@@ -33,7 +33,6 @@ export const PARES_SIN_TESTIGO_CONGELADOS = new Set([
   'docs/legal/AUDITLOG_FISCAL_CONTRATO.md # borradoMerchant.ts',
   'docs/legal/AUDITLOG_FISCAL_CONTRATO.md # clean-staging-tests.mjs',
   'docs/legal/AUDITLOG_FISCAL_CONTRATO.md # docs/RUNBOOKS.md',
-  'docs/legal/AUDITLOG_FISCAL_CONTRATO.md # e2e-critico.mjs',
   'docs/legal/AUDITLOG_FISCAL_CONTRATO.md # exportData.ts',
   'docs/legal/AUDITLOG_FISCAL_CONTRATO.md # exports.routes.ts',
   'docs/legal/AUDITLOG_FISCAL_CONTRATO.md # invoiceNumber.service.ts',

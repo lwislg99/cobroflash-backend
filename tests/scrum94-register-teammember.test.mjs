@@ -7,6 +7,19 @@
 // activo/invitado (suspended = ya no entra, se permite). Mensaje claro pero GENÉRICO (sin
 // revelar la empresa). NO se crea ningún merchant fantasma.
 //
+// 🔴 8-oct-2026 · SCRUM-1515 (orden del fundador): `POST /auth/register` está CERRADA. Ya no da de
+// alta a NADIE y contesta siempre el mismo 409 (`registration_closed`, con la frase firmada en
+// SCRUM-1515 c.18971). Este test cambia PORQUE CAMBIA EL COMPORTAMIENTO, no para que pase:
+//   · lo que vigilaba sigue vigilado y es más fuerte: el correo de un operario no acaba en un
+//     merchant (ahora, ni el suyo ni el de nadie) y la respuesta no depende de la empresa (ahora,
+//     ni del correo);
+//   · los casos 4 y 5 decían «suspendido y correo nuevo SÍ se registran»: era el alta abierta. Hoy
+//     reciben el mismo 409 y no se crea nada.
+// El rechazo `email_belongs_to_team` sigue vivo en `registerMerchant` y lo ejercita el guion de
+// alta (sale 4) en `tests/scrum1515-nuestra-puerta-de-alta.test.mjs`, que SÍ corre en el
+// obligatorio. ⚠️ Esta versión NO se ha ejecutado al escribirla: su gate es staging, y SCRUM-1515
+// no tocó staging. Lo ejecutado está en el test de SCRUM-1515.
+//
 // ⚠️ GATEADO (crea/BORRA merchants + teamMembers efímeros; levanta la app):
 //   QA_DB_TEST=1 npm run test:staging
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
@@ -27,11 +40,11 @@ test('SCRUM-94: /auth/register rechaza el email de un operario (sin merchant fan
 
   const reg = (email) => fetch(`${base}/auth/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'Negocio Nuevo', email, country: 'ES' }) });
 
-  // ⚠️ NO son fixtures nuestras: son los merchants que crea la APLICACIÓN cuando un registro
-  // SÍ se permite (el operario suspendido y el email nuevo). `withMerchant` no los conoce ni
-  // puede borrarlos — se declaran fuera para que su limpieza sobreviva a todo lo de dentro.
-  // Si algún día alguien vacía este `finally` «porque ya limpia withMerchant», dejará dos
-  // merchants reales por ejecución.
+  // ⚠️ NO son fixtures nuestras: son los merchants que crearía la APLICACIÓN si la ruta volviera a
+  // dar de alta (lo hacía con el operario suspendido y con el email nuevo). `withMerchant` no los
+  // conoce ni puede borrarlos — se declaran fuera para que su limpieza sobreviva a todo lo de
+  // dentro. Con la ruta cerrada no debería haber nada que borrar; si este test cae porque la ruta
+  // dio de alta, esto es lo que impide dejar merchants reales en staging.
   const merchantsToClean = [];
 
   // SCRUM-113: el merchant de fixture y sus 3 teamMembers se montan DENTRO de withMerchant.
@@ -51,7 +64,7 @@ test('SCRUM-94: /auth/register rechaza el email de un operario (sin merchant fan
         const rA = await reg(activo.email);
         assert.equal(rA.status, 409, `registrar el email de un operario ACTIVO debe dar 409 y fue ${rA.status}`);
         const bA = await rA.json();
-        assert.equal(bA.error, 'email_belongs_to_team', 'código de error esperado');
+        assert.equal(bA.error, 'registration_closed', 'código de error esperado (la ruta está cerrada: SCRUM-1515)');
         assert.ok(bA.message && bA.message.length > 0, 'debe traer un mensaje claro');
 
         // 1b · FORMA FIJA (SCRUM-108, vía 1): el 409 no lleva NADA más que estas dos claves.
@@ -100,18 +113,19 @@ test('SCRUM-94: /auth/register rechaza el email de un operario (sin merchant fan
           },
         );
 
-        // 4 · operario SUSPENDIDO → NO se rechaza (ya no puede entrar; registrar su propio negocio es legítimo).
-        const rS = await reg(suspendido.email);
-        assert.equal(rS.status, 200, `un TeamMember suspendido SÍ puede registrarse y fue ${rS.status}`);
-        merchantsToClean.push(suspendido.email);
-
-        // 5 · SANITY: un email nuevo (ni merchant ni teammember) se registra con normalidad.
+        // 4 · operario SUSPENDIDO y 5 · email NUEVO (ni merchant ni teammember): con el alta abierta
+        // se registraban (200). Con la ruta CERRADA (SCRUM-1515) reciben EXACTAMENTE lo mismo que el
+        // operario activo, y no se crea ningún merchant.
         const nuevoEmail = `qa-s94-nuevo-${stamp}@test.local`;
-        const rN = await reg(nuevoEmail);
-        assert.equal(rN.status, 200, 'un email nuevo debe registrarse con normalidad (no rompimos el alta)');
-        merchantsToClean.push(nuevoEmail);
+        merchantsToClean.push(suspendido.email, nuevoEmail);
+        for (const email of [suspendido.email, nuevoEmail]) {
+          const r = await reg(email);
+          assert.equal(r.status, 409, `la ruta está cerrada: ${email} debe recibir 409 y fue ${r.status}`);
+          assert.deepEqual(await r.json(), bA, 'la ruta cerrada contesta lo MISMO a un operario, a un suspendido y a un extraño');
+          assert.equal(await prisma.merchant.findUnique({ where: { email } }), null, `LA RUTA CERRADA HA DADO DE ALTA a ${email}`);
+        }
 
-        t.diagnostic('SCRUM-94: operario active/invited → 409 sin merchant fantasma; suspended/nuevo → alta OK; mensaje sin fuga de empresa ✓');
+        t.diagnostic('SCRUM-94 tras SCRUM-1515: operario active/invited/suspended y email nuevo → el mismo 409, sin merchant; respuesta idéntica entre empresas ✓');
       },
     );
   } finally {

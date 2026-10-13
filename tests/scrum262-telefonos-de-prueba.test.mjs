@@ -48,7 +48,8 @@ function ficherosDeDatos() {
     for (const f of fs.readdirSync(path.join(RAIZ, d))) {
       // TODOS los .mjs de scripts/, no solo `seed*`: al medir apareció `e2e-critico.mjs`
       // creando un cliente con un móvil de rango real, y el recorte anterior no lo veía. Los
-      // datos de prueba no siempre se llaman «seed».
+      // datos de prueba no siempre se llaman «seed». (Ese guion se retiró el 13-oct-2026,
+      // SCRUM-1521; el barrido se queda como está: el motivo era el recorte, no el fichero.)
       if (f.endsWith('.mjs') || /\.test\.mjs$/.test(f)) out.push(path.join(RAIZ, d, f));
     }
   }

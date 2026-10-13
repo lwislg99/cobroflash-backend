@@ -261,3 +261,255 @@ La fila de S3 cambia otra vez: al traer `main` con esto, `node scripts/carriles.
 la fusión. La sonda de la cerradura no cambia de veredicto por esto (`meta-guard-mutaciones.mjs` sigue en la fila
 de S3), pero un caso nuevo sí: una sesión de S3 en `_medidor-de-toque.mjs` ya no encuentra cerradura, ni a favor
 ni en contra.
+
+# SCRUM-1480d · La fila de `quoteRevisiones.js`, y cuántos ficheros del panel están como estaba él
+
+**Medido contra:** `origin/main` = `be48345279da158bc81aebbea543eb926ae9eb88` · 2026-10-09T08:22:54Z
+
+A9: sin fallo que generalice — una fila nueva que confirma al dueño que el fichero ya tenía; las cifras de este anexo salen de comandos que van escritos al lado
+
+Carril S0 (`docs/equipo/dos-equipos.md` y `afirmaciones-verificadas.md` son suyos). Toca §3.2, que lee
+`tests/scrum514-aprobado-y-aplicado.test.mjs`: se añade UNA fila con el formato que ese test espera, y eso no necesita
+aviso (lo dice la cabecera de §3). Con ella cambian dos ficheros generados (`.claude/carriles.json` y
+`.claude/rules/carril-s2.md`): los escribe `node scripts/carriles.mjs generar`, no una mano.
+
+## Qué pasaba
+
+El 7-oct-2026 la S4 tuvo que preguntarle al orquestador de quién era `public/dashboard/js/quoteRevisiones.js`. El
+orquestador contestó S2, por la fila general, y el 9-oct-2026 (orden de arranque de las 08:10Z) mandó ponerle fila
+propia y mirar si había más ficheros del panel en la misma situación.
+
+## Lo que medí antes de escribir la fila
+
+| Qué | Resultado | Comando |
+|---|---|---|
+| De quién es el fichero ANTES de la fila | S2, por el patrón `public/**` (la fila general) | `node scripts/carriles.mjs de public/dashboard/js/quoteRevisiones.js` |
+| De quién es DESPUÉS | S2, por su propio patrón | el mismo |
+| Un hermano sin fila (`quoteSuplido.js`), después | S2, por `public/**`: la fila nueva no arrastra a nadie más | el mismo, con esa ruta |
+| Ficheros de `public/dashboard/js/` | 95 | `git ls-files public/dashboard/js` |
+| Con fila propia | 30 (J2 10 · J1 8 · J3 6 · S4 3 · S2 3) | el comando `de`, una vez por fichero |
+| Sólo por la fila general, antes de este cambio | **65** (todos S2) | lo mismo |
+| De esos 65, con un nombre que se parece a los de OTRO puesto | 7: `albaranAccion.js`, `albaranActionsRegistry.js`, `albaranDesdePresupuestoModal.js`, `parteOficinaView.js` (S4) · `facturasRecibidasView.js` (J1) · `etiquetasDelDocumento.js`, `jobCobroHuecos.js` (J2) | `node scripts/carriles.mjs huecos` |
+
+**`quoteRevisiones.js` no sale en el censo de huecos**, y es coherente: ningún otro puesto tiene un fichero con «quote»
+ni con «revisiones» en el nombre. El censo busca parecidos de nombre, y aquí no lo había: la duda no venía del nombre.
+
+**Lo que la herramienta ya contestaba.** La cerradura no deduce: lee `.claude/carriles.json`, y ahí el fichero era de
+S2 antes y después. Quien tenía que deducir era la sesión que leía la tabla. La pregunta de la S4 se contestaba con
+el comando de la primera fila, que está en `main` desde el 6-oct-2026 (#2001).
+
+## El cambio
+
+- `docs/equipo/dos-equipos.md` §3.2: una fila, `dashboard/js/quoteRevisiones.js` → S2, con quién lo decidió y cuándo.
+- `.claude/carriles.json` y `.claude/rules/carril-s2.md`: regenerados (60 filas, 157 reglas, 137 con dueño; antes 59,
+  156 y 136). Segunda pasada: 0 escritos.
+- `docs/equipo/afirmaciones-verificadas.md`: tres filas del 9-oct.
+
+## Aceptación → dónde se ve
+
+La aceptación es el punto 4 del encargo del orquestador de Luis a esta sesión (9-oct-2026, 08:10Z); no está escrita en
+el ticket.
+
+| aceptación | dónde se ve |
+|---|---|
+| «`quoteRevisiones.js` no tiene fila en `dos-equipos.md`… Ponle fila explícita» | `docs/equipo/dos-equipos.md` §3.2, la fila anterior a la general |
+| «mira si hay más ficheros de `public/dashboard/js/` en la misma situación» | la tabla de arriba: 65 de 95, con su comando |
+
+## Lo que no se ha hecho, dicho
+
+- **No he dado fila a los otros 64.** El orquestador decidió UNO. Siete de ellos son la pregunta de §7.4, que es de los
+  dos jefes, y una fila mía la contestaría por ellos.
+- **Dos familias que el censo de huecos no ve, y se parecen a ficheros de S4.** Diez `job*.js` (`jobDetailView.js`,
+  `jobActionsRegistry.js`, `jobAgendar.js`, `jobAsignados.js`, `jobDocsReparto.js`, `jobNextAction.js`,
+  `jobNuevoModal.js`, `jobRailBlocks.js`, `jobTrabajoPlegable.js`, `jobsCierreTrabajo.js`) frente a `jobsView.js`, y
+  `albaranesView.js` frente a `albaranDetailView.js`. Motivo, leído en `palabrasDe` (`scripts/_carriles.mjs`): no cuenta
+  palabras de menos de cinco letras («job», «jobs») y al plural sólo le quita la «s» final («albaranes» queda en
+  «albarane», que no es «albaran»). Es un límite del instrumento, no arreglado aquí: cambiarlo mueve la cifra «32» de
+  §7.4 y abre más preguntas para los jefes.
+- **No he corrido la suite completa** (memoria de la máquina): los tests que leen los documentos tocados y
+  `guards:entrada`.
+
+# SCRUM-1480e · Ocho filas de `scripts/` por el área del ticket que creó cada fichero, y el criterio escrito
+
+**Medido contra:** `origin/main` = `85d8d01e64196569928b523c9074542d6ffbbd0a` · 2026-10-09T10:01:47Z
+
+A9: comprobación → `tests/scrum1295-carriles.test.mjs`
+
+El fallo: regeneré los carriles y DESPUÉS retoqué una nota de la tabla; el generado lleva la huella del documento
+entero y quedó distinto. Lo cazó ese test en la dirigida, antes de empujar. Cicatriz del 9-oct en
+`docs/equipo/cicatrices/S0.md`.
+
+Carril S0 (`docs/equipo/dos-equipos.md`, `afirmaciones-verificadas.md`, y desde este cambio `scripts/carriles.mjs`). Sólo
+cambia §3.3, que no lee `tests/scrum514-aprobado-y-aplicado.test.mjs`. Los generados los escribe
+`node scripts/carriles.mjs generar`.
+
+## Qué pasaba
+
+253 de los 302 ficheros de `scripts/` sólo los cubría la fila general, que no da dueño. El 7-oct la S0 midió cuánto
+decide cada criterio posible (comentario 18635) y el 9-oct el orquestador de Luis aceptó uno: **el área del ticket que
+creó el fichero**, «porque es el único que da PUESTO y no sólo equipo, y sale de un dato que ya está escrito». Encargo:
+aplicarlo a los que decide, dejar el resto con la fila general diciendo que están sin puesto, no tocar los de Javier, y
+escribir el criterio donde viva para que el siguiente fichero nazca con fila.
+
+## Lo que recontré antes de escribir nada
+
+La propuesta era del 7-oct sobre `73ce872c`. Una cifra heredada se recuenta:
+
+| qué | resultado el 9-oct | comando |
+|---|---|---|
+| Ficheros de `scripts/` y cuántos sólo con la fila general | 302 y 253: igual que el 7-oct | `node docs/master/evidencias/SCRUM-1480/partir-scripts.mjs <raíz> <salida.tsv>` |
+| ¿Son los MISMOS 253, con el mismo ticket creador? | sí: 0 salen, 0 entran, 0 cambian de ticket; 167 tickets creadores | las dos fotos comparadas como conjuntos (la del 7-oct no está en git) |
+| Tickets creadores con etiqueta de área, hoy en Jira | 33, los mismos; 3 de ellos con dos áreas | `key in (<los 167>) AND labels in (area-s0 … area-j6)` |
+| Ficheros que el criterio decide | **41**: 28 del equipo de Luis (S0 9 · S3 8 · S4 5 · S5 3 · S2 2 · S1 1) y 13 del de Javier (J6 5 · J1 4 · J3 2 · J4 1 · J5 1) | `node docs/master/evidencias/SCRUM-1480/escalera-scripts.mjs scripts-sueltos-9oct.tsv areas-de-tickets-9oct.tsv --listas` |
+| Donde área y autor de git se pueden comparar, ¿se contradicen? | 0 de 41 | el mismo |
+| De los 28, ¿algún ayudante lo importa un script de otro dueño o sin fila? | **ninguno**: 8 los importan sólo scripts de su mismo puesto y a 20 no los importa ningún script. Control: `_navegador.mjs` sale con 38 importadores, y el único de los 41 con importadores ajenos es `_hallazgos-y-ciegos.mjs` (37), que es de Javier y no se toca | `node docs/master/evidencias/SCRUM-1480/importadores-por-area.mjs <raíz> scripts-sueltos-9oct.tsv areas-de-tickets-9oct.tsv` |
+
+Las salidas de hoy, en la misma carpeta: `salida-escalera-9oct.txt` y `salida-importadores-por-area-9oct.txt`.
+
+## El cambio
+
+- `docs/equipo/dos-equipos.md` §3.3: **ocho filas, 28 ficheros.** S0 ocho scripts · S0 (contenedor) una lista · S1 uno ·
+  S2 dos · S3 cinco · S3 (contenedor) tres listas · S4 cinco · S5 tres. La fila general dice su cifra nueva: **225 de
+  302** (contado después del commit, con `recuento-de-la-fila-general.mjs`: 77 con fila propia).
+- Bajo la tabla, **«Cómo nace la fila de un fichero de `scripts/`»**: el criterio, cuándo calla, la regla del ayudante y
+  la de la lista de declarados, y lo medido. Obliga al equipo de Luis; al de Javier se le propone por su orquestador.
+- `scripts/carriles.mjs`: a quien pregunta `de <ruta>` por un script que sólo cubre la fila general se le dice ahí
+  mismo que nadie ha decidido su dueño y cómo nace su fila. Es el comando con el que cada sesión respeta su carril, así
+  que el criterio le llega sin tener que ir a leerlo.
+- `tests/scrum1480e-la-fila-de-un-script-nace-con-el.test.mjs`: los 28 tienen fila que los NOMBRA y del puesto que dio el
+  criterio; el aviso sale para un script nuevo y para uno viejo sin fila, y no sale para uno con fila, para uno de
+  `scripts/equipo/` ni para uno de producto. Visto en rojo antes del cambio de `carriles.mjs` (1 de 2), y con la tabla de
+  `origin/main` los 28 caen en la fila general (4 de muestra, los 4).
+- `.claude/carriles.json` y seis `.claude/rules/carril-s*.md`: regenerados (68 filas, 185 reglas, 165 con dueño; antes
+  60, 157 y 137). Segunda pasada: 0 escritos.
+- `docs/equipo/afirmaciones-verificadas.md`: dos filas del 9-oct.
+
+## Dos desviaciones, declaradas
+
+1. **«Aplícalo a los 41» son 28 filas escritas, no 41.** De los 41, 13 son de áreas de Javier, y el mismo encargo dice
+   que lo de Javier no se toca: van a su orquestador (lista en `salida-escalera-9oct.txt`, líneas `AREA j…`).
+2. **Cuatro de los 28 van como contenedor, y eso no lo da el criterio: lo añado yo.** Son listas de declarados. Medido en
+   dos: `_sin-consumir-declarados.json` lleva 44 commits de los dos equipos, y de `_entorno-prestado-declarados.json` la
+   S5 retiró sus entradas en SCRUM-1359. En las otras dos (`_ciegos-por-entorno-declarados.json` y
+   `_version-de-fila-dudosa-declaradas.json`) no está medido: sólo llevan el commit que las creó, y las trato igual por
+   ser la misma clase de fichero. Con cerradura de puesto, quien tuviera que declarar o retirar SU entrada se pararía.
+
+## Aceptación → dónde se ve
+
+La aceptación es el punto 1 del encargo del orquestador de Luis a esta sesión (9-oct-2026, tercera tanda); no está
+escrita en el ticket.
+
+| aceptación | dónde se ve |
+|---|---|
+| «Aplícalo a los 41 que decide» | `docs/equipo/dos-equipos.md` §3.3, las ocho filas anteriores a `scripts/_suelo-*`: 28 de los 41 (desviación 1) · `tests/scrum1480e-la-fila-de-un-script-nace-con-el.test.mjs` |
+| «Los 138 donde el autor sólo da equipo: déjalos con la fila general y DI que están sin puesto» | el último punto de «Cómo nace la fila…», en §3.3: 225 sin puesto, con su desglose · `node scripts/carriles.mjs de <uno de ellos>` lo dice |
+| «Los 96 de Javier NO los toques: van en la lista de su orquestador» | ninguna fila con dueño J en este cambio · la lista de los 13 con área, en `salida-escalera-9oct.txt`; los 83 por autor, columna `quien` = `javier` de `scripts-sueltos-9oct.tsv` |
+| «escribe el criterio donde viva (no en `YAQU_MASTER.md`), para que el siguiente fichero nuevo nazca con fila» | `docs/equipo/dos-equipos.md` §3.3, «Cómo nace la fila de un fichero de `scripts/`» · el aviso de `scripts/carriles.mjs de` |
+
+## Lo que no se ha hecho, dicho
+
+- **Nada obliga a que un script nuevo traiga fila.** El criterio está escrito y el comando lo recuerda, pero un PR que
+  cree un script sin fila entra en verde. Lo que lo haría un rojo es un trinquete («los que sólo cubre la fila general
+  no suben de 225»), y no lo he construido: saltaría también en los PR del equipo de Javier, sobre una tabla que ellos
+  no editan. Cruza de equipo: lo deciden los dos orquestadores.
+- **Los 55 de Luis sin puesto no se han leído** (paso 3 de la propuesta del 7-oct). Siguen en la fila general.
+- **Los 17 que no nombra nada en el código y los 8 que sólo se corren a mano** siguen sin mirar: quizá sobran.
+- **No he corrido la suite completa** (memoria de la máquina): la dirigida sobre lo tocado y `guards:entrada`.
+
+# SCRUM-1480f · El trinquete: un script nuevo no entra sin fila; y la aceptación 3 del ticket, que no estaba a la letra
+
+**Medido contra:** `origin/main` = `ebd9bd8e9c4329edbdc35fffced5ff5b173f885c` · 2026-10-09T11:10:09Z
+
+A9: comprobación → `tests/scrum1480f-un-script-nuevo-no-entra-sin-fila.test.mjs`
+
+El fallo, que es mío y del 6-oct: entregué la aceptación 3 de este ticket («la fila de `scripts/` NOMBRA las dos
+excepciones nuevas») como hecha, y la fila no las nombraba: decía «y las dos filas de abajo» (#2216), y desde #2227 «y
+las filas de abajo». Remitir no es nombrar. Lo vi al releer la aceptación contra `main`, que es lo que pidió el
+orquestador antes de cerrar. La última prueba de ese test lo sujeta desde hoy.
+
+Carril S0 (`docs/equipo/dos-equipos.md`, `afirmaciones-verificadas.md`, `scripts/carriles.mjs`, `scripts/_carriles.mjs`).
+
+## Qué pasaba
+
+SCRUM-1480e dejó escrito el criterio («un fichero nuevo de `scripts/` nace con fila») y un aviso en
+`carriles.mjs de`. Nada lo hacía cumplir: un PR que creara un script sin fila entraba en verde. Mirado en el cuerpo de
+los dos tests que podían hacerlo, no en su nombre: `tests/scrum1295-carriles.test.mjs` compara la tabla con lo generado
+y `tests/scrum1480e-…` sujeta 28 ficheros con nombre; ninguno cuenta los que no tienen fila.
+
+## Lo que recontré antes de escribir nada
+
+| qué | resultado | comando |
+|---|---|---|
+| Scripts que sólo cubre la fila general, en `origin/main` | **225 de 302** (77 con fila propia): la cifra del 9-oct por la mañana sigue saliendo | `node docs/master/evidencias/SCRUM-1480/recuento-de-la-fila-general.mjs <raíz>` |
+| Lo mismo con la sonda nueva, sobre el árbol de esta rama | **225 de 303** (78 con fila): el fichero que se suma es la lista del trinquete, que nace con fila | `node scripts/carriles.mjs sin-fila` |
+
+Son dos sondas distintas (una lee las filas del documento de un commit; la otra usa el mapa que lee la cerradura) y dan
+el mismo número. No he comparado los dos CONJUNTOS: el recuento viejo no imprime la lista.
+
+## El cambio
+
+- `scripts/_carriles.mjs`: `scriptsSinFila` (la pregunta de `carriles.mjs de`, para toda la carpeta) y
+  `trinqueteDeScripts` (nuevos · quedan · declarados que sobran), sin tocar el disco.
+- `scripts/carriles.mjs sin-fila [--lista]`: la cuenta, con su población, y la lista.
+- `docs/master/evidencias/SCRUM-1480/sin-fila-9oct.txt`: **la foto**, los 225. No se edita: el test lleva su huella.
+- `scripts/_sin-fila-declarados.json`: el número (`suelo.quedan`, 225, 9-oct-2026) y la lista de declarados, vacía. Con
+  fila propia en §3.3 (S0, contenedor).
+- `tests/scrum1480f-un-script-nuevo-no-entra-sin-fila.test.mjs`, seis pruebas: la foto y el tope · NO SUBE (conjuntos:
+  todo script sin fila está en la foto o declarado) · NO BAJA EN SILENCIO (de la foto quedan exactamente `suelo.quedan`)
+  · la forma de un declarado · el cebo fabricado · la aceptación 3.
+- `docs/equipo/dos-equipos.md` §3.3: la fila general nombra `scripts/qa/` y `scripts/vigia-sesiones-jv.mjs`; la fila de
+  la lista; y dos puntos nuevos en «Cómo nace la fila…» (el trinquete y sus dos salidas).
+- `.claude/carriles.json` y `.claude/rules/carril-s0.md`: regenerados (69 filas, 186 reglas, 166 con dueño; antes 68,
+  185 y 165), después del último cambio de la tabla. `comprobar`: igual a la tabla.
+- `docs/equipo/afirmaciones-verificadas.md`: tres filas del 9-oct (dos del orquestador y una mía).
+
+## Visto en ROJO
+
+Con todo comiteado antes (`d7e3fa474d81b326d51e0a3f2ef0e1183b72f9b4`) y deshecho después con
+`git restore --source=HEAD --staged --worktree`; el árbol quedó limpio las tres veces.
+
+| lo que inyecté (el `--numstat` al lado) | lo que cayó |
+|---|---|
+| un script REAL nuevo sin fila, `scripts/cebo-real-sin-fila.mjs`, añadido al índice (1 · 0) | «NO SUBE», 1 de 6, y lo nombra |
+| fila para uno de la foto (`scripts/_navegador.mjs`) sin bajar el número (1 · 1) | «NO BAJA EN SILENCIO», 1 de 6: «siguen sin fila 224, y … dice 225» |
+| la tabla de `origin/main` entera (1 · 16) | 2 de 6: «NO SUBE», que caza a la propia lista del trinquete porque allí no tiene fila, y la aceptación 3 |
+
+Base sin mutar: 6 de 6.
+
+## Una desviación, declarada
+
+**El encargo era «que no suba de 225», a secas, y el rojo tiene una segunda salida que añado yo: declarar el fichero.**
+El motivo es el que di el 9-oct por la mañana para no construirlo: el trinquete corre en el check obligatorio de TODOS
+los PR, y el equipo de Javier crea scripts (83 de los 225 son suyos por el autor) sobre una tabla que no edita
+(`dos-equipos.md` es de la S0; ellos proponen por Jira). Sin esa salida, un PR suyo se quedaría en rojo sin poder
+arreglarlo él, por una norma que el propio §3.3 dice que a su equipo «se le propone». Con ella no entra NADA callado: o
+trae fila, o trae una línea con su ticket y su motivo en una lista que el test cuenta. Lo que la desviación cuesta: el
+total de scripts sin fila SÍ puede subir, por la lista de declarados; lo que no sube es lo no dicho. Quitarla es borrar
+`declarados` del test y de la lista: una decisión de los dos orquestadores, no mía.
+
+## Aceptación → dónde se ve
+
+La del encargo del orquestador de Luis a esta sesión (9-oct-2026, cuarta tanda, punto 2); no está escrita en el ticket.
+
+| aceptación | dónde se ve |
+|---|---|
+| «Un trinquete que cuente los ficheros de `scripts/` sin fila y no deje subir ese número» | `tests/scrum1480f-un-script-nuevo-no-entra-sin-fila.test.mjs` · con la desviación de arriba |
+| «Con su control positivo: un script nuevo fabricado sin fila tiene que ponerlo ROJO» | «Visto en ROJO», primera fila (un fichero real) · y dentro del test, la prueba del cebo, que corre siempre |
+| «no puede exigir cero — tiene que ser "no suba de 225", con el número escrito y su fecha» | `scripts/_sin-fila-declarados.json`, `suelo` · `TOPE` en el test · `dos-equipos.md` §3.3 |
+
+Y la del ticket, releída contra `main`:
+
+| aceptación (literal) | dónde se ve |
+|---|---|
+| §3.3 tiene una fila `scripts/qa/**` → **S3**, con su motivo. | `docs/equipo/dos-equipos.md` §3.3, en `main` |
+| §3.3 tiene una fila para el vigía de sesiones (`scripts/vigia-sesiones-jv.mjs`) → **S5**, y dice que lo escribió el equipo de Javier para su máquina (SCRUM-1000) y que un cambio se le avisa a su orquestador. | el mismo fichero, la fila siguiente, en `main` |
+| La fila de `scripts/` nombra las dos excepciones nuevas, para que nadie vuelva a leerla a la letra. | **en `main` NO** (remite a «las filas de abajo») · en esta rama sí, y lo sujeta la última prueba del test nuevo |
+| El formato que lee `tests/scrum514-aprobado-y-aplicado.test.mjs` (§3.1 y §3.2) no se toca: ese test sigue verde. | ese test, corrido sobre esta rama |
+| Dicho en el registro qué queda SIN fila después de esto. | este fichero, «Lo que sigue sin fila, dicho» (dos veces) y «Lo que no se ha hecho, dicho» |
+
+## Lo que no se ha hecho, dicho
+
+- **No he avisado al equipo de Javier.** El canal es su orquestador. Lo que tiene que saber cabe en el mensaje del rojo,
+  que es lo primero que verá una sesión suya; el texto para su orquestador va en la entrega de Jira.
+- **Los 225 siguen sin puesto.** El trinquete no reparte nada: impide que la cuenta crezca callada.
+- **No he corrido la suite completa** (memoria de la máquina): la dirigida sobre lo tocado y `guards:entrada`.

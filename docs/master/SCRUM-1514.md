@@ -245,3 +245,171 @@ los de suite 237, 976, 812, 267, 1294, 921c, 387, 603b, 723): 630 tests, 628 pas
    después y lo vi tarde, al ir a escribir el registro. El dato llevaba hora y no la puse.
 2. El primer cotejo de las 190 filas lo hice con `sed` y `diff` en consola; lo rehíce como fichero
    con población y controles porque así no se podía repetir.
+
+---
+
+# SCRUM-1514c · Las 25 que el censo no llegó a medir: medidas, y ninguna cruza
+
+**Medido contra:** `origin/main` = `a46ade85412a88c7f9d95c25b2d063f4501fb89e` · 2026-10-08T08:24:06Z (hora de GitHub)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1514c/medir-las-25.mjs`
+
+Sesión jv-j1 (relevo), equipo de Javier, por encargo del orquestador (`cobroflash-backend-90`). **Carril J1 a
+mano. Es MEDICIÓN: no se toca `src/`, ni `prisma/`, ni `tests/`, ni el fichero del censo** (lo trabaja J4
+en SCRUM-1516). Todo lo nuevo vive en `docs/master/evidencias/SCRUM-1514c/`. El arranque dijo «SIN
+IDENTIDAD… no construyas» (SCRUM-1498, carril de S5): se siguió, como manda la ficha.
+
+Las corridas se hicieron sobre `d47dad333`; `main` avanzó a `a46ade854` mientras tanto y entre los dos
+**no cambia ningún fichero de `src/`** (`git diff --stat` vacío). No se repitió la corrida tras mezclar.
+
+## 0 · La respuesta corta
+
+**De las 25 rutas en NO-LLEGO, cruza la frontera entre comercios: 0.** Y son dos calidades de dato:
+
+| calidad del dato | rutas |
+|---|---|
+| **EJECUTADA hasta el final** de lo que hace frente al recurso ajeno (o no tiene recurso que pedir) | **21** |
+| **EJECUTADA A MEDIAS** (hasta la llamada a la IA, o hasta un tope del doble) **y el resto LEÍDO** | **4** |
+| sólo leída | 0 |
+| suma | 25 |
+
+Las 4 a medias: `POST /admin/expenses/leer-ticket`, `POST /admin/ai/suggest-quote`,
+`POST /admin/ai/quote-message` y `POST /admin/team`. Lo leído de cada una está en §3.
+
+La frase «de 191 sólo cruzaba una» deja de descansar sobre 25 casillas en blanco: descansa sobre 21
+ejecutadas y 4 medio ejecutadas y medio leídas. **Sigue descansando sobre Prisma doblado** (§5).
+
+## 1 · El instrumento, y su par sembrado
+
+`medir-las-25.mjs` no lleva la lista de rutas escrita: **la lee de la sección `== NO-LLEGO · 25` de la
+salida del censo** (`censo-eje-comercio-de-entrada.txt`, corrida hoy; idéntica fila a fila a la
+`despues.txt` de SCRUM-1514b según `comparar.mjs`, 191 de 191). El motor es el del censo, COPIADO (el
+censo es un guion que se ejecuta entero al cargarlo y no se puede importar): es un segundo fichero con el
+mismo motor, y se dice. Añade tres cosas: guarda el cuerpo de la respuesta, una receta por ruta
+(`recetas.mjs`) y un veredicto que el censo no separaba (contestar 4xx con todo atado no es lo mismo que
+acabar).
+
+El positivo del censo caducó con el arreglo de SCRUM-1514b. **Esta pasada siembra el suyo:** siete rutas
+de mentira montadas en memoria sobre la app ya cargada (no existen en `src/` ni en `dist/`), que pasan por
+el mismo camino que las de verdad.
+
+| control | esperado | sale |
+|---|---|---|
+| sembrada por `:id`, sin comercio | CRUZA 200 | CRUZA 200 · `invoice.findUnique {"id":102}` |
+| sembrada por `:id`, con comercio | FILTRA-Y-NIEGA 404 | FILTRA-Y-NIEGA 404 |
+| sembrada que compara antes de leer | NIEGA-SIN-CONSULTAR 404 | NIEGA-SIN-CONSULTAR 404 |
+| sembrada por id EN EL CUERPO, lee sin comercio | CRUZA 200 | CRUZA 200 |
+| su gemela con comercio | FILTRA-Y-NIEGA 404 | FILTRA-Y-NIEGA 404 |
+| sembrada por id en el cuerpo, ESCRIBE sin comercio | CRUZA 200 | CRUZA 200 |
+| su gemela con comercio | FILTRA 200 | FILTRA 200 |
+| NEGATIVO del árbol: `POST …/send-reminder` | FILTRA 404, 0 envíos | FILTRA-Y-NIEGA 404, 0 envíos |
+| la arreglada: `POST …/resend-whatsapp` | ya no cruza | FILTRA-Y-NIEGA 404, 0 envíos |
+| POSITIVO del árbol: `POST /admin/quotes/:id/send-whatsapp` | lee sin comercio y niega | LEE-Y-NIEGA 404 · `quote.findUnique {"id":102}` |
+| CERO: una sembrada que no he montado | 0 manos | 0 manos |
+| MOTOR: la pasada genérica repite al censo | 25 de 25 | 25 de 25 |
+
+**Rojo visto dos veces.** Con `--doble-sordo` las tres sembradas que cruzan y el positivo del árbol salen
+MAL y el fichero sale 1 (`salida-rojo-doble-sordo.txt`). Con la entrada mutilada (una fila menos) se
+declara CIEGO y sale 2 (`salida-rojo-poblacion-mutilada.txt`).
+
+🔴 **Y el dato que justifica el encargo, medido:** con el doble sordo **los totales de las 25 salen
+IDÉNTICOS** a los de la corrida buena (CRUZA 0 en las dos). Un «0 cruzan» de este método no distingue
+«ninguna cruza» de «el doble no oye»: lo único que los separa es el par sembrado. Y las cuatro sembradas
+con validación delante, pedidas como las pedía el censo, salen **NO-LLEGO 400 las cuatro, las dos que
+cruzan incluidas**: NO-LLEGO podía esconder un cruce.
+
+## 2 · Por qué no llegó cada una (causa medida por el cuerpo de la respuesta, no por parecido)
+
+| causa | rutas | cuáles |
+|---|---|---|
+| el cuerpo o la query piden un campo PROPIO de esa ruta que el relleno no llevaba | 17 | 14 validaciones distintas: `accion` (bulk-tags), `fichero` (los dos import de clientes), `con` por query (fusion-preview) y por cuerpo (fusionar), `version` (billing-plan), `motivo` (annul), `csv` (products/import), `customerId` de trabajo (jobs) y de consolidación (consolidar), `entorno`, `mensaje` (soporte), año y trimestre (los tres libros), `email` (team), `status` (quote-requests) |
+| Stripe no está configurado en el árbol (501) | 3 | billing/checkout, billing/portal, connect/onboard |
+| la IA no está configurada en el árbol (503) | 3 | expenses/leer-ticket, ai/suggest-quote, ai/quote-message |
+| la sesión se lee de la cookie y la petición no llevaba (401) | 1 | `GET /admin/me` |
+| flag `MERCHANT_DELETE_ENABLED` apagado (404) | 1 | `POST /admin/supresion/:merchantId` |
+
+Las 17 del primer grupo se parecen (400 tras relleno) y no comparten causa: cada una muere en SU campo.
+Los dos 404 y 401 tampoco: uno es un flag, otro una cookie.
+
+## 3 · El resultado, ruta a ruta (`salida.txt`)
+
+Peor veredicto de cada ruta entre sus variantes. Convenio del doble: 102 es del comercio 22, 501 del 21.
+
+**EJECUTADAS hasta el final (21)**
+
+| ruta | qué se le pidió | sale |
+|---|---|---|
+| `GET /admin/me` | cookie de una sesión del 21 | FILTRA 200 · todo lo que consulta va atado a la sesión. No recibe id de recurso |
+| `POST /admin/customers/bulk-tags` | etiquetar el 102; el 501 y el 102 juntos; quitar | FILTRA 200 · «actualizados 0, No encontrado» |
+| `POST /admin/customers/import/preparar` | un CSV | SIN-CONSULTA 200 · no toca la base |
+| `POST /admin/customers/import` | un CSV con mapeo | FILTRA 200 |
+| `GET /admin/customers/:id/fusion-preview` | principal ajeno y fusionado propio; al revés | FILTRA 200 · «bloqueada: cliente_no_encontrado» |
+| `POST /admin/customers/:id/fusionar` | lo mismo | FILTRA-Y-NO-ACABA 409 `cliente_no_encontrado`: la negación sale de la consulta atada |
+| `PATCH /admin/quotes/:id/billing-plan` | el plan del 102 | FILTRA-Y-NIEGA 404 |
+| `POST /admin/invoices/:id/annul` | anular la 102 | FILTRA-Y-NIEGA 404 |
+| `POST /admin/products/import` | un CSV | FILTRA 200 |
+| `POST /admin/jobs` | trabajo para el cliente 102; para el 501 | FILTRA-Y-NIEGA 404 con el ajeno; FILTRA 201 con el propio |
+| `POST /admin/albaranes/consolidar` | cliente 102; cliente 501 con albarán 102 | 404 por el cliente; con cliente propio y comercio que puede consolidar, llega a `albaran.findMany` atado y da 404 `albaran_no_encontrado` |
+| `POST /admin/entorno` | con la sesión que pone `requireAuth` | FILTRA 200 |
+| `POST /admin/soporte` | un mensaje | FILTRA 200 · el correo no sale («sin_transporte») |
+| `GET /admin/libros/expedidas.csv`, `recibidas.csv`, `recibidas.json` | tercer trimestre de 2026 | FILTRA 200 las tres |
+| `POST /admin/supresion/:merchantId` | flag encendido, suprimir el 22 | NIEGA-SIN-CONSULTAR 404. LEÍDO por qué: compara `:merchantId` con el de la sesión antes de leer (`supresion.routes.ts:47`). Con el propio y la confirmación mal da 409: el flag sí abrió la puerta |
+| `POST /admin/billing/checkout`, `billing/portal`, `connect/onboard` | con Stripe doblado | FILTRA 200 las tres · sólo consultan `merchant` por el id de la sesión |
+| `PATCH /admin/quote-requests/:id` | marcar leída la 102 | FILTRA-Y-NIEGA 404. **Era la que el antecesor no había leído** |
+
+**EJECUTADAS A MEDIAS, y el resto LEÍDO (4). Lo leído no es lo ejecutado.**
+
+| ruta | hasta dónde se EJECUTÓ | lo que queda, LEÍDO |
+|---|---|---|
+| `POST /admin/expenses/leer-ticket` | hasta la llamada a la IA (cortada): antes no consulta nada (NO-LLEGO 502) | después hace UNA consulta, `provider.findMany` con `merchantId` (`lecturaTicket.ts:331`) |
+| `POST /admin/ai/suggest-quote` | `merchant` por id de sesión y `product.findMany` atado, hasta la IA (502) | la ruta, después, sólo contesta. No leí el servicio más allá de su consulta de productos |
+| `POST /admin/ai/quote-message` | con el presupuesto 102: FILTRA-Y-NIEGA 404, entera. Sin presupuesto: `merchant` atado, hasta la IA (502) | después sólo contesta |
+| `POST /admin/team` | `merchant` y `teamMember.count` atados; con plan equipo llega al servicio y para en 409 `email_is_owner` | el 409 es del DOBLE (devuelve el comercio propio a cualquier consulta atada, aunque el correo no case). Lo que sigue (`team.service.ts:36-48`): `teamMember.findFirst` con `merchantId`, y `update` por el id de esa fila o `create` con `merchantId` |
+
+## 4 · Lo que vi de paso, sin arreglar
+
+- `serializeJob` lee el cliente con `customer.findUnique({ id: job.customerId })`, **sin comercio**
+  (`jobs.routes.ts:379`). En `POST /admin/jobs` ese id es el que la propia ruta acaba de validar con
+  comercio, así que no cruza. Es la misma forma que tenía `resend-whatsapp`: quien llame a `serializeJob`
+  con un trabajo que no haya filtrado antes, no tiene filtro. No barrí sus llamadores.
+- La única «ruta que no es texto» que el censo deja fuera de su población es el `GET` del HTML del
+  panel (`/dashboard`, tres rutas en una): no es de `/admin`. Comprobado.
+
+## 5 · Lo que NO está medido, en la misma frase que lo que sí
+
+- **Prisma doblado, no una base.** Ninguna de las 25 se pidió por HTTP ni contra Postgres. El doble
+  aplica sólo el comercio; no aplica el resto del `where`, y a una consulta atada que no nombre el 102 le
+  devuelve una fila propia (por eso retiré la variante «los dos ajenos» de la fusión: contestaba con
+  una fila que no existe).
+- **Las recetas son mías:** de una a tres variantes por ruta, las que salen de leer su validación. No
+  agotan los campos del cuerpo (un `empresaId` ajeno en un alta, por ejemplo).
+- **Consultas a modelos sin columna de comercio:** una, `jobAssignee.findMany` en `POST /admin/jobs`,
+  que filtra por `teamMember.merchantId`. El instrumento la imprime y no la juzga. SQL crudo: 0 en las 25.
+- **Una sola sesión, de administrador.** Las puertas de montaje (`requireRole` en `/admin/team`) no se
+  ejecutan: el motor llama a los manejadores.
+- **Stripe y la IA no se ejecutaron:** Stripe es un doble mío (no el SDK) y la IA se corta en la red.
+- **Fuera de las 25:** las 4 SIN-CONSULTA del censo, las 2 que cruzan a propósito y todo lo que no es
+  `/admin` siguen como las dejó SCRUM-1514.
+- La tanda de tests no se corrió: no hay código ni test nuevo, sólo evidencias y este registro.
+- Envíos reales 0 · envíos doblados a Meta 0 · salidas de la máquina cortadas 3 (las tres a la IA, por
+  las recetas) · ninguna base tocada.
+
+## 6 · Reproducir
+
+    node ../../../node_modules/typescript/bin/tsc --noCheck
+    E=docs/master/evidencias/SCRUM-1514c
+    NO_COLOR=1 node $E/medir-las-25.mjs <raíz del árbol> $E/censo-eje-comercio-de-entrada.txt                # sale 0
+    NO_COLOR=1 node $E/medir-las-25.mjs <raíz del árbol> $E/censo-eje-comercio-de-entrada.txt --doble-sordo  # sale 1
+
+Dos corridas seguidas dan la misma salida salvo la fecha de `createdAt` del trabajo creado.
+
+## 7 · Mis errores de esta tanda
+
+1. **Mi primera pasada dijo CRUZA en `POST /admin/jobs`, y era mi doble.** `job.create` devolvía una fila
+   cualquiera (cliente 5) en vez de lo que se le pedía crear, y la ruta leyó después «el cliente 5» sin
+   comercio. Corregí el doble (un `create` devuelve lo que se le pide) y la fila pasó a FILTRA. La salida
+   con el falso positivo está guardada: `salida-primera-pasada.txt`. La consulta sin comercio es real y
+   está en §4.
+2. Avisé de los 200k de contexto con 212.625: lo crucé leyendo manejadores y lo medí después.
+3. La primera corrida con recetas murió por un paréntesis de más que metí al editar con un guion: salió
+   1 con la salida vacía, y lo vi porque miré los bytes antes que el veredicto.

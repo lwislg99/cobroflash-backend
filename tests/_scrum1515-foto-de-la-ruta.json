@@ -1,0 +1,188 @@
+{
+  "que_es": "SCRUM-1515 · Lo que dejaba POST /auth/register al dar de alta, la ULTIMA vez que lo hizo: 8-oct-2026, sobre a945b405e (un commit antes de cerrarla), en el banco local, con los dos merchants y los datos sucios de tests/scrum1515-nuestra-puerta-de-alta.test.mjs. Es la referencia CONGELADA con la que ese test compara al merchant que crea el guion. No se puede volver a sacar (la ruta ya no crea nada) y NO se edita a mano: un valor cambiado aqui es una comparacion que deja de valer.",
+  "sello": "Z9O6T6",
+  "entraRutaA": {
+    "status": 302,
+    "va": "/dashboard/",
+    "sesion": true
+  },
+  "ruta": {
+    "A": {
+      "fila": {
+        "id": 1,
+        "name": "Z9O6T6A Reformas Ñandú",
+        "email": "alta-a-1515-z9o6t6@test.local",
+        "legalName": null,
+        "taxId": null,
+        "address": null,
+        "trade": null,
+        "defaultCurrency": "EUR",
+        "invoiceSeriesPrefix": "CF",
+        "nextInvoiceNumber": 1,
+        "invoiceSeriesYear": null,
+        "nextRectInvoiceNumber": 1,
+        "invoiceStartSeq": null,
+        "invoiceStartYear": null,
+        "nextQuoteNumber": 1,
+        "nextAlbaranNumber": 1,
+        "albaranSeriesYear": null,
+        "quoteSeriesYear": null,
+        "logoUrl": null,
+        "whatsappPhone": null,
+        "asesorProgramaPreguntadoAt": null,
+        "asesorPrograma": null,
+        "criterioCaja": null,
+        "llevaLibrosPorSii": null,
+        "domicilioFiscalForal": null,
+        "googleReviewUrl": null,
+        "stripeAccountId": null,
+        "connectStatus": "none",
+        "bizumPhone": null,
+        "subscriptionStatus": null,
+        "slug": null,
+        "slugChangedAt": null,
+        "profileZones": null,
+        "profileYears": null,
+        "flags": null,
+        "homePrefs": null,
+        "isPlatformOwner": false,
+        "onboardingCompleted": false,
+        "plan": "trial",
+        "planExpiresAt": "2026-10-22T08:20:41.668Z",
+        "stripeCustomerId": null,
+        "stripeSubscriptionId": null,
+        "country": "ES",
+        "timezone": null,
+        "pspId": null,
+        "iban": null,
+        "clabe": null,
+        "status": "active",
+        "acquisitionSource": null,
+        "notifyEmailOnPaid": true,
+        "notifyEmailOnQuoteAccepted": false,
+        "notifyEmailWeeklyDigest": false,
+        "lifecycleEmailsSent": {
+          "welcome": 1
+        },
+        "referralCode": "Z9O6T6AR26",
+        "referredBy": null,
+        "freeMonthsEarned": 0,
+        "referralRewardedAt": null,
+        "brandColor": null,
+        "brandAccentColor": null,
+        "approvalThreshold": null,
+        "retencionIrpfDeclarada": false,
+        "retencionIrpfTipo": null,
+        "clausulasPresupuesto": null,
+        "createdAt": "2026-10-08T08:20:41.669Z",
+        "updatedAt": "2026-10-08T08:20:41.700Z"
+      },
+      "cuelga": {
+        "authSession": 2,
+        "emailMessage": 2
+      },
+      "sesiones": [
+        {
+          "type": "magic_link",
+          "usada": true,
+          "teamMemberId": null
+        },
+        {
+          "type": "session",
+          "usada": false,
+          "teamMemberId": null
+        }
+      ],
+      "cartas": [
+        "=?UTF-8?Q?=C2=A1Bienvenido_a_YaQu!_=F0=9F=8E=89?=",
+        "Tu enlace de acceso a YaQu"
+      ]
+    },
+    "B": {
+      "fila": {
+        "id": 2,
+        "name": "Z9O6T6B Fontanería Güell",
+        "email": "alta-b-1515-z9o6t6@test.local",
+        "legalName": null,
+        "taxId": null,
+        "address": null,
+        "trade": null,
+        "defaultCurrency": "EUR",
+        "invoiceSeriesPrefix": "CF",
+        "nextInvoiceNumber": 1,
+        "invoiceSeriesYear": null,
+        "nextRectInvoiceNumber": 1,
+        "invoiceStartSeq": null,
+        "invoiceStartYear": null,
+        "nextQuoteNumber": 1,
+        "nextAlbaranNumber": 1,
+        "albaranSeriesYear": null,
+        "quoteSeriesYear": null,
+        "logoUrl": null,
+        "whatsappPhone": null,
+        "asesorProgramaPreguntadoAt": null,
+        "asesorPrograma": null,
+        "criterioCaja": null,
+        "llevaLibrosPorSii": null,
+        "domicilioFiscalForal": null,
+        "googleReviewUrl": null,
+        "stripeAccountId": null,
+        "connectStatus": "none",
+        "bizumPhone": null,
+        "subscriptionStatus": null,
+        "slug": null,
+        "slugChangedAt": null,
+        "profileZones": null,
+        "profileYears": null,
+        "flags": null,
+        "homePrefs": null,
+        "isPlatformOwner": false,
+        "onboardingCompleted": false,
+        "plan": "trial",
+        "planExpiresAt": "2026-10-22T08:20:41.786Z",
+        "stripeCustomerId": null,
+        "stripeSubscriptionId": null,
+        "country": "PT",
+        "timezone": null,
+        "pspId": null,
+        "iban": null,
+        "clabe": null,
+        "status": "active",
+        "acquisitionSource": "origen/medio/campaña-origen/medio/campaña-origen/medio/campaña-origen/medio/campaña-origen/medio/campaña-origen/medio/campaña-origen/medio/campaña-origen/medio/campaña-origen/medio/campaña-origen/medi",
+        "notifyEmailOnPaid": true,
+        "notifyEmailOnQuoteAccepted": false,
+        "notifyEmailWeeklyDigest": false,
+        "lifecycleEmailsSent": {
+          "welcome": 1
+        },
+        "referralCode": "Z9O6T6BF26",
+        "referredBy": 1,
+        "freeMonthsEarned": 0,
+        "referralRewardedAt": null,
+        "brandColor": null,
+        "brandAccentColor": null,
+        "approvalThreshold": null,
+        "retencionIrpfDeclarada": false,
+        "retencionIrpfTipo": null,
+        "clausulasPresupuesto": null,
+        "createdAt": "2026-10-08T08:20:41.787Z",
+        "updatedAt": "2026-10-08T08:20:41.796Z"
+      },
+      "cuelga": {
+        "authSession": 1,
+        "emailMessage": 2
+      },
+      "sesiones": [
+        {
+          "type": "magic_link",
+          "usada": false,
+          "teamMemberId": null
+        }
+      ],
+      "cartas": [
+        "=?UTF-8?Q?=C2=A1Bienvenido_a_YaQu!_=F0=9F=8E=89?=",
+        "Tu enlace de acceso a YaQu"
+      ]
+    }
+  }
+}

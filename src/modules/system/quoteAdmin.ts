@@ -14,6 +14,7 @@ import {
   // SCRUM-688 · el llamador que faltaba: crear una revision de verdad.
   nuevaRevisionDe, vigenteUnicaDe, REVISION_HEREDA,
 } from '../quotes/domain/revision'; // SCRUM-655 (T6, fase B)
+import { jsonAnulable } from '../../core/db/jsonAnulable'; // SCRUM-1188d
 
 /**
  * SCRUM-606 (ALB-01) · EL TOPE DE ESTA LISTA, CON NOMBRE.
@@ -500,6 +501,37 @@ export class RevisionNoCreable extends Error {
   }
 }
 
+// ── SCRUM-1188d (de paso) · UNA COLUMNA `Json?` VACÍA SE HEREDA VACÍA ──────────────────────
+//
+// `nuevaRevisionDe` copia cada campo tal cual se leyó, y una columna `Json?` a NULL de SQL se lee
+// `null`. Ese `null` de JS, escrito de vuelta, NO es un NULL: Prisma guarda el valor JSON `null`
+// (medido con la función de verdad contra Postgres: la revisión de un presupuesto sin niveles ni
+// plan salía con las columnas de abajo OCUPADAS). Por Prisma se leen igual, así que no lo nota
+// nadie hasta que una consulta pregunte `IS NULL`. `tags` es la que más pierde: su `null` quiere
+// decir «no se declararon etiquetas» (SCRUM-595), y una columna ocupada dice lo contrario.
+//
+// Son las columnas `Json?` de `Quote` que están en `REVISION_HEREDA`. Que esta lista sea ESA
+// intersección lo censa `tests/scrum1188d-la-revision-hereda-el-vacio.test.mjs` contra
+// `prisma/schema.prisma`: una columna `Json?` nueva que se clasifique como heredada y no entre
+// aquí sale roja.
+export const JSON_ANULABLES_DE_LA_REVISION = Object.freeze([
+  'docFields',
+  'payMethods',
+  'customBillingPlan',
+  'tiers',
+  'clausulasExcluidas',
+  'tags',
+] as const);
+
+/** Los datos de `nuevaRevisionDe`, con «vacío» dicho en el lenguaje de Prisma. No muta la entrada. */
+export function revisionParaLaBase(datos: Record<string, unknown>): Record<string, unknown> {
+  const salida: Record<string, unknown> = { ...datos };
+  for (const campo of JSON_ANULABLES_DE_LA_REVISION) {
+    if (salida[campo] === null) salida[campo] = jsonAnulable(null);
+  }
+  return salida;
+}
+
 /**
  * Crea una revisión NUEVA de un presupuesto. No toca la anterior: la revisión es otra fila.
  *
@@ -559,7 +591,7 @@ export async function crearRevisionDeQuote(merchantId: number, id: number) {
   const datos = nuevaRevisionDe(origen as any, siguiente);
 
   const creada = await prisma.quote.create({
-    data: datos as any,
+    data: revisionParaLaBase(datos) as any, // SCRUM-1188d: un `Json?` vacío se hereda vacío
     select: { id: true, quoteNumber: true, revision: true, status: true },
   });
 

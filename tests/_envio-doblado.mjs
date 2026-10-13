@@ -97,6 +97,16 @@ export function dobleDeLaBase(respuestas) {
     get: (_t, prop) => {
       const nombre = String(prop);
       if (nombre === '$transaction') return undefined;
+      // SCRUM-1513: el tope de plantillas toma un cerrojo de transacción antes de preguntar. No
+      // mueve datos y aquí hay un solo proceso, así que un no-op es fiel — pero SÓLO para esa
+      // sentencia: cualquier otro `$executeRaw` sigue cayendo en el suelo de abajo, que avisa.
+      if (nombre === '$executeRaw' && respuestas[nombre] === undefined) {
+        return async (trozos, ...valores) => {
+          const sentencia = Array.isArray(trozos) ? trozos.join('?') : String(trozos);
+          if (/^\s*SELECT pg_advisory_xact_lock\(/.test(sentencia)) return 0;
+          return clienteGet(nombre, 'el cliente de transacción')(trozos, ...valores);
+        };
+      }
       return clienteGet(nombre, 'el cliente de transacción');
     },
   });

@@ -1,0 +1,254 @@
+fichero	carpeta	clase	usa	ci	tests	importadores	hereda	npm	quien	commits	primero	ultimo	nace	tickets	edad
+scripts/_abrir-conceptos.mjs	(raiz)	_ayudante	5-otro-script	false	0	2	SIN-FILA		luis	2	2026-09-18	2026-09-18	915	1	b) 7-30 d
+scripts/_afirmaciones-publicadas.mjs	(raiz)	_ayudante	4-test	false	3	4	SIN-FILA		javier	5	2026-08-20	2026-09-28	564	4	b) 7-30 d
+scripts/_anclas-con-testigo.mjs	(raiz)	_ayudante	4-test	false	1	0			javier	1	2026-09-16	2026-09-16	525	1	b) 7-30 d
+scripts/_anclas-sin-testigo.congelado.mjs	(raiz)	_ayudante	4-test	false	3	0			javier	3	2026-09-16	2026-09-17	525	2	b) 7-30 d
+scripts/_aplicar-sql-dev.mjs	(raiz)	_ayudante	4-test	false	3	2	SIN-FILA		javier	5	2026-08-10	2026-09-28	425	5	b) 7-30 d
+scripts/_artefactos-guard.mjs	(raiz)	_ayudante	4-test	false	1	1	SIN-FILA		javier+luis	3	2026-07-27	2026-08-11	182	3	c) 30-60 d
+scripts/_backup-codec.mjs	(raiz)	_ayudante	4-test	false	2	2	SIN-FILA		luis	1	2026-08-10	2026-08-10	242	1	d) > 60 d
+scripts/_backup-nucleo.mjs	(raiz)	_ayudante	4-test	false	1	1	SIN-FILA		luis	1	2026-08-12	2026-08-12	242	1	c) 30-60 d
+scripts/_banco-lista.mjs	(raiz)	_ayudante	4-test	false	1	10	MEZCLA	//guard:lista-trabajos	javier+luis	6	2026-09-07	2026-09-28	816	4	b) 7-30 d
+scripts/_barrido-de-credenciales.mjs	(raiz)	_ayudante	4-test	false	1	0			luis	1	2026-09-09	2026-09-09	835	1	c) 30-60 d
+scripts/_cargar-env.mjs	(raiz)	_ayudante	4-test	false	1	3	SIN-FILA		luis	1	2026-09-17	2026-09-17	932	1	b) 7-30 d
+scripts/_carriles.mjs	(raiz)	_ayudante	2-hook-o-skill	false	1	1	SIN-FILA		luis	4	2026-09-29	2026-10-01	1295	2	b) 7-30 d
+scripts/_censo-alcanzabilidad.mjs	(raiz)	_ayudante	4-test	false	5	6	SIN-FILA		javier+luis	4	2026-09-06	2026-09-09	753	2	c) 30-60 d
+scripts/_censo-alta-de-cliente.mjs	(raiz)	_ayudante	4-test	false	1	0			javier	1	2026-09-06	2026-09-06	795	1	c) 30-60 d
+scripts/_censo-bytes-control.mjs	(raiz)	_ayudante	4-test	false	1	0			luis	2	2026-09-22	2026-09-22	942	2	b) 7-30 d
+scripts/_censo-convenio-microcopy-declarados.json	(raiz)	_ayudante	3-producto	false	1	1	SIN-FILA		luis	9	2026-09-28	2026-10-07	1157	5	a) < 7 d
+scripts/_censo-convenio-microcopy.mjs	(raiz)	_ayudante	4-test	false	2	0			luis	2	2026-09-28	2026-09-28	1157	1	b) 7-30 d
+scripts/_censo-de-censos.mjs	(raiz)	_ayudante	4-test	false	2	1	SIN-FILA		javier	1	2026-09-17	2026-09-17	927	1	b) 7-30 d
+scripts/_censo-de-suelos.mjs	(raiz)	_ayudante	4-test	false	2	1	SIN-FILA		javier+luis	2	2026-09-17	2026-09-26	940	1	b) 7-30 d
+scripts/_censo-entorno-prestado.mjs	(raiz)	_ayudante	4-test	false	2	1	SIN-FILA		luis	3	2026-09-26	2026-10-01	1153	3	b) 7-30 d
+scripts/_censo-escrituras-sin-version.mjs	(raiz)	_ayudante	4-test	false	2	1	SIN-FILA		luis	4	2026-09-29	2026-10-02	1285	2	b) 7-30 d
+scripts/_censo-fecha-sin-zona.mjs	(raiz)	_ayudante	4-test	false	2	1	SIN-FILA		javier+luis	7	2026-09-27	2026-10-06	1093	8	a) < 7 d
+scripts/_censo-gemelo-crudo.mjs	(raiz)	_ayudante	4-test	false	1	0			javier+luis	3	2026-10-06	2026-10-07	1452	2	a) < 7 d
+scripts/_censo-microcopy-sin-marcar.mjs	(raiz)	_ayudante	3-producto	false	1	0			javier	1	2026-08-20	2026-08-20	549	1	c) 30-60 d
+scripts/_censo-mkdtemp.mjs	(raiz)	_ayudante	4-test	false	1	1	SIN-FILA		javier	1	2026-09-17	2026-09-17	864	1	b) 7-30 d
+scripts/_censo-rango-del-parte.mjs	(raiz)	_ayudante	4-test	false	1	0			luis	1	2026-10-07	2026-10-07	1488	1	a) < 7 d
+scripts/_censo-reparto.mjs	(raiz)	_ayudante	4-test	false	6	4	SIN-FILA		luis	2	2026-08-06	2026-09-09	387	2	c) 30-60 d
+scripts/_censo-sin-consumir.mjs	(raiz)	_ayudante	4-test	false	1	0			luis	2	2026-09-27	2026-10-01	1185	2	b) 7-30 d
+scripts/_censo-suelos.mjs	(raiz)	_ayudante	4-test	false	1	1	SIN-FILA		javier+luis	3	2026-09-06	2026-09-28	775	2	b) 7-30 d
+scripts/_ciegos-por-entorno-declarados.json	(raiz)	_ayudante	4-test	false	1	2	SIN-FILA		luis	1	2026-10-02	2026-10-02	1412	1	b) 7-30 d
+scripts/_cifras-heroe.mjs	(raiz)	_ayudante	3-producto	false	1	1	SIN-FILA		javier	2	2026-08-20	2026-08-20	331	2	c) 30-60 d
+scripts/_citar-fuera-del-censo.mjs	(raiz)	_ayudante	4-test	false	1	3	SIN-FILA		javier	1	2026-08-20	2026-08-20	561	1	c) 30-60 d
+scripts/_clasificador-sql.mjs	(raiz)	_ayudante	2-hook-o-skill	false	5	5	SIN-FILA		javier	3	2026-08-07	2026-09-28	395	3	b) 7-30 d
+scripts/_clave-vs-destino.mjs	(raiz)	_ayudante	4-test	false	5	9	MEZCLA		javier+luis	4	2026-08-06	2026-09-04	383	3	c) 30-60 d
+scripts/_cobertura-visual.mjs	(raiz)	_ayudante	4-test	false	1	0			javier	4	2026-09-16	2026-09-16	628	1	b) 7-30 d
+scripts/_conciliacion-fiscal.mjs	(raiz)	_ayudante	4-test	false	2	1	SIN-FILA		luis	1	2026-07-29	2026-07-29	207	1	d) > 60 d
+scripts/_console-guard.mjs	(raiz)	_ayudante	4-test	false	1	1	SIN-FILA		luis	3	2026-07-27	2026-07-28	183	2	d) > 60 d
+scripts/_contraste-de-tokens.mjs	(raiz)	_ayudante	4-test	false	1	0			javier	2	2026-09-17	2026-09-17	691	1	b) 7-30 d
+scripts/_credenciales-en-texto.mjs	(raiz)	_ayudante	4-test	false	1	1	SIN-FILA		luis	1	2026-09-09	2026-09-09	835	1	c) 30-60 d
+scripts/_db-guard.mjs	(raiz)	_ayudante	2-hook-o-skill	false	53	34	SIN-FILA		javier+luis	5	2026-07-23	2026-09-04	118	5	c) 30-60 d
+scripts/_decisiones-encerradas-declaradas.json	(raiz)	_ayudante	4-test	false	1	0			luis	1	2026-09-28	2026-09-28	1179	1	b) 7-30 d
+scripts/_defectos-viaje-firma-declarados.json	(raiz)	_ayudante	4-test	false	2	0			luis	5	2026-10-01	2026-10-02	1362	3	b) 7-30 d
+scripts/_destino-de-semilla.mjs	(raiz)	_ayudante	4-test	false	1	3	SIN-FILA		javier	1	2026-09-25	2026-09-25	1105	1	b) 7-30 d
+scripts/_detalle-917.mjs	(raiz)	_ayudante	4-test	false	1	1	SIN-FILA		luis	5	2026-09-20	2026-09-21	917	1	b) 7-30 d
+scripts/_documentos-citados.mjs	(raiz)	_ayudante	4-test	false	4	0			javier	6	2026-09-16	2026-09-17	534	1	b) 7-30 d
+scripts/_entorno-prestado-declarados.json	(raiz)	_ayudante	4-test	false	1	1	SIN-FILA		luis	3	2026-10-01	2026-10-01	1349	3	b) 7-30 d
+scripts/_escritores-opacos-declarados.json	(raiz)	_ayudante	4-test	false	1	1	SIN-FILA		javier+luis	2	2026-09-28	2026-10-01	1179	2	b) 7-30 d
+scripts/_evidencia-tanda.mjs	(raiz)	_ayudante	1-CI	true	5	3	MEZCLA		javier+luis	11	2026-07-28	2026-10-01	161	7	b) 7-30 d
+scripts/_exenciones-de-guards.mjs	(raiz)	_ayudante	4-test	false	1	0			javier	1	2026-09-16	2026-09-16	511	1	b) 7-30 d
+scripts/_gremios-landing.mjs	(raiz)	_ayudante	3-producto	false	1	0			javier	1	2026-08-20	2026-08-20	333	1	c) 30-60 d
+scripts/_guard-afirmacion-fiscal.mjs	(raiz)	_ayudante	2-hook-o-skill	false	3	0			javier+luis	4	2026-08-20	2026-09-25	537	3	b) 7-30 d
+scripts/_guard-arbol-y-borrado.mjs	(raiz)	_ayudante	4-test	false	1	1	SIN-FILA		luis	1	2026-09-02	2026-09-02	674	2	c) 30-60 d
+scripts/_guard-conformidad-landing.mjs	(raiz)	_ayudante	4-test	false	3	2	SIN-FILA		javier	1	2026-08-07	2026-08-07	400	1	d) > 60 d
+scripts/_guard-espejo-skills.mjs	(raiz)	_ayudante	4-test	false	1	0			javier	1	2026-09-23	2026-09-23	1089	1	b) 7-30 d
+scripts/_hallazgos-y-ciegos.mjs	(raiz)	_ayudante	4-test	false	8	37	SIN-FILA		javier	4	2026-10-01	2026-10-07	1320	3	a) < 7 d
+scripts/_hueco-condicion.mjs	(raiz)	_ayudante	4-test	false	1	1	SIN-FILA		javier	2	2026-08-20	2026-08-20	564	2	c) 30-60 d
+scripts/_identidad-sesion.mjs	(raiz)	_ayudante	4-test	false	4	8	SIN-FILA		luis	1	2026-08-04	2026-08-04		0	d) > 60 d
+scripts/_invocaciones-de-la-tanda.mjs	(raiz)	_ayudante	4-test	false	4	0			javier	4	2026-09-15	2026-10-01	850	3	b) 7-30 d
+scripts/_lecturas-sin-select.mjs	(raiz)	_ayudante	4-test	false	1	0			javier	1	2026-09-15	2026-09-15	860	1	b) 7-30 d
+scripts/_marca-de-arbol.mjs	(raiz)	_ayudante	4-test	false	4	3	MEZCLA		javier	2	2026-09-07	2026-09-07	808	2	c) 30-60 d
+scripts/_marcadores-pendientes-declarados.json	(raiz)	_ayudante	4-test	false	8	0			javier+luis	2	2026-09-29	2026-10-02	1293	2	b) 7-30 d
+scripts/_margen-tanda.mjs	(raiz)	_ayudante	4-test	false	1	2	SIN-FILA		javier	2	2026-08-02	2026-10-01	265	2	b) 7-30 d
+scripts/_medidor-de-toque.mjs	(raiz)	_ayudante	3-producto	false	6	4	MEZCLA		javier+luis	3	2026-08-20	2026-09-15	562	3	b) 7-30 d
+scripts/_navegador.mjs	(raiz)	_ayudante	1-CI	true	13	38	MEZCLA		javier+luis	8	2026-08-20	2026-09-02	522	6	c) 30-60 d
+scripts/_numero-de-rama.mjs	(raiz)	_ayudante	4-test	false	6	3	SIN-FILA		luis	4	2026-09-09	2026-09-20	829	4	b) 7-30 d
+scripts/_pagina-panel.mjs	(raiz)	_ayudante	4-test	false	2	3	MEZCLA	//guard:objetivo-tactil,//guard:lista-trabajos	javier+luis	7	2026-09-06	2026-09-18	782	6	b) 7-30 d
+scripts/_pares-del-schema.mjs	(raiz)	_ayudante	4-test	false	3	1	SIN-FILA		javier	2	2026-08-11	2026-09-15	461	2	b) 7-30 d
+scripts/_parse-cuenta.mjs	(raiz)	_ayudante	4-test	false	1	1	SIN-FILA		javier	2	2026-07-29	2026-10-01	197	2	b) 7-30 d
+scripts/_preflight-migracion.mjs	(raiz)	_ayudante	4-test	false	1	1	SIN-FILA		javier	1	2026-08-07	2026-08-07	395	1	d) > 60 d
+scripts/_prisma-client-guard.mjs	(raiz)	_ayudante	4-test	false	5	5	SIN-FILA	//postinstall,guard:prisma,pretest,pretest:staging,pretest:staging:gated	javier+luis	8	2026-07-28	2026-08-11	190	5	c) 30-60 d
+scripts/_prisma-procedencia-guard.mjs	(raiz)	_ayudante	4-test	false	3	2	SIN-FILA	guard:prisma,pretest,pretest:staging,pretest:staging:gated	javier+luis	4	2026-08-03	2026-09-15	252	4	b) 7-30 d
+scripts/_prisma-sync.mjs	(raiz)	_ayudante	4-test	false	3	2	SIN-FILA	pretest	luis	2	2026-08-10	2026-09-22	429	2	b) 7-30 d
+scripts/_puerta-de-entrada.mjs	(raiz)	_ayudante	4-test	false	2	16	MEZCLA		javier	2	2026-09-06	2026-09-06	765	1	c) 30-60 d
+scripts/_rastro-del-ticket.mjs	(raiz)	_ayudante	4-test	false	1	3	MEZCLA		javier	1	2026-09-08	2026-09-08	804	1	c) 30-60 d
+scripts/_rastro-limpieza.mjs	(raiz)	_ayudante	4-test	false	1	1	SIN-FILA		javier+luis	4	2026-08-02	2026-08-04	260	1	d) > 60 d
+scripts/_registro-de-lo-aprobado.mjs	(raiz)	_ayudante	4-test	false	1	1	SIN-FILA		javier	2	2026-08-20	2026-08-20	563	1	c) 30-60 d
+scripts/_renumerar-documentos.mjs	(raiz)	_ayudante	4-test	false	1	2	SIN-FILA		javier	1	2026-09-04	2026-09-04	592	1	c) 30-60 d
+scripts/_salida-de-guard.mjs	(raiz)	_ayudante	4-test	false	1	2	SIN-FILA		javier	1	2026-09-16	2026-09-16	554	1	b) 7-30 d
+scripts/_scratch-run.mjs	(raiz)	_ayudante	4-test	false	1	2	SIN-FILA		javier+luis	2	2026-08-10	2026-09-04	242	2	c) 30-60 d
+scripts/_senal-de-nombres.mjs	(raiz)	_ayudante	4-test	false	3	1	SIN-FILA		javier	1	2026-10-01	2026-10-01	1339	1	b) 7-30 d
+scripts/_servidor.mjs	(raiz)	_ayudante	4-test	false	4	30	SIN-FILA		javier	1	2026-09-01	2026-09-01	620	1	c) 30-60 d
+scripts/_sin-consumir-declarados.json	(raiz)	_ayudante	4-test	false	3	2	SIN-FILA		javier+luis	44	2026-09-27	2026-10-08	1185	26	a) < 7 d
+scripts/_solape-de-guards.mjs	(raiz)	_ayudante	4-test	false	3	2	SIN-FILA		javier	1	2026-08-20	2026-08-20	548	1	c) 30-60 d
+scripts/_staging-lock.mjs	(raiz)	_ayudante	3-producto	false	12	9	SIN-FILA		luis	7	2026-07-28	2026-08-04	188	5	d) > 60 d
+scripts/_suelos-sin-leer-declarados.json	(raiz)	_ayudante	4-test	false	1	1	SIN-FILA		luis	3	2026-09-28	2026-09-29	1179	2	b) 7-30 d
+scripts/_tabla-verifactu-catalogo.mjs	(raiz)	_ayudante	4-test	false	1	1	SIN-FILA		javier	2	2026-09-18	2026-09-23	524	2	b) 7-30 d
+scripts/_tanda-por-tramos.mjs	(raiz)	_ayudante	4-test	false	1	1	SIN-FILA		luis	3	2026-10-02	2026-10-02	1412	2	b) 7-30 d
+scripts/_telefonos-prueba.mjs	(raiz)	_ayudante	4-test	false	36	1	SIN-FILA		javier+luis	2	2026-08-02	2026-09-04	262	2	c) 30-60 d
+scripts/_temporales-en-el-arbol.mjs	(raiz)	_ayudante	4-test	false	4	0			javier+luis	3	2026-09-15	2026-10-01	824	3	b) 7-30 d
+scripts/_tests-que-cubren.mjs	(raiz)	_ayudante	4-test	false	1	1	SIN-FILA		luis	1	2026-10-01	2026-10-01	1363	1	b) 7-30 d
+scripts/_texto-fuera-del-censo.mjs	(raiz)	_ayudante	4-test	false	3	1	SIN-FILA		javier	3	2026-08-20	2026-09-23	555	2	b) 7-30 d
+scripts/_timeouts-tanda.mjs	(raiz)	_ayudante	4-test	false	1	1	SIN-FILA		javier+luis	2	2026-08-03	2026-10-01	265	2	b) 7-30 d
+scripts/_trabajos-917.mjs	(raiz)	_ayudante	5-otro-script	false	0	3	SIN-FILA		luis	1	2026-09-18	2026-09-18	917	1	b) 7-30 d
+scripts/_trabajos-de-muestra.mjs	(raiz)	_ayudante	5-otro-script	false	0	9	MEZCLA	//capturas:lista-trabajos	luis	2	2026-09-07	2026-09-09	816	2	c) 30-60 d
+scripts/_trinquete-de-zona-hijo.mjs	(raiz)	_ayudante	5-otro-script	false	0	1	SIN-FILA		javier	1	2026-09-07	2026-09-07	813	1	c) 30-60 d
+scripts/_trinquete-de-zona.mjs	(raiz)	_ayudante	4-test	false	3	2	SIN-FILA		javier+luis	9	2026-09-07	2026-10-06	813	3	a) < 7 d
+scripts/_turno-nota.mjs	(raiz)	_ayudante	4-test	false	1	4	SIN-FILA		luis	2	2026-07-31	2026-08-04	249	1	d) > 60 d
+scripts/_version-de-fila-dudosa-declaradas.json	(raiz)	_ayudante	4-test	false	1	0			luis	1	2026-10-01	2026-10-01	1381	1	b) 7-30 d
+scripts/_vistas-del-barrido.mjs	(raiz)	_ayudante	4-test	false	2	1	SIN-FILA		luis	1	2026-09-07	2026-09-07	821	1	c) 30-60 d
+scripts/abierto-con-trabajo-en-main.mjs	(raiz)	abierto	4-test	false	2	2	S5		javier	3	2026-09-28	2026-09-28		1	b) 7-30 d
+scripts/aplicar-sql-dev.mjs	(raiz)	aplicar	2-hook-o-skill	false	4	3	SIN-FILA		javier	1	2026-08-10	2026-08-10	425	1	d) > 60 d
+scripts/arbol-mio.mjs	(raiz)	arbol	4-test	false	1	0		arbol:mio	luis	1	2026-09-22	2026-09-22	774	1	b) 7-30 d
+scripts/atestiguar-sobres.mjs	(raiz)	atestiguar	4-test	false	1	0			javier	2	2026-08-10	2026-08-10	438	1	d) > 60 d
+scripts/auditoria-cierres.mjs	(raiz)	auditoria	4-test	false	2	0			luis	3	2026-10-01	2026-10-02	1372	1	b) 7-30 d
+scripts/aviso-programado-acreditacion-invoicing-es.mjs	(raiz)	aviso	4-test	false	2	0			javier	3	2026-09-23	2026-09-25	1109	3	b) 7-30 d
+scripts/backfill-quote-jobid.mjs	(raiz)	backfill	4-test	false	1	0			luis	2	2026-08-05	2026-08-10	195	2	d) > 60 d
+scripts/backfill-quote-numbers.mjs	(raiz)	backfill	4-test	false	1	0			luis	1	2026-07-02	2026-07-02		0	d) > 60 d
+scripts/backup-bd.mjs	(raiz)	backup	4-test	false	1	1	SIN-FILA		luis	3	2026-08-12	2026-08-12	242	1	c) 30-60 d
+scripts/backup-dump.mjs	(raiz)	backup	4-test	false	9	4	SIN-FILA		javier+luis	14	2026-07-06	2026-09-30		11	b) 7-30 d
+scripts/backup-restore.mjs	(raiz)	backup	3-producto	false	5	4	SIN-FILA		javier+luis	4	2026-08-10	2026-09-04	242	2	c) 30-60 d
+scripts/cambiar-flag-fiscal.mjs	(raiz)	cambiar	5-otro-script	false	0	1	SIN-FILA		luis	1	2026-07-29	2026-07-29	218	1	d) > 60 d
+scripts/capturar-detalle-trabajo.mjs	(raiz)	capturar	5-otro-script	false	0	1	SIN-FILA		luis	2	2026-09-07	2026-09-20	817	2	b) 7-30 d
+scripts/capturas-lista-trabajos-917.mjs	(raiz)	capturas	5-otro-script	false	0	1	SIN-FILA		luis	1	2026-09-18	2026-09-18	917	1	b) 7-30 d
+scripts/capturas-lista-trabajos.mjs	(raiz)	capturas	5-otro-script	false	0	1	SIN-FILA	capturas:lista-trabajos	luis	1	2026-09-07	2026-09-07	816	1	c) 30-60 d
+scripts/capture-demo.mjs	(raiz)	capture	3-producto	false	3	2	SIN-FILA		luis	3	2026-07-05	2026-09-07		1	c) 30-60 d
+scripts/carriles.mjs	(raiz)	carriles	2-hook-o-skill	false	2	2	MEZCLA		luis	5	2026-09-29	2026-10-01	1295	2	b) 7-30 d
+scripts/censo-abiertos-vs-guards.mjs	(raiz)	censo	4-test	false	1	0			javier	1	2026-09-07	2026-09-07	804	1	c) 30-60 d
+scripts/censo-afirmaciones-de-skills.mjs	(raiz)	censo	4-test	false	2	1	SIN-FILA		javier	5	2026-09-17	2026-09-25	939	2	b) 7-30 d
+scripts/censo-afirmaciones-medidas.mjs	(raiz)	censo	7-nadie-en-codigo	false	0	0			javier	1	2026-09-17	2026-09-17	880	1	b) 7-30 d
+scripts/censo-alcance-vs-sujeto.mjs	(raiz)	censo	4-test	false	1	0			javier	1	2026-09-17	2026-09-17	732	1	b) 7-30 d
+scripts/censo-alcanzabilidad.mjs	(raiz)	censo	4-test	false	2	2	SIN-FILA	censo:alcanzabilidad	javier	2	2026-09-06	2026-09-06	753	1	c) 30-60 d
+scripts/censo-anclas-bloque-f.mjs	(raiz)	censo	4-test	false	10	8	SIN-FILA	censo:anclas-f	javier	6	2026-08-20	2026-09-15	551	4	b) 7-30 d
+scripts/censo-arbitro-de-toque.mjs	(raiz)	censo	4-test	false	1	0		censo:arbitro-de-toque	javier	1	2026-08-20	2026-08-20	562	1	c) 30-60 d
+scripts/censo-bancos-fijados.mjs	(raiz)	censo	7-nadie-en-codigo	false	0	0			javier	1	2026-09-17	2026-09-17	903	1	b) 7-30 d
+scripts/censo-conflictos-package.mjs	(raiz)	censo	4-test	false	1	0		censo:conflictos-package	javier+luis	2	2026-08-20	2026-09-28	548	2	b) 7-30 d
+scripts/censo-cr-en-disco.mjs	(raiz)	censo	4-test	false	3	0		cr:censo,cr:tecnica,cr:limpiar	javier+luis	5	2026-08-20	2026-09-28	570	3	b) 7-30 d
+scripts/censo-cuenta-de-control-con-grep.mjs	(raiz)	censo	4-test	false	1	0		censo:cuenta-de-control-con-grep	javier	2	2026-09-07	2026-09-08	766	1	c) 30-60 d
+scripts/censo-decisiones-encerradas.mjs	(raiz)	censo	4-test	false	1	0		censo:decisiones-encerradas	luis	1	2026-09-09	2026-09-09	837	1	c) 30-60 d
+scripts/censo-escritores-del-arbol.mjs	(raiz)	censo	4-test	false	1	1	SIN-FILA	censo:escritores-arbol	javier+luis	2	2026-09-07	2026-09-28	808	2	b) 7-30 d
+scripts/censo-escritores-invoice.mjs	(raiz)	censo	7-nadie-en-codigo	false	0	0			javier	2	2026-09-23	2026-09-23	1099	3	b) 7-30 d
+scripts/censo-estado-no-contemplado.mjs	(raiz)	censo	7-nadie-en-codigo	false	0	0			luis	1	2026-09-08	2026-09-08	707	1	c) 30-60 d
+scripts/censo-etiquetas-del-documento.mjs	(raiz)	censo	4-test	false	2	0			javier	2	2026-09-07	2026-09-08	595	1	c) 30-60 d
+scripts/censo-etiquetas-pegadas.mjs	(raiz)	censo	4-test	false	1	0		censo:etiquetas-pegadas	javier	3	2026-08-20	2026-08-20	553	2	c) 30-60 d
+scripts/censo-eventos-de-pasarela.mjs	(raiz)	censo	7-nadie-en-codigo	false	0	0			luis	1	2026-09-07	2026-09-07	815	1	c) 30-60 d
+scripts/censo-guards-gateados.mjs	(raiz)	censo	4-test	false	2	0		censo:gateados	javier	1	2026-09-08	2026-09-08	754	1	c) 30-60 d
+scripts/censo-guards-navegador.mjs	(raiz)	censo	4-test	false	1	1	SIN-FILA	censo:guards-navegador	javier	3	2026-08-20	2026-09-16	546	3	b) 7-30 d
+scripts/censo-internos-de-prisma.mjs	(raiz)	censo	4-test	false	2	0		censo:internos-prisma	javier	2	2026-09-04	2026-09-04	742	1	c) 30-60 d
+scripts/censo-lista-como-fixture.mjs	(raiz)	censo	4-test	false	2	1	SIN-FILA	censo:lista-fixture	javier+luis	2	2026-09-17	2026-09-26	938	1	b) 7-30 d
+scripts/censo-marcadores.mjs	(raiz)	censo	3-producto	false	4	1	SIN-FILA		luis	1	2026-08-17	2026-08-17		0	c) 30-60 d
+scripts/censo-migraciones.mjs	(raiz)	censo	7-nadie-en-codigo	false	0	0			javier+luis	2	2026-09-06	2026-09-22	758	2	b) 7-30 d
+scripts/censo-mudez.mjs	(raiz)	censo	4-test	false	3	2	MEZCLA	censo:mudez	javier+luis	2	2026-09-04	2026-09-07	719	2	c) 30-60 d
+scripts/censo-peso-prefijos.mjs	(raiz)	censo	3-producto	false	0	0			javier	1	2026-09-01	2026-09-01	578	1	c) 30-60 d
+scripts/censo-regla-42.mjs	(raiz)	censo	4-test	false	4	1	S5		javier	3	2026-09-17	2026-10-01	804	2	b) 7-30 d
+scripts/censo-reparto.mjs	(raiz)	censo	4-test	false	2	1	SIN-FILA		luis	2	2026-08-06	2026-08-06	387	1	d) > 60 d
+scripts/censo-respaldo-de-la-n.mjs	(raiz)	censo	4-test	false	1	0		censo:respaldo-n	javier	1	2026-09-07	2026-09-07	801	1	c) 30-60 d
+scripts/censo-sellos-que-empatan.mjs	(raiz)	censo	7-nadie-en-codigo	false	0	0			javier	1	2026-09-17	2026-09-17	880	1	b) 7-30 d
+scripts/censo-suelos.mjs	(raiz)	censo	4-test	false	1	0		censo:suelos	javier	1	2026-09-06	2026-09-06	775	1	c) 30-60 d
+scripts/censo-tablero-vs-arbol.mjs	(raiz)	censo	4-test	false	5	8	SIN-FILA	//censo:suelos	javier+luis	5	2026-09-04	2026-09-09	738	4	c) 30-60 d
+scripts/censo-tipo-cliente.mjs	(raiz)	censo	4-test	false	1	0			javier	1	2026-08-24	2026-08-24	574	2	c) 30-60 d
+scripts/censo-usos-de-campo.mjs	(raiz)	censo	4-test	false	1	0			javier	1	2026-08-24	2026-08-24	615	1	c) 30-60 d
+scripts/censo-vias-de-cobro.mjs	(raiz)	censo	4-test	false	1	0		censo:vias-de-cobro	javier+luis	2	2026-08-19	2026-09-28	519	2	b) 7-30 d
+scripts/ci-de-la-rama.mjs	(raiz)	ci	4-test	false	1	0		ci:rama	javier	1	2026-09-15	2026-09-15	618	1	b) 7-30 d
+scripts/citar-afirmaciones-publicadas.mjs	(raiz)	citar	7-nadie-en-codigo	false	0	0			javier	1	2026-08-20	2026-08-20	564	1	c) 30-60 d
+scripts/citar-fuera-del-censo.mjs	(raiz)	citar	4-test	false	1	0			javier	1	2026-08-20	2026-08-20	561	1	c) 30-60 d
+scripts/citar-hueco-condicion.mjs	(raiz)	citar	4-test	false	1	1	SIN-FILA		javier	3	2026-08-20	2026-09-23	564	3	b) 7-30 d
+scripts/claves-bd-de-todos-los-arboles.mjs	(raiz)	claves	4-test	false	1	0			luis	1	2026-10-02	2026-10-02	1423	1	b) 7-30 d
+scripts/clean-staging-tests.mjs	(raiz)	clean	1-CI	true	4	1	SIN-FILA		javier+luis	9	2026-07-22	2026-08-06	79	6	d) > 60 d
+scripts/comprobar-claves-bd.mjs	(raiz)	comprobar	4-test	false	1	4	MEZCLA		javier	2	2026-08-06	2026-08-10	383	2	d) > 60 d
+scripts/comprobar-encargo.mjs	(raiz)	comprobar	4-test	false	1	0		comprobar:encargo	javier	1	2026-08-20	2026-08-20	565	1	c) 30-60 d
+scripts/conciliar-auditoria-fiscal.mjs	(raiz)	conciliar	4-test	false	1	1	SIN-FILA		javier+luis	3	2026-07-29	2026-08-10	207	3	d) > 60 d
+scripts/db-push-prod	(raiz)	db	2-hook-o-skill	false	9	3	SIN-FILA	db:push	javier+luis	4	2026-07-22	2026-09-04	40	5	c) 30-60 d
+scripts/diagnostico-dependencias.mjs	(raiz)	diagnostico	4-test	false	1	1	SIN-FILA	diagnostico:deps	luis	1	2026-08-12	2026-08-12	351	1	c) 30-60 d
+scripts/e2e-critico.mjs	(raiz)	e2e	4-test	false	4	2	SIN-FILA	e2e:critico	luis	6	2026-07-06	2026-08-02		3	d) > 60 d
+scripts/espera-del-equipo.mjs	(raiz)	espera	4-test	false	1	1	SIN-FILA		luis	4	2026-10-02	2026-10-02	1414	1	b) 7-30 d
+scripts/estado-antes-del-go.mjs	(raiz)	estado	6-npm-a-mano	false	0	0		antes-del-go	luis	1	2026-09-22	2026-09-22	568	1	b) 7-30 d
+scripts/gen-registros-sample.mjs	(raiz)	gen	3-producto	false	3	2	SIN-FILA		luis	2	2026-06-12	2026-08-02		1	d) > 60 d
+scripts/generar-sql-deriva.mjs	(raiz)	generar	4-test	false	6	1	SIN-FILA		javier+luis	3	2026-08-02	2026-09-04	222	3	c) 30-60 d
+scripts/guard-915e1-documento-vivo.mjs	(raiz)	guard	6-npm-a-mano	false	0	0		guard:documento-vivo	javier+luis	4	2026-09-20	2026-10-01	915	2	b) 7-30 d
+scripts/guard-915g-ajustes-del-justificante.mjs	(raiz)	guard	4-test	false	3	1	SIN-FILA	guard:ajustes-del-justificante	javier+luis	3	2026-09-21	2026-10-01	915	3	b) 7-30 d
+scripts/guard-915h-conceptos-limpios.mjs	(raiz)	guard	6-npm-a-mano	false	0	0		guard:conceptos-limpios	javier+luis	5	2026-09-21	2026-10-01	915	2	b) 7-30 d
+scripts/guard-915i-cabecera.mjs	(raiz)	guard	4-test	false	1	0		guard:cabecera-del-editor	javier+luis	9	2026-09-21	2026-10-01	915	4	b) 7-30 d
+scripts/guard-965-un-solo-presupuesto.mjs	(raiz)	guard	4-test	false	1	0		guard:un-solo-presupuesto	javier+luis	3	2026-09-20	2026-10-01	965	3	b) 7-30 d
+scripts/guard-a11y-comparativa.mjs	(raiz)	guard	4-test	false	3	1	SIN-FILA	guard:a11y-comparativa	javier	7	2026-08-20	2026-10-01	541	6	b) 7-30 d
+scripts/guard-a11y-landing.mjs	(raiz)	guard	4-test	false	4	2	SIN-FILA	guard:a11y-landing	javier+luis	9	2026-08-20	2026-10-01	543	7	b) 7-30 d
+scripts/guard-acreditacion-invoicing-es.mjs	(raiz)	guard	4-test	false	4	1	SIN-FILA		javier	1	2026-09-23	2026-09-23	1097	1	b) 7-30 d
+scripts/guard-albaranes-con-acciones.mjs	(raiz)	guard	6-npm-a-mano	false	0	0		guard:albaranes-con-acciones	javier+luis	2	2026-09-09	2026-10-01	831	2	b) 7-30 d
+scripts/guard-arranque-sin-red.mjs	(raiz)	guard	4-test	false	1	0		guard:arranque-sin-red	javier+luis	3	2026-09-17	2026-10-01	918	2	b) 7-30 d
+scripts/guard-aviso-bizum.mjs	(raiz)	guard	4-test	false	4	0		guard:aviso-bizum	javier	6	2026-08-19	2026-10-01	515	5	b) 7-30 d
+scripts/guard-caja-avisos.mjs	(raiz)	guard	3-producto	false	0	0		guard:caja-avisos	javier	7	2026-08-11	2026-10-01	469	6	b) 7-30 d
+scripts/guard-caja-datos-del-cliente.mjs	(raiz)	guard	4-test	false	2	0		guard:caja-datos-del-cliente	javier	3	2026-09-06	2026-10-07	589	3	a) < 7 d
+scripts/guard-caja-documento-suelto.mjs	(raiz)	guard	4-test	false	3	0		guard:caja-documento-suelto	javier+luis	7	2026-09-06	2026-10-07	776	7	a) < 7 d
+scripts/guard-caja-semaforo.mjs	(raiz)	guard	4-test	false	2	0		guard:caja-semaforo	javier	1	2026-09-05	2026-09-05	648	1	c) 30-60 d
+scripts/guard-cls-barra-anuncio.mjs	(raiz)	guard	4-test	false	1	0		guard:cls-barra-anuncio	javier	5	2026-08-20	2026-10-01	544	5	b) 7-30 d
+scripts/guard-completar-lleva-al-campo.mjs	(raiz)	guard	4-test	false	2	1	SIN-FILA	guard:completar-lleva-al-campo	javier+luis	3	2026-09-17	2026-09-26	904	1	b) 7-30 d
+scripts/guard-conformidad-landing.mjs	(raiz)	guard	4-test	false	2	1	SIN-FILA		javier	1	2026-08-07	2026-08-07	400	1	d) > 60 d
+scripts/guard-contraste.mjs	(raiz)	guard	4-test	false	1	1	SIN-FILA	guard:contraste	javier+luis	10	2026-08-05	2026-10-01	368	5	b) 7-30 d
+scripts/guard-descuento-redibuja.mjs	(raiz)	guard	4-test	false	1	0		guard:descuento-redibuja	javier+luis	6	2026-09-17	2026-10-01	888	4	b) 7-30 d
+scripts/guard-descuentos-en-el-detalle.mjs	(raiz)	guard	6-npm-a-mano	false	0	0		guard:descuentos-en-el-detalle	javier+luis	2	2026-09-17	2026-10-01	888	2	b) 7-30 d
+scripts/guard-detalle-trabajo-917.mjs	(raiz)	guard	3-producto	false	1	0		guard:detalle-trabajo-917	javier+luis	10	2026-09-20	2026-10-01	917	4	b) 7-30 d
+scripts/guard-duplicar-926.mjs	(raiz)	guard	4-test	false	2	0		guard:duplicar-conserva	javier+luis	5	2026-09-20	2026-10-07	926	3	a) < 7 d
+scripts/guard-escalera-por-estado.mjs	(raiz)	guard	6-npm-a-mano	false	0	0		guard:escalera-por-estado	javier+luis	4	2026-09-08	2026-10-01	823	3	b) 7-30 d
+scripts/guard-falta-en-otra-pestana.mjs	(raiz)	guard	4-test	false	1	0		guard:falta-en-otra-pestana	javier+luis	3	2026-09-17	2026-10-01	894	2	b) 7-30 d
+scripts/guard-firma-con-tramos.mjs	(raiz)	guard	4-test	false	2	0		guard:firma-con-tramos	javier+luis	3	2026-09-16	2026-10-01	892	2	b) 7-30 d
+scripts/guard-foto-del-gasto.mjs	(raiz)	guard	6-npm-a-mano	false	0	0		guard:foto-del-gasto	javier+luis	5	2026-09-18	2026-10-01	947	4	b) 7-30 d
+scripts/guard-lista-gastos.mjs	(raiz)	guard	4-test	false	1	0		guard:lista-gastos	javier+luis	6	2026-09-21	2026-10-01	920	4	b) 7-30 d
+scripts/guard-lista-trabajos-917.mjs	(raiz)	guard	5-otro-script	false	0	1	SIN-FILA	guard:lista-trabajos-917	javier+luis	5	2026-09-18	2026-10-01	917	3	b) 7-30 d
+scripts/guard-lista-trabajos.mjs	(raiz)	guard	4-test	false	1	0		guard:lista-trabajos	javier+luis	11	2026-09-07	2026-10-01	816	9	b) 7-30 d
+scripts/guard-marcadores-en-pantalla.mjs	(raiz)	guard	3-producto	false	2	2	SIN-FILA	guard:marcadores-en-pantalla	javier+luis	8	2026-09-07	2026-10-02	722	7	b) 7-30 d
+scripts/guard-nif-del-gasto.mjs	(raiz)	guard	4-test	false	1	0		guard:nif-del-gasto	javier+luis	2	2026-09-18	2026-10-01	937	2	b) 7-30 d
+scripts/guard-nombres-no-declarados.mjs	(raiz)	guard	4-test	false	3	0			luis	1	2026-09-29	2026-09-29	1280	1	b) 7-30 d
+scripts/guard-objetivo-tactil.mjs	(raiz)	guard	4-test	false	9	0		guard:objetivo-tactil	javier+luis	24	2026-08-20	2026-10-01	542	21	b) 7-30 d
+scripts/guard-pasos-del-editor.mjs	(raiz)	guard	4-test	false	1	0		guard:pasos-del-editor	javier+luis	8	2026-09-18	2026-10-01	915	3	b) 7-30 d
+scripts/guard-portal-en-la-ficha.mjs	(raiz)	guard	4-test	false	2	0		guard:portal-en-la-ficha	javier+luis	4	2026-09-07	2026-10-07	795	4	a) < 7 d
+scripts/guard-primera-pantalla.mjs	(raiz)	guard	4-test	false	1	0		guard:primera-pantalla	javier	5	2026-08-20	2026-09-01	331	5	c) 30-60 d
+scripts/guard-rastro-del-menu.mjs	(raiz)	guard	4-test	false	3	0		guard:rastro-del-menu	javier+luis	3	2026-09-07	2026-10-01	819	3	b) 7-30 d
+scripts/guard-rotulos-de-la-linea.mjs	(raiz)	guard	6-npm-a-mano	false	0	0		guard:rotulos-de-la-linea	javier+luis	3	2026-09-17	2026-10-01	909	3	b) 7-30 d
+scripts/guard-vias-de-cobro.mjs	(raiz)	guard	4-test	false	1	0		guard:vias-de-cobro	javier	7	2026-08-19	2026-10-01	519	5	b) 7-30 d
+scripts/guards-entrada.mjs	(raiz)	guards	4-test	false	10	3	MEZCLA	guards:entrada	javier+luis	12	2026-08-10	2026-10-02	414	10	b) 7-30 d
+scripts/guards-visuales.mjs	(raiz)	guards	1-CI	true	19	7	MEZCLA	guards:visuales	javier+luis	13	2026-08-20	2026-10-01	522	10	b) 7-30 d
+scripts/marcar-staging.mjs	(raiz)	marcar	4-test	false	3	4	SIN-FILA	//turno	javier+luis	2	2026-07-23	2026-07-28	118	2	d) > 60 d
+scripts/medir-concurrencia-emision.mjs	(raiz)	medir	4-test	false	1	0			javier	1	2026-09-06	2026-09-06	781	1	c) 30-60 d
+scripts/medir-hueco-condicion.mjs	(raiz)	medir	4-test	false	1	2	SIN-FILA		javier	1	2026-08-20	2026-08-20	564	1	c) 30-60 d
+scripts/medir-tokens.mjs	(raiz)	medir	7-nadie-en-codigo	false	0	0			luis	1	2026-09-16	2026-09-16		0	b) 7-30 d
+scripts/migrate-stripe-prices-live.mjs	(raiz)	migrate	5-otro-script	false	0	1	SIN-FILA		luis	1	2026-07-08	2026-07-08		0	d) > 60 d
+scripts/pasada-real-etiquetas-del-documento.mjs	(raiz)	pasada	4-test	false	1	0			javier	1	2026-09-08	2026-09-08	595	1	c) 30-60 d
+scripts/preflight-migracion.mjs	(raiz)	preflight	7-nadie-en-codigo	false	0	0			javier	1	2026-08-07	2026-08-07	395	1	d) > 60 d
+scripts/preflight-schema-drift.mjs	(raiz)	preflight	2-hook-o-skill	false	5	2	SIN-FILA		javier+luis	6	2026-07-27	2026-10-01	167	6	b) 7-30 d
+scripts/preview-migracion.mjs	(raiz)	preview	2-hook-o-skill	false	4	4	SIN-FILA		luis	1	2026-08-06	2026-08-06	385	1	d) > 60 d
+scripts/puerta-cliente-real.mjs	(raiz)	puerta	4-test	false	2	1	SIN-FILA	puerta:cliente-real	luis	1	2026-08-10	2026-08-10	390	1	d) > 60 d
+scripts/recorrido-entre-vistas.mjs	(raiz)	recorrido	7-nadie-en-codigo	false	0	0			luis	1	2026-09-07	2026-09-07		0	c) 30-60 d
+scripts/registro-de-lo-aprobado.mjs	(raiz)	registro	4-test	false	1	0			javier	2	2026-08-20	2026-08-20	563	1	c) 30-60 d
+scripts/renumerar-documentos.mjs	(raiz)	renumerar	4-test	false	1	2	SIN-FILA		javier	1	2026-09-04	2026-09-04	592	1	c) 30-60 d
+scripts/seed-demo.mjs	(raiz)	seed	2-hook-o-skill	false	11	3	SIN-FILA		javier+luis	14	2026-07-05	2026-09-25		10	b) 7-30 d
+scripts/seed-staging.mjs	(raiz)	seed	1-CI	true	4	2	SIN-FILA		javier+luis	9	2026-07-12	2026-09-25		7	b) 7-30 d
+scripts/seed-video.mjs	(raiz)	seed	3-producto	false	10	2	SIN-FILA		javier+luis	10	2026-07-14	2026-09-25		7	b) 7-30 d
+scripts/senal-de-nombres.mjs	(raiz)	senal	1-CI	true	1	1	SIN-FILA		javier	1	2026-10-01	2026-10-01	1339	1	b) 7-30 d
+scripts/sesiones-que-no-volvieron.mjs	(raiz)	sesiones	4-test	false	2	1	SIN-FILA		luis	3	2026-10-02	2026-10-02	1418	1	b) 7-30 d
+scripts/setup-stripe-prices.mjs	(raiz)	setup	3-producto	false	0	1	SIN-FILA		luis	2	2026-06-12	2026-07-08		0	d) > 60 d
+scripts/sobre-soap-prueba-aeat.mjs	(raiz)	sobre	3-producto	false	2	0			javier	5	2026-09-24	2026-10-02	1110	4	b) 7-30 d
+scripts/sonda-915-inventario-v3.mjs	(raiz)	sonda	7-nadie-en-codigo	false	0	0			luis	4	2026-09-20	2026-09-21	915	1	b) 7-30 d
+scripts/staging-gated.mjs	(raiz)	staging	1-CI	true	15	6	SIN-FILA	test:staging,test:staging:gated	javier	1	2026-10-01	2026-10-01	1308	1	b) 7-30 d
+scripts/tabla-verifactu.mjs	(raiz)	tabla	4-test	false	1	1	SIN-FILA		javier	2	2026-09-18	2026-09-23	524	2	b) 7-30 d
+scripts/tests-que-cubren.mjs	(raiz)	tests	4-test	false	2	1	SIN-FILA	tanda:dirigida,tests:que-cubren	luis	4	2026-10-01	2026-10-02	1363	3	b) 7-30 d
+scripts/topologia-node-modules.mjs	(raiz)	topologia	4-test	false	2	1	SIN-FILA	topologia	javier+luis	2	2026-08-11	2026-09-28	351	2	b) 7-30 d
+scripts/traspaso-derivado.mjs	(raiz)	traspaso	4-test	false	1	0			luis	3	2026-10-02	2026-10-06	1427	3	a) < 7 d
+scripts/trinquete-de-zona.mjs	(raiz)	trinquete	1-CI	true	1	0		trinquete:zona	javier+luis	5	2026-09-07	2026-10-06	813	2	a) < 7 d
+scripts/turno-staging.mjs	(raiz)	turno	4-test	false	10	5	SIN-FILA	turno:estado,turno:tomar,turno:soltar	javier+luis	9	2026-07-30	2026-09-17	232	7	b) 7-30 d
+scripts/validate-registros-xsd.ps1	(raiz)	validate	3-producto	false	3	1	SIN-FILA		luis	1	2026-06-12	2026-06-12		0	d) > 60 d
+scripts/verificacion-s5/censo-instrumentos-sin-caso.mjs	verificacion-s5/	censo	4-test	false	1	0			javier+luis	6	2026-09-09	2026-09-17	842	3	b) 7-30 d
+scripts/verificacion-s5/enlace-ticket-rama.mjs	verificacion-s5/	enlace	4-test	false	2	1	SIN-FILA	enlace:ticket-rama	luis	1	2026-09-07	2026-09-07	637	1	c) 30-60 d
+scripts/verificacion-s5/idempotencia-stripe-corrida.mjs	verificacion-s5/	idempotencia	7-nadie-en-codigo	false	0	0			luis	1	2026-09-07	2026-09-07	637	1	c) 30-60 d
+scripts/verificacion-s5/intentar-pasar-la-puerta.mjs	verificacion-s5/	intentar	7-nadie-en-codigo	false	0	0			luis	1	2026-09-09	2026-09-09	842	1	c) 30-60 d
+scripts/verificacion-s5/kbd-en-botones-de-crear.mjs	verificacion-s5/	kbd	7-nadie-en-codigo	false	0	0			luis	1	2026-09-07	2026-09-07	637	1	c) 30-60 d
+scripts/verificacion-s5/ramas-borrables.mjs	verificacion-s5/	ramas	4-test	false	2	1	SIN-FILA	ramas:borrables	luis	2	2026-09-07	2026-09-08	637	1	c) 30-60 d
+scripts/verificacion-s5/ramas-sin-mergear.mjs	verificacion-s5/	ramas	4-test	false	2	0		ramas:sin-mergear	javier	1	2026-09-08	2026-09-08	637	1	c) 30-60 d
+scripts/verificacion-s5/romper-los-quince.mjs	verificacion-s5/	romper	4-test	false	3	1	SIN-FILA		luis	4	2026-09-15	2026-09-15	846	1	b) 7-30 d
+scripts/verificacion-s5/tabla-dentro-de-su-scroll.mjs	verificacion-s5/	tabla	7-nadie-en-codigo	false	0	0			luis	1	2026-09-07	2026-09-07	637	1	c) 30-60 d
+scripts/verificar-email-messages.mjs	(raiz)	verificar	5-otro-script	false	0	1	SIN-FILA		javier	1	2026-08-11	2026-08-11	475	1	c) 30-60 d
+scripts/verificar-evidencia-tanda.mjs	(raiz)	verificar	2-hook-o-skill	false	3	0			javier+luis	5	2026-07-28	2026-09-16	161	5	b) 7-30 d
+scripts/verificar-vf-submissions.mjs	(raiz)	verificar	7-nadie-en-codigo	false	0	0			javier	1	2026-09-28	2026-09-28	1197	1	b) 7-30 d
+scripts/vigia-silencio-de-main.mjs	(raiz)	vigia	4-test	false	1	0		vigia:silencio	javier	2	2026-10-01	2026-10-01	1324	1	b) 7-30 d
+scripts/voice-eval.mjs	(raiz)	voice	4-test	false	3	0			luis	1	2026-07-05	2026-07-05		0	d) > 60 d
+scripts/wa-prueba.mjs	(raiz)	wa	3-producto	false	2	0			javier	1	2026-10-01	2026-10-01	1308	1	b) 7-30 d

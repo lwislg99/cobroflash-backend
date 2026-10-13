@@ -1,0 +1,11 @@
+ESQUEMA=D:\MILLONARIO\cobroFlash\cobroflash-backend\.claude\worktrees\s2-1302c\dist\core\validation\schemas.js · control: URL externa cae · imagen subida pasa
+SERVIDO=LOCAL D:\MILLONARIO\cobroFlash\cobroflash-backend\.claude\worktrees\s2-1302c\public\admin.html · build del panel 85d8d01e64196569928b523c9074542d6ffbbd0a · REAL=0 (nada sale) · RELLENA=1
+AL CARGAR={"estado":"Perfil cargado correctamente","hayCampo":false,"etiqueta":null,"marcador":null,"valorCampo":null,"logoGuardado":"ninguno (null)","vacios":["legalName","taxId","address","whatsappPhone"],"controlesDelFormulario":7}
+  RELLENADOS POR LA SONDA (no salen de la página): legalName, taxId, address, whatsappPhone
+--- FILAS (caso | logoUrl en el cuerpo | veredicto del esquema | qué se hizo con el PUT | lo que dice la página | clase del aviso)
+NADA · se guarda sin tocar nada | NO VIAJA | lo aceptaría | NO salió · contestado por la sonda (200) | «Cambios guardados correctamente» | status ok
+claves del último cuerpo: name, legalName, taxId, address, defaultCurrency, invoiceSeriesPrefix, whatsappPhone
+AL ACABAR={"logoGuardado":"ninguno (null)","estado":"Perfil cargado correctamente"}
+errores de página: ninguno
+POBLACION=1 guardados · PUT vistos=1
+EXIT=0

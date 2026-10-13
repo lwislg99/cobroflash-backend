@@ -23,7 +23,10 @@
 //   NO-LLEGO       · las cuatro corridas acabaron en 4xx/5xx sin consultar ningún documento: NO MEDIDA
 //   CIEGO          · no encontré la ruta montada
 //
-// Uso: node censo-que-ve-el-tecnico.mjs <raiz del arbol, con dist/>
+// Uso: node censo-que-ve-el-tecnico.mjs <raiz del arbol, con dist/> [--eje=comercio]
+//   Sale 0 si los controles SEMBRADOS salen como deben y la conducta correcta del árbol se mantiene;
+//   1 si no; 2 si está CIEGO (no pudo medir, o le falta la siembra). Las dos que NO son medición,
+//   para verlo caer: `--sin-sembrar` (sale 2) y, en el eje del comercio, `--doble-sordo` (sale 1).
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { PassThrough } from 'node:stream';
@@ -134,6 +137,72 @@ prisma.$queryRawUnsafe = prisma.$queryRaw;
 prisma.$executeRaw = async () => 0;
 prisma.$executeRawUnsafe = prisma.$executeRaw;
 
+// ── SCRUM-1516 · EL POSITIVO SE SIEMBRA, NO SE TOMA PRESTADO DEL ÁRBOL.
+// Los controles de los dos ejes se apoyaban en DEFECTOS reales: tres rutas que no distinguían el rol
+// (arregladas en SCRUM-1397) y `resend-whatsapp` cruzando de comercio (arreglada en SCRUM-1514b). Un
+// defecto se arregla —es el objetivo— y el día que se arregla el control se muere: el censo se queda
+// sin poder demostrar que distingue. Por eso el caso que TIENE que salir lo fabrica este fichero:
+// rutas de mentira, montadas aquí sobre la app ya cargada, que no existen en el producto, no entran
+// en la población ni en los totales, y pasan por el MISMO motor que las de verdad (manosDe, peticion,
+// pedir, el doble de Prisma y el veredicto). Nadie las va a arreglar.
+// `--sin-sembrar` NO es una medición: no las monta, para ver al censo declararse CIEGO (sale 2).
+const SIEMBRA = '/admin/__sembrada-por-el-censo';
+const SIN_SEMBRAR = process.argv.includes('--sin-sembrar');
+const esSembrada = (ruta) => ruta.startsWith(SIEMBRA + '/');
+const SEMBRADAS = EJE === 'comercio'
+  ? { cruza: { method: 'POST', path: SIEMBRA + '/:id/cruza' }, filtra: { method: 'POST', path: SIEMBRA + '/:id/filtra' } }
+  : { noDistingue: { method: 'GET', path: SIEMBRA + '/no-distingue' }, conFecha: { method: 'GET', path: SIEMBRA + '/no-distingue-con-fecha' }, recortaAntes: { method: 'GET', path: SIEMBRA + '/recorta-en-la-consulta' },
+    recortaDespues: { method: 'GET', path: SIEMBRA + '/:id/recorta-despues-de-leer' } };
+if (!SIN_SEMBRAR && EJE === 'comercio') {
+  const { createRequire } = await import('node:module');
+  const axiosDeDist = createRequire(path.join(raiz, 'dist', 'integrations', 'whatsapp.js'))('axios'); // el mismo que dobla el eje
+  const envia = (f) => axiosDeDist.post('https://graph.facebook.com/sembrada-por-el-censo', { type: 'template', to: f.customer.phone });
+  // La que CRUZA: busca la factura sólo por `id` y le escribe a su cliente. Es el defecto de SCRUM-1514, a propósito.
+  app.post(SEMBRADAS.cruza.path, async (req, res) => {
+    const f = await prisma.invoice.findUnique({ where: { id: Number(req.params.id) } });
+    if (!f) return res.status(404).json({ ok: false });
+    await envia(f); return res.json({ ok: true });
+  });
+  // La que FILTRA: la misma, con el comercio de la sesión en el `where`.
+  app.post(SEMBRADAS.filtra.path, async (req, res) => {
+    const f = await prisma.invoice.findFirst({ where: { id: Number(req.params.id), merchantId: req.merchantId } });
+    if (!f) return res.status(404).json({ ok: false });
+    await envia(f); return res.json({ ok: true });
+  });
+}
+if (!SIN_SEMBRAR && EJE === 'rol') {
+  // La que NO DISTINGUE: la misma consulta para los dos roles, y al técnico no se le niega el ajeno.
+  app.get(SEMBRADAS.noDistingue.path, async (req, res) => {
+    await prisma.quote.findMany({ where: { merchantId: req.merchantId } }); return res.json({ ok: true });
+  });
+  // La que NO DISTINGUE y lleva una FECHA que no se repite nunca (un milisegundo mas en cada peticion):
+  // si `canon` deja de cambiar las fechas, esta sale RECORTA siempre, no una vez de cada cuatro.
+  let tic = 0;
+  app.get(SEMBRADAS.conFecha.path, async (req, res) => {
+    await prisma.quote.findMany({ where: { merchantId: req.merchantId, createdAt: { gte: new Date(Date.UTC(2026, 0, 1) + (tic += 1)) } } }); return res.json({ ok: true });
+  });
+  // La que RECORTA EN LA CONSULTA (pasada A): el rol cambia el `where`.
+  app.get(SEMBRADAS.recortaAntes.path, async (req, res) => {
+    await prisma.quote.findMany({ where: { merchantId: req.merchantId, ...(req.userRole === 'tecnico' ? { teamMemberId: req.teamMemberId } : {}) } });
+    return res.json({ ok: true });
+  });
+  // La que RECORTA DESPUÉS DE LEER (pasada B): misma consulta, y al técnico se le niega el del compañero.
+  app.get(SEMBRADAS.recortaDespues.path, async (req, res) => {
+    const q = await prisma.quote.findFirst({ where: { id: Number(req.params.id), merchantId: req.merchantId } });
+    if (!q) return res.status(404).json({ ok: false });
+    if (req.userRole === 'tecnico' && q.teamMemberId !== req.teamMemberId) return res.status(404).json({ ok: false });
+    return res.json({ ok: true });
+  });
+}
+// Ciego ANTES de medir nada: sin la siembra montada no hay prueba de que el censo distinga, y una
+// tabla sin esa prueba se lee como un resultado.
+const sinMontar = Object.values(SEMBRADAS).filter((s) => !app.router.stack.some((l) => l.route && l.route.path === s.path && l.route.methods[s.method.toLowerCase()]));
+if (sinMontar.length) {
+  console.log('CIEGO: ' + sinMontar.length + ' de ' + Object.keys(SEMBRADAS).length + ' rutas sembradas no están montadas (' + sinMontar.map((s) => s.method + ' ' + s.path).join(', ')
+    + '). Sin ellas no puedo demostrar que distingo: no mido' + (SIN_SEMBRAR ? ' (--sin-sembrar)' : '') + '.');
+  console.log('EXIT=2'); process.exit(2);
+}
+
 // ── Dónde vive cada ruta declarada. Una ruta puede estar registrada DOS veces
 // (`app.post(ruta, requireActivePlan)` delante del router): se juntan todas sus manos, en orden de
 // montaje. Quedarse con la primera medía sólo la puerta del plan — pasó en la primera pasada de
@@ -200,7 +269,11 @@ async function pedir(manos, req) {
   return { estado: error && !acabado ? 'EXC' : estado, error: error ? String(error.message || error).slice(0, 90) : null };
 }
 
-const canon = (x) => JSON.stringify(x, (k, v) => (v instanceof Date ? 'FECHA' : v));
+// SCRUM-1516: JSON.stringify llama a toJSON ANTES de pasar el valor al sustituto, asi que dentro de un
+// objeto `v` ya es un texto y `v instanceof Date` no era cierto nunca: ninguna fecha se cambiaba, y una
+// consulta con `new Date()` salia RECORTA cuando entre las dos peticiones cambiaba el milisegundo
+// (frequent-concepts: 9 y 3 en 12 corridas identicas). El valor sin convertir esta en `this[k]`.
+const canon = (x) => JSON.stringify(x, function (k, v) { return this[k] instanceof Date ? 'FECHA' : v; });
 const soloDoc = (l) => l.filter((a) => DOCUMENTO.includes(a.modelo));
 const firma = (l, modelo) => soloDoc(l).filter((a) => !modelo || a.modelo === modelo)
   .map((a) => a.modelo + '.' + a.op + ' ' + canon(a.where)).join(' | ');
@@ -273,11 +346,14 @@ if (EJE === 'comercio') {
     if (typeof layer.route.path !== 'string') { noTexto += 1; continue; }
     apunta(mount.prefix + (layer.route.path === '/' ? '' : layer.route.path), layer.route.methods);
   }
-  const poblacion = [...rutas.values()];
+  // SCRUM-1516: las sembradas las ENCUENTRA el mismo recolector (están montadas en la app), y se
+  // apartan aquí: se miden igual, pero no son población ni entran en los totales.
+  const poblacion = [...rutas.values()].filter((d) => !esSembrada(d.path));
+  const sembradas = [...rutas.values()].filter((d) => esSembrada(d.path));
   const delTecnico = TECNICO_ALLOWED.filter((d) => rutas.has(d.method.toUpperCase() + ' ' + d.path)).length;
 
-  const fc = [];
-  for (const d of poblacion) {
+  const fc = []; const fs = [];
+  for (const d of [...poblacion, ...sembradas]) {
     apuntes = []; sueltas = []; const m0 = aMeta.length;
     const req = { ...peticion('admin', d.path, d.method), merchantId: SESION, merchant: de21('merchant') };
     let out = await pedir(manosDe(d.method, d.path), req);
@@ -294,7 +370,7 @@ if (EJE === 'comercio') {
     if (sueltas.length) v = pasa ? 'CRUZA' : niega ? 'LEE-Y-NIEGA' : 'LEE-Y-NO-ACABA';
     else if (deComercio.length) v = 'FILTRA';
     else v = pasa ? 'SIN-CONSULTA' : 'NO-LLEGO';
-    fc.push({ ...d, v, estado: e, relleno, conId: d.path.includes('/:'), envios: aMeta.length - m0, error: out.error,
+    (esSembrada(d.path) ? fs : fc).push({ ...d, v, estado: e, relleno, conId: d.path.includes('/:'), envios: aMeta.length - m0, error: out.error,
       sueltas: sueltas.map((a) => a.modelo + '.' + a.op + (a.escribe ? '(ESCRIBE)' : '') + ' ' + canon(a.where)),
       atadas: deComercio.filter((a) => a.atada).length });
   }
@@ -313,25 +389,43 @@ if (EJE === 'comercio') {
       if (f.error && v !== 'FILTRA') console.log('         error: ' + f.error);
     }
   }
-  // ── CONTROLES. El par viene medido por HTTP contra base real desechable en SCRUM-1512 (caso X1).
+  // ── CONTROLES. SCRUM-1516: el par que decide es el SEMBRADO. El par del producto (medido por HTTP
+  // contra base desechable en SCRUM-1512, caso X1) era el control hasta que SCRUM-1514b arregló
+  // `resend-whatsapp`: ahora esa fila es un TESTIGO —se enseña lo que dice hoy, no se le exige nada—
+  // y `send-reminder` se queda como conducta correcta que tiene que seguir siéndolo.
   const ve = (m, p) => fc.find((f) => f.method === m && f.path === p) || {};
-  const pos = ve('POST', '/admin/invoices/:id/resend-whatsapp'); const neg = ve('POST', '/admin/invoices/:id/send-reminder');
+  const vs = (s) => fs.find((f) => f.method === s.method && f.path === s.path) || {};
+  const pos = vs(SEMBRADAS.cruza); const neg = vs(SEMBRADAS.filtra);
+  const testigo = ve('POST', '/admin/invoices/:id/resend-whatsapp'); const correcta = ve('POST', '/admin/invoices/:id/send-reminder');
   const cero = ve('POST', '/admin/invoices/:id/resend-' + 'whatsapp-que-no-existe');
-  console.log('\n-- CONTROLES');
-  console.log('  POSITIVO (X1 de SCRUM-1512: 200 y 1 plantilla al cliente del otro)  POST …/resend-whatsapp → ' + pos.v + ' ' + pos.estado + ' envíos ' + pos.envios);
-  console.log('  NEGATIVO (X1 de SCRUM-1512: 404)                                    POST …/send-reminder   → ' + neg.v + ' ' + neg.estado + ' envíos ' + neg.envios);
-  console.log('  CERO     (una ruta que no está montada)                             → ' + (cero.v || 'no figura'));
+  const ceroS = fs.find((f) => f.path === SIEMBRA + '/:id/no-la-he-montado');
+  const colada = fc.filter((f) => esSembrada(f.path)).length;
+  console.log('\n-- CONTROLES SEMBRADOS (SCRUM-1516: rutas de mentira que monta este fichero; no existen en el producto ni cuentan en los totales)');
+  console.log('  POSITIVO sembrado (busca la factura sólo por id y escribe a su cliente)  POST …/:id/cruza  → ' + pos.v + ' ' + pos.estado + ' envíos ' + pos.envios);
+  console.log('  NEGATIVO sembrado (la misma, con el comercio de la sesión en el where)   POST …/:id/filtra → ' + neg.v + ' ' + neg.estado + ' envíos ' + neg.envios);
+  console.log('  CERO     (una ruta del producto que no está montada, y una sembrada que no he montado)  → ' + (cero.v || 'no figura') + ' · ' + (ceroS ? ceroS.v : 'no figura'));
+  console.log('  SEMBRADAS medidas ' + fs.length + ' de ' + Object.keys(SEMBRADAS).length + ' · coladas en la población ' + colada);
   console.log('  POBLACIÓN contiene las ' + TECNICO_ALLOWED.length + ' del censo del rol: ' + (delTecnico === TECNICO_ALLOWED.length));
-  const ok = pos.v === 'CRUZA' && pos.estado === 200 && pos.envios === 1 && neg.v === 'FILTRA' && neg.estado === 404 && neg.envios === 0 && !cero.v && delTecnico === TECNICO_ALLOWED.length;
-  console.log('¿el instrumento distingue las dos rutas del par?  ' + ok);
+  console.log('-- DEL ÁRBOL (rutas del producto: lo que digan puede cambiar con un arreglo)');
+  console.log('  CONDUCTA CORRECTA, se exige (X1 de SCRUM-1512: 404)                  POST …/send-reminder   → ' + correcta.v + ' ' + correcta.estado + ' envíos ' + correcta.envios);
+  console.log('  TESTIGO, no se exige (fue el positivo hasta SCRUM-1514b)             POST …/resend-whatsapp → ' + testigo.v + ' ' + testigo.estado + ' envíos ' + testigo.envios);
+  const distingue = pos.v === 'CRUZA' && pos.estado === 200 && pos.envios === 1 && neg.v === 'FILTRA' && neg.estado === 404 && neg.envios === 0
+    && !cero.v && !ceroS && fs.length === Object.keys(SEMBRADAS).length && colada === 0 && delTecnico === TECNICO_ALLOWED.length;
+  const sigueCorrecta = correcta.v === 'FILTRA' && correcta.estado === 404 && correcta.envios === 0;
+  const ok = distingue && sigueCorrecta;
+  console.log('¿el instrumento distingue las dos rutas del par?  ' + distingue + '  (el par sembrado)');
+  console.log('¿la conducta correcta del árbol sigue siéndolo?   ' + sigueCorrecta + (sigueCorrecta ? '' : '  ← esto NO es un censo ciego: es una ruta del producto que ha cambiado'));
   console.log('TOTALES: ' + CL.map((v) => v + ' ' + fc.filter((f) => f.v === v).length).join(' · ') + ' · suma ' + fc.length);
-  console.log('envíos a Meta doblados en toda la corrida: ' + aMeta.length + ' · intentos de salir de la máquina cortados: ' + fugas.length + (fugas.length ? ' → ' + [...new Set(fugas)].join(', ') : ''));
+  const enviosS = fs.reduce((n, f) => n + f.envios, 0);
+  console.log('envíos a Meta doblados en toda la corrida: ' + (aMeta.length - enviosS) + ' · intentos de salir de la máquina cortados: ' + fugas.length + (fugas.length ? ' → ' + [...new Set(fugas)].join(', ') : '')
+    + ' · aparte, de las sembradas: ' + enviosS);
   console.log('EXIT=' + (ok ? 0 : 1));
   process.exit(ok ? 0 : 1);
 }
 
-const filas = [];
-for (const d of TECNICO_ALLOWED) {
+// SCRUM-1516: las sembradas pasan por el MISMO bucle que las 78, y se apartan al acabar.
+const medidas = []; const filas = medidas;
+for (const d of [...TECNICO_ALLOWED, ...Object.values(SEMBRADAS)]) {
   const manos = manosDe(d.method, d.path);
   if (!manos.length) { filas.push({ ...d, veredicto: 'CIEGO', nota: 'no encuentro la ruta montada', porModelo: {} }); continue; }
   const r = {};
@@ -364,6 +458,8 @@ for (const d of TECNICO_ALLOWED) {
     otros: [...new Set(CORRIDAS.flatMap((k) => r[k].apuntes.filter((a) => !DOCUMENTO.includes(a.modelo)).map((a) => a.modelo)))],
     err: r.Btecnico.error || r.Atecnico.error || null });
 }
+const deSiembra = medidas.filter((f) => esSembrada(f.path));
+for (const f of deSiembra) medidas.splice(medidas.indexOf(f), 1); // desde aquí `filas` vuelve a ser sólo TECNICO_ALLOWED
 
 console.log('POBLACION: ' + TECNICO_ALLOWED.length + ' rutas en TECNICO_ALLOWED · ' + modelos.length + ' modelos doblados · modelos de documento: ' + DOCUMENTO.join(', '));
 const por = (v) => filas.filter((f) => f.veredicto === v);
@@ -396,12 +492,26 @@ for (const m of DOCUMENTO) {
 // ── Controles del instrumento. Sin ellos un «NO-DISTINGUE» podría ser que no ve ningún recorte.
 const ver = (m, p) => (filas.find((f) => f.method === m && f.path === p) || {}).veredicto;
 const positivos = [['GET', '/admin/jobs'], ['GET', '/admin/jobs/:id'], ['GET', '/admin/albaranes'], ['GET', '/admin/albaranes/:id'], ['GET', '/admin/partes']];
-const negativos = [['GET', '/admin/quotes'], ['GET', '/admin/quotes/:id'], ['GET', '/admin/invoices'], ['GET', '/admin/metrics/inicio']];
-console.log('\n-- CONTROLES');
-let ok = true;
-for (const [m, p] of positivos) { const v = ver(m, p); if (v !== 'RECORTA') ok = false; console.log(`  positivo (recorte conocido: SCRUM-23/467/992)  ${m} ${p} → ${v}`); }
-for (const [m, p] of negativos) { const v = ver(m, p); if (v !== 'NO-DISTINGUE') ok = false; console.log(`  negativo (medido en yaqu.app por J4g / por J2i)   ${m} ${p} → ${v}`); }
-console.log('¿los controles salen como se sabe que son?  ' + ok);
+// SCRUM-1516: los cuatro «negativos» eran DEFECTOS del producto (un Técnico veía de más), y tres se
+// arreglaron en SCRUM-1397. Un defecto no puede ser el control: el que tiene que salir NO-DISTINGUE
+// ahora es el sembrado. Estos cuatro se siguen enseñando, como testigos, y no se les exige nada.
+const testigos = [['GET', '/admin/quotes'], ['GET', '/admin/quotes/:id'], ['GET', '/admin/invoices'], ['GET', '/admin/metrics/inicio']];
+const vsr = (s) => (deSiembra.find((f) => f.method === s.method && f.path === s.path) || {}).veredicto;
+const esperado = [[SEMBRADAS.noDistingue, 'NO-DISTINGUE', 'la misma consulta para los dos roles      '], [SEMBRADAS.conFecha, 'NO-DISTINGUE', 'la misma, con una fecha que no se repite '], [SEMBRADAS.recortaAntes, 'RECORTA', 'el rol cambia el where (pasada A)        '],
+  [SEMBRADAS.recortaDespues, 'RECORTA', 'al técnico se le niega el ajeno (pasada B)']];
+const colada = filas.filter((f) => esSembrada(f.path)).length;
+console.log('\n-- CONTROLES SEMBRADOS (SCRUM-1516: rutas de mentira que monta este fichero; no existen en el producto ni cuentan en los totales)');
+let distingue = deSiembra.length === esperado.length && colada === 0 && filas.length === TECNICO_ALLOWED.length;
+for (const [s, quiero, que] of esperado) { const v = vsr(s); if (v !== quiero) distingue = false; console.log(`  sembrada (${que})  ${s.method} …${s.path.slice(SIEMBRA.length)} → ${v}  (tiene que ser ${quiero})`); }
+console.log('  CERO     (una sembrada que no he montado)  → ' + (vsr({ method: 'GET', path: SIEMBRA + '/no-la-he-montado' }) || 'no figura'));
+console.log('  SEMBRADAS medidas ' + deSiembra.length + ' de ' + esperado.length + ' · coladas en la población ' + colada + ' · filas del producto ' + filas.length + ' de ' + TECNICO_ALLOWED.length);
+console.log('-- DEL ÁRBOL (rutas del producto: lo que digan puede cambiar con un arreglo)');
+let sigueCorrecta = true;
+for (const [m, p] of positivos) { const v = ver(m, p); if (v !== 'RECORTA') sigueCorrecta = false; console.log(`  conducta correcta, se exige (recorte conocido: SCRUM-23/467/992)  ${m} ${p} → ${v}`); }
+for (const [m, p] of testigos) { const v = ver(m, p); console.log(`  testigo, no se exige (era NO-DISTINGUE en yaqu.app, J4g / J2i)   ${m} ${p} → ${v}`); }
+const ok = distingue && sigueCorrecta;
+console.log('¿los controles salen como se sabe que son?  ' + distingue + '  (los sembrados)');
+console.log('¿la conducta correcta del árbol sigue siéndolo?   ' + sigueCorrecta + (sigueCorrecta ? '' : '  ← esto NO es un censo ciego: es una ruta del producto que ha cambiado'));
 console.log('TOTALES: ' + CLASES.map((v) => v + ' ' + por(v).length).join(' · ') + ' · suma ' + filas.length);
 console.log('EXIT=' + (ok ? 0 : 1));
 process.exit(ok ? 0 : 1);

@@ -772,7 +772,10 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   // ── Resumen: estado de cobro + total + barra + cobrado/pendiente ──
   const sumSec = document.createElement('div');
   sumSec.className = 'detail-section';
-  body.appendChild(sumSec);
+  // SCRUM-917i · aquí NO se cuelga todavía. Se colgaba siempre, antes de saber si tenía algo que
+  // decir, y en un Trabajo sin importe (`totalAceptado` null) quedaba en pantalla una sección de
+  // 37 px —su relleno y su borde— sin nada dentro. Se cuelga abajo, con la franja, bajo la misma
+  // guarda que decide si hay franja: misma regla del hueco que «Lo que falta», justo encima.
   // SCRUM-31 (F1) puso aquí el cliente con tap-to-call. SCRUM-318 (G3) lo sube al rail (bloque
   // CLIENTE), donde vive el contexto y donde ya no compite con el dinero por la misma franja.
   const sumRow = document.createElement('div');
@@ -834,6 +837,9 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   // (la franja), 318/363 de si hay eje para derivar (el foco).
   const hayEje = aceptado > 0;
   if (job.totalAceptado != null) {
+    // SCRUM-917i · el resumen se cuelga AQUÍ: sólo existe si tiene franja. Entre su creación y este
+    // punto no se añade nada más al cuerpo, así que su sitio en la pantalla es el mismo de antes.
+    body.appendChild(sumSec);
     const franja = document.createElement('div');
     franja.className = 'detail-dinero';
 

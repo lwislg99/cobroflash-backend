@@ -1,5 +1,11 @@
 // scripts/_console-guard.mjs — SCRUM-183, endurecido en SCRUM-184
 //
+// 🔴 SIN CONSUMIDOR desde el 13-oct-2026 (SCRUM-1521). Su único llamador era `e2e-critico`, que
+// se retiró ese día por decisión del fundador (Jira, SCRUM-1521 c.19145). Se CONSERVA a
+// propósito (c.19152): es el único oyente de errores de JavaScript de página que hay en el
+// repositorio. «El E2E», en todo lo que sigue, es ese recorrido retirado: hoy no lo escucha
+// nadie. Lo mide el último caso de `tests/scrum183-consola-e2e.test.mjs`.
+//
 // POR QUÉ EXISTE. SCRUM-139 F6 se mergeó ROTA y estuvo así en producción: un `let` de ámbito de
 // módulo (`plantillasRotulo`) se leía desde `recalcTotals()` ~1.700 líneas ANTES de su propia
 // declaración, o sea dentro de su zona muerta (TDZ). El `ReferenceError` **abortaba el resto del

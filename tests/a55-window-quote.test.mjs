@@ -146,6 +146,11 @@ test('A5.5: ventana abierta → envío de presupuesto por SESIÓN (service), no 
       }
       assert.equal(rows.filter((r) => r.type === 'template').length, 1,
         wa1.explicar('debe registrarse 1 fila template'));
+      // SCRUM-1513f: la plantilla que sale ya no se apunta al volver. Su fila nace reservada en
+      // `queued` y se RESUELVE al volver; lo que `wa1.esperar()` ha esperado es esa resolución. Si
+      // la fila siguiera en cola, la espera no habría sincronizado nada aunque la cuenta diera 1.
+      assert.equal(rows.find((r) => r.type === 'template').status, 'sent',
+        wa1.explicar('la fila de la plantilla tiene que haber pasado de la cola a enviada'));
 
       // ── Caso 2: el cliente escribe (bot) → ventana abierta → SESIÓN ────────
       const wa2 = interceptarWaLog({ log: await moduloDeLog(), prisma }); // ventana propia: ver arriba

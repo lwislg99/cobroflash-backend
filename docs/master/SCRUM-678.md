@@ -124,3 +124,119 @@ llamada, no la respuesta.
 | `docs/master/evidencias/scrum678/via-unica-678.mjs` | la sonda de ②: ejecuta las dos rutas y observa con qué llaman a Stripe |
 | `docs/master/SCRUM-678.md` | esto |
 | `src/` | **sin tocar** |
+
+---
+
+## SCRUM-678b (9-oct-2026) · qué variable, con qué nombre, y qué pasa hoy sin ella
+
+**Medido contra:** `origin/main` = `be48345279da158bc81aebbea543eb926ae9eb88` · 2026-10-09T08:18:36Z
+A9: sin fallo que generalice — sólo documentación y una sonda de lectura; su único tropiezo (salir con `process.exit` tras `fetch` daba en Windows un código que no era el suyo) lo delató el control negativo y ya estaba contado en SCRUM-893b.
+
+Sesión `s1-9octm` (S1) · rama `scrum-678b-que-variable-y-que-pasa-sin-ella`. **No toca `src/`**: el
+código de los dos webhooks es del puesto J2 y el ticket está asignado a Javier. Esto es lo que pedía
+el encargo —dejarlo ESCRITO para quien tiene que poner las variables— más una sonda que se puede
+repetir. Producción servía `be483452` al medir (`/version`).
+
+> ⛔ Los valores los pega un jefe **directo en Railway**. Nunca en un chat, un ticket ni un fichero,
+> ni reales ni de ejemplo (regla 9). Aquí sólo van los NOMBRES.
+
+### 1 · Las dos variables
+
+| | **`STRIPE_CONNECT_WEBHOOK_SECRET`** | **`MP_WEBHOOK_SECRET`** |
+|---|---|---|
+| qué es | el secreto de firma del endpoint de tipo **Connect** del panel de Stripe | la clave secreta de los Webhooks del panel de Mercado Pago |
+| a qué ruta protege | `POST /webhooks/stripe-connect` (`app.ts:152`) | `POST /webhooks/mp` (`app.ts:367`) |
+| quién da de alta el endpoint | **un jefe, a mano, en Stripe**: en el repo nadie lo crea (0 ocurrencias de `webhookEndpoints` en `src/` y `scripts/`) | el código manda la URL en cada preferencia (`mercadopago.ts:46`); la clave se saca del panel |
+| ¿falta HOY en producción? | **SÍ, medido hoy**: un POST sin firma contesta `500 Missing STRIPE_CONNECT_WEBHOOK_SECRET` | **no se puede medir desde fuera**: la ruta contesta `200` antes de verificar. Sólo lo dice el aviso de arranque en los logs de Railway (leído por última vez el 2-sep) |
+| qué pasa HOY sin ella | **nada**: Connect está apagado y nadie puede llegar a generar un evento | **nada**: ninguna pantalla lleva a `/pay/mp` |
+| cuándo hay que ponerla | **ANTES** de encender `PAYMENTS_CONNECT_ENABLED` para nadie | antes de ofrecer Mercado Pago a nadie |
+
+### 2 · Cómo se ha medido que falta la de Connect
+
+`docs/master/evidencias/scrum678/sonda-produccion-678b.mjs` manda un POST **sin firma** a cada
+webhook. Los tres rechazan sin firma antes de tocar nada; lo que cambia es con qué:
+
+```
+/webhooks/stripe           [HTTP 400]  Webhook Error: No stripe-signature header value was provided.
+/webhooks/stripe-connect   [HTTP 500]  Missing STRIPE_CONNECT_WEBHOOK_SECRET
+/webhooks/mp               [HTTP 200]  {"ok":true}
+/webhooks/no-existe-678b   [HTTP 404]  {"error":"not_found"}
+```
+
+El control es `/webhooks/stripe`: su secreto está puesto y por eso llega a mirar la firma (400). La
+de Connect no llega: se para en la línea que comprueba la variable (`connectWebhook.routes.ts:29`).
+Contra un servidor que no es el nuestro la sonda sale **CIEGA** (código 2), no «falta»: probado.
+
+**Que Connect está apagado**, también leído en producción y no del valor por defecto:
+`GET /admin/connect/status` con la cuenta QA → `enabled:false`, `connectStatus:"none"`. ⚠️ Es UN
+negocio: el interruptor también se puede encender por negocio (`merchants.flags`) y los demás no
+los veo.
+
+### 3 · Lo que ya NO es verdad de la sección de arriba
+
+El apartado 2 de arriba (17-sep) concluye que, para un cobro con tarjeta por Connect, el webhook es
+la **única** vía que lo marca pagado. **Dejó de serlo el 22-sep**: SCRUM-923 (#1647,
+`cae002af2aec5a777d866cc8e50cc71f0d555f8f`) hizo que el fallback del recibo recupere la sesión en
+la cuenta conectada. La misma sonda de entonces, ejecutada hoy sin tocarla:
+
+```
+payCard  [HTTP 303]  crea la sesion con stripeAccount = "acct_CONECTADA"
+receipt  [HTTP 200]  el fallback recupera con stripeAccount = "acct_CONECTADA"
+  el fallback la BUSCA en la de plataforma .... false
+```
+
+(Se corre con la raíz del árbol como argumento y contra un `dist/` cuyo `receipt.routes` y
+`payCard.routes` sean los de `main`; hoy lo eran los del árbol `s1-893b`, sin diferencias con
+`main` en esos dos ficheros.) Para **Mercado Pago no ha cambiado nada**: `payMp.routes.ts` sigue
+sin importar `getMpPayment`, así que su webhook sigue siendo la única vía.
+
+### 4 · Qué se rompe el día que se encienda sin la variable
+
+**Stripe Connect** (los cuatro eventos que atiende `connectWebhook.routes.ts`):
+
+| evento | qué se pierde sin el secreto | ¿hay otra vía? |
+|---|---|---|
+| `account.updated` | el negocio no pasa a `active` cuando Stripe lo aprueba, y sin `active` no se le ofrece tarjeta | a medias: `syncConnectStatus` lo consulta al VOLVER del alta (`/admin/connect/return`); si Stripe aprueba después, nadie se entera |
+| `checkout.session.completed` | el cobro no se marca pagado | a medias: el fallback del recibo, **sólo si la clienta vuelve** a la página tras pagar. Si cierra la pestaña, queda cobrado y sin registrar |
+| `charge.dispute.created` | la disputa no avisa ni prepara su paquete de evidencia | **ninguna** |
+| `payment_intent.payment_failed` | el intento fallido no se apunta | ninguna |
+
+**Mercado Pago:** todo aviso se descarta en silencio. La ruta contesta `200`, así que Mercado Pago
+no reintenta, y el cobro queda **pagado y sin registrar siempre**, no a veces.
+
+En los dos casos el mecanismo es correcto y **no se relaja**: sin secreto no se puede verificar la
+firma, y aceptar sin verificar sería dejar que cualquiera invente un «pagado».
+
+### 5 · Cómo se comprueba después de ponerlas
+
+1. Repetir la sonda: `/webhooks/stripe-connect` tiene que pasar de `500` a `400`. **Eso prueba que
+   hay una variable, no que sea la correcta.**
+2. Lo que prueba que es la correcta: mandar un evento de prueba desde el panel de Stripe al
+   endpoint de Connect y ver un `200`. Con el secreto de otro endpoint da `400`.
+3. Mercado Pago: su simulador de notificaciones, y que en el log NO salga
+   «`MP_WEBHOOK_SECRET` no configurado» ni «Firma inválida». Desde fuera no hay otra forma.
+
+### 6 · De paso: a las dos listas del fundador les faltaba un evento
+
+`docs/PENDIENTES_FUNDADOR.md` y `docs/DEMO_READY_CHECKLIST_FUNDADOR.md` le dicen al fundador con
+qué eventos dar de alta el endpoint de Connect, y nombraban **tres**. El código atiende **cuatro**:
+faltaba `charge.dispute.created` (en el código desde el 6-jul, `0cc87b28f`). Stripe sólo entrega los
+eventos suscritos, así que siguiendo la lista una disputa en una cuenta conectada no habría llegado
+nunca, con el secreto bien puesto. Corregidas las dos en esta rama. Ningún test ata esas listas al
+código: es lectura contra `connectWebhook.routes.ts`, hecha hoy.
+
+### 7 · Lo que no se ha medido
+
+- Si `MP_WEBHOOK_SECRET` falta hoy (apartado 1). Ni si Mercado Pago está configurado en producción.
+- Si el endpoint de Connect existe en el panel de Stripe: vive en Stripe.
+- «Desde cuándo sale el aviso» (el ③ de arriba): sigue sin medirse, está en los logs de Railway.
+- Ningún evento firmado: esta sesión no tiene ni debe tener ningún secreto.
+
+### 8 · Ficheros de esta sección
+
+| fichero | qué |
+|---|---|
+| `docs/master/evidencias/scrum678/sonda-produccion-678b.mjs` | la sonda del apartado 2 (códigos: 0 está · 1 falta · 2 no he podido mirar) |
+| `docs/PENDIENTES_FUNDADOR.md` · `docs/DEMO_READY_CHECKLIST_FUNDADOR.md` | el evento que faltaba (apartado 6) |
+| `docs/master/SCRUM-678.md` | esta sección |
+| `src/` | **sin tocar** |

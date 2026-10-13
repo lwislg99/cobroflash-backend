@@ -154,14 +154,41 @@ export function esVigente(q: RevisionDePresupuesto, grupo: readonly RevisionDePr
 // no leído de un acta). Lo de abajo es lo que hacía falta para enchufarlo a una pantalla.
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
+// ── SCRUM-1150 · UNA CAUSA, UN CÓDIGO ────────────────────────────────────────────────────────
+//
+// Las dos clases de abajo se lanzan desde CUATRO sitios, y la ruta los contestaba todos con un solo
+// código y con el `message` de la excepción. Un código con varias causas no admite una frase cierta
+// para la persona: la que explica una miente sobre las otras. Por eso cada sitio que lanza dice
+// AQUÍ cuál es (`motivo`), y eso es lo que viaja; el `message` es el diagnóstico para quien lo
+// arregla y se queda en el log.
+//
+//   revisiones_dos_vigentes    dos filas del grupo con la MISMA revisión más alta. Son los datos:
+//                              reintentar no lo arregla.
+//   revision_no_posterior      el número calculado para la nueva no supera al de la que se revisa.
+//                              Es un fallo NUESTRO al calcularlo, no de los datos.
+//   revisiones_sin_leer        el grupo llega sin ninguna revisión legible: no se ha leído nada.
+//   revisiones_sin_la_propia   el censo de un presupuesto no lo incluye a él mismo.
+//
+// Los nombres de clase NO cambian: su test (`scrum655b`) y la ruta deciden por `e.name`. El tipo del
+// `motivo` es cerrado para que lanzar sin decir la causa no compile. Lo censa
+// `tests/scrum1150-un-codigo-por-causa.test.mjs`.
+type MotivoDeRevisionesAmbiguas = 'revisiones_dos_vigentes' | 'revision_no_posterior';
+type MotivoDeCensoCiego = 'revisiones_sin_leer' | 'revisiones_sin_la_propia';
+
 /** Dos filas del mismo grupo se disputan el «vigente». No hay respuesta, y no se elige una. */
 export class RevisionesAmbiguas extends Error {
-  constructor(mensaje: string) { super(mensaje); this.name = 'RevisionesAmbiguas'; }
+  constructor(public readonly motivo: MotivoDeRevisionesAmbiguas, mensaje: string) {
+    super(mensaje);
+    this.name = 'RevisionesAmbiguas';
+  }
 }
 
 /** El censo de revisiones no se ve ni a sí mismo. */
 export class CensoDeRevisionesCiego extends Error {
-  constructor(mensaje: string) { super(mensaje); this.name = 'CensoDeRevisionesCiego'; }
+  constructor(public readonly motivo: MotivoDeCensoCiego, mensaje: string) {
+    super(mensaje);
+    this.name = 'CensoDeRevisionesCiego';
+  }
 }
 
 /**
@@ -181,6 +208,7 @@ export function vigenteUnicaDe<T extends RevisionDePresupuesto>(revisiones: read
   const legibles = src.filter((q) => Number.isFinite(Number(q?.revision)));
   if (legibles.length === 0) {
     throw new CensoDeRevisionesCiego(
+      'revisiones_sin_leer',
       'CENSO CIEGO · se ha pedido la revisión vigente de un grupo SIN revisiones legibles. Todo '
       + 'presupuesto es al menos su propia revisión, así que un grupo vacío aquí no significa «no '
       + 'tiene revisiones»: significa que no se ha leído nada — grupo mal armado, `quoteNumber` '
@@ -192,6 +220,7 @@ export function vigenteUnicaDe<T extends RevisionDePresupuesto>(revisiones: read
   if (empatadas.length > 1) {
     const quienes = empatadas.map((q) => `${numeroConRevision(q)} (revisión ${q.revision})`).join(' y ');
     throw new RevisionesAmbiguas(
+      'revisiones_dos_vigentes',
       `DOS VIGENTES A LA VEZ: ${quienes}.\n`
       + '  «Cuál está vigente» con dos respuestas no es una respuesta. Elegir una de las dos aquí\n'
       + '  sería peor que fallar: la pantalla enseñaría una y el PDF podría enseñar la otra, y nadie\n'
@@ -221,6 +250,7 @@ export function revisionesDe<T extends RevisionDePresupuesto>(
   );
   if (!seVeASiMisma) {
     throw new CensoDeRevisionesCiego(
+      'revisiones_sin_la_propia',
       `CENSO CIEGO · el censo de revisiones de ${numeroConRevision(propia)} devuelve `
       + `${src.length} y NO SE INCLUYE A SÍ MISMO. Todo presupuesto es al menos su propia revisión, `
       + 'así que esto no es «no tiene otras versiones»: es que el grupo no se ha leído — agrupado '
@@ -377,6 +407,7 @@ export function nuevaRevisionDe(
 ): Record<string, unknown> {
   if (!Number.isInteger(siguienteRevision) || siguienteRevision <= Number(anterior?.revision)) {
     throw new RevisionesAmbiguas(
+      'revision_no_posterior',
       `LA REVISIÓN NUEVA (${siguienteRevision}) NO ES POSTERIOR A LA QUE SE REVISA `
       + `(${anterior?.revision}). Crearla así pondría dos filas con la misma revisión en el mismo `
       + 'grupo, y entonces «cuál está vigente» deja de tener respuesta. El número sale del grupo '

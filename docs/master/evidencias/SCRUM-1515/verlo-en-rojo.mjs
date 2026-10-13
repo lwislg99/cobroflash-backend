@@ -1,11 +1,11 @@
-// SCRUM-1515 · ¿El test de las dos puertas SABE caer? Seis cambios, de uno en uno, sobre `dist/`
+// SCRUM-1515 · ¿El test de las dos puertas SABE caer? Quince cambios, de uno en uno, sobre `dist/`
 // (que no está en git: `src/` no se toca), y el test corrido con cada uno en el banco local.
 //
 // Uso:  node docs/master/evidencias/SCRUM-1515/verlo-en-rojo.mjs <carpeta node_modules con @electric-sql> <esquema.sql>
 // Antes: `tsc --noCheck` y el test en verde sin tocar nada (es la primera fila, «sin cambio»).
 // Cada fila dice si el cambio ENTRÓ (el fichero cambió de contenido), con qué código salió el
 // test y la primera línea 🔴. Al acabar cada una se restaura el fichero y se comprueba por sha.
-// Sale 0 si la base sale 0 y los seis cambios hacen caer el test; 1 si alguno no; 2 si algo no se
+// Sale 0 si la base sale 0 y los quince cambios hacen caer el test; 1 si alguno no; 2 si algo no se
 // pudo aplicar o restaurar.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -32,8 +32,32 @@ const CAMBIOS = [
   { nombre: 'el guion escribe la fila A MANO en vez de llamar a registerMerchant', fichero: GUION,
     de: 'await (0, auth_service_1.registerMerchant)(campos);',
     a: 'await prisma_1.prisma.merchant.create({ data: { name: campos.name, email: campos.email, country: campos.country, plan: "trial", status: "active" } });' },
-  { nombre: 'la RUTA deja de recortar `source` a 200 (las copias divergen por el otro lado)', fichero: RUTA,
-    de: "String(req.body?.source || '').trim().slice(0, 200)", a: "String(req.body?.source || '').trim()" },
+  // ── Paso ②: la ruta cerrada, y lo que cerrarla NO puede romper ──────────────────────────────
+  { nombre: 'la RUTA vuelve a dar de alta (el manejador de antes del cierre, entero)', fichero: RUTA,
+    de: "router.post('/register', (_req, res) => {",
+    a: "router.post('/register', async (req, res) => { const name = String(req.body?.name || '').trim(); const email = String(req.body?.email || '').toLowerCase().trim(); if (name && email.includes('@')) { await require('../../domain/auth.service').registerMerchant({ name, email, country: String(req.body?.country || 'ES').trim() }); return res.json({ ok: true }); }" },
+  { nombre: 'la RUTA cerrada cambia UNA letra de la frase firmada', fichero: RUTA,
+    de: 'escríbenos y te damos acceso.', a: 'escribenos y te damos acceso.' },
+  { nombre: 'la RUTA cerrada contesta 400 en vez de 409', fichero: RUTA,
+    de: "return res.status(409).json({\n        error: 'registration_closed',", a: "return res.status(400).json({\n        error: 'registration_closed'," },
+  { nombre: 'la RUTA cerrada no manda `message` (la página pintaría el código crudo)', fichero: RUTA,
+    de: "        message: 'Ahora mismo", a: "        mensaje: 'Ahora mismo" },
+  { nombre: 'la RUTA cerrada le manda un enlace a quien ya es merchant (lo que hacía registerMerchant)', fichero: RUTA,
+    de: "router.post('/register', (_req, res) => {",
+    a: "router.post('/register', async (_req, res) => { await (0, auth_service_1.requestMagicLink)(String(_req.body?.email || '').toLowerCase().trim()).catch(() => {});" },
+  { nombre: 'la RUTA cerrada recupera el limitador (a la sexta, otra frase)', fichero: RUTA,
+    de: "router.post('/register', (_req, res) => {",
+    a: "router.post('/register', (0, rateLimit_1.rateLimit)({ scope: 'register', max: 5, windowMs: 15 * 60_000, withEmail: true }), (_req, res) => {" },
+  { nombre: 'el cierre se lleva por delante el LOGIN (POST /auth/login también se niega)', fichero: RUTA,
+    de: "router.post('/login', loginLimiter, async (req, res) => {",
+    a: "router.post('/login', loginLimiter, async (req, res) => { return res.status(409).json({ error: 'registration_closed' });" },
+  { nombre: 'el LOGIN contesta 200 pero ya no manda el enlace', fichero: RUTA,
+    de: 'await (0, auth_service_1.requestMagicLink)(email);', a: '' },
+  { nombre: 'el cierre se lleva por delante la VERIFICACIÓN (GET /auth/verify no deja entrar)', fichero: RUTA,
+    de: "if (!sessionToken)\n            return res.redirect('/login.html?error=link_expired');",
+    a: "if (true)\n            return res.redirect('/login.html?error=link_expired');" },
+  { nombre: 'la VERIFICACIÓN redirige al panel sin dar sesión', fichero: RUTA,
+    de: '(0, authMiddleware_1.setCookie)(res, sessionToken);', a: '' },
 ];
 
 let mal = 0;
