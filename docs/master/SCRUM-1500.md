@@ -1514,3 +1514,50 @@ Jira, no aquí: escribirlo aquí sería otro commit y otra tanda.
 | las 769 candidatas, dichas como suelo | ⑤ |
 | explicar el 5 → 13 del censo de skills | ⑥ (y ahora 14) |
 | leer el obligatorio de #2345 por nombre | comentario de entrega de Jira |
+
+### ⑧ El obligatorio de #2345, leído por nombre: COLGADA (ni verde ni rojo)
+
+Lo escribe una tercera sesión J5 (`jv-j5`, relevo del relevo; 13-oct-2026, 04:42Z de GitHub). La
+anterior dejó ①-⑦ comiteado y EMPUJADO (`a6c65b4f7`, punta del remoto comprobada: 0 commits sin
+empujar, árbol limpio) y se paró sin leer el obligatorio ni entregar. El párrafo de ⑦ dice que el
+veredicto iría sólo a Jira «porque escribirlo aquí sería otro commit y otra tanda». Va aquí porque
+**la otra tanda hace falta de todos modos**: la que hay no tiene veredicto, y sin una nueva el PR se
+queda bloqueado para siempre. No he tocado ①-⑦: los he vuelto a medir (`en-sitio.cjs`, salida 0,
+3.342 bytes; las dos copias, 9.567 B y el mismo sha256 `e769d14082178946…`; la 88, la del ancestro).
+
+**El job «build + tests (con banco desechable)»** del run 38327072252, sobre `a6c65b4f7`, acabado a
+las 00:45:07Z: GitHub lo da por `failure`, y **no es un rojo**:
+
+| qué | este job | uno completo (el de `main` @`dfda86d65`) |
+| --- | --- | --- |
+| tamaño del log (bajado con `--allow-escape-sequences`) | 992.258 B | 1.799.846 B |
+| «TANDA SIN VEREDICTO» | 1 | 0 |
+| línea `ℹ tests N` | no hay | `ℹ tests 11180` · pass 11087 · fail 0 · skipped 93 |
+| casos pasados, la marca anclada al inicio del caso | 5.933 | 11.114 |
+| casos caídos, la cruz anclada al inicio del caso | 0 | 0 |
+| la cruz contada a secas | 2 (el nombre de un caso de SCRUM-1336 que pasa, y un aviso de `por-que-cayo`) | — |
+| control de cero (una cadena que no existe) / positivo (grupos de paso) | 0 / 32 | 0 / 32 |
+
+A las 00:29:49Z llegó el último caso de `scrum446`, y a las 00:44:59Z el vigilante de SCRUM-858 cortó:
+«910 s sin escribir nada», salida 3. Los tres pasos de detrás (`por-que-cayo`, su integridad y el
+suelo de la tanda) dicen «NO SUPE MIRAR»: el TAP no tiene resumen. **Lo que se puede afirmar: 5.933
+casos pasaron y 0 cayeron ANTES del silencio. De los otros ~5.100 no se sabe nada**, y entre ellos
+están `scrum854`, `scrum811c` y `scrum939b`, que son los que leen este registro y las skills.
+
+El mismo lector, sobre un log que sí es rojo (run 38327792266, de otra rama): 2 casos caídos con la
+cruz anclada y `ℹ fail 2`. Lo cuento porque un lector que sólo se ha probado contra verdes no se
+sabe si ve.
+
+**Qué fichero no terminó:** el vigilante dice que es el siguiente a `scrum446`, y en los dos logs
+completos que he bajado lo que sigue es `scrum447`. En este árbol, `scrum447`, `scrum448` y
+`scrum451` juntos: 25 de 25 en 5,3 s. **La causa del silencio NO está medida.** Que sea cosa del
+corredor y no de esta rama es una suposición mía y no la doy por buena: lo único que dirá algo es la
+tanda nueva. Si vuelve a pararse en el mismo sitio, es de la rama y hay que mirarlo.
+
+`main` al escribir esto: `dfda86d65b8de9594b59b277fd38ea0ac3eda93a` (39 ficheros desde el ancestro
+común; UNO en común con esta rama, `docs/legal/AUDITLOG_FISCAL_CONTRATO.md`: `main` le cambia la
+línea 130 y esta rama la 300, la 301 y la 777, las dos sin mover líneas; GitHub da el PR por
+`MERGEABLE`).
+
+**Lo que NO he hecho:** relanzar el job (`gh run rerun` conserva la base vieja), cerrar y reabrir el
+PR (desarma el auto-merge, que no se toca), ni correr la tanda completa en este árbol.
