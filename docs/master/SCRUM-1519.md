@@ -270,3 +270,98 @@ Uno de los sembrados cruza sólo por `quoteId` con cliente propio: si el detecto
 
 Salidas guardadas: `salida-escritores.txt` (0), `salida-escritores-rojo-doble-sordo.txt` (1) y
 `salida-escritores-ciego-sin-siembra.txt` (2), en `docs/master/evidencias/SCRUM-1519b/`.
+
+
+# SCRUM-1519c · Los tres creadores de presupuesto que estaban leídos: ninguno ORIGINA un presupuesto cruzado, y uno lo COPIA
+
+**Medido contra:** `origin/main` = `dfda86d65b8de9594b59b277fd38ea0ac3eda93a` · 2026-10-13T04:45:06Z (hora de GitHub)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1519c/medir-los-creadores.mjs`
+
+13-oct-2026 · **J1** (sesión `jv-j1`, relevo; equipo de Javier), por encargo del orquestador (`cobroflash-backend-2e`).
+[Escrito por J1. El encargo es el mensaje de reparto del orquestador más SCRUM-1519 leído entero en Jira con sus tres comentarios, c.19109, c.19148 y c.19156.]
+
+**Es MEDICIÓN. No se ha tocado `src/`, ni `prisma/`, ni ningún test.** El hook de arranque dijo «SIN IDENTIDAD» (SCRUM-1498); se siguió, como manda la ficha del 13-oct.
+
+## El veredicto, en una frase
+
+Con sesión del comercio 21 y recursos del 22, **ninguno de los tres creadores deja un presupuesto cruzado
+pidiéndoselo por la puerta (0 de 3 intentos; 0 de 7 contando el plan y la fusión)**; con el dato ya cruzado, **dos de los tres se niegan y uno
+lo copia**: la revisión (`quoteAdmin.ts:593`) fabrica otro presupuesto cruzado, 2 de 2.
+
+Lo que esa frase no dice: la cadena **no tiene origen medido, pero sí dos eslabones que propagan** —
+la aceptación (c.19156) y la revisión (esto). «Cerrada» a secas sería falso; «nadie la abre por la
+puerta y dos la propagan si ya está abierta» es lo medido.
+
+## 1 · Los creadores, por efecto
+
+El veredicto sale del almacén: tras cada caso se recorren todas las filas de Trabajo, de Presupuesto y
+de Plan de mantenimiento y se compara su comercio con el de aquello a lo que apuntan.
+
+| creador | sitio | control propio | P · se le pide lo de B | D · el dato ya viene cruzado |
+|---|---|---|---|---|
+| A · la revisión | `quoteAdmin.ts:593` | crea, limpio | revisar el presupuesto de B: 404 por la ruta, lanza a pelo; no escribe (2 de 2) | **CRUZA, 2 de 2** (por la ruta y a pelo): la revisión nace con el cliente de B |
+| B · el adicional del albarán | `albaranes.routes.ts:1641` | emite la factura y crea el adicional, limpio | convertir el parte de B: 404, no escribe | **no escribe**: 500, y la consola dice `cliente_no_encontrado_al_congelar:702` |
+| C · el ciclo de mantenimiento | `maintenance.service.ts:413` | crea, limpio | no aplica (es un cron, no hay sesión) | **no escribe**: `plan 832: customer_gone` |
+| aguas arriba del C · crear el plan | `maintenance.routes.ts:60` | crea el plan, limpio | 404 con el cliente de B; 404 con el presupuesto de B | no aplica |
+| de paso · fusionar clientes (mueve `Quote.customerId`) | `fusionClientes.ts:177` | mueve el presupuesto, limpio | 409 y no escribe, 2 de 2 | no aplica |
+
+- **A copia.** Lee el presupuesto atado al comercio y hereda todos sus campos; del cliente no pregunta.
+- **B no llega.** Lo que lo para no es una comprobación del adicional: es `congelarCliente`, que ata el
+  cliente al comercio para congelar la ficha de la factura, **antes** de emitir. Ni adicional ni factura
+  (lo segundo, por orden de las líneas leído; la foto no mira la tabla de facturas).
+- **C comprueba de verdad**: compara el comercio del cliente con el del plan y se salta el plan.
+- Quién escribe `Quote.customerId`, por el censo de TEXTO de SCRUM-1519b (no AST): cuatro `create` y un
+  `updateMany`. Con esta pasada están los cinco ejecutados.
+
+## 2 · Los controles
+
+| control | sale |
+|---|---|
+| par sembrado: 5 creadores de mentira, 10 casos (2 cruzan por la puerta, 1 por herencia, 2 filtran) | 10 de 10, salida 0 |
+| `--doble-sordo` (el almacén ata toda consulta al comercio 21) | salida 1: caen los 2 de la puerta; **el resumen de los reales sale idéntico al bueno** |
+| `--detector-sordo` (el detector no mira las filas de Presupuesto) | salida 1: caen los 3 que cruzan; **la revisión sale «escribe limpio, escribe limpio»** |
+| `--sin-siembra` | salida 2, CIEGO |
+| control propio de cada creador real: con recursos del 21 tiene que crear | 5 de 5 (los tres creadores, con presupuesto nuevo en el almacén) |
+
+El doble sordo no toca el eje de la herencia: quien hereda no consulta nada de B, así que sigue cruzando
+con el almacén sordo. Por eso hay un segundo rojo. Y la pareja `hereda/copia` · `hereda/comprueba` es la
+que separa «copia» de «comprueba», que es la pregunta de esta pasada.
+
+## 3 · Lo que no se ha hecho
+
+- Nada por HTTP ni contra Postgres. Manejadores y funciones reales de `dist/` (`tsc --noCheck`) con Prisma
+  doblado por un almacén en memoria; el middleware de autenticación no se ejecuta, **las claves foráneas
+  no existen en el almacén** y las consultas en crudo devuelven vacío.
+- Para llegar al adicional y al mantenimiento, la fila EN MEMORIA del comercio 21 lleva encendidos
+  `INVOICING_ES_ENABLED` y `MAINTENANCE_ENABLED`. Con ellos apagados, que es como están por defecto, B sale
+  409 y C se salta el plan antes de mirar nada: no medido aquí, leído.
+- B emite una factura dentro del almacén (camino de emisión EJECUTADO en memoria, no modificado). 0 envíos, 0 intentos de red.
+- Un caso por forma: un presupuesto cruzado, un Trabajo cruzado, un plan cruzado. No se agotan variantes
+  (revisión de una versión no vigente, plan con `quoteId`, parte sin presupuesto).
+- Escrituras de `Quote` en crudo: 0 con una expresión de texto (23 líneas de SQL en crudo en `src/`, vistas
+  con otra expresión: el positivo no es del mismo patrón). `connect:` anidado: 0 en todo `src/`, sin positivo.
+  **Los dos son ceros que no distinguen.**
+- Los dos llamadores de `ensureJobForQuote` que c.19156 dejó leídos (`quotes.routes.ts:519`,
+  `whatsappIncoming.routes.ts:493`): siguen LEÍDOS.
+- Que una fila de cliente cambie de comercio, y las 143 consultas sólo-por-id: sin tocar.
+- **No leí** los comentarios de SCRUM-1514 que cita c.19148, ni `dos-equipos.md`. Sí leí enteras la ficha
+  del 13-oct, `00-normas-comunes.md` (986 líneas, desde el árbol, que estaba en `origin/main`), este ticket
+  con sus tres comentarios y el instrumento de SCRUM-1519b.
+- Tanda completa local no corrida.
+
+## 4 · Mis errores de hoy
+
+- Di por bueno el rojo del doble sordo sin mirar qué eje ensordecía: de los tres sembrados que cruzan sólo
+  cayeron dos. El tercero, el de la herencia, seguía cruzando. Añadí `--detector-sordo` y lo vi en rojo.
+- La salida guardada se regeneró después de ese cambio; es igual a la anterior salvo la huella de la factura
+  de prueba, que cambia en cada corrida.
+
+## Cómo se repite
+
+    node <checkout compartido>/node_modules/typescript/bin/tsc --noCheck -p .
+    node docs/master/evidencias/SCRUM-1519c/medir-los-creadores.mjs . [--doble-sordo] [--detector-sordo] [--sin-siembra]
+
+Salidas guardadas en `docs/master/evidencias/SCRUM-1519c/`: `salida-creadores.txt` (0),
+`salida-creadores-rojo-doble-sordo.txt` (1), `salida-creadores-rojo-detector-sordo.txt` (1) y
+`salida-creadores-ciego-sin-siembra.txt` (2).
