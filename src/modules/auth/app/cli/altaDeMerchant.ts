@@ -6,19 +6,23 @@
 //
 // Uso (desde la raíz, con `dist/` construido y la base en el entorno del proceso):
 //   node dist/modules/auth/app/cli/altaDeMerchant.js --name "Fontanería X" --email x@y.es
-//        [--country ES] [--ref CODIGO] [--source "origen/medio/campaña"]
+//        --provincia "Las Palmas" [--country ES] [--ref CODIGO] [--source "origen/medio/campaña"]
 //
-// Sale: 0 creado · 2 argumentos que la ruta también rechaza (o mal escritos) · 3 ese correo ya es
+// SCRUM-1522e: `--provincia` es OBLIGATORIA con país España (el que va por defecto). De ella sale la
+// zona con la que nace el comercio (domain/zonaDeLaProvincia.ts); sin ella no se crea nada. Con
+// otro país no se admite: no hay tabla de ningún otro, y ese comercio nace sin zona, como hasta hoy.
+//
+// Sale: 0 creado · 2 argumentos que la ruta también rechazaba, mal escritos, o sin provincia · 3 ese correo ya es
 // un merchant (no se llama a nada) · 4 ese correo es de un operario · 1 cualquier otro fallo.
 // Lo que dice va a la consola de quien lo lanza, en una línea de JSON. No lo lee ningún usuario.
 import '../../../../core/config/loadEnv'; // PRIMERO, como en src/index.ts
 import { prisma } from '../../../../core/db/prisma';
 import { registerMerchant } from '../../domain/auth.service';
 
-const ARGUMENTOS = ['name', 'email', 'country', 'ref', 'source'] as const;
+const ARGUMENTOS = ['name', 'email', 'country', 'ref', 'source', 'provincia'] as const;
 type Argumento = (typeof ARGUMENTOS)[number];
 
-/** `--clave valor` → { clave: valor }. `null` si hay algo que no es uno de los cinco. */
+/** `--clave valor` → { clave: valor }. `null` si hay algo que no es uno de los admitidos. */
 function leerArgumentos(argv: string[]): Partial<Record<Argumento, string>> | null {
   const crudo: Partial<Record<Argumento, string>> = {};
   for (let i = 0; i < argv.length; i += 2) {
@@ -44,7 +48,10 @@ function camposDeAlta(crudo: Partial<Record<Argumento, string>>) {
   const country = String(crudo.country || 'ES').trim();
   const ref = String(crudo.ref || '').trim();
   const source = String(crudo.source || '').trim().slice(0, 200);
-  return { name, email, country, ref: ref || undefined, source: source || undefined };
+  // SCRUM-1522e: la provincia NO viene de la ruta (nunca la pidió). Sólo se le quitan los espacios:
+  // quién es cada una lo decide `zonaDeAlta`, dentro de `registerMerchant`.
+  const provincia = String(crudo.provincia || '').trim();
+  return { name, email, country, ref: ref || undefined, source: source || undefined, provincia: provincia || undefined };
 }
 
 const decir = (algo: Record<string, unknown>) => console.log(JSON.stringify(algo));
@@ -78,7 +85,15 @@ async function principal(): Promise<void> {
   try {
     await registerMerchant(campos);
   } catch (err) {
-    if ((err as { code?: string })?.code !== 'email_belongs_to_team') throw err;
+    const codigo = (err as { code?: string })?.code;
+    // SCRUM-1522e: sin provincia (o con una que no está en la tabla) `registerMerchant` no crea nada.
+    // Se dice cuáles admite (las trae el propio rechazo): lo lee quien da de alta, en su consola.
+    if (codigo === 'provincia_required' || codigo === 'provincia_desconocida') {
+      decir({ resultado: 'rechazado', error: codigo, provincias: (err as { provincias?: string[] }).provincias });
+      process.exitCode = 2;
+      return;
+    }
+    if (codigo !== 'email_belongs_to_team') throw err;
     decir({ resultado: 'rechazado', error: 'email_belongs_to_team' });
     process.exitCode = 4;
     return;
@@ -94,7 +109,7 @@ async function principal(): Promise<void> {
       .findUnique({
         where: { email: campos.email },
         select: {
-          id: true, name: true, email: true, country: true, status: true, plan: true, planExpiresAt: true,
+          id: true, name: true, email: true, country: true, timezone: true, status: true, plan: true, planExpiresAt: true,
           referralCode: true, referredBy: true, acquisitionSource: true, lifecycleEmailsSent: true, createdAt: true,
         },
       })
