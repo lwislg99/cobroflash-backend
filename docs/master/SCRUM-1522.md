@@ -580,3 +580,145 @@ de memoria y NO la he cotejado con ninguna fuente oficial: es parte de lo que se
 | 5 · carriles | §0.2 y §1 |
 | visto en yaqu.app | NO HECHO → no hay nada construido que ver |
 
+
+# SCRUM-1522e · La zona en el origen: el alta guarda la zona de la provincia
+
+**Medido contra:** `origin/main` = `97618f169b3b4f71e384600b3d0720d7e502fea9` · 2026-10-13T11:22:00Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum1522e-la-zona-en-el-origen.test.mjs`
+
+J3 (sesión `jv-j3h`, equipo de Javier). Encargo: que ningún comercio vuelva a nacer con la zona a NULL.
+Permiso: las decisiones del fundador de Jira `c.19297` (provincia en vez de ciudad; los comercios que ya
+existen no se tocan). Medición de partida: `c.19288` y `c.19294`. No se ha tocado `prisma/schema.prisma`,
+ninguna pantalla, ningún texto que lea un usuario ni ninguna base.
+
+## Qué se ha cambiado
+
+| fichero | qué |
+| --- | --- |
+| `src/modules/auth/domain/zonaDeLaProvincia.ts` (nuevo) | la tabla de 52 nombres → zona, y `zonaDeAlta(país, provincia)`, el único sitio que decide con qué zona nace un comercio |
+| `src/modules/auth/domain/auth.service.ts` | `registerMerchant` admite `provincia`, resuelve la zona ANTES de crear y la escribe en el `create` |
+| `src/modules/auth/app/cli/altaDeMerchant.ts` | la consola admite `--provincia`, dice la zona guardada y, si `registerMerchant` rechaza por la provincia, sale 2 con el código y la lista que admite |
+| `tests/scrum1522e-la-zona-en-el-origen.test.mjs` y `tests/_scrum1522e-doble-de-base.cjs` (nuevos) | el test y su base en memoria |
+| `tests/scrum1515-nuestra-puerta-de-alta.test.mjs` | ver «Tocado fuera del encargo» |
+
+La regla, entera:
+
+- **España** (el país por defecto; se compara sin espacios ni mayúsculas): la zona es la de su provincia.
+  Sin provincia lanza `provincia_required`; con una que no está en la tabla, `provincia_desconocida`. No
+  se crea nada.
+- **Otro país:** nace con la zona a NULL, como hasta hoy. Con una provincia delante lanza
+  `provincia_desconocida`.
+- Las Palmas y Santa Cruz de Tenerife guardan `Atlantic/Canary`; las otras 50, Ceuta y Melilla
+  incluidas, `Europe/Madrid`. El nombre se busca sin tildes, sin mayúsculas y sin espacios de más.
+
+## Lo que he decidido yo y no estaba escrito en `c.19297`
+
+Son cuatro, y cualquiera se puede deshacer en una línea:
+
+1. **La provincia es OBLIGATORIA para España, y lo exige `registerMerchant`, no sólo la consola.** Con la
+   provincia opcional el alta de siempre (nombre y correo) seguiría creando a NULL, que es el defecto. Y
+   puesta sólo en la consola, el día que se reabra `POST /auth/register` volvería a nacer sin zona.
+   Lo recomendaba `c.19294` §5.4; el fundador no lo contestó con esas palabras.
+2. **Fuera de España se sigue naciendo a NULL.** No hay tabla de ningún otro país y nadie ha decidido
+   ninguna (`c.19294` §5.5). El encargo decía «todo comercio nuevo»: **para otro país, el origen sigue
+   abierto.** No he medido de qué país son los 14 comercios.
+3. **Una provincia con otro país se rechaza**, en vez de ignorarla: un argumento que no hace nada se lee
+   igual que uno que sí.
+4. **Dos códigos nuevos**, `provincia_required` y `provincia_desconocida`. Salen en la consola del equipo,
+   en una línea de JSON. No los lee ningún usuario y no hay ruta que los devuelva.
+
+## 🔴 La grafía de los 52 nombres NO está verificada
+
+Están escritos de memoria. En el repositorio no hay ninguna lista con la que cotejarlos (`c.19294` §2: seis
+provincias buscadas, 0 ficheros cada una) y no he traído ninguna de fuera. Lo que sí está comprobado, por
+el test: son 52, no hay dos que se llamen igual sin tildes, y con la hora de Canarias van esas dos y sólo
+esas dos. **Que cada nombre sea el oficial, y que no falte una provincia a cambio de otra repetida con
+otro nombre, no lo comprueba nada.** Para las que tienen dos nombres en uso he puesto uno solo (A Coruña,
+Álava, Bizkaia, Gipuzkoa, Girona, Lleida, Ourense, Illes Balears, Alicante, Castellón, Valencia): quien
+teclee «Vizcaya» o «Gerona» recibe `provincia_desconocida` y la lista. Hoy los teclea el equipo; el día
+que salgan en una pantalla son texto de usuario y se firman (regla 39).
+
+## El control, visto en rojo antes de construir
+
+El test se escribió antes que el arreglo y se corrió contra el `dist/` del código de hoy:
+
+| pasada | resultado | salida |
+| --- | --- | --- |
+| el código de hoy | **caen 5 de 5** | `docs/master/evidencias/SCRUM-1522e/salida-1-codigo-de-hoy-ROJO.txt` |
+| con el arreglo | pasan 5 de 5 | `salida-2-con-el-arreglo-VERDE.txt` |
+| el arreglo sin la línea `timezone,` del `create` | **caen 3 de 5** | `salida-3-sin-la-linea-que-guarda-ROJO.txt` |
+
+Lo que dice el rojo de hoy, por caso: la consola crea un comercio de España con sólo nombre y correo, y lo
+que pide crear no lleva `timezone` (sale 0 y dice `creado`); `registerMerchant` no rechaza; `--provincia`
+no es un argumento. El primero de los cinco cae porque la tabla no existía: ese rojo sólo dice «no está
+construido» (y ese caso se reescribió después: ver «Errores propios»). El caso «otro país nace sin zona» pasa su primera mitad antes y después: es el control que no
+tiene que moverse.
+
+En la tercera pasada pasan los dos casos que no dependen de esa línea (la tabla, y el de otro país), y caen
+los tres que sí. Esa línea es la que hace el trabajo. La mutación se aplicó sobre `dist/` y se comprobó que
+el fichero había cambiado antes de correr; después se restauró y se comprobó byte a byte.
+
+**Cómo mide:** la consola real, lanzada como proceso aparte con su entorno escrito a mano, y delante una
+base en memoria que apunta qué se le pide a `merchant.create`. Si el proceso no deja su apunte, el caso
+dice CIEGO en vez de «0 altas». **No es Postgres.**
+
+## En Postgres: `scrum1515`, ejecutado en un banco en memoria
+
+`tests/scrum1515-nuestra-puerta-de-alta.test.mjs` da de alta por la consola contra una base de verdad. En
+local se ejecutó con `docs/master/evidencias/SCRUM-1515/banco-local.mjs` (PGlite instalado en una carpeta
+temporal de fuera del repositorio; el esquema, de `prisma migrate diff --from-empty`, 33 tablas):
+
+| pasada | resultado | salida |
+| --- | --- | --- |
+| con el arreglo | pasa: A nace con `Atlantic/Canary`, B (otro país) con NULL; 118 campos por valor contra la foto | `salida-4-scrum1515-en-banco-VERDE.txt` |
+| sin la línea `timezone,` | **cae**: «A se dio de alta en Las Palmas y su fila no guarda la hora de Canarias» | `salida-5-scrum1515-en-banco-sin-la-linea-ROJO.txt` |
+
+PGlite no es el Postgres 16 del CI: allí corre por primera vez con este cambio.
+
+## Tocado fuera del encargo, y por qué
+
+**`tests/scrum1515-nuestra-puerta-de-alta.test.mjs` (carril J3, mío).** Ese test da de alta a un comercio
+de España con sólo nombre y correo y compara su fila con una foto congelada, donde `timezone` es NULL. Con
+el arreglo ese alta ya no crea, así que el test caía por construcción. Lo cambiado:
+
+- el comercio A lleva `--provincia` (Las Palmas, escrita sucia);
+- `timezone` sale de la comparación por valor **sólo en A** y pasa a comprobarse por su regla: la foto
+  guarda NULL, A guarda `Atlantic/Canary` y B sigue en NULL. Antes se comparaban 119 campos por valor;
+  ahora 118;
+- un caso más: el alta de antes (España, sin provincia) sale 2 con `provincia_required` y no deja fila.
+
+No es relajar un control: el test afirmaba «nace igual que nacía», y la decisión del fundador es
+precisamente que deje de nacer igual en ese campo. Se dice aquí porque nadie lo pidió con esas palabras.
+
+## Lo que NO he medido
+
+- **Ninguna base de verdad**, ni producción ni staging. Ningún alta real.
+- Nada en yaqu.app: no hay pantalla ni ruta nueva que ver. La consola no se ha lanzado contra ningún
+  entorno.
+- **La tanda completa en local** (el arnés la mata). Lo corrido en local está en la entrega de Jira, con
+  su recuento.
+- La versión de node y de ICU de producción: que `Atlantic/Canary` exista allí lo dio por medido `c.19294`
+  sólo en esta máquina.
+- Los comercios que ya están a NULL: no se tocan (decisión del fundador).
+
+## Errores propios
+
+- Exporté la tabla para que la consola dijera qué provincias admite, y `scrum411` cayó: la consola no
+  cuenta como llamador vivo y el export era un huérfano sin declarar. No lo declaré en la lista del guard
+  (regla 41): la tabla dejó de exportarse y los nombres viajan dentro del propio rechazo. El caso de la
+  tabla pasó a preguntarle a `zonaDeAlta` por cada nombre; las pasadas 2, 3 y 4 son posteriores a ese cambio;
+  la 1 y la 5, anteriores.
+- Escribí un rango de caracteres con la forma `\u…` en el test y aterrizó en disco como los caracteres
+  mismos (A22). Lo vi al contar; lo cambié por una clase que no necesita escape.
+- El parche con el que lo quité lo pasé por la consola y se comió una barra invertida y un punto. Lo cazó
+  releer la línea después de escribirla. Las dos trampas estaban en la ficha del día.
+
+| encargo | dónde se ve |
+| --- | --- |
+| la tabla de 52 provincias → zona | `src/modules/auth/domain/zonaDeLaProvincia.ts` · caso «la tabla tiene las 52 provincias» |
+| el alta guarda la zona: el `create` | `src/modules/auth/domain/auth.service.ts` · caso «el origen mismo» |
+| el alta guarda la zona: la consola | `src/modules/auth/app/cli/altaDeMerchant.ts` · casos «un alta de España guarda la zona» y «sin provincia no se crea» |
+| visto en rojo primero | `docs/master/evidencias/SCRUM-1522e/salida-1-codigo-de-hoy-ROJO.txt` |
+| la grafía oficial de los nombres | NO HECHO → sin verificar; se firma cuando haya pantalla |
+| visto en yaqu.app | NO HECHO → no hay nada que ver en pantalla; la consola es del equipo |
