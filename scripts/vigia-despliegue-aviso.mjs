@@ -19,15 +19,33 @@
 // FORMA de la decisión: qué Issue elige, qué cuerpo compone y qué falla cerrado.
 
 /**
- * El cuerpo del aviso, EXACTO al que componía el `printf` del YAML — misma prosa, mismo orden.
- * @param {{renglon:string, runUrl:string, marca:string}} e
+ * Lo que va DELANTE del aviso cuando la ejecución es un SIMULACRO (SCRUM-1542): producción no
+ * está congelada, se ha fabricado una a propósito para comprobar que este canal suena. Va lo
+ * primero porque es lo primero que tiene que leer quien reciba el correo.
  */
-export function componerCuerpo({ renglon, runUrl, marca }) {
+export const AVISO_DE_SIMULACRO = '🧪 **SIMULACRO — PRODUCCIÓN NO ESTÁ CONGELADA.** Esta ejecución '
+  + 'fabricó a propósito una producción parada para comprobar que este aviso suena de verdad '
+  + '(SCRUM-1542). Lo de abajo es el aviso tal cual saldría; la lectura que cita NO es de '
+  + '`yaqu.app`. No hay que hacer nada.\n\n';
+
+/** El título del Issue. El del simulacro lo dice delante: es lo que se lee en el asunto del correo. */
+export const TITULO_DEL_AVISO = '🔴 Producción congelada — el vigía del despliegue está en rojo';
+export const TITULO_DEL_SIMULACRO = '🧪 SIMULACRO (no es real) · ' + TITULO_DEL_AVISO;
+
+/**
+ * El cuerpo del aviso, EXACTO al que componía el `printf` del YAML — misma prosa, mismo orden.
+ * @param {{renglon:string, runUrl:string, marca:string, simulacro?:boolean}} e
+ */
+export function componerCuerpo({ renglon, runUrl, marca, simulacro = false }) {
   const r = renglon || '(sin constancia: no se pudo leer .vigia/constancias.log)';
-  return 'El vigía del despliegue (`vigia-despliegue.yml`) ha cantado: producción no está al día '
+  return (simulacro ? AVISO_DE_SIMULACRO : '')
+    + 'El vigía del despliegue (`vigia-despliegue.yml`) ha cantado: producción no está al día '
     + 'con `main` y no se está cerrando solo.\n\n'
-    + 'Antes esto tardó 8 días en verse (SCRUM-1122) porque el único aviso era el job en rojo y '
-    + 'nadie miraba Actions.\n\n'
+    // SCRUM-1542 · aquí decía «tardó 8 días en verse». Eran las «193 h» del log de entonces, y
+    // esa cifra era la fecha de escritura de un commit viejo, no el tiempo parado: medido, fueron
+    // 24,5 h sin un despliegue bueno (24-sep 16:12Z → 25-sep 16:40Z). El motivo no cambia.
+    + 'El 24/25-sep-2026 producción pasó 24,5 h sin un despliegue bueno (SCRUM-1122) y no se '
+    + 'enteró nadie, porque el único aviso era el job en rojo y nadie miraba Actions.\n\n'
     + 'Primer sitio donde mirar: los logs de arranque en Railway. Si dicen `[schema] DERIVA`, '
     + 'falta un `ALTER` en producción — mirar `docs/sql/` en `main` por SQL pendiente.\n\n'
     + `\`\`\`\n${r}\n\`\`\`\n\n`
@@ -61,16 +79,21 @@ export function elegirIssueExistente(issues, marca) {
  * FALLA CERRADO: sin `marca` no hay forma de deduplicar, así que no se decide nada (igual que el
  * resto de guards de esta casa tratan «no sé» y «no hay» como respuestas opuestas).
  *
- * @param {{issues:object[], marca:string, renglon:string, runUrl:string}} e
- * @returns {{accion:'crear'|'comentar', numero?:number, cuerpo:string}|{accion:'no-se-sabe', motivo:string}}
+ * 🔴 SCRUM-1542 · EL SIMULACRO PASA POR AQUÍ MISMO. No tiene una decisión aparte: misma marca,
+ * misma dedupe, mismo cuerpo con un párrafo delante y otro título. Un simulacro con su propio
+ * camino comprobaría su propio camino, no el del aviso.
+ *
+ * @param {{issues:object[], marca:string, renglon:string, runUrl:string, simulacro?:boolean}} e
+ * @returns {{accion:'crear'|'comentar', numero?:number, cuerpo:string, titulo:string}|{accion:'no-se-sabe', motivo:string}}
  */
-export function decidirAviso({ issues, marca, renglon, runUrl } = {}) {
+export function decidirAviso({ issues, marca, renglon, runUrl, simulacro = false } = {}) {
   if (!marca) return { accion: 'no-se-sabe', motivo: 'sin marca no se puede deduplicar: no se decide nada' };
-  const cuerpo = componerCuerpo({ renglon, runUrl, marca });
+  const cuerpo = componerCuerpo({ renglon, runUrl, marca, simulacro });
+  const titulo = simulacro ? TITULO_DEL_SIMULACRO : TITULO_DEL_AVISO;
   const existente = elegirIssueExistente(issues, marca);
   return existente !== null
-    ? { accion: 'comentar', numero: existente, cuerpo }
-    : { accion: 'crear', cuerpo };
+    ? { accion: 'comentar', numero: existente, cuerpo, titulo }
+    : { accion: 'crear', cuerpo, titulo };
 }
 
 // ── CLI ────────────────────────────────────────────────────────────────────────────────────────
@@ -98,6 +121,9 @@ if (esCli) {
   }
   const r = decidirAviso({
     issues, marca: process.env.VIGIA_MARCA, renglon: process.env.VIGIA_RENGLON, runUrl: process.env.VIGIA_RUN_URL,
+    // Sólo el literal `true`, que es lo que da `${{ inputs.simulacro }}`: cualquier otra cosa
+    // (vacío en el programado, `false`) es un aviso de verdad.
+    simulacro: process.env.VIGIA_SIMULACRO === 'true',
   });
   console.log(JSON.stringify(r));
   process.exit(r.accion === 'no-se-sabe' ? 1 : 0);
