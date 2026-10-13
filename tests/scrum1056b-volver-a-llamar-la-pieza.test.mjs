@@ -34,6 +34,7 @@ const FIRMADOS = {
   cambiar: 'Cambiar', // B9
   marcaHoy: 'Llamar hoy', // B10
   noGuardado: 'No se ha podido guardar la llamada. Inténtalo otra vez.', // B12
+  noMarcado: 'No se ha podido marcar como hecha. Inténtalo otra vez.', // B15 (c.19453): el fallo de «Hecho»
   guardar: 'Guardar', // B13
   cancelar: 'Cancelar', // B14
 };
@@ -246,8 +247,32 @@ test('SCRUM-1056 · «Hecho»: llama una vez y deja el bloque sin fecha; si fall
   boton(f.contenedor, FIRMADOS.hecho).click();
   await tic();
   assert.deepEqual(textos(f.contenedor, 'P'), [FIRMADOS.hoy, 'Llamar por la tarde'], 'no se marcó: la llamada sigue ahí');
-  assert.deepEqual(avisos(f.contenedor).map((a) => a.textContent), [FIRMADOS.noGuardado]);
+  // SCRUM-1056c · el aviso dice lo que se pulsó. Hasta c.19453 aquí salía el de GUARDAR, que nombra
+  // una acción que el profesional no acaba de hacer.
+  assert.deepEqual(avisos(f.contenedor).map((a) => a.textContent), [FIRMADOS.noMarcado], '🔴 el fallo de «Hecho» no sale con su texto');
   assert.deepEqual(botones(f.contenedor).map((b) => b.disabled), [false, false]);
+  // Y al segundo fallo sigue habiendo UNO: el bloque se repinta entero, no se apilan.
+  boton(f.contenedor, FIRMADOS.hecho).click();
+  await tic();
+  assert.deepEqual(avisos(f.contenedor).map((a) => a.textContent), [FIRMADOS.noMarcado], 'un solo aviso tras dos fallos de «Hecho»');
+});
+
+test('SCRUM-1056c · cada fallo con su texto: el de guardar no sale al marcar, ni el de marcar al guardar', async () => {
+  assert.notEqual(FIRMADOS.noMarcado, FIRMADOS.noGuardado, 'si los dos literales fueran el mismo, lo de abajo no distinguiría nada');
+  // «Cambiar» sobre una llamada puesta, y falla guardar: el aviso es el de GUARDAR.
+  const g = montada({ dia: '2026-10-13', nota: '', estado: 'hoy' }, { guardar: () => Promise.reject(new Error('500')), hecho: () => Promise.reject(new Error('500')) });
+  boton(g.contenedor, FIRMADOS.cambiar).click();
+  boton(g.contenedor, FIRMADOS.guardar).click();
+  await tic();
+  assert.deepEqual(avisos(g.contenedor).map((a) => a.textContent), [FIRMADOS.noGuardado], '🔴 el fallo de guardar ya no dice «guardar la llamada»');
+  // Se cancela, y ahora falla «Hecho» en ESE MISMO bloque: sale el de marcar y el de guardar se ha ido.
+  boton(g.contenedor, FIRMADOS.cancelar).click();
+  assert.deepEqual(avisos(g.contenedor), [], 'cancelar no arrastra el aviso del formulario');
+  boton(g.contenedor, FIRMADOS.hecho).click();
+  await tic();
+  assert.deepEqual(avisos(g.contenedor).map((a) => a.textContent), [FIRMADOS.noMarcado]);
+  assert.equal(g.visto.guardar.length, 1);
+  assert.equal(g.visto.hecho, 1);
 });
 
 test('SCRUM-1056 · 🔴 la pieza no conoce rutas ni mira el reloj (por AST, no por texto)', () => {
