@@ -1,0 +1,69 @@
+HEAD = fa4641f045f1109a750c3f5841397c7447247d84
+arbol limpio antes = True
+===== base =====
+numstat: 
+EXIT=0
+FORCE_COLOR fuera = True
+LIBRO_PG_URL puesta = True
+POBLACION = 2 fichero(s)
+# tests 6
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+EXIT=0
+===== m0-fichero-de-main =====
+numstat: 25	85	src/modules/system/quoteAdmin.ts
+EXIT=0
+FORCE_COLOR fuera = True
+LIBRO_PG_URL puesta = True
+POBLACION = 2 fichero(s)
+# tests 6
+# pass 1
+# fail 5
+# cancelled 0
+# skipped 0
+not ok 1 - SCRUM-1150c · POSTGRES · 🔴 diez pares de «Crear revisión» A LA VEZ: ninguno deja dos filas con la misma revisión
+not ok 2 - SCRUM-1150c · POSTGRES · 🔴 «Crear revisión» ESPERA al cerrojo de su negocio, y lee el grupo DESPUÉS de conseguirlo
+not ok 3 - SCRUM-1150c · el cerrojo es de transacción, propio y por negocio, y el grupo se lee y se escribe DETRÁS de él
+not ok 4 - SCRUM-1150c · 🔴 si el otro confirmó la `.1` mientras se esperaba el cerrojo, ésta es la `.2` y hereda de la `.1`
+not ok 5 - SCRUM-1150c · si el presupuesto desaparece mientras se esperaba, se rechaza con su código y no se escribe
+EXIT=1
+MUTANTE m1 puesto en D:\MILLONARIO\cobroFlash\cobroflash-backend\.claude\worktrees\s1-1150c\src\modules\system\quoteAdmin.ts
+===== m1-sin-releer-detras =====
+numstat: 2	2	src/modules/system/quoteAdmin.ts
+EXIT=0
+FORCE_COLOR fuera = True
+LIBRO_PG_URL puesta = True
+POBLACION = 2 fichero(s)
+# tests 6
+# pass 1
+# fail 5
+# cancelled 0
+# skipped 0
+not ok 1 - SCRUM-1150c · POSTGRES · 🔴 diez pares de «Crear revisión» A LA VEZ: ninguno deja dos filas con la misma revisión
+not ok 2 - SCRUM-1150c · POSTGRES · 🔴 «Crear revisión» ESPERA al cerrojo de su negocio, y lee el grupo DESPUÉS de conseguirlo
+not ok 3 - SCRUM-1150c · el cerrojo es de transacción, propio y por negocio, y el grupo se lee y se escribe DETRÁS de él
+not ok 4 - SCRUM-1150c · 🔴 si el otro confirmó la `.1` mientras se esperaba el cerrojo, ésta es la `.2` y hereda de la `.1`
+not ok 5 - SCRUM-1150c · si el presupuesto desaparece mientras se esperaba, se rechaza con su código y no se escribe
+EXIT=1
+MUTANTE m2 puesto en D:\MILLONARIO\cobroFlash\cobroflash-backend\.claude\worktrees\s1-1150c\src\modules\system\quoteAdmin.ts
+===== m2-sin-cerrojo =====
+numstat: 0	1	src/modules/system/quoteAdmin.ts
+EXIT=0
+FORCE_COLOR fuera = True
+LIBRO_PG_URL puesta = True
+POBLACION = 2 fichero(s)
+# tests 6
+# pass 1
+# fail 5
+# cancelled 0
+# skipped 0
+not ok 1 - SCRUM-1150c · POSTGRES · 🔴 diez pares de «Crear revisión» A LA VEZ: ninguno deja dos filas con la misma revisión
+not ok 2 - SCRUM-1150c · POSTGRES · 🔴 «Crear revisión» ESPERA al cerrojo de su negocio, y lee el grupo DESPUÉS de conseguirlo
+not ok 3 - SCRUM-1150c · el cerrojo es de transacción, propio y por negocio, y el grupo se lee y se escribe DETRÁS de él
+not ok 4 - SCRUM-1150c · 🔴 si el otro confirmó la `.1` mientras se esperaba el cerrojo, ésta es la `.2` y hereda de la `.1`
+not ok 5 - SCRUM-1150c · si el presupuesto desaparece mientras se esperaba, se rechaza con su código y no se escribe
+EXIT=1
+EXIT=0
+arbol limpio despues = True

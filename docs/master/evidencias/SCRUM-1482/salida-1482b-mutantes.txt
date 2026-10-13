@@ -1,0 +1,74 @@
+POBLACION=7 mutantes · 4 ficheros de test · árbol c8d7f3c1b42b03c2f23af8316c42e29a19f53a34
+BASE sin mutar · tests 27 · pasan 27 · fallan 0
+
+M1 · el router y la ficha de ANTES (lo que hay en producción el 13-oct)
+   git diff --numstat: 1	1	public/dashboard/js/app.js · 1	1	public/dashboard/js/quotesDetailView.js
+   tests 27 · pasan 23 · fallan 4 → MUERE
+     ✗ SCRUM-1482 · título de la vista · mientras carga dice la palabra del documento, sola: ni el id de la tabla ni una almohadilla
+     ✗ SCRUM-1482 · título de la vista · la palabra sale del LOCALE, no está escrita en el router
+     ✗ SCRUM-1482 · título de la vista · si la carga falla se queda en la palabra sola, sin el id de la tabla
+     ✗ SCRUM-832 · el router escribe el título que la ficha sabe CORREGIR
+
+M2 · router nuevo con la ficha de antes (la V1 de c.18498: el título se queda sin número)
+   git diff --numstat: 1	1	public/dashboard/js/quotesDetailView.js
+   tests 27 · pasan 19 · fallan 8 → MUERE
+     ✗ SCRUM-1482 · ficha · CONTROL: cargada, la cabecera y el título de la vista llevan el número de siempre
+     ✗ SCRUM-1487 · 🔴 en un país de «cotización», la ficha cargada dice «Cotización \#N» en la cabecera y en el título de la vista
+     ✗ SCRUM-1487 · CONTROL: en España la ficha cargada sigue diciendo «Presupuesto \#N», igual que antes
+     ✗ SCRUM-1495 · abre A y luego B, B carga y A llega TARDE: el título de la vista dice el número de B
+     ✗ SCRUM-1495 · abre A y luego B, y A llega tarde ANTES que B: el título no enseña el número de A ni un momento
+     ✗ SCRUM-1495 · CONTROL: sin cruce, la ficha cargada sigue corrigiendo el título y la cabecera a su número
+     ✗ SCRUM-1495 · CONTROL: volver a abrir LA MISMA ficha mientras carga no la deja sin número
+     ✗ SCRUM-832 · el router escribe el título que la ficha sabe CORREGIR
+
+M3 · router de antes con la ficha nueva
+   git diff --numstat: 1	1	public/dashboard/js/app.js
+   tests 27 · pasan 16 · fallan 11 → MUERE
+     ✗ SCRUM-1482 · ficha · CONTROL: cargada, la cabecera y el título de la vista llevan el número de siempre
+     ✗ SCRUM-1482 · título de la vista · mientras carga dice la palabra del documento, sola: ni el id de la tabla ni una almohadilla
+     ✗ SCRUM-1482 · título de la vista · la palabra sale del LOCALE, no está escrita en el router
+     ✗ SCRUM-1482 · título de la vista · si la carga falla se queda en la palabra sola, sin el id de la tabla
+     ✗ SCRUM-1487 · 🔴 en un país de «cotización», la ficha cargada dice «Cotización \#N» en la cabecera y en el título de la vista
+     ✗ SCRUM-1487 · CONTROL: en España la ficha cargada sigue diciendo «Presupuesto \#N», igual que antes
+     ✗ SCRUM-1495 · abre A y luego B, B carga y A llega TARDE: el título de la vista dice el número de B
+     ✗ SCRUM-1495 · abre A y luego B, y A llega tarde ANTES que B: el título no enseña el número de A ni un momento
+     ✗ SCRUM-1495 · CONTROL: sin cruce, la ficha cargada sigue corrigiendo el título y la cabecera a su número
+     ✗ SCRUM-1495 · CONTROL: volver a abrir LA MISMA ficha mientras carga no la deja sin número
+     ✗ SCRUM-832 · el router escribe el título que la ficha sabe CORREGIR
+
+M4 · el router escribe la palabra A MANO en vez de leerla del locale
+   git diff --numstat: 1	1	public/dashboard/js/app.js
+   tests 27 · pasan 24 · fallan 3 → MUERE
+     ✗ SCRUM-1482 · título de la vista · la palabra sale del LOCALE, no está escrita en el router
+     ✗ SCRUM-1487 · 🔴 en un país de «cotización», la ficha cargada dice «Cotización \#N» en la cabecera y en el título de la vista
+     ✗ SCRUM-832 · el router escribe el título que la ficha sabe CORREGIR
+
+M5 · la ficha corrige el título sin mirar si sigue MONTADA
+   git diff --numstat: 1	1	public/dashboard/js/quotesDetailView.js
+   tests 27 · pasan 25 · fallan 2 → MUERE
+     ✗ SCRUM-1495 · abre A y luego B, y A llega tarde ANTES que B: el título no enseña el número de A ni un momento
+     ✗ SCRUM-1495 · abre A y luego B, la carga de B FALLA y A llega tarde: el título no lleva nada de A
+
+M6 · la ficha montada corrige CUALQUIER título, sin mirar que sea el provisional
+   git diff --numstat: 1	1	public/dashboard/js/quotesDetailView.js
+   tests 27 · pasan 26 · fallan 1 → MUERE
+     ✗ SCRUM-1487 · CONTROL: si el título que hay no es el de una ficha, la ficha no lo toca (en ningún país)
+
+M7 · el router escribe la palabra y una almohadilla, sin el id
+   git diff --numstat: 1	1	public/dashboard/js/app.js
+   tests 27 · pasan 16 · fallan 11 → MUERE
+     ✗ SCRUM-1482 · ficha · CONTROL: cargada, la cabecera y el título de la vista llevan el número de siempre
+     ✗ SCRUM-1482 · título de la vista · mientras carga dice la palabra del documento, sola: ni el id de la tabla ni una almohadilla
+     ✗ SCRUM-1482 · título de la vista · la palabra sale del LOCALE, no está escrita en el router
+     ✗ SCRUM-1482 · título de la vista · si la carga falla se queda en la palabra sola, sin el id de la tabla
+     ✗ SCRUM-1487 · 🔴 en un país de «cotización», la ficha cargada dice «Cotización \#N» en la cabecera y en el título de la vista
+     ✗ SCRUM-1487 · CONTROL: en España la ficha cargada sigue diciendo «Presupuesto \#N», igual que antes
+     ✗ SCRUM-1495 · abre A y luego B, B carga y A llega TARDE: el título de la vista dice el número de B
+     ✗ SCRUM-1495 · abre A y luego B, y A llega tarde ANTES que B: el título no enseña el número de A ni un momento
+     ✗ SCRUM-1495 · CONTROL: sin cruce, la ficha cargada sigue corrigiendo el título y la cabecera a su número
+     ✗ SCRUM-1495 · CONTROL: volver a abrir LA MISMA ficha mientras carga no la deja sin número
+     ✗ SCRUM-832 · el router escribe el título que la ficha sabe CORREGIR
+
+árbol después: limpio (git status vacío en public/ y tests/)
+RECUENTO · 7 mutantes · 7 mueren · 0 viven · 0 ciegos
+EXIT=0

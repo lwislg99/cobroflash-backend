@@ -7,14 +7,20 @@
 //
 // Se EJECUTA la ficha en el banco con el locale de cada caso; no se lee el fuente.
 //
-// LO QUE NO ENTRA: el título PROVISIONAL de la vista mientras carga lo escribe el router (`app.js`),
-// con la palabra a mano y el id de la ruta. Es de SCRUM-1482 y lo fija el caso 7 de `scrum832`.
-// Aquí se parte de ese título tal como el router lo deja hoy.
+// LO QUE NO ENTRA: el título PROVISIONAL de la vista mientras carga lo escribe el router (`app.js`).
+// Es de SCRUM-1482. Aquí se parte de ese título tal como el router lo deja.
+//
+// 13-oct-2026 (SCRUM-1482b) · «tal como el router lo deja» era una cadena copiada a mano
+// («Presupuesto #» + el id de la ruta). El router ha dejado de escribir eso (ahora, la palabra del
+// locale sola) y la copia se habría quedado midiendo una ficha que ya no recibe ese título. Desde
+// hoy el título de partida sale de EVALUAR la expresión del router. Lo que estos casos exigen de
+// la ficha no cambia.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
+import { tituloProvisionalDelRouter } from './_titulo-provisional-del-router.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ID = 205;
@@ -65,11 +71,11 @@ async function fichaCargada(locale, tituloAlAbrir) {
   return { h2: todos(v.contenedor).filter((n) => n.tagName === 'H2').map((n) => n.textContent), titulo: titulo.textContent };
 }
 
-// Lo que el router escribe hoy al abrir la ficha, en cualquier país (`app.js`, `case 'quotes-detail'`).
-const PROVISIONAL = 'Presupuesto #' + ID;
+// Lo que el router escribe al abrir la ficha con ese locale (`app.js`, `case 'quotes-detail'`).
+const provisional = (locale) => tituloProvisionalDelRouter(RAIZ, { quoteId: ID, locale });
 
 test('SCRUM-1487 · 🔴 en un país de «cotización», la ficha cargada dice «Cotización #N» en la cabecera y en el título de la vista', async () => {
-  const f = await fichaCargada(LOCALE_MX, PROVISIONAL);
+  const f = await fichaCargada(LOCALE_MX, provisional(LOCALE_MX));
   assert.deepEqual(f.h2, ['Cotización #' + NUMERO],
     '🔴 con un locale que dice «Cotización», la cabecera de la ficha cargada dice otra cosa: la palabra está escrita a mano.');
   assert.equal(f.titulo, 'Cotización #' + NUMERO,
@@ -78,7 +84,7 @@ test('SCRUM-1487 · 🔴 en un país de «cotización», la ficha cargada dice �
 });
 
 test('SCRUM-1487 · CONTROL: en España la ficha cargada sigue diciendo «Presupuesto #N», igual que antes', async () => {
-  const f = await fichaCargada(LOCALE_ES, PROVISIONAL);
+  const f = await fichaCargada(LOCALE_ES, provisional(LOCALE_ES));
   assert.deepEqual(f.h2, ['Presupuesto #' + NUMERO]);
   assert.equal(f.titulo, 'Presupuesto #' + NUMERO);
 });
