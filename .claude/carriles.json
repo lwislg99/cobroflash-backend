@@ -1,7 +1,7 @@
 {
-  "_": "GENERADO por scripts/carriles.mjs desde docs/equipo/dos-equipos.md (sha256 4a3e62de27aa). NO se edita a mano: se cambia la tabla y se regenera.",
+  "_": "GENERADO por scripts/carriles.mjs desde docs/equipo/dos-equipos.md (sha256 d0f3cc651890). NO se edita a mano: se cambia la tabla y se regenera.",
   "fuente": "docs/equipo/dos-equipos.md",
-  "sha": "4a3e62de27aa",
+  "sha": "d0f3cc651890",
   "areas": {
     "S0": "consultoría y auditoría: «¿esto existe hoy?», filtro de las afirmaciones de SU orquestador, dueña de `00-normas-comunes.md`, `dos-equipos.md` y `trampas-del-entorno.md`",
     "S1": "servidor: importes, presupuestos, gastos, mantenimientos, y el servidor de todo lo que no sea de J1-J3",
@@ -443,6 +443,13 @@
       "tipo": "puesto",
       "linea": 184,
       "dueno": "**S4**"
+    },
+    {
+      "patron": "scripts/rellenar-anio-de-la-serie.mjs",
+      "puesto": "S1",
+      "tipo": "puesto",
+      "linea": 180,
+      "dueno": "**S1**"
     },
     {
       "patron": "scripts/sesiones-que-no-volvieron.mjs",
