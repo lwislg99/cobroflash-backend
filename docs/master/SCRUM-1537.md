@@ -117,3 +117,11 @@ nadie lo reclama». Es un instrumento que corre en la tanda obligatoria y no tie
   medio; rehecho con la herramienta de edición. La causa exacta no la comprobé.
 - La primera pasada de mutaciones dio el código de salida pero los recuentos vacíos (mi lector no
   casaba con la salida); no la di por buena y la repetí hasta tener base y población.
+
+### Lo que pasó en #2380 mientras tanto
+
+A las 12:54:39Z `claude[bot]` empujó a la rama de #2380 el commit
+`5b46be141fb56fbd4f133eff3e98cdee432383ce`, que arma la misma cita de fichero y línea en ejecución
+para que el censo de scrum710b no la vea. Eso deja el guard en verde sin dejar de citar por posición.
+Ese commit está mergeado dentro de esta rama (para que no choque si #2380 llegara a entrar) y en el
+test se queda la versión de ②: la escritura que saca el instrumento, comprobada por lo que es.
