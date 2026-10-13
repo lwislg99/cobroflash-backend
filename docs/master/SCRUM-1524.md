@@ -310,3 +310,117 @@ el documento entero (nota fechada, como los inventarios) y es del fundador.
 | Para el grupo 1, el arreglo: cuántas, cuánto cuesta, cuántos PR | «Grupo 1: el arreglo que propongo» |
 | Leer una muestra de las cambiadas contra su frase | 18 de 55 · `muestra-14-cambiadas-contrato.txt` |
 | Positivo que tiene que aparecer y cero derivado | control sembrado del censo (6 de 6; CIEGO sin rotas) · control 205 y cero sembrado en `fuera.mjs` |
+
+## SCRUM-1524c · Tramo 3 (jv-j5g, 13-oct-2026): las 25 citas vivas, arregladas, y la nota fechada del contrato del auditlog
+
+**Medido contra:** `origin/main` = `6f35b50901fac64347d862255ec755a036ca1f0d` · 2026-10-13T11:00:33Z (hora de GitHub)
+
+A9: aviso → A10 «El sitio al que un censo dice que se fue una línea es el del texto que había, no el de lo que la frase afirma: si la cita nació mal, su destino también. (SCRUM-1524)» — no se pudo comprobar: decidir qué afirma una frase es leerla; `leer.mjs` lo comprueba para estas 25 con el texto esperado escrito a mano, y no corre en CI
+
+**ES CONSTRUIR, con permiso del fundador:** SCRUM-1524 c.19292 (las 25 citas del grupo 1 y la nota fechada).
+Carril J5, a mano. Tres ficheros de `docs/legal/`, una línea en A10 y este registro. Nada en `src/`, ni en
+`scrum525d`, ni en su congelado. Instrumentos y salidas: `docs/master/evidencias/SCRUM-1524c/`.
+
+### Lo primero: cuatro de las «cambiar el número y nada más» no iban donde decía el censo
+
+El tramo 2 clasificó 18 citas como «cambiar el número, y nada más», con el destino que da el censo. **En
+cuatro de las cinco de `PREGUNTAS_ASESOR.md` ese destino era otro sitio.** El censo busca dónde está hoy
+el texto que había en la línea citada el día que la cita entró. Las citas de la sección 21 (los avisos del
+libro de facturas) entraron **apuntando ocho líneas más arriba de lo que su frase describe**: la que dice
+«`descuadre` se dispara en la 231» apuntaba ese día a la línea de `importesIlegibles`. Seguir al censo
+habría dejado cuatro citas con el número nuevo y apuntando igual de mal.
+
+| Línea del documento | Decía | El censo daba | Lo que la frase describe está en |
+|---|---|---|---|
+| 693 | `:231` | 238 | **246** (`if (libro.miradas > 0) avisar(COPY.descuadre…`) |
+| 693 | `:229` | 236 | **244** (`if (asientos.length === 0)`) |
+| 724 | `:223-225` | 230 | **238-240** (el bloque de `importesIlegibles`) |
+| 786 | `:332-334` | 339 | **346-349** (el bloque de `albaranesNoSellados`) |
+
+El destino bueno sale del bloque de código que el propio documento pone debajo de cada cita. Las dos que
+el tramo 2 dejó como «hay que leer» (745 y 764) son el mismo defecto: quedan en la 241 y la 242. La de la
+704 sí iba donde decía el censo (60-62). En la auditoría, las 13 de «sólo el número» coinciden con el censo.
+
+### Lo hecho
+
+| | Auditoría | Preguntas | Total |
+|---|---|---|---|
+| Citas con el número cambiado | 16 | 7 | **23** |
+| Sin tocar (apuntan bien: 223 y 461) | 1 | 1 | **2** |
+| Líneas de documento tocadas | 15 | 6 | **21** |
+
+- **Tres llevan además la fecha al lado, en su misma línea**, porque el número vive dentro de una frase
+  fechada y esa frase no se reescribe (SCRUM-1521 c.19153): la 39 (ya contaba quién movió la línea; se le
+  añade que decía 563) y la 217 y la 234 (dicen «MEDIDO el 16-sep-2026» y «la 673 se quedó vacía»: la cita
+  pasa a la 930 y la nota dice que «la 674» y «la 673» del párrafo son las de aquel día).
+- **La nota fechada del contrato** va en la línea 2 de `AUDITLOG_FISCAL_CONTRATO.md`, que estaba en
+  blanco. Dice que el documento se deja como se escribió el 29-jul-2026, que su cabecera («Cero código»,
+  «Nada de esto está implementado») dejó de ser cierta **ese mismo día** y que sus coordenadas no se ponen
+  al día a propósito. Sus 42 números no se han tocado.
+  - **Desde cuándo, medido:** el contrato entró en `f4d1f0bc2` (29-jul, 13:39 +02:00) y `df8890e63`
+    (29-jul, 16:33 +02:00), que lo tiene por ancestro y está en `main`, cambió seis ficheros de `src/` con
+    el título «SCRUM-207: "si no consta, no se emite" deja de ser una intención».
+  - **NO medido, y la nota lo dice:** cuánto de lo que el contrato propone está construido hoy.
+
+### Antes de añadir líneas: quién cita estos tres ficheros por fichero:línea
+
+Medido con `git grep` sobre todo el árbol (positivo: una cita que existe hoy sale; cero: un nombre
+fabricado da 0):
+
+| Documento | Lo citan por línea (fuera de `docs/master`) | En `docs/master` |
+|---|---|---|
+| `PREGUNTAS_ASESOR.md` | 8 sitios: `src/…/libroRegistro.repo.ts`, `public/…/expensesView.js`, 2 tests y 3 documentos legales | 15 registros |
+| `AUDITLOG_FISCAL_CONTRATO.md` | 1 (un inventario, líneas 300 y 777) | 8 registros |
+| `AUDITORIA_CAMINO_EMISION.md` | 0 | 14 registros |
+
+**Decisión: no se añade ni se quita ninguna línea en ninguno de los tres.** Todo va dentro de líneas que
+ya existían, y la nota del contrato ocupa una línea que estaba vacía. `aplicar.mjs` se niega a escribir si
+el número de líneas cambia; `git diff --numstat` da 15/15, 6/6 y 1/1, y los tres siguen en 240, 1.410 y 800.
+
+### La política de privacidad
+
+Ninguna de las 25 cae en ella, y no se ha tocado ni una palabra. En `PREGUNTAS_ASESOR.md` «privacidad»
+aparece en las líneas 57, 63, 95, 1257 y 1316; las citas tocadas están entre la 693 y la 786. Los otros
+dos documentos no la nombran. ⚠️ En `docs/legal/` no he encontrado el texto de la política en sí: lo que
+hay son menciones a la publicada en `yaqu.app/privacidad`, y un documento sobre el tratamiento de datos
+que este tramo no abre.
+
+### Cómo se comprobó: leyendo, no con el censo
+
+`leer.mjs` pone cada cita junto a la línea a la que apunta en el árbol y exige que esa línea contenga un
+texto escrito a mano a partir de la frase (`tabla.mjs`).
+
+| Pasada | Resultado |
+|---|---|
+| Antes de aplicar (`salida-leer-ANTES.txt`) | 2 bien de 25, 23 rotas: las 23 porque el documento aún no llevaba la cita. Sale 1 |
+| Después (`salida-leer-DESPUES.txt`) | **25 bien de 25**, 0 rotas. Sale 0 |
+| Control positivo, sembrado | 2 citas rotas fabricadas (una línea más arriba; fichero que no existe): vistas 2 de 2 |
+| Cero derivado, sembrado | 1 cita buena fabricada: no la marca |
+| Sin las rotas (`--sin-rotas`) | dice CIEGO, no da ninguna cifra y sale 2 |
+
+Y leídas con los ojos las 25 de `salida-leer-DESPUES.txt`, una a una.
+
+### Lo que NO he hecho ni medido
+
+- **Las 34 intactas de la auditoría no se han releído** (ya leídas en el tramo 2).
+- **Cuatro coordenadas sueltas de la misma sección 21 siguen desfasadas y no se han tocado**: `:56-58`,
+  `:59`, `:60` y `:73`, que van sin nombre de fichero y por eso no están entre las 25 (el extractor no las
+  ve). Comprobada una: `:56-58` se refiere al texto de `avisoIlegibles`, que hoy está en 63-65. El permiso
+  cubre las 25; éstas se le dicen al orquestador.
+- Las seis coordenadas de `libroRegistro.ts` de esa sección (`:105`, `:107`, `:109`, `:120`, y sueltas
+  `:18-20` y `:118`): las cuatro con nombre de fichero no salen desfasadas en el censo, las dos sueltas el
+  censo no las ve, y **ninguna la he leído contra su frase**. Después de lo de arriba, «no desfasada» ahí
+  vale menos que en la auditoría.
+- Los grupos 2 y 3, salvo la nota del contrato. No se ha puesto testigo a ninguna cita: es decisión de un jefe.
+- La tanda completa de tests. Sí los guards que tocan estos ficheros, abajo.
+
+### Aceptación → dónde se ve
+
+| aceptación (del encargo y de c.19292) | dónde se ve |
+|---|---|
+| Arreglar las 25 citas vivas | `docs/legal/AUDITORIA_CAMINO_EMISION.md` y `docs/legal/PREGUNTAS_ASESOR.md` · `docs/master/evidencias/SCRUM-1524c/salida-leer-DESPUES.txt` |
+| Nota fechada al contrato, sin mover sus 42 números, sin decir cuánto hay hecho | `docs/legal/AUDITLOG_FISCAL_CONTRATO.md`, línea 2 |
+| Ni una palabra de la política de privacidad | apartado «La política de privacidad» |
+| Medir quién cita por línea antes de añadir líneas, y declarar la decisión | apartado «Antes de añadir líneas» |
+| Comprobar leyendo, no con el censo | `docs/master/evidencias/SCRUM-1524c/leer.mjs` y sus dos salidas |
+| Positivo que tiene que aparecer y cero derivado | controles sembrados de `leer.mjs`; CIEGO con `--sin-rotas` |
