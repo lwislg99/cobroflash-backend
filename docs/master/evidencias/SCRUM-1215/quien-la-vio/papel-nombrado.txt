@@ -1,0 +1,125 @@
+POBLACION: 173 hojas de grupo · foto de main f7a4c816ab2bf5c334a953dee60dc7b73718a0f8 · el oráculo da 75 · no da 74 que se miran aquí y 24 de los dos objetos ya abiertos en firmadas-en-jira.mjs · volcado de Jira: 14 ticket(s)
+CONTROL: «Crear albarán» en docs/master/SCRUM-303.md → true (tiene que ser true) · un inventado → false (tiene que ser false)
+
+══ albaranDetailView.js · ROTULOS_RAIL_ALBARAN · 2 hoja(s) · grupo 2026-08-06 · ticket del grupo SCRUM-302 · la letra nombra al fundador · papeles nombrados: 1 · tickets en Jira volcados: —
+  · fotos = «Fotos» → docs/master/SCRUM-302.md:448
+  · presupuesto = «Presupuesto» → docs/master/SCRUM-302.md:355
+
+══ buscadorDeClientes.js · TEXTOS · 1 hoja(s) · grupo 2026-09-08 · ticket del grupo SCRUM-713 · la letra nombra al asesor · papeles nombrados: 2 · tickets en Jira volcados: 713
+  · placeholder = «Buscar por nombre, teléfono, email o referencia…» → docs/master/SCRUM-713.md:19
+
+══ cobrosView.js · COBROS_COPY · 5 hoja(s) · grupo 2026-08-10 · ticket del grupo SCRUM-285 · la letra nombra al asesor · papeles nombrados: 1 · tickets en Jira volcados: 285
+  · errorCarga = «No hemos podido cargar los cobros. Vuelve a intentarlo.» → docs/master/SCRUM-285.md:248
+  · filtroSinMetodo = «Método no registrado» → docs/master/SCRUM-285.md:200
+  · filtroTodos = «Todos» → docs/master/SCRUM-285.md:245
+  · titulo = «Cobros» → docs/master/SCRUM-285.md:9 · Jira SCRUM-285 descripción · Jira SCRUM-285 c.12249 · Jira SCRUM-285 c.13033 · Jira SCRUM-285 c.13084
+  · vacioSinCobros = «Todavía no hay cobros registrados.» → docs/master/SCRUM-285.md:250
+
+══ cobrosView.js · COBROS_COPY · 1 hoja(s) · grupo 2026-08-12 · ticket del grupo SCRUM-481 · la letra nombra al asesor · papeles nombrados: 2 · tickets en Jira volcados: 285
+  · vacioPorFiltro = «Ningún cobro coincide con este filtro.» → docs/master/SCRUM-285.md:251
+
+══ cobrosView.js · COBROS_DESCONOCIDO · 2 hoja(s) · grupo 2026-08-12 · ticket del grupo SCRUM-506 · la letra nombra al asesor · papeles nombrados: 7 · tickets en Jira volcados: 506,285
+  · rotulo = «Método sin especificar» → docs/master/SCRUM-503.md:47 · docs/master/SCRUM-506.md:57 · Jira SCRUM-506 descripción
+  · valor = «desconocido» → docs/master/SCRUM-285.md:159 · docs/master/SCRUM-486.md:149 · docs/master/SCRUM-488.md:80 · docs/master/SCRUM-491.md:38 · docs/master/SCRUM-499.md:269 · y 3 más
+
+══ customerDetailView.js · FUSION_CLIENTE · 9 hoja(s) · grupo 2026-09-29 · ticket del grupo SCRUM-1126 · la letra orquestador por delegación · papeles nombrados: 16 · tickets en Jira volcados: —
+  · avisoNif = «Ojo: los NIF no coinciden ({…}). Comprueba que es el mismo cliente.» → docs/microcopy/2026-09-29-SCRUM-1126-fusion-de-clientes.md:42
+  · candidatos = «» → SIN TROZO BUSCABLE
+  · confirmacion = «Esta acción no se puede deshacer.{…}dejará de existir.» → docs/microcopy/2026-09-29-SCRUM-1126-fusion-de-clientes.md:43
+  · contados = «Contados:{…}presupuesto{…}presupuestos{…}trabajo{…}trabajos{…}nota{…}n» → docs/master/SCRUM-1126.md:61 · docs/microcopy/2026-09-29-SCRUM-1126-fusion-de-clientes.md:11 · docs/microcopy/2026-09-29-SCRUM-1126-fusion-singular-contados.md:11
+  · desaparece = «Desaparece:» → docs/microcopy/2026-09-29-SCRUM-1126-fusion-de-clientes.md:36
+  · etiquetas = «Etiquetas tras fusionar:» → docs/microcopy/2026-09-29-SCRUM-1126-fusion-de-clientes.md:40
+  · seQueda = «Se queda:{…}(sus datos no cambian)» → docs/microcopy/2026-09-29-SCRUM-1126-fusion-de-clientes.md:35
+  · sinEmpresa = «Las personas de contacto de{…}se quedan sin empresa.» → docs/master/SCRUM-1126.md:66 · docs/microcopy/2026-09-29-SCRUM-1126-fusion-de-clientes.md:39
+  · todoPasa = «Todo lo de{…}pasa a{…}: presupuestos, solicitudes de presupuesto, trab» → docs/microcopy/2026-09-30-SCRUM-1126-fusion-direcciones-de-obra.md:12
+
+══ customerDetailView.js · HISTORIAL_CLIENTE · 4 hoja(s) · grupo 2026-09-21 · ticket del grupo SCRUM-980 · la letra orquestador por delegación · papeles nombrados: 3 · tickets en Jira volcados: —
+  · ariaFotos = «1 foto{…}fotos» → docs/microcopy/2026-09-21-SCRUM-980-historial-del-cliente.md:34
+  · fechaProxima = «{…}es-ES{…}numeric{…}short{…}numeric{…}2-digit{…}2-digit» → SIN TROZO BUSCABLE
+  · TEXTOS.columnas = «Fecha{…}Trabajo{…}Estado{…}Documentos» → docs/master/SCRUM-980.md:65 · docs/microcopy/2026-09-21-SCRUM-980-historial-del-cliente.md:30
+  · tituloPestana = « ({…}+{…})» → SIN TROZO BUSCABLE
+
+══ estadoFirma.js · TEXTO_DESALOJO · 2 hoja(s) · grupo 2026-08-11 · ticket del grupo SCRUM-469 · la letra nombra al asesor · papeles nombrados: 3 · tickets en Jira volcados: 469
+  · cuerpo = «Revisa tus albaranes: los que no salgan firmados hay que volver a firm» → Jira SCRUM-469 descripción
+  · titulo = «El móvil ha borrado firmas sin subir» → Jira SCRUM-469 descripción
+
+══ estadoFirma.js · TEXTO_FIRMA · 3 hoja(s) · grupo 2026-08-10 · ticket del grupo SCRUM-356 · la letra nombra al asesor · papeles nombrados: 1 · tickets en Jira volcados: 356
+  · [FIRMA_A_SALVO] = «A salvo{…}Guardado en YaQu. Ya no depende de este móvil.» → Jira SCRUM-356 c.13092
+  · [FIRMA_SOLO_EN_ESTE_MOVIL] = «Solo en este móvil{…}La firma está guardada solo en este móvil. Si lo » → Jira SCRUM-356 c.13092
+  · [FIRMA_SUBIENDO] = «Subiendo…» → docs/master/SCRUM-356.md:175 · Jira SCRUM-356 c.13092
+
+══ estadoFirma.js · TEXTO_PRECARGA · 2 hoja(s) · grupo 2026-08-11 · ticket del grupo SCRUM-357 · la letra nombra al asesor · papeles nombrados: 3 · tickets en Jira volcados: 357,469
+  · nada = «No hay nada que llevarte: no tienes trabajos abiertos ni agendados.» → docs/master/SCRUM-357.md:50
+  · noSePudo = «No hemos podido preparar tus albaranes. Vuelve a entrar con cobertura.» → docs/master/SCRUM-357.md:51
+
+══ filtroClientes.js · TEXTOS_ETIQUETAS · 2 hoja(s) · grupo 2026-09-02 · ticket del grupo SCRUM-580 · la letra nombra al fundador · papeles nombrados: 2 · tickets en Jira volcados: —
+  · placeholder = «comunidad, administrador, urgencias…» → docs/master/SCRUM-580.md:255
+  · sinFiltro = «Todas las etiquetas» → docs/master/SCRUM-580.md:257
+
+══ filtroClientes.js · TEXTOS_SELECCION · 3 hoja(s) · grupo 2026-09-04 · ticket del grupo SCRUM-582 · la letra nombra al fundador · papeles nombrados: 2 · tickets en Jira volcados: —
+  · todos = «Seleccionar todos» → docs/master/SCRUM-582.md:112
+  · uno = «1 cliente seleccionado» → docs/master/SCRUM-582.md:113
+  · varios = «clientes seleccionados» → docs/master/SCRUM-582.md:114
+
+══ filtroClientes.js · VACIO_PESTANA · 2 hoja(s) · grupo 2026-09-02 · ticket del grupo SCRUM-581 · la letra nombra al fundador · papeles nombrados: 2 · tickets en Jira volcados: —
+  · ayuda = «Marca cada cliente como empresa o persona al editarlo.» → docs/master/SCRUM-581.md:363
+  · palabra = «Aquí no hay ningún cliente todavía.» → docs/master/SCRUM-581.md:362
+
+══ homeView.js · TONO_DE_ACEPTACION · 3 hoja(s) · grupo 2026-10-01 · ticket del grupo SCRUM-1341 · la letra nombra al fundador · papeles nombrados: 3 · tickets en Jira volcados: —
+  · alta = «equipo-actividad-num equipo-actividad-tasa-alta» → EN NINGÚN PAPEL NOMBRADO
+  · baja = «equipo-actividad-num equipo-actividad-tasa-baja» → EN NINGÚN PAPEL NOMBRADO
+  · media = «equipo-actividad-num equipo-actividad-tasa-media» → EN NINGÚN PAPEL NOMBRADO
+
+══ jobDetailView.js · ALB_CREAR_COPY · 6 hoja(s) · grupo 2026-08-05 · ticket del grupo SCRUM-303 · la letra nombra al fundador · papeles nombrados: 1 · tickets en Jira volcados: 303
+  · descartadas = «1 línea sin cantidad no se ha copiado.{…}líneas sin cantidad no se han» → EN NINGÚN PAPEL NOMBRADO
+  · guardar = «Crear albarán» → docs/master/SCRUM-303.md:150
+  · presupuesto_ilegible = «No se ha podido leer el presupuesto, así que no se ha rellenado nada. » → docs/master/SCRUM-303.md:151
+  · presupuesto_sin_lineas = «El presupuesto no tiene ninguna línea que se pueda entregar.» → docs/master/SCRUM-303.md:152
+  · sin_presupuesto = «Este trabajo no tiene presupuesto, así que empiezas de cero.» → docs/master/SCRUM-303.md:155
+  · valorado = «Con precios, las líneas se escriben a mano: el presupuesto no los trae» → docs/master/SCRUM-303.md:154
+
+══ jobDetailView.js · ALB_TABLA_COPY · 2 hoja(s) · grupo 2026-08-05 · ticket del grupo SCRUM-304 · la letra nombra al fundador · papeles nombrados: 1 · tickets en Jira volcados: 304
+  · colLineas = «Líneas» → docs/master/SCRUM-304.md:35 · Jira SCRUM-304 descripción · Jira SCRUM-304 c.12448
+  · colNumero = «Nº» → docs/master/SCRUM-304.md:34 · Jira SCRUM-304 descripción
+
+══ jobDetailView.js · TEXTO_HUECO · 2 hoja(s) · grupo 2026-09-21 · ticket del grupo SCRUM-917 · la letra no nombra a nadie · papeles nombrados: 6 · tickets en Jira volcados: 917
+  · sin-firmar = «albarán{…}albaranes{…}sin firmar» → docs/master/SCRUM-917.md:512
+  · sin-presupuesto = «Este trabajo no tiene presupuesto aceptado» → docs/prototipos/SCRUM-917/textos-propuestos.md:50
+
+══ jobRailBlocks.js · JOB_RAIL_TITULOS · 5 hoja(s) · grupo 2026-08-05 · ticket del grupo SCRUM-318 · la letra nombra al fundador · papeles nombrados: 1 · tickets en Jira volcados: 318
+  · cliente = «CLIENTE» → docs/master/SCRUM-318.md:45 · Jira SCRUM-318 descripción · Jira SCRUM-318 c.12400
+  · dinero = «DINERO» → docs/master/SCRUM-318.md:46 · Jira SCRUM-318 descripción · Jira SCRUM-318 c.12400
+  · donde = «DÓNDE» → docs/master/SCRUM-318.md:17 · Jira SCRUM-318 descripción · Jira SCRUM-318 c.12400
+  · presupuesto = «PRESUPUESTO» → docs/master/SCRUM-318.md:47 · Jira SCRUM-318 descripción · Jira SCRUM-318 c.12400
+  · responsable = «RESPONSABLE» → docs/master/SCRUM-318.md:48 · Jira SCRUM-318 descripción · Jira SCRUM-318 c.12400
+
+══ jobsCierreTrabajo.js · CIERRE_TEXTOS · 5 hoja(s) · grupo 2026-08-05 · ticket del grupo SCRUM-344 · la letra nombra al fundador · papeles nombrados: 3 · tickets en Jira volcados: 344
+  · avisoSaldo = «Quedan{…}que todavía no has cobrado. Si cierras el trabajo, el botón{…» → EN NINGÚN PAPEL NOMBRADO
+  · boton = «Cerrar trabajo» → docs/master/SCRUM-344.md:116 · Jira SCRUM-344 descripción
+  · confirmar = «Quedan{…}sin cobrar. Al cerrar el trabajo ya no podrás cobrarlos desde» → docs/master/SCRUM-344.md:121
+  · explicacion = «Cerrar da el trabajo por acabado. No se puede reabrir.» → docs/master/SCRUM-344.md:117
+  · titulo = «Cerrar el trabajo» → docs/master/SCRUM-344.md:115
+
+══ libroRegistroView.js · ESTADO_VISIBLE · 2 hoja(s) · grupo 2026-08-19 · ticket del grupo SCRUM-514 · la letra nombra al fundador · papeles nombrados: 1 · tickets en Jira volcados: 514
+  · paid = «Cobrada» → Jira SCRUM-514 c.13776
+  · pending = «Pendiente» → Jira SCRUM-514 c.13776 · Jira SCRUM-514 c.13778
+
+══ quoteActionsRegistry.js · QUOTE_ACTION_ROTULOS · 1 hoja(s) · grupo 2026-09-21 · ticket del grupo SCRUM-984 · la letra nombra al fundador · papeles nombrados: 2 · tickets en Jira volcados: —
+  · btnCobrar = «Cobrar ahora» → docs/master/SCRUM-984.md:9 · docs/microcopy/2026-09-21-SCRUM-984-del-presupuesto-al-albaran.md:11
+
+══ settingsSubmenus.js · ROTULOS · 8 hoja(s) · grupo 2026-08-05 · ticket del grupo SCRUM-284 · la letra nombra al fundador · papeles nombrados: 1 · tickets en Jira volcados: 284
+  · avisos = «Avisos» → docs/master/SCRUM-284.md:341 · Jira SCRUM-284 descripción · Jira SCRUM-284 c.12232 · Jira SCRUM-284 c.12438
+  · cobro = «Cobros» → docs/master/SCRUM-284.md:188 · Jira SCRUM-284 descripción · Jira SCRUM-284 c.12184 · Jira SCRUM-284 c.12189 · Jira SCRUM-284 c.12228
+  · cumplimiento = «Cumplimiento» → Jira SCRUM-284 descripción · Jira SCRUM-284 c.12232
+  · datos = «Tus datos» → docs/master/SCRUM-284.md:387 · Jira SCRUM-284 descripción · Jira SCRUM-284 c.12232 · Jira SCRUM-284 c.12438
+  · equipo = «Equipo» → Jira SCRUM-284 descripción · Jira SCRUM-284 c.12184 · Jira SCRUM-284 c.12189 · Jira SCRUM-284 c.12228 · Jira SCRUM-284 c.12232
+  · facturacion = «Facturación» → Jira SCRUM-284 descripción · Jira SCRUM-284 c.12232
+  · marca = «Marca» → docs/master/SCRUM-284.md:300 · Jira SCRUM-284 descripción
+  · publica = «Tu página pública» → docs/master/SCRUM-284.md:166 · Jira SCRUM-284 descripción · Jira SCRUM-284 c.12228 · Jira SCRUM-284 c.12232
+
+══ settingsView.js · QR_COPY · 2 hoja(s) · grupo 2026-07-29 · ticket del grupo SCRUM-230 · la letra nombra al fundador · papeles nombrados: 1 · tickets en Jira volcados: 230
+  · ayudaSvg = «Elige SVG si vas a imprimirlo grande (furgoneta, cartel): no se pixela» → EN NINGÚN PAPEL NOMBRADO
+  · errorGenerico = «No hemos podido generar el QR con esas opciones. Prueba a cambiar el c» → EN NINGÚN PAPEL NOMBRADO
+
+RECUENTO: 74 hojas · en algún papel que nombra su letra 64 · en ninguno 7 · sin trozo buscable 3
+EXIT=0
