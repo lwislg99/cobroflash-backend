@@ -462,3 +462,121 @@ peninsular al canario, que es lo que esa constante existe para no hacer.
 | cuál cede | §5 |
 | el P3 del tope, reproducido | §4 · `docs/master/evidencias/SCRUM-1522c/p3-reserva-duracion-pasada-1.txt` y `-pasada-2.txt` |
 
+# SCRUM-1522d · La zona por el lugar donde trabaja: lo que hay que saber antes de construirlo
+
+**Medido contra:** `origin/main` = `b9ecf641065f2616b0d019fa398f7f1c21f4e8d6` · 2026-10-13T11:00:06Z (hora de GitHub)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1522d/zonas-es.cjs`
+
+J2 (sesión `jv-j2g`, equipo de Javier). Encargo: PREPARAR, sin construir, la decisión del fundador de
+`c.19290` (la zona se pregunta, pero por el lugar y no como zona horaria). La entrega completa está en
+Jira, `c.19294`; aquí va lo que tiene que durar. **No se ha tocado `src/`, `public/`, `tests/` ni el
+esquema, y no se ha mirado ninguna base.** Al empujar, la rama lleva dentro `origin/main` =
+`6f35b50901fac64347d862255ec755a036ca1f0d`; entre los dos sha no cambió ningún fichero de `src/`,
+`public/` ni `prisma/` (13 ficheros: `docs/`, dos de `scripts/equipo/` y dos tests).
+
+## 0 · Tres premisas del encargo que la medición corrige
+
+1. **Hoy no hay alta en pantalla.** `POST /auth/register` está cerrada desde el 8-oct (SCRUM-1515,
+   `src/modules/auth/app/routes/auth.routes.ts:44`). La única puerta que crea comercios es la consola
+   del equipo, `src/modules/auth/app/cli/altaDeMerchant.ts`, que llama a `registerMerchant`.
+2. **La pantalla no es de S2.** En `docs/equipo/dos-equipos.md`: `register.html` (`:147`),
+   `onboardingView.js` (`:145`), lo general de `settingsView.js` (`:146`), `src/modules/auth/**`
+   (`:126`) y `merchantAdmin.ts` (`:127`) son de **J3**, equipo de Javier. Tampoco son de J2.
+3. **No hay lista de ciudades ni de provincias en casa** (§2).
+
+## 1 · Dónde se escribiría
+
+El campo existe: `prisma/schema.prisma:124`, `timezone String? @map("timezone")`, sin `@default`.
+
+| puerta | fichero y línea | carril |
+| --- | --- | --- |
+| el alta, la única que crea | `src/modules/auth/domain/auth.service.ts:307-314` y `:341-352` | J3 |
+| la consola del equipo | `src/modules/auth/app/cli/altaDeMerchant.ts:18` y `:43-50` | J3 |
+| el arranque guiado, donde hoy se pregunta «País» | `public/dashboard/js/onboardingView.js:146-148` y `:163-167` | J3 |
+| lo que valida ese guardado | `src/core/validation/schemas.ts:390` (`merchantProfileUpdateSchema`) | S1, equipo de Luis |
+| lo que guarda | `src/modules/system/merchantAdmin.ts:252-258` | J3 (contenedor) |
+| el formulario público, cuando se reabra el alta | `public/register.html:33-34` | J3 |
+
+Propuesta: que viaje el LUGAR y el servidor lo traduzca a zona. No hace falta columna nueva.
+
+Recuentos, por concepto: `merchant.create|createMany|upsert` e `INSERT INTO merchants` en `src/`,
+`scripts/` y `prisma/` dan 6 sitios, 1 en `src/` (`auth.service.ts:341`). `timezone:` como clave de
+objeto en `src/`: 34 líneas, las 34 lecturas. `timezone` en `schemas.ts`: 0.
+
+## 2 · De dónde sale la lista
+
+* Seis provincias (Badajoz, Ourense, Huesca, Teruel, Palencia, Zamora) en todo el repositorio menos
+  `docs/master`: 0 ficheros cada una. Control positivo de la misma búsqueda, «Madrid»: 130 ficheros.
+* Por nombre de fichero, sobre 6.136 seguidos: ninguna lista de lugares. `profileZones` es texto libre;
+  `prefijosPais.js` no baja de país; el comercio no tiene código postal ni provincia en el esquema.
+* El motor, sin traer nada (`salida-zonas-es.txt`): `Atlantic/Canary` marca un reloj distinto del de
+  Madrid las 8.760 horas de 2026; `Africa/Ceuta`, ninguna; una zona inventada no la acepta.
+
+**En España la zona depende sólo de la provincia, y de las 52 sólo cambian dos.** Una tabla escrita en
+casa basta. «Ciudad» al pie de la letra pide una lista de municipios traída de fuera (regla 36).
+
+Descartado: la zona del dispositivo (esta máquina contesta `Europe/London`) y el nombre que `Intl` da en
+castellano («hora de Europa central», «hora de Europa occidental»).
+
+## 3 · Los que ya están a NULL
+
+Pregunta al fundador: al comercio que ya está sin zona, ¿se le hace la misma pregunta la próxima vez
+que entre, en Ajustes, o lo rellena el equipo a mano como en septiembre? Recomendación: las dos.
+
+## 4 · El literal, PROPUESTO y SIN FIRMAR (regla 39). No está escrito en ningún fichero de producto
+
+| dónde | propuesta |
+| --- | --- |
+| etiqueta del campo | ¿Dónde trabajas? |
+| primera opción, sin elegir | Elige tu provincia |
+| debajo, al elegir Las Palmas o Santa Cruz de Tenerife | Usaremos la hora de Canarias, una menos que en la Península. |
+| debajo, al elegir cualquier otra | Usaremos la hora peninsular. |
+| si intenta seguir sin elegir | Elige tu provincia para continuar. |
+
+Las 52 opciones propuestas, por orden alfabético (los nombres también son texto que se ve, y se firman
+con lo demás): A Coruña · Álava · Albacete · Alicante · Almería · Asturias · Ávila · Badajoz ·
+Barcelona · Bizkaia · Burgos · Cáceres · Cádiz · Cantabria · Castellón · Ceuta · Ciudad Real · Córdoba ·
+Cuenca · Gipuzkoa · Girona · Granada · Guadalajara · Huelva · Huesca · Illes Balears · Jaén · La Rioja ·
+Las Palmas · León · Lleida · Lugo · Madrid · Málaga · Melilla · Murcia · Navarra · Ourense · Palencia ·
+Pontevedra · Salamanca · Santa Cruz de Tenerife · Segovia · Sevilla · Soria · Tarragona · Teruel ·
+Toledo · Valencia · Valladolid · Zamora · Zaragoza.
+
+⚠️ La grafía de cada nombre (Álava o Araba, Illes Balears o Baleares, Alicante o Alacant…) la he escrito
+de memoria y NO la he cotejado con ninguna fuente oficial: es parte de lo que se firma.
+
+## 5 · Lo que decide el fundador
+
+1. Provincia en vez de ciudad. 2. Los textos del §4. 3. Los que ya están a NULL. 4. Si es obligatorio
+(recomendado: sí, con país España). 5. Otros países (recomendado: sólo España por ahora).
+
+## Lo que NO he medido
+
+* Ninguna base, ningún alta ejecutada, nada en yaqu.app ni en un navegador.
+* Que el guardado descarte hoy una `timezone` que llegue: leído, no ejecutado.
+* Cuándo se enseña el arranque guiado a un comercio que ya existe.
+* La versión de node y de ICU de producción.
+* Cuántos municipios hay, y de qué país son los 14 comercios.
+* La tanda completa: no hay código tocado.
+
+## De paso (carril de S1; sin arreglar)
+
+`Europe/Madrid` escrito a mano en `src/modules/expenses/domain/lecturaTicket.ts:167`,
+`src/modules/maintenance/domain/maintenance.service.ts:106` y, como valor por defecto de un parámetro,
+`src/modules/jobs/domain/ventanaDeFirma.ts:182`. No he medido quién las llama ni con qué.
+
+## Errores propios
+
+* En `c.19294` puse 11:00Z como hora y el sha `b9ecf6410` como base; mientras lo escribía entró #2365 y
+  `main` pasó a `6f35b5090`. Lo medido no cambia (ningún fichero de producto entre los dos), pero el sha
+  de aquel comentario ya no era la punta cuando se publicó.
+
+| encargo | dónde se ve |
+| --- | --- |
+| 1 · dónde se escribe y si el campo existe | §1 |
+| 2 · de dónde sale la lista y cómo se traduce | §2 · `docs/master/evidencias/SCRUM-1522d/salida-zonas-es.txt` |
+| 3 · los que ya están a NULL | §3 |
+| 4 · el literal para firmar | §4 |
+| 5 · carriles | §0.2 y §1 |
+| visto en yaqu.app | NO HECHO → no hay nada construido que ver |
+

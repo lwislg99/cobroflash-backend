@@ -241,3 +241,187 @@ da `CIEGO`. Por eso la línea A9 de arriba apunta al instrumento.
 - 70 de los 82 tests con el vocabulario en código: sin abrir.
 - Los comentarios 17446 (SCRUM-825) y 18287: citados por lo que dice el repositorio, sin abrir en Jira.
 - Ninguna tanda completa. Sólo los comprobadores de registro, tras escribir esto.
+
+# SCRUM-1523b · El PDF que dice «JUSTIFICANTE DE COBRO»: sale sólo de una fila guardada, y qué lee el usuario
+
+**Medido contra:** `origin/main` = `9358f02b14e9648f1ab65fbdacf6464d50728242` · 2026-10-13T10:28:39Z (hora de GitHub)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1523b/camino-del-pdf.mjs`
+
+13-oct-2026 · sesión `jv-j1f` (carril J1, facturas y PDF; equipo de Javier), por encargo del orquestador
+(`cobroflash-backend-2e`). [Escrito por una sesión. No es firma del fundador ni del orquestador.]
+El hook de arranque dijo «SIN IDENTIDAD» (SCRUM-1498); seguí, como manda la ficha del 13-oct.
+
+**Es MEDICIÓN.** No se ha tocado `src/`, `public/`, `tests/`, `scripts/` ni `prisma/`. Ninguna base.
+Ningún ticket transicionado. Lo nuevo es este tramo y `docs/master/evidencias/SCRUM-1523b/`.
+
+## b0 · Lo que ya estaba hecho, reproducido — y lo que el encargo daba por cierto y no lo es
+
+El tramo de arriba (J4, PR #2342) ya contestaba medio encargo. **Reproducido hoy** con su mismo
+instrumento sobre `9358f02b1`: `src` da 46 ficheros y 162 apariciones (118 comentario / 19 cadena /
+25 identificador), y `public` 19 ficheros y 102: **idéntico** salvo los caracteres leídos. `scripts`
+baja de 14 a 13 ficheros porque `scripts/e2e-critico.mjs` ya no existe.
+
+**El encargo decía «un documento que un cliente final puede tener en la mano con un nombre que el
+producto ya no emite». Medido, es otra cosa:** el producto no puede fabricar hoy un documento NUEVO
+con ese título; lo que hace es volver a pintar, con el código de hoy, un justificante que se emitió
+antes de SCRUM-1027. El título no es un resto que se cuela en facturas: es el nombre con el que ese
+papel se entregó. Y son 46 ficheros, no 45, de los que 4 son del justificante de un GASTO (§3.0).
+
+## b1 · El PDF: qué camino lo genera y cuándo sale el título — EJECUTADO
+
+El título es un literal local de `generateInvoicePdf` (`pdf.service.ts:401`), gobernado por
+`params.type === 'JUST'` (`:318`). Tiene **tres llamadas** en todo `src/`, y las tres le pasan el
+`type` **de la fila guardada**, nunca uno calculado: `lib/invoicing.ts:123` (`ensureInvoicePdf`),
+`lib/invoicing.ts:285` (`ensureInvoiceForCharge`) y `invoicesAdmin.routes.ts:1219` (`regenerate-pdf`).
+
+`docs/master/evidencias/SCRUM-1523b/camino-del-pdf.mjs` llama a `ensureInvoicePdf` de `dist/` con un
+Prisma de mentira que devuelve UNA fila fabricada, comercio español con NIF y el flag sin encender, y
+lee la primera línea del PDF que sale (5 casos ejecutados, 5 leyeron su fila):
+
+| fila guardada | ¿sale PDF? | primera línea |
+|---|---|---|
+| A · `JUST` + número `J-` + `no_aplica` (**la siembra**) | sí | «JUSTIFICANTE DE COBRO» |
+| B · `F1` sellada, con huella | sí | «FACTURA» |
+| C · `JUST` + `J-` + `pendiente_de_sellado` (el valor por defecto del esquema) | **no**: `invoice_pendiente_de_sellado` | — |
+| D · `F1` con número `J-` + `no_aplica` | sí | **«FACTURA»**, con «Escanea el QR para validar la factura.» y sin huella |
+| E · `JUST` con número de factura, sin huella | **no**: `invoice_sin_sellar` | — |
+
+Controles: positivo SEMBRADO (la fila A) `VISTO`; quitado (`--sin-siembra`) dice `CIEGO` y sale 2; cero
+derivado (el título del revés) 0 apariciones en los 3 PDF que salen.
+
+**Cuándo sale, entonces:** sólo con una fila ya guardada que tenga a la vez tipo `JUST`, número `J-` y
+`vfEstado = no_aplica`. Ningún escritor de hoy produce esa fila (§3.2). Y sale **cada vez que el fichero
+falta del disco**, no una vez: `ensureInvoicePdf` regenera si no existe (`:79`), y
+`tests/scrum608…:17-21` tiene medido que el disco de producción es efímero.
+
+🔴 **De paso, la fila D.** Si existe una fila `F1` con número `J-` (`tests/scrum413…:23` dice que en
+producción había 5; la memoria de esta máquina dice que el 1-oct el fundador contó cero), su PDF abre
+diciendo «FACTURA», con un QR que no verifica nada y sin sello: el portón la deja pasar por el número y
+el título la llama factura por el tipo. **No sé si existe alguna**: es el mismo recuento de §1.
+
+## b2 · ¿Se puede llegar desde una pantalla? — LEÍDO, no pulsado en un navegador
+
+Sí, si la fila existe; y no por la lista de Facturas, que la esconde en los dos lados
+(`invoiceAdmin.ts:44`, `invoicesView.js:81`). Las puertas, leídas:
+
+- **El profesional**, a la ficha del documento (`invoice-detail`) desde: Cobros (`cobrosView.js:617-628`),
+  la ficha del cliente (`customerDetailView.js:593`), el buscador (`globalSearch.js:243`), el bloque
+  DINERO del Trabajo (`jobRailBlocks.js:157` → `jobDetailView.js:89`) y «🧾 Ver justificante» en el
+  presupuesto (`quotesDetailView.js:326`). Allí, «Descargar PDF» abre `GET /admin/invoices/:id/pdf`
+  (`invoiceDetailView.js:360` → `invoicesAdmin.routes.ts:1281`).
+- **El cliente final**, sin sesión: `GET /recibo/:token/pdf` (`receipt.routes.ts:498`), con el enlace
+  que recibió en su día.
+- **Sin pantalla:** el correo que adjunta el PDF (`email.service.ts:76`) y el ZIP del export
+  (`exports.routes.ts:201`).
+
+**«Existe en el código» sí; «se puede llegar» depende de un dato que nadie ha medido:** cuántas filas
+`JUST` hay y con qué `vfEstado`. Con cero filas, ninguna puerta lleva al título. Con el estado por
+defecto, la puerta existe y devuelve error (caso C).
+
+## b3 · Qué LEE alguien y qué no — la separación
+
+`src/` sin los 4 de gastos: 42 ficheros, 137 apariciones. `public/`: 19 ficheros, 102.
+
+| | lo lee alguien | no lo lee nadie |
+|---|---|---|
+| `src/` | **15 cadenas** | 122: 107 en comentario, 13 identificadores, 2 valores |
+| `public/` | **7 cadenas** | 95: 83 en comentario, 9 identificadores, 3 valores |
+
+**Las 22 que se leen, por urgencia:**
+
+1. **Se pintan SIEMPRE, haya o no justificantes — 2.** Las de §3.1: el LÉEME del export
+   (`exportData.ts:615`) y la hoja de evidencia de una disputa (`invoicesAdmin.routes.ts:435`).
+   Son las únicas con víctima sin condición.
+2. **Sólo ante una fila guardada — 19.** Las 12 de §3.1 en servidor (PDF ×2, `/recibo`, correo,
+   WhatsApp ×2, recordatorio ×2, anulación, página de pago, `detail` ×2) y **las 7 de `public/`, que
+   el tramo de arriba no clasificó**: «Justificante de cobro», «Detalle y acciones del justificante.»
+   y la insignia «JUSTIFICANTE» (`invoiceDetailView.js:93`, `:94`, `:138`); el `title` del botón de la
+   reclamación (`:537`); el rótulo «Justificante» de la pila del Trabajo (`jobDetailView.js:24`);
+   «🧾 Ver justificante» (`quotesDetailView.js:326`); y «No se pudo enviar el justificante al cliente
+   por email.» (`cobrosView.js:73`).
+3. **Sólo ante un recuento — 1.** `paquete.ts:190`.
+
+**Tres de las 19 llevan firma escrita en el propio código:** `quotesDetailView.js:326` e
+`invoiceDetailView.js:537` citan SCRUM-1257 comentario 17444 («un `J-` antiguo conserva su rótulo»), y
+`cobrosView.js:73` cita SCRUM-1235 comentario 17384. Las dos son firmas del orquestador por delegación,
+del 28-sep, **anteriores** a la frase del fundador que abre este ticket. No las he abierto en Jira.
+
+Fuera de JavaScript, `public/` tiene una sola aparición, en un comentario (`dashboard/index.html:299`):
+ni la landing ni las páginas legales lo nombran.
+
+## b4 · Los que no ve el usuario: ¿alguno MIENTE?
+
+Criterio, y su límite: juzgado por la línea y como mucho la vecina, no por el bloque entero.
+«Miente» = afirma en presente que hoy se emite o se recibe un justificante.
+
+**`src/`, 11 sitios.** Los 8 de §3.5, más tres: `billing/app/routes/receipt.routes.ts:103` («el
+documento es FACTURA (post-SIF) o JUSTIFICANTE (pre-SIF)»), `invoiceNumber.service.ts:326-327` («se
+audita también el justificante», de un parámetro que sólo recibe `false`) y
+`invoicing/domain/modoVisible.ts:8-9` y `:42` («qué documento sale —factura, factura con marca de agua
+o justificante—»).
+
+**`public/`, 4 sin corrección al lado:** `app.js:394-396` («con el flag en su valor por defecto emite
+JUSTIFICANTES»), `settingsView.js:1305-1306` («el documento es un justificante de cobro»),
+`jobsCierreTrabajo.js:58` («recibe un JUSTIFICANTE, no una factura») e `invoiceDetailView.js:90`.
+Otros dos bloques dicen lo mismo **y llevan debajo su corrección fechada**, así que no engañan a quien
+lee hasta el final: `app.js:45-46` (corregido en `:55`) y `rotulosDelDocumento.js:7-46` (en `:49`).
+
+**Un nombre que miente sin afirmar nada: «modo justificante».** Es como se llama al modo `receipt`,
+en el que hoy no sale ningún documento. Lo lleva una función viva, `enModoJustificante()`
+(`jobDetailView.js:140`, 6 usos), y al menos 17 comentarios: en `src/`, `albaranes.routes.ts:1263` y
+`:1463`, `jobs.routes.ts:1637` y `:1650` y `whatsappTemplates.ts:202`; en `public/`, 12 líneas de
+`albaranAccion.js`, `jobNextAction.js`, `jobsView.js`, `quotesDetailView.js`, `quotesView.js` y
+`cuerpoDelDocumentoSuelto.js`. La función hace lo correcto (calla textos en `receipt`); el nombre
+describe un modo que ya no existe. Es la misma invitación que el valor muerto de §3.3.
+
+**Y un test:** el mensaje de `tests/scrum608…:159` dice que el justificante «es el documento del flag
+apagado». La aserción es buena (fija el PDF de lo guardado); el porqué dejó de ser verdad.
+
+## b5 · Qué haría falta para cambiarlo — propuesta, NO ejecutada
+
+**Recomiendo no cambiar el título del PDF.** Tres motivos medidos: sólo lo lleva un papel que se
+entregó con ese nombre; el disco efímero haría que el mismo documento saliera mañana con otro nombre
+que la copia que el cliente ya guardó; y la firma 17444 ya decidió para dos textos hermanos que un `J-`
+antiguo conserva su rótulo. Si el fundador decide eso mismo para el PDF, no hay literal que firmar.
+
+**Si decide que la palabra desaparezca también de lo guardado**, hace falta, en un solo PR:
+- GO de emisión (regla 40): `pdf.service.ts:401` y `:712` están en el camino de emisión.
+- Firma de los literales (regla 39). Propuesta, sin escribir en el código: título **«RECIBO DE COBRO»**
+  y pie **«Recibo de cobro — este documento acredita el cobro recibido.»** No puede ser «FACTURA»:
+  sería un claim fiscal sobre un documento sin sello (reglas 7 y 17).
+- Los otros 18 textos condicionados, con la misma palabra, o el mismo cobro se llamará de dos maneras
+  entre el PDF, el correo, el WhatsApp y el panel. Tres de ellos tienen firma previa que habría que
+  revocar citándola.
+- `tests/scrum608…:159`, `tests/pdfs…:54` y `tests/scrum1436b…:75` cambian en el mismo PR, con la
+  decisión citada (regla 41).
+
+**Lo que sí propongo cambiar, y no depende de ningún recuento — los 2 que se pintan siempre:**
+- `exportData.ts:615` → **«facturas/  N de M PDF de factura»**. ⚠️ Sin medir: si el ZIP incluye los
+  PDF de filas `JUST`; si los incluye, el texto de hoy es exacto para quien las tenga.
+- `invoicesAdmin.routes.ts:435` → **«PDF del presupuesto firmado y de la factura: disponibles desde el
+  panel (se adjuntan a la respuesta de la disputa).»**, y «del justificante» sólo si el documento es
+  un `J-` antiguo, que es la regla ya firmada en 17444 para el botón que abre esa hoja.
+
+**Sin firma de texto, carril J1:** el valor `'justificante'` de `ModoDocumentoSuelto` (§3.3) y los
+comentarios de b4 que caen en `invoicing/`, `lib/invoicing.ts`, `invoicesAdmin.routes.ts` e
+`invoiceAdmin.ts`. Los demás son de J2, J3 y S1/S2: se reportan, no se arreglan desde aquí.
+
+## b6 · Lo que salió mal aquí
+
+La primera pasada del instrumento dio `CIEGO` en sus cinco casos (guardada en
+`salida-primera-pasada-ciega.txt`): di por hecho que el lector de PDF de la casa devolvía una cadena y
+devuelve un objeto con `ok`. Lo paró la siembra, que es para lo que está: sin ella habría leído tres
+«NO SALE» falsos junto a dos verdaderos. Ahora un PDF ilegible se declara y no cuenta como «no sale».
+
+## b7 · Lo que NO se ha hecho
+
+- Ninguna base: no sé si hay filas `JUST`, cuántas, ni con qué `vfEstado`. De eso depende todo b2.
+- Ninguna ruta por HTTP ni ninguna pantalla en un navegador: las puertas de b2 están leídas.
+- `ensureInvoiceForCharge` y `regenerate-pdf` no se ejecutaron; sí se leyó que pasan `inv.type`.
+- Los comentarios de b4 no están juzgados uno a uno con su bloque; el resto de los 83 de `public/`,
+  `scripts/` (13 ficheros), `docs/` y 70 tests siguen sin clasificar.
+- Por concepto y no por palabra: «recibo» sale en 88 líneas de `src/` y `public/` y «comprobante» en 1.
+  Contadas, sin clasificar: no sé cuántas son texto que alguien lee.
+- Los comentarios 17444, 17384, 17446 y 18287: citados por lo que dice el repositorio, sin abrir.
+- Ninguna tanda completa. Sólo los comprobadores de registro, tras escribir esto.

@@ -1,0 +1,13 @@
+POBLACION zonas que conoce Intl = 418 · node v24.18.0 · ICU 78.3
+  zona Europe/Madrid · en la lista: true · la acepta el motor: true
+  zona Atlantic/Canary · en la lista: true · la acepta el motor: true
+  zona Africa/Ceuta · en la lista: true · la acepta el motor: true
+  zona Europe/Zzqx1522d · en la lista: false · la acepta el motor: false
+  horas de 2026 con reloj distinto de Madrid · Atlantic/Canary = 8760 de 8760
+  horas de 2026 con reloj distinto de Madrid · Africa/Ceuta = 0 de 8760
+  horas de 2026 con reloj distinto de Madrid · Europe/Madrid = 0 de 8760
+  zona del dispositivo segun Intl = Europe/London
+  nombre en castellano de Europe/Madrid = hora de Europa central
+  nombre en castellano de Atlantic/Canary = hora de Europa occidental
+  nombre en castellano de Africa/Ceuta = hora de Europa central
+EXIT=0
