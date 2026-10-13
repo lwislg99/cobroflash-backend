@@ -482,3 +482,46 @@ El título de ese bloque dice «REGLA 30: NINGUNO ESTÁ APROBADO» y el censo le
 - Las 171 de «porGrupo» que no están en «porGrupoSinVer» no se han contrastado una a una con su firma.
 - Una clave con marca en su línea gasta igualmente un hueco de la cuenta que tenga encima (por eso otra del grupo puede salir acusada). Es anterior a este cambio y acusa de más, no de menos; se deja y se fija en el test.
 - `QUOTE_ACTION_ROTULOS` (dice 12, tiene 13), `quoteDireccionObra.TEXTOS` (3 y 4), `settingsSubmenus.ROTULOS` (10 y 9) y `COBROS_COPY` (6 en la cabecera y 13 claves, con otra firma de grupo dentro) siguen con una cuenta de cabecera que no coincide con sus claves. Recontado hoy con una sonda propia que no es el censo. Sus ficheros no son de S4.
+
+# SCRUM-1215h · las sondas de «¿quién vio cada hoja?» suben al repo, y el reparto de las 173
+
+**Medido contra:** `origin/main` = `254a697924c99bdf85eb06c95ee439a4a013aa67` · 2026-10-13T12:00:37Z
+A9: sin fallo que generalice — medición de sólo lectura; la sexta «no vista» que dio la sonda se descartó leyéndola y queda dicha abajo, y los literales firmados se comparan con una sonda que lleva su laboratorio.
+**Skill UI:** no cargada · no se toca ninguna pantalla ni ningún fichero del panel
+
+13-oct-2026 · **S4** · rama `scrum-1215h-las-sondas-de-quien-vio-cada-hoja`. Encargo del orquestador (lote del 13-oct, 12:05Z): las sondas de SCRUM-1215 c.19332 van a git, y se abren los comentarios de Jira que citan las letras para cerrar las dudosas. No corrige ninguna hoja: primero el número.
+
+## Dónde están y cómo se repiten
+
+`docs/master/evidencias/SCRUM-1215/quien-la-vio/`. Ninguna escribe en el árbol salvo `quien-la-vio.mjs`, que deja `quien-la-vio.json` a su lado (las otras tres lo leen).
+
+| Sonda | Qué mide | Cómo se corre | Su salida del 13-oct |
+|---|---|---|---|
+| `quien-la-vio.mjs` | en la historia de `main` (primer padre), si la letra que aprueba a cada hoja de grupo se escribió con la hoja y su texto delante | `node quien-la-vio.mjs <árbol>` (`--lab` corre sólo el laboratorio) | `quien-la-vio.txt` |
+| `papel-por-objeto.mjs` | de cada objeto, cuántas hojas no tienen su literal en ningún acta de `docs/microcopy/`, y qué cita su letra | `node papel-por-objeto.mjs <árbol>` | `papel-por-objeto.txt` |
+| `quien-firma.mjs` | quién dice la letra que firmó | `node quien-firma.mjs` | `quien-firma.txt` |
+| `firmadas-en-jira.mjs` | compara cada hoja de los objetos cuyo comentario de Jira se abrió con los literales firmados en él, transcritos dentro de la sonda | `node firmadas-en-jira.mjs` | `firmadas-en-jira.txt` |
+
+Las tres primeras se corrieron sobre `f7a4c816ab2bf5c334a953dee60dc7b73718a0f8`; el JSON es de ese árbol. `quien-la-vio.mjs` instrumenta una copia del censo por sustitución de texto y aborta si el censo ha cambiado: hay que ajustarla antes de volver a correrla sobre un censo distinto.
+
+## El reparto de las 173 hojas aprobadas por firma de grupo
+
+| Cuántas | Qué se sabe de su firma |
+|---|---|
+| 88 | su literal está en algún acta de `docs/microcopy/` (cota: «en alguna», no «en la suya») |
+| 22 | sin acta; su literal está, idéntico, en el comentario de Jira que cita su letra, abierto hoy |
+| 7 | sin acta; su propia letra dice «por el asesor, a la espera del fundador» |
+| 7 | sin acta; el ticket que citan (SCRUM-656) se abrió y sus dos comentarios no traen esos literales |
+| 3 | sin acta y sin literal que buscar |
+| 38 | sin acta, sin abrir; letra anterior al 3-sep-2026, cuando aún no existía `docs/microcopy/` |
+| 8 | sin acta, sin abrir; letra posterior al 3-sep-2026 |
+
+Las 22: 15 del parte (SCRUM-916, comentarios 17251 y 17273, orquestador de Luis por delegación) y 7 de la puerta de serie (SCRUM-1216, comentario 17347, Javier en persona transcrito por su orquestador, y 17349, su orquestador por delegación). Dos de las de serie llevan el año en un hueco donde la firma dice «2026». Una del parte, «La hora se elige, no se escribe.», se firmó con condición (sólo si el campo es de verdad un selector) y el código la cumple: se pinta sólo con `sonSelector`. De los seis literales que esos comentarios firmaron y luego retiraron, ninguno está pintado.
+
+Aparte, y sin sumar a lo anterior: la historia dice que a 5 de las 173 la firma que las aprueba no las vio (llegaron, o cambió su texto, con la letra ya escrita). Las cinco tienen su literal en un acta: están firmadas por otra firma, que no es la que tienen encima. La sonda da una sexta, `COBROS_COPY.vacioPorFiltro`, que se descarta: estaba el día de la firma, y es la cuenta de la cabecera la que la dejaba fuera.
+
+## Lo que NO dice
+
+- «Con acta» y «en el comentario» prueban que el literal de hoy consta firmado en un papel; no que la marca del código apunte a ese papel.
+- De las 46 sin abrir no se sabe nada más que lo que dice su letra. Las 7 de SCRUM-656 citan también SCRUM-402, que no se ha abierto.
+- No se ha corregido ninguna hoja.

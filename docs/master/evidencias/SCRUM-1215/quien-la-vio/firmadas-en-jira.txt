@@ -1,0 +1,49 @@
+  LAB bien · un literal firmado se encuentra
+  LAB bien · una plantilla con hueco casa con su literal firmado
+  LAB bien · un literal inventado NO se encuentra
+  LAB bien · un retirado NO sale como firmado
+  LAB bien · un retirado sale como retirado
+  LAB bien · una hoja sin literal NO casa con nada
+LABORATORIO: 6 casos · 0 mal
+
+POBLACION: 173 hojas de grupo · foto de main f7a4c816ab2bf5c334a953dee60dc7b73718a0f8
+
+LOS DOS OBJETOS ABIERTOS, hoja a hoja:
+  SIN acta · FIRMADA_CON_CONDICION                    · SCRUM-916 c.17251 · TEXTOS.horasGuia · «La hora se elige, no se escribe.»
+  SIN acta · FIRMADA_EN_JIRA                          · SCRUM-1216 c.17347 · SERIE_TEXTOS.ayudaCampo · «YaQu empezará en el siguiente, para que no repitas un número que ya has usado.»
+  SIN acta · FIRMADA_EN_JIRA                          · SCRUM-1216 c.17347 · SERIE_TEXTOS.ayudaTitulo · «Si vienes de otro programa, de una plantilla o del papel, cuenta igual.»
+  SIN acta · FIRMADA_EN_JIRA                          · SCRUM-1216 c.17349 · SERIE_TEXTOS.errorNumeroFalta · «Escribe el número de tu última factura. Por ejemplo: 41.»
+  SIN acta · FIRMADA_EN_JIRA                          · SCRUM-1216 c.17349 · SERIE_TEXTOS.errorNumeroGrande · «Ese número es demasiado alto. Revisa el número de tu última factura.»
+  SIN acta · FIRMADA_EN_JIRA                          · SCRUM-1216 c.17349 · SERIE_TEXTOS.errorNumeroNoValido · «Tiene que ser un número entero, del 1 en adelante. Por ejemplo: 41.»
+  SIN acta · FIRMADA_EN_JIRA                          · SCRUM-916 c.17251 · TEXTOS.datosTitulo · «Datos del parte»
+  SIN acta · FIRMADA_EN_JIRA                          · SCRUM-916 c.17251 · TEXTOS.km · «km»
+  SIN acta · FIRMADA_EN_JIRA                          · SCRUM-916 c.17251 · TEXTOS.obraYReferencia · «Obra y referencia»
+  SIN acta · FIRMADA_EN_JIRA                          · SCRUM-916 c.17251 · TEXTOS.pistaNotas · «Lo que haya que dejar dicho.»
+  SIN acta · FIRMADA_EN_JIRA                          · SCRUM-916 c.17251 · TEXTOS.pistaReferencia · «Tu referencia interna, si usas alguna»
+  SIN acta · FIRMADA_EN_JIRA                          · SCRUM-916 c.17251 · TEXTOS.revisaLasHoras · «Revisa las horas»
+  SIN acta · FIRMADA_EN_JIRA                          · SCRUM-916 c.17251 · TEXTOS.salidaAntesQueEntrada · «La salida es antes que la entrada»
+  SIN acta · FIRMADA_EN_JIRA                          · SCRUM-916 c.17251 · TEXTOS.sinElegir · «Sin elegir»
+  SIN acta · FIRMADA_EN_JIRA                          · SCRUM-916 c.17251 · TEXTOS.sinNotas · «Sin notas»
+  SIN acta · FIRMADA_EN_JIRA                          · SCRUM-916 c.17251 · TEXTOS.tiempoEnLaObra · «Tiempo en la obra»
+  SIN acta · FIRMADA_EN_JIRA                          · SCRUM-916 c.17273 · TEXTOS.pistaObra · «Dónde se ha hecho el trabajo»
+  SIN acta · FIRMADA_EN_JIRA                          · SCRUM-916 c.17273 · TEXTOS.pistaTecnicos · «Quién ha estado en la obra»
+  SIN acta · FIRMADA_EN_JIRA                          · SCRUM-916 c.17273 · TEXTOS.sinObraNiReferencia · «Sin dirección ni referencia»
+  SIN acta · FIRMADA_EN_JIRA                          · SCRUM-916 c.17273 · TEXTOS.sinTecnicos · «Sin técnicos»
+  SIN acta · FIRMADA_EN_JIRA_CON_HUECO(2026)          · SCRUM-1216 c.17347 · SERIE_TEXTOS.etiquetaCampo · «¿Cuál fue el número de tu última factura de {…}?»
+  SIN acta · FIRMADA_EN_JIRA_CON_HUECO(2026)          · SCRUM-1216 c.17347 · SERIE_TEXTOS.titulo · «¿Ya has emitido facturas en {…}?»
+  con acta · FIRMADA_EN_JIRA                          · SCRUM-916 c.17251 · TEXTOS.ahora · «Ahora»
+  con acta · FIRMADA_EN_JIRA                          · SCRUM-916 c.17251 · TEXTOS.horasTitulo · «Horas y desplazamiento»
+  con acta · NO_ESTA_EN_EL_COMENTARIO_PERO_TIENE_ACTA · — · SERIE_TEXTOS.errorSinRespuesta · «No hemos podido confirmar si se ha guardado. Comprueba tu conexión y pulsa otra vez: si ya estaba guardado, se queda igual.»
+
+RETIRADOS que siguen pintados en esos objetos: 0
+
+REPARTO de las 173:
+   88  con acta en docs/microcopy/
+   22  SIN acta, firma HALLADA en el comentario de Jira que cita
+    7  SIN acta, su letra dice «asesor, a la espera del fundador»
+    7  SIN acta, ticket citado abierto (SCRUM-656) y el literal no está
+    3  SIN acta, sin literal que buscar
+   38  SIN acta, SIN ABRIR, letra anterior al 3-sep (antes de docs/microcopy/)
+    8  SIN acta, SIN ABRIR, letra posterior al 3-sep
+  173  suma (tiene que ser la población)
+EXIT=0
