@@ -9,17 +9,25 @@
 // montan en EL MISMO hueco, como hace el panel (`app.js` pinta toda vista en `#view-container`).
 //
 // 🔴 QUÉ NO MIDE, y se dice:
-//   · El router: el banco no lo ejecuta. El título provisional se SIEMBRA con lo que el router
-//     escribe hoy al abrir cada ficha («Presupuesto #» + el id de la ruta). El recorrido entero
-//     se mide en navegador (sonda `id-ficha.mjs`, filas E3, E4 y E5).
-//   · QUÉ dice el título mientras carga o si la carga falla (el id de la tabla): es SCRUM-1482,
-//     y aquí sólo se comprueba que no lleva nada del OTRO presupuesto.
+//   · El router ENTERO: el banco no lo ejecuta. El título provisional se siembra con lo que da la
+//     expresión del router al abrir cada ficha, sacada de su `case` y evaluada
+//     (`_titulo-provisional-del-router.mjs`). El recorrido entero se mide en navegador (sonda
+//     `id-ficha.mjs`, filas E3, E4 y E5).
+//     13-oct-2026 (SCRUM-1482b): hasta hoy se sembraba una cadena copiada a mano («Presupuesto #»
+//     + el id de la ruta). El router ya no escribe eso —escribe la palabra del locale, sola, la
+//     MISMA para A y para B— y la copia habría seguido en verde midiendo otro panel. Lo que estos
+//     casos exigen no cambia; cambia de dónde sale el título de partida. Y ahora muerden más: con
+//     el mismo provisional en las dos fichas, lo único que impide el cruce es mirar cuál está
+//     montada.
+//   · QUÉ dice el título mientras carga o si la carga falla: es SCRUM-1482, y aquí sólo se
+//     comprueba que no lleva nada del OTRO presupuesto.
 //   · Las otras fichas (Trabajo, factura, albarán, cliente, parte): no se miran.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cargarDashboard, todos } from './_banco-vistas.mjs';
+import { tituloProvisionalDelRouter } from './_titulo-provisional-del-router.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 // Ids y números DISTINTOS entre sí los cuatro: confundir cualquiera con cualquiera se ve.
@@ -34,6 +42,8 @@ const respuesta = (status, cuerpo) => ({
 });
 const vueltas = async (n = 40) => { for (let i = 0; i < n; i++) await new Promise((r) => setImmediate(r)); };
 const LOCALE_ES = { quote: 'Presupuesto', quotePlural: 'Presupuestos', quoteVerb: 'presupuesto', currency: 'EUR' };
+/** Lo que el router escribe de título al abrir la ficha de `x`, antes de que llegue su respuesta. */
+const provisionalDe = (x) => tituloProvisionalDelRouter(RAIZ, { quoteId: x.id, locale: LOCALE_ES });
 
 const presupuesto = ({ id, numero }) => ({
   id, number: numero, quoteNumber: numero, revision: 0, numeroConRevision: 'P' + numero, revisiones: [], vigenteId: id,
@@ -80,7 +90,7 @@ function panel() {
 
   const pintadas = [];
   const abrir = async (x) => {
-    titulo.textContent = 'Presupuesto #' + x.id;
+    titulo.textContent = provisionalDe(x);
     pintadas.push(banco.ctx.renderQuoteDetailView(hueco, x.id));
     await vueltas();
     assert.ok(enVuelo.has(x.id), `🔴 CIEGO: la ficha del ${x.id} no ha pedido su presupuesto, así que no está «cargando».`);
@@ -124,7 +134,7 @@ test('SCRUM-1495 · abre A y luego B, y A llega tarde ANTES que B: el título no
   await p.abrir(A);
   await p.abrir(B);
   await p.llega(A);
-  assert.equal(p.titulo.textContent, 'Presupuesto #' + B.id,
+  assert.equal(p.titulo.textContent, provisionalDe(B),
     `🔴 con B todavía cargando, la respuesta de A ha cambiado el título de la vista a «${p.titulo.textContent}». `
     + 'Tiene que quedarse como lo dejó el router al abrir B: A ya no está en pantalla.');
   await p.llega(B);
@@ -141,7 +151,7 @@ test('SCRUM-1495 · abre A y luego B, la carga de B FALLA y A llega tarde: el t�
   assert.ok(p.avisos().includes('Error cargando presupuesto.'),
     '🔴 CIEGO: no sale «Error cargando presupuesto.», así que la carga de B no ha fallado.');
   await p.llega(A);
-  assert.equal(p.titulo.textContent, 'Presupuesto #' + B.id,
+  assert.equal(p.titulo.textContent, provisionalDe(B),
     `🔴 con la carga de B fallida, la respuesta tardía de A ha cambiado el título de la vista a «${p.titulo.textContent}». `
     + 'Qué dice ese título cuando la carga falla es de SCRUM-1482; aquí sólo se exige que A no lo toque.');
   assert.deepEqual(p.h2(), ['Presupuesto'],

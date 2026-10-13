@@ -19,7 +19,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import {
   RAIZ, CARPETA, DECLARADOS_JSON, censar, censarFuente, compararConDeclarados, leerDeclarados,
-  claseDeComentario, cuantosDice,
+  claseDeComentario, cuantosDice, queHacer,
 } from '../scripts/_censo-convenio-microcopy.mjs';
 
 const CLI = path.join(RAIZ, 'scripts', '_censo-convenio-microcopy.mjs');
@@ -75,9 +75,12 @@ test('SCRUM-1157 ① trinquete: lo acusado == lo declarado, en las dos direccion
   const r = censar();
   assert.equal(r.estado, 'OK');
   const { nuevas, sobran } = compararConDeclarados(r, leerDeclarados());
+  // SCRUM-1215g · en las dos listas van también las APROBADAS POR GRUPO que «porGrupo» no nombra
+  // (y las que nombra y ya no están). Cada fila trae lo SUYO que hacer; el párrafo de abajo es el
+  // de las acusadas de siempre.
   const msg = [
-    ...nuevas.map((h) => `NUEVA  ${h.id} (${h.clase})${h.sinMotivo ? ' — declarada SIN motivo' : ''}`),
-    ...sobran.map((h) => `SOBRA  ${h.id} (${h.clase})`),
+    ...nuevas.map((h) => `NUEVA  ${h.id} (${h.clase}${h.porGrupo ? ' POR GRUPO, sin nombrar' : ''})\n         → ${queHacer(h, 'nuevas')}`),
+    ...sobran.map((h) => `SOBRA  ${h.id} (${h.clase}${h.porGrupo ? ', de «porGrupo»' : ''})\n         → ${queHacer(h, 'sobran')}`),
   ].join('\n');
   assert.equal(nuevas.length, 0,
     `${msg}\n\nNUEVA = texto del panel sin firma legible en el fuente. Mándalo a firmar (S4, regla 39); si YA ` +
@@ -118,6 +121,8 @@ test('SCRUM-1157 ② lo que la sonda NO debe tomar por firma', () => {
   assert.equal(claseDeComentario('// Ni un rótulo de esta pantalla está aprobado'), null, 'minúsculas en prosa');
   assert.equal(claseDeComentario('// FIRMADO el 16-sep-2026 por\n// el fundador'), 'APROBADO', 'firma partida en dos líneas');
   assert.equal(claseDeComentario('// Todavía SIN APROBAR'), 'AMBIGUO');
+  assert.equal(claseDeComentario('// ── RÓTULOS · REGLA 30: NINGUNO ESTÁ APROBADO ──'), 'AMBIGUO', '«NINGUNO ESTÁ APROBADO» niega (SCRUM-1215g)');
+  assert.equal(claseDeComentario('// NINGUNA FIRMADA por el fundador'), 'AMBIGUO');
   assert.equal(claseDeComentario('// antes caía al marcador `[PENDIENTE microcopy oficial]`'), 'AMBIGUO', 'el marcador CITADO no declara');
   // Un objeto con un comentario de ESTADO encima no entra en el censo.
   const r = censarFuente('public/x.js', '// un parte FIRMADO no se edita\nconst X = { a: "texto" };\n', {});

@@ -1,0 +1,19 @@
+SERVIDO=LOCAL D:\MILLONARIO\cobroFlash\cobroflash-backend\.claude\worktrees\s2-1302c\public\dashboard\js (app.js y quotesDetailView.js) · build af37a0cd3836575b86ed4fb2bc05a49e89970092
+TESTIGO={"conRegex":false,"conConectada":false,"conMontada":true,"conIgualdad":false,"conPalabraExacta":true,"h2ConId":false} · palabra del locale: «Presupuesto»
+POBLACION=5 presupuestos · 5 con número distinto de su id
+A = id 206 / número 5 · B = id 205 / número 4
+E1 · peticiones retrasadas: 1
+E2 · peticiones cortadas: 1
+E3 · peticiones retrasadas: 1
+E4 · retrasadas de A: 1 · cortadas de B: 1
+E5 · retrasadas de A: 1
+--- FILAS (escenario | momento | título de la vista | pestaña del navegador | cabecera de la ficha | aviso | lo que se espera)
+E1 carga lenta de A | mientras carga | «Presupuesto» | «Presupuesto · YaQu» | «Presupuesto» | «Cargando presupuesto…» | sin el id de la tabla
+E1 carga lenta de A | cargada | «Presupuesto #5» | «Presupuesto · YaQu» | «Presupuesto #5» | - | título y cabecera con el número 5
+E2 la carga de A falla | después | «Presupuesto» | «Presupuesto · YaQu» | «Presupuesto» | «Error cargando presupuesto.» | sin el id de la tabla
+E3 se va a Inicio mientras A carga | cuando A ya llegó | «Inicio» | «Inicio · YaQu» | «null» | - | el título de Inicio («Inicio»), intacto
+E4 abre A (lenta) y luego B, que falla | cuando A ya llegó | «Presupuesto» | «Presupuesto · YaQu» | «Presupuesto» | «Error cargando presupuesto.» | nada de A (ni 5 ni 206) sobre la ficha de B
+E5 abre A (lenta) y luego B, que carga | cuando A ya llegó | «Presupuesto #4» | «Presupuesto · YaQu» | «Presupuesto #4» | - | título y cabecera con el número 4
+no-GET: ninguna
+errores de página: ninguno
+EXIT=0

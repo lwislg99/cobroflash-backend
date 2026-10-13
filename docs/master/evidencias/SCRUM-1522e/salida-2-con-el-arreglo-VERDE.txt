@@ -1,0 +1,24 @@
+✔ SCRUM-1522e · la tabla tiene las 52 provincias: dos con la hora de Canarias y cincuenta con la peninsular (18.4366ms)
+✔ SCRUM-1522e · un alta de España guarda la zona de su provincia, y la consola dice cuál (703.2665ms)
+✔ SCRUM-1522e · un comercio de España sin provincia no se crea: ni a NULL ni de ninguna manera (707.9191ms)
+[lifecycle] (sin RESEND) email a bde4433f@test.local: ¡Bienvenido a YaQu! 🎉
+[magic-link] to=origen-3-1522e@test.local link=http://localhost:3000/auth/verify?token=6be27cee0c529df88da4bc70d5c13ac8cb15e420ece1fba04f56f4d6d95456c5
+[aviso] {"evento":"aviso_no_entregado","aviso":"bienvenida","destinatario":"bde4433f@test.local","estado":"fallo_envio","idProveedor":null,"motivo":"no se pudo enviar el email (sin_transporte)"}
+[lifecycle] (sin RESEND) email a cd7627b1@test.local: ¡Bienvenido a YaQu! 🎉
+[magic-link] to=origen-4-1522e@test.local link=http://localhost:3000/auth/verify?token=05434e29bdb35591aa67b38912fde5bd795754801926c667e87ecf24f63af289
+[magic-link] ERROR enviando email a bde4433f@test.local: no se pudo enviar el email (sin_transporte)
+[aviso] {"evento":"aviso_no_entregado","aviso":"enlace_de_acceso","destinatario":"bde4433f@test.local","estado":"fallo_envio","idProveedor":null,"motivo":"no se pudo enviar el email (sin_transporte)"}
+[aviso] {"evento":"aviso_no_entregado","aviso":"bienvenida","destinatario":"cd7627b1@test.local","estado":"fallo_envio","idProveedor":null,"motivo":"no se pudo enviar el email (sin_transporte)"}
+[magic-link] ERROR enviando email a cd7627b1@test.local: no se pudo enviar el email (sin_transporte)
+[aviso] {"evento":"aviso_no_entregado","aviso":"enlace_de_acceso","destinatario":"cd7627b1@test.local","estado":"fallo_envio","idProveedor":null,"motivo":"no se pudo enviar el email (sin_transporte)"}
+✔ SCRUM-1522e · fuera de España el comercio nace sin zona, como hasta hoy: no hay tabla de otros países (298.2485ms)
+✔ SCRUM-1522e · el origen mismo: `registerMerchant` no deja crear un comercio de España sin zona, lo llame quien lo llame (91.9925ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1888.6849
+EXIT=0

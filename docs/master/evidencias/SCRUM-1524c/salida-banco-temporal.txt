@@ -1,0 +1,5 @@
+ANTES   con throw · salida 1 · revento=true · imprimio POBLACION=false · restos nuevos en TMPDIR: 1
+ANTES   sano      · salida 0 · revento=false · imprimio POBLACION=true · restos nuevos en TMPDIR: 0
+DESPUES con throw · salida 1 · revento=true · imprimio POBLACION=false · restos nuevos en TMPDIR: 0
+DESPUES sano      · salida 0 · revento=false · imprimio POBLACION=true · restos nuevos en TMPDIR: 0
+EXIT=0

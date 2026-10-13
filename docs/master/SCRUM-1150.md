@@ -69,6 +69,7 @@ ocho líneas de diagnóstico.
   empate (la pantalla desactiva el botón al pulsar, pero eso sólo cubre una pestaña). Leído, no
   provocado: probarlo pide una base de verdad y concurrencia de verdad, y cerrarlo pide o un cerrojo en
   la ruta o un índice único, que es esquema.
+  *(13-oct-2026: provocado el 9-oct y arreglado con un cerrojo en SCRUM-1150c, al final de este registro.)*
 
 ## Pruebas
 
@@ -174,3 +175,96 @@ firmado donde toca y un diagnóstico de programador en los demás.
 Hasta que la rama entre: `node sondas-s2/revision-error.mjs` sin argumento (copia en
 `evidencias/SCRUM-1150/`). Ninguna de las causas se provoca de verdad; lo que se mide es la pantalla de
 producción con la respuesta puesta por la sonda.
+
+## SCRUM-1150c · dos «Crear revisión» a la vez ya no crean el empate (13-oct, S1)
+
+**Medido contra:** `origin/main` = `9358f02b14e9648f1ab65fbdacf6464d50728242` · 2026-10-13T10:56:19Z
+
+A9: comprobación → `tests/scrum219-tx-tipado.test.mjs`
+
+(El fallo propio: la primera versión tipaba como `Prisma.TransactionClient` un lector al que se le pasa
+el cliente global. Lo paró ese guard antes de empujar, y el arreglo fue el tipo, no el guard.)
+
+### Qué pasaba
+
+`crearRevisionDeQuote` leía la revisión más alta del grupo y creaba la siguiente sin nada que pusiera
+las dos cosas en serie. Dos `POST /admin/quotes/:id/revisiones` a la vez leían las dos «la última es
+la .0» y las dos escribían la `.1`. Las dos contestaban 201. Desde ese momento la ficha de ese
+presupuesto (`GET /admin/quotes/:id`) daba 500 y «Crear revisión» 409 `revisiones_dos_vigentes`, y el
+profesional no podía salir de ahí desde el panel.
+
+Hace falta que coincidan dos pulsaciones: dos pestañas, dos dispositivos o dos personas del mismo
+negocio (la pantalla desactiva el botón al pulsar, y eso cubre una pestaña).
+
+### Medido antes de tocar nada (PASO 0)
+
+`dist/app.js` por HTTP, sesión de administradora, contra un Postgres 16.4 propio y desechable. Diez
+intentos de dos `POST` a la vez sobre un presupuesto sano, y un control con los mismos dos en serie.
+
+| árbol | control en serie | a la vez | ficha después |
+|---|---|---|---|
+| `main` (`9358f02b1`), 13-oct | `.1` y `.2` | **9 empates de 10** (el 9-oct, 8 de 10) | 500 en los 9 |
+| con el arreglo | `.1` y `.2` | **0 empates de 10**: `.1` y `.2` en los diez | 200 en los diez |
+
+Sonda y salidas: `docs/master/evidencias/SCRUM-1150c/` (`sonda-1150-carrera.mjs` y sus dos salidas).
+`sonda-1150.mjs` es la del 9-oct que fabrica el empate y mide la ficha en 500; va con ellas.
+
+### Qué cambia
+
+Un fichero de `src/`: `src/modules/system/quoteAdmin.ts`.
+
+- La creación va dentro de una transacción cuya primera sentencia es
+  `pg_advisory_xact_lock(1752, negocio)`. El grupo se lee **detrás** del cerrojo, así que la segunda
+  petición ve la revisión que acaba de confirmar la primera y escribe la siguiente.
+- El espacio `1752` es propio. 1748, 1749 y 1750 son de la emisión y 1751 del tope de WhatsApp: crear
+  una revisión no espera a una factura, ni al revés.
+- Las puertas se pasan dos veces: antes de abrir la transacción (un rechazo no reserva ni escribe
+  nada; `tests/scrum887c-caso-c-bloqueado.test.mjs` cuenta abrir una transacción como escritura) y otra
+  vez dentro, sobre lo que se lee con el cerrojo. Es el molde de SCRUM-814 al facturar.
+- **No hay ALTER ni cambio de esquema.** No depende de SCRUM-1490.
+
+Lo que contesta la ruta no cambia: los mismos códigos y los mismos estados.
+
+### Lo que NO arregla, y se dice
+
+- **Dos pulsaciones a la vez dejan DOS revisiones** (`.1` y `.2`), las dos válidas. Es lo que ya pasaba
+  con dos pulsaciones seguidas. Que la segunda no cree nada pediría que la pantalla mande qué versión
+  creía vigente, y eso es otra conducta: no se ha decidido ni construido.
+- **Un empate que YA esté en una base sigue dando 500 en la ficha.** Este cambio impide crearlo; no
+  repara filas. No se ha mirado si alguna base tiene uno: no hay acceso de lectura a producción desde
+  una sesión. Qué contesta la ficha en ese caso es una decisión que sigue abierta en el ticket.
+- **El otro origen de `revisiones_dos_vigentes`, el año de la serie, sigue vivo** hasta que entre
+  SCRUM-1490 (dos presupuestos de años distintos con el mismo número, desde el 1-ene-2027).
+- **No hay segunda red:** `Quote` sigue sin unicidad para (negocio, número, revisión). Un camino nuevo
+  que cree revisiones sin pasar por `crearRevisionDeQuote` no tendría cerrojo. El índice único es
+  esquema y lo decide el fundador.
+- El cerrojo es por negocio, no por número: dos revisiones de presupuestos distintos del mismo
+  negocio se esperan una a otra durante lo que dura una creación.
+
+### Pruebas de SCRUM-1150c
+
+- `tests/scrum1150c-dos-crear-revision-a-la-vez.test.mjs`, 4 casos con Prisma doblado, corre siempre:
+  las claves del cerrojo y que no comparte espacio, que el grupo se lee y se escribe detrás de él, que
+  si la `.1` aparece mientras se espera sale la `.2` heredando de la `.1`, que si el presupuesto
+  desaparece se rechaza sin escribir, y que un rechazo decidible sin esperar no toma el cerrojo.
+- `tests/scrum1150c-carrera-de-la-revision-postgres.test.mjs`, 2 casos contra el banco desechable
+  (`LIBRO_PG_URL`; declarados en `tests/scrum419`): diez pares a la vez sin una sola revisión repetida,
+  y la espera vista en `pg_locks` (otro tiene el cerrojo, la creación aparece como pendiente, no ha
+  escrito, y al soltar lee la `.1` del otro y escribe la `.2`).
+- **Control positivo** (`evidencias/SCRUM-1150c/salida-control-positivo.txt`, con el `numstat` de cada
+  inyección): base 6 de 6. Con el fichero de `main` caen 5 de 6. Con el cerrojo puesto pero sin releer
+  detrás, 5 de 6. Sin cerrojo, 5 de 6. El que pasa en los cuatro es el que tiene que pasar: el rechazo
+  que no llega a tomar el cerrojo.
+- Vecinos: 105 ficheros de `tests/` que nombran lo tocado, 848 tests, 823 pasan, 0 fallan, 25 saltos
+  (los de otras bases). La primera pasada dio 1 rojo, el de SCRUM-219 de arriba.
+- Tipos: `tsc --noEmit` sobre `quoteAdmin.ts` y su ruta (93 fuentes en el programa), 0 errores; la
+  misma sonda ve dos errores puestos a propósito. El proyecto entero no cabe en memoria en esta
+  máquina (1,3 GB libres): lo comprueba el check obligatorio.
+
+### No visto en yaqu.app, y por qué
+
+Al escribir esto la rama no está desplegada. La medida que decide es la de arriba, con el motor de
+verdad: en producción un par a la vez que sale bien no prueba nada por sí solo (con el código viejo
+salía bien 1 o 2 de cada 10). Lo que se mira al desplegar, y se escribe en el ticket: que el build
+servido es el del merge, y que dos «Crear revisión» a la vez sobre un presupuesto de la cuenta de
+pruebas contestan `.N` y `.N+1` y su ficha sigue abriendo.

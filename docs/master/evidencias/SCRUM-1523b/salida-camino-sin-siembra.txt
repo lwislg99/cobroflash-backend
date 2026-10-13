@@ -1,0 +1,17 @@
+POBLACION · casos ejecutados=4 · banco=temporal
+B · fila F1 sellada (numero de factura, con huella)
+    SALE PDF · bytes=4901 · lineas=19 · primera linea=«FACTURA» · titulo=no · cero derivado=no · dice «factura» en otro sitio=SI · lecturas=1
+      linea que nombra el documento: «FACTURA»
+      linea que nombra el documento: «Factura verificable en la sede electrónica de la AEAT»
+      linea que nombra el documento: «Factura generada automáticamente por YaQu · yaqu.app»
+      linea que nombra el documento: «Sistema de facturación verificable conforme al RD 1007/2023 (VeriFactu).»
+C · fila JUST + J- + pendiente_de_sellado (el DEFAULT del esquema)
+    NO SALE · invoice_pendiente_de_sellado · lecturas=1
+D · fila F1 con numero J- + no_aplica
+    SALE PDF · bytes=5190 · lineas=16 · primera linea=«FACTURA» · titulo=no · cero derivado=no · dice «factura» en otro sitio=SI · lecturas=1
+      linea que nombra el documento: «FACTURA»
+      linea que nombra el documento: «Escanea el QR para validar la factura.»
+      linea que nombra el documento: «Factura generada automáticamente por YaQu · yaqu.app»
+E · fila JUST con numero de factura + no_aplica, sin huella
+    NO SALE · invoice_sin_sellar:F2026-0002 · lecturas=1
+CIEGO: la fila sembrada no dio el titulo. Ninguna fila de arriba vale. EXIT=2

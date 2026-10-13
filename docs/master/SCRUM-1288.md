@@ -133,3 +133,82 @@ exigiendo MÁS, no menos; se dice porque es una aserción de un test que ya esta
 - No se ha corrido la suite completa (memoria de la máquina y turno); sí los dos ficheros, la tanda
   dirigida y `guards:entrada`. Ningún fichero de `src/` cambia, así que `dist/` no interviene.
 - No se ha visto ninguno de los tres correos saliendo.
+
+# APÉNDICE · SCRUM-1288c (S3) · El correo «presupuesto aprobado» al técnico, en es-ES
+
+**Medido contra:** `origin/main` = `44cbb050536158705c423950a76254ad8f1848b4` · 2026-10-09T11:46:09Z
+**Rama:** `scrum-1288c-el-correo-al-tecnico-en-euros` · **Carril:** `src/` de S1, por encargo del orquestador (punto 3 del lote de la cuarta tanda del 9-oct) · **Resultado:** uno de los tres correos que el apéndice 1288b dejó como DEUDA, arreglado; los otros dos no se tocan
+
+A9: sin fallo que generalice — el arreglo son dos líneas de `src/` y su rojo salió a la primera, corriendo el test nuevo contra el `dist/` de antes de recompilar
+
+## Qué cambia
+
+| fichero | antes | ahora |
+|---|---|---|
+| `src/modules/system/app/routes/quotesAdmin.routes.ts` (quien llama, S1) | `total: Number(quote.total).toFixed(2)` | `total: Number(quote.total)` |
+| `src/modules/messaging/domain/merchantNotifications.ts::sendTechQuoteApprovedEmail` (S1) | `total: string`, y la plantilla escribía `${total} ${currency}` | `total: number`, y la plantilla escribe `formatMoneyEs(total, currency)` |
+| `scripts/_censo-gemelo-crudo.mjs` | la entrada `SIN_FORMATEAR` de esa función, DEUDA | pasa a `RETIRADAS` |
+
+Lo que lee el técnico en la fila «Total»: «1234.50 EUR» → «1.234,50 €». Ninguna otra palabra del correo cambia.
+
+## Por qué sólo uno de los tres
+
+Los tres se escriben en el mismo fichero de S1. Lo que los separa es quién les pasa el importe:
+
+| correo | quien llama | qué pasa hoy |
+|---|---|---|
+| «presupuesto aprobado», al técnico | `quotesAdmin.routes.ts` (S1) | **arreglado aquí** |
+| «💰 Pago recibido», al profesional (asunto y cuerpo) | `src/modules/billing/app/routes/psp.routes.ts` (**J2**) | SIGUE: «1234.5 EUR». Es el aviso de un cobro |
+| «presupuesto aceptado», al profesional | `src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts` (**J2**) | SIGUE: «1234.50 EUR» |
+
+El encargo: «si el arreglo es el mismo formateador, hazlo; si cruzan a Javier, nómbralos y paras». Los dos de abajo cruzan: el arreglo limpio (que llegue el número) cambia la llamada en dos ficheros de J2. Siguen en el censo como DEUDA, con su motivo.
+
+## La firma, dicha como está
+
+El cambio lo ve un usuario (regla 39). Lo pedí en Jira (SCRUM-1288, c.19094, punto 2: «no estiro esa firma: te la pido»). La respuesta del orquestador está en el encargo de la cuarta tanda, punto 3, que es un mensaje a esta sesión y **no un comentario de Jira**. No se ha escrito ningún literal nuevo: es el formateador que ya usan los siete avisos de este ticket.
+
+## Los rojos
+
+`evidencias/SCRUM-1288c/mutar-1288c.txt` (guion al lado).
+
+| qué se rompe | resultado |
+|---|---|
+| El test nuevo contra el `dist/` de antes (sin recompilar) | ROJO en 3 de 4: «1234.5 EUR», «99 EUR», «1500 MXN». El cuarto (asunto, saludo y cliente) pasa: no ha cambiado |
+| M1 · la plantilla vuelve a pegar el total a la moneda (`src/`, `numstat` 1 1) | ROJO en 2 de 31: `scrum1288b` («los tres correos… VISTOS») y `scrum1452` («ninguna identidad RETIRADA ha vuelto a aparecer») |
+| M2 · quien llama vuelve a pasar `toFixed(2)` (`src/`, `numstat` 1 1) | ROJO: `tsc --noEmit` sale 2, `TS2322: Type 'string' is not assignable to type 'number'` |
+
+Base del trinquete 31 de 31 antes y después; `git status` vacío tras cada restauración.
+
+## Lo que NO mide
+
+- El camino entero por la ruta (aprobar el presupuesto → correo): pide base y ningún test lo corre. El lado de quien llama lo ata el tipo (M2).
+- El correo recibido en un buzón: no se ha enviado ninguno. Lo que se lee es el HTML que la función real entrega al emisor, doblado.
+
+## Reproducir
+
+    node --test tests/scrum1288c-el-correo-al-tecnico-en-euros.test.mjs
+    node docs/master/evidencias/SCRUM-1288c/mutar-1288c.mjs
+
+## 13-oct · El obligatorio de #2340 estuvo cuatro días en rojo, y el rojo era mío
+
+**Medido contra:** `origin/main` = `6f35b50901fac64347d862255ec755a036ca1f0d` · 2026-10-13T11:02:11Z
+
+A9: comprobación → `tests/scrum622-desconocido-no-es-verde.test.mjs`
+
+No cayó por el arreglo ni por su test. Run 37926919510, un caído de 7.618: `SCRUM-622 · EL CENSO`, que barre el árbol entero buscando expresiones cuyo lado por defecto es el estado bueno. Encontró dos, las dos en el guion de los rojos de este PR:
+
+    docs/master/evidencias/SCRUM-1288c/mutar-1288c.mjs:50   r.fail > 0 ? 'ROJO' : 'VERDE'
+    docs/master/evidencias/SCRUM-1288c/mutar-1288c.mjs:59   r.status !== 0 && errores.length ? 'ROJO' : 'VERDE'
+
+Y tenía razón en las dos. Una pasada sin recuento (`fail` no numérico) salía `VERDE`; un `tsc` que no llegó a correr, también. Y el guion acababa en `EXIT=0` pasara lo que pasara. El guard no se ha tocado; cambia el guion:
+
+| qué | antes | ahora |
+|---|---|---|
+| M1 sin recuento de tests | `VERDE` | `CIEGO` |
+| M2 con `tsc` caído sin ningún error que nombre el fichero mutado | `VERDE`, o `ROJO` por un error de otro sitio | `CIEGO` |
+| Una mutación que no casa | se saltaba, y `EXIT=0` | cuenta como `CIEGO` |
+| Código de salida | siempre 0 | 1 si algo no es `ROJO`, o si la base de después no queda verde |
+
+Corrido otra vez sobre el árbol ya fusionado con `main` (`77c630f9`, build exit 0): 2 de 2 `ROJO`, los mismos casos del 9-oct, base 31 de 31 antes y después; `mutar-1288c.txt` es esa salida. Control del camino nuevo: una copia del guion cuya M2 busca un texto que no existe dice `CIEGO`, `RECUENTO · 1 ROJO · 0 VERDE · 1 CIEGO`, y sale 1.
+
+El fallo mío: escribí el guion DESPUÉS de la última pasada de los guards de árbol entero, y empujé. Un guion de `docs/master/evidencias/` es código para esos censos. La sesión se cortó por límite de uso antes de leer el veredicto, y el PR se quedó en rojo cuatro días. La cicatriz del puesto va en el PR #2337, que cayó por lo mismo.
