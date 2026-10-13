@@ -163,7 +163,7 @@
         acciones.appendChild(boton(TEXTOS.ponerFecha, 'btn-secondary', pintarFormulario));
       } else {
         contenedor.appendChild(crear('p', '', textoDelEstado(actual)));
-        if (actual.nota) contenedor.appendChild(crear('p', '', actual.nota));
+        if (actual.nota) contenedor.appendChild(crear('p', 'volver-a-llamar-nota', actual.nota));
         var hecho = boton(TEXTOS.hecho, 'btn-primary', function () {
           apagar([hecho, cambiar], true);
           Promise.resolve().then(function () { return o.hecho(); }).then(function () {

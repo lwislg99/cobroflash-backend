@@ -4538,3 +4538,7 @@ textarea.parte-linea-desc {
   .data-card:has(#quotes-count) .data-card-header > div > .btn-sm,
   .data-card:has(#quotes-count) td.cell-actions > div > .btn-sm { min-height: 44px; }
 }
+
+/* SCRUM-1056 · «Volver a llamar»: la nota es texto libre del profesional. Una palabra muy larga
+   (un enlace, una referencia) se parte en vez de salirse de la tarjeta: medido a 390 px. */
+.volver-a-llamar-nota { overflow-wrap: anywhere; }

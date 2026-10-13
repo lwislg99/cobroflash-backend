@@ -140,7 +140,12 @@ test('SCRUM-1056 · ficha con fecha: la frase la decide el ESTADO que manda el s
     const m = montada({ dia, nota: '  Preguntar por la caldera  ', estado });
     assert.deepEqual(textos(m.contenedor, 'P'), [frase, 'Preguntar por la caldera'], `${estado}: frase y nota`);
     assert.deepEqual(botones(m.contenedor).map((b) => b.textContent), [FIRMADOS.hecho, FIRMADOS.cambiar], `${estado}: acciones`);
+    // La nota es texto libre: lleva la clase que parte una palabra larga. Sin ella se salía de la
+    // tarjeta a 390 px, y eso lo vio el navegador, no este banco (aquí sólo se fija la clase).
+    assert.equal(todos(m.contenedor).filter((n) => n.tagName === 'P')[1].className, 'volver-a-llamar-nota', `${estado}: la nota sin su clase`);
   }
+  const css = fs.readFileSync(path.join(RAIZ, 'public/dashboard/css/styles.css'), 'utf8').replace(/\r\n/g, '\n');
+  assert.match(css, /\n\.volver-a-llamar-nota \{[^}]*overflow-wrap: anywhere;[^}]*\}/, '🔴 la hoja ya no parte las palabras largas de la nota');
   // 🔴 El mismo día con dos estados da dos frases: la pieza no lo decide mirando la fecha.
   const a = montada({ dia: '2099-01-01', nota: '', estado: 'vencido' });
   assert.deepEqual(textos(a.contenedor, 'P'), [VENCIDO('01/01/2099')], 'manda el estado del servidor aunque la fecha parezca lejana');
