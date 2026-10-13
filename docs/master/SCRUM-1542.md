@@ -229,3 +229,137 @@ De `jv-j2k`:
 2. La frase de A10 me llegó en la ficha sin tildes («cuando se escribio, no cuando entro»). No está en
    Jira para copiarla byte a byte: **las tildes las he puesto yo**, y lo digo.
 3. El hook de arranque dijo «SIN IDENTIDAD» (SCRUM-1498). Seguí, porque el encargo es sólo `docs/`.
+
+## 13-oct-2026 · SCRUM-1542c · EL ARREGLO (S5): primer padre, la lectura anterior entera, y el aviso que se puede hacer sonar
+
+**Medido contra:** `origin/main` = `fc10ff9cb3b29eb18a5da552ec18f8c551eba7b7` · 2026-10-13T14:55:23Z
+
+A9: comprobación → `tests/scrum1542c-el-hueco-se-fecha-por-entrada.test.mjs`
+
+Carril S5 (los scripts del vigía, `scripts/equipo/**`, `.github/workflows/**`). No toca `src/`, ni
+producción, ni el punto ④ del ticket: **qué hace el vigía al detectar sigue siendo del fundador.**
+Rama `scrum-1542c-primer-padre-y-el-aviso-suena`. Lo construye la Sesión 5 sobre lo medido arriba
+por el equipo de Javier; ninguna cifra de aquella medición se ha vuelto a medir aquí, salvo las que
+se dicen.
+
+### Lo que entra
+
+| qué | dónde | antes → ahora |
+|---|---|---|
+| ① La cifra | `scripts/vigilante-de-despliegue.mjs`, `scripts/_vigilante-de-despliegue.mjs` | el hueco se fechaba con el commit más viejo de todo `prod..main` → se fecha con la cadena de PRIMER PADRE: cuándo ENTRÓ en `main` |
+| ② El ritmo | `scripts/_ritmo-de-despliegue.mjs` | de la lectura anterior se leía sólo `prod=` → se leen también su HORA y su `main` |
+| ③ El aviso | `.github/workflows/vigia-despliegue.yml`, `scripts/equipo/simulacro-del-vigia.mjs`, `scripts/vigia-despliegue-aviso.mjs` | no había forma de hacerlo sonar → `gh workflow run vigia-despliegue.yml -f simulacro=true` |
+| el latido | `scripts/equipo/latido.mjs` | — → aparta las corridas de simulacro por su título |
+
+### ① La cifra
+
+`git log --first-parent --format=%ct prod..main`, y de ahí el mínimo. **El supuesto, medido:** vale
+porque todo entra en `main` por un merge que firma GitHub con la hora del merge. Sobre los 2.000
+últimos commits de primer padre de `main` (13-oct, `git log --first-parent -2000 --format=%cn`):
+**2.000 de 2.000 firmados por «GitHub»**. Un push directo de commits viejos, hoy bloqueado, volvería
+a meter una fecha de escritura: por ese lado la cifra sólo puede inflar.
+
+De paso, en el mismo sitio: una salida vacía de `git log` daba epoch `0` (`Number('')`) y un hueco
+de 56 años. Ahora «no pude leer la fecha» llega al veredicto como ciego. Y el detalle dice las dos
+cuentas con su nombre: commits y ENTRADAS («20 commits» eran 2 merges).
+
+### ② El ritmo: los cuatro casos
+
+`e` = cuándo se abrió el hueco de ahora (entrada en `main` de lo más antiguo sin desplegar) ·
+`t0` = hora de la lectura anterior.
+
+| producción entre las dos lecturas | el hueco | antes | ahora |
+|---|---|---|---|
+| igual | cualquiera | CONGELADO (1) | CONGELADO (1) |
+| distinta | ya estaba en `t0` | DESPLIEGA (0) | DESPLIEGA (0) |
+| distinta | se abrió después de `t0`, o la anterior no lo vio | DESPLIEGA (0) | **NO SE SABE (2)** |
+| cualquiera | la anterior vio `prod` = `main` y aun así `e` es más de 10 min anterior a `t0` | 1 ó 0 | **NO SE SABE (2)**: las dos lecturas se contradicen |
+
+**Desviación DECLARADA sobre la propuesta de arriba** («que congelado exija que lo que falta ya
+estuviera en `main` en aquella lectura»): **no se exige.** Con producción quieta y un hueco REAL de
+más del margen, esperar a que haya dos lecturas con el hueco retrasa un ciclo el aviso de una parada
+de verdad (mediana 6,2 h entre dos pasadas, máximo 11,3 h, medido arriba). Lo que sí lo exige es
+DESPLIEGA. La falsa alarma que motivaba la propuesta (7-oct, «CONGELADA, 10,1 h» con 15 s reales)
+la paran dos cosas: la cifra ya no sale inflada, y si volviera a salir, la cuarta fila la caza.
+Aprobada por el orquestador de Luis el 13-oct por el canal de sesiones.
+
+**Lo que SIGUE sin arreglar, y se dice:** en la tercera fila el aviso de una parada real sigue
+llegando un ciclo tarde, porque «no lo sé» es salida 2 y por ceguera no se abre Issue. Antes ese
+ciclo era un VERDE; ahora es un rojo sin Issue. Que cante es cambiar qué hace el vigía al detectar:
+punto ④, del fundador.
+
+### ③ El aviso: el simulacro
+
+Se fabrica UNA cosa: lo que contesta `/version`. El vigía lee una URL `data:` con un commit viejo de
+`main` dentro (por `VIGIA_URL`, no por `argv`: guard de SCRUM-226) y lo demás corre por su camino
+de siempre: mismo guion, mismo paso de aviso, mismo token, misma marca, misma dedupe.
+
+| lo que podría salir mal | qué lo impide |
+|---|---|
+| la lectura fabricada llega a la memoria del vigía y calla un hueco real | en simulacro la caché ni se recupera ni se guarda |
+| el Issue del simulacro se queda abierto con la marca y se come el siguiente aviso real | el último paso lo cierra; sólo cierra lo que ESE simulacro abrió |
+| se da por bueno porque «el paso corrió» | el último paso le pide el Issue a la API y mira que exista y lleve la marca |
+| lanzarlo cancela una pasada de verdad | va en su propio grupo de concurrencia |
+| el latido lo lee como «CANTÓ y NO CONSTA SU AVISO» | el `run-name` empieza por «SIMULACRO del aviso del vigía» y el latido lo aparta, contándolo |
+| alguien lee el renglón como una lectura de producción | el vigía dice «ESTA LECTURA NO ES DE PRODUCCIÓN» siempre que la URL no sea la suya; el Issue lo dice en el título y en la primera línea |
+
+⚠️ **Una ejecución de simulacro sale en ROJO, y es lo que tiene que pasar:** el vigía canta fallando
+el job. Si fue bien lo dice su último paso, «¿sonó?», no el color del run.
+
+### Comprobado
+
+| qué | cifra |
+|---|---|
+| `tests/scrum1542c-el-hueco-se-fecha-por-entrada.test.mjs` | 18 tests, 18 pasan. Los de punta a punta corren el CLI de verdad sobre un repo con un MERGE (rama de hace 96 h, merge de hace 59 s) |
+| los 13 ficheros de tests que ya ataban el vigía y el latido | 110 tests, 110 pasan, con el cambio puesto y sin tocar ninguno |
+| mutaciones (`docs/master/evidencias/SCRUM-1542/s5-mutar.mjs`) | base 18 de 18; **25 de 25 mueren por el test que las nombra** (6 declaradas en el propio test + 19 extra), cada una con su `git diff --numstat`; árbol limpio al acabar |
+| tanda dirigida (`scripts/tests-que-cubren.mjs --lanzar`, 2 tramos, antes del registro) | 272 ficheros de 1.321, 2.695 tests, 2.683 pasan, 7 caen. Los 7, uno a uno, abajo |
+
+Los 7 de la dirigida: **2 eran de este cambio y se arreglaron en el código** (el censo de señales
+del entorno de `scrum702`: el test nombraba una para apagarla, y ahora construye a mano el entorno
+del sujeto; y el censo de `scrum723`: el simulacro lee `origin/main`, que es su sujeto, y entra en
+`HALLAZGOS_DECLARADOS` con su motivo, aprobado por el orquestador). **2 esperaban este registro**
+(`scrum854`, `scrum976`). **2 de `scrum804` los provoqué yo**: hice `git fetch` con la tanda
+corriendo y el censo de ramas leyó el remoto antes y después (es la carrera de SCRUM-1539, inducida).
+**1 es de entorno y el propio selector lo dice** (`scrum1321`, «ciego por entorno, no es tu cambio»).
+
+### Hallazgos de paso
+
+- **SCRUM-1122, que arriba consta sin leer, está leído.** Su título dice «Producción congelada 193h»
+  y su cuerpo fecha el último commit desplegado el 24-sep a las 16:09:26Z y la lectura el 25-sep a
+  las 14:49Z: 22,7 h. **La cifra del título es la inflada; el diagnóstico de la causa no depende de
+  ella.** En su tabla, el vigía dijo «172,2 h, retrasado pero desplegando» a las 18:01Z del 24-sep,
+  con producción parada desde hacía menos de dos horas.
+- El cuerpo del aviso decía «antes esto tardó 8 días en verse». Eran las 193 h. Ahora dice lo
+  medido: 24,5 h sin un despliegue bueno. Lo mismo en el comentario del workflow.
+
+### Aceptación → dónde se ve
+
+| lo que pedía el encargo | dónde se ve |
+|---|---|
+| fechar por el PRIMER PADRE | `tests/scrum1542c-el-hueco-se-fecha-por-entrada.test.mjs`, «EL CASO DEL 13-oct» y «Y SIGUE CANTANDO» |
+| que el ritmo lea también la hora y el `main` de la lectura anterior | el mismo fichero, bloque ② |
+| hacer sonar el aviso una vez a propósito | abajo, «El simulacro en vivo» |
+| ④ qué hace al detectar | NO HECHO → del fundador (no se construye sin su OK) |
+
+### El simulacro en vivo
+
+PENDIENTE al escribir esto: se lanza desde la rama, ya empujada, y su resultado se anexa aquí.
+
+### No medido
+
+- Que el correo del Issue le llegue a una persona: depende de quién vigile el repositorio en GitHub.
+- El simulacro no ejercita la lectura de `yaqu.app/version` ni la caché entre dos pasadas de verdad:
+  las aparta a propósito.
+- Las cifras del equipo de Javier (105 ejecuciones, 27 con hueco, 5,2 pasadas al día) no se han
+  vuelto a medir.
+
+### Mis errores
+
+1. **Medí mi contexto a los 394k**, no al acabar la lectura de arranque: el orquestador pidió aviso a
+   los 300k.
+2. **Escribí una hora de memoria** en un mensaje al orquestador («14:58Z»; GitHub decía 14:53Z).
+3. **Hice `git fetch` con la tanda dirigida corriendo**, y dos tests que censan ramas cayeron por eso.
+4. Dejé pasar el segundo tramo de la dirigida a segundo plano (pasó de diez minutos); la norma del
+   día era nada en segundo plano.
+5. El primer `correElVigia` de los tests le prestaba al sujeto el entorno entero del laboratorio.
