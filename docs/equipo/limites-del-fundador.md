@@ -80,6 +80,11 @@ Su literal, como lo dejó en el chat de su orquestador:
   delegación sigue saliendo vigente; sin la viñeta de Luis, deja de estarlo
   (`docs/master/evidencias/SCRUM-997/vigencia.mjs`). Que un texto fiscal del equipo de Javier suba a
   Javier lo sostiene hoy quien firma.
+- **Desde SCRUM-997d el oráculo lo dice en vez de callarlo.** Una firma delegada ya no sale «aprobada» a
+  secas: sale `aprobada-por-delegacion-sin-comprobar`, con la lista de lo que no se ha mirado de ella
+  (`NO_COMPROBADO_EN_UNA_DELEGADA`, en `tests/_microcopy-aprobada.mjs`). **Sigue contando como aprobada**:
+  decirlo no es comprobarlo, y la exclusión de arriba sigue sin mecanismo. A quién alcanza cada delegación
+  lo decide cada jefe.
 
 Lo que NO está delegado y vuelve siempre a él: coste nuevo o dependencia nueva,
 el camino de emisión fiscal y cualquier cambio de infraestructura de producción (la regla 36 del máster es otra cosa: plugins, skills y hooks de terceros; y la 38 dice que un test que solo LEE el camino fiscal NO es STOP. Estas reservas vienen de las STOP CONDITIONS de CLAUDE.md y de lo que el fundador ha dicho; se citaban mal, lo cazó la auditoría de la Sesión 0 del 17-sep).
