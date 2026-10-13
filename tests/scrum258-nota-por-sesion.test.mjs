@@ -255,7 +255,11 @@ test('SCRUM-258 · ningún script guarda estado en una ruta fija compartida por 
 // reconocerlos pediría análisis entre funciones. No es una lista de excepciones y se comporta
 // como el censo de SCRUM-267 — NO PUEDE CRECER, y si BAJA también falla, para que la mejora
 // quede anotada en vez de pasar desapercibida.
-const RESIDUO = { 'scripts/e2e-critico.mjs': 2 };
+//
+// BAJÓ A CERO el 13-oct-2026 (SCRUM-1521): los dos vivían en `e2e-critico.mjs`, y ese guion se
+// retiró por decisión del fundador (Jira, SCRUM-1521 c.19145). No se arregló el análisis entre
+// funciones: desapareció el fichero. El censo sigue sin poder crecer.
+const RESIDUO = {};
 
 test('SCRUM-258 · SUELO: el analizador recorre los scripts de verdad', () => {
   const n = ficherosDe(RAIZ, 'scripts').length + ficherosDe(RAIZ, 'tests').length;
