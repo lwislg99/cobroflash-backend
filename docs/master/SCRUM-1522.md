@@ -146,3 +146,113 @@ nuevo. B deja el defecto en pie y lo rotula.
   salida, que imprime el desfase del proceso: decía 60 minutos donde tocaban 120. La zona va ahora por
   argumento (`--tz=`) y la salida vieja está borrada.
 - Avisé de los 200k a 194.501, con la medición ya hecha y antes de escribir este registro.
+
+
+# SCRUM-1522b · El panel cuenta las plantillas de hoy con el mismo filtro que el tope
+
+**Medido contra:** `origin/main` = `6834c4b8ded04eaedb5cea07f2c5cb94bafbe6d9` · 2026-10-13T00:31:19Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum1522b-el-panel-cuenta-lo-mismo.test.mjs`
+
+J2 (sesión `jv-j2`, relevo, equipo de Javier). **Construido con las tres decisiones del fundador,
+Jira SCRUM-1522 c.19157:** ① las métricas pasan al día del comercio, igual que el tope · ② el mes
+también · ③ «Hoy» no cuenta las plantillas rechazadas: cuenta lo mismo que el tope. La medición de
+partida es el tramo de arriba (c.19150).
+
+## Qué se ha cambiado
+
+Sólo `src/modules/messaging/domain/whatsappLog.service.ts` (carril J2). Ninguna pantalla, ninguna
+ruta, ningún texto.
+
+- Una función nueva, `plantillasDeHoy(merchantId, zona, ahora)`, que devuelve el filtro: plantillas
+  desde el inicio del día del comercio, con identificador del proveedor o en `queued`. No se exporta.
+- `reservarPlantilla` (el tope) pide ese filtro en vez de escribirlo. Cuenta lo mismo que antes.
+- `getWhatsAppMetrics` lee la zona del comercio (`zonaDelMerchant`) y:
+  - `templateToday` es un `count` con ese mismo filtro (antes: todas las filas desde la medianoche
+    del proceso, rechazadas incluidas);
+  - `windowToday` cuenta desde el inicio del día del comercio;
+  - el mes (`monthStart`) empieza el día 1 del mes del comercio: con él se mueven `month.*`, el
+    coste estimado, `byTemplate`, `windowMonth` y el ahorro.
+- La ventana de 7 días de la alerta no se toca: son 7 × 24 h hacia atrás, sin calendario.
+
+Un comercio sin zona declarada sigue en UTC en los dos lados, como antes.
+
+## El control, visto en rojo antes de construir
+
+`tests/scrum1522b-el-panel-cuenta-lo-mismo.test.mjs`: las mismas filas por las dos funciones reales
+de `dist/`, con una base en memoria que evalúa el filtro que cada una pide. La zona del proceso se
+cambia dentro del test (`process.env.TZ`) y se comprueba que ha entrado, con el desfase de un
+instante de verano, antes de medir. Se corre en tres zonas de proceso: UTC, `Europe/Madrid` y
+`America/New_York`.
+
+| caso (comercio en Madrid, proceso en UTC) | antes: panel · tope | después: panel · tope |
+|---|---|---|
+| 13 de madrugada + 87 de día, a las 18:00 de Madrid | 87 · 100 (BLOQUEADO) | 100 · 100 (BLOQUEADO) |
+| 90 enviadas + 15 rechazadas | 105 · 90 | 90 · 90 |
+
+- **Antes** (`docs/master/evidencias/SCRUM-1522b/rojo-antes.txt`): 13 casos, pasan 2, caen 11. Los
+  dos que pasaban: el suelo, y el caso del fundador con el proceso en `Europe/Madrid`, donde el reloj
+  del proceso coincide con el del comercio.
+- **Después** (`verde-despues.txt`): 13 de 13. Con los vecinos, 14 ficheros: 187 casos, pasan 181,
+  caen 0, saltan 6 (los seis piden una base: `A55_DB_TEST`, `SERIE_PG_URL`, `LIBRO_PG_URL`).
+- **Barrido** (dentro del test): 3.456 instantes (3 zonas de proceso · 4 ventanas de 48 h —los dos
+  cambios de hora, un fin de mes y el fin de año— · 3 zonas de comercio · 96 instantes), sobre una
+  bolsa de filas de todos los estados. Antes: 3.456 de 3.456 con el panel y el tope contando distinto.
+  Después: 0. Lleva dos suelos: más de la mitad de los instantes tienen algo que contar, y hay
+  instantes en que dos zonas dan cuentas distintas (si no, la igualdad se cumpliría sin mirar la zona).
+
+## Qué pieza hace el trabajo
+
+`docs/master/evidencias/SCRUM-1522b/quitar-una-pieza.cjs` quita una pieza cada vez, recompila y
+corre este test y el del censo (34 casos). Salida en `salida-quitar-una-pieza.txt`:
+
+| se quita | caen | cuáles |
+|---|---|---|
+| nada (base) | 0 de 34 | |
+| la zona del comercio en las métricas | 8 | el caso del fundador en las tres zonas de proceso, el mes, la ventana y el barrido |
+| el `count` con el filtro del tope en «Hoy» | 5 | las rechazadas en las tres zonas, las de en cola y el barrido |
+| el mes en la zona del comercio | 5 | el mes en las tres zonas y **dos casos de `scrum1093h`** (ver abajo) |
+| la exclusión de las rechazadas en el filtro común | 4 | las rechazadas y las de en cola: el test fija el 90, no sólo que coincidan |
+
+## 🔴 El trinquete de SCRUM-1093h BAJA, y se declara
+
+`getWhatsAppMetrics` estaba en `scripts/_censo-fecha-sin-zona.mjs` clasificada `AGREGADO`: dada por
+buena leyendo el reloj del proceso. Ya no lo lee (ni `getFullYear`, ni `getMonth`, ni `setHours`),
+así que su fila desaparece del censo. **Con el permiso de Jira SCRUM-1522 c.19157**, la entrada sale
+de `USO` y entra en `RETIRADAS`. Es apretar: una `AGREGADO` que desaparece no la vigila nadie; una
+`RETIRADA` que vuelve a aparecer pone en rojo «ninguna entrada de `RETIRADAS` ha vuelto a aparecer
+en el censo». Visto en rojo: es la tercera fila de la tabla de arriba.
+
+## Tocado fuera del fichero del arreglo, y por qué
+
+- `tests/scrum530-…` y `tests/scrum862-…`: sus dobles de la base sólo tenían `findMany`. Las métricas
+  leen ahora también el comercio y hacen un `count`; sin eso el servicio se traga el error y devuelve
+  ceros. Cada doble aprende las dos lecturas (comercio sin zona, cuenta 0). Ninguno de los dos mira
+  «Hoy»; sus aserciones no cambian.
+- `docs/master/evidencias/SCRUM-1522/dos-hoy.cjs`: mismo motivo, y peor. Tras el arreglo daba
+  «panel 0» en los 8 casos con `EXIT=0` y «SUELO: los 8 casos tenían filas»: su doble no tenía el
+  comercio fuera de la transacción y las métricas se tragaban el error. Arreglado el doble, y el
+  suelo exige ahora que el panel haya visto las filas del mes. Salidas de después, con el proceso en
+  UTC y en Madrid: `docs/master/evidencias/SCRUM-1522b/dos-hoy-despues-*.txt` (8 de 8 coinciden).
+
+## Lo que queda distinto a propósito, y lo que no he medido
+
+- **El mes sigue contando las rechazadas** (`month.total`, `month.failed`, el coste estimado). La
+  decisión ③ es sobre «Hoy». Con 90 enviadas y 15 rechazadas la tarjeta dice «105 plantillas» del
+  mes y «Hoy: 90». No lo he tocado ni lo propongo: lo digo.
+- **No he medido nada en yaqu.app**: el PR no ha entrado. Ni el panel pintado con sesión.
+- **No he corrido la tanda completa** en local (el arnés la mata por memoria). Sí `guards:entrada`
+  y los vecinos de arriba. La pasada completa es el obligatorio del PR.
+- La zona del proceso de Railway sigue sin medir. Ya no decide: el test da lo mismo en las tres.
+- Los tests gateados por base (`a55-window-quote` y los de staging) no se han ejecutado.
+
+## Errores propios
+
+- **Mi arreglo dejó mudo el instrumento de mi antecesora y no lo vi venir bien.** Supuse que
+  `dos-hoy.cjs` pasaría a comparar el panel consigo mismo (porque las métricas ahora también hacen
+  `count`). Al correrlo era otra cosa: «panel 0» por un error tragado, con salida 0. La suposición la
+  corrigió ejecutarlo. Lo que lo impide en el test nuevo: el doble apunta todo filtro que no conoce y
+  el caso cae si apuntó alguno, y la cuenta del tope se toma después de vaciar la lista y tiene que
+  ser exactamente una.
+- La ficha del encargo daba `origin/main` = `0472952cd`; medido, `6834c4b8d` (habían entrado #2343,
+  #2342 y #2341). La rama se adelantó a `main` antes de empezar.

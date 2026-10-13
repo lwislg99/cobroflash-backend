@@ -43,6 +43,7 @@ const tabla = {
   create: async () => ({ id: 1 }), // la reserva NO se apunta: aqui solo se pregunta
 };
 const db = {
+  merchant: { findUnique: async () => ({ timezone: ZONA_GUARDADA }) }, // SCRUM-1522b: las metricas tambien leen la zona
   whatsAppMessage: tabla,
   $transaction: async (cb) => cb({
     merchant: { findUnique: async () => ({ timezone: ZONA_GUARDADA }) },
@@ -72,9 +73,13 @@ const rechazada = (iso) => ({ merchantId: COMERCIO, type: 'template', status: 'f
 const varias = (n, iso, f = enviada) => Array.from({ length: n }, () => f(iso));
 
 async function medir(nombre, { zona, ahora, filas }) {
-  FILAS = filas; ZONA_GUARDADA = zona; cuentas.length = 0;
+  FILAS = filas; ZONA_GUARDADA = zona;
   const instante = new RelojReal(ahora);
   const metricas = await getWhatsAppMetrics(COMERCIO, instante);
+  // SCRUM-1522b: desde el arreglo las metricas TAMBIEN preguntan con `count`. La lista se vacia
+  // aqui, justo antes de la reserva: si no, `cuentas[0]` seria la cuenta del panel y el guion
+  // compararia el panel consigo mismo.
+  cuentas.length = 0;
   fijarReloj(instante);
   let reserva;
   try { reserva = await reservarPlantilla(db, { merchantId: COMERCIO, topeComercio: TOPE, topeCliente: 3 }); } finally { soltarReloj(); }
@@ -84,6 +89,7 @@ async function medir(nombre, { zona, ahora, filas }) {
     zona: zona === null ? 'NULL' : zona,
     ahora,
     filas: filas.length,
+    panel_mes: metricas.month.total,
     panel_hoy: metricas.channel.templateToday,
     tope_cuenta: delTope.n,
     tope_desde: delTope.desde.toISOString(),
@@ -167,8 +173,10 @@ async function medir(nombre, { zona, ahora, filas }) {
     }));
   }
 
-  const suelo = r.length === 8 && r.every((x) => x.filas > 0);
-  console.log('SUELO: ' + (suelo ? 'los 8 casos tenian filas' : 'CIEGO'));
+  // SCRUM-1522b: `getWhatsAppMetrics` se traga cualquier error y devuelve ceros. Si el panel no ha
+  // visto ni una fila del mes, no ha medido: es CIEGO, no un «0».
+  const suelo = r.length === 8 && r.every((x) => x.filas > 0 && x.panel_mes > 0);
+  console.log('SUELO: ' + (suelo ? 'los 8 casos tenian filas y el panel las vio' : 'CIEGO'));
   console.log('EXIT=' + (suelo ? 0 : 1));
   process.exit(suelo ? 0 : 1);
 })().catch((e) => { console.error('ROTO:', e); console.log('EXIT=2'); process.exit(2); });
