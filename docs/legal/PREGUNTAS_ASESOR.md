@@ -690,7 +690,7 @@ pantalla pero se ven marcadas**. No se han reescrito: lo que hay abajo es lo que
 
 ### 21.1 · `descuadre` — 🔴 la que más importa, y no es un rótulo
 
-**(a) Qué la dispara.** `libroRegistroView.js:231`, dentro de `if (asientos.length === 0)` (`:229`):
+**(a) Qué la dispara.** `libroRegistroView.js:246`, dentro de `if (asientos.length === 0)` (`:244`):
 
 ```js
 if (libro.miradas > 0) avisar(COPY.descuadre(libro.miradas), 'warning');
@@ -701,7 +701,7 @@ Es decir: **se examinaron N facturas y no salió NI UN asiento**. `miradas` est�
 existe justamente para separar «no había» de «algo está roto». Cero asientos con `miradas: 0` es un
 negocio que no ha facturado; cero asientos con `miradas: 40` es **un libro que no cuadra**.
 
-**(b) Qué se pinta hoy** (`libroRegistroView.js:53-55`):
+**(b) Qué se pinta hoy** (`libroRegistroView.js:60-62`):
 
 > `[PENDIENTE microcopy oficial] El libro no cuadra: se han revisado 40 facturas y no ha salido
 > ningún asiento. No lo tomes como que no has facturado.`
@@ -721,7 +721,7 @@ Tres preguntas concretas:
 
 ### 21.2 · `avisoIlegibles` — importes que no se pudieron leer
 
-**(a) Qué la dispara.** `libroRegistroView.js:223-225`:
+**(a) Qué la dispara.** `libroRegistroView.js:238-240`:
 
 ```js
 if (Array.isArray(libro.importesIlegibles) && libro.importesIlegibles.length > 0) { … }
@@ -742,7 +742,7 @@ entender el profesional sobre la validez del libro mientras haya importes ilegib
 
 ### 21.3 · `avisoAjenas` — filas descartadas por no ser de este negocio
 
-**(a) Qué la dispara.** `libroRegistroView.js:226`:
+**(a) Qué la dispara.** `libroRegistroView.js:241`:
 
 ```js
 if (libro.ajenas > 0) avisar(COPY.avisoAjenas, 'warning');
@@ -761,7 +761,7 @@ que tiene que avisarnos a nosotros y no a él? Y si lo ve, ¿qué se le pide que
 
 ### 21.4 · `avisoSinNumero` — facturas sin número, que no son asiento
 
-**(a) Qué la dispara.** `libroRegistroView.js:227`:
+**(a) Qué la dispara.** `libroRegistroView.js:242`:
 
 ```js
 if (libro.sinNumero > 0) avisar(COPY.avisoSinNumero(libro.sinNumero), 'warning');
@@ -783,7 +783,7 @@ factura sin número quede fuera del libro y solo se avise?
 
 ### 21.5 · `trazaNoSellado` — albaranes posteriores al sello
 
-**(a) Qué la dispara.** `libroRegistroView.js:332-334`, por cada fila de la tabla:
+**(a) Qué la dispara.** `libroRegistroView.js:346-349`, por cada fila de la tabla:
 
 ```js
 if (e.albaranesNoSellados > 0) { … COPY.trazaNoSellado + ' ×' + e.albaranesNoSellados … }
