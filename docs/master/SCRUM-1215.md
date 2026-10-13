@@ -578,3 +578,49 @@ c.19088 decía «`SIN_APROBAR` deja de ser 4» en `quoteDireccionObra.js`. **No 
 
 - Nada en yaqu.app: no cambia ninguna pantalla.
 - La suite completa y `tsc`: en el check obligatorio. El cambio no toca `src/`.
+
+# SCRUM-1215j · el papel que nombra la letra: las 33 «sin papel» abiertas una a una, y el reparto entero de las 173
+
+**Medido contra:** `origin/main` = `cf0a4cb7eb8613d394f98bc3134ba9a89896839c` · 2026-10-13T13:56:39Z
+A9: aviso → A10 «Antes de escribir una sonda que pregunta «¿consta?», se busca la función de la casa que ya lo contesta: una sonda propia mira el papel que tú conoces, no el que hay.» — no se pudo comprobar: es el mismo fallo de 1215h por segunda vez en el día y sigue siendo de criterio; esta vez el papel que no conocía era el registro del propio ticket
+**Skill UI:** no cargada · no se toca ninguna pantalla ni ningún fichero del panel
+
+13-oct-2026 · **S4** · rama `scrum-1215j-el-papel-que-nombra-la-letra`. Encargo del orquestador (lote del 13-oct, 13:35Z, punto 1): «¿cuántas de las 173 no las vio nunca una firma? Dame el número con tu método. No las corrijas todavía». Sólo lectura: no se ha tocado ninguna hoja, ningún texto ni el censo. Entregado en SCRUM-1215 c.19421, corregido en c.19422.
+
+## La cifra
+
+**20 de las 173 tienen como única aprobación la del «asesor»**, que la casa no cuenta como firma (`tests/_microcopy-aprobada.mjs`, el comentario sobre `FIRMA_DELEGADA`: «por el asesor» se lee y sigue sin contar). Sin ningún papel fuera del comentario del código quedan 2. Sin ninguna firma en absoluto, 0.
+
+| cuántas | qué se sabe de su firma |
+|---|---|
+| 75 | constan firmadas por identidad (oráculo `constaAprobado`): 49 en una ficha de `docs/microcopy/`, 26 en el registro congelado |
+| 24 | firma hallada en el comentario de Jira que cita su letra (sección 1215h, sin cambio) |
+| 35 | su letra nombra al fundador y el oráculo no las ve. 32 tienen el literal en el registro del ticket o en su Jira, 2 (`settingsView.js · QR_COPY`) no tienen más papel que el comentario del código y 1 (`quoteActionsRegistry.js · btnCobrar`) está en una ficha que el oráculo no lee |
+| 12 | orquestador por delegación: 10 son plantillas con huecos que el oráculo no puede preguntar y están en su ficha; 2 (`jobDetailView.js · TEXTO_HUECO`) se firmaron por referencia en SCRUM-917, comentario 15881 |
+| 20 | sólo «aprobado por el asesor»; 5 de ellas lo dicen ellas mismas («a la espera del fundador») |
+| 7 | no son texto: 3 clases CSS, 1 clave de comparación, 2 opciones de formato de fecha y 1 cadena vacía |
+
+Suma 173. Las 20: `cobrosView.js` 7 (`COBROS_COPY` 6 y `COBROS_DESCONOCIDO.rotulo`), `estadoFirma.js` 7 (`TEXTO_FIRMA` 3, `TEXTO_DESALOJO` 2, `TEXTO_PRECARGA` 2), `filtroClientes.js` 5 (`TEXTOS_ETIQUETAS` 2, `TEXTOS_SELECCION` 3) y `buscadorDeClientes.js` 1 (`placeholder`). Con las 2 de `QR_COPY` son los 22 textos que c.19421 lleva en bloque a la firma del orquestador.
+
+## Qué se hizo que faltaba en 1215h
+
+- Se abrieron los 14 tickets de Jira que citan las letras de las 33 «sin papel» (descripción y comentarios, 51 de 51): 12 literales estaban en su ticket y 17 no.
+- Las 17 estaban en un papel que ninguna sonda miraba: el registro del propio ticket. `docs/master/SCRUM-303.md`, `docs/master/SCRUM-344.md`, `docs/master/SCRUM-285.md` y `docs/master/SCRUM-357.md` llevan la tabla de textos aprobados y dicen quién aprobó.
+- La fila de 30 «por subcadena» de 1215h era casi toda coincidencia de palabra genérica («Todos», «Cobros», «Marca» dentro de fichas de otros tickets). Aquí se reparten por lo que dice su propia letra, no por la coincidencia.
+
+## Dónde está y cómo se repite
+
+`docs/master/evidencias/SCRUM-1215/quien-la-vio/papel-nombrado.mjs` y su salida del 13-oct, `papel-nombrado.txt` (74 hojas: 64 en algún papel que nombra su letra, 7 en ninguno, 3 sin trozo buscable). Lleva control positivo y negativo y aborta si falla alguno. La sonda dice DÓNDE está el literal; quién firma se leyó a mano en cada línea que imprime, y esa lectura es la tabla de arriba.
+
+## Lo que destapa, y NO resuelve
+
+- El registro congelado (`docs/MICROCOPY_APROBADA_SIN_APLICAR.md`) no es «todo lo que el fundador aprobó hasta el 3-sep», que es como lo trata el oráculo: hay 32 hojas (30 de agosto, 2 del 2-sep) cuyo registro de ticket dice «aprobó el fundador» con el literal al lado y que no están en él. O el congelado está incompleto, o aquellos «aprobó el fundador» se escribieron de oídas. Desde el repo y desde Jira no se distingue: en Jira todo lo firma la misma cuenta.
+- De las 75 que constan, sólo se ha cruzado ficha contra ticket en 1. «Consta en alguna ficha» no es «en la suya».
+- Las 7 fichas a las que el oráculo no les lee ningún literal siguen sin causa.
+- No se ha comprobado que el código haga lo que dicen los 22 textos.
+
+## Errores propios de esta tanda
+
+- En c.19421 escribí «34 hojas de agosto» y eran 32, con 2 de septiembre: conté las 2 de `QR_COPY`, que justamente no tienen registro. Corregido en c.19422.
+- La hora de c.19422 la escribí sin tomarla de GitHub en el mismo comando. Coincidió con la que puso Jira, y aun así no se midió.
+- La foto de las hojas es de `f7a4c816ab2bf5c334a953dee60dc7b73718a0f8` y el oráculo se leyó sobre el árbol de hoy: por eso las 73 de 1215h son 75 aquí. No se ha vuelto a tomar la foto.

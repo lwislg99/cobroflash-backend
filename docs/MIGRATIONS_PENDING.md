@@ -3170,3 +3170,32 @@ a que esté en las tres bases (`schemaDrift` es fail-closed, SCRUM-1122).
 >
 > ⚠️ **Lo que esto NO habilita:** el PR ③ (esquema + código) sigue siendo un paso aparte.
 > `prisma/schema.prisma` no se ha tocado en ninguna de estas aplicaciones.
+
+## SCRUM-1490 · `quotes.series_year` (el año de la serie, guardado en el presupuesto) — 13-oct-2026 · ✅ **APLICADA EN LAS TRES BASES**, según el equipo de Javier
+
+**Una** sentencia, aditiva y re-ejecutable:
+`ALTER TABLE "quotes" ADD COLUMN IF NOT EXISTS "series_year" INTEGER;` — nullable, sin default, sin
+índice: ninguna fila cambia. El DDL lo sacó S1 el 6-oct-2026 con `node scripts/preview-migracion.mjs
+--desde <esquema de bafb0734>` (control positivo: 33 tablas; veredicto «aditiva»), y está pegado en
+los comentarios 18522 y 18617 del ticket. El `IF NOT EXISTS` lo añadió quien lo aplicó.
+
+Esta entrada la escribe S1 el 13-oct-2026 **sin haber aplicado ni medido ninguna base**: el árbol de
+la rama no tiene claves (`node scripts/comprobar-claves-bd.mjs`: las tres ausentes). Lo que consta
+sale del comentario 19370 del ticket, del orquestador del equipo de Javier:
+
+- [x] **desarrollo y tests · yaqu_dev_javier** (la misma base para las dos claves) — aplicada el
+      13-oct-2026 por el orquestador del equipo de Javier con `scripts/aplicar-sql-dev.mjs`, y leída
+      por él del catálogo: `series_year`, `integer`, admite nulos; control positivo (`quote_number`
+      → 1) y negativo (columna inventada → 0). **No medido por el equipo de Luis.**
+- [x] **staging** — aplicada por el fundador («OK hecho», según ese comentario). El comentario no
+      dice que se leyera del catálogo. **No medido por el equipo de Luis.**
+- [x] **producción** — aplicada por el fundador («OK hecho», según ese comentario). La medida propia
+      es el check «constancia del ALTER» del CI del PR #2252, que pregunta a producción por las
+      columnas que el cliente de Prisma va a nombrar: el 7-oct-2026 cayó nombrando
+      `quotes.series_year`, y el 13-oct-2026 (14:06Z, sobre `d8706857`, job 115341282939) contesta
+      «producción responde que no le falta ninguna de las 512 columnas preguntadas». **Medido por el
+      equipo de Luis, por esa vía.**
+
+⚠️ **El relleno de las filas que ya existen NO es este ALTER** y no está hecho en ninguna base:
+`scripts/rellenar-anio-de-la-serie.mjs` (simulacro por defecto) sigue sin ejecutarse, y quién lo
+corre sigue sin decidir. Este log no cubre migraciones de datos.

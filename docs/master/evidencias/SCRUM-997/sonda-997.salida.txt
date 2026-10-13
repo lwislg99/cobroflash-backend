@@ -1,0 +1,12 @@
+POBLACION: 7 comercios x 5 vias = 35 llamadas · FLAG_DEFAULTS.INVOICING_ES_ENABLED = false
+VIA por defecto (sin variable, sin override): {"receipt":7} · Madrid=receipt | Bizkaia, foral SI=receipt | Gipuzkoa, foral SI=receipt | Navarra, foral SI=receipt | Alava, sin contestar=receipt | Las Palmas=receipt | S.C. Tenerife=receipt
+VIA variable de entorno = false: {"receipt":7} · Madrid=receipt | Bizkaia, foral SI=receipt | Gipuzkoa, foral SI=receipt | Navarra, foral SI=receipt | Alava, sin contestar=receipt | Las Palmas=receipt | S.C. Tenerife=receipt
+VIA variable de entorno = true: {"fiscal":7} · Madrid=fiscal | Bizkaia, foral SI=fiscal | Gipuzkoa, foral SI=fiscal | Navarra, foral SI=fiscal | Alava, sin contestar=fiscal | Las Palmas=fiscal | S.C. Tenerife=fiscal
+VIA override del comercio = true (sin variable): {"fiscal":7} · Madrid=fiscal | Bizkaia, foral SI=fiscal | Gipuzkoa, foral SI=fiscal | Navarra, foral SI=fiscal | Alava, sin contestar=fiscal | Las Palmas=fiscal | S.C. Tenerife=fiscal
+VIA override del comercio = false, variable = true: {"receipt":7} · Madrid=receipt | Bizkaia, foral SI=receipt | Gipuzkoa, foral SI=receipt | Navarra, foral SI=receipt | Alava, sin contestar=receipt | Las Palmas=receipt | S.C. Tenerife=receipt
+LLAMADAS: 35 · PROPIEDADES LEIDAS (union): country, email, flags, id
+NO LEIDAS de las que llevaba el comercio: domicilioFiscalForal, timezone, address
+CONTROL pais MX -> fiscal (se espera fiscal) · CONTROL id demo -> demo (se espera demo) · CONTROL MX con override false -> fiscal (se espera fiscal: el pais no pasa por el flag)
+CONTROL del espia: leyendo timezone y domicilioFiscalForal apunta -> domicilioFiscalForal, timezone (se esperan las dos)
+CONTROLES: los cuatro como se esperaba
+EXIT=0

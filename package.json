@@ -182,6 +182,8 @@
     "enlace:ticket-rama": "node scripts/verificacion-s5/enlace-ticket-rama.mjs",
     "//ya-esta": "SCRUM-1424: ANTES de repartir un ticket — `npm run ya-esta -- <n>`. Dice YA ESTA / NO ESTA / NO HE PODIDO MIRAR (esta ultima sale 2) leyendo origin/main y no el disco: registro, evidencias, commits y ramas, desde cuando, y que otros registros lo nombran. Solo LEE; no mira Jira y lo dice.",
     "ya-esta": "node scripts/equipo/ya-esta.mjs",
+    "//parados": "SCRUM-1357b: quien esta BLOQUEADO ahora, contado por SESION y no por puesto — cruza `claude agents --json` con los state.json y da puesto, desde cuando y la pregunta (`needs`). Tarda 1 s. Sale 0 nadie / 1 hay bloqueadas / 2 NO PUDE MIRAR. Solo LEE.",
+    "parados": "node scripts/equipo/parados.mjs",
     "//antes-del-go": "SCRUM-568: cuántas de las afirmaciones publicadas condicionadas a un flag (regla 24) son alcanzables HOY para un merchant nuevo. Es un REGISTRO (sale 0 siempre), no una puerta.",
     "antes-del-go": "node scripts/estado-antes-del-go.mjs",
     "//arbol:mio": "SCRUM-774: PASO 0 antes de escribir — en qué worktree y rama está esta sesión, y si esa rama es la del ticket dado (`npm run arbol:mio -- 774`). Sin ticket, sólo informa. Exit != 0 si NO-MIO o CIEGO. Sólo lectura.",

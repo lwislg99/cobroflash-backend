@@ -1082,6 +1082,7 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   // —no sólo al buscar—, así que cargarla después dejaría la pantalla sin selector de cliente.
   'buscadorDeClientes.js',
   'cobrosView.js',
+  'clienteVolverALlamar.js', // SCRUM-1056 (CRM-15)
   'colaDeFirmas.js',
   'contacto.js',
   'csvImport.js',

@@ -24,7 +24,7 @@
 -- ajenas ni valores de enum. Y no reporta columnas de MÁS en la base: que la base vaya por
 -- delante del código es el orden seguro de un cambio aditivo, no un problema.
 --
--- Columnas esperadas: 511. Tablas: 33.
+-- Columnas esperadas: 512. Tablas: 33.
 
 WITH esperado (tabla, columna) AS (
   VALUES
@@ -481,6 +481,7 @@ WITH esperado (tabla, columna) AS (
     ('quotes','reminderSentAt'),
     ('quotes','revision'),
     ('quotes','selectedTierId'),
+    ('quotes','series_year'),
     ('quotes','shipping_address'),
     ('quotes','shipping_address_mode'),
     ('quotes','signatureUrl'),
