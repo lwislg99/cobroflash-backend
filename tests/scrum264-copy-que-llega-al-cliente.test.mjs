@@ -66,7 +66,7 @@ const SUPERFICIES = [
     fuente: () => leer('dist', 'modules', 'system', 'app', 'routes', 'quoteDecisionLanding.routes.js'),
     patron: /getElementById\('sig-error'\)\.textContent = ([^;]+);/,
     variables: ['data'],
-    porDefecto: 'Error al procesar.',
+    porDefecto: 'No se ha podido firmar. Inténtalo de nuevo.', // SCRUM-1302d: firmado en SCRUM-1302 c.19428
     tieneMapa: false,
   },
   {

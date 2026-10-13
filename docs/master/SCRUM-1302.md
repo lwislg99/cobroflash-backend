@@ -337,3 +337,68 @@ La versión en el `where` cierra una segunda ventana que nadie había pedido med
 ## Sigue abierto en este ticket tras C
 
 D y E, camino fiscal (J1). Los dos «NO TOCADO» de arriba.
+
+# APÉNDICE · SCRUM-1302d: cuatro textos de las páginas que ve el cliente final (S4)
+
+**Medido contra:** `origin/main` = `fc10ff9cb3b29eb18a5da552ec18f8c551eba7b7` · 2026-10-13T14:50:44Z
+A9: comprobación → `tests/scrum1302d-textos-de-la-pagina-de-firma.test.mjs`
+
+Carril S4 por ser texto puro (encargo del orquestador del 13-oct; los dos ficheros son de S1) · rama `scrum-1302d-textos-firmados-de-la-pagina-de-firma`.
+
+**Skill UI:** no cargada · sólo cambian cuatro literales en dos páginas que sirve el servidor; ni una clase, ni un estilo, ni una etiqueta.
+
+## Lo firmado
+
+Aprobado por el orquestador por delegación del fundador, 13-oct-2026 — SCRUM-1302 comentario 19428. Ficha: `docs/microcopy/2026-10-13-SCRUM-1302-paginas-de-firma-del-cliente.md`.
+
+| | antes | ahora | dónde |
+|---|---|---|---|
+| A | «⭐ Más popular» | «Recomendada» | la tarjeta de la opción con `recommended`, `quoteDecisionLanding.routes.ts` |
+| B | «Error de conexión.» | «No hemos podido confirmar que tu firma haya llegado. Comprueba tu conexión y vuelve a intentarlo.» | el `catch` de la petición de firma, presupuesto y parte |
+| C | «Error al procesar.» | «No se ha podido firmar. Inténtalo de nuevo.» | el texto de reserva del presupuesto |
+| D | «Gracias, {nombre}. Recibirás tu copia por WhatsApp.» | «Gracias, {nombre}.» | las dos pantallas del parte firmado, `albaranPublic.routes.ts` |
+
+D no es un texto nuevo: es una retirada. El envío de la copia es de mejor esfuerzo y lo corta el tope diario; la página no sabe si va a salir.
+
+## La condición de la B, medida antes de construir
+
+B aconseja reintentar. Se firmó a condición de medir qué pasa al reintentar cuando la primera firma sí llegó.
+
+**Parte**, corriendo `POST /albaran/:token/firmar` de `dist` sobre `tests/_banco-firma-del-parte.mjs` (base doblada con una fila que recuerda; el PDF y el envío de la copia son contadores). Guion y salida: `docs/master/evidencias/SCRUM-1302/reintento-de-firma/reintento.mjs` y `reintento.txt`.
+
+| caso | respuesta | escrituras | copias pedidas | queda |
+|---|---|---|---|---|
+| control: un parte emitido, una firma | 200 `{ok:true}` | 1 | 1 | el primer trazo |
+| la primera llegó, se reintenta con lo mismo | 200 `{ok:true, already:true}` | 1 | 1 | mismo sello y misma fecha |
+| se reintenta con otro trazo y otro nombre | 200 `already` | 1 | 1 | el primer trazo y el primer nombre |
+| se reintenta con otra versión del parte | 200 `already` | 1 | 1 | el primer trazo |
+
+**Presupuesto:** ya estaba sujeto en `tests/scrum1276-decision-no-reabre.test.mjs` (casos 4-5: 200 `already_accepted` sin escribir, sin aviso y sin historial; caso 7: dos a la vez, escribe una). Corrido hoy sobre esta rama: 9 de 9.
+
+Con eso el orquestador confirmó que la B se construye (mensaje del 13-oct, tras la medición).
+
+## 🔴 Hallazgo de servidor, NO arreglado aquí (es de S1)
+
+En el parte, **dos peticiones a la vez** sobre un parte emitido (las dos leen `emitido` antes de que ninguna escriba) **escriben las dos**: 2 escrituras, 2 PDF, 2 copias pedidas, y quedan **el segundo trazo y el segundo nombre**. Las dos contestan 200 `{ok:true}`. El `update` de `albaranPublic.routes.ts` no lleva en su `where` la condición de estado que SCRUM-1276 puso en el del presupuesto.
+
+No es el reintento de una persona que ha leído el aviso: para entonces la primera ya escribió, salvo que se quede atascada antes de su escritura. Y el camino existe igual con el texto viejo, porque el botón ya se reactivaba en el `catch`. Es el caso 2 del guion. El doble no tiene cerrojos: dice qué hace el código en esa carrera, no cada cuánto ocurre.
+
+## Verificado, ejecutando
+
+`tests/scrum1302d-textos-de-la-pagina-de-firma.test.mjs`: pide las dos páginas a sus rutas de `dist` y mira el HTML que sale; 8 tests.
+
+- **Rojo antes** (con el `dist` de `origin/main`): 4 de 8. Caen A, B+C del presupuesto, B del parte y D, cada uno enseñando el texto viejo; pasan el control de las sondas, «sin opción marcada no hay insignia» y los dos del reintento.
+- **Verde después:** 8 de 8.
+- **Una sonda mía estaba ciega y lo cazó el rojo:** la primera versión de la sonda de B se quedaba con el rótulo del botón, que el mismo `catch` reescribe antes, y daba rojo por otra cosa. Ahora se ancla en `#sig-error` dentro del último `catch`, y el control lleva ese rótulo delante.
+- **D, como retirada:** en las dos páginas del parte, medidas enteras, antes había una frase con «copia», «recibirás» o «WhatsApp» (la retirada) y ahora ninguna.
+- `tests/scrum264-copy-que-llega-al-cliente.test.mjs` cambia una línea: su `porDefecto` de la landing es el literal C. La propiedad que mide (el mensaje humano gana al código) no cambia.
+
+- **La tanda dirigida** (`npm run tanda:dirigida`, en dos tramos) se corrió entera sobre `875d665c42a055a09d05d75bc3bd580b03c82744`: 377 ficheros, 3.671 tests, 1 caído y ciego por entorno de esta máquina (SCRUM-1321, el temporal en otra unidad), veredicto verde. `main` se movió 12 commits después (traía `quotes.routes.ts` y el esquema): sobre el ancla de arriba se volvieron a correr 18 ficheros, los de estas dos páginas y los guards del registro y de las evidencias (158 de 158), y `guards:entrada`. La dirigida entera NO se repitió sobre el ancla.
+
+**NO medido:** yaqu.app con esto desplegado (se mira cuando mergee) · un navegador de verdad con la red cortada a mitad de la firma · la carrera de las dos peticiones contra una base real.
+
+## Lo que la firma no cubre, y cómo queda
+
+- En el parte, el texto de reserva sigue siendo «No se pudo firmar. Inténtalo de nuevo.», que no es el literal C. El comentario 19428 dice que C «unifica»; cambiar también éste es estirar la firma, y se pregunta.
+- Con «Acepto sin firmar» marcado en el presupuesto, C dice «No se ha podido firmar» de una aceptación sin trazo. El botón se sigue llamando «Firmar y aceptar», así que no desentona con la página; queda dicho.
+- El guion de las dos páginas lleva comentarios de código que se sirven al navegador (ya los había). Los dos que añade esta rama no nombran ficheros ni tests.

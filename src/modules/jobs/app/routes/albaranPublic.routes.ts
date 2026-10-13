@@ -256,7 +256,10 @@ router.get('/:token', async (req: Request, res: Response) => {
   const obra = esc((job?.direccion || job?.titulo || '').trim());
 
   if (albaran.estado === 'firmado') {
-    return html('Parte de trabajo firmado', `${hero}<div class="status-ok"><strong>Este parte de trabajo ya está firmado.</strong><br/>Gracias, ${customerName}. Recibirás tu copia por WhatsApp.</div>`);
+    // SCRUM-1302d (D) · ni aquí ni en «¡Parte firmado!» se promete la copia por WhatsApp: el
+    // auto-envío del POST es de mejor esfuerzo y lo corta el tope diario (J6), y la página no sabe
+    // si va a salir. Lo vigila `tests/scrum1302d-textos-de-la-pagina-de-firma.test.mjs`.
+    return html('Parte de trabajo firmado', `${hero}<div class="status-ok"><strong>Este parte de trabajo ya está firmado.</strong><br/>Gracias, ${customerName}.</div>`);
   }
   if (albaran.estado !== 'emitido') {
     // borrador u otro: el token solo se emite en 'emitido', pero degradamos con dignidad.
@@ -339,7 +342,7 @@ router.get('/:token', async (req: Request, res: Response) => {
             const d=await r.json().catch(()=>({}));
             document.querySelector('.card').innerHTML=
               '<div style="text-align:center;padding:12px 0"><div class="success-check">✓</div>'+
-              '<h1>¡Parte firmado!</h1><p class="meta">Gracias, ${customerName}. Recibirás tu copia por WhatsApp.</p></div>';
+              '<h1>¡Parte firmado!</h1><p class="meta">Gracias, ${customerName}.</p></div>';
             if(d && typeof d.portalUrl==='string' && /^https?:\\/\\//.test(d.portalUrl)){
               const p=document.createElement('p'); p.className='meta';
               p.textContent=${literalJs(`Ahí tienes tus ${presupuestosDe(merchant)} y pagos con ${negocioDe(merchant)}.`)};
@@ -365,7 +368,8 @@ router.get('/:token', async (req: Request, res: Response) => {
             e.textContent=d.message||'No se pudo firmar. Inténtalo de nuevo.'; e.style.display='block';
           }
         }catch(_){ btn.disabled=false; btn.textContent='Firmar el parte de trabajo';
-          const e=document.getElementById('sig-error'); e.textContent='Error de conexión.'; e.style.display='block'; }
+          // SCRUM-1302d: aquí no se sabe si la firma llegó. Sobre un parte ya firmado el POST contesta que ya está, sin escribir.
+          const e=document.getElementById('sig-error'); e.textContent='No hemos podido confirmar que tu firma haya llegado. Comprueba tu conexión y vuelve a intentarlo.'; e.style.display='block'; }
       });
     </script>
   `);
