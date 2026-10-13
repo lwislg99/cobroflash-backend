@@ -50,7 +50,7 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     fichero: 'scripts/equipo/cierre-sin-clic.mjs',
     de: '  if (!(horas <= HORAS_DE_FOTO)) return ciega(',
     a: '  if (!(horas <= HORAS_DE_FOTO * 999)) return ciega(',
-    cae: 'SCRUM-1463b · la sección del latido: una foto de más de 12 h es «no pude mirar», y lo guardado ilegible también',
+    cae: 'SCRUM-1463b · la sección del latido: una foto de más de 12 h es «no pude mirar», y un resultado ilegible también',
   },
 ];
 
@@ -207,7 +207,7 @@ test('SCRUM-1463b · el control ve o no ve, y las búsquedas llevan las fórmula
   for (const f of FORMULAS) { assert.ok(c.abiertos.includes(`comment ~ "\\"${f}\\""`)); assert.ok(c.control.includes(f)); }
 });
 
-test('SCRUM-1463b · la sección del latido: una foto de más de 12 h es «no pude mirar», y lo guardado ilegible también', () => {
+test('SCRUM-1463b · la sección del latido: una foto de más de 12 h es «no pude mirar», y un resultado ilegible también', () => {
   const fila = filaDe(1126, { estado: 'En curso', cierre: comentarioDeCierre([CIERRE_1126]) }, EN_MAIN, AHORA);
   const guardado = resumir({ filas: [fila], cerrados: 2, control: { ve: true, cuantos: 61 }, tomada: AHORA - 3600000, main: 'abc', ahora: AHORA });
   const fresca = seccionCierres({ guardado, ahora: AHORA });
@@ -227,7 +227,7 @@ test('SCRUM-1463b · la sección del latido: una foto de más de 12 h es «no pu
   assert.match(NOTA_SIN_CORRER, /NO sabe/);
 });
 
-test('SCRUM-1463b · el guion LANZADO: cero abiertos sin control es CIEGO; con control es «ninguno»; y no guarda si no se le deja', () => {
+test('SCRUM-1463b · el guion LANZADO: cero abiertos sin control es CIEGO; con control es «ninguno»; y no escribe su resultado si no se le deja', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1463b-'));
   try {
     const escribir = (n, t) => { const f = path.join(dir, n); fs.writeFileSync(f, t); return f; };

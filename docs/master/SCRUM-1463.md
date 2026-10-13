@@ -225,6 +225,14 @@ tickets de arriba devuelve 13, 12 de ellos cerrados, así que la búsqueda ve.
    transición del mismo ticket detrás es el fallo, visto en el momento, sin foto y sin Jira. No vería los
    cierres hechos desde otra máquina.
 
+### De paso, visto y NO arreglado
+
+`seTitulaGuard` (`scripts/meta-guard-mutaciones.mjs`) da por «guard» cualquier test cuyo título contenga
+esas cinco letras, sin distinguir mayúsculas: dos títulos de este test decían «guarda» y «guardado», y el
+trinquete de `tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs` contó el fichero como un guard más
+(33 donde el suelo dice 32). Se cambiaron los dos títulos, no el trinquete ni su número. La subcadena
+sigue ahí para el siguiente que escriba «guardar» en un título: es del carril de S5 y no cabía hoy.
+
 ### Lo que no se midió
 
 - Las mutaciones declaradas en el test (4) se corrieron a mano una vez, no por el meta-guard.
