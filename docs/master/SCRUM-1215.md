@@ -486,7 +486,7 @@ El título de ese bloque dice «REGLA 30: NINGUNO ESTÁ APROBADO» y el censo le
 # SCRUM-1215h · las sondas de «¿quién vio cada hoja?» suben al repo, y el reparto de las 173
 
 **Medido contra:** `origin/main` = `254a697924c99bdf85eb06c95ee439a4a013aa67` · 2026-10-13T12:00:37Z
-A9: sin fallo que generalice — medición de sólo lectura; la sexta «no vista» que dio la sonda se descartó leyéndola y queda dicha abajo, y los literales firmados se comparan con una sonda que lleva su laboratorio.
+A9: aviso → A10 «Antes de escribir una sonda que pregunta «¿consta?», se busca la función de la casa que ya lo contesta: una sonda propia mira el papel que tú conoces, no el que hay.» — no se pudo comprobar: es de criterio, qué fuente se consulta antes de escribir una sonda no lo ve un test
 **Skill UI:** no cargada · no se toca ninguna pantalla ni ningún fichero del panel
 
 13-oct-2026 · **S4** · rama `scrum-1215h-las-sondas-de-quien-vio-cada-hoja`. Encargo del orquestador (lote del 13-oct, 12:05Z): las sondas de SCRUM-1215 c.19332 van a git, y se abren los comentarios de Jira que citan las letras para cerrar las dudosas. No corrige ninguna hoja: primero el número.
@@ -506,22 +506,31 @@ Las tres primeras se corrieron sobre `f7a4c816ab2bf5c334a953dee60dc7b73718a0f8`;
 
 ## El reparto de las 173 hojas aprobadas por firma de grupo
 
+El papel se pregunta al oráculo de la casa, `constaAprobado` de `tests/_microcopy-aprobada.mjs`: por identidad del literal, mirando quién firma, en `docs/microcopy/` y en el registro congelado `docs/MICROCOPY_APROBADA_SIN_APLICAR.md`.
+
 | Cuántas | Qué se sabe de su firma |
 |---|---|
-| 88 | su literal está en algún acta de `docs/microcopy/` (cota: «en alguna», no «en la suya») |
-| 22 | sin acta; su literal está, idéntico, en el comentario de Jira que cita su letra, abierto hoy |
-| 7 | sin acta; su propia letra dice «por el asesor, a la espera del fundador» |
-| 7 | sin acta; el ticket que citan (SCRUM-656) se abrió y sus dos comentarios no traen esos literales |
-| 3 | sin acta y sin literal que buscar |
-| 38 | sin acta, sin abrir; letra anterior al 3-sep-2026, cuando aún no existía `docs/microcopy/` |
-| 8 | sin acta, sin abrir; letra posterior al 3-sep-2026 |
+| 47 | consta firmada en una ficha de `docs/microcopy/` (oráculo; «en alguna ficha», no «en la suya») |
+| 26 | consta firmada en el registro congelado, el de antes del 3-sep-2026 (oráculo) |
+| 24 | el oráculo no la da; su literal está, idéntico, en el comentario de Jira que cita su letra, abierto hoy |
+| 30 | el oráculo no la da; su literal aparece en algún acta de `docs/microcopy/` por subcadena (cota: incluye coincidencias de palabra genérica) |
+| 7 | su propia letra dice «por el asesor, a la espera del fundador» |
+| 6 | no se puede buscar: plantilla con huecos, o sin literal |
+| 28 | no aparece en ningún papel y su Jira no se ha abierto; letra anterior al 3-sep-2026 |
+| 5 | no aparece en ningún papel y su Jira no se ha abierto; letra posterior al 3-sep-2026 (3 son clases CSS, no texto) |
 
-Las 22: 15 del parte (SCRUM-916, comentarios 17251 y 17273, orquestador de Luis por delegación) y 7 de la puerta de serie (SCRUM-1216, comentario 17347, Javier en persona transcrito por su orquestador, y 17349, su orquestador por delegación). Dos de las de serie llevan el año en un hueco donde la firma dice «2026». Una del parte, «La hora se elige, no se escribe.», se firmó con condición (sólo si el campo es de verdad un selector) y el código la cumple: se pinta sólo con `sonSelector`. De los seis literales que esos comentarios firmaron y luego retiraron, ninguno está pintado.
+Las 33 de las dos últimas filas, por objeto y clave, al final de `firmadas-en-jira.txt`.
+
+**Corrección de lo dicho en SCRUM-1215 c.19332 y c.19343.** Allí se dio «85 sin acta» y que las de antes del 3-sep «no podían tener acta». Las dos cosas salían de `papel-por-objeto.mjs`, que sólo mira `docs/microcopy/` y por subcadena. El papel de antes del 3-sep existe (el registro congelado) y el oráculo lo lee: 17 de aquellas 85 constan firmadas, entre ellas las 7 de `settingsView.js · TX` que c.19343 dio por «buscadas y no halladas». En el otro sentido, 20 de las 88 «con acta» no las da el oráculo. El cruce entero sale al final de `firmadas-en-jira.txt`. `papel-por-objeto.txt` se conserva como lo que se midió, no como cifra vigente.
+
+El oráculo tampoco lo ve todo: a 7 de las 128 fichas de `docs/microcopy/` no les lee ningún literal (la de SCRUM-984 entre ellas, y por eso «Cobrar ahora» no le consta). No se ha mirado por qué.
+
+Las 24 del comentario de Jira: 17 del parte (SCRUM-916, comentarios 17251 y 17273, orquestador de Luis por delegación) y 7 de la puerta de serie (SCRUM-1216, comentario 17347, Javier en persona transcrito por su orquestador, y 17349, su orquestador por delegación). Dos de las de serie llevan el año en un hueco donde la firma dice «2026». Una del parte, «La hora se elige, no se escribe.», se firmó con condición (sólo si el campo es de verdad un selector) y el código la cumple: se pinta sólo con `sonSelector`. De los seis literales que esos comentarios firmaron y luego retiraron, ninguno está pintado.
 
 Aparte, y sin sumar a lo anterior: la historia dice que a 5 de las 173 la firma que las aprueba no las vio (llegaron, o cambió su texto, con la letra ya escrita). Las cinco tienen su literal en un acta: están firmadas por otra firma, que no es la que tienen encima. La sonda da una sexta, `COBROS_COPY.vacioPorFiltro`, que se descarta: estaba el día de la firma, y es la cuenta de la cabecera la que la dejaba fuera.
 
 ## Lo que NO dice
 
 - «Con acta» y «en el comentario» prueban que el literal de hoy consta firmado en un papel; no que la marca del código apunte a ese papel.
-- De las 46 sin abrir no se sabe nada más que lo que dice su letra. Las 7 de SCRUM-656 citan también SCRUM-402, que no se ha abierto.
+- De las 33 que no aparecen en ningún papel no se sabe nada más que lo que dice su letra: sus tickets de Jira no se han abierto.
 - No se ha corregido ninguna hoja.
