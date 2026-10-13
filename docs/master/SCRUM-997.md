@@ -91,3 +91,98 @@ Todo de SCRUM-1536 c.19355, citado y no vuelto a medir:
 | verificar la premisa con control positivo | «La premisa, medida» |
 | escribir las tres decisiones en `limites-del-fundador.md` | NO HECHO → es del orquestador de Luis; pedido en SCRUM-997 |
 | el aviso del flag, donde lo lea quien construya | `docs/equipo/cicatrices/J5.md`, última línea |
+
+# SCRUM-997c · Las cuatro fuentes y las dos delegaciones, escritas en `limites-del-fundador.md` con su mecanismo al lado
+
+**Medido contra:** `origin/main` = `cf0a4cb7eb8613d394f98bc3134ba9a89896839c` · 2026-10-13T14:03:04Z
+
+A9: aviso → cicatriz S0 «Guardé la salida de una sonda con la tubería de PowerShell: la primera vez la sonda no había arrancado y el fichero de salida tenía 1 byte, y la segunda los caracteres que no son ASCII llegaron rotos. La salida de una sonda la escribe la propia sonda, y se cuentan sus bytes antes de citarla» — no se pudo comprobar: es de cómo se lanza un guion desde la consola, y eso no pasa por ningún guard del repositorio
+
+13-oct-2026 · **S0** (sesión `s0-13octe`, equipo de Luis). [Escrito por la sesión, no por Luis ni por su orquestador.]
+
+**Carril.** `docs/equipo/limites-del-fundador.md` es del orquestador de Luis (`dos-equipos.md` §3.3). La
+excepción la escribió él en la primera línea del encargo de esta tanda (13-oct-2026): la S0 edita los ficheros
+de normas que SCRUM-997 necesita, y sólo lo que el ticket nombra. Este PR toca ese fichero, este registro,
+`docs/equipo/cicatrices/S0.md`, `docs/equipo/afirmaciones-verificadas.md` y dos sondas con una salida en
+`docs/master/evidencias/SCRUM-997/`. No toca `src/`, `public/`, `prisma/`, ningún test, ningún flag ni ningún
+texto que vea el usuario.
+
+## Lo pedido → dónde se ve
+
+Los seis puntos son los de SCRUM-997 c.19389, repetidos en c.19420.
+
+| lo pedido | dónde se ve |
+|---|---|
+| 1 · la regla 33, como norma | `docs/equipo/limites-del-fundador.md`, sección «Forales y Canarias…», fila 1 de la tabla |
+| 2 · 21-sep, no se vende en País Vasco ni Navarra | misma tabla, fila 2 |
+| 3 · 7-oct, Canarias | misma tabla, fila 4 |
+| 4 · 23-sep, no se hace nada hoy | misma tabla, fila 3 |
+| 5 · el estado del mecanismo | misma sección, «El estado del mecanismo, medido el 13-oct-2026» |
+| 6 · la delegación del 22-sep (c.16373) | sección «Delegación permanente», debajo de la del 25-sep |
+| de cada una, qué es y si algo la cumple | columnas «Qué es» y «¿La cumple algo?»; en la delegación, sus tres viñetas |
+| el nombre de quien decidió, no el cargo | las cuatro filas; la del 7-oct dice de dónde sale el nombre y que no está comprobado en origen |
+| no copiar el texto del enunciado | no se ha copiado: la frase «la regla 33 ya bloquea» no está en el fichero |
+| ni puerta ni flag | `git diff --stat origin/main...HEAD`: ningún fichero de `src/` ni de `prisma/` |
+
+## Lo medido por esta sesión
+
+- **Las cuatro fuentes, leídas enteras:** el máster (regla 33 y las líneas de «Gate foral» y de la Parte M),
+  el enunciado de SCRUM-1497, SCRUM-998 c.16609 y SCRUM-1536 c.19355, más el enunciado y los cinco
+  comentarios de SCRUM-997 y el enunciado de SCRUM-1121.
+- **«IGIC» en el máster: 0 líneas.** Control: «TicketBAI», 5.
+- **`getEmissionMode`, 35 llamadas** (7 comercios fabricados por 5 combinaciones del flag), con un espía de
+  propiedades y cuatro controles: `docs/master/evidencias/SCRUM-997/sonda-997.cjs` y su salida al lado.
+  Sin variable ni valor propio, 7 de 7 `receipt`. Con la variable en `true`, 7 de 7 `fiscal`. Con el valor
+  del comercio en `true` y sin variable, 7 de 7 `fiscal`. Con el valor del comercio en `false` y la variable
+  en `true`, 7 de 7 `receipt`. Leídas: `country`, `email`, `flags`, `id`. Corre contra `dist/`, compilado de
+  `f3090b1c3`; `src/core/flags.ts` y `emission.service.ts` no cambian entre ese commit y el del ancla.
+  Coincide con las 14 llamadas de jv-j5j; su guion no se ha usado (vive en el PR #2377, sin mergear).
+- **Quién lee `domicilioFiscalForal`:** buscado en `src/`, `prisma/` y `public/`. Sale en el esquema, en la
+  validación, en una lectura de la consola del equipo y en la pantalla de Configuración. En ninguna puerta.
+- **Qué línea sostiene la firma delegada:** `docs/master/evidencias/SCRUM-997/vigencia.mjs`. Sin ninguna
+  línea que nombre a Javier, `delegacionVigente` da `true`; sin la viñeta de Luis, `false`.
+
+## Lo que el ticket daba por cierto y la medición matiza
+
+- **«La autoridad del orquestador de Javier para firmar microcopy vive sólo en un comentario de Jira»**
+  (c.19381 y c.19389). No del todo: la delegación del 25-sep (SCRUM-1121, «te lo delego») está en el fichero
+  desde ese día (commit `978a24966d472f6ecd8a1b2755a0bd6af566270b`). La que vivía sólo en Jira es la del
+  22-sep, que es otra y dice otra cosa. Las tres búsquedas de c.19381 dan 0 con razón, y ninguna busca
+  «Javier», que es como se ve la del 25-sep.
+- **«El flag se enciende por tres vías: por comercio, por país o por variable de entorno»** (c.19389). El
+  país no enciende nada: un comercio de MX da `fiscal` sin pasar por el flag, aunque lleve el valor en
+  `false`. Los tres sitios son el valor del comercio, la variable y el valor por defecto del código.
+- **«No se bloquea el alta», como si fuera el literal del 23-sep.** c.16609 no lleva palabras de Javier: lo
+  redacta su orquestador y dice «NO se hace nada hoy». Así se ha escrito.
+- c.19355 cita `prisma/schema.prisma:57`; hoy la columna está en la línea 61. En el fichero de límites se
+  cita por el nombre de la columna.
+
+## Lo que NO se ha medido
+
+- Ninguna base. No se sabe si hay algún comercio con el flag encendido en su fila, ni con «Sí» en el
+  domicilio foral, ni qué vale la variable en producción.
+- El chat donde Javier dijo lo del 7-oct y lo del 13-oct: está en otra máquina. SCRUM-1522 c.19294 no se
+  ha abierto.
+- La lectura del BOE y el rechazo de los tipos del IGIC son de jv-j5j y de J4c: se citan, no se repiten.
+- Nada en yaqu.app: este PR no cambia nada que se vea.
+- La tanda completa: no hay código tocado. Corridos los guards de entrada y los tests que leen estos
+  ficheros (la lista, en el comentario de entrega del ticket).
+
+## De paso, de otro carril: se dice y no se arregla
+
+El oráculo de microcopy no tiene con qué distinguir la firma delegada del orquestador de Javier de la del de
+Luis: las dos escriben la misma frase y las dos dependen de la viñeta de Luis. Si Javier retirase su
+delegación, sus firmas delegadas seguirían contando. Es del carril de microcopy.
+
+## Errores de esta sesión
+
+- La sonda no arrancó la primera vez que corrió desde el árbol (raíz relativa) y el fichero de salida quedó
+  en 1 byte. Lo enseñó el recuento de bytes, no el código de salida de la orden, que encadenaba más cosas.
+- En el primer borrador de la tabla escribí «el alta no pregunta el territorio»: desde el PR #2374 el alta
+  por consola recibe una provincia, para la zona horaria. Corregido antes del primer commit.
+
+| lo pedido | dónde se ve |
+|---|---|
+| los seis puntos, con qué es cada uno y si algo lo cumple | `docs/equipo/limites-del-fundador.md` (tabla de arriba, fila a fila) |
+| la medición del flag, repetida o citada como ajena | repetida: `docs/master/evidencias/SCRUM-997/sonda-997.cjs` |
+| visto en yaqu.app | NO APLICA: no cambia nada que se sirva |
