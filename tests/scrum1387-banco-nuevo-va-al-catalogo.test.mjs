@@ -128,6 +128,16 @@ test('SCRUM-1387 · 🔴 en el árbol: ningún banco de mutación nuevo queda fu
   assert.deepEqual(vistos.nuevos.filter((b) => b.carpeta === SEMBRADO),
     [{ carpeta: SEMBRADO, guiones: [`${SEMBRADO}/mutar.mjs`] }],
     'CIEGO: el banco sembrado por este test no ha salido como nuevo. El camino no ve lo que tiene que ver.');
+  // Y el otro camino, el que ve el CI de un PR: uno que SÍ está en la historia, un commit después del
+  // corte. (Sin corte comiteado no hay «después»: sólo pasa en el árbol de quien está tocando el corte.)
+  if (corte !== null) {
+    const TARDIO = `${SEMBRADO}/tardio`;
+    const conTardio = clasificar([...ficheros, { ruta: `${TARDIO}/mutar.mjs`, texto: 'const LISTA_PROPIA = [];' }]);
+    const altaConTardio = (ruta) => (ruta === `${TARDIO}/mutar.mjs` ? { pos: corte + 1, sha: '', fecha: nace.fecha } : altaDe(ruta));
+    assert.deepEqual(juicio({ fuera: conTardio.fuera, altaDe: altaConTardio, corte }).nuevos.filter((b) => b.carpeta === TARDIO),
+      [{ carpeta: TARDIO, guiones: [`${TARDIO}/mutar.mjs`] }],
+      'CIEGO: un banco sembrado un commit DESPUÉS del corte no ha salido como nuevo.');
+  }
 
   const { nuevos, heredados } = juicio({ fuera, altaDe, corte });
   assert.equal(nuevos.length + heredados.length, fuera.length, 'nuevos y heredados no suman los que están fuera');
