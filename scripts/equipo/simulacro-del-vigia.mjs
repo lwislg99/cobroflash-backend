@@ -152,7 +152,7 @@ if (esCli && process.argv[2] === 'comprobar') {
   let crudo = null;
   try {
     crudo = String(execFileSync('git', ['log', '--first-parent', '-n', String(ENTRADAS_A_MIRAR), '--format=%H %ct %P', 'origin/main'], { encoding: 'utf8' }));
-  } catch (e) { muere('`git log origin/main` falló: ' + String(e.message).split('\n')[0]); }
+  } catch (e) { muere('no se pudo leer la cadena de primer padre de la punta de `main`: ' + String(e.message).split('\n')[0]); }
   const entradas = crudo.split('\n').map((l) => l.trim()).filter(Boolean).map((l) => {
     const [sha, ct, padre] = l.split(' ');
     return { sha, epoch: epochsDeGitLog(ct)[0], padre: padre || null };
@@ -170,9 +170,10 @@ if (esCli && process.argv[2] === 'comprobar') {
   // La siembra: el vigía de verdad, con la URL fabricada. Hereda la salida para que se lea en el log.
   // La URL viaja por el ENTORNO, no por el `argv` del hijo (guard de SCRUM-226).
   const siembra = spawnSync(process.execPath, [VIGIA], {
-    // Sin resumen ni anotación de Actions: la siembra sale 2 a propósito, y un «⚠️ no sé» pintado
-    // en el run sería un aviso de algo que aquí es lo esperado. Su salida entera queda en el log.
-    stdio: 'inherit', env: { ...process.env, VIGIA_URL: url, GITHUB_STEP_SUMMARY: '', GITHUB_ACTIONS: '' },
+    // Sin resumen del job: el de la siembra no es el veredicto de esta ejecución. La anotación
+    // «⚠️ hay hueco y no sé si se está cerrando» que deja en el run SÍ sale, y es la esperada: es
+    // la primera de las dos lecturas, y sin lectura anterior no puede decir otra cosa.
+    stdio: 'inherit', env: { ...process.env, VIGIA_URL: url, GITHUB_STEP_SUMMARY: '' },
   });
   // 2 = «hay hueco y no sé si se está cerrando»: es lo ÚNICO que puede decir sin lectura anterior.
   // Cualquier otra cosa es que el escenario no es el que se cree, y entonces no se sigue.

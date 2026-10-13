@@ -65,22 +65,39 @@ function repoConMerge({ horasRama, segundosMerge }) {
     const iso = new Date(ahora - segundos * 1000).toISOString();
     return { GIT_AUTHOR_DATE: iso, GIT_COMMITTER_DATE: iso };
   };
-  const g = (args, env = {}) => String(execFileSync('git', args, {
-    cwd: dir, encoding: 'utf8', env: { ...process.env, ...env },
-  })).trim();
-  g(['init', '-q']);
-  g(['config', 'user.email', 'v@test.local']);
-  g(['config', 'user.name', 'vigia']);
-  g(['commit', '--allow-empty', '-q', '-m', 'base: lo que está desplegado'], hace(400 * 3600));
-  const base = g(['rev-parse', 'HEAD']);
-  const principal = g(['symbolic-ref', '--short', 'HEAD']);
-  g(['checkout', '-q', '-b', 'rama-vieja']);
-  g(['commit', '--allow-empty', '-q', '-m', 'escrito hace días, dentro de la rama'], hace(horasRama * 3600));
-  g(['checkout', '-q', principal]);
-  g(['merge', '--no-ff', '-q', '-m', 'Merge pull request #1 from rama-vieja', 'rama-vieja'], hace(segundosMerge));
-  const main = g(['rev-parse', 'HEAD']);
-  g(['update-ref', 'refs/remotes/origin/main', main]);
+  const { g, fechado } = gitEn(dir);
+  g('init', '-q');
+  g('config', 'user.email', 'v@test.local');
+  g('config', 'user.name', 'vigia');
+  fechado(hace(400 * 3600), 'commit', '--allow-empty', '-q', '-m', 'base: lo que está desplegado');
+  const base = g('rev-parse', 'HEAD');
+  const principal = g('symbolic-ref', '--short', 'HEAD');
+  g('checkout', '-q', '-b', 'rama-vieja');
+  fechado(hace(horasRama * 3600), 'commit', '--allow-empty', '-q', '-m', 'escrito hace días, dentro de la rama');
+  g('checkout', '-q', principal);
+  fechado(hace(segundosMerge), 'merge', '--no-ff', '-q', '-m', 'Merge pull request #1 from rama-vieja', 'rama-vieja');
+  const main = g('rev-parse', 'HEAD');
+  g('update-ref', 'refs/remotes/origin/main', main);
   return { dir, base, main, g };
+}
+
+/** git dentro de `dir`: `g(...)` a secas, y `fechado(fechas, ...)` para un commit con su fecha puesta. */
+function gitEn(dir) {
+  const corre = (a, env) => String(execFileSync('git', a, { cwd: dir, encoding: 'utf8', env: { ...process.env, ...env } })).trim();
+  return { g: (...a) => corre(a, {}), fechado: (fechas, ...a) => corre(a, fechas) };
+}
+
+/**
+ * El entorno del SUJETO se construye a mano, no se le presta el del laboratorio (A21): sólo lo
+ * que hace falta para encontrar `git` y un temporal, más lo que cada caso le dé. Así el vigía que
+ * se prueba aquí no hereda nada del job que corre la tanda —ni su resumen, ni sus anotaciones, ni
+ * el color del chat— y este fichero no tiene que nombrar ninguna de esas señales para apagarlas.
+ */
+const LO_QUE_HEREDA_EL_SUJETO = ['PATH', 'Path', 'SystemRoot', 'windir', 'TEMP', 'TMP', 'TMPDIR', 'HOME', 'USERPROFILE'];
+function entornoDelSujeto(extra = {}) {
+  const env = {};
+  for (const k of LO_QUE_HEREDA_EL_SUJETO) if (process.env[k] !== undefined) env[k] = process.env[k];
+  return { ...env, ...extra };
 }
 
 /**
@@ -91,10 +108,7 @@ function repoConMerge({ horasRama, segundosMerge }) {
 function correElVigia({ cwd, sha, estado }) {
   const r = spawnSync(process.execPath, [CLI], {
     cwd, encoding: 'utf8',
-    env: {
-      ...process.env, VIGIA_URL: urlFabricada(sha), VIGIA_ESTADO: estado || '',
-      GITHUB_ACTIONS: '', GITHUB_STEP_SUMMARY: '', GITHUB_OUTPUT: '', FORCE_COLOR: '',
-    },
+    env: entornoDelSujeto({ VIGIA_URL: urlFabricada(sha), VIGIA_ESTADO: estado || '' }),
   });
   const salida = (r.stdout || '') + (r.stderr || '');
   const renglon = salida.split('\n').find((l) => l.startsWith('vigía · ')) || '';
@@ -107,8 +121,8 @@ test('SCRUM-1542 · 🔴 SUELO: en el repo del banco, «todo el rango» y «prim
   // Sin esto, los dos casos de abajo podrían pasar sobre un repo donde las dos formas coinciden,
   // y «el vigía dice 0,0 h» no probaría el arreglo: lo diría también el código viejo.
   const r = repoConMerge({ horasRama: 96, segundosMerge: 59 });
-  const todo = epochsDeGitLog(r.g(['log', '--format=%ct', `${r.base}..${r.main}`]));
-  const primerPadre = epochsDeGitLog(r.g(['log', '--first-parent', '--format=%ct', `${r.base}..${r.main}`]));
+  const todo = epochsDeGitLog(r.g('log', '--format=%ct', `${r.base}..${r.main}`));
+  const primerPadre = epochsDeGitLog(r.g('log', '--first-parent', '--format=%ct', `${r.base}..${r.main}`));
   assert.equal(todo.length, 2, `🔴 el rango entero debería traer 2 commits (el de la rama y el merge) y trae ${todo.length}`);
   assert.equal(primerPadre.length, 1, `🔴 la cadena de primer padre debería traer 1 (el merge) y trae ${primerPadre.length}`);
   const horasDeMas = (Math.min(...primerPadre) - Math.min(...todo)) / 3600;
@@ -313,7 +327,7 @@ test('SCRUM-1542 · el aviso de un simulacro lo dice LO PRIMERO, en el cuerpo y 
 test('SCRUM-1542 · el CLI del aviso sólo hace simulacro con `VIGIA_SIMULACRO=true`, que es lo que le da el workflow', () => {
   const corre = (valor) => JSON.parse(spawnSync(process.execPath, [path.join(RAIZ, 'scripts', 'vigia-despliegue-aviso.mjs')], {
     encoding: 'utf8',
-    env: { ...process.env, VIGIA_ISSUES_JSON: '[]', VIGIA_MARCA: MARCA_DE_CONGELADA, VIGIA_RENGLON: 'r', VIGIA_RUN_URL: 'u', VIGIA_SIMULACRO: valor },
+    env: entornoDelSujeto({ VIGIA_ISSUES_JSON: '[]', VIGIA_MARCA: MARCA_DE_CONGELADA, VIGIA_RENGLON: 'r', VIGIA_RUN_URL: 'u', VIGIA_SIMULACRO: valor }),
   }).stdout);
   assert.equal(corre('true').titulo, TITULO_DEL_SIMULACRO);
   for (const no of ['', 'false', '1', 'TRUE']) {
@@ -341,18 +355,18 @@ test('SCRUM-1542 · 🔴 DE PUNTA A PUNTA: el simulacro siembra, y el vigía de 
   // Un `main` de cinco entradas, de 40 h a 1 h. Lineal a propósito: aquí lo que se prueba es la
   // cadena siembra → segunda lectura → CONGELADA, no la forma del grafo (eso es el bloque ①).
   const dir = temporal('scrum1542c-sim-');
-  const g = (args, env = {}) => String(execFileSync('git', args, { cwd: dir, encoding: 'utf8', env: { ...process.env, ...env } })).trim();
-  g(['init', '-q']); g(['config', 'user.email', 'v@test.local']); g(['config', 'user.name', 'vigia']);
+  const { g, fechado } = gitEn(dir);
+  g('init', '-q'); g('config', 'user.email', 'v@test.local'); g('config', 'user.name', 'vigia');
   const base = Date.now();
   for (const horas of [40, 20, 8, 3, 1]) {
     const iso = new Date(base - horas * 3600 * 1000).toISOString();
-    g(['commit', '--allow-empty', '-q', '-m', `entrada-${horas}h`], { GIT_AUTHOR_DATE: iso, GIT_COMMITTER_DATE: iso });
+    fechado({ GIT_AUTHOR_DATE: iso, GIT_COMMITTER_DATE: iso }, 'commit', '--allow-empty', '-q', '-m', `entrada-${horas}h`);
   }
-  g(['update-ref', 'refs/remotes/origin/main', g(['rev-parse', 'HEAD'])]);
-  const shaDe = (asunto) => g(['log', '--format=%H', '--fixed-strings', '--grep', asunto, '-n', '1']);
+  g('update-ref', 'refs/remotes/origin/main', g('rev-parse', 'HEAD'));
+  const shaDe = (asunto) => g('log', '--format=%H', '--fixed-strings', '--grep', asunto, '-n', '1');
   const estado = path.join(dir, '.vigia', 'constancias.log');
   const salidaDeActions = path.join(dir, 'salida-del-paso.txt');
-  const entorno = { ...process.env, VIGIA_ESTADO: estado, GITHUB_OUTPUT: salidaDeActions, GITHUB_ACTIONS: '', GITHUB_STEP_SUMMARY: '', VIGIA_URL: '', FORCE_COLOR: '' };
+  const entorno = entornoDelSujeto({ VIGIA_ESTADO: estado, GITHUB_OUTPUT: salidaDeActions });
 
   const s = spawnSync(process.execPath, [SIMULACRO], { cwd: dir, encoding: 'utf8', env: entorno });
   assert.equal(s.status, 0, '🔴 el simulacro no pudo fabricarse.\n' + s.stdout + s.stderr);

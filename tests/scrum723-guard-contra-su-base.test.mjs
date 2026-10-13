@@ -286,6 +286,16 @@ const HALLAZGOS_DECLARADOS = [
   // Lo retira: quien le pase a la pasada la fecha ya leída (un fichero más de los que prepara el
   // workflow), o quien retire el aviso de `main` parado.
   'scripts/vigia-pasada.mjs [log]',
+  // SCRUM-1542 · el simulacro del aviso del vigía del despliegue. Para fabricar una «producción»
+  // congelada necesita un commit VIEJO de la cadena de primer padre de la PUNTA
+  // (`git log --first-parent origin/main`): es contra esa punta contra la que el vigía va a medir
+  // el hueco acto seguido, así que la referencia móvil es el sujeto, misma familia que el vigía de
+  // arriba. Contra la base de una rama fabricaría un hueco que el vigía no vería. No acusa a
+  // ninguna rama ni corre en la tanda: sólo en `vigia-despliegue.yml` lanzado a mano con
+  // `simulacro=true`, que trae `main` con `fetch-depth: 0`; y si no encuentra una entrada lo
+  // bastante vieja lo DICE y sale 2 (`tests/scrum1542c-el-hueco-se-fecha-por-entrada.test.mjs`).
+  // Lo retira: quien retire el simulacro, o quien le pase la lista de entradas ya leída.
+  'scripts/equipo/simulacro-del-vigia.mjs [log]',
   // Este mismo fichero: la lógica VIEJA, conservada para poder enseñar el rojo del ticket. Vive
   // dentro de un repo SINTÉTICO —su `origin/main` no es el de nadie— y desaparece el día que se
   // borre el caso ①, no antes: sin ella, «ahora está verde» no se puede contrastar con nada.
