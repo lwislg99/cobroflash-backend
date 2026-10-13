@@ -632,6 +632,16 @@ const INDIRECTAS_DECLARADAS = [
   // repositorio SINTÉTICO en el temporal con su propio remoto desnudo, cuyo `main` no es el de nadie.
   // Lo retira quien borre el test.
   'tests/scrum1298b-latido-arbol-de-arranque.test.mjs',
+  // SCRUM-1542 · el simulacro del aviso del vigía del despliegue. Su ÚNICA lectura de la punta es el
+  // `[log]` declarado arriba; lo que sale aquí es la prosa de sus mensajes, que nombra `main` para
+  // decir qué ha fabricado y sobre qué («entró en `main` hace N h», «entradas de `main` miradas»).
+  // No hay ninguna referencia que viaje por una variable hasta un git. Lo retira quien retire el
+  // simulacro.
+  'scripts/equipo/simulacro-del-vigia.mjs',
+  // …y su test: monta repositorios SINTÉTICOS en el temporal (uno con un merge, otro lineal) y les
+  // pone su propio `refs/remotes/origin/main`, que no es el de nadie; el resto son los mensajes de
+  // sus aserciones, que hablan de cuándo ENTRÓ algo en `main`. Mismo caso que 839d, 899b y 966.
+  'tests/scrum1542c-el-hueco-se-fecha-por-entrada.test.mjs',
 ];
 
 test('SCRUM-723 · SUELO del censo: lee, ve los git de verdad y sabe absolver a `merge-base`', () => {

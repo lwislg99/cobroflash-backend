@@ -318,7 +318,10 @@ el job. Si fue bien lo dice su último paso, «¿sonó?», no el color del run.
 Los 7 de la dirigida: **2 eran de este cambio y se arreglaron en el código** (el censo de señales
 del entorno de `scrum702`: el test nombraba una para apagarla, y ahora construye a mano el entorno
 del sujeto; y el censo de `scrum723`: el simulacro lee `origin/main`, que es su sujeto, y entra en
-`HALLAZGOS_DECLARADOS` con su motivo, aprobado por el orquestador). **2 esperaban este registro**
+`HALLAZGOS_DECLARADOS` con su motivo, aprobado por el orquestador; y en la lista hermana,
+`INDIRECTAS_DECLARADAS`, entran el simulacro y su test, porque sus mensajes nombran `main` y el
+test monta repositorios sintéticos con su propio `origin/main`: tres entradas en total, cada una
+con su motivo y con quién la retira). **2 esperaban este registro**
 (`scrum854`, `scrum976`). **2 de `scrum804` los provoqué yo**: hice `git fetch` con la tanda
 corriendo y el censo de ramas leyó el remoto antes y después (es la carrera de SCRUM-1539, inducida).
 **1 es de entorno y el propio selector lo dice** (`scrum1321`, «ciego por entorno, no es tu cambio»).
