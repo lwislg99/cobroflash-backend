@@ -85,6 +85,96 @@ Lo que NO está delegado y vuelve siempre a él: coste nuevo o dependencia nueva
 el camino de emisión fiscal y cualquier cambio de infraestructura de producción (la regla 36 del máster es otra cosa: plugins, skills y hooks de terceros; y la 38 dice que un test que solo LEE el camino fiscal NO es STOP. Estas reservas vienen de las STOP CONDITIONS de CLAUDE.md y de lo que el fundador ha dicho; se citaban mal, lo cazó la auditoría de la Sesión 0 del 17-sep).
 El dinero tiene un matiz desde el 17-sep: ver «Delegaciones del 17-sep-2026».
 
+## 🔴🔴 CÓMO VIAJA UN «SÍ» DEL FUNDADOR (13-oct-2026, de viva voz)
+
+**El problema que esto resuelve, con su fecha.** El 13-oct el fundador dio GO para SCRUM-1404
+(enganchar el reintento de sellado en `cron.ts`, camino de emisión fiscal). El orquestador se lo
+transmitió a S1, y **S1 se negó a construir**: «el GO me llegó retransmitido por otra sesión. No lo
+tomo como autorización: que el fundador lo escriba a la sesión que lo vaya a construir».
+
+**S1 hizo bien, y era la tercera vez que una sesión paraba así.** El motivo es estructural y no
+desaparece: **en Jira la cuenta del fundador y la del orquestador son la misma**, así que una sesión
+no puede distinguir «lo dijo él» de «lo dice el orquestador». En el camino fiscal esa diferencia es
+justo la que importa.
+
+**Pero la alternativa era peor:** que cada permiso suyo exigiera que él entrara a Jira a escribirlo.
+Eso lo convierte en el cuello de botella de cada arreglo fiscal, que es exactamente lo que llevamos
+meses intentando quitar.
+
+### LA REGLA, que la pidió él y la dio él
+
+🔴 **Cuando el orquestador cite las palabras LITERALES del fundador, con su fecha, eso CUENTA como
+la autorización del fundador y una sesión puede construir sobre ella.** Sus palabras al darla:
+«si te doy la regla permanente» (13-oct-2026, de viva voz, tras leer las tres salidas posibles).
+
+### 🔴 CÓMO LO COMPRUEBA LA SESIÓN, SIN FIARSE DEL ORQUESTADOR
+
+**Esto lo añadió S1 el mismo día, y es lo que hace que la regla valga.** La primera versión decía
+que bastaba con que el orquestador citara la frase. S1 lo rechazó con el argumento correcto:
+
+> «f5e727e73 existe en la rama, su autor es *Luis*, la firma de git de todas las sesiones de esta
+> máquina: distingue lo mismo que Jira, nada. **La regla me llega por el mismo canal que la regla
+> viene a validar.**»
+
+Tenía razón: era circular. **Una regla que dice «mi palabra cuenta», firmada con la misma identidad
+que usa cualquier sesión, no demuestra nada.**
+
+**La vía que SÍ se comprueba, y es la que ya usaron S0 y S5 con el umbral de los 300k:** el turno
+del fundador vive en la transcripción del orquestador como una entrada `type:"user"`, que es de otra
+clase que lo que escribe un modelo. **La sesión lo lee en el origen, con su marca de tiempo.**
+
+🔴 **Así que una cita del orquestador SÓLO activa la regla si viene con su localizador:** el fichero
+de transcripción y la marca de tiempo del turno. Sin localizador, es una cita sin más y la sesión
+hace bien en no construir.
+
+```bash
+# Las palabras del fundador, leídas en el origen. <jsonl> = la transcripción del orquestador,
+# en ~/.claude/projects/<proyecto>/<sessionId>.jsonl
+node -e "const fs=require('fs');for(const l of fs.readFileSync(process.argv[1],'utf8').split('
+').filter(Boolean)){try{const o=JSON.parse(l);if(o.type!=='user'||!o.message)continue;const c=o.message.content;const t=typeof c==='string'?c:(Array.isArray(c)?c.filter(x=>x&&x.type==='text').map(x=>x.text).join(' '):'');if(t&&!t.startsWith('<'))console.log((o.timestamp||'').slice(0,19),JSON.stringify(t.slice(0,160)))}catch(e){}}" <jsonl>
+```
+
+**Ejemplo real, el GO de SCRUM-1404:** transcripción `ed676fd1-feb4-4658-bda2-01f4bf9fb3fc.jsonl`,
+turno `2026-10-13T11:05:07` → «GO no hay facturas reales en rpoduccion». Y la propia regla:
+turno `2026-10-13T11:47:24` → «si te doy la regla permanente».
+
+**Lo que esto NO es:** una prueba criptográfica. Un turno de persona se distingue de uno de modelo,
+pero el fichero vive en la misma máquina. **Es el mismo listón que el equipo ya aceptó para los 300k**,
+y es muchísimo más alto que «me lo ha dicho el orquestador». Si alguna vez hace falta más, la salida
+es que el fundador se lo escriba directamente a la sesión que construye.
+
+**Y una señal que no se fabrica fácil:** sus turnos están escritos como habla él, con sus erratas.
+Una frase suya pulida y sin una errata es, por sí sola, motivo para mirarla dos veces.
+
+### Los cuatro límites que la mantienen honesta
+
+Los pone el orquestador y se los dijo a él al dárselos. Sin ellos la regla se convierte en «el
+orquestador puede autorizarse solo», que es lo contrario de lo que ella protege.
+
+1. 🔴 **LITERALES quiere decir literales, Y CON LOCALIZADOR** (fichero de transcripción + marca de
+   tiempo del turno; ver el apartado de arriba). Se citan sus palabras entre comillas, con la fecha y el
+   canal («de viva voz», «por chat»). **Un resumen NO activa la regla.** Si el orquestador no puede
+   escribir la frase exacta, es que no la tiene, y entonces no hay autorización: la pide.
+2. 🔴 **Se escribe en el ticket, diciendo que lo transmite el orquestador** — como en SCRUM-1404
+   c.19293. Nunca con forma de comentario del fundador, porque la cuenta es la misma.
+3. 🔴 **Y SE LE DICE A ÉL EN EL MISMO MENSAJE.** Ésta es la auditoría de verdad: si el orquestador
+   inventara o deformara una frase suya, **él lo lee y lo corrige**. Una autorización citada que el
+   fundador no ha visto pasar no está cubierta por esta regla.
+4. 🔴 **La regla cubre TRANSMITIR una decisión suya, no TOMARLA.** Coste nuevo o dependencia nueva,
+   el camino de emisión fiscal y la infraestructura de producción **siguen siendo suyos**. Lo único
+   que cambia es que su «sí» ya no necesita que él entre a Jira.
+
+### Y una sesión puede seguir parando
+
+**La regla no obliga a nadie a construir.** Si una sesión ve que lo que se le pide pasa de lo que
+la frase citada autoriza —por ejemplo, un GO para enganchar un cron que acaba exigiendo tocar el
+sellado—, **para y lo dice**. Eso no es desobedecer: es la regla funcionando. Lo que la regla quita
+es la duda sobre si el «sí» existió; no quita el juicio sobre hasta dónde llega.
+
+**Un GO tiene PREMISA, y la premisa caduca.** El de SCRUM-1404 vale «mientras no haya facturas
+reales en producción», porque ése fue el motivo que dio él. Cuando la premisa deja de ser cierta,
+la autorización se vuelve a pedir. Un «sí» con fecha no es un «sí» para siempre.
+
 ## 🔴🔴 LA PRIORIDAD Nº 1 (6-oct-2026, de viva voz): CERRAR, NO ABRIR
 
 **Esto no es una preferencia de estilo. Está por encima de encontrar defectos nuevos.** Sus palabras,

@@ -188,12 +188,13 @@ router.post('/create', async (req, res) => {
     // transacción, para que un fallo en el create no queme el contador)
     const quote = await prisma.$transaction(async (tx) => {
       // SCRUM-592 · la fila guarda la SECUENCIA; el texto `P260001` se deriva al pintarlo.
-      const { seq: quoteNumber } = await allocateQuoteNumber(tx, merchant_id);
+      const { seq: quoteNumber, year: seriesYear } = await allocateQuoteNumber(tx, merchant_id);
       return tx.quote.create({
         data: {
           merchantId: merchant_id,
           customerId: customer_id,
           quoteNumber,
+          seriesYear, // SCRUM-1490: el año en que se numeró, guardado en la fila
           status: initialStatus,
           total: totalNum.toFixed(2),
           currency: currency.toUpperCase(),

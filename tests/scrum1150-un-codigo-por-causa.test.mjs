@@ -50,8 +50,9 @@ const ABIERTA = Object.freeze({
   id: 7, merchantId: MERCHANT, quoteNumber: NUMERO, revision: 0, signatureUrl: null,
   customerId: 55, currency: 'EUR', total: '12.10', discountGlobalAmount: null,
   lines: [{ concept: 'Revisión de caldera', qty: 1, price: 10, tax: 0.21 }],
+  createdAt: new Date('2026-10-01T10:00:00Z'), // una fila real siempre lo trae; SCRUM-1490 lee de ahí el año de una fila sin `seriesYear`
 });
-const base = { abierta: ABIERTA, hermanas: [], escrituras: [] };
+const base ={ abierta: ABIERTA, hermanas: [], escrituras: [] };
 inyectarBase({
   'quote.findFirst': (args) => (args?.where?.id === base.abierta?.id ? { ...base.abierta } : null),
   'quote.findMany': () => base.hermanas.map((h) => ({ ...h })),
