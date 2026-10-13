@@ -312,7 +312,7 @@ D y E, camino fiscal (J1). Los dos «NO TOCADO» de arriba.
 
 # APÉNDICE · SCRUM-1302d: cuatro textos de las páginas que ve el cliente final (S4)
 
-**Medido contra:** `origin/main` = `875d665c42a055a09d05d75bc3bd580b03c82744` · 2026-10-13T14:35:24Z
+**Medido contra:** `origin/main` = `fc10ff9cb3b29eb18a5da552ec18f8c551eba7b7` · 2026-10-13T14:50:44Z
 A9: comprobación → `tests/scrum1302d-textos-de-la-pagina-de-firma.test.mjs`
 
 Carril S4 por ser texto puro (encargo del orquestador del 13-oct; los dos ficheros son de S1) · rama `scrum-1302d-textos-firmados-de-la-pagina-de-firma`.
@@ -364,6 +364,8 @@ No es el reintento de una persona que ha leído el aviso: para entonces la prime
 - **Una sonda mía estaba ciega y lo cazó el rojo:** la primera versión de la sonda de B se quedaba con el rótulo del botón, que el mismo `catch` reescribe antes, y daba rojo por otra cosa. Ahora se ancla en `#sig-error` dentro del último `catch`, y el control lleva ese rótulo delante.
 - **D, como retirada:** en las dos páginas del parte, medidas enteras, antes había una frase con «copia», «recibirás» o «WhatsApp» (la retirada) y ahora ninguna.
 - `tests/scrum264-copy-que-llega-al-cliente.test.mjs` cambia una línea: su `porDefecto` de la landing es el literal C. La propiedad que mide (el mensaje humano gana al código) no cambia.
+
+- **La tanda dirigida** (`npm run tanda:dirigida`, en dos tramos) se corrió entera sobre `875d665c42a055a09d05d75bc3bd580b03c82744`: 377 ficheros, 3.671 tests, 1 caído y ciego por entorno de esta máquina (SCRUM-1321, el temporal en otra unidad), veredicto verde. `main` se movió 12 commits después (traía `quotes.routes.ts` y el esquema): sobre el ancla de arriba se volvieron a correr 18 ficheros, los de estas dos páginas y los guards del registro y de las evidencias (158 de 158), y `guards:entrada`. La dirigida entera NO se repitió sobre el ancla.
 
 **NO medido:** yaqu.app con esto desplegado (se mira cuando mergee) · un navegador de verdad con la red cortada a mitad de la firma · la carrera de las dos peticiones contra una base real.
 
