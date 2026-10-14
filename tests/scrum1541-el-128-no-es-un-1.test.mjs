@@ -65,12 +65,16 @@ function montar() {
   return banco;
 }
 
+/** El hijo no hereda el contexto del runner de tests (SCRUM-1349). */
+const entorno = { ...process.env };
+for (const k of ['FORCE_COLOR', 'NODE_OPTIONS', 'NODE_TEST_CONTEXT']) delete entorno[k];
+
 /** El censo de verdad, corrido DENTRO de un clon (sus órdenes de git van al cwd). */
 function censoEn(cwd, tickets, expr = 'censarConMotivo') {
   const programa = `import * as c from ${JSON.stringify(CENSO)};\n`
     + `const r = c.${expr}(${JSON.stringify(tickets)});\n`
     + 'process.stdout.write(JSON.stringify(r.ciego ? { ciego: r.ciego } : { somero: r.censo.somero, filas: r.censo.filas.map((f) => ({ n: f.n, cubo: f.cubo, motivo: f.motivo })) }));';
-  const r = spawnSync(process.execPath, ['--input-type=module', '-e', programa], { cwd, encoding: 'utf8' });
+  const r = spawnSync(process.execPath, ['--input-type=module', '-e', programa], { cwd, encoding: 'utf8', env: entorno });
   assert.equal(r.status, 0, `🔴 el censo no ha corrido en ${cwd}: ${r.stderr}`);
   return JSON.parse(r.stdout);
 }

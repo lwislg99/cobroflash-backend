@@ -95,3 +95,12 @@ Guards de entrada, de registro y vecinos (22 ficheros, `scrum723`, `scrum976`, `
 - `enlace-ticket-rama.mjs` y los otros cinco ejecutores de `--is-ancestor` que clasificó SCRUM-1540 ⑤:
   no están aquí. Éste es el de la regla 42.
 - Linux: el obligatorio del PR será la primera pasada.
+
+## Primera pasada del obligatorio (14-oct-2026 16:58Z, PR #2467): ROJO, y era MÍO
+
+Run 38600134843: 11.513 tests, 2 fallos, los dos del trinquete de SCRUM-1349
+(`scrum1349-entorno-prestado-solo-baja`). El acusado era mi test nuevo: `censoEn()` lanzaba el
+`node` hijo sin `env`, y heredaba FORCE_COLOR/NODE_OPTIONS/NODE_TEST_CONTEXT del runner. No era
+`scrum1405c`. Arreglado donde nace (`{ ...process.env }` y se borran las tres, la forma de los bancos de
+1102f y 1436): en local, `scrum1349` y `scrum1541` dan 13 de 13. El rojo con el código anterior es ese
+log de CI; no lo he repetido en local.
