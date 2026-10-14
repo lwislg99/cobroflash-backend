@@ -505,6 +505,20 @@ CIEGO si no son 4. Y mi primer pasador lanzaba al hijo con `NODE_TEST_CONTEXT` v
 así que no ejecutó nada y las cuatro salieron «MAL» sin un solo test: es la memoria «hijo de node --test:
 entorno a mano», que ya existía y no apliqué.
 
+**Y el rojo del primer empujón (52595646), también mío:** el obligatorio del PR #2439 cayó en 1 de 11.447
+tests: `scrum812` («LA COBERTURA HA SUBIDO a 34»), porque mi test nuevo declara mutaciones y un caso suyo
+nombra al guard. Antes de empujar corrí `guards:entrada`, los 38 guards de navegador y 18 ficheros
+elegidos a mano, no la tanda entera, y `scrum812` no estaba entre ellos: es la cicatriz de J2 del
+13-oct («los vecinos los elegí a mano»), repetida. Se sube el suelo a 34 con su ancla, como piden el
+test y las subidas anteriores. Lo cazó el propio trinquete, que es la comprobación que ya existe.
+
+## 3bis · Qué se corrió
+
+- Local, sobre la rama: `guards:entrada` (14 guards, 166 tests, 0 fallos); `guards:visuales` (38 guards:
+  38 verdes, 0 ciegos, 0 rojos); 18 ficheros de `tests/` a mano (160 tests, 0 fallos, 0 saltados) y, tras
+  el arreglo, `scrum812` con 8 vecinos (87 de 87). **La tanda completa NO se corrió en local.**
+- CI del primer empujón: guards de navegador en VERDE, mi guard incluido; obligatorio en ROJO por `scrum812`.
+
 ## 4 · 🔴 Lo que esto NO prueba
 
 **No se ha visto en producción, y no se puede ver hoy:** ningún comercio está en modo `receipt` (dato del
