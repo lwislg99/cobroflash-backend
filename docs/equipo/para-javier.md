@@ -280,3 +280,27 @@ El límite es 0,1. **A 390 px está verde y a 360 px está rojo**, que es el anc
 **Cómo lo veis vosotros:** `npm run guards:visuales` y mirad `guard:cls-barra-anuncio`, o el log del job «guards de navegador» de cualquier corrida de CI de `main` de hoy.
 
 **No hemos abierto ticket.** El fichero es vuestro y este documento es el canal; si queréis uno en el tablero, lo abrís vosotros con vuestro número. **Lo pasamos porque la landing es lo que vende y está en producción así.**
+
+---
+
+## 13 🔴 EL MAPA DEL ENVÍO A LA AEAT ESTÁ HECHO POR VOSOTROS Y NO LLEGÓ A QUIEN PREGUNTÓ
+
+**Esto es un fallo de nuestro lado, no vuestro, y lo contamos entero porque la cura es de los dos.**
+
+El fundador preguntó el **13-oct** qué falta para que nuestro software mande a la AEAT. **`jv-j5c` entregó el mapa completo doce horas después** (SCRUM-1531 c.19221, los cinco puntos, medido por AST) y **`jv-j2i` lo verificó** (c.19349). **Trabajo impecable.**
+
+**Y el 14-oct, un día entero después, el fundador seguía sin tener la respuesta, y yo mandé a una sesión nuestra a rehacer el mapa.** Nos paró S1 midiendo que ya estaba hecho — y midiendo además que **el carril es J1, no nuestro** (`dos-equipos.md:55` y `:117`). **Dos errores míos: repartí un ticket hecho y en vuestro carril.**
+
+🔴 **La causa la había escrito `jv-j2i` en su propia verificación, literalmente: «quien no abra este ticket no los ve».** Lo midió con controles: `SCRUM-1531` sale **0 veces** en el contenido de `main`, **no existe `docs/master/SCRUM-1531.md`**, **0 commits**, **0 ramas** (control positivo con `SCRUM-1529`: sale en `docs/master/` y da 9 commits). **Vuestra sesión diagnosticó el problema y nadie actuó sobre su diagnóstico.**
+
+**Lo que pedimos, y es de J1:**
+
+1. **Subir el mapa al repositorio**, en `docs/master/SCRUM-1531.md`. Es lo único que impide que vuelva a pasar. Un mapa que vive en un comentario de Jira lo encuentra quien ya sabe que existe.
+2. 🔴 **Actualizar su sección A con el SELLO DE ENTIDAD.** La sección A es **anterior** a c.19272 y hoy se ha quedado corta en lo más importante: su **A4** dice «la dirección del entorno de pruebas, variable `VERIFACTU_AEAT_ENDPOINT`», pero c.19272 añade que **el sello de entidad se admite para el SERVICIO WEB y exige un ENDPOINT ESPECÍFICO** — o sea, **con sello la dirección NO es la misma**, y el propio comentario dice que «ninguna medición de hoy contemplaba eso».
+3. **La revisión que pide c.19272 y que no tiene ticket ni commit:** cualquier documento nuestro que diga que **«firmamos»** los registros en modo VERI\*FACTU debe revisarse, porque en ese modo **lo que hay es autenticación por canal seguro, no firma por registro** (la firma XAdES es del modo NO VERI\*FACTU, art. 14 de la Orden). ⚠️ **`jv-j2i` buscó la palabra «firmamos» y dio cero, y declaró el límite de su propia medida: «eso mide UNA palabra, no la idea».** Hace falta mirarlo por idea, no por palabra.
+4. **Y el dato que cambia el plan, por si no ha circulado:** las pruebas aceptadas que constan se hicieron con el **NIF personal del fundador y su certificado personal**. En cuanto el obligado sea la S.L., **esa pareja deja de cuadrar** salvo apoderamiento inscrito. Lo tenéis en c.19272.
+
+## 14 · DOS COSAS VUESTRAS QUE NOS HEMOS ENCONTRADO AL CRIBAR
+
+· **SCRUM-1056 · la mitad que queda es 100 % vuestra y NO TIENE NI TICKET NI RAMA en vuestro tablero.** Las líneas 1, 2, 3 y 6 son de J2 y J3 (montar la pieza, las rutas, anonimizar, la captura). **Nuestra mitad está terminada y en `main`** (1056c y 1056d, #2401 y #2458), y la pieza `clienteVolverALlamar` **no la monta ninguna vista**: las dos pantallas donde habría que montarla —`customersView.js` y `customerDetailView.js`— son de J2 (`dos-equipos.md` §3.2, fila 144).
+· **SCRUM-1505 es vuestro** (lleva `equipo-javier`) y **vuestro propio orquestador escribió en c.18845 que su titular era falso**, mientras el ticket sigue diciendo «CENSADO: 0 tickets mal clasificados». **Lo dejamos en vuestra mano: nosotros no cerramos tickets vuestros.**
