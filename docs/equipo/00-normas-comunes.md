@@ -113,6 +113,31 @@ porque no la había (SCRUM-774).
   29-jul), «`gh` no está instalado» repetido durante días (estaba en
   `C:\Program Files\GitHub CLI\gh.exe`, 15-sep) y «no hay Playwright»
   (el MCP existía, 7-sep).
+- 🔴 **«No se ha podido verificar» y «está bloqueado por X» son
+  afirmaciones sobre PRODUCCIÓN, y exigen el dato RECIBIDO:** la ruta, la
+  cuenta, el código de respuesta, el `error` del cuerpo y la hora de
+  GitHub. Leer el código y deducir qué contestaría no es recibirlo: se
+  escribe «leído en el código, no intentado». Y si no se intentó, se dice
+  **«no lo he intentado»**, que es otra frase y es legítima. ✗ Falla,
+  medida por la S3 el 14-oct-2026: de los **7** comentarios del tablero
+  que culpaban a la cuenta QA caducada, **0** eran ciertos (2 falsos por
+  ruta, 4 deducidos del código, 1 dudoso); **ninguno había recibido el
+  403**, y uno era del orquestador (SCRUM-1367 c.19747). Mientras tanto,
+  dos tickets de SCRUM-1302 esperaron días sin motivo. Lo que hay de
+  verdad, para que nadie vuelva a usar la excusa:
+  - **La prueba vencida (403 `trial_expired`) sólo cierra CUATRO
+    rutas:** `POST /quote/create`, `POST /admin/quotes/:id/send-whatsapp`,
+    `POST /admin/albaranes/:id/enviar-whatsapp` y
+    `…/enviar-para-firmar`. Leer, editar, crear albaranes o **aceptar un
+    borrador que ya existe** (`POST /admin/quotes/:id/accept`) no pasan
+    por ella. Si alguien monta o desmonta una, lo caza el censo de
+    `tests/scrum337-aviso-atado-al-bloqueo.test.mjs`. Medido el 14-oct:
+    con un quinto montaje en `accept`, cae su caso «si cambia lo que el
+    producto HACE».
+  - **Lo que impide probar otro rol NO es la caducidad: es el tope de
+    usuarios del plan.** `trial` admite 1 (`src/core/entitlements.ts`), e
+    invitar a otro da 409 `user_limit` (`team.routes.ts`), venza o no
+    venza la prueba. Alargar el plan no lo arregla.
 - **Auditar por mutación: primero la BASE sin mutar.** Sin ella, un
   test inestable que cae se lee como un mutante que muere. Y un
   instrumento que no produce salida (un proceso lanzado con demasiados
