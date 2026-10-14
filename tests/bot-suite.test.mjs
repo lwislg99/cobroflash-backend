@@ -329,6 +329,13 @@ test('A8.4: suite completa del bot (webhook + dry-run)', { skip: !ENABLED && 'si
       await waitOutbox(len + 2);
       assert.ok(outbox.slice(len).some((m) => /le he avisado/i.test(m.text || '')), 'expectativa al cliente');
       assert.ok(outbox.slice(len).some((m) => m.to !== TEST_PHONE && /quiere hablar contigo/i.test(m.text || '')), 'aviso al pro con contexto');
+      // SCRUM-1543: el buzón y la sesión son dos escrituras, y ver la primera no dice que la segunda
+      // haya llegado. Leerla al instante cayó 4 veces en 65 logs de CI con `'menu' !== 'handoff'`.
+      // Se espera a la condición; si el techo vence, no hay veredicto (y si el bot nunca escribe
+      // `handoff`, sigue cayendo).
+      await esperarCondicion(async () => (await prisma.botSession.findFirst({ where: { phone: TEST_PHONE }, orderBy: { id: 'desc' } }))?.state === 'handoff', {
+        techoMs: 6000, pasoMs: 100, que: 'la sesión en handoff (9)',
+      });
       const sess = await prisma.botSession.findFirst({ where: { phone: TEST_PHONE }, orderBy: { id: 'desc' } });
       assert.equal(sess?.state, 'handoff', 'sesión en handoff (registro BO A8.3)');
       log('9 handoff + registro', true);
