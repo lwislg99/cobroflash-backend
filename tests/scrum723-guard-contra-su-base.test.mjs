@@ -325,6 +325,11 @@ const HALLAZGOS_DECLARADOS = [
   // Lo retira: quien borre `scripts/verificacion-s5/`, o el día que haya `gh` y el estado de los
   // PR se pueda consultar de frente, que es lo que este rodeo sustituye.
   'scripts/verificacion-s5/ramas-borrables.mjs [log]',
+  // SCRUM-1540 · el mismo generador, desde que juzga cada rama por su punta VIVA del remoto: resuelve
+  // `origin/main` UNA vez (`rev-parse --verify`) y mide todo —las ramas y sus sondas sembradas—
+  // contra ese sha congelado, que es lo que este guard pide ver. La punta es el sujeto de la pregunta
+  // por el mismo motivo que el `[log]` de arriba. Lo retira quien retire el `[log]`.
+  'scripts/verificacion-s5/ramas-borrables.mjs [rev-parse]',
   // SCRUM-839d · el job que resuelve los conflictos de solo registro. Su pregunta es sobre la
   // PUNTA por definición: «¿este PR choca con `main` TAL COMO ESTÁ AHORA?». Es lo que GitHub
   // mira para marcarlo CONFLICTING, y contra la base de la rama no habría conflicto que ver.
@@ -642,6 +647,10 @@ const INDIRECTAS_DECLARADAS = [
   // pone su propio `refs/remotes/origin/main`, que no es el de nadie; el resto son los mensajes de
   // sus aserciones, que hablan de cuándo ENTRÓ algo en `main`. Mismo caso que 839d, 899b y 966.
   'tests/scrum1542c-el-hueco-se-fecha-por-entrada.test.mjs',
+  // SCRUM-1540 · monta un remoto de juguete en el temporal (veinte ramas mergeadas y una que recibe
+  // un commit después) y empuja a SU `main`, que no es el de nadie. Mismo caso que 1542c. Lo retira
+  // quien borre el test.
+  'tests/scrum1540-borrables-por-la-punta-viva.test.mjs',
 ];
 
 test('SCRUM-723 · SUELO del censo: lee, ve los git de verdad y sabe absolver a `merge-base`', () => {
