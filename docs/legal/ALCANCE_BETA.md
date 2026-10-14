@@ -25,7 +25,7 @@ Entre **[Nombre/Razón social del titular de YaQu]**, NIF **[NIF]** ("YaQu") y
 
 ## 2. Qué NO incluye todavía (y cuándo se activa)
 
-- La **facturación con sistema VERI*FACTU se activará al cerrar la declaración responsable**
+- La **facturación con sistema VERI*****FACTU se activará al cerrar la declaración responsable**
   del fabricante, **sin cambio de precio** para ti. Hoy la remisión a Hacienda todavía no está construida, y no existe una «certificación» de VeriFactu: el régimen se basa en una declaración responsable del fabricante, que publicaremos en cuanto el envío esté terminado. Hasta ese momento YaQu emite
   justificantes de cobro (no facturas fiscales); la facturación fiscal de tu actividad
   sigue siendo tu responsabilidad por tus medios actuales (tu gestoría o tu sistema

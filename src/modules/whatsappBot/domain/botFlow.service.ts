@@ -628,6 +628,12 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
       request: 'estaba pidiendo un presupuesto',
     };
     const context = CONTEXT_LABEL[String(session?.data?.lastAction || '')] || 'estaba en el menú';
+    // SCRUM-1543: la sesión pasa a `handoff` ANTES de enviar nada. Guardada después, la respuesta del
+    // cliente a «le he avisado» podía entrar antes del UPDATE y procesarse en `menu`, no en silencio.
+    // `sendWhatsAppText` no lanza (un fallo devuelve `ok:false`), así que con un envío fallido la
+    // sesión ya acababa en `handoff`: el orden nuevo no abre ningún estado. Si el UPDATE falla, ahora
+    // no sale ningún aviso que prometa un silencio que no se ha guardado.
+    await setSession(phone, { merchantId, state: 'handoff', data: { lastAction: session?.data?.lastAction } }, session);
     notifyMerchantAlert({
       merchantId,
       merchantPhone: merchant.whatsappPhone,
@@ -653,7 +659,6 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
       title: '💬 Pidió hablar contigo por WhatsApp (bot)',
       detail: `Contexto: ${context}`,
     });
-    await setSession(phone, { merchantId, state: 'handoff', data: { lastAction: session?.data?.lastAction } }, session);
     return true;
   }
 
@@ -685,6 +690,8 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
   // ── Texto fuera de flujo (K1): reenseñar menú; 2ª vez → handoff ────────
   const offMenuCount = Number(session?.data?.offMenuCount || 0);
   if (offMenuCount >= 1) {
+    // SCRUM-1543: `handoff` se guarda ANTES de los envíos, por lo mismo que en `bot_human` (arriba).
+    await setSession(phone, { merchantId, state: 'handoff', data: { lastAction: session?.data?.lastAction } }, session);
     notifyMerchantAlert({
       merchantId,
       merchantPhone: merchant.whatsappPhone,
@@ -707,7 +714,6 @@ export async function handleBotMessage(from: string, input: BotInput): Promise<b
       title: '💬 Te escribió por WhatsApp y pasó a humano (bot)',
       detail: `"${text.slice(0, 120)}"`,
     });
-    await setSession(phone, { merchantId, state: 'handoff', data: { lastAction: session?.data?.lastAction } }, session);
     return true;
   }
 

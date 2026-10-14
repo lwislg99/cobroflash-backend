@@ -1,0 +1,35 @@
+# medido: 2026-10-14T06:49Z · jql: project = SCRUM AND labels = "listo-para-construir" AND statusCategory != Done ORDER BY key ASC · total: 34 · hasNextPage: false · por: J3 (jv-j3g), MCP de Atlassian
+SCRUM-332	Tareas por hacer	area-s2,equipo-luis,listo-para-construir
+SCRUM-334	Tareas por hacer	area-s2,equipo-luis,listo-para-construir
+SCRUM-774	Tareas por hacer	area-s5,equipo-luis,listo-para-construir
+SCRUM-1043	En curso	bloque-crm,equipo-javier,listo-para-construir
+SCRUM-1045	Tareas por hacer	area-s4,bloque-crm,equipo-luis,esperando-alter,listo-para-construir,ola-2
+SCRUM-1050	Tareas por hacer	area-j1,bloque-contabilidad,equipo-javier,esperando-caso-real,listo-para-construir,ola-2
+SCRUM-1051	Tareas por hacer	area-j1,bloque-contabilidad,equipo-javier,listo-para-construir,ola-2
+SCRUM-1052	Tareas por hacer	area-j1,bloque-contabilidad,equipo-javier,esperando-asesor,listo-para-construir,ola-2
+SCRUM-1054	Tareas por hacer	area-j1,bloque-contabilidad,equipo-javier,esperando-asesor,listo-para-construir,ola-2
+SCRUM-1055	Tareas por hacer	area-j1,bloque-contabilidad,equipo-javier,esperando-asesor,listo-para-construir,ola-2
+SCRUM-1056	Tareas por hacer	area-s1,area-s2,bloque-crm,equipo-luis,esperando-alter,listo-para-construir,ola-3
+SCRUM-1058	En revisión	area-j1,bloque-crm,equipo-javier,listo-para-construir,ola-3
+SCRUM-1063	Tareas por hacer	area-j1,bloque-contabilidad,equipo-javier,listo-para-construir,ola-3
+SCRUM-1064	Tareas por hacer	area-j1,bloque-contabilidad,equipo-javier,listo-para-construir,ola-3
+SCRUM-1065	Tareas por hacer	area-j1,bloque-contabilidad,equipo-javier,listo-para-construir,ola-3
+SCRUM-1066	En curso	area-j1,bloque-contabilidad,equipo-javier,esperando-alter,listo-para-construir,ola-3
+SCRUM-1067	Tareas por hacer	area-j1,bloque-contabilidad,equipo-javier,listo-para-construir,ola-3
+SCRUM-1069	Tareas por hacer	area-s1,area-s2,bloque-contabilidad,equipo-luis,esperando-decision,listo-para-construir,ola-3
+SCRUM-1072	Tareas por hacer	area-s1,area-s2,bloque-contabilidad,competencia,equipo-luis,esperando-alter,listo-para-construir,ola-2
+SCRUM-1074	Tareas por hacer	area-s1,area-s2,bloque-contabilidad,competencia,equipo-luis,esperando-asesor,listo-para-construir,ola-2
+SCRUM-1076	Tareas por hacer	area-j1,bloque-contabilidad,competencia,equipo-javier,esperando-asesor,listo-para-construir,ola-3
+SCRUM-1077	Tareas por hacer	area-j1,bloque-contabilidad,competencia,equipo-javier,listo-para-construir,ola-3
+SCRUM-1144	Tareas por hacer	area-s2,equipo-luis,listo-para-construir
+SCRUM-1231	En curso	area-s1,equipo-luis,listo-para-construir,privacidad
+SCRUM-1246	Tareas por hacer	area-j3,cambio-de-master,equipo-javier,legal,listo-para-construir
+SCRUM-1401	Tareas por hacer	area-j5,calidad,equipo-javier,listo-para-construir
+SCRUM-1403	En curso	area-j2,bloque-permisos,decision-jefe,equipo-javier,listo-para-construir
+SCRUM-1408	En curso	area-j2,calidad,equipo-javier,instrumentos,listo-para-construir
+SCRUM-1481	En curso	area-j4,calidad,equipo-javier,instrumentos,listo-para-construir
+SCRUM-1502	Tareas por hacer	area-j1,area-j4,aviso-a-javier,calidad,equipo-javier,fundador,listo-para-construir,microcopy
+SCRUM-1503	Tareas por hacer	area-s3,auditoria,aviso-a-luis,calidad,equipo-javier,equipo-luis,instrumentos,listo-para-construir
+SCRUM-1505	Tareas por hacer	area-s5,auditoria,calidad,equipo-javier,equipo-luis,instrumentos,listo-para-construir
+SCRUM-1548	Tareas por hacer	area-j6,calidad,equipo-javier,instrumentos,listo-para-construir
+SCRUM-1550	Tareas por hacer	area-j3,auditoria,calidad,equipo-javier,instrumentos,listo-para-construir
