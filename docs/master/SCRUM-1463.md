@@ -242,3 +242,52 @@ sigue ahí para el siguiente que escriba «guardar» en un título: es del carri
   consta que hay commits suyos en `main` posteriores al comentario de cierre.
 - La lectura de los comentarios la hicieron dos subagentes de sólo lectura (17 y 6 tickets, todos
   leídos). Las llamadas del primero se contaron: 17 lecturas y ninguna escritura. Las del segundo no.
+
+## 14-oct-2026 · SCRUM-1463c · LA FILA DEL LATIDO (S5): los cierres sin clic salen en cada pasada
+
+Medido sobre `origin/main` `e2be1c9fda3b5ceac853b4d376f5664ac8e4df67`, 14-oct-2026 07:54Z (`Date:` de GitHub;
+el reloj de la máquina iba unos 4 min por delante). Rama `scrum-1463c-cierres-en-el-latido`.
+
+Es lo que le faltaba a SCRUM-1463b: el guion existía y sólo avisaba si alguien se acordaba de correrlo.
+Ahora `scripts/equipo/latido.mjs` lee lo que guardó `cierre-sin-clic.mjs` y lo enseña como sección 13,
+«CIERRES SIN CLIC». ⛔ Lista y calla: ni el latido ni el guion cierran, transicionan ni escriben en Jira.
+
+- Sin nada guardado en la máquina: NO hay sección y va una NOTA (`NOTA_SIN_CORRER`) que lo dice; no cuenta
+  para la salida.
+- Lo guardado ilegible, o una foto de Jira de más de 12 h: «NO PUDE MIRAR» y la salida del latido es 2.
+  **Riesgo, declarado:** si nadie rehace la foto cada 12 h, el latido sale 2 en cada pasada por esto. Es
+  la regla de la casa («no pude mirar» nunca es verde), pero un 2 permanente enseña a no leer el 2.
+
+### La pasada real (14-oct-2026, ~07:55Z)
+
+Foto de Jira sacada con el conector (las dos búsquedas de `cierre-sin-clic.mjs consultas`): 2 abiertos
+casan, SCRUM-1126 y SCRUM-1538. Los comentarios se dictaron en TSV: el de 1126 (c.17592) y la cita de 1538
+(c.19393) son los leídos el 13-oct, y su `updated` en Jira es anterior a esa lectura. Control: SCRUM-997 y
+SCRUM-1528, cerrados, con las mismas fórmulas. Resultado del guion y del latido real corrido desde la rama:
+
+    🔴 CIERRES SIN CLIC · 2 tickets abiertos casan con las fórmulas de cierre (foto de hace 0.0 h): 1 con comentario de cierre, 0 sin leer, 1 que sólo lo citan
+       · SCRUM-1126 [En curso] · 14 días desde su comentario de cierre (c.17592, dictado a mano: …) · … LE FALTA EL CLIC · 4 commit(s) suyos en main, el último del 2026-09-30 · 🔴 2 de esos commits son POSTERIORES al comentario de cierre
+
+997 y 1528 (cerrados) no salen; 1538 sale como cita, sin aviso.
+
+### Aceptación → dónde se ve
+
+| aceptación (literal del encargo) | dónde se ve |
+|---|---|
+| «Haz que `latido.mjs` llame a `cierre-sin-clic.mjs` y salga en el latido como una fila más» | `scripts/equipo/latido.mjs` (`cierresDelLatido`, sección 13) · `tests/scrum1463c-latido-cierres-sin-clic.test.mjs`, «ESCRITO NO ES CORRIENDO» |
+| «Que NO cierre nada: lista y calla» | el mismo test, última aserción · `NO_CIERRA` en la población de la sección |
+| «con un ticket cerrado de verdad, la fila NO lo saca» | test «CONTROL» (997 cerrado no sale) · pasada real de arriba (997 y 1528) |
+| «con uno que tenga comentario de cierre y siga abierto, SÍ» | test «CONTROL» (1126 sale; 997 abierto también) · pasada real (1126) |
+
+Mutaciones declaradas en el test: 2, corridas a mano, 2 de 2 muertas, con la base sin mutar en verde.
+
+### De paso, medido y NO arreglado: `seTitulaGuard`
+
+El título de un test de esta rama decía «guardado» y subió el trinquete de
+`tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs` a 34 (suelo 33): el mismo defecto que vio la
+SCRUM-1463b. Se cambió el título. Medido sobre los 1.338 ficheros de `tests/`: por subcadena se «titulan
+guard» 302; por palabra entera («guard»/«guards»), 153. De los que declaran mutaciones, 33 → 29 (el fichero de esta rama no entra en ninguna de las dos cifras).
+**Arreglarlo exige BAJAR el suelo del trinquete de 33 a 29**, y eso es relajar un guard: se pide, no se
+hace. Y no es sólo ruido: «guarda» en castellano a veces SÍ nombra un guard («guarda de presencia», «la
+guarda va ANTES de escribir»), así que la palabra entera también se equivoca. Falta una definición, no
+una expresión regular.
