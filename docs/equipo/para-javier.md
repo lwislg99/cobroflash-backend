@@ -304,3 +304,28 @@ El fundador preguntó el **13-oct** qué falta para que nuestro software mande a
 
 · **SCRUM-1056 · la mitad que queda es 100 % vuestra y NO TIENE NI TICKET NI RAMA en vuestro tablero.** Las líneas 1, 2, 3 y 6 son de J2 y J3 (montar la pieza, las rutas, anonimizar, la captura). **Nuestra mitad está terminada y en `main`** (1056c y 1056d, #2401 y #2458), y la pieza `clienteVolverALlamar` **no la monta ninguna vista**: las dos pantallas donde habría que montarla —`customersView.js` y `customerDetailView.js`— son de J2 (`dos-equipos.md` §3.2, fila 144).
 · **SCRUM-1505 es vuestro** (lleva `equipo-javier`) y **vuestro propio orquestador escribió en c.18845 que su titular era falso**, mientras el ticket sigue diciendo «CENSADO: 0 tickets mal clasificados». **Lo dejamos en vuestra mano: nosotros no cerramos tickets vuestros.**
+
+---
+
+## 15 🔴 SCRUM-1507 · NO ES «UNA LÍNEA» Y NO ES NUESTRA: es la tercera pieza de un PR-2 VUESTRO que no existe
+
+**Lo traemos porque está en nuestra lista de «lo que bloquea vender» y hoy hemos medido que ahí no debería estar.** Un sellado VeriFactu que falla **se queda sin sellar**, y el mecanismo del reintento **está construido y no corre**.
+
+**Lo que creíamos:** que faltaba **una línea** de cron y que el fundador ya había dado el sí. **Las dos mitades son falsas, y lo ha medido nuestra S1 parándose antes de tocar nada:**
+
+| lo que creíamos | lo medido |
+| --- | --- |
+| «es una línea en `cron.ts`» | El bloque está sólo en `cron.ts`, **pero no puede entrar solo**: importa `src/modules/invoicing/domain/reintentoSellado`, que es **J1 y camino de emisión** |
+| «y con eso funciona» | **No**: sin la fecha no hace nada — `REINTENTO_ACTIVO_DESDE` sigue a `null` (`reintentoSellado.ts:74`). Vuestro c.19406 ya lo midió: la tarea sola contesta «inactivo», con 0 accesos a la base |
+| «se puede meter ya» | **Pone ROJO el obligatorio**: `tests/scrum1404b:134` exige `assert.deepEqual(importan('reintentoSellado'), [])`, con «fecha + cron + respuesta, **los tres a la vez**». Pasarlo exigiría cambiar **vuestro** guard, y eso es la regla 41 |
+| «el PR-2 está en marcha» | **No existe: 0 ramas remotas** con `1404`, `1507` o «reintento» (control positivo: la rama viva de `1302s` sí sale) |
+| «el fundador dio el sí» | El «Sí te lo doy» vive en **SCRUM-1507 c.19511, escrito por vuestro orquestador**, y ese mismo comentario dice **literalmente** que «no autoriza … ni el bloque de `cron.ts` — eso es S1 y va por su GO propio». **Lo pasamos como autorización del fundador y no lo era. El error es nuestro** |
+
+**Qué hace falta para que esto se mueva, y los tres primeros son vuestros:**
+
+1. **Que abráis el PR-2 con la FECHA y la RESPUESTA.** Sin esas dos piezas, la nuestra no puede entrar ni sola ni acompañada.
+2. **La decisión de jefes que sigue sin tomarse** (vuestro c.19511): **¿PR-2 entero o partido?**
+3. **El nombre de la rama**, para que nuestra S1 empuje ahí su commit de `cron.ts` — o el cruce declarado, como queráis llevarlo.
+4. **Sólo entonces** tiene sentido que lo intentemos: a una sesión nuestra de S1 ya le **denegaron** editar `cron.ts` el 13-oct («Production Deploy»), e intentarlo hoy en rama propia daría un PR rojo por vuestro guard.
+
+🔴 **Y un dato de diseño que sale de esto y que conviene que miréis antes de cerrar el PR-2:** el bloque pide **cada minuto** (`* * * * *`, de vuestro c.19344). **Sería el primer cron de la casa por debajo de una hora** — las seis programaciones de hoy son `0 * * * *`, `0 10 * * *` (×2), `0 9 * * 1`, `0 8 * * *` y `15 3 * * *`. **Y `noOverlap` no protege entre PROCESOS**: con varias réplicas corriendo crons en producción, dos podrían reintentar el mismo sellado a la vez. **Eso no está medido por nadie.**
