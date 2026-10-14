@@ -359,6 +359,35 @@ Carril S1 · sesión `s1-13octf` · rama `scrum-1302k-dos-firmas-en-obra-a-la-ve
 
 **NO medido:** contra un Postgres real · yaqu.app · cada cuánto ocurre · `POST /admin/partes/:id/firmar` y `/firmar-tecnico` (`partes.routes.ts`), que firman con el mismo gesto: sin leer.
 
+**Visto en yaqu.app el 14-oct-2026** (SCRUM-1302 c.19601): dos firmas en obra a la vez, desde dos procesos, sobre el albarán de prueba #47 de la cuenta QA → una 200 y otra 409 `albaran_locked`; releído por `GET`, el firmante es el del 200.
+
+## SCRUM-1302o · la versión en el `where` de la firma en obra, y el otro lado de la misma ventana: el PATCH (S1, 14-oct-2026)
+
+**Medido contra:** `origin/main` = `e2be1c9fda3b5ceac853b4d376f5664ac8e4df67` · 2026-10-14T08:11:04Z
+A9: comprobación → `tests/scrum1302o-version-en-la-firma-en-obra.test.mjs`
+
+Carril S1 · tanda del 14-oct · árbol `s1-13octd` · rama `scrum-1302o-version-en-la-firma-en-obra`. Cierra la ventana que 1302k dejó declarada, con el texto firmado en SCRUM-1302 c.19467 (`docs/microcopy/2026-10-14-SCRUM-1302-albaran-cambiado-en-obra.md`).
+
+**Reproduce, por las dos puertas** (instrumentos comiteados antes de cada arreglo: `68c8c4290` y `a0025674c`):
+
+| caso | código de `main` | con el arreglo |
+|---|---|---|
+| firma en obra; alguien edita el albarán entre la lectura y la escritura | **escribe**: la evidencia sella «lo que vio el cliente» y la fila guarda lo editado | 409 `albaran_cambiado` con el texto firmado, 0 escrituras, sin PDF |
+| control: firmado por otro en medio | 409 `albaran_locked` | igual |
+| `PATCH`; la firma entra entre su lectura y su escritura | **escribe sobre un albarán FIRMADO** | 409 `albaran_locked` «Un albarán firmado está congelado: no se puede editar.» |
+| dos `PATCH` con la misma versión | **el segundo pisa al primero en silencio** | 409 `albaran_cambiado_al_editar` (la respuesta que la ruta ya da a una versión vieja) |
+| suelos: una firma sola, un `PATCH` solo | pasan | pasan |
+
+El `PATCH` no estaba en el encargo: la firma no sube `version`, así que poner la versión sólo en el `where` de la firma dejaba la ventana abierta por el otro orden. Es la misma ventana, y se arregla sin texto nuevo.
+
+**Dónde cae, mirado y no deducido (14-oct, no heredado de 1302k):** `emitInvoice` está ahora en las líneas 1330 y 1610 del fichero de `main` (`facturar-parcial` y `convertir-en-factura`; antes 1310 y 1590). Los dos manejadores tocados, `PATCH /:id` y `POST /:id/firmar`, no llaman a ninguna. El diff no toca `buildFirmaEvidencia` ni lo sellado: el `where` de los dos `update` y qué se contesta si no casa.
+
+**De paso, por el guard de SCRUM-411:** `ERROR_ALBARAN_CAMBIADO` y `ERROR_ALBARAN_CAMBIADO_AL_EDITAR` dejan de ser huérfanos (ya los importa la ruta) y salen de `tests/_huerfanos-declarados.mjs`.
+
+**Lo que esto NO cierra, declarado:** en obra el cuerpo de la firma no lleva versión, así que el servidor no sabe qué contenido VIO el cliente. Esto garantiza que la evidencia y la fila hablan del mismo contenido; no que ése sea el que el cliente tenía delante. Si la oficina edita mientras la firma espera en la cola sin cobertura, al volver la red la cola la sube y entra sobre lo editado (`albaran_cambiado` no está en `RECHAZOS_DEFINITIVOS` de `public/dashboard/js/colaDeFirmas.js`, así que la firma no sale de la cola y el siguiente intento lee la versión nueva). Cerrarlo pide que el panel mande la `version` que pintó (carril S2) y una decisión sobre las firmas ya encoladas sin ella.
+
+**NO medido:** contra un Postgres real (el doble imita el `P2025`) · en yaqu.app (la edición en medio no se provoca desde fuera con garantía).
+
 ## Sigue abierto en este ticket tras C
 
 D y E, camino fiscal (J1). Los dos «NO TOCADO» de arriba.
