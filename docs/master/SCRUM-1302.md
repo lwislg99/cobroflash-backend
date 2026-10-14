@@ -678,6 +678,8 @@ Sesión `s4-14oct` · rama `scrum-1302p-el-enlace-de-una-revision-antigua`. El s
 
 # SCRUM-1302r · el `POST /quote/:token/decision` rechaza la versión no vigente (S1)
 
+**Medido contra:** `origin/main` = `099cfd383764b8cd87ab78e9ef7df8ca57a206a7` · traído a la rama en el merge `4ecebfea5` (2026-10-14T16:24:16Z); la tanda completa corrió después, sobre ese árbol. Lo escribe S1.
+
 **Lo que faltaba de este defecto** (c.19636 punto 3, c.19656): con una .1 en el grupo, un `POST` fabricado con el token de la .0 todavía ACEPTABA (200). La página ya no ofrecía el formulario (1302p), la API sí.
 
 **Lo firmado que se aplica:** que el `POST` rechace, con `message` = T2 y T3 seguidos (propuesta de S4 en c.19451; firmada en c.19454 punto 6 y repetida en c.19636 punto 3). **Ningún texto nuevo.** Ningún comentario fija el código HTTP: va un **409**, como el de «ya decidido» de la misma ruta (SCRUM-1276), con un `error` propio, `quote_has_newer_version`, para no decir «ya decidido» de algo que no lo está.
