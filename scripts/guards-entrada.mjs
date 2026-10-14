@@ -133,6 +133,11 @@ export const GUARDS = [
   // sobre ese árbol. El CI lo habría parado con este mismo test; aquí se para antes del push.
   { fichero: 'tests/scrum393-marcadores-de-conflicto.test.mjs',
     porque: 'ningún fichero del árbol lleva marcadores de conflicto de git (un merge mal resuelto se empuja igual de verde)' },
+  // SCRUM-1548 · el decimocuarto. Lee el árbol y la historia de git, sin `dist` ni base: ~0,4 s. El caso
+  // que lo decide: el 14-oct-2026 una sesión corrió este comando (13 guards, 158 de 158, verde), empujó,
+  // y el CI la tumbó con este mismo test por dos guiones de mutación sin registrar en el catálogo.
+  { fichero: 'tests/scrum1387-banco-nuevo-va-al-catalogo.test.mjs',
+    porque: 'todo banco de mutación NUEVO de las carpetas de evidencias nombra el catálogo del meta-guard, no una lista propia' },
 ];
 
 // TECHO de este comando ENTERO, en milisegundos de reloj. Lo hace cumplir el propio comando (plazo
@@ -151,7 +156,7 @@ export const PRESUPUESTO_MS = TECHO_MS;
 // SUELO Nº1. Un agregador que se queda corto es PEOR que no tenerlo: da la tranquilidad entera con
 // la cobertura a medias, y quien lo corre en verde deja de mirar. Si mañana alguien borra una línea
 // de la lista de arriba «porque molestaba», esto para.
-export const MINIMO = 13;
+export const MINIMO = 14;
 
 // Secuencias de escape ANSI (CSI). El runner de node colorea su resumen cuando cree que hay un
 // terminal detrás —o cuando el entorno trae `FORCE_COLOR`—, y entonces la línea del recuento llega
