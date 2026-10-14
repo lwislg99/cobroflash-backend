@@ -755,3 +755,60 @@ Una línea cambiada, ninguna movida (`git diff --numstat`: `1 1`).
 - No empujé `public/index.html`.
 - No escribí la nota de 1347, ni ninguna otra línea del máster.
 - No toqué `src/`, el camino de emisión, `prisma/schema.prisma` ni ninguna base.
+
+---
+
+# APÉNDICE · 14-oct-2026 · SCRUM-1016m · Title y los dos H1, aplicados con la firma del 14-oct — el subtítulo vivo sigue fuera
+
+**Medido contra:** `origin/main` = `ca0e2501b72668c41ed5fcd565390b97993b8932` · 2026-10-14T08:27:52Z
+**Rama:** `scrum-1016m-titular-y-h1-firmados` · **Puesto:** J3 (sesión `jv-j3i`) · **Skill UI:** cargada (`yaqu-premium-ui`, antes de tocar `public/index.html`)
+
+A9: comprobación → `tests/scrum563-registro-de-lo-aprobado.test.mjs`
+
+## Las firmas, leídas en Jira por esta sesión
+
+- **SCRUM-1016 c.19607** (14-oct, «Ok firmamos»): los tres literales del Candidato 1 de c.16564.
+- **SCRUM-1016 c.19608** (14-oct, «Firmamos sí»): la 1ª frase del subtítulo espejo (`:507`), **tal como está hoy**, así que en ella no cambia nada. Y la autorización para actualizar el registro de lo aprobado: «te confirmo que resuelvas tú», con la condición de citar los dos comentarios.
+
+## Lo aplicado en `public/index.html` (5 líneas)
+
+| sitio | queda |
+| --- | --- |
+| `:6`, `:14`, `:21` — `<title>`/`og:title`/`twitter:title` | `YaQu — Del presupuesto a la firma, sin salir de WhatsApp` |
+| `:426` H1 vivo y `:506` H1 espejo, juntos (los ata `scrum331:158`) | `Del presupuesto a la firma, <span class="hl">sin salir de WhatsApp.</span>` |
+
+**Fuera, y no es mío:** el subtítulo vivo (`:427`). Lo sigue parando `tests/scrum331-heroe.test.mjs:121`, la lista negra de AEAT/Hacienda, que va por detrás de la regla 26 enmendada (apéndice 1016l §2). El orquestador lo encarga a otra sesión: el que escribe el texto no escribe el guard que lo juzga. Hasta entonces, la página sirve el H1 nuevo con el subtítulo viejo («…y te paga — con tarjeta, Bizum o transferencia. Y llevas clientes, gastos y facturas en el mismo sitio.»).
+
+## El registro de lo aprobado — cita la firma, y la vieja no se borra
+
+- `scripts/_registro-de-lo-aprobado.mjs:62-64`, en sitio: `heroe-f4/h1#1` pasa al texto nuevo, con fecha `2026-10-14` y quien `fundador (SCRUM-1016 c.19607 + c.19608)`. La cita va en `quien` para que viaje con el dato: sale en el documento legible y en el mensaje de caducidad.
+- La entrada de 2026-08-20 pasa a un `SUPERADAS` nuevo, con su texto, el día en que se aprobó, el día en que se superó y la firma que la superó. Nada la consulta para decidir.
+- El generador (`scripts/registro-de-lo-aprobado.mjs`) pinta una sección «Superadas», y `docs/REGISTRO_DE_MICROCOPY_APROBADA.md` está regenerado.
+
+## Los guards que esperaban el texto viejo — no se relajan, se ponen al día
+
+Autorizado por el orquestador para `scrum563`. `guard-a11y-landing` es el mismo caso, y se declara aquí: no lo cubría la autorización escrita.
+
+1. `tests/scrum563-registro-de-lo-aprobado.test.mjs`, caso «dado un texto cualquiera»: el texto «registrado» ya no está escrito a fuego en el test. Lo lee del `REGISTRO` por su id, así que no se rompe con cada firma nueva.
+2. Mismo fichero: `SIN_CUBRIR` pasa de **cuántas** (`1`) a **cuáles** (`['F4-1', 'F4-2']`), comparando el conjunto. F4-2 es la propuesta original, «Del presupuesto al cobro…», que superó la firma del 14-oct. Si mañana aparece otra, el test dice cuál.
+3. `scripts/guard-a11y-landing.mjs:68`: el nombre de región esperado de `reg-hero` pasa de «Del presupuesto al cobro» a «Del presupuesto a la firma». Es un guard de navegador: sin este cambio, `guards:visuales` daba 2 hallazgos (los dos anchos).
+
+**Controles negativos, repetidos DESPUÉS de tocar cada test** (con el H1 cambiado a «Texto que nadie ha firmado», y restaurado):
+
+| control | resultado |
+| --- | --- |
+| `scrum563` con el H1 sin firmar | 16 tests, **6 fail**, y `--revisar` dice «🔴 CADUCADA · heroe-f4/h1#1 — aprobado el 2026-10-14 por fundador (SCRUM-1016 c.19607 + c.19608)» |
+| `scrum563` con `SIN_CUBRIR = ['F4-1', 'F4-3']` (mismo número, otra identidad) | 16 tests, **1 fail** (nº 11): mira la identidad, no la cuenta |
+| `guard-a11y-landing` con el H1 sin firmar | salida 1, `reg-hero («Del presupuesto a la firma…»)` en los dos anchos |
+
+Antes de tocar el test, el mismo control daba 8 fallos y ahora da 6. Los dos que faltan son el caso «texto cualquiera», que ya no lee la landing, y el de la reconstrucción, que no depende del H1. El que vigila la deriva de la landing sigue cayendo.
+
+## Lo medido
+
+- Mini-tanda de landing (8 ficheros): **96 tests, 96 pass, 0 fail**.
+- `node scripts/guard-a11y-landing.mjs`: 0 hallazgos, 0 ciegos. `guards:visuales` entero: 37 verdes · 0 CIEGOS · 0 rojos.
+- Tanda entera, en el árbol anidado: 11.432 tests, 17 fail, 152 skip. Los mismos 10 ficheros contra la base `3c254525` dan 14 fail, con los mismos nombres: son del entorno del árbol anidado (Prisma CLI local, `node_modules`, hooks del árbol principal, compilado). Los 3 de más (scrum811c/1340, scrum854 y scrum976 ④) eran la falta de esta entrada de registro.
+
+## SCRUM-1347 — sin cambios
+
+Ya entró en `main` con el PR #2432 (merge `3c254525`, 08:12:21Z). El obligatorio de #2432 salió verde. El meta-guard salió `fail`, sin colgarse: 1 CIEGO en `scrum757-la-declaracion-que-nadie-lee` (la pasada mutada perdió 5 de sus 9 tests) y 0 mudas. Ese fichero no lo toca el PR, y no lo he investigado.
