@@ -124,6 +124,11 @@ export const NO_COMPROBADO_EN_UNA_DELEGADA = Object.freeze([
   'que el comentario de Jira citado exista y apruebe ese texto: sólo se lee la forma de la referencia',
 ]);
 
+export const NO_COMPROBADO_EN_UNA_FIRMA_DEL_FUNDADOR = Object.freeze([
+  'que el ticket citado exista y recoja esa firma: sólo se lee la forma de la línea',
+  'quién escribe la línea: la frase del fundador la puede escribir cualquier sesión, con la misma cuenta',
+]);
+
 /**
  * La firma delegada de un registro, con su referencia, o `null` si no la tiene COMPLETA.
  *
@@ -268,8 +273,8 @@ export function aprobacionesDeMicrocopy({ permitirVacio = false, dir = null, con
         aprobada: porElFundador || porDelegacion,
         // SCRUM-997d · el mismo veredicto, dicho en tres palabras en vez de dos. Una delegada
         // CUENTA (arriba) y además declara qué no se ha mirado de ella.
-        estado: porElFundador ? ESTADO_APROBADA : (porDelegacion ? ESTADO_DELEGADA_SIN_COMPROBAR : ESTADO_NO_APROBADA),
-        noComprobado: porDelegacion ? [...NO_COMPROBADO_EN_UNA_DELEGADA] : [],
+        estado: (porElFundador || porDelegacion) ? ESTADO_DELEGADA_SIN_COMPROBAR : ESTADO_NO_APROBADA,
+        noComprobado: porElFundador ? [...NO_COMPROBADO_EN_UNA_FIRMA_DEL_FUNDADOR] : (porDelegacion ? [...NO_COMPROBADO_EN_UNA_DELEGADA] : []),
         // En un fichero por aprobación, el literal va en su cita; y algunos usan tabla.
         literales: unidadesDelimitadas(texto, { aceptarCitas: true }),
       });
@@ -365,7 +370,7 @@ export function comoConstaAprobado(texto, opciones) {
  */
 export function delegadasSinComprobar(opciones) {
   return aprobacionesDeMicrocopy(opciones)
-    .filter((a) => a.estado === ESTADO_DELEGADA_SIN_COMPROBAR)
+    .filter((a) => a.estado === ESTADO_DELEGADA_SIN_COMPROBAR && a.delegacion !== null)
     .map((a) => ({ ruta: a.ruta, ticket: a.ticket, referencia: a.delegacion.referencia, noComprobado: a.noComprobado, literales: a.literales }));
 }
 
