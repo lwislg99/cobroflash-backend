@@ -29,7 +29,7 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { inyectarBase, moduloDeDist, MERCHANT, CLIENTE } from './_envio-doblado.mjs';
 import { telefonoDePrueba } from '../scripts/_telefonos-prueba.mjs';
-import { soloEjecutable } from './_guard-texto.mjs';
+import { ejecutableDe } from './_guard-texto.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const TELEFONO = telefonoDePrueba(29);
@@ -245,7 +245,10 @@ test('SCRUM-529 · la columna del esquema es la del DDL: opcional, sin valor por
   assert.equal(lineas.length, 1, 'una sola declaración de la columna');
   // El comentario de la línea se quita con el filtro de la casa (SCRUM-700): uno propio que corte
   // en cualquier barra doble ciega lo que venga detrás de una URL.
-  const sinComentario = soloEjecutable(lineas[0], { almohadillaEsComentario: false }).trimEnd();
+  // Con suelo (SCRUM-1395): si el filtro se quedara ciego, `toPhone` no sobreviviría y esto lanza.
+  const sinComentario = ejecutableDe(lineas[0], {
+    ancla: 'toPhone', donde: 'prisma/schema.prisma · WhatsAppMessage', almohadillaEsComentario: false,
+  }).trimEnd();
   assert.match(sinComentario, /^\s*toPhone\s+String\?\s+@map\("to_phone"\)$/,
     'opcional y sin `@default`: NULL es «no se sabe», y un valor por defecto lo inventaría');
   const ddl = fs.readFileSync(path.join(RAIZ, 'docs', 'sql', 'scrum-529-to-phone.sql'), 'utf8');
