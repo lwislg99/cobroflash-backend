@@ -240,6 +240,11 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     }
   }
 
+  // Archivar y desarchivar son SÓLO de admin (`requireRole('admin')`, c.19655): la misma comparación
+  // que la ruta. A otro rol no se le ofrece el botón, porque su 403 haría leer «Inténtalo de nuevo» y
+  // reintentar no sirve (c.19728). El aviso de archivado sí lo ve: es cierto para él también.
+  const puedeArchivar = window.appUserRole === 'admin';
+
   function pintarArchivo() {
     archivoBox.innerHTML = '';
     archivoBox.className = '';
@@ -251,15 +256,19 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
       aviso.setAttribute('data-archivo', 'aviso');
       const texto = document.createElement('span');
       texto.textContent = TEXTOS_ARCHIVO.avisoArchivado;
-      const btnDesarchivar = document.createElement('button');
-      btnDesarchivar.className = 'btn-secondary btn-sm';
-      btnDesarchivar.setAttribute('data-archivo', 'desarchivar');
-      btnDesarchivar.textContent = TEXTOS_ARCHIVO.desarchivar;
-      btnDesarchivar.addEventListener('click', () => cambiarArchivo(false, btnDesarchivar));
-      aviso.append(texto, ' ', btnDesarchivar);
+      aviso.appendChild(texto);
+      if (puedeArchivar) {
+        const btnDesarchivar = document.createElement('button');
+        btnDesarchivar.className = 'btn-secondary btn-sm';
+        btnDesarchivar.setAttribute('data-archivo', 'desarchivar');
+        btnDesarchivar.textContent = TEXTOS_ARCHIVO.desarchivar;
+        btnDesarchivar.addEventListener('click', () => cambiarArchivo(false, btnDesarchivar));
+        aviso.append(' ', btnDesarchivar);
+      }
       archivoBox.appendChild(aviso);
       return;
     }
+    if (!puedeArchivar) return;
     const destino = typeof window.destinoAccionPresupuesto === 'function'
       ? window.destinoAccionPresupuesto('btnArchivar', st) : null;
     const rotulo = window.QUOTE_ACTION_ROTULOS && window.QUOTE_ACTION_ROTULOS.btnArchivar;

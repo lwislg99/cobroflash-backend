@@ -89,3 +89,34 @@ rótulos; con el cambio de nombre en los dos sitios siguen siendo 13 e iguales. 
 - Los textos dicen «presupuesto» también donde el panel dice «cotización» (MX, CO, PE, CL): la firma
   es del literal.
 - La marca «Archivado» en el buscador: sin construir, como decidió el comentario 19605.
+
+## La mitad de S2 · el rol (s2-14oct-b, 14-oct-2026)
+
+**Medido contra:** `origin/main` = `05808c319acc9eb6b10ad04d23a4245141c64d6f` · 2026-10-14T16:59:59Z (`Date:` de GitHub), traído a la rama con `git merge`.
+**Skill UI:** no cargada · no cambia marcado, clases, estilos ni textos: la ficha deja de crear dos botones que ya existían para quien no es admin.
+A9: sin fallo que generalice. El hueco lo encontró esta misma sesión al leer la rama antes de pasarla a lista (c.19728), y el orquestador dio paso en el mensaje de las 16:5xZ.
+
+**Qué pasaba.** La ficha ofrecía «Archivar» y «Desarchivar» mirando sólo el ESTADO. Las dos rutas de S1 son
+`requireRole('admin')` (`quotesAdmin.routes.ts:994` y `:1027` en `scrum-1273-archivar-presupuestos`), y a otro
+rol le contestan 403 `{error:'forbidden', required_role:'admin'}`, sin `message`. Así que un Técnico habría leído
+el respaldo «No se pudo archivar el presupuesto. Inténtalo de nuevo.», y reintentar no le serviría de nada.
+
+**Qué cambia.** Los dos botones salen sólo con `window.appUserRole === 'admin'`, la misma comparación que hace
+`requireRole`. En la ficha conviven también `!== 'tecnico' && !== 'operario'`; no la uso, porque no es la de la
+ruta. El aviso «Presupuesto archivado. No sale en tu lista de presupuestos.» lo sigue viendo cualquier rol, porque
+para él también es cierto. Sin texto nuevo (aprobado así por el orquestador).
+
+**Verificado, ejecutando.**
+- `tests/scrum1273-archivar-presupuesto.test.mjs`: tres casos nuevos (`tecnico`, `operario` y el CONTROL `admin`
+  con el mismo servidor): **16 de 16**.
+- **Control positivo**, con la ficha de la punta anterior (`aa73f807`) puesta con `git restore --source=HEAD`:
+  caen EXACTAMENTE los dos de rol (14 de 16), y el control de admin pasa.
+  ✗ El primer intento de control, escrito con `git show | Set-Content`, hizo caer los 16: PowerShell 5.1 estropea
+  los acentos. Era el instrumento, no el código. No cuenta.
+- 30 ficheros de `tests/` que nombran `quotesDetailView` o `archivar`: 281 de 281. La suite completa NO, en
+  local (1.112 MB libres). La corre el CI.
+
+**Abierto, y no es de esta pantalla:** `GET /admin/quotes?archivados=1` no exige rol, así que un Técnico SÍ ve
+la lista de archivados. Si eso tiene que ser sólo de admin, es servidor y lo lleva S1 (lo pasa el orquestador).
+
+**No se puede ver en yaqu.app por el camino de un rol:** `test-login` sólo abre propietarios. Visto en el banco.
