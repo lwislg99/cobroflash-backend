@@ -216,6 +216,8 @@ comprueba. En Jira todas las sesiones firman con la misma cuenta.
   sobre esta rama; `evidencias/SCRUM-1056/salida-1056d-reintentos.txt`): «inténtalo de nuevo» 26 veces en
   12 ficheros, «inténtalo otra vez» 5 en 5. Su control positivo ve en esta pieza las dos líneas nuevas.
 - **Dirigida, a mano:** los 160 ficheros de `tests/` que leen `docs/microcopy/`, las evidencias o la
-  pieza, o nombran la forma de la casa. Ver el resultado en la entrega (c. de Jira de esta sección).
+  pieza, o nombran la forma de la casa, tras mergear `origin/main` (`79531cf8`): 1.596 tests, 0 rojos,
+  17 saltos declarados. Antes de arreglarlos dio 3 rojos, míos: `scrum514` (las citas viejas sin aparcar),
+  `scrum709` (la ficha nueva nombraba a las viejas por su fichero) y `scrum811c` (faltaba esta sección).
 - 🔴 **Sin navegador:** con la pieza sin montar, en yaqu.app lo único que se puede comprobar al
   desplegar es `clienteVolverALlamar.TEXTOS.noGuardado` y `.noMarcado` en la consola.
