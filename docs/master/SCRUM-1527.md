@@ -482,5 +482,7 @@ que pide el paso 1 de §⑧, y ahora sabemos a QUÉ fichero mirar.
     node 1527b/testigo-pg.mjs logs                         # ① el testigo
     node 1527c/cascada.mjs logs                            # ③ la última ráfaga
     node 1527c/frontera-final.mjs logs logs-viejos         # ③ el hueco que decide
-    cd 1527c && node --test --test-reporter=spec --test-reporter-destination=stdout \
-        --test-reporter=./eventos.mjs --test-reporter-destination=stdout a.mjs b.mjs c.mjs   # ④ (corta con timeout: b no cierra)
+    # ④ los de control viven como `.mjs.txt` (como `.mjs` registrarían tests que la tanda no corre: SCRUM-708)
+    D=$(mktemp -d) && for f in a b c; do cp 1527c/$f.mjs.txt $D/$f.mjs; done && cp 1527c/eventos.mjs $D/ && cd $D && \
+      node --test --test-reporter=spec --test-reporter-destination=stdout \
+        --test-reporter=./eventos.mjs --test-reporter-destination=stdout a.mjs b.mjs c.mjs   # (corta con timeout: b no cierra)
