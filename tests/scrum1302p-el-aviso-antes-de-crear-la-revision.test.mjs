@@ -20,6 +20,24 @@ import { fileURLToPath } from 'node:url';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+// Las mutaciones que este fichero tiene que cazar; las corre `npm run meta:mutaciones` en cada PR.
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // M1 · el botón no avisa nunca: vuelve el POST de un clic, el defecto medido el 13-oct.
+    fichero: 'public/dashboard/js/quoteRevisiones.js',
+    de: 'var avisa = ESTADOS_CON_ENLACE_VIVO.indexOf(vigente.status) !== -1;',
+    a: 'var avisa = false;',
+    cae: 'vigente ENVIADA: el primer clic NO crea nada',
+  },
+  {
+    // M2 · se estrecha a `sent`, que es justo lo que c.19475 decidió no hacer.
+    fichero: 'public/dashboard/js/quoteRevisiones.js',
+    de: "var ESTADOS_CON_ENLACE_VIVO = ['draft', 'sent'];",
+    a: "var ESTADOS_CON_ENLACE_VIVO = ['sent'];",
+    cae: 'vigente en BORRADOR también avisa',
+  },
+];
 const W1_P7 = 'Al crear la revisión, el enlace de P7 dejará de valer.';
 const W1_P71 = 'Al crear la revisión, el enlace de P7.1 dejará de valer.';
 const W2 = 'Quien lo abra verá que hay una versión más reciente y ya no podrá aceptar. Envíale la nueva a tu cliente cuando esté lista.';

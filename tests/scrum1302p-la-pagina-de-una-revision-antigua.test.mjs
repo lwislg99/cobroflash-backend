@@ -18,6 +18,24 @@ process.env.WHATSAPP_DRY_RUN = '1';
 const { inyectarBase, moduloDeDist, MERCHANT, CLIENTE } = await import('./_envio-doblado.mjs');
 const LANDING = '../dist/modules/system/app/routes/quoteDecisionLanding.routes.js';
 
+// Las mutaciones que este fichero tiene que cazar; las corre `npm run meta:mutaciones` en cada PR.
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // M1 · la página pregunta pero no hace caso: vuelve el formulario en el enlace viejo.
+    fichero: 'src/modules/system/app/routes/quoteDecisionLanding.routes.ts',
+    de: "return res.setHeader('Content-Type', 'text/html; charset=utf-8').send(paginaDeVersionAntigua(quote, locale, brandColor));",
+    a: 'void paginaDeVersionAntigua;',
+    cae: 'el enlace de la .0 habiendo .1: SÓLO el aviso',
+  },
+  {
+    // M2 · el grupo pierde el año de la serie (SCRUM-1490): la .1 de otro año haría antigua a la .0.
+    fichero: 'src/modules/quotes/domain/versionMasReciente.ts',
+    de: '...whereDelGrupo({ merchantId: q.merchantId, quoteNumber: q.quoteNumber, anio: anioDeLaSerie(q, merchant) }, merchant),',
+    a: "merchantId: q.merchantId, quoteNumber: q.quoteNumber, ...(String(merchant) === 'x' ? whereDelGrupo({ merchantId: 0, quoteNumber: 0, anio: anioDeLaSerie(q) }) : {}),",
+    cae: 'el grupo es por AÑO de la serie',
+  },
+];
+
 const T1 = 'Presupuesto actualizado';
 const T2 = 'Este presupuesto tiene una versión más reciente.';
 const T3 = 'La que estás viendo ya no se puede aceptar. Abre el enlace de la versión nueva que te haya enviado {negocio}, o pídesela.';

@@ -71,7 +71,7 @@
   // versión anterior deja de valer (la página pública lo dice: `versionMasReciente.ts`), y el panel
   // tiene que decírselo al profesional ANTES, no romperlo en silencio. W1 y W2, «Cancelar» y la
   // conducta, firmados por el orquestador por delegación del fundador (SCRUM-1302, c.19475, sobre la
-  // propuesta de c.19456): `docs/microcopy/2026-10-14-SCRUM-1302-revision-antigua.md`.
+  // propuesta de c.19456): `docs/microcopy/2026-10-13-SCRUM-1302-aviso-al-crear-revision.md`.
   //
   // `{numero}` es el de la fila sobre la que actúa el botón (la VIGENTE), tal como lo pinta la lista:
   // puede no ser la versión que está abierta.

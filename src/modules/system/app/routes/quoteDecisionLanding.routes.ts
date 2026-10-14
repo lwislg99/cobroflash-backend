@@ -267,7 +267,7 @@ function condicionesDePago(
 /**
  * SCRUM-1302 · LA PÁGINA DEL ENLACE DE UNA REVISIÓN ANTIGUA. Literales y conducta firmados por el
  * orquestador por delegación del fundador (SCRUM-1302, c.19454 y c.19475):
- * `docs/microcopy/2026-10-14-SCRUM-1302-revision-antigua.md`.
+ * `docs/microcopy/2026-10-13-SCRUM-1302-enlace-de-revision-antigua.md`.
  *
  * Sólo el aviso, como la de caducado: ni detalle, ni importes, ni firma, ni «Rechazar», ni PDF. Sin
  * botón y sin emoji que señale a nada, y SIN enlace a la versión nueva: la página no reparte el

@@ -5,7 +5,7 @@
 //
 // Conducta firmada por el orquestador por delegación del fundador (SCRUM-1302, c.19454 y c.19475):
 // el enlace de la versión anterior deja de valer al CREAR la revisión, y el panel se lo avisa al
-// profesional antes de crearla. Ficha: `docs/microcopy/2026-10-14-SCRUM-1302-revision-antigua.md`.
+// profesional antes de crearla. Ficha: `docs/microcopy/2026-10-13-SCRUM-1302-enlace-de-revision-antigua.md`.
 //
 // Vive aquí, y no en la página, porque la misma pregunta la tiene que hacer el `POST` que registra la
 // decisión del cliente (de S1): dos sitios que deciden lo mismo con dos criterios acaban discrepando.
