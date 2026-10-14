@@ -83,9 +83,14 @@ desde él (este mismo CLAUDE.md incluido) puede ser una versión antigua. *(17-s
    `docs/equipo/00-normas-comunes.md`). El DDL sale de `node scripts/preview-migracion.mjs`.
    `migrate dev` está PROHIBIDO (el hook lo bloquea). *(Corregido el 17-sep-2026: decía «siempre db push
    con preview antes de tocar prod», contra la regla 3.)* **Claves de BD — REGISTRO MEDIDO el
-   10-ago-2026 (SCRUM-418), no afirmación de estado:** los cuatro worktrees llevan
-   `DATABASE_URL_STAGING`, `_DEV` y `_TESTS`; **ninguno tiene `DATABASE_URL`, ninguno apunta a
-   producción, y no existe ningún `.env.local`**. Quien lo vuelva a medir, que lo re-feche aquí:
+   14-oct-2026 a las 08:15Z (S0, SCRUM-418b), no afirmación de estado; dice lo que HABÍA ese día:** de
+   los 113 árboles git de esta máquina (los de `git worktree list` y las carpetas de `D:\MILLONARIO\cobroFlash`),
+   **ninguno llevaba `DATABASE_URL_STAGING`, `_DEV` ni `_TESTS`** (ni en un `.env*` ni en el entorno de
+   usuario o de máquina), y **ninguna clave apuntaba a producción**. Dos árboles —el checkout compartido y
+   `s1-960`— tenían un `.env.local` con `DATABASE_URL` → `localhost/yaqu_dev`, y no había ningún Postgres
+   escuchando en el 5432. **Consecuencia: ese día ninguna sesión podía medir dev ni staging desde un árbol.**
+   El registro anterior (10-ago-2026: «los cuatro worktrees llevan las tres; no existe ningún
+   `.env.local`») ya no describía la máquina. Quien lo vuelva a medir, que lo re-feche aquí:
    `node scripts/comprobar-claves-bd.mjs` (mapa y guard en `scripts/_clave-vs-destino.mjs`; en un
    árbol de trabajo NO vive producción, y desde SCRUM-418 el guard lo hace cumplir por DESTINO).
    `loadEnv.ts` sigue dando prioridad a `.env.local` **si aparece**.

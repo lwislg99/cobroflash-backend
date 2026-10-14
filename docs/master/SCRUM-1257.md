@@ -431,3 +431,101 @@ que `scrum514`, que lee todas las fichas, no tiene de dónde saber que una firma
 su lista. Si hay más fichas firmadas-pero-no-pintadas, es un patrón y pide ticket: en esa lista he
 leído tres entradas cuyo motivo acaba en «la firma ocurrió; ya no tiene dónde pintarse» («2. Líneas»,
 la de la sección SCRUM-1257c y ésta). El resto de la lista no lo he clasificado.
+
+---
+
+# SCRUM-1257e · El modo de Ajustes, medido en navegador en los tres modos
+
+**Medido contra:** `origin/main` = `e2be1c9fda3b5ceac853b4d376f5664ac8e4df67` · 2026-10-14T08:03:51Z (J2)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1257e/mutar.mjs`
+
+Encargo del orquestador (`cobroflash-backend-2e`), autorizado por el fundador («Si me vale»): comprobar con
+un guard de NAVEGADOR que la tercera descripción de modo de `Configuración › Cumplimiento` sale, literal,
+cuando el comercio está en `receipt`. Sin cambiar ningún texto, sin `src/`, sin esquema y sin bases.
+
+## 0 · Lo que ya había (PASO 0, buscado por concepto)
+
+- `tests/scrum298-modo-visible.test.mjs` y `tests/scrum1257-p8-detalle-receipt-sin-justificantes.test.mjs`
+  leen el FUENTE: el literal y su firma. No pintan nada.
+- `tests/banco-scrum1220/medir-ajustes-modo-justificante.mjs` pinta, pero en el banco de vistas (DOM de
+  mentira), sólo con `receipt` y `fiscal`, busca por subcadena y no lo corre nadie.
+- Cinco guards de navegador pintan `renderSettingsView`: `aviso-bizum`, `completar-lleva-al-campo`,
+  `falta-en-otra-pestana`, `vias-de-cobro` y `objetivo-tactil`. Los cuatro primeros fijan
+  `window.appModoEmision = null`, con lo que la fila del modo NO se pinta nunca en ellos; el quinto no lo
+  fija. Ningún fichero de `scripts/` ni de `tests/` nombraba `.settings-modo-emision` antes de éste.
+
+## 1 · Qué cambia
+
+- `scripts/guard-modo-en-ajustes.mjs` · `npm run guard:modo-en-ajustes`. Cuatro casos: `fiscal`, `demo`,
+  `receipt` y sin modo. Saca los literales de `TITULO_MODO_EMISION` y `DETALLE_MODO_EMISION` por AST de
+  `settingsView.js`, pinta Ajustes con `window.appModoEmision` puesto, abre el submenú de la fila y compara
+  rótulo y frase con `===`. Cada texto pintado tiene que casar con SU modo y con ninguno de los otros dos,
+  y la frase de otro modo no puede estar en ningún sitio del documento, oculto incluido.
+- Suelos: los tres literales distintos (si no, el contraste no distingue y se declara ciego), el render
+  sin lanzar, el JS y el CSS del árbol servidos, y una calibración que rechaza un prefijo y una
+  superstring del literal.
+- Entra en CI solo: `guards:visuales` recoge todo `guard:*` cuya nota de `package.json` dice
+  «navegador». Declarado en `tests/_guards-de-navegador-declarados.mjs` y en
+  `scripts/_sin-fila-declarados.json` (sin fila en §3.3 hasta que el orquestador diga el puesto).
+- `tests/scrum1257e-modo-en-ajustes-tres-modos.test.mjs` · la misma comparación en el banco de vistas de
+  la casa, DENTRO de la tanda. Hace falta porque el job de navegador no es el check obligatorio y el
+  meta-guard de mutaciones sólo ejecuta tests: sin él, nada que bloquee un merge vería la fila. Declara
+  las cuatro mutaciones (`MUTACIONES_QUE_ME_TUMBAN`), y el banco de navegador las toma de ahí (SCRUM-1387).
+
+## 2 · Lo que sale, y dónde no
+
+Salida entera en `docs/master/evidencias/SCRUM-1257e/salida-guard.txt`. La frase de `receipt`,
+«Por ahora, YaQu no genera facturas desde tu cuenta.», sale en `receipt` (con el rótulo «Aún no se
+emiten documentos», 20 px de alto, submenú `cumplimiento`) y **no** sale en `fiscal`, `demo` ni sin modo.
+Cada uno de los otros dos pinta la suya y sólo la suya.
+
+## 3 · Rojo primero
+
+Las cuatro mutaciones del test, aplicadas a `settingsView.js` una a una y restauradas por bytes (sha256
+`b4c183a02103…` antes y después). En NAVEGADOR, con `mutar.mjs` (salida en `salida-mutar.txt`):
+
+| Mutación | Caen | No caen |
+|---|---|---|
+| M1 · todos los modos pintan la frase de `receipt` | `fiscal`, `demo` | `receipt`, sin modo |
+| M2 · en `receipt` no se pinta la fila | `receipt` | `fiscal`, `demo`, sin modo |
+| M3 · en `receipt` la frase pierde el punto final (un prefijo) | `receipt` | `fiscal`, `demo`, sin modo |
+| M4 · la fila se pinta y se borra a los 100 ms | `fiscal`, `demo`, `receipt` | sin modo |
+
+En la TANDA, con `mutar-tanda.mjs` (salida en `salida-mutar-tanda.txt`): las cuatro tumban el caso que
+nombran en `cae`, de 7 casos; M1 tumba `fiscal` y `demo` y no `receipt`, y M2 y M3 sólo `receipt`.
+
+**Error mío, cazado por M3:** la primera calibración construía el prefijo y la superstring desde el texto
+PINTADO. Con la frase ya truncada, «pintado + un carácter» volvía a ser el literal, y el guard salió CIEGO
+(2) en vez de ROJO (1). Ahora parte del literal del fuente. Lo impide la propia M3 (línea `A9:` de arriba).
+
+**Otros dos, de la misma tanda:** escribí la `a` de M3 como dos literales concatenados y el lector del
+meta-guard la descartó en silencio (3 de 4); lo vi porque el pasador imprime cuántas lee, y ahora sale
+CIEGO si no son 4. Y mi primer pasador lanzaba al hijo con `NODE_TEST_CONTEXT` vacío en vez de quitado,
+así que no ejecutó nada y las cuatro salieron «MAL» sin un solo test: es la memoria «hijo de node --test:
+entorno a mano», que ya existía y no apliqué.
+
+**Y el rojo del primer empujón (52595646), también mío:** el obligatorio del PR #2439 cayó en 1 de 11.447
+tests: `scrum812` («LA COBERTURA HA SUBIDO a 34»), porque mi test nuevo declara mutaciones y un caso suyo
+nombra al guard. Antes de empujar corrí `guards:entrada`, los 38 guards de navegador y 18 ficheros
+elegidos a mano, no la tanda entera, y `scrum812` no estaba entre ellos: es la cicatriz de J2 del
+13-oct («los vecinos los elegí a mano»), repetida. Se sube el suelo a 34 con su ancla, como piden el
+test y las subidas anteriores. Lo cazó el propio trinquete, que es la comprobación que ya existe.
+
+## 3bis · Qué se corrió
+
+- Local, sobre la rama: `guards:entrada` (14 guards, 166 tests, 0 fallos); `guards:visuales` (38 guards:
+  38 verdes, 0 ciegos, 0 rojos); 18 ficheros de `tests/` a mano (160 tests, 0 fallos, 0 saltados) y, tras
+  el arreglo, `scrum812` con 8 vecinos (87 de 87). **La tanda completa NO se corrió en local.**
+- CI del primer empujón: guards de navegador en VERDE, mi guard incluido; obligatorio en ROJO por `scrum812`.
+
+## 4 · 🔴 Lo que esto NO prueba
+
+**No se ha visto en producción, y no se puede ver hoy:** ningún comercio está en modo `receipt` (dato del
+orquestador en el encargo y de la memoria de la máquina del 28-sep-2026, «sin clientes reales»; no lo he
+medido yo). El fundador miró su Ajustes y no vio ningún modo. Por qué, NO lo sé: en cualquiera de los tres
+modos la fila se pinta (medido aquí), pero sólo en el submenú `Cumplimiento`, y con `modoEmision` nulo no
+se pinta nada. Distinguir esas dos causas pide su `/admin/me`, que no he consultado. El guard
+prueba el CÓDIGO del panel con el modo puesto a mano, no la pantalla de nadie. Qué modo le da el servidor
+a cada comercio lo vigila `scrum298`; el valor de `INVOICING_ES_ENABLED` en Railway no lo he consultado, ni
+ninguna base.
