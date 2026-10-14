@@ -148,8 +148,8 @@ Sesión `jv-j6f`, puesto J6, equipo de Javier. Etiquetas del ticket leídas en J
 
 `node scripts/carriles.mjs de scripts/guards-entrada.mjs` → **SIN CERRADURA**: sólo lo cubre la fila
 general de `scripts/`. Su ticket creador, SCRUM-414, no lleva ninguna etiqueta en Jira, así que el
-criterio de `docs/equipo/dos-equipos.md` §3.3 calla: **sin puesto**. En git: 12 commits, 9 de la cuenta
-de Luis y 2 de la de Javier. Dentro del fichero no hay ninguna marca de propiedad. Por eso el cambio
+criterio de `docs/equipo/dos-equipos.md` §3.3 calla: **sin puesto**. En git: 12 commits, 10 de la cuenta
+de Luis y 2 de la de Javier (`git shortlog -sn c30729832 -- scripts/guards-entrada.mjs`). Dentro del fichero no hay ninguna marca de propiedad. Por eso el cambio
 es el mínimo: una línea de lista con su motivo, y el suelo que la protege. Sin reestructurar ni
 renombrar nada. El orquestador se lo pasa al equipo de Luis.
 
