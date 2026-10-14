@@ -250,6 +250,34 @@ test('SCRUM-1150d · la ficha del presupuesto, abierta con un 500, dice su «Err
     `🔴 la ficha enseña el código o un «ya no existe»: ${JSON.stringify(textos)}`);
 });
 
+test('SCRUM-1150d · la ficha del albarán, abierta con un 500, dice el texto FIRMADO y no «API 500»', async () => {
+  // Hasta SCRUM-1150d pintaba `'No se pudo cargar el albarán: ' + e.message`: con el hash abriendo la
+  // ficha en un 5xx, eso se habría visto también por ahí. Literal: SCRUM-1150 c.19658.
+  const FIRMADO = 'No se pudo cargar el albarán. Inténtalo de nuevo.';
+  assert.ok(constaAprobado(FIRMADO).length > 0, '🔴 el literal del albarán no consta firmado (regla 30).');
+  for (const [rotulo, cuerpo, espera] of [
+    ['500 sin message', { error: 'internal_error' }, FIRMADO],
+    ['500 con un message para personas', { error: 'x', message: 'Mensaje para personas.' }, 'Mensaje para personas.'],
+  ]) {
+    const banco = cargarDashboard(RAIZ, {
+      red: {
+        fetch: async () => ({
+          ok: false, status: 500, statusText: 'Internal Server Error',
+          headers: { get: () => 'application/json' },
+          json: async () => cuerpo, text: async () => JSON.stringify(cuerpo), blob: async () => ({}),
+        }),
+      },
+    });
+    const v = await pintarVista(banco, 'renderAlbaranDetailView', 7);
+    assert.equal(v.error, null, `🔴 la ficha revienta: ${v.error && v.error.message}`);
+    for (let i = 0; i < 40; i++) await new Promise((r) => setImmediate(r));
+    const textos = todos(v.contenedor).map((n) => String(n.textContent || '')).filter(Boolean);
+    assert.ok(textos.includes(espera), `🔴 ${rotulo}: la ficha no dice «${espera}»: ${JSON.stringify(textos)}`);
+    assert.equal(textos.some((t) => /internal_error|API 500|ya no existe/.test(t)), false,
+      `🔴 ${rotulo}: la ficha enseña el código o un «ya no existe»: ${JSON.stringify(textos)}`);
+  }
+});
+
 test('SCRUM-832 · el hash se parte por la PRIMERA barra, y no se renombra ninguna clave', () => {
   // La decisión ① del fundador: `#quotes-detail/123`, aditivo. Si alguien partiera por la última
   // barra o por todas, un id con barra rompería la vista en silencio.

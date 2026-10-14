@@ -302,7 +302,7 @@ Lo que el cerrojo protegía era que «no existe» y «no es tuyo» no se disting
 
 ### Lo que queda, declarado
 
-- 🔴 **El albarán con un 5xx pinta el código crudo.** Su ficha dice `'No se pudo cargar el albarán: ' + (e.data.message || e.message)`, que con un 500 sin `message` es «No se pudo cargar el albarán: API 500: internal_error» (`albaranDetailView.js`). Ya pasaba entrando desde la lista; con este cambio pasa también por el hash, donde antes salía «Ese albarán ya no existe.». Sin red no le pasa: tiene su texto firmado. Arreglarlo es un literal nuevo y no lo invento: lo pido en SCRUM-1150.
+- ~~El albarán con un 5xx pinta el código crudo~~ → **arreglado en este mismo PR** con el literal firmado en SCRUM-1150 c.19658: «No se pudo cargar el albarán. Inténtalo de nuevo.» (`COPY_ALBARAN_NO_SE_PUDO_CARGAR`, por `mensajeParaPersona`: si el servidor trae un `message` para personas, ése). Ficha: `docs/microcopy/2026-10-14-SCRUM-1150-albaran-no-se-pudo-cargar.md`. Caso nuevo en el test de SCRUM-832, con la ficha REAL del albarán y su `GET` en 500: 10 de 10; con el `albaranDetailView.js` de `main`, cae ese caso. Guards de microcopy, del albarán y de trinquetes (135 ficheros, 1.304 tests): 0 caídos.
 - Las otras cuatro fichas dicen un texto propio y legible: «No pudimos cargar el trabajo.», «Error cargando la factura.», «Error al cargar el historial del cliente.» y «No se ha podido cargar el parte. Vuelve a intentarlo.» (este último con la forma de reintento que no es la de la casa; ya estaba firmado y no lo toco).
 - Con un 5xx la ficha hace su `GET` una segunda vez (la del router y la suya). Es una petición de más en un caso de fallo.
 - **NO medido:** yaqu.app (hasta que mergee) · la suite completa de `npm test`.
