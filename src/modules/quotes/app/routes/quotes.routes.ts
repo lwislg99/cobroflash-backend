@@ -73,6 +73,7 @@ import { normalizarDireccionObra, normalizarModoDireccionObra } from '../../../.
 import { paramsDePresupuestoParaPdf } from '../../domain/presupuestoParaPdf';
 import { firmaTieneTrazo, ERROR_FIRMA_VACIA, COPY_FIRMA_VACIA } from '../../domain/firmaConTrazo';
 import { ESTADOS_DECIDIBLES_POR_EL_CLIENTE, ERROR_PRESUPUESTO_YA_DECIDIDO, mensajeYaDecidido } from '../../domain/decisionDelCliente'; // SCRUM-1276
+import { tieneVersionMasReciente, mensajeDeVersionMasReciente, ERROR_VERSION_NO_VIGENTE } from '../../domain/versionMasReciente'; // SCRUM-1302r
 
 
 // SCRUM-728 · la sección crítica de la serie saturada: se traduce a un aviso legible en vez
@@ -381,6 +382,19 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
     if (decision === 'reject' && quote.status === 'rejected') {
       return res.json({ ok: true, status: 'already_rejected' });
     }
+    // SCRUM-1302r · una versión con otra más reciente en su grupo no se decide, en ningún sentido:
+    // es la misma pregunta que hace la página del enlace (`versionMasReciente.ts`), para que el
+    // `POST` fabricado con el enlace viejo no acepte lo que la página ya no deja aceptar. Va ANTES
+    // del caducado (punto 5 de c.19454: «pide uno actualizado» sería falso habiendo ya uno). Una
+    // versión aceptada o rechazada no llega aquí con el mismo sentido (idempotente, arriba) y la
+    // pregunta la deja fuera (punto 6). Si la consulta falla, lanza → 500, nunca acepta a ciegas.
+    if (await tieneVersionMasReciente(quote, quote.merchant)) {
+      return res.status(409).json({
+        error: ERROR_VERSION_NO_VIGENTE,
+        message: mensajeDeVersionMasReciente(getLocale(quote.merchant?.country).quoteHasNewer, quote.merchant),
+      });
+    }
+
     // A16.2: un presupuesto caducado no se decide (la landing ya muestra el
     // copy oficial N3; esto cubre carreras entre pasadas del cron)
     if (isQuoteExpired(quote)) {
@@ -475,6 +489,8 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
           decisionComment: comment,
           rejectionReason: null,
           rejectedAt: null,
+          // SCRUM-1273 · aceptado y archivado sería un compromiso que no sale en la lista (c.19605).
+          archivedAt: null,
           ...(signatureData ? { signatureUrl: signatureData } : {}),
           ...(evidenciaFirma ? { evidenciaFirma: evidenciaFirma as any } : {}),
           ...(tierId ? { selectedTierId: tierId } : {}),
@@ -729,6 +745,8 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
           decisionChannel: 'whatsapp',
           rejectionReason: reason || comment || null,
           decisionComment: comment ?? null,
+          // SCRUM-1273 · la decisión del cliente lo devuelve a la lista (c.19605, decisión 1).
+          archivedAt: null,
         },
       });
       } catch (e) {
