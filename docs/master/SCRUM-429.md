@@ -305,3 +305,45 @@ una de esas cadenas y vació el compartido — dos veces.
 **No hay ninguna prisa y hoy no se limpia.** Queda medido para cuando se ataque, con el aviso de que
 el primer paso de esa limpieza tiene que ser volver a mirar a qué apunta cada uno: los números de
 arriba son de hoy.
+
+## SCRUM-429b · el build NOMBRA el cliente viejo (14-oct-2026, Sesión 5)
+
+Encargo del orquestador. Sin ticket nuevo: va aquí porque es el mismo defecto, y este ticket ya está cerrado.
+
+**Medido, sobre `origin/main` = `bcd333823`:** el cliente compartido
+(`cobroflash-backend/node_modules/.prisma/client`, generado el 1-oct) no tiene `Quote.seriesYear`,
+`Quote.archivedAt` ni `WhatsAppMessage.toPhone`, y no le sobra nada. El encargo hablaba de dos campos;
+son **tres**. El guard ya lo sabía (`node scripts/_prisma-client-guard.mjs` → exit 1, `Quote.seriesYear`),
+pero no habló, por dos motivos:
+- `npm run build` es `tsc` a secas. El guard sólo corría en `pretest`.
+- El guard cantaba sólo la PRIMERA diferencia.
+
+**Hecho:**
+- `_prisma-client-guard.mjs`: `todasLasDiscrepancias()` saca la lista entera, que va en el mensaje. Con
+  `--avisar` imprime un aviso que nombra cada campo y sale con 0.
+- `package.json`: `prebuild` = el guard con `--avisar`. **No para el build**, a propósito: `tsc` emite `dist`
+  aunque haya errores, un cliente compartido viejo pararía a todas las sesiones a la vez, y `prebuild` corre
+  también en el deploy. El juez que bloquea sigue siendo `pretest` y el CI.
+- De paso: el mensaje de «no se puede comparar» recomendaba `npx prisma generate`, en contra de SCRUM-385.
+  Ahora dice `npm run prisma:generate` y remite al procedimiento.
+- El procedimiento para regenerar está escrito en `docs/equipo/trampas-del-entorno.md` §10, **SIN EJECUTAR**.
+  Medido para escribirlo: **no hace falta matar todos los `node`**, sólo los que tienen
+  `query_engine-windows.dll.node` cargada. La sonda (`$_.Modules.FileName`) se vio cazar un `node` que la
+  cargaba a propósito. De los 14 `node` vivos, ninguno la tenía.
+
+**Control positivo:**
+- Contra el cliente compartido de hoy, `--avisar` nombra los tres campos y sale con 0. Sin `--avisar`, la
+  misma lista y sale con 1.
+- Test `scrum429b`: (1) un cliente igual al schema no da ninguna diferencia, y quitando las tres columnas y
+  añadiendo una salen las cuatro con su nombre; (2) contra el cliente REAL, dos columnas inventadas en `Quote`
+  salen las dos, sea cual sea el estado del cliente local; (3) `--avisar` sale con 0 y sin él con 1;
+  (4) `prebuild` avisa y `pretest` sigue bloqueando.
+- **«Se calla con un cliente al día»** está probado con un cliente fabricado (la copia del schema), **no con
+  un cliente regenerado**: hoy no se regenera. La primera regeneración tiene que ver el `✔`.
+
+**Tanda local (13 ficheros): 87 de 93.** Los 6 rojos NO son de este diff:
+- 4 (SCRUM-235/252, «el árbol sano da verde contra el cliente real») caen porque el cliente compartido es
+  viejo. El guard ya salía con 1 sobre el árbol sin tocar.
+- 2 (`scrum394`, `scrum729`) caen por `ERR_MODULE_NOT_FOUND` de `dist/…`: este árbol no tiene `dist`.
+
+El juez es el CI, que genera su propio cliente.
