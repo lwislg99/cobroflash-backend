@@ -10,6 +10,11 @@
       "ticket": "SCRUM-1525",
       "equipo": "javier",
       "motivo": "Lo crea el carril J6 (equipo de Javier), que no edita la tabla de §3.3; la S0 le da fila cuando su orquestador diga el puesto."
+    },
+    "scripts/tuberia-bloqueante.mjs": {
+      "ticket": "SCRUM-1405",
+      "equipo": "javier",
+      "motivo": "Lo crea el carril J3 (equipo de Javier) para la salida C de SCRUM-1405 (c.19584), que no edita la tabla de §3.3; la S0 le da fila cuando su orquestador diga el puesto."
     }
   }
 }
