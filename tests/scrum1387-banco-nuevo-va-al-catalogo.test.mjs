@@ -2,6 +2,8 @@
 //
 // Sin gate: ni BD, ni red, ni navegador, ni `dist/`. Lee `docs/evidencias/`, `docs/master/evidencias/`
 // y la HISTORIA de git (primer padre de `HEAD`). En un clon superficial NO pasa: dice CIEGO.
+// Y tampoco donde el primer padre de `HEAD` no es la línea de main (SCRUM-1548): una rama anterior al
+// guard que trajo main con `git merge origin/main` resolvía el corte a su merge local y salía VERDE.
 //
 // Un banco de mutación NUEVO que traiga su lista propia y no nombre el catálogo del meta-guard CAE,
 // y el rojo dice qué banco y qué fichero. «Nuevo» no sale de ninguna lista: es el que entró en la
@@ -13,10 +15,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
+import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
   leerFicherosDeMutacion, clasificar, leerHistoria, juicio, corteDe, fichaDelHeredado, RUTAS_DEL_CORTE,
+  cegueraDelCorte, CORTE_EN_MAIN,
 } from './_catalogo-obligatorio.mjs';
+import { temporalDeFixtureGit, gitDeFixture } from './_censo-fixture.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -41,6 +46,20 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     de: 'if (!alta) return true;',
     a: 'if (!alta) return false;',
     cae: 'un guion que todavía no está en ningún commit es nuevo',
+  },
+  {
+    // SCRUM-1548: cualquier corte vale, también el del merge local de una rama. Vuelve el falso verde.
+    fichero: 'tests/_catalogo-obligatorio.mjs',
+    de: 'if (nace.sha !== CORTE_EN_MAIN) {',
+    a: 'if (false) {',
+    cae: 'un corte que no es el de la línea principal es CIEGO, y dice cuál salió y cuál esperaba',
+  },
+  {
+    // SCRUM-1548: la función sigue sabiendo, pero la historia ya no la consulta: el canal se queda mudo.
+    fichero: 'tests/_catalogo-obligatorio.mjs',
+    de: 'return { ...historia, ciego: cegueraDelCorte(corteDe(historia)) };',
+    a: 'return historia;',
+    cae: 'una historia de verdad con otro corte que el de la línea principal sale CIEGA por el canal de siempre',
   },
 ];
 
@@ -105,10 +124,54 @@ test('SCRUM-1387 · el corte es la entrada MÁS VIEJA de las rutas que este fich
   assert.equal(RUTAS_DEL_CORTE[0], 'tests/_catalogo-obligatorio.mjs', 'la ruta con la que nació no se quita');
 });
 
+test('SCRUM-1548 · un corte que no es el de la línea principal es CIEGO, y dice cuál salió y cuál esperaba', () => {
+  // El caso medido en el ticket: el corte resuelto al merge local de la rama.
+  const local = 'b043b2a3a' + '0'.repeat(31);
+  const dicho = cegueraDelCorte({ pos: 2741, sha: local, fecha: '2026-10-14T03:02:38Z' });
+  assert.equal(typeof dicho, 'string');
+  assert.ok(dicho.includes('b043b2a3a') && dicho.includes(CORTE_EN_MAIN.slice(0, 9)), dicho);
+  // Sin corte en la línea (el guard copiado a un árbol que no lo tiene en su historia) tampoco se juzga.
+  assert.equal(typeof cegueraDelCorte(null), 'string');
+  // EL NEGATIVO: con el corte de main, la MISMA función no dice nada, esté donde esté en la línea.
+  for (const pos of [1, 2741, 99999]) {
+    assert.equal(cegueraDelCorte({ pos, sha: CORTE_EN_MAIN, fecha: '2026-10-14T02:04:37Z' }), null, `pos ${pos}`);
+  }
+  assert.match(CORTE_EN_MAIN, /^[0-9a-f]{40}$/, 'el corte va entero: un prefijo no es un nombre');
+});
+
+test('SCRUM-1548 · una historia de verdad con otro corte que el de la línea principal sale CIEGA por el canal de siempre', () => {
+  // SEMBRADO, con git de verdad: un repositorio fabricado aquí, en el que este guard entra en un commit
+  // que no puede ser el de main. No se presta de ninguna rama real. ⚠️ LÍMITE: no reproduce la forma del
+  // merge (eso está medido en `docs/master/evidencias/SCRUM-1548/`); prueba que `leerHistoria` PREGUNTA.
+  const repo = temporalDeFixtureGit('scrum1548-');
+  const g = (...args) => gitDeFixture(['-c', 'user.name=banco', '-c', 'user.email=banco@yaqu.test',
+    '-c', 'commit.gpgsign=false', ...args], { cwd: repo });
+  g('init', '-q');
+  fs.writeFileSync(path.join(repo, 'LEEME.md'), 'sembrado\n');
+  g('add', '-A');
+  g('commit', '-q', '-m', 'antes del guard');
+  // Todavía sin guard en la historia: no hay corte, y lo dice.
+  const sinCorte = leerHistoria(repo);
+  assert.equal(sinCorte.commits, 1);
+  assert.match(String(sinCorte.ciego), /no entró en ningún commit/);
+  fs.mkdirSync(path.join(repo, 'tests'), { recursive: true });
+  fs.writeFileSync(path.join(repo, RUTAS_DEL_CORTE[0]), '// sembrado\n');
+  g('add', '-A');
+  g('commit', '-q', '-m', 'entra el guard en otra historia');
+  const suCorte = g('rev-parse', 'HEAD').trim();
+  const h = leerHistoria(repo);
+  // Leyó (no es el ciego de «git no contesta»): ve los dos commits y el corte, y AUN ASÍ no juzga.
+  assert.equal(h.commits, 2);
+  assert.equal(corteDe(h).sha, suCorte);
+  assert.match(String(h.ciego), /no es la línea principal/);
+  assert.ok(h.ciego.includes(suCorte.slice(0, 9)), h.ciego);
+});
+
 test('SCRUM-1387 · 🔴 en el árbol: ningún banco de mutación nuevo queda fuera del catálogo', (t) => {
   const historia = leerHistoria(RAIZ);
+  // EL NEGATIVO de SCRUM-1548 vive aquí: en main y en el merge que prueba CI esto es `null` y se decide.
   assert.equal(historia.ciego, null,
-    `CIEGO: no puedo leer la historia de git (${historia.ciego}). Sin ella no sé qué banco es nuevo: no he mirado nada.`);
+    `CIEGO: con la historia de git de este árbol no sé qué banco es nuevo (${historia.ciego}). No he mirado nada.`);
   const ficheros = leerFicherosDeMutacion(RAIZ);
   const { bancos, fuera } = clasificar(ficheros);
   // SUELO: no haber visto nada no es estar limpio.
@@ -117,7 +180,7 @@ test('SCRUM-1387 · 🔴 en el árbol: ningún banco de mutación nuevo queda fu
     + `${historia.altas.size} altas en ${historia.commits} commits. No he mirado nada.`);
   const altaDe = (ruta) => historia.altas.get(ruta);
   const nace = corteDe(historia);
-  const corte = nace ? nace.pos : null;
+  const corte = nace.pos;
 
   // EL POSITIVO, SEMBRADO AQUÍ Y EN CADA PASADA: un banco fabricado que no existe en el árbol ni en
   // la historia pasa por el mismo camino que los de verdad y TIENE que salir. No se toma prestado de
@@ -129,8 +192,8 @@ test('SCRUM-1387 · 🔴 en el árbol: ningún banco de mutación nuevo queda fu
     [{ carpeta: SEMBRADO, guiones: [`${SEMBRADO}/mutar.mjs`] }],
     'CIEGO: el banco sembrado por este test no ha salido como nuevo. El camino no ve lo que tiene que ver.');
   // Y el otro camino, el que ve el CI de un PR: uno que SÍ está en la historia, un commit después del
-  // corte. (Sin corte comiteado no hay «después»: sólo pasa en el árbol de quien está tocando el corte.)
-  if (corte !== null) {
+  // corte. (Desde SCRUM-1548 hay corte siempre que se llega aquí, y es el de main: si no, ya dijo CIEGO.)
+  {
     const TARDIO = `${SEMBRADO}/tardio`;
     const conTardio = clasificar([...ficheros, { ruta: `${TARDIO}/mutar.mjs`, texto: 'const LISTA_PROPIA = [];' }]);
     const altaConTardio = (ruta) => (ruta === `${TARDIO}/mutar.mjs` ? { pos: corte + 1, sha: '', fecha: nace.fecha } : altaDe(ruta));
@@ -144,7 +207,7 @@ test('SCRUM-1387 · 🔴 en el árbol: ningún banco de mutación nuevo queda fu
   const fichas = heredados.map((b) => fichaDelHeredado(b, altaDe));
   const poblacion = `población: ${ficheros.length} ficheros con «mut» en el nombre · ${bancos.length} bancos · `
     + `${fuera.length} fuera · ${heredados.length} heredados · ${nuevos.length} nuevos · historia de `
-    + `${historia.commits} commits · corte ${nace ? `${nace.sha.slice(0, 9)} (${nace.fecha})` : 'sin comitear todavía'}`;
+    + `${historia.commits} commits · corte ${nace.sha.slice(0, 9)} (${nace.fecha})`;
   t.diagnostic(poblacion);
   for (const f of fichas) t.diagnostic(`heredado · ${f.carpeta} · ${f.motivo} · desde ${f.desde} · retira: ${f.retira}`);
   assert.deepEqual(nuevos.map((b) => `${b.carpeta} → ${b.guiones.join(', ')}`), [],

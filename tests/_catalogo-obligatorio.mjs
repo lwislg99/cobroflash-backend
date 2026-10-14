@@ -91,6 +91,8 @@ export function clasificar(ficheros) {
  * Devuelve `{ ciego, commits, altas, nacimientos, posDe }`:
  *   · `ciego`   por qué NO se ha podido leer (cadena), o `null`. Un clon superficial es ciego: ahí
  *               todos los ficheros parecen nacidos en el mismo commit y el guard saldría verde sin mirar.
+ *               Y lo es una línea de primer padre que no es la de main (`cegueraDelCorte`, SCRUM-1548):
+ *               ésa devuelve lo leído Y el motivo, para que quien lo lea vea qué corte salió.
  *   · `commits` cuántos commits tiene la línea principal;
  *   · `altas`   `ruta → { pos, sha, fecha }` del ÚLTIMO commit que dio de alta la ruta (un fichero
  *               borrado y vuelto a meter es nuevo); `nacimientos`, lo mismo del PRIMERO (para el corte);
@@ -128,7 +130,44 @@ export function leerHistoria(raiz) {
     if (!altas.has(linea)) altas.set(linea, actual);
     nacimientos.set(linea, actual);
   }
-  return { ciego: null, commits: lineaPrincipal.length, altas, nacimientos, posDe: (sha) => pos.get(sha) };
+  const historia = { ciego: null, commits: lineaPrincipal.length, altas, nacimientos, posDe: (sha) => pos.get(sha) };
+  // SCRUM-1548: leída entera, pero ¿es la de main? Si el corte no es el de main, lo demás no se puede juzgar.
+  return { ...historia, ciego: cegueraDelCorte(corteDe(historia)) };
+}
+
+/**
+ * El corte EN MAIN, por identidad: el commit de la línea principal de `main` en el que entró este
+ * guard (PR #2406). Es un hecho de la historia, como `LA_DECISION`; no se recalcula porque lo único
+ * que se podría recalcular aquí es el primer padre de `HEAD`, que es justo lo que se está juzgando.
+ * Si estuviera mal, el guard diría CIEGO en `main` y en todos los PR: no puede fallar en silencio.
+ */
+export const CORTE_EN_MAIN = 'bc5fa21eefa951fd01ff4b2b5d200c80d216612d';
+
+/**
+ * SCRUM-1548 · ¿el corte que sale de ESTA historia es el de main? Devuelve por qué no (cadena) o `null`.
+ *
+ * El primer padre de `HEAD` sólo es la línea de `main` si el árbol nació de main DESPUÉS del corte, o
+ * es main, o es el merge que prueba CI (`refs/pull/N/merge`, cuyo primer padre es main: medido en
+ * cinco PR abiertos el 14-oct-2026). En una rama anterior al corte que trajo main con
+ * `git merge origin/main` —lo que A4 ordena— el guard y todo lo que main traía entran en el MISMO
+ * commit, el del merge local: ése sale como corte, todo sale «heredado» y el guard pasaría en verde
+ * sin haber mirado. Con el corte de main en su sitio, lo anterior a él es la línea de main y lo
+ * posterior es posterior en cualquier topología: ahí sí se puede juzgar.
+ */
+export function cegueraDelCorte(nace) {
+  if (!nace) {
+    // Los textos dicen «línea principal» y no el nombre de la rama: el censo de SCRUM-723 cuenta como
+    // referencia móvil toda cadena que la nombre, y aquí no se compara contra ninguna.
+    return 'este guard no entró en ningún commit de la línea de primer padre de este árbol, y en la línea '
+      + `principal sí (${CORTE_EN_MAIN.slice(0, 9)}): no hay corte con el que separar lo nuevo de lo heredado`;
+  }
+  if (nace.sha !== CORTE_EN_MAIN) {
+    return `el corte sale ${String(nace.sha).slice(0, 9)} y el de la línea principal es ${CORTE_EN_MAIN.slice(0, 9)}: `
+      + 'el primer padre de este árbol no es la línea principal (una rama anterior al guard que la trajo con '
+      + '`git merge`), así que todo lo que vino en ese merge parecería heredado. Aquí no se puede saber; CI lo '
+      + 'mide sobre la línea principal';
+  }
+  return null;
 }
 
 /**
