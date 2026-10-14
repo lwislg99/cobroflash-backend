@@ -29,6 +29,44 @@ const git = (args) => {
   }
 };
 
+// ── 🔴 SCRUM-1541 · `--is-ancestor` TIENE TRES RESPUESTAS, NO DOS ─────────────────────────────
+//
+// Sale 0 (es ancestro), 1 (no lo es) o 128 (git no pudo mirar: el sha no está en el almacén, o
+// falta la ref). Hasta el 14-oct-2026 todo lo que no era 0 se leía «rama viva», y eso sólo era
+// verdad porque el job obligatorio trae la historia ENTERA (`fetch-depth: 0`). En un clon de
+// profundidad 1, medido ese día, las 105 ramas `scrum-N` del remoto dan 128 —también las 18 que
+// están mergeadas—, y el censo sacaba FUERA un ticket que el clon completo saca DENTRO.
+//
+// La regla, y por qué cada rama:
+//   · 0 → SÍ. Git encontró el camino: eso no lo inventa una historia cortada.
+//   · clon SOMERO y cualquier otra cosa → NO SE SABE. Con la historia cortada, ni el 1 ni el 128
+//     prueban nada: el camino puede pasar por debajo del corte.
+//   · clon completo y 1 → NO.
+//   · clon completo, 128 y el sha NO está en el almacén → NO. Con la historia de main entera, todo
+//     commit de main está aquí; uno que no está, no es de main. Es una deducción, y se dice como tal.
+//   · lo demás → NO SE SABE.
+// Un «no se sabe» NO se reparte entre los otros dos: el censo lo saca NO DECIDIBLE con su motivo.
+export const SI = 'SI';
+export const NO = 'NO';
+export const NO_SE_SABE = 'NO_SE_SABE';
+
+/** ¿`sha` está dentro de `main`? `{ es: SI | NO | NO_SE_SABE, por }`. `somero` sale de la foto. */
+export function ancestro(sha, main, { somero }) {
+  let codigo = 0;
+  try {
+    execFileSync('git', ['merge-base', '--is-ancestor', sha, main], { stdio: 'ignore' });
+  } catch (e) {
+    codigo = typeof e?.status === 'number' ? e.status : null;
+  }
+  if (codigo === 0) return { es: SI, por: 'is-ancestor 0' };
+  if (somero) return { es: NO_SE_SABE, por: `clon SOMERO: con la historia de la rama principal cortada, el ${codigo} de is-ancestor no prueba nada` };
+  if (codigo === 1) return { es: NO, por: 'is-ancestor 1' };
+  if (codigo === 128 && git(['cat-file', '-e', `${sha}^{commit}`]) === null) {
+    return { es: NO, por: 'is-ancestor 128 en un clon completo y el sha no está en el almacén: no puede ser de la rama principal' };
+  }
+  return { es: NO_SE_SABE, por: `is-ancestor salió ${codigo}: git no pudo mirarlo` };
+}
+
 /** Los tres cubos, y NADA MÁS. `NO_DECIDIBLE` cuenta del lado malo. */
 export const DENTRO = 'DENTRO';
 export const FUERA = 'FUERA';
@@ -80,8 +118,9 @@ export function esFalloDeRed(texto) {
 // Lo que se comparte es la RESPUESTA, no cómo se lee: cada lector la interpreta con lo suyo.
 
 /**
- * La foto: `{ salida, main, ciego: null }` o `{ salida: null, main: null, ciego: { que, detalle } }`.
- * `salida` es el texto crudo de `git ls-remote --heads origin`; `main`, el sha de `origin/main`.
+ * La foto: `{ salida, main, somero, ciego: null }` o `{ salida: null, main: null, ciego: { que, detalle } }`.
+ * `salida` es el texto crudo de `git ls-remote --heads origin`; `main`, el sha de `origin/main`;
+ * `somero`, si este clon tiene la historia cortada (SCRUM-1541).
  */
 export function leerRemoto() {
   let salida;
@@ -96,7 +135,9 @@ export function leerRemoto() {
   if (!main) {
     return { salida: null, main: null, ciego: { que: SIN_ARBOL, detalle: 'este clon no tiene la punta remota de la rama principal: sin ella no se sabe qué está mergeado' } };
   }
-  return { salida, main, ciego: null };
+  // SCRUM-1541 · si no se sabe si el clon es somero, cuenta como somero: del lado malo.
+  const somero = git(['rev-parse', '--is-shallow-repository'])?.trim() !== 'false';
+  return { salida, main, somero, ciego: null };
 }
 
 /**
@@ -154,20 +195,29 @@ export function artefactosQueNombra(texto) {
  * 🔴 EL ORDEN, DECLARADO:
  *  ① rama viva SIN mergear → **FUERA**. Es la única evidencia positiva de que hay trabajo que no
  *    está en `main`, y es lo único que este censo puede probar de ese lado;
+ *  ①bis una rama de la que NO SE SABE si está mergeada → **NO DECIDIBLE** (SCRUM-1541): ni DENTRO,
+ *    porque podría haber obra fuera, ni FUERA, porque eso es afirmar lo que no se ha visto;
  *  ② entrada de registro en `main` **y** al menos un artefacto suyo presente → **DENTRO**;
  *  ③ ficheros propios en `main` (`tests/scrumN…`, `scripts/…scrumN…`) → **DENTRO**;
  *  ④ todo lo demás → **NO DECIDIBLE**, del lado malo, y con el motivo separado: entrada sin
  *    artefactos · commits que lo nombran pero nada comprobable · anterior a la convención · nada.
  */
-export function clasificar(n, { ramas, ficheros, entrada, commits, primeraEntrada, main }) {
+export function clasificar(n, { ramas, ficheros, entrada, commits, primeraEntrada, main, somero = true }) {
   const mias = ramasDelTicket([...ramas.keys()], n);
-  const sinMergear = mias.filter((r) => git(['merge-base', '--is-ancestor', ramas.get(r), main]) === null);
-  const mergeadas = mias.filter((r) => !sinMergear.includes(r));
+  const juicio = new Map(mias.map((r) => [r, ancestro(ramas.get(r), main, { somero })]));
+  const sinMergear = mias.filter((r) => juicio.get(r).es === NO);
+  const sinSaber = mias.filter((r) => juicio.get(r).es === NO_SE_SABE);
+  const mergeadas = mias.filter((r) => juicio.get(r).es === SI);
 
   const propios = ficheros.filter((f) => new RegExp(`(^|/)scrum-?${n}([a-z])?[-._]`, 'i').test(f));
 
   if (sinMergear.length) {
     return { n, cubo: FUERA, motivo: `rama viva SIN mergear: ${sinMergear.join(', ')}`, ramas: mias, mergeadas, propios: propios.length };
+  }
+  // SCRUM-1541 · una rama de la que no se sabe si está mergeada no deja decidir NADA del ticket: si
+  // está fuera, el ticket no está entero aunque su entrada y sus ficheros sí estén en main.
+  if (sinSaber.length) {
+    return { n, cubo: NO_DECIDIBLE, motivo: `no se puede saber si ${sinSaber.join(', ')} está mergeada (${juicio.get(sinSaber[0]).por})`, ramas: mias, mergeadas, propios: propios.length };
   }
   if (entrada != null) {
     const nombrados = artefactosQueNombra(entrada);
@@ -220,11 +270,11 @@ export function censarConMotivo(tickets, { foto = leerRemoto() } = {}) {
   if (!ficheros) {                                 // 🔴 CIEGO: sin árbol tampoco
     return { censo: null, ciego: { que: SIN_ARBOL, detalle: 'el `ls-tree` de la punta remota no ha contestado' } };
   }
-  return { censo: censoSobre(tickets, ramas, ficheros, foto.main), ciego: null };
+  return { censo: censoSobre(tickets, ramas, ficheros, foto.main, foto.somero !== false), ciego: null };
 }
 
 /** El censo, ya con las refs y el árbol leídos. `tickets` son números; `main`, el sha de la foto. */
-function censoSobre(tickets, ramas, ficheros, main) {
+function censoSobre(tickets, ramas, ficheros, main, somero) {
 
   // 🔴 LA CONVENCIÓN SE DERIVA DEL ÁRBOL, no se escribe a mano. «La primera densa» = el número más
   // bajo a partir del cual hay al menos tres entradas seguidas dentro de un margen de 100: así una
@@ -241,9 +291,10 @@ function censoSobre(tickets, ramas, ficheros, main) {
     const entrada = git(['show', `${main}:docs/master/SCRUM-${n}.md`]);
     const log = git(['log', main, '--oneline', '-i', '-E', `--grep=SCRUM-${n}([^0-9]|$)`]);
     const commits = log === null ? 0 : log.split('\n').filter(Boolean).length;
-    return clasificar(n, { ramas, ficheros, entrada, commits, primeraEntrada, main });
+    return clasificar(n, { ramas, ficheros, entrada, commits, primeraEntrada, main, somero });
   });
   return {
+    somero,
     poblacion: tickets.length,
     ramasVistas: ramas.size,
     ficherosEnMain: ficheros.length,

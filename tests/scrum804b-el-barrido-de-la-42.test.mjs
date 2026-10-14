@@ -88,6 +88,13 @@ const POSITIVOS = [866, 881];
  * se conserva lo que había — sin red, rojo.
  */
 function ciego(c) {
+  if (c.que === SOMERO) {
+    assert.fail('🔴 CIEGO · CLON SOMERO. Este clon tiene la historia de `main` cortada, y con ella cortada '
+      + '`merge-base --is-ancestor` no distingue una rama mergeada de una viva (SCRUM-1541: en un clon de '
+      + 'profundidad 1, 18 de 18 ramas mergeadas salían «vivas»). El barrido de la regla 42 NO se ha '
+      + 'comprobado. Si esto es el job obligatorio, su `actions/checkout` necesita `fetch-depth: 0` '
+      + `(\`.github/workflows/ci.yml\`). Lo que dijo git: «${c.detalle}».`);
+  }
   if (c.que === SIN_RED) {
     assert.fail('🔴 CIEGO · SIN RED · ESTO NO ES TU CAMBIO. `git ls-remote --heads origin` no ha llegado al '
       + `remoto («${c.detalle}»). El barrido de la regla 42 NO se ha comprobado en esta pasada: no es `
@@ -119,21 +126,53 @@ function negativoVivo() {
   return negativoYaDerivado;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-1541 · EL 128 NO ES UN 1, Y UN CLON SOMERO NO SE MIDE.
+//
+// `--is-ancestor` sale 0, 1 o 128 (no pudo mirar). Hasta el 14-oct-2026 aquí todo lo que no era 0
+// era «viva», y eso sólo era cierto porque el obligatorio trae la historia entera. Ahora:
+//   · clon SOMERO → este fichero NO MIDE y lo dice (`ciego` SOMERO). Es el guard de la dependencia
+//     de `fetch-depth: 0` en `ci.yml`: el día que alguien lo quite, este caso cae nombrando la causa,
+//     en vez de dar por vivas ramas mergeadas. No lo puede comprobar desde el propio job, que es
+//     completo: lo comprueba `tests/scrum1541-el-128-no-es-un-1.test.mjs` con un clon somero hecho a
+//     propósito.
+//   · clon completo: candidato con 1, o con 128 si el sha no está en el almacén (con la historia de
+//     main entera, lo que no está aquí no es de main). Cualquier otra salida NO es candidato: un
+//     negativo tiene que ser seguro, y hay más ramas donde elegir.
+// Se mira con una orden propia, no con la foto del censo: el control sigue siendo independiente.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+const SOMERO = 'SOMERO';
+
+function salidaDeGit(args) {
+  try {
+    execFileSync('git', args, { stdio: 'ignore' });
+    return 0;
+  } catch (e) {
+    return typeof e?.status === 'number' ? e.status : null;
+  }
+}
+
 function derivarNegativo(foto) {
   if (foto.ciego) return { n: null, ciego: foto.ciego };
+  let profundidad;
+  try {
+    profundidad = execFileSync('git', ['rev-parse', '--is-shallow-repository'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+  } catch (e) {
+    profundidad = `no contestó: ${String(e?.stderr || e?.message || '').trim().slice(0, 200)}`;
+  }
+  if (profundidad !== 'false') {
+    return { n: null, ciego: { que: SOMERO, detalle: `git rev-parse --is-shallow-repository → ${profundidad}` } };
+  }
   const heads = foto.salida.split('\n').filter(Boolean);
   const candidatos = [];
   for (const fila of heads) {
     const [sha, ref] = fila.split(/\s+/);
     const m = /refs\/heads\/scrum-(\d+)(?:[a-z]\d*)?(?:-|$)/.exec(ref || '');
     if (!m) continue;
-    try {
-      // `--is-ancestor` sale 0 si YA está en main; si sale != 0, la rama sigue viva. Contra el sha
-      // de la FOTO, no contra la ref: un `git fetch` de otro árbol la mueve a mitad de la tanda.
-      execFileSync('git', ['merge-base', '--is-ancestor', sha, foto.main], { stdio: 'ignore' });
-    } catch {
-      candidatos.push(Number(m[1]));
-    }
+    // Contra el sha de la FOTO, no contra la ref: un `git fetch` de otro árbol la mueve (SCRUM-1539).
+    const codigo = salidaDeGit(['merge-base', '--is-ancestor', sha, foto.main]);
+    const viva = codigo === 1 || (codigo === 128 && salidaDeGit(['cat-file', '-e', `${sha}^{commit}`]) !== 0);
+    if (viva) candidatos.push(Number(m[1]));
   }
   // El más alto: el más reciente. Desde SCRUM-1539 da igual que se mergee mientras corre la tanda:
   // el censo lo clasifica sobre la misma foto en la que se eligió.
