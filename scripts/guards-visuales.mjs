@@ -145,6 +145,44 @@ export function llegoAMedir(codigo) {
 // eso su `estadoDeLaSalida` no se reusa aquí: es la regla opuesta, no la misma.
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-1343d · UN GUARD QUE REVIENTA ANTES DE MEDIR NO HA ENCONTRADO NADA — Y AQUÍ SE CAMBIÓ
+// UNA DECISIÓN DE SCRUM-1343, A SABIENDAS.
+//
+// LO QUE PASÓ: `guard:firma-con-tramos` llevaba desde el 7-oct muriendo en 0,2 s, antes de abrir el
+// navegador (su doble no traía `seriesYear`; SCRUM-1490c), y esta puerta lo pintaba `rojo(1)`. El
+// 14-oct-2026 remataba «36 verdes · 0 CIEGOS · 2 rojos · Han medido y hay hallazgos». No había medido
+// nada en una semana, y el instrumento decía de sí mismo lo contrario.
+//
+// SCRUM-1343 había decidido lo opuesto («reventar en la primera línea es rojo: ese 1 es suyo») por un
+// miedo correcto: defecto → leído como ceguera → se relanza → mergea. ESO SIGUE IMPOSIBLE: una caída
+// es un no-verde y la tanda cae igual (por la puerta del ciego); lo ata su propio test. Lo que cambia
+// es sólo lo que la puerta AFIRMA: ya no dice «midió y encontró» de quien no midió.
+//
+// LA SEÑAL, medida y no razonada: Node escribe una línea final `Node.js vX.Y.Z` SÓLO cuando el
+// proceso muere por una excepción no capturada (throw, `await` de primer nivel rechazado, promesa
+// rechazada suelta). Un `process.exit(1)` decidido, un `exitCode = 1` o un guard que captura, imprime
+// la traza y sale con 1, NO la escriben. Medido con Node v24.8.0 (local, Windows) y visto en el log de
+// CI con v24.21.0. «Sin `⟦veredicto⟧`» a secas NO sirve: `guard:primera-pantalla` y
+// `guard:completar-lleva-al-campo` salen con 1 por defectos REALES sin imprimirlo.
+//
+// ⚠️ EL TRUEQUE, declarado: una excepción que lanza el CÓDIGO DE PRODUCCIÓN con datos válidos (un
+// defecto de verdad) sale también como «CAÍDO ANTES DE MEDIR» y no como rojo. No mergea —la tanda no
+// sale verde— y la fila lleva la primera línea de la excepción para que se identifique antes de
+// relanzar nada. Pero ya no cuenta entre los «rojos»: quien lea sólo esa cifra lo pierde.
+// ⚠️ HACIA DÓNDE FALLA SI NODE CAMBIA: si una versión dejara de escribir la línea, la caída volvería a
+// salir `rojo(1)` —lo de antes—: el lado cerrado, no un verde.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+/** La línea que Node escribe al final cuando el proceso muere por una excepción no capturada. */
+export const FIRMA_DE_EXCEPCION = /^Node\.js v\d+\.\d+\.\d+\s*$/m;
+
+/** La primera línea que nombra la excepción (`Error: …`, `TypeError: …`), para la fila. */
+export function primeraLineaDeLaExcepcion(salida) {
+  const m = String(salida).match(/^\s*((?:[A-Z]\w*)?Error\b.*)$/m);
+  return m ? m[1].trim().slice(0, 140) : 'sin mensaje legible';
+}
+
 /** Desde aquí los códigos son NTSTATUS de error: los pone Windows, no el guard. */
 export const SUELO_DEL_CODIGO_DEL_SISTEMA = 0xC0000000;
 
@@ -164,12 +202,26 @@ export function desenlaceDelHijo(r, salida = '') {
   const error = r.error ? String(r.error.code || r.error.message || 'error') : null;
   if (error === 'ETIMEDOUT') return { estado: 'TOPE', codigo: null, arranco: true };
 
+  // Lo que el guard llegó a DECIR manda sobre cómo acabó: se decide UNA vez, con la regla de la casa
+  // (`veredictoDe`) y no con una tercera escrita aquí. Lo leen las dos ramas de abajo.
+  const dicho = leerVeredicto(salida);
+  let dijoHallazgos = false;
+  if (dicho && veredictoDe(dicho).codigo === SALIDA_HALLAZGO) {
+    dijoHallazgos = true;
+  }
+
   const sinCodigo = r.status === null || r.status === undefined;
   if (!sinCodigo && !esCodigoDelSistema(r.status)) {
     // SCRUM-522 · TRES desenlaces malos y no dos. El 3 —«lo hay y no arranca»— tiene nombre propio
     // porque antes salía como `rojo(1)`, indistinguible de «he encontrado defectos».
     // SCRUM-639 · y el 4 entra en la escalera.
     const codigo = r.status;
+    // SCRUM-1343d · reventó antes de decir hallazgos: no midió (cabecera de arriba).
+    if (codigo === 1 && FIRMA_DE_EXCEPCION.test(String(salida))) {
+      if (!dijoHallazgos) {
+        return { estado: 'CAÍDO ANTES DE MEDIR (' + primeraLineaDeLaExcepcion(salida) + ')', codigo: null, arranco: true };
+      }
+    }
     const estado = codigo === SALIDA_VERDE ? 'verde'
       : (codigo === SALIDA_NO_ENCONTRADO ? 'CIEGO'
         : (codigo === SALIDA_NO_ARRANCA ? 'NO ARRANCA'
@@ -180,10 +232,8 @@ export function desenlaceDelHijo(r, salida = '') {
   // De aquí abajo el final lo puso el sistema, no el guard.
   const como = error ? 'spawn ' + error
     : (sinCodigo ? 'señal ' + String(r.signal) : '0x' + r.status.toString(16).toUpperCase());
-  // Lo que el guard llegó a DECIR manda sobre cómo acabó: se decide con la regla de la casa
-  // (`veredictoDe`) y no con una tercera escrita aquí.
-  const dicho = leerVeredicto(salida);
-  if (dicho && veredictoDe(dicho).codigo === SALIDA_HALLAZGO) {
+  // Lo dicho (arriba) manda sobre cómo acabó.
+  if (dijoHallazgos) {
     return { estado: 'rojo(' + como + ')', codigo: SALIDA_HALLAZGO, arranco: true };
   }
   if (String(salida).trim() === '') return { estado: 'PROCESO NO ARRANCÓ (' + como + ')', codigo: null, arranco: false };
