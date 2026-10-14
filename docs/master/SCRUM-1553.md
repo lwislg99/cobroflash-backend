@@ -127,3 +127,98 @@ el texto**. Para esas no hay mecanismo barato: hace falta leer, como en el PASO 
   `CONTABILIDAD.md:131` y SCRUM-1261, no por un comentario del propio ticket. Los estados de SCRUM-1048,
   SCRUM-1499 y SCRUM-1504 no se miraron.
 - No se tocó ninguna etiqueta: eso es del orquestador (A13).
+
+---
+
+## SCRUM-1553b · ③ salida D: la consulta que tiene que salir VACÍA, construida — hoy sale ROJA con 8
+
+**Medido contra:** `origin/main` = `76c29b57c871584b04c8206c11571f9c56c9d699` · 2026-10-14T06:52:27Z
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1553/contradiccion.mjs`
+
+J3 (sesión `jv-j3g`, equipo de Javier), por encargo de su orquestador (`cobroflash-backend-2e`), que **eligió la
+D** entre las cuatro del §5 («las otras tres dependen de que alguien se acuerde»). El hook de arranque dijo «SIN
+IDENTIDAD» (SCRUM-1549); se construyó por la orden escrita del orquestador. **No se tocó ninguna etiqueta de
+Jira** (las mueve él, A13), ni `src/`, tests, guards, workflows, esquema o bases.
+
+⚠️ **La comprobación del A9 corre cuando alguien la lanza, no sola.** No está en el obligatorio ni en ningún
+workflow: meterla es decisión del orquestador (abajo, §④). Hasta entonces convierte el fallo en una
+comprobación de un comando, no en una puerta.
+
+### ① Qué es
+
+`docs/master/evidencias/SCRUM-1553/contradiccion.mjs --foto <foto.tsv> [--equipo equipo-javier]`. Lee la foto de
+la casa (el mismo TSV `clave⇥estado⇥etiquetas` que lee `SCRUM-1496/tabla-ya-esta.mjs --jira`; **no es un
+segundo censo**: no mira `main`, solo las etiquetas) y saca los tickets con `listo-para-construir` y una
+contraria: cualquier `esperando-*` (con el guion) o, por nombre exacto, `decision-jefe`, `fundador`,
+`sin-firma`. **Sale 0 si está vacía, 1 si no, 2 si no ha podido mirar.**
+
+- **La fecha es obligatoria:** la foto lleva delante `# medido: <ISO Z> · jql: … · total: N`. Sin fecha, sin
+  `total`, o con un `total` que no casa con las filas (foto cortada), sale 2. Imprime además cuántas horas
+  tiene la foto; no pone umbral (una ventana fija es una tolerancia disfrazada).
+- **No consulta Jira él mismo:** el repositorio no guarda credenciales de Jira. La foto se saca por el MCP con
+  la JQL que el guion imprime si se le llama sin `--foto`.
+- **Cero filas con la etiqueta sale 2**, no 0: cero no es «vacía», es «no hay qué mirar».
+- **El límite va en CADA salida**, no solo aquí: los que llevan la etiqueta sin contraria salen como «NO
+  JUZGADOS, NO LIMPIOS» con su lista, y debajo las tres cosas que no ve — la decisión que solo consta en el
+  texto (el dato de jv-j2d, **con su fecha**: 9 de 17 el 14-oct hacia las 04:20Z, 1043 1051 1058 1063 1064
+  1065 1067 1077 1401), la contraria caducada (la cuenta igual: `esperando-alter` de 1066), y lo que no trae
+  la foto.
+
+### ② Lo que sale hoy
+
+Foto nueva, `evidencias/SCRUM-1553/foto-jira-2026-10-14T0649Z.tsv`: la JQL de §1 sin filtro de equipo, **34**
+filas, `totalCount` 34, `hasNextPage: false`. Salida entera en `salida-contradiccion-2026-10-14T0649Z.txt`.
+
+| Alcance | Con la etiqueta | Contradicciones (exit 1) | No juzgados |
+| --- | --- | --- | --- |
+| `--equipo equipo-javier` | 24 | **8**: 1050 `esperando-caso-real` · 1052, 1054, 1055, 1076 `esperando-asesor` · 1066 `esperando-alter` · 1403 `decision-jefe` · 1502 `fundador` | 16 |
+| sin filtro (los dos equipos) | 34 | **13**: los 8, más 1045, 1056, 1072 `esperando-alter` · 1069 `esperando-decision` · 1074 `esperando-asesor` (los cinco, `equipo-luis`) | 21 |
+
+**Los 8 de `equipo-javier` son exactamente los que midió jv-j2d a las 04:15Z.** Los 5 de `equipo-luis` no
+estaban en §4 porque el censo no miraba ese equipo; `esperando-decision` (1069) no la citaba nadie y la caza el
+prefijo, que es por lo que se eligió prefijo y no lista cerrada.
+
+### ③ Los controles
+
+**Sembrados**, dentro del guion, y pasan por **la misma función** que la foto real en CADA ejecución, antes de
+mirarla; si fallan, sale 2. Ninguno es un ticket de la foto: el día que el orquestador quite las 8 etiquetas, los
+controles siguen cazando lo suyo.
+
+| Caso sembrado | Esperado | Por qué |
+| --- | --- | --- |
+| SCRUM-90001 `esperando-semilla-1553b` | SALE | POSITIVO por prefijo, con un nombre que no existe |
+| SCRUM-90002 `fundador` | SALE | POSITIVO por nombre exacto |
+| SCRUM-90003 `decision-jefe` + `sin-firma` | SALE, nombrando las dos | POSITIVO doble |
+| SCRUM-90004 solo la etiqueta | NO sale (no juzgado) | NEGATIVO |
+| SCRUM-90005 `esperandox`, `fundadores`, `no-esperando-x` | NO sale | NEGATIVO: un prefijo no es un nombre, una subcadena tampoco |
+| SCRUM-90006/90007 contraria sin la etiqueta | NO sale | NEGATIVO |
+| SCRUM-90008 de `equipo-luis` | fuera con `--equipo equipo-javier` | el filtro de equipo |
+| foto sin fecha · foto cortada | ciegas | las puertas de «no he podido mirar» |
+
+**El rojo, primero.** Seis mutaciones del guion, cada una en una copia fuera del árbol, con `--solo-controles`:
+las seis salen **2** y nombran qué falló — nada es contraria (3 fallos) · sin prefijo (2) · prefijo como
+subcadena (2) · sin la comprobación de `total` (1) · nombres exactos como subcadena (2) · sin filtro de equipo
+(2). Sobre la foto real: sin cabecera sale 2 (sin fecha, sin total); cortada a 19 filas sale 2 («Jira dijo
+total 34 y la foto trae 19»); con `total: 0` sale 2; sin `--foto` sale 2 e imprime la JQL.
+
+### ④ ¿Obligatorio o a mano? — lo decide el orquestador
+
+Recomiendo **a mano, en el PASO 0 de quien reparte**, y meter en la tanda **solo** `--solo-controles`:
+
+- La consulta real **no puede** correr en el obligatorio: CI no tiene Jira, y una foto commiteada es de una hora
+  concreta — correrla en CI sería dar por bueno, cada vez, el Jira del día que se sacó.
+- `--solo-controles` sí podría ir a la tanda (no lee nada de fuera; 0 si el instrumento caza su semilla). Eso
+  vigila que nadie rompa el instrumento, **no** que las etiquetas digan verdad. **No lo he metido**: el encargo
+  pide decirlo antes.
+
+### ⑤ Error mío, dicho
+
+La hora de la foto (`06:49Z`) la escribí yo a mano: la herramienta de Jira no devuelve hora, y el `date -u`
+lo lancé después de la consulta (dio `06:50Z`). Es exacta al minuto, no al segundo.
+
+### ⑥ Lo que NO hace
+
+- No cambia ninguna etiqueta, ni propone cuál quitar: las 8 son del orquestador (A13).
+- No juzga los 16 «no juzgados»: entre ellos están los 9 que esperan una decisión escrita solo en el texto.
+- No sabe si una contraria está caducada (1066).
