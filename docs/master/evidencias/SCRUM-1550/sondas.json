@@ -1,0 +1,71 @@
+{
+  "medidoContra": "c30729832c18b65c3793917ca836868e6cfdaa6e",
+  "poblacion": "Los 39 NADA EN MAIN del censo por número del 14-oct 02:52Z (SCRUM-1496b). En la foto de las 03:31Z, 1536 y 1548 pasaron a ALGO, entró 1549 y 1550 es este mismo ticket: quedan 38",
+  "tickets": [
+    { "n": 18, "pide": "certificaciones de obra por % y retención de garantía del 5 %", "sondas": [
+      { "que": "entidad Certificacion", "patron": "model Certificaci", "fijo": true, "rutas": ["prisma/schema.prisma"], "espera": "presente" },
+      { "que": "retención de garantía en el Trabajo", "patron": "retencionGarantiaPorcentaje", "fijo": true, "rutas": ["prisma/schema.prisma"], "espera": "presente" } ] },
+    { "n": 19, "pide": "adeudo SEPA con mandato a nivel Trabajo", "sondas": [
+      { "que": "SEPA en servidor o esquema", "patron": "sepa_debit|mandato.{0,30}SEPA|SEPA.{0,30}mandato", "i": true, "rutas": ["src", "prisma/schema.prisma"], "espera": "presente" } ] },
+    { "n": 142, "pide": "emisión de la factura de anticipo (bloqueada por el dictamen P1)", "sondas": [
+      { "que": "tipo o serie de anticipo", "patron": "nextAntInvoiceNumber|type: 'ANT'", "rutas": ["src"], "espera": "presente" } ] },
+    { "n": 143, "pide": "decidir el modelo de envío a la AEAT tras la respuesta sobre el Convenio 017", "sinSonda": "lo que pide es una decisión del fundador; el árbol ni la contiene ni la desmiente" },
+    { "n": 658, "pide": "factura desde el parte, recurrentes y modelo 303 (bloque B Tecnosel, bloqueado por regla 24)", "sinSonda": "agrupa tres peticiones que esperan una decisión del fundador y no nombra ningún artefacto que buscar" },
+    { "n": 957, "pide": "texto en trampas-del-entorno.md: Windows 11 sin wmic tumba scrum858b", "sondas": [
+      { "que": "el texto propuesto en trampas-del-entorno.md", "patron": "wmic", "i": true, "rutas": ["docs/equipo/trampas-del-entorno.md"], "espera": "presente" },
+      { "que": "el DEFECTO: scrum858b llamando a wmic", "patron": "['\"]wmic['\"]", "rutas": ["tests/scrum858b-la-tanda-sin-veredicto.test.mjs"], "espera": "ausente" } ] },
+    { "n": 1005, "pide": "pestaña «Documentos adjuntos» en la ficha del cliente", "sondas": [
+      { "que": "adjuntos en la ficha del cliente", "patron": "adjunt", "i": true, "rutas": ["public/dashboard/js/customerDetailView.js"], "espera": "presente" } ] },
+    { "n": 1028, "pide": "que ALCANCE_BETA.md deje de prometer cobro (regla 24)", "sondas": [
+      { "que": "el DEFECTO: la promesa «Cobro integrado»", "patron": "Cobro integrado", "fijo": true, "rutas": ["docs/legal/ALCANCE_BETA.md"], "espera": "ausente" } ] },
+    { "n": 1044, "pide": "«Cómo llegar» por sitio en la pestaña Sitios", "sondas": [
+      { "que": "el panel llama a las rutas de sitios", "patron": "/sites", "fijo": true, "rutas": ["public/dashboard"], "espera": "presente" } ] },
+    { "n": 1052, "pide": "IVA del 10 % en reformas con aviso si los materiales pasan del 40 %", "sondas": [
+      { "que": "el aviso del 40 % de materiales", "patron": "materiales.{0,60}40|40 ?%.{0,60}materiales", "i": true, "rutas": ["src", "public/dashboard/js"], "espera": "presente" } ] },
+    { "n": 1053, "pide": "que la retención de IRPF llegue al total de la factura", "sondas": [
+      { "que": "retencionIrpf importado en el camino de la factura", "patron": "from ['\"][^'\"]*retencionIrpf", "rutas": ["src/lib", "src/modules/invoicing", "src/modules/fiscal"], "espera": "presente" } ] },
+    { "n": 1054, "pide": "que el recargo de equivalencia y los suplidos entren en el total", "sondas": [
+      { "que": "recargoEquivalencia o suplidos importados por alguien", "patron": "from ['\"][^'\"]*(recargoEquivalencia|suplidos)", "rutas": ["src"], "espera": "presente" } ] },
+    { "n": 1073, "pide": "retención de IRPF por cliente y por factura (necesita ALTER aditivo)", "sondas": [
+      { "que": "ALTER de retención en clientes o facturas", "patron": "ALTER TABLE.{0,40}(customers|invoices).{0,200}retenc", "i": true, "rutas": ["docs/sql"], "espera": "presente" } ] },
+    { "n": 1101, "pide": "guard de solo lectura que acredite la regla 24 (flag OFF)", "sondas": [
+      { "que": "el guard de acreditación", "patron": "FLAG_INVOICING_ES = 'INVOICING_ES_ENABLED'", "fijo": true, "rutas": ["scripts/guard-acreditacion-invoicing-es.mjs"], "espera": "presente" } ] },
+    { "n": 1115, "pide": "que los correos no salgan como «PresuFácil»", "sinSonda": "el remitente sale de la variable EMAIL_FROM de Railway, fuera del árbol («presuf» da 0 en src/ y public/, que es lo que el propio ticket ya midió)" },
+    { "n": 1132, "pide": "la pantalla de las notas del cliente con fecha y autor", "sondas": [
+      { "que": "el panel consume /admin/customers/…/notes", "patron": "customers/.{0,60}/notes", "rutas": ["public/dashboard"], "espera": "presente" } ] },
+    { "n": 1145, "pide": "pestaña «Sitios» en la ficha del cliente", "sondas": [
+      { "que": "el panel consume /sites", "patron": "/sites", "fijo": true, "rutas": ["public/dashboard"], "espera": "presente" } ] },
+    { "n": 1149, "pide": "los .btn-sm de la fila de Clientes a 44 px", "sondas": [
+      { "que": "el DEFECTO: la excepción BUTTON.btn-secondary.btn-sm sigue en el guard", "patron": "{ sel: 'BUTTON.btn-secondary.btn-sm'", "fijo": true, "rutas": ["scripts/guard-objetivo-tactil.mjs"], "espera": "ausente" } ] },
+    { "n": 1159, "pide": "44 px en los botones de forma de cobro (Bizum, tarjeta, transferencia)", "sinSonda": "el enunciado no nombra ni el selector ni la vista; identificar esos botones pide medir en navegador" },
+    { "n": 1242, "pide": "norma: una cita del BOE se fija con el texto CONSOLIDADO y la fecha de vigencia", "sondas": [
+      { "que": "la norma en las normas comunes", "patron": "BOE.{0,120}consolidad|consolidad.{0,120}BOE", "i": true, "rutas": ["docs/equipo"], "espera": "presente" } ] },
+    { "n": 1248, "pide": "nada mientras no salte su criterio de disparo (declaración de un rojo intermitente)", "sinSonda": "es una DECLARACIÓN con criterio de disparo, no pide artefacto; si saltó o no se mide en los runs de CI, no en el árbol" },
+    { "n": 1250, "pide": "retirar POST invoices/:id/pay y /unpay, rutas legacy", "sondas": [
+      { "que": "el DEFECTO: /unpay sigue declarada", "patron": "/admin/invoices/:invoiceId/unpay", "fijo": true, "rutas": ["src/core/http/adminOnlyRoutes.ts"], "espera": "ausente" } ] },
+    { "n": 1251, "pide": "que una pantalla ofrezca evidencias.zip", "sondas": [
+      { "que": "el panel enlaza evidencias.zip", "patron": "evidencias.zip", "fijo": true, "rutas": ["public"], "espera": "presente" } ] },
+    { "n": 1260, "pide": "quitar el escritor inalcanzable de type 'JUST' en emitInvoice", "sondas": [
+      { "que": "el DEFECTO: el ternario que escribe 'JUST'", "patron": "isReceiptNumber(number) ? 'JUST'", "fijo": true, "rutas": ["src/lib/invoicing.ts"], "espera": "ausente" } ] },
+    { "n": 1264, "pide": "las respuestas del asesor a sus 28 preguntas", "sinSonda": "la lista viva está en Jira y lo que espera es la respuesta del asesor, que no llega al árbol" },
+    { "n": 1310, "pide": "(i) decidir si el guard sigue con 13 FK sin fuente; (ii) registrar como DDL lo que solo vive en producción", "sondas": [
+      { "que": "(ii) DDL de una de las FK sin fuente", "patron": "invoices_rectifies_id_fkey", "fijo": true, "rutas": ["docs/sql"], "espera": "presente" } ], "nota": "la parte (i) es una decisión y no se mira" },
+    { "n": 1314, "pide": "decidir (a)/(b)/(c) sobre el orden sellado-estado de la anulación", "sinSonda": "la decisión está sin firmar y, sin saber qué opción se elige, no hay artefacto que buscar" },
+    { "n": 1346, "pide": "reproducir contra Prisma real lo que el Técnico reconstruye", "sinSonda": "pide medir contra una base real, y este encargo tiene prohibida cualquier base" },
+    { "n": 1347, "pide": "fila 1 de la Parte S1 del máster: «productos: ver»", "sondas": [
+      { "que": "la fila firmada en el máster", "patron": "productos: ver", "fijo": true, "rutas": ["docs/YAQU_MASTER.md"], "espera": "presente" } ] },
+    { "n": 1396, "pide": "que _censo-mkdtemp empareje creación y borrado por ámbito, no por nombre", "sinSonda": "el arreglo es de algoritmo y no deja un literal; comprobarlo exige fabricar el caso y pasarlo por el censo. Su rama scrum-1396-censo-mkdtemp-por-variable sigue VIVA sin mergear" },
+    { "n": 1406, "pide": "que el máster diga el límite de usuarios del plan trial", "sondas": [
+      { "que": "el límite de trial en el máster", "patron": "trial[^.;]{0,60}(1 usuario|un usuario|maxUsers)", "i": true, "rutas": ["docs/YAQU_MASTER.md"], "espera": "presente" } ] },
+    { "n": 1410, "pide": "medir cuántas veces el avisador llamó a @claude sobre una rama viva, y decidir cuándo debe hacerlo", "sinSonda": "la medición se hace sobre los runs de claude.yml y la decisión no se ha tomado; ninguna de las dos deja todavía un artefacto en el árbol" },
+    { "n": 1497, "pide": "dejar escrito que Canarias y forales no se hacen por ahora", "sinSonda": "el fundador pidió dejarlo reflejado EN JIRA, y eso es este mismo ticket; docs/master/SCRUM-1536.md:33 ya lo cita. No pide nada en el árbol" },
+    { "n": 1499, "pide": "Parte L de WhatsAppMessage: recoger received e inbound, o corregir el código; y qué pasa con queued", "sondas": [
+      { "que": "received en la Parte L", "patron": "`received`: estado de los mensajes ENTRANTES", "fijo": true, "rutas": ["docs/YAQU_MASTER.md"], "espera": "presente" },
+      { "que": "inbound en la línea de la Parte L", "patron": "^\\*\\*WhatsAppMessage:\\*\\*.*inbound", "rutas": ["docs/YAQU_MASTER.md"], "espera": "presente" } ] },
+    { "n": 1501, "pide": "decidir qué vigila scrum475: comentarios o solo estructura", "sinSonda": "lo que pide primero es una decisión, que no deja artefacto hasta tomarse" },
+    { "n": 1506, "pide": "que puestoDeNombre resuelva jv-jN", "sinSonda": "pide medirlo EJECUTANDO la puerta, que es de S5 (lleva equipo-luis y area-s5); este censo solo lee el árbol" },
+    { "n": 1507, "pide": "una línea en cron.ts que programe el reintento de sellado de SCRUM-1404", "sondas": [
+      { "que": "reintentoSellado programado en el cron o en el arranque", "patron": "reintentoSellado", "fijo": true, "rutas": ["src/core/cron", "src/index.ts"], "espera": "presente" } ] },
+    { "n": 1549, "pide": "reinstalar la copia de sesion.mjs y comprobar que `estado` contesta", "sinSonda": "la puerta instalada vive fuera del árbol. El hook de inicio de esta sesión (14-oct, 03:29Z) volvió a decir SIN IDENTIDAD, pero eso es una señal y no una medición de la copia" }
+  ]
+}
