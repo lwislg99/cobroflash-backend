@@ -151,6 +151,18 @@ de `tests/_guard-texto.mjs`. Visto pasar (12 de 12), caer con un `@default` pues
 caso del esquema; `numstat` 1/1) y volver a pasar con el esquema restaurado. Mi tanda de vecinos no llevaba
 `scrum700`: no nombra nada de lo que usé para elegirlos.
 
+**Y ese arreglo trajo otro rojo, mío:** llamé a `soloEjecutable` a secas, y `scrum719` (SCRUM-1395 ②) no deja
+que un test nuevo llame al filtro sin suelo. El segundo obligatorio cayó por eso. Ahora es `ejecutableDe` con
+el ancla `toPhone`. Antes del tercer empujón corrí lo que debí correr antes del segundo: los 175 ficheros de
+`tests/` que barren la propia carpeta de tests (más `scrum237`, `scrum976`, `scrum1415`, `scrum1387`): 1.763
+casos, 1.761 pasan, 1 se salta y cae 1, `scrum476`, que es de los 13 del árbol (no hay `node_modules` aquí).
+El caso del esquema, otra vez: cae 1 con el `@default` puesto (`numstat` 1/1) y 12 de 12 al restaurar.
+
+Los dos obligatorios que cayeron, leídos por nombre (11.408 casos, 11.317 pasan, 89 se saltan, 2 caen en cada
+uno): el primero, `SCRUM-700` y `SCRUM-1387`; el segundo, `SCRUM-1395 ②` y `SCRUM-1387`. `SCRUM-1387` no es de
+este PR: nombra `docs/master/evidencias/SCRUM-1544/mutaciones.mjs`. En los dos pasaron los dos casos que sólo
+el CI podía decidir: `scrum222` (el SQL de deriva) y `scrum244 · CONTRA POSTGRES`.
+
 ## Lo medido, los dos commits JUNTOS sobre el merge
 
 `dist/` reconstruido con `tsc --noCheck` (salida 0) después del merge.
@@ -173,11 +185,10 @@ caso del esquema; `numstat` 1/1) y volver a pasar con el esquema restaurado. Mi 
 
 ## Lo que NO se ha medido
 
-- 🔴 **Que `docs/sql/deriva-prod.sql` sea byte a byte lo que saca el generador con un cliente al día.**
-  `scrum222` cae aquí igual en la rama que en `main` (el cliente compartido da 511 columnas), así que ese
-  rojo local no distingue un fichero bueno de uno malo. Lo decide el CI, que genera el cliente.
-- `scrum244 · CONTRA POSTGRES`: se salta aquí; corre en CI. Es el caso que decide si la supresión llega al
-  final con la clave nueva.
+- En local, que `docs/sql/deriva-prod.sql` sea byte a byte lo que saca el generador con un cliente al día:
+  `scrum222` cae aquí igual en la rama que en `main` (el cliente compartido da 511 columnas). **Lo midió el
+  CI: pasa** (arriba).
+- En local, `scrum244 · CONTRA POSTGRES`: se salta aquí. **Lo midió el CI: pasa** (arriba).
 - Las mutaciones de los dos tramos de origen no se repitieron sobre el merge.
 - La suite completa (869 ficheros no entraron en la tanda) y la comprobación de tipos: CI.
 - Ninguna base. La forma de `to_phone` en staging y producción sigue sin medir por nadie.
