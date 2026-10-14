@@ -332,6 +332,7 @@ export async function sendWhatsAppTemplate(params: {
     if (!params.merchantId) return;
     recordWaMessage({
       merchantId: params.merchantId,
+      toPhone: params.to,
       customerId: params.log?.customerId ?? null,
       type: 'template',
       templateName: params.templateName,
@@ -387,6 +388,7 @@ export async function sendWhatsAppTemplate(params: {
       const reserva = await reservarPlantilla(prisma, {
         merchantId: params.merchantId,
         customerId,
+        toPhone: params.to,
         templateName: params.templateName,
         topeComercio: config.WA_DAILY_TEMPLATE_CAP,
         topeCliente: config.WA_CUSTOMER_DAILY_CAP,
@@ -430,6 +432,7 @@ export async function sendWhatsAppTemplate(params: {
     }
     recordWaMessage({
       merchantId: params.merchantId,
+      toPhone: params.to,
       customerId: params.log?.customerId ?? null,
       type: 'template',
       templateName: params.templateName,
@@ -526,6 +529,7 @@ export async function sendWhatsAppWindowFirst(params: {
     // no tiene NINGÚN otro sitio donde ver este fallo si no queda aquí.
     recordWaMessage({
       merchantId: params.merchantId,
+      toPhone: params.to,
       customerId,
       type: 'service',
       templateName: params.template.templateName,
@@ -559,6 +563,7 @@ export async function sendWhatsAppWindowFirst(params: {
     if (text.ok) {
       recordWaMessage({
         merchantId: params.merchantId,
+        toPhone: params.to,
         customerId,
         type: 'service',
         templateName: params.template.templateName, // la plantilla que NO se pagó
@@ -665,6 +670,7 @@ export async function sendWhatsAppText(params: {
     if (!params.merchantId) return;
     recordWaMessage({
       merchantId: params.merchantId,
+      toPhone: params.to,
       customerId: params.log?.customerId ?? null,
       type: 'service',
       status: 'failed',
@@ -750,6 +756,7 @@ export async function sendWhatsAppButtons(params: {
     if (!params.merchantId) return;
     recordWaMessage({
       merchantId: params.merchantId,
+      toPhone: params.to,
       customerId: params.log?.customerId ?? null,
       type: 'service',
       status: 'failed',
@@ -762,6 +769,7 @@ export async function sendWhatsAppButtons(params: {
     if (!params.merchantId) return;
     recordWaMessage({
       merchantId: params.merchantId,
+      toPhone: params.to,
       customerId: params.log?.customerId ?? null,
       type: 'service',
       waMessageId,
@@ -853,6 +861,7 @@ export async function sendWhatsAppList(params: {
     if (!params.merchantId) return;
     recordWaMessage({
       merchantId: params.merchantId,
+      toPhone: params.to,
       customerId: params.log?.customerId ?? null,
       type: 'service',
       status: 'failed',
@@ -865,6 +874,7 @@ export async function sendWhatsAppList(params: {
     if (!params.merchantId) return;
     recordWaMessage({
       merchantId: params.merchantId,
+      toPhone: params.to,
       customerId: params.log?.customerId ?? null,
       type: 'service',
       waMessageId,
@@ -965,6 +975,7 @@ export async function sendWhatsAppCtaUrl(params: {
     if (!params.merchantId) return;
     recordWaMessage({
       merchantId: params.merchantId,
+      toPhone: params.to,
       customerId: params.log?.customerId ?? null,
       type: 'service',
       status: 'failed',
@@ -977,6 +988,7 @@ export async function sendWhatsAppCtaUrl(params: {
     if (!params.merchantId) return;
     recordWaMessage({
       merchantId: params.merchantId,
+      toPhone: params.to,
       customerId: params.log?.customerId ?? null,
       type: 'service',
       waMessageId,
@@ -1055,6 +1067,7 @@ export async function sendWhatsAppDocument(params: {
     if (!params.merchantId) return;
     recordWaMessage({
       merchantId: params.merchantId,
+      toPhone: params.to,
       customerId: params.log?.customerId ?? null,
       type: 'service',
       status: 'failed',
@@ -1067,6 +1080,7 @@ export async function sendWhatsAppDocument(params: {
     if (!params.merchantId) return;
     recordWaMessage({
       merchantId: params.merchantId,
+      toPhone: params.to,
       customerId: params.log?.customerId ?? null,
       type: 'service',
       waMessageId,
@@ -1138,6 +1152,7 @@ export async function sendWhatsAppLocationRequest(params: {
     if (!params.merchantId) return;
     recordWaMessage({
       merchantId: params.merchantId,
+      toPhone: params.to,
       customerId: params.log?.customerId ?? null,
       type: 'service',
       status: 'failed',
@@ -1150,6 +1165,7 @@ export async function sendWhatsAppLocationRequest(params: {
     if (!params.merchantId) return;
     recordWaMessage({
       merchantId: params.merchantId,
+      toPhone: params.to,
       customerId: params.log?.customerId ?? null,
       type: 'service',
       waMessageId,
