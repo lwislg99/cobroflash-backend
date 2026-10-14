@@ -1,0 +1,23 @@
+SCRUM-1302 · qué le dice el panel al profesional al pulsar «Crear revisión»
+pieza medida: public/dashboard/js/quoteRevisiones.js + quotesDetailView.js (la ficha real, montada entera)
+caso: P7, versión única, ENVIADA y sin decidir (el cliente tiene su enlace vivo)
+
+0 · control · el POST falla: la sonda tiene que ver el aviso que aparece
+   sección antes : «Revisiones Esta es la única versión. Crear revisión»
+   sección después: «Revisiones Esta es la única versión. Crear revisión Al crear la revisión, el enlace de P7 dejará de valer. Quien lo abra verá que hay una versión más reciente y ya no podrá aceptar. Envíale la nueva a tu cliente cuando esté lista. Crear revisión Cancelar»
+   🔴 NO SE CUMPLE: el clic no llegó a hacer el POST: no hay viaje que medir
+   🔴 NO SE CUMPLE: la sonda no ve un texto nuevo tras el clic: está ciega
+
+1 · un clic en «Crear revisión», el servidor contesta 201
+   la ficha entera, antes del clic, ¿nombra el enlace del cliente junto a la revisión? sección: «Revisiones Esta es la única versión. Crear revisión»
+   preguntas antes del POST (confirm / alert / prompt): 0
+   POST hechos con UN clic, sin contestar nada: 0
+   sección con el POST en vuelo : «Revisiones Esta es la única versión. Crear revisión Al crear la revisión, el enlace de P7 dejará de valer. Quien lo abra verá que hay una versión más reciente y ya no podrá aceptar. Envíale la nueva a tu cliente cuando esté lista. Crear revisión Cancelar»
+   sección al terminar          : «Revisiones Esta es la única versión. Crear revisión Al crear la revisión, el enlace de P7 dejará de valer. Quien lo abra verá que hay una versión más reciente y ya no podrá aceptar. Envíale la nueva a tu cliente cuando esté lista. Crear revisión Cancelar»
+   preguntas en total: 0
+   a dónde lleva: a ninguna parte
+   textos de la sección de revisiones que nombran el enlace o que deja de valer: 2 de 3
+   (la ficha entera mide 776 caracteres; fuera de la sección sí habla de enlaces: no)
+
+VEREDICTO: HOY SÍ dice algo: leer las líneas de arriba.
+EXIT=1 · controles que no se cumplen: 2

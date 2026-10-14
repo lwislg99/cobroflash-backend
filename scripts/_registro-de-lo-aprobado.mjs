@@ -60,8 +60,8 @@ export const MARCADORES_DE_PENDIENTE = [
  */
 export const REGISTRO = [
   { id: 'heroe-f4/h1#1',
-    texto: 'Del presupuesto al cobro, sin salir de WhatsApp.',
-    via: 'elemento', fecha: '2026-08-20', quien: 'fundador' },
+    texto: 'Del presupuesto a la firma, sin salir de WhatsApp.',
+    via: 'elemento', fecha: '2026-10-14', quien: 'fundador (SCRUM-1016 c.19607 + c.19608)' },
   { id: 'heroe-f4/p#1',
     texto: 'Crea el presupuesto en 30 segundos, tu cliente lo firma desde el móvil y te paga — con tarjeta, Bizum o transferencia. No hace falta que te fíes: haz tú el recorrido completo antes de dar tu correo.',
     via: 'elemento', fecha: '2026-08-20', quien: 'fundador' },
@@ -253,6 +253,17 @@ export const NO_APROBADAS = [
   { id: 'heroe-f4/span#1', texto: 'El ERP por WhatsApp para los oficios', doc: 'F4-1',
     motivo: 'afirma la CATEGORÍA del producto. Necesita aprobación y ancla; las dos son del '
       + 'fundador. Citada en docs/MICROCOPY_FUERA_DEL_ESQUEMA.md.' },
+];
+
+/**
+ * Las aprobaciones SUPERADAS por otra firma del fundador. No se borran: se marcan y se fechan.
+ * Nada las consulta para decidir; están para que se sepa qué se aprobó antes y cuándo dejó de
+ * valer. La que la sustituye está en REGISTRO, con la cita de su firma en `quien`.
+ */
+export const SUPERADAS = [
+  { id: 'heroe-f4/h1#1', texto: 'Del presupuesto al cobro, sin salir de WhatsApp.',
+    via: 'elemento', fecha: '2026-08-20', quien: 'fundador',
+    superada: '2026-10-14', por: 'SCRUM-1016 c.19607 («Ok firmamos») + c.19608 («te confirmo que resuelvas tú»)' },
 ];
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
