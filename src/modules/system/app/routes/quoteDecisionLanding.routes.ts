@@ -638,7 +638,7 @@ quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async 
       brandColor = quote.merchant?.brandColor ?? null;
       // SCRUM-1302 · hay una versión más reciente: el enlace ya no deja aceptar. Va ANTES que el
       // caducado (punto 5 de la conducta): si la vieja además caducó, «Pide uno actualizado» sería
-      // falso habiendo ya uno. Sólo con la vieja en `draft`/`sent`; una decidida sigue su página
+      // falso habiendo ya uno. Sólo con la vieja en `draft`/`sent`/`expired`; una decidida sigue su página
       // de siempre (punto 6). Si la pregunta falla, lanza: no se pinta el formulario a ciegas.
       if (await tieneVersionMasReciente(quote, quote.merchant)) {
         return res.setHeader('Content-Type', 'text/html; charset=utf-8').send(paginaDeVersionAntigua(quote, locale, brandColor));

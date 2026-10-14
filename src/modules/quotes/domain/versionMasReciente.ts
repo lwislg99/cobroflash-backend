@@ -11,14 +11,16 @@
 // decisión del cliente (de S1): dos sitios que deciden lo mismo con dos criterios acaban discrepando.
 //
 // 🔴 LA CONDICIÓN ES LA MISMA QUE LA DEL AVISO DEL PANEL (`quoteRevisiones.js`, `ESTADOS_CON_ENLACE_VIVO`):
-// el enlace sólo «muere» si su presupuesto está en `draft` o `sent`. Una versión ya aceptada o
-// rechazada sigue con su página de siempre: es historia cierta (punto 6 de la conducta). Si una
-// mitad cambia, la otra; lo ata `tests/scrum1302p-el-enlace-de-una-revision-antigua.test.mjs`.
+// el enlace sólo «muere» si su presupuesto está en `draft`, `sent` o `expired`. `expired` entra por
+// c.19636: el aviso va ANTES que el de caducado (punto 5), y sin él eso sólo valía para las vencidas
+// que el cron aún no había barrido. Una versión ya aceptada o rechazada sigue con su página de
+// siempre: es historia cierta (punto 6 de la conducta). Si una mitad cambia, la otra; lo ata
+// `tests/scrum1302p-el-aviso-antes-de-crear-la-revision.test.mjs`.
 // ═════════════════════════════════════════════════════════════════════════════════════════
 import { prisma } from '../../../core/db/prisma';
 import { whereDelGrupo, anioDeLaSerie } from '../../../core/documentos/grupoDelPresupuesto';
 
-const ESTADOS_CON_ENLACE_VIVO: readonly string[] = ['draft', 'sent'];
+const ESTADOS_CON_ENLACE_VIVO: readonly string[] = ['draft', 'sent', 'expired'];
 
 type PresupuestoDelEnlace = {
   merchantId: number;

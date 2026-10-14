@@ -28,10 +28,12 @@ otras pantallas; la propuesta de c.19456 lo nombraba).
 
 1. Sale ANTES del POST. El primer clic no crea nada: pinta el aviso en el sitio, con los dos botones.
    Crea el segundo clic. «Cancelar» lo deja como estaba.
-2. Sólo cuando el enlace va a morir: la versión vigente está en `draft` o `sent`. Es la misma
-   condición que la página del enlace antiguo (`ESTADOS_CON_ENLACE_VIVO`, en los dos ficheros), a
-   propósito. No se estrecha a `sent`: copiar el enlace ya es entregarlo y el estado se queda en
-   `draft` (SCRUM-1297), así que un borrador no prueba que el enlace no haya salido.
+2. Sólo cuando el enlace va a morir: la versión vigente está en `draft`, `sent` o `expired`. Es la
+   misma condición que la página del enlace antiguo (`ESTADOS_CON_ENLACE_VIVO`, en los dos
+   ficheros), a propósito. No se estrecha a `sent`: copiar el enlace ya es entregarlo y el estado se
+   queda en `draft` (SCRUM-1297), así que un borrador no prueba que el enlace no haya salido.
+   `expired` entra por c.19636, con la página: su enlace pasa de «caducó» a «hay una versión más
+   reciente».
 3. El estado ya viaja en cada fila de `revisiones` (`quoteAdmin.ts`): no se toca el servidor.
 
 Lo sujeta `tests/scrum1302p-el-aviso-antes-de-crear-la-revision.test.mjs`.

@@ -618,7 +618,7 @@ Sesión `s4-14oct` · rama `scrum-1302p-el-enlace-de-una-revision-antigua`. El s
 - `src/modules/quotes/domain/versionMasReciente.ts` (nuevo): `tieneVersionMasReciente(q, merchant)` y `ESTADOS_CON_ENLACE_VIVO`. Pregunta con `prisma.quote.count` por el grupo de `whereDelGrupo` (negocio, año de la serie, número) con `revision > n`. Sin número no hay grupo. Si la consulta falla, LANZA: «no he podido mirar» no pinta el formulario. **Está hecho para que el `POST` de S1 lo use con la misma condición.**
 - `quoteDecisionLanding.routes.ts`: un import; la función `paginaDeVersionAntigua` (justo encima de `loadQuote`); en el `GET /quote/:token`, una comprobación justo antes del bloque de caducado; en el `GET /quote/:token/reject`, una comprobación justo después de la de «ya decidido». **Nada del `POST /quote/:token/reject` ni de ningún otro manejador.**
 - `src/core/i18n/locales.ts`: dos campos por país, `quoteUpdatedTitle` y `quoteHasNewer`, frases enteras como los títulos de SCRUM-1476.
-- `public/dashboard/js/quoteRevisiones.js`: `TEXTOS_AVISO` y `ESTADOS_CON_ENLACE_VIVO` aparte de `TEXTOS` (el bloque de SCRUM-688 no se toca); el botón lleva `data-revision-avisa` con el número de la vigente si está en `draft` o `sent`; `pintarAvisoDelEnlace`; el cableado crea al segundo clic. El foco pasa a «Cancelar» al abrir el aviso, para que un segundo Intro sin leer no cree la revisión.
+- `public/dashboard/js/quoteRevisiones.js`: `TEXTOS_AVISO` y `ESTADOS_CON_ENLACE_VIVO` aparte de `TEXTOS` (el bloque de SCRUM-688 no se toca); el botón lleva `data-revision-avisa` con el número de la vigente si está en `draft`, `sent` o `expired` (`expired` desde c.19636, abajo); `pintarAvisoDelEnlace`; el cableado crea al segundo clic. El foco pasa a «Cancelar» al abrir el aviso, para que un segundo Intro sin leer no cree la revisión.
 - `public/dashboard/css/styles.css`: `.revision-aviso`.
 
 ## Cambio de conducta a propósito en tests de otros (declarado)
@@ -636,10 +636,22 @@ Sesión `s4-14oct` · rama `scrum-1302p-el-enlace-de-una-revision-antigua`. El s
 ## Lo que queda sin hacer, y de quién
 
 - Rechazar el `POST /quote/:token/decision` de una no vigente: S1, con `tieneVersionMasReciente` ya disponible.
-- La concordancia en femenino de T1 y T2 en los países de «cotización» está aplicada como en SCRUM-1476 y pedida para firma en el ticket.
-- Una versión antigua con `status = 'expired'` (la que barre el cron) sigue pintando la página de caducado: el punto 1 firmado sólo cubre `draft` y `sent`. Declarado en el ticket, sin tocar.
+- ~~La concordancia en femenino de T1 y T2~~ → firmada en c.19636 (abajo).
+- ~~Una versión antigua con `status = 'expired'` sigue pintando la página de caducado~~ → ampliado en c.19636 (abajo).
 - El PDF del enlace antiguo (`GET /quote/:token/pdf`) se sigue sirviendo: la conducta firmada habla de la página, no de esa ruta.
 
 - **Tanda amplia** (los ficheros de test que leen estas páginas, el panel, los locales, el dominio de presupuestos, las fichas, las evidencias o los registros; `--test-concurrency=3`, `FORCE_COLOR` borrado, 3.529 MB libres): **427 ficheros, 4.019 tests, 3.982 pasan, 34 saltados, 3 caídos, los tres míos**, y arreglados en el código: `scrum411` (`ESTADOS_CON_ENLACE_VIVO` exportado sin llamador: deja de exportarse) y `scrum553` (cuatro extractores de mi test con el `>` pegado: aceptan atributos). Esos dos ficheros y los dos míos, otra vez: 61 de 61.
 
 **NO medido:** yaqu.app (este PR no ha mergeado al escribir esto) · la suite completa de `npm test`.
+
+## Seguimiento en el mismo PR (#2445): las dos firmas de c.19636
+
+**Medido contra:** `origin/main` = `4f487bb177c42a7ee02042b0029f8c90b7e9e77e` · 2026-10-14T08:53:25Z (`Date:` de GitHub). Relevo de S4 (la tanda anterior salió a 347k). Va en el mismo PR porque a las 08:53Z #2445 seguía sin mergear.
+
+- **Concordancia en femenino:** ya estaba aplicada en `locales.ts` y atada por el test del país de «cotización». No cambia código; sólo la ficha, que la daba por «sin firmar».
+- **`expired` entra en la condición**, en las dos mitades a la vez (`versionMasReciente.ts` y `quoteRevisiones.js`); el test de «mismos estados» exige ahora `['draft', 'sent', 'expired']`. Motivo, del propio orquestador: el punto 1 (`draft`/`sent`) y el punto 5 (va antes que el caducado) no podían cumplirse a la vez con una vieja ya barrida por el cron. ⛔ Aceptado y rechazado siguen fuera.
+- **Rojo antes del cambio:** con los tests nuevos y el código sin tocar, 3 de 22 caen (la .0 `expired` habiendo .1 en la página, la vigente `expired` en el panel, y «mismos estados»). Con el cambio, 22 de 22. El test de la página trae su control: la misma .0 caducada SIN .1 sigue diciendo «caducó».
+- **Mutaciones nuevas, declaradas:** M3 en cada fichero (quitar `expired`). La M2 del panel (estrechar a `sent`) cambia su `de`/`a` para casar con la línea nueva.
+- **Riesgo declarado de W1 con una vigente caducada:** «el enlace de {número} dejará de valer» — ese enlace ya no dejaba aceptar (caducó); lo que cambia es lo que dice. Es el mismo caso que ya existía con una `sent` vencida que el cron no ha barrido, y W2 sigue siendo cierto. No pido texto nuevo.
+- **De paso, en el código:** el comentario de `versionMasReciente.ts` citaba un test que no existe (`scrum1302p-el-enlace-de-una-revision-antigua`); ahora nombra el que lo ata.
+- **Tanda dirigida:** los 81 ficheros de test que nombran la página, el panel de revisiones, `versionMasReciente` o revisiones: 756 tests, 749 pasan, 7 saltados, 0 caídos.
