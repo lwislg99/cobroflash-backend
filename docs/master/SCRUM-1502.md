@@ -371,3 +371,136 @@ de la marca.
 - El hook de arranque dijo «SIN IDENTIDAD… no construyas» (no reconoce `jv-j4`; SCRUM-1498, carril de
   S5). Se siguió por la norma común del 8-oct, y queda dicho.
 - Tanda completa: no corrida. El cambio es este registro y cuatro ficheros bajo `docs/master/`.
+
+---
+
+## SCRUM-1502c · Tramo 4 (J1, 14-oct-2026): las 27 que quedan, con la cita LEÍDA en su sitio
+
+**Medido contra:** `origin/main` = `c30729832c18b65c3793917ca836868e6cfdaa6e` · 2026-10-14T03:23:44Z (hora de GitHub)
+
+A9: aviso → A10 «Un registro escrito por la misma mano que aplicó el texto no es su firma: es quien lo aplicó contando que la tuvo.» — no se pudo comprobar: separar «lo dice el registro de la sesión» de «lo dice el fundador» exige leer Jira, y el trinquete no sale de la máquina (tramo 2)
+
+Lo hace J1 (equipo de Javier), sesión `jv-j1e`, por encargo del orquestador `cobroflash-backend-2e`.
+El hook de arranque dijo «SIN IDENTIDAD… no construyas» (medido: SCRUM-1549); se siguió por la orden
+escrita del orquestador. Sólo `docs/`: no se ha tocado ninguna marca, ningún texto, ningún guard ni
+su número.
+
+### Qué añade a los tramos 1-3
+
+El tramo 1 dejó dicho que **los ids de comentario de Jira no los abrió nadie** y que varios tickets no
+se miraron en Jira. Este tramo abre el sitio que cada «consta» cita y lo lee. Tres veredictos:
+**CONSTA** (con la cita) · **NO CONSTA** · **NO HE PODIDO MIRAR**. «Consta» exige que el sitio diga
+que lo decidió el fundador sobre ESE texto o ESA decisión; un registro de `docs/master/` escrito por la
+misma sesión que aplicó el texto **no cuenta como consta**: es la misma mano.
+
+Población: `congeladas()` del propio trinquete, hoy **27** (las 28 de J4 menos
+`invoicesAdmin.routes.ts:1293`, que salió en el tramo 3). Control de la lista: las 27 son exactamente
+las filas de §2 menos esa (`evidencias/scrum1502/lista.mjs`, 0 perdidas; al importarlo, `scrum921c`
+corre sus casos y salen 0 fallos).
+
+Cómo se leyó: el repo, a mano (fichero, línea y el commit que retiró cada marcador, con su mensaje);
+Jira, 14 tickets leídos enteros (en los 14, comentarios devueltos = total) por dos subagentes con la
+orden de devolver la cita literal y el id; y SCRUM-667 `c.14271` lo abrí yo para contrastar a uno de
+ellos: coincide letra por letra. Y la función de la casa que contesta «¿consta?» para microcopy
+(`aprobacionesDeMicrocopy`, `tests/_microcopy-aprobada.mjs`), en
+`docs/master/evidencias/scrum1502c/consta.mjs`: 135 aprobaciones, 4 positivos que sí encuentra, un
+cero inventado que no, y nada para ningún literal de las cinco urgentes (`salida-consta.txt`). Esa
+función sólo mira los registros de microcopy, no Jira: su vacío no es «no consta», es «no está ahí».
+
+### 🔴 Lo urgente: NO CONSTA y lo pinta la pantalla de un PROFESIONAL
+
+Las cinco están en el código de `main`, que es lo que se despliega. **No las he visto en yaqu.app.**
+
+| marca | texto que gobierna | dónde se pinta | por qué NO CONSTA |
+|---|---|---|---|
+| `src/modules/system/app/routes/quotesAdmin.routes.ts:395` | el 409 al emitir: «La factura se creó pero no se pudo registrar…» | `quotesDetailView.js` lo pinta tal cual (`textoDeErrorDeFacturar` devuelve el `message`) cuando el sellado queda pendiente | SCRUM-206 `c.11667` (30-jul 12:14) lo da por **pendiente** de aprobación del fundador; el único comentario posterior (`c.11670`) no habla de textos. Lo único que lo afirma es el commit que quitó la marca (`3beaf9514`). El fundador reconoció la frase HERMANA de `:1293` (`c.18835`), y ese comentario dice que no se extiende a otra por parecido |
+| `public/dashboard/js/reportsView.js:1195` | el título, la ayuda y la etiqueta del bloque de desglose por empleado (literales: en el fichero, no aquí) | Informes, cuando el negocio tiene más de un empleado (`data.byEmployee.length > 1`) | el máster (entrada de SCRUM-228) los da por **pendientes**; en SCRUM-228 los literales no aparecen. Sólo lo afirma el commit `ed96e9357` |
+| `public/dashboard/js/jobRailBlocks.js:19` | CLIENTE · DÓNDE · DINERO · PRESUPUESTO · RESPONSABLE | el raíl del Trabajo | la descripción de SCRUM-318 los da por **«sin aprobar»**; el cierre (`c.12400`) no habla de firma. Sólo lo afirma su registro (`docs/master/SCRUM-318.md`, «Microcopy») |
+| `public/dashboard/js/settingsSubmenus.js:36` | los diez rótulos de Configuración | las pestañas de Configuración | la descripción de SCRUM-284 trae los nueve nombres **como «microcopy sin aprobar»**; lo único atribuido al fundador en Jira es dónde va cada campo (`c.12228`). Sólo lo afirma su registro (`docs/master/SCRUM-284.md`, «Dos correcciones del fundador», ②) |
+| `tests/scrum291-series-huecos.test.mjs:99` | el título y el cuerpo del bloqueo de una serie con facturas emitidas (`TIT_SERIE_YA_EMITIDA`, `merchantAdmin.ts`; literales: allí, no aquí) | Configuración, al cambiar una serie que ya tiene facturas | el literal no aparece en SCRUM-291; el GO del fundador de ese día (`c.12490`) es para el bloque de series y su esquema, no para el texto. `docs/master/SCRUM-291.md` dice «APROBADA (5-ago)» **sin decir quién** |
+
+Ninguna de las que no constan la lee un cliente final.
+
+### Las otras 22
+
+**CONSTA (13)**
+
+| marca | dónde consta, leído |
+|---|---|
+| `homeView.js:779` | SCRUM-236 `c.11668` (30-jul): «MICROCOPY OFICIAL aprobado por el fundador: "Total cobrado" y "Cobros sin presupuesto"». Es un cierre de sesión, no una cita del fundador |
+| `quoteActionsRegistry.js:64` | `docs/MICROCOPY_APROBADA_SIN_APLICAR.md`, Bloque 3, tabla de `quoteActionsRegistry.js` (17-ago); la función de la casa lo confirma |
+| `quoteMargen.js:64` | SCRUM-229, descripción: «Microcopy — APROBADO por el fundador (29-jul-2026)», con la tabla del formato |
+| `parteDictado.ts:138` | el mismo registro, addendum del 2-sep: «el fundador aprobó el singular por línea»; la casa lo confirma |
+| `tests/scrum283…:118` | el mismo registro, Bloque 1: «Marcar como cobrada»; la casa lo confirma |
+| `tests/scrum294c…:175` | el mismo registro, Bloque 5: «Criterio de caja»; la casa lo confirma |
+| `tests/scrum377…:72` | SCRUM-377 `c.12880`: «DECISIÓN DEL FUNDADOR (delegada, 9-ago-2026): apruebo el PATRÓN, no las cadenas». ⚠️ El mismo comentario se reserva «el visto final de cada cadena», y ese visto no consta |
+| `tests/scrum593b…:89` | `docs/master/SCRUM-593.md`, con el literal del fundador entre comillas. Jira NO abierto |
+| `tests/scrum609b…:75` | SCRUM-667 `c.14271` (2-sep), abierto por mí: «APROBADA POR EL FUNDADOR… «Esto es» · «Producto» · «Servicio»» |
+| `tests/scrum651…:381` | SCRUM-651 `c.14229` (2-sep), bajo «Las tres decisiones del fundador»: los tres valores |
+| `botFlow.service.ts:1` (lo lee un CLIENTE) | `docs/YAQU_MASTER.md`, «Copy A18 (fundador, 7-jul-2026…)» |
+| `tests/scrum151…:53` | `docs/YAQU_MASTER.md`: «DECISIÓN DEL FUNDADOR: un Trabajo con condiciones MANUAL/SIN_CONDICIONES SÍ debe poder facturarse» |
+| `tests/scrum320…:252` | SCRUM-320 `c.12636` (6-ago): «Decisión del fundador: el cuarto hueco VA» |
+
+**NO CONSTA, y no gobiernan texto que vea nadie (6)**
+
+| marca | qué se leyó |
+|---|---|
+| `parteDictado.ts:401` (instrucción al modelo) | su registro (`docs/master/SCRUM-683.md`) dice «queda aprobado», **sin decir quién**; en SCRUM-683 no hay nada del 2-sep; la cabecera de su propia sección sigue diciendo «PROPUESTA, PENDIENTE DEL FUNDADOR». Corrige al tramo 1, que decía que `docs/` sólo la nombraba para denunciarla |
+| `tests/scrum320…:36` | «853» sólo está en SCRUM-320 como captura medida y como ilustración bajo la decisión del hueco, no como ejemplo aprobado |
+| `tests/scrum683…:85` | su registro repite la decisión del 2-ago; en Jira, nada |
+| `tests/scrum586…:178` y `:392` | sólo su registro («LA DECISIÓN DEL FUNDADOR (5-sep-2026)»); en SCRUM-586 nada del 5-sep. Lo único literal del fundador (`c.14585`, 6-sep) delega la redacción de una ayuda |
+| `tests/scrum716…:127` | sólo su registro («Sí autorizo»). En Jira, `c.14645` dice que esa autorización **falta** y ningún comentario posterior la añade |
+
+**No afirman ninguna firma (3)**, releídas: `customersView.js:977` (habla de un contador de textos
+sin firma), `tests/scrum715…:147` (una hipótesis), `scripts/seed-video.mjs:1` (instrucciones: «el
+fundador decide la BD»).
+
+**NO HE PODIDO MIRAR:** ninguna marca entera. Sí partes: si un merchant real alcanza hoy el 409 de
+`quotesAdmin:395` (no medido en producción), y Jira de SCRUM-593.
+
+### En corto
+
+| | tramo 1 (J4, 7-oct, sobre 28) | este (14-oct, sobre 27) |
+|---|---|---|
+| CONSTA | 14 | **13** |
+| NO CONSTA (incluye «sólo en su registro» y «sin quién») | 11 | **11** |
+| no afirman | 3 | 3 |
+
+Cuadra: la que falta es `:1293`, que ya salió. Ninguna «consta» del tramo 1 se ha caído al leerla.
+Lo que cambia es el porqué de dos: `scrum291:99` y `parteDictado:401`.
+
+### Hallazgo de paso, FUERA de las 27: una marca que el trinquete da por buena y choca con Jira
+
+`public/dashboard/js/jobDetailView.js:217` — «… aceptados y sin facturar», en el Trabajo. Su
+comentario dice «APROBADO por el fundador (docs/master/SCRUM-320.md, C4…; marca: SCRUM-1215
+comentario 19084)», así que el trinquete la cuenta como anclada. Pero en SCRUM-320 `c.13271` (11-ago)
+el texto aprobado para ESE hueco, por delegación del fundador, es **«Falta emitir la factura»**. Dos
+textos «aprobados» para la misma ranura. No he abierto SCRUM-1215 `c.19084`. Es la forma del caso C
+del tramo 2: anclada no es verificada.
+
+### Errores propios
+
+1. **Encargué a los subagentes con una premisa falsa** que traía de mi memoria: «todo sale bajo la
+   cuenta de Javier». Lo cazó el primero: 11668, 12880, 14229, 12636, 13271 y 11667 salen bajo la
+   cuenta de Luis Lara. No cambia ningún veredicto (ninguno descansa en la cuenta); la nota de memoria
+   queda corregida.
+2. **Busqué en `docs/` a mano antes de usar la función de la casa** que contesta «¿consta?» para
+   microcopy, que es justo la última línea de A10. La pasé después como contraste y no movió ningún
+   veredicto.
+3. Escribí este tramo con un heredoc de bash y reventó con los acentos (no escribió nada; `git status`
+   lo confirmó). Lo tenía apuntado.
+4. **🔴 El peor, y es el defecto que este ticket existe para medir: fabriqué respaldo citando.** La
+   primera versión de este tramo copiaba los literales de dos de las urgentes en la tabla, en un
+   registro que atribuye al fundador en otros párrafos. `scrum921c` cayó: «quedan 25 y el trinquete
+   dice 27»; las dos que salieron eran `reportsView.js:1195` y `scrum291:99`, justo dos que NO
+   constan. Lo cazó el trinquete, no yo: el tramo 1 lo avisaba en su §4 y lo leí antes de escribir.
+   Quitados los literales (se nombran por fichero), vuelve a 27. La propuesta de §4 del tramo 1
+   (`sinCitas` en el índice de fuentes) sigue sin aplicar, y esto es una segunda medición de que hace
+   falta.
+
+### Lo que NO se ha hecho
+
+- No se ha tocado ninguna de las 27 marcas, ningún texto, `scrum921c`, `scrum387`, ni sus números.
+- No se ha preguntado al fundador: las cinco urgentes van en el comentario de entrega.
+- Tanda completa: no corrida. El cambio es este registro, dos ficheros bajo
+  `docs/master/evidencias/scrum1502c/` y una línea en A10.
