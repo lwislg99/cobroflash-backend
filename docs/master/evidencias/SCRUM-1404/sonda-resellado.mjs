@@ -1,11 +1,48 @@
-// SONDA (no entra en el repo): ¿puede el reintento, por la puerta REAL (sellarTrasEmision y
-// applyVeriFactu compilados), pisar la huella de una factura que YA la tiene?
-// Se le da el caso peor: la lectura de candidatas devuelve una foto VIEJA (sin huella) de una fila
-// que en la base ya está sellada. Sólo se dobla la base. Uso: node sonda-resellado.mjs <raiz>
+// docs/master/evidencias/SCRUM-1404/sonda-resellado.mjs — SCRUM-1404
+//
+// ¿PUEDE EL REINTENTO DEL SELLADO PISAR LA HUELLA DE UNA FACTURA QUE YA LA TIENE? Ejecutado, no leído.
+//
+// Es la regla 29 del máster (una factura emitida jamás se edita) preguntada por efecto. La pasada
+// corre por la puerta REAL: `reintentarSelladosPendientes` llama al `sellarTrasEmision` compilado,
+// que llama al `applyVeriFactu` compilado. Lo único doblado es la BASE (por `require.cache`, antes
+// de cargar nada de `dist/`), y el doble apunta cada escritura con los campos que toca.
+//
+// El caso peor: la lectura de candidatas devuelve una foto VIEJA («sin huella») de una fila que en
+// la base YA está sellada. Es lo que pasaría si otra entrega la sellara entre que la pasada lee y
+// que la pasada sella. Lo que la para es la guarda de SCRUM-1330, dentro del cerrojo de
+// `applyVeriFactu`: relee la fila y, si tiene huella, devuelve la guardada sin escribir.
+//
+//   P  · CONTROL POSITIVO: una factura nueva sin huella SÍ se sella, y el doble VE esa escritura.
+//        Sin él, «cero escrituras de huella» en S lo daría igual un doble que no apunta nada.
+//   S  · el caso: foto vieja de una fila ya sellada. Se exige que se llegue a `applyVeriFactu`
+//        (cerrojo tomado) y que lo ÚNICO escrito sea el estado.
+//   S2 · la factura sellada en P, ofrecida otra vez con una foto vieja.
+//
+//   node docs/master/evidencias/SCRUM-1404/sonda-resellado.mjs      (después de compilar `dist/`)
+//
+// CÓMO SE SABE QUE DISTINGUE: `mutar-guarda.mjs`, al lado, quita esa guarda del compilado y la
+// vuelve a correr. Con la guarda quitada caen las de S que miran QUÉ se escribió y la de las
+// escrituras de S2; las que sólo dicen «el caso se ejerció» siguen en pie, como deben.
+//
+// La escribió y la midió la sesión jv-j1a (J1, equipo de Javier) el 14-oct-2026: SCRUM-1507,
+// comentario 19509. Vivía en la carpeta temporal de su trabajo. Lo cambiado al traerla está en el
+// diff de este fichero contra su commit anterior, que es su copia byte a byte.
+//
+// ⚠️ LO QUE NO MIDE:
+//  · El doble no es Postgres: el cerrojo se ANOTA, no se ejerce. Dos sellados a la vez de verdad
+//    los cubre `tests/scrum1330-una-sellada-no-se-resella.test.mjs`, no esto.
+//  · La huella que se calcula en P se calcula contra el doble: no dice nada de la cadena.
+//  · La cola de la AEAT: en P, tras sellar, el encolado no sale y deja `encolado_fallido` en el
+//    doble. Se imprime, no se juzga, y no se ha mirado por qué.
+//  · En S2, «la huella es la de P» NO distingue: con la guarda quitada se vuelve a sellar, pero la
+//    huella se calcula con el instante truncado al segundo y sale la misma si P y S2 caen en el
+//    mismo segundo. En S2 la que distingue es la de las escrituras.
+//  · Un fallo de la base a mitad del sellado.
 import path from 'node:path';
 import { createRequire } from 'node:module';
 
-const RAIZ = path.resolve(process.argv[2]);
+// Por defecto, el árbol donde vive este fichero. Con un argumento, otro árbol ya compilado.
+const RAIZ = path.resolve(process.argv[2] ?? path.join(import.meta.dirname, '../../../..'));
 const requiere = createRequire(path.join(RAIZ, 'package.json'));
 const rutaDe = (r) => requiere.resolve(path.join(RAIZ, r));
 const PENDIENTE = 'pendiente_de_sellado';
@@ -72,8 +109,10 @@ const fila = (id, extra = {}) => ({
   merchant: { country: 'ES', taxId: 'B00000000', email: 'taller@example.test' }, ...extra,
 });
 let mal = 0;
+let hechas = 0;
 const comprobar = (que, visto, esperado) => {
   const ok = JSON.stringify(visto) === JSON.stringify(esperado);
+  hechas += 1;
   if (!ok) mal += 1;
   decir(`  ${ok ? 'ok  ' : 'CAE '} · ${que}: ${JSON.stringify(visto)}${ok ? '' : ` — esperaba ${JSON.stringify(esperado)}`}`);
 };
@@ -85,7 +124,8 @@ const pasada = async () => {
 };
 const tocanHuella = () => banco.escrituras.filter((x) => x.campos.includes('vfHash') || x.campos.includes('vfPrevHash') || x.campos.includes('vfTimestamp'));
 
-decir(`POBLACION: 3 casos · raiz ${RAIZ}`);
+// La raíz no se imprime: es la ruta de UNA máquina y haría distinta cada salida guardada.
+decir(`POBLACION: 3 casos (P, S, S2) · sobre el compilado de ${process.argv[2] ? 'el árbol pasado por argumento' : 'este árbol'}`);
 
 // ── P · CONTROL POSITIVO: el instrumento VE una escritura de huella cuando la hay ────────────────
 decir('\nP · control positivo: factura nueva, sin huella, con líneas → la puerta real la sella');
@@ -119,6 +159,7 @@ parte = await pasada();
 comprobar('escrituras que tocan la huella', tocanHuella().length, 0);
 comprobar('la huella es la de P', deP.vfHash === huellaP, true);
 
-decir(`\nVEREDICTOS QUE CAEN: ${mal}`);
+decir(`\nCOMPROBACIONES HECHAS: ${hechas}`);
+decir(`VEREDICTOS QUE CAEN: ${mal}`);
 decir(`EXIT=${mal ? 1 : 0}`);
 process.exit(mal ? 1 : 0);
