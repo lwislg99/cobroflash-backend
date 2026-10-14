@@ -4,6 +4,8 @@
 
 Escrito por la Sesión 0 (`s0-14octc`).
 
+A9: sin fallo que generalice — la añade a posteriori la S0 de la tarde del 14-oct, porque el guard de SCRUM-1294 la pedía y faltaba; el traspaso de la sesión que hizo el trabajo no recoge ningún tropiezo de esta entrega
+
 ## Qué se ha hecho
 
 J6 (equipo de Javier) midió la trampa el 28-sep-2026 y se la reportó a la S0, que es la dueña de
