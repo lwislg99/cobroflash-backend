@@ -1,0 +1,38 @@
+POBLACION: 140 ficheros .md en docs/microcopy (README incluido, que el oráculo no cuenta) · oráculo tests\_microcopy-aprobada.mjs
+
+[F  firma del fundador INVENTADA, ticket inexistente]
+  fichas leídas=140 · cobaya vista=true · firmante=fundador · aprobada=true · estado=aprobada-sin-comprobar · noComprobado=2
+  constaAprobado(literal) → ["docs/microcopy/2026-10-14-SCRUM-999999-cobaya-m5.md"]
+  comoConstaAprobado(literal) → [{"ruta":"docs/microcopy/2026-10-14-SCRUM-999999-cobaya-m5.md","estado":"aprobada-sin-comprobar","noComprobado":["que el ticket citado exista y recoja esa firma: sólo se lee la forma de la línea","quién escribió la línea: no se lee ni el autor del commit ni nada fuera del texto de la ficha"]}]
+  censo 921 clasificarLinea → {"fichero":"docs/microcopy/2026-10-14-SCRUM-999999-cobaya-m5.md","linea":0,"texto":"**Aprobado por el fundador** el 14-oct-2026, en **SCRUM-999999**.","formas":["participio+por"],"ids":[],"idsEnLaLinea":[],"procedencia":true,"bloque":[1,1]}
+
+[F2 firma del fundador INVENTADA, sin ticket ninguno]
+  fichas leídas=140 · cobaya vista=true · firmante=fundador · aprobada=true · estado=aprobada-sin-comprobar · noComprobado=2
+  constaAprobado(literal) → ["docs/microcopy/2026-10-14-SCRUM-999999-cobaya-m5.md"]
+  comoConstaAprobado(literal) → [{"ruta":"docs/microcopy/2026-10-14-SCRUM-999999-cobaya-m5.md","estado":"aprobada-sin-comprobar","noComprobado":["que el ticket citado exista y recoja esa firma: sólo se lee la forma de la línea","quién escribió la línea: no se lee ni el autor del commit ni nada fuera del texto de la ficha"]}]
+  censo 921 clasificarLinea → {"fichero":"docs/microcopy/2026-10-14-SCRUM-999999-cobaya-m5.md","linea":0,"texto":"Aprobado por el fundador.","formas":["participio+por"],"ids":[],"idsEnLaLinea":[],"procedencia":true,"bloque":[1,1]}
+
+[S  control: la MISMA ficha SIN firma]
+  fichas leídas=140 · cobaya vista=true · firmante=null · aprobada=false · estado=no-aprobada · noComprobado=0
+  constaAprobado(literal) → []
+  comoConstaAprobado(literal) → []
+
+[Q  control: la firma falsa DENTRO de una cita]
+  fichas leídas=140 · cobaya vista=true · firmante=null · aprobada=false · estado=no-aprobada · noComprobado=0
+  constaAprobado(literal) → []
+  comoConstaAprobado(literal) → []
+  censo 921 clasificarLinea → {"fichero":"docs/microcopy/2026-10-14-SCRUM-999999-cobaya-m5.md","linea":0,"texto":"> **Aprobado por el fundador** el 14-oct-2026, en **SCRUM-999999**.","formas":["participio+por"],"ids":[],"idsEnLaLinea":[],"procedencia":true,"bloque":[1,1]}
+
+[A  control: «Aprobado por el asesor»]
+  fichas leídas=140 · cobaya vista=true · firmante=asesor · aprobada=false · estado=no-aprobada · noComprobado=0
+  constaAprobado(literal) → []
+  comoConstaAprobado(literal) → []
+  censo 921 clasificarLinea → {"fichero":"docs/microcopy/2026-10-14-SCRUM-999999-cobaya-m5.md","linea":0,"texto":"**Aprobado por el asesor** el 14-oct-2026, en **SCRUM-999999**.","formas":["participio+por"],"ids":[],"idsEnLaLinea":[],"procedencia":true,"bloque":[1,1]}
+
+[D  control: delegada con referencia INVENTADA]
+  fichas leídas=140 · cobaya vista=true · firmante=orquestador · aprobada=true · estado=aprobada-sin-comprobar · noComprobado=3
+  constaAprobado(literal) → ["docs/microcopy/2026-10-14-SCRUM-999999-cobaya-m5.md"]
+  comoConstaAprobado(literal) → [{"ruta":"docs/microcopy/2026-10-14-SCRUM-999999-cobaya-m5.md","estado":"aprobada-sin-comprobar","noComprobado":["qué orquestador firma: el de Luis y el de Javier escriben la misma frase","si el texto es legal o fiscal, que la delegación de Javier del 22-sep-2026 excluye","que el comentario de Jira citado exista y apruebe ese texto: sólo se lee la forma de la referencia"]}]
+  censo 921 clasificarLinea → {"fichero":"docs/microcopy/2026-10-14-SCRUM-999999-cobaya-m5.md","linea":0,"texto":"Aprobado por el orquestador por delegación del fundador · SCRUM-999999 comentario 99999999","formas":["participio+por","delegacion"],"ids":[],"idsEnLaLinea":[],"procedencia":true,"bloque":[1,1]}
+
+EXIT=0
