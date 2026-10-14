@@ -235,21 +235,20 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
       // ficha se vuelve a leer del servidor, que es quien sabe si quedó archivado.
       if (err && err.incierto) { renderQuoteDetailView(container, id); return; }
       boton.disabled = false;
-      // El 409 de archivar trae su motivo para una persona (T10); cualquier otro fallo, el nuestro.
-      const motivo = archivar && err && err.status === 409 && err.data && typeof err.data.message === 'string'
-        ? err.data.message : '';
-      setStatus('error', motivo || (archivar ? TEXTOS_ARCHIVO.errorArchivar : TEXTOS_ARCHIVO.errorDesarchivar));
+      // El 409 de archivar trae su motivo para una persona (T10); sin él, el texto de la pantalla.
+      setStatus('error', mensajeParaPersona(err, archivar ? TEXTOS_ARCHIVO.errorArchivar : TEXTOS_ARCHIVO.errorDesarchivar));
     }
   }
 
   function pintarArchivo() {
     archivoBox.innerHTML = '';
+    archivoBox.className = '';
     if (archivarBtn) { archivarBtn.remove(); archivarBtn = null; }
     if (quote.archivedAt) {
+      archivoBox.className = 'detail-section';
       const aviso = document.createElement('div');
-      aviso.className = 'alert';
+      aviso.className = 'alert info';
       aviso.setAttribute('data-archivo', 'aviso');
-      aviso.style.cssText = 'margin:14px 22px 0;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap';
       const texto = document.createElement('span');
       texto.textContent = TEXTOS_ARCHIVO.avisoArchivado;
       const btnDesarchivar = document.createElement('button');
@@ -257,13 +256,12 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
       btnDesarchivar.setAttribute('data-archivo', 'desarchivar');
       btnDesarchivar.textContent = TEXTOS_ARCHIVO.desarchivar;
       btnDesarchivar.addEventListener('click', () => cambiarArchivo(false, btnDesarchivar));
-      aviso.appendChild(texto);
-      aviso.appendChild(btnDesarchivar);
+      aviso.append(texto, ' ', btnDesarchivar);
       archivoBox.appendChild(aviso);
       return;
     }
-    const fila = (window.QUOTE_ACTION_REGISTRY || []).find((a) => a.id === 'btnArchivar');
-    const destino = fila && fila.destinos ? fila.destinos[st] : undefined;
+    const destino = typeof window.destinoAccionPresupuesto === 'function'
+      ? window.destinoAccionPresupuesto('btnArchivar', st) : null;
     const rotulo = window.QUOTE_ACTION_ROTULOS && window.QUOTE_ACTION_ROTULOS.btnArchivar;
     if (!destino || destino === 'oculta' || !rotulo) return;
     archivarBtn = document.createElement('button');

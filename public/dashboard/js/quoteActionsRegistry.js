@@ -92,11 +92,23 @@ const QUOTE_ACTION_ROTULOS = {
   btnArchivar:         'Archivar', // APROBADO por el orquestador, SCRUM-1273 comentario 19605 (T1)
 };
 
+/**
+ * Destino de una acción del presupuesto en un estado. Devuelve null si la acción no está en la
+ * tabla o el estado no es uno de los seis: la pantalla que pregunta falla cerrada (no la pinta).
+ * SCRUM-1273 · lo pregunta la ficha para «Archivar»: la respuesta vive aquí, no en la vista.
+ */
+function destinoAccionPresupuesto(id, estado) {
+  const a = QUOTE_ACTION_REGISTRY.find((x) => x.id === id);
+  if (!a || !QUOTE_STATES.includes(estado)) return null;
+  return a.destinos[estado] || null;
+}
+
 if (typeof window !== 'undefined') {
   window.QUOTE_ACTION_REGISTRY = QUOTE_ACTION_REGISTRY;
   window.QUOTE_STATES = QUOTE_STATES;
   window.QUOTE_ACTION_ROTULOS = QUOTE_ACTION_ROTULOS;
+  window.destinoAccionPresupuesto = destinoAccionPresupuesto;
 }
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { QUOTE_ACTION_REGISTRY, QUOTE_STATES, QUOTE_ACTION_ROTULOS };
+  module.exports = { QUOTE_ACTION_REGISTRY, QUOTE_STATES, QUOTE_ACTION_ROTULOS, destinoAccionPresupuesto };
 }

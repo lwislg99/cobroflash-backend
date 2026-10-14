@@ -43,10 +43,12 @@ T9 · la opción del selector de estado y la lista vacía (`quotesListView.js`, 
 
 > No tienes presupuestos archivados.
 
-T10 · el `message` del 409 de `POST /admin/quotes/:id/archivar`. **Lo escribe la ruta (S1)**; la
-ficha lo enseña tal cual, y sólo en ese 409:
+## T10 no está en esta ficha, y por qué
 
-> Solo se puede archivar un borrador, uno rechazado o uno caducado.
+T10 (el `message` del 409 de `POST /admin/quotes/:id/archivar`) se firmó en el mismo comentario,
+pero **lo escribe la ruta, que es de S1**, y este fichero sólo recoge lo que aplica la pantalla. La
+ficha lo enseña por `mensajeParaPersona`, como cualquier `data.message`. Su literal está en el
+comentario 19605; lo registra quien lo aplica.
 
 ## Lo que esta firma no cubre
 

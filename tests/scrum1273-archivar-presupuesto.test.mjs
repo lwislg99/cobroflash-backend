@@ -22,6 +22,7 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
@@ -211,15 +212,24 @@ test('SCRUM-1273 · 🔴 EL VIAJE: archivar → sale de la lista → está en «
 // ③ TABLA = PANTALLA, en los seis estados
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-for (const estado of QUOTE_STATES) {
-  test(`SCRUM-1273 · en «${estado}» la ficha ofrece «Archivar» si y sólo si la tabla lo dice`, async () => {
-    const srv = servidor([{ id: 1, status: estado }]);
-    const f = await ficheDe(montarBanco(srv), 1);
-    assert.ok(f.nodos().length > 60, `🔴 CIEGO: la ficha montó ${f.nodos().length} nodos`);
-    const enTabla = QUOTE_ACTION_REGISTRY.find((a) => a.id === 'btnArchivar').destinos[estado] !== 'oculta';
-    assert.equal(f.archivar().length, enTabla ? 1 : 0, `🔴 en «${estado}» la pantalla y la tabla no coinciden`);
-  });
-}
+const ESTADOS_ESCRITOS = ['draft', 'pending_approval', 'sent', 'accepted', 'rejected', 'expired'];
+test('SCRUM-1273 · la lista de estados de este test es la de la tabla', () => {
+  assert.deepEqual(ESTADOS_ESCRITOS, QUOTE_STATES, '🔴 la tabla cambió de estados: actualiza los casos escritos');
+});
+const casoEstado = casosEscritos(ESTADOS_ESCRITOS, (estado) => `SCRUM-1273 · en «${estado}» la ficha ofrece «Archivar» si y sólo si la tabla lo dice`, async (estado) => {
+  const srv = servidor([{ id: 1, status: estado }]);
+  const f = await ficheDe(montarBanco(srv), 1);
+  assert.ok(f.nodos().length > 60, `🔴 CIEGO: la ficha montó ${f.nodos().length} nodos`);
+  const enTabla = QUOTE_ACTION_REGISTRY.find((a) => a.id === 'btnArchivar').destinos[estado] !== 'oculta';
+  assert.equal(f.archivar().length, enTabla ? 1 : 0, `🔴 en «${estado}» la pantalla y la tabla no coinciden`);
+});
+test('SCRUM-1273 · en «draft» la ficha ofrece «Archivar» si y sólo si la tabla lo dice', casoEstado(0));
+test('SCRUM-1273 · en «pending_approval» la ficha ofrece «Archivar» si y sólo si la tabla lo dice', casoEstado(1));
+test('SCRUM-1273 · en «sent» la ficha ofrece «Archivar» si y sólo si la tabla lo dice', casoEstado(2));
+test('SCRUM-1273 · en «accepted» la ficha ofrece «Archivar» si y sólo si la tabla lo dice', casoEstado(3));
+test('SCRUM-1273 · en «rejected» la ficha ofrece «Archivar» si y sólo si la tabla lo dice', casoEstado(4));
+test('SCRUM-1273 · en «expired» la ficha ofrece «Archivar» si y sólo si la tabla lo dice', casoEstado(5));
+casoEstado.todos();
 
 test('SCRUM-1273 · un archivado enseña el aviso y «Desarchivar» en cualquier estado (el servidor lo dice, no la tabla)', async () => {
   const srv = servidor([{ id: 1, status: 'accepted', archivedAt: '2026-10-14T09:00:00.000Z' }]);
@@ -256,15 +266,17 @@ test('SCRUM-1273 · el 409 de archivar enseña SU motivo (T10), y el botón sigu
   assert.equal(f.aviso().length, 0, '🔴 un fallo pintó el aviso de archivado');
 });
 
-test('SCRUM-1273 · cualquier otro fallo dice el texto de la casa (T7 y T8), no el del servidor', async () => {
+test('SCRUM-1273 · un fallo SIN frase para una persona dice el texto de la pantalla (T7 y T8), nunca el código', async () => {
+  // La regla de la casa es `mensajeParaPersona` (SCRUM-1233): se pinta `data.message` si el
+  // servidor lo trae, y si no, el texto aprobado. Aquí se mide la segunda mitad.
   const srv = servidor([{ id: 1, status: 'draft' }, { id: 2, status: 'draft', archivedAt: '2026-10-14T09:00:00.000Z' }]);
-  srv.fallo = { status: 500, cuerpo: { error: 'boom', message: 'texto interno que no se enseña' } };
+  srv.fallo = { status: 500, cuerpo: { error: 'internal_error' } };
   let f = await ficheDe(montarBanco(srv), 1);
   f.archivar()[0].click();
   await espera();
   assert.equal(f.alerta() && f.alerta().textContent, T.errorArchivar, '🔴 un 500 al archivar no dice T7');
 
-  srv.fallo = { status: 409, cuerpo: { error: 'x', message: 'texto interno que no se enseña' } };
+  srv.fallo = { status: 500, cuerpo: { error: 'internal_error' } };
   f = await ficheDe(montarBanco(srv), 2);
   f.desarchivar()[0].click();
   await espera();

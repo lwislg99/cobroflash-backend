@@ -34,8 +34,9 @@ servidor en el banco, y **su PR se queda en borrador y sin armar hasta que la pa
 | qué | dónde |
 | --- | --- |
 | La fila `btnBorrar` («Borrar») pasa a `btnArchivar` («Archivar»): `overflow` en `draft`, `rejected` y `expired`; `oculta` en el resto. Siguen siendo 13 filas | `quoteActionsRegistry.js` |
-| «Archivar» en la cabecera, junto a «⎘ Duplicar» (la ficha no pinta «⋮»). Se ofrece si la TABLA lo dice para ese estado y el presupuesto no está archivado; sin la tabla cargada, no se ofrece | `quotesDetailView.js` |
-| `confirm()` con T2; T5/T7 al terminar; el 409 de archivar enseña su `message` (T10) y cualquier otro fallo, T7/T8 | `quotesDetailView.js` |
+| `destinoAccionPresupuesto(id, estado)`: la pregunta «¿en qué destino va esta acción en este estado?» vive junto a la tabla y se expone, como `destinoAccionTrabajo` en `jobActionsRegistry.js`. Falla cerrada (null) con una acción o un estado que no conoce | `quoteActionsRegistry.js` |
+| «Archivar» en la cabecera, junto a «⎘ Duplicar» (la ficha no pinta «⋮»). Se ofrece si `destinoAccionPresupuesto('btnArchivar', estado)` no es `oculta` y el presupuesto no está archivado; sin la tabla cargada, no se ofrece | `quotesDetailView.js` |
+| `confirm()` con T2; T5/T6 al terminar; el fallo pasa por `mensajeParaPersona` (SCRUM-1233): el `message` del servidor si lo trae (así llega T10 en el 409), y si no, T7/T8 | `quotesDetailView.js` |
 | En un archivado (`archivedAt` del detalle), el aviso T3 con «Desarchivar» (T4), en cualquier estado | `quotesDetailView.js` |
 | «Archivados» en el selector de estado: se pide con `?archivados=1`, no con `status`; su vacío dice T9 | `quotesListView.js` |
 | El viaje entero con las dos pantallas montadas, la tabla contra la pantalla en los seis estados, cancelar, el 409 y los otros fallos | `tests/scrum1273-archivar-presupuesto.test.mjs` |
@@ -48,6 +49,22 @@ servidor en el banco, y **su PR se queda en borrador y sin armar hasta que la pa
   entra en «retiradas» con su motivo. `btnArchivar` lleva la firma en su línea y sale APROBADO como
   firma PROPIA, no de grupo. La CLI: `0 nuevas · 0 que sobran · 34 acusadas · 170 aprobadas por grupo`
   (antes, 35 acusadas). Era la última hoja de SCRUM-1215 en el carril de S2.
+
+**Cinco guards se pusieron en rojo con la primera versión, y se arregló el CÓDIGO, no los guards:**
+- `scrum837` (decisión encerrada): la ficha abría `QUOTE_ACTION_REGISTRY` ella misma → la pregunta
+  pasa a `destinoAccionPresupuesto`, expuesta junto a la tabla.
+- `scrum1233` (un `.message` pintado a mano): leía `err.data.message` con su propia regla → pasa por
+  `mensajeParaPersona`, la de la casa. Mi regla («sólo en el 409») era una variante nueva.
+- `scrum713c` (estilos escritos desde JS): el aviso llevaba `style.cssText` → `alert info` dentro de
+  una `detail-section`, clases que ya existen.
+- `scrum1415` (tests de nombre construido): el bucle por estados → `casosEscritos`, nombres literales.
+- `scrum514` (texto aprobado sin aplicar): T10 estaba en la ficha de microcopy y lo aplica la ruta
+  de S1, no esta pantalla → sale de la sección de literales; se explica en la ficha.
+
+**Rojos de la tanda que NO son de esta rama:** 11, en `scrum222`, `scrum235`, `scrum245`, `scrum252`,
+`scrum461`, `scrum733` (el cliente Prisma del `node_modules` compartido va por detrás del esquema: el
+`npm run build` local da 5 errores de tipos por eso) y `scrum1321` (el temporal está en otra unidad).
+**Base:** los mismos 7 ficheros sobre `origin/main` = `e2be1c9f` sin mis cambios dan los mismos 11 rojos.
 
 **Desviación declarada:** el comentario 19604 decía que también cambiaba `tests/scrum984-…:509-511`.
 **No ha hecho falta:** esas líneas cuentan 13 filas y comparan el conjunto de la tabla con el de los
