@@ -684,3 +684,6 @@ Sesión `s4-14oct` · rama `scrum-1302p-el-enlace-de-una-revision-antigua`. El s
 - **Riesgo declarado de W1 con una vigente caducada:** «el enlace de {número} dejará de valer» — ese enlace ya no dejaba aceptar (caducó); lo que cambia es lo que dice. Es el mismo caso que ya existía con una `sent` vencida que el cron no ha barrido, y W2 sigue siendo cierto. No pido texto nuevo.
 - **De paso, en el código:** el comentario de `versionMasReciente.ts` citaba un test que no existe (`scrum1302p-el-enlace-de-una-revision-antigua`); ahora nombra el que lo ata.
 - **Tanda dirigida:** los 81 ficheros de test que nombran la página, el panel de revisiones, `versionMasReciente` o revisiones: 756 tests, 749 pasan, 7 saltados, 0 caídos.
+- **Error propio (14-oct 15:50Z):** este tramo se empujó sin su línea A9 y el obligatorio de #2451 cayó por eso (`not ok 1597`, `docs/master/SCRUM-1302.md:678 · ancla del 2026-10-14 sin línea «A9:»`; ni `scrum1405c` ni nada ajeno: leído en el log del job 115768836190). La tanda dirigida elegía los tests por lo que nombran del código, y el que lee los registros no nombra nada de eso.
+
+A9: comprobación → `tests/scrum1294-a9-leccion-en-a10.test.mjs`
