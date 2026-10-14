@@ -256,6 +256,8 @@ const COPY_ALBARAN_SIN_PRECARGA = 'Este albarán no está descargado y ahora no 
   + 'Podrás abrirlo cuando tengas señal.';
 const COPY_SIN_RED_NO_SE_CREA = 'Sin cobertura no puedes crear albaranes, solo firmar los que ya '
   + 'llevas descargados.';
+// SCRUM-1150d · con un 5xx, la ficha decía «No se pudo cargar el albarán: API 500: internal_error».
+const COPY_ALBARAN_NO_SE_PUDO_CARGAR = 'No se pudo cargar el albarán. Inténtalo de nuevo.'; // APROBADO · SCRUM-1150 comentario 19658
 
 /**
  * El albarán precargado, si lo hay. Devuelve `null` cuando no está o no se pudo mirar el almacén.
@@ -432,7 +434,8 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
       // 🔴 EL CONTROL NEGATIVO DEL TICKET: sin red y sin precarga, se DICE. Ni pantalla en blanco,
       // ni formulario vacío que invite a firmar algo que no se ha cargado.
       if (e && e.sinRed) { setStatus('error', COPY_ALBARAN_SIN_PRECARGA); return; }
-      setStatus('error', 'No se pudo cargar el albarán: ' + (e?.data?.message || e.message));
+      // SCRUM-1150d · el mensaje humano del servidor, si lo trae; si no, el firmado. Nunca el crudo.
+      setStatus('error', mensajeParaPersona(e, COPY_ALBARAN_NO_SE_PUDO_CARGAR));
       return;
     }
   }

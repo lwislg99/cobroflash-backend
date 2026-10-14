@@ -15,6 +15,11 @@
       "ticket": "SCRUM-1405",
       "equipo": "javier",
       "motivo": "Lo crea el carril J3 (equipo de Javier) para la salida C de SCRUM-1405 (c.19584), que no edita la tabla de §3.3; la S0 le da fila cuando su orquestador diga el puesto."
+    },
+    "scripts/guard-modo-en-ajustes.mjs": {
+      "ticket": "SCRUM-1257",
+      "equipo": "javier",
+      "motivo": "Lo crea el carril J2 (equipo de Javier) para SCRUM-1257e, el guard de navegador del modo de emisión en Ajustes, que no edita la tabla de §3.3; la S0 le da fila cuando su orquestador diga el puesto."
     }
   }
 }

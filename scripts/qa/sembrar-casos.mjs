@@ -1,8 +1,9 @@
 // scripts/qa/sembrar-casos.mjs — SCRUM-1367
 //
 // ═════════════════════════════════════════════════════════════════════════════════════════════
-// 🔴 ESTO NO SE HA EJECUTADO NUNCA CONTRA PRODUCCIÓN, Y NO SE EJECUTA HASTA QUE EL FUNDADOR DIGA
-//    CON QUÉ REGLA. Es la CAPACIDAD de crear los casos que le faltan a la cuenta QA, probada sin
+// 🔴 ESTO NO SE HA EJECUTADO NUNCA CONTRA PRODUCCIÓN. La regla de `aceptado` existe (SCRUM-1367
+//    c.18479, sus cinco condiciones abajo); las otras órdenes siguen sin regla propia. Es la
+//    CAPACIDAD de crear los casos que le faltan a la cuenta QA, probada sin
 //    red (`tests/scrum1367-sembrar-casos.test.mjs`). Vive APARTE de `sembrar-qa.mjs` a propósito:
 //    aquél tiene la autorización del 29-sep-2026 y su lista blanca; éste ensancha lo que se puede
 //    escribir (ACEPTAR un presupuesto) y por eso pide su propia regla. Dos ficheros, dos permisos.
@@ -36,6 +37,21 @@
 //      QA firmado ANTES de rellenarlos dejará de verificar. Es una cuenta de pruebas; se avisa.
 //   ④ Partes y albaranes numeran aparte, y el id del siguiente parte no se sabe hasta crearlo.
 //      Sin `--crear-hasta` no se escribe nada. Con él, cada parte creado se QUEDA (borrar no entra).
+//
+// ① LAS CINCO CONDICIONES DE SCRUM-1367 c.18479 (6-oct-2026: el orquestador decide SÍ, por
+//    delegación del fundador). Cómo las cumple `aceptado` (SCRUM-1367e):
+//   1 · sólo la cuenta QA ............ `comprobarCuentaQA` (merchant 46 y owner, dicho por el servidor).
+//   2 · ni documento ni cobro ......... foto de los ids de facturas, cobros y albaranes ANTES de
+//                                       aceptar y DESPUÉS; si difieren, grita (sale 1). Sin foto
+//                                       completa (lista ilegible o llena), no acepta.
+//       ⚠️ «deshace» NO se puede: un documento emitido no se borra (regla 29) y un aceptado no se
+//       rechaza (409 `already_accepted`). Por eso la quinta va ANTES y es la que protege.
+//   3 · teléfonos del rango imposible . relee la ficha del cliente QA: todo teléfono que traiga es
+//                                       `340` + 8 dígitos (SCRUM-262), o no acepta.
+//   4 · declarado ..................... la salida dice qué creó y que NO se quita por el panel.
+//   5 · 🔴 FAIL-CLOSED ................ `GET /admin/me` → `modoEmision` tiene que ser `receipt`
+//       (España, no demo, `INVOICING_ES_ENABLED` en OFF: `getEmissionMode`). Cualquier otro
+//       valor, o ninguno, y no escribe NADA. El día que se encienda, la orden deja de funcionar sola.
 //
 // SALIDAS: las de `sembrar-qa.mjs` — 0 hecho · 1 NO PUDE · 2 CIEGO: sin sesión · 3 rechazado.
 // ═════════════════════════════════════════════════════════════════════════════════════════════
@@ -152,15 +168,87 @@ async function presupuestoConMarca(fetchFn, leer, cuenta, cliente, marca, extra)
   return { presupuesto, nuevo: true };
 }
 
-/** ① Un presupuesto ACEPTADO y su Trabajo, vistos los dos al releer. */
-export async function casoAceptado(fetchFn, cookie, { esperar = (ms) => new Promise((r) => setTimeout(r, ms)) } = {}) {
+/** El único modo en que aceptar no puede emitir ni cobrar (regla 24). Ver condición 5 arriba. */
+export const MODO_QUE_PERMITE_ACEPTAR = 'receipt';
+/** Rango imposible de SCRUM-262: 34 + 0 + 8 dígitos. */
+export const TELEFONO_IMPOSIBLE = /^340\d{8}$/;
+
+/** Condición 5. El modo lo calcula el SERVIDOR; aquí no se reconstruye el criterio. */
+async function exigirModoSinEmision(leer) {
+  const me = await leer('/admin/me');
+  if (me.modoEmision !== MODO_QUE_PERMITE_ACEPTAR) {
+    throw new Rechazo(`🔴 NO SE ACEPTA: el servidor dice modoEmision=${JSON.stringify(me.modoEmision ?? null)} y sólo se acepta con `
+      + `«${MODO_QUE_PERMITE_ACEPTAR}» (INVOICING_ES_ENABLED en OFF: aceptar no puede emitir ni cobrar). No se ha escrito nada.`);
+  }
+}
+
+/** Condición 3. Cada teléfono que traiga la ficha, del rango imposible; si la ficha no los trae, no se sabe. */
+async function exigirTelefonosImposibles(leer, cliente) {
+  const ficha = await leer(`/admin/customers/${cliente.id}`);
+  if (!ficha || !('mobile' in ficha) || !('phone' in ficha)) {
+    throw new NoPude(`la ficha del cliente #${cliente.id} no trae «mobile» y «phone»: no sé si un mensaje llegaría a alguien. No se ha escrito nada.`);
+  }
+  const reales = ['mobile', 'phone'].filter((k) => ficha[k] != null && String(ficha[k]).trim() !== '' && !TELEFONO_IMPOSIBLE.test(String(ficha[k]).replace(/\D/g, '')));
+  if (reales.length) {
+    throw new Rechazo(`🔴 NO SE ACEPTA: el cliente #${cliente.id} tiene ${reales.map((k) => `${k}=${ficha[k]}`).join(', ')}, fuera del rango imposible (SCRUM-262). No se ha escrito nada.`);
+  }
+}
+
+/**
+ * Condición 2. Los ids de todo lo que es documento o cobro en la cuenta. Ids y no cifras: un
+ * documento que entra mientras otro sale deja la cifra igual. Lista ilegible o llena = sin foto.
+ */
+async function fotoDeDocumentosYCobros(leer) {
+  const llena = (xs, que) => { if (xs.length >= LIMITE_LISTA) throw new NoPude(`${que} llega llena (${xs.length}): no puedo contar lo que hay.`); return xs; };
+  const facturas = llena(lista(await leer('/admin/invoices'), 'la lista de facturas'), 'la lista de facturas');
+  const cobros = llena(lista(await leer('/admin/cobros'), 'la lista de cobros'), 'la lista de cobros');
+  const al = await leer('/admin/albaranes');
+  const albaranes = llena(lista(al && al.filas, 'la lista de albaranes'), 'la lista de albaranes');
+  const ids = (xs, pref) => xs.map((x) => `${pref}${x.origen ? `${x.origen}:` : ''}${x.id}`);
+  return [...ids(facturas, 'factura '), ...ids(cobros, 'cobro '), ...ids(albaranes, 'albarán ')].sort();
+}
+
+/**
+ * ① Un presupuesto ACEPTADO y su Trabajo, vistos los dos al releer. Si se llegó a intentar la
+ * aceptación, la foto de después se mira SIEMPRE: también si el `accept` falla o el Trabajo no sale.
+ */
+export async function casoAceptado(fetchFn, cookie, opciones = {}) {
+  const intento = { fotoAntes: null, leer: lector(fetchFn, cookie), presupuestoId: null };
+  let lineas = null;
+  let fallo = null;
+  try { lineas = await aceptarYVerTrabajo(fetchFn, cookie, opciones, intento); } catch (e) { fallo = e; }
+  if (intento.fotoAntes !== null) {
+    let fotoDespues;
+    try { fotoDespues = await fotoDeDocumentosYCobros(intento.leer); } catch (e) {
+      throw new NoPude(`🔴 se intentó aceptar el presupuesto #${intento.presupuestoId} y NO PUDE releer documentos y cobros después (${e.message}). `
+        + `Míralo a mano en la cuenta QA.${fallo ? ` Antes había fallado: ${fallo.message}` : ''}`);
+    }
+    const nuevos = fotoDespues.filter((x) => !intento.fotoAntes.includes(x));
+    const idos = intento.fotoAntes.filter((x) => !fotoDespues.includes(x));
+    if (nuevos.length || idos.length) {
+      throw new NoPude(`🔴🔴 ACEPTAR HA MOVIDO DOCUMENTOS O COBROS en la cuenta QA: aparecen [${nuevos.join(', ')}] · desaparecen [${idos.join(', ')}]. `
+        + `El presupuesto #${intento.presupuestoId} y lo que haya salido NO se deshacen por el panel (regla 29). Avisa YA al orquestador.`);
+    }
+    if (!fallo) lineas.push(`documentos y cobros: los mismos ${intento.fotoAntes.length} antes y después de aceptar (ids de facturas, cobros y albaranes)`);
+  }
+  if (fallo) throw fallo;
+  return lineas;
+}
+
+async function aceptarYVerTrabajo(fetchFn, cookie, { esperar = (ms) => new Promise((r) => setTimeout(r, ms)) }, intento) {
   const cuenta = await cuentaQA(fetchFn, cookie);
-  const leer = lector(fetchFn, cookie);
+  const { leer } = intento;
+  await exigirModoSinEmision(leer);
   const cliente = await clienteQA(leer);
+  await exigirTelefonosImposibles(leer, cliente);
   let { presupuesto, nuevo } = await presupuestoConMarca(fetchFn, leer, cuenta, cliente, MARCA_ACEPTADO, {});
   let aceptadoAhora = false;
   if (presupuesto.status !== 'accepted') {
     if (presupuesto.status !== 'draft') throw new NoPude(`el presupuesto #${presupuesto.id} está en «${presupuesto.status}»: sólo se acepta desde borrador.`);
+    const foto = await fotoDeDocumentosYCobros(leer);
+    await exigirModoSinEmision(leer); // otra vez, pegado a la escritura
+    intento.fotoAntes = foto;
+    intento.presupuestoId = presupuesto.id;
     await leerJSON(await escrituraDeCaso(fetchFn, 'POST', `/admin/quotes/${presupuesto.id}/accept`, {
       cuenta, cuerpo: { channel: 'backoffice', comment: 'Aceptación de PRUEBA (scripts/qa/sembrar-casos.mjs, SCRUM-1367). Sin cliente real.' },
     }), `POST /admin/quotes/${presupuesto.id}/accept`);
@@ -188,6 +276,8 @@ export async function casoAceptado(fetchFn, cookie, { esperar = (ms) => new Prom
   if (trabajo.totalAceptado == null) throw new NoPude(`el Trabajo #${trabajo.id} existe, pero su importe aceptado sale vacío: el control positivo de SCRUM-1355 no se vería.`);
   lineas.push(`trabajo   #${trabajo.id} · con su presupuesto aceptado · importe aceptado ${trabajo.totalAceptado}`);
   lineas.push('no se ha emitido ningún documento, ni cobrado, ni enviado nada');
+  lineas.push(`queda en la cuenta QA: el presupuesto #${presupuesto.id} (marca ${MARCA_ACEPTADO}) aceptado y su Trabajo #${trabajo.id}. `
+    + 'NO se quita por el panel (un aceptado no se rechaza ni se borra); repetir la orden no crea otro.');
   return lineas;
 }
 

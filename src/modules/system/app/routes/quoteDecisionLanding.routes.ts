@@ -25,6 +25,7 @@ import { zonaDelMerchant } from '../../../../core/zonaDelMerchant';
 import { textoDeValidez } from '../../../quotes/domain/validez';
 import { numeroQueImprimeElPapel } from '../../../quotes/domain/revision'; // SCRUM-1444: el número de la página es el del papel
 import { sinTildes } from '../../../../core/texto/sinTildes';
+import { tieneVersionMasReciente } from '../../../quotes/domain/versionMasReciente'; // SCRUM-1302
 
 type DecisionApiError = { message?: string; error?: string };
 
@@ -261,6 +262,28 @@ function condicionesDePago(
     partes.push(`${nombre}: ${valor}`);
   }
   return partes.join(' · ');
+}
+
+/**
+ * SCRUM-1302 · LA PÁGINA DEL ENLACE DE UNA REVISIÓN ANTIGUA. Literales y conducta firmados por el
+ * orquestador por delegación del fundador (SCRUM-1302, c.19454 y c.19475):
+ * `docs/microcopy/2026-10-13-SCRUM-1302-enlace-de-revision-antigua.md`.
+ *
+ * Sólo el aviso, como la de caducado: ni detalle, ni importes, ni firma, ni «Rechazar», ni PDF. Sin
+ * botón y sin emoji que señale a nada, y SIN enlace a la versión nueva: la página no reparte el
+ * enlace de otra revisión, que puede no estar enviada todavía. Por eso la última frase vale en los
+ * dos casos («que te haya enviado…, o pídesela»).
+ */
+function paginaDeVersionAntigua(
+  quote: NonNullable<Awaited<ReturnType<typeof loadQuote>>>,
+  locale: ReturnType<typeof getLocale>,
+  brandColor: string | null,
+): string {
+  const negocio = quote.merchant?.legalName || quote.merchant?.name || 'el profesional';
+  return renderPage(locale.quoteUpdatedTitle, escapandoLoInterpolado`<div class="status-ok" style="text-align:center" data-version-antigua="1">
+    <strong>${locale.quoteHasNewer}</strong><br/>
+    La que estás viendo ya no se puede aceptar. Abre el enlace de la versión nueva que te haya enviado ${negocio}, o pídesela.
+  </div>`, brandColor);
 }
 
 async function loadQuote(token: string) {
@@ -613,6 +636,13 @@ quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async 
     if (quote) {
       locale = getLocale(quote.merchant?.country);
       brandColor = quote.merchant?.brandColor ?? null;
+      // SCRUM-1302 · hay una versión más reciente: el enlace ya no deja aceptar. Va ANTES que el
+      // caducado (punto 5 de la conducta): si la vieja además caducó, «Pide uno actualizado» sería
+      // falso habiendo ya uno. Sólo con la vieja en `draft`/`sent`/`expired`; una decidida sigue su página
+      // de siempre (punto 6). Si la pregunta falla, lanza: no se pinta el formulario a ciegas.
+      if (await tieneVersionMasReciente(quote, quote.merchant)) {
+        return res.setHeader('Content-Type', 'text/html; charset=utf-8').send(paginaDeVersionAntigua(quote, locale, brandColor));
+      }
       // A16.2 (N3): caducado — copy OFICIAL + reconversión por WhatsApp. Cubre
       // también sent con validUntil pasado (el cron horario aún no barrió).
       if (isQuoteExpired(quote as any)) {
@@ -857,6 +887,11 @@ quoteDecisionLandingRouter.get('/quote/:token/reject', async (req: Request, res:
       // cliente que ya había aceptado podía rechazar desde aquí. La landing principal ya cuenta la
       // verdad con su texto N3 firmado («Ya aceptaste…» / «Rechazaste…»): se le manda allí.
       if (quote.status === 'accepted' || quote.status === 'rejected') {
+        return res.redirect(`/pay/quote/${token}`);
+      }
+      // SCRUM-1302 (punto 7) · una versión antigua tampoco se rechaza desde aquí: la landing cuenta
+      // que hay una más reciente, igual que con las decididas.
+      if (await tieneVersionMasReciente(quote, quote.merchant)) {
         return res.redirect(`/pay/quote/${token}`);
       }
       if (quote.status === 'draft' || quote.status === 'sent') {

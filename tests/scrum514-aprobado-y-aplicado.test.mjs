@@ -363,6 +363,17 @@ const APARCADOS = [
       + 'texto sin «ni justificantes». NO se desaprueba en el registro —la firma ocurrió—; ya no '
       + 'tiene dónde pintarse. Registro: `docs/master/SCRUM-1257.md`, sección SCRUM-1257d.',
   },
+  ...[
+    'No se ha podido guardar la llamada. Inténtalo otra vez.',
+    'No se ha podido marcar como hecha. Inténtalo otra vez.',
+  ].map((texto) => ({
+    texto,
+    motivo: 'SUSTITUIDO POR UNA FIRMA POSTERIOR (SCRUM-1056 comentario 19649, 14-oct-2026). Eran B12 y '
+      + 'B15 de «Volver a llamar» (`clienteVolverALlamar.js`, `TEXTOS.noGuardado` y `TEXTOS.noMarcado`). '
+      + 'La firma nueva pinta en esas MISMAS ranuras el mismo texto acabado en «Inténtalo de nuevo.», '
+      + 'la forma de la casa (SCRUM-1215 comentario 19460). NO se desaprueba en el registro —la firma '
+      + 'ocurrió—; ya no tiene dónde pintarse. Registro: `docs/master/SCRUM-1056.md`, sección SCRUM-1056d.',
+  })),
   {
     texto: 'Modo no reconocido',
     motivo: 'RESPALDO del modo de emisión (`settingsView.js:213`). Aparcado por la REGLA 26: el '

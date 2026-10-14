@@ -359,6 +359,35 @@ Carril S1 · sesión `s1-13octf` · rama `scrum-1302k-dos-firmas-en-obra-a-la-ve
 
 **NO medido:** contra un Postgres real · yaqu.app · cada cuánto ocurre · `POST /admin/partes/:id/firmar` y `/firmar-tecnico` (`partes.routes.ts`), que firman con el mismo gesto: sin leer.
 
+**Visto en yaqu.app el 14-oct-2026** (SCRUM-1302 c.19601): dos firmas en obra a la vez, desde dos procesos, sobre el albarán de prueba #47 de la cuenta QA → una 200 y otra 409 `albaran_locked`; releído por `GET`, el firmante es el del 200.
+
+## SCRUM-1302o · la versión en el `where` de la firma en obra, y el otro lado de la misma ventana: el PATCH (S1, 14-oct-2026)
+
+**Medido contra:** `origin/main` = `e2be1c9fda3b5ceac853b4d376f5664ac8e4df67` · 2026-10-14T08:11:04Z
+A9: comprobación → `tests/scrum1302o-version-en-la-firma-en-obra.test.mjs`
+
+Carril S1 · tanda del 14-oct · árbol `s1-13octd` · rama `scrum-1302o-version-en-la-firma-en-obra`. Cierra la ventana que 1302k dejó declarada, con el texto firmado en SCRUM-1302 c.19467 (`docs/microcopy/2026-10-14-SCRUM-1302-albaran-cambiado-en-obra.md`).
+
+**Reproduce, por las dos puertas** (instrumentos comiteados antes de cada arreglo: `68c8c4290` y `a0025674c`):
+
+| caso | código de `main` | con el arreglo |
+|---|---|---|
+| firma en obra; alguien edita el albarán entre la lectura y la escritura | **escribe**: la evidencia sella «lo que vio el cliente» y la fila guarda lo editado | 409 `albaran_cambiado` con el texto firmado, 0 escrituras, sin PDF |
+| control: firmado por otro en medio | 409 `albaran_locked` | igual |
+| `PATCH`; la firma entra entre su lectura y su escritura | **escribe sobre un albarán FIRMADO** | 409 `albaran_locked` «Un albarán firmado está congelado: no se puede editar.» |
+| dos `PATCH` con la misma versión | **el segundo pisa al primero en silencio** | 409 `albaran_cambiado_al_editar` (la respuesta que la ruta ya da a una versión vieja) |
+| suelos: una firma sola, un `PATCH` solo | pasan | pasan |
+
+El `PATCH` no estaba en el encargo: la firma no sube `version`, así que poner la versión sólo en el `where` de la firma dejaba la ventana abierta por el otro orden. Es la misma ventana, y se arregla sin texto nuevo.
+
+**Dónde cae, mirado y no deducido (14-oct, no heredado de 1302k):** `emitInvoice` está ahora en las líneas 1330 y 1610 del fichero de `main` (`facturar-parcial` y `convertir-en-factura`; antes 1310 y 1590). Los dos manejadores tocados, `PATCH /:id` y `POST /:id/firmar`, no llaman a ninguna. El diff no toca `buildFirmaEvidencia` ni lo sellado: el `where` de los dos `update` y qué se contesta si no casa.
+
+**De paso, por el guard de SCRUM-411:** `ERROR_ALBARAN_CAMBIADO` y `ERROR_ALBARAN_CAMBIADO_AL_EDITAR` dejan de ser huérfanos (ya los importa la ruta) y salen de `tests/_huerfanos-declarados.mjs`.
+
+**Lo que esto NO cierra, declarado:** en obra el cuerpo de la firma no lleva versión, así que el servidor no sabe qué contenido VIO el cliente. Esto garantiza que la evidencia y la fila hablan del mismo contenido; no que ése sea el que el cliente tenía delante. Si la oficina edita mientras la firma espera en la cola sin cobertura, al volver la red la cola la sube y entra sobre lo editado (`albaran_cambiado` no está en `RECHAZOS_DEFINITIVOS` de `public/dashboard/js/colaDeFirmas.js`, así que la firma no sale de la cola y el siguiente intento lee la versión nueva). Cerrarlo pide que el panel mande la `version` que pintó (carril S2) y una decisión sobre las firmas ya encoladas sin ella.
+
+**NO medido:** contra un Postgres real (el doble imita el `P2025`) · en yaqu.app (la edición en medio no se provoca desde fuera con garantía).
+
 ## Sigue abierto en este ticket tras C
 
 D y E, camino fiscal (J1). Los dos «NO TOCADO» de arriba.
@@ -596,3 +625,65 @@ cada PR, y que borrar una declaración lo denuncia el suelo contra `main` de SCR
 
 **NO medido:** `npm run meta:mutaciones` entero (el del CI, con todas las declaraciones de la casa) · la tanda
 completa de `npm test` · yaqu.app (este tramo no despliega nada que se vea).
+
+# APÉNDICE · SCRUM-1302p: el enlace de una revisión antigua deja de aceptar, y el panel lo avisa antes de crearla (S4)
+
+**Medido contra:** `origin/main` = `e2be1c9fda3b5ceac853b4d376f5664ac8e4df67` · 2026-10-14T08:13:22Z (`Date:` de GitHub)
+A9: comprobación → `tests/scrum1302p-la-pagina-de-una-revision-antigua.test.mjs`
+
+Sesión `s4-14oct` · rama `scrum-1302p-el-enlace-de-una-revision-antigua`. El sufijo era `1302o` y pasó a `1302p` antes de empujar, por aviso del orquestador: S1 tenía `1302o` en otra rama al mismo tiempo, y los dos sin empujar.
+
+**Carril.** Las dos mitades en un solo PR, construidas por S4, por decisión del orquestador (SCRUM-1302 c.19475, repetida en el encargo del 14-oct-2026): `quoteRevisiones.js` es de S2 y `quoteDecisionLanding.routes.ts` de S1, con la excepción dada sólo para este cambio. Motivo, del propio orquestador: repartir un cambio cuyas mitades sólo valen juntas es la forma de que se mergee una sola. ⛔ El `POST /quote/:token/decision` (rechazar la decisión sobre una no vigente) es de S1 y no se ha tocado.
+
+**Skill UI:** cargada (`yaqu-premium-ui`) antes de tocar `public/dashboard/css/styles.css` y `public/dashboard/js/quoteRevisiones.js`. Sin tokens nuevos: el aviso usa el ámbar de `.aviso-sin-cobertura` y los `.btn` de siempre; ni un `style=` nuevo.
+
+## Lo firmado
+
+- La página: T1, T2, T3 (con la enmienda del orquestador) y los siete puntos de conducta, SCRUM-1302 c.19454. Ficha: `docs/microcopy/2026-10-13-SCRUM-1302-enlace-de-revision-antigua.md`.
+- El aviso del panel: W1, W2 y su conducta, sin estrechar a `sent`, SCRUM-1302 c.19475 sobre la propuesta de c.19456. Ficha: `docs/microcopy/2026-10-13-SCRUM-1302-aviso-al-crear-revision.md`.
+
+## Lo construido — qué líneas toca, para no pisar a S1
+
+- `src/modules/quotes/domain/versionMasReciente.ts` (nuevo): `tieneVersionMasReciente(q, merchant)` y `ESTADOS_CON_ENLACE_VIVO`. Pregunta con `prisma.quote.count` por el grupo de `whereDelGrupo` (negocio, año de la serie, número) con `revision > n`. Sin número no hay grupo. Si la consulta falla, LANZA: «no he podido mirar» no pinta el formulario. **Está hecho para que el `POST` de S1 lo use con la misma condición.**
+- `quoteDecisionLanding.routes.ts`: un import; la función `paginaDeVersionAntigua` (justo encima de `loadQuote`); en el `GET /quote/:token`, una comprobación justo antes del bloque de caducado; en el `GET /quote/:token/reject`, una comprobación justo después de la de «ya decidido». **Nada del `POST /quote/:token/reject` ni de ningún otro manejador.**
+- `src/core/i18n/locales.ts`: dos campos por país, `quoteUpdatedTitle` y `quoteHasNewer`, frases enteras como los títulos de SCRUM-1476.
+- `public/dashboard/js/quoteRevisiones.js`: `TEXTOS_AVISO` y `ESTADOS_CON_ENLACE_VIVO` aparte de `TEXTOS` (el bloque de SCRUM-688 no se toca); el botón lleva `data-revision-avisa` con el número de la vigente si está en `draft`, `sent` o `expired` (`expired` desde c.19636, abajo); `pintarAvisoDelEnlace`; el cableado crea al segundo clic. El foco pasa a «Cancelar» al abrir el aviso, para que un segundo Intro sin leer no cree la revisión.
+- `public/dashboard/css/styles.css`: `.revision-aviso`.
+
+## Cambio de conducta a propósito en tests de otros (declarado)
+
+- `scrum1150b`, `scrum1215-revisiones-error-crear` y `scrum988`: pulsaban «Crear revisión» una vez y esperaban el POST. Con la vigente enviada o en borrador, el primer clic ahora avisa; los tres pulsan después el «Crear revisión» del aviso, y exigen que exista (si falta, caen con «CIEGO»). Lo que miden después no cambia.
+- `scrum1001`, `scrum1431-tarjeta-sin-claim-de-iva`, `scrum1444` y `scrum1476`: doblaban sólo `prisma.quote.findUnique`, y la página pregunta ahora también por el grupo. Se les dobla `prisma.quote.count` a 0 («no hay versión más reciente»), que es el caso que modelan, y se restaura en el mismo `finally`.
+
+## Verificado, ejecutando
+
+- **Los dos tests nuevos:** el del panel, 9 de 9; el de la página, 11 de 11. Cada uno con su CONTROL POSITIVO dentro: con la vigente aceptada o rechazada, la misma sonda ve el POST salir al primer clic; el enlace de la vigente sigue pintando el formulario.
+- **Rojo con cada mutación** (`git diff --numstat` 1 1 en cada una, restaurada con `git restore --source=HEAD` y `git status` limpio): el botón sin aviso → 6 de 9 caen; estrechado a `sent` → 2 de 9 (el de borrador y el de «mismos estados»); la página sin hacer caso a la pregunta → 5 de 11; el grupo sin el año de la serie → 1 de 11 (el del año). Dos de cada fichero quedan declaradas en `MUTACIONES_QUE_ME_TUMBAN` para el meta-guard (`--solo-censo`: 559 declaraciones, salida 0).
+- **Los guiones de ayer, vueltos a correr sobre este árbol** (`despues-1302p.txt` junto a cada uno): el `GET` del enlace de la .0 ya no pinta el formulario y pregunta por el grupo 1 vez; el panel avisa con W1 y W2 y no hace ningún POST al primer clic. El control 0 del guion del panel ahora cae, y es lo esperado: pulsaba una vez para provocar un fallo del POST, y el primer clic ya no lo hace.
+- **El `POST` de aceptar con el enlace de la .0 sigue contestando 200** (mismo guion): es la mitad de S1, y hasta que entre, un cliente que fabricara el `POST` a mano todavía podría aceptar la vieja. La página ya no le ofrece el formulario.
+
+## Lo que queda sin hacer, y de quién
+
+- Rechazar el `POST /quote/:token/decision` de una no vigente: S1, con `tieneVersionMasReciente` ya disponible.
+- ~~La concordancia en femenino de T1 y T2~~ → firmada en c.19636 (abajo).
+- ~~Una versión antigua con `status = 'expired'` sigue pintando la página de caducado~~ → ampliado en c.19636 (abajo).
+- El PDF del enlace antiguo (`GET /quote/:token/pdf`) se sigue sirviendo: la conducta firmada habla de la página, no de esa ruta.
+
+- **Tanda amplia** (los ficheros de test que leen estas páginas, el panel, los locales, el dominio de presupuestos, las fichas, las evidencias o los registros; `--test-concurrency=3`, `FORCE_COLOR` borrado, 3.529 MB libres): **427 ficheros, 4.019 tests, 3.982 pasan, 34 saltados, 3 caídos, los tres míos**, y arreglados en el código: `scrum411` (`ESTADOS_CON_ENLACE_VIVO` exportado sin llamador: deja de exportarse) y `scrum553` (cuatro extractores de mi test con el `>` pegado: aceptan atributos). Esos dos ficheros y los dos míos, otra vez: 61 de 61.
+
+**NO medido:** yaqu.app (este PR no ha mergeado al escribir esto) · la suite completa de `npm test`.
+
+## Seguimiento (SCRUM-1302q): las dos firmas de c.19636
+
+**Medido contra:** `origin/main` = `4f487bb177c42a7ee02042b0029f8c90b7e9e77e` · 2026-10-14T08:53:25Z (`Date:` de GitHub). Relevo de S4 (la tanda anterior salió a 347k). Iba a ir en #2445, que a las 08:53Z seguía sin mergear; entró entre el commit y el push, así que va en un PR de seguimiento, rama `scrum-1302q-expired-en-el-enlace-vivo` (el commit de código conserva el asunto `SCRUM-1302p`, escrito antes).
+
+- **Concordancia en femenino:** ya estaba aplicada en `locales.ts` y atada por el test del país de «cotización». No cambia código; sólo la ficha, que la daba por «sin firmar».
+- **`expired` entra en la condición**, en las dos mitades a la vez (`versionMasReciente.ts` y `quoteRevisiones.js`); el test de «mismos estados» exige ahora `['draft', 'sent', 'expired']`. Motivo, del propio orquestador: el punto 1 (`draft`/`sent`) y el punto 5 (va antes que el caducado) no podían cumplirse a la vez con una vieja ya barrida por el cron. ⛔ Aceptado y rechazado siguen fuera.
+- **Rojo antes del cambio:** con los tests nuevos y el código sin tocar, 3 de 22 caen (la .0 `expired` habiendo .1 en la página, la vigente `expired` en el panel, y «mismos estados»). Con el cambio, 22 de 22. El test de la página trae su control: la misma .0 caducada SIN .1 sigue diciendo «caducó».
+- **Mutaciones nuevas, declaradas:** M3 en cada fichero (quitar `expired`). La M2 del panel (estrechar a `sent`) cambia su `de`/`a` para casar con la línea nueva.
+- **Riesgo declarado de W1 con una vigente caducada:** «el enlace de {número} dejará de valer» — ese enlace ya no dejaba aceptar (caducó); lo que cambia es lo que dice. Es el mismo caso que ya existía con una `sent` vencida que el cron no ha barrido, y W2 sigue siendo cierto. No pido texto nuevo.
+- **De paso, en el código:** el comentario de `versionMasReciente.ts` citaba un test que no existe (`scrum1302p-el-enlace-de-una-revision-antigua`); ahora nombra el que lo ata.
+- **Tanda dirigida:** los 81 ficheros de test que nombran la página, el panel de revisiones, `versionMasReciente` o revisiones: 756 tests, 749 pasan, 7 saltados, 0 caídos.
+- **Error propio (14-oct 15:50Z):** este tramo se empujó sin su línea A9 y el obligatorio de #2451 cayó por eso (`not ok 1597`, `docs/master/SCRUM-1302.md:678 · ancla del 2026-10-14 sin línea «A9:»`; ni `scrum1405c` ni nada ajeno: leído en el log del job 115768836190). La tanda dirigida elegía los tests por lo que nombran del código, y el que lee los registros no nombra nada de eso.
+
+A9: comprobación → `tests/scrum1294-a9-leccion-en-a10.test.mjs`

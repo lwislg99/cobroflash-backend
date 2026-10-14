@@ -64,21 +64,50 @@ export function esFalloDeRed(texto) {
   return HUELLA_DE_RED.test(String(texto ?? ''));
 }
 
+// ── 🔴 SCRUM-1539 · UNA FOTO, NO DOS: LEER ES UNA COSA E INTERPRETAR ES OTRA ──────────────────
+//
+// Hasta el 14-oct-2026 cada llamada a `censarConMotivo` volvía a preguntar al remoto. El test de
+// `scrum804b` elegía su negativo con UNA lectura y el censo lo clasificaba con OTRA, y entre las
+// dos alguien mergeaba ese ticket: su rama se borraba, la segunda lectura ya no la veía y el caso
+// caía en el obligatorio de un PR que no tenía nada que ver (#2370, 13-oct, job 115277830730).
+//
+// Ahora `leerRemoto` es la ÚNICA función que ejecuta `ls-remote`, y devuelve la FOTO entera: las
+// ramas tal como contestó el remoto y el sha de `origin/main` en ese mismo momento. Quien necesite
+// dos respuestas coherentes se las pide a la misma foto. `main` va en la foto porque `origin/main`
+// es una ref LOCAL que cualquier `git fetch` mueve, y en esta máquina los árboles de trabajo la
+// comparten: con la ref y no con el sha, la carrera sólo cambiaba de sitio.
+//
+// Lo que se comparte es la RESPUESTA, no cómo se lee: cada lector la interpreta con lo suyo.
+
 /**
- * Las ramas remotas CON el motivo si no se pudieron leer:
- * `{ ramas: Map, ciego: null }` o `{ ramas: null, ciego: { que: SIN_RED | SIN_REFS, detalle } }`.
+ * La foto: `{ salida, main, ciego: null }` o `{ salida: null, main: null, ciego: { que, detalle } }`.
+ * `salida` es el texto crudo de `git ls-remote --heads origin`; `main`, el sha de `origin/main`.
  */
-export function ramasRemotasConMotivo() {
+export function leerRemoto() {
   let salida;
   try {
     salida = execFileSync('git', ['ls-remote', '--heads', 'origin'],
       { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
   } catch (e) {
     const detalle = String(e?.stderr || e?.message || '').trim().split('\n').filter(Boolean).pop() ?? '';
-    return { ramas: null, ciego: { que: esFalloDeRed(detalle) ? SIN_RED : SIN_REFS, detalle: detalle.slice(0, 300) } };
+    return { salida: null, main: null, ciego: { que: esFalloDeRed(detalle) ? SIN_RED : SIN_REFS, detalle: detalle.slice(0, 300) } };
   }
+  const main = git(['rev-parse', '--verify', '--quiet', 'origin/main^{commit}'])?.trim() || null;
+  if (!main) {
+    return { salida: null, main: null, ciego: { que: SIN_ARBOL, detalle: 'este clon no tiene la punta remota de la rama principal: sin ella no se sabe qué está mergeado' } };
+  }
+  return { salida, main, ciego: null };
+}
+
+/**
+ * Las ramas remotas CON el motivo si no se pudieron leer:
+ * `{ ramas: Map, ciego: null }` o `{ ramas: null, ciego: { que: SIN_RED | SIN_REFS | SIN_ARBOL, detalle } }`.
+ * Sin `foto`, la saca ella (una lectura nueva).
+ */
+export function ramasRemotasConMotivo(foto = leerRemoto()) {
+  if (foto.ciego) return { ramas: null, ciego: foto.ciego };
   const m = new Map();
-  for (const l of salida.split('\n')) {
+  for (const l of foto.salida.split('\n')) {
     const [sha, ref] = l.split('\t');
     if (ref?.startsWith('refs/heads/')) m.set(ref.slice('refs/heads/'.length), sha);
   }
@@ -90,9 +119,9 @@ export function ramasRemotas() {
   return ramasRemotasConMotivo().ramas;
 }
 
-/** Todos los ficheros de `origin/main`, una sola vez. */
-export function arbolDeMain() {
-  const salida = git(['ls-tree', '-r', '--name-only', 'origin/main']);
+/** Todos los ficheros de `main`, una sola vez. `main` es el sha de la foto (`leerRemoto`), no la ref. */
+export function arbolDeMain(main) {
+  const salida = git(['ls-tree', '-r', '--name-only', main]);
   return salida === null ? null : salida.split('\n').filter(Boolean);
 }
 
@@ -130,9 +159,9 @@ export function artefactosQueNombra(texto) {
  *  ④ todo lo demás → **NO DECIDIBLE**, del lado malo, y con el motivo separado: entrada sin
  *    artefactos · commits que lo nombran pero nada comprobable · anterior a la convención · nada.
  */
-export function clasificar(n, { ramas, ficheros, entrada, commits, primeraEntrada }) {
+export function clasificar(n, { ramas, ficheros, entrada, commits, primeraEntrada, main }) {
   const mias = ramasDelTicket([...ramas.keys()], n);
-  const sinMergear = mias.filter((r) => git(['merge-base', '--is-ancestor', ramas.get(r), 'origin/main']) === null);
+  const sinMergear = mias.filter((r) => git(['merge-base', '--is-ancestor', ramas.get(r), main]) === null);
   const mergeadas = mias.filter((r) => !sinMergear.includes(r));
 
   const propios = ficheros.filter((f) => new RegExp(`(^|/)scrum-?${n}([a-z])?[-._]`, 'i').test(f));
@@ -180,19 +209,22 @@ export function censar(tickets) {
 /**
  * SCRUM-1331 · el censo y, si salió ciego, el motivo: `{ censo, ciego }`, y siempre uno de los dos
  * es `null`. `ciego.que` es `SIN_RED`, `SIN_REFS` o `SIN_ARBOL`; `ciego.detalle`, lo que dijo git.
+ *
+ * SCRUM-1539 · `foto` es la de `leerRemoto()`. Quien ya la tiene —porque ha sacado otra respuesta de
+ * la misma lectura— la PASA, y el censo no vuelve a preguntar. Sin ella, saca una nueva.
  */
-export function censarConMotivo(tickets) {
-  const { ramas, ciego } = ramasRemotasConMotivo();
+export function censarConMotivo(tickets, { foto = leerRemoto() } = {}) {
+  const { ramas, ciego } = ramasRemotasConMotivo(foto);
   if (!ramas) return { censo: null, ciego };       // 🔴 CIEGO: sin refs no se mide
-  const ficheros = arbolDeMain();
+  const ficheros = arbolDeMain(foto.main);
   if (!ficheros) {                                 // 🔴 CIEGO: sin árbol tampoco
     return { censo: null, ciego: { que: SIN_ARBOL, detalle: 'el `ls-tree` de la punta remota no ha contestado' } };
   }
-  return { censo: censoSobre(tickets, ramas, ficheros), ciego: null };
+  return { censo: censoSobre(tickets, ramas, ficheros, foto.main), ciego: null };
 }
 
-/** El censo, ya con las refs y el árbol leídos. `tickets` son números. */
-function censoSobre(tickets, ramas, ficheros) {
+/** El censo, ya con las refs y el árbol leídos. `tickets` son números; `main`, el sha de la foto. */
+function censoSobre(tickets, ramas, ficheros, main) {
 
   // 🔴 LA CONVENCIÓN SE DERIVA DEL ÁRBOL, no se escribe a mano. «La primera densa» = el número más
   // bajo a partir del cual hay al menos tres entradas seguidas dentro de un margen de 100: así una
@@ -206,10 +238,10 @@ function censoSobre(tickets, ramas, ficheros) {
   }
 
   const filas = tickets.map((n) => {
-    const entrada = git(['show', `origin/main:docs/master/SCRUM-${n}.md`]);
-    const log = git(['log', 'origin/main', '--oneline', '-i', '-E', `--grep=SCRUM-${n}([^0-9]|$)`]);
+    const entrada = git(['show', `${main}:docs/master/SCRUM-${n}.md`]);
+    const log = git(['log', main, '--oneline', '-i', '-E', `--grep=SCRUM-${n}([^0-9]|$)`]);
     const commits = log === null ? 0 : log.split('\n').filter(Boolean).length;
-    return clasificar(n, { ramas, ficheros, entrada, commits, primeraEntrada });
+    return clasificar(n, { ramas, ficheros, entrada, commits, primeraEntrada, main });
   });
   return {
     poblacion: tickets.length,
