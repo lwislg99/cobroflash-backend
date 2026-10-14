@@ -231,3 +231,159 @@ Literales, cortadas a 230 caracteres donde lleva «[…]»; la línea entera est
 - `docs/master/SCRUM-1457.md:21` — ¦ `stripe.routes.ts:177` ¦ `prisma.merchant.update` (`customer.subscription.deleted`) ¦ NO HECHO → **decisión**, abajo ¦
 - `docs/master/SCRUM-1470.md:66` — ¦ 2. Decidido por J1 con su jefe qué día imprime el PDF de la FACTURA, y escrito en este ticket. ¦ NO HECHO → el fundador, por el orquestador de Javier. Este ticket no se cierra: se parte. ¦
 - `docs/master/SCRUM-1471.md:53` — ¦ 2. La fecha del presupuesto y de la factura en el portal es la misma que imprime su PDF. ¦ Presupuesto: el mismo test, «SCRUM-1471 · la fecha del presupuesto en el portal…» (el PDF del presupuesto no imprime fecha de creación; s […]
+
+## 14-oct-2026 · SCRUM-1496c · De los que tienen algo en `main`, cuáles están TERMINADOS: 41 de 132
+
+**Medido contra:** `origin/main` = `76c29b57c871584b04c8206c11571f9c56c9d699` · 2026-10-14T06:55:34Z
+
+A9: aviso → cicatriz J3 «Di por TERMINADO un control porque el orquestador lo esperaba así, antes de aplicarle el criterio que aplicaba a los otros 131: lo deshice al ver que el mismo hueco dejaba a otros en LE FALTA ALGO.» — no se pudo comprobar: decidir si un hueco es una parte del enunciado o una decisión de quien cierra es un juicio; lo que queda es que el criterio está escrito antes de leer y los controles no van en él
+
+J3 (`jv-j3h`), por encargo del orquestador del equipo de Javier (`cobroflash-backend-2e`). **Es LECTURA.** No
+se ha cerrado, transicionado ni etiquetado ningún ticket, y no se ha tocado `src/`, ningún test, guard o
+workflow, ninguna base de datos ni el esquema. El hook de inicio dijo **SIN IDENTIDAD**; es SCRUM-1549 y se
+construyó con la orden escrita del orquestador.
+
+La pregunta del fundador era: «¿por qué no le damos caña y bajamos ese número?». La respuesta: **de los 132
+abiertos con algo en `main`, 41 están terminados y solo les falta cerrarse. A 91 les falta algo. 0 sin
+mirar.** Y de esos 91 hay 8 a los que solo les falta una decisión o una verificación del propio orquestador.
+
+### La población, otra vez
+
+- **Jira, 06:54Z.** Misma consulta que en SCRUM-1550 (`project = SCRUM AND labels = "equipo-javier" AND
+  statusCategory != Done`), dos páginas, `hasNextPage: false`: **172** abiertos, 172 claves únicas
+  (97 «Tareas por hacer», 53 «En curso», 19 «Acción del fundador», 3 «En revisión»). Frente a la foto de
+  las 03:31Z entran 1543, 1551, 1552, 1553 y 1554, y no sale ninguno. Foto con etiquetas en
+  `docs/master/evidencias/SCRUM-1496c/foto-jira-2026-10-14T0654Z.tsv`.
+- **El censo por número**, con el mismo instrumento (`docs/master/evidencias/SCRUM-1496/tabla-ya-esta.mjs
+  --ref 76c29b57c…`), en 5 min: **132 ALGO EN MAIN · 40 NADA EN MAIN · 0 NO HE PODIDO MIRAR**. El control
+  SCRUM-9999 sale con las tres columnas a cero. Están en `tabla-por-numero-76c29b57c.md` y en
+  `lineas-76c29b57c.tsv` (973 líneas «queda» citadas). **La población de este tramo son los 132**, no los
+  128 de las 03:31Z.
+
+### Cómo se decidió, y no es un censo nuevo
+
+No hay instrumento que decida «terminado»: eso es leer el enunciado. Las tres columnas las da el censo de
+siempre (arriba). Lo que se añadió es la LECTURA. Once lectores, uno por lote de 12, leyeron cada ticket con
+el mismo criterio, escrito antes de empezar y guardado tal cual en
+`docs/master/evidencias/SCRUM-1496c/criterio-de-lectura.md`. El criterio: descripción y comentarios enteros;
+las partes, una por una; cada parte verificada por EFECTO en `76c29b57c` (fichero:línea), no por el merge;
+un «NO HECHO» / falta / pendiente / sin medir del registro sobre una parte del encargo, o una decisión
+pedida sin rastro de que se tomó, hace que NO esté terminado; una rama viva sin mergear con trabajo pedido
+tampoco (regla 42). **Los controles del orquestador NO iban en el criterio**: los lectores no sabían qué
+tenía que salir. La salida de los once, sin retocar, está en `veredictos-por-lote.md` (132 filas).
+
+### Los controles, corridos
+
+| control | tenía que salir | salió | |
+|---|---|---|---|
+| SCRUM-9999 | no aparece | no está en la foto de Jira; en el censo, tres ceros | ✅ |
+| SCRUM-1339 | NO terminado (falta una decisión) | LE FALTA ALGO: la señal solo avisa (60 %), la revisión del 15-oct y la salida de 1405 §⑤ sin tomar | ✅ |
+| SCRUM-1405 | NO terminado (falta una decisión) | LE FALTA ALGO: la salida C está decidida (c.19584) y sin construir | ✅ |
+| SCRUM-1536 | LE FALTA ALGO: el ② | LE FALTA ALGO: «El ② NO está contestado» (c.19534) | ✅ |
+| SCRUM-1496 | LE FALTA ALGO: fila NO HECHO hacia S5 | LE FALTA ALGO: `SCRUM-1496.md:204` «Script reutilizable en `scripts/` \| NO HECHO» | ✅ |
+| SCRUM-1471, 1538 | hechos y en `main` (veredicto sin dar) | los dos LE FALTA ALGO: 1471 la parte de la factura, que espera a la aceptación 2 de 1470 (`SCRUM-1471.md:53`); 1538 dos causas «NO HECHO → sin dueño» (`SCRUM-1538.md:175-176`) | — |
+| **SCRUM-1515** | **TERMINADO** | **LE FALTA ALGO**: solo una decisión TUYA | 🔴 |
+| **SCRUM-1331** | **TERMINADO** | **LE FALTA ALGO**: solo una decisión TUYA | 🔴 |
+
+**Los dos rojos los he releído yo, enteros, y mantengo el veredicto de los lectores:**
+
+- **1515.** Las partes ①②③ y las aceptaciones 1, 2 y 4 de c.18971 están en `main`. La 3 («login y
+  verificación… visto en ejecución») está ejecutada contra Postgres en el obligatorio de #2324 (c.18996).
+  Pero c.18996 escribe, en su propia tabla de aceptación: «En yaqu.app: … el login completo, **NO HECHO →
+  lo decide el orquestador** (pide un correo real)». Hay una decisión abierta y es tuya. Si decides que el
+  obligatorio basta, se cierra.
+- **1331.** ①②④ están en `main` y la población de ③ está medida por ejecución (1.146 ficheros, 1 llama a la
+  red al cargar). Pero `SCRUM-1331.md:136`, «## 6 · Lo que NO está hecho, dicho», confiesa un límite de esa
+  misma población: «Los 6 ficheros que lanzan `node`/`bash`/`tar` al cargar: la sonda ve que se lanzan, no
+  lo que hacen dentro». Aceptar ese límite o pedir que se mida es decisión de quien cierra.
+
+**Por qué no los paso a TERMINADO para que cuadre el control:** con el mismo criterio que a los otros 130,
+caen en el grupo de abajo (el hueco es tuyo). Darlos por terminados obligaría a cambiar de criterio en
+otros seis tickets. Si tu medición de anoche vale más que mi lectura, gana la tuya, pero dímelo y los
+muevo los ocho juntos, no estos dos sueltos.
+
+### ✅ TERMINADOS: 41, se pueden cerrar
+
+`529` `1018` `1022` `1104` `1108` `1110` `1113` `1116` `1119` `1120` `1126` `1128` `1130` `1214` `1245`
+`1246` `1253` `1258` `1259` `1304` `1313` `1315` `1319` `1321` `1323` `1327` `1329` `1336` `1344` `1345`
+`1392` `1394` `1472` `1477` `1478` `1481` `1514` `1537` `1548` `1550` `1551`
+
+Cada uno, con sus partes y su fichero:línea, está en `veredictos-por-lote.md`. Los que llevan algo que debes
+saber ANTES de cerrar:
+
+- **1304** (la cicatriz): el arreglo SÍ está. `src/lib/invoicing.ts` toma `tomarCerrojoDeSerie` y busca la
+  factura del cobro con `findFirst({ chargeId, merchantId })` antes de emitir, y avisa con `console.error`
+  si ya existía. Hay test, `tests/scrum1304-un-cobro-una-factura.test.mjs`. Entró por #2053 (SCRUM-1330),
+  y `bee39d3b5` es ancestro de `76c29b57c`. Comprobado por mí.
+- **1477**: el registro dice «NO HECHO» en la ④ (`SCRUM-1477.md:134`, «avisado en SCRUM-1465 cuando esté
+  en `main`»). Está caducado: el aviso es SCRUM-1465 c.18790 (7-oct). Comprobado por mí en Jira.
+- **1551**: `SCRUM-1551.md:326` dice «aplicar | NO HECHO, por mandato». Aplicar no era parte del encargo, que
+  pedía PROPONER sin aplicar (④). R1-R6 y D1 viven ahora en SCRUM-1554.
+- **1319**: su «NO HECHO» es el TEXTO que el ticket mandaba escribir en el máster («S1-D ~~✅~~ 🟡 NO HECHO»,
+  `docs/YAQU_MASTER.md:986`), no una falta.
+- **529**: `SCRUM-529.md:42` «Verlo en yaqu.app · NO HECHO → no hay pantalla que lo enseñe». No es una parte
+  de su «Hecho =», y no hay pantalla donde verlo.
+- **1259**: nada por construir, pero `SCRUM-1259.md:187` dice «Sigue abierto como sede de este barrido, por
+  decisión del orquestador». Ciérralo solo si esa decisión ya no vale.
+- **1537**: la rama `scrum-1537-los-dos-cotejos` sigue viva. Es la del #2380, que se cerró sustituido por el
+  #2385, que sí entró. Antes de cerrar, borrar esa rama o declararla muerta (regla 42).
+- **1108**: la «lista» de su ③ se leyó como lo que manda el servidor por fila; la pantalla de «quién me
+  debe» no existe. Si «lista» quería decir pantalla, deja de estar terminado.
+- **1126, 1130**: terminados por enunciado; no consta verificación en yaqu.app tras el merge (lo dicen sus
+  registros).
+- **1550 y 1496 son de J3, como yo.** 1550 sale TERMINADO por un lector, no por mí. «Quien cierra no
+  clasifica su propio “no lo vi”»: míralo tú.
+- Estados de Jira caducados (el trabajo los dejó atrás): 1018 y 1022 dicen «Acción del fundador», y en
+  1116, 1253, 1548, 1550 y 1551 sobran etiquetas `stop-fundador`, `decision-jefe`, `sin-firma` o
+  `listo-para-construir`.
+
+### 🔴 LE FALTA ALGO: 91
+
+Cada uno, con lo que le falta y su cita, en `veredictos-por-lote.md`. **Solo te falta a ti (8): una decisión
+o una verificación del orquestador, sin nada que construir:**
+
+| ticket | lo único que falta |
+|---|---|
+| 1515 | decidir si el login a mano en yaqu.app hace falta (c.18996) |
+| 1331 | aceptar el límite de los 6 ficheros con hijos al cargar, o pedir que se mida (`SCRUM-1331.md:136`) |
+| 1341 | verlo en yaqu.app con sesión de Técnico: «NO HECHO → … lo decide el orquestador» (c.17940) |
+| 1249 | la verificación en yaqu.app tras el merge (`SCRUM-1249.md:118`); el código está completo |
+| 1257 | verlo en pantalla con sesión: «NO HECHO → pide una sesión iniciada» (c.17953) |
+| 1391 | aceptar `staging-gated` como SIN JUZGAR entera (`SCRUM-1345.md:236`) o darle turno |
+| 1328 | decidir si se cierra como duplicado de SCRUM-1289 (propuesto en c.17710) |
+| 1538 | decidir quién mide las dos causas «NO HECHO → sin dueño» (`SCRUM-1538.md:175-176`) |
+
+Los 83 restantes tienen algo sin construir, una decisión del fundador sin tomar (los 11 que siguen en «Acción del
+fundador» esperan lo que dice su fila), el asesor, otro
+carril (1503 a S3, 1505 a S5, 1092 a los dos equipos), o una rama viva sin mergear (534 con #2425, 1553 con
+`scrum-1553b-la-consulta-vacia`).
+
+### ⚠️ NO HE PODIDO MIRAR: 0
+
+Los 132 se leyeron. Que salga cero no quiere decir que todo se pudiera verificar a fondo, y lo digo abajo.
+
+### Lo que NO se ha hecho y lo que NO se ha medido
+
+- **El veredicto de 128 de los 132 es de un lector, no mío.** Yo releí entero 1515 y 1331 (los dos controles
+  rojos), comprobé por efecto 1304 y 1477, y leí en contexto los «NO HECHO» de los TERMINADOS 1319, 1477,
+  529 y 1551. Los otros 37 TERMINADOS no los ha leído una segunda persona. Antes de cerrar, lee el
+  enunciado (A13): esto es la lista de por dónde empezar, no un permiso.
+- **«TERMINADO» lo juzga el lector contra el ENUNCIADO, no contra el protocolo.** Un ticket cuyo enunciado no
+  pedía verlo en yaqu.app sale terminado aunque nadie lo haya visto allí (1126 y 1130 lo declaran).
+- **Los 40 NADA EN MAIN no se han mirado aquí.** De 38 de ellos ya se ocupó SCRUM-1550 por contenido, y los
+  57 que esperan al fundador los audita otra sesión.
+- La foto de Jira y la lectura no son del mismo instante: Jira es de las 06:54Z y los lectores leyeron
+  comentarios hasta las ~07:30Z. Un comentario posterior a esa hora no está mirado.
+- El instrumento del censo no se ha cambiado. La capa de contenido de SCRUM-1550 no hizo falta: sirve para
+  los NADA, y aquí todos son ALGO.
+
+### Aceptación (del encargo de `cobroflash-backend-2e`) → dónde se ve
+
+| lo pedido | dónde se ve |
+|---|---|
+| re-medir el 128 | «La población, otra vez»: 132 de 172 a las 06:54Z |
+| tres veredictos por ticket, con evidencia | `docs/master/evidencias/SCRUM-1496c/veredictos-por-lote.md` y las tres secciones de arriba |
+| enunciado entero, cada parte por efecto | `criterio-de-lectura.md` (escrito antes) y la columna de partes de cada fila |
+| los controles | tabla «Los controles, corridos»: 5 bien, 2 en rojo y explicados |
+| la población declarada | 132 clasificados · 0 sin mirar · 128 por un lector, 4 releídos por mí |
+| reusar `tabla-ya-esta.mjs` | «La población, otra vez» |
