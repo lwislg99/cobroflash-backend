@@ -56,3 +56,50 @@ orquestador lo pare si no vale.
   otro país. Lo de arriba es la palabra forzada por la sonda sobre la cuenta de España.
 - No sé si hay hoy cuentas de MX, CO, PE o CL en producción.
 - Nada desplegado al escribir esto. Móvil y otro navegador.
+
+## SCRUM-1487b · El rótulo de las tres opciones lee la palabra del locale
+
+**Medido contra:** `origin/main` = `5d076797d991c3275ad973da5b21147c4b745274` · 2026-10-14T15:58:23Z (`Date:` de GitHub)
+A9: sin fallo que generalice — defecto de paso que encargó el orquestador (14-oct, tanda de tarde, punto 1); medido antes de tocar
+
+**Skill UI:** no cargada · no toca marcado, clases, estilos ni tokens: cambia de dónde sale UNA palabra de un rótulo que ya existía. Un fichero de `public/dashboard/js` (`quotesDetailView.js`).
+
+14-oct-2026 · **S2** (`s2-14oct-b`) · rama `scrum-1487b-tres-opciones-lee-la-palabra`. Sin ticket propio: es
+un defecto de paso (orden nº 1, punto 4) y va con el ticket del mecanismo.
+
+### Qué cambia
+
+| Sitio | Antes | Ahora |
+|---|---|---|
+| Rótulo encima de Básico/Estándar/Premium (`quotesDetailView.js`) | `Cotización con 3 opciones`, a mano, en TODOS los países | `${appLocale.quote} con 3 opciones` |
+
+En España y Argentina pasa a decir «Presupuesto con 3 opciones», que es lo que ya dice la cabecera de esa
+misma ficha. En MX, CO, PE y CL no cambia nada. Firma: el mismo caso que el de arriba — la palabra es
+oficial por país (`src/core/i18n/locales.ts`) y el resto del rótulo («con 3 opciones») no concuerda con ella.
+
+### Lo que NO cambia, y por qué (STOP)
+
+- **«Sin gastos asignados a esta cotización.»** (`quotesDetailView.js`, bloque de margen). Medido: el locale
+  trae `quote` («Presupuesto»/«Cotización»), `quoteVerb` (la misma en minúscula) y `quoteArticle`
+  («el presupuesto»/«la cotización»). **No trae el demostrativo**, y aquí concuerda: «este presupuesto» /
+  «esta cotización». Componerlo con `quoteVerb` da «esta presupuesto»; con `quoteArticle`, «a el
+  presupuesto». Sacar el género del artículo sería componer, y SCRUM-1476 fija frases enteras por país.
+  Las salidas (una frase nueva en el locale, o un texto que no concuerde) piden firma: se le devuelve al
+  orquestador.
+- **El resto del panel**, medido de paso con `grep` sobre `public/dashboard/**/*.{js,html}`: hay más
+  «cotización» fijos fuera de este fichero (`homeView.js`, `quotesListView.js`, `app.js`, `onboardingView.js`,
+  `tutorial.js`, `productsView.js`, `reportsView.js`, `settingsView.js`; y `customersView.js`, que es de J2).
+  Nombrados en la entrega, no tocados.
+
+### Verificado, ejecutando
+
+- `tests/scrum1487b-tres-opciones-lee-la-palabra.test.mjs`, 3 casos, la ficha EJECUTADA en el banco con
+  cada locale: **rama 3 de 3**. Con el `quotesDetailView.js` de `origin/main` cae el de España:
+  `actual: [ 'Cotización con 3 opciones' ]` (control positivo).
+- Los 31 ficheros de `tests/` que nombran `quotesDetailView`: 271 de 271. La suite completa NO, en local:
+  1.219 MB libres, por debajo del umbral. La corre el CI.
+
+### Lo que NO se ha podido mirar
+
+- **En yaqu.app:** el rótulo sólo sale en un presupuesto CON opciones, y la cuenta QA no puede crear
+  ninguno (`POST /quote/create` da 403 `trial_expired` desde el 12-oct).
