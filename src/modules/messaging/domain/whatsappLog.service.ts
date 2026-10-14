@@ -18,6 +18,13 @@ export type WaRelatedType = 'quote' | 'invoice' | 'charge' | 'albaran' | 'review
 export interface RecordWaMessageInput {
   merchantId: number;
   customerId?: number | null;
+  /**
+   * SCRUM-529 · El número al que se mandó, TAL CUAL se le dio al proveedor (`to`). No sale de la
+   * ficha del cliente: la ficha se corrige, y con ella se perdía a dónde fue el envío anterior.
+   * OBLIGATORIO en el tipo a propósito: un envío nuevo que no lo pase no compila. `null` sólo si
+   * de verdad no hay número.
+   */
+  toPhone: string | null;
   type: WaMsgType;
   templateName?: string | null;
   waMessageId?: string | null;
@@ -35,6 +42,7 @@ export async function recordWaMessage(input: RecordWaMessageInput): Promise<void
       data: {
         merchantId: input.merchantId,
         customerId: input.customerId ?? null,
+        toPhone: input.toPhone ?? null,
         type: input.type,
         templateName: input.templateName ?? null,
         waMessageId: input.waMessageId ?? null,
@@ -110,6 +118,8 @@ function plantillasDeHoy(merchantId: number, zona: string, ahora: Date) {
 export async function reservarPlantilla(db: ClienteDeLaBase, input: {
   merchantId: number;
   customerId?: number | null;
+  /** SCRUM-529 · La reserva nace ANTES de hablar con el proveedor: si no lo lleva ella, no lo lleva nadie. */
+  toPhone: string | null;
   templateName?: string | null;
   topeComercio: number;
   topeCliente: number;
@@ -138,6 +148,7 @@ export async function reservarPlantilla(db: ClienteDeLaBase, input: {
         data: {
           merchantId: input.merchantId,
           customerId: input.customerId ?? null,
+          toPhone: input.toPhone ?? null,
           type: 'template',
           templateName: input.templateName ?? null,
           status: 'queued',
@@ -210,6 +221,8 @@ export async function recordInboundWaMessage(rawPhone: string): Promise<void> {
       select: { id: true, merchantId: true },
     });
     if (!customers.length) return; // número sin cliente asociado: nada que abrir
+    // SCRUM-529: SIN `toPhone`, y no es un olvido. Es un mensaje ENTRANTE: no se mandó a ningún
+    // número, así que la columna se queda a NULL.
     await prisma.whatsAppMessage.createMany({
       data: customers.map((c) => ({
         merchantId: c.merchantId,

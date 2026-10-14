@@ -225,6 +225,8 @@ test('SCRUM-244 · con el nombre escrito: ANOTA primero y redacta despues, en es
     'emailMessage.updateMany': async () => ({ count: 5 }),
     // SCRUM-1014: y el teléfono del contacto de cada sitio guardado.
     'customerSite.updateMany': async () => ({ count: 2 }),
+    // SCRUM-529: y el número al que se mandó cada WhatsApp (la fila se conserva).
+    'whatsAppMessage.updateMany': async () => ({ count: 4 }),
   });
   try {
     const res = resFalso();
@@ -240,6 +242,7 @@ test('SCRUM-244 · con el nombre escrito: ANOTA primero y redacta despues, en es
     assert.deepEqual(res.body.redactados, [
       { modelo: 'merchant', filas: 1 }, { modelo: 'customer', filas: 3 }, { modelo: 'emailMessage', filas: 5 },
       { modelo: 'customerSite', filas: 2 },
+      { modelo: 'whatsAppMessage', filas: 4 },
     ]);
   } finally { restaurar(); delete process.env.MERCHANT_DELETE_ENABLED; }
 });

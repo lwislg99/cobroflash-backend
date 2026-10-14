@@ -1275,7 +1275,7 @@ model WhatsAppMessage {
   type         String // 'template' | 'service'
   templateName String? @map("template_name")
   waMessageId  String? @unique @map("wa_message_id") // id que devuelve Meta (wamid.*)
-
+  toPhone      String? @map("to_phone") // SCRUM-529: el número al que se mandó, tal cual se le dio a Meta. NULL = anterior a la columna, o entrante. Va en esta línea, que estaba en blanco, para no mover las de debajo: hay documentos que las citan por número.
   status String  @default("queued") // queued → sent → delivered → read | failed
   error  String?
 
