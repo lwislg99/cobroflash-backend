@@ -34,12 +34,15 @@ async function tarjetas(tiers) {
   };
   const original = prisma.quote.findUnique;
   prisma.quote.findUnique = async () => quote;
+  // SCRUM-1302p · la página pregunta si hay una versión más reciente del grupo; aquí, ninguna.
+  const originalCount = prisma.quote.count;
+  prisma.quote.count = async () => 0;
   const capa = quoteDecisionLandingRouter.stack.find((l) => l.route?.path?.includes?.('/quote/:token'));
   assert.ok(capa, '🔴 CIEGO: no encuentro GET /quote/:token');
   let html = '';
   const res = { setHeader() { return res; }, status() { return res; }, send(b) { html = String(b); return res; }, redirect() { return res; } };
   try { await capa.route.stack[0].handle({ params: { token: 'abcdef0123456789abcdef0123456789' }, query: {}, headers: {} }, res); }
-  finally { prisma.quote.findUnique = original; }
+  finally { prisma.quote.findUnique = original; prisma.quote.count = originalCount; }
   const trozos = html.split('<div class="tier-card').slice(1).map((t) => t.split('Elegir este plan')[0]);
   assert.equal(trozos.length, tiers.length, `🔴 CIEGO: esperaba ${tiers.length} tarjeta(s) y la página trae ${trozos.length}`);
   return trozos;

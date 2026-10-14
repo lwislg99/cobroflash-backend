@@ -41,7 +41,11 @@ const MUTANTES = [
   // SCRUM-1056c · cada fallo con su texto (firma: SCRUM-1056 comentario 19453).
   ['M14 · el fallo de «Hecho» vuelve a salir con el texto de guardar (lo que había antes de 1056c)', (s) => s.replace("            pintarEstado(TEXTOS.noMarcado);", "            pintarEstado(TEXTOS.noGuardado);")],
   ['M15 · el fallo de guardar sale con el texto de «Hecho»', (s) => s.replace("          avisoPuesto = aviso(TEXTOS.noGuardado);", "          avisoPuesto = aviso(TEXTOS.noMarcado);")],
-  ['M16 · el texto nuevo acaba como la primera firma, la retirada («de nuevo»)', (s) => s.replace("noMarcado: 'No se ha podido marcar como hecha. Inténtalo otra vez.',", "noMarcado: 'No se ha podido marcar como hecha. Inténtalo de nuevo.',")],
+  // SCRUM-1056d · los dos acaban en «Inténtalo de nuevo.», la forma de la casa (SCRUM-1215 c.19460).
+  // M16 era «el texto nuevo acaba como la firma retirada («de nuevo»)»: hoy «de nuevo» es lo firmado,
+  // así que el mutante se da la vuelta y es el control positivo del encargo: con el texto viejo, se ve.
+  ['M16 · el fallo de «Hecho» vuelve al final de antes de 1056d («otra vez»)', (s) => s.replace("noMarcado: 'No se ha podido marcar como hecha. Inténtalo de nuevo.',", "noMarcado: 'No se ha podido marcar como hecha. Inténtalo otra vez.',")],
+  ['M17 · el fallo de guardar vuelve al final de antes de 1056d («otra vez»)', (s) => s.replace("noGuardado: 'No se ha podido guardar la llamada. Inténtalo de nuevo.',", "noGuardado: 'No se ha podido guardar la llamada. Inténtalo otra vez.',")],
 ];
 
 const normal = ORIGINAL.toString('utf8').replace(/\r\n/g, '\n');

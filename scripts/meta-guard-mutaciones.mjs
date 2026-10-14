@@ -319,9 +319,17 @@ export function mutacionesDeclaradas(codigo, nombre = 'x.mjs') {
  * Es la ÚNICA señal auto-declarada que hay en el árbol, y es DÉBIL EN LAS DOS DIRECCIONES —
  * medido el 17-sep-2026: de los 81 que declaran, sólo 18 se titulan guard; y de los 206 que se
  * titulan guard, sólo 18 declaran. No es un censo de guards y el rótulo lo dice en voz alta.
+ *
+ * 🔴 SCRUM-812d · se cuenta la PALABRA «guard»/«guards», no la subcadena. Hasta el 14-oct-2026 casaba
+ * con «guarda», «guardado», «guardada» (de guardar): medido sobre `origin/main` = `4f487bb17`, 303
+ * ficheros «se titulaban GUARD» por subcadena y 154 por palabra; en el subconjunto que además
+ * declara, 34 y 30. Los cuatro que salen, en el trinquete de
+ * `tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs`, con su línea.
+ * ⚠️ El final de palabra es una lista de letras y no `\b`: sin la bandera `u`, `\b` toma la «é» de
+ * «guardé» por un final de palabra.
  */
 export function seTitulaGuard(codigo) {
-  return /test\(\s*[`'"][^`'"]*GUARD/i.test(codigo);
+  return /test\(\s*[`'"][^`'"]*GUARDS?(?![a-záéíóúüñ])/i.test(codigo);
 }
 
 /**
