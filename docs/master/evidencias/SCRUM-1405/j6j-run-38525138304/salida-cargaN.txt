@@ -1,0 +1,11 @@
+control del lector · ok (nombre escapado y directiva SKIP leídos)
+CONTROLES · 30 pasadas (presente, corte, ciego × con/sin el flag × 5) · 0 pasadas con algún control fuera de lo esperado
+  corte: 100 ausentes · 50 con testigo · 50 SIN testigo (deben ser 5 por pasada: 50)
+  el testigo dice las dos cosas, y el analizador dice CIEGA cuando no hay testigo
+REAL · tests/scrum834-puerta-avisador-rojo.test.mjs · sha256 ddbeab7ebbe33b1e · 53 líneas «test(» en columna 0 · la instrumentación cambia 1 línea de 648
+restaurado · sha256 IGUAL al original
+POBLACIÓN · node v24.21.0 · linux · 4 hilos · carga 4 · 200 pasadas por brazo
+  sin-tocar-con-flag: 200 pasadas · 160 con «# tests» por debajo de 53 · salidas 0
+  testigo-con-flag: 200 pasadas · 0 CIEGAS · declarados por pasada 53 · 162 con «# tests» por debajo de 53 · 162 con casos ausentes · 2670 casos ausentes · 2670 CON testigo · 0 SIN testigo · 0 informados sin testigo · forma cola · salidas 0
+  testigo-sin-flag: 200 pasadas · 0 CIEGAS · declarados por pasada 53 · 0 con «# tests» por debajo de 53 · 0 con casos ausentes · 0 casos ausentes · 0 CON testigo · 0 SIN testigo · 0 informados sin testigo · forma - · salidas 0
+veredicto · 0 casos ausentes sin testigo

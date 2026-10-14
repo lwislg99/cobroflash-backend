@@ -1,0 +1,62 @@
+# ⛔ EXPERIMENTO DESECHABLE · SCRUM-1405 (J6j) · ESTE FICHERO NO SE MERGEA NUNCA A `main`.
+#
+# El workflow NUEVO Y APARTE que autoriza SCRUM-1339 c.17951 ①. Vive SÓLO en la rama
+# `exp-1405-testigo-en-fichero-real`, que no empieza por `scrum-` (el bot no le abre PR). Se dispara
+# con un push a esa rama o a mano: no es check de ningún PR, no es requerido y no puede bloquear nada.
+# No toca `ci.yml`, ni el script `test`, ni `--test-force-exit`, ni nada de `area-s5`.
+#
+# Qué pregunta: en UN fichero real (`scrum834`), de los casos que no informan con el flag, ¿todos
+# tienen su testigo de «empecé»? El testigo se escribe en la copia desechable del runner, en su sitio,
+# y se restaura con su sha256 comprobado. Nada de `tests/` cambia en la rama.
+# El repositorio es público y estos logs también: aquí no hay ni se imprime ningún secreto.
+name: exp-1405-j6j · testigo dentro de un fichero real
+
+on:
+  push:
+    branches: [exp-1405-testigo-en-fichero-real]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  E: docs/master/evidencias/SCRUM-1405
+
+jobs:
+  testigo-real:
+    name: scrum834 con testigo (con y sin el flag)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Qué máquina y qué node
+        run: |
+          node -v
+          echo "hilos: $(nproc)"
+          git rev-parse HEAD
+      - name: Sin carga
+        run: node "$E/j6j-testigo-real.mjs" "$RUNNER_TEMP/j6j" --en-sitio --pasadas 200 --carga 0 > "$RUNNER_TEMP/salida-carga0.txt" 2>&1
+      - name: Lo que dijo (sin carga)
+        if: always()
+        run: cat "$RUNNER_TEMP/salida-carga0.txt"
+      - name: Con un proceso de carga por hilo
+        run: node "$E/j6j-testigo-real.mjs" "$RUNNER_TEMP/j6j" --en-sitio --pasadas 200 --carga "$(nproc)" > "$RUNNER_TEMP/salida-cargaN.txt" 2>&1
+      - name: Lo que dijo (con carga)
+        if: always()
+        run: cat "$RUNNER_TEMP/salida-cargaN.txt"
+      - name: El árbol del runner quedó como estaba
+        if: always()
+        run: git status --porcelain && test -z "$(git status --porcelain)"
+      - name: Guardar
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: exp1405-j6j
+          path: |
+            ${{ runner.temp }}/salida-carga*.txt
+            ${{ runner.temp }}/j6j/*.tsv
+          retention-days: 7
+          if-no-files-found: warn
