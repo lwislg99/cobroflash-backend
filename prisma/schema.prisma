@@ -685,6 +685,9 @@ model Quote {
   tiers                Json?
   selectedTierId       String?
   internalNotes        String?   @map("internal_notes") @db.Text // Notas privadas del profesional, nunca visibles al cliente
+  // SCRUM-1273 · ARCHIVAR es quitarlo de la lista, no un estado: NULL = no archivado. Sin
+  // `archived_by` ni auditoría (c.19655): el quién NO queda. ALTER en docs/sql/scrum-1273-archivar-presupuestos.sql.
+  archivedAt           DateTime? @map("archived_at")
   // ⚠️ NO es la evidencia de la FIRMA, y la distinción costó medirla (SCRUM-805): esto lo escribe
   // el camino de ADMIN cuando el profesional marca a mano «aceptado/rechazado» ({method,
   // typedName, …}, ver `quotesAdmin.ts`). El camino público de firma NUNCA la toca. Se deja

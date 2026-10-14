@@ -475,6 +475,8 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
           decisionComment: comment,
           rejectionReason: null,
           rejectedAt: null,
+          // SCRUM-1273 · aceptado y archivado sería un compromiso que no sale en la lista (c.19605).
+          archivedAt: null,
           ...(signatureData ? { signatureUrl: signatureData } : {}),
           ...(evidenciaFirma ? { evidenciaFirma: evidenciaFirma as any } : {}),
           ...(tierId ? { selectedTierId: tierId } : {}),
@@ -729,6 +731,8 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
           decisionChannel: 'whatsapp',
           rejectionReason: reason || comment || null,
           decisionComment: comment ?? null,
+          // SCRUM-1273 · la decisión del cliente lo devuelve a la lista (c.19605, decisión 1).
+          archivedAt: null,
         },
       });
       } catch (e) {
