@@ -720,6 +720,34 @@ A9: comprobación → `tests/scrum1302r-el-post-rechaza-la-version-vieja.test.mj
 
 A9: comprobación → `tests/scrum1294-a9-leccion-en-a10.test.mjs`
 
+
+---
+
+# SCRUM-1302s · dos firmas a la vez sobre la misma ranura del PARTE: escribe una (S1)
+
+**Medido contra:** `origin/main` = `099cfd383764b8cd87ab78e9ef7df8ca57a206a7` · 2026-10-14T16:36:49Z (`Date:` de GitHub, la de las dos salidas de la sonda). Lo escribe S1.
+A9: comprobación → `tests/scrum1302s-dos-firmas-del-parte-a-la-vez.test.mjs`
+
+**El tercer sitio del patrón** de 1302j (firma remota) y 1302k (albarán en obra), encargado por el orquestador el 14-oct-2026: «medirlo igual; si no reproduce, se cierra el cabo».
+
+**REPRODUCE, medido con el código de `main`** (`evidencias/SCRUM-1302/partes-dos-a-la-vez/salida-main.txt`, sonda `sonda.mjs` con la ruta real de `dist` y un doble del `update` fiel al `where`). Dos `POST /admin/partes/:id/firmar` a la vez → **200 y 200, 2 escrituras**, y en la fila queda el SEGUNDO nombre y trazo. El primero recibió un 200 de una firma que ya no está. `/firmar-tecnico`, igual. Controles en la misma sonda: una firma sola escribe 1 vez; una segunda posterior ya daba 409.
+
+## Lo construido
+
+- `src/modules/jobs/app/routes/partes.routes.ts`: la ranura leída vacía va en el `where` (`firmadoAt: null` en `/firmar`, `firmadoTecnicoAt: null` en `/firmar-tecnico`). Quien llega tarde (P2025) relee con tenancy y recibe lo que ya contestaba la puerta de arriba: `409 parte_locked` con el mismo motivo (`puedeFirmarCliente` / `puedeFirmarTecnico`). La cola de firmas lo trata como ÉXITO al drenar. **Ningún texto nuevo.** Si la fila sigue ahí con la ranura vacía (no debería), LANZA → 500, nunca un 409 que la cola daría por bueno.
+- **El sello no se toca:** `computeParteContentHash` y su entrada son los mismos; sólo cambia la condición de la escritura.
+
+## Verificado, ejecutando
+
+- `tests/scrum1302s-dos-firmas-del-parte-a-la-vez.test.mjs`, 6 de 6: control positivo por ranura; carrera en cada ranura (1 escritura, gana la primera, la otra 409 con el motivo literal); **cliente y técnico a la vez entran los dos** (ranuras distintas, mismo sello); secuencial como antes.
+- **Rojo con cada mutación** (la condición fuera del `where`): M1 tumba la carrera de `/firmar`, M2 la de `/firmar-tecnico`, una cada una. Restauradas y recompiladas. Declaradas en `MUTACIONES_QUE_ME_TUMBAN`.
+- La sonda contra esta rama (`salida-1302s.txt`): 200 y 409, 1 escritura, queda la primera.
+- Los 9 ficheros de test que cargan `partes.routes.js`: 72 de 72.
+
+## Lo que NO cubre
+
+- **Editar el parte mientras se firma** (lo que 1302o cerró en el albarán con `version`): `ParteTrabajo` no tiene columna `version`, y la firma ya congela el contenido. No lo he medido.
+- **En producción: NO lo he intentado.** Haría falta un parte sin firmar en la cuenta QA y dos `POST` simultáneos desde una sesión con escritura; con la prueba de la cuenta caducada (12-oct) no he comprobado si deja crear un parte.
 ## SCRUM-1302t: el 5xx al aceptar (firma de c.19719)
 
 **Medido contra:** `origin/main` = `56d53be5cf2df7bac82c6891960095fdbc849c94` · 2026-10-14T16:48:07Z
