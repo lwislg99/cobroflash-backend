@@ -114,3 +114,72 @@ sólo ése. El corte es el commit de merge, no una fecha escrita.
     node docs/master/evidencias/scrum1387b/derivar-contra-la-lista.mjs
     node docs/master/evidencias/scrum1387b/verlo-caer.mjs
     node docs/master/evidencias/scrum1387b/simular-el-aterrizaje.mjs <sha de main>
+
+## SCRUM-1387c · el rojo del obligatorio de #2382 era una fuga de verdad, y se borra
+
+**Medido contra:** `origin/main` = `1d338a5ae8afa6166282c28e7a8c818c5375a856` · 2026-10-14T01:50:40Z
+(J4 del equipo de Javier, sesión `jv-j4a`; encargo del orquestador `cobroflash-backend-2e`. El ticket lleva
+`area-j6`: carril cruzado por encargo. Esta rama lleva dentro la de 1387b, traída con `git merge`, y su PR
+sustituye al #2382.)
+
+A9: comprobación → `tests/scrum864c-el-temporal-no-vuelve.test.mjs`
+
+### Qué caía, con su población
+
+El obligatorio de #2382 (job 115316206418, log de 1.832.276 bytes y 15.260 líneas, sin «TANDA SIN VEREDICTO»):
+**11.268 tests · 11.178 pasan · 1 cae · 89 saltados · 0 cancelados** (11.178 + 1 + 89 = 11.268). El caído:
+«SCRUM-864c · ③ NINGÚN temporal nuevo nace sin borrarse», con UNA línea:
+
+    [NO_GARANTIZADA] docs/master/evidencias/scrum1387b/verlo-caer.mjs:22 · mkdtempSync(…) → TMP · borra en 155 SIN cobertura
+
+En local, sobre esta rama con la de 1387b mezclada y antes de tocar nada: 4 casos, 3 pasan, 1 cae, la misma línea.
+
+### Era una fuga real, no un tecnicismo del censo
+
+El guion borraba su temporal en la última línea, y tiene tres salidas que no llegan a ella: los dos
+«NO ARRANCO» (`process.exit(2)`) y cualquier `git` que lance. Visto por efecto antes del arreglo: con el
+árbol sucio sale con 2 y en el temporal del sistema queda su carpeta (`scrum1387b-*`: 0 antes, 1 después).
+Si la salida llega tras la fila del clon superficial, lo que queda dentro es un clon del repositorio.
+
+### El arreglo
+
+`process.on('exit', …)` junto a la creación: borra salga por donde salga, también en `process.exit`, que
+un `finally` no cubre. La llamada **sigue siendo `mkdtempSync` y sigue dentro de la población del censo**,
+que ahora la cuenta entre las garantizadas; no se ha tocado el censo, ni su lista de declaradas, ni el
+guard. Y el guion dice él mismo, al acabar, si su temporal sigue en disco (y entonces cuenta un fallo).
+
+| camino | carpetas `scrum1387b-*` en el temporal, antes → después | salida |
+|---|---|---|
+| salida temprana (árbol sucio), ANTES del arreglo | 0 → 1 | 2 |
+| salida temprana (árbol sucio), con el arreglo | 0 → 0 | 2 |
+| un `git` que lanza (sin `git` en el PATH), con el arreglo | 0 → 0 | 1 |
+| la pasada completa, con el arreglo | 0 → 0 | 0 |
+
+`tests/scrum864c-el-temporal-no-vuelve.test.mjs` después: 4 casos, 4 pasan.
+
+### Lo de 1387b sigue haciendo lo suyo (`evidencias/scrum1387c/salida-verlo-caer.txt`)
+
+La pasada completa del banco de siembra sobre esta rama: **11 filas, 0 mal**. Las 3 mutaciones caen cada una
+en su caso; el banco sembrado cae sin comitear y comiteado, nombrando carpeta y guion; **el clon superficial
+dice CIEGO**; `HEAD` y `git status` iguales después, y ninguna carpeta sembrada en `docs/master/evidencias/`.
+
+La población ha cambiado sola, como dice c.19380: **144 ficheros con «mut» · 58 bancos · 34 fuera · 34
+heredados · 0 nuevos** (ayer 136 · 54 · 31 · 31). Entre los dos `main` han entrado tres bancos fuera del
+catálogo y salen heredados: es el «no caduca en vuelo», visto esta vez sin simular. La amnistía aceptada en
+c.19383 con el número 31 es hoy de 34 por la misma regla; cuáles son esos tres no lo he mirado.
+
+### Lo que NO he medido
+
+La tanda completa y `guards:entrada` (este árbol no tiene `dist/`) · el obligatorio de este PR · el camino
+del `git` que lanza ANTES del arreglo (sólo el de la salida temprana) · un proceso matado a lo bruto, que
+no ejecuta ningún manejador de salida y seguirá dejando la carpeta: es el límite que la cabecera de 864c ya
+declara · `simular-el-aterrizaje.mjs`, que no he corrido (su temporal ya iba en un `finally` y el censo no
+lo acusaba).
+
+### Mis errores
+
+- No medí mi contexto al acabar el arranque ni al acabar de leer el ticket, como pedía el encargo: la
+  primera medida fue de 194.739, con el arreglo ya hecho. Es la falta que este puesto lleva apuntada en sus
+  cicatrices, repetida.
+- Mi primera prueba de la fuga dejó una carpeta mía en el temporal del sistema (`scrum1387b-kgq3qJ`, vacía);
+  la borré a mano antes de seguir midiendo.
