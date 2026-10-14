@@ -233,3 +233,34 @@ una foto de ese momento; la orden lo vuelve a medir al correr.
 ## Lo que esto NO dice
 
 Que las ESCRITURAS de las órdenes funcionen en producción. Ninguna se ha corrido.
+
+## SCRUM-1367e · las cinco condiciones de c.18479, dentro de `aceptado` (14-oct-2026)
+
+Puesto S3 (s3-14octb), 09:20Z (hora de GitHub), base `origin/main` `7f5e1dd225430829497a6a778f06527892b606f4`.
+**Nada sembrado ni escrito en producción.** Sólo lecturas GET con la cuenta QA (abajo).
+
+| Condición (c.18479) | Antes de este tramo | Ahora |
+|---|---|---|
+| 1 · sólo la cuenta QA | sí (`comprobarCuentaQA`: merchant 46 y owner) | igual |
+| 2 · ni documento ni cobro, y lo comprueba después | **no**: lo decía el comentario, no se medía | ids de `/admin/invoices`, `/admin/cobros` y `/admin/albaranes` antes y después; si difieren, sale 1 gritando. También si el `accept` revienta o el Trabajo no sale. Lista ilegible o llena = no acepta. ⚠️ **«deshace» NO se cumple:** un aceptado no se rechaza (409) y un emitido no se borra (regla 29) |
+| 3 · teléfonos del rango imposible | sólo heredado de `sembrar-qa` (busca el cliente por nombre) | relee la ficha del cliente; todo teléfono `340` + 8 dígitos, o no escribe |
+| 4 · deshacible y declarado | dice qué crea, no cómo se quita | dice qué queda y que **no se quita por el panel**. ⚠️ «deshacible» NO se cumple, por lo mismo que en la 2 |
+| 5 · fail-closed si `INVOICING_ES_ENABLED` no está en OFF | **no** (0 menciones) | `GET /admin/me` → `modoEmision` tiene que ser `receipt` (lo calcula `getEmissionMode`). Cualquier otro valor o ninguno → sale 3 sin escribir. Se lee otra vez justo antes del `accept` |
+
+**Medido:**
+
+* `node --test tests/scrum1367-sembrar-casos.test.mjs`: 23 tests, 23 pass (17 de antes + 6 nuevos).
+* 10 mutaciones declaradas (6 + 4), y cada una tumba el test que nombra. Base sin mutar verde antes y después.
+* `npm run build` sale 2 por 7 errores de tipos de Prisma (`seriesYear`, `toPhone`), del cliente viejo en los `node_modules` compartidos. No son de este tramo.
+
+**Visto en producción (sólo GET, cuenta QA, 14-oct ~09:18Z):**
+
+| Ruta | Respuesta |
+|---|---|
+| `/admin/me` | `merchantId: 46` · `isOwner: true` · `modoEmision: "receipt"` |
+| `/admin/invoices` | array, 0 elementos |
+| `/admin/cobros` | array, 0 elementos |
+| `/admin/albaranes` | `{ filas }`, 2 filas |
+| `/admin/customers/83` | `mobile: "34000001268"` · `phone: null` |
+
+🔴 **Lo que impide sembrarlo hoy:** `/admin/me` da `plan: "trial"` con `planExpiresAt: 2026-10-12T14:41:58.799Z`, y `POST /quote/create` lleva `requireActivePlan`, que con la prueba vencida responde **403 `trial_expired`** (`src/core/http/authMiddleware.ts`). La orden fallaría en el alta del borrador (sale 1 sin aceptar nada). Afecta a cualquier sesión que cree presupuestos en la cuenta QA. Alargar el plan es escribir en el merchant: no lo hago yo.

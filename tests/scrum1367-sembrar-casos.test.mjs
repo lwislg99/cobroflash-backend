@@ -16,7 +16,7 @@ import {
   ejecutar, escrituraDeCasoPermitida, ESCRITURAS_DE_CASOS, MARCA_ACEPTADO, MARCA_PLAN, PLAN_QA,
   PERFIL_FISCAL_QA, TOPE_PARTES_POR_ORDEN,
 } from '../scripts/qa/sembrar-casos.mjs';
-import { MERCHANT_QA, NOMBRE_CLIENTE_QA, TITULO_TRABAJO_QA, escrituraPermitida } from '../scripts/qa/sembrar-qa.mjs';
+import { MERCHANT_QA, NOMBRE_CLIENTE_QA, MOVIL_CLIENTE_QA, TITULO_TRABAJO_QA, escrituraPermitida } from '../scripts/qa/sembrar-qa.mjs';
 import { Rechazo } from '../scripts/qa/sesion-panel.mjs';
 // Los esquemas DE VERDAD (lección de SCRUM-1268c): un servidor de mentira que dice que sí a todo
 // prueba el guion contra sí mismo.
@@ -67,6 +67,34 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: '  if (false) {',
     cae: 'SCRUM-1367 · ④ sin --crear-hasta SÓLO MIDE: cero escrituras, y dice que no hay',
   },
+  {
+    // Condición 5 de c.18479: aceptar con la facturación encendida.
+    fichero: 'scripts/qa/sembrar-casos.mjs',
+    de: '  if (me.modoEmision !== MODO_QUE_PERMITE_ACEPTAR) {',
+    a: '  if (false) {',
+    cae: 'SCRUM-1367e · 🔴 condición 5: fuera de «receipt» (o sin modo) «aceptado» NO escribe nada',
+  },
+  {
+    // Condición 3: un cliente con un teléfono de verdad.
+    fichero: 'scripts/qa/sembrar-casos.mjs',
+    de: '  if (reales.length) {',
+    a: '  if (false) {',
+    cae: 'SCRUM-1367e · 🔴 condición 3: un teléfono fuera del rango imposible y «aceptado» NO escribe nada',
+  },
+  {
+    // Condición 2: no comparar la foto de después.
+    fichero: 'scripts/qa/sembrar-casos.mjs',
+    de: '    if (nuevos.length || idos.length) {',
+    a: '    if (false) {',
+    cae: 'SCRUM-1367e · 🔴 condición 2: si aceptar crea una factura o un cobro, GRITA y sale 1',
+  },
+  {
+    // Condición 2: comparar sólo en el camino feliz (el Trabajo no sale y la foto no se mira).
+    fichero: 'scripts/qa/sembrar-casos.mjs',
+    de: '  if (intento.fotoAntes !== null) {',
+    a: '  if (intento.fotoAntes !== null && !fallo) {',
+    cae: 'SCRUM-1367e · 🔴 condición 2: la foto de después se mira TAMBIÉN si el accept revienta o el Trabajo no sale',
+  },
 ];
 
 const COOKIE = 'pf_session=tok1367abcdef';
@@ -84,11 +112,16 @@ function resp(status, cuerpo) {
  * `/admin/partes` → `{partes}`; aceptar crea el Trabajo con `totalAceptado` = total del presupuesto.
  */
 function panel({
-  me = { merchantId: MERCHANT_QA, isOwner: true, merchantName: 'PruebaQA' },
+  me = { merchantId: MERCHANT_QA, isOwner: true, merchantName: 'PruebaQA', modoEmision: 'receipt' },
   sinBase = false, sinTrabajoAlAceptar = false, pierdePlan = false,
   merchant = {}, albaranes = [205], partes = [], proximoParte = 200,
+  // SCRUM-1367e · lo que la condición 2 y la 3 miran
+  ficha = { mobile: MOVIL_CLIENTE_QA, phone: null }, facturas = [], cobros = [{ origen: 'invoice', id: 9 }],
+  emiteAlAceptar = false, aceptarRevienta = false,
 } = {}) {
   const s = {
+    facturas: facturas.map((id) => ({ id })),
+    cobros: cobros.map((c) => ({ ...c })),
     clientes: sinBase ? [] : [{ id: ID_CLIENTE, name: NOMBRE_CLIENTE_QA }],
     trabajos: sinBase ? [] : [{ id: ID_TRABAJO_QA, tituloPropio: TITULO_TRABAJO_QA, customer: { id: ID_CLIENTE }, quote: null, totalAceptado: null }],
     albaranes: albaranes.map((id) => ({ id, numero: `AB-${id}`, estado: 'emitido' })),
@@ -107,6 +140,9 @@ function panel({
     llamadas.push({ m, ruta: u.pathname + u.search, cuerpo, cookie: init.headers && init.headers.cookie });
     if (clave === 'GET /admin/me') return resp(200, me);
     if (clave === 'GET /admin/customers') return resp(200, s.clientes.filter((c) => c.name.includes(u.searchParams.get('search') || '')));
+    if (clave === `GET /admin/customers/${ID_CLIENTE}`) return resp(200, { id: ID_CLIENTE, name: NOMBRE_CLIENTE_QA, ...ficha });
+    if (clave === 'GET /admin/invoices') return resp(200, s.facturas);
+    if (clave === 'GET /admin/cobros') return resp(200, s.cobros);
     if (clave === 'GET /admin/jobs') return resp(200, s.trabajos);
     if (clave === 'GET /admin/albaranes') return resp(200, { filas: s.albaranes });
     if (clave === 'GET /admin/partes') return resp(200, { partes: s.partes });
@@ -145,6 +181,8 @@ function panel({
       const p = s.presupuestos.find((x) => x.id === Number(r[1]));
       if (!p) return resp(404, { error: 'not_found' });
       p.status = 'accepted';
+      if (emiteAlAceptar) { s.facturas.push({ id: 501 }); s.cobros.push({ origen: 'charge', id: 77 }); }
+      if (aceptarRevienta) return resp(500, { error: 'internal_error' });
       if (!sinTrabajoAlAceptar && !s.trabajos.some((j) => j.quote && j.quote.id === p.id)) {
         s.trabajos.push({ id: ++id, tituloPropio: null, customer: { id: p.customerId }, quote: { id: p.id }, totalAceptado: p.total });
       }
@@ -380,6 +418,89 @@ test('SCRUM-1367 · uso: orden desconocida y argumentos de más salen 3; sin ses
   assert.equal(r.codigo, 2);
   assert.match(r.err, /^CIEGO — no hay sesión guardada/);
   assert.deepEqual(p.llamadas, []);
+});
+
+// ── SCRUM-1367e · las cinco condiciones de c.18479 ────────────────────────────────────────────────
+const ACEPTA = (p) => escrituras(p).filter((l) => /\/accept$/.test(l.ruta));
+
+test('SCRUM-1367e · 🔴 condición 5: fuera de «receipt» (o sin modo) «aceptado» NO escribe nada', async () => {
+  for (const modoEmision of ['fiscal', 'demo', null, undefined, 'RECEIPT']) {
+    const p = panel({ me: { merchantId: MERCHANT_QA, isOwner: true, merchantName: 'PruebaQA', modoEmision } });
+    const r = await correr(['aceptado'], p);
+    assert.equal(r.codigo, 3, `modoEmision=${modoEmision}`);
+    assert.match(r.err, /NO SE ACEPTA: el servidor dice modoEmision=/);
+    assert.deepEqual(escrituras(p), [], `modoEmision=${modoEmision}: ni una escritura, tampoco el borrador`);
+  }
+  // Control: con «receipt» la misma orden SÍ acepta.
+  const p = panel();
+  assert.equal((await correr(['aceptado'], p)).codigo, 0);
+  assert.equal(ACEPTA(p).length, 1);
+});
+
+test('SCRUM-1367e · 🔴 condición 3: un teléfono fuera del rango imposible y «aceptado» NO escribe nada', async () => {
+  for (const ficha of [{ mobile: '34612345678', phone: null }, { mobile: MOVIL_CLIENTE_QA, phone: '911234567' }]) {
+    const p = panel({ ficha });
+    const r = await correr(['aceptado'], p);
+    assert.equal(r.codigo, 3, JSON.stringify(ficha));
+    assert.match(r.err, /fuera del rango imposible/);
+    assert.deepEqual(escrituras(p), []);
+  }
+  // Una ficha que no dice sus teléfonos no se da por buena.
+  const sinCampos = panel({ ficha: { mobile: undefined, phone: undefined } });
+  const r = await correr(['aceptado'], sinCampos);
+  assert.equal(r.codigo, 1);
+  assert.match(r.err, /no trae «mobile» y «phone»/);
+  assert.deepEqual(escrituras(sinCampos), []);
+  // Control: el rango imposible, también escrito con espacios y «+», pasa.
+  const p = panel({ ficha: { mobile: '+34 000 00 12 68', phone: '' } });
+  assert.equal((await correr(['aceptado'], p)).codigo, 0);
+  assert.equal(ACEPTA(p).length, 1);
+});
+
+test('SCRUM-1367e · 🔴 condición 2: si aceptar crea una factura o un cobro, GRITA y sale 1', async () => {
+  const p = panel({ emiteAlAceptar: true });
+  const r = await correr(['aceptado'], p);
+  assert.equal(r.codigo, 1);
+  assert.match(r.err, /ACEPTAR HA MOVIDO DOCUMENTOS O COBROS/);
+  assert.match(r.err, /factura 501/);
+  assert.match(r.err, /cobro charge:77/);
+  assert.match(r.err, /NO se deshacen por el panel/, 'no promete un «deshacer» que no existe');
+  // Control: sin emitir, la misma orden sale 0 y dice que la foto es la misma.
+  const q = panel({ facturas: [3], cobros: [{ origen: 'invoice', id: 9 }, { origen: 'charge', id: 9 }] });
+  const rq = await correr(['aceptado'], q);
+  assert.equal(rq.codigo, 0, rq.err);
+  assert.match(rq.out, /documentos y cobros: los mismos 4 antes y después de aceptar/);
+});
+
+test('SCRUM-1367e · 🔴 condición 2: la foto de después se mira TAMBIÉN si el accept revienta o el Trabajo no sale', async () => {
+  for (const op of [{ aceptarRevienta: true }, { sinTrabajoAlAceptar: true }]) {
+    const p = panel({ emiteAlAceptar: true, ...op });
+    const r = await correr(['aceptado'], p);
+    assert.equal(r.codigo, 1, JSON.stringify(op));
+    assert.match(r.err, /ACEPTAR HA MOVIDO DOCUMENTOS O COBROS/, JSON.stringify(op));
+  }
+  // Control: sin emitir, el fallo de siempre sale con su propio mensaje.
+  const p = panel({ sinTrabajoAlAceptar: true });
+  const r = await correr(['aceptado'], p);
+  assert.equal(r.codigo, 1);
+  assert.match(r.err, /su Trabajo no aparece/);
+  assert.doesNotMatch(r.err, /MOVIDO/);
+});
+
+test('SCRUM-1367e · condición 2: sin foto completa (lista llena) NO acepta', async () => {
+  const p = panel({ facturas: Array.from({ length: 200 }, (_, i) => i + 1) });
+  const r = await correr(['aceptado'], p);
+  assert.equal(r.codigo, 1);
+  assert.match(r.err, /la lista de facturas llega llena \(200\)/);
+  assert.deepEqual(ACEPTA(p), []);
+});
+
+test('SCRUM-1367e · condición 4: la salida dice qué queda y que NO se quita por el panel', async () => {
+  const p = panel();
+  const r = await correr(['aceptado'], p);
+  assert.equal(r.codigo, 0, r.err);
+  assert.match(r.out, /queda en la cuenta QA: el presupuesto #\d+ \(marca \[QA-1367-ACEPTADO\]\) aceptado y su Trabajo #\d+/);
+  assert.match(r.out, /NO se quita por el panel/);
 });
 
 test('SCRUM-1367 · control del instrumento: el filtro de «dinero o envío» SÍ ve una ruta de emitir', () => {
