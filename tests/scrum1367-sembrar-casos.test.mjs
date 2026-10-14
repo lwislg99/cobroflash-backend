@@ -95,6 +95,27 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: '  if (intento.fotoAntes !== null && !fallo) {',
     cae: 'SCRUM-1367e · 🔴 condición 2: la foto de después se mira TAMBIÉN si el accept revienta o el Trabajo no sale',
   },
+  {
+    // SCRUM-1367f: con otro ya aceptado, «--presupuesto» aceptaría un segundo caso.
+    fichero: 'scripts/qa/sembrar-casos.mjs',
+    de: '  if (otros.length) {',
+    a: '  if (false) {',
+    cae: 'SCRUM-1367f · 🔴 con un aceptado ya en la cuenta, «--presupuesto» de OTRO no acepta nada',
+  },
+  {
+    // SCRUM-1367f: aceptar un borrador de un cliente cuyos teléfonos no se han mirado.
+    fichero: 'scripts/qa/sembrar-casos.mjs',
+    de: '  if (!presupuesto.customer || presupuesto.customer.id !== cliente.id) {',
+    a: '  if (false) {',
+    cae: 'SCRUM-1367f · 🔴 un borrador que NO es del cliente QA no se acepta: sale 3 sin escribir',
+  },
+  {
+    // SCRUM-1367f: sin «--presupuesto», un aceptado sin marca no frena el alta de otro.
+    fichero: 'scripts/qa/sembrar-casos.mjs',
+    de: '    if (sinMarca.length) {',
+    a: '    if (false) {',
+    cae: 'SCRUM-1367f · 🔴 sin --presupuesto, un aceptado SIN marca frena el alta de otro',
+  },
 ];
 
 const COOKIE = 'pf_session=tok1367abcdef';
@@ -118,6 +139,8 @@ function panel({
   // SCRUM-1367e · lo que la condición 2 y la 3 miran
   ficha = { mobile: MOVIL_CLIENTE_QA, phone: null }, facturas = [], cobros = [{ origen: 'invoice', id: 9 }],
   emiteAlAceptar = false, aceptarRevienta = false,
+  // SCRUM-1367f · borradores que YA están en la cuenta (los de producción no llevan marca)
+  presupuestosBase = [],
 } = {}) {
   const s = {
     facturas: facturas.map((id) => ({ id })),
@@ -126,7 +149,7 @@ function panel({
     trabajos: sinBase ? [] : [{ id: ID_TRABAJO_QA, tituloPropio: TITULO_TRABAJO_QA, customer: { id: ID_CLIENTE }, quote: null, totalAceptado: null }],
     albaranes: albaranes.map((id) => ({ id, numero: `AB-${id}`, estado: 'emitido' })),
     partes: partes.map((id) => ({ id, jobId: ID_TRABAJO_QA, estado: 'borrador' })),
-    presupuestos: [],
+    presupuestos: presupuestosBase.map((q) => ({ status: 'draft', customerId: ID_CLIENTE, total: 1.21, docHeaderText: null, plan: null, ...q })),
     merchant: { name: 'PruebaQA', legalName: null, taxId: null, address: null, whatsappPhone: null, ...merchant },
   };
   let id = 300;
@@ -152,7 +175,7 @@ function panel({
       return resp(201, p);
     }
     if (clave === 'GET /admin/quotes') {
-      return resp(200, s.presupuestos.map((p) => ({ id: p.id, number: p.number, customerName: NOMBRE_CLIENTE_QA, status: p.status })));
+      return resp(200, s.presupuestos.map((p) => ({ id: p.id, number: p.number, customerName: p.customerName ?? NOMBRE_CLIENTE_QA, status: p.status })));
     }
     let r = u.pathname.match(/^\/admin\/quotes\/(\d+)$/);
     if (r && m === 'GET') {
@@ -406,7 +429,10 @@ test('SCRUM-1367 · 🔴 LISTA: lo único que se añade es ACEPTAR; lo demás se
 
 test('SCRUM-1367 · uso: orden desconocida y argumentos de más salen 3; sin sesión, CIEGO (2); nada toca la red', async () => {
   const malos = [[], ['sembrar'], ['aceptado', '--crear-hasta', '3'], ['mismo-id', '--crear-hasta'], ['mismo-id', '--crear-hasta', '0'],
-    ['mismo-id', '--crear-hasta', String(TOPE_PARTES_POR_ORDEN + 1)], ['mismo-id', '--crear-hasta', '3x'], ['plan', 'extra']];
+    ['mismo-id', '--crear-hasta', String(TOPE_PARTES_POR_ORDEN + 1)], ['mismo-id', '--crear-hasta', '3x'], ['plan', 'extra'],
+    // SCRUM-1367f
+    ['aceptado', '--presupuesto'], ['aceptado', '--presupuesto', '0'], ['aceptado', '--presupuesto', '2x'],
+    ['plan', '--presupuesto', '3'], ['mismo-id', '--presupuesto', '3']];
   for (const argv of malos) {
     const p = panel();
     const r = await correr(argv, p);
@@ -503,6 +529,77 @@ test('SCRUM-1367e · condición 4: la salida dice qué queda y que NO se quita p
   assert.equal(r.codigo, 0, r.err);
   assert.match(r.out, /queda en la cuenta QA: el presupuesto #\d+ \(marca \[QA-1367-ACEPTADO\]\) aceptado y su Trabajo #\d+/);
   assert.match(r.out, /NO se quita por el panel/);
+});
+
+// ── SCRUM-1367f · aceptar un borrador que YA existe (crear pide plan activo; aceptar, no) ─────────
+const BORRADOR = 206;
+
+test('SCRUM-1367f · «aceptado --presupuesto N» acepta el borrador que ya existe: NO crea, y ve su Trabajo', async () => {
+  const p = panel({ presupuestosBase: [{ id: BORRADOR, number: 5 }] });
+  const r = await correr(['aceptado', '--presupuesto', String(BORRADOR)], p);
+  assert.equal(r.codigo, 0, r.err);
+  assert.deepEqual(rutasEscritas(p), [`POST /admin/quotes/${BORRADOR}/accept`], 'la única escritura es aceptar: ni un alta');
+  assert.equal(p.s.presupuestos.length, 1);
+  assert.equal(p.s.presupuestos[0].status, 'accepted');
+  assert.match(r.out, /presupuesto #206 nº 5 · ya estaba \(elegido con --presupuesto, sin marca\) · ACEPTADO ahora/);
+  assert.match(r.out, /trabajo\s+#\d+ · con su presupuesto aceptado · importe aceptado 1\.21/);
+  assert.match(r.out, /documentos y cobros: los mismos 2 antes y después de aceptar/, 'la condición 2 corre igual (un cobro y un albarán)');
+  assert.match(r.out, /queda en la cuenta QA: el presupuesto #206 \(elegido con --presupuesto\) aceptado/);
+  assert.deepEqual(sinDineroNiEnvio(p), []);
+  // Repetirla no escribe nada.
+  const r2 = await correr(['aceptado', '--presupuesto', String(BORRADOR)], p);
+  assert.equal(r2.codigo, 0, r2.err);
+  assert.equal(escrituras(p).length, 1, 'la segunda pasada no escribe');
+  assert.match(r2.out, /ya estaba aceptado \(no se repite\)/);
+});
+
+test('SCRUM-1367f · 🔴 con un aceptado ya en la cuenta, «--presupuesto» de OTRO no acepta nada', async () => {
+  const p = panel({ presupuestosBase: [{ id: BORRADOR, number: 5, status: 'accepted' }, { id: 204, number: 3 }] });
+  const r = await correr(['aceptado', '--presupuesto', '204'], p);
+  assert.equal(r.codigo, 1);
+  assert.match(r.err, /ya tiene un presupuesto aceptado \(#206\): el caso ① ya existe y no acepto el #204/);
+  assert.match(r.err, /aceptado --presupuesto 206/);
+  assert.deepEqual(escrituras(p), []);
+  assert.equal(p.s.presupuestos.find((q) => q.id === 204).status, 'draft');
+});
+
+test('SCRUM-1367f · 🔴 un borrador que NO es del cliente QA no se acepta: sale 3 sin escribir', async () => {
+  const p = panel({ presupuestosBase: [{ id: 205, number: 4, customerId: 84, customerName: 'QA 1198 cliente de prueba sin teléfono' }] });
+  const r = await correr(['aceptado', '--presupuesto', '205'], p);
+  assert.equal(r.codigo, 3);
+  assert.match(r.err, /NO SE ACEPTA: el presupuesto #205 es del cliente #84/);
+  assert.deepEqual(escrituras(p), []);
+  // Control: el del cliente QA, en la misma cuenta, SÍ.
+  const q = panel({ presupuestosBase: [{ id: 205, number: 4, customerId: 84, customerName: 'QA 1198 cliente de prueba sin teléfono' }, { id: BORRADOR, number: 5 }] });
+  assert.equal((await correr(['aceptado', '--presupuesto', String(BORRADOR)], q)).codigo, 0);
+  assert.equal(ACEPTA(q).length, 1);
+});
+
+test('SCRUM-1367f · 🔴 las condiciones 5 y 3 mandan igual con --presupuesto', async () => {
+  const p = panel({ presupuestosBase: [{ id: BORRADOR, number: 5 }], me: { merchantId: MERCHANT_QA, isOwner: true, merchantName: 'PruebaQA', modoEmision: 'fiscal' } });
+  const r = await correr(['aceptado', '--presupuesto', String(BORRADOR)], p);
+  assert.equal(r.codigo, 3);
+  assert.match(r.err, /NO SE ACEPTA: el servidor dice modoEmision=/);
+  assert.deepEqual(escrituras(p), []);
+  const t = panel({ presupuestosBase: [{ id: BORRADOR, number: 5 }], ficha: { mobile: '34612', phone: null } });
+  const rt = await correr(['aceptado', '--presupuesto', String(BORRADOR)], t);
+  assert.equal(rt.codigo, 3);
+  assert.match(rt.err, /fuera del rango imposible/);
+  assert.deepEqual(escrituras(t), []);
+});
+
+test('SCRUM-1367f · 🔴 sin --presupuesto, un aceptado SIN marca frena el alta de otro', async () => {
+  const p = panel({ presupuestosBase: [{ id: BORRADOR, number: 5 }] });
+  assert.equal((await correr(['aceptado', '--presupuesto', String(BORRADOR)], p)).codigo, 0);
+  const antes = escrituras(p).length;
+  const r = await correr(['aceptado'], p);
+  assert.equal(r.codigo, 1);
+  assert.match(r.err, /ya tiene el presupuesto #206 aceptado \(sin la marca \[QA-1367-ACEPTADO\]\): el caso ① ya existe y no creo otro/);
+  assert.equal(escrituras(p).length, antes, 'ni un alta ni otra aceptación');
+  // Control: con el borrador SIN aceptar, la orden sin opción crea el suyo como siempre.
+  const q = panel({ presupuestosBase: [{ id: BORRADOR, number: 5 }] });
+  assert.equal((await correr(['aceptado'], q)).codigo, 0);
+  assert.deepEqual(rutasEscritas(q)[0], 'POST /quote/create');
 });
 
 test('SCRUM-1367 · control del instrumento: el filtro de «dinero o envío» SÍ ve una ruta de emitir', () => {

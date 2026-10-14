@@ -278,3 +278,44 @@ Puesto S3 (2ª tanda del 14-oct).
 * **Decisión 4 (orquestador, 14-oct):** basta con «declarada» si la salida lista los ids creados. Lo hace la `:279` (`el presupuesto #<id> … y su Trabajo #<id>`), y el test lo comprueba en la `:504`.
 
 A9: comprobación → `tests/scrum262-telefonos-de-prueba.test.mjs`
+
+## SCRUM-1367f · aceptar un borrador que YA existe, y el caso ① sembrado en la cuenta QA (14-oct-2026)
+
+**Medido contra:** `origin/main` = `bcd333823d9f97ea55a6dd9a126d9d0e89b80db3` · 2026-10-14T17:32Z (hora de GitHub)
+
+Puesto S3 (3ª tanda del 14-oct). Encargo del orquestador: `POST /admin/quotes/:id/accept` no lleva el paywall, así que el caso ① se puede sembrar sin crear un presupuesto, por el sembrador y con las cinco condiciones.
+
+**Qué cambia.** `node scripts/qa/sembrar-casos.mjs aceptado --presupuesto N` acepta el borrador #N que ya existe, en vez de crearlo. Corre por el mismo camino que la orden sin opción y con las mismas cinco condiciones de c.18479. Lleva además dos cerrojos:
+
+* el #N tiene que ser del cliente QA, que es aquél cuyos teléfonos mira la condición 3. Si es de otro cliente, sale 3 sin escribir;
+* si el cliente QA ya tiene un presupuesto aceptado, no se acepta otro: sale 1 y nombra el que hay. Como los borradores de producción no llevan marca, la idempotencia es ésta. Vale también al revés: sin la opción, un aceptado sin marca impide dar de alta otro.
+
+**Medido sin red:** `tests/scrum1367-sembrar-casos.test.mjs` da 28 tests y 28 pass (23 de antes y 5 nuevos). Hay 13 mutaciones declaradas (10 de antes y 3 nuevas), y cada una tumba el test que nombra. La base sin mutar sale verde antes y después.
+
+**El 403, recibido.** `POST /quote/create` con cuerpo `{}` y la sesión de la cuenta QA devuelve **403 `{"error":"trial_expired","redirect":"/dashboard/#plans"}`** (`Date: Wed, 14 Oct 2026 17:31:25 GMT`). El cuerpo vacío se eligió a propósito: si el plan estuviera activo, la validación lo habría parado con un 400 y no se habría creado nada. Antes, como control positivo, la misma cookie dio `GET /admin/me` → 200, merchant 46, `plan: "trial"`, `planExpiresAt: 2026-10-12T14:41:58.799Z`.
+
+**Corrido en producción (cuenta QA, ~17:31Z):** `aceptado --presupuesto 206` sale 0.
+
+| Visto | Por dónde |
+|---|---|
+| presupuesto #206 (nº 5) `accepted` | salida del sembrador y `GET /admin/quotes/206` |
+| **Trabajo #77**: `quote.id` 206, `totalAceptado` 1.21, `remaining` 1.21 EUR, `totalCobrado` 0, `invoices` 0 | `GET /admin/jobs` |
+| facturas 0 y cobros 0 después; ids de facturas, cobros y albaranes iguales antes y después (2: los albaranes 46 y 47) | condición 2 del sembrador, y `GET /admin/invoices` y `GET /admin/cobros` |
+| repetir la orden: sale 0 y no escribe («ya estaba aceptado (no se repite)») | salida |
+| `--presupuesto 204`: sale 1 («ya tiene un presupuesto aceptado (#206)») y el 204 sigue en `draft` | salida y `GET /admin/quotes/204` |
+
+**Por qué el 206.** Los seis borradores tenían un uso medido:
+
+* 202: es el presupuesto base `[QA-1268]`.
+* 203: cuelga del Trabajo 76, que es el caso NEGATIVO de SCRUM-1355; ése se conserva.
+* 204 y 208: son las versiones de SCRUM-1302 que usa S1.
+* 205: es del cliente 84 (SCRUM-1198).
+* 206: lo usaban las sondas de SCRUM-1150 y SCRUM-1482, que sólo leían.
+
+⚠️ Riesgo declarado: esas sondas ven ahora el 206 aceptado. Ninguna dependía del estado: una mide el título y la otra tiene el POST de revisiones interceptado.
+
+**Lo que queda en la cuenta QA y NO se quita por el panel:** el presupuesto #206 aceptado y el Trabajo #77.
+
+**Qué desbloquea (el lado POSITIVO, un Trabajo con presupuesto aceptado):** SCRUM-1355, 1369 y 1370. 1365 lo tiene a medias, porque pide un Trabajo TERMINADO y el #77 está en `pendiente_agendar`. **No desbloquea:** 1285, que pide un plan propio y para eso hay que crear presupuesto; 1227, que pide el perfil fiscal ③ y no tiene regla; ni 1375, que pide un albarán `parcial`/`facturado`.
+
+A9: comprobación → `tests/scrum1367-sembrar-casos.test.mjs`
