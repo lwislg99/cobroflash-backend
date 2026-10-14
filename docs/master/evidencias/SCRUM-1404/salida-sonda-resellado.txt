@@ -16,9 +16,10 @@ S · la lectura de candidatas trae una foto VIEJA (sin huella) de una factura ya
   ok   · avisó de que la conserva: true
 
 S2 · la factura sellada en P, ofrecida otra vez con una foto vieja
+  ok   · el instante que entraría ahora en la huella ya no es el de P (el caso se ejerció): true
   ok   · escrituras que tocan la huella: 0
   ok   · la huella es la de P: true
 
-COMPROBACIONES HECHAS: 12
+COMPROBACIONES HECHAS: 13
 VEREDICTOS QUE CAEN: 0
 EXIT=0

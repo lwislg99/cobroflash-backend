@@ -19,8 +19,12 @@
 // compilado: si la segunda llamada no llegaba, el árbol se quedaba con la guarda quitada. Ésta
 // guarda el original en memoria y lo devuelve al SALIR, salga por donde salga.
 //
-// ⚠️ LO QUE NO CUBRE: un proceso matado a lo bruto no ejecuta ningún manejador de salida. Si eso
-// pasa, `dist/` se queda mutado: se vuelve a compilar.
+// ⚠️ LO QUE NO CUBRE, MEDIDO el 14-oct-2026: matado a lo bruto (SIGKILL) con el compilado ya
+// mutado, este proceso no ejecuta ningún manejador de salida y `dist/` SE QUEDA SIN LA GUARDA. Un
+// corte ordenado (`process.exit`) sí lo devuelve; un kill, no.
+// Lo que impide que eso acabe en un verde falso: la siguiente pasada toma como original lo que hay
+// en disco, su BASE cae en las mismas comprobaciones y dice «CIEGO: la base no sale limpia», sale
+// con 2 y no muta nada. Se arregla volviendo a compilar `dist/`.
 import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
@@ -54,6 +58,7 @@ const TIENE_QUE_CAER = [
   'S · lo único escrito sobre la factura',
   'S · avisó de que la conserva',
   'S2 · escrituras que tocan la huella',
+  'S2 · la huella es la de P',
 ];
 
 if (!fs.existsSync(SUJETO)) {

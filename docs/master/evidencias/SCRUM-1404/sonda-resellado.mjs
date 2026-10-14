@@ -34,10 +34,16 @@
 //  · La huella que se calcula en P se calcula contra el doble: no dice nada de la cadena.
 //  · La cola de la AEAT: en P, tras sellar, el encolado no sale y deja `encolado_fallido` en el
 //    doble. Se imprime, no se juzga, y no se ha mirado por qué.
-//  · En S2, «la huella es la de P» NO distingue: con la guarda quitada se vuelve a sellar, pero la
-//    huella se calcula con el instante truncado al segundo y sale la misma si P y S2 caen en el
-//    mismo segundo. En S2 la que distingue es la de las escrituras.
 //  · Un fallo de la base a mitad del sellado.
+//
+// POR QUÉ S2 ESPERA ANTES DE EMPEZAR. Tal como llegó, «la huella es la de P» NO distinguía: con la
+// guarda quitada la factura se vuelve a sellar, pero en la huella no entra el instante entero sino
+// lo que devuelve `formatFechaHoraHuso`, que lo corta al segundo. Mismos datos y mismo segundo dan
+// la misma huella, así que un resellado dentro del segundo de P no se veía en esa comprobación.
+// La espera no es un número de milisegundos elegido: S2 no empieza hasta que ESA MISMA función
+// devuelve, para «ahora», otra cadena que la que devolvió para el instante en que se selló P. El
+// reloj no retrocede a la cadena de P, así que cualquier resellado posterior lleva otro instante
+// en la huella, y con él otra huella. Si la función cambiara de corte, la espera cambia con ella.
 import path from 'node:path';
 import { createRequire } from 'node:module';
 
@@ -136,6 +142,7 @@ comprobar('escrituras que tocan la huella', tocanHuella().length, 1);
 comprobar('la fila tiene huella y estado', [typeof banco.facturas[0].vfHash, banco.facturas[0].vfHash.length > 20, banco.facturas[0].vfEstado], ['string', true, 'sellado']);
 comprobar('se entró bajo cerrojo', banco.llamadas.includes('$executeRaw(cerrojo)'), true);
 const huellaP = banco.facturas[0].vfHash;
+const instanteDeP = banco.facturas[0].vfTimestamp;
 decir(`  (lo que el doble no supo imitar, después del sellado: ${JSON.stringify([...new Set(banco.noSabe)])} · auditoría: ${JSON.stringify(banco.auditoria)})`);
 
 // ── S · EL CASO: foto vieja «sin huella» de una fila que YA está sellada ──────────────────────────
@@ -153,7 +160,15 @@ comprobar('avisó de que la conserva', avisos.some((a) => a.includes('ya estaba 
 
 // ── S2 · la sellada en P, ofrecida otra vez con foto vieja: misma huella ─────────────────────────
 decir('\nS2 · la factura sellada en P, ofrecida otra vez con una foto vieja');
-const deP = fila(81, { vfHash: huellaP, vfPrevHash: '', vfTimestamp: new Date(), vfEstado: 'sellado' });
+// La espera derivada (ver cabecera): hasta que lo que entraría en la huella ya no sea lo de P.
+const { formatFechaHoraHuso } = requiere(rutaDe('dist/modules/invoicing/domain/verifactu.service.js'));
+const loQueEntraEnLaHuella = (d) => formatFechaHoraHuso(d, 'Europe/Madrid');
+const topeDeLaEspera = Date.now() + 10_000;
+while (loQueEntraEnLaHuella(new Date()) === loQueEntraEnLaHuella(instanteDeP) && Date.now() < topeDeLaEspera) {
+  await new Promise((r) => setTimeout(r, 25));
+}
+comprobar('el instante que entraría ahora en la huella ya no es el de P (el caso se ejerció)', loQueEntraEnLaHuella(new Date()) !== loQueEntraEnLaHuella(instanteDeP), true);
+const deP =fila(81, { vfHash: huellaP, vfPrevHash: '', vfTimestamp: new Date(), vfEstado: 'sellado' });
 banco.facturas = [deP]; banco.fotoVieja = [{ ...deP, vfHash: null, vfEstado: PENDIENTE }];
 parte = await pasada();
 comprobar('escrituras que tocan la huella', tocanHuella().length, 0);

@@ -613,9 +613,10 @@ base, y el doble apunta cada escritura con los campos que toca. Tres casos:
 |---|---|---|
 | P · control positivo | una factura nueva, sin huella | se sella una vez, y el doble VE esa escritura de huella |
 | S · el caso | la lectura de candidatas devuelve una foto vieja «sin huella» de una fila que ya tiene huella | se llega a `applyVeriFactu` y se toma el cerrojo; lo único escrito es el estado; huella, anterior, instante y QR quedan como estaban; se avisa de que se conserva |
-| S2 | la factura sellada en P, ofrecida otra vez con una foto vieja | ninguna escritura toca la huella |
+| S2 | la factura sellada en P, ofrecida otra vez con una foto vieja, cuando el instante que entraría en la huella ya no es el de P | ninguna escritura toca la huella, y la huella sigue siendo la de P |
 
-Resultado sobre este `main`: 12 comprobaciones, 0 caen (`salida-sonda-resellado.txt`).
+Resultado sobre este `main`: 13 comprobaciones, 0 caen (`salida-sonda-resellado.txt`). Eran 12 tal
+como llegó; la que hace 13 es la que dice que S2 esperó lo que tenía que esperar (abajo).
 
 ## Cómo distingue
 
@@ -625,11 +626,12 @@ guion antes de correr, y se compara como conjunto.
 
 | pasada | comprobaciones | caen |
 |---|---|---|
-| base sin mutar | 12 | 0 |
-| con la guarda quitada (el ancla casa una vez; el compilado cambió) | 12 | 5: cuatro de S y la de escrituras de S2 |
-| tras restaurar (el compilado es el de antes) | 12 | 0 |
+| base sin mutar | 13 | 0 |
+| con la guarda quitada (el ancla casa una vez; el compilado cambió) | 13 | 6: cuatro de S y dos de S2 |
+| tras restaurar (el compilado es el de antes) | 13 | 0 |
 
-Las cinco que caen son las cinco declaradas, y ninguna más (`salida-mutar-guarda.txt`). Las dos de S
+Las seis que caen son las seis declaradas, y ninguna más (`salida-mutar-guarda.txt`); repetido cuatro
+veces seguidas, cuatro iguales. Las dos de S y la de S2
 que sólo dicen «el caso se ejerció» siguen en pie con la guarda quitada, como deben: son las que
 prueban que la factura llegó hasta la puerta.
 
@@ -691,7 +693,14 @@ borradas; repetidas después de que pasara a leer del catálogo):
 | una mutación que no cambia nada | «MUDA», sale con 1 |
 | lo declarado nombra una comprobación que no existe | «CIEGO», sale con 2, antes de mutar |
 | se le quita una de las cinco declaradas | «VIVA, PERO NO COMO SE DECLARÓ», sale con 1 |
-| se le corta el proceso entre mutar y restaurar | el compilado vuelve a tener la guarda |
+| se le corta el proceso ORDENADAMENTE (`process.exit`) entre mutar y restaurar | el compilado vuelve a tener la guarda |
+| se le MATA (SIGKILL) con el compilado ya mutado | 🔴 el compilado SE QUEDA SIN LA GUARDA: un kill no ejecuta el manejador de salida |
+| se vuelve a correr sobre ese compilado sin guarda | «BASE sin mutar · CAE» y «CIEGO: la base no sale limpia», sale con 2 y no muta nada. No da un verde falso |
+
+La fila del kill es el límite del mutador, y la de debajo es lo que lo salva: se queda sin guarda,
+pero la pasada siguiente lo dice en vez de medir encima. Se arregla volviendo a compilar; así se
+dejó, y después el mutador volvió a dar su veredicto de siempre. `dist/` lo ignora git: ese
+compilado no puede entrar en un commit, pero sí estropear una tanda local corrida después.
 
 ## Lo que NO mide, y un límite que no estaba dicho
 
@@ -700,11 +709,20 @@ borradas; repetidas después de que pasara a leer del catálogo):
 - **La huella de P se calcula contra el doble:** no dice nada de la cadena.
 - **La cola de la AEAT.** En P, tras sellar, el encolado no sale y deja `encolado_fallido` en el
   doble. La sonda lo imprime y no lo juzga. No he mirado por qué.
-- **En S2, «la huella es la de P» no distingue.** Con la guarda quitada la factura se vuelve a
-  sellar, pero esa comprobación sigue en pie en las dos pasadas mutadas (la suya y la mía). Leído el
-  motivo en `applyVeriFactu`: la huella se calcula con el instante truncado al segundo, así que sale
-  la misma si P y S2 caen en el mismo segundo. No lo he provocado con dos segundos distintos. En S2
-  la que distingue es la de las escrituras. De las 12, las que pueden caer por esta mutación son 5.
+- **En S2, «la huella es la de P» NO distinguía, y ahora sí.** Tal como llegó, con la guarda
+  quitada la factura se volvía a sellar y esa comprobación seguía en pie (en su pasada mutada y en
+  la mía). El motivo: en la huella no entra el instante entero, sino lo que devuelve
+  `formatFechaHoraHuso`, que lo corta al segundo; mismos datos y mismo segundo dan la misma huella.
+  Era una comprobación que creía medir algo y no lo medía.
+  Primero se provocó, con una copia fuera del repositorio y una espera fija de algo más de un
+  segundo: cayó. La espera que ha entrado NO es ese número: S2 no empieza hasta que esa misma
+  función devuelve para «ahora» una cadena distinta de la que devolvió para el instante en que se
+  selló P. No hay milisegundos elegidos; si la función cambiara de corte, la espera cambia con ella.
+  Una comprobación nueva dice que la espera se cumplió (tiene un tope, y si se agota CAE, no pasa
+  en silencio). Y «la huella es la de P» está ahora entre las declaradas como «tiene que caer»: si
+  un día deja de caer, el mutador lo dice.
+  ⚠️ Lo que NO he hecho: derivar el corte de la especificación. Leí que la función escribe hasta
+  los segundos; la sonda no lo afirma, pregunta a la función cada vez.
 - Un fallo de la base a mitad del sellado.
 
 ## Lo que NO se midió
@@ -740,6 +758,10 @@ que repita el defecto como vivo; la única copia del título es la foto de Jira 
 - Corrí los tres censos que me avisaron y `guards:entrada`, salieron verdes, y el rojo estaba en un
   cuarto que nadie había nombrado: el del catálogo de bancos. Lo sacó la dirigida, no yo. De ahí
   que este tramo toque un test.
+- Le dije al orquestador que había visto al mutador devolver el compilado «con el proceso cortado
+  entre mutar y restaurar», y lo había cortado con `process.exit`. Me preguntó si lo había matado
+  de verdad; lo maté y se quedó mutado. La primera versión de este tramo afirmaba de un kill lo que
+  sólo vale para un cierre ordenado.
 - En la cabecera de la sonda escribí primero que con la guarda quitada «caen las comprobaciones de
   S». Caen cuatro de seis. Lo corregí antes de comitear, al mirar la salida que ya tenía delante.
 - El fallo que se convierte en comprobación no es mío, es del instrumento que traía: un mutador en
