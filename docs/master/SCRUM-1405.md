@@ -314,3 +314,109 @@ los reales), más las carpetas de los otros tres runs.
 
 Para repetir el experimento entero: un push a la rama `exp-1405-force-exit` con el workflow de
 `exp-1405.yml.txt`. ⛔ Esa rama no se mergea a `main`.
+
+# APÉNDICE · 14-oct-2026 · SCRUM-1405c · La salida C, construida (J3f)
+
+**Medido contra:** `origin/main` = `76c29b57c871584b04c8206c11571f9c56c9d699` · 2026-10-14T07:06:39Z (J3f del equipo de Javier, sesión `jv-j3f`, lanzada por el orquestador `cobroflash-backend-2e`. La tanda local corrió sobre `540ff2d83`; los cuatro commits que separan los dos son sólo `docs/`.)
+
+A9: comprobación → `tests/scrum1405c-tuberia-bloqueante.test.mjs`
+
+**La autorización, leída en Jira y no en el encargo:** SCRUM-1405 c.19584, 14-oct-2026, el fundador:
+**«Ok la C»**. Autoriza conservar `--test-force-exit` y poner bloqueante la tubería de salida de cada
+hijo, tocando `NODE_OPTIONS` del paso de tests de `ci.yml` **o** el script `test`. NO autoriza la A
+(quitar el flag) ni la B. Cualquier otro cambio en `ci.yml` sigue siendo STOP.
+
+## Qué se ha construido
+
+| fichero | qué |
+|---|---|
+| `scripts/tuberia-bloqueante.mjs` | el módulo: si la salida estándar es una tubería, la pone bloqueante con `process.stdout._handle.setBlocking(true)`; si no puede, **lanza** |
+| `package.json`, script `test` | `--import=./scripts/tuberia-bloqueante.mjs` detrás de `--test`. **`--test-force-exit` sigue** |
+| `tests/scrum1405c-tuberia-bloqueante.test.mjs` | ① cableado · ② alcance · ③ la alarma de la pieza interna · ④ el rojo primero |
+
+**`ci.yml` no se toca.** Se eligió el script `test` y no `NODE_OPTIONS`: así lo cargan sólo el
+corredor y sus hijos, no cada proceso de node del job (ni `npm run build`, ni lo que lance un test).
+Y el CI corre `npm test`: el obligatorio lo hereda sin tocar el workflow.
+
+## Las cuatro condiciones del encargo
+
+**1 · El rojo primero.** ⚠️ **En esta máquina NO se puede ver.** Es Windows, y node ya pone ahí la
+tubería bloqueante: la cobaya (4 copias de 80 casos, ~330 KB por fichero, con el flag) pierde **0 de
+30 pasadas** sin el módulo, y 0 de 30 **también forzando `setBlocking(false)`**. No hay WSL ni Docker.
+Así que el rojo se mide donde existe: el caso ④ corre la cobaya **en el mismo proceso, primero sin el
+módulo y después con él**, 4 pasadas por brazo, y exige que sin él se pierda algo y con él nada. En
+Windows se salta, y **no por la plataforma sino por una medición**: un hijo sin el módulo escribe 1 MiB
+de un tirón a una tubería y dice cuánto le queda pendiente (aquí, 0). El dato de Linux lo da el
+obligatorio de este mismo PR, y va a Jira al leerlo. Lo que sí se ha visto aquí: el camino del ④
+forzado en Windows sale **CIEGO** (320 de 320 informados en los dos brazos), que es lo que tiene que
+decir cuando no hay rojo que ver.
+
+**2 · 🔴 La alarma si la pieza interna desaparece.** El módulo decide si la salida es una tubería por
+API pública (`fs.fstatSync` e `instanceof net.Socket`; en Windows `fstat` de una tubería no dice nada,
+medido, por eso van las dos) y **sólo después** pide la pieza interna. Si no está, o devuelve error,
+lanza: el proceso no arranca y el fichero sale en rojo con «SCRUM-1405c · la salida estándar es una
+tubería y este node ya no ofrece…». En una tanda eso tumba **todos** los ficheros: ruidoso. Además el
+caso ③ ALARMA arranca un proceso con el módulo en cada tanda y cae si no puede.
+Visto caer, con el defecto sembrado y no prestado del árbol:
+- sin `setBlocking` → grita · sin `_handle` → grita · `setBlocking` devolviendo -22 → grita;
+- control negativo: salida a fichero y sin la pieza → no grita (ahí node ya escribe síncrono).
+
+Mutaciones del módulo y del script, las cuatro vistas en rojo y el árbol restaurado (`cmp`):
+
+| mutación | qué cae |
+|---|---|
+| el módulo nunca actúa | ② y los cuatro de ③ que no son el negativo |
+| sin la pieza devuelve en vez de lanzar | los dos sembrados de «sin la pieza» |
+| el script `test` sin el `--import` | ① y ② |
+| el script `test` sin `--test-force-exit` | ① |
+
+**3 · `sonda.mjs` NO sale de `evidencias/`.** Decidido: la C sólo necesita poner la tubería
+bloqueante, y eso es lo que se ha extraído, con su test. La sonda mide (bytes pendientes, recursos
+vivos al salir) y escribe un fichero por proceso: cargarla en cada hijo de la tanda sería meter un
+instrumento que nadie lee. Se queda como evidencia del experimento.
+
+**4 · El alcance, declarado y MEDIDO (caso ②).** Lo cargan el proceso `node --test` y **cada hijo
+que lanza por fichero** (el corredor les pasa su `execArgv`). **NO** lo cargan los procesos que un
+test lance por su cuenta, ni el envoltorio `tanda-con-veredicto.mjs`, ni `npm run build`. Es **más
+estrecho** que lo medido en §⑤, donde iba por `NODE_OPTIONS` y lo cargaba todo proceso: los hijos por
+fichero, que son los que perdían, lo reciben igual; los nietos ya no. Si el alcance cambia, ② cae.
+- Un `node --test` que un test lance dentro (`scrum928b`, `scrum858b`…) **sigue sin el módulo**.
+- **Las tres copias del flag que nombró S3 en c.18373** (`scripts/meta-guard-mutaciones.mjs`,
+  `scripts/_trinquete-de-zona-hijo.mjs`, `scripts/censo-guards-gateados.mjs`) **siguen perdiendo**:
+  la autorización es para el script `test` o el `NODE_OPTIONS` del paso de tests, y no las cubre.
+
+## La tanda completa, en local (Windows, node v24.18.0)
+
+`node scripts/tanda-con-veredicto.mjs node --test --test-force-exit --import=./scripts/tuberia-bloqueante.mjs 'tests/*.test.mjs'`,
+con `dist/` emitido con `tsc --noCheck`: **11.428 tests · 11.250 pasan · 26 caen · 152 saltan**,
+salida 1, log de 1.442.231 B, **0 «TANDA SIN VEREDICTO»**.
+- **3 de los 26 eran míos y están arreglados** en el código, no en los guards: `scrum702` (leía
+  `process.platform`; ahora el ④ decide por una medición), `scrum864c` y `scrum824` (el temporal salía
+  por una fábrica; ahora es `mkdtempSync(path.join(os.tmpdir(), …))` con `finally`).
+- **Los otros 23 no dependen del módulo:** los 12 ficheros que los dan, corridos con y sin él, dan
+  **los mismos 23 casos en rojo** (134 tests, 108 pasan, en los dos brazos). Son del worktree:
+  `express` y el CLI de Prisma no están en su `node_modules`, y la ruta corta `JAVIER~1`.
+- ⚠️ **No he repetido la tanda entera después de los tres arreglos.** Sí los cuatro ficheros
+  implicados juntos: 31 tests, 0 caen.
+
+## Lo que NO sé
+
+- **Linux.** Que la C arregla la pérdida sigue siendo lo de §① y §② (12 tandas, 200 pasadas, una
+  mañana) más lo que diga el ④ en el obligatorio de este PR. Una corrida más no es una garantía.
+- Si los nietos de la tanda (un `node --test` dentro de un test) pierden: no lo he medido, y no los cubre.
+- Una pasada accidental mía de la tanda entera sin el módulo dio 25 rojos y no 23, y no guardé los
+  nombres (abajo). NO PUDE MIRAR qué eran los 2 de más.
+
+## Mis errores
+
+- **Repetí la cicatriz de J3 del 2-oct, en el mismo ticket.** La expresión de la sonda del ④ pasó por
+  un heredoc y perdió la barra (`(d+)` en vez de `(\d+)`). Lo cazó el propio test: la sonda sin
+  respuesta sale «NO PUDE MIRAR» en vez de saltarse el caso. La cicatriz estaba escrita y no lo
+  impidió; lo paró que el `null` del instrumento es rojo.
+- **El primer módulo sólo miraba `fstat`**, y en Windows `fstat` de una tubería da los cuatro `is*` en
+  `false`: habría hecho NADA en silencio. Lo vi midiéndolo antes de usarlo. Ahora mira también el objeto.
+- **Mi primera cobaya pasaba el mismo fichero cuatro veces**; node lo cuenta una, y los tres brazos
+  «perdían» 240 casos. Lo delató que los tres brazos daban lo mismo.
+- **Mi comparación de los rojos ajenos corrió la tanda entera sin querer:** un `sed` falló, la lista
+  quedó vacía, y `node --test` sin ficheros lo corre todo. La repetí con un guion que se niega a correr
+  con la lista vacía.
