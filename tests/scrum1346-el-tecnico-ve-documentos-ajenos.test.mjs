@@ -53,19 +53,15 @@ if (URL_BANCO) {
 const CON_BASE = URL_BANCO !== '';
 
 /**
- * Las fugas que HOY siguen abiertas (14-oct-2026). Cada una, con el sitio donde se cierra. Quien la
- * cierre QUITA su clave en el mismo PR: si no, su caso cae y se lo dice.
+ * Las fugas que HOY siguen abiertas. Cada una, con el sitio donde se cierra. Quien la cierre QUITA
+ * su clave en el mismo PR: si no, su caso cae y se lo dice.
+ *
+ * VACÍA desde SCRUM-1555 (S1, 14-oct-2026): las ocho medidas aquí el 14-oct se cerraron en el mismo
+ * PR, con `puedeVerElPresupuesto` en las seis rutas por id y `wherePresupuestosVisibles` en Inicio y
+ * en el buscador del albarán. Antes de vaciarla, con el arreglo puesto y la lista llena, el caso ①
+ * cayó con las ocho en NO-VE: ése es el control de que se cerraron todas y no sólo una.
  */
-const FUGAS_CONOCIDAS = new Map([
-  ['pdf-presupuesto', 'GET /admin/quotes/:id/pdf — busca por id y negocio, sin `puedeVerElPresupuesto`'],
-  ['inicio', 'GET /admin/metrics/inicio — `getInicioOperario(merchantId)` no recibe quién pregunta'],
-  ['albaran-buscador', 'GET /admin/albaranes/presupuestos — `listQuotesAdmin` sin el recorte'],
-  ['notas', 'PUT /admin/quotes/:id/notes — `updateMany` por id y negocio'],
-  ['aceptar', 'POST /admin/quotes/:id/accept — `acceptQuoteAdmin` por id y negocio'],
-  ['rechazar', 'POST /admin/quotes/:id/reject — `rejectQuoteAdmin` por id y negocio'],
-  ['enviar-whatsapp', 'POST /admin/quotes/:id/send-whatsapp — `sendQuoteWhatsAppToCustomer` por id y negocio'],
-  ['enviar-correo', 'POST /admin/quotes/:id/send-email — busca por id y negocio'],
-]);
+const FUGAS_CONOCIDAS = new Map([]);
 const fugas = process.env.SCRUM1346_SIN_TRINQUETE === '1' ? new Map() : FUGAS_CONOCIDAS;
 
 after(async () => {
