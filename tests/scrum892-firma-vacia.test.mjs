@@ -110,6 +110,7 @@ function doblarPrisma(quote) {
   moduloPrisma.prisma.quote = {
     findUnique: async () => quote,
     findFirst: async () => quote,
+    count: async () => 0, // SCRUM-1302r · la ruta pregunta si hay una versión más reciente del grupo; aquí, ninguna.
     update: async (a) => { escrituras.push(a.data); return { ...quote, ...a.data }; },
   };
   return escrituras;

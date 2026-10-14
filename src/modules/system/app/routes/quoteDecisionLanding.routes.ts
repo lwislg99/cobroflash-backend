@@ -25,7 +25,7 @@ import { zonaDelMerchant } from '../../../../core/zonaDelMerchant';
 import { textoDeValidez } from '../../../quotes/domain/validez';
 import { numeroQueImprimeElPapel } from '../../../quotes/domain/revision'; // SCRUM-1444: el número de la página es el del papel
 import { sinTildes } from '../../../../core/texto/sinTildes';
-import { tieneVersionMasReciente } from '../../../quotes/domain/versionMasReciente'; // SCRUM-1302
+import { tieneVersionMasReciente, fraseDeLaVersionAntigua, ERROR_VERSION_NO_VIGENTE } from '../../../quotes/domain/versionMasReciente'; // SCRUM-1302
 
 type DecisionApiError = { message?: string; error?: string };
 
@@ -290,7 +290,7 @@ function paginaDeVersionAntigua(
   const negocio = quote.merchant?.legalName || quote.merchant?.name || 'el profesional';
   return renderPage(locale.quoteUpdatedTitle, escapandoLoInterpolado`<div class="status-ok" style="text-align:center" data-version-antigua="1">
     <strong>${locale.quoteHasNewer}</strong><br/>
-    La que estás viendo ya no se puede aceptar. Abre el enlace de la versión nueva que te haya enviado ${negocio}, o pídesela.
+    ${fraseDeLaVersionAntigua(negocio)}
   </div>`, brandColor);
 }
 
@@ -847,9 +847,11 @@ quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async 
                 '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M.06 24l1.69-6.16a11.87 11.87 0 01-1.59-5.95C.16 5.34 5.5 0 12.06 0a11.82 11.82 0 018.42 3.49 11.82 11.82 0 013.48 8.41c0 6.56-5.34 11.9-11.9 11.9a11.9 11.9 0 01-5.69-1.45L.06 24z"/></svg>' +
                 'Compartir por WhatsApp</a>' +
             '</div>';
-        } else if (res.status === 409 && data.error === '${ERROR_PRESUPUESTO_YA_DECIDIDO}') {
+        } else if (res.status === 409 && (data.error === '${ERROR_PRESUPUESTO_YA_DECIDIDO}' || data.error === '${ERROR_VERSION_NO_VIGENTE}')) {
           // SCRUM-1276 · ya decidido en otra pestaña: se recarga y la página enseña el estado con
           // su texto N3 firmado. Ningún texto nuevo aquí.
+          // SCRUM-1302r · igual si se creó una revisión mientras la página estaba abierta: al
+          // recargar sale el aviso de la versión antigua.
           location.reload();
         } else if (res.status >= 500) {
           // SCRUM-1302t · un fallo NUESTRO no dice si la aceptación se guardó: puede haber caído
@@ -986,7 +988,8 @@ quoteDecisionLandingRouter.post('/quote/:token/reject', express.urlencoded({ ext
     const json = (await apiResponse.json().catch(() => null)) as DecisionApiError | null;
     // SCRUM-1276 · ya decidido (p. ej. aceptado en otra pestaña): se enseña el estado con su texto
     // N3 firmado en vez de un código crudo. Sin copy nuevo.
-    if (apiResponse.status === 409 && json?.error === ERROR_PRESUPUESTO_YA_DECIDIDO) {
+    // SCRUM-1302r · y si entre tanto se creó una revisión, la landing enseña el aviso de la antigua.
+    if (apiResponse.status === 409 && (json?.error === ERROR_PRESUPUESTO_YA_DECIDIDO || json?.error === ERROR_VERSION_NO_VIGENTE)) {
       return res.redirect(303, `/pay/quote/${encodeURIComponent(token)}`);
     }
     if (!apiResponse.ok) {
