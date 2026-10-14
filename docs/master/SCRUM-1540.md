@@ -3,6 +3,8 @@
 **Medido contra:** `origin/main` = `3c25452545a3b7092fb284df8a57b4f203f7a8a8` · 2026-10-14T08:18:58Z (`Date:` de GitHub).
 Rama `scrum-1540-borrables-por-la-punta-viva`. Puesto: S5.
 
+A9: sin fallo que generalice — cinco guards vecinos cayeron al primer intento y se arregló el código o se declaró con su motivo, ninguno se aflojó (`scrum723`: el `rev-parse` nuevo y el `main` sintético del test; `scrum237`: una negación sin su hermano positivo; `scrum267`: el ancla sin el formato «Medido contra»; en CI, `scrum1294`: esta misma línea; `scrum824`: el temporal que llega por parámetro).
+
 ## La medida que pidió el orquestador, primero
 
 **¿Cuántas ramas propone borrar HOY que NO deberían borrarse?** Con el guion SIN tocar, sobre el árbol
