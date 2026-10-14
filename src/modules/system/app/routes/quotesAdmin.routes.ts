@@ -142,6 +142,11 @@ router.post('/:id/accept', async (req, res) => {
     }
 
     const { channel, comment, paymentTerms, evidence } = req.body ?? {};
+    // SCRUM-1555 · la misma puerta que la ficha: el ajeno contesta igual que el que no existe.
+    if (!(await puedeVerElPresupuesto(quienPideDe(req), id))) {
+      return res.status(404).json({ error: 'not_found' });
+    }
+
 
     const updated = await acceptQuoteAdmin(id, {
       channel,
@@ -181,6 +186,11 @@ router.post('/:id/reject', async (req, res) => {
     }
 
     const { channel, reason, comment, evidence } = req.body ?? {};
+    // SCRUM-1555 · la misma puerta que la ficha: el ajeno contesta igual que el que no existe.
+    if (!(await puedeVerElPresupuesto(quienPideDe(req), id))) {
+      return res.status(404).json({ error: 'not_found' });
+    }
+
 
     const updated = await rejectQuoteAdmin(id, {
       channel,
@@ -695,6 +705,13 @@ router.post('/:id/send-whatsapp', async (req, res) => {
       return res.status(400).json({ ok: false, error: 'invalid_id' });
     }
 
+    // SCRUM-1555 · la misma puerta que la ficha: el ajeno contesta igual que el que no existe.
+    // Antes llegaba a `sendQuoteWhatsAppToCustomer` y contestaba 400 «falta teléfono»: eso
+    // confirmaba que el documento existe aunque no se pudiera ver.
+    if (!(await puedeVerElPresupuesto(quienPideDe(req), id))) {
+      return res.status(404).json({ ok: false, error: 'not_found' });
+    }
+
     // A15.2: la lógica vive en sendQuoteWhatsAppToCustomer (texto K1 + guards
     // intactos) para que "Aprobar y enviar" del ciclo de mantenimientos sea
     // EXACTAMENTE el flujo normal. Aquí solo se mapean reasons → HTTP de siempre.
@@ -757,6 +774,8 @@ router.get('/:id/pdf', async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
+    // SCRUM-1555 · la misma puerta que la ficha: el PDF de un presupuesto ajeno no se sirve.
+    if (!(await puedeVerElPresupuesto(quienPideDe(req), id))) return res.status(404).json({ error: 'not_found' });
 
     const quote = await prisma.quote.findFirst({
       where: { id, merchantId: req.merchantId }, // multi-tenant
@@ -794,6 +813,9 @@ router.post('/:id/send-email', async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
+    // SCRUM-1555 · la misma puerta que la ficha. Antes un ajeno recibía 400 «falta correo», que
+    // confirmaba que el documento existe.
+    if (!(await puedeVerElPresupuesto(quienPideDe(req), id))) return res.status(404).json({ ok: false, error: 'not_found' });
 
     const quote = await prisma.quote.findFirst({
       where: { id, merchantId: req.merchantId },
@@ -900,11 +922,16 @@ router.put('/:id/notes', async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
+    // SCRUM-1555 · la misma puerta que la ficha: un Técnico reescribía la nota de un compañero.
+    if (!(await puedeVerElPresupuesto(quienPideDe(req), id))) return res.status(404).json({ error: 'not_found' });
     const notes = req.body?.notes !== undefined ? String(req.body.notes ?? '') : null;
-    await prisma.quote.updateMany({
+    const r = await prisma.quote.updateMany({
       where: { id, merchantId: req.merchantId },
       data: { internalNotes: notes || null },
     });
+    // 0 filas = no existe. Antes contestaba `ok: true` igual: decía que había guardado algo que no
+    // (mismo criterio que `/tags`).
+    if (r.count === 0) return res.status(404).json({ error: 'not_found' });
     return res.json({ ok: true });
   } catch (err) {
     console.error('[PUT /admin/quotes/:id/notes]', err);

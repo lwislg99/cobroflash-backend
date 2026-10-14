@@ -36,6 +36,8 @@ import { ERROR_ALBARAN_CAMBIADO, exigirNombreFirmante, normalizarLugarEntrega, r
 import { ERROR_ALBARAN_CAMBIADO_AL_EDITAR, puedeEditarEstaVersion } from '../../domain/albaranEdicion';
 import { seesOnlyOwnJobs } from '../../../../core/http/roleCapabilities'; // SCRUM-467
 import { esSuyoElTrabajo, SELECT_DUENOS } from '../../domain/accesoAlTrabajo'; // SCRUM-849
+import { quienPideDe } from '../../../../core/documentos/accesoALaFactura'; // SCRUM-1555
+import { wherePresupuestosVisibles } from '../../../../core/documentos/accesoAlPresupuesto'; // SCRUM-1555
 import { fotoYaSubida } from '../../domain/fotoDuplicada'; // SCRUM-382: la misma foto no se guarda dos veces
 import { canalDeWhatsApp } from '../../../../core/contacto/canalDeWhatsApp'; // SCRUM-1302 (F)
 import { getPendientesFacturar } from '../../domain/pendientesFacturar.service'; // SCRUM-69
@@ -268,7 +270,9 @@ router.get('/serie', async (req, res) => {
 router.get('/presupuestos', async (req, res) => {
   try {
     const q = req.query.q !== undefined ? String(req.query.q) : undefined;
-    const candidatos = await listQuotesAdmin(req.merchantId!, q);
+    // SCRUM-1555 · con el recorte de quien pregunta, como la lista de Presupuestos (SCRUM-1403).
+    const recorte = await wherePresupuestosVisibles(quienPideDe(req));
+    const candidatos = await listQuotesAdmin(req.merchantId!, q, undefined, null, null, undefined, recorte);
 
     // Los Trabajos que tienen por ORIGEN a alguno de estos presupuestos. Una sola consulta para
     // toda la lista (patrón de SCRUM-58), no una por fila.
