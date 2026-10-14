@@ -1,0 +1,25 @@
+POBLACION: 3 casos (P, S, S2) · sobre el compilado de este árbol
+
+P · control positivo: factura nueva, sin huella, con líneas → la puerta real la sella
+  ok   · candidatas / selladas: [1,[81]]
+  ok   · escrituras que tocan la huella: 1
+  ok   · la fila tiene huella y estado: ["string",true,"sellado"]
+  ok   · se entró bajo cerrojo: true
+  (lo que el doble no supo imitar, después del sellado: [] · auditoría: ["encolado_fallido"])
+
+S · la lectura de candidatas trae una foto VIEJA (sin huella) de una factura ya sellada
+  ok   · la pasada la trató como candidata (el caso se ejerció): 1
+  ok   · se llegó a applyVeriFactu (cerrojo tomado): true
+  ok   · escrituras que tocan la huella: 0
+  ok   · huella, anterior, instante y QR intactos: ["HUELLA-ORIGINAL-0082","PREV-0082","2026-11-02T09:00:01.234Z","QR-ORIGINAL"]
+  ok   · lo único escrito sobre la factura: [{"id":82,"campos":["vfEstado"]}]
+  ok   · avisó de que la conserva: true
+
+S2 · la factura sellada en P, ofrecida otra vez con una foto vieja
+  ok   · el instante que entraría ahora en la huella ya no es el de P (el caso se ejerció): true
+  ok   · escrituras que tocan la huella: 0
+  ok   · la huella es la de P: true
+
+COMPROBACIONES HECHAS: 13
+VEREDICTOS QUE CAEN: 0
+EXIT=0
