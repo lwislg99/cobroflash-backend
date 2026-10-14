@@ -673,9 +673,9 @@ Sesión `s4-14oct` · rama `scrum-1302p-el-enlace-de-una-revision-antigua`. El s
 
 **NO medido:** yaqu.app (este PR no ha mergeado al escribir esto) · la suite completa de `npm test`.
 
-## Seguimiento en el mismo PR (#2445): las dos firmas de c.19636
+## Seguimiento (SCRUM-1302q): las dos firmas de c.19636
 
-**Medido contra:** `origin/main` = `4f487bb177c42a7ee02042b0029f8c90b7e9e77e` · 2026-10-14T08:53:25Z (`Date:` de GitHub). Relevo de S4 (la tanda anterior salió a 347k). Va en el mismo PR porque a las 08:53Z #2445 seguía sin mergear.
+**Medido contra:** `origin/main` = `4f487bb177c42a7ee02042b0029f8c90b7e9e77e` · 2026-10-14T08:53:25Z (`Date:` de GitHub). Relevo de S4 (la tanda anterior salió a 347k). Iba a ir en #2445, que a las 08:53Z seguía sin mergear; entró entre el commit y el push, así que va en un PR de seguimiento, rama `scrum-1302q-expired-en-el-enlace-vivo` (el commit de código conserva el asunto `SCRUM-1302p`, escrito antes).
 
 - **Concordancia en femenino:** ya estaba aplicada en `locales.ts` y atada por el test del país de «cotización». No cambia código; sólo la ficha, que la daba por «sin firmar».
 - **`expired` entra en la condición**, en las dos mitades a la vez (`versionMasReciente.ts` y `quoteRevisiones.js`); el test de «mismos estados» exige ahora `['draft', 'sent', 'expired']`. Motivo, del propio orquestador: el punto 1 (`draft`/`sent`) y el punto 5 (va antes que el caducado) no podían cumplirse a la vez con una vieja ya barrida por el cron. ⛔ Aceptado y rechazado siguen fuera.
