@@ -164,3 +164,51 @@ PROD; dev usa `.env.local`»*: hoy ningún `.env` apunta a prod, ninguno tiene `
 * `scripts/comprobar-claves-bd.mjs` — barrido por destino, `raiz` inyectable, suelo ampliado.
 * `tests/scrum418-credencial-de-produccion.test.mjs` (nuevo, 10 tests, **sin gate**).
 * `docs/master/SCRUM-418.md` (nuevo) — esta entrada.
+
+---
+
+# SCRUM-418b — el párrafo de las claves de BD de `CLAUDE.md`, re-fechado con una medida nueva
+
+**Medido contra:** `origin/main` = `0f0e67f38622c263c68317161d6f5ffc92e63a36` · 2026-10-14T08:15:01Z (hora de `gh api -i zen`)
+
+**Quién y por qué:** S0, por encargo de su orquestador (14-oct-2026). La S2 midió esa mañana que ningún árbol
+tenía `DATABASE_URL_STAGING`, `_DEV` ni `_TESTS`, y `CLAUDE.md` (regla dura 3) afirmaba con fecha del
+10-ago-2026 que los cuatro worktrees las llevaban. El propio párrafo pide que quien lo vuelva a medir lo
+re-feche. **No se heredó la cifra de la S2: se volvió a medir.** SCRUM-418 está cerrado; esto cuelga de él
+porque el párrafo lo cita.
+
+## Lo medido (sin imprimir ningún valor: sólo NOMBRES de clave y `host/base`)
+
+| qué | resultado | cómo |
+|---|---|---|
+| población | 183 carpetas: las de `D:\MILLONARIO\cobroFlash` y las de `git worktree list`; **113 son árboles git** | `Get-ChildItem -Directory` + `git worktree list --porcelain`, deduplicadas |
+| `DATABASE_URL_STAGING` / `_DEV` / `_TESTS` | **en ninguna** | regex `^DATABASE_URL[A-Z_]*=` sobre cada `.env*` de cada raíz (`-Filter '.env*' -Force`) |
+| ficheros `.env*` | **2**, los dos `.env.local`, con fecha de modificación del 5-jun-2026: `cobroflash-backend\.env.local` (el checkout compartido) y `.claude\worktrees\s1-960\.env.local` | el mismo barrido. Control positivo: es el que los encontró |
+| a dónde van | los dos: `DATABASE_URL` → `localhost/yaqu_dev`; `comprobarCredencialDeProduccion` da `destino_no_reconocido`, **no producción** | `describirBD` de `scripts/_db-guard.mjs` y `scripts/_clave-vs-destino.mjs`, importados desde un guion fuera del árbol |
+| entorno de usuario y de máquina | ninguna variable `DATABASE_URL*` | `[Environment]::GetEnvironmentVariables('User'/'Machine')` |
+| Postgres local | **nada escuchando en el 5432**, ningún proceso `postgres` | `Get-NetTCPConnection -State Listen` (control: 32 puertos en escucha) |
+
+**Consecuencia, que es lo que importa:** ese día ninguna sesión podía medir dev ni staging desde un árbol de esta
+máquina. Lo que se afirme sobre esas bases sin una medida nueva es una pregunta, no un hecho.
+
+**Lo que NO sé:** si esos dos `.env.local` existían ya el 10-ago (la fecha de modificación es del 5-jun, pero una
+copia puede conservarla), así que no afirmo que el registro anterior fuera falso cuando se escribió: sólo que ya no
+describe la máquina.
+
+## Hallazgo de paso, REPORTADO y no tocado: el instrumento que el párrafo manda usar no ve `.env.local`
+
+`scripts/comprobar-claves-bd.mjs` carga el entorno con `import 'dotenv/config'`, que lee **sólo `.env`**. La
+aplicación (`src/core/config/loadEnv.ts:10`) carga **primero `.env.local`** y sus valores ganan. Así que en un árbol
+cuyo `.env.local` llevase una credencial de producción, el instrumento diría «no se leyó ni una sola cadena»
+(o verde, si además hubiera un `.env`), y `npm run dev` se conectaría a producción. Medido hoy en los dos árboles
+que tienen `.env.local`: el instrumento no los habría leído. **No se arregla aquí:** `carriles.mjs de
+scripts/comprobar-claves-bd.mjs` dice que sólo lo cubre la fila general de `scripts/` y que su dueño no lo ha
+decidido nadie. Se le pasa al orquestador.
+
+## Ficheros
+
+* `CLAUDE.md` — el párrafo de la regla dura 3, re-fechado y escrito en PASADO (lo que dice
+  `scripts/censo-afirmaciones-medidas.mjs:63`: una medida en presente caduca aunque lleve fecha).
+* `docs/master/SCRUM-418.md` — esta sección.
+
+A9: sin fallo que generalice — no me salió nada mal en esta entrega; la cifra que caducó (la del 10-ago) la avisaba el propio párrafo, que pedía re-fecharla, y aquí se ha hecho.

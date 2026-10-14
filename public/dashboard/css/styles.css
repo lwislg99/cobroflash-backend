@@ -4325,6 +4325,14 @@ textarea.parte-linea-desc {
    cosas de una: lo saco a su clase y de paso le quito el color que no contrasta. */
 .revision-error { margin: 6px 0 0; font-size: 13px; color: var(--danger-ink, #991b1b); }
 
+/* SCRUM-1302 · el aviso de «Crear revisión»: el enlace de la versión anterior va a dejar de valer.
+   Cero tokens nuevos: el ámbar de «pendiente» es el de `.aviso-sin-cobertura` (fondo y tinta), que
+   ya contrasta; los botones son los `.btn` de siempre. */
+.revision-aviso { margin: 8px 0 0; padding: 12px; border: 1px solid #fde68a; border-radius: var(--radius-md); background: var(--amber-50); color: #92400e; font-size: 13px; }
+.revision-aviso strong { display: block; margin: 0 0 4px; }
+.revision-aviso p { margin: 0 0 10px; }
+.revision-aviso .btn + .btn { margin-left: 8px; }
+
 /* ═══ SCRUM-920c · LA LISTA DE GASTOS, SIN TABLA (y sin `style=` en línea) ════════════════════════
    Prototipo aprobado: docs/prototipos/SCRUM-920/gastos.html. Bloque propio y todo acotado a
    `.gastos-pantalla`, `.gastos-*` o `.gasto-*`: no se toca `.table-scroll .table`, que es de otros
