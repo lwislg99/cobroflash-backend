@@ -471,3 +471,128 @@ Lo que el mismo comentario dijo y NO se ha aplicado, con su motivo:
 - D y E de la tabla del comentario 19449 siguen vivos y cruzan a J1.
 
 **NO medido:** yaqu.app con el #2395 desplegado · la ficha de la revisión nueva tras navegar · un clic en «Crear revisión» en yaqu.app.
+
+# APÉNDICE · SCRUM-1302m: el total y la leyenda «IVA NO INCLUIDO» del PDF del presupuesto (J1)
+
+**Medido contra:** `origin/main` = `1d338a5ae8afa6166282c28e7a8c818c5375a856` · 2026-10-14T01:54:29Z
+A9: comprobación → `tests/scrum1302m-el-total-y-la-leyenda.test.mjs`
+
+Sale del hallazgo 1 de la entrega de S4 (comentario 19428 de este ticket): el PDF decía «Total 121,00» y, debajo,
+«IVA NO INCLUIDO», con el IVA dentro de ese total. El fundador autorizó tocar SÓLO el PDF; lo demás del IVA
+(SCRUM-1438 y SCRUM-1439) sigue parado y aquí no se toca.
+
+## Cuál de los dos estaba mal
+
+**La cifra, no la leyenda.** Fabricado y leído, no razonado: `docs/master/evidencias/scrum1302m/medicion.mjs`
+arma la fila, calcula su total con `calcTotal` (lo que hace `POST /quote/create`), genera el PDF por
+`paramsDePresupuestoParaPdf` → `generateQuotePdf` y lee el texto del fichero. Una línea de 100,00 al 21 %:
+
+| modo | lo guardado | lo que decía el PDF | lo que dice ahora |
+|---|---|---|---|
+| `sumar` | 121,00 | línea 121,00 · Base imponible 100,00 · IVA 21% 21,00 · Total presupuesto 121,00 | igual |
+| `no_incluido` | 121,00 | línea 121,00 · **Total presupuesto 121,00 · IVA NO INCLUIDO** | línea 100,00 · Total presupuesto 100,00 · IVA NO INCLUIDO |
+| `no_incluido`, línea al 0 % | 100,00 | Total presupuesto 100,00 · IVA NO INCLUIDO | igual |
+| sin modo (anterior a la casilla) | 121,00 | como `sumar` | igual |
+
+Las salidas enteras: `antes-sobre-1d338a5ae.txt` y `despues.txt`, en esa carpeta.
+
+- **La leyenda es el modo funcionando.** `no_incluido` es un modo declarado (SCRUM-656): el profesional lo elige
+  en el editor y el documento de referencia dice «TOTAL 987,00 € · IVA NO INCLUIDO», con un total sin impuesto.
+- **El total guardado no está mal calculado.** `Quote.total` lleva el IVA de sus líneas en los dos modos, a
+  propósito («el modo no cambia ni un céntimo», `presentacionIva.ts`), y es lo que se cobra.
+- **El defecto era del PDF:** en ese modo pintaba el guardado a secas, y también el importe de cada línea y el de
+  cada opción con el IVA sumado, encima de una leyenda que dice que no lo llevan.
+
+## Lo construido — sólo `pdf.service.ts`, sólo el presupuesto
+
+En `no_incluido`, los importes del papel van sin impuesto: el de cada línea, el de cada línea y el total de cada
+opción, y «Total presupuesto». El total sigue saliendo del guardado: se le resta el IVA que lleva dentro, que es
+`calcTotal` con los tipos de las líneas menos `calcTotal` con los tipos a cero (`ivaDentroDelImporte`). No hay
+aritmética nueva ni texto nuevo: los rótulos y la leyenda son los que había.
+
+En `sumar` y sin modo el papel sale idéntico. La factura no lo conoce (lo comprueba el test, por AST).
+
+## Verificado, ejecutando
+
+- `tests/scrum1302m-el-total-y-la-leyenda.test.mjs`: ocho casos, con céntimos, dos tipos, descuento de línea y
+  global, y tres opciones. Las bases esperadas están calculadas a mano en el propio test.
+- **Visto en rojo:** `mutaciones.mjs` quita el arreglo en cinco trozos; la base sale verde y las cinco caen
+  (`mutaciones.txt`, con el `diff --numstat` de cada una).
+- **La tanda dirigida** (`npm run tanda:dirigida`, sobre la base `1d338a5a`) cazó dos rojos de este mismo cambio
+  antes de empujar, y los dos se arreglaron en el código: el test usaba el merchant demo como fixture
+  (`scrum409`) y la función nueva estaba colocada donde `scrum603b` la cuenta como cuerpo de la factura; ahora
+  vive al final del fichero. Quedan en rojo en este árbol, sin relación con el cambio, `scrum476` (el árbol no
+  tiene `node_modules` propio) y dos casos de `scrum1298b` (miden el árbol principal de esta máquina): no se han
+  corrido sobre la base para confirmarlo.
+
+## Lo que este arreglo NO decide, y queda a la vista
+
+- **La columna «IVA%» de la tabla sigue pintando el tipo de cada línea** («21%») también en `no_incluido`. No
+  contradice a la leyenda, pero `presentacionIva.ts` dice que ese documento «no afirma cuánto será el impuesto».
+  Quitarla es maqueta y decisión de producto; no se ha tocado.
+- **El papel y la página pública enseñan ahora cifras distintas del mismo presupuesto**, y las dos son ciertas:
+  el PDF, 100,00 sin IVA; la página donde el cliente firma, 121,00 «IVA incluido» (medido por S4, comentario 19428;
+  aquí no se ha vuelto a medir). Es la página de S1 y cae en lo parado de SCRUM-1438.
+- **Lo que se cobra no cambia:** sigue siendo el guardado, con IVA.
+- El importe de línea de la tabla no aplica el descuento de línea (`qty × price`); ya era así y no es de este
+  encargo.
+
+**NO medido:** yaqu.app (nada de esto está desplegado) · el `POST /quote/create` de verdad contra una base (se usó
+su misma función de total, no la ruta) · un presupuesto real de producción en `no_incluido` (no se sabe si existe
+alguno) · el PDF abierto en un visor: se leyó su texto, no su maqueta.
+
+# APÉNDICE · SCRUM-1302n: el banco de 1302m, y el de SCRUM-1544, al catálogo del meta-guard (J1)
+
+**Medido contra:** `origin/main` = `cb30885dd69c4df7f33d3a0066fed93698926857` · 2026-10-14T02:30:35Z
+A9: comprobación → `tests/scrum1387-banco-nuevo-va-al-catalogo.test.mjs`
+
+Este tramo no cambia el arreglo del PDF: trae la rama de 1302m por `git merge` (su PR, el #2408, queda
+sustituido por el de esta rama) y da de alta su banco de mutación donde el guard de SCRUM-1387 lo pide.
+
+## Lo que se encontró: el guard cazaba DOS bancos, y uno ya estaba en `main`
+
+El obligatorio del #2408 caía en «ningún banco de mutación nuevo queda fuera del catálogo». Corrido en local,
+el guard nombró dos carpetas, no una:
+
+- `docs/master/evidencias/scrum1302m/mutaciones.mjs`, el de la rama que se trae;
+- `docs/master/evidencias/SCRUM-1544/mutaciones.mjs`, que **ya estaba en `main`**.
+
+El guard entró con el PR #2406 (`bc5fa21ee`, 2026-10-14T02:04:37Z) y el banco de SCRUM-1544 con el PR #2407
+(`cb30885dd`, 2026-10-14T02:08:10Z): un commit después del corte. El obligatorio del #2407 había corrido antes
+de que el guard existiera en `main`, así que pasó. No es un descuido de nadie: es la ventana de estrenar un
+guard, y volverá a darse con el siguiente. **Medido, no deducido:** el guard corrido sobre un árbol aparte fijado
+a `origin/main` `cb30885dd` cae nombrando sólo la carpeta de SCRUM-1544. Mientras eso no se registrara, caía el
+obligatorio de cualquier PR, no sólo el de 1302m.
+
+## Lo que pide el guard, leído en `tests/_catalogo-obligatorio.mjs`
+
+Un banco es una carpeta de evidencias con algún fichero con «mut» en el nombre; está fuera si tiene guion
+(`.mjs`) y ninguno nombra el catálogo. El alta es que el test del ticket exporte `MUTACIONES_QUE_ME_TUMBAN` y el
+guion las tome de ahí. No hay lista de excepciones, y no se ha tocado ni el guard ni su catálogo.
+
+## Lo hecho
+
+- `tests/scrum1302m-el-total-y-la-leyenda.test.mjs` exporta las cinco mutaciones del banco (mismos `de` y `a` que
+  llevaba el guion). Sus ocho casos no cambian. Cada una nombra ahora UN caso que tiene que caer.
+- `tests/scrum710b-anclaje-por-identidad.test.mjs` exporta las cinco del banco de SCRUM-1544, trasladadas tal
+  cual: mismo fichero, `de`, `a` y `cae`. Cruce de puesto (el ticket es de J6) autorizado por el orquestador de
+  Javier por el canal, el 14-oct-2026; los ficheros no tienen fila en `dos-equipos.md` §3.
+- Los dos guiones dejan su lista propia y leen la del test con `mutacionesDeclaradas` del meta-guard, que es el
+  lector que usa el CI. El de 1302m exige ahora que caiga el caso nombrado, no «alguno».
+
+**Por qué no es un esquive.** Nada sale del alcance del censo: las carpetas, los nombres de fichero y los guiones
+siguen donde estaban. Lo que cambia es que las diez mutaciones las ejecuta `npm run meta:mutaciones` en el CI en
+cada PR, y que borrar una declaración lo denuncia el suelo contra `main` de SCRUM-810.
+
+## Verificado, ejecutando
+
+- **En rojo primero:** el guard, antes de tocar nada, con las dos carpetas nombradas; y sobre `origin/main`
+  limpio, con una.
+- **En verde después:** el mismo guard, sobre este árbol (la población y el recuento van en la entrega).
+- **Las diez mutaciones caen** por los dos caminos: los dos guiones (`mutaciones.txt` y `mutaciones-salida.txt`,
+  regenerados) y el camino del meta-guard (`correr` + `aplicarUna`, con un guion de fuera del árbol que pasa sólo
+  estos dos tests): diez VIVAS, cero ciegas, cero mudas, con la pasada limpia en verde antes.
+- El test del PDF sigue cazando sus cinco: la base, ocho casos en verde; cada mutación, su caso nombrado en rojo.
+
+**NO medido:** `npm run meta:mutaciones` entero (el del CI, con todas las declaraciones de la casa) · la tanda
+completa de `npm test` · yaqu.app (este tramo no despliega nada que se vea).

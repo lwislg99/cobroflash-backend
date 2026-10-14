@@ -1,0 +1,19 @@
+POBLACION casos=4
+
+== A · linea al 21 %, modo sumar
+   guardado (calcTotal): 121.00 · base (calcVatBreakdown): 100.00 · cuota: 21.00
+   PDF> PresupuestoPresupuesto #1302Válido hasta el 13 de noviembre de 2026Emisor: Oficio de la medicionCliente: Cliente de la medicionDetalle del presupuesto:ConceptoCant.PrecioIVA%TotalRevision1100,0021%121,00Base imponible: 100,00 EURIVA 21%: 21,00 EURTotal presupuesto: 121,00 EURPresupuesto generado automáticamente por YaQu — válido salvo indicación en contrario.
+
+== B · linea al 21 %, modo no_incluido
+   guardado (calcTotal): 121.00 · base (calcVatBreakdown): 100.00 · cuota: 21.00
+   PDF> PresupuestoPresupuesto #1302Válido hasta el 13 de noviembre de 2026Emisor: Oficio de la medicionCliente: Cliente de la medicionDetalle del presupuesto:ConceptoCant.PrecioIVA%TotalRevision1100,0021%121,00Total presupuesto: 121,00 EURIVA NO INCLUIDOPresupuesto generado automáticamente por YaQu — válido salvo indicación en contrario.
+
+== C · linea al 0 %, modo no_incluido
+   guardado (calcTotal): 100.00 · base (calcVatBreakdown): 100.00 · cuota: 0.00
+   PDF> PresupuestoPresupuesto #1302Válido hasta el 13 de noviembre de 2026Emisor: Oficio de la medicionCliente: Cliente de la medicionDetalle del presupuesto:ConceptoCant.PrecioIVA%TotalRevision1100,000%100,00Total presupuesto: 100,00 EURIVA NO INCLUIDOPresupuesto generado automáticamente por YaQu — válido salvo indicación en contrario.
+
+== D · linea al 21 %, sin modo (anterior a la casilla)
+   guardado (calcTotal): 121.00 · base (calcVatBreakdown): 100.00 · cuota: 21.00
+   PDF> PresupuestoPresupuesto #1302Válido hasta el 13 de noviembre de 2026Emisor: Oficio de la medicionCliente: Cliente de la medicionDetalle del presupuesto:ConceptoCant.PrecioIVA%TotalRevision1100,0021%121,00Base imponible: 100,00 EURIVA 21%: 21,00 EURTotal presupuesto: 121,00 EURPresupuesto generado automáticamente por YaQu — válido salvo indicación en contrario.
+
+LEIDOS=4 de 4
