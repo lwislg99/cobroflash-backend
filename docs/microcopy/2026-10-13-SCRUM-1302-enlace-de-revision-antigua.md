@@ -32,9 +32,10 @@ comercial, o «el profesional», como en la página del rechazo:
 
 ## La conducta firmada con ellos (los siete puntos de c.19451)
 
-1. Sale si el presupuesto del enlace está en `draft` o `sent` y en su grupo (negocio, número, año de
-   la serie) hay otra fila con `revision` mayor, en el estado que sea. El enlace muere al CREAR la
-   revisión.
+1. Sale si el presupuesto del enlace está en `draft`, `sent` o `expired` y en su grupo (negocio,
+   número, año de la serie) hay otra fila con `revision` mayor, en el estado que sea. El enlace muere
+   al CREAR la revisión. `expired` entra por c.19636: sin él, el punto 5 sólo valía para las vencidas
+   que el cron aún no había barrido.
 2. Sólo el aviso: ni detalle, ni importes, ni firma, ni «Rechazar», ni PDF.
 3. Sin botón y sin emoji que señale a nada.
 4. No enlaza a la versión nueva.
@@ -49,11 +50,12 @@ Lo sujeta `tests/scrum1302p-la-pagina-de-una-revision-antigua.test.mjs`.
 Antes, con una versión más reciente en el grupo, el enlace de la anterior pintaba el formulario de
 firma con el total viejo (medido el 13-oct-2026: `docs/master/evidencias/SCRUM-1302/revision-vieja/`).
 
+## La concordancia en femenino (firmada en c.19636)
+
+En los países de «cotización» (México, Colombia, Perú y Chile) T1 es «Cotización actualizada» y T2
+«Esta cotización tiene una versión más reciente.». T3 no cambia: concuerda con «versión».
+
 ## Lo que queda sin firmar en esta página
 
-- La concordancia en femenino de T1 y T2 en los países de «cotización» (México, Colombia, Perú y
-  Chile): la página dice «Cotización actualizada» y «Esta cotización tiene una versión más
-  reciente.». La firma nombra la palabra del país y no su género; se aplicó la concordancia como en
-  los títulos de SCRUM-1476, y está pedida en SCRUM-1302.
 - Rechazar en el servidor la decisión sobre una versión no vigente (`POST /quote/:token/decision`) es
   de S1, con su propio texto.
