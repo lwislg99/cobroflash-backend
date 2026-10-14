@@ -120,3 +120,4 @@ Una frase que un fichero escribe al morir compite con el lector que la espera: s
 Una fecha de commit dice cuándo se escribió, no cuándo entró. (SCRUM-1542)
 Antes de escribir una sonda que pregunta «¿consta?», se busca la función de la casa que ya lo contesta: una sonda propia mira el papel que tú conoces, no el que hay. (SCRUM-1215)
 Un registro escrito por la misma mano que aplicó el texto no es su firma: es quien lo aplicó contando que la tuvo. (SCRUM-1502)
+Una tilde entre corchetes no casa en `git grep -E` ni en `grep -E`: el patrón da cero sin avisar. Se busca la raíz sin tilde y con un fichero que la tenga al lado. (SCRUM-1115)
