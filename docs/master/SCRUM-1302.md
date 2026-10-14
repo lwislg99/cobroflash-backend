@@ -694,6 +694,7 @@ A9: comprobación → `tests/scrum1294-a9-leccion-en-a10.test.mjs`
 # SCRUM-1302s · dos firmas a la vez sobre la misma ranura del PARTE: escribe una (S1)
 
 **Medido contra:** `origin/main` = `099cfd383764b8cd87ab78e9ef7df8ca57a206a7` · 2026-10-14T16:36:49Z (`Date:` de GitHub, la de las dos salidas de la sonda). Lo escribe S1.
+A9: comprobación → `tests/scrum1302s-dos-firmas-del-parte-a-la-vez.test.mjs`
 
 **El tercer sitio del patrón** de 1302j (firma remota) y 1302k (albarán en obra), encargado por el orquestador el 14-oct-2026: «medirlo igual; si no reproduce, se cierra el cabo».
 
