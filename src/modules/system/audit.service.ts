@@ -115,7 +115,12 @@ export type AuditAction =
   // qué se hizo con los datos de quién — y ése es exactamente el rastro que este ticket existe
   // para dejar. La regla 5 (unión cerrada) se levanta solo para estas dos.
   | 'merchant_borrado'
-  | 'merchant_anonimizado';
+  | 'merchant_anonimizado'
+  // SCRUM-1273 · archivar y desarchivar un presupuesto: el «quién» que la columna `archived_at`
+  // no guarda a propósito. Pedidas en el contrato del orquestador (c.19605, «llevan recordAudit»);
+  // dos y no una por lo mismo que las de RGPD: son actos distintos.
+  | 'presupuesto_archivado'
+  | 'presupuesto_desarchivado';
 
 /**
  * Las que EXIGEN constancia: si no se pueden registrar, la acción NO ocurre.

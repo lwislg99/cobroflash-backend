@@ -47,8 +47,13 @@ export async function listQuotesAdmin(
   // SCRUM-1403 · el recorte de quien pregunta (`wherePresupuestosVisibles`). `null` = ve todo el
   // negocio, y entonces este `where` sale exactamente como salía.
   recorte: Prisma.QuoteWhereInput | null = null,
+  // SCRUM-1273 · `false` = sin los archivados · `true` = SÓLO ésos · sin pasar = no filtra. Lo pasa
+  // únicamente la lista de Presupuestos: archivar no saca de ningún otro sitio (c.19605, decisión 2),
+  // y el otro llamador (`GET /admin/albaranes/presupuestos`) no lo pasa a propósito.
+  archivados?: boolean,
 ) {
   const where: any = { merchantId };
+  if (archivados !== undefined) where.archivedAt = archivados ? { not: null } : null;
 
   if (teamMemberId !== undefined) where.teamMemberId = teamMemberId;
 
@@ -143,6 +148,8 @@ export async function listQuotesAdmin(
       // SCRUM-986 · MISMO PROBLEMA DEL QUINTO ESLABÓN: proyección a mano. Sin esta línea el chip
       // se calcula y no sale. `null` = nunca se le envió por WhatsApp = sin chip.
       waDelivery: entregas.get(q.id) ?? null,
+      // SCRUM-1273 · proyección a mano (el quinto eslabón de arriba): sin esta línea no sale.
+      archivedAt: q.archivedAt ?? null,
     };
   });
 }
@@ -266,6 +273,8 @@ export async function getQuoteDetailAdmin(id: number, merchantId?: number) {
     status: quote.status,
     createdAt: quote.createdAt,
     updatedAt: quote.updatedAt,
+    // SCRUM-1273 · `null` = no archivado. La ficha lo enseña y ofrece «Desarchivar».
+    archivedAt: quote.archivedAt ?? null,
 
     currency: quote.currency,
     total: quote.total,
@@ -399,6 +408,8 @@ export async function acceptQuoteAdmin(
       decisionComment: params.comment ?? null,
       paymentTerms: params.paymentTerms ?? quote.paymentTerms,
       evidence: params.evidence ?? quote.evidence,
+      // SCRUM-1273 · una decisión sobre un presupuesto archivado lo devuelve a la lista (c.19605).
+      archivedAt: null,
     },
   });
 
@@ -446,6 +457,8 @@ export async function rejectQuoteAdmin(
       rejectionReason: params.reason ?? null,
       decisionComment: params.comment ?? null,
       evidence: params.evidence ?? quote.evidence,
+      // SCRUM-1273 · una decisión sobre un presupuesto archivado lo devuelve a la lista (c.19605).
+      archivedAt: null,
     },
   });
 
