@@ -89,7 +89,8 @@ function principal(argv) {
       const re = reMencion(t.n);
       for (const s of t.sondas || []) {
         const excl = s.semilla ? [] : EXCLUIR;
-        const existen = s.rutas.every((r) => r === '.' || git(['cat-file', '-e', `${sha}:${r.replace(/\/$/, '')}`]).ok);
+        // `.` es la raíz y no se comprueba: se quita ANTES, en vez de darla por buena dentro de un `||`.
+        const existen = s.rutas.filter((r) => r !== '.').every((r) => git(['cat-file', '-e', `${sha}:${r.replace(/\/$/, '')}`]).ok);
         if (s.espera === 'ausente' && !existen) { s.aciertos = null; s.nota = 'sus rutas no existen en el commit'; continue; }
         // La semilla se busca en el ÁRBOL DE TRABAJO (`--untracked`), no en `sha`: el commit medido es anterior a ella.
         const g = git(['grep', '-n', '-I', ...(s.semilla ? ['--untracked'] : []), s.fijo ? '-F' : '-E', ...(s.i ? ['-i'] : []), '-e', s.patron, ...(s.semilla ? [] : [sha]), '--', ...s.rutas, ...excl]);
