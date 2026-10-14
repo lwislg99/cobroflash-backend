@@ -25,6 +25,12 @@ columna esté en las tres bases.
 **Medido contra:** `origin/main` = `e2be1c9fda3b5ceac853b4d376f5664ac8e4df67` · 2026-10-14T08:26:53Z (`Date:` de GitHub).
 **Skill UI:** cargada (`yaqu-premium-ui`).
 
+**Error propio:** escribí mi propia regla para pintar el motivo del servidor («sólo en el 409») y
+abrí la tabla de acciones dentro de la vista, sin buscar antes si la casa ya tenía la pieza. La
+tenía (`mensajeParaPersona`, y el patrón `destinoAccionTrabajo`), y me lo dijeron los guards, no yo.
+
+A9: comprobación → `tests/scrum1233-mensaje-para-persona.test.mjs`
+
 Firmas y decisiones en SCRUM-1273 comentario 19605 (el orquestador; responde al 19604 de S2). El
 reparto: **S1 primero** (esquema + `POST /admin/quotes/:id/archivar|desarchivar` + el filtro de
 `GET /admin/quotes`), **S2 después**. Esta mitad se construye contra ese contrato, con un DOBLE del
