@@ -1285,3 +1285,262 @@ y lleva un guion que le mentiría a un cliente.
 - Ninguna otra línea del máster. Un cambio de máster lleva una firma, y esta firma cubre estas dos.
 - Ningún estado, flag ni transición de producto (reglas 27 y 30) más allá de las dos enmendadas.
 - Ningún fichero de `src/`, ningún test, ningún guard.
+
+---
+
+# APÉNDICE · 14-oct-2026 · SCRUM-534p · La palabra «certificación» fuera del máster — medida y con la redacción PROPUESTA; nada aplicado
+
+**Medido contra:** `origin/main` = `cb30885dd69c4df7f33d3a0066fed93698926857` · 2026-10-14T02:12:44Z
+
+A9: aviso → A10 «Una ventana fija es una tolerancia disfrazada.» — no se pudo comprobar: la orden era mía y de un solo uso (un `grep -o` que exigía sesenta caracteres delante de la palabra y salió vacío sobre la página de producción, donde la palabra SÍ está); lo cazó leer la página entera en vez de creerse el vacío, y nada impide escribir otra igual
+A9: aviso → cicatriz J4 «escribí «leídas: no son esto» sobre tres líneas de un barrido cuando una me había llegado cortada antes de la palabra que buscaba, y era justo la que sí lo era: «debe estar homologado»» — no se pudo comprobar: el recorte lo puse yo en la orden para leer cómodo y ninguna herramienta distingue una línea leída de una línea vista a medias; lo cazó volver a pedir la línea con la palabra en el centro antes de empujar
+
+**Quién:** jv-j4b (puesto J4), por encargo del orquestador de Javier. **Qué toca este tramo:** este
+registro y nada más. `docs/legal/ALCANCE_BETA.md` y `docs/legal/EMAIL_ASESOR.md` están SIN TOCAR, a
+propósito: el porqué es el apartado 2.
+
+Sufijo: el encargo traía la rama `scrum-534c-…`. Ese sufijo ya lo gastó el PR #1344
+(`scrum-534c-inventario-de-huecos`, mergeado el 16-sep-2026). Este tramo va como **534p**, el primero
+sin PR ni commit en `main`.
+
+## 1 · Qué firmó Javier en el comentario 16395, literal
+
+Lo único que el comentario pone en boca de Javier es esto: **«firmo H2 y la del guión nuevo».**
+
+Todo lo demás del comentario lo escribe el orquestador, y dice dos cosas que importan aquí:
+
+- El criterio: «donde el máster hable de «certificación» de VeriFactu como si existiera, está mal».
+- Su límite, en la línea siguiente: «Eso es un CRITERIO, no una reescritura en blanco. Cada sitio
+  donde haya que cambiarlo es un texto fiscal nuevo y su firma sigue siendo suya.»
+
+La segunda firma, la del comentario 16404, cubre TRES líneas del máster (C1, C2 y C3) con su literal
+cada una. Ninguna de las dos nombra `docs/legal/`.
+
+**Lectura mía, no medición:** el criterio cubre este caso (la certificación no existe, esté escrita
+donde esté). La redacción que la sustituye, no: es justo lo que el comentario se reserva. Por eso
+este tramo propone y no aplica.
+
+## 2 · Por qué no se aplica en la rama
+
+Tres hechos medidos, y el tercero no estaba en el encargo:
+
+1. Empujar la rama ES publicarla: el PR se abre y se arma solo, y con el obligatorio en verde entra
+   en `main` sin que nadie lo mire.
+2. La autorización de hoy vive en el canal. En el ticket no consta, y la norma A19 dice que no se
+   hereda. Es el mismo caso del comentario 16404, que existe porque J4 se negó y Javier volvió a firmar.
+3. 🔴 **`ALCANCE_BETA.md` no es sólo un papel: es una página de producción y la llave del cobro
+   founding.** `src/modules/system/app/routes/legalPages.routes.ts` lo sirve en
+   `/legal/alcance-beta`, y la «versión» del documento es el hash del texto servido. El alta founding
+   (`src/modules/billing/app/routes/subscriptions.routes.ts`, `/checkout`) exige una aceptación de
+   ESA versión. Cambiar una palabra de la cláusula cambia la versión, y las aceptaciones que hubiera
+   dejan de valer para pagar.
+
+Lo medido del punto 3, el 14-oct-2026 a las 02:10Z:
+
+| qué | resultado |
+|---|---|
+| `GET https://yaqu.app/legal/alcance-beta` | HTTP 200, 4.298 bytes |
+| versión que imprime producción | `4deaa1a6d479` |
+| versión calculada del fichero de `main` (réplica de `mdToHtml`, 54 líneas) | `4deaa1a6d479`: producción sirve el fichero de `main` |
+| ¿la página dice «se activará al cerrar la certificación»? | SÍ, en el punto 2 |
+| ¿lleva el aviso «BORRADOR… NO usar con clientes»? | NO: las líneas que empiezan por `>` se omiten al servir |
+| versión si se cambia SÓLO la cabecera (línea 5) | `4deaa1a6d479`: no cambia, porque esa línea no se sirve |
+| versión si se cambia la cláusula (líneas 28-29) | `e78d68e9c02e`: cambia |
+
+O sea: la cláusula con «certificación» la puede leer hoy cualquiera en `yaqu.app`, sin el aviso de
+borrador y con los huecos `[Nombre/Razón social…]` y `[REVISAR ASESOR…]` a la vista.
+
+## 3 · Las dos líneas del encargo son cuatro
+
+El comentario 19516 contó una por fichero porque su sonda seguía el inventario (C9 y C10). Leídos
+los dos ficheros enteros, la raíz «certific» sale seis veces, y cuatro son la idea falsa:
+
+| dónde | literal | qué es |
+|---|---|---|
+| `docs/legal/ALCANCE_BETA.md`, línea 5 | «…la facturación VeriFactu se activa al cerrar la certificación, sin cambio de precio» | idea falsa. Cabecera interna, no se sirve. Dice citar el máster «literalmente» y el máster ya no dice eso (V0-6 se corrigió con la firma del comentario 16404) |
+| `docs/legal/ALCANCE_BETA.md`, líneas 28-29 | «La **facturación con sistema VERI*FACTU se activará al cerrar la certificación** del sistema» | idea falsa. Es C9. **Se sirve en producción** y es lo que acepta un founding |
+| `docs/legal/EMAIL_ASESOR.md`, línea 20 | «¿Puedo cobrar la suscripción antes de tener la facturación fiscal certificada?» | idea falsa, en el titular de la pregunta |
+| `docs/legal/EMAIL_ASESOR.md`, líneas 22-23 | «La facturación con **VeriFactu** la activaré cuando tenga el sistema certificado» | idea falsa. Es C10 |
+| `docs/legal/EMAIL_ASESOR.md`, líneas 32 y 33 | «con mi certificado», «aporta su certificado» | legítimas: es el certificado electrónico |
+
+Ninguna de las cuatro la niega: las cuatro la dan por un trámite que existe y que falta cerrar.
+
+## 4 · Si hay más: el barrido
+
+Orden: `git grep -n -i 'certific' cb30885d… -- docs public`, y después cada aparición leída con su
+ventana.
+
+| población | cifra |
+|---|---|
+| ficheros en `docs/` · en `docs/legal/` · en `public/` | 3.815 · 20 · 136 |
+| líneas con la raíz | 470 |
+| control positivo de la misma orden (`FNMT` en `docs/`) | 17 ficheros |
+| de ellas en `docs/master/` (registros: citan lo que había) | 303, **no clasificadas una a una** |
+| en `docs/historico/`, `docs/competencia/` y `docs/legal/fuentes/` | 29, **no clasificadas una a una** |
+| leídas y clasificadas una a una | 138 líneas, 152 apariciones, 31 ficheros |
+
+De las 152, **diez afirman la idea falsa, en cinco ficheros**:
+
+| fichero | apariciones | carril (`node scripts/carriles.mjs de`) |
+|---|---|---|
+| `docs/legal/ALCANCE_BETA.md` | 2 (líneas 5 y 28) | J4 propone |
+| `docs/legal/EMAIL_ASESOR.md` | 2 (líneas 20 y 23) | J4 propone |
+| `docs/legal/PREGUNTAS_ASESOR.md` | 1 (línea 66: le cita la cláusula al asesor) | J4 propone |
+| `docs/COMO_FUNCIONA_YAQU.md` | 4 (línea 124 dos veces, 126 y 172) | sin fila: nadie lo reclama |
+| `docs/SPRINT_DEMO_READY.md` | 1 (línea 180: el guion H2 VIEJO, rotulado «regla 26, literal») | sin fila: nadie lo reclama |
+
+Los dos últimos no son de mi carril y no se tocan ni se les propone literal. Pesan: el primero se
+presenta como «base del manual de usuario, del centro de ayuda, del guion de demo» y además dice
+«está construida pero desactivada»; el segundo es el guion retirado, con el rótulo de literal.
+
+Las otras 142, por familia: el certificado electrónico (FNMT, sello, mTLS), las certificaciones de
+obra, el «certificado de evidencias» de la firma, lo que hace un competidor, el uso corriente del
+verbo, y **las citas de lo que había** (los inventarios, la medición del guion en la web, las dos
+notas que avisan de que la frase hay que corregirla). Ésas últimas son las que una sonda por literal
+contaría como defecto; aquí se separaron leyendo.
+
+Tres citas quedan aparte: `docs/legal/PREGUNTAS_ASESOR.md`, líneas 437, 438 y 442, bajo el título
+«Qué dice la web pública, hoy». Citan «en certificación» de `public/index.html`, y hoy `public/` da
+una sola línea con la raíz (un comentario de `public/dashboard/js/app.js`, de otra cosa). La web ya
+no lo dice; el «hoy» de ese título caducó. No es la idea falsa: es una fecha que falta.
+
+En `src/` (331 ficheros, 38 líneas con la raíz, leídas): ninguna habla de certificar VeriFactu.
+
+La idea con otras palabras, en `docs/legal/`, `public/` y `src/`: «homolog» 1 línea, «validado por»
+2, «aprobado por la AEAT/Hacienda» 0, «acreditado por» 0, «conforme al RRSIF/VeriFactu/AEAT» 0;
+control de la misma orden, «responsable del fabricante/productor», 7. De las tres que salen, leídas,
+**una SÍ es la idea, con otra palabra**: `docs/legal/INVESTIGACION_ALBARANES.md`, línea 330, «El
+módulo de facturación aguas abajo debe estar homologado». Es un documento interno de investigación,
+no sale a nadie, y es de mi carril: va en el lote como H1. Las otras dos son «validada por ti» y
+«invalidada por». «sello de/oficial» da 19 líneas en 14 ficheros y **no las leí una a una**: por los
+ficheros (firma del presupuesto y del albarán) son el sello de la firma.
+
+Total con ésta: **once sitios en seis ficheros**; siete de ellos en `docs/legal/`.
+
+## 5 · La redacción propuesta — para firmar; nada está aplicado
+
+Lo que se puede afirmar hoy, medido sobre el mismo commit:
+
+- El envío a la AEAT no está conectado: `enviarSobre` tiene 1 definición
+  (`src/modules/fiscal/verifactu/sif.client.ts`) y 0 llamadas en `src/`. Control de la misma
+  búsqueda: `encolarAltaTrasSellado` sale definida y llamada.
+- La declaración responsable es un borrador: `docs/legal/DECLARACION_RESPONSABLE.md` se titula
+  «PLANTILLA» y dice «Borrador con placeholders».
+- El máster ya tiene firmada la frase que sustituye a ésta. V0-6, hoy: «…el cobro a tus clientes y
+  la facturación VeriFactu se activan al cerrar la declaración responsable del fabricante, sin
+  cambio de precio».
+
+Ninguna propuesta usa «validación», «homologación», «conforme a» ni nada que suene a sello de un
+tercero. «Declaración responsable del fabricante» nombra un papel que firma YaQu, no uno que
+alguien le concede.
+
+### P1 · `ALCANCE_BETA.md`, líneas 28-29 — la palabra, sin mover líneas
+
+Hoy:
+
+    - La **facturación con sistema VERI*FACTU se activará al cerrar la certificación**
+      del sistema, **sin cambio de precio** para ti. Hasta ese momento YaQu emite
+
+Propuesto:
+
+    - La **facturación con sistema VERI*FACTU se activará al cerrar la declaración responsable**
+      del fabricante, **sin cambio de precio** para ti. Hasta ese momento YaQu emite
+
+Es la frase firmada de V0-6 con el tiempo verbal de la cláusula. Qué NO arregla: la lectura falsa
+que el inventario le apuntó a C9 (que sólo falta un paso) sigue, con otro nombre. Y la regla 26 pide
+que el estado real se lea en la misma unidad; P1 sola no lo lleva. Para eso está P2.
+
+### P2 · la misma cláusula, con el estado real al lado (la que recomiendo)
+
+P1, y detrás de «para ti.» esta frase, hecha con palabras del guion H2 ya firmado:
+
+    Hoy la remisión a Hacienda todavía no está construida, y no existe una «certificación» de
+    VeriFactu: el régimen se basa en una declaración responsable del fabricante, que publicaremos
+    en cuanto el envío esté terminado.
+
+Añade tres líneas al fichero. Quién cita ese fichero por línea fuera de `docs/master/`: el
+inventario (C9, 28-29: no se mueve) y un comentario de
+`tests/scrum341-condicion-precio-publicada.test.mjs` (línea 38: se movería a la 41; el test lee el
+texto, no la línea).
+
+### P3 · `ALCANCE_BETA.md`, líneas 4-5 — la cabecera que dice citar el máster
+
+Hoy: «presupuestos+firma+cobro; la facturación VeriFactu se activa al cerrar la certificación, sin
+cambio de precio». Propuesto, la cita del máster de hoy: «presupuestos+firma+albaranes; el cobro a
+tus clientes y la facturación VeriFactu se activan al cerrar la declaración responsable del
+fabricante, sin cambio de precio». No se sirve y no cambia la versión (medido arriba).
+
+### E1 · `EMAIL_ASESOR.md`, línea 20
+
+Hoy: «¿Puedo cobrar la suscripción antes de tener la facturación fiscal certificada?»
+Propuesto: «¿Puedo cobrar la suscripción antes de tener la facturación fiscal operativa?»
+«Operativa» es la palabra que ya usan para la misma pregunta
+`docs/legal/ENVIO_ASESOR_2026-09-28.md` (F3) y `docs/legal/PREGUNTAS_ASESOR_POR_ESPECIALISTA.md`.
+
+### E2 · `EMAIL_ASESOR.md`, líneas 22-23
+
+Hoy: «La facturación con **VeriFactu** la activaré cuando tenga el sistema certificado, sin subir el
+precio al cliente.»
+Propuesto: «La facturación con **VeriFactu** la activaré cuando el envío a la AEAT esté construido y
+la declaración responsable del fabricante esté firmada (hoy es un borrador), sin subir el precio al
+cliente.»
+Añade una línea. Fuera de `docs/master/`, a ese fichero sólo lo cita por línea el inventario (C10,
+22-23).
+
+### Q1 · `PREGUNTAS_ASESOR.md`, línea 66 — va con P1
+
+Le cita al asesor la cláusula vieja. Si se firma P1 o P2, la cita pasa a ser «VERI*FACTU se activará
+al cerrar la declaración responsable del fabricante, sin cambio de precio». Y las entradas C9 y C10
+del inventario reciben su nota fechada, como las demás corregidas.
+
+### H1 · `INVESTIGACION_ALBARANES.md`, línea 330 — la misma idea, dicha «homologado»
+
+Hoy: «El módulo de facturación aguas abajo debe estar homologado».
+Propuesto: «El módulo de facturación aguas abajo debe cumplir el RRSIF y llevar la declaración
+responsable de su fabricante». Es lo que exige el art. 13 del RRSIF; no mueve líneas.
+
+## 6 · Lo que encontré de paso y NO es la palabra
+
+En los mismos dos documentos, y pesa más que la palabra. La regla 24 (enmendada el 21-sep-2026) dice
+que, con el interruptor en OFF, YaQu no emite ningún documento ni cobra a los clientes del
+profesional. Y dicen lo contrario:
+
+- `ALCANCE_BETA.md`, punto 1 («Qué incluye HOY»): «**Cobro integrado**: tu cliente paga desde el
+  móvil; recordatorios automáticos de cobro» y «**Justificantes de cobro** por cada pago recibido».
+- `ALCANCE_BETA.md`, punto 2: «Hasta ese momento YaQu emite justificantes de cobro» y «mientras
+  tanto, Bizum y transferencia».
+- `EMAIL_ASESOR.md`, líneas 21-22: «Ahora mismo la app hace presupuestos, firma y cobro, y emite
+  justificantes de cobro». Es la premisa de la pregunta «¿puedo cobrar?».
+
+La frase firmada de V0-6 ya pone el cobro del lado de lo que se activará. Estos dos textos no se
+han puesto al día. No propongo literal: no es aplicar el criterio del comentario 16395, es otra
+decisión, y cambia qué se le promete hoy a un founding.
+
+Y uno menor, del mismo sitio: en producción la negrita de la cláusula sale rota, con asteriscos a
+la vista, porque el asterisco de «VERI*FACTU» parte el par. Se ve en la página.
+
+## 7 · Aceptación → dónde se ve
+
+El ticket no trae lista de aceptación para este tramo; las filas son las del encargo.
+
+| lo pedido | dónde se ve |
+|---|---|
+| decir qué firmó el comentario 16395 | apartado 1 de este tramo |
+| leer las dos líneas en su contexto | apartado 3 |
+| medir si hay más, con población y control | apartado 4 |
+| proponer la redacción y medir que no afirma nada falso | apartado 5 |
+| dejar el cambio hecho en la rama | NO HECHO → espera la firma de Javier sobre P1 o P2, P3, E1, E2, Q1 y H1; lo aplica J4 con esa firma escrita en el ticket |
+
+## Lo que NO he medido
+
+- Ninguna base de datos: no sé si existe alguna fila de aceptación del alcance, ni cuántas. Si las
+  hay, aplicar P1 o P2 las invalida para el checkout.
+- Si `EMAIL_ASESOR.md` llegó a enviarse, y si `ENVIO_ASESOR_2026-09-28.md` lo sustituye.
+- Las 303 líneas de `docs/master/` y las 29 de histórico, competencia y fuentes, una a una.
+- Las 19 líneas de «sello», una a una.
+- Si la página `/legal/alcance-beta` está enlazada desde algún sitio que un visitante encuentre.
+  Medí que responde, no cómo se llega.
+- Que P1 a E2 estén bien como DERECHO: mido que cada frase es cierta contra el código y el máster.
+  La cláusula entera sigue marcada para el asesor.
+- No he corrido `npm test`: este árbol no tiene `dist/` ni dependencias. Corrí los guards que leen
+  documentos y no las necesitan; el resultado va en la entrega.
