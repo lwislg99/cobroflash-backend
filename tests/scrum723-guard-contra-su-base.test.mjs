@@ -393,6 +393,15 @@ const HALLAZGOS_DECLARADOS = [
   'scripts/censo-regla-42.mjs [log]',
   'scripts/censo-regla-42.mjs [ls-tree]',
   'scripts/censo-regla-42.mjs [show]',
+  // SCRUM-1539 · el mismo censo, desde que lee el remoto UNA vez por foto: `leerRemoto` resuelve
+  // `origin/main` (`rev-parse --verify`) en el instante del `ls-remote` y todo lo demás —`ls-tree`,
+  // `show`, `log`, `--is-ancestor`— se mide contra ese sha congelado. La punta es el sujeto de la
+  // pregunta, como en las tres de arriba. Lo retira quien retire el censo de la 42.
+  'scripts/censo-regla-42.mjs [rev-parse]',
+  // …y su test, que resuelve la punta y su padre sólo para tener DOS commits donde uno no contiene
+  // al otro: el caso pasa igual con cualquier punta, porque lo que mide es que el censo use el sha
+  // de la foto que se le da. Lo retira quien retire el test.
+  'tests/scrum1539b-una-sola-foto-del-remoto.test.mjs [rev-parse]',
 ];
 
 /** Ficheros que llaman a git y nombran la referencia móvil FUERA de los argumentos. */
