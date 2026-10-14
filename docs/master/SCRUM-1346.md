@@ -73,6 +73,13 @@ rutas de envío. La ruta enseña si encontró el documento sin que pueda salir n
 | mutante M2: `seesAllJobs` → `false` | ③ «la administradora ha perdido» facturas y presupuestos |
 | mutante M3: Inicio no devuelve nada | ① «🟢 la fuga «inicio» ya NO está — quita su clave»; ② y ③ rojos (cerrar de más también se caza) |
 
+**Tanda entera** (`'tests/*.test.mjs'`, TAP a fichero fuera del árbol, sin banco): 11.437 casos, 11.274
+pasan, 156 saltos, **7 caen**. Cinco eran míos: los cuatro de SCRUM-419/456 (saltos sin declarar) y uno de
+SCRUM-737 (una cifra sin ancla), corregidos y vueltos a correr: 36 casos, 0 caen, 4 saltos (los míos sin
+banco). Los otros **dos**, `scrum1298b` (dos casos), comparan `JAVIER~1` con `Javier Pereira` en la ruta del
+TEMP de esta máquina. Mi diff no toca ni el latido ni sus scripts: no son míos, y no se tocan.
+`guards:entrada`: 14 guards, 166 casos, 0 caen. scrum237 + scrum976 + scrum267 + scrum1294: 37 de 37.
+
 Mutantes impresos línea a línea antes de leer el resultado; `dist/` reconstruido después y las tres
 líneas comprobadas de vuelta. `git status` después: sólo el test.
 
@@ -114,5 +121,9 @@ lo habría impedido. El orquestador lo lleva. `jv-j6k` lo está censando, así q
    otras que sí. Es la familia de mi cicatriz del 2-oct (SCRUM-1403). La quité al releer, antes de correr.
 2. **Copié el lanzador de SCRUM-1515 fuera del repo sin mirar que calcula la raíz desde donde vive.** Lo
    cacé leyendo la línea antes de lanzarlo; habría corrido sin encontrar el test.
-3. **Empecé por leer el censo del 1-oct y no el código de hoy.** Fue `grep` de las puertas lo que dijo
+3. **Puse cinco rojos míos en la tanda:** guardé el motivo del salto en una constante (`SIN_BASE`).
+   `scrum419` sólo reconoce un literal en línea, así que lo leyó como salto mudo, y además no declaré los
+   cuatro en `GATEADOS_DECLARADOS`. Y escribí «15 sitios» en un comentario sin su fecha (`scrum737`). Los
+   cazó la tanda entera, no la muestra de guards: por eso se corre entera.
+4. **Empecé por leer el censo del 1-oct y no el código de hoy.** Fue `grep` de las puertas lo que dijo
    que siete de quince ya estaban cerradas, antes de escribir nada.

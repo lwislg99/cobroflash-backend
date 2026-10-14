@@ -5,10 +5,9 @@
 // AUTOR, si tiene el TRABAJO asignado o si está ASIGNADO AL DOCUMENTO. Y la regla va en TODOS los
 // sitios donde recibe uno, no en uno: filtrar sólo Inicio «esconde, no cierra».
 //
-// Medido el 14-oct-2026 sobre `origin/main` 6c5b3ad6 (registro: docs/master/SCRUM-1346.md): de los
-// 15 sitios del censo de SCRUM-1390, SCRUM-1397, 1403 y 1489 ya cerraron siete lecturas (las tres
-// de factura, lista y ficha de presupuesto, ficha de cliente y buscador). Quedan ABIERTOS ocho, y son
-// los de `FUGAS_CONOCIDAS`.
+// Del censo de SCRUM-1390, SCRUM-1397, 1403 y 1489 ya cerraron las lecturas de factura, la lista y la
+// ficha de presupuesto, la ficha de cliente y el buscador. Lo que queda ABIERTO es `FUGAS_CONOCIDAS`, y
+// la medición, con su fecha y su sha, está en docs/master/SCRUM-1346.md.
 //
 // ── POR QUÉ ES UN TRINQUETE Y NO UN `todo` ───────────────────────────────────────────────────
 //
@@ -52,7 +51,6 @@ if (URL_BANCO) {
   process.env.DATABASE_URL = URL_BANCO;
 }
 const CON_BASE = URL_BANCO !== '';
-const SIN_BASE = !CON_BASE && 'sin LIBRO_PG_URL (banco desechable): corre en el check obligatorio del CI';
 
 /**
  * Las fugas que HOY siguen abiertas (14-oct-2026). Cada una, con el sitio donde se cierra. Quien la
@@ -226,7 +224,7 @@ const ACCIONES = ['notas', 'aceptar', 'rechazar', 'enviar-whatsapp', 'enviar-cor
 // ① · EL TÉCNICO Y EL DOCUMENTO DE SU COMPAÑERO — presupuestos Y facturas
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-1346 · ① el Técnico y los documentos de su COMPAÑERO, ruta a ruta: lo cerrado sigue cerrado y cada fuga conocida sigue donde se midió', { skip: SIN_BASE }, async () => {
+test('SCRUM-1346 · ① el Técnico y los documentos de su COMPAÑERO, ruta a ruta: lo cerrado sigue cerrado y cada fuga conocida sigue donde se midió', { skip: !CON_BASE && 'sin LIBRO_PG_URL (banco desechable): corre en el check obligatorio del CI' }, async () => {
   await conElNegocio(async ({ prisma, port, e, token }) => {
     const filas = [];
     for (const clave of [...LECTURAS, ...ACCIONES]) {
@@ -252,7 +250,7 @@ test('SCRUM-1346 · ① el Técnico y los documentos de su COMPAÑERO, ruta a ru
 // ② · LO SUYO lo sigue viendo — por las mismas rutas
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-1346 · ② el Técnico sigue viendo y tocando SUS documentos por las mismas rutas (un filtro que lo deje ciego no arregla nada)', { skip: SIN_BASE }, async () => {
+test('SCRUM-1346 · ② el Técnico sigue viendo y tocando SUS documentos por las mismas rutas (un filtro que lo deje ciego no arregla nada)', { skip: !CON_BASE && 'sin LIBRO_PG_URL (banco desechable): corre en el check obligatorio del CI' }, async () => {
   await conElNegocio(async ({ prisma, port, e, token }) => {
     const fallos = [];
     // aceptar y rechazar sobre lo suyo cambiarían su presupuesto antes de las demás: se miden en ④.
@@ -268,7 +266,7 @@ test('SCRUM-1346 · ② el Técnico sigue viendo y tocando SUS documentos por la
 // ③ · LA ADMINISTRADORA lo sigue viendo TODO — el control que no se puede falsear
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-1346 · ③ la ADMINISTRADORA sigue viendo y tocando los documentos de TODOS, por las mismas rutas', { skip: SIN_BASE }, async () => {
+test('SCRUM-1346 · ③ la ADMINISTRADORA sigue viendo y tocando los documentos de TODOS, por las mismas rutas', { skip: !CON_BASE && 'sin LIBRO_PG_URL (banco desechable): corre en el check obligatorio del CI' }, async () => {
   await conElNegocio(async ({ prisma, port, e, token }) => {
     const fallos = [];
     for (const clave of [...LECTURAS, ...ACCIONES]) {
@@ -286,7 +284,7 @@ test('SCRUM-1346 · ③ la ADMINISTRADORA sigue viendo y tocando los documentos 
 // ④ · ACEPTAR y RECHAZAR lo suyo
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-1346 · ④ el Técnico sigue pudiendo registrar la aceptación y el rechazo de un presupuesto SUYO', { skip: SIN_BASE }, async () => {
+test('SCRUM-1346 · ④ el Técnico sigue pudiendo registrar la aceptación y el rechazo de un presupuesto SUYO', { skip: !CON_BASE && 'sin LIBRO_PG_URL (banco desechable): corre en el check obligatorio del CI' }, async () => {
   await conElNegocio(async ({ prisma, port, e, token }) => {
     const otro = await prisma.quote.create({
       data: { merchantId: e.deAna.merchantId, customerId: e.cliente.id, total: '100', currency: 'EUR', lines: [], quoteNumber: 99, status: 'sent', teamMemberId: e.ana.id },

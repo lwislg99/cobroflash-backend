@@ -222,6 +222,12 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // manda con el recorte en AND, y que ese filtro deja fuera lo ajeno lo contesta Postgres. La
   // mitad sin base (nueve casos, con Prisma doblado) corre siempre.
   'scrum1489-la-busqueda-recorta-al-tecnico.test.mjs': 1,
+  // SCRUM-1346: los CUATRO que entran por la RUTA, con sesiones de verdad, y miran si el Tecnico
+  // alcanza el presupuesto o la factura de un companero, si sigue alcanzando lo suyo y si la
+  // administradora lo sigue alcanzando todo. Necesitan banco porque lo que vigilan es la consulta
+  // que arma cada ruta (con su recorte o sin el), y lo contesta Postgres. El caso sin base (la
+  // lista del trinquete solo nombra sondas que existen) corre siempre.
+  'scrum1346-el-tecnico-ve-documentos-ajenos.test.mjs': 4,
   // SCRUM-1150c: los DOS que miran que dos «Crear revision» a la vez no dejan dos filas con la
   // misma revision. Necesitan banco porque lo que vigilan es del MOTOR: que
   // `pg_advisory_xact_lock` hace esperar de verdad a la segunda creacion (se mira en `pg_locks`)
