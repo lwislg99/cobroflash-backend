@@ -625,3 +625,50 @@ cada PR, y que borrar una declaración lo denuncia el suelo contra `main` de SCR
 
 **NO medido:** `npm run meta:mutaciones` entero (el del CI, con todas las declaraciones de la casa) · la tanda
 completa de `npm test` · yaqu.app (este tramo no despliega nada que se vea).
+
+# APÉNDICE · SCRUM-1302p: el enlace de una revisión antigua deja de aceptar, y el panel lo avisa antes de crearla (S4)
+
+**Medido contra:** `origin/main` = `e2be1c9fda3b5ceac853b4d376f5664ac8e4df67` · 2026-10-14T08:13:22Z (`Date:` de GitHub)
+A9: comprobación → `tests/scrum1302p-la-pagina-de-una-revision-antigua.test.mjs`
+
+Sesión `s4-14oct` · rama `scrum-1302p-el-enlace-de-una-revision-antigua`. El sufijo era `1302o` y pasó a `1302p` antes de empujar, por aviso del orquestador: S1 tenía `1302o` en otra rama al mismo tiempo, y los dos sin empujar.
+
+**Carril.** Las dos mitades en un solo PR, construidas por S4, por decisión del orquestador (SCRUM-1302 c.19475, repetida en el encargo del 14-oct-2026): `quoteRevisiones.js` es de S2 y `quoteDecisionLanding.routes.ts` de S1, con la excepción dada sólo para este cambio. Motivo, del propio orquestador: repartir un cambio cuyas mitades sólo valen juntas es la forma de que se mergee una sola. ⛔ El `POST /quote/:token/decision` (rechazar la decisión sobre una no vigente) es de S1 y no se ha tocado.
+
+**Skill UI:** cargada (`yaqu-premium-ui`) antes de tocar `public/dashboard/css/styles.css` y `public/dashboard/js/quoteRevisiones.js`. Sin tokens nuevos: el aviso usa el ámbar de `.aviso-sin-cobertura` y los `.btn` de siempre; ni un `style=` nuevo.
+
+## Lo firmado
+
+- La página: T1, T2, T3 (con la enmienda del orquestador) y los siete puntos de conducta, SCRUM-1302 c.19454. Ficha: `docs/microcopy/2026-10-13-SCRUM-1302-enlace-de-revision-antigua.md`.
+- El aviso del panel: W1, W2 y su conducta, sin estrechar a `sent`, SCRUM-1302 c.19475 sobre la propuesta de c.19456. Ficha: `docs/microcopy/2026-10-13-SCRUM-1302-aviso-al-crear-revision.md`.
+
+## Lo construido — qué líneas toca, para no pisar a S1
+
+- `src/modules/quotes/domain/versionMasReciente.ts` (nuevo): `tieneVersionMasReciente(q, merchant)` y `ESTADOS_CON_ENLACE_VIVO`. Pregunta con `prisma.quote.count` por el grupo de `whereDelGrupo` (negocio, año de la serie, número) con `revision > n`. Sin número no hay grupo. Si la consulta falla, LANZA: «no he podido mirar» no pinta el formulario. **Está hecho para que el `POST` de S1 lo use con la misma condición.**
+- `quoteDecisionLanding.routes.ts`: un import; la función `paginaDeVersionAntigua` (justo encima de `loadQuote`); en el `GET /quote/:token`, una comprobación justo antes del bloque de caducado; en el `GET /quote/:token/reject`, una comprobación justo después de la de «ya decidido». **Nada del `POST /quote/:token/reject` ni de ningún otro manejador.**
+- `src/core/i18n/locales.ts`: dos campos por país, `quoteUpdatedTitle` y `quoteHasNewer`, frases enteras como los títulos de SCRUM-1476.
+- `public/dashboard/js/quoteRevisiones.js`: `TEXTOS_AVISO` y `ESTADOS_CON_ENLACE_VIVO` aparte de `TEXTOS` (el bloque de SCRUM-688 no se toca); el botón lleva `data-revision-avisa` con el número de la vigente si está en `draft` o `sent`; `pintarAvisoDelEnlace`; el cableado crea al segundo clic. El foco pasa a «Cancelar» al abrir el aviso, para que un segundo Intro sin leer no cree la revisión.
+- `public/dashboard/css/styles.css`: `.revision-aviso`.
+
+## Cambio de conducta a propósito en tests de otros (declarado)
+
+- `scrum1150b`, `scrum1215-revisiones-error-crear` y `scrum988`: pulsaban «Crear revisión» una vez y esperaban el POST. Con la vigente enviada o en borrador, el primer clic ahora avisa; los tres pulsan después el «Crear revisión» del aviso, y exigen que exista (si falta, caen con «CIEGO»). Lo que miden después no cambia.
+- `scrum1001`, `scrum1431-tarjeta-sin-claim-de-iva`, `scrum1444` y `scrum1476`: doblaban sólo `prisma.quote.findUnique`, y la página pregunta ahora también por el grupo. Se les dobla `prisma.quote.count` a 0 («no hay versión más reciente»), que es el caso que modelan, y se restaura en el mismo `finally`.
+
+## Verificado, ejecutando
+
+- **Los dos tests nuevos:** el del panel, 9 de 9; el de la página, 11 de 11. Cada uno con su CONTROL POSITIVO dentro: con la vigente aceptada o rechazada, la misma sonda ve el POST salir al primer clic; el enlace de la vigente sigue pintando el formulario.
+- **Rojo con cada mutación** (`git diff --numstat` 1 1 en cada una, restaurada con `git restore --source=HEAD` y `git status` limpio): el botón sin aviso → 6 de 9 caen; estrechado a `sent` → 2 de 9 (el de borrador y el de «mismos estados»); la página sin hacer caso a la pregunta → 5 de 11; el grupo sin el año de la serie → 1 de 11 (el del año). Dos de cada fichero quedan declaradas en `MUTACIONES_QUE_ME_TUMBAN` para el meta-guard (`--solo-censo`: 559 declaraciones, salida 0).
+- **Los guiones de ayer, vueltos a correr sobre este árbol** (`despues-1302p.txt` junto a cada uno): el `GET` del enlace de la .0 ya no pinta el formulario y pregunta por el grupo 1 vez; el panel avisa con W1 y W2 y no hace ningún POST al primer clic. El control 0 del guion del panel ahora cae, y es lo esperado: pulsaba una vez para provocar un fallo del POST, y el primer clic ya no lo hace.
+- **El `POST` de aceptar con el enlace de la .0 sigue contestando 200** (mismo guion): es la mitad de S1, y hasta que entre, un cliente que fabricara el `POST` a mano todavía podría aceptar la vieja. La página ya no le ofrece el formulario.
+
+## Lo que queda sin hacer, y de quién
+
+- Rechazar el `POST /quote/:token/decision` de una no vigente: S1, con `tieneVersionMasReciente` ya disponible.
+- La concordancia en femenino de T1 y T2 en los países de «cotización» está aplicada como en SCRUM-1476 y pedida para firma en el ticket.
+- Una versión antigua con `status = 'expired'` (la que barre el cron) sigue pintando la página de caducado: el punto 1 firmado sólo cubre `draft` y `sent`. Declarado en el ticket, sin tocar.
+- El PDF del enlace antiguo (`GET /quote/:token/pdf`) se sigue sirviendo: la conducta firmada habla de la página, no de esa ruta.
+
+- **Tanda amplia** (los ficheros de test que leen estas páginas, el panel, los locales, el dominio de presupuestos, las fichas, las evidencias o los registros; `--test-concurrency=3`, `FORCE_COLOR` borrado, 3.529 MB libres): **427 ficheros, 4.019 tests, 3.982 pasan, 34 saltados, 3 caídos, los tres míos**, y arreglados en el código: `scrum411` (`ESTADOS_CON_ENLACE_VIVO` exportado sin llamador: deja de exportarse) y `scrum553` (cuatro extractores de mi test con el `>` pegado: aceptan atributos). Esos dos ficheros y los dos míos, otra vez: 61 de 61.
+
+**NO medido:** yaqu.app (este PR no ha mergeado al escribir esto) · la suite completa de `npm test`.
