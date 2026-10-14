@@ -622,6 +622,28 @@ router.patch('/:id', async (req: any, res) => {
   }
 });
 
+/**
+ * SCRUM-1302s · la firma perdida en la carrera (P2025: la ranura ya no está vacía, o la fila ya no
+ * está). Se relee y se contesta lo que contestaría una petición nueva: el mismo `409 parte_locked`
+ * con el mismo motivo de la puerta de arriba —la cola de firmas lo trata como ÉXITO al drenar—.
+ */
+async function respuestaTrasFirmaAjena(
+  req: any,
+  id: number,
+  ranura: (p: any) => { ok: boolean; motivo: string | null },
+): Promise<{ code: number; body: Record<string, unknown> }> {
+  const ahora = await prisma.parteTrabajo.findFirst({
+    where: { id, merchantId: req.merchantId },
+    select: { firmadoAt: true, firmadoTecnicoAt: true },
+  });
+  if (!ahora) return { code: 404, body: { error: 'not_found' } };
+  const r = ranura(ahora);
+  // La única condición que se añadió al `where` es la ranura: si la fila sigue ahí, está firmada.
+  // Si no lo está, no sé por qué no casó: LANZA (500), nunca un 409 que la cola daría por bueno.
+  if (r.ok) throw new Error('parte_firma_p2025_con_la_ranura_vacia');
+  return { code: 409, body: { error: 'parte_locked', message: r.motivo } };
+}
+
 // ───────────────────────────────────────────────────────
 // POST /admin/partes/:id/firmar-tecnico · SCRUM-653
 // ───────────────────────────────────────────────────────
@@ -676,8 +698,15 @@ router.post('/:id/firmar-tecnico', async (req: any, res) => {
       ? parte.contenidoHash
       : computeParteContentHash(paramsDeSello(parte, lineas), PARTE_CONTENIDO_VERSION_ACTUAL);
 
-    const updated = await prisma.parteTrabajo.update({
-      where: { id: parte.id },
+    // SCRUM-1302s: la firma se escribe SÓLO si la ranura sigue VACÍA, como se leyó. Con
+    // `where: { id }`, dos peticiones a la vez (el reintento de la firma, o la cola sin cobertura al
+    // volver la red) leían las dos la ranura vacía y escribían las dos: quedaba el SEGUNDO trazo y el
+    // primero recibía un 200 de una firma que ya no estaba. Medido el 14-oct-2026. Mismo patrón que
+    // la firma del albarán en obra (SCRUM-1302k).
+    let updated;
+    try {
+    updated = await prisma.parteTrabajo.update({
+      where: { id: parte.id, firmadoTecnicoAt: null },
       data: {
         // El contenido se congela con la PRIMERA firma, sea de quien sea. Si firma el técnico
         // primero, el estado pasa a `firmado` aquí y el cliente firma después sobre su ranura.
@@ -690,6 +719,11 @@ router.post('/:id/firmar-tecnico', async (req: any, res) => {
         contenidoVersion: parte.contenidoVersion ?? PARTE_CONTENIDO_VERSION_ACTUAL,
       },
     });
+    } catch (e: any) {
+      if (e?.code !== 'P2025') throw e;
+      const r = await respuestaTrasFirmaAjena(req, parte.id, puedeFirmarTecnico);
+      return res.status(r.code).json(r.body);
+    }
     return res.json(serializeParteParaElTecnico(updated));
   } catch (err: any) {
     console.error('[POST /admin/partes/:id/firmar-tecnico]', err?.message || err);
@@ -758,8 +792,11 @@ router.post('/:id/firmar', async (req: any, res) => {
       ? parte.contenidoHash
       : computeParteContentHash(paramsDeSello(parte, lineas), PARTE_CONTENIDO_VERSION_ACTUAL);
 
-    const updated = await prisma.parteTrabajo.update({
-      where: { id: parte.id },
+    // SCRUM-1302s: la ranura del cliente, leída vacía, va en el `where` (ver `/firmar-tecnico`).
+    let updated;
+    try {
+    updated = await prisma.parteTrabajo.update({
+      where: { id: parte.id, firmadoAt: null },
       data: {
         // SCRUM-1226: sube, nunca baja — un parte `facturado` sigue facturado (precios cerrados).
         estado: estadoTrasFirmar(parte.estado as EstadoParte),
@@ -773,6 +810,11 @@ router.post('/:id/firmar', async (req: any, res) => {
         contenidoVersion: parte.contenidoVersion ?? PARTE_CONTENIDO_VERSION_ACTUAL,
       },
     });
+    } catch (e: any) {
+      if (e?.code !== 'P2025') throw e;
+      const r = await respuestaTrasFirmaAjena(req, parte.id, puedeFirmarCliente);
+      return res.status(r.code).json(r.body);
+    }
     return res.json(serializeParteParaElTecnico(updated));
   } catch (err: any) {
     console.error('[POST /admin/partes/:id/firmar]', err?.message || err);

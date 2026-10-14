@@ -1,0 +1,7 @@
+# Date: Wed, 14 Oct 2026 16:36:49 GMT · dist de esta rama (scrum-1302s)
+/firmar (cliente) · CONTROL una firma: 200, escrituras=1
+/firmar (cliente) · secuencial, la segunda: 409 parte_locked
+/firmar (cliente) · DOS A LA VEZ: 200 y 409, escrituras=1, en la fila queda firmadoPorNombre=Ana
+/firmar-tecnico · CONTROL una firma: 200, escrituras=1
+/firmar-tecnico · secuencial, la segunda: 409 parte_locked
+/firmar-tecnico · DOS A LA VEZ: 200 y 409, escrituras=1, en la fila queda firmadoTecnicoNombre=Ana
