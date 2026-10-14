@@ -687,3 +687,19 @@ Sesión `s4-14oct` · rama `scrum-1302p-el-enlace-de-una-revision-antigua`. El s
 - **Error propio (14-oct 15:50Z):** este tramo se empujó sin su línea A9 y el obligatorio de #2451 cayó por eso (`not ok 1597`, `docs/master/SCRUM-1302.md:678 · ancla del 2026-10-14 sin línea «A9:»`; ni `scrum1405c` ni nada ajeno: leído en el log del job 115768836190). La tanda dirigida elegía los tests por lo que nombran del código, y el que lee los registros no nombra nada de eso.
 
 A9: comprobación → `tests/scrum1294-a9-leccion-en-a10.test.mjs`
+
+## SCRUM-1302r: el 5xx al aceptar (firma de c.19719)
+
+**Medido contra:** `origin/main` = `56d53be5cf2df7bac82c6891960095fdbc849c94` · 2026-10-14T16:48:07Z
+
+Lo medido en c.19714: con un 5xx, la landing pintaba bajo la firma el código crudo `internal_error`, y ese 500 también sale después del commit. El orquestador no firmó el literal B que propuse (aconseja repetir lo que puede estar hecho) y firmó otro en c.19719, **con una condición: volver a abrir el enlace tiene que enseñar el estado decidido.**
+
+- **Código:** en `quoteDecisionLanding.routes.ts`, una rama `res.status >= 500` antes de la genérica, con `COPY_RESPUESTA_SIN_CONFIRMAR` («No hemos podido confirmar tu respuesta. Vuelve a abrir el enlace para ver si se ha guardado.», `// APROBADO · SCRUM-1302 comentario 19719`). Vale para cualquier 5xx, lleve el cuerpo que lleve: un 502 del proxy tampoco sabe si se guardó. Los 4xx, el 409 «ya decidido» y la red caída no cambian. Ficha: `docs/microcopy/2026-10-14-SCRUM-1302-el-5xx-de-la-aceptacion.md`.
+- **La condición, comprobada ejecutando la ruta real** (`dist`, base doblada), no leyendo: el enlace de un aceptado pinta «Ya aceptaste este presupuesto…» sin formulario, también con la validez ya pasada (`isQuoteExpired` sólo mira `sent`); el control, el mismo enlace sin decidir, pinta el formulario. **En yaqu.app no se pudo mirar:** la cuenta QA sólo tiene borradores (202-208), la API del panel no expone el token del enlace, y crear uno aceptado está BLOQUEADO (prueba caducada, 403 `trial_expired`).
+- **Test:** `tests/scrum1302r-el-5xx-de-la-aceptacion.test.mjs` EJECUTA el `<script>` del botón que sale en el HTML servido, con un `fetch` doblado (500, 502 sin JSON, 503 con texto). **Rojo antes del cambio (el control positivo de la firma):** con el código de hoy, el 500 enseña `internal_error`; caía sólo ese test y pasaban los otros tres. Con el cambio, 4 de 4.
+- **Mutaciones declaradas y ejecutadas a mano** (mutar, compilar y ver qué cae): M1 (la rama del 5xx no se alcanza) tumba «un 5xx al aceptar enseña el literal firmado…»; M2 (el aceptado vuelve al formulario) tumba «LA CONDICIÓN…». Cada una, sólo la suya.
+- **`scrum264` no se toca:** su fila ACEPTAR extrae la expresión de los 4xx (`data.message || data.error || C`), que sigue igual. La rama nueva escribe por `aviso.textContent`, y por eso su patrón no la ve: **esa fila sigue sin modelar el 5xx, y el que lo modela es el test de 1302r.** Lo declaro para que nadie lea el verde de `scrum264` como cobertura del 5xx.
+- **Primer rojo del test, mío y del instrumento:** el token `'r'×32` no pasa `parseToken` y la página salía en 404; cayeron los cuatro, controles incluidos. Por eso aquel rojo no valía, y lo repetí con un token hexadecimal.
+- **NO medido:** yaqu.app (arriba) · la suite completa.
+
+A9: aviso → cicatriz S4 «el primer rojo de un test nuevo cayó también en sus controles: era el instrumento (un token que no pasaba `parseToken` daba la página de 404), no el defecto, y un rojo así no prueba nada» — no se pudo comprobar: no hay forma general de saber qué tests de un fichero son controles
