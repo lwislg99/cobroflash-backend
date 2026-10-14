@@ -1,4 +1,4 @@
-// tests/scrum1302r-el-5xx-de-la-aceptacion.test.mjs — SCRUM-1302r
+// tests/scrum1302t-el-5xx-de-la-aceptacion.test.mjs — SCRUM-1302t
 //
 // Medido el 14-oct-2026 (SCRUM-1302 c.19714): cuando ACEPTAR contesta un 5xx, la landing pintaba bajo
 // la firma el código crudo (`internal_error`), y el 500 también sale DESPUÉS del commit
@@ -27,14 +27,14 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     fichero: 'src/modules/system/app/routes/quoteDecisionLanding.routes.ts',
     de: '} else if (res.status >= 500) {',
     a: '} else if (res.status >= 600) {',
-    cae: 'SCRUM-1302r · 🔴 un 5xx al aceptar enseña el literal firmado, nunca el código crudo',
+    cae: 'SCRUM-1302t · 🔴 un 5xx al aceptar enseña el literal firmado, nunca el código crudo',
   },
   {
     // M2 · la condición de la firma: el enlace de un aceptado vuelve a pintar el formulario.
     fichero: 'src/modules/system/app/routes/quoteDecisionLanding.routes.ts',
     de: "} else if (quote.status === 'accepted') {",
     a: "} else if (quote.status === 'accepted' && quote.id < 0) {",
-    cae: 'SCRUM-1302r · 🔴 LA CONDICIÓN: volver a abrir el enlace enseña el estado decidido, no el formulario',
+    cae: 'SCRUM-1302t · 🔴 LA CONDICIÓN: volver a abrir el enlace enseña el estado decidido, no el formulario',
   },
 ];
 
@@ -106,15 +106,15 @@ async function pulsarAceptar(html, respuesta) {
   return { aviso: nodos['sig-error'].textContent, avisoVisible: nodos['sig-error'].style.display === 'block', exito: nodos['.card']?.innerHTML ?? '', recargas, boton: nodos['btn-accept'] };
 }
 
-test('SCRUM-1302r · CONTROL POSITIVO: la sonda ve el éxito con un 200 y el código con un 4xx sin texto (SCRUM-264, sin cambio)', async () => {
+test('SCRUM-1302t · CONTROL POSITIVO: la sonda ve el éxito con un 200 y el código con un 4xx sin texto (SCRUM-264, sin cambio)', async () => {
   const html = await pagina();
   const ok = await pulsarAceptar(html, { status: 200, cuerpo: { ok: true } });
   assert.ok(ok.exito.includes('ya tiene tu confirmación'), '🔴 la sonda no ve el éxito: lo de abajo no probaría nada');
   const cuatro = await pulsarAceptar(html, { status: 400, cuerpo: { error: 'invalid_decision' } });
-  assert.equal(cuatro.aviso, 'invalid_decision', 'un 4xx sin `message` sigue como lo dejó SCRUM-264: esto no lo cambia 1302r');
+  assert.equal(cuatro.aviso, 'invalid_decision', 'un 4xx sin `message` sigue como lo dejó SCRUM-264: esto no lo cambia 1302t');
 });
 
-test('SCRUM-1302r · 🔴 un 5xx al aceptar enseña el literal firmado, nunca el código crudo', async () => {
+test('SCRUM-1302t · 🔴 un 5xx al aceptar enseña el literal firmado, nunca el código crudo', async () => {
   const html = await pagina();
   for (const [caso, respuesta] of [
     ['500 de la ruta', { status: 500, cuerpo: { error: 'internal_error' } }],
@@ -130,7 +130,7 @@ test('SCRUM-1302r · 🔴 un 5xx al aceptar enseña el literal firmado, nunca el
   }
 });
 
-test('SCRUM-1302r · el 409 «ya decidido» sigue recargando y la red caída sigue con su texto (B): no se mezclan', async () => {
+test('SCRUM-1302t · el 409 «ya decidido» sigue recargando y la red caída sigue con su texto (B): no se mezclan', async () => {
   const html = await pagina();
   const { ERROR_PRESUPUESTO_YA_DECIDIDO } = await import('../dist/modules/quotes/domain/decisionDelCliente.js');
   const yaDecidido = await pulsarAceptar(html, { status: 409, cuerpo: { error: ERROR_PRESUPUESTO_YA_DECIDIDO } });
@@ -139,7 +139,7 @@ test('SCRUM-1302r · el 409 «ya decidido» sigue recargando y la red caída sig
   assert.equal(red.aviso, 'No hemos podido confirmar que tu firma haya llegado. Comprueba tu conexión y vuelve a intentarlo.');
 });
 
-test('SCRUM-1302r · 🔴 LA CONDICIÓN: volver a abrir el enlace enseña el estado decidido, no el formulario', async () => {
+test('SCRUM-1302t · 🔴 LA CONDICIÓN: volver a abrir el enlace enseña el estado decidido, no el formulario', async () => {
   // Control: el mismo enlace sin decidir pinta el formulario (si no, «sin formulario» no probaría nada).
   const sinDecidir = await pagina();
   assert.ok(sinDecidir.includes('id="btn-accept"'), 'CIEGO: la página sin decidir no pinta el formulario');

@@ -1,4 +1,4 @@
-# SCRUM-1302r · el 5xx al aceptar el presupuesto
+# SCRUM-1302t · el 5xx al aceptar el presupuesto
 
 Aprobado por el orquestador por delegación del fundador · SCRUM-1302 comentario 19719 (14-oct-2026).
 
@@ -28,4 +28,4 @@ Volver a abrir el enlace TIENE que enseñar el estado decidido. Hoy lo enseña: 
 aceptaste este presupuesto…» y no el formulario, también con la validez ya pasada (`isQuoteExpired` sólo
 mira `sent`). Si no se guardó, el enlace vuelve a dejar aceptar.
 
-Lo sujeta `tests/scrum1302r-el-5xx-de-la-aceptacion.test.mjs`, con una mutación para cada mitad.
+Lo sujeta `tests/scrum1302t-el-5xx-de-la-aceptacion.test.mjs`, con una mutación para cada mitad.

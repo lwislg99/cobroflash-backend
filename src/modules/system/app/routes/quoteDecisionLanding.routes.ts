@@ -65,10 +65,10 @@ function escapandoLoInterpolado(trozos: TemplateStringsArray, ...valores: Array<
 const CONSEJO_DE_REINTENTAR = 'Inténtalo más tarde.';
 
 /**
- * SCRUM-1302r · lo que lee el cliente cuando ACEPTAR contesta un 5xx. Antes, el código crudo
+ * SCRUM-1302t · lo que lee el cliente cuando ACEPTAR contesta un 5xx. Antes, el código crudo
  * (`internal_error`), y a veces con la aceptación ya guardada: el 500 también sale después del commit.
  * No dice «inténtalo»: repetir algo que puede estar hecho es peor que no saberlo. Volver a abrir el
- * enlace enseña el estado decidido («Ya aceptaste…»), y eso lo ata el test de SCRUM-1302r.
+ * enlace enseña el estado decidido («Ya aceptaste…»), y eso lo ata el test de SCRUM-1302t.
  */
 const COPY_RESPUESTA_SIN_CONFIRMAR = 'No hemos podido confirmar tu respuesta. Vuelve a abrir el enlace para ver si se ha guardado.'; // APROBADO · SCRUM-1302 comentario 19719
 
@@ -852,7 +852,7 @@ quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async 
           // su texto N3 firmado. Ningún texto nuevo aquí.
           location.reload();
         } else if (res.status >= 500) {
-          // SCRUM-1302r · un fallo NUESTRO no dice si la aceptación se guardó: puede haber caído
+          // SCRUM-1302t · un fallo NUESTRO no dice si la aceptación se guardó: puede haber caído
           // después del commit. Ni el código crudo ni «inténtalo»: volver al enlace enseña el estado.
           btn.disabled = false; btn.textContent = 'Firmar y aceptar ${locale.quoteVerb}';
           const aviso = document.getElementById('sig-error');

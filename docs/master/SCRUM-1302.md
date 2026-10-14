@@ -688,7 +688,7 @@ Sesión `s4-14oct` · rama `scrum-1302p-el-enlace-de-una-revision-antigua`. El s
 
 A9: comprobación → `tests/scrum1294-a9-leccion-en-a10.test.mjs`
 
-## SCRUM-1302r: el 5xx al aceptar (firma de c.19719)
+## SCRUM-1302t: el 5xx al aceptar (firma de c.19719)
 
 **Medido contra:** `origin/main` = `56d53be5cf2df7bac82c6891960095fdbc849c94` · 2026-10-14T16:48:07Z
 
@@ -696,11 +696,12 @@ Lo medido en c.19714: con un 5xx, la landing pintaba bajo la firma el código cr
 
 - **Código:** en `quoteDecisionLanding.routes.ts`, una rama `res.status >= 500` antes de la genérica, con `COPY_RESPUESTA_SIN_CONFIRMAR` («No hemos podido confirmar tu respuesta. Vuelve a abrir el enlace para ver si se ha guardado.», `// APROBADO · SCRUM-1302 comentario 19719`). Vale para cualquier 5xx, lleve el cuerpo que lleve: un 502 del proxy tampoco sabe si se guardó. Los 4xx, el 409 «ya decidido» y la red caída no cambian. Ficha: `docs/microcopy/2026-10-14-SCRUM-1302-el-5xx-de-la-aceptacion.md`.
 - **La condición, comprobada ejecutando la ruta real** (`dist`, base doblada), no leyendo: el enlace de un aceptado pinta «Ya aceptaste este presupuesto…» sin formulario, también con la validez ya pasada (`isQuoteExpired` sólo mira `sent`); el control, el mismo enlace sin decidir, pinta el formulario. **En yaqu.app no se pudo mirar:** la cuenta QA sólo tiene borradores (202-208), la API del panel no expone el token del enlace, y crear uno aceptado está BLOQUEADO (prueba caducada, 403 `trial_expired`).
-- **Test:** `tests/scrum1302r-el-5xx-de-la-aceptacion.test.mjs` EJECUTA el `<script>` del botón que sale en el HTML servido, con un `fetch` doblado (500, 502 sin JSON, 503 con texto). **Rojo antes del cambio (el control positivo de la firma):** con el código de hoy, el 500 enseña `internal_error`; caía sólo ese test y pasaban los otros tres. Con el cambio, 4 de 4.
+- **Test:** `tests/scrum1302t-el-5xx-de-la-aceptacion.test.mjs` EJECUTA el `<script>` del botón que sale en el HTML servido, con un `fetch` doblado (500, 502 sin JSON, 503 con texto). **Rojo antes del cambio (el control positivo de la firma):** con el código de hoy, el 500 enseña `internal_error`; caía sólo ese test y pasaban los otros tres. Con el cambio, 4 de 4.
 - **Mutaciones declaradas y ejecutadas a mano** (mutar, compilar y ver qué cae): M1 (la rama del 5xx no se alcanza) tumba «un 5xx al aceptar enseña el literal firmado…»; M2 (el aceptado vuelve al formulario) tumba «LA CONDICIÓN…». Cada una, sólo la suya.
-- **`scrum264` no se toca:** su fila ACEPTAR extrae la expresión de los 4xx (`data.message || data.error || C`), que sigue igual. La rama nueva escribe por `aviso.textContent`, y por eso su patrón no la ve: **esa fila sigue sin modelar el 5xx, y el que lo modela es el test de 1302r.** Lo declaro para que nadie lea el verde de `scrum264` como cobertura del 5xx.
+- **`scrum264` no se toca:** su fila ACEPTAR extrae la expresión de los 4xx (`data.message || data.error || C`), que sigue igual. La rama nueva escribe por `aviso.textContent`, y por eso su patrón no la ve: **esa fila sigue sin modelar el 5xx, y el que lo modela es el test de 1302t.** Lo declaro para que nadie lea el verde de `scrum264` como cobertura del 5xx.
 - **Primer rojo del test, mío y del instrumento:** el token `'r'×32` no pasa `parseToken` y la página salía en 404; cayeron los cuatro, controles incluidos. Por eso aquel rojo no valía, y lo repetí con un token hexadecimal.
 - **Tanda amplia** (todo test que lee `docs/master`, `docs/microcopy`, `docs/equipo` o la landing): **la cortó el sistema por falta de memoria**, con 3.717 pasados y 5 caídos hasta ese punto; no sé cuántos ficheros quedaban. De los 5: `scrum553` era MÍO (mi extractor `<script>` con el `>` pegado; ahora `<script[^>]*>`, y 20/20 junto con el mío). Los otros cuatro cayeron como fichero entero y con 10-162 s de duración, y **pasan solos**: `scrum854` 6/6, `scrum839d` 15/15, `scrum839e` 13/13, `scrum775` 16/16.
+- **Sufijo:** lo empecé como `1302r` y antes de empujar vi que `1302r` (S1, el `POST` de la versión vieja) y `1302s` ya existían en el remoto. Lo pasé a `1302t` (rama, test y comentarios). Los dos primeros commits de la rama conservan `1302r` en el asunto: estaban escritos y no se reescriben.
 - **NO medido:** yaqu.app (arriba) · la suite completa (la corre el obligatorio).
 
 A9: aviso → cicatriz S4 «el primer rojo de un test nuevo cayó también en sus controles: era el instrumento (un token que no pasaba `parseToken` daba la página de 404), no el defecto, y un rojo así no prueba nada» — no se pudo comprobar: no hay forma general de saber qué tests de un fichero son controles
