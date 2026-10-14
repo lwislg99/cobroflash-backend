@@ -58,7 +58,11 @@ const QUOTE_ACTION_REGISTRY = [
   // ── El resto, al «⋮» (regla 3). ────────────────────────────────────────────────────────────
   { id: 'btnVerCliente',       destinos: { draft: 'overflow',   pending_approval: 'overflow',   sent: 'overflow',    accepted: 'overflow',  rejected: 'overflow',  expired: 'overflow' } },
   { id: 'btnMarcarRechazado',  destinos: { draft: 'oculta',     pending_approval: 'oculta',     sent: 'overflow',    accepted: 'oculta',    rejected: 'oculta',    expired: 'oculta' } },
-  { id: 'btnBorrar',           destinos: { draft: 'overflow',   pending_approval: 'overflow',   sent: 'oculta',      accepted: 'oculta',    rejected: 'overflow',  expired: 'overflow' } },
+  // SCRUM-1273 · aquí estaba la fila «Borrar», que no existía en ningún sitio: ni ruta ni botón.
+  // Se ARCHIVA en vez de borrar (decisión del orquestador, c.17511): un borrador puede haber salido
+  // de casa por el enlace copiado a mano. Sólo en `draft`, `rejected` y `expired`; el servidor
+  // impide el resto con un 409. Archivar saca el presupuesto de la LISTA y nada más (c.19605).
+  { id: 'btnArchivar',         destinos: { draft: 'overflow',   pending_approval: 'oculta',     sent: 'oculta',      accepted: 'oculta',    rejected: 'overflow',  expired: 'overflow' } },
 ];
 
 // ── RÓTULOS · REGLA 30: NINGUNO ESTÁ APROBADO ────────────────────────────────────────────────
@@ -85,7 +89,7 @@ const QUOTE_ACTION_ROTULOS = {
   btnNuevoAlbaran:     'Nuevo albarán',
   btnVerCliente:       'Ver cliente',
   btnMarcarRechazado:  'Marcar como rechazado',
-  btnBorrar:           'Borrar',
+  btnArchivar:         'Archivar', // APROBADO por el orquestador, SCRUM-1273 comentario 19605 (T1)
 };
 
 if (typeof window !== 'undefined') {

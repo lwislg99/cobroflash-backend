@@ -50,6 +50,19 @@ const TEXTO_PLAN_DE_COBRO_CAMBIADO =
 // pone el guardado rechazado y lo consume el repintado: el aviso sale una vez, junto al plan vigente.
 let planDeCobroCambiadoEn = null;
 
+// SCRUM-1273 · archivar el presupuesto. Cada texto lleva su firma en su línea (T2–T8 del
+// comentario 19605). El rótulo del botón (T1) vive en `QUOTE_ACTION_ROTULOS.btnArchivar`, y el
+// motivo de un 409 (T10) lo escribe el servidor.
+const TEXTOS_ARCHIVO = {
+  confirmar: '¿Archivar este presupuesto? Dejará de salir en tu lista. Podrás desarchivarlo cuando quieras, y si tu cliente llega a aceptarlo volverá a salir.', // APROBADO por el orquestador, SCRUM-1273 comentario 19605 (T2)
+  avisoArchivado: 'Presupuesto archivado. No sale en tu lista de presupuestos.', // APROBADO por el orquestador, SCRUM-1273 comentario 19605 (T3)
+  desarchivar: 'Desarchivar', // APROBADO por el orquestador, SCRUM-1273 comentario 19605 (T4)
+  archivado: 'Presupuesto archivado.', // APROBADO por el orquestador, SCRUM-1273 comentario 19605 (T5)
+  desarchivado: 'Presupuesto desarchivado.', // APROBADO por el orquestador, SCRUM-1273 comentario 19605 (T6)
+  errorArchivar: 'No se pudo archivar el presupuesto. Inténtalo de nuevo.', // APROBADO por el orquestador, SCRUM-1273 comentario 19605 (T7)
+  errorDesarchivar: 'No se pudo desarchivar el presupuesto. Inténtalo de nuevo.', // APROBADO por el orquestador, SCRUM-1273 comentario 19605 (T8)
+};
+
 /** Lo que la persona VE del plan: tramos, reparto y cuántos están ya facturados. */
 function huellaDelPlanDeCobro(q) {
   const tramos = Array.isArray(q && q.billingPlan) ? q.billingPlan : [];
@@ -199,6 +212,69 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
 
   const st = String(quote.status || '').toLowerCase();
   const cur = quote.currency;
+
+  // ── SCRUM-1273 · ARCHIVAR ───────────────────────────────────
+  // Archivar es una cuestión de VISTA: saca el presupuesto de la lista y nada más. No toca el
+  // estado, ni el enlace del cliente, ni las cifras (c.19605, decisión 2). Cuándo se ofrece lo dice
+  // la tabla (`btnArchivar`), no esta pantalla: sin la tabla cargada, no se ofrece. Va en la
+  // cabecera, junto a «Duplicar», porque la ficha no pinta «⋮» (la misma divergencia que «Duplicar»).
+  const archivoBox = document.createElement('div');
+  page.appendChild(archivoBox);
+  let archivarBtn = null;
+
+  async function cambiarArchivo(archivar, boton) {
+    if (archivar && !window.confirm(TEXTOS_ARCHIVO.confirmar)) return;
+    boton.disabled = true;
+    try {
+      const r = await apiRequest(`/admin/quotes/${quote.id}/${archivar ? 'archivar' : 'desarchivar'}`, { method: 'POST' });
+      quote.archivedAt = archivar ? ((r && r.archivedAt) || new Date().toISOString()) : null;
+      pintarArchivo();
+      setStatus('success', archivar ? TEXTOS_ARCHIVO.archivado : TEXTOS_ARCHIVO.desarchivado);
+    } catch (err) {
+      // Un POST vencido es «no sé si llegó» (SCRUM-459): decir «no se pudo» podría ser falso. La
+      // ficha se vuelve a leer del servidor, que es quien sabe si quedó archivado.
+      if (err && err.incierto) { renderQuoteDetailView(container, id); return; }
+      boton.disabled = false;
+      // El 409 de archivar trae su motivo para una persona (T10); cualquier otro fallo, el nuestro.
+      const motivo = archivar && err && err.status === 409 && err.data && typeof err.data.message === 'string'
+        ? err.data.message : '';
+      setStatus('error', motivo || (archivar ? TEXTOS_ARCHIVO.errorArchivar : TEXTOS_ARCHIVO.errorDesarchivar));
+    }
+  }
+
+  function pintarArchivo() {
+    archivoBox.innerHTML = '';
+    if (archivarBtn) { archivarBtn.remove(); archivarBtn = null; }
+    if (quote.archivedAt) {
+      const aviso = document.createElement('div');
+      aviso.className = 'alert';
+      aviso.setAttribute('data-archivo', 'aviso');
+      aviso.style.cssText = 'margin:14px 22px 0;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap';
+      const texto = document.createElement('span');
+      texto.textContent = TEXTOS_ARCHIVO.avisoArchivado;
+      const btnDesarchivar = document.createElement('button');
+      btnDesarchivar.className = 'btn-secondary btn-sm';
+      btnDesarchivar.setAttribute('data-archivo', 'desarchivar');
+      btnDesarchivar.textContent = TEXTOS_ARCHIVO.desarchivar;
+      btnDesarchivar.addEventListener('click', () => cambiarArchivo(false, btnDesarchivar));
+      aviso.appendChild(texto);
+      aviso.appendChild(btnDesarchivar);
+      archivoBox.appendChild(aviso);
+      return;
+    }
+    const fila = (window.QUOTE_ACTION_REGISTRY || []).find((a) => a.id === 'btnArchivar');
+    const destino = fila && fila.destinos ? fila.destinos[st] : undefined;
+    const rotulo = window.QUOTE_ACTION_ROTULOS && window.QUOTE_ACTION_ROTULOS.btnArchivar;
+    if (!destino || destino === 'oculta' || !rotulo) return;
+    archivarBtn = document.createElement('button');
+    archivarBtn.className = 'btn-secondary btn-sm';
+    archivarBtn.setAttribute('data-accion', 'btnArchivar');
+    archivarBtn.textContent = rotulo;
+    const este = archivarBtn;
+    archivarBtn.addEventListener('click', () => cambiarArchivo(true, este));
+    headRight.insertBefore(archivarBtn, backBtn);
+  }
+  pintarArchivo();
 
   // ── Sección: ESTADO + TOTAL destacado + timeline ────────────
   const summarySec = document.createElement('div');
