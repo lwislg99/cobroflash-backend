@@ -264,3 +264,17 @@ Puesto S3 (s3-14octb), 09:20Z (hora de GitHub), base `origin/main` `7f5e1dd22543
 | `/admin/customers/83` | `mobile: "34000001268"` · `phone: null` |
 
 🔴 **Lo que impide sembrarlo hoy:** `/admin/me` da `plan: "trial"` con `planExpiresAt: 2026-10-12T14:41:58.799Z`, y `POST /quote/create` lleva `requireActivePlan`, que con la prueba vencida responde **403 `trial_expired`** (`src/core/http/authMiddleware.ts`). La orden fallaría en el alta del borrador (sale 1 sin aceptar nada). Afecta a cualquier sesión que cree presupuestos en la cuenta QA. Alargar el plan es escribir en el merchant: no lo hago yo.
+
+## SCRUM-1367e · seguimiento: el rojo de #2460 era mío (14-oct-2026)
+
+**Medido contra:** `origin/main` = `099cfd383764b8cd87ab78e9ef7df8ca57a206a7` · 2026-10-14T16:25:50Z
+
+Puesto S3 (2ª tanda del 14-oct).
+
+* **Por qué estaba rojo.** El obligatorio de #2460 (job 115783802215, punta `1577a4f`) cayó sólo por `SCRUM-262 · todo teléfono sembrado está en el rango imposible`. La causa era `tests/scrum1367-sembrar-casos.test.mjs:441`, que usaba `phone: '911234567'`, un fijo de rango real, como caso negativo. Era un defecto de este tramo, no algo ajeno.
+* **Qué cambia.** Los dos casos negativos de la condición 3 pasan a `mobile: '34612'` y `phone: '91123'`. Siguen fuera del rango imposible, así que el sembrador los sigue rechazando con el mismo mensaje, y tienen cinco cifras: no pueden ser de nadie, porque un abonado español tiene nueve. El `mobile: '34612345678'` de antes también era de rango real, y el guard no lo veía.
+* **Medido:** `node --test tests/scrum1367-sembrar-casos.test.mjs tests/scrum262-telefonos-de-prueba.test.mjs` da 28 tests, 28 pass. El rojo previo es el del CI, con el `911234567` nombrado.
+* **Hallazgo de paso, sin arreglar aquí:** `ESCRITURA` del guard 262 no incluye `mobile`, aunque `Customer.mobile` existe en el esquema. Con el mismo recorte de ficheros y la misma forma de literal hay 22 `mobile: '…'`, y 5 están fuera de rango. Uno era este. Los otros cuatro: `scrum1032-contacto-con-un-toque.test.mjs:47` y `:81` (dos, con números de ficción del Reino Unido y de EE. UU.) y `scrum312-importador-clientes.test.mjs:303` (`34600000009`, de rango real). Ensanchar el guard cambia el veredicto de ficheros de otros tickets, así que se lo paso al orquestador.
+* **Decisión 4 (orquestador, 14-oct):** basta con «declarada» si la salida lista los ids creados. Lo hace la `:279` (`el presupuesto #<id> … y su Trabajo #<id>`), y el test lo comprueba en la `:504`.
+
+A9: comprobación → `tests/scrum262-telefonos-de-prueba.test.mjs`

@@ -438,7 +438,9 @@ test('SCRUM-1367e · 🔴 condición 5: fuera de «receipt» (o sin modo) «acep
 });
 
 test('SCRUM-1367e · 🔴 condición 3: un teléfono fuera del rango imposible y «aceptado» NO escribe nada', async () => {
-  for (const ficha of [{ mobile: '34612345678', phone: null }, { mobile: MOVIL_CLIENTE_QA, phone: '911234567' }]) {
+  // Fuera del rango imposible y demasiado cortos para ser de nadie (un abonado español tiene 9
+  // cifras): un caso negativo tampoco lleva un teléfono que pueda existir (SCRUM-262).
+  for (const ficha of [{ mobile: '34612', phone: null }, { mobile: MOVIL_CLIENTE_QA, phone: '91123' }]) {
     const p = panel({ ficha });
     const r = await correr(['aceptado'], p);
     assert.equal(r.codigo, 3, JSON.stringify(ficha));
