@@ -212,3 +212,51 @@ decidido nadie. Se le pasa al orquestador.
 * `docs/master/SCRUM-418.md` — esta sección.
 
 A9: sin fallo que generalice — no me salió nada mal en esta entrega; la cifra que caducó (la del 10-ago) la avisaba el propio párrafo, que pedía re-fecharla, y aquí se ha hecho.
+
+# SCRUM-418c · el instrumento ve `.env.local` (y `.env`), cada uno por separado
+
+**Medido contra:** `origin/main` = `ebe2b932c0a4e07352516487df5146cd1a37abfc` · 2026-10-14T09:08:10Z
+
+Escrito por la Sesión 0 (`s0-14octc`). El hallazgo de la sección de arriba lo asignó el orquestador a la S0
+el 14-oct («el instrumento y la norma son tu carril»).
+
+## Qué cambia
+
+`scripts/comprobar-claves-bd.mjs` hace el barrido de producción también sobre **cada fichero de entorno** que
+lee la app (`leerFicherosEnv`: `.env.local` y `.env` de la raíz del árbol). Los ficheros **no se fusionan**:
+lo que hay en el que pierde también cuenta, porque un script que sólo cargue `.env` se lleva lo de `.env`. Si
+un fichero existe y no se puede leer, el resultado es un **fallo**, no un «no hay nada». Las comprobaciones
+que ya existían siguen igual, y `import 'dotenv/config'` se queda donde estaba.
+
+El SUELO tampoco dice ya «no se leyó ni una sola cadena» cuando los ficheros sí traían alguna.
+
+## Rojo primero, y control positivo
+
+| medida | `main` | con el cambio |
+| --- | --- | --- |
+| `comprobarEsteArbol` con el entorno sano y un `.env.local` REAL en disco con `DATABASE_URL` a producción | **fallos = 0**, no nombra `.env.local` | **fallos = 1**, nombra `.env.local` |
+| `tests/scrum418c-env-local-en-el-barrido.test.mjs` | no carga (falta `leerFicherosEnv`) | 7 de 7 |
+| junto con `scrum418`, `scrum1526` y `scrum383*` | — | 42 de 42 |
+
+**En un árbol real** (el checkout compartido, que tiene un `.env.local` desde junio): el instrumento de `main`
+no lo leía. El nuevo dice `DATABASE_URL (en .env.local) · Apunta a: localhost/yaqu_dev ← nadie lo ha
+declarado`. Sólo se imprime host y base.
+
+## Lo que no se ha hecho, dicho
+
+- **No he declarado `localhost` como destino que no es producción.** La orden decía que «algo que no sea
+  localhost» tenía que hacerlo saltar, y aquí salta también `localhost`, porque nadie lo ha declarado
+  (SCRUM-1526). Lo he dejado así a propósito: un `localhost` puede ser un túnel a producción, y declararlo
+  es una decisión de la tabla `DESTINOS_ESPERADOS`, no de este arreglo.
+- `npm run guards:entrada` salió **CIEGO** (lo cortó el plazo de 90 s por la carga de la máquina, SCRUM-1345):
+  no dice ni rojo ni verde. Lo decide el CI.
+- `scripts/comprobar-claves-bd.mjs` sigue sin fila propia en `dos-equipos.md` §3. No la escribo hoy porque
+  el equipo de Javier va a tocar esa tabla (SCRUM-1556) y no quiero pisarme con ellos.
+
+## Ficheros
+
+* `scripts/comprobar-claves-bd.mjs` — `leerFicherosEnv`, el barrido por fichero y el texto del SUELO.
+* `tests/scrum418c-env-local-en-el-barrido.test.mjs` — 7 casos: control, R1 a R5 y el directorio vacío.
+* `docs/master/SCRUM-418.md` — esta sección.
+
+A9: el fallo que generaliza es mío y es de ayer: lo encontré y lo dejé «reportado, sin dueño» en vez de preguntar en ese momento de quién era. Lo apunto como lo que fue: un hueco en un guard de producción que se quedó abierto un relevo más.
