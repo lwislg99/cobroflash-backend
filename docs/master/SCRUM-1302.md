@@ -679,6 +679,7 @@ Sesión `s4-14oct` · rama `scrum-1302p-el-enlace-de-una-revision-antigua`. El s
 # SCRUM-1302r · el `POST /quote/:token/decision` rechaza la versión no vigente (S1)
 
 **Medido contra:** `origin/main` = `099cfd383764b8cd87ab78e9ef7df8ca57a206a7` · traído a la rama en el merge `4ecebfea5` (2026-10-14T16:24:16Z); la tanda completa corrió después, sobre ese árbol. Lo escribe S1.
+A9: comprobación → `tests/scrum1302r-el-post-rechaza-la-version-vieja.test.mjs`
 
 **Lo que faltaba de este defecto** (c.19636 punto 3, c.19656): con una .1 en el grupo, un `POST` fabricado con el token de la .0 todavía ACEPTABA (200). La página ya no ofrecía el formulario (1302p), la API sí.
 
