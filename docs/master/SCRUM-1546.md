@@ -108,7 +108,7 @@ instrumento, no las fichas. Tampoco si en Jira o en el PR alguien vería una fic
 
 14-oct-2026 · **S0** (segunda tanda, equipo de Luis). [Escrito por la sesión, no por Luis ni por su orquestador.]
 
-A9: sin fallo que generalice. El primer control positivo cayó por la IMPORTACIÓN (el oráculo de `main` no exporta `ESTADO_SIN_COMPROBAR`) y no por la conducta. Se vio en el TAP, que daba los dos ficheros caídos y 0 tests, y se sustituyó por mutantes dirigidos con su `numstat`. Es lo que ya enseña `rojos-997d.mjs`.
+A9: sin fallo que generalice — el primer control positivo cayó por la IMPORTACIÓN (el oráculo de `main` no exporta `ESTADO_SIN_COMPROBAR`) y no por la conducta. Se vio en el TAP, que daba los dos ficheros caídos y 0 tests, y se sustituyó por mutantes dirigidos con su `numstat`. Es lo que ya enseña `rojos-997d.mjs`.
 
 **La decisión, y de quién es.** Del orquestador de Luis, en dos pasos el 14-oct-2026:
 1. La firma del fundador sin comprobar entra en el MISMO tercer estado que la delegada, con la condición de parar si cambiaba alguna de las 31 reales. Cambiaron las 31; se paró y se dijo en Jira, SCRUM-1546 c.19704.
