@@ -144,7 +144,12 @@ Dos commits traídos por `cherry-pick`, **sin conflicto y sin tocar una línea d
 | `jv-j2a` (J2) | `2b2bb6c1d353a9dcc5f8df8fe51266fc103c8413` | esquema, `whatsappLog.service.ts`, `whatsapp.ts`, su test, `docs/sql/deriva-prod.sql`, este registro |
 | `jv-j3a` (J3) | `65310ab34ed215502170a9ae7623a2a508b92d47` | `anonimizarMerchant.ts`, `tests/_censo-datos-personales.mjs`, `scrum244`, `scrum440`, `scrum497` |
 
-Mío sólo es este tramo del registro.
+Mío es este tramo del registro y, **de paso**, una línea del test de 529: quitaba el comentario de la línea
+del esquema con un filtro propio que corta en cualquier barra doble, y el trinquete de SCRUM-700 (filtros que
+ciegan código, tope 7) subía a 8. El primer obligatorio de este PR cayó por eso. Ahora usa `soloEjecutable`
+de `tests/_guard-texto.mjs`. Visto pasar (12 de 12), caer con un `@default` puesto en la columna (cae 1, el
+caso del esquema; `numstat` 1/1) y volver a pasar con el esquema restaurado. Mi tanda de vecinos no llevaba
+`scrum700`: no nombra nada de lo que usé para elegirlos.
 
 ## Lo medido, los dos commits JUNTOS sobre el merge
 
