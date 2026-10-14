@@ -101,3 +101,34 @@ F y a F2. A F2 no por su texto, sino porque el NOMBRE del fichero lleva `SCRUM-9
 
 **Lo que NO se ha medido.** Si alguna de las 31 fichas reales del fundador es falsa: esto mide el
 instrumento, no las fichas. Tampoco si en Jira o en el PR alguien vería una ficha así antes de entrar.
+
+## SCRUM-1546c · La firma del fundador sale `aprobada-sin-comprobar` y dice lo que no se mira
+
+**Medido contra:** `origin/main` = `becfaf83094b8ddba05043e7850dbf5c6c6635bd` · 2026-10-14T16:20Z (`Date:` de GitHub)
+
+14-oct-2026 · **S0** (segunda tanda, equipo de Luis). [Escrito por la sesión, no por Luis ni por su orquestador.]
+
+A9: sin fallo que generalice. El primer control positivo cayó por la IMPORTACIÓN (el oráculo de `main` no exporta `ESTADO_SIN_COMPROBAR`) y no por la conducta. Se vio en el TAP, que daba los dos ficheros caídos y 0 tests, y se sustituyó por mutantes dirigidos con su `numstat`. Es lo que ya enseña `rojos-997d.mjs`.
+
+**La decisión, y de quién es.** Del orquestador de Luis, en dos pasos el 14-oct-2026:
+1. La firma del fundador sin comprobar entra en el MISMO tercer estado que la delegada, con la condición de parar si cambiaba alguna de las 31 reales. Cambiaron las 31; se paró y se dijo en Jira, SCRUM-1546 c.19704.
+2. Su respuesta: SÍ a los 31 cambios y SÍ a renombrar el estado, porque `aprobada-por-delegacion-sin-comprobar` mentía de una firma que dice ser del fundador.
+
+Cómo se hace verificable de verdad una firma del fundador **no se decide aquí**: es del fundador.
+
+| lo pedido | dónde se ve |
+|---|---|
+| la del fundador, en el mismo tercer estado | `tests/_microcopy-aprobada.mjs`: `estado` y `noComprobado`; `NO_COMPROBADO_EN_UNA_FIRMA_DEL_FUNDADOR`, dos líneas |
+| renombrado a `aprobada-sin-comprobar` | `ESTADO_SIN_COMPROBAR`. Ya no existe `ESTADO_DELEGADA_SIN_COMPROBAR`. `delegadasSinComprobar` filtra también por firmante |
+| el criterio no cambia | test 2 de `scrum997d`, sin tocar su línea de criterio: `aprobada` vale lo mismo, ficha a ficha, sobre el árbol real |
+| 31 de 31 cambian de estado y 0 de `aprobada` | comparación ficha a ficha, oráculo de `main` frente a prototipo (SCRUM-1546 c.19704). Sobre el árbol: 140 registros; `aprobada` 1 (el congelado); `aprobada-sin-comprobar` 139 (31 del fundador y 108 delegadas); `no-aprobada` 0 |
+| los 4 tests de 997d que caían, con su motivo y sin aflojar | cabecera «SCRUM-1546c · CONDUCTA CAMBIADA A PROPÓSITO» en `tests/scrum997d-…`. Cada aserción vieja sigue en pie sobre su población. Se añaden: «`aprobada` a secas sólo el congelado» (test 1), «cada firma declara SU lista» (test 2) y el congelado como tercer caso del 5 |
+| cada línea de lo no comprobado, atada | `tests/scrum1546c-la-firma-del-fundador-sin-comprobar.test.mjs`, tests 2 y 3 |
+| control positivo: con la conducta de antes, la firma falsa vuelve a salir `aprobada` a secas | `docs/master/evidencias/SCRUM-1546/rojos-1546c.salida.txt`, mutante M: caen 7 de 11. Los mutantes N, O, P y Q también mueren, cada uno con su `numstat` |
+| el caso M5, repetido con el oráculo nuevo | `banco-m5.despues.salida.txt`: F y F2 salen `aprobada-sin-comprobar` con 2 líneas declaradas; los controles S, Q y A, `no-aprobada`. La salida de antes (`banco-m5.salida.txt`) no se toca |
+
+**Lo que este cambio NO hace.**
+- **No caza la firma falsa.** Sigue contando como aprobada. Lo que cambia es que el oráculo ya no afirma haberla comprobado.
+- **De los 36 importadores, ninguno pregunta por el estado.** Pasan los 36 sin tocarlos (333 tests, con los 3 nuevos).
+- **Los bancos viejos de `docs/master/evidencias/SCRUM-997/`** mutan el texto de una versión anterior del oráculo y ya no se pueden repetir sobre esta. Son historia, como ya dejó dicho 997d de sí mismo.
+- Nada en yaqu.app: no cambia nada de lo que se sirve.
