@@ -1,0 +1,287 @@
+SCRUM-1520d · ¿por dónde puede callar un caso que cae? — censo por AST de tests/
+población: 1526 ficheros .mjs/.js/.cjs en tests/ · 1338 los ejecuta la tanda (tests/*.test.mjs) · 188 ayudantes y arneses
+           + 387 ficheros FUERA de tests/ a los que se llega por imports relativos (205 de dist/; si dist/ no está compilado, esos no se ven y se dice aquí)
+referencia de TEXTO (no es censo): 131 ficheros contienen «process.exit(» · 980 contienen la palabra «todo»
+controles del instrumento: 0 positivos sembrados · 5 ceros (cadena, plantilla, comentario, exit(1)) · FALLAN
+
+── en un fichero de la tanda: 0 hallazgo(s) en 0 fichero(s)
+── en un ayudante o arnés de tests/: 17 hallazgo(s) en 17 fichero(s)
+   tests/_meta-de-laboratorio.mjs:198 · exit(0) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum1477-meta-dijo-que-no-o-no-contesto.test.mjs
+        process.exit(0)
+   tests/_sonda-fecha-impresa.mjs:195 · exit(0) · en código de primer nivel (corre al IMPORTAR el fichero) · lo importan 0 test(s) de la tanda
+        process.exit(0)
+   tests/banco-scrum1102f/mutar.mjs:112 · exit(<expresión>) · en código de primer nivel (corre al IMPORTAR el fichero) · lo importan 0 test(s) de la tanda
+        process.exit(mudas === 0 && b.status === 0 && fin.caen.length === 0 && st.stdout.trim() ==
+   tests/banco-scrum1102f/navegador.mjs:164 · exit(<expresión>) · en código de primer nivel (corre al IMPORTAR el fichero) · lo importan 0 test(s) de la tanda
+        process.exit(salida)
+   tests/banco-scrum1325/mutar.mjs:141 · exit(<expresión>) · en código de primer nivel (corre al IMPORTAR el fichero) · lo importan 0 test(s) de la tanda
+        process.exit(mudas === 0 && b.status === 0 && fin.efecto.caen.length === 0 && fin.guard.ca
+   tests/banco-scrum1329/mutar.mjs:89 · exit(<expresión>) · en código de primer nivel (corre al IMPORTAR el fichero) · lo importan 0 test(s) de la tanda
+        process.exit(salida)
+   tests/banco-scrum1334/mutar.mjs:185 · exit(<expresión>) · en código de primer nivel (corre al IMPORTAR el fichero) · lo importan 0 test(s) de la tanda
+        process.exit(salida)
+   tests/banco-scrum1334/quitar-cita-a-las-notas.mjs:112 · exit(<expresión>) · en código de primer nivel (corre al IMPORTAR el fichero) · lo importan 0 test(s) de la tanda
+        process.exit(ok ? 0 : 1)
+   tests/banco-scrum1341/admin-identico.mjs:126 · exit(<expresión>) · en código de primer nivel (corre al IMPORTAR el fichero) · lo importan 0 test(s) de la tanda
+        process.exit(mal === 0 ? 0 : 1)
+   tests/banco-scrum1341/mutar.mjs:157 · exit(<expresión>) · en código de primer nivel (corre al IMPORTAR el fichero) · lo importan 0 test(s) de la tanda
+        process.exit(bien ? 0 : 1)
+   tests/banco-scrum1341/navegador.mjs:173 · exit(<expresión>) · en código de primer nivel (corre al IMPORTAR el fichero) · lo importan 0 test(s) de la tanda
+        process.exit(salida)
+   tests/banco-scrum1397/lanzar.mjs:69 · exit(<expresión>) · en código de primer nivel (corre al IMPORTAR el fichero) · lo importan 0 test(s) de la tanda
+        process.exit(r.status ?? 2)
+   tests/banco-scrum1397/mutar.mjs:90 · exit(<expresión>) · en la función fin() · no exportada · lo importan 0 test(s) de la tanda
+        process.exit(codigo)
+   tests/banco-scrum1456/mutar.mjs:180 · exit(<expresión>) · en código de primer nivel (corre al IMPORTAR el fichero) · lo importan 0 test(s) de la tanda
+        process.exit(bien ? 0 : 1)
+   tests/banco-scrum1477/mutar.mjs:134 · exit(<expresión>) · en código de primer nivel (corre al IMPORTAR el fichero) · lo importan 0 test(s) de la tanda
+        process.exit(mal === 0 ? 0 : 1)
+   tests/banco-scrum911/censo-kpi-mantenimientos.mjs:77 · exit(0) · en código de primer nivel (corre al IMPORTAR el fichero) · lo importan 0 test(s) de la tanda
+        process.exit(0)
+   tests/banco-scrum911/turno.mjs:17 · exit(<expresión>) · en código de primer nivel (corre al IMPORTAR el fichero) · lo importan 0 test(s) de la tanda
+        process.exit(r.status ?? 1)
+── fuera de tests/, importado por la tanda: 119 hallazgo(s) en 66 fichero(s)
+   scripts/meta-guard-mutaciones.mjs:1404 · exit(<expresión>) · en la función aplicarUna() · EXPORTADA · lo importan 30 test(s) de la tanda: restauracion-del-arbol-ejecutable.test.mjs, scrum1100d-el-rojo-dice-lo-que-sabe.test.mjs, scrum1321-el-resumen-no-prueba-el-final.test.mjs, scrum586-forma-de-pago-por-cliente.test.mjs, …
+        process.exit(SALIDA_NO_RESTAURADO)
+   scripts/meta-guard-mutaciones.mjs:1467 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 30 test(s) de la tanda: restauracion-del-arbol-ejecutable.test.mjs, scrum1100d-el-rojo-dice-lo-que-sabe.test.mjs, scrum1321-el-resumen-no-prueba-el-final.test.mjs, scrum586-forma-de-pago-por-cliente.test.mjs, …
+        process.exit(SALIDA_CIEGO)
+   scripts/meta-guard-mutaciones.mjs:1476 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 30 test(s) de la tanda: restauracion-del-arbol-ejecutable.test.mjs, scrum1100d-el-rojo-dice-lo-que-sabe.test.mjs, scrum1321-el-resumen-no-prueba-el-final.test.mjs, scrum586-forma-de-pago-por-cliente.test.mjs, …
+        process.exit(SALIDA_NO_RESTAURADO)
+   scripts/meta-guard-mutaciones.mjs:1509 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 30 test(s) de la tanda: restauracion-del-arbol-ejecutable.test.mjs, scrum1100d-el-rojo-dice-lo-que-sabe.test.mjs, scrum1321-el-resumen-no-prueba-el-final.test.mjs, scrum586-forma-de-pago-por-cliente.test.mjs, …
+        process.exit(SALIDA_CIEGO)
+   scripts/meta-guard-mutaciones.mjs:1524 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 30 test(s) de la tanda: restauracion-del-arbol-ejecutable.test.mjs, scrum1100d-el-rojo-dice-lo-que-sabe.test.mjs, scrum1321-el-resumen-no-prueba-el-final.test.mjs, scrum586-forma-de-pago-por-cliente.test.mjs, …
+        process.exit(SALIDA_CIEGO)
+   scripts/meta-guard-mutaciones.mjs:1533 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 30 test(s) de la tanda: restauracion-del-arbol-ejecutable.test.mjs, scrum1100d-el-rojo-dice-lo-que-sabe.test.mjs, scrum1321-el-resumen-no-prueba-el-final.test.mjs, scrum586-forma-de-pago-por-cliente.test.mjs, …
+        process.exit(SALIDA_CIEGO)
+   scripts/meta-guard-mutaciones.mjs:1546 · exit(0) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 30 test(s) de la tanda: restauracion-del-arbol-ejecutable.test.mjs, scrum1100d-el-rojo-dice-lo-que-sabe.test.mjs, scrum1321-el-resumen-no-prueba-el-final.test.mjs, scrum586-forma-de-pago-por-cliente.test.mjs, …
+        process.exit(0)
+   scripts/meta-guard-mutaciones.mjs:1571 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 30 test(s) de la tanda: restauracion-del-arbol-ejecutable.test.mjs, scrum1100d-el-rojo-dice-lo-que-sabe.test.mjs, scrum1321-el-resumen-no-prueba-el-final.test.mjs, scrum586-forma-de-pago-por-cliente.test.mjs, …
+        process.exit(SALIDA_CIEGO)
+   scripts/meta-guard-mutaciones.mjs:1650 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 30 test(s) de la tanda: restauracion-del-arbol-ejecutable.test.mjs, scrum1100d-el-rojo-dice-lo-que-sabe.test.mjs, scrum1321-el-resumen-no-prueba-el-final.test.mjs, scrum586-forma-de-pago-por-cliente.test.mjs, …
+        process.exit(SALIDA_CIEGO)
+   scripts/meta-guard-mutaciones.mjs:1657 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 30 test(s) de la tanda: restauracion-del-arbol-ejecutable.test.mjs, scrum1100d-el-rojo-dice-lo-que-sabe.test.mjs, scrum1321-el-resumen-no-prueba-el-final.test.mjs, scrum586-forma-de-pago-por-cliente.test.mjs, …
+        process.exit(SALIDA_MUDO)
+   scripts/meta-guard-mutaciones.mjs:1662 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 30 test(s) de la tanda: restauracion-del-arbol-ejecutable.test.mjs, scrum1100d-el-rojo-dice-lo-que-sabe.test.mjs, scrum1321-el-resumen-no-prueba-el-final.test.mjs, scrum586-forma-de-pago-por-cliente.test.mjs, …
+        process.exit(SALIDA_CIEGO)
+   scripts/clasificar-fallo-automerge.mjs:163 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 2 test(s) de la tanda: automerge-conflicto-no-es-averia.test.mjs, scrum1382-borrador-no-es-fallo-real.test.mjs
+        process.exit(r.benigno ? 0 : 1)
+   scripts/_navegador.mjs:76 · exit(<expresión>) · en la función rutaDelNavegador() · EXPORTADA · lo importan 17 test(s) de la tanda: scrum1313-ciego-no-es-verde-ni-rojo.test.mjs, scrum1320-hallazgo-y-ciego-no-son-excluyentes.test.mjs, scrum1336-un-ciego-no-se-pinta-de-hallazgo.test.mjs, scrum1343-un-hijo-que-no-arranca-es-ciego.test.mjs, …
+        process.exit(SALIDA_NO_ENCONTRADO)
+   scripts/_navegador.mjs:440 · exit(<expresión>) · en la función lanzarNavegador() · EXPORTADA · lo importan 17 test(s) de la tanda: scrum1313-ciego-no-es-verde-ni-rojo.test.mjs, scrum1320-hallazgo-y-ciego-no-son-excluyentes.test.mjs, scrum1336-un-ciego-no-se-pinta-de-hallazgo.test.mjs, scrum1343-un-hijo-que-no-arranca-es-ciego.test.mjs, …
+        process.exit(SALIDA_NO_ARRANCA)
+   scripts/_servidor.mjs:46 · exit(<expresión>) · en código de primer nivel (corre al IMPORTAR el fichero) · lo importan 16 test(s) de la tanda: scrum1313-ciego-no-es-verde-ni-rojo.test.mjs, scrum1320-hallazgo-y-ciego-no-son-excluyentes.test.mjs, scrum1336-un-ciego-no-se-pinta-de-hallazgo.test.mjs, scrum1343-un-hijo-que-no-arranca-es-ciego.test.mjs, …
+        process.exit(SALIDA_SIN_SERVIDOR)
+   scripts/_servidor.mjs:73 · exit(<expresión>) · en la función levantarServidor() · EXPORTADA · lo importan 16 test(s) de la tanda: scrum1313-ciego-no-es-verde-ni-rojo.test.mjs, scrum1320-hallazgo-y-ciego-no-son-excluyentes.test.mjs, scrum1336-un-ciego-no-se-pinta-de-hallazgo.test.mjs, scrum1343-un-hijo-que-no-arranca-es-ciego.test.mjs, …
+        process.exit(SALIDA_SIN_SERVIDOR)
+   scripts/equipo/gasto-arranque.mjs:767 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 2 test(s) de la tanda: scrum1070-vivas-relevo.test.mjs, scrum996-suelo-de-arranque.test.mjs
+        process.exit(r.codigo)
+   scripts/equipo/sesion.mjs:986 · exit(<expresión>) · en la función salir() · no exportada · lo importan 15 test(s) de la tanda: scrum1070-vivas-relevo.test.mjs, scrum1123d-latido-dice-el-veredicto.test.mjs, scrum1282-contexto-nombres-de-hoy.test.mjs, scrum1298b-latido-arbol-de-arranque.test.mjs, …
+        process.exit(codigo)
+   .claude/hooks/guard-dangerous.mjs:828 · exit(0) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 7 test(s) de la tanda: scrum1091-guard-cwd-posix.test.mjs, scrum176-guard-mensaje.test.mjs, scrum176b-force-por-identidad.test.mjs, scrum454-destructivo-sin-comprobacion.test.mjs, …
+        process.exit(0)
+   scripts/guard-acreditacion-invoicing-es.mjs:230 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 3 test(s) de la tanda: scrum1097-guard-acreditacion-invoicing-es.test.mjs, scrum1109-aviso-programado-acreditacion-invoicing-es.test.mjs, scrum1525b-el-respaldo-por-correo.test.mjs
+        process.exit(codigo)
+   scripts/aviso-programado-acreditacion-invoicing-es.mjs:348 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 2 test(s) de la tanda: scrum1109-aviso-programado-acreditacion-invoicing-es.test.mjs, scrum1525b-el-respaldo-por-correo.test.mjs
+        process.exit(codigo)
+   scripts/vigia-despliegue-aviso.mjs:129 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 13 test(s) de la tanda: scrum1123-vigia-despliegue-aviso.test.mjs, scrum1123d-latido-dice-el-veredicto.test.mjs, scrum1298b-latido-arbol-de-arranque.test.mjs, scrum1350-latido.test.mjs, …
+        process.exit(r.accion === 'no-se-sabe' ? 1 : 0)
+   scripts/equipo/latido.mjs:1410 · exitCode = orden === 'repartos' ? await r · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 12 test(s) de la tanda: scrum1123d-latido-dice-el-veredicto.test.mjs, scrum1298b-latido-arbol-de-arranque.test.mjs, scrum1350-latido.test.mjs, scrum1357b-parados.test.mjs, …
+        process.exitCode = orden === 'repartos' ? await repartos() : orden === 'cierre' ? cierre()
+   scripts/equipo/ancla.mjs:100 · exit(0) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 2 test(s) de la tanda: scrum1152-generador-ancla.test.mjs, scrum1324-nadie-vigila-el-silencio.test.mjs
+        process.exit(0)
+   scripts/qa/sesion-panel.mjs:264 · exitCode = await ejecutar(process.argv.sl · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 18 test(s) de la tanda: scrum1123d-latido-dice-el-veredicto.test.mjs, scrum1222-sesion-panel.test.mjs, scrum1268-sembrar-qa.test.mjs, scrum1298b-latido-arbol-de-arranque.test.mjs, …
+        process.exitCode = await ejecutar(process.argv.slice(2))
+   scripts/abierto-con-trabajo-en-main.mjs:288 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 3 test(s) de la tanda: scrum1259-abierto-con-trabajo-en-main.test.mjs, scrum1424-ya-esta.test.mjs, scrum1463b-cierre-sin-clic.test.mjs
+        process.exit(c)
+   scripts/puerta-claude-empuje.mjs:287 · exit(0) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 2 test(s) de la tanda: scrum1263-gancho-pre-push.test.mjs, scrum834-puerta-avisador-rojo.test.mjs
+        process.exit(0)
+   scripts/puerta-claude-empuje.mjs:295 · exit(0) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 2 test(s) de la tanda: scrum1263-gancho-pre-push.test.mjs, scrum834-puerta-avisador-rojo.test.mjs
+        process.exit(0)
+   scripts/puerta-claude-empuje.mjs:300 · exit(0) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 2 test(s) de la tanda: scrum1263-gancho-pre-push.test.mjs, scrum834-puerta-avisador-rojo.test.mjs
+        process.exit(0)
+   scripts/puerta-claude-empuje.mjs:326 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 2 test(s) de la tanda: scrum1263-gancho-pre-push.test.mjs, scrum834-puerta-avisador-rojo.test.mjs
+        process.exit(d.empujar ? 0 : 1)
+   scripts/puerta-claude-empuje.mjs:335 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 2 test(s) de la tanda: scrum1263-gancho-pre-push.test.mjs, scrum834-puerta-avisador-rojo.test.mjs
+        process.exit(d.declarar ? 1 : 0)
+   scripts/qa/sembrar-qa.mjs:282 · exitCode = await ejecutar(process.argv.sl · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 4 test(s) de la tanda: scrum1268-sembrar-qa.test.mjs, scrum1367-sembrar-casos.test.mjs, scrum1367b-sembrar-albaranes.test.mjs, scrum1367c-albaran-de-cliente-sin-movil.test.mjs
+        process.exitCode = await ejecutar(process.argv.slice(2))
+   scripts/puerta-avisador-rojo.mjs:393 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 6 test(s) de la tanda: scrum1263-gancho-pre-push.test.mjs, scrum1270-pr-mudo-avisado-en-el-pr.test.mjs, scrum1458-vigia-main-parado.test.mjs, scrum834-puerta-avisador-rojo.test.mjs, …
+        process.exit(r.avisar ? 0 : 1)
+   scripts/equipo/minutos-actions.mjs:123 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum1284-minutos-actions.test.mjs
+        process.exit(SALIDA.NO_PUDE_MIRAR)
+   scripts/equipo/minutos-actions.mjs:139 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum1284-minutos-actions.test.mjs
+        process.exit(v.codigo)
+   scripts/_censo-escrituras-sin-version.mjs:624 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 2 test(s) de la tanda: scrum1285c-censo-escrituras-sin-version.test.mjs, scrum1381-escritores-por-fila.test.mjs
+        process.exit(SALIDA_NO_MEDIDO)
+   scripts/_censo-escrituras-sin-version.mjs:628 · exit(0) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 2 test(s) de la tanda: scrum1285c-censo-escrituras-sin-version.test.mjs, scrum1381-escritores-por-fila.test.mjs
+        process.exit(0)
+   scripts/_censo-escrituras-sin-version.mjs:658 · exit(0) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 2 test(s) de la tanda: scrum1285c-censo-escrituras-sin-version.test.mjs, scrum1381-escritores-por-fila.test.mjs
+        process.exit(0)
+   scripts/_censo-escrituras-sin-version.mjs:668 · exit(0) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 2 test(s) de la tanda: scrum1285c-censo-escrituras-sin-version.test.mjs, scrum1381-escritores-por-fila.test.mjs
+        process.exit(0)
+   scripts/equipo/intermitente-1281.mjs:195 · exit(0) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum1286-intermitente-1281.test.mjs
+        process.exit(0)
+   scripts/equipo/intermitente-1281.mjs:204 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum1286-intermitente-1281.test.mjs
+        process.exit(r.codigo)
+   scripts/_censo-gemelo-crudo.mjs:599 · exitCode = mal ? 1 : 0 · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 2 test(s) de la tanda: scrum1288b-el-importe-pegado-a-la-moneda.test.mjs, scrum1452-gemelo-crudo.test.mjs
+        process.exitCode = mal ? 1 : 0
+   scripts/equipo/por-que-cayo.mjs:144 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum1289-por-que-cayo.test.mjs
+        process.exit(codigo)
+   scripts/equipo/por-que-cayo.mjs:152 · exit(0) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum1289-por-que-cayo.test.mjs
+        process.exit(0)
+   scripts/carriles.mjs:200 · exitCode = principal(process.argv.slice(2 · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 3 test(s) de la tanda: scrum1295-carriles.test.mjs, scrum1480e-la-fila-de-un-script-nace-con-el.test.mjs, scrum1480f-un-script-nuevo-no-entra-sin-fila.test.mjs
+        process.exitCode = principal(process.argv.slice(2))
+   scripts/guards-visuales.mjs:631 · exit(<expresión>) · en la función puerta() · no exportada · lo importan 15 test(s) de la tanda: scrum1313-ciego-no-es-verde-ni-rojo.test.mjs, scrum1320-hallazgo-y-ciego-no-son-excluyentes.test.mjs, scrum1336-un-ciego-no-se-pinta-de-hallazgo.test.mjs, scrum1343-un-hijo-que-no-arranca-es-ciego.test.mjs, …
+        process.exit(SALIDA_NO_ENCONTRADO)
+   scripts/guards-visuales.mjs:658 · exit(<expresión>) · en la función puerta() · no exportada · lo importan 15 test(s) de la tanda: scrum1313-ciego-no-es-verde-ni-rojo.test.mjs, scrum1320-hallazgo-y-ciego-no-son-excluyentes.test.mjs, scrum1336-un-ciego-no-se-pinta-de-hallazgo.test.mjs, scrum1343-un-hijo-que-no-arranca-es-ciego.test.mjs, …
+        process.exit(v.codigo)
+   scripts/vigia-silencio-de-main.mjs:480 · exitCode = await principal() · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum1324-nadie-vigila-el-silencio.test.mjs
+        process.exitCode = await principal()
+   scripts/guards-entrada.mjs:419 · exit(<expresión>) · en la función main() · no exportada · lo importan 3 test(s) de la tanda: scrum1349-no-se-empuja-con-una-mutacion-puesta.test.mjs, scrum928-guards-entrada-recuento-con-color.test.mjs, scrum976-guards-entrada-con-techo.test.mjs
+        process.exit(veredicto.codigo)
+   scripts/guards-entrada.mjs:448 · exit(<expresión>) · en la función main() · no exportada · lo importan 3 test(s) de la tanda: scrum1349-no-se-empuja-con-una-mutacion-puesta.test.mjs, scrum928-guards-entrada-recuento-con-color.test.mjs, scrum976-guards-entrada-con-techo.test.mjs
+        process.exit(veredicto.codigo)
+   .claude/hooks/latido-arranque.mjs:177 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum1356-latido-enganchado.test.mjs
+        process.exit(r.codigo)
+   .claude/hooks/latido-arranque.mjs:187 · exit(0) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum1356-latido-enganchado.test.mjs
+        process.exit(0)
+   .claude/hooks/latido-cierre.mjs:199 · exit(0) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 14 test(s) de la tanda: scrum1123d-latido-dice-el-veredicto.test.mjs, scrum1298b-latido-arbol-de-arranque.test.mjs, scrum1350-latido.test.mjs, scrum1356-latido-enganchado.test.mjs, …
+        process.exit(0)
+   scripts/equipo/parados.mjs:243 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum1357b-parados.test.mjs
+        process.exit(r.codigo)
+   scripts/tests-que-cubren.mjs:201 · exit(<expresión>) · en la función main() · no exportada · lo importan 2 test(s) de la tanda: scrum1363-tests-que-cubren.test.mjs, scrum1412-tanda-por-tramos.test.mjs
+        process.exit(SALIDA_CIEGO)
+   scripts/tests-que-cubren.mjs:211 · exit(<expresión>) · en la función main() · no exportada · lo importan 2 test(s) de la tanda: scrum1363-tests-que-cubren.test.mjs, scrum1412-tanda-por-tramos.test.mjs
+        process.exit(SALIDA_CIEGO)
+   scripts/tests-que-cubren.mjs:221 · exit(<expresión>) · en la función main() · no exportada · lo importan 2 test(s) de la tanda: scrum1363-tests-que-cubren.test.mjs, scrum1412-tanda-por-tramos.test.mjs
+        process.exit(SALIDA_CIEGO)
+   scripts/tests-que-cubren.mjs:251 · exit(<expresión>) · en la función main() · no exportada · lo importan 2 test(s) de la tanda: scrum1363-tests-que-cubren.test.mjs, scrum1412-tanda-por-tramos.test.mjs
+        process.exit(salida)
+   scripts/tests-que-cubren.mjs:257 · exit(<expresión>) · en la función main() · no exportada · lo importan 2 test(s) de la tanda: scrum1363-tests-que-cubren.test.mjs, scrum1412-tanda-por-tramos.test.mjs
+        process.exit(SALIDA_CIEGO)
+   scripts/tests-que-cubren.mjs:264 · exit(<expresión>) · en la función main() · no exportada · lo importan 2 test(s) de la tanda: scrum1363-tests-que-cubren.test.mjs, scrum1412-tanda-por-tramos.test.mjs
+        process.exit(SALIDA_CIEGO)
+   scripts/tests-que-cubren.mjs:272 · exit(<expresión>) · en la función main() · no exportada · lo importan 2 test(s) de la tanda: scrum1363-tests-que-cubren.test.mjs, scrum1412-tanda-por-tramos.test.mjs
+        process.exit(SALIDA_CIEGO)
+   scripts/tests-que-cubren.mjs:315 · exit(<expresión>) · en la función main() · no exportada · lo importan 2 test(s) de la tanda: scrum1363-tests-que-cubren.test.mjs, scrum1412-tanda-por-tramos.test.mjs
+        process.exit(salida)
+   scripts/qa/sembrar-casos.mjs:299 · exitCode = await ejecutar(process.argv.sl · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum1367-sembrar-casos.test.mjs
+        process.exitCode = await ejecutar(process.argv.slice(2))
+   scripts/qa/sembrar-albaranes.mjs:334 · exitCode = await ejecutar(process.argv.sl · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 2 test(s) de la tanda: scrum1367b-sembrar-albaranes.test.mjs, scrum1367c-albaran-de-cliente-sin-movil.test.mjs
+        process.exitCode = await ejecutar(process.argv.slice(2))
+   scripts/auditoria-cierres.mjs:423 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum1372-auditoria-cierres.test.mjs
+        process.exit(r.codigo)
+   scripts/espera-del-equipo.mjs:360 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 4 test(s) de la tanda: scrum1357b-parados.test.mjs, scrum1414-espera-del-equipo.test.mjs, scrum1418-sesiones-que-no-volvieron.test.mjs, scrum1427-traspaso-derivado.test.mjs
+        process.exit(r.codigo)
+   scripts/sesiones-que-no-volvieron.mjs:321 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 2 test(s) de la tanda: scrum1418-sesiones-que-no-volvieron.test.mjs, scrum1427-traspaso-derivado.test.mjs
+        process.exit(r.codigo)
+   scripts/claves-bd-de-todos-los-arboles.mjs:124 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 2 test(s) de la tanda: scrum1423-claves-bd-de-todos-los-arboles.test.mjs, scrum1526-produccion-no-se-reconoce-por-nombre.test.mjs
+        process.exit(r.codigo)
+   scripts/equipo/ya-esta.mjs:271 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 2 test(s) de la tanda: scrum1424-ya-esta.test.mjs, scrum1463b-cierre-sin-clic.test.mjs
+        process.exit(SALIDA_CIEGO)
+   scripts/equipo/ya-esta.mjs:279 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 2 test(s) de la tanda: scrum1424-ya-esta.test.mjs, scrum1463b-cierre-sin-clic.test.mjs
+        process.exit(SALIDA_CIEGO)
+   scripts/equipo/ya-esta.mjs:303 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 2 test(s) de la tanda: scrum1424-ya-esta.test.mjs, scrum1463b-cierre-sin-clic.test.mjs
+        process.exit(ciego ? SALIDA_CIEGO : SALIDA_MIRADO)
+   scripts/traspaso-derivado.mjs:240 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum1427-traspaso-derivado.test.mjs
+        process.exit(r.codigo)
+   scripts/equipo/cierre-sin-clic.mjs:349 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum1463b-cierre-sin-clic.test.mjs
+        process.exit(SALIDA_CIEGO)
+   scripts/equipo/cierre-sin-clic.mjs:351 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum1463b-cierre-sin-clic.test.mjs
+        process.exit(c)
+   scripts/equipo/barrer-jobs.mjs:205 · exitCode = principal(process.argv.slice(2 · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 12 test(s) de la tanda: scrum1123d-latido-dice-el-veredicto.test.mjs, scrum1298b-latido-arbol-de-arranque.test.mjs, scrum1350-latido.test.mjs, scrum1357b-parados.test.mjs, …
+        process.exitCode = principal(process.argv.slice(2))
+   scripts/equipo/censo-rutas-de-maquina.mjs:391 · exitCode = salida · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum1485-censo-rutas-de-maquina.test.mjs
+        process.exitCode = salida
+   scripts/_censo-rango-del-parte.mjs:211 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum1488-rango-del-parte.test.mjs
+        process.exit(SALIDA_NO_MEDIDO)
+   scripts/_censo-rango-del-parte.mjs:216 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum1488-rango-del-parte.test.mjs
+        process.exit(r.fallos.length ? 1 : 0)
+   scripts/respaldo-programado.mjs:332 · exit(<expresión>) · en la función principal() · no exportada · lo importan 1 test(s) de la tanda: scrum1525b-el-respaldo-por-correo.test.mjs
+        process.exit(v.codigo === 0 ? SALIDA.NO_ENTREGADO : SALIDA.SIN_RESPALDO)
+   scripts/respaldo-programado.mjs:354 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum1525b-el-respaldo-por-correo.test.mjs
+        process.exit(codigo)
+   scripts/equipo/simulacro-del-vigia.mjs:140 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum1542c-el-hueco-se-fecha-por-entrada.test.mjs
+        process.exit(v.sono ? 0 : 1)
+   scripts/zona-roja.mjs:132 · exit(0) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 2 test(s) de la tanda: scrum168-zona-roja.test.mjs, scrum187-codeowners-zona-roja.test.mjs
+        process.exit(0)
+   scripts/diagnostico-dependencias.mjs:230 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum351-diagnostico-dependencias.test.mjs
+        process.exit(filas.some((f) => f.veredicto === 'no legible') ? 1 : 0)
+   scripts/preview-migracion.mjs:175 · exit(0) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 2 test(s) de la tanda: scrum385-preview-fiable.test.mjs, scrum475-schema-vs-sql.test.mjs
+        process.exit(0)
+   scripts/tabla-verifactu.mjs:486 · exitCode = codigoDeSalida(r) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum524b-trinquete-de-la-tabla.test.mjs
+        process.exitCode = codigoDeSalida(r)
+   scripts/censo-arbitro-de-toque.mjs:251 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum562-arbitro-de-toque.test.mjs
+        process.exit(fallos ? 1 : 0)
+   scripts/registro-de-lo-aprobado.mjs:156 · exit(0) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum563-registro-de-lo-aprobado.test.mjs
+        process.exit(0)
+   scripts/registro-de-lo-aprobado.mjs:167 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum563-registro-de-lo-aprobado.test.mjs
+        process.exit(r.caducadas.length || r.sinAnclaje.length ? 1 : 0)
+   scripts/comprobar-encargo.mjs:201 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum565-encargo-completo.test.mjs
+        process.exit(r.parar ? 1 : 0)
+   scripts/censo-cr-en-disco.mjs:275 · exit(0) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum570-cr-en-disco.test.mjs
+        process.exit(0)
+   scripts/censo-cr-en-disco.mjs:283 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum570-cr-en-disco.test.mjs
+        process.exit(r.ok ? 0 : 1)
+   scripts/ci-de-la-rama.mjs:124 · exit(<expresión>) · en la función principal() · no exportada · lo importan 1 test(s) de la tanda: scrum618-leer-el-ci.test.mjs
+        process.exit(SALIDA_CIEGO)
+   scripts/ci-de-la-rama.mjs:133 · exit(<expresión>) · en la función principal() · no exportada · lo importan 1 test(s) de la tanda: scrum618-leer-el-ci.test.mjs
+        process.exit(SALIDA_CIEGO)
+   scripts/ci-de-la-rama.mjs:143 · exit(<expresión>) · en la función principal() · no exportada · lo importan 1 test(s) de la tanda: scrum618-leer-el-ci.test.mjs
+        process.exit(SALIDA_CIEGO)
+   scripts/ci-de-la-rama.mjs:172 · exit(<expresión>) · en la función principal() · no exportada · lo importan 1 test(s) de la tanda: scrum618-leer-el-ci.test.mjs
+        process.exit(hayRojo ? SALIDA_ROJO : SALIDA_OK)
+   scripts/censo-tablero-vs-arbol.mjs:199 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 11 test(s) de la tanda: scrum1259-abierto-con-trabajo-en-main.test.mjs, scrum1372-auditoria-cierres.test.mjs, scrum1418-sesiones-que-no-volvieron.test.mjs, scrum1424-ya-esta.test.mjs, …
+        process.exit(noSeFia ? 2 : 0)
+   scripts/censo-guards-gateados.mjs:121 · exit(<expresión>) · en la función principal() · no exportada · lo importan 2 test(s) de la tanda: scrum754-el-juez-que-oscila.test.mjs, scrum846b-siembras-a-los-quince.test.mjs
+        process.exit(SALIDA_CIEGO)
+   scripts/censo-guards-gateados.mjs:136 · exit(<expresión>) · en la función principal() · no exportada · lo importan 2 test(s) de la tanda: scrum754-el-juez-que-oscila.test.mjs, scrum846b-siembras-a-los-quince.test.mjs
+        process.exit(SALIDA_EXPUESTO)
+   scripts/censo-guards-gateados.mjs:142 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 2 test(s) de la tanda: scrum754-el-juez-que-oscila.test.mjs, scrum846b-siembras-a-los-quince.test.mjs
+        process.exit(SALIDA_CIEGO)
+   scripts/frontera-dist.mjs:158 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 31 test(s) de la tanda: restauracion-del-arbol-ejecutable.test.mjs, scrum1100d-el-rojo-dice-lo-que-sabe.test.mjs, scrum1321-el-resumen-no-prueba-el-final.test.mjs, scrum586-forma-de-pago-por-cliente.test.mjs, …
+        process.exit(SALIDA_CIEGO)
+   scripts/frontera-dist.mjs:176 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 31 test(s) de la tanda: restauracion-del-arbol-ejecutable.test.mjs, scrum1100d-el-rojo-dice-lo-que-sabe.test.mjs, scrum1321-el-resumen-no-prueba-el-final.test.mjs, scrum586-forma-de-pago-por-cliente.test.mjs, …
+        process.exit(SALIDA_DESAJUSTE)
+   scripts/censo-cuenta-de-control-con-grep.mjs:377 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum766-el-grep-que-cuenta-lineas.test.mjs
+        process.exit(SALIDA_CIEGO)
+   scripts/censo-cuenta-de-control-con-grep.mjs:385 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum766-el-grep-que-cuenta-lineas.test.mjs
+        process.exit(SALIDA_CIEGO)
+   scripts/censo-cuenta-de-control-con-grep.mjs:400 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum766-el-grep-que-cuenta-lineas.test.mjs
+        process.exit(SALIDA_CIEGO)
+   scripts/censo-cuenta-de-control-con-grep.mjs:423 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum766-el-grep-que-cuenta-lineas.test.mjs
+        process.exit(SALIDA_HALLAZGO)
+   scripts/arbol-mio.mjs:55 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum774-arbol-de-otra-sesion.test.mjs
+        process.exit(r.veredicto === 'NO-MIO' || r.veredicto === 'CIEGO' ? 1 : 0)
+   scripts/medir-concurrencia-emision.mjs:77 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum781-concurrencia-de-la-factura.test.mjs
+        process.exit(SALIDA_DESTINO_NO_DEV)
+   scripts/censo-respaldo-de-la-n.mjs:281 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum801-el-respaldo-de-la-n.test.mjs
+        process.exit(principal())
+   scripts/censo-escritores-del-arbol.mjs:228 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum808-el-arbol-que-queda-mutado.test.mjs
+        process.exit(principal())
+   scripts/puerta-claude.mjs:251 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum853d-cortacircuitos.test.mjs
+        process.exit(r.despertar ? 0 : 1)
+   scripts/puerta-claude.mjs:264 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum853d-cortacircuitos.test.mjs
+        process.exit(r.declarar ? 1 : 0)
+   scripts/censo-lista-como-fixture.mjs:416 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum938-la-lista-como-fixture.test.mjs
+        process.exit(SALIDA_CIEGO)
+   scripts/censo-lista-como-fixture.mjs:425 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum938-la-lista-como-fixture.test.mjs
+        process.exit(r.acusados.length ? SALIDA_ACUSA : SALIDA_OK)
+   scripts/censo-lista-como-fixture.mjs:442 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum938-la-lista-como-fixture.test.mjs
+        process.exit(r.acusados.length ? SALIDA_ACUSA : SALIDA_OK)
+   scripts/censo-lista-como-fixture.mjs:473 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum938-la-lista-como-fixture.test.mjs
+        process.exit(confirmados.length ? SALIDA_ACUSA : SALIDA_OK)
+   scripts/censo-lista-como-fixture.mjs:477 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum938-la-lista-como-fixture.test.mjs
+        process.exit(r.acusados.length ? SALIDA_ACUSA : SALIDA_OK)
+   scripts/censo-afirmaciones-de-skills.mjs:353 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum939b-trinquete-de-las-skills.test.mjs
+        process.exit(falsas.length ? 1 : 0)
+   scripts/equipo/huerfanos.mjs:299 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 2 test(s) de la tanda: scrum946-censo-de-huerfanos.test.mjs, scrum966-censo-ve-las-ramas.test.mjs
+        process.exit(r.codigo)
+   scripts/equipo/norma.mjs:389 · exit(<expresión>) · en el bloque de programa (sólo corre si se LANZA el fichero, no al importarlo) · lo importan 1 test(s) de la tanda: scrum996-suelo-de-arranque.test.mjs
+        process.exit(r.codigo)
+
+por forma: exit(0) 20 · exit(<expresión>) 105 · exitCode = orden === 'repartos' ? await r 1 · exitCode = await ejecutar(process.argv.sl 4 · exitCode = mal ? 1 : 0 1 · exitCode = principal(process.argv.slice(2 2 · exitCode = await principal() 1 · exitCode = salida 1 · exitCode = codigoDeSalida(r) 1
+PUEDEN CALLAR un caído en el proceso de un test de la tanda (lo que mira el guard scrum1520d): 0
+
+CIEGO: el banco no ha pasado sus propios controles y esta tabla NO VALE:
+   · sin siembra: ningún positivo que comprobar (el banco no puede decir que ve lo que busca)

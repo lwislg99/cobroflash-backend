@@ -83,8 +83,9 @@
   // 🔴 LA MISMA CONDICIÓN QUE LA PÁGINA (`ESTADOS_CON_ENLACE_VIVO` en
   // `src/modules/quotes/domain/versionMasReciente.ts`): sólo avisa si el enlace va a morir. Y NO se
   // estrecha a `sent`: copiar el enlace ya es entregarlo y el estado se queda en `draft` (SCRUM-1297),
-  // así que un borrador no prueba que el enlace no haya salido (c.19475).
-  var ESTADOS_CON_ENLACE_VIVO = ['draft', 'sent'];
+  // así que un borrador no prueba que el enlace no haya salido (c.19475). Y `expired` también
+  // (c.19636): el enlace de una caducada pasa de «caducó» a «hay una versión más reciente».
+  var ESTADOS_CON_ENLACE_VIVO = ['draft', 'sent', 'expired'];
 
   // SCRUM-1150 · CUANDO «CREAR REVISIÓN» FALLA, LA PANTALLA DECIDE POR EL CÓDIGO, NO PINTA EL
   // `message` QUE VENGA. Conducta y literales firmados por el orquestador por delegación del

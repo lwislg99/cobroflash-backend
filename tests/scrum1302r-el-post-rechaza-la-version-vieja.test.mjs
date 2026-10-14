@@ -137,6 +137,11 @@ test('SCRUM-1302r · 🔴 también en BORRADOR, y va ANTES que el caducado (punt
   const r = await decidir(fila(0).decisionToken, { decision: 'accept' });
   assert.equal(r.status, 409, '🔴 sale «Pide uno actualizado» (410) habiendo ya uno');
   assert.equal(r.data.error, 'quote_has_newer_version');
+  // c.19636 punto 2 (#2451): la que ya barrió el cron a `expired` también cuenta.
+  TABLA = [fila(0, { status: 'expired', validUntil: '2026-01-01T00:00:00.000Z' }), fila(1)];
+  const x = await decidir(fila(0).decisionToken, { decision: 'accept' });
+  assert.equal(x.status, 409, `🔴 una .0 en «expired» habiendo .1 contesta ${x.status}`);
+  assert.equal(x.data.error, 'quote_has_newer_version');
 });
 
 test('SCRUM-1302r · una .0 ya ACEPTADA sigue idempotente (punto 6: historia cierta)', async () => {

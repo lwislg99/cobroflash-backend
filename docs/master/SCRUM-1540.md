@@ -84,3 +84,46 @@ del guion y el `main` sintético del test).
   y los 14 guards de entrada.
 - El control de proporción del apartado sale hoy 🔴 en el árbol real (14 apartadas de 19, 73,7 %): ya
   salía así con el guion viejo. No es este defecto y no se ha mirado por qué.
+
+---
+
+## SCRUM-1540b · ⑤ el barrido del patrón (14-oct-2026, 09:28Z, S5)
+
+Medido sobre `origin/main` = `79531cf8435857e973405bff594c56be0e915342` · rama `scrum-1540b-enlace-por-la-punta-viva`.
+`SCRUM-1539` ya barrió `ls-remote` (1.826 ficheros, 19 lo nombran): se cita y no se repite. Esto barre lo que faltaba.
+
+**Población:** 1.863 ficheros de `scripts/` y `tests/` en `origin/main` (de ellos, 9 en `scripts/verificacion-s5/`,
+22 en `scripts/equipo/` y 1.553 en `tests/`). **29** nombran `is-ancestor` o `merge-base`; **19** listan ramas
+(`branch -r`, `--merged`, `--no-merged`, `for-each-ref`). Los sitios de `scripts/` que EJECUTAN `--is-ancestor`, uno a uno:
+
+| fichero | qué hace con el 128 | veredicto |
+| --- | --- | --- |
+| `scripts/equipo/ya-esta.mjs:206` | 0 dentro · 1 fuera · lo demás a `ciegos` | ✅ tres valores; hace `fetch --prune` antes |
+| `scripts/sesiones-que-no-volvieron.mjs:283` | 0 · 1 · `undefined` | ✅ tres valores |
+| `scripts/censo-reparto.mjs:59-63` | `cat-file -e` antes → `null`; luego el `catch` da «no» | ✅ con el `cat-file`; resto: un 128 con el sha presente caería en «no», lado ruidoso |
+| `scripts/_censo-alcanzabilidad.mjs:374-375` | igual: `cat-file -e` antes | ✅ igual que el anterior; hace `fetch --prune` |
+| `scripts/vigilante-de-despliegue.mjs:64-66` | `cat-file -e` antes; luego `!== null` | ✅ igual; el error cae en «no está en main», que alarma, no borra |
+| `scripts/censo-regla-42.mjs:135` | cualquier error → «rama viva SIN mergear» | 🟡 sin `cat-file`: en un clon somero da falsos «sin mergear» (lo que midió 1539). Lado seguro: impide cerrar, no borra. No tocado |
+| `scripts/verificacion-s5/ramas-borrables.mjs` | arreglado en SCRUM-1540 (#2443) | ✅ |
+
+**Lo que listaba ramas y decía «se puede borrar» — arreglado aquí:** `scripts/verificacion-s5/enlace-ticket-rama.mjs`
+(`npm run enlace:ticket-rama`) decidía el mergeado con `git branch -r --merged origin/main` sobre las refs LOCALES, sin
+`fetch`. Es el defecto de 1540 en el hermano:
+
+- **El rojo, visto antes de arreglar**, en un clon desechable (`git clone --shared` en el temporal del job, `origin` a
+  GitHub): con la ref local de `scrum-812d-titula-guard-por-palabra` puesta en `origin/main~3` (su punta viva `7f30bd99`
+  tiene un commit fuera de `main`), el guion sin tocar dijo **«VIVA pero YA MERGEADA (se puede borrar)»**, salida 0.
+  Con el arreglo y la misma ref atrasada: **«🔴 VIVA Y SIN MERGEAR»**.
+- **Ahora** usa el `clasificar` de `ramas-borrables.mjs`: punta viva de `ls-remote`, `cat-file -e`, tres respuestas;
+  la que no se puede saber sale «estado de merge DESCONOCIDO».
+- **Y de paso, el mismo defecto por el otro lado:** su `--foto` decía «borrables: 18» donde `ramas-borrables` dice 5.
+  Daba por borrables las 14 que ningún merge nombra (su PR pudo quedar abierto). Ahora: «YA MERGEADAS: 18 · borrables
+  (un merge las nombra): 4 · apartadas, mirar su PR (14)». El 4 frente al 5 es la rama SIN número de ticket, que la
+  foto de este guion no recorre.
+- Control con las refs al día (después de `fetch --prune`): el guion viejo y el nuevo dan las mismas 18 dentro de main.
+- `tests/scrum723-guard-contra-su-base.test.mjs`: dos declaraciones nuevas con su motivo (el `rev-parse` y la mención
+  de `origin/main`), como las de 1540. No se afloja nada.
+
+**Corrido:** `scrum637`, `scrum723`, `scrum1540` → 30/30. **No corrido:** la tanda completa en local.
+**No mirado:** los 22 `tests/` del barrido (usan `merge-base` en fixtures y juguetes, no deciden sobre el remoto) ni los
+`merge-base` que calculan una base (`_suelo-contra-main`, `censo-conflictos-package`, `capturas-lista-trabajos*`).
