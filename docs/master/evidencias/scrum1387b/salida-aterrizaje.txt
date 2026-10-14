@@ -1,0 +1,12 @@
+rama (HEAD de este árbol) 3ce35c00671c1bcf8d0637511131c0d964477181
+main de partida .......... 7802d7cb509a6d57593e470f26702646668ae4be
+OK  | control: en ese main el test todavía NO existe
+   población: 137 ficheros con «mut» en el nombre · 55 bancos · 32 fuera · 32 heredados · 0 nuevos · historia de 2717 commits · corte 51ffd977f (2026-10-13T13:47:04+01:00)
+OK  | al aterrizar con un banco que entró en vuelo: 6 casos · 6 pasan · 0 caen (tiene que pasar)
+OK  | el que entró en vuelo (docs/master/evidencias/__entra-mientras-espera__/mutar.mjs) sale como HEREDADO
+   población: 138 ficheros con «mut» en el nombre · 56 bancos · 33 fuera · 32 heredados · 1 nuevos · historia de 2718 commits · corte 51ffd977f (2026-10-13T13:47:04+01:00)
+OK  | el que entra después: 6 casos · 5 pasan · 1 caen (tiene que caer 1 y nombrarlo)
+OK  | y NO nombra al que entró en vuelo
+OK  | heredados 32 (igual que al aterrizar: 32) · nuevos 1
+mal 0
+EXIT=0

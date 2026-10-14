@@ -1,0 +1,47 @@
+censo medido: tests/_censo-por-posicion.mjs · 13958 B
+
+① SIEMBRA · raíz fabricada, una cita por fichero · población: 8 ficheros
+   el censo leyó 8 ficheros y halló 6
+   VE      entera-en-comillas                           en ejecución es la cita: sí
+   VE      entera-en-plantilla-sin-huecos               en ejecución es la cita: sí
+   VE      join                                         en ejecución es la cita: sí
+   VE      concatenada                                  en ejecución es la cita: sí
+   VE      plantilla-con-la-linea-en-un-hueco           en ejecución es la cita: sí
+   VE      entera-en-plantilla-con-un-hueco-al-lado     en ejecución es la cita: sí
+   NO VE   linea-en-una-constante                       en ejecución es la cita: sí
+   NO VE   dos-puntos-por-codigo                        en ejecución es la cita: sí
+   el veneno entró en 8 de 8 · el censo VE 6 de 8
+
+② EL CASO REAL · tests/scrum1537-los-dos-cotejos.test.mjs, sacado de git a la raíz fabricada
+   1b827185f · 10507 caracteres · «sembrado.ts» aparece 3 veces · el censo leyó 1 y halló 3 (src/sembrado.ts:1, src/sembrado.ts:1, src/sembrado.ts:1)
+   5b46be141 · 10676 caracteres · «sembrado.ts» aparece 1 veces · el censo leyó 1 y halló 1 (src/sembrado.ts:1)
+
+③ EL BARRIDO · tests/ y scripts/ · 1795 ficheros leídos (.mjs/.js/.ts, los que lee el censo) · 36 que el censo NO lee por su extensión
+   no leídos, por extensión: .json 23 · .md 3 · .cjs 2 · .tap 2 · .png 1 · .txt 1 · .jsonl 1 · .xml 1 · (sin) 1 · .ps1 1
+   control: el censo de verdad lee 1795 y halla 47 citas enteras
+   expresiones que arman texto (plantilla con huecos, suma, join de una lista): 25167 · literales de dentro con la cita ya entera (los ve el censo de siempre): 19
+   A · fichero y línea ESCRITOS, sólo troceados: 3 en 3 ficheros
+       tests/scrum398-vocabulario-de-cobro.test.mjs:162  `🔴 «manual» sale como «${etiquetaMetodoCobro('manual')}». Lo fabrica \`reports.routes.ts:164\` ` + 'al leer u
+       tests/scrum403-beneficio-sin-iva.test.mjs:156  `🔴 el censo ve ${cifras.length} cifras y se localizaron 5 a mano (reports.routes.ts:85, :120, ` + ':127 y des
+       scripts/_banco-lista.mjs:78  `<!doctype html><html lang="es"><head><meta charset="utf-8"> <meta name="viewport" content="width=device-width
+   B · fichero escrito, línea en un hueco: 7 en 6 ficheros
+       tests/scrum205-un-solo-punto-de-sellado.test.mjs:131  `src/lib/invoicing.ts:${l.linea} → ${l.nombre}()`
+       tests/scrum216-tipo-rectificativa-sin-defecto.test.mjs:362  `registro.builder.ts:${d.linea}`
+       tests/scrum216-tipo-rectificativa-sin-defecto.test.mjs:365  ` registro.builder.ts:${d.linea}\n ${d.texto}`
+       tests/scrum447-byte-invisible-en-patrones.test.mjs:95  `falso.mjs:${i + 1}`
+       tests/scrum650d-pantalla-asignar.test.mjs:348  ` jobs.routes.ts:${s.linea} → ${JSON.stringify(s.props)}`
+       tests/scrum712-decimales-de-precio.test.mjs:98  ` schemas.ts:${c.linea} ${c.campo}: ${c.texto}`
+       tests/scrum720b-el-nav-abre.test.mjs:190  ` app.js:${x.linea} ${x.nombre}`
+   C · fichero en un hueco, línea ESCRITA: 26 en 14 ficheros
+   D · fichero y línea en huecos: 406 en 237 ficheros
+   expresión regular con un fichero:línea escrito dentro: 7
+       tests/scrum1424-ya-esta.test.mjs:81  /docs\/master\/SCRUM-9\.md:4 «SCRUM-7 queda cubierto aquí»/
+       tests/scrum1424-ya-esta.test.mjs:166  /docs\/master\/SCRUM-40\.md:3 «SCRUM-43 queda cubierto aquí/
+       tests/scrum1452-gemelo-crudo.test.mjs:225  /no parsea \(src\/roto\.ts:1\)/
+       tests/scrum390-puerta-cliente-real.test.mjs:91  /YAQU_MASTER\.md:1472/
+       tests/scrum411-exports-inalcanzables.test.mjs:475  /src\/modules\/x\/domain\/motor\.ts:4/
+       tests/scrum475-ignoran-el-resultado.test.mjs:272  /src\/core\/cron\/cron\.ts:110/
+       tests/scrum778-la-lista-cableada.test.mjs:210  /rutas\.ts:1[01]/
+   cita entera a una extensión que el censo no reconoce (cjs, css, json, prisma…): 0 en 0 ficheros
+
+EXIT=0
