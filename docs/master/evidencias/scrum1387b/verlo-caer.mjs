@@ -20,7 +20,12 @@ const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '.
 const TEST = 'tests/scrum1387-banco-nuevo-va-al-catalogo.test.mjs';
 const CASO_DEL_ARBOL = 'en el árbol: ningún banco de mutación nuevo queda fuera del catálogo';
 const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1387b-'));
-const git = (args, cwd = RAIZ) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+// SCRUM-1387c: el temporal se borra SALGA POR DONDE SALGA. Este guion tiene tres salidas que no llegan
+// al final —los dos «NO ARRANCO» (`process.exit(2)`) y cualquier `git` que lance— y un `finally` no
+// cubre un `process.exit`. Dentro puede haber un clon entero del repositorio. No se traga el error:
+// si no se puede borrar, que se vea.
+process.on('exit', () => fs.rmSync(TMP, { recursive: true, force: true, maxRetries: 3 }));
+const git =(args, cwd = RAIZ) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
 
 /** Corre el test en `raiz` con el entorno limpio. Devuelve `{ pasan, caen, caidos: [nombre], tap }`. */
 function correr(raiz = RAIZ) {
@@ -152,7 +157,10 @@ console.log('');
 for (const f of filas) console.log(f);
 console.log(`\nárbol después: HEAD ${HEAD1 === HEAD0 ? 'igual' : '🔴 DISTINTO ' + HEAD1} · git status ${estado1 ? '🔴 ' + estado1 : 'limpio'}`);
 if (HEAD1 !== HEAD0 || estado1) fallos += 1;
-fs.rmSync(TMP, { recursive: true, force: true });
+fs.rmSync(TMP, { recursive: true, force: true, maxRetries: 3 });
+const quedaElTemporal = fs.existsSync(TMP);
+console.log(`temporal ${quedaElTemporal ? '🔴 SIGUE EN DISCO: ' + TMP : 'borrado'}`);
+if (quedaElTemporal) fallos += 1;
 console.log(`filas ${filas.length} · mal ${fallos}`);
 console.log(`EXIT=${fallos ? 1 : 0}`);
 process.exit(fallos ? 1 : 0);
