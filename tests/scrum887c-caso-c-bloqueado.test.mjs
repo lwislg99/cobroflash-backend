@@ -132,6 +132,7 @@ function prismaDeDoble(quote, escrituras) {
   const p = moduloPrisma.prisma;
   p.quote = {
     findFirst: async () => quote, findUnique: async () => quote, findMany: async () => [quote],
+    count: async () => 0, // SCRUM-1302r · la ruta pregunta si hay una versión más reciente del grupo; aquí, ninguna.
     update: anota('quote.update'), create: anota('quote.create'),
   };
   p.invoice = { findMany: async () => [], findFirst: async () => null, create: anota('invoice.create') };

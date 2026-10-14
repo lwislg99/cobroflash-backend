@@ -29,6 +29,7 @@ comercial, o «el profesional», como en la página del rechazo:
 - T1 y T2, una frase entera por país en `src/core/i18n/locales.ts` (`quoteUpdatedTitle`,
   `quoteHasNewer`), como los títulos de SCRUM-1476.
 - La pregunta «¿tiene una versión más reciente?», en `src/modules/quotes/domain/versionMasReciente.ts`.
+- T3, desde SCRUM-1302r, en el mismo fichero (`fraseDeLaVersionAntigua`): lo dicen la página y el `message` del `POST`.
 
 ## La conducta firmada con ellos (los siete puntos de c.19451)
 
@@ -57,5 +58,5 @@ En los países de «cotización» (México, Colombia, Perú y Chile) T1 es «Cot
 
 ## Lo que queda sin firmar en esta página
 
-- Rechazar en el servidor la decisión sobre una versión no vigente (`POST /quote/:token/decision`) es
-  de S1, con su propio texto.
+- Rechazar en el servidor la decisión sobre una versión no vigente (`POST /quote/:token/decision`):
+  hecho en SCRUM-1302r (S1), 409 con `message` = T2 y T3 seguidos, lo firmado en c.19454 punto 6 y c.19636 punto 3.
