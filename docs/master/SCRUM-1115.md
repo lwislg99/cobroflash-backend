@@ -106,6 +106,38 @@ facturas.
   `no-reply@`, y ningún llamador del cliente final pasa `replyTo`. Es texto que ve el usuario y una
   decisión del fundador, así que aquí solo se nombra.
 
+## 5 · Después del cambio del fundador (14-oct): qué consta y qué no se puede verificar desde aquí
+
+**Observación del fundador**, transmitida por el orquestador, no medida aquí: «Llega el email de
+yaqu ya, no presufacil, está cambiado.» Lo que vio llegar sale del **backend**.
+
+- **Resend (SCRUM-1196):** según esa observación, el correo llega. Resend rechaza el envío desde un
+  dominio sin verificar, así que el dominio del remite nuevo está verificado. ⚠️ «de yaqu» puede ser
+  solo el NOMBRE visible (`YaQu <noreply@presufacil.online>` también «llega de yaqu»). Que el
+  dominio sea `yaqu.app` lo dice la dirección entre `<…>`, no el nombre.
+- **¿Hay algún sitio del repo que registre qué remite usó un envío? No hay ninguno.** Se leyeron los
+  tres:
+  - backend: el log `[correo]` (`src/integrations/enviarCorreo.ts:133`, `:146`, `:192`, `:204`) lleva
+    `evento`, `via`, `id`, `origen`, `to` enmascarado y `asunto`, pero **no `from`**. La fila de
+    `registrarEnvio` (`registroDeEnvios.ts`) tampoco lo guarda: su `error` incluso enmascara toda
+    dirección.
+  - cron de acreditación: su `rastro` (`scripts/aviso-programado-acreditacion-invoicing-es.mjs:266`)
+    lleva el asunto y si se entregó, **no el remitente**.
+  - respaldo programado: igual, `remitente` entra en `sendMail` (`scripts/respaldo-programado.mjs:250`)
+    y no se escribe en ningún log.
+- **Dónde SÍ consta, fuera del repo:** en el registro de envíos de Resend, que guarda el `From` de
+  cada correo. Se puede mirar desde el panel o con `GET /emails/{id}` (el `id` es el `provider_id`
+  de la fila). Esto sale de lo que sé de la API de Resend: aquí no se ha llamado ni se ha releído su
+  documentación. Con eso, quien tenga la cuenta puede mirar el último envío de **cada** servicio. Para
+  los dos cron, si ya han corrido después del cambio. Si no han corrido, lo único es leer la
+  variable en cada servicio de Railway.
+
+| Servicio | `EMAIL_FROM` cambiado |
+|---|---|
+| backend | **consta** (observación del fundador: el correo llega como YaQu) |
+| cron de acreditación | **no se puede verificar desde aquí**: solo el fundador, en Railway o en el panel de Resend |
+| respaldo programado | **no se puede verificar desde aquí**: ídem, si el servicio existe |
+
 ## Qué NO se ha hecho
 
 - No se ha tocado código: no hay nada que cambiar en él.
