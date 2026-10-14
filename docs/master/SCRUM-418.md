@@ -259,4 +259,4 @@ declarado`. Sólo se imprime host y base.
 * `tests/scrum418c-env-local-en-el-barrido.test.mjs` — 7 casos: control, R1 a R5 y el directorio vacío.
 * `docs/master/SCRUM-418.md` — esta sección.
 
-A9: el fallo que generaliza es mío y es de ayer: lo encontré y lo dejé «reportado, sin dueño» en vez de preguntar en ese momento de quién era. Lo apunto como lo que fue: un hueco en un guard de producción que se quedó abierto un relevo más.
+A9: aviso → cicatriz S0 «Encontré un hueco en un guard de producción y lo dejé reportado y sin dueño en vez de preguntar en ese momento de quién era: siguió abierto un relevo más.» — no se pudo comprobar: preguntar de quién es un hallazgo es una conducta, y ningún test ve la pregunta que no se hizo
