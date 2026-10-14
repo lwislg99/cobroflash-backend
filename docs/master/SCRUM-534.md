@@ -1544,3 +1544,88 @@ El ticket no trae lista de aceptación para este tramo; las filas son las del en
   La cláusula entera sigue marcada para el asesor.
 - No he corrido `npm test`: este árbol no tiene `dist/` ni dependencias. Corrí los guards que leen
   documentos y no las necesitan; el resultado va en la entrega.
+
+---
+
+# APÉNDICE · 14-oct-2026 · SCRUM-534q · Las siete redacciones de la opción P2, APLICADAS
+
+**Medido contra:** `origin/main` = `c30729832c18b65c3793917ca836868e6cfdaa6e` · 2026-10-14T03:30:19Z
+
+A9: sin fallo que generalice — no hubo tropiezo propio en este tramo que otra sesión pueda repetir: el único error (la sonda de pantalla arrancó sin `path` en su ámbito) salió en rojo y ruidoso a la primera, y la sonda es de un solo uso
+
+**Quién:** jv-j4c (puesto J4), por encargo del orquestador de Javier (`cobroflash-backend-2e`).
+El hook de inicio dijo «SIN IDENTIDAD»; se construye con la orden del orquestador, que remite a
+SCRUM-1549 (la puerta de identidad responde ALTERADO desde el 28-sep).
+
+## 1 · La firma, leída en Jira y no en el prompt
+
+- **`SCRUM-534 c.19531`** (14-oct-2026, ~03:25Z, transcrito por el orquestador): literal del fundador
+  **«Ok vamos con tu recomendación»**, sobre la recomendación P2. Habilita aplicar las siete
+  redacciones de la opción P2 tal como están en el `c.19520`. NO habilita: ningún otro texto (el
+  `c.16395`: «Eso es un CRITERIO, no una reescritura en blanco»), nada más de `docs/legal`, ni cambiar
+  la regla 24, la 17 ni `INVOICING_ES_ENABLED`.
+- **`SCRUM-534 c.19520`** (jv-j4b, 14-oct-2026): el literal de cada redacción. Se ha copiado de ahí,
+  no de un resumen.
+- Etiquetas del ticket al arrancar: `area-j4, decision-jefe, equipo-javier, fundador, legal, verifactu`.
+  Ni `equipo-luis`, ni `area-s*`, ni `esperando-*`.
+
+**Cómo salen siete.** El `c.19520` etiqueta siete piezas: P1, P2, P3, E1, E2, Q1, H1. P2 se define allí
+como «P1 y, detrás de «para ti.», esta frase»: elegir P2 es aplicar el texto de P1 MÁS la frase. Son
+siete literales en seis sitios. Ninguno queda sin aplicar y no hay un octavo.
+
+## 2 · Lo aplicado, fichero por fichero
+
+| id | fichero:línea | queda |
+|---|---|---|
+| P1 | `docs/legal/ALCANCE_BETA.md:28-29` | «La **facturación con sistema VERI*FACTU se activará al cerrar la declaración responsable** del fabricante, **sin cambio de precio** para ti.» |
+| P2 | `docs/legal/ALCANCE_BETA.md:29`, detrás de «para ti.» | «Hoy la remisión a Hacienda todavía no está construida, y no existe una «certificación» de VeriFactu: el régimen se basa en una declaración responsable del fabricante, que publicaremos en cuanto el envío esté terminado.» |
+| P3 | `docs/legal/ALCANCE_BETA.md:4-5` (cabecera, no se sirve) | «presupuestos+firma+albaranes; el cobro a tus clientes y la facturación VeriFactu se activan al cerrar la declaración responsable del fabricante, sin cambio de precio» |
+| E1 | `docs/legal/EMAIL_ASESOR.md:20` | «¿Puedo cobrar la suscripción antes de tener la facturación fiscal operativa?» |
+| E2 | `docs/legal/EMAIL_ASESOR.md:22-23` | «La facturación con **VeriFactu** la activaré cuando el envío a la AEAT esté construido y la declaración responsable del fabricante esté firmada (hoy es un borrador), sin subir el precio al cliente.» |
+| Q1 | `docs/legal/PREGUNTAS_ASESOR.md:66` | «VERI*FACTU se activará al cerrar la declaración responsable del fabricante, sin cambio de precio» |
+| H1 | `docs/legal/INVESTIGACION_ALBARANES.md:330` | «El módulo de facturación aguas abajo debe cumplir el RRSIF y llevar la declaración responsable de su fabricante» |
+
+No se mueve ninguna línea (9 dentro, 9 fuera; la frase de P2 va en la misma línea física 29). P3 se
+comprobó contra el V0-6 de hoy (`docs/YAQU_MASTER.md:1006`), que dice lo mismo.
+
+## 3 · Lo que se ve EN PANTALLA (`/legal/alcance-beta`)
+
+Medido pasando el fichero por el renderizador REAL (`mdToHtml`/`readLegalDoc` extraídos de
+`src/modules/system/app/routes/legalPages.routes.ts` y transpilados, no copiados a mano). Control: sobre
+el fichero de `main` la sonda da la versión `4deaa1a6d479`, la misma que imprime producción hoy.
+
+- El renderizador pinta **cada línea física como un elemento aparte**: la línea 28 es un punto de la
+  lista y la 29, un párrafo suelto debajo. Ya era así antes de este cambio.
+- La negrita de la línea 28 sale ROTA, como antes: el asterisco de «VERI*FACTU» parte el par, y en
+  pantalla se lee `La *` con el asterisco visible, `facturación con sistema VERI` en cursiva, y
+  `FACTU se activará al cerrar la declaración responsable**` con los dos asteriscos visibles. No se
+  arregla aquí: cambiar el marcado es otro texto y otra firma.
+- **La versión del documento pasa de `4deaa1a6d479` a `17275d59e185`.** (El `c.19520` calculó
+  `e78d68e9c02e` para P1 sola; P2 añade una frase y da otro hash, recalculado.) Si existe alguna
+  aceptación founding de la versión vieja, deja de valer para el checkout al desplegarse. No medido si
+  hay alguna: no tengo base de datos.
+- P3, E1, E2, Q1 y H1 no se sirven en ninguna pantalla (P3 es cabecera `>`, que se omite; los otros
+  tres ficheros no tienen ruta). Su «pantalla» es el fichero.
+
+## 4 · Lo que NO se ha tocado
+
+- Ningún texto fuera de los siete. En concreto, en los mismos ficheros siguen igual: «Cobro integrado»
+  y «Justificantes de cobro» de `ALCANCE_BETA.md` y la frase «Hasta ese momento YaQu emite justificantes
+  de cobro» (contradicen la regla 24; ticket aparte, sin decidir), y `EMAIL_ASESOR.md:21`.
+- `docs/COMO_FUNCIONA_YAQU.md` y `docs/SPRINT_DEMO_READY.md` (sin dueño; fuera de la firma).
+- `docs/YAQU_MASTER.md`, `INVOICING_ES_ENABLED`, reglas 17 y 24, el camino de emisión, `src/`,
+  `public/`, `prisma/schema.prisma`, ninguna base, ningún guard ni workflow.
+
+## 5 · Aceptación → dónde se ve
+
+| lo pedido | dónde se ve |
+|---|---|
+| leer etiquetas y la firma en Jira, citarla | apartado 1 (`c.19531`, `c.19520`) |
+| aplicar las siete de P2, ni una más | apartado 2 y `git diff` de este commit: 4 ficheros de `docs/legal/` + este registro |
+| los siete literales como quedan en pantalla | apartado 3 y la entrega al orquestador |
+
+## Lo que NO he medido
+
+- Ninguna base de datos: si hay aceptaciones founding de `4deaa1a6d479`, ni cuántas.
+- La página desplegada con el texto nuevo: hasta el merge, producción sigue sirviendo `4deaa1a6d479`.
+- Que las redacciones estén bien como DERECHO: están firmadas; la cláusula sigue marcada para el asesor.
