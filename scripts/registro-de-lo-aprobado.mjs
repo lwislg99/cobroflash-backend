@@ -12,7 +12,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
-  REGISTRO, NO_APROBADAS, estadoDe, revisar, reconstruir, leerLanding, DOC_PROPUESTA,
+  REGISTRO, NO_APROBADAS, SUPERADAS, estadoDe, revisar, reconstruir, leerLanding, DOC_PROPUESTA,
   APROBADO, PENDIENTE, NI_UNA_COSA_NI_OTRA,
 } from './_registro-de-lo-aprobado.mjs';
 
@@ -139,6 +139,14 @@ export function generar(html, raiz) {
   p('|---|---|---|---|---|');
   for (const e of REGISTRO) {
     p(`| \`${e.id}\` | «${e.texto.replace(/\|/g, '\\|')}» | ${e.via} | ${e.fecha} | ${e.quien} |`);
+  }
+  p();
+  p('## Superadas (no se borran: se marcan y se fechan)');
+  p();
+  p('| identificador | texto literal | aprobado | superada | por |');
+  p('|---|---|---|---|---|');
+  for (const e of SUPERADAS) {
+    p(`| \`${e.id}\` | «${e.texto.replace(/\|/g, '\\|')}» | ${e.fecha} · ${e.quien} | ${e.superada} | ${e.por} |`);
   }
   p();
   return L.join('\n') + '\n';
