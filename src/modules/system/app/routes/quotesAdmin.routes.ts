@@ -26,7 +26,7 @@ import { prisma } from '../../../../core/db/prisma';
 import { leerVersion, esVersionSuperada, ERROR_VERSION_SUPERADA } from '../../../../core/db/escrituraConVersion'; // SCRUM-1285
 import { formatMoneyEs } from '../../../../core/utils/utils'; // SCRUM-1288
 import { getLocale } from '../../../../core/i18n/locales'; // SCRUM-647
-import { actorDeRequest, recordAudit } from '../../audit.service'; // SCRUM-207: quién emite (C3/C4)
+import { actorDeRequest } from '../../audit.service'; // SCRUM-207: quién emite (C3/C4)
 import { puedeArchivarse, ERROR_NO_ARCHIVABLE, COPY_NO_ARCHIVABLE } from '../../../quotes/domain/archivado'; // SCRUM-1273
 import { resolveBillingPlan, distributeStageAmounts, motivoSinTramo, validarEdicionPlan } from '../../../quotes/domain/billingPlan'; // SCRUM-37
 import { sendQuoteWhatsAppToCustomer } from '../../../quotes/domain/sendQuote.service';
@@ -958,7 +958,11 @@ router.put('/:id/tags', requireRole('admin'), async (req, res) => {
  *
  * El estado leído va en el `where` (patrón de SCRUM-1276): si alguien decide entre la lectura y la
  * escritura, no se archiva sobre lo que ya no es. Archivar dos veces no mueve la fecha; desarchivar
- * uno que no lo está no escribe nada. Sólo deja traza lo que cambió.
+ * uno que no lo está no escribe nada.
+ *
+ * ⚠️ SIN auditoría, DECLARADO (SCRUM-1273 c.19655): `AuditAction` es una unión cerrada y ampliarla
+ * es cambio de máster. Hoy NO queda registro de quién archivó. ⛔ No se usa una acción parecida de
+ * las que ya existen: una acción que dice otra cosa es peor que ninguna.
  */
 router.post('/:id/archivar', requireRole('admin'), async (req, res) => {
   try {
@@ -986,11 +990,6 @@ router.post('/:id/archivar', requireRole('admin'), async (req, res) => {
       if (ahora.archivedAt) return res.json({ id: ahora.id, archivedAt: ahora.archivedAt });
       return res.status(409).json({ error: ERROR_NO_ARCHIVABLE, message: COPY_NO_ARCHIVABLE });
     }
-    recordAudit({
-      merchantId: req.merchantId, teamMemberId: req.teamMemberId ?? null,
-      action: 'presupuesto_archivado', entityType: 'quote', entityId: id,
-      meta: { status: quote.status },
-    });
     return res.json({ id, archivedAt });
   } catch (err) {
     console.error('[POST /admin/quotes/:id/archivar]', err);
@@ -1009,12 +1008,7 @@ router.post('/:id/desarchivar', requireRole('admin'), async (req, res) => {
     if (r.count === 0) {
       const existe = await prisma.quote.findFirst({ where: { id, merchantId: req.merchantId }, select: { id: true } });
       if (!existe) return res.status(404).json({ error: 'quote_not_found' });
-      return res.json({ id, archivedAt: null });
     }
-    recordAudit({
-      merchantId: req.merchantId, teamMemberId: req.teamMemberId ?? null,
-      action: 'presupuesto_desarchivado', entityType: 'quote', entityId: id,
-    });
     return res.json({ id, archivedAt: null });
   } catch (err) {
     console.error('[POST /admin/quotes/:id/desarchivar]', err);

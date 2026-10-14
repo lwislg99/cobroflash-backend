@@ -2,8 +2,8 @@
 //
 // Por la ruta real (`dist`), base doblada. El contrato es el de c.19605:
 //   · `POST /admin/quotes/:id/archivar` y `/desarchivar`, filtrando por `req.merchantId`, con
-//     `recordAudit`, archivar sólo en borrador, rechazado o caducado, y fuera de ésos un 409 con el
-//     texto firmado T10. ⛔ No tocan `status`, ni el sello, ni el documento.
+//     archivar sólo en borrador, rechazado o caducado, y fuera de ésos un 409 con el
+//     texto firmado T10. SIN auditoría: decidido en c.19655 (`AuditAction` es cerrada). ⛔ No tocan `status`, ni el sello, ni el documento.
 //   · `GET /admin/quotes` deja fuera los archivados por defecto; `?archivados=1` devuelve sólo ésos.
 //   · el detalle devuelve `archivedAt`; una decisión sobre un archivado lo desarchiva.
 //
@@ -89,11 +89,11 @@ async function llamar(pila, { id = ID, merchantId = MERCHANT, rol = 'admin', que
       if (!siguio) break;
     }
   } finally { console.error = deVerdad; }
-  await new Promise((r2) => setImmediate(r2)); // `recordAudit` es fire-safe
+  await new Promise((r2) => setImmediate(r2)); // por si algo escribiera sin esperar: se vería en `auditorias`
   return r;
 }
 
-test('SCRUM-1273 · SUELO: archivar un borrador escribe SÓLO archivedAt, con su traza', async () => {
+test('SCRUM-1273 · SUELO: archivar un borrador escribe SÓLO archivedAt, y SIN auditoría (c.19655)', async () => {
   preparar();
   const r = await llamar(ARCHIVAR);
   assert.equal(r.status, 200, `🔴 CIEGO: el caso sano responde ${r.status} ${JSON.stringify(r.body)}`);
@@ -101,9 +101,7 @@ test('SCRUM-1273 · SUELO: archivar un borrador escribe SÓLO archivedAt, con su
   assert.equal(banco.escrituras.length, 1);
   assert.deepEqual(Object.keys(banco.escrituras[0]), ['archivedAt'], '⛔ archivar ha escrito algo más que la fecha');
   assert.equal(banco.fila.status, 'draft', '⛔ archivar ha cambiado el estado');
-  assert.equal(banco.auditorias.length, 1);
-  assert.equal(banco.auditorias[0].action, 'presupuesto_archivado');
-  assert.equal(banco.auditorias[0].merchantId, MERCHANT);
+  assert.equal(banco.auditorias.length, 0, '⛔ archivar escribe auditoría: c.19655 decidió que NO (`AuditAction` es cerrada)');
 });
 
 test('SCRUM-1273 · rechazado y caducado también se archivan', async () => {
@@ -160,13 +158,13 @@ test('SCRUM-1273 · 🔴 el cliente acepta entre la lectura y la escritura: no s
   assert.deepEqual([r.status, r.body], [409, { error: 'no_archivable', message: T10 }]);
 });
 
-test('SCRUM-1273 · desarchivar vuelve a NULL con su traza; sobre uno no archivado no escribe', async () => {
+test('SCRUM-1273 · desarchivar vuelve a NULL, sin auditoría; sobre uno no archivado no escribe', async () => {
   preparar({ archivedAt: '2026-10-01T10:00:00.000Z', status: 'rejected' });
   const r = await llamar(DESARCHIVAR);
   assert.deepEqual([r.status, r.body], [200, { id: ID, archivedAt: null }]);
   assert.equal(banco.fila.archivedAt, null);
   assert.equal(banco.fila.status, 'rejected', '⛔ desarchivar ha cambiado el estado');
-  assert.deepEqual(banco.auditorias.map((a) => a.action), ['presupuesto_desarchivado']);
+  assert.equal(banco.auditorias.length, 0, '⛔ desarchivar escribe auditoría: c.19655 decidió que NO');
 
   preparar();
   const r2 = await llamar(DESARCHIVAR);
