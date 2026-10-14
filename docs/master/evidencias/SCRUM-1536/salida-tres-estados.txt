@@ -6,8 +6,9 @@ CONTROL positivo sembrado: 14 de 14 OK · cero en la siembra: OK · quitada la s
 codigo de salida: 0
 
 ## barrido · NO SE PUDO SABER (catalogo solo con el centinela: nada que esperar)
+(vuelto a correr el 14-oct-2026: desde que el mutador lee la declaracion del test del ticket, cuenta caracteres y no lineas; la linea de CONTROL y el codigo son los mismos)
 $ node <E>/mutar-vaciar.mjs <E>/barrido.mjs b-vacio.mjs ; node b-vacio.mjs <raiz> h1.tsv docs/YAQU_MASTER.md
-MUTADO b-vacio.mjs · lineas antes 90 · despues 76
+MUTADO b-vacio.mjs · caracteres antes 4285 · despues 4351
 CONTROL positivo sembrado: 0 de 0 NO SE PUDO SABER · cero en la siembra: NO SE PUDO SABER · quitada la siembra: 0 (tiene que ser 0)
 CIEGO
 codigo de salida: 2

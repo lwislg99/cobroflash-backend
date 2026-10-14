@@ -205,3 +205,80 @@ Las tres salidas guardadas de la rama anterior no se han tocado.
   como sus vecinos de carpeta.
 - El hook de arranque dijo «SIN IDENTIDAD» y seguí con el puesto que da el encargo, como hizo la
   sesión anterior de este ticket. Se dice aquí; no lo he resuelto.
+
+## SCRUM-1536b (segundo empujón) · Los dos mutadores de los tres estados entran en el catálogo del meta-guard
+
+**Medido contra:** `origin/main` = `82a61cd7c05c0f3ab4cbdf4aff55076d3b337822` · 2026-10-14T02:58:01Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum1387-banco-nuevo-va-al-catalogo.test.mjs`
+
+Sesión `jv-j6d`, puesto J6, relevo de `jv-j6c`. Misma rama, `scrum-1536b-los-tres-ternarios`, sobre
+`f9a50e547`. Carril: etiquetas del ticket leídas en Jira al arrancar (`area-fiscal`, `equipo-javier`,
+En curso); las rutas que se tocan salen «sin fila en §3: nadie lo reclama» en
+`node scripts/carriles.mjs de`, mirado ANTES de escribir el test.
+
+### Qué caía
+
+El obligatorio del PR #2410 (comentario 19522 del ticket): `scrum622` ya no caía, y caía
+`tests/scrum1387-banco-nuevo-va-al-catalogo.test.mjs`, que nombraba `mutar-sembrar.mjs` y
+`mutar-vaciar.mjs` de `docs/master/evidencias/SCRUM-1536/`: dos guiones con «mut» en el nombre,
+cada uno con su parche escrito dentro, que entraron después que la regla.
+
+Visto en rojo en local antes de tocar nada: 6 casos, 5 pasan y 1 cae; población «148 ficheros con
+«mut» en el nombre · 60 bancos · 36 fuera · 34 heredados · 2 nuevos · historia de 2743 commits ·
+corte bc5fa21ee (2026-10-14T02:04:37Z)». El corte es el merge de #2406 en `main`, no un merge de
+esta rama: la línea de primer padre de la rama pasa por `main` (`cb30885dd`). El segundo «nuevo»
+era `SCRUM-1544/mutaciones.mjs`, que no es de este PR y que `main` ya arregló con #2413.
+
+### El arreglo
+
+No se ha tocado el guard, ni `tests/_catalogo-obligatorio.mjs`, ni ningún nombre de fichero.
+
+- `tests/scrum1536b-los-tres-estados-de-los-guiones.test.mjs`, nuevo, sin gate. Ejecuta
+  `barrido.mjs` en sus tres estados (tal cual, y sobre las copias que fabrican los dos mutadores)
+  y lee su línea de CONTROL y su código de salida. Siete casos. Exporta cinco
+  `MUTACIONES_QUE_ME_TUMBAN`: tres sobre `barrido.mjs` (las que aplicaban los mutadores, ahora con
+  un campo `modo`) y dos sobre `veredicto.mjs`, que ningún mutador aplica: son el defecto de
+  origen —lo que no se pudo mirar sale OK, lo roto sale OK— puesto a mano.
+- `mutar-sembrar.mjs` y `mutar-vaciar.mjs` ya no llevan su parche: leen del test la declaración de
+  su `modo` con `mutacionesDeclaradas` (el lector del meta-guard) y la aplican a una copia. Con un
+  modo que el test no declara, o con cero o dos declaraciones de ese modo, dicen CIEGO y salen
+  con 2 sin escribir nada.
+- «Vaciar» era un corte por índices del catálogo; como declaración de un solo `de`/`a` es otra
+  forma de lo mismo: el catálogo se queda con el centinela y las catorce palabras pasan a un
+  objeto que nadie lee. La línea de CONTROL y el código de la copia son los de antes; cambia la
+  línea «MUTADO», que contaba líneas y ahora cuenta caracteres. Es la única línea cambiada de
+  `salida-tres-estados.txt`, y lleva su nota.
+
+### Medido
+
+- El test nuevo: 7 de 7, 0 saltos.
+- Las cinco declaraciones, aplicadas con las piezas de la casa (`correr` + `aplicarUna`, vía
+  `docs/master/evidencias/scrum1321/aplicar-las-de-un-guard.mjs`): la pasada limpia da 7 pasados,
+  y las cinco salen VIVA, cada una tumbando el caso que nombra. Después, `git status` sólo
+  enseñaba los ficheros de este empujón: `barrido.mjs` y `veredicto.mjs`, sin diff.
+- `scrum1387` tras el arreglo, en este árbol: «35 fuera · 34 heredados · 1 nuevos», mismo corte.
+  El que queda es el de `SCRUM-1544`. Lo que ve el CI (el merge con `main`) va en la entrega de
+  Jira, no aquí: se mide después de comitear.
+
+### Lo que NO se ha medido
+
+- `npm run meta:mutaciones` entero. Sólo las cinco de este test.
+- La tanda completa en local.
+- `boe.mjs`: el test no lo cubre (pide el texto del BOE, que no vive en el árbol). Sus tres
+  estados siguen siendo los de `salida-tres-estados.txt`, corridos a mano por `jv-j6c`.
+- Los tres barridos mutados de `salida-tres-estados.txt` se han vuelto a correr sobre
+  `docs/YAQU_MASTER.md` y dan las mismas líneas de CONTROL y los mismos códigos; los cuatro de
+  `boe.mjs` no se han vuelto a correr.
+
+### Errores propios
+
+- De `jv-j6c`, que lo dejó pedido en el comentario 19523: `scrum1387` salió en su lista de tests
+  que leen `evidencias` y corrió diez guards menos ése. La cicatriz de J6 del 8-oct ya decía que
+  los censos se miran antes de escribir el fichero, y la nota no lo corrigió. Lo que lo paró fue
+  el obligatorio. `npm run guards:entrada` no lleva `scrum1387`.
+- De esta sesión: el contexto se midió por primera vez con el arreglo ya escrito (169.123), no al
+  acabar el arranque como pedía el encargo.
+- El hook de arranque dijo «SIN IDENTIDAD». Se construyó con la orden del orquestador, que dice
+  haber medido que la puerta instalada (`sesion.mjs`) contesta «ALTERADO»; esta sesión no lo ha
+  reproducido.
