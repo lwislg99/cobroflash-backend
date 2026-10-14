@@ -178,3 +178,43 @@ Repetido sobre `762f4fbb` mezclado, tras `prisma generate` y `npm run build` (sa
 - **NO corrido**: los otros 176 de los 232 que selecciona `tests:que-cubren` (ya corrieron en
   la dirigida de la mañana y `main` no los cambió), las mutaciones, `guards:visuales` y la suite
   completa. De los módulos que importa la puerta, `main` no cambió ninguno.
+
+# SCRUM-1343d · un guard que REVIENTA antes de medir es CIEGO, no un hallazgo
+
+**Medido contra:** `origin/main` = `365d0de29e05bafac6d1542919f9af759b8e6955` · 2026-10-14T17:10:43Z
+
+14-oct-2026 · Puesto S3. Con el GO del orquestador y sus cuatro condiciones (14-oct): se cambia, a sabiendas, el positivo de arriba «uno que **revienta en la primera línea**… sigue rojo».
+
+## Por qué
+
+`guard:firma-con-tramos` llevaba desde el 7-oct muriendo en 0,2 s sin abrir el navegador, porque a su doble le faltaba `seriesYear` (eso se arregla aparte, en SCRUM-1490c). La puerta lo pintaba `rojo(1)` y cerraba con «36 verdes · 0 CIEGOS · 2 rojos · Han medido y hay hallazgos». Llevaba una semana sin medir nada, y el instrumento decía de sí mismo lo contrario. Nadie lo vio porque el job es informativo.
+
+## Qué cambia (`scripts/guards-visuales.mjs`)
+
+- Si un hijo sale con **1**, lleva en su salida la **firma de excepción no capturada de Node** (la línea final `Node.js vX.Y.Z`) y **no dijo hallazgos** (`⟦veredicto⟧`), se clasifica `CAÍDO ANTES DE MEDIR (<primera línea de la excepción>)`, con `codigo: null` y `arranco: true`. Cuenta entre los CIEGOS y la tanda sale por la puerta del ciego (2), o por el hallazgo (1) si hay otro rojo, diciendo que uno no midió. **Nunca sale 0.**
+- `veredictoDe` se sigue llamando UNA vez en `desenlaceDelHijo` (el guard «no hay una tercera forma de decidir» lo exige). Lo dicho se calcula arriba y lo leen las dos ramas.
+- La cabecera del código lleva el trueque, con el nombre de 1343 dentro (condición 4).
+
+## La señal, medida (condición 2)
+
+Con Node v24.8.0, local en Windows: `throw` síncrono, `await` de primer nivel rechazado y promesa rechazada suelta → status 1 **con** la firma. `process.exit(1)` decidido, guard que captura, imprime la traza y sale con 1, y `exitCode = 1` → status 1 **sin** la firma. En el CI (v24.21.0) la línea `Node.js v24.21.0` sale debajo de la traza de este mismo guard (job 115971185588).
+
+**Si Node dejara de escribir la línea**, la caída volvería a salir `rojo(1)`: el lado cerrado, lo de antes, nunca un verde.
+
+«Sin `⟦veredicto⟧`» a secas NO sirve: `guard:primera-pantalla` y `guard:completar-lleva-al-campo` salen con 1 por defectos REALES sin imprimirlo.
+
+## El trueque, declarado
+
+Si el **código de producción** lanza una excepción con datos válidos (un defecto de verdad), también sale «CAÍDO ANTES DE MEDIR» y no rojo. No mergea, porque la tanda no sale verde, y la fila lleva la primera línea de la excepción. Pero ya no cuenta entre los «rojos».
+
+## Controles
+
+- **Condición 1, con su propio test:** «una CAÍDA antes de medir NO deja la tanda en verde, ni sola ni con 37 verdes». Visto en ROJO con la mutación que convierte la caída en `verde`.
+- **Condición 2:** «`process.exit(1)` A PROPÓSITO sigue siendo rojo», con hijos de verdad en tres formas, más uno que revienta DESPUÉS de decir sus hallazgos (rojo).
+- **Los dos positivos de 1343 siguen distinguiéndose:** el que NO ARRANCA (`arranco: false`) y el que ARRANCA Y REVIENTA (`arranco: true`, ahora caída). Este último también con la forma del 14-oct (`await` rechazado).
+- **Mutaciones:** 17 declaradas (14 de antes + 3 nuevas), **17 de 17 caen**, con la base verde antes y después. Banco: aplica cada `de → a`, comprueba que el `de` aparece una sola vez y que cae el test que nombra.
+- **Con datos REALES del CI:** la salida de `firma-con-tramos` del job 115971185588 → `CAÍDO ANTES DE MEDIR (Error: anio_de_la_serie_ilegible: …)`, y con 36 verdes «NO MEDIDO (salida 2)». La de `cls-barra-anuncio` del mismo log → `rojo(1)`, «DEFECTOS (salida 1)».
+- **Los 24 ficheros de `tests/` que nombran `guards-visuales`:** 211 tests, 211 pasan.
+- **NO corrido:** `guards:visuales` entero, el meta-guard entero y la suite completa. Eso lo corre el CI.
+
+A9: comprobación → `tests/scrum1343-un-hijo-que-no-arranca-es-ciego.test.mjs`
