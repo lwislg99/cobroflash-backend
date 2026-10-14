@@ -236,7 +236,7 @@ Un plan público (Parte W): **Pro 19,90 €/mes (199 €/año) + 0,9 % solo tarj
 
 ---
 
-# PARTE I — REGLAS (1-42; cerradas)
+# PARTE I — REGLAS (1-44; cerradas)
 
 **Técnicas heredadas:** 1) NUNCA n8n — WhatsApp solo vía `src/integrations/whatsapp.ts` (Meta Cloud API directa). 2) Multi-tenant: toda query filtra por `req.merchantId`. 3) Prisma sin TTY: **NUNCA `db push` contra PRODUCCIóN** (SCRUM-705). El procedimiento ÚNICO es ① decisión → ② ALTER ADITIVO en las TRES bases (dev→staging→prod) → ③ UN solo PR con esquema+código+tests; **nunca ③ sin ②**. El DDL sale de `prisma migrate diff` y de ningún otro sitio. `scripts/db-push-prod` queda para STAGING y para diagnosticar deriva. Nunca `migrate dev`; `prisma/migrations` archivada en `docs/historico/prisma-migrations-frozen-2026-03/` (congelada mar-2026; volver a migrate = SCRUM-40 opción A). Preview del diff antes de tocar prod. 4) Frontend vanilla, sin frameworks ni build. 5) Emails por Resend. 6) Crons in-process. 7) Rutas `/admin/*` con `pf_session`. 8) Demo merchant `demo@yaqu.app` id=1 (watermark, DEMO_SAFE_NUMBERS, fuera de métricas).
 **Técnicas v5+:** 9) Código nuevo lee `getCountryConfig()` — nada hardcodeado por país (capa mínima en F1). 10) Todo cobro con tarjeta pasa por Connect cuando el merchant lo tenga activo. 11) Artefactos nuevos a R2 desde F2 (no fs local). 12) Ningún claim fiscal en UI/marketing que el motor del país no cumpla (LATAM sin PAC: "nota/recibo").
@@ -268,6 +268,12 @@ cualquier sesión.
 40) **El camino de emisión fiscal se lee, no se modifica. `prisma/schema.prisma` no se toca sin ALTER previo.** Las dos mitades ya existían por separado —la primera es la regla 38, la segunda el procedimiento ÚNICO de la regla 3 (① decisión → ② ALTER aditivo en las tres bases → ③ el PR)—. Aquí van juntas y en una línea porque es la forma en que hay que recordarlas cuando no hay nadie revisando.
 
 41) **Un guard en rojo se arregla cambiando el CÓDIGO, nunca lo que el guard exige. Si el arreglo pasa por relajar el guard, se para y se dice.** Un guard que cede ante el primer rojo deja de medir y nadie se entera: el rojo desaparece de la pantalla y el defecto se queda en el árbol. Bajar un umbral, añadir una excepción o recortar el ámbito para que pase **es** relajar el guard. Si de verdad el guard está mal, eso es un hallazgo con su ticket (regla 37), no una edición de paso.
+
+**Proceso (14-oct-2026):**
+
+43) **Lo que hoy es falso porque lo que promete aún no está construido no se le pregunta al fundador: va a la puerta de go-live (`SCRUM-1554`), y su firma se pide EN BLOQUE en esa revisión.** *Literal del fundador, 14-oct-2026:* **«Que no estamos en el go live todavía, no preguntes por cosas que están mal, pero cuando sea el go live estarán bien. No importa que sea verdad hoy, importa que el día del go live lo sea.»** **Lo que SÍ sube igualmente:** algo que YA le pasó a una persona real (un cobro, una aceptación, un documento enviado fuera); algo que cambia lo que se vende hoy o toca dinero en producción; y un STOP de las reglas 24, 26, 28, 29, 39 o 40 sobre algo vivo y en uso. **La diferencia es el tiempo verbal: «será falso si lanzamos así» se queda en la lista; «fue falso para alguien» sube.** **Límite, y es parte de la regla: NO retira ningún requisito.** La firma del fundador sobre texto de usuario (regla 39) y el triple de la regla 26 siguen siendo obligatorios; lo que se retira es la INTERRUPCIÓN, no el requisito. Y cuando no se sabe de qué lado cae algo, lo que sube es LA PREGUNTA, no la alarma.
+
+44) **Una decisión del fundador que condiciona trabajo futuro deja UNA LÍNEA en el máster, con el enlace a su comentario de Jira. El detalle se queda en Jira; lo que sube es el titular y dónde mirar.** *Literal propuesto por el orquestador y aprobado por el fundador el 14-oct-2026 («Si me vale»; `SCRUM-1552`).* **Motivo, medido:** la delegación de microcopy vive solo en `SCRUM-997` c.16373, y lo de forales y Canarias solo en `SCRUM-998` c.16609 y en `SCRUM-1497`; **a un comentario de Jira solo se llega si ya sabes el número del ticket**, y por eso se repartió dos veces trabajo ya decidido.
 
 ---
 
