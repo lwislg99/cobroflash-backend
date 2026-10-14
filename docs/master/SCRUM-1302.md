@@ -540,3 +540,59 @@ En `sumar` y sin modo el papel sale idéntico. La factura no lo conoce (lo compr
 **NO medido:** yaqu.app (nada de esto está desplegado) · el `POST /quote/create` de verdad contra una base (se usó
 su misma función de total, no la ruta) · un presupuesto real de producción en `no_incluido` (no se sabe si existe
 alguno) · el PDF abierto en un visor: se leyó su texto, no su maqueta.
+
+# APÉNDICE · SCRUM-1302n: el banco de 1302m, y el de SCRUM-1544, al catálogo del meta-guard (J1)
+
+**Medido contra:** `origin/main` = `cb30885dd69c4df7f33d3a0066fed93698926857` · 2026-10-14T02:30:35Z
+A9: comprobación → `tests/scrum1387-banco-nuevo-va-al-catalogo.test.mjs`
+
+Este tramo no cambia el arreglo del PDF: trae la rama de 1302m por `git merge` (su PR, el #2408, queda
+sustituido por el de esta rama) y da de alta su banco de mutación donde el guard de SCRUM-1387 lo pide.
+
+## Lo que se encontró: el guard cazaba DOS bancos, y uno ya estaba en `main`
+
+El obligatorio del #2408 caía en «ningún banco de mutación nuevo queda fuera del catálogo». Corrido en local,
+el guard nombró dos carpetas, no una:
+
+- `docs/master/evidencias/scrum1302m/mutaciones.mjs`, el de la rama que se trae;
+- `docs/master/evidencias/SCRUM-1544/mutaciones.mjs`, que **ya estaba en `main`**.
+
+El guard entró con el PR #2406 (`bc5fa21ee`, 2026-10-14T02:04:37Z) y el banco de SCRUM-1544 con el PR #2407
+(`cb30885dd`, 2026-10-14T02:08:10Z): un commit después del corte. El obligatorio del #2407 había corrido antes
+de que el guard existiera en `main`, así que pasó. No es un descuido de nadie: es la ventana de estrenar un
+guard, y volverá a darse con el siguiente. **Medido, no deducido:** el guard corrido sobre un árbol aparte fijado
+a `origin/main` `cb30885dd` cae nombrando sólo la carpeta de SCRUM-1544. Mientras eso no se registrara, caía el
+obligatorio de cualquier PR, no sólo el de 1302m.
+
+## Lo que pide el guard, leído en `tests/_catalogo-obligatorio.mjs`
+
+Un banco es una carpeta de evidencias con algún fichero con «mut» en el nombre; está fuera si tiene guion
+(`.mjs`) y ninguno nombra el catálogo. El alta es que el test del ticket exporte `MUTACIONES_QUE_ME_TUMBAN` y el
+guion las tome de ahí. No hay lista de excepciones, y no se ha tocado ni el guard ni su catálogo.
+
+## Lo hecho
+
+- `tests/scrum1302m-el-total-y-la-leyenda.test.mjs` exporta las cinco mutaciones del banco (mismos `de` y `a` que
+  llevaba el guion). Sus ocho casos no cambian. Cada una nombra ahora UN caso que tiene que caer.
+- `tests/scrum710b-anclaje-por-identidad.test.mjs` exporta las cinco del banco de SCRUM-1544, trasladadas tal
+  cual: mismo fichero, `de`, `a` y `cae`. Cruce de puesto (el ticket es de J6) autorizado por el orquestador de
+  Javier por el canal, el 14-oct-2026; los ficheros no tienen fila en `dos-equipos.md` §3.
+- Los dos guiones dejan su lista propia y leen la del test con `mutacionesDeclaradas` del meta-guard, que es el
+  lector que usa el CI. El de 1302m exige ahora que caiga el caso nombrado, no «alguno».
+
+**Por qué no es un esquive.** Nada sale del alcance del censo: las carpetas, los nombres de fichero y los guiones
+siguen donde estaban. Lo que cambia es que las diez mutaciones las ejecuta `npm run meta:mutaciones` en el CI en
+cada PR, y que borrar una declaración lo denuncia el suelo contra `main` de SCRUM-810.
+
+## Verificado, ejecutando
+
+- **En rojo primero:** el guard, antes de tocar nada, con las dos carpetas nombradas; y sobre `origin/main`
+  limpio, con una.
+- **En verde después:** el mismo guard, sobre este árbol (la población y el recuento van en la entrega).
+- **Las diez mutaciones caen** por los dos caminos: los dos guiones (`mutaciones.txt` y `mutaciones-salida.txt`,
+  regenerados) y el camino del meta-guard (`correr` + `aplicarUna`, con un guion de fuera del árbol que pasa sólo
+  estos dos tests): diez VIVAS, cero ciegas, cero mudas, con la pasada limpia en verde antes.
+- El test del PDF sigue cazando sus cinco: la base, ocho casos en verde; cada mutación, su caso nombrado en rojo.
+
+**NO medido:** `npm run meta:mutaciones` entero (el del CI, con todas las declaraciones de la casa) · la tanda
+completa de `npm test` · yaqu.app (este tramo no despliega nada que se vea).

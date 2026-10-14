@@ -48,6 +48,48 @@ const sinMi = (h) => h.fichero !== YO;
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
+// SCRUM-1302n · las cinco mutaciones del banco de SCRUM-1544 pasan AL CATÁLOGO del meta-guard
+// (SCRUM-1387), tal como estaban escritas en `docs/master/evidencias/SCRUM-1544/mutaciones.mjs`:
+// mismo fichero, mismo `de`, mismo `a`, mismo `cae`. `npm run meta:mutaciones` las ejecuta en el
+// CI y aquel guion las lee de aquí en vez de llevar su lista.
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // el censo deja de leer el join
+    fichero: 'tests/_censo-por-posicion.mjs',
+    de: "&& n.expression.name.text === 'join' && n.arguments.length === 1",
+    a: "&& n.expression.name.text === 'join' && n.arguments.length === 99",
+    cae: 'una cita TROCEADA con todas sus piezas escritas',
+  },
+  {
+    // un número escrito pasa a ser un hueco
+    fichero: 'tests/_censo-por-posicion.mjs',
+    de: 'if (ts.isNumericLiteral(n)) return n.text;',
+    a: 'if (ts.isNumericLiteral(n)) return HUECO;',
+    cae: 'una cita TROCEADA con todas sus piezas escritas',
+  },
+  {
+    // un nombre se lee como si fuera el número (el censo «aprende» constantes)
+    fichero: 'tests/_censo-por-posicion.mjs',
+    de: '  resto.push(n);\n  return HUECO;\n}',
+    a: "  resto.push(n);\n  return ts.isIdentifier(n) ? '12' : HUECO;\n}",
+    cae: 'EL LÍMITE: con una pieza en un nombre',
+  },
+  {
+    // el literal con la cita entera se cuenta dos veces
+    fichero: 'tests/_censo-por-posicion.mjs',
+    de: '    resto.push(n);\n    return HUECO;\n  }\n  if (ts.isNumericLiteral(n))',
+    a: '    resto.push(n);\n    return n.text;\n  }\n  if (ts.isNumericLiteral(n))',
+    cae: 'los anclajes por NÚMERO DE LÍNEA no crecen',
+  },
+  {
+    // se retira de la lista uno de los tres que el censo no veía
+    fichero: 'tests/scrum710b-anclaje-por-identidad.test.mjs',
+    de: "  ['tests/scrum398-vocabulario-de-cobro.test.mjs  reports.routes.ts', 1],\n",
+    a: '',
+    cae: 'los anclajes por NÚMERO DE LÍNEA no crecen',
+  },
+];
+
 // ═══ ① SUELO ═════════════════════════════════════════════════════════════════════════════
 
 test('SCRUM-710b · SUELO: los dos censos VEN el árbol, y ninguno devuelve cero', () => {

@@ -25,6 +25,49 @@ const { calcTotal } = await import('../dist/core/utils/utils.js');
 const { LEYENDA_IVA_NO_INCLUIDO } = await import('../dist/modules/quotes/domain/presentacionIva.js');
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+// SCRUM-1302n · el banco de este ticket vive en el catálogo del meta-guard (SCRUM-1387): las cinco
+// mutaciones se declaran AQUÍ, `npm run meta:mutaciones` las ejecuta en el CI, y el guion
+// `docs/master/evidencias/scrum1302m/mutaciones.mjs` las lee de aquí en vez de llevar su lista.
+// Cada una quita un trozo del arreglo y nombra el caso que TIENE que caer.
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // M1 · el total vuelve a ser el guardado a secas.
+    fichero: 'src/modules/invoicing/infra/pdf/pdf.service.ts',
+    de: '? Number(params.total) - ivaDentroDelImporte(params.lines, params.discountGlobalAmount ?? null)',
+    a: '? Number(params.total)',
+    cae: 'el guardado sigue mandando: se le resta su IVA, no se recalcula',
+  },
+  {
+    // M2 · el importe de la línea vuelve a llevar el IVA.
+    fichero: 'src/modules/invoicing/infra/pdf/pdf.service.ts',
+    de: '(1 + (ivaFueraDelPapel ? 0 : l.tax))',
+    a: '(1 + l.tax)',
+    cae: 'el total que se lee NO lleva el IVA dentro',
+  },
+  {
+    // M3 · el total de cada opción vuelve a ser el guardado.
+    fichero: 'src/modules/invoicing/infra/pdf/pdf.service.ts',
+    de: 'Number(tier.total) - ivaDentroDelImporte(tier.lines)',
+    a: 'Number(tier.total)',
+    cae: 'con tres opciones, cada caja y el total van sin IVA',
+  },
+  {
+    // M4 · la línea de cada opción vuelve a llevar el IVA.
+    fichero: 'src/modules/invoicing/infra/pdf/pdf.service.ts',
+    de: '(ivaFueraDelPapel ? 0 : (l.tax ?? 0))',
+    a: '(l.tax ?? 0)',
+    cae: 'con tres opciones, cada caja y el total van sin IVA',
+  },
+  {
+    // M5 · el IVA de dentro se calcula sin el descuento global.
+    fichero: 'src/modules/invoicing/infra/pdf/pdf.service.ts',
+    de: 'ivaDentroDelImporte(params.lines, params.discountGlobalAmount ?? null)',
+    a: 'ivaDentroDelImporte(params.lines)',
+    cae: 'con céntimos, dos tipos y descuentos: sale la base, calculada A MANO',
+  },
+];
+
 let siguienteId = 13020100;
 
 /** La fila tal como la guarda `POST /quote/create`: el total sale de `calcTotal`, no de aquí. */
