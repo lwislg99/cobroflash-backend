@@ -77,7 +77,7 @@ async function pagina(extra = {}) {
  * devuelve lo que queda escrito bajo la firma. Ejecuta el `<script>` REAL del botón, no una copia.
  */
 async function pulsarAceptar(html, respuesta) {
-  const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
+  const scripts = [...html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
   const delBoton = scripts.find((s) => s.includes("getElementById('btn-accept').addEventListener"));
   assert.ok(delBoton, 'CIEGO: no encuentro el script del botón de aceptar en la página');
   const nodos = {};
