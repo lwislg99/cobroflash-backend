@@ -1,0 +1,51 @@
+aa0f9606	38510249911	completo	success	ya estaba	tanda.tap	2952365
+c3072983	38506027349	CON AUSENTES	success	bajado	tanda.tap	2939579
+f9f5810e	38505163907	CON AUSENTES	success	bajado	tanda.tap	2937665
+82a61cd7	38503362389	CON AUSENTES	success	bajado	tanda.tap	2943813
+cb30885d	38499444392	completo	failure	bajado	tanda.tap	2944856
+bc5fa21e	38499131546	completo	success	bajado	tanda.tap	2942376
+1d338a5a	38426733925	CON AUSENTES	success	bajado	tanda.tap	2922361
+055648dc	38424352986	CON AUSENTES	failure	bajado	tanda.tap	2933438
+c252b131	38420793976	CON AUSENTES	success	bajado	tanda.tap	2923818
+fc10ff9c	38416301367	completo	success	bajado	tanda.tap	2917380
+875d665c	38414620072	completo	success	bajado	tanda.tap	2913879
+18014c49	38409645100	completo	success	bajado	tanda.tap	2905910
+cf0a4cb7	38408285203	CON AUSENTES	success	bajado	tanda.tap	2903723
+f3090b1c	38403505803	completo	success	bajado	tanda.tap	2904143
+9308125e	38399979221	completo	success	bajado	tanda.tap	2897518
+7802d7cb	38398005578	CON AUSENTES	success	bajado	tanda.tap	2890249
+eebc104d	38395019776	CON AUSENTES	success	bajado	tanda.tap	2889229
+fdd80538	38393049131	CON AUSENTES	success	bajado	tanda.tap	2883167
+97618f16	38389511323	CON AUSENTES	success	bajado	tanda.tap	2878463
+32425f41	38388167002	completo	success	bajado	tanda.tap	2879168
+b9ecf641	38386000440	CON AUSENTES	success	bajado	tanda.tap	2871115
+9358f02b	38363823572	completo	failure	bajado	tanda.tap	2877006
+9226d0f2	38361029764	CON AUSENTES	success	bajado	tanda.tap	2875269
+33e62fee	38358816878	completo	success	bajado	tanda.tap	2877054
+b95e33e4	38357657232	CON AUSENTES	success	bajado	tanda.tap	2874992
+780c8127	38353083285	CON AUSENTES	success	bajado	tanda.tap	2865628
+ccee4b60	38351407756	CON AUSENTES	success	bajado	tanda.tap	2872699
+6ca2fb65	38349137940	completo	success	bajado	tanda.tap	2874364
+944cc64f	38348866897	completo	success	bajado	tanda.tap	2870778
+dfda86d6	38328144698	completo	success	bajado	tanda.tap	2870413
+9b77c72d	38326560769	CON AUSENTES	success	bajado	tanda.tap	2867062
+0472952c	37927852725	completo	success	bajado	tanda.tap	2870866
+206d57a4	37926164012	CON AUSENTES	success	bajado	tanda.tap	2835725
+44cbb050	37923152158	CON AUSENTES	success	bajado	tanda.tap	2858328
+ebd9bd8e	37920493193	CON AUSENTES	success	bajado	tanda.tap	2852813
+17159d7f	37918922460	CON AUSENTES	success	bajado	tanda.tap	2852631
+582656bd	37918185257	CON AUSENTES	success	bajado	tanda.tap	2851676
+51fbba7f	37916555202	CON AUSENTES	success	bajado	tanda.tap	2843083
+85d8d01e	37907003344	completo	success	bajado	tanda.tap	2850486
+65ee1329	37905886062	CON AUSENTES	success	bajado	tanda.tap	2843173
+be483452	37764283834	CON AUSENTES	success	bajado	tanda.tap	2849062
+497f5167	37753074312	CON AUSENTES	success	bajado	tanda.tap	2837021
+6defb376	37751786156	CON AUSENTES	success	bajado	tanda.tap	2840150
+a46ade85	37749231857	completo	success	bajado	tanda.tap	2842899
+aa0b22ac	37747489121	completo	success	bajado	tanda.tap	2841305
+ad377526	37745531661	CON AUSENTES	success	bajado	tanda.tap	2830672
+16e80dea	37722012944	completo	success	bajado	tanda.tap	2839736
+787aa06c	37718640993	CON AUSENTES	success	bajado	tanda.tap	2837517
+3be83fbd	37718154561	completo	success	bajado	tanda.tap	2840162
+179c248b	37716526283	CON AUSENTES	success	bajado	tanda.tap	2839304
+POBLACION: 50 runs medidos · intentados 50 · con fichero 50

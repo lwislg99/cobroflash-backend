@@ -2150,3 +2150,168 @@ ni ningún test.
 - De paso, sin tocar: en ese mismo run el job del meta-guard (115181642144) salió con 2 por
   `scrum859-identidad-y-motivo-cerrado.test.mjs` (vivas 519 · mudas 0 · ciegas 1). Es un caso más
   de lo que este tramo mide. Si es requerido para el merge, no lo he mirado.
+
+
+# SCRUM-1339q · La tasa de hoy, sobre 50 runs que no se solapan con los del 7-oct: 30 de 50 (60 %). No baja, y en esta ventana no hay ningún ausente que venga de un fichero caído
+
+**Medido contra:** `origin/main` = `b6151efd72269b68a48bd8bdb32b0a966221a108` · 2026-10-14T04:39:09Z
+
+A9: aviso → A10 «Un registro escrito por la misma mano que aplicó el texto no es su firma: es quien lo aplicó contando que la tuvo.» — no se pudo comprobar: Jira publica todos los comentarios con la cuenta del fundador, y ningún instrumento de la casa sabe quién escribió un comentario. Lo que lo distingue es leer el texto que el fundador contestó (abajo, ④)
+
+**El encargo** (orquestador del equipo de Javier, `cobroflash-backend-2e`, 14-oct; sesión
+`jv-j6g`, carril J6). La tasa que se usaba para decidir era la del 7-oct (1339g). Hay que medirla
+con datos de hoy, usando el instrumento de J3a sin tocarlo, y declarar la ventana, la población y
+si el instrumento sigue midiendo lo mismo. **No decido si se bloquea.** Sólo lectura: ni
+`scripts/`, ni tests, ni `ci.yml`, ni el instrumento. Entran esta sección y ocho ficheros `q-*` en
+evidencias. El hook de arranque dijo «SIN IDENTIDAD» (SCRUM-1549); seguí por orden del orquestador.
+
+## En corto
+
+- **30 de 50 runs del obligatorio en `main` tienen nombres ausentes: el 60,0 %.** El 7-oct eran 28
+  de 50 (56,0 %). Las dos ventanas no comparten ningún run: esta va del 8-oct a las 02:09:58Z al
+  14-oct a las 04:13:03Z. La de 1339g acababa el 7-oct a las 15:43:04Z.
+- **De los 47 jobs VERDES de la ventana, 29 llevan ausentes (62 %).** De los 3 rojos, 1.
+- **644 casos ausentes, en 55 bloques y 19 ficheros.** Por run afectado: mínimo 2, mediana 16 y
+  máximo 118. Los 55 bloques son «cola»: no hay ningún «entero».
+- **No está inflada.** Leídos los 50 TAP, no hay ni una entrada de fichero de nivel 0. Los 644
+  casos son cola de ficheros que corrieron, no ficheros caídos (el mecanismo de 1339h). 47 de los
+  50 TAP llevan `# fail 0`.
+- **El instrumento mide lo mismo que el 7-oct.** Entre `12ecc7bb` (1339g) y `b6151efd` no ha
+  cambiado ninguno de estos cinco ficheros: el instrumento, los dos guiones de la señal,
+  `tests/_poblacion-de-tests.mjs` (que la señal importa) y `ci.yml`. El diff es vacío. El flag sigue en el script `test` de `package.json`, línea 11. La salida tiene
+  la misma forma, y sus dos coherencias dan 0 de 30 y 0 de 20.
+- **⚠️ De quién es el criterio del 5 %: del orquestador, no del fundador.** Detalle en el ④.
+
+## ⓪ La ventana y la población
+
+`e-tasa-de-main.mjs` (de 1339e, sin cambios) recorre la línea principal de más nuevo a más viejo y
+lee, de cada commit, la `::notice` que el paso de la señal dejó en el job obligatorio de su run de
+push. Para cuando junta 50 runs medidos.
+
+| qué | cuánto |
+|---|---|
+| commits recorridos desde `b6151efd` | 113 (8-oct 02:09:58Z → 14-oct 04:36:24Z) |
+| el job obligatorio corrió y dejó registro medible | **50** |
+| run de CI `completed/cancelled` con 0 jobs | 61 (preguntados uno a uno con `g-desglose.mjs`: los 61 dicen lo mismo) |
+| run sin acabar al medir (`pending` 1, `in_progress` 1) | 2, los dos de la punta |
+| sin run de CI | 0 |
+| no pude preguntar | 0 |
+| corrió y no dejó registro, o dijo «no pude medir» | 0 |
+
+**Sin medir dentro de la ventana: 0.** Los dos runs sin acabar no entran en la tasa ni la bajan: el
+instrumento sigue hacia atrás hasta juntar 50. El obligatorio corrió en 50 de 113 commits (44 %);
+el 7-oct fueron 50 de 138. El 10, el 11 y el 12-oct no hay ningún commit en la línea principal.
+
+Control positivo del lector, dentro del instrumento: el check-run `110514502040` trae su línea de
+registro (3 anotaciones, «sí»). Si no la viera, el guion sale con 3 sin medir nada.
+
+## ① La tasa
+
+    [señal de nombres · tasa] 30 de 50 runs medidos con nombres ausentes (60.0 %) · población 50 runs · sin medir 0 · por ENCIMA del 5 % sobre 50 runs medidos · tope 2026-10-15 (SCRUM-1339 c.17935)
+
+La línea sale igual por los dos caminos: por el instrumento (`q-salida-tasa-de-main.txt`) y por
+`node scripts/senal-de-nombres.mjs --tasa` sobre `q-registros-de-main.json`
+(`q-salida-tasa-cli.txt`, salida 0). Es la misma función sobre los mismos 50 registros.
+
+| | completos | con ausentes |
+|---|---|---|
+| job `success` | 18 | **29** |
+| job `failure` | 2 | 1 |
+
+| día (UTC) | con ausentes | de |
+|---|---|---|
+| 8-oct | 6 | 10 |
+| 9-oct | 7 | 9 |
+| 13-oct | 14 | 25 |
+| 14-oct | 3 | 6 |
+
+Coherencia interna: con ausentes y SIN `::warning` de la señal, 0 de 30; completos y CON
+`::warning`, 0 de 20.
+
+Comparado con 1339g son dos ventanas distintas y sin solapes, y no se restan. Ninguna se acerca al
+5 %: 56 % y 60 %.
+
+## ② La forma
+
+- 19 ficheros distintos, contando un fichero una vez por run: `scrum524b` y `scrum834` en 8 runs;
+  `scrum1262` en 6; `scrum1456`, `scrum1379b` y `vigia-atascados` en 5; `scrum514` y `scrum853`
+  en 3; `scrum888g` en 2; diez en 1. La lista entera está en `q-salida-desglose.txt`.
+- `scrum1456` no estaba en la lista del 7-oct. La población que pierde sigue moviéndose, como ya
+  vio 1339g; no he cruzado las dos listas fichero a fichero.
+- El máximo, 118 casos en un run, es de `206d57a4`. Los dos siguientes son de 52 y 40.
+
+## ③ ¿Está inflada? No: 0 de 644
+
+Lo repito con los guiones de 1339h, sin tocarlos:
+
+- `h-separar.mjs` (`q-salida-separar.txt`): de 55 bloques, 55 sin entrada de fichero. Los 29 runs
+  verdes con ausentes tienen `tap_fail=0`. El control de cero (una marca inventada) da 0.
+- `h-bajar-taps.mjs` (`q-salida-bajar.txt`): 50 TAP de 50, uno por run medido. Antes de bajar el
+  lote corrió el canario (`--solo 1`), por eso la primera fila dice «ya estaba».
+- `h-entradas.mjs` (`q-salida-entradas.txt`): 50 TAP enteros según la casa, 0 con NUL y 0
+  descuadres. Entradas de fichero de nivel 0: **0**. Bloque contra entrada: 55 bloques y 644 casos,
+  todos «SIN entrada de fichero (cola)». Control de cero: 0. Control positivo, sobre un TAP
+  fabricado con un fichero caído: lo ve, con `caida=true` y `exitCode 1`.
+- Los 3 TAP que no llevan `# fail 0` caen por un test con nombre, no por un fichero. Uno es de
+  SCRUM-1387, en `cb30885d`. Los otros dos son el `A8.4` de la suite del bot (`055648dc` y
+  `9358f02b`), el mismo caso que vio caer c.19334 en #2361. No lo he abierto: no es de este tramo.
+
+**La tasa corregida es la misma: 30 de 50.**
+
+## ④ De quién es el criterio del 5 % — leído en Jira, no decidido
+
+El criterio «bloquear cuando la tasa baje del 5 % sobre los últimos 50 runs, y revisar el 15-oct
+pase lo que pase» está escrito en c.17935. Ese comentario se titula «DECISIÓN DEL FUNDADOR». Pero:
+
+1. La respuesta del fundador que cita es «1-Ok la que recomiendas», y lo que se le había
+   recomendado es c.17934. c.17934 dice: «avisar ahora y bloquear cuando la causa esté arreglada».
+   No tiene ningún 5 %, ninguna ventana de 50 ni ninguna fecha.
+2. En los comentarios anteriores a c.17935 no aparece ningún «5 %».
+3. En c.17954, el mismo orquestador (`cobroflash-backend-5b`) lo llama «mi propia decisión
+   c.17935».
+
+**Así que el 5 %, la ventana de 50 y el tope del 15-oct son del orquestador 5b. Lo que consta que el
+fundador aprobó es «bloquear cuando la causa esté arreglada».** No es lo mismo: la causa (SCRUM-1405)
+no depende de ninguna tasa. Lo que se le dijera al fundador por el canal no está en Jira y no lo he
+podido leer. Puede que lo viera; aquí no consta.
+
+El instrumento (`scripts/_senal-de-nombres.mjs`) imprime el tope «2026-10-15 (SCRUM-1339
+c.17935)» en cada línea de tasa. No lo he tocado.
+
+## Lo que NO sé
+
+- **La tasa en los runs de PR**, que es donde un bloqueo mordería. El instrumento sólo recorre
+  `main`.
+- Quién cancela los 61 runs con 0 jobs.
+- Si los 63 commits sin medir habrían perdido más o menos que los 50 medidos.
+- Por qué cae `A8.4` en dos runs de `main`.
+- Los 50 TAP (unos 140 MB) no están en git. Están fuera del árbol, en la carpeta temporal de este
+  trabajo, y se rebajan con `h-bajar-taps.mjs` mientras GitHub conserve los artefactos.
+
+## Mis errores
+
+- Le dije al orquestador que c.17935 era «la decisión del fundador». Me fié del título del
+  comentario sin leer qué texto había contestado el fundador. El orquestador se lo repitió a Javier
+  como su criterio, y Javier lo desmintió preguntando «¿qué revisión del 15 de octubre?». Lo cazó
+  Javier, no yo. Leído después, está en el ④.
+- En el PASO 0 la primera llamada a Jira llevó un `cloudId` equivocado. No tuvo efecto.
+
+## Reproducir
+
+    E=docs/master/evidencias/SCRUM-1339
+    node $E/e-tasa-de-main.mjs b6151efd72269b68a48bd8bdb32b0a966221a108 <fuera del árbol>/banco
+    node scripts/senal-de-nombres.mjs --tasa <fuera del árbol>/banco/e-registros-de-main.json
+    node $E/g-desglose.mjs <fuera del árbol>/banco/e-tasa-de-main.tsv
+    node $E/h-separar.mjs <fuera del árbol>/banco/e-tasa-de-main.tsv
+    node $E/h-bajar-taps.mjs <fuera del árbol>/banco/e-tasa-de-main.tsv <fuera del árbol>/taps --solo 1
+    node $E/h-bajar-taps.mjs <fuera del árbol>/banco/e-tasa-de-main.tsv <fuera del árbol>/taps
+    node $E/h-entradas.mjs scripts/_senal-de-nombres.mjs <fuera del árbol>/banco/e-tasa-de-main.tsv <fuera del árbol>/taps
+
+## Quién lo empuja
+
+La medición, las cifras y el texto de este tramo son de la sesión `jv-j6g`, que murió antes de
+comitear. Los rescata `jv-j6i` (orquestador `cobroflash-backend-2e`, 14-oct): comiteados y
+empujados tal cual, sin re-correr nada ni cambiar una cifra. Lo único añadido es esta sección.
+Antes de empujar se cotejó el texto contra las ocho salidas `q-*` (30/50, 644 casos en 55 bloques
+y 19 ficheros, 47 de 50 TAP con `# fail 0`) y casan. La atribución del criterio del 5 % ya iba al
+orquestador 5b, no al fundador (④): no hubo que corregirla.
