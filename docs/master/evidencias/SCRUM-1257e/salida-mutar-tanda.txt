@@ -1,0 +1,5 @@
+declaradas: 4
+OK  cae «en fiscal Ajustes pinta su frase y no la de receipt» · tests 7 · caidos: ["SCRUM-1257e · en fiscal Ajustes pinta su frase y no la de receipt","SCRUM-1257e · en demo Ajustes pinta su frase y no la de receipt"]
+OK  cae «en receipt Ajustes pinta la frase de receipt, literal» · tests 7 · caidos: ["SCRUM-1257e · en receipt Ajustes pinta la frase de receipt, literal"]
+OK  cae «en receipt Ajustes pinta la frase de receipt, literal» · tests 7 · caidos: ["SCRUM-1257e · en receipt Ajustes pinta la frase de receipt, literal"]
+OK  cae «en receipt Ajustes pinta la frase de receipt, literal» · tests 7 · caidos: ["SCRUM-1257e · en receipt Ajustes pinta la frase de receipt, literal","SCRUM-1257e · en fiscal Ajustes pinta su frase y no la de receipt","SCRUM-1257e · en demo Ajustes pinta su frase y no la de receipt"]
