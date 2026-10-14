@@ -625,13 +625,26 @@ async function initApp() {
    * carácter por carácter. Si se distinguieran, cualquiera podría recorrer ids y averiguar QUÉ
    * documentos hay en otros negocios sin llegar a ver ninguno: es fuga de tenencia (regla 2)
    * aunque no se enseñe un solo dato. Por eso aquí no se mira el CÓDIGO del error —404, 403 o el
-   * que sea— sino sólo si la petición salió bien.
+   * que sea—: dentro de los 4xx, todos dan lo mismo.
+   *
+   * SCRUM-1150d · LO ÚNICO QUE SE MIRA ES SI EL SERVIDOR CONTESTÓ. Con un 5xx, sin red o con el
+   * plazo vencido, el panel decía «Ese presupuesto ya no existe.» teniéndolo en la lista de al lado
+   * (medido en SCRUM-1150 c.19286): eso le afirma al usuario algo falso. Ahí no se sabe nada del
+   * documento, así que se abre la ficha y la ficha dice su propio «no se ha podido cargar».
+   * Decidido por el orquestador en el encargo del 14-oct-2026 (SCRUM-1150, punto 2). No abre la
+   * fuga: las seis rutas filtran por negocio en el `where` antes de nada que pueda lanzar, así que
+   * un id de otro negocio y uno que no existe dan el mismo 404 (leído en SCRUM-1150, no corrido).
    */
+  function elServidorDijoQueNo(err) {
+    const s = err && err.status;
+    return typeof s === 'number' && s >= 400 && s < 500;
+  }
   async function abrirFichaDesdeHash(view, id) {
     const d = DETALLES[view];
     try {
       await apiRequest(d.ruta(id));
-    } catch (_e) {
+    } catch (e) {
+      if (!elServidorDijoQueNo(e)) { _origRender(view, { [d.clave]: id }); return; }
       _origRender(d.lista);
       if (typeof showToast === 'function') showToast(d.aviso, 'warn');
       try { history.replaceState(null, '', '#' + d.lista); } catch (_e2) {}

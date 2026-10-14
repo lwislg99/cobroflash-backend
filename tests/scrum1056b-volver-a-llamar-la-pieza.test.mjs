@@ -33,8 +33,8 @@ const FIRMADOS = {
   hecho: 'Hecho', // B8
   cambiar: 'Cambiar', // B9
   marcaHoy: 'Llamar hoy', // B10
-  noGuardado: 'No se ha podido guardar la llamada. Inténtalo otra vez.', // B12
-  noMarcado: 'No se ha podido marcar como hecha. Inténtalo otra vez.', // B15 (c.19453): el fallo de «Hecho»
+  noGuardado: 'No se ha podido guardar la llamada. Inténtalo de nuevo.', // B12 (c.19649: acaba en «de nuevo», la forma de la casa)
+  noMarcado: 'No se ha podido marcar como hecha. Inténtalo de nuevo.', // B15 (c.19453; final cambiado en c.19649): el fallo de «Hecho»
   guardar: 'Guardar', // B13
   cancelar: 'Cancelar', // B14
 };
