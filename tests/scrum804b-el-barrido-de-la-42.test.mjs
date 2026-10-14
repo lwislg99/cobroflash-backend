@@ -17,7 +17,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import {
-  DENTRO, FUERA, NO_DECIDIBLE, SIN_RED, censarConMotivo, esFalloDeRed, linea, ramasDelTicket,
+  DENTRO, FUERA, NO_DECIDIBLE, SIN_RED, censarConMotivo, leerRemoto, linea, ramasDelTicket,
   artefactosQueNombra,
 } from '../scripts/censo-regla-42.mjs';
 
@@ -54,12 +54,13 @@ const POSITIVOS = [866, 881];
 // censo además lee entradas de registro, artefactos y commits. Si el censo se equivocara leyendo
 // las ramas, esta derivación NO se equivocaría igual — que es justo lo que un control tiene que
 // garantizar y lo que un fixture sacado del propio censo no garantizaría.
+//
+// 🔴 SCRUM-1539 · INDEPENDIENTE EN CÓMO SE LEE, NO EN CUÁNDO. Hasta el 14-oct-2026 este fichero
+// preguntaba al remoto para elegir el negativo y el censo volvía a preguntar para clasificarlo. Si
+// entre las dos alguien mergeaba ese ticket, su rama se borraba y el caso caía en el obligatorio
+// de un PR ajeno (#2370, 13-oct). Ahora hay UNA foto por proceso (`leerRemoto`: las ramas y el sha
+// de `origin/main` del mismo instante) y las dos partes la interpretan, cada una con lo suyo.
 // ═══════════════════════════════════════════════════════════════════════════════════════════
-
-/** Cero escritura: sólo pregunta. La salida de error se RECOGE, para poder decir por qué falló. */
-function git(args) {
-  return execFileSync('git', args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
-}
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 // 🔴 SCRUM-1331 · LA RED NO SE LLAMA AL CARGAR EL MÓDULO, Y SU FALTA SE DICE CON SU NOMBRE.
@@ -72,9 +73,9 @@ function git(args) {
 // Ahora el negativo se deriva DENTRO del caso que lo usa (una vez por proceso), y los dos casos
 // puros —identidad y artefactos— corren haya red o no.
 //
-// ⚠️ La red se llama en DOS sitios y los dos están cubiertos: aquí (`negativoVivo`) y dentro de
-// `censarConMotivo` (`scripts/censo-regla-42.mjs`). Sacar sólo éste dejaba los casos de red cayendo
-// con un «CIEGO» que no decía de qué.
+// ⚠️ La red se llama en UN sitio desde SCRUM-1539: `leerRemoto` (`scripts/censo-regla-42.mjs`), una
+// vez por proceso y dentro de `fotoDelRemoto`. El negativo y el censo reciben esa misma foto, y su
+// ceguera trae el motivo con nombre.
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 
 /**
@@ -105,34 +106,37 @@ function ciego(c) {
  * SALTA declarando el motivo. Un negativo que no se puede montar y pasa en silencio cuenta como
  * verde sin haberse ganado nada.
  */
+let fotoYaSacada = null;
+/** SCRUM-1539 · la ÚNICA lectura del remoto de este proceso. */
+function fotoDelRemoto() {
+  fotoYaSacada ??= leerRemoto();
+  return fotoYaSacada;
+}
+
 let negativoYaDerivado = null;
 function negativoVivo() {
-  negativoYaDerivado ??= derivarNegativo();
+  negativoYaDerivado ??= derivarNegativo(fotoDelRemoto());
   return negativoYaDerivado;
 }
 
-function derivarNegativo() {
-  let heads;
-  try {
-    heads = git(['ls-remote', '--heads', 'origin']).split('\n').filter(Boolean);
-  } catch (e) {
-    const detalle = String(e?.stderr || e?.message || '').trim().split('\n').filter(Boolean).pop() ?? '';
-    return { n: null, ciego: { que: esFalloDeRed(detalle) ? SIN_RED : 'SIN_REFS', detalle: detalle.slice(0, 300) } };
-  }
+function derivarNegativo(foto) {
+  if (foto.ciego) return { n: null, ciego: foto.ciego };
+  const heads = foto.salida.split('\n').filter(Boolean);
   const candidatos = [];
   for (const fila of heads) {
     const [sha, ref] = fila.split(/\s+/);
     const m = /refs\/heads\/scrum-(\d+)(?:[a-z]\d*)?(?:-|$)/.exec(ref || '');
     if (!m) continue;
     try {
-      // `--is-ancestor` sale 0 si YA está en main; si sale != 0, la rama sigue viva.
-      execFileSync('git', ['merge-base', '--is-ancestor', sha, 'origin/main'], { stdio: 'ignore' });
+      // `--is-ancestor` sale 0 si YA está en main; si sale != 0, la rama sigue viva. Contra el sha
+      // de la FOTO, no contra la ref: un `git fetch` de otro árbol la mueve a mitad de la tanda.
+      execFileSync('git', ['merge-base', '--is-ancestor', sha, foto.main], { stdio: 'ignore' });
     } catch {
       candidatos.push(Number(m[1]));
     }
   }
-  // El más alto: el más reciente, y por tanto el que menos probable es que esté a punto de
-  // mergearse mientras corre esta misma tanda.
+  // El más alto: el más reciente. Desde SCRUM-1539 da igual que se mergee mientras corre la tanda:
+  // el censo lo clasifica sobre la misma foto en la que se eligió.
   return { n: candidatos.length ? Math.max(...candidatos) : null, ciego: null };
 }
 
@@ -170,7 +174,7 @@ test('SCRUM-804b · 🔴 SUELO y CONTROLES: el criterio reconoce lo que SÍ est�
   const negativo = negativoVivo();
   if (negativo.ciego) ciego(negativo.ciego);
   const NEGATIVO = negativo.n;
-  const { censo: c, ciego: censoCiego } = censarConMotivo([...POSITIVOS, NEGATIVO]);
+  const { censo: c, ciego: censoCiego } = censarConMotivo([...POSITIVOS, NEGATIVO], { foto: fotoDelRemoto() });
   if (censoCiego) ciego(censoCiego);
   t.diagnostic(linea(c));
 
@@ -211,7 +215,7 @@ test('SCRUM-804b · 🔴 SUELO y CONTROLES: el criterio reconoce lo que SÍ est�
 test('SCRUM-804b · 🔴 «no encuentro marca» NO es FUERA: va a NO DECIDIBLE, del lado malo', () => {
   // Un número que con toda seguridad no tiene rama, ni entrada, ni ficheros, ni commits.
   const inventado = 999999;
-  const { censo: c, ciego: censoCiego } = censarConMotivo([inventado]);
+  const { censo: c, ciego: censoCiego } = censarConMotivo([inventado], { foto: fotoDelRemoto() });
   if (censoCiego) ciego(censoCiego);
   const f = c.filas.find((x) => x.n === inventado);
 
@@ -229,7 +233,7 @@ test('SCRUM-804b · 🔴 «no encuentro marca» NO es FUERA: va a NO DECIDIBLE, 
 test('SCRUM-804b · 🔴 el censo DECLARA su reparto, y las clases SUMAN', (t) => {
   const negativo = negativoVivo();
   if (negativo.ciego) ciego(negativo.ciego);
-  const { censo: c, ciego: censoCiego } = censarConMotivo([...POSITIVOS, negativo.n, 41, 534, 691]);
+  const { censo: c, ciego: censoCiego } = censarConMotivo([...POSITIVOS, negativo.n, 41, 534, 691], { foto: fotoDelRemoto() });
   if (censoCiego) ciego(censoCiego);
   t.diagnostic(linea(c));
   for (const f of c.filas) t.diagnostic(`  SCRUM-${String(f.n).padEnd(6)} ${f.cubo.padEnd(13)} ${f.motivo.slice(0, 95)}`);
