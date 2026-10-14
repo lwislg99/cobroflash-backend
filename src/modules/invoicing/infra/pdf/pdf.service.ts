@@ -7,7 +7,7 @@ import QRCode from 'qrcode';
 import { invoicesDir } from '../../../../core/storage/dirs';
 import { cantidadDeLinea } from '../../domain/vat.service'; // SCRUM-504: una sola cantidad
 import { getLocale } from '../../../../core/i18n/locales';
-import { formatImporteEs, tipoEnPorcentaje, rotuloDeTipo } from '../../../../core/utils/utils'; // SCRUM-636: el sitio unico
+import { formatImporteEs, tipoEnPorcentaje, rotuloDeTipo, calcTotal } from '../../../../core/utils/utils'; // SCRUM-636: el sitio unico
 import { nombreParaDocumento } from '../../../../core/documentos/nombreParaDocumento'; // SCRUM-577
 import { partirConceptoYDescripcion } from './conceptoLinea'; // SCRUM-603 (DOC-13)
 // SCRUM-656 (T7): CÓMO se presenta el IVA de un PRESUPUESTO y sus cláusulas de cierre. El
@@ -762,6 +762,12 @@ export async function generateQuotePdf(params: ParamsPdfPresupuesto) {
   // El documento deja de decidir; quien sabe, pasa.
   // ═══════════════════════════════════════════════════════════════════════════════════
   const impuesto = params.taxName || NOMBRE_IMPUESTO_POR_DEFECTO;
+  // SCRUM-1302m · el modo se lee AQUÍ, antes de pintar el primer importe, y no en el pie: en
+  // `no_incluido` todo importe del papel va SIN el impuesto —el de cada línea, el de cada opción
+  // y el total—, porque la leyenda de abajo habla de todos. Lo cobrado no cambia: cambia lo que
+  // este documento enseña, que es justo para lo que existe el modo.
+  const modoDelDocumento = leerModoIva(params.modoIva).modo;
+  const ivaFueraDelPapel = modoDelDocumento === 'no_incluido';
   const QUOTE_LABEL = locale.quote; // "Presupuesto" o "Cotización"
 
   // ═══════════════════════════════════════════════════════════════════════════════════
@@ -901,7 +907,7 @@ export async function generateQuotePdf(params: ParamsPdfPresupuesto) {
         lineY += 12;
       }
       tier.lines.forEach((l: any) => {
-        const lineTotal = fmtImporte(l.qty * l.price * (1 + (l.tax ?? 0)));
+        const lineTotal = fmtImporte(l.qty * l.price * (1 + (ivaFueraDelPapel ? 0 : (l.tax ?? 0))));
         const text = `${l.concept} × ${l.qty}`;
         doc.text(text, x + 4, lineY, { width: tierW - 8 });
         lineY += 10;
@@ -912,7 +918,7 @@ export async function generateQuotePdf(params: ParamsPdfPresupuesto) {
       // Total del tier
       doc.rect(x, lineY, tierW, 14).fill(tier.recommended ? '#dcfce7' : '#e5e7eb');
       doc.fillColor('#111827').font('Helvetica-Bold').fontSize(9)
-        .text(`Total: ${fmtImporte(tier.total)} ${params.currency}`, x + 4, lineY + 3, { width: tierW - 8, align: 'center' });
+        .text(`Total: ${fmtImporte(ivaFueraDelPapel ? Number(tier.total) - ivaDentroDelImporte(tier.lines) : tier.total)} ${params.currency}`, x + 4, lineY + 3, { width: tierW - 8, align: 'center' });
 
       doc.fillColor('black').font('Helvetica');
     });
@@ -976,7 +982,7 @@ drawTableHeader();
 
 
 params.lines.forEach((l) => {
-  const lineTotal = l.qty * l.price * (1 + l.tax);
+  const lineTotal = l.qty * l.price * (1 + (ivaFueraDelPapel ? 0 : l.tax));
 
   const concept = softBreakLongTokens(String(l.concept || '').trim());
 
@@ -1084,7 +1090,6 @@ const filasDeTotales: Array<{ etiqueta: string; importe: number }> = [];
 // sigue siendo `calcVatBreakdown` —dentro de `pieDePresupuesto`— y aquí no se suma nada: esta
 // función solo pinta lo que le den. Es lo que impide que «una funcioncita para el IVA del pie»
 // se convierta en la tercera copia de la aritmética (la segunda fue `calcTierTotal`, SCRUM-655).
-const modoDelDocumento = leerModoIva(params.modoIva).modo;
 const pie = pieDePresupuesto({
   lineas: lineasParaDesglose as any,
   modo: modoDelDocumento,
@@ -1106,8 +1111,16 @@ for (const fila of filasDeTotales) {
 }
 
 // Total (sin partirse raro)
+//
+// 🔴 SCRUM-1302m · EN `no_incluido`, EL TOTAL VA SIN EL IVA QUE EL GUARDADO LLEVA DENTRO. Sigue
+// saliendo de `params.total` —el guardado manda, como dice el bloque de arriba—, y se le resta
+// lo que `calcTotal` dice que es impuesto. Antes se pintaba el guardado a secas y la leyenda de
+// debajo lo desmentía: «Total presupuesto: 121,00» · «IVA NO INCLUIDO», con 21,00 de IVA dentro.
+const totalDelPapel = ivaFueraDelPapel
+  ? Number(params.total) - ivaDentroDelImporte(params.lines, params.discountGlobalAmount ?? null)
+  : Number(params.total);
 doc.fontSize(12).text(
-  `Total ${locale.quoteVerb}: ${fmtImporte(Number(params.total))} ${params.currency}`,
+  `Total ${locale.quoteVerb}: ${fmtImporte(totalDelPapel)} ${params.currency}`,
   CONTENT_X,
   doc.y,
   { width: CONTENT_W, align: 'right' },
@@ -1279,4 +1292,26 @@ doc
   // SCRUM-72: ídem factura — Quote.pdfUrl guarda la ruta del endpoint AUTENTICADO
   // GET /admin/quotes/:id/pdf, no una ruta estática pública.
   return { outPath, publicUrlPath: `/admin/quotes/${params.quoteId}/pdf` };
+}
+
+/**
+ * SCRUM-1302m · EL IVA QUE UN IMPORTE GUARDADO LLEVA DENTRO.
+ *
+ * `Quote.total` y `tier.total` se guardan SIEMPRE con el IVA de sus líneas sumado, en los dos
+ * modos (`calcTotal`; el modo «no cambia ni un céntimo», `presentacionIva.ts`). Medido con el
+ * PDF de verdad: una línea de 100,00 al 21 % en modo `no_incluido` salía «Total presupuesto:
+ * 121,00» y, debajo, «IVA NO INCLUIDO». La leyenda es la del modo; la cifra era la de otro.
+ *
+ * Aquí no hay aritmética nueva: es `calcTotal`, la misma primitiva que produjo el guardado,
+ * llamada dos veces —con el tipo de cada línea y con el tipo a cero—. La diferencia es el
+ * impuesto que va dentro, con sus descuentos ya aplicados. Lo que NO sume (una cabecera de
+ * apartado) lo filtra ella.
+ *
+ * Si no se puede saber —líneas ilegibles—, devuelve 0 y el papel sale como salía.
+ */
+function ivaDentroDelImporte(lineas: unknown, descuentoGlobal?: number | string | null): number {
+  const conIva = (Array.isArray(lineas) ? lineas : []) as Parameters<typeof calcTotal>[0];
+  const sinIva = conIva.map((l) => ({ ...l, tax: 0 }));
+  const dentro = calcTotal(conIva, descuentoGlobal) - calcTotal(sinIva, descuentoGlobal);
+  return Number.isFinite(dentro) ? Math.round(dentro * 100) / 100 : 0;
 }

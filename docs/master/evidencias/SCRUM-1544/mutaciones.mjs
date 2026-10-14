@@ -12,34 +12,21 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { mutacionesDeclaradas } from '../../../../scripts/meta-guard-mutaciones.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..');
 const CENSO = 'tests/_censo-por-posicion.mjs';
 const GUARD = 'tests/scrum710b-anclaje-por-identidad.test.mjs';
 const sha = (f) => crypto.createHash('sha256').update(fs.readFileSync(path.join(RAIZ, f))).digest('hex');
 
-const MUTACIONES = [
-  { nombre: 'el censo deja de leer el join', fichero: CENSO,
-    de: "&& n.expression.name.text === 'join' && n.arguments.length === 1",
-    a: "&& n.expression.name.text === 'join' && n.arguments.length === 99",
-    cae: 'una cita TROCEADA con todas sus piezas escritas' },
-  { nombre: 'un número escrito pasa a ser un hueco', fichero: CENSO,
-    de: 'if (ts.isNumericLiteral(n)) return n.text;',
-    a: 'if (ts.isNumericLiteral(n)) return HUECO;',
-    cae: 'una cita TROCEADA con todas sus piezas escritas' },
-  { nombre: 'un nombre se lee como si fuera el número (el censo «aprende» constantes)', fichero: CENSO,
-    de: '  resto.push(n);\n  return HUECO;\n}',
-    a: "  resto.push(n);\n  return ts.isIdentifier(n) ? '12' : HUECO;\n}",
-    cae: 'EL LÍMITE: con una pieza en un nombre' },
-  { nombre: 'el literal con la cita entera se cuenta dos veces', fichero: CENSO,
-    de: '    resto.push(n);\n    return HUECO;\n  }\n  if (ts.isNumericLiteral(n))',
-    a: '    resto.push(n);\n    return n.text;\n  }\n  if (ts.isNumericLiteral(n))',
-    cae: 'los anclajes por NÚMERO DE LÍNEA no crecen' },
-  { nombre: 'se retira de la lista uno de los tres que el censo no veía', fichero: GUARD,
-    de: "  ['tests/scrum398-vocabulario-de-cobro.test.mjs  reports.routes.ts', 1],\n",
-    a: '',
-    cae: 'los anclajes por NÚMERO DE LÍNEA no crecen' },
-];
+// 🔴 SIN LISTA PROPIA (SCRUM-1387, alta hecha en SCRUM-1302n). Las mutaciones son las
+// `MUTACIONES_QUE_ME_TUMBAN` que declara el guard, leídas con el lector del meta-guard (por AST, sin
+// ejecutar el test). Son las mismas cinco que este guion llevaba escritas: mismo `de`, `a` y `cae`.
+// La red de la casa es `npm run meta:mutaciones`, en el CI; esto es la segunda sonda, local.
+const MUTACIONES = mutacionesDeclaradas(fs.readFileSync(path.join(RAIZ, GUARD), 'utf8'), GUARD)
+  .map((m, i) => ({ ...m, nombre: `#${i + 1} ${JSON.stringify(m.de.slice(0, 50))} → ${JSON.stringify(m.a.slice(0, 50))}` }));
+if (MUTACIONES.length === 0) { console.log(`🔴 CIEGO: ${GUARD} no declara ninguna mutación legible. EXIT=2`); process.exit(2); }
+console.log(`POBLACION: ${MUTACIONES.length} mutaciones declaradas en ${GUARD}`);
 
 function corre() {
   const tap = path.join(os.tmpdir(), `scrum1544-mut-${process.pid}.tap`);
