@@ -640,4 +640,6 @@ Sesión `s4-14oct` · rama `scrum-1302p-el-enlace-de-una-revision-antigua`. El s
 - Una versión antigua con `status = 'expired'` (la que barre el cron) sigue pintando la página de caducado: el punto 1 firmado sólo cubre `draft` y `sent`. Declarado en el ticket, sin tocar.
 - El PDF del enlace antiguo (`GET /quote/:token/pdf`) se sigue sirviendo: la conducta firmada habla de la página, no de esa ruta.
 
+- **Tanda amplia** (los ficheros de test que leen estas páginas, el panel, los locales, el dominio de presupuestos, las fichas, las evidencias o los registros; `--test-concurrency=3`, `FORCE_COLOR` borrado, 3.529 MB libres): **427 ficheros, 4.019 tests, 3.982 pasan, 34 saltados, 3 caídos, los tres míos**, y arreglados en el código: `scrum411` (`ESTADOS_CON_ENLACE_VIVO` exportado sin llamador: deja de exportarse) y `scrum553` (cuatro extractores de mi test con el `>` pegado: aceptan atributos). Esos dos ficheros y los dos míos, otra vez: 61 de 61.
+
 **NO medido:** yaqu.app (este PR no ha mergeado al escribir esto) · la suite completa de `npm test`.

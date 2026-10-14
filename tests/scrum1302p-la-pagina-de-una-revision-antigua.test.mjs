@@ -110,8 +110,8 @@ test('SCRUM-1302p · 🔴 el enlace de la .0 habiendo .1: SÓLO el aviso, con T1
   assert.ok(llamadas.count > antes, 'CIEGO: la página no ha preguntado por el grupo');
   assert.equal(pinta(r.html).aviso, true, '🔴 el enlace de una versión antigua no avisa: es el defecto medido el 13-oct');
   assert.equal(pinta(r.html).formulario, false, '🔴 el enlace de una versión antigua deja firmar');
-  assert.match(r.html, new RegExp(`<title>${T1}`), 'T1 no es el título de la página');
-  assert.ok(r.html.includes(`<strong>${T2}</strong>`), 'T2 no se lee tal cual');
+  assert.match(r.html, new RegExp(`<title[^>]*>${T1}`), 'T1 no es el título de la página');
+  assert.match(r.html, new RegExp(`<strong[^>]*>${T2.replace('.', '\\.')}</strong>`), 'T2 no se lee tal cual');
   assert.ok(r.html.includes(T3.replace('{negocio}', 'Fontanería Ruiz')), 'T3 no se lee tal cual');
   // Punto 2 y 3: ni importes, ni rechazar, ni PDF, ni botón, ni emoji que señale.
   assert.equal(/121,00|242,00/.test(r.html), false, 'enseña un importe');
@@ -179,6 +179,6 @@ test('SCRUM-1302p · {negocio}: el nombre fiscal si lo hay, y escapado', async (
 test('SCRUM-1302p · en un país de «cotización», T1 y T2 concuerdan en femenino', async () => {
   TABLA = [fila(0, { merchant: merchantDe('MX') }), fila(1)];
   const r = await pedir('/quote/:token', fila(0).decisionToken);
-  assert.match(r.html, /<title>Cotización actualizada/);
-  assert.ok(r.html.includes('<strong>Esta cotización tiene una versión más reciente.</strong>'));
+  assert.match(r.html, /<title[^>]*>Cotización actualizada/);
+  assert.match(r.html, /<strong[^>]*>Esta cotización tiene una versión más reciente\.<\/strong>/);
 });

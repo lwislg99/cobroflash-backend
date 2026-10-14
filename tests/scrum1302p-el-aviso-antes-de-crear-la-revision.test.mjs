@@ -189,7 +189,7 @@ function estadosDe(rel, patron) {
 }
 test('SCRUM-1302p · 🔴 el panel y la página deciden con los MISMOS estados', () => {
   const panel = estadosDe('public/dashboard/js/quoteRevisiones.js', /var ESTADOS_CON_ENLACE_VIVO = \[([^\]]*)\]/);
-  const pagina = estadosDe('src/modules/quotes/domain/versionMasReciente.ts', /export const ESTADOS_CON_ENLACE_VIVO[^=]*= \[([^\]]*)\]/);
+  const pagina = estadosDe('src/modules/quotes/domain/versionMasReciente.ts', /const ESTADOS_CON_ENLACE_VIVO[^=]*= \[([^\]]*)\]/);
   assert.deepEqual(panel, ['draft', 'sent']);
   assert.deepEqual(pagina, panel);
 });

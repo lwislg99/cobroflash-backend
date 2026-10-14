@@ -18,7 +18,7 @@
 import { prisma } from '../../../core/db/prisma';
 import { whereDelGrupo, anioDeLaSerie } from '../../../core/documentos/grupoDelPresupuesto';
 
-export const ESTADOS_CON_ENLACE_VIVO: readonly string[] = ['draft', 'sent'];
+const ESTADOS_CON_ENLACE_VIVO: readonly string[] = ['draft', 'sent'];
 
 type PresupuestoDelEnlace = {
   merchantId: number;
