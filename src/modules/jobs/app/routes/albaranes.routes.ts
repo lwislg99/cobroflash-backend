@@ -31,9 +31,9 @@ import { allocateAlbaranNumber, AlbaranSerieSinAnioError } from '../../domain/al
 import { siguienteNumeroDeAlbaran } from '../../domain/albaranSerie'; // SCRUM-1184: vista previa del número
 import { datosDuplicado } from '../../domain/albaranDuplicado'; // SCRUM-302: qué viaja al duplicado
 // SCRUM-300 (C5): microcopy y normalización del firmante, en su fuente única.
-import { exigirNombreFirmante, normalizarLugarEntrega, resolverCalidadFirmante } from '../../domain/albaranFirmante';
+import { ERROR_ALBARAN_CAMBIADO, exigirNombreFirmante, normalizarLugarEntrega, resolverCalidadFirmante } from '../../domain/albaranFirmante';
 // SCRUM-361 (H6 · fase 2): dos editores a la vez dejaban de existir el uno para el otro.
-import { puedeEditarEstaVersion } from '../../domain/albaranEdicion';
+import { ERROR_ALBARAN_CAMBIADO_AL_EDITAR, puedeEditarEstaVersion } from '../../domain/albaranEdicion';
 import { seesOnlyOwnJobs } from '../../../../core/http/roleCapabilities'; // SCRUM-467
 import { esSuyoElTrabajo, SELECT_DUENOS } from '../../domain/accesoAlTrabajo'; // SCRUM-849
 import { fotoYaSubida } from '../../domain/fotoDuplicada'; // SCRUM-382: la misma foto no se guarda dos veces
@@ -767,10 +767,28 @@ router.patch('/:id', async (req, res) => {
     }
     if (cambios.length === 0) return res.status(400).json({ error: 'nothing_to_update' });
 
-    const updated = await prisma.albaran.update({
-      where: { id: albaran.id },
-      data: { ...data, version: { increment: 1 } },
-    });
+    // SCRUM-1302o: se escribe SÓLO sobre el albarán que se leyó. Con `where: { id }`, lo comprobado
+    // arriba podía dejar de ser cierto antes de escribir: una firma en medio (no sube `version`) y la
+    // edición caía sobre un albarán FIRMADO; otra edición en medio y ésta la pisaba en silencio.
+    // Quien choca recibe lo que esta ruta ya contesta a una petición nueva: ningún texto nuevo.
+    let updated;
+    try {
+      updated = await prisma.albaran.update({
+        where: { id: albaran.id, estado: albaran.estado, version: albaran.version },
+        data: { ...data, version: { increment: 1 } },
+      });
+    } catch (e: any) {
+      if (e?.code !== 'P2025') throw e;
+      const ahora = await prisma.albaran.findFirst({
+        where: { id: albaran.id, merchantId: req.merchantId },
+        select: { estado: true },
+      });
+      if (!ahora) return res.status(404).json({ error: 'not_found' });
+      if (ahora.estado === 'firmado') {
+        return res.status(409).json({ error: 'albaran_locked', message: 'Un albarán firmado está congelado: no se puede editar.' });
+      }
+      return res.status(409).json({ error: ERROR_ALBARAN_CAMBIADO_AL_EDITAR });
+    }
     recordAudit({
       merchantId: req.merchantId,
       teamMemberId: (req as any).teamMemberId ?? null,
@@ -1043,10 +1061,13 @@ router.post('/:id/firmar', async (req, res) => {
     // `where: { id }`, dos peticiones a la vez (el reintento de la firma, o la cola sin cobertura
     // al volver la red) leían las dos `emitido` y escribían las dos: quedaba el SEGUNDO trazo.
     // Mismo patrón que la firma remota (SCRUM-1302j). Quien llega tarde no regenera el PDF.
+    // SCRUM-1302o: y la VERSIÓN leída también. La evidencia de arriba sella el contenido LEÍDO; si
+    // alguien lo edita en medio (el PATCH sube `version`), escribir dejaría la evidencia de uno y la
+    // fila del otro.
     let updated;
     try {
       updated = await prisma.albaran.update({
-        where: { id: albaran.id, estado: albaran.estado },
+        where: { id: albaran.id, estado: albaran.estado, version: albaran.version },
         data: {
           estado: 'firmado', signatureUrl: signatureData, firmadoAt, evidenciaFirma: evidencia as any,
           firmadoPorNombre, firmadoPorCalidad: calidad.valor,
@@ -1058,11 +1079,15 @@ router.post('/:id/firmar', async (req, res) => {
       // textos, ya aprobados, de las puertas de arriba, literales y con su `message` (SCRUM-275).
       const ahora = await prisma.albaran.findFirst({
         where: { id: albaran.id, merchantId: req.merchantId },
-        select: { estado: true },
+        select: { estado: true, version: true },
       });
       if (!ahora) return res.status(404).json({ error: 'not_found' });
       if (ahora.estado === 'firmado') {
         return res.status(409).json({ error: 'albaran_locked', message: 'Este albarán ya está firmado.' });
+      }
+      if (ahora.estado === albaran.estado && ahora.version !== albaran.version) {
+        // Texto aprobado en SCRUM-1302 c.19467 (docs/microcopy/2026-10-14-SCRUM-1302-albaran-cambiado-en-obra.md).
+        return res.status(409).json({ error: ERROR_ALBARAN_CAMBIADO, message: 'El albarán ha cambiado mientras lo firmabas. Vuelve a abrirlo para firmar la versión actual.' });
       }
       return res.status(409).json({ error: 'invalid_transition', from: ahora.estado, to: 'firmado', message: 'Emite el albarán antes de firmarlo.' });
     }

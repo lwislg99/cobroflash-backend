@@ -222,3 +222,43 @@ lo lancé después de la consulta (dio `06:50Z`). Es exacta al minuto, no al seg
 - No cambia ninguna etiqueta, ni propone cuál quitar: las 8 son del orquestador (A13).
 - No juzga los 16 «no juzgados»: entre ellos están los 9 que esperan una decisión escrita solo en el texto.
 - No sabe si una contraria está caducada (1066).
+
+---
+
+## SCRUM-1553c · los controles de la consulta vacía, en la tanda
+
+**Medido contra:** `origin/main` = `6c5b3ad61fcce65bcedaad61499afa0a97167e73` · 2026-10-14T07:28:35Z
+
+A9: comprobación → `tests/scrum1553c-la-consulta-vacia-se-vigila.test.mjs`
+
+J3 (sesión `jv-j3g`), por encargo de su orquestador (`cobroflash-backend-2e`), que decidió que `--solo-controles`
+entra en la tanda y la consulta real se queda a mano en el PASO 0. El fallo que cierra es el mío del tramo
+1553b: dejé la decisión escrita y el instrumento fuera de la tanda, así que nadie se habría enterado el día que
+dejara de cazar. **Este test no toca Jira**: solo lanza el guion con `--solo-controles`.
+
+### Qué exige
+
+| Test | Verde solo si |
+| --- | --- |
+| ① la consulta caza su semilla | el guion existe, el hijo no muere, imprime «CONTROLES · N tickets sembrados … pasan» con **N ≥ 8**, y sale 0 |
+| ② 🔴 con un control roto sale 2 | una copia en `os.tmpdir()` con el prefijo cambiado imprime «FALLAN», sale 2 y nombra SCRUM-90001; si el ancla de la mutación desaparece, cae |
+| ③ 🔴 no arrancar no es pasar | un guion que revienta al cargar y uno que no existe salen distinto de 0 y **sin** la línea de controles |
+
+El ① distingue «pasan» de «no arrancó» por la LÍNEA con su recuento, no solo por el código de salida: un guion
+que sale 0 sin decir nada cae.
+
+### El rojo, primero (cinco mutaciones en el árbol, restaurado y comparado con `cmp` después de cada una)
+
+| Mutación de `contradiccion.mjs` | Resultado (TAP) |
+| --- | --- |
+| ninguna | 3 de 3 pasan |
+| A · un control roto (la comparación del positivo) | cae ① (1 de 3) |
+| B · guion renombrado | caen ① («NO ARRANCÓ: no existe …») y ② |
+| C · revienta al cargar | caen ① y ② |
+| D · sustituido por `process.exit(0)` (sale 0 mudo) | caen ① y ② |
+| E · la semilla declara 3 casos | cae ① («solo 3 tickets sembrados») |
+
+### Guards antes de empujar
+
+`dist/` reconstruido con `tsc --noCheck` (el worktree no lo tenía), para que scrum636 arranque esta vez. Las
+cifras van en la entrega.
