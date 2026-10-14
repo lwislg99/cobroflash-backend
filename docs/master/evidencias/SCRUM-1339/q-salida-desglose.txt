@@ -1,0 +1,8 @@
+POBLACIÓN: 113 filas del TSV (una por commit de main recorrido)
+medidos: 50 · {"completo · job success":18,"CON AUSENTES · job success":29,"completo · job failure":2,"CON AUSENTES · job failure":1}
+jobs VERDES medidos: 47; de ellos con ausentes: 29
+por día: {"2026-10-14 sin":3,"2026-10-14 con":3,"2026-10-13 con":14,"2026-10-13 sin":11,"2026-10-09 sin":2,"2026-10-09 con":7,"2026-10-08 con":6,"2026-10-08 sin":4}
+ausentes por run afectado: mín 2 · mediana 16 · máx 118 · suma 644
+ficheros distintos que pierden: 19 · scrum524b-trinquete-de-la-tabla 8 · scrum834-puerta-avisador-rojo 8 · scrum1262-la-baja-corta-todas-las-vias 6 · scrum1456-ids-que-no-caben-en-la-columna 5 · scrum1379b-id-fuera-de-rango-resto 5 · vigia-atascados 5 · scrum514-aprobado-y-aplicado 3 · scrum853-avisador-solo-obligatorio 3 · scrum888g-senal-en-la-firma 2 · scrum522-guards-fuera-de-la-tanda 1 · scrum411-exports-inalcanzables 1 · scrum719-el-suelo-de-los-doce 1 · scrum286-bloques-orden 1 · scrum813-trinquete-de-zona 1 · scrum312-importador-clientes 1 · scrum1350-latido 1 · scrum931-un-solo-importe-de-plantilla 1 · scrum595-etiquetas-del-documento 1 · scrum1344-arnes-de-prueba-con-rol 1
+«sin job obligatorio»: 61 · no pude preguntar 0 · {"run completed/cancelled · 0 jobs":61}
+EXIT=0
