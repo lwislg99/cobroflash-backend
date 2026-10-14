@@ -1,4 +1,4 @@
-# Archivar un presupuesto: la ficha y la lista
+# Archivar un presupuesto: la ficha, la lista y el 409 del servidor
 
 **Aprobado por el orquestador por delegación del fundador** el 14-oct-2026 — SCRUM-1273 comentario 19605.
 
@@ -6,6 +6,10 @@ La delegación de microcopy es la permanente de `docs/equipo/limites-del-fundado
 los propuso S2 en el comentario 19604; el orquestador firmó nueve tal cual y **cambió T2**: el
 presupuesto archivado vuelve a salir solo si el cliente lo acepta (decisión 1 del mismo comentario),
 y el texto tenía que decirlo.
+
+Esta ficha la escribieron las dos mitades del ticket por separado, con el mismo nombre: S1 con T10
+(la ruta) y S2 con T1–T9 (la pantalla). Se juntaron al traer `main` a la rama de S2, sin cambiar
+ningún literal.
 
 ## Texto aprobado, literal
 
@@ -43,12 +47,16 @@ T9 · la opción del selector de estado y la lista vacía (`quotesListView.js`, 
 
 > No tienes presupuestos archivados.
 
-## T10 no está en esta ficha, y por qué
+T10 · el `message` del 409 `no_archivable` de `POST /admin/quotes/:id/archivar`:
 
-T10 (el `message` del 409 de `POST /admin/quotes/:id/archivar`) se firmó en el mismo comentario,
-pero **lo escribe la ruta, que es de S1**, y este fichero sólo recoge lo que aplica la pantalla. La
-ficha lo enseña por `mensajeParaPersona`, como cualquier `data.message`. Su literal está en el
-comentario 19605; lo registra quien lo aplica.
+> Solo se puede archivar un borrador, uno rechazado o uno caducado.
+
+## Dónde se pinta T10
+
+- `src/modules/quotes/domain/archivado.ts`, `COPY_NO_ARCHIVABLE`, que devuelve
+  `src/modules/system/app/routes/quotesAdmin.routes.ts` (SCRUM-1273, parte de S1).
+- La ficha del presupuesto lo enseña al fallar, por `mensajeParaPersona`, como cualquier
+  `data.message` (parte de S2).
 
 ## Lo que esta firma no cubre
 

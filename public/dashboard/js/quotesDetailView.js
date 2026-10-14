@@ -341,8 +341,9 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     const chosen = quote.selectedTierId ? tierLabels[quote.selectedTierId] || quote.selectedTierId : null;
     const tierBadge = document.createElement('div');
     tierBadge.style.marginTop = '14px';
+    // SCRUM-1487b · la palabra del documento, la misma de la cabecera (no concuerda con nada del rótulo).
     tierBadge.innerHTML = `
-      <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Cotización con 3 opciones</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px">${palabraDelDocumento} con 3 opciones</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         ${quote.tiers.map((t) => `
           <span style="padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;
