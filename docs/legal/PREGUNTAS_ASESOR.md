@@ -63,7 +63,7 @@
    hoy en `yaqu.app/privacidad` no cubre IBAN/NIF/teléfono del profesional, dirección del
    cliente final, ni la evidencia de firma — nunca fue validada por ti pese a estar live.
 10. **Alcance Founding** (`docs/legal/ALCANCE_BETA.md`): revisa el borrador, sobre todo la
-    cláusula de "VERI*FACTU se activa al cerrar la certificación, sin cambio de precio" y
+    cláusula de "VERI*FACTU se activará al cerrar la declaración responsable del fabricante, sin cambio de precio" y
     que cobrar la beta antes de tener facturación fiscal sea correcto.
 
 ## D. Calendario / coste
