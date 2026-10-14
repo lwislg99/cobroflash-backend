@@ -94,7 +94,7 @@ rótulos; con el cambio de nombre en los dos sitios siguen siendo 13 e iguales. 
 
 **Medido contra:** `origin/main` = `05808c319acc9eb6b10ad04d23a4245141c64d6f` · 2026-10-14T16:59:59Z (`Date:` de GitHub), traído a la rama con `git merge`.
 **Skill UI:** no cargada · no cambia marcado, clases, estilos ni textos: la ficha deja de crear dos botones que ya existían para quien no es admin.
-A9: sin fallo que generalice. El hueco lo encontró esta misma sesión al leer la rama antes de pasarla a lista (c.19728), y el orquestador dio paso en el mensaje de las 16:5xZ.
+A9: sin fallo que generalice — el hueco lo encontró esta misma sesión al leer la rama antes de pasarla a lista (c.19728), y el orquestador dio paso en el mensaje de las 16:5xZ.
 
 **Qué pasaba.** La ficha ofrecía «Archivar» y «Desarchivar» mirando sólo el ESTADO. Las dos rutas de S1 son
 `requireRole('admin')` (`quotesAdmin.routes.ts:994` y `:1027` en `scrum-1273-archivar-presupuestos`), y a otro

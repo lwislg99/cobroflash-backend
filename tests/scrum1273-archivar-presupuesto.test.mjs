@@ -244,18 +244,19 @@ test('SCRUM-1273 · un archivado enseña el aviso y «Desarchivar» en cualquier
 // pantalla no puede ofrecer un botón que acaba en «Inténtalo de nuevo» (c.19728).
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-for (const rol of ['tecnico', 'operario']) {
-  test(`SCRUM-1273 · 🔴 a un «${rol}» la ficha NO le ofrece «Archivar» ni «Desarchivar», y el aviso de archivado sí lo ve`, async () => {
-    const srv = servidor([{ id: 1, status: 'draft' }, { id: 2, status: 'draft', archivedAt: '2026-10-14T09:00:00.000Z' }]);
-    let f = await ficheDe(montarBanco(srv, () => true, rol), 1);
-    assert.ok(f.nodos().length > 60, `🔴 CIEGO: la ficha montó ${f.nodos().length} nodos`);
-    assert.equal(f.archivar().length, 0, `🔴 a un «${rol}» se le ofrece «Archivar», y la ruta le contesta 403`);
-    f = await ficheDe(montarBanco(srv, () => true, rol), 2);
-    assert.equal(f.aviso().length, 1, `🔴 a un «${rol}» no se le dice que el presupuesto está archivado`);
-    assert.equal(f.desarchivar().length, 0, `🔴 a un «${rol}» se le ofrece «Desarchivar», y la ruta le contesta 403`);
-    assert.equal(srv.llamadas.some((c) => c.startsWith('POST')), false);
-  });
-}
+// Los nombres van escritos enteros (SCRUM-1415): uno construido no lo puede contar la tanda.
+const casoRolSinArchivo = (rol) => async () => {
+  const srv = servidor([{ id: 1, status: 'draft' }, { id: 2, status: 'draft', archivedAt: '2026-10-14T09:00:00.000Z' }]);
+  let f = await ficheDe(montarBanco(srv, () => true, rol), 1);
+  assert.ok(f.nodos().length > 60, `🔴 CIEGO: la ficha montó ${f.nodos().length} nodos`);
+  assert.equal(f.archivar().length, 0, `🔴 a un «${rol}» se le ofrece «Archivar», y la ruta le contesta 403`);
+  f = await ficheDe(montarBanco(srv, () => true, rol), 2);
+  assert.equal(f.aviso().length, 1, `🔴 a un «${rol}» no se le dice que el presupuesto está archivado`);
+  assert.equal(f.desarchivar().length, 0, `🔴 a un «${rol}» se le ofrece «Desarchivar», y la ruta le contesta 403`);
+  assert.equal(srv.llamadas.some((c) => c.startsWith('POST')), false);
+};
+test('SCRUM-1273 · 🔴 a un «tecnico» la ficha NO le ofrece «Archivar» ni «Desarchivar», y el aviso de archivado sí lo ve', casoRolSinArchivo('tecnico'));
+test('SCRUM-1273 · 🔴 a un «operario» la ficha NO le ofrece «Archivar» ni «Desarchivar», y el aviso de archivado sí lo ve', casoRolSinArchivo('operario'));
 
 test('SCRUM-1273 · CONTROL: con el MISMO servidor y rol «admin», la ficha sí ofrece los dos', async () => {
   const srv = servidor([{ id: 1, status: 'draft' }, { id: 2, status: 'draft', archivedAt: '2026-10-14T09:00:00.000Z' }]);
