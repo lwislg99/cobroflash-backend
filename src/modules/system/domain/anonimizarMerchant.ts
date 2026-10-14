@@ -56,6 +56,18 @@ export const CAMPOS_PERSONALES: Readonly<Record<string, readonly string[]>> = Ob
   // tanto no entra aquí. `address` (la dirección del sitio) queda SIN DECIDIR, misma pregunta
   // que `job.direccion`.
   customerSite: ['phone'],
+  // SCRUM-529 · `whatsapp_messages.to_phone` guarda el NÚMERO al que se mandó cada WhatsApp: el
+  // teléfono del cliente, fuera de `customers`. Sin esta línea se redacta `customer.phone` y el
+  // mismo número queda en claro una tabla más allá.
+  //
+  // Mismo caso y mismo criterio que `emailMessage.toEmail`, justo arriba: SE ANONIMIZA, NO SE
+  // BORRA. La fila acredita el envío (qué plantilla, cuándo, con qué resultado); lo que
+  // desaparece es el destinatario.
+  //
+  // ⚠️ Solo `toPhone`. `waMessageId` es el identificador que da Meta —mismo papel que
+  // `providerId` en el correo: no es un dato del interesado y es lo que cruza un webhook de
+  // entrega con su fila—, y `type`/`templateName`/`status`/las fechas son el hecho, no la persona.
+  whatsAppMessage: ['toPhone'],
 });
 
 /** Lo que NUNCA se toca, con su motivo. Sirve de documentación y de guard a la vez. */

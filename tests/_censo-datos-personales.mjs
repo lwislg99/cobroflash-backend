@@ -43,6 +43,7 @@ export const RUTA_SCHEMA = path.join(path.resolve(import.meta.dirname, '..'), 'p
 export const VOCABULARIO_PERSONAL = Object.freeze([
   'email', 'toEmail',                       // direcciones de correo
   'phone', 'whatsappPhone', 'bizumPhone',   // teléfonos
+  'toPhone',                                // el número al que se mandó un WhatsApp (SCRUM-529)
   'name', 'legalName',                      // nombres
   'taxId',                                  // NIF/CIF
   'address', 'direccion',                   // domicilios y direcciones de trabajo

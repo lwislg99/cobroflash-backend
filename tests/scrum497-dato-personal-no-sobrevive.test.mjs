@@ -85,7 +85,7 @@ test('SCRUM-497 · 🔴 SUELO: la derivación ve las columnas personales del esq
 
   // Y que el vocabulario no se haya quedado vacío: con él vacío, el cero de arriba sería trivial.
   assert.ok(VOCABULARIO_PERSONAL.length >= 10,
-    `🔴 el vocabulario de dato personal trae ${VOCABULARIO_PERSONAL.length} nombres y son 13.`);
+    `🔴 el vocabulario de dato personal trae ${VOCABULARIO_PERSONAL.length} nombres y son 14 (13 hasta SCRUM-529, que sumó \`toPhone\`).`);
 });
 
 test('SCRUM-497 · 🔴 AUTOPRUEBA: la derivación distingue un dato personal de una bandera', () => {
@@ -268,6 +268,90 @@ test('SCRUM-497 · 🔴 tras suprimir, ninguna dirección es recuperable y las f
   assert.equal(redaccionesPara('emailMessage').toEmail, REDACTADO);
 });
 
+// ── 4 · 🔴 SCRUM-529 · EL NÚMERO AL QUE SE MANDÓ UN WHATSAPP ───────────────────────────────
+//
+// `whatsapp_messages.to_phone` es el teléfono del cliente guardado fuera de `customers`. Lo midió
+// jv-j2a antes de empujar la columna: el censo casa por NOMBRE EXACTO, `toPhone` no estaba en el
+// vocabulario, y el esquema con la columna puesta daba las mismas 33 columnas personales que sin
+// ella. El guard habría salido verde con el teléfono en claro.
+//
+// 🔴 LOS DOS CASOS VAN SEMBRADOS, no prestados del árbol: el esquema es sintético y la lista
+// «anonimizado que se deja `toPhone`» se fabrica aquí. Si se apoyaran en `prisma/schema.prisma`,
+// el día que la columna cambie de nombre se quedarían mudos y seguirían en verde.
+
+test('SCRUM-529 · 🔴 SIEMBRA: un anonimizado que deja `toPhone` en claro pone el guard EN ROJO', () => {
+  const conLaColumna = `
+model Customer {
+  phone String?
+}
+model WhatsAppMessage {
+  merchantId Int     @map("merchant_id")
+  status     String  @default("queued")
+  toPhone    String? @map("to_phone")
+}
+`;
+  // ① El censo VE la columna. Antes de SCRUM-529 no la veía, y todo lo de abajo era verde por eso.
+  assert.deepEqual(camposPersonalesDelSchema(conLaColumna).map((p) => p.clave),
+    ['customer.phone', 'whatsAppMessage.toPhone'],
+    '🔴 el censo NO VE `whatsAppMessage.toPhone`: `toPhone` ha salido del vocabulario, y un teléfono '
+    + 'de cliente guardado fuera de `customers` vuelve a ser invisible para este guard.');
+
+  // ② LA SIEMBRA: la lista de anonimizado de verdad, SIN la entrada de `whatsAppMessage`. Es el
+  //    anonimizado que redacta `customer.phone` y deja el mismo número en `whatsapp_messages`.
+  const seLoDeja = Object.fromEntries(Object.entries(CAMPOS_PERSONALES).filter(([m]) => m !== 'whatsAppMessage'));
+  assert.ok(!('whatsAppMessage' in seLoDeja) && 'customer' in seLoDeja,
+    '🔴 la siembra no se ha aplicado: la lista fabricada tendría que perder `whatsAppMessage` y conservar `customer`.');
+  assert.deepEqual(repartir(conLaColumna, seLoDeja, {}, {}).sinClasificar, ['whatsAppMessage.toPhone'],
+    '🔴 un anonimizado que NO toca `whatsAppMessage.toPhone` pasa el guard: se redactaría el teléfono '
+    + 'de la ficha del cliente y el mismo número quedaría en claro en el registro de envíos.');
+
+  // ③ Y con la lista REAL, cubierto. Sin esto, ② podría caer porque el guard cae siempre.
+  const real = repartir(conLaColumna, CAMPOS_PERSONALES, {}, {});
+  assert.deepEqual(real.sinClasificar, [],
+    `🔴 la lista real no cubre \`whatsAppMessage.toPhone\`: ${JSON.stringify(real.sinClasificar)}`);
+  assert.deepEqual(real.cubiertos, ['customer.phone', 'whatsAppMessage.toPhone']);
+});
+
+test('SCRUM-529 · 🔴 tras suprimir, el número de cada WhatsApp se redacta y la fila SIGUE', async () => {
+  // Mismo criterio que `emailMessage.toEmail` y mismos tres asertos: redactado, sin borrar, y
+  // filtrado por el merchant. La fila acredita el envío; lo que desaparece es el destinatario.
+  const pedidos = [];
+  const db = new Proxy({}, {
+    get(_d, modelo) {
+      if (modelo === 'auditLog') {
+        return { create: async (args) => { pedidos.push({ modelo, op: 'create', args }); return { id: 1 }; } };
+      }
+      return {
+        updateMany: async (args) => { pedidos.push({ modelo, op: 'updateMany', args }); return { count: 3 }; },
+        deleteMany: async (args) => { pedidos.push({ modelo, op: 'deleteMany', args }); return { count: 3 }; },
+      };
+    },
+  });
+
+  const r = await suprimirMerchant({
+    merchantId: 77,
+    actor: { tipo: 'merchant', teamMemberId: null },
+    db,
+    auditar: async () => ({ id: 1 }),
+  });
+  assert.ok(r.ok, `🔴 la supresión ha fallado: ${r.motivo}`);
+
+  const delWhatsApp = pedidos.filter((p) => p.modelo === 'whatsAppMessage');
+  assert.equal(delWhatsApp.length, 1,
+    '🔴 LA SUPRESIÓN NO TOCA `whatsAppMessage`: el número al que se mandó cada mensaje sobrevive en '
+    + 'claro. Añade `whatsAppMessage: [\'toPhone\']` a `CAMPOS_PERSONALES`.');
+  assert.equal(delWhatsApp[0].op, 'updateMany',
+    `🔴 a \`whatsAppMessage\` se le ha pedido un \`${delWhatsApp[0].op}\`: la fila es la constancia del envío y se conserva.`);
+  assert.deepEqual(delWhatsApp[0].args.data, { toPhone: REDACTADO },
+    `🔴 no se redacta el número, o se redacta algo más que el número: ${JSON.stringify(delWhatsApp[0].args.data)}`);
+  assert.deepEqual(delWhatsApp[0].args.where, { merchantId: 77 },
+    `🔴 la redacción de \`whatsAppMessage\` no va filtrada por merchant: ${JSON.stringify(delWhatsApp[0].args.where)}`);
+
+  // Y el marcador no se parece a un teléfono: uno que parezca un dato se lee como un dato.
+  assert.ok(!/\d/.test(REDACTADO),
+    `🔴 el texto de redacción lleva cifras y se leerá como un número: «${REDACTADO}»`);
+});
+
 test('SCRUM-497 · CONTROL: la supresión sigue cubriendo merchant y customer, no solo el correo', () => {
   // Un cambio en esta lista podría haberse llevado por delante lo que ya cubría. Se comprueba que
   // los doce campos de antes siguen, no solo el nuevo.
@@ -279,4 +363,6 @@ test('SCRUM-497 · CONTROL: la supresión sigue cubriendo merchant y customer, n
     '🔴 han cambiado los campos personales de `customer`.');
   assert.deepEqual([...CAMPOS_PERSONALES.emailMessage], ['toEmail'],
     '🔴 han cambiado los campos personales de `emailMessage`.');
+  assert.deepEqual([...CAMPOS_PERSONALES.whatsAppMessage], ['toPhone'],
+    '🔴 han cambiado los campos personales de `whatsAppMessage`.');
 });
