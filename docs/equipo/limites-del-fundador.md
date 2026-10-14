@@ -81,7 +81,8 @@ Su literal, como lo dejó en el chat de su orquestador:
   (`docs/master/evidencias/SCRUM-997/vigencia.mjs`). Que un texto fiscal del equipo de Javier suba a
   Javier lo sostiene hoy quien firma.
 - **Desde SCRUM-997d el oráculo lo dice en vez de callarlo.** Una firma delegada ya no sale «aprobada» a
-  secas: sale `aprobada-por-delegacion-sin-comprobar`, con la lista de lo que no se ha mirado de ella
+  secas: sale `aprobada-sin-comprobar` (hasta SCRUM-1546c se llamaba `aprobada-por-delegacion-sin-comprobar`;
+  hoy lo comparte con la firma del fundador, que tampoco se comprueba), con la lista de lo que no se ha mirado de ella
   (`NO_COMPROBADO_EN_UNA_DELEGADA`, en `tests/_microcopy-aprobada.mjs`). **Sigue contando como aprobada**:
   decirlo no es comprobarlo, y la exclusión de arriba sigue sin mecanismo. A quién alcanza cada delegación
   lo decide cada jefe.
