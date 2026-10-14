@@ -21,7 +21,7 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     fichero: 'src/modules/quotes/app/routes/quotes.routes.ts',
     de: 'if (await tieneVersionMasReciente(quote, quote.merchant)) {\n      return res.status(409).json({',
     a: 'if (false && await tieneVersionMasReciente(quote, quote.merchant)) {\n      return res.status(409).json({',
-    cae: 'el POST con el token de la .0 habiendo .1',
+    cae: 'aceptar con el token de la .0 habiendo .1',
   },
 ];
 
