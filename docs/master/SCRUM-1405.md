@@ -314,3 +314,87 @@ los reales), más las carpetas de los otros tres runs.
 
 Para repetir el experimento entero: un push a la rama `exp-1405-force-exit` con el workflow de
 `exp-1405.yml.txt`. ⛔ Esa rama no se mergea a `main`.
+
+---
+
+## Tramo de J6j · 14-oct-2026 · el testigo dentro de UN fichero real (`scrum834`)
+
+**Medido contra:** `origin/main` = `11ca1e05f2e211a0a4eddf8941eaf738c6df98e5` · 2026-10-14T06:55:57Z (sesión `jv-j6j`, equipo de Javier, por encargo del orquestador `cobroflash-backend-2e`. Es la base de la rama del experimento y la hora es la del arranque del run `38525138304`. Al escribir esto `origin/main` iba por `76c29b57c871584b04c8206c11571f9c56c9d699`, que no toca ni `tests/scrum834-*` ni `scripts/puerta-avisador-rojo.mjs`.)
+
+A9: aviso → cicatriz J6 «Parcheé mi propio guion con un script de node pasado por un heredoc que calculaba las posiciones antes de sustituir, y dejó el fichero roto» — no se pudo comprobar: lo cazó node al no compilar, pero un parche que compile y caiga en el sitio equivocado no lo caza nadie
+
+**El hueco que cierra.** Lo de arriba decía «los casos que faltan SE EJECUTARON» con el testigo en una
+cobaya fabricada; los seis ficheros reales se midieron sin tocar, por `# tests`. Para ellos, «se
+ejecutaron» salía del mecanismo, no de un testigo suyo. Aquí UNO real lleva el testigo dentro.
+
+**Respuesta: sí, en `scrum834`, todos.** 400 pasadas con el flag y el testigo: 310 con casos ausentes,
+**5.460 casos ausentes, los 5.460 con su testigo de «empecé», 0 sin él**, siempre la cola. Sin el flag:
+400 pasadas y 0 ausentes. Ninguna pasada salió ciega.
+
+### Cómo
+
+- **El testigo.** En la copia desechable del runner cambia UNA línea del fichero real, la del
+  `import test from 'node:test'`, por un envoltorio de `test` en una sola línea (no se mueve ninguna
+  otra): apunta `DECLARADO <nombre>` al declarar el caso e `INICIO <nombre>` al entrar en su cuerpo, con
+  `appendFileSync` a un fichero aparte. **No escribe ni un byte en la tubería cuya pérdida se mide.** El
+  fichero se restaura al acabar, con su sha256 comprobado (IGUAL en las dos pasadas del run), y el paso
+  final del job comprueba `git status` vacío. En `main` y en la rama de entrega, `tests/` no cambia.
+- **Por nombre, no por recuento.** Ausente es lo declarado según el testigo que no sale en el TAP de
+  primer nivel. 53 declarados en las 800 pasadas con testigo, los mismos que las 53 líneas `test(` del
+  texto. Los casos que sí informan casan nombre a nombre con su testigo: 0 informados sin testigo.
+- **Dónde corrió.** Un workflow nuevo y aparte (SCRUM-1339 c.17951 ①) que sólo existe en la rama
+  `exp-1405-testigo-en-fichero-real`: se dispara con un push a esa rama, no es check de ningún PR y no se
+  mergea. Copia en `evidencias/SCRUM-1405/exp-1405-j6j.yml.txt`. GitHub `ubuntu-latest`, 4 hilos, node
+  v24.21.0. No toca `ci.yml`, ni el script `test`, ni `--test-force-exit`, ni nada de `area-s5`.
+
+### Los controles, antes de medir el real (los mismos `instrumentar()` y analizador)
+
+| control | qué es | qué dio (10 pasadas cada uno, 5 con el flag y 5 sin él, en el run y en local) |
+|---|---|---|
+| presente | 10 casos verdes | 0 ausentes, 10 con testigo |
+| corte | 10 casos, el 5.º hace `process.exit(0)` | 10 ausentes por pasada: 5 CON testigo (empezaron) y **5 SIN testigo (los 6 a 10, no corrieron)** |
+| ciego | el mismo fichero instrumentado sin decirle dónde apuntar | la pasada sale **CIEGA**, no «0 sin testigo» |
+| lector | un TAP fabricado con `#` y `\` escapados y un `# SKIP` | lo lee bien |
+
+El testigo dice las dos cosas: en el corte salen 50 «se ejecutó y no informó» y 50 «no se ejecutó».
+Si algún control falla, el guion sale con 1 y no mide el real.
+
+### El real, run `38525138304` (200 pasadas por brazo, los tres brazos intercalados)
+
+| brazo | carga | pasadas | con ausentes | casos ausentes | con testigo | **sin testigo** | salida |
+|---|---|---|---|---|---|---|---|
+| con el flag, con testigo | 0 | 200 | 148 | 2.790 | 2.790 | **0** | 0 las 200 |
+| con el flag, con testigo | 4 | 200 | 162 | 2.670 | 2.670 | **0** | 0 las 200 |
+| sin el flag, con testigo | 0 | 200 | 0 | 0 | – | 0 | 0 las 200 |
+| sin el flag, con testigo | 4 | 200 | 0 | 0 | – | 0 | 0 las 200 |
+| con el flag, **sin tocar** | 0 | 200 | 170 (por `# tests`) | 2.845 | sin testigo: no se puede juzgar | – | 0 las 200 |
+| con el flag, **sin tocar** | 4 | 200 | 160 (por `# tests`) | 2.363 | sin testigo: no se puede juzgar | – | 0 las 200 |
+
+- **El testigo no se come su objeto** (la objeción de c.17951): el fichero instrumentado pierde en
+  148 y 162 de 200, el mismo fichero sin tocar en 170 y 160, en las mismas máquinas e intercalados. No lo
+  he contrastado con una prueba estadística; la diferencia sin carga va en la dirección de «pierde algo
+  menos», y el veredicto no depende de ella.
+- El primer caso ausente cae entre el 15.º y el 53.º; la forma es «cola» en las 310.
+- **La salida fue 0 en las 1.200 pasadas**, también en las que perdieron casos: en verde la pérdida no
+  deja ningún rastro en el código de salida. Es lo que ya decía el registro (sólo un rojo lo deja).
+
+### Lo que NO dice
+
+- **Es UN fichero de 18.** Para los otros 17, «se ejecutaron» sigue saliendo del mecanismo y de la
+  cobaya, no de un testigo suyo. Lo que cambia es que la afirmación ya tiene un fichero real medido
+  detrás, y en él no hay excepción en 5.460.
+- El testigo dice «empecé», no «terminé en verde». Que los ausentes pasaran no lo dice el testigo: lo
+  dice que la salida fue 0 (un rojo da salida 1, 131 de 131 arriba).
+- Un tipo de runner, una mañana y una versión de node, como arriba. Windows no pierde (5 pasadas en
+  local con los tres brazos: 0 ausentes); allí el testigo no tiene nada que contar.
+- `scrum834` lo ejecuta este guion a solas, no dentro de la tanda.
+
+**Evidencias:** `evidencias/SCRUM-1405/j6j-testigo-real.mjs` (el guion) y `j6j-run-38525138304/`
+(las dos salidas, `controles.tsv`, `real-pasadas-carga{0,4}.tsv` con una fila por pasada, y
+`real-ausentes-sin-testigo-carga{0,4}.tsv`, que sólo traen la cabecera porque no hay ninguno). Para
+repetirlo: `node $E/j6j-testigo-real.mjs <carpeta de fuera> --en-sitio --pasadas 200` desde la raíz de
+una copia DESECHABLE, en Linux. ⛔ La rama `exp-1405-testigo-en-fichero-real` no se mergea a `main`.
+
+**Mis errores.** Parcheé mi propio guion con un script de node pasado por un heredoc que buscaba las
+posiciones antes de sustituir: el fichero quedó roto y lo cazó node al no compilar. La trampa del
+heredoc estaba en la memoria; la repetí. Lo arreglé con el editor y volví a pasar los controles.
