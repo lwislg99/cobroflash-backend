@@ -107,6 +107,19 @@ ausente**. Se borra en cada comando (A6) y se escribe en la primera línea de ca
   (así le llega desde `npm test`, porque cmd no expande el patrón). **Cómo se comprueba:** antes de creerse el
   código de salida, el TAP tiene que existir y traer su línea `# tests N`, con N del orden de los tests de la
   última suite buena; sin esa línea no hay suite, hay un instrumento que no arrancó (A21).
+- **El reaper de Claude Code puede matar la tanda entera si va en SEGUNDO PLANO y la sesión está quieta**
+  («stopped because the system is running low on memory … while the session was idle»). El umbral **no** es
+  la memoria libre: en la misma condición, la tanda que murió nunca bajó de 1.704 MB libres y las que
+  sobrevivieron bajaron a 1.201 y a 1.263 MB. Cuál es el umbral no se sabe. → correr la tanda en **PRIMER
+  PLANO**, con la herramienta de shell y sin `run_in_background`, con un `timeout` de 600.000. En primer plano
+  terminaron 2 de 2, en 4,2 y 4,3 min, una de ellas bajando a 744 MB libres. Con n = 2 no es una garantía.
+  ⚠️ **Sólo si no hay otras sesiones trabajando:** una tanda en primer plano que aprieta la memoria podría
+  hacer que el reaper mate lo que otra sesión tenga en segundo plano. Esto se deduce del mecanismo; **no está
+  medido**. ⚠️ Una orden en primer plano tiene un tope de 10 min: si se agota, no hay veredicto. **Cómo se
+  comprueba:** la línea `ℹ tests N` con su recuento. Que la tanda termine sin que la maten no quiere decir que
+  esté en verde. No sustituye al CI, que sigue siendo el juez obligatorio. Tampoco autoriza a tocar
+  `CLAUDE_CODE_DISABLE_BG_SHELL_PRESSURE_REAP`, que es configuración del equipo de Javier. Medido por J6 el
+  28-sep-2026 con seis tandas enteras: `docs/master/SCRUM-1244.md` §⑤. Reportado en SCRUM-1254.
 
 ## 8 · CI: un «build + tests» que agota el tiempo
 
