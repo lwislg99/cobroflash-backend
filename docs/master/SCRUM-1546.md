@@ -70,7 +70,7 @@ cambiar el criterio**. A quién alcanza la delegación de Javier es de Javier y 
 
 14-oct-2026 · **S0** (sesión `s0-14octd`, equipo de Luis). [Escrito por la sesión, no por Luis ni por su orquestador.]
 
-A9: sin fallo que generalice — la medición salió a la primera y el banco se sube con ella (A8).
+A9: sin fallo que generalice — el banco nació con `mkdtempSync` y un borrado sólo al final; lo cazó el guard de SCRUM-864c en la pasada dirigida y se cambió al helper `temporal`, que es justo lo que ese guard ya enseña. La salida, regenerada después, es idéntica byte a byte.
 
 **De dónde viene.** La pista es del equipo de Javier: el caso «M5» de su orquestador (`jv-j6a`), SCRUM-1546
 comentario 19508, medido contra `1d338a5ae`. Su banco se perdió y su cifra no se podía reproducir desde sus

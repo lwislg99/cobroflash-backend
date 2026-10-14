@@ -3,7 +3,6 @@
 // Cada caso = copia REAL de docs/microcopy/ + UNA cobaya. Se cuenta que la cobaya entró antes de preguntar.
 import fs from 'node:fs';
 import path from 'node:path';
-import os from 'node:os';
 import { pathToFileURL } from 'node:url';
 
 const RAIZ = path.resolve(process.argv[2] || '');
@@ -12,6 +11,8 @@ const CENSO921 = path.join(RAIZ, 'tests', '_censo-firmas-autorizacion.mjs');
 if (!fs.existsSync(ORACULO)) { console.log('CIEGO: no existe ' + ORACULO); process.exit(2); }
 const o = await import(pathToFileURL(ORACULO).href);
 const c921 = await import(pathToFileURL(CENSO921).href);
+// El temporal, con el helper de la casa (SCRUM-864c): se borra al salir el proceso, pase lo que pase.
+const { temporal } = await import(pathToFileURL(path.join(RAIZ, 'tests', '_temporal.mjs')).href);
 
 const REAL = path.join(RAIZ, 'docs', 'microcopy');
 const reales = fs.readdirSync(REAL).filter((n) => n.endsWith('.md'));
@@ -28,7 +29,7 @@ const CASOS = [
   ['D  control: delegada con referencia INVENTADA', 'Aprobado por el orquestador por delegación del fundador · SCRUM-999999 comentario 99999999'],
 ];
 
-const base = fs.mkdtempSync(path.join(os.tmpdir(), 'm5-'));
+const base = temporal('scrum1546-m5-');
 console.log(`POBLACION: ${reales.length} ficheros .md en docs/microcopy (README incluido, que el oráculo no cuenta) · oráculo ${path.relative(RAIZ, ORACULO)}`);
 let fallos = 0;
 for (const [rotulo, firma] of CASOS) {
@@ -53,6 +54,5 @@ for (const [rotulo, firma] of CASOS) {
     console.log(`  censo 921 clasificarLinea → ${JSON.stringify(r)}`);
   }
 }
-fs.rmSync(base, { recursive: true, force: true });
 console.log(`\nEXIT=${fallos ? 2 : 0}`);
 process.exit(fallos ? 2 : 0);
