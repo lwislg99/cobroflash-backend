@@ -55,6 +55,7 @@ test('SCRUM-1202 · la vía VIVA sigue rechazando una firma sin trazo (422) sin 
     id: 99912020, quoteNumber: 7, merchantId: 7, customerId: 2, status: 'sent', currency: 'EUR',
     total: 100, lines: [{ concept: 'Revisión', qty: 1, price: 100, tax: 0 }], tiers: null,
     paymentTerms: 'MANUAL', decisionToken: 'b'.repeat(32), Invoice: [], validUntil: null,
+    revision: 0, createdAt: '2026-10-01T10:00:00.000Z', // SCRUM-1302r · como una fila real: el grupo es por año
     merchant: { id: 7, name: 'QA', country: 'ES' }, customer: { id: 2, name: 'Cliente QA' },
   };
   const escrituras = [];
@@ -62,6 +63,7 @@ test('SCRUM-1202 · la vía VIVA sigue rechazando una firma sin trazo (422) sin 
   moduloPrisma.prisma.quote = {
     findUnique: async () => quote,
     findFirst: async () => quote,
+    count: async () => 0, // SCRUM-1302r · la ruta pregunta si hay una versión más reciente del grupo; aquí, ninguna.
     update: async (a) => { escrituras.push(a.data); return { ...quote, ...a.data }; },
   };
   try {

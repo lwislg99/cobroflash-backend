@@ -51,3 +51,28 @@ export async function tieneVersionMasReciente(
   });
   return masNuevas > 0;
 }
+
+/**
+ * T3, literal firmado (c.19454, con la enmienda «La que estás viendo»). Vive aquí y no en la página
+ * porque lo dicen DOS sitios: la página del enlace viejo y el `message` del `POST` que lo rechaza.
+ * `{negocio}` es el nombre fiscal, o el comercial, o «el profesional», como en la página del rechazo.
+ * ⚠️ Sin escapar: quien lo pinte en HTML lo escapa (la página lo hace con `escapandoLoInterpolado`).
+ */
+export function fraseDeLaVersionAntigua(negocio: string): string {
+  return `La que estás viendo ya no se puede aceptar. Abre el enlace de la versión nueva que te haya enviado ${negocio}, o pídesela.`;
+}
+
+/**
+ * SCRUM-1302r · el `message` del `POST /quote/:token/decision` sobre una versión no vigente: T2 y T3
+ * seguidos (propuesta de S4 en c.19451, firmada en c.19454 punto 6 y c.19636 punto 3).
+ */
+export function mensajeDeVersionMasReciente(
+  quoteHasNewer: string,
+  merchant?: { legalName?: string | null; name?: string | null } | null,
+): string {
+  const negocio = merchant?.legalName || merchant?.name || 'el profesional';
+  return `${quoteHasNewer} ${fraseDeLaVersionAntigua(negocio)}`;
+}
+
+/** El código del 409 de una versión no vigente: la página lo trata como el de «ya decidido» (recarga). */
+export const ERROR_VERSION_NO_VIGENTE = 'quote_has_newer_version';

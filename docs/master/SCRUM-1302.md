@@ -672,3 +672,33 @@ Sesión `s4-14oct` · rama `scrum-1302p-el-enlace-de-una-revision-antigua`. El s
 - **Tanda amplia** (los ficheros de test que leen estas páginas, el panel, los locales, el dominio de presupuestos, las fichas, las evidencias o los registros; `--test-concurrency=3`, `FORCE_COLOR` borrado, 3.529 MB libres): **427 ficheros, 4.019 tests, 3.982 pasan, 34 saltados, 3 caídos, los tres míos**, y arreglados en el código: `scrum411` (`ESTADOS_CON_ENLACE_VIVO` exportado sin llamador: deja de exportarse) y `scrum553` (cuatro extractores de mi test con el `>` pegado: aceptan atributos). Esos dos ficheros y los dos míos, otra vez: 61 de 61.
 
 **NO medido:** yaqu.app (este PR no ha mergeado al escribir esto) · la suite completa de `npm test`.
+
+
+---
+
+# SCRUM-1302r · el `POST /quote/:token/decision` rechaza la versión no vigente (S1)
+
+**Lo que faltaba de este defecto** (c.19636 punto 3, c.19656): con una .1 en el grupo, un `POST` fabricado con el token de la .0 todavía ACEPTABA (200). La página ya no ofrecía el formulario (1302p), la API sí.
+
+**Lo firmado que se aplica:** que el `POST` rechace, con `message` = T2 y T3 seguidos (propuesta de S4 en c.19451; firmada en c.19454 punto 6 y repetida en c.19636 punto 3). **Ningún texto nuevo.** Ningún comentario fija el código HTTP: va un **409**, como el de «ya decidido» de la misma ruta (SCRUM-1276), con un `error` propio, `quote_has_newer_version`, para no decir «ya decidido» de algo que no lo está.
+
+## Lo construido
+
+- `src/modules/quotes/domain/versionMasReciente.ts`: T3 pasa a `fraseDeLaVersionAntigua(negocio)`, la fuente única para la página y para el `POST`; `mensajeDeVersionMasReciente(quoteHasNewer, merchant)` = T2 + T3; `ERROR_VERSION_NO_VIGENTE`. **No se toca `tieneVersionMasReciente`** (la ampliación a `expired` es de #2451, de S4).
+- `quotes.routes.ts`, `POST /:token/decision`: la misma pregunta que la página, **después** de los 200 idempotentes y **antes** del caducado (punto 5). Vale para `accept` y `reject` (punto 7). Una aceptada o rechazada no cambia (punto 6: la pregunta la deja fuera). Si la consulta falla, LANZA y la ruta da 500: nunca acepta a ciegas.
+- `quoteDecisionLanding.routes.ts`: la página pinta T3 desde la función (mismo HTML; `scrum1302p`, 11 de 11), y sus dos manejadores del 409 (el `fetch` de aceptar y el `POST /quote/:token/reject`) tratan `quote_has_newer_version` como «ya decidido»: recargan, y sale el aviso de la versión antigua. Es el caso de una revisión creada con la página ya abierta.
+
+## Tests de otros que cambian (declarado)
+
+`scrum1202`, `scrum892`, `scrum887c` y `scrum1370b` doblaban `prisma.quote` sin `count`, o con una fila sin `createdAt` ni `seriesYear`, y la ruta ahora pregunta por el grupo (que es por año). A los tres primeros se les dobla `count` a 0 («no hay versión más reciente», el caso que modelan); a `scrum1202` y `scrum1370b` se les pone el `createdAt` que una fila real siempre trae. Lo que miden no cambia.
+
+## Verificado, ejecutando
+
+- `tests/scrum1302r-el-post-rechaza-la-version-vieja.test.mjs`: 8 de 8, con CONTROL POSITIVO (la vigente se acepta, y el banco ve la pregunta por el grupo y la escritura).
+- **Rojo con la mutación** (`if (false && await tieneVersionMasReciente…`, que es la conducta de `main`): **6 de 8 caen**; siguen verdes los dos controles del otro lado (aceptada idempotente, .1 de otro año). Restaurada y recompilada. Declarada en `MUTACIONES_QUE_ME_TUMBAN`.
+- Los 29 ficheros que pasan por estas rutas: en verde tras arreglar los 4 dobles de arriba.
+
+## Lo que NO cubre
+
+- **El camino del bot** (`whatsappIncoming.routes.ts`, de J2) no pasa por este `POST`. No lo he medido.
+- `GET /quote/:token/pdf` de la antigua sigue sirviéndose (ya declarado arriba por S4).
