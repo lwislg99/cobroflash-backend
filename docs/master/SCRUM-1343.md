@@ -218,3 +218,10 @@ Si el **código de producción** lanza una excepción con datos válidos (un def
 - **NO corrido:** `guards:visuales` entero, el meta-guard entero y la suite completa. Eso lo corre el CI.
 
 A9: comprobación → `tests/scrum1343-un-hijo-que-no-arranca-es-ciego.test.mjs`
+
+**Seguimiento (14-oct-2026 ~17:40Z): el rojo del obligatorio de #2472 era mío.** El job 115993864452 sobre la punta `80e13c9` dio 11540 tests y 2 fallos, y los dos eran trinquetes de texto que había pisado este tramo:
+
+* **SCRUM-710b:** la traza de mentira del test 1343d llevaba `at f (g.mjs:1:1)`, que el censo lee como un anclaje por número de línea. Ahora es `at f (<anonymous>)`. El test no usaba esa posición: lee la primera línea y el `Node.js vX` del final.
+* **SCRUM-737:** el censo pasó de 81 a 83 cifras sin ancla. Las dos nuevas eran `36` y `2`, de la cita «36 verdes · … · 2 rojos» en `scripts/guards-visuales.mjs`, porque esa línea no llevaba fecha. La línea de la cita lleva ahora «14-oct-2026» (opción ④). Las cifras y la cita no cambian.
+
+Corridos en local sobre `origin/main` mergeado, 1343, 710b y 737 dan 33 tests y 33 pass. El rojo previo es el del CI, con las dos cifras y el fichero nombrados.

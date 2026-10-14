@@ -149,9 +149,9 @@ export function llegoAMedir(codigo) {
 // 🔴 SCRUM-1343d · UN GUARD QUE REVIENTA ANTES DE MEDIR NO HA ENCONTRADO NADA — Y AQUÍ SE CAMBIÓ
 // UNA DECISIÓN DE SCRUM-1343, A SABIENDAS.
 //
-// LO QUE PASÓ (14-oct-2026): `guard:firma-con-tramos` llevaba desde el 7-oct muriendo en 0,2 s, antes
-// de abrir el navegador (su doble no traía `seriesYear`; SCRUM-1490c), y esta puerta lo pintaba
-// `rojo(1)` y remataba «36 verdes · 0 CIEGOS · 2 rojos · Han medido y hay hallazgos». No había medido
+// LO QUE PASÓ: `guard:firma-con-tramos` llevaba desde el 7-oct muriendo en 0,2 s, antes de abrir el
+// navegador (su doble no traía `seriesYear`; SCRUM-1490c), y esta puerta lo pintaba `rojo(1)`. El
+// 14-oct-2026 remataba «36 verdes · 0 CIEGOS · 2 rojos · Han medido y hay hallazgos». No había medido
 // nada en una semana, y el instrumento decía de sí mismo lo contrario.
 //
 // SCRUM-1343 había decidido lo opuesto («reventar en la primera línea es rojo: ese 1 es suyo») por un

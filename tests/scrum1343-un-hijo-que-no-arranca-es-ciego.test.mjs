@@ -334,7 +334,7 @@ test('SCRUM-1343d · 🔴 CONTROL de la señal, con un hijo de verdad: `process.
 
 test('SCRUM-1343d · 🔴 una CAÍDA antes de medir NO deja la tanda en verde, ni sola ni con 37 verdes', () => {
   const caida = { status: 1, signal: null };
-  const traza = "Error: anio_de_la_serie_ilegible: x\n    at f (g.mjs:1:1)\n\nNode.js v24.21.0\n";
+  const traza = "Error: anio_de_la_serie_ilegible: x\n    at f (<anonymous>)\n\nNode.js v24.21.0\n";
   const filas = [...repetir(37, VERDE), filaDe('guard:firma-con-tramos', caida, traza)];
   const v = veredicto(filas);
   assert.notEqual(v.codigo, 0, '🔴 una caída ha dejado la tanda en verde');
