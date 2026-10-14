@@ -6,7 +6,7 @@
 // texto del 409, y que una decisión del cliente lo desarchiva).
 
 /** Los estados de la fila en los que se puede archivar (c.17511). */
-export const ESTADOS_ARCHIVABLES = ['draft', 'rejected', 'expired'] as const;
+const ESTADOS_ARCHIVABLES = ['draft', 'rejected', 'expired'] as const;
 
 export const ERROR_NO_ARCHIVABLE = 'no_archivable';
 /** T10, firmado en SCRUM-1273 c.19605. */

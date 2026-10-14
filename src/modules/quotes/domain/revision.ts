@@ -370,6 +370,7 @@ export const REVISION_NO_HEREDA: Readonly<Record<string, string>> = Object.freez
   decisionToken:   'el enlace público es de UN documento: compartirlo llevaría al cliente a la versión vieja',
   pdfUrl:          'el PDF pintado de la versión anterior. La nueva se pinta cuando exista',
   reminderSentAt:  'los recordatorios ya enviados son de aquella versión',
+  archivedAt:      'archivar es quitar de la lista AQUELLA versión (SCRUM-1273). La revisión la acaba de crear el profesional: nace en la lista',
 });
 
 /** Los que pone el sistema al crear la revisión — ni se heredan ni se copian: se calculan. */
