@@ -34,6 +34,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: "merchantId: q.merchantId, quoteNumber: q.quoteNumber, ...(String(merchant) === 'x' ? whereDelGrupo({ merchantId: 0, quoteNumber: 0, anio: anioDeLaSerie(q) }) : {}),",
     cae: 'el grupo es por AÑO de la serie',
   },
+  {
+    // M3 · se deja fuera `expired` (c.19636): la vieja ya barrida por el cron vuelve a «Pide uno actualizado».
+    fichero: 'src/modules/quotes/domain/versionMasReciente.ts',
+    de: "const ESTADOS_CON_ENLACE_VIVO: readonly string[] = ['draft', 'sent', 'expired'];",
+    a: "const ESTADOS_CON_ENLACE_VIVO: readonly string[] = ['draft', 'sent'];",
+    cae: 'también con la .0 ya CADUCADA por el cron',
+  },
 ];
 
 const T1 = 'Presupuesto actualizado';
@@ -120,7 +127,7 @@ test('SCRUM-1302p · 🔴 el enlace de la .0 habiendo .1: SÓLO el aviso, con T1
   assert.equal(r.html.includes('👇'), false, 'trae un emoji que señala a nada');
 });
 
-test('SCRUM-1302p · 🔴 también con la .0 en BORRADOR (punto 1: draft o sent)', async () => {
+test('SCRUM-1302p · 🔴 también con la .0 en BORRADOR (punto 1: draft, sent o expired)', async () => {
   TABLA = [fila(0, { status: 'draft' }), fila(1, { status: 'draft' })];
   const r = await pedir('/quote/:token', fila(0).decisionToken);
   assert.equal(pinta(r.html).aviso, true);
@@ -131,6 +138,20 @@ test('SCRUM-1302p · 🔴 va ANTES que el caducado (punto 5): una .0 enviada y v
   const r = await pedir('/quote/:token', fila(0).decisionToken);
   assert.equal(pinta(r.html).aviso, true, '🔴 sale «Pide uno actualizado» habiendo ya uno');
   assert.equal(r.html.includes('caducó'), false);
+});
+
+// SCRUM-1302 c.19636 · el punto 1 se amplía a `expired`: sin eso el punto 5 sólo valía para las
+// vencidas que el cron aún no había barrido. El caso de arriba es el `sent` vencido; éste, el barrido.
+test('SCRUM-1302p · 🔴 también con la .0 ya CADUCADA por el cron (`status = expired`, c.19636)', async () => {
+  TABLA = [fila(0, { status: 'expired', validUntil: '2026-01-01T00:00:00.000Z' }), fila(1)];
+  const r = await pedir('/quote/:token', fila(0).decisionToken);
+  assert.equal(pinta(r.html).aviso, true, '🔴 sale «Pide uno actualizado» habiendo ya uno');
+  assert.equal(r.html.includes('caducó'), false);
+  // Control: la misma .0 caducada SIN .1 sigue con su página de caducado.
+  TABLA = [fila(0, { status: 'expired', validUntil: '2026-01-01T00:00:00.000Z' })];
+  const sola = await pedir('/quote/:token', fila(0).decisionToken);
+  assert.equal(pinta(sola.html).aviso, false);
+  assert.ok(sola.html.includes('caducó'), '🔴 la sonda no ve el caducado: «sin caducó» de arriba no probaría nada');
 });
 
 test('SCRUM-1302p · una .0 ya ACEPTADA no cambia: es historia cierta (punto 6)', async () => {

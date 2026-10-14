@@ -330,6 +330,11 @@ const HALLAZGOS_DECLARADOS = [
   // contra ese sha congelado, que es lo que este guard pide ver. La punta es el sujeto de la pregunta
   // por el mismo motivo que el `[log]` de arriba. Lo retira quien retire el `[log]`.
   'scripts/verificacion-s5/ramas-borrables.mjs [rev-parse]',
+  // SCRUM-1540b · el enlace ticket↔rama, desde que juzga el mergeado por la punta VIVA con el mismo
+  // `clasificar` de `ramas-borrables.mjs`: resuelve `origin/main` UNA vez y mide cada punta contra ese
+  // sha. Su `branch -r --merged` sobre refs locales atrasadas decía «se puede borrar» de una rama viva
+  // sin mergear. La punta es el sujeto, como su `[log]`. Lo retira quien retire el `[log]`.
+  'scripts/verificacion-s5/enlace-ticket-rama.mjs [rev-parse]',
   // SCRUM-839d · el job que resuelve los conflictos de solo registro. Su pregunta es sobre la
   // PUNTA por definición: «¿este PR choca con `main` TAL COMO ESTÁ AHORA?». Es lo que GitHub
   // mira para marcarlo CONFLICTING, y contra la base de la rama no habría conflicto que ver.
@@ -478,6 +483,11 @@ const INDIRECTAS_DECLARADAS = [
   // mergeada, que es la respuesta inútil. EN SECO por defecto y fuera de CI.
   // Lo retira: quien borre `scripts/verificacion-s5/`.
   'scripts/verificacion-s5/ramas-borrables.mjs',
+  // SCRUM-1540b · el enlace ticket↔rama nombra `origin/main` al resolverla UNA vez para juzgar cada
+  // punta viva («¿esta rama está DENTRO de la punta de main?»), como `ramas-borrables.mjs`, cuyo
+  // `clasificar` usa. La referencia móvil es el sujeto. Herramienta de mano, fuera de CI.
+  // Lo retira: quien borre `scripts/verificacion-s5/`.
+  'scripts/verificacion-s5/enlace-ticket-rama.mjs',
   // SCRUM-804 · el guard de la dimensión «rama viva». Nombra `main` en la PROSA que explica la
   // regla —«¿el trabajo de este ticket está dentro de `main`?»— y en la clase `'en-main'` que
   // devuelve el clasificador de SCRUM-387. NO compara contra la referencia móvil: su árbitro le

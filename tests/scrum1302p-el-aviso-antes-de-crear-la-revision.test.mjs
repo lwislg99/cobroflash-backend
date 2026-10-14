@@ -33,9 +33,16 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // M2 · se estrecha a `sent`, que es justo lo que c.19475 decidió no hacer.
     fichero: 'public/dashboard/js/quoteRevisiones.js',
-    de: "var ESTADOS_CON_ENLACE_VIVO = ['draft', 'sent'];",
-    a: "var ESTADOS_CON_ENLACE_VIVO = ['sent'];",
+    de: "var ESTADOS_CON_ENLACE_VIVO = ['draft', 'sent', 'expired'];",
+    a: "var ESTADOS_CON_ENLACE_VIVO = ['sent', 'expired'];",
     cae: 'vigente en BORRADOR también avisa',
+  },
+  {
+    // M3 · se deja fuera `expired` (c.19636): la página avisaría y el panel no.
+    fichero: 'public/dashboard/js/quoteRevisiones.js',
+    de: "var ESTADOS_CON_ENLACE_VIVO = ['draft', 'sent', 'expired'];",
+    a: "var ESTADOS_CON_ENLACE_VIVO = ['draft', 'sent'];",
+    cae: 'vigente CADUCADA también avisa',
   },
 ];
 const W1_P7 = 'Al crear la revisión, el enlace de P7 dejará de valer.';
@@ -105,7 +112,7 @@ test('SCRUM-1302p · CONTROL POSITIVO: con la vigente ACEPTADA no hay enlace que
   const f = await ficha(presupuesto([fila(1, 0, 'P7', 'accepted', true)]));
   f.btn.click(); await pausa();
   assert.equal(f.posts.length, 1, '🔴 la sonda no ve un POST de un clic: «cero POST» de abajo no probaría nada');
-  assert.equal(f.aviso().length, 0, '🔴 avisa de un enlace que no va a morir (punto 2: sólo draft o sent)');
+  assert.equal(f.aviso().length, 0, '🔴 avisa de un enlace que no va a morir (punto 2: sólo draft, sent o expired)');
   assert.deepEqual(f.viajes, ['quotes-detail {"quoteId":2}']);
 });
 
@@ -159,6 +166,13 @@ test('SCRUM-1302p · 🔴 vigente en BORRADOR también avisa: NO se estrecha a `
   assert.ok(f.textoDelAviso().includes(W1_P7));
 });
 
+test('SCRUM-1302p · 🔴 vigente CADUCADA también avisa: su enlace pasa de «caducó» a «hay una más reciente» (c.19636)', async () => {
+  const f = await ficha(presupuesto([fila(1, 0, 'P7', 'expired', true)]));
+  f.btn.click(); await pausa();
+  assert.equal(f.posts.length, 0, '🔴 el primer clic ha creado la revisión sin avisar');
+  assert.ok(f.textoDelAviso().includes(W1_P7));
+});
+
 test('SCRUM-1302p · {número} es el de la VIGENTE, no el de la versión abierta', async () => {
   // Abierta la .0 (aceptada), vigente la .1 enviada: el enlace que muere es el de P7.1.
   const f = await ficha(presupuesto([fila(1, 0, 'P7', 'accepted', false), fila(9, 1, 'P7.1', 'sent', true)]));
@@ -190,6 +204,6 @@ function estadosDe(rel, patron) {
 test('SCRUM-1302p · 🔴 el panel y la página deciden con los MISMOS estados', () => {
   const panel = estadosDe('public/dashboard/js/quoteRevisiones.js', /var ESTADOS_CON_ENLACE_VIVO = \[([^\]]*)\]/);
   const pagina = estadosDe('src/modules/quotes/domain/versionMasReciente.ts', /const ESTADOS_CON_ENLACE_VIVO[^=]*= \[([^\]]*)\]/);
-  assert.deepEqual(panel, ['draft', 'sent']);
+  assert.deepEqual(panel, ['draft', 'sent', 'expired']);
   assert.deepEqual(pagina, panel);
 });

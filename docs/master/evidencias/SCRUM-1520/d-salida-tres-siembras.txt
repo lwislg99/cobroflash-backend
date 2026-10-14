@@ -1,0 +1,7 @@
+SCRUM-1520d · tres rutas que callan · node v24.8.0 · win32 · cadena: tanda-con-veredicto → node --test --test-force-exit --import=./scripts/tuberia-bloqueante.mjs
+id | qué se siembra | salida | ℹ tests | pass | fail | todo
+R | sin más: el caso 3 cae | 1 | 3 | 2 | 1 | 0
+X | process.exit(0) en el caso 2; el 3 cae | 0 | 1 | 1 | 0 | 0
+C | process.exitCode = 0 en un after; el 3 cae | 1 | 3 | 2 | 1 | 0
+T | { todo: true } en el caso 3, que cae | 0 | 3 | 2 | 0 | 1
+T2 | t.todo() dentro del caso 3, que luego cae | 0 | 3 | 2 | 0 | 1
