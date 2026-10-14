@@ -1,0 +1,18 @@
+SCRUM-1527d · ¿se sigue colgando? · ventana desde 2026-10-13T04:00:00Z · corte 2026-10-14T07:47:56Z
+población: 173 ejecuciones CON job obligatorio (de la caché jobs.json; la lista entera de ci.yml no se relee) ·178 jobs «build + tests» con reintentos · in_progress 3 · failure 45 · success 122 · cancelled 8
+antes del corte: 160 jobs con paso «Tests» · 117 en success · 5 con «TANDA SIN VEREDICTO»
+después del corte: 15 jobs con paso «Tests» · 5 en success · 0 con «TANDA SIN VEREDICTO»
+candidatos (paso «Tests» de 600 s o más): 11
+   job 115756220354 · 2026-10-14T08:27:01Z · pull_request · scrum-418b-claves-bd-refechadas · paso success en 614 s · 1859918 B · aviso no · pasan 11356 · lo último que llegó: -
+   job 115752609225 · 2026-10-14T08:17:36Z · pull_request · scrum-1257e-modo-en-ajustes-navegador · paso failure en 604 s · 1869161 B · aviso no · pasan 11357 · lo último que llegó: -
+   job 115749682292 · 2026-10-14T08:09:51Z · pull_request · scrum-1346-el-tecnico-solo-lo-suyo · paso failure en 605 s · 1863164 B · aviso no · pasan 11355 · lo último que llegó: -
+   job 115735116377 · 2026-10-14T07:29:56Z · pull_request · scrum-1553c-controles-en-la-tanda · paso failure en 1285 s · 1271213 B · aviso SÍ · pasan 7762 · lo último que llegó: «SCRUM-615 · 🔴 el módulo no escribe NI UN texto de producto » → scrum615-pedir-tipo-destinatario.test.mjs
+   job 115728094402 · 2026-10-14T07:09:32Z · pull_request · scrum-1554b-los-57-por-tipo · paso failure en 1285 s · 1270728 B · aviso SÍ · pasan 7757 · lo último que llegó: «SCRUM-615 · 🔴 el módulo no escribe NI UN texto de producto » → scrum615-pedir-tipo-destinatario.test.mjs
+   job 115727053715 · 2026-10-14T07:06:23Z · pull_request · scrum-1543b-el-hueco-de-dos-segundos · paso success en 602 s · 1855066 B · aviso no · pasan 11333 · lo último que llegó: -
+   job 115719177602 · 2026-10-14T06:42:05Z · push · main · paso success en 601 s · 1854408 B · aviso no · pasan 11341 · lo último que llegó: -
+   job 115659957882 · 2026-10-14T03:10:29Z · pull_request · scrum-1548-el-guard-dice-ciego · paso success en 626 s · 1852719 B · aviso no · pasan 11317 · lo último que llegó: -
+   job 115305001172 · 2026-10-13T12:48:28Z · pull_request · scrum-1387b-el-catalogo-se-deriva · paso failure en 1254 s · 1242970 B · aviso SÍ · pasan 7623 · lo último que llegó: «SCRUM-615 · 🔴 SUELO del guard anterior: sabría ver que un e» → scrum615-plazo-con-null.test.mjs
+   job 115290677611 · 2026-10-13T12:14:23Z · pull_request · scrum-1528-reason-de-auth-register · paso failure en 1104 s · 1005746 B · aviso SÍ · pasan 5987 · lo último que llegó: «SCRUM-445 · ② el comentario NO vuelve a afirmar que `chargeI» → scrum445-cobros-sin-duplicar.test.mjs
+   job 115134364145 · 2026-10-13T04:47:58Z · pull_request · scrum-1519c-los-tres-creadores-leidos · paso failure en 1103 s · 992509 B · aviso SÍ · pasan 5908 · lo último que llegó: «SCRUM-445 · ② el comentario NO vuelve a afirmar que `chargeI» → scrum445-cobros-sin-duplicar.test.mjs
+control positivo (115134364145): sale, con su aviso
+el paso «Tests» más largo fuera de los candidatos: 594 s
