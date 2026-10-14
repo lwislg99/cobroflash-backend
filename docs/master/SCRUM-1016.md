@@ -755,3 +755,68 @@ Una línea cambiada, ninguna movida (`git diff --numstat`: `1 1`).
 - No empujé `public/index.html`.
 - No escribí la nota de 1347, ni ninguna otra línea del máster.
 - No toqué `src/`, el camino de emisión, `prisma/schema.prisma` ni ninguna base.
+
+---
+
+# APÉNDICE · 14-oct-2026 · SCRUM-1016m · `scrum331:121` dice lo que dice la regla 26: (a)+(b), no lista negra
+
+**Medido contra:** `origin/main` = `515a14d90e109d25eb0bb00961ffc901f636172f` · 2026-10-14T08:27:46Z
+**Rama:** `scrum-1016m-scrum331-regla-26` · **Puesto:** J4 (sesión `jv-j4h`) · **No toca** `public/`, `src/`, el camino de emisión, el esquema, ninguna base, `scripts/_registro-de-lo-aprobado.mjs` ni `tests/scrum563`.
+
+A9: comprobación → `tests/scrum331-heroe.test.mjs`
+
+## Encargo
+
+Del orquestador (`cobroflash-backend-2e`), 14-oct: poner `tests/scrum331-heroe.test.mjs:121` al día con la regla 26 enmendada (firma c.16432). Es el último freno del titular firmado (c.16564, ratificado «Ok firmamos» en c.19607; «Firmamos sí» + «te confirmo que resuelvas tú» en c.19608, leídos en Jira, no relayados). Especificación de partida: §5.A de este fichero (PR #1668). El PR #1666, que lo intentó, se cerró sin merge.
+
+## 1 · Lo que la regla 26 define, y lo que no
+
+Literal (`docs/YAQU_MASTER.md:246`): «(b) el matiz en la MISMA unidad visible — la afirmación y el estado real (remisión no construida, sin certificación, declaración responsable pendiente) se leen JUNTOS, sin que el lector tenga que bajar a otro bloque».
+
+- **«La misma unidad»: la regla SÍ la da.** «Sin bajar a otro bloque» → la unidad es el texto entre dos fronteras de bloque HTML. Las etiquetas en línea (`span`, `a`, `b`, `strong`, `em`…) no cortan; todo lo demás sí, también lo desconocido. Es MÁS estricto que §5.A y que #1666, que daban por buena la mención en el `<h1>` con el matiz en el `<p>` hermano bajo el mismo `<div>`. Eso son dos bloques.
+- **Qué es matiz: la regla lo cierra.** Los tres estados del paréntesis, y sólo esos. El «aún no / en camino / pendiente / se activa con» de §5.A no sale de la regla y no entra.
+- **(a) se comprueba también** (§5.A lo dejaba como checklist humano): cada cláusula que nombra un término regulado tiene que estar letra a letra en el máster, sin mayúsculas ni marcas de markdown.
+- **«Sigue prohibido decir "VeriFactu listo" o "cumple con Hacienda"»** → siempre rojo. Hace falta porque el máster CONTIENE «cumple con Hacienda» (`:215`, como prohibido) y (a) sola lo daría por cita.
+- **(c) no se comprueba**: vive en Jira.
+
+**Dos elecciones mías, que la regla NO da. Las digo para que se puedan corregir:**
+
+1. **(a) por cláusula, no por frase entera.** 🔴 La frase entera del subtítulo firmado **NO está en el máster** (0 apariciones, medido hoy con `grep -o`). c.19607 dice «la frase está, 1 aparición»: lo que está es cada cláusula por separado, y en minúscula «hoy generamos…» (guion H2, `:215`). «y los founding la estrenaréis» es redacción nueva, ya declarada en 1016i. Leída como «frase = oración entera», el subtítulo firmado NO cumple (a). Lo he leído por cláusula porque es como se firmó («cláusula por cláusula», 1016i → c.16564). **Si el fundador lee «frase» como oración entera, esto es un cambio de máster, no de guard.**
+2. **Una cláusula de menos de 5 palabras no cuenta como cita.** Sin ese mínimo, «AEAT» suelta está en el máster por fuerza. El 5 es mío.
+
+## 2 · Los controles — fabricados y corridos
+
+Dentro del test (`AUTOPRUEBA regla 26`), por la misma función que mide la página:
+
+| caso | resultado |
+| --- | --- |
+| el subtítulo firmado de c.16564, entero, en su `<p class="sub">` | ✅ pasa |
+| «…formato oficial de la AEAT.» sin matiz | 🔴 cae por (b) |
+| la mención en el `<h1>`, el matiz en el `<p>` de al lado | 🔴 cae por (b) |
+| «Hacienda, muy pronto» (un matiz que la regla no nombra) | 🔴 cae por (b) |
+| con matiz, redacción nueva («Mandamos tus facturas a la AEAT») | 🔴 cae por (a) |
+| «AEAT» suelta en una cláusula corta | 🔴 cae por (a) |
+| «Cumple con Hacienda» con matiz | 🔴 cae por lo prohibido |
+
+**Sobre la página real** (los literales firmados aplicados EN LOCAL y retirados con `git checkout`; no se empuja ni un carácter de `public/`):
+
+| página | guard viejo | guard nuevo |
+| --- | --- | --- |
+| `origin/main` sin tocar | — | 12/12 |
+| title + 2 H1 + subtítulo firmado | **1 fail** (el `:121`) | **12/12** |
+| igual, con el matiz movido a un `<p>` aparte | — | **1 fail**: «…formato oficial de la AEAT.» → (b) |
+
+**Mutaciones** (cada una localizada por coincidencia ÚNICA, y la línea mutada impresa antes de leer el resultado; cicatriz J4 del 1-oct): quitar la comprobación de (b), la de (a), la de lo prohibido, o tratar todas las etiquetas como en línea → las cuatro cayeron en la autoprueba, cada una por su caso.
+
+## 3 · Batería antes de empujar
+
+- `guards:entrada`: 14 guards, 166 tests, verde.
+- Mini-tanda de landing (los 8 de 1016l): **97 tests, 97 pass, 0 fail, 0 skip**. Son 97 y no 96 porque el test viejo pasa a ser dos (el guard y su autoprueba). `scrum563` va dentro y sigue en verde: no lo he movido.
+- Navegador: `guard:primera-pantalla` y `guard:cls-barra-anuncio`, verde.
+- A mano: scrum237, scrum976, scrum267 y scrum1294, en verde (cifras en la entrega).
+
+## Qué NO hice
+
+- No toqué `public/index.html`: con este cambio, el único rojo que queda para el titular es el de `scrum563`, y lo lleva `jv-j3i`.
+- No toqué `scripts/_cifras-heroe.mjs`: los ayudantes viven en el propio test, a diferencia de #1666.
+- No hice el guard B de §5 (el `<head>`). Hoy el `<title>` firmado no nombra ningún término regulado. Sigue sin vigilarlo nadie: es un hueco abierto, no lo cierra este cambio.
