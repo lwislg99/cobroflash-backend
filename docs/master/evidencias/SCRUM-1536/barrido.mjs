@@ -3,6 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { veredicto, OK, ROTO } from './veredicto.mjs';
 
 const [, , raiz, salida, ...ambitos] = process.argv;
 const plano = (t) => t.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
@@ -47,8 +48,18 @@ const vistas = new Set(s.hits.map((h) => h.nombre));
 const esperadas = Object.keys(PALABRAS).filter((k) => k !== 'ZZ_CERO');
 const faltan = esperadas.filter((k) => !vistas.has(k));
 const sinSiembra = mirar('# Parte SEMBRADA\nnada de nada\n').hits.length;
-console.log('CONTROL positivo sembrado:', vistas.size, 'de', esperadas.length, faltan.length ? 'FALTAN ' + faltan : 'OK', '· cero en la siembra:', vistas.has('ZZ_CERO') ? 'ROTO' : 'OK', '· quitada la siembra:', sinSiembra, '(tiene que ser 0)');
-if (faltan.length || vistas.has('ZZ_CERO') || sinSiembra !== 0) { console.log('CIEGO'); process.exit(2); }
+// Tres resultados por control (SCRUM-1536b). El positivo solo es OK si habia algo que esperar: sin
+// catalogo, «0 de 0» no falta nada y no prueba nada. El de cero solo es OK si el centinela se busco
+// de verdad y la misma pasada vio alguna otra palabra: no ver el centinela sin haber visto nada no absuelve.
+const vPositivo = veredicto({ pudoMirar: esperadas.length > 0, roto: faltan.length > 0 });
+const vCero = veredicto({
+  pudoMirar: PALABRAS.ZZ_CERO instanceof RegExp && [...vistas].some((k) => k !== 'ZZ_CERO'),
+  roto: vistas.has('ZZ_CERO'),
+});
+let rotuloPositivo = vPositivo;
+if (vPositivo === ROTO) rotuloPositivo = 'FALTAN ' + faltan;
+console.log('CONTROL positivo sembrado:', vistas.size, 'de', esperadas.length, rotuloPositivo, '· cero en la siembra:', vCero, '· quitada la siembra:', sinSiembra, '(tiene que ser 0)');
+if (vPositivo !== OK || vCero !== OK || sinSiembra !== 0) { console.log('CIEGO'); process.exit(2); }
 
 // --- poblacion: ficheros seguidos por git bajo los ambitos ---
 const lista = execFileSync('git', ['-C', raiz, 'ls-files', '-z', '--', ...ambitos], { encoding: 'utf8', maxBuffer: 1 << 28 }).split('\0').filter(Boolean);

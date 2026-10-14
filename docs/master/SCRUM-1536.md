@@ -117,3 +117,91 @@ art. 1.3 del Reglamento.
 | qué pasa hoy con las seis | ② · `docs/master/evidencias/SCRUM-1536/sonda.cjs` |
 | si el régimen no es el del ticket | ③ · `docs/master/evidencias/SCRUM-1536/salida-boe.txt` |
 | visto en yaqu.app | NO HECHO → no hay pantalla que ver |
+
+## SCRUM-1536b · El obligatorio de la rama anterior cayó por tres controles de sus propios guiones que sólo sabían decir dos cosas: ahora dicen tres
+
+**Medido contra:** `origin/main` = `cb30885dd69c4df7f33d3a0066fed93698926857` · 2026-10-14T02:15:00Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum622-desconocido-no-es-verde.test.mjs`
+
+Sesión `jv-j6c`, puesto J6. Rama `scrum-1536b-los-tres-ternarios`, que lleva dentro, por merge, la
+rama `scrum-1536-forales-y-canarias` @ `1a6cf221fd2d545be9f90af73c0ac93936c2ae23` entera (PR #2377)
+y la sustituye. Carril: el ticket lleva `equipo-javier` y `area-fiscal` y está En curso; los
+ficheros que se tocan salen «sin fila en §3: nadie lo reclama» (los guiones de evidencia) y «quien
+trabaja el ticket» (este registro) en `node scripts/carriles.mjs de`, una ruta por llamada.
+
+### Qué caía
+
+`tests/scrum622-desconocido-no-es-verde.test.mjs`, el caso «EL CENSO», en su aserto de lista
+vacía. Visto en rojo en local antes de tocar nada, con la rama anterior mergeada: el censo nombra
+tres expresiones, las tres en guiones de evidencia que añadió la rama anterior.
+
+| dónde | la expresión |
+|---|---|
+| `barrido.mjs`, control positivo sembrado | `faltan.length ? 'FALTAN ' + faltan : 'OK'` |
+| `barrido.mjs`, control de cero | `vistas.has('ZZ_CERO') ? 'ROTO' : 'OK'` |
+| `boe.mjs`, control de cero | `c0 ? 'ROTO' : 'OK'` |
+
+### Por qué caía, y por qué el guard tenía razón
+
+No es una cuestión de forma. Los tres controles decían OK por descarte, y eso se ve corriendo los
+guiones VIEJOS sobre una entrada que no deja mirar:
+
+- `barrido.mjs` con el catálogo reducido al centinela: «0 de 0 OK · cero en la siembra: OK», sin la
+  línea CIEGO y con código 0. No faltaba ninguna palabra porque no se esperaba ninguna.
+- `boe.mjs` sobre un fichero vacío: positivo `false`, «control de cero: OK» y código 0. No encontró
+  el centinela en un texto donde no podía encontrar nada.
+
+### El arreglo, y por qué no es un esquive
+
+`veredicto.mjs`, nuevo, en la misma carpeta: una función con tres salidas. ROTO si se vio lo que
+no tenía que verse o falta lo que tenía que verse; OK sólo si además hay prueba de que se pudo
+mirar; y lo que no es ninguna de las dos, NO SE PUDO SABER. El resultado por defecto es el que
+no afirma nada. Qué cuenta como «pudo mirar» en cada control:
+
+- Positivo de `barrido.mjs`: había alguna palabra que esperar.
+- Cero de `barrido.mjs`: el centinela está en el catálogo como expresión regular y la misma pasada
+  sobre la siembra vio alguna otra palabra.
+- Cero de `boe.mjs`: la misma búsqueda, sobre el mismo texto, encuentra la frase del positivo.
+
+En `barrido.mjs` un control que no sale OK corta con CIEGO y código 2, como ya hacía con ROTO.
+
+No es la versión equivalente del esquive del 13-oct porque el tercer resultado OCURRE y se ve. Los
+tres estados de cada guion están corridos en `salida-tres-estados.txt`, con las copias mutadas
+fabricadas por `mutar-vaciar.mjs` y `mutar-sembrar.mjs` (los dos abortan si su parche no casa). No
+se ha tocado `tests/scrum622-…` ni `tests/_censo-redes-benignas.mjs`, y los guiones siguen dentro
+de la población del censo: son `.mjs` bajo `docs/`, que el censo recorre.
+
+### Lo que miden los guiones no ha cambiado
+
+Medido con el guion de antes y el de después sobre la misma entrada:
+
+- `barrido.mjs` sobre `docs/YAQU_MASTER.md` (sin cambios entre `254a69792` y este árbol, `git diff`
+  vacío): la salida es idéntica a `salida-barrido-master.txt` con los dos guiones, y el fichero de
+  líneas halladas es idéntico byte a byte entre los dos (16 líneas).
+- `boe.mjs` sobre el texto consolidado bajado de nuevo de la API del BOE: mismo tamaño y mismo
+  sha256 que el de la medición original, y la salida es idéntica a `salida-boe.txt` con los dos.
+
+Las tres salidas guardadas de la rama anterior no se han tocado.
+
+### De paso
+
+- `boe.mjs` acababa siempre con «EXIT=0», también con el positivo en `false`. Ahora, si su control
+  de cero no sale OK, acaba con código 2 y lo escribe. Con el Reglamento de verdad sigue en 0.
+- `barrido.mjs` cuenta el centinela entre las «vistas» cuando aparece, así que el caso ROTO de cero
+  imprime «15 de 14». Ya era así; no se ha tocado, y el veredicto de esa línea es ROTO igual.
+
+### Lo que NO se ha medido
+
+- `sonda.cjs`: no se ha corrido ni tocado. El censo no la nombra.
+- La tanda completa: este árbol no tenía `dist`; se compiló con `tsc --noCheck` para los guards
+  que se nombran en la entrega.
+- El obligatorio de esta rama, al escribir esto.
+- Que el texto del BOE siga siendo el mismo mañana: el sha256 coincide hoy.
+
+### Errores propios
+
+- El carril de `veredicto.mjs` lo miré después de escribirlo, no antes. Salió «sin fila en §3»,
+  como sus vecinos de carpeta.
+- El hook de arranque dijo «SIN IDENTIDAD» y seguí con el puesto que da el encargo, como hizo la
+  sesión anterior de este ticket. Se dice aquí; no lo he resuelto.

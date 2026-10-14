@@ -1,6 +1,7 @@
 // Lee el texto consolidado del RD 1007/2023 (BOE-A-2023-24840) y saca los parrafos de territorio.
 import fs from 'node:fs';
 import crypto from 'node:crypto';
+import { veredicto, OK } from './veredicto.mjs';
 const f = process.argv[2];
 const xml = fs.readFileSync(f, 'utf8');
 const bloques = [...xml.matchAll(/<bloque id="([^"]+)" tipo="([^"]+)"(?: titulo="([^"]*)")?[^>]*>([\s\S]*?)<\/bloque>/g)];
@@ -29,6 +30,10 @@ enPre.forEach((p) => console.log('   PRE >> ' + p.replace(/\s+/g, ' ').trim()));
 // controles
 const c1 = /sistemas informaticos de facturacion/.test(plano(xml));
 const c0 = /qwzxforalinventado/.test(plano(xml));
-console.log(`CONTROL positivo («sistemas informaticos de facturacion» esta): ${c1} · control de cero: ${c0 ? 'ROTO' : 'OK'}`);
+// Tres resultados (SCRUM-1536b): no encontrar el centinela solo absuelve si la MISMA busqueda, sobre el
+// MISMO texto, encuentra lo que se sabe que esta. Sobre un fichero vacio o que no es el Reglamento, no se sabe.
+const vCero = veredicto({ pudoMirar: c1, roto: c0 });
+console.log(`CONTROL positivo («sistemas informaticos de facturacion» esta): ${c1} · control de cero: ${vCero}`);
 console.log('canari en TODO el fichero:', (plano(xml).match(/canari/g) || []).length, '· igic:', (plano(xml).match(/\bigic\b/g) || []).length, '· foral:', (plano(xml).match(/foral/g) || []).length);
-console.log('EXIT=0');
+if (vCero !== OK) process.exitCode = 2;
+console.log('EXIT=' + (process.exitCode ?? 0));
