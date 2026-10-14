@@ -402,9 +402,9 @@ const CONOCIDOS_A = new Map([
   ['tests/scrum1286-intermitente-1281.test.mjs  tests/scrum804b-el-barrido-de-la-42.test.mjs', 1],
   // SCRUM-1544 · NO SON NUEVOS: ESTABAN, Y EL CENSO NO LOS VEÍA. Los tres van enteros dentro de
   // un trozo de PLANTILLA con huecos, y para el censo un trozo de plantilla no era un literal.
-  // Nadie los troceó a propósito. Salen al enseñarle a leer el texto armado (13-oct-2026, medido
-  // con el censo de antes y el de después sobre los mismos 1.795 ficheros: 3 de diferencia, estos
-  // tres). Se declaran como deuda que ya había, igual que el resto de la lista; no se han tocado.
+  // Nadie los troceó a propósito. Salen al enseñarle a leer el texto armado. Lo dice el cruce del
+  // 13-oct-2026: el censo de antes y el de después sobre los mismos 1.795 ficheros, 3 de diferencia,
+  // estos tres. Se declaran como deuda que ya había, igual que el resto de la lista; no se han tocado.
   ['scripts/_banco-lista.mjs  invoicesView.js', 1],
   ['tests/scrum398-vocabulario-de-cobro.test.mjs  reports.routes.ts', 1],
   ['tests/scrum403-beneficio-sin-iva.test.mjs  reports.routes.ts', 1],
