@@ -116,8 +116,10 @@ test('SCRUM-1539b · ② con la foto, el censo no vuelve a preguntar y juzga con
 
   // La rama apunta a la punta de hoy. Contra una foto tomada un commit antes, NO está mergeada.
   const salida = `${tip}\trefs/heads/scrum-${TICKET}z-rama-de-la-foto\n`;
-  const antes = censarConMotivo([TICKET], { foto: { salida, main: viejo, ciego: null } });
-  const ahora = censarConMotivo([TICKET], { foto: { salida, main: tip, ciego: null } });
+  // `somero: false` a propósito: los dos commits están en el almacén, y lo que se mide aquí es contra
+  // QUÉ sha se juzga, no la profundidad del clon (eso es SCRUM-1541, en su propio test).
+  const antes = censarConMotivo([TICKET], { foto: { salida, main: viejo, somero: false, ciego: null } });
+  const ahora = censarConMotivo([TICKET], { foto: { salida, main: tip, somero: false, ciego: null } });
 
   assert.equal(lecturas, 0, `🔴 el censo ha preguntado al remoto ${lecturas} veces teniendo la foto.`);
   assert.equal(antes.ciego, null, `🔴 el censo sale CIEGO con una foto completa: ${JSON.stringify(antes.ciego)}`);
