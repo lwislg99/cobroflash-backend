@@ -125,3 +125,93 @@ Pasé dos veces código de node por un heredoc de bash y las dos se comió las b
 `\n` dentro de un literal y una expresión regular). El primero dejó el test con un error de sintaxis,
 que se vio al correrlo: exit 1 con 1 test en vez de 8. No generaliza a nada que un guard pueda mirar;
 el recuento de tests lo delató.
+
+## SCRUM-1548b · ② `scrum1387` entra en `guards:entrada` (la derivación del c.19533 se midió y no cabe)
+
+**Medido contra:** `origin/main` = `c30729832c18b65c3793917ca836868e6cfdaa6e` · 2026-10-14T04:06:55Z
+
+A9: aviso → A10 «Un criterio que casa por la forma de la frase casa con una convención que nadie acordó: calibrado sobre una muestra, grita o calla con la siguiente.» — no se pudo comprobar: el filtro que falló era mío y de usar y tirar (una medición, no código del repo); no hay instrumento de la casa que lea cómo filtra una sonda de sesión
+
+Sesión `jv-j6f`, puesto J6, equipo de Javier. Etiquetas del ticket leídas en Jira al arrancar:
+`area-j6`, `equipo-javier`, `listo-para-construir`. El hook de inicio dijo «SIN IDENTIDAD»
+(SCRUM-1549); se construyó con la orden del orquestador `cobroflash-backend-2e`.
+
+### En corto
+
+- **Se construyó la variante (c)**: una entrada más en `GUARDS` de `scripts/guards-entrada.mjs`
+  (`tests/scrum1387-banco-nuevo-va-al-catalogo.test.mjs`) y `MINIMO` de 13 a 14, igual que hizo
+  SCRUM-1417 con el decimotercero. Nada más en ese fichero.
+- **La derivación del c.19533 se MIDIÓ antes de construirla y no cabe** en el plazo de 90 s (Jira,
+  comentario 19540). El orquestador decidió (c) con esa medición delante.
+
+### ⚠️ El fichero no tiene dueño, y el cambio es aditivo
+
+`node scripts/carriles.mjs de scripts/guards-entrada.mjs` → **SIN CERRADURA**: sólo lo cubre la fila
+general de `scripts/`. Su ticket creador, SCRUM-414, no lleva ninguna etiqueta en Jira, así que el
+criterio de `docs/equipo/dos-equipos.md` §3.3 calla: **sin puesto**. En git: 12 commits, 9 de la cuenta
+de Luis y 2 de la de Javier. Dentro del fichero no hay ninguna marca de propiedad. Por eso el cambio
+es el mínimo: una línea de lista con su motivo, y el suelo que la protege. Sin reestructurar ni
+renombrar nada. El orquestador se lo pasa al equipo de Luis.
+
+### Lo que cuesta, medido
+
+| pasada (este árbol, 12 núcleos) | guards | tests | tiempo | salida |
+| --- | --- | --- | --- | --- |
+| antes del cambio, árbol limpio | 13 | 158 | 14,2 s | 0 |
+| A · con el cambio, árbol limpio | 14 | 166 | 13,6 s | 0 |
+
+`scrum1387` añade 8 tests. La diferencia de tiempo queda dentro del ruido de la máquina; en CI ese
+fichero tardó 0,44 s (medido por `jv-j6c`, enunciado del ticket). La población de `scrum1387` en la
+pasada A imprime el corte `bc5fa21ee (2026-10-14T02:04:37Z)`, que es el de la línea principal: esta
+rama nace de `c30729832` y no trae nada por merge, así que su verde vale.
+
+### El rojo, con un banco SEMBRADO (no prestado del árbol)
+
+Banco fabricado `docs/master/evidencias/__sembrado-scrum1548__/mutar.mjs`, con una lista propia
+(`const LISTA = [{ de: "x", a: "y" }];`) y sin nombrar el catálogo. Sin comitear. Se borró después.
+
+| pasada | guards | salida | qué dice |
+| --- | --- | --- | --- |
+| B · sembrado, CON el cambio | 14 | **1** | «1 hallazgo · 0 ciegos», y el rojo nombra `__sembrado-scrum1548__/mutar.mjs` |
+| C · sembrado, SIN el cambio | 13 | **0** | «13 guards de entrada en verde»: el falso verde de `jv-j6c` |
+
+Para la pasada C se quitó el cambio con `git apply -R` de su propio parche, y se volvió a poner con
+`git apply`. Después, `git status` sólo enseñaba `scripts/guards-entrada.mjs`.
+
+### Lo que se descubrió al medir la derivación, y vale más que el arreglo
+
+1. 🔵 **La derivación YA EXISTE, y es de S3**: `scripts/_tests-que-cubren.mjs` (SCRUM-1363) contesta
+   «he tocado estos ficheros: ¿qué tests me pueden caer?», con el diff contra la base de la rama
+   (`tocadosDeLaRama`). Se lanza con `npm run tanda:dirigida`. **Lo que falta no es construirla: es
+   que alguien la corra.** Esa pregunta no es de este ticket ni de este equipo.
+2. 🔴 **«Sin gate» leído del TEXTO no garantiza «sin `dist` ni base».** De los 122 ficheros que la
+   regla del c.19533 sacaba para el diff de #2410, cayeron 90 tests, todos de bancos del panel y
+   todos por entorno: este árbol no tiene `dist/`. Ya lo decía la cabecera de SCRUM-976: «leer el
+   texto del fichero no basta para saberlo».
+3. **La regla del c.19533 sacaba 122 ficheros como MÍNIMO en cualquier PR**: todo PR toca su
+   `docs/master/SCRUM-N.md`, y 122 tests sin gate nombran `docs/master`. Tardaron 90,3 s y 105,8 s
+   ellos solos. La variante sin `docs/master` sacaba 24 y 49 ficheros: 50,7 s y 80,9 s, más los ~14
+   de la base. Medido sobre los diffs `<merge>^1...<merge>^2` de los 12 últimos merges de la línea
+   principal. Las cifras enteras, en el comentario 19540.
+
+### Mi fallo
+
+El primer filtro de «sin gate» de la medición buscaba `dist/` en el TEXTO del test, y dejó fuera a
+`scrum1387` porque su línea 3 dice «ni `dist/`» en un comentario. Con ese filtro, la medición
+«demostraba» que la derivación no cazaba el caso de `jv-j6c`. **No lo cazó un control mío: lo cazó la
+contradicción con un caso conocido** (el c.19533 dice que `scrum1387` nombra esa carpeta). Se
+corrigió quitando los comentarios antes de buscar. Es la misma familia que el punto 2 de arriba.
+
+Y uno menor: la cabecera del comentario 19540 dice «~04:40Z»; Jira lo registró a las 04:02Z.
+
+### Pasado a mano antes de empujar
+
+`tests/scrum1387`, `scrum237`, `scrum976`, `scrum267` y `scrum1294`, más todos los que importan
+`scripts/guards-entrada.mjs` (`scrum711`, `scrum928`, `scrum928b`, `scrum1349`, `scrum1327`,
+`scrum812`, `scrum702`, `scrum775`, `scrum1153`, `scrum1289`), y además `scrum723` y `scrum1480f`:
+17 ficheros, **151 de 151, 0 saltados**, salida 0, TAP de 79.790 B, sin «TANDA SIN VEREDICTO».
+
+### Lo que NO se ha medido
+
+- La tanda completa en local, y `npm run tanda:dirigida` (el árbol no tiene `dist/`).
+- El tiempo de `guards:entrada` en CI con 14 guards: lo juzga `scrum976` en el obligatorio.
