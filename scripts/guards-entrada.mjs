@@ -337,6 +337,15 @@ export function avisoDeMutacionPuesta(marcas) {
   lineas.push('\n  Lo devuelve a sus bytes ESA herramienta la próxima vez que arranca. Para');
   lineas.push('  `meta-guard-mutaciones` basta `node scripts/meta-guard-mutaciones.mjs --solo-censo`');
   lineas.push('  (segundos). Después, `git status`: no tiene que quedar nada que no sea tuyo.');
+  // 🔴 SCRUM-1178 · lo que difiere de la copia y NO es una mutación apuntada no lo pisa nadie: el
+  // remedio de arriba se negará. Decirlo aquí evita que alguien lo «arregle» copiando la marca a mano.
+  const ajenas = marcas.flatMap((m) => (m.ajenas || []).map((r) => ({ r, h: m.herramienta })));
+  if (ajenas.length) {
+    lineas.push('\n  ⚠️ Esto NO es una mutación: difiere de la copia de la marca, pero no es nada que esa');
+    lineas.push('  pasada apuntara (trabajo de después, o una marca de antes de SCRUM-1178). El remedio');
+    lineas.push('  NO lo va a pisar. Si lo de ahora es lo bueno, borra la marca a mano:');
+    for (const { r, h } of ajenas) lineas.push(`   · ${r} → .cache/${h}`);
+  }
   return lineas.join('\n');
 }
 

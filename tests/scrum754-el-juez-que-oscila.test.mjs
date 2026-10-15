@@ -54,7 +54,7 @@ import {
 } from '../scripts/_arbol-quieto.mjs';
 import { aplicarUna } from '../scripts/meta-guard-mutaciones.mjs';
 import { veredictoDelCenso } from '../scripts/censo-guards-gateados.mjs'; // SCRUM-754c
-import { procesoVivo, restaurarDesdeMarca, marcarEnVuelo } from '../scripts/_marca-de-arbol.mjs';
+import { procesoVivo, restaurarDesdeMarca, marcarEnVuelo, apuntarMutacion } from '../scripts/_marca-de-arbol.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const JUEZ = 'scripts/meta-guard-mutaciones.mjs';
@@ -354,7 +354,9 @@ function bancoConMarca(pid) {
     datos.pid = pid;
     fs.writeFileSync(man, JSON.stringify(datos));
   }
-  fs.writeFileSync(abs, 'export const x = 2; // MUTADO y en vuelo\n'); // la mutación, puesta
+  const MUTADO = 'export const x = 2; // MUTADO y en vuelo\n';
+  apuntarMutacion(marca, abs, MUTADO); // SCRUM-1178 · como el meta-guard: se apunta antes de escribir
+  fs.writeFileSync(abs, MUTADO); // la mutación, puesta
   return { dir, abs, marca, sigueMutado: () => fs.readFileSync(abs).toString().includes('MUTADO') };
 }
 
