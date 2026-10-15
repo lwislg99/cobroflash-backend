@@ -149,4 +149,28 @@ desde `s2-14oct` (junction al compartido) con la salida a `$null`.
 - `CLAUDE.md` (Comandos) dice «en Windows, matar node antes si el DLL queda bloqueado»; §10 dice «NO matar
   todos los `node`: Claude Code también corre en `node`». `CLAUDE.md` es de un jefe; la S0 propone el cambio.
 
+### Las dos propuestas de 996c §4 que son de la S0: decididas, y HECHAS las dos
+
+**1 · Arrancar con `norma.mjs --arranque`: SÍ.** Con la condición que la S5 ponía: el índice tiene que decir
+CUÁNDO hace falta cada sección de fuera. No se toca `norma.mjs` (es de la S5): la tabla «antes de… | traes» va
+al final de la A1, que el arranque SÍ imprime, y la cabecera del fichero dice «no se leen enteras». El test
+cae si una sección queda fuera del arranque sin su fila, o si la tabla manda traer una que no existe.
+- ⚠️ **Esto no basta para que se use.** Lo que hace que las sesiones lean el fichero entero es el arranque que
+  les manda leerlo: `CLAUDE.md` («LECTURA OBLIGATORIA, cada tanda: `00-normas-comunes.md`»), la skill
+  `cerebro-yaqu` y el prompt de lanzamiento. `CLAUDE.md` y `.claude/**` son de un jefe; la S0 propone el cambio
+  (en la entrega de este ticket, con el literal).
+
+**2 · Sacar de la A19 el porqué del 300k: SÍ, pero sin fichero nuevo.** Se mueve DENTRO de la A19, detrás del
+marcador «Cuarta versión», que `norma.mjs` ya corta: no lo lee el arranque y `norma.mjs A19 --entera` lo trae. En
+su sitio queda un párrafo que dice dónde está y que lo autorizó el fundador. El texto movido es el mismo:
+comprobado sobre el diff, de las 49 líneas no vacías quitadas no falta ninguna entre las añadidas. Son 55
+líneas, **4.811 B**, no los ~6,5 KB estimados en 996c.
+- Los cuatro tests que atan la A19 no atan ese bloque: `scrum1484c` ata los dos números y las dos frases (se
+  quedan arriba), `scrum996` el marcador y una línea de la historia, `scrum899c` y `scrum1070` el código.
+
+**Cifras, de `norma.mjs` sobre este árbol:** el arranque pasa de 39.498 B a **38.205 B** (lo que añade la A1, la
+tabla y el `generate` reescrito, se come parte de lo que sale de la A19). Frente a leer el fichero entero, que
+ahora pesa 71.167 B, el arranque es el **54 %**: ~33 KB menos, ~15k tokens por sesión a 2,2 B/token. Es un
+cálculo por bytes, no un relevo medido.
+
 A9: comprobación → `tests/scrum996d-a1-no-regenera-a-ciegas.test.mjs`

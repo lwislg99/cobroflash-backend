@@ -19,7 +19,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const NORMAS = 'docs/equipo/00-normas-comunes.md';
-const { parsearSecciones, normalizar } = await import(
+const { parsearSecciones, normalizar, ARRANQUE } = await import(
   pathToFileURL(path.join(RAIZ, 'scripts', 'equipo', 'norma.mjs')).href
 );
 
@@ -30,6 +30,12 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     de: '    git fetch origin && git rev-list --count HEAD..origin/main\n    node scripts/_prisma-client-guard.mjs',
     a: '    ./node_modules/.bin/prisma generate\n    git fetch origin && git rev-list --count HEAD..origin/main',
     cae: '🔴 SCRUM-996d · el bloque de órdenes de la A1 no regenera el cliente',
+  },
+  {
+    fichero: NORMAS,
+    de: '| escribir o tocar un guard, o un test que bloquea | A23 |\n',
+    a: '',
+    cae: '🔴 SCRUM-996d · cada sección que el arranque NO imprime tiene su «antes de…» en la tabla de la A1',
   },
 ];
 
@@ -66,6 +72,31 @@ test('SCRUM-996d · la A1 enlaza el procedimiento de §10 y conserva su porqué 
   const t = a1().texto.replace(/\s+/g, ' ');
   assert.match(t, /trampas-del-entorno\.md` §10/, 'la A1 tiene que enlazar el procedimiento de §10');
   assert.match(t, /\*\*9 veces\*\*/, 'sin la cifra del 14-oct, la norma se poda en la siguiente limpieza');
+});
+
+/** Los ids de la columna «traes» de la tabla de la A1 (filas `| … | A5 · A6 |`). */
+export function idsDeLaTabla(sec) {
+  const ids = new Set();
+  for (const linea of sec.lineas) {
+    const m = /^\|.*\|\s*((?:A\d+\s*·?\s*)+)\|\s*$/.exec(linea);
+    if (m) for (const id of m[1].match(/A\d+/g)) ids.add(id);
+  }
+  return ids;
+}
+
+test('🔴 SCRUM-996d · cada sección que el arranque NO imprime tiene su «antes de…» en la tabla de la A1', () => {
+  const texto = normalizar(fs.readFileSync(path.join(RAIZ, NORMAS)));
+  const { secciones } = parsearSecciones(texto);
+  const enArranque = new Set(ARRANQUE.map((a) => a.id));
+  const fuera = secciones.map((s) => s.id).filter((id) => !enArranque.has(id));
+  assert.ok(fuera.length >= 5, `🔴 suelo: veo ${fuera.length} secciones fuera del arranque y había 11: NO PUDE MIRAR`);
+  const tabla = idsDeLaTabla(a1());
+  const sinDisparador = fuera.filter((id) => !tabla.has(id));
+  assert.deepEqual(sinDisparador, [],
+    '🔴 estas secciones no se imprimen al arrancar y la tabla de la A1 no dice CUÁNDO traerlas: '
+    + 'nadie las leerá. Añade su fila «antes de… | traes».');
+  const sobran = [...tabla].filter((id) => !fuera.includes(id));
+  assert.deepEqual(sobran, [], '🔴 la tabla de la A1 manda traer secciones que no existen o que ya imprime el arranque');
 });
 
 test('control positivo · bloqueDeOrdenes ve un generate cuando lo hay', () => {
