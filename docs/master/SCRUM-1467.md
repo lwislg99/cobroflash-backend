@@ -1,7 +1,8 @@
 # SCRUM-1467 · el vigía de Javier deja de decir qué espera una sesión cuando no lo sabe (Sesión 5)
 
-**Medido contra:** `origin/main` = `310721d21` (merge de #2483) · 15-oct-2026, tarde (`Date:` de GitHub 16:13:17Z al
-empezar la tanda).
+**Medido contra:** `origin/main` = `310721d211be7cdd081003dc02ed987e582d7426` · 2026-10-15T16:25:54Z (`Date:` de GitHub)
+
+A9: sin fallo que generalice — el defecto de la tanda (registros sin línea A9) va dicho en el de SCRUM-1494, donde está su comprobación.
 
 **Carril:** `scripts/vigia-sesiones-jv.mjs` es de **S5** en la tabla de ficheros de `docs/equipo/dos-equipos.md`
 desde SCRUM-1480 (commit `f2db65f01`, 6-oct-2026). La discrepancia que dejó la S0 en el comentario 18393 (a la letra
