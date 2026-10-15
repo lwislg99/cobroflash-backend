@@ -549,6 +549,15 @@ export function nodo(tag, reg) {
         n.dataset[clave.slice(5).replace(/-([a-z])/g, (_, c) => c.toUpperCase())] = String(v);
       }
     },
+    // 🔴 SCRUM-1158 · `hidden` ES el atributo, en los DOS sentidos, como en el navegador. Antes no
+    // existía: `el.hidden = true` dejaba un campo suelto que `serializar` no emite, y un `<span
+    // hidden>` del marcado daba `.hidden === undefined`. Medido sobre 73e41ab0 con
+    // `docs/master/evidencias/scrum1158/censo-hidden-desacorde.mjs`: 23 elementos que el producto
+    // oculta salían VISIBLES en la página que miden los guards de navegador (17 interactivos dentro).
+    // Y la dirección peor —nace `hidden` en el marcado, el producto lo enseña con `.hidden = false`
+    // y el banco lo seguía ocultando— es la que da VERDES: el guard no ve lo que el usuario sí.
+    get hidden() { return Object.prototype.hasOwnProperty.call(n._attrs, 'hidden'); },
+    set hidden(v) { if (v) n._attrs.hidden = ''; else delete n._attrs.hidden; },
     getAttribute: (k) => (Object.prototype.hasOwnProperty.call(n._attrs, String(k)) ? n._attrs[String(k)] : null),
     hasAttribute: (k) => Object.prototype.hasOwnProperty.call(n._attrs, String(k)),
     removeAttribute(k) { delete n._attrs[String(k)]; },
@@ -1178,6 +1187,7 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'quoteDescuentos.js',
   'quoteCaducidad.js', // SCRUM-633
   'quoteDireccionObra.js', // SCRUM-602 (DOC-12)
+  'sitiosGuardados.js', // SCRUM-1144 · va ANTES de `quotesView.js`, que la consume
   'quoteRevisiones.js',
   'quoteAtajosVencimiento.js',
   'quoteMargen.js',
@@ -1292,6 +1302,10 @@ export const DEPENDENCIAS_DE_CARGA = Object.freeze([
   { antes: 'modalHeader.js', despues: 'albaranDesdePresupuestoModal.js', motivo: 'SCRUM-606: la cabecera del modal sale de `cabeceraModal`' },
   { antes: 'atajoNuevo.js', despues: 'albaranDesdePresupuestoModal.js', motivo: 'SCRUM-606: el título del modal ES el rótulo del botón, leído de su fuente única' },
   { antes: 'albaranDesdePresupuestoModal.js', despues: 'albaranesView.js', motivo: 'SCRUM-606: el botón «Nuevo albarán» de la lista abre este modal' },
+  // SCRUM-1144 · las DOS pantallas montan el control al pintarse, no al pulsar: cargada después,
+  // `window.sitiosGuardados` no existiría y el editor y la ficha del Trabajo reventarían al abrir.
+  { antes: 'sitiosGuardados.js', despues: 'quotesView.js', motivo: 'SCRUM-1144: «Elegir un sitio guardado» bajo la dirección de la obra' },
+  { antes: 'sitiosGuardados.js', despues: 'jobDetailView.js', motivo: 'SCRUM-1144: el mismo control bajo la dirección de la obra del Trabajo' },
 ]);
 
 /** Nombre a secas, venga con prefijo `js/` o sin él, y sea cadena u objeto `{fichero}`. */
