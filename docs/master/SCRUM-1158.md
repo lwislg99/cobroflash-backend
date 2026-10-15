@@ -1,7 +1,8 @@
 # SCRUM-1158 · El mini-DOM del banco refleja `hidden`
 
-15-oct-2026 15:50:17Z (hora de GitHub) · medido sobre `origin/main` = `73e41ab00f727fae5c6c8f1715d6eb6749133502` ·
-S3 · rama `scrum-1158-el-banco-ve-hidden` · worktree `wt-s3-1288b`.
+**Medido contra:** `origin/main` = `73e41ab00f727fae5c6c8f1715d6eb6749133502` · 2026-10-15T15:50Z
+
+S3 · rama `scrum-1158-el-banco-ve-hidden` · worktree `wt-s3-1288b` (hora del `Date:` de GitHub).
 
 ## Qué mentía
 
