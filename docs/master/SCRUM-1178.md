@@ -44,6 +44,22 @@ Ninguna se arregla haciendo que lo citado corra donde bloquea (la opción 1 del 
 `censo:gateados` ejecuta la carpeta entera y `scrum76`/`pdfs` piden la base de staging, que el CI no
 recibe por la regla 9. Las cinco quedan como comentarios que dicen la verdad.
 
+## De paso: `restaurarDesdeMarca` pisa trabajo nuevo con una copia vieja — NO ARREGLADO
+
+`guards:entrada` paró el empuje con una marca huérfana de `meta-guard-mutaciones` en este worktree (pid
+3228, 2026-10-01T10:45:47Z, `public/dashboard/js/homeView.js`): mi propia pasada muerta del 1-oct, ya
+reparada a mano entonces. El remedio que propone (`--solo-censo`) llama a
+`restaurarDesdeMarca` (`scripts/_marca-de-arbol.mjs:261-262`), que escribe la copia guardada **siempre
+que los bytes difieran**, sin comprobar que lo que hay sea la mutación. Aquí la copia es el `homeView.js`
+del 1-oct (75.033 B) y el de `main` hoy mide 85.825 B: **habría revertido ~10 KB de `main`** en el árbol.
+No se lanzó. Comprobado que el árbol no estaba mutado (`git diff --quiet HEAD -- homeView.js` → igual;
+copia ≠ fichero de hoy) y la marca se sacó del árbol, conservada fuera como evidencia.
+
+El arreglo (guardar la huella de los bytes MUTADOS al marcar y restaurar sólo si lo que hay es eso) no
+cabe en esta sesión, que pasa de 300k de contexto: queda para la siguiente S3, en su carril. Toca
+`marcarEnVuelo` y sus llamantes (`meta-guard-mutaciones`, `censo-mudez`) y los bancos de `scrum808` y
+`scrum754`, que marcan sin pasar los bytes mutados.
+
 ## Pruebas
 
 27 ficheros (los seis tocados, los que los leen, `scrum710b` y `scrum737`): 252 tests · 251 pass · 0 fail
