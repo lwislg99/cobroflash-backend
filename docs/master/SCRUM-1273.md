@@ -126,6 +126,14 @@ creado la MISMA ficha de microcopy (`docs/microcopy/2026-10-14-SCRUM-1273-archiv
 y S2 con T1–T9. Ahora es una ficha con los diez, y ningún literal ha cambiado. Después del merge: 235 ficheros de
 `tests/`, 2.378 casos, 0 fallos, 6 saltos (cada uno con su motivo de banco). Y el control de rol, otra vez con la
 ficha de `aa73f807`, sigue cayendo en exactamente los 2 casos: la ruta no hace lo que hace la pantalla.
+
+**El PR #2449 se quedó BLOCKED con todo en verde (s2-15oct, 15-oct-2026 15:42Z, `Date:` de GitHub).** Medido en
+la punta `55f3491b`: el único obligatorio del ruleset `protect-main`, «build + tests (con banco desechable)», dio
+`success` (job 116001990037, 14-oct 17:45:07Z). Ruleset no estricto, sin cambios desde agosto, 0 revisiones
+exigidas. Los 8 commits llevan autor. El último push fue de una persona y no del bot. `merge-tree` contra `main`
+`73e41ab0` da 0 conflictos. Aun así, `mergeStateStatus=BLOCKED`, y el orquestador lo vio seguir igual con el
+auto-merge desarmado. **Desatascado con un push nuevo, este mismo commit. La causa del BLOCKED NO se identificó.**
+No era el caso del push del bot, que ya está descartado. Si con esto entra, sabremos que un push lo cura, no por qué.
 ## Paso ③ · la parte de S1: esquema, las dos rutas y el filtro de la lista (S1, 14-oct-2026)
 
 **Medido contra:** `origin/main` = `3c25452545a3b7092fb284df8a57b4f203f7a8a8` · 2026-10-14T08:27:28Z
