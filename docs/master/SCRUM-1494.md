@@ -2,6 +2,8 @@
 
 **Medido contra:** `origin/main` = `73e41ab00f727fae5c6c8f1715d6eb6749133502` · 2026-10-15T16:11:46Z
 
+A9: sin fallo que generalice — sólo medición: el PASO 0 dio cero y se dijo, con el control positivo de la sonda.
+
 **Sólo medición. No se construye nada**, porque el defecto no se reproduce en la ventana de hoy (A2).
 
 Sonda de solo lectura (`gh api`, en el temporal del job `2558c165`): los jobs cuyo nombre contiene «zona» en las
@@ -34,6 +36,12 @@ Sonda de solo lectura (`gh api`, en el temporal del job `2558c165`): los jobs cu
 
 **Medido contra:** `origin/main` = `73e41ab00f727fae5c6c8f1715d6eb6749133502` · 2026-10-15 ~16:3xZ (`Date:` de GitHub
 16:13:17Z al empezar la tanda) · node v24.8.0 · Windows.
+
+A9: comprobación → `tests/scrum1294-a9-leccion-en-a10.test.mjs`
+
+*(El fallo de esta tanda: escribí tres registros sin su línea A9, y lo vi porque el CI de #2484 —la 1557 de mi
+puesto— cayó por lo mismo. Ese test ya lo para; en 1467 y 1506 el ancla, además, iba con «15-oct-2026» y el guard
+no la veía. Corregido en los tres.)*
 
 El orquestador decidió construirlo (15-oct, 1ª tanda), con el rojo sembrado primero. **El rojo está visto. Lo
 construido NO, por carril** (abajo).
