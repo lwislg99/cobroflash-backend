@@ -351,8 +351,11 @@ export function equipoVivo({ agentes, repo, job, mesas }) {
  * ocasional: disparaba SIEMPRE, así que «espera algo interactivo» no era un dato, era relleno con
  * forma de dato. Si algún día el CLI empieza a traer `waitingFor` de verdad, se usa; si no, se dice
  * que no se sabe, en vez de inventar qué tipo de algo espera.
+ *
+ * Exportada por SCRUM-1467: `scripts/vigia-sesiones-jv.mjs` compone su aviso con ESTA función, para
+ * que la frase viva en un solo sitio (su copia propia se quedó atrás diez días tras 1095).
  */
-function motivoDeBloqueo(v) {
+export function motivoDeBloqueo(v) {
   return v.waitingFor ? `espera ${v.waitingFor}` : 'está bloqueada, motivo desconocido — `agents --json` no informa de por qué';
 }
 
