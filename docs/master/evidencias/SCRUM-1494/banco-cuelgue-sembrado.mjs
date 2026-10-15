@@ -19,6 +19,8 @@ const LIMITE_MS = 5000;
 const TOPE_S = 30;
 const hijoRepo = path.resolve(process.argv[2] ?? 'scripts/_trinquete-de-zona-hijo.mjs');
 const base = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1494-'));
+// Se borra al salir pase lo que pase (también con `process.exit` y si algo revienta): guard de SCRUM-864c.
+process.on('exit', () => fs.rmSync(base, { recursive: true, force: true }));
 const raiz = path.join(base, 'raiz');
 fs.mkdirSync(path.join(raiz, 'tests'), { recursive: true });
 
@@ -71,7 +73,6 @@ for (const variante of Object.keys(variantes)) {
     console.log(`${r.variante.padEnd(8)} ${r.fichero.padEnd(28)} ${r.tope ? 'TOPE ' : 'acaba'} ${r.s.padStart(5)} s · code=${r.code} · sano=${r.sano} · semilla=${r.v}`);
   }
 }
-fs.rmSync(base, { recursive: true, force: true });
 // El control: «antes» TIENE que colgarse con alguna semilla; si no, el banco no ve el defecto.
 const control = filas.some((r) => r.variante === 'antes' && r.tope);
 console.log(control ? 'CONTROL · «antes» se cuelga con una semilla: el banco ve el defecto' : 'CONTROL FALLIDO · «antes» no se colgó con ninguna semilla: el banco es ciego');
