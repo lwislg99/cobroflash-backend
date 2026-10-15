@@ -10,7 +10,8 @@
 //     y `git status` marcando M. Un cambio que nadie pidió y que el diff no enseña.
 //
 // ── LO QUE ESTE FICHERO NO PUEDE DECIR ─────────────────────────────────────────────────────
-// 🔴 NO mide el checkout: eso lo hace `npm run cr:censo`, que recorre 1.820 ficheros y tarda.
+// 🔴 NO mide el checkout. Lo mide `npm run cr:censo` (recorre 1.820 ficheros y tarda) cuando alguien
+//    lo lanza A MANO: no está en ningún workflow (SCRUM-1178), así que el checkout NO lo vigila nada.
 //    Aquí se vigila que la técnica esté escrita donde se lee y que las piezas discriminen.
 import test from 'node:test';
 import assert from 'node:assert/strict';

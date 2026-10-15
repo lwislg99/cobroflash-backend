@@ -49,7 +49,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 // 🔴 SCRUM-808 · LA MISMA red que el meta-guard, no una parecida (regla 2).
 import {
-  marcaDe, marcarEnVuelo, borrarMarca, restaurarDesdeMarca, instalarRedDeSeguridad,
+  marcaDe, marcarEnVuelo, borrarMarca, restaurarDesdeMarca, instalarRedDeSeguridad, apuntarMutacion,
 } from './_marca-de-arbol.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -115,6 +115,10 @@ if (pendiente.sucios.length) {
   console.error(`   La dejó una pasada muerta (pid ${pendiente.pid}, ${pendiente.cuando}). Los bytes `
     + `originales siguen en \`${path.relative(RAIZ, DIR_MARCA)}\`. MÍRALO A MANO: no se mide nada `
     + 'sobre un árbol mutado.');
+  if (pendiente.ajenos?.length) {
+    console.error('   ⚠️ Lo marcado «NO lo piso» NO es una mutación de esa pasada (SCRUM-1178): no he '
+      + 'escrito nada encima. Si es trabajo bueno, sólo sobra la marca.');
+  }
   process.exit(3);
 }
 if (pendiente.reparadas.length) {
@@ -163,9 +167,12 @@ try {
   // ── ① PASADA LIMPIA E INSTRUMENTADA ──────────────────────────────────────────────────
   // El comportamiento no cambia: sólo avisa la primera vez que lo llaman. De aquí salen las dos
   // cosas que la mutación NO puede decir: cuántos tests corren, y si el filtro llegó a usarse.
-  fs.writeFileSync(HELPER, conCuerpo(
+  const instrumentado = conCuerpo(
     `  if (!globalThis.__filtroVisto) { globalThis.__filtroVisto = 1; process.stderr.write('${MARCA}\\n'); }\n`,
-  ), 'utf8');
+  );
+  // 🔴 SCRUM-1178 · se apunta en la marca ANTES de escribir: si muero, sólo se devuelve lo mío.
+  apuntarMutacion(DIR_MARCA, HELPER, instrumentado);
+  fs.writeFileSync(HELPER, instrumentado, 'utf8');
   console.log('\n① Pasada limpia e instrumentada — cuántos tests corre cada uno, y si llama al filtro');
   const antes = new Map();
   for (const f of FICHEROS) antes.set(f, correr(f));
@@ -173,7 +180,9 @@ try {
   console.log(`   llaman al filtro de verdad: ${usan.length} · sólo lo mencionan: ${FICHEROS.length - usan.length}`);
 
   // ── ② PASADA MUTADA ──────────────────────────────────────────────────────────────────
-  fs.writeFileSync(HELPER, conCuerpo("  return ''; // SCRUM-719 mutación de medida\n"), 'utf8');
+  const mutado = conCuerpo("  return ''; // SCRUM-719 mutación de medida\n");
+  apuntarMutacion(DIR_MARCA, HELPER, mutado);
+  fs.writeFileSync(HELPER, mutado, 'utf8');
   console.log('\n② Pasada mutada — `soloEjecutable` devuelve la cadena vacía');
   for (const f of FICHEROS) {
     const a = antes.get(f);

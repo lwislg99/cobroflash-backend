@@ -181,3 +181,20 @@ enlace o resolviendo hacia arriba.
 5. Que el cliente vaya con `main` no quiere decir que vaya con TU rama: una rama que añade columnas sigue
    viéndolas como «faltan». Eso es la causa (A) de `_prisma-client-guard.mjs`, y para ella no hay cliente
    compartido que valga.
+
+## 11 · Una marca huérfana VIEJA en `.cache/`: el remedio que propone `guards:entrada` revertía el fichero
+
+15-oct-2026 · SCRUM-1178 (de paso) · Sesión 3. Los instrumentos que mutan el árbol (`meta-guard-mutaciones`,
+`censo-mudez`) dejan una marca en `.cache/<herramienta>/` con la copia del fichero ORIGINAL (SCRUM-808).
+`.cache/` no viaja con git y una marca huérfana puede quedarse semanas en un worktree. Hasta SCRUM-1178,
+`restaurarDesdeMarca` escribía esa copia **siempre que los bytes difirieran**. Medido en `wt-s3-1293`: una
+marca del 1-oct sobre `homeView.js` (75.033 B) frente al `main` de ese día (85.825 B). El remedio que
+`guards:entrada` imprime (`node scripts/meta-guard-mutaciones.mjs --solo-censo`) habría quitado ~10 KB de
+`main` del árbol **sin un solo error**: no fallaba, obedecía. No se lanzó porque se miró la copia antes.
+
+| síntoma | causa | qué hacer | cómo se comprueba |
+|---|---|---|---|
+| `guards:entrada` dice «HAY UNA MUTACIÓN PUESTA» en un fichero que no has mutado | marca huérfana de una pasada muerta hace días; desde entonces el fichero cambió (merge, trabajo) | desde SCRUM-1178 la marca apunta la huella de cada mutación que escribe, y el remedio **sólo** devuelve lo que es exactamente una de ellas. Lo demás sale «NO lo piso» (salida 3) y el aviso dice «NO es una mutación». Si lo de ahora es lo bueno, **se borra la marca**, nunca se copia encima | `tests/scrum1178b-la-marca-no-revierte.test.mjs` (el rojo sembrado) |
+| una marca de ANTES del 15-oct (sin `mutaciones` en su `en-vuelo.json`) | no sabe qué escribió | fail-closed: no escribe nunca. Se mira a mano: `git diff` del fichero contra la copia `pieza-N.bin` | el caso ② del mismo test |
+
+⛔ **Nunca se «arregla» una marca copiando `pieza-N.bin` encima del fichero a mano.** Es exactamente el defecto.
