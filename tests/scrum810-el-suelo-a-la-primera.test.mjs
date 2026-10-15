@@ -124,10 +124,17 @@ test('la retirada A PROPÓSITO se puede hacer sin pelearse con el suelo', () => 
   const actual = new Map([['otro.test.mjs', 2]]); // se retiró `viejo` entero
   assert.ok(sueloContraMain(perdidasContraLaReferencia(actual, referencia)),
     'sin declararla, la retirada tiene que doler');
-  const conRetirada = [{ guard: 'viejo.test.mjs', motivo: 'su sujeto se borró del producto', fecha: '2026-09-07' }];
+  const conRetirada = [{ guard: 'viejo.test.mjs', motivo: 'su sujeto se borró del producto', fecha: '2026-09-07', antes: 4, ahora: 0 }];
   const r = perdidasContraLaReferencia(actual, referencia, conRetirada);
   assert.deepEqual(r.perdidas, [], 'una retirada declarada NO puede seguir doliendo: si duele, el suelo está mal puesto');
   assert.equal(sueloContraMain(r), null);
+  // 🔴 SCRUM-1173 · y SÓLO su baja: sin números no exime nada, y una baja mayor que la declarada habla.
+  const sinNumeros = [{ guard: 'viejo.test.mjs', motivo: 'm', fecha: '2026-09-07' }];
+  assert.equal(perdidasContraLaReferencia(actual, referencia, sinNumeros).perdidas.length, 1,
+    '🔴 una retirada sin `antes`/`ahora` exime el guard ENTERO: es la exención para siempre de SCRUM-1173.');
+  const corta = [{ guard: 'viejo.test.mjs', motivo: 'm', fecha: '2026-09-07', antes: 4, ahora: 3 }];
+  assert.equal(perdidasContraLaReferencia(actual, referencia, corta).perdidas.length, 1,
+    '🔴 declarar una baja de 1 deja perder 4: la retirada exime más de lo que dice.');
 });
 
 test('no haber podido mirar la referencia NO es verde', () => {
@@ -141,6 +148,8 @@ test('la lista de retiradas es una lista, y cada renglón dice guard, motivo y f
   for (const r of RETIRADAS_A_PROPOSITO) {
     assert.ok(r.guard && r.motivo && r.fecha, `retirada sin guard/motivo/fecha: ${JSON.stringify(r)}`);
     assert.match(r.fecha, /^\d{4}-\d{2}-\d{2}$/);
+    assert.ok(Number.isInteger(r.antes) && Number.isInteger(r.ahora) && r.antes !== r.ahora,
+      `retirada sin su baja en números (\`antes\`, \`ahora\`): ${JSON.stringify(r)}. Sin ellos no exime nada (SCRUM-1173).`);
   }
 });
 
