@@ -150,6 +150,8 @@ test('SCRUM-1178 · `marcasHuerfanas` dice qué es AJENO, y el aviso de `guards:
   assert.match(aviso, /NO es una mutación/,
     `🔴 el aviso no dice que lo que hay no es una mutación — y propone el remedio igual:\n${aviso}`);
   assert.match(aviso, /borra la marca/, `🔴 no dice cómo salir si lo de hoy es lo bueno:\n${aviso}`);
+  assert.doesNotMatch(aviso, /dejó mutado|--solo-censo/,
+    `🔴 llama «mutado» a lo ajeno y propone el remedio que lo pisaría (o que se negará):\n${aviso}`);
 
   // CONTROL: una mutación apuntada sale sucia pero NO ajena, y el aviso de siempre se mantiene.
   const c = bancoHuerfano();
@@ -159,6 +161,8 @@ test('SCRUM-1178 · `marcasHuerfanas` dice qué es AJENO, y el aviso de `guards:
   assert.deepEqual([hc[0].sucias, hc[0].ajenas], [['homeView.js'], []]);
   assert.doesNotMatch(avisoDeMutacionPuesta(hc), /NO es una mutación/,
     '🔴 el aviso trata como ajena una mutación de verdad: mandaría a borrar la marca que la repara.');
+  assert.match(avisoDeMutacionPuesta(hc), /dejó mutado: homeView\.js[\s\S]*--solo-censo/,
+    '🔴 una mutación de verdad ya no recibe el remedio que la devuelve.');
 });
 
 // ═══ ⑥ los instrumentos reales apuntan ANTES de escribir ═══════════════════════════════════

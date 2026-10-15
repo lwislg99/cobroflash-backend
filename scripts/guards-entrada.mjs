@@ -329,16 +329,32 @@ export function mutacionesPuestas(extra = process.env.GUARDS_ENTRADA_CACHE_EXTRA
 /** Lo que se le dice a quien iba a empujar. Una línea por marca, con el fichero y el remedio. */
 export function avisoDeMutacionPuesta(marcas) {
   const lineas = ['🔴 HAY UNA MUTACIÓN PUESTA EN ESTE ÁRBOL — no se empuja nada:\n'];
+  // 🔴 SCRUM-1178 · lo que difiere de la copia y NO es una mutación apuntada (`ajenas`) no lo pisa
+  // nadie: el remedio se negará. No se le llama «mutado» ni se le propone el remedio: decirlo evita
+  // que alguien lo «arregle» copiando la marca a mano encima de trabajo bueno.
+  let reparables = 0;
   for (const m of marcas) {
-    lineas.push(m.ilegible
-      ? `   · \`${m.herramienta}\` dejó una marca que no se puede leer: no sé qué quedó puesto.`
-      : `   · \`${m.herramienta}\` murió (pid ${m.pid}, ${m.cuando}) y dejó mutado: ${m.sucias.join(', ')}`);
+    if (m.ilegible) {
+      reparables += 1;
+      lineas.push(`   · \`${m.herramienta}\` dejó una marca que no se puede leer: no sé qué quedó puesto.`);
+      continue;
+    }
+    const ajenasDe = new Set(m.ajenas || []);
+    const mutadas = m.sucias.filter((r) => !ajenasDe.has(r));
+    reparables += mutadas.length;
+    if (mutadas.length) {
+      lineas.push(`   · \`${m.herramienta}\` murió (pid ${m.pid}, ${m.cuando}) y dejó mutado: ${mutadas.join(', ')}`);
+    }
+    if (ajenasDe.size) {
+      lineas.push(`   · \`${m.herramienta}\` murió (pid ${m.pid}, ${m.cuando}) y dejó una marca sobre: `
+        + `${[...ajenasDe].join(', ')}`);
+    }
   }
-  lineas.push('\n  Lo devuelve a sus bytes ESA herramienta la próxima vez que arranca. Para');
-  lineas.push('  `meta-guard-mutaciones` basta `node scripts/meta-guard-mutaciones.mjs --solo-censo`');
-  lineas.push('  (segundos). Después, `git status`: no tiene que quedar nada que no sea tuyo.');
-  // 🔴 SCRUM-1178 · lo que difiere de la copia y NO es una mutación apuntada no lo pisa nadie: el
-  // remedio de arriba se negará. Decirlo aquí evita que alguien lo «arregle» copiando la marca a mano.
+  if (reparables) {
+    lineas.push('\n  Lo devuelve a sus bytes ESA herramienta la próxima vez que arranca. Para');
+    lineas.push('  `meta-guard-mutaciones` basta `node scripts/meta-guard-mutaciones.mjs --solo-censo`');
+    lineas.push('  (segundos). Después, `git status`: no tiene que quedar nada que no sea tuyo.');
+  }
   const ajenas = marcas.flatMap((m) => (m.ajenas || []).map((r) => ({ r, h: m.herramienta })));
   if (ajenas.length) {
     lineas.push('\n  ⚠️ Esto NO es una mutación: difiere de la copia de la marca, pero no es nada que esa');
