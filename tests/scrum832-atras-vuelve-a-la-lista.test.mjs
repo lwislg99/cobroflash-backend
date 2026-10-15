@@ -15,8 +15,9 @@
 //
 // ── LO QUE ESTE FICHERO VIGILA, y lo que no ────────────────────────────────────────────────
 // Aquí se vigila la PIEZA del router —partir el hash, componerlo, y qué se responde cuando el id
-// no vale—, que es lo que se puede ejercitar sin navegador. El «atrás» de verdad se mide en
-// `scripts/guard-atras-vuelve.mjs`, con historial real: un doble no tiene botón de atrás.
+// no vale—, que es lo que se puede ejercitar sin navegador. ⚠️ SCRUM-1177 · El «atrás» de una
+// FICHA a su lista, con historial real, NO lo mide nadie: aquí se citaba un guard de navegador que
+// no ha existido nunca. `guard:rastro-del-menu` pulsa «atrás», pero entre pantallas del MENÚ.
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 import test from 'node:test';
 import assert from 'node:assert/strict';
