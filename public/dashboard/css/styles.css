@@ -1692,6 +1692,37 @@ html, body { overflow-x: clip; }
    por qué un elemento con `hidden` no se ve. */
 .quote-direccion-obra { margin-top: 8px; }
 .quote-direccion-obra[hidden] { display: none; }
+
+/* ── SCRUM-1144 · «Elegir un sitio guardado», bajo el campo de la dirección de la obra ───────
+   Lo montan el editor de presupuestos y la ficha del Trabajo (`sitiosGuardados.montarSelector`).
+   Sin tokens nuevos. El botón es `.btn-ghost.btn-sm`, como «Usar plantilla»: una ayuda
+   ocasional, no la acción del paso, con su objetivo táctil de 44 px opt-in (mismo patrón que
+   SCRUM-962; `.btn-sm` global no se toca). Cada sitio es un botón de 44 px como mínimo (AB6),
+   con el nombre que le puso el profesional y debajo su dirección, que es lo que se escribirá.
+   El selector compuesto pesa (0,3,0) y gana a `.btn.btn-sm` sin `!important` (SCRUM-1167). */
+.btn-ghost.btn-sm.sitios-guardados__boton { align-self: flex-start; min-height: 44px; margin-top: 6px; }
+.sitios-guardados { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+.sitios-guardados__opcion {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-height: 44px;
+  padding: 8px 12px;
+  text-align: left;
+  font: inherit;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--input-border, var(--border));
+  border-radius: var(--radius-md, 12px);
+  cursor: pointer;
+}
+.sitios-guardados__opcion:hover { background: var(--neutral-50); }
+.sitios-guardados__opcion:focus-visible { outline: none; box-shadow: var(--ring); }
+.sitios-guardados__nombre { font-weight: 600; }
+.sitios-guardados__direccion { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.sitios-guardados__vacio { margin: 0; font-size: 13px; color: var(--muted); }
+.sitios-guardados__error { margin: 0; font-size: 13px; color: var(--danger-ink); }
 .quote-dto-global__campo { display: flex; flex-direction: column; gap: 4px; max-width: 200px; }
 
 /* SCRUM-139 F2 · RENGLÓN EN BLANCO DEL CUADERNILLO.
