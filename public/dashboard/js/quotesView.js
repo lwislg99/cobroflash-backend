@@ -754,6 +754,20 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   // tope de aquí es para que el profesional vea dónde está el límite, no para validar.
   direccionObraInput.maxLength = 300;
   direccionObraWrap.appendChild(direccionObraInput);
+  // SCRUM-1144 · «Elegir un sitio guardado»: abre la lista de sitios del cliente y, al PULSAR
+  // uno, escribe su dirección en el campo de arriba. Vive dentro del mismo envoltorio, así que
+  // sólo existe con «Personalizada», que es el único modo en el que el texto viaja. Nada se
+  // rellena solo (P2/DOC-12): sin pulsación del profesional el campo sigue vacío. El control es
+  // el mismo que el de la ficha del Trabajo (`sitiosGuardados.montarSelector`).
+  const selectorDeSitios = window.sitiosGuardados.montarSelector({
+    idLista: "quote-sitios-guardados",
+    idCliente: () => fieldCustomer.select.value,
+    campo: direccionObraInput,
+    // Lo mismo que hace el oyente `input` del campo al teclear: previsualización y borrador.
+    alElegir: () => { renderPreview(); scheduleDraftSave(); },
+  });
+  direccionObraWrap.appendChild(selectorDeSitios.boton);
+  direccionObraWrap.appendChild(selectorDeSitios.lista);
   // SCRUM-600 · el campo de texto de la dirección de la obra se va con su selector (arriba). Va
   // aparte porque también se pinta aparte, y dejarlo suelto sería un `shipping_address` en la
   // pantalla del documento suelto sin nada que lo gobierne — invisible por `hidden`, que es
@@ -796,6 +810,9 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
       (c) => String(c.id) === String(fieldCustomer.select.value),
     ) || null;
     direccionObraInput.placeholder = window.quoteDireccionObra.sugerenciaParaPlaceholder(cliente);
+    // SCRUM-1144 · la lista abierta es de UN cliente y de un modo: al cambiar cualquiera de los
+    // dos se cierra, o se ofrecerían los sitios del cliente anterior.
+    selectorDeSitios.cerrar();
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════════════
