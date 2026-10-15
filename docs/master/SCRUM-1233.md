@@ -179,3 +179,4 @@ hermanas, chocarían al mergear. Lo pidió el orquestador (el techo decía 2 y e
 - `jobsView.js` entra en «lo arreglado se queda en cero».
 - **Rojo probado:** sembrando `showToast('x: ' + err.message, 'error')` en `jobsView.js` (diff 1/0) caen
   2 de 14 (el trinquete y «se queda en cero»); sin la siembra, 14 de 14.
+A9: comprobación → `tests/scrum1233e-trabajos-y-parte-sin-tripa.test.mjs`
