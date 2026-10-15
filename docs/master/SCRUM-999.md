@@ -83,3 +83,41 @@ acusa nada nuevo bajo `tests/` y `scripts/` tras el arreglo).
   sección `999c`.
 - No toca `SCRUM-996`/`SCRUM-1070` (bajar el suelo de arranque): confirmado por el orquestador
   que esa palanca vive en la cuenta del fundador, no en el repositorio.
+
+## SCRUM-999c · ¿se puede saber hoy que queda poco uso? Medido el 15-oct (Sesión 5)
+
+**Medido contra:** `origin/main` = `73e41ab00f727fae5c6c8f1715d6eb6749133502` · 2026-10-15T15:43:49Z
+
+El arranque automático está APARCADO por el fundador: aquí no se construye nada. Sólo se mide si el dato existe
+y por qué vía (encargo del orquestador, después de que el 9-oct cinco sesiones murieran por el límite de uso).
+
+**Sí se puede saber, y el dato está vivo.** La vía es la de SCRUM-899d: el statusLine del usuario
+(`node C:/Users/Admin/AppData/Local/yaqu-equipo/uso.mjs escribir`) deja en
+`%LOCALAPPDATA%\yaqu-equipo\uso.json` lo que Claude Code le pasa en `rate_limits`, y lo renueva con cada
+llamada a la API. Leído a las 15:4xZ: 20 sesiones lo han escrito, cinco de ellas en el último minuto, y
+`uso.mjs leer` da `VERDE` con edad 0 min.
+
+**Pero `leer` sólo juzga UNA de las dos ventanas.** El fichero trae las dos:
+
+| ventana | usado | se reinicia |
+|---|---|---|
+| `five_hour` | 17-19 % | 2026-10-15 20:10Z |
+| `seven_day` | **89 %** | 2026-10-15 22:00Z |
+
+`juzgar()` (`uso.mjs`, líneas 115-125) mira sólo `five_hour`. **Control positivo, con dato y no leyendo el
+código:** la copia del `uso.json` real con `seven_day.used_percentage` puesto a 100 → `leer --fichero` da
+`VERDE`, `uso 19% < 85%`, salida 0. Con la cuenta semanal agotada, el corte de este ticket dejaría lanzar.
+
+**Qué ventana mató las sesiones del 9-oct: NO lo sé.** `uso.json` sólo guarda la última lectura, no el histórico,
+y la memoria de aquel día no lo dice.
+
+**Lo que no cubre la vía:**
+- Sólo hay dato mientras alguna sesión está viva y hablando con la API. Con el equipo parado, el dato envejece y
+  `leer` responde `NO_PUDE_MIRAR` (falla cerrado: bien para lanzar, pero no avisa a nadie).
+- Lo lee quien lo pregunta. Hoy nadie lo enseña en el latido ni lo empuja al orquestador.
+
+**Si un día se construye** (lo decide el orquestador; no lo hago): que `juzgar()` dé `AVISO` también con
+`seven_day ≥ umbral` y nombre qué ventana es. Es un cambio de pocas líneas, pero `uso.mjs` tiene copia instalada
+en `%LOCALAPPDATA%\yaqu-equipo` y la puerta de integridad exige reinstalar.
+
+🔴 **Para hoy, sin construir nada:** la semanal está al 89 % y no se reinicia hasta las 22:00Z.
