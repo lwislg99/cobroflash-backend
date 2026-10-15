@@ -90,6 +90,11 @@ escrito igual» y «ha recreado un fichero que alguien borró después».
    después. El aviso de `guards:entrada` sobre esa marca: «Esto NO es una mutación». Limpiado a mano y la
    marca fabricada retirada.
 
+**Rojo propio en CI (punta `8bb3042ad`):** probé sólo los tests que importan los módulos tocados, y cayeron
+dos censos transversales sobre mi test nuevo: `scrum1415` (los dos casos de ⑥ con nombre construido →
+ahora literales) y `scrum824` (su banco cuelga de `temporal()` → declarado en `SIN_PROBAR_CONOCIDOS`, como
+951d/1298/1089b). Lección: un test nuevo se pasa también por los censos de tests, no sólo por sus vecinos.
+
 **Bancos tocados:** `scrum808` ① y `scrum754` (`bancoConMarca`) apuntan su mutación como las herramientas;
 sin eso fijaban el comportamiento de antes («cualquier diferencia se devuelve»).
 

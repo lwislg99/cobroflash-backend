@@ -194,13 +194,15 @@ function sinApuntar(texto, objetivos, devoluciones) {
   return { escrituras, faltan };
 }
 
-const INSTRUMENTOS = [
-  { rel: 'scripts/meta-guard-mutaciones.mjs', objetivos: ['abs', 'absDist'], devoluciones: [], minimo: 2 },
-  { rel: 'scripts/censo-mudez.mjs', objetivos: ['HELPER'], devoluciones: ['ORIGINAL'], minimo: 2 },
-];
+const META_GUARD = { rel: 'scripts/meta-guard-mutaciones.mjs', objetivos: ['abs', 'absDist'], devoluciones: [], minimo: 2 };
+const CENSO_MUDEZ = { rel: 'scripts/censo-mudez.mjs', objetivos: ['HELPER'], devoluciones: ['ORIGINAL'], minimo: 2 };
 
-for (const ins of INSTRUMENTOS) {
-  test(`SCRUM-1178 · \`${ins.rel}\` apunta cada mutación antes de escribirla`, () => {
+// Nombres LITERALES a propósito: SCRUM-1415 no deja declarar test() con nombre construido.
+test('SCRUM-1178 · `meta-guard-mutaciones` apunta cada mutación antes de escribirla', () => apuntaAntes(META_GUARD));
+test('SCRUM-1178 · `censo-mudez` apunta cada mutación antes de escribirla', () => apuntaAntes(CENSO_MUDEZ));
+
+function apuntaAntes(ins) {
+  {
     const texto = fs.readFileSync(path.join(RAIZ, ins.rel), 'utf8');
     const r = sinApuntar(texto, ins.objetivos, ins.devoluciones);
     assert.ok(r.escrituras >= ins.minimo,
@@ -215,5 +217,5 @@ for (const ins of INSTRUMENTOS) {
     assert.notEqual(sinLinea, texto, '🔴 CIEGO: no encuentro ninguna línea que apunte.');
     assert.ok(sinApuntar(sinLinea, ins.objetivos, ins.devoluciones).faltan.length >= ins.minimo,
       '🔴 el detector no cae al quitar las líneas que apuntan: este test no vigila nada.');
-  });
+  }
 }
