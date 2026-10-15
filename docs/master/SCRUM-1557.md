@@ -4,6 +4,12 @@
 
 Sesión 5, 15-oct-2026.
 
+A9: comprobación → `scripts/meta-guard-mutaciones.mjs`
+
+*(La A9 la añade el relevo, 15-oct ~16:35Z: el CI de #2484 cayó por faltar esta línea. El fallo que generaliza es el
+de abajo —una mutación que tumbaba el CONTROL y no el test que decía—, y lo para el meta-guard: corre cada mutación
+de `MUTACIONES_QUE_ME_TUMBAN` y exige que caiga el test que nombra su `cae`.)*
+
 ## Qué cambia
 - `scripts/equipo/sesion.mjs`: nueva `elegirParaContexto({ nombre, agentes, job })`, exportada, que pasa por
   `repartirPorNombre`, igual que `lanzar`, `relevar`, `parar` y `olvidar`. `leerContexto` la usa con el
