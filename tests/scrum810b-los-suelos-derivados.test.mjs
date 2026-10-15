@@ -67,7 +67,7 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     fichero: 'scripts/_suelo-contra-main.mjs',
     a: '  if (false) return null;',
-    de: '  if (retiradas.some((r) => r.guard === medida.nombre)) return null;',
+    de: '  if (cubiertoPorRetiradas(medida.nombre, medida.antes, medida.ahora, retiradas, direccion)) return null;',
     cae: 'la retirada A PROPÓSITO también vale para una población',
   },
 ];

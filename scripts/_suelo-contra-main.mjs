@@ -177,7 +177,9 @@ export function retiradasPendientes(raiz = process.cwd()) {
 export function cubiertoPorRetiradas(nombre, antes, ahora, retiradas, direccion = 'no-encoger') {
   const signo = direccion === 'no-crecer' ? -1 : 1; // no-encoger: lo que viola es BAJAR
   const exceso = signo * (antes - ahora);
-  if (exceso <= 0) return true;
+  // Lo que no viola no se «cubre»: decidirlo es de quien llama. Devolver `true` aquí duplicaba esa
+  // decisión, y la mutación de «CRECER» de scrum810/810b dejaba de caer (medido, SCRUM-1173).
+  if (exceso <= 0) return false;
   const declarado = retiradas
     .filter((r) => r.guard === nombre && Number.isFinite(r.antes) && Number.isFinite(r.ahora))
     .map((r) => signo * (r.antes - r.ahora))

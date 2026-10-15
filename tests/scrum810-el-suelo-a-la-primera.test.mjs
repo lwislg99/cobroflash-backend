@@ -43,14 +43,16 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     fichero: 'scripts/_suelo-contra-main.mjs',
-    a: '    if (ahora !== antes) perdidas.push({ guard, antes, ahora });',
-    de: '    if (ahora < antes) perdidas.push({ guard, antes, ahora });',
+    a: '    if (ahora !== antes && !cubiertoPorRetiradas(guard, antes, ahora, retiradas)) perdidas.push({ guard, antes, ahora });',
+    de: '    if (ahora < antes && !cubiertoPorRetiradas(guard, antes, ahora, retiradas)) perdidas.push({ guard, antes, ahora });',
     cae: 'CRECER no dispara nada: un suelo que salta siempre se desactiva',
   },
   {
+    // SCRUM-1173 · la exención ya no es un `Set` de guards: es `cubiertoPorRetiradas` (su baja, con
+    // números). Apagarla es el mismo defecto que vaciar el `Set` de antes.
     fichero: 'scripts/_suelo-contra-main.mjs',
-    a: '  const eximido = new Set();',
-    de: '  const eximido = new Set(retiradas.map((r) => r.guard));',
+    a: '    if (ahora < antes) perdidas.push({ guard, antes, ahora });',
+    de: '    if (ahora < antes && !cubiertoPorRetiradas(guard, antes, ahora, retiradas)) perdidas.push({ guard, antes, ahora });',
     cae: 'la retirada A PROPÓSITO se puede hacer sin pelearse con el suelo',
   },
 ];

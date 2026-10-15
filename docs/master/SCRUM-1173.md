@@ -55,3 +55,17 @@ con su control positivo sobre el propio fichero.
 | «Que el suelo vuelva a hablar ante cualquier baja NUEVA» | la tabla de arriba: el mutante cae 2 de 2 |
 | «una baja nueva en una población con retirada antigua tiene que dar rojo, y la baja declarada no» | `scrum810b`, mismo test, casos ① y ② |
 | «redefinirlo, no borrarlo» (`scrum810b:185-191`) | el test sigue, con la retirada llevando sus números |
+
+## El rojo de #2497 (punta 417c128c) era MÍO, y escondía un mutante vivo
+
+**Medido contra:** `origin/main` = `95bb7e71de1b7989716d7a713d2792ae560702e0` · 2026-10-15T17:45Z
+
+A9: comprobación → `tests/scrum836-ancla-de-mutacion-viva.test.mjs`
+
+- Obligatorio (job 116553922090): `scrum836` — tres mutaciones de `scrum810`/`810b` anclaban en las líneas
+  de `_suelo-contra-main.mjs` que este ticket reescribió. El otro rojo, `scrum1405c ④`, es el ajeno conocido.
+- Reanclarlas no bastaba. Aplicando cada mutación y corriendo su test: en `main` (BASE) caen **7 de 7**; con
+  1173, las dos de «CRECER» **sobrevivían** (fail 0). Causa: `cubiertoPorRetiradas` devolvía `true` para lo
+  que no viola, y eso duplicaba la decisión de quien llama: apagar una de las dos no tumbaba nada.
+- Arreglo: devuelve `false` para lo que no viola. Con eso, 7 de 7 caen otra vez (810: 2·1·1; 810b: 4·3·1·2),
+  y el fichero mutado se restauró idéntico (huella antes/después).
