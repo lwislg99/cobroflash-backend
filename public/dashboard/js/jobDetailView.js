@@ -1144,6 +1144,19 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   dirInput.style.minHeight = '44px';
   dirWrap.appendChild(dirLabel);
   dirWrap.appendChild(dirInput);
+  // SCRUM-1144 · «Elegir un sitio guardado», el MISMO control que el editor de presupuestos. Escribe
+  // en el campo y le deja el foco, y se GUARDA al salir de él por el `blur` de abajo, igual que lo
+  // tecleado: un solo camino de guardado. Sin cliente no hay sitios que ofrecer, y no se pinta.
+  const idClienteDelTrabajo = job.customer && job.customer.id != null ? String(job.customer.id) : '';
+  if (idClienteDelTrabajo) {
+    const selectorDeSitios = window.sitiosGuardados.montarSelector({
+      idLista: 'job-sitios-guardados',
+      idCliente: () => idClienteDelTrabajo,
+      campo: dirInput,
+    });
+    dirWrap.appendChild(selectorDeSitios.boton);
+    dirWrap.appendChild(selectorDeSitios.lista);
+  }
   infoSec.appendChild(dirWrap);
 
   dirInput.addEventListener('blur', async () => {
