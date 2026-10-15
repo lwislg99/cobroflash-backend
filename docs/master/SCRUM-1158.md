@@ -2,6 +2,8 @@
 
 **Medido contra:** `origin/main` = `73e41ab00f727fae5c6c8f1715d6eb6749133502` · 2026-10-15T15:50Z
 
+A9: sin fallo que generalice — el primer empuje salió rojo por faltar esta misma línea (SCRUM-1294), y eso ya lo caza su guard; lo demás de la tanda (la junction del worktree a un cliente de Prisma viejo) es del entorno y está en «Lo que no se ha hecho».
+
 S3 · rama `scrum-1158-el-banco-ve-hidden` · worktree `wt-s3-1288b` (hora del `Date:` de GitHub).
 
 ## Qué mentía
