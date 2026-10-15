@@ -158,3 +158,4 @@ frase → el molde con paréntesis; `parte_vacio` → su texto (control, pasa en
 **Rojo probado:** con las dos vistas de `origin/main` (diff 4/5 y 1/5) caen 5 de 19: los cuatro de
 1233e que no son control y el trinquete. Vecinos: 65 ficheros que nombran estas vistas o los censos,
 600/600, 0 saltados. Suite completa NO corrida: 1.804 MB libres, por debajo del umbral (A6).
+A9: comprobación → `tests/scrum1233e-trabajos-y-parte-sin-tripa.test.mjs`
