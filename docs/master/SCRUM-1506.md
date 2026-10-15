@@ -1,7 +1,8 @@
 # SCRUM-1506 · la cerradura de carril y los nombres `jv-jN`: medido, NO construido (Sesión 5)
 
-**Medido contra:** `origin/main` = `310721d21` (merge de #2483) · 15-oct-2026 ~16:35Z (`Date:` de GitHub 16:25:54Z
-diez minutos antes).
+**Medido contra:** `origin/main` = `310721d211be7cdd081003dc02ed987e582d7426` · 2026-10-15T16:25:54Z (`Date:` de GitHub; la sonda corrió ~10 min después)
+
+A9: sin fallo que generalice — sólo medición; el defecto de la tanda (registros sin línea A9) va dicho en el de SCRUM-1494, con su comprobación.
 
 **Sólo medición.** El ticket lleva `decision-jefe`, y el orquestador de Luis lo encargó así: «mide qué falta y PARA».
 
