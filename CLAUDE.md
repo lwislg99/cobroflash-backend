@@ -155,7 +155,13 @@ npm run test:staging:gated   # los gateados por QA_DB_TEST / A55_DB_TEST / BOT_S
 node scripts/preview-migracion.mjs                        # contra la BD del entorno
 node scripts/preview-migracion.mjs --desde viejo.prisma    # offline: schema viejo → actual
 # db push: NUNCA contra producción (regla 3). Solo staging, con el turno.
-./node_modules/.bin/prisma generate   # nunca `npx prisma` (SCRUM-385); en Windows, matar node antes si el DLL queda bloqueado
+./node_modules/.bin/prisma generate   # nunca `npx prisma` (SCRUM-385). SÓLO con `node_modules` propio:
+# ⛔ desde el árbol COMPARTIDO, o desde uno que cuelgue de él por junction, NO se regenera — deshace el
+#    cliente de los seis puestos. Compruébalo con `npm run topologia` y lee la salida (nunca a `$null`).
+# ⚠️ En Windows NO se matan todos los `node`: Claude Code corre en node y matarlos MATA LAS SESIONES.
+#    Sólo los que tengan cargada `query_engine-windows.dll.node`, con la sonda de
+#    `docs/equipo/trampas-del-entorno.md` §10 y SU CONTROL POSITIVO (una sonda que no caza parece limpia).
+#    Medido el 14-oct: se lanzó 9 veces, una desde un árbol con junction al compartido y la salida a `$null`.
 ```
 
 ## Mapa rápido (detalle en master Parte D)
