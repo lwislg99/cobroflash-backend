@@ -107,3 +107,38 @@ Vecinos (`scrum522`, `694c`, `848b`, `1294`, `1415`, `824`, `824b` ×2): 67/67.
 
 **Lo que no se ha hecho:** la suite entera (la red es el CI). No he medido las 10 vistas que el banco no
 monta con estos datos: sobre ellas este arreglo no dice nada.
+
+## La pregunta abierta · ¿algún guard de TEXTO de la landing cuenta lo `hidden` como visible?
+
+**Medido contra:** `origin/main` = `95bb7e71de1b7989716d7a713d2792ae560702e0` = `/version` de yaqu.app (leído) · 2026-10-15T17:41Z
+
+A9: comprobación → `docs/master/evidencias/scrum1158/sonda-landing-visible.mjs`
+
+Por qué importa: SCRUM-1236 pide al fundador firmar textos de la landing, y tres de sus cuatro falsos
+originales están en secciones `hidden`.
+
+**Respuesta: SÍ hay dos que lo cuentan como visible, y NO afecta a lo que se le pide firmar.**
+
+| instrumento | ¿distingue `hidden`? | dato |
+|---|---|---|
+| `_guard-conformidad-landing.mjs` (SCRUM-400) | **no** | con una afirmación de conformidad visible: 1; **dentro de `<section hidden>`: 1**; control sin afirmación: 0. Sobre el árbol: 0 hallazgos |
+| `_guard-afirmacion-fiscal.mjs` (SCRUM-537) | **no** | visible 1 · dentro de `hidden` 1 · control 0. Sobre el árbol: 0 en las 4 páginas |
+| `_censo-microcopy-sin-marcar.mjs` (SCRUM-549) | sí | censa justo los elementos `hidden` y les exige motivo |
+| `censo-anclas-bloque-f.mjs` | sí | declara `#heroe-f4`, `#gremios` y `#comparativa` como `hidden` |
+
+(Sonda de los dos primeros: `docs/master/evidencias/scrum1158/sonda-guards-texto-hidden.mjs`.)
+
+Por qué no afecta:
+1. **Contar lo oculto es la dirección SEGURA en un guard que bloquea:** la sección se destapa quitando un
+   atributo, sin pasar por el guard. Si distinguieran `hidden`, ése sería el verde hueco.
+2. **La lista de SCRUM-1236 no sale de ningún guard:** S4 la midió a mano sobre el HTML servido
+   (c.19745) y anotó «¿Se ve?» texto a texto.
+3. **Y esa columna es CORRECTA en un navegador real** (Edge, yaqu.app servida, a 1280 y a 360): se ven
+   el subtítulo #1 (su copia en `#heroe-f4` no), la tarjeta #4, el `aria-label` #6 y la llamada #7. No se
+   ven los cinco de `#gremios` ni los dos de `#comparativa`. Control: el `h1` se ve y `#gremios` no.
+
+**Mi propio falso, dicho:** la primera pasada de la sonda dio la tarjeta #4 por invisible. Era la
+animación `.reveal`, que tiene opacidad 0 hasta que la tarjeta entra en pantalla (`.prod.reveal`, o=0;
+tras el scroll, `.reveal.in`, o=1). Ahora la sonda recorre la página antes de mirar y cuenta los
+`.reveal` sin disparar fuera de `hidden` (0). **Quien mida la visibilidad de la landing con
+`checkVisibility({checkOpacity})` sin recorrerla dará por invisible todo lo que esté bajo el pliegue.**
