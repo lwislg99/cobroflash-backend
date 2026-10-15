@@ -122,6 +122,63 @@ abierto: la próxima sesión que mida, antes de tocar nada, remide con N mayor y
 candidato 1 aislado del 2 y el 3 (medir `norma.mjs --arranque` a secas frente a un arranque real completo, en
 dos sesiones de control) en vez de tocar los tres a la vez.
 
+## SCRUM-996d · la A1 deja de mandar `prisma generate` cada tanda (Sesión 0)
+
+**Medido contra:** `origin/main` = `73e41ab00f727fae5c6c8f1715d6eb6749133502` · 2026-10-15T16:06:31Z
+
+Del apartado 5 de 996c (de la S5, PR #2477 al escribir esto): la A1 abría con `./node_modules/.bin/prisma
+generate` «cada tanda, antes de nada», y §10 de `trampas-del-entorno.md` dice que el cliente compartido lo
+regenera sólo el orquestador, con el equipo parado. Las dos cosas se muerden: el 14-oct se lanzó 9 veces, una
+desde `s2-14oct` (junction al compartido) con la salida a `$null`.
+
+- **La A1 nueva abre con `node scripts/_prisma-client-guard.mjs`**, que MIRA: `✔` → nada; rojo → se lee entero.
+  Causa A (tu rama añade columnas) es correcta; cliente viejo con árbol al día → se regenera sólo con un
+  `node_modules` propio (`npm run topologia`) y leyendo la salida; si cuelga del compartido, al orquestador (§10).
+- Lleva el porqué con la cifra (9 veces el 14-oct, una con la salida a `$null`), para que no se pode.
+- §10 no se repite: se enlaza. Lo que pasó al ejecutarlo lo apunta la S5 en SCRUM-429c (PR #2476).
+- **Control positivo del guard antes de escribirlo en la norma:** `✔` EXIT 0 desde `wt-s0-15oct` (junction al
+  compartido, en `origin/main`); desde el árbol compartido (`scrum-1082…`) rojo con `Merchant.invoiceStartSeq`,
+  EXIT 1. Las dos cosas que la A1 nueva dice que pasan.
+- Test: `tests/scrum996d-a1-no-regenera-a-ciegas.test.mjs` (el bloque de órdenes de la A1 no lleva `generate`
+  y sí el guard). Rojo comprobado aplicando su mutación declarada: cae, exit 1, y el fichero queda restaurado.
+  Con los otros 5 ficheros de tests que leen las normas: 53 de 53, EXIT 0.
+
+**Visto de paso, de otros carriles (se reporta, no se toca):**
+- `scripts/_prisma-client-guard.mjs:332` sigue diciendo «Arreglo, en los dos casos: `npm run prisma:generate`
+  (desde ESTE worktree)». En la causa (B) eso es justo lo que §10 prohíbe. Es de la S5.
+- `CLAUDE.md` (Comandos) dice «en Windows, matar node antes si el DLL queda bloqueado»; §10 dice «NO matar
+  todos los `node`: Claude Code también corre en `node`». `CLAUDE.md` es de un jefe; la S0 propone el cambio.
+
+### Las dos propuestas de 996c §4 que son de la S0: decididas, y HECHAS las dos
+
+**1 · Arrancar con `norma.mjs --arranque`: SÍ.** Con la condición que la S5 ponía: el índice tiene que decir
+CUÁNDO hace falta cada sección de fuera. No se toca `norma.mjs` (es de la S5): la tabla «antes de… | traes» va
+al final de la A1, que el arranque SÍ imprime, y la cabecera del fichero dice «no se leen enteras». El test
+cae si una sección queda fuera del arranque sin su fila, o si la tabla manda traer una que no existe.
+- ⚠️ **Esto no basta para que se use.** Lo que hace que las sesiones lean el fichero entero es el arranque que
+  les manda leerlo: `CLAUDE.md` («LECTURA OBLIGATORIA, cada tanda: `00-normas-comunes.md`»), la skill
+  `cerebro-yaqu` y el prompt de lanzamiento. `CLAUDE.md` y `.claude/**` son de un jefe; la S0 propone el cambio
+  (en la entrega de este ticket, con el literal).
+
+**2 · Sacar de la A19 el porqué del 300k: SÍ, pero sin fichero nuevo.** Se mueve DENTRO de la A19, detrás del
+marcador «Cuarta versión», que `norma.mjs` ya corta: no lo lee el arranque y `norma.mjs A19 --entera` lo trae. En
+su sitio queda un párrafo que dice dónde está y que lo autorizó el fundador. El texto movido es el mismo:
+comprobado sobre el diff, de las 49 líneas no vacías quitadas no falta ninguna entre las añadidas. Son 55
+líneas, **4.811 B**, no los ~6,5 KB estimados en 996c.
+- Los cuatro tests que atan la A19 no atan ese bloque: `scrum1484c` ata los dos números y las dos frases (se
+  quedan arriba), `scrum996` el marcador y una línea de la historia, `scrum899c` y `scrum1070` el código.
+
+**Cifras, de `norma.mjs` sobre este árbol:** el arranque pasa de 39.498 B a **38.205 B** (lo que añade la A1, la
+tabla y el `generate` reescrito, se come parte de lo que sale de la A19). Frente a leer el fichero entero, que
+ahora pesa 71.167 B, el arranque es el **54 %**: ~33 KB menos, ~15k tokens por sesión a 2,2 B/token. Es un
+cálculo por bytes, no un relevo medido.
+
+**Mi rojo en el primer CI (job 116532845442, 16:24Z):** las dos `MUTACIONES_QUE_ME_TUMBAN` del test llevaban
+`fichero: NORMAS` (una constante) y el meta-guard sólo evalúa literales: 3 fallos (`scrum745`, `scrum757`,
+`scrum765`), 11.483 pass. Arreglado con el literal; esos tres más el mío, 31 de 31, y `--solo-censo` EXIT 0. Lo
+cazó el guard que existe para eso: no hace falta norma nueva.
+
+A9: comprobación → `tests/scrum996d-a1-no-regenera-a-ciegas.test.mjs`
 ## SCRUM-996c · el arranque medido el 15-oct, y qué se puede quitar (Sesión 5)
 
 **Medido contra:** `origin/main` = `73e41ab00f727fae5c6c8f1715d6eb6749133502` · 2026-10-15T15:42:24Z

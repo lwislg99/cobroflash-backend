@@ -1,5 +1,8 @@
 # Normas comunes del equipo de sesiones
 
+> 🔴 **No se leen enteras: `node scripts/equipo/norma.mjs --arranque`** (A1, con la tabla de
+> cuándo traer cada una de las demás). Si estás leyendo esto con un `Read` del fichero, para aquí.
+
 > 🔴 **ESTE FICHERO TIENE UN SOLO DUEÑO: LA SESIÓN 0 DEL EQUIPO DE LUIS, Y VALE PARA LOS DOS
 > EQUIPOS.** Nadie más lo edita — ni las otras sesiones, ni Codex, ni los orquestadores, ni ningún
 > puesto del equipo de Javier.
@@ -28,8 +31,8 @@ docs/equipo/orquestador.md.
 
 ## A1 · Cada tanda, antes de nada
 
-    ./node_modules/.bin/prisma generate
     git fetch origin && git rev-list --count HEAD..origin/main
+    node scripts/_prisma-client-guard.mjs
 
 Si ese contador NO es 0, tu árbol no es main y ningún número que
 saques de él describe el proyecto. Se han pillado árboles a 446, 463,
@@ -38,9 +41,36 @@ creíbles de árboles que ya no existían.
 
   Un banco viejo no da error: da un número que parece bueno.
 
-Nunca `npx prisma`: descarga un CLI distinto (SCRUM-385). El cliente
-de Prisma se comparte entre worktrees y se desfasa — da errores de
-«columna que no existe» sobre columnas que sí están en el esquema.
+🔴 **El cliente de Prisma se MIRA cada tanda; regenerarlo NO es de
+cada tanda.** El cliente se comparte entre worktrees y se desfasa: da
+errores de «columna que no existe» sobre columnas que sí están en el
+esquema. El guard de arriba dice si casa con TU `schema.prisma` y, si
+no, nombra cada diferencia. `✔` → nada que hacer. Rojo → lo lees ENTERO:
+- **Tu rama añade o quita columnas** (su causa A): es correcto, y ningún
+  cliente compartido lo arregla (`trampas-del-entorno.md` §10, paso 5).
+- **Cliente viejo con tu árbol al día:** si tu `node_modules` es SOLO
+  tuyo (`npm run topologia` lo dice), regeneras desde tu worktree con
+  `node node_modules/prisma/build/index.js generate`, LEYENDO su salida,
+  y el guard otra vez hasta `✔`. Si cuelga del compartido (junction, o
+  sin `node_modules` propio), NO regeneras: lo dices al orquestador, que
+  lo hace con el procedimiento de §10.
+
+⛔ Nunca un `generate` desde el árbol compartido `cobroflash-backend` ni
+desde uno que cuelgue de él, y nunca con la salida a `$null`. Tampoco
+cuando lo proponga el propio guard: su «desde ESTE worktree» no sabe
+que ese worktree es de todos. Nunca `npx prisma`: descarga un CLI
+distinto (SCRUM-385).
+
+✗ Falla: hasta el 15-oct-2026 esta norma abría con
+`./node_modules/.bin/prisma generate` a secas, «cada tanda, antes de
+nada». El 14-oct se lanzó **9 veces** (la S5 lo midió en las
+transcripciones, SCRUM-996c §5): 8 en `node_modules` propios y **1
+desde `s2-14oct`, que cuelga del compartido por junction, con la salida
+a `$null`**; qué cliente dejó esa no lo sabe nadie. El 15-oct por la
+mañana el orquestador regeneró el compartido con el equipo parado
+(§10), y el guard pasó a `✔`. Un solo `generate` desde un árbol con
+otro `schema.prisma` lo deshace para los seis puestos, y obedeciendo
+la norma.
 
 **Un agente o un workflow que MIDE trabaja en un worktree fijado a
 `origin/main`** (`git worktree add <ruta ABSOLUTA> origin/main`), nunca
@@ -49,6 +79,33 @@ el 29-jul-2026 un censo de 12 agentes concluyó que dos funciones «no
 existen en el repositorio»; existían desde hacía dos horas, pero los
 agentes leyeron un árbol compartido que otra sesión había dejado 9
 commits atrás.
+
+🔴 **Estas normas se leen con `node scripts/equipo/norma.mjs --arranque`,
+no enteras** (SCRUM-996d). Imprime las 14 secciones que hay que saber
+antes de tocar nada. Las demás se traen con `norma.mjs <id>` JUSTO
+ANTES de hacer lo que dice esta tabla; si vas a hacerlo y no la has
+traído, la traes:
+
+| antes de… | traes |
+|---|---|
+| tocar `prisma/schema.prisma` o pedir un ALTER | A5 |
+| decir que algo está hecho, o correr una suite completa | A6 |
+| proponer o editar una norma, o una frase de la casa | A10 · A11 |
+| barrer, borrar o renombrar en masa (ramas, ficheros, filas) | A12 |
+| apartar trabajo a medias | A15 |
+| apilar un segundo ticket en tu rama | A17 |
+| empezar un ticket cuya rama puede estar ya en `main`, o entregar con un resto | A18 |
+| dar por bueno un arreglo con una cobaya o un banco | A21 |
+| escribir un carácter de control (ANSI, `\x1b`) en un fichero o un test | A22 |
+| escribir o tocar un guard, o un test que bloquea | A23 |
+
+✗ Falla: el 15-oct-2026 la S5 midió que las sesiones del día leían
+este fichero ENTERO (67 KB, ~33k tokens, el 71 % de la lectura de
+arranque de una de ellas; SCRUM-996c) y ninguna usaba `--arranque`.
+Su riesgo era éste: el índice de `norma.mjs` daba el título de cada
+sección, no CUÁNDO hace falta. Lo ata
+`tests/scrum996d-a1-no-regenera-a-ciegas.test.mjs`: una sección que
+no entra en el arranque y no está en esta tabla lo tumba.
 
 ## A2 · PASO 0 — ¿el defecto existe HOY?
 
@@ -615,61 +672,11 @@ segundo plano, que lee lo suyo y sigue donde lo dejó la anterior sin arrastrar 
   coste, y es suyo** (`limites-del-fundador.md`). La otra mitad de la norma no
   cambia: el umbral dice «ya toca»; el punto limpio dice «ahora».
 
-  **Por qué 300k al entregar, y no los 200k de antes** (cambio del 6-oct-2026; quién lo autorizó, abajo).
-  Lo medido va entero para que quien lo relea con sesiones más largas lo RECALCULE y no lo herede. Es UN
-  día de UN equipo, y «entrega» se cuenta como un `git push`: es un sustituto (un push no es una entrega
-  verificada, y una entrega sin push no se ve).
-
-  - **La medición.** El 6-oct-2026 a las 19:27Z, 42 sesiones de fondo con algún turno ese día (26 dieron
-    algún push, 50 en total; el primero llega con 232k de mediana, habiendo arrancado en ~66-70k):
-    - **200k** lo cruzan 35 de 42, y al cruzarlo sólo 6 de las 35 habían empujado algo. Salta antes de la
-      primera entrega: un aviso que suena en ocho de cada diez no distingue a ninguna.
-    - **300k** lo cruzan 20 de 42; al cruzarlo 13 de las 20 ya habían empujado, y 14 vuelven a empujar
-      después, que es donde una norma «al entregar» puede saltar. Con ella, esas 14 se habrían relevado
-      entre 304k y 416k (mediana 340k). Las otras 6 cruzan y no vuelven a empujar.
-    - **500k** lo cruzan 4 de 42 y sólo 1 vuelve a empujar después: a 500k la norma «al entregar» casi no
-      salta nunca.
-
-    ⚠️ Qué mide cada cifra. Todas cuentan el MÁXIMO del día de cada sesión de fondo. A las ~17:15Z, contando
-    todas las transcripciones del día y no sólo las de fondo, eran 32 sesiones y 5 pasaban de 500k: son dos
-    poblaciones, no una contradicción. Y en aquella, contando el ÚLTIMO turno en vez del máximo salía una
-    menos por encima de 800k: una pasó, compactó y acabó por debajo.
-  - **No hay un techo medido por debajo de la compactación.** Las 16 sesiones que ese día quedaron paradas
-    con una pregunta acabaron entre 186k y 423k (mediana 273k): se paran por la pregunta, no por el tamaño.
-    11 de 42 pasaron de 400k y siguieron trabajando, y una llegó a 823k. El único límite medido es la
-    compactación sola, entre 861k y 967k (casilla 1).
-  - **El coste, sin adornarlo.** Simulado a las 19:28Z sobre 43 sesiones (las 42 de arriba y una del 2-oct
-    cuyo fichero se tocó ese día, con sus turnos viejos dentro; Σ de contexto 733,3 M): relevar a
-    200k lo dejaría en 393,7 M (−46,3 %), a 300k en 518,2 M (−29,3 %), a 400k en 625,4 M (−14,7 %) y a 500k
-    en 700,8 M (−4,4 %). Frente a 200k, 300k renuncia a 17 puntos del ahorro simulado. **El ahorro de 200k
-    no se estaba cobrando:** con el umbral en 200k la suma real era la de arriba, porque casi nadie relevaba
-    a 200k. Es una simulación de la suma de contexto, no del coste ni de la eficiencia. Supone que una
-    sesión relevada arranca en 85k, releva en el turno en que cruza el umbral (la norma espera a la entrega)
-    y no cuenta lo que cuesta cada relevo: es un techo del ahorro, no el ahorro. El comando, entero, una
-    vez por umbral:
-
-        node scripts/equipo/gasto-arranque.mjs vivas --horas 30 --simular 300000
-
-    (`--simular` sin número no arranca. Sale con código 1 cuando hay sesiones que relevar: no es un fallo.)
-  - **El motivo.** Un umbral que salta antes de la primera entrega no se puede cumplir «al entregar», y uno
-    que casi nadie cruza no ahorra. 300k es, además, el valor que esta norma tuvo hasta el 21-sep-2026.
-  - **Para el número de «a mitad» (500k; quien lo quiera mover lo recalcula con esto).** Entre un push y el siguiente una sesión crece
-    64k de mediana, 169k en el percentil 90 y 216k como máximo (23 pares). Una sesión que entrega justo por
-    debajo de 300k y hace una entrega más acaba, como mucho, hacia 470-516k; con la norma de 300k, la que
-    más tarde se habría relevado lo habría hecho a 416k. Por encima de 500k ese día hubo 4 sesiones.
-
-  **Quién lo autorizó.** El número es una decisión de coste, y el coste está fuera de la delegación del
-  orquestador (`limites-del-fundador.md`). **Luis, fundador, 6-oct-2026, 18:50Z: «El límite de relevo lo
-  pongo en 300.000. Autorizado el coste.»** Se lo dijo a su orquestador, que lo transcribió en SCRUM-1479
-  (comentario 18513) y lo mandó escribir en `limites-del-fundador.md`. En Jira los dos firman con la misma
-  cuenta, así que la S5 y la S0 lo comprobaron cada una en el origen: en la transcripción del chat del
-  orquestador es un turno escrito por una persona, con esa frase (SCRUM-1479, comentario 18532). La frase
-  la había redactado el orquestador y el fundador la envió tal cual. Autorizó UN número, el de relevo al
-  entregar.
-
-  **El gemelo de código entró en el mismo PR** (SCRUM-1479, de la S5): la constante de `sesion.mjs`,
-  `gasto-arranque.mjs`, sus tests y `orquestador-autonomo.md` dicen 300k desde el mismo merge que esta
-  norma. Ningún test ata este texto a esa constante: quien cambie uno, cambia el otro en el mismo PR.
+  **El porqué de 300k y de 500k** (la medición del 6-oct-2026 sobre 42 sesiones y su coste simulado), **quién
+  lo autorizó** (el fundador, el 6-oct-2026, porque es coste) **y su gemelo de código** (`sesion.mjs`,
+  SCRUM-1479) están al final de esta sección, detrás del corte del arranque: `node scripts/equipo/norma.mjs A19
+  --entera`. Para cumplir la norma no hacen falta; quien vaya a MOVER cualquiera de los dos números los lee
+  antes, y lo recalcula con ellos.
 
   ✗ **Falla:** el 18-sep-2026 todas las sesiones pasaban de 350k y ninguna lo medía; la Sesión 0 llegó a
   ~560k entregando SCRUM-951b **sin decirlo en ningún informe**, y el relevo se pidió desde fuera. La norma
@@ -729,6 +736,66 @@ segundo plano, que lee lo suyo y sigue donde lo dejó la anterior sin arrastrar 
 - *Lectura de la Sesión 0, no palabras del fundador:* el umbral de 300k que el 16-sep se retiró vuelve
   porque lo que se rechazó entonces era **abrir chats a mano**, y el relevo lo lanza el orquestador
   sin que el fundador haga nada.
+
+**El porqué de los dos números, quién lo autorizó y su gemelo de código.** Hasta el 15-oct-2026 estaba arriba,
+dentro de la norma; se movió aquí, detrás del corte del arranque, en SCRUM-996d: eran ~6,5 KB que cada sesión
+leía al arrancar y sólo hacen falta para mover un número. El texto es el mismo, sin tocar una palabra.
+
+**Por qué 300k al entregar, y no los 200k de antes** (cambio del 6-oct-2026; quién lo autorizó, abajo).
+Lo medido va entero para que quien lo relea con sesiones más largas lo RECALCULE y no lo herede. Es UN
+día de UN equipo, y «entrega» se cuenta como un `git push`: es un sustituto (un push no es una entrega
+verificada, y una entrega sin push no se ve).
+
+- **La medición.** El 6-oct-2026 a las 19:27Z, 42 sesiones de fondo con algún turno ese día (26 dieron
+  algún push, 50 en total; el primero llega con 232k de mediana, habiendo arrancado en ~66-70k):
+  - **200k** lo cruzan 35 de 42, y al cruzarlo sólo 6 de las 35 habían empujado algo. Salta antes de la
+    primera entrega: un aviso que suena en ocho de cada diez no distingue a ninguna.
+  - **300k** lo cruzan 20 de 42; al cruzarlo 13 de las 20 ya habían empujado, y 14 vuelven a empujar
+    después, que es donde una norma «al entregar» puede saltar. Con ella, esas 14 se habrían relevado
+    entre 304k y 416k (mediana 340k). Las otras 6 cruzan y no vuelven a empujar.
+  - **500k** lo cruzan 4 de 42 y sólo 1 vuelve a empujar después: a 500k la norma «al entregar» casi no
+    salta nunca.
+
+  ⚠️ Qué mide cada cifra. Todas cuentan el MÁXIMO del día de cada sesión de fondo. A las ~17:15Z, contando
+  todas las transcripciones del día y no sólo las de fondo, eran 32 sesiones y 5 pasaban de 500k: son dos
+  poblaciones, no una contradicción. Y en aquella, contando el ÚLTIMO turno en vez del máximo salía una
+  menos por encima de 800k: una pasó, compactó y acabó por debajo.
+- **No hay un techo medido por debajo de la compactación.** Las 16 sesiones que ese día quedaron paradas
+  con una pregunta acabaron entre 186k y 423k (mediana 273k): se paran por la pregunta, no por el tamaño.
+  11 de 42 pasaron de 400k y siguieron trabajando, y una llegó a 823k. El único límite medido es la
+  compactación sola, entre 861k y 967k (casilla 1).
+- **El coste, sin adornarlo.** Simulado a las 19:28Z sobre 43 sesiones (las 42 de arriba y una del 2-oct
+  cuyo fichero se tocó ese día, con sus turnos viejos dentro; Σ de contexto 733,3 M): relevar a
+  200k lo dejaría en 393,7 M (−46,3 %), a 300k en 518,2 M (−29,3 %), a 400k en 625,4 M (−14,7 %) y a 500k
+  en 700,8 M (−4,4 %). Frente a 200k, 300k renuncia a 17 puntos del ahorro simulado. **El ahorro de 200k
+  no se estaba cobrando:** con el umbral en 200k la suma real era la de arriba, porque casi nadie relevaba
+  a 200k. Es una simulación de la suma de contexto, no del coste ni de la eficiencia. Supone que una
+  sesión relevada arranca en 85k, releva en el turno en que cruza el umbral (la norma espera a la entrega)
+  y no cuenta lo que cuesta cada relevo: es un techo del ahorro, no el ahorro. El comando, entero, una
+  vez por umbral:
+
+      node scripts/equipo/gasto-arranque.mjs vivas --horas 30 --simular 300000
+
+  (`--simular` sin número no arranca. Sale con código 1 cuando hay sesiones que relevar: no es un fallo.)
+- **El motivo.** Un umbral que salta antes de la primera entrega no se puede cumplir «al entregar», y uno
+  que casi nadie cruza no ahorra. 300k es, además, el valor que esta norma tuvo hasta el 21-sep-2026.
+- **Para el número de «a mitad» (500k; quien lo quiera mover lo recalcula con esto).** Entre un push y el siguiente una sesión crece
+  64k de mediana, 169k en el percentil 90 y 216k como máximo (23 pares). Una sesión que entrega justo por
+  debajo de 300k y hace una entrega más acaba, como mucho, hacia 470-516k; con la norma de 300k, la que
+  más tarde se habría relevado lo habría hecho a 416k. Por encima de 500k ese día hubo 4 sesiones.
+
+**Quién lo autorizó.** El número es una decisión de coste, y el coste está fuera de la delegación del
+orquestador (`limites-del-fundador.md`). **Luis, fundador, 6-oct-2026, 18:50Z: «El límite de relevo lo
+pongo en 300.000. Autorizado el coste.»** Se lo dijo a su orquestador, que lo transcribió en SCRUM-1479
+(comentario 18513) y lo mandó escribir en `limites-del-fundador.md`. En Jira los dos firman con la misma
+cuenta, así que la S5 y la S0 lo comprobaron cada una en el origen: en la transcripción del chat del
+orquestador es un turno escrito por una persona, con esa frase (SCRUM-1479, comentario 18532). La frase
+la había redactado el orquestador y el fundador la envió tal cual. Autorizó UN número, el de relevo al
+entregar.
+
+**El gemelo de código entró en el mismo PR** (SCRUM-1479, de la S5): la constante de `sesion.mjs`,
+`gasto-arranque.mjs`, sus tests y `orquestador-autonomo.md` dicen 300k desde el mismo merge que esta
+norma. Ningún test ata este texto a esa constante: quien cambie uno, cambia el otro en el mismo PR.
 
 Lo que sigue es la historia anterior, sin tocar:
 
