@@ -39,6 +39,7 @@ import { fileURLToPath } from 'node:url'; // NUNCA `new URL().pathname`: no deco
 import {
   DIRECCIONES, RAMA_DE_REFERENCIA, arbolDeLaBase,
   poblacionesContraLaBase, sueloDerivado,
+  RETIRADAS_A_PROPOSITO, leerRetiradas, pendientesFrente, // SCRUM-1173
 } from '../scripts/_suelo-contra-main.mjs';
 import { testsDeclaradosEn } from './_poblacion-de-tests.mjs';
 
@@ -66,7 +67,7 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     fichero: 'scripts/_suelo-contra-main.mjs',
     a: '  if (false) return null;',
-    de: '  if (retiradas.some((r) => r.guard === medida.nombre)) return null;',
+    de: '  if (cubiertoPorRetiradas(medida.nombre, medida.antes, medida.ahora, retiradas, direccion)) return null;',
     cae: 'la retirada A PROPÓSITO también vale para una población',
   },
 ];
@@ -184,10 +185,45 @@ test('un TOPE es el mismo trinquete del revés: lo que viola es CRECER', () => {
 
 test('la retirada A PROPÓSITO también vale para una población', () => {
   const medida = { nombre: 'entradas-de-master', medible: true, antes: 436, ahora: 400 };
-  assert.ok(sueloDerivado(medida), 'sin declararla, la pérdida tiene que doler');
-  const conRetirada = [{ guard: 'entradas-de-master', motivo: 'se archivó el bloque viejo', fecha: '2026-09-07' }];
+  assert.ok(sueloDerivado(medida, 'no-encoger', []), 'sin declararla, la pérdida tiene que doler');
+  const conRetirada = [{ guard: 'entradas-de-master', motivo: 'se archivó el bloque viejo', fecha: '2026-09-07', antes: 436, ahora: 400 }];
   assert.equal(sueloDerivado(medida, 'no-encoger', conRetirada), null,
     'una retirada declarada NO puede seguir doliendo: si duele, el suelo está mal puesto');
+});
+
+// ══ 🔴 SCRUM-1173 · la retirada exime SU baja, no la población, y caduca al entrar en la base ══
+// Este test sustituye al «exime la población entera» de antes, que FIJABA el defecto: con la
+// retirada de SCRUM-773 en la lista, cualquier baja futura de `tests-declarados` callaba.
+test('🔴 SCRUM-1173 · una baja NUEVA en una población con retirada antigua habla; la declarada no', () => {
+  const vieja = { guard: 'tests-declarados', motivo: 'SCRUM-773', fecha: '2026-09-22', antes: 7802, ahora: 7796 };
+  // ① La retirada ya está en la base (se mergeó en septiembre): no es pendiente, no exime nada.
+  const pendientes = pendientesFrente([vieja], [{ guard: 'tests-declarados', fecha: '2026-09-22', motivo: 'x' }]);
+  assert.deepEqual(pendientes, [], '🔴 una retirada que la base ya lleva sigue contando como pendiente.');
+  const nueva = { nombre: 'tests-declarados', medible: true, antes: 11587, ahora: 11575 };
+  assert.ok(sueloDerivado(nueva, 'no-encoger', pendientes),
+    '🔴 una baja de 12 tests HOY calla porque en septiembre se retiraron 6: la exención para siempre.');
+  // ② En el PR que la declara (la base aún no la lleva): exime su baja…
+  const enSuPR = pendientesFrente([vieja], []);
+  assert.equal(sueloDerivado({ nombre: 'tests-declarados', medible: true, antes: 7802, ahora: 7796 }, 'no-encoger', enSuPR), null,
+    'la baja declarada, en su propio PR, no puede doler.');
+  // …y sólo su tamaño, aunque `main` haya crecido debajo.
+  assert.equal(sueloDerivado({ nombre: 'tests-declarados', medible: true, antes: 7900, ahora: 7894 }, 'no-encoger', enSuPR), null);
+  assert.ok(sueloDerivado({ nombre: 'tests-declarados', medible: true, antes: 7802, ahora: 7795 }, 'no-encoger', enSuPR),
+    '🔴 la retirada de 6 deja perder 7.');
+  // ③ Fail-closed: sin lista de la base, ninguna retirada exime.
+  assert.deepEqual(pendientesFrente([vieja], null), [], '🔴 no poder leer la base se lee como «todo pendiente».');
+});
+
+test('SCRUM-1173 · la lista de retiradas se LEE por AST, y de verdad', () => {
+  // Control positivo: la lista de este mismo árbol se lee entera y coincide con la que exporta.
+  const propia = leerRetiradas(fs.readFileSync(path.join(RAIZ, 'scripts/_suelo-contra-main.mjs'), 'utf8'));
+  assert.ok(Array.isArray(propia) && propia.length >= 3, `🔴 CIEGO: leo ${JSON.stringify(propia)} de mi propio fichero.`);
+  assert.deepEqual(propia.map((r) => `${r.guard}|${r.fecha}|${r.antes}|${r.ahora}`),
+    RETIRADAS_A_PROPOSITO.map((r) => `${r.guard}|${r.fecha}|${r.antes}|${r.ahora}`));
+  // Un comentario con forma de retirada no es una retirada; un valor que no es literal, ilegible.
+  assert.deepEqual(leerRetiradas("// { guard: 'x', fecha: '2026-01-01' }\nexport const RETIRADAS_A_PROPOSITO = [];"), []);
+  assert.equal(leerRetiradas('export const RETIRADAS_A_PROPOSITO = [{ guard: g }];'), null);
+  assert.equal(leerRetiradas('const otra = [];'), null, '🔴 sin la lista devuelve vacío: «no la encuentro» no es «no hay».');
 });
 
 test('no haber podido medir NO es verde', () => {
