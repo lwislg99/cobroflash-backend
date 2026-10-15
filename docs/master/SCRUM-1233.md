@@ -119,3 +119,42 @@ no; `data.message` sigue ganando. ② VIAJE: modal de alta de Gastos en el banco
 las dos vías de `abrirFoto`, clic en «Añadir gasto», se LEE `#exp-error`, y el gasto no sale hacia el servidor.
 Controles: un 500 sin frase → «Error al guardar.»; una frase del servidor → la suya.
 **Rojo probado:** con `api.js` y `expensesView.js` de main caen 2 de 4; el del viaje pinta exactamente «Error al guardar.».
+
+## 1233e — los dos sitios de S4: la lista de Trabajos y la firma del parte (S4, s4-15oct)
+
+**Medido contra:** `origin/main` = `73e41ab00f727fae5c6c8f1715d6eb6749133502` · 2026-10-15T16:10:09Z
+
+**Skill UI:** no cargada · no cambia nada visual: solo qué texto, ya aprobado, sale en un aviso que ya existía.
+
+- `jobsView.js` · `avisoDeFallo(prefijo, err)` (antes `:397`), el único punto por el que la lista de
+  Trabajos enseña un fallo (guardar el estado, asignar técnicos ×2, generar el cobro). Caía a
+  `err.message`: medido con el `apiRequest` real, un 500 sin frase pintaba
+  «No se pudo guardar: API 500: internal_error». Ahora `mensajeParaPersona(err, '')`: sin frase del
+  servidor, el prefijo solo. Los prefijos son los literales que ya usaba la pantalla; ningún texto nuevo.
+- `parteDetailView.js` (antes `:1276`), el aviso que esta misma tabla dejó a S4 (c.17504): el rechazo
+  de la firma que no es `parte_vacio` subía `r.error.message` crudo al contrato del pad. Ahora
+  `mensajeDelAlbaran(r.error)`, lo mismo que el albarán ante el mismo rechazo (`albaranDetailView.js`,
+  `mensajeDeFalloAlFirmar(resultado.error)`): «No hemos podido registrar la firma», con la frase del
+  servidor entre paréntesis si la mandó. `parte_vacio` sigue con su texto propio.
+- Trinquete: `jobsView.js` 1 → 0 y sale de la tabla; total 14 → 13. El censo, ejecutado con el módulo
+  de esta rama: sobre `origin/main` ve `jobsView.js:398` (control positivo) y sobre la rama, 0; 96
+  ficheros mirados en los dos.
+- No tocado: lo aparcado de `[PENDIENTE…]` (c.17568, permisos). El techo de `jobsView.js` en el trinquete
+  de SCRUM-644 dice 2 y el censo de 644 ya veía 0 ANTES de este cambio (medido sobre `origin/main`);
+  es techo, no igualdad, y no lo muevo sin saber cuándo bajó.
+- **SCRUM-1340 (`scrum811c`), la lista de heredadas encoge 4:** los merges #1952, #1954, #1961 y #1979
+  (los de 1233, 1233b, 1233c y 1233d) pasaban a «DECLARA» en cuanto esta entrada 1233e declara la skill,
+  porque el motor junta las entradas por FICHERO de registro y los cuatro escribieron en este mismo
+  `SCRUM-1233.md`. El guard cae hasta que se quitan («la lista encoge diciéndolo, no en silencio») y se
+  quitan, cada uno con su línea comentada y el motivo. No relaja nada: esos cuatro pasaban antes por la
+  lista y pasan ahora por «DECLARA». ⚠️ Lo que sí queda dicho: **no la declararon ellos**; cualquier
+  registro con una heredada dentro que reciba una entrada nueva de interfaz hará lo mismo.
+
+**Tests:** `tests/scrum1233e-trabajos-y-parte-sin-tripa.test.mjs` (6). Trabajos: un 500 y sin red dan el
+prefijo solo, con control de que el error de `api.js` SÍ lleva la tripa (si no la llevara, el test no
+probaría nada); la frase del servidor sale detrás del prefijo (control, pasa en los dos lados). Parte, en
+el banco del almacén con `firmarParte` real: 400 `firma_invalida` sin frase → el texto del albarán; con
+frase → el molde con paréntesis; `parte_vacio` → su texto (control, pasa en los dos lados).
+**Rojo probado:** con las dos vistas de `origin/main` (diff 4/5 y 1/5) caen 5 de 19: los cuatro de
+1233e que no son control y el trinquete. Vecinos: 65 ficheros que nombran estas vistas o los censos,
+600/600, 0 saltados. Suite completa NO corrida: 1.804 MB libres, por debajo del umbral (A6).

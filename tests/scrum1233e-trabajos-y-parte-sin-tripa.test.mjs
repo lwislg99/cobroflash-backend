@@ -116,7 +116,8 @@ test('SCRUM-1233e · 🔴 parte: un rechazo sin frase dice lo del albarán, no �
   assert.equal(aviso, FALLO_AL_FIRMAR);
 });
 
-test('SCRUM-1233e · CONTROL: un rechazo con frase la enseña, con el mismo molde que el albarán', async () => {
+// No es un control: en `origin/main` cae (salía la frase sola, sin el molde). Es el comportamiento nuevo.
+test('SCRUM-1233e · parte: un rechazo con frase la enseña, con el mismo molde que el albarán', async () => {
   const aviso = await avisoDelPad({ status: 400, data: { error: 'firma_sin_nombre', message: 'Falta el nombre de quien firma.' } });
   assert.equal(aviso, `${FALLO_AL_FIRMAR} (Falta el nombre de quien firma.)`);
 });
