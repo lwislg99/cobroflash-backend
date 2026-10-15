@@ -1178,6 +1178,7 @@ export const SCRIPTS_DEL_DASHBOARD = Object.freeze([
   'quoteDescuentos.js',
   'quoteCaducidad.js', // SCRUM-633
   'quoteDireccionObra.js', // SCRUM-602 (DOC-12)
+  'sitiosGuardados.js', // SCRUM-1144 · va ANTES de `quotesView.js`, que la consume
   'quoteRevisiones.js',
   'quoteAtajosVencimiento.js',
   'quoteMargen.js',
@@ -1292,6 +1293,10 @@ export const DEPENDENCIAS_DE_CARGA = Object.freeze([
   { antes: 'modalHeader.js', despues: 'albaranDesdePresupuestoModal.js', motivo: 'SCRUM-606: la cabecera del modal sale de `cabeceraModal`' },
   { antes: 'atajoNuevo.js', despues: 'albaranDesdePresupuestoModal.js', motivo: 'SCRUM-606: el título del modal ES el rótulo del botón, leído de su fuente única' },
   { antes: 'albaranDesdePresupuestoModal.js', despues: 'albaranesView.js', motivo: 'SCRUM-606: el botón «Nuevo albarán» de la lista abre este modal' },
+  // SCRUM-1144 · las DOS pantallas montan el control al pintarse, no al pulsar: cargada después,
+  // `window.sitiosGuardados` no existiría y el editor y la ficha del Trabajo reventarían al abrir.
+  { antes: 'sitiosGuardados.js', despues: 'quotesView.js', motivo: 'SCRUM-1144: «Elegir un sitio guardado» bajo la dirección de la obra' },
+  { antes: 'sitiosGuardados.js', despues: 'jobDetailView.js', motivo: 'SCRUM-1144: el mismo control bajo la dirección de la obra del Trabajo' },
 ]);
 
 /** Nombre a secas, venga con prefijo `js/` o sin él, y sea cadena u objeto `{fichero}`. */
