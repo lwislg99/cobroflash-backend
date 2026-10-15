@@ -2,6 +2,8 @@
 
 **Medido contra:** `origin/main` = `73e41ab00f727fae5c6c8f1715d6eb6749133502` · 2026-10-15T15:58Z
 
+A9: sin fallo que generalice — mis tres tropiezos de la tanda ya tienen norma o trampa escrita: lo puse «En curso» tarde (A13, paso 2); la mitad de PR del control del sufijo salió ciega por `ConvertFrom-Json` en PowerShell 5.1 (se vio, «PRs leídos=1», y se repitió antes de empujar); y faltaba esta línea (lo cazó SCRUM-1294 en CI).
+
 S3 · rama `scrum-1177-citas-a-redes-que-no-existen` · worktree `wt-s3-1367e` (hora del `Date:` de GitHub).
 
 ## Qué mentía
