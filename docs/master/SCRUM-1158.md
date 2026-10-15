@@ -65,4 +65,43 @@ las 9 líneas del arreglo, que es lo que había en HEAD.
 - La suite completa: no la he corrido (memoria libre 1.314 MB, umbral 2.200). La red es el CI.
 - La segunda cara del ticket (c.17197: `serializar` sólo emite `cssText` y `display`, y pierde
   `el.style.minHeight = '44px'` y similares). No la he tocado: es otro defecto en otro fichero
-  (`_pagina-panel.mjs`, fila general) y sigue vivo.
+  (`_pagina-panel.mjs`, fila general) y sigue vivo. → **Hecha abajo, en «Segunda cara».**
+
+## Segunda cara (c.17197) · `serializar` pierde los estilos en línea
+
+**Medido contra:** `origin/main` = `f4910603f44de8d16eab3abc938d853d255d8295` · 2026-10-15T17:37Z
+
+S3 · rama `scrum-1158b-serializar-y-hidden` · worktree `wt-s3-1288b` (hora del `Date:` de GitHub).
+
+**Qué mentía, y era más ancho de lo que decía el ticket.** No sólo lo puesto por JS: el banco NO
+mantiene `cssText`, así que un `style="…"` del **marcado** (que `setAttribute` reparte en propiedades
+sueltas desde SCRUM-1038) tampoco llegaba a la página. Sólo salía `display`.
+
+**Cuánto, antes de tocar** (`docs/master/evidencias/scrum1158/censo-estilos-perdidos.mjs`, con control
+positivo del detector independiente del `serializar` medido):
+
+| medida | antes | después |
+|---|---|---|
+| declaraciones en línea que no llegan a la página | **876** en **16 de 18** vistas montadas · **824 del marcado**, 52 por JS · 335 nodos · 101 interactivos las llevan o están dentro | 0 · mismas 18 montadas, mismas 10 sin montar |
+| propiedades más perdidas | color 153 · font-size 147 · font-weight 57 · width 44 · margin 41 · … · **min-height 23** | — |
+| `censo:tactil-panel`, elementos DISTINTOS < 44 px | **62** (42 con `.btn-sm`) | **51** (29 con `.btn-sm`) |
+| `guard:objetivo-tactil` | 0 hallazgos · 0 ciegos | 0 hallazgos · 0 ciegos (sus cuatro superficies no cambian de fila) |
+
+**«Infla el censo» era verdad sólo a medias, y la otra mitad es la peligrosa.** Por clase:
+- **Sobraban 19 falsos cortos:** `BUTTON.btn-sm.btn-ghost` 15 → 0 (las pestañas de Cobros «Bizum /
+  tarjeta / transferencia»: `cobrosView.js:514` les pone `minHeight = '44px'` por JS) y
+  `BUTTON.btn-sm.btn-secondary` 4 → 0 («Todos / Historial / Empresa»).
+- **Faltaban 8 cortos de verdad** (verdes huecos): `BUTTON.btn-ghost.btn-sm` 3 → 8, `btn-primary` 4 → 5,
+  `btn-primary.btn-sm` 3 → 4, `btn-secondary` 3 → 4. Por pantalla: Inicio pasa de 0 a 10 cortos (a 390
+  tenía 6 «no tocables» que dejan de serlo), Informes de 0 a 8, Exportar de 1 a 3.
+- Neto 62 − 19 + 8 = 51.
+
+**El arreglo:** `serializar` emite cada propiedad con valor de `.style` (más `cssText` si lo hay).
+Test `tests/scrum1158b-serializar-no-pierde-estilos.test.mjs`, 5 casos con un control.
+
+**Rojo por mutación:** con el `serializar` de `origin/main` (stash del arreglo) el test da **4 de 5 rojos**;
+el que pasa es el control, como debe. Con el arreglo 5/5, y `scrum1158-el-banco-ve-hidden` sigue 6/6.
+Vecinos (`scrum522`, `694c`, `848b`, `1294`, `1415`, `824`, `824b` ×2): 67/67.
+
+**Lo que no se ha hecho:** la suite entera (la red es el CI). No he medido las 10 vistas que el banco no
+monta con estos datos: sobre ellas este arreglo no dice nada.
