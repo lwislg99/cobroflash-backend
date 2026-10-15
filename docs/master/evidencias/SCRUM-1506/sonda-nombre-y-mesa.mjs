@@ -24,9 +24,12 @@ const casos = [
 ];
 for (const k of casos) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sonda1506-'));
-  if (k.mesa) fs.writeFileSync(path.join(dir, '.yaqu-puesto.json'), JSON.stringify(k.mesa));
-  const id = h.identidad({ proyecto: dir, transcript: null, nombre: k.nombre });
-  console.log(`identidad(nombre=${k.nombre}, mesa=${JSON.stringify(k.mesa)}) → puesto=${JSON.stringify(id.puesto)} porNombre=${JSON.stringify(id.porNombre)} carpeta=${JSON.stringify(id.carpeta)} discrepa=${id.discrepa}`);
-  fs.rmSync(dir, { recursive: true, force: true });
+  try {
+    if (k.mesa) fs.writeFileSync(path.join(dir, '.yaqu-puesto.json'), JSON.stringify(k.mesa));
+    const id = h.identidad({ proyecto: dir, transcript: null, nombre: k.nombre });
+    console.log(`identidad(nombre=${k.nombre}, mesa=${JSON.stringify(k.mesa)}) → puesto=${JSON.stringify(id.puesto)} porNombre=${JSON.stringify(id.porNombre)} carpeta=${JSON.stringify(id.carpeta)} discrepa=${id.discrepa}`);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 }
 console.log('EXIT=0');
