@@ -26,13 +26,13 @@ const { parsearSecciones, normalizar, ARRANQUE } = await import(
 // El rojo, declarado: lo ejecuta `npm run meta:mutaciones`.
 export const MUTACIONES_QUE_ME_TUMBAN = [
   {
-    fichero: NORMAS,
+    fichero: 'docs/equipo/00-normas-comunes.md',
     de: '    git fetch origin && git rev-list --count HEAD..origin/main\n    node scripts/_prisma-client-guard.mjs',
     a: '    ./node_modules/.bin/prisma generate\n    git fetch origin && git rev-list --count HEAD..origin/main',
     cae: '🔴 SCRUM-996d · el bloque de órdenes de la A1 no regenera el cliente',
   },
   {
-    fichero: NORMAS,
+    fichero: 'docs/equipo/00-normas-comunes.md',
     de: '| escribir o tocar un guard, o un test que bloquea | A23 |\n',
     a: '',
     cae: '🔴 SCRUM-996d · cada sección que el arranque NO imprime tiene su «antes de…» en la tabla de la A1',

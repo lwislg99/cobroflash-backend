@@ -173,4 +173,9 @@ tabla y el `generate` reescrito, se come parte de lo que sale de la A19). Frente
 ahora pesa 71.167 B, el arranque es el **54 %**: ~33 KB menos, ~15k tokens por sesión a 2,2 B/token. Es un
 cálculo por bytes, no un relevo medido.
 
+**Mi rojo en el primer CI (job 116532845442, 16:24Z):** las dos `MUTACIONES_QUE_ME_TUMBAN` del test llevaban
+`fichero: NORMAS` (una constante) y el meta-guard sólo evalúa literales: 3 fallos (`scrum745`, `scrum757`,
+`scrum765`), 11.483 pass. Arreglado con el literal; esos tres más el mío, 31 de 31, y `--solo-censo` EXIT 0. Lo
+cazó el guard que existe para eso: no hace falta norma nueva.
+
 A9: comprobación → `tests/scrum996d-a1-no-regenera-a-ciegas.test.mjs`
