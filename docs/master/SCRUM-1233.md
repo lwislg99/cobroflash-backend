@@ -158,6 +158,7 @@ frase → el molde con paréntesis; `parte_vacio` → su texto (control, pasa en
 **Rojo probado:** con las dos vistas de `origin/main` (diff 4/5 y 1/5) caen 5 de 19: los cuatro de
 1233e que no son control y el trinquete. Vecinos: 65 ficheros que nombran estas vistas o los censos,
 600/600, 0 saltados. Suite completa NO corrida: 1.804 MB libres, por debajo del umbral (A6).
+A9: comprobación → `tests/scrum1233e-trabajos-y-parte-sin-tripa.test.mjs`
 
 ## 1233f — el techo de `jobsView.js` en el trinquete de SCRUM-644, de 2 a 0 (S4, s4-15oct)
 
@@ -179,4 +180,9 @@ hermanas, chocarían al mergear. Lo pidió el orquestador (el techo decía 2 y e
 - `jobsView.js` entra en «lo arreglado se queda en cero».
 - **Rojo probado:** sembrando `showToast('x: ' + err.message, 'error')` en `jobsView.js` (diff 1/0) caen
   2 de 14 (el trinquete y «se queda en cero»); sin la siembra, 14 de 14.
-A9: comprobación → `tests/scrum1233e-trabajos-y-parte-sin-tripa.test.mjs`
+- **De paso, el rojo de esta rama en el CI (run del 15-oct, 16:55Z):** las dos entradas de hoy (1233e y
+  1233f) se empujaron sin su línea `A9:`, y `scrum1294` cayó con 1 fallo de 11.588. Era nuestro, no del
+  otro equipo. 1233e la recibió en `5bc0aa25ccbbbcddf10100e593aa0c03f0b1a895`, y aquí se mezcla esa
+  rama: el merge dejó aquella línea al FINAL del fichero, o sea, dentro de este tramo y no del suyo, así
+  que se ha devuelto a su sitio y este tramo lleva la suya.
+A9: comprobación → `tests/scrum644-trinquete-mensaje-crudo.test.mjs`
