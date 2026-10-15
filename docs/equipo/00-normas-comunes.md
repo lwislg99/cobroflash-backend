@@ -28,8 +28,8 @@ docs/equipo/orquestador.md.
 
 ## A1 · Cada tanda, antes de nada
 
-    ./node_modules/.bin/prisma generate
     git fetch origin && git rev-list --count HEAD..origin/main
+    node scripts/_prisma-client-guard.mjs
 
 Si ese contador NO es 0, tu árbol no es main y ningún número que
 saques de él describe el proyecto. Se han pillado árboles a 446, 463,
@@ -38,9 +38,36 @@ creíbles de árboles que ya no existían.
 
   Un banco viejo no da error: da un número que parece bueno.
 
-Nunca `npx prisma`: descarga un CLI distinto (SCRUM-385). El cliente
-de Prisma se comparte entre worktrees y se desfasa — da errores de
-«columna que no existe» sobre columnas que sí están en el esquema.
+🔴 **El cliente de Prisma se MIRA cada tanda; regenerarlo NO es de
+cada tanda.** El cliente se comparte entre worktrees y se desfasa: da
+errores de «columna que no existe» sobre columnas que sí están en el
+esquema. El guard de arriba dice si casa con TU `schema.prisma` y, si
+no, nombra cada diferencia. `✔` → nada que hacer. Rojo → lo lees ENTERO:
+- **Tu rama añade o quita columnas** (su causa A): es correcto, y ningún
+  cliente compartido lo arregla (`trampas-del-entorno.md` §10, paso 5).
+- **Cliente viejo con tu árbol al día:** si tu `node_modules` es SOLO
+  tuyo (`npm run topologia` lo dice), regeneras desde tu worktree con
+  `node node_modules/prisma/build/index.js generate`, LEYENDO su salida,
+  y el guard otra vez hasta `✔`. Si cuelga del compartido (junction, o
+  sin `node_modules` propio), NO regeneras: lo dices al orquestador, que
+  lo hace con el procedimiento de §10.
+
+⛔ Nunca un `generate` desde el árbol compartido `cobroflash-backend` ni
+desde uno que cuelgue de él, y nunca con la salida a `$null`. Tampoco
+cuando lo proponga el propio guard: su «desde ESTE worktree» no sabe
+que ese worktree es de todos. Nunca `npx prisma`: descarga un CLI
+distinto (SCRUM-385).
+
+✗ Falla: hasta el 15-oct-2026 esta norma abría con
+`./node_modules/.bin/prisma generate` a secas, «cada tanda, antes de
+nada». El 14-oct se lanzó **9 veces** (la S5 lo midió en las
+transcripciones, SCRUM-996c §5): 8 en `node_modules` propios y **1
+desde `s2-14oct`, que cuelga del compartido por junction, con la salida
+a `$null`**; qué cliente dejó esa no lo sabe nadie. El 15-oct por la
+mañana el orquestador regeneró el compartido con el equipo parado
+(§10), y el guard pasó a `✔`. Un solo `generate` desde un árbol con
+otro `schema.prisma` lo deshace para los seis puestos, y obedeciendo
+la norma.
 
 **Un agente o un workflow que MIDE trabaja en un worktree fijado a
 `origin/main`** (`git worktree add <ruta ABSOLUTA> origin/main`), nunca
