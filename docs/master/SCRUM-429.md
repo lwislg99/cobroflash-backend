@@ -347,3 +347,24 @@ pero no habló, por dos motivos:
 - 2 (`scrum394`, `scrum729`) caen por `ERR_MODULE_NOT_FOUND` de `dist/…`: este árbol no tiene `dist`.
 
 El juez es el CI, que genera su propio cliente.
+
+## SCRUM-429c · la primera regeneración, apuntada (15-oct-2026, Sesión 5)
+
+**Medido contra:** `origin/main` = `73e41ab00f727fae5c6c8f1715d6eb6749133502` · 2026-10-15T15:34:16Z
+
+El orquestador ejecutó el procedimiento de §10 por primera vez esta tanda, con el equipo parado. §10 decía
+«la primera vez que se ejecute, se apunta aquí qué pasó», y eso es lo que se ha apuntado allí:
+- Su primer control positivo falló por estar el script en `%TEMP%` (desde ahí no resuelve `@prisma/client` y
+  el motor no se carga). Dentro del proyecto, la sonda vio el proceso. Ningún proceso con la DLL al regenerar.
+  *(Medido por el orquestador; esta sesión no lo repitió.)*
+- Repetido por esta sesión desde `s5-14octb` (junction al compartido, en `origin/main`): el guard da `✔`, EXIT 0.
+  **Así queda probado lo que el 14-oct sólo estaba probado con un cliente fabricado: el guard se calla con un
+  cliente regenerado de verdad.**
+- Y los cuatro tests de SCRUM-235/252 que el 14-oct caían en local por el cliente viejo: con los de 429 y 429b,
+  **47 de 47**, EXIT 0 (`scrum235`, `scrum252`, `scrum429`, `scrum429b`).
+- Desde el árbol compartido (`scrum-1082…`, schema del 17-sep) el guard sigue en rojo con
+  `Merchant.invoiceStartSeq` (cliente por delante del schema), EXIT 1. Es la causa (A): correcto. Se escribe en
+  §10 para que nadie lo lea como «la regeneración falló», y que el arreglo que propone el guard, desde ese árbol,
+  deshace la regeneración para todos.
+
+**No se tocó** el texto del guard (que en el árbol compartido recomienda regenerar): queda dicho en §10.
