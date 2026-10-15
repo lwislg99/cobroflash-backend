@@ -161,7 +161,24 @@ enlace o resolviendo hacia arriba.
 
 ### Cómo se regenera sin romper a nadie (lo coordina el orquestador; nunca una sesión por su cuenta)
 
-⚠️ **Escrito el 14-oct-2026 y SIN EJECUTAR todavía.** La primera vez que se ejecute, se apunta aquí qué pasó.
+Escrito el 14-oct-2026. **Ejecutado por primera vez el 15-oct-2026 por el orquestador, con el equipo parado.**
+Lo que pasó (lo de los dos primeros puntos lo midió el orquestador; el tercero lo repitió la Sesión 5 a las
+15:3xZ desde `s5-14octb`, en `origin/main` = `73e41ab00`):
+
+- **Su primer control positivo FALLÓ, y el fallo era del control, no de la sonda.** El script de prueba estaba en
+  `%TEMP%`, y desde ahí `require("@prisma/client")` no resuelve: el `node` nunca cargó el motor, así que no había
+  nada que ver. Con el script **dentro del proyecto** el motor se cargó y la sonda lo vio. Un control positivo mal
+  colocado dice «la sonda no sirve» cuando la que no sirve es la prueba: antes de dar la sonda por mala, comprobar
+  que el control llegó a cargar la DLL.
+- **Procesos con la DLL al regenerar: ninguno**, con la sonda ya comprobada.
+- **Antes**, desde un árbol al día, el guard nombraba las tres columnas (`Quote.seriesYear`, `Quote.archivedAt`,
+  `WhatsAppMessage.toPhone`). **Después**, `✔` (EXIT 0) desde `s5-14octb`, que cuelga del compartido por junction.
+- 🔴 **Desde el árbol compartido `cobroflash-backend` el guard SIGUE EN ROJO, y es lo correcto.** Ese árbol va en
+  `scrum-1082-flujo-crear-factura-competencia`, con un `schema.prisma` del 17-sep, y el guard dice «el campo
+  `Merchant.invoiceStartSeq` está en el cliente generado y NO en schema.prisma» (EXIT 1): el cliente va con `main`
+  y el schema de esa rama no. Es la causa (A) del paso 5. **No quiere decir que la regeneración fallara.**
+  ⛔ Y el arreglo que propone el guard (`npm run prisma:generate` «desde ESTE worktree») **desde el compartido
+  deshace la regeneración para todos**: lo dejaría generado con el schema del 17-sep. Se mira desde un árbol al día.
 
 1. **Cuándo.** Con el equipo parado o avisado: regenerar le cambia el cliente a TODOS los árboles que cuelgan
    de él. `npm run topologia` dice quiénes son.

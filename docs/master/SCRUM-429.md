@@ -347,3 +347,56 @@ pero no habló, por dos motivos:
 - 2 (`scrum394`, `scrum729`) caen por `ERR_MODULE_NOT_FOUND` de `dist/…`: este árbol no tiene `dist`.
 
 El juez es el CI, que genera su propio cliente.
+
+## SCRUM-429c · la primera regeneración, apuntada (15-oct-2026, Sesión 5)
+
+**Medido contra:** `origin/main` = `73e41ab00f727fae5c6c8f1715d6eb6749133502` · 2026-10-15T15:34:16Z
+
+A9: sin fallo que generalice — tramo de sólo medición. La línea A9 que le faltaba (el CI de #2476 cayó por eso) la añade el relevo de S5; el fallo, con su comprobación, va en el registro de SCRUM-1494.
+
+El orquestador ejecutó el procedimiento de §10 por primera vez esta tanda, con el equipo parado. §10 decía
+«la primera vez que se ejecute, se apunta aquí qué pasó», y eso es lo que se ha apuntado allí:
+- Su primer control positivo falló por estar el script en `%TEMP%` (desde ahí no resuelve `@prisma/client` y
+  el motor no se carga). Dentro del proyecto, la sonda vio el proceso. Ningún proceso con la DLL al regenerar.
+  *(Medido por el orquestador; esta sesión no lo repitió.)*
+- Repetido por esta sesión desde `s5-14octb` (junction al compartido, en `origin/main`): el guard da `✔`, EXIT 0.
+  **Así queda probado lo que el 14-oct sólo estaba probado con un cliente fabricado: el guard se calla con un
+  cliente regenerado de verdad.**
+- Y los cuatro tests de SCRUM-235/252 que el 14-oct caían en local por el cliente viejo: con los de 429 y 429b,
+  **47 de 47**, EXIT 0 (`scrum235`, `scrum252`, `scrum429`, `scrum429b`).
+- Desde el árbol compartido (`scrum-1082…`, schema del 17-sep) el guard sigue en rojo con
+  `Merchant.invoiceStartSeq` (cliente por delante del schema), EXIT 1. Es la causa (A): correcto. Se escribe en
+  §10 para que nadie lo lea como «la regeneración falló», y que el arreglo que propone el guard, desde ese árbol,
+  deshace la regeneración para todos.
+
+**No se tocó** el texto del guard (que en el árbol compartido recomienda regenerar): queda dicho en §10.
+
+## SCRUM-429d · con el `node_modules` compartido, el guard manda al orquestador y no a regenerar (Sesión 5)
+
+**Medido contra:** `origin/main` = `f4910603f44de8d16eab3abc938d853d255d8295` · 2026-10-15T17:32:54Z
+
+A9: comprobación → `tests/scrum429d-causa-b-no-regeneres.test.mjs`
+
+Encargo del orquestador (15-oct, por mensaje), que lo trae de la S0: `_prisma-client-guard.mjs:332` decía «Arreglo, en
+los dos casos: `npm run prisma:generate` (desde ESTE worktree)». En la causa (B) es justo lo que §10 prohíbe: un
+consejo que, obedecido, rompe a los demás. Y el gemelo, encontrado de paso: `_prisma-sync.mjs:81`, ante un junction,
+mandaba «avisar a las otras sesiones y regenerar a mano».
+
+- **Carril:** el guard no tiene fila en `dos-equipos.md` (está entre los ayudantes compartidos sin clasificar), lo
+  tocó la S5 el 14-oct (429b) y lo encarga el orquestador. Mismo caso el sync.
+- **El guard:** el arreglo se parte por la topología. TUYO → `npm run prisma:generate`. COMPARTIDO (la B, o la A en
+  un árbol que cuelga del compartido) → «NO regeneres», avisa al orquestador, §10. Sigue diciendo «ROMPE EL DE LOS
+  DEMÁS» y nombra `LinkType` y `npm run topologia`, que es lo que exige `tests/scrum235-cliente-por-columnas`.
+- **El sync:** la segunda salida pasa a ser «avisar al orquestador, que coordina la regeneración (§10)».
+- **Rojo:** el test nuevo, 3 de 3 en rojo contra el texto de `main`; con el arreglo, 3 de 3 (`51e105707`).
+  Los 9 ficheros de `tests/` que importan el guard o el sync: 81 de 81.
+- **Mutación:** devolver «Arreglo, en los dos casos» (`git diff --numstat` 1/1) → cae SÓLO el caso 1. Restaurado
+  con `git restore --source=HEAD`, porcelana vacía.
+- Comprobado que nadie regeneró nada: `node_modules/.prisma/client/index.js` del compartido sigue con la hora de
+  la regeneración del orquestador (15:33Z).
+- Lleva dentro el merge de `scrum-429c-regenerado-apuntado` (#2476): las dos ramas anexaban a este mismo fichero y
+  habrían chocado al final.
+
+**Queda viejo, y no es mío:** `docs/equipo/trampas-del-entorno.md` §10 (líneas 180-181 con 429c) dice que el guard
+propone regenerar «desde ESTE worktree» también desde el compartido. Al entrar esto deja de ser cierto. El fichero es
+de S0.
