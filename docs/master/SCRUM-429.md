@@ -352,6 +352,8 @@ El juez es el CI, que genera su propio cliente.
 
 **Medido contra:** `origin/main` = `73e41ab00f727fae5c6c8f1715d6eb6749133502` · 2026-10-15T15:34:16Z
 
+A9: sin fallo que generalice — tramo de sólo medición. La línea A9 que le faltaba (el CI de #2476 cayó por eso) la añade el relevo de S5; el fallo, con su comprobación, va en el registro de SCRUM-1494.
+
 El orquestador ejecutó el procedimiento de §10 por primera vez esta tanda, con el equipo parado. §10 decía
 «la primera vez que se ejecute, se apunta aquí qué pasó», y eso es lo que se ha apuntado allí:
 - Su primer control positivo falló por estar el script en `%TEMP%` (desde ahí no resuelve `@prisma/client` y
