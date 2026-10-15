@@ -351,8 +351,11 @@ export function equipoVivo({ agentes, repo, job, mesas }) {
  * ocasional: disparaba SIEMPRE, así que «espera algo interactivo» no era un dato, era relleno con
  * forma de dato. Si algún día el CLI empieza a traer `waitingFor` de verdad, se usa; si no, se dice
  * que no se sabe, en vez de inventar qué tipo de algo espera.
+ *
+ * Exportada por SCRUM-1467: `scripts/vigia-sesiones-jv.mjs` compone su aviso con ESTA función, para
+ * que la frase viva en un solo sitio (su copia propia se quedó atrás diez días tras 1095).
  */
-function motivoDeBloqueo(v) {
+export function motivoDeBloqueo(v) {
   return v.waitingFor ? `espera ${v.waitingFor}` : 'está bloqueada, motivo desconocido — `agents --json` no informa de por qué';
 }
 
@@ -1019,12 +1022,30 @@ export function rutaDelTraspaso(config, nombre) {
   return path.join(base, fichero);
 }
 
+/**
+ * Qué sesión mide `contexto <nombre>` (SCRUM-1557). Pasa por `repartirPorNombre`, como `lanzar`,
+ * `relevar`, `parar` y `olvidar`: un resto MUERTO con el mismo nombre no se cuenta como «viva»
+ * —antes se contaba, y con una muerta al lado no había forma de medir a la viva—. Lo que no se
+ * puede jurar muerto sigue contando, y con dos que cuentan no se elige una a ciegas.
+ *
+ * @returns {{veredicto:'ELEGIDA', agente:object}|{veredicto:'NO-VIVA'|'NO-PUDE-MIRAR', motivo:string}}
+ */
+export function elegirParaContexto({ nombre, agentes, job }) {
+  if (!Array.isArray(agentes)) return { veredicto: 'NO-PUDE-MIRAR', motivo: 'no se pudo leer `claude agents --json`' };
+  const { cuentan, restos } = repartirPorNombre({ nombre, agentes, job });
+  if (cuentan.length === 0) return { veredicto: 'NO-VIVA', motivo: `no hay ninguna sesión «${nombre}» viva`, ...comoRestos(restos) };
+  if (cuentan.length > 1) {
+    return { veredicto: 'NO-PUDE-MIRAR', motivo: `${cuentan.length} sesiones que no se pueden dar por muertas se llaman «${nombre}»`,
+      cuentan: cuentan.map((c) => ({ id: c.agente.id ?? null, motivo: c.motivo })), ...comoRestos(restos) };
+  }
+  return { veredicto: 'ELEGIDA', agente: cuentan[0].agente };
+}
+
 /** El contexto de una sesión viva, con todo lo que hizo falta para leerlo. */
 function leerContexto(config, nombre, agentes) {
-  if (!Array.isArray(agentes)) return { veredicto: 'NO-PUDE-MIRAR', motivo: 'no se pudo leer `claude agents --json`' };
-  const vivas = agentes.filter((a) => a && a.name === nombre);
-  if (vivas.length === 0) return { veredicto: 'NO-VIVA', motivo: `no hay ninguna sesión «${nombre}» viva` };
-  if (vivas.length > 1) return { veredicto: 'NO-PUDE-MIRAR', motivo: `${vivas.length} sesiones vivas se llaman «${nombre}»` };
+  const e = elegirParaContexto({ nombre, agentes, job: (id) => estadoDeJob(config, id) });
+  if (e.veredicto !== 'ELEGIDA') return e;
+  const vivas = [e.agente];
 
   const carpetas = carpetasDeProyecto(config);
   if (!carpetas) return { veredicto: 'NO-PUDE-MIRAR', motivo: 'no se pudo listar ~/.claude/projects' };

@@ -13,8 +13,9 @@
 // correcto** — que es exactamente lo que se ve como «no pasa nada».
 //
 // ── 🔒 POR QUÉ 21/21 EN VERDE NO LO VIERON ───────────────────────────────────────────────
-// `scrum652d` mide que ninguna entrada del nav lleve a una vista SIN CONTEXTO, y `scrum652f` que
-// el extractor no se quede ciego. Las dos son ciertas y ninguna PULSA. **Se medía el mecanismo, no
+// `scrum652d` mide que ninguna entrada del nav lleve a una vista SIN CONTEXTO, y su «SUELO DEL
+// NAV» que el extractor no se quede ciego (SCRUM-1177: aquí decía «scrum652f», que no ha existido
+// nunca). Las dos son ciertas y ninguna PULSA. **Se medía el mecanismo, no
 // el hecho.** Un `data-view` que existe y un `case` que existe no son una pantalla que se abre.
 //
 // ── LO QUE VIGILA ESTE FICHERO ────────────────────────────────────────────────────────────

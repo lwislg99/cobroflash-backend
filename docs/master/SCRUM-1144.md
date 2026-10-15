@@ -53,3 +53,27 @@ texto tecleado. Si se prefiere que elegir guarde al momento, es un cambio de una
 ## NO hecho
 
 - Dar de alta, corregir o borrar sitios: es la ficha del cliente (SCRUM-1146, J2). Esta pantalla sólo LEE.
+
+## Visto en yaqu.app (s2-15oct, tramo 1144b)
+
+**Medido contra:** `origin/main` = `310721d211be7cdd081003dc02ed987e582d7426` · 2026-10-15T16:33:40Z (`Date:` de GitHub)
+A9: sin fallo que generalice — los dos rojos de la sonda eran de la SONDA (pulsaba un botón plegado y elegía cliente por un `<select>` oculto), y se corrigieron hasta pulsar como el profesional.
+
+`yaqu.app/version` = `310721d2` (contiene el merge `d09323e9` de #2481). Cuenta QA, sonda
+`D:\MILLONARIO\cobroFlash\sondas-s2\sitios-de-verdad.mjs`, chrome-headless-shell, 1280×900. Desde la página no
+sale ninguna escritura (la puerta de `comun.mjs`, con control positivo). El único dato es un sitio
+(«Sonda S2 · nave», C/ Sonda 1, 28001 Madrid) creado por la API en el cliente #83 del Trabajo #77, y BORRADO al
+acabar: `DELETE` 204, y la lista leída aparte vuelve a tener 0 sitios. Ids creados y borrados: 1 a 5, uno por pasada.
+
+| | lo medido, con clics reales | resultado |
+|---|---|---|
+| ① Trabajo #77 | «Datos» viene plegado (`details.detail-plega`): se abre por su `summary`. Botón visible, 44 px. Pulsar → la lista con el sitio («Sonda S2 · nave» + «C/ Sonda 1, 28001, Madrid, Madrid»). Elegir → el campo dice `C/ Sonda 1, 28001, Madrid, Madrid` y la lista se cierra | ✔ |
+| ② Editor | cliente #83 por su botón, una línea tecleada, «Continuar» ×2, «Ajustes del documento · Cambiar» y «Personalizada» en su selector. **Antes de pulsar, el campo de la obra está VACÍO** (P2/DOC-12). Botón de 44 px. Pulsar → la lista. Elegir → el campo dice la dirección del sitio | ✔ |
+| ③ Carga que falla | la sonda contesta 500 al GET de sitios: «No se pudieron cargar los sitios guardados. Inténtalo de nuevo.» al lado del botón, y el botón activo | ✔ |
+
+Errores de página: ninguno. VEREDICTO=VERDE.
+
+**NO medido en producción:** el GUARDADO del Trabajo (el `blur` → `PATCH /admin/jobs/77`). #77 es el fixture de S3
+y no se toca: la puerta cortó ese PATCH. El guardado está medido en el banco (`scrum1144` · TRABAJO), no aquí.
+**No intentado:** el estado «sin sitios» en producción (el cliente tenía 0 antes de crear el de prueba, pero no se
+pulsó en ese momento), y el editor a 360 px.

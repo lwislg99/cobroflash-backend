@@ -1345,6 +1345,15 @@
         });
       });
     } catch (e) {
+      // SCRUM-1493b · 409 y 404, lo mismo que «Ordenar» ante esos dos (conducta 2 de SCRUM-1302 C):
+      // se RELEE el parte y no se dice nada nuevo. El 409 del `PATCH` es `parte_locked` (firmado desde
+      // otro sitio): «vuelve a intentarlo» era falso, porque reintentar no va a funcionar nunca; la
+      // relectura enseña el parte como está, sin el botón. El 404, la ficha de «no se ha podido cargar».
+      var codigo = e && e.status;
+      if (codigo === 409 || codigo === 404) {
+        await renderParteDetailView(contenedor, parteId, o);
+        return false;
+      }
       // Si no se pudo guardar NO se repinta como si sí: el técnico creería que ya está apuntado.
       // 🔴 SCRUM-1493 · Y TAMPOCO SE PINTA ENCIMA DE LA PROPUESTA. El aviso se escribía DENTRO del
       // hueco: se llevaba las líneas, lo corregido a mano y el botón, y decía «vuelve a intentarlo»
