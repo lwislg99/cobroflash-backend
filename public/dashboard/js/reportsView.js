@@ -50,10 +50,15 @@ async function renderReportsView(container) {
   const btnInv  = makeExportBtn('Facturas CSV',     '/admin/exports/invoices.csv');
   const btnExp  = makeExportBtn('Gastos CSV',        '/admin/exports/expenses.csv');
   const btnQuot = makeExportBtn('Presupuestos CSV',  '/admin/exports/quotes.csv');
+  // SCRUM-1183 · `jobs.csv` existía desde SCRUM-25 y suelto no lo bajaba nadie: sólo salía dentro
+  // del paquete de «Descargar datos». Filtra por `createdAt` con from/to, igual que quotes.csv,
+  // así que lleva el mismo año (abajo). Rótulo firmado en SCRUM-1183 comentario 19799.
+  const btnJobs = makeExportBtn('Trabajos CSV',      '/admin/exports/jobs.csv');
   const btnCust = makeExportBtn('Clientes CSV',      '/admin/exports/customers.csv'); // A11.4 (RGPD)
   exportRow.appendChild(btnInv);
   exportRow.appendChild(btnExp);
   exportRow.appendChild(btnQuot);
+  exportRow.appendChild(btnJobs);
   exportRow.appendChild(btnCust);
 
   // VeriFactu XML (registro RRSIF) — solo aplica a negocios de España con NIF;
@@ -384,6 +389,7 @@ async function renderReportsView(container) {
     btnInv.href  = `/admin/exports/invoices.csv?from=${year}-01-01&to=${year}-12-31`;
     btnExp.href  = `/admin/exports/expenses.csv?from=${year}-01-01&to=${year}-12-31`;
     btnQuot.href = `/admin/exports/quotes.csv?from=${year}-01-01&to=${year}-12-31`;
+    btnJobs.href = `/admin/exports/jobs.csv?from=${year}-01-01&to=${year}-12-31`;
   }
 
   // ── Carga del bloque IVA (modelo 303) ────────────────────────────────────
