@@ -2,6 +2,8 @@
 
 **Medido contra:** `origin/main` = `73e41ab00f727fae5c6c8f1715d6eb6749133502` · 2026-10-15T16:08Z
 
+A9: sin fallo que generalice — el error de esta tanda es de un instrumento, no mío (`restaurarDesdeMarca`, abajo, declarado y sin arreglar); mi censo marca gateado el fichero entero y no el caso, y está dicho como límite.
+
 S3 · rama `scrum-1178-citas-a-redes-que-no-corren` · worktree `wt-s3-1293` (hora del `Date:` de GitHub).
 
 ## Qué mentía
