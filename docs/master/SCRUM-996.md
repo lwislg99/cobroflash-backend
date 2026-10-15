@@ -121,3 +121,32 @@ verificar todavía — no tratar como diagnóstico:
 abierto: la próxima sesión que mida, antes de tocar nada, remide con N mayor y, si el rojo persiste, corre el
 candidato 1 aislado del 2 y el 3 (medir `norma.mjs --arranque` a secas frente a un arranque real completo, en
 dos sesiones de control) en vez de tocar los tres a la vez.
+
+## SCRUM-996d · la A1 deja de mandar `prisma generate` cada tanda (Sesión 0)
+
+**Medido contra:** `origin/main` = `73e41ab00f727fae5c6c8f1715d6eb6749133502` · 2026-10-15T16:06:31Z
+
+Del apartado 5 de 996c (de la S5, PR #2477 al escribir esto): la A1 abría con `./node_modules/.bin/prisma
+generate` «cada tanda, antes de nada», y §10 de `trampas-del-entorno.md` dice que el cliente compartido lo
+regenera sólo el orquestador, con el equipo parado. Las dos cosas se muerden: el 14-oct se lanzó 9 veces, una
+desde `s2-14oct` (junction al compartido) con la salida a `$null`.
+
+- **La A1 nueva abre con `node scripts/_prisma-client-guard.mjs`**, que MIRA: `✔` → nada; rojo → se lee entero.
+  Causa A (tu rama añade columnas) es correcta; cliente viejo con árbol al día → se regenera sólo con un
+  `node_modules` propio (`npm run topologia`) y leyendo la salida; si cuelga del compartido, al orquestador (§10).
+- Lleva el porqué con la cifra (9 veces el 14-oct, una con la salida a `$null`), para que no se pode.
+- §10 no se repite: se enlaza. Lo que pasó al ejecutarlo lo apunta la S5 en SCRUM-429c (PR #2476).
+- **Control positivo del guard antes de escribirlo en la norma:** `✔` EXIT 0 desde `wt-s0-15oct` (junction al
+  compartido, en `origin/main`); desde el árbol compartido (`scrum-1082…`) rojo con `Merchant.invoiceStartSeq`,
+  EXIT 1. Las dos cosas que la A1 nueva dice que pasan.
+- Test: `tests/scrum996d-a1-no-regenera-a-ciegas.test.mjs` (el bloque de órdenes de la A1 no lleva `generate`
+  y sí el guard). Rojo comprobado aplicando su mutación declarada: cae, exit 1, y el fichero queda restaurado.
+  Con los otros 5 ficheros de tests que leen las normas: 53 de 53, EXIT 0.
+
+**Visto de paso, de otros carriles (se reporta, no se toca):**
+- `scripts/_prisma-client-guard.mjs:332` sigue diciendo «Arreglo, en los dos casos: `npm run prisma:generate`
+  (desde ESTE worktree)». En la causa (B) eso es justo lo que §10 prohíbe. Es de la S5.
+- `CLAUDE.md` (Comandos) dice «en Windows, matar node antes si el DLL queda bloqueado»; §10 dice «NO matar
+  todos los `node`: Claude Code también corre en `node`». `CLAUDE.md` es de un jefe; la S0 propone el cambio.
+
+A9: comprobación → `tests/scrum996d-a1-no-regenera-a-ciegas.test.mjs`
