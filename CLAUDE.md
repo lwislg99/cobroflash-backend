@@ -15,7 +15,10 @@ ni documento ni cobro por YaQu (regla 24; SCRUM-612).** España-first.
 
 > **Flujo Git completo (ramas + PR + trabajo en equipo): `docs/FLUJO_DE_TRABAJO.md`.**
 
-🔴 **LECTURA OBLIGATORIA, cada tanda: [`docs/equipo/00-normas-comunes.md`](docs/equipo/00-normas-comunes.md)** —
+🔴 **LECTURA OBLIGATORIA, cada tanda: `node scripts/equipo/norma.mjs --arranque`** — trae las normas comunes
+POR SECCIONES (38 KB de 71, medido el 15-oct). **La A1 lleva una tabla que dice CUÁNDO traer cada una de las
+once que quedan fuera** (A5 antes de tocar el esquema, A23 antes de escribir un guard, A22 antes de un carácter
+de control…). ⛔ **No se leen enteras.** El fichero sigue siendo [`docs/equipo/00-normas-comunes.md`](docs/equipo/00-normas-comunes.md) —
 las normas comunes de todas las sesiones: preámbulo, PASO 0, cómo se mide aquí, git, el orden del
 esquema, lo que no se toca y cómo se entrega. Tu identidad y tus trampas propias, en
 `docs/equipo/sesion-N.md`, y tu carril en la tabla §11bis de `docs/equipo/orquestador.md`.
