@@ -130,7 +130,6 @@
     {"clave":"ruta · DELETE /admin/customers/:id/sites/:siteId","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:478","carril":"J2","ticket":"SCRUM-1145"},
     {"clave":"ruta · GET /admin/albaranes/consolidables","donde":"src/modules/jobs/app/routes/albaranes.routes.ts:297","carril":"S4","ticket":"SCRUM-1185"},
     {"clave":"ruta · GET /admin/customers/:id/notes","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:383","carril":"J2","ticket":"SCRUM-1132"},
-    {"clave":"ruta · GET /admin/customers/:id/sites","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:425","carril":"J2","ticket":"SCRUM-1145"},
     {"clave":"ruta · GET /admin/evidencias.zip","donde":"src/modules/fiscal/evidencias/evidencias.routes.ts:15","carril":"J1","ticket":"SCRUM-1185"},
     {"clave":"ruta · GET /admin/expenses/categories","donde":"src/modules/expenses/app/routes/expenses.routes.ts:78","carril":"S2","ticket":"SCRUM-1185","motivo":"RESTO / GEMELA (S2, 29-sep): la lista de categorías vive COPIADA en el front, CATEGORY_LABELS de public/dashboard/js/expensesView.js. Si se conecta esta ruta, hay que retirar esa copia en el mismo cambio, o habrá dos fuentes de las categorías."},
     {"clave":"ruta · GET /admin/exports/fees.csv","donde":"src/modules/exports/app/routes/exports.routes.ts:450","carril":"J2","ticket":"SCRUM-1185"},
@@ -160,6 +159,7 @@
   "retiradas": [
     {"clave":"ruta · POST /admin/quotes/:id/archivar","motivo":"SCRUM-1273: conectada en quotesDetailView.js (botón «Archivar» de la ficha del presupuesto, sólo admin)"},
     {"clave":"ruta · POST /admin/quotes/:id/desarchivar","motivo":"SCRUM-1273: conectada en quotesDetailView.js (botón «Desarchivar» del aviso de archivado de la ficha, sólo admin)"},
+    {"clave":"ruta · GET /admin/customers/:id/sites","motivo":"SCRUM-1144: conectada en quotesView.js («Elegir un sitio guardado», bajo la dirección de la obra en modo Personalizada; sólo lee). El alta, la edición y el borrado siguen en «declaradas»: son de la ficha del cliente (J2)"},
     {"clave":"front-funcion · public/dashboard/js/colaDeFirmas.js::alConfirmarseFirmas","motivo":"SCRUM-1374: conectada en albaranDetailView.js (el detalle abierto escucha el drenado y se recarga si viene su albarán y no hay pad de firma abierto)"},
     {"clave":"export · src/core/utils/utils.ts::formatNumeroEs","motivo":"SCRUM-743: conectada en albaranPdf.service.ts (fmtQty) y albaranPublicVista.ts (fmtCantidadAlbaran): la cantidad del albaran, una sola forma en el PDF y en la pantalla de firma"},
     {"clave":"ruta · GET /admin/customers/:id/fusion-preview","motivo":"SCRUM-1126: conectada en customerDetailView.js (Fusionar con otro cliente, previsualización antes de confirmar, sólo admin)"},

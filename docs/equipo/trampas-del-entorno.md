@@ -32,7 +32,7 @@ máquina**: que en la de Luis fuera así no dice nada de la de Javier.
 |---|---|---|
 | un comando con `Remove-Item Env:FORCE_COLOR` y, en la misma línea, `/c` o `'\]\('` lo **bloquea el hook** («Remove-Item on system path») | el hook lee esos trozos como una ruta del sistema | `[Environment]::SetEnvironmentVariable('FORCE_COLOR', $null)`, o el regex en un `.mjs` |
 | `$m` y `$M` pisan el mismo valor | PowerShell no distingue mayúsculas en las variables | nombres distintos de verdad |
-| `[IO.File]::ReadAllText('ruta/relativa')` lee OTRO fichero | las APIs de .NET resuelven contra el directorio del PROCESO, no el de PowerShell | rutas ABSOLUTAS (`Resolve-Path`) |
+| `[IO.File]::ReadAllText('ruta/relativa')` lee OTRO fichero, y 🔴 `[IO.File]::WriteAllText('ruta/relativa')` **ESCRIBE en otro árbol**: tras un `cd` al worktree, la ruta cae en el checkout compartido desde el que se lanzó la sesión (14-oct-2026: un mutante de prueba cayó allí, y el test del worktree salió verde porque no lo veía) | las APIs de .NET resuelven contra el directorio del PROCESO, no el de PowerShell | rutas ABSOLUTAS (`Resolve-Path`), y después de mutar, `git status` del árbol que se quería tocar Y del compartido |
 | 🔴 `[IO.File]::ReadAllBytes('ruta/relativa')` tras un `cd` **lanza**, el array queda vacío y `(@() \| Where-Object {…}).Count` da **0**, que se lee igual que «fichero limpio» (medido el 20-sep-2026 barriendo BOMs) | la misma causa, con peor cara: aquí el error no acaba en un fichero equivocado sino en un recuento vacío | ruta ABSOLUTA y, **al lado de cada recuento, la POBLACIÓN** (`$b.Length`): un 0 sobre 0 bytes no es un hallazgo, es un instrumento que no arrancó |
 | `… \| Select-Object -First N` y node no escribe nada | la tubería corta a node antes de que escriba | redirigir a un fichero y leerlo en OTRO comando |
 | `>` o `Out-File` escribe UTF-16 o con BOM | valores por defecto de 5.1 | `-Encoding utf8`; y para un mensaje de commit sin BOM: `[IO.File]::WriteAllText($ruta, $texto, (New-Object Text.UTF8Encoding $false))` |
@@ -66,6 +66,11 @@ ausente**. Se borra en cada comando (A6) y se escribe en la primera línea de ca
   (0 existe · 2 no existe · otro = no se sabe).
 - **`gh pr list` tiene tope.** Con `--limit 400` sobre un repo de 1.300 PR se pierden los abiertos VIEJOS y la
   cuenta sale corta sin avisar. → `--limit 2000` y comprobar el número mínimo y máximo de PR traídos.
+- **`gh pr diff --name-only` puede enseñar el diff VIEJO** un rato después de que entre la PR de debajo de una
+  apilada (14-oct-2026, #2467: 7 ficheros, cuando el diff de verdad tenía 5). → `gh api
+  repos/<dueño>/<repo>/compare/main...<rama>` (`ahead_by` y `files`), o `git diff --name-only origin/main...HEAD`.
+- **`gh run view --log` no da el log de un job mientras el run sigue vivo.** → `gh api
+  --allow-escape-sequences repos/<dueño>/<repo>/actions/jobs/<id>/logs`.
 - **Una lista de PR ABIERTOS vacía no distingue «nunca se abrió» de «se abrió y ya entró».** → `--state all`.
 - **Un push hecho con el token de un bot no dispara los checks**, y el auto-merge espera para siempre: se
   empuja con cuenta de persona. Si un PR se queda sin checks, mirar primero las ejecuciones en
@@ -140,3 +145,39 @@ aunque corra varios a la vez: un fichero lento retiene la salida de todos los de
 - Las sesiones de fondo (`claude --bg`) no salen en la barra de VS Code y `--resume` con flags arranca una
   copia: `orquestador-autonomo.md` §5bis.6.
 - La memoria de Claude Code va por CARPETA: `instalacion-orquestador-autonomo.md`.
+
+## 10 · El cliente de Prisma COMPARTIDO va por detrás y `tsc` no lo dice
+
+14-oct-2026 · SCRUM-429b · Sesión 5. Medido ese día: el cliente del árbol principal
+(`cobroflash-backend/node_modules/.prisma/client`, generado el 1-oct) no tenía `Quote.seriesYear`,
+`Quote.archivedAt` ni `WhatsAppMessage.toPhone`, y `npm run build` daba ~23 errores de tipos que no eran
+de nadie. `npm run topologia` lo enseña: casi todos los worktrees cuelgan de ese `node_modules`, por
+enlace o resolviendo hacia arriba.
+
+| síntoma | causa | qué hacer | cómo se comprueba |
+|---|---|---|---|
+| `tsc` se queja de campos que SÍ están en `prisma/schema.prisma` | el cliente generado es de OTRO schema (otra rama, u otra sesión que regeneró) | leer el aviso de `prebuild`, que nombra TODAS las diferencias; o `node scripts/_prisma-client-guard.mjs` | el guard nombra los campos; con un cliente al día dice `✔` |
+| «hay que matar `node` para regenerar» | en Windows, `prisma generate` no puede sustituir `query_engine-windows.dll.node` mientras un proceso la tenga cargada | **NO matar todos los `node`**: Claude Code también corre en `node`, y matarlos mata las sesiones. Sólo hace falta parar los procesos que tienen esa DLL cargada | la sonda del paso 2, con su control positivo |
+
+### Cómo se regenera sin romper a nadie (lo coordina el orquestador; nunca una sesión por su cuenta)
+
+⚠️ **Escrito el 14-oct-2026 y SIN EJECUTAR todavía.** La primera vez que se ejecute, se apunta aquí qué pasó.
+
+1. **Cuándo.** Con el equipo parado o avisado: regenerar le cambia el cliente a TODOS los árboles que cuelgan
+   de él. `npm run topologia` dice quiénes son.
+2. **Qué procesos tienen la DLL cargada** (PowerShell, desde cualquier sitio):
+   `Get-Process node | Where-Object { $_.Modules.FileName -match 'query_engine' } | Select-Object Id, StartTime`
+   · **Control positivo antes de creerse un vacío:** lanzar un `node` que cree un `PrismaClient` y llame a
+   `$connect()` (aunque falle la conexión) y comprobar que la sonda lo ve. Medido el 14-oct: lo vio; y de 14
+   `node` vivos, ninguno tenía la DLL cargada.
+   · Si sale alguno: es un servidor de desarrollo o una tanda de tests. Se para ESE PID, con su dueño avisado.
+   El resto no se toca.
+3. **Desde un worktree al día con `origin/main`, que cuelgue del `node_modules` compartido** (no desde el árbol
+   principal: va en otra rama y su `schema.prisma` es viejo, y regenerar ahí deja el cliente viejo otra vez):
+   `node node_modules/prisma/build/index.js generate`. ⛔ Nunca `npx prisma` (SCRUM-385).
+4. **Antes**, apuntar lo que dice `node scripts/_prisma-client-guard.mjs` (las diferencias, con su nombre).
+   **Después**, el mismo comando tiene que dar `✔` desde ese worktree, y desde otro que cuelgue del mismo
+   `node_modules`. Y `npm run build` sin el aviso amarillo.
+5. Que el cliente vaya con `main` no quiere decir que vaya con TU rama: una rama que añade columnas sigue
+   viéndolas como «faltan». Eso es la causa (A) de `_prisma-client-guard.mjs`, y para ella no hay cliente
+   compartido que valga.

@@ -1,14 +1,16 @@
 // scripts/qa/sembrar-casos.mjs — SCRUM-1367
 //
 // ═════════════════════════════════════════════════════════════════════════════════════════════
-// 🔴 ESTO NO SE HA EJECUTADO NUNCA CONTRA PRODUCCIÓN. La regla de `aceptado` existe (SCRUM-1367
-//    c.18479, sus cinco condiciones abajo); las otras órdenes siguen sin regla propia. Es la
+// 🔴 SÓLO `aceptado --presupuesto 206` SE HA EJECUTADO CONTRA PRODUCCIÓN (14-oct-2026, SCRUM-1367f:
+//    Trabajo #77). La regla de `aceptado` existe (SCRUM-1367 c.18479, sus cinco condiciones abajo);
+//    las otras órdenes siguen sin regla propia y sin correr. Es la
 //    CAPACIDAD de crear los casos que le faltan a la cuenta QA, probada sin
 //    red (`tests/scrum1367-sembrar-casos.test.mjs`). Vive APARTE de `sembrar-qa.mjs` a propósito:
 //    aquél tiene la autorización del 29-sep-2026 y su lista blanca; éste ensancha lo que se puede
 //    escribir (ACEPTAR un presupuesto) y por eso pide su propia regla. Dos ficheros, dos permisos.
 //
 //   node scripts/qa/sembrar-casos.mjs aceptado        ① un presupuesto ACEPTADO, con su Trabajo
+//   node scripts/qa/sembrar-casos.mjs aceptado --presupuesto N   …aceptando el BORRADOR #N que ya existe (no crea)
 //   node scripts/qa/sembrar-casos.mjs plan            ② un presupuesto en borrador con plan de cobro PROPIO
 //   node scripts/qa/sembrar-casos.mjs perfil-fiscal   ③ razón social, NIF, dirección y WhatsApp DE PRUEBA en el merchant QA
 //   node scripts/qa/sembrar-casos.mjs mismo-id        ④ SOLO MIDE: ¿hay un albarán y un parte con el mismo id?
@@ -52,6 +54,16 @@
 //   5 · 🔴 FAIL-CLOSED ................ `GET /admin/me` → `modoEmision` tiene que ser `receipt`
 //       (España, no demo, `INVOICING_ES_ENABLED` en OFF: `getEmissionMode`). Cualquier otro
 //       valor, o ninguno, y no escribe NADA. El día que se encienda, la orden deja de funcionar sola.
+//
+// ① CON `--presupuesto N` (SCRUM-1367f, 14-oct-2026). Crear un presupuesto pide plan activo
+//    (`requireActivePlan` en `/quote/create`) y la prueba de la cuenta QA venció el 12-oct; aceptar
+//    no lo pide. Esta variante acepta un borrador que YA existe, por el mismo camino y con las
+//    mismas cinco condiciones. Lo único que cambia es de dónde sale el presupuesto, y por eso
+//    lleva dos cerrojos más:
+//   · el #N tiene que ser del cliente QA, que es aquél cuyos teléfonos mira la condición 3;
+//   · si el cliente QA ya tiene un presupuesto ACEPTADO, no se acepta otro: el caso ① ya existe.
+//     Sin la marca, ésta es la idempotencia. Vale también al revés: sin `--presupuesto`, un
+//     aceptado sin marca frena el alta de uno nuevo.
 //
 // SALIDAS: las de `sembrar-qa.mjs` — 0 hecho · 1 NO PUDE · 2 CIEGO: sin sesión · 3 rechazado.
 // ═════════════════════════════════════════════════════════════════════════════════════════════
@@ -208,6 +220,33 @@ async function fotoDeDocumentosYCobros(leer) {
   return [...ids(facturas, 'factura '), ...ids(cobros, 'cobro '), ...ids(albaranes, 'albarán ')].sort();
 }
 
+/** Los presupuestos ACEPTADOS del cliente QA, releídos uno a uno. Lista llena = no se sabe. */
+async function aceptadosDelCliente(leer, cliente) {
+  const delCliente = lista(await leer(`/admin/quotes?search=${encodeURIComponent(NOMBRE_CLIENTE_QA)}`), 'la lista de presupuestos');
+  if (delCliente.length >= TOPE_LISTA_PRESUPUESTOS) throw new NoPude(`la lista de presupuestos llega llena (${delCliente.length}): no puedo afirmar que no haya ya uno aceptado.`);
+  const aceptados = [];
+  for (const q of delCliente.filter((x) => x && x.customerName === NOMBRE_CLIENTE_QA && x.status === 'accepted')) {
+    const d = await leer(`/admin/quotes/${q.id}`);
+    if (d.customer && d.customer.id === cliente.id) aceptados.push(d);
+  }
+  return aceptados;
+}
+
+/** `--presupuesto N`: el borrador que ya existe, del cliente QA y sin otro aceptado al lado. */
+async function presupuestoElegido(leer, cliente, id, aceptados) {
+  const otros = aceptados.filter((q) => q.id !== id);
+  if (otros.length) {
+    throw new NoPude(`el cliente QA ya tiene ${otros.length === 1 ? 'un presupuesto aceptado' : `${otros.length} presupuestos aceptados`} (#${otros.map((q) => q.id).join(', #')}): `
+      + `el caso ① ya existe y no acepto el #${id}. Para verlo: \`aceptado --presupuesto ${otros[0].id}\`. No se ha escrito nada.`);
+  }
+  const presupuesto = await leer(`/admin/quotes/${id}`);
+  if (!presupuesto.customer || presupuesto.customer.id !== cliente.id) {
+    throw new Rechazo(`🔴 NO SE ACEPTA: el presupuesto #${id} es del cliente #${presupuesto.customer ? presupuesto.customer.id : '?'} y sólo se acepta uno `
+      + `del cliente QA #${cliente.id}, el de los teléfonos comprobados. No se ha escrito nada.`);
+  }
+  return presupuesto;
+}
+
 /**
  * ① Un presupuesto ACEPTADO y su Trabajo, vistos los dos al releer. Si se llegó a intentar la
  * aceptación, la foto de después se mira SIEMPRE: también si el `accept` falla o el Trabajo no sale.
@@ -235,13 +274,25 @@ export async function casoAceptado(fetchFn, cookie, opciones = {}) {
   return lineas;
 }
 
-async function aceptarYVerTrabajo(fetchFn, cookie, { esperar = (ms) => new Promise((r) => setTimeout(r, ms)) }, intento) {
+async function aceptarYVerTrabajo(fetchFn, cookie, { esperar = (ms) => new Promise((r) => setTimeout(r, ms)), presupuestoId = null }, intento) {
   const cuenta = await cuentaQA(fetchFn, cookie);
   const { leer } = intento;
   await exigirModoSinEmision(leer);
   const cliente = await clienteQA(leer);
   await exigirTelefonosImposibles(leer, cliente);
-  let { presupuesto, nuevo } = await presupuestoConMarca(fetchFn, leer, cuenta, cliente, MARCA_ACEPTADO, {});
+  const aceptados = await aceptadosDelCliente(leer, cliente);
+  let presupuesto;
+  let nuevo = false;
+  if (presupuestoId !== null) {
+    presupuesto = await presupuestoElegido(leer, cliente, presupuestoId, aceptados);
+  } else {
+    const sinMarca = aceptados.filter((q) => !`${q.docHeaderText ?? ''}\n${q.docFooterText ?? ''}`.includes(MARCA_ACEPTADO));
+    if (sinMarca.length) {
+      throw new NoPude(`el cliente QA ya tiene el presupuesto #${sinMarca[0].id} aceptado (sin la marca ${MARCA_ACEPTADO}): el caso ① ya existe y no creo otro. `
+        + `Para verlo: \`aceptado --presupuesto ${sinMarca[0].id}\`. No se ha escrito nada.`);
+    }
+    ({ presupuesto, nuevo } = await presupuestoConMarca(fetchFn, leer, cuenta, cliente, MARCA_ACEPTADO, {}));
+  }
   let aceptadoAhora = false;
   if (presupuesto.status !== 'accepted') {
     if (presupuesto.status !== 'draft') throw new NoPude(`el presupuesto #${presupuesto.id} está en «${presupuesto.status}»: sólo se acepta desde borrador.`);
@@ -267,7 +318,7 @@ async function aceptarYVerTrabajo(fetchFn, cookie, { esperar = (ms) => new Promi
   }
   const lineas = [
     `cuenta comprobada en el servidor: merchant ${cuenta.merchantId} («${cuenta.nombre}»), owner`,
-    `presupuesto #${presupuesto.id} nº ${presupuesto.number ?? '?'} · ${nuevo ? 'CREADO' : 'ya estaba'} · ${aceptadoAhora ? 'ACEPTADO ahora' : 'ya estaba aceptado (no se repite)'}`,
+    `presupuesto #${presupuesto.id} nº ${presupuesto.number ?? '?'} · ${nuevo ? 'CREADO' : presupuestoId !== null ? 'ya estaba (elegido con --presupuesto, sin marca)' : 'ya estaba'} · ${aceptadoAhora ? 'ACEPTADO ahora' : 'ya estaba aceptado (no se repite)'}`,
   ];
   if (!trabajo) {
     throw new NoPude(`el presupuesto #${presupuesto.id} está aceptado, pero su Trabajo no aparece entre los ${total} de la lista`
@@ -276,7 +327,7 @@ async function aceptarYVerTrabajo(fetchFn, cookie, { esperar = (ms) => new Promi
   if (trabajo.totalAceptado == null) throw new NoPude(`el Trabajo #${trabajo.id} existe, pero su importe aceptado sale vacío: el control positivo de SCRUM-1355 no se vería.`);
   lineas.push(`trabajo   #${trabajo.id} · con su presupuesto aceptado · importe aceptado ${trabajo.totalAceptado}`);
   lineas.push('no se ha emitido ningún documento, ni cobrado, ni enviado nada');
-  lineas.push(`queda en la cuenta QA: el presupuesto #${presupuesto.id} (marca ${MARCA_ACEPTADO}) aceptado y su Trabajo #${trabajo.id}. `
+  lineas.push(`queda en la cuenta QA: el presupuesto #${presupuesto.id} (${presupuestoId !== null ? 'elegido con --presupuesto' : `marca ${MARCA_ACEPTADO}`}) aceptado y su Trabajo #${trabajo.id}. `
     + 'NO se quita por el panel (un aceptado no se rechaza ni se borra); repetir la orden no crea otro.');
   return lineas;
 }
@@ -357,12 +408,19 @@ export async function ejecutar(argv, { fetchFn = globalThis.fetch, rutaSesion = 
   const [orden, ...resto] = argv;
   try {
     const ORDENES = ['aceptado', 'plan', 'perfil-fiscal', 'mismo-id'];
-    if (!ORDENES.includes(orden)) throw new Rechazo(`orden «${orden ?? ''}» desconocida. Uso: ${ORDENES.join(' · ')} [--crear-hasta N]`);
+    if (!ORDENES.includes(orden)) throw new Rechazo(`orden «${orden ?? ''}» desconocida. Uso: ${ORDENES.join(' · ')} [--crear-hasta N | --presupuesto N]`);
     let crearHasta = 0;
+    let presupuestoId = null;
     if (resto.length) {
-      if (orden !== 'mismo-id' || resto.length !== 2 || resto[0] !== '--crear-hasta' || !/^\d+$/.test(resto[1])) throw new Rechazo(`argumentos de más o mal formados: ${resto.join(' ')}`);
-      crearHasta = Number(resto[1]);
-      if (crearHasta < 1 || crearHasta > TOPE_PARTES_POR_ORDEN) throw new Rechazo(`--crear-hasta admite de 1 a ${TOPE_PARTES_POR_ORDEN} partes por orden.`);
+      const opcion = { 'mismo-id': '--crear-hasta', aceptado: '--presupuesto' }[orden];
+      if (!opcion || resto.length !== 2 || resto[0] !== opcion || !/^\d+$/.test(resto[1])) throw new Rechazo(`argumentos de más o mal formados: ${resto.join(' ')}`);
+      if (orden === 'aceptado') {
+        presupuestoId = Number(resto[1]);
+        if (presupuestoId < 1) throw new Rechazo('--presupuesto necesita el id de un presupuesto.');
+      } else {
+        crearHasta = Number(resto[1]);
+        if (crearHasta < 1 || crearHasta > TOPE_PARTES_POR_ORDEN) throw new Rechazo(`--crear-hasta admite de 1 a ${TOPE_PARTES_POR_ORDEN} partes por orden.`);
+      }
     }
     let cookie = '';
     try { cookie = fs.readFileSync(rutaSesion, 'utf8').trim(); } catch { cookie = ''; }
@@ -370,7 +428,7 @@ export async function ejecutar(argv, { fetchFn = globalThis.fetch, rutaSesion = 
       err(`CIEGO — no hay sesión guardada en ${rutaSesion}. Entra antes con: node scripts/qa/sesion-panel.mjs login luisdragonball+qa@gmail.com`);
       return 2;
     }
-    const lineas = orden === 'aceptado' ? await casoAceptado(fetchFn, cookie, esperar ? { esperar } : {})
+    const lineas = orden === 'aceptado' ? await casoAceptado(fetchFn, cookie, { ...(esperar ? { esperar } : {}), presupuestoId })
       : orden === 'plan' ? await casoPlan(fetchFn, cookie)
         : orden === 'perfil-fiscal' ? await casoPerfilFiscal(fetchFn, cookie)
           : await casoMismoId(fetchFn, cookie, { crearHasta });
