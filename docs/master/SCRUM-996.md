@@ -218,3 +218,5 @@ Lo decide el orquestador.
 - El ahorro de las propuestas 1-3 está calculado por bytes, no medido con un relevo que las aplique.
 - **Esta sesión no ha leído `00-normas-comunes.md` entero en esta tanda**: sólo la A1 y la A19, al medirlas.
 - Contexto de esta sesión al escribir esto: ~200k.
+
+A9: sin fallo que generalice — ticket de sólo medición y propuesta (un único .md, sin código ni camino de emisión tocado); lo no comprobado queda declarado arriba, y la corrección al comentario 16988 va en el texto del apartado 4.
