@@ -1,0 +1,53 @@
+# SCRUM-1178 · Comentarios que citan como red algo que no corre en CI
+
+**Medido contra:** `origin/main` = `73e41ab00f727fae5c6c8f1715d6eb6749133502` · 2026-10-15T16:08Z
+
+S3 · rama `scrum-1178-citas-a-redes-que-no-corren` · worktree `wt-s3-1293` (hora del `Date:` de GitHub).
+
+## Qué mentía
+
+Comentarios que justifican «aquí no se vigila X» porque «eso lo hace» un censo que sólo corre a mano, o
+un test gateado por `QA_DB_TEST`, que el CI no pone (`.github/workflows/ci.yml` sólo pone
+`LIBRO_PG_URL`, `SERIE_PG_URL` y `TRAMOS_PG_URL`; el propio YAML explica por qué no pone la de staging).
+
+## Cuánto
+
+Censo de las líneas de comentario de `tests/` y `scripts/` (1.843 ficheros): citas entre comillas de
+código a un `npm run X` que ningún workflow ejecuta (ni directa ni transitivamente: de 187 scripts de npm,
+47 corren en CI) o a un test gateado por una variable que el CI no pone (69 ficheros). Control: `test` y
+`censo:tactil-panel` salen como «corren»; `cr:censo` y `scrum76` como «no».
+
+**43 citas en 38 ficheros.** Leídas una a una:
+
+| clase | cuántas |
+|---|---|
+| la presentan como vigilancia y no lo es | **5** — las del ticket menos la que ya resolvió SCRUM-1172 |
+| dicen lo CONTRARIO y ya es falso: que `censo:tactil-panel` no corre en ningún sitio, cuando desde SCRUM-1179-C corre en cada PR (informativo) | **2** — no venían en el ticket |
+| herramientas (`dev`, `db:seed`, `topologia`, `arbol:mio`, `guards:entrada`, la tanda gateada…), historia de una medición, o ya dicen que no corre / que está gateado | 36 |
+
+⚠️ Límite del censo: marca gateado el FICHERO entero, no el caso. `scripts/generar-sql-deriva.mjs:13`
+sale como cita a un gateado y es cierta: el caso de `scrum222` que compara el SQL generado no lleva gate
+(líneas 259-264). Y no ve una cita sin comillas de código: la de `scrum72` (que sí arreglo) no la cazó.
+
+## Lo que se cambia (sólo comentarios; ninguna aserción)
+
+| cita | antes | ahora |
+|---|---|---|
+| `tests/scrum570-cr-en-disco.test.mjs:13` | «eso lo hace `npm run cr:censo`» | lo mide `cr:censo` A MANO; el checkout no lo vigila nada |
+| `tests/scrum754-el-juez-que-oscila.test.mjs:790` | «El recuento vive en `censo:gateados`» | … que se lanza A MANO |
+| `scripts/censo-objetivo-tactil-panel.mjs:14-16` | el total «ya está bajo vigilancia (`censo:guards-navegador`)» y «esto se ejecuta cuando alguien quiere el número, no en cada tanda» | lo CUENTA a mano, no es vigilancia; y este censo SÍ corre en cada PR desde SCRUM-1179-C, informativo |
+| `tests/scrum72-pdfs-privados.test.mjs:163-164` | «con test propio en `scrum76`» | … GATEADO: esa cobertura no existe en el check obligatorio |
+| `tests/_pdf-texto.mjs:8` | «Los tests de PDF que había (`pdfs.test.mjs`)» | … GATEADOS: el CI no los corre |
+| `scripts/guard-objetivo-tactil.mjs:381-384` | «esa red no corre en ningún sitio automático» (cierto el 27-sep) | se conserva y se fecha: desde SCRUM-1179-C SÍ corre, informativo, y sigue sin bloquear |
+
+Ninguna se arregla haciendo que lo citado corra donde bloquea (la opción 1 del ticket): `cr:censo` tarda,
+`censo:gateados` ejecuta la carpeta entera y `scrum76`/`pdfs` piden la base de staging, que el CI no
+recibe por la regla 9. Las cinco quedan como comentarios que dicen la verdad.
+
+## Pruebas
+
+27 ficheros (los seis tocados, los que los leen, `scrum710b` y `scrum737`): 252 tests · 251 pass · 0 fail
+· 1 skip (`scrum72`, el gateado: en local sin base; en CI corre con `LIBRO_PG_URL`). Sin guard nuevo: lo
+que distingue «cita una red» de «cita una herramienta» es el sentido de la frase, y un guard por texto
+sobre eso daría rojos que no se reproducen. La norma general va en el ticket estructural del fundador
+(SCRUM-1179, STOP: no se toca).

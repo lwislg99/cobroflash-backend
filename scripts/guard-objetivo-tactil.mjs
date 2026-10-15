@@ -380,7 +380,8 @@ const SUPERFICIES_791 = [
   // 14 px) dejó de estar. Con CERO deuda CONOCIDA la ficha salió de esta lista citando
   // `npm run censo:tactil-panel` como red — y esa red **no corre en ningún sitio automático ni
   // bloquea nada** (medido por S0, SCRUM-1172: no está en los workflows, ni en
-  // `guards-visuales.mjs`, ni en `test`). Cero deuda CONOCIDA no es cero deuda: es que nadie
+  // `guards-visuales.mjs`, ni en `test`). (SCRUM-1178, 15-oct-2026: desde SCRUM-1179-C SÍ corre en
+  // cada PR, en el job informativo; cuenta, pero sigue sin bloquear nada.) Cero deuda CONOCIDA no es cero deuda: es que nadie
   // miraba, y detrás había botones de COBRO a 30 px («📲 Confirmar Bizum recibido», acciones de
   // cobro, «Enlace de pago»).
   //
