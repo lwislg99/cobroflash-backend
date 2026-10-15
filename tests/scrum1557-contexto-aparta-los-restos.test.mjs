@@ -17,13 +17,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     fichero: 'scripts/equipo/sesion.mjs',
     de: '  const { cuentan, restos } = repartirPorNombre({ nombre, agentes, job });\n  if (cuentan.length === 0) return { veredicto: \'NO-VIVA\'',
     a: '  const cuentan = agentes.filter((a) => a && a.name === nombre).map((agente) => ({ agente })); const restos = [];\n  if (cuentan.length === 0) return { veredicto: \'NO-VIVA\'',
-    cae: 'con una viva y un resto muerto, `contexto` mide a la viva',
+    cae: 'SCRUM-1557 · 🔴 una viva y un resto MUERTO con el mismo nombre: se mide la viva',
   },
   {
     fichero: 'scripts/equipo/sesion.mjs',
-    de: "return v.waitingFor ? `espera ${v.waitingFor}` : 'está bloqueada, motivo desconocido",
-    a: "return v.waitingFor ? `espera ${v.waitingFor}` : 'espera algo interactivo', 'está bloqueada, motivo desconocido",
-    cae: 'una bloqueada sin `waitingFor` dice que el motivo no se sabe',
+    de: "return v.waitingFor ? `espera ${v.waitingFor}` : 'está bloqueada, motivo desconocido — `agents --json` no informa de por qué';",
+    a: "return `espera ${v.waitingFor || 'algo interactivo'}`;",
+    cae: 'SCRUM-1095 · 🔴 una bloqueada sin `waitingFor` dice que el motivo NO se sabe',
   },
 ];
 
