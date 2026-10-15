@@ -1,8 +1,8 @@
 # SCRUM-1173 · El suelo derivado eximía ENTERAS y PARA SIEMPRE las poblaciones con una retirada
 
-**Medido contra:** `origin/main` = `e8d27c636dfce4e80071a28552b40479e7195265` · 2026-10-15 16:45Z (`Date:` de GitHub)
+**Medido contra:** `origin/main` = `e8d27c636dfce4e80071a28552b40479e7195265` · 2026-10-15T16:45Z
 
-A9: sin fallo propio que generalice en esta entrega.
+A9: sin fallo que generalice — mis dos rojos de esta entrega fueron de formato de este mismo registro (la línea A9 y el ancla), cazados por sus guards antes de empujar.
 
 S3 · rama `scrum-1173-la-retirada-caduca` · worktree `wt-s3-1173`.
 
