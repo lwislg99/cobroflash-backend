@@ -121,3 +121,5 @@ y la memoria de aquel día no lo dice.
 en `%LOCALAPPDATA%\yaqu-equipo` y la puerta de integridad exige reinstalar.
 
 🔴 **Para hoy, sin construir nada:** la semanal está al 89 % y no se reinicia hasta las 22:00Z.
+
+A9: sin fallo que generalice — medición encargada por el orquestador, sin código tocado; el hueco hallado (`juzgar()` sólo mira `five_hour`) no es un error de esta sesión y queda descrito arriba para que lo decida el orquestador
