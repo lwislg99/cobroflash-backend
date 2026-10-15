@@ -71,6 +71,8 @@ las 9 líneas del arreglo, que es lo que había en HEAD.
 
 **Medido contra:** `origin/main` = `f4910603f44de8d16eab3abc938d853d255d8295` · 2026-10-15T17:37Z
 
+A9: sin fallo que generalice — el primer control positivo del censo dependía del `serializar` medido y salió CIEGO tras el arreglo; se cazó en la misma tanda y se rehízo independiente (emisor mudo). Y el primer empuje salió sin esta línea: ya lo caza `scrum1294`.
+
 S3 · rama `scrum-1158b-serializar-y-hidden` · worktree `wt-s3-1288b` (hora del `Date:` de GitHub).
 
 **Qué mentía, y era más ancho de lo que decía el ticket.** No sólo lo puesto por JS: el banco NO
