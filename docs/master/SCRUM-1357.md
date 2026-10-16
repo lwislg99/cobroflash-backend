@@ -158,3 +158,82 @@ JSON · sin poder lanzar · las de más de 24 h de fuera del panel entran en la 
 - Fuera del panel sólo mira las últimas 24 h; lo más viejo lo cuenta y lo manda al cementerio del latido.
 - Las sesiones interactivas (el orquestador, el fundador) no son trabajos: las cuenta y no las mira.
 - Si el panel se cuelga, espera 60 s y lo dice; no mata al proceso que dejó colgado.
+
+## 16-oct-2026 · SCRUM-1357c · PARADOS: la sesión que ACABÓ SU TURNO y sigue viva te espera; y los puestos vacíos
+
+**Medido contra:** `origin/main` = `48fc00f6a90089b0f172b58c49413d889288bec0` · 2026-10-16T11:17:22Z (`Date:` de GitHub)
+
+A9: comprobación → `tests/scrum1357c-te-espera.test.mjs`
+
+Encargo del orquestador (16-oct, 1.ª tanda, punto 3): pasar su vigía `quien-me-espera.mjs` (vivía sólo en
+su scratchpad) a `scripts/equipo/`. **No entra como fichero nuevo:** `parados.mjs` ya hacía sus ① (si no
+puede mirar lo dice y sale 2) y ② (sesiones vivas sin registro legible = ciego), y contaba por SESIÓN. Un
+segundo vigía duplicaba eso y daba dos fuentes de verdad. Lo que le faltaba a `parados.mjs` era otra cosa,
+y es la que importa. Decisión avisada al orquestador antes de construir; aceptada.
+
+### El defecto, medido
+
+Una sesión de fondo que acaba su turno queda en `state=done · tempo=idle` (284 de los 455 `state.json`
+del registro el 16-oct). **`done` NO es terminal**: con un mensaje vuelve a `working`. En los
+`timeline.jsonl` del 15-oct: `s3-15octb` `done` a las 16:54Z → `working` a las 17:33Z (**39 min
+esperando**); `s0-15octb` `done` 16:35Z → `working` 16:36Z. `parados.mjs` leía el `state` terminal como
+«acabada» sin mirar el proceso, y con eso salía **0 con ✅**: el 15-oct, el día en que el fundador avisó
+al orquestador de cinco puestos sin atender, el instrumento le decía «nadie parado». Y un puesto sin
+ninguna sesión no tenía fila: la tabla sólo listaba los puestos que tenían alguna.
+
+### Lo que entra (sólo `scripts/equipo/parados.mjs` y su test nuevo)
+
+- **TE ESPERA** = terminada en el panel **o** en el registro (basta uno, como con el bloqueo) **y** con
+  proceso (`pid`). Sale 1, en su tabla, con la hora del último `done` de su línea de tiempo (o
+  `updatedAt`, rotulado) y su último `detail`. Un bloqueo gana: si hay pregunta, es «bloqueada».
+- **Puestos vacíos** (`--puestos`, por defecto S0-S5; `--puestos ninguno` no los mira): un puesto pedido
+  sin ninguna sesión con proceso sale 1 con su línea. Si alguna suya es «no sé», no se afirma (ya va en
+  los ciegos). **Sin panel no se afirma ninguno** (no hay procesos que ver). Un `--puestos` que no se
+  entiende sale 2: no se lee como «ninguno».
+- El titular verde de 1357b no cambia (su test lo fija literal); lo nuevo va en la línea de debajo.
+- `medir` recibe `puestos` y por defecto no mira ninguno: los 21 casos de 1357b no se han tocado.
+
+**Desviación declarada y aceptada por el orquestador:** su vigía tomaba DOS muestras del tamaño de la
+transcripción para distinguir «quieta» de «pensando». Aquí no: «quieta» no se deduce de un tamaño que no
+crece; la afirman las dos fuentes al acabar el turno, y una sesión pensando está en `working`.
+
+### Probado en rojo
+
+| corrida | resultado |
+|---|---|
+| los casos de 1357c contra el `parados.mjs` de `main` (commit `d6a15a67a466368ba0a8b1b019bfcf94a5819fa2`) | 9 de 9 caen; el del 15-oct por lo que importa: `0 !== 1` |
+| con el arreglo | 1357b + 1357c: **31 de 31** |
+| 11 mutaciones (BASE 31/31 antes y después; bytes restaurados en `finally`) | **11 cazadas** |
+
+Las mutaciones: el `done` con proceso vuelve a «acabada» (3 rojos) · no se mira el proceso · sólo cuenta
+el panel · el bloqueo deja de ganar · la salida no mira a las que esperan · **la salida no mira los
+puestos vacíos** · un resto sin proceso cuenta como viva · vacíos también sin panel · la que espera pinta
+NADIE en su puesto · un `--puestos` ilegible se lee como «ninguno» · la hora no sale de la línea de tiempo.
+La de los puestos vacíos **sobrevivió** en la primera pasada: todos mis casos con un puesto vacío tenían
+además una sesión esperando. Se añadió «un puesto vacío y NADA MÁS basta para salir 1» y cae.
+No se declaran en `MUTACIONES_QUE_ME_TUMBAN` (SCRUM-935), como las de 1357b.
+
+### Contra el mundo
+
+- 16-oct 11:21Z (reloj de la máquina): salida 1 por las dos bloqueadas de ayer (s4-15oct, s1-15octb);
+  «ninguna te espera · puestos pedidos: S0…S5 — todos con alguna sesión viva». Correcto: los seis
+  `…16oct` estaban `busy`.
+- **El caso nuevo NO lo he visto en vivo:** a esa hora ninguna sesión estaba en `done` con proceso. Lo
+  prueban la línea de tiempo del 15-oct y el caso fabricado.
+- **La ceguera, con el guion de verdad y el registro de verdad:** panel que no se puede lanzar → salida 2,
+  «NO PUDE MIRAR», y debajo lo que sí se leyó; `--puestos S9x` → salida 2.
+
+### Mis errores
+
+1. **La mutación de los puestos vacíos sobrevivió** (arriba): el test no lo comprobaba aislado.
+2. **De paso, en SCRUM-1494 (mismo día):** para el rojo de su línea `A9:` usé `git stash push` + `pop` en
+   el mismo comando. A15 lo prohíbe: el almacén es compartido entre worktrees. Comprobado después: la
+   única entrada que queda es ajena y del 8-sep, y el commit llevaba mi versión. Sin daño, pero era la
+   herramienta prohibida. El rojo se hace con un commit y `git restore --source=HEAD`, no con `stash`.
+
+### Lo que NO hace
+
+- No distingue «te espera porque acabó su lote» de «te espera porque se quedó sin uso»: las dos son
+  `done` con proceso (ver el límite de uso del 9-oct). Lo dice su `detail`, que va en la tabla.
+- No lo lanza nadie solo: sigue siendo una orden que el orquestador corre. `notify_when_idle` es el aviso
+  que llega sin pedirlo; esto es la foto cuando se pide.

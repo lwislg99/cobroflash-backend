@@ -29,8 +29,9 @@ export async function sendQuoteWhatsAppToCustomer(
   // la plantilla que ABRE la conversación le llega al cliente como el mensaje de antes — la
   // receta del «pero si esto ya lo firmé». Por defecto `false`: el envío normal no cambia.
   //
-  // ⚠️ QUIÉN lo pone NO se decide aquí. Depende del ROL del presupuesto (`Quote.esAdicional`),
-  // que es schema del fundador y está PENDIENTE. Deducirlo de otra cosa sería simular el rol.
+  // ⚠️ QUIÉN lo pone NO se decide aquí. Depende del ROL del presupuesto (`Quote.esAdicional`).
+  // SCRUM-1190: la columna EXISTE (ALTER del «lote único» de `docs/MIGRATIONS_PENDING.md`,
+  // aplicado en staging y producción el 10-ago-2026), pero NADIE la escribe todavía. Quién la pone está sin decidir, y deducirlo de otra cosa sería simular el rol.
   opciones: { sinPlantilla?: boolean } = {},
 ): Promise<SendQuoteResult> {
   const quote = await prisma.quote.findUnique({
