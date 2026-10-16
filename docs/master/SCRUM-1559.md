@@ -76,3 +76,23 @@ Interactivos de Clientes en el DOM servido 29 → 39; ficha de Trabajo 20 → 22
 de Clientes (41,8 y 37) pasan los 36 del guard en escritorio. El guard queda en ROJO al entrar esto
 en main; no se le añade excepción ni se toca (regla 41): o se arregla el control, o se decide junto
 con `.btn-sm` (las demás `.btn-sm` de Clientes ya esperan esa decisión del fundador).
+
+## 16-oct-2026 · S3 · los datos de muestra del censo dan respuestas que el servidor nunca daría
+
+S2 midió que el «undefined» de Ajustes (los tres `kpi-value` de Referidos) sale del fixture y no
+del producto: `GET /admin/referral` siempre trae las cinco claves. Preguntado si era sólo ése: **es
+un patrón, no un caso.** Sonda `evidencias/scrum1559/sonda-fixture-relleno.mjs`, con control (una
+ruta servida sale como servida; una inventada cae en el relleno):
+
+- **28 rutas reales** que piden las vistas caen en el `return []` de relleno de `DATOS`
+  (`scripts/censo-objetivo-tactil-panel.mjs`), entre ellas endpoints que devuelven OBJETO:
+  `/admin/referral`, `/admin/connect/status`, `/admin/metrics/home`, `/admin/reports/pl`,
+  `/admin/reports/vat`, `/admin/expenses/summary`, `/admin/exports/datos.zip/info`…
+- Rutas «servidas» con el fixture de OTRA: `/admin/customers/:n/historial` y `/whatsapp` casan con
+  `/admin\/customers/` y reciben la LISTA de clientes; `/admin/jobs/:n/gastos` recibe el Trabajo;
+  `/admin/albaranes/:n/fotos` recibe el albarán.
+- Vistas de detalle montadas SIN id: `/admin/jobs/NaN`, `/admin/albaranes/undefined`,
+  `/admin/partes/undefined` (sólo la 360 lleva argumento en `ARGUMENTOS_DE_VISTA`).
+
+No arreglado aquí: mueve las cifras de pantalla y mezclarlo con el serializador no dejaría saber
+cuál las movió. No medido: los datos propios que `guard:objetivo-tactil` pasa a cada superficie.
