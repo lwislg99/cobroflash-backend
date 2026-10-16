@@ -9,7 +9,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   esAsuntoDelVigia, causaDelAtasco, haEmpeorado, sueloDeLaPasada, horasDesde, validarSonda, GRACIA_MINUTOS,
-  ETIQUETA_NO_MERGEAR, BOT,
+  ETIQUETA_NO_MERGEAR, BOT, CAUSAS_QUE_SE_ARREGLAN_ESPERANDO,
 } from '../scripts/vigia-atascados.mjs';
 
 // El meta-guard de la casa ejecuta esto: si el vigía dejara de distinguir «sin checks» de
@@ -46,6 +46,20 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     de: '    .filter((p) => !seArreglaEsperando(p.causa) || Number(p.umbral || 0) > 0);',
     a: '    .filter(() => true);',
     cae: '🔴 CONTROL NEGATIVO REAL #1259 · recién empujado CON checks corriendo: ESPERANDO, y NO avisa',
+  },
+  // SCRUM-839i · los dos sentidos: el que vuelve a llamar «esperando» al verde bloqueado, y el que
+  // llama «sin causa» al que de verdad no ha terminado.
+  {
+    fichero: 'scripts/vigia-atascados.mjs',
+    de: "  if (estado === 'BLOCKED') {\n    return {\n      causa: 'BLOQUEADO-SIN-CAUSA',",
+    a: "  if (false) {\n    return {\n      causa: 'BLOQUEADO-SIN-CAUSA',",
+    cae: '🔴 ③ obligatorio VERDE y BLOCKED → BLOQUEADO-SIN-CAUSA, y lo dice: no «esperando al obligatorio»',
+  },
+  {
+    fichero: 'scripts/vigia-atascados.mjs',
+    de: "  const sinTerminar = deCadaUno.filter(({ run }) => !run || run.status !== 'completed');",
+    a: '  const sinTerminar = [];',
+    cae: '🔴 ① obligatorio SIN TERMINAR (conclusión vacía) y BLOCKED → ESPERANDO, y dice que no ha terminado',
   },
 ];
 
@@ -476,14 +490,77 @@ test('🔴 manda la ÚLTIMA ejecución de cada check (por id), no la primera que
     { id: 10, name: OBLIGATORIO, status: 'completed', conclusion: 'failure' },
     { id: 11, name: OBLIGATORIO, status: 'completed', conclusion: 'success' },
   ];
-  assert.equal(causaDelAtasco({ estado: 'BLOCKED', checks: 2, checkRuns: rojoViejoVerdeNuevo, obligatorios: [OBLIGATORIO] }).causa, 'ESPERANDO',
-    'un fallo relanzado en verde ya no bloquea');
+  // SCRUM-839i: aquí decía `ESPERANDO`. Lo que este caso protege es que el rojo VIEJO ya no cuente,
+  // y eso se sigue exigiendo; pero con el obligatorio en verde y `BLOCKED`, «esperando a que pase el
+  // obligatorio» era una causa inventada. Ahora es la de «no sé por qué», que es lo que se sabe.
+  const relanzado = causaDelAtasco({ estado: 'BLOCKED', checks: 2, checkRuns: rojoViejoVerdeNuevo, obligatorios: [OBLIGATORIO] });
+  assert.notEqual(relanzado.causa, 'ROJO-OBLIGATORIO', 'un fallo relanzado en verde ya no bloquea');
+  assert.equal(relanzado.causa, 'BLOQUEADO-SIN-CAUSA');
   const verdeViejoRojoNuevo = [
     { id: 10, name: OBLIGATORIO, status: 'completed', conclusion: 'success' },
     { id: 11, name: OBLIGATORIO, status: 'completed', conclusion: 'failure' },
   ];
   assert.equal(causaDelAtasco({ estado: 'BLOCKED', checks: 2, checkRuns: verdeViejoRojoNuevo, obligatorios: [OBLIGATORIO] }).causa, 'ROJO-OBLIGATORIO');
 });
+
+// ── SCRUM-839i · `BLOCKED` SIN ROJO NO ES SIEMPRE «ESPERANDO» ─────────────────────────────
+// Hasta aquí, todo `BLOCKED` sin un obligatorio en rojo salía «esperando a que pase el check
+// obligatorio», también con el obligatorio ya en VERDE: un relleno con forma de dato. Los tres casos,
+// medidos el 16-oct-2026 (S0 y el orquestador): ① conclusión VACÍA → no ha terminado · ② FAILURE →
+// cayó · ③ VERDE y aun así bloqueado → no se sabe por qué, y se dice. Con su control en los dos
+// sentidos: lo que espera de verdad sigue saliendo ESPERANDO.
+{
+  const run = (status, conclusion, id = 1) => ({ id, name: OBLIGATORIO, status, conclusion });
+  const causa = (estado, runs) => causaDelAtasco({ estado, checks: runs.length || 1, checkRuns: runs, obligatorios: [OBLIGATORIO] });
+
+  test('🔴 ③ obligatorio VERDE y BLOCKED → BLOQUEADO-SIN-CAUSA, y lo dice: no «esperando al obligatorio»', () => {
+    const r = causa('BLOCKED', [run('completed', 'success')]);
+    assert.equal(r.causa, 'BLOQUEADO-SIN-CAUSA', JSON.stringify(r));
+    assert.match(r.detalle, /no sé por qué/);
+    assert.match(r.detalle, /build \+ tests \(con banco desechable\): success/, 'nombra el obligatorio y cómo terminó');
+    assert.doesNotMatch(r.detalle, /esperando a que pase/);
+  });
+
+  test('🔴 ① obligatorio SIN TERMINAR (conclusión vacía) y BLOCKED → ESPERANDO, y dice que no ha terminado', () => {
+    for (const status of ['in_progress', 'queued']) {
+      const r = causa('BLOCKED', [run(status, null)]);
+      assert.equal(r.causa, 'ESPERANDO', status);
+      assert.match(r.detalle, /no ha terminado/, status);
+    }
+    // Un verde VIEJO no tapa una ejecución nueva sin terminar: manda la última.
+    assert.equal(causa('BLOCKED', [run('completed', 'success', 1), run('in_progress', null, 2)]).causa, 'ESPERANDO');
+  });
+
+  test('① obligatorio SIN NINGUNA ejecución sobre el head → ESPERANDO, diciendo que no tiene ejecución', () => {
+    const r = causaDelAtasco({ estado: 'BLOCKED', checks: 1, checkRuns: [{ id: 1, name: 'otro check', status: 'completed', conclusion: 'success' }], obligatorios: [OBLIGATORIO] });
+    assert.equal(r.causa, 'ESPERANDO');
+    assert.match(r.detalle, /sin ejecución sobre el head/);
+  });
+
+  test('② obligatorio en FAILURE y BLOCKED sigue siendo ROJO-OBLIGATORIO (no lo toca el caso ③)', () => {
+    assert.equal(causa('BLOCKED', [run('completed', 'failure')]).causa, 'ROJO-OBLIGATORIO');
+  });
+
+  test('🔴 CONTROL: obligatorio VERDE y estado que deja fusionar (CLEAN, UNSTABLE) → ESPERANDO al auto-merge, NO «sin causa»', () => {
+    for (const estado of ['CLEAN', 'UNSTABLE', 'HAS_HOOKS']) {
+      const r = causa(estado, [run('completed', 'success')]);
+      assert.equal(r.causa, 'ESPERANDO', estado);
+      assert.match(r.detalle, /auto-merge/, estado);
+    }
+  });
+
+  test('una conclusión que ni es verde ni es roja (skipped, neutral) con BLOCKED tampoco se inventa: sin causa', () => {
+    for (const conclusion of ['skipped', 'neutral', 'stale']) {
+      assert.equal(causa('BLOCKED', [run('completed', conclusion)]).causa, 'BLOQUEADO-SIN-CAUSA', conclusion);
+    }
+  });
+
+  test('BLOQUEADO-SIN-CAUSA no se arregla esperando: avisa al entrar, una vez', () => {
+    assert.ok(!CAUSAS_QUE_SE_ARREGLAN_ESPERANDO.includes('BLOQUEADO-SIN-CAUSA'));
+    assert.equal(haEmpeorado([], [{ numero: 9, causa: 'BLOQUEADO-SIN-CAUSA', umbral: 0 }]).empeora, true);
+    assert.equal(haEmpeorado([{ numero: 9, causa: 'BLOQUEADO-SIN-CAUSA', umbral: 0 }], [{ numero: 9, causa: 'BLOQUEADO-SIN-CAUSA', umbral: 0 }]).empeora, false);
+  });
+}
 
 test('🔴 sin lista de obligatorios y con algo en rojo → ROJO-SIN-LISTA, no ESPERANDO', () => {
   const r = causaDelAtasco({ estado: 'BLOCKED', checks: CHECKS_1205.length, checkRuns: CHECKS_1205, obligatorios: null });

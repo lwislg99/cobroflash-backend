@@ -589,3 +589,64 @@ cerrar el PR antes de que acabara su CI: eso solo evita ruido, la barrera contra
 - **En una mañana con muchos merges, el CI de `main` no llega a terminar:** la concurrencia `ci-refs/heads/main`
   cancela el run anterior. De `08ad4076` a `1e7d6de2` (07:57Z–08:51Z) terminaron 2 de 8 runs; el resto salió
   `cancelled`. El meta-guard de `main` solo se puede leer cuando hay un respiro de ~10 min entre merges. Carril S5.
+
+---
+
+# APÉNDICE · SCRUM-839i (16-oct-2026) · `BLOCKED` sin rojo ya no se rellena con «esperando al obligatorio»
+
+**Medido contra:** `origin/main` = `9dbf1c171ac2f89fe2e8b5ffc597d5c4baba7c48` · 2026-10-16T12:31:43Z (`Date:` de GitHub)
+
+**Rama:** `scrum-839i-atasco-sin-causa` · Sesión 5 · encargo del orquestador (hallazgo de la S0, nombrado sin tocarlo).
+El vigía nació con el commit `383aa8777` rotulado «SCRUM-840», pero `docs/master/SCRUM-840.md` es otro asunto (el
+camino del dinero): la familia del vigía es ésta. Los sufijos `b`…`h` de 839 ya estaban usados.
+
+## ① El defecto
+
+`causaDelAtasco` (`scripts/vigia-atascados.mjs`) terminaba en `return { causa: 'ESPERANDO', detalle: 'estado X:
+esperando a que pase el check obligatorio' }` para TODO lo que no fuera conflicto, rojo, sin auto-merge, BEHIND
+o sin estado. Eso incluía el obligatorio ya en VERDE con GitHub diciendo `BLOCKED`: una causa inventada con forma
+de diagnóstico. Lo midió el orquestador el 16-oct: `BLOCKED` con el obligatorio de conclusión VACÍA no es atasco,
+es que no ha terminado; con el obligatorio verde, no se sabe por qué.
+
+## ② Qué se cambió (sólo el final de `causaDelAtasco`, y su test)
+
+| caso, con los checks a la vista | antes | ahora |
+|---|---|---|
+| ① obligatorio sin terminar (`queued`, `in_progress`) o sin ejecución sobre el head | ESPERANDO | ESPERANDO, y el detalle dice cuál y en qué estado |
+| ② obligatorio en rojo | ROJO-OBLIGATORIO | igual (no se toca) |
+| ③ obligatorio terminado sin rojo y `BLOCKED` | ESPERANDO «esperando a que pase el check obligatorio» | **BLOQUEADO-SIN-CAUSA**: «no sé por qué está bloqueado», con la conclusión del obligatorio |
+| obligatorio verde y estado que deja fusionar (`CLEAN`, `UNSTABLE`, `HAS_HOOKS`) | ESPERANDO | ESPERANDO «esperando a que el auto-merge lo fusione» |
+| sin datos de checks o sin lista de obligatorios | ESPERANDO | ESPERANDO, pero el detalle dice que no se pudo ver a qué espera |
+
+Una conclusión que ni es verde ni roja (`skipped`, `neutral`, `stale`) con `BLOCKED` también es «sin causa»: no se
+inventa. `BLOQUEADO-SIN-CAUSA` NO entra en `CAUSAS_QUE_SE_ARREGLAN_ESPERANDO`: avisa al entrar, una vez. Con el
+obligatorio verde y el auto-merge armado ya tendría que haber entrado; el vigía pasa cada 3 h, así que si lo
+encuentra así no hay nada que esperar.
+
+🔴 **Un test existente cambia de aserción, y no se relaja (regla 41):** «manda la ÚLTIMA ejecución de cada check»
+exigía `ESPERANDO` para un rojo viejo con un verde nuevo y `BLOCKED`. Lo que protege —que el rojo viejo ya no
+cuente— se sigue exigiendo (`notEqual ROJO-OBLIGATORIO`), y además exige la causa nueva. Es el caso ③ tal cual.
+
+Lo que NO se cambió: «sin datos de checks el clasificador se comporta como antes» y el CEBO REAL #1248 (`UNSTABLE`,
+verde) siguen fijando `ESPERANDO`, y siguen en verde.
+
+## ③ ROJO · VERDE · MUTACIONES · CONTRA EL MUNDO
+
+- **ROJO:** con el `vigia-atascados.mjs` de `main`, 6 de los 71 caen (los cinco nuevos que lo distinguen y el
+  cambiado).
+- **VERDE:** 71/71 en `tests/vigia-atascados.test.mjs`; 197/197 en los 13 ficheros que importan el vigía o su
+  pasada; 42/42 en los del latido (que también llama al clasificador).
+- **Mutaciones declaradas: 7 de 7 cazadas** (las 5 que había y 2 nuevas, una en cada sentido: el que vuelve a
+  llamar «esperando» al verde bloqueado, y el que llama «sin causa» al que no ha terminado).
+- **Contra el mundo, 12:3xZ:** los 9 PR abiertos clasificados con el viejo y con el nuevo dan la misma causa
+  (4 `ROJO-OBLIGATORIO`, 5 `SIN-ESTADO`): `gh pr list` los trae todos en `UNKNOWN`, que va antes que este caso.
+  **El caso ③ no lo he visto en vivo**; lo prueba el caso fabricado.
+
+## ④ Lo que queda abierto
+
+- El latido (`scripts/equipo/latido.mjs:216`) sólo alerta `ROJO*` y `SIN-AUTO-MERGE` pasadas sus horas; un
+  `BLOQUEADO-SIN-CAUSA` sale en su tabla, pero no en sus alertas. No se ha tocado: lo decide el orquestador.
+- Sin datos de checks la causa sigue llamándose `ESPERANDO` (lo fija un test); lo que cambió es que el detalle ya
+  no afirma a qué espera.
+
+A9: comprobación → `tests/vigia-atascados.test.mjs`
