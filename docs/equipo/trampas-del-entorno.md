@@ -177,8 +177,18 @@ Lo que pasó (lo de los dos primeros puntos lo midió el orquestador; el tercero
   `scrum-1082-flujo-crear-factura-competencia`, con un `schema.prisma` del 17-sep, y el guard dice «el campo
   `Merchant.invoiceStartSeq` está en el cliente generado y NO en schema.prisma» (EXIT 1): el cliente va con `main`
   y el schema de esa rama no. Es la causa (A) del paso 5. **No quiere decir que la regeneración fallara.**
-  ⛔ Y el arreglo que propone el guard (`npm run prisma:generate` «desde ESTE worktree») **desde el compartido
-  deshace la regeneración para todos**: lo dejaría generado con el schema del 17-sep. Se mira desde un árbol al día.
+  ⛔ Regenerar desde el compartido **deshace la regeneración para todos**: lo dejaría generado con el schema del
+  17-sep. Se mira desde un árbol al día.
+- **Qué propone el guard, según QUÉ COPIA corre** (medido por la Sesión 0 el 16-oct-2026 ~11:10Z, `origin/main` =
+  `48fc00f6a`). Desde #2501 (SCRUM-429d, merge `6a79dc15`, 15-oct 17:54Z) el guard de `main` ya no manda
+  regenerar «en los dos casos»: con el `node_modules` propio, `npm run prisma:generate`; con el compartido, **«NO
+  regeneres… Avisa al orquestador»**, y lo mismo `_prisma-sync.mjs`. Lo ata
+  `tests/scrum429d-causa-b-no-regeneres.test.mjs`. **Pero un árbol corre SU copia del script, no la de `main`:** el
+  compartido `cobroflash-backend` sigue en `scrum-1082-…`, 3185 commits por detrás, y su guard sigue diciendo
+  «Arreglo, en los dos casos: npm run prisma:generate (desde ESTE worktree)» (EXIT 1, el mismo día). Con la copia
+  de `main` y el mismo directorio de trabajo da `✔`, porque lee el `schema.prisma` de su propio árbol. Así que el
+  ⛔ de arriba no lo ha resuelto #2501: desde el compartido, el consejo sigue siendo el viejo hasta que ese árbol se
+  mueva, y nadie lo mueve (CLAUDE.md: «va miles de commits por detrás»).
 
 1. **Cuándo.** Con el equipo parado o avisado: regenerar le cambia el cliente a TODOS los árboles que cuelgan
    de él. `npm run topologia` dice quiénes son.
