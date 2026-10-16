@@ -319,3 +319,27 @@ Puesto S3 (3ª tanda del 14-oct). Encargo del orquestador: `POST /admin/quotes/:
 **Qué desbloquea (el lado POSITIVO, un Trabajo con presupuesto aceptado):** SCRUM-1355, 1369 y 1370. 1365 lo tiene a medias, porque pide un Trabajo TERMINADO y el #77 está en `pendiente_agendar`. **No desbloquea:** 1285, que pide un plan propio y para eso hay que crear presupuesto; 1227, que pide el perfil fiscal ③ y no tiene regla; ni 1375, que pide un albarán `parcial`/`facturado`.
 
 A9: comprobación → `tests/scrum1367-sembrar-casos.test.mjs`
+
+## SCRUM-1367g · R25: la regla de firmar en la cuenta de QA (16-oct-2026)
+
+**Medido contra:** `origin/main` = `555c65fa91cd12d54d735a40b90e479805b276fa` · 2026-10-16T11:56:36Z
+
+Puesto S0. **Encargo del orquestador de Luis:** escribir la regla que él decidió ese mismo día, con la delegación del fundador («NO SE que dices de las firmas hazlo tú»). La regla y sus seis condiciones son suyas; lo que pone aquí la S0 es la redacción y lo que midió para escribirla.
+
+| Qué | Dónde |
+|---|---|
+| La regla, con sus seis condiciones, qué firma entra y qué NO cubre | `docs/RUNBOOKS.md` R25 |
+
+**El número.** El orquestador pidió comprobarlo antes de escribir. Sobre `555c65fa9`, el último apartado de `docs/RUNBOOKS.md` es R24 (SCRUM-1367). De los 11 PR abiertos a las 11:49Z, ninguno toca `RUNBOOKS.md`. Control positivo: los 11 traen su lista de ficheros, entre 2 y 18 cada uno. **R25 estaba libre.**
+
+**Medido para escribirla (leído, sin tocar el camino de emisión):**
+
+* Las tres firmas del panel (`partes.routes.ts` `/:id/firmar` y `/:id/firmar-tecnico`, `albaranes.routes.ts` `/:id/firmar`) se leyeron enteras, desde su `router.post` hasta el siguiente. Buscando `whatsapp|send[A-Z]|mailer|notif|enqueue|emit|invoice|verifactu`, sólo salen comentarios y el 409 «Emite el albarán antes de firmarlo.». **Ninguna envía.**
+* 🔴 **La firma por el enlace público del albarán (`albaranPublic.routes.ts` `/:token/firmar`) llama a `sendAlbaranFirmadoWhatsApp(albaran.id)`**: el auto-envío de SCRUM-49. Por eso R25 lo deja FUERA y lo nombra. Si una medida necesita esa ruta, se decide aparte.
+* `scripts/qa/sembrar-albaranes.mjs firmado` firma por `POST /admin/albaranes/:id/firmar` (su lista de escrituras permitidas, línea 69), es decir, por la firma del panel. Queda dentro de R25.
+
+**Lo que esto NO hace:** no firma nada. No toca ni el código ni el sembrador. No mide SCRUM-1302s ni la gemela del albarán: eso lo hace quien tenga esos tickets, ya con regla.
+
+**Error propio.** El primer barrido de los handlers miró una ventana fija de ~125 líneas desde cada `router.post` y sólo las rutas del panel. Con eso, «firmar no envía nada» salía limpio. Al leer cada handler entero, y también el del enlace público, apareció el auto-envío. Sin esa segunda lectura, R25 habría dicho que ninguna firma envía.
+
+A9: aviso → A10 «Una ventana fija es una tolerancia disfrazada.» — no se pudo comprobar: no hay instrumento que diga dónde acaba un handler sin abrir el fichero; el barrido entero desde `router.post` hasta el siguiente es la receta, y va en este registro
