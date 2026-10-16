@@ -400,3 +400,21 @@ mandaba «avisar a las otras sesiones y regenerar a mano».
 **Queda viejo, y no es mío:** `docs/equipo/trampas-del-entorno.md` §10 (líneas 180-181 con 429c) dice que el guard
 propone regenerar «desde ESTE worktree» también desde el compartido. Al entrar esto deja de ser cierto. El fichero es
 de S0.
+
+## SCRUM-429e · trampas §10 al día con 429d: qué propone el guard depende de QUÉ COPIA corre (16-oct-2026, Sesión 0)
+
+**Medido contra:** `origin/main` = `48fc00f6a90089b0f172b58c49413d889288bec0` · 2026-10-16T11:05:37Z (`gh api -i zen`)
+
+A9: sin fallo que generalice — tramo de documentación; la premisa del encargo era cierta para `main` y no para el compartido, y se dice abajo.
+
+Encargo del orquestador (16-oct): #2501 entró, actualizar §10 (~180-181), que decía que el guard propone regenerar.
+
+- **#2501 MERGED** 2026-10-15T17:54:44Z, merge `6a79dc1510f750806e2bf8cb6b87a39960f23397`.
+- **Lo que dice cada copia, medido (texto del script, con el control en los dos sentidos):**
+  `origin/main:scripts/_prisma-client-guard.mjs` → «NO regeneres» sí · «Arreglo, en los dos casos» no.
+  `cobroflash-backend` `HEAD` (rama `scrum-1082-flujo-crear-factura-competencia`, 3185 commits por detrás) → «NO
+  regeneres» no · «Arreglo, en los dos casos» sí. Ejecutado desde el compartido, su guard sale EXIT 1 y lo imprime.
+- **La copia de `main` con el mismo directorio de trabajo da `✔` EXIT 0:** lee el `schema.prisma` de su propio árbol,
+  no el del directorio desde el que se llama.
+- **Así que la premisa «ya no lo propone» vale para todo árbol al día y NO para el compartido**, que es justo el sitio
+  del ⛔. §10 lo dice ahora así, y conserva el ⛔. La §11 (S3) no se toca.
