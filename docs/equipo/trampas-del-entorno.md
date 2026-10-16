@@ -265,6 +265,11 @@ Mercado Pago usa el checkout real y no el de sandbox (`mercadopago.ts`, `isProd`
 SCRUM-1558a (#2522), si allí no hay Resend, el correo del presupuesto contesta «no salió» en vez de
 escribir un `.eml`.
 
+**Lo que eso implica, y no estaba escrito en ningún sitio:** una prueba hecha en staging vale como
+prueba de PRODUCCIÓN, para bien y para mal. **Un fallo de arranque allí por deriva de esquema es el
+mismo fallo que congeló producción en SCRUM-1122** (`docs/RUNBOOKS.md` R22). Si staging no arranca,
+no es «cosa de staging»: es lo que pasará en `yaqu.app` con el mismo `main`.
+
 **Cómo se comprueba, sólo con GET:** `/outbox`, sin la barra final y sin seguir redirecciones. El
 estático sólo se monta fuera de producción (`if (config.NODE_ENV !== 'production') app.use('/outbox', …)`
 en `app.ts`), y el directorio existe siempre (`mkdirSync(outboxDir)` en `dirs.ts`). Así que **301 →
