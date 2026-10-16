@@ -88,7 +88,9 @@ escrita de quien pueda darla para que lo construya la S5, o el reparto a S3.
 **Medido contra:** `origin/main` = `95bb7e71de1b7989716d7a713d2792ae560702e0` · 2026-10-15T17:50:00Z (`Date:` de GitHub) ·
 node v24.8.0 · Windows.
 
-A9: comprobación → `tests/scrum813-trinquete-de-zona.test.mjs` (cinco casos SCRUM-1494 y las mutaciones ㉓-㉖)
+A9: comprobación → `tests/scrum813-trinquete-de-zona.test.mjs`
+
+La comprobación son los cinco casos SCRUM-1494 de ese fichero y las mutaciones ㉓-㉖ de §③.
 
 **Excepción de carril, literal (orquestador, 15-oct-2026):** «`_trinquete-de-zona-hijo.mjs` no tiene fila de dueño → es
 tuyo. Y te autorizo a tocar `_trinquete-de-zona.mjs`, que es carril S3/J6, SÓLO en lo que exija este arreglo, con tres
