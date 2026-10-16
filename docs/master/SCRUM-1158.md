@@ -151,3 +151,63 @@ por NÚMERO DE LÍNEA no crecen» — `tests/scrum1158b-serializar-no-pierde-est
 mismo (lo da «CIEGO» porque `scrum710b` ya falla en la limpia). No era `scrum1405c ④`.
 Arreglo: la cita nombra lo que la cosa ES (los botones `data-filtro-cobro` de `cobrosView.js`). Con
 `origin/main` mezclado, `scrum710b` + `scrum1158b`: 17/17. El rojo es el de CI sobre `d64ed0ac`.
+## Los cortos que destapa 1158b, uno a uno, y el guard (16-oct-2026, S3)
+
+**Medido contra:** `origin/main` = `574e538065dd51f45cfdca078b3787d7f32fbb5a` · 2026-10-16T11:21:36Z
+
+Medido sobre dos copias extraídas con `git archive` (nunca un worktree): `origin/main` `48fc00f6`
+y la rama `3d157000`. El censo es `censo:tactil-panel` con el mismo árbitro; sólo se le añade el
+volcado (`docs/master/evidencias/scrum1158/sonda-cortos-1158b/`). Se comparan CONJUNTOS.
+
+⚠️ **Medido sobre la RAMA, no sobre `main`.** En `main` hoy son **62 distintos, con 19 falsos
+dentro y estos 13 escondidos**; en la rama, 51.
+
+**Los «21» del 15-oct son 21 MEDICIONES a 929 px y 13 BOTONES** (el censo cuenta como uno la tupla
+pantalla|selector|texto: los 9 «Ir →» le cuentan como 1).
+
+| vista | elemento | toque 929 / 390 px |
+|---|---|---|
+| Inicio | `#btn-home-prefs` «⚙ Personalizar» (`btn-ghost btn-sm`, sólo admin) | 30,5 / 30,5 |
+| Inicio | 9 × «Ir →» de la lista de pasos (`btn-ghost btn-sm` con padding en línea; los distingue su `renderAppView('<acción>')`) | 31 / 30,8 |
+| Informes | `#vat-quarter-row` 1T 2T 3T 4T (`btn-ghost btn-sm`, el activo `btn-primary btn-sm`) | 31 / 30,6 |
+| Informes | `#resumen-quarter-row` 1T 2T 3T 4T | 30,7 / 30,7 |
+| Exportar | `#btn-export-zip`, `#btn-libro-emitidas` | 36,7–36,8 / ≥ 44 |
+| Exportar | `#btn-portabilidad` — ya corto en `main`, no lo destapa 1158b | 36,6 / 44,6 |
+
+**Decisión del orquestador (16-oct, por mensaje a S3):** los de Inicio e Informes (18) son defecto a
+los dos anchos y van a S2 con esta lista. **Los tres de Exportar se quedan:** un comentario de
+SCRUM-384 en `exportView.js` dice que el `min-height` en línea se quitó A PROPÓSITO porque la base da
+44 px en móvil (SCRUM-352), y a 390 px los tres llegan. Extender AB6 a 929 px sería cambiar el
+criterio de AB6, y eso no se decide dentro de otro ticket. Dato a favor: `guard:objetivo-tactil`
+juzga el escritorio contra **36 px** (DESIGN.md) y el censo contra 44 a los dos anchos.
+
+**Por qué `main` no los ve (los 8 distintos que faltaban).** El serializador viejo conservaba
+`display` y tiraba el `align-items` que el MARCADO pone en línea al padre flex, así que el botón se
+estiraba a la altura de la fila: «Ir →» medía 181 px (padre `display:flex;align-items:center`),
+1T–4T de 51 a 148 px (padre `…;align-items:flex-start`), ZIP y CSV 59–62 px (aquí el padre no lo he
+leído). En `main`, además, 1 «Ir →» a 929 y 6 a 390 salen «no tocable».
+
+**Los 19 falsos que quita: UNA causa, tres fuentes.** `el.style.minHeight = '44px'` puesto por JS,
+que el serializador viejo perdía: botones `data-filtro-cobro` de `cobrosView.js` (6), pestañas
+`data-submenu` de `settingsView.js` (9) y pestañas `data-pestana` de `quotesTabs.js`, montadas en
+Presupuestos y en Plantillas (2 + 2). **El patrón que puede volver: toda pestaña o segmentado `btn-sm`
+que llegue a 44 px por `style.minHeight` en JS.** Con 1158b dentro lo cubre
+`tests/scrum1158b-serializar-no-pierde-estilos.test.mjs`.
+
+**`guard:objetivo-tactil` con 1158b: su 0·0 SIGUE siendo cierto, y no es sordera.** Sin sembrar,
+salida 0 en las dos copias. No se queda quieto: 18 líneas de su salida cambian (px de las
+excepciones, cajas de los «no tocables»), todas en casos ya excusados. Sus superficies del panel
+(Clientes, editor, Trabajo, 360) no son las de los 13 ni las de los 19. **Siembra:** un `btn-sm` de
+30 px dentro de un padre flex con `align-items:center` en el MARCADO, en la cabecera de Clientes:
+`main` → salida 0 (lo estira y pasa: ciego) · rama → salida 1, `31px < 36` y `31px < 44`. **Primera
+siembra descartada, dicha:** la puse por `style.cssText` y la cazaban LAS DOS. El serializador viejo
+sí conservaba `cssText`; lo que perdía era el estilo del marcado y las propiedades sueltas.
+
+**De paso, del instrumento (no tocado, decisión del orquestador):** el censo subcuenta por la tupla.
+Se arregla en rama aparte cuando 1158b esté en `main`, declarando que el total SUBE y por qué.
+
+**El rojo de `3d157000`** (16-oct 11:19Z): tanda completa, 11.639 tests, 1 fallo, `scrum1405c ④`,
+ajeno; `scrum710b` ya pasa.
+
+A9: comprobación → `tests/scrum710b-anclaje-por-identidad.test.mjs`
+A9: aviso → cicatriz S3 «Aparté mi arreglo con `git stash` para mezclar main, y `stash pop` saca el último del almacén de TODOS los worktrees, no el mío.» — no se pudo comprobar: es un comando de git en mi shell y ningún guard lee lo que una sesión teclea
