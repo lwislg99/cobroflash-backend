@@ -249,3 +249,29 @@ marca del 1-oct sobre `homeView.js` (75.033 B) frente al `main` de ese día (85.
 | una marca de ANTES del 15-oct (sin `mutaciones` en su `en-vuelo.json`) | no sabe qué escribió | fail-closed: no escribe nunca. Se mira a mano: `git diff` del fichero contra la copia `pieza-N.bin` | el caso ② del mismo test |
 
 ⛔ **Nunca se «arregla» una marca copiando `pieza-N.bin` encima del fichero a mano.** Es exactamente el defecto.
+
+## 12 · Staging corre con `NODE_ENV=production` y se comporta COMO producción
+
+**Una prueba en staging NO pasa por los caminos de desarrollo.** Todo lo que el código condiciona a
+`NODE_ENV` (11 ficheros de `src/` el 16-oct-2026) va allí igual que en `yaqu.app`. Y no hay nada que
+lo avise: una prueba que en local tomaba el camino de desarrollo pasa en staging por el de
+producción, sin error, y su verde no dice nada del camino que se quería probar (SCRUM-951h; lo midió
+la S1).
+
+**Qué cambia, en concreto:** la cookie va con `Secure` (`authMiddleware.ts`, `isProd`) · no se montan
+`/dev` ni `/outbox` (`app.ts`) · el arranque aborta si hay deriva de esquema (`schemaDrift.ts`) · salen
+los avisos de secretos de webhook que falten · `receipt.routes.ts` pierde sus avisos de desarrollo ·
+Mercado Pago usa el checkout real y no el de sandbox (`mercadopago.ts`, `isProd`) · y desde
+SCRUM-1558a (#2522), si allí no hay Resend, el correo del presupuesto contesta «no salió» en vez de
+escribir un `.eml`.
+
+**Cómo se comprueba, sólo con GET:** `/outbox`, sin la barra final y sin seguir redirecciones. El
+estático sólo se monta fuera de producción (`if (config.NODE_ENV !== 'production') app.use('/outbox', …)`
+en `app.ts`), y el directorio existe siempre (`mkdirSync(outboxDir)` en `dirs.ts`). Así que **301 →
+`/outbox/` = desarrollo · 404 = producción.** Control positivo de S1: la app de `dist/` en local da 301
+con `NODE_ENV=development` y 404 con `production`. Medido el 16-oct-2026: staging
+(`yaqu-staging-production.up.railway.app`) da **404** y `yaqu.app` da **404**, los dos con la versión
+`0dbc92f2` en `/health` (repetido por la S0; S1 lo había medido sobre `665bcd17`).
+
+⚠️ **No medido:** qué variables tiene staging (Resend, SMTP, `LOG_MAGIC_LINKS`). Ninguna sesión las
+puede leer.
