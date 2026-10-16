@@ -66,7 +66,7 @@ A9: aviso → cicatriz S0 «Copié a mi tabla de la criba que `POST /quote/creat
 
 **Medido contra:** `origin/main` = `48fc00f6a90089b0f172b58c49413d889288bec0` · 2026-10-16T11:05:37Z (`gh api -i zen`)
 
-A9: sin fallo que generalice — tramo de sólo medición.
+A9: aviso → cicatriz S0 «Copié a mi traspaso del 15-oct «cerrados hoy por el orquestador: 1367 · 1476 · 1302 · 1144 · 1295 · 1092 · 1070 · 1493 · 899» sin mirar Jira, y al día siguiente el orquestador me lo devolvió como premisa. Medido con una sola consulta (`key in (…)`, campos `status` y `resolutiondate`): 1295 está En curso, 1092 y 1070 en Tareas por hacer, ninguno de los tres tocado desde septiembre o el 6-oct, y 1493 se cerró el 7-oct, no ese día. Un «cerrado» se copia de Jira, no del mensaje que lo dice.» — no se pudo comprobar: el estado vive en Jira, y ningún test del repositorio lo lee (es la pieza 8 en pequeño)
 
 Encargo del orquestador (16-oct): `ya-esta` da 1300 🟢 desde el 14-oct; contar cuántas de sus piezas están, cuáles
 faltan y de quién son. **Son NUEVE, no ocho:** de la 0 a la 7 en la descripción, y la 8 en el comentario c.17878
