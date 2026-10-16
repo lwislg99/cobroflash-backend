@@ -36,6 +36,7 @@ async function renderReportsView(container) {
 
   // Botones de exportar
   const exportRow = document.createElement('div');
+  exportRow.className = 'informes-exportar'; // SCRUM-1158c: enganche de su regla de 44 px en styles.css
   exportRow.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap';
 
   function makeExportBtn(label, href) {

@@ -6,6 +6,58 @@ A9: sin fallo que generalice — el primer empuje salió rojo por faltar esta mi
 
 S3 · rama `scrum-1158-el-banco-ve-hidden` · worktree `wt-s3-1288b` (hora del `Date:` de GitHub).
 
+## SCRUM-1158c · los objetivos cortos que destapó el banco arreglado: Inicio e Informes a 44 px (S2)
+
+**Medido contra:** `origin/main` = `7e53b1474096bde7aa23898d9f30caf2097b5d70` · 2026-10-16T11:28:09Z (`Date:` de GitHub)
+**Skill UI:** cargada · `yaqu-premium-ui`: sólo tamaño (`min-height`/`min-width` 44 px), cero tokens, cero texto, cero componentes.
+A9: aviso → cicatriz S2 «el banco de `main` daba 0 cortos en Inicio e Informes y producción tenía 20: un censo sobre un banco que pierde estilos es un verde hueco, y sólo lo destapa medir la pantalla de verdad» — no se pudo comprobar: lo que lo impide es el censo en navegador sobre el banco de #2500, que no corre en cada PR
+
+*(Va aquí, y no al final, porque #2500 —1158b, de S3, abierto— añade 146 líneas al final de este fichero: dos anexos
+al final chocan. Este tramo acaba en «Fin de 1158c»; lo de debajo es el registro original de 1158.)*
+
+S2 · rama `scrum-1158c-inicio-informes-44px` · worktree `s2-1158c`. Forma firmada: decisión del fundador de SCRUM-786 (c.16266, opción ③: reglas de
+44 px ACOTADAS, nunca `.btn-sm` global); el encargo, del orquestador (lote del 16-oct, punto 3).
+
+**Recuento, no cifra heredada.** `censo:tactil-panel` sobre `main` (`48fc00f6a`): Inicio **0**, Informes **0**,
+Exportar 1 → el banco de `main` todavía pierde los estilos. Sobre la punta de #2500 (`3d1570004`, el banco
+arreglado): Inicio **10/10** y Informes **8/8** a 929 y a 390, Exportar 3 sólo a 929 → **18**, los que dijo el
+orquestador. Exportar NO se toca (decidido: SCRUM-384/352, y a 929 juzga contra 36 px).
+
+| dónde | qué | antes | después |
+|---|---|---|---|
+| Inicio | «⚙ Personalizar» (`#btn-home-prefs`) | 30 | 44 |
+| Inicio | «Ir →» de «Completa tu configuración» | 39×30 | 44×44 |
+| Informes | «1T-4T» de «IVA repercutido» y de «Resumen del trimestre» | 38-41×30 | 44×44 |
+| Informes, **de paso** | fila de descargas: «⬇ Facturas / Gastos / Presupuestos / Trabajos / Clientes CSV» | 30 | 44 |
+
+**De paso — un agujero del instrumento, NO de S2:** el censo nunca vio la fila de descargas. En el banco los 5
+enlaces están en el DOM (5 de 5), pero el HTML que serializa `_pagina-panel.mjs` no los lleva (0 de 5, y tampoco
+«⬇ VeriFactu XML»); Informes salía con 8 medidos y eran los 13 de producción. Reportado al orquestador.
+
+### Qué cambia
+- `public/dashboard/css/styles.css`: tres reglas acotadas (`#btn-home-prefs` y `.informes-exportar > .btn-sm`:
+  alto; `.home-checklist .btn-sm`, `#vat-quarter-row > .btn-sm`, `#resumen-quarter-row > .btn-sm`: alto y ancho).
+- `homeView.js` / `reportsView.js`: una clase de enganche cada uno (`home-checklist`, `informes-exportar`). En
+  `homeView.js` va en la MISMA línea que crea el `div` (`Object.assign`): `tests/scrum601` ancla su control en la
+  línea 885 de ese fichero, y una línea de más lo tumbaba (medido: cayó). No se toca el guard; no se mueve la línea.
+- `tests/scrum1158c-inicio-informes-44px.test.mjs`: las reglas con 44 px, `.btn-sm` global intacto, y que el
+  producto siga pintando los botones DENTRO de lo que cada regla nombra.
+
+### Verificado, ejecutando
+- **Censo en navegador sobre el banco arreglado** (los ficheros de esta rama aplicados en la punta de #2500):
+  Inicio y Informes **0 cortos** a 929 y a 390; las otras 32 filas pantalla×anchura, **idénticas** (comparadas fila
+  a fila); mediciones cortas 106 → 70 (−36 = 18 × 2).
+- **yaqu.app, cuenta QA** (sonda de sólo lectura `sondas-s2/tactil-1158c.mjs`, fuera del repo; sirve los ficheros
+  de la rama en lugar de los de producción, con control de que se sirvieron; 0 escrituras, 0 errores; capturas en
+  `sondas-s2/cap1158c/`): **20 de 20 a 44 px** a 390 y a 929 (antes, 20 de 20 por debajo). **NO medido:** «⬇ VeriFactu
+  XML», que sólo se pinta en modo de emisión fiscal y la cuenta QA no lo tiene.
+- **Rojo primero, por inyección** (commit antes de cada una; `git diff --numstat` al lado; `git restore --source=HEAD`
+  y `status --porcelain` vacío después): sin `home-checklist` cae el caso de Inicio; sin la regla de un trimestre,
+  o con `.btn-sm` global a 44, cae el de CSS; con otro id en la fila del IVA, o sin `informes-exportar`, cae el de
+  Informes. Base: 3 de 3.
+
+*Fin de 1158c.*
+
 ## Qué mentía
 
 `tests/_banco-vistas.mjs` no tenía `hidden`. `el.hidden = true` dejaba un campo suelto en el nodo que
