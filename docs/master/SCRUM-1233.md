@@ -220,4 +220,10 @@ del 1-oct ya decía esto, con «sin comprobación». Ahora la tiene:
   1482b, 917i) no abren contexto: lo abre `sondas-s2/comun.mjs`, fuera del repo, y ése SÍ bloquea (medido,
   su línea 15). Van en `FUERA_DEL_REPO`. Que dependan de un fichero que no está en git es de S2: reportado
   al orquestador, no tocado.
+- **Rojo probado**, sobre `470b63668c573220a12a023abef75e657c6db11c` y deshecho cada vez (`git status` vacío):
+  ① quitar el `serviceWorkers: 'block'` del `newContext` de `ver1233.mjs` (diff 1/1; el de su comentario
+  se queda) → cae y lo nombra. ② sembrar una sonda que importa `./no-existe.mjs` → cae «fuera del repo» y
+  la nombra. ③ subir junto a 917i un `comun.mjs` que bloquea → cae «sácalo de FUERA_DEL_REPO». ④ el mismo
+  `comun.mjs` sin bloquear → cae «NO bloquea» con 917i. Población del verde: 895 ficheros, 8 llaman a
+  `.route(` (bloquea 3 · fuera del repo 5).
 A9: comprobación → `tests/scrum1233g-banco-bloquea-el-sw.test.mjs`
