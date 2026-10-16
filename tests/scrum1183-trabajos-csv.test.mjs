@@ -17,6 +17,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
 import { aprobacionesDeMicrocopy } from './_microcopy-aprobada.mjs';
+import { soloCodigo } from './_solo-codigo.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const rotulo = (n) => String(n._texto || n._html || '').trim();
@@ -67,8 +68,8 @@ test('SCRUM-1183 · 🔴 «Trabajos CSV» lleva el MISMO rango de año que «Pre
 // de la cuenta QA salían sin filtro y en NINGÚN año. Ahora se lee el campo que de verdad se pasa
 // a `whereRango`, sin comentarios, y se dice lo que es: el mismo año, sobre fechas distintas.
 test('SCRUM-1183b · el año de «Trabajos CSV» es la fecha PREVISTA; el de «Presupuestos CSV», el alta', () => {
-  const src = fs.readFileSync(path.join(RAIZ, 'src/modules/exports/domain/exportData.ts'), 'utf8')
-    .replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  // Sin comentarios con el scanner de la casa (SCRUM-693/694), no con un regex propio.
+  const src = soloCodigo(fs.readFileSync(path.join(RAIZ, 'src/modules/exports/domain/exportData.ts'), 'utf8'), 'exportData.ts');
   const campo = (fn) => {
     const i = src.indexOf(`export async function ${fn}(`);
     assert.ok(i !== -1, `🔴 CIEGO: no encuentro ${fn} en exportData.ts.`);
