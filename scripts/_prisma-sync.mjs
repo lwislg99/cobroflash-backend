@@ -78,7 +78,8 @@ export async function sincronizar() {
         '',
         '   Dos salidas:',
         '     · aislar este worktree (una vez, y ya no vuelve a pasar) — ver docs/master/SCRUM-429.md;',
-        '     · o avisar a las otras sesiones y regenerar a mano:  npm run prisma:generate',
+        '     · o avisar al orquestador, que coordina la regeneración del cliente compartido',
+        '       (docs/equipo/trampas-del-entorno.md §10). Una sesión no lo regenera por su cuenta.',
         '',
       ].join('\n'),
     };

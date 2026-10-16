@@ -1273,7 +1273,11 @@
         if (r && r.rechazada) {
           if (typeof o.alFirmar === 'function') { try { await o.alFirmar(); } catch (_e) {} }
           var codigo = r.error && r.error.code;
-          throw new Error(codigo === 'parte_vacio' ? TEXTOS.parteVacioNoSeFirma : ((r.error && r.error.message) || ''));
+          // SCRUM-1233e · el resto de rechazos dicen lo mismo que el albarán ante el mismo rechazo
+          // (`albaranDetailView.js`, `mensajeDeFalloAlFirmar(resultado.error)`), con la frase del
+          // servidor si la mandó. Antes subía `r.error.message` crudo («API 409: …») a un contrato
+          // —el del pad— que espera un texto ya traducido.
+          throw new Error(codigo === 'parte_vacio' ? TEXTOS.parteVacioNoSeFirma : mensajeDelAlbaran(r.error));
         }
         // 🔴 SCRUM-890 (PR 2) · SIN ③ EL PAD NO SE CIERRA, igual que el albarán (SCRUM-358). Sin red
         // la firma está en la cola, pero cerrar en silencio deja al profesional creyendo que subió.
