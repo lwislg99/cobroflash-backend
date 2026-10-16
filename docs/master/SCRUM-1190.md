@@ -97,3 +97,8 @@ escrituras (todo lo que no es GET, cortado; no salió ninguno), con `jobDetailVi
 
 **No medido en navegador:** el `POST /quote/create` con `job_id` que saldría al generar (sería una
 escritura). Ese tramo lo cubre `scrum1274` de punta a punta, y este cambio no lo toca.
+
+A9: comprobación → `tests/scrum1190b-nuevo-presupuesto-en-el-trabajo.test.mjs`
+(Mi primera condición fue `job.quote?.id != null`. Con un presupuesto enviado y sin aceptar habría
+enseñado el botón Y el hueco a la vez; lo vi al leer `huecosDeCobro`, y el caso «enviado» de este test
+cae con ese mutante.)
