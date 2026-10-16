@@ -189,7 +189,9 @@ A9: comprobación → `tests/scrum644-trinquete-mensaje-crudo.test.mjs`
 
 ## 1233g — visto en yaqu.app, y un banco que intercepta producción bloquea el service worker (S4, s4-16oct)
 
-**Medido contra:** `origin/main` = producción = `48fc00f6a90089b0f172b58c49413d889288bec0` (leído en `/version`) · 2026-10-16T11:11:49Z
+**Medido contra:** `origin/main` = `48fc00f6a90089b0f172b58c49413d889288bec0` · 2026-10-16T11:11:49Z
+
+Producción servía ese mismo SHA (leído en `/version`).
 
 **Skill UI:** no cargada · no se toca ninguna pantalla: sólo se miran, en producción.
 
