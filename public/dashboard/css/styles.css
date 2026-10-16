@@ -2676,6 +2676,8 @@ html, body { overflow-x: clip; }
 /* Modal post-crear: grupo de acciones de envío dentro del cuerpo */
 .modal-share-label { font-size: 11.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin: 14px 0 8px; }
 .modal-share { display: flex; gap: 8px; flex-wrap: wrap; }
+/* SCRUM-1237 · el aviso de lo que contestó cada envío, dentro de la modal (quotesView.js). */
+.modal-share-aviso { margin: 10px 0 0; }
 /* `.quote-vat-calc` y `.quote-total-final` RETIRADAS en SCRUM-139 F3: la primera era el
    total viejo (fila `space-between` de 24 px), sustituida por `.quote-total-kpi`; la
    segunda ya estaba muerta de antes (ningun fichero la emitia). Se retiran en vez de
