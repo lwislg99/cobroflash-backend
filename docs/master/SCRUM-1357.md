@@ -237,3 +237,65 @@ No se declaran en `MUTACIONES_QUE_ME_TUMBAN` (SCRUM-935), como las de 1357b.
   `done` con proceso (ver el límite de uso del 9-oct). Lo dice su `detail`, que va en la tabla.
 - No lo lanza nadie solo: sigue siendo una orden que el orquestador corre. `notify_when_idle` es el aviso
   que llega sin pedirlo; esto es la foto cuando se pide.
+
+## 16-oct-2026 · SCRUM-1357d · SALA: el panel del fundador, alimentado por `parados.mjs` y desde el repo
+
+**Medido contra:** `origin/main` = `665bcd17ff7fe0f63959b300bda92cdc6bf448c7` · 2026-10-16T12:08:36Z (`Date:` de GitHub)
+
+### Lo que pasó
+
+Encargo del orquestador. El plugin `yaqu-sala` (el renglón «SALA ·» bajo el prompt y `/sala`) corría un
+vigía que vivía en el scratchpad de UNA sesión del orquestador (`register.js:21`): muere con su relevo. Y
+sólo conocía los nombres `sN-…`; el 16-oct las sesiones se lanzaron como `sesion-N` y el panel enseñó los
+seis puestos «SIN CUBRIR» con los seis trabajando. A las 12:01Z, ese vigía dijo «ningún puesto que
+atender» mientras `parados.mjs` cazaba a `sesion-3` bloqueada en un permiso.
+
+### Lo que entra
+
+- `scripts/equipo/sala.mjs`: **llama** a `parados.mjs --json` como proceso (no lo importa ni lo copia) y
+  traduce su informe a las líneas que el plugin ya lee — `AVERIA|…`, `VACIO|S3|…|su puesto está SIN
+  CUBRIR`, `BLOQUEADA|S3|sesion-3|hace 8 min|pid …|«pregunta»`, `TE ESPERA|…` y `HUÉRFANAS|…`. Nada que
+  atender = ninguna línea y salida 0; hay = 1; avería = 2, y la avería también va en línea.
+- Los nombres los resuelve `puestoDe` (`latido.mjs`): `sN`, `sN-…`, `sesion-N`, `sesion-N-…`. Una sesión
+  con proceso que no casa con ninguno sale como `HUÉRFANAS`, no se calla.
+- **No escribe la línea de PR** que pedía el encargo: el plugin ya los cuenta él (`register.js:45-58`), y
+  cada línea que recibe del vigía la cuenta como un puesto que atender (`register.js:97`). Una línea de PR
+  aquí saldría como «1 puesto(s) que atender».
+- **No hay «SIN MOVERSE»**: era la deducción por quietud del vigía viejo. Lo que la sustituye es
+  `TE ESPERA` (terminada y con proceso), por lo mismo que en 1357c.
+
+### Comprobado
+
+| corrida | resultado |
+|---|---|
+| test nuevo `tests/scrum1357d-sala.test.mjs` | 8 de 8 |
+| 4 mutaciones a mano (bytes restaurados en `finally`) | **4 cazadas** |
+| el instrumento de mutación, sobre `scrum899d` como control | 8 de 8 |
+| contra el mundo, 12:0xZ | salida 1 · `BLOQUEADA` de `sesion-3` (permiso de worktree), `sesion-4`, `sesion-1` (preguntas al fundador) y las dos viejas sin proceso del 15-oct |
+
+Las mutaciones: **`puestoDe` que sólo conoce `sN` (el defecto del 16-oct tal cual) → cae «lo presente se
+ve presente»** · las huérfanas no se miran · los ciegos de `parados.mjs` no se traducen · un informe que
+no cuadra con su salida se cree. No se declaran en `MUTACIONES_QUE_ME_TUMBAN` (SCRUM-935).
+
+Los dos sentidos del control, como pidió el orquestador: las seis vivas con las cuatro formas de nombre
+dan CERO líneas; sin la de S3 sale exactamente `VACIO|S3|…`; y dos vivas sin puesto (`javier-16oct`,
+`s12-16oct`) salen como huérfanas, con el control de que una sin proceso no lo es.
+
+### Mis errores
+
+1. **Mi instrumento de mutación dio «0 de 4 cazadas» la primera vez**: lo copié con `Get-Content` sin
+   `-Encoding UTF8` y se corrompieron los `✖`/`✔` que busca. Como falla cerrado, lo marcó todo como
+   superviviente en vez de como cazado. Rehecho en UTF-8 y comprobado contra 899d (8/8) antes de creerlo.
+
+### Lo que NO hace
+
+- **El plugin sigue apuntando al vigía del scratchpad**: el cambio de `register.js` es del orquestador.
+- **El plugin no mira el código de salida** (`register.js:35-37`): si el guion no existe en la ruta,
+  `node` sale 1 sin imprimir nada y el plugin pinta «los 6 trabajando». `sala.mjs` no puede arreglar eso
+  desde dentro; lo arregla el plugin mirando `exitCode`.
+- **No hay árbol al día del que correrlo**: el compartido va 3.226 commits por detrás y no tiene
+  `parados.mjs`; `parados.mjs` arrastra `latido.mjs` y su cadena de imports, así que no se copia suelto a
+  `%LOCALAPPDATA%`. Necesita una carpeta que siga a `origin/main`.
+- Sigue sin verse en vivo una fila `TE ESPERA` (pendiente, como en 1357c).
+
+A9: comprobación → `tests/scrum1357d-sala.test.mjs`
