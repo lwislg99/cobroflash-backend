@@ -96,3 +96,29 @@ ruta servida sale como servida; una inventada cae en el relleno):
 
 No arreglado aquí: mueve las cifras de pantalla y mezclarlo con el serializador no dejaría saber
 cuál las movió. No medido: los datos propios que `guard:objetivo-tactil` pasa a cada superficie.
+
+## 16-oct-2026 12:42Z · S3 · 1559b — el censo cuenta cada ELEMENTO (la COLA 2)
+
+Rama `scrum-1559b-censo-cuenta-cada-elemento`, encima de la de 1559 (GO del orquestador).
+«Distinto» en `censo:tactil-panel` era pantalla + selector + texto: tres «💬» de Clientes contaban
+UNO. Ahora es pantalla + posición del elemento en `querySelectorAll(INTERACTIVOS)`
+(`scripts/_censo-distintos.mjs`). Sirve de identidad a los dos anchos porque el censo sirve el MISMO
+HTML a 929 y a 390. Test `tests/scrum1559b-censo-cuenta-cada-elemento.test.mjs`: con la clave vieja
+cae 1 de 5 (el caso), los 4 controles pasan; con la nueva, 5 de 5.
+
+🔴 **El total SUBE, y sube porque el instrumento cuenta lo que antes juntaba:**
+
+| Cifra | Con 1559 | Con 1559b | Qué entra |
+|---|---|---|---|
+| distintos < 44 px | 53 | **61** (+8) | todo en Clientes, filas que se juntaban |
+| `BUTTON.btn-secondary.btn-sm` | 12 | 16 (+4) | «Editar» ×3 y «Portal» ×3 contaban 2 |
+| `BUTTON.btn-ghost.btn-sm` | 3 | 5 (+2) | «📊 Historial» ×3 contaba 1 |
+| `A.contacto-link.contacto-link--icono` | 1 | 3 (+2) | «💬» ×3 contaba 1 |
+| con `.btn-sm` | 26 | 32 | |
+| mediciones cortas | 82 | **82** | sin cambio: control de que sólo cambió la cuenta, no la medida |
+
+Quién cita las cifras viejas: `docs/master/SCRUM-1158.md` (62 → 51 con la clave vieja y el banco
+de antes de 1559). No se reescribe: es lo que se midió entonces con aquel instrumento.
+Declarado y sin tocar: el suelo de `guard:objetivo-tactil` (`distintosEsperados`) usa la misma
+clave `sel|texto` (`scripts/guard-objetivo-tactil.mjs`, el `Set` de distintos), así que subcuenta
+igual. Es un suelo (mínimo): subcontar lo hace más fácil de cumplir, no da rojos falsos.
