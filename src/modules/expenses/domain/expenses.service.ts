@@ -121,16 +121,39 @@ export async function listExpenses(
   }
   const items = await prisma.expense.findMany({
     where,
-    // `select` y no `include`: `include` trae TODAS las columnas de `Expense` y la foto con ellas.
-    select: {
-      ...CAMPOS_DE_LA_LISTA,
-      quote:    { select: { id: true } },
-      provider: { select: { id: true, name: true } },
-    },
+    select: SELECT_DE_LA_FILA,
     orderBy: { date: 'desc' },
     take: 200,
   });
+  return completarFilas(merchantId, items);
+}
 
+// `select` y no `include`: `include` trae TODAS las columnas de `Expense` y la foto con ellas.
+// SCRUM-1156b · UNO para la lista y la ficha: la ficha es una fila de la lista, y si cada una
+// pidiera sus columnas, la ficha enseñaría un gasto distinto del que se acaba de tocar en la tabla.
+const SELECT_DE_LA_FILA = {
+  ...CAMPOS_DE_LA_LISTA,
+  quote:    { select: { id: true } },
+  provider: { select: { id: true, name: true } },
+} as const;
+
+/**
+ * SCRUM-1156b · `GET /admin/expenses/:id` — LA FICHA DE LECTURA DE UN GASTO.
+ *
+ * Devuelve la MISMA fila que la lista (mismo `select`, `tieneFoto` y `job`), filtrada por
+ * `merchantId` (regla 2): el gasto de otro negocio da `null`, lo mismo que un id que no existe.
+ * Existe para que la ficha viva en el hash (`DETALLES` de `app.js`, SCRUM-832) y una recarga o un
+ * «atrás» la pidan sola, sin depender de que la lista siga en memoria.
+ */
+export async function getExpense(merchantId: number, id: number) {
+  const fila = await prisma.expense.findFirst({ where: { id, merchantId }, select: SELECT_DE_LA_FILA });
+  if (!fila) return null;
+  const [gasto] = await completarFilas(merchantId, [fila]);
+  return gasto;
+}
+
+/** Lo que la lista y la ficha añaden a cada fila: `tieneFoto` y el Trabajo al que pertenece. */
+async function completarFilas<T extends { id: number; quoteId: number | null }>(merchantId: number, items: T[]) {
   /**
    * SCRUM-964 · QUÉ GASTOS LLEVAN FOTO, SIN TRAERSE NI UNA.
    *
