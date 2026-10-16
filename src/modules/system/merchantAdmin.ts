@@ -143,6 +143,8 @@ export async function getMerchantProfile(merchantId: number = DEFAULT_MERCHANT_I
       criterioCaja: true,
       retencionIrpfDeclarada: true,
       retencionIrpfTipo: true,
+      // SCRUM-1072 · la actividad: sin su línea aquí, el siguiente guardado la devolvería a NULL.
+      activityKind: true,
       // SCRUM-1102 · las dos respuestas de Configuración (SII y domicilio foral). Mismo aviso que
       // arriba: sin su línea aquí, el siguiente guardado de cualquier ajuste las devolvería a NULL.
       llevaLibrosPorSii: true,
