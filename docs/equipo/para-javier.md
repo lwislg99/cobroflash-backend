@@ -347,3 +347,26 @@ El fundador preguntó el **13-oct** qué falta para que nuestro software mande a
 🔴 **Lo que NO es esto.** No es una propuesta: las tres están decididas. **Lo que sí es vuestro es el fichero** — `public/index.html` es de J3 por `dos-equipos.md` — y por eso ninguna sesión nuestra lo toca. **Si alguna os parece mal, decidlo y se discute; pero no se queda a medias por silencio.**
 
 · **Y una del mismo fichero que ya os pasamos y sigue abierta: el salto de la landing a 360 px (sección 12), con la causa declarada DESCONOCIDA** y la contraprueba dentro (sigue dando 0,125 **con la barra escondida**, así que la barra no lo explica). **El fundador también nos delegó «lo del móvil» en el mismo turno, y nuestra decisión es ésta: no lo perseguimos más, porque es vuestro fichero y nuestra medida ya está entregada entera.** **Si queréis nuestro banco para reproducirlo, os lo pasamos.**
+
+## 18 🔴 `scrum1405c ④` NOS TUMBA OBLIGATORIOS TODOS LOS DÍAS · con la lista de cuándo
+
+**Qué es.** El caso ④ de `tests/scrum1405c-…` («🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, ninguno»). **Es vuestro.** Falla **intermitentemente**: una vez de ~11.600 tests, y cuando cae tumba el check obligatorio de quien pasara por ahí. **Nosotros no lo tocamos y no proponemos tocarlo: os lo contamos con la cuenta.**
+
+**Lo que nos ha costado, con nombre y PR. Esto NO es una impresión:**
+
+| cuándo | dónde | qué pasó |
+|---|---|---|
+| 15-oct | **cinco de nuestros seis puestos** | sus obligatorios cayeron por este test el mismo día |
+| 16-oct | **#2449** (archivar) | sus **dos últimos** obligatorios cayeron por él |
+| 16-oct | **#2495** (presupuesto adicional) | rojo por él; entró tras **un relanzamiento** |
+| 16-oct | **#2505** | 1 fallo de **11.634**, y el log decía **heap OOM** |
+| 16-oct | **#2512** | rojo sólo por él; el commit entró por otra rama |
+| 16-oct | **#2523** | medido por nosotros: `not ok 2804 - SCRUM-1405c · ④` y **nada más** |
+
+**El coste real no es el rojo: es lo que hace con la gente.** Un rojo intermitente **enseña a relanzar sin mirar**, y el día que caiga un rojo de verdad lo relanzaremos igual. Nosotros tenemos norma de **clasificar antes de relanzar** y la cumplimos, pero eso son minutos de una persona por cada caso de esta tabla.
+
+🔵 **UNA PISTA, Y VA DECLARADA COMO HIPÓTESIS, NO COMO CAUSA.** En **#2505** el fallo vino acompañado de **heap OOM**. Y el mismo día, **a tres de nuestras sesiones el sistema les mató la tanda completa de tests por falta de memoria** en la máquina local. **Eso sugiere —no demuestra— que el caso ④ es sensible a la memoria disponible y cae cuando el runner va cargado.** **No lo hemos medido**, y no lo vamos a medir porque el test es vuestro: lo decimos por si os ahorra la búsqueda.
+· **Lo que lo confirmaría o lo tumbaría:** correr ese caso solo, con el heap limitado a propósito, y ver si cae; y correrlo con holgura, y ver si no. **Si cae con holgura, nuestra pista es falsa y mejor saberlo pronto.**
+
+· ⚠️ **Y lo que NO os pedimos: que lo quitéis.** Un test que a veces cae suele estar midiendo algo real de forma frágil, y borrarlo cambiaría un rojo molesto por un verde hueco. **Lo que pedimos es que deje de ser intermitente.**
+· **Lo escribe el orquestador de Luis, 16-oct-2026, con las seis instancias medidas por sesiones distintas.**
