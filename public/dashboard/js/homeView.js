@@ -472,6 +472,7 @@ function renderSetupChecklist(merchant, data) {
   if (!container) return;
 
   const checklist = document.createElement('div');
+  checklist.className = 'home-checklist'; // SCRUM-1158c: enganche de su regla de 44 px en styles.css
   checklist.style.cssText = 'background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border:1px solid #bbf7d0;border-radius:14px;padding:16px 18px;margin-bottom:20px;grid-column:1/-1';
   checklist.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">

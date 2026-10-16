@@ -1693,6 +1693,18 @@ html, body { overflow-x: clip; }
 .quote-direccion-obra { margin-top: 8px; }
 .quote-direccion-obra[hidden] { display: none; }
 
+/* SCRUM-1158c (AB6, misma decisión de SCRUM-786, opción ③: reglas ACOTADAS, nunca `.btn-sm`
+   global). Con el banco que ya no pierde estilos (SCRUM-1158b) aparecieron 18 objetivos de 30-31 px
+   a 929 y a 390: «⚙ Personalizar» y los «Ir →» de «Completa tu configuración» en Inicio, y los
+   «1T-4T» de los dos bloques trimestrales de Informes (pestañas pegadas: tocar la de al lado
+   enseña otro trimestre). Sólo tamaño. Los selectores pesan (0,2,0) o más y ganan a `.btn.btn-sm`
+   sin `!important`; `min-height` gana al padding en línea de «Ir →». Los «1T» llevan además ancho:
+   son estrechos, y el árbitro de toque sólo mide el alto. */
+#btn-home-prefs,
+.home-checklist .btn-sm { min-height: 44px; }
+#vat-quarter-row > .btn-sm,
+#resumen-quarter-row > .btn-sm { min-height: 44px; min-width: 44px; }
+
 /* ── SCRUM-1144 · «Elegir un sitio guardado», bajo el campo de la dirección de la obra ───────
    Lo montan el editor de presupuestos y la ficha del Trabajo (`sitiosGuardados.montarSelector`).
    Sin tokens nuevos. El botón es `.btn-ghost.btn-sm`, como «Usar plantilla»: una ayuda
