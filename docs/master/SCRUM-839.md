@@ -608,45 +608,58 @@ o sin estado. Eso incluía el obligatorio ya en VERDE con GitHub diciendo `BLOCK
 de diagnóstico. Lo midió el orquestador el 16-oct: `BLOCKED` con el obligatorio de conclusión VACÍA no es atasco,
 es que no ha terminado; con el obligatorio verde, no se sabe por qué.
 
-## ② Qué se cambió (sólo el final de `causaDelAtasco`, y su test)
+## ② Qué se cambió (el final de `causaDelAtasco`, la sección de PR del latido, y sus tests)
 
 | caso, con los checks a la vista | antes | ahora |
 |---|---|---|
 | ① obligatorio sin terminar (`queued`, `in_progress`) o sin ejecución sobre el head | ESPERANDO | ESPERANDO, y el detalle dice cuál y en qué estado |
 | ② obligatorio en rojo | ROJO-OBLIGATORIO | igual (no se toca) |
-| ③ obligatorio terminado sin rojo y `BLOCKED` | ESPERANDO «esperando a que pase el check obligatorio» | **BLOQUEADO-SIN-CAUSA**: «no sé por qué está bloqueado», con la conclusión del obligatorio |
+| ③ obligatorio terminado sin rojo, `BLOCKED`, y así desde hace **≥ 60 min** | ESPERANDO «esperando a que pase el check obligatorio» | **BLOQUEADO-SIN-CAUSA**: «terminado hace N min … no sé por qué está bloqueado» |
+| ③ igual, pero terminado hace < 60 min | ESPERANDO (mismo relleno) | ESPERANDO «dentro de la espera normal hasta el auto-merge (se afirma desde 60 min)» |
+| ③ igual, sin `completed_at` | ESPERANDO (mismo relleno) | ESPERANDO «no sé desde cuándo: no se afirma un atasco» |
 | obligatorio verde y estado que deja fusionar (`CLEAN`, `UNSTABLE`, `HAS_HOOKS`) | ESPERANDO | ESPERANDO «esperando a que el auto-merge lo fusione» |
 | sin datos de checks o sin lista de obligatorios | ESPERANDO | ESPERANDO, pero el detalle dice que no se pudo ver a qué espera |
 
 Una conclusión que ni es verde ni roja (`skipped`, `neutral`, `stale`) con `BLOCKED` también es «sin causa»: no se
-inventa. `BLOQUEADO-SIN-CAUSA` NO entra en `CAUSAS_QUE_SE_ARREGLAN_ESPERANDO`: avisa al entrar, una vez. Con el
-obligatorio verde y el auto-merge armado ya tendría que haber entrado; el vigía pasa cada 3 h, así que si lo
-encuentra así no hay nada que esperar.
+inventa. Con varios obligatorios, el plazo cuenta desde el que terminó MÁS TARDE.
 
-🔴 **Un test existente cambia de aserción, y no se relaja (regla 41):** «manda la ÚLTIMA ejecución de cada check»
-exigía `ESPERANDO` para un rojo viejo con un verde nuevo y `BLOCKED`. Lo que protege —que el rojo viejo ya no
-cuente— se sigue exigiendo (`notEqual ROJO-OBLIGATORIO`), y además exige la causa nueva. Es el caso ③ tal cual.
+**La persistencia (condición del orquestador: no avisar por un estado pasajero).** Elegí medirla con la hora que
+da GitHub y no con una memoria entre pasadas: `MINUTOS_PARA_AFIRMAR_SIN_CAUSA = 60`, desde el `completed_at` del
+último obligatorio. Por qué 60, medido sobre los **78 últimos PR fusionados** (del verde del obligatorio al
+`mergedAt`): mediana **1,4 min** · p90 6,3 · p95 14,5 · máximo **55,9** (#2493), y todos entraron solos. 60 queda
+por encima de todos. Va en el clasificador, no en el latido, para que proteja a los DOS consumidores: el latido
+y el vigía de CI, que avisa al entrar (`BLOQUEADO-SIN-CAUSA` no está en `CAUSAS_QUE_SE_ARREGLAN_ESPERANDO`) y
+sin esto lo habría hecho por un PR en tránsito. Lo que no se afirma no se pierde: como ESPERANDO, el vigía lo
+sigue levantando por edad (24 h).
 
-Lo que NO se cambió: «sin datos de checks el clasificador se comporta como antes» y el CEBO REAL #1248 (`UNSTABLE`,
-verde) siguen fijando `ESPERANDO`, y siguen en verde.
+**El latido** (`scripts/equipo/latido.mjs`, `seccionPRs`) avisa ahora de `BLOQUEADO-SIN-CAUSA` (decisión del
+orquestador, 16-oct: el caso ③ es el que nadie nota; #2449 estuvo dos días así). Recibe `ahora` y se lo pasa al
+clasificador; no espera nada más, porque el pasajero ya llega como ESPERANDO.
+
+**Ningún test existente cambia de aserción.** En la primera versión de este PR cambié «manda la ÚLTIMA ejecución
+de cada check» (exigía `ESPERANDO` en un verde `BLOCKED`); con la persistencia, ese caso —que no trae
+`completed_at`— vuelve a ser `ESPERANDO` y la aserción está restaurada tal cual. Respecto a la base, el fichero de
+test sólo quita la línea del `import` (para añadir dos nombres).
 
 ## ③ ROJO · VERDE · MUTACIONES · CONTRA EL MUNDO
 
-- **ROJO:** con el `vigia-atascados.mjs` de `main`, 6 de los 71 caen (los cinco nuevos que lo distinguen y el
-  cambiado).
-- **VERDE:** 71/71 en `tests/vigia-atascados.test.mjs`; 197/197 en los 13 ficheros que importan el vigía o su
-  pasada; 42/42 en los del latido (que también llama al clasificador).
-- **Mutaciones declaradas: 7 de 7 cazadas** (las 5 que había y 2 nuevas, una en cada sentido: el que vuelve a
-  llamar «esperando» al verde bloqueado, y el que llama «sin causa» al que no ha terminado).
+- **ROJO:** con el `vigia-atascados.mjs` de `main`, los casos nuevos que lo distinguen caen. Sin la rama nueva del
+  latido, «PERSISTE … el latido AVISA» cae.
+- **VERDE:** 72/72 en `tests/vigia-atascados.test.mjs`; 4/4 en `tests/scrum839i-latido-sin-causa.test.mjs`;
+  **336/336 en los 24 ficheros** que importan el vigía, su pasada o el latido.
+- **Mutaciones declaradas: 8 de 8 cazadas** (las 5 que había y 3 nuevas: el que vuelve a llamar «esperando» al
+  verde bloqueado que persiste, el que llama «sin causa» al que no ha terminado, y **el que lo afirma a la
+  primera lectura** — esta última tumba además 3 de los 4 casos del latido).
 - **Contra el mundo, 12:3xZ:** los 9 PR abiertos clasificados con el viejo y con el nuevo dan la misma causa
   (4 `ROJO-OBLIGATORIO`, 5 `SIN-ESTADO`): `gh pr list` los trae todos en `UNKNOWN`, que va antes que este caso.
   **El caso ③ no lo he visto en vivo**; lo prueba el caso fabricado.
 
 ## ④ Lo que queda abierto
 
-- El latido (`scripts/equipo/latido.mjs:216`) sólo alerta `ROJO*` y `SIN-AUTO-MERGE` pasadas sus horas; un
-  `BLOQUEADO-SIN-CAUSA` sale en su tabla, pero no en sus alertas. No se ha tocado: lo decide el orquestador.
 - Sin datos de checks la causa sigue llamándose `ESPERANDO` (lo fija un test); lo que cambió es que el detalle ya
-  no afirma a qué espera.
+  no afirma a qué espera. Decisión del orquestador: se queda así, declarado.
+- El plazo de 60 min sale de 78 PR de dos semanas. Si el equipo cambia de ritmo (más merges a la vez, CI más
+  lento), hay que volver a medirlo: `MINUTOS_PARA_AFIRMAR_SIN_CAUSA` lleva la medida en su comentario.
 
 A9: comprobación → `tests/vigia-atascados.test.mjs`
+A9: comprobación → `tests/scrum839i-latido-sin-causa.test.mjs`

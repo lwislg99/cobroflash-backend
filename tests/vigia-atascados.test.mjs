@@ -9,7 +9,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   esAsuntoDelVigia, causaDelAtasco, haEmpeorado, sueloDeLaPasada, horasDesde, validarSonda, GRACIA_MINUTOS,
-  ETIQUETA_NO_MERGEAR, BOT, CAUSAS_QUE_SE_ARREGLAN_ESPERANDO,
+  ETIQUETA_NO_MERGEAR, BOT, CAUSAS_QUE_SE_ARREGLAN_ESPERANDO, MINUTOS_PARA_AFIRMAR_SIN_CAUSA,
 } from '../scripts/vigia-atascados.mjs';
 
 // El meta-guard de la casa ejecuta esto: si el vigía dejara de distinguir «sin checks» de
@@ -47,13 +47,19 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: '    .filter(() => true);',
     cae: '🔴 CONTROL NEGATIVO REAL #1259 · recién empujado CON checks corriendo: ESPERANDO, y NO avisa',
   },
-  // SCRUM-839i · los dos sentidos: el que vuelve a llamar «esperando» al verde bloqueado, y el que
-  // llama «sin causa» al que de verdad no ha terminado.
+  // SCRUM-839i · los tres sentidos: el que vuelve a llamar «esperando» al verde bloqueado que persiste, el
+  // que llama «sin causa» al que no ha terminado, y el que lo afirma a la primera lectura (el pasajero).
   {
     fichero: 'scripts/vigia-atascados.mjs',
-    de: "  if (estado === 'BLOCKED') {\n    return {\n      causa: 'BLOQUEADO-SIN-CAUSA',",
-    a: "  if (false) {\n    return {\n      causa: 'BLOQUEADO-SIN-CAUSA',",
+    de: "  if (estado === 'BLOCKED') {\n    // Sólo se afirma si PERSISTE",
+    a: "  if (false) {\n    // Sólo se afirma si PERSISTE",
     cae: '🔴 ③ obligatorio VERDE y BLOCKED → BLOQUEADO-SIN-CAUSA, y lo dice: no «esperando al obligatorio»',
+  },
+  {
+    fichero: 'scripts/vigia-atascados.mjs',
+    de: '    if (!(verdeHace >= MINUTOS_PARA_AFIRMAR_SIN_CAUSA)) {',
+    a: '    if (false) {',
+    cae: '🔴 ③ PASAJERO: verde hace menos del plazo, o sin hora, NO se afirma sin causa',
   },
   {
     fichero: 'scripts/vigia-atascados.mjs',
@@ -490,12 +496,8 @@ test('🔴 manda la ÚLTIMA ejecución de cada check (por id), no la primera que
     { id: 10, name: OBLIGATORIO, status: 'completed', conclusion: 'failure' },
     { id: 11, name: OBLIGATORIO, status: 'completed', conclusion: 'success' },
   ];
-  // SCRUM-839i: aquí decía `ESPERANDO`. Lo que este caso protege es que el rojo VIEJO ya no cuente,
-  // y eso se sigue exigiendo; pero con el obligatorio en verde y `BLOCKED`, «esperando a que pase el
-  // obligatorio» era una causa inventada. Ahora es la de «no sé por qué», que es lo que se sabe.
-  const relanzado = causaDelAtasco({ estado: 'BLOCKED', checks: 2, checkRuns: rojoViejoVerdeNuevo, obligatorios: [OBLIGATORIO] });
-  assert.notEqual(relanzado.causa, 'ROJO-OBLIGATORIO', 'un fallo relanzado en verde ya no bloquea');
-  assert.equal(relanzado.causa, 'BLOQUEADO-SIN-CAUSA');
+  assert.equal(causaDelAtasco({ estado: 'BLOCKED', checks: 2, checkRuns: rojoViejoVerdeNuevo, obligatorios: [OBLIGATORIO] }).causa, 'ESPERANDO',
+    'un fallo relanzado en verde ya no bloquea');
   const verdeViejoRojoNuevo = [
     { id: 10, name: OBLIGATORIO, status: 'completed', conclusion: 'success' },
     { id: 11, name: OBLIGATORIO, status: 'completed', conclusion: 'failure' },
@@ -507,18 +509,43 @@ test('🔴 manda la ÚLTIMA ejecución de cada check (por id), no la primera que
 // Hasta aquí, todo `BLOCKED` sin un obligatorio en rojo salía «esperando a que pase el check
 // obligatorio», también con el obligatorio ya en VERDE: un relleno con forma de dato. Los tres casos,
 // medidos el 16-oct-2026 (S0 y el orquestador): ① conclusión VACÍA → no ha terminado · ② FAILURE →
-// cayó · ③ VERDE y aun así bloqueado → no se sabe por qué, y se dice. Con su control en los dos
-// sentidos: lo que espera de verdad sigue saliendo ESPERANDO.
+// cayó · ③ VERDE y aun así bloqueado, y así desde hace el plazo → no se sabe por qué, y se dice. Con su
+// control en los dos sentidos: lo que espera de verdad sigue saliendo ESPERANDO, y un BLOCKED PASAJERO (el
+// obligatorio acaba de pasar y el auto-merge aún no ha disparado) no se afirma.
 {
-  const run = (status, conclusion, id = 1) => ({ id, name: OBLIGATORIO, status, conclusion });
-  const causa = (estado, runs) => causaDelAtasco({ estado, checks: runs.length || 1, checkRuns: runs, obligatorios: [OBLIGATORIO] });
+  const AHORA = Date.parse('2026-10-16T12:00:00Z');
+  /** `haceMin`: cuánto hace que terminó (sólo si está completado); `null` = la API no trajo la hora. */
+  const run = (status, conclusion, id = 1, haceMin = 90) => ({
+    id, name: OBLIGATORIO, status, conclusion,
+    completed_at: status === 'completed' && haceMin !== null ? new Date(AHORA - haceMin * 60_000).toISOString() : null,
+  });
+  const causa = (estado, runs) => causaDelAtasco({ estado, checks: runs.length || 1, checkRuns: runs, obligatorios: [OBLIGATORIO], ahora: AHORA });
 
   test('🔴 ③ obligatorio VERDE y BLOCKED → BLOQUEADO-SIN-CAUSA, y lo dice: no «esperando al obligatorio»', () => {
     const r = causa('BLOCKED', [run('completed', 'success')]);
     assert.equal(r.causa, 'BLOQUEADO-SIN-CAUSA', JSON.stringify(r));
     assert.match(r.detalle, /no sé por qué/);
+    assert.match(r.detalle, /hace 90 min/);
     assert.match(r.detalle, /build \+ tests \(con banco desechable\): success/, 'nombra el obligatorio y cómo terminó');
     assert.doesNotMatch(r.detalle, /esperando a que pase/);
+    // Justo en el plazo ya se afirma.
+    assert.equal(causa('BLOCKED', [run('completed', 'success', 1, MINUTOS_PARA_AFIRMAR_SIN_CAUSA)]).causa, 'BLOQUEADO-SIN-CAUSA');
+  });
+
+  test('🔴 ③ PASAJERO: verde hace menos del plazo, o sin hora, NO se afirma sin causa', () => {
+    // Medido: la mediana del verde al merge es 1,4 min y el p95 14,5. Eso es tránsito, no atasco.
+    for (const hace of [1, 14, MINUTOS_PARA_AFIRMAR_SIN_CAUSA - 1]) {
+      const r = causa('BLOCKED', [run('completed', 'success', 1, hace)]);
+      assert.equal(r.causa, 'ESPERANDO', `${hace} min`);
+      assert.match(r.detalle, new RegExp(`hace ${hace} min.*espera normal`), `${hace} min`);
+    }
+    const sinHora = causa('BLOCKED', [run('completed', 'success', 1, null)]);
+    assert.equal(sinHora.causa, 'ESPERANDO');
+    assert.match(sinHora.detalle, /no sé desde cuándo/);
+    // Con dos obligatorios manda el que terminó MÁS TARDE: hasta que acaba el último, el merge no puede.
+    const dos = causaDelAtasco({ estado: 'BLOCKED', checks: 2, ahora: AHORA, obligatorios: [OBLIGATORIO, 'otro obligatorio'],
+      checkRuns: [run('completed', 'success', 1, 300), { ...run('completed', 'success', 2, 5), name: 'otro obligatorio' }] });
+    assert.equal(dos.causa, 'ESPERANDO', JSON.stringify(dos));
   });
 
   test('🔴 ① obligatorio SIN TERMINAR (conclusión vacía) y BLOCKED → ESPERANDO, y dice que no ha terminado', () => {

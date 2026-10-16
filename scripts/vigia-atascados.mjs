@@ -167,6 +167,13 @@ export const CAUSA_MAIN_PARADO = 'MAIN-PARADO';
 export const UMBRAL_MENCION_HORAS = 72;
 /** Así empieza el renglón de `main` en el aviso. Lo busca el latido para saber que el aviso habla de `main`. */
 export const MARCA_DE_MAIN_PARADO = '`main` está PARADO';
+/**
+ * (SCRUM-839i) Minutos con el obligatorio ya terminado y GitHub aún en BLOCKED desde los que se afirma
+ * BLOQUEADO-SIN-CAUSA. Medido el 16-oct-2026 sobre los 78 últimos PR fusionados (del `completed_at` del
+ * obligatorio en verde al `mergedAt`): mediana 1,4 min · p90 6,3 · p95 14,5 · máximo 55,9 (#2493), y todos
+ * entraron solos. 60 queda por encima de todos: un BLOCKED más corto es tránsito, no atasco.
+ */
+export const MINUTOS_PARA_AFIRMAR_SIN_CAUSA = 60;
 
 /**
  * Conclusiones de un check COMPLETADO que impiden el merge. `cancelled` va dentro: la cancelación
@@ -365,7 +372,8 @@ export function causaDelAtasco(obs = {}) {
   // la vista son tres casos, y el tercero no tiene causa que se pueda leer:
   //   ① el obligatorio no ha terminado (conclusión vacía) o no tiene ejecución → ESPERANDO, de verdad;
   //   ② en rojo → ya salió arriba como ROJO-OBLIGATORIO;
-  //   ③ terminado sin rojo y GitHub dice BLOCKED → BLOQUEADO-SIN-CAUSA: «no sé por qué», dicho.
+  //   ③ terminado sin rojo y GitHub dice BLOCKED, y así desde hace MINUTOS_PARA_AFIRMAR_SIN_CAUSA o más
+  //     → BLOQUEADO-SIN-CAUSA: «no sé por qué», dicho. Antes de ese plazo es la espera normal.
   // Sin datos de checks no se sabe cuál de los tres es: se mantiene ESPERANDO (como antes), pero el
   // detalle dice que no se pudo mirar en vez de afirmar a qué se espera.
   if (!Array.isArray(obs.checkRuns) || !Array.isArray(obs.obligatorios) || obs.obligatorios.length === 0) {
@@ -383,9 +391,22 @@ export function causaDelAtasco(obs = {}) {
   }
   const como = deCadaUno.map(({ nombre, run }) => `${nombre}: ${String(run.conclusion || '(vacía)').toLowerCase()}`).join(', ');
   if (estado === 'BLOCKED') {
+    // Sólo se afirma si PERSISTE: el último obligatorio tiene que haber terminado hace al menos
+    // MINUTOS_PARA_AFIRMAR_SIN_CAUSA. Antes es la espera normal hasta que el auto-merge dispara, y sin la
+    // hora no se sabe cuánto lleva: tampoco se afirma (si de verdad se queda, lo levanta la edad).
+    const ahora = Number.isFinite(obs.ahora) ? obs.ahora : Date.now();
+    const verdeHace = (ahora - Math.max(...deCadaUno.map(({ run }) => Date.parse(run.completed_at)))) / 60000;
+    if (!(verdeHace >= MINUTOS_PARA_AFIRMAR_SIN_CAUSA)) {
+      return {
+        causa: 'ESPERANDO',
+        detalle: Number.isFinite(verdeHace)
+          ? `GitHub dice BLOCKED con el obligatorio terminado hace ${Math.round(verdeHace)} min (${como}): dentro de la espera normal hasta el auto-merge (se afirma desde ${MINUTOS_PARA_AFIRMAR_SIN_CAUSA} min)`
+          : `GitHub dice BLOCKED con el obligatorio terminado (${como}) y no sé desde cuándo: no se afirma un atasco`,
+      };
+    }
     return {
       causa: 'BLOQUEADO-SIN-CAUSA',
-      detalle: `GitHub dice BLOCKED con el obligatorio terminado y sin rojo (${como}): no sé por qué está bloqueado`,
+      detalle: `GitHub dice BLOCKED con el obligatorio terminado hace ${Math.round(verdeHace)} min y sin rojo (${como}): no sé por qué está bloqueado`,
     };
   }
   return { causa: 'ESPERANDO', detalle: `estado ${estado} con el obligatorio terminado (${como}): esperando a que el auto-merge lo fusione` };
