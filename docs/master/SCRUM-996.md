@@ -289,7 +289,7 @@ Encargo del orquestador (16-oct): 996 se cierra si la LECTURA de arranque baja d
 el instrumento no imprime cifras fijas.
 
 **1 · La cifra.** `node scripts/equipo/gasto-arranque.mjs sesiones --desde 2026-10-16T10:00:00Z --min-turnos 8`
-(~11:30Z), sobre una población de 455 `state.json`, 22 con actividad y **6 con ≥ 8 turnos** (`s0…s5-16oct`):
+(antes de las 11:19:35Z, hora de GitHub leída después), sobre una población de 455 `state.json`, 22 con actividad y **6 con ≥ 8 turnos** (`s0…s5-16oct`):
 
 | sesión | turnos | U1 | U8 | lectura | % |
 |---|---|---|---|---|---|
