@@ -277,3 +277,63 @@ Lo decide el orquestador.
 - Contexto de esta sesión al escribir esto: ~200k.
 
 A9: sin fallo que generalice — ticket de sólo medición y propuesta (un único .md, sin código ni camino de emisión tocado); lo no comprobado queda declarado arriba, y la corrección al comentario 16988 va en el texto del apartado 4.
+
+## SCRUM-996e · la lectura de arranque MEDIDA con `--arranque` en uso: 18,5 %, y el 6-7 % de dos sesiones es del instrumento (16-oct-2026, Sesión 0)
+
+**Medido contra:** `origin/main` = `48fc00f6a90089b0f172b58c49413d889288bec0` · 2026-10-16T11:05:37Z (`gh api -i zen`)
+
+A9: sin fallo que generalice — tramo de sólo medición; el defecto del instrumento es de S5 (`scripts/equipo/**`) y se reporta, no se arregla aquí.
+
+Encargo del orquestador (16-oct): 996 se cierra si la LECTURA de arranque baja del 15 %, medida (no calculada) con
+`gasto-arranque` sobre las sesiones de hoy, que ya arrancan con `norma.mjs --arranque` (#2502). Y comprobar antes que
+el instrumento no imprime cifras fijas.
+
+**1 · La cifra.** `node scripts/equipo/gasto-arranque.mjs sesiones --desde 2026-10-16T10:00:00Z --min-turnos 8`
+(antes de las 11:19:35Z, hora de GitHub leída después), sobre una población de 455 `state.json`, 22 con actividad y **6 con ≥ 8 turnos** (`s0…s5-16oct`):
+
+| sesión | turnos | U1 | U8 | lectura | % |
+|---|---|---|---|---|---|
+| s1 | 54 | 68.439 | 101.626 | 33.187 | 19,6 |
+| s0 | 58 | 66.872 | 104.354 | 37.482 | 24,4 |
+| s2 | 51 | 67.862 | 104.210 | 36.348 | 24,5 |
+| s4 | 48 | 67.807 | 103.386 | 35.579 | 22,9 |
+| s5 | 44 | 69.594 | 78.343 | 8.749 | 6,1 |
+| s3 | 43 | 67.613 | 76.642 | 9.029 | 6,8 |
+
+**TOTAL: lectura 18,5 %** (objetivo del ticket ≤ 10 %; el del orquestador, < 15 %) · U8 mediano **102.506**
+(≤ 90.000) · `NO CUMPLE` · EXIT 1. Ayer (996c): 21,2 % y U8 117.261, también con N=6.
+
+**2 · El instrumento, comprobado con una sonda independiente** (un script de 20 líneas que no reutiliza nada de
+`gasto-arranque`: dedup por `message.id`, `input + cache_read + cache_creation`). Sobre mi propio jsonl da U1=66.872,
+U8=104.354, lectura=37.482 y 24,3 %: **los mismos números**. La cifra por sesión cambia de una sesión a otra, así que no
+imprime nada fijo. Los «90k/10 %» que vio la S5 son los OBJETIVOS, que salen en la línea del criterio. Y el «% del
+contexto» es `lectura × (turnos − 8) / Σcontexto`: la lectura que se vuelve a pagar en cada turno posterior. Por eso
+baja a medida que la sesión crece, y sólo se compara entre poblaciones con un número de turnos parecido.
+
+**3 · 🔴 Defecto del instrumento: la lectura que se hace DESPUÉS del turno 8 no la cuenta.** El bloque de
+`norma.mjs --arranque` (40.954 B) es un salto de **~19,7k tokens en un solo turno**, y ese salto se ve en las seis:
+
+| sesión | turno del salto | Δ |
+|---|---|---|
+| s0 | 5 | 19.678 |
+| s1 | 6 | 21.430 |
+| s2 | 5 | 19.781 |
+| s4 | 5 | 19.730 |
+| s3 | **24** | 19.730 |
+| s5 | **21** | 19.735 |
+
+s3 y s5 leyeron las normas después del turno 8, así que su 6-7 % es U8 cortando antes de la lectura, no un arranque
+más barato. Si se les suma el salto, quedan en ~21,6 % y ~19,3 %: **las seis por encima del 15 %**. Una sesión que lee
+tarde parece más barata: es la forma de «un instrumento que acierta por suerte». Es de S5 (`scripts/equipo/**`):
+queda nombrado aquí y no se toca.
+
+**4 · Lo que sí bajó, medido y no calculado.** La lectura de las normas pasó de **32.885 tokens** (996c, s4-15oct,
+el fichero entero más su resultado) a **~19,7k** hoy, en un solo turno: unos **13k menos por sesión**. El total no baja
+del 15 % porque la lectura de hoy, ~33-37k en las cuatro que leyeron antes del turno 8, lleva además el traspaso, la
+ficha del puesto, `ya-esta` y el propio encargo.
+
+**5 · Y algo que el instrumento no ve.** El suelo (U1, ~67-70k, el 53,5 % del contexto) lleva el `CLAUDE.md` FÓSIL del
+árbol compartido: las seis sesiones de hoy arrancan con `cwd` en él (1300b). No he medido cuánto pesa ese fichero
+frente al de `main`.
+
+**Veredicto: 996 sigue ABIERTO.** 18,5 % medido, 6 de 6 por encima del 15 % al corregir el corte de U8.
