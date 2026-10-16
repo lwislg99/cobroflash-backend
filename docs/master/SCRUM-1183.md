@@ -30,3 +30,57 @@ Carril S2 · árbol `s2-1183` · rama `scrum-1183-trabajos-csv`.
   tiene año, el test dice CIEGO, no verde), el filtro por `createdAt` de las dos rutas, y la ficha de la firma.
 - **Control por mutación**, con la base en verde: sin la línea del año cae SU caso; sin colgar el botón caen los dos
   de pantalla.
+
+## SCRUM-1183b · en yaqu.app: el botón y la descarga, bien; el año NO es la misma fecha, y lo dije mal
+
+**Medido contra:** `origin/main` = `48fc00f6a90089b0f172b58c49413d889288bec0` · 2026-10-16T11:13:30Z (`Date:` de GitHub) · producción en ese mismo SHA (`/version`).
+A9: comprobación → `tests/scrum1183-trabajos-csv.test.mjs`
+
+Carril S2 · árbol `s2-16oct` · rama `scrum-1183b-el-anio-es-la-fecha-prevista`.
+
+**🔴 Lo de arriba que es FALSO** (no se borra; se corrige aquí): «`jobs.csv` y `quotes.csv` filtran los dos por
+`createdAt`… Medido ANTES de pedir la firma» y «el filtro por `createdAt` de las dos rutas». Lo que se «midió» fue el
+`where` que `exports.routes.ts` construye en cada ruta (`:674` jobs, `:719` quotes) y **no pasa a nadie**: el filtro
+que corre está en `exportData.ts`, `buildTrabajos` → `whereRango(…, CAMPO_FECHA_TRABAJOS)` = **`scheduledAt`**, la
+fecha de ejecución PREVISTA (decisión de SCRUM-106), y `buildPresupuestos` → `createdAt`. El orquestador firmó el
+rótulo apoyándose en esa frase mía (c.19799).
+
+**Visto en yaqu.app** con la cuenta QA (sonda de sólo lectura `sondas-s2/informes-csv-de-verdad.mjs`, fuera del repo;
+corta todo lo que no sea GET, con control positivo; 0 escrituras), rol admin:
+
+| aceptación | dónde se ve | resultado |
+|---|---|---|
+| el botón, al lado de los otros cuatro | Informes en yaqu.app | ✅ fila «Facturas · Gastos · Presupuestos · **Trabajos** · Clientes», visible (118×30 px) |
+| descarga de verdad | clic en «⬇ Trabajos CSV» | ✅ evento de descarga, `trabajos_2026-10-16.csv`, CSV con su cabecera |
+| lleva el año, igual que `quotes.csv` | href tras pintar y tras cambiar a 2025 | ✅ `?from=2026-01-01&to=2026-12-31` y luego `2025`, los dos botones a la par |
+| el filtro por año funciona | `jobs.csv` sin filtro / por año | 🔴 **2 filas sin filtro; 0 en 2022, 2023, 2024, 2025, 2026 y en 2001**. Control: `quotes.csv` 2026 = 6, 2001 = 0 |
+
+Los dos trabajos de la cuenta (#77, alta 2026-10-14; #76, alta 2026-09-29) están `pendiente_agendar`, sin fecha
+prevista. **Efecto, dicho sin adornos: hoy, en Informes y con 2026 puesto, «Trabajos CSV» baja un fichero VACÍO
+aunque el profesional tenga trabajos, si no están agendados.** El paquete de «Descargar datos» lo explica en su LEEME
+(`CRITERIO_TRABAJOS`); el botón suelto de Informes, no.
+
+- **NO medido:** el positivo (un trabajo agendado que SÍ sale en su año). Agendar es escribir en el fixture de S3 de
+  la cuenta QA; no lo he intentado, por orden del orquestador.
+- **Decisión** (orquestador, 16-oct, mensaje a S2): se corrige el comentario y el test (esta rama). Qué hace el
+  botón —(b) bajar sin año, o (c) decirlo en pantalla, que pide firma— **va a la puerta de go-live, SCRUM-1554**, y
+  no se construye.
+- **Código muerto, de back, NO tocado:** el `where` de `exports.routes.ts:674` (jobs) y `:719` (quotes) se construye y
+  no se usa. Nombrado para que lo reparta el orquestador; borrarlo a ciegas no es de este carril.
+- **Pendiente en este carril:** el motivo de `ruta · GET /admin/exports/jobs.csv` en `scripts/_sin-consumir-declarados.json`
+  repite «las dos filtran por createdAt». No se toca aquí: es la línea vecina de la que añade #2449 (1273), y ya
+  chocaron una vez. Se corrige cuando #2449 esté en `main`.
+
+### Qué cambia
+
+- `public/dashboard/js/reportsView.js`: sólo el comentario (dice ahora qué fecha filtra cada uno). Cero cambio de pantalla.
+- `tests/scrum1183-trabajos-csv.test.mjs`: el caso que leía el `where` muerto se sustituye por uno que lee el campo
+  que de verdad se pasa a `whereRango` en `exportData.ts`, sin comentarios, y resuelve la constante a su literal.
+
+### Verificado, ejecutando
+
+- Base: **4 de 4** (con `dist` compilado; sin él caen los dos de pantalla por `Cannot find module`, que es el
+  worktree, no el test).
+- **Rojo primero, por mutación** de `CAMPO_FECHA_TRABAJOS` a `'createdAt'`: el caso nuevo CAE (3 de 4).
+- **El instrumento viejo, contra lo mismo:** el test de `origin/main` da 4 de 4 hoy, con el producto filtrando por
+  `scheduledAt`, y 4 de 4 con el mutante. Verde en los dos sentidos: no medía el filtro.

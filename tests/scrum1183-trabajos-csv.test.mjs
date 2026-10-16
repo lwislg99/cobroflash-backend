@@ -6,8 +6,8 @@
 // del paquete de «Descargar datos». Ahora Informes tiene «⬇ Trabajos CSV» al lado de los otros
 // CSV. Lo que se vigila:
 //   ① el botón está, con su rótulo firmado (c.19799) y apuntando a jobs.csv;
-//   ② lleva el MISMO rango de año que «Presupuestos CSV»: las dos rutas filtran por `createdAt`
-//     con from/to (`exports.routes.ts`), así que un año distinto sería un fichero de otro periodo;
+//   ② lleva el MISMO rango de año que «Presupuestos CSV», aunque NO sobre la misma fecha: trabajos
+//     por fecha prevista (SCRUM-106), presupuestos por alta. Lo dice el test SCRUM-1183b, abajo;
 //   ③ la ficha de la firma consta, por ticket y ranura (SCRUM-1306).
 // (La pieza de operarios del mismo ticket está SUSTITUIDA por el hub de Equipo, c.17343: no se construye.)
 import test from 'node:test';
@@ -61,17 +61,30 @@ test('SCRUM-1183 · 🔴 «Trabajos CSV» lleva el MISMO rango de año que «Pre
     '🔴 los trabajos se descargarían de otro periodo que los presupuestos del mismo año.');
 });
 
-test('SCRUM-1183 · las dos rutas filtran por la MISMA fecha, que es lo que hace válido el mismo año', () => {
-  const src = fs.readFileSync(path.join(RAIZ, 'src/modules/exports/app/routes/exports.routes.ts'), 'utf8');
-  const cuerpo = (ruta) => {
-    const i = src.indexOf(`router.get('${ruta}'`);
-    assert.ok(i !== -1, `🔴 CIEGO: no encuentro ${ruta} en exports.routes.ts.`);
-    const j = src.indexOf('router.get(', i + 1);
-    return src.slice(i, j === -1 ? undefined : j);
+// SCRUM-1183b · Este test decía que las dos rutas filtraban por `createdAt`, y lo «comprobaba»
+// leyendo el `where` que exports.routes.ts construye y NO USA: el filtro que corre está en
+// exportData.ts (`buildTrabajos` / `buildPresupuestos`). En yaqu.app, los dos trabajos sin agendar
+// de la cuenta QA salían sin filtro y en NINGÚN año. Ahora se lee el campo que de verdad se pasa
+// a `whereRango`, sin comentarios, y se dice lo que es: el mismo año, sobre fechas distintas.
+test('SCRUM-1183b · el año de «Trabajos CSV» es la fecha PREVISTA; el de «Presupuestos CSV», el alta', () => {
+  const src = fs.readFileSync(path.join(RAIZ, 'src/modules/exports/domain/exportData.ts'), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  const campo = (fn) => {
+    const i = src.indexOf(`export async function ${fn}(`);
+    assert.ok(i !== -1, `🔴 CIEGO: no encuentro ${fn} en exportData.ts.`);
+    const j = src.indexOf('export ', i + 1);
+    const m = src.slice(i, j === -1 ? undefined : j).match(/whereRango\(\s*merchantId\s*,\s*rango\s*,\s*([^,)]+)/);
+    assert.ok(m, `🔴 CIEGO: ${fn} ya no filtra con whereRango(merchantId, rango, <campo>).`);
+    const arg = m[1].trim();
+    if (/^'[^']+'$/.test(arg)) return arg.slice(1, -1);
+    const c = src.match(new RegExp(`const ${arg}\\s*=\\s*'([^']+)'`));
+    assert.ok(c, `🔴 CIEGO: no resuelvo ${arg} a un literal.`);
+    return c[1];
   };
-  for (const ruta of ['/jobs.csv', '/quotes.csv']) {
-    assert.match(cuerpo(ruta), /where\.createdAt\.gte = from/, `🔴 ${ruta} ya no filtra por createdAt: el año del botón diría otra cosa.`);
-  }
+  assert.equal(campo('buildPresupuestos'), 'createdAt',
+    '🔴 quotes.csv ya no filtra por fecha de alta: el comentario de reportsView.js y SCRUM-1183b mienten.');
+  assert.equal(campo('buildTrabajos'), 'scheduledAt',
+    '🔴 jobs.csv ya no filtra por fecha prevista (SCRUM-106): el comentario de reportsView.js y SCRUM-1183b mienten.');
 });
 
 test('SCRUM-1183 · la firma del rótulo consta en SU ficha de docs/microcopy/', () => {
