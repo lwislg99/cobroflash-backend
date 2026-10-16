@@ -20,6 +20,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { soloCodigo } from './_solo-codigo.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const moduloPrisma = await import('../dist/core/db/prisma.js');
@@ -158,7 +159,7 @@ test('🔴 SCRUM-1072 · ⑥ ningún fichero de src LEE la actividad: solo la va
   assert.ok(ficheros.length > 200, `🔴 CIEGO: el censo solo ve ${ficheros.length} ficheros de src`);
   // El código SIN comentarios: un comentario que la nombre no es una lectura.
   const quienLaNombra = ficheros.filter((f) => {
-    const sinComentarios = fs.readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+    const sinComentarios = soloCodigo(fs.readFileSync(f, 'utf8'), f);
     return /\bactivityKind\b|\bactivity_kind\b/.test(sinComentarios);
   }).map((f) => path.relative(RAIZ, f).replace(/\\/g, '/')).sort();
   // CONTROL POSITIVO: los dos sitios donde SÍ tiene que estar salen. Un censo que no los viera
