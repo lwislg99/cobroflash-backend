@@ -223,7 +223,10 @@ router.post('/create', async (req, res) => {
           teamMemberId: creatorTeamMemberId,
           createdVia: body.created_via ?? 'text', // V0-3: telemetría quote_created_via
           payMethods: body.payMethods ?? undefined, // A2.1: selector al crear
-          jobId: jobIdDelAdicional, // SCRUM-195: null = presupuesto normal; con valor = adicional
+          // SCRUM-195: el Trabajo al que pertenece. ⚠️ SCRUM-1190: «con valor = adicional» dejó de ser
+          // cierto con SCRUM-1274, que manda `job_id` también en el PRIMER presupuesto de un Trabajo
+          // (el hueco «Hacer presupuesto»). El rol vive en `esAdicional`, y hoy no lo escribe nadie.
+          jobId: jobIdDelAdicional,
           // SCRUM-656 (T7 fase B) · LOS DOS CAMPOS QUE SE LEÍAN Y NO SE ESCRIBÍAN.
           //
           // 🔴 `ivaModo` ES UN DEFECTO DE LA FASE A, Y ERA MÍO: `quotesView.js:3294` lo manda, el
