@@ -61,3 +61,50 @@ deducidos del código y 1 dudoso. No la he recontado: la cito con su origen.
    `git status` del fichero quedó vacío.
 
 A9: aviso → cicatriz S0 «Copié a mi tabla de la criba que `POST /quote/create` daba 403 `trial_expired`, sacado de un registro ajeno que lo había deducido del código, y con eso marqué 1476 como bloqueado: el orquestador tuvo que revertirlo. Lo que un registro dice de producción se copia con su «leído» o su «recibido», nunca sin él.» — no se pudo comprobar: lo que un comentario afirma de producción vive en Jira, y ningún test del repositorio lo lee
+
+## SCRUM-1300b · las nueve piezas y los cinco cabos, medidos uno a uno (16-oct-2026, Sesión 0)
+
+**Medido contra:** `origin/main` = `48fc00f6a90089b0f172b58c49413d889288bec0` · 2026-10-16T11:05:37Z (`gh api -i zen`)
+
+A9: sin fallo que generalice — tramo de sólo medición.
+
+Encargo del orquestador (16-oct): `ya-esta` da 1300 🟢 desde el 14-oct; contar cuántas de sus piezas están, cuáles
+faltan y de quién son. **Son NUEVE, no ocho:** de la 0 a la 7 en la descripción, y la 8 en el comentario c.17878
+(1-oct). Más los 5 cabos. Leído el ticket entero en Jira (descripción + su único comentario).
+
+**El dato que ordena la tabla.** `claude agents --json`, 16-oct ~11:20Z: **las 7 sesiones vivas** (`s0…s5-16oct` y
+`cobroflash-backend-f3`) tienen `cwd` = `D:\MILLONARIO\cobroFlash\cobroflash-backend`, el compartido (rama
+`scrum-1082-…`, 3185 commits por detrás). De ahí se cargan `CLAUDE.md`, `.claude/settings.json` y `.claude/rules`, y
+medido en ese disco: sus hooks son **sólo** `guard-dangerous.sh`; **no existe** `.claude/rules` ni
+`.claude/carriles.json` (en un árbol al día, sí: control); su `CLAUDE.md` no tiene ninguna línea `@` y sigue diciendo
+«matar node» (el de `main`: 0 veces). `%LOCALAPPDATA%\yaqu-equipo\config.json` **no tiene la clave `mesas`**. Y los
+logs de los hooks de latido acaban el **1-oct 13:25Z**: sus últimas filas son controles de la S0 de aquel día, y no hay
+ninguna después.
+
+| pieza | estado | dónde se ve | lo que falta · de quién |
+|---|---|---|---|
+| 0 · mesa fija por puesto | CONSTRUIDA, **APAGADA** | `scripts/equipo/sesion.mjs` (SCRUM-1298) · `tests/scrum1298-mesa-por-puesto.test.mjs` · `mesa-s5` y `mesa-control-s5` en disco | dar el interruptor (`mesas` en el config instalado), con el equipo parado — orquestador; su propia cabecera lo dice |
+| 1 · la A9 cierra el círculo | **HECHA y llega** | A9 de `00-normas-comunes.md` · `tests/scrum1294-a9-leccion-en-a10.test.mjs` | — |
+| 2 · `CLAUDE.md` importa las normas | HECHA en `main`, **NO LLEGA** | `@docs/equipo/00-normas-siempre.md` en `origin/main:CLAUDE.md` | depende de la 0 |
+| 3 · `.claude/rules` generadas | HECHA en `main`, **NO LLEGA** | 11 reglas · `scripts/carriles.mjs comprobar` · `tests/scrum1295-carriles.test.mjs` | depende de la 0 |
+| 4 · identidad + cerradura | HECHA en `main`, **NO CORRE** | `.claude/hooks/identidad.mjs` (SessionStart) · `.claude/hooks/carril.mjs` (PreToolUse: «SIN IDENTIDAD … no trabajas») | depende de la 0; ⚠️ al encenderla, toda sesión sin mesa queda bloqueada (es su diseño) |
+| 5 · cicatrices por puesto | ESCRITAS, **NO SE ENTREGAN** | `docs/equipo/cicatrices/` (12 ficheros) · las inyecta `identidad.mjs` | depende de la 0 |
+| 6 · latido del orquestador | **HECHA** como script | `scripts/equipo/latido.mjs` (fail-closed: 10 líneas `NO-PUDE-MIRAR`) · 13 tests con «latido» | los hooks `latido-arranque`/`latido-cierre` no corren desde el 1-oct: depende de la 0 |
+| 7 · agentes definidos | **NO HECHA** | no hay `.claude/agents/`; la regla «leer mucho para concluir poco → agente» no está en las normas (sólo A25: «subagentes … salida ≤ 2 KB») | sin dueño (así lo dice el ticket) |
+| 8 · la memoria del orquestador se comprueba contra el árbol | **NO HECHA** | ningún script ni test (búsqueda en `scripts/ tests/ .claude/` con 0; la misma, en `docs/`, ve 3 ficheros: no está ciega) | S0 o S5, sin decidir (c.17878) |
+
+| cabo | estado | dónde se ve |
+|---|---|---|
+| 1 · auditoría rutinaria de cierres | instrumento HECHO, **no es rutina** | `scripts/auditoria-cierres.mjs` (SCRUM-1372) · `docs/equipo/auditoria-de-cierres.md`, sin cadencia escrita y sin cambios desde el 2-oct · S0 |
+| 2 · ¿existe el traspaso y está al día? | HECHO (leído, no corrido) | `latido.mjs` (17 líneas «traspaso») · `scripts/traspaso-derivado.mjs` (SCRUM-1427) |
+| 3 · libro de repartos | HECHO (leído, no corrido) | `node scripts/equipo/latido.mjs repartos` |
+| 4 · ficheros sin fila en `dos-equipos.md` | HECHO para `scripts/` | `node scripts/carriles.mjs sin-fila` (SCRUM-1480f) |
+| 5 · el fundador, único canal | sin solución, declarado así | — |
+
+**Recuento.** De 9 piezas: **2 hechas y llegan** (1 y 6) · **4 hechas en `main` que no llegan a nadie** (2, 3, 4 y 5)
+· **1 construida y apagada** (0), que es la que bloquea a esas cuatro · **2 sin hacer** (7 y 8). **No está completo.**
+El cuello es uno solo: la pieza 0 es la que se definió como «sin esto, ninguna de las demás llega a nadie», y hoy no
+llegan.
+
+**Una pregunta, no un hecho:** hoy las sesiones se llaman `sN-16oct`, y `sesion.mjs` sólo admite los puestos del
+config (`sesion-N`). No he medido cómo se lanzaron. Si fue sin `sesion.mjs`, encender `mesas` no basta.
