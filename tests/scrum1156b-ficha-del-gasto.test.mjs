@@ -19,6 +19,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { inyectarBase, moduloDeDist, MERCHANT } from './_envio-doblado.mjs';
+import { reqDeSesion } from './_arnes-de-router.mjs';
 
 const RUTAS = '../dist/modules/expenses/app/routes/expenses.routes.js';
 const SERVICIO = '../dist/modules/expenses/domain/expenses.service.js';
@@ -76,7 +77,7 @@ function banco() {
     const res = { status(c) { r.estado = c; return res; }, json(j) { r.cuerpo = j; return res; } };
     const error = console.error;
     console.error = () => {};
-    try { await h({ merchantId: MERCHANT, userRole: 'admin', query: {}, params: {}, ...req }, res); } finally { console.error = error; }
+    try { await h(reqDeSesion({ rol: 'admin', merchantId: MERCHANT, query: {}, params: {}, ...req }), res); } finally { console.error = error; }
     return r;
   };
   return { router, capaDe, pedir, llamadas };
