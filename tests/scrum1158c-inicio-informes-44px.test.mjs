@@ -42,11 +42,11 @@ const reglas = () => fs.readFileSync(path.join(RAIZ, 'public/dashboard/css/style
 test('SCRUM-1158c · las tres reglas acotadas existen con 44 px, y `.btn-sm` global sigue sin tocar', () => {
   const rs = reglas();
   const con = (s) => rs.filter((r) => r.sel.includes(s));
-  for (const s of ['#btn-home-prefs', '.home-checklist .btn-sm', '#vat-quarter-row > .btn-sm', '#resumen-quarter-row > .btn-sm']) {
+  for (const s of ['#btn-home-prefs', '.home-checklist .btn-sm', '#vat-quarter-row > .btn-sm', '#resumen-quarter-row > .btn-sm', '.informes-exportar > .btn-sm']) {
     assert.ok(con(s).some((r) => /min-height:\s*44px/.test(r.cuerpo)), `🔴 ${s} no tiene su min-height de 44 px en styles.css.`);
   }
-  for (const s of ['#vat-quarter-row > .btn-sm', '#resumen-quarter-row > .btn-sm']) {
-    assert.ok(con(s).some((r) => /min-width:\s*44px/.test(r.cuerpo)), `🔴 ${s} perdió el ancho de 44 px («1T» es estrecho).`);
+  for (const s of ['.home-checklist .btn-sm', '#vat-quarter-row > .btn-sm', '#resumen-quarter-row > .btn-sm']) {
+    assert.ok(con(s).some((r) => /min-width:\s*44px/.test(r.cuerpo)), `🔴 ${s} perdió el ancho de 44 px («Ir →» y «1T» son estrechos).`);
   }
   assert.ok(!con('.btn-sm').some((r) => /min-height:\s*44px/.test(r.cuerpo)),
     '🔴 alguien subió `.btn-sm` GLOBAL a 44 px: la decisión de SCRUM-786 es acotar, nunca global.');
@@ -76,4 +76,10 @@ test('SCRUM-1158c · Informes pinta los «1T-4T» como hijos DIRECTOS de sus dos
     assert.deepEqual(hijos.map((b) => String(b.textContent).trim()), ['1T', '2T', '3T', '4T'],
       `🔴 los trimestres de #${id} no son hijos directos .btn-sm: el «>» de la regla no les llega.`);
   }
+  // De paso: la fila de descargas. El censo en navegador NO la ve (el HTML serializado del banco la
+  // pierde), así que aquí es el único sitio que vigila que sus enlaces sigan bajo la regla.
+  const fila = nodos.filter((n) => clases(n).includes('informes-exportar'));
+  assert.equal(fila.length, 1, '🔴 la fila de descargas no lleva `.informes-exportar`: sus botones vuelven a 30 px.');
+  const enlaces = (fila[0].children || fila[0].childNodes || []).filter((n) => n.tagName === 'A' && clases(n).includes('btn-sm'));
+  assert.ok(enlaces.length >= 5, `🔴 CIEGO: sólo ${enlaces.length} descargas .btn-sm como hijos directos de la fila (esperaba las 5 CSV).`);
 });

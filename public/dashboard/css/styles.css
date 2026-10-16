@@ -1698,10 +1698,13 @@ html, body { overflow-x: clip; }
    a 929 y a 390: «⚙ Personalizar» y los «Ir →» de «Completa tu configuración» en Inicio, y los
    «1T-4T» de los dos bloques trimestrales de Informes (pestañas pegadas: tocar la de al lado
    enseña otro trimestre). Sólo tamaño. Los selectores pesan (0,2,0) o más y ganan a `.btn.btn-sm`
-   sin `!important`; `min-height` gana al padding en línea de «Ir →». Los «1T» llevan además ancho:
-   son estrechos, y el árbitro de toque sólo mide el alto. */
+   sin `!important`; `min-height` gana al padding en línea de «Ir →». «Ir →» y «1T» llevan además
+   ancho: medidos en yaqu.app daban 39 y 38-41 px, y el árbitro de toque sólo mide el alto.
+   De paso, la fila de descargas de Informes («⬇ … CSV» y «⬇ VeriFactu XML»): 30 px en yaqu.app,
+   y el censo NO la veía porque el HTML serializado del banco la pierde (reportado, no es de S2). */
 #btn-home-prefs,
-.home-checklist .btn-sm { min-height: 44px; }
+.informes-exportar > .btn-sm { min-height: 44px; }
+.home-checklist .btn-sm,
 #vat-quarter-row > .btn-sm,
 #resumen-quarter-row > .btn-sm { min-height: 44px; min-width: 44px; }
 
