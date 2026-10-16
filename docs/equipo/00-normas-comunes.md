@@ -529,6 +529,33 @@ git commit -m "wip: apartado"
 git reset --soft HEAD~1
 ```
 
+**Traer `main` con trabajo a medias encima: el trabajo se comitea en TU rama ANTES del merge**, y el
+commit se queda. Es el motivo más común para tirar de `stash` (dos sesiones lo hicieron el 16-oct-2026,
+según el orquestador), y tiene salida limpia:
+
+```bash
+git add <tus ficheros>          # por nombre: nunca `-A` en un árbol que puede tener lo de otro
+git commit -m "wip(SCRUM-N): <qué queda a medias>"
+git merge origin/main           # A4: merge, nunca rebase
+# … sigues trabajando; el commit siguiente completa el wip
+```
+
+- **Después del merge NO va el `reset --soft HEAD~1` de arriba.** Sobre un merge, `HEAD~1` es el
+  primer padre, o sea tu wip: deshace el merge y te deja todo `main` en el índice como si fuera tuyo.
+  El wip se queda en la historia. Que sea feo no rompe nada; reescribirla, sí (A4).
+- **El wip no se empuja mientras la rama no esté entera.** Aquí un push abre el PR y lo arma solo
+  (`pr-automatico.yml`): un wip que pase el obligatorio entra en `main` a medias.
+- Si el merge da conflicto, tu trabajo ya está a salvo en un commit. No hay un `pop` que pueda
+  sacar encima lo de otro.
+
+✗ Falla: en el almacén compartido sigue **una** entrada desde el 8-sep-2026,
+`stash@{0}` = `a7f6fad8d39d8ce7fe0bf4f72cb9171070591a1d`, «On scrum-713-buscador-cliente:
+scrum713-before-main-20260908-9e7b4a21». Su propio mensaje dice para qué se hizo: *before main*,
+apartar trabajo para traerse `main`. Es la del suceso de abajo. Lleva 4 ficheros seguidos y 3 sin
+seguir, y sus dos tests (`tests/scrum713-buscador-cliente*.mjs`) no están en `main` con ese nombre.
+Si ese trabajo se perdió o entró con otro nombre no está medido. **Nadie le hace `pop`**: quien la
+necesite la mira con `git show` y la trae con `apply`.
+
 Si aun así hay que mirar un stash: `git stash list` PRIMERO, se comprueba de
 quién es por su mensaje, y **NUNCA se usa `pop` — solo `apply`**, que conserva
 la entrada.
