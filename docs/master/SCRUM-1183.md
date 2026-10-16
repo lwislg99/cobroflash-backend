@@ -67,9 +67,9 @@ aunque el profesional tenga trabajos, si no están agendados.** El paquete de «
   no se construye.
 - **Código muerto, de back, NO tocado:** el `where` de `exports.routes.ts:674` (jobs) y `:719` (quotes) se construye y
   no se usa. Nombrado para que lo reparta el orquestador; borrarlo a ciegas no es de este carril.
-- **Pendiente en este carril:** el motivo de `ruta · GET /admin/exports/jobs.csv` en `scripts/_sin-consumir-declarados.json`
-  repite «las dos filtran por createdAt». No se toca aquí: es la línea vecina de la que añade #2449 (1273), y ya
-  chocaron una vez. Se corrige cuando #2449 esté en `main`.
+- **El motivo de `ruta · GET /admin/exports/jobs.csv`** en `scripts/_sin-consumir-declarados.json` repetía «las dos
+  filtran por createdAt». Se esperó a que #2449 (1273), que añade la línea vecina, entrara en `main` (11:23:03Z,
+  `7e53b1474`); después se trajo `main` a esta rama y se corrigió.
 
 ### Qué cambia
 
