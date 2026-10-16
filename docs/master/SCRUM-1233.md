@@ -186,3 +186,38 @@ hermanas, chocarían al mergear. Lo pidió el orquestador (el techo decía 2 y e
   rama: el merge dejó aquella línea al FINAL del fichero, o sea, dentro de este tramo y no del suyo, así
   que se ha devuelto a su sitio y este tramo lleva la suya.
 A9: comprobación → `tests/scrum644-trinquete-mensaje-crudo.test.mjs`
+
+## 1233g — visto en yaqu.app, y un banco que intercepta producción bloquea el service worker (S4, s4-16oct)
+
+**Medido contra:** `origin/main` = producción = `48fc00f6a90089b0f172b58c49413d889288bec0` (leído en `/version`) · 2026-10-16T11:11:49Z
+
+**Skill UI:** no cargada · no se toca ninguna pantalla: sólo se miran, en producción.
+
+**Visto en yaqu.app** (SCRUM-1233 c.19857; banco `docs/master/evidencias/SCRUM-1233/ver1233.mjs`, salida
+en `ver1233-salida-16oct.txt`). El fallo se simula en el navegador, y cualquier otra petición que no sea GET se aborta:
+
+| caso | lo que sale | control |
+|---|---|---|
+| Trabajos #77 · Agendar · 500 sin frase | `No se pudo guardar` | el mismo `err.message` vale `API 500: internal_error` |
+| ídem · sin red | `No se pudo guardar` | `err.message` = `Failed to fetch` |
+| ídem · 400 con `message` | `No se pudo guardar: <frase>` | el camino del detalle funciona |
+| parte #9 · firma del cliente · 400 `firma_invalida` | `No hemos podido registrar la firma`, botón `Reintentar`, el pad no se cierra | el parte sigue `borrador`, releído |
+| Albaranes (ya lo hacía bien) · 500 con y sin `message` | aviso sin detalle / con la frase debajo | igual que antes de 1233e |
+
+**Error mío, y repetido:** la 1.ª pasada abrió el contexto sin `serviceWorkers: 'block'`, y tres
+`PATCH /admin/jobs/77` con cuerpo `{}` llegaron a producción (~11:10Z). El #77 sigue `pendiente_agendar`,
+`scheduledAt: null`, `notes: null`. Su `updatedAt` NO se ha podido medir: ninguna lectura lo expone (lista y
+detalle, 0 veces; `/ics` → 409 `not_scheduled`), y no sé si Prisma lo mueve con `data: {}`. La cicatriz S4
+del 1-oct ya decía esto, con «sin comprobación». Ahora la tiene:
+
+- `tests/scrum1233g-banco-bloquea-el-sw.test.mjs`, por AST sobre `docs/master/evidencias/` + `scripts/`. Un
+  fichero que llama a `.route(` y abre él mismo el contexto contra `yaqu.app` lleva `serviceWorkers: 'block'`.
+  Si su contexto lo abre un import del repo, se le aplica lo mismo. Si lo abre un fichero que NO está en git,
+  el banco va nombrado en `FUERA_DEL_REPO`. Las dos mitades: uno nuevo cae, y uno de la lista que deja de
+  estarlo cae también.
+- **Segundo error mío, en el mismo ticket:** el primer censo, por regex, dio «5 de 7 bancos sin bloquear».
+  Era falso, porque contaba `yaqu.app` dentro de COMENTARIOS. Por AST, esas 5 sondas (1188e, 1227, 1231b,
+  1482b, 917i) no abren contexto: lo abre `sondas-s2/comun.mjs`, fuera del repo, y ése SÍ bloquea (medido,
+  su línea 15). Van en `FUERA_DEL_REPO`. Que dependan de un fichero que no está en git es de S2: reportado
+  al orquestador, no tocado.
+A9: comprobación → `tests/scrum1233g-banco-bloquea-el-sw.test.mjs`
