@@ -39,7 +39,13 @@ Este árbol cuelga del `node_modules` compartido y regenerar desde él está vet
 | 2. Tres estados que no colapsan: NULL = no consta · cada opción declarada | `tests/scrum1072-actividad-se-guarda.test.mjs` ② |
 | 3. Columna nueva y anulable · viaja con el perfil · lista cerrada · multi-tenant | `tests/scrum1072-actividad-se-guarda.test.mjs` ① ③ ⑤ |
 | 4. La respuesta NO cambia la retención ni ningún importe | `tests/scrum1072-actividad-se-guarda.test.mjs` ④ ⑥ |
-| 5. Ninguna frase dice qué corresponde · ayuda «pregúntaselo a tu asesor» | NO HECHO → texto por firmar (regla 39), y la pantalla |
+| 5. Ninguna frase dice qué corresponde · ayuda «pregúntaselo a tu asesor» | Enunciado y opciones FIRMADOS (SCRUM-1072 c.19859; `docs/microcopy/2026-10-16-SCRUM-1072-tipo-de-actividad.md`) · la ayuda NO se escribe (SCRUM-1264) · pintarlos: NO HECHO → S2 |
 | 6. Si existe «Resumen del trimestre» (SCRUM-1049), la respuesta sale allí | NO HECHO → existe: «Resumen del trimestre» sale en `public/dashboard/js/reportsView.js` y `homeView.js`. Pintarla allí es pantalla (S2) y texto por firmar; de dónde lee esa vista, no lo he mirado |
 
-**Textos que piden firma** (propuestos al orquestador, no escritos en ningún fichero): las tres opciones «Profesional» · «Empresarial» · «No lo sé»; y, aparte, el enunciado de la pregunta y la ayuda de «No lo sé», que el ticket también pide.
+## SCRUM-1072b · los textos, firmados por el orquestador
+
+A9: comprobación → `tests/scrum514-aprobado-y-aplicado.test.mjs`
+
+- **Firmados** (orquestador por delegación, SCRUM-1072 comentario 19859, leído en Jira): «¿Qué tipo de actividad tienes?» · «Profesional» · «Empresarial» · «No lo sé». Registro: `docs/microcopy/2026-10-16-SCRUM-1072-tipo-de-actividad.md`, con el LÍMITE de la firma: son rótulos, no criterio fiscal; el día que algo decida una retención con este campo, decide el asesor.
+- **NO firmada y NO se escribe:** la ayuda de «No lo sé». Va a SCRUM-1264. La pantalla no la necesita.
+- `scrum514` (texto firmado = texto pintado) cayó con los tres que aún no se pintan. Se **aparcan** en `APARCADOS` con su motivo y quién los desbloquea (S2, al pintar la pregunta), que es la vía que el propio guard indica. «Profesional» no se aparca porque el cruce ya la encuentra en `src/modules/system/domain/publicProfile.service.ts:51`, que es OTRO texto (el nombre de respaldo del perfil público): eso no prueba que la pregunta esté pintada. Tests de microcopy (71 ficheros): primero 675 tests · 1 fail (`scrum514`, los tres textos); después, EXIT 0.
