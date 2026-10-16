@@ -9,13 +9,13 @@ S3 · rama `scrum-1158-el-banco-ve-hidden` · worktree `wt-s3-1288b` (hora del `
 ## SCRUM-1158c · los objetivos cortos que destapó el banco arreglado: Inicio e Informes a 44 px (S2)
 
 **Medido contra:** `origin/main` = `7e53b1474096bde7aa23898d9f30caf2097b5d70` · 2026-10-16T11:28:09Z (`Date:` de GitHub)
-A9: aviso → cicatriz S2 «el banco de `main` daba 0 cortos en Inicio e Informes y producción tenía 20» — no se pudo comprobar: lo que lo impide es el censo en navegador sobre el banco de #2500, que no corre en cada PR
+**Skill UI:** cargada · `yaqu-premium-ui`: sólo tamaño (`min-height`/`min-width` 44 px), cero tokens, cero texto, cero componentes.
+A9: aviso → cicatriz S2 «el banco de `main` daba 0 cortos en Inicio e Informes y producción tenía 20: un censo sobre un banco que pierde estilos es un verde hueco, y sólo lo destapa medir la pantalla de verdad» — no se pudo comprobar: lo que lo impide es el censo en navegador sobre el banco de #2500, que no corre en cada PR
 
 *(Va aquí, y no al final, porque #2500 —1158b, de S3, abierto— añade 146 líneas al final de este fichero: dos anexos
 al final chocan. Este tramo acaba en «Fin de 1158c»; lo de debajo es el registro original de 1158.)*
 
-S2 · rama `scrum-1158c-inicio-informes-44px` · worktree `s2-1158c`. Skill UI cargada (`yaqu-premium-ui`): sólo
-tamaño, cero tokens, cero texto. Forma firmada: decisión del fundador de SCRUM-786 (c.16266, opción ③: reglas de
+S2 · rama `scrum-1158c-inicio-informes-44px` · worktree `s2-1158c`. Forma firmada: decisión del fundador de SCRUM-786 (c.16266, opción ③: reglas de
 44 px ACOTADAS, nunca `.btn-sm` global); el encargo, del orquestador (lote del 16-oct, punto 3).
 
 **Recuento, no cifra heredada.** `censo:tactil-panel` sobre `main` (`48fc00f6a`): Inicio **0**, Informes **0**,
@@ -37,7 +37,9 @@ enlaces están en el DOM (5 de 5), pero el HTML que serializa `_pagina-panel.mjs
 ### Qué cambia
 - `public/dashboard/css/styles.css`: tres reglas acotadas (`#btn-home-prefs` y `.informes-exportar > .btn-sm`:
   alto; `.home-checklist .btn-sm`, `#vat-quarter-row > .btn-sm`, `#resumen-quarter-row > .btn-sm`: alto y ancho).
-- `homeView.js` / `reportsView.js`: una clase de enganche cada uno (`home-checklist`, `informes-exportar`).
+- `homeView.js` / `reportsView.js`: una clase de enganche cada uno (`home-checklist`, `informes-exportar`). En
+  `homeView.js` va en la MISMA línea que crea el `div` (`Object.assign`): `tests/scrum601` ancla su control en la
+  línea 885 de ese fichero, y una línea de más lo tumbaba (medido: cayó). No se toca el guard; no se mueve la línea.
 - `tests/scrum1158c-inicio-informes-44px.test.mjs`: las reglas con 44 px, `.btn-sm` global intacto, y que el
   producto siga pintando los botones DENTRO de lo que cada regla nombra.
 
