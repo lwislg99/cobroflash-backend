@@ -1,0 +1,73 @@
+emparejados: 263 · NUEVOS medidos: 46 · DESAPARECIDOS: 0
+
+── NUEVOS medidos (el instrumento ve más) · cortos 12 de 46
+  renderCustomersView @929 · A.btn-secondary.btn-sm «⬇ Clientes CSV» · 31.0 px · CORTO
+  renderCustomersView @929 · A.contacto-link «34000000001» · 41.8 px · CORTO
+  renderCustomersView @929 · A.contacto-link.contacto-link--icono «💬» · 37.0 px · CORTO
+  renderCustomersView @929 · A.contacto-link «34000000002» · 41.8 px · CORTO
+  renderCustomersView @929 · A.contacto-link.contacto-link--icono «💬» · 37.0 px · CORTO
+  renderCustomersView @929 · A.contacto-link «34000000003» · 41.8 px · CORTO
+  renderCustomersView @929 · A.contacto-link.contacto-link--icono «💬» · 37.0 px · CORTO
+  renderInvoicesView @929 · A.btn-secondary.btn-sm «⬇ CSV» · 31.0 px · CORTO
+  renderInvoicesView @929 · INPUT «(sin texto)» · 14.0 px · CORTO
+  renderQuotesListView @929 · A.btn-secondary.btn-sm «⬇ CSV» · 37.0 px · CORTO
+  renderCustomersView @390 · A.btn-secondary.btn-sm «⬇ Clientes CSV» · 31.0 px · CORTO
+  renderInvoicesView @390 · A.btn-secondary.btn-sm «⬇ CSV» · 31.0 px · CORTO
+  renderCustomersView @929 · A.contacto-link «admin@fincassoler.es» · 84.7 px · cumple
+  renderCustomersView @929 · A.contacto-link «carmen@ejemplo.es» · 84.7 px · cumple
+  renderCustomersView @929 · A.contacto-link «cp118@ejemplo.es» · 84.7 px · cumple
+  renderExportView @929 · INPUT.export-ds.casilla-tactil-44 «(sin texto)» · 46.0 px · cumple
+  renderExportView @929 · INPUT.export-ds.casilla-tactil-44 «(sin texto)» · 46.0 px · cumple
+  renderExportView @929 · INPUT.export-ds.casilla-tactil-44 «(sin texto)» · 46.0 px · cumple
+  renderExportView @929 · INPUT.export-ds.casilla-tactil-44 «(sin texto)» · 46.0 px · cumple
+  renderExportView @929 · INPUT.export-ds.casilla-tactil-44 «(sin texto)» · 46.0 px · cumple
+  renderExportView @929 · INPUT.export-ds.casilla-tactil-44 «(sin texto)» · 46.0 px · cumple
+  renderJobDetailView @929 · A.detail-rail-enlace «📞 34000000005» · 45.0 px · cumple
+  renderReportsView @929 · A.btn-secondary.btn-sm «⬇ Facturas CSV» · 45.0 px · cumple
+  renderReportsView @929 · A.btn-secondary.btn-sm «⬇ Gastos CSV» · 45.0 px · cumple
+  renderReportsView @929 · A.btn-secondary.btn-sm «⬇ Presupuestos CSV» · 45.0 px · cumple
+  renderReportsView @929 · A.btn-secondary.btn-sm «⬇ Trabajos CSV» · 45.0 px · cumple
+  renderReportsView @929 · A.btn-secondary.btn-sm «⬇ Clientes CSV» · 45.0 px · cumple
+  renderCustomersView @390 · A.contacto-link «34000000001» · 45.0 px · cumple
+  renderCustomersView @390 · A.contacto-link.contacto-link--icono «💬» · 45.0 px · cumple
+  renderCustomersView @390 · A.contacto-link «34000000002» · 45.0 px · cumple
+  renderCustomersView @390 · A.contacto-link.contacto-link--icono «💬» · 45.0 px · cumple
+  renderCustomersView @390 · A.contacto-link «34000000003» · 45.0 px · cumple
+  renderCustomersView @390 · A.contacto-link.contacto-link--icono «💬» · 45.0 px · cumple
+  renderExportView @390 · INPUT.export-ds.casilla-tactil-44 «(sin texto)» · 46.0 px · cumple
+  renderExportView @390 · INPUT.export-ds.casilla-tactil-44 «(sin texto)» · 46.0 px · cumple
+  renderExportView @390 · INPUT.export-ds.casilla-tactil-44 «(sin texto)» · 46.0 px · cumple
+  renderExportView @390 · INPUT.export-ds.casilla-tactil-44 «(sin texto)» · 46.0 px · cumple
+  renderExportView @390 · INPUT.export-ds.casilla-tactil-44 «(sin texto)» · 46.0 px · cumple
+  renderExportView @390 · INPUT.export-ds.casilla-tactil-44 «(sin texto)» · 46.0 px · cumple
+  renderJobDetailView @390 · A.detail-rail-enlace «📞 34000000005» · 45.0 px · cumple
+  renderQuotesListView @390 · A.btn-secondary.btn-sm «⬇ CSV» · 45.0 px · cumple
+  renderReportsView @390 · A.btn-secondary.btn-sm «⬇ Facturas CSV» · 45.0 px · cumple
+  renderReportsView @390 · A.btn-secondary.btn-sm «⬇ Gastos CSV» · 45.0 px · cumple
+  renderReportsView @390 · A.btn-secondary.btn-sm «⬇ Presupuestos CSV» · 45.0 px · cumple
+  renderReportsView @390 · A.btn-secondary.btn-sm «⬇ Trabajos CSV» · 45.0 px · cumple
+  renderReportsView @390 · A.btn-secondary.btn-sm «⬇ Clientes CSV» · 45.0 px · cumple
+
+── DESAPARECIDOS (tiene que ser 0)
+
+── CAMBIAN DE VEREDICTO (cumple↔corto) · 0
+
+── CAMBIAN DE ÁREA ≥ 0,5 px sin cambiar de veredicto · 0
+
+── CAMBIAN DE TEXTO (arreglo 3) · 16
+  renderCustomersView @929 · BUTTON.btn-primary «N» → «Nuevo clienteN» · 37.0 → 37.0 px
+  renderExpensesView @929 · BUTTON.btn-primary.gastos-nuevo «N» → «Nuevo gastoN» · 44.5 → 44.5 px
+  renderExpensesView @929 · BUTTON.gastos-chip «· 0» → «Todos · 0» · 44.6 → 44.6 px
+  renderExpensesView @929 · BUTTON.gastos-chip «· 0» → «Sin foto · 0» · 44.6 → 44.6 px
+  renderHomeView @929 · BUTTON.home-action.home-cta «⚡Nueva cotizaciónN» → «⚡Nueva cotizaciónen 30 segundos · » · 68.9 → 68.9 px
+  renderInvoicesView @929 · BUTTON.btn-primary «N» → «Nueva facturaN» · 37.0 → 37.0 px
+  renderInvoicesView @929 · BUTTON.data-card-tab «(sin texto)» → «Pendientes» · 51.0 → 51.0 px
+  renderQuotesListView @929 · BUTTON.btn-primary «N» → «Nuevo presupuestoN» · 37.0 → 37.0 px
+  renderCustomersView @390 · BUTTON.btn-primary «N» → «Nuevo clienteN» · 45.0 → 45.0 px
+  renderExpensesView @390 · BUTTON.btn-primary.gastos-nuevo «N» → «Nuevo gastoN» · 45.0 → 45.0 px
+  renderExpensesView @390 · BUTTON.gastos-chip «· 0» → «Todos · 0» · 44.7 → 44.7 px
+  renderExpensesView @390 · BUTTON.gastos-chip «· 0» → «Sin foto · 0» · 44.7 → 44.7 px
+  renderHomeView @390 · BUTTON.home-action.home-cta «⚡Nueva cotizaciónN» → «⚡Nueva cotizaciónen 30 segundos · » · 68.7 → 68.7 px
+  renderInvoicesView @390 · BUTTON.btn-primary «N» → «Nueva facturaN» · 45.0 → 45.0 px
+  renderInvoicesView @390 · BUTTON.data-card-tab «(sin texto)» → «Pendientes» · 51.0 → 51.0 px
+  renderQuotesListView @390 · BUTTON.btn-primary «N» → «Nuevo presupuestoN» · 45.0 → 45.0 px
