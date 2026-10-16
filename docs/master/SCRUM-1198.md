@@ -116,3 +116,19 @@ Cualquier otro fallo del envío sigue como estaba: modal abierto y botón encend
 - El primer intento de añadir este apéndice, desde PowerShell, no escribió nada y no dio error: lo dijo el guard de la skill (`scrum811c`), no yo.
 - **El primer empujón salió ROJO en el obligatorio (1 de 10.368): `scrum128-frontend-census`.** Ese guard exige que, tras llamar a una ruta de envío, el resultado se mire en las 20 líneas siguientes. El resultado SE miraba (`sendResult.sent`), pero metí el camino de «sin teléfono» con su comentario entre la llamada y la comprobación, y la empujé fuera de la ventana. Arreglado en el código: ese camino va a una función (`avisarGuardadoSinTelefono`) y la comprobación vuelve a estar pegada a la llamada. El guard no se ha tocado. No lo corrí en local antes de empujar: no estaba entre los vecinos que elegí a mano.
 - Lo que NO era: el aviso no se pintaba para cualquier fallo. Sólo `customer_missing_phone` cierra y avisa; con otro fallo el modal sigue abierto y ese texto no sale (caso «CONTROL NEGATIVO» del test, verde desde el primer empujón). Con otro fallo se sigue leyendo lo de antes, «API 500: …»: es un defecto anterior, su texto sería nuevo y no se ha escrito.
+
+## Rescate del borrador local (16-oct-2026, S3, por orden del orquestador)
+
+**Medido contra:** `origin/main` = `3cbea839eec138891d68ee0c0554c646ed369b04` · 2026-10-16T11:41:06Z
+
+El árbol compartido tenía, sin seguir, un borrador anterior del apéndice de arriba. Casi todo está
+aquí ya, en su versión posterior. Estas dos frases no estaban ni en `main` ni en ningún objeto de git; se
+copian literales, sin juzgar si siguen siendo ciertas (contexto: `docs/rescate/arbol-compartido-16oct/`).
+
+De «Límites»:
+- El 400 del envío lo dio la sonda, no el servidor. Que el servidor contesta ese código está medido el 1-oct (comentario 17914).
+
+De «Errores propios de esta tanda»:
+- Di por buena la frase del encargo «la firma está en el ticket» y fui a leerla después de medir, no antes: no estaba. Lo que lo cazó fue leer el ticket antes de escribir el literal en el código.
+
+A9: sin fallo que generalice — es un rescate literal de texto ajeno, no trabajo de esta sesión
