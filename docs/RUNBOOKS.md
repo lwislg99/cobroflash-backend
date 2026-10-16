@@ -863,3 +863,25 @@ Repetir una orden no crea nada nuevo. Salidas: 0 hecho · 1 NO PUDE (lo dice) ·
 | `node scripts/qa/sembrar-albaranes.mjs sin-movil` | (SCRUM-1367c) Un cliente PROPIO, «Cliente sin móvil de pruebas QA», sin móvil ni teléfono, con su Trabajo y un albarán emitido. Emitirlo gasta un número ALB. | No usa el cliente #84. **Si alguien le pone un número al cliente, la orden se niega** sin escribir: ya no es el caso. No firma. |
 
 Ninguna de las tres factura, cobra ni envía. Una factura en la cuenta QA sigue sin caso: emitirla es el camino fiscal y no entra por un sembrador.
+
+## R25 · Firmar en la cuenta de QA: un parte y un albarán, con seis condiciones (SCRUM-1367g)
+
+**Decidido por el orquestador de Luis el 16-oct-2026**, con la delegación que el fundador le dio ese día («NO SE que dices de las firmas hazlo tú»). **Por qué se puede:** en la cuenta de QA no hay clientes reales, así que el daño es cero. Lo que faltaba no era seguridad, era permiso. Sin esta regla seguían parados la carrera de las dos firmas del parte (SCRUM-1302s, verificada por CI y nunca en producción), su gemela del albarán y `privacidad:92` de SCRUM-1236.
+
+Se puede firmar **un parte y un albarán** en `luisdragonball+qa@gmail.com` (merchant 46) si se cumplen **las seis** condiciones:
+
+1. **Sólo esa cuenta, y sólo sobre documentos que ha creado el equipo.** Nunca `demo@yaqu.app` (regla 8) ni la cuenta de nadie.
+2. **Antes de firmar se anotan el id y el estado del documento.** Firmar no tiene vuelta atrás: sin el «antes» no queda qué contar.
+3. **Un documento firmado no se intenta borrar ni editar.** La regla 29 vale igual en QA. Se deja como está y se nombra en el registro.
+4. **Un documento por medida, con su gemelo SIN firmar al lado como control.** Así «sale bien» distingue el arreglo de que, sin más, no haya fallado nada.
+5. **NUNCA una factura.** R25 cubre partes y albaranes, que no emiten a Hacienda. Emitir una factura sigue siendo STOP del fundador (reglas 24, 26 y 29).
+6. **En el registro del ticket va qué se firmó (tipo e id), con qué cuenta, a qué hora (la de GitHub, A14) y qué se midió.** Sin registro, la firma no cuenta como medida.
+
+**Qué firma entra: la del panel**, `POST /admin/partes/:id/firmar`, `POST /admin/partes/:id/firmar-tecnico` y `POST /admin/albaranes/:id/firmar`. Leído el 16-oct-2026 sobre `555c65fa9`: ninguno de los tres handlers llama a un envío. Es la misma firma que hace `sembrar-albaranes.mjs firmado` (R24), y esa orden queda cubierta por esta regla.
+
+**Lo que R25 NO cubre:**
+
+* 🔴 **Firmar por el ENLACE PÚBLICO del albarán** (`POST /:token/firmar`, en `albaranPublic.routes.ts`). **Queda fuera para siempre, no «de momento»** (decisión del orquestador, 16-oct-2026). Ese handler llama solo a `sendAlbaranFirmadoWhatsApp` (SCRUM-49). Firmar por ahí no es sólo firmar: **es firmar Y mandar un WhatsApp de verdad a un teléfono de verdad, y eso cuesta dinero.** R25 autoriza firmar. Un envío no lo puede autorizar el orquestador: es dinero y es la regla 28 (J6). **Lo decide el fundador.**
+* Enviar la copia firmada (`POST /admin/albaranes/:id/enviar-whatsapp`): es otra orden, manual.
+* Facturar el parte o el albarán ya firmado: eso sí es emitir.
+* Firmar con el perfil fiscal vacío: la razón social y el NIF entran en el hash de la firma (R24, `perfil-fiscal`).
