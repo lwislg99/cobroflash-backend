@@ -263,6 +263,19 @@ export async function sendQuoteEmail(args: { quoteId: number; prisma: PrismaClie
     return { ok: true, resend: true, acuseId: r.acuse?.id ?? null };
   }
 
+  // 🔴 SCRUM-1558 · EN PRODUCCIÓN, UN `.eml` EN DISCO NO ES UN ENVÍO. Sin Resend ni SMTP, lo de
+  // abajo escribe el correo en el outbox y devuelve `ok`, y la pantalla decía «enviado» de un
+  // presupuesto que no había salido. La variable que falta es la CONDICIÓN; la decisión de contar
+  // un fichero como un envío es de este código. Fuera de producción el outbox sigue igual.
+  if (config.NODE_ENV === 'production' && !config.SMTP_URL) {
+    await registrarEnvio({
+      contexto: registro,
+      to: toEmail,
+      constancia: constanciaDeFallo({ code: 'sin_transporte', message: 'no hay transporte configurado' }),
+    });
+    throw new Error('sin_transporte');
+  }
+
   // Dev sin Resend: SMTP o .eml a outbox (mismo patrón que sendInvoiceEmail)
   const transporter: nodemailer.Transporter = config.SMTP_URL
     ? nodemailer.createTransport(config.SMTP_URL)

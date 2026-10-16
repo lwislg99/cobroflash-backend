@@ -57,8 +57,11 @@ function generateToken() {
 // RESEND_API_KEY ni SMTP_URL — ahí el log es la única forma de entrar) o con
 // LOG_MAGIC_LINKS=true explícito, env var que NO existe en producción. En prod
 // (Resend configurado) el token jamás toca los logs de Railway.
+// 🔴 SCRUM-1558 · y en producción la AUSENCIA de correo ya no lo abre: era la misma condición que
+// convertía un `.eml` en «enviado», y aquí dejaba una credencial en el log justo cuando nadie la
+// iba a recibir. Queda sólo el interruptor explícito, que alguien tiene que escribir a propósito.
 function logMagicLink(tag: string, to: string, link: string) {
-  const emailDisabled = !config.RESEND_API_KEY && !config.SMTP_URL;
+  const emailDisabled = !config.RESEND_API_KEY && !config.SMTP_URL && config.NODE_ENV !== 'production';
   if (emailDisabled || process.env.LOG_MAGIC_LINKS === 'true') {
     console.log(`[${tag}] to=${to} link=${link}`);
   }
