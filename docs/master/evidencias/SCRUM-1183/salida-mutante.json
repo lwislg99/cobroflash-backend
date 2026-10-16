@@ -1,0 +1,180 @@
+{
+ "modo": "mutante",
+ "veces": 3,
+ "out": [
+  {
+   "p": "/x/charges.csv",
+   "status": 200,
+   "cuerpo": "Cobro #;Fecha;Cliente;Concepto;Importe;Moneda;Método (paid_via);Estado;Cobrado en;Referencia\r\n1;2026-02-10;Ana;;0,00;;bizum;paid;2026-02-10;",
+   "llamadas": [
+    {
+     "modelo": "charge",
+     "where": {
+      "merchantId": 7
+     }
+    }
+   ]
+  },
+  {
+   "p": "/x/charges.csv?from=2026-01-01&to=2026-03-31",
+   "status": 200,
+   "cuerpo": "Cobro #;Fecha;Cliente;Concepto;Importe;Moneda;Método (paid_via);Estado;Cobrado en;Referencia\r\n1;2026-02-10;Ana;;0,00;;bizum;paid;2026-02-10;",
+   "llamadas": [
+    {
+     "modelo": "charge",
+     "where": {
+      "merchantId": 7,
+      "createdAt": {
+       "gte": "2026-01-01T00:00:00.000Z",
+       "lte": "2026-03-31T21:59:59.999Z"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "p": "/x/charges.csv?status=paid&from=2026-01-01",
+   "status": 200,
+   "cuerpo": "Cobro #;Fecha;Cliente;Concepto;Importe;Moneda;Método (paid_via);Estado;Cobrado en;Referencia\r\n1;2026-02-10;Ana;;0,00;;bizum;paid;2026-02-10;",
+   "llamadas": [
+    {
+     "modelo": "charge",
+     "where": {
+      "merchantId": 7,
+      "status": "paid",
+      "createdAt": {
+       "gte": "2026-01-01T00:00:00.000Z"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "p": "/x/jobs.csv",
+   "status": 200,
+   "cuerpo": "Trabajo #;Título;Estado;Cliente;Operario;Fecha prevista;Total aceptado;Total cobrado;Pendiente;Estado de cobro;Alta\r\n2;t;done;;;2026-02-10;5,00;5,00;0,00;Pagado;2026-02-10",
+   "llamadas": [
+    {
+     "modelo": "job",
+     "where": {
+      "merchantId": 7
+     }
+    },
+    {
+     "modelo": "customer",
+     "where": {
+      "merchantId": 7
+     }
+    },
+    {
+     "modelo": "teamMember",
+     "where": {
+      "merchantId": 7
+     }
+    }
+   ]
+  },
+  {
+   "p": "/x/jobs.csv?from=2026-01-01&to=2026-03-31",
+   "status": 200,
+   "cuerpo": "Trabajo #;Título;Estado;Cliente;Operario;Fecha prevista;Total aceptado;Total cobrado;Pendiente;Estado de cobro;Alta\r\n2;t;done;;;2026-02-10;5,00;5,00;0,00;Pagado;2026-02-10",
+   "llamadas": [
+    {
+     "modelo": "job",
+     "where": {
+      "merchantId": 7,
+      "scheduledAt": {
+       "gte": "2026-01-01T00:00:00.000Z",
+       "lte": "2026-03-31T21:59:59.999Z"
+      }
+     }
+    },
+    {
+     "modelo": "customer",
+     "where": {
+      "merchantId": 7
+     }
+    },
+    {
+     "modelo": "teamMember",
+     "where": {
+      "merchantId": 7
+     }
+    }
+   ]
+  },
+  {
+   "p": "/x/jobs.csv?status=done&to=2026-03-31",
+   "status": 200,
+   "cuerpo": "Trabajo #;Título;Estado;Cliente;Operario;Fecha prevista;Total aceptado;Total cobrado;Pendiente;Estado de cobro;Alta\r\n2;t;done;;;2026-02-10;5,00;5,00;0,00;Pagado;2026-02-10",
+   "llamadas": [
+    {
+     "modelo": "job",
+     "where": {
+      "merchantId": 7,
+      "status": "done",
+      "scheduledAt": {
+       "lte": "2026-03-31T21:59:59.999Z"
+      }
+     }
+    },
+    {
+     "modelo": "customer",
+     "where": {
+      "merchantId": 7
+     }
+    },
+    {
+     "modelo": "teamMember",
+     "where": {
+      "merchantId": 7
+     }
+    }
+   ]
+  },
+  {
+   "p": "/x/quotes.csv",
+   "status": 200,
+   "cuerpo": "ID;Fecha;Cliente;Email;Teléfono;Total;Moneda;Estado;Aceptada en;Condiciones de pago\r\n3;2026-02-10;Ana;;;7,00;EUR;accepted;2026-02-10;",
+   "llamadas": [
+    {
+     "modelo": "quote",
+     "where": {
+      "merchantId": 7
+     }
+    }
+   ]
+  },
+  {
+   "p": "/x/quotes.csv?from=2026-01-01&to=2026-03-31",
+   "status": 200,
+   "cuerpo": "ID;Fecha;Cliente;Email;Teléfono;Total;Moneda;Estado;Aceptada en;Condiciones de pago\r\n3;2026-02-10;Ana;;;7,00;EUR;accepted;2026-02-10;",
+   "llamadas": [
+    {
+     "modelo": "quote",
+     "where": {
+      "merchantId": 7,
+      "createdAt": {
+       "gte": "2026-01-01T00:00:00.000Z",
+       "lte": "2026-03-31T21:59:59.999Z"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "p": "/x/quotes.csv?status=accepted",
+   "status": 200,
+   "cuerpo": "ID;Fecha;Cliente;Email;Teléfono;Total;Moneda;Estado;Aceptada en;Condiciones de pago\r\n3;2026-02-10;Ana;;;7,00;EUR;accepted;2026-02-10;",
+   "llamadas": [
+    {
+     "modelo": "quote",
+     "where": {
+      "merchantId": 7,
+      "status": "accepted"
+     }
+    }
+   ]
+  }
+ ]
+}

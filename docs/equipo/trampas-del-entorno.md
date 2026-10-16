@@ -72,6 +72,30 @@ ausente**. Se borra en cada comando (A6) y se escribe en la primera línea de ca
 - **`gh run view --log` no da el log de un job mientras el run sigue vivo.** → `gh api
   --allow-escape-sequences repos/<dueño>/<repo>/actions/jobs/<id>/logs`.
 - **Una lista de PR ABIERTOS vacía no distingue «nunca se abrió» de «se abrió y ya entró».** → `--state all`.
+- 🔴 **`BLOCKED` no es «atascado».** `mergeStateStatus` escribe la MISMA palabra para tres situaciones
+  distintas, y sólo una de ellas pide hacer algo (SCRUM-951f). A S2 le costó dos días no saberlo. Lo
+  que las separa es la conclusión del check obligatorio, `build + tests (con banco desechable)`, sobre
+  la punta del PR:
+
+  | conclusión del obligatorio | qué es | qué se hace |
+  |---|---|---|
+  | **vacía** (`QUEUED` o `IN_PROGRESS`), con `mergeable=MERGEABLE` | ① **no ha terminado**. No hay nada atascado: así estaban #2500, #2510 y #2511 a las 11:31Z del 16-oct-2026 (medido por el orquestador), y #2506, #2508, #2511, #2512 y #2513 a las 11:50Z (medido por la S0) | nada. No se relanza ni se empuja |
+  | **`FAILURE`** | ② **falló**. Esto sí bloquea | se lee el log y se clasifica antes de culpar al diff. #2505 a las 11:32Z del 16-oct: 1 fallo de 11.634, `1405c ④` con heap OOM, y el diff eran dos `.md`. Se relanza el job cuando GitHub deja: con el run vivo contesta «already running» |
+  | **`SUCCESS`** y sigue `BLOCKED` | ③ **el caso raro**: #2449 el 15-oct-2026 a las 15:35Z (medido por el orquestador). **SIGUE SIN EXPLICAR** | se busca la causa con `merge-tree` (abajo), sin dar ninguna por buena antes |
+
+  ⚠️ El vigía tiene la misma confusión. `causaDelAtasco` (`scripts/vigia-atascados.mjs`, carril S5)
+  devuelve `ESPERANDO`, «esperando a que pase el check obligatorio», para todo `BLOCKED` sin rojo, y
+  eso incluye el caso ③.
+
+  **`mergeStateStatus` no dice POR QUÉ; `git merge-tree` sí.** `git merge-tree --write-tree --name-only
+  origin/main <punta del PR>` (git ≥ 2.38; en la máquina de Luis, 2.51) sale con **0** si el merge es
+  limpio, y entonces imprime sólo el árbol. Sale con **1** si hay conflicto, y entonces nombra cada
+  fichero. Medido el 16-oct-2026: un conflicto fabricado da 1 y nombra `a.txt`; #2512 da 0.
+
+  🔴 **Y la trampa no es sólo de la palabra.** El orquestador cerró el caso ③ con una causa que sólo
+  explicaba un suceso POSTERIOR: un conflicto con la rama hermana #2498, que la noche anterior aún no
+  estaba en `main`. S2 le contestó «eso no lo explica», y tenía razón. Una causa que encaja con lo
+  último que viste no está cerrada hasta que explica también lo primero.
 - **Un push hecho con el token de un bot no dispara los checks**, y el auto-merge espera para siempre: se
   empuja con cuenta de persona. Si un PR se queda sin checks, mirar primero las ejecuciones en
   `action_required`.

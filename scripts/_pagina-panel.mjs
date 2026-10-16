@@ -31,9 +31,17 @@ export function serializar(n) {
   if (n.type) at.push(`type="${esc(n.type)}"`);
   if (n.checked) at.push('checked');
   if (n.disabled) at.push('disabled');
-  const css = (n.style && n.style.cssText) || '';
-  const disp = (n.style && n.style.display) || '';
-  const junto = [css, disp ? `display:${disp}` : ''].filter(Boolean).join(';');
+  // 🔴 SCRUM-1158 (cara 2) · antes salían sólo `cssText` y `display`. Pero el banco NO mantiene
+  // `cssText`: un `style="min-height:44px"` del marcado se reparte en propiedades sueltas
+  // (`setAttribute`, SCRUM-1038) y un `el.style.minHeight` por JS también, y ninguna llegaba a la
+  // página. Medido sobre f4910603: 876 declaraciones perdidas en 16 de 18 vistas, 824 del MARCADO
+  // (`docs/master/evidencias/scrum1158/censo-estilos-perdidos.mjs`). Ahora sale cada propiedad.
+  const decl = [];
+  for (const [k, v] of Object.entries(n.style || {})) {
+    if (k === 'cssText' || typeof v !== 'string' || v === '') continue;
+    decl.push(`${k.replace(/[A-Z]/g, (c) => '-' + c.toLowerCase())}:${v}`);
+  }
+  const junto = [(n.style && n.style.cssText) || '', ...decl].filter(Boolean).join(';');
   if (junto) at.push(`style="${esc(junto)}"`);
   for (const [k, v] of Object.entries(n._attrs || {})) {
     if (['class', 'id', 'type', 'style'].includes(k)) continue;

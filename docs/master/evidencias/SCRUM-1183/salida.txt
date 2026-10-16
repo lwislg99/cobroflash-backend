@@ -1,0 +1,9 @@
+﻿# Date: Fri, 16 Oct 2026 11:26:19 GMT · origin/main 7e53b1474096bde7aa23898d9f30caf2097b5d70 · dist compilado con src/modules/exports idéntico a main
+base · peticiones 9 · estados 200,200,200,200,200,200,200,200,200 · llamadas 15
+mutante · peticiones 9 · estados 200,200,200,200,200,200,200,200,200 · llamadas 15
+control · peticiones 9 · estados 200,200,200,200,200,200,200,200,200 · llamadas 15
+base vs mutante · 9 peticiones · idénticas 9 · distintas 0
+jobs.csv con rango → where que llega a prisma.job: {"merchantId":7,"scheduledAt":{"gte":"2026-01-01T00:00:00.000Z","lte":"2026-03-31T21:59:59.999Z"}}
+charges.csv status+from → where: {"merchantId":7,"status":"paid","createdAt":{"gte":"2026-01-01T00:00:00.000Z"}}
+quotes.csv status → where: {"merchantId":7,"status":"accepted"}
+base vs control · 9 peticiones · idénticas 6 · distintas 3: /x/charges.csv?status=paid&from=2026-01-01 /x/jobs.csv?status=done&to=2026-03-31 /x/quotes.csv?status=accepted

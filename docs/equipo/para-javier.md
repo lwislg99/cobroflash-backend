@@ -329,3 +329,21 @@ El fundador preguntó el **13-oct** qué falta para que nuestro software mande a
 4. **Sólo entonces** tiene sentido que lo intentemos: a una sesión nuestra de S1 ya le **denegaron** editar `cron.ts` el 13-oct («Production Deploy»), e intentarlo hoy en rama propia daría un PR rojo por vuestro guard.
 
 🔴 **Y un dato de diseño que sale de esto y que conviene que miréis antes de cerrar el PR-2:** el bloque pide **cada minuto** (`* * * * *`, de vuestro c.19344). **Sería el primer cron de la casa por debajo de una hora** — las seis programaciones de hoy son `0 * * * *`, `0 10 * * *` (×2), `0 9 * * 1`, `0 8 * * *` y `15 3 * * *`. **Y `noOverlap` no protege entre PROCESOS**: con varias réplicas corriendo crons en producción, dos podrían reintentar el mismo sellado a la vez. **Eso no está medido por nadie.**
+
+## 16 🔴 LAS TRES FRASES DE LA LANDING: FIRMADAS. El fichero es vuestro, así que las aplicáis vosotros
+
+**Qué es esto.** De los cuatro textos falsos de `public/index.html` que levantó SCRUM-1236, **dos los firmó el fundador el 14-oct** (c.19607 y c.19608) y están esperando que los apliquéis. **Las otras tres las ha firmado el orquestador de Luis hoy**, 16-oct-2026, **con delegación expresa del fundador**:
+
+> **«NO SE que dices de las fimas hazlo tu ni lo del movil»** — turno del fundador, 16-oct-2026, transcripción `ed676fd1-feb4-4658-bda2-01f4bf9fb3fc`.
+
+**No son tres arreglos iguales: cada una tiene un motivo distinto, y uno de los tres es NO tocarla todavía.**
+
+| # | línea | qué dice hoy | qué se hace | por qué |
+|---|---|---|---|---|
+| 1 | `index.html:739` | «Únete a los profesionales que cierran más trabajos sin perseguir presupuestos.» | **SE QUITA el `<p>` entero** | Es prueba social, y **hoy no hay ni un cliente**. No se reescribe: **se quita**. Quitar no necesita ninguna palabra nueva firmada, y el `<h2>` «Tu próxima cotización, lista en 30 segundos» con el botón «Empezar gratis» se sostienen solos. Cuando haya profesionales, vuelve con una cifra detrás. |
+| 2 | `index.html:638` | «Cobros — Tarjeta, Bizum o transferencia. Cobra trabajos completos o por adelantado…» | **NO se toca hoy: va a la PUERTA DE GO-LIVE (SCRUM-1554)** | Es falsa **sólo porque lo que promete no está encendido todavía** (Stripe Connect, y en España `INVOICING_ES_ENABLED` en OFF). Eso es exactamente lo que la regla 43 manda agrupar y firmar en bloque antes de vender, **en vez de interrumpir al fundador frase a frase**. ⚠️ **Pero que no se pierda: con el cobro apagado, la tarjeta Y el Bizum Y la transferencia son promesa, no producto.** |
+| 3 | `index.html:432` | `aria-label="Demostración: de presupuesto a cobro"` | **Pasa a `aria-label="Demostración: de presupuesto a firma"`** | **Ésta sí se arregla hoy, y no depende del go-live.** La demo que hay DENTRO de ese bloque termina en «Firmado. Presupuesto cerrado.» — sus cuatro tiempos son 30 s, WhatsApp, firma y cerrado. **No llega a ningún cobro.** O sea: no es una promesa de producto, es una etiqueta que no describe lo que hay debajo de ella. **Las palabras nuevas no afirman nada nuevo: dicen lo que ya se ve.** |
+
+🔴 **Lo que NO es esto.** No es una propuesta: las tres están decididas. **Lo que sí es vuestro es el fichero** — `public/index.html` es de J3 por `dos-equipos.md` — y por eso ninguna sesión nuestra lo toca. **Si alguna os parece mal, decidlo y se discute; pero no se queda a medias por silencio.**
+
+· **Y una del mismo fichero que ya os pasamos y sigue abierta: el salto de la landing a 360 px (sección 12), con la causa declarada DESCONOCIDA** y la contraprueba dentro (sigue dando 0,125 **con la barra escondida**, así que la barra no lo explica). **El fundador también nos delegó «lo del móvil» en el mismo turno, y nuestra decisión es ésta: no lo perseguimos más, porque es vuestro fichero y nuestra medida ya está entregada entera.** **Si queréis nuestro banco para reproducirlo, os lo pasamos.**
