@@ -142,3 +142,12 @@ animación `.reveal`, que tiene opacidad 0 hasta que la tarjeta entra en pantall
 tras el scroll, `.reveal.in`, o=1). Ahora la sonda recorre la página antes de mirar y cuenta los
 `.reveal` sin disparar fuera de `hidden` (0). **Quien mida la visibilidad de la landing con
 `checkVisibility({checkOpacity})` sin recorrerla dará por invisible todo lo que esté bajo el pliegue.**
+
+## El rojo de #2500 era mío (16-oct-2026, S3)
+
+`d64ed0ac` cayó en `build + tests` (15-oct 18:15Z) por **un solo** test: `scrum710b` · «los anclajes
+por NÚMERO DE LÍNEA no crecen» — `tests/scrum1158b-serializar-no-pierde-estilos.test.mjs cobrosView.js
+(declarados 0, hay 1)`. Mi test citaba las pestañas de Cobros por su línea. El meta-guard cayó por lo
+mismo (lo da «CIEGO» porque `scrum710b` ya falla en la limpia). No era `scrum1405c ④`.
+Arreglo: la cita nombra lo que la cosa ES (los botones `data-filtro-cobro` de `cobrosView.js`). Con
+`origin/main` mezclado, `scrum710b` + `scrum1158b`: 17/17. El rojo es el de CI sobre `d64ed0ac`.

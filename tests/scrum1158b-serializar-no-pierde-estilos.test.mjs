@@ -7,7 +7,8 @@
 // marcado se reparte en propiedades sueltas y un `el.style.minHeight = '44px'` también. Medido sobre
 // f4910603 con `docs/master/evidencias/scrum1158/censo-estilos-perdidos.mjs`: 876 declaraciones
 // perdidas en 16 de 18 vistas, 824 del marcado. En `censo:tactil-panel` eso daba por cortas las
-// pestañas de Cobros (`cobrosView.js:514`, `minHeight` 44 por JS) y escondía cortos de verdad.
+// pestañas de Cobros (los botones `data-filtro-cobro` de `cobrosView.js`, `minHeight` 44 por JS)
+// y escondía cortos de verdad.
 //
 // El nodo sin estilo es el CONTROL: si `serializar` inventara un `style` para todo, cae su caso.
 import test from 'node:test';
@@ -25,7 +26,7 @@ test('CONTROL · un elemento sin estilos se sirve sin atributo style', () => {
   assert.equal(estiloServido(nodo('button', reg())), null);
 });
 
-test('min-height puesto por JS (el caso de cobrosView.js:514) llega a la página', () => {
+test('min-height puesto por JS (las pestañas data-filtro-cobro de Cobros) llega a la página', () => {
   const b = nodo('button', reg());
   b.style.minHeight = '44px';
   assert.match(estiloServido(b) || '', /(^|;)min-height:44px(;|$)/, serializar(b));
