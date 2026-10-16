@@ -549,6 +549,15 @@ export function nodo(tag, reg) {
         n.dataset[clave.slice(5).replace(/-([a-z])/g, (_, c) => c.toUpperCase())] = String(v);
       }
     },
+    // 🔴 SCRUM-1158 · `hidden` ES el atributo, en los DOS sentidos, como en el navegador. Antes no
+    // existía: `el.hidden = true` dejaba un campo suelto que `serializar` no emite, y un `<span
+    // hidden>` del marcado daba `.hidden === undefined`. Medido sobre 73e41ab0 con
+    // `docs/master/evidencias/scrum1158/censo-hidden-desacorde.mjs`: 23 elementos que el producto
+    // oculta salían VISIBLES en la página que miden los guards de navegador (17 interactivos dentro).
+    // Y la dirección peor —nace `hidden` en el marcado, el producto lo enseña con `.hidden = false`
+    // y el banco lo seguía ocultando— es la que da VERDES: el guard no ve lo que el usuario sí.
+    get hidden() { return Object.prototype.hasOwnProperty.call(n._attrs, 'hidden'); },
+    set hidden(v) { if (v) n._attrs.hidden = ''; else delete n._attrs.hidden; },
     getAttribute: (k) => (Object.prototype.hasOwnProperty.call(n._attrs, String(k)) ? n._attrs[String(k)] : null),
     hasAttribute: (k) => Object.prototype.hasOwnProperty.call(n._attrs, String(k)),
     removeAttribute(k) { delete n._attrs[String(k)]; },

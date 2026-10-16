@@ -11,9 +11,11 @@
 // número no se puede decidir si se toca una clase compartida.
 //
 // ── POR QUÉ ES UN CENSO Y NO UN GUARD ───────────────────────────────────────────────────────
-// Medir es barato; VIGILAR cuesta segundos en cada PR, y el total de guards de navegador ya está
-// bajo vigilancia (`npm run censo:guards-navegador`). Esto se ejecuta cuando alguien quiere el
-// número, no en cada tanda. Qué superficies merecen entrar al guard lo decide el asesor.
+// Medir es barato; VIGILAR cuesta segundos en cada PR. Lo que cuestan juntos los guards de navegador
+// lo CUENTA `npm run censo:guards-navegador`, a mano: no está en ningún workflow, así que no es
+// vigilancia (SCRUM-1178). Este censo, en cambio, corre en CADA PR desde SCRUM-1179-C, en el job
+// informativo de guards de navegador: cuenta y deja su número en el resumen, y NO bloquea nada.
+// Qué superficies merecen entrar al guard lo decide el asesor.
 //
 // ── EL ÁRBITRO ES EL DEL GUARD, NO UNA COPIA ────────────────────────────────────────────────
 // Se importa `FUENTE_MEDIDOR` de `_medidor-de-toque.mjs`, que instala `window.__areaDeToque` y

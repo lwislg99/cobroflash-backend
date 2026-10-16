@@ -72,6 +72,8 @@ const SIN_PROBAR_CONOCIDOS = [
   'tests/scrum1007-1011-1026-relevo-lanzar-bloqueo.test.mjs',
   // SCRUM-1089b: `copiarSkillsA()` cuelga de `temporal()` (tests/_temporal.mjs), mismo caso que 951d.
   'tests/scrum1089b-espejo-skills-agentes.test.mjs',
+  // SCRUM-1178: su `bancoHuerfano()` cuelga de `temporal()` (tests/_temporal.mjs), mismo caso que 951d.
+  'tests/scrum1178b-la-marca-no-revierte.test.mjs',
   // SCRUM-1298: su `banco()` cuelga de `temporal()` (tests/_temporal.mjs), mismo caso que 951d.
   'tests/scrum1298-mesa-por-puesto.test.mjs',
   // SCRUM-1540: su remoto de juguete cuelga de `fs.mkdtempSync(path.join(os.tmpdir(), …))`, y `juguete(dir)`

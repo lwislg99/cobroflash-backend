@@ -3,6 +3,7 @@
 // LA PIEZA UNICA. Ver la cabecera del bloque de abajo.
 import fs from 'node:fs';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -101,11 +102,15 @@ export function marcasHuerfanas(raizCache = path.join(RAIZ, '.cache')) {
     let viva = false;
     try { process.kill(datos.pid, 0); viva = true; } catch { viva = false; }
     if (viva) continue; // hay una pasada trabajando: no es un defecto
-    const sucias = (datos.piezas || []).filter((p) => {
-      try { return Buffer.compare(fs.readFileSync(p.abs), fs.readFileSync(p.copia)) !== 0; }
-      catch { return true; }
-    }).map((p) => p.ruta);
-    if (sucias.length) out.push({ herramienta: nombre, ilegible: false, sucias, pid: datos.pid, cuando: datos.cuando });
+    const sucias = [];
+    const ajenas = []; // SCRUM-1178 · difiere, y NO es una mutación apuntada: el remedio no la pisará
+    for (const p of datos.piezas || []) {
+      const e = estadoDePieza(p);
+      if (e === 'original') continue;
+      sucias.push(p.ruta);
+      if (e === 'ajena') ajenas.push(p.ruta);
+    }
+    if (sucias.length) out.push({ herramienta: nombre, ilegible: false, sucias, ajenas, pid: datos.pid, cuando: datos.cuando });
   }
   return out;
 }
@@ -164,11 +169,58 @@ export function marcarEnVuelo(piezas, dir) {
   const apuntes = piezas.map((p, i) => {
     const copia = path.join(dir, `pieza-${i}.bin`);
     fs.writeFileSync(copia, p.ORIGINAL);
-    return { ruta: p.ruta, abs: p.abs, copia };
+    return { ruta: p.ruta, abs: p.abs, copia, mutaciones: [] };
   });
   fs.writeFileSync(path.join(dir, MANIFIESTO),
     JSON.stringify({ pid: process.pid, cuando: new Date().toISOString(), piezas: apuntes }, null, 2));
   return apuntes;
+}
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 SCRUM-1178 · LA MARCA APUNTA QUÉ ESCRIBE, NO SÓLO QUÉ HABÍA.
+ *
+ * Hasta aquí la marca guardaba el ORIGINAL y nada más, y `restaurarDesdeMarca` devolvía la copia
+ * en cuanto los bytes diferían. «Difiere» no distingue «mi mutación sigue puesta» de «alguien
+ * trabajó encima después»: con una marca huérfana VIEJA, el remedio que propone `guards:entrada`
+ * REVERTÍA el fichero. Medido en `wt-s3-1293`: una marca del 1-oct habría devuelto `homeView.js`
+ * a 75.033 B con `main` en 85.825 B. Sin un error: no falla, obedece.
+ *
+ * Por eso cada escritura de una mutación se APUNTA antes de hacerse (la huella de sus bytes), y
+ * la restauración sólo escribe si lo que hay es EXACTAMENTE una de ellas. Lo demás es AJENO y no
+ * se pisa — tampoco con una marca del formato de antes, que no sabe qué escribió: fail-closed.
+ *
+ * Va ANTES de `writeFileSync` a propósito: si el proceso muere entre los dos, lo que hay es el
+ * original (nada que hacer); al revés, la mutación quedaría puesta sin apuntar y se denunciaría
+ * como ajena, sin repararse.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ */
+export function apuntarMutacion(dir, abs, bytes) {
+  const man = path.join(dir, MANIFIESTO);
+  const datos = JSON.parse(fs.readFileSync(man, 'utf8'));
+  const p = (datos.piezas || []).find((x) => x.abs === abs);
+  if (!p) throw new Error(`\`${abs}\` no está en la marca de \`${dir}\`: no se puede apuntar su mutación`);
+  const h = huella(Buffer.isBuffer(bytes) ? bytes : Buffer.from(bytes, 'utf8'));
+  p.mutaciones = [...(p.mutaciones || []).filter((x) => x !== h), h];
+  fs.writeFileSync(man, JSON.stringify(datos, null, 2));
+}
+
+function huella(buf) {
+  return createHash('sha256').update(buf).digest('hex');
+}
+
+/**
+ * Qué hay hoy en el sitio de una pieza: `original` (coincide con su copia), `mutada` (es una de
+ * las mutaciones apuntadas: se puede devolver) o `ajena` (otra cosa, o no existe, o no se puede
+ * leer: no se toca). Fail-closed: lo que no se sabe es `ajena`, nunca `mutada`.
+ */
+function estadoDePieza(p) {
+  let copia;
+  let actual;
+  try { copia = fs.readFileSync(p.copia); } catch { return 'ajena'; }
+  try { actual = fs.readFileSync(p.abs); } catch { return 'ajena'; }
+  if (Buffer.compare(actual, copia) === 0) return 'original';
+  return Array.isArray(p.mutaciones) && p.mutaciones.includes(huella(actual)) ? 'mutada' : 'ajena';
 }
 
 /** Retira la marca. Sólo se llama cuando la restauración ha CUADRADO por bytes. */
@@ -255,10 +307,21 @@ export function restaurarDesdeMarca(dir, vivo = procesoVivo) {
 
   const reparadas = [];
   const sucios = [];
+  const ajenos = [];
   for (const p of datos.piezas || []) {
     try {
       const copia = fs.readFileSync(p.copia);
-      if (fs.existsSync(p.abs) && Buffer.compare(fs.readFileSync(p.abs), copia) === 0) continue;
+      const estado = estadoDePieza(p);
+      if (estado === 'original') continue;
+      if (estado === 'ajena') {
+        // 🔴 SCRUM-1178 · no es una mutación que esta marca apuntara: o alguien trabajó encima
+        // después, o la marca es de antes de las huellas y no sabe qué escribió. No se adivina.
+        ajenos.push(p.ruta);
+        sucios.push(`${p.ruta} (NO lo piso: lo que hay no es el original ni ninguna mutación que `
+          + `esta marca apuntara. Si lo de ahora es lo bueno, borra la marca \`${dir}\`; si no, la `
+          + `copia de entonces está en \`${p.copia}\`)`);
+        continue;
+      }
       fs.writeFileSync(p.abs, copia);
       if (Buffer.compare(fs.readFileSync(p.abs), copia) !== 0) { sucios.push(p.ruta); continue; }
       reparadas.push(p.ruta);
@@ -268,5 +331,5 @@ export function restaurarDesdeMarca(dir, vivo = procesoVivo) {
   }
   // La marca sólo se retira si NO queda nada sucio: mientras quede, es la evidencia.
   if (!sucios.length) borrarMarca(dir);
-  return { habia: true, reparadas, sucios, cuando: datos.cuando, pid: datos.pid };
+  return { habia: true, reparadas, sucios, ajenos, cuando: datos.cuando, pid: datos.pid };
 }

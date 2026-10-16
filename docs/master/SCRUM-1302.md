@@ -768,3 +768,40 @@ A9: aviso → cicatriz S4 «el primer rojo de un test nuevo cayó también en su
 - **Tanda completa** (`node --test tests/*.test.mjs`, TMP en la misma unidad que el repo): 11.503 tests, 11.334 pasan, 158 saltados, **11 caídos**, clasificados uno a uno: **1 mío** (`scrum836d`: el `cae` de mi mutación no nombraba un test existente; arreglado); **8** comparan esquema contra cliente de Prisma (`scrum222`, `scrum235` ×3, `scrum252`, `scrum461` ×2, `scrum733`), que en mi disco es COMPARTIDO y estaba generado con el esquema de otra rama (`archivedAt`, de 1273); **2** de `scrum1266b` (el dictado del panel, que este cambio no toca). Regenerado el cliente con el esquema de este árbol, esos 8 ficheros más el mío: **118 de 118 sin fallos** (2 saltados), incluido 1266b, que en la tanda cayó bajo carga.
 
 **NO medido todavía:** yaqu.app (sin mergear al escribir esto). Es verificable SIN crear nada (la cuenta QA tiene la prueba caducada y no deja crear): S4 dejó en producción la .0 y la .1 del dato P3.1 (id 208, c.19656). Cuando entre: `POST /quote/<token de la .0>/decision` con `accept` → 409 `quote_has_newer_version` con T2+T3, y la .0 sigue en su estado, leído por otra vía (el panel).
+
+## SCRUM-1302u · lo que quedó abierto de B y de C, contestado (S4, 15-oct-2026)
+
+**Medido contra:** `origin/main` = `73e41ab00f727fae5c6c8f1715d6eb6749133502` · 2026-10-15T16:10:09Z
+A9: sin fallo que generalice — solo lectura y una respuesta; nada construido
+
+Carril S4. Sin código: contesta las dos cosas que este registro dejaba abiertas para S4 (líneas «Sigue abierto en este ticket» del apéndice B y «Sigue abierto en este ticket tras C»).
+
+### C · los dos casos «NO TOCADO»: YA ESTÁN, los cerró SCRUM-1493
+
+El apéndice C los declaró sin tocar el 6-oct: ① la ruta del dictado contesta 200 sin líneas con una propuesta en pantalla, y ② «Añadir al parte» con el guardado fallando. Los dos los arregló SCRUM-1493 (registro `docs/master/SCRUM-1493.md`, en `main`): en ① la propuesta corregida se queda y el texto del servidor sale arriba, en ② el aviso firmado va a su sitio y la propuesta con su botón siguen. Hoy, corrido y no leído: `tests/scrum1493-la-propuesta-no-se-borra-por-ningun-camino.test.mjs` y `tests/scrum1302c-…` en verde sobre este `main` (tanda de 65 ficheros vecinos de SCRUM-1233e, 600 de 600).
+
+Lo que 1493 dejó a la vista, y es texto, por eso se nombra aquí y no se toca:
+
+| hoy dice | debería decir | estado |
+|---|---|---|
+| ① encima de tres líneas que siguen ahí: «No se ha podido sacar ninguna línea — escríbelas tú» (firmado para una pantalla SIN propuesta; 1493 lo declaró «impreciso, no falso») | lo que se firme: el literal se estiró a un caso para el que no se firmó | **pide firma** — no se propone texto aquí sin que lo pida quien firma |
+| un `PATCH` de «Añadir al parte» rechazado con 409 (el parte se firmó en otro sitio) dice «vuelve a intentarlo», y repetir no va a salir nunca | lo mismo que «Ordenar» ante el 409: releer el parte (conducta 2 de c.18491), sin texto nuevo | **pide firma de conducta**: c.18491 la firmó para «Ordenar», no para «Añadir»; estirarla no vale |
+
+### B · ¿los mensajes del servidor se pueden enseñar TAL CUAL?
+
+⚠️ **Premisa corregida:** quien los lee no es un cliente final. Es la ficha del parte (`parteDetailView.js`, `guardarCampo`), o sea el profesional o su técnico.
+
+La ficha de la firma (`docs/microcopy/2026-10-06-SCRUM-1302-campo-que-no-se-guarda.md`) habla de «Los desplazamientos son un número entero.» «y otros tres». Los cuatro rechazos de valor que tenía entonces el `PATCH /admin/partes/:id` (`partes.routes.ts`, `parteRango.ts`):
+
+| código | mensaje del servidor, literal | ¿tal cual? | hoy en pantalla |
+|---|---|---|---|
+| `desplazamientos_invalido` | «Los desplazamientos son un número entero.» | **sí**, se entiende y dice qué hacer | **ya no hace falta:** SCRUM-1491/1492 le dieron texto propio firmado en la vista (`TEXTO_POR_CODIGO_DE_LA_RUTA` → «No se ha guardado. Desplazamiento es un número entero, como 1 o 2 — no el tiempo de viaje») |
+| `kilometros_invalido` | «Los kilómetros son un número.» | **sí** | **ya no hace falta:** igual («No se ha guardado. Kilómetros es un número, como 12 o 12,5») |
+| `tipo_invalido` | «Tipo de intervención desconocido: ${tipo}.» | **no**: interpola el identificador interno que llegó | el general firmado, «No se ha podido guardar el cambio — vuelve a intentarlo». **Sin recambio:** desde esta pantalla no se alcanza (el tipo sale de los radios, con valores de la lista) — leído en el código, no intentado |
+| `tecnicos_invalido` | «Los técnicos vienen en una lista.» | **no**: habla del formato de la petición, y un técnico no puede hacer nada con eso | el general. **Sin recambio:** `cuerpoDeCampo` manda SIEMPRE una lista (parte por comas) — leído en el código, no intentado |
+
+Los cuatro que SCRUM-1488 añadió después (`desplazamientos_negativo`, `_no_cabe`, `kilometros_negativo`, `_no_cabe`) también tienen ya texto propio en la vista. `«… no pueden pasar de 2147483647.»` no se habría podido enseñar tal cual (un número de columna), y no se enseña.
+
+**Conclusión:** no queda nada que decidir sobre «enseñar el mensaje del servidor» en la cabecera del parte. Los dos que se alcanzan tienen texto firmado propio; los dos que no, caen en el general, y está bien. **No hay que pedir ninguna firma por B.**
+
+**NO medido:** ninguno de los cuatro en yaqu.app.

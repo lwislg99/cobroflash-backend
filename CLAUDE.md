@@ -15,7 +15,10 @@ ni documento ni cobro por YaQu (regla 24; SCRUM-612).** España-first.
 
 > **Flujo Git completo (ramas + PR + trabajo en equipo): `docs/FLUJO_DE_TRABAJO.md`.**
 
-🔴 **LECTURA OBLIGATORIA, cada tanda: [`docs/equipo/00-normas-comunes.md`](docs/equipo/00-normas-comunes.md)** —
+🔴 **LECTURA OBLIGATORIA, cada tanda: `node scripts/equipo/norma.mjs --arranque`** — trae las normas comunes
+POR SECCIONES (38 KB de 71, medido el 15-oct). **La A1 lleva una tabla que dice CUÁNDO traer cada una de las
+once que quedan fuera** (A5 antes de tocar el esquema, A23 antes de escribir un guard, A22 antes de un carácter
+de control…). ⛔ **No se leen enteras.** El fichero sigue siendo [`docs/equipo/00-normas-comunes.md`](docs/equipo/00-normas-comunes.md) —
 las normas comunes de todas las sesiones: preámbulo, PASO 0, cómo se mide aquí, git, el orden del
 esquema, lo que no se toca y cómo se entrega. Tu identidad y tus trampas propias, en
 `docs/equipo/sesion-N.md`, y tu carril en la tabla §11bis de `docs/equipo/orquestador.md`.
@@ -155,7 +158,13 @@ npm run test:staging:gated   # los gateados por QA_DB_TEST / A55_DB_TEST / BOT_S
 node scripts/preview-migracion.mjs                        # contra la BD del entorno
 node scripts/preview-migracion.mjs --desde viejo.prisma    # offline: schema viejo → actual
 # db push: NUNCA contra producción (regla 3). Solo staging, con el turno.
-./node_modules/.bin/prisma generate   # nunca `npx prisma` (SCRUM-385); en Windows, matar node antes si el DLL queda bloqueado
+./node_modules/.bin/prisma generate   # nunca `npx prisma` (SCRUM-385). SÓLO con `node_modules` propio:
+# ⛔ desde el árbol COMPARTIDO, o desde uno que cuelgue de él por junction, NO se regenera — deshace el
+#    cliente de los seis puestos. Compruébalo con `npm run topologia` y lee la salida (nunca a `$null`).
+# ⚠️ En Windows NO se matan todos los `node`: Claude Code corre en node y matarlos MATA LAS SESIONES.
+#    Sólo los que tengan cargada `query_engine-windows.dll.node`, con la sonda de
+#    `docs/equipo/trampas-del-entorno.md` §10 y SU CONTROL POSITIVO (una sonda que no caza parece limpia).
+#    Medido el 14-oct: se lanzó 9 veces, una desde un árbol con junction al compartido y la salida a `$null`.
 ```
 
 ## Mapa rápido (detalle en master Parte D)
