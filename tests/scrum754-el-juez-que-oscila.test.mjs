@@ -54,7 +54,7 @@ import {
 } from '../scripts/_arbol-quieto.mjs';
 import { aplicarUna } from '../scripts/meta-guard-mutaciones.mjs';
 import { veredictoDelCenso } from '../scripts/censo-guards-gateados.mjs'; // SCRUM-754c
-import { procesoVivo, restaurarDesdeMarca, marcarEnVuelo } from '../scripts/_marca-de-arbol.mjs';
+import { procesoVivo, restaurarDesdeMarca, marcarEnVuelo, apuntarMutacion } from '../scripts/_marca-de-arbol.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const JUEZ = 'scripts/meta-guard-mutaciones.mjs';
@@ -354,7 +354,9 @@ function bancoConMarca(pid) {
     datos.pid = pid;
     fs.writeFileSync(man, JSON.stringify(datos));
   }
-  fs.writeFileSync(abs, 'export const x = 2; // MUTADO y en vuelo\n'); // la mutación, puesta
+  const MUTADO = 'export const x = 2; // MUTADO y en vuelo\n';
+  apuntarMutacion(marca, abs, MUTADO); // SCRUM-1178 · como el meta-guard: se apunta antes de escribir
+  fs.writeFileSync(abs, MUTADO); // la mutación, puesta
   return { dir, abs, marca, sigueMutado: () => fs.readFileSync(abs).toString().includes('MUTADO') };
 }
 
@@ -787,7 +789,8 @@ test('SCRUM-754c · 🔴 SUELO del censo: el árbol TIENE guards con todos sus t
   // gateado— y por eso el suelo es de EXISTENCIA, no de cantidad: lo que no puede pasar es que
   // el censo devuelva CERO, porque entonces no está mirando.
   //
-  // El recuento vive en `npm run censo:gateados`, que los EJECUTA. Aquí sólo se comprueba que la
+  // El recuento vive en `npm run censo:gateados`, que los EJECUTA y se lanza A MANO (no está en
+  // ningún workflow: SCRUM-1178). Aquí sólo se comprueba que la
   // clasificación sobre la que se apoya distingue de verdad, con un caso de cada.
   const clasifica = (ev) => (ev.type === 'test:pass' && ev.data.skip ? 'saltado' : ev.type === 'test:pass' ? 'real' : 'caido');
   assert.equal(clasifica({ type: 'test:pass', data: { skip: 'sin QA_DB_TEST=1' } }), 'saltado');

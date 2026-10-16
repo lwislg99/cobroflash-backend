@@ -73,7 +73,13 @@ const CENSO_HEREDADO = Object.freeze({
   // 11 → 9 (SCRUM-1233, 29-sep-2026): la dirección de la obra y «consolidar» pasan por
   // `mensajeParaPersona`, que entra en TRADUCTORES.
   'jobDetailView.js': 9,
-  'jobsView.js': 2,
+  // jobsView.js: 2 → 0 (SCRUM-1233f, 15-oct-2026). Salen, uno a uno, los dos que se contaron el 2-sep
+  // sobre 19ea5a4052340cbe9598451c9ede91f2c1a07170:
+  //   · :281 showToast(… invalid_transition … 'No se pudo guardar: ' + … err.message)
+  //   · :361 showToast('No se pudo generar el cobro: ' + (err?.data?.message || err.message))
+  // Este censo dejó de verlos con el PR #1134 (SCRUM-727, merge d1b65eb91b6940246d87d0931188c24fc92ee0d9,
+  // 7-sep): pasaron por `avisoDeFallo`, que los pinta a través de una VARIABLE, y eso solo lo ve el censo
+  // de SCRUM-1233. Allí el techo de jobsView quedó a 0 con SCRUM-1233e (`mensajeParaPersona`).
   'plansView.js': 2,
   'quotesDetailView.js': 9,
   'quotesView.js': 5,
@@ -118,15 +124,17 @@ test('SCRUM-644 · 🔴 y el censo heredado NO CRECE por la puerta de atrás', (
   // El de arriba caza un fichero que se pase de su techo. Éste caza que la TABLA engorde: subir un
   // número para que el otro test pase es exactamente cómo muere un trinquete.
   const total = Object.values(CENSO_HEREDADO).reduce((a, b) => a + b, 0);
-  assert.ok(total <= 57,
+  // 57 → 53 (SCRUM-1233f): la tabla sumaba 55 desde SCRUM-1233 (jobDetailView 11 → 9, sin bajar este
+  // tope) y jobsView sale con sus 2. El tope es la suma de la tabla, no un número con holgura.
+  assert.ok(total <= 53,
     `🔴 el censo heredado ha subido a ${total}. Sólo puede BAJAR. Si un fichero necesita más sitios,\n`
     + '  el arreglo es traducirlos, no ampliarle el techo.');
   assert.equal(censo(RAIZ).hallazgos.length <= total, true,
     '🔴 hay más sitios en el árbol que en la tabla.');
 });
 
-test('SCRUM-644 · 🔴 lo ARREGLADO se queda en cero: products y providers', () => {
-  for (const base of ['productsView.js', 'providersView.js']) {
+test('SCRUM-644 · 🔴 lo ARREGLADO se queda en cero: products, providers y jobs (SCRUM-1233f)', () => {
+  for (const base of ['productsView.js', 'providersView.js', 'jobsView.js']) {
     const sitios = crudosDe(base, leer(`public/dashboard/js/${base}`));
     assert.deepEqual(sitios.map((s) => s.linea), [],
       `🔴 ${base} vuelve a pintar un \`.message\` crudo. SCRUM-641/644 lo cerraron:\n`

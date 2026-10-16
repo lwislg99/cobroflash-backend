@@ -129,3 +129,23 @@ proceso, que exige salida 0 en todos los casos.
    245 s. Medí antes de engancharlo, que es lo que el ticket pedía; pero el diseño que traía en la
    cabeza (pasada síncrona sin plazo) habría colgado el arranque cuatro minutos. → comprobación: el plazo
    interno y el test que exige que sea menor que el `timeout` del arnés.
+
+## SCRUM-1356b · la entrega se MANDA (Sesión 0)
+
+**Medido contra:** `origin/main` = `f4910603f` · 2026-10-15T17:28:41Z
+
+Encargo del orquestador: que las normas digan que una entrega se manda y no se queda escrita esperando, y
+medir antes si ya lo decían. **No lo decían.** En `00-normas-comunes.md` la A8 dice QUÉ lleva la entrega y
+nada de cómo llega. «Por el canal» aparece tres veces, todas en la A19 y sólo para el relevo, sin decir qué
+canal es. `SendMessage` no sale ni una vez en `00-normas-comunes.md` ni en `00-normas-siempre.md`: sólo en
+los ficheros del orquestador y en la skill `cerebro-yaqu`.
+
+- **A8 nueva, primer párrafo** (A8 entra en `norma.mjs --arranque`): cada punto acabado y empujado es un
+  `SendMessage` a quien mandó el encargo, copiando su `from`, en ese momento. También el bloqueo, la decisión
+  que se necesita y el «traspaso listo»: eso es «el canal» de A19.
+- Cifra: «cuatro de seis sesiones calladas el 15-oct» es del orquestador. **No la he recontado**, y la norma
+  lo dice. La S0 fue una de ellas (16:13Z).
+- Este ticket es el del hook `latido-cierre`, que al parar avisa de lo empujado sin verde. **Ese hook no
+  puede saber si la entrega se mandó** (no ve los mensajes), y `.claude/**` es de un jefe: no se ha tocado.
+
+A9: aviso → A10 «Una entrega escrita en tu turno no ha llegado: llega cuando se manda con `SendMessage` a quien te la encargó.» — no se pudo comprobar: lo que lo comprobaría es un hook de cierre que mire si el turno lleva `SendMessage`, y los hooks son `.claude/**`, de un jefe

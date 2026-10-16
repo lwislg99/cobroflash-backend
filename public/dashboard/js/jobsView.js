@@ -387,14 +387,15 @@ function pintarCifrasDeLaLista(zona, jobs) {
  * fichero era 2. Con el modal de técnicos habrían sido tres — y **un trinquete solo baja**. En vez
  * de subirlo, los tres caminos pasan por aquí y quedan en UNO.
  *
- * ⚠️ Esto REDUCE la superficie, no la cura: por esta rendija sigue pudiendo salir un identificador
- * del servidor. Lo que cambia es que ahora hay un único punto donde traducirlo el día que se haga,
- * en vez de tres. Traducirlo es otro ticket (el patrón es `mensajeDeErrorProveedor`, SCRUM-644).
+ * SCRUM-1233e · y ese punto ya traduce: el detalle sale de `mensajeParaPersona` (api.js), que solo
+ * deja pasar la frase que el servidor escribió para una persona (`data.message`). Antes caía a
+ * `err.message`, o sea «API 500: internal_error» o «Failed to fetch» detrás del prefijo. Sin frase
+ * del servidor, el aviso es el prefijo solo.
  *
  * Los prefijos son los literales que ya usaba esta pantalla: no se estrena microcopy (regla 30).
  */
 function avisoDeFallo(prefijo, err) {
-  const detalle = (err && err.data && err.data.message) || (err && err.message) || '';
+  const detalle = mensajeParaPersona(err, '');
   showToast(detalle ? prefijo + ': ' + detalle : prefijo, 'error');
 }
 

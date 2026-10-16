@@ -325,6 +325,16 @@ leído: una caja CSS no es lo que ocupa.
 
 ## A8 · Cómo se entrega
 
+🔴 **La entrega se MANDA; escribirla en tu turno no le llega a nadie.** Quien te reparte no lee tu
+chat: lee sus mensajes. Cada punto acabado y empujado es UN `SendMessage` a quien te mandó el encargo
+(su dirección es el `from` del mensaje que te lo trajo: se copia, no se deduce), en ese momento, sin
+esperar a tener el lote entero. Lo mismo vale para un BLOQUEO, una DECISIÓN que necesitas y el
+«traspaso listo» de A19: esas tres cosas son «el canal» del que habla A19, y no hay otro. ✗ Falla:
+15-oct-2026, según el orquestador (dato suyo, no recontado), cuatro de las seis sesiones acabaron y se
+quedaron calladas, y fue el fundador quien le avisó de que tenía cinco puestos sin atender. Una de
+ellas fue la S0, que a las 16:13Z dejó la entrega escrita en su turno y no la mandó hasta que se la
+pidieron. Hasta ese día, ni esta norma ni la 00-normas-siempre nombraban `SendMessage`.
+
 Rama y SHA de 40 caracteres COMPLETO. No lo cortes.
 El informe de entrega dice SIEMPRE tu contexto medido, con la cifra (la comprobación de A19).
 El banco SE SUBE: el scratchpad es efímero y ya se perdió uno, y
