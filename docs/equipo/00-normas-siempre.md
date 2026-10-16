@@ -123,3 +123,4 @@ Un registro escrito por la misma mano que aplicó el texto no es su firma: es qu
 Una tilde entre corchetes no casa en `git grep -E` ni en `grep -E`: el patrón da cero sin avisar. Se busca la raíz sin tilde y con un fichero que la tenga al lado. (SCRUM-1115)
 «No se ha podido verificar» exige el dato recibido —ruta, código, cuerpo y hora—; deducido del código es «no lo he intentado», y se escribe así. (SCRUM-1300)
 Una entrega escrita en tu turno no ha llegado: llega cuando se manda con `SendMessage` a quien te la encargó. (SCRUM-1356b)
+Una causa que encaja con lo último que viste no está cerrada hasta que explica también lo primero. (SCRUM-951f)
