@@ -335,7 +335,7 @@ Puesto S0. **Encargo del orquestador de Luis:** escribir la regla que él decidi
 **Medido para escribirla (leído, sin tocar el camino de emisión):**
 
 * Las tres firmas del panel (`partes.routes.ts` `/:id/firmar` y `/:id/firmar-tecnico`, `albaranes.routes.ts` `/:id/firmar`) se leyeron enteras, desde su `router.post` hasta el siguiente. Buscando `whatsapp|send[A-Z]|mailer|notif|enqueue|emit|invoice|verifactu`, sólo salen comentarios y el 409 «Emite el albarán antes de firmarlo.». **Ninguna envía.**
-* 🔴 **La firma por el enlace público del albarán (`albaranPublic.routes.ts` `/:token/firmar`) llama a `sendAlbaranFirmadoWhatsApp(albaran.id)`**: el auto-envío de SCRUM-49. Por eso R25 lo deja FUERA y lo nombra. Si una medida necesita esa ruta, se decide aparte.
+* 🔴 **La firma por el enlace público del albarán (`albaranPublic.routes.ts` `/:token/firmar`) llama a `sendAlbaranFirmadoWhatsApp(albaran.id)`**: el auto-envío de SCRUM-49. Por eso R25 lo deja FUERA y lo nombra. **El orquestador lo confirmó por `SendMessage` el mismo 16-oct: queda fuera «definitivamente y no "de momento"».** Su motivo, que R25 lleva escrito: un envío es dinero y es regla 28, y no lo puede autorizar él. Lo decide el fundador, y ya está en su lista.
 * `scripts/qa/sembrar-albaranes.mjs firmado` firma por `POST /admin/albaranes/:id/firmar` (su lista de escrituras permitidas, línea 69), es decir, por la firma del panel. Queda dentro de R25.
 
 **Lo que esto NO hace:** no firma nada. No toca ni el código ni el sembrador. No mide SCRUM-1302s ni la gemela del albarán: eso lo hace quien tenga esos tickets, ya con regla.

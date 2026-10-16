@@ -881,7 +881,7 @@ Se puede firmar **un parte y un albarán** en `luisdragonball+qa@gmail.com` (mer
 
 **Lo que R25 NO cubre:**
 
-* 🔴 **Firmar por el ENLACE PÚBLICO del albarán** (`POST /:token/firmar`, en `albaranPublic.routes.ts`). Ese handler dispara solo `sendAlbaranFirmadoWhatsApp` (SCRUM-49): un envío por WhatsApp al cliente, que es justo lo que regula J6 (regla 28). Necesita su propia decisión.
+* 🔴 **Firmar por el ENLACE PÚBLICO del albarán** (`POST /:token/firmar`, en `albaranPublic.routes.ts`). **Queda fuera para siempre, no «de momento»** (decisión del orquestador, 16-oct-2026). Ese handler llama solo a `sendAlbaranFirmadoWhatsApp` (SCRUM-49). Firmar por ahí no es sólo firmar: **es firmar Y mandar un WhatsApp de verdad a un teléfono de verdad, y eso cuesta dinero.** R25 autoriza firmar. Un envío no lo puede autorizar el orquestador: es dinero y es la regla 28 (J6). **Lo decide el fundador.**
 * Enviar la copia firmada (`POST /admin/albaranes/:id/enviar-whatsapp`): es otra orden, manual.
 * Facturar el parte o el albarán ya firmado: eso sí es emitir.
 * Firmar con el perfil fiscal vacío: la razón social y el NIF entran en el hash de la firma (R24, `perfil-fiscal`).
