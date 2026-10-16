@@ -221,6 +221,18 @@ test('🔴 SCRUM-999 · con la cuenta en AVISO (≥85 %), la tanda NO lanza y lo
   } finally { b.limpiar(); }
 });
 
+// SCRUM-999b · el 15-oct la semanal iba al 89 % con la de 5 h al 19 %, y esta tanda habría lanzado.
+test('🔴 SCRUM-999b · con la SEMANAL al 95 % y la de 5 h al 10 %, la tanda NO lanza y dice que muerde la semanal', () => {
+  const b = banco({ usoVerde: 10 });
+  try {
+    b.escribirUso(10, { semanal: 95 });
+    const r = b.tanda();
+    assert.equal(r.v?.veredicto, 'SIN-CUOTA', `🔴 lanza con la semanal casi agotada: ${JSON.stringify(r.v)}`);
+    assert.equal(r.v?.uso?.muerde, 'semanal', `🔴 no dice qué ventana lo para: ${JSON.stringify(r.v)}`);
+    assert.deepEqual(b.leerLlamadas(), [], '🔴 con la semanal en AVISO, llegó a llamar a claude');
+  } finally { b.limpiar(); }
+});
+
 test('🔴 SCRUM-999 · sin lectura vigente de uso.mjs (máquina recién instalada), la tanda NO lanza', () => {
   const b = banco({ usoVerde: null });
   try {

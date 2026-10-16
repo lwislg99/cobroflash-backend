@@ -1,4 +1,5 @@
-// scripts/equipo/uso.mjs — SCRUM-899d · el aviso de uso: cuánto queda de la ventana de 5 h de la cuenta
+// scripts/equipo/uso.mjs — SCRUM-899d · el aviso de uso: cuánto queda de las ventanas de 5 h y semanal de la cuenta
+// (la semanal se juzga desde SCRUM-999b; el veredicto es el de la que más lleva, y `muerde` dice cuál)
 //
 //   node uso.mjs escribir [--fichero F]                               ← lo ejecuta el statusLine de Claude Code
 //   node uso.mjs leer [--fichero F] [--max-edad-min 10] [--umbral 85] ← lo ejecuta el orquestador
@@ -91,7 +92,9 @@ export function lineaDeEstado(entrada) {
   const d = new Date(cinco.resets_at * 1000);
   const hh = String(d.getHours()).padStart(2, '0');
   const mm = String(d.getMinutes()).padStart(2, '0');
-  return `uso 5h ${Math.round(cinco.used_percentage)}% · reinicia ${hh}:${mm}`;
+  const semana = ventana(entrada?.rate_limits?.seven_day);
+  return `uso 5h ${Math.round(cinco.used_percentage)}% · reinicia ${hh}:${mm}`
+    + (semana ? ` · semana ${Math.round(semana.used_percentage)}%` : '');
 }
 
 const noPude = (motivo, extra = {}) => ({ veredicto: 'NO_PUDE_MIRAR', motivo, ...extra });
@@ -114,15 +117,24 @@ export function juzgar(texto, ahoraMs, { maxEdadMin = EDAD_MAXIMA_MIN, umbral = 
   const leido = Date.parse(v.leido_en);
   const cinco = ventana(v.five_hour);
   if (!numero(leido) || !cinco) return noPude('ilegible: lectura vigente incompleta');
+  // SCRUM-999b · la semanal se guardaba y no se juzgaba: el 15-oct iba al 89 % y esto decía «VERDE 19 %».
+  // El veredicto es el de la ventana que MÁS lleva, y `muerde` dice cuál.
+  const semana = ventana(v.seven_day);
 
   const edadMs = ahoraMs - leido;
-  const datos = { usado: cinco.used_percentage, reinicia: new Date(cinco.resets_at * 1000).toISOString(),
-    leido_en: v.leido_en, edad_min: Math.round(edadMs / 6000) / 10 };
+  const resumen = (w) => w && { usado: w.used_percentage, reinicia: new Date(w.resets_at * 1000).toISOString() };
+  const muerde = semana && semana.used_percentage > cinco.used_percentage ? 'semanal' : '5 h';
+  const peor = muerde === 'semanal' ? semana : cinco;
+  const datos = { usado: peor.used_percentage, reinicia: new Date(peor.resets_at * 1000).toISOString(), muerde,
+    cinco_horas: resumen(cinco), semanal: resumen(semana), leido_en: v.leido_en, edad_min: Math.round(edadMs / 6000) / 10 };
   if (edadMs < -FUTURO_TOLERADO_MS) return noPude('la lectura tiene la hora en el futuro', datos);
   if (edadMs > maxEdadMin * 60 * 1000) return noPude(`lectura vieja: más de ${maxEdadMin} min`, datos);
   if (cinco.resets_at * 1000 <= ahoraMs) return noPude('la ventana de 5 h ya se reinició: el dato es de la anterior', datos);
-  if (cinco.used_percentage >= umbral) return { veredicto: 'AVISO', motivo: `uso ${cinco.used_percentage}% ≥ ${umbral}%`, ...datos };
-  return { veredicto: 'VERDE', motivo: `uso ${cinco.used_percentage}% < ${umbral}%`, ...datos };
+  if (!semana) return noPude('sin dato de la ventana semanal: con la de 5 h sola no se sabe si la cuenta está agotada', datos);
+  if (semana.resets_at * 1000 <= ahoraMs) return noPude('la ventana semanal ya se reinició: el dato es de la anterior', datos);
+  const cifras = `5 h ${cinco.used_percentage}% · semanal ${semana.used_percentage}%`;
+  if (peor.used_percentage >= umbral) return { veredicto: 'AVISO', motivo: `muerde la ventana ${muerde === 'semanal' ? 'semanal' : 'de 5 h'}: ${cifras} (umbral ${umbral}%)`, ...datos };
+  return { veredicto: 'VERDE', motivo: `${cifras} < ${umbral}%`, ...datos };
 }
 
 function leerTexto(fichero) {
