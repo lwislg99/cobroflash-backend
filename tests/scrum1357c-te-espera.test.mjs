@@ -116,6 +116,18 @@ test('PUESTOS SIN NINGUNA SESIÓN VIVA: salen con su línea y la salida es 1; un
   assert.match(t, /\| S5 \| 0 ⚠️ NADIE \| 0 \| 0 \| 1 \(sesion-5\) \| 0 \| 0 \|/);
 });
 
+test('un puesto vacío y NADA MÁS basta para salir 1 (el S1 muerto del 15-oct, con los demás trabajando)', () => {
+  const r = medir({
+    panel: [enPanel('aaaa0011', 's0-16oct', 'working', { pid: 1 })],
+    registro: registroDe(reg('aaaa0011', 's0-16oct', 'working')),
+    puestos: ['S0', 'S1'],
+    ahora: AHORA,
+  });
+  assert.equal(r.codigo, SALIDA_HAY);
+  assert.equal(r.lineas[0], '🔴 PARADOS · PUESTO(S) SIN NINGUNA SESIÓN VIVA: S1');
+  assert.equal(r.lineas[1], '   ninguna te espera · puestos pedidos: S0, S1 — SIN sesión viva: S1');
+});
+
 test('todos los puestos con una sesión trabajando y nadie esperando → 0, el verde de siempre', () => {
   const r = medir({
     panel: [enPanel('aaaa0007', 's0-16oct', 'working', { pid: 1 }), enPanel('aaaa0008', 's1-16oct', 'working', { pid: 2 })],
