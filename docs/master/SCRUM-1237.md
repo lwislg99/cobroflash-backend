@@ -58,3 +58,8 @@ Capturas en `sondas-s2/cap1237/`. Test `tests/scrum1237-aviso-dentro-de-la-modal
 **No medido:** los dos errores de WhatsApp en navegador (pasan por la misma `copiarAvisoALaModal()` que el
 de correo; el test los exige, la sonda no los dispara porque mandar WhatsApp no es una escritura que se
 pueda dejar salir).
+
+A9: comprobación → `tests/scrum811c-skill-ui-declarada.test.mjs`
+(Toqué `quotesView.js` antes de cargar `yaqu-premium-ui`, y metí un `style.cssText` que la skill prohíbe.
+Me cazaron este guard y el de 713c; la primera versión del registro tampoco llevaba esta línea A9 y la
+cazó el obligatorio de #2521, `scrum1294`.)
