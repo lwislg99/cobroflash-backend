@@ -58,6 +58,15 @@ de vistas (`_banco-vistas.mjs`).
   está vetado; el juez es el CI.
 - **1 de entorno conocido:** `scrum1321` (el temporal en otra unidad, ya declarado en SCRUM-1150 c.19657).
 
+**🔴 Error mío, cazado por el CI (run 38902849765, 16-oct 12:57Z):** de los 11 «de entorno», UNO no lo era.
+`scrum237` (toda negación lleva respaldo) caía por MI test: `!todo.includes('Añadir texto en el documento')` no
+tenía un positivo hermano, así que podía estar buscando un texto que no existe en ninguna parte y dar verde
+para siempre. Lo metí en la cuenta del cliente de Prisma sin leer su mensaje. Arreglo: el hermano comprueba
+que ese texto ES el rótulo que expone la pieza (`TD_TITULO_CABECERA`). Con él, `scrum237` y `scrum976` (que lo
+ejecuta dentro de `guards:entrada`) pasan en local: 14/14 y 11/11.
+- **Rojo informativo, no mío:** `guard:cls-barra-anuncio` (guards de navegador) mide CLS 0,127 a 360 px en la
+  barra de oferta de la LANDING. No toca esta rama (J3).
+
 **No visto en yaqu.app todavía:** se mira cuando entre, sobre el albarán #46 de la cuenta QA (su GET trae la
 nota «Albarán de pruebas QA (SCRUM-1268).»), con el #47 de control.
 A9: sin fallo que generalice — la firma separó dos campos que el contradato mezclaba, y eso ya queda escrito arriba con su localizador

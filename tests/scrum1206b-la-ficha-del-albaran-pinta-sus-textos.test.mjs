@@ -74,8 +74,12 @@ test('SCRUM-1206b · las observaciones (`notas`) salen con su rótulo «Observac
 });
 
 test('SCRUM-1206b · la cabecera (`docHeaderText`) sale SIN rótulo, como en el papel', async () => {
-  const { filas, todo } = await ficha({ docHeaderText: CABECERA });
+  const { filas, todo, banco } = await ficha({ docHeaderText: CABECERA });
   assert.deepEqual(filas, [{ etiqueta: null, valor: CABECERA, enElRail: true }]);
+  // HERMANO (SCRUM-237): el token de abajo es el rótulo REAL del formulario, el que vive en la pieza.
+  // Sin esto, la negación podría estar buscando un texto que no existe en ninguna parte y dar verde siempre.
+  assert.ok(String(banco.ctx.TD_TITULO_CABECERA).includes('Añadir texto en el documento'),
+    '🔴 SUELO: la pieza ya no expone ese rótulo; la negación de abajo no probaría nada');
   assert.ok(!todo.includes('Añadir texto en el documento'),
     '🔴 el rótulo del FORMULARIO encima de un texto guardado se lee como un botón que no hace nada');
 });
