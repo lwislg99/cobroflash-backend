@@ -70,3 +70,40 @@ ejecuta dentro de `guards:entrada`) pasan en local: 14/14 y 11/11.
 **No visto en yaqu.app todavía:** se mira cuando entre, sobre el albarán #46 de la cuenta QA (su GET trae la
 nota «Albarán de pruebas QA (SCRUM-1268).»), con el #47 de control.
 A9: sin fallo que generalice — la firma separó dos campos que el contradato mezclaba, y eso ya queda escrito arriba con su localizador
+
+## 1206b — VISTO en yaqu.app (S4, s4-16oct)
+
+**Medido contra:** `origin/main` = `8e5c7801e7520c012256103aa9c122f807f3ad55` · 2026-10-16T13:29:47Z
+
+#2529 se mergeó a las 13:26:29Z (`8e5c7801`), y producción servía ese mismo SHA (/version) al medir. El
+`albaranDetailView.js` servido trae `filaDeTexto(` 2 veces.
+
+**Banco:** `docs/master/evidencias/SCRUM-1206/ver1206b.mjs`. Cuenta QA, sólo GET (cualquier otra petición se
+aborta y se apunta), `serviceWorkers: 'block'`, a 390 y 1280 px. Cada caso compara la ficha con lo que trae
+SU GET. Salidas: `ver1206b-antes-16oct.txt` (antes del merge) y `ver1206b-despues-16oct.txt`.
+
+**El dato para la cabecera:** ningún albarán de QA tenía `docHeaderText`. Se creó UNO, con el sí del
+orquestador (opción c): el **#48 (AB260003), en BORRADOR**, en el Trabajo #76, a las 12:41:22Z, con
+`crear-borrador-qa.mjs`. El script se cierra si la sesión no es del negocio 46. Antes de escribir había #47
+(firmado) y #46 (emitido). Los dos textos van marcados «[QA S4 16-oct] … No es un cliente real.». **No se
+emite, no se firma, no se envía.** De paso: `POST /admin/jobs/:id/albaranes` no lleva `requireActivePlan`, así
+que el plan vencido de la cuenta QA no impide crear albaranes.
+
+| albarán | qué trae su GET | ANTES (0dbc92f2 / 1716a0f5) | DESPUÉS (8e5c7801) |
+|---|---|---|---|
+| #46 emitido | `notas`, sin cabecera | 0 filas | 1 fila: «Observaciones» + su nota, a 390 y 1280 |
+| #47 firmado | `notas`, sin cabecera | 0 filas | 1 fila: «Observaciones» + su nota, a 390 y 1280 |
+| #48 borrador | cabecera (2 líneas) + `notas` | 0 filas | 2 filas en el orden del papel: la cabecera SIN rótulo, con su salto de línea, y después «Observaciones» |
+
+En los 6 casos: el número del albarán se pinta (control de que la ficha se montó), no hay desborde
+horizontal, se hicieron 110 GET y el único abortado fue `POST /admin/entorno`. El texto de cada fila es
+IDÉNTICO al de su GET. «Añadir texto en el documento» no aparece.
+
+**Visto en la captura a 390 px, y NO arreglado (no es de este ticket):** «Observaciones» se pinta con
+`.detail-rail-etiqueta` (gris, mayúscula sólo la inicial), y las filas de encima (TRABAJO, CLIENTE…) con
+`detail-total-label` (versalitas). Son dos estilos de rótulo en el mismo rail. La clase de la nota es la de
+SCRUM-982, la única que existía para texto de varias líneas. Igualarlas es una decisión de diseño del rail
+del albarán, y queda para quien la reparta.
+
+**Lo que NO cierra:** SCRUM-1206 es del PRESUPUESTO (`quotesDetailView.js`, S2). Esto es la mitad del albarán.
+A9: aviso → cicatriz S4 «metí un rojo mío de la tanda local entre los de entorno sin leer su mensaje, porque sus diez vecinos sí eran del cliente de Prisma; lo cazó el CI» — no se pudo comprobar: clasificar los rojos lo hace quien lee la tanda, y ningún test lo ve
