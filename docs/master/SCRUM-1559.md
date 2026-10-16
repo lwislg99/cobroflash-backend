@@ -2,8 +2,9 @@
 
 ## 16-oct-2026 · S3 · causa, arreglo del instrumento y antes/después
 
-**Cabecera.** 2026-10-16 12:36:53Z (`Date:` de GitHub) · medido sobre `origin/main`
-`ce054fb4da4240ce67aa6715c93380e3e0cfb0d1` · rama `scrum-1559-serializar-lee-los-dos-sitios`.
+**Medido contra:** `origin/main` = `ce054fb4da4240ce67aa6715c93380e3e0cfb0d1` · 2026-10-16T12:36:53Z
+
+Hora de la cabecera `Date:` de GitHub · rama `scrum-1559-serializar-lee-los-dos-sitios`.
 
 ### La pregunta
 S2 midió que en Informes los 5 enlaces de la fila de descargas están en el DOM del banco (5 de 5) y
