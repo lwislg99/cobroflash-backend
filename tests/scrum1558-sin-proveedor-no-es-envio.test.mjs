@@ -3,20 +3,21 @@
 // `sendQuoteEmail` tiene un respaldo debajo de Resend: SMTP si hay `SMTP_URL` y, si no, un `.eml`
 // en el outbox. El outbox devolvía `ok` y la ruta contestaba `sent:true`: en producción, con la
 // variable de Resend vacía, la pantalla decía «enviado» de un presupuesto que no había salido.
-// El gemelo, con la misma condición: `logMagicLink` escribía el enlace de acceso en el log.
+// (El gemelo del enlace de acceso, `logMagicLink`, va en su propia rama: depende de cómo corre
+// staging, y eso no está medido. Ver `docs/master/SCRUM-1558.md`.)
 //
 // Se mide por el camino real, con las dos mitades:
 //   · NEGATIVO: producción sin Resend ni SMTP → `sendQuoteEmail` LANZA, no monta el outbox y deja
-//     UNA fila de fallo; y el enlace de acceso no toca el log.
+//     UNA fila de fallo.
 //   · POSITIVOS: con SMTP o con Resend en producción, todo igual; fuera de producción el outbox
-//     sigue exactamente como estaba, y el enlace sigue en el log (ahí es la forma de entrar).
+//     sigue exactamente como estaba.
 //
 // Y de punta a punta: el handler REAL de la ruta, con el `sendQuoteEmail` REAL debajo, contesta
 // `sent:false` + `email_send_failed`, que es lo que las dos pantallas pintan como fallo
 // (`quotesView.js` y `quotesDetailView.js` miran `waSendFailed`).
 //
 // Se dobla la base, el token y `nodemailer.createTransport`. NO se dobla lo que se mide:
-// `sendQuoteEmail`, `registrarEnvio` y `requestMagicLink` son dist/ tal cual.
+// `sendQuoteEmail`, `registrarEnvio` y la ruta son dist/ tal cual.
 // ⛔ Ni una clave real. Ni un byte de red.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -30,7 +31,6 @@ import { reqDeSesion } from './_arnes-de-router.mjs';
 // MISMO objeto `config`, como en `scrum1299`.
 process.env.RESEND_API_KEY = '';
 process.env.SMTP_URL = '';
-delete process.env.LOG_MAGIC_LINKS;
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const requiere = createRequire(import.meta.url);
@@ -57,8 +57,6 @@ const doble = dobleDeLaBase({
     merchantId: MERCHANT, customerId: null, customer: { email: 'cliente@ejemplo.invalid' },
   }),
   'quote.update': (a) => { marcados.push(a.data); return {}; },
-  'merchant.findUnique': () => ({ id: MERCHANT, name: 'Taller', email: 'pro@ejemplo.invalid' }),
-  'authSession.create': (a) => ({ id: 1, ...a.data }),
   'emailMessage.create': (a) => { const f = { id: filas.length + 1, ...a.data }; filas.push(f); return f; },
 });
 const fPrisma = rutaDe('dist/core/db/prisma.js');
@@ -80,7 +78,6 @@ axios.post = async (url) => {
 
 const { config } = requiere(path.join(RAIZ, 'dist/core/config/env.js'));
 const { sendQuoteEmail } = requiere(path.join(RAIZ, 'dist/modules/messaging/domain/email.service.js'));
-const { requestMagicLink } = requiere(path.join(RAIZ, 'dist/modules/auth/domain/auth.service.js'));
 const { outboxDir } = requiere(path.join(RAIZ, 'dist/core/storage/dirs.js'));
 
 function reiniciar({ entorno, resendKey = '', smtpUrl = '' }) {
@@ -92,16 +89,6 @@ function reiniciar({ entorno, resendKey = '', smtpUrl = '' }) {
 }
 const enviar = () => sendQuoteEmail({ quoteId: presupuesto.id, prisma: doble });
 const EML = path.join(outboxDir, `quote-${presupuesto.id}.eml`);
-
-/** Lo que `requestMagicLink` escribe con `console.log`, con la consola callada. */
-async function lineasDelEnlace() {
-  const escritas = [];
-  const [log, error] = [console.log, console.error];
-  console.log = (...a) => { escritas.push(a.join(' ')); };
-  console.error = () => {};
-  try { await requestMagicLink('pro@ejemplo.invalid'); } finally { [console.log, console.error] = [log, error]; }
-  return escritas.filter((l) => /auth\/verify\?token=/.test(l));
-}
 
 test('SCRUM-1558 · SUELO: fuera de producción y sin proveedor, el outbox sigue como estaba', async () => {
   reiniciar({ entorno: 'development' });
@@ -177,24 +164,3 @@ test('SCRUM-1558 · CONTROL: en producción CON Resend, sale por Resend y no toc
   assert.equal(r.resend, true, `🔴 con Resend en producción la respuesta ya no es la de Resend: ${JSON.stringify(r)}`);
 });
 
-test('SCRUM-1558 · 🔴 el gemelo: en producción sin correo, el enlace de acceso NO va al log', async () => {
-  reiniciar({ entorno: 'production' });
-  const lineas = await lineasDelEnlace();
-  assert.deepEqual(lineas, [], `🔴 en producción, sin proveedor, el enlace de acceso se ha escrito en el log: ${lineas.length} línea(s).`);
-});
-
-test('SCRUM-1558 · CONTROL: fuera de producción sin correo, el enlace SÍ va al log (es la forma de entrar)', async () => {
-  reiniciar({ entorno: 'development' });
-  const lineas = await lineasDelEnlace();
-  assert.equal(lineas.length, 1, '🔴 CIEGO: fuera de producción el enlace no sale en el log; el caso de producción no mide nada.');
-});
-
-test('SCRUM-1558 · CONTROL: en producción, LOG_MAGIC_LINKS=true explícito sigue mandando', async () => {
-  reiniciar({ entorno: 'production' });
-  process.env.LOG_MAGIC_LINKS = 'true';
-  try {
-    assert.equal((await lineasDelEnlace()).length, 1, '🔴 el interruptor explícito ha dejado de funcionar.');
-  } finally {
-    delete process.env.LOG_MAGIC_LINKS;
-  }
-});
