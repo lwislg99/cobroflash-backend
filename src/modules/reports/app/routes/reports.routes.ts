@@ -403,6 +403,16 @@ router.get('/resumen-trimestre', async (req, res) => {
     // los que importan de verdad («N gastos sin datos de IVA no figuran…»).
     const avisosLibroRecibidasSinFormato = avisosLibroRecibidas(libroRecibidas).slice(1);
 
+    // SCRUM-1072c (punto 6) · la actividad que DECLARÓ el profesional, tal cual: `profesional`,
+    // `empresarial`, `no_lo_se` o `null` (nunca se le preguntó). Es un atributo del MERCHANT, no
+    // del trimestre, y meterlo aquí mezcla las dos cosas: decisión del orquestador (17-oct), con
+    // ese coste conocido, porque Informes ya pide esta ruta y la alternativa era una petición más
+    // a `/admin/merchant` en cada carga. No decide nada: ni retención ni importe la leen.
+    const negocio = await prisma.merchant.findUnique({
+      where: { id: req.merchantId },
+      select: { activityKind: true },
+    });
+
     return res.json({
       ...resumen,
       from: from.toISOString().slice(0, 10),
@@ -415,6 +425,7 @@ router.get('/resumen-trimestre', async (req, res) => {
       expenseCount: expenses.length,
       gastosNoDeducibleDeclarados,
       avisosLibroRecibidas: avisosLibroRecibidasSinFormato,
+      activityKind: negocio?.activityKind ?? null,
     });
   } catch (err) {
     console.error('[GET /admin/reports/resumen-trimestre]', err);

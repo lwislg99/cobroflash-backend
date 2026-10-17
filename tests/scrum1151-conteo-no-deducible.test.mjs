@@ -62,12 +62,15 @@ async function conPrismaSustituido(fn, gastos = GASTOS) {
     invoice: moduloPrisma.prisma.invoice,
     quote: moduloPrisma.prisma.quote,
     albaran: moduloPrisma.prisma.albaran,
+    merchant: moduloPrisma.prisma.merchant,
   };
   moduloPrisma.prisma.expense = { findMany: async () => gastos };
   // Repercutido vacío a propósito: este ticket mide el lado de gastos, no el de facturas.
   moduloPrisma.prisma.invoice = { findMany: async () => [] };
   moduloPrisma.prisma.quote = { findMany: async () => [] };
   moduloPrisma.prisma.albaran = { findMany: async () => [] };
+  // SCRUM-1072c: la ruta lee además la actividad del merchant; aquí no se mide, sólo se contesta.
+  moduloPrisma.prisma.merchant = { findUnique: async () => ({ activityKind: null }) };
   try {
     return await fn();
   } finally {
@@ -75,6 +78,7 @@ async function conPrismaSustituido(fn, gastos = GASTOS) {
     moduloPrisma.prisma.invoice = original.invoice;
     moduloPrisma.prisma.quote = original.quote;
     moduloPrisma.prisma.albaran = original.albaran;
+    moduloPrisma.prisma.merchant = original.merchant;
   }
 }
 
