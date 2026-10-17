@@ -399,3 +399,30 @@ El fundador preguntó el **13-oct** qué falta para que nuestro software mande a
 
 · ⛔ **Y DOS QUE NO HAY QUE TOCAR, para que no perdáis el tiempo:** `customerDetailView.js` «Trabajos (1)» y «WhatsApp (1)» (**41 / 59**) y «Suscribirme» (**39,8 / 44,6**). **Sólo fallan contra el 44 del censo; contra los 36 px que el guard aplica en escritorio por `DESIGN.md`, CUMPLEN.**
 · **Nuestros son los otros 16**, y van por nuestra cuenta. **Decisión del orquestador de Luis, 17-oct-2026; midió S3.**
+
+## 21 🔴 EL DETALLE DE FACTURA DEVUELVE EL PRESUPUESTO ENTERO · con la IP del cliente que firmó, su firma y el token del enlace público
+
+**Lo primero, para que nadie se alarme de más: NO es una fuga entre merchants.** Medido: la ruta pide sesión (`requireAuth`) y filtra por `merchantId` **dos veces** (`invoiceAdmin.ts:120` y `accesoALaFactura.ts:127`); un id ajeno da 404. **Un merchant NO ve la evidencia de otro.** Y **no hay clientes reales en producción**, así que no hay nada en curso.
+
+**Lo que sí pasa.** `invoiceAdmin.ts:124` hace **`quote: true`**: el detalle de factura se lleva el presupuesto de origen **ENTERO, sin recortar**. Por ahí salen:
+
+| sale | qué es |
+|---|---|
+| `quote.evidenciaFirma` | **la IP y el navegador del CLIENTE que firmó**, su `tokenId`, `firmadoAt`, la huella (`contentHash`, `hashAlg`) y el bloque congelado |
+| `quote.signatureUrl` | **el trazo de la firma del cliente**, como data-URI |
+| `quote.decisionToken` | **la llave del enlace público del presupuesto** |
+| `quote.evidence` | la marca manual de aceptado/rechazado |
+| `quote.internalNotes` | las notas internas del profesional |
+
+🔴 **Lo que lo convierte en defecto y no en opinión: vuestro propio esquema dice que la IP y el navegador «NUNCA se exponen» por API.** **El código contradice la garantía que el propio esquema declara.** (Lo construye `quotes.routes.ts:460-479`, con la IP en `:473` y el UA en `:474`.)
+
+· 🔴 **Y lo ve un TÉCNICO.** La ruta no pide rol: un técnico recibe todo lo de arriba en las facturas que puede ver (`whereFacturasVisibles`, `accesoALaFactura.ts:76-131`). **Al técnico se le recorta el coste de las líneas (`sinCosteEnDocumento`) y en cambio le llega la IP del cliente y su firma.**
+· ✅ **Y la pantalla NO USA NADA DE ESO.** `invoiceDetailView.js` no lee ningún `quote.*`: sólo `customer.name`, `email` y `phone`. **El presupuesto entero viaja y nadie lo pinta.**
+
+🔵 **EL ARREGLO YA EXISTE EN VUESTRA CASA, y por eso esto es barato:** `GET /admin/quotes/:id` usa **una lista explícita de campos** (`quoteAdmin.ts:261 y ss.`) y **NO manda `evidenciaFirma` ni `evidence`**. **El detalle de factura es el único sitio por donde sale.** Basta con que haga lo mismo que ya hace su hermana.
+
+**Dónde está:** `src/modules/system/invoiceAdmin.ts:124` (`quote: true`) y `:138`; el `res.json`, en `invoicesAdmin.routes.ts:276`.
+
+· **Por qué os lo pasamos en vez de arreglarlo: `invoiceAdmin.ts` es de J1** (`.claude/carriles.json`) **y ese fichero lleva además la lógica del estado fiscal (des-pagar, R1)**, así que para nosotros es camino que se LEE (regla 38). **Lo hemos leído y no hemos tocado nada.**
+· ⚠️ **Y una pata que no es de código: la IP es dato personal.** **Si `docs/legal/` promete en algún sitio que no se expone, esto lo contradice** — conviene mirarlo antes del primer cliente real.
+· **Medido por S1 (equipo de Luis) el 17-oct-2026 sobre `origin/main` 44f3a6bf, leyendo código, sin tocar yaqu.app.** **De la misma auditoría, los hallazgos #3 (token del presupuesto) y #8 (clientes) salieron CERRADOS: el presupuesto ya usa token opaco de 16 bytes y clientes usa lista explícita sin `portalToken`.**
