@@ -133,6 +133,35 @@ Cuatro guards que ya existían cayeron, todos con razón:
 Los dos rojos de «guards de navegador» (informativo) NO son de este cambio: `objetivo-tactil` es
 «⬇ Clientes CSV» (J2, ya conocido) y `cls-barra-anuncio` es de la landing.
 
+### 🔴 TRAMPA PARA S0 · «los guards de árbol entero que sólo corre la tanda del CI»
+Lo que pasó el 17-oct con #2541: `npm run guards:entrada` dijo VERDE («La entrada puede
+empujarse») antes de cada push, y el obligatorio lo tumbó tres veces seguidas, cada vez por otro
+guard de la MISMA familia. No fue descuido ni mala suerte: el control previo no cubre a los que de
+verdad cazan esto.
+
+**La familia** (los cinco me cayeron a mí en este PR):
+
+| Guard | Qué caza en `tests/` y `scripts/` |
+|---|---|
+| `scrum195-url-bd-sin-fuga` y `scrum414-url-a-mano` | un `new URL(…)` cuyo error es alcanzable (lleva la cadena entera dentro) |
+| `scrum694-los-guards-migrados` | un guard que se fabrica su propio filtro de comentarios por regex, en vez de usar `tests/_solo-codigo.mjs` |
+| `scrum710b-anclaje-por-identidad` | un `fichero.ext:NNN` en el código: un anclaje por POSICIÓN que caduca en cuanto se edita por encima. Se ancla al literal (en 1560, el `get` de cada contrato) |
+| `scrum737-cifra-con-arbol-y-hora` | una cifra del árbol en un comentario SIN fecha ni sha («Antes 28 rutas…») |
+
+**Por qué `guards:entrada` no los ve:** su lista es CERRADA. La eligió el orquestador, guard a guard
+(`scripts/guards-entrada.mjs`, `GUARDS`), con un techo de tiempo (SCRUM-976). Sólo entra lo que
+pasa sin `dist`, sin base y en segundos. Estos cinco recorren el árbol entero y no están; tampoco
+`scrum1294` (la línea A9), que le cayó a S2 y a mí. **El verde de `guards:entrada` dice «los de su
+lista pasan», no «el CI pasará».** ⛔ No se meten en la lista (decisión del orquestador,
+17-oct): son lentos, y en esta máquina el comando ya sale CIEGO a los 90 s.
+
+**La regla que sale de aquí:** en un comentario de `tests/` o `scripts/`, toda cifra del árbol lleva
+su FECHA o su SHA, igual que el ancla de un registro. Lo que no se puede fechar no se escribe como
+número (`scrum737` da las cinco salidas: derivar, reformular, atar, anclar, retirar). Y antes de
+empujar un fichero nuevo de `tests/` o `scripts/`, se corren estos cinco a mano además de
+`guards:entrada`:
+`node --test tests/scrum195-url-bd-sin-fuga.test.mjs tests/scrum414-url-a-mano.test.mjs tests/scrum694-los-guards-migrados.test.mjs tests/scrum710b-anclaje-por-identidad.test.mjs tests/scrum737-cifra-con-arbol-y-hora.test.mjs tests/scrum1294-a9-leccion-en-a10.test.mjs`
+
 ### Lo que esto NO sabe
 - Los contratos son una COPIA fechada del servidor, no una lectura. Si el servidor cambia, este
   fichero no se entera: la `fuente` está para volver a mirarla.
