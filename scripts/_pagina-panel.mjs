@@ -20,15 +20,33 @@ import { cargarDashboard, pintarVista, todos } from '../tests/_banco-vistas.mjs'
 const VACIO = new Set(['INPUT', 'IMG', 'BR', 'HR']);
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
+// 🔴 SCRUM-1559 · EL BANCO GUARDA CADA DATO EN DOS SITIOS, y esto leía cada uno de UNO solo. Un
+// atributo reflejado puesto por PROPIEDAD (`a.href = …`) vive en el campo y no en `_attrs`, así que
+// no salía: el censo selecciona `a[href]` y 18 enlaces de 5 vistas eran invisibles (Informes 5 de 5,
+// Clientes 10 de 10). Son los reflejados del banco (`REFLEJADOS` en `tests/_banco-vistas.mjs`) que
+// no tienen ya su línea aquí, más `htmlFor`. Si están los dos, manda `_attrs`, como hasta hoy: el
+// banco no sabe cuál se escribió el último. `value` NO va: en el navegador la propiedad no es el
+// atributo, y para la geometría no cuenta.
+const REFLEJADOS_POR_PROPIEDAD = [['href', 'href'], ['src', 'src'], ['name', 'name'], ['title', 'title'],
+  ['placeholder', 'placeholder'], ['download', 'download'], ['htmlFor', 'for']];
+
 /** El árbol del mini-DOM a HTML. Conserva clases, ids, atributos, dataset y `style`. */
 export function serializar(n) {
   if (!n || !n.tagName) return '';
   if (n.tagName === '#TEXT') return esc(n._texto || n.textContent || '');
   const t = n.tagName.toLowerCase();
+  const attrs = n._attrs || {};
   const at = [];
   if (n.className) at.push(`class="${esc(n.className)}"`);
   if (n._id) at.push(`id="${esc(n._id)}"`);
-  if (n.type) at.push(`type="${esc(n.type)}"`);
+  // SCRUM-1559 · el `type` del MARCADO vive en `_attrs` y no en el campo: `<input type="checkbox">`
+  // salía `<input>`, un cuadro de texto (las 9 casillas de Exportar).
+  const tipo = n.type || attrs.type;
+  if (tipo) at.push(`type="${esc(tipo)}"`);
+  for (const [campo, nombre] of REFLEJADOS_POR_PROPIEDAD) {
+    const v = n[campo];
+    if (typeof v === 'string' && v !== '' && !Object.prototype.hasOwnProperty.call(attrs, nombre)) at.push(`${nombre}="${esc(v)}"`);
+  }
   if (n.checked) at.push('checked');
   if (n.disabled) at.push('disabled');
   // 🔴 SCRUM-1158 (cara 2) · antes salían sólo `cssText` y `display`. Pero el banco NO mantiene
@@ -43,7 +61,7 @@ export function serializar(n) {
   }
   const junto = [(n.style && n.style.cssText) || '', ...decl].filter(Boolean).join(';');
   if (junto) at.push(`style="${esc(junto)}"`);
-  for (const [k, v] of Object.entries(n._attrs || {})) {
+  for (const [k, v] of Object.entries(attrs)) {
     if (['class', 'id', 'type', 'style'].includes(k)) continue;
     at.push(`${esc(k)}="${esc(v)}"`);
   }
@@ -53,7 +71,11 @@ export function serializar(n) {
   const abre = `<${t}${at.length ? ' ' + at.join(' ') : ''}>`;
   if (VACIO.has(n.tagName)) return abre;
   let dentro = '';
-  if (n.hijos && n.hijos.length) dentro = n.hijos.map(serializar).join('');
+  // SCRUM-1559 · texto propio Y hijos (`btn.textContent = 'Nuevo cliente'; btn.appendChild(kbd)`, o
+  // `<p>Tu plan incluye <strong>…</strong>` del marcado): salen los dos, el texto delante, que es
+  // donde lo deja el navegador. Antes salía sólo el hijo y el CTA de Clientes se medía como «N».
+  // Con `_html` puesto NO: ahí `_texto` puede ser de antes del `innerHTML` (medido: 0 casos hoy).
+  if (n.hijos && n.hijos.length) dentro = (n._texto && !n._html ? esc(n._texto) : '') + n.hijos.map(serializar).join('');
   else if (n._html) dentro = n._html;
   else if (n._texto) dentro = esc(n._texto);
   return abre + dentro + `</${t}>`;
