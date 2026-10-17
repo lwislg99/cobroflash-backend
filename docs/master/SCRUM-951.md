@@ -476,7 +476,7 @@ En los dos casos los tres rojos son los mismos: «declara contra qué main…»,
 | `node --test` de `scrum1294` + `scrum267` | 17 / 1: cae `SCRUM-1294` y `SCRUM-267` pasa entero |
 | `npm run guards:entrada` | «✓ 14 guards de entrada en verde… La entrada puede empujarse», exit 0 |
 
-`scripts/guards-entrada.mjs` no incluye `scrum1294`. El comando que existe para no enterarse por el CI da luz verde a lo que el CI rechaza, y ésa es la mitad que cayó dos veces. No lo toco: lo arregla S5, a quien el orquestador ha dado la otra mitad, y se le pasa por `SendMessage`.
+`scripts/guards-entrada.mjs` no incluye `scrum1294`. El comando que existe para no enterarse por el CI da luz verde a lo que el CI rechaza, y ésa es la mitad que cayó dos veces. No lo toco: se le pasó por `SendMessage` a S5, que tiene la otra mitad por encargo del orquestador. Lo arregló en #2538 (SCRUM-1152b, abierto a las ~20Z): `scrum1294` entra en `guards:entrada` (15 guards) y la plantilla del registro trae la línea `A9:`. La §13 no afirma que esté en `main`: le dice a quien la lea cómo saber si su árbol lo trae (15 guards o 14).
 
 **Corrección a una cifra.** El orquestador propuso apuntar «divide entre seis». No lo he escrito así porque no es cierto con dos entradas mal: caen los mismos tres tests y salen las mismas seis líneas. El número de defectos es el de entradas que lista el primer rojo de cada guard.
 
