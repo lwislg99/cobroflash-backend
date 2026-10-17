@@ -642,14 +642,6 @@ router.get('/charges.csv', async (req, res) => {
     const { from, to } = parseDateFilter(req.query as any);
     const status = String(req.query.status || 'all');
 
-    const where: any = { merchantId: req.merchantId };
-    if (status !== 'all') where.status = status;
-    if (from || to) {
-      where.createdAt = {};
-      if (from) where.createdAt.gte = from;
-      if (to)   where.createdAt.lte = to;
-    }
-
     auditExport(req, 'cobros.csv', { from, to });
     const { header, rows } = await buildCobros(req.merchantId, { from, to }, status);
     sendCsv(res, `cobros_${new Date().toISOString().slice(0,10)}.csv`, header, rows);
@@ -667,14 +659,6 @@ router.get('/jobs.csv', async (req, res) => {
   try {
     const { from, to } = parseDateFilter(req.query as any);
     const status = String(req.query.status || 'all');
-
-    const where: any = { merchantId: req.merchantId };
-    if (status !== 'all') where.status = status;
-    if (from || to) {
-      where.createdAt = {};
-      if (from) where.createdAt.gte = from;
-      if (to)   where.createdAt.lte = to;
-    }
 
     auditExport(req, 'trabajos.csv', { from, to });
     const { header, rows } = await buildTrabajos(req.merchantId, { from, to }, status);
@@ -712,14 +696,6 @@ router.get('/quotes.csv', async (req, res) => {
   try {
     const { from, to } = parseDateFilter(req.query as any);
     const status = String(req.query.status || 'all');
-
-    const where: any = { merchantId: req.merchantId };
-    if (status !== 'all') where.status = status;
-    if (from || to) {
-      where.createdAt = {};
-      if (from) where.createdAt.gte = from;
-      if (to)   where.createdAt.lte = to;
-    }
 
     auditExport(req, 'presupuestos.csv', { from, to });
     const { header, rows } = await buildPresupuestos(req.merchantId, { from, to }, status);

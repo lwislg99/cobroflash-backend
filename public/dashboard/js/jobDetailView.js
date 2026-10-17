@@ -1564,6 +1564,35 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   });
   newAlbRow.appendChild(parteBtn);
 
+  // ── SCRUM-1190 · UN PRESUPUESTO MÁS SOBRE ESTE TRABAJO (el imprevisto, la ampliación) ────────
+  //
+  // El servidor ya lo cuelga de este Trabajo (`job_id`, SCRUM-195) y al aceptarlo suma su importe
+  // (SCRUM-1370); faltaba por dónde pedirlo. Va por el MISMO camino que «Hacer presupuesto» del hueco
+  // (SCRUM-1274), así que el editor nace con este Trabajo y su cliente.
+  //
+  // SÓLO si el Trabajo ya tiene importe aceptado (`totalAceptado != null`): es el COMPLEMENTO EXACTO
+  // de la condición del hueco «Hacer presupuesto» (`huecosDeCobro`, `== null`), así que siempre sale
+  // uno de los dos y nunca los dos. Con `job.quote` a secas, un presupuesto enviado y sin aceptar
+  // enseñaría ambos: dos botones para lo mismo con dos rótulos dirían que son cosas distintas.
+  // Rótulo: `+ ${L.quoteNew}`, el de la ficha del cliente para el caso equivalente (abrir el editor
+  // atado a la ficha). Reutilización, no texto nuevo: firma del orquestador, 16-oct-2026.
+  // No escribe `Quote.esAdicional`: quién pone ese rol está sin decidir (docs/master/SCRUM-1190.md).
+  if (job.totalAceptado != null) {
+    const L = window.appLocale || {};
+    const otroPresupuestoBtn = document.createElement('button');
+    otroPresupuestoBtn.type = 'button';
+    otroPresupuestoBtn.className = 'btn-secondary btn-sm job-toolbar-btn-44';
+    otroPresupuestoBtn.setAttribute('data-presupuesto-del-trabajo', '1');
+    otroPresupuestoBtn.textContent = `+ ${L.quoteNew || 'Nuevo presupuesto'}`;
+    otroPresupuestoBtn.addEventListener('click', () => {
+      if (!window.renderAppView) return;
+      window.renderAppView('quotes-new', {
+        template: { deTrabajo: { jobId: job.id, customerId: job.customer && job.customer.id != null ? job.customer.id : null } },
+      });
+    });
+    newAlbRow.appendChild(otroPresupuestoBtn);
+  }
+
   // ── SCRUM-135: "+ Añadir gasto" ya vinculado a ESTE trabajo ──────────────────
   // Es el alta rápida "desde la furgoneta" que SCRUM-107 dejó aparcada hasta que existiera
   // Expense.teamMemberId (SCRUM-109, ya en prod): el técnico compra material y lo registra

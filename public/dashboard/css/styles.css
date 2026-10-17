@@ -2998,6 +2998,10 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 .detail-dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; }
 .detail-dl dt { font-size: 13px; color: var(--muted); }
 .detail-dl dd { font-size: 13.5px; color: var(--body); margin: 0; }
+/* SCRUM-1206 · los textos del documento en la ficha del presupuesto. Los saltos los pone la pieza
+   (`textoDelDocumentoPintado`, `pre-line`); aquí, que una palabra larga (una URL) se parta en vez de
+   ensanchar la ficha a 360 px. Ni un token nuevo. */
+.quote-doc-texto { font-size: 14px; color: var(--body); overflow-wrap: anywhere; }
 
 /* ── SCRUM-597 (DOC-07) · QUIÉN LLEVA EL DOCUMENTO, y SCRUM-650 · quién ejecuta el trabajo
    Las dos pantallas COMPARTEN estas reglas en vez de tener cada una las suyas: son el mismo

@@ -421,3 +421,66 @@ Puesto S0. **La trampa la midió y la mandó S1** por `SendMessage`, a las ~12:2
 **PASO 0, reproducido por la S0 antes de escribirla.** En un repositorio desechable, con un fichero nuevo en el índice, `git commit -q -F - @'<salto>mensaje de prueba<salto>'@` da `error: pathspec 'mensaje de prueba' did not match any file(s) known to git` y **exit 1**. El HEAD no cambia y el fichero se queda en el índice (`A  b.txt`). El push encadenado no lo reproduje: con el commit fallido no hay nada que enseñar, y el resto del mecanismo (`;` no para) ya está en §1 y en A4.
 
 A9: aviso → A10 «Una operación que no se ejecutó se lee exactamente igual que un éxito.» — no se pudo comprobar: el commit y el push los escribe cada sesión en su shell, y no hay hook de la casa que vea un `;` entre los dos
+
+## SCRUM-951h · Staging corre con `NODE_ENV=production`: una prueba allí vale como prueba de PRODUCCIÓN (17-oct-2026)
+
+**Medido contra:** `origin/main` = `78a1af2506c053c460eeca9b458026060cf83829` · 2026-10-17T19:34:54Z
+
+Puesto S0. **La trampa la midió S1** (~12:50Z del 16-oct) y la S0 la repitió antes de escribirla. Quedó commiteada el 16-oct y sin empujar a propósito: 951g y 951h escriben al final de este mismo registro, y se esperó a que #2525 (951g) entrase en `main` (12:59:23Z del 16-oct). La rama se ha mezclado con `main` (A15) antes de añadir este tramo.
+
+| Qué | Dónde |
+|---|---|
+| Qué cambia en staging por correr como producción, lo que eso implica (un arranque abortado allí es el fallo de SCRUM-1122, R22) y la sonda por GET | `docs/equipo/trampas-del-entorno.md` §12 |
+
+**La sonda, y por qué discrimina.** `GET /outbox`, sin barra final y sin seguir redirecciones. El estático sólo se monta fuera de producción (`src/app.ts:187`) y el directorio se crea siempre (`src/core/storage/dirs.ts:23`), así que **301 = desarrollo · 404 = producción**. Control positivo, de S1: la app de `dist/` en local da 301 con `NODE_ENV=development` y 404 con `production`.
+
+| Cuándo | staging (`yaqu-staging-production.up.railway.app`) | `yaqu.app` | versión en `/health` | quién |
+|---|---|---|---|---|
+| 16-oct ~12:50Z | 404 | 404 | `665bcd17` | S1 |
+| 16-oct ~12:55Z | 404 | 404 | `0dbc92f2` | S0 |
+| 17-oct 19:34Z | 404 | 404 | `78a1af25` (= el ancla) | S0 |
+
+**No medido:** qué variables tiene staging (Resend, SMTP, `LOG_MAGIC_LINKS`). Ninguna sesión las puede leer, y §12 lo dice.
+
+A9: sin fallo que generalice — el tramo escribe una medición de S1; lo que tenía de error (empujar antes de que entrase 951g y chocar en este fichero) se evitó esperando, y la regla de esperar ya es A15
+
+## SCRUM-951i · El encabezado de un tramo del registro: dos requisitos, dos guards, y `guards:entrada` sólo mira uno (17-oct-2026)
+
+**Medido contra:** `origin/main` = `78a1af2506c053c460eeca9b458026060cf83829` · 2026-10-17T19:39:05Z
+
+Puesto S0. **Encargo del orquestador:** escribir la trampa que el 16-oct tumbó a S4 y a S3 con `scrum267` (la premisa era cierta sólo a medias: ver «Corrección» abajo): cuál es la forma exacta, qué tres fallos da y qué significa cada uno. Y con la lectura dentro: cuando dos personas se equivocan igual el mismo día, falta una herramienta. Rama apilada sobre `scrum-951h-staging-es-produccion`, porque las dos escriben al final de este registro y de `trampas-del-entorno.md`.
+
+| Qué | Dónde |
+|---|---|
+| Los dos requisitos y sus dos guards (el ancla, `scrum267`; la línea `A9:`, `scrum1294`); la forma del ancla, el comando que la genera y sus cuatro motivos; los tres rojos de un ancla mala; que nadie genera la A9 y que `guards:entrada` no la mira; cómo se cuentan los defectos | `docs/equipo/trampas-del-entorno.md` §13 |
+| La lección, en una línea | `docs/equipo/00-normas-siempre.md` A10 |
+
+**PASO 0: la herramienta ya existía.** `scripts/equipo/ancla.mjs` es de SCRUM-1152 (26-sep), y el mensaje del propio rojo de `scrum267` lo nombra. El orquestador le había pedido a S5 «un comando que la genere». Se lo dije por `SendMessage` antes de escribir nada, y lo cambió: S5 hace que `ancla.mjs` se use solo, no construye otro.
+
+**Reproducido antes de escribirla.** En `s0-829c`, una entrada temporal `docs/master/SCRUM-99991.md` y sólo `node --test tests/scrum267-ancla-de-medicion.test.mjs`. Borrada después: `git status` limpio.
+
+| entrada temporal | pasa / falla | el primer rojo dice |
+|---|---|---|
+| el ancla de `ancla.mjs` (control positivo) | 14 / 0 | — |
+| la forma de S3, la de `d062c61a` antes de `6ff67998` | 11 / 3 | `no declara «Medido contra»` |
+| la forma de S4 (`= producción =` delante del sha) | 11 / 3 | `el ancla no tiene la forma esperada` |
+
+En los dos casos los tres rojos son los mismos: «declara contra qué main…», «LAS EXENTAS SON EXACTAMENTE ÉSTAS» y «los números CUADRAN». `spec` los imprime dos veces, así que salen seis líneas por un solo error.
+
+**Corrección: el rojo de #2528 NO era el ancla.** La primera versión de este tramo (`e4126577`) decía que «los seis fallos de #2528 eran uno» de `scrum267`. Lo tomé de la premisa del encargo. Lo afinó S3 midiendo el último job, y lo comprobé en el log: el run `38905690014` (sobre `6ff67998`) tiene `scrum267` en verde, y lo que cae es `SCRUM-1294` con `docs/master/SCRUM-1559.md:5 · ancla del 2026-10-16 sin línea «A9:»`. El ancla de S3 la arregló `6ff67998` antes de que terminara ningún CI. El run anterior, sobre `d062c61a`, quedó cancelado. Según S3 y el orquestador, la A9 también tumbó a S2 en #2521. No lo he visto en un log: el CI rojo de #2521 que miré (`38901732782`) era de un guard de navegador.
+
+**La otra mitad, medida.** Una entrada temporal con el ancla buena y sin línea `A9:`:
+
+| comando | resultado |
+|---|---|
+| `node --test` de `scrum1294` + `scrum267` | 17 / 1: cae `SCRUM-1294` y `SCRUM-267` pasa entero |
+| `npm run guards:entrada` | «✓ 14 guards de entrada en verde… La entrada puede empujarse», exit 0 |
+
+`scripts/guards-entrada.mjs` no incluye `scrum1294`. El comando que existe para no enterarse por el CI da luz verde a lo que el CI rechaza, y ésa es la mitad que cayó dos veces. No lo toco: se le pasó por `SendMessage` a S5, que tiene la otra mitad por encargo del orquestador. Lo arregló en #2538 (SCRUM-1152b, abierto a las ~20Z): `scrum1294` entra en `guards:entrada` (15 guards) y la plantilla del registro trae la línea `A9:`. La §13 no afirma que esté en `main`: le dice a quien la lea cómo saber si su árbol lo trae (15 guards o 14).
+
+**Corrección a una cifra.** El orquestador propuso apuntar «divide entre seis». No lo he escrito así porque no es cierto con dos entradas mal: caen los mismos tres tests y salen las mismas seis líneas. El número de defectos es el de entradas que lista el primer rojo de cada guard.
+
+**No medido.** La línea exacta de S4: lo cazó antes del CI y no está en el historial. La reproduje con la forma que describió el orquestador.
+
+A9: aviso → A10 «Cuando dos personas distintas se equivocan igual el mismo día, no falta cuidado: falta una herramienta, o que la que ya existe sea el camino por defecto.» — no se pudo comprobar: el ancla mala la caza `scrum267`, y la A9 que falta, `scrum1294`; lo que ningún guard ve es si el ancla se escribió a mano. Hacer de `ancla.mjs` el camino por defecto y meter `scrum1294` en `guards:entrada` es de S5
+A9: aviso → cicatriz S0 «Expliqué un rojo de CI con la premisa del encargo sin leer qué test había caído» — no se pudo comprobar: leer el nombre del test antes de explicar un rojo es una conducta, y ningún guard ve la explicación que se escribe sin leerlo

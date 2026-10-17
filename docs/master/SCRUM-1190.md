@@ -55,3 +55,50 @@ comentarios sí crece (53.661 → 53.946 y 7.013 → 7.179 B): `tsc` los conserv
 `dist` a pelo NO prueba nada aquí.
 
 A9: sin fallo que generalice — atribuí la columna a SCRUM-293 por el commit que la metió en el esquema, y era del lote único del 10-ago; lo cacé leyendo `MIGRATIONS_PENDING.md` antes de empujar, que es la regla de siempre (la fuente, no el asunto de un commit).
+
+# SCRUM-1190 · la pantalla: «+ Nuevo presupuesto» en la ficha del Trabajo (S2)
+
+**Medido contra:** `origin/main` = `9dbf1c171ac2f89fe2e8b5ffc597d5c4baba7c48` · 2026-10-16T12:27:02Z
+**Skill UI:** cargada · reutiliza el botón de la barra de documentos tal cual (`btn-secondary btn-sm
+job-toolbar-btn-44`, el de «+ Nuevo albarán»: 44 px por SCRUM-962), sin estilos en línea ni clases nuevas.
+Sesión 2 (pantallas). Rama `scrum-1190b-nuevo-presupuesto-en-el-trabajo`.
+**Rótulo FIRMADO:** «`+ ${L.quoteNew}`» — orquestador de Luis, 16-oct-2026, mensaje punto a punto a S2:
+«No es texto nuevo: es REUTILIZACIÓN de un literal ya firmado en una situación equivalente». Es el que
+pinta la ficha del cliente (`customerDetailView.js:281`) para abrir el editor atado a ella. Descartado
+«Hacer presupuesto»: hoy significa «este Trabajo aún no tiene presupuesto».
+
+## Lo que cambia (`public/dashboard/js/jobDetailView.js`, barra de documentos)
+
+- Botón «+ Nuevo presupuesto» (en MX, «+ Nueva cotización»: sale del locale) que abre el editor por el
+  MISMO camino que el hueco de 1274: `renderAppView('quotes-new', { template: { deTrabajo: { jobId,
+  customerId } } })`. El servidor lo cuelga del Trabajo y al aceptarlo suma (mitad de S1, arriba).
+- Sale sólo con `job.totalAceptado != null`: el COMPLEMENTO EXACTO de la condición del hueco «Hacer
+  presupuesto» (`jobCobroHuecos.js:146`, `== null`). Uno de los dos, nunca los dos. Con `job.quote` a
+  secas, un presupuesto enviado y sin aceptar habría enseñado ambos (el mutante lo comprueba).
+- En un Trabajo `cerrado` la barra entera ya se oculta (`newAlbRow.hidden`), y el botón con ella.
+- NO escribe `Quote.esAdicional`: sigue sin decidir quién pone ese rol.
+
+## Verificación
+
+`tests/scrum1190b-nuevo-presupuesto-en-el-trabajo.test.mjs` (ficha REAL en el banco de vistas), 4/4.
+Sin el arreglo: 3 de 4 en rojo (el cuarto es el negativo, que tiene que pasar igual). Con el mutante
+`job.quote?.id != null` en vez de `totalAceptado`: cae «uno, nunca los dos». Tests que leen
+`jobDetailView.js` y los guards de registro/estilos: 104 ficheros, 999 tests, 995 pass, 3 fail antes de
+este registro (los tres, por el registro: 1340, 854 y 976), 1 skip.
+
+En `yaqu.app` (build `35b7c806`), cuenta QA, sonda `sondas-s2/nuevo-presupuesto-1190.mjs`, CERO
+escrituras (todo lo que no es GET, cortado; no salió ninguno), con `jobDetailView.js` de la rama servido:
+
+| fila | rama | producción (control) |
+|---|---|---|
+| Trabajo #77, aceptado | «+ Nuevo presupuesto», visible, 44 px; sin hueco | sin botón |
+| pulsarlo | editor «Nuevo presupuesto» con el cliente del Trabajo (#83) ya elegido (`aria-pressed=true`) | — |
+| Trabajo #76, sin aceptado | sin botón; con el hueco «Hacer presupuesto» | igual |
+
+**No medido en navegador:** el `POST /quote/create` con `job_id` que saldría al generar (sería una
+escritura). Ese tramo lo cubre `scrum1274` de punta a punta, y este cambio no lo toca.
+
+A9: comprobación → `tests/scrum1190b-nuevo-presupuesto-en-el-trabajo.test.mjs`
+(Mi primera condición fue `job.quote?.id != null`. Con un presupuesto enviado y sin aceptar habría
+enseñado el botón Y el hueco a la vez; lo vi al leer `huecosDeCobro`, y el caso «enviado» de este test
+cae con ese mutante.)

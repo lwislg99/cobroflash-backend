@@ -299,3 +299,68 @@ dan CERO líneas; sin la de S3 sale exactamente `VACIO|S3|…`; y dos vivas sin 
 - Sigue sin verse en vivo una fila `TE ESPERA` (pendiente, como en 1357c).
 
 A9: comprobación → `tests/scrum1357d-sala.test.mjs`
+
+
+## 17-oct-2026 · SCRUM-1357e · APARCADO NO ES CAÍDO: el puesto que el orquestador para a propósito no alarma
+
+**Medido contra:** `origin/main` = `c646bee25e320a69dda62ec4e63beabc56cdd466` · 2026-10-17T19:43:51Z
+
+A9: comprobación → `tests/scrum1357e-aparcado-no-es-caido.test.mjs`
+
+### El defecto
+
+El 16-oct el orquestador paró al equipo por gasto y el panel del fundador pintó cinco puestos «SIN
+CUBRIR». Era verdad, y el fundador preguntó DOS VECES si pasaba algo. Encargo: que un puesto parado a
+propósito se vea distinto de uno caído, con dos condiciones: ⓐ si no sabe cuál es, lo dice y avisa;
+ⓑ control en los dos sentidos.
+
+### El mecanismo, y por qué una marca y no una deducción
+
+- **Marca escrita por quien aparca**: `node scripts/equipo/aparcar.mjs S1,S2 --hasta 30h --motivo "gasto"`
+  (o `--hasta 2026-10-18T09:00Z`; `--quitar S3|todos`; sin argumentos, lista). Vive en
+  `%LOCALAPPDATA%\yaqu-equipo\aparcados.json`, junto al resto del estado del equipo.
+- **Descartada la deducción por el último estado** (`stopped` = alguien lo paró): callaría el caso
+  peligroso. `sesion.mjs relevar` PARA la sesión vieja antes de lanzar la nueva; si la nueva no arranca,
+  el puesto queda con un `stopped` encima y sin cubrir de verdad. Deducido, eso saldría «aparcado».
+- `parados.mjs` decide con `juzgarAparcado`. La marca **sólo vale** si: trae `desde` y `hasta`
+  legibles · no ha vencido · **ninguna sesión del puesto se lanzó después** (`createdAt` del registro,
+  no `updatedAt`: parar una sesión la toca después de aparcar y eso no es un relanzamiento) · una sesión
+  del puesto sin `createdAt` no se movió después · hay registro que mirar. Si no vale, el puesto sale
+  `VACIO` como siempre, con un quinto campo: `estaba aparcado, pero <por qué>`.
+- `--hasta` y `--motivo` son **obligatorios**: una marca sin fin callaría el puesto para siempre, y el
+  motivo es lo que lee el fundador en lugar de «SIN CUBRIR». Un `--hasta` sin huso se rechaza.
+- **Marca ilegible = ciego** (parados sale 2, sala `AVERIA`), y los puestos salen `VACIO`, nunca
+  `APARCADO`. `aparcar.mjs` se niega a escribir encima de una marca que no sabe leer.
+- `sala.mjs` escribe `APARCADO|S3|hasta <ISO>|«motivo»|aparcado a las <ISO>`. **No cuenta para la
+  salida** (sólo `APARCADO` → 0). La huella del plugin (tres primeros campos) lleva el `hasta`, no un
+  «hace N min»: no suena cada tres minutos.
+- Con `--jobs` (otro registro) y sin `--aparcados`, no se lee la marca de la máquina: hermético para
+  los tests de la familia, que corren con `--jobs` en la máquina del equipo.
+
+### Comprobado
+
+| corrida | resultado |
+|---|---|
+| test nuevo `scrum1357e` + los de 1357b, 1357c y 1357d | **49 de 49** (`tests 49`, `skipped 0`) |
+| 8 mutaciones a mano (restauradas en `finally` y comparadas byte a byte) | **8 cazadas** |
+| `sala.mjs` contra el mundo, sin marca | salida 1, dos `BLOQUEADA` (S4, S1): lo de siempre |
+
+Las mutaciones: no leer las marcas (ⓑ, cae el aparcado) · ignorar el vencimiento · ignorar el
+relanzamiento · creerse una sesión sin `createdAt` · creerse la marca sin registro · callar la marca
+ilegible · contar `APARCADO` como aviso · leer la marca de la máquina con `--jobs`. No se declaran en
+`MUTACIONES_QUE_ME_TUMBAN` (SCRUM-935), como las de 1357b, c y d.
+
+Los dos sentidos (ⓑ): el MISMO equipo parado (S0 viva, S1-S5 `stopped`) da cinco `APARCADO` y salida 0
+con la marca, y cinco `VACIO` y salida 1 sin ella. Y por efecto, con los guiones de verdad: aparcar →
+la sala deja de alarmar; quitar S3 → vuelve `VACIO|S3`.
+
+### Lo que NO hace
+
+- **El plugin `yaqu-sala` cuenta TODA línea como «puesto que atender»** (`register.js`, `renglon()` y la
+  huella del aviso). Sin tocarlo, un `APARCADO` sale en `/sala` con su texto («APARCADO|S3|hasta…»), pero
+  el renglón sigue diciendo «N puesto(s) que atender» y suena el aviso una vez. El plugin es del
+  orquestador: el parche (filtrar las líneas `APARCADO|` antes de contar y de la huella, y pintarlas
+  aparte) va en mano al orquestador. Hasta que entre, esto es la mitad.
+- `_sala` sigue a `origin/main` a mano: hasta que se ponga al día, el panel corre el `sala.mjs` viejo.
+- **Aparcar no para nada**, ni `sesion.mjs parar` aparca: son dos órdenes. Juntarlas tocaría la puerta
+  única de `sesion.mjs`, que no recibe flags de fuera; no se ha hecho.
