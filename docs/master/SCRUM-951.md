@@ -407,3 +407,17 @@ El caso ③ no se pudo volver a medir. `statusCheckRollup` de #2449 ya sólo tra
 **Error propio.** Mi primer filtro buscaba el obligatorio por el nombre exacto `build + tests` y dio **n=0 en los siete PR**. Eso se leía igual que «el obligatorio no ha arrancado» en todos. El nombre real es `build + tests (con banco desechable)`, y salió al listar los checks de un PR: el control positivo que tendría que haber ido primero.
 
 A9: aviso → A10 «Una causa que encaja con lo último que viste no está cerrada hasta que explica también lo primero.» — no se pudo comprobar: cerrar una causa es un juicio, no un comando; lo que sí se puede es nombrar el caso que no explica, y eso va en la tabla de §5
+
+## SCRUM-951g · Una rama empujada VACÍA: `-F -` con here-string en PowerShell 5.1 (16-oct-2026)
+
+**Medido contra:** `origin/main` = `0dbc92f240a91fbe9e35fd2d3830c53bb12cddc4` · 2026-10-16T12:35:09Z
+
+Puesto S0. **La trampa la midió y la mandó S1** por `SendMessage`, a las ~12:20Z, por indicación del orquestador. Su caso fue `scrum-1558-sin-proveedor-no-es-envio`: el primer push dejó la rama en `665bcd17`, la punta de `main`, y el bueno llegó después, `d7698912`. La S0 la escribe en `trampas-del-entorno.md` §2 (PowerShell 5.1).
+
+| Qué | Dónde |
+|---|---|
+| Síntoma, causa, cura y control | `docs/equipo/trampas-del-entorno.md` §2, la última fila |
+
+**PASO 0, reproducido por la S0 antes de escribirla.** En un repositorio desechable, con un fichero nuevo en el índice, `git commit -q -F - @'<salto>mensaje de prueba<salto>'@` da `error: pathspec 'mensaje de prueba' did not match any file(s) known to git` y **exit 1**. El HEAD no cambia y el fichero se queda en el índice (`A  b.txt`). El push encadenado no lo reproduje: con el commit fallido no hay nada que enseñar, y el resto del mecanismo (`;` no para) ya está en §1 y en A4.
+
+A9: aviso → A10 «Una operación que no se ejecutó se lee exactamente igual que un éxito.» — no se pudo comprobar: el commit y el push los escribe cada sesión en su shell, y no hay hook de la casa que vea un `;` entre los dos
