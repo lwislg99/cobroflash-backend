@@ -97,8 +97,14 @@ test('SCRUM-1156c · datos de la factura: SÓLO los apuntados, en el orden del a
   assert.equal(dd[0], 'A-2026/114');
   assert.equal(dd[2], '21%');
   assert.ok(dd[1].includes('40,00') && dd[3].includes('8,40'), `🔴 importes mal: ${JSON.stringify(dd)}`);
-  // HERMANO: el rótulo que NO se apuntó tampoco sale.
+  // El rótulo que NO se apuntó tampoco sale...
   assert.ok(!dt.includes('Fecha de la factura'));
+  // ...y su hermano: apuntada, sale, en su sitio del alta. Sin esto la negación de arriba pasaría
+  // también con un rótulo mal escrito (SCRUM-237).
+  const conFecha = await ficha({ providerInvoiceNumber: 'A-2026/114', providerInvoiceDate: '2026-10-03' });
+  const dtConFecha = conFecha.nodos.filter((n) => n.tagName === 'DT').map((n) => n.textContent);
+  assert.deepEqual(dtConFecha, ['Nº de factura del proveedor', 'Fecha de la factura']);
+  assert.ok(dtConFecha.includes('Fecha de la factura'));
 });
 
 test('SCRUM-1156c · gasto suelto: «Sin trabajo», por qué importa, y «Vincular a un trabajo»', async () => {
