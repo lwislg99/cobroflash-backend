@@ -215,3 +215,28 @@ aquí (`scrum1340`, `scrum854 ②` y `scrum976 ④`, que ejecuta los mismos guar
 **No visto en yaqu.app todavía:** se mira cuando entre, sobre el #202 de la cuenta QA (su GET trae
 «[QA-1268] Cabecera de pruebas QA…» y «[QA-1268] Pie de pruebas QA…», c.19790), con otro presupuesto sin
 textos de control.
+
+## 1206d — VISTO en yaqu.app (S4, s4-15oct)
+
+**Medido contra:** `origin/main` = `1900f25f0386e08a69cfab766b92395874209050` · 2026-10-17T20:38:58Z
+
+#2540 se mergeó a las 20:33:16Z (`1900f25f`), y producción servía ese mismo SHA (/version) al medir. El JS
+servido trae `CLASE_ROTULO_RAIL` (control de que no se mide una versión vieja). Cuenta QA, sólo GET, 390 y 1280 px,
+`serviceWorkers: 'block'`; el único abortado en todos los casos, `POST /admin/entorno`.
+
+| caso | ANTES (17-oct, `e244ff61`) | DESPUÉS (`1900f25f`) |
+|---|---|---|
+| #46 y #48, tal cual | 4 versalitas + «Observaciones» con `.detail-rail-etiqueta` | 5 rótulos, todos `detail-total-label` |
+| #48 con presupuesto y una foto añadidos EN EL NAVEGADOR (8 filas) | 5 + 3 (Presupuesto y Fotos, al lado de su valor) | 8, todos `detail-total-label`, todos encima de su valor; enlace 44×44 |
+| Trabajo #76 (control: no se tocó) | CLIENTE/PRESUPUESTO/RESPONSABLE `detail-section-title` + «Nota del cliente» `.detail-rail-etiqueta` | igual |
+
+Salidas: `ver1206d-visto-real-17oct.txt` y `ver1206d-visto-inyectado-17oct.txt` (bancos `ver1206d-rotulos-en-prod.mjs`
+y `ver1206d-antes-de-empujar.mjs main`, éste con `jsLocalServido: false`: el JS es el de producción).
+
+**Check informativo «guards de navegador» de #2540 en rojo, leído:** `guard:cls-barra-anuncio` (CLS 0,127 a 360 px
+en la landing) y `guard:objetivo-tactil` («⬇ Clientes CSV» 31 px). Ninguno toca el albarán;
+`guard:albaranes-con-acciones` en verde.
+
+**Lo que queda abierto, y no es de S4:** `DESIGN.md` sigue sin decir qué rótulo lleva un rail (tramo de arriba).
+Lo decide el orquestador aparte.
+A9: sin fallo que generalice — tramo de verificación; el fallo del sufijo (`1206c` ya cogido al empujar) lo paró el control antes del push, que es la comprobación que ya existe
