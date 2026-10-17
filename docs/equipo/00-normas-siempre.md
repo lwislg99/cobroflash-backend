@@ -125,3 +125,4 @@ Una tilde entre corchetes no casa en `git grep -E` ni en `grep -E`: el patrón d
 Una entrega escrita en tu turno no ha llegado: llega cuando se manda con `SendMessage` a quien te la encargó. (SCRUM-1356b)
 Una causa que encaja con lo último que viste no está cerrada hasta que explica también lo primero. (SCRUM-951f)
 Cuando dos personas distintas se equivocan igual el mismo día, no falta cuidado: falta una herramienta, o que la que ya existe sea el camino por defecto. (SCRUM-951i)
+Cero resultados con tu vocabulario no es silencio del documento. (SCRUM-1206)

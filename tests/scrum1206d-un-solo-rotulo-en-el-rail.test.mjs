@@ -5,10 +5,10 @@
 // Observaciones y Fotos en gris y minúscula (`.detail-rail-etiqueta`). Medido en yaqu.app el
 // 17-oct-2026 (albaranes #46 y #48, cuenta QA): 11,5 px / 700 / mayúsculas frente a 13 px / 400.
 //
-// ⚠️ La CAUSA no es un descuido de una fila: `DESIGN.md` no dice qué estilo de rótulo lleva un rail
-// (define «Label» en MAYÚSCULAS para KPI, cabeceras de tabla y secciones del sidebar, y un rótulo de
-// campo sin mayúsculas). Con la laguna, cada fila nueva copió la clase que tenía más a mano. La
-// decisión de alinear la minoría con la mayoría es del ORQUESTADOR (17-oct-2026), no de una norma.
+// ⚠️ La CAUSA no es un descuido de una fila: `DESIGN.md` define el estilo Label en MAYÚSCULAS
+// (`:147`) y la forma rótulo-arriba/valor-abajo (`:213`), pero no nombra el rail entre sus usos. Con
+// ese hueco, cada fila nueva copió la clase que tenía más a mano. Aplicar el Label al rail entero lo
+// decidió el ORQUESTADOR (17-oct-2026).
 //
 // Se pinta la pantalla de verdad con TODAS las filas que el rail sabe pintar y se exige que sus
 // rótulos compartan UNA sola clase.
