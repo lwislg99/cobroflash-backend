@@ -123,10 +123,12 @@ test('las seis rutas que recibían el dato de OTRA tienen ahora el suyo', () => 
   assert.equal(de('https://yaqu.app/admin/invoices/21').ejemplo, '/admin/invoices/21');
 });
 
-test('las cinco vistas de detalle se montan con el id de su dato, no con NaN ni undefined', () => {
+test('las seis vistas de detalle se montan con el id de su dato, no con NaN ni undefined', () => {
   const esperado = {
     renderJobDetailView: IDS.trabajo, renderQuoteDetailView: IDS.presupuesto, renderInvoiceDetailView: IDS.factura,
     renderAlbaranDetailView: IDS.albaran, renderParteDetailView: IDS.parte,
+    // SCRUM-1560c · la sexta, la ficha del gasto (SCRUM-1156c): sin id no pide nada y no se medía.
+    renderExpenseDetailView: IDS.gasto,
   };
   for (const [fn, id] of Object.entries(esperado)) {
     assert.deepEqual(ARGUMENTOS_DEL_CENSO[fn], [id], fn);
@@ -137,6 +139,7 @@ test('las cinco vistas de detalle se montan con el id de su dato, no con NaN ni 
   assert.equal(de(`/admin/partes/${IDS.parte}`).dato().id, IDS.parte);
   assert.equal(de(`/admin/quotes/${IDS.presupuesto}`).dato().id, IDS.presupuesto);
   assert.equal(de(`/admin/invoices/${IDS.factura}`).dato().id, IDS.factura);
+  assert.equal(de(`/admin/expenses/${IDS.gasto}`).dato().item.id, IDS.gasto);
 });
 
 test('el censo usa ESTOS datos y estos argumentos, no un relleno propio (código sin comentarios)', () => {
