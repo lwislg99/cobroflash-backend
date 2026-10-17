@@ -57,9 +57,8 @@ test('si el atributo y la propiedad están los dos, sale UNA vez', () => {
 test('type del MARCADO llega a la página (las casillas de Exportar)', () => {
   const c = nodo('div', reg());
   c.innerHTML = '<input type="checkbox"><button type="button">x</button>';
-  const s = serializar(c);
-  assert.ok(s.includes('<input type="checkbox">'), s);
-  assert.ok(s.includes('<button type="button">'), s);
+  // Igualdad con la salida ENTERA, no `includes`: es más estricta y no es un extractor (SCRUM-553).
+  assert.equal(serializar(c), '<div><input type="checkbox"><button type="button">x</button></div>');
 });
 
 test('CONTROL · type por propiedad sigue saliendo, una vez', () => {
@@ -79,7 +78,7 @@ test('texto propio + un hijo: salen los dos, el texto delante (el CTA «Nuevo cl
 test('texto del MARCADO delante de un hijo («Tu plan incluye <strong>…</strong>»)', () => {
   const c = nodo('div', reg());
   c.innerHTML = '<p>Tu plan incluye <strong>3</strong></p>';
-  assert.ok(serializar(c).includes('<p>Tu plan incluye<strong>3</strong></p>'), serializar(c));
+  assert.equal(serializar(c), '<div><p>Tu plan incluye<strong>3</strong></p></div>');
 });
 
 test('CONTROL · un nodo con innerHTML de etiquetas no repite su marcado como texto', () => {

@@ -1,0 +1,108 @@
+#!/usr/bin/env node
+// SCRUM-1357d · SALA — lo que necesita el panel «La sala» del fundador, sacado de `parados.mjs`.
+//
+//   node scripts/equipo/sala.mjs                    → una línea por cosa que atender; NADA si no hay ninguna
+//   node scripts/equipo/sala.mjs --jobs <carpeta>   → otro registro (así lo doblan los tests)
+//
+// POR QUÉ EXISTE. El plugin `yaqu-sala` corría un vigía que vivía en el scratchpad de UNA sesión del
+// orquestador (muere con su relevo) y que sólo conocía los nombres `sN-…`. El 16-oct-2026 hubo que lanzar
+// por `sesion.mjs`, cuya lista blanca sólo admite `sesion-0`…`sesion-5`, y el panel enseñó los SEIS puestos
+// «SIN CUBRIR» con los seis trabajando. A la vez, ese vigía dijo «ningún puesto que atender» mientras
+// `parados.mjs` cazaba a `sesion-3` bloqueada en un permiso.
+//
+// ES UNA TRADUCCIÓN, NO OTRO VIGÍA. Se LLAMA a `parados.mjs --json` como proceso (no se importa ni se
+// copia): lo que él sabe —sesión y no puesto, las dos fuentes, «te espera», puestos vacíos, y decir que no
+// pudo mirar— es lo que sale aquí. Los nombres de puesto los resuelve `puestoDe` (`latido.mjs`):
+// `sN`, `sN-…`, `sesion-N` y `sesion-N-…`.
+//
+// EL FORMATO es el que el plugin ya lee: una línea = una cosa que atender, campos separados por `|`, y los
+// tres primeros son la huella con la que el plugin decide si el aviso es nuevo.
+//   AVERIA|no pude mirar <qué>                                  (parados.mjs no pudo mirar algo)
+//   VACIO|S3|ninguna sesión suya con proceso|su puesto está SIN CUBRIR
+//   BLOQUEADA|S3|sesion-3|hace 8 min|pid 14304|«approve Entering worktree»
+//   TE ESPERA|S2|sesion-2|hace 39 min|pid 4100|«lo último que dijo»
+//   HUÉRFANAS|2 sesión(es) VIVA(S) que no son de ningún puesto: a, b|¿han cambiado los nombres?
+// Una sesión VIVA que no casa con ningún puesto NO se calla: si el equipo cambia de nombres otra vez, aquí
+// sale como huérfana en vez de desaparecer.
+//
+// 🔴 LA SALIDA VACÍA ES UNA AFIRMACIÓN. El plugin pinta «los 6 trabajando» cuando no lee ninguna línea, y
+// hoy no mira el código de salida. Por eso este guion no puede reventar en silencio: cualquier fallo se
+// imprime como `AVERIA|…` y sale 2.
+//
+// SALIDA: 0 = nada que atender (y ninguna línea) · 1 = hay líneas · 2 = alguna AVERIA (va también en líneas).
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+
+export const SALIDA_NADA = 0;
+export const SALIDA_HAY = 1;
+export const SALIDA_AVERIA = 2;
+const PARADOS = path.join(path.dirname(fileURLToPath(import.meta.url)), 'parados.mjs');
+/** Lo que se espera a `parados.mjs`: él espera hasta 60 s al panel. */
+const TOPE_MS = 120_000;
+const MIN = 60_000;
+
+/** Un campo no puede llevar `|` ni saltos: partiría la línea en el plugin. */
+const campo = (s, n = 200) => {
+  const t = String(s ?? '').replace(/[|\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
+  return t.length > n ? `${t.slice(0, n - 1)}…` : t;
+};
+const hace = (ahora, desde) => {
+  if (!Number.isFinite(ahora) || !Number.isFinite(desde)) return 'desde no se sabe';
+  const min = Math.max(0, Math.round((ahora - desde) / MIN));
+  return min < 120 ? `hace ${min} min` : `hace ${(min / 60).toFixed(1)} h`;
+};
+const averia = (motivo) => ({ codigo: SALIDA_AVERIA, lineas: [`AVERIA|${campo(motivo, 300)}`] });
+
+/**
+ * El informe de `parados.mjs --json` (su `datos`), traducido a las líneas del plugin.
+ * @returns {{codigo: 0|1|2, lineas: string[]}}
+ */
+export function aLineas(datos) {
+  if (!datos || typeof datos !== 'object' || !Array.isArray(datos.filas) || !Array.isArray(datos.ciegos)) {
+    return averia('parados.mjs devolvió algo que no es su informe');
+  }
+  const lineas = [];
+  for (const c of datos.ciegos) lineas.push(`AVERIA|no pude mirar ${campo(c, 300)}`);
+  for (const p of datos.vacios || []) lineas.push(`VACIO|${campo(p)}|ninguna sesión suya con proceso|su puesto está SIN CUBRIR`);
+  for (const f of datos.bloqueadas || []) {
+    lineas.push(`BLOQUEADA|${f.puesto || 'sin puesto'}|${campo(f.nombre, 60)}|${hace(datos.ahora, f.desde)}|${f.pid ? `pid ${f.pid}` : 'sin proceso'}|${f.pregunta ? `«${campo(f.pregunta)}»` : '(no dice qué espera)'}`);
+  }
+  for (const f of datos.esperan || []) {
+    lineas.push(`TE ESPERA|${f.puesto || 'sin puesto'}|${campo(f.nombre, 60)}|${hace(datos.ahora, f.desde)}|pid ${f.pid}|${f.detalle ? `«${campo(f.detalle)}»` : '(no dice qué hizo)'}`);
+  }
+  const huerfanas = datos.filas.filter((f) => f && !f.puesto && f.pid).map((f) => campo(f.nombre, 60));
+  if (huerfanas.length) lineas.push(`HUÉRFANAS|${huerfanas.length} sesión(es) VIVA(S) que no son de ningún puesto: ${huerfanas.join(', ')}|¿han cambiado los nombres?`);
+  const codigo = datos.ciegos.length ? SALIDA_AVERIA : lineas.length ? SALIDA_HAY : SALIDA_NADA;
+  return { codigo, lineas };
+}
+
+/**
+ * Corre `parados.mjs --json` y comprueba que su informe y su salida cuadran.
+ * @returns {{datos: object} | {averia: string}}
+ */
+export function correrParados({ jobs, lanzar = spawnSync, env = process.env } = {}) {
+  const r = lanzar(process.execPath, [PARADOS, '--json', ...(jobs ? ['--jobs', jobs] : [])],
+    { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, timeout: TOPE_MS, windowsHide: true, env });
+  if (r.error) return { averia: `no pude correr parados.mjs (${r.error.code || r.error.message})` };
+  let datos;
+  try { datos = JSON.parse(String(r.stdout)); } catch {
+    return { averia: `parados.mjs salió con ${r.status} sin un informe legible${r.stderr && r.stderr.trim() ? `: ${campo(r.stderr, 160)}` : ''}` };
+  }
+  if (!datos || datos.codigo !== r.status) return { averia: `parados.mjs salió con ${r.status} y su informe dice ${datos ? datos.codigo : 'nada'}: no cuadran` };
+  return { datos };
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const fin = ({ codigo, lineas }) => {
+    if (lineas.length) process.stdout.write(`${lineas.join('\n')}\n`);
+    process.exitCode = codigo;
+  };
+  try {
+    const i = process.argv.indexOf('--jobs');
+    const r = correrParados({ jobs: i >= 0 ? process.argv[i + 1] : undefined });
+    fin(r.averia ? averia(r.averia) : aLineas(r.datos));
+  } catch (e) {
+    fin(averia(`sala.mjs reventó: ${e && e.message ? e.message : e}`));
+  }
+}

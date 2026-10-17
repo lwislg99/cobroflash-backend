@@ -52,8 +52,10 @@ async function renderReportsView(container) {
   const btnExp  = makeExportBtn('Gastos CSV',        '/admin/exports/expenses.csv');
   const btnQuot = makeExportBtn('Presupuestos CSV',  '/admin/exports/quotes.csv');
   // SCRUM-1183 · `jobs.csv` existía desde SCRUM-25 y suelto no lo bajaba nadie: sólo salía dentro
-  // del paquete de «Descargar datos». Filtra por `createdAt` con from/to, igual que quotes.csv,
-  // así que lleva el mismo año (abajo). Rótulo firmado en SCRUM-1183 comentario 19799.
+  // del paquete de «Descargar datos». Lleva el mismo año que los otros (abajo), pero NO filtra por
+  // la misma fecha: quotes.csv va por alta (`createdAt`) y jobs.csv por fecha PREVISTA
+  // (`CAMPO_FECHA_TRABAJOS`, SCRUM-106), así que un trabajo sin agendar no sale en ningún año
+  // (SCRUM-1183b, medido en yaqu.app). Rótulo firmado en SCRUM-1183 comentario 19799.
   const btnJobs = makeExportBtn('Trabajos CSV',      '/admin/exports/jobs.csv');
   const btnCust = makeExportBtn('Clientes CSV',      '/admin/exports/customers.csv'); // A11.4 (RGPD)
   exportRow.appendChild(btnInv);

@@ -378,3 +378,46 @@ Sesión 5.
 - `docs/equipo/puesto-j5.md`: una línea que remite a esa sección.
 - Comprobado antes de escribir: `puppeteer-core` está en `package.json` y `playwright` no; `.mcp.json` declara el
   servidor `playwright` (`@playwright/mcp`).
+
+## SCRUM-951f · `BLOCKED` no es «atascado»: tres casos con una misma palabra (16-oct-2026)
+
+**Medido contra:** `origin/main` = `665bcd17ff7fe0f63959b300bda92cdc6bf448c7` · 2026-10-16T12:09:57Z
+
+Puesto S0. **Encargo del orquestador de Luis:** escribir en `trampas-del-entorno.md` lo que él midió ese día. `BLOCKED`, con `mergeable=MERGEABLE` y el obligatorio con la conclusión vacía, es un obligatorio que no ha terminado. El caso raro, el de #2449 (obligatorio verde y `BLOCKED`), sigue sin explicar. Y además va su propia corrección: cerró ese caso con una causa que sólo explicaba un suceso posterior.
+
+| Qué | Dónde |
+|---|---|
+| La trampa, con sus tres casos, la receta de `merge-tree` y la corrección del orquestador | `docs/equipo/trampas-del-entorno.md` §5 |
+| La lección, en una línea | `docs/equipo/00-normas-siempre.md` A10 |
+
+**Medido por la S0 para escribirla:**
+
+| PR | `mergeStateStatus` | `mergeable` | obligatorio | caso |
+|---|---|---|---|---|
+| #2506, #2508, #2511, #2512, #2513 (11:50Z) | `BLOCKED` | `MERGEABLE` | `QUEUED` / `IN_PROGRESS`, conclusión vacía | ① no ha terminado |
+| #2505 (11:50Z) | `BLOCKED` | `MERGEABLE` | `FAILURE` (11:32:34Z) | ② falló: 1 de 11.634, `SCRUM-1405c · ④`, con `FATAL ERROR: Reached heap limit` en el mismo log; el diff son 2 `.md` |
+| #2510 (11:50Z) | `UNSTABLE` | `MERGEABLE` | `SUCCESS` | ni ①, ni ②, ni ③: el obligatorio está verde y quedan checks informativos en curso. Entró en `main` minutos después |
+
+El caso ③ no se pudo volver a medir. `statusCheckRollup` de #2449 ya sólo trae el último run (verde, de 11:09Z a 11:21Z del 16-oct), y el PR entró a las 11:23:03Z. **El dato de las 15:35Z del 15-oct es del orquestador, no mío.**
+
+**`merge-tree`, con sus dos controles:** en un repositorio desechable, un conflicto fabricado en `a.txt` da exit **1** y nombra `a.txt`. `origin/main` contra la punta de #2512 da exit **0** y sólo el árbol. Con `git version 2.51.0.windows.1`.
+
+**De quién es lo que no se toca aquí:** `causaDelAtasco` (`scripts/vigia-atascados.mjs`) devuelve `ESPERANDO` para todo `BLOCKED` sin rojo, y eso incluye el caso ③. El fichero es de S5 (`dos-equipos.md` §3, la fila de los 16 scripts del bucle PR → CI): se nombra y se le pasa al orquestador.
+
+**Error propio.** Mi primer filtro buscaba el obligatorio por el nombre exacto `build + tests` y dio **n=0 en los siete PR**. Eso se leía igual que «el obligatorio no ha arrancado» en todos. El nombre real es `build + tests (con banco desechable)`, y salió al listar los checks de un PR: el control positivo que tendría que haber ido primero.
+
+A9: aviso → A10 «Una causa que encaja con lo último que viste no está cerrada hasta que explica también lo primero.» — no se pudo comprobar: cerrar una causa es un juicio, no un comando; lo que sí se puede es nombrar el caso que no explica, y eso va en la tabla de §5
+
+## SCRUM-951g · Una rama empujada VACÍA: `-F -` con here-string en PowerShell 5.1 (16-oct-2026)
+
+**Medido contra:** `origin/main` = `0dbc92f240a91fbe9e35fd2d3830c53bb12cddc4` · 2026-10-16T12:35:09Z
+
+Puesto S0. **La trampa la midió y la mandó S1** por `SendMessage`, a las ~12:20Z, por indicación del orquestador. Su caso fue `scrum-1558-sin-proveedor-no-es-envio`: el primer push dejó la rama en `665bcd17`, la punta de `main`, y el bueno llegó después, `d7698912`. La S0 la escribe en `trampas-del-entorno.md` §2 (PowerShell 5.1).
+
+| Qué | Dónde |
+|---|---|
+| Síntoma, causa, cura y control | `docs/equipo/trampas-del-entorno.md` §2, la última fila |
+
+**PASO 0, reproducido por la S0 antes de escribirla.** En un repositorio desechable, con un fichero nuevo en el índice, `git commit -q -F - @'<salto>mensaje de prueba<salto>'@` da `error: pathspec 'mensaje de prueba' did not match any file(s) known to git` y **exit 1**. El HEAD no cambia y el fichero se queda en el índice (`A  b.txt`). El push encadenado no lo reproduje: con el commit fallido no hay nada que enseñar, y el resto del mecanismo (`;` no para) ya está en §1 y en A4.
+
+A9: aviso → A10 «Una operación que no se ejecutó se lee exactamente igual que un éxito.» — no se pudo comprobar: el commit y el push los escribe cada sesión en su shell, y no hay hook de la casa que vea un `;` entre los dos
