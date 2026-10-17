@@ -386,6 +386,10 @@ El fundador preguntó el **13-oct** qué falta para que nuestro software mande a
 🔵 **UNA PISTA, Y VA DECLARADA COMO HIPÓTESIS, NO COMO CAUSA.** En **#2505** el fallo vino acompañado de **heap OOM**. Y el mismo día, **a tres de nuestras sesiones el sistema les mató la tanda completa de tests por falta de memoria** en la máquina local. **Eso sugiere —no demuestra— que el caso ④ es sensible a la memoria disponible y cae cuando el runner va cargado.** **No lo hemos medido**, y no lo vamos a medir porque el test es vuestro: lo decimos por si os ahorra la búsqueda.
 · **Lo que lo confirmaría o lo tumbaría:** correr ese caso solo, con el heap limitado a propósito, y ver si cae; y correrlo con holgura, y ver si no. **Si cae con holgura, nuestra pista es falsa y mejor saberlo pronto.**
 
+🔵 **ACTUALIZACIÓN DEL 17-oct, y ahora hay MECANISMO, no sólo correlación.** Nuestra S3 leyó qué mide el caso ④: **la PÉRDIDA DE SALIDA POR UNA TUBERÍA** (`stdout` no bloqueante). **Eso depende de la carga y del momento, por construcción.** Y el «Reached heap limit» aparece **en el MISMO log** en **TRES** corridas: **#2505, #2528 y #2533**.
+**Un test que mide pérdida de salida por tubería, que falla a ráfagas, y que tres veces lo hace con el montón de memoria agotado en el mismo log: eso ya no es una coincidencia de tres cifras, es una historia que encaja de principio a fin.**
+⚠️ **Aun así seguimos llamándolo HIPÓTESIS, y lo decimos a propósito: nadie ha corrido todavía la prueba que la confirma o la tumba** (el caso ④ solo, con el heap limitado adrede → debe caer; y con holgura → no debe caer). **Nuestra sesión que lo midió se negó a ascenderlo a causa, y nosotros tampoco lo ascendemos.** **Si al correr esa prueba cae con holgura, la hipótesis es falsa y mejor saberlo pronto.**
+
 · ⚠️ **Y lo que NO os pedimos: que lo quitéis.** Un test que a veces cae suele estar midiendo algo real de forma frágil, y borrarlo cambiaría un rojo molesto por un verde hueco. **Lo que pedimos es que deje de ser intermitente.**
 · **Lo escribe el orquestador de Luis, 16-oct-2026, con las seis instancias medidas por sesiones distintas.**
 
