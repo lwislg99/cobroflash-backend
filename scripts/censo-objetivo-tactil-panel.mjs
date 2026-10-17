@@ -49,6 +49,7 @@ import { lanzarNavegador } from './_navegador.mjs';
 import { FUENTE_MEDIDOR, INTERACTIVOS, MINIMO_TACTIL } from './_medidor-de-toque.mjs';
 import { serializar, paginaDeClientes, CLIENTES_DE_MUESTRA, DETALLE_360_DE_MUESTRA, TRABAJO_DE_MUESTRA, ARGUMENTOS_DE_VISTA } from './_pagina-panel.mjs';
 import { cargarDashboard, pintarVista, todos } from '../tests/_banco-vistas.mjs';
+import { cortosDistintos } from './_censo-distintos.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = path.join(RAIZ, 'public');
@@ -156,9 +157,10 @@ const MEDIR = `(async (SEL, MIN) => {
     if (el.className && typeof el.className === 'string') c = el.className.trim().split(/\\s+/).filter(Boolean).join('.');
     return el.tagName + (c ? '.' + c : '');
   };
-  for (const el of nodos) {
+  for (const [i, el] of nodos.entries()) {
     const r0 = el.getBoundingClientRect();
-    const ficha = { sel: nombreDe(el), texto: (el.textContent || '').replace(/\\s+/g, ' ').trim().slice(0, 34) || '(sin texto)' };
+    // SCRUM-1559b · \`i\` es la identidad del elemento a los dos anchos (ver _censo-distintos.mjs).
+    const ficha = { i, sel: nombreDe(el), texto: (el.textContent || '').replace(/\\s+/g, ' ').trim().slice(0, 34) || '(sin texto)' };
     if (!r0.width || !r0.height) { sinPintar.push(ficha); continue; }
     const m = await window.__areaDeToque(el, SEL, { scroll: true });
     if (m.error) { noTocables.push({ ...ficha, motivo: m.error }); continue; }
@@ -207,15 +209,9 @@ for (const r of resultados) {
     + String(r.sinPintar.length).padEnd(11) + r.noTocables.length);
 }
 
-/** Un elemento es el MISMO aunque se mida a dos anchuras: pantalla + selector + texto. */
-const distintos = new Map();
-for (const r of resultados) {
-  for (const m of r.medidos.filter((x) => !x.cumple)) {
-    const k = `${r.fn}|${m.sel}|${m.texto}`;
-    const p = distintos.get(k);
-    if (!p || m.tocable < p.tocable) distintos.set(k, { fn: r.fn, sel: m.sel, texto: m.texto, tocable: m.tocable });
-  }
-}
+// Un elemento es el MISMO aunque se mida a dos anchuras: pantalla + su posición en el DOM servido.
+// 🔴 SCRUM-1559b · era pantalla + selector + texto, y los tres «💬» de Clientes contaban UNO.
+const distintos = cortosDistintos(resultados);
 const mediciones = resultados.reduce((t, r) => t + r.medidos.filter((m) => !m.cumple).length, 0);
 const esSm = (sel) => sel.includes('btn-sm');
 const smDistintos = [...distintos.values()].filter((v) => esSm(v.sel)).length;
