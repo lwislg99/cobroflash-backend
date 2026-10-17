@@ -92,6 +92,7 @@ de scrum267. El encargo se reformuló a «que se use solo». Lo medido, con S0 (
 | entrada temporal con el ancla de `ancla.mjs` y SIN `A9:`, comando NUEVO | salida 1 · `✖ SCRUM-1294` · 15 guards |
 | control: sin la entrada, comando NUEVO | salida 0 · «15 guards de entrada en verde (170 tests, 85,0 s de 90)» |
 | la misma entrada con el comando de `main` | **CIEGO** (salida 2, cortado a 90 s por la carga de seis sesiones): no lo pude ver en verde yo; el verde falso de `main` es medida de S0 |
+| mutación: quitar scrum1294 de `GUARDS` (restaurado y comparado byte a byte) | salida 1 · «la lista tiene 14 guards y el mínimo son 15. No se ejecuta nada.» |
 | los 11 tests que vigilan `guards-entrada.mjs` (976, 928, 928b, 1349, 1327, 1289, 1178b, 711, 775, 812, 1153) | 102 de 102, `skipped 0` |
 
 La entrada temporal se borró en un `finally` y `git status` quedó con sólo `scripts/guards-entrada.mjs`.
