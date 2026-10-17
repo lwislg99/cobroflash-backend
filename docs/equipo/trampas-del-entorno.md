@@ -277,7 +277,8 @@ en `app.ts`), y el directorio existe siempre (`mkdirSync(outboxDir)` en `dirs.ts
 `/outbox/` = desarrollo · 404 = producción.** Control positivo de S1: la app de `dist/` en local da 301
 con `NODE_ENV=development` y 404 con `production`. Medido el 16-oct-2026: staging
 (`yaqu-staging-production.up.railway.app`) da **404** y `yaqu.app` da **404**, los dos con la versión
-`0dbc92f2` en `/health` (repetido por la S0; S1 lo había medido sobre `665bcd17`).
+`0dbc92f2` en `/health` (repetido por la S0; S1 lo había medido sobre `665bcd17`). Vuelto a medir el
+17-oct-2026 a las 19:34Z: los dos dan **404**, con la versión `78a1af25`.
 
 ⚠️ **No medido:** qué variables tiene staging (Resend, SMTP, `LOG_MAGIC_LINKS`). Ninguna sesión las
 puede leer.

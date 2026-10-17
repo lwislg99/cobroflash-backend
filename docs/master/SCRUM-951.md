@@ -421,3 +421,25 @@ Puesto S0. **La trampa la midió y la mandó S1** por `SendMessage`, a las ~12:2
 **PASO 0, reproducido por la S0 antes de escribirla.** En un repositorio desechable, con un fichero nuevo en el índice, `git commit -q -F - @'<salto>mensaje de prueba<salto>'@` da `error: pathspec 'mensaje de prueba' did not match any file(s) known to git` y **exit 1**. El HEAD no cambia y el fichero se queda en el índice (`A  b.txt`). El push encadenado no lo reproduje: con el commit fallido no hay nada que enseñar, y el resto del mecanismo (`;` no para) ya está en §1 y en A4.
 
 A9: aviso → A10 «Una operación que no se ejecutó se lee exactamente igual que un éxito.» — no se pudo comprobar: el commit y el push los escribe cada sesión en su shell, y no hay hook de la casa que vea un `;` entre los dos
+
+## SCRUM-951h · Staging corre con `NODE_ENV=production`: una prueba allí vale como prueba de PRODUCCIÓN (17-oct-2026)
+
+**Medido contra:** `origin/main` = `78a1af2506c053c460eeca9b458026060cf83829` · 2026-10-17T19:34:54Z
+
+Puesto S0. **La trampa la midió S1** (~12:50Z del 16-oct) y la S0 la repitió antes de escribirla. Quedó commiteada el 16-oct y sin empujar a propósito: 951g y 951h escriben al final de este mismo registro, y se esperó a que #2525 (951g) entrase en `main` (12:59:23Z del 16-oct). La rama se ha mezclado con `main` (A15) antes de añadir este tramo.
+
+| Qué | Dónde |
+|---|---|
+| Qué cambia en staging por correr como producción, lo que eso implica (un arranque abortado allí es el fallo de SCRUM-1122, R22) y la sonda por GET | `docs/equipo/trampas-del-entorno.md` §12 |
+
+**La sonda, y por qué discrimina.** `GET /outbox`, sin barra final y sin seguir redirecciones. El estático sólo se monta fuera de producción (`src/app.ts:187`) y el directorio se crea siempre (`src/core/storage/dirs.ts:23`), así que **301 = desarrollo · 404 = producción**. Control positivo, de S1: la app de `dist/` en local da 301 con `NODE_ENV=development` y 404 con `production`.
+
+| Cuándo | staging (`yaqu-staging-production.up.railway.app`) | `yaqu.app` | versión en `/health` | quién |
+|---|---|---|---|---|
+| 16-oct ~12:50Z | 404 | 404 | `665bcd17` | S1 |
+| 16-oct ~12:55Z | 404 | 404 | `0dbc92f2` | S0 |
+| 17-oct 19:34Z | 404 | 404 | `78a1af25` (= el ancla) | S0 |
+
+**No medido:** qué variables tiene staging (Resend, SMTP, `LOG_MAGIC_LINKS`). Ninguna sesión las puede leer, y §12 lo dice.
+
+A9: sin fallo que generalice — el tramo escribe una medición de S1; lo que tenía de error (empujar antes de que entrase 951g y chocar en este fichero) se evitó esperando, y la regla de esperar ya es A15
