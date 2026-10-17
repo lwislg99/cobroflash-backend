@@ -67,4 +67,52 @@ Sesión S2 · rama `scrum-1156c-ficha-gasto-pantalla`. Encargo del orquestador d
 ### Lo que NO entra todavía
 
 - El NIF del proveedor: la fila no lo trae, y sin dato no hay fila.
-- Visto en yaqu.app: después del merge.
+- Visto en yaqu.app: después del merge (tramo siguiente).
+
+## Tramo 1156c VISTO · la ficha en yaqu.app (S2)
+
+**Medido contra:** `origin/main` = `44f3a6bf229837bc5249b4dc8056790f7b6d0e41` · 2026-10-17T22:18:01Z
+
+A9: sin fallo que generalice — tramo de verificación en producción, sin código: lo medido va en las tablas de abajo, con sondas de navegador fuera del repo (`D:\MILLONARIO\cobroFlash\sondas-s2\visto-1156.mjs`, `crear-1156.mjs`, `medir-1156.mjs`) contra yaqu.app con la cuenta QA.
+
+#2545 entró en `main` el 2026-10-17T22:10:06Z (merge `196453e15bb14ab8df07f9edfc3ea419bfe16461`, obligatorio verde en 12m55s). yaqu.app servía `44f3a6bf` (contiene el merge, comprobado con `git merge-base --is-ancestor`).
+
+### 🔴 La cuenta QA pasa de 0 a 2 gastos
+
+Antes de medir, `GET /admin/expenses` de la cuenta QA daba `{"ok":true,"items":[]}`: sin un gasto no hay ficha. Con la autorización del orquestador (bajo la norma del fundador del 29-sep: crear datos de prueba en QA es nuestro trabajo) se crearon DOS por el alta del panel, y sólo esas dos escrituras salieron (`POST /admin/expenses` → 201 cada una; todo lo demás que no es GET, cortado y probado con control positivo):
+
+| id | concepto | estado al crearlo |
+|---|---|---|
+| 13 | `[QA-1156] sin foto ni trabajo` | 10 €, materiales, sin foto, sin trabajo (`quoteId` null), sin datos de factura |
+| 14 | `[QA-1156] con foto y nº de factura` | 14,64 €, materiales, foto de un ticket de prueba dibujado por la sonda, `providerInvoiceNumber` «A-QA/1156», sin trabajo |
+
+No se borran: la cuenta QA es para esto, y un borrado sería otra escritura. Quien llegue después se encontrará 2 gastos donde había 0.
+
+### Los cinco literales de 920 c.15992, dónde se ven
+
+En el `expensesView.js` SERVIDO por yaqu.app los cinco salen ahora (1, 2, 1, 1, 1 apariciones), con el control «Ver trabajo» dando 3. S3 los midió a CERO el 17-oct con ese control en 1.
+
+| literal | dónde se ve en yaqu.app |
+|---|---|
+| «Ver a tamaño completo» | ficha del gasto 14 (con foto), botón bajo la foto del ticket |
+| «Cambiar la foto» | ficha del gasto 14, botón al lado del anterior |
+| «De este gasto no guardaste ninguna foto.» | ficha del gasto 13 (sin foto), en el bloque «La foto del ticket», sobre «📷 Añadir la foto ahora» |
+| «Este gasto no cuenta para el margen de ningún trabajo.» | fichas 13 y 14 (las dos sin trabajo), bajo «Sin trabajo» |
+| «Vincular a un trabajo» | fichas 13 y 14, botón bajo esa frase, y en su «⋯» |
+
+Datos de la factura del proveedor: la ficha 14 pinta «Nº de factura del proveedor: A-QA/1156» y sólo esa fila (no se apuntó nada más); la 13 no tiene tarjeta. El «⋯», abierto: ficha 13 → Editar · 📷 Añadir la foto · Vincular a un trabajo · 🗑 Eliminar; ficha 14 → Editar · Ver la foto · Vincular a un trabajo · 🗑 Eliminar. A 390 sale como hoja inferior (capturas `visto-g13-menu-390.png`, `visto-g14-menu-390.png`).
+
+### El historial (SCRUM-832), a 1280 y a 390
+
+- Tocar la fila en la lista abre `#expenses-detail/13` y `#expenses-detail/14`, con la ficha y SIN el modal de edición.
+- «Atrás» desde la ficha vuelve a `#expenses`.
+- Recargar con `#expenses-detail/<id>` vuelve a pintar la ficha de ese gasto.
+- `#expenses-detail/999999999` → `showToast('Ese gasto ya no existe.')` (llamada interceptada; a los 4 s ya no estaba en pantalla) y termina en `#expenses`, título «Gastos».
+- Sin desborde horizontal, 0 errores de página y 0 peticiones que no fueran GET en la medida.
+
+Capturas: `docs/master/evidencias/SCRUM-1156/visto-*.png` (fichas 13 y 14 a 390 y 1280, los dos «⋯» a 390, el id inexistente a 390, esta última con la cuenta todavía vacía).
+
+### Visto y no es de esta ficha
+
+- En la captura de página completa a 390 de la ficha 14, el botón flotante «?» de ayuda (global del panel) tapa media fila de «Nº de factura del proveedor». Es el botón de siempre, no algo de la ficha; queda dicho, sin ticket.
+- El censo táctil todavía no mide la ficha: le falta su contrato en `scripts/_datos-del-censo.mjs` (carril de S3), apuntado en SCRUM-1560.
