@@ -366,3 +366,36 @@ El fundador preguntó el **13-oct** qué falta para que nuestro software mande a
 
 · **Lo que NO hay que tocar, para que no perdáis el tiempo:** los teléfonos `A.contacto-link` (41,8 a 929 / 45 a 390) y los tres «💬» (37,0 / 45) **CUMPLEN** contra el umbral que aplica el guard en escritorio (36 px, por `DESIGN.md`). Sólo salen «cortos» contra el 44 del censo, que es otra medida.
 · **Decisión del orquestador de Luis, 16-oct-2026.** Nosotros medimos y os lo pasamos; el fichero es vuestro y el arreglo también.
+
+## 20 🔴 QUINCE CONTROLES VUESTROS QUE NO SE PUEDEN PULSAR BIEN · medidos, con el arreglo resuelto
+
+**De dónde salen, porque importa.** Nuestro banco de pantallas montaba las vistas con datos que el servidor **nunca devuelve**: 28 rutas recibían una lista vacía, varias recibían el dato de otra, y tres fichas de detalle se montaban **sin número**. Arreglado (SCRUM-1560), el censo pasa de medir **18 vistas a 27**, y los controles por debajo del mínimo pasan de **61 a 96**.
+🔵 **Esos 35 «nuevos» no son nuevos: llevaban ahí siempre.** **Lo que cambió es que el instrumento por fin llega a esas pantallas.** **Sube porque vemos más, no porque haya empeorado nada.**
+
+**De los 31 defectos reales, 15 están en ficheros vuestros.** Px a **929 / 390**:
+
+| dueño | fichero | control | px |
+|---|---|---|---|
+| **J1** | `invoiceDetailView.js` | «← Volver a facturas» | **31 / 31** |
+| **J1** | `invoiceDetailView.js` | «Marcar como cobrada» | **30,5 / 30,5** |
+| **J1** | `invoiceDetailView.js` | «Descargar PDF» | **30,5 / 30,5** |
+| **J1** | `invoiceDetailView.js` | «Enviar por WhatsApp» | **30,5 / 30,5** |
+| **J1** | `invoicesView.js` | casilla de fila | **14 / —** (no se pinta a 390) |
+| **J1** vista · componente compartido | `documentoAsignados.js`, en el detalle de FACTURA | `INPUT.doc-asignados-casilla` | **21 / 21** |
+| **J2** | `cobrosView.js` | enlace «factura F-…» | **19 / 17** |
+| **J3** | `plansView.js` | «Quiero mi plaza founding» | **41,9 / 41,9** |
+| **J3** | `plansView.js` | «Mensual» | **29,9** |
+| **J3** | `plansView.js` | «Anual −17%» | **29,9** |
+| **J3** | `teamView.js` | «+ Añadir miembro» | **31 / 30,7** |
+| **J3** | `teamView.js` | «Ver su trabajo →» (×2) | **~30,8** |
+| **J3** | `teamView.js` | «Editar» | **30,7 / 30,9** |
+| **J3** | `teamView.js` | «Suspender» | **30,7 / 30,9** |
+
+🔴 **LOS TRES QUE DE VERDAD NO SE PUEDEN PULSAR**, y los pondríamos primero: **`cobrosView.js` a 19/17 px** —menos de la mitad del mínimo, en **un enlace a una factura**—, **la casilla de `documentoAsignados` a 21** y **la de `invoicesView` a 14**. El resto son botones de ~30 donde el mínimo en móvil es 44.
+
+⚠️ **UN CRUCE QUE CONVIENE QUE NO ARREGLEMOS DOS VECES: `documentoAsignados.js` es un COMPONENTE COMPARTIDO.** Su casilla sale **igual de corta (21 px)** en **vuestro** detalle de factura y en **nuestro** detalle de presupuesto. **Si lo arregla uno, se arregla para los dos.** **Nosotros no lo vamos a tocar sin avisaros: decidnos si lo cogéis vosotros o lo hacemos nosotros, pero que no lo toquemos los dos a la vez.**
+
+🔵 **EL ARREGLO YA ESTÁ RESUELTO DE NUESTRO LADO Y OS LO DAMOS:** el patrón de **SCRUM-1158c** (PR #2513, en `main`) es **una regla acotada que lleva ese `.btn-sm` a 44 px sin tocar el `.btn-sm` global** — la decisión ③ de SCRUM-786, que evita el rediseño en cascada. **Lo aplicamos a 18 controles y lo medimos en yaqu.app: 20 de 20 pasaron de ~30 a 44 px, a 390 y a 929.**
+
+· ⛔ **Y DOS QUE NO HAY QUE TOCAR, para que no perdáis el tiempo:** `customerDetailView.js` «Trabajos (1)» y «WhatsApp (1)» (**41 / 59**) y «Suscribirme» (**39,8 / 44,6**). **Sólo fallan contra el 44 del censo; contra los 36 px que el guard aplica en escritorio por `DESIGN.md`, CUMPLEN.**
+· **Nuestros son los otros 16**, y van por nuestra cuenta. **Decisión del orquestador de Luis, 17-oct-2026; midió S3.**
