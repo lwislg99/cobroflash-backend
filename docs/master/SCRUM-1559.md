@@ -6,6 +6,14 @@
 
 Hora de la cabecera `Date:` de GitHub · rama `scrum-1559-serializar-lee-los-dos-sitios`.
 
+A9: comprobación → `tests/scrum1559-serializar-lee-los-dos-sitios.test.mjs`
+A9: comprobación → `tests/scrum1294-a9-leccion-en-a10.test.mjs`
+
+Error propio (17-oct): empujé esta entrada sin pasar los guards del registro en local, y el
+obligatorio cayó tres veces por lo mismo que ya vigilaban: el ancla mal formada (`scrum267`), la
+falta de esta línea A9 (`scrum1294`) y cuatro `includes('<etiqueta>')` con el `>` pegado en mi
+propio test (`scrum553`; pasados a igualdad con la salida entera, que es más estricta).
+
 ### La pregunta
 S2 midió que en Informes los 5 enlaces de la fila de descargas están en el DOM del banco (5 de 5) y
 no en el HTML de `scripts/_pagina-panel.mjs` (0 de 5): el censo daba Informes = 8 medidos y en
