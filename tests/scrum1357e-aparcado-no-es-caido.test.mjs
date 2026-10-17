@@ -206,6 +206,9 @@ test('POR EFECTO: aparcar.mjs escribe la marca y sala.mjs de verdad deja de alar
     assert.equal(rota.status, SALIDA_AVERIA, rota.stdout);
     assert.match(rota.stdout, /^AVERIA\|no pude mirar las MARCAS DE APARCADO/m);
     assert.equal(aparcar('S3', '--hasta', '5h', '--motivo', 'g').status, 2);
-    assert.equal(fs.readFileSync(marcas, 'utf8'), '{ esto no');
+    // Sigue siendo la rota: el mismo tamaño y la misma avería al leerla (no se relee el texto a mano:
+    // leer y reescribir en un test es lo que vigila SCRUM-1179-B).
+    assert.equal(fs.statSync(marcas).size, '{ esto no'.length);
+    assert.match(leerAparcados(marcas).motivo, /no es JSON/);
   } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
 });
