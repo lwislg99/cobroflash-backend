@@ -179,7 +179,7 @@ export function origenDelSinArmar(eventos) {
 /**
  * @param {{prs:object[], reglas:any, checksDe:(n:number)=>object[]|undefined, minutosDesdePush:(n:number)=>number|undefined, eventosDeArmado?:(n:number)=>object[]|undefined, ahora?:number}} e
  */
-export function seccionPRs({ prs, reglas, checksDe, minutosDesdePush, eventosDeArmado = () => undefined }) {
+export function seccionPRs({ prs, reglas, checksDe, minutosDesdePush, eventosDeArmado = () => undefined, ahora = Date.now() }) {
   if (!Array.isArray(prs)) return ciega('PR', 'la lista de PR abiertos no llegó');
   const obligatorios = checksObligatoriosDeReglas(reglas);
   const filas = [];
@@ -198,7 +198,7 @@ export function seccionPRs({ prs, reglas, checksDe, minutosDesdePush, eventosDeA
       checks: Array.isArray(checkRuns) ? checkRuns.length : 0,
       minutosDesdePush: min,
       sondaConflicto: p.mergeable === 'CONFLICTING' ? true : p.mergeable === 'MERGEABLE' ? false : null,
-      checkRuns, obligatorios, autoMerge: !!p.autoMergeRequest,
+      checkRuns, obligatorios, autoMerge: !!p.autoMergeRequest, ahora,
     });
     filas.push({ numero: p.number, rama: p.headRefName, causa: c.causa, detalle: c.detalle, minutos: min });
   }
@@ -217,6 +217,11 @@ export function seccionPRs({ prs, reglas, checksDe, minutosDesdePush, eventosDeA
       // (SCRUM-1453) El clasificador ya lo decía y aquí se tiraba: cuatro PR, cuatro días, sección en ✅.
       const o = origenDelSinArmar(eventosDeArmado(f.numero));
       alertas.push({ ...f, origen: o.tipo, linea: `#${f.numero} ${f.rama} · SIN auto-merge: aunque todo pase a verde, nadie lo va a mergear · ${o.texto} · ${edad}` });
+    } else if (f.causa === 'BLOQUEADO-SIN-CAUSA') {
+      // (SCRUM-839i) El caso que nadie nota: #2449 estuvo dos días así. El clasificador sólo lo afirma si PERSISTE
+      // (obligatorio en verde desde hace MINUTOS_PARA_AFIRMAR_SIN_CAUSA y aún BLOCKED), así que aquí no hace falta
+      // otra espera: un BLOCKED pasajero llega como ESPERANDO y no suena.
+      alertas.push({ ...f, linea: `#${f.numero} ${f.rama} · BLOQUEADO sin causa: ${f.detalle} · ${edad}` });
     }
   }
   return {

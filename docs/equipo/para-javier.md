@@ -347,3 +347,22 @@ El fundador preguntó el **13-oct** qué falta para que nuestro software mande a
 🔴 **Lo que NO es esto.** No es una propuesta: las tres están decididas. **Lo que sí es vuestro es el fichero** — `public/index.html` es de J3 por `dos-equipos.md` — y por eso ninguna sesión nuestra lo toca. **Si alguna os parece mal, decidlo y se discute; pero no se queda a medias por silencio.**
 
 · **Y una del mismo fichero que ya os pasamos y sigue abierta: el salto de la landing a 360 px (sección 12), con la causa declarada DESCONOCIDA** y la contraprueba dentro (sigue dando 0,125 **con la barra escondida**, así que la barra no lo explica). **El fundador también nos delegó «lo del móvil» en el mismo turno, y nuestra decisión es ésta: no lo perseguimos más, porque es vuestro fichero y nuestra medida ya está entregada entera.** **Si queréis nuestro banco para reproducirlo, os lo pasamos.**
+
+## 17 🔴 DOS CONTROLES VUESTROS A 31 px, MEDIDOS · y un guard nuestro se va a poner rojo por ellos
+
+**Qué ha pasado.** Nuestro banco de pantallas **perdía nodos** al serializar: un atributo puesto por propiedad JS (`a.href = …`) no salía, una casilla nacida del marcado salía como caja de texto, y un botón con texto más icono perdía el texto. **Arreglado** (SCRUM-1559). Al verlo todo, aparecieron controles que **siempre** estuvieron por debajo del mínimo y que nadie podía ver.
+
+**De los que aparecieron, dos son de ficheros VUESTROS**, así que no los tocamos:
+
+| control | fichero | dueño | medida |
+|---|---|---|---|
+| «⬇ Clientes CSV» (`A.btn-secondary.btn-sm`) | `customersView.js:118` | **J2** | **31,0 px** a 929 **y** a 390 |
+| «⬇ CSV» de Facturas (`A.btn-secondary.btn-sm`) | `invoicesView.js:196` | **J1** | **31,0 px** a 929 y a 390 |
+| casilla de Facturas (`INPUT` del marcado) | `invoicesView.js` | **J1** | **14,0 px** a 929; no se pinta a 390 |
+
+⚠️ **Y lo que os afecta aunque no lo arregléis hoy: cuando entre nuestro arreglo del banco, `guard:objetivo-tactil` pasará de 0 a 2 hallazgos y se quedará en ROJO por el primero.** **Es informativo, no es el check obligatorio, y el rojo es VERDAD** — ese botón siempre midió 31. ⛔ **Que nadie lo «arregle» por el lado del guard: la regla 41 dice que se arregla el código.**
+
+🔵 **El arreglo ya está resuelto de nuestro lado y os lo damos medido:** el patrón de **SCRUM-1158c** (PR #2513, ya en `main`) es **una regla acotada que lleva ese `.btn-sm` concreto a 44 px sin tocar el `.btn-sm` global** — que es la decisión ③ de SCRUM-786 y evita el rediseño en cascada. **Nuestra S2 lo aplicó a 18 controles y lo midió en yaqu.app: 20 de 20 pasaron de 30 a 44 px, a 390 y a 929.**
+
+· **Lo que NO hay que tocar, para que no perdáis el tiempo:** los teléfonos `A.contacto-link` (41,8 a 929 / 45 a 390) y los tres «💬» (37,0 / 45) **CUMPLEN** contra el umbral que aplica el guard en escritorio (36 px, por `DESIGN.md`). Sólo salen «cortos» contra el 44 del censo, que es otra medida.
+· **Decisión del orquestador de Luis, 16-oct-2026.** Nosotros medimos y os lo pasamos; el fichero es vuestro y el arreglo también.

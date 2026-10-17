@@ -41,6 +41,7 @@ máquina**: que en la de Luis fuera así no dice nada de la de Javier.
 | 🔴 un `$` dentro de comillas dobles **no llega a node**: PowerShell lo expande antes, y una medición hecha con `node -e "…$…"` sale distinta —y peor— de lo que es, **sin error** | las comillas dobles de 5.1 interpolan `$nombre` y `$(…)` | el script **desde fichero** (`.mjs`), o comillas simples; y comprobar que el texto que llega es el que escribiste |
 | `2>&1` sobre un programa nativo pone `$?` en falso aunque saliera 0 | 5.1 envuelve cada línea de error | no redirigir stderr de programas nativos |
 | `FORCE_COLOR` vuelve en cada comando | el entorno de la herramienta no persiste entre comandos | borrarlo al principio de CADA comando (A6) |
+| 🔴 **una rama empujada VACÍA, que deja un PR fantasma con pinta de trabajo.** `git commit -q -F - @'…'@; git push -u origin HEAD:<rama>`: el commit falla con «error: pathspec '<el mensaje entero>' did not match any file(s) known to git» y no crea nada. El push sale igual, sube la rama apuntando al commit de `main` y dice «* [new branch]» como si todo fuera bien. `pr-automatico.yml` arranca con un PR sin diff (S1, 16-oct-2026 ~12:20Z, `scrum-1558-sin-proveedor-no-es-envio`: el primer push fue `665bcd17`, que era `main`; el bueno, `d7698912`) | en 5.1 un here-string escrito detrás de `-F -` NO entra por stdin: git lo recibe como un argumento más, un pathspec. Y `;` no para en el error | el mensaje a un fichero (con la herramienta de escritura, fuera del árbol: en el tmp del trabajo) y `git commit -F <fichero>`. El push en su PROPIO comando (A4), o al menos `git commit …; if ($?) { git push … }`. **Control:** `git rev-parse HEAD` = `git ls-remote origin refs/heads/<rama>`, y esa punta NO es la de `origin/main`. Reproducido por la S0 el mismo día en un repo desechable: exit 1, el HEAD no se mueve y el fichero se queda en el índice |
 
 ## 3 · cmd (`.cmd` de bancos y tareas)
 
@@ -72,6 +73,30 @@ ausente**. Se borra en cada comando (A6) y se escribe en la primera línea de ca
 - **`gh run view --log` no da el log de un job mientras el run sigue vivo.** → `gh api
   --allow-escape-sequences repos/<dueño>/<repo>/actions/jobs/<id>/logs`.
 - **Una lista de PR ABIERTOS vacía no distingue «nunca se abrió» de «se abrió y ya entró».** → `--state all`.
+- 🔴 **`BLOCKED` no es «atascado».** `mergeStateStatus` escribe la MISMA palabra para tres situaciones
+  distintas, y sólo una de ellas pide hacer algo (SCRUM-951f). A S2 le costó dos días no saberlo. Lo
+  que las separa es la conclusión del check obligatorio, `build + tests (con banco desechable)`, sobre
+  la punta del PR:
+
+  | conclusión del obligatorio | qué es | qué se hace |
+  |---|---|---|
+  | **vacía** (`QUEUED` o `IN_PROGRESS`), con `mergeable=MERGEABLE` | ① **no ha terminado**. No hay nada atascado: así estaban #2500, #2510 y #2511 a las 11:31Z del 16-oct-2026 (medido por el orquestador), y #2506, #2508, #2511, #2512 y #2513 a las 11:50Z (medido por la S0) | nada. No se relanza ni se empuja |
+  | **`FAILURE`** | ② **falló**. Esto sí bloquea | se lee el log y se clasifica antes de culpar al diff. #2505 a las 11:32Z del 16-oct: 1 fallo de 11.634, `1405c ④` con heap OOM, y el diff eran dos `.md`. Se relanza el job cuando GitHub deja: con el run vivo contesta «already running» |
+  | **`SUCCESS`** y sigue `BLOCKED` | ③ **el caso raro**: #2449 el 15-oct-2026 a las 15:35Z (medido por el orquestador). **SIGUE SIN EXPLICAR** | se busca la causa con `merge-tree` (abajo), sin dar ninguna por buena antes |
+
+  ⚠️ El vigía tiene la misma confusión. `causaDelAtasco` (`scripts/vigia-atascados.mjs`, carril S5)
+  devuelve `ESPERANDO`, «esperando a que pase el check obligatorio», para todo `BLOCKED` sin rojo, y
+  eso incluye el caso ③.
+
+  **`mergeStateStatus` no dice POR QUÉ; `git merge-tree` sí.** `git merge-tree --write-tree --name-only
+  origin/main <punta del PR>` (git ≥ 2.38; en la máquina de Luis, 2.51) sale con **0** si el merge es
+  limpio, y entonces imprime sólo el árbol. Sale con **1** si hay conflicto, y entonces nombra cada
+  fichero. Medido el 16-oct-2026: un conflicto fabricado da 1 y nombra `a.txt`; #2512 da 0.
+
+  🔴 **Y la trampa no es sólo de la palabra.** El orquestador cerró el caso ③ con una causa que sólo
+  explicaba un suceso POSTERIOR: un conflicto con la rama hermana #2498, que la noche anterior aún no
+  estaba en `main`. S2 le contestó «eso no lo explica», y tenía razón. Una causa que encaja con lo
+  último que viste no está cerrada hasta que explica también lo primero.
 - **Un push hecho con el token de un bot no dispara los checks**, y el auto-merge espera para siempre: se
   empuja con cuenta de persona. Si un PR se queda sin checks, mirar primero las ejecuciones en
   `action_required`.
