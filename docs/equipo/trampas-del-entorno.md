@@ -367,8 +367,11 @@ Medido el 17-oct-2026 con una entrada temporal con el ancla buena y sin línea `
 - `npm run guards:entrada`, sobre esa misma entrada, da **«✓ 14 guards de entrada en verde… La entrada puede
   empujarse»**, con exit 0.
 
-El comando que existe para no enterarse por el CI da luz verde a lo que el CI rechaza. Hasta que se arregle, la
-A9 se comprueba aparte: `node --test tests/scrum1294-a9-leccion-en-a10.test.mjs` (segundos, sin compilar).
+El comando que existe para no enterarse por el CI da luz verde a lo que el CI rechaza. **El arreglo es de S5:
+#2538 (SCRUM-1152b)** mete `scrum1294` en `guards:entrada`, que pasa a 15 guards, y pone la línea `A9:` en la
+plantilla de `docs/master/README.md`. Estaba abierto el 17-oct a las ~20Z. Se mira si tu árbol lo trae: si
+`npm run guards:entrada` dice **15** guards, ya la mira; si dice 14, la A9 se comprueba aparte con
+`node --test tests/scrum1294-a9-leccion-en-a10.test.mjs` (segundos, sin compilar).
 
 ### Cómo se cuenta
 
@@ -380,4 +383,4 @@ primer rojo de cada guard y se cuentan los ficheros que lista.
 herramienta. Aquí, para la mitad ① **ya existía**: la línea de S4 no puede salir de `ancla.mjs`, así que se
 escribió a mano. Lo que falta ahí es que el comando sea el camino por defecto, y el orquestador se lo ha
 encargado a S5 (17-oct). Para la mitad ② **no existe ninguna herramienta**, el comando de antes del push no la
-mira, y es la que cayó dos veces.
+miraba hasta #2538, y es la que cayó dos veces.
