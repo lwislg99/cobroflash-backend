@@ -17,7 +17,8 @@
 //        (la lección del «⋯» que se tragaba sus propios clics, 917): Editar abre el modal con ese gasto ·
 //        Ver trabajo navega a ese trabajo y no abre nada · Eliminar pregunta y, si se acepta, borra ESE
 //        gasto y la lista lo pierde; si se rechaza, no sale ninguna petición (NEGATIVO).
-//   E · LA FILA Y SUS DOS EXCEPCIONES: tocar la fila abre el gasto; tocar el enlace del trabajo navega y
+//   E · LA FILA Y SUS DOS EXCEPCIONES: tocar la fila abre el gasto (desde SCRUM-1156, su FICHA de lectura,
+//        `expenses-detail` con ESE id, y no el modal); tocar el enlace del trabajo navega y
 //        NO abre el modal; tocar el «⋯» no abre el modal.
 //   F · «Sin trabajo» / «Presupuesto sin trabajo» / el nombre del trabajo, y el proveedor debajo.
 //   G · SE CONSERVA LO QUE YA ESTABA: el estado vacío palabra por palabra, el filtro de categoría pide
@@ -379,8 +380,13 @@ titulo('E · tocar la fila abre el gasto · el enlace del trabajo y el «⋯» N
   await pulsar(await fila.$('.gasto-que b'));
   await espera(250);
   const a = await estado(page);
-  if (!a.modal || a.concepto !== 'Tubo de cobre 22 mm') mal(`tocar la fila no abrió el gasto (modal ${a.modal}, concepto ${JSON.stringify(a.concepto)})`);
-  else bien('tocar la fila abre el gasto en el modal de edición');
+  // SCRUM-1156 · CAMBIA LO QUE SE EXIGE, no se afloja: hasta que existió la ficha de lectura, «abrir el
+  // gasto» era el modal de edición (lo decía el propio código: «hasta que exista el detalle»). Ahora es
+  // SU ficha, y por identidad: la de ESE gasto (id 1), y sin abrir además el modal.
+  const ficha = a.navegaciones[0];
+  if (a.modal) mal('tocar la fila abrió el modal de edición: abre la ficha de lectura (SCRUM-1156)');
+  else if (a.navegaciones.length !== 1 || ficha.vista !== 'expenses-detail' || ficha.params.expenseId !== 1) mal(`tocar la fila no abrió la ficha del gasto 1: ${JSON.stringify(a.navegaciones)}`);
+  else bien('tocar la fila abre la ficha de ESE gasto (SCRUM-1156), sin el modal');
   await page.close();
 }
 {
