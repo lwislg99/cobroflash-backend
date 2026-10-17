@@ -131,3 +131,8 @@ de antes de 1559). No se reescribe: es lo que se midió entonces con aquel instr
 Declarado y sin tocar: el suelo de `guard:objetivo-tactil` (`distintosEsperados`) usa la misma
 clave `sel|texto` (`scripts/guard-objetivo-tactil.mjs`, el `Set` de distintos), así que subcuenta
 igual. Es un suelo (mínimo): subcontar lo hace más fácil de cumplir, no da rojos falsos.
+
+17-oct · error propio: `scripts/_censo-distintos.mjs` nació sin fila en `dos-equipos.md` §3.3 y el
+obligatorio cayó por `scrum1480f`. Fila propia a nombre de S3, con su motivo (decisión del
+orquestador de Luis), y `.claude/carriles.json` + `carril-s3.md` regenerados con
+`node scripts/carriles.mjs generar`.
