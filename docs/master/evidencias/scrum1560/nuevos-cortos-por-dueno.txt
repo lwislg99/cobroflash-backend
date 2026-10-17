@@ -1,0 +1,55 @@
+elementos DISTINTOS cortos antes: 61 · después: 96 · NUEVOS: 37
+
+══ A · NO llega a 44 a 390 px — defecto de verdad · 29
+  ── J1 (vista) / S2 (componente)
+     public/dashboard/js/documentoAsignados.js · INPUT.doc-asignados-casilla «(sin texto)» · 929: 21.0 · 390: 21.0
+  ── J1
+     public/dashboard/js/invoiceDetailView.js · BUTTON.btn-secondary.btn-sm «← Volver a facturas» · 929: 31.0 · 390: 31.0
+     public/dashboard/js/invoiceDetailView.js · BUTTON.btn-primary.btn-sm «Marcar como cobrada» · 929: 30.5 · 390: 30.5
+     public/dashboard/js/invoiceDetailView.js · BUTTON.btn-secondary.btn-sm «Descargar PDF» · 929: 30.5 · 390: 30.5
+     public/dashboard/js/invoiceDetailView.js · BUTTON.btn-secondary.btn-sm «Enviar por WhatsApp» · 929: 30.5 · 390: 30.5
+  ── J2
+     public/dashboard/js/cobrosView.js · A «factura F-2026-0021» · 929: 19.0 · 390: 17.0
+  ── J3
+     public/dashboard/js/plansView.js · BUTTON.plan-btn «Quiero mi plaza founding — 9,90 €/» · 929: 41.9 · 390: 41.9
+     public/dashboard/js/plansView.js · BUTTON «Mensual» · 929: 29.9 · 390: 29.9
+     public/dashboard/js/plansView.js · BUTTON «Anual-17%» · 929: 29.9 · 390: 29.9
+     public/dashboard/js/teamView.js · BUTTON.btn-primary.btn-sm «+ Añadir miembro» · 929: 31.0 · 390: 30.7
+     public/dashboard/js/teamView.js · BUTTON.btn-ghost.btn-sm «Ver su trabajo →» · 929: 30.8 · 390: 30.9
+     public/dashboard/js/teamView.js · BUTTON.btn-ghost.btn-sm «Ver su trabajo →» · 929: 30.7 · 390: 30.9
+     public/dashboard/js/teamView.js · BUTTON.btn-ghost.btn-sm «Editar» · 929: 30.7 · 390: 30.9
+     public/dashboard/js/teamView.js · BUTTON.btn-danger.btn-sm «Suspender» · 929: 30.7 · 390: 30.9
+  ── S2 (vista) / S2 (componente)
+     public/dashboard/js/documentoAsignados.js · INPUT.doc-asignados-casilla «(sin texto)» · 929: 21.0 · 390: 21.0
+  ── S2
+     public/dashboard/js/homeView.js · BUTTON.btn-primary.btn-sm «Ver resumen» · 929: 30.9 · 390: 30.6
+     public/dashboard/js/homeView.js · BUTTON.btn-ghost.btn-sm «✕» · 929: 30.9 · 390: 30.6
+     public/dashboard/js/homeView.js · BUTTON.btn.btn-secondary.btn-sm «Ver facturas →» · 929: 30.7 · 390: 30.5
+     public/dashboard/js/quotesDetailView.js · BUTTON.btn-secondary.btn-sm «📄 PDF» · 929: 31.0 · 390: 31.0
+     public/dashboard/js/quotesDetailView.js · BUTTON.btn-secondary.btn-sm «⎘ Duplicar» · 929: 31.0 · 390: 31.0
+     public/dashboard/js/quotesDetailView.js · BUTTON.btn-secondary.btn-sm «← Volver» · 929: 31.0 · 390: 31.0
+     public/dashboard/js/quotesDetailView.js · BUTTON.btn-secondary.btn-sm «↻ Reenviar por WhatsApp» · 929: 30.5 · 390: 30.5
+     public/dashboard/js/quotesDetailView.js · BUTTON.btn-secondary.btn-sm «↻ Reenviar por correo» · 929: 30.5 · 390: 30.5
+     public/dashboard/js/quotesDetailView.js · BUTTON.btn-primary.btn-sm «Aceptar presupuesto» · 929: 30.5 · 390: 30.6
+     public/dashboard/js/quotesDetailView.js · BUTTON.btn-secondary.btn-sm «Rechazar presupuesto» · 929: 30.5 · 390: 30.6
+     public/dashboard/js/quotesDetailView.js · BUTTON.btn-secondary.btn-sm «+ Añadir gasto a este trabajo» · 929: 30.6 · 390: 30.7
+     public/dashboard/js/quoteRequestsView.js · BUTTON.btn-primary.btn-sm «+ Crear presupuesto» · 929: 30.7 · 390: 30.9
+     public/dashboard/js/quoteRequestsView.js · BUTTON.btn-ghost.btn-sm «✓ Marcar gestionada» · 929: 30.7 · 390: 30.9
+     public/dashboard/js/albaranesView.js · A.alb-numero «A-2026-0031» · 929: — · 390: 17.0
+
+══ B · sólo < 44 a 929 y ≥ 36 (cumple el guard en escritorio) — no se toca · 6
+  ── J2
+     public/dashboard/js/customerDetailView.js · BUTTON «Trabajos (1)» · 929: 41.0 · 390: 59.0
+     public/dashboard/js/customerDetailView.js · BUTTON «WhatsApp (1)» · 929: 41.0 · 390: 59.0
+  ── J3
+     public/dashboard/js/plansView.js · BUTTON.btn-primary.plan-btn «Suscribirme — 19,90 €/mes» · 929: 39.8 · 390: 44.6
+  ── S2
+     public/dashboard/js/albaranesView.js · BUTTON.btn.btn-primary «Nuevo albaránN» · 929: 37.0 · 390: 45.0
+     public/dashboard/js/quotesDetailView.js · BUTTON.btn.btn-ghost «Crear revisión» · 929: 36.7 · 390: 44.6
+     public/dashboard/js/quotesListView.js · BUTTON.btn-secondary.btn-sm «Ver detalle» · 929: 36.8 · 390: 44.7
+
+══ C · < 36 a 929, cumple a 390 · 2
+  ── J1
+     public/dashboard/js/invoicesView.js · INPUT.inv-row-check «(sin texto)» · 929: 14.0 · 390: —
+  ── S2
+     public/dashboard/js/albaranesView.js · BUTTON.btn-secondary.btn-sm «Enviar para firmar» · 929: 30.8 · 390: 44.6
