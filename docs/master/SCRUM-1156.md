@@ -32,3 +32,37 @@ Las fichas viven en el hash (`DETALLES` de `app.js`, SCRUM-832) para que «atrá
 ### No medido
 
 - La ruta contra una base de verdad ni en producción: es una lectura nueva sin pantalla que la use todavía. Se verá en yaqu.app cuando S2 enganche la ficha.
+
+## Tramo 1156c · la ficha en pantalla (S2)
+
+**Medido contra:** `origin/main` = `c646bee25e320a69dda62ec4e63beabc56cdd466` · 2026-10-17T19:47:49Z
+
+A9: comprobación → `tests/scrum1156c-la-ficha-del-gasto.test.mjs`
+
+**Skill UI:** cargada (`yaqu-premium-ui`: DESIGN.md por tokens de `styles.css`, ni un token ni un `style=` nuevos; AB6 medido en navegador).
+
+Sesión S2 · rama `scrum-1156c-ficha-gasto-pantalla`. Encargo del orquestador del 16-oct-2026, con la ruta de S1 (tramo 1156b) ya en `main`.
+
+### Lo que hace
+
+- `public/dashboard/js/expensesView.js`: `renderExpenseDetailView`, la ficha de LECTURA. Cabecera (migas «Gastos», concepto, fecha, píldora de categoría, «Foto guardada»/«Sin foto», importe; «Editar», «Ver trabajo» si lo hay, y el «⋯» completo del prototipo: Editar · Ver la foto / 📷 Añadir la foto · Ver trabajo / Vincular a un trabajo · 🗑 Eliminar). La foto del ticket DELANTE y grande, por `GET /admin/expenses/:id/foto`; sin foto, su bloque y «📷 Añadir la foto ahora». Los datos de la factura, SÓLO los apuntados, y sin tarjeta si no hay ninguno (nunca «—»). Notas, si las hay. El trabajo, con la misma `celdaTrabajo` de la fila; suelto, por qué importa y «Vincular a un trabajo».
+- Todo lo que CAMBIA el gasto pasa por el modal de siempre (`openExpenseModal`) con el foco en el control pedido (`#exp-btn-camara`, `#exp-foto-quitar`, `#exp-quoteid`) y `onSaved` que repinta la ficha: no hay un segundo formulario, ni textos de error nuevos.
+- La fila de la lista abre la ficha (`expenses-detail`), no el modal: era lo que su comentario dejaba pendiente («hasta que exista el detalle»). Su «⋯» no cambia.
+- `public/dashboard/js/app.js`: `case 'expenses-detail'` (admin, como su ruta), su entrada en `DETALLES` (SCRUM-832: «atrás» vuelve a Gastos y una recarga la pide sola), `state.expenseId` y el menú activo en Gastos.
+- `public/dashboard/css/styles.css`: las reglas propias de la ficha; el armazón es el de las otras (`.detail-page`, `.detail-head`, `.detail-section`, `.detail-dl`).
+- Censos que cuentan fichas: `scrum832` pasa de seis a siete; `tests/_barra-lateral.mjs` declara `expenses-detail` sin entrada en la barra.
+- `scripts/guard-lista-gastos.mjs`, caso E: CAMBIA lo que exige, no se afloja. Antes «tocar la fila abre el modal con ese gasto»; ahora «abre la ficha de ESE gasto (id 1) y no el modal».
+- `docs/microcopy/2026-10-17-SCRUM-1156-ficha-del-gasto.md`: los diez literales de 920 c.15992 que esta ficha pinta, con su firma.
+
+### Verificado, ejecutando
+
+- `tests/scrum1156c-la-ficha-del-gasto.test.mjs`: 8 de 8, pintando la vista real en el banco. **Rojo primero**, mutando el fuente sobre `2aa57b60`: la tarjeta de datos con «—» en los vacíos, la foto pedida aunque no haya, y el gasto suelto sin su «Vincular»: cada mutante cae en su caso (7 pass · 1 fail cada uno).
+- `guard:lista-gastos` (navegador real, 390 y 1280): de acuerdo, 0 hallazgos. **En rojo** con la fila devolviendo el modal: 1 hallazgo, el del caso E, 0 ciegos.
+- Sonda de navegador de la ficha (`D:\MILLONARIO\cobroFlash\sondas-s2\ficha-gasto-1156.mjs`, fuera del repo): 3 gastos × 2 anchos, sin desborde, 0 cajas fuera, 0 controles bajo 44 px, 0 `style=`, 0 errores. Capturas en `docs/master/evidencias/SCRUM-1156/`. En el banco la foto no se sirve: la `<img>` se retira, como en el alta.
+- Vecinos (31 ficheros: `scrum514`, `402`, `709`, `811`, `722`, `801`, `599`, `821`, `769`, `920`, `964`, `135`, `370`, `1155`, `1038`, `912`…): 399 tests · 392 pass · 6 skip · 1 fail, el de la Skill UI de este registro, que se escribe aquí.
+
+### Lo que NO entra todavía
+
+- 🔴 **La firma de dos textos necesita su comentario de Jira**, y sin él `scrum832 · REGLA 30` está en rojo: «Ese gasto ya no existe.» (firmado por el orquestador en el encargo del 16-oct, sin comentario que citar) y, **propuesto y sin firmar**, «No se ha podido cargar el gasto. Vuelve a intentarlo.» (la ficha con un 5xx o sin red). **La rama no se empuja hasta tener las dos.**
+- El NIF del proveedor: la fila no lo trae, y sin dato no hay fila.
+- Visto en yaqu.app: después del merge.
