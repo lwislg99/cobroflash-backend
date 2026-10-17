@@ -88,10 +88,24 @@ export function serializar(n) {
  * empieza por 0, así que un dato de prueba nunca puede ser el número de alguien. La primera
  * versión usó números con pinta real y el guard de la casa la cazó — con razón.
  */
+//
+// 🔴 SCRUM-1560d · CON LA FORMA DEL SERVIDOR. Cada fila lleva TODAS las claves de
+// `CUSTOMER_SELECT_NO_TOKEN` (`src/modules/system/customerAdmin.ts`, el `select` de `listCustomers`),
+// a su valor de «no declarado». Antes llevaba siete. Y Carmen Ruiz tenía `tags: []`, que el servidor
+// no puede devolver: `normalizarTags` convierte la lista vacía en `null` («no se declararon»).
+// Las tres opcionales (`ultimaVisita`, `saldoPendiente`, `garantiaRetenida`) faltan a propósito: el
+// servidor las OMITE cuando no hay, y ausente no es cero.
+const clienteDelServidor = (c) => ({
+  merchantId: 1, mobile: null, legalName: null, taxId: null, waOptOut: false, updatedAt: c.createdAt,
+  contactKind: null, companyId: null, tipoDestinatario: null, billingPeriodicity: 'NINGUNA',
+  recargoEquivalencia: null, dtoPorDefecto: null, billingAddress: null, billingCity: null,
+  billingPostalCode: null, billingProvince: null, billingCountry: null, internalRef: null,
+  ...c,
+});
 export const CLIENTES_DE_MUESTRA = [
-  { id: 1, name: 'Administración de Fincas Soler y Asociados', phone: '34000000001', email: 'admin@fincassoler.es', notes: 'Portal 3, escalera B', tags: ['administrador'], createdAt: '2026-01-15T10:00:00Z' },
-  { id: 2, name: 'Carmen Ruiz', phone: '34000000002', email: 'carmen@ejemplo.es', notes: '', tags: [], createdAt: '2026-02-20T10:00:00Z' },
-  { id: 3, name: 'Comunidad de Propietarios Av. del Puerto 118', phone: '34000000003', email: 'cp118@ejemplo.es', notes: 'Factura a nombre de la comunidad', tags: ['moroso'], createdAt: '2026-03-05T10:00:00Z' },
+  clienteDelServidor({ id: 1, name: 'Administración de Fincas Soler y Asociados', phone: '34000000001', email: 'admin@fincassoler.es', notes: 'Portal 3, escalera B', tags: ['administrador'], createdAt: '2026-01-15T10:00:00Z' }),
+  clienteDelServidor({ id: 2, name: 'Carmen Ruiz', phone: '34000000002', email: 'carmen@ejemplo.es', notes: '', tags: null, createdAt: '2026-02-20T10:00:00Z' }),
+  clienteDelServidor({ id: 3, name: 'Comunidad de Propietarios Av. del Puerto 118', phone: '34000000003', email: 'cp118@ejemplo.es', notes: 'Factura a nombre de la comunidad', tags: ['moroso'], createdAt: '2026-03-05T10:00:00Z' }),
 ];
 
 // ═══ SCRUM-795 · EL DETALLE DE LA FICHA 360 ═══════════════════════════════════════════════════
@@ -104,12 +118,21 @@ export const CLIENTES_DE_MUESTRA = [
 // Vive aquí y no dentro del guard porque lo usan DOS instrumentos: `guard-objetivo-tactil` (que
 // vigila) y `censo-objetivo-tactil-panel` (que cuenta). Si cada uno llevara el suyo, el día que
 // uno cambie el número del censo y el veredicto del guard dejarían de hablar de la misma pantalla.
+//
+// 🔴 SCRUM-1560d · CON LA FORMA DE `GET /admin/customers/:id/detail` (`customersAdmin.routes.ts`).
+// El `select` del cliente de la 360 NO es el de la lista: no lleva `merchantId`, `updatedAt`,
+// `recargoEquivalencia` ni `dtoPorDefecto`, y sí `portalToken` y `portalUrl`. Se DERIVA del primero
+// de la lista quitando y poniendo, no se copia. Sin portal (`null`): como hasta hoy, que no lo traía.
+// Los importes de `quotes` e `invoices` son `Decimal` en la base y viajan como TEXTO; `acceptedAt` y
+// `paidAt` viajan siempre. `stats` lleva sus ocho cifras y cuadran con las listas (antes decía 3
+// presupuestos y servía 1). `events` son filas de `CustomerEvent` tal cual.
+const { merchantId: _m, updatedAt: _u, recargoEquivalencia: _r, dtoPorDefecto: _d, ...CLIENTE_360 } = CLIENTES_DE_MUESTRA[0];
 export const DETALLE_360_DE_MUESTRA = Object.freeze({
-  customer: CLIENTES_DE_MUESTRA[0],
-  quotes: [{ id: 11, quoteNumber: 'P-2026-0011', status: 'accepted', total: 1234.56, currency: 'EUR', createdAt: '2026-04-02T09:00:00.000Z' }],
-  invoices: [{ id: 21, number: 'F-2026-0021', status: 'paid', total: 999.99, currency: 'EUR', createdAt: '2026-04-09T09:00:00.000Z', pdfUrl: '/x.pdf' }],
-  stats: { totalQuotes: 3, acceptedQuotes: 2, totalBilled: 2500, totalPaid: 1500, profit: 800 },
-  events: [{ type: 'quote_accepted', title: 'Presupuesto aceptado', detail: 'P-2026-0011', createdAt: '2026-04-02T10:00:00.000Z' }],
+  customer: { ...CLIENTE_360, portalToken: null, portalUrl: null },
+  quotes: [{ id: 11, quoteNumber: 'P-2026-0011', status: 'accepted', total: '1234.56', currency: 'EUR', createdAt: '2026-04-02T09:00:00.000Z', acceptedAt: '2026-04-02T10:00:00.000Z' }],
+  invoices: [{ id: 21, number: 'F-2026-0021', status: 'paid', total: '999.99', currency: 'EUR', createdAt: '2026-04-09T09:00:00.000Z', paidAt: '2026-04-10T09:00:00.000Z', pdfUrl: '/x.pdf' }],
+  stats: { totalQuotes: 1, acceptedQuotes: 1, totalBilled: 999.99, totalPaid: 999.99, totalPending: 0, pendingCount: 0, totalExpenses: 0, profit: 999.99 },
+  events: [{ id: 1, merchantId: 1, customerId: 1, type: 'quote_accepted', title: 'Presupuesto aceptado', detail: 'P-2026-0011', meta: null, createdAt: '2026-04-02T10:00:00.000Z' }],
 });
 
 // ═══ SCRUM-848 · EL TRABAJO DE MUESTRA, Y POR QUÉ HACÍA FALTA ════════════════════════════════
@@ -130,9 +153,22 @@ export const DETALLE_360_DE_MUESTRA = Object.freeze({
 //
 // Vive aquí, junto a `DETALLE_360_DE_MUESTRA` y por el mismo motivo: lo usan los DOS instrumentos
 // —el que vigila y el que cuenta—, y con un fixture cada uno acabarían hablando de dos pantallas.
+//
+// 🔴 SCRUM-1560d · CON LA FORMA DE `serializeJobDetail` (`jobs.routes.ts`): la base de `serializeJob`
+// más `customer` ampliado, `invoices`, `charge`, `albaranes`, `asignados` y `entregaPendiente`. Llevaba
+// `title`, y el servidor manda `titulo`: la ficha nunca vio su nombre. El ESCENARIO no cambia: un
+// Trabajo SIN presupuesto (`quote: null`, como hasta hoy), que es la salida temprana del serializador
+// y por eso `charge: null` y la entrega `sin_eje`. Sin presupuesto no hay dinero aceptado: los cuatro
+// del eje de cobro valen lo que da `estadoCobroFor` con todo a cero, `null`.
 export const TRABAJO_DE_MUESTRA = Object.freeze({
   id: 1,
-  title: 'Reforma de baño',
+  titulo: 'Reforma de baño',
+  tituloPropio: 'Reforma de baño',
+  scheduledAt: null, assignedUserId: null, notes: null, createdAt: '2026-10-01T09:00:00.000Z', direccion: null,
+  totalAceptado: null, totalCobrado: 0, estadoCobro: null, importeReferencia: null,
+  operarioId: null, operario: null, asignados: Object.freeze([]), tipoOperacion: 'TRABAJO_UNICO',
+  quote: null, remaining: null, nextStage: null, pendingStagesCount: 0, hasCustomPlan: false,
+  charge: null, entregaPendiente: Object.freeze({ estado: 'sin_eje', motivo: null, calculable: false }),
   // `en_curso` y no otro: es el estado en el que la ficha ofrece MÁS —admite documentos (SCRUM-823)
   // y sigue teniendo el rail entero—, así que es el que deja más superficie que medir. Un fixture
   // para un guard de objetivos táctiles se elige por eso: por lo que hace VISIBLE.
@@ -142,7 +178,9 @@ export const TRABAJO_DE_MUESTRA = Object.freeze({
   // 🔴 Lo escribí primero como `+34600000000` —con pinta real— teniendo esa regla tres párrafos
   // más arriba en este mismo fichero, y me cazó `guard` de SCRUM-262. Queda aquí anotado: leer la
   // norma y aplicarla son dos actos distintos, y el mecanismo existe porque el primero no basta.
-  customer: Object.freeze({ id: 5, name: 'Ana Ruiz', phone: '34000000005' }),
+  // SCRUM-1560d · el `customer` del detalle: `CUSTOMER_SELECT` (id, name, phone, mobile) más email,
+  // taxId, notes y `numeroWhatsApp` (`canalDeWhatsApp`: con el móvil vacío, el fijo).
+  customer: Object.freeze({ id: 5, name: 'Ana Ruiz', phone: '34000000005', mobile: null, email: null, taxId: null, notes: null, numeroWhatsApp: '34000000005' }),
   albaranes: Object.freeze([]),
   invoices: Object.freeze([]),
 });
