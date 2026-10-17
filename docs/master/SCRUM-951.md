@@ -443,3 +443,32 @@ Puesto S0. **La trampa la midió S1** (~12:50Z del 16-oct) y la S0 la repitió a
 **No medido:** qué variables tiene staging (Resend, SMTP, `LOG_MAGIC_LINKS`). Ninguna sesión las puede leer, y §12 lo dice.
 
 A9: sin fallo que generalice — el tramo escribe una medición de S1; lo que tenía de error (empujar antes de que entrase 951g y chocar en este fichero) se evitó esperando, y la regla de esperar ya es A15
+
+## SCRUM-951i · El ancla del registro: la forma exacta, y por qué un error da seis líneas rojas (17-oct-2026)
+
+**Medido contra:** `origin/main` = `78a1af2506c053c460eeca9b458026060cf83829` · 2026-10-17T19:39:05Z
+
+Puesto S0. **Encargo del orquestador:** escribir la trampa que el 16-oct tumbó a S4 y a S3 con `scrum267`: cuál es la forma exacta, qué tres fallos da y qué significa cada uno. Y con la lectura dentro: cuando dos personas se equivocan igual el mismo día, falta una herramienta. Rama apilada sobre `scrum-951h-staging-es-produccion`, porque las dos escriben al final de este registro y de `trampas-del-entorno.md`.
+
+| Qué | Dónde |
+|---|---|
+| La forma, el comando que la genera, los cuatro motivos del primer rojo, los tres rojos y cómo se cuentan | `docs/equipo/trampas-del-entorno.md` §13 |
+| La lección, en una línea | `docs/equipo/00-normas-siempre.md` A10 |
+
+**PASO 0: la herramienta ya existía.** `scripts/equipo/ancla.mjs` es de SCRUM-1152 (26-sep), y el mensaje del propio rojo de `scrum267` lo nombra. El orquestador le había pedido a S5 «un comando que la genere». Se lo dije por `SendMessage` antes de escribir nada, y lo cambió: S5 hace que `ancla.mjs` se use solo, no construye otro.
+
+**Reproducido antes de escribirla.** En `s0-829c`, una entrada temporal `docs/master/SCRUM-99991.md` y sólo `node --test tests/scrum267-ancla-de-medicion.test.mjs`. Borrada después: `git status` limpio.
+
+| entrada temporal | pasa / falla | el primer rojo dice |
+|---|---|---|
+| el ancla de `ancla.mjs` (control positivo) | 14 / 0 | — |
+| la forma de S3, la de `d062c61a` antes de `6ff67998` | 11 / 3 | `no declara «Medido contra»` |
+| la forma de S4 (`= producción =` delante del sha) | 11 / 3 | `el ancla no tiene la forma esperada` |
+
+En los dos casos los tres rojos son los mismos: «declara contra qué main…», «LAS EXENTAS SON EXACTAMENTE ÉSTAS» y «los números CUADRAN». `spec` los imprime dos veces, así que salen seis líneas. **Los «seis fallos» de #2528 eran uno.**
+
+**Corrección a una cifra.** El orquestador propuso apuntar «divide entre seis». No lo he escrito así porque no es cierto con dos entradas mal: caen los mismos tres tests y salen las mismas seis líneas. El número de defectos es el de entradas que lista el primer rojo.
+
+**No medido.** La línea exacta de S4: lo cazó antes del CI y no está en el historial. La reproduje con la forma que describió el orquestador.
+
+A9: aviso → A10 «Cuando dos personas distintas se equivocan igual el mismo día, no falta cuidado: falta una herramienta, o que la que ya existe sea el camino por defecto.» — no se pudo comprobar: el ancla mala ya la cazan `scrum267` y, antes del push, `guards:entrada`; lo que ningún guard ve es si el ancla se escribió a mano, y hacer que `ancla.mjs` sea el camino por defecto es el encargo de S5

@@ -282,3 +282,56 @@ con `NODE_ENV=development` y 404 con `production`. Medido el 16-oct-2026: stagin
 
 ⚠️ **No medido:** qué variables tiene staging (Resend, SMTP, `LOG_MAGIC_LINKS`). Ninguna sesión las
 puede leer.
+
+## 13 · El ancla del registro: una sola forma vale, y un solo error da SEIS líneas rojas
+
+17-oct-2026 · SCRUM-951i · Sesión 0. El 16-oct, `tests/scrum267-ancla-de-medicion.test.mjs` tumbó a **dos
+sesiones distintas, el mismo día**: a S4 (lo cazó ella antes del CI) y a S3 (se lo cazó el CI de #2528,
+corregido en `6ff67998`).
+
+**La forma exacta.** Una línea, en el encabezado de la entrada (y en cada apéndice: el guard mira entrada a
+entrada, no el fichero):
+
+    **Medido contra:** `origin/main` = `<sha de 40>` · <ISO-8601 con huso, `Z` o `±HH:MM`>
+
+**No se teclea: se genera.** `git fetch origin` y después `node scripts/equipo/ancla.mjs`, que existe desde
+el 26-sep (SCRUM-1152). Toma el sha de `origin/main` y la hora de la cabecera `Date:` de `gh api -i zen`
+(nunca la del reloj de la máquina), y si no puede leer alguno de los dos sale con 2 sin imprimir nada.
+Antes de empujar, `npm run guards:entrada` corre los 14 guards de la entrada en ~75 s, sin compilar.
+
+| lo que se escribió | lo que dice el primer rojo | qué hacer |
+|---|---|---|
+| todo el dato, pero en otra forma («**Cabecera.** 2026-10-16 12:36:53Z · medido sobre `origin/main` `ce054fb4…`»: el caso de S3) | `no declara «Medido contra»` | la etiqueta es literal: `**Medido contra:**`. El dato estaba bien; sólo hay que darle la forma |
+| la etiqueta, pero otra cosa entre `origin/main` y el sha (`= producción =`: el caso de S4) | `el ancla no tiene la forma esperada: "<la línea>"` | entre la etiqueta y el sha sólo va `` `origin/main` = `` |
+| el sha corto | `el sha está ABREVIADO` | 40 posiciones: un sha de 7 aparece en varias ramas |
+| la fecha sin hora | `falta la HORA` | hora con huso. ⚠️ La del commit NO vale: es cuándo se escribió, no cuándo se midió |
+
+**Los tres rojos son UN error.** Con una sola entrada mal, caen tres tests del mismo fichero:
+
+1. **«toda entrada NUEVA del registro declara contra qué main se midió, y cuándo».** El único que diagnostica:
+   nombra el fichero, la entrada, la línea y el motivo de la tabla de arriba. **Se lee éste y sólo éste.**
+2. **«LAS EXENTAS SON EXACTAMENTE ÉSTAS».** Es un eco: tu entrada no tiene ancla y no está en la lista de
+   exentas. ⛔ **No se arregla añadiéndola a la lista**: está cerrada desde el 19-ago-2026 por decisión del
+   fundador, y una entrada nueva siempre se puede medir.
+3. **«los números CUADRAN».** Otro eco: hay una entrada acusada y el guard espera cero.
+
+Se arregla el ancla y caen los tres a la vez. Y el reporter `spec` imprime cada fallo **dos veces**, una en su
+sitio y otra bajo `✖ failing tests:`. Por eso un ancla mala son **seis líneas rojas**: los «seis fallos» de
+#2528 eran uno.
+
+⚠️ **Lo que NO vale: «divide entre seis».** Con dos entradas mal siguen cayendo los mismos tres tests, y salen
+las mismas seis líneas. El número de defectos es el **número de entradas que lista el rojo 1**, no el de líneas.
+
+**Medido el 17-oct-2026 a las 19:3xZ** en `s0-829c`, con `origin/main` = `78a1af25`, metiendo y quitando una
+entrada temporal en `docs/master/` y corriendo sólo `scrum267`:
+
+| entrada temporal | pasa / falla | los rojos |
+|---|---|---|
+| el ancla que imprime `ancla.mjs` (control positivo) | 14 / 0 | ninguno |
+| la forma de S3 | 11 / 3 | los tres de arriba; el 1 dice `no declara «Medido contra»` |
+| la forma de S4 | 11 / 3 | los tres de arriba; el 1 dice `el ancla no tiene la forma esperada` |
+
+🔵 **La lectura.** Cuando dos personas distintas se equivocan igual el mismo día, no falta cuidado: falta una
+herramienta. Y aquí la herramienta **ya existía**: ninguna de las dos líneas puede salir de `ancla.mjs`, así
+que las dos se escribieron a mano. Lo que falta es que el comando sea el camino por defecto, no que se sepa que
+existe. El orquestador se lo ha encargado a S5 (17-oct): hacer que se use solo, no construir otro.
