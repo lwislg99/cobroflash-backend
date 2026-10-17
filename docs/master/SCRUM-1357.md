@@ -364,3 +364,68 @@ la sala deja de alarmar; quitar S3 → vuelve `VACIO|S3`.
 - `_sala` sigue a `origin/main` a mano: hasta que se ponga al día, el panel corre el `sala.mjs` viejo.
 - **Aparcar no para nada**, ni `sesion.mjs parar` aparca: son dos órdenes. Juntarlas tocaría la puerta
   única de `sesion.mjs`, que no recibe flags de fuera; no se ha hecho.
+
+
+## 17-oct-2026 · SCRUM-1357f · PREGUNTA: la sesión muerta con su pregunta dentro no es un puesto vacío
+
+**Medido contra:** `origin/main` = `d66ca7942c47ced5648fabe0280cc9ffcf2ec1a2` · 2026-10-17T21:47:50Z
+
+A9: comprobación → `tests/scrum1357f-pregunta-sin-proceso.test.mjs`
+
+### El defecto, medido
+
+`sesion-2` (trabajo `7ffe11d9`) pasó a `blocked` a las **20:07:56Z** pidiendo una firma («Ficha de gasto
+1156c lista; falta tu firma en SCRUM-1156»), según su `timeline.jsonl`. No hubo otro evento hasta que el
+orquestador la paró a las **21:32:58Z**: 85 minutos. El panel pintaba `VACIO|S2|ninguna sesión suya con
+proceso|su puesto está SIN CUBRIR`, igual que un puesto que se cubre cuando se pueda.
+
+Simulado con el `sala.mjs` de `main` (una `sesion-2` bloqueada, sin proceso, con su `needs`): la pregunta
+**sí salía**, como `BLOQUEADA|S2|sesion-2|hace 83 min|sin proceso|«…»`, pero en la ÚLTIMA línea y debajo
+de un `VACIO|S2|…` del mismo puesto que la contradecía.
+
+**Y había una segunda causa, fuera de este ticket:** la caché compartida del plugin
+(`~/.claude/yaqu-sala-cache.json`) la estaba escribiendo TAMBIÉN el vigía viejo (`vigia2.mjs`, el del
+scratchpad de una sesión del orquestador), desde una sesión que cargó el plugin antes del parche del
+16-oct. Su formato lo delata (`VACIO|s0|no tiene ninguna sesión que se haya movido en 120 min|…`), y su
+filtro de 120 min esconde a la sesión quieta. Avisado al orquestador; lo retiró él (ahora imprime
+`AVERIA|vigía RETIRADO…` y sale 2) y se cura relanzando esa sesión.
+
+### Lo que entra (sólo `scripts/equipo/sala.mjs` y su test nuevo)
+
+- **`PREGUNTA|S2|sesion-2|hace 83 min|sin proceso|«<needs>»|su puesto está SIN CUBRIR`**: una bloqueada
+  de `parados.mjs` SIN `pid` y CON pregunta. Va **antes** que los `VACIO` y **sustituye** al `VACIO` de su
+  puesto: dos líneas que se contradicen sobre el mismo puesto son peor que una. El último campo sólo va si
+  el puesto está vacío; si ya se relanzó, la pregunta vieja sigue saliendo sin él (nadie sabe si se
+  contestó: lo mismo que ya decía `parados.mjs`).
+- Cuenta como «que atender» (salida 1) y el plugin no necesita cambio: toda línea que no es `APARCADO|`
+  ya cuenta. La huella (`PREGUNTA|S2|sesion-2`) no lleva el «hace N min»: suena una vez.
+- `parados.mjs` no cambia: ya leía el `needs` de las fichas sin proceso de las últimas 24 h, incluidas las
+  `stopped`. Lo que faltaba era la traducción.
+
+### Comprobado
+
+| corrida | resultado |
+|---|---|
+| test nuevo `scrum1357f` + los de 1357b, c, d y e | **55 de 55** (`fail 0`) |
+| 4 mutaciones a mano (con Edit y vuelta atrás; árbol limpio después) | **4 cazadas** |
+| `sala.mjs` contra el mundo | salida 1, cuatro `VACIO` (S0, S1, S3, S4) y ninguna `PREGUNTA`: ninguna ficha muerta conserva `needs` ahora |
+
+Las mutaciones: no comerse el `VACIO` del puesto con pregunta · sacar `PREGUNTA` también con proceso ·
+no sacar ninguna · dejarla también como `BLOQUEADA`. Los dos sentidos: muerta CON `needs` → `PREGUNTA`
+(bloqueada fuera del panel, `stopped`, y en el panel sin `pid`); muerta SIN `needs` → `VACIO` y sólo eso.
+No se declaran en `MUTACIONES_QUE_ME_TUMBAN` (SCRUM-935), como las de 1357b-e.
+
+### La lección
+
+**Un instrumento acotado a propósito se vuelve mentiroso si su mensaje no dice dónde termina.** Aquí,
+«VACIO» era verdad (no había proceso), pero era más ANCHO que lo medido: decía «no hay nadie» donde había
+alguien esperando. Y la del orquestador al retirar el vigía viejo: **fallar cerrado es IMPRIMIR una
+línea, no desaparecer** — borrar el guion habría dado `node` saliendo 1 sin nada, y la copia vieja del
+plugin, que no mira el código de salida, lo habría pintado como «nadie que atender».
+
+### Lo que NO hace
+
+- **Parar una sesión borra su `needs`**, como se midió el 13-oct: la ficha de `7ffe11d9` tras pararla ya
+  no lo trae (sí conserva `suggestedReply`). Una pregunta que se contesta parando la sesión desaparece del
+  panel; la que se para SIN contestar, también. El latido la guarda en su libro (`latido.mjs preguntas`).
+- `_sala` sigue a `origin/main` a mano: hasta que se ponga al día, el panel corre el `sala.mjs` anterior.
