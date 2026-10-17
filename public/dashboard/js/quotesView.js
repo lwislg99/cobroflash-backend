@@ -132,7 +132,7 @@ function renderQuotesView(container, template, documentoSuelto) {
 
 
     // ---------- MODAL PREVISUALIZACIÓN PRESUPUESTO ----------
-function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingApproval }) {
+function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingApproval, clienteSinEmail }) {
   // A1.2: quoteNumber = número visible por merchant; quoteId sigue siendo el
   // id global para las llamadas a la API.
   const displayNum = quoteNumber ?? quoteId;
@@ -211,6 +211,23 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   shareWrap.appendChild(shareRow);
   mBody.appendChild(shareWrap);
 
+  // SCRUM-1237 · lo que contesta cada envío se dice TAMBIÉN aquí, donde se pulsó. `setAlert` escribe
+  // en el aviso del formulario, que esta modal TAPA: el 400 «sin email» llegaba, se traducía bien y
+  // no se veía hasta cerrarla. Se copia el aviso tal cual (mismo texto, misma clase): ninguna frase
+  // nueva, y las llamadas a `setAlert` siguen donde estaban, a la vista del censo de SCRUM-644.
+  const avisoDeLaModal = document.createElement("div");
+  avisoDeLaModal.className = "alert modal-share-aviso";
+  avisoDeLaModal.setAttribute("role", "status");
+  avisoDeLaModal.style.display = "none";
+  shareWrap.appendChild(avisoDeLaModal);
+  function copiarAvisoALaModal() {
+    avisoDeLaModal.textContent = alertBox.textContent;
+    avisoDeLaModal.className = alertBox.className + " modal-share-aviso";
+    avisoDeLaModal.style.display = alertBox.style.display;
+    // En móvil la modal se desplaza y el aviso nace bajo el borde: medido a 390 px, fuera de la vista.
+    if (avisoDeLaModal.style.display !== "none") avisoDeLaModal.scrollIntoView({ block: "nearest" });
+  }
+
   modal.appendChild(mBody);
 
   const mFooter = document.createElement("div");
@@ -261,6 +278,12 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
     emailBtn.type = "button";
     emailBtn.textContent = "✉ Enviar por email";
     emailBtn.className = "btn btn-secondary";
+    // SCRUM-1237 · un botón que no puede funcionar no se ofrece: la misma conducta, y el mismo
+    // texto, que el botón de correo de la ficha (`quotesDetailView.js`).
+    if (clienteSinEmail) {
+      emailBtn.disabled = true;
+      emailBtn.title = 'El cliente no tiene email configurado.';
+    }
     emailBtn.addEventListener("click", async function() {
       emailBtn.disabled = true;
       emailBtn.textContent = "Enviando…";
@@ -278,6 +301,7 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
         // miraba body.ok, que ya no es la señal del envío. waSendFailed mira sent.
         if (!waSendFailed(body)) {
           setAlert("success", "Presupuesto enviado por email.");
+          copiarAvisoALaModal();
           setResult({ quote_id: quoteId, number: displayNum, status: "SENT", sent: true });
           markDone(emailBtn, "✓ Enviado por email"); // la modal sigue abierta
         } else {
@@ -285,6 +309,7 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
         }
       } catch (err) {
         setAlert("error", err.message || "Error enviando el email.");
+        copiarAvisoALaModal();
         emailBtn.disabled = false;
         emailBtn.textContent = "✉ Enviar por email";
       }
@@ -320,16 +345,19 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
         // P3-2: si Meta rechazó, el backend devuelve 200 + sent:false con un mensaje claro.
         if (!waSendFailed(body)) {
           setAlert("success", "Presupuesto enviado por WhatsApp.");
+          copiarAvisoALaModal();
           setResult({ quote_id: quoteId, number: displayNum, status: "SENT", sent: true });
           markDone(sendBtn, "✓ Enviado por WhatsApp"); // la modal sigue abierta
         } else {
           setAlert("error", body.message || "Presupuesto creado, pero no se pudo enviar por WhatsApp.");
+          copiarAvisoALaModal();
           setResult({ quote_id: quoteId, number: displayNum, status: "DRAFT", sent: false });
           sendBtn.disabled = false;
           sendBtn.textContent = "Enviar por WhatsApp";
         }
       } catch (err) {
         setAlert("error", err.message || "Error enviando por WhatsApp.");
+        copiarAvisoALaModal();
         sendBtn.disabled = false;
         sendBtn.textContent = "Enviar por WhatsApp";
       }
@@ -5835,11 +5863,15 @@ payloadLines.push(lineaParaPayload({
 
       // 2) Pedimos el detalle al admin para recuperar el pdfUrl del presupuesto
       let pdfUrl = null;
+      // SCRUM-1237 · del mismo detalle sale si el cliente tiene email. Sólo se da por «sin email»
+      // si el detalle LLEGÓ y lo dice: si no se pudo leer, el botón se ofrece y contesta el servidor.
+      let clienteSinEmail = false;
       try {
         const detailRes = await fetch(`/admin/quotes/${quoteId}`);
         if (detailRes.ok) {
           const detail = await detailRes.json();
           pdfUrl = detail.pdfUrl || null;
+          clienteSinEmail = !(detail.customer && detail.customer.email);
         }
       } catch (e) {
         console.warn("No se pudo obtener pdfUrl del presupuesto", e);
@@ -5852,7 +5884,7 @@ payloadLines.push(lineaParaPayload({
       const pendingApproval = quote.status === 'pending_approval';
       // SCRUM-965 · se guarda la hoja EXACTA que se acaba de abrir, no sus trozos: el segundo clic
       // tiene que reabrir esto mismo, y reconstruirlo a mano sería la segunda fuente que deriva.
-      const hojaDeEstePresupuesto = { quoteId, quoteNumber, pdfUrl, allowWhatsapp: true, pendingApproval };
+      const hojaDeEstePresupuesto = { quoteId, quoteNumber, pdfUrl, allowWhatsapp: true, pendingApproval, clienteSinEmail };
       presupuestoYaCreado = { huella: huellaDeEstePresupuesto, hoja: hojaDeEstePresupuesto };
       openQuoteModal(hojaDeEstePresupuesto);
 

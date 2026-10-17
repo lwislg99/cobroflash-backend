@@ -130,7 +130,37 @@ export async function listExpenses(
     orderBy: { date: 'desc' },
     take: 200,
   });
+  return completarFilas(merchantId, items);
+}
 
+/**
+ * SCRUM-1156b · `GET /admin/expenses/:id` — LA FICHA DE LECTURA DE UN GASTO.
+ *
+ * Devuelve la MISMA fila que la lista (mismo `select`, `tieneFoto` y `job`), filtrada por
+ * `merchantId` (regla 2): el gasto de otro negocio da `null`, lo mismo que un id que no existe.
+ * Existe para que la ficha viva en el hash (`DETALLES` de `app.js`, SCRUM-832) y una recarga o un
+ * «atrás» la pidan sola, sin depender de que la lista siga en memoria.
+ *
+ * El `select` se escribe AQUÍ, igual que el de `listExpenses`, y no en una constante compartida:
+ * el censo de SCRUM-289 lee la proyección de `quote` en el literal de la llamada, y una constante
+ * se la esconde. Que las dos sigan siendo la misma fila lo comprueba `scrum1156b-ficha-del-gasto`.
+ */
+export async function getExpense(merchantId: number, id: number) {
+  const fila = await prisma.expense.findFirst({
+    where: { id, merchantId },
+    select: {
+      ...CAMPOS_DE_LA_LISTA,
+      quote:    { select: { id: true } },
+      provider: { select: { id: true, name: true } },
+    },
+  });
+  if (!fila) return null;
+  const [gasto] = await completarFilas(merchantId, [fila]);
+  return gasto;
+}
+
+/** Lo que la lista y la ficha añaden a cada fila: `tieneFoto` y el Trabajo al que pertenece. */
+async function completarFilas<T extends { id: number; quoteId: number | null }>(merchantId: number, items: T[]) {
   /**
    * SCRUM-964 · QUÉ GASTOS LLEVAN FOTO, SIN TRAERSE NI UNA.
    *

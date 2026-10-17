@@ -1045,6 +1045,41 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
     rail.appendChild(filaQuote);
   }
 
+  // ── SCRUM-1206 · LOS DOS TEXTOS DEL DOCUMENTO, LEÍDOS ───────────────────────────────────
+  //
+  // El PDF los imprime y esta ficha no los enseñaba: el profesional sólo podía leer lo que
+  // escribió descargando el papel. Van en el ORDEN DEL PAPEL (`albaranPdf.service.ts`): la
+  // cabecera arriba, las observaciones abajo.
+  //
+  // Los rótulos, firmados por el orquestador (SCRUM-1206, 16-oct-2026, delegación del fundador):
+  //   · `docHeaderText` va SIN RÓTULO, como en el PDF (SCRUM-593: «en el pdf final … solo aparece
+  //     el texto sin rótulo»). «Añadir texto en el documento» es el rótulo del FORMULARIO: encima
+  //     de un texto ya guardado se lee como un botón que no hace nada.
+  //   · `notas` lleva «Observaciones» porque ES el bloque «Observaciones» del papel: el PDF
+  //     imprime `notas` bajo ese título y el albarán no tiene otro pie (`schema.prisma`, junto a
+  //     `docHeaderText`). Mismo campo, mismo rótulo: se lee de la pieza, no se copia aquí.
+  //
+  // La clase es la de la nota del cliente en el rail del Trabajo (SCRUM-982): etiqueta encima,
+  // los saltos del profesional respetados y una palabra larga partida en 360 px. Sin estilo en
+  // línea y por `textContent`: el texto lo escribe el profesional. SIN DATO, SIN FILA.
+  const filaDeTexto = (etiqueta, valor) => {
+    if (valor == null || String(valor).trim() === '') return;
+    const filaTexto = document.createElement('div');
+    filaTexto.className = 'detail-rail-linea detail-rail-linea--nota';
+    if (etiqueta) {
+      const et = document.createElement('span');
+      et.className = 'detail-rail-etiqueta';
+      et.textContent = etiqueta;
+      filaTexto.appendChild(et);
+    }
+    const texto = document.createElement('span');
+    texto.textContent = String(valor);
+    filaTexto.appendChild(texto);
+    rail.appendChild(filaTexto);
+  };
+  filaDeTexto(null, alb.docHeaderText);
+  filaDeTexto(window.TD_TITULO_OBSERVACIONES || TEXTO_ROTULO_SIN_MAPEAR, alb.notas);
+
   // ── ② LAS FOTOS DEL PARTE ───────────────────────────────────────────────────────────────
   //
   // El camino de lectura YA EXISTE entero y esta página no abre ninguno nuevo: lista con

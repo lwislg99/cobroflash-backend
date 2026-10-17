@@ -348,6 +348,24 @@ El fundador preguntó el **13-oct** qué falta para que nuestro software mande a
 
 · **Y una del mismo fichero que ya os pasamos y sigue abierta: el salto de la landing a 360 px (sección 12), con la causa declarada DESCONOCIDA** y la contraprueba dentro (sigue dando 0,125 **con la barra escondida**, así que la barra no lo explica). **El fundador también nos delegó «lo del móvil» en el mismo turno, y nuestra decisión es ésta: no lo perseguimos más, porque es vuestro fichero y nuestra medida ya está entregada entera.** **Si queréis nuestro banco para reproducirlo, os lo pasamos.**
 
+## 17 🔴 DOS CONTROLES VUESTROS A 31 px, MEDIDOS · y un guard nuestro se va a poner rojo por ellos
+
+**Qué ha pasado.** Nuestro banco de pantallas **perdía nodos** al serializar: un atributo puesto por propiedad JS (`a.href = …`) no salía, una casilla nacida del marcado salía como caja de texto, y un botón con texto más icono perdía el texto. **Arreglado** (SCRUM-1559). Al verlo todo, aparecieron controles que **siempre** estuvieron por debajo del mínimo y que nadie podía ver.
+
+**De los que aparecieron, dos son de ficheros VUESTROS**, así que no los tocamos:
+
+| control | fichero | dueño | medida |
+|---|---|---|---|
+| «⬇ Clientes CSV» (`A.btn-secondary.btn-sm`) | `customersView.js:118` | **J2** | **31,0 px** a 929 **y** a 390 |
+| «⬇ CSV» de Facturas (`A.btn-secondary.btn-sm`) | `invoicesView.js:196` | **J1** | **31,0 px** a 929 y a 390 |
+| casilla de Facturas (`INPUT` del marcado) | `invoicesView.js` | **J1** | **14,0 px** a 929; no se pinta a 390 |
+
+⚠️ **Y lo que os afecta aunque no lo arregléis hoy: cuando entre nuestro arreglo del banco, `guard:objetivo-tactil` pasará de 0 a 2 hallazgos y se quedará en ROJO por el primero.** **Es informativo, no es el check obligatorio, y el rojo es VERDAD** — ese botón siempre midió 31. ⛔ **Que nadie lo «arregle» por el lado del guard: la regla 41 dice que se arregla el código.**
+
+🔵 **El arreglo ya está resuelto de nuestro lado y os lo damos medido:** el patrón de **SCRUM-1158c** (PR #2513, ya en `main`) es **una regla acotada que lleva ese `.btn-sm` concreto a 44 px sin tocar el `.btn-sm` global** — que es la decisión ③ de SCRUM-786 y evita el rediseño en cascada. **Nuestra S2 lo aplicó a 18 controles y lo midió en yaqu.app: 20 de 20 pasaron de 30 a 44 px, a 390 y a 929.**
+
+· **Lo que NO hay que tocar, para que no perdáis el tiempo:** los teléfonos `A.contacto-link` (41,8 a 929 / 45 a 390) y los tres «💬» (37,0 / 45) **CUMPLEN** contra el umbral que aplica el guard en escritorio (36 px, por `DESIGN.md`). Sólo salen «cortos» contra el 44 del censo, que es otra medida.
+· **Decisión del orquestador de Luis, 16-oct-2026.** Nosotros medimos y os lo pasamos; el fichero es vuestro y el arreglo también.
 ## 18 🔴 `scrum1405c ④` NOS TUMBA OBLIGATORIOS TODOS LOS DÍAS · con la lista de cuándo
 
 **Qué es.** El caso ④ de `tests/scrum1405c-…` («🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, ninguno»). **Es vuestro.** Falla **intermitentemente**: una vez de ~11.600 tests, y cuando cae tumba el check obligatorio de quien pasara por ahí. **Nosotros no lo tocamos y no proponemos tocarlo: os lo contamos con la cuenta.**
@@ -370,3 +388,26 @@ El fundador preguntó el **13-oct** qué falta para que nuestro software mande a
 
 · ⚠️ **Y lo que NO os pedimos: que lo quitéis.** Un test que a veces cae suele estar midiendo algo real de forma frágil, y borrarlo cambiaría un rojo molesto por un verde hueco. **Lo que pedimos es que deje de ser intermitente.**
 · **Lo escribe el orquestador de Luis, 16-oct-2026, con las seis instancias medidas por sesiones distintas.**
+
+## 19 🔴 EL TRINQUETE DE ZONA FABRICA UNA CAUSA FALSA · y casi os mandamos a perseguirla
+
+**Esto es, a la vez, un hallazgo y una retirada nuestra.** Lo medimos, nos lo creímos un rato, y lo tumbamos nosotros mismos antes de mandároslo. **Os contamos las dos mitades porque la segunda vale más que la primera.**
+
+**Lo que el instrumento dijo.** El job «trinquete · ningún test nuevo mide la zona de la máquina» de **#2528** (job `116989128862`, run `38905690014`) imprimió:
+
+> **NUEVA SCRUM-1405c ④ · Kiritimati → pass · Midway → fail**
+
+Leído tal cual, eso dice: *«el caso ④ depende del huso horario»*. **Y es falso.**
+
+**Las tres razones por las que es falso, medidas:**
+1. **El test ④ no lee la fecha en ninguna parte:** ni `Date`, ni `TZ`, ni `toLocale`. Lo que mide es la **pérdida de salida por una tubería** (`stdout` no bloqueante), que depende de la carga y del momento.
+2. **Contraprueba, en vuestro propio CI:** el **mismo** trinquete con el **mismo** test salió **VERDE** en **#2526** (job `116989528908`, run `38905735004`, 16-oct 13:42:56Z) — nueve minutos después del rojo.
+3. **Y cayó también en `build + tests`, que corre con UNA SOLA zona:** 311 de 320 en 1 de cada 4 vueltas.
+
+🔴 **EL DEFECTO DE VERDAD, Y ES DEL INSTRUMENTO:** **el trinquete de zona no distingue «depende de la zona» de «es intermitente».** Hace **una sola pasada por zona**, así que **cualquier test inestable le sale como dependiente de zona**. Y **su autocontrol de canarios no lo caza, porque sus canarios son DETERMINISTAS**: nunca fallan por azar, así que nunca exponen el agujero.
+
+**Por qué os lo mandamos aunque no es vuestro defecto favorito:** `trinquete-de-zona.mjs` y `_trinquete-de-zona.mjs` llevan **`area-j6`** (`dos-equipos.md:176`), así que **son vuestros y no los tocamos**. Nuestra S3 sólo entra ahí por la excepción escrita de SCRUM-1335 (c.18387), que el propio documento define como «un permiso para un trabajo, no un carril».
+
+· **Lo que lo arreglaría, si os sirve:** más de una pasada por zona antes de afirmar, o un canario **deliberadamente inestable** en el autocontrol — hoy no hay ninguno, y por eso el agujero es invisible desde dentro.
+· ⚠️ **Y lo que esto cambia de nuestra sección 18:** la pista de carga/memoria que os dimos allí **sigue siendo una hipótesis** y no la ascendemos a causa. **Pero ahora sabemos que la salida de este trinquete NO sirve como prueba de nada sobre ④.**
+· **Lo midió S3 (equipo de Luis) el 17-oct-2026, y fue ella misma quien retiró la conclusión antes de que su orquestador os la mandara como causa.**
