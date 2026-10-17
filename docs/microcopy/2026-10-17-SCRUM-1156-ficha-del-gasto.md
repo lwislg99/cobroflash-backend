@@ -27,8 +27,5 @@
   de IVA»— y «Notas»: los del alta. «Trabajo» y «Gastos» (la miga): los nombres que el panel ya usa.
 - «NIF del proveedor» NO se pinta: la fila que devuelve `GET /admin/expenses/:id` no trae el NIF (`provider` es
   `{ id, name }`), y sin dato no hay fila.
-
-## Los dos avisos de la carga
-
-Van en su propia ficha, con su propia firma: `2026-10-17-SCRUM-1156-ficha-del-gasto-avisos.md` (SCRUM-1156
-comentario 19907).
+- Los dos avisos de la carga («Ese gasto ya no existe.» y el de la carga fallida) no son de esta firma: van en su propia
+  ficha de este mismo ticket.

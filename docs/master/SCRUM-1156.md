@@ -35,7 +35,7 @@ Las fichas viven en el hash (`DETALLES` de `app.js`, SCRUM-832) para que «atrá
 
 ## Tramo 1156c · la ficha en pantalla (S2)
 
-**Medido contra:** `origin/main` = `c646bee25e320a69dda62ec4e63beabc56cdd466` · 2026-10-17T19:47:49Z
+**Medido contra:** `origin/main` = `d66ca7942c47ced5648fabe0280cc9ffcf2ec1a2` · 2026-10-17T21:31:06Z
 
 A9: comprobación → `tests/scrum1156c-la-ficha-del-gasto.test.mjs`
 
