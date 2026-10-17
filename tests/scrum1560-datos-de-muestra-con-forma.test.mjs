@@ -1,7 +1,7 @@
 // tests/scrum1560-datos-de-muestra-con-forma.test.mjs — SCRUM-1560
 //
-// El censo táctil monta cada vista del banco con datos de muestra. Antes 28 rutas recibían un `[]`
-// de relleno (varias son OBJETO en el servidor), seis el dato de OTRA ruta y cinco vistas de detalle
+// El censo táctil monta cada vista del banco con datos de muestra. Medido el 16-oct-2026 sobre
+// `ce054fb4`: 28 rutas recibían un `[]` de relleno (varias son OBJETO en el servidor), seis el dato de OTRA ruta y cinco vistas de detalle
 // se montaban sin id: el banco pintaba pantallas que el producto no alcanza («undefined» en
 // Referidos, en Inicio, en Exportar…). Aquí se fija:
 //   · el comprobador de forma SABE fallar (forma mala → cae) y sabe absolver (forma buena → pasa);

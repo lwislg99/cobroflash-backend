@@ -128,6 +128,8 @@ Cuatro guards que ya existían cayeron, todos con razón:
   en cuanto se edita por encima. Ahora llevan el fichero y `get` = el literal de su `router.get(…)`.
   El test comprueba que ese literal sigue en ese fichero, y está probado en rojo: con un `get` falso,
   cae. (En este registro las citas con línea se quedan: lo que hacen es fechar la medida.)
+- Segundo push (4d49b2f1), `scrum737`: la cabecera del test decía «Antes 28 rutas…», una cifra
+  del árbol sin fecha. Ahora lleva la fecha y el sha de la medida.
 Los dos rojos de «guards de navegador» (informativo) NO son de este cambio: `objetivo-tactil` es
 «⬇ Clientes CSV» (J2, ya conocido) y `cls-barra-anuncio` es de la landing.
 
