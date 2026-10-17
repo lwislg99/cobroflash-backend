@@ -50,3 +50,61 @@ mismo contrato que ya existía, no un guard nuevo ni uno relajado.
   rompí ese guard al añadir la mención del generador).
 - Control positivo real: la línea `**Medido contra:**` de la cabecera de este mismo fichero salió
   de `node scripts/equipo/ancla.mjs`, sin tocarla a mano.
+
+---
+
+# SCRUM-1152 · APÉNDICE · 17-oct-2026 · SCRUM-1152b · la mitad que `guards:entrada` no miraba: la línea A9
+
+**Medido contra:** `origin/main` = `e244ff61b1b81dd57d3747298ca207502a5a1c59` · 2026-10-17T19:59:48Z
+
+A9: comprobación → `tests/scrum1294-a9-leccion-en-a10.test.mjs`
+
+## El encargo y lo que se midió antes de construir
+
+El orquestador pidió «un comando que escriba el ancla» tras dos rojos del 16-oct (S4 y S3). Ese comando
+**ya existía** (`scripts/equipo/ancla.mjs`, este ticket, 26-sep) y su existencia la nombra el propio rojo
+de scrum267. El encargo se reformuló a «que se use solo». Lo medido, con S0 (que reprodujo los dos casos):
+
+- **Ninguna de las dos líneas salió de `ancla.mjs`**: las dos se teclearon. S4 escribió `= producción =`
+  delante del sha (corregido en `44d967e74`); en los cinco arreglos de ancla del 15 y 16-oct
+  (`44d967e74`, `7061e487b`, `23c3aeaa6`, `417c128c8`, `7349b8928`) el defecto es siempre de tecleo: sha
+  corto, fecha a la española, espacio en vez de `T`, texto de más.
+- **El rojo de S3 en #2528 NO era el ancla**: era la línea `A9:` (SCRUM-1294). En el run 38905690014
+  scrum267 sale verde. Son dos requisitos con dos guards, y `ancla.mjs` sólo genera uno.
+- **`guards:entrada` no llevaba scrum1294**: con el ancla buena y sin `A9:` decía «la entrada puede
+  empujarse» (medido por S0) y el CI la tumbaba. El comando de antes del push aprobaba lo que el
+  obligatorio rechaza.
+- **La plantilla del registro (`docs/master/README.md`) no trae la línea `A9:`**: lo que se copia al
+  escribir una entrada lleva la mitad de lo que se exige.
+
+## Lo que se hizo
+
+- `scripts/guards-entrada.mjs`: scrum1294 entra en `GUARDS` (el decimoquinto, ~1,4 s, sin `dist` ni base)
+  y `MINIMO` pasa de 14 a 15.
+- `docs/master/README.md`: la plantilla lleva la línea `A9:` debajo del ancla (el formato más común; los
+  cuatro, sólo en `docs/equipo/00-normas-siempre.md`), y 1294 entra en la tabla de lo que exige
+  `guards:entrada`.
+
+## Comprobado
+
+| corrida | resultado |
+|---|---|
+| entrada temporal con el ancla de `ancla.mjs` y SIN `A9:`, comando NUEVO | salida 1 · `✖ SCRUM-1294` · 15 guards |
+| control: sin la entrada, comando NUEVO | salida 0 · «15 guards de entrada en verde (170 tests, 85,0 s de 90)» |
+| la misma entrada con el comando de `main` | **CIEGO** (salida 2, cortado a 90 s por la carga de seis sesiones): no lo pude ver en verde yo; el verde falso de `main` es medida de S0 |
+| los 11 tests que vigilan `guards-entrada.mjs` (976, 928, 928b, 1349, 1327, 1289, 1178b, 711, 775, 812, 1153) | 102 de 102, `skipped 0` |
+
+La entrada temporal se borró en un `finally` y `git status` quedó con sólo `scripts/guards-entrada.mjs`.
+
+## Lo que NO hace, y la pregunta que queda abierta
+
+- **Sigue habiendo que acordarse de correr `guards:entrada`**. Esto hace que, si se corre, diga la
+  verdad entera; no hace que se corra.
+- **El único sitio por el que pasan las seis sesiones antes de empujar es `git push`**, y en esta
+  máquina no hay ningún gancho de git instalado (`core.hooksPath` vacío, `.git/hooks` sólo con
+  `.sample`). Un `pre-push` en el `.git` común cubriría todos los árboles de trabajo a la vez. **No se
+  ha instalado**: cambia el push de todas las sesiones y es decisión del orquestador. La propuesta va en
+  mano al orquestador.
+- `ancla.mjs` no escribe en el fichero: imprime. Escribir la línea en la entrada no habría evitado
+  ninguno de los dos rojos del 16-oct (uno no era del ancla, y el otro quería decir algo —el sha de
+  producción— que el formato no admite delante del sha, sí en un paréntesis detrás del instante).

@@ -138,6 +138,12 @@ export const GUARDS = [
   // y el CI la tumbó con este mismo test por dos guiones de mutación sin registrar en el catálogo.
   { fichero: 'tests/scrum1387-banco-nuevo-va-al-catalogo.test.mjs',
     porque: 'todo banco de mutación NUEVO de las carpetas de evidencias nombra el catálogo del meta-guard, no una lista propia' },
+  // SCRUM-1152b · el decimoquinto, y es de la ENTRADA: lee `docs/master/` y `docs/equipo/`, sin `dist` ni
+  // base, ~1,4 s. El caso que lo decide, medido por S0 el 17-oct-2026: una entrada con el ancla buena y SIN
+  // línea `A9:` daba aquí «14 guards en verde · la entrada puede empujarse» (salida 0), y este test, solo,
+  // 1 rojo. Es lo que tumbó a S3 en #2528 (run 38905690014: scrum267 en verde, 1294 en rojo).
+  { fichero: 'tests/scrum1294-a9-leccion-en-a10.test.mjs',
+    porque: 'todo tramo de registro con ancla fechada lleva su línea `A9:` en uno de los cuatro formatos, y lo que nombra existe' },
 ];
 
 // TECHO de este comando ENTERO, en milisegundos de reloj. Lo hace cumplir el propio comando (plazo
@@ -156,7 +162,7 @@ export const PRESUPUESTO_MS = TECHO_MS;
 // SUELO Nº1. Un agregador que se queda corto es PEOR que no tenerlo: da la tranquilidad entera con
 // la cobertura a medias, y quien lo corre en verde deja de mirar. Si mañana alguien borra una línea
 // de la lista de arriba «porque molestaba», esto para.
-export const MINIMO = 14;
+export const MINIMO = 15;
 
 // Secuencias de escape ANSI (CSI). El runner de node colorea su resumen cuando cree que hay un
 // terminal detrás —o cuando el entorno trae `FORCE_COLOR`—, y entonces la línea del recuento llega
