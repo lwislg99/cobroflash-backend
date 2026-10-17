@@ -592,7 +592,7 @@ async function renderExpenseDetailView(container, expenseId) {
   const foto = gastoEl('div', 'detail-section');
   foto.appendChild(gastoEl('h3', 'detail-section-title', TEXTO_FICHA_FOTO_TITULO));
   if (e.tieneFoto) {
-    const caja = gastoEl('div', 'gasto-ficha-justificante');
+    const caja = gastoEl('div', 'gasto-ficha-ticket');
     const img = gastoEl('img', 'gasto-ficha-foto');
     img.alt = TEXTO_FICHA_FOTO_TITULO;
     // Si la foto no se puede servir (415 de una fila vieja), se quita en vez de dejar el icono roto,

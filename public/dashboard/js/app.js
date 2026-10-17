@@ -605,7 +605,8 @@ async function initApp() {
     // Aviso firmado por delegación (SCRUM-980, P8).
     'parte-detail':   { clave: 'parteId',       lista: 'jobs',        ruta: (id) => '/admin/partes/' + id,     aviso: 'Ese parte ya no existe.' },
     // SCRUM-1156 · la ficha del gasto, con su ruta propia (SCRUM-1156b): sin ella, abrirla borraba
-    // la lista del historial. Séptimo aviso del patrón. // APROBADO · SCRUM-1156 comentario 19907
+    // la lista del historial. Séptimo aviso del patrón, firmado por delegación (SCRUM-1156
+    // comentario 19907; la marca de la casa va en `expensesView.js`, fuera de este objeto).
     'expenses-detail': { clave: 'expenseId',    lista: 'expenses',    ruta: (id) => '/admin/expenses/' + id,   aviso: 'Ese gasto ya no existe.' },
   };
 

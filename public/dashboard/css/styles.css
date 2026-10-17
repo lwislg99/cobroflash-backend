@@ -4524,7 +4524,7 @@ textarea.parte-linea-desc {
 .gasto-ficha-importe { margin-left: auto; }
 .gasto-ficha-acciones { width: 100%; margin-left: 0; padding-top: 12px; border-top: 1px solid var(--border); }
 /* La foto es el justificante: delante y grande, con sus dos botones al lado (debajo, si no caben). */
-.gasto-ficha-justificante { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+.gasto-ficha-ticket { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
 .gasto-ficha-foto {
   display: block; width: 190px; max-width: 100%; border-radius: var(--r-md);
   border: 1px solid var(--border); background: var(--surface);
