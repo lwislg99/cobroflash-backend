@@ -108,6 +108,66 @@ del albarán, y queda para quien la reparta.
 **Lo que NO cierra:** SCRUM-1206 es del PRESUPUESTO (`quotesDetailView.js`, S2). Esto es la mitad del albarán.
 A9: aviso → cicatriz S4 «metí un rojo mío de la tanda local entre los de entorno sin leer su mensaje, porque sus diez vecinos sí eran del cliente de Prisma; lo cazó el CI» — no se pudo comprobar: clasificar los rojos lo hace quien lee la tanda, y ningún test lo ve
 
+## 1206d — un solo estilo de rótulo en el rail del albarán (S4, s4-15oct)
+
+**Medido contra:** `origin/main` = `e244ff61b1b81dd57d3747298ca207502a5a1c59` · 2026-10-17T19:59:19Z
+
+Producción servía `e244ff61b1b81dd57d3747298ca207502a5a1c59` (/version) a esa hora.
+
+**Sufijo:** el orquestador dio `1206c` por libre; al ir a empujar ya era de S2
+(`scrum-1206c-la-ficha-del-presupuesto-pinta-sus-textos`, la mitad del presupuesto). Éste es `1206d`.
+
+**Skill UI:** cargada (`yaqu-premium-ui`, en esta sesión y ANTES de editar). Sin token, clase ni estilo nuevo, y
+sin tocar `styles.css` (contenedor de S2): sólo `albaranDetailView.js` (S4, `dos-equipos.md:149`). Las PALABRAS
+no cambian, sólo cómo se pintan: es estilo, no microcopy.
+
+**Lo medido (yaqu.app, cuenta QA, sólo GET, 390 y 1280 px; `ver1206d-rotulos-en-prod.mjs`):**
+
+| ficha | rótulos | ¿mezcla? |
+|---|---|---|
+| albarán #46 y #48 | TRABAJO, CLIENTE, DIRECCIÓN, FACTURACIÓN con `detail-total-label` (11,5 px / 700 / mayúsculas); «Observaciones» con `.detail-rail-etiqueta` (13 px / 400 / sin mayúsculas), cada uno en su propia caja del rail. Presupuesto y Fotos, por código, con la clase de «Observaciones» | **sí**: dos estilos para filas del mismo nivel |
+| Trabajo #76 | CLIENTE, PRESUPUESTO, RESPONSABLE con `detail-section-title` (título de BLOQUE); «Nota del cliente» con `.detail-rail-etiqueta` DENTRO del bloque | no: son dos niveles |
+| parte (`parteDetailView.js`) | no tiene rail | no aplica |
+
+Sólo el albarán: es un retoque, no un patrón. La ficha del Trabajo es de S2 (`jobDetailView.js`), no de S4.
+
+**La causa:** `DESIGN.md` no cubre el formato de los rótulos de un rail. No dice «versalitas» ni
+`text-transform` (cero apariciones); sí dice MAYÚSCULAS para el «Label» de KPI, cabeceras de tabla y secciones
+del sidebar (`DESIGN.md:147`), y un rótulo de campo «estilo Label (12px, 600)» encima del campo (`DESIGN.md:201`),
+pero no cuál de los dos vale en un rail. Con esa laguna, cada fila nueva copió la clase que tenía más a mano: las
+de SCRUM-302 y la de 1206b (mía) copiaron la del rótulo de línea del Trabajo (.detail-rail-etiqueta, SCRUM-318). **Mientras `DESIGN.md` no lo diga, volverá a
+pasar en la siguiente pantalla.** Tocar `DESIGN.md` lo decide el orquestador aparte; aquí sólo queda nombrado.
+
+**La decisión NO sale de una norma: es del orquestador, 17-oct-2026** (por `SendMessage` a S4): los tres rótulos de
+la minoría (Presupuesto, Observaciones, Fotos) se alinean a versalitas con la mayoría (TRABAJO, CLIENTE…), porque
+el cambio menor es llevar la minoría a la mayoría.
+
+**Lo construido:** una constante `CLASE_ROTULO_RAIL` (`detail-total-label`) para TODOS los rótulos del rail. Las
+filas de Presupuesto y Fotos pasan a `--nota` (rótulo ENCIMA del valor, como las de arriba; al lado, en
+versalitas, se leía como otra cosa). El enlace del presupuesto va dentro de su caja: suelto, `--nota` lo estiraba
+a 320 px (390 de pantalla) y se pulsaba tocando el hueco vacío; medido de nuevo, 44×44.
+
+**Antes de empujar** (`ver1206d-antes-de-empujar.mjs`: yaqu.app con el `albaranDetailView.js` del disco servido
+en el navegador y el GET del #48 completado EN EL NAVEGADOR con presupuesto y una foto, para que salgan las 8
+filas; control: `jsLocalServido` es `false` en el ANTES y `true` en el DESPUÉS; único abortado `POST /admin/entorno`):
+
+| | ANTES (main) | DESPUÉS |
+|---|---|---|
+| clases de rótulo en el rail | 2 (5 `detail-total-label` + 3 `.detail-rail-etiqueta`) | 1 (8 `detail-total-label`) |
+| rótulo encima de su valor | 6 de 8 (Presupuesto y Fotos, al lado) | 8 de 8 |
+| enlace del presupuesto | 44×44 | 44×44 |
+| desborde horizontal | no | no |
+
+Diferencia que queda: entre rótulo y valor hay 6 px en las tres filas `--nota` y 3 px en las de arriba (el
+`margin-bottom` de la clase sólo cuenta cuando el rótulo es elemento flex). Igualarlo pide CSS de S2: no se toca.
+
+**Guard:** `tests/scrum1206d-un-solo-rotulo-en-el-rail.test.mjs` pinta la ficha con las 8 filas (suelo: las cuenta
+por su TEXTO) y exige UNA sola clase de rótulo. Visto en ROJO contra el `albaranDetailView.js` de main («conviven
+varios estilos… Presupuesto → detail-rail-etiqueta · Observaciones → … · Fotos → …»), y verde con el arreglo.
+`scrum1206b` localizaba el rótulo por `.detail-rail-etiqueta`: su localizador pasa a la clase nueva; lo que exige
+(rótulo «Observaciones», texto intacto, orden del papel, sin dato sin fila) no cambia. Tanda local de los 4
+ficheros del rail (1206d, 1206b, 1375, 302): 26 de 26.
+A9: comprobación → `tests/scrum1206d-un-solo-rotulo-en-el-rail.test.mjs`
 ## 1206c — la ficha del PRESUPUESTO pinta su cabecera y sus Observaciones (S2, s2-1206)
 
 **Medido contra:** `origin/main` = `e244ff61b1b81dd57d3747298ca207502a5a1c59` · 2026-10-17T19:57:04Z
