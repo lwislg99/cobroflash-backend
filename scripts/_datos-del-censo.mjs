@@ -41,7 +41,7 @@ import { CLIENTES_DE_MUESTRA, DETALLE_360_DE_MUESTRA, TRABAJO_DE_MUESTRA, ARGUME
 const F = '2026-10-01T09:00:00.000Z';
 const CLIENTE = CLIENTES_DE_MUESTRA[0];
 // Ids de los detalles: los de los fixtures que ya existían, para que todo hable del MISMO negocio.
-export const IDS = Object.freeze({ trabajo: TRABAJO_DE_MUESTRA.id, presupuesto: 11, factura: 21, albaran: 31, parte: 41 });
+export const IDS = Object.freeze({ trabajo: TRABAJO_DE_MUESTRA.id, presupuesto: 11, factura: 21, albaran: 31, parte: 41, gasto: 51 });
 
 const lineaAlbaran = { concepto: 'Sustitución de grifo', unidad: 'ud', cantidad: 1, precioUnitario: 85, tipoIva: 21 };
 const job = (id, titulo, status) => ({
@@ -207,6 +207,13 @@ export const CONTRATOS = Object.freeze([
   { ruta: /^\/admin\/expenses\/margin\/\d+$/, ejemplo: '/admin/expenses/margin/11', forma: 'objeto',
     claves: ['ok', 'revenue', 'totalExpenses', 'margin', 'marginPct', 'currency', 'expenses'], fuente: 'src/modules/expenses/app/routes/expenses.routes.ts', get: '/margin/:quoteId',
     dato: () => ({ ok: true, revenue: 1234.56, totalExpenses: 0, margin: 1234.56, marginPct: 100, currency: 'EUR', expenses: [] }) },
+  // SCRUM-1560c · la ficha del gasto (SCRUM-1156c). `item` es la MISMA fila que la lista (`getExpense`
+  // y `listExpenses` comparten `CAMPOS_DE_LA_LISTA` + `quote` + `provider`, y `completarFilas` les
+  // añade `tieneFoto` y `job`): es `gasto()`. `comprobarForma` sólo mira `ok` e `item`, no lo de dentro.
+  // Sin foto, a propósito: con `tieneFoto` la ficha pide `/:id/foto`, que no es JSON.
+  { ruta: /^\/admin\/expenses\/\d+$/, ejemplo: '/admin/expenses/51', forma: 'objeto', claves: ['ok', 'item'],
+    fuente: 'src/modules/expenses/app/routes/expenses.routes.ts', get: '/:id',
+    dato: () => ({ ok: true, item: gasto(IDS.gasto, 'Tubería de cobre', 121) }) },
   { ruta: /^\/admin\/exports\/datos\.zip\/info$/, ejemplo: '/admin/exports/datos.zip/info', forma: 'objeto',
     claves: ['facturas', 'maximo', 'excede'], fuente: 'src/modules/exports/app/routes/exports.routes.ts', get: '/datos.zip/info',
     dato: () => ({ facturas: 2, maximo: 500, excede: false }) },
@@ -330,6 +337,7 @@ export const ARGUMENTOS_DEL_CENSO = Object.freeze({
   renderInvoiceDetailView: [IDS.factura],
   renderAlbaranDetailView: [IDS.albaran],
   renderParteDetailView: [IDS.parte],
+  renderExpenseDetailView: [IDS.gasto],
 });
 
 const tipo = (v) => (Array.isArray(v) ? 'array' : v !== null && typeof v === 'object' ? 'objeto' : typeof v);
