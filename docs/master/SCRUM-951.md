@@ -444,15 +444,15 @@ Puesto S0. **La trampa la midió S1** (~12:50Z del 16-oct) y la S0 la repitió a
 
 A9: sin fallo que generalice — el tramo escribe una medición de S1; lo que tenía de error (empujar antes de que entrase 951g y chocar en este fichero) se evitó esperando, y la regla de esperar ya es A15
 
-## SCRUM-951i · El ancla del registro: la forma exacta, y por qué un error da seis líneas rojas (17-oct-2026)
+## SCRUM-951i · El encabezado de un tramo del registro: dos requisitos, dos guards, y `guards:entrada` sólo mira uno (17-oct-2026)
 
 **Medido contra:** `origin/main` = `78a1af2506c053c460eeca9b458026060cf83829` · 2026-10-17T19:39:05Z
 
-Puesto S0. **Encargo del orquestador:** escribir la trampa que el 16-oct tumbó a S4 y a S3 con `scrum267`: cuál es la forma exacta, qué tres fallos da y qué significa cada uno. Y con la lectura dentro: cuando dos personas se equivocan igual el mismo día, falta una herramienta. Rama apilada sobre `scrum-951h-staging-es-produccion`, porque las dos escriben al final de este registro y de `trampas-del-entorno.md`.
+Puesto S0. **Encargo del orquestador:** escribir la trampa que el 16-oct tumbó a S4 y a S3 con `scrum267` (la premisa era cierta sólo a medias: ver «Corrección» abajo): cuál es la forma exacta, qué tres fallos da y qué significa cada uno. Y con la lectura dentro: cuando dos personas se equivocan igual el mismo día, falta una herramienta. Rama apilada sobre `scrum-951h-staging-es-produccion`, porque las dos escriben al final de este registro y de `trampas-del-entorno.md`.
 
 | Qué | Dónde |
 |---|---|
-| La forma, el comando que la genera, los cuatro motivos del primer rojo, los tres rojos y cómo se cuentan | `docs/equipo/trampas-del-entorno.md` §13 |
+| Los dos requisitos y sus dos guards (el ancla, `scrum267`; la línea `A9:`, `scrum1294`); la forma del ancla, el comando que la genera y sus cuatro motivos; los tres rojos de un ancla mala; que nadie genera la A9 y que `guards:entrada` no la mira; cómo se cuentan los defectos | `docs/equipo/trampas-del-entorno.md` §13 |
 | La lección, en una línea | `docs/equipo/00-normas-siempre.md` A10 |
 
 **PASO 0: la herramienta ya existía.** `scripts/equipo/ancla.mjs` es de SCRUM-1152 (26-sep), y el mensaje del propio rojo de `scrum267` lo nombra. El orquestador le había pedido a S5 «un comando que la genere». Se lo dije por `SendMessage` antes de escribir nada, y lo cambió: S5 hace que `ancla.mjs` se use solo, no construye otro.
@@ -465,10 +465,22 @@ Puesto S0. **Encargo del orquestador:** escribir la trampa que el 16-oct tumbó 
 | la forma de S3, la de `d062c61a` antes de `6ff67998` | 11 / 3 | `no declara «Medido contra»` |
 | la forma de S4 (`= producción =` delante del sha) | 11 / 3 | `el ancla no tiene la forma esperada` |
 
-En los dos casos los tres rojos son los mismos: «declara contra qué main…», «LAS EXENTAS SON EXACTAMENTE ÉSTAS» y «los números CUADRAN». `spec` los imprime dos veces, así que salen seis líneas. **Los «seis fallos» de #2528 eran uno.**
+En los dos casos los tres rojos son los mismos: «declara contra qué main…», «LAS EXENTAS SON EXACTAMENTE ÉSTAS» y «los números CUADRAN». `spec` los imprime dos veces, así que salen seis líneas por un solo error.
 
-**Corrección a una cifra.** El orquestador propuso apuntar «divide entre seis». No lo he escrito así porque no es cierto con dos entradas mal: caen los mismos tres tests y salen las mismas seis líneas. El número de defectos es el de entradas que lista el primer rojo.
+**Corrección: el rojo de #2528 NO era el ancla.** La primera versión de este tramo (`e4126577`) decía que «los seis fallos de #2528 eran uno» de `scrum267`. Lo tomé de la premisa del encargo. Lo afinó S3 midiendo el último job, y lo comprobé en el log: el run `38905690014` (sobre `6ff67998`) tiene `scrum267` en verde, y lo que cae es `SCRUM-1294` con `docs/master/SCRUM-1559.md:5 · ancla del 2026-10-16 sin línea «A9:»`. El ancla de S3 la arregló `6ff67998` antes de que terminara ningún CI. El run anterior, sobre `d062c61a`, quedó cancelado. Según S3 y el orquestador, la A9 también tumbó a S2 en #2521. No lo he visto en un log: el CI rojo de #2521 que miré (`38901732782`) era de un guard de navegador.
+
+**La otra mitad, medida.** Una entrada temporal con el ancla buena y sin línea `A9:`:
+
+| comando | resultado |
+|---|---|
+| `node --test` de `scrum1294` + `scrum267` | 17 / 1: cae `SCRUM-1294` y `SCRUM-267` pasa entero |
+| `npm run guards:entrada` | «✓ 14 guards de entrada en verde… La entrada puede empujarse», exit 0 |
+
+`scripts/guards-entrada.mjs` no incluye `scrum1294`. El comando que existe para no enterarse por el CI da luz verde a lo que el CI rechaza, y ésa es la mitad que cayó dos veces. No lo toco: lo arregla S5, a quien el orquestador ha dado la otra mitad, y se le pasa por `SendMessage`.
+
+**Corrección a una cifra.** El orquestador propuso apuntar «divide entre seis». No lo he escrito así porque no es cierto con dos entradas mal: caen los mismos tres tests y salen las mismas seis líneas. El número de defectos es el de entradas que lista el primer rojo de cada guard.
 
 **No medido.** La línea exacta de S4: lo cazó antes del CI y no está en el historial. La reproduje con la forma que describió el orquestador.
 
-A9: aviso → A10 «Cuando dos personas distintas se equivocan igual el mismo día, no falta cuidado: falta una herramienta, o que la que ya existe sea el camino por defecto.» — no se pudo comprobar: el ancla mala ya la cazan `scrum267` y, antes del push, `guards:entrada`; lo que ningún guard ve es si el ancla se escribió a mano, y hacer que `ancla.mjs` sea el camino por defecto es el encargo de S5
+A9: aviso → A10 «Cuando dos personas distintas se equivocan igual el mismo día, no falta cuidado: falta una herramienta, o que la que ya existe sea el camino por defecto.» — no se pudo comprobar: el ancla mala la caza `scrum267`, y la A9 que falta, `scrum1294`; lo que ningún guard ve es si el ancla se escribió a mano. Hacer de `ancla.mjs` el camino por defecto y meter `scrum1294` en `guards:entrada` es de S5
+A9: aviso → cicatriz S0 «Expliqué un rojo de CI con la premisa del encargo sin leer qué test había caído» — no se pudo comprobar: leer el nombre del test antes de explicar un rojo es una conducta, y ningún guard ve la explicación que se escribe sin leerlo

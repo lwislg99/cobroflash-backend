@@ -283,11 +283,21 @@ con `NODE_ENV=development` y 404 con `production`. Medido el 16-oct-2026: stagin
 ⚠️ **No medido:** qué variables tiene staging (Resend, SMTP, `LOG_MAGIC_LINKS`). Ninguna sesión las
 puede leer.
 
-## 13 · El ancla del registro: una sola forma vale, y un solo error da SEIS líneas rojas
+## 13 · El encabezado de un tramo del registro: DOS requisitos, DOS guards, y la herramienta sólo cubre uno
 
-17-oct-2026 · SCRUM-951i · Sesión 0. El 16-oct, `tests/scrum267-ancla-de-medicion.test.mjs` tumbó a **dos
-sesiones distintas, el mismo día**: a S4 (lo cazó ella antes del CI) y a S3 (se lo cazó el CI de #2528,
-corregido en `6ff67998`).
+17-oct-2026 · SCRUM-951i · Sesión 0. El 16-oct, el encabezado del registro tumbó a varias sesiones, y
+**no siempre por lo mismo**. Cada tramo de `docs/master/SCRUM-N.md` necesita dos cosas, y cada una la vigila
+un guard distinto:
+
+| requisito | guard | lo genera alguien | a quién tumbó el 16-oct |
+|---|---|---|---|
+| ① el **ancla**: `**Medido contra:**` con sha de 40 y hora con huso | `tests/scrum267-ancla-de-medicion.test.mjs` | **sí**: `node scripts/equipo/ancla.mjs` | a S4, que lo cazó antes del CI (con «= producción =» delante del sha). S3 lo arregló en `6ff67998` antes de que terminara ningún CI |
+| ② **debajo del ancla, en el mismo tramo, al menos una línea `A9: …`** | `tests/scrum1294-a9-leccion-en-a10.test.mjs` | **NO: nadie** | a S3 en el CI de #2528 (`SCRUM-1559.md:5 · ancla del 2026-10-16 sin línea «A9:»`, run `38905690014`). Según S3 y el orquestador, también a S2 en #2521. Eso no lo he visto en un log: el CI rojo de #2521 que miré (`38901732782`) era de un guard de navegador |
+
+🔴 **Quien lee «falta el ancla» cuando lo que falta es la A9 pierde la tarde.** El nombre del test que cae
+dice cuál de los dos es: `SCRUM-267 · …` es el ancla y `SCRUM-1294 · …` es la A9.
+
+### ① El ancla
 
 **La forma exacta.** Una línea, en el encabezado de la entrada (y en cada apéndice: el guard mira entrada a
 entrada, no el fichero):
@@ -316,8 +326,7 @@ Antes de empujar, `npm run guards:entrada` corre los 14 guards de la entrada en 
 3. **«los números CUADRAN».** Otro eco: hay una entrada acusada y el guard espera cero.
 
 Se arregla el ancla y caen los tres a la vez. Y el reporter `spec` imprime cada fallo **dos veces**, una en su
-sitio y otra bajo `✖ failing tests:`. Por eso un ancla mala son **seis líneas rojas**: los «seis fallos» de
-#2528 eran uno.
+sitio y otra bajo `✖ failing tests:`. Por eso un ancla mala son **seis líneas rojas** de `SCRUM-267`.
 
 ⚠️ **Lo que NO vale: «divide entre seis».** Con dos entradas mal siguen cayendo los mismos tres tests, y salen
 las mismas seis líneas. El número de defectos es el **número de entradas que lista el rojo 1**, no el de líneas.
@@ -331,7 +340,44 @@ entrada temporal en `docs/master/` y corriendo sólo `scrum267`:
 | la forma de S3 | 11 / 3 | los tres de arriba; el 1 dice `no declara «Medido contra»` |
 | la forma de S4 | 11 / 3 | los tres de arriba; el 1 dice `el ancla no tiene la forma esperada` |
 
+⚠️ **No medido:** la línea exacta de S4. La cazó antes del CI y no está en el historial; se reprodujo con la
+forma que describió el orquestador.
+
+### ② La línea `A9:`, debajo del ancla
+
+Cada ancla abre un tramo, y el tramo necesita **al menos una línea** que empiece por `A9: `, en uno de los
+cuatro formatos de A9 (`00-normas-siempre.md`). Si no, cae **un solo test**:
+«SCRUM-1294 · todo registro desde el corte lleva su línea A9, y lo que dice se cumple». Con `spec`, eso son
+**dos líneas rojas**. El mensaje nombra fichero y línea del ancla: `…SCRUM-N.md:<línea> · ancla del <fecha> sin
+línea «A9:»`.
+
+El mismo test cae también si la línea existe pero no se cumple:
+- el formato es inventado;
+- una `comprobación →` apunta a un fichero que no existe;
+- un `aviso → A10 «…»` cita una frase que no está **literal** en A10 (si la frase es nueva, se añade a A10 en
+  el mismo PR);
+- un `aviso` o un `sin fallo que generalice` no lleva motivo.
+
+**Esta mitad no la genera nadie.** `ancla.mjs` imprime el ancla y nada más. La A9 se escribe a mano porque
+dice qué fallo se generaliza y cómo, y eso lo decide quien escribe, no un comando.
+
+🔴 **Y `npm run guards:entrada` NO la mira.** Sus 14 guards no incluyen `scrum1294` (`scripts/guards-entrada.mjs`).
+Medido el 17-oct-2026 con una entrada temporal con el ancla buena y sin línea `A9:`:
+- `node --test` de `scrum1294` + `scrum267` da **17 / 1**: cae `SCRUM-1294` y `SCRUM-267` pasa entero.
+- `npm run guards:entrada`, sobre esa misma entrada, da **«✓ 14 guards de entrada en verde… La entrada puede
+  empujarse»**, con exit 0.
+
+El comando que existe para no enterarse por el CI da luz verde a lo que el CI rechaza. Hasta que se arregle, la
+A9 se comprueba aparte: `node --test tests/scrum1294-a9-leccion-en-a10.test.mjs` (segundos, sin compilar).
+
+### Cómo se cuenta
+
+**El número de defectos es el de entradas que nombra el rojo, no el de líneas rojas.** Con dos entradas mal
+caen los mismos tests y salen las mismas líneas: ni «divide entre seis» ni «divide entre dos». Se lee el
+primer rojo de cada guard y se cuentan los ficheros que lista.
+
 🔵 **La lectura.** Cuando dos personas distintas se equivocan igual el mismo día, no falta cuidado: falta una
-herramienta. Y aquí la herramienta **ya existía**: ninguna de las dos líneas puede salir de `ancla.mjs`, así
-que las dos se escribieron a mano. Lo que falta es que el comando sea el camino por defecto, no que se sepa que
-existe. El orquestador se lo ha encargado a S5 (17-oct): hacer que se use solo, no construir otro.
+herramienta. Aquí, para la mitad ① **ya existía**: la línea de S4 no puede salir de `ancla.mjs`, así que se
+escribió a mano. Lo que falta ahí es que el comando sea el camino por defecto, y el orquestador se lo ha
+encargado a S5 (17-oct). Para la mitad ② **no existe ninguna herramienta**, el comando de antes del push no la
+mira, y es la que cayó dos veces.
