@@ -428,4 +428,9 @@ plugin, que no mira el código de salida, lo habría pintado como «nadie que at
 - **Parar una sesión borra su `needs`**, como se midió el 13-oct: la ficha de `7ffe11d9` tras pararla ya
   no lo trae (sí conserva `suggestedReply`). Una pregunta que se contesta parando la sesión desaparece del
   panel; la que se para SIN contestar, también. El latido la guarda en su libro (`latido.mjs preguntas`).
+  La pregunta sobrevive a que el PROCESO muera, no a que alguien la PARE.
+- 🔴 **De ahí sale una regla de cómo se para a alguien, no un detalle del instrumento** (la pidió el
+  orquestador al leer lo de arriba, 17-oct): **el `needs` se LEE ANTES de parar, nunca después.** Ese día
+  paró a `sesion-2` con la pregunta ya leída y contestada; de no ser así, se habría perdido para siempre
+  y la sesión siguiente no sabría ni que existió.
 - `_sala` sigue a `origin/main` a mano: hasta que se ponga al día, el panel corre el `sala.mjs` anterior.
