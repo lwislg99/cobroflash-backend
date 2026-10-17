@@ -84,3 +84,36 @@ aunque el profesional tenga trabajos, si no están agendados.** El paquete de «
 - **Rojo primero, por mutación** de `CAMPO_FECHA_TRABAJOS` a `'createdAt'`: el caso nuevo CAE (3 de 4).
 - **El instrumento viejo, contra lo mismo:** el test de `origin/main` da 4 de 4 hoy, con el producto filtrando por
   `scheduledAt`, y 4 de 4 con el mutante. Verde en los dos sentidos: no medía el filtro.
+
+## SCRUM-1183d · los tres `where` muertos de `exports.routes.ts`, quitados
+
+**Medido contra:** `origin/main` = `78a1af2506c053c460eeca9b458026060cf83829` · 2026-10-17T19:37:19Z
+A9: sin fallo que generalice — la sonda de `evidencias/SCRUM-1183/` se niega a correr sobre el código limpio (su
+ancla sale 0 y se declara CIEGA), que es lo que debe hacer; para medir el «después» se usó una copia fuera del árbol.
+
+Carril S1 · árbol `s1-1183d` · rama `scrum-1183d-quita-tres-where-muertos`. Reparto del orquestador (17-oct), tras
+entrar #2508 (1183b) el 16-oct a las 12:57:32Z.
+
+### Re-medido ANTES de quitar nada (la medida de 1183c tenía 30 h y 88 commits encima)
+
+`sonda-where.cjs` y `compara-where.mjs` de `evidencias/SCRUM-1183/`, sin tocar, sobre `dist/` compilado de este `main`:
+
+- `base` frente a `mutante` (los tres bloques borrados en memoria; ancla = 3): **9 de 9 idénticas**. Siguen muertos.
+- `base` frente a `control`: **3 distintas** (las tres con `status`). La sonda sigue viendo lo que importa.
+
+### Qué cambia
+
+- `src/modules/exports/app/routes/exports.routes.ts`: fuera los tres `const where …` de `charges.csv`, `jobs.csv` y
+  `quotes.csv` (eran `:645-651`, `:671-677` y `:716-722`). 24 líneas borradas, ninguna añadida. El filtro que corre
+  —`buildCobros` / `buildTrabajos` / `buildPresupuestos` con `whereRango`, en `exportData.ts`— no se toca.
+- Con esto desaparece también el `createdAt` que mentía en `jobs.csv` (a `prisma.job` le llega `scheduledAt`).
+
+### Verificado, ejecutando
+
+- **Después frente a antes:** la misma batería de 9 peticiones sobre el `dist` ya limpio, comparada con el `base` de
+  arriba (que aún llevaba los `where`): **9 de 9 idénticas** — el CSV y el `where` que llega a Prisma.
+- **Control positivo sobre el código limpio:** **3 distintas**. La copia de la sonda ve diferencias en este código.
+  La copia sólo cambia una cosa: no exige el ancla en `base`/`control` (no existe ya). El fichero de evidencias, intacto.
+- 18 ficheros de `tests/` (los 17 que leen `exports.routes` + `scrum25-exports`): **128 pasan, 0 fallan, 2 saltados**
+  con motivo declarado (`SCRUM-25` y `SCRUM-82`, «sin QA_DB_TEST=1»). Por eso la equivalencia la da la sonda, no ellos.
+- `tsc`: sólo el error conocido de `merchantAdmin.ts:147` (cliente de Prisma viejo; sin `prisma generate`).
