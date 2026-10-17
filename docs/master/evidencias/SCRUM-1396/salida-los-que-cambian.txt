@@ -1,0 +1,191 @@
+LOS QUE CAMBIAN · 24 de 154 llamadas nuestras
+
+tests/scrum1263-gancho-pre-push.test.mjs:52 · dir · GARANTIZADA → ESCAPA
+   crea ......... const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1263-'));
+   dentro de .... montar, línea 51
+   ya no ......... 83: } finally { fs.rmSync(m.dir, { recursive: true, force: true }); }
+   ya no ......... 101: } finally { fs.rmSync(m.dir, { recursive: true, force: true }); }
+   ya no ......... 183: } finally { fs.rmSync(m.dir, { recursive: true, force: true }); }
+   ya no ......... 196: } finally { fs.rmSync(m.dir, { recursive: true, force: true }); }
+   llamadores ... 4 de montar() en este fichero · 4 con un borrado cubierto en su función · 0 sin él
+
+tests/scrum1289b-reporters-como-argumentos.test.mjs:80 · dir · GARANTIZADA → ESCAPA
+   crea ......... const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-1289b-'));
+   dentro de .... banco, línea 79
+   ya no ......... 134: } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+   ya no ......... 148: } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+   llamadores ... 2 de banco() en este fichero · 2 con un borrado cubierto en su función · 0 sin él
+
+tests/scrum1424-ya-esta.test.mjs:114 · base · GARANTIZADA → ESCAPA
+   crea ......... const base = fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-ya-esta-'));
+   dentro de .... juguete, línea 113
+   ya no ......... 142: const j = juguete(); t.after(() => fs.rmSync(j.base, { recursive: true, force: true }));
+   ya no ......... 153: const j = juguete(); t.after(() => fs.rmSync(j.base, { recursive: true, force: true }));
+   ya no ......... 170: const j = juguete(); t.after(() => fs.rmSync(j.base, { recursive: true, force: true }));
+   ya no ......... 241: const j = jugueteConAjeno(); t.after(() => fs.rmSync(j.base, { recursive: true, force: true }));
+   ya no ......... 255: const j = jugueteConAjeno(); t.after(() => fs.rmSync(j.base, { recursive: true, force: true }));
+   ya no ......... 279: const j = juguete(); t.after(() => fs.rmSync(j.base, { recursive: true, force: true }));
+   llamadores ... 5 de juguete() en este fichero · 4 con un borrado cubierto en su función · 1 sin él (líneas 232)
+
+tests/scrum252-procedencia-cliente.test.mjs:60 · dir · GARANTIZADA → NO_GARANTIZADA
+   crea ......... const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum252-'));
+   dentro de .... conSchema, línea 59
+   se le atribuye  63: return { ruta: p, limpiar: () => fs.rmSync(dir, { recursive: true, force: true }) };
+   ya no ......... 136: } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+   llamadores ... 4 de conSchema() en este fichero · 0 con un borrado cubierto en su función · 4 sin él (líneas 89, 103, 112, 149)
+
+tests/scrum454-destructivo-sin-comprobacion.test.mjs:157 · dir · GARANTIZADA → ESCAPA
+   crea ......... const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-454-')));
+   dentro de .... repo, línea 156
+   ya no ......... 189: for (const r of [SUCIO, LIMPIO]) fs.rmSync(r.dir, { recursive: true, force: true });
+   llamadores ... 2 de repo() en este fichero · 0 con un borrado cubierto en su función · 2 sin él (líneas 186, 187)
+
+tests/scrum521-resolvedor-de-importadores.test.mjs:52 · raiz · GARANTIZADA → ESCAPA
+   crea ......... const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum521-'));
+   dentro de .... arbolSintetico, línea 51
+   ya no ......... 63: try { return fn(raiz); } finally { fs.rmSync(raiz, { recursive: true, force: true }); }
+   llamadores ... 1 de arbolSintetico() en este fichero · 1 con un borrado cubierto en su función · 0 sin él
+
+tests/scrum709-microcopy-por-fichero.test.mjs:84 · dir · GARANTIZADA → ESCAPA
+   crea ......... const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum709-'));
+   dentro de .... repoDePruebas, línea 83
+   ya no ......... 140: fs.rmSync(dir, { recursive: true, force: true });
+   llamadores ... 1 de repoDePruebas() en este fichero · 1 con un borrado cubierto en su función · 0 sin él
+
+tests/scrum716c-la-memoria-del-vigia.test.mjs:224 · dir · GARANTIZADA → ESCAPA
+   crea ......... const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum716c-'));
+   dentro de .... repoDePrueba, línea 223
+   ya no ......... 322: fs.rmSync(dir, { recursive: true, force: true });
+   ya no ......... 345: fs.rmSync(dir, { recursive: true, force: true });
+   ya no ......... 368: fs.rmSync(dir, { recursive: true, force: true });
+   ya no ......... 395: fs.rmSync(dir, { recursive: true, force: true });
+   ya no ......... 485: fs.rmSync(dir, { recursive: true, force: true });
+   llamadores ... 5 de repoDePrueba() en este fichero · 5 con un borrado cubierto en su función · 0 sin él
+
+tests/scrum726-quien-firma-la-microcopy.test.mjs:36 · dir · GARANTIZADA → ESCAPA
+   crea ......... const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum726-'));
+   dentro de .... registrosDePrueba, línea 35
+   ya no ......... 70: fs.rmSync(dir, { recursive: true, force: true });
+   ya no ......... 89: fs.rmSync(dir, { recursive: true, force: true });
+   ya no ......... 169: fs.rmSync(dir, { recursive: true, force: true });
+   llamadores ... 3 de registrosDePrueba() en este fichero · 3 con un borrado cubierto en su función · 0 sin él
+
+tests/scrum754-el-juez-que-oscila.test.mjs:345 · dir · GARANTIZADA → ESCAPA
+   crea ......... const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum754-marca-'));
+   dentro de .... bancoConMarca, línea 344
+   ya no ......... 134: fs.rmSync(dir, { recursive: true, force: true });
+   ya no ......... 375: } finally { fs.rmSync(b.dir, { recursive: true, force: true }); }
+   ya no ......... 387: } finally { fs.rmSync(b.dir, { recursive: true, force: true }); }
+   ya no ......... 396: } finally { fs.rmSync(mia.dir, { recursive: true, force: true }); }
+   ya no ......... 706: return { dir, abs, borrar: () => fs.rmSync(dir, { recursive: true, force: true }) };
+   llamadores ... 3 de bancoConMarca() en este fichero · 3 con un borrado cubierto en su función · 0 sin él
+
+tests/scrum754-el-juez-que-oscila.test.mjs:703 · dir · GARANTIZADA → NO_GARANTIZADA
+   crea ......... const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum754c-'));
+   dentro de .... fixture, línea 702
+   se le atribuye  706: return { dir, abs, borrar: () => fs.rmSync(dir, { recursive: true, force: true }) };
+   ya no ......... 134: fs.rmSync(dir, { recursive: true, force: true });
+   ya no ......... 375: } finally { fs.rmSync(b.dir, { recursive: true, force: true }); }
+   ya no ......... 387: } finally { fs.rmSync(b.dir, { recursive: true, force: true }); }
+   ya no ......... 396: } finally { fs.rmSync(mia.dir, { recursive: true, force: true }); }
+   llamadores ... 2 de fixture() en este fichero · 0 con un borrado cubierto en su función · 2 sin él (líneas 723, 760)
+
+tests/scrum757-la-declaracion-que-nadie-lee.test.mjs:41 · dir · GARANTIZADA → NO_GARANTIZADA
+   crea ......... const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum757-'));
+   dentro de .... banco, línea 40
+   se le atribuye  44: return { dir, limpia: () => fs.rmSync(dir, { recursive: true, force: true }) };
+   ya no ......... 136: } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+   ya no ......... 208: } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+   llamadores ... 7 de banco() en este fichero · 0 con un borrado cubierto en su función · 7 sin él (líneas 50, 82, 98, 140, 160, 180, 189)
+
+tests/scrum759-el-guard-ciego-fuera-de-su-fichero.test.mjs:107 · dir · GARANTIZADA → NO_GARANTIZADA
+   crea ......... const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum759-'));
+   dentro de .... banco, línea 106
+   se le atribuye  122: limpia: () => fs.rmSync(dir, { recursive: true, force: true }),
+   ya no ......... 259: } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+   ya no ......... 298: } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+   llamadores ... 3 de banco() en este fichero · 0 con un borrado cubierto en su función · 3 sin él (líneas 127, 161, 174)
+
+tests/scrum811c-skill-ui-declarada.test.mjs:611 · raiz · GARANTIZADA → ESCAPA
+   crea ......... const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1340-'));
+   dentro de .... repoDePrueba, línea 610
+   ya no ......... 697: fs.rmSync(r.raiz, { recursive: true, force: true });
+   llamadores ... 1 de repoDePrueba() en este fichero · 1 con un borrado cubierto en su función · 0 sin él
+
+tests/scrum836-ancla-de-mutacion-viva.test.mjs:83 · dir · GARANTIZADA → NO_GARANTIZADA
+   crea ......... const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefijo));
+   dentro de .... banco, línea 82
+   se le atribuye  87: return { dir, limpia: () => fs.rmSync(dir, { recursive: true, force: true }) };
+   ya no ......... 381: fs.rmSync(dir, { recursive: true, force: true });
+   ya no ......... 396: fs.rmSync(dir, { recursive: true, force: true });
+   ya no ......... 498: return { dir, limpia: () => fs.rmSync(dir, { recursive: true, force: true }) };
+   llamadores ... 8 de banco() en este fichero · 0 con un borrado cubierto en su función · 8 sin él (líneas 240, 266, 279, 305, 333, 349, 450, 475)
+
+tests/scrum836-ancla-de-mutacion-viva.test.mjs:491 · dir · GARANTIZADA → NO_GARANTIZADA
+   crea ......... const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefijo));
+   dentro de .... bancoQueSeCita, línea 490
+   se le atribuye  498: return { dir, limpia: () => fs.rmSync(dir, { recursive: true, force: true }) };
+   ya no ......... 87: return { dir, limpia: () => fs.rmSync(dir, { recursive: true, force: true }) };
+   ya no ......... 381: fs.rmSync(dir, { recursive: true, force: true });
+   ya no ......... 396: fs.rmSync(dir, { recursive: true, force: true });
+   llamadores ... 3 de bancoQueSeCita() en este fichero · 0 con un borrado cubierto en su función · 3 sin él (líneas 504, 524, 535)
+
+tests/scrum839d-union-solo-en-el-registro.test.mjs:149 · dir · GARANTIZADA → ESCAPA
+   crea ......... const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum839d-'));
+   dentro de .... repo, línea 148
+   ya no ......... 179: try { return fn(r); } finally { fs.rmSync(r.dir, { recursive: true, force: true }); }
+   ya no ......... 304: fs.rmSync(path.join(r.dir, 'docs/master/SCRUM-609.md'));
+   llamadores ... 1 de repo() en este fichero · 1 con un borrado cubierto en su función · 0 sin él
+
+tests/scrum839e-solo-pr-armados.test.mjs:116 · dir · GARANTIZADA → ESCAPA
+   crea ......... const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum839e-'));
+   dentro de .... repoDeRegistro, línea 115
+   ya no ......... 143: try { return fn(r); } finally { fs.rmSync(r.dir, { recursive: true, force: true }); }
+   ya no ......... 345: fs.rmSync(r.dir, { recursive: true, force: true });
+   llamadores ... 2 de repoDeRegistro() en este fichero · 2 con un borrado cubierto en su función · 0 sin él
+
+tests/scrum850b-las-formas-que-mienten.test.mjs:73 · dir · GARANTIZADA → ESCAPA
+   crea ......... const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tanda850b-'));
+   dentro de .... bancoDeTanda, línea 72
+   ya no ......... 126: } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+   ya no ......... 154: } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+   llamadores ... 2 de bancoDeTanda() en este fichero · 2 con un borrado cubierto en su función · 0 sin él
+
+tests/scrum899-sesion-lista-blanca.test.mjs:177 · dir · GARANTIZADA → ESCAPA
+   crea ......... const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum899-'));
+   dentro de .... banco, línea 176
+   ya no ......... 230: } finally { fs.rmSync(b.dir, { recursive: true, force: true }); }
+   ya no ......... 240: } finally { fs.rmSync(b.dir, { recursive: true, force: true }); }
+   ya no ......... 250: } finally { fs.rmSync(b.dir, { recursive: true, force: true }); }
+   ya no ......... 258: } finally { fs.rmSync(b.dir, { recursive: true, force: true }); }
+   ya no ......... 265: } finally { fs.rmSync(c.dir, { recursive: true, force: true }); }
+   llamadores ... 5 de banco() en este fichero · 5 con un borrado cubierto en su función · 0 sin él
+
+tests/_alcance-desde-entradas.mjs:385 · raiz · GARANTIZADA → ESCAPA
+   crea ......... const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum411-alcance-'));
+   dentro de .... escribirFuenteSintetica, línea 384
+   ya no ......... 410: fs.rmSync(raiz, { recursive: true, force: true });
+   llamadores ... 1 de escribirFuenteSintetica() en este fichero · 1 con un borrado cubierto en su función · 0 sin él
+
+tests/_comparador-alcance.mjs:261 · raiz · GARANTIZADA → ESCAPA
+   crea ......... const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum493-comparador-'));
+   dentro de .... escribirFuenteSintetica, línea 260
+   ya no ......... 286: fs.rmSync(raiz, { recursive: true, force: true });
+   llamadores ... 1 de escribirFuenteSintetica() en este fichero · 1 con un borrado cubierto en su función · 0 sin él
+
+tests/_export-que-sobra.mjs:239 · raiz · GARANTIZADA → ESCAPA
+   crea ......... const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum494-'));
+   dentro de .... escribirFuenteSintetica, línea 238
+   ya no ......... 278: fs.rmSync(raiz, { recursive: true, force: true });
+   llamadores ... 1 de escribirFuenteSintetica() en este fichero · 1 con un borrado cubierto en su función · 0 sin él
+
+tests/_huerfanos-en-modulos-vivos.mjs:195 · raiz · GARANTIZADA → ESCAPA
+   crea ......... const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum411-autoprueba-'));
+   dentro de .... escribirFuenteSintetica, línea 194
+   ya no ......... 234: fs.rmSync(raiz, { recursive: true, force: true });
+   llamadores ... 1 de escribirFuenteSintetica() en este fichero · 1 con un borrado cubierto en su función · 0 sin él
+
+RESUMEN
+  ESCAPA ........... 18 · con función nombrada 18 · con algún llamador SIN borrado cubierto en su función: 2
+  NO_GARANTIZADA ... 6
+  SIN_LIMPIEZA ..... 0

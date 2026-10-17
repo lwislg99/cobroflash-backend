@@ -1,0 +1,38 @@
+ANTES Y DESPUÉS · el mismo árbol por los dos censos
+  ficheros mirados ...... antes 2513 · ahora 2513
+  llamadas .............. antes 159 · ahora 159 · sólo en antes 0 · sólo en ahora 0
+  nuestras, por nombre .. GARANTIZADA 154 · NO_GARANTIZADA 0 · SIN_LIMPIEZA 0 · ESCAPA 0 · FABRICA 0
+  nuestras, por variable  GARANTIZADA 130 · NO_GARANTIZADA 6 · SIN_LIMPIEZA 0 · ESCAPA 18 · FABRICA 0
+  tiempo ................ antes 591 ms · ahora 742 ms
+
+CAMBIAN DE CATEGORÍA: 25 de 159
+  tests/scrum1263-gancho-pre-push.test.mjs:52 · dir · GARANTIZADA → ESCAPA · borrados que ya no se le atribuyen: [83, 101, 183, 196] · los que sí: []
+  tests/scrum1289b-reporters-como-argumentos.test.mjs:80 · dir · GARANTIZADA → ESCAPA · borrados que ya no se le atribuyen: [134, 148] · los que sí: []
+  tests/scrum1424-ya-esta.test.mjs:114 · base · GARANTIZADA → ESCAPA · borrados que ya no se le atribuyen: [142, 153, 170, 241, 255, 279] · los que sí: []
+  tests/scrum252-procedencia-cliente.test.mjs:60 · dir · GARANTIZADA → NO_GARANTIZADA · borrados que ya no se le atribuyen: [136] · los que sí: [63]
+  tests/scrum454-destructivo-sin-comprobacion.test.mjs:157 · dir · GARANTIZADA → ESCAPA · borrados que ya no se le atribuyen: [189] · los que sí: []
+  tests/scrum521-resolvedor-de-importadores.test.mjs:52 · raiz · GARANTIZADA → ESCAPA · borrados que ya no se le atribuyen: [63] · los que sí: []
+  tests/scrum709-microcopy-por-fichero.test.mjs:84 · dir · GARANTIZADA → ESCAPA · borrados que ya no se le atribuyen: [140] · los que sí: []
+  tests/scrum716c-la-memoria-del-vigia.test.mjs:224 · dir · GARANTIZADA → ESCAPA · borrados que ya no se le atribuyen: [322, 345, 368, 395, 485] · los que sí: []
+  tests/scrum726-quien-firma-la-microcopy.test.mjs:36 · dir · GARANTIZADA → ESCAPA · borrados que ya no se le atribuyen: [70, 89, 169] · los que sí: []
+  tests/scrum754-el-juez-que-oscila.test.mjs:345 · dir · GARANTIZADA → ESCAPA · borrados que ya no se le atribuyen: [134, 375, 387, 396, 706] · los que sí: []
+  tests/scrum754-el-juez-que-oscila.test.mjs:703 · dir · GARANTIZADA → NO_GARANTIZADA · borrados que ya no se le atribuyen: [134, 375, 387, 396] · los que sí: [706]
+  tests/scrum757-la-declaracion-que-nadie-lee.test.mjs:41 · dir · GARANTIZADA → NO_GARANTIZADA · borrados que ya no se le atribuyen: [136, 208] · los que sí: [44]
+  tests/scrum759-el-guard-ciego-fuera-de-su-fichero.test.mjs:107 · dir · GARANTIZADA → NO_GARANTIZADA · borrados que ya no se le atribuyen: [259, 298] · los que sí: [122]
+  tests/scrum811c-skill-ui-declarada.test.mjs:611 · raiz · GARANTIZADA → ESCAPA · borrados que ya no se le atribuyen: [697] · los que sí: []
+  tests/scrum836-ancla-de-mutacion-viva.test.mjs:83 · dir · GARANTIZADA → NO_GARANTIZADA · borrados que ya no se le atribuyen: [381, 396, 498] · los que sí: [87]
+  tests/scrum836-ancla-de-mutacion-viva.test.mjs:491 · dir · GARANTIZADA → NO_GARANTIZADA · borrados que ya no se le atribuyen: [87, 381, 396] · los que sí: [498]
+  tests/scrum839d-union-solo-en-el-registro.test.mjs:149 · dir · GARANTIZADA → ESCAPA · borrados que ya no se le atribuyen: [179, 304] · los que sí: []
+  tests/scrum839e-solo-pr-armados.test.mjs:116 · dir · GARANTIZADA → ESCAPA · borrados que ya no se le atribuyen: [143, 345] · los que sí: []
+  tests/scrum850b-las-formas-que-mienten.test.mjs:73 · dir · GARANTIZADA → ESCAPA · borrados que ya no se le atribuyen: [126, 154] · los que sí: []
+  tests/scrum899-sesion-lista-blanca.test.mjs:177 · dir · GARANTIZADA → ESCAPA · borrados que ya no se le atribuyen: [230, 240, 250, 258, 265] · los que sí: []
+  tests/_alcance-desde-entradas.mjs:385 · raiz · GARANTIZADA → ESCAPA · borrados que ya no se le atribuyen: [410] · los que sí: []
+  tests/_comparador-alcance.mjs:261 · raiz · GARANTIZADA → ESCAPA · borrados que ya no se le atribuyen: [286] · los que sí: []
+  tests/_export-que-sobra.mjs:239 · raiz · GARANTIZADA → ESCAPA · borrados que ya no se le atribuyen: [278] · los que sí: []
+  tests/_huerfanos-en-modulos-vivos.mjs:195 · raiz · GARANTIZADA → ESCAPA · borrados que ya no se le atribuyen: [234] · los que sí: []
+  tests/_temporal.mjs:93 · dir · NO_GARANTIZADA → ESCAPA · borrados que ya no se le atribuyen: [47, 103] · los que sí: []
+
+SIGUEN EMPAREJADAS POR NOMBRE (no hay variable que enlazar): 0 de 154
+
+LA LÍNEA DEL CENSO
+  99 ficheros con temporales (154 llamadas, de 2513 ficheros mirados) · 21 con nombres repetidos · 200 emparejamientos fuera de ámbito, que ya no cuentan · 0 emparejadas sólo por nombre
