@@ -200,6 +200,7 @@ export const VISTAS_SIN_ENTRADA = {
   'parte-detail': { motivo: 'detalle: se llega desde el Trabajo', ticket: 'SCRUM-652' },
   'invoice-detail': { motivo: 'detalle: se llega desde el listado de facturas' },
   'jobs-detail': { motivo: 'detalle: se llega desde el listado de trabajos' },
+  'expenses-detail': { motivo: 'detalle: se llega desde el listado de gastos', ticket: 'SCRUM-1156' },
   'customer-360': { motivo: 'detalle: la ficha de un cliente, se llega desde el listado de clientes' },
   'quotes-new': { motivo: 'es subitem del grupo Presupuestos, no entrada de primer nivel' },
   // SCRUM-600 (DOC-10) · el alta del documento suelto (factura o justificante) tiene página
