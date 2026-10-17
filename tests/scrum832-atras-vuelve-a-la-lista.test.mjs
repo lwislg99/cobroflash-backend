@@ -116,14 +116,14 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     fichero: 'public/dashboard/js/app.js',
     de: 'return typeof s === \'number\' && s >= 400 && s < 500;',
     a: 'return s === 404;',
-    cae: 'SCRUM-832 · 🔴 CORRIDO: id inexistente e id de OTRO merchant dan el MISMO texto y destino, en las SEIS fichas',
+    cae: 'SCRUM-832 · 🔴 CORRIDO: id inexistente e id de OTRO merchant dan el MISMO texto y destino, en las SIETE fichas',
   },
   {
     // M3 · el router pinta el error crudo en vez de su aviso firmado.
     fichero: 'public/dashboard/js/app.js',
     de: "if (typeof showToast === 'function') showToast(d.aviso, 'warn');",
     a: "if (typeof showToast === 'function') showToast(e.message, 'warn');",
-    cae: 'SCRUM-832 · 🔴 CORRIDO: id inexistente e id de OTRO merchant dan el MISMO texto y destino, en las SEIS fichas',
+    cae: 'SCRUM-832 · 🔴 CORRIDO: id inexistente e id de OTRO merchant dan el MISMO texto y destino, en las SIETE fichas',
   },
 ];
 

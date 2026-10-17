@@ -325,7 +325,9 @@ test('SCRUM-601 · el censo distingue DEPENDER DEL FLAG de estar en un ternario 
   // SCRUM-1317 · 370 → 386: `app.js` gana por encima las 8 líneas que le quitan Proveedores e Informes
   // de la barra al operario y las 8 netas del guard de rol de `case 'reports'`. Medido, no deducido:
   // `grep -n "textContent = 'Facturas'" public/dashboard/js/app.js` da una sola línea, y es ésta.
-  const menu = en('public/dashboard/js/app.js', 386);
+  // SCRUM-1156c · 386 → 388: `app.js` gana por encima el menú activo de `expenses-detail` y su
+  // `state.expenseId`. Medido, no deducido: el mismo `grep` da una sola línea, la 388.
+  const menu = en('public/dashboard/js/app.js', 388);
   assert.equal(menu.length, 1, 'no se encuentra el rótulo del menú donde se midió');
   assert.equal(menu[0].texto, 'Facturas');
   assert.equal(menu[0].dependeDelFlag, false);

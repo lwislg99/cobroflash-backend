@@ -524,6 +524,9 @@ function botonDeFicha(texto, clase, alPulsar) {
 }
 
 async function renderExpenseDetailView(container, expenseId) {
+  // Sin id no hay gasto que pedir: `/admin/expenses/undefined` es una petición que el servidor sólo
+  // puede rechazar (SCRUM-1560). `app.js` no la llama así; quien lo haga no recibe una ficha a medias.
+  if (expenseId == null || expenseId === '') return;
   container.innerHTML = '';
   const page = gastoEl('div', 'detail-page gasto-ficha');
   container.appendChild(page);
