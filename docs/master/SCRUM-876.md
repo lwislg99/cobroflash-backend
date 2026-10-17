@@ -811,3 +811,89 @@ Lo que NO se ha hecho: volver a correr los dos casos en pila (#2268 y #2279) con
 El fallo mío: escribí el expediente y sus guiones DESPUÉS de la última pasada de los guards de árbol entero, y empujé. Un guion de `docs/master/evidencias/` es código para esos censos. La sesión se cortó por límite de uso antes de leer el veredicto, y el PR se quedó en rojo cuatro días.
 
 El «CIEGO» del meta-guard de ese mismo run (`scrum757`, «no aparece en la pasada mutada») es informativo: a la pasada mutada le faltaron 5 de los 9 tests de ese fichero. No he medido por qué; en #2340, a la misma hora y desde la misma base, ese job salió verde.
+
+---
+
+# APÉNDICE · SCRUM-876h · `scrum17-recapitulativa` al banco: corre, sus rojos caen, y NO puede entrar al lado de `scrum1515`
+
+**Medido contra:** `origin/main` = `18014c49ab7f2089c48d4c2e189f1fe799b829cf` · 2026-10-13T14:05:10Z
+**Rama:** `scrum-876h-scrum17-al-banco` · **Carril:** `tests/` (Sesión 3) · **Resultado:** el test está hecho y probado en rojo; el PR se deja en BORRADOR, sin armar, porque con él en la tanda cae un test de otro carril
+
+A9: comprobación → `tests/scrum622-desconocido-no-es-verde.test.mjs`
+
+## Qué lleva
+
+`tests/scrum17-recapitulativa.test.mjs` (un test gateado, la factura recapitulativa por mes natural) conserva `QA_DB_TEST=1` contra staging y gana `LIBRO_PG_URL` como segundo destino, por `tests/_banco-libro.mjs`. Ninguna variable nueva. `scrum419` lo declara. No toca `src/`, `ci.yml`, `_staging-db.mjs`, `assertSafeStagingUrl` ni `scrum1515`.
+
+| qué cambia en el test | por qué |
+|---|---|
+| la comprobación de la serie pasa de `/^\d{4}-/` a `/^F\d{6}$/`, en las dos facturas, y las dos con número distinto | el formato cambió el 7-sep (SCRUM-780). El test caía con un número que SÍ es fiscal, y nadie lo vio porque estaba gateado |
+| los tres merchants nacen con `withMerchant` | nacían con `prisma.merchant.create` antes del `try`. En un banco recién creado el primero recibe el id 1, el demo; el fixture lo evita (876f). Y su limpieza a mano no conocía `vfSubmission` |
+| sin `planExpiresAt` | la ruta no lleva `requireActivePlan` (SCRUM-123) |
+| con el banco como destino, corta la salida (`tests/_sin-salida.mjs`) | lo que ejercita emite facturas y las sella. Control positivo antes de la primera petición; al acabar, lo apuntado tiene que ser `[]` |
+
+## Los rojos, en el banco local
+
+Postgres 16.4, loopback, 33 tablas, el esquema de hoy (comparado con el del banco: iguales). `evidencias/SCRUM-876h/rojos-876h.txt`. Base verde antes y después, árbol limpio, poso 0 en las 33 tablas menos `gateway_events`, que tenía 140 filas antes de empezar y 140 al acabar.
+
+| mutación | resultado |
+|---|---|
+| `dist/`: la ruta deja de romper por mes (todo a una factura) | ROJO: «rotura → 2 facturas (marzo + abril)» |
+| `dist/`: la factura sale sin sus `albaranRefs` | ROJO: «albaranRefs referencia el albarán origen» |
+| `dist/`: el albarán no se marca como facturado | ROJO: «consolidar → 201 (fue 409)». Cae antes de lo que esperaba: en la primera petición, no en la lectura del `invoiceId` |
+| `dist/`: al emitir sale una llamada suelta hacia fuera | ROJO: «el test INTENTÓ salir de esta máquina» |
+| el TEST con la comprobación de antes del 7-sep | ROJO: «número de serie FISCAL (no J-)». Es lo que tenía `main` mientras estuvo gateado |
+
+5 de 5, y en las cinco cae sólo el test 12 de 12 (el gateado).
+
+## 🔴 Al lado de `scrum1515`: se pisan, y el que cae es `scrum1515`
+
+`tests/scrum1515-nuestra-puerta-de-alta.test.mjs` (J3) cuenta los merchants de TODA la tabla (`const cuantos = () => prisma.merchant.count();`, línea 163) en el banco que comparte con el resto. En el orden de la tanda está en la posición 407 y `scrum17` en la 424 (1.319 ficheros): 17 ficheros después.
+
+Medición: el tramo de 61 ficheros de las posiciones 380 a 440, en el orden de la tanda, CON el `scrum17` de esta rama y SIN él (el de `main`, que con sólo `LIBRO_PG_URL` se salta). Se cambia el fichero, no la lista. Cada proceso apunta cuándo arranca y cuándo sale (`marcas-876h.mjs`, por `--import`), y `solape-876h.mjs` cruza las marcas con el TAP. `evidencias/SCRUM-876h/medir-876h.txt`: 20 pasadas, marcas de 61 de 61 ficheros en las 20.
+
+| `scrum17` | concurrencia | pasadas | se pisan en el tiempo | `scrum1515` cae |
+|---|---|---|---|---|
+| CON | 2 | 1 | 0 (arranca 8,0 s después de que `scrum1515` acabe) | 0 |
+| CON | 3 | 5 | 0 de 5 (arranca entre 1,1 y 1,5 s después) | 0 de 5 |
+| CON | 4 | 3 | 3 de 3 (5,5 a 7,5 s) | **3 de 3** |
+| CON | 5 | 2 | 2 de 2 (11,2 y 11,6 s) | **1 de 2** |
+| CON | 7 | 4 | 4 de 4 (3,6 a 10,8 s) | **2 de 4** |
+| SIN | 3 | 1 | — (se salta) | 0 |
+| SIN | 4 | 1 | — | 0 |
+| SIN | 7 | 3 | — | 0 de 3 |
+
+Con el cambio y concurrencia 4 o más: se pisan 9 de 9 y `scrum1515` cae 6 de 9. Sin él: 0 de 5 a cualquier concurrencia. El mensaje de la caída es «5 !== 2» en cinco y «3 !== 2» en una: sus dos merchants más los de `scrum17`. `scrum17` sale `ok` en las 15 pasadas en que corre.
+
+Las 20 pasadas son sobre `6640b38f3d7800f7c439e1e78fa9694440822507`, antes de fusionar con `main`. La fusión trae un fichero de test nuevo que ordena delante de los dos (pasan a la 408 y la 425): la distancia es la misma.
+
+A concurrencia 3 no se pisan, pero por 1,1 a 1,5 s. Eso no es una separación: es cuánto tardan hoy los 16 ficheros que hay entre los dos.
+
+### Y en CI, ¿cuánto margen hay?
+
+`evidencias/SCRUM-876h/margen-en-ci.txt`: los 13 últimos obligatorios en verde del 13-oct. El reporter imprime por orden de fichero, así que la hora de la línea de `scrum1515` es su final y la de `scrum17` es, como tarde, el suyo. En esos 13 la de `scrum17` sale entre 340 ms y 17,2 s después de la de `scrum1515`; en 6 de 13, a menos de 1,4 s. Hoy `scrum17` se salta y su proceso dura décimas, así que en la pasada de 340 ms arrancó prácticamente cuando `scrum1515` acababa.
+
+Lo que esto NO dice: no es el arranque de `scrum17`, sólo una cota de cuándo acabó. No he medido la concurrencia del runner (no la he leído en ningún log; `ci.yml` no la fija). Y no hay ninguna pasada de CI con el `scrum17` de esta rama: la primera será la de este PR.
+
+## La decisión
+
+No entra así. Lo que separa a los dos en CI es el reparto de la tanda, no un diseño, y cuando se pisan `scrum1515` cae: sería un rojo intermitente en el obligatorio de los dos equipos, que es justo lo que este ticket avisa que no se meta.
+
+El arreglo no está en este fichero. `scrum1515` ya sella los correos de sus merchants (su línea 350 cuenta por ese sello): si `cuantos()` cuenta por el sello y no la tabla entera, deja de importarle quién corre a su lado. Es de J3 y no lo he tocado. La otra salida que da el ticket, un paso propio en `ci.yml`, es de S5.
+
+Con cualquiera de las dos, este PR entra como está.
+
+## De paso
+
+Mi guion `solape-876h.mjs` daba «ok» a cualquier línea del TAP que no supiera leer. Lo corregí antes de copiarlo al expediente, y comprobé que el censo lo habría cazado: con la línea de antes puesta, `scrum622` cae y la nombra (`solape-876h.mjs:22`); sin ella, 12 de 12.
+
+## Reproducir
+
+```
+# banco: Postgres loopback, base *_test, con el esquema de `prisma migrate diff --from-empty`
+$env:LIBRO_PG_URL = '<banco>'
+node --test --test-force-exit tests/scrum17-recapitulativa.test.mjs
+.\rojos-876h.ps1
+.\medir-876h.ps1 -pasadas "con:3","con:7","sin:7"
+node margen-en-ci.mjs <logs de `gh run view <id> --log`>
+```

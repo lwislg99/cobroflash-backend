@@ -1,0 +1,14 @@
+POBLACION · 13 log(s)
+ci-38390928374.log · 1515=ok (4131 ms) · scrum17=SALTADO · líneas de test entre los dos: 103 · la de scrum17 sale 340 ms DESPUÉS de la de 1515 · y 285 ms después de la línea anterior a ella
+ci-38395019776.log · 1515=ok (4531 ms) · scrum17=SALTADO · líneas de test entre los dos: 108 · la de scrum17 sale 1034 ms DESPUÉS de la de 1515 · y 0 ms después de la línea anterior a ella
+ci-38395332676.log · 1515=ok (3644 ms) · scrum17=SALTADO · líneas de test entre los dos: 108 · la de scrum17 sale 1143 ms DESPUÉS de la de 1515 · y 0 ms después de la línea anterior a ella
+ci-38395530288.log · 1515=ok (4144 ms) · scrum17=SALTADO · líneas de test entre los dos: 124 · la de scrum17 sale 3272 ms DESPUÉS de la de 1515 · y 0 ms después de la línea anterior a ella
+ci-38395830806.log · 1515=ok (2708 ms) · scrum17=SALTADO · líneas de test entre los dos: 110 · la de scrum17 sale 743 ms DESPUÉS de la de 1515 · y 0 ms después de la línea anterior a ella
+ci-38396031101.log · 1515=ok (3068 ms) · scrum17=SALTADO · líneas de test entre los dos: 108 · la de scrum17 sale 1379 ms DESPUÉS de la de 1515 · y 0 ms después de la línea anterior a ella
+ci-38398005578.log · 1515=ok (3533 ms) · scrum17=SALTADO · líneas de test entre los dos: 124 · la de scrum17 sale 1632 ms DESPUÉS de la de 1515 · y 0 ms después de la línea anterior a ella
+ci-38398304622.log · 1515=ok (4460 ms) · scrum17=SALTADO · líneas de test entre los dos: 124 · la de scrum17 sale 2646 ms DESPUÉS de la de 1515 · y 0 ms después de la línea anterior a ella
+ci-38399979221.log · 1515=ok (4142 ms) · scrum17=SALTADO · líneas de test entre los dos: 126 · la de scrum17 sale 3174 ms DESPUÉS de la de 1515 · y 0 ms después de la línea anterior a ella
+ci-38400977683.log · 1515=ok (4298 ms) · scrum17=SALTADO · líneas de test entre los dos: 132 · la de scrum17 sale 17218 ms DESPUÉS de la de 1515 · y 0 ms después de la línea anterior a ella
+ci-38401555087.log · 1515=ok (3010 ms) · scrum17=SALTADO · líneas de test entre los dos: 126 · la de scrum17 sale 1079 ms DESPUÉS de la de 1515 · y 0 ms después de la línea anterior a ella
+ci-38403505803.log · 1515=ok (4165 ms) · scrum17=SALTADO · líneas de test entre los dos: 132 · la de scrum17 sale 16966 ms DESPUÉS de la de 1515 · y 0 ms después de la línea anterior a ella
+ci-38404452272.log · 1515=ok (2951 ms) · scrum17=SALTADO · líneas de test entre los dos: 132 · la de scrum17 sale 11075 ms DESPUÉS de la de 1515 · y 0 ms después de la línea anterior a ella

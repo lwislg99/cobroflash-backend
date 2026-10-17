@@ -1,0 +1,14 @@
+POBLACION · 1 fichero (scrum17-recapitulativa, 12 casos; el gateado es el 12) · 5 mutaciones · HEAD 44c645bc6d5886958de7b3af9976c5af8e1f7ad6 · FORCE_COLOR ausente: True
+--- BASE (antes)
+  VERDE · casos 12 · caidos 0 [] · saltados 0 · salida 0 
+--- MUTACIONES
+  una-sola-factura :: ROJO  · casos 12 · caidos 1 [12] · saltados 0 · salida 1 error: |- rotura → 2 facturas (marzo + abril)  :: numstat [] · mutado: una-sola-factura · dist/modules/jobs/app/routes/jobs.routes.js · be47af59b3f5 → 3b104d03b71f :: restaurado
+  refs-vacias :: ROJO  · casos 12 · caidos 1 [12] · saltados 0 · salida 1 error: |- albaranRefs referencia el albarán origen  :: numstat [] · mutado: refs-vacias · dist/modules/jobs/domain/recapitulativa.service.js · 009e0b3fd741 → 7d00eb8d5468 :: restaurado
+  sin-marcar-facturado :: ROJO  · casos 12 · caidos 1 [12] · saltados 0 · salida 1 error: |- consolidar → 201 (fue 409)  :: numstat [] · mutado: sin-marcar-facturado · dist/modules/jobs/domain/recapitulativa.service.js · 009e0b3fd741 → 535fc3e2dff0 :: restaurado
+  salida-al-emitir :: ROJO  · casos 12 · caidos 1 [12] · saltados 0 · salida 1 error: |- 🔴 el test INTENTÓ salir de esta máquina con el banco como destino + actual - expected :: numstat [] · mutado: salida-al-emitir · dist/modules/jobs/domain/recapitulativa.service.js · 009e0b3fd741 → 5f7f9aafdc04 :: restaurado
+  asercion-de-antes :: ROJO  · casos 12 · caidos 1 [12] · saltados 0 · salida 1 error: 'número de serie FISCAL (no J-)' code: 'ERR_ASSERTION' name: 'AssertionError' :: numstat [1	1	tests/scrum17-recapitulativa.test.mjs] · mutado: asercion-de-antes · tests/scrum17-recapitulativa.test.mjs · 65a254f01daa → d2d65012cce9 :: restaurado
+--- BASE (despues)
+  VERDE · casos 12 · caidos 0 [] · saltados 0 · salida 0 
+git status: []
+tablas=33 · con filas: gateway_events=140
+EXIT=0

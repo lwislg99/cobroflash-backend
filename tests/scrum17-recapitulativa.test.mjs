@@ -1,14 +1,23 @@
 // SCRUM-17 (FISCAL-2): factura recapitulativa con motor de rotura por mes natural.
 //   Parte PURA (siempre): groupByRotura (rotura por mes), validarConsolidacion (cada código),
 //   aritmética de totales en céntimos con IVA mixto.
-//   Parte GATEADA (QA_DB_TEST=1): se añade con el endpoint (2 meses → 2 facturas, IVA mixto,
+//   Parte GATEADA: se añade con el endpoint (2 meses → 2 facturas, IVA mixto,
 //   doble consolidación concurrente, TRABAJO_UNICO/SIN_VALORAR/receipt, tenancy).
+//
+// ⚠️ GATEADO (crea y BORRA merchants efímeros; levanta la app in-process). Dos destinos (SCRUM-876h):
+//   QA_DB_TEST=1 npm run test:staging                     → staging, por `_staging-db.mjs` (igual que antes)
+//   LIBRO_PG_URL=<banco loopback, base *_test> npm test   → el banco desechable que CI levanta para la tanda
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
+// SCRUM-876h: el segundo destino, fail-closed; no afloja el primero. Va ANTES de cualquier `dist/`:
+// `albaran.service.js` construye el cliente de Prisma al cargarse.
+import { URL_BANCO } from './_banco-libro.mjs';
+import { cortarSalida } from './_sin-salida.mjs'; // SCRUM-876h: el hecho, no la bandera
 // SCRUM-643: la zona se fija A MANO; sin esto el fichero mediría la máquina donde corre.
 const MADRID = 'Europe/Madrid';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
+import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 import {
   groupByRotura,
   validarConsolidacion,
@@ -109,9 +118,24 @@ test('calcAlbaranTotales: líneas con IVA mixto suman en céntimos enteros', () 
 });
 
 // ── Flujo HTTP real (gateado) ────────────────────────────────────────────────
-const ENABLED = process.env.QA_DB_TEST === '1';
+const CON_BANCO = URL_BANCO !== '';
+const ENABLED = process.env.QA_DB_TEST === '1' || CON_BANCO;
 
-test('SCRUM-17: consolidar → rotura por mes (N facturas), IVA mixto, guards, tenancy', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-17: consolidar → rotura por mes (N facturas), IVA mixto, guards, tenancy', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
+  // SCRUM-876h · con el banco como destino este fichero corre en la tanda de CI, y lo que ejercita
+  // EMITE facturas y las sella. Se corta toda conexión que no sea de esta máquina, con su control
+  // positivo ANTES de la primera petición, y al acabar lo apuntado tiene que ser nada.
+  const corte = CON_BANCO ? cortarSalida() : null;
+  if (corte) {
+    await corte.controlPositivo();
+    t.after(() => {
+      const ajenos = corte.ajenos();
+      corte.restaurar();
+      assert.equal(corte.controlado, true, '🔴 CIEGO: el corte de salida no pasó su control');
+      assert.deepEqual(ajenos, [], '🔴 el test INTENTÓ salir de esta máquina con el banco como destino');
+    });
+  }
+
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const server = app.listen(0);
@@ -122,17 +146,13 @@ test('SCRUM-17: consolidar → rotura por mes (N facturas), IVA mixto, guards, t
   // SCRUM-81: tras alinear allocateInvoiceNumber con merchant.flags, el modo fiscal se obtiene con
   // el caso REAL —un merchant ES + override INVOICING_ES_ENABLED (Parte P)— en vez del apaño de
   // país no-ES. El gate del endpoint y la numeración ahora coinciden. ES sin flag → 'receipt'.
-  const mkMerchant = (tag, fiscal) =>
-    prisma.merchant.create({
-      data: {
-        name: `QA S17 ${tag}`, country: 'ES', email: `qa-s17-${tag}-${stamp}@test.local`,
-        onboardingCompleted: true, planExpiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000),
-        ...(fiscal ? { flags: { INVOICING_ES_ENABLED: true } } : {}),
-      },
-    });
-  const mA = await mkMerchant('A', true);   // fiscal (ES + override de flag)
-  const mR = await mkMerchant('R', false);  // receipt (ES sin flag)
-  const mB = await mkMerchant('B', true);   // otro merchant (tenancy)
+  // SCRUM-876h: nacían con `prisma.merchant.create`, antes del `try`. Pasan a `withMerchant`: en un
+  // banco recién creado el primero que nace es el id 1, el demo, y el fixture es quien lo evita.
+  // Sin `planExpiresAt`: esta ruta no lleva `requireActivePlan` (SCRUM-123).
+  const datosMerchant = (tag, fiscal) => ({
+    name: `QA S17 ${tag}`, email: `qa-s17-${tag}-${stamp}@test.local`,
+    ...(fiscal ? { flags: { INVOICING_ES_ENABLED: true } } : {}),
+  });
 
   const mkCtx = async (merchant, tipoOperacion = 'OPERACIONES_SUELTAS') => {
     const customer = await prisma.customer.create({ data: { merchantId: merchant.id, name: `Cli ${merchant.id}`, phone: `346${merchant.id}${stamp % 100000}` } });
@@ -150,8 +170,12 @@ test('SCRUM-17: consolidar → rotura por mes (N facturas), IVA mixto, guards, t
   const post = (cookie, jobId, albaranIds) =>
     fetch(`${base}/admin/jobs/${jobId}/consolidar-albaranes`, { method: 'POST', headers: { cookie, 'content-type': 'application/json' }, body: JSON.stringify({ albaranIds }) });
 
-  const merchantIds = [mA.id, mR.id, mB.id];
+  // Los tres merchants y TODO su montaje dentro de withMerchant: A fiscal (ES + override de flag),
+  // R receipt (ES sin flag) y B, otro merchant (tenancy).
   try {
+    await withMerchant(prisma, datosMerchant('A', true), (mA) =>
+      withMerchant(prisma, datosMerchant('R', false), (mR) =>
+        withMerchant(prisma, datosMerchant('B', true), async (mB) => {
     const cookieA = await mkCookie(mA.id);
 
     // ── (1) HAPPY: 2 meses → 2 facturas; marzo con IVA MIXTO (21%+10%) ──────────
@@ -173,7 +197,12 @@ test('SCRUM-17: consolidar → rotura por mes (N facturas), IVA mixto, guards, t
     assert.ok(fMar && fAbr, 'una factura por mes');
     assert.equal(fMar.total, '218.90', 'marzo IVA mixto: 90*1.21 + 100*1.10 = 218.90');
     assert.equal(fAbr.total, '242.00', 'abril: 200*1.21 = 242.00');
-    assert.match(fMar.number, /^\d{4}-/, 'número de serie FISCAL (no J-)');
+    // SCRUM-876h: la serie fiscal es `F` + año en dos cifras + contador de cuatro (SCRUM-780, corte
+    // del 7-sep-2026). Esta comprobación leía el formato anterior (`2026-…`) y caía con un número
+    // que SÍ es fiscal. Lo que vigila no cambia: que sale de la serie y no es un justificante.
+    assert.match(fMar.number, /^F\d{6}$/, 'número de serie FISCAL (no J-)');
+    assert.match(fAbr.number, /^F\d{6}$/, 'número de serie FISCAL (no J-)');
+    assert.notEqual(fMar.number, fAbr.number, 'cada factura lleva su número');
 
     // albaranes marcados facturado + facturas con type F1 + albaranRefs
     const albMarDb = await prisma.albaran.findUnique({ where: { id: albMar.id }, select: { invoiceId: true } });
@@ -216,13 +245,8 @@ test('SCRUM-17: consolidar → rotura por mes (N facturas), IVA mixto, guards, t
     assert.equal(rTen.status, 404, 'merchant B no accede al Job de A');
 
     console.log('✔ SCRUM-17: rotura 2 meses→2 facturas · IVA mixto 218.90 · refs · re-facturar 409 · SIN_VALORAR 400 · TRABAJO_UNICO 409 · receipt 409 · tenancy 404.');
+        })));
   } finally {
-    await prisma.invoice.deleteMany({ where: { merchantId: { in: merchantIds } } });
-    await prisma.albaran.deleteMany({ where: { merchantId: { in: merchantIds } } });
-    await prisma.job.deleteMany({ where: { merchantId: { in: merchantIds } } });
-    await prisma.customer.deleteMany({ where: { merchantId: { in: merchantIds } } });
-    await prisma.authSession.deleteMany({ where: { merchantId: { in: merchantIds } } });
-    await prisma.merchant.deleteMany({ where: { id: { in: merchantIds } } });
     server.close();
     await prisma.$disconnect();
   }
