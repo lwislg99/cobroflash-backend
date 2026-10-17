@@ -50,3 +50,48 @@ A9: comprobación → `tests/scrum514-aprobado-y-aplicado.test.mjs`
 - **NO firmada y NO se escribe:** la ayuda de «No lo sé». Va a SCRUM-1264. La pantalla no la necesita.
 - `scrum514` (texto firmado = texto pintado) cayó con los tres que aún no se pintan. Se **aparcan** en `APARCADOS` con su motivo y quién los desbloquea (S2, al pintar la pregunta), que es la vía que el propio guard indica. «Profesional» no se aparca porque el cruce ya la encuentra en `src/modules/system/domain/publicProfile.service.ts:51`, que es OTRO texto (el nombre de respaldo del perfil público): eso no prueba que la pregunta esté pintada. Tests de microcopy (71 ficheros): primero 675 tests · 1 fail (`scrum514`, los tres textos); después, EXIT 0.
 - **Rojo MÍO en el CI** (run `38893115898`, punta `40805a91`, 11.646 tests · 3 fail): ① `scrum694` y `scrum700`: el caso ⑥ de mi test se fabricaba su propio filtro de comentarios por regex, y la casa tiene `soloCodigo` (`tests/_solo-codigo.mjs`). Lo cambié. ② `scrum525d`: las 6 líneas de `activityKind` desplazaron dos anclas de `docs/legal/AUDITORIA_CAMINO_EMISION.md` (`schema.prisma:925-926` → `931-932`, en dos sitios, y `:1803` → `:1809`); las llevé a donde está hoy su testigo, sin tocar la frase. Antes de calcularlas mergeé `origin/main`. Después, esos tres, mi test y `scrum514`: 64/64. Lección: antes de empujar, correr los guards de la casa sobre los tests NUEVOS (`scrum694`, `scrum700`) y sobre lo que mueve líneas de `schema.prisma` (`scrum525d`), no solo los vecinos del perfil.
+
+## SCRUM-1072c · el punto 6 (la actividad en el Resumen del trimestre): HECHO Y APARCADO
+
+**Medido contra:** `origin/main` = `e244ff61b1b81dd57d3747298ca207502a5a1c59` · 2026-10-17T20:01:51Z
+A9: comprobación → `tests/scrum1072c-actividad-en-el-resumen.test.mjs`
+
+Sesión S1 · árbol `s1-1072c` · rama aparcada `espera/scrum-1072c-actividad-en-el-resumen`. El prefijo `espera/` está
+puesto a propósito, igual que en 1558b, para que `pr-automatico` no le abra PR. **No va a `main`.**
+
+### De dónde lee cada vista (medido antes de construir; deja sin efecto el «no lo he mirado» de la fila 6)
+
+- El Resumen de Informes (`reportsView.js:535`) pide `GET /admin/reports/resumen-trimestre`, `recibidas.json` y `/pl`.
+  Ninguna de las tres trae la actividad: `resumen-trimestre` (`reports.routes.ts:361`) no lee el Merchant.
+- La Home (`homeView.js:381`) pide el mismo `resumen-trimestre`, pero además ya carga `/admin/merchant` (`:137`).
+
+### Lo que está hecho en la rama
+
+- `src/modules/reports/app/routes/reports.routes.ts`: `resumen-trimestre` lee
+  `merchant.findUnique({ where: { id: req.merchantId }, select: { activityKind: true } })` y devuelve `activityKind`
+  tal cual: `profesional`, `empresarial`, `no_lo_se` o `null`. La ruta es sólo para admin (`app.ts:667`). Es la
+  opción (b), elegida por el orquestador el 17-oct **con un coste que conocía**: la actividad es un atributo del merchant y
+  no del trimestre, y aun así se mete aquí para no añadir una petición a `/admin/merchant` en cada carga de Informes.
+- `tests/scrum1072c-actividad-en-el-resumen.test.mjs`, 3 de 3: ① los cuatro estados llegan sin colapsar; ② lee el
+  merchant de la sesión y sólo esa columna; ③ no mueve ninguna otra cifra del resumen. **Rojo primero** con cuatro
+  mutantes inyectados en `dist` (quitar el campo, colapsar `null` en `no_lo_se`, leer un merchant fijo, quitar el
+  `select`): mueren los cuatro, y la base restaurada vuelve a 0 fallos.
+- `tests/scrum1151-conteo-no-deducible.test.mjs`: a su doble de `prisma` le faltaba `merchant`, así que la lectura
+  nueva iba a la base de verdad y caía por `DATABASE_URL`. Se añadió `merchant` al doble y **no se tocó ni una aserción**.
+- Los 18 ficheros vecinos de la ruta: 140 pasan, 0 fallan, 2 saltados (piden `LIBRO_PG_URL`; el motivo está declarado).
+
+### Por qué no entra
+
+Cae el ⑥ de `tests/scrum1072-actividad-se-guarda.test.mjs`, que sólo deja nombrar `activityKind` a `schemas.ts` y
+`merchantAdmin.ts`: «hasta que el asesor responda Q-C5, YaQu no decide nada con ella». Para que pasara habría que
+añadir un fichero a esa lista, y la regla 41 llama a eso relajar el guard. Así que se paró y se preguntó.
+
+**Lo decidió el orquestador (17-oct): ninguna de las tres salidas, y el punto 6 se aparca.** Su motivo es que el
+Resumen del trimestre es una superficie FISCAL. Poner «Profesional / Empresarial» al lado de esas cifras da a entender
+que la clasificación tiene que ver con ellas, y eso es justo lo que espera la respuesta del asesor: es un claim
+fiscal en UI, STOP. «No mueve cifras» (el ③) no es lo mismo que «no insinúa nada». Volver a la opción (a) se descartó
+expresamente, porque pasaría el guard sólo porque el guard no mira pantallas. Replantear el ⑥ queda apuntado para
+cuando haya respuesta, y entonces con su ticket.
+
+**Lo desbloquea:** la respuesta del asesor a Q-C5. El orquestador la ha puesto en la cola del fundador. Cuando llegue,
+se decide de nuevo qué hacer con el ⑥ y con esta rama. Hasta entonces, el punto 6 de la tabla de arriba sigue en NO HECHO.
