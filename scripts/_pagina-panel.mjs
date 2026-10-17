@@ -91,7 +91,7 @@ export function serializar(n) {
 //
 // 🔴 SCRUM-1560d · CON LA FORMA DEL SERVIDOR. Cada fila lleva TODAS las claves de
 // `CUSTOMER_SELECT_NO_TOKEN` (`src/modules/system/customerAdmin.ts`, el `select` de `listCustomers`),
-// a su valor de «no declarado». Antes llevaba siete. Y Carmen Ruiz tenía `tags: []`, que el servidor
+// a su valor de «no declarado». Hasta SCRUM-1560d llevaba siete. Y Carmen Ruiz tenía `tags: []`, que el servidor
 // no puede devolver: `normalizarTags` convierte la lista vacía en `null` («no se declararon»).
 // Las tres opcionales (`ultimaVisita`, `saldoPendiente`, `garantiaRetenida`) faltan a propósito: el
 // servidor las OMITE cuando no hay, y ausente no es cero.
@@ -124,8 +124,8 @@ export const CLIENTES_DE_MUESTRA = [
 // `recargoEquivalencia` ni `dtoPorDefecto`, y sí `portalToken` y `portalUrl`. Se DERIVA del primero
 // de la lista quitando y poniendo, no se copia. Sin portal (`null`): como hasta hoy, que no lo traía.
 // Los importes de `quotes` e `invoices` son `Decimal` en la base y viajan como TEXTO; `acceptedAt` y
-// `paidAt` viajan siempre. `stats` lleva sus ocho cifras y cuadran con las listas (antes decía 3
-// presupuestos y servía 1). `events` son filas de `CustomerEvent` tal cual.
+// `paidAt` viajan siempre. `stats` lleva sus ocho cifras y cuadran con las listas (hasta SCRUM-1560d
+// decía 3 presupuestos y servía 1). `events` son filas de `CustomerEvent` tal cual.
 const { merchantId: _m, updatedAt: _u, recargoEquivalencia: _r, dtoPorDefecto: _d, ...CLIENTE_360 } = CLIENTES_DE_MUESTRA[0];
 export const DETALLE_360_DE_MUESTRA = Object.freeze({
   customer: { ...CLIENTE_360, portalToken: null, portalUrl: null },
