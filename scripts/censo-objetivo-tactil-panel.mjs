@@ -47,9 +47,10 @@ import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
 import { lanzarNavegador } from './_navegador.mjs';
 import { FUENTE_MEDIDOR, INTERACTIVOS, MINIMO_TACTIL } from './_medidor-de-toque.mjs';
-import { serializar, paginaDeClientes, CLIENTES_DE_MUESTRA, DETALLE_360_DE_MUESTRA, TRABAJO_DE_MUESTRA, ARGUMENTOS_DE_VISTA } from './_pagina-panel.mjs';
+import { serializar, paginaDeClientes } from './_pagina-panel.mjs';
 import { cargarDashboard, pintarVista, todos } from '../tests/_banco-vistas.mjs';
 import { cortosDistintos } from './_censo-distintos.mjs';
+import { datosDelCenso, ARGUMENTOS_DEL_CENSO } from './_datos-del-censo.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = path.join(RAIZ, 'public');
@@ -62,26 +63,14 @@ let salida = 0;
 const decir = (s) => console.log(s);
 const noSupe = (s) => { console.error(s); salida = 2; };
 
-/** Datos de muestra generosos: cuantas más vistas monten, mayor la población medida. */
-const DATOS = (url) => {
-  const u = String(url || '');
-  // SCRUM-795 · el DETALLE va antes que la lista: `/admin/customers/7/detail` casa con las dos, y
-  // servirle un array a la 360 la revienta en `invoices[0]`.
-  if (/\/admin\/customers\/\d+\/detail/.test(u)) return DETALLE_360_DE_MUESTRA;
-  if (u.includes('/admin/merchant')) return { id: 1, name: 'Fontanería Soler' };
-  if (/\/admin\/customers/.test(u)) return CLIENTES_DE_MUESTRA;
-  if (/\/admin\/products\b/.test(u)) return { ok: true, items: [{ id: 1, name: 'Grifo', price: 100, cost: 60, description: '', providerId: null, itemKind: null, active: true }] };
-  if (/\/admin\/providers\b/.test(u)) return { ok: true, items: [{ id: 1, name: 'Proveedor QA', phone: '', email: '', notes: '' }] };
-  if (/\/billing\/plans/.test(u)) return { plans: [], currentPlan: null, founding: null };
-  if (/\/albaranes\//.test(u)) return { id: 1, estado: 'borrador', lines: [], items: [] };
-  // SCRUM-848 · la ficha de Trabajo, con un Trabajo QUE EXISTE. Antes caía en el `return []` de
-  // abajo —y ni eso le llegaba: el banco no le pasaba la ruta a `apiRequest`, así que esta función
-  // se llamaba sin url y contestaba siempre por la rama final—. Se medía un Trabajo sin `status`,
-  // que el producto no puede producir. Es el MISMO fixture que usa `guard:objetivo-tactil`: el que
-  // cuenta y el que vigila tienen que hablar de la misma pantalla.
-  if (/\/admin\/jobs\//.test(u)) return TRABAJO_DE_MUESTRA;
-  return [];
-};
+// 🔴 SCRUM-1560 · LOS DATOS DE MUESTRA, CON LA FORMA QUE DA EL SERVIDOR. Aquí vivía un `DATOS` que
+// servía ocho rutas y a las demás les devolvía `[]`: 28 rutas reales caían en ese relleno (varias
+// son OBJETO en el servidor), seis recibían el dato de otra y cinco vistas de detalle se montaban
+// sin id. Ahora cada ruta tiene contrato, con fichero:línea del servidor, en `_datos-del-censo.mjs`
+// (el Trabajo, los Clientes y la 360 siguen siendo los MISMOS fixtures que usa el guard). Una ruta
+// sin contrato recibe `null` y se dice abajo: con una respuesta inventada no hay pantalla medida.
+const DC = datosDelCenso();
+const DATOS = DC.datos;
 
 const vistasDelBanco = () => {
   const b = cargarDashboard(RAIZ);
@@ -96,7 +85,9 @@ for (const fn of VISTAS) {
   let r;
   // SCRUM-795 · con los argumentos que el producto le pasa a la vista, si los necesita. La ficha
   // 360 montaba 2 nodos y salía en «NO MEDIDAS» por esto, no por estar vacía.
-  try { r = await pintarVista(cargarDashboard(RAIZ, { datos: DATOS }), fn, ...(ARGUMENTOS_DE_VISTA[fn] || [])); }
+  // SCRUM-1560 · y las de detalle, con el id que les da `app.js`, no `NaN` ni `undefined`.
+  DC.enVista(fn);
+  try { r = await pintarVista(cargarDashboard(RAIZ, { datos: DATOS }), fn, ...(ARGUMENTOS_DEL_CENSO[fn] || [])); }
   catch (e) { noMedidas.push([fn, 'el banco no la pudo montar: ' + String(e.message).slice(0, 70)]); continue; }
   if (r.error) { noMedidas.push([fn, 'no monta: ' + String(r.error.message).slice(0, 70)]); continue; }
   let html;
@@ -127,6 +118,12 @@ if (superficies.length < MINIMO_SUPERFICIES) {
 }
 decir('\nNO MEDIDAS (no se cuentan como cero — se dicen):');
 for (const [fn, motivo] of noMedidas) decir(`   ⚠️ ${fn} → ${motivo}`);
+
+decir(`\nDATOS DE MUESTRA (SCRUM-1560) · rutas servidas con su contrato: ${DC.servidas.size} · SIN contrato: ${DC.sinContrato.size}`);
+for (const [ruta, vistas] of DC.sinContrato) decir(`   🔴 ${ruta} ← ${[...vistas].join(', ')}`);
+if (DC.sinContrato.size) {
+  noSupe('🔴 hay vistas que piden rutas sin contrato en `_datos-del-censo.mjs`: se han montado con `null`, no con lo que da el servidor.');
+}
 
 // ═══ ② MEDIR ═════════════════════════════════════════════════════════════════════════════════
 const HOJAS = '<link rel="stylesheet" href="/tokens.css"><link rel="stylesheet" href="/dashboard/css/styles.css">';

@@ -1,0 +1,122 @@
+── POR PANTALLA Y ANCHO (medidos / cortos), sólo las que cambian
+  renderAlbaranDetailView @390: 4 / 2 → 5 / 2
+  renderAlbaranDetailView @929: 4 / 2 → 5 / 2
+  renderAlbaranesView @390: no medida → 8 / 1
+  renderAlbaranesView @929: no medida → 6 / 2
+  renderCobrosView @390: 6 / 0 → 7 / 1
+  renderCobrosView @929: 6 / 0 → 7 / 1
+  renderCustomer360View @390: 10 / 7 → 12 / 5
+  renderCustomer360View @929: 12 / 12 → 14 / 14
+  renderHomeView @390: 13 / 0 → 14 / 3
+  renderHomeView @929: 13 / 0 → 14 / 3
+  renderInvoiceDetailView @390: no medida → 7 / 5
+  renderInvoiceDetailView @929: no medida → 7 / 5
+  renderInvoicesView @390: 5 / 2 → 4 / 1
+  renderJobsView @390: no medida → 12 / 0
+  renderJobsView @929: no medida → 12 / 0
+  renderLibroRegistroView @390: no medida → 0 / 0
+  renderLibroRegistroView @929: no medida → 0 / 0
+  renderParteDetailView @390: no medida → 6 / 0
+  renderParteDetailView @929: no medida → 6 / 0
+  renderPlansView @390: no medida → 4 / 3
+  renderPlansView @929: no medida → 4 / 4
+  renderQuoteDetailView @390: no medida → 10 / 9
+  renderQuoteDetailView @929: no medida → 10 / 10
+  renderQuoteRequestsView @390: no medida → 2 / 2
+  renderQuoteRequestsView @929: no medida → 2 / 2
+  renderQuotesListView @390: 5 / 1 → 5 / 0
+  renderReportsView @390: 13 / 0 → 15 / 0
+  renderReportsView @929: 13 / 0 → 15 / 0
+  renderTeamView @390: no medida → 5 / 5
+  renderTeamView @929: no medida → 5 / 5
+  renderTemplatesView @390: 3 / 0 → 6 / 0
+  renderTemplatesView @929: 3 / 0 → 6 / 0
+
+emparejados: 297 · NUEVOS: 137 (cortos 65) · DESAPARECIDOS: 12 (cortos 4) · cambian de veredicto: 2 · cambian de área ≥ 0,5 px: 0
+
+── NUEVOS cortos
+  renderAlbaranesView @929 · BUTTON.btn.btn-primary «Nuevo albaránN» 37.0 px CORTO
+  renderAlbaranesView @929 · BUTTON.btn-secondary.btn-sm «Enviar para firmar» 30.8 px CORTO
+  renderCobrosView @929 · A «factura F-2026-0021» 19.0 px CORTO
+  renderCustomer360View @929 · BUTTON «Trabajos (1)» 41.0 px CORTO
+  renderCustomer360View @929 · BUTTON «WhatsApp (1)» 41.0 px CORTO
+  renderHomeView @929 · BUTTON.btn-primary.btn-sm «Ver resumen» 30.9 px CORTO
+  renderHomeView @929 · BUTTON.btn-ghost.btn-sm «✕» 30.9 px CORTO
+  renderHomeView @929 · BUTTON.btn.btn-secondary.btn-sm «Ver facturas →» 30.7 px CORTO
+  renderInvoiceDetailView @929 · BUTTON.btn-secondary.btn-sm «← Volver a facturas» 31.0 px CORTO
+  renderInvoiceDetailView @929 · INPUT.doc-asignados-casilla «(sin texto)» 21.0 px CORTO
+  renderInvoiceDetailView @929 · BUTTON.btn-primary.btn-sm «Marcar como cobrada» 30.5 px CORTO
+  renderInvoiceDetailView @929 · BUTTON.btn-secondary.btn-sm «Descargar PDF» 30.5 px CORTO
+  renderInvoiceDetailView @929 · BUTTON.btn-secondary.btn-sm «Enviar por WhatsApp» 30.5 px CORTO
+  renderInvoicesView @929 · INPUT.inv-row-check «(sin texto)» 14.0 px CORTO
+  renderPlansView @929 · BUTTON.plan-btn «Quiero mi plaza founding — 9,90 €/» 41.9 px CORTO
+  renderPlansView @929 · BUTTON «Mensual» 29.9 px CORTO
+  renderPlansView @929 · BUTTON «Anual-17%» 29.9 px CORTO
+  renderPlansView @929 · BUTTON.btn-primary.plan-btn «Suscribirme — 19,90 €/mes» 39.8 px CORTO
+  renderQuoteDetailView @929 · BUTTON.btn-secondary.btn-sm «📄 PDF» 31.0 px CORTO
+  renderQuoteDetailView @929 · BUTTON.btn-secondary.btn-sm «⎘ Duplicar» 31.0 px CORTO
+  renderQuoteDetailView @929 · BUTTON.btn-secondary.btn-sm «← Volver» 31.0 px CORTO
+  renderQuoteDetailView @929 · BUTTON.btn-secondary.btn-sm «↻ Reenviar por WhatsApp» 30.5 px CORTO
+  renderQuoteDetailView @929 · BUTTON.btn-secondary.btn-sm «↻ Reenviar por correo» 30.5 px CORTO
+  renderQuoteDetailView @929 · BUTTON.btn-primary.btn-sm «Aceptar presupuesto» 30.5 px CORTO
+  renderQuoteDetailView @929 · BUTTON.btn-secondary.btn-sm «Rechazar presupuesto» 30.5 px CORTO
+  renderQuoteDetailView @929 · INPUT.doc-asignados-casilla «(sin texto)» 21.0 px CORTO
+  renderQuoteDetailView @929 · BUTTON.btn-secondary.btn-sm «+ Añadir gasto a este trabajo» 30.6 px CORTO
+  renderQuoteDetailView @929 · BUTTON.btn.btn-ghost «Crear revisión» 36.7 px CORTO
+  renderQuoteRequestsView @929 · BUTTON.btn-primary.btn-sm «+ Crear presupuesto» 30.7 px CORTO
+  renderQuoteRequestsView @929 · BUTTON.btn-ghost.btn-sm «✓ Marcar gestionada» 30.7 px CORTO
+  renderQuotesListView @929 · BUTTON.btn-secondary.btn-sm «Ver detalle» 36.8 px CORTO
+  renderTeamView @929 · BUTTON.btn-primary.btn-sm «+ Añadir miembro» 31.0 px CORTO
+  renderTeamView @929 · BUTTON.btn-ghost.btn-sm «Ver su trabajo →» 30.8 px CORTO
+  renderTeamView @929 · BUTTON.btn-ghost.btn-sm «Ver su trabajo →» 30.7 px CORTO
+  renderTeamView @929 · BUTTON.btn-ghost.btn-sm «Editar» 30.7 px CORTO
+  renderTeamView @929 · BUTTON.btn-danger.btn-sm «Suspender» 30.7 px CORTO
+  renderAlbaranesView @390 · A.alb-numero «A-2026-0031» 17.0 px CORTO
+  renderCobrosView @390 · A «factura F-2026-0021» 17.0 px CORTO
+  renderHomeView @390 · BUTTON.btn-primary.btn-sm «Ver resumen» 30.6 px CORTO
+  renderHomeView @390 · BUTTON.btn-ghost.btn-sm «✕» 30.6 px CORTO
+  renderHomeView @390 · BUTTON.btn.btn-secondary.btn-sm «Ver facturas →» 30.5 px CORTO
+  renderInvoiceDetailView @390 · BUTTON.btn-secondary.btn-sm «← Volver a facturas» 31.0 px CORTO
+  renderInvoiceDetailView @390 · INPUT.doc-asignados-casilla «(sin texto)» 21.0 px CORTO
+  renderInvoiceDetailView @390 · BUTTON.btn-primary.btn-sm «Marcar como cobrada» 30.5 px CORTO
+  renderInvoiceDetailView @390 · BUTTON.btn-secondary.btn-sm «Descargar PDF» 30.5 px CORTO
+  renderInvoiceDetailView @390 · BUTTON.btn-secondary.btn-sm «Enviar por WhatsApp» 30.5 px CORTO
+  renderPlansView @390 · BUTTON.plan-btn «Quiero mi plaza founding — 9,90 €/» 41.9 px CORTO
+  renderPlansView @390 · BUTTON «Mensual» 29.9 px CORTO
+  renderPlansView @390 · BUTTON «Anual-17%» 29.9 px CORTO
+  renderQuoteDetailView @390 · BUTTON.btn-secondary.btn-sm «📄 PDF» 31.0 px CORTO
+  renderQuoteDetailView @390 · BUTTON.btn-secondary.btn-sm «⎘ Duplicar» 31.0 px CORTO
+  renderQuoteDetailView @390 · BUTTON.btn-secondary.btn-sm «← Volver» 31.0 px CORTO
+  renderQuoteDetailView @390 · BUTTON.btn-secondary.btn-sm «↻ Reenviar por WhatsApp» 30.5 px CORTO
+  renderQuoteDetailView @390 · BUTTON.btn-secondary.btn-sm «↻ Reenviar por correo» 30.5 px CORTO
+  renderQuoteDetailView @390 · BUTTON.btn-primary.btn-sm «Aceptar presupuesto» 30.6 px CORTO
+  renderQuoteDetailView @390 · BUTTON.btn-secondary.btn-sm «Rechazar presupuesto» 30.6 px CORTO
+  renderQuoteDetailView @390 · INPUT.doc-asignados-casilla «(sin texto)» 21.0 px CORTO
+  renderQuoteDetailView @390 · BUTTON.btn-secondary.btn-sm «+ Añadir gasto a este trabajo» 30.7 px CORTO
+  renderQuoteRequestsView @390 · BUTTON.btn-primary.btn-sm «+ Crear presupuesto» 30.9 px CORTO
+  renderQuoteRequestsView @390 · BUTTON.btn-ghost.btn-sm «✓ Marcar gestionada» 30.9 px CORTO
+  renderTeamView @390 · BUTTON.btn-primary.btn-sm «+ Añadir miembro» 30.7 px CORTO
+  renderTeamView @390 · BUTTON.btn-ghost.btn-sm «Ver su trabajo →» 30.9 px CORTO
+  renderTeamView @390 · BUTTON.btn-ghost.btn-sm «Ver su trabajo →» 30.9 px CORTO
+  renderTeamView @390 · BUTTON.btn-ghost.btn-sm «Editar» 30.9 px CORTO
+  renderTeamView @390 · BUTTON.btn-danger.btn-sm «Suspender» 30.9 px CORTO
+
+── DESAPARECIDOS (lo que el dato imposible pintaba y el servidor no da)
+  renderHomeView @929 · BUTTON.btn-ghost.btn-sm «Ir →» 45.0 px cumple
+  renderHomeView @929 · BUTTON.btn-ghost.btn-sm «Ir →» 45.0 px cumple
+  renderHomeView @929 · BUTTON.btn-ghost.btn-sm «Ir →» 45.0 px cumple
+  renderInvoicesView @929 · BUTTON.btn-primary.btn-sm «Crear un presupuesto» 30.9 px CORTO
+  renderJobDetailView @929 · SUMMARY.detail-plega-cab «Quién lo ejecuta» 44.0 px cumple
+  renderQuotesListView @929 · BUTTON.btn-primary.btn-sm «🚀 Crear mi primer presupuesto» 30.8 px CORTO
+  renderHomeView @390 · BUTTON.btn-ghost.btn-sm «Ir →» 44.8 px cumple
+  renderHomeView @390 · BUTTON.btn-ghost.btn-sm «Ir →» 44.8 px cumple
+  renderHomeView @390 · BUTTON.btn-ghost.btn-sm «Ir →» 44.8 px cumple
+  renderInvoicesView @390 · BUTTON.btn-primary.btn-sm «Crear un presupuesto» 30.6 px CORTO
+  renderJobDetailView @390 · SUMMARY.detail-plega-cab «Quién lo ejecuta» 44.0 px cumple
+  renderQuotesListView @390 · BUTTON.btn-primary.btn-sm «🚀 Crear mi primer presupuesto» 30.9 px CORTO
+
+── CAMBIAN DE VEREDICTO
+  renderCustomer360View @390 · BUTTON «Presupuestos (1)» 41.0 px CORTO → 59.0 px
+  renderCustomer360View @390 · BUTTON «Facturas (1)» 41.0 px CORTO → 59.0 px
+
+── CAMBIAN DE ÁREA ≥ 0,5 px (mismo veredicto)
