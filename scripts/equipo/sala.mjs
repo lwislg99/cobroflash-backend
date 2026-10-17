@@ -19,6 +19,7 @@
 // EL FORMATO es el que el plugin ya lee: una línea = una cosa que atender, campos separados por `|`, y los
 // tres primeros son la huella con la que el plugin decide si el aviso es nuevo.
 //   AVERIA|no pude mirar <qué>                                  (parados.mjs no pudo mirar algo)
+//   PREGUNTA|S2|sesion-2|hace 83 min|sin proceso|«falta tu firma…»|su puesto está SIN CUBRIR   (SCRUM-1357f)
 //   VACIO|S3|ninguna sesión suya con proceso|su puesto está SIN CUBRIR
 //   BLOQUEADA|S3|sesion-3|hace 8 min|pid 14304|«approve Entering worktree»
 //   TE ESPERA|S2|sesion-2|hace 39 min|pid 4100|«lo último que dijo»
@@ -31,6 +32,15 @@
 // y le añade un quinto campo: «estaba aparcado, pero <por qué ya no vale>».
 // Una sesión VIVA que no casa con ningún puesto NO se calla: si el equipo cambia de nombres otra vez, aquí
 // sale como huérfana en vez de desaparecer.
+//
+// PREGUNTA (SCRUM-1357f): una sesión SIN PROCESO que conserva una pregunta en su `needs`. Medido el
+// 17-oct-2026: `sesion-2` pasó a `blocked` a las 20:07:56Z pidiendo una firma y nadie la contestó hasta
+// pararla a las 21:32:58Z, 85 minutos. El panel enseñaba «VACIO|S2|…»: un puesto vacío se cubre cuando
+// se pueda, una pregunta se contesta YA, y se pintaban igual. Esto ya salía como BLOQUEADA «sin proceso»,
+// pero DEBAJO de un VACIO del mismo puesto que lo contradecía. Ahora sale PRIMERO, con su propio rótulo,
+// y SUSTITUYE al VACIO de su puesto (que viaja en el último campo). La pregunta sobrevive a la sesión:
+// se lee del registro aunque el proceso haya muerto. Una muerta SIN `needs` sigue dando VACIO.
+// La huella (`PREGUNTA|S2|sesion-2`) no cambia de un repintado a otro: el aviso suena una vez.
 //
 // 🔴 LA SALIDA VACÍA ES UNA AFIRMACIÓN. El plugin pinta «los 6 trabajando» cuando no lee ninguna línea, y
 // hoy no mira el código de salida. Por eso este guion no puede reventar en silencio: cualquier fallo se
@@ -74,10 +84,19 @@ export function aLineas(datos) {
   const lineas = [];
   for (const c of datos.ciegos) lineas.push(`AVERIA|no pude mirar ${campo(c, 300)}`);
   const noValen = datos.marcasQueNoValen || {};
-  for (const p of datos.vacios || []) {
+  const vacios = datos.vacios || [];
+  // 1357f: muerta con su pregunta dentro. Va antes que los vacíos y se come el VACIO de su puesto.
+  const preguntas = (datos.bloqueadas || []).filter((f) => !f.pid && f.pregunta);
+  for (const f of preguntas) {
+    lineas.push(`PREGUNTA|${f.puesto || 'sin puesto'}|${campo(f.nombre, 60)}|${hace(datos.ahora, f.desde)}|sin proceso|«${campo(f.pregunta)}»${vacios.includes(f.puesto) ? '|su puesto está SIN CUBRIR' : ''}`);
+  }
+  const conPregunta = new Set(preguntas.map((f) => f.puesto));
+  for (const p of vacios) {
+    if (conPregunta.has(p)) continue;
     lineas.push(`VACIO|${campo(p)}|ninguna sesión suya con proceso|su puesto está SIN CUBRIR${noValen[p] ? `|estaba aparcado, pero ${campo(noValen[p])}` : ''}`);
   }
   for (const f of datos.bloqueadas || []) {
+    if (preguntas.includes(f)) continue;
     lineas.push(`BLOQUEADA|${f.puesto || 'sin puesto'}|${campo(f.nombre, 60)}|${hace(datos.ahora, f.desde)}|${f.pid ? `pid ${f.pid}` : 'sin proceso'}|${f.pregunta ? `«${campo(f.pregunta)}»` : '(no dice qué espera)'}`);
   }
   for (const f of datos.esperan || []) {
