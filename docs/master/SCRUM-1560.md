@@ -117,6 +117,20 @@ pinta a 390) · S2\* `albaranesView.js` «Enviar para firmar» 30,8/44,6.
   definición en `invoiceDetailView.js` (J1). Corregido en `por-dueno.mjs`. Sin ese cambio habría
   repartido mal 5 de los 37.
 
+### Errores propios que cazó el obligatorio (#2541, primer push 9266d662)
+Cuatro guards que ya existían cayeron, todos con razón:
+- `scrum195` y `scrum414`: `caminoDe` usaba `new URL` sin `try`. Su error lleva la cadena entera
+  dentro. Ahora quita el origen y la consulta con texto, y las cifras no se mueven (96/141, 0 sin
+  contrato).
+- `scrum694`: el test se fabricaba su propio filtro de comentarios por regex. Ahora usa
+  `tests/_solo-codigo.mjs`.
+- `scrum710b`: las 42 `fuente` iban como `fichero:línea`, que es un anclaje por POSICIÓN y caduca
+  en cuanto se edita por encima. Ahora llevan el fichero y `get` = el literal de su `router.get(…)`.
+  El test comprueba que ese literal sigue en ese fichero, y está probado en rojo: con un `get` falso,
+  cae. (En este registro las citas con línea se quedan: lo que hacen es fechar la medida.)
+Los dos rojos de «guards de navegador» (informativo) NO son de este cambio: `objetivo-tactil` es
+«⬇ Clientes CSV» (J2, ya conocido) y `cls-barra-anuncio` es de la landing.
+
 ### Lo que esto NO sabe
 - Los contratos son una COPIA fechada del servidor, no una lectura. Si el servidor cambia, este
   fichero no se entera: la `fuente` está para volver a mirarla.

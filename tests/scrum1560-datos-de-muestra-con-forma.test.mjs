@@ -19,6 +19,7 @@ import {
 } from '../scripts/_datos-del-censo.mjs';
 import { serializar, CLIENTES_DE_MUESTRA, TRABAJO_DE_MUESTRA } from '../scripts/_pagina-panel.mjs';
 import { cargarDashboard, pintarVista } from './_banco-vistas.mjs';
+import { soloCodigo } from './_solo-codigo.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const de = (ruta) => {
@@ -75,9 +76,18 @@ test('cada contrato: su dato cumple, su ejemplo casa con ÉL (no con el de otra 
   for (const c of CONTRATOS) {
     fallos.push(...comprobarForma(c, c.dato()));
     if (contratoDe(c.ejemplo) !== c) fallos.push(`${c.ejemplo} lo contesta ${contratoDe(c.ejemplo)?.ejemplo ?? 'nadie'}`);
-    const fichero = c.fuente.split(/[: ]/)[0];
-    if (!fs.existsSync(path.join(RAIZ, fichero))) fallos.push(`${c.ejemplo}: la fuente ${fichero} no existe`);
+    const fichero = c.fuente.split(' ')[0];
+    if (!fs.existsSync(path.join(RAIZ, fichero))) { fallos.push(`${c.ejemplo}: la fuente ${fichero} no existe`); continue; }
+    // Anclado por IDENTIDAD: el literal de la ruta tiene que seguir en su router.
+    if (fichero.startsWith('src/')) {
+      if (!c.get) fallos.push(`${c.ejemplo}: fuente del servidor sin \`get\``);
+      else if (!new RegExp(`\\.get\\(\\s*['"]${c.get.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}['"]`).test(fs.readFileSync(path.join(RAIZ, fichero), 'utf8'))) {
+        fallos.push(`${c.ejemplo}: ${fichero} ya no tiene \`.get('${c.get}'\``);
+      }
+    }
   }
+  const delServidor = CONTRATOS.filter((c) => c.fuente.startsWith('src/')).length;
+  assert.ok(delServidor >= 40, `sólo ${delServidor} contratos citan el servidor`);
   assert.deepEqual(fallos, []);
 });
 
@@ -113,8 +123,7 @@ test('las cinco vistas de detalle se montan con el id de su dato, no con NaN ni 
 });
 
 test('el censo usa ESTOS datos y estos argumentos, no un relleno propio (código sin comentarios)', () => {
-  const fuente = fs.readFileSync(path.join(RAIZ, 'scripts/censo-objetivo-tactil-panel.mjs'), 'utf8')
-    .replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  const fuente = soloCodigo(fs.readFileSync(path.join(RAIZ, 'scripts/censo-objetivo-tactil-panel.mjs'), 'utf8'), 'censo-objetivo-tactil-panel.mjs');
   assert.match(fuente, /=\s*datosDelCenso\(\)/, 'el censo ya no llama a datosDelCenso()');
   assert.match(fuente, /ARGUMENTOS_DEL_CENSO\[fn\]/, 'el censo ya no monta las vistas con ARGUMENTOS_DEL_CENSO');
   assert.doesNotMatch(fuente, /return\s*\[\s*\]\s*;/, 'ha vuelto un `return []` de relleno al censo');
