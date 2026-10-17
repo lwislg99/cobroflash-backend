@@ -70,6 +70,23 @@ test('🔴 EL ROJO DE ANTES: lo que servía el censo viejo cae contra el contrat
   assert.deepEqual(absueltos, [], `🔴 el contrato absuelve una respuesta que el servidor no da: ${absueltos.join(', ')}`);
 });
 
+test('🔴 SCRUM-1560d · los tres fixtures COMPARTIDOS de antes caen contra su contrato del servidor', () => {
+  // Tal como estaban en `_pagina-panel.mjs` hasta SCRUM-1560d (recortados a lo que decide).
+  const clienteViejo = { id: 1, name: 'x', phone: '34000000001', email: 'a@b.es', notes: '', tags: [], createdAt: '2026-01-15T10:00:00Z' };
+  const viejo = [
+    ['/admin/customers', [clienteViejo]],
+    ['/admin/customers/1/detail', { customer: clienteViejo, quotes: [{ id: 11, quoteNumber: 'P', status: 'accepted', total: 1, currency: 'EUR', createdAt: 'x' }],
+      invoices: [{ id: 21, number: 'F', status: 'paid', total: 1, currency: 'EUR', createdAt: 'x', pdfUrl: '/x.pdf' }], stats: {}, events: [] }],
+    ['/admin/jobs/1', { id: 1, title: 'Reforma de baño', status: 'en_curso', customer: { id: 5 }, albaranes: [], invoices: [] }],
+  ];
+  const absueltos = viejo.filter(([r, v]) => comprobarForma(de(r), v).length === 0).map(([r]) => r);
+  assert.deepEqual(absueltos, [], `🔴 el contrato absuelve un fixture que el servidor no da: ${absueltos.join(', ')}`);
+  // Y los de ahora no traen lo que el servidor NUNCA manda: `title` en el Trabajo ni `tags: []`.
+  assert.ok(!('title' in TRABAJO_DE_MUESTRA), 'el Trabajo de muestra vuelve a llevar `title`');
+  const vacias = CLIENTES_DE_MUESTRA.filter((c) => Array.isArray(c.tags) && c.tags.length === 0).map((c) => c.name);
+  assert.deepEqual(vacias, [], 'clientes con `tags: []`, que `normalizarTags` convierte en null');
+});
+
 test('cada contrato: su dato cumple, su ejemplo casa con ÉL (no con el de otra ruta) y su fuente existe', () => {
   assert.ok(CONTRATOS.length >= 45, `sólo ${CONTRATOS.length} contratos: se perdieron rutas`);
   const fallos = [];

@@ -30,11 +30,11 @@
 // contrato. A esas se les contesta `null` (lo que `apiRequest` da ante un 204) y el censo las DICE
 // y sale con 2: una pantalla montada con una respuesta inventada no está medida.
 //
-// ── LO COMPARTIDO NO SE TOCA ─────────────────────────────────────────────────────────────────
+// ── LO COMPARTIDO, TAMBIÉN CON SU CONTRATO ───────────────────────────────────────────────────
 // `CLIENTES_DE_MUESTRA`, `DETALLE_360_DE_MUESTRA` y `TRABAJO_DE_MUESTRA` (de `_pagina-panel.mjs`)
-// los usa también `guard-objetivo-tactil`: cambiarlos movería el guard. Se sirven tal cual, con su
-// forma (array / objeto) comprobada y `claves` sólo las que ya llevan. Las que les faltan frente
-// al servidor van declaradas en `PENDIENTE_EN_LO_COMPARTIDO`, no escondidas.
+// los usa también `guard-objetivo-tactil`: cambiarlos mueve el guard. En SCRUM-1560 se sirvieron
+// tal cual, con `claves` sólo las que ya llevaban y lo que les faltaba declarado aparte. Desde
+// SCRUM-1560d tienen la forma del servidor y aquí se exigen sus claves enteras, como a las demás.
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 import { CLIENTES_DE_MUESTRA, DETALLE_360_DE_MUESTRA, TRABAJO_DE_MUESTRA, ARGUMENTOS_DE_VISTA } from './_pagina-panel.mjs';
 
@@ -46,8 +46,11 @@ export const IDS = Object.freeze({ trabajo: TRABAJO_DE_MUESTRA.id, presupuesto: 
 const lineaAlbaran = { concepto: 'Sustitución de grifo', unidad: 'ud', cantidad: 1, precioUnitario: 85, tipoIva: 21 };
 const job = (id, titulo, status) => ({
   id, status, scheduledAt: F, assignedUserId: null, notes: null, createdAt: F, titulo, tituloPropio: titulo,
-  direccion: 'C/ Mayor 1, Valencia', totalAceptado: 1234.56, totalCobrado: 0, estadoCobro: 'pendiente',
-  importeReferencia: 1234.56, operarioId: null, tipoOperacion: 'servicio', nextStage: null, pendingStagesCount: 0,
+  // SCRUM-1560d · `estadoCobro` es 'Pagado' | 'Parcial' | 'Pendiente' (`estadoCobroFor`, con
+  // mayúscula) y `tipoOperacion`, uno de `JOB_TIPOS_OPERACION`. Aquí ponía 'pendiente' y 'servicio':
+  // la forma cumplía y los valores no existen (la lista no contaba la fila en ningún chip de cobro).
+  direccion: 'C/ Mayor 1, Valencia', totalAceptado: 1234.56, totalCobrado: 0, estadoCobro: 'Pendiente',
+  importeReferencia: 1234.56, operarioId: null, tipoOperacion: 'TRABAJO_UNICO', nextStage: null, pendingStagesCount: 0,
   hasCustomPlan: false, customer: { id: CLIENTE.id, name: CLIENTE.name, phone: CLIENTE.phone, mobile: null },
   operario: null, asignados: [], quote: { id: IDS.presupuesto, number: 'P-2026-0011', total: 1234.56, currency: 'EUR', paymentTerms: null },
   remaining: { amount: 1234.56, currency: 'EUR' }, albaranes: [], invoices: [],
@@ -92,11 +95,14 @@ const totalesPl = { revenue: 2500, expenses: 900, profit: 1600, maintenance: 0, 
 export const CONTRATOS = Object.freeze([
   // ── clientes (los fixtures COMPARTIDOS con el guard: forma comprobada, claves las que ya llevan)
   { ruta: /^\/admin\/customers\/\d+\/detail$/, ejemplo: '/admin/customers/1/detail', forma: 'objeto', compartido: true,
-    claves: ['customer', 'quotes', 'invoices', 'stats', 'events'], fuente: 'scripts/_pagina-panel.mjs (DETALLE_360_DE_MUESTRA)',
+    claves: ['customer', 'quotes', 'invoices', 'stats', 'events'],
+    elementosDe: { quotes: ['id', 'quoteNumber', 'status', 'total', 'currency', 'createdAt', 'acceptedAt'],
+      invoices: ['id', 'number', 'status', 'total', 'currency', 'createdAt', 'paidAt', 'pdfUrl'] },
+    fuente: 'src/modules/system/app/routes/customersAdmin.routes.ts', get: '/:id/detail',
     dato: () => DETALLE_360_DE_MUESTRA },
   { ruta: /^\/admin\/customers\/\d+\/historial$/, ejemplo: '/admin/customers/1/historial', forma: 'objeto',
     claves: ['trabajos', 'partesSueltos'], fuente: 'src/modules/system/app/routes/customersAdmin.routes.ts', get: '/:id/historial',
-    dato: () => ({ trabajos: [{ id: IDS.trabajo, titulo: TRABAJO_DE_MUESTRA.title, estado: 'en_curso', scheduledAt: F, createdAt: F,
+    dato: () => ({ trabajos: [{ id: IDS.trabajo, titulo: TRABAJO_DE_MUESTRA.titulo, estado: 'en_curso', scheduledAt: F, createdAt: F,
       partes: [{ id: IDS.parte, numero: 'PT-2026-0041', fecha: F, estado: 'borrador' }],
       albaranes: [{ id: IDS.albaran, numero: 'A-2026-0031', fecha: F, estado: 'borrador', fotos: 0 }] }], partesSueltos: [] }) },
   { ruta: /^\/admin\/customers\/\d+\/whatsapp$/, ejemplo: '/admin/customers/1/whatsapp', forma: 'objeto',
@@ -104,7 +110,10 @@ export const CONTRATOS = Object.freeze([
     dato: () => ({ waOptOut: false, mensajes: [{ id: 1, type: 'template', templateName: 'presupuesto_enviado', status: 'delivered',
       error: null, relatedType: 'quote', relatedId: IDS.presupuesto, createdAt: F }] }) },
   { ruta: /^\/admin\/customers$/, ejemplo: '/admin/customers', forma: 'array', compartido: true,
-    elemento: ['id', 'name', 'phone', 'email'], fuente: 'scripts/_pagina-panel.mjs (CLIENTES_DE_MUESTRA)',
+    elemento: ['id', 'merchantId', 'name', 'phone', 'mobile', 'email', 'notes', 'legalName', 'taxId', 'waOptOut', 'createdAt',
+      'updatedAt', 'contactKind', 'companyId', 'tipoDestinatario', 'billingPeriodicity', 'recargoEquivalencia', 'dtoPorDefecto',
+      'tags', 'billingAddress', 'billingCity', 'billingPostalCode', 'billingProvince', 'billingCountry', 'internalRef'],
+    fuente: 'src/modules/system/app/routes/customersAdmin.routes.ts (listCustomers, CUSTOMER_SELECT_NO_TOKEN de src/modules/system/customerAdmin.ts)', get: '/',
     dato: () => CLIENTES_DE_MUESTRA },
   // ── negocio, catálogo
   { ruta: /^\/admin\/merchant$/, ejemplo: '/admin/merchant', forma: 'objeto', claves: ['id', 'name'],
@@ -131,7 +140,7 @@ export const CONTRATOS = Object.freeze([
     dato: () => ({
       filas: [{ id: IDS.albaran, numero: 'A-2026-0031', fecha: F, emisionAt: F, estado: 'emitido', estadoFacturacion: 'sin_facturar',
         modoValoracion: 'VALORADO', quote: { id: IDS.presupuesto }, clienteId: CLIENTE.id, cliente: CLIENTE.name, jobId: IDS.trabajo,
-        trabajo: TRABAJO_DE_MUESTRA.title }],
+        trabajo: TRABAJO_DE_MUESTRA.titulo }],
       contadores: { total: 1, porEstado: { emitido: 1 }, porCobro: { sin_facturar: 1 } },
       ejes: { estado: ['borrador', 'emitido', 'firmado'], cobro: ['sin_facturar', 'parcial', 'facturado'] },
     }) },
@@ -150,18 +159,22 @@ export const CONTRATOS = Object.freeze([
       totales: { base: 85, cuota: 17.85, total: 102.85 }, estado: 'borrador', version: 1, firmadoAt: null, notas: '', docHeaderText: null,
       ocultarPreciosEnDocumento: false, fechaEntrega: null, lugarEntrega: null, firmadoPorNombre: null, firmadoPorCalidad: null,
       pdfUrl: null, facturado: false, createdAt: F, updatedAt: F,
-      job: { id: IDS.trabajo, titulo: TRABAJO_DE_MUESTRA.title, direccion: 'C/ Mayor 1, Valencia' },
+      job: { id: IDS.trabajo, titulo: TRABAJO_DE_MUESTRA.titulo, direccion: 'C/ Mayor 1, Valencia' },
       customer: { id: CLIENTE.id, name: CLIENTE.name, puedeRecibirWhatsApp: true }, quote: { id: IDS.presupuesto, number: 'P-2026-0011' },
       estadoFacturacion: 'sin_facturar', enviadoParaFirma: false, cabenMasFotos: true, pendientes: [],
     }) },
   // ── trabajos
   { ruta: /^\/admin\/jobs$/, ejemplo: '/admin/jobs', forma: 'array', elemento: ['id', 'status', 'titulo', 'customer', 'quote', 'albaranes', 'invoices'],
     fuente: 'src/modules/jobs/app/routes/jobs.routes.ts', get: '/',
-    dato: () => [job(IDS.trabajo, TRABAJO_DE_MUESTRA.title, 'en_curso'), job(2, 'Cambio de termo', 'pendiente_agendar')] },
+    dato: () => [job(IDS.trabajo, TRABAJO_DE_MUESTRA.titulo, 'en_curso'), job(2, 'Cambio de termo', 'pendiente_agendar')] },
   { ruta: /^\/admin\/jobs\/\d+\/gastos$/, ejemplo: '/admin/jobs/1/gastos', forma: 'objeto', claves: ['gastos'],
     fuente: 'src/modules/jobs/app/routes/jobs.routes.ts', get: '/:id/gastos', dato: () => ({ gastos: [] }) },
   { ruta: /^\/admin\/jobs\/\d+$/, ejemplo: '/admin/jobs/1', forma: 'objeto', compartido: true,
-    claves: ['id', 'status', 'customer', 'albaranes', 'invoices'], fuente: 'scripts/_pagina-panel.mjs (TRABAJO_DE_MUESTRA)',
+    claves: ['id', 'status', 'scheduledAt', 'assignedUserId', 'notes', 'createdAt', 'titulo', 'tituloPropio', 'direccion',
+      'totalAceptado', 'totalCobrado', 'estadoCobro', 'importeReferencia', 'customer', 'operarioId', 'operario', 'asignados',
+      'tipoOperacion', 'quote', 'remaining', 'nextStage', 'pendingStagesCount', 'hasCustomPlan', 'albaranes', 'invoices',
+      'charge', 'entregaPendiente'],
+    fuente: 'src/modules/jobs/app/routes/jobs.routes.ts (serializeJobDetail sobre serializeJob)', get: '/:id',
     dato: () => TRABAJO_DE_MUESTRA },
   // ── partes
   { ruta: /^\/admin\/partes$/, ejemplo: '/admin/partes', forma: 'objeto', claves: ['partes'], elementosDe: { partes: ['id', 'numero', 'estado', 'lineas'] },
@@ -322,12 +335,6 @@ export const CONTRATOS = Object.freeze([
       facturasSinDesglose: { count: 0, importe: 0 }, invoiceCount: 1, expenseCount: 0, gastosNoDeducibleDeclarados: 0, avisosLibroRecibidas: [] }) },
 ]);
 
-/** Lo que les falta a los fixtures COMPARTIDOS frente al servidor. Declarado, no arreglado aquí. */
-export const PENDIENTE_EN_LO_COMPARTIDO = Object.freeze([
-  'TRABAJO_DE_MUESTRA (/admin/jobs/:n): lleva `title` y el servidor manda `titulo`; le faltan, entre otras, `direccion`, `quote`, `charge`, `entregaPendiente`, `asignados`',
-  'CLIENTES_DE_MUESTRA (/admin/customers): le faltan `merchantId`, `mobile`, `legalName`, `taxId`, `waOptOut`, `contactKind`, `tipoDestinatario`…',
-  'DETALLE_360_DE_MUESTRA (/admin/customers/:n/detail): su contrato en el servidor NO se midió en SCRUM-1560',
-]);
 
 /** Las vistas de detalle con el id que el producto les pasa (`renderView` de `app.js`). Sólo para el censo. */
 export const ARGUMENTOS_DEL_CENSO = Object.freeze({

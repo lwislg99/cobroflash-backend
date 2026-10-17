@@ -209,3 +209,57 @@ las dos anchuras. Es de `expensesView.js` (S2, SCRUM-1156c): se dice, no se toca
 **Lo que esto NO sabe.** `comprobarForma` mira `ok` e `item`, no los campos de dentro de `item`. La
 ficha se mide SIN foto (con foto pide `/:id/foto`, que no es JSON) y CON trabajo: la variante sin
 trabajo («Vincular a un trabajo») no se mide.
+
+## 17-oct-2026 · S3 · 1560d — los tres fixtures compartidos, con la forma del servidor
+
+**Medido contra:** `origin/main` = `44f3a6bf229837bc5249b4dc8056790f7b6d0e41` · 2026-10-17T22:38:42Z
+
+Rama `scrum-1560d-fixtures-compartidos-con-forma`, apilada sobre 1560c (las dos añaden a este
+registro; por separado chocarían). Lo que en SCRUM-1560 quedó en `PENDIENTE_EN_LO_COMPARTIDO`, con
+el GO del orquestador (17-oct, «1559, 1559b y 1560 están DENTRO»).
+
+A9: comprobación → `tests/scrum1560-datos-de-muestra-con-forma.test.mjs`
+
+**Qué tenían, frente al servidor** (leído en el router y su serializador, no supuesto):
+- `TRABAJO_DE_MUESTRA` contra `serializeJobDetail` (`jobs.routes.ts`): llevaba `title`, y el servidor
+  manda `titulo`; de sus 27 claves llevaba 5 (más `title`, que no es suya). Ahora las 27, en el MISMO escenario (Trabajo sin
+  presupuesto: `quote`, `charge` y el eje de cobro a `null`, entrega `sin_eje`), y el `customer` del
+  detalle con `email`, `taxId`, `notes` y `numeroWhatsApp`.
+- `CLIENTES_DE_MUESTRA` contra `CUSTOMER_SELECT_NO_TOKEN` (`customerAdmin.ts`): de 25 claves llevaba 7.
+  Y Carmen Ruiz tenía `tags: []`, que el servidor no puede devolver (`normalizarTags` lo deja en `null`).
+- `DETALLE_360_DE_MUESTRA` contra `GET /:id/detail` (`customersAdmin.routes.ts`): su cliente era la
+  fila de la LISTA (otro `select`: sin `portalToken`/`portalUrl`, con `merchantId`…); importes en
+  número donde la base da `Decimal` (viaja como texto); sin `acceptedAt` ni `paidAt`; `stats` con 5 de
+  8 cifras y diciendo 3 presupuestos con 1 en la lista.
+- Y uno MÍO, de 1560: el `job()` de `/admin/jobs` tenía `estadoCobro: 'pendiente'` y `tipoOperacion:
+  'servicio'`. La forma cumplía; los valores no existen (`'Pendiente'`, `'TRABAJO_UNICO'`).
+
+Los tres contratos exigen ahora sus claves enteras; `PENDIENTE_EN_LO_COMPARTIDO` se retira. El test
+nuevo hace caer los tres fixtures VIEJOS contra su contrato (control: un contrato que los
+absolviera no mediría nada).
+
+**Antes → después.** Antes = `scrum-1560c` (main + la ficha del gasto); después = esta rama.
+
+| instrumento | cifra | antes | después |
+|---|---|---|---|
+| `censo:tactil-panel` | ficha del Trabajo, medidos a 929 / 390 | 11 / 11 | **12 / 12** (SUBE: el instrumento ve un control más) |
+| `censo:tactil-panel` | ficha del Trabajo, cortos a 929 / 390 | 1 / 0 | 1 / 0 (sin cambio) |
+| `censo:tactil-panel` | cortos DISTINTOS · mediciones cortas | 97 · 143 | 97 · 143 (sin cambio) |
+| `censo:tactil-panel` | el resto de vistas, Clientes y 360 incluidas | — | sin cambio, fila a fila |
+| `guard:objetivo-tactil` | salida y hallazgos | 1 · 2 | 1 · 2 (sin cambio: los dos de «⬇ Clientes CSV», de J2) |
+| `guard:objetivo-tactil` | el resto de su salida | — | idéntica, línea a línea |
+
+El control que sube: «💬 WhatsApp» (`a.detail-rail-enlace`, `https://wa.me/…`) en el bloque Cliente
+de la ficha del Trabajo. Lo pinta `numeroWhatsApp` (SCRUM-1171), que el fixture no traía: la ficha
+medida nunca había enseñado ese botón. Llega a 44 px.
+
+**Que no se mueva casi nada, ¿es ceguera?** Medido, no supuesto (`sonda-pantallas.mjs` en el
+temporal de la sesión): el HTML servido de la 360 CAMBIA (otro sha1; son cifras de `stats`, sin un
+interactivo más ni menos) y el de Clientes sale IDÉNTICO byte a byte. Control positivo de esa
+igualdad, mutando un campo cada vez sobre el fixture nuevo: `tags: ['vip']` y `mobile` cambian el
+HTML; `tags: []`, `waOptOut: true`, `legalName` y `saldoPendiente` no. La lista no pinta esos campos;
+la sonda sí ve los que pinta.
+
+**Lo que esto NO sabe.** `comprobarForma` mira las claves de primer nivel (y los elementos de
+`quotes`/`invoices` de la 360), no los objetos anidados (`customer`, `stats`, `entregaPendiente`).
+Los contratos siguen siendo una COPIA fechada del servidor.
