@@ -53,6 +53,7 @@ Sesión S2 · rama `scrum-1156c-ficha-gasto-pantalla`. Encargo del orquestador d
 - Censos que cuentan fichas: `scrum832` pasa de seis a siete; `tests/_barra-lateral.mjs` declara `expenses-detail` sin entrada en la barra.
 - `scripts/guard-lista-gastos.mjs`, caso E: CAMBIA lo que exige, no se afloja. Antes «tocar la fila abre el modal con ese gasto»; ahora «abre la ficha de ESE gasto (id 1) y no el modal».
 - `docs/microcopy/2026-10-17-SCRUM-1156-ficha-del-gasto.md`: los diez literales de 920 c.15992 que esta ficha pinta, con su firma.
+- `docs/microcopy/2026-10-17-SCRUM-1156-ficha-del-gasto-avisos.md`: los dos avisos de la carga, «Ese gasto ya no existe.» (id que no existe) y «No se ha podido cargar el gasto. Vuelve a intentarlo.» (5xx o sin red), firmados por el orquestador en SCRUM-1156 comentario 19907 y citados así en `app.js` y `expensesView.js`. Hasta esa firma `scrum832 · REGLA 30` estaba en rojo y la rama no se empujó.
 
 ### Verificado, ejecutando
 
@@ -63,6 +64,5 @@ Sesión S2 · rama `scrum-1156c-ficha-gasto-pantalla`. Encargo del orquestador d
 
 ### Lo que NO entra todavía
 
-- 🔴 **La firma de dos textos necesita su comentario de Jira**, y sin él `scrum832 · REGLA 30` está en rojo: «Ese gasto ya no existe.» (firmado por el orquestador en el encargo del 16-oct, sin comentario que citar) y, **propuesto y sin firmar**, «No se ha podido cargar el gasto. Vuelve a intentarlo.» (la ficha con un 5xx o sin red). **La rama no se empuja hasta tener las dos.**
 - El NIF del proveedor: la fila no lo trae, y sin dato no hay fila.
 - Visto en yaqu.app: después del merge.

@@ -28,11 +28,7 @@
 - «NIF del proveedor» NO se pinta: la fila que devuelve `GET /admin/expenses/:id` no trae el NIF (`provider` es
   `{ id, name }`), y sin dato no hay fila.
 
-## Pendiente de referencia de Jira (no cuenta todavía)
+## Los dos avisos de la carga
 
-Firmado por el orquestador en el encargo a la S2 del 16-oct-2026, pero sin comentario de Jira que citar en la línea
-de firma (lo exige `tests/_microcopy-aprobada.mjs`). Hasta que lo haya, NO van como cita y la rama no se empuja:
-
-- «Ese gasto ya no existe.» — el aviso de `DETALLES` en `app.js` y de la ficha ante un 4xx. Séptimo del patrón.
-- **Propuesto, sin firma:** «No se ha podido cargar el gasto. Vuelve a intentarlo.» — la ficha ante un 5xx o sin red.
-  Octavo hermano de «No se ha podido cargar el parte. Vuelve a intentarlo.» (SCRUM-720).
+Van en su propia ficha, con su propia firma: `2026-10-17-SCRUM-1156-ficha-del-gasto-avisos.md` (SCRUM-1156
+comentario 19907).

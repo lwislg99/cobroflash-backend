@@ -497,13 +497,12 @@ const TEXTO_FICHA_SUELTO = 'Este gasto no cuenta para el margen de ningún traba
 const TEXTO_FICHA_VINCULAR = 'Vincular a un trabajo';
 const TEXTO_MENU_VER_FOTO = 'Ver la foto';
 const TEXTO_MENU_ANADIR_FOTO = '📷 Añadir la foto';
-// 🔴 PROPUESTO, SIN FIRMA (SCRUM-1156): la ficha que no se pudo pedir (5xx, sin red). Es la octava
-// hermana de «No se ha podido cargar el parte. Vuelve a intentarlo.» (SCRUM-720). Hasta que se
-// firme, esta rama NO se empuja.
-const TEXTO_FICHA_NO_CARGA = 'No se ha podido cargar el gasto. Vuelve a intentarlo.';
-// El aviso del id que no existe: el MISMO literal que `DETALLES` de app.js (firma del orquestador,
-// 16-oct-2026). «No existe» y «no es tuyo» dicen lo mismo, también desde aquí.
-const TEXTO_FICHA_NO_EXISTE = 'Ese gasto ya no existe.';
+// La ficha que no se pudo pedir (5xx, sin red): el singular de lo que dice la lista más arriba
+// («No se han podido cargar los gastos. Vuelve a intentarlo.»), con la misma forma.
+const TEXTO_FICHA_NO_CARGA = 'No se ha podido cargar el gasto. Vuelve a intentarlo.'; // APROBADO · SCRUM-1156 comentario 19907
+// El aviso del id que no existe: el MISMO literal que `DETALLES` de app.js. «No existe» y «no es
+// tuyo» dicen lo mismo, también desde aquí.
+const TEXTO_FICHA_NO_EXISTE = 'Ese gasto ya no existe.'; // APROBADO · SCRUM-1156 comentario 19907
 
 /** La foto entera, en otra pestaña: lo mismo que «Verla» del alta. */
 function abrirFotoDelGasto(e) {
