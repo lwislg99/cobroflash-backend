@@ -171,3 +171,41 @@ empujar un fichero nuevo de `tests/` o `scripts/`, se corren estos cinco a mano 
 
 Sondas: `evidencias/scrum1560/sonda-vistas.mjs` (nodos, errores y rutas sin contrato por vista, con
 `antes|ahora`) · `sonda-undefined.mjs` · `diff-censo.mjs` · `por-dueno.mjs`.
+
+## 17-oct-2026 · S3 · 1560c — la ficha del gasto, medida (la mitad que dejó #2545)
+
+**Medido contra:** `origin/main` = `44f3a6bf229837bc5249b4dc8056790f7b6d0e41` · 2026-10-17T22:38:42Z
+
+Rama `scrum-1560c-censo-ficha-del-gasto`.
+
+A9: comprobación → `tests/scrum1560-datos-de-muestra-con-forma.test.mjs`
+
+**Qué faltaba.** S2 arregló en #2545 que la ficha sin id pidiera `/admin/expenses/undefined`: ahora
+sin id no pide NADA y vuelve con el contenedor vacío. El censo la montaba sin argumento, así que la
+ficha salía en «NO MEDIDAS» con 1 nodo y el motivo genérico («a medias o vacía con estos datos»).
+
+**Qué se ha hecho** (sólo `scripts/_datos-del-censo.mjs` y su test; ninguna vista tocada):
+contrato de `GET /admin/expenses/:id` (`{ ok, item }`, `item` = `gasto()`, la misma fila que la lista
+según `getExpense`), `IDS.gasto = 51`, y `renderExpenseDetailView: [IDS.gasto]` en `ARGUMENTOS_DEL_CENSO`.
+`gasto()` existía desde 1560 y no lo usaba nadie: ahora sí.
+
+**Antes → después** (`npm run censo:tactil-panel`, salida 0 las dos veces; todo lo que se mueve SUBE
+porque el instrumento ve una pantalla más, no porque nada empeore):
+
+| cifra | antes | después |
+|---|---|---|
+| vistas montadas y medidas | 27 | **28** |
+| NO medidas | 2 | **1** (queda Partes de oficina, la de siempre) |
+| rutas servidas con contrato | 45 | **46** |
+| superficies × anchuras con sonda | 54 (0 fallidas) | **56** (0 fallidas) |
+| cortos DISTINTOS | 96 | **97** |
+| mediciones cortas | 141 | **143** |
+| cortos sin `.btn-sm` | 42 | **43** |
+| cortos con `.btn-sm` | 54 | 54 (sin cambio) |
+
+La ficha: 6 medidos a 929 y a 390, **1 corto**: `A.gasto-trab-enlace` «Reforma de baño», 36,0 px a
+las dos anchuras. Es de `expensesView.js` (S2, SCRUM-1156c): se dice, no se toca.
+
+**Lo que esto NO sabe.** `comprobarForma` mira `ok` e `item`, no los campos de dentro de `item`. La
+ficha se mide SIN foto (con foto pide `/:id/foto`, que no es JSON) y CON trabajo: la variante sin
+trabajo («Vincular a un trabajo») no se mide.
