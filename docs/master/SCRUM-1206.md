@@ -107,3 +107,51 @@ del albarán, y queda para quien la reparta.
 
 **Lo que NO cierra:** SCRUM-1206 es del PRESUPUESTO (`quotesDetailView.js`, S2). Esto es la mitad del albarán.
 A9: aviso → cicatriz S4 «metí un rojo mío de la tanda local entre los de entorno sin leer su mensaje, porque sus diez vecinos sí eran del cliente de Prisma; lo cazó el CI» — no se pudo comprobar: clasificar los rojos lo hace quien lee la tanda, y ningún test lo ve
+
+## 1206c — la ficha del PRESUPUESTO pinta su cabecera y sus Observaciones (S2, s2-1206)
+
+**Medido contra:** `origin/main` = `e244ff61b1b81dd57d3747298ca207502a5a1c59` · 2026-10-17T19:57:04Z
+
+A9: comprobación → `tests/scrum1206c-la-ficha-del-presupuesto-pinta-sus-textos.test.mjs`
+
+**Skill UI:** cargada (`yaqu-premium-ui`, en esta sesión y ANTES de editar). Una clase nueva en `styles.css`
+(`.quote-doc-texto`, sólo `overflow-wrap` y tokens existentes); el resto, el armazón de la ficha
+(`.detail-section`, `.detail-section-title`). Carril: `quotesDetailView.js` y `textoDelDocumento.js` → S2.
+
+**La firma** es la del tramo 1206b (orquestador, 16-oct-2026, delegación del fundador; repetida a la S2 en el
+encargo del 16-oct): la cabecera **SIN RÓTULO**, como en el papel; el bloque final con **«Observaciones»**,
+LEÍDO de `TD_TITULO_OBSERVACIONES` y no copiado. ⚠️ En el presupuesto ese bloque NO es `notas`: es
+`docFooterText`. Lo dice el papel —`pdf.service.ts` imprime `TITULO_OBSERVACIONES` sobre `docFooterText`— y lo
+dice la pieza (`TD_CAMPOS`: `docFooterText` → «Observaciones», firmado por el fundador el 2-sep). El criterio de
+la firma («el campo que el papel imprime bajo Observaciones lleva Observaciones») da aquí `docFooterText`. Sin
+palabra nueva.
+
+**Lo construido (las 4 líneas de la aceptación):**
+
+1. `quotesDetailView.js`: dos secciones, en el ORDEN DEL PAPEL: la cabecera (`data-seccion="texto-cabecera"`,
+   sin título) justo encima de «Conceptos», y las Observaciones (`data-seccion="observaciones"`) justo debajo
+   de los totales. Las pinta `textoDelDocumentoPintado`, la pieza que existía para esto (saltos con
+   `pre-line`, por `textContent`); su contenedor `.quote-doc-texto` le añade `overflow-wrap: anywhere`, que era
+   la objeción de S4 en 1206b (una URL larga ensanchaba la ficha a 360 px). Sin dato no hay sección: vacío,
+   sólo espacios o `null` no pintan nada, ni el rótulo. Sin el rótulo de la pieza, las Observaciones no se
+   pintan (sin título se leerían como la cabecera).
+2. `scripts/_sin-consumir-declarados.json`: `textoDelDocumentoPintado` pasa de `declaradas` a `retiradas` con su
+   motivo.
+3. `tests/scrum1206c-la-ficha-del-presupuesto-pinta-sus-textos.test.mjs` (6), con la ficha REAL en el banco.
+4. Rótulos: los de la pieza; nada nuevo.
+
+| comprobación | resultado |
+|---|---|
+| con el cambio | 6 de 6 |
+| con el `quotesDetailView.js` de `main` | caen 4: los que ven texto. Pasan el SUELO (el rótulo y la pieza llegan) y «sin dato, sin sección» |
+| M1 · la cabecera con el rótulo del formulario | cae 1 de 6 |
+| M2 · sin la sección de la cabecera | caen 2 de 6 |
+| M3 · sin el «sin dato, sin sección» (sólo `null`) | cae 1 de 6 |
+
+**Vecinos:** 38 ficheros (las 18 que montan `renderQuoteDetailView`, `scrum593*`, `scrum1185*`, `1174`,
+`1187`, `514`, `237`, `976`…): 388 tests · 381 pass · 4 skip · 3 fail, los tres del registro que se escribe
+aquí (`scrum1340`, `scrum854 ②` y `scrum976 ④`, que ejecuta los mismos guards de entrada).
+
+**No visto en yaqu.app todavía:** se mira cuando entre, sobre el #202 de la cuenta QA (su GET trae
+«[QA-1268] Cabecera de pruebas QA…» y «[QA-1268] Pie de pruebas QA…», c.19790), con otro presupuesto sin
+textos de control.
