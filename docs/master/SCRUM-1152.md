@@ -91,21 +91,35 @@ de scrum267. El encargo se reformuló a «que se use solo». Lo medido, con S0 (
 |---|---|
 | entrada temporal con el ancla de `ancla.mjs` y SIN `A9:`, comando NUEVO | salida 1 · `✖ SCRUM-1294` · 15 guards |
 | control: sin la entrada, comando NUEVO | salida 0 · «15 guards de entrada en verde (170 tests, 85,0 s de 90)» |
-| la misma entrada con el comando de `main` | **CIEGO** (salida 2, cortado a 90 s por la carga de seis sesiones): no lo pude ver en verde yo; el verde falso de `main` es medida de S0 |
+| la misma entrada con el comando de `main` | **CIEGO** (salida 2, cortado a 90 s por la carga de seis sesiones): no lo pude ver en verde yo. El verde falso es medida de S0: 17-oct, sobre `origin/main` = `78a1af25`, salida 0 y «14 guards de entrada en verde» |
 | mutación: quitar scrum1294 de `GUARDS` (restaurado y comparado byte a byte) | salida 1 · «la lista tiene 14 guards y el mínimo son 15. No se ejecuta nada.» |
 | los 11 tests que vigilan `guards-entrada.mjs` (976, 928, 928b, 1349, 1327, 1289, 1178b, 711, 775, 812, 1153) | 102 de 102, `skipped 0` |
 
 La entrada temporal se borró en un `finally` y `git status` quedó con sólo `scripts/guards-entrada.mjs`.
 
-## Lo que NO hace, y la pregunta que queda abierta
+## Lo que NO hace, y por qué no hay gancho
 
 - **Sigue habiendo que acordarse de correr `guards:entrada`**. Esto hace que, si se corre, diga la
-  verdad entera; no hace que se corra.
-- **El único sitio por el que pasan las seis sesiones antes de empujar es `git push`**, y en esta
-  máquina no hay ningún gancho de git instalado (`core.hooksPath` vacío, `.git/hooks` sólo con
-  `.sample`). Un `pre-push` en el `.git` común cubriría todos los árboles de trabajo a la vez. **No se
-  ha instalado**: cambia el push de todas las sesiones y es decisión del orquestador. La propuesta va en
-  mano al orquestador.
+  verdad entera; no hace que se corra. Con la plantilla que ya trae la línea `A9:`, el caso realista
+  queda cubierto: quien la copia la lleva puesta, y quien corre el comando se entera antes de empujar.
+  Lo que queda es algún rojo de CI y dos minutos de arreglo, y el orquestador lo acepta.
+- **Se propuso un gancho `pre-push`** (en esta máquina no hay ninguno: `core.hooksPath` vacío,
+  `.git/hooks` sólo con `.sample`; uno en el `.git` común cubriría todos los árboles de trabajo). **El
+  orquestador dijo NO el 17-oct-2026**, con un dato medido ese mismo día y por dos sesiones: con seis
+  sesiones vivas, `guards:entrada` se queda CIEGO a los 90 s, y la máquina estaba al 85 % de memoria.
+  Un gancho que corre guards al empujar, en una máquina donde los guards se quedan ciegos, no es una
+  red, es un tapón: convierte el momento de guardar el trabajo en el de más riesgo de perderlo, justo
+  cuando más se empuja. Y la salida de emergencia, `--no-verify`, se aprende a la tercera vez que un
+  push se cuelga con prisa; a partir de ahí el gancho no protege y nadie se fía de él.
+
+### 🔴 La condición, por si algún día se replantea (no es hoy)
+
+**Ese gancho tendría que FALLAR ABIERTO, al revés que todo lo nuestro.** Si no puede medir —máquina
+cargada, tiempo agotado, un guard que no arranca—, **deja pasar el push y lo dice**. La regla normal
+de esta casa es fallar cerrado, porque callar es peor que alarmar. Aquí se invierte porque lo que hay
+al otro lado es distinto: bloquear el guardado de un trabajo que ya existe es peor que dejar pasar una
+entrada mal escrita que el CI obligatorio va a cazar de todos modos. El gancho sería un atajo, nunca la
+red: la red es el CI.
 - `ancla.mjs` no escribe en el fichero: imprime. Escribir la línea en la entrada no habría evitado
   ninguno de los dos rojos del 16-oct (uno no era del ancla, y el otro quería decir algo —el sha de
   producción— que el formato no admite delante del sha, sí en un paréntesis detrás del instante).
