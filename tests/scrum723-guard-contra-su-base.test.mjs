@@ -296,6 +296,15 @@ const HALLAZGOS_DECLARADOS = [
   // bastante vieja lo DICE y sale 2 (`tests/scrum1542c-el-hueco-se-fecha-por-entrada.test.mjs`).
   // Lo retira: quien retire el simulacro, o quien le pase la lista de entradas ya leída.
   'scripts/equipo/simulacro-del-vigia.mjs [log]',
+  // SCRUM-1300c · la memoria del orquestador contra el árbol. Su pregunta ES la punta: «lo que la memoria
+  // dice EN MAIN, ¿está HOY en `origin/main`?» (`cat-file`, el `merge-base --is-ancestor` no sale aquí
+  // porque la punta va en el último argumento), y sus testigos salen de ella (`rev-parse`, el último
+  // «Merge pull request» por `log`). No acusa a ninguna rama ni corre en la tanda: lo corre el orquestador
+  // contra su memoria, después de un `fetch`, y si no puede traer el remoto sale 2.
+  // Lo retira: quien le pase la punta y los testigos ya leídos.
+  'scripts/equipo/memoria-contra-el-arbol.mjs [cat-file]',
+  'scripts/equipo/memoria-contra-el-arbol.mjs [log]',
+  'scripts/equipo/memoria-contra-el-arbol.mjs [rev-parse]',
   // Este mismo fichero: la lógica VIEJA, conservada para poder enseñar el rojo del ticket. Vive
   // dentro de un repo SINTÉTICO —su `origin/main` no es el de nadie— y desaparece el día que se
   // borre el caso ①, no antes: sin ella, «ahora está verde» no se puede contrastar con nada.
@@ -662,6 +671,10 @@ const INDIRECTAS_DECLARADAS = [
   // No hay ninguna referencia que viaje por una variable hasta un git. Lo retira quien retire el
   // simulacro.
   'scripts/equipo/simulacro-del-vigia.mjs',
+  // SCRUM-1300c · la memoria contra el árbol: fuera de los argumentos nombra `origin/main` al montar
+  // `origin/main:<ruta>` para `cat-file` y en la prosa de sus veredictos. Su sujeto es la punta (ver la
+  // entrada de arriba). Lo retira quien le pase la punta ya leída.
+  'scripts/equipo/memoria-contra-el-arbol.mjs',
   // …y su test: monta repositorios SINTÉTICOS en el temporal (uno con un merge, otro lineal) y les
   // pone su propio `refs/remotes/origin/main`, que no es el de nadie; el resto son los mensajes de
   // sus aserciones, que hablan de cuándo ENTRÓ algo en `main`. Mismo caso que 839d, 899b y 966.
