@@ -200,3 +200,64 @@ de este `schema.prisma`. Dos cosas antes de regenerar, ninguna supuesta:
 | `src/modules/billing/app/routes/stripe.routes.ts` | las dos puertas dejan de escribir `planExpiresAt: null` (+ el porqué) |
 | `tests/scrum809-paywall-tras-cancelar.test.mjs` | el guard: 6 tests, las dos puertas, con `MUTACIONES_QUE_ME_TUMBAN` |
 | `docs/master/SCRUM-809.md` | esta entrada |
+
+## SCRUM-809b · el banner de impago no podía salir, y la fecha de fin no se escribe al suscribirse
+
+**Medido contra:** `origin/main` = `06c6289d46d5998493ec014fa26ff3353946b58b` · 2026-10-18T17:32:44Z (hora de GitHub)
+A9: comprobación → `tests/scrum809b-banner-de-impago-lee-el-estado.test.mjs`
+
+Carril S1 · árbol `s1-809b` · rama `scrum-809b-banner-de-impago-lee-el-estado`. Encargo del orquestador
+(`cobroflash-backend-f3`), 18-oct-2026 ~17:40Z: arreglar (1) con su test; declarar (2) sin tocar el webhook.
+
+### (1) ARREGLADO · `GET /admin/me` devolvía `subscriptionStatus: null` a todo merchant
+
+`app.js` pinta el banner de impago (A10.2) cuando `/admin/me` dice `subscriptionStatus: 'past_due'`. La ruta lo
+leía de `session.merchant`, y `getSession` (`auth.service.ts`) **no selecciona ese campo**: para todo merchant que
+no fuera el dueño de la plataforma valía `null`, y el banner no podía salir nunca. Medido en yaqu.app el
+18-oct-2026 a las 17:36Z con la cuenta QA: `subscriptionStatus: null`.
+
+🔵 **Lo que enseña, más allá del banner:** un `null` en `subscriptionStatus` NO significaba «está al día»:
+significaba «no lo hemos leído». Es la familia «no pude mirar = no hay nada», esta vez con forma de campo de base
+de datos. Por eso el `null` de la cuenta QA no dice nada de su estado real.
+
+- **Dónde se arregla, y por qué no donde se encargó:** el encargo decía `auth.service.ts`, pero `src/modules/auth/**`
+  es carril de J3 (`.claude/carriles.json`). `/admin/me` (`src/app.ts`, S1) ya lee la fila del merchant en esa misma
+  petición (`merchantFull`): `subscriptionStatus` entra en SU `select` y la ruta lo lee de ahí. Una línea, sin
+  tocar el carril de otro y sin añadir un campo a cada `getSession` de cada petición. Dicho al orquestador.
+- **Texto:** ninguno nuevo. El banner ya existía (`app.js`) y su texto no cambia; lo que cambia es que ahora PUEDE
+  salir. El orquestador se lo dice al fundador con el texto delante; si lo veta, se revierte este cambio.
+- **Test:** app REAL por HTTP (`_banco-camino-real.mjs`). El doble de `merchant.findUnique` **respeta el `select`**
+  (sin eso el test no mide nada: un doble que devuelve la fila entera tapa justo un campo que nadie pidió), y la
+  sesión del banco trae el merchant sin `subscriptionStatus`, como `getSession`. Rojo sobre `dist/` de la punta, sin
+  el arreglo: cae el caso `past_due`. Con el arreglo: **3 de 3**.
+- 120 ficheros de `tests/` que leen `src/app.ts`, `/admin/me` o `dist/app.js`: **852 pasan, 1 cae, 66 saltados**. El
+  que cae es SCRUM-854 (esta rama aún no traía su registro, que es esta entrada).
+- `tsc`: sólo el error conocido de `merchantAdmin.ts:147` (cliente de Prisma viejo; sin `prisma generate`).
+
+### (2) DECLARADO, NO arreglado · `planExpiresAt` se queda viejo al suscribirse
+
+**Hecho, medido en yaqu.app** (cuenta QA, suscrita por el fundador el 18-oct en Stripe modo pruebas):
+`GET /admin/billing/plans` a las 17:36:14Z → `currentPlan: "pro"`, `planExpiresAt: 2026-10-12T14:41:58.799Z` (en
+el pasado). El orquestador vio lo mismo unos diez minutos antes.
+
+**Hecho, en el código** (`stripe.routes.ts`): el único sitio que pone `plan` a algo distinto de `trial` es ese
+webhook. `checkout.session.completed` escribe `plan` y `subscriptionStatus`, **sin** `planExpiresAt`;
+`customer.subscription.created/updated` en estado activo escribe los tres. Que la fecha siga vieja dice que esa
+segunda rama **no se ha ejecutado con éxito** para este merchant.
+
+**Por qué importa, y es la firma de arriba:** al cancelar, el webhook pone `plan: 'trial'` y conserva
+`planExpiresAt` (SCRUM-809). Con la fecha en el pasado, quien cancela cae en el 403 `trial_expired` **al instante**,
+no al acabar el periodo que pagó.
+
+**Dos hipótesis, sin medir, por orden:**
+
+| | causa | qué se vería |
+|---|---|---|
+| (a) | el endpoint del webhook en Stripe no está suscrito a `customer.subscription.created/updated` | ninguna entrega de esos eventos; ninguna fila suya en `gateway_events` |
+| (b) | llegan y revientan: desde la API de Stripe 2025-03-31, `current_period_end` ya no viene en la raíz de la `Subscription` (pasó a sus items). La versión del payload la fija el ENDPOINT, no el `apiVersion` del cliente (`stripe.ts`). `new Date(undefined * 1000)` es una fecha inválida, Prisma la rechaza y la ruta responde 400 | entregas con 400 y «Webhook Error: …»; fila en `gateway_events` con `processed_at` NULL y el mensaje de error (`anotarFalloDeEvento`) |
+
+Los dos eventos van por `gateway_events` (`EVENTOS_CON_REGISTRO`), así que **esa fila decide entre (a) y (b)**. Sin
+tocar código, también lo decide el panel de Stripe (modo pruebas) → Webhooks → el endpoint: qué eventos escucha, su
+versión de API y las entregas de hoy de `customer.subscription.created`. Lo mira el fundador; el orquestador se lo
+ha pedido. **No se arregla hasta saber cuál de las dos es:** arreglar la causa equivocada en el camino del dinero
+es peor que no arreglar nada. Y no se descarta que Stripe reintente más tarde con éxito.

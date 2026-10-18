@@ -251,6 +251,36 @@ marca del 1-oct sobre `homeView.js` (75.033 B) frente al `main` de ese día (85.
 
 ⛔ **Nunca se «arregla» una marca copiando `pieza-N.bin` encima del fichero a mano.** Es exactamente el defecto.
 
+### La otra cara: con la máquina cargada, `guards:entrada` sale CIEGO, y un ciego no es un verde
+
+18-oct-2026 · SCRUM-1345b (medido de paso en SCRUM-1158d) · Sesión 3. `guards:entrada` corta a su runner a
+los 90 s (`TECHO_MS`) y, si se pasa sin que haya caído nada, sale **2**: «0 hallazgos · 1 ciego». Está hecho
+así a propósito (SCRUM-1345: cuánto tarda lo decide la carga de la máquina, no la lista). La trampa no está
+en el comando: está en **leer ese 2 como «no ha salido nada rojo» y empujar.** El 18-oct, en
+`wt-s3-18oct-d`, sobre la misma entrada, salió dos veces seguidas CIEGO a los 90,0 s. Una hora antes, en otro
+árbol, había dado verde en 75 s. **Corriendo sus 15 ficheros sin plazo: 170 de 170.**
+
+| síntoma | causa | qué hacer | cómo se comprueba |
+|---|---|---|---|
+| `⟦veredicto⟧ 0 hallazgos · 1 ciego → salida 2` y `15 guards · 90.0 s · plazo 90 s` | otras sesiones ocupan los núcleos; la lista no cambió | **no empujar con eso.** Las marcas de mutación y los ficheros que faltan YA se miraron (es lo primero que hace `main()`, antes de correr nada); lo que falta es correr los tests sin plazo, con la lista que exporta el propio script (abajo) | el resumen del runner: `ℹ tests N` con N > 0 y `ℹ fail 0`. Sin esa línea, el runner no terminó |
+
+La lista se saca del script (`GUARDS` y `FUERA_DE_LA_LISTA` son `export`, y `main()` sólo corre si se
+lanza el fichero), así que no se copia a mano ni envejece. En PowerShell, desde la raíz del árbol, probado
+el 18-oct sobre `06c6289d` (20 ficheros, 208 de 208, 51 s):
+
+```powershell
+$f = node --input-type=module -e "const m = await import('./scripts/guards-entrada.mjs'); console.log([...new Set([...m.GUARDS.map((g) => g.fichero), ...m.FUERA_DE_LA_LISTA])].join('\n'))"
+$f.Count          # control: tiene que ser > 0 ANTES de seguir
+node --test --test-force-exit @f
+```
+
+- ⚠️ **Si `$f` sale vacío, `node --test` sin ficheros corre TODA la carpeta `tests/`.** Tarda minutos y sus
+  rojos no son los de la entrada. Por eso se mira `$f.Count` antes.
+- Lleva también los de árbol entero (`FUERA_DE_LA_LISTA`), que `guards:entrada` sólo nombra al final: son
+  los que tumbaron seis PR el 17-oct con el comando en verde (SCRUM-1152c).
+- No es el CI: la tanda completa corre muchos más. Es el control previo, ahora con un veredicto.
+- Bash no está probado: en esta máquina no hay Git Bash.
+
 ## 12 · Staging corre con `NODE_ENV=production` y se comporta COMO producción
 
 **Una prueba en staging NO pasa por los caminos de desarrollo.** Todo lo que el código condiciona a

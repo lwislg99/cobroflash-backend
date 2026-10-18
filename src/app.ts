@@ -390,8 +390,9 @@ app.get('/admin/me', async (req, res) => {
     // (V0-0) se resuelve con merchant demo (por email) + flag por merchant, no solo con el país.
     // SCRUM-328: los dos telefonos entran para poder decidir el aviso de Bizum sin telefono
     // con EL MISMO criterio que usa la pagina de pago del cliente (que cae a `whatsappPhone`).
+    // SCRUM-809b: `subscriptionStatus` se lee AQUÍ; la sesión no lo trae (ver el banner, abajo).
     select: { country: true, logoUrl: true, email: true, flags: true, invoiceSeriesYear: true,
-      bizumPhone: true, whatsappPhone: true, timezone: true },
+      bizumPhone: true, whatsappPhone: true, timezone: true, subscriptionStatus: true },
   });
 
   // SCRUM-298 (A8) · UN SOLO objeto para las dos preguntas de modo. `documentoSuelto` (qué se
@@ -542,7 +543,10 @@ app.get('/admin/me', async (req, res) => {
     // navegador no decide qué tipos existen: los recibe, como los cubos de cobros.
     tiposIntervencion: tiposIntervencionParaUI(),
     // A10.2 (Parte L): estado de la suscripción para el banner past_due
-    subscriptionStatus: owner ? 'active' : ((session.merchant as any).subscriptionStatus ?? null),
+    // SCRUM-809b · antes se leía de `session.merchant`, y `getSession` no selecciona ese campo: valía
+    // null SIEMPRE y el banner no podía salir. Un null aquí NO significa «al día»: significaba «no
+    // lo hemos leído». Ahora sale de la fila del merchant de esta misma petición.
+    subscriptionStatus: owner ? 'active' : (merchantFull?.subscriptionStatus ?? null),
     // SCRUM-313 (D2): ¿todavia se le puede preguntar por su numeracion? Mismo patron que la
     // factura suelta -- veredicto del servidor, no regla en el navegador.
     // ⚠️ SCRUM-1216b: la puerta y el bloqueo miran poblaciones DISTINTAS, y a propósito. La

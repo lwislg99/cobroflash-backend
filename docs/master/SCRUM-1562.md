@@ -265,3 +265,29 @@ Lo que sí se puede contar como «arreglado»: filas con clic y SIN alternativa 
 técnico sin escalera): QA sólo tiene Trabajos «Sin agendar», y crear otros para verlo exige escribir.
 En el código, `jobRow` añade el botón sin condición de estado; el test lo ve en las 2 filas del censo
 («+ Nuevo albarán» y «Agendar»), no en cada estado; en producción, sólo visto en «Agendar». Tampoco lector de pantalla.
+
+## 18-oct-2026 · S3 · las dos cifras, re-medidas con #2560 y #2561 dentro (sólo medir)
+
+**Medido contra:** `origin/main` = `06c6289d46d5998493ec014fa26ff3353946b58b` · 2026-10-18T17:40:44Z
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1562/sonda-div-clicables.mjs`
+
+La sonda saca dos cifras, y sólo una mide el defecto. **La cifra que manda es «sin teclado y sin
+alternativa nativa»**; la cruda («elementos no nativos con clic») es un indicador. Aceptado así por el
+orquestador (18-oct): la cifra que BAJA cuando aparece la alternativa demuestra que la sonda depende de
+lo que dice medir.
+
+| árbol | no nativos con clic (cruda) | sin teclado y **sin alternativa** |
+|---|---|---|
+| `e59be9fa` (antes de 1562c y 1562d) | 13 | **5**: Facturas ×2 · Trabajos ×2 · Partes ×1 |
+| `57b0bc82` (#2561 dentro, #2560 todavía no) | 13 | **3**: Facturas ×2 · Partes ×1 |
+| `06c6289d` (los dos dentro) | **12** | **2**: Facturas ×2 (`invoicesView.js`, J1) |
+
+- Trabajos (#2561) no baja la cruda, y es correcto: la `TR.jobs-fila` mantiene su clic de ratón y gana
+  `BUTTON«Ver detalle»` dentro. Es el mismo patrón que la `TR` de Presupuestos, que se decidió no tocar.
+  Bajar la cruda quitándole el clic a una fila sería romper el ratón para mejorar el indicador.
+- Partes (#2560) sí la baja: `DIV.customers-card` deja de recibir clic sin ser nativo.
+- Queda una sola lista que con teclado no se puede abrir: Facturas, de J1 (`para-javier.md` §23).
+- El censo táctil sigue declarando Partes de oficina en «NO MEDIDAS», con 12 nodos. Es el umbral de
+  20 nodos del censo (`if (nodos < 20)` en `scripts/censo-objetivo-tactil-panel.mjs`), no la vista:
+  dicho, no tocado.
