@@ -61,7 +61,7 @@ Encargo del orquestador (18-oct, tras la primera foto): actualizar el documento 
 | qué tiene cada ticket en `main` | `git log origin/main --merges --grep=scrum-<n>[a-z]*-` por cada número | control positivo: 1190 sale con #2523 |
 | lo que mandamos en el botón de WhatsApp | `git show origin/main:src/integrations/whatsappTemplates.ts` | `urlButton` manda sólo el sufijo (`:130-136`); 4 plantillas con botón de URL dinámica (`:57-68`) |
 | los CSV sin sesión | `curl -D -` a los 7 `/admin/exports/*.csv` sin cookie, 18:39:38Z | 7 de 7 **401**, `cf-cache-status: DYNAMIC`. Control: `/` da 200 |
-| #2568, #2576, #2578 | `gh pr view` | a las 18:4xZ, los tres ABIERTOS; #2568 con `build + tests (con banco desechable)` en FAILURE (18:05:04Z). Re-mirado a las 18:51Z: #2578 MERGEADO a las 18:49:54Z; el documento se corrigió antes de empujar |
+| #2568, #2576, #2578 | `gh pr view` | a las 18:4xZ, los tres ABIERTOS; #2568 con `build + tests (con banco desechable)` en FAILURE (18:05:04Z). Re-mirado a las 18:51Z: #2578 MERGEADO a las 18:49:54Z; y a las 18:5xZ, #2576 MERGEADO a las 18:54:15Z. El documento se corrigió las dos veces; #2568 sigue ABIERTO |
 | la versión de producción | `curl https://yaqu.app/version` | `74e60ebe5923e79f63411bbb6be0e0f09ae98393` |
 | las seis cuentas de §5 | JQL con `searchResultMode: count` | 271 · 56 · 164 · 51 · 41 · 10; control 56 + 164 + 51 = 271 |
 | §3 | el contador | 66 filas · 43/28 · 28/12 · 12/5 · 6/2. Control: sobre la versión de las 17:13Z da lo publicado entonces |
