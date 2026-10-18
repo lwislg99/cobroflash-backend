@@ -153,3 +153,52 @@ La tanda dirigida que calcula `tests-que-cubren` son 233 ficheros de test. En la
 | de los 51, por este cambio | 1: `scrum824` no podía probar de dónde colgaban los ficheros del banco del test nuevo. Arreglado en el test (las rutas se dan relativas a la carpeta temporal) y vuelto a correr en verde |
 
 Lo que no se compiló lo dirá el CI.
+
+## 18-oct-2026 · SCRUM-1298c · CAMBIO: sin mesa, se arranca en `repo`, ya no en el cwd de quien lanza
+
+**Medido contra:** `origin/main` = `183895cdef71c5655a3978352b716a79e1ca2b2b` · 2026-10-18T18:05:13Z
+
+A9: comprobación → `tests/scrum1298c-sin-mesa-lanza-desde-el-repo.test.mjs`
+
+**Esto cambia lo que este registro dejó escrito arriba** («Sin él, todo sigue como antes y el veredicto
+dice `SIN-MESA`», o sea, heredar el cwd de quien lanza). Lo de arriba se deja tal cual. **Decisión del
+orquestador (18-oct, opción «a» de las dos que le planteó S5):** que el arranque del equipo no dependa
+de dónde esté quien teclea.
+
+### Por qué, medido
+- El orquestador lanzó `sesion-0` dos veces con `cd "C:/Users/Admin/AppData/Local/yaqu-equipo" && node
+  sesion.mjs lanzar …` y las dos salió `NO-PUDE-MIRAR` con `salida: ""`. A mano, desde el repo, la misma
+  orden arrancó (`backgrounded · 4b401020`).
+- Los argumentos son los mismos: los de `argsLanzar` de la copia instalada coinciden con los que se
+  escribieron a mano.
+- La instalación no declara `mesas`, así que `claude` heredaba el cwd: **`yaqu-equipo`, que no cuelga de
+  ninguna carpeta de confianza.** Una sonda lanzada desde una carpeta así: `status 1`, stdout vacío, y en
+  stderr `Workspace not trusted. … accept the trust prompt, then retry.` (lo que `sesion.mjs` tiraba;
+  lo arregla SCRUM-1011b).
+- Lo que dice arriba el 29-sep se SIGUE cumpliendo, medido otra vez: `D:/MILLONARIO/cobroFlash` es de
+  confianza (`~/.claude.json`) y sus hijas la heredan. Otra sonda, desde una hija escrita con `d:` en
+  minúscula, ARRANCÓ: **la letra de unidad no cuenta.** Las entradas `false` que hay
+  (`d:/…/cobroflash-backend`, `mesa-control-s5`) apuntan un lanzamiento, no lo impiden.
+  **Así que encender las mesas NO choca con la confianza**: cuelgan de `D:/MILLONARIO/cobroFlash`.
+
+### Lo que cambia (sólo `mesaDelLanzamiento` en `scripts/equipo/sesion.mjs`)
+- Sin `mesas`: `cwd: config.repo`, y el veredicto lo sigue diciendo (`SIN-MESA`, con el motivo nuevo).
+- Sin `mesas` NI `repo`: no se lanza (`NO-PUDE-MIRAR`). La puerta de integridad ya exige `repo`, así que
+  por la línea de órdenes no se llega aquí; la función lo cubre por si alguien la llama de otra forma.
+- **No se normaliza la letra de unidad**: la medida dice que no hace falta, y no se añade una defensa
+  que ningún test podría poner en rojo.
+- El test de `scrum1298` que fijaba `cwd: undefined` pasa a fijar `cwd: '/r'`. Es el cambio decidido, y el
+  test lo dice.
+
+### Comprobado
+| corrida | resultado |
+|---|---|
+| test nuevo: `lanzar` corrido DESDE la carpeta de la instalación, con un `claude` falso que apunta su cwd | `LANZADA`; `claude` arrancó en `repo` y no en la instalación |
+| mutación: devolver `cwd: undefined` | cae el test nuevo |
+| los 23 ficheros que nombran `sesion.mjs`, más `scrum824`, `scrum723` y `scrum836` | 260/261. El caído es `scrum836`, por el `dist/` de `scrum608`: el árbol nuevo está sin compilar, y no tiene que ver con este cambio |
+
+### Una sesión de prueba que se quedó viva
+La segunda sonda (`s5-sonda-1011b`, `39682f8b`, haiku, con un prompt que no pide nada) arrancó y se
+quedó bloqueada pidiendo aprobar un servidor MCP. A S5 se le DENEGÓ `claude stop`/`rm`, igual que el
+29-sep con `983223e8`. La paró el orquestador, que tiene ese permiso en su puesto, y S5 no se lo pidió.
+**Lección para la próxima sonda:** una sonda que puede ARRANCAR sólo la lanza quien puede pararla.
