@@ -91,5 +91,10 @@ Sin lanzar ninguna sesión (no es mío hacerlo, y la máquina está a ~2,4 GB li
   `status 1`, **stdout vacío**, y en stderr `Workspace not trusted. Run claude in <dir> once and accept the
   trust prompt, then retry.` No creó trabajo, así que no hubo nada que limpiar. Es el síntoma exacto: con
   `errores`, el primer intento lo habría dicho.
-- Qué cwd heredó en las dos tentativas, no lo sé: o `yaqu-equipo` (si se corrió `node sesion.mjs` desde
-  allí) o `d:\…` en minúscula (el cwd del orquestador). **Los dos son directorios sin confianza.**
+- ~~Qué cwd heredó, no lo sé: `yaqu-equipo` o `d:\…` en minúscula; los dos sin confianza.~~ **CORREGIDO por
+  S5 a los minutos, medido:** `D:/MILLONARIO/cobroFlash` es de confianza y sus hijas la heredan. Una sonda
+  desde `d:\MILLONARIO\cobroFlash\…` en minúscula ARRANCÓ: **la letra de unidad no cuenta**, y la entrada
+  `false` de `d:/…` apunta un lanzamiento, no lo impide. Mi filtro buscaba el repo y no listó al padre:
+  «no pude mirar» leído como «no hay». El cwd fue **`yaqu-equipo`** (el orquestador corrió
+  `cd ".../yaqu-equipo" && node sesion.mjs …`), que no cuelga de ninguna carpeta de confianza. El
+  arreglo de fondo (lanzar desde `repo`) es SCRUM-1298c.
