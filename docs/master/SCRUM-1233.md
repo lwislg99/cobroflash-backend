@@ -272,3 +272,8 @@ verde: la mutación es la que es); volver a `: location.origin` en jobDetailView
 ficheros que leen `api.js` o `jobDetailView.js`: los mismos 403 rojos en rama y en `main` limpio, nombre a
 nombre (el worktree no tiene `dist`); la rama sólo suma estos 6 en verde. La tanda completa la da el CI.
 A9: comprobación → `tests/scrum1233h-copiar-enlace-sin-enlace.test.mjs`
+**Visto con la rama servida sobre yaqu.app** (build `74e60ebe5`; `enlace-falso.mjs <carpeta>` sirve `api.js` y
+`jobDetailView.js` de la rama, 18-oct ~18:55Z). Pasada con el CONTROL en verde: con token la barra trae las tres
+salidas y copia `…/pay/invoice/tokSONDA123`; sin teléfono, cobro no creado y error de red traen «Enviar por email» y
+«Reintentar WhatsApp», y no hay nada que copiar. ⚠️ En una 2.ª pasada el control no llegó a abrir el «⋯» (mi sonda,
+no el producto): esa pasada no cuenta. Prod a pelo, en la misma tanda: los tres casos siguen copiando `https://yaqu.app`.
