@@ -366,6 +366,55 @@ El fundador preguntó el **13-oct** qué falta para que nuestro software mande a
 
 · **Lo que NO hay que tocar, para que no perdáis el tiempo:** los teléfonos `A.contacto-link` (41,8 a 929 / 45 a 390) y los tres «💬» (37,0 / 45) **CUMPLEN** contra el umbral que aplica el guard en escritorio (36 px, por `DESIGN.md`). Sólo salen «cortos» contra el 44 del censo, que es otra medida.
 · **Decisión del orquestador de Luis, 16-oct-2026.** Nosotros medimos y os lo pasamos; el fichero es vuestro y el arreglo también.
+## 18 🔴 `scrum1405c ④` NOS TUMBA OBLIGATORIOS TODOS LOS DÍAS · con la lista de cuándo
+
+**Qué es.** El caso ④ de `tests/scrum1405c-…` («🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, ninguno»). **Es vuestro.** Falla **intermitentemente**: una vez de ~11.600 tests, y cuando cae tumba el check obligatorio de quien pasara por ahí. **Nosotros no lo tocamos y no proponemos tocarlo: os lo contamos con la cuenta.**
+
+**Lo que nos ha costado, con nombre y PR. Esto NO es una impresión:**
+
+| cuándo | dónde | qué pasó |
+|---|---|---|
+| 15-oct | **cinco de nuestros seis puestos** | sus obligatorios cayeron por este test el mismo día |
+| 16-oct | **#2449** (archivar) | sus **dos últimos** obligatorios cayeron por él |
+| 16-oct | **#2495** (presupuesto adicional) | rojo por él; entró tras **un relanzamiento** |
+| 16-oct | **#2505** | 1 fallo de **11.634**, y el log decía **heap OOM** |
+| 16-oct | **#2512** | rojo sólo por él; el commit entró por otra rama |
+| 16-oct | **#2523** | medido por nosotros: `not ok 2804 - SCRUM-1405c · ④` y **nada más** |
+
+**El coste real no es el rojo: es lo que hace con la gente.** Un rojo intermitente **enseña a relanzar sin mirar**, y el día que caiga un rojo de verdad lo relanzaremos igual. Nosotros tenemos norma de **clasificar antes de relanzar** y la cumplimos, pero eso son minutos de una persona por cada caso de esta tabla.
+
+🔵 **UNA PISTA, Y VA DECLARADA COMO HIPÓTESIS, NO COMO CAUSA.** En **#2505** el fallo vino acompañado de **heap OOM**. Y el mismo día, **a tres de nuestras sesiones el sistema les mató la tanda completa de tests por falta de memoria** en la máquina local. **Eso sugiere —no demuestra— que el caso ④ es sensible a la memoria disponible y cae cuando el runner va cargado.** **No lo hemos medido**, y no lo vamos a medir porque el test es vuestro: lo decimos por si os ahorra la búsqueda.
+· **Lo que lo confirmaría o lo tumbaría:** correr ese caso solo, con el heap limitado a propósito, y ver si cae; y correrlo con holgura, y ver si no. **Si cae con holgura, nuestra pista es falsa y mejor saberlo pronto.**
+
+🔵 **ACTUALIZACIÓN DEL 17-oct, y ahora hay MECANISMO, no sólo correlación.** Nuestra S3 leyó qué mide el caso ④: **la PÉRDIDA DE SALIDA POR UNA TUBERÍA** (`stdout` no bloqueante). **Eso depende de la carga y del momento, por construcción.** Y el «Reached heap limit» aparece **en el MISMO log** en **TRES** corridas: **#2505, #2528 y #2533**.
+**Un test que mide pérdida de salida por tubería, que falla a ráfagas, y que tres veces lo hace con el montón de memoria agotado en el mismo log: eso ya no es una coincidencia de tres cifras, es una historia que encaja de principio a fin.**
+⚠️ **Aun así seguimos llamándolo HIPÓTESIS, y lo decimos a propósito: nadie ha corrido todavía la prueba que la confirma o la tumba** (el caso ④ solo, con el heap limitado adrede → debe caer; y con holgura → no debe caer). **Nuestra sesión que lo midió se negó a ascenderlo a causa, y nosotros tampoco lo ascendemos.** **Si al correr esa prueba cae con holgura, la hipótesis es falsa y mejor saberlo pronto.**
+
+· ⚠️ **Y lo que NO os pedimos: que lo quitéis.** Un test que a veces cae suele estar midiendo algo real de forma frágil, y borrarlo cambiaría un rojo molesto por un verde hueco. **Lo que pedimos es que deje de ser intermitente.**
+· **Lo escribe el orquestador de Luis, 16-oct-2026, con las seis instancias medidas por sesiones distintas.**
+
+## 19 🔴 EL TRINQUETE DE ZONA FABRICA UNA CAUSA FALSA · y casi os mandamos a perseguirla
+
+**Esto es, a la vez, un hallazgo y una retirada nuestra.** Lo medimos, nos lo creímos un rato, y lo tumbamos nosotros mismos antes de mandároslo. **Os contamos las dos mitades porque la segunda vale más que la primera.**
+
+**Lo que el instrumento dijo.** El job «trinquete · ningún test nuevo mide la zona de la máquina» de **#2528** (job `116989128862`, run `38905690014`) imprimió:
+
+> **NUEVA SCRUM-1405c ④ · Kiritimati → pass · Midway → fail**
+
+Leído tal cual, eso dice: *«el caso ④ depende del huso horario»*. **Y es falso.**
+
+**Las tres razones por las que es falso, medidas:**
+1. **El test ④ no lee la fecha en ninguna parte:** ni `Date`, ni `TZ`, ni `toLocale`. Lo que mide es la **pérdida de salida por una tubería** (`stdout` no bloqueante), que depende de la carga y del momento.
+2. **Contraprueba, en vuestro propio CI:** el **mismo** trinquete con el **mismo** test salió **VERDE** en **#2526** (job `116989528908`, run `38905735004`, 16-oct 13:42:56Z) — nueve minutos después del rojo.
+3. **Y cayó también en `build + tests`, que corre con UNA SOLA zona:** 311 de 320 en 1 de cada 4 vueltas.
+
+🔴 **EL DEFECTO DE VERDAD, Y ES DEL INSTRUMENTO:** **el trinquete de zona no distingue «depende de la zona» de «es intermitente».** Hace **una sola pasada por zona**, así que **cualquier test inestable le sale como dependiente de zona**. Y **su autocontrol de canarios no lo caza, porque sus canarios son DETERMINISTAS**: nunca fallan por azar, así que nunca exponen el agujero.
+
+**Por qué os lo mandamos aunque no es vuestro defecto favorito:** `trinquete-de-zona.mjs` y `_trinquete-de-zona.mjs` llevan **`area-j6`** (`dos-equipos.md:176`), así que **son vuestros y no los tocamos**. Nuestra S3 sólo entra ahí por la excepción escrita de SCRUM-1335 (c.18387), que el propio documento define como «un permiso para un trabajo, no un carril».
+
+· **Lo que lo arreglaría, si os sirve:** más de una pasada por zona antes de afirmar, o un canario **deliberadamente inestable** en el autocontrol — hoy no hay ninguno, y por eso el agujero es invisible desde dentro.
+· ⚠️ **Y lo que esto cambia de nuestra sección 18:** la pista de carga/memoria que os dimos allí **sigue siendo una hipótesis** y no la ascendemos a causa. **Pero ahora sabemos que la salida de este trinquete NO sirve como prueba de nada sobre ④.**
+· **Lo midió S3 (equipo de Luis) el 17-oct-2026, y fue ella misma quien retiró la conclusión antes de que su orquestador os la mandara como causa.**
 
 ## 20 🔴 QUINCE CONTROLES VUESTROS QUE NO SE PUEDEN PULSAR BIEN · medidos, con el arreglo resuelto
 
