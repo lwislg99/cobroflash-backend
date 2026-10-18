@@ -390,8 +390,12 @@ export const contratoDe = (url) => CONTRATOS.find((c) => c.ruta.test(caminoDe(ur
 export function datosDelCenso() {
   const sinContrato = new Map();
   const servidas = new Map();
+  // SCRUM-1560e · cuántas peticiones hizo cada vista. Una que no pide NADA no aparece en ninguno de
+  // los dos mapas de arriba, y por eso pasaba por «ninguna ruta sin contrato» sin haber mirado.
+  const pedidasPor = new Map();
   let vista = '';
   const datos = (url) => {
+    pedidasPor.set(vista, (pedidasPor.get(vista) || 0) + 1);
     const c = contratoDe(url);
     const camino = caminoDe(url).replace(/\d+/g, ':n');
     const anota = (m) => { if (!m.has(camino)) m.set(camino, new Set()); m.get(camino).add(vista); };
@@ -402,5 +406,47 @@ export function datosDelCenso() {
     anota(servidas);
     return v;
   };
-  return { datos, sinContrato, servidas, enVista: (fn) => { vista = fn; } };
+  return { datos, sinContrato, servidas, pedidasDe: (fn) => pedidasPor.get(fn) || 0, enVista: (fn) => { vista = fn; } };
+}
+
+// ═══ SCRUM-1560e · CUANDO EL CENSO NO PUEDE MEDIR UNA VISTA, DICE QUÉ AÑADIR Y DÓNDE ══════════
+//
+// La ficha del gasto entró en `main` (#2545) y el censo la apuntó en «NO MEDIDAS» con «a medias o
+// vacía con estos datos». Era falso: se montaba SIN su id, no pedía nada y volvía con el contenedor
+// vacío. El resumen del CI sólo daba el número, que pasó de 1 a 2 sin que nadie lo viera.
+// Lo que distingue ese caso, medido el 17-oct-2026 sobre las vistas del banco: «no pidió ninguna
+// ruta y pintó menos nodos que el suelo». La aridad de la función NO vale: el editor de
+// presupuestos y Partes de oficina declaran parámetros opcionales y se montan bien sin ellos.
+//
+// Aquí sólo se REDACTA el aviso; el censo lo imprime, y no bloquea (decisión del orquestador,
+// 17-oct: primero informa y se arreglan los que haya; obligatorio, después y acordado con J).
+
+const FICHERO = 'scripts/_datos-del-censo.mjs';
+
+/** Los parámetros que declara una vista, sin el contenedor ni los valores por defecto. */
+export function parametrosDe(f) {
+  const m = String(f).match(/^[^(]*\(([^)]*)\)/);
+  if (!m) return [];
+  return m[1].split(',').map((p) => p.split('=')[0].trim()).filter(Boolean).slice(1);
+}
+
+/** Una vista que no pidió nada y no llegó al suelo: le falta su entrada en `ARGUMENTOS_DEL_CENSO`. */
+export function avisoDeVistaSinPedir(fn, parametros, nodos) {
+  const primero = parametros[0] || 'id';
+  return `${fn} no le pidió NADA al servidor y pintó ${nodos} nodo(s): se montó sin los argumentos que espera`
+    + ` (declara: ${parametros.length ? parametros.join(', ') : 'ninguno además del contenedor'}).`
+    + `\n      QUÉ AÑADIR · en ${FICHERO}, dentro de ARGUMENTOS_DEL_CENSO: \`${fn}: [<${primero}>],\``
+    + ` con el valor que le pasa \`renderView\` de app.js (un id de IDS si es una ficha).`
+    + `\n      Si la ruta que pida entonces no tiene contrato, el censo la dirá en «SIN contrato» con su línea para CONTRATOS.`;
+}
+
+/** Una ruta que alguna vista pidió y no tiene contrato: la entrada de `CONTRATOS` que falta, a medio rellenar. */
+export function avisoDeRutaSinContrato(camino, vistas) {
+  const ruta = camino.split(':n').map((t) => t.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')).join('\\d+');
+  const ejemplo = camino.replace(/:n/g, '1');
+  return `${camino} ← ${[...vistas].join(', ')}`
+    + `\n      QUÉ AÑADIR · en ${FICHERO}, dentro de CONTRATOS (antes de cualquier ruta más general que también case):`
+    + `\n      { ruta: /^${ruta}$/, ejemplo: '${ejemplo}', forma: 'objeto' | 'array', claves: [ …las de su res.json… ],`
+    + ` fuente: 'src/…/<router>.routes.ts', get: '<literal de su router.get>', dato: () => ({ … }) },`
+    + `\n      forma y claves se COPIAN del res.json del servidor; el test de SCRUM-1560 comprueba que el literal del get sigue en su router.`;
 }
