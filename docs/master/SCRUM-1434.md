@@ -76,3 +76,23 @@ devuelta con Edit y `git status` sin `zona-roja.yml`.
 
 Los otros rojos de esa corrida (`guards de navegador`: `cls-barra-anuncio`, `objetivo-tactil`,
 `marcadores-en-pantalla`) no son obligatorios ni tocan nada de este PR.
+
+### Los dos hermanos del censo de S0, medidos: NO se arreglan (decisión del orquestador, 18-oct)
+Las citas `vigia-despliegue.yml:214` y `vigia-atascados.yml:220` de `SCRUM-1123.md` ya no apuntaban a
+lo mismo: en `origin/main` de hoy el sitio es `vigia-despliegue.yml`, la tubería que acaba en
+`gh issue comment` (rama `comentar`), y `vigia-atascados.yml`, `gh issue create … | grep`, más
+`gh issue edit` y `gh issue comment` del mismo paso. **Una cita por NÚMERO DE LÍNEA envejece sola**:
+se ancla al literal, no a la posición.
+- Ninguno de los dos ficheros declara `shell:` ni `defaults:` → `bash -e {0}`, sin `pipefail`.
+- Si cae `gh`, el paso sale ROJO sin `::error`. Nunca verde en falso. En `vigia-despliegue` el aviso
+  sólo corre con salida=1, cuando el job ya está rojo por el vigía.
+- Historial (`gh run list`): `vigia-despliegue` 191 success / 9 failure de 200, y los 9 caen en
+  «¿Está producción corriendo lo que hay en main?», ninguno en el aviso; `vigia-atascados` 183/183.
+El criterio: `zona-roja` PROMETÍA no salir rojo nunca, y una promesa rota es peor que un rojo feo.
+Éstos molestan pero no engañan.
+
+**De paso (sin ticket, orden del fundador del 6-oct):** `vigia-despliegue.yml` decía en su comentario
+del `|| true` que los `run:` «llevan `-e -o pipefail`». Era falso, y es la familia de SCRUM-1178:
+un comentario que cita una red que no corre. Ahora dice lo que hay (`-e` sí, `pipefail` no) y qué
+implica para sus tuberías. Sólo cambia el comentario. Los 7 ficheros de test que leen
+`vigia-despliegue.yml` dan 76/76.
