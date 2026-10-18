@@ -229,3 +229,71 @@ del 1-oct ya decía esto, con «sin comprobación». Ahora la tiene:
   `comun.mjs` sin bloquear → cae «NO bloquea» con 917i. Población del verde: 895 ficheros, 8 llaman a
   `.route(` (bloquea 3 · fuera del repo 5).
 A9: comprobación → `tests/scrum1233g-banco-bloquea-el-sw.test.mjs`
+
+## 1233h — «Copiar enlace» copiaba la PORTADA cuando la factura aún no tenía cobro (S2, s2-18oct)
+
+**Medido contra:** `origin/main` = `2cc3243ec30c41e27bbe04d0d5647f241c83c28c` · 2026-10-18T18:48:22Z
+
+**Skill UI:** cargada · cambia un componente compartido (`waFallbackBar`, api.js) y una línea de la ficha del Trabajo; ningún texto nuevo.
+
+**El defecto, medido antes de tocar nada.** La barra de fallo de WhatsApp de la ficha del Trabajo
+(`jobDetailView.js:1475`) recibía `link: token ? origin + '/pay/invoice/' + token : location.origin`. Sin
+`payToken` —la factura aún no tiene cobro— el botón «📋 Copiar enlace» copiaba `https://yaqu.app` y decía
+«✓ Enlace copiado — mándaselo por SMS». Sonda `sondas-s2/enlace-falso.mjs` (fuera del repo, arnés
+`comun.mjs` con el service worker bloqueado): código SERVIDO por yaqu.app (build `74e60ebe5`), el GET del
+trabajo #77 completado con UNA factura de mentira (QA no tiene facturas) y el POST de reenvío CONTESTADO
+por la sonda. Nada salió a producción (`noGet` = sólo ese POST, «contestada por la sonda»).
+
+| caso (respuesta del reenvío, la forma real de `invoicesAdmin.routes.ts:645-690`) | lo que copia |
+|---|---|
+| CONTROL · con token · 200 `sent:false`, `pay_token` | `https://yaqu.app/pay/invoice/tokSONDA123` |
+| cliente sin teléfono · 400 `customer_missing_phone` (el cobro no llega a crearse) | `https://yaqu.app` |
+| cobro no creado · 200 `sent:false`, `pay_token: null` | `https://yaqu.app` |
+| error de red · 500 | `https://yaqu.app` |
+
+**La forma, y por qué ésta.** Sin enlace, la barra NO pinta «Copiar enlace»; «Enviar por email» y
+«Reintentar WhatsApp» se quedan. Quien llama pasa `null`, nunca la portada. Un enlace falso con forma de
+bueno es peor que no ofrecer copiar nada. Descartadas: ① un botón deshabilitado con su motivo → pide un
+texto nuevo (regla 39); ② crear el cobro para que haya enlace → es backend y dinero (S1, STOP).
+⚠️ **Choca con la letra de A20.5** (`docs/SPRINT_DEMO_READY_EXT3.md:417`, «SIEMPRE … Copiar enlace»),
+que daba por hecho que había enlace. Con enlace, las tres salidas siguen; sin él, quedan dos. Declarado
+aquí y al orquestador.
+
+**El gemelo es de J1:** `invoiceDetailView.js:405` y `:421`, la misma rama a `location.origin`
+(para-javier §25.4). Con este cambio, su arreglo es cambiar `: location.origin` por `: null` en esas dos
+líneas, y bajar a 0 el techo de `invoiceDetailView.js` en el test. No lo toco: no es mi fichero.
+
+**Test** `tests/scrum1233h-copiar-enlace-sin-enlace.test.mjs`: ① ejecuta la `waFallbackBar` REAL, recortada
+de api.js, sobre un DOM mínimo — con control positivo (con enlace, el botón existe y copia ESE enlace) y sin
+enlace (`null`, `undefined`, `''`) no hay botón y los otros dos sí. ② censo por fichero de `location.origin`
+pasado a pelo como enlace, sobre código sin comentarios, con techo y sus dos mitades (J1: 2).
+**Rojos sembrados** y deshechos (diff limpio después): `if (link)` → `if (true)` cae ①×3 (el control sigue
+verde: la mutación es la que es); volver a `: location.origin` en jobDetailView cae ②. Tanda de los 159
+ficheros que leen `api.js` o `jobDetailView.js`: los mismos 403 rojos en rama y en `main` limpio, nombre a
+nombre (el worktree no tiene `dist`); la rama sólo suma estos 6 en verde. La tanda completa la da el CI.
+A9: comprobación → `tests/scrum1233h-copiar-enlace-sin-enlace.test.mjs`
+**Visto con la rama servida sobre yaqu.app** (build `74e60ebe5`; `enlace-falso.mjs <carpeta>` sirve `api.js` y
+`jobDetailView.js` de la rama, 18-oct ~18:55Z). Pasada con el CONTROL en verde: con token la barra trae las tres
+salidas y copia `…/pay/invoice/tokSONDA123`; sin teléfono, cobro no creado y error de red traen «Enviar por email» y
+«Reintentar WhatsApp», y no hay nada que copiar. ⚠️ En una 2.ª pasada el control no llegó a abrir el «⋯» (mi sonda,
+no el producto): esa pasada no cuenta. Prod a pelo, en la misma tanda: los tres casos siguen copiando `https://yaqu.app`.
+### 1233h · DIVERGENCIA DECLARADA de A20.5 (18-oct ~19:15Z)
+
+**Lo que dice la letra** (`docs/SPRINT_DEMO_READY_EXT3.md:417-420`, literal): «**A20.5 `[CC]` — Fallback WhatsApp
+completo (J5).** En TODO fallo de envío (UI y cron): acciones SIEMPRE ofrecidas — Copiar enlace · Enviar por email ·
+Reintentar. 131026 → "copia el enlace y mándaselo por SMS o llámale". Cron que falla registra y aparece en BO. Nunca
+fallo silencioso.»
+
+**Lo que hace ahora el código:** con enlace, las tres salidas, como siempre. SIN enlace (la factura aún no tiene cobro
+y el reenvío no devolvió `pay_token`), sólo dos: «Enviar por email» y «Reintentar WhatsApp». «Copiar enlace» no se
+pinta (`waFallbackBar`, `public/dashboard/js/api.js`, `if (link)`), y el aviso de error sigue saliendo: no es un
+fallo silencioso.
+
+**Por qué:** la regla se escribió dando por hecho que había enlace. Nadie decidió «enseña un botón que copia la
+portada», y eso es lo que pasaba (medido arriba, tres casos). La letra choca; la intención («que el profesional tenga
+una salida que funcione, nunca un callejón») no: un enlace falso no la cumple, la contradice. Quitar una mentira no
+añade texto (regla 39).
+
+**Estado:** decidido por el orquestador el 18-oct que el arreglo entra con la divergencia DECLARADA. **La enmienda
+de A20.5 la lleva el orquestador al fundador: está PENDIENTE, no aprobada.** El comentario de `waFallbackBar` remite
+aquí.
