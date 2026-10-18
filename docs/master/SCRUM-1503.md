@@ -228,6 +228,11 @@ que estaban ciegos (`scrum245-*`, `scrum397`, `scrum728`…), que J3 ya contaba 
 `public/`»). No entran cincuenta. `scrum643-huso-del-sello-fiscal` no entra en ninguno, ni antes ni después: no
 estaba entre los 24.
 
+Repetido tras mezclar `main` (`fa163339`, 1.402 tests): las mismas cifras con +1 en casi todos los casos (p. ej.
+255 → 260). Ese +1 es el test nuevo de este ticket: escribe la ruta de `scrum622` como cadena, y el lector trata una
+ruta de `tests/` escrita así como un script que se lanza (SCRUM-1363), de modo que hereda su NO_SE y entra siempre.
+Es el comportamiento de antes, no de este cambio.
+
 **Los que SALEN, uno a uno** (entraban siempre por un NO_SE que ahora se lee):
 - `scrum241` y `scrum495` listaban `process.env.BACKUP_DIR || path.join(process.cwd(), 'backups')`
   (`scripts/backup-dump.mjs:167`). Se lee como `backups/`, que no está en el repositorio; en ejecución listan 0
