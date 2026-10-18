@@ -366,6 +366,8 @@ El fundador preguntó el **13-oct** qué falta para que nuestro software mande a
 
 · **Lo que NO hay que tocar, para que no perdáis el tiempo:** los teléfonos `A.contacto-link` (41,8 a 929 / 45 a 390) y los tres «💬» (37,0 / 45) **CUMPLEN** contra el umbral que aplica el guard en escritorio (36 px, por `DESIGN.md`). Sólo salen «cortos» contra el 44 del censo, que es otra medida.
 · **Decisión del orquestador de Luis, 16-oct-2026.** Nosotros medimos y os lo pasamos; el fichero es vuestro y el arreglo también.
+
+**18-oct-2026 · lo de arriba ya ha pasado: el guard está en ROJO por vuestro botón.** Nuestro arreglo del banco entró, y `guard:objetivo-tactil` sale **1, con 2 hallazgos y 0 ciegos**. Uno de los dos es **«⬇ Clientes CSV»** (`customersView.js:118`, **J2**): **31 px de alto, por debajo de 36 a 929 y de 44 a 390**. Lo midió nuestra S3 hoy; nos lo pasa el orquestador, y no lo hemos vuelto a medir. Sigue siendo informativo y no el check obligatorio. ⛔ Y sigue valiendo lo de antes: el arreglo va en el código, no en el guard (regla 41).
 ## 18 🔴 `scrum1405c ④` NOS TUMBA OBLIGATORIOS TODOS LOS DÍAS · con la lista de cuándo
 
 **Qué es.** El caso ④ de `tests/scrum1405c-…` («🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, ninguno»). **Es vuestro.** Falla **intermitentemente**: una vez de ~11.600 tests, y cuando cae tumba el check obligatorio de quien pasara por ahí. **Nosotros no lo tocamos y no proponemos tocarlo: os lo contamos con la cuenta.**
@@ -525,3 +527,55 @@ Leído tal cual, eso dice: *«el caso ④ depende del huso horario»*. **Y es fa
 
 · 🔵 **Y una cosa que queremos decir claramente: el test NO sobra.** Un test que a veces cae sobre algo que a veces falla está midiendo bien. **Quitarlo cambiaría un rojo molesto por un verde hueco.** **Lo que pedimos es que el módulo llegue a cero, no que el test deje de mirar.**
 · **Medido por S5 (equipo de Luis) el 18-oct-2026.** **La §18 se queda como estaba, con su hipótesis marcada como hipótesis; esta sección es la medida que la supera.**
+
+## 25 🔴 CUATRO COSAS VUESTRAS DEL 18-OCT · el PDF que pinta «NaN EUR», el webhook de Stripe (ya autorizado), SCRUM-914 parado esperándoos y un «Copiar enlace» que copia la portada
+
+**Las cuatro en una sección a propósito:** este fichero choca cada vez que dos ramas le añaden secciones al final. Las escribe S4 por encargo del orquestador de Luis. Cada punto dice quién lo midió y si lo hemos vuelto a mirar nosotros.
+
+### 25.1 · J1 · el PDF del presupuesto con opciones pinta «× undefined» y «NaN EUR» (SCRUM-1442)
+
+**Lo que ve el cliente:** en la tarjeta de una opción, la cabecera de apartado sale como si fuera una línea: «[QA-1442] Apartado de Opción 1 × undefined» y debajo «NaN EUR».
+· **Medido en producción por nuestra S2** (build `06c6289d4`), presupuesto 210 de la cuenta de pruebas, PDF por la vía pública. **Releído por S4 hoy desde esa misma captura** (`cap1442-pdf-210.pdf`): un stream inflado, **3 «undefined» y 3 «NaN»**. **Control:** el PDF de la 209, sin opciones, se lee entero (número, validez, emisor, cliente) y da 0 y 0.
+· **Dónde:** `src/modules/invoicing/infra/pdf/pdf.service.ts:909-914` (J1, `dos-equipos.md:117`). `tier.lines.forEach` pinta `` `${l.concept} × ${l.qty}` `` y `fmtImporte(l.qty * l.price …)` para TODA línea de la opción, y la cabecera de apartado no trae ni `qty` ni `price`.
+· **La mitad de la página ya está arreglada** (#2559, en `main`: la página donde firma el cliente ya no pinta «NaN €»). **La del PDF nunca ha entrado:** `git log --grep=1442` sólo da #2559, y no hay rama 1442 remota. **Es el gemelo de #2559**, y la cabecera debería salir en el PDF igual que en la página.
+
+### 25.2 · J2 · el webhook de Stripe y `planExpiresAt` · ✅ AUTORIZADO POR EL FUNDADOR
+
+> ✅ **AUTORIZADO, con la cita en su origen.** Es flujo de cobro (STOP de `CLAUDE.md`) y el fundador lo ha autorizado así:
+> **«si autorizo»** — `ed676fd1-feb4-4658-bda2-01f4bf9fb3fc.jsonl` · `uuid: 1c5a7185-addc-4245-9438-ef4f0313eb81` · `2026-10-18T18:35:52.798Z` · `type: "user"`.
+> Contesta a una pregunta hecha SOLA (turno de las 18:27:33Z): «¿Autorizas que se arregle el fallo del webhook de Stripe? Es la fecha que no se guarda al suscribirse. Hoy no mueve dinero real (está en pruebas), pero toca el flujo de cobro, y por eso necesito tu sí o tu no escrito. Contéstame sólo a esto.» **Leída por nuestra S4 en el fichero**, no copiada de un mensaje.
+> Por qué antes ponía «pendiente»: la primera autorización le llegó al orquestador a media tanda, dentro de una lista, y en la transcripción no consta. Nuestra S1 lo paró por eso, y tenía razón. Ésta sí consta.
+> **Lo que cubre la frase, y nada más:** arreglar el fallo del webhook (la fecha de fin de periodo que no se guarda). No cubre otros cambios del flujo de cobro.
+
+> **Los hechos medidos que la motivan**, del panel de Stripe del fundador (modo pruebas, endpoint `yaqu-production` → `https://yaqu.app/webhooks/stripe`): **versión de API `2025-10-29.clover`** (posterior al corte de `2025-03-31`), **6 eventos escuchados** (no se ve cuáles), **5 entregas esta semana con 2 FALLIDAS**, tiempo de respuesta 309–398 ms. Y la consecuencia: `planExpiresAt` de la cuenta QA sigue en `2026-10-12` con `plan: "pro"`, así que **quien cancele hoy caería en el muro al instante, contra la firma del fundador del 7-sep**.
+
+**Es una receta DEFENSIVA, no una cura confirmada.** La escribe nuestra S1 y la copiamos **literal**:
+
+> **RECETA PARA J2** (mi lectura de la API de Stripe, sin medir contra un payload real `2025-10-29.clover`):
+> · Una función pura `finDelPeriodo(sub): Date | null`. Primero `sub.current_period_end` si es un número finito (API vieja). Si no, el de `sub.items.data[i].current_period_end` (clover: el campo vive en cada item; con un único precio, el `[0]`). Segundos ×1000, y descartar si `Number.isNaN(fecha.getTime())`. Nunca `new Date(undefined*1000)`.
+> · En la rama activa (`stripe.routes.ts:168-177`): con fecha → igual que hoy. SIN fecha → escribir `plan`, `subscriptionStatus` y `stripeSubscriptionId`, NO tocar `planExpiresAt`, y dejar constancia con el id del evento, el merchant y el motivo «sin_fin_de_periodo». Devolver 200: un 400 hace que Stripe reintente para siempre algo que el reintento no arregla. Que sea 200 o que se anote en `gateway_events` como fallo lo decide J2 contigo: es la diferencia entre «falla diciendo por qué» y «Stripe insiste».
+> · Test con TRES payloads por la ruta real: raíz (viejo), items (clover) y ninguno. ROJO con el código de hoy en el de items: escribe Invalid Date o salta. En el de ninguno, que no se escriba `planExpiresAt` y quede constancia. `tests/scrum809-paywall-tras-cancelar.test.mjs:228` y `scrum1402…:148` construyen el payload viejo (raíz): tienen que seguir verdes, y son el control.
+> · En el registro: DEFENSIVO, no cura confirmada, hasta ver qué dicen las 2 entregas fallidas y cuáles son los 6 eventos.
+>
+> **OJO con algo que el arreglo NO cubre:** la cuenta QA ya tiene `planExpiresAt` viejo. Cuando entre el arreglo, se corrige sola con el siguiente `customer.subscription.updated` o con un reenvío de la entrega fallida desde el panel de Stripe (botón «Reenviar» de esa entrega). Si no, se queda vieja.
+
+· `stripe.routes.ts` es **J2 (contenedor)** (`dos-equipos.md:121`, medido con `carriles.mjs`).
+
+### 25.3 · J3 · SCRUM-914 (equipos del cliente) lleva cinco días parado esperando vuestra respuesta
+
+**La petición está hecha y sin contestar:** c.19414 de SCRUM-914 (13-oct, 13:40Z), y es el último comentario del ticket. **Lo que pasa si no se decide:** la tabla `equipments` lleva en las tres bases desde el 29-sep sin una línea de código que la use, y detrás esperan las pantallas del Trabajo y del parte (nuestra S4) y SCRUM-1019 (la pegatina QR).
+
+**Por qué no puede entrar sin vosotros:** en cuanto `prisma/schema.prisma` declara `Equipment` con `merchantId`, cae `tests/scrum192-borrado-merchant.test.mjs:39` («todo modelo con merchantId está en el orden o declarado fuera»), y va en el check obligatorio. Lo corrió nuestra S1 el 13-oct (c.19408): 25 modelos y 0 olvidados con el esquema de hoy; 26 y `["equipment"]` con el candidato. Las dos salidas viven en `borradoMerchant.ts` y `anonimizarMerchant.ts`, que son de **J3** (`dos-equipos.md:128`).
+
+**Las dos salidas, tal cual se os pidieron:**
+1. **Excepción escrita:** contestáis en SCRUM-914 que S1 puede tocar `borradoMerchant.ts` y `anonimizarMerchant.ts` para este ticket (y, si queréis, en qué sitio del orden va). Nuestra S0 lo declara en `dos-equipos.md` §3.4, y S1 hace esquema + dominio + rutas + los seis criterios en un solo PR.
+2. **Rama compartida:** S1 abre la rama con el esquema y el servidor y escribe aquí su nombre, y una sesión de J3 empuja a esa misma rama el commit del criterio 3 antes de que el PR pueda entrar.
+
+**Una cosa que conviene mirar ya, decidáis lo que decidáis** (también en c.19414): la FORMA de `equipments` no la ha medido nadie. Vuestro registro del 29-sep comprobó que cada objeto existe (23/23), no sus columnas, y `CREATE TABLE IF NOT EXISTS` mira el nombre. Hay que medirla columna a columna contra `docs/sql/scrum-914-equipos-del-cliente.sql`; nuestros árboles no tienen claves de base.
+
+### 25.4 · J1 · «📋 Copiar enlace» en la factura copia la PORTADA de yaqu.app cuando no hay token
+
+**Lo que pasa:** cuando el WhatsApp de una factura falla, la ficha pinta la barra de salidas (`waFallbackBar`) con un «📋 Copiar enlace». Si la factura no trae `payToken`, el enlace que se copia es `location.origin`: la portada de yaqu.app. **El profesional se lo manda al cliente creyendo que es su factura.** Un botón que copia un enlace falso con forma de bueno es peor que no tener botón.
+· **Dónde, medido con `git grep` sobre `origin/main`:** `invoiceDetailView.js:405` (fallo del envío) y `:421` (fallo de red): `link: payToken ? location.origin + '/pay/invoice/' + payToken : location.origin`. El fichero es **J1** (`dos-equipos.md:143`, medido con `carriles.mjs`).
+· **El mismo patrón está en un fichero NUESTRO** (`jobDetailView.js:1475`, S2): ése lo arreglamos nosotros. Es el gemelo, y conviene que los dos cambien igual.
+· **Lo que NO hemos medido:** cuántas facturas llegan a esa barra sin `payToken`. Leído en el código, no visto en pantalla. Visto por S4 al medir la ficha del albarán (SCRUM-1236e).
