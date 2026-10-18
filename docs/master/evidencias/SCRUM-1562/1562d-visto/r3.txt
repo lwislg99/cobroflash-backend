@@ -1,0 +1,244 @@
+﻿{
+ "ancho": 390,
+ "alto": 844,
+ "servidoLlevaArreglo": true,
+ "filas": 2,
+ "verDetalleEnFilas": 2,
+ "primeraFila": {
+  "cliente": "Cliente de pruebas QA",
+  "botones": [
+   "Agendar",
+   "Ver detalle",
+   "⋯"
+  ]
+ },
+ "focoInicial": "BODY",
+ "tabHastaVerDetalleFila0": 28,
+ "trRecibioFoco": false,
+ "recorrido": [
+  "1:BUTTON«Inicio»",
+  "2:BUTTON«Solicitudes»",
+  "3:BUTTON«Trabajos»",
+  "4:BUTTON«Presupuestos»",
+  "5:BUTTON«Albaranes»",
+  "6:BUTTON«Partes por valorar»",
+  "7:BUTTON«Facturas»",
+  "8:BUTTON«Cobros»",
+  "9:BUTTON«Clientes»",
+  "10:BUTTON«Productos»",
+  "11:BUTTON«Proveedores»",
+  "12:BUTTON«Gastos»",
+  "13:BUTTON«Informes»",
+  "14:BUTTON«Libro de registro»",
+  "15:BUTTON«Facturas recibidas»",
+  "16:BUTTON«Equipo»",
+  "17:BUTTON«Planes»",
+  "18:BUTTON«Configuración»",
+  "19:BUTTON«Salir»",
+  "20:BUTTON«Menú»",
+  "21:BUTTON«Nuevo trabajo»",
+  "22:BUTTON«Partes por valorar»",
+  "23:BUTTON«Todos · 2»",
+  "24:BUTTON«Pendiente · 1»",
+  "25:BUTTON«Parcial · 0»",
+  "26:BUTTON«Pagado · 0»",
+  "27:BUTTON«Agendar»[fila0]",
+  "28:BUTTON«Ver detalle»[fila0]"
+ ],
+ "anillo": {
+  "focusVisible": true,
+  "boxShadow": "rgba(34, 197, 94, 0.3) 0px 0px 0px 3px",
+  "outline": "none 3px rgb(51, 60, 55)",
+  "caja": {
+   "x": 126,
+   "y": 720,
+   "w": 89,
+   "h": 44
+  },
+  "recortan": [
+   {
+    "el": "TABLE.table.table--cards-mobile.table--trabajos",
+    "overflow": "auto",
+    "margenIzq": 113,
+    "margenDer": 163,
+    "margenArr": 149,
+    "margenAba": 198
+   },
+   {
+    "el": "DIV.table-scroll",
+    "overflow": "auto",
+    "margenIzq": 113,
+    "margenDer": 163,
+    "margenArr": 149,
+    "margenAba": 198
+   },
+   {
+    "el": "DIV.customers-card.jobs-card",
+    "overflow": "hidden",
+    "margenIzq": 114,
+    "margenDer": 164,
+    "margenArr": 150,
+    "margenAba": 199
+   }
+  ],
+  "recorteCambiaConElFoco": true,
+  "controlRecorteVeUnBorde": true
+ },
+ "enterSobre": {
+  "tag": "BUTTON",
+  "texto": "Ver detalle",
+  "clase": "btn-ghost btn-sm",
+  "fila": 0,
+  "esFila": false
+ },
+ "enter": {
+  "hash": "#jobs-detail/77",
+  "nav": [
+   [
+    "jobs-detail",
+    77
+   ]
+  ],
+  "h": "Trabajo"
+ },
+ "ratonFila": {
+  "hash": "#jobs-detail/77",
+  "nav": [
+   [
+    "jobs-detail",
+    77
+   ]
+  ]
+ },
+ "ratonBoton": {
+  "hash": "#jobs-detail/77",
+  "nav": [
+   [
+    "jobs-detail",
+    77
+   ]
+  ]
+ },
+ "gets": 125,
+ "abortadas": [
+  "POST /admin/entorno"
+ ]
+}
+{
+ "ancho": 1280,
+ "alto": 800,
+ "servidoLlevaArreglo": true,
+ "filas": 2,
+ "verDetalleEnFilas": 2,
+ "primeraFila": {
+  "cliente": "Cliente de pruebas QA",
+  "botones": [
+   "Agendar",
+   "Ver detalle",
+   "⋯"
+  ]
+ },
+ "focoInicial": "BODY",
+ "tabHastaVerDetalleFila0": 28,
+ "trRecibioFoco": false,
+ "recorrido": [
+  "1:BUTTON«Inicio»",
+  "2:BUTTON«Solicitudes»",
+  "3:BUTTON«Trabajos»",
+  "4:BUTTON«Presupuestos»",
+  "5:BUTTON«Albaranes»",
+  "6:BUTTON«Partes por valorar»",
+  "7:BUTTON«Facturas»",
+  "8:BUTTON«Cobros»",
+  "9:BUTTON«Clientes»",
+  "10:BUTTON«Productos»",
+  "11:BUTTON«Proveedores»",
+  "12:BUTTON«Gastos»",
+  "13:BUTTON«Informes»",
+  "14:BUTTON«Libro de registro»",
+  "15:BUTTON«Facturas recibidas»",
+  "16:BUTTON«Equipo»",
+  "17:BUTTON«Planes»",
+  "18:BUTTON«Configuración»",
+  "19:BUTTON«Salir»",
+  "20:INPUT«»",
+  "21:BUTTON«Nuevo trabajo N»",
+  "22:BUTTON«Partes por valorar»",
+  "23:BUTTON«Todos · 2»",
+  "24:BUTTON«Pendiente · 1»",
+  "25:BUTTON«Parcial · 0»",
+  "26:BUTTON«Pagado · 0»",
+  "27:BUTTON«Agendar»[fila0]",
+  "28:BUTTON«Ver detalle»[fila0]"
+ ],
+ "anillo": {
+  "focusVisible": true,
+  "boxShadow": "rgba(34, 197, 94, 0.3) 0px 0px 0px 3px",
+  "outline": "none 3px rgb(51, 60, 55)",
+  "caja": {
+   "x": 1000,
+   "y": 492,
+   "w": 89,
+   "h": 44
+  },
+  "recortan": [
+   {
+    "el": "DIV.table-scroll",
+    "overflow": "auto",
+    "margenIzq": 727,
+    "margenDer": 167,
+    "margenArr": 89,
+    "margenAba": 81
+   },
+   {
+    "el": "DIV.customers-card.jobs-card",
+    "overflow": "hidden",
+    "margenIzq": 728,
+    "margenDer": 168,
+    "margenArr": 90,
+    "margenAba": 82
+   }
+  ],
+  "recorteCambiaConElFoco": true,
+  "controlRecorteVeUnBorde": true
+ },
+ "enterSobre": {
+  "tag": "BUTTON",
+  "texto": "Ver detalle",
+  "clase": "btn-ghost btn-sm",
+  "fila": 0,
+  "esFila": false
+ },
+ "enter": {
+  "hash": "#jobs-detail/77",
+  "nav": [
+   [
+    "jobs-detail",
+    77
+   ]
+  ],
+  "h": "Trabajo"
+ },
+ "ratonFila": {
+  "hash": "#jobs-detail/77",
+  "nav": [
+   [
+    "jobs-detail",
+    77
+   ]
+  ]
+ },
+ "ratonBoton": {
+  "hash": "#jobs-detail/77",
+  "nav": [
+   [
+    "jobs-detail",
+    77
+   ]
+  ]
+ },
+ "gets": 125,
+ "abortadas": [
+  "POST /admin/entorno"
+ ]
+}

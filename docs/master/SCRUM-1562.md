@@ -191,3 +191,77 @@ fila de Trabajos pasa de «🔴 alternativa nativa: no» a «sí: «Ver detalle�
 rojos. Nueve son del cliente de Prisma desfasado (`Merchant.activityKind`, 515 columnas frente a 514:
 222, 235 ×3, 252, 461 ×2, 733 ×2) y uno de entorno (1321: el temporal está en otra unidad). Los dos de SCRUM-1340 / 976 eran
 esta entrada sin `**Skill UI:**`, y por eso se ha escrito.
+
+## 18-oct-2026 · S4 · 1562d VISTO en yaqu.app (Trabajos con teclado)
+
+**Medido contra:** `origin/main` = `57b0bc82215bf0a6ae9295ba758dff65f6940016` · 2026-10-18T17:01:52Z
+
+Ancla de `node scripts/equipo/ancla.mjs`. `https://yaqu.app/version` = `57b0bc82…` (el merge de #2561):
+producción sirve `main`. Sólo registro y evidencias; no se toca código.
+
+A9: aviso → cicatriz S4 «leí el anillo de foco con getComputedStyle justo después del Tab y salió «sin anillo»: medía el arranque de la transición de box-shadow, no el estado final» — no se pudo comprobar: las sondas de navegador viven fuera del repositorio y ningún test las corre
+
+**Cómo.** `playwright-core` contra `yaqu.app/dashboard/#jobs`, cuenta QA, `serviceWorkers:'block'`, sólo
+GET: lo demás se aborta y se cuenta (en cada pasada, un único `POST /admin/entorno`, abortado). 390×844
+(móvil, táctil) y 1280×800. Tabulador REAL desde la página recién cargada (foco en `BODY`), Enter real,
+clic real. Un espía envuelve `renderAppView` sin cambiar lo que hace, para contar navegaciones. Datos de
+QA: 2 Trabajos, los dos en «Sin agendar»; la 1ª fila es «Cliente de pruebas QA» (`jobId` 77), con
+«Agendar · Ver detalle · ⋯». Script y salidas en `docs/master/evidencias/SCRUM-1562/1562d-visto/`.
+
+**El «antes», con el mismo instrumento:** la misma pasada, pero el GET de `jobsView.js` se contesta con
+el de `57b0bc82^1` (`r4-antes.txt`). Control: en esa pasada, 0 filas con «Ver detalle»; en la de
+producción, 2 de 2.
+
+| | antes de #2561 | producción (390 y 1280, igual) |
+|---|---|---|
+| ① paradas de Tab en la 1ª fila | 27 «Agendar» · 28 «⋯» · la 29 ya es la 2ª fila | 27 «Agendar» · **28 «Ver detalle»** |
+| ¿alguna lleva a la ficha? | **ninguna** («⋯» trae Técnicos/Agendar; no la ficha) | **sí, la 28** |
+| ¿el `<tr>` recibe foco? | no | no (a propósito: sin `role` en la fila) |
+| ② anillo con el foco puesto por Tab | — | `:focus-visible` sí · `box-shadow: rgba(34,197,94,.3) 0 0 0 3px` (`--ring`) · **se ve** en la captura |
+| ③ Enter sobre «Ver detalle» | — | `#jobs-detail/77`, **1** navegación, título «Trabajo» |
+| ④ ratón: clic en el nombre del cliente | 1 navegación a `jobs-detail` 77 | **1** navegación a `jobs-detail` 77 (igual) |
+| ④ ratón: clic en «Ver detalle» | — | **1** navegación (el `stopPropagation` aguanta: no navega dos veces) |
+
+Las 26 paradas de antes de la tabla son el menú lateral (19), «Menú» o el buscador, «Nuevo trabajo»,
+«Partes por valorar» y los 4 filtros de cobro: iguales antes y después.
+
+**② El anillo, y por qué la 1ª medida dijo lo contrario.** La primera pasada (`r1-sin-espera-transicion.txt`)
+leyó `box-shadow: rgba(0,0,0,0) 0 0 0 0` y la captura salía sin anillo: medía en el ARRANQUE de la
+transición (`.btn-ghost` lleva `transition: … box-shadow .15s`, FRONT-1 de `styles.css`). Con 600 ms
+de espera, el anillo está. Lo que le pasó a Partes (otra regla le pisaba la sombra) **no le pasa a
+Trabajos**: `.btn-ghost` no declara `box-shadow`, y el valor final es el `--ring` global. Ningún
+ancestro lo recorta: los que tienen `overflow` distinto de `visible` (`.table-scroll`, `.jobs-card`)
+quedan a ≥ 81 px del botón. Control del instrumento: un `outline` rojo forzado SÍ cambia el recorte.
+Capturas: `trabajos-390-ver-detalle-con-foco.png` (y `-sin-foco`), `trabajos-1280-ver-detalle-con-foco.png`,
+y la pantalla entera a 390 y 1280.
+
+🔵 **Visto y no tocado:** el anillo es `rgba(34,197,94,.30)` sobre `--neutral-100`: verde muy claro,
+contraste del orden de 1,3:1 con el fondo (cálculo mío sobre blanco, no medido con herramienta). Se ve
+en la captura, pero es tenue. Es el `--ring` GLOBAL de todo el panel (`styles.css:143`), no de esta fila:
+no es de este ticket ni de mi carril.
+
+**Corrijo mi entrada de arriba (AB6, 44 px).** Escribí «entre 641 px y escritorio, `btn-sm` mide ~30 px».
+**Falso para esta pantalla:** a 1280 «Ver detalle» mide **89×44**, igual que a 390. Lo pone
+`.jobs-pantalla .btn-ghost { min-height: 44px; }` (`styles.css:4292`), que no miré.
+
+**La sonda de S3** (`sonda-div-clicables.mjs`), corrida sobre tres árboles sacados con `git archive`:
+
+| árbol | elementos NO nativos con clic |
+|---|---|
+| `226e8708` (la sonda recién entrada, antes de #2561) | 13 |
+| `origin/main` `57b0bc82` (con #2561) | **13** |
+| `origin/scrum-1562c-partes-oficina-con-teclado` `0a103940` (#2560 de S2, ABIERTO; lleva dentro #2561) | **12** |
+
+**No baja de 13 a 11 con lo mío, ni a 10 con lo de S2:** baja a 12, y sólo por S2. La premisa del
+encargo no casa con lo que la sonda cuenta: saca TODO elemento no nativo con clic, también si lleva
+alternativa nativa dentro (Clientes y Presupuestos siguen saliendo, con su «📊 Historial» y su «Ver
+detalle»). Mis dos `TR.jobs-fila` siguen teniendo su clic de ratón, a propósito, y por eso siguen
+contando. Lo que cambia con #2561 es su `nativosDentro`, que gana `BUTTON«Ver detalle»`; entre
+`antes` y `main`, esas 2 líneas y ninguna más (`sonda-antes.txt`, `sonda-main.txt`). Lo de S2 sí quita
+una fila de la cuenta: `DIV.customers-card` de `renderPartesOficinaView` desaparece (`sonda-s2.txt`).
+Lo que sí se puede contar como «arreglado»: filas con clic y SIN alternativa nativa de la tabla de S3.
+
+**Lo que no se ha medido:** las otras escaleras de la fila («▶ Empezar», «💰 Cobrar el resto», un
+técnico sin escalera): QA sólo tiene Trabajos «Sin agendar», y crear otros para verlo exige escribir.
+En el código, `jobRow` añade el botón sin condición de estado; el test lo ve en las 2 filas del censo
+(«+ Nuevo albarán» y «Agendar»), no en cada estado; en producción, sólo visto en «Agendar». Tampoco lector de pantalla.
