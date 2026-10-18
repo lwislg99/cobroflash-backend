@@ -277,3 +277,23 @@ A9: comprobación → `tests/scrum1233h-copiar-enlace-sin-enlace.test.mjs`
 salidas y copia `…/pay/invoice/tokSONDA123`; sin teléfono, cobro no creado y error de red traen «Enviar por email» y
 «Reintentar WhatsApp», y no hay nada que copiar. ⚠️ En una 2.ª pasada el control no llegó a abrir el «⋯» (mi sonda,
 no el producto): esa pasada no cuenta. Prod a pelo, en la misma tanda: los tres casos siguen copiando `https://yaqu.app`.
+### 1233h · DIVERGENCIA DECLARADA de A20.5 (18-oct ~19:15Z)
+
+**Lo que dice la letra** (`docs/SPRINT_DEMO_READY_EXT3.md:417-420`, literal): «**A20.5 `[CC]` — Fallback WhatsApp
+completo (J5).** En TODO fallo de envío (UI y cron): acciones SIEMPRE ofrecidas — Copiar enlace · Enviar por email ·
+Reintentar. 131026 → "copia el enlace y mándaselo por SMS o llámale". Cron que falla registra y aparece en BO. Nunca
+fallo silencioso.»
+
+**Lo que hace ahora el código:** con enlace, las tres salidas, como siempre. SIN enlace (la factura aún no tiene cobro
+y el reenvío no devolvió `pay_token`), sólo dos: «Enviar por email» y «Reintentar WhatsApp». «Copiar enlace» no se
+pinta (`waFallbackBar`, `public/dashboard/js/api.js`, `if (link)`), y el aviso de error sigue saliendo: no es un
+fallo silencioso.
+
+**Por qué:** la regla se escribió dando por hecho que había enlace. Nadie decidió «enseña un botón que copia la
+portada», y eso es lo que pasaba (medido arriba, tres casos). La letra choca; la intención («que el profesional tenga
+una salida que funcione, nunca un callejón») no: un enlace falso no la cumple, la contradice. Quitar una mentira no
+añade texto (regla 39).
+
+**Estado:** decidido por el orquestador el 18-oct que el arreglo entra con la divergencia DECLARADA. **La enmienda
+de A20.5 la lleva el orquestador al fundador: está PENDIENTE, no aprobada.** El comentario de `waFallbackBar` remite
+aquí.

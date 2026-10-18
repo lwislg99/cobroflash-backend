@@ -986,6 +986,9 @@ window.waCollectRestSent = waCollectRestSent;
 // era su factura (medido el 18-oct en la ficha del Trabajo: sin teléfono, cobro no creado y error
 // de red, los tres). Un enlace falso con forma de bueno es peor que no ofrecer copiar nada; el
 // email y el reintento se quedan. Quien llama pasa `null` cuando no tiene token, nunca la portada.
+// ⚠️ DIVERGE A PROPÓSITO de la LETRA de A20.5 («SIEMPRE … Copiar enlace»), no de su intención: la
+// regla daba por hecho que había enlace. Declarado en docs/master/SCRUM-1233.md §1233h; la enmienda
+// está PENDIENTE del fundador, no aprobada.
 function waFallbackBar({ link, onEmail, onRetry, emailDisabledReason }) {
   const bar = document.createElement('div');
   bar.className = 'wa-fallback-bar';
