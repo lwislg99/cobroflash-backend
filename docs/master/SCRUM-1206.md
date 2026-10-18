@@ -274,3 +274,64 @@ Salidas: `ver1206c-presupuesto-antes-17oct.txt` y `ver1206c-presupuesto-despues-
 **Con esto, las dos mitades de SCRUM-1206 están en `main` y vistas en producción:** el albarán (1206b, y 1206d el
 estilo de sus rótulos) y el presupuesto (1206c). Cerrar es del orquestador.
 A9: aviso → A10 «Cero resultados con tu vocabulario no es silencio del documento.» — no se pudo comprobar: buscar con las palabras del propio documento es una elección de quien busca y ningún test la ve; nació aquí (el orquestador buscó «versalitas», `text-transform` y `uppercase`, y `DESIGN.md` dice «MAYÚSCULAS»)
+
+## 1206e — la ficha del albarán, en rejilla: «se ve fatal la pantalla de albaranes» (S4, 18-oct)
+
+**Medido contra:** `origin/main` = `bbb9bfe544b692765e84dec7d1f6686bfd526618` · 2026-10-18T18:16:33Z
+
+**Skill UI:** cargada (`yaqu-premium-ui`) ANTES de tocar el código. Checklist AB6 abajo.
+
+A9: comprobación → `tests/scrum1206e-ficha-del-albaran-en-rejilla.test.mjs`
+
+**El encargo.** El fundador, sobre la ficha del albarán `AB260001` en escritorio: «se ve fatal la pantalla de
+albaranes». El orquestador lo trajo y aprobó la opción A de S4 (18-oct): rejilla en el estilo en línea que ya
+era de esta ficha, sin tocar `styles.css` (S2), sin filete, sin tokens nuevos y **a 390 que no cambie nada**.
+La B (pintar las LÍNEAS del albarán como cuerpo de la ficha, que hoy sólo se pasan al pad de firma) **no se
+construye**: toca `styles.css` y es otra talla, y la lleva el orquestador al fundador.
+
+**ANTES, medido en yaqu.app** (cuenta QA, sólo GET, `serviceWorkers:'block'`; el único abortado, `POST
+/admin/entorno`; banco `medir-ficha.mjs`): la ficha es SÓLO el rail, cinco filas de 78 px una debajo de otra,
+432 px de alto. Y el rail se estira a todo el ancho: 982 px a 1280, 1142 a 1440 y 1622 a 1920, para un
+contenido de 243 px como mucho. Igual en el #46 y en el #47.
+
+**La causa:** `.detail-rail` está pensada como la columna DERECHA, de 220–300 px, de `.detail-cuerpo--con-rail`
+(`styles.css`, SCRUM-316), con su filete izquierdo. `albaranDetailView.js` la cuelga de la página sin cuerpo.
+
+**El cambio** (sólo `albaranDetailView.js`): el `cssText` del rail pasa de `flex` en columna a `display:grid` con
+`repeat(auto-fit, minmax(max(220px, 25%), 1fr))`, `gap: 8px 0` y `border-left: none`. Las cuatro filas de texto
+(presupuesto, cabecera, observaciones, fotos) llevan `grid-column: 1 / -1`. Sin texto nuevo y sin CSS nuevo.
+
+**DESPUÉS, medido en yaqu.app ANTES del merge**, con el mismo banco y el `albaranDetailView.js` de esta rama
+servido en lugar del de producción (`FICHERO=…`; sólo cambia ese GET, `sustituido: 1` en las ocho pasadas):
+
+| ancho | rail ANTES | rail DESPUÉS | columnas |
+|---|---|---|---|
+| 1280 | 982 × 432 | **982 × 174** | 4 × 245,5 px: Trabajo, Cliente, Dirección y Facturación en una fila; Observaciones, 982 |
+| 1440 | 1142 × 432 | **1142 × 174** | 4 × 285,5 |
+| 1920 | 1622 × 432 | **1622 × 174** | 4 × 405,5 |
+| 390 (#46) | 364 × 433 | **364 × 433** | 1: las cinco filas en las MISMAS posiciones que antes |
+| 390 (#47) | 364 × 453 | **364 × 453** | 1: ídem |
+
+El «de 432 a unos 170» que propuse era una estimación; la medida es **174**.
+
+**Lo que cazó la medida, y por qué el `max(…, 25%)`:** la primera versión llevaba `minmax(220px, 1fr)` a secas.
+A 1280 salía igual, pero a 1440 y 1920 la fila de Observaciones, a todo el ancho, mantenía vivas las columnas
+vacías de `auto-fit`: 5 y 7 columnas, los cuatro datos en 928 px y el borde de esa fila cortado a media
+tarjeta (visto en la captura de 1920). Con cuatro columnas como mucho, los datos ocupan el ancho entero.
+
+**El test:** rojo primero contra `main` (2 de 2 caen: el rail no es rejilla y «Presupuesto #7» no va a todo el
+ancho). Con el cambio, 2/2, y los vecinos `scrum1206d` y `scrum302` (16/16 en total). **Mutación:** quitando el
+`grid-column` de la fila de fotos, cae «las filas de TEXTO van a todo el ancho» con «Fotos» en el mensaje.
+
+**AB6:**
+- Contraste, foco y etiquetas: no cambian (ni colores, ni controles, ni textos). El enlace del presupuesto
+  conserva su regla de 44 px (`.detail-rail-linea a`).
+- Capturas antes/después en `docs/master/evidencias/SCRUM-1206/1206e/` (#46 a 390, 1280 y 1920).
+- Matriz: 390 (móvil), 1280, 1440 y 1920 medidos; tablet NO medido.
+- Textos largos: las filas de texto van a todo el ancho, así que no se parten en celdas de 220 px. Importes:
+  la ficha no pinta ninguno.
+- ⚠️ **Tensión con la skill, escrita:** `yaqu-premium-ui` pide «cero estilos inline aleatorios». El rail ya vivía
+  en un `cssText` de este fichero, y el orquestador pidió el cambio ahí precisamente para no tocar
+  `styles.css`, que es de S2. Si se quiere una clase, es un cambio de S2.
+
+**Pendiente:** verlo en yaqu.app después del merge (el JS servido por producción, no inyectado).
