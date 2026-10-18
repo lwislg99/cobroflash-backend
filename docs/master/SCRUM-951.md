@@ -484,3 +484,24 @@ En los dos casos los tres rojos son los mismos: «declara contra qué main…»,
 
 A9: aviso → A10 «Cuando dos personas distintas se equivocan igual el mismo día, no falta cuidado: falta una herramienta, o que la que ya existe sea el camino por defecto.» — no se pudo comprobar: el ancla mala la caza `scrum267`, y la A9 que falta, `scrum1294`; lo que ningún guard ve es si el ancla se escribió a mano. Hacer de `ancla.mjs` el camino por defecto y meter `scrum1294` en `guards:entrada` es de S5
 A9: aviso → cicatriz S0 «Expliqué un rojo de CI con la premisa del encargo sin leer qué test había caído» — no se pudo comprobar: leer el nombre del test antes de explicar un rojo es una conducta, y ningún guard ve la explicación que se escribe sin leerlo
+
+## SCRUM-951j · Un banco que busca un nodo por su clase EXACTA se queda CIEGO si le añades otra clase (18-oct-2026)
+
+**Medido contra:** `origin/main` = `214283d7958a13b0280e2b64ac041856ad275cf2` · 2026-10-18T18:55:56Z
+
+A9: comprobación → `tests/scrum1562c-partes-oficina-con-teclado.test.mjs`
+
+Trampa §14 de `docs/equipo/trampas-del-entorno.md`. La reportó la S2 tras el rojo de #2560 y llevaba en el traspaso de la S0 desde la tarde del 18-oct, sin escribir. Se escribe con lo medido, no con lo recordado.
+
+| qué | dónde se mide | resultado |
+|---|---|---|
+| el cambio que la disparó | `git show a92f741e -- public/dashboard/js/parteOficinaView.js` | `fila.className = 'customers-card parte-oficina-fila'` |
+| cómo localiza el banco | `tests/scrum1285-guardado-en-vuelo.test.mjs:90` | `n.className === 'customers-card'`, igualdad exacta |
+| el rojo | run `39084375339` (sobre `f096b8f2`), `gh run view --log-failed` | los 4 casos de «oficina» de SCRUM-1285, con `🔴 CIEGO: no sale el parte en la lista` |
+| el arreglo | commit `0a103940`; `styles.css:2487-2488` en `main` | la fila vuelve a `customers-card` a secas; el CSS cuelga de `#po-lista > button.customers-card` |
+| el verde | run `39147335140` (sobre `0a103940`) | ninguna línea roja en el obligatorio |
+| cuántos bancos tienen la forma | `git grep -c "className === '" origin/main -- tests/` sobre `74e60ebe` | 49 apariciones en 26 ficheros, sin clasificar; control: sale `scrum1285:90` |
+
+**No medido por S0:** la mutación de la clase doble. La hizo la S2 (`0a103940`) y la confirma el log del CI; repetirla es tocar `public/`.
+
+La comprobación de la línea A9 es el test de la S2, que exige la clase exacta y cae en su propio fichero si alguien vuelve a añadir una segunda.
