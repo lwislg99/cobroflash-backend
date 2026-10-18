@@ -319,3 +319,16 @@ texto no está.** La pregunta del webhook se hizo (turno 36421). El último mens
 línea en Railway?». La respuesta (turno 36531, uuid `c1f48323-a767-446d-807d-793047029345`) es, literal,
 **«1 si conectame / 2 si hazlo»**, y contesta a ESA lista. **El STOP de cobro sigue puesto** hasta una respuesta
 del fundador a la pregunta del webhook, copiada literal con su localizador.
+
+**Actualización (hora de GitHub 18:31:19Z): la autorización NO constaba a las 18:19 y SÍ consta desde las 18:35.**
+El orquestador volvió a preguntarlo SOLO, sin otra lista al lado (turno 36703, 18:27:33Z): «¿Autorizas que se
+arregle el fallo del webhook de Stripe? Es la fecha que no se guarda al suscribirse. Hoy no mueve dinero real (está
+en pruebas), pero toca el flujo de cobro, y por eso necesito tu sí o tu no escrito. Contéstame sólo a esto.»
+
+> **«si autorizo»** — el fundador · transcripción `ed676fd1-feb4-4658-bda2-01f4bf9fb3fc.jsonl` · turno 36706 ·
+> `uuid: 1c5a7185-addc-4245-9438-ef4f0313eb81` · `ts: 2026-10-18T18:35:52.798Z` (reloj de la transcripción) ·
+> `type: user`, sólo texto · es el primer turno humano después de la pregunta.
+
+Leído por S1 en la transcripción, no recibido de oídas. **Con eso el STOP de cobro queda levantado para ESTE
+arreglo**, que hace J2: el fichero sigue siendo suyo. Lo de arriba no se borra: es por qué una autorización se
+pide sola y se lee con su localizador. El «2 autorizo» que circuló antes no está en la transcripción.
