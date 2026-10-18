@@ -15,6 +15,7 @@ import { prisma } from '../../../../core/db/prisma';
 import { recordAudit, actorDeRequest, requestIp } from '../../../system/audit.service'; // SCRUM-207
 import { requireActivePlan } from '../../../../core/http/authMiddleware'; // SCRUM-47 (S1: enviar WA ✅ técnico, sin requireRole)
 import { sendAlbaranFirmadoWhatsApp, sendAlbaranParaFirmarWhatsApp, type AlbaranFirmadoSendResult } from '../../domain/albaranWhatsApp.service'; // SCRUM-47/49
+import { leerEntregaParaFirmar } from '../../domain/entregaParaFirmar'; // SCRUM-49b
 import { sendSuccessBody, sendFailureBody, type SendFailureReason } from '../../../../lib/sendOutcome'; // SCRUM-126
 import {
   ALBARAN_MODOS_VALORACION,
@@ -903,6 +904,8 @@ router.get('/:id', async (req, res) => {
     const fotos = await prisma.attachment.count({
       where: { merchantId: req.merchantId, entityType: 'albaran', entityId: albaran.id },
     });
+    // SCRUM-49b · lo que de verdad pasó con el último WhatsApp «para firmar». Sólo LEE.
+    const entregaParaFirmar = await leerEntregaParaFirmar(req.merchantId, albaran.id, albaran.enviadoParaFirmaAt);
 
     return res.json({
       ...serializeAlbaran(albaran),
@@ -918,6 +921,17 @@ router.get('/:id', async (req, res) => {
       pendientes: pendientePorLinea(lineas, facturado),
       // Derivado, NO un estado (Parte L intacta): el modelo solo tiene borrador|emitido|firmado.
       enviadoParaFirma: !!albaran.enviadoParaFirmaAt && albaran.estado === 'emitido',
+      // SCRUM-49b · `enviadoParaFirma` dice que se INTENTÓ (la marca se escribe antes de llamar a
+      // Meta), no que llegara. Lo que se puede afirmar sale de aquí: entregado · aceptado ·
+      // fallido (en el acto o después) · sin rastro · no se pudo leer · nunca enviado.
+      entregaParaFirmar,
+      // SCRUM-49c · la credencial de la página pública de firma (`/albaran/<token>`), para que el
+      // comercio pueda copiar el enlace: el mismo precedente que `quote.payToken` e `invoice.payToken`,
+      // y la misma credencial que ya viaja dentro del WhatsApp. Va AQUÍ y no en `serializeAlbaran`, a
+      // propósito: sale sólo en la ficha, que ya pasó por tenencia y por «es suyo» (SCRUM-467), y no en
+      // listas ni en otras respuestas. `null` hasta el primer envío para firmar, que es quien lo crea:
+      // esta ruta sólo LEE, no lo genera.
+      firmaToken: albaran.firmaToken ?? null,
       cabenMasFotos: fotos < FOTOS_MAX_POR_ALBARAN, // SCRUM-1302 (G)
     });
   } catch (err: any) {
