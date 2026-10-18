@@ -83,6 +83,7 @@ import {
 } from '../../domain/albaranAFactura';
 // SCRUM-195: el número del adicional se reserva DENTRO de su transacción, igual que el del alta.
 import { allocateQuoteNumber } from '../../../quotes/domain/quoteNumber.service';
+import { numeroVisibleDelPresupuesto } from '../../../quotes/domain/revision'; // SCRUM-1444c
 // SCRUM-728 · la sección crítica de la serie saturada: se traduce a un aviso legible en vez
 // de un `internal_error`. NO sube el timeout ni toca el cerrojo.
 import { esCerrojoSaturado, cuerpoCerrojoSaturado, ESTADO_CERROJO_SATURADO } from '../../../invoicing/domain/cerrojoSaturado';
@@ -888,7 +889,7 @@ router.get('/:id', async (req, res) => {
     const quote = job?.quoteId
       ? await prisma.quote.findFirst({
           where: { id: job.quoteId, merchantId: req.merchantId },
-          select: { id: true, quoteNumber: true },
+          select: { id: true, quoteNumber: true, revision: true }, // SCRUM-1444c: la revisión se pide, no se supone 0
         })
       : null;
 
@@ -914,7 +915,10 @@ router.get('/:id', async (req, res) => {
       customer,
       // Del DOCUMENTO. `null` cuando el Trabajo no vino de un presupuesto (`Job.quoteId` es
       // nullable): el rail lo omite en vez de pintar un enlace que no lleva a ningún sitio.
-      quote: quote ? { id: quote.id, number: quote.quoteNumber ?? quote.id } : null,
+      quote: quote
+        ? { id: quote.id, number: quote.quoteNumber ?? quote.id,
+            numeroVisible: numeroVisibleDelPresupuesto(quote) } // SCRUM-1444c: `number` sigue mientras S4 migra
+        : null,
       // Los TRES valores, no un booleano (SCRUM-170/302).
       estadoFacturacion,
       // Lo que queda por facturar, por línea: es lo que hace verdadero el «parcial».

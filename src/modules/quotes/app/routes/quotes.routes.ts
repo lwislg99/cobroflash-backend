@@ -25,6 +25,7 @@ import { sendWhatsAppText } from '../../../../integrations/whatsapp';
 import { notifyMerchantAlert } from '../../../../integrations/whatsappNotifications';
 import { resolveBillingPlan, distributeStageAmounts, validateCustomBillingPlan } from '../../domain/billingPlan';
 import { allocateQuoteNumber, displayQuoteNumber } from '../../domain/quoteNumber.service';
+import { numeroVisibleDelPresupuesto } from '../../domain/revision'; // SCRUM-1444c
 import { isQuoteExpired } from '../../domain/expire.service';
 import { getSession } from '../../../auth/domain/auth.service';
 
@@ -276,6 +277,7 @@ router.post('/create', async (req, res) => {
     return res.status(201).json({
       id: quote.id,
       number: quote.quoteNumber, // A1.2: número visible (por merchant); el id queda para links/API
+      numeroVisible: numeroVisibleDelPresupuesto(quote), // SCRUM-1444c: el número HECHO; `number` sigue mientras S2 migra
       status: quote.status,
       total: quote.total.toString(),
       currency: quote.currency,
