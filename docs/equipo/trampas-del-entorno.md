@@ -456,3 +456,50 @@ La forma que no se rompe al añadir una clase, `classList.contains(…)`, sale e
 ⚠️ **No medido por S0:** la mutación (volver a poner las dos clases y correr el banco). La hizo la S2 en
 `0a103940` («mutación con clase doble: caen los 4 del CI + el mío») y la confirma el log del CI de arriba; S0
 no la ha repetido, porque es un cambio en `public/`.
+
+## 15 · `FATAL ERROR: Reached heap limit` en el log de la tanda NO es un OOM de la tanda
+
+18-oct-2026 · SCRUM-951k · Sesión 5.
+
+**El síntoma.** En el log del job `build + tests` aparece, a media tanda:
+
+    FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory
+    ----- Native stack trace -----
+
+con unas cuarenta líneas de pila nativa. Parece que el runner se ha quedado sin memoria. **No es así: sale en
+TODAS las tandas, también en las verdes.**
+
+**La causa.** Lo imprime un test que funciona bien:
+`tests/scrum1525b-el-respaldo-por-correo.test.mjs`, «un hijo que muere por MEMORIA (sin pasar por su catch) se
+ve desde fuera y acaba en correo». Ese test lanza un hijo con `--max-old-space-size=24` y lo mata **a
+propósito**. `lanzarVolcado` (`scripts/respaldo-programado.mjs`) copia el stderr del hijo en el del padre,
+también a propósito, porque en Railway es lo que queda guardado. Las líneas de GC del volcado marcan 22-28 MB:
+es el tope de 24 MB del hijo, no el del runner. **La línea siguiente del log es el ✔ de ese test.**
+
+**Cómo se distingue, en 30 segundos.** Se busca la misma línea en una run VERDE de `main`:
+
+    gh run list -b main -w ci.yml -s success -L 1          # el id de la run
+    gh api "repos/<dueño>/<repo>/actions/runs/<id>/jobs"    # el id del job «build + tests»
+    gh api --allow-escape-sequences "repos/<dueño>/<repo>/actions/jobs/<job>/logs" | grep "FATAL ERROR"
+
+La contraprueba ya medida es la run **38524399363** (`main`, 14-oct-2026, `ℹ fail 0`). Trae la misma
+`FATAL ERROR` y el ✔ de `scrum1525b` justo debajo. ⚠️ Sin `--allow-escape-sequences`, `gh api` no escribe el
+log, sale sin nada y no da ningún error. Según el orquestador, así empezó el error del #2568: leyó ese vacío como «el
+log no dice nada», pasó a `gh run view --log-failed` y de ahí cogió la línea más alarmante. Un instrumento mudo
+le llevó a uno ruidoso.
+
+🔴 **Lo que vale para todo: el resumen final de la tanda manda sobre cualquier línea alarmante del cuerpo.**
+Ese resumen es el bloque `ℹ tests / ℹ pass / ℹ fail / ℹ skipped`, y debajo va `✖ failing tests:` con los
+nombres. Si llegó, la tanda no murió, y los rojos son los de esa lista. Un OOM de verdad de la tanda se ve de
+otra manera: el job se corta **sin** ese bloque, o hay un fichero que se queda sin resultados (§8).
+
+**El caso que lo destapó.** El 18-oct-2026, en el #2568 (`scrum-231b-exports-sin-cache-compartida`, run
+**39151663342**, job 117746392988), el FATAL salió a las 17:57:27Z. Se leyó como un OOM y se relanzó la run.
+Pero la tanda siguió viva **7 minutos más** y cerró con su resumen: `tests 11826 · pass 11718 · fail 19 ·
+skipped 89`. Los 19 rojos eran del propio diff (los censos de `scrum267`, `scrum859`, `scrum976`, `scrum1344` y
+`scrum1415`), y el relanzamiento sólo los habría repetido. Había además un dato a la vista que ya descartaba el
+OOM: **el job del trinquete de esa misma run corrió la tanda entera dos veces**, en el mismo tipo de runner, y
+salió en verde.
+
+⚠️ **No medido:** cuánta memoria pide la tanda en el pico, porque el log no lo dice. Tampoco hacía falta: no
+hubo ningún OOM de la tanda que medir.
