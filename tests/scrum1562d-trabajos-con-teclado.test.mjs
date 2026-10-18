@@ -1,4 +1,4 @@
-// tests/scrum1562c-trabajos-con-teclado.test.mjs — SCRUM-1562 (S4, 18-oct-2026)
+// tests/scrum1562d-trabajos-con-teclado.test.mjs — SCRUM-1562 (S4, 18-oct-2026)
 //
 // DESDE LA LISTA DE TRABAJOS, CON TECLADO, SE ABRE EL TRABAJO. Y CON RATÓN, IGUAL QUE ANTES.
 //

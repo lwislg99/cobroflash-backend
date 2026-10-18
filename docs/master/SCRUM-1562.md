@@ -49,13 +49,15 @@ Con teclado, desde esas tres listas no se abre ni una factura, ni un Trabajo, ni
 **Skill UI:** cargada (`yaqu-premium-ui`), pero DESPUÉS de escribir el cambio y antes del commit: lo
 recordó el guard de SCRUM-1340. El cambio se repasó contra su checklist AB6 (abajo). Sin CSS nuevo.
 
-**Medido contra:** `origin/main` = `ad9ec5634d49a41b1b8fef01d81235e1fbe5feaf` · 2026-10-18T00:33:36Z
+**Medido contra:** `origin/main` = `226e870856827873f9e8822af361221ea4ecf20b` · 2026-10-18T00:36:43Z
 
-Ancla de `node scripts/equipo/ancla.mjs` · rama `scrum-1562c-trabajos-con-teclado`, que lleva dentro
-la rama de S3 (`scrum-1562-sonda-filas-sin-teclado`, PR #2557, aún sin fusionar), porque la sonda y
-este registro vivían sólo allí. El orquestador los daba por «en main»: no lo estaban.
+Ancla de `node scripts/equipo/ancla.mjs` · rama `scrum-1562d-trabajos-con-teclado`. Al empezar, la
+sonda y este registro vivían sólo en la rama de S3 (PR #2557), y no en `main` como decía el encargo:
+la fusioné en esta rama. #2557 entró en `main` mientras yo trabajaba (226e8708).
+**El sufijo:** empecé con `1562c`; el control de antes del push lo encontró cogido por S2 (#2560,
+Partes de oficina), así que rama y test pasan a `1562d`.
 
-A9: comprobación → `tests/scrum1562c-trabajos-con-teclado.test.mjs`
+A9: comprobación → `tests/scrum1562d-trabajos-con-teclado.test.mjs`
 
 **Qué se ha elegido y por qué: la (b).** Un `<button>` «Ver detalle» dentro de cada `TR.jobs-fila`,
 en `.jobs-acciones`, entre la acción de la escalera y el «⋯». Es lo que ya hacen Presupuestos
@@ -82,7 +84,7 @@ albarán», emitir, firmar, recordar), pero con un rótulo que promete otra cosa
 «Agendar», «▶ Empezar», «💰 Cobrar el resto», ni en la de un técnico sin escalera. El defecto existe;
 es más estrecho de lo que decía el encargo.
 
-**El test: rojo primero.** `tests/scrum1562c-trabajos-con-teclado.test.mjs`, 6 casos.
+**El test: rojo primero.** `tests/scrum1562d-trabajos-con-teclado.test.mjs`, 6 casos.
 - Contra el `jobsView.js` de `main` (guardado con `git stash`): **2 pass, 4 fail**. El que importa
   falla por el motivo bueno: `fila 1 (… Cambio …): ningún botón ni enlace lleva a la ficha`.
 - Con el cambio: **6/6**.
