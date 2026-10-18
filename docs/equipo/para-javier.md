@@ -426,3 +426,31 @@ El fundador preguntó el **13-oct** qué falta para que nuestro software mande a
 · **Por qué os lo pasamos en vez de arreglarlo: `invoiceAdmin.ts` es de J1** (`.claude/carriles.json`) **y ese fichero lleva además la lógica del estado fiscal (des-pagar, R1)**, así que para nosotros es camino que se LEE (regla 38). **Lo hemos leído y no hemos tocado nada.**
 · ⚠️ **Y una pata que no es de código: la IP es dato personal.** **Si `docs/legal/` promete en algún sitio que no se expone, esto lo contradice** — conviene mirarlo antes del primer cliente real.
 · **Medido por S1 (equipo de Luis) el 17-oct-2026 sobre `origin/main` 44f3a6bf, leyendo código, sin tocar yaqu.app.** **De la misma auditoría, los hallazgos #3 (token del presupuesto) y #8 (clientes) salieron CERRADOS: el presupuesto ya usa token opaco de 16 bytes y clientes usa lista explícita sin `portalToken`.**
+
+## 22 ⛔ NO TOQUÉIS LA CASILLA: ya la hemos arreglado, y os arregla a vosotros también
+
+**En la §20 os avisamos de que `documentoAsignados.js` es un componente COMPARTIDO y os pedimos decidir quién lo arreglaba. Lo hemos hecho nosotros. Esto es el aviso.**
+
+**La casilla `INPUT.doc-asignados-casilla` pasa de 21 a 45 px**, y como el componente es el mismo, **vuestro detalle de FACTURA se arregla con él: `invoiceDetailView` baja de 5 controles cortos a 4** (medido en el banco). ⛔ **Que J1 NO la toque: si la arreglamos los dos, el segundo arreglo choca con el primero.**
+· **Cómo está hecho, por si queréis el mismo patrón:** CSS puro, `.doc-asignados-casilla::before` con `inset -12px`. **Es el mecanismo de SCRUM-786, que agranda el área de toque sin tocar la caja ni el `.btn-sm` global.** **Cero texto.**
+· **Va en nuestra rama `scrum-1559g-dieciseis-controles-nuestros-44px`.**
+· **Lo que SIGUE siendo vuestro de la §20: los 4 de `invoiceDetailView.js`, la casilla de fila de `invoicesView.js` (14 px), el enlace de `cobrosView.js` (19/17 px, el peor de la lista) y los 8 de `plansView.js` y `teamView.js`.**
+
+---
+
+## 23 🔴 CON TECLADO NO SE PUEDE ABRIR UNA FACTURA · y a vosotros os toca una de las dos sin salida
+
+**Medido el 18-oct sobre `origin/main` e59be9fa (SCRUM-1562).** Montamos las 29 vistas y buscamos los elementos que reciben clic y **no** son nativos (`button`, `a[href]`, `input`…). A cada uno le miramos `tabindex`, `role` y oyente de teclado, propio o heredado. **Control: la sonda SÍ distingue el caso bueno** — la actividad de Inicio sale con `tabindex=0`, `role=button` y `keydown`.
+
+**De los 9 que navegan sólo con ratón, dos son vuestros:**
+
+| vista | elemento | abre | fichero | dueño | ¿hay otra forma? |
+|---|---|---|---|---|---|
+| 🔴 **Facturas** | `TR` ×2 | el detalle de la factura | `invoicesView.js` | **J1** | **NO. Dentro sólo hay la casilla.** |
+| Clientes | `TR` ×3 | la ficha 360 | `customersView.js` | **J2** | SÍ: «📊 Historial» llama a la misma `openCustomer360` |
+
+🔴 **La de Facturas es la grave: desde esa lista, con teclado, NO SE PUEDE ABRIR UNA FACTURA.** Para un ratón funciona; para quien no usa ratón, esa pantalla no tiene salida. **La de Clientes está degradada pero se puede usar, porque el botón de historial hace lo mismo.**
+· **Las dos soluciones valen y la segunda es más barata:** dar foco, `role` y respuesta a Enter a la fila — **o** que dentro haya un control nativo que haga lo mismo, como ya pasa en Clientes. ⛔ **Sin texto nuevo: se reutiliza el rótulo que ya está en la fila.**
+· **Nuestros son los otros tres: Trabajos y Partes de oficina (los dos SIN alternativa) y Presupuestos (con ella).** Van por nuestra cuenta.
+· **Límites que declaró quien lo midió, y los pasamos tal cual:** sólo ve el estado montado, sin modales ni pestañas · no ve oyentes puestos en `document` · el número escala con los datos, porque el patrón es por fila · **y NO se comprobó si el buscador global abre esos detalles con teclado — si lo hace, el impacto baja pero el defecto sigue.**
+· **Medido por S3 (equipo de Luis). Ticket nuestro: SCRUM-1562, con la tabla completa de los 13 elementos y los tres grupos.**
