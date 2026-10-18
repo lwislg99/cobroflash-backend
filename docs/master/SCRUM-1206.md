@@ -131,16 +131,19 @@ no cambian, sólo cómo se pintan: es estilo, no microcopy.
 
 Sólo el albarán: es un retoque, no un patrón. La ficha del Trabajo es de S2 (`jobDetailView.js`), no de S4.
 
-**La causa:** `DESIGN.md` no cubre el formato de los rótulos de un rail. No dice «versalitas» ni
-`text-transform` (cero apariciones); sí dice MAYÚSCULAS para el «Label» de KPI, cabeceras de tabla y secciones
-del sidebar (`DESIGN.md:147`), y un rótulo de campo «estilo Label (12px, 600)» encima del campo (`DESIGN.md:201`),
-pero no cuál de los dos vale en un rail. Con esa laguna, cada fila nueva copió la clase que tenía más a mano: las
-de SCRUM-302 y la de 1206b (mía) copiaron la del rótulo de línea del Trabajo (.detail-rail-etiqueta, SCRUM-318). **Mientras `DESIGN.md` no lo diga, volverá a
-pasar en la siguiente pantalla.** Tocar `DESIGN.md` lo decide el orquestador aparte; aquí sólo queda nombrado.
+**La causa:** `DESIGN.md` define el estilo Label en MAYÚSCULAS (`DESIGN.md:147`: «etiquetas de KPI, encabezados
+de tabla, secciones del sidebar») y describe en `DESIGN.md:213` la forma rótulo-arriba/valor-abajo que el rail usa
+(«Card con Label arriba (MAYÚSCULAS, Apagado) y cifra … debajo»); lo que no hace es nombrar el rail entre sus usos.
+Con ese hueco, cada fila nueva copió la clase que tenía más a mano: las de SCRUM-302 y la de 1206b (mía) copiaron
+la del rótulo de línea del Trabajo (`.detail-rail-etiqueta`, SCRUM-318). **Mientras `DESIGN.md` no nombre el rail,
+volverá a pasar en la siguiente pantalla.** Tocar `DESIGN.md` lo decide el orquestador aparte; aquí sólo queda
+nombrado.
 
-**La decisión NO sale de una norma: es del orquestador, 17-oct-2026** (por `SendMessage` a S4): los tres rótulos de
-la minoría (Presupuesto, Observaciones, Fotos) se alinean a versalitas con la mayoría (TRABAJO, CLIENTE…), porque
-el cambio menor es llevar la minoría a la mayoría.
+**La decisión de aplicarlo es del orquestador, 17-oct-2026** (por `SendMessage` a S4): los tres rótulos de la
+minoría (Presupuesto, Observaciones, Fotos) se alinean a versalitas con la mayoría (TRABAJO, CLIENTE…), que es la
+forma del estilo Label de `DESIGN.md`. *(Corregido el 17-oct, en el tramo VISTO de 1206c: la primera versión de
+este párrafo decía «la decisión NO sale de una norma». El orquestador buscó «versalitas», `text-transform` y
+`uppercase`, sus palabras y no las del documento; S4 citó `:147` y él encontró `:213`.)*
 
 **Lo construido:** una constante `CLASE_ROTULO_RAIL` (`detail-total-label`) para TODOS los rótulos del rail. Las
 filas de Presupuesto y Fotos pasan a `--nota` (rótulo ENCIMA del valor, como las de arriba; al lado, en
@@ -237,6 +240,37 @@ y `ver1206d-antes-de-empujar.mjs main`, éste con `jsLocalServido: false`: el JS
 en la landing) y `guard:objetivo-tactil` («⬇ Clientes CSV» 31 px). Ninguno toca el albarán;
 `guard:albaranes-con-acciones` en verde.
 
-**Lo que queda abierto, y no es de S4:** `DESIGN.md` sigue sin decir qué rótulo lleva un rail (tramo de arriba).
-Lo decide el orquestador aparte.
+**Lo que queda abierto, y no es de S4:** `DESIGN.md` sigue sin nombrar el rail entre los usos del estilo Label
+(tramo de arriba). Lo decide el orquestador aparte. Y la diferencia de 6 px contra 3 px entre rótulo y valor es CSS
+de S2: queda escrita, no se toca.
 A9: sin fallo que generalice — tramo de verificación; el fallo del sufijo (`1206c` ya cogido al empujar) lo paró el control antes del push, que es la comprobación que ya existe
+
+## 1206c — VISTO en yaqu.app: la ficha del PRESUPUESTO (S4, s4-15oct)
+
+**Medido contra:** `origin/main` = `88a955587f193992a425c6fa5229eb16effcdb97` · 2026-10-17T21:27:33Z
+
+#2537 (S2) se mergeó a las 20:13:53Z (`41140655`); producción servía `88a95558` (/version), que lo contiene, y el
+`quotesDetailView.js` servido trae `texto-cabecera`. Banco `ver1206c-presupuesto.mjs`: cuenta QA, sólo GET (lo
+demás se aborta y se apunta; el único, `POST /admin/entorno`), `serviceWorkers: 'block'`, 390 y 1280 px. El ANTES
+ya no se servía: se midió con el `quotesDetailView.js` del padre del merge (`41140655^1`) servido EN EL NAVEGADOR
+(`jsAntesServido: true`); el DESPUÉS, con el de producción (`false`). Cada caso compara la ficha con SU GET.
+
+**Los datos:** el #202 (borrador) trae los dos textos «[QA-1268] …» de SCRUM-1268; el #205 (borrador) y el #206
+(aceptado, Trabajo #77) no traen ninguno y sirven de control de «sin dato, no hay fila». No se creó nada.
+
+| presupuesto | su GET | ANTES (`41140655^1`) | DESPUÉS (`88a95558`) |
+|---|---|---|---|
+| #202 borrador | cabecera + `docFooterText` | ni cabecera ni Observaciones | la cabecera SIN rótulo justo antes de «Conceptos»; «Observaciones» con `docFooterText` justo debajo de los totales (que van dentro de «Conceptos»); los dos textos IDÉNTICOS a su GET, a 390 y 1280 |
+| #205 borrador | sin textos | nada | nada: ni sección ni rótulo |
+| #206 aceptado | sin textos | nada | nada: ni sección ni rótulo |
+
+Orden de secciones del #202 DESPUÉS: Cliente · asignados · **texto-cabecera** · Conceptos · **observaciones** ·
+Notas internas · Etiquetas · Gastos y margen · Revisiones. En los 12 casos: sin desborde horizontal, 111 GET, y
+«Añadir texto en el documento» no aparece. Ancho del texto: 320 px a 390 y 938 px a 1280.
+
+Salidas: `ver1206c-presupuesto-antes-17oct.txt` y `ver1206c-presupuesto-despues-17oct.txt`; capturas del #202 a 390 px,
+`ver1206c-presupuesto-202-antes-390.png` y `ver1206c-presupuesto-202-despues-390.png`.
+
+**Con esto, las dos mitades de SCRUM-1206 están en `main` y vistas en producción:** el albarán (1206b, y 1206d el
+estilo de sus rótulos) y el presupuesto (1206c). Cerrar es del orquestador.
+A9: aviso → A10 «Cero resultados con tu vocabulario no es silencio del documento.» — no se pudo comprobar: buscar con las palabras del propio documento es una elección de quien busca y ningún test la ve; nació aquí (el orquestador buscó «versalitas», `text-transform` y `uppercase`, y `DESIGN.md` dice «MAYÚSCULAS»)

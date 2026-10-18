@@ -991,11 +991,11 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
   // SCRUM-1206d · UN solo estilo de rótulo para TODO el rail, en versalitas. Hasta el 17-oct
   // convivían dos: estas filas en versalitas y las de abajo (presupuesto, observaciones, fotos)
   // con `.detail-rail-etiqueta`, gris y en minúscula — medido en yaqu.app, albaranes #46 y #48.
-  // ⚠️ NO es una norma de `DESIGN.md`: define «Label» en MAYÚSCULAS para KPI, cabeceras de tabla
-  // y secciones del sidebar, y un rótulo de campo SIN mayúsculas, pero no dice cuál vale en un
-  // rail. Esa laguna es la causa de que convivieran los dos. La decisión es del orquestador,
-  // 17-oct-2026: la minoría se alinea con la mayoría. Por eso va en una constante: el rótulo que
-  // se añada mañana al rail sale igual que los demás sin tener que adivinar la clase.
+  // Es el estilo Label de `DESIGN.md` (MAYÚSCULAS, `:147`) con la forma rótulo-arriba/valor-abajo
+  // que describe en `:213`; lo que `DESIGN.md` no hace es nombrar el rail entre sus usos, y ese
+  // hueco es la causa de que convivieran los dos. Aplicarlo aquí lo decidió el orquestador,
+  // 17-oct-2026. Por eso va en una constante: el rótulo que se añada mañana al rail sale igual
+  // que los demás sin tener que adivinar la clase.
   const CLASE_ROTULO_RAIL = 'detail-total-label';
   const fila = (etiqueta, valor) =>
     `<div><span class="${CLASE_ROTULO_RAIL}">${esc(etiqueta)}</span><div>${esc(valor ?? '—')}</div></div>`;
