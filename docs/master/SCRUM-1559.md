@@ -161,7 +161,7 @@ elemento de las cuatro pantallas: salen los **16** de S3, uno a uno, con las mis
 | ficha de presupuesto | «+ Añadir gasto a este trabajo» | 30,6 / 30,7 | 44,6 / 44,7 |
 | ficha de presupuesto | casilla de `documentoAsignados` | 21 / 21 | 45 / 45 |
 | Solicitudes | «+ Crear presupuesto», «✓ Marcar gestionada» | 30,7 / 30,9 | 44,7 / 44,9 |
-| Albaranes | número «A-2026-0031» | — / 17 | — / 45 |
+| Albaranes | número «A-2026-0031» | no tocable / 17 | 45 / 45 |
 | Albaranes | «Enviar para firmar» | 30,8 / 44,6 | 44,8 / 44,6 |
 
 Total del censo: distintos bajo 44 px **97 → 80** (−17), mediciones cortas **143 → 111**. Los 17 son los 16 más
@@ -173,7 +173,7 @@ y «Crear revisión» (36,7) a 929, que cumplen los 36 px de escritorio de `DESI
 ### Qué cambia
 - `public/dashboard/css/styles.css`: una regla de alto para `#btn-ver-resumen-trimestre`, `.home-hero-card > .btn-sm`,
   `.presupuesto-ficha .btn-sm`, `.solicitud-acciones > .btn-sm` y `.table--albaranes td.cell-actions > .btn-sm`;
-  alto y ancho para «✕» (un glifo); el número del albarán a 44 sólo en la tarjeta (≤640 px); y la casilla con el
+  alto y ancho para «✕» (un glifo); el número del albarán como caja de 44 (`inline-flex`); y la casilla con el
   mecanismo de `.casilla-tactil-44` (SCRUM-786), con `inset: -12px` y no -16: 20 + 2 × 12 = 44 cabe en su fila de
   44, y -16 se metería 2 px en la de al lado, que marca a OTRA persona.
 - La ficha del presupuesto va ENTERA (`.presupuesto-ficha`) y no botón a botón: el censo sólo ve lo que pintan sus
@@ -189,4 +189,19 @@ y «Crear revisión» (36,7) a 929, que cumplen los 36 px de escritorio de `DESI
 - **Rojo primero, por mutación** (cada una aplicada y restaurada byte a byte): sin `presupuesto-ficha` en la ficha,
   con la regla renombrada, con `inset: -16px`, sin `solicitud-acciones`, y sin el ancho de «✕»: cae 1 cada vez. Base: 6 de 6.
 - `guard:objetivo-tactil`: rojo, y AJENO: «⬇ Clientes CSV» (J2, §17), el que anunció 1559b. Ninguna excepción sobra.
-- **yaqu.app:** pendiente del merge (el despliegue sale de `main`).
+- **yaqu.app, cuenta QA**, antes del merge: sonda de sólo lectura (`sondas-s2/tactil-1559g.mjs`, fuera del repo;
+  sirve `styles.css`, `quotesDetailView.js` y `quoteRequestsView.js` de la rama en lugar de los de producción, con
+  control de que se sirvieron y de que el interceptor corta todo lo que no es GET; 0 escrituras, 0 errores;
+  capturas en `sondas-s2/cap1559g/`). Área de toque por `elementFromPoint` desde el centro, no por caja:
+  · ficha del presupuesto #202, a 390 y a 929: **8 de 8** de 30,5 a **44,5** («📄 PDF», «⎘ Duplicar», «Archivar»,
+    «← Volver», «✉️ Enviar por correo», «Aceptar presupuesto», «Rechazar presupuesto», «+ Añadir gasto…»);
+  · Albaranes: «Enviar para firmar» y «Emitir» 30,5 → **44,5** a 929; los tres números 16 → **44,5** a 390, y a 929
+    de 17×10 / TAPADOS (0×0) a una caja de **120,5×18,5** sin huecos.
+  · **NO medido en yaqu.app, y por qué:** Inicio (la cuenta QA no pinta ni «Tu resumen del trimestre» ni «Tienes en
+    juego»), Solicitudes (cero solicitudes), los dos «↻ Reenviar» (QA no tiene un presupuesto enviado) y la casilla
+    (sin miembros de equipo). Medidos en el banco, arriba. No se han creado datos: la sonda no escribe.
+- **De paso, medido y NO arreglado — para el orquestador:** a 929 la tabla de Albaranes parte letra a letra el
+  número («A/B2/6/0/0/3»), las fechas («16/10/2 026») y el estado («BOR/RAD/OR»): siete columnas en 631 px y
+  `.table td { word-break: break-word }` global. Probé a ponerlos en una línea y lo retiré: sólo con el número la
+  tabla pide 676 px y desborda 45 (con «Enviar para firmar» medio fuera); con todo, 27-251 px entre 800 y 1024.
+  Es de cuántas columnas caben a ese ancho, no de toque, y no cabe en este PR.
