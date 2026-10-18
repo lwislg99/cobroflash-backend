@@ -1708,6 +1708,21 @@ html, body { overflow-x: clip; }
 #vat-quarter-row > .btn-sm,
 #resumen-quarter-row > .btn-sm { min-height: 44px; min-width: 44px; }
 
+/* SCRUM-1559g (AB6, misma decisión de SCRUM-786, opción ③, el patrón de 1158c). Con el banco que
+   ya monta las fichas con datos de verdad (SCRUM-1560), S3 midió 14 botones de 30-31 px a 929 y a
+   390: en Inicio «Ver resumen», «✕» y «Ver facturas →»; en la ficha del presupuesto ocho (los tres
+   de la cabecera, los dos «↻ Reenviar», la decisión y «+ Añadir gasto a este trabajo»); en Solicitudes
+   «+ Crear presupuesto» y «✓ Marcar gestionada»; en Albaranes «Enviar para firmar». Sólo tamaño,
+   `.btn-sm` global sin tocar. La ficha va ENTERA (`.presupuesto-ficha`) y no botón a botón: el
+   censo sólo ve los que pintan sus datos, y «Confirmar aceptación», «Archivar» o el albarán son
+   la misma fila de la misma pantalla. «✕» lleva ancho: es un glifo, y el ancho es todo lo que tiene. */
+#btn-ver-resumen-trimestre,
+.home-hero-card > .btn-sm,
+.presupuesto-ficha .btn-sm,
+.solicitud-acciones > .btn-sm,
+.table--albaranes td.cell-actions > .btn-sm { min-height: 44px; }
+#btn-cerrar-resumen-trimestre { min-height: 44px; min-width: 44px; }
+
 /* ── SCRUM-1144 · «Elegir un sitio guardado», bajo el campo de la dirección de la obra ───────
    Lo montan el editor de presupuestos y la ficha del Trabajo (`sitiosGuardados.montarSelector`).
    Sin tokens nuevos. El botón es `.btn-ghost.btn-sm`, como «Usar plantilla»: una ayuda
@@ -3032,6 +3047,12 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 .job-asignados-fila:hover { background: var(--bg, #f6f7f5); }
 .doc-asignados-casilla,
 .job-asignados-casilla { width: 20px; height: 20px; flex: none; accent-color: var(--brand); }
+/* SCRUM-1559g · la fila (el `<label>`) mide 44, pero el área que se cuenta es la de la CASILLA, y
+   daba 21 px (medido por S3 en las fichas de presupuesto y de factura: este componente es de las
+   dos). El mecanismo de `.casilla-tactil-44` (SCRUM-786), con 12 px y no 16: 20 + 2 × 12 = 44 cabe
+   justo en su fila, y 16 se metería 2 px en la de al lado, que marca a OTRA persona. */
+.doc-asignados-casilla { position: relative; }
+.doc-asignados-casilla::before { content: ""; position: absolute; inset: -12px; }
 .doc-asignados-nombre,
 .job-asignados-nombre { font-size: 14px; color: var(--ink); }
 .doc-asignados-lectura,
@@ -4303,6 +4324,9 @@ textarea.parte-linea-desc {
   .table--albaranes td.cell-status { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
   .table--albaranes td.cell-status .alb-chip-cobro { margin-left: 0; }
   .table--albaranes td.cell-client { white-space: normal; }
+  /* SCRUM-1559g · el número que abre el albarán medía 17 px de toque en la tarjeta (S3, a 390): era
+     sólo su línea de texto. Sólo tamaño: la línea del número crece a 44 y el texto no cambia. */
+  .table--albaranes .alb-numero { display: inline-flex; align-items: center; min-height: 44px; }
   /* La tarjeta de ESTA tabla gana un área para el Trabajo, que hasta hoy tomaba prestada la de
      `actions`. Se redefine SÓLO para `.table--albaranes`: añadirla a la rejilla COMPARTIDA habría
      movido las cuatro listas hermanas de golpe, que es justo lo que un modificador evita — el
