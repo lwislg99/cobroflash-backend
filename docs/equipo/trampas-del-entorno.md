@@ -484,7 +484,9 @@ es el tope de 24 MB del hijo, no el del runner. **La línea siguiente del log es
 
 La contraprueba ya medida es la run **38524399363** (`main`, 14-oct-2026, `ℹ fail 0`). Trae la misma
 `FATAL ERROR` y el ✔ de `scrum1525b` justo debajo. ⚠️ Sin `--allow-escape-sequences`, `gh api` no escribe el
-log, sale sin nada y no da ningún error.
+log, sale sin nada y no da ningún error. Según el orquestador, así empezó el error del #2568: leyó ese vacío como «el
+log no dice nada», pasó a `gh run view --log-failed` y de ahí cogió la línea más alarmante. Un instrumento mudo
+le llevó a uno ruidoso.
 
 🔴 **Lo que vale para todo: el resumen final de la tanda manda sobre cualquier línea alarmante del cuerpo.**
 Ese resumen es el bloque `ℹ tests / ℹ pass / ℹ fail / ℹ skipped`, y debajo va `✖ failing tests:` con los
