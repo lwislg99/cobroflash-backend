@@ -178,3 +178,83 @@ A y B no se excluyen, y D es lo que distingue «arreglado» de «arreglado hasta
 
 Pide `dist/` (aquí, `prisma generate` y `tsc --noCheck`). `sonda-consolidada.json` guarda lo que listó cada test:
 `cruce.mjs`, `forma.mjs`, `desde-cuando.mjs` y `costes.mjs` se pueden repetir sin volver a correr la sonda.
+
+## 1503c · la salida B: el lector aprende las tres formas (18-oct-2026, S3)
+
+**Medido contra:** `origin/main` = `183895cdef71c5655a3978352b716a79e1ca2b2b` · 2026-10-18T18:01:02Z
+
+A9: comprobación → `tests/scrum1503c-el-lector-ve-el-caminante.test.mjs`
+
+La salida B la eligió el fundador el 8-oct (c.18852, «2-Ok vamos por B») y pasó a S3. Llevaba diez días parada;
+la encargó el orquestador de Luis. Sólo se toca el lector, `scripts/_tests-que-cubren.mjs` (carril S3); ni
+`scrum622` ni ningún guard ni workflow.
+
+**Qué cambia en el lector.**
+- La llamada a un caminante escrito EN EL SITIO, `(function anda(dir) { … })(RAIZ)`, se resuelve como la llamada
+  a un nombre. Se identifica por su NODO y no por su nombre (ver el segundo error, abajo).
+- `lista.forEach(caminante)` (y `map`, `flatMap`, `filter`, `some`, `every`): cada elemento de una lista literal
+  es su primer argumento. Una lista que no se lee va a NO_SE, nunca a cero.
+- El valor de un nombre se busca CON ÁMBITO: gana la declaración del ámbito más cercano que encierra al uso.
+- Dos lecturas que salieron al medir: `a || b` y `a ?? b` (gana el lado que es un directorio) y `lista[0]` sobre
+  una lista literal.
+
+**La medida que pidió la decisión, con el cruce de J3** (`cruce.mjs`, la misma sonda del 8-oct, sobre los 1.290
+tests que tienen salida; los 109 posteriores no la tienen y no cuentan):
+
+| | antes | después |
+|---|---|---|
+| tests con algún par CIEGO | 24 | **0** |
+| ficheros seguidos con algún test ciego | 5.889 de 6.698 | **0** |
+| listan la raíz y NO están en NO_SE | 2 (`scrum622`, `scrum643-zona`) | **0** |
+| de los 342 que listan, entran siempre (NO_SE) | 125 | **130** |
+
+Controles del cruce: `scrum622` ya no está en la población; `h-entradas.mjs` (el fichero de #2280) ya no es ciego
+para nadie; `scrum976` y `scrum713c` siguen fuera de la población y un nombre inventado, 0.
+
+**El techo: que la dirigida NO crezca más de lo medido.** Mismos ficheros tocados, lector de `main` contra el de
+la rama, sobre el mismo árbol (1.399 tests, motivos para no fiarse 0 y 0):
+
+| tocado | antes → después | `scrum622` / `scrum643-zona` |
+|---|---|---|
+| dos ficheros de `docs/` (como 1345b) | 254 → 258 (+6 −2) | no/no → **sí/sí** |
+| `h-entradas.mjs` (el caso de #2280) | 254 → 258 (+6 −2) | no/no → **sí/sí** |
+| `public/dashboard/js/homeView.js` | 506 → 509 (+6 −3) | sí/no → sí/sí |
+| `src/modules/quotes/quotes.routes.ts` | 332 → 350 (+21 −3) | no/no → **sí/sí** |
+| `tests/scrum713c-…` | 252 → 256 (+7 −3) | no/no → **sí/sí** |
+| `scripts/equipo/ya-esta.mjs` | 247 → 250 (+6 −3) | no/no → **sí/sí** |
+
++2 a +4 netos fuera de `src/`, frente a los +7 que estimó J3. En `src/`, +18 netos: son los caminantes de `src/`
+que estaban ciegos (`scrum245-*`, `scrum397`, `scrum728`…), que J3 ya contaba («15 más al tocar `src/` o
+`public/`»). No entran cincuenta. `scrum643-huso-del-sello-fiscal` no entra en ninguno, ni antes ni después: no
+estaba entre los 24.
+
+**Los que SALEN, uno a uno** (entraban siempre por un NO_SE que ahora se lee):
+- `scrum241` y `scrum495` listaban `process.env.BACKUP_DIR || path.join(process.cwd(), 'backups')`
+  (`scripts/backup-dump.mjs:167`). Se lee como `backups/`, que no está en el repositorio; en ejecución listan 0
+  directorios seguidos.
+- `scrum547` lista `dir ?? path.join(raiz, 'docs')` (`tests/_documentos-a-la-espera.mjs`). Ahora entra por
+  RECORRE `docs`; en ejecución lista 287 directorios, con 0 ciegos.
+
+**Verificado, ejecutando.**
+- `tests/scrum1503c-el-lector-ve-el-caminante.test.mjs`: 6 de 6. Con el lector de `main` puesto en su sitio, rojo
+  6 de 6, y restaurado byte a byte (hash).
+- Las 5 `MUTACIONES_QUE_ME_TUMBAN`, aplicadas una a una y restauradas byte a byte: cada una tumba el test que nombra.
+- La dirigida de esta misma rama, con el lector nuevo: 266 ficheros, 2.595 pruebas, 3 caídas: `scrum854` (faltaba
+  este registro), `scrum737` (una cifra sin ancla en mi test, ya anclada) y `scrum1321`, ciego por entorno (temporal
+  en C:, árbol en D:).
+
+**Errores míos, los dos cazados por el cruce antes de empujar.**
+1. El ámbito, bien leído, rompió otra cosa: `_microcopy-aprobada.mjs:258` declara `const DIR_APROBACIONES = dir ||
+   DIR_APROBACIONES_REAL`, que el resolver no sabía leer. Con «la primera declaración» se leía la de la línea 36 y
+   salía bien por casualidad. **NO_SE pasó de 125 a 163 y 34 tests entraban en TODA dirigida.** Arreglado leyendo `||`.
+2. El caminante en el sitio, buscado por NOMBRE: en `scrum728` hay un `anda(d)` que recorre directorios y dos
+   `anda(n)` que recorren el árbol sintáctico, y éstos heredaban el caminante del primero (`anda(sf)` a NO_SE).
+   Arreglado por nodo; tiene su mitad en el test (`el homónimo`).
+
+**Lo que NO cubre, dicho.**
+- El cruce mide los 1.290 tests que tienen salida de la sonda del 8-oct. Los 109 posteriores no se han medido en
+  ejecución, y el «24» de J3 era un suelo: 60 saltaron enteros y 41 lanzan hijos que pueden no llevar la sonda.
+- Cuatro caminantes reciben un argumento que no se lee escribiendo (`andar(base)`, `rec(abs)`, `andar(dir)`,
+  `anda(abs)`) y van a NO_SE: entran siempre, que es el lado seguro, no el preciso.
+- `scrum804b` y `scrum835` enumeran con `git ls-tree` en ejecución y siguen fuera de NO_SE, como antes. Sobre qué
+  repositorio lo hacen no lo sabía J3 y yo no lo he mirado: no es de las tres formas de este ticket.
