@@ -205,3 +205,51 @@ y «Crear revisión» (36,7) a 929, que cumplen los 36 px de escritorio de `DESI
   `.table td { word-break: break-word }` global. Probé a ponerlos en una línea y lo retiré: sólo con el número la
   tabla pide 676 px y desborda 45 (con «Enviar para firmar» medio fuera); con todo, 27-251 px entre 800 y 1024.
   Es de cuántas columnas caben a ese ancho, no de toque, y no cabe en este PR.
+## 1559i — la tabla de Albaranes, entera desde 900 px (S2, s2-18oct)
+
+**Medido contra:** `origin/main` = `2cc3243ec30c41e27bbe04d0d5647f241c83c28c` · 2026-10-18T19:02:57Z
+
+**Skill UI:** cargada · sólo CSS acotado a `.table--albaranes` (`public/dashboard/css/styles.css`), sin texto nuevo; una pantalla.
+
+**Decisión (orquestador, 18-oct):** A+B desde 900 px; **NO** la tarjeta C para 769-899. **769-899 queda sin
+tratamiento propio, decidido el 18-oct; se añade si aparece una medida que lo pida.**
+
+- **A** · desde 641, en esta tabla `word-break: normal; overflow-wrap: break-word` (se parte por palabras, nunca
+  dentro de una) y la fecha `nowrap`. La causa era la regla GLOBAL `.table td { word-break: break-word }`, que
+  NO se toca: el modificador la acota a esta tabla (el patrón de `.table--trabajos`).
+- **B** · entre 641 y 1279 se oculta «Emisión» (el mismo `col-hide-mobile` que ya la quita en móvil; la ficha la
+  sigue teniendo) y el relleno lateral baja a 8 px desde 769.
+
+**Medido en yaqu.app** (build `214283d79`, cuenta QA, 3 albaranes) sirviendo el `styles.css` de la rama;
+`sondas-s2/albaranes-tabla-medida.mjs [css]`, sólo GET. Carril = ancho del `.table-scroll`; desborda = lo que la
+tabla pide de más; «página» = scroll horizontal de la PÁGINA.
+
+| ancho | prod: desborda · alto de fila | rama: desborda · alto de fila | rama: página |
+|---|---|---|---|
+| 769 | 149 · 171-192 | 106 · 108-109 | +0 |
+| 800 | 118 · 171-192 | 75 · 108-109 | +0 |
+| 850 | 68 · 171-192 | 25 · 108-109 | +0 |
+| 899 | 19 · 171-192 | **0** · 87-88 | +0 |
+| 900 | 18 · 171-192 | **0** · 87-88 | — |
+| 929 | 0 · 150-171 | 0 · **69** | — |
+| 1024 | 0 · 87-88 | 0 · 69 | — |
+| 1100-1440 | 0 · 69 | 0 · 69 | — |
+
+Con la rama, número, fechas y estado van en UNA línea en todos los anchos medidos (641-1440); cliente y trabajo se
+parten por palabras (4 líneas a 769-850, 2 a 929-1024). Por debajo de 769 la tabla ya era un bloque con scroll
+(A6.6) y no cambia de forma; el botón de la fila queda menos fuera (641: 158 → 64 px; 700: 99 → 5; 768: 31 → 0).
+**769-899, ¿rota o fea?** Fea, no rota: la página no se desborda (+0), el carril tiene `overflow-x: auto` y la
+acción se alcanza con su scroll (a 769, 24 px fuera; prod: 62). Es el patrón del design system, y en esa banda
+prod ya desbordaba MÁS. Capturas fuera del repo: `sondas-s2/cap-albaranes-929/albaranes-{800,929,1280}-rama-1559i.png`
+y las `-prod` de la misma tanda.
+
+**Test** `tests/scrum1559i-tabla-albaranes-desde-900.test.mjs` (sin gate; el caso de la vista usa el banco, que
+pide `dist`): las reglas EN SU `@media` (lector de reglas con condición, con control: ve la regla global
+causante), que la regla global siga intacta, y que la vista pinte lo que las reglas nombran (2.ª cabecera
+«Emisión», su celda con `col-hide-mobile`, la 3.ª con `cell-date`, tantas celdas como cabeceras).
+**Rojos sembrados**, deshechos cada vez: ① quitar `word-break: normal` → cae A; ② quitar `th:nth-child(2)` → cae
+B; ③ el relleno sólo en `th` → cae B; ④ cambiar la regla GLOBAL → caen el control y «acotada»; ⑤ quitar
+`col-hide-mobile` de la celda en la vista → cae el de la vista. Los 84 ficheros que leen `styles.css` o
+`albaranesView.js`: 813/813 con y sin el cambio, sobre el mismo `dist` (`tsc` con el error conocido de
+`activityKind`, Prisma desfasado; no se ha corrido `prisma generate`).
+A9: comprobación → `tests/scrum1559i-tabla-albaranes-desde-900.test.mjs`
