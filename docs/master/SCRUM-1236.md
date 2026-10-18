@@ -85,3 +85,104 @@ enlace. Con el enlace en la mano: se mide la página del #46 emitido, se firma e
 con el #47 de gemelo ya firmado y el estado anotado antes) y se vuelve a pedir el MISMO enlace, que entonces
 cae en la rama `firmado`.
 A9: sin fallo que generalice — la premisa «falta la regla de firmar» la dejé escrita yo arriba sin leer de dónde sale el token; se corrige aquí, en el mismo registro
+
+## 1236d — «Enviar para firmar» en el #46: autorizado por el fundador, NO enviado (S4, 18-oct)
+
+**Medido contra:** `origin/main` = `06c6289d46d5998493ec014fa26ff3353946b58b` · 2026-10-18T17:42:18Z
+
+Producción servía ese mismo SHA (/version). Sólo registro: no se toca código, y en la cuenta de QA no se ha
+creado ni cambiado nada (sólo GET).
+
+**Skill UI:** no cargada · no se toca ninguna pantalla ni ningún texto.
+
+A9: aviso → cicatriz S4 «di como vía para ver la página de firma «pulsar Enviar para firmar y abrir el enlace desde el móvil que lo recibe» sin mirar que el móvil del cliente 83 es inventado» — no se pudo comprobar: es una premisa de un registro y ningún test lee los datos de la cuenta de QA
+
+**Qué pasó.** El orquestador encargó el envío con la autorización del fundador. La cita se leyó en su origen:
+`ed676fd1-feb4-4658-bda2-01f4bf9fb3fc.jsonl`, turno `type:"user"` `2026-10-18T17:31:26.351Z`, «lo de un minuto
+pues hazlo tu si imagino que peudes», en respuesta a «4 · Un minuto: el albarán #46… o dinos que lo mandemos
+nosotros». **El clasificador de permisos de la sesión de S4 lo denegó** («Real-World Transactions») y no se ha
+rodeado: un sí del fundador no levanta un bloqueo del harness, y pedírselo a otra sesión sería saltarse la misma
+decisión. Lo levanta el fundador: lo pulsa él, o da el permiso en la sesión que lo vaya a hacer.
+
+**Línea base, leída hoy en yaqu.app (cuenta QA, sólo GET):**
+- `GET /admin/albaranes/46` → 200 · `AB260001`, `estado:"emitido"`, `enviadoParaFirma:false`, `lineas:[]`,
+  cliente 83 con `puedeRecibirWhatsApp:true`.
+- `GET /admin/customers/83/whatsapp` → 200 · `waOptOut:false` y UNA sola fila: id 450, 2026-10-06,
+  `quote_decision_es`, `failed`, `error:"wa_opt_out"`. **Ningún envío a este cliente ha llegado nunca a Meta.**
+- El móvil del cliente 83 es `34000001268` (medida del orquestador): inventado.
+
+**Qué respuesta corresponde a qué causa**, leído en el código. El #46 va por `sendWhatsAppWindowFirst`; sin
+ventana abierta (el cliente 83 no ha escrito nunca) cae a `sendWhatsAppTemplate`. La ruta convierte el resultado
+con `sendResultJson` (`albaranes.routes.ts`), y lo que no es un motivo conocido acaba en `whatsapp_send_failed`
+(`albaranWhatsApp.service.ts:181`):
+
+| causa | respuesta del POST | fila nueva en `GET /admin/customers/83/whatsapp` |
+|---|---|---|
+| producción SIN token o SIN phone id | 200 `{sent:false, error:"not_configured"}` | `failed` · `error:"not_configured"` (`whatsapp.ts:351`) |
+| cliente dado de baja (J3) | 200 `{sent:false, error:"wa_opt_out"}` | `failed` · `error:"wa_opt_out"` (como la 450) |
+| tope diario del comercio o del cliente | 200 `{sent:false, error:"daily_cap"}` o `"customer_daily_cap"` | `failed` con ese motivo |
+| plantilla que no casa con su spec (J7) | 200 `{sent:false, error:"whatsapp_send_failed"}` | `failed` · `error:"template_invalid: …"` |
+| **Meta rechaza** (número falso, 131026, plantilla, token caducado…) | 200 `{sent:false, error:"whatsapp_send_failed"}`: **el código de Meta NO viaja** | `error` = el JSON que devolvió Meta (`whatsapp.ts:482`) |
+| 🔴 `WHATSAPP_DRY_RUN=1` en producción | 200 **`{sent:true}`**: un «salió» FALSO (`whatsapp.ts:26`, `:451`) | fila `sent` con un `wamid.dryrun.…` |
+| 🔴 **Meta ACEPTA y la entrega falla después** (número inexistente: 131026) — **medido el 18-oct, abajo** | 200 **`{sent:true}`** | primero `sent` con su `wamid`; minutos después, el webhook la pasa a `failed` · `error:"131026: Message undeliverable"` |
+| entregado de verdad | 200 `{sent:true}` | `sent`, y luego `delivered` / `read` por el webhook |
+
+**`{sent:true}` no distingue TRES situaciones:** dry-run, aceptado por Meta y no entregado, y entregado. Sólo
+la fila del historial, leída DESPUÉS, las separa.
+
+**Para medir el punto 2.1 de `docs/producto/ESTADO-DEL-PRODUCTO.md`** (¿está montado el WhatsApp de producción?)
+no basta la respuesta del POST: hay que leer también la fila nueva del historial. `not_configured`, rechazo de
+Meta, dry-run y éxito se distinguen ahí y sólo ahí. Ninguna ruta GET dice si las credenciales están puestas
+(fuera de `whatsapp.ts`, nadie lee `WHATSAPP_ACCESS_TOKEN` ni `WHATSAPP_PHONE_NUMBER_ID`).
+
+**El token, con el envío o sin él.** `albaranWhatsApp.service.ts:133` lo escribe ANTES de llamar a Meta, así que
+un rechazo (o un `not_configured`) no impide que exista. Pero no hay forma de LEERLO: la respuesta es
+`sendSuccessBody()` vacío o `sendFailureBody(motivo)` (sin enlace), el albarán sólo da el booleano
+`enviadoParaFirma`, y `WhatsAppMessage` no guarda el cuerpo. **Con el móvil inventado, el enlace no le llega a
+nadie.** Corrijo el veredicto de 1236b: su vía ① («pulsar y abrir el enlace desde el móvil que lo recibe»)
+**no sirve** mientras el cliente 83 tenga ese número.
+
+**Veredicto:** `privacidad:92` sigue **DECLARADO no medible en producción por el equipo**, ahora con el motivo
+exacto: hace falta un móvil REAL que controle el fundador en el cliente 83 (y el envío), o leer la base.
+
+🔵 **Visto y no tocado (K1, de J2):** si falla, el profesional lee «No se pudo enviar por WhatsApp. Copia el
+enlace y mándaselo por SMS o llámale.» (`sendOutcome.ts:41`), y la pantalla del albarán no le enseña ningún
+enlace que copiar. Lo lleva el orquestador a `para-javier.md`.
+
+### 18-oct, ~18:10Z · el fundador lo pulsó: el WhatsApp de producción está VIVO, y la pantalla dice «enviado» de un mensaje que no llegó
+
+El fundador pulsó «Enviar para firmar» en el #46, dos veces. **Medido por S4, sólo GET, cuenta QA**:
+
+| fuente | lo que dice |
+|---|---|
+| `GET /admin/customers/83/whatsapp` | fila **451**, `template`, `albaran_para_firmar_es`, `failed`, `error:"131026: Message undeliverable"`, 17:53:05Z · fila **452**, igual, 17:53:59Z |
+| `GET /admin/albaranes/46` | `estado:"emitido"`, **`enviadoParaFirma:true`** |
+| respuesta del POST | `{"ok":true,"sent":true}`. **Dato del orquestador** (captura de la pestaña de red del fundador), **no medido por S4** |
+
+**El punto 2.1 de `docs/producto/ESTADO-DEL-PRODUCTO.md` queda MEDIDO:** `131026` es un código de Meta, así que
+la petición llegó a Meta y Meta contestó. Token y phone id están puestos, y la plantilla `albaran_para_firmar_es`
+existe y se usó. Lo que falló es el número inventado del cliente 83. (El fichero 2.1 es de S0: aquí sólo consta
+la medida.)
+
+**🔴 El defecto: la pantalla le dice al profesional que se envió, y el cliente no recibe nada.** Medido y
+declarado, **NO arreglado**:
+
+1. **¿Podía saberlo el servidor al contestar? No.** El `error` tiene la forma `código: título`, que es la que
+   escribe el WEBHOOK de estados (`whatsappIncoming.routes.ts:118-120` → `updateWaMessageStatus`,
+   `whatsappLog.service.ts:277`). El camino síncrono guarda otra forma: el JSON entero de Meta
+   (`whatsapp.ts:482`). Y el webhook sólo encuentra la fila por su `wamid`, así que Meta devolvió primero un
+   200 con `wamid` (la fila quedó `sent`) y avisó del 131026 después. Cuando el POST contestó, el fallo no
+   existía todavía.
+2. **La píldora «enviado para firmar» no mira el envío.** La deriva `albaranes.routes.ts:920` de
+   `enviadoParaFirmaAt`, y `albaranWhatsApp.service.ts:133` lo escribe ANTES de llamar a Meta. Leído, no
+   medido: la píldora sale también cuando el envío falla en el acto (`not_configured`, baja, topes), porque el
+   campo ya está escrito. La pinta `albaranDetailView.js:515`.
+3. **Nadie vuelve a mirar.** Ni la ficha del albarán ni su ruta leen `WhatsAppMessage` (búsqueda en
+   `albaranes.routes.ts`: 0). El estado de entrega sólo se ve en la ficha del CLIENTE
+   (`customerDetailView.js:226`, historial de WhatsApp). La píldora se queda en «enviado» para siempre.
+4. **Y cuesta plazas de J6:** dos pulsaciones son dos plantillas en el día de ese cliente (tope 3).
+
+**De quién es arreglarlo: lo decide el orquestador.** La respuesta y el campo salen del servidor
+(`src/modules/jobs/**` → S1). La píldora es `albaranDetailView.js` (S4). El texto que diga «no llegó» sería
+K1 nuevo, con firma.
+
