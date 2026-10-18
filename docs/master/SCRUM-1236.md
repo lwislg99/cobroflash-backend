@@ -204,7 +204,10 @@ fundador): el `{sent:true}` era honesto. El defecto es la píldora. Va en dos mi
 
 **Por qué el defecto se paga dos veces:** un botón que dice «enviado» de algo que no llegó invita a volver a
 pulsarlo, y cada pulsación es un envío de verdad. Medido en el #46: dos pulsaciones, dos plantillas (filas
-451 y 452), **2 de las 3 plazas diarias de J6** de ese cliente.
+451 y 452), **2 de las 3 plazas diarias de J6** de ese cliente. **Y la tercera se gastó igual:** con el móvil real
+del fundador en el cliente 83, el envío de las 18:09:36Z llegó (fila 453, `delivered`), y el de las 18:09:53Z
+salió con «Este cliente ya recibió varios mensajes hoy (límite anti-spam)» (fila 454, `failed`,
+`customer_daily_cap`). Tres plazas del día, una sola entrega útil.
 
 **`docs/equipo/para-javier.md`:** se amplía la §17 («⬇ Clientes CSV», 31 px, medido por S3) y se abre la
 §25, con tres puntos: el PDF de 1442 (J1, releído por S4 desde la captura de S2), el webhook de Stripe (J2,
@@ -213,4 +216,42 @@ receta literal de S1, pendiente del OK del fundador) y SCRUM-914 esperando a J3 
 (`carriles.mjs`, `dos-equipos.md:136`), no J2. Y el texto no es falso en todas partes: donde la pantalla
 pinta `waFallbackBar` (`api.js:982`), sí hay un «📋 Copiar enlace». Es falso en la ficha del albarán, que no
 lo pinta. Es nuestro, y se lo digo al orquestador.
+
+### 18-oct, ~18:30Z · 🔴 el enlace de firma llega ROTO: `/albaran/{{1}}<token>`
+
+**El camino completo (enviar, recibir, pulsar, firmar) no se había probado NUNCA de punta a punta.** El
+registro de 1236b lo dejó dicho: el enlace «sólo existe dentro de un WhatsApp de verdad» y nadie del equipo
+lo tenía. Hoy el fundador le puso su móvil real al cliente 83, el WhatsApp llegó y, al pulsar «Ver y firmar»,
+el móvil abrió (URL que nos pasa el orquestador, copiada por el fundador):
+`yaqu.app/albaran/%7B%7B1%7D%7D94ccccca9dcd166e5228b4394cad8ff37`. `%7B%7B1%7D%7D` es `{{1}}`: la URL lleva el
+marcador LITERAL y el token detrás. La página contesta, con razón, que el enlace no corresponde a nada.
+
+**① Qué mandamos nosotros como sufijo — MEDIDO en el código: sólo el token.** `buildAlbaranParaFirmar`
+(`whatsappTemplates.ts`) llama a `urlButton(p.token)`, que envía `parameters: [{ type: 'text', text:
+String(suffix) }]` (`:131-137`). El token es `crypto.randomBytes(16).toString('hex')`
+(`albaranWhatsApp.service.ts:132`): 32 hex. **Y la fila 453 es `type:"template"`:** el mensaje que llegó fue
+por plantilla, no por la vía «ventana», que construye la URL entera en nuestro código. La base de la URL es la
+que está registrada en Meta.
+- ⚠️ **Un dato que no cuadra:** detrás del `{{1}}` de esa URL hay **33** caracteres, y nuestro token tiene
+  32. O la URL se copió con uno de más, o Meta mete algo más. **Hace falta la URL copiada tal cual del móvil**
+  para saberlo; no la he visto yo.
+
+**② Las otras plantillas con sufijo dinámico: el riesgo es el MISMO, y desde aquí NO se puede medir.** Las
+cuatro usan el mismo `urlButton` y mandan sólo el sufijo: `quote_decision_es` (`/pay/quote/{{1}}`),
+`payment_request_es` (`/pay/invoice/{{1}}`), `payment_confirmation_invoice_es` (`/recibo/{{1}}`) y
+`albaran_para_firmar_es`. Lo que está registrado en Meta como base de cada botón no se ve desde el código ni
+desde la base: lo tiene que mirar el fundador en WhatsApp Manager. **No lo doy por roto ni por sano.**
+
+**Lo que puede haberlo causado — MI LECTURA, no verificada contra Meta:** nuestras dos guías dicen que la URL
+base «termina en `/{{1}}`» (`docs/WHATSAPP_TEMPLATES.md:52` y `.claude/skills/yaqu-wa-templates/SKILL.md:20`).
+Si el editor de Meta, al elegir URL DINÁMICA, añade él mismo el `{{1}}` del final, quien teclee la base con
+`{{1}}` siguiendo nuestra guía deja un marcador de más, y el resultado es justo `…/{{1}}<token>`. Además,
+la tabla de la skill tiene cinco plantillas y **no incluye `albaran_para_firmar_es`**, que es la que ha fallado.
+
+**Qué mirar en WhatsApp Manager, plantilla por plantilla** (no se toca nada: es STOP del fundador): el botón
+de URL de las cuatro debe mostrar la base SIN `{{1}}` tecleado, con un solo marcador dinámico al final.
+**Prueba de punta a punta que lo confirmaría, cuando haya plazas de J6 otra vez:** mandar al cliente 83
+(con el móvil real) un presupuesto y pulsar «Ver presupuesto».
+
+⛔ **No se ha tocado nada:** ni las plantillas (STOP del fundador), ni el builder, ni las guías.
 
