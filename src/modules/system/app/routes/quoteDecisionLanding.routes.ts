@@ -310,6 +310,20 @@ async function loadQuote(token: string) {
   });
 }
 
+/**
+ * SCRUM-1442 · el importe NETO de una línea (qty × price), o NADA si no es un número.
+ *
+ * Una cabecera de apartado (SCRUM-655) viaja sin `qty` ni `price`, y `undefined * undefined` es
+ * NaN: la página donde firma el cliente pintaba «NaN €». La cabecera pinta su concepto y deja el
+ * importe vacío, que es lo que ya hace la tabla del PDF (`Number.isFinite`). Lo usan las DOS tablas
+ * de esta página —la del presupuesto y la tarjeta de cada opción—, para que no vuelva a quedarse
+ * atrás una de las dos.
+ */
+function importeDeLinea(l: any, fmt: (n: number) => string): string {
+  const neto = l.qty * l.price;
+  return Number.isFinite(neto) ? fmt(neto) : '';
+}
+
 function renderTierCards(tiers: any[], token: string, locale: ReturnType<typeof getLocale>): string {
   return `
     <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px" id="tier-cards">
@@ -324,7 +338,7 @@ function renderTierCards(tiers: any[], token: string, locale: ReturnType<typeof 
             ${(tier.lines || []).map((l: any) => `
               <div class="tier-line">
                 <span>${esc(l.concept)}</span>
-                <span>${formatMoneyEs(l.qty * l.price, tier.currency)}</span>
+                <span>${importeDeLinea(l, (n) => formatMoneyEs(n, tier.currency))}</span>
               </div>`).join('')}
           </div>
           <div class="tier-total">${formatMoneyEs(tier.total, tier.currency)}</div>
@@ -434,7 +448,7 @@ function renderQuoteDetail(
           <tr>
             <td><span class="line-icon">${lineIcon(l.concept)}</span>${esc(l.concept)}</td>
             <td>${esc(l.qty)}</td>
-            <td>${money(l.qty * l.price)}</td>
+            <td>${importeDeLinea(l, money)}</td>
           </tr>`).join('')}
         </tbody>
       </table>` : '';
