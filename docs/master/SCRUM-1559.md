@@ -136,3 +136,72 @@ igual. Es un suelo (mínimo): subcontar lo hace más fácil de cumplir, no da ro
 obligatorio cayó por `scrum1480f`. Fila propia a nombre de S3, con su motivo (decisión del
 orquestador de Luis), y `.claude/carriles.json` + `carril-s3.md` regenerados con
 `node scripts/carriles.mjs generar`.
+
+## 18-oct-2026 · S2 · 1559g — los 16 controles NUESTROS de la §20, a 44 px
+
+**Medido contra:** `origin/main` = `e59be9fa384b5bb1d4fbaa6d429a32a5a8a6be8d` · 2026-10-17T23:51:18Z
+A9: comprobación → `tests/scrum1559g-dieciseis-controles-44px.test.mjs`
+**Skill UI:** cargada · `yaqu-premium-ui`: sólo tamaño (`min-height`/`min-width` 44 px y el área de una casilla), cero tokens, cero texto, cero componentes.
+
+S2 · rama `scrum-1559g-dieciseis-controles-nuestros-44px` · worktree `s2-1559g`. Encargo del orquestador
+(18-oct): los 16 de `docs/equipo/para-javier.md` §20 que son nuestros, con el patrón de SCRUM-1158c (decisión
+del fundador de SCRUM-786, opción ③: reglas ACOTADAS, nunca `.btn-sm` global). Los 15 de J1/J2/J3 no se tocan.
+
+**Recuento propio, no cifra heredada.** `censo:tactil-panel` sobre `main` (`e59be9fa3`), con el detalle por
+elemento de las cuatro pantallas: salen los **16** de S3, uno a uno, con las mismas medidas.
+
+| pantalla | control | antes 929 / 390 | después 929 / 390 |
+|---|---|---|---|
+| Inicio | «Ver resumen» | 30,9 / 30,6 | 44,6 / 44,6 |
+| Inicio | «✕» | 30,9 / 30,6 | 44,6 / 44,6 |
+| Inicio | «Ver facturas →» | 30,7 / 30,5 | 44,7 / 44,5 |
+| ficha de presupuesto | «📄 PDF», «⎘ Duplicar», «← Volver» | 31 / 31 | 45 / 45 |
+| ficha de presupuesto | «↻ Reenviar por WhatsApp», «↻ Reenviar por correo» | 30,5 / 30,5 | 44,5 / 44,5 |
+| ficha de presupuesto | «Aceptar presupuesto», «Rechazar presupuesto» | 30,5 / 30,6 | 44,5 / 44,6 |
+| ficha de presupuesto | «+ Añadir gasto a este trabajo» | 30,6 / 30,7 | 44,6 / 44,7 |
+| ficha de presupuesto | casilla de `documentoAsignados` | 21 / 21 | 45 / 45 |
+| Solicitudes | «+ Crear presupuesto», «✓ Marcar gestionada» | 30,7 / 30,9 | 44,7 / 44,9 |
+| Albaranes | número «A-2026-0031» | no tocable / 17 | 45 / 45 |
+| Albaranes | «Enviar para firmar» | 30,8 / 44,6 | 44,8 / 44,6 |
+
+Total del censo: distintos bajo 44 px **97 → 80** (−17), mediciones cortas **143 → 111**. Los 17 son los 16 más
+la casilla en la ficha de FACTURA de J1: `documentoAsignados.js` es un componente compartido, y arreglarlo aquí lo
+arregla allí (avisado al orquestador para que J1 no lo toque también). Las otras 46 filas pantalla × anchura,
+**idénticas** a las de `main`, comparadas fila a fila. Quedan, sin tocar y fuera del encargo: «Nuevo albarán» (37)
+y «Crear revisión» (36,7) a 929, que cumplen los 36 px de escritorio de `DESIGN.md`.
+
+### Qué cambia
+- `public/dashboard/css/styles.css`: una regla de alto para `#btn-ver-resumen-trimestre`, `.home-hero-card > .btn-sm`,
+  `.presupuesto-ficha .btn-sm`, `.solicitud-acciones > .btn-sm` y `.table--albaranes td.cell-actions > .btn-sm`;
+  alto y ancho para «✕» (un glifo); el número del albarán como caja de 44 (`inline-flex`); y la casilla con el
+  mecanismo de `.casilla-tactil-44` (SCRUM-786), con `inset: -12px` y no -16: 20 + 2 × 12 = 44 cabe en su fila de
+  44, y -16 se metería 2 px en la de al lado, que marca a OTRA persona.
+- La ficha del presupuesto va ENTERA (`.presupuesto-ficha`) y no botón a botón: el censo sólo ve lo que pintan sus
+  datos, y «Confirmar aceptación», «Archivar» o el del albarán son la misma pantalla.
+- `quotesDetailView.js` y `quoteRequestsView.js`: una clase de enganche cada uno, en la MISMA línea (no se mueve
+  ninguna). `homeView.js` y `albaranesView.js` no se tocan: sus ids y clases ya bastaban.
+- `tests/scrum1559g-dieciseis-controles-44px.test.mjs`: las reglas con 44 px, `.btn-sm` global intacto, el `inset`
+  contra el alto de la fila, y que cada vista siga pintando sus controles DENTRO de lo que la regla nombra, montada
+  con los datos del censo (`_datos-del-censo.mjs`).
+
+### Verificado, ejecutando
+- **Censo en navegador**, `main` contra esta rama (un árbol desechable de `main` al lado, misma `dist`): la tabla de arriba.
+- **Rojo primero, por mutación** (cada una aplicada y restaurada byte a byte): sin `presupuesto-ficha` en la ficha,
+  con la regla renombrada, con `inset: -16px`, sin `solicitud-acciones`, y sin el ancho de «✕»: cae 1 cada vez. Base: 6 de 6.
+- `guard:objetivo-tactil`: rojo, y AJENO: «⬇ Clientes CSV» (J2, §17), el que anunció 1559b. Ninguna excepción sobra.
+- **yaqu.app, cuenta QA**, antes del merge: sonda de sólo lectura (`sondas-s2/tactil-1559g.mjs`, fuera del repo;
+  sirve `styles.css`, `quotesDetailView.js` y `quoteRequestsView.js` de la rama en lugar de los de producción, con
+  control de que se sirvieron y de que el interceptor corta todo lo que no es GET; 0 escrituras, 0 errores;
+  capturas en `sondas-s2/cap1559g/`). Área de toque por `elementFromPoint` desde el centro, no por caja:
+  · ficha del presupuesto #202, a 390 y a 929: **8 de 8** de 30,5 a **44,5** («📄 PDF», «⎘ Duplicar», «Archivar»,
+    «← Volver», «✉️ Enviar por correo», «Aceptar presupuesto», «Rechazar presupuesto», «+ Añadir gasto…»);
+  · Albaranes: «Enviar para firmar» y «Emitir» 30,5 → **44,5** a 929; los tres números 16 → **44,5** a 390, y a 929
+    de 17×10 / TAPADOS (0×0) a una caja de **120,5×18,5** sin huecos.
+  · **NO medido en yaqu.app, y por qué:** Inicio (la cuenta QA no pinta ni «Tu resumen del trimestre» ni «Tienes en
+    juego»), Solicitudes (cero solicitudes), los dos «↻ Reenviar» (QA no tiene un presupuesto enviado) y la casilla
+    (sin miembros de equipo). Medidos en el banco, arriba. No se han creado datos: la sonda no escribe.
+- **De paso, medido y NO arreglado — para el orquestador:** a 929 la tabla de Albaranes parte letra a letra el
+  número («A/B2/6/0/0/3»), las fechas («16/10/2 026») y el estado («BOR/RAD/OR»): siete columnas en 631 px y
+  `.table td { word-break: break-word }` global. Probé a ponerlos en una línea y lo retiré: sólo con el número la
+  tabla pide 676 px y desborda 45 (con «Enviar para firmar» medio fuera); con todo, 27-251 px entre 800 y 1024.
+  Es de cuántas columnas caben a ese ancho, no de toque, y no cabe en este PR.
