@@ -1,0 +1,134 @@
+﻿{
+ "ancho": 390,
+ "alto": 844,
+ "servidoLlevaArreglo": true,
+ "filas": 2,
+ "verDetalleEnFilas": 0,
+ "primeraFila": {
+  "cliente": "Cliente de pruebas QA",
+  "botones": [
+   "Agendar",
+   "⋯"
+  ]
+ },
+ "focoInicial": "BODY",
+ "modo": "ANTES (jobsView.js de 57b0bc82^1)",
+ "paradasFila0": [
+  "27:BUTTON«Agendar»",
+  "28:BUTTON«⋯»"
+ ],
+ "tabHastaVerDetalleFila0": null,
+ "trRecibioFoco": false,
+ "recorrido": [
+  "1:BUTTON«Inicio»",
+  "2:BUTTON«Solicitudes»",
+  "3:BUTTON«Trabajos»",
+  "4:BUTTON«Presupuestos»",
+  "5:BUTTON«Albaranes»",
+  "6:BUTTON«Partes por valorar»",
+  "7:BUTTON«Facturas»",
+  "8:BUTTON«Cobros»",
+  "9:BUTTON«Clientes»",
+  "10:BUTTON«Productos»",
+  "11:BUTTON«Proveedores»",
+  "12:BUTTON«Gastos»",
+  "13:BUTTON«Informes»",
+  "14:BUTTON«Libro de registro»",
+  "15:BUTTON«Facturas recibidas»",
+  "16:BUTTON«Equipo»",
+  "17:BUTTON«Planes»",
+  "18:BUTTON«Configuración»",
+  "19:BUTTON«Salir»",
+  "20:BUTTON«Menú»",
+  "21:BUTTON«Nuevo trabajo»",
+  "22:BUTTON«Partes por valorar»",
+  "23:BUTTON«Todos · 2»",
+  "24:BUTTON«Pendiente · 1»",
+  "25:BUTTON«Parcial · 0»",
+  "26:BUTTON«Pagado · 0»",
+  "27:BUTTON«Agendar»[fila0]",
+  "28:BUTTON«⋯»[fila0]",
+  "29:BUTTON«Agendar»[fila1]"
+ ],
+ "ratonFila": {
+  "hash": "#jobs-detail/77",
+  "nav": [
+   [
+    "jobs-detail",
+    77
+   ]
+  ]
+ },
+ "sustituido": 1,
+ "gets": 112,
+ "abortadas": [
+  "POST /admin/entorno"
+ ]
+}
+{
+ "ancho": 1280,
+ "alto": 800,
+ "servidoLlevaArreglo": true,
+ "filas": 2,
+ "verDetalleEnFilas": 0,
+ "primeraFila": {
+  "cliente": "Cliente de pruebas QA",
+  "botones": [
+   "Agendar",
+   "⋯"
+  ]
+ },
+ "focoInicial": "BODY",
+ "modo": "ANTES (jobsView.js de 57b0bc82^1)",
+ "paradasFila0": [
+  "27:BUTTON«Agendar»",
+  "28:BUTTON«⋯»"
+ ],
+ "tabHastaVerDetalleFila0": null,
+ "trRecibioFoco": false,
+ "recorrido": [
+  "1:BUTTON«Inicio»",
+  "2:BUTTON«Solicitudes»",
+  "3:BUTTON«Trabajos»",
+  "4:BUTTON«Presupuestos»",
+  "5:BUTTON«Albaranes»",
+  "6:BUTTON«Partes por valorar»",
+  "7:BUTTON«Facturas»",
+  "8:BUTTON«Cobros»",
+  "9:BUTTON«Clientes»",
+  "10:BUTTON«Productos»",
+  "11:BUTTON«Proveedores»",
+  "12:BUTTON«Gastos»",
+  "13:BUTTON«Informes»",
+  "14:BUTTON«Libro de registro»",
+  "15:BUTTON«Facturas recibidas»",
+  "16:BUTTON«Equipo»",
+  "17:BUTTON«Planes»",
+  "18:BUTTON«Configuración»",
+  "19:BUTTON«Salir»",
+  "20:INPUT«»",
+  "21:BUTTON«Nuevo trabajo N»",
+  "22:BUTTON«Partes por valorar»",
+  "23:BUTTON«Todos · 2»",
+  "24:BUTTON«Pendiente · 1»",
+  "25:BUTTON«Parcial · 0»",
+  "26:BUTTON«Pagado · 0»",
+  "27:BUTTON«Agendar»[fila0]",
+  "28:BUTTON«⋯»[fila0]",
+  "29:BUTTON«Agendar»[fila1]"
+ ],
+ "ratonFila": {
+  "hash": "#jobs-detail/77",
+  "nav": [
+   [
+    "jobs-detail",
+    77
+   ]
+  ]
+ },
+ "sustituido": 1,
+ "gets": 112,
+ "abortadas": [
+  "POST /admin/entorno"
+ ]
+}
