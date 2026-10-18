@@ -174,10 +174,11 @@ test('un generador que sale ≠ 0 corta el lanzamiento, y su motivo llega', () =
   assert.match(p.motivo, /NO-PUDE-MIRAR: puesto ZZ/);
 });
 
-test('sin `mesas` en la instalación todo sigue como antes, pero el veredicto lo DICE', () => {
+test('sin `mesas` en la instalación no hay mesa, el veredicto lo DICE, y se arranca en `repo` (SCRUM-1298c)', () => {
   const m = s.mesaDelLanzamiento({ config: { repo: '/r' }, nombre: 'sesion-1', equipo: EQUIPO });
   assert.equal(m.ok, true);
-  assert.equal(m.cwd, undefined);
+  // Era `undefined` (heredar el cwd de quien lanza) hasta SCRUM-1298c: ver tests/scrum1298c-*.
+  assert.equal(m.cwd, '/r');
   assert.equal(m.mesa.veredicto, 'SIN-MESA');
 });
 

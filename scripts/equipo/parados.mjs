@@ -5,6 +5,7 @@
 //   node scripts/equipo/parados.mjs --json     → lo mismo, para otra herramienta
 //   node scripts/equipo/parados.mjs --jobs <carpeta>   → otro registro (así lo doblan los tests)
 //   node scripts/equipo/parados.mjs --aparcados <fichero>  → otras marcas de aparcado (SCRUM-1357e)
+//   node scripts/equipo/parados.mjs --control  → el control positivo, sin `npm test` (SCRUM-1357g)
 //
 // POR QUÉ EXISTE. El 13-oct-2026 había 37 sesiones en el panel y 31 BLOQUEADAS, siete de ese día,
 // paradas entre 12 y 70 minutos. El vigía que miraba el orquestador decía «nadie parado», y con eso
@@ -60,6 +61,15 @@
 // SALIDA: 0 = miré todo y nadie está bloqueado, nadie espera y no falta ningún puesto pedido (los
 // aparcados no faltan) · 1 = hay alguna de las tres · 2 = NO PUDE MIRAR algo (y gana al 1: debajo va lo
 // que sí se pudo leer, pero un «no sé» no se tapa con una lista).
+//
+// CONTROL (SCRUM-1357g, `--control`). Fabrica cinco casos y comprueba que se ven como deben: una que
+// trabaja (0), una que te espera (1), una bloqueada que el panel da por `working` (1, con su pregunta), un
+// panel que no se puede leer (2, NUNCA «ninguna») y un state.json ilegible (2). Pasa por las piezas DE
+// VERDAD: el `leerPanel` de aquí con un lanzador falso (su JSON se parsea igual), el `leerTrabajos` del
+// latido sobre state.json escritos en un temporal, y este `medir`. No una copia de la condición: el
+// 18-oct-2026 un vigía con su `--control` sobre una copia daba verde mientras el programa contaba mal.
+// No toca el panel ni el registro reales. Sale 0 si caza los cinco; 2 si no (un vigía cuyo control
+// falla está ciego, aunque mire).
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -296,7 +306,81 @@ export function medir({ panel, motivoPanel = 'sin motivo', registro, lineaDe = (
   return { codigo, lineas: out, datos: { codigo, ahora, bloqueadas, esperan, vacios, aparcados, marcasQueNoValen, pedidos: [...pedidos], puestos, ciegos, filas, viejas, panel: hayPanel ? { entradas: panel.length, fondo: fondo.length, interactivas: interactivas.length } : null } };
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+/**
+ * SCRUM-1357g · el control positivo. Las piezas se pueden cambiar para probar el control mismo: un control
+ * que no cae cuando `medir` se equivoca no controla nada.
+ * @returns {{ok:boolean, lineas:string[]}}
+ */
+export function control({ medir: medirX = medir, leerPanel: leerPanelX = leerPanel, leerTrabajos: leerTrabajosX = leerTrabajos, ahora = Date.now() } = {}) {
+  const iso = (ms) => new Date(ms).toISOString();
+  const lanzadorQueContesta = (entradas) => () => ({ status: 0, stdout: JSON.stringify(entradas), stderr: '' });
+  const lanzadorRoto = () => ({ error: Object.assign(new Error('spawn claude ENOENT'), { code: 'ENOENT' }), status: null });
+  const panelDe = (id, name, state, pid, status) => ({ id, name, kind: 'background', state, pid, status, cwd: 'D:\\control' });
+  const estado = (name, state, tempo, extra = {}) => JSON.stringify({ name, state, tempo, updatedAt: iso(ahora - 10 * MIN), createdAt: iso(ahora - 60 * MIN), ...extra });
+  const PREGUNTA = '¿Me das la cookie de la demo para medir el plan?';
+
+  const casos = [
+    { n: 'una que trabaja', espera: 'sale 0 y la cuenta trabajando',
+      panel: lanzadorQueContesta([panelDe('c1357g01', 'sesion-1', 'working', 101, 'busy')]),
+      jobs: { c1357g01: estado('sesion-1', 'working', 'active') },
+      vale: (r) => r.codigo === SALIDA_NADIE && r.datos.filas.some((f) => f.id === 'c1357g01' && f.clase === 'trabajando') },
+    { n: 'una que acabó su turno con proceso', espera: 'sale 1 y TE ESPERA',
+      panel: lanzadorQueContesta([panelDe('c1357g02', 'sesion-2', 'done', 102, 'idle')]),
+      jobs: { c1357g02: estado('sesion-2', 'done', 'idle') },
+      vale: (r) => r.codigo === SALIDA_HAY && r.datos.esperan.some((f) => f.id === 'c1357g02') },
+    { n: 'una bloqueada que el panel da por working', espera: 'sale 1, BLOQUEADA y con su pregunta',
+      panel: lanzadorQueContesta([panelDe('c1357g03', 'sesion-3', 'working', 103, 'busy')]),
+      jobs: { c1357g03: estado('sesion-3', 'working', 'blocked', { needs: PREGUNTA }) },
+      vale: (r) => r.codigo === SALIDA_HAY && r.datos.bloqueadas.some((f) => f.id === 'c1357g03' && f.disfraz && f.pregunta === PREGUNTA) },
+    { n: 'un panel que no se puede leer', espera: 'sale 2 y dice NO PUDE MIRAR, nunca «ninguna»',
+      panel: lanzadorRoto,
+      jobs: { c1357g04: estado('sesion-4', 'done', 'idle') },
+      vale: (r) => r.codigo === SALIDA_CIEGO && /NO PUDE MIRAR/.test(r.lineas[0]) && !r.lineas.some((l) => /✅|ninguna sesión bloqueada/.test(l)) },
+    { n: 'un state.json ilegible', espera: 'sale 2: no sé qué pregunta',
+      panel: lanzadorQueContesta([panelDe('c1357g05', 'sesion-5', 'working', 105, 'busy')]),
+      jobs: { c1357g05: '{ esto no es json' },
+      vale: (r) => r.codigo === SALIDA_CIEGO && r.datos.ciegos.some((c) => /ILEGIBLE/.test(c)) },
+  ];
+
+  const lineas = [];
+  let mal = 0;
+  let raiz = null;
+  try {
+    raiz = fs.mkdtempSync(path.join(os.tmpdir(), `yaqu-1357g-${process.pid}-`));
+    casos.forEach((c, i) => {
+      let r = null; let fallo = '';
+      try {
+        const dir = path.join(raiz, String(i));
+        for (const [id, cuerpo] of Object.entries(c.jobs)) {
+          fs.mkdirSync(path.join(dir, id), { recursive: true });
+          fs.writeFileSync(path.join(dir, id, 'state.json'), cuerpo);
+        }
+        const leido = leerPanelX({ orden: ['claude'], lanzar: c.panel });
+        r = medirX({ panel: leido.panel, motivoPanel: leido.motivo, registro: leerTrabajosX(dir), ahora });
+      } catch (e) { fallo = `reventó: ${e.message}`; }
+      const ok = !fallo && !!r && c.vale(r) === true;
+      if (!ok) mal++;
+      lineas.push(`  ${ok ? '✔' : '🔴'} ${c.n} → ${c.espera}${ok ? '' : ` · ha dado: ${fallo || (r ? `salida ${r.codigo} · «${corto(r.lineas[0], 140)}»` : 'nada')}`}`);
+    });
+  } catch (e) {
+    mal++;
+    lineas.push(`  🔴 no pude fabricar los casos: ${e.message}`);
+  } finally {
+    if (raiz) fs.rmSync(raiz, { recursive: true, force: true });
+  }
+  lineas.unshift(mal
+    ? `🔴 PARADOS · CONTROL: falla en ${mal} de ${casos.length} — no te fíes de su salida`
+    : `✅ PARADOS · CONTROL: caza los ${casos.length} casos (los de verdad: leerPanel, leerTrabajos y medir)`);
+  return { ok: mal === 0, lineas };
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url) && process.argv.includes('--control')) {
+  const c = control();
+  console.log(c.lineas.join('\n'));
+  process.exit(c.ok ? SALIDA_NADIE : SALIDA_CIEGO);
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url) && !process.argv.includes('--control')) {
   const arg = (n, def) => { const i = process.argv.indexOf(n); return i >= 0 ? process.argv[i + 1] : def; };
   const dir = arg('--jobs', path.join(os.homedir(), '.claude', 'jobs'));
   // `PARADOS_CLAUDE`: la orden del panel como lista JSON (`["node","doble.mjs"]`). Así lo doblan los tests.

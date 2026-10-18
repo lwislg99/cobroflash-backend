@@ -263,3 +263,57 @@ ajeno; `scrum710b` ya pasa.
 
 A9: comprobación → `tests/scrum710b-anclaje-por-identidad.test.mjs`
 A9: aviso → cicatriz S3 «Aparté mi arreglo con `git stash` para mezclar main, y `stash pop` saca el último del almacén de TODOS los worktrees, no el mío.» — no se pudo comprobar: es un comando de git en mi shell y ningún guard lee lo que una sesión teclea
+
+## Recuento de los 21 con el censo arreglado (18-oct-2026, S3, sólo medir)
+
+**Medido contra:** `origin/main` = `06c6289d46d5998493ec014fa26ff3353946b58b` · 2026-10-18T17:40:44Z
+
+A9: comprobación → `tests/scrum1158b-serializar-no-pierde-estilos.test.mjs`
+
+Los «21» (Inicio 10, Informes 8, Exportar 3) se midieron sobre la rama de 1158b, antes de que entrara.
+Ahora se recuentan con `censo:tactil-panel` sobre `main`, que lleva 1158b, 1158c, 1559b y 1560 dentro.
+El censo da 80 distintos y 111 mediciones, 0 sondas sin cazar de 56. Cada control sale MEDIDO, no
+ausente: el volcado elemento a elemento sale de una copia del censo fuera del repo, que reproduce
+80/111.
+
+**Quedan 3, y son los tres de Exportar que se decidió no tocar.** Los 18 de Inicio e Informes llegan a 44.
+
+| vista | selector | control | px 929 / 390 | estado |
+|---|---|---|---|---|
+| Inicio | `#btn-home-prefs` (`BUTTON.btn-ghost.btn-sm`) | «⚙ Personalizar» | 44,5 / 44,5 | cumple |
+| Inicio | `.home-checklist .btn-sm` (`BUTTON.btn-ghost.btn-sm`) ×6 | «Ir →» | 44,6–45,0 / 44,6–44,9 | cumple |
+| Inicio | ídem ×3 | «Ir →» | — | **no pintados con estos datos** (ver abajo) |
+| Informes | `#vat-quarter-row > .btn-sm` ×4 | «1T» «2T» «3T» «4T» | 44,8 / 44,8 | cumple |
+| Informes | `#resumen-quarter-row > .btn-sm` ×4 | «1T» «2T» «3T» «4T» | 44,6 / 44,7 | cumple |
+| Exportar | `#btn-export-zip` (`BUTTON.btn-primary`) | «Descargar ZIP» | **36,9** / 44,8 | corto sólo contra 44; cumple 36 en escritorio |
+| Exportar | `#btn-libro-emitidas` (`BUTTON.btn-secondary`) | «Descargar CSV» | **37,0** / 44,7 | ídem |
+| Exportar | `#btn-portabilidad` (`BUTTON.btn-secondary`) | «Descargar todo» | **36,7** / 44,7 | ídem |
+
+- **Los «Ir →» son 6 y no 9.** `renderSetupChecklist` (`homeView.js`) sólo pinta «Ir →» en los pasos
+  sin hacer (`pasos.filter(s => !s.done)`). Los datos de 1560 traen un merchant con 3 pasos hechos.
+  Los 6 pintados salen de la misma plantilla y caen bajo la misma regla, y dan 44,6–45. Los otros 3 NO
+  están medidos con estos datos: se dice, no se cuenta como cero.
+- **Exportar** sigue la decisión del 16-oct (SCRUM-384/352): a 390 llega, a 929 juzga el 36 de `DESIGN.md`.
+
+**Los 19 falsos: los 19 de la misma causa, re-medidos hoy.** La causa es `el.style.minHeight = '44px'`
+puesto por JS, que el serializador viejo perdía. Hoy, con el serializador arreglado, cada uno sale medido:
+
+| fuente | elementos | px 929 / 390 |
+|---|---|---|
+| `cobrosView.js`, filtros `data-filtro-cobro` | 6 | 44,9 / 44,9 |
+| `settingsView.js`, pestañas `data-submenu` | 9 | 45,0 / 44,8 |
+| `quotesTabs.js` en Presupuestos («Historial», «Plantillas») | 2 | 44,5 / 44,5 |
+| `quotesTabs.js` en Plantillas | 2 | 44,5 / 44,5 |
+
+El patrón que puede volver es una pestaña o segmentado `btn-sm` que llega a 44 sólo por
+`style.minHeight` en JS y un serializador que vuelve a tirar esa propiedad. Lo vigila
+`tests/scrum1158b-serializar-no-pierde-estilos.test.mjs`: 5 de 5 hoy.
+
+**`guard:objetivo-tactil`: el «0·0» del 16-oct ya NO es verdad, y es porque el guard SÍ se movió.**
+Hoy sale 1, con 2 hallazgos y 0 ciegos. Los dos son el mismo control: «⬇ Clientes CSV»
+(`A.btn-secondary.btn-sm`, `customersView.js`, J2), con 31 < 36 a 929 y 31 < 44 a 390. Es el rojo que
+anunció 1559b, cuando el banco dejó de perder el botón con texto más icono. Está en `para-javier.md`
+§17 y no se arregla por el lado del guard (regla 41). Las demás superficies dan 0 cortos sin excusar,
+y todas las sondas de umbral caen donde deben (sonda-30 cae y sonda-37 pasa a 36 px; sonda-40 cae a 44).
+Que el guard sólo se moviera con 1559b y no con 1158b casa con lo medido el 16: sus superficies (Clientes,
+editor, Trabajo, 360, Proveedores) no eran las de los 13 ni las de los 19.

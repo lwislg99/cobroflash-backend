@@ -434,3 +434,60 @@ plugin, que no mira el código de salida, lo habría pintado como «nadie que at
   paró a `sesion-2` con la pregunta ya leída y contestada; de no ser así, se habría perdido para siempre
   y la sesión siguiente no sabría ni que existió.
 - `_sala` sigue a `origin/main` a mano: hasta que se ponga al día, el panel corre el `sala.mjs` anterior.
+
+## 18-oct-2026 · SCRUM-1357g · `parados.mjs --control`: el control positivo que se corre sin `npm test`
+
+**Medido contra:** `origin/main` = `06c6289d46d5998493ec014fa26ff3353946b58b` · 2026-10-18T17:46:18Z
+
+A9: comprobación → `tests/scrum1357g-parados-control.test.mjs`
+
+### De dónde viene
+El orquestador pidió pasar a `scripts/equipo/` su `quien-me-espera.mjs`. Ese guion vivía en un scratchpad,
+llevaba `--control` y se creía probado en caliente. **No se ha portado.** Medido a la vez que `parados.mjs`,
+contra el panel de verdad (17:43Z):
+
+| | `quien-me-espera.mjs` | `parados.mjs` |
+|---|---|---|
+| sin argumento | filtra por «oct»; ningún nombre lo lleva (son `sesion-N`) → «ninguna casa», **sale 0** | mira todo |
+| `sesion-2`, bloqueada 18 min, que el panel da por `working` | «trabajando» (su transcripción crece) | **BLOQUEADA**, con su `detail` |
+| puestos | «SIN NINGUNA SESION VIVA: s0…s5» en cada pasada (`slice(0,2)` de `sesion-N` = `se`) | por `puestoDe` |
+| su control | prueba una COPIA de la condición, no la que usa `pintar` | (no tenía, sólo los tests de CI) |
+
+El acierto que se le atribuía («las seis que me esperaban») era de `sala.mjs`, no suyo: lo corrigió el
+propio orquestador. El orquestador lo da por tirado y deja `parados.mjs` como el vigía oficial. Le pidió a
+`parados.mjs` lo único que el otro tenía: un control que se corra sin `npm test`.
+
+### Lo que entra (sólo `scripts/equipo/parados.mjs` y su test nuevo)
+- **`control()` exportada y `--control` en la línea de órdenes.** Cinco casos fabricados: una que trabaja
+  (0) · una que acabó su turno con proceso (1, TE ESPERA) · una bloqueada que el panel da por `working`
+  (1, BLOQUEADA, con la pregunta de su `needs`) · **un panel que no se puede leer (2, «NO PUDE MIRAR», sin
+  ✅ ni «ninguna sesión bloqueada»)** · un state.json ilegible (2).
+- **Pasa por las piezas de verdad, no por una copia:** el `leerPanel` de aquí con un lanzador falso (el JSON
+  se parsea con el código de siempre), el `leerTrabajos` del latido sobre state.json escritos en un
+  `os.tmpdir()` que se borra, y `medir`. No toca el panel ni el registro reales.
+- Sale **0** si caza los cinco y **2** si no: un vigía cuyo control falla está ciego aunque mire.
+
+### Comprobado
+| corrida | resultado |
+|---|---|
+| `node scripts/equipo/parados.mjs --control` | ✅ los 5 casos, salida 0 |
+| test nuevo + 1357b-f + `scrum824` | **71/71** tras arreglar mi propio test (abajo) |
+| 52 ficheros de censos que barren `scripts/` y vecinos | 539/549. Los 10 caídos son `scrum1398` y `scrum381`: «falta `dist/`», árbol nuevo sin compilar, y este cambio no añade ningún `import` |
+
+**El control del control** (el test): el control CAE, y nombra SOLO el caso que toca, con cada pieza rota
+como un defecto que ya tuvimos. `leerPanel` que da `[]` cuando no pudo leer (el vigía del 13-oct) → cae
+«panel que no se puede leer». `medir` que con el panel ciego contesta 0 → el mismo. `medir` que no mira
+`needs`/`tempo` → cae «bloqueada que el panel da por working». `leerTrabajos` que se salta el ilegible →
+cae «state.json ilegible». `medir` que revienta → los cinco 🔴 con «reventó», y el control no revienta.
+
+**Mutación a mano** (Edit y vuelta, árbol limpio): con `--control` cayendo a la foto de verdad (sin su
+`exit` y sin la guarda), el test «NO mira el panel de verdad» cae.
+
+**Mi error, cazado por el test:** el chivato de «ha hecho la foto de verdad» buscaba `NO PUDE MIRAR` a secas,
+y la descripción del cuarto caso lo lleva. Es la trampa de auto-referencia de siempre. Ahora busca lo que
+sólo escribe la foto (`PARADOS · NO PUDE MIRAR`, `mirado a las`).
+
+### Lo que NO hace
+- No prueba el `claude agents --json` real: si el CLI cambia su forma, lo que lo dice es la propia foto
+  (sale 2 con su motivo), no el control. El control prueba que LA LÓGICA ve lo que debe.
+- No cubre TE ESPERA por `timeline.jsonl` ni APARCADO: ésos siguen en los tests de 1357c y 1357e.
