@@ -52,6 +52,9 @@ test('SCRUM-1562c · cada parte por valorar es un control NATIVO: `<button type=
     assert.equal(f.tagName, 'BUTTON', `🔴 la fila es ${f.tagName} y no BUTTON.`);
     assert.equal(String(f.type || (f.getAttribute && f.getAttribute('type'))), 'button',
       '🔴 el botón no es `type="button"`: dentro de un formulario lo enviaría.');
+    // El banco de SCRUM-1285 busca la fila por `className === 'customers-card'`: una clase más y
+    // sus cuatro casos de «oficina» se quedan ciegos (medido en el PR #2560).
+    assert.equal(f.className, 'customers-card', `🔴 la fila lleva «${f.className}»: el banco de SCRUM-1285 deja de verla.`);
   }
 });
 
@@ -59,8 +62,8 @@ test('SCRUM-1562c · el foco en la fila SE VE: su propio `:focus-visible` con `-
   // El global (`:focus-visible { box-shadow: var(--ring) }`) pesa lo mismo que `.customers-card`, que
   // va después y pone su sombra encima: medido en yaqu.app, con el foco en la fila no se veía nada.
   const css = fs.readFileSync(path.join(RAIZ, 'public/dashboard/css/styles.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-  const regla = /\.parte-oficina-fila:focus-visible\s*\{([^}]*)\}/.exec(css);
-  assert.ok(regla, '🔴 no hay `.parte-oficina-fila:focus-visible`: la sombra de la tarjeta tapa el anillo.');
+  const regla = /#po-lista\s*>\s*button\.customers-card:focus-visible\s*\{([^}]*)\}/.exec(css);
+  assert.ok(regla, '🔴 no hay `#po-lista > button.customers-card:focus-visible`: la sombra de la tarjeta tapa el anillo.');
   assert.match(regla[1], /box-shadow:\s*var\(--ring\)/, '🔴 el foco de la fila no usa el anillo `--ring` del sistema.');
 });
 

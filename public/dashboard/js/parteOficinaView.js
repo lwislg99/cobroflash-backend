@@ -77,7 +77,9 @@ async function renderPartesOficinaView(container, opts) {
     // la tarjeta entera, como antes. Dentro de un botón sólo cabe contenido en línea: `span` en bloque.
     const fila = document.createElement('button');
     fila.type = 'button';
-    fila.className = 'customers-card parte-oficina-fila';
+    // La clase se queda EXACTAMENTE en `customers-card`: el banco de SCRUM-1285 localiza la fila así.
+    // Su CSS de botón cuelga de `#po-lista > button.customers-card`.
+    fila.className = 'customers-card';
     fila.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:12px;'
       + 'padding:12px 14px;margin-bottom:8px;cursor:pointer';
     fila.innerHTML =
