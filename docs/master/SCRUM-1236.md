@@ -255,3 +255,26 @@ de URL de las cuatro debe mostrar la base SIN `{{1}}` tecleado, con un solo marc
 
 ⛔ **No se ha tocado nada:** ni las plantillas (STOP del fundador), ni el builder, ni las guías.
 
+### 18-oct, ~18:50Z · la barra «Copiar enlace» en el albarán: hoy NO se puede · y dos cambios en para-javier
+
+**¿Puede la ficha del albarán pintar `waFallbackBar` (`api.js:982`, S2 contenedor)? Hoy no. Medido:**
+- **No hay enlace que darle.** `GET /admin/albaranes/46` (hoy, cuenta QA) no trae ningún campo con el token,
+  y el POST tampoco lo devuelve. Presupuesto y factura sí lo tienen (`quote.payToken`, `invoice.payToken`).
+- **No hay envío de albarán por email**, y la barra pinta SIEMPRE ese botón. Desactivado, el único motivo
+  escrito es «Este cliente no tiene email guardado», que aquí sería falso.
+- **Y no cubriría el caso de hoy:** el 131026 llega por el webhook después de un `sent:true`, y la barra sale
+  con `sent:false`.
+
+**Decisión del orquestador (18-oct):** S1 expone al comercio dueño el enlace de firma, siguiendo el precedente
+de `payToken`. Eso además abre el camino de `privacidad:92`. Lo de la barra se aparca hasta ver qué queda.
+**Mientras tanto, «Copia el enlace…» en la ficha del albarán es FALSO, y queda declarado aquí.**
+
+**En `docs/equipo/para-javier.md` §25:**
+- **25.2:** el webhook de Stripe pasa de «pendiente del OK» a **AUTORIZADO**, con la cita leída por S4 en el
+  fichero: «si autorizo», `ed676fd1-feb4-4658-bda2-01f4bf9fb3fc.jsonl`, `uuid
+  1c5a7185-addc-4245-9438-ef4f0313eb81`, `2026-10-18T18:35:52.798Z`, `type:"user"`, en respuesta a una pregunta
+  hecha sola sobre ese fallo.
+- **25.4 (nuevo, J1):** «📋 Copiar enlace» copia `location.origin` (la portada) cuando la factura no trae
+  `payToken` (`invoiceDetailView.js:405` y `:421`). El gemelo es nuestro: `jobDetailView.js:1475`, S2
+  (`dos-equipos.md:152`). Lo reparte el orquestador.
+

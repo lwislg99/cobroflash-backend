@@ -528,9 +528,9 @@ Leído tal cual, eso dice: *«el caso ④ depende del huso horario»*. **Y es fa
 · 🔵 **Y una cosa que queremos decir claramente: el test NO sobra.** Un test que a veces cae sobre algo que a veces falla está midiendo bien. **Quitarlo cambiaría un rojo molesto por un verde hueco.** **Lo que pedimos es que el módulo llegue a cero, no que el test deje de mirar.**
 · **Medido por S5 (equipo de Luis) el 18-oct-2026.** **La §18 se queda como estaba, con su hipótesis marcada como hipótesis; esta sección es la medida que la supera.**
 
-## 25 🔴 TRES COSAS VUESTRAS DEL 18-OCT · el PDF que pinta «NaN EUR», el webhook de Stripe y SCRUM-914 parado esperándoos
+## 25 🔴 CUATRO COSAS VUESTRAS DEL 18-OCT · el PDF que pinta «NaN EUR», el webhook de Stripe (ya autorizado), SCRUM-914 parado esperándoos y un «Copiar enlace» que copia la portada
 
-**Las tres en una sección a propósito:** este fichero choca cada vez que dos ramas le añaden secciones al final. Las escribe S4 por encargo del orquestador de Luis. Cada punto dice quién lo midió y si lo hemos vuelto a mirar nosotros.
+**Las cuatro en una sección a propósito:** este fichero choca cada vez que dos ramas le añaden secciones al final. Las escribe S4 por encargo del orquestador de Luis. Cada punto dice quién lo midió y si lo hemos vuelto a mirar nosotros.
 
 ### 25.1 · J1 · el PDF del presupuesto con opciones pinta «× undefined» y «NaN EUR» (SCRUM-1442)
 
@@ -539,9 +539,13 @@ Leído tal cual, eso dice: *«el caso ④ depende del huso horario»*. **Y es fa
 · **Dónde:** `src/modules/invoicing/infra/pdf/pdf.service.ts:909-914` (J1, `dos-equipos.md:117`). `tier.lines.forEach` pinta `` `${l.concept} × ${l.qty}` `` y `fmtImporte(l.qty * l.price …)` para TODA línea de la opción, y la cabecera de apartado no trae ni `qty` ni `price`.
 · **La mitad de la página ya está arreglada** (#2559, en `main`: la página donde firma el cliente ya no pinta «NaN €»). **La del PDF nunca ha entrado:** `git log --grep=1442` sólo da #2559, y no hay rama 1442 remota. **Es el gemelo de #2559**, y la cabecera debería salir en el PDF igual que en la página.
 
-### 25.2 · J2 · el webhook de Stripe y `planExpiresAt` · ⛔ PENDIENTE DEL OK DEL FUNDADOR
+### 25.2 · J2 · el webhook de Stripe y `planExpiresAt` · ✅ AUTORIZADO POR EL FUNDADOR
 
-> ⛔ **PENDIENTE DEL OK DEL FUNDADOR.** Es flujo de cobro (STOP de `CLAUDE.md`). **Que nadie lo construya hasta que la cita literal del fundador esté en el registro.** Nuestra S1 nos paró por esto y tenía razón: lo que le llegó era un OK del orquestador, y en Jira la firma del orquestador y la del fundador son la misma cuenta.
+> ✅ **AUTORIZADO, con la cita en su origen.** Es flujo de cobro (STOP de `CLAUDE.md`) y el fundador lo ha autorizado así:
+> **«si autorizo»** — `ed676fd1-feb4-4658-bda2-01f4bf9fb3fc.jsonl` · `uuid: 1c5a7185-addc-4245-9438-ef4f0313eb81` · `2026-10-18T18:35:52.798Z` · `type: "user"`.
+> Contesta a una pregunta hecha SOLA (turno de las 18:27:33Z): «¿Autorizas que se arregle el fallo del webhook de Stripe? Es la fecha que no se guarda al suscribirse. Hoy no mueve dinero real (está en pruebas), pero toca el flujo de cobro, y por eso necesito tu sí o tu no escrito. Contéstame sólo a esto.» **Leída por nuestra S4 en el fichero**, no copiada de un mensaje.
+> Por qué antes ponía «pendiente»: la primera autorización le llegó al orquestador a media tanda, dentro de una lista, y en la transcripción no consta. Nuestra S1 lo paró por eso, y tenía razón. Ésta sí consta.
+> **Lo que cubre la frase, y nada más:** arreglar el fallo del webhook (la fecha de fin de periodo que no se guarda). No cubre otros cambios del flujo de cobro.
 
 > **Los hechos medidos que la motivan**, del panel de Stripe del fundador (modo pruebas, endpoint `yaqu-production` → `https://yaqu.app/webhooks/stripe`): **versión de API `2025-10-29.clover`** (posterior al corte de `2025-03-31`), **6 eventos escuchados** (no se ve cuáles), **5 entregas esta semana con 2 FALLIDAS**, tiempo de respuesta 309–398 ms. Y la consecuencia: `planExpiresAt` de la cuenta QA sigue en `2026-10-12` con `plan: "pro"`, así que **quien cancele hoy caería en el muro al instante, contra la firma del fundador del 7-sep**.
 
@@ -568,3 +572,10 @@ Leído tal cual, eso dice: *«el caso ④ depende del huso horario»*. **Y es fa
 2. **Rama compartida:** S1 abre la rama con el esquema y el servidor y escribe aquí su nombre, y una sesión de J3 empuja a esa misma rama el commit del criterio 3 antes de que el PR pueda entrar.
 
 **Una cosa que conviene mirar ya, decidáis lo que decidáis** (también en c.19414): la FORMA de `equipments` no la ha medido nadie. Vuestro registro del 29-sep comprobó que cada objeto existe (23/23), no sus columnas, y `CREATE TABLE IF NOT EXISTS` mira el nombre. Hay que medirla columna a columna contra `docs/sql/scrum-914-equipos-del-cliente.sql`; nuestros árboles no tienen claves de base.
+
+### 25.4 · J1 · «📋 Copiar enlace» en la factura copia la PORTADA de yaqu.app cuando no hay token
+
+**Lo que pasa:** cuando el WhatsApp de una factura falla, la ficha pinta la barra de salidas (`waFallbackBar`) con un «📋 Copiar enlace». Si la factura no trae `payToken`, el enlace que se copia es `location.origin`: la portada de yaqu.app. **El profesional se lo manda al cliente creyendo que es su factura.** Un botón que copia un enlace falso con forma de bueno es peor que no tener botón.
+· **Dónde, medido con `git grep` sobre `origin/main`:** `invoiceDetailView.js:405` (fallo del envío) y `:421` (fallo de red): `link: payToken ? location.origin + '/pay/invoice/' + payToken : location.origin`. El fichero es **J1** (`dos-equipos.md:143`, medido con `carriles.mjs`).
+· **El mismo patrón está en un fichero NUESTRO** (`jobDetailView.js:1475`, S2): ése lo arreglamos nosotros. Es el gemelo, y conviene que los dos cambien igual.
+· **Lo que NO hemos medido:** cuántas facturas llegan a esa barra sin `payToken`. Leído en el código, no visto en pantalla. Visto por S4 al medir la ficha del albarán (SCRUM-1236e).
