@@ -186,3 +186,31 @@ declarado, **NO arreglado**:
 (`src/modules/jobs/**` → S1). La píldora es `albaranDetailView.js` (S4). El texto que diga «no llegó» sería
 K1 nuevo, con firma.
 
+## 1236e — lo que sale de 1236d hacia el otro equipo, y la decisión sobre la píldora (S4, 18-oct)
+
+**Medido contra:** `origin/main` = `183895cdef71c5655a3978352b716a79e1ca2b2b` · 2026-10-18T18:08:48Z
+
+Sólo registro y `docs/equipo/para-javier.md`. No se toca código.
+
+**Skill UI:** no cargada · no se toca ninguna pantalla ni ningún texto.
+
+A9: aviso → cicatriz S4 «le dije al orquestador que el ③ de SCRUM-914 «no espera a nadie» sin haber leído sus comentarios: el c.19408 ya decía que espera a J3» — no se pudo comprobar: leer los comentarios de un ticket antes de afirmar su estado es un acto de quien escribe, y ningún test lee Jira
+
+**La decisión del orquestador sobre 1236d** (18-oct, por mensaje entre sesiones; resumida aquí, no es cita del
+fundador): el `{sent:true}` era honesto. El defecto es la píldora. Va en dos mitades y sin texto nuevo:
+- **S1:** que el albarán exponga el estado REAL de la última entrega.
+- **S4:** que la píldora salga sólo si la última entrega no falló. Quitar una afirmación falsa no pide firma;
+  añadir «no llegó, reenvíalo» sí, y el orquestador se lo pide al fundador. S4 espera a la mitad de S1.
+
+**Por qué el defecto se paga dos veces:** un botón que dice «enviado» de algo que no llegó invita a volver a
+pulsarlo, y cada pulsación es un envío de verdad. Medido en el #46: dos pulsaciones, dos plantillas (filas
+451 y 452), **2 de las 3 plazas diarias de J6** de ese cliente.
+
+**`docs/equipo/para-javier.md`:** se amplía la §17 («⬇ Clientes CSV», 31 px, medido por S3) y se abre la
+§25, con tres puntos: el PDF de 1442 (J1, releído por S4 desde la captura de S2), el webhook de Stripe (J2,
+receta literal de S1, pendiente del OK del fundador) y SCRUM-914 esperando a J3 (c.19414 sin respuesta).
+**El aviso «Copia el enlace…» NO va a para-javier:** `src/lib/sendOutcome.ts` es **S1**
+(`carriles.mjs`, `dos-equipos.md:136`), no J2. Y el texto no es falso en todas partes: donde la pantalla
+pinta `waFallbackBar` (`api.js:982`), sí hay un «📋 Copiar enlace». Es falso en la ficha del albarán, que no
+lo pinta. Es nuestro, y se lo digo al orquestador.
+
