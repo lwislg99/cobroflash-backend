@@ -43,3 +43,44 @@ Con teclado, desde esas tres listas no se abre ni una factura, ni un Trabajo, ni
 - El ancho: es el mismo DOM a cualquier ancho, y el CSS no da teclado.
 - Si otra pantalla, como el buscador global, abre esos detalles con teclado: si lo hace, el impacto
   baja, pero el defecto de la lista sigue.
+
+## 18-oct-2026 · S2 · 1562c — Partes por valorar se abre con teclado
+
+**Medido contra:** `origin/main` = `ad9ec5634d49a41b1b8fef01d81235e1fbe5feaf` · 2026-10-18T00:26:37Z
+A9: comprobación → `tests/scrum1562c-partes-oficina-con-teclado.test.mjs`
+**Skill UI:** cargada · `yaqu-premium-ui`: el mismo aspecto (la fila mide 69 px antes y después), el anillo `--ring` del sistema, cero tokens, cero texto, cero componentes.
+
+S2 · rama `scrum-1562c-partes-oficina-con-teclado`, apilada sobre `scrum-1562-sonda-filas-sin-teclado` (#2557, de
+S3, abierto: la sonda y este registro todavía no están en `main`). Encargo del orquestador (18-oct): la peor de las
+filas de S2, `DIV.customers-card` de `parteOficinaView.js`, sin teclado y sin ningún nativo dentro.
+
+**Arreglo: la opción (b), en su forma más corta.** La fila pasa a ser un `<button type="button">`: el control
+nativo ES la tarjeta. El foco, Enter y Espacio los da el navegador, y el ratón sigue pulsando la tarjeta entera
+(no hay un botón pequeño dentro que obligue a apuntar). Por qué no la (a) `tabindex` + `role` + Enter: habría que
+escribir a mano lo que el botón ya trae, y la sonda la seguiría contando. Sin texto nuevo: la fila dice lo mismo.
+Dentro de un botón sólo cabe contenido en línea, así que los `div` de dentro pasan a `span` en bloque.
+`styles.css`: `.parte-oficina-fila` (ancho, alineación, letra y color que el botón no hereda) y su propio
+`:focus-visible` con `--ring`.
+
+**Lo que salió al medirlo, y no estaba en el encargo:** el anillo de foco NO se veía. El `:focus-visible` global
+pesa lo mismo que `.customers-card`, que va después en la hoja y pone su sombra encima. Y mi primera sonda dijo
+«anillo: sí»: miraba que hubiera ALGUNA sombra, y la de la tarjeta contaba. Corregida para comparar contra
+`--ring` (y esperar a la transición de 0,18 s de la tarjeta, que daba un falso «no»).
+
+### Verificado, ejecutando
+- **Sonda de S3** (`sonda-div-clicables.mjs`): 13 → **12** elementos no nativos con clic; Partes de oficina sale de
+  la lista. Con Trabajos (S4, 2) queda en 10.
+- **Test**, rojo primero: sobre la base cae el caso (la fila es `DIV`) y pasa el control del ratón; con el arreglo,
+  3 de 3. Mutaciones, cada una tumba 1: la fila otra vez `div`, sin `type="button"`, sin la regla del anillo, y sin
+  el oyente de clic (el ratón).
+- **yaqu.app, cuenta QA** (sonda de sólo lectura `sondas-s2/teclado-1562c.mjs`, fuera del repo; sirve
+  `parteOficinaView.js` y `styles.css` de la rama; 0 escrituras, 0 errores; capturas en `sondas-s2/cap1562c/`), con
+  el parte PT-2026-002 de la cuenta, a 390 y a 1280:
+
+| | teclado: ¿llega el foco? | ¿se ve el anillo? | Enter abre el parte | ratón abre el parte | alto de la fila |
+|---|---|---|---|---|---|
+| antes (prod) | **no** (80 Tab sin llegar) | — | **no** | sí | 69 |
+| después | sí | sí (`--ring`, medido) | **sí** | sí | 69 |
+
+- **No tocado:** la fila de la lista de Presupuestos (`TR`, `quotesListView.js`). Ya tiene alternativa nativa
+  («Ver detalle», la misma `openDetail`), y el orquestador la puso detrás.
