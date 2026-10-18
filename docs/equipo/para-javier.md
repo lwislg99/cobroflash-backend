@@ -503,3 +503,25 @@ Leído tal cual, eso dice: *«el caso ④ depende del huso horario»*. **Y es fa
 · **Nuestros son los otros tres: Trabajos y Partes de oficina (los dos SIN alternativa) y Presupuestos (con ella).** Van por nuestra cuenta.
 · **Límites que declaró quien lo midió, y los pasamos tal cual:** sólo ve el estado montado, sin modales ni pestañas · no ve oyentes puestos en `document` · el número escala con los datos, porque el patrón es por fila · **y NO se comprobó si el buscador global abre esos detalles con teclado — si lo hace, el impacto baja pero el defecto sigue.**
 · **Medido por S3 (equipo de Luis). Ticket nuestro: SCRUM-1562, con la tabla completa de los 13 elementos y los tres grupos.**
+
+## 24 🔵 `scrum1405c ④`: YA NO ES «UN TEST INESTABLE». Vuestro arreglo funciona en 3 de cada 4 pasadas
+
+**Esto SUSTITUYE a la hipótesis que os dimos en la §18.** Allí os dijimos que el caso ④ parecía sensible a la memoria, porque «Reached heap limit» salía en el mismo log tres veces. **Era una hipótesis y la marcamos como tal. Ahora hay una medida mejor, y apunta a otro sitio.**
+
+**Lo medido en vuestro propio CI** (run `39147352034`, job `117734088229`), con el caso ④ de `scrum1405c-tuberia-bloqueante.test.mjs:201`:
+
+| | casos que la cobaya PIERDE, por pasada |
+|---|---|
+| **sin** el módulo (salida C) | **14 · 10 · 27 · 31** |
+| **con** el módulo | **0 · 0 · 11 · 0** |
+
+🔴 **Leído en una frase: vuestro arreglo reduce muchísimo la pérdida, pero NO la lleva a cero en el CI de Linux. Una de cada cuatro pasadas todavía pierde 11 casos.** **Y como el test afirma pérdida CERO, falla justo esa vez.**
+
+**Por qué esto cambia dónde hay que mirar.** Mientras se leía como «un test que a veces falla», lo natural era sospechar del test o del runner. **Con estos números, el test está haciendo su trabajo: detecta que el módulo no siempre consigue lo que promete.** **El sitio donde mirar no es el test: es la eficacia del módulo bajo carga.**
+· **Y encaja con lo que ya sabíamos de qué mide ④: la PÉRDIDA DE SALIDA POR UNA TUBERÍA** (`stdout` no bloqueante), **que depende de la carga por construcción.** La salida C la mitiga; cuando la máquina aprieta, no basta.
+· ⚠️ **Lo que esto NO dice:** no sabemos por qué falla esa pasada y no las otras tres, ni si el umbral es memoria, concurrencia o tiempo. **Eso sigue sin medir, y no lo vamos a medir nosotros: `scrum1405c` es de J6** (PR #2429, «Tramo de J6j» en `SCRUM-1405.md`).
+
+**Lo que nos cuesta a nosotros, para que sepáis por qué insistimos:** es el rojo ajeno que más PR nuestros ha tumbado esta semana — **#2449, #2495, #2505, #2512, #2523, #2544, #2531 y #2552**, y el 15-oct cayó en **cinco de nuestros seis puestos el mismo día**. **Cada uno son minutos de alguien clasificando antes de relanzar, porque nuestra norma es no relanzar a ciegas.**
+
+· 🔵 **Y una cosa que queremos decir claramente: el test NO sobra.** Un test que a veces cae sobre algo que a veces falla está midiendo bien. **Quitarlo cambiaría un rojo molesto por un verde hueco.** **Lo que pedimos es que el módulo llegue a cero, no que el test deje de mirar.**
+· **Medido por S5 (equipo de Luis) el 18-oct-2026.** **La §18 se queda como estaba, con su hipótesis marcada como hipótesis; esta sección es la medida que la supera.**
