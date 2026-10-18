@@ -117,3 +117,38 @@ entrar #2508 (1183b) el 16-oct a las 12:57:32Z.
 - 18 ficheros de `tests/` (los 17 que leen `exports.routes` + `scrum25-exports`): **128 pasan, 0 fallan, 2 saltados**
   con motivo declarado (`SCRUM-25` y `SCRUM-82`, «sin QA_DB_TEST=1»). Por eso la equivalencia la da la sonda, no ellos.
 - `tsc`: sólo el error conocido de `merchantAdmin.ts:147` (cliente de Prisma viejo; sin `prisma generate`).
+
+## SCRUM-1183e · `GET /admin/metrics/operarios`: decidido no darle puerta, se queda servida y declarada
+
+**Medido contra:** `origin/main` = `57b0bc82215bf0a6ae9295ba758dff65f6940016` · 2026-10-18T00:52:04Z
+A9: sin fallo que generalice — el encargo preguntaba por una «mitad que falta» que este mismo registro ya daba por
+sustituida (tabla de arriba); se dijo al entregar, no se volvió a medir lo ya medido.
+
+Carril S1 · árbol `s1-1183e` · rama `scrum-1183e-operarios-servida-y-declarada`. Sólo este registro: ni código, ni
+censo, ni tests.
+
+### La decisión
+
+Del orquestador (`cobroflash-backend-f3`), mensaje a S1 del 18-oct-2026 ~17:35Z, literal: **«decidido no darle puerta,
+se queda servida y declarada»**. Motivo, también suyo: retirar una ruta servida no se puede deshacer por chat y hoy
+no lo pide nada; declararla deja constancia y no rompe a nadie. Es la misma salida que la tabla de arriba y que el
+motivo del censo (`scripts/_sin-consumir-declarados.json`, «se queda sin pantalla a propósito»), que no cambia.
+
+### Lo que se midió para decidir (sólo lectura)
+
+- **Qué devuelve:** `{ currency, hasOperarios, operarios[] }`, una fila por persona (el propietario, con
+  `operarioId: null`, más cada `TeamMember`, sin filtrar por estado): trabajos, abiertos, aceptado, cobrado,
+  pendiente, % cobrado y estado del cobro. Agrega `Job` por `operarioId`, con todo el histórico, y lo ordena por
+  lo pendiente (`metrics.service.ts`, `getOperariosMetrics`).
+- **Comercio y rol:** las cuatro consultas filtran por `merchantId`; `requireRole('admin')` en la ruta y entrada en
+  `src/core/http/adminOnlyRoutes.ts`.
+- **Con un solo profesional:** `hasOperarios: false` y UNA fila, la suya, con los totales de todos sus trabajos (lo
+  que ya enseña Trabajos). Sólo dice algo con equipo, y para eso el hub de Equipo (`GET /admin/team`,
+  `getTeamOverview`) ya da por persona trabajos abiertos, totales y pendiente. Lo único que tiene esta ruta y el hub
+  no: aceptado, cobrado y % por persona.
+- **Restos de la pantalla:** `operariosView.js` no existe (se borró en SCRUM-136). Quedan `app.js` (`case 'operarios'`
+  → redirige a Equipo, a propósito), un comentario en `index.html` que cita SCRUM-433 y un comentario viejo en
+  `api.js` (`cobroPillClass`) que aún nombra `operariosView`.
+- **Quién la usa hoy:** nadie en `public/`. La ejecutan `tests/scrum24-operarios-metrics.test.mjs` (gateado) y
+  `tests/scrum1370b-por-la-ruta-y-en-el-informe.test.mjs`, que llama a `getOperariosMetrics` como el «informe» de
+  su aceptación 4. Si algún día se retira, ese test tiene que pasar a `getTeamOverview` en el mismo PR.
