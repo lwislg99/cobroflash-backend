@@ -28,7 +28,7 @@ const OTRO_MERCHANT = MERCHANT + 1;
 
 const MERCHANT_FILA = { id: MERCHANT, name: 'Fontanería 1370', legalName: null, taxId: null, country: 'ES',
   whatsappPhone: null, defaultCurrency: 'EUR', flags: null, timezone: 'Europe/Madrid' };
-const CLIENTE_FILA = { id: CLIENTE, name: 'Cliente 1370', phone: null };
+const CLIENTE_FILA = { id: CLIENTE, merchantId: MERCHANT, name: 'Cliente 1370', phone: null }; // SCRUM-1519e: el negocio del cliente
 
 /** El estado de la base en el caso en curso. */
 let bd = { quotes: [], jobs: [], members: [] };
