@@ -6,7 +6,7 @@ Un registro por ticket (SCRUM-273). Quien lo actualice después AÑADE su tramo 
 
 **Medido contra:** `origin/main` = `bea8415859996e0bda44c7d85011235120ab6ca3` · 2026-10-18T17:13:31Z
 
-A9: aviso → cicatriz S0 «Un comentario que cuenta una escritura se manda DESPUÉS de leer que la escritura entró.» — no se pudo comprobar: los permisos y los comentarios de Jira no pasan por ningún test del repositorio
+A9: aviso → cicatriz S0 «Un comentario que cuenta una escritura se manda DESPUÉS de leer que la escritura entró: mandé en el mismo envío la edición de un ticket y el comentario «pongo las dos etiquetas», y la edición estaba denegada.» — no se pudo comprobar: los permisos y los comentarios de Jira no pasan por ningún test del repositorio
 
 Sesión S0 · rama `scrum-1563-estado-del-producto` · worktree `.claude/worktrees/s0-estado` (fijado a `origin/main` con `git worktree add --detach`). Encargo del orquestador de Luis, a petición del fundador.
 
