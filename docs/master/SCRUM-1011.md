@@ -76,6 +76,20 @@ Sin lanzar ninguna sesión (no es mío hacerlo, y la máquina está a ~2,4 GB li
   último encargo de S0 en el scratchpad del orquestador tiene 3 440 caracteres. Descartado.
 - **Rastro en el registro**: ninguna carpeta nueva en `~/.claude/jobs` de esas dos tentativas, así que
   `claude` rechazó la orden ANTES de crear el trabajo.
-- **MI LECTURA, sin medir:** algo del estado del daemon: un nombre aún ocupado, o una negativa a abrir
-  sesiones de fondo con poca memoria (ese día Claude Code paró una orden de fondo de esta misma sesión
-  «porque el sistema iba corto de memoria»). Con este arreglo, el próximo intento lo dirá en `errores`.
+- ~~MI LECTURA, sin medir: algo del estado del daemon (un nombre ocupado, o poca memoria).~~ **FALSA.** El
+  orquestador corrió a mano la misma orden, con el mismo encargo, y arrancó (`backgrounded · 4b401020`),
+  con la misma memoria libre.
+
+### Medido después (18-oct ~18:10Z): es la CONFIANZA del directorio desde el que se lanza
+- Los argumentos NO son: `argsLanzar` de la copia INSTALADA da `--bg -n sesion-0 --permission-mode auto
+  --model opus <encargo>`, los mismos que a mano.
+- La instalación no declara `mesas` → `SIN-MESA`: `claude` hereda el cwd de quien corre `sesion.mjs`.
+- `~/.claude.json` (sólo su campo `hasTrustDialogAccepted`): `D:/MILLONARIO/cobroFlash/cobroflash-backend`
+  → `true`; **`d:/MILLONARIO/…` (la misma carpeta, con la letra en minúscula) → `false`**; y
+  `AppData/Local/yaqu-equipo` no aparece, así que no tiene la confianza dada.
+- **Sonda** (una sesión de nombre desechable y prompt inerte, lanzada desde un directorio sin confianza):
+  `status 1`, **stdout vacío**, y en stderr `Workspace not trusted. Run claude in <dir> once and accept the
+  trust prompt, then retry.` No creó trabajo, así que no hubo nada que limpiar. Es el síntoma exacto: con
+  `errores`, el primer intento lo habría dicho.
+- Qué cwd heredó en las dos tentativas, no lo sé: o `yaqu-equipo` (si se corrió `node sesion.mjs` desde
+  allí) o `d:\…` en minúscula (el cwd del orquestador). **Los dos son directorios sin confianza.**
