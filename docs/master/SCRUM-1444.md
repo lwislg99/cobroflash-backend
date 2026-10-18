@@ -149,6 +149,16 @@ servidor (`tituloDeTrabajo`, `trabajoDirecto.ts`). Cambiarlo cambia lo que se ve
 a `#12.1`, y un presupuesto sin número dejaría de caer al `id` de la tabla (que es el gemelo de c.18405, punto 2).
 Eso no es «sin cambio en pantalla» y queda para decidir.
 
+**🔴 Y es un defecto pequeño y real, no sólo un formato viejo** (lo pidió declarar así el orquestador, 18-oct):
+
+| | |
+| --- | --- |
+| qué se ve | un Trabajo que nació de la REVISIÓN `.1` del presupuesto 12 se titula «Presupuesto #12 · cliente» en Trabajos, en gastos y en el historial del cliente |
+| qué debería verse | «Presupuesto #12.1 · cliente»: el número del documento que de verdad está detrás |
+| por qué está mal | `#12` es el número del ORIGINAL, que es otro documento. Se le enseña al profesional un número que no es el del presupuesto que mira |
+| por qué no se toca aquí | cambiarlo cambia la pantalla, y la opción A era «sin cambio en pantalla». Es una decisión de una línea del fundador: el orquestador la lleva al documento de estado del producto |
+| dónde se arreglaría | `tituloDeTrabajo` (`trabajoDirecto.ts`), pasando a `numeroVisibleDelPresupuesto`. Con el mismo cambio, un presupuesto sin número dejaría de caer al `id` de la tabla. Las consultas de gastos e historial (`expenses.service.ts`, `historialDelCliente.ts`) tendrían que pedir además `revision` |
+
 **`QUOTE_SELECT` está en `jobs.routes.ts`, donde vive también la facturación del Trabajo.** Comprobado antes de
 tocarlo: lo usan sólo `loadJobRefs` y `quotesDeJob`, que alimentan los serializadores de la lista y del detalle.
 Ninguna ruta de emisión. Añadir un campo leído no cambia nada de lo que se factura.
@@ -168,7 +178,9 @@ Ninguna ruta de emisión. Añadir un campo leído no cambia nada de lo que se fa
 - **Un test ajeno ampliado, y se dice (regla 41):** `tests/scrum302-presupuesto-y-fotos.test.mjs` ③ exigía con
   `deepEqual` que `quote` fuera `{ id, number }`. No caza un defecto: fija la forma, y la forma se amplía por la
   decisión A. Pasa a `{ id, number, numeroVisible }`, con `revision: 0` en su doble (la consulta ya la pide y la
-  base la da). El `deepEqual` sigue exacto.
+  base la da). El `deepEqual` sigue exacto. **Aprobado por el orquestador (18-oct):** «no es tocar un guard en
+  rojo para taparlo: ese test fija una FORMA, no caza un defecto, y la forma la ensanché yo al elegir (A)». Si
+  alguien quiere revertirlo, que mire antes este párrafo: el campo nuevo es contrato decidido, no ruido.
 - 658 ficheros de `tests/` vecinos: **6066 pasan, 64 saltados**. Caían 7: el de 302 (arriba), SCRUM-854 (faltaba
   esta entrada) y **5 que caen IGUAL en la base sin el cambio** (`scrum222` censo SQL, `scrum461` ①/control,
   `scrum733` ×2). Son del cliente de Prisma viejo de este árbol (sin `prisma generate`), no de este cambio.
