@@ -263,10 +263,13 @@ jobs:
             VIGIA_ISSUES_JSON='[]'
           fi
 
-          # 🔴 `|| true` en las tres líneas siguientes A PROPÓSITO: los `run:` de Actions llevan
-          # `-e -o pipefail`, y sin esto un `jq`/`node` que fallara abortaría el paso ANTES de
+          # 🔴 `|| true` en las tres líneas siguientes A PROPÓSITO: este fichero no declara `shell:`
+          # ni `defaults:`, así que Actions corre el paso con `bash -e {0}` — `-e` SÍ, `pipefail`
+          # NO (medido en SCRUM-1123c). Sin esto, un `node` que fallara abortaría el paso ANTES de
           # llegar al `if`/`else` que decide cómo avisar del fallo — el mismo error de "abortar en
           # vez de decidir" que este propio seguimiento viene a evitar en la decisión de arriba.
+          # (Sin `pipefail`, en las tuberías de abajo sólo cuenta la ÚLTIMA orden: un `jq` de en
+          # medio que falla no aborta, le pasa vacío a la siguiente.)
           DECISION="$(VIGIA_ISSUES_JSON="$VIGIA_ISSUES_JSON" VIGIA_MARCA="$MARCA" VIGIA_RENGLON="$RENGLON" VIGIA_RUN_URL="$RUN_URL" \
                       node scripts/vigia-despliegue-aviso.mjs)" || true
           ACCION="$(printf '%s' "$DECISION" | jq -r '.accion' 2>/dev/null)" || true
