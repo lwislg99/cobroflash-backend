@@ -1708,6 +1708,21 @@ html, body { overflow-x: clip; }
 #vat-quarter-row > .btn-sm,
 #resumen-quarter-row > .btn-sm { min-height: 44px; min-width: 44px; }
 
+/* SCRUM-1559g (AB6, misma decisión de SCRUM-786, opción ③, el patrón de 1158c). Con el banco que
+   ya monta las fichas con datos de verdad (SCRUM-1560), S3 midió 14 botones de 30-31 px a 929 y a
+   390: en Inicio «Ver resumen», «✕» y «Ver facturas →»; en la ficha del presupuesto ocho (los tres
+   de la cabecera, los dos «↻ Reenviar», la decisión y «+ Añadir gasto a este trabajo»); en Solicitudes
+   «+ Crear presupuesto» y «✓ Marcar gestionada»; en Albaranes «Enviar para firmar». Sólo tamaño,
+   `.btn-sm` global sin tocar. La ficha va ENTERA (`.presupuesto-ficha`) y no botón a botón: el
+   censo sólo ve los que pintan sus datos, y «Confirmar aceptación», «Archivar» o el albarán son
+   la misma fila de la misma pantalla. «✕» lleva ancho: es un glifo, y el ancho es todo lo que tiene. */
+#btn-ver-resumen-trimestre,
+.home-hero-card > .btn-sm,
+.presupuesto-ficha .btn-sm,
+.solicitud-acciones > .btn-sm,
+.table--albaranes td.cell-actions > .btn-sm { min-height: 44px; }
+#btn-cerrar-resumen-trimestre { min-height: 44px; min-width: 44px; }
+
 /* ── SCRUM-1144 · «Elegir un sitio guardado», bajo el campo de la dirección de la obra ───────
    Lo montan el editor de presupuestos y la ficha del Trabajo (`sitiosGuardados.montarSelector`).
    Sin tokens nuevos. El botón es `.btn-ghost.btn-sm`, como «Usar plantilla»: una ayuda
@@ -3032,6 +3047,12 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 .job-asignados-fila:hover { background: var(--bg, #f6f7f5); }
 .doc-asignados-casilla,
 .job-asignados-casilla { width: 20px; height: 20px; flex: none; accent-color: var(--brand); }
+/* SCRUM-1559g · la fila (el `<label>`) mide 44, pero el área que se cuenta es la de la CASILLA, y
+   daba 21 px (medido por S3 en las fichas de presupuesto y de factura: este componente es de las
+   dos). El mecanismo de `.casilla-tactil-44` (SCRUM-786), con 12 px y no 16: 20 + 2 × 12 = 44 cabe
+   justo en su fila, y 16 se metería 2 px en la de al lado, que marca a OTRA persona. */
+.doc-asignados-casilla { position: relative; }
+.doc-asignados-casilla::before { content: ""; position: absolute; inset: -12px; }
 .doc-asignados-nombre,
 .job-asignados-nombre { font-size: 14px; color: var(--ink); }
 .doc-asignados-lectura,
@@ -4293,6 +4314,15 @@ textarea.parte-linea-desc {
 .alb-enlace { color: var(--green-700); }
 .alb-numero { font-weight: 600; color: var(--green-700); }
 .alb-chip-cobro { margin-left: 6px; white-space: nowrap; } /* SCRUM-1450: «Facturado en parte» no se parte en dos */
+
+/* SCRUM-1559g · EL NÚMERO DEL ALBARÁN, A 44 px DE TOQUE. A 390 medía 17 de alto (S3): sólo su
+   línea. Y a 929 (medido en yaqu.app), partido letra a letra en una columna de 45 px, era un
+   enlace de 17×141 con huecos entre líneas que no responden: como caja (`inline-flex`) ya no los tiene.
+   ⚠️ NO se pone en una línea, y se probó: con el número entero la tabla pide 676 px mínimo y a 929
+   tiene 631 — desborda 45 y «Enviar para firmar» se queda medio fuera; con fechas y estado también,
+   desborda 27-251 px entre 800 y 1024. Que se partan es un defecto de cuántas columnas caben a ese
+   ancho, no de toque: no se arregla aquí. */
+.table--albaranes .alb-numero { display: inline-flex; align-items: center; min-height: 44px; }
 
 @media (max-width: 640px) {
   /* SCRUM-1450 · la marca de facturación va DEBAJO del estado, no a su lado. Con «Facturado en

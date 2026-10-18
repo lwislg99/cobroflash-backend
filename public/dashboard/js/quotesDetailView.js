@@ -83,7 +83,7 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   container.innerHTML = '';
 
   const page = document.createElement('div');
-  page.className = 'detail-page';
+  page.className = 'detail-page presupuesto-ficha'; // SCRUM-1559g: enganche de su regla de 44 px
   container.appendChild(page);
 
   // ── Cabecera ────────────────────────────────────────────────
