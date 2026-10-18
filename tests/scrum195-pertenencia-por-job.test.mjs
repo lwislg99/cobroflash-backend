@@ -98,7 +98,7 @@ function prismaFalso({ quotes = [], jobs = [], invoices = [] } = {}) {
 
 const QUOTE_BASE = {
   merchantId: 7, customerId: 3, status: 'accepted', total: '1000.00',
-  quoteNumber: 1, teamMemberId: null, jobId: null, customer: { name: 'Cliente QA' },
+  quoteNumber: 1, teamMemberId: null, jobId: null, customer: { name: 'Cliente QA', merchantId: 7 }, // SCRUM-1519e
 };
 
 // ═════════════════════════════════════════════════════════════════════════════

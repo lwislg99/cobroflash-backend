@@ -50,7 +50,8 @@ export async function ensureJobForQuote(quoteId: number, prismaClient = prisma):
       select: {
         id: true, merchantId: true, customerId: true, status: true,
         total: true, quoteNumber: true, teamMemberId: true, jobId: true,
-        customer: { select: { name: true } },
+        // SCRUM-1519e: `merchantId` del cliente, para no copiar al Trabajo el de otro negocio.
+        customer: { select: { name: true, merchantId: true } },
       },
     });
     if (!quote || quote.status !== 'accepted') return;
@@ -98,6 +99,25 @@ export async function ensureJobForQuote(quoteId: number, prismaClient = prisma):
     // cálculo. NO se hace backfill (decisión del fundador, 5-ago-2026), coherente con la regla
     // fechada del 2-ago: los datos de producción son de prueba y lo que importa es que los
     // registros NUEVOS nazcan bien.
+
+    // 🔴 SCRUM-1519e · EL CLIENTE TIENE QUE SER DE ESTE NEGOCIO, o el Trabajo nace cruzado: el
+    // `create` de abajo copia `customerId` del presupuesto sin preguntar de quién es (J1, SCRUM-1519
+    // c.19192: CRUZA 2 de 2). Decisión del fundador (c.19205 ②): la aceptación NO falla —la hace el
+    // cliente final, y el problema de datos no es suyo—, el Trabajo NO se crea y queda una fila de
+    // auditoría que alguien vea. Va aquí, justo antes de crear: los dos caminos de arriba no copian
+    // el cliente a ningún sitio. Un cliente que no aparece cuenta como ajeno: se falla cerrado.
+    if (quote.customer?.merchantId !== quote.merchantId) {
+      recordAudit({
+        merchantId: quote.merchantId,
+        teamMemberId: quote.teamMemberId,
+        action: 'trabajo_omitido_cliente_ajeno', // APROBADO · SCRUM-1519 comentario 19913
+        entityType: 'quote',
+        entityId: quote.id,
+        meta: { quoteId: quote.id, customerId: quote.customerId },
+      });
+      return;
+    }
+
     const job = await prismaClient.job.create({
       data: {
         merchantId: quote.merchantId,
