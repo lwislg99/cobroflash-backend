@@ -979,23 +979,32 @@ window.waCollectRestSent = waCollectRestSent;
 // A20.5 (J5): acciones de FALLBACK cuando un envío de WhatsApp falla — SIEMPRE
 // se ofrecen las tres salidas: Copiar enlace · Enviar por email · Reintentar.
 // Devuelve el elemento para insertarlo junto al mensaje de error de la vista.
+//
+// SCRUM-1233h · «Copiar enlace» SÓLO si hay enlace. Sin `link` no se pinta: antes dos pantallas
+// pasaban `location.origin` cuando la factura aún no tenía cobro, y el botón copiaba la PORTADA de
+// yaqu.app con el aviso «✓ Enlace copiado». El profesional se la mandaba al cliente creyendo que
+// era su factura (medido el 18-oct en la ficha del Trabajo: sin teléfono, cobro no creado y error
+// de red, los tres). Un enlace falso con forma de bueno es peor que no ofrecer copiar nada; el
+// email y el reintento se quedan. Quien llama pasa `null` cuando no tiene token, nunca la portada.
 function waFallbackBar({ link, onEmail, onRetry, emailDisabledReason }) {
   const bar = document.createElement('div');
   bar.className = 'wa-fallback-bar';
   bar.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-top:8px';
 
-  const copyBtn = document.createElement('button');
-  copyBtn.className = 'btn-secondary btn-sm';
-  copyBtn.textContent = '📋 Copiar enlace';
-  copyBtn.addEventListener('click', async () => {
-    try {
-      await navigator.clipboard.writeText(link);
-      showToast('✓ Enlace copiado — mándaselo por SMS o desde tu WhatsApp');
-    } catch {
-      window.prompt('Copia el enlace:', link);
-    }
-  });
-  bar.appendChild(copyBtn);
+  if (link) {
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'btn-secondary btn-sm';
+    copyBtn.textContent = '📋 Copiar enlace';
+    copyBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(link);
+        showToast('✓ Enlace copiado — mándaselo por SMS o desde tu WhatsApp');
+      } catch {
+        window.prompt('Copia el enlace:', link);
+      }
+    });
+    bar.appendChild(copyBtn);
+  }
 
   const emailBtn = document.createElement('button');
   emailBtn.className = 'btn-secondary btn-sm';
