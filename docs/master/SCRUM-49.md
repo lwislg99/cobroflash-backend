@@ -69,3 +69,41 @@ webhook de estados. Al contestar el POST el fallo aún no existía.
 - Si el ÚLTIMO intento no dejó fila (el registro de WA-0b es «fire-and-forget» y puede fallar), se lee la del intento
   anterior. Y una reserva que se quedó en `queued` no lleva todavía el documento (SCRUM-1513), así que no se ve desde
   el albarán: sale `sin_rastro` si no hay otra fila.
+
+## SCRUM-49c · la ficha del albarán expone su credencial de firma (para copiar el enlace)
+
+**Medido contra:** rama `scrum-49b-albaran-estado-real-de-entrega` = `1233bdb8186846c9f16a283667e7a686c3b1ba74`
+(apilada: toca el mismo bloque de respuesta que 49b), sobre `origin/main` `183895cd` · hora de GitHub al escribir: 18:33:53Z
+A9: comprobación → `tests/scrum49c-albaran-expone-enlace-de-firma.test.mjs`
+
+Carril S1 · árbol `s1-49c` · rama `scrum-49c-albaran-expone-enlace-de-firma`. Encargo del orquestador, 18-oct-2026,
+tras una medida de S4.
+
+### Qué faltaba
+
+La barra de «copiar el enlace» no se podía pintar en la ficha del albarán: ningún campo llevaba `firmaToken`.
+El presupuesto y la factura sí exponen el suyo (`quote.payToken`, `invoice.payToken`) y la pantalla compone el
+enlace. Con esto, además, la página pública de firma se puede alcanzar desde el panel, que es lo que dejó
+`privacidad:92` de SCRUM-1236 como «ni falso ni comprobado».
+
+### Qué cambia
+
+- `albaranes.routes.ts`, `GET /:id`: añade `firmaToken` (o `null`). Es la misma credencial que ya viaja dentro del
+  WhatsApp «para firmar»; la página pública es `/albaran/<token>`.
+- **Sólo en la ficha y NO en `serializeAlbaran`**, a propósito: la ficha ya pasó por tenencia y por «es suyo»
+  (SCRUM-467). Las listas y las demás respuestas que usan el serializador no la llevan.
+- **Sólo se LEE.** El token lo crea el primer envío para firmar; antes de eso, `null`. La ficha no lo genera.
+- El envío no se toca.
+
+### Verificado, ejecutando
+
+- **Rojo primero**, con el test sobre el `dist/` de 49b: caen los 3 casos que piden el campo, y pasan los 2
+  invariantes (técnico ajeno → 404 sin el token en el cuerpo; `serializeAlbaran` sin el token), que ya se cumplían
+  y tienen que seguir cumpliéndose. **Con el cambio: 5 de 5**, y 49b sigue 8 de 8.
+- 93 ficheros de `tests/` que leen la ruta del albarán, `firmaToken` o los censos: **825 pasan, 0 caen, 14 saltados**.
+- `tsc`: sólo el error conocido de `merchantAdmin.ts:147`.
+
+### Lo que NO cubre
+
+- La pantalla (la barra de copiar en `albaranDetailView.js`) es de **S4**.
+- No medido en yaqu.app.
