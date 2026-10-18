@@ -115,7 +115,14 @@ export type AuditAction =
   // qué se hizo con los datos de quién — y ése es exactamente el rastro que este ticket existe
   // para dejar. La regla 5 (unión cerrada) se levanta solo para estas dos.
   | 'merchant_borrado'
-  | 'merchant_anonimizado';
+  | 'merchant_anonimizado'
+  // SCRUM-1519e · CABLE TRAMPA, no funcionalidad. Al aceptar un presupuesto cuyo cliente es de OTRO
+  // negocio, no se crea el Trabajo y queda esta fila (`entityType: 'quote'`, `meta: { quoteId,
+  // customerId }`). Nadie abre esa cadena por la puerta (J1, SCRUM-1519 c.19192), así que si salta
+  // es dato anterior a cerrar las puertas o un agujero sin encontrar: en los dos casos hay que
+  // enterarse. La regla 5 se levanta para ESTA acción y ninguna más.
+  // APROBADO · SCRUM-1519 comentario 19913
+  | 'trabajo_omitido_cliente_ajeno';
 
 /**
  * Las que EXIGEN constancia: si no se pueden registrar, la acción NO ocurre.

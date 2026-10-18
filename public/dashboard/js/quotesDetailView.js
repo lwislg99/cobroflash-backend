@@ -83,7 +83,7 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   container.innerHTML = '';
 
   const page = document.createElement('div');
-  page.className = 'detail-page';
+  page.className = 'detail-page presupuesto-ficha'; // SCRUM-1559g: enganche de su regla de 44 px
   container.appendChild(page);
 
   // ── Cabecera ────────────────────────────────────────────────
@@ -654,6 +654,46 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     });
   }
 
+  // ── SCRUM-1206 · LOS DOS TEXTOS DEL DOCUMENTO, LEÍDOS ─────────────────────────────────────
+  //
+  // El PDF los imprime y la ficha no los enseñaba: el profesional escribía la cabecera y las
+  // Observaciones, guardaba, y sólo volvía a verlas descargando el papel o al Duplicar. Van en el
+  // ORDEN DEL PAPEL (`pdf.service.ts`): la cabecera encima de los conceptos, las Observaciones
+  // debajo de los totales.
+  //
+  // Los rótulos, firmados por el orquestador (SCRUM-1206, 16-oct-2026, delegación del fundador), los
+  // mismos que la mitad del albarán (`albaranDetailView.js`):
+  //   · `docHeaderText` va SIN RÓTULO, como en el PDF. «Añadir texto en el documento» es el rótulo
+  //     del FORMULARIO: encima de un texto ya guardado se lee como un botón que no hace nada.
+  //   · `docFooterText` lleva «Observaciones» porque ES el bloque «Observaciones» del papel
+  //     (`pdf.service.ts`, `TITULO_OBSERVACIONES` sobre `docFooterText`). Se LEE de la pieza
+  //     (`TD_TITULO_OBSERVACIONES`), no se copia: un literal firmado duplicado deja de ser el mismo
+  //     en cuanto alguien cambia uno. En el albarán el mismo bloque es `notas`; aquí, `docFooterText`.
+  //
+  // El texto lo pinta `textoDelDocumentoPintado`, la pieza que existía para esto (saltos con
+  // `pre-line`, por `textContent`). Su contenedor le añade `overflow-wrap`: una URL larga no puede
+  // ensanchar la ficha a 360 px. SIN DATO, SIN SECCIÓN: vacío, sólo espacios o `null` no pintan nada.
+  const seccionDeTexto = (rotulo, valor, seccion) => {
+    if (valor == null || String(valor).trim() === '') return null;
+    if (typeof window.textoDelDocumentoPintado !== 'function') return null;
+    const sec = document.createElement('div');
+    sec.className = 'detail-section';
+    sec.dataset.seccion = seccion;
+    if (rotulo) {
+      const h = document.createElement('h3');
+      h.className = 'detail-section-title';
+      h.textContent = rotulo;
+      sec.appendChild(h);
+    }
+    const caja = document.createElement('div');
+    caja.className = 'quote-doc-texto';
+    caja.appendChild(window.textoDelDocumentoPintado(valor));
+    sec.appendChild(caja);
+    return sec;
+  };
+  const secCabecera = seccionDeTexto(null, quote.docHeaderText, 'texto-cabecera');
+  if (secCabecera) page.appendChild(secCabecera);
+
   // ── Sección: CONCEPTOS + TOTALES ────────────────────────────
   const concSec = document.createElement('div');
   concSec.className = 'detail-section';
@@ -771,6 +811,12 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     <div style="font-size:16px;color:var(--ink);font-weight:700;margin-top:2px">Total: <span class="amount" style="font-size:18px">${fmtQuoteMoney(quote.total, cur)}</span></div>
   `;
   concSec.appendChild(totalsWrap);
+
+  // SCRUM-1206 · las Observaciones, debajo de los totales, como en el papel (ver arriba).
+  // Sin el rótulo de la pieza no se pinta: unas Observaciones sin título se leerían como la cabecera.
+  const secObservaciones = window.TD_TITULO_OBSERVACIONES
+    ? seccionDeTexto(window.TD_TITULO_OBSERVACIONES, quote.docFooterText, 'observaciones') : null;
+  if (secObservaciones) page.appendChild(secObservaciones);
 
   // (La sección DECISIÓN vive ahora arriba, en 2 columnas junto a CLIENTE)
 

@@ -52,10 +52,13 @@ async function ficha(textos) {
   const nodos = todos(v.contenedor);
   // CONTROL POSITIVO: la ficha se montó de verdad. Sin esto, «no hay filas» probaría nada.
   assert.ok(nodos.some((n) => n.textContent === 'AB260012'), '🔴 SUELO: no veo el número del albarán en la ficha');
+  // El rótulo se reconoce por la clase de rótulo del rail: desde SCRUM-1206d (17-oct-2026, decisión
+  // del orquestador) es la versalita del resto del rail, ya no `.detail-rail-etiqueta`. Que sea UNA
+  // sola para todo el rail lo vigila `scrum1206d-un-solo-rotulo-en-el-rail.test.mjs`.
   const filas = nodos.filter((n) => clases(n).includes('detail-rail-linea--nota')).map((f) => {
     const hijos = f.hijos.filter((h) => h.tagName === 'SPAN');
-    const et = hijos.find((h) => clases(h).includes('detail-rail-etiqueta'));
-    const valor = hijos.find((h) => !clases(h).includes('detail-rail-etiqueta'));
+    const et = hijos.find((h) => clases(h).includes('detail-total-label'));
+    const valor = hijos.find((h) => !clases(h).includes('detail-total-label'));
     return { etiqueta: et ? et.textContent : null, valor: valor ? valor.textContent : null, enElRail: clases(f._padre).includes('detail-rail') };
   });
   return { filas, banco, todo: nodos.map((n) => n.textContent || '').join(' ') };

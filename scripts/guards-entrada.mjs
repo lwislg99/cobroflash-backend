@@ -83,6 +83,15 @@
 // ⚠️ El residuo, dicho: un fichero matado y uno que hace `process.exit(1)` callado son indistinguibles,
 // y los dos salen ciegos. Las mediciones y los controles, en `docs/master/SCRUM-1386.md`.
 //
+// ── 🔴 EL 17-OCT-2026 (SCRUM-1152c): EL VERDE DICE DÓNDE ACABA ─────────────────────────────────
+// La lista es CERRADA a propósito (SCRUM-976) y está bien hecha. Lo que engañaba era su verde: «La
+// entrada puede empujarse». Ese día seis PR de tres sesiones cayeron en el CI con este comando en
+// verde, por guards de árbol entero que no están en la lista (SCRUM-1560) — y las tres habían hecho
+// lo que se les pedía. El verde no era falso: era más ANCHO que lo medido. Ahora dice lo que pasa
+// (los de la lista), lo que NO promete (el CI), y nombra a mano la familia que sólo corre allí.
+// ⛔ Esos NO entran en `GUARDS` (orquestador, 17-oct): son de árbol entero y lentos, y en una máquina
+// cargada este comando ya sale CIEGO a los 90 s. Meterlos convertiría el control previo en un tapón.
+//
 // ⚠️ Esto NO sustituye a `npm test`. Comprueba lo barato de comprobar, no el trabajo.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -138,6 +147,12 @@ export const GUARDS = [
   // y el CI la tumbó con este mismo test por dos guiones de mutación sin registrar en el catálogo.
   { fichero: 'tests/scrum1387-banco-nuevo-va-al-catalogo.test.mjs',
     porque: 'todo banco de mutación NUEVO de las carpetas de evidencias nombra el catálogo del meta-guard, no una lista propia' },
+  // SCRUM-1152b · el decimoquinto, y es de la ENTRADA: lee `docs/master/` y `docs/equipo/`, sin `dist` ni
+  // base, ~1,4 s. El caso que lo decide, medido por S0 el 17-oct-2026: una entrada con el ancla buena y SIN
+  // línea `A9:` daba aquí «14 guards en verde · la entrada puede empujarse» (salida 0), y este test, solo,
+  // 1 rojo. Es lo que tumbó a S3 en #2528 (run 38905690014: scrum267 en verde, 1294 en rojo).
+  { fichero: 'tests/scrum1294-a9-leccion-en-a10.test.mjs',
+    porque: 'todo tramo de registro con ancla fechada lleva su línea `A9:` en uno de los cuatro formatos, y lo que nombra existe' },
 ];
 
 // TECHO de este comando ENTERO, en milisegundos de reloj. Lo hace cumplir el propio comando (plazo
@@ -156,7 +171,41 @@ export const PRESUPUESTO_MS = TECHO_MS;
 // SUELO Nº1. Un agregador que se queda corto es PEOR que no tenerlo: da la tranquilidad entera con
 // la cobertura a medias, y quien lo corre en verde deja de mirar. Si mañana alguien borra una línea
 // de la lista de arriba «porque molestaba», esto para.
-export const MINIMO = 14;
+export const MINIMO = 15;
+
+/**
+ * SCRUM-1152c · LOS QUE TUMBAN PR Y NO ESTÁN EN LA LISTA. Medidos en `docs/master/SCRUM-1560.md`: de
+ * árbol entero, sólo corren en la tanda del CI. No se ejecutan aquí: se NOMBRAN en el verde, con la
+ * orden para pasarlos a mano. Si uno entra en `GUARDS`, deja de nombrarse solo (se filtra al pintar).
+ */
+export const FUERA_DE_LA_LISTA = [
+  'tests/scrum195-url-bd-sin-fuga.test.mjs',
+  'tests/scrum414-url-a-mano.test.mjs',
+  'tests/scrum694-los-guards-migrados.test.mjs',
+  'tests/scrum710b-anclaje-por-identidad.test.mjs',
+  'tests/scrum737-cifra-con-arbol-y-hora.test.mjs',
+  'tests/scrum1294-a9-leccion-en-a10.test.mjs',
+];
+
+/**
+ * El cierre de una pasada en verde. La primera línea conserva su forma (`✓ N guards de entrada en
+ * verde (M tests`), que es lo que lee `scrum976`; lo demás dice dónde acaba lo medido.
+ */
+export function cierreDelVerde({ guards = GUARDS, ejecutados, ms, techoMs = TECHO_MS, fuera = FUERA_DE_LA_LISTA }) {
+  const enLista = new Set(guards.map((g) => g.fichero));
+  const otros = fuera.filter((f) => !enLista.has(f));
+  const lineas = [
+    `✓ ${guards.length} guards de entrada en verde (${ejecutados} tests, ${(ms / 1000).toFixed(1)} s de ${techoMs / 1000}): pasan los ${guards.length} de ESTA lista, y sólo eso.`,
+    '  Esto NO dice que el CI pase: la tanda completa corre otros, entre ellos los de árbol entero.',
+  ];
+  if (otros.length) {
+    lineas.push(
+      `  Los ${otros.length} de árbol entero que ya han tumbado PR y sólo corren en el CI (SCRUM-1560), a mano antes de empujar:`,
+      `  node --test ${otros.join(' ')}`,
+    );
+  }
+  return lineas.join('\n');
+}
 
 // Secuencias de escape ANSI (CSI). El runner de node colorea su resumen cuando cree que hay un
 // terminal detrás —o cuando el entorno trae `FORCE_COLOR`—, y entonces la línea del recuento llega
@@ -472,7 +521,7 @@ if (r.status !== 0) {
   console.log(linea);
   process.exit(veredicto.codigo);
 }
-console.log(`\n✓ ${GUARDS.length} guards de entrada en verde (${ejecutados} tests, ${(ms / 1000).toFixed(1)} s de ${TECHO_MS / 1000}). La entrada puede empujarse.`);
+console.log(`\n${cierreDelVerde({ ejecutados, ms })}`);
 console.log(linea);
 }
 

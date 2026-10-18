@@ -988,8 +988,17 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
   const rail = document.createElement('div');
   rail.className = 'detail-rail';
   rail.style.cssText = 'margin-top:18px;display:flex;flex-direction:column;gap:8px;font-size:13px';
+  // SCRUM-1206d · UN solo estilo de rótulo para TODO el rail, en versalitas. Hasta el 17-oct
+  // convivían dos: estas filas en versalitas y las de abajo (presupuesto, observaciones, fotos)
+  // con `.detail-rail-etiqueta`, gris y en minúscula — medido en yaqu.app, albaranes #46 y #48.
+  // ⚠️ NO es una norma de `DESIGN.md`: define «Label» en MAYÚSCULAS para KPI, cabeceras de tabla
+  // y secciones del sidebar, y un rótulo de campo SIN mayúsculas, pero no dice cuál vale en un
+  // rail. Esa laguna es la causa de que convivieran los dos. La decisión es del orquestador,
+  // 17-oct-2026: la minoría se alinea con la mayoría. Por eso va en una constante: el rótulo que
+  // se añada mañana al rail sale igual que los demás sin tener que adivinar la clase.
+  const CLASE_ROTULO_RAIL = 'detail-total-label';
   const fila = (etiqueta, valor) =>
-    `<div><span class="detail-total-label">${esc(etiqueta)}</span><div>${esc(valor ?? '—')}</div></div>`;
+    `<div><span class="${CLASE_ROTULO_RAIL}">${esc(etiqueta)}</span><div>${esc(valor ?? '—')}</div></div>`;
   const pendientes = Array.isArray(alb.pendientes) ? alb.pendientes.filter((p) => p.pendiente > 0) : [];
   rail.innerHTML =
     fila('Trabajo', alb.job?.titulo) +
@@ -1026,9 +1035,11 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
   // enlace ausente no significa nada: o hay documento o no lo hay.
   if (alb.quote && alb.quote.id != null) {
     const filaQuote = document.createElement('div');
-    filaQuote.className = 'detail-rail-linea';
+    // SCRUM-1206d · `--nota` pone el rótulo ENCIMA del valor, como en las filas de arriba; al lado,
+    // en versalitas, se leía como otra cosa. La regla de 44 px del enlace sigue (`.detail-rail-linea a`).
+    filaQuote.className = 'detail-rail-linea detail-rail-linea--nota';
     const etiquetaQuote = document.createElement('span');
-    etiquetaQuote.className = 'detail-rail-etiqueta';
+    etiquetaQuote.className = CLASE_ROTULO_RAIL;
     etiquetaQuote.textContent = ROTULOS_RAIL_ALBARAN.presupuesto || TEXTO_ROTULO_SIN_MAPEAR;
     filaQuote.appendChild(etiquetaQuote);
     // Navegación DENTRO del dashboard, con la misma llamada que ya usa el rail del Trabajo
@@ -1041,7 +1052,11 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
       e.preventDefault();
       if (window.renderAppView) window.renderAppView('quotes-detail', { quoteId: alb.quote.id });
     });
-    filaQuote.appendChild(enlaceQuote);
+    // Dentro de su caja: suelto, `--nota` (que estira a sus hijos) lo ensanchaba a toda la fila —
+    // 320 px a 390 de pantalla, medido— y se pulsaba tocando el hueco vacío de la derecha.
+    const valorQuote = document.createElement('div');
+    valorQuote.appendChild(enlaceQuote);
+    filaQuote.appendChild(valorQuote);
     rail.appendChild(filaQuote);
   }
 
@@ -1059,16 +1074,17 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
   //     imprime `notas` bajo ese título y el albarán no tiene otro pie (`schema.prisma`, junto a
   //     `docHeaderText`). Mismo campo, mismo rótulo: se lee de la pieza, no se copia aquí.
   //
-  // La clase es la de la nota del cliente en el rail del Trabajo (SCRUM-982): etiqueta encima,
-  // los saltos del profesional respetados y una palabra larga partida en 360 px. Sin estilo en
-  // línea y por `textContent`: el texto lo escribe el profesional. SIN DATO, SIN FILA.
+  // La fila es la de la nota del cliente en el rail del Trabajo (SCRUM-982): etiqueta encima,
+  // los saltos del profesional respetados y una palabra larga partida en 360 px. El RÓTULO no:
+  // es el del resto de este rail (SCRUM-1206d, `CLASE_ROTULO_RAIL`). Sin estilo en línea y por
+  // `textContent`: el texto lo escribe el profesional. SIN DATO, SIN FILA.
   const filaDeTexto = (etiqueta, valor) => {
     if (valor == null || String(valor).trim() === '') return;
     const filaTexto = document.createElement('div');
     filaTexto.className = 'detail-rail-linea detail-rail-linea--nota';
     if (etiqueta) {
       const et = document.createElement('span');
-      et.className = 'detail-rail-etiqueta';
+      et.className = CLASE_ROTULO_RAIL;
       et.textContent = etiqueta;
       filaTexto.appendChild(et);
     }
@@ -1096,9 +1112,9 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
     const lista = Array.isArray(fotos) ? fotos : [];
     if (!lista.length) return;
     const filaFotos = document.createElement('div');
-    filaFotos.className = 'detail-rail-linea';
+    filaFotos.className = 'detail-rail-linea detail-rail-linea--nota'; // rótulo encima (SCRUM-1206d)
     const etiquetaFotos = document.createElement('span');
-    etiquetaFotos.className = 'detail-rail-etiqueta';
+    etiquetaFotos.className = CLASE_ROTULO_RAIL;
     etiquetaFotos.textContent = ROTULOS_RAIL_ALBARAN.fotos || TEXTO_ROTULO_SIN_MAPEAR;
     filaFotos.appendChild(etiquetaFotos);
     const galeria = document.createElement('div');

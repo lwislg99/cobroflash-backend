@@ -110,7 +110,7 @@ async function trabajosCreadosAlAceptar(cuerpo) {
   const quoteGuardado = {
     id: 99, merchantId: 4242, customerId: leido.customer_id, status: 'accepted', total: '100.00',
     quoteNumber: 3, teamMemberId: null, jobId: leido.job_id ?? null, // quotes.routes.ts: `jobId: jobIdDelAdicional`
-    customer: { name: CLIENTE.name },
+    customer: { name: CLIENTE.name, merchantId: 4242 }, // SCRUM-1519e: el negocio del cliente
   };
   const creados = [];
   const noop = new Proxy({}, { get: () => async () => null });

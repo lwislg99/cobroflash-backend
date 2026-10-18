@@ -37,7 +37,9 @@ const fila = (f) => ({
   merchantId: NEGOCIO, status: 'draft', total: '900.00', currency: 'EUR', lines: [], signatureUrl: null,
   teamMemberId: null, jobId: null, asignados: [], customerId: 55, paymentTerms: null, customBillingPlan: null,
   discountGlobalAmount: null,
-  merchant: { id: f.merchantId ?? NEGOCIO, timezone: null }, customer: { id: 55, name: 'Cliente', phone: null, email: null },
+  merchant: { id: f.merchantId ?? NEGOCIO, timezone: null },
+  // SCRUM-1519d: el cliente es del MISMO negocio que la fila; la revisión lo exige en su `where`.
+  customer: { id: 55, merchantId: f.merchantId ?? NEGOCIO, name: 'Cliente', phone: null, email: null },
   charge: null, Invoice: [],
   ...f,
 });
@@ -74,6 +76,10 @@ function casa(f, where) {
       assert.deepEqual(Object.keys(valor).sort(), ['gte', 'lt'], `🔴 DOBLE CIEGO: no sé evaluar createdAt: ${JSON.stringify(valor)}`);
       assert.ok(valor.gte instanceof Date && valor.lt instanceof Date && valor.gte < valor.lt, '🔴 DOBLE CIEGO: un tramo de fechas que no es un tramo');
       if (!(f.createdAt >= valor.gte && f.createdAt < valor.lt)) return false;
+    } else if (clave === 'customer') {
+      // SCRUM-1519d · la revisión pide el cliente del MISMO negocio.
+      assert.deepEqual(Object.keys(valor), ['merchantId'], `🔴 DOBLE CIEGO: no sé evaluar customer: ${JSON.stringify(valor)}`);
+      if (f.customer.merchantId !== valor.merchantId) return false;
     } else if (ESCALARES.has(clave)) {
       assert.ok(clave in f, `🔴 DOBLE CIEGO: la fila no tiene \`${clave}\``);
       if (valor === null || typeof valor !== 'object') { if (f[clave] !== valor) return false; continue; }

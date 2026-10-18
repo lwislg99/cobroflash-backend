@@ -107,3 +107,136 @@ del albarán, y queda para quien la reparta.
 
 **Lo que NO cierra:** SCRUM-1206 es del PRESUPUESTO (`quotesDetailView.js`, S2). Esto es la mitad del albarán.
 A9: aviso → cicatriz S4 «metí un rojo mío de la tanda local entre los de entorno sin leer su mensaje, porque sus diez vecinos sí eran del cliente de Prisma; lo cazó el CI» — no se pudo comprobar: clasificar los rojos lo hace quien lee la tanda, y ningún test lo ve
+
+## 1206d — un solo estilo de rótulo en el rail del albarán (S4, s4-15oct)
+
+**Medido contra:** `origin/main` = `e244ff61b1b81dd57d3747298ca207502a5a1c59` · 2026-10-17T19:59:19Z
+
+Producción servía `e244ff61b1b81dd57d3747298ca207502a5a1c59` (/version) a esa hora.
+
+**Sufijo:** el orquestador dio `1206c` por libre; al ir a empujar ya era de S2
+(`scrum-1206c-la-ficha-del-presupuesto-pinta-sus-textos`, la mitad del presupuesto). Éste es `1206d`.
+
+**Skill UI:** cargada (`yaqu-premium-ui`, en esta sesión y ANTES de editar). Sin token, clase ni estilo nuevo, y
+sin tocar `styles.css` (contenedor de S2): sólo `albaranDetailView.js` (S4, `dos-equipos.md:149`). Las PALABRAS
+no cambian, sólo cómo se pintan: es estilo, no microcopy.
+
+**Lo medido (yaqu.app, cuenta QA, sólo GET, 390 y 1280 px; `ver1206d-rotulos-en-prod.mjs`):**
+
+| ficha | rótulos | ¿mezcla? |
+|---|---|---|
+| albarán #46 y #48 | TRABAJO, CLIENTE, DIRECCIÓN, FACTURACIÓN con `detail-total-label` (11,5 px / 700 / mayúsculas); «Observaciones» con `.detail-rail-etiqueta` (13 px / 400 / sin mayúsculas), cada uno en su propia caja del rail. Presupuesto y Fotos, por código, con la clase de «Observaciones» | **sí**: dos estilos para filas del mismo nivel |
+| Trabajo #76 | CLIENTE, PRESUPUESTO, RESPONSABLE con `detail-section-title` (título de BLOQUE); «Nota del cliente» con `.detail-rail-etiqueta` DENTRO del bloque | no: son dos niveles |
+| parte (`parteDetailView.js`) | no tiene rail | no aplica |
+
+Sólo el albarán: es un retoque, no un patrón. La ficha del Trabajo es de S2 (`jobDetailView.js`), no de S4.
+
+**La causa:** `DESIGN.md` no cubre el formato de los rótulos de un rail. No dice «versalitas» ni
+`text-transform` (cero apariciones); sí dice MAYÚSCULAS para el «Label» de KPI, cabeceras de tabla y secciones
+del sidebar (`DESIGN.md:147`), y un rótulo de campo «estilo Label (12px, 600)» encima del campo (`DESIGN.md:201`),
+pero no cuál de los dos vale en un rail. Con esa laguna, cada fila nueva copió la clase que tenía más a mano: las
+de SCRUM-302 y la de 1206b (mía) copiaron la del rótulo de línea del Trabajo (.detail-rail-etiqueta, SCRUM-318). **Mientras `DESIGN.md` no lo diga, volverá a
+pasar en la siguiente pantalla.** Tocar `DESIGN.md` lo decide el orquestador aparte; aquí sólo queda nombrado.
+
+**La decisión NO sale de una norma: es del orquestador, 17-oct-2026** (por `SendMessage` a S4): los tres rótulos de
+la minoría (Presupuesto, Observaciones, Fotos) se alinean a versalitas con la mayoría (TRABAJO, CLIENTE…), porque
+el cambio menor es llevar la minoría a la mayoría.
+
+**Lo construido:** una constante `CLASE_ROTULO_RAIL` (`detail-total-label`) para TODOS los rótulos del rail. Las
+filas de Presupuesto y Fotos pasan a `--nota` (rótulo ENCIMA del valor, como las de arriba; al lado, en
+versalitas, se leía como otra cosa). El enlace del presupuesto va dentro de su caja: suelto, `--nota` lo estiraba
+a 320 px (390 de pantalla) y se pulsaba tocando el hueco vacío; medido de nuevo, 44×44.
+
+**Antes de empujar** (`ver1206d-antes-de-empujar.mjs`: yaqu.app con el `albaranDetailView.js` del disco servido
+en el navegador y el GET del #48 completado EN EL NAVEGADOR con presupuesto y una foto, para que salgan las 8
+filas; control: `jsLocalServido` es `false` en el ANTES y `true` en el DESPUÉS; único abortado `POST /admin/entorno`):
+
+| | ANTES (main) | DESPUÉS |
+|---|---|---|
+| clases de rótulo en el rail | 2 (5 `detail-total-label` + 3 `.detail-rail-etiqueta`) | 1 (8 `detail-total-label`) |
+| rótulo encima de su valor | 6 de 8 (Presupuesto y Fotos, al lado) | 8 de 8 |
+| enlace del presupuesto | 44×44 | 44×44 |
+| desborde horizontal | no | no |
+
+Diferencia que queda: entre rótulo y valor hay 6 px en las tres filas `--nota` y 3 px en las de arriba (el
+`margin-bottom` de la clase sólo cuenta cuando el rótulo es elemento flex). Igualarlo pide CSS de S2: no se toca.
+
+**Guard:** `tests/scrum1206d-un-solo-rotulo-en-el-rail.test.mjs` pinta la ficha con las 8 filas (suelo: las cuenta
+por su TEXTO) y exige UNA sola clase de rótulo. Visto en ROJO contra el `albaranDetailView.js` de main («conviven
+varios estilos… Presupuesto → detail-rail-etiqueta · Observaciones → … · Fotos → …»), y verde con el arreglo.
+`scrum1206b` localizaba el rótulo por `.detail-rail-etiqueta`: su localizador pasa a la clase nueva; lo que exige
+(rótulo «Observaciones», texto intacto, orden del papel, sin dato sin fila) no cambia. Tanda local de los 4
+ficheros del rail (1206d, 1206b, 1375, 302): 26 de 26.
+A9: comprobación → `tests/scrum1206d-un-solo-rotulo-en-el-rail.test.mjs`
+## 1206c — la ficha del PRESUPUESTO pinta su cabecera y sus Observaciones (S2, s2-1206)
+
+**Medido contra:** `origin/main` = `e244ff61b1b81dd57d3747298ca207502a5a1c59` · 2026-10-17T19:57:04Z
+
+A9: comprobación → `tests/scrum1206c-la-ficha-del-presupuesto-pinta-sus-textos.test.mjs`
+
+**Skill UI:** cargada (`yaqu-premium-ui`, en esta sesión y ANTES de editar). Una clase nueva en `styles.css`
+(`.quote-doc-texto`, sólo `overflow-wrap` y tokens existentes); el resto, el armazón de la ficha
+(`.detail-section`, `.detail-section-title`). Carril: `quotesDetailView.js` y `textoDelDocumento.js` → S2.
+
+**La firma** es la del tramo 1206b (orquestador, 16-oct-2026, delegación del fundador; repetida a la S2 en el
+encargo del 16-oct): la cabecera **SIN RÓTULO**, como en el papel; el bloque final con **«Observaciones»**,
+LEÍDO de `TD_TITULO_OBSERVACIONES` y no copiado. ⚠️ En el presupuesto ese bloque NO es `notas`: es
+`docFooterText`. Lo dice el papel —`pdf.service.ts` imprime `TITULO_OBSERVACIONES` sobre `docFooterText`— y lo
+dice la pieza (`TD_CAMPOS`: `docFooterText` → «Observaciones», firmado por el fundador el 2-sep). El criterio de
+la firma («el campo que el papel imprime bajo Observaciones lleva Observaciones») da aquí `docFooterText`. Sin
+palabra nueva.
+
+**Lo construido (las 4 líneas de la aceptación):**
+
+1. `quotesDetailView.js`: dos secciones, en el ORDEN DEL PAPEL: la cabecera (`data-seccion="texto-cabecera"`,
+   sin título) justo encima de «Conceptos», y las Observaciones (`data-seccion="observaciones"`) justo debajo
+   de los totales. Las pinta `textoDelDocumentoPintado`, la pieza que existía para esto (saltos con
+   `pre-line`, por `textContent`); su contenedor `.quote-doc-texto` le añade `overflow-wrap: anywhere`, que era
+   la objeción de S4 en 1206b (una URL larga ensanchaba la ficha a 360 px). Sin dato no hay sección: vacío,
+   sólo espacios o `null` no pintan nada, ni el rótulo. Sin el rótulo de la pieza, las Observaciones no se
+   pintan (sin título se leerían como la cabecera).
+2. `scripts/_sin-consumir-declarados.json`: `textoDelDocumentoPintado` pasa de `declaradas` a `retiradas` con su
+   motivo.
+3. `tests/scrum1206c-la-ficha-del-presupuesto-pinta-sus-textos.test.mjs` (6), con la ficha REAL en el banco.
+4. Rótulos: los de la pieza; nada nuevo.
+
+| comprobación | resultado |
+|---|---|
+| con el cambio | 6 de 6 |
+| con el `quotesDetailView.js` de `main` | caen 4: los que ven texto. Pasan el SUELO (el rótulo y la pieza llegan) y «sin dato, sin sección» |
+| M1 · la cabecera con el rótulo del formulario | cae 1 de 6 |
+| M2 · sin la sección de la cabecera | caen 2 de 6 |
+| M3 · sin el «sin dato, sin sección» (sólo `null`) | cae 1 de 6 |
+
+**Vecinos:** 38 ficheros (las 18 que montan `renderQuoteDetailView`, `scrum593*`, `scrum1185*`, `1174`,
+`1187`, `514`, `237`, `976`…): 388 tests · 381 pass · 4 skip · 3 fail, los tres del registro que se escribe
+aquí (`scrum1340`, `scrum854 ②` y `scrum976 ④`, que ejecuta los mismos guards de entrada).
+
+**No visto en yaqu.app todavía:** se mira cuando entre, sobre el #202 de la cuenta QA (su GET trae
+«[QA-1268] Cabecera de pruebas QA…» y «[QA-1268] Pie de pruebas QA…», c.19790), con otro presupuesto sin
+textos de control.
+
+## 1206d — VISTO en yaqu.app (S4, s4-15oct)
+
+**Medido contra:** `origin/main` = `1900f25f0386e08a69cfab766b92395874209050` · 2026-10-17T20:38:58Z
+
+#2540 se mergeó a las 20:33:16Z (`1900f25f`), y producción servía ese mismo SHA (/version) al medir. El JS
+servido trae `CLASE_ROTULO_RAIL` (control de que no se mide una versión vieja). Cuenta QA, sólo GET, 390 y 1280 px,
+`serviceWorkers: 'block'`; el único abortado en todos los casos, `POST /admin/entorno`.
+
+| caso | ANTES (17-oct, `e244ff61`) | DESPUÉS (`1900f25f`) |
+|---|---|---|
+| #46 y #48, tal cual | 4 versalitas + «Observaciones» con `.detail-rail-etiqueta` | 5 rótulos, todos `detail-total-label` |
+| #48 con presupuesto y una foto añadidos EN EL NAVEGADOR (8 filas) | 5 + 3 (Presupuesto y Fotos, al lado de su valor) | 8, todos `detail-total-label`, todos encima de su valor; enlace 44×44 |
+| Trabajo #76 (control: no se tocó) | CLIENTE/PRESUPUESTO/RESPONSABLE `detail-section-title` + «Nota del cliente» `.detail-rail-etiqueta` | igual |
+
+Salidas: `ver1206d-visto-real-17oct.txt` y `ver1206d-visto-inyectado-17oct.txt` (bancos `ver1206d-rotulos-en-prod.mjs`
+y `ver1206d-antes-de-empujar.mjs main`, éste con `jsLocalServido: false`: el JS es el de producción).
+
+**Check informativo «guards de navegador» de #2540 en rojo, leído:** `guard:cls-barra-anuncio` (CLS 0,127 a 360 px
+en la landing) y `guard:objetivo-tactil` («⬇ Clientes CSV» 31 px). Ninguno toca el albarán;
+`guard:albaranes-con-acciones` en verde.
+
+**Lo que queda abierto, y no es de S4:** `DESIGN.md` sigue sin decir qué rótulo lleva un rail (tramo de arriba).
+Lo decide el orquestador aparte.
+A9: sin fallo que generalice — tramo de verificación; el fallo del sufijo (`1206c` ya cogido al empujar) lo paró el control antes del push, que es la comprobación que ya existe

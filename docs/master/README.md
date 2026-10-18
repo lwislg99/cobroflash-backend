@@ -173,6 +173,15 @@ Y debajo, su ancla — generada, no tecleada: `node scripts/equipo/ancla.mjs`
 **Medido contra:** `origin/main` = `<sha de 40>` · <ISO-8601 con huso>
 ```
 
+Y debajo del ancla, **la linea `A9:`** (SCRUM-1152b). Es OTRO requisito con OTRO guard
+(`tests/scrum1294-a9-leccion-en-a10.test.mjs`), y `ancla.mjs` no la escribe: la del 16-oct que tumbo
+a S3 en #2528 traia el ancla buena y le faltaba esta. Sus cuatro formatos validos estan en
+`docs/equipo/00-normas-siempre.md` (A9), y solo alli; el mas comun:
+
+```markdown
+A9: comprobación → `<ruta del test, guard o hook que ya lo impide>`
+```
+
 ⚠️ **Lo que el guard NO reconoce como entrada** son los encabezados de seccion interna
 (`# PUNTO 1`, `# TRAMO 2`, `# FASE C`). Estan medidos —**153 en el arbol**— y no se les exige
 ancla, porque no son mediciones aparte. Si tu apendice de verdad es un trabajo nuevo, ponle
@@ -182,13 +191,14 @@ ancla, porque no son mediciones aparte. Si tu apendice de verdad es un trabajo n
 
 **No es un guard, son VARIOS** —los de la lista `GUARDS` de `scripts/guards-entrada.mjs`; eran
 cuatro al escribir esto y hoy son mas—, y hasta ahora cada sesion los descubria EN ROJO despues de
-empujar, cuando el PR ya estaba abierto. Los cuatro de origen:
+empujar, cuando el PR ya estaba abierto. Los cuatro de origen, y el de la linea `A9:`:
 
 | guard | lo que exige |
 |---|---|
 | SCRUM-273 | el fichero se llama `SCRUM-<n>.md`, y el trabajo no se escribe en `YAQU_MASTER.md` |
 | SCRUM-267 | el ancla `**Medido contra:**`, con sha de **40** y hora con huso |
 | SCRUM-391 | todo test que la entrada DECLARA existe en el arbol |
+| SCRUM-1294 | bajo cada ancla fechada, una linea `A9:` en uno de sus cuatro formatos (entro en la lista con SCRUM-1152b) |
 | SCRUM-242 | no se nombra un documento que no existe |
 
 ```

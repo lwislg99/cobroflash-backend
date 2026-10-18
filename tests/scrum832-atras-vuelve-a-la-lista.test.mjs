@@ -48,9 +48,11 @@ test('SCRUM-832 · SUELO: se encuentran las cinco fichas declaradas', () => {
     + 'de mirar lo que cree que mira y todo lo de abajo es un verde vacío.');
   // SCRUM-980 · la SEXTA: `parte-detail`, que ahora se abre desde el historial de la ficha del
   // cliente. Entra CON su aviso firmado (P8) y vuelve a Trabajos, que es lo que este suelo exige.
-  assert.equal(d.length, 6,
-    `🔴 hay ${d.length} fichas declaradas y son seis: presupuesto, trabajo, factura, albarán, `
-    + 'cliente y parte. Si entra una séptima sin aviso, el atrás la deja fuera de la aplicación.');
+  // SCRUM-1156 · la SÉPTIMA: `expenses-detail`, la ficha del gasto, con su ruta propia (1156b) y su
+  // aviso firmado por el orquestador el 16-oct-2026. Vuelve a Gastos.
+  assert.equal(d.length, 7,
+    `🔴 hay ${d.length} fichas declaradas y son siete: presupuesto, trabajo, factura, albarán, `
+    + 'cliente, parte y gasto. Si entra una octava sin aviso, el atrás la deja fuera de la aplicación.');
 });
 
 test('SCRUM-832 · cada ficha vuelve a SU lista, y su lista es una vista real', () => {
@@ -114,14 +116,14 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     fichero: 'public/dashboard/js/app.js',
     de: 'return typeof s === \'number\' && s >= 400 && s < 500;',
     a: 'return s === 404;',
-    cae: 'SCRUM-832 · 🔴 CORRIDO: id inexistente e id de OTRO merchant dan el MISMO texto y destino, en las SEIS fichas',
+    cae: 'SCRUM-832 · 🔴 CORRIDO: id inexistente e id de OTRO merchant dan el MISMO texto y destino, en las SIETE fichas',
   },
   {
     // M3 · el router pinta el error crudo en vez de su aviso firmado.
     fichero: 'public/dashboard/js/app.js',
     de: "if (typeof showToast === 'function') showToast(d.aviso, 'warn');",
     a: "if (typeof showToast === 'function') showToast(e.message, 'warn');",
-    cae: 'SCRUM-832 · 🔴 CORRIDO: id inexistente e id de OTRO merchant dan el MISMO texto y destino, en las SEIS fichas',
+    cae: 'SCRUM-832 · 🔴 CORRIDO: id inexistente e id de OTRO merchant dan el MISMO texto y destino, en las SIETE fichas',
   },
 ];
 
@@ -181,11 +183,11 @@ test('SCRUM-832 · 🔴 el `catch` sólo pregunta SI el servidor contestó, y na
     `🔴 el \`catch\` usa \`${variable}\` ${usos.length} veces: fuera de la pregunta, el error no se lee ni se pinta.`);
 });
 
-test('SCRUM-832 · 🔴 CORRIDO: id inexistente e id de OTRO merchant dan el MISMO texto y destino, en las SEIS fichas', async () => {
+test('SCRUM-832 · 🔴 CORRIDO: id inexistente e id de OTRO merchant dan el MISMO texto y destino, en las SIETE fichas', async () => {
   // Se EJECUTA la función de `app.js`. Cuatro 4xx con mensajes DISTINTOS entre sí: si el router
   // pintara el error, o distinguiera un código de otro, las salidas dejarían de ser iguales.
   const vistas = detallesDeclarados().map((d) => d.view);
-  assert.equal(vistas.length, 6, '🔴 CIEGO: no salen las seis fichas.');
+  assert.equal(vistas.length, 7, '🔴 CIEGO: no salen las siete fichas.');
   for (const view of vistas) {
     const salidas = [];
     for (const fallo of [

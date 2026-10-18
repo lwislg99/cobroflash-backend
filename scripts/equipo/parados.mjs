@@ -4,6 +4,7 @@
 //   node scripts/equipo/parados.mjs            → la foto de ahora (segundos; no llama a GitHub)
 //   node scripts/equipo/parados.mjs --json     → lo mismo, para otra herramienta
 //   node scripts/equipo/parados.mjs --jobs <carpeta>   → otro registro (así lo doblan los tests)
+//   node scripts/equipo/parados.mjs --aparcados <fichero>  → otras marcas de aparcado (SCRUM-1357e)
 //
 // POR QUÉ EXISTE. El 13-oct-2026 había 37 sesiones en el panel y 31 BLOQUEADAS, siete de ese día,
 // paradas entre 12 y 70 minutos. El vigía que miraba el orquestador decía «nadie parado», y con eso
@@ -50,9 +51,15 @@
 // PUESTOS VACÍOS (`--puestos`, por defecto S0-S5). Un puesto sin NINGUNA sesión con proceso no tenía fila:
 // la tabla sólo listaba los que tenían alguna. Sin panel no se afirma (no hay procesos que ver).
 //
-// SALIDA: 0 = miré todo y nadie está bloqueado, nadie espera y no falta ningún puesto pedido · 1 = hay
-// alguna de las tres · 2 = NO PUDE MIRAR algo (y gana al 1: debajo va lo que sí se pudo leer, pero un
-// «no sé» no se tapa con una lista).
+// APARCADOS (SCRUM-1357e). Un puesto vacío que el orquestador ha parado A PROPÓSITO (`aparcar.mjs`) sale
+// como APARCADO y no cuenta como alarma. Sólo si su marca VALE (`juzgarAparcado`: no vencida, nadie del
+// puesto lanzado después, registro legible); si no vale, sale VACÍO como siempre y dice por qué no valió.
+// Una marca ilegible es un ciego. `--aparcados <fichero>` lee otra; con `--jobs` y sin `--aparcados` no se
+// lee ninguna: las marcas hablan de las sesiones del registro de verdad, no de uno doblado.
+//
+// SALIDA: 0 = miré todo y nadie está bloqueado, nadie espera y no falta ningún puesto pedido (los
+// aparcados no faltan) · 1 = hay alguna de las tres · 2 = NO PUDE MIRAR algo (y gana al 1: debajo va lo
+// que sí se pudo leer, pero un «no sé» no se tapa con una lista).
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -61,6 +68,7 @@ import { fileURLToPath } from 'node:url';
 import { leerTrabajos, espera, preguntaDe, puestoDe, HORAS_DE_SESION } from './latido.mjs';
 import { clasificarAgente, ESTADOS_TERMINALES } from './sesion.mjs';
 import { leerLinea, tramosDe } from '../espera-del-equipo.mjs';
+import { ficheroDeAparcados, leerAparcados, juzgarAparcado } from './aparcar.mjs';
 
 export const SALIDA_NADIE = 0;
 export const SALIDA_HAY = 1;
@@ -116,11 +124,13 @@ export function paradaDesde(reg, linea) {
  * `panel`: la salida de `claude agents --json` · `null` = no se pudo leer (con `motivoPanel`).
  * `registro`: lo que devuelve `leerTrabajos` · `undefined` = la carpeta no existe.
  * `puestos`: los que tienen que tener alguna sesión viva (`['S0', …]`) · `[]` = no se mira.
+ * `aparcados`: lo que devuelve `leerAparcados` (`{marcas}` o `{marcas:null, motivo}`) · ausente = ninguna marca.
  * @returns {{codigo:0|1|2, lineas:string[], datos:object}}
  */
-export function medir({ panel, motivoPanel = 'sin motivo', registro, lineaDe = () => null, ahora, puestos: pedidos = [], motivoPuestos = null }) {
+export function medir({ panel, motivoPanel = 'sin motivo', registro, lineaDe = () => null, ahora, puestos: pedidos = [], motivoPuestos = null, aparcados: marcasLeidas = { marcas: {} } }) {
   const ciegos = [];
   if (motivoPuestos) ciegos.push(`los PUESTOS pedidos: ${motivoPuestos}`);
+  if (!marcasLeidas || !marcasLeidas.marcas) ciegos.push(`las MARCAS DE APARCADO: ${(marcasLeidas && marcasLeidas.motivo) || 'sin motivo'} — un puesto aparcado sale como SIN CUBRIR`);
   const hayPanel = Array.isArray(panel);
   const hayRegistro = !!registro && Array.isArray(registro.sesiones);
   if (!hayPanel) ciegos.push(`el PANEL (\`claude agents --json\`): ${motivoPanel}`);
@@ -207,7 +217,18 @@ export function medir({ panel, motivoPanel = 'sin motivo', registro, lineaDe = (
     puestos[k][f.clase].push(f.nombre);
   }
   // Vacío = ninguna sesión suya con proceso. Si alguna es «no sé», no se afirma: ya va en los ciegos.
-  const vacios = hayPanel ? pedidos.filter((p) => !filas.some((f) => f.puesto === p && (f.pid || f.clase === 'nose'))) : [];
+  const sinNadie = hayPanel ? pedidos.filter((p) => !filas.some((f) => f.puesto === p && (f.pid || f.clase === 'nose'))) : [];
+  // 1357e: de los vacíos, los que el orquestador aparcó a propósito y cuya marca VALE. Ante la duda, vacío.
+  const marcas = (marcasLeidas && marcasLeidas.marcas) || {};
+  const aparcados = [];
+  const marcasQueNoValen = {};
+  for (const p of sinNadie) {
+    if (!Object.prototype.hasOwnProperty.call(marcas, p)) continue;
+    const j = juzgarAparcado({ puesto: p, marca: marcas[p], sesiones: hayRegistro ? registro.sesiones : null, ahora });
+    if (j.vale) aparcados.push({ puesto: p, desde: j.desde, hasta: j.hasta, motivo: j.motivo });
+    else marcasQueNoValen[p] = j.porque;
+  }
+  const vacios = sinNadie.filter((p) => !aparcados.some((a) => a.puesto === p));
   const conBloqueo = Object.keys(puestos).filter((k) => puestos[k].bloqueada.length).sort();
   const conEspera = Object.keys(puestos).filter((k) => puestos[k].espera.length).sort();
   const alarma = bloqueadas.length || esperan.length || vacios.length;
@@ -217,8 +238,9 @@ export function medir({ panel, motivoPanel = 'sin motivo', registro, lineaDe = (
   const partes = [];
   if (bloqueadas.length) partes.push(`${bloqueadas.length} SESIÓN(ES) BLOQUEADA(S) en ${conBloqueo.length} puesto(s) (${conBloqueo.join(', ')})${Number.isFinite(bloqueadas[0].desde) ? ` · la más antigua, hace ${haceDe(ahora - bloqueadas[0].desde)}` : ''}`);
   if (esperan.length) partes.push(`${esperan.length} SESIÓN(ES) TE ESPERA(N) (acabaron su turno y siguen vivas) en ${conEspera.length} puesto(s) (${conEspera.join(', ')})${Number.isFinite(esperan[0].desde) ? ` · la que más, hace ${haceDe(ahora - esperan[0].desde)}` : ''}`);
-  if (vacios.length) partes.push(`PUESTO(S) SIN NINGUNA SESIÓN VIVA: ${vacios.join(', ')}`);
+  if (vacios.length) partes.push(`PUESTO(S) SIN NINGUNA SESIÓN VIVA: ${vacios.map((p) => (marcasQueNoValen[p] ? `${p} (estaba aparcado, pero ${marcasQueNoValen[p]})` : p)).join(', ')}`);
   const titular = partes.length ? partes.join(' · ') : 'ninguna sesión bloqueada';
+  const aparcadosTxt = aparcados.map((a) => `${a.puesto} hasta ${horaDe(a.hasta)} («${corto(a.motivo, 80)}»)`).join(', ');
   if (ciegos.length) {
     out.push(`🔴 PARADOS · NO PUDE MIRAR (salida 2) — esto NO quiere decir que nadie esté parado.`);
     for (const c of ciegos) out.push(`   · no pude mirar ${c}`);
@@ -226,8 +248,9 @@ export function medir({ panel, motivoPanel = 'sin motivo', registro, lineaDe = (
     out.push(alarma ? `   En lo que SÍ pude leer: ${titular}.` : '   En lo que SÍ pude leer hay 0 bloqueadas, y con lo que falta por mirar eso NO vale como «nadie parado».');
   } else {
     out.push(`${alarma ? '🔴' : '✅'} PARADOS · ${titular}`);
-    out.push(`   ${esperan.length ? `${esperan.length} te espera(n)` : 'ninguna te espera'} · ${!pedidos.length ? 'no se pidió mirar puestos (--puestos)' : `puestos pedidos: ${pedidos.join(', ')} — ${vacios.length ? `SIN sesión viva: ${vacios.join(', ')}` : 'todos con alguna sesión viva'}`}`);
+    out.push(`   ${esperan.length ? `${esperan.length} te espera(n)` : 'ninguna te espera'} · ${!pedidos.length ? 'no se pidió mirar puestos (--puestos)' : `puestos pedidos: ${pedidos.join(', ')} — ${vacios.length ? `SIN sesión viva: ${vacios.join(', ')}` : aparcados.length ? 'los no aparcados, todos con alguna sesión viva' : 'todos con alguna sesión viva'}`}`);
   }
+  if (aparcados.length) out.push(`   ⏸ APARCADO(S) A PROPÓSITO, no es una avería: ${aparcadosTxt} (\`aparcar.mjs\`)`);
   out.push(
     `   mirado a las ${horaDe(ahora)} (reloj de esta máquina) · contado por SESIÓN, no por puesto`,
     `   panel: ${hayPanel ? `${panel.length} entradas — ${fondo.length} trabajos de fondo, ${interactivas.length} interactivas (${interactivas.map((a) => a.name || '?').join(', ') || 'ninguna'}; no son trabajos y no se miran)` : 'NO LEÍDO'}`,
@@ -263,14 +286,14 @@ export function medir({ panel, motivoPanel = 'sin motivo', registro, lineaDe = (
       const v = puestos[k];
       const n = (l) => (l.length ? `${l.length} (${l.join(', ')})` : '0');
       // «Nadie» sólo es un aviso en un PUESTO: las sesiones sin puesto no forman uno. Una que te espera está viva.
-      out.push(`| ${k} | ${v.trabajando.length || v.espera.length || k === 'sin puesto' ? n(v.trabajando) : '0 ⚠️ NADIE'} | ${n(v.bloqueada)} | ${n(v.acabada)} | ${n(v.resto)} | ${n(v.nose)} | ${n(v.espera)} |`);
+      out.push(`| ${k} | ${v.trabajando.length || v.espera.length || k === 'sin puesto' ? n(v.trabajando) : aparcados.some((a) => a.puesto === k) ? '0 ⏸ aparcado' : '0 ⚠️ NADIE'} | ${n(v.bloqueada)} | ${n(v.acabada)} | ${n(v.resto)} | ${n(v.nose)} | ${n(v.espera)} |`);
     }
     out.push('trabajando = el panel la da por `working` Y tiene proceso · acabada = terminada y SIN proceso · resto = el panel la da por `working`, pero no tiene proceso y su state.json dice que terminó · te espera = terminada (panel o registro) y CON proceso.');
   }
   if (viejas) out.push('', `Además, ${viejas} trabajo(s) de más de ${HORAS_DE_SESION} h que ya no están en el panel conservan una pregunta en el registro: son del cementerio → node scripts/equipo/latido.mjs preguntas`);
   if (bloqueadas.length) out.push('', '⚠️ Parar una sesión BORRA su pregunta del registro. Esto no sabe si ya se contestó: sólo que sigue bloqueada.');
 
-  return { codigo, lineas: out, datos: { codigo, ahora, bloqueadas, esperan, vacios, pedidos: [...pedidos], puestos, ciegos, filas, viejas, panel: hayPanel ? { entradas: panel.length, fondo: fondo.length, interactivas: interactivas.length } : null } };
+  return { codigo, lineas: out, datos: { codigo, ahora, bloqueadas, esperan, vacios, aparcados, marcasQueNoValen, pedidos: [...pedidos], puestos, ciegos, filas, viejas, panel: hayPanel ? { entradas: panel.length, fondo: fondo.length, interactivas: interactivas.length } : null } };
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
@@ -290,7 +313,10 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const lista = crudo === 'ninguno' ? [] : String(crudo).split(',').map((s) => s.trim().toUpperCase()).filter(Boolean);
   const malos = crudo === 'ninguno' ? [] : !lista.length ? [String(crudo)] : lista.filter((p) => !/^S\d$/.test(p));
   const motivoPuestos = malos.length ? `--puestos no se deja leer («${malos.join(', ')}»): se esperan nombres como S0,S3, o «ninguno»` : null;
-  const r = medir({ panel: leido.panel, motivoPanel: leido.motivo, registro, lineaDe, ahora: Date.now(), puestos: malos.length ? [] : lista, motivoPuestos });
+  // 1357e: con otro registro (`--jobs`) las marcas del equipo no aplican; se pasan con `--aparcados`.
+  const ficheroMarcas = arg('--aparcados', process.argv.includes('--jobs') ? null : ficheroDeAparcados());
+  const aparcados = ficheroMarcas ? leerAparcados(ficheroMarcas) : { marcas: {} };
+  const r = medir({ panel: leido.panel, motivoPanel: leido.motivo, registro, lineaDe, ahora: Date.now(), puestos: malos.length ? [] : lista, motivoPuestos, aparcados });
   console.log(process.argv.includes('--json') ? JSON.stringify(r.datos, null, 2) : r.lineas.join('\n'));
   process.exit(r.codigo);
 }

@@ -263,6 +263,7 @@ async function initApp() {
       : view === 'templates' ? 'quotes-list'
       : view === 'albaran-detail' ? 'albaranes'
       : view === 'invoice-detail' ? 'invoices'
+      : view === 'expenses-detail' ? 'expenses' // SCRUM-1156
       : view === 'jobs-detail' ? 'jobs' : view;
 
     document.querySelectorAll('.nav-item[data-view]').forEach((btn) => {
@@ -287,6 +288,7 @@ async function initApp() {
     if (options.albaranId !== undefined) state.albaranId = options.albaranId; // SCRUM-302
     if (options.parteId !== undefined) state.parteId = options.parteId; // SCRUM-652 (fase D)
     if (options.jobId     !== undefined) state.jobId     = options.jobId;
+    if (options.expenseId !== undefined) state.expenseId = options.expenseId; // SCRUM-1156
     // 🔴 SCRUM-832 · ÉSTE FALTABA. `case 'customer-360'` LEE `state.customerId360` y nadie lo
     // escribía aquí: quien abría la ficha 360 tenía que tocar `window.appState` desde fuera.
     // Funcionaba por costumbre, no por mecanismo — y el router no podía restaurarla desde el hash,
@@ -491,6 +493,16 @@ async function initApp() {
         viewTitle.textContent = 'Gastos';
         renderExpensesView(viewContainer);
         break;
+      // SCRUM-1156 · la ficha de LECTURA del gasto. Mismo permiso que su lista y que su ruta
+      // (`requireRole('admin')`): la ficha no tiene entrada en la barra, así que el veto por rol de
+      // arriba no la ve, y se dice aquí, como en 'providers'. El rótulo es el nombre de la cosa, como
+      // 'Trabajo' o 'Albarán'.
+      case 'expenses-detail':
+        if (window.appUserRole !== 'admin') return renderView('home', options);
+        viewTitle.textContent = 'Gasto';
+        if (state.expenseId != null && typeof window.renderExpenseDetailView === 'function')
+          window.renderExpenseDetailView(viewContainer, state.expenseId);
+        break;
       // SCRUM-138: mismo guard que 'settings'/'team' — el export se lleva TODO el negocio,
       // datos de cliente incluidos (S4/RGPD), así que un técnico no entra ni tecleando la
       // vista. La seguridad real la da el requireRole('admin') del router /admin/exports.
@@ -592,6 +604,10 @@ async function initApp() {
     // recargar estando en ella la perdía. Vuelve a Trabajos, que es donde viven los partes.
     // Aviso firmado por delegación (SCRUM-980, P8).
     'parte-detail':   { clave: 'parteId',       lista: 'jobs',        ruta: (id) => '/admin/partes/' + id,     aviso: 'Ese parte ya no existe.' },
+    // SCRUM-1156 · la ficha del gasto, con su ruta propia (SCRUM-1156b): sin ella, abrirla borraba
+    // la lista del historial. Séptimo aviso del patrón, firmado por delegación (SCRUM-1156
+    // comentario 19907; la marca de la casa va en `expensesView.js`, fuera de este objeto).
+    'expenses-detail': { clave: 'expenseId',    lista: 'expenses',    ruta: (id) => '/admin/expenses/' + id,   aviso: 'Ese gasto ya no existe.' },
   };
 
   /** El hash, partido por la PRIMERA barra: `#quotes-detail/123` → `{ view, id }`. */

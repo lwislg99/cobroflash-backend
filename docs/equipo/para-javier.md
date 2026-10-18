@@ -415,3 +415,91 @@ Leído tal cual, eso dice: *«el caso ④ depende del huso horario»*. **Y es fa
 · **Lo que lo arreglaría, si os sirve:** más de una pasada por zona antes de afirmar, o un canario **deliberadamente inestable** en el autocontrol — hoy no hay ninguno, y por eso el agujero es invisible desde dentro.
 · ⚠️ **Y lo que esto cambia de nuestra sección 18:** la pista de carga/memoria que os dimos allí **sigue siendo una hipótesis** y no la ascendemos a causa. **Pero ahora sabemos que la salida de este trinquete NO sirve como prueba de nada sobre ④.**
 · **Lo midió S3 (equipo de Luis) el 17-oct-2026, y fue ella misma quien retiró la conclusión antes de que su orquestador os la mandara como causa.**
+
+## 20 🔴 QUINCE CONTROLES VUESTROS QUE NO SE PUEDEN PULSAR BIEN · medidos, con el arreglo resuelto
+
+**De dónde salen, porque importa.** Nuestro banco de pantallas montaba las vistas con datos que el servidor **nunca devuelve**: 28 rutas recibían una lista vacía, varias recibían el dato de otra, y tres fichas de detalle se montaban **sin número**. Arreglado (SCRUM-1560), el censo pasa de medir **18 vistas a 27**, y los controles por debajo del mínimo pasan de **61 a 96**.
+🔵 **Esos 35 «nuevos» no son nuevos: llevaban ahí siempre.** **Lo que cambió es que el instrumento por fin llega a esas pantallas.** **Sube porque vemos más, no porque haya empeorado nada.**
+
+**De los 31 defectos reales, 15 están en ficheros vuestros.** Px a **929 / 390**:
+
+| dueño | fichero | control | px |
+|---|---|---|---|
+| **J1** | `invoiceDetailView.js` | «← Volver a facturas» | **31 / 31** |
+| **J1** | `invoiceDetailView.js` | «Marcar como cobrada» | **30,5 / 30,5** |
+| **J1** | `invoiceDetailView.js` | «Descargar PDF» | **30,5 / 30,5** |
+| **J1** | `invoiceDetailView.js` | «Enviar por WhatsApp» | **30,5 / 30,5** |
+| **J1** | `invoicesView.js` | casilla de fila | **14 / —** (no se pinta a 390) |
+| **J1** vista · componente compartido | `documentoAsignados.js`, en el detalle de FACTURA | `INPUT.doc-asignados-casilla` | **21 / 21** |
+| **J2** | `cobrosView.js` | enlace «factura F-…» | **19 / 17** |
+| **J3** | `plansView.js` | «Quiero mi plaza founding» | **41,9 / 41,9** |
+| **J3** | `plansView.js` | «Mensual» | **29,9** |
+| **J3** | `plansView.js` | «Anual −17%» | **29,9** |
+| **J3** | `teamView.js` | «+ Añadir miembro» | **31 / 30,7** |
+| **J3** | `teamView.js` | «Ver su trabajo →» (×2) | **~30,8** |
+| **J3** | `teamView.js` | «Editar» | **30,7 / 30,9** |
+| **J3** | `teamView.js` | «Suspender» | **30,7 / 30,9** |
+
+🔴 **LOS TRES QUE DE VERDAD NO SE PUEDEN PULSAR**, y los pondríamos primero: **`cobrosView.js` a 19/17 px** —menos de la mitad del mínimo, en **un enlace a una factura**—, **la casilla de `documentoAsignados` a 21** y **la de `invoicesView` a 14**. El resto son botones de ~30 donde el mínimo en móvil es 44.
+
+⚠️ **UN CRUCE QUE CONVIENE QUE NO ARREGLEMOS DOS VECES: `documentoAsignados.js` es un COMPONENTE COMPARTIDO.** Su casilla sale **igual de corta (21 px)** en **vuestro** detalle de factura y en **nuestro** detalle de presupuesto. **Si lo arregla uno, se arregla para los dos.** **Nosotros no lo vamos a tocar sin avisaros: decidnos si lo cogéis vosotros o lo hacemos nosotros, pero que no lo toquemos los dos a la vez.**
+
+🔵 **EL ARREGLO YA ESTÁ RESUELTO DE NUESTRO LADO Y OS LO DAMOS:** el patrón de **SCRUM-1158c** (PR #2513, en `main`) es **una regla acotada que lleva ese `.btn-sm` a 44 px sin tocar el `.btn-sm` global** — la decisión ③ de SCRUM-786, que evita el rediseño en cascada. **Lo aplicamos a 18 controles y lo medimos en yaqu.app: 20 de 20 pasaron de ~30 a 44 px, a 390 y a 929.**
+
+· ⛔ **Y DOS QUE NO HAY QUE TOCAR, para que no perdáis el tiempo:** `customerDetailView.js` «Trabajos (1)» y «WhatsApp (1)» (**41 / 59**) y «Suscribirme» (**39,8 / 44,6**). **Sólo fallan contra el 44 del censo; contra los 36 px que el guard aplica en escritorio por `DESIGN.md`, CUMPLEN.**
+· **Nuestros son los otros 16**, y van por nuestra cuenta. **Decisión del orquestador de Luis, 17-oct-2026; midió S3.**
+
+## 21 🔴 EL DETALLE DE FACTURA DEVUELVE EL PRESUPUESTO ENTERO · con la IP del cliente que firmó, su firma y el token del enlace público
+
+**Lo primero, para que nadie se alarme de más: NO es una fuga entre merchants.** Medido: la ruta pide sesión (`requireAuth`) y filtra por `merchantId` **dos veces** (`invoiceAdmin.ts:120` y `accesoALaFactura.ts:127`); un id ajeno da 404. **Un merchant NO ve la evidencia de otro.** Y **no hay clientes reales en producción**, así que no hay nada en curso.
+
+**Lo que sí pasa.** `invoiceAdmin.ts:124` hace **`quote: true`**: el detalle de factura se lleva el presupuesto de origen **ENTERO, sin recortar**. Por ahí salen:
+
+| sale | qué es |
+|---|---|
+| `quote.evidenciaFirma` | **la IP y el navegador del CLIENTE que firmó**, su `tokenId`, `firmadoAt`, la huella (`contentHash`, `hashAlg`) y el bloque congelado |
+| `quote.signatureUrl` | **el trazo de la firma del cliente**, como data-URI |
+| `quote.decisionToken` | **la llave del enlace público del presupuesto** |
+| `quote.evidence` | la marca manual de aceptado/rechazado |
+| `quote.internalNotes` | las notas internas del profesional |
+
+🔴 **Lo que lo convierte en defecto y no en opinión: vuestro propio esquema dice que la IP y el navegador «NUNCA se exponen» por API.** **El código contradice la garantía que el propio esquema declara.** (Lo construye `quotes.routes.ts:460-479`, con la IP en `:473` y el UA en `:474`.)
+
+· 🔴 **Y lo ve un TÉCNICO.** La ruta no pide rol: un técnico recibe todo lo de arriba en las facturas que puede ver (`whereFacturasVisibles`, `accesoALaFactura.ts:76-131`). **Al técnico se le recorta el coste de las líneas (`sinCosteEnDocumento`) y en cambio le llega la IP del cliente y su firma.**
+· ✅ **Y la pantalla NO USA NADA DE ESO.** `invoiceDetailView.js` no lee ningún `quote.*`: sólo `customer.name`, `email` y `phone`. **El presupuesto entero viaja y nadie lo pinta.**
+
+🔵 **EL ARREGLO YA EXISTE EN VUESTRA CASA, y por eso esto es barato:** `GET /admin/quotes/:id` usa **una lista explícita de campos** (`quoteAdmin.ts:261 y ss.`) y **NO manda `evidenciaFirma` ni `evidence`**. **El detalle de factura es el único sitio por donde sale.** Basta con que haga lo mismo que ya hace su hermana.
+
+**Dónde está:** `src/modules/system/invoiceAdmin.ts:124` (`quote: true`) y `:138`; el `res.json`, en `invoicesAdmin.routes.ts:276`.
+
+· **Por qué os lo pasamos en vez de arreglarlo: `invoiceAdmin.ts` es de J1** (`.claude/carriles.json`) **y ese fichero lleva además la lógica del estado fiscal (des-pagar, R1)**, así que para nosotros es camino que se LEE (regla 38). **Lo hemos leído y no hemos tocado nada.**
+· ⚠️ **Y una pata que no es de código: la IP es dato personal.** **Si `docs/legal/` promete en algún sitio que no se expone, esto lo contradice** — conviene mirarlo antes del primer cliente real.
+· **Medido por S1 (equipo de Luis) el 17-oct-2026 sobre `origin/main` 44f3a6bf, leyendo código, sin tocar yaqu.app.** **De la misma auditoría, los hallazgos #3 (token del presupuesto) y #8 (clientes) salieron CERRADOS: el presupuesto ya usa token opaco de 16 bytes y clientes usa lista explícita sin `portalToken`.**
+
+## 22 ⛔ NO TOQUÉIS LA CASILLA: ya la hemos arreglado, y os arregla a vosotros también
+
+**En la §20 os avisamos de que `documentoAsignados.js` es un componente COMPARTIDO y os pedimos decidir quién lo arreglaba. Lo hemos hecho nosotros. Esto es el aviso.**
+
+**La casilla `INPUT.doc-asignados-casilla` pasa de 21 a 45 px**, y como el componente es el mismo, **vuestro detalle de FACTURA se arregla con él: `invoiceDetailView` baja de 5 controles cortos a 4** (medido en el banco). ⛔ **Que J1 NO la toque: si la arreglamos los dos, el segundo arreglo choca con el primero.**
+· **Cómo está hecho, por si queréis el mismo patrón:** CSS puro, `.doc-asignados-casilla::before` con `inset -12px`. **Es el mecanismo de SCRUM-786, que agranda el área de toque sin tocar la caja ni el `.btn-sm` global.** **Cero texto.**
+· **Va en nuestra rama `scrum-1559g-dieciseis-controles-nuestros-44px`.**
+· **Lo que SIGUE siendo vuestro de la §20: los 4 de `invoiceDetailView.js`, la casilla de fila de `invoicesView.js` (14 px), el enlace de `cobrosView.js` (19/17 px, el peor de la lista) y los 8 de `plansView.js` y `teamView.js`.**
+
+---
+
+## 23 🔴 CON TECLADO NO SE PUEDE ABRIR UNA FACTURA · y a vosotros os toca una de las dos sin salida
+
+**Medido el 18-oct sobre `origin/main` e59be9fa (SCRUM-1562).** Montamos las 29 vistas y buscamos los elementos que reciben clic y **no** son nativos (`button`, `a[href]`, `input`…). A cada uno le miramos `tabindex`, `role` y oyente de teclado, propio o heredado. **Control: la sonda SÍ distingue el caso bueno** — la actividad de Inicio sale con `tabindex=0`, `role=button` y `keydown`.
+
+**De los 9 que navegan sólo con ratón, dos son vuestros:**
+
+| vista | elemento | abre | fichero | dueño | ¿hay otra forma? |
+|---|---|---|---|---|---|
+| 🔴 **Facturas** | `TR` ×2 | el detalle de la factura | `invoicesView.js` | **J1** | **NO. Dentro sólo hay la casilla.** |
+| Clientes | `TR` ×3 | la ficha 360 | `customersView.js` | **J2** | SÍ: «📊 Historial» llama a la misma `openCustomer360` |
+
+🔴 **La de Facturas es la grave: desde esa lista, con teclado, NO SE PUEDE ABRIR UNA FACTURA.** Para un ratón funciona; para quien no usa ratón, esa pantalla no tiene salida. **La de Clientes está degradada pero se puede usar, porque el botón de historial hace lo mismo.**
+· **Las dos soluciones valen y la segunda es más barata:** dar foco, `role` y respuesta a Enter a la fila — **o** que dentro haya un control nativo que haga lo mismo, como ya pasa en Clientes. ⛔ **Sin texto nuevo: se reutiliza el rótulo que ya está en la fila.**
+· **Nuestros son los otros tres: Trabajos y Partes de oficina (los dos SIN alternativa) y Presupuestos (con ella).** Van por nuestra cuenta.
+· **Límites que declaró quien lo midió, y los pasamos tal cual:** sólo ve el estado montado, sin modales ni pestañas · no ve oyentes puestos en `document` · el número escala con los datos, porque el patrón es por fila · **y NO se comprobó si el buscador global abre esos detalles con teclado — si lo hace, el impacto baja pero el defecto sigue.**
+· **Medido por S3 (equipo de Luis). Ticket nuestro: SCRUM-1562, con la tabla completa de los 13 elementos y los tres grupos.**
