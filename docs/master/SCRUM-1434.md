@@ -60,3 +60,19 @@ medida y devuelta; `git status` limpio después:
   este ticket; salen rojo sin decir por qué, pero nunca verde en falso.
 - No se ha visto una corrida real del workflow con `gh` caído: lo que hay es el `run:` real ejecutado
   con un `gh` falso. El PR de este ticket es la primera corrida con el fichero nuevo.
+
+## 18-oct-2026 16:53Z · S5 · el rojo de #2552 era el censo de SCRUM-824, y se arregla en el test
+
+La corrida 39080520369 de #2552 cayó por UNA sola cosa: `SCRUM-824 · el conjunto de ficheros SIN
+PROBAR no crece`, con este fichero como el nuevo. Medido con `sinProbar(censar(RAIZ))`: dos creaciones
+`DESCONOCIDO`, `:110 mkdirSync(bin)` y `:112 writeFileSync(path.join(bin, nombre))`, las dos dentro de
+`binFalso(tmp)`, que escribía en una carpeta que le llegaba por PARÁMETRO (el censo no atraviesa la
+llamada). Las de `correrPaso` ya salían probadas: cuelgan de un `temporal()` en la misma función.
+
+**Arreglo en mi lado, no en el censo:** `binFalso()` crea su propio `temporal('yaqu-1434-bin-…')`.
+`SIN_PROBAR_CONOCIDOS` sin tocar. Medido: `scrum824` + `scrum1434` → 18/18. Control positivo después
+del cambio: la mutación `IDS="?"` → `IDS=""` sigue tumbando «gh caído al buscar…» (8 ok, 1 not ok);
+devuelta con Edit y `git status` sin `zona-roja.yml`.
+
+Los otros rojos de esa corrida (`guards de navegador`: `cls-barra-anuncio`, `objetivo-tactil`,
+`marcadores-en-pantalla`) no son obligatorios ni tocan nada de este PR.

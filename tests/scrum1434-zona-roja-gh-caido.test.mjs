@@ -105,9 +105,9 @@ const GIT_FALSO = [
 const barras = (p) => p.split(path.sep).join('/');
 const clavePath = Object.keys(process.env).find((k) => k.toUpperCase() === 'PATH') || 'PATH';
 
-function binFalso(tmp) {
-  const bin = path.join(tmp, 'bin');
-  fs.mkdirSync(bin);
+// Su propio temporal, y no uno que llegue por parámetro: así el censo de SCRUM-824 ve de dónde cuelga.
+function binFalso() {
+  const bin = temporal(`yaqu-1434-bin-${process.pid}-`);
   for (const [nombre, guion] of [['gh', GH_FALSO], ['git', GIT_FALSO]]) {
     fs.writeFileSync(path.join(bin, nombre), guion);
     fs.chmodSync(path.join(bin, nombre), 0o755);
@@ -120,7 +120,7 @@ function correrPaso(escenario = {}) {
   const guion = pasoAviso();
   assert.ok(guion, '🔴 no encuentro el paso «Avisar de zona roja» en zona-roja.yml: el laboratorio no mide nada');
   const tmp = temporal(`yaqu-1434-${process.pid}-`);
-  const bin = binFalso(tmp);
+  const bin = binFalso();
   const trabajo = path.join(tmp, 'trabajo');
   fs.mkdirSync(path.join(trabajo, 'scripts'), { recursive: true });
   fs.copyFileSync(path.join(RAIZ, 'scripts', 'zona-roja.mjs'), path.join(trabajo, 'scripts', 'zona-roja.mjs'));
@@ -153,7 +153,7 @@ const diag = (r) => `\n  status=${r.status}\n  stdout=${r.stdout}\n  stderr=${r.
 // ── LOS SUELOS: sin ellos, un verde de abajo no se distinguiría de un laboratorio que no reproduce Actions ──
 
 test('🔴 SUELO · hay bash, ve node, y el gh falso falla COMO EL DE VERDAD (error por stdout y código 1)', () => {
-  const bin = binFalso(temporal(`yaqu-1434-suelo-${process.pid}-`));
+  const bin = binFalso();
   const r = spawnSync('bash', ['-c', 'FALLA=BUSCAR GH_LOG=/dev/null gh api repos/o/r/issues/1/comments; echo "exit=$?"; command -v node >/dev/null && echo node=si'], {
     env: { ...process.env, [clavePath]: bin + path.delimiter + process.env[clavePath] }, encoding: 'utf8', timeout: 30000,
   });
