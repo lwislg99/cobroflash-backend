@@ -40,3 +40,42 @@ defecto, no descrito en el ticket pero medible con el mismo mecanismo).
 - Rojo confirmado contra `origin/main` sin el arreglo (`git stash`): los dos tests de EFECTO fallan
   (el control positivo daba `NO-PUDE-MIRAR` con el código viejo — leía el `sessionId` de la primera
   respuesta sin `pid`, exactamente el defecto del ticket).
+
+## 18-oct-2026 · SCRUM-1011b · S5 · cuando `claude --bg` no confirma, la causa VIAJA
+
+**Medido contra:** `origin/main` = `06c6289d46d5998493ec014fa26ff3353946b58b` · 2026-10-18T17:56:27Z
+
+A9: comprobación → `tests/scrum1011b-lanzar-dice-por-que.test.mjs`
+
+### El defecto, medido
+El orquestador lanzó `sesion-0` dos veces con `sesion.mjs lanzar` y recibió las dos
+`{"veredicto":"NO-PUDE-MIRAR","motivo":"claude no confirmó la sesión de fondo","salida":""}`. La sesión no
+existe (`claude agents --json`), así que el fallo es real. Los dos sitios que responden así (`relevar` y
+`lanzar`) guardaban sólo el final de **stdout**. **Tiraban stderr, el código de salida, la señal y el error
+del propio lanzamiento**, que es justo donde un `claude` que falla deja el motivo. Fallar cerrado era
+correcto. Comerse la única pista, no: la familia de «no pude mirar», un nivel más abajo.
+
+### El arreglo (sólo `scripts/equipo/sesion.mjs` y su test nuevo)
+`rastroDeClaude(r)` (exportada y pura): `status`, `senal`, `error` (el `code` del lanzamiento), `salida`
+(final de stdout, 400) y `errores` (final de stderr, 800; el final, porque es donde va el error). Se usa en
+los DOS sitios. **El veredicto no cambia**: sigue saliendo 2 y no se lanza nada.
+
+### Comprobado
+| corrida | resultado |
+|---|---|
+| test nuevo: `lanzar` y `relevar` con un `claude` falso cuyo `--bg` sale 3 escribiendo SÓLO en stderr | sale 2, `NO-PUDE-MIRAR`, `errores` trae el motivo, `status` 3, `salida` vacía |
+| mutación: la línea vieja en `lanzar` | cae SÓLO el test de `lanzar` |
+| mutación: la línea vieja en `relevar` | cae SÓLO el test de `relevar` |
+| los 22 ficheros de test que nombran `sesion.mjs` + `scrum824` | 245/246 a la primera. El caído era mío: mi banco hacía `git show origin/main:`, y el censo de SCRUM-723 lo cuenta como referencia móvil. Ahora copia el fichero (con `core.autocrlf=false` son los mismos bytes). Con eso: 21/21 en 1011b + 723 + 824 |
+
+### Por qué falla `sesion-0` de verdad: NO lo sé, y esto es lo que se ha descartado
+Sin lanzar ninguna sesión (no es mío hacerlo, y la máquina está a ~2,4 GB libres):
+- **El binario**: `config.json` de la instalación (`AppData/Local/yaqu-equipo`) apunta a
+  `…/@anthropic-ai/claude-code/bin/claude.exe`; existe y contesta `2.1.302`.
+- **La longitud del encargo** (Windows corta la línea de órdenes a 32 767 caracteres, y `cmd` a 8 191): el
+  último encargo de S0 en el scratchpad del orquestador tiene 3 440 caracteres. Descartado.
+- **Rastro en el registro**: ninguna carpeta nueva en `~/.claude/jobs` de esas dos tentativas, así que
+  `claude` rechazó la orden ANTES de crear el trabajo.
+- **MI LECTURA, sin medir:** algo del estado del daemon: un nombre aún ocupado, o una negativa a abrir
+  sesiones de fondo con poca memoria (ese día Claude Code paró una orden de fondo de esta misma sesión
+  «porque el sistema iba corto de memoria»). Con este arreglo, el próximo intento lo dirá en `errores`.
