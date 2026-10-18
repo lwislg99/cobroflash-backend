@@ -125,3 +125,18 @@ de esa medida se quedan FUERA del repositorio, a propósito (el repo es público
   cachea por defecto. Sólo salen éstas y los dos CSV de `librosAeat` (`expedidas.csv`, `recibidas.csv`), que ya
   llevan `no-store` (fiscal: no se tocan). Las rutas sin extensión Cloudflare no las cachea por defecto; si llevan
   cabecera o no, NO se ha mirado. La regla de Cloudflare sobre `/admin/*` es la que cubre eso.
+
+### Los 19 rojos del obligatorio, y qué eran (hora de GitHub: 19:00:37Z)
+
+El primer obligatorio de #2568 cayó con 19 rojos (run `39151663342`, medido por S5). Ninguno era un defecto del
+arreglo: eran censos que el diff obliga a anotar. **El «se queda sin memoria» que se dijo primero era falso:** el
+`FATAL … heap out of memory` del log es de `scrum1525b`, que mata a su hijo a propósito, y sale igual en una
+tanda verde de `main`.
+
+| censo | por qué cayó | qué se hizo |
+| --- | --- | --- |
+| SCRUM-267 (×15), SCRUM-859, SCRUM-976 ④ | este tramo trae su `**Medido contra:**` dentro de la entrada de primer nivel `# SCRUM-231 · CACHE-EDGE-1…`, así que esa entrada deja de estar sin ancla | sale de `HEREDADAS_SIN_ANCLA`; el recuento baja 26 → 25 y la suma de los tres censos 58 → 57, anotado en el propio test. Es una MEJORA que el trinquete obliga a declarar |
+| SCRUM-1344 ⑦ | el test hace `require` del router de exports sin armarle un `req` de sesión | declarado en `SIN_FORMA_DE_SESION`: sólo lee `router.stack` para LISTAR los GET; las rutas se llaman por HTTP contra la app entera, con la cookie del propietario |
+| SCRUM-1415 | un `test()` con nombre construido dentro de un bucle | desenrollado con `casosEscritos`: seis casos con su nombre literal |
+
+Con la rama al día con `main`: los cinco censos, el 976 y el test de 231b, **86 de 86**.

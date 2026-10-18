@@ -18,6 +18,7 @@ import assert from 'node:assert/strict';
 import http from 'node:http';
 import { createRequire } from 'node:module';
 import { montarAppReal, bancoDePrisma, sesionesDe } from './_banco-camino-real.mjs';
+import { casosEscritos } from './_casos-escritos.mjs'; // SCRUM-1415
 
 const require = createRequire(import.meta.url);
 const app = await montarAppReal();
@@ -62,13 +63,20 @@ test('SCRUM-231b · suelo: el router se lee y trae las seis CSV del panel', () =
   for (const r of SEIS_CSV) assert.ok(RUTAS.includes(r), `suelo: ${r} no está entre las rutas del router (${RUTAS.join(', ')})`);
 });
 
-for (const ruta of SEIS_CSV) {
-  test(`SCRUM-231b · suelo: GET /admin/exports${ruta} responde 200 como propietario`, async () => {
-    programar();
-    const r = await pedir(`/admin/exports${ruta}`);
-    assert.equal(r.status, 200, `suelo: ${ruta} → ${r.status} ${r.texto?.slice(0, 160)}`);
-  });
-}
+// SCRUM-1415: un caso por CSV, con el nombre ESCRITO (el bucle lo construía y la señal por nombres
+// no podía decir que faltaba).
+const responde200 = casosEscritos(SEIS_CSV, (ruta) => `SCRUM-231b · suelo: GET /admin/exports${ruta} responde 200 como propietario`, async (ruta) => {
+  programar();
+  const r = await pedir(`/admin/exports${ruta}`);
+  assert.equal(r.status, 200, `suelo: ${ruta} → ${r.status} ${r.texto?.slice(0, 160)}`);
+});
+test('SCRUM-231b · suelo: GET /admin/exports/invoices.csv responde 200 como propietario', responde200(0));
+test('SCRUM-231b · suelo: GET /admin/exports/expenses.csv responde 200 como propietario', responde200(1));
+test('SCRUM-231b · suelo: GET /admin/exports/quotes.csv responde 200 como propietario', responde200(2));
+test('SCRUM-231b · suelo: GET /admin/exports/jobs.csv responde 200 como propietario', responde200(3));
+test('SCRUM-231b · suelo: GET /admin/exports/customers.csv responde 200 como propietario', responde200(4));
+test('SCRUM-231b · suelo: GET /admin/exports/charges.csv responde 200 como propietario', responde200(5));
+responde200.todos();
 
 test('SCRUM-231b · 🔴 TODA ruta de /admin/exports sale con `private` y `no-store`', async () => {
   const mal = [];
