@@ -263,3 +263,51 @@ la sonda sí ve los que pinta.
 **Lo que esto NO sabe.** `comprobarForma` mira las claves de primer nivel (y los elementos de
 `quotes`/`invoices` de la 360), no los objetos anidados (`customer`, `stats`, `entregaPendiente`).
 Los contratos siguen siendo una COPIA fechada del servidor.
+
+## 18-oct-2026 · S3 · 1560e — una vista que el censo no puede medir dice QUÉ AÑADIR y DÓNDE
+
+**Medido contra:** `origin/main` = `44f3a6bf229837bc5249b4dc8056790f7b6d0e41` · 2026-10-18T00:02:58Z
+
+Rama `scrum-1560e-vista-que-no-pide-nada`, apilada sobre 1560d. Base medida: `44f3a6bf` + 1560c + 1560d.
+
+A9: comprobación → `tests/scrum1560-datos-de-muestra-con-forma.test.mjs`
+
+**El defecto.** Cuando entró la ficha del gasto (#2545), el censo la apuntó en «NO MEDIDAS» con
+«a medias o vacía con estos datos». Era falso: se montaba sin su id, no pedía nada y volvía vacía.
+Salió con 0, y el resumen del CI sólo copia el NÚMERO (pasó de 1 a 2 sin nombre). Y el test de 1560
+(«ninguna vista pide una ruta sin contrato») lo pasaba una vista que no pide NADA.
+
+**La señal, medida antes de construir** (29 vistas): la aridad NO sirve (el editor de presupuestos
+y Partes de oficina declaran parámetros opcionales y se montan bien); «pidió 0 rutas y pintó menos
+de 20 nodos» sí: 1 de 29 antes de #2549 (justo la ficha del gasto), 0 hoy.
+
+**Lo decidido por el orquestador (17-oct):** que INFORME y no bloquee; que diga la lista; se arreglan
+las que haya; obligatorio sólo con la lista a cero y acordado antes con J. Y que cada aviso diga qué
+añadir y dónde.
+
+**Qué hace ahora** (`censo-objetivo-tactil-panel.mjs` + `_datos-del-censo.mjs`; salida del censo
+sin cambiar: informa):
+- cuenta las peticiones POR VISTA (`pedidasDe`) y separa «no pidió nada» de «pidió y pintó poco»;
+- «no pidió nada» → aviso con la vista, los parámetros que declara y la línea para
+  `ARGUMENTOS_DEL_CENSO` de `scripts/_datos-del-censo.mjs`;
+- ruta sin contrato → aviso con la entrada de `CONTRATOS` a medio rellenar, la regex ya escrita;
+- la línea «vistas que publica el banco…», la que copia el resumen del CI, lleva ahora los NOMBRES
+  de las no medidas, y cuántas «sin argumentos» y cuántas rutas sin contrato. `ci.yml` no se toca.
+
+**Control en rojo**, sobre el árbol real y restaurado después:
+| se quita | qué dice el censo | salida |
+|---|---|---|
+| `renderExpenseDetailView: [IDS.gasto]` | «sin argumentos: 1» y «QUÉ AÑADIR · … ARGUMENTOS_DEL_CENSO: `renderExpenseDetailView: [<expenseId>],`» | 0 (informa) |
+| el contrato de `/admin/expenses/:id` | «rutas SIN contrato: 1» y la entrada con `ruta: /^\/admin\/expenses\/\d+$/` | 2 (como desde 1560) |
+
+Los tests nuevos son SINTÉTICOS (vistas y rutas de mentira): van en la tanda obligatoria y no pueden
+caer por una vista de otro equipo. Tres mutaciones, las tres caen: el aviso sin «ARGUMENTOS_DEL_CENSO»,
+la regex `\d+` cambiada por `.*` (sobrevivía hasta añadir el caso `/1/2/notas`) y la línea sin nombres.
+
+**LA CIFRA de hoy:** vistas sin argumentos **0** · rutas sin contrato **0** · NO medidas **1**
+(Partes de oficina: 12 nodos con 1 petición servida; son filas `div` clicables, la vista es así).
+El paso ② (arreglar las que haya) está vacío: la lista ya está a cero.
+
+**Lo que esto NO sabe.** Una vista que no pide nada y pinta 20 nodos o más (un estado vacío
+grande) no se marca: su caso es otro, y no hay ninguna hoy. El umbral de 20 nodos sigue
+confundiendo una vista pequeña con una vacía (Partes de oficina).

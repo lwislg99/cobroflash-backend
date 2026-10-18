@@ -16,6 +16,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   CONTRATOS, comprobarForma, contratoDe, datosDelCenso, ARGUMENTOS_DEL_CENSO, IDS,
+  parametrosDe, avisoDeVistaSinPedir, avisoDeRutaSinContrato,
 } from '../scripts/_datos-del-censo.mjs';
 import { serializar, CLIENTES_DE_MUESTRA, TRABAJO_DE_MUESTRA } from '../scripts/_pagina-panel.mjs';
 import { cargarDashboard, pintarVista } from './_banco-vistas.mjs';
@@ -85,6 +86,48 @@ test('🔴 SCRUM-1560d · los tres fixtures COMPARTIDOS de antes caen contra su 
   assert.ok(!('title' in TRABAJO_DE_MUESTRA), 'el Trabajo de muestra vuelve a llevar `title`');
   const vacias = CLIENTES_DE_MUESTRA.filter((c) => Array.isArray(c.tags) && c.tags.length === 0).map((c) => c.name);
   assert.deepEqual(vacias, [], 'clientes con `tags: []`, que `normalizarTags` convierte en null');
+});
+
+// SCRUM-1560e · lo que el censo dice cuando NO puede medir una vista. Con funciones y rutas de
+// mentira a propósito: este test va en la tanda obligatoria y no puede caer por una vista de otro
+// equipo (decisión del orquestador, 17-oct). El aviso sobre las vistas reales lo da el censo, que informa.
+test('SCRUM-1560e · cuenta las peticiones POR VISTA: la que no pide nada sale con cero, no ausente de todo', () => {
+  const dc = datosDelCenso();
+  dc.enVista('renderPideView'); dc.datos('/admin/quotes'); dc.datos('/admin/quotes/11');
+  dc.enVista('renderMudaView');
+  assert.equal(dc.pedidasDe('renderPideView'), 2);
+  assert.equal(dc.pedidasDe('renderMudaView'), 0);
+});
+
+test('SCRUM-1560e · los parámetros de una vista, sin el contenedor ni los valores por defecto', () => {
+  assert.deepEqual(parametrosDe(async function renderX(container, expenseId) {}), ['expenseId']);
+  assert.deepEqual(parametrosDe(function renderY(contenedor, parteId, opciones = {}, yaTraido) {}), ['parteId', 'opciones', 'yaTraido']);
+  assert.deepEqual(parametrosDe(function renderZ(container) {}), []);
+});
+
+test('SCRUM-1560e · 🔴 el aviso dice QUÉ añadir y DÓNDE, con la vista y el fichero por su nombre', () => {
+  const v = avisoDeVistaSinPedir('renderFichaView', ['fichaId'], 1);
+  for (const debe of ['renderFichaView', 'scripts/_datos-del-censo.mjs', 'ARGUMENTOS_DEL_CENSO', '`renderFichaView: [<fichaId>],`']) {
+    assert.ok(v.includes(debe), `al aviso de vista sin pedir le falta ${debe}:\n${v}`);
+  }
+  const r = avisoDeRutaSinContrato('/admin/fichas/:n/notas', new Set(['renderFichaView']));
+  for (const debe of ['/admin/fichas/:n/notas ← renderFichaView', 'scripts/_datos-del-censo.mjs', 'CONTRATOS', "ejemplo: '/admin/fichas/1/notas'"]) {
+    assert.ok(r.includes(debe), `al aviso de ruta sin contrato le falta ${debe}:\n${r}`);
+  }
+  // La regex que propone se puede pegar tal cual: casa con su ejemplo y no con la ruta de al lado.
+  const regex = new RegExp(r.match(/ruta: \/(.+?)\/, ejemplo/)[1]);
+  assert.ok(regex.test('/admin/fichas/1/notas'), `la regex propuesta ${regex} no casa con su ejemplo`);
+  assert.ok(!regex.test('/admin/fichas/1/notas/2'), `la regex propuesta ${regex} se come una ruta más larga`);
+  assert.ok(!regex.test('/admin/fichas/1/2/notas'), `la regex propuesta ${regex} deja pasar dos tramos donde va un id`);
+  assert.ok(!regex.test('/admin/fichas/abc/notas'), `la regex propuesta ${regex} acepta un id que no es número`);
+});
+
+test('SCRUM-1560e · el censo usa los avisos, separa «no pidió nada» y pone los NOMBRES en la línea del resumen', () => {
+  const fuente = soloCodigo(fs.readFileSync(path.join(RAIZ, 'scripts/censo-objetivo-tactil-panel.mjs'), 'utf8'), 'censo-objetivo-tactil-panel.mjs');
+  assert.match(fuente, /DC\.pedidasDe\(fn\)/, 'el censo ya no mira cuántas peticiones hizo la vista');
+  assert.match(fuente, /avisoDeVistaSinPedir\(/, 'el censo ya no redacta el aviso de vista sin pedir');
+  assert.match(fuente, /avisoDeRutaSinContrato\(/, 'el censo ya no redacta el aviso de ruta sin contrato');
+  assert.match(fuente, /vistas que publica el banco:[^\n]*nombresNoMedidas/, 'la línea que copia el CI ya no lleva los nombres');
 });
 
 test('cada contrato: su dato cumple, su ejemplo casa con ÉL (no con el de otra ruta) y su fuente existe', () => {

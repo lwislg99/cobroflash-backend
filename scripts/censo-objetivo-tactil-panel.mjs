@@ -50,7 +50,7 @@ import { FUENTE_MEDIDOR, INTERACTIVOS, MINIMO_TACTIL } from './_medidor-de-toque
 import { serializar, paginaDeClientes } from './_pagina-panel.mjs';
 import { cargarDashboard, pintarVista, todos } from '../tests/_banco-vistas.mjs';
 import { cortosDistintos } from './_censo-distintos.mjs';
-import { datosDelCenso, ARGUMENTOS_DEL_CENSO } from './_datos-del-censo.mjs';
+import { datosDelCenso, ARGUMENTOS_DEL_CENSO, parametrosDe, avisoDeVistaSinPedir, avisoDeRutaSinContrato } from './_datos-del-censo.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = path.join(RAIZ, 'public');
@@ -72,15 +72,15 @@ const noSupe = (s) => { console.error(s); salida = 2; };
 const DC = datosDelCenso();
 const DATOS = DC.datos;
 
-const vistasDelBanco = () => {
-  const b = cargarDashboard(RAIZ);
-  return Object.keys(b.ctx).filter((k) => /^render[A-Z].*View$/.test(k) && typeof b.ctx[k] === 'function').sort();
-};
+const BANCO = cargarDashboard(RAIZ);
+const vistasDelBanco = () => Object.keys(BANCO.ctx).filter((k) => /^render[A-Z].*View$/.test(k) && typeof BANCO.ctx[k] === 'function').sort();
 
 // ═══ ① CENSO DE SUPERFICIES ══════════════════════════════════════════════════════════════════
 const VISTAS = vistasDelBanco();
 const superficies = [];
 const noMedidas = [];
+// SCRUM-1560e · las que no llegaron al suelo SIN haber pedido nada: les faltan sus argumentos.
+const sinPedir = [];
 for (const fn of VISTAS) {
   let r;
   // SCRUM-795 · con los argumentos que el producto le pasa a la vista, si los necesita. La ficha
@@ -95,7 +95,18 @@ for (const fn of VISTAS) {
   catch (e) { noMedidas.push([fn, 'no serializa: ' + String(e.message).slice(0, 70)]); continue; }
   const nodos = todos(r.contenedor).length;
   // Una vista con cuatro nodos no es una vista medida: es una vista que no llegó a pintarse.
-  if (nodos < 20) { noMedidas.push([fn, `sólo ${nodos} nodos: la vista está a medias o vacía con estos datos`]); continue; }
+  // SCRUM-1560e · y el motivo se dice entero: «no pidió nada» y «pidió y pintó poco» son dos
+  // defectos distintos, con arreglos distintos, y antes salían con el mismo rótulo.
+  if (nodos < 20) {
+    const pedidas = DC.pedidasDe(fn);
+    if (pedidas === 0) {
+      sinPedir.push(avisoDeVistaSinPedir(fn, parametrosDe(BANCO.ctx[fn]), nodos));
+      noMedidas.push([fn, 'no pidió nada al servidor: le faltan sus argumentos (abajo, en «VISTAS QUE NO PIDIERON NADA», qué añadir)']);
+    } else {
+      noMedidas.push([fn, `sólo ${nodos} nodos con ${pedidas} petición(es) servida(s): la vista es así de pequeña con estos datos, o el dato de su contrato no la llena`]);
+    }
+    continue;
+  }
   superficies.push({ fn, html });
 }
 // Clientes se monta con SU helper —el mismo que usa el guard— porque necesita una fila
@@ -109,7 +120,11 @@ else {
 }
 
 decir('═══ ① SUPERFICIES ═══');
-decir(`vistas que publica el banco: ${VISTAS.length} · montadas y serializadas: ${superficies.length} · NO medidas: ${noMedidas.length}`);
+// SCRUM-1560e · con los NOMBRES: esta línea es la que copia el resumen del CI, y con sólo el número
+// la ficha del gasto pasó de 1 a 2 sin que nadie supiera cuál era la nueva.
+const nombresNoMedidas = noMedidas.length ? ` (${noMedidas.map(([fn]) => fn).join(', ')})` : '';
+decir(`vistas que publica el banco: ${VISTAS.length} · montadas y serializadas: ${superficies.length} · NO medidas: ${noMedidas.length}${nombresNoMedidas}`
+  + ` · sin argumentos: ${sinPedir.length} · rutas SIN contrato: ${DC.sinContrato.size}`);
 const hayClientes = superficies.some((s) => s.fn === 'renderCustomersView');
 decir(`✅ CONTROL POSITIVO · ¿está la de Clientes, que ya está montada en el guard? ${hayClientes ? 'sí' : '🔴 NO'}`);
 if (!hayClientes) noSupe('🔴 CIEGO: sin la superficie que ya sabemos montar, el resto del censo no se sostiene.');
@@ -119,8 +134,12 @@ if (superficies.length < MINIMO_SUPERFICIES) {
 decir('\nNO MEDIDAS (no se cuentan como cero — se dicen):');
 for (const [fn, motivo] of noMedidas) decir(`   ⚠️ ${fn} → ${motivo}`);
 
+// SCRUM-1560e · INFORMA y no bloquea (orquestador, 17-oct): no cambia la salida.
+decir(`\nVISTAS QUE NO PIDIERON NADA (SCRUM-1560e) · ${sinPedir.length}`);
+for (const aviso of sinPedir) decir(`   🔴 ${aviso}`);
+
 decir(`\nDATOS DE MUESTRA (SCRUM-1560) · rutas servidas con su contrato: ${DC.servidas.size} · SIN contrato: ${DC.sinContrato.size}`);
-for (const [ruta, vistas] of DC.sinContrato) decir(`   🔴 ${ruta} ← ${[...vistas].join(', ')}`);
+for (const [ruta, vistas] of DC.sinContrato) decir(`   🔴 ${avisoDeRutaSinContrato(ruta, vistas)}`);
 if (DC.sinContrato.size) {
   noSupe('🔴 hay vistas que piden rutas sin contrato en `_datos-del-censo.mjs`: se han montado con `null`, no con lo que da el servidor.');
 }
