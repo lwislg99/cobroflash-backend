@@ -1191,6 +1191,28 @@ function jobRow(j, container, equipo) {
     });
   }
 
+  // ── SCRUM-1562 · LA FICHA, TAMBIÉN SIN RATÓN ──────────────────────────────────────────────
+  // El clic en la fila abre el Trabajo, pero un `<tr>` no recibe foco ni teclas. Y los botones de
+  // arriba no lo suplen: «Agendar», «▶ Empezar» y «💰 Cobrar el resto» ejecutan aquí, y los que sí
+  // llevan a la ficha («+ Nuevo albarán»…) prometen otra cosa en el rótulo. Medido el 18-oct-2026
+  // con la sonda de S3. Se resuelve como Presupuestos (`quotesListView.js`, «Ver detalle») y
+  // Clientes («📊 Historial»): un control NATIVO dentro de la fila, con el rótulo que ya usa la
+  // lista hermana. No se le da `role` a la fila: un `<tr>` con `role=button` deja de ser una fila
+  // de tabla para quien la oye.
+  //
+  // Fantasma, no secundaria: la jerarquía de SCRUM-917c no cambia —la primaria sigue siendo la del
+  // dinero, y la acción de la escalera sigue pesando más que mirar—. El clic en la fila se queda.
+  // `stopPropagation`, como Presupuestos: no navega dos veces aunque la guarda de abajo dejara de
+  // reconocer este botón.
+  const bDetalle = document.createElement('button');
+  bDetalle.className = 'btn-ghost btn-sm';
+  bDetalle.textContent = 'Ver detalle';
+  bDetalle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (window.renderAppView) window.renderAppView('jobs-detail', { jobId: j.id });
+  });
+  caja.appendChild(bDetalle);
+
   if (menu.length && typeof overflowMenu === 'function') caja.appendChild(overflowMenu(menu));
   tr.appendChild(tdAcc);
 
