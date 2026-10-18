@@ -925,6 +925,13 @@ router.get('/:id', async (req, res) => {
       // Meta), no que llegara. Lo que se puede afirmar sale de aquí: entregado · aceptado ·
       // fallido (en el acto o después) · sin rastro · no se pudo leer · nunca enviado.
       entregaParaFirmar,
+      // SCRUM-49c · la credencial de la página pública de firma (`/albaran/<token>`), para que el
+      // comercio pueda copiar el enlace: el mismo precedente que `quote.payToken` e `invoice.payToken`,
+      // y la misma credencial que ya viaja dentro del WhatsApp. Va AQUÍ y no en `serializeAlbaran`, a
+      // propósito: sale sólo en la ficha, que ya pasó por tenencia y por «es suyo» (SCRUM-467), y no en
+      // listas ni en otras respuestas. `null` hasta el primer envío para firmar, que es quien lo crea:
+      // esta ruta sólo LEE, no lo genera.
+      firmaToken: albaran.firmaToken ?? null,
       cabenMasFotos: fotos < FOTOS_MAX_POR_ALBARAN, // SCRUM-1302 (G)
     });
   } catch (err: any) {

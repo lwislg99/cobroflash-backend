@@ -261,3 +261,74 @@ tocar código, también lo decide el panel de Stripe (modo pruebas) → Webhooks
 versión de API y las entregas de hoy de `customer.subscription.created`. Lo mira el fundador; el orquestador se lo
 ha pedido. **No se arregla hasta saber cuál de las dos es:** arreglar la causa equivocada en el camino del dinero
 es peor que no arreglar nada. Y no se descarta que Stripe reintente más tarde con éxito.
+
+## SCRUM-809c · CONFIRMADA la (b): Stripe escribe el `Invalid Date` en su propio panel
+
+**Medido contra:** `origin/main` = `bbb9bfe544b692765e84dec7d1f6686bfd526618` · 2026-10-18T18:14:23Z (hora de GitHub al escribir: 18:15:21Z)
+A9: sin fallo que generalice — la causa la confirma el panel de Stripe del fundador, no una prueba nuestra; aquí sólo se registra.
+
+Carril S1 · árbol `s1-809c` · rama `scrum-809c-webhook-invalid-date-confirmado`. Sólo este registro: **el webhook
+NO se toca** (`stripe.routes.ts` y `src/modules/billing/**` son de J2, y el cobro es STOP del fundador).
+
+### Lo que trajo el panel (Stripe en modo pruebas, endpoint `https://yaqu.app/webhooks/stripe`)
+
+Captura del fundador, transcrita por el orquestador (`cobroflash-backend-f3`) el 18-oct-2026. Versión de API del
+endpoint y del evento: **`2025-10-29.clover`**, posterior al corte `2025-03-31` que nombraba la hipótesis (b).
+
+| hora (del panel) | evento | resultado |
+|---|---|---|
+| 17:23:40 | `checkout.session.completed` | 200 |
+| 17:23:40 | `customer.subscription.created` | 200 |
+| 17:23:40 | `customer.subscription.updated` | **400** |
+| 17:23:40 | `invoice.payment_succeeded` | 200 |
+| 17:23:57 | `customer.subscription.updated` | **400** (reintento; el panel anuncia el siguiente) |
+
+El cuerpo del 400, literal:
+
+> `Webhook Error: Invalid prisma.merchant.update() invocation: { where: { id: 46 }, data: { plan: "pro", subscriptionStatus: "active", stripeSubscriptionId: "sub_1URxo4EJBIeVR6H8UbVeN1XZ", planExpiresAt: new Date("Invalid Date") }} Invalid value for argument 'planExpiresAt': Provided Date object is invalid. Expected Date.`
+
+Es la rama activa de `customer.subscription.created/updated` (`stripe.routes.ts`, la que hace
+`new Date(sub.current_period_end * 1000)`): con esta versión de la API, `current_period_end` no viene en la raíz de
+la `Subscription` y la fecha sale inválida. **(a) queda descartada** para `updated`: el evento llega.
+
+### Lo que esto cambia
+
+- **La receta deja de ser defensiva: es el arreglo de la causa confirmada.** Es la que pasó S1 al orquestador para
+  J2: leer `current_period_end` de la raíz o, si no está, de los items de la suscripción; no escribir nunca una
+  fecha inválida; sin fecha utilizable, guardar plan y estado sin tocar `planExpiresAt`, dejar constancia y
+  contestar 200, porque un 400 hace que Stripe reintente algo que el reintento no arregla. Test con tres payloads:
+  raíz (el viejo), items (`clover`) y sin fecha.
+- **Mientras no se arregle, le pasa a TODO suscriptor nuevo**, no sólo a la cuenta QA: el `updated` a `active` es el
+  paso normal de una suscripción que se paga.
+- **Después del arreglo**, la cuenta QA no se corrige sola. Hay que reenviar esa entrega desde el panel de Stripe
+  (botón de reenvío de la entrega fallida). Reenviarla antes del arreglo sólo repite el 400.
+
+### Lo que NO está explicado
+
+`customer.subscription.created` salió **200** y `updated` **400** en el mismo segundo, y los dos entran en la misma
+rama del código. **No se ha medido por qué.** Lectura de S1, sin comprobar: una suscripción que crea Checkout
+suele nacer `incomplete` hasta que se paga la primera factura. `incomplete` no entra en ninguna rama (va al
+«estado de suscripción sin mapeo directo») y devuelve 200; el `updated` llega ya `active` y entra en la rama que
+revienta. Se comprueba mirando el `status` del payload de ese `created` en el panel.
+
+### 🔴 La autorización del fundador para ARREGLARLO: NO consta
+
+El orquestador trasladó como autorización «2 autorizo», citando la transcripción `ed676fd1-…`. **Leída por S1, ese
+texto no está.** La pregunta del webhook se hizo (turno 36421). El último mensaje antes de la respuesta del fundador
+(turno 36528) era otra lista: «1. ¿Te conecto a Meta? … 2. ¿Preparo lo de la demo para que sólo tengas que pegar una
+línea en Railway?». La respuesta (turno 36531, uuid `c1f48323-a767-446d-807d-793047029345`) es, literal,
+**«1 si conectame / 2 si hazlo»**, y contesta a ESA lista. **El STOP de cobro sigue puesto** hasta una respuesta
+del fundador a la pregunta del webhook, copiada literal con su localizador.
+
+**Actualización (hora de GitHub 18:31:19Z): la autorización NO constaba a las 18:19 y SÍ consta desde las 18:35.**
+El orquestador volvió a preguntarlo SOLO, sin otra lista al lado (turno 36703, 18:27:33Z): «¿Autorizas que se
+arregle el fallo del webhook de Stripe? Es la fecha que no se guarda al suscribirse. Hoy no mueve dinero real (está
+en pruebas), pero toca el flujo de cobro, y por eso necesito tu sí o tu no escrito. Contéstame sólo a esto.»
+
+> **«si autorizo»** — el fundador · transcripción `ed676fd1-feb4-4658-bda2-01f4bf9fb3fc.jsonl` · turno 36706 ·
+> `uuid: 1c5a7185-addc-4245-9438-ef4f0313eb81` · `ts: 2026-10-18T18:35:52.798Z` (reloj de la transcripción) ·
+> `type: user`, sólo texto · es el primer turno humano después de la pregunta.
+
+Leído por S1 en la transcripción, no recibido de oídas. **Con eso el STOP de cobro queda levantado para ESTE
+arreglo**, que hace J2: el fichero sigue siendo suyo. Lo de arriba no se borra: es por qué una autorización se
+pide sola y se lee con su localizador. El «2 autorizo» que circuló antes no está en la transcripción.
