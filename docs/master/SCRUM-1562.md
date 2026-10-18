@@ -44,6 +44,72 @@ Con teclado, desde esas tres listas no se abre ni una factura, ni un Trabajo, ni
 - Si otra pantalla, como el buscador global, abre esos detalles con teclado: si lo hace, el impacto
   baja, pero el defecto de la lista sigue.
 
+## 18-oct-2026 · S2 · 1562c — Partes por valorar se abre con teclado
+
+**Medido contra:** `origin/main` = `ad9ec5634d49a41b1b8fef01d81235e1fbe5feaf` · 2026-10-18T00:26:37Z
+A9: comprobación → `tests/scrum1562c-partes-oficina-con-teclado.test.mjs`
+**Skill UI:** cargada · `yaqu-premium-ui`: el mismo aspecto (la fila mide 69 px antes y después), el anillo `--ring` del sistema, cero tokens, cero texto, cero componentes.
+
+S2 · rama `scrum-1562c-partes-oficina-con-teclado`, apilada sobre `scrum-1562-sonda-filas-sin-teclado` (#2557, de
+S3, abierto: la sonda y este registro todavía no están en `main`). Encargo del orquestador (18-oct): la peor de las
+filas de S2, `DIV.customers-card` de `parteOficinaView.js`, sin teclado y sin ningún nativo dentro.
+
+**Arreglo: la opción (b), en su forma más corta.** La fila pasa a ser un `<button type="button">`: el control
+nativo ES la tarjeta. El foco, Enter y Espacio los da el navegador, y el ratón sigue pulsando la tarjeta entera
+(no hay un botón pequeño dentro que obligue a apuntar). Por qué no la (a) `tabindex` + `role` + Enter: habría que
+escribir a mano lo que el botón ya trae, y la sonda la seguiría contando. Sin texto nuevo: la fila dice lo mismo.
+Dentro de un botón sólo cabe contenido en línea, así que los `div` de dentro pasan a `span` en bloque.
+`styles.css`: `#po-lista > button.customers-card` (ancho, alineación, letra y color que el botón no hereda) y su
+propio `:focus-visible` con `--ring`. *(Al empujar iba por una clase propia, `.parte-oficina-fila`: tumbó el check;
+ver el tramo siguiente.)*
+
+**Lo que salió al medirlo, y no estaba en el encargo:** el anillo de foco NO se veía. El `:focus-visible` global
+pesa lo mismo que `.customers-card`, que va después en la hoja y pone su sombra encima. Y mi primera sonda dijo
+«anillo: sí»: miraba que hubiera ALGUNA sombra, y la de la tarjeta contaba. Corregida para comparar contra
+`--ring` (y esperar a la transición de 0,18 s de la tarjeta, que daba un falso «no»).
+
+### Verificado, ejecutando
+- **Sonda de S3** (`sonda-div-clicables.mjs`): 13 → **12** elementos no nativos con clic; Partes de oficina sale de
+  la lista. Con Trabajos (S4, 2) queda en 10.
+- **Test**, rojo primero: sobre la base cae el caso (la fila es `DIV`) y pasa el control del ratón; con el arreglo,
+  3 de 3. Mutaciones, cada una tumba 1: la fila otra vez `div`, sin `type="button"`, sin la regla del anillo, y sin
+  el oyente de clic (el ratón).
+- **yaqu.app, cuenta QA** (sonda de sólo lectura `sondas-s2/teclado-1562c.mjs`, fuera del repo; sirve
+  `parteOficinaView.js` y `styles.css` de la rama; 0 escrituras, 0 errores; capturas en `sondas-s2/cap1562c/`), con
+  el parte PT-2026-002 de la cuenta, a 390 y a 1280:
+
+| | teclado: ¿llega el foco? | ¿se ve el anillo? | Enter abre el parte | ratón abre el parte | alto de la fila |
+|---|---|---|---|---|---|
+| antes (prod) | **no** (80 Tab sin llegar) | — | **no** | sí | 69 |
+| después | sí | sí (`--ring`, medido) | **sí** | sí | 69 |
+
+- **No tocado:** la fila de la lista de Presupuestos (`TR`, `quotesListView.js`). Ya tiene alternativa nativa
+  («Ver detalle», la misma `openDetail`), y el orquestador la puso detrás.
+
+## 18-oct-2026 · S2 · 1562c — el PR #2560 en rojo: era la CLASE, no el comportamiento en vuelo
+
+**Medido contra:** `origin/main` = `57b0bc82215bf0a6ae9295ba758dff65f6940016` · 2026-10-18T16:54:23Z
+A9: comprobación → `tests/scrum1562c-partes-oficina-con-teclado.test.mjs`
+
+**Error mío.** El check obligatorio de #2560 cayó en los cuatro casos `SCRUM-1285 · oficina` de
+`tests/scrum1285-guardado-en-vuelo.test.mjs`. La lectura del orquestador era que el `<button>` había cambiado el
+comportamiento en vuelo; medido, no: el banco de 1285 localiza la fila con `n.className === 'customers-card'`
+(igualdad EXACTA), y yo le había añadido `parte-oficina-fila`. Sin fila, los cuatro casos se quedaban en su
+«CIEGO: no sale el parte en la lista» antes de llegar al guardado. No corrí 1285 antes de empujar: sólo el mío.
+
+**Arreglo en mi código, no en el guard** (regla 41): la fila vuelve a llevar exactamente `customers-card`, y su CSS
+de botón cuelga de `#po-lista > button.customers-card` (el patrón `#qq-lines-container > div` ya estaba en la hoja).
+Teclado y 1285 a la vez: no son incompatibles.
+
+- **Test propio**: ahora exige además `className === 'customers-card'`, con el motivo en el mensaje. Así el mismo
+  error cae en MI fichero, que es el que corro, y no sólo en el de 1285.
+- **Ejecutando**: `scrum1285-guardado-en-vuelo` + `scrum1562c` → 12 de 12. **Mutación** (fila con
+  `'customers-card x'`): caen exactamente los cuatro de 1285 que cayeron en CI, más el mío → 7 de 12.
+- **Rojos informativos de «guards de navegador»** en #2560 (`cls-barra-anuncio`, `objetivo-tactil`,
+  `escalera-por-estado`, `marcadores-en-pantalla` CIEGO): los mismos cuatro, con las mismas cifras, en #2561
+  (run 39083518926), que ya está en `main`. No son de este cambio.
+- **yaqu.app otra vez** (build `57b0bc822`, misma sonda de sólo lectura, rama servida con el selector nuevo): a 390
+  y 1280, el foco llega a la fila, el anillo es `--ring`, Enter y ratón abren PT-2026-002, alto 69. 0 escrituras.
 ## 18-oct-2026 · S4 · Trabajos: «Ver detalle» en cada fila (la mitad de `jobsView.js`)
 
 **Skill UI:** cargada (`yaqu-premium-ui`), pero DESPUÉS de escribir el cambio y antes del commit: lo

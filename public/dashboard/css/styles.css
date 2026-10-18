@@ -2478,6 +2478,14 @@ html, body { overflow-x: clip; }
 .customers-card {
   overflow: visible; /* era hidden, lo que clipaba contenido en algunas vistas */
 }
+/* SCRUM-1562c · la fila de «Partes por valorar» es un `<button>` (se abre con teclado). Lo que el
+   navegador pone a un botón y la tarjeta no traía: ancho, alineación, letra y color. El fondo, el
+   borde y la sombra siguen saliendo de `.customers-card`.
+   El anillo de foco NO puede venir del `:focus-visible` global: pesa lo mismo que `.customers-card`,
+   que va después y pone su sombra encima (medido en yaqu.app: con el foco en la fila no se veía nada).
+   Va por `#po-lista` y no por una clase propia: la fila conserva la clase exacta `customers-card`. */
+#po-lista > button.customers-card { width: 100%; text-align: left; font: inherit; color: inherit; }
+#po-lista > button.customers-card:focus-visible { outline: none; box-shadow: var(--ring); }
 /* Solo clipa las cards que envuelven tablas */
 .data-card { overflow: hidden; }
 
