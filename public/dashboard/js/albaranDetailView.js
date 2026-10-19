@@ -508,11 +508,18 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
   // El estado del MODELO es uno de tres (borrador|emitido|firmado). Lo demás que se enseña aquí
   // son DERIVADOS y se pintan como tales, no como estados: «enviado para firmar» y el estado de
   // facturación, que tiene TRES valores y por eso no se aplana a un sí/no.
+  //
+  // SCRUM-49d · «enviado para firmar» sólo si Meta lo ACEPTÓ o lo ENTREGÓ. `enviadoParaFirma` dice
+  // que se INTENTÓ: su marca se escribe antes de llamar a Meta, y el 18-oct el #46 la llevaba con
+  // los dos intentos en `failed`. Fallido, sin rastro o sin poder leerlo: no se afirma nada, y la
+  // píldora no sale. Si el servidor no trae `entregaParaFirmar`, tampoco: no se sabe.
+  const enviadoYAceptado = !!alb.enviadoParaFirma && !!alb.entregaParaFirmar
+    && (alb.entregaParaFirmar.estado === 'entregado' || alb.entregaParaFirmar.estado === 'aceptado');
   const chips = document.createElement('div');
   chips.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 16px';
   chips.innerHTML =
     `<span class="status-pill">${esc(alb.estado)}</span>` +
-    (alb.enviadoParaFirma ? '<span class="status-pill status-pill-pending">enviado para firmar</span>' : '') +
+    (enviadoYAceptado ? '<span class="status-pill status-pill-pending">enviado para firmar</span>' : '') +
     // SCRUM-1375 · las mismas palabras que la fila «Facturación» de abajo. Un valor que no se
     // conoce no lleva píldora: la fila ya pinta su raya.
     (alb.estadoFacturacion !== 'sin_facturar' && textoDeFacturacion(alb.estadoFacturacion)
