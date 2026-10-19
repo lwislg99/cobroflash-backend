@@ -50,6 +50,17 @@ test('SCRUM-1559j · la casilla «Solo activos» amplía SU área a 44 sin meter
   assert.ok(-Number(inset[2]) < 10, `🔴 inset lateral ${inset[2]}px: se mete en el hueco de 10 px que la separa del buscador.`);
 });
 
+test('SCRUM-1559j · el estado vacío toma el ancho de la caja que scrollea, no el de la tabla', () => {
+  // A 390 la tabla mide 520 dentro de una caja de 364: sin esto, «+ Añadir un servicio a mano» queda
+  // medio fuera de la pantalla (x 298-493, medido en yaqu.app).
+  assert.ok(con('.catalogo-productos .table-scroll').some((r) => /container-type:\s*inline-size/.test(r.cuerpo)),
+    '🔴 la caja que scrollea ya no es contenedor: `100cqi` mediría otra cosa (o el viewport).');
+  const vacio = con('.catalogo-productos .empty-state');
+  assert.equal(vacio.length, 1, '🔴 no está la regla del estado vacío de Productos.');
+  assert.match(vacio[0].cuerpo, /position:\s*sticky/, '🔴 el estado vacío ya no se queda pegado: al deslizar la tabla se va con ella.');
+  assert.match(vacio[0].cuerpo, /width:\s*calc\(100cqi\s*-\s*28px\)/, '🔴 el estado vacío ya no mide la caja menos el relleno del `td`.');
+});
+
 test('SCRUM-1559j · Productos lleva `.catalogo-productos` y sus controles caen dentro', async () => {
   const fn = 'renderProductsView';
   const dc = datosDelCenso();
