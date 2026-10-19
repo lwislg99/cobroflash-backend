@@ -117,7 +117,7 @@ A9: comprobación → `tests/scrum49d-pildora-solo-si-llego.test.mjs`
 Carril S4 · árbol `s4-49d` · rama `scrum-49d-pildora-solo-si-llego`. Encargo del orquestador, 19-oct-2026: la mitad
 de pantalla de 49b.
 
-**Skill UI:** no cargada a propósito · no cambia ningún estilo, ningún texto ni ningún componente: sólo DEJA de
+**Skill UI:** no cargada · a propósito: no cambia ningún estilo, ningún texto ni ningún componente: sólo DEJA de
 pintarse una píldora que ya existía, cuando lo que dice es falso.
 
 ### Lo que había en yaqu.app (sólo GET, cuenta QA)

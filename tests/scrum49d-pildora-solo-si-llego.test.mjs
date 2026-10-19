@@ -48,28 +48,26 @@ async function pildoras(alb) {
 
 const entrega = (estado, fallo = null) => ({ estado, fallo, at: estado === 'nunca_enviado' ? null : '2026-10-18T18:09:53.752Z' });
 
-for (const estado of ['entregado', 'aceptado']) {
-  test(`SCRUM-49d · «${estado}» → la píldora «enviado para firmar» SÍ sale`, async () => {
-    const t = await pildoras({ ...BASE, entregaParaFirmar: entrega(estado) });
-    assert.ok(t.includes('enviado para firmar'), `🔴 Meta lo ${estado === 'entregado' ? 'entregó' : 'aceptó'} y la píldora no sale: ${JSON.stringify(t)}`);
-  });
+async function sale(e) {
+  const t = await pildoras({ ...BASE, entregaParaFirmar: e });
+  assert.ok(t.includes('enviado para firmar'), `🔴 Meta lo aceptó o lo entregó y la píldora no sale: ${JSON.stringify(t)}`);
+}
+async function noSale(alb) {
+  const t = await pildoras(alb);
+  assert.ok(!t.includes('enviado para firmar'),
+    `🔴 la ficha afirma «enviado para firmar» con ${JSON.stringify(alb.entregaParaFirmar)}: ${JSON.stringify(t)}`);
 }
 
-const NO_SE_AFIRMA = [
-  ['fallido en el acto (el #46 del 18-oct)', entrega('fallido', 'en_el_acto')],
-  ['fallido después (131026 por el webhook)', entrega('fallido', 'despues')],
-  ['sin rastro', entrega('sin_rastro')],
-  ['no se pudo leer', entrega('no_se_pudo_leer')],
-  ['el servidor no trae `entregaParaFirmar`', undefined],
-];
-for (const [caso, e] of NO_SE_AFIRMA) {
-  test(`SCRUM-49d · 🔴 ${caso} → la píldora NO sale aunque \`enviadoParaFirma\` sea true`, async () => {
-    const alb = { ...BASE };
-    if (e !== undefined) alb.entregaParaFirmar = e;
-    const t = await pildoras(alb);
-    assert.ok(!t.includes('enviado para firmar'), `🔴 la ficha afirma «enviado para firmar» con ${caso}: ${JSON.stringify(t)}`);
-  });
-}
+test('SCRUM-49d · «entregado» → la píldora «enviado para firmar» SÍ sale', () => sale(entrega('entregado')));
+test('SCRUM-49d · «aceptado» → la píldora «enviado para firmar» SÍ sale', () => sale(entrega('aceptado')));
+
+test('SCRUM-49d · 🔴 fallido en el acto (el #46 del 18-oct) → NO sale aunque `enviadoParaFirma` sea true',
+  () => noSale({ ...BASE, entregaParaFirmar: entrega('fallido', 'en_el_acto') }));
+test('SCRUM-49d · 🔴 fallido después (131026 por el webhook) → NO sale',
+  () => noSale({ ...BASE, entregaParaFirmar: entrega('fallido', 'despues') }));
+test('SCRUM-49d · 🔴 sin rastro → NO sale', () => noSale({ ...BASE, entregaParaFirmar: entrega('sin_rastro') }));
+test('SCRUM-49d · 🔴 no se pudo leer → NO sale', () => noSale({ ...BASE, entregaParaFirmar: entrega('no_se_pudo_leer') }));
+test('SCRUM-49d · 🔴 el servidor no trae `entregaParaFirmar` → NO sale', () => noSale({ ...BASE }));
 
 test('SCRUM-49d · sin intento (`enviadoParaFirma` false) no sale aunque llegue un «entregado»', async () => {
   const t = await pildoras({ ...BASE, estado: 'firmado', enviadoParaFirma: false, entregaParaFirmar: entrega('entregado') });
