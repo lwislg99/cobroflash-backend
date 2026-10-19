@@ -12,6 +12,8 @@ import { tieneDescuentoGlobalConVariosIva } from '../invoicing/domain/invoiceLin
 import { ERROR_DESCUENTO_GLOBAL_VARIOS_IVA, COPY_REVISAR_CON_DESCUENTO_GLOBAL_VARIOS_IVA } from '../quotes/domain/descuentoGlobalConVariosIva'; // SCRUM-887
 import {
   numeroConRevision, vistaDeRevisiones,
+  numeroVisibleDelPresupuesto, // SCRUM-1444c
+
   // SCRUM-688 · el llamador que faltaba: crear una revision de verdad.
   nuevaRevisionDe, vigenteUnicaDe, REVISION_HEREDA,
 } from '../quotes/domain/revision'; // SCRUM-655 (T6, fase B)
@@ -47,8 +49,13 @@ export async function listQuotesAdmin(
   // SCRUM-1403 · el recorte de quien pregunta (`wherePresupuestosVisibles`). `null` = ve todo el
   // negocio, y entonces este `where` sale exactamente como salía.
   recorte: Prisma.QuoteWhereInput | null = null,
+  // SCRUM-1273 · `false` = sin los archivados · `true` = SÓLO ésos · sin pasar = no filtra. Lo pasa
+  // únicamente la lista de Presupuestos: archivar no saca de ningún otro sitio (c.19605, decisión 2),
+  // y el otro llamador (`GET /admin/albaranes/presupuestos`) no lo pasa a propósito.
+  archivados?: boolean,
 ) {
   const where: any = { merchantId };
+  if (archivados !== undefined) where.archivedAt = archivados ? { not: null } : null;
 
   if (teamMemberId !== undefined) where.teamMemberId = teamMemberId;
 
@@ -120,6 +127,7 @@ export async function listQuotesAdmin(
     return {
       id: q.id,
       number: q.quoteNumber ?? q.id, // A1.2: número visible por merchant (fallback pre-backfill)
+      numeroVisible: numeroVisibleDelPresupuesto(q), // SCRUM-1444c: el número HECHO; `number` sigue mientras S2 migra
       customerName: q.customer?.name ?? '—',
       customerPhone: q.customer?.phone ?? null,
       createdAt: q.createdAt,
@@ -143,6 +151,8 @@ export async function listQuotesAdmin(
       // SCRUM-986 · MISMO PROBLEMA DEL QUINTO ESLABÓN: proyección a mano. Sin esta línea el chip
       // se calcula y no sale. `null` = nunca se le envió por WhatsApp = sin chip.
       waDelivery: entregas.get(q.id) ?? null,
+      // SCRUM-1273 · proyección a mano (el quinto eslabón de arriba): sin esta línea no sale.
+      archivedAt: q.archivedAt ?? null,
     };
   });
 }
@@ -244,6 +254,7 @@ export async function getQuoteDetailAdmin(id: number, merchantId?: number) {
     id: r.id,
     revision: r.revision,
     numero: numeroConRevision(r),
+    numeroVisible: numeroVisibleDelPresupuesto(porId.get(r.id)!), // SCRUM-1444c
     status: porId.get(r.id)!.status,
     firmado: r.firmado,
     total: porId.get(r.id)!.total,
@@ -254,6 +265,7 @@ export async function getQuoteDetailAdmin(id: number, merchantId?: number) {
   return {
     id: quote.id,
     number: quote.quoteNumber ?? quote.id, // A1.2: número visible por merchant
+    numeroVisible: numeroVisibleDelPresupuesto(quote), // SCRUM-1444c: el número HECHO; `number` sigue mientras S2 migra
     // SCRUM-655 (T6, fase B). `number` NO se toca: un presupuesto sin revisiones sale exactamente
     // como salía —enumerado y sin «.0»—, y todo lo que ya lo consume sigue leyendo lo mismo.
     revision: quote.revision,
@@ -266,6 +278,8 @@ export async function getQuoteDetailAdmin(id: number, merchantId?: number) {
     status: quote.status,
     createdAt: quote.createdAt,
     updatedAt: quote.updatedAt,
+    // SCRUM-1273 · `null` = no archivado. La ficha lo enseña y ofrece «Desarchivar».
+    archivedAt: quote.archivedAt ?? null,
 
     currency: quote.currency,
     total: quote.total,
@@ -399,6 +413,8 @@ export async function acceptQuoteAdmin(
       decisionComment: params.comment ?? null,
       paymentTerms: params.paymentTerms ?? quote.paymentTerms,
       evidence: params.evidence ?? quote.evidence,
+      // SCRUM-1273 · una decisión sobre un presupuesto archivado lo devuelve a la lista (c.19605).
+      archivedAt: null,
     },
   });
 
@@ -446,6 +462,8 @@ export async function rejectQuoteAdmin(
       rejectionReason: params.reason ?? null,
       decisionComment: params.comment ?? null,
       evidence: params.evidence ?? quote.evidence,
+      // SCRUM-1273 · una decisión sobre un presupuesto archivado lo devuelve a la lista (c.19605).
+      archivedAt: null,
     },
   });
 
@@ -565,7 +583,8 @@ const REVISION_LOCK_NS = 1752;
 interface LectorDeRevisiones {
   quote: {
     findFirst(args: {
-      where: { id: number; merchantId: number };
+      // SCRUM-1519d: el cliente, del MISMO negocio (ver `decidirRevisionDe`).
+      where: { id: number; merchantId: number; customer: { merchantId: number } };
       select: Record<string, true>;
     }): Promise<unknown>;
     findMany(args: {
@@ -591,8 +610,14 @@ interface LectorDeRevisiones {
  * cliente global, la segunda con el de la transacción, ya detrás del cerrojo.
  */
 async function decidirRevisionDe(db: LectorDeRevisiones, merchantId: number, id: number) {
+  // 🔴 SCRUM-1519d · EL CLIENTE TAMBIÉN TIENE QUE SER DE ESTE NEGOCIO, no sólo el presupuesto. La
+  // revisión COPIA `customerId` de la versión de origen sin preguntar de quién es: con un
+  // presupuesto propio que ya apuntara al cliente de otro comercio, nacía otra fila cruzada (J1,
+  // SCRUM-1519 c.19192: CRUZA 2 de 2). Se exige en las DOS lecturas —la abierta y la vigente,
+  // que es la que se copia— y contesta lo mismo que un id ajeno: `quote_not_found` (c.19205 ①,
+  // decisión del fundador: un 404 no confirma que el cliente exista).
   const anterior = await db.quote.findFirst({
-    where: { id, merchantId },
+    where: { id, merchantId, customer: { merchantId } },
     select: SELECT_PARA_REVISION,
   }) as (Record<string, unknown> & {
     id: number; quoteNumber: number | null; revision: number;
@@ -631,9 +656,11 @@ async function decidirRevisionDe(db: LectorDeRevisiones, merchantId: number, id:
   const origen = vigente.id === anterior.id
     ? anterior
     : (await db.quote.findFirst({
-        where: { id: vigente.id, merchantId },
+        where: { id: vigente.id, merchantId, customer: { merchantId } }, // SCRUM-1519d
         select: SELECT_PARA_REVISION,
-      })) as Record<string, unknown> & { revision: number };
+      })) as (Record<string, unknown> & { revision: number }) | null;
+  // SCRUM-1519d · la vigente con el cliente de otro negocio no se copia: mismo 404 que arriba.
+  if (!origen) throw new RevisionNoCreable('quote_not_found', 'El presupuesto no existe.');
 
   // SCRUM-887 · UNA REVISIÓN DE UN C NO SE CREA (comentarios 15697 y 15698): HEREDARÍA el global
   // con varios tipos de IVA, que es justo lo que no se puede guardar ni facturar. Antes de escribir.
@@ -681,6 +708,7 @@ export async function crearRevisionDeQuote(merchantId: number, id: number) {
       id: creada.id,
       revision: creada.revision,
       numero: numeroConRevision({ numero: base, revision: creada.revision }),
+      numeroVisible: numeroVisibleDelPresupuesto(creada), // SCRUM-1444c
       status: creada.status,
       // De qué versión salió, para que la pantalla pueda decirlo sin adivinarlo.
       origenId: vigente.id,

@@ -15,6 +15,7 @@ import { prisma } from '../../../../core/db/prisma';
 import { recordAudit, actorDeRequest, requestIp } from '../../../system/audit.service'; // SCRUM-207
 import { requireActivePlan } from '../../../../core/http/authMiddleware'; // SCRUM-47 (S1: enviar WA ✅ técnico, sin requireRole)
 import { sendAlbaranFirmadoWhatsApp, sendAlbaranParaFirmarWhatsApp, type AlbaranFirmadoSendResult } from '../../domain/albaranWhatsApp.service'; // SCRUM-47/49
+import { leerEntregaParaFirmar } from '../../domain/entregaParaFirmar'; // SCRUM-49b
 import { sendSuccessBody, sendFailureBody, type SendFailureReason } from '../../../../lib/sendOutcome'; // SCRUM-126
 import {
   ALBARAN_MODOS_VALORACION,
@@ -31,11 +32,13 @@ import { allocateAlbaranNumber, AlbaranSerieSinAnioError } from '../../domain/al
 import { siguienteNumeroDeAlbaran } from '../../domain/albaranSerie'; // SCRUM-1184: vista previa del número
 import { datosDuplicado } from '../../domain/albaranDuplicado'; // SCRUM-302: qué viaja al duplicado
 // SCRUM-300 (C5): microcopy y normalización del firmante, en su fuente única.
-import { exigirNombreFirmante, normalizarLugarEntrega, resolverCalidadFirmante } from '../../domain/albaranFirmante';
+import { ERROR_ALBARAN_CAMBIADO, exigirNombreFirmante, normalizarLugarEntrega, resolverCalidadFirmante } from '../../domain/albaranFirmante';
 // SCRUM-361 (H6 · fase 2): dos editores a la vez dejaban de existir el uno para el otro.
-import { puedeEditarEstaVersion } from '../../domain/albaranEdicion';
+import { ERROR_ALBARAN_CAMBIADO_AL_EDITAR, puedeEditarEstaVersion } from '../../domain/albaranEdicion';
 import { seesOnlyOwnJobs } from '../../../../core/http/roleCapabilities'; // SCRUM-467
 import { esSuyoElTrabajo, SELECT_DUENOS } from '../../domain/accesoAlTrabajo'; // SCRUM-849
+import { quienPideDe } from '../../../../core/documentos/accesoALaFactura'; // SCRUM-1555
+import { wherePresupuestosVisibles } from '../../../../core/documentos/accesoAlPresupuesto'; // SCRUM-1555
 import { fotoYaSubida } from '../../domain/fotoDuplicada'; // SCRUM-382: la misma foto no se guarda dos veces
 import { canalDeWhatsApp } from '../../../../core/contacto/canalDeWhatsApp'; // SCRUM-1302 (F)
 import { getPendientesFacturar } from '../../domain/pendientesFacturar.service'; // SCRUM-69
@@ -80,6 +83,7 @@ import {
 } from '../../domain/albaranAFactura';
 // SCRUM-195: el número del adicional se reserva DENTRO de su transacción, igual que el del alta.
 import { allocateQuoteNumber } from '../../../quotes/domain/quoteNumber.service';
+import { numeroVisibleDelPresupuesto } from '../../../quotes/domain/revision'; // SCRUM-1444c
 // SCRUM-728 · la sección crítica de la serie saturada: se traduce a un aviso legible en vez
 // de un `internal_error`. NO sube el timeout ni toca el cerrojo.
 import { esCerrojoSaturado, cuerpoCerrojoSaturado, ESTADO_CERROJO_SATURADO } from '../../../invoicing/domain/cerrojoSaturado';
@@ -268,7 +272,9 @@ router.get('/serie', async (req, res) => {
 router.get('/presupuestos', async (req, res) => {
   try {
     const q = req.query.q !== undefined ? String(req.query.q) : undefined;
-    const candidatos = await listQuotesAdmin(req.merchantId!, q);
+    // SCRUM-1555 · con el recorte de quien pregunta, como la lista de Presupuestos (SCRUM-1403).
+    const recorte = await wherePresupuestosVisibles(quienPideDe(req));
+    const candidatos = await listQuotesAdmin(req.merchantId!, q, undefined, null, null, undefined, recorte);
 
     // Los Trabajos que tienen por ORIGEN a alguno de estos presupuestos. Una sola consulta para
     // toda la lista (patrón de SCRUM-58), no una por fila.
@@ -767,10 +773,28 @@ router.patch('/:id', async (req, res) => {
     }
     if (cambios.length === 0) return res.status(400).json({ error: 'nothing_to_update' });
 
-    const updated = await prisma.albaran.update({
-      where: { id: albaran.id },
-      data: { ...data, version: { increment: 1 } },
-    });
+    // SCRUM-1302o: se escribe SÓLO sobre el albarán que se leyó. Con `where: { id }`, lo comprobado
+    // arriba podía dejar de ser cierto antes de escribir: una firma en medio (no sube `version`) y la
+    // edición caía sobre un albarán FIRMADO; otra edición en medio y ésta la pisaba en silencio.
+    // Quien choca recibe lo que esta ruta ya contesta a una petición nueva: ningún texto nuevo.
+    let updated;
+    try {
+      updated = await prisma.albaran.update({
+        where: { id: albaran.id, estado: albaran.estado, version: albaran.version },
+        data: { ...data, version: { increment: 1 } },
+      });
+    } catch (e: any) {
+      if (e?.code !== 'P2025') throw e;
+      const ahora = await prisma.albaran.findFirst({
+        where: { id: albaran.id, merchantId: req.merchantId },
+        select: { estado: true },
+      });
+      if (!ahora) return res.status(404).json({ error: 'not_found' });
+      if (ahora.estado === 'firmado') {
+        return res.status(409).json({ error: 'albaran_locked', message: 'Un albarán firmado está congelado: no se puede editar.' });
+      }
+      return res.status(409).json({ error: ERROR_ALBARAN_CAMBIADO_AL_EDITAR });
+    }
     recordAudit({
       merchantId: req.merchantId,
       teamMemberId: (req as any).teamMemberId ?? null,
@@ -865,7 +889,7 @@ router.get('/:id', async (req, res) => {
     const quote = job?.quoteId
       ? await prisma.quote.findFirst({
           where: { id: job.quoteId, merchantId: req.merchantId },
-          select: { id: true, quoteNumber: true },
+          select: { id: true, quoteNumber: true, revision: true }, // SCRUM-1444c: la revisión se pide, no se supone 0
         })
       : null;
 
@@ -881,6 +905,8 @@ router.get('/:id', async (req, res) => {
     const fotos = await prisma.attachment.count({
       where: { merchantId: req.merchantId, entityType: 'albaran', entityId: albaran.id },
     });
+    // SCRUM-49b · lo que de verdad pasó con el último WhatsApp «para firmar». Sólo LEE.
+    const entregaParaFirmar = await leerEntregaParaFirmar(req.merchantId, albaran.id, albaran.enviadoParaFirmaAt);
 
     return res.json({
       ...serializeAlbaran(albaran),
@@ -889,13 +915,27 @@ router.get('/:id', async (req, res) => {
       customer,
       // Del DOCUMENTO. `null` cuando el Trabajo no vino de un presupuesto (`Job.quoteId` es
       // nullable): el rail lo omite en vez de pintar un enlace que no lleva a ningún sitio.
-      quote: quote ? { id: quote.id, number: quote.quoteNumber ?? quote.id } : null,
+      quote: quote
+        ? { id: quote.id, number: quote.quoteNumber ?? quote.id,
+            numeroVisible: numeroVisibleDelPresupuesto(quote) } // SCRUM-1444c: `number` sigue mientras S4 migra
+        : null,
       // Los TRES valores, no un booleano (SCRUM-170/302).
       estadoFacturacion,
       // Lo que queda por facturar, por línea: es lo que hace verdadero el «parcial».
       pendientes: pendientePorLinea(lineas, facturado),
       // Derivado, NO un estado (Parte L intacta): el modelo solo tiene borrador|emitido|firmado.
       enviadoParaFirma: !!albaran.enviadoParaFirmaAt && albaran.estado === 'emitido',
+      // SCRUM-49b · `enviadoParaFirma` dice que se INTENTÓ (la marca se escribe antes de llamar a
+      // Meta), no que llegara. Lo que se puede afirmar sale de aquí: entregado · aceptado ·
+      // fallido (en el acto o después) · sin rastro · no se pudo leer · nunca enviado.
+      entregaParaFirmar,
+      // SCRUM-49c · la credencial de la página pública de firma (`/albaran/<token>`), para que el
+      // comercio pueda copiar el enlace: el mismo precedente que `quote.payToken` e `invoice.payToken`,
+      // y la misma credencial que ya viaja dentro del WhatsApp. Va AQUÍ y no en `serializeAlbaran`, a
+      // propósito: sale sólo en la ficha, que ya pasó por tenencia y por «es suyo» (SCRUM-467), y no en
+      // listas ni en otras respuestas. `null` hasta el primer envío para firmar, que es quien lo crea:
+      // esta ruta sólo LEE, no lo genera.
+      firmaToken: albaran.firmaToken ?? null,
       cabenMasFotos: fotos < FOTOS_MAX_POR_ALBARAN, // SCRUM-1302 (G)
     });
   } catch (err: any) {
@@ -1043,10 +1083,13 @@ router.post('/:id/firmar', async (req, res) => {
     // `where: { id }`, dos peticiones a la vez (el reintento de la firma, o la cola sin cobertura
     // al volver la red) leían las dos `emitido` y escribían las dos: quedaba el SEGUNDO trazo.
     // Mismo patrón que la firma remota (SCRUM-1302j). Quien llega tarde no regenera el PDF.
+    // SCRUM-1302o: y la VERSIÓN leída también. La evidencia de arriba sella el contenido LEÍDO; si
+    // alguien lo edita en medio (el PATCH sube `version`), escribir dejaría la evidencia de uno y la
+    // fila del otro.
     let updated;
     try {
       updated = await prisma.albaran.update({
-        where: { id: albaran.id, estado: albaran.estado },
+        where: { id: albaran.id, estado: albaran.estado, version: albaran.version },
         data: {
           estado: 'firmado', signatureUrl: signatureData, firmadoAt, evidenciaFirma: evidencia as any,
           firmadoPorNombre, firmadoPorCalidad: calidad.valor,
@@ -1058,11 +1101,15 @@ router.post('/:id/firmar', async (req, res) => {
       // textos, ya aprobados, de las puertas de arriba, literales y con su `message` (SCRUM-275).
       const ahora = await prisma.albaran.findFirst({
         where: { id: albaran.id, merchantId: req.merchantId },
-        select: { estado: true },
+        select: { estado: true, version: true },
       });
       if (!ahora) return res.status(404).json({ error: 'not_found' });
       if (ahora.estado === 'firmado') {
         return res.status(409).json({ error: 'albaran_locked', message: 'Este albarán ya está firmado.' });
+      }
+      if (ahora.estado === albaran.estado && ahora.version !== albaran.version) {
+        // Texto aprobado en SCRUM-1302 c.19467 (docs/microcopy/2026-10-14-SCRUM-1302-albaran-cambiado-en-obra.md).
+        return res.status(409).json({ error: ERROR_ALBARAN_CAMBIADO, message: 'El albarán ha cambiado mientras lo firmabas. Vuelve a abrirlo para firmar la versión actual.' });
       }
       return res.status(409).json({ error: 'invalid_transition', from: ahora.estado, to: 'firmado', message: 'Emite el albarán antes de firmarlo.' });
     }

@@ -193,6 +193,11 @@ function sustituirPrisma(quotes, jobs, visibles = jobs) {
   moduloPrisma.prisma.job = {
     findMany: async (args) => (args?.where?.OR ? visibles : jobs),
   };
+  // SCRUM-1555 · para un Técnico la ruta pide ya su recorte de presupuestos
+  // (`wherePresupuestosVisibles`), que lee el huso del negocio para agrupar revisiones por año. El
+  // doble de `quote.findMany` no filtra, así que esto no cambia qué presupuestos llegan: sólo deja
+  // que la puerta conteste en vez de caerse contra una base que el test no tiene.
+  moduloPrisma.prisma.merchant = { findUnique: async () => ({ timezone: 'Europe/Madrid' }) };
 }
 
 const REQ = (query = {}) => ({ query, merchantId: 7, teamMemberId: null, userRole: 'admin', params: {}, body: {}, headers: {} });

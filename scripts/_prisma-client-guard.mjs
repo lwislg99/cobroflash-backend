@@ -241,7 +241,36 @@ export function primeraDiscrepancia(delSchema, delCliente) {
   return null;
 }
 
-export function mensaje(d) {
+/**
+ * SCRUM-429b · TODAS las diferencias, con su nombre, en una línea cada una. La primera sola sigue
+ * mandando en el diagnóstico (la causa es una), pero quien tiene delante 23 errores de tipos necesita
+ * ver que los TRES campos que nombra `tsc` salen de aquí, y no buscarlos uno a uno.
+ *
+ * @returns {string[]} p. ej. `Quote.seriesYear — falta en el cliente`
+ */
+export function todasLasDiscrepancias(delSchema, delCliente) {
+  const out = [];
+  for (const [modelo, { tabla, campos }] of delSchema) {
+    const enCliente = delCliente.get(modelo);
+    if (!enCliente) { out.push(`${modelo} (modelo entero) — falta en el cliente`); continue; }
+    if (enCliente.tabla !== tabla) out.push(`${modelo} (tabla) — "${tabla}" en el schema, "${enCliente.tabla}" en el cliente`);
+    for (const [campo, columna] of campos) {
+      const enClienteCol = enCliente.campos.get(campo);
+      if (enClienteCol === undefined) out.push(`${modelo}.${campo} — falta en el cliente`);
+      else if (enClienteCol !== columna) out.push(`${modelo}.${campo} — columna "${columna}" en el schema, "${enClienteCol}" en el cliente`);
+    }
+  }
+  for (const [modelo, { campos }] of delCliente) {
+    const enSchema = delSchema.get(modelo);
+    if (!enSchema) { out.push(`${modelo} (modelo entero) — sobra en el cliente`); continue; }
+    for (const [campo] of campos) {
+      if (!enSchema.campos.has(campo)) out.push(`${modelo}.${campo} — sobra en el cliente`);
+    }
+  }
+  return out;
+}
+
+export function mensaje(d, todas = []) {
   const qué = d.tipo === 'modelo' ? `el modelo "${d.modelo}"` : `el campo "${d.modelo}.${d.campo}"`;
 
   // UN diagnóstico por dirección: el hecho es el mismo (el cliente no es de este schema) pero lo
@@ -283,6 +312,7 @@ export function mensaje(d) {
     '',
     ...porDireccion,
     '',
+    ...listaDeDiferencias(todas),
     '   El cliente ESTÁ generado — no falta: es de OTRO schema. Y hay DOS causas distintas, que',
     '   piden mirar en sitios distintos. Este mensaje solo nombraba la primera, y eso llevó a',
     '   diagnosticar mal una caída (SCRUM-429, 10-ago-2026):',
@@ -299,13 +329,53 @@ export function mensaje(d) {
     '         (el `(Get-Item node_modules).LinkType` de antes solo ve el enlace: cuando no hay',
     '          `node_modules` que inspeccionar sale vacío y eso NO significa que sea tuyo.)',
     '',
-    '   Arreglo, en los dos casos:  npm run prisma:generate   (desde ESTE worktree)',
+    '   Arreglo: depende de si el `node_modules` de este árbol es TUYO o lo COMPARTES',
+    '   (`npm run topologia` lo dice, y dice NO SUPE MIRAR cuando no ha podido leerlo):',
     '',
-    '   ⚠️ Y si es (B), regenerar ARREGLA EL TUYO Y ROMPE EL DE LOS DEMÁS: avisa antes.',
-    '      SCRUM-351: esto ANTES se daba por hecho, y de darlo por hecho salió la restricción',
-    '      «no regeneres» que en los cuatro worktrees de hoy NO aplica. Míralo, no lo supongas —',
-    '      ni en un sentido ni en el otro. `npm run topologia` nombra con quién compartes, si',
-    '      compartes, y dice NO SUPE MIRAR cuando no ha podido leerlo.',
+    '     · TUYO (sólo de este árbol):  npm run prisma:generate   (desde ESTE worktree)',
+    '',
+    '     · COMPARTIDO — la causa (B), o la (A) en un árbol que cuelga del compartido: NO regeneres.',
+    '       Regenerar ARREGLA EL TUYO Y ROMPE EL DE LOS DEMÁS. Avisa al orquestador: la regeneración',
+    `       del cliente compartido la coordina él, con el equipo avisado (${PROCEDIMIENTO}).`,
+    '',
+    '   Míralo, no lo supongas, ni en un sentido ni en el otro (SCRUM-351): el 10-ago no compartía',
+    '   ninguno de los cuatro worktrees, y el 14-oct casi todos colgaban del árbol principal.',
+    '',
+  ].join('\n');
+}
+
+function listaDeDiferencias(todas) {
+  if (!todas.length) return [];
+  return [`   Todas las diferencias (${todas.length}):`, ...todas.map((t) => `     · ${t}`), ''];
+}
+
+/** Dónde está escrito cómo se regenera sin romperle el cliente a otra sesión. */
+const PROCEDIMIENTO = 'docs/equipo/trampas-del-entorno.md §10';
+
+/**
+ * SCRUM-429b · el modo `--avisar`, el que corre en `prebuild`. NO PARA EL BUILD, a propósito:
+ *   · `tsc` emite `dist` aunque haya errores de tipos, y con un cliente COMPARTIDO viejo todas las
+ *     sesiones que cuelgan de él siguen pudiendo trabajar. Bloquear las pararía a todas a la vez.
+ *   · `prebuild` corre también en el deploy (`npm run build`). Un guard que bloquea ahí es un
+ *     riesgo de producción que no se compra para dar un aviso.
+ * El juez que bloquea sigue siendo el de siempre: `pretest` y el CI. Esto sólo pone NOMBRE a los
+ * errores de tipos antes de que salgan, que es lo que costaba la tarde (14-oct-2026).
+ */
+export function aviso(r) {
+  return [
+    '',
+    '🟡 AVISO · EL CLIENTE DE PRISMA NO ES DE ESTE prisma/schema.prisma (no para el build)',
+    '',
+    ...(r.todas?.length
+      ? [
+        ...listaDeDiferencias(r.todas),
+        '   Si `tsc` da errores de tipos que nombran estos campos, vienen de AQUÍ y no de tu código:',
+        '   el cliente generado es de otro schema.',
+      ]
+      : r.mensaje.split('\n').filter(Boolean)),
+    '',
+    `   Cómo se regenera sin romperle el cliente a otra sesión: ${PROCEDIMIENTO}.`,
+    '   Antes de regenerar, mira si lo compartes:  npm run topologia',
     '',
   ].join('\n');
 }
@@ -345,17 +415,21 @@ export async function comprobarCliente({ schemaPath, rutaCliente } = {}) {
         '   conjuntos vacíos son iguales. Falla cerrado a propósito.',
         '',
         '   Mira que `prisma/schema.prisma` esté donde debe y que el cliente esté generado:',
-        '     npx prisma generate   (desde ESTE worktree)',
+        `     npm run prisma:generate   (desde ESTE worktree; si lo compartes, ${PROCEDIMIENTO})`,
+        '     (nunca `npx prisma`: se baja otro CLI de la red, SCRUM-385)',
         '',
       ].join('\n'),
     };
   }
 
   const d = primeraDiscrepancia(delSchema, delCliente);
-  return d ? { ok: false, mensaje: mensaje(d) } : { ok: true };
+  if (!d) return { ok: true };
+  const todas = todasLasDiscrepancias(delSchema, delCliente);
+  return { ok: false, mensaje: mensaje(d, todas), todas };
 }
 
-// Uso directo:  node scripts/_prisma-client-guard.mjs [rutaClienteAlternativo]
+// Uso directo:  node scripts/_prisma-client-guard.mjs [--avisar] [rutaClienteAlternativo]
+//   --avisar  imprime el aviso y sale con 0 (SCRUM-429b, `prebuild`); sin él, sale con 1.
 /**
  * ¿Se está ejecutando este fichero COMO SCRIPT (y no importado)?
  *
@@ -379,8 +453,14 @@ export function esInvocacionDirecta(metaUrl, argv1) {
 
 const invocadoDirecto = esInvocacionDirecta(import.meta.url, process.argv[1]);
 if (invocadoDirecto) {
-  const r = await comprobarCliente({ rutaCliente: process.argv[2] });
+  const args = process.argv.slice(2);
+  const avisar = args.includes('--avisar');
+  const r = await comprobarCliente({ rutaCliente: args.find((a) => !a.startsWith('--')) });
   if (!r.ok) {
+    if (avisar) {
+      console.error(aviso(r));
+      process.exit(0);
+    }
     console.error(r.mensaje);
     process.exit(1); // salida inmediata: nada de seguir compilando sobre un cliente que no es
   }

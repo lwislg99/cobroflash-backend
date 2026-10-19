@@ -24,8 +24,8 @@
 //    Su nombre sobrevive en el mensaje del commit de merge, y de ahí se recupera.
 // 🔴 ② LAS REFS `refs/remotes/origin/*` LOCALES MIENTEN. En este clon hay 560 y en el remoto 550:
 //    diez son ramas ya borradas que siguen ahí porque nadie ha hecho `fetch --prune`. La AUTORIDAD
-//    de «qué está vivo» es `ls-remote`, nunca las refs locales. Éstas sólo se usan para fechar y
-//    para el cálculo de mergeado, y siempre intersectadas con `ls-remote`.
+//    de «qué está vivo» es `ls-remote`, nunca las refs locales. Éstas sólo se usan para fechar,
+//    siempre intersectadas con `ls-remote`. El mergeado se juzga por la punta viva (SCRUM-1540b).
 //
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────────
 // Un CERO nunca es «está limpio»: es «no he mirado». Si `ls-remote` no devuelve ramas, si el
@@ -40,10 +40,11 @@
 //   node scripts/verificacion-s5/enlace-ticket-rama.mjs --foto     todas las ramas vivas
 //   node scripts/verificacion-s5/enlace-ticket-rama.mjs --controles
 // ═════════════════════════════════════════════════════════════════════════════════════════════
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { clasificar } from './ramas-borrables.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const git = (...a) => execFileSync('git', a, { cwd: RAIZ, encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
@@ -65,17 +66,12 @@ for (const l of lineas(git('ls-remote', '--heads', 'origin'))) {
 }
 exigir(VIVAS.size > 0, 'ls-remote no devolvió ninguna rama: sin esto no se sabe qué está vivo.');
 
-/** Refs locales: SÓLO para fechar y para el cálculo de mergeado. Se intersectan con VIVAS. */
+/** Refs locales: SÓLO para fechar. Se intersectan con VIVAS. */
 const LOCAL = new Map(); // nombre -> {sha, fecha}
 for (const l of lineas(git('for-each-ref', '--format=%(refname:short)|%(objectname)|%(committerdate:short)', 'refs/remotes/origin/'))) {
   const [ref, sha, fecha] = l.split('|');
   LOCAL.set(ref.replace(/^origin\//, ''), { sha, fecha });
 }
-
-const MERGEADAS = new Set(lineas(git('branch', '-r', '--merged', 'origin/main')).map((x) => x.replace(/^origin\//, '')));
-const SIN_MERGEAR = new Set(lineas(git('branch', '-r', '--no-merged', 'origin/main')).map((x) => x.replace(/^origin\//, '')));
-exigir(MERGEADAS.size > 0 && SIN_MERGEAR.size > 0,
-  'el reparto mergeadas/sin-mergear salió vacío por un lado: o el repo es raro o la llamada falló.');
 
 /**
  * Histórico de merges: de aquí —y sólo de aquí— salen las ramas MERGEADAS Y BORRADAS.
@@ -95,6 +91,25 @@ for (const l of MERGES) {
     }
   }
 }
+
+// 🔴 SCRUM-1540b · el mergeado se juzga por la punta VIVA (la de `ls-remote`), no por la ref local.
+// Aquí había `git branch -r --merged origin/main`, que lee `refs/remotes/origin/*`: con la ref local
+// atrasada, una rama viva con commits fuera de `main` salía «YA MERGEADA (se puede borrar)». Es el
+// defecto de SCRUM-1540 en `ramas-borrables.mjs`, y se usa su mismo `clasificar`: tres respuestas,
+// y la que no se puede saber sale «estado de merge DESCONOCIDO», nunca borrable.
+// Y «se puede borrar» sólo para la que entró por un merge que la NOMBRA: la que está dentro sin él
+// pudo dejar su PR abierto, y borrarla lo cierra (las «apartadas» de `ramas-borrables`).
+const MAIN = git('rev-parse', '--verify', 'origin/main^{commit}').trim();
+const codigoDe = (...a) => spawnSync('git', a, { cwd: RAIZ, encoding: 'utf8' }).status;
+const { mergeadas: MERGEADAS, sinMergear: SIN_MERGEAR, borrables } = clasificar({
+  vivas: VIVAS,
+  estaEnElAlmacen: (sha) => codigoDe('cat-file', '-e', `${sha}^{commit}`) === 0,
+  codigoAncestro: (sha) => codigoDe('merge-base', '--is-ancestor', sha, MAIN),
+  nombradasPorUnMerge: new Set(HISTORICO.keys()),
+});
+const BORRABLES = new Set(borrables);
+exigir(MERGEADAS.size > 0 && SIN_MERGEAR.size > 0,
+  'el reparto mergeadas/sin-mergear salió vacío por un lado: o el repo es raro o la llamada falló.');
 
 /** Commits: dos pasadas y sólo dos. Lo que está en `origin/main` es ancestro; el resto, no. */
 const ANCESTROS = new Set();
@@ -184,6 +199,7 @@ function informe(num) {
     r.ramasVivas.push({
       nombre, sha,
       mergeada: MERGEADAS.has(nombre) ? true : (SIN_MERGEAR.has(nombre) ? false : null),
+      borrable: BORRABLES.has(nombre),
       fecha: loc ? loc.fecha : null,
       parada: loc ? dias(loc.fecha) : null,
       // Una rama viva sin ref local no se puede fechar: se dice, no se le pone «hoy».
@@ -237,7 +253,7 @@ function pinta(r) {
   console.log(`\nSCRUM-${r.num}  ${t}`);
   if (!r.ramasVivas.length && !r.ramasBorradas.length) console.log('  ramas   · ninguna (ni viva ni en el histórico de merges)');
   for (const b of r.ramasVivas) {
-    console.log(`  rama    · ${b.nombre}  ${b.mergeada === true ? 'VIVA pero YA MERGEADA (se puede borrar)' : b.mergeada === false ? '🔴 VIVA Y SIN MERGEAR' : 'estado de merge DESCONOCIDO'}`
+    console.log(`  rama    · ${b.nombre}  ${b.mergeada === true ? (b.borrable ? 'VIVA pero YA MERGEADA (se puede borrar)' : 'VIVA y dentro de main, pero NINGÚN merge la nombra: mira su PR antes de borrarla') : b.mergeada === false ? '🔴 VIVA Y SIN MERGEAR' : 'estado de merge DESCONOCIDO'}`
       + (b.ciega ? '  · 🔴 sin ref local: NO se puede fechar' : `  · último commit ${b.fecha} (${b.parada} d)`));
   }
   for (const b of r.ramasBorradas) console.log(`  rama    · ${b.nombre}  MERGEADA Y BORRADA del remoto (merge del ${b.fecha})`);
@@ -337,8 +353,12 @@ if (arg === '--foto') {
   console.log(`números sin asunto en la foto de Jira (${sinAsunto.length}): ${sinAsunto.map((r) => r.num).join(', ') || 'ninguno'}`);
   const ciegas = infs.flatMap((r) => r.ramasVivas.filter((b) => b.ciega).map((b) => b.nombre));
   console.log(`ramas vivas que no se pueden fechar (${ciegas.length}): ${ciegas.join(', ') || 'ninguna'}`);
-  const yaMergeadas = infs.flatMap((r) => r.ramasVivas.filter((b) => b.mergeada === true).map((b) => b.nombre));
-  console.log(`ramas vivas YA MERGEADAS, borrables: ${yaMergeadas.length}`);
+  const yaMergeadas = infs.flatMap((r) => r.ramasVivas.filter((b) => b.mergeada === true));
+  const sinMerge = yaMergeadas.filter((b) => !b.borrable).map((b) => b.nombre);
+  console.log(`ramas vivas YA MERGEADAS: ${yaMergeadas.length} · borrables (un merge las nombra): `
+    + `${yaMergeadas.length - sinMerge.length} · apartadas, mirar su PR (${sinMerge.length}): ${sinMerge.join(', ') || 'ninguna'}`);
+  const desconocidas = infs.flatMap((r) => r.ramasVivas.filter((b) => b.mergeada === null).map((b) => b.nombre));
+  console.log(`ramas vivas con estado de merge DESCONOCIDO (${desconocidas.length}): ${desconocidas.join(', ') || 'ninguna'}`);
 
   // El reparto del parecido, para que el umbral se vea en vez de creerse.
   const todas = [];

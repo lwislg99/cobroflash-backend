@@ -1,0 +1,179 @@
+{
+  "que_es": "La puerta de go-live (SCRUM-1554, regla 43 del máster): lo que hoy es falso porque lo que promete aún no está construido, y tiene que ser verdad ANTES de encender INVOICING_ES_ENABLED para el primer negocio real en España (decisión del orquestador, SCRUM-1554 c.19645). Una entrada NUNCA se borra: se cierra con «cerrada: {por, motivo, sha, fecha}». Lo vigila tests/scrum1554c-puerta-de-go-live.test.mjs.",
+  "medido_contra": "origin/main 8ff4238950 · 2026-10-19. Fuentes: la descripción y los 6 comentarios de SCRUM-1554, y los registros de main que mandan algo a esta puerta.",
+  "no_es": "Esta lista NO impide encender el interruptor: INVOICING_ES_ENABLED se enciende por la variable de entorno de Railway o por merchants.flags en la BD, y ninguno de los dos pasa por la CI. Lo que la hace cumplir en ejecución es la mitad B de SCRUM-1554c, que espera el GO del fundador. Tampoco está completa: lo que no se ha escrito aquí no se sabe.",
+  "entradas": [
+    {
+      "numero": 1,
+      "que": "Los siete literales de P2 aplicados en el PR #2415, sin firma: la firma se pide en bloque en la revisión. El PR entró en main el 14-oct a las 06:42Z (SCRUM-1554 c.19594).",
+      "de_donde": "SCRUM-534",
+      "consta_en": "SCRUM-1554, descripción, fila 1",
+      "estado": "abierta"
+    },
+    {
+      "numero": 2,
+      "que": "R1–R6 del documento legal servido: fuera «Cobro integrado» y «Justificantes de cobro», soporte sólo por email, el cobro con su estado real, «no emite facturas ni ningún otro documento de cobro», fuera el «mientras tanto».",
+      "de_donde": "SCRUM-1551 c.19542",
+      "consta_en": "SCRUM-1554, descripción, fila 2",
+      "estado": "abierta"
+    },
+    {
+      "numero": 3,
+      "que": "D1: el aviso de BORRADOR va en una línea «>» y no se sirve; sí se ven tres [REVISAR ASESOR] y los huecos del contrato.",
+      "de_donde": "SCRUM-1551",
+      "consta_en": "SCRUM-1554, descripción, fila 3",
+      "estado": "abierta"
+    },
+    {
+      "numero": 4,
+      "que": "El P1 sale roto en pantalla: el «*» de VERI*FACTU parte la negrita y se leen asteriscos sueltos.",
+      "de_donde": "SCRUM-534q",
+      "consta_en": "SCRUM-1554, descripción, fila 4",
+      "estado": "cerrada",
+      "cerrada": {
+        "por": "jv-j4e (equipo de Javier), PR #2425",
+        "motivo": "Una línea de ALCANCE_BETA.md:28 sin mover ninguna; el texto visible es idéntico quitando asteriscos y sólo queda el de VERI*FACTU. La ventana de 27 minutos entre #2415 y #2425 estaba vacía: 0 aceptaciones de la versión 17275d59e185, consulta del fundador en producción (SCRUM-1554 c.19593 y c.19594).",
+        "sha": "cd99c713994fce6e51bb0969f30e38a00b73093f",
+        "fecha": "2026-10-14"
+      }
+    },
+    {
+      "numero": 5,
+      "que": "Cinco marcas de microcopy «aprobado por el fundador» sin firma que conste, en texto que lee un profesional: el 409 al emitir, el desglose por empleado, los rótulos del raíl, los diez de Configuración y el bloqueo de serie.",
+      "de_donde": "SCRUM-1502 c.19543",
+      "consta_en": "SCRUM-1554, descripción, fila 5",
+      "estado": "abierta"
+    },
+    {
+      "numero": 6,
+      "que": "La oferta founding no comprueba el modo receipt: un comercio ES con el interruptor en OFF ve el iframe de cobro que SCRUM-1029 esconde en la lista del plan.",
+      "de_donde": "SCRUM-1551",
+      "consta_en": "SCRUM-1554, descripción, fila 6",
+      "estado": "abierta"
+    },
+    {
+      "numero": 7,
+      "que": "public/terminos.html:48 dice en presente «emitir facturas y gestionar cobros». Fuera de la población medida; no leído entero.",
+      "de_donde": "SCRUM-1551",
+      "consta_en": "SCRUM-1554, descripción, fila 7",
+      "estado": "abierta"
+    },
+    {
+      "numero": 8,
+      "que": "El guard de SCRUM-406 sólo mira public/ y no ve lo que se sirve desde docs/legal: por ahí se coló «soporte por email y WhatsApp».",
+      "de_donde": "SCRUM-1551",
+      "consta_en": "SCRUM-1554, descripción, fila 8",
+      "estado": "abierta"
+    },
+    {
+      "numero": 9,
+      "que": "readLegalDoc sirve cada línea de continuación de una viñeta como un <p> suelto: 7 líneas de ALCANCE_BETA.md, el P1 entre ellas, se leen partidas en dos bloques. No cambia ninguna palabra.",
+      "de_donde": "SCRUM-534 §5",
+      "consta_en": "SCRUM-1554 c.19593",
+      "estado": "abierta"
+    },
+    {
+      "numero": 10,
+      "que": "Las cicatrices de puesto no las lee nadie: una sesión repitió un fallo que su prompt nombraba por ruta. Mitigado (el prompt lleva el CONTENIDO), no cerrado: «es mejor que una ruta, y no es un guard».",
+      "de_donde": "SCRUM-1554 c.19594",
+      "consta_en": "SCRUM-1554 c.19594",
+      "estado": "abierta"
+    },
+    {
+      "numero": 11,
+      "que": "public/index.html:638, tarjeta «Cobros»: «Tarjeta, Bizum o transferencia…». Sin Connect, «Tarjeta» es falso.",
+      "de_donde": "SCRUM-1236 c.19745",
+      "consta_en": "SCRUM-1554 c.19746, fila 11 · docs/equipo/para-javier.md:344",
+      "condicion": "Verdad si al encender hay cobro y Connect.",
+      "estado": "abierta"
+    },
+    {
+      "numero": 12,
+      "que": "public/index.html:432, aria-label de la animación: «Demostración: de presupuesto a cobro». La animación termina en «Firmado».",
+      "de_donde": "SCRUM-1236 c.19745",
+      "consta_en": "SCRUM-1554 c.19746, fila 12",
+      "condicion": "Falso siempre.",
+      "estado": "abierta"
+    },
+    {
+      "numero": 13,
+      "que": "public/index.html:739, llamada final: «Únete a los profesionales que cierran más trabajos sin perseguir presupuestos.»",
+      "de_donde": "SCRUM-1236 c.19745",
+      "consta_en": "SCRUM-1554 c.19746, fila 13",
+      "condicion": "Falso mientras no haya clientes y una cifra.",
+      "estado": "abierta"
+    },
+    {
+      "numero": 14,
+      "que": "public/index.html:427, el subtítulo vivo: tiene recambio firmado (SCRUM-1016 c.19607) y falta aplicarlo. Carril J3.",
+      "de_donde": "SCRUM-1236 c.19745",
+      "consta_en": "SCRUM-1554 c.19746, fila 14",
+      "condicion": "Aplicarlo, sin firma nueva.",
+      "estado": "abierta"
+    },
+    {
+      "numero": 15,
+      "que": "Bot, botFlow.service.ts:582: «🎉 ¡Estás al día! No tienes ningún pago pendiente con …», que sólo ve los cobros de dentro de YaQu. Lo dispara BOT_INBOUND_ENABLED, otro interruptor.",
+      "de_donde": "SCRUM-1236 c.19745",
+      "consta_en": "SCRUM-1554 c.19746, fila 15",
+      "condicion": "Falso siempre. Carril J2 y cambio de máster K1.",
+      "estado": "abierta"
+    },
+    {
+      "numero": 16,
+      "que": "Las fechas impresas van en hora de Londres (UTC): un albarán de las 00:30 lleva la víspera.",
+      "de_donde": "SCRUM-1445",
+      "consta_en": "SCRUM-1554 c.19645 (movida por el orquestador del equipo de Luis); sin redacción propia en el ticket",
+      "estado": "abierta"
+    },
+    {
+      "numero": 17,
+      "que": "Las dos líneas bajo el sellado.",
+      "de_donde": "SCRUM-1490",
+      "consta_en": "SCRUM-1554 c.19645 (movida por el orquestador del equipo de Luis); sin redacción propia en el ticket",
+      "estado": "abierta"
+    },
+    {
+      "numero": 18,
+      "que": "Las tres preguntas fiscales.",
+      "de_donde": "no lo dice el comentario",
+      "consta_en": "SCRUM-1554 c.19645 (movida por el orquestador del equipo de Luis); sin redacción propia ni ticket de origen",
+      "estado": "abierta"
+    },
+    {
+      "numero": 19,
+      "que": "Los textos del albarán y del libro registro.",
+      "de_donde": "no lo dice el comentario",
+      "consta_en": "SCRUM-1554 c.19645 (movida por el orquestador del equipo de Luis); sin redacción propia ni ticket de origen",
+      "estado": "abierta"
+    },
+    {
+      "numero": 20,
+      "que": "El texto de Stripe en inglés de connect.routes.ts:70.",
+      "de_donde": "src/modules/payments/connect/connect.routes.ts:70",
+      "consta_en": "SCRUM-1554 c.19645 (movida por el orquestador del equipo de Luis); sin redacción propia en el ticket",
+      "estado": "abierta"
+    },
+    {
+      "numero": 21,
+      "que": "La puerta de producción de SCRUM-418.",
+      "de_donde": "SCRUM-418",
+      "consta_en": "SCRUM-1554 c.19645 (movida por el orquestador del equipo de Luis); sin redacción propia en el ticket",
+      "estado": "abierta"
+    },
+    {
+      "numero": 22,
+      "que": "El botón de exportar sin año: qué hace, (b) bajar sin año o (c) decirlo en pantalla, que pide firma. No se construye.",
+      "de_donde": "SCRUM-1183",
+      "consta_en": "docs/master/SCRUM-1183.md:66 (decisión del orquestador, 16-oct). NO consta en SCRUM-1554",
+      "estado": "abierta"
+    },
+    {
+      "numero": 23,
+      "que": "sendInvoiceEmail, sin proveedor, escribe invoice-<número>.eml y devuelve ok: el día que se encienda la facturación le dirá a un profesional que su factura salió por correo cuando sólo se escribió un fichero. STOP del fundador (camino de emisión).",
+      "de_donde": "SCRUM-1558",
+      "consta_en": "docs/master/SCRUM-1558.md:29 («el orquestador lo apunta en la puerta»). NO consta en SCRUM-1554",
+      "estado": "abierta"
+    }
+  ]
+}

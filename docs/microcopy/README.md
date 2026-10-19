@@ -49,10 +49,15 @@ Lo que hace falta para que la aprobación sea **verificable por alguien que no e
    firmas **dejan de contar solas**. ⛔ Nadie escribe «Aprobado por el fundador» si no es él.
 
    Una firma delegada **cuenta, y sale con otro nombre** (SCRUM-997d). El oráculo da tres estados:
-   `aprobada` (la firma del fundador), `aprobada-por-delegacion-sin-comprobar` y `no-aprobada`. De
+   `aprobada` (hoy, sólo el registro congelado), `aprobada-sin-comprobar` y `no-aprobada`. De
    una delegada **no comprueba** qué orquestador firma, ni si el texto es legal o fiscal, ni que el
    comentario citado exista, y lo dice en `noComprobado`. `comoConstaAprobado()` devuelve el estado
    junto a la ruta; `delegadasSinComprobar()` las lista.
+
+   **La firma del fundador tampoco se comprueba, y desde SCRUM-1546c también lo dice:** sale
+   `aprobada-sin-comprobar` y declara que no mira si el ticket citado existe ni quién escribió la
+   línea. Sigue contando. Escribir «Aprobado por el fundador» sin serlo sigue estando prohibido: el
+   oráculo no lo caza, sólo deja de afirmar que lo ha comprobado.
 
    Si la firma dice otra cosa —«por el asesor», «por el orquestador» a secas, «pendiente»— el
    registro **se lee igual, pero sus textos NO cuentan como aprobados**: `constaAprobado()` los

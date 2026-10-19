@@ -1,0 +1,7 @@
+renderDocumentoSueltoView 4 " type="button" title="Añadir una línea con &quot;undefined&quot; (en undefined ‖ stos)"><span class="quote-plantilla-chip__nombre">undefined</span><span class=" ‖ quote-plantilla-chip__meta">en undefined presupuestos</span>
+renderExportView 2 argin:12px 0 0;font-size:12px" aria-live="polite">undefined facturas en este ra ‖ ngo (máximo undefined). Preparar el archi
+renderHomeView 1 aciones sin respuesta</div><div class="kpi-value">undefined</div><div class="kp
+renderQuotesView 4 " type="button" title="Añadir una línea con &quot;undefined&quot; (en undefined ‖ stos)"><span class="quote-plantilla-chip__nombre">undefined</span><span class=" ‖ quote-plantilla-chip__meta">en undefined presupuestos</span>
+renderReportsView 2 0);margin:0;font-size:12px">Facturas emitidas del undefined al undefined (deven
+renderSettingsView 3 div><div class="kpi-value" style="font-size:20px">undefined<span style="color:v ‖ ar(--muted);font-size:12px">(undefined pagando)</span></di ‖ ue" style="color:var(--green-600);font-size:20px">undefined</div></div></div></
+TOTAL 16

@@ -127,6 +127,14 @@ export const ZONAS = ['Pacific/Kiritimati', 'Pacific/Midway'];
  */
 export const AUSENTE = 'ausente';
 
+/**
+ * 🔴 `cortada` TAMPOCO ES UN VEREDICTO (SCRUM-1494, 15-oct-2026). Es una prueba (o un fichero
+ * entero) que el hijo cortó por tiempo: no acabó, así que no se sabe qué habría dado. Se compara
+ * como `AUSENTE` —no acusa, se cuenta en «no pude comparar»— y la escribe el hijo con este mismo
+ * literal.
+ */
+export const CORTADA = 'cortada';
+
 export const SALIDA_OK = 0;
 /** Alguien metió un test que depende de la zona y no está censado. EL TRINQUETE HABLA. */
 export const SALIDA_HABLA = 1;
@@ -594,7 +602,7 @@ export function arbolQuieto(antes, despues, declaradas = ESCRITURAS_DE_LA_TANDA)
  * los tests, y una sola línea suelta de un `console.log` ajeno convertiría el JSON en basura. Un
  * fichero no se puede contaminar desde dentro de otro proceso.
  */
-export function medirEnZona({ zona, ficheros, raiz = RAIZ, salida }) {
+export function medirEnZona({ zona, ficheros, raiz = RAIZ, salida, topes }) {
   const destino = salida
     || path.join(temporal('trinquete-zona-med-'), 'medida.json');
   const lista = path.join(path.dirname(destino), 'ficheros.json');
@@ -606,7 +614,10 @@ export function medirEnZona({ zona, ficheros, raiz = RAIZ, salida }) {
   try { fs.rmSync(destino, { force: true }); } catch { /* si no se puede borrar, se verá abajo */ }
 
   const arranque = Date.now();
-  const r = spawnSync(process.execPath, [HIJO, lista, destino, raiz], {
+  // SCRUM-1494: `topes` ({ limiteTestMs, paredMs }) sólo lo pasa quien siembra cuelgues de segundos;
+  // sin él, el hijo usa los suyos (ver allí por qué esos).
+  const conTopes = topes ? [String(topes.limiteTestMs), String(topes.paredMs)] : [];
+  const r = spawnSync(process.execPath, [HIJO, lista, destino, raiz, ...conTopes], {
     cwd: raiz,
     env: entornoLimpio(zona),
     encoding: 'utf8',
@@ -649,6 +660,7 @@ export function medirEnZona({ zona, ficheros, raiz = RAIZ, salida }) {
     veredictos,
     zonaVista: bruto.zonaVista,
     concurrencia: bruto.concurrencia,
+    topes: bruto.topes,
     ficheros: ficheros.length,
     segundos: (Date.now() - arranque) / 1000,
   };
@@ -722,7 +734,7 @@ export function compararZonas(medidas) {
   const sinComparar = [];
   for (const clave of [...claves].sort()) {
     const porZona = medidas.map((m) => ({
-      zona: m.zona, veredicto: m.veredictos.get(clave) ?? AUSENTE,
+      zona: m.zona, veredicto: [undefined, CORTADA].includes(m.veredictos.get(clave)) ? AUSENTE : m.veredictos.get(clave),
     }));
     const [fichero, ...resto] = clave.split('::');
     const entrada = { clave, fichero, prueba: resto.join('::'), porZona };
@@ -804,7 +816,8 @@ export function resolverRepesca({ cambian, sinComparar, aSolas }) {
     // Una candidata que lo es POR EL FICHERO se compara por el fichero, y el código de salida
     // llega siempre: si a solas no cae en una zona sí y en otra no, se comparó y es lo mismo.
     if (c.porElFichero) return { estado: 'igual' };
-    return { estado: solo.every((m) => m.veredictos.has(c.clave)) ? 'igual' : 'sin comparar' };
+    // SCRUM-1494: una prueba CORTADA a solas tiene clave y no tiene resultado; no se comparó.
+    return { estado: solo.every((m) => m.veredictos.has(c.clave) && m.veredictos.get(c.clave) !== CORTADA) ? 'igual' : 'sin comparar' };
   };
 
   const porClave = new Map();

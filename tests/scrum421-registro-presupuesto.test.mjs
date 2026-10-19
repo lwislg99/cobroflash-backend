@@ -206,14 +206,20 @@ test('SCRUM-421 · los trece rótulos son EXACTAMENTE los aprobados (regla 30)',
   // entran `btnCobrar` («Cobrar ahora», el rótulo que la pantalla ya pintaba) y `btnNuevoAlbaran`
   // («Nuevo albarán», el firmado en SCRUM-722). Doce − 1 + 2 = trece. Registro en
   // `docs/microcopy/2026-09-21-SCRUM-984-del-presupuesto-al-albaran.md`.
+  //
+  // 14-oct-2026 · SCRUM-1273 (firmado por el orquestador, comentario 19605): `btnBorrar` («Borrar»)
+  // SALE —no existía en ningún sitio, ni ruta ni botón— y entra `btnArchivar` («Archivar»). Siguen
+  // siendo trece. La conducta cambia A PROPÓSITO: se archiva en vez de borrar. Registro en
+  // `docs/microcopy/2026-10-14-SCRUM-1273-archivar-presupuestos.md`.
   const src = fs.readFileSync(REGISTRO, 'utf8');
   const APROBADOS = {
     btnEnviarAprobacion: 'Enviar a aprobación', btnEnviar: 'Enviar al cliente', btnAprobar: 'Aprobar',
     btnRecordar: 'Enviar recordatorio', btnCobrar: 'Cobrar ahora', btnDuplicar: 'Duplicar',
     btnPdf: 'Descargar PDF', btnEditarLineas: 'Editar líneas', btnWhatsApp: 'Enviar por WhatsApp',
     btnNuevoAlbaran: 'Nuevo albarán',
-    btnVerCliente: 'Ver cliente', btnMarcarRechazado: 'Marcar como rechazado', btnBorrar: 'Borrar',
+    btnVerCliente: 'Ver cliente', btnMarcarRechazado: 'Marcar como rechazado', btnArchivar: 'Archivar',
   };
+  assert.equal(/\bbtnBorrar\b/.test(src), false, '🔴 `btnBorrar` volvió a la tabla: lo que se hace es archivar (SCRUM-1273)');
   for (const [id, texto] of Object.entries(APROBADOS)) {
     assert.ok(src.includes(id + ':') && src.includes("'" + texto + "'"),
       `🔴 el rótulo de \`${id}\` no es el aprobado («${texto}»). Un renombre es microcopy nueva.`);

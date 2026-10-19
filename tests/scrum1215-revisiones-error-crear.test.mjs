@@ -66,6 +66,11 @@ async function avisoTrasCrear(alPost) {
   assert.equal(btn.length, 1, 'CIEGO: el admin no ve «Crear revisión»; no hay viaje que medir');
   btn[0].click();
   await new Promise((ok) => setTimeout(ok, 60));
+  // SCRUM-1302p · con la vigente ENVIADA, el primer clic sólo avisa; crea el «Crear revisión» del aviso.
+  const confirmar = todos(r.contenedor).filter((n) => attr(n, 'data-revision-confirmar') != null);
+  assert.equal(confirmar.length, 1, 'CIEGO: el aviso del enlace no trae «Crear revisión»');
+  confirmar[0].click();
+  await new Promise((ok) => setTimeout(ok, 60));
   assert.equal(posts.length, 1, 'CIEGO: el clic no llegó a hacer el POST');
   const avisos = todos(r.contenedor).filter((n) => attr(n, 'data-revision-error') === '1');
   assert.equal(avisos.length, 1, `CIEGO: se esperaba UN aviso de error tras el fallo; hay ${avisos.length}`);

@@ -50,6 +50,32 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: '  if (false) return',
     cae: '🔴 NO_PUDE_MIRAR · ventana ya reiniciada',
   },
+  // SCRUM-999b · la semanal. La primera devuelve el lector de antes (sólo la de 5 h); la segunda, el que
+  // mirase sólo la semanal: por eso hay un test en cada sentido.
+  {
+    fichero: 'scripts/equipo/uso.mjs',
+    de: "  const muerde = semana && semana.used_percentage > cinco.used_percentage ? 'semanal' : '5 h';",
+    a: "  const muerde = '5 h';",
+    cae: '🔴 la SEMANAL al 95 % con la de 5 h al 10 % es AVISO, y nombra la semanal',
+  },
+  {
+    fichero: 'scripts/equipo/uso.mjs',
+    de: "  const muerde = semana && semana.used_percentage > cinco.used_percentage ? 'semanal' : '5 h';",
+    a: "  const muerde = semana ? 'semanal' : '5 h';",
+    cae: '🔴 ESPEJO: la de 5 h al 95 % con la semanal al 5 % es AVISO, y nombra la de 5 h',
+  },
+  {
+    fichero: 'scripts/equipo/uso.mjs',
+    de: '  if (semana.resets_at * 1000 <= ahoraMs) return',
+    a: '  if (false) return',
+    cae: '🔴 NO_PUDE_MIRAR · semanal ya reiniciada',
+  },
+  {
+    fichero: 'scripts/equipo/uso.mjs',
+    de: "  if (!semana) return noPude('sin dato de la ventana semanal",
+    a: "  if (false) return noPude('sin dato de la ventana semanal",
+    cae: '🔴 NO_PUDE_MIRAR · sin dato de la semanal',
+  },
 ];
 
 const raiz = temporal('scrum899d-');
@@ -58,7 +84,8 @@ const MIN = 60 * 1000;
 const RESET = Math.floor(T0 / 1000) + 3 * 3600; // la ventana acaba 3 h después de T0
 
 /** El JSON que Claude Code pasa por stdin al statusLine (forma de 2.1.276). */
-function entradaStatusLine({ sesion = 'sesion-a', apiMs = 12000, usado = 42, reset = RESET, conLimites = true } = {}) {
+function entradaStatusLine({ sesion = 'sesion-a', apiMs = 12000, usado = 42, reset = RESET, conLimites = true,
+  semanal = 10, resetSemanal = reset + 86400, conSemanal = true } = {}) {
   return {
     session_id: sesion,
     version: '2.1.276',
@@ -66,7 +93,7 @@ function entradaStatusLine({ sesion = 'sesion-a', apiMs = 12000, usado = 42, res
     cost: { total_cost_usd: 1.5, total_duration_ms: 90000, total_api_duration_ms: apiMs },
     ...(conLimites && { rate_limits: {
       five_hour: { used_percentage: usado, resets_at: reset },
-      seven_day: { used_percentage: 10, resets_at: reset + 86400 },
+      ...(conSemanal && { seven_day: { used_percentage: semanal, resets_at: resetSemanal } }),
     } }),
   };
 }
@@ -106,6 +133,9 @@ test('CONTROL: una lectura fresca y válida da VERDE — el lector SABE decir ve
     'del futuro (+5 min)': () => juzgar(control, T0 - 5 * MIN),
     'ventana ya reiniciada': () => juzgar(u.registrar(null, entradaStatusLine({ reset: Math.floor(T0 / 1000) + 30 }), T0)),
     'parámetro inválido': () => juzgar(control, T0 + MIN, { maxEdadMin: Number('diez') }),
+    // SCRUM-999b: sin la semanal no se sabe si la cuenta está agotada; con la de 5 h sola, NO es verde.
+    'sin dato de la semanal': () => juzgar(u.registrar(null, entradaStatusLine({ conSemanal: false }), T0)),
+    'semanal ya reiniciada': () => juzgar(u.registrar(null, entradaStatusLine({ resetSemanal: Math.floor(T0 / 1000) + 30 }), T0)),
   };
   const noPudeMirar = casosEscritos(Object.entries(casos), ([nombre, caso]) => `🔴 NO_PUDE_MIRAR · ${nombre}`, ([nombre, caso]) => {
     const r = caso();
@@ -124,6 +154,8 @@ test('CONTROL: una lectura fresca y válida da VERDE — el lector SABE decir ve
   test('🔴 NO_PUDE_MIRAR · del futuro (+5 min)', noPudeMirar(8));
   test('🔴 NO_PUDE_MIRAR · ventana ya reiniciada', noPudeMirar(9));
   test('🔴 NO_PUDE_MIRAR · parámetro inválido', noPudeMirar(10));
+  test('🔴 NO_PUDE_MIRAR · sin dato de la semanal', noPudeMirar(11));
+  test('🔴 NO_PUDE_MIRAR · semanal ya reiniciada', noPudeMirar(12));
   noPudeMirar.todos();
 }
 
@@ -136,6 +168,34 @@ test('NO_PUDE_MIRAR nunca sale con 0, y AVISO tampoco', () => {
 test('a partir del umbral es AVISO', () => {
   assert.equal(juzgar(u.registrar(null, entradaStatusLine({ usado: 85 }), T0)).veredicto, 'AVISO');
   assert.equal(juzgar(u.registrar(null, entradaStatusLine({ usado: 84.9 }), T0)).veredicto, 'VERDE');
+});
+
+// SCRUM-999b · el 15-oct la semanal iba al 89 % y `leer` decía «VERDE 19 %»: sólo juzgaba la de 5 h.
+// El veredicto es el PEOR de las dos ventanas, y `muerde` dice cuál. Los dos sentidos, para que un lector
+// que mire sólo una de las dos caiga en uno de ellos.
+test('🔴 la SEMANAL al 95 % con la de 5 h al 10 % es AVISO, y nombra la semanal', () => {
+  const r = juzgar(u.registrar(null, entradaStatusLine({ usado: 10, semanal: 95 }), T0));
+  assert.equal(r.veredicto, 'AVISO', JSON.stringify(r));
+  assert.equal(r.muerde, 'semanal');
+  assert.equal(r.usado, 95);
+  assert.match(r.motivo, /semanal 95%/);
+});
+
+test('🔴 ESPEJO: la de 5 h al 95 % con la semanal al 5 % es AVISO, y nombra la de 5 h', () => {
+  const r = juzgar(u.registrar(null, entradaStatusLine({ usado: 95, semanal: 5 }), T0));
+  assert.equal(r.veredicto, 'AVISO', JSON.stringify(r));
+  assert.equal(r.muerde, '5 h');
+  assert.equal(r.usado, 95);
+  assert.match(r.motivo, /5 h 95%/);
+});
+
+test('VERDE dice las dos ventanas, y `usado` es el de la que más lleva', () => {
+  const r = juzgar(u.registrar(null, entradaStatusLine({ usado: 35, semanal: 60 }), T0));
+  assert.equal(r.veredicto, 'VERDE', JSON.stringify(r));
+  assert.equal(r.muerde, 'semanal');
+  assert.equal(r.usado, 60);
+  assert.deepEqual([r.cinco_horas.usado, r.semanal.usado], [35, 60]);
+  assert.match(r.motivo, /5 h 35%.*semanal 60%/);
 });
 
 test('🔴 un REPINTADO sin llamada a la API no rejuvenece el dato; una llamada nueva, sí', () => {
@@ -188,6 +248,20 @@ test('POR EFECTO: statusLine → escribir → leer, con el proceso de verdad', (
   const ilegible = correr(['leer', '--fichero', fichero]);
   assert.equal(ilegible.status, 2, ilegible.stdout);
   assert.equal(JSON.parse(ilegible.stdout).veredicto, 'NO_PUDE_MIRAR');
+});
+
+test('🔴 POR EFECTO: la semanal al 95 % y la de 5 h al 10 % → `leer` sale con 1 nombrando la semanal', () => {
+  const fichero = path.join(raiz, 'semanal', 'uso.json');
+  const reset = Math.floor(Date.now() / 1000) + 3600;
+  const e = correr(['escribir', '--fichero', fichero], JSON.stringify(entradaStatusLine({ reset, usado: 10, semanal: 95 })));
+  assert.equal(e.status, 0, e.stderr);
+  // La barra enseña también la semanal: quien la mira ve lo que va a morder.
+  assert.match(e.stdout, /^uso 5h 10% · reinicia \d\d:\d\d · semana 95%/);
+  const l = correr(['leer', '--fichero', fichero]);
+  assert.equal(l.status, 1, l.stdout + l.stderr);
+  const r = JSON.parse(l.stdout);
+  assert.equal(r.veredicto, 'AVISO');
+  assert.equal(r.muerde, 'semanal');
 });
 
 test('escribir con una entrada ilegible no rompe la barra: pinta «sin dato» y sale con 0', () => {

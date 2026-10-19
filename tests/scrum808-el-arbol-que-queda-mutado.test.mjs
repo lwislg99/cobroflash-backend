@@ -29,6 +29,7 @@ import {
   marcarEnVuelo, borrarMarca, restaurarDesdeMarca, restaurarYVerificar,
   redDeSeguridad, marcasHuerfanas, SALIDA_NO_RESTAURADO,
 } from '../scripts/meta-guard-mutaciones.mjs';
+import { apuntarMutacion } from '../scripts/_marca-de-arbol.mjs'; // SCRUM-1178
 import { censar as censarEscritores, analizar as analizarEscritor }
   from '../scripts/censo-escritores-del-arbol.mjs';
 
@@ -51,8 +52,11 @@ test('SCRUM-808 · 🔴 una mutación que sobrevivió a la pasada se REPARA, y s
   const b = banco();
   try {
     marcarEnVuelo([{ ruta: 'victima.mjs', abs: b.abs, ORIGINAL: b.ORIGINAL }], b.dir);
-    // La pasada muere aquí: el fichero queda mutado y la marca sin borrar.
-    fs.writeFileSync(b.abs, 'export const x = 999; // MUTADO\n');
+    // La pasada muere aquí: el fichero queda mutado y la marca sin borrar. La mutación va apuntada,
+    // como la apuntan las dos herramientas (SCRUM-1178: lo que no se apuntó no se pisa).
+    const MUTADO = 'export const x = 999; // MUTADO\n';
+    apuntarMutacion(b.dir, b.abs, MUTADO);
+    fs.writeFileSync(b.abs, MUTADO);
     assert.notEqual(Buffer.compare(fs.readFileSync(b.abs), b.ORIGINAL), 0,
       '🔴 el banco no ha llegado a mutar nada: lo de abajo mediría el vacío.');
 

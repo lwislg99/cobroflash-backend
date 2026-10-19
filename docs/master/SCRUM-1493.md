@@ -70,3 +70,31 @@ El aviso mide 366×42 (una línea) o 366×63 (dos) en móvil; letra 13,5 px, a 8
 
 - Un `PATCH` rechazado con 409 (el parte se firmó en otro sitio) dice lo mismo, «vuelve a intentarlo», y ahí repetir no va a salir nunca. Ya era así antes de este cambio; en «Ordenar» SCRUM-1302 (C) lo resuelve releyendo el parte, y aquí no se ha hecho.
 - Una línea propuesta sin cantidad no entra al añadir, y tras guardar la propuesta se repinta sin ella. Es el diseño (lo dice su aviso «Falta la cantidad»), pero lo dictado de esa línea se va con el repintado.
+
+## SCRUM-1493b · «Añadir al parte» con un 409 relee el parte, como «Ordenar» (S4, 15-oct-2026)
+
+**Medido contra:** `origin/main` = `310721d211be7cdd081003dc02ed987e582d7426` · 2026-10-15T16:21:52Z
+A9: sin fallo que generalice — el rojo se probó con la vista de main antes de darlo por bueno
+
+Carril S4 (`public/dashboard/js/parteDetailView.js`) · rama `scrum-1493b-anadir-409-relee`.
+
+**Skill UI:** no cargada · sin marcado, clases ni estilos: solo qué hace la vista ante un código; la pantalla que sale es la relectura que ya existía.
+
+### El defecto (el «visto de paso» de arriba)
+
+Un `PATCH` de «Añadir al parte» rechazado con 409 decía «No se han podido guardar las líneas — vuelve a intentarlo», y reintentar no iba a funcionar nunca. El único 409 de esa ruta es `parte_locked` (`partes.routes.ts:501`, `permisoDeCampos`): el parte ya no admite líneas, normalmente porque se firmó desde otro sitio.
+
+### Por qué no es estirar una firma
+
+El orquestador (mensaje a la sesión, 15-oct ~16:20Z): un arreglo de COMPORTAMIENTO que reutiliza una forma ya firmada en una situación equivalente lo firma él; c.18491 se queda para «Ordenar». La prueba de la equivalencia es la que pidió: **que releer arregle la pantalla también aquí**. Mismo 409 (`parte_locked`), misma relectura (`renderParteDetailView`), y tras ella la ficha sale firmada, sin «Añadir al parte», sin «Ordenar» y sin casillas: cuenta la verdad, igual que en «Ordenar». El 404 va con él, como en «Ordenar» (conducta 2 de SCRUM-1302 C): la relectura pinta «No se ha podido cargar el parte…», ya firmado. Ningún texto nuevo. 5xx y sin red no cambian: siguen con el aviso de SCRUM-704 y la propuesta en pantalla.
+
+### Verificado, ejecutando
+
+`tests/scrum1493b-anadir-409-relee.test.mjs`, la vista real en el banco con un servidor de `fetch` cuyo 409 firma el parte de verdad.
+- **Rojo** con la vista de `origin/main` (diff 0/9): cae el del 409 y pasa el control (500).
+- **Verde:** 2 de 2, y los 21 de `scrum1493` y `scrum1302c` siguen verdes.
+- **NO medido:** yaqu.app (sin mergear) · la suite completa (la corre el obligatorio).
+
+### (a) «No se ha podido sacar ninguna línea» encima de tres líneas: la condición NO está mal
+
+El orquestador pidió arreglar la condición si miraba lo que no debía, o pasarlo a S1 si el servidor contestaba «ninguna» devolviendo tres. **No es ninguna de las dos**, leído en el código (`ordenarElDictado`, el bloque de SCRUM-1493) y en la fila 1 de la tabla de arriba (navegador, 7-oct): las tres líneas que siguen en pantalla son de un intento **ANTERIOR**, y la respuesta vacía (`propuesta.vacia`) es la del intento **NUEVO**. El servidor no se contradice y la condición mira lo que debe. Quitar el aviso dejaría el segundo «Ordenar» sin ninguna respuesta visible, que es la familia de SCRUM-1302 B. Así que **no se ha tocado**. Si se quiere otra cosa, pide una frase nueva («de este intento no ha salido ninguna») y esa la firma el orquestador, no la escribe S4.

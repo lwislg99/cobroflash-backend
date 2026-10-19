@@ -25,6 +25,7 @@ import { zonaDelMerchant } from '../../../../core/zonaDelMerchant';
 import { textoDeValidez } from '../../../quotes/domain/validez';
 import { numeroQueImprimeElPapel } from '../../../quotes/domain/revision'; // SCRUM-1444: el número de la página es el del papel
 import { sinTildes } from '../../../../core/texto/sinTildes';
+import { tieneVersionMasReciente, fraseDeLaVersionAntigua, ERROR_VERSION_NO_VIGENTE } from '../../../quotes/domain/versionMasReciente'; // SCRUM-1302
 
 type DecisionApiError = { message?: string; error?: string };
 
@@ -62,6 +63,14 @@ function escapandoLoInterpolado(trozos: TemplateStringsArray, ...valores: Array<
  * mismo hecho en la misma página acaban diciendo cosas distintas.
  */
 const CONSEJO_DE_REINTENTAR = 'Inténtalo más tarde.';
+
+/**
+ * SCRUM-1302t · lo que lee el cliente cuando ACEPTAR contesta un 5xx. Antes, el código crudo
+ * (`internal_error`), y a veces con la aceptación ya guardada: el 500 también sale después del commit.
+ * No dice «inténtalo»: repetir algo que puede estar hecho es peor que no saberlo. Volver a abrir el
+ * enlace enseña el estado decidido («Ya aceptaste…»), y eso lo ata el test de SCRUM-1302t.
+ */
+const COPY_RESPUESTA_SIN_CONFIRMAR = 'No hemos podido confirmar tu respuesta. Vuelve a abrir el enlace para ver si se ha guardado.'; // APROBADO · SCRUM-1302 comentario 19719
 
 function renderPage(title: string, body: string, brandColor?: string | null): string {
   return `<!doctype html>
@@ -263,6 +272,28 @@ function condicionesDePago(
   return partes.join(' · ');
 }
 
+/**
+ * SCRUM-1302 · LA PÁGINA DEL ENLACE DE UNA REVISIÓN ANTIGUA. Literales y conducta firmados por el
+ * orquestador por delegación del fundador (SCRUM-1302, c.19454 y c.19475):
+ * `docs/microcopy/2026-10-13-SCRUM-1302-enlace-de-revision-antigua.md`.
+ *
+ * Sólo el aviso, como la de caducado: ni detalle, ni importes, ni firma, ni «Rechazar», ni PDF. Sin
+ * botón y sin emoji que señale a nada, y SIN enlace a la versión nueva: la página no reparte el
+ * enlace de otra revisión, que puede no estar enviada todavía. Por eso la última frase vale en los
+ * dos casos («que te haya enviado…, o pídesela»).
+ */
+function paginaDeVersionAntigua(
+  quote: NonNullable<Awaited<ReturnType<typeof loadQuote>>>,
+  locale: ReturnType<typeof getLocale>,
+  brandColor: string | null,
+): string {
+  const negocio = quote.merchant?.legalName || quote.merchant?.name || 'el profesional';
+  return renderPage(locale.quoteUpdatedTitle, escapandoLoInterpolado`<div class="status-ok" style="text-align:center" data-version-antigua="1">
+    <strong>${locale.quoteHasNewer}</strong><br/>
+    ${fraseDeLaVersionAntigua(negocio)}
+  </div>`, brandColor);
+}
+
 async function loadQuote(token: string) {
   return prisma.quote.findUnique({
     where: { decisionToken: token },
@@ -279,6 +310,20 @@ async function loadQuote(token: string) {
   });
 }
 
+/**
+ * SCRUM-1442 · el importe NETO de una línea (qty × price), o NADA si no es un número.
+ *
+ * Una cabecera de apartado (SCRUM-655) viaja sin `qty` ni `price`, y `undefined * undefined` es
+ * NaN: la página donde firma el cliente pintaba «NaN €». La cabecera pinta su concepto y deja el
+ * importe vacío, que es lo que ya hace la tabla del PDF (`Number.isFinite`). Lo usan las DOS tablas
+ * de esta página —la del presupuesto y la tarjeta de cada opción—, para que no vuelva a quedarse
+ * atrás una de las dos.
+ */
+function importeDeLinea(l: any, fmt: (n: number) => string): string {
+  const neto = l.qty * l.price;
+  return Number.isFinite(neto) ? fmt(neto) : '';
+}
+
 function renderTierCards(tiers: any[], token: string, locale: ReturnType<typeof getLocale>): string {
   return `
     <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:20px" id="tier-cards">
@@ -293,7 +338,7 @@ function renderTierCards(tiers: any[], token: string, locale: ReturnType<typeof 
             ${(tier.lines || []).map((l: any) => `
               <div class="tier-line">
                 <span>${esc(l.concept)}</span>
-                <span>${formatMoneyEs(l.qty * l.price, tier.currency)}</span>
+                <span>${importeDeLinea(l, (n) => formatMoneyEs(n, tier.currency))}</span>
               </div>`).join('')}
           </div>
           <div class="tier-total">${formatMoneyEs(tier.total, tier.currency)}</div>
@@ -403,7 +448,7 @@ function renderQuoteDetail(
           <tr>
             <td><span class="line-icon">${lineIcon(l.concept)}</span>${esc(l.concept)}</td>
             <td>${esc(l.qty)}</td>
-            <td>${money(l.qty * l.price)}</td>
+            <td>${importeDeLinea(l, money)}</td>
           </tr>`).join('')}
         </tbody>
       </table>` : '';
@@ -613,6 +658,13 @@ quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async 
     if (quote) {
       locale = getLocale(quote.merchant?.country);
       brandColor = quote.merchant?.brandColor ?? null;
+      // SCRUM-1302 · hay una versión más reciente: el enlace ya no deja aceptar. Va ANTES que el
+      // caducado (punto 5 de la conducta): si la vieja además caducó, «Pide uno actualizado» sería
+      // falso habiendo ya uno. Sólo con la vieja en `draft`/`sent`/`expired`; una decidida sigue su página
+      // de siempre (punto 6). Si la pregunta falla, lanza: no se pinta el formulario a ciegas.
+      if (await tieneVersionMasReciente(quote, quote.merchant)) {
+        return res.setHeader('Content-Type', 'text/html; charset=utf-8').send(paginaDeVersionAntigua(quote, locale, brandColor));
+      }
       // A16.2 (N3): caducado — copy OFICIAL + reconversión por WhatsApp. Cubre
       // también sent con validUntil pasado (el cron horario aún no barrió).
       if (isQuoteExpired(quote as any)) {
@@ -809,10 +861,19 @@ quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async 
                 '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M.06 24l1.69-6.16a11.87 11.87 0 01-1.59-5.95C.16 5.34 5.5 0 12.06 0a11.82 11.82 0 018.42 3.49 11.82 11.82 0 013.48 8.41c0 6.56-5.34 11.9-11.9 11.9a11.9 11.9 0 01-5.69-1.45L.06 24z"/></svg>' +
                 'Compartir por WhatsApp</a>' +
             '</div>';
-        } else if (res.status === 409 && data.error === '${ERROR_PRESUPUESTO_YA_DECIDIDO}') {
+        } else if (res.status === 409 && (data.error === '${ERROR_PRESUPUESTO_YA_DECIDIDO}' || data.error === '${ERROR_VERSION_NO_VIGENTE}')) {
           // SCRUM-1276 · ya decidido en otra pestaña: se recarga y la página enseña el estado con
           // su texto N3 firmado. Ningún texto nuevo aquí.
+          // SCRUM-1302r · igual si se creó una revisión mientras la página estaba abierta: al
+          // recargar sale el aviso de la versión antigua.
           location.reload();
+        } else if (res.status >= 500) {
+          // SCRUM-1302t · un fallo NUESTRO no dice si la aceptación se guardó: puede haber caído
+          // después del commit. Ni el código crudo ni «inténtalo»: volver al enlace enseña el estado.
+          btn.disabled = false; btn.textContent = 'Firmar y aceptar ${locale.quoteVerb}';
+          const aviso = document.getElementById('sig-error');
+          aviso.textContent = '${COPY_RESPUESTA_SIN_CONFIRMAR}';
+          aviso.style.display = 'block';
         } else {
           btn.disabled = false; btn.textContent = 'Firmar y aceptar ${locale.quoteVerb}';
           // SCRUM-264 · el MENSAJE HUMANO gana al código, igual que en api.js:35-37 (SCRUM-151).
@@ -857,6 +918,11 @@ quoteDecisionLandingRouter.get('/quote/:token/reject', async (req: Request, res:
       // cliente que ya había aceptado podía rechazar desde aquí. La landing principal ya cuenta la
       // verdad con su texto N3 firmado («Ya aceptaste…» / «Rechazaste…»): se le manda allí.
       if (quote.status === 'accepted' || quote.status === 'rejected') {
+        return res.redirect(`/pay/quote/${token}`);
+      }
+      // SCRUM-1302 (punto 7) · una versión antigua tampoco se rechaza desde aquí: la landing cuenta
+      // que hay una más reciente, igual que con las decididas.
+      if (await tieneVersionMasReciente(quote, quote.merchant)) {
         return res.redirect(`/pay/quote/${token}`);
       }
       if (quote.status === 'draft' || quote.status === 'sent') {
@@ -936,7 +1002,8 @@ quoteDecisionLandingRouter.post('/quote/:token/reject', express.urlencoded({ ext
     const json = (await apiResponse.json().catch(() => null)) as DecisionApiError | null;
     // SCRUM-1276 · ya decidido (p. ej. aceptado en otra pestaña): se enseña el estado con su texto
     // N3 firmado en vez de un código crudo. Sin copy nuevo.
-    if (apiResponse.status === 409 && json?.error === ERROR_PRESUPUESTO_YA_DECIDIDO) {
+    // SCRUM-1302r · y si entre tanto se creó una revisión, la landing enseña el aviso de la antigua.
+    if (apiResponse.status === 409 && (json?.error === ERROR_PRESUPUESTO_YA_DECIDIDO || json?.error === ERROR_VERSION_NO_VIGENTE)) {
       return res.redirect(303, `/pay/quote/${encodeURIComponent(token)}`);
     }
     if (!apiResponse.ok) {

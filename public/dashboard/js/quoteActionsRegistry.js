@@ -58,7 +58,11 @@ const QUOTE_ACTION_REGISTRY = [
   // ── El resto, al «⋮» (regla 3). ────────────────────────────────────────────────────────────
   { id: 'btnVerCliente',       destinos: { draft: 'overflow',   pending_approval: 'overflow',   sent: 'overflow',    accepted: 'overflow',  rejected: 'overflow',  expired: 'overflow' } },
   { id: 'btnMarcarRechazado',  destinos: { draft: 'oculta',     pending_approval: 'oculta',     sent: 'overflow',    accepted: 'oculta',    rejected: 'oculta',    expired: 'oculta' } },
-  { id: 'btnBorrar',           destinos: { draft: 'overflow',   pending_approval: 'overflow',   sent: 'oculta',      accepted: 'oculta',    rejected: 'overflow',  expired: 'overflow' } },
+  // SCRUM-1273 · aquí estaba la fila «Borrar», que no existía en ningún sitio: ni ruta ni botón.
+  // Se ARCHIVA en vez de borrar (decisión del orquestador, c.17511): un borrador puede haber salido
+  // de casa por el enlace copiado a mano. Sólo en `draft`, `rejected` y `expired`; el servidor
+  // impide el resto con un 409. Archivar saca el presupuesto de la LISTA y nada más (c.19605).
+  { id: 'btnArchivar',         destinos: { draft: 'overflow',   pending_approval: 'oculta',     sent: 'oculta',      accepted: 'oculta',    rejected: 'overflow',  expired: 'overflow' } },
 ];
 
 // ── RÓTULOS · REGLA 30: NINGUNO ESTÁ APROBADO ────────────────────────────────────────────────
@@ -85,14 +89,26 @@ const QUOTE_ACTION_ROTULOS = {
   btnNuevoAlbaran:     'Nuevo albarán',
   btnVerCliente:       'Ver cliente',
   btnMarcarRechazado:  'Marcar como rechazado',
-  btnBorrar:           'Borrar',
+  btnArchivar:         'Archivar', // APROBADO por el orquestador, SCRUM-1273 comentario 19605 (T1)
 };
+
+/**
+ * Destino de una acción del presupuesto en un estado. Devuelve null si la acción no está en la
+ * tabla o el estado no es uno de los seis: la pantalla que pregunta falla cerrada (no la pinta).
+ * SCRUM-1273 · lo pregunta la ficha para «Archivar»: la respuesta vive aquí, no en la vista.
+ */
+function destinoAccionPresupuesto(id, estado) {
+  const a = QUOTE_ACTION_REGISTRY.find((x) => x.id === id);
+  if (!a || !QUOTE_STATES.includes(estado)) return null;
+  return a.destinos[estado] || null;
+}
 
 if (typeof window !== 'undefined') {
   window.QUOTE_ACTION_REGISTRY = QUOTE_ACTION_REGISTRY;
   window.QUOTE_STATES = QUOTE_STATES;
   window.QUOTE_ACTION_ROTULOS = QUOTE_ACTION_ROTULOS;
+  window.destinoAccionPresupuesto = destinoAccionPresupuesto;
 }
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { QUOTE_ACTION_REGISTRY, QUOTE_STATES, QUOTE_ACTION_ROTULOS };
+  module.exports = { QUOTE_ACTION_REGISTRY, QUOTE_STATES, QUOTE_ACTION_ROTULOS, destinoAccionPresupuesto };
 }

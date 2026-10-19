@@ -121,3 +121,219 @@ verificar todavía — no tratar como diagnóstico:
 abierto: la próxima sesión que mida, antes de tocar nada, remide con N mayor y, si el rojo persiste, corre el
 candidato 1 aislado del 2 y el 3 (medir `norma.mjs --arranque` a secas frente a un arranque real completo, en
 dos sesiones de control) en vez de tocar los tres a la vez.
+
+## SCRUM-996d · la A1 deja de mandar `prisma generate` cada tanda (Sesión 0)
+
+**Medido contra:** `origin/main` = `73e41ab00f727fae5c6c8f1715d6eb6749133502` · 2026-10-15T16:06:31Z
+
+Del apartado 5 de 996c (de la S5, PR #2477 al escribir esto): la A1 abría con `./node_modules/.bin/prisma
+generate` «cada tanda, antes de nada», y §10 de `trampas-del-entorno.md` dice que el cliente compartido lo
+regenera sólo el orquestador, con el equipo parado. Las dos cosas se muerden: el 14-oct se lanzó 9 veces, una
+desde `s2-14oct` (junction al compartido) con la salida a `$null`.
+
+- **La A1 nueva abre con `node scripts/_prisma-client-guard.mjs`**, que MIRA: `✔` → nada; rojo → se lee entero.
+  Causa A (tu rama añade columnas) es correcta; cliente viejo con árbol al día → se regenera sólo con un
+  `node_modules` propio (`npm run topologia`) y leyendo la salida; si cuelga del compartido, al orquestador (§10).
+- Lleva el porqué con la cifra (9 veces el 14-oct, una con la salida a `$null`), para que no se pode.
+- §10 no se repite: se enlaza. Lo que pasó al ejecutarlo lo apunta la S5 en SCRUM-429c (PR #2476).
+- **Control positivo del guard antes de escribirlo en la norma:** `✔` EXIT 0 desde `wt-s0-15oct` (junction al
+  compartido, en `origin/main`); desde el árbol compartido (`scrum-1082…`) rojo con `Merchant.invoiceStartSeq`,
+  EXIT 1. Las dos cosas que la A1 nueva dice que pasan.
+- Test: `tests/scrum996d-a1-no-regenera-a-ciegas.test.mjs` (el bloque de órdenes de la A1 no lleva `generate`
+  y sí el guard). Rojo comprobado aplicando su mutación declarada: cae, exit 1, y el fichero queda restaurado.
+  Con los otros 5 ficheros de tests que leen las normas: 53 de 53, EXIT 0.
+
+**Visto de paso, de otros carriles (se reporta, no se toca):**
+- `scripts/_prisma-client-guard.mjs:332` sigue diciendo «Arreglo, en los dos casos: `npm run prisma:generate`
+  (desde ESTE worktree)». En la causa (B) eso es justo lo que §10 prohíbe. Es de la S5.
+- `CLAUDE.md` (Comandos) dice «en Windows, matar node antes si el DLL queda bloqueado»; §10 dice «NO matar
+  todos los `node`: Claude Code también corre en `node`». `CLAUDE.md` es de un jefe; la S0 propone el cambio.
+
+### Las dos propuestas de 996c §4 que son de la S0: decididas, y HECHAS las dos
+
+**1 · Arrancar con `norma.mjs --arranque`: SÍ.** Con la condición que la S5 ponía: el índice tiene que decir
+CUÁNDO hace falta cada sección de fuera. No se toca `norma.mjs` (es de la S5): la tabla «antes de… | traes» va
+al final de la A1, que el arranque SÍ imprime, y la cabecera del fichero dice «no se leen enteras». El test
+cae si una sección queda fuera del arranque sin su fila, o si la tabla manda traer una que no existe.
+- ⚠️ **Esto no basta para que se use.** Lo que hace que las sesiones lean el fichero entero es el arranque que
+  les manda leerlo: `CLAUDE.md` («LECTURA OBLIGATORIA, cada tanda: `00-normas-comunes.md`»), la skill
+  `cerebro-yaqu` y el prompt de lanzamiento. `CLAUDE.md` y `.claude/**` son de un jefe; la S0 propone el cambio
+  (en la entrega de este ticket, con el literal).
+
+**2 · Sacar de la A19 el porqué del 300k: SÍ, pero sin fichero nuevo.** Se mueve DENTRO de la A19, detrás del
+marcador «Cuarta versión», que `norma.mjs` ya corta: no lo lee el arranque y `norma.mjs A19 --entera` lo trae. En
+su sitio queda un párrafo que dice dónde está y que lo autorizó el fundador. El texto movido es el mismo:
+comprobado sobre el diff, de las 49 líneas no vacías quitadas no falta ninguna entre las añadidas. Son 55
+líneas, **4.811 B**, no los ~6,5 KB estimados en 996c.
+- Los cuatro tests que atan la A19 no atan ese bloque: `scrum1484c` ata los dos números y las dos frases (se
+  quedan arriba), `scrum996` el marcador y una línea de la historia, `scrum899c` y `scrum1070` el código.
+
+**Cifras, de `norma.mjs` sobre este árbol:** el arranque pasa de 39.498 B a **38.205 B** (lo que añade la A1, la
+tabla y el `generate` reescrito, se come parte de lo que sale de la A19). Frente a leer el fichero entero, que
+ahora pesa 71.167 B, el arranque es el **54 %**: ~33 KB menos, ~15k tokens por sesión a 2,2 B/token. Es un
+cálculo por bytes, no un relevo medido.
+
+**Mi rojo en el primer CI (job 116532845442, 16:24Z):** las dos `MUTACIONES_QUE_ME_TUMBAN` del test llevaban
+`fichero: NORMAS` (una constante) y el meta-guard sólo evalúa literales: 3 fallos (`scrum745`, `scrum757`,
+`scrum765`), 11.483 pass. Arreglado con el literal; esos tres más el mío, 31 de 31, y `--solo-censo` EXIT 0. Lo
+cazó el guard que existe para eso: no hace falta norma nueva.
+
+A9: comprobación → `tests/scrum996d-a1-no-regenera-a-ciegas.test.mjs`
+## SCRUM-996c · el arranque medido el 15-oct, y qué se puede quitar (Sesión 5)
+
+**Medido contra:** `origin/main` = `73e41ab00f727fae5c6c8f1715d6eb6749133502` · 2026-10-15T15:42:24Z
+
+Encargo del orquestador: medir cuánto pesa hoy el arranque, con cifras, y proponer qué quitar o partir sin perder
+lo que impide un fallo, declarando el riesgo. **Aquí sólo se mide y se propone: no se ha cambiado nada.**
+
+Instrumentos: `gasto-arranque.mjs sesiones` y `arranque <nombre>` (los de este ticket) y dos sondas sueltas de
+sólo lectura sobre los mismos jsonl (adjuntos del turno 1 por tipo y modelo; `tool_use` con `prisma generate`).
+Población: 33 sesiones con ≥ 8 turnos en 48 h; las de hoy son 6 (`s0`…`s5-15oct`).
+
+### 1 · El suelo (U1) se mueve ~11k de un día a otro, y no por nada nuestro
+
+| día | sesiones | U1 (turno 1) |
+|---|---|---|
+| 13-oct | 32 | 69.114 – 75.209 |
+| 14-oct | 27 | 58.433 – 61.307 |
+| 15-oct | 6 | 69.755 – 71.408 |
+
+Mismo modelo (`claude-opus-5-5`) y misma versión (`2.1.299`) el 14 y el 15. Y del 14 al 15 los adjuntos que el
+jsonl registra antes del turno 1 pesan lo mismo, byte a byte (`skill_listing` 63.274 B de JSON, agentes 7.773 B,
+`session_context` 7.393 B, `prompt_snapshot` 11.241 B, instrucciones 66-69 KB, prompt 6,4-8,4 mil caracteres).
+**Así que la diferencia no está en nada que el jsonl registre. La causa NO la sé.** Hipótesis sin verificar: el
+system prompt o las herramientas que se cargan en línea, que no quedan en el jsonl. Los adjuntos del 13-oct no
+los he desglosado. Consecuencia práctica: comparar U8 entre días mezcla nuestro efecto con ~11k que no son nuestros.
+
+### 2 · Lo que SÍ controlamos dentro del suelo (turno 1 de `s5-15oct`, bytes de contenido)
+
+| pieza | bytes | dueño |
+|---|---|---|
+| `MEMORY.md` (índice de la memoria) | 18.912 | orquestador |
+| `CLAUDE.md` del árbol compartido (va en `scrum-1082`, es el del 17-sep) | 13.304 | — |
+| lista de skills, total | 30.044 | — |
+| · de ella, `unity:*` (plugin de otro proyecto) | 14.683 | fundador |
+| · de ella, `badcops-team:*` (plugin de otro proyecto) | 1.103 | fundador |
+| lista de agentes (incluye 2 de `badcops-team`) | 3.726 | fundador |
+
+Esto va en el contexto de CADA turno de CADA sesión, no sólo en el primero.
+
+### 3 · La lectura del arranque: las normas se leen ENTERAS
+
+U8 mediano de hoy **117.261** y lectura **21,2 %** del contexto (N=6). Contra el objetivo recalibrado por el
+orquestador el 25-sep (comentario 16922: U8 ≤ 120.000, lectura ≤ 15 %): **U8 cumple por poco, la lectura no.**
+*(`gasto-arranque.mjs` sigue imprimiendo el objetivo viejo, 90.000 / 10 %: nadie le cambió la constante.)*
+
+`arranque s0-15oct`, `s1-15oct` y `s4-15oct`: **las tres leen `00-normas-comunes.md` entero**, en dos `Read`
+(47.869 B + 23.287 B de resultado). En `s4-15oct` eso son Δ 22.045 + 10.840 = **32.885 tokens, el 71 % de toda
+su lectura de arranque** (2,16 B/token: cuadra con el 2,2 de arriba). **Ninguna usa `norma.mjs --arranque`.**
+
+| | 21-sep (este ticket) | 15-oct |
+|---|---|---|
+| `00-normas-comunes.md` | 51.780 B | 67.208 B (+30 %) |
+| `norma.mjs --arranque` | 23.626 B | 41.329 B (+75 %) |
+| A19 sola | 6,4 KB (SCRUM-1070) | 16.614 B (el 25 % del fichero) |
+
+De la A19, las líneas 610-672 (~6,5 KB) son **el porqué** del umbral de 300k: la medición del 6-oct, el coste
+simulado, quién lo autorizó y el gemelo de código. La norma en sí (tres casos, tres casillas, 300k/500k) cabe en
+unas 40 líneas.
+
+### 4 · Propuesta, de más a menos ahorro. Lo que se quita es lo que la siguiente sesión NO va a saber
+
+| # | qué | ahorro por sesión | riesgo (lo que se pierde) | quién decide |
+|---|---|---|---|---|
+| 1 | El arranque lee `norma.mjs --arranque`, no el fichero entero (A1 y la línea de `CLAUDE.md`) | −25,9 KB ≈ **−12k tokens** de lectura | Las 11 secciones de fuera (A5, A6, A10-A12, A15, A17, A18, A21, A22, A23) sólo llegan si la sesión las pide. El índice da título y tamaño, **no cuándo hace falta cada una**: quien escriba un guard sin leer A23, o un carácter de control sin A22, repite esos fallos. Para mitigarlo, cada línea del índice diría su disparador («antes de escribir un guard»). | S0 (normas), orquestador |
+| 2 | Sacar de A19 el porqué del 300k a un fichero propio que A19 enlace | ≈ −6,5 KB ≈ **−3k tokens** (dentro del arranque) | Quien quiera mover el número no ve las cifras sin abrir el enlace. Y hay cuatro tests que atan texto de A19 (`scrum1484c`, `scrum899c`, `scrum1070`, `scrum996`): se tocan en el mismo PR. | S0 |
+| 3 | Desactivar `unity` y `badcops-team` (y el MCP `blender`) **sólo para este proyecto**, en su `.claude/settings.json` (`enabledPlugins` a `false`) | 15,8 KB de skills en inglés, más 2 agentes y el bloque de reglas de Bad Cops ≈ **−4k tokens en CADA turno** (es suelo, no lectura) | Ninguno para YaQu. Y quita una instrucción equivocada: hoy el system prompt de cada sesión de YaQu manda usar `badcops-team:revision-antes-de-push` antes de cada push. **No he probado que el `false` del proyecto gane al `true` del usuario**: es `.claude/*` (regla 36) y no lo toco. | fundador |
+| 4 | Podar `MEMORY.md` | recortar las líneas largas da poco: sólo 25 de 102 pasan de 220 B, con 1.351 B de exceso (≈ −0,6k) | Lo que sale del índice no se recuerda. La palanca real es quitar líneas superadas, y eso es criterio, no tijera. | orquestador |
+
+**Lo que corrige esto de lo que había escrito:** el comentario 16988 (25-sep) dice que «desde el repo no hay
+palanca» sobre la lista de skills. Era cierto para las skills de Anthropic. **No lo es para `unity` ni para
+`badcops-team`**, que están en `enabledPlugins` del usuario desde el 6 y el 9-oct.
+
+### 5 · Hallazgo de paso: la A1 manda regenerar Prisma, y §10 dice lo contrario
+
+La A1 abre con `./node_modules/.bin/prisma generate` «cada tanda, antes de nada». `trampas-del-entorno.md` §10
+(SCRUM-429b) dice que el cliente compartido lo regenera sólo el orquestador, con el equipo parado. **Se ejecuta:**
+la sonda contó 9 `generate` lanzados el 14-oct por `s1` (7, en árboles con `node_modules` privado, `s1-zona`),
+`s4` (1, `node_modules` propio) y `s2-14octa` (1, desde `s2-14oct`, que **cuelga del compartido por junction**,
+con la salida a `$null`). **Si ese último cambió el cliente compartido no lo he medido.** Hoy (15-oct) ninguna
+sesión lo ha ejecutado. Propuesta a la S0: quitar el `generate` de la A1 y poner en su lugar
+`node scripts/_prisma-client-guard.mjs` y un enlace a §10.
+
+### 6 · ¿996 y 1070 son el mismo ticket?
+
+**No del todo.** 1070 es el estudio general del gasto: el relevo (hecho, y superado por los 300k de SCRUM-1479),
+más el índice del código y `estado.mjs`, que su propia tabla deja con payback de > 15 y ~8 relevos y que nadie ha
+construido. Lo que se solapa, el arranque y `MEMORY.md` (sus palancas 2 y 3), es justo lo que lleva 996. Mi
+propuesta: 996 sigue siendo el hilo del arranque, y 1070 se cierra con su resto declarado como «no se construye».
+Lo decide el orquestador.
+
+### No comprobado, y lo mío (A9)
+
+- La causa del vaivén de ~11k en U1 (apartado 1).
+- El ahorro de las propuestas 1-3 está calculado por bytes, no medido con un relevo que las aplique.
+- **Esta sesión no ha leído `00-normas-comunes.md` entero en esta tanda**: sólo la A1 y la A19, al medirlas.
+- Contexto de esta sesión al escribir esto: ~200k.
+
+A9: sin fallo que generalice — ticket de sólo medición y propuesta (un único .md, sin código ni camino de emisión tocado); lo no comprobado queda declarado arriba, y la corrección al comentario 16988 va en el texto del apartado 4.
+
+## SCRUM-996e · la lectura de arranque MEDIDA con `--arranque` en uso: 18,5 %, y el 6-7 % de dos sesiones es del instrumento (16-oct-2026, Sesión 0)
+
+**Medido contra:** `origin/main` = `48fc00f6a90089b0f172b58c49413d889288bec0` · 2026-10-16T11:05:37Z (`gh api -i zen`)
+
+A9: sin fallo que generalice — tramo de sólo medición; el defecto del instrumento es de S5 (`scripts/equipo/**`) y se reporta, no se arregla aquí.
+
+Encargo del orquestador (16-oct): 996 se cierra si la LECTURA de arranque baja del 15 %, medida (no calculada) con
+`gasto-arranque` sobre las sesiones de hoy, que ya arrancan con `norma.mjs --arranque` (#2502). Y comprobar antes que
+el instrumento no imprime cifras fijas.
+
+**1 · La cifra.** `node scripts/equipo/gasto-arranque.mjs sesiones --desde 2026-10-16T10:00:00Z --min-turnos 8`
+(antes de las 11:19:35Z, hora de GitHub leída después), sobre una población de 455 `state.json`, 22 con actividad y **6 con ≥ 8 turnos** (`s0…s5-16oct`):
+
+| sesión | turnos | U1 | U8 | lectura | % |
+|---|---|---|---|---|---|
+| s1 | 54 | 68.439 | 101.626 | 33.187 | 19,6 |
+| s0 | 58 | 66.872 | 104.354 | 37.482 | 24,4 |
+| s2 | 51 | 67.862 | 104.210 | 36.348 | 24,5 |
+| s4 | 48 | 67.807 | 103.386 | 35.579 | 22,9 |
+| s5 | 44 | 69.594 | 78.343 | 8.749 | 6,1 |
+| s3 | 43 | 67.613 | 76.642 | 9.029 | 6,8 |
+
+**TOTAL: lectura 18,5 %** (objetivo del ticket ≤ 10 %; el del orquestador, < 15 %) · U8 mediano **102.506**
+(≤ 90.000) · `NO CUMPLE` · EXIT 1. Ayer (996c): 21,2 % y U8 117.261, también con N=6.
+
+**2 · El instrumento, comprobado con una sonda independiente** (un script de 20 líneas que no reutiliza nada de
+`gasto-arranque`: dedup por `message.id`, `input + cache_read + cache_creation`). Sobre mi propio jsonl da U1=66.872,
+U8=104.354, lectura=37.482 y 24,3 %: **los mismos números**. La cifra por sesión cambia de una sesión a otra, así que no
+imprime nada fijo. Los «90k/10 %» que vio la S5 son los OBJETIVOS, que salen en la línea del criterio. Y el «% del
+contexto» es `lectura × (turnos − 8) / Σcontexto`: la lectura que se vuelve a pagar en cada turno posterior. Por eso
+baja a medida que la sesión crece, y sólo se compara entre poblaciones con un número de turnos parecido.
+
+**3 · 🔴 Defecto del instrumento: la lectura que se hace DESPUÉS del turno 8 no la cuenta.** El bloque de
+`norma.mjs --arranque` (40.954 B) es un salto de **~19,7k tokens en un solo turno**, y ese salto se ve en las seis:
+
+| sesión | turno del salto | Δ |
+|---|---|---|
+| s0 | 5 | 19.678 |
+| s1 | 6 | 21.430 |
+| s2 | 5 | 19.781 |
+| s4 | 5 | 19.730 |
+| s3 | **24** | 19.730 |
+| s5 | **21** | 19.735 |
+
+s3 y s5 leyeron las normas después del turno 8, así que su 6-7 % es U8 cortando antes de la lectura, no un arranque
+más barato. Si se les suma el salto, quedan en ~21,6 % y ~19,3 %: **las seis por encima del 15 %**. Una sesión que lee
+tarde parece más barata: es la forma de «un instrumento que acierta por suerte». Es de S5 (`scripts/equipo/**`):
+queda nombrado aquí y no se toca.
+
+**4 · Lo que sí bajó, medido y no calculado.** La lectura de las normas pasó de **32.885 tokens** (996c, s4-15oct,
+el fichero entero más su resultado) a **~19,7k** hoy, en un solo turno: unos **13k menos por sesión**. El total no baja
+del 15 % porque la lectura de hoy, ~33-37k en las cuatro que leyeron antes del turno 8, lleva además el traspaso, la
+ficha del puesto, `ya-esta` y el propio encargo.
+
+**5 · Y algo que el instrumento no ve.** El suelo (U1, ~67-70k, el 53,5 % del contexto) lleva el `CLAUDE.md` FÓSIL del
+árbol compartido: las seis sesiones de hoy arrancan con `cwd` en él (1300b). No he medido cuánto pesa ese fichero
+frente al de `main`.
+
+**Veredicto: 996 sigue ABIERTO.** 18,5 % medido, 6 de 6 por encima del 15 % al corregir el corte de U8.

@@ -69,7 +69,9 @@ jobs:
           BASE: ${{ github.base_ref }}
         run: |
           # `set -u` y `pipefail` sí; `set -e` NO: aquí ningún fallo puede tumbar el job.
-          set -uo pipefail
+          # Y NO basta con no escribirlo: Actions invoca el paso con `bash -e {0}` (medido en el
+          # log de la corrida 35366350410, SCRUM-1123c). Por eso se QUITA a mano (SCRUM-1434).
+          set +e -uo pipefail
 
           resumen() { echo "$1" >> "$GITHUB_STEP_SUMMARY"; }
           problema=""
@@ -110,18 +112,30 @@ jobs:
 
           # ── 4. Comentario: uno por PR, actualizado. Nunca uno por push. ─────────────────
           if [ -s informe.md ] && [ -n "${PR:-}" ]; then
-            ID=$(gh api "repos/$REPO/issues/$PR/comments" --paginate \
-                   --jq '.[] | select(.body | contains("<!-- yaqu:zona-roja -->")) | .id' \
-                 2>/dev/null | head -1)
-            if [ -n "$ID" ]; then
-              gh api -X PATCH "repos/$REPO/issues/comments/$ID" -F body=@informe.md > /dev/null \
-                && echo "Comentario actualizado ($ID)." \
-                || resumen "_(no pude actualizar el comentario; el aviso está aquí arriba)_"
-            else
-              gh api -X POST "repos/$REPO/issues/$PR/comments" -F body=@informe.md > /dev/null \
-                && echo "Comentario creado." \
-                || resumen "_(no pude crear el comentario; el aviso está aquí arriba)_"
+            # SCRUM-1434 · leer y elegir, separados. Era `ID=$(gh api … | head -1)`: con el `-e`
+            # de Actions y el `pipefail` de arriba, un `gh` caído tumbaba el paso antes del
+            # `exit 0`. Y «no pude buscarlo» NO es «no hay ninguno»: `gh` deja el cuerpo del error
+            # en stdout (SCRUM-853), y leído como id daba un PATCH a ciegas; leído como vacío, un
+            # comentario NUEVO por push. Sólo un número es un id; lo demás es «no lo sé».
+            if ! IDS="$(gh api "repos/$REPO/issues/$PR/comments" --paginate \
+                   --jq '.[] | select(.body | contains("<!-- yaqu:zona-roja -->")) | .id' 2>/dev/null)"; then
+              IDS="?"
             fi
+            ID="${IDS%%$'\n'*}"
+            case "$ID" in
+              '')
+                gh api -X POST "repos/$REPO/issues/$PR/comments" -F body=@informe.md > /dev/null \
+                  && echo "Comentario creado." \
+                  || resumen "_(no pude crear el comentario; el aviso está aquí arriba)_" ;;
+              *[!0-9]*)
+                echo "::warning title=Zona roja::no pude buscar el comentario de este PR, así que no lo he creado ni actualizado (a ciegas se duplicaría). El aviso está en el resumen del job."
+                resumen ""
+                resumen "_(no pude buscar el comentario de este PR, así que no lo he creado ni actualizado: a ciegas se duplicaría. El aviso es el de aquí arriba)_" ;;
+              *)
+                gh api -X PATCH "repos/$REPO/issues/comments/$ID" -F body=@informe.md > /dev/null \
+                  && echo "Comentario actualizado ($ID)." \
+                  || resumen "_(no pude actualizar el comentario; el aviso está aquí arriba)_" ;;
+            esac
           fi
 
           # Pase lo que pase: verde. Si sale rojo, no es un aviso.

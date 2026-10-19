@@ -178,3 +178,46 @@ se comprueba. En Jira todas las sesiones firman con la misma cuenta.
 El texto nuevo no se ve en producción hasta que alguna pantalla monte la pieza (J2) y haya rutas
 (S1). Al desplegar esta rama lo que se puede comprobar es que `clienteVolverALlamar.TEXTOS.noMarcado`
 existe en el panel.
+
+## SCRUM-1056d · los dos avisos de fallo acaban en «Inténtalo de nuevo.» (14-oct, S2)
+
+**Medido contra:** `origin/main` = `ebe2b932c0a4e07352516487df5146cd1a37abfc` · 2026-10-14T09:16:06Z
+
+A9: comprobación → `tests/scrum1056b-volver-a-llamar-la-pieza.test.mjs`
+
+**Sesión:** S2 (`s2-14oct`, sesión `c92d5545`) · carril: `public/**` es S2.
+**Skill UI:** no cargada · cambia el final de dos literales; ni dibujo, ni clases, ni conducta.
+Sección AÑADIDA: lo de arriba no se toca.
+
+**La corrección es del ORQUESTADOR, no de esta sesión.** Firmó B12 y B15 el 13-oct con «Inténtalo
+otra vez.» antes de fijar la forma de la casa, «Inténtalo de nuevo.» (SCRUM-1215 comentario 19460).
+Lo corrige hoy, cuando nadie puede leerlos todavía: la pieza sigue sin montar en ninguna pantalla
+(en `main` sólo la nombran `public/dashboard/index.html:255`, que la carga, y `public/sw.js:44`).
+
+**Texto y firma.** «No se ha podido guardar la llamada. Inténtalo de nuevo.» (B12) y «No se ha podido
+marcar como hecha. Inténtalo de nuevo.» (B15), del orquestador por delegación: SCRUM-1056 comentario
+19649. Registro: `docs/microcopy/2026-10-14-SCRUM-1056-intentalo-de-nuevo.md`. Las dos fichas del
+13-oct no se tocan (README de `docs/microcopy/`); sus dos citas viejas pasan a `APARCADOS` de
+`tests/scrum514-aprobado-y-aplicado.test.mjs` como «SUSTITUIDO POR UNA FIRMA POSTERIOR», que es como
+la casa ya trata una ranura que se vuelve a firmar (SCRUM-915d, SCRUM-1257d).
+
+**Desviación declarada.** Como en 1056c, la firma no la escribió el orquestador en Jira: llegó en el
+encargo de arranque de esta sesión y la transcribí letra por letra en c.19649, con el sitio donde se
+comprueba. En Jira todas las sesiones firman con la misma cuenta.
+
+### Pruebas de SCRUM-1056d
+
+- `tests/scrum1056b-volver-a-llamar-la-pieza.test.mjs`: 15 de 15, con los dos literales nuevos.
+- **Mutantes** (`evidencias/SCRUM-1056/salida-1056d-mutantes.txt`; base sin mutar 15 de 15): diecisiete,
+  mueren diecisiete. **El control positivo del encargo** («con el texto viejo, se vuelve a ver») son
+  M16 y M17: cada uno devuelve un aviso a «Inténtalo otra vez.» y el test cae. M16 antes comprobaba lo
+  contrario (que no se colara «de nuevo», la firma retirada en c.19453): se ha dado la vuelta.
+- **Recuento de la casa** (el guion de SCRUM-1215, `evidencias/SCRUM-1215/reintentos/reintentos.mjs`,
+  sobre esta rama; `evidencias/SCRUM-1056/salida-1056d-reintentos.txt`): «inténtalo de nuevo» 26 veces en
+  12 ficheros, «inténtalo otra vez» 5 en 5. Su control positivo ve en esta pieza las dos líneas nuevas.
+- **Dirigida, a mano:** los 160 ficheros de `tests/` que leen `docs/microcopy/`, las evidencias o la
+  pieza, o nombran la forma de la casa, tras mergear `origin/main` (`79531cf8`): 1.596 tests, 0 rojos,
+  17 saltos declarados. Antes de arreglarlos dio 3 rojos, míos: `scrum514` (las citas viejas sin aparcar),
+  `scrum709` (la ficha nueva nombraba a las viejas por su fichero) y `scrum811c` (faltaba esta sección).
+- 🔴 **Sin navegador:** con la pieza sin montar, en yaqu.app lo único que se puede comprobar al
+  desplegar es `clienteVolverALlamar.TEXTOS.noGuardado` y `.noMarcado` en la consola.

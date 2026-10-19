@@ -1,0 +1,29 @@
+ARBOL · HEAD 221d20978c45d84abcf12ccc7485a8b6f7c187d8
+
+BASE (sin mutar)
+   numstat: (sin diferencias)
+   exit 0 · tests 11 · pass 11 · fail 0 · caen: ninguno
+
+M · vuelta al caso M5: la firma del fundador sale `aprobada` a secas y no declara nada
+   numstat: 2	2	tests/_microcopy-aprobada.mjs
+   exit 1 · tests 11 · pass 4 · fail 7 · caen: 1546c·1, 1546c·2, 1546c·3, 997d·1, 997d·3, 997d·4, 997d·5
+
+N · la firma del fundador sale sin comprobar pero CALLA qué no se ha comprobado
+   numstat: 1	1	tests/_microcopy-aprobada.mjs
+   exit 1 · tests 11 · pass 7 · fail 4 · caen: 1546c·1, 997d·2, 997d·3, 997d·5
+
+O · el oráculo rechaza un ticket imposible en la firma del fundador (la declaración 1 dejaría de ser cierta)
+   numstat: 1	1	tests/_microcopy-aprobada.mjs
+   exit 1 · tests 11 · pass 8 · fail 3 · caen: 1546c·1, 1546c·2, 1546c·3
+
+P · el oráculo pide que la ficha esté en git (la declaración 2 dejaría de ser cierta)
+   numstat: 1	1	tests/_microcopy-aprobada.mjs
+   exit 1 · tests 11 · pass 5 · fail 6 · caen: 1546c·1, 1546c·2, 1546c·3, 997d·3, 997d·4, 997d·5
+
+Q · el registro congelado también sale sin comprobar (ninguno quedaría `aprobada` a secas)
+   numstat: 1	1	tests/_microcopy-aprobada.mjs
+   exit 1 · tests 11 · pass 8 · fail 3 · caen: 997d·1, 997d·2, 997d·5
+
+RESTAURADO · git status --porcelain: (limpio)
+MUTANTES 5 · fuera de lo esperado 0
+EXIT=0

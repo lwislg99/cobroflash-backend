@@ -233,3 +233,43 @@ La fila 9 la cierra SCRUM-1489: la ruta pide el recorte a las dos puertas (`wher
 `whereFacturasVisibles`) y lo pone en `AND` en sus consultas de presupuestos y de facturas. Los
 clientes que devuelve no se recortan (la cartera entera ya es del Técnico por `GET /admin/customers`).
 Medición, mutantes y lo que queda sin ver en yaqu.app: `docs/master/SCRUM-1489.md`.
+
+## SCRUM-1390b · «Trabajo ajeno — 1 ruta»: `GET /admin/jobs/:id/ics`
+
+[Anexado por S1, equipo de Luis, el 19-oct-2026 a las 07:33Z (`Date:` de GitHub), sobre `origin/main`
+`1edb5ce43cc9da8b1e0dc6e0477557c9cb5e0960`. No toca nada de lo de arriba. Encargo del orquestador
+(`cobroflash-backend-86`), tras volver a salir en la sonda de frontera de S3 (SCRUM-1516, eje del rol:
+`GET /admin/jobs/:id/ics [job=NO-DISTINGUE]`).]
+
+**Qué era, medido antes de tocar nada.** Dentro de un mismo comercio: la ruta busca el Trabajo por `id` y
+`merchantId`, así que **entre comercios no se cruzaba**. Lo que le faltaba es la comprobación de su
+hermana `GET /admin/jobs/:id` (SCRUM-23): un técnico que no puede ABRIR el Trabajo de otro sí se bajaba
+su `.ics`, con el nombre del cliente, el número del presupuesto, la fecha y las notas.
+
+**¿Tenía razón de ser así?** No. El único llamador es el «⋯» del Trabajo (`jobsView.js`, «Añadir a mi
+calendario»), y un técnico sólo llega a ese menú en sus Trabajos, porque la lista y el detalle ya le
+recortan. No existe un calendario compartido del equipo que lo use.
+
+**Qué cambia.** `jobs.routes.ts`, `GET /:id/ics`: la misma línea que `GET /:id`, con el mismo 404
+`not_found` (no delata que el Trabajo existe), antes del 409 `not_scheduled`. Mismo eje que la
+hermana (`operarioId`); si la lectura del Trabajo pasa a mirar más ejes, ésta tiene que seguirla.
+
+**Verificado, ejecutando** — `tests/scrum1390b-ics-sin-trabajo-ajeno.test.mjs`, handler real de `dist/`
+con `prisma` de doble:
+
+| caso | sin el arreglo | con el arreglo |
+| --- | --- | --- |
+| técnico AJENO | **200**, cita entregada (rojo) | 404 `not_found`, nada enviado |
+| control · técnico DUEÑO | 200 | 200, `text/calendar`, lleva al cliente |
+| control · administrador | 200 | 200 |
+
+Mutante sobre `dist/` (la condición del `if` nuevo a `false`, la línea en su sitio): cae SÓLO el caso del
+técnico ajeno; los dos controles siguen en verde. ⚠️ El primer mutante que probé cortaba en el `}` de
+`{ error: 'not_found' }`, rompía la sintaxis y tumbaba los tres: un rojo que no medía nada. Rehecho.
+
+Vecinos: los 95 ficheros de `tests/` que leen `jobs.routes`, `/admin/jobs` o los censos de rol:
+**878 tests, 862 pasan, 0 fallan, 16 saltados** (con puerta). `tsc`: sólo el error conocido de
+`merchantAdmin.ts:147` (cliente de Prisma viejo; sin `prisma generate`).
+
+**Lo que NO se ha medido.** En yaqu.app, con un técnico de verdad: el plan de prueba sólo abre
+propietarios (la misma limitación que SCRUM-1555). Se mira cuando eso exista.

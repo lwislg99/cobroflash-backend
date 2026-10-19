@@ -1,0 +1,32 @@
+{
+  "medido": "2026-10-14, sesión jv-j6l (J6). Logs bajados con gh api …/actions/jobs/<id>/logs --allow-escape-sequences; leídos con cascada.mjs y frontera-final.mjs",
+  "regla": "cascada = la 1.ª línea del último fichero entregado llega ≤ 0,14 ms tras la última del anterior: ese fichero estaba COMPLETO y el que no completa es el SIGUIENTE. sin_separar = llega 47 ms o más después: lo soltó su propio cierre o su propio último mensaje",
+  "nuevos_desde_1527b": [
+    { "job": 115290677611, "run_creado": "2026-10-13T12:14:23Z", "rama": "scrum-1528-reason-de-auth-register", "bytes": 1005746 },
+    { "job": 115305001172, "run_creado": "2026-10-13T12:48:28Z", "rama": "scrum-1387b-el-catalogo-se-deriva", "bytes": 1242970 },
+    { "job": 115728094402, "run": 38526531948, "run_creado": "2026-10-14T07:09:32Z", "rama": "scrum-1554b-los-57-por-tipo", "bytes": 1270728 },
+    { "job": 115735116377, "run": 38528703912, "intento": 1, "run_creado": "2026-10-14T07:29:56Z", "rama": "scrum-1553c-controles-en-la-tanda", "bytes": 1271213 }
+  ],
+  "cascada": [
+    { "job": 113216097886, "ultimo_completo": "scrum445-cobros-sin-duplicar", "no_completa": "scrum446-cabecera-modal", "hueco_ms": 0.10 },
+    { "job": 115064831385, "ultimo_completo": "scrum445-cobros-sin-duplicar", "no_completa": "scrum446-cabecera-modal", "hueco_ms": 0.12 },
+    { "job": 115134364145, "ultimo_completo": "scrum445-cobros-sin-duplicar", "no_completa": "scrum446-cabecera-modal", "hueco_ms": 0.13 },
+    { "job": 115290677611, "ultimo_completo": "scrum445-cobros-sin-duplicar", "no_completa": "scrum446-cabecera-modal", "hueco_ms": 0.10 },
+    { "job": 115068271610, "ultimo_completo": "scrum446-cabecera-modal", "no_completa": "scrum447-byte-invisible-en-patrones", "hueco_ms": 0.06 },
+    { "job": 115305001172, "ultimo_completo": "scrum615-plazo-con-null", "no_completa": "scrum616-que-guarda-la-factura", "hueco_ms": 0.13 },
+    { "job": 115728094402, "ultimo_completo": "scrum615-pedir-tipo-destinatario", "no_completa": "scrum615-plazo-con-null", "hueco_ms": 0.13 },
+    { "job": 115735116377, "ultimo_completo": "scrum615-pedir-tipo-destinatario", "no_completa": "scrum615-plazo-con-null", "hueco_ms": 0.14 }
+  ],
+  "sin_separar": [
+    { "job": 106973511384, "ultimo_entregado": "scrum615-plazo-con-null", "hueco_ms": 2884.96 },
+    { "job": 107138394330, "ultimo_entregado": "scrum615-plazo-con-null", "hueco_ms": 9243.68 },
+    { "job": 107150234705, "ultimo_entregado": "scrum615-plazo-con-null", "hueco_ms": 10799.92 },
+    { "job": 108352556918, "ultimo_entregado": "scrum475-constancia-correo", "hueco_ms": 2409.02 },
+    { "job": 112295210122, "ultimo_entregado": "scrum446-cabecera-modal", "hueco_ms": 241.85 },
+    { "job": 112435237313, "ultimo_entregado": "scrum446-cabecera-modal", "hueco_ms": 47.86 },
+    { "job": 112906403918, "ultimo_entregado": "scrum446-cabecera-modal", "hueco_ms": 85.94 }
+  ],
+  "fuera": [
+    { "job": 109503839889, "motivo": "cancelado sin aviso (1527b §①): sin línea TANDA SIN VEREDICTO, estos instrumentos no lo leen" }
+  ]
+}

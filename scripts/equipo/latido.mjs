@@ -69,6 +69,11 @@
 //                  de las piezas que una sesión carga al arrancar (CLAUDE.md, lo que importa, `.claude/`) son
 //                  distintas. Avisa si falta UN hook o UNA pieza; el número de commits no avisa, se enseña.
 //                  El 9-oct-2026 iba 2.582 por detrás con 1 hook de 5, y sólo se sabía midiéndolo a mano.
+//  13 · CIERRES  → (SCRUM-1463c) los tickets con el comentario de cierre ESCRITO y el estado sin mover, leídos de
+//                  lo que guardó `cierre-sin-clic.mjs` (el latido no tiene credenciales de Jira). El 13-oct-2026
+//                  el guion existía y dependía de que alguien se acordara de correrlo: era el mismo fallo que
+//                  venía a cazar. Si nadie lo ha corrido nunca en esta máquina, va como NOTA (no afirma nada);
+//                  con una foto de más de 12 h, «no pude mirar». ⛔ Lista y calla: no cierra nada.
 //
 // ⚠️ LO QUE ESTO NO ARREGLA: el latido corre cuando ALGUIEN lo corre. Si nadie corre nada en tres días,
 // no dice nada. El único que corre sin sesión es `vigia-atascados` (workflow), y escribe en GitHub.
@@ -107,6 +112,8 @@ import { censar as censarTmp, candidatos as tmpBarribles, HORAS_SIN_ACTIVIDAD } 
 import { seccionArranque, medirArranque } from './arranque.mjs';
 // (SCRUM-1123d) Qué Issue lleva la marca del aviso se decide con la MISMA función que usa el workflow.
 import { elegirIssueExistente } from '../vigia-despliegue-aviso.mjs';
+// (SCRUM-1463c) Los cierres sin clic: la sección la escribe SU guion; aquí sólo se lee lo que guardó.
+import { seccionCierres, leerGuardado, NOTA_SIN_CORRER } from './cierre-sin-clic.mjs';
 
 export const SALIDA_OK = 0;
 export const SALIDA_AVISO = 1;
@@ -172,7 +179,7 @@ export function origenDelSinArmar(eventos) {
 /**
  * @param {{prs:object[], reglas:any, checksDe:(n:number)=>object[]|undefined, minutosDesdePush:(n:number)=>number|undefined, eventosDeArmado?:(n:number)=>object[]|undefined, ahora?:number}} e
  */
-export function seccionPRs({ prs, reglas, checksDe, minutosDesdePush, eventosDeArmado = () => undefined }) {
+export function seccionPRs({ prs, reglas, checksDe, minutosDesdePush, eventosDeArmado = () => undefined, ahora = Date.now() }) {
   if (!Array.isArray(prs)) return ciega('PR', 'la lista de PR abiertos no llegó');
   const obligatorios = checksObligatoriosDeReglas(reglas);
   const filas = [];
@@ -191,7 +198,7 @@ export function seccionPRs({ prs, reglas, checksDe, minutosDesdePush, eventosDeA
       checks: Array.isArray(checkRuns) ? checkRuns.length : 0,
       minutosDesdePush: min,
       sondaConflicto: p.mergeable === 'CONFLICTING' ? true : p.mergeable === 'MERGEABLE' ? false : null,
-      checkRuns, obligatorios, autoMerge: !!p.autoMergeRequest,
+      checkRuns, obligatorios, autoMerge: !!p.autoMergeRequest, ahora,
     });
     filas.push({ numero: p.number, rama: p.headRefName, causa: c.causa, detalle: c.detalle, minutos: min });
   }
@@ -210,6 +217,11 @@ export function seccionPRs({ prs, reglas, checksDe, minutosDesdePush, eventosDeA
       // (SCRUM-1453) El clasificador ya lo decía y aquí se tiraba: cuatro PR, cuatro días, sección en ✅.
       const o = origenDelSinArmar(eventosDeArmado(f.numero));
       alertas.push({ ...f, origen: o.tipo, linea: `#${f.numero} ${f.rama} · SIN auto-merge: aunque todo pase a verde, nadie lo va a mergear · ${o.texto} · ${edad}` });
+    } else if (f.causa === 'BLOQUEADO-SIN-CAUSA') {
+      // (SCRUM-839i) El caso que nadie nota: #2449 estuvo dos días así. El clasificador sólo lo afirma si PERSISTE
+      // (obligatorio en verde desde hace MINUTOS_PARA_AFIRMAR_SIN_CAUSA y aún BLOCKED), así que aquí no hace falta
+      // otra espera: un BLOCKED pasajero llega como ESPERANDO y no suena.
+      alertas.push({ ...f, linea: `#${f.numero} ${f.rama} · BLOQUEADO sin causa: ${f.detalle} · ${edad}` });
     }
   }
   return {
@@ -998,6 +1010,17 @@ export const NOTAS_FIJAS = [
   'ℹ️ JIRA · el cruce «tickets abiertos con su trabajo ya en main» NO lo hace el latido: no tiene credenciales de Jira. Saca la foto con el conector (los que no están en Done, TODAS las páginas) y corre: node scripts/abierto-con-trabajo-en-main.mjs --jira <foto.json …> · la foto vale 12 h: con una más vieja el comando se declara CIEGO y sale 2 · «con trabajo en main» NO es «terminado» · esto es un puntero, no una medición: no cuenta para la salida',
 ];
 
+/**
+ * (SCRUM-1463c) Lo que el latido dice de los cierres sin clic. Pura. `guardado` es lo que devuelve `leerGuardado`:
+ * `null` = nadie lo ha corrido en esta máquina → NO hay sección y va la nota (señala, no afirma, no cuenta para
+ * la salida) · `undefined` = está y no se deja leer → sección CIEGA · un objeto → la sección de `seccionCierres`.
+ * @returns {{seccion: object|null, notas: string[]}}
+ */
+export function cierresDelLatido({ guardado, ahora }) {
+  const seccion = seccionCierres({ guardado, ahora });
+  return seccion === null ? { seccion: null, notas: [NOTA_SIN_CORRER] } : { seccion, notas: [] };
+}
+
 export function informe(secciones, { ahora, fallosDe = () => undefined, notas = [] }) {
   const out = [`LATIDO · ${new Date(ahora).toISOString().slice(0, 16)}Z`];
   for (const s of secciones) {
@@ -1399,8 +1422,12 @@ async function todo() {
   // 12 · arranque. Pregunta la punta al remoto (`ls-remote`, sin escribir referencias) y compara el árbol principal.
   const sArr = seccionArranque(intentar(() => medirArranque({ raiz })));
   tramo('arranque');
+  // 13 · cierres sin clic. Sólo lee el fichero que dejó `cierre-sin-clic.mjs`; no toca Jira ni git.
+  const cie = cierresDelLatido({ guardado: intentar(() => leerGuardado()), ahora });
+  tramo('cierres');
   const secciones = [sPR, sSes, sTra, sMain, sDep, sCem, sCtx, sExp, sVig, sQA, sDis, sArr];
-  console.log(informe(secciones, { ahora, fallosDe: (n) => fallos.get(n), notas: NOTAS_FIJAS }));
+  if (cie.seccion) secciones.push(cie.seccion);
+  console.log(informe(secciones, { ahora, fallosDe: (n) => fallos.get(n), notas: [...NOTAS_FIJAS, ...cie.notas] }));
   console.log(tiempos(tramos));
   return salidaDe(secciones);
 }

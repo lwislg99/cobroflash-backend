@@ -182,6 +182,12 @@ model Merchant {
   // que esto NO abre deriva: el esquema alcanza a las bases, no al revés.
   retencionIrpfDeclarada Boolean @default(false) @map("retencion_irpf_declarada")
   retencionIrpfTipo      Int?    @map("retencion_irpf_tipo")
+  // SCRUM-1072 · LA ACTIVIDAD, junto a la retención: 'profesional' · 'empresarial' · 'no_lo_se'.
+  // UNA columna basta (docs/sql/scrum-1072-activity-kind.sql): NULL = no consta, y «no lo sé» es
+  // una RESPUESTA, otro valor. Sin `@default`: un valor por defecto afirmaría lo que nadie dijo.
+  // Solo se GUARDA: no cambia la retención ni ningún importe hasta que el asesor responda Q-C5.
+  // El DDL ya estaba aplicado (MIGRATIONS_PENDING, 29-sep): esto es A5 paso ③.
+  activityKind           String? @map("activity_kind")
 
   // SCRUM-656 (T7) · Las clausulas de cierre, escritas UNA vez: [{id, titulo, texto}].
   clausulasPresupuesto Json? @map("clausulas_presupuesto")
@@ -685,6 +691,9 @@ model Quote {
   tiers                Json?
   selectedTierId       String?
   internalNotes        String?   @map("internal_notes") @db.Text // Notas privadas del profesional, nunca visibles al cliente
+  // SCRUM-1273 · ARCHIVAR es quitarlo de la lista, no un estado: NULL = no archivado. Sin
+  // `archived_by` ni auditoría (c.19655): el quién NO queda. ALTER en docs/sql/scrum-1273-archivar-presupuestos.sql.
+  archivedAt           DateTime? @map("archived_at")
   // ⚠️ NO es la evidencia de la FIRMA, y la distinción costó medirla (SCRUM-805): esto lo escribe
   // el camino de ADMIN cuando el profesional marca a mano «aceptado/rechazado» ({method,
   // typedName, …}, ver `quotesAdmin.ts`). El camino público de firma NUNCA la toca. Se deja

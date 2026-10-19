@@ -252,20 +252,20 @@ export const HEREDADAS = [
   '510ba6d9f408490c6dcbf2bed0806fd298044627', // 2026-09-29 · SCRUM-1215.md
   'bd2964d9a4ebfc48a38f8d34cacc1db250ebd144', // 2026-09-29 · SCRUM-1180.md
   'ae49a457a20950256b4cc80b69aa7aedf40f72be', // 2026-09-29 · SCRUM-1215.md (sólo tocadas)
-  '7a94abae5260c5953b4171860e9779dd428f6527', // 2026-09-29 · SCRUM-1233.md
+  // fuera (SCRUM-1233e, 15-oct): '7a94abae5260c5953b4171860e9779dd428f6527' · 2026-09-29 · SCRUM-1233.md → sale DECLARA porque la entrada 1233e del MISMO registro declara; el PR no la escribió
   '51dcfe156990dfb36b6dfb225e6d75bda7e5a08e', // 2026-09-29 · SCRUM-1267.md
-  '2d1f9244cd0991cf6804e3965ebe1119fe0fdbe7', // 2026-09-29 · SCRUM-1233.md (sólo tocadas)
+  // fuera (SCRUM-1233e, 15-oct): '2d1f9244cd0991cf6804e3965ebe1119fe0fdbe7' · 2026-09-29 · SCRUM-1233.md (sólo tocadas) → sale DECLARA porque la entrada 1233e del MISMO registro declara; el PR no la escribió
   '84925995b8621619f5c27542e90988cdbe4ee1e1', // 2026-09-29 · SCRUM-1266.md
   'b1d8845daf38394c33a22814db323394517c091a', // 2026-09-29 · SCRUM-1215.md (sólo tocadas)
   'fcc889928bd077ecd81776fded32ca83658e7cbb', // 2026-09-29 · SCRUM-1272.md
-  '89fb1ec45d06b8c8d8368bc68a1c2492f5e748ab', // 2026-09-29 · SCRUM-1233.md (sólo tocadas)
+  // fuera (SCRUM-1233e, 15-oct): '89fb1ec45d06b8c8d8368bc68a1c2492f5e748ab' · 2026-09-29 · SCRUM-1233.md (sólo tocadas) → sale DECLARA porque la entrada 1233e del MISMO registro declara; el PR no la escribió
   '57d3b900b26c0ac5725010a0220d1b112471f935', // 2026-09-29 · SCRUM-1271.md
   '59453d6a6fdf45b9c59c36bab08c04d3db134f0f', // 2026-09-29 · SCRUM-1215.md (sólo tocadas)
   '00d98f6bae81edddfd783e7aa7ac86244b3bf07f', // 2026-09-29 · SCRUM-1135.md
   'd3b37ac8fc5de19c15c4a39bd9fc2bf5abe8ecfb', // 2026-09-29 · SCRUM-1212.md (sólo tocadas)
   '610adb8d9141b9d7e41038acca0fa73b6bba2932', // 2026-09-29 · SCRUM-1275.md
   'f61f2d2efa89bc35a6208d64ae072f650f4fecf6', // 2026-09-29 · SCRUM-1266.md (sólo tocadas)
-  'e75b94ca8755bd5d27981940c5ff4c01b2df8695', // 2026-09-29 · SCRUM-1233.md (sólo tocadas)
+  // fuera (SCRUM-1233e, 15-oct): 'e75b94ca8755bd5d27981940c5ff4c01b2df8695' · 2026-09-29 · SCRUM-1233.md (sólo tocadas) → sale DECLARA porque la entrada 1233e del MISMO registro declara; el PR no la escribió
   '3700de42ef552b5da5689f375084d8be8ff47157', // 2026-09-29 · SCRUM-1285.md
   '51d81311b01e19d592ad99a1f1f0817e4121cb55', // 2026-09-29 · SCRUM-1126.md
   '1183c79946d9da54f471aa3502070e6c43842105', // 2026-09-29 · SCRUM-1287.md

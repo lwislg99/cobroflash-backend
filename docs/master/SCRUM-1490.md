@@ -93,3 +93,16 @@ Este árbol no tiene ninguna clave de base (`node scripts/comprobar-claves-bd.mj
 - **Aceptación 6** (cuántas filas quedan sin año tras el relleno): el script sigue sin ejecutarse contra ninguna base, y quién lo corre sigue sin decidir.
 - **El adicional del albarán** no guarda el año (arriba).
 - **No se ha ejecutado contra un Postgres real** en local: la mitad con base la corre el check obligatorio del CI.
+
+## SCRUM-1490c · el doble del guard de navegador `firma-con-tramos` (14-oct-2026)
+
+**Medido contra:** `origin/main` = `05808c319acc9eb6b10ad04d23a4245141c64d6f` · 2026-10-14T16:57:51Z
+
+Puesto S3. Lo encontró el orquestador el 14-oct: el job «guards de navegador» lleva rojo en `main` desde al menos las 09:18Z.
+
+- **Qué pasaba.** `scripts/guard-firma-con-tramos.mjs` se quedaba en el arranque, sin abrir el navegador. El 7-oct, este ticket arregló los fixtures de `tests/` que montaban un presupuesto sin `createdAt` (`scrum1150`, `scrum1150c`, arriba). Pero el doble de este guard vive fuera de la tanda, y ahí nadie lo vio. `anioDeLaSerie` lanza `anio_de_la_serie_ilegible`, como debe. Producción NO se toca.
+- **Eran dos huecos, no uno.** Con `seriesYear` y `createdAt` puestos, el guard caía en el siguiente sitio: su `prisma.quote` doblado no tenía `count`, que pide `tieneVersionMasReciente` (SCRUM-1302p). El doble lleva ahora `seriesYear`, `createdAt`, `revision: 0` y `count → 0` (ninguna revisión más nueva).
+- **Rojo primero:** con el doble viejo, `node scripts/guard-firma-con-tramos.mjs` sale con 1 por la excepción, antes del navegador. Después: sale con 0 en 67 s, con los 4 casos medidos (normal y tramos, a densidad 1 y 3, todos con trazo) y `⟦veredicto⟧ 0 hallazgos · 0 ciegos`.
+- **Lo que NO arregla, y queda propuesto al orquestador:** la puerta (`scripts/guards-visuales.mjs`) contó esta caída como `rojo(1)`, es decir, «midió y encontró algo», y la tanda dijo «0 CIEGOS». Es una decisión a propósito de SCRUM-1343, fijada por un test («reventar en la primera línea es rojo»). Cambiarla obliga a cambiar ese test, y eso no se hace sin un GO.
+
+A9: sin fallo que generalice — el fallo de fondo (una caída antes de medir contada como hallazgo) no se arregla en esta entrega; queda propuesto en la clasificación de la puerta, a falta de GO porque cambia un test de SCRUM-1343.

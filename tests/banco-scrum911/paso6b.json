@@ -1,0 +1,28 @@
+{
+  "medido": "2026-10-15T16:21:26.238Z",
+  "nuevo": {
+    "id": 1916,
+    "seAbre": true,
+    "totalDocumento": "387,20",
+    "linea": [
+      "320,00",
+      "21",
+      "387,20"
+    ]
+  },
+  "viejo": {
+    "id": 1889,
+    "seAbre": true,
+    "totalDocumento": "320,00",
+    "linea": [
+      "320,00",
+      "21",
+      "387,20"
+    ]
+  },
+  "R": {
+    "pantallaConIva": "funciona",
+    "pantallaDistingue": "funciona (el del 17-sep enseña Total: 320,00)",
+    "lineaIgualEnLosDos": "sí"
+  }
+}

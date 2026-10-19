@@ -83,6 +83,11 @@ export function numeroQueImprimeElPapel(
  * manda la secuencia en crudo obliga al navegador a componer el número, y entonces hay dos sitios
  * escribiéndolo: así nació «P12» en una pantalla y `#205` (el id de la tabla) en el buscador. La
  * respuesta que use esta función NO manda además `quoteNumber`.
+ *   ⚠️ EXCEPCIÓN DECLARADA, CON FECHA DE FIN · SCRUM-1444c (decisión del orquestador, 18-oct-2026,
+ *   opción A): las respuestas de S1 que llevan `numeroVisible` desde 1444c lo llevan AL LADO de su
+ *   número crudo (`number` / `quoteNumber`), porque sus pantallas todavía leen el crudo y quitarlo
+ *   las rompería. Cada pantalla que pase a leer `numeroVisible` pide quitar el crudo de SU
+ *   respuesta; cuando no quede ninguna, esta excepción se borra. Lista y estado: `docs/master/SCRUM-1444.md`.
  *
  * 🔴 HOY ESCRIBE LO MISMO QUE EL PAPEL (`#12`), NO LA SERIE (`P260012`), Y ES A PROPÓSITO. La
  * serie está decidida (SCRUM-1444 c.18405) y desde SCRUM-1490 su año se guarda en la fila
@@ -370,6 +375,7 @@ export const REVISION_NO_HEREDA: Readonly<Record<string, string>> = Object.freez
   decisionToken:   'el enlace público es de UN documento: compartirlo llevaría al cliente a la versión vieja',
   pdfUrl:          'el PDF pintado de la versión anterior. La nueva se pinta cuando exista',
   reminderSentAt:  'los recordatorios ya enviados son de aquella versión',
+  archivedAt:      'archivar es quitar de la lista AQUELLA versión (SCRUM-1273). La revisión la acaba de crear el profesional: nace en la lista',
 });
 
 /** Los que pone el sistema al crear la revisión — ni se heredan ni se copian: se calculan. */

@@ -21,6 +21,15 @@
 // lista y el test, en el mismo cambio. Una declaración de ceguera que sobrevive a la cura miente
 // igual que un verde hueco.
 //
+// ── SCRUM-1546c · CONDUCTA CAMBIADA A PROPÓSITO ─────────────────────────────────────────────
+// El tercer estado pasa a llamarse `aprobada-sin-comprobar` y lo comparte la firma del fundador,
+// de la que el oráculo tampoco lee más que la forma (caso M5, SCRUM-1546). Decisión del orquestador
+// de Luis, 14-oct-2026. Cambian los tests 1, 3, 4 y 5 (decían «la del fundador sale `aprobada` a
+// secas») y el 6 (contaba las delegadas por el estado, que ya no basta). Ninguno afloja: cada
+// aserción de antes sigue, sobre la población que le toca, y se añade la del fundador.
+// Lo que no se comprueba de la firma del fundador lo atan sus propios tests, en
+// `tests/scrum1546c-la-firma-del-fundador-sin-comprobar.test.mjs`.
+//
 // Todo lo que se escribe va a `os.tmpdir()` y se escribe AQUÍ, sobre `e.raiz` / `e.dir`, como pide
 // el censo de SCRUM-824; los ayudantes sólo devuelven texto.
 import test from 'node:test';
@@ -32,10 +41,14 @@ import { temporal } from './_temporal.mjs';
 import {
   aprobacionesDeMicrocopy, constaAprobado, comoConstaAprobado, delegadasSinComprobar,
   delegacionVigente, LIMITES_DEL_FUNDADOR,
-  ESTADO_APROBADA, ESTADO_DELEGADA_SIN_COMPROBAR, ESTADO_NO_APROBADA, NO_COMPROBADO_EN_UNA_DELEGADA,
+  ESTADO_APROBADA, ESTADO_SIN_COMPROBAR, ESTADO_NO_APROBADA, NO_COMPROBADO_EN_UNA_DELEGADA,
+  NO_COMPROBADO_EN_UNA_FIRMA_DEL_FUNDADOR,
 } from './_microcopy-aprobada.mjs';
 
-const ESTADOS = [ESTADO_APROBADA, ESTADO_DELEGADA_SIN_COMPROBAR, ESTADO_NO_APROBADA];
+const ESTADOS = [ESTADO_APROBADA, ESTADO_SIN_COMPROBAR, ESTADO_NO_APROBADA];
+/** Las delegadas que cuentan: el estado ya no basta, lo comparten con la firma del fundador (1546c). */
+const esDelegada = (a) => a.estado === ESTADO_SIN_COMPROBAR && a.firmante === 'orquestador';
+const esDelFundador = (a) => a.estado === ESTADO_SIN_COMPROBAR && a.firmante === 'fundador';
 
 const LIMITES_VIGENTE = '# Límites\n\n## Delegación permanente\n\n'
   + '- **Los textos de microcopy que haya que aprobar los aprueba el orquestador**\n'
@@ -72,15 +85,20 @@ test('SCRUM-997d · 1) SUELO: sobre el árbol real hay fichas en los dos estados
   const todas = aprobacionesDeMicrocopy();
   const de = (e) => todas.filter((a) => a.estado === e);
   t.diagnostic(`POBLACION · registros ${todas.length} · ${ESTADO_APROBADA} ${de(ESTADO_APROBADA).length} · `
-    + `${ESTADO_DELEGADA_SIN_COMPROBAR} ${de(ESTADO_DELEGADA_SIN_COMPROBAR).length} · ${ESTADO_NO_APROBADA} ${de(ESTADO_NO_APROBADA).length}`);
+    + `${ESTADO_SIN_COMPROBAR} ${de(ESTADO_SIN_COMPROBAR).length} (del fundador ${todas.filter(esDelFundador).length}, `
+    + `delegadas ${todas.filter(esDelegada).length}) · ${ESTADO_NO_APROBADA} ${de(ESTADO_NO_APROBADA).length}`);
   for (const a of todas) {
     assert.ok(ESTADOS.includes(a.estado), `🔴 ${a.ruta} sale con el estado «${a.estado}», que no es ninguno de los tres.`);
   }
-  // Sin estos dos, todo lo de abajo se cumpliría sobre el vacío.
-  assert.ok(de(ESTADO_APROBADA).length >= 1, '🔴 ninguna ficha con la firma del fundador: el barrido no ha mirado.');
-  assert.ok(de(ESTADO_DELEGADA_SIN_COMPROBAR).length >= 1,
+  // Sin estos, todo lo de abajo se cumpliría sobre el vacío.
+  assert.ok(todas.filter(esDelFundador).length >= 1, '🔴 ninguna ficha con la firma del fundador: el barrido no ha mirado.');
+  assert.ok(todas.filter(esDelegada).length >= 1,
     '🔴 ninguna ficha delegada en el árbol real. Hay decenas: o el barrido no ha mirado, o la delegación ha dejado de '
     + 'estar vigente y entonces el rojo de verdad está en scrum861.');
+  // SCRUM-1546c · `aprobada` a secas es SÓLO el registro congelado. Ninguna ficha: de ninguna se lee
+  // más que la forma de su firma.
+  assert.deepEqual(de(ESTADO_APROBADA).map((a) => a.origen), ['congelado'],
+    '🔴 una ficha de docs/microcopy/ sale `aprobada` a secas: el oráculo vuelve a afirmar una firma que no comprueba (M5, SCRUM-1546).');
 });
 
 // ═══ 2 · EL CRITERIO NO CAMBIA ══════════════════════════════════════════════════════════════
@@ -95,8 +113,12 @@ test('SCRUM-997d · 2) el criterio NO cambia: cuenta exactamente lo que contaba,
     assert.equal(a.aprobada, antes, `🔴 ${a.ruta}: «aprobada» ya no vale lo que valía antes de los tres estados.`);
     assert.equal(a.aprobada, a.estado !== ESTADO_NO_APROBADA,
       `🔴 ${a.ruta}: «aprobada» y «estado» discrepan (${a.aprobada} frente a «${a.estado}»).`);
-    assert.equal(a.noComprobado.length > 0, a.estado === ESTADO_DELEGADA_SIN_COMPROBAR,
-      `🔴 ${a.ruta}: sólo una delegada declara algo sin comprobar, y una delegada lo declara siempre.`);
+    assert.equal(a.noComprobado.length > 0, a.estado === ESTADO_SIN_COMPROBAR,
+      `🔴 ${a.ruta}: sólo lo que sale sin comprobar declara algo, y lo declara siempre.`);
+    // Y declara lo SUYO: la lista de la delegada no vale para la del fundador, ni al revés.
+    if (esDelegada(a)) assert.deepEqual(a.noComprobado, [...NO_COMPROBADO_EN_UNA_DELEGADA], `🔴 ${a.ruta}`);
+    if (esDelFundador(a)) assert.deepEqual(a.noComprobado, [...NO_COMPROBADO_EN_UNA_FIRMA_DEL_FUNDADOR], `🔴 ${a.ruta}`);
+    if (a.estado === ESTADO_SIN_COMPROBAR) assert.ok(esDelegada(a) || esDelFundador(a), `🔴 ${a.ruta}: sin comprobar y no es de ninguna de las dos firmas que cuentan.`);
   }
   // Por CONJUNTOS: las delegadas son las que firma el orquestador y cuentan, ni una más ni una menos.
   const esperadas = todas.filter((a) => a.firmante === 'orquestador' && a.aprobada).map((a) => a.ruta).sort();
@@ -114,12 +136,18 @@ test('SCRUM-997d · 3) tres firmas, tres estados', () => {
   fs.writeFileSync(limites, LIMITES_VIGENTE);
   const o = opciones(e.dir, limites);
 
-  const estados = estadoPorRuta(aprobacionesDeMicrocopy(o));
+  const todas = aprobacionesDeMicrocopy(o);
+  const estados = estadoPorRuta(todas);
+  // SCRUM-1546c · la del fundador sale sin comprobar, como la delegada: antes salía `aprobada`.
   assert.deepEqual([...estados].sort(), [
     ['docs/microcopy/' + F_ASESOR, ESTADO_NO_APROBADA],
-    ['docs/microcopy/' + F_FUNDADOR, ESTADO_APROBADA],
-    ['docs/microcopy/' + F_DELEGADA, ESTADO_DELEGADA_SIN_COMPROBAR],
+    ['docs/microcopy/' + F_FUNDADOR, ESTADO_SIN_COMPROBAR],
+    ['docs/microcopy/' + F_DELEGADA, ESTADO_SIN_COMPROBAR],
   ].sort());
+  // Las dos «sin comprobar» se distinguen por lo que declaran, que es distinto.
+  assert.deepEqual(todas.find((a) => a.nombre === F_FUNDADOR).noComprobado, [...NO_COMPROBADO_EN_UNA_FIRMA_DEL_FUNDADOR],
+    '🔴 la firma del fundador tiene que decir QUÉ no se ha comprobado de ella.');
+  assert.ok(NO_COMPROBADO_EN_UNA_FIRMA_DEL_FUNDADOR.length >= 1, '🔴 la lista de la firma del fundador está vacía.');
 
   const [delegada] = delegadasSinComprobar(o);
   assert.equal(delegadasSinComprobar(o).length, 1);
@@ -139,7 +167,9 @@ test('SCRUM-997d · 4) con la delegación retirada, la delegada pasa a «no apro
   const o = opciones(e.dir, limites);
 
   const estados = estadoPorRuta(aprobacionesDeMicrocopy(o));
-  assert.equal(estados.get('docs/microcopy/' + F_FUNDADOR), ESTADO_APROBADA);
+  // SCRUM-1546c · «no se mueve» es ahora «sigue sin comprobar»: la delegación no la toca.
+  assert.equal(estados.get('docs/microcopy/' + F_FUNDADOR), ESTADO_SIN_COMPROBAR);
+  assert.deepEqual(constaAprobado(T_FUNDADOR, o), ['docs/microcopy/' + F_FUNDADOR], '🔴 la del fundador dejó de contar al retirar la delegación.');
   assert.equal(estados.get('docs/microcopy/' + F_DELEGADA), ESTADO_NO_APROBADA,
     '🔴 «sin comprobar» no puede querer decir «sin delegación»: una firma delegada sin delegación vigente NO cuenta.');
   assert.deepEqual(delegadasSinComprobar(o), []);
@@ -157,21 +187,27 @@ test('SCRUM-997d · 5) `comoConstaAprobado` da las rutas de `constaAprobado`, y 
   fs.writeFileSync(limites, LIMITES_VIGENTE);
   const o = opciones(e.dir, limites);
 
+  // SCRUM-1546c · la del fundador consta SIN COMPROBAR y dice qué no se ha mirado (antes: `aprobada`, `[]`).
   assert.deepEqual(comoConstaAprobado(T_FUNDADOR, o),
-    [{ ruta: 'docs/microcopy/' + F_FUNDADOR, estado: ESTADO_APROBADA, noComprobado: [] }]);
+    [{ ruta: 'docs/microcopy/' + F_FUNDADOR, estado: ESTADO_SIN_COMPROBAR, noComprobado: [...NO_COMPROBADO_EN_UNA_FIRMA_DEL_FUNDADOR] }]);
   assert.deepEqual(comoConstaAprobado(T_DELEGADA, o),
-    [{ ruta: 'docs/microcopy/' + F_DELEGADA, estado: ESTADO_DELEGADA_SIN_COMPROBAR, noComprobado: [...NO_COMPROBADO_EN_UNA_DELEGADA] }]);
+    [{ ruta: 'docs/microcopy/' + F_DELEGADA, estado: ESTADO_SIN_COMPROBAR, noComprobado: [...NO_COMPROBADO_EN_UNA_DELEGADA] }]);
   assert.deepEqual(comoConstaAprobado(T_ASESOR, o), [], 'una firma que no cuenta no consta, tampoco aquí');
   assert.throws(() => comoConstaAprobado('', o), /CIEGO/);
 
-  // Y sobre el árbol real, un literal de cada estado: mismas rutas, en el mismo orden.
+  // Y sobre el árbol real, un literal de cada firma que cuenta y del congelado: mismas rutas, en el mismo orden.
   const todas = aprobacionesDeMicrocopy();
-  for (const estado of [ESTADO_APROBADA, ESTADO_DELEGADA_SIN_COMPROBAR]) {
-    const ficha = todas.find((a) => a.origen === 'fichero' && a.estado === estado && a.literales.length > 0);
-    assert.ok(ficha, `🔴 no encuentro en el árbol real ninguna ficha «${estado}» con un literal: no puedo comparar.`);
+  const casos = [
+    ['ficha del fundador', ESTADO_SIN_COMPROBAR, (a) => a.origen === 'fichero' && esDelFundador(a)],
+    ['ficha delegada', ESTADO_SIN_COMPROBAR, (a) => a.origen === 'fichero' && esDelegada(a)],
+    ['registro congelado', ESTADO_APROBADA, (a) => a.origen === 'congelado'],
+  ];
+  for (const [rotulo, estado, cual] of casos) {
+    const ficha = todas.find((a) => cual(a) && a.literales.length > 0);
+    assert.ok(ficha, `🔴 no encuentro en el árbol real ningún ${rotulo} con un literal: no puedo comparar.`);
     const como = comoConstaAprobado(ficha.literales[0]);
     assert.deepEqual(como.map((c) => c.ruta), constaAprobado(ficha.literales[0]));
-    assert.ok(como.some((c) => c.ruta === ficha.ruta && c.estado === estado));
+    assert.ok(como.some((c) => c.ruta === ficha.ruta && c.estado === estado), `🔴 ${rotulo}: no consta con «${estado}».`);
   }
 });
 
@@ -197,13 +233,13 @@ test('SCRUM-997d · 6) declarado «no sé qué orquestador firma»: sin ninguna 
   t.diagnostic(`POBLACION · ${lineas.length} líneas · quitadas ${lineas.length - sinJavier.length} que nombran a Javier · quitadas ${lineas.length - sinLuis.length} con la viñeta de Luis`);
   assert.equal(lineas.length - sinLuis.length, 1, '🔴 CIEGO: la viñeta de Luis no aparece exactamente una vez; el control de abajo no vale.');
 
+  // SCRUM-1546c · las delegadas se cuentan por estado Y firmante: el estado lo comparten con la del fundador.
   const real = estadoPorRuta(aprobacionesDeMicrocopy());
-  const delegadas = [...real].filter(([, s]) => s === ESTADO_DELEGADA_SIN_COMPROBAR).length;
+  const delegadas = aprobacionesDeMicrocopy().filter(esDelegada).length;
   assert.ok(delegadas >= 1, '🔴 CIEGO: ninguna delegada en el árbol real.');
 
   // CONTROL: la sonda ve. Quitar la viñeta de Luis apaga TODAS las delegadas.
-  const conSinLuis = estadoPorRuta(aprobacionesDeMicrocopy({ limites: rutaSinLuis }));
-  assert.equal([...conSinLuis].filter(([, s]) => s === ESTADO_DELEGADA_SIN_COMPROBAR).length, 0,
+  assert.equal(aprobacionesDeMicrocopy({ limites: rutaSinLuis }).filter(esDelegada).length, 0,
     '🔴 quitar la viñeta de Luis no apaga las delegadas: la copia no llega al oráculo y este test no mide nada.');
 
   // LO DECLARADO: quitar todo lo de Javier no mueve ninguna.
@@ -222,8 +258,8 @@ test('SCRUM-997d · 7) declarado «no sé si el texto es legal o fiscal»: una d
   fs.writeFileSync(limites, LIMITES_VIGENTE);
 
   const estados = estadoPorRuta(aprobacionesDeMicrocopy(opciones(e.dir, limites)));
-  assert.equal(estados.get('docs/microcopy/' + F_DELEGADA), ESTADO_DELEGADA_SIN_COMPROBAR);
-  assert.equal(estados.get('docs/microcopy/' + F_LEGAL), ESTADO_DELEGADA_SIN_COMPROBAR,
+  assert.equal(estados.get('docs/microcopy/' + F_DELEGADA), ESTADO_SIN_COMPROBAR);
+  assert.equal(estados.get('docs/microcopy/' + F_LEGAL), ESTADO_SIN_COMPROBAR,
     '🔴 una delegada con un texto legal o fiscal ya no sale como las demás. ' + SI_ESTO_CAE);
 });
 
@@ -236,7 +272,7 @@ test('SCRUM-997d · 8) declarado «no sé si el comentario de Jira existe»: una
   fs.writeFileSync(limites, LIMITES_VIGENTE);
 
   const [ficha] = aprobacionesDeMicrocopy(opciones(e.dir, limites));
-  assert.equal(ficha.estado, ESTADO_DELEGADA_SIN_COMPROBAR,
+  assert.equal(ficha.estado, ESTADO_SIN_COMPROBAR,
     '🔴 una referencia a un comentario que no existe ya no cuenta. ' + SI_ESTO_CAE);
   assert.deepEqual(ficha.delegacion, { referencia: 'SCRUM-99999999 comentario 1' });
 });

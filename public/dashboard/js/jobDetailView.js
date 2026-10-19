@@ -1144,6 +1144,19 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   dirInput.style.minHeight = '44px';
   dirWrap.appendChild(dirLabel);
   dirWrap.appendChild(dirInput);
+  // SCRUM-1144 · «Elegir un sitio guardado», el MISMO control que el editor de presupuestos. Escribe
+  // en el campo y le deja el foco, y se GUARDA al salir de él por el `blur` de abajo, igual que lo
+  // tecleado: un solo camino de guardado. Sin cliente no hay sitios que ofrecer, y no se pinta.
+  const idClienteDelTrabajo = job.customer && job.customer.id != null ? String(job.customer.id) : '';
+  if (idClienteDelTrabajo) {
+    const selectorDeSitios = window.sitiosGuardados.montarSelector({
+      idLista: 'job-sitios-guardados',
+      idCliente: () => idClienteDelTrabajo,
+      campo: dirInput,
+    });
+    dirWrap.appendChild(selectorDeSitios.boton);
+    dirWrap.appendChild(selectorDeSitios.lista);
+  }
   infoSec.appendChild(dirWrap);
 
   dirInput.addEventListener('blur', async () => {
@@ -1455,11 +1468,12 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
     else list.forEach((el) => acts.appendChild(el));
   };
   // SCRUM-85: payToken (Charge.receiptToken), NUNCA el chargeId — /pay/invoice ya no acepta el id.
+  // SCRUM-1233h: sin token, `null` — la barra no ofrece copiar. Antes copiaba la portada.
   const invWaFallback = (inv, payToken, onRetry) => {
     const token = payToken || inv.payToken;
     statusBox.querySelectorAll('.wa-fallback-bar').forEach((b) => b.remove());
     statusBox.appendChild(waFallbackBar({
-      link: token ? location.origin + '/pay/invoice/' + token : location.origin,
+      link: token ? location.origin + '/pay/invoice/' + token : null,
       onEmail: job.customer?.email ? () => apiRequest(`/admin/invoices/${inv.id}/send-email`, { method: 'POST' }) : null,
       emailDisabledReason: job.customer?.email ? null : 'Este cliente no tiene email guardado',
       onRetry,
@@ -1550,6 +1564,35 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
     }
   });
   newAlbRow.appendChild(parteBtn);
+
+  // ── SCRUM-1190 · UN PRESUPUESTO MÁS SOBRE ESTE TRABAJO (el imprevisto, la ampliación) ────────
+  //
+  // El servidor ya lo cuelga de este Trabajo (`job_id`, SCRUM-195) y al aceptarlo suma su importe
+  // (SCRUM-1370); faltaba por dónde pedirlo. Va por el MISMO camino que «Hacer presupuesto» del hueco
+  // (SCRUM-1274), así que el editor nace con este Trabajo y su cliente.
+  //
+  // SÓLO si el Trabajo ya tiene importe aceptado (`totalAceptado != null`): es el COMPLEMENTO EXACTO
+  // de la condición del hueco «Hacer presupuesto» (`huecosDeCobro`, `== null`), así que siempre sale
+  // uno de los dos y nunca los dos. Con `job.quote` a secas, un presupuesto enviado y sin aceptar
+  // enseñaría ambos: dos botones para lo mismo con dos rótulos dirían que son cosas distintas.
+  // Rótulo: `+ ${L.quoteNew}`, el de la ficha del cliente para el caso equivalente (abrir el editor
+  // atado a la ficha). Reutilización, no texto nuevo: firma del orquestador, 16-oct-2026.
+  // No escribe `Quote.esAdicional`: quién pone ese rol está sin decidir (docs/master/SCRUM-1190.md).
+  if (job.totalAceptado != null) {
+    const L = window.appLocale || {};
+    const otroPresupuestoBtn = document.createElement('button');
+    otroPresupuestoBtn.type = 'button';
+    otroPresupuestoBtn.className = 'btn-secondary btn-sm job-toolbar-btn-44';
+    otroPresupuestoBtn.setAttribute('data-presupuesto-del-trabajo', '1');
+    otroPresupuestoBtn.textContent = `+ ${L.quoteNew || 'Nuevo presupuesto'}`;
+    otroPresupuestoBtn.addEventListener('click', () => {
+      if (!window.renderAppView) return;
+      window.renderAppView('quotes-new', {
+        template: { deTrabajo: { jobId: job.id, customerId: job.customer && job.customer.id != null ? job.customer.id : null } },
+      });
+    });
+    newAlbRow.appendChild(otroPresupuestoBtn);
+  }
 
   // ── SCRUM-135: "+ Añadir gasto" ya vinculado a ESTE trabajo ──────────────────
   // Es el alta rápida "desde la furgoneta" que SCRUM-107 dejó aparcada hasta que existiera

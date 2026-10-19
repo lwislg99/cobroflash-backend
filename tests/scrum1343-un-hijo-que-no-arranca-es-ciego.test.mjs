@@ -15,7 +15,9 @@
 // Lo que este fichero fija:
 //   ① el caso que se vio: un final que puso el SISTEMA, sin una letra, es CIEGO y tiene nombre;
 //   ② el positivo, que es el que protege lo ganado: lo que un guard SÍ dijo sigue siendo rojo —
-//      también el que sale con 1 sin imprimir nada y el que revienta en su primera línea;
+//      también el que sale con 1 sin imprimir nada y el que sale con `process.exit(1)` a propósito;
+//      el que REVIENTA en su primera línea arrancó (no es «no arrancó») pero no midió: desde
+//      SCRUM-1343d es «CAÍDO ANTES DE MEDIR» y no un hallazgo, y la tanda SIGUE cayendo;
 //   ③ la línea «N guards midieron · K no arrancaron» sale siempre, y sus partes suman el total;
 //   ④ la puerta decide con esa función y con `veredictoDe`, no con una escalera propia.
 //
@@ -34,6 +36,7 @@ import ts from 'typescript';
 import {
   desenlaceDelHijo, esCodigoDelSistema, SUELO_DEL_CODIGO_DEL_SISTEMA,
   veredicto, recuento, filaDeFicheroAusente, llegoAMedir,
+  FIRMA_DE_EXCEPCION,
 } from '../scripts/guards-visuales.mjs';
 import { veredictoDe, SALIDA_HALLAZGO, SALIDA_NO_SUPE_MEDIR } from '../scripts/_hallazgos-y-ciegos.mjs';
 import { SALIDA_NO_ENCONTRADO, SALIDA_NO_ARRANCA } from '../scripts/_navegador.mjs';
@@ -128,7 +131,26 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     fichero: 'scripts/guards-visuales.mjs',
     de: 'const sinCodigo = r.status === null || r.status === undefined;',
     a: 'const sinCodigo = r.status === null || r.status === undefined || r.status === 1;',
-    cae: 'con un hijo de verdad: reventar en la primera línea es rojo',
+    cae: 'con un hijo de verdad: `process.exit(1)` A PROPÓSITO sigue siendo rojo',
+  },
+  // ── SCRUM-1343d · la caída antes de medir ──
+  {
+    fichero: 'scripts/guards-visuales.mjs',
+    de: "return { estado: 'CAÍDO ANTES DE MEDIR (' + primeraLineaDeLaExcepcion(salida) + ')', codigo: null, arranco: true };",
+    a: "return { estado: 'verde', codigo: 0, arranco: true };",
+    cae: 'una CAÍDA antes de medir NO deja la tanda en verde',
+  },
+  {
+    fichero: 'scripts/guards-visuales.mjs',
+    de: 'if (codigo === 1 && FIRMA_DE_EXCEPCION.test(String(salida))) {',
+    a: 'if (codigo === 1) {',
+    cae: 'con un hijo de verdad: `process.exit(1)` A PROPÓSITO sigue siendo rojo',
+  },
+  {
+    fichero: 'scripts/guards-visuales.mjs',
+    de: 'if (codigo === 1 && FIRMA_DE_EXCEPCION.test(String(salida))) {',
+    a: 'if (false) {',
+    cae: 'con un hijo de verdad: reventar en la primera línea ARRANCA y no mide',
   },
 ];
 
@@ -257,23 +279,75 @@ test('SCRUM-1343 · 🔴 POSITIVO: si lo mató el sistema DESPUÉS de decir sus 
   assert.equal(desenlaceDelHijo({ status: EL_DEL_1_DE_OCTUBRE, signal: null }, sinHallazgos).codigo, null);
 });
 
-test('SCRUM-1343 · 🔴 POSITIVO, con un hijo de verdad: reventar en la primera línea es rojo, no «no arrancó»', () => {
+/** Corre `fuente` como un guard de verdad y devuelve lo que la puerta recibe de él. */
+function hijoDeVerdad(fuente) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1343-'));
   try {
-    const guard = path.join(dir, 'revienta.mjs');
-    fs.writeFileSync(guard, "throw new Error('reventé en la primera línea');\n");
+    const guard = path.join(dir, 'guard.mjs');
+    fs.writeFileSync(guard, fuente);
     // El entorno del hijo se construye a mano: sin el contexto de `node --test` ni el color del chat.
     const env = {};
     for (const k of ['PATH', 'Path', 'SystemRoot', 'SYSTEMROOT', 'TEMP', 'TMP']) if (process.env[k] !== undefined) env[k] = process.env[k];
     const r = spawnSync(process.execPath, [guard], { cwd: dir, env, encoding: 'utf8', timeout: 30000 });
-    const salida = (r.stdout || '') + (r.stderr || '');
-    // Testigo: el hijo existió y fue él quien habló.
-    assert.match(salida, /reventé en la primera línea/);
-    assert.equal(r.status, 1);
-    assert.deepEqual(desenlaceDelHijo(r, salida), { estado: 'rojo(1)', codigo: 1, arranco: true });
+    return { r, salida: (r.stdout || '') + (r.stderr || '') };
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
+}
+
+// SCRUM-1343d · los DOS positivos de 1343 siguen distinguiéndose: uno que NO ARRANCA (arriba,
+// `arranco: false`) y uno que ARRANCA Y REVIENTA (aquí, `arranco: true`). Lo que cambia es la
+// etiqueta del segundo: ya no es un hallazgo, porque no llegó a medir.
+test('SCRUM-1343 · 🔴 POSITIVO, con un hijo de verdad: reventar en la primera línea ARRANCA y no mide — ni «no arrancó» ni hallazgo', () => {
+  const { r, salida } = hijoDeVerdad("throw new Error('reventé en la primera línea');\n");
+  // Testigo: el hijo existió y fue él quien habló, y Node firmó la excepción.
+  assert.match(salida, /reventé en la primera línea/);
+  assert.equal(r.status, 1);
+  assert.match(salida, FIRMA_DE_EXCEPCION, `🔴 este Node (${process.version}) ya no firma la excepción: la señal de SCRUM-1343d no vale`);
+  const d = desenlaceDelHijo(r, salida);
+  assert.deepEqual(d, { estado: 'CAÍDO ANTES DE MEDIR (Error: reventé en la primera línea)', codigo: null, arranco: true });
+  assert.equal(llegoAMedir(d.codigo), false);
+  // Y lo mismo con un `await` de primer nivel rechazado, que es la forma del 14-oct.
+  const a = hijoDeVerdad("await Promise.reject(new Error('anio_de_la_serie_ilegible: la fila no trae nada'));\n");
+  assert.equal(desenlaceDelHijo(a.r, a.salida).estado, 'CAÍDO ANTES DE MEDIR (Error: anio_de_la_serie_ilegible: la fila no trae nada)');
+});
+
+test('SCRUM-1343d · 🔴 CONTROL de la señal, con un hijo de verdad: `process.exit(1)` A PROPÓSITO sigue siendo rojo', () => {
+  // Las tres formas de salir con 1 POR DECISIÓN del guard, también imprimiendo una traza: ninguna
+  // lleva la firma de Node, y las tres siguen siendo un hallazgo.
+  for (const fuente of [
+    "console.error('🔴 HALLAZGOS 1'); process.exit(1);\n",
+    "try { throw new Error('x'); } catch (e) { console.error(e); process.exit(1); }\n",
+    "console.error(new Error('y').stack); process.exitCode = 1;\n",
+  ]) {
+    const { r, salida } = hijoDeVerdad(fuente);
+    assert.equal(r.status, 1, fuente);
+    assert.doesNotMatch(salida, FIRMA_DE_EXCEPCION, fuente);
+    assert.deepEqual(desenlaceDelHijo(r, salida), { estado: 'rojo(1)', codigo: 1, arranco: true }, fuente);
+  }
+  // Y si reventó DESPUÉS de decir sus hallazgos, lo dicho manda: rojo.
+  const dicho = veredictoDe({ hallazgos: 2, ciegos: 0 }).linea;
+  const { r, salida } = hijoDeVerdad(`console.log(${JSON.stringify(dicho)}); throw new Error('después');\n`);
+  assert.match(salida, FIRMA_DE_EXCEPCION);
+  assert.deepEqual(desenlaceDelHijo(r, salida), { estado: 'rojo(1)', codigo: 1, arranco: true });
+});
+
+test('SCRUM-1343d · 🔴 una CAÍDA antes de medir NO deja la tanda en verde, ni sola ni con 37 verdes', () => {
+  const caida = { status: 1, signal: null };
+  const traza = "Error: anio_de_la_serie_ilegible: x\n    at f (<anonymous>)\n\nNode.js v24.21.0\n";
+  const filas = [...repetir(37, VERDE), filaDe('guard:firma-con-tramos', caida, traza)];
+  const v = veredicto(filas);
+  assert.notEqual(v.codigo, 0, '🔴 una caída ha dejado la tanda en verde');
+  assert.equal(v.codigo, SALIDA_NO_SUPE_MEDIR, 'cae por la puerta del ciego');
+  assert.equal(v.defectos, 0);
+  assert.equal(v.ciegos, 1);
+  assert.match(v.detalle, /guard:firma-con-tramos: CAÍDO ANTES DE MEDIR \(Error: anio_de_la_serie_ilegible: x\)/, 'la fila lleva la primera línea de la excepción');
+  const c = recuento(filas);
+  assert.equal(c.linea, '37 verdes · 1 CIEGO (1 CAÍDO ANTES DE MEDIR (Error: anio_de_la_serie_ilegible: x)) · 0 rojos');
+  // Con un rojo de verdad al lado, la tanda sale por el hallazgo y DICE que además uno no midió.
+  const conRojo = veredicto([...filas, filaDe('guard:cls', { status: 1, signal: null }, '🔴 CLS 0,127\n')]);
+  assert.equal(conRojo.codigo, SALIDA_HALLAZGO);
+  assert.match(conRojo.detalle, /NO llegaron a medir \(guard:firma-con-tramos: CAÍDO ANTES DE MEDIR/);
 });
 
 test('SCRUM-1343 · el borde sale de la constante: justo por debajo NO es del sistema', () => {

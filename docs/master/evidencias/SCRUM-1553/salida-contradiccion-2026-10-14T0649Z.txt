@@ -1,0 +1,25 @@
+CONTROLES · 8 tickets sembrados (SCRUM-90001…90008), por la misma función que la foto real: pasan
+FOTO · docs/master/evidencias/SCRUM-1553/foto-jira-2026-10-14T0649Z.tsv
+   medida en Jira: 2026-10-14T06:49Z (hace 0.1 h) · total que dijo Jira: 34 · filas leídas: 34
+POBLACIÓN · 34 con listo-para-construir · 24 de equipo-javier · 10 fuera de ese equipo (no mirados)
+   contrarias: «esperando-*», «decision-jefe», «fundador», «sin-firma»
+
+🔴 NO SALE VACÍA · 8 de 24 llevan listo-para-construir y una etiqueta que dice lo contrario:
+   SCRUM-1050  esperando-caso-real          (Tareas por hacer)
+   SCRUM-1052  esperando-asesor             (Tareas por hacer)
+   SCRUM-1054  esperando-asesor             (Tareas por hacer)
+   SCRUM-1055  esperando-asesor             (Tareas por hacer)
+   SCRUM-1066  esperando-alter              (En curso)
+   SCRUM-1076  esperando-asesor             (Tareas por hacer)
+   SCRUM-1403  decision-jefe                (En curso)
+   SCRUM-1502  fundador                     (Tareas por hacer)
+
+⚠️ NO JUZGADOS, NO LIMPIOS · 16 llevan la etiqueta sin ninguna contraria; esta consulta no dice que estén listos:
+   1043 1051 1058 1063 1064 1065 1067 1077 1246 1401 1408 1481 1503 1505 1548 1550
+
+⚠️ NO VE la decisión pendiente que solo consta en el TEXTO de un ticket, sin etiqueta.
+⚠️   Medido por SCRUM-1553 el 2026-10-14 hacia las 04:20Z (main c30729832): en 9 de las 17 que esperaban una
+⚠️   decisión el bloqueo NO tenía etiqueta (1043 1051 1058 1063 1064 1065 1067 1077 1401). Esa lista es de
+⚠️   ese día: no se ha vuelto a medir. Para esos, lo único que hay es leer el ticket (PASO 0).
+⚠️ NO VE una etiqueta contraria CADUCADA: la cuenta igual (p. ej. `esperando-alter` con el ALTER ya aplicado).
+⚠️ NO VE tickets cerrados ni los que no lleven la etiqueta: solo lo que trae la foto.

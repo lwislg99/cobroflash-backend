@@ -1,5 +1,12 @@
 // public/dashboard/js/quotesListView.js
 
+// SCRUM-1273 · los presupuestos archivados. Cada texto lleva su firma en su línea (T9).
+const TEXTOS_ARCHIVADOS = {
+  opcion: 'Archivados', // APROBADO por el orquestador, SCRUM-1273 comentario 19605 (T9)
+  vacio: 'No tienes presupuestos archivados.', // APROBADO por el orquestador, SCRUM-1273 comentario 19605 (T9)
+};
+const VALOR_ARCHIVADOS = "archivados";
+
 function renderQuotesListView(container) {
   container.innerHTML = "";
 
@@ -94,6 +101,12 @@ function renderQuotesListView(container) {
     <option value="rejected">Rechazado</option>
     <option value="expired">Caducado</option>
   `;
+  // SCRUM-1273 · «Archivados» no es un estado: es la otra mitad de la lista. Se pide al servidor
+  // con `?archivados=1` y no con `status`, y por eso su valor no es el de ningún estado.
+  const opcionArchivados = document.createElement("option");
+  opcionArchivados.value = VALOR_ARCHIVADOS;
+  opcionArchivados.textContent = TEXTOS_ARCHIVADOS.opcion;
+  statusSel.appendChild(opcionArchivados);
 
   const qFromInput = document.createElement("input");
   qFromInput.type = "date";
@@ -214,6 +227,19 @@ function renderQuotesListView(container) {
       // este ticket mete una columna: un vacío descuadrado no lo ve ninguna tanda, y es
       // exactamente el defecto que SCRUM-584 tuvo que arreglar en la lista de clientes.
       td.colSpan = numeroDeColumnas();
+      // SCRUM-1273 · sin archivados no se invita a crear el primero: se dice lo que hay.
+      if (currentStatus === VALOR_ARCHIVADOS) {
+        const vacio = document.createElement("div");
+        vacio.className = "empty-state";
+        const tituloVacio = document.createElement("div");
+        tituloVacio.className = "empty-state-title";
+        tituloVacio.textContent = TEXTOS_ARCHIVADOS.vacio;
+        vacio.appendChild(tituloVacio);
+        td.appendChild(vacio);
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        return;
+      }
       const L = window.appLocale || {};
       td.innerHTML =
         '<div class="empty-state"><div class="empty-state-icon">📋</div>' +
@@ -407,7 +433,9 @@ function renderQuotesListView(container) {
 
   function updateQuoteExportHref() {
     const params = new URLSearchParams();
-    if (currentStatus !== "all") params.set("status", currentStatus);
+    // SCRUM-1273 · archivar no saca nada del CSV (c.19605, decisión 2): con «Archivados» elegido,
+    // la exportación es la de «Todos los estados».
+    if (currentStatus !== "all" && currentStatus !== VALOR_ARCHIVADOS) params.set("status", currentStatus);
     if (currentDateFrom) params.set("from", currentDateFrom);
     if (currentDateTo) params.set("to", currentDateTo);
     exportQBtn.href = "/admin/exports/quotes.csv" + (params.toString() ? "?" + params.toString() : "");
@@ -420,7 +448,8 @@ function renderQuotesListView(container) {
       uiSkeletonRows(tbody, numeroDeColumnas(), 6);
       const params = new URLSearchParams();
       if (currentSearch) params.set("search", currentSearch);
-      if (currentStatus !== "all") params.set("status", currentStatus);
+      if (currentStatus === VALOR_ARCHIVADOS) params.set("archivados", "1");
+      else if (currentStatus !== "all") params.set("status", currentStatus);
       if (currentDateFrom) params.set("dateFrom", currentDateFrom);
       if (currentDateTo) params.set("dateTo", currentDateTo);
       const list = await apiRequest("/admin/quotes" + (params.toString() ? "?" + params.toString() : ""));

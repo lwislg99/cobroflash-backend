@@ -10,14 +10,14 @@
 // participa en ninguna de esas decisiones. Es CATEGORIZACIÓN —dice de quién es el asunto—, no
 // una llave.
 //
-// Por eso este fichero no exporta nada que responda «¿puede?», y hay un guard que lo comprueba:
-// si un día alguien lee `quote_assignees` para decidir un 403, la asignación se habrá convertido
-// en permiso sin que nadie lo decida.
+// Por eso este fichero no exporta nada que responda «¿puede?». Lo comprueba, y dice quién SÍ
+// decide con la asignación, `tests/scrum1408-asignar-no-es-un-permiso.test.mjs` (SCRUM-1408):
+// un export nuevo aquí, o un fichero más que lea la asignación, cae ahí y pide una decisión.
 //
 // 🔵 2-oct-2026 (SCRUM-1397) · ALGUIEN LO DECIDIÓ, Y SÓLO PARA **VER**. El fundador firmó el
 // 1-oct-2026 (SCRUM-1390 c.17962, «1-Sí») que estar asignado a un documento cuenta para que un
-// Técnico lo VEA. Esa lectura vive en `accesoALaFactura.ts`, no aquí: este fichero sigue sin
-// exportar ningún «¿puede?». Para EDITAR y EMITIR todo lo de arriba sigue siendo verdad tal cual.
+// Técnico lo VEA. Esa lectura vive en `accesoALaFactura.ts` y `accesoAlPresupuesto.ts` (SCRUM-1403),
+// no aquí: este fichero sigue sin exportar ningún «¿puede?». Para EDITAR y EMITIR, lo de arriba vale tal cual.
 //
 // ⚠️ Y TAMPOCO ABRE LA ECONOMÍA. Un técnico asignado a un documento sigue sin ver coste ni
 // margen: eso lo decide `visibilidadEconomica.ts` por ROL, y la asignación no entra en esa

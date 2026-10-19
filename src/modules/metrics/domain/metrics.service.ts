@@ -1,8 +1,10 @@
+import type { Prisma } from '@prisma/client'; // SCRUM-1555: el tipo del recorte
 import { prisma } from '../../../core/db/prisma';
 import { estadoCobroFor } from '../../jobs/domain/job.service'; // SCRUM-24: mismo semáforo que la lista de Trabajos
 import { isFieldMember } from '../../../core/http/roleCapabilities'; // SCRUM-147
 import { ensamblarMetricasEquipo } from './metricasEquipo'; // SCRUM-236
 import { ensamblarActividadEquipo } from './actividadEquipo'; // SCRUM-1341
+import { numeroVisibleDelPresupuesto } from '../../quotes/domain/revision'; // SCRUM-1444c
 
 export async function getHomeMetrics(merchantId: number) {
   const now = new Date();
@@ -154,6 +156,7 @@ export async function getHomeMetrics(merchantId: number) {
       type: 'quote' as const,
       id: q.id,
       quoteNumber: q.quoteNumber, // SCRUM-43: número por merchant (A1.2); el id global queda solo para navegar
+      numeroVisible: numeroVisibleDelPresupuesto(q), // SCRUM-1444c: el número HECHO; `quoteNumber` sigue mientras S2 migra
       status: q.status,
       customer: q.customer?.name ?? '—',
       total: Number(q.total),
@@ -202,18 +205,21 @@ function monthRange(offset = 0) {
  *
  *   · los tres RECUENTOS de los globos del menú (solicitudes, presupuestos esperando, facturas
  *     pendientes): son recuentos de listas que el operario ya puede abrir (S1: «ver sí»);
- *   · la actividad reciente: los últimos presupuestos del negocio, con importe. El Técnico SÍ ve
- *     la actividad de sus compañeros: lo decidió el fundador el 1-oct-2026 y está en la tabla
- *     «Qué VE el Técnico en Inicio» de la Parte S1 del máster (SCRUM-1337). Son los mismos
- *     presupuestos que ya tiene en la pantalla de Presupuestos.
+ *   · la actividad reciente: los últimos presupuestos, con importe. SCRUM-1555: los que el que
+ *     pregunta puede ver (`recorte`, de `wherePresupuestosVisibles`; `null` = admin, todo el
+ *     negocio). Es la decisión de la TARDE del 1-oct-2026, «autor o asignado», que en la tabla
+ *     «Qué VE el Técnico en Inicio» de la Parte S1 del máster sustituye a la de la mañana
+ *     (SCRUM-1337, «la ve»). Los mismos que ya ve en su pantalla de Presupuestos (SCRUM-1403).
+ *   ⚠️ Los RECUENTOS de arriba NO se recortan: no son documentos y la decisión no los nombra
+ *     (SCRUM-1555 c.19622). Recortarlos sería ampliar una decisión que no es nuestra.
  */
-export async function getInicioOperario(merchantId: number) {
+export async function getInicioOperario(merchantId: number, recorte: Prisma.QuoteWhereInput | null = null) {
   const [pendingCount, quotesAwaiting, pendingRequests, recentQuotes] = await Promise.all([
     prisma.invoice.count({ where: { merchantId, status: 'pending' } }),
     prisma.quote.count({ where: { merchantId, status: 'sent' } }),
     prisma.quoteRequest.count({ where: { merchantId, status: 'pending' } }),
     prisma.quote.findMany({
-      where: { merchantId },
+      where: recorte ? { merchantId, AND: [recorte] } : { merchantId },
       include: { customer: { select: { name: true } } },
       orderBy: { updatedAt: 'desc' },
       take: 5,
@@ -228,6 +234,7 @@ export async function getInicioOperario(merchantId: number) {
       type: 'quote' as const,
       id: q.id,
       quoteNumber: q.quoteNumber,
+      numeroVisible: numeroVisibleDelPresupuesto(q), // SCRUM-1444c
       status: q.status,
       customer: q.customer?.name ?? '—',
       total: Number(q.total),

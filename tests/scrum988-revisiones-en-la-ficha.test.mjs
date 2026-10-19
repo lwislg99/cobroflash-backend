@@ -92,6 +92,13 @@ test('SCRUM-988 · 🔴 admin: «Crear revisión» hace el POST sobre la VIGENTE
   assert.equal(btn[0].textContent, 'Crear revisión');
   btn[0].click();
   await espera();
+  // SCRUM-1302p · la vigente (9) está en BORRADOR: el primer clic sólo avisa de que su enlace dejará
+  // de valer, y crea el «Crear revisión» del aviso.
+  // `m.dentro` es la foto del montaje: el aviso nace después, así que se vuelve a recorrer la sección.
+  const confirmar = todos(m.seccion[0]).filter((n) => m.attr(n, 'data-revision-confirmar') != null);
+  assert.equal(confirmar.length, 1, 'CIEGO: el aviso del enlace no trae «Crear revisión»');
+  confirmar[0].click();
+  await espera();
   assert.deepEqual(m.posts.map((u) => u.replace(/^.*(\/admin\/)/, '$1')), ['/admin/quotes/9/revisiones'],
     '🔴 el POST debe ir sobre la vigente (9), no sobre la abierta (1)');
   // Por JSON: el objeto nace dentro del contexto del banco y su prototipo no es el de este realm.

@@ -97,7 +97,14 @@ async function ficha(alPost) {
   assert.equal(btn.length, 1, 'CIEGO: el admin no ve «Crear revisión»; no hay viaje que medir');
   return {
     posts,
-    pulsar: async () => { btn[0].click(); await pausa(); },
+    // SCRUM-1302p · con la vigente ENVIADA, el primer clic sólo avisa de que su enlace dejará de valer;
+    // crea el «Crear revisión» del aviso. El viaje que mide este fichero empieza ahí.
+    pulsar: async () => {
+      btn[0].click(); await pausa();
+      const ok = todos(r.contenedor).filter((n) => attr(n, 'data-revision-confirmar') != null);
+      assert.equal(ok.length, 1, 'CIEGO: el aviso del enlace no trae «Crear revisión»');
+      ok[0].click(); await pausa();
+    },
     avisos: () => todos(r.contenedor).filter((n) => attr(n, 'data-revision-error') === '1'),
   };
 }

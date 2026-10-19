@@ -111,3 +111,83 @@ tocada se reancló (lo pidió el guard de SCRUM-836); imita lo mismo que antes.
   (J2) · `invoicesAdmin.routes.ts:400` (J1).
 - De mi carril, para el profesional y sin tocar: `expire.service.ts:22`, `reminder.service.ts:70`,
   `quotesAdmin.routes.ts:767`, `maintenance.service.ts:515`.
+
+## SCRUM-1444c · `numeroVisible` en las respuestas de S1 (§3.2 de c.18501), al lado del número crudo
+
+**Medido contra:** `origin/main` = `b8cdb771cb2554a072c10fd71bd10322559130ef` · 2026-10-18T18:28:05Z (hora de GitHub al escribir: 18:48:07Z)
+A9: comprobación → `tests/scrum1444c-numero-visible-en-las-respuestas.test.mjs`
+
+Carril S1 · árbol `s1-1444c` · rama `scrum-1444c-numero-visible-en-las-respuestas`. Encargo del orquestador
+(`cobroflash-backend-f3`), 18-oct-2026. Sin cambio en pantalla: ninguna pantalla lee todavía el campo nuevo.
+
+### La decisión que había que tomar antes (orquestador, 18-oct, opción A)
+
+`numeroVisibleDelPresupuesto` (`revision.ts`, SCRUM-1483) lleva escrita la regla «la respuesta que use esta
+función NO manda además `quoteNumber`». Cumplirla aquí obligaba a quitar el número crudo, y las pantallas de hoy
+lo leen. **Opción A:** se AÑADE `numeroVisible` y el crudo (`number` / `quoteNumber` / `numero`) se queda; cada
+pantalla que pase a leer `numeroVisible` pide quitar el crudo de SU respuesta. La excepción está escrita junto a
+la regla, en `revision.ts`, con este ticket. **Condición de cierre de 1444 (la lleva el orquestador):** que no
+quede ninguna respuesta con los dos.
+
+### Re-medida de la tabla de c.18485 (12 días después), y qué se hizo con cada fila
+
+| # | respuesta | hecho | crudo que se queda |
+| --- | --- | --- | --- |
+| 1 | `GET /admin/quotes` (`listQuotesAdmin`) | ✅ | `number` |
+| 2 | `GET /admin/albaranes/presupuestos` (`filasParaElegirPresupuesto`) | ✅ (lo recibe de la fila 1) | `numero` |
+| 3 | `GET /admin/quotes/:id` (`getQuoteDetailAdmin`) | ✅ arriba y en cada fila de `revisiones` | `number`, `numero` |
+| 4 | `POST /quote/create` | ✅ sobre la fila recién creada | `number` |
+| 5 | `GET /admin/metrics/home` e `/inicio` (`recentActivity`) | ✅ | `quoteNumber` |
+| 6 | `GET /admin/jobs/:id` (`quote`) | ✅ y **`revision` añadida a `QUOTE_SELECT`** | `number` |
+| 7 | `GET /admin/jobs` (`quote` de cada fila) | ✅ por el mismo `QUOTE_SELECT` | `number` |
+| 8 | `GET /admin/albaranes/:id` (`quote`) | ✅ y **`revision` añadida a su `select`** | `number` |
+| 10 | `POST /admin/quotes/:id/revisiones` | ✅ | `numero` |
+| 7 (título), 9, 12 | el título «Presupuesto #N · cliente» de `tituloDeTrabajo` (Trabajos, gastos, historial del cliente) | ❌ **NO hecho, a propósito** | — |
+
+**Por qué las filas de título no:** ahí el número no viaja en un campo, va DENTRO de un texto que compone el
+servidor (`tituloDeTrabajo`, `trabajoDirecto.ts`). Cambiarlo cambia lo que se ve: una revisión pasaría de `#12`
+a `#12.1`, y un presupuesto sin número dejaría de caer al `id` de la tabla (que es el gemelo de c.18405, punto 2).
+Eso no es «sin cambio en pantalla» y queda para decidir.
+
+**🔴 Y es un defecto pequeño y real, no sólo un formato viejo** (lo pidió declarar así el orquestador, 18-oct):
+
+| | |
+| --- | --- |
+| qué se ve | un Trabajo que nació de la REVISIÓN `.1` del presupuesto 12 se titula «Presupuesto #12 · cliente» en Trabajos, en gastos y en el historial del cliente |
+| qué debería verse | «Presupuesto #12.1 · cliente»: el número del documento que de verdad está detrás |
+| por qué está mal | `#12` es el número del ORIGINAL, que es otro documento. Se le enseña al profesional un número que no es el del presupuesto que mira |
+| por qué no se toca aquí | cambiarlo cambia la pantalla, y la opción A era «sin cambio en pantalla». Es una decisión de una línea del fundador: el orquestador la lleva al documento de estado del producto |
+| dónde se arreglaría | `tituloDeTrabajo` (`trabajoDirecto.ts`), pasando a `numeroVisibleDelPresupuesto`. Con el mismo cambio, un presupuesto sin número dejaría de caer al `id` de la tabla. Las consultas de gastos e historial (`expenses.service.ts`, `historialDelCliente.ts`) tendrían que pedir además `revision` |
+
+**`QUOTE_SELECT` está en `jobs.routes.ts`, donde vive también la facturación del Trabajo.** Comprobado antes de
+tocarlo: lo usan sólo `loadJobRefs` y `quotesDeJob`, que alimentan los serializadores de la lista y del detalle.
+Ninguna ruta de emisión. Añadir un campo leído no cambia nada de lo que se factura.
+
+### Verificado, ejecutando
+
+- Test nuevo, 8 casos (filas 1, 2, 3, 5, 6, 7, 8 y 10): el presupuesto de todos es la revisión `.1` del 12, y el
+  doble de Prisma **honra el `select`**, así que una consulta que no pida `revision` no la recibe. Cada caso pide
+  `numeroVisible = '#12.1'` y que el crudo siga.
+- **Rojo primero:** sobre `dist/` de `main` sin el cambio (árbol aparte), **0 de 8**, todos por el campo ausente y
+  ninguno por un 500. **Con el cambio: 8 de 8.**
+- **Mutantes sobre `dist/`:** sin `revision` en `QUOTE_SELECT` → caen las filas 6 y 7; sin `revision` en el
+  `select` del albarán → cae la 8. Restaurado: 8 de 8. (Sin `revision`, la función escribe `#12` en silencio:
+  por eso se pide.)
+- **Fila 4 (`POST /quote/create`) sólo por `tsc`**: por el banco generaría el PDF en disco. Es la misma función
+  sobre la fila completa que devuelve el `create`.
+- **Un test ajeno ampliado, y se dice (regla 41):** `tests/scrum302-presupuesto-y-fotos.test.mjs` ③ exigía con
+  `deepEqual` que `quote` fuera `{ id, number }`. No caza un defecto: fija la forma, y la forma se amplía por la
+  decisión A. Pasa a `{ id, number, numeroVisible }`, con `revision: 0` en su doble (la consulta ya la pide y la
+  base la da). El `deepEqual` sigue exacto. **Aprobado por el orquestador (18-oct):** «no es tocar un guard en
+  rojo para taparlo: ese test fija una FORMA, no caza un defecto, y la forma la ensanché yo al elegir (A)». Si
+  alguien quiere revertirlo, que mire antes este párrafo: el campo nuevo es contrato decidido, no ruido.
+- 658 ficheros de `tests/` vecinos: **6066 pasan, 64 saltados**. Caían 7: el de 302 (arriba), SCRUM-854 (faltaba
+  esta entrada) y **5 que caen IGUAL en la base sin el cambio** (`scrum222` censo SQL, `scrum461` ①/control,
+  `scrum733` ×2). Son del cliente de Prisma viejo de este árbol (sin `prisma generate`), no de este cambio.
+- `tsc`: sólo el error conocido de `merchantAdmin.ts:147`.
+
+### Lo que NO cubre
+
+- Ninguna pantalla lee todavía `numeroVisible`: lo hace S2 (y S4 la del albarán, J3 la de `teamView`).
+- La serie `P260012.1` sigue fuera (es otra decisión: la función escribe hoy lo mismo que el papel).
+- Las filas de título (arriba).

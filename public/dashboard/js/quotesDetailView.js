@@ -50,6 +50,19 @@ const TEXTO_PLAN_DE_COBRO_CAMBIADO =
 // pone el guardado rechazado y lo consume el repintado: el aviso sale una vez, junto al plan vigente.
 let planDeCobroCambiadoEn = null;
 
+// SCRUM-1273 · archivar el presupuesto. Cada texto lleva su firma en su línea (T2–T8 del
+// comentario 19605). El rótulo del botón (T1) vive en `QUOTE_ACTION_ROTULOS.btnArchivar`, y el
+// motivo de un 409 (T10) lo escribe el servidor.
+const TEXTOS_ARCHIVO = {
+  confirmar: '¿Archivar este presupuesto? Dejará de salir en tu lista. Podrás desarchivarlo cuando quieras, y si tu cliente llega a aceptarlo volverá a salir.', // APROBADO por el orquestador, SCRUM-1273 comentario 19605 (T2)
+  avisoArchivado: 'Presupuesto archivado. No sale en tu lista de presupuestos.', // APROBADO por el orquestador, SCRUM-1273 comentario 19605 (T3)
+  desarchivar: 'Desarchivar', // APROBADO por el orquestador, SCRUM-1273 comentario 19605 (T4)
+  archivado: 'Presupuesto archivado.', // APROBADO por el orquestador, SCRUM-1273 comentario 19605 (T5)
+  desarchivado: 'Presupuesto desarchivado.', // APROBADO por el orquestador, SCRUM-1273 comentario 19605 (T6)
+  errorArchivar: 'No se pudo archivar el presupuesto. Inténtalo de nuevo.', // APROBADO por el orquestador, SCRUM-1273 comentario 19605 (T7)
+  errorDesarchivar: 'No se pudo desarchivar el presupuesto. Inténtalo de nuevo.', // APROBADO por el orquestador, SCRUM-1273 comentario 19605 (T8)
+};
+
 /** Lo que la persona VE del plan: tramos, reparto y cuántos están ya facturados. */
 function huellaDelPlanDeCobro(q) {
   const tramos = Array.isArray(q && q.billingPlan) ? q.billingPlan : [];
@@ -70,7 +83,7 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   container.innerHTML = '';
 
   const page = document.createElement('div');
-  page.className = 'detail-page';
+  page.className = 'detail-page presupuesto-ficha'; // SCRUM-1559g: enganche de su regla de 44 px
   container.appendChild(page);
 
   // ── Cabecera ────────────────────────────────────────────────
@@ -200,6 +213,76 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
   const st = String(quote.status || '').toLowerCase();
   const cur = quote.currency;
 
+  // ── SCRUM-1273 · ARCHIVAR ───────────────────────────────────
+  // Archivar es una cuestión de VISTA: saca el presupuesto de la lista y nada más. No toca el
+  // estado, ni el enlace del cliente, ni las cifras (c.19605, decisión 2). Cuándo se ofrece lo dice
+  // la tabla (`btnArchivar`), no esta pantalla: sin la tabla cargada, no se ofrece. Va en la
+  // cabecera, junto a «Duplicar», porque la ficha no pinta «⋮» (la misma divergencia que «Duplicar»).
+  const archivoBox = document.createElement('div');
+  page.appendChild(archivoBox);
+  let archivarBtn = null;
+
+  async function cambiarArchivo(archivar, boton) {
+    if (archivar && !window.confirm(TEXTOS_ARCHIVO.confirmar)) return;
+    boton.disabled = true;
+    try {
+      const r = await apiRequest(`/admin/quotes/${quote.id}/${archivar ? 'archivar' : 'desarchivar'}`, { method: 'POST' });
+      quote.archivedAt = archivar ? ((r && r.archivedAt) || new Date().toISOString()) : null;
+      pintarArchivo();
+      setStatus('success', archivar ? TEXTOS_ARCHIVO.archivado : TEXTOS_ARCHIVO.desarchivado);
+    } catch (err) {
+      // Un POST vencido es «no sé si llegó» (SCRUM-459): decir «no se pudo» podría ser falso. La
+      // ficha se vuelve a leer del servidor, que es quien sabe si quedó archivado.
+      if (err && err.incierto) { renderQuoteDetailView(container, id); return; }
+      boton.disabled = false;
+      // El 409 de archivar trae su motivo para una persona (T10); sin él, el texto de la pantalla.
+      setStatus('error', mensajeParaPersona(err, archivar ? TEXTOS_ARCHIVO.errorArchivar : TEXTOS_ARCHIVO.errorDesarchivar));
+    }
+  }
+
+  // Archivar y desarchivar son SÓLO de admin (`requireRole('admin')`, c.19655): la misma comparación
+  // que la ruta. A otro rol no se le ofrece el botón, porque su 403 haría leer «Inténtalo de nuevo» y
+  // reintentar no sirve (c.19728). El aviso de archivado sí lo ve: es cierto para él también.
+  const puedeArchivar = window.appUserRole === 'admin';
+
+  function pintarArchivo() {
+    archivoBox.innerHTML = '';
+    archivoBox.className = '';
+    if (archivarBtn) { archivarBtn.remove(); archivarBtn = null; }
+    if (quote.archivedAt) {
+      archivoBox.className = 'detail-section';
+      const aviso = document.createElement('div');
+      aviso.className = 'alert info';
+      aviso.setAttribute('data-archivo', 'aviso');
+      const texto = document.createElement('span');
+      texto.textContent = TEXTOS_ARCHIVO.avisoArchivado;
+      aviso.appendChild(texto);
+      if (puedeArchivar) {
+        const btnDesarchivar = document.createElement('button');
+        btnDesarchivar.className = 'btn-secondary btn-sm';
+        btnDesarchivar.setAttribute('data-archivo', 'desarchivar');
+        btnDesarchivar.textContent = TEXTOS_ARCHIVO.desarchivar;
+        btnDesarchivar.addEventListener('click', () => cambiarArchivo(false, btnDesarchivar));
+        aviso.append(' ', btnDesarchivar);
+      }
+      archivoBox.appendChild(aviso);
+      return;
+    }
+    if (!puedeArchivar) return;
+    const destino = typeof window.destinoAccionPresupuesto === 'function'
+      ? window.destinoAccionPresupuesto('btnArchivar', st) : null;
+    const rotulo = window.QUOTE_ACTION_ROTULOS && window.QUOTE_ACTION_ROTULOS.btnArchivar;
+    if (!destino || destino === 'oculta' || !rotulo) return;
+    archivarBtn = document.createElement('button');
+    archivarBtn.className = 'btn-secondary btn-sm';
+    archivarBtn.setAttribute('data-accion', 'btnArchivar');
+    archivarBtn.textContent = rotulo;
+    const este = archivarBtn;
+    archivarBtn.addEventListener('click', () => cambiarArchivo(true, este));
+    headRight.insertBefore(archivarBtn, backBtn);
+  }
+  pintarArchivo();
+
   // ── Sección: ESTADO + TOTAL destacado + timeline ────────────
   const summarySec = document.createElement('div');
   summarySec.className = 'detail-section';
@@ -258,8 +341,9 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     const chosen = quote.selectedTierId ? tierLabels[quote.selectedTierId] || quote.selectedTierId : null;
     const tierBadge = document.createElement('div');
     tierBadge.style.marginTop = '14px';
+    // SCRUM-1487b · la palabra del documento, la misma de la cabecera (no concuerda con nada del rótulo).
     tierBadge.innerHTML = `
-      <div style="font-size:12px;color:var(--muted);margin-bottom:6px">Cotización con 3 opciones</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:6px">${palabraDelDocumento} con 3 opciones</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         ${quote.tiers.map((t) => `
           <span style="padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;
@@ -570,6 +654,46 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     });
   }
 
+  // ── SCRUM-1206 · LOS DOS TEXTOS DEL DOCUMENTO, LEÍDOS ─────────────────────────────────────
+  //
+  // El PDF los imprime y la ficha no los enseñaba: el profesional escribía la cabecera y las
+  // Observaciones, guardaba, y sólo volvía a verlas descargando el papel o al Duplicar. Van en el
+  // ORDEN DEL PAPEL (`pdf.service.ts`): la cabecera encima de los conceptos, las Observaciones
+  // debajo de los totales.
+  //
+  // Los rótulos, firmados por el orquestador (SCRUM-1206, 16-oct-2026, delegación del fundador), los
+  // mismos que la mitad del albarán (`albaranDetailView.js`):
+  //   · `docHeaderText` va SIN RÓTULO, como en el PDF. «Añadir texto en el documento» es el rótulo
+  //     del FORMULARIO: encima de un texto ya guardado se lee como un botón que no hace nada.
+  //   · `docFooterText` lleva «Observaciones» porque ES el bloque «Observaciones» del papel
+  //     (`pdf.service.ts`, `TITULO_OBSERVACIONES` sobre `docFooterText`). Se LEE de la pieza
+  //     (`TD_TITULO_OBSERVACIONES`), no se copia: un literal firmado duplicado deja de ser el mismo
+  //     en cuanto alguien cambia uno. En el albarán el mismo bloque es `notas`; aquí, `docFooterText`.
+  //
+  // El texto lo pinta `textoDelDocumentoPintado`, la pieza que existía para esto (saltos con
+  // `pre-line`, por `textContent`). Su contenedor le añade `overflow-wrap`: una URL larga no puede
+  // ensanchar la ficha a 360 px. SIN DATO, SIN SECCIÓN: vacío, sólo espacios o `null` no pintan nada.
+  const seccionDeTexto = (rotulo, valor, seccion) => {
+    if (valor == null || String(valor).trim() === '') return null;
+    if (typeof window.textoDelDocumentoPintado !== 'function') return null;
+    const sec = document.createElement('div');
+    sec.className = 'detail-section';
+    sec.dataset.seccion = seccion;
+    if (rotulo) {
+      const h = document.createElement('h3');
+      h.className = 'detail-section-title';
+      h.textContent = rotulo;
+      sec.appendChild(h);
+    }
+    const caja = document.createElement('div');
+    caja.className = 'quote-doc-texto';
+    caja.appendChild(window.textoDelDocumentoPintado(valor));
+    sec.appendChild(caja);
+    return sec;
+  };
+  const secCabecera = seccionDeTexto(null, quote.docHeaderText, 'texto-cabecera');
+  if (secCabecera) page.appendChild(secCabecera);
+
   // ── Sección: CONCEPTOS + TOTALES ────────────────────────────
   const concSec = document.createElement('div');
   concSec.className = 'detail-section';
@@ -687,6 +811,12 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
     <div style="font-size:16px;color:var(--ink);font-weight:700;margin-top:2px">Total: <span class="amount" style="font-size:18px">${fmtQuoteMoney(quote.total, cur)}</span></div>
   `;
   concSec.appendChild(totalsWrap);
+
+  // SCRUM-1206 · las Observaciones, debajo de los totales, como en el papel (ver arriba).
+  // Sin el rótulo de la pieza no se pinta: unas Observaciones sin título se leerían como la cabecera.
+  const secObservaciones = window.TD_TITULO_OBSERVACIONES
+    ? seccionDeTexto(window.TD_TITULO_OBSERVACIONES, quote.docFooterText, 'observaciones') : null;
+  if (secObservaciones) page.appendChild(secObservaciones);
 
   // (La sección DECISIÓN vive ahora arriba, en 2 columnas junto a CLIENTE)
 

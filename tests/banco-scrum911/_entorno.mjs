@@ -9,7 +9,9 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 // estar midiendo. Dos niveles arriba de este fichero (`tests/banco-scrum911/`) es la raíz.
 export const WT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..').replace(/\\/g, '/');
 // El fichero de secretos vive FUERA del repositorio, al lado de los worktrees, y ahí sigue.
-const SECRETOS = path.resolve(WT, '..', 'e2e-staging-secret.txt');
+// SCRUM-911b: `YAQU_ENV_FILE` manda, como en `scripts/turno-staging.mjs` (SCRUM-932). Los worktrees
+// de hoy viven en `.claude/worktrees/`, y desde ahí «al lado» ya no es donde está el fichero.
+const SECRETOS = process.env.YAQU_ENV_FILE || path.resolve(WT, '..', 'e2e-staging-secret.txt');
 export const BASE = 'https://yaqu-staging-production.up.railway.app';
 export const imp = (rel) => import(pathToFileURL(`${WT}/${rel}`).href);
 

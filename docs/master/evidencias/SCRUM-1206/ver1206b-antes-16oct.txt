@@ -1,0 +1,10 @@
+ANTES del merge de #2529. Mismo banco (ver1206b.mjs), cuenta QA, sólo GET.
+#46 y #47: build 0dbc92f240a91fbe9e35fd2d3830c53bb12cddc4, 16-oct ~12:38Z (la 1.ª versión del banco miraba sólo esos dos).
+#48: build 1716a0f5451c37c35250fb90b07bda2f2bbdc574, 16-oct ~12:42Z, justo después de crearlo (crear-borrador-qa.mjs, 12:41:22Z).
+{"albaran":46,"ancho":390,"numero":"AB260001","filas":[],"desbordaEnHorizontal":false,"delGet":{"docHeaderText":null,"notas":"Albarán de pruebas QA (SCRUM-1268)."},"gets":110,"abortadas":["POST /admin/entorno"]}
+{"albaran":46,"ancho":1280,"numero":"AB260001","filas":[],"desbordaEnHorizontal":false,"delGet":{"docHeaderText":null,"notas":"Albarán de pruebas QA (SCRUM-1268)."},"gets":110,"abortadas":["POST /admin/entorno"]}
+{"albaran":47,"ancho":390,"numero":"AB260002","filas":[],"desbordaEnHorizontal":false,"delGet":{"docHeaderText":null,"notas":"[QA S1 14-oct] Dos firmas en obra a la vez (SCRUM-1302k). No es un cliente real."},"gets":110,"abortadas":["POST /admin/entorno"]}
+{"albaran":47,"ancho":1280,"numero":"AB260002","filas":[],"desbordaEnHorizontal":false,"delGet":{"docHeaderText":null,"notas":"[QA S1 14-oct] Dos firmas en obra a la vez (SCRUM-1302k). No es un cliente real."},"gets":110,"abortadas":["POST /admin/entorno"]}
+{"albaran":48,"ancho":390,"numero":"AB260003","filas":[],"desbordaEnHorizontal":false,"delGet":{"docHeaderText":"[QA S4 16-oct] Cabecera de pruebas (SCRUM-1206b).\nNo es un cliente real.","notas":"[QA S4 16-oct] Observaciones de pruebas (SCRUM-1206b)."},"gets":110,"abortadas":["POST /admin/entorno"]}
+{"albaran":48,"ancho":1280,"numero":"AB260003","filas":[],"desbordaEnHorizontal":false,"delGet":{"docHeaderText":"[QA S4 16-oct] Cabecera de pruebas (SCRUM-1206b).\nNo es un cliente real.","notas":"[QA S4 16-oct] Observaciones de pruebas (SCRUM-1206b)."},"gets":110,"abortadas":["POST /admin/entorno"]}
+Escritura previa (crear-borrador-qa.mjs): ANTES = #47 firmado y #46 emitido, los dos del trabajo #76 → POST /admin/jobs/76/albaranes 201 → #48 AB260003 borrador.

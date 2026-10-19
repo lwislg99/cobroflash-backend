@@ -5,7 +5,8 @@
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // POR QUÉ EXISTE ESTO
 //
-// Los tests de PDF que había (`tests/pdfs.test.mjs`) comprueban que el fichero existe, que
+// Los tests de PDF que había (`tests/pdfs.test.mjs`, GATEADOS por QA_DB_TEST: el CI no los corre,
+// SCRUM-1178) comprueban que el fichero existe, que
 // empieza por `%PDF-` y que pesa más de N bytes. Eso demuestra que se generó ALGO, no que
 // dentro ponga lo que tiene que poner: un PDF con los campos en blanco pasa esas tres.
 //

@@ -108,8 +108,19 @@ const LINEA_DELEGACION_MICROCOPY = 'Los textos de microcopy que haya que aprobar
 // `literalesAprobados` y `pendientesDeFirma` contestan igual. Lo que se añade es el NOMBRE de lo
 // que el oráculo no mira, para que «no pude comprobarlo» y «está aprobado» dejen de dar la misma
 // palabra. Cambiar a quién vale cada delegación es de los dos jefes, no de este fichero.
+//
+// ── SCRUM-1546c · LA FIRMA DEL FUNDADOR TAMPOCO SE COMPRUEBA, Y AHORA LO DICE ───────────────
+//
+// Medido el 14-oct-2026 (caso M5, `docs/master/evidencias/SCRUM-1546/`): una ficha con «Aprobado
+// por el fundador … SCRUM-999999», un ticket que no existe, salía `aprobada` a secas, y sin la
+// línea salía `no-aprobada`. De la firma del fundador el oráculo también lee sólo la FORMA: las 31
+// reales y la inventada tienen la misma. Decisión del orquestador de Luis (SCRUM-1546 c.19704 y su
+// respuesta del 14-oct): entra en el MISMO tercer estado que la delegada, que deja de llamarse «por
+// delegación», porque ese nombre mentía de una firma que dice ser del fundador. `aprobada` a secas
+// queda sólo para el registro congelado, que no se firma línea a línea (ver abajo).
+// El criterio sigue sin cambiar: `aprobada` vale lo mismo para cada ficha.
 export const ESTADO_APROBADA = 'aprobada';
-export const ESTADO_DELEGADA_SIN_COMPROBAR = 'aprobada-por-delegacion-sin-comprobar';
+export const ESTADO_SIN_COMPROBAR = 'aprobada-sin-comprobar';
 export const ESTADO_NO_APROBADA = 'no-aprobada';
 
 /**
@@ -122,6 +133,16 @@ export const NO_COMPROBADO_EN_UNA_DELEGADA = Object.freeze([
   'qué orquestador firma: el de Luis y el de Javier escriben la misma frase',
   'si el texto es legal o fiscal, que la delegación de Javier del 22-sep-2026 excluye',
   'que el comentario de Jira citado exista y apruebe ese texto: sólo se lee la forma de la referencia',
+]);
+
+/**
+ * SCRUM-1546c · Lo que este oráculo NO comprueba de una firma del fundador. Mismo contrato que la
+ * lista de arriba: cada línea la ata un test de `tests/scrum1546c-la-firma-del-fundador-sin-comprobar.test.mjs`
+ * a lo que el código hace, y se quita de aquí el día que el oráculo aprenda a mirarla.
+ */
+export const NO_COMPROBADO_EN_UNA_FIRMA_DEL_FUNDADOR = Object.freeze([
+  'que el ticket citado exista y recoja esa firma: sólo se lee la forma de la línea',
+  'quién escribió la línea: no se lee ni el autor del commit ni nada fuera del texto de la ficha',
 ]);
 
 /**
@@ -266,10 +287,11 @@ export function aprobacionesDeMicrocopy({ permitirVacio = false, dir = null, con
         // `constaAprobado`, `literalesAprobados` y `pendientesDeFirma`, para que no puedan
         // discrepar entre ellas.
         aprobada: porElFundador || porDelegacion,
-        // SCRUM-997d · el mismo veredicto, dicho en tres palabras en vez de dos. Una delegada
-        // CUENTA (arriba) y además declara qué no se ha mirado de ella.
-        estado: porElFundador ? ESTADO_APROBADA : (porDelegacion ? ESTADO_DELEGADA_SIN_COMPROBAR : ESTADO_NO_APROBADA),
-        noComprobado: porDelegacion ? [...NO_COMPROBADO_EN_UNA_DELEGADA] : [],
+        // SCRUM-997d · el mismo veredicto, dicho en tres palabras en vez de dos. Una firma que
+        // CUENTA (arriba) declara además qué no se ha mirado de ella. SCRUM-1546c: también la del
+        // fundador, porque de ella tampoco se mira más que la forma.
+        estado: (porElFundador || porDelegacion) ? ESTADO_SIN_COMPROBAR : ESTADO_NO_APROBADA,
+        noComprobado: porElFundador ? [...NO_COMPROBADO_EN_UNA_FIRMA_DEL_FUNDADOR] : (porDelegacion ? [...NO_COMPROBADO_EN_UNA_DELEGADA] : []),
         // En un fichero por aprobación, el literal va en su cita; y algunos usan tabla.
         literales: unidadesDelimitadas(texto, { aceptarCitas: true }),
       });
@@ -291,6 +313,8 @@ export function aprobacionesDeMicrocopy({ permitirVacio = false, dir = null, con
       firmante: 'fundador',
       delegacion: null,
       aprobada: true,
+      // SCRUM-1546c · el único registro que sale `aprobada` a secas: no lleva una línea de firma
+      // que se pueda imitar en una ficha nueva, y está CONGELADO desde el 3-sep-2026.
       estado: ESTADO_APROBADA,
       noComprobado: [],
       // 🔴 AQUÍ NO SE ACEPTAN CITAS: el registro congelado usa `>` para NOTAS y avisos, no para
@@ -346,8 +370,9 @@ export function constaAprobado(texto, opciones) {
 /**
  * SCRUM-997d · ¿CÓMO consta este texto? Lo mismo que `constaAprobado`, con el estado de cada ficha
  * al lado: `[{ ruta, estado, noComprobado }]`, o `[]`. Devuelve las mismas rutas y en el mismo
- * orden; lo que añade es poder distinguir «lo firmó el fundador» de «lo aprobó un orquestador por
- * una delegación de la que no he podido comprobar a quién alcanza».
+ * orden; lo que añade es poder distinguir «consta y lo he comprobado» de «consta por una firma de
+ * la que sólo he leído la forma». SCRUM-1546c: hoy sólo el registro congelado está en el primer
+ * caso; de una ficha, sea del fundador o delegada, `noComprobado` dice qué no se ha mirado.
  */
 export function comoConstaAprobado(texto, opciones) {
   const aguja = desnudar(texto);
@@ -365,7 +390,8 @@ export function comoConstaAprobado(texto, opciones) {
  */
 export function delegadasSinComprobar(opciones) {
   return aprobacionesDeMicrocopy(opciones)
-    .filter((a) => a.estado === ESTADO_DELEGADA_SIN_COMPROBAR)
+    // SCRUM-1546c · el estado ya no basta para decir «delegada»: lo comparte con la del fundador.
+    .filter((a) => a.estado === ESTADO_SIN_COMPROBAR && a.firmante === 'orquestador')
     .map((a) => ({ ruta: a.ruta, ticket: a.ticket, referencia: a.delegacion.referencia, noComprobado: a.noComprobado, literales: a.literales }));
 }
 

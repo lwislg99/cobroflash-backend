@@ -72,8 +72,14 @@ const SIN_PROBAR_CONOCIDOS = [
   'tests/scrum1007-1011-1026-relevo-lanzar-bloqueo.test.mjs',
   // SCRUM-1089b: `copiarSkillsA()` cuelga de `temporal()` (tests/_temporal.mjs), mismo caso que 951d.
   'tests/scrum1089b-espejo-skills-agentes.test.mjs',
+  // SCRUM-1178: su `bancoHuerfano()` cuelga de `temporal()` (tests/_temporal.mjs), mismo caso que 951d.
+  'tests/scrum1178b-la-marca-no-revierte.test.mjs',
   // SCRUM-1298: su `banco()` cuelga de `temporal()` (tests/_temporal.mjs), mismo caso que 951d.
   'tests/scrum1298-mesa-por-puesto.test.mjs',
+  // SCRUM-1540: su remoto de juguete cuelga de `fs.mkdtempSync(path.join(os.tmpdir(), …))`, y `juguete(dir)`
+  // y `commit(c, …)` escriben en la carpeta que les llega por PARÁMETRO: el censo no atraviesa la llamada.
+  // Lo retira quien enseñe al censo a seguir un parámetro, o quien pase el juguete a `temporal()`.
+  'tests/scrum1540-borrables-por-la-punta-viva.test.mjs',
   'tests/scrum253-adopcion.test.mjs',
   'tests/scrum258-nota-por-sesion.test.mjs',
   'tests/scrum351-diagnostico-dependencias.test.mjs',

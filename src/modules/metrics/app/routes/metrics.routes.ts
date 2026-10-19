@@ -4,6 +4,8 @@ import { requireRole } from '../../../../core/http/authMiddleware';
 import { getWhatsAppMetrics } from '../../../messaging/domain/whatsappLog.service';
 import { prisma } from '../../../../core/db/prisma';
 import { isVerifiedPlatformOwner } from '../../../../core/config/env';
+import { quienPideDe } from '../../../../core/documentos/accesoALaFactura'; // SCRUM-1555
+import { wherePresupuestosVisibles } from '../../../../core/documentos/accesoAlPresupuesto'; // SCRUM-1555
 
 const router = Router();
 
@@ -22,7 +24,8 @@ router.get('/home', requireRole('admin'), async (req, res) => {
 // Declarada en TECNICO_ALLOWED con su motivo.
 router.get('/inicio', async (req, res) => {
   try {
-    return res.json(await getInicioOperario(req.merchantId));
+    // SCRUM-1555 · la actividad reciente, sólo de los presupuestos que quien pregunta puede ver.
+    return res.json(await getInicioOperario(req.merchantId, await wherePresupuestosVisibles(quienPideDe(req))));
   } catch (err) {
     console.error('[GET /admin/metrics/inicio]', err);
     return res.status(500).json({ error: 'internal_error' });

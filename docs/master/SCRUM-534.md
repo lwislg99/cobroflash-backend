@@ -1629,3 +1629,104 @@ el fichero de `main` la sonda da la versión `4deaa1a6d479`, la misma que imprim
 - Ninguna base de datos: si hay aceptaciones founding de `4deaa1a6d479`, ni cuántas.
 - La página desplegada con el texto nuevo: hasta el merge, producción sigue sirviendo `4deaa1a6d479`.
 - Que las redacciones estén bien como DERECHO: están firmadas; la cláusula sigue marcada para el asesor.
+
+---
+
+# APÉNDICE · 14-oct-2026 · SCRUM-534r · El P1 de `/legal/alcance-beta` se ve entero
+
+**Medido contra:** `origin/main` = `76c29b57c871584b04c8206c11571f9c56c9d699` · 2026-10-14T06:48:32Z
+
+A9: comprobación → `tests/scrum534r-el-p1-se-ve-entero.test.mjs`
+
+**Quién:** jv-j4e (puesto J4), por encargo del orquestador de Javier (`cobroflash-backend-2e`).
+El hook de inicio dijo «SIN IDENTIDAD»; se construye con la orden del orquestador, que remite a
+SCRUM-1549 (la puerta de identidad responde ALTERADO desde el 28-sep).
+
+## 1 · La autorización, leída en Jira
+
+`SCRUM-534 c.19585` (transcrito por el orquestador; literal del fundador: **«Ok»**). Autoriza
+reparar cómo se VE el P1, sin cambiar ni una palabra de lo firmado. NO autoriza reescribir el
+literal: si cambiara una palabra visible, es texto nuevo y vuelve a la regla 39. Etiquetas del
+ticket: `area-j4`, `equipo-javier`, `decision-jefe`, `fundador`, `legal`, `verifactu` (ninguna
+`equipo-luis`, `area-s*` ni `esperando-*`).
+
+## 2 · La rotura, reproducida ANTES de tocar nada
+
+`readLegalDoc` REAL de `src/modules/system/app/routes/legalPages.routes.ts`, transpilado sin
+tocarlo, sobre `ALCANCE_BETA.md` de `11ca1e05f` (y de `76c29b57c`, igual): versión
+`17275d59e185` (la del encargo: control). Su línea 20 de HTML:
+
+    <li>La *<em>facturación con sistema VERI</em>FACTU se activará al cerrar la declaración responsable**</li>
+
+En pantalla: «La \*», «facturación con sistema VERI» en cursiva, «FACTU…responsable\*\*». Tres
+asteriscos sueltos, y el de la marca desaparece («VERIFACTU»).
+
+## 3 · El arreglo: un solo fichero, una sola línea, sin mover ninguna
+
+`docs/legal/ALCANCE_BETA.md:28`: `VERI*FACTU` → `VERI*****FACTU`. El renderizador corta la negrita
+en `VERI**`, deja el `*` de la marca suelto y abre otra negrita en `**FACTU…responsable**`. El
+fichero sigue con 53 líneas.
+
+Primero lo intenté en el renderizador (que `\*` fuese un asterisco literal), y lo revertí antes
+de commitear: `legalPages.routes.ts` es carril **J3** (`docs/equipo/dos-equipos.md:129`), no J4.
+El hook de carril no me paró; lo vi en la regla cargada al editar. Error mío: no miré el carril
+antes de editar `src/`.
+
+## 4 · El control que decide: texto visible ANTES y DESPUÉS, por el renderizador real
+
+| | versión | asteriscos visibles | línea del P1 en pantalla |
+|---|---|---|---|
+| antes (`main`) | `17275d59e185` | 3 | «La \*facturación con sistema VERIFACTU se activará al cerrar la declaración responsable\*\*» |
+| después (rama) | `597cbb48f4b9` | 1 | «La facturación con sistema VERI\*FACTU se activará al cerrar la declaración responsable» |
+
+- `diff` del texto visible: UNA línea distinta (la de arriba) de 41.
+- Quitados TODOS los `*` de los dos textos: **idénticos**. No aparece ni desaparece otra letra.
+- Matiz que se declara: el `*` que queda es el de VERI\*FACTU, que antes se comía la cursiva. Es
+  el del literal firmado en c.19585; no es una palabra nueva.
+- Estilo: «facturación con sistema VERI» y «FACTU … responsable» en negrita; el `*` en peso normal.
+
+El P1 tal como queda en pantalla (dos bloques; véase el apartado 5):
+
+> **La facturación con sistema VERI\*FACTU se activará al cerrar la declaración responsable**
+>
+> del fabricante, **sin cambio de precio** para ti.
+
+## 5 · Otra rotura al servir, que NO se toca (va a la puerta de go-live, SCRUM-1554)
+
+El renderizador no une las líneas de continuación de una viñeta: cada una sale como un `<p>`
+aparte, fuera de la lista. En este documento son **7** (líneas de HTML 11, 17, 22, 23, 24, 25 y
+29), y el P1 es una de ellas: «del fabricante, sin cambio de precio para ti. Hoy la remisión…»
+sale como párrafo suelto debajo de la viñeta. No cambia ninguna palabra, pero el P1 se lee
+partido en dos bloques. Arreglarlo es el renderizador (carril J3, y toca los otros seis
+literales) o unir líneas del `.md` (mueve líneas citadas por número). No es de este encargo.
+
+## 6 · Consecuencia: la versión del documento
+
+`17275d59e185` → **`597cbb48f4b9`** al desplegar. Hoy no cuesta ninguna aceptación: según el
+orquestador, las cuatro filas de `legal_acceptances` de producción son de `48e3140b2083` (ya
+muerta) y su comercio es cuenta de prueba (`SCRUM-1551 c.19547`). **No lo he medido yo**: no
+consulté ninguna base ni pedí credenciales, por orden del encargo. El c.19585 dice que «se vuelve
+a comprobar antes de aplicarlo» con la consulta del registro de 1551: esa comprobación no la he
+hecho y queda para quien tenga la base.
+
+## 7 · Aceptación → dónde se ve
+
+| lo pedido | dónde se ve |
+|---|---|
+| rojo primero | apartado 2, y el guard cae con la línea de `main` (medido) |
+| antes/después por el `mdToHtml` real, texto visible idéntico salvo asteriscos | apartado 4 |
+| el P1 como queda en pantalla | apartado 4 |
+| hash nuevo | apartado 6 |
+| otro literal roto: decirlo y no tocarlo | apartado 5 |
+| que no vuelva | `tests/scrum534r-el-p1-se-ve-entero.test.mjs`: el P1 firmado se lee y no queda ningún `*` suelto; con positivo SEMBRADO |
+
+El test tuvo su propio fallo, cazado antes de empujar: el módulo fija `LEGAL_DIR` con
+`process.cwd()` AL CARGARSE, así que mi primer «sembrado» leía el documento real y pasaba por
+la razón equivocada. Ahora carga una instancia nueva por raíz y comprueba que leyó la sembrada.
+
+## Lo que NO he medido
+
+- Ninguna base de datos (apartado 6).
+- La página desplegada: hasta el merge, producción sirve `17275d59e185`.
+- Cómo pinta GitHub el `.md` en crudo: `VERI*****FACTU` no es CommonMark limpio; el documento lo
+  sirve `legalPages.routes.ts`, y eso es lo que se ha medido.

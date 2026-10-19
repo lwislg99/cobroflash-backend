@@ -25,6 +25,7 @@ import { sendWhatsAppText } from '../../../../integrations/whatsapp';
 import { notifyMerchantAlert } from '../../../../integrations/whatsappNotifications';
 import { resolveBillingPlan, distributeStageAmounts, validateCustomBillingPlan } from '../../domain/billingPlan';
 import { allocateQuoteNumber, displayQuoteNumber } from '../../domain/quoteNumber.service';
+import { numeroVisibleDelPresupuesto } from '../../domain/revision'; // SCRUM-1444c
 import { isQuoteExpired } from '../../domain/expire.service';
 import { getSession } from '../../../auth/domain/auth.service';
 
@@ -73,6 +74,7 @@ import { normalizarDireccionObra, normalizarModoDireccionObra } from '../../../.
 import { paramsDePresupuestoParaPdf } from '../../domain/presupuestoParaPdf';
 import { firmaTieneTrazo, ERROR_FIRMA_VACIA, COPY_FIRMA_VACIA } from '../../domain/firmaConTrazo';
 import { ESTADOS_DECIDIBLES_POR_EL_CLIENTE, ERROR_PRESUPUESTO_YA_DECIDIDO, mensajeYaDecidido } from '../../domain/decisionDelCliente'; // SCRUM-1276
+import { tieneVersionMasReciente, mensajeDeVersionMasReciente, ERROR_VERSION_NO_VIGENTE } from '../../domain/versionMasReciente'; // SCRUM-1302r
 
 
 // SCRUM-728 · la sección crítica de la serie saturada: se traduce a un aviso legible en vez
@@ -222,7 +224,10 @@ router.post('/create', async (req, res) => {
           teamMemberId: creatorTeamMemberId,
           createdVia: body.created_via ?? 'text', // V0-3: telemetría quote_created_via
           payMethods: body.payMethods ?? undefined, // A2.1: selector al crear
-          jobId: jobIdDelAdicional, // SCRUM-195: null = presupuesto normal; con valor = adicional
+          // SCRUM-195: el Trabajo al que pertenece. ⚠️ SCRUM-1190: «con valor = adicional» dejó de ser
+          // cierto con SCRUM-1274, que manda `job_id` también en el PRIMER presupuesto de un Trabajo
+          // (el hueco «Hacer presupuesto»). El rol vive en `esAdicional`, y hoy no lo escribe nadie.
+          jobId: jobIdDelAdicional,
           // SCRUM-656 (T7 fase B) · LOS DOS CAMPOS QUE SE LEÍAN Y NO SE ESCRIBÍAN.
           //
           // 🔴 `ivaModo` ES UN DEFECTO DE LA FASE A, Y ERA MÍO: `quotesView.js:3294` lo manda, el
@@ -272,6 +277,7 @@ router.post('/create', async (req, res) => {
     return res.status(201).json({
       id: quote.id,
       number: quote.quoteNumber, // A1.2: número visible (por merchant); el id queda para links/API
+      numeroVisible: numeroVisibleDelPresupuesto(quote), // SCRUM-1444c: el número HECHO; `number` sigue mientras S2 migra
       status: quote.status,
       total: quote.total.toString(),
       currency: quote.currency,
@@ -381,6 +387,19 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
     if (decision === 'reject' && quote.status === 'rejected') {
       return res.json({ ok: true, status: 'already_rejected' });
     }
+    // SCRUM-1302r · una versión con otra más reciente en su grupo no se decide, en ningún sentido:
+    // es la misma pregunta que hace la página del enlace (`versionMasReciente.ts`), para que el
+    // `POST` fabricado con el enlace viejo no acepte lo que la página ya no deja aceptar. Va ANTES
+    // del caducado (punto 5 de c.19454: «pide uno actualizado» sería falso habiendo ya uno). Una
+    // versión aceptada o rechazada no llega aquí con el mismo sentido (idempotente, arriba) y la
+    // pregunta la deja fuera (punto 6). Si la consulta falla, lanza → 500, nunca acepta a ciegas.
+    if (await tieneVersionMasReciente(quote, quote.merchant)) {
+      return res.status(409).json({
+        error: ERROR_VERSION_NO_VIGENTE,
+        message: mensajeDeVersionMasReciente(getLocale(quote.merchant?.country).quoteHasNewer, quote.merchant),
+      });
+    }
+
     // A16.2: un presupuesto caducado no se decide (la landing ya muestra el
     // copy oficial N3; esto cubre carreras entre pasadas del cron)
     if (isQuoteExpired(quote)) {
@@ -475,6 +494,8 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
           decisionComment: comment,
           rejectionReason: null,
           rejectedAt: null,
+          // SCRUM-1273 · aceptado y archivado sería un compromiso que no sale en la lista (c.19605).
+          archivedAt: null,
           ...(signatureData ? { signatureUrl: signatureData } : {}),
           ...(evidenciaFirma ? { evidenciaFirma: evidenciaFirma as any } : {}),
           ...(tierId ? { selectedTierId: tierId } : {}),
@@ -729,6 +750,8 @@ router.post('/:token/decision', decisionLimiter, async (req, res) => {
           decisionChannel: 'whatsapp',
           rejectionReason: reason || comment || null,
           decisionComment: comment ?? null,
+          // SCRUM-1273 · la decisión del cliente lo devuelve a la lista (c.19605, decisión 1).
+          archivedAt: null,
         },
       });
       } catch (e) {

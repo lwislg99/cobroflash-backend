@@ -233,3 +233,113 @@ una foto de ese momento; la orden lo vuelve a medir al correr.
 ## Lo que esto NO dice
 
 Que las ESCRITURAS de las órdenes funcionen en producción. Ninguna se ha corrido.
+
+## SCRUM-1367e · las cinco condiciones de c.18479, dentro de `aceptado` (14-oct-2026)
+
+Puesto S3 (s3-14octb), 09:20Z (hora de GitHub), base `origin/main` `7f5e1dd225430829497a6a778f06527892b606f4`.
+**Nada sembrado ni escrito en producción.** Sólo lecturas GET con la cuenta QA (abajo).
+
+| Condición (c.18479) | Antes de este tramo | Ahora |
+|---|---|---|
+| 1 · sólo la cuenta QA | sí (`comprobarCuentaQA`: merchant 46 y owner) | igual |
+| 2 · ni documento ni cobro, y lo comprueba después | **no**: lo decía el comentario, no se medía | ids de `/admin/invoices`, `/admin/cobros` y `/admin/albaranes` antes y después; si difieren, sale 1 gritando. También si el `accept` revienta o el Trabajo no sale. Lista ilegible o llena = no acepta. ⚠️ **«deshace» NO se cumple:** un aceptado no se rechaza (409) y un emitido no se borra (regla 29) |
+| 3 · teléfonos del rango imposible | sólo heredado de `sembrar-qa` (busca el cliente por nombre) | relee la ficha del cliente; todo teléfono `340` + 8 dígitos, o no escribe |
+| 4 · deshacible y declarado | dice qué crea, no cómo se quita | dice qué queda y que **no se quita por el panel**. ⚠️ «deshacible» NO se cumple, por lo mismo que en la 2 |
+| 5 · fail-closed si `INVOICING_ES_ENABLED` no está en OFF | **no** (0 menciones) | `GET /admin/me` → `modoEmision` tiene que ser `receipt` (lo calcula `getEmissionMode`). Cualquier otro valor o ninguno → sale 3 sin escribir. Se lee otra vez justo antes del `accept` |
+
+**Medido:**
+
+* `node --test tests/scrum1367-sembrar-casos.test.mjs`: 23 tests, 23 pass (17 de antes + 6 nuevos).
+* 10 mutaciones declaradas (6 + 4), y cada una tumba el test que nombra. Base sin mutar verde antes y después.
+* `npm run build` sale 2 por 7 errores de tipos de Prisma (`seriesYear`, `toPhone`), del cliente viejo en los `node_modules` compartidos. No son de este tramo.
+
+**Visto en producción (sólo GET, cuenta QA, 14-oct ~09:18Z):**
+
+| Ruta | Respuesta |
+|---|---|
+| `/admin/me` | `merchantId: 46` · `isOwner: true` · `modoEmision: "receipt"` |
+| `/admin/invoices` | array, 0 elementos |
+| `/admin/cobros` | array, 0 elementos |
+| `/admin/albaranes` | `{ filas }`, 2 filas |
+| `/admin/customers/83` | `mobile: "34000001268"` · `phone: null` |
+
+🔴 **Lo que impide sembrarlo hoy:** `/admin/me` da `plan: "trial"` con `planExpiresAt: 2026-10-12T14:41:58.799Z`, y `POST /quote/create` lleva `requireActivePlan`, que con la prueba vencida responde **403 `trial_expired`** (`src/core/http/authMiddleware.ts`). La orden fallaría en el alta del borrador (sale 1 sin aceptar nada). Afecta a cualquier sesión que cree presupuestos en la cuenta QA. Alargar el plan es escribir en el merchant: no lo hago yo.
+
+## SCRUM-1367e · seguimiento: el rojo de #2460 era mío (14-oct-2026)
+
+**Medido contra:** `origin/main` = `099cfd383764b8cd87ab78e9ef7df8ca57a206a7` · 2026-10-14T16:25:50Z
+
+Puesto S3 (2ª tanda del 14-oct).
+
+* **Por qué estaba rojo.** El obligatorio de #2460 (job 115783802215, punta `1577a4f`) cayó sólo por `SCRUM-262 · todo teléfono sembrado está en el rango imposible`. La causa era `tests/scrum1367-sembrar-casos.test.mjs:441`, que usaba `phone: '911234567'`, un fijo de rango real, como caso negativo. Era un defecto de este tramo, no algo ajeno.
+* **Qué cambia.** Los dos casos negativos de la condición 3 pasan a `mobile: '34612'` y `phone: '91123'`. Siguen fuera del rango imposible, así que el sembrador los sigue rechazando con el mismo mensaje, y tienen cinco cifras: no pueden ser de nadie, porque un abonado español tiene nueve. El `mobile: '34612345678'` de antes también era de rango real, y el guard no lo veía.
+* **Medido:** `node --test tests/scrum1367-sembrar-casos.test.mjs tests/scrum262-telefonos-de-prueba.test.mjs` da 28 tests, 28 pass. El rojo previo es el del CI, con el `911234567` nombrado.
+* **Hallazgo de paso, sin arreglar aquí:** `ESCRITURA` del guard 262 no incluye `mobile`, aunque `Customer.mobile` existe en el esquema. Con el mismo recorte de ficheros y la misma forma de literal hay 22 `mobile: '…'`, y 5 están fuera de rango. Uno era este. Los otros cuatro: `scrum1032-contacto-con-un-toque.test.mjs:47` y `:81` (dos, con números de ficción del Reino Unido y de EE. UU.) y `scrum312-importador-clientes.test.mjs:303` (`34600000009`, de rango real). Ensanchar el guard cambia el veredicto de ficheros de otros tickets, así que se lo paso al orquestador.
+* **Decisión 4 (orquestador, 14-oct):** basta con «declarada» si la salida lista los ids creados. Lo hace la `:279` (`el presupuesto #<id> … y su Trabajo #<id>`), y el test lo comprueba en la `:504`.
+
+A9: comprobación → `tests/scrum262-telefonos-de-prueba.test.mjs`
+
+## SCRUM-1367f · aceptar un borrador que YA existe, y el caso ① sembrado en la cuenta QA (14-oct-2026)
+
+**Medido contra:** `origin/main` = `bcd333823d9f97ea55a6dd9a126d9d0e89b80db3` · 2026-10-14T17:32Z (hora de GitHub)
+
+Puesto S3 (3ª tanda del 14-oct). Encargo del orquestador: `POST /admin/quotes/:id/accept` no lleva el paywall, así que el caso ① se puede sembrar sin crear un presupuesto, por el sembrador y con las cinco condiciones.
+
+**Qué cambia.** `node scripts/qa/sembrar-casos.mjs aceptado --presupuesto N` acepta el borrador #N que ya existe, en vez de crearlo. Corre por el mismo camino que la orden sin opción y con las mismas cinco condiciones de c.18479. Lleva además dos cerrojos:
+
+* el #N tiene que ser del cliente QA, que es aquél cuyos teléfonos mira la condición 3. Si es de otro cliente, sale 3 sin escribir;
+* si el cliente QA ya tiene un presupuesto aceptado, no se acepta otro: sale 1 y nombra el que hay. Como los borradores de producción no llevan marca, la idempotencia es ésta. Vale también al revés: sin la opción, un aceptado sin marca impide dar de alta otro.
+
+**Medido sin red:** `tests/scrum1367-sembrar-casos.test.mjs` da 28 tests y 28 pass (23 de antes y 5 nuevos). Hay 13 mutaciones declaradas (10 de antes y 3 nuevas), y cada una tumba el test que nombra. La base sin mutar sale verde antes y después.
+
+**El 403, recibido.** `POST /quote/create` con cuerpo `{}` y la sesión de la cuenta QA devuelve **403 `{"error":"trial_expired","redirect":"/dashboard/#plans"}`** (`Date: Wed, 14 Oct 2026 17:31:25 GMT`). El cuerpo vacío se eligió a propósito: si el plan estuviera activo, la validación lo habría parado con un 400 y no se habría creado nada. Antes, como control positivo, la misma cookie dio `GET /admin/me` → 200, merchant 46, `plan: "trial"`, `planExpiresAt: 2026-10-12T14:41:58.799Z`.
+
+**Corrido en producción (cuenta QA, ~17:31Z):** `aceptado --presupuesto 206` sale 0.
+
+| Visto | Por dónde |
+|---|---|
+| presupuesto #206 (nº 5) `accepted` | salida del sembrador y `GET /admin/quotes/206` |
+| **Trabajo #77**: `quote.id` 206, `totalAceptado` 1.21, `remaining` 1.21 EUR, `totalCobrado` 0, `invoices` 0 | `GET /admin/jobs` |
+| facturas 0 y cobros 0 después; ids de facturas, cobros y albaranes iguales antes y después (2: los albaranes 46 y 47) | condición 2 del sembrador, y `GET /admin/invoices` y `GET /admin/cobros` |
+| repetir la orden: sale 0 y no escribe («ya estaba aceptado (no se repite)») | salida |
+| `--presupuesto 204`: sale 1 («ya tiene un presupuesto aceptado (#206)») y el 204 sigue en `draft` | salida y `GET /admin/quotes/204` |
+
+**Por qué el 206.** Los seis borradores tenían un uso medido:
+
+* 202: es el presupuesto base `[QA-1268]`.
+* 203: cuelga del Trabajo 76, que es el caso NEGATIVO de SCRUM-1355; ése se conserva.
+* 204 y 208: son las versiones de SCRUM-1302 que usa S1.
+* 205: es del cliente 84 (SCRUM-1198).
+* 206: lo usaban las sondas de SCRUM-1150 y SCRUM-1482, que sólo leían.
+
+⚠️ Riesgo declarado: esas sondas ven ahora el 206 aceptado. Ninguna dependía del estado: una mide el título y la otra tiene el POST de revisiones interceptado.
+
+**Lo que queda en la cuenta QA y NO se quita por el panel:** el presupuesto #206 aceptado y el Trabajo #77.
+
+**Qué desbloquea (el lado POSITIVO, un Trabajo con presupuesto aceptado):** SCRUM-1355, 1369 y 1370. 1365 lo tiene a medias, porque pide un Trabajo TERMINADO y el #77 está en `pendiente_agendar`. **No desbloquea:** 1285, que pide un plan propio y para eso hay que crear presupuesto; 1227, que pide el perfil fiscal ③ y no tiene regla; ni 1375, que pide un albarán `parcial`/`facturado`.
+
+A9: comprobación → `tests/scrum1367-sembrar-casos.test.mjs`
+
+## SCRUM-1367g · R25: la regla de firmar en la cuenta de QA (16-oct-2026)
+
+**Medido contra:** `origin/main` = `555c65fa91cd12d54d735a40b90e479805b276fa` · 2026-10-16T11:56:36Z
+
+Puesto S0. **Encargo del orquestador de Luis:** escribir la regla que él decidió ese mismo día, con la delegación del fundador («NO SE que dices de las firmas hazlo tú»). La regla y sus seis condiciones son suyas; lo que pone aquí la S0 es la redacción y lo que midió para escribirla.
+
+| Qué | Dónde |
+|---|---|
+| La regla, con sus seis condiciones, qué firma entra y qué NO cubre | `docs/RUNBOOKS.md` R25 |
+
+**El número.** El orquestador pidió comprobarlo antes de escribir. Sobre `555c65fa9`, el último apartado de `docs/RUNBOOKS.md` es R24 (SCRUM-1367). De los 11 PR abiertos a las 11:49Z, ninguno toca `RUNBOOKS.md`. Control positivo: los 11 traen su lista de ficheros, entre 2 y 18 cada uno. **R25 estaba libre.**
+
+**Medido para escribirla (leído, sin tocar el camino de emisión):**
+
+* Las tres firmas del panel (`partes.routes.ts` `/:id/firmar` y `/:id/firmar-tecnico`, `albaranes.routes.ts` `/:id/firmar`) se leyeron enteras, desde su `router.post` hasta el siguiente. Buscando `whatsapp|send[A-Z]|mailer|notif|enqueue|emit|invoice|verifactu`, sólo salen comentarios y el 409 «Emite el albarán antes de firmarlo.». **Ninguna envía.**
+* 🔴 **La firma por el enlace público del albarán (`albaranPublic.routes.ts` `/:token/firmar`) llama a `sendAlbaranFirmadoWhatsApp(albaran.id)`**: el auto-envío de SCRUM-49. Por eso R25 lo deja FUERA y lo nombra. **El orquestador lo confirmó por `SendMessage` el mismo 16-oct: queda fuera «definitivamente y no "de momento"».** Su motivo, que R25 lleva escrito: un envío es dinero y es regla 28, y no lo puede autorizar él. Lo decide el fundador, y ya está en su lista.
+* `scripts/qa/sembrar-albaranes.mjs firmado` firma por `POST /admin/albaranes/:id/firmar` (su lista de escrituras permitidas, línea 69), es decir, por la firma del panel. Queda dentro de R25.
+
+**Lo que esto NO hace:** no firma nada. No toca ni el código ni el sembrador. No mide SCRUM-1302s ni la gemela del albarán: eso lo hace quien tenga esos tickets, ya con regla.
+
+**Error propio.** El primer barrido de los handlers miró una ventana fija de ~125 líneas desde cada `router.post` y sólo las rutas del panel. Con eso, «firmar no envía nada» salía limpio. Al leer cada handler entero, y también el del enlace público, apareció el auto-envío. Sin esa segunda lectura, R25 habría dicho que ninguna firma envía.
+
+A9: aviso → A10 «Una ventana fija es una tolerancia disfrazada.» — no se pudo comprobar: no hay instrumento que diga dónde acaba un handler sin abrir el fichero; el barrido entero desde `router.post` hasta el siguiente es la receta, y va en este registro

@@ -346,10 +346,14 @@ const SUPERFICIES_791 = [
   // 44 px (`.quote-lines-header > .btn-sm`), medidos con ESTE guard antes y después:
   //     «✨ Sugerir con IA»    BUTTON.btn-ghost.btn-sm                   30,7 → cumple a 929 y a 390
   //     «📋 Usar plantilla»    BUTTON.btn-ghost.btn-sm.quote-header-btn  30,7 → cumple a 929 y a 390
-  // Siguen: las casillas de 17 px (INPUT) y «+ Añadir descuento» (ver su excepción: 43,6 px, y es
-  // el banco, no el producto).
-  { ruta: '/__quotes', vista: 'renderQuotesView', titulo: 'editor de presupuesto', distintosEsperados: 2,
-    origen: 'SCRUM-1148 (26-sep-2026, con el mínimo de cada ancho)', preparar: abrirTodosLosPasos },
+  // 🔴 SCRUM-1158 · 15-oct-2026 · 2 → 1, y el que sale VA NOMBRADO:
+  //     «+ Añadir descuento»   BUTTON.btn-ghost.btn-sm   43,6 → cumple a 929 y a 390
+  // No cambió el botón: cambió el BANCO. Su 43,6 era el `<span>` «Descuento global», que el
+  // producto oculta con `hidden` y el mini-DOM pintaba (no reflejaba la propiedad). Con el banco
+  // arreglado ese campo ya no sale en la página serializada y el botón mide sus 44. Lo nombró el
+  // detector de sobrantes, medido con ESTE guard antes y después. Sigue: las casillas de 17 px.
+  { ruta: '/__quotes', vista: 'renderQuotesView', titulo: 'editor de presupuesto', distintosEsperados: 1,
+    origen: 'SCRUM-1158 (15-oct-2026, con el banco que refleja `hidden`)', preparar: abrirTodosLosPasos },
   // 🔴 SCRUM-848 · `datos` NO es una excepción nueva ni un número tocado: es la SUPERFICIE.
   //
   // Sin él, el banco montaba esta ficha con `{}` — un Trabajo SIN `status`, que el producto no
@@ -380,7 +384,8 @@ const SUPERFICIES_791 = [
   // 14 px) dejó de estar. Con CERO deuda CONOCIDA la ficha salió de esta lista citando
   // `npm run censo:tactil-panel` como red — y esa red **no corre en ningún sitio automático ni
   // bloquea nada** (medido por S0, SCRUM-1172: no está en los workflows, ni en
-  // `guards-visuales.mjs`, ni en `test`). Cero deuda CONOCIDA no es cero deuda: es que nadie
+  // `guards-visuales.mjs`, ni en `test`). (SCRUM-1178, 15-oct-2026: desde SCRUM-1179-C SÍ corre en
+  // cada PR, en el job informativo; cuenta, pero sigue sin bloquear nada.) Cero deuda CONOCIDA no es cero deuda: es que nadie
   // miraba, y detrás había botones de COBRO a 30 px («📲 Confirmar Bizum recibido», acciones de
   // cobro, «Enlace de pago»).
   //
@@ -782,15 +787,11 @@ if (!PANEL_HTML) {
 // una deuda: es bajar el umbral. Cada superficie declara las suyas y responde de ellas.
 const EXCEPCIONES_791 = {
   renderQuotesView: [
-    // 🔴 SCRUM-1148 · UNA SOLA VÍCTIMA YA, y es DEL BANCO. «✨ Sugerir con IA» cumple desde la regla
-    // por contenedor y sale del motivo (la avería de SCRUM-794: el emparejador va por selector y no
-    // avisaría). «+ Añadir descuento» tiene caja de 44 px y el medidor le da 43,6 a 390 porque el
-    // `<span>` «Descuento global» del campo le pisa el borde inferior. Ese campo nace con
-    // `hidden = true` y en el producto NUNCA convive con el botón (quotesView.js, el clic hace
-    // campo.hidden=false y botón.hidden=true; `[hidden]` es `display:none !important`, SCRUM-731),
-    // pero el mini-DOM no refleja la PROPIEDAD `hidden` como atributo y la página serializada los
-    // pinta a los dos. Medido con `elementsFromPoint` en el borde, no supuesto.
-    { sel: 'BUTTON.btn-ghost.btn-sm', motivo: 'LIMITACIÓN DEL BANCO, NO DECISIÓN DE PRODUCTO. «+ Añadir descuento»: caja 44 px, 43,6 px de toque a 390 SOLO en el banco — el campo «Descuento global» (oculto con `hidden` en el producto, que nunca lo pinta junto al botón) sale visible en la página serializada porque el mini-DOM no refleja la propiedad `hidden`. Aquí el instrumento no sabe medir: se RETIRA en cuanto el banco refleje `hidden` (SCRUM-1158).' },
+    // 🔴 SCRUM-1158 · aquí estaba `BUTTON.btn-ghost.btn-sm` «+ Añadir descuento», la última, y era DEL
+    // BANCO: caja de 44 px y 43,6 de toque a 390 porque el `<span>` «Descuento global» —oculto con
+    // `hidden` en el producto, que nunca lo pinta junto al botón— salía visible en la página
+    // serializada. El mini-DOM ya refleja `hidden` y el botón cumple a 929 y a 390. Retirada; la
+    // nombró el detector de sobrantes.
     // SCRUM-1148 · aquí estaba `BUTTON.btn-ghost.btn-sm.quote-header-btn` «📋 Usar plantilla»: cumple
     // a 929 y a 390 con la regla por contenedor. Retirada; la nombró el detector de sobrantes.
     // 🔴 SCRUM-711 · AQUÍ HABÍA DOS EXCEPCIONES MÁS, y se retiran porque ya no tienen causa:

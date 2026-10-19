@@ -148,10 +148,6 @@
       "clase": "SIN_COMENTARIO",
       "motivo": "SCRUM-1215 lote 5 (S2, c.17505; decisión del orquestador, 29-sep-2026): SE CONSERVA, declarada. Sin productor vivo desde SCRUM-491 (nadie en src/ escribe 'manual'), pero traduce un VALOR DE DATO que una fila antigua puede traer escrito; sin ella se vería el valor crudo. No se puede consultar la base para saberlo, así que el lado seguro es conservarla. El motivo ya consta en su código (paidViaEtiquetas.js:53-58, fichero de J, no tocado). Cuando es cierto: «Marcado a mano» es lo que significa ese valor."
     },
-    "public/dashboard/js/quoteActionsRegistry.js · QUOTE_ACTION_ROTULOS.btnBorrar": {
-      "clase": "SIN_COMENTARIO",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
     "public/dashboard/js/settingsView.js · QR_COPY.color": {
       "clase": "PENDIENTE",
       "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): su propio comentario lo da por [PENDIENTE microcopy oficial]. Contenido de J3/S4, no de este instrumento."
@@ -373,6 +369,10 @@
     {
       "id": "public/dashboard/js/quoteDireccionObra.js · TEXTOS.personalizada",
       "motivo": "SCRUM-1215i (13-oct-2026): APROBADA tal cual por el orquestador por delegación del fundador en SCRUM-1215 comentario 19084 (9-oct-2026), F3, con sus tres hermanas. No estaba acusada por no tener firma sino por ser la cuarta bajo una cabecera que contaba tres (SCRUM-1215 comentario 19088): por eso las cuatro llevan la marca en su línea. Ficha en docs/microcopy/2026-10-09-SCRUM-1215-direccion-de-la-obra.md."
+    },
+    {
+      "id": "public/dashboard/js/quoteActionsRegistry.js · QUOTE_ACTION_ROTULOS.btnBorrar",
+      "motivo": "SCRUM-1273 (14-oct-2026): la hoja SALE del fichero, no se firma. «Borrar» no existía en ningún sitio (ni ruta ni botón) y se sustituye por `btnArchivar` («Archivar», T1), APROBADA por el orquestador en SCRUM-1273 comentario 19605, con su marca en su misma línea. Ficha en docs/microcopy/2026-10-14-SCRUM-1273-archivar-presupuestos.md. Era la última hoja de SCRUM-1215 en el carril de S2."
     }
   ],
   "porGrupo": {

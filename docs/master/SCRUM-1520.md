@@ -346,3 +346,148 @@ primera entrega y no las he regenerado: cambian el sello de tiempo y la ruta del
          tests/scrum708-el-fichero-que-no-corre.test.mjs tests/scrum864c-el-temporal-no-vuelve.test.mjs
     grep -E "^# (tests|pass|fail|skipped)" "${TMPDIR:-/tmp}/1520c.tap"     # 10 · 10 · 0 · 0
     node docs/master/evidencias/SCRUM-1520/la-cola-que-cae.mjs --por-npm  # sale 0, 8 controles de 8
+
+# SCRUM-1520d · La puerta que quedaba abierta: dos formas SÍ dan verde con un caso que cae, el árbol las usa CERO veces, y un guard la cierra
+
+**Medido contra:** `origin/main` = `e2be1c9fda3b5ceac853b4d376f5664ac8e4df67` · 2026-10-14T08:07:01Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum1520d-nada-calla-un-caido.test.mjs`
+
+S3 (equipo de Luis), por encargo del orquestador del 14-oct («SCRUM-1520 · ¿puede un obligatorio
+en verde esconder un test que cae?»). Toca `tests/` (un ayudante y un guard, carril S3) y
+`docs/master/`. No toca `src/`, `scripts/`, ningún workflow ni ningún guard ajeno.
+
+## En corto
+
+- **Sí puede, por dos formas, y ninguna es la cola perdida.** Medido con la cadena de `npm test`
+  de HOY, que desde el 14-oct 07:47Z lleva `--import=./scripts/tuberia-bloqueante.mjs` (SCRUM-1405c,
+  #2429), y sólo en local: un `process.exit(0)` a mitad del fichero, y un caso marcado `todo`. En
+  las dos, la tanda sale 0 con un caso que cae.
+- **El árbol de hoy las usa CERO veces** en el proceso de un test de la tanda. Población: los
+  1.338 `tests/*.test.mjs` (1.337 más el guard de este tramo), 188 ayudantes de `tests/` (con el
+  suyo) y 387 ficheros de fuera de `tests/` a los que
+  la tanda llega por imports relativos (`scripts/`, `dist/`, `.claude/hooks/`).
+- **Desde este tramo, un guard de la tanda lo mantiene en cero**:
+  `tests/scrum1520d-nada-calla-un-caido.test.mjs`. Visto en rojo con tres violaciones reales.
+- **Lo que NO es una puerta:** `process.exitCode = 0` por sí solo. La tanda sale 1, porque el
+  informe del caído llega igual. Sólo callaría junto con la cola perdida, y esa la cierra 1405c.
+
+## ① Las tres formas, con la cadena de hoy
+
+`evidencias/SCRUM-1520/d-tres-siembras.mjs`. Cada siembra se lanza sola por
+`tanda-con-veredicto.mjs → node --test --test-force-exit --import=./scripts/tuberia-bloqueante.mjs`.
+Windows, node v24.8.0. Salida en `d-salida-tres-siembras.txt`.
+
+| | qué se siembra | salida | ℹ tests | pass | fail | todo |
+|---|---|---|---|---|---|---|
+| R | el caso 3 cae, sin más (control positivo) | 1 | 3 | 2 | 1 | 0 |
+| X | `process.exit(0)` en el caso 2; el 3 cae | **0** | 1 | 1 | 0 | 0 |
+| C | `process.exitCode = 0` en un `after`; el 3 cae | 1 | 3 | 2 | 1 | 0 |
+| T | el caso 3 cae y lleva `{ todo: true }` | **0** | 3 | 2 | 0 | 1 |
+| T2 | el caso 3 llama a `t.todo()` y cae | **0** | 3 | 2 | 0 | 1 |
+
+X es la variante I del tramo 1520 ②, ahora con la tubería bloqueante en la cadena. T y T2 no los
+había medido nadie: el caso cae, el corredor lo cuenta como TODO y no como caído.
+
+## ② El censo del árbol
+
+`evidencias/SCRUM-1520/d-la-ruta-que-calla.mjs` (el censo vive en `tests/_la-ruta-que-calla.mjs`,
+que comparte con el guard). AST de TypeScript, no texto. Salida en `d-salida-la-ruta-que-calla.txt`.
+
+| dónde | hallazgos | pueden callar un caído en el proceso de un test |
+|---|---|---|
+| los 1.338 ficheros de la tanda | 0 | 0 |
+| 188 ayudantes y arneses de `tests/` | 17 (`exit`) | 0: 16 no los importa ningún test (se lanzan como programa); 1 está en su bloque de programa |
+| 387 ficheros de fuera, importados por la tanda | 119 (`exit`/`exitCode`) | 0 |
+
+De los 119 de fuera, los que corren en el proceso del test son cuatro `exit` dentro de funciones
+EXPORTADAS (`scripts/_navegador.mjs:76` y `:440`, `scripts/_servidor.mjs:73`,
+`scripts/meta-guard-mutaciones.mjs:1404`). Salen con 2, 3, 4 y 3 (`SALIDA_NO_ENCONTRADO`,
+`SALIDA_NO_ARRANCA`, `SALIDA_SIN_SERVIDOR`, `SALIDA_NO_RESTAURADO`): ponen el fichero en ROJO, no
+lo callan. Los demás están en un bloque de programa o en una función no exportada que sólo llama
+ese bloque. Esto último lo he leído en `scripts/equipo/sesion.mjs`. En los otros no.
+
+Controles: 9 positivos sembrados, uno por forma, y 5 ceros (la forma dentro de una cadena, de una
+plantilla o de un comentario; un `exit(1)`; y un método propio que se llama `todo`). Sobre el
+árbol: el `exit(0)` conocido de `tests/_meta-de-laboratorio.mjs` tiene que salir, y los
+`b.todo()` de `scrum1367b`, no. Con `--sin-siembra` dice CIEGO y sale 2
+(`d-salida-sin-siembra-la-ruta.txt`). Como referencia, el texto da otra cosa: 54 ficheros de
+`tests/` contienen «process.exit(» y 783 la palabra «todo». No es un censo.
+
+## ③ El guard, en rojo antes que en verde
+
+Commit de todo el árbol antes de inyectar: `2b6054499121726b3cf13505eb81f1e72fb04cb3`. Una
+inyección cada vez, con su `git diff --numstat`, y se restaura con `git restore --source=HEAD`:
+
+| inyección | numstat | guard | qué nombra |
+|---|---|---|---|
+| `test(` → `test.todo(` en un caso de `scrum1424-ya-esta` | `1 1` | sale 1, 1 caído | `tests/scrum1424-ya-esta.test.mjs:29 · .todo(…)` |
+| `process.exit(0);` dentro de ese caso | `1 1` | sale 1, 1 caído | `…:29 · exit(0) · dentro de «SCRUM-1424 · YA ESTÁ…»` |
+| `exit(SALIDA_NO_ENCONTRADO)` → `exit(0)` en `scripts/_navegador.mjs` | `1 1` | sale 1, 1 caído | `scripts/_navegador.mjs:76 · exit(0) · en la función rutaDelNavegador() · EXPORTADA` |
+
+Después, `git status --porcelain` vacío. En verde: 3 de 3, en 11,3 s. Es lo que tarda en
+analizar unos 1.900 ficheros.
+
+## ④ ¿Se pierde un caso que FALLA, o sólo los que pasan? Recontado, no heredado
+
+El orquestador lo preguntó el 14-oct. Se pierde su NOMBRE y no su VEREDICTO. He vuelto a pasar el
+banco del tramo 1520, `la-cola-que-cae.mjs --por-npm`, en esta máquina (Windows, node v24.8.0).
+Salida en `d-salida-recuento-de-la-cola.txt`, con 8 controles de 8.
+
+| variante | J6, 13-oct (node v24.18.0) | yo, 14-oct (node v24.8.0) |
+|---|---|---|
+| B · cae, sin corte | 1 | 1 |
+| C · cae; corte ENTRE dos casos | 1 | 1 |
+| D · cae; corte DENTRO del caso | 1 | 1 |
+| E · cae; el corte parte en dos el MENSAJE del fallo | 1 | **cuelga**: `spawnSync ETIMEDOUT` a los 180 s, 2 pasadas de 2 |
+| F · el fallo llega y se pierde lo de detrás | 1 | 1 |
+| H · como C, y el hijo sale con 0 | 0 | 0 |
+| J · no llega nada del informe | 1 | 1 |
+
+- **Ninguna variante con un caído sale 0.** La excepción es H, que es la pieza quitada a
+  propósito. El rojo lo sostiene el código de salida del hijo, como dijo el tramo 1520 ①.
+- **E no sale verde, pero tampoco sale 1 en este node:** el padre se queda esperando el resto
+  de un mensaje que no llega. En una tanda, eso lo dice el envoltorio a los 900 s («TANDA SIN
+  VEREDICTO», salida 3): un `failure`, no un verde. Con node v24.18.0 J6 midió 1. CI corre
+  v24.21.0, que no he probado. **No he medido si esto tiene que ver con los cuelgues de
+  SCRUM-1527** (un fichero que no termina y su silencio). Lo dejo dicho allí como pista, no
+  como causa.
+- **Tampoco uso el «4 de 6 tandas pierden casos con el flag»** de SCRUM-1405: es suyo y no lo he
+  vuelto a medir. Desde el 14-oct la tubería es bloqueante (1405c), y si sigue perdiendo lo
+  dirá la señal de nombres de los próximos obligatorios.
+
+## Lo que NO he medido
+
+- **Linux.** No he lanzado ninguna sonda en CI, y es una decisión, no un olvido: un PR en rojo
+  despierta a `@claude` por `avisador-rojo.yml`, que no exceptúa los borradores, y uno en verde
+  con rama `scrum-**` se arma y se mergea solo (`pr-automatico.yml`). El código de salida del
+  corredor sale de `runner.js` y no depende del sistema (tramo 1520 ①). Eso es lectura, no medida.
+  Y el node de esta máquina (v24.8.0) es más viejo que el de CI (v24.21.0): ④ ya enseña una
+  variante que cambia con la versión.
+- **Si la cola perdida ha desaparecido con 1405c.** #2429 entró a las 07:47:56Z. A la hora del
+  ancla no hay obligatorios después: la señal de nombres de los próximos lo dirá.
+- **Qué NO cubre el guard:** un `exit(<expresión>)` fuera de la tanda cuyo valor pueda ser 0 (no
+  resuelve constantes); una función no exportada que llama una exportada; imports con ruta
+  calculada (`import(pathToFileURL(join(…)))`), que no se siguen; un `dist/` sin compilar, que deja
+  esos ficheros fuera (en el árbol medido estaban los 205).
+- **Que la llamada se alcance.** Un `exit(0)` en una rama que nunca corre cuenta igual.
+
+## Mis errores
+
+- **Mi primera regla de `todo` casaba el NOMBRE del método** y contó 26 `b.todo()` en
+  `scrum1367b`, `scrum1367c` y `scrum1430`. Es un método de un banco que devuelve la salida, y no
+  marca nada como pendiente. Lo cacé leyendo la lista, no con un control. Es el defecto de la
+  ficha de mi puesto, «casaba el literal en vez de seguir la variable». Ahora es un cero sembrado
+  y un cero sobre el árbol.
+- **Mi primer reconocedor de «bloque de programa» sólo sabía `process.argv[1]`** y dio 50 `exit`
+  «al importar» que no lo eran (`ejecutadoDirectamente(import.meta.url)`, `esPrincipal`, `esCli`…).
+  Si lo hubiera convertido en guard así, habría salido rojo sobre un árbol sano. Lo reconoce ahora
+  por nombre cuando la función es importada, y eso es una suposición: va dicha en el ayudante.
+
+## Reproducir
+
+    E=docs/master/evidencias/SCRUM-1520
+    node $E/d-tres-siembras.mjs                    # sale 0; R=1, X/T/T2=0, C=1
+    node $E/d-la-ruta-que-calla.mjs                # sale 0; «PUEDEN CALLAR …: 0»
+    node $E/d-la-ruta-que-calla.mjs --sin-siembra  # tiene que salir 2 y decir CIEGO
+    node --test --test-force-exit tests/scrum1520d-nada-calla-un-caido.test.mjs   # 3 de 3

@@ -17,7 +17,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import {
-  DENTRO, FUERA, NO_DECIDIBLE, SIN_RED, censarConMotivo, esFalloDeRed, linea, ramasDelTicket,
+  DENTRO, FUERA, NO_DECIDIBLE, SIN_RED, censarConMotivo, leerRemoto, linea, ramasDelTicket,
   artefactosQueNombra,
 } from '../scripts/censo-regla-42.mjs';
 
@@ -54,12 +54,13 @@ const POSITIVOS = [866, 881];
 // censo además lee entradas de registro, artefactos y commits. Si el censo se equivocara leyendo
 // las ramas, esta derivación NO se equivocaría igual — que es justo lo que un control tiene que
 // garantizar y lo que un fixture sacado del propio censo no garantizaría.
+//
+// 🔴 SCRUM-1539 · INDEPENDIENTE EN CÓMO SE LEE, NO EN CUÁNDO. Hasta el 14-oct-2026 este fichero
+// preguntaba al remoto para elegir el negativo y el censo volvía a preguntar para clasificarlo. Si
+// entre las dos alguien mergeaba ese ticket, su rama se borraba y el caso caía en el obligatorio
+// de un PR ajeno (#2370, 13-oct). Ahora hay UNA foto por proceso (`leerRemoto`: las ramas y el sha
+// de `origin/main` del mismo instante) y las dos partes la interpretan, cada una con lo suyo.
 // ═══════════════════════════════════════════════════════════════════════════════════════════
-
-/** Cero escritura: sólo pregunta. La salida de error se RECOGE, para poder decir por qué falló. */
-function git(args) {
-  return execFileSync('git', args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
-}
 
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 // 🔴 SCRUM-1331 · LA RED NO SE LLAMA AL CARGAR EL MÓDULO, Y SU FALTA SE DICE CON SU NOMBRE.
@@ -72,9 +73,9 @@ function git(args) {
 // Ahora el negativo se deriva DENTRO del caso que lo usa (una vez por proceso), y los dos casos
 // puros —identidad y artefactos— corren haya red o no.
 //
-// ⚠️ La red se llama en DOS sitios y los dos están cubiertos: aquí (`negativoVivo`) y dentro de
-// `censarConMotivo` (`scripts/censo-regla-42.mjs`). Sacar sólo éste dejaba los casos de red cayendo
-// con un «CIEGO» que no decía de qué.
+// ⚠️ La red se llama en UN sitio desde SCRUM-1539: `leerRemoto` (`scripts/censo-regla-42.mjs`), una
+// vez por proceso y dentro de `fotoDelRemoto`. El negativo y el censo reciben esa misma foto, y su
+// ceguera trae el motivo con nombre.
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 
 /**
@@ -87,6 +88,13 @@ function git(args) {
  * se conserva lo que había — sin red, rojo.
  */
 function ciego(c) {
+  if (c.que === SOMERO) {
+    assert.fail('🔴 CIEGO · CLON SOMERO. Este clon tiene la historia de `main` cortada, y con ella cortada '
+      + '`merge-base --is-ancestor` no distingue una rama mergeada de una viva (SCRUM-1541: en un clon de '
+      + 'profundidad 1, 18 de 18 ramas mergeadas salían «vivas»). El barrido de la regla 42 NO se ha '
+      + 'comprobado. Si esto es el job obligatorio, su `actions/checkout` necesita `fetch-depth: 0` '
+      + `(\`.github/workflows/ci.yml\`). Lo que dijo git: «${c.detalle}».`);
+  }
   if (c.que === SIN_RED) {
     assert.fail('🔴 CIEGO · SIN RED · ESTO NO ES TU CAMBIO. `git ls-remote --heads origin` no ha llegado al '
       + `remoto («${c.detalle}»). El barrido de la regla 42 NO se ha comprobado en esta pasada: no es `
@@ -105,34 +113,69 @@ function ciego(c) {
  * SALTA declarando el motivo. Un negativo que no se puede montar y pasa en silencio cuenta como
  * verde sin haberse ganado nada.
  */
+let fotoYaSacada = null;
+/** SCRUM-1539 · la ÚNICA lectura del remoto de este proceso. */
+function fotoDelRemoto() {
+  fotoYaSacada ??= leerRemoto();
+  return fotoYaSacada;
+}
+
 let negativoYaDerivado = null;
 function negativoVivo() {
-  negativoYaDerivado ??= derivarNegativo();
+  negativoYaDerivado ??= derivarNegativo(fotoDelRemoto());
   return negativoYaDerivado;
 }
 
-function derivarNegativo() {
-  let heads;
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-1541 · EL 128 NO ES UN 1, Y UN CLON SOMERO NO SE MIDE.
+//
+// `--is-ancestor` sale 0, 1 o 128 (no pudo mirar). Hasta el 14-oct-2026 aquí todo lo que no era 0
+// era «viva», y eso sólo era cierto porque el obligatorio trae la historia entera. Ahora:
+//   · clon SOMERO → este fichero NO MIDE y lo dice (`ciego` SOMERO). Es el guard de la dependencia
+//     de `fetch-depth: 0` en `ci.yml`: el día que alguien lo quite, este caso cae nombrando la causa,
+//     en vez de dar por vivas ramas mergeadas. No lo puede comprobar desde el propio job, que es
+//     completo: lo comprueba `tests/scrum1541-el-128-no-es-un-1.test.mjs` con un clon somero hecho a
+//     propósito.
+//   · clon completo: candidato con 1, o con 128 si el sha no está en el almacén (con la historia de
+//     main entera, lo que no está aquí no es de main). Cualquier otra salida NO es candidato: un
+//     negativo tiene que ser seguro, y hay más ramas donde elegir.
+// Se mira con una orden propia, no con la foto del censo: el control sigue siendo independiente.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+const SOMERO = 'SOMERO';
+
+function salidaDeGit(args) {
   try {
-    heads = git(['ls-remote', '--heads', 'origin']).split('\n').filter(Boolean);
+    execFileSync('git', args, { stdio: 'ignore' });
+    return 0;
   } catch (e) {
-    const detalle = String(e?.stderr || e?.message || '').trim().split('\n').filter(Boolean).pop() ?? '';
-    return { n: null, ciego: { que: esFalloDeRed(detalle) ? SIN_RED : 'SIN_REFS', detalle: detalle.slice(0, 300) } };
+    return typeof e?.status === 'number' ? e.status : null;
   }
+}
+
+function derivarNegativo(foto) {
+  if (foto.ciego) return { n: null, ciego: foto.ciego };
+  let profundidad;
+  try {
+    profundidad = execFileSync('git', ['rev-parse', '--is-shallow-repository'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+  } catch (e) {
+    profundidad = `no contestó: ${String(e?.stderr || e?.message || '').trim().slice(0, 200)}`;
+  }
+  if (profundidad !== 'false') {
+    return { n: null, ciego: { que: SOMERO, detalle: `git rev-parse --is-shallow-repository → ${profundidad}` } };
+  }
+  const heads = foto.salida.split('\n').filter(Boolean);
   const candidatos = [];
   for (const fila of heads) {
     const [sha, ref] = fila.split(/\s+/);
     const m = /refs\/heads\/scrum-(\d+)(?:[a-z]\d*)?(?:-|$)/.exec(ref || '');
     if (!m) continue;
-    try {
-      // `--is-ancestor` sale 0 si YA está en main; si sale != 0, la rama sigue viva.
-      execFileSync('git', ['merge-base', '--is-ancestor', sha, 'origin/main'], { stdio: 'ignore' });
-    } catch {
-      candidatos.push(Number(m[1]));
-    }
+    // Contra el sha de la FOTO, no contra la ref: un `git fetch` de otro árbol la mueve (SCRUM-1539).
+    const codigo = salidaDeGit(['merge-base', '--is-ancestor', sha, foto.main]);
+    const viva = codigo === 1 || (codigo === 128 && salidaDeGit(['cat-file', '-e', `${sha}^{commit}`]) !== 0);
+    if (viva) candidatos.push(Number(m[1]));
   }
-  // El más alto: el más reciente, y por tanto el que menos probable es que esté a punto de
-  // mergearse mientras corre esta misma tanda.
+  // El más alto: el más reciente. Desde SCRUM-1539 da igual que se mergee mientras corre la tanda:
+  // el censo lo clasifica sobre la misma foto en la que se eligió.
   return { n: candidatos.length ? Math.max(...candidatos) : null, ciego: null };
 }
 
@@ -170,7 +213,7 @@ test('SCRUM-804b · 🔴 SUELO y CONTROLES: el criterio reconoce lo que SÍ est�
   const negativo = negativoVivo();
   if (negativo.ciego) ciego(negativo.ciego);
   const NEGATIVO = negativo.n;
-  const { censo: c, ciego: censoCiego } = censarConMotivo([...POSITIVOS, NEGATIVO]);
+  const { censo: c, ciego: censoCiego } = censarConMotivo([...POSITIVOS, NEGATIVO], { foto: fotoDelRemoto() });
   if (censoCiego) ciego(censoCiego);
   t.diagnostic(linea(c));
 
@@ -211,7 +254,7 @@ test('SCRUM-804b · 🔴 SUELO y CONTROLES: el criterio reconoce lo que SÍ est�
 test('SCRUM-804b · 🔴 «no encuentro marca» NO es FUERA: va a NO DECIDIBLE, del lado malo', () => {
   // Un número que con toda seguridad no tiene rama, ni entrada, ni ficheros, ni commits.
   const inventado = 999999;
-  const { censo: c, ciego: censoCiego } = censarConMotivo([inventado]);
+  const { censo: c, ciego: censoCiego } = censarConMotivo([inventado], { foto: fotoDelRemoto() });
   if (censoCiego) ciego(censoCiego);
   const f = c.filas.find((x) => x.n === inventado);
 
@@ -229,7 +272,7 @@ test('SCRUM-804b · 🔴 «no encuentro marca» NO es FUERA: va a NO DECIDIBLE, 
 test('SCRUM-804b · 🔴 el censo DECLARA su reparto, y las clases SUMAN', (t) => {
   const negativo = negativoVivo();
   if (negativo.ciego) ciego(negativo.ciego);
-  const { censo: c, ciego: censoCiego } = censarConMotivo([...POSITIVOS, negativo.n, 41, 534, 691]);
+  const { censo: c, ciego: censoCiego } = censarConMotivo([...POSITIVOS, negativo.n, 41, 534, 691], { foto: fotoDelRemoto() });
   if (censoCiego) ciego(censoCiego);
   t.diagnostic(linea(c));
   for (const f of c.filas) t.diagnostic(`  SCRUM-${String(f.n).padEnd(6)} ${f.cubo.padEnd(13)} ${f.motivo.slice(0, 95)}`);

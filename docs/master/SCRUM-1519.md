@@ -365,3 +365,187 @@ que separa «copia» de «comprueba», que es la pregunta de esta pasada.
 Salidas guardadas en `docs/master/evidencias/SCRUM-1519c/`: `salida-creadores.txt` (0),
 `salida-creadores-rojo-doble-sordo.txt` (1), `salida-creadores-rojo-detector-sordo.txt` (1) y
 `salida-creadores-ciego-sin-siembra.txt` (2).
+
+# SCRUM-1519d · La REVISIÓN ya no copia el cliente de otro comercio. La ACEPTACIÓN, NO ESTÁ
+
+**Medido contra:** `origin/main` = `e59be9fa384b5bb1d4fbaa6d429a32a5a8a6be8d` · 2026-10-17T23:51:12Z
+A9: comprobación → `tests/scrum1519d-la-revision-ata-el-cliente.test.mjs`
+
+Escribe S1 (equipo de Luis), en su carril: `dos-equipos.md` §3.1, «todo lo demás de `src/` (…
+jobs, … system) → S1», sin regla más específica para `quoteAdmin.ts` ni para `job.service.ts`
+(medido en `.claude/carriles.json`). Decisiones del fundador: c.19205 ① y ②, recogidas por el
+orquestador. Reparto: el orquestador del equipo de Luis, 18-oct-2026.
+
+## 🔴 Lo primero: esto es MEDIO arreglo, y se dice aquí para que nadie lea «1519 hecho»
+
+| eslabón que PROPAGA (c.19192) | estado |
+| --- | --- |
+| la revisión (`crearRevisionDeQuote`) | ✅ arreglado en este tramo |
+| la aceptación (`ensureJobForQuote`) | ⛔ **NO ESTÁ.** Espera una firma del fundador |
+
+**Por qué falta la aceptación.** c.19205 ② decide que la aceptación pasa sin Trabajo «y queda
+registrado de forma que alguien lo vea», como un cable trampa, con `avisoPuerta.service.ts` de
+precedente y «NO al log solo». Medido en `e59be9fa`: no existe ningún vehículo para ese registro que
+no pida algo nuevo.
+
+- **A.** Fila de auditoría con una acción nueva (`recordAudit`, la puerta que no tumba nada). Pero
+  `AuditAction` es una unión CERRADA (regla 5), y ampliarla la firma el fundador (precedente:
+  `encolado_fallido`, SCRUM-1296 c.17642).
+- **B.** WhatsApp al fundador, como `avisoPuerta`. Es un envío automático nuevo (regla 28), con
+  texto nuevo y una variable de Railway.
+- **C.** `console.error` solo: lo que el fundador descartó.
+
+Recomendada la A, sin texto visible, sin envío, sin variable y sin esquema. El orquestador la sube
+al fundador en una línea: «¿Firmas levantar la regla 5 para la acción `trabajo_omitido_cliente_ajeno`
+(meta `{quoteId, customerId}`), y ninguna más?». **El ticket no se cierra hasta que estén las dos
+mitades.**
+
+## Qué hace el arreglo
+
+`decidirRevisionDe` (`src/modules/system/quoteAdmin.ts`) lee DOS veces el presupuesto: la versión
+ABIERTA y la VIGENTE, que es la que se copia cuando no coinciden. Las dos lecturas piden ahora
+también `customer: { merchantId }`. Si el cliente es de otro comercio la fila no aparece y se
+contesta `quote_not_found` («El presupuesto no existe.»), el código y el texto que ya existían para
+un id ajeno (decisión del fundador, c.19205 ①: un 404 no confirma que el cliente exista). Sin texto
+nuevo, sin esquema y sin tocar el camino de emisión: la revisión crea un presupuesto, no una factura.
+
+## Rojo primero, verde después, y quitar cada pieza
+
+Instrumento de J1, sin cambios: `docs/master/evidencias/SCRUM-1519c/medir-los-creadores.mjs`.
+
+| fila del instrumento | antes (`e59be9fa`) | después |
+| --- | --- | --- |
+| C · revisión del propio, cliente propio | ESCRIBE-LIMPIO 201 | ESCRIBE-LIMPIO 201 |
+| P · revisión del presupuesto de B (ruta y a pelo) | NO-ESCRIBE, NO-ESCRIBE | NO-ESCRIBE, NO-ESCRIBE |
+| H · revisión del propio SEMBRADO con cliente de B (ruta y a pelo) | **CRUZA, CRUZA** | **NO-ESCRIBE, NO-ESCRIBE** (404 `quote_not_found`) |
+| par sembrado (10 casos) | 10 de 10 | 10 de 10 |
+
+Salidas: `docs/master/evidencias/SCRUM-1519d/salida-creadores-antes.txt` y
+`salida-creadores-despues.txt` (las dos salen 0).
+
+Test nuevo, 3 casos: control (con el cliente propio SE CREA), abierta con cliente ajeno y abierta
+sana con la VIGENTE ajena. Su doble respeta el `where` (id, negocio y negocio del cliente).
+
+| mutante | test nuevo | instrumento (fila H) |
+| --- | --- | --- |
+| sin la pieza de la ABIERTA | cae el caso de la abierta (2 de 3 pasan) | vuelve a CRUZA, CRUZA |
+| sin la pieza de la VIGENTE | cae el caso de la vigente (2 de 3 pasan) | sigue NO-ESCRIBE: **el instrumento no distingue esta pieza**; la distingue sólo el test |
+
+## De paso, un doble que pidió crecer
+
+`tests/scrum1490-el-anio-de-la-serie.test.mjs` tiene un doble que LANZA ante una clave del `where`
+que no sabe evaluar («amplía el doble, no la ignores»). Cayó con la clave `customer`. Se amplió:
+el cliente de cada fila es de su mismo negocio, y la clave `customer` se evalúa. No se aflojó nada.
+
+## Lo que se ha corrido
+
+- Los 24 ficheros de `tests/` que nombran `quoteAdmin` o `crearRevisionDeQuote`, más el nuevo:
+  206 tests, 201 pasan, 0 caen, 5 saltados con su motivo (3 de Postgres: `LIBRO_PG_URL`, corren en
+  el obligatorio; 2 de `QA_DB_TEST`). Los de Postgres de la revisión (1150c, 1188d) siembran el
+  cliente en el mismo comercio que el presupuesto: leído, no ejecutado aquí.
+- `npm run guards:entrada`: 15 en verde. Los 5 de árbol entero (195, 414, 694, 710b, 737) a mano:
+  38 de 38.
+- La tanda completa, no (en esta máquina la mata la memoria); la juzga el obligatorio del CI.
+
+## Lo que NO se ha medido
+
+- Nada por HTTP ni contra Postgres en local: dist/ real con Prisma doblado.
+- La aceptación: ni tocada.
+- Si existe HOY alguna fila cruzada en una base real (la segunda pregunta de J1, c.19192): sigue
+  abierta y es del fundador.
+- `tsc` sale con el error ya conocido de `merchantAdmin.ts` (cliente de Prisma del árbol
+  compartido, sin regenerar a propósito); emite `dist/` igual, y no viene de este cambio.
+
+## Cómo se repite
+
+    npm run build
+    node --test tests/scrum1519d-la-revision-ata-el-cliente.test.mjs
+    node docs/master/evidencias/SCRUM-1519c/medir-los-creadores.mjs .
+
+# SCRUM-1519e · La ACEPTACIÓN ya no crea un Trabajo con el cliente de otro comercio, y lo deja escrito
+
+**Medido contra:** `origin/main` = `32913b35d22a9809f7b41bba1c14f4a136ff180c` · 2026-10-18T00:16:33Z
+A9: comprobación → `tests/scrum1519e-la-aceptacion-no-crea-trabajo-ajeno.test.mjs`
+
+Escribe S1, en su carril (el mismo de 1519d). Es la mitad que el tramo de arriba declaró que NO
+estaba. Con las dos dentro, los dos eslabones que PROPAGAN (c.19192) quedan cerrados:
+
+| eslabón que PROPAGA (c.19192) | estado |
+| --- | --- |
+| la revisión (`crearRevisionDeQuote`) | ✅ 1519d, #2553, en `main` |
+| la aceptación (`ensureJobForQuote`) | ✅ este tramo |
+
+## La firma
+
+- **Lo que se le preguntó al fundador**, literal: «¿Firmas levantar la regla 5 para la acción
+  `trabajo_omitido_cliente_ajeno`, con meta {quoteId, customerId}, y ninguna más?».
+- **Su respuesta**, literal: «la firmo». Es un turno de usuario de su conversación con el orquestador,
+  18-oct-2026T00:12:05Z, transcripción `ed676fd1-feb4-4658-bda2-01f4bf9fb3fc`. **Leído por S1 en la
+  transcripción**, no sólo en Jira: allí su cuenta y la del orquestador son la misma.
+- Publicada en SCRUM-1519, comentario 19913. En el código va como `// APROBADO · SCRUM-1519 comentario 19913`.
+
+## Qué hace el arreglo
+
+- `src/modules/system/audit.service.ts`: UNA acción más en la unión cerrada,
+  `trabajo_omitido_cliente_ajeno`. Fire-safe: no va en `ACCIONES_BLOQUEANTES`.
+- `src/modules/jobs/domain/job.service.ts`, `ensureJobForQuote`: el `select` pide además el
+  `merchantId` del cliente. Justo antes de `job.create`, si el cliente no es del negocio del
+  presupuesto (o no aparece: se falla cerrado), **no se crea el Trabajo** y se escribe la fila
+  (`recordAudit`, `entityType: 'quote'`, `entityId`, `meta: { quoteId, customerId }`). Los dos caminos
+  de arriba (ya tiene Trabajo; Trabajo viejo que se enlaza) no copian el cliente a ningún sitio, y no
+  se tocan.
+- **La aceptación NO falla** (c.19205 ②): el presupuesto pasa a aceptado igual. No es un estado nuevo
+  ni una transición nueva. Sin texto visible, sin envío, sin variable y sin esquema.
+
+## Rojo primero, verde después, y tres mutantes
+
+Instrumento de J1, sin cambios: `docs/master/evidencias/SCRUM-1519b/medir-los-escritores.mjs`.
+
+| fila del instrumento (escritor 2, aceptar) | antes (`08a54862`) | después |
+| --- | --- | --- |
+| C · aceptar el propio, cliente propio | ESCRIBE-LIMPIO 200 (crea su Trabajo) | ESCRIBE-LIMPIO 200 (crea su Trabajo) |
+| H · `ensureJobForQuote` a pelo, propio SEMBRADO con cliente de B | **CRUZA** | **NO-ESCRIBE** |
+| H · `POST accept` del propio SEMBRADO con cliente de B | **CRUZA** (Trabajo con el cliente de B) | ESCRIBE-LIMPIO 200: el presupuesto pasa a aceptado y **no nace Trabajo** |
+| resumen: «COPIAN un dato que ya venía cruzado» | 1 | 0 |
+
+Salidas: `docs/master/evidencias/SCRUM-1519e/salida-escritores-antes.txt` y `-despues.txt`.
+
+Test nuevo, 3 casos: CONTROL (una aceptación legítima crea su Trabajo y NO escribe la fila), cliente
+de otro comercio y cliente que no aparece.
+
+| mutante | qué cae |
+| --- | --- |
+| sin la pieza | los dos casos de cliente ajeno; el instrumento vuelve a CRUZA, CRUZA |
+| sin la fila (omitir en silencio) | los dos casos de cliente ajeno («se omitió en SILENCIO») |
+| la pieza lo bloquea TODO | el CONTROL |
+
+## Cuatro dobles vecinos que no traían el negocio del cliente
+
+`scrum1274`, `scrum1370`, `scrum1370b` y `scrum195-pertenencia-por-job` devuelven el presupuesto con
+`customer: { name }`. Con el `select` nuevo, Prisma devolvería también `merchantId`. Sin él, la pieza
+falla cerrado y sus CONTROLES («sigue creando su Trabajo») caían. Se les añadió el `merchantId` del
+propio presupuesto, que es lo que devolvería la base. No se aflojó ninguna aserción. Los de Postgres
+que pasan por aquí (`scrum52`, `scrum13`) crean el cliente en el mismo comercio: leído, no ejecutado.
+
+## Lo que se ha corrido
+
+- Los 45 ficheros que nombran `ensureJobForQuote`, `job.service`, `audit.service`, `recordAudit` o
+  `AuditAction`, más el nuevo, los 5 de árbol entero (195, 414, 694, 710b, 737) y `scrum553`:
+  478 tests, 471 pasan, 0 caen, 7 saltados con su motivo (`QA_DB_TEST` / `LIBRO_PG_URL`).
+- `npm run guards:entrada`: 15 en verde.
+- La tanda completa no (en esta máquina la mata la memoria): la juzga el obligatorio del CI.
+
+## Lo que NO se ha medido
+
+- Nada por HTTP ni contra Postgres en local.
+- Que alguien LEA la fila: hoy no hay pantalla de auditoría que la enseñe. Queda en `AuditLog`, que es
+  lo firmado; quién la mira y cuándo no lo decide este tramo.
+- Si existe HOY alguna fila cruzada en una base real (c.19192, pregunta 2): sigue abierta, del fundador.
+- `tsc` sale con el error ya conocido de `merchantAdmin.ts` (cliente de Prisma del árbol compartido,
+  sin regenerar a propósito); emite `dist/` igual, y no viene de este cambio.
+
+## Cómo se repite
+
+    npm run build
+    node --test tests/scrum1519e-la-aceptacion-no-crea-trabajo-ajeno.test.mjs
+    node docs/master/evidencias/SCRUM-1519b/medir-los-escritores.mjs .

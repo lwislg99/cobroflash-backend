@@ -315,3 +315,29 @@ de un guard es exactamente la avería que ese guard vigila. Tras declararlo, `sc
 `scripts/_censo-alcanzabilidad.mjs` · `scripts/_censo-reparto.mjs` · `scripts/_numero-de-rama.mjs`
 (se prueban, no se cambian) · `scrum753` · de `scrum723`, nada salvo la entrada declarada del §4 · ninguna ref del repositorio real · ninguna rama
 `claude/*` · ningún stash.
+
+## SCRUM-829c · A15: la salida limpia para traer `main` con trabajo a medias (16-oct-2026)
+
+**Medido contra:** `origin/main` = `665bcd17ff7fe0f63959b300bda92cdc6bf448c7` · 2026-10-16T12:18:55Z
+
+Puesto S0. **Encargo del orquestador de Luis:** dos sesiones usaron `git stash` el 16-oct por el mismo motivo, que era traerse `main` con trabajo a medias encima. Hay que escribir la salida limpia y decir por qué el stash es trampa aquí. Quiénes fueron lo sabe él; yo no lo he medido.
+
+| Qué | Dónde |
+|---|---|
+| La salida limpia: comitear en la propia rama antes de mergear, sin `reset` después y sin empujar el wip | `docs/equipo/00-normas-comunes.md` A15 |
+| El stash que sigue en el almacén, con su sha y su motivo | ídem, el «✗ Falla» de A15 |
+
+**Medido para escribirlo (sólo lectura del almacén; ningún `pop`, `apply` ni `drop`):**
+
+* `git stash list` da **una** entrada: `a7f6fad8d39d8ce7fe0bf4f72cb9171070591a1d`, del 2026-09-08 08:38:30 +0200, «On scrum-713-buscador-cliente: scrum713-before-main-20260908-9e7b4a21». El almacén es el del repositorio, y por eso sale igual desde cualquier worktree.
+* `git show --stat` de la entrada da 4 ficheros seguidos (`styles.css`, `quotesView.js`, `scrum697`, `scrum698`). Su tercer padre (`59d78226…`, los no seguidos) trae 3: un `.md` de sesión y `tests/scrum713-buscador-cliente.test.mjs` / `.browser.mjs`. Es el «cuatro seguidos y tres sin seguir» que A15 ya contaba del 8-sep.
+* Esos dos tests **no están en `origin/main` con ese nombre** (`git cat-file -e` sale ≠ 0). Si el trabajo se perdió o entró con otro nombre no está medido. A10: se compara contenido, no nombre.
+* **El `reset --soft HEAD~1` de la receta vieja, después de un merge**, en un repositorio desechable: rama `mia` con un wip (`mio.txt`), `main` con un commit ajeno (`ajeno.txt`), merge y reset. Resultado: HEAD queda en el wip y **`ajeno.txt` sale en el índice como si fuera mío**. Por eso la norma dice que, tras un merge, el wip se queda.
+
+**🔴 El hook de la casa RECOMIENDA el stash.** `.claude/hooks/guard-dangerous.mjs:587`: cuando una orden va a descartar cambios sin commitear, el aviso dice «Commitealo, guardalo con `git stash`, o —si de verdad sobra— crea .claude/allow-destructivo». Es el único sitio de `.claude/hooks/` que nombra `stash`, y empuja justo a lo que A15 prohíbe. Que eso explique los dos stash del 16-oct es una hipótesis: no he leído sus transcripciones. **Propuesta para un jefe** (`.claude/**` es suyo, `dos-equipos.md` §3; la S0 prepara la propuesta): cambiar esa línea por «Commitealo en tu rama (A15: el stash es compartido), o —si de verdad sobra— …». No lo toco.
+
+**Lo que esto NO hace:** no toca el stash ni el hook, no averigua de quién es el trabajo de SCRUM-713 y no nombra a las dos sesiones del 16-oct.
+
+**Error propio.** Ninguno en la medición. El riesgo lo vi al escribir: la receta que ya había en A15 (`commit` + `reset --soft HEAD~1`) es justo la que una sesión aplicaría tras un merge de `main`, y ahí rompe. La norma vieja, seguida al pie de la letra en el caso de hoy, habría metido todo `main` en el índice. Y el primer borrador de la línea A9 de abajo decía que ningún hook ve un `git stash`. Lo miré antes de comitear: el que hay lo recomienda, que es peor.
+
+A9: aviso → A10 «Un `git stash pop` a ciegas es un `git checkout` del trabajo de otro encima del tuyo.» — no se pudo comprobar: la comprobación sería un hook, `.claude/**` es de un jefe, y el único hook que nombra el stash (`guard-dangerous.mjs:587`) lo recomienda; la propuesta va al orquestador

@@ -146,9 +146,30 @@ function tituladosQueDeclaran() {
  * GUARD» por una SUBCADENA: su título «el guardado sigue mandando…» casa con `/GUARD/i`; no se
  * llama guard a sí mismo. La cifra la dio este test sobre `origin/main` =
  * `cb30885dd69c4df7f33d3a0066fed93698926857` mezclado en la rama (decía 32; subió a 33).
+ *
+ * ⬆️ **34** (SCRUM-1257e, 14-oct-2026): entra `scrum1257e-modo-en-ajustes-tres-modos.test.mjs`, que
+ * declara las cuatro mutaciones de su banco (SCRUM-1387). ⚠️ Cuenta como «titulado GUARD» por su caso
+ * «el guard de navegador está declarado…», que NOMBRA al guard de navegador; el fichero no se llama
+ * guard a sí mismo. La cifra la dio el obligatorio del PR #2439 sobre el merge con `origin/main`
+ * (run 38534078867, «LA COBERTURA HA SUBIDO a 34»), y este test en local sobre la rama, base
+ * `e2be1c9fda3b5ceac853b4d376f5664ac8e4df67` (decía 33; subió a 34).
+ *
+ * ⬇️ **30** (SCRUM-812d, 14-oct-2026): BAJA, y no porque nadie quitara una declaración: el matcher
+ * contaba la SUBCADENA «guard», y desde hoy `seTitulaGuard` cuenta la PALABRA. Bajada aprobada por el
+ * orquestador con una condición: que los que salen se nombren uno a uno. Son cuatro, los cuatro
+ * declaran todavía, y ninguno se llama guard en un título:
+ *   · `scrum1302m-el-total-y-la-leyenda.test.mjs` L146 — «el guardado sigue mandando…» (el importe
+ *     guardado). Ya lo avisaba la entrada del 33.
+ *   · `scrum880-el-empate-del-sello.test.mjs` L224 — «…recomputable desde el sello guardado».
+ *   · `scrum951d-ensayo-instalacion.test.mjs` L110 — «la decisión guardada en la entrada del proyecto…».
+ *     ⚠️ La entrada del 20 dice que este fichero «titula GUARD»: era esta misma subcadena.
+ *   · `vigia-atascados.test.mjs` L573 — «la pasada lee reglas y checks, guarda el umbral…».
+ * El total de titulados baja con ellos, de 303 a 154. Medido sobre `origin/main` =
+ * `4f487bb177c42a7ee02042b0029f8c90b7e9e77e`. CONTROL POSITIVO: con el matcher viejo, los cuatro
+ * vuelven a contarse y este trinquete da «HA SUBIDO a 34» (es la mutación ⑤ de abajo).
  * ═════════════════════════════════════════════════════════════════════════════════════════════
  */
-export const SUELO_GUARD_QUE_DECLARAN = 33;
+export const SUELO_GUARD_QUE_DECLARAN = 30;
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 // ① SUELO · ¿he mirado algo? Un cero de población no es «no hay»: es «no he mirado».
@@ -266,6 +287,24 @@ test('SCRUM-812 · 🔴 EL TRINQUETE del GUARD: la cobertura auto-declarada NO B
   );
 });
 
+test('SCRUM-812d · 🔴 el título se cuenta por PALABRA: «guarda» y «guardado» no son un guard', () => {
+  // Fabricado y no del árbol, como el rótulo: el caso no puede depender de qué títulos haya hoy.
+  const titulo = (t) => `test('${t}', () => {});`;
+  for (const t of ['el guardado sigue mandando', 'el sello guardado', 'la decisión guardada',
+    'guarda el umbral', 'lo guardé ayer', 'la guardia']) {
+    assert.equal(seTitulaGuard(titulo(t)), false,
+      `🔴 «${t}» cuenta como «se titula GUARD». Es la subcadena de guardar: así entraron en el `
+      + 'trinquete cuatro ficheros que nunca se llamaron guard (SCRUM-812d).');
+  }
+  // CONTROL POSITIVO: si esto no cuenta nada, el bucle de arriba pasaría con un matcher muerto.
+  for (const t of ['GUARD: en tests/ ninguna ruta', 'el guard de navegador está declarado',
+    'CASO REAL (meta-guard de main', 'los guards caen', 'guard_dangerous bloquea']) {
+    assert.equal(seTitulaGuard(titulo(t)), true,
+      `🔴 «${t}» ya NO cuenta como «se titula GUARD»: el matcher se ha quedado ciego, y el `
+      + 'trinquete bajaría sin que nadie quitara nada.');
+  }
+});
+
 test('SCRUM-812 · 🔴 mi ancla ④ muta la CONSTANTE, no el texto que la cita', () => {
   // El ancla de la mutación ④ aparece DOS veces en este fichero, y por construcción: la línea de
   // la constante, y la propia declaración que la copia para poder mutarla. El meta-guard hace
@@ -301,8 +340,8 @@ test('SCRUM-812 · 🔴 mi ancla ④ muta la CONSTANTE, no el texto que la cita'
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 // LA MUTACIÓN QUE ME TUMBA (SCRUM-745)
 //
-// Las cuatro imitan el defecto de este ticket, cada una por su lado: el nombre, el denominador,
-// el límite y el trinquete. Ninguna es un cambio cosmético — todas hacen que el instrumento
+// Las cuatro primeras imitan el defecto de este ticket, cada una por su lado: el nombre, el
+// denominador, el límite y el trinquete; la quinta (SCRUM-812d), el matcher que infla el subconjunto. Ninguna es un cambio cosmético — todas hacen que el instrumento
 // vuelva a publicar una cifra que se lee mejor de lo que es.
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 export const MUTACIONES_QUE_ME_TUMBAN = [
@@ -331,8 +370,15 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // ④ El trinquete se afloja una unidad: deja hueco para que la cobertura baje sin aviso.
     fichero: 'tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs',
-    de: 'export const SUELO_GUARD_QUE_DECLARAN = 33;',
-    a: 'export const SUELO_GUARD_QUE_DECLARAN = 32;',
+    de: 'export const SUELO_GUARD_QUE_DECLARAN = 30;',
+    a: 'export const SUELO_GUARD_QUE_DECLARAN = 29;',
     cae: 'SCRUM-812 · 🔴 EL TRINQUETE del GUARD: la cobertura auto-declarada NO BAJA',
+  },
+  {
+    // ⑤ SCRUM-812d · el matcher vuelve a la subcadena: «guardado» vuelve a contar como guard.
+    fichero: 'scripts/meta-guard-mutaciones.mjs',
+    de: '[^`\'"]*GUARDS?(?![a-záéíóúüñ])/i',
+    a: '[^`\'"]*GUARD/i',
+    cae: 'SCRUM-812d · 🔴 el título se cuenta por PALABRA: «guarda» y «guardado» no son un guard',
   },
 ];

@@ -268,3 +268,41 @@ verdad: en producción un par a la vez que sale bien no prueba nada por sí solo
 salía bien 1 o 2 de cada 10). Lo que se mira al desplegar, y se escribe en el ticket: que el build
 servido es el del merge, y que dos «Crear revisión» a la vez sobre un presupuesto de la cuenta de
 pruebas contestan `.N` y `.N+1` y su ficha sigue abriendo.
+
+## SCRUM-1150d · el hash no dice «ya no existe» con un 5xx o sin red (14-oct, S4)
+
+**Medido contra:** `origin/main` = `7f5e1dd225430829497a6a778f06527892b606f4` · 2026-10-14T09:12:19Z (`Date:` de GitHub)
+
+A9: comprobación → `tests/scrum832-atras-vuelve-a-la-lista.test.mjs`
+
+**Skill UI:** cargada (`yaqu-premium-ui`), pero DESPUÉS de escribir el cambio de `app.js`, no antes: lo declaro. El cambio no toca tokens, estilos, componentes ni texto; sólo a qué pantalla lleva el router.
+
+**Decisión:** del orquestador, encargo del 14-oct-2026, punto 2 (SCRUM-1150 (b)): el `catch` de `abrirFichaDesdeHash` separa «sin respuesta o 5xx» de «4xx». Medido el defecto en c.19286 (S2): llegando por el hash con un 500 o sin red, el panel volvía a la lista y decía «Ese presupuesto ya no existe.», con el presupuesto en esa misma lista.
+
+### Lo construido
+
+- `public/dashboard/js/app.js`: `elServidorDijoQueNo(err)` (sólo mira si `status` es un número entre 400 y 499) y, en el `catch`, si NO es un 4xx se abre la ficha, que dice su propio «no se ha podido cargar». Con un 4xx, lo de siempre, carácter por carácter. Vale para las seis fichas de `DETALLES`.
+- Sin texto nuevo.
+
+### Por qué no abre la fuga de SCRUM-832
+
+Lo que el cerrojo protegía era que «no existe» y «no es tuyo» no se distingan. Leídas las seis rutas (`GET /admin/quotes|jobs|invoices|albaranes|customers|partes/:id`): todas filtran por `merchantId` en el `where` de la primera lectura y nada que pueda lanzar va antes; un id inexistente y uno de otro negocio dan el mismo 404 `not_found`. Un 5xx (base caída, proceso roto) no depende de quién es el dueño del id. **Leído, no corrido contra una base.**
+
+### Cambio de conducta a propósito en el test de SCRUM-832 (declarado)
+
+- Caía si el `catch` leía el error. Ahora exige que lo lea UNA vez y sólo para `elServidorDijoQueNo`, y que ni el router ni esa pregunta nombren `.code`, `.data`, `message`, `403`, `404`, `forbidden` ni `not_found`.
+- No es más flojo: el caso CORRIDO antes ejecutaba una copia de la función escrita a mano en el test (no habría cambiado aunque cambiara el router); ahora saca del fuente la función REAL y la corre en las SEIS fichas con cuatro 4xx de mensajes distintos (404, 403, 400 y el 403 de la prueba caducada): mismo aviso firmado, mismo destino, mismo hash. Si el router pintara el error o distinguiera un código de otro, cae.
+- Dos casos nuevos: con 500, 503, sin red y un `Error` sin estado, en las seis fichas, el router no pinta nada y abre la ficha (con control positivo: la misma sonda ve abrirse la ficha con un 200 y ve el aviso con un 404); y la ficha del presupuesto montada con su `GET` en 500 dice «Error cargando presupuesto.» y no «internal_error», «API 500» ni «ya no existe».
+
+### Verificado, ejecutando
+
+- El fichero, 9 de 9.
+- **Rojo con cada mutación** (aplicada sobre `app.js`, restaurada y comprobada idéntica): M1, el `if` quitado (vuelve el «ya no existe» con un 500) → 2 de 9; M2, `s === 404` en vez del rango → 2 de 9; M3, el aviso cambiado por `e.message` → 2 de 9. Con el `app.js` de `main` tal cual → 3 de 9 (los tres por CIEGO: allí no existe `elServidorDijoQueNo`, así que el de los 4xx cae por no encontrarla y no por conducta; lo prueban M2 y M3). Las tres declaradas en `MUTACIONES_QUE_ME_TUMBAN`, con el nombre exacto del caso que cae.
+- **Tanda** (los 362 ficheros de test que leen `app.js`, montan el banco de vistas o declaran mutaciones; `--test-concurrency=4`): 3.493 tests, 6 caídos. Míos y arreglados: `scrum836d` (el `cae` debe ser el nombre exacto de un caso) y `scrum811c`/`scrum976` (este registro). De entorno: `scrum1321` (el temporal está en `C:` y el repo en `D:`, sale CIEGO) y `scrum1266b`, que solo da 15 de 15.
+
+### Lo que queda, declarado
+
+- ~~El albarán con un 5xx pinta el código crudo~~ → **arreglado en este mismo PR** con el literal firmado en SCRUM-1150 c.19658: «No se pudo cargar el albarán. Inténtalo de nuevo.» (`COPY_ALBARAN_NO_SE_PUDO_CARGAR`, por `mensajeParaPersona`: si el servidor trae un `message` para personas, ése). Ficha: `docs/microcopy/2026-10-14-SCRUM-1150-albaran-no-se-pudo-cargar.md`. Caso nuevo en el test de SCRUM-832, con la ficha REAL del albarán y su `GET` en 500: 10 de 10; con el `albaranDetailView.js` de `main`, cae ese caso. Guards de microcopy, del albarán y de trinquetes (135 ficheros, 1.304 tests): 0 caídos.
+- Las otras cuatro fichas dicen un texto propio y legible: «No pudimos cargar el trabajo.», «Error cargando la factura.», «Error al cargar el historial del cliente.» y «No se ha podido cargar el parte. Vuelve a intentarlo.» (este último con la forma de reintento que no es la de la casa; ya estaba firmado y no lo toco).
+- Con un 5xx la ficha hace su `GET` una segunda vez (la del router y la suya). Es una petición de más en un caso de fallo.
+- **NO medido:** yaqu.app (hasta que mergee) · la suite completa de `npm test`.

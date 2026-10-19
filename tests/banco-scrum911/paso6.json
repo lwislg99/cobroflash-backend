@@ -1,0 +1,54 @@
+{
+  "inicio": "2026-10-15T16:20:33.710Z",
+  "staging": "73e41ab00f727fae5c6c8f1715d6eb6749133502",
+  "crear": {
+    "status": 201,
+    "error": null
+  },
+  "quoteId": 1915,
+  "planId": 10,
+  "now": "2028-07-01T10:00:00.000Z",
+  "ciclo": {
+    "due": 1,
+    "proposed": 1,
+    "skipped": []
+  },
+  "draftId": 1916,
+  "base": {
+    "nuevo": 387.2,
+    "viejo": 320
+  },
+  "api": {
+    "status": 200,
+    "total": "387.2"
+  },
+  "pantalla": {
+    "nuevo": {
+      "id": 1916,
+      "ve387": true,
+      "ve320": true,
+      "seAbre": true,
+      "recorte": "EPTO CANT. PRECIO IVA TOTAL Revisión de termo/calentador 1 320,00 € 21 % 387,20 € Base imponible: 320,00 € IVA: 67,20 € Total: 387,20 € NOTAS INTERNAS Solo tú las ves ETIQUETAS GASTOS Y MARGEN INGRESOS 387,20 € GASTOS 0,00 € MARGEN 387,20 € 100% Sin gastos asignados a esta cotización. + Añadir gasto a este trabajo REVI"
+    },
+    "viejo": {
+      "id": 1889,
+      "ve387": true,
+      "ve320": true,
+      "seAbre": true,
+      "recorte": "EPTO CANT. PRECIO IVA TOTAL Revisión de termo/calentador 1 320,00 € 21 % 387,20 € Base imponible: 320,00 € IVA: 67,20 € Total: 320,00 € NOTAS INTERNAS Solo tú las ves ETIQUETAS GASTOS Y MARGEN INGRESOS 320,00 € GASTOS 0,00 € MARGEN 320,00 € 100% Sin gastos asignados a esta cotización. + Añadir gasto a este trabajo REVI"
+    }
+  },
+  "fin": "2026-10-15T16:20:44.426Z",
+  "R": {
+    "flagSoloQA": "funciona",
+    "sugerencia": "funciona",
+    "alta": "funciona",
+    "cicloPropone": "funciona",
+    "baseConIva": "funciona",
+    "baseControl17sep": "el instrumento ve el defecto viejo (320)",
+    "apiConIva": "funciona",
+    "pantallaConIva": "funciona",
+    "pantallaDistingue": "control roto (abre=true 387=true 320=true)",
+    "restaurado": "sí"
+  }
+}

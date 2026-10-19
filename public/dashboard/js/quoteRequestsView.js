@@ -109,7 +109,7 @@ async function renderQuoteRequestsView(container) {
         </div>
         <div style="background:var(--neutral-50);border-radius:8px;padding:12px;font-size:13.5px;color:var(--neutral-700);border:1px solid var(--neutral-100);white-space:pre-wrap;word-break:break-word;margin-bottom:12px">${escReq(req.description)}</div>
         ${galleryHtml}
-        <div style="display:flex;gap:8px;flex-wrap:wrap" id="req-actions-${req.id}"></div>
+        <div class="solicitud-acciones" style="display:flex;gap:8px;flex-wrap:wrap" id="req-actions-${req.id}"></div>
       `;
 
       const actionsDiv = card.querySelector(`#req-actions-${req.id}`);

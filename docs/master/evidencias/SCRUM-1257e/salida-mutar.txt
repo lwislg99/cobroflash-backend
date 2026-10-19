@@ -1,0 +1,25 @@
+✔ M1 · en el test cae «en fiscal Ajustes pinta su frase y no la de receipt» · en el navegador: salida 1 · caen [fiscal, demo] · tenían que caer [fiscal, demo] y NO [receipt, null]
+     🔴 [fiscal] sale la frase del modo «receipt»: "Por ahora, YaQu no genera facturas desde tu cuenta.". A un comercio en «fiscal» se le está contando el modo de otro.
+     🔴 [fiscal] la frase pintada NO es la del fuente (difiere en el carácter 0).
+     pintada: "Por ahora, YaQu no genera facturas desde tu cuenta."
+     fuente:  "Cada cobro genera una factura con su numeración. Una vez emitida no se puede editar ni borrar."
+     🔴 [fiscal] la frase pintada casa con los modos ["receipt"], y tiene que casar SOLO con «fiscal».
+     🔴 [demo] sale la frase del modo «receipt»: "Por ahora, YaQu no genera facturas desde tu cuenta.". A un comercio en «demo» se le está contando el modo de otro.
+     🔴 [demo] la frase pintada NO es la del fuente (difiere en el carácter 0).
+     pintada: "Por ahora, YaQu no genera facturas desde tu cuenta."
+     fuente:  "Se generan facturas completas con una marca de agua DEMO. No tienen validez: esta cuenta es para probar."
+     🔴 [demo] la frase pintada casa con los modos ["receipt"], y tiene que casar SOLO con «demo».
+✔ M2 · en el test cae «en receipt Ajustes pinta la frase de receipt, literal» · en el navegador: salida 1 · caen [receipt] · tenían que caer [receipt] y NO [fiscal, demo, null]
+     🔴 [receipt] en «Configuración › Cumplimiento» hay 0 filas de modo, y tiene que haber UNA. El profesional no ve en qué modo está.
+✔ M3 · en el test cae «en receipt Ajustes pinta la frase de receipt, literal» · en el navegador: salida 1 · caen [receipt] · tenían que caer [receipt] y NO [fiscal, demo, null]
+     🔴 [receipt] la frase pintada NO es la del fuente (difiere en el carácter 50).
+     pintada: "Por ahora, YaQu no genera facturas desde tu cuenta"
+     fuente:  "Por ahora, YaQu no genera facturas desde tu cuenta."
+     🔴 [receipt] la frase pintada casa con los modos [], y tiene que casar SOLO con «receipt».
+✔ M4 · en el test cae «en receipt Ajustes pinta la frase de receipt, literal» · en el navegador: salida 1 · caen [fiscal, demo, receipt] · tenían que caer [fiscal, demo, receipt] y NO [null]
+     🔴 [fiscal] en «Configuración › Cumplimiento» hay 0 filas de modo, y tiene que haber UNA. El profesional no ve en qué modo está.
+     🔴 [demo] en «Configuración › Cumplimiento» hay 0 filas de modo, y tiene que haber UNA. El profesional no ve en qué modo está.
+     🔴 [receipt] en «Configuración › Cumplimiento» hay 0 filas de modo, y tiene que haber UNA. El profesional no ve en qué modo está.
+
+public\dashboard\js\settingsView.js sha256 antes b4c183a02103 · después b4c183a02103
+✔ las 4 mutaciones caen en el navegador donde tienen que caer, y sólo ahí

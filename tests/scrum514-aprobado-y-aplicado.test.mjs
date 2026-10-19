@@ -363,6 +363,17 @@ const APARCADOS = [
       + 'texto sin «ni justificantes». NO se desaprueba en el registro —la firma ocurrió—; ya no '
       + 'tiene dónde pintarse. Registro: `docs/master/SCRUM-1257.md`, sección SCRUM-1257d.',
   },
+  ...[
+    'No se ha podido guardar la llamada. Inténtalo otra vez.',
+    'No se ha podido marcar como hecha. Inténtalo otra vez.',
+  ].map((texto) => ({
+    texto,
+    motivo: 'SUSTITUIDO POR UNA FIRMA POSTERIOR (SCRUM-1056 comentario 19649, 14-oct-2026). Eran B12 y '
+      + 'B15 de «Volver a llamar» (`clienteVolverALlamar.js`, `TEXTOS.noGuardado` y `TEXTOS.noMarcado`). '
+      + 'La firma nueva pinta en esas MISMAS ranuras el mismo texto acabado en «Inténtalo de nuevo.», '
+      + 'la forma de la casa (SCRUM-1215 comentario 19460). NO se desaprueba en el registro —la firma '
+      + 'ocurrió—; ya no tiene dónde pintarse. Registro: `docs/master/SCRUM-1056.md`, sección SCRUM-1056d.',
+  })),
   {
     texto: 'Modo no reconocido',
     motivo: 'RESPALDO del modo de emisión (`settingsView.js:213`). Aparcado por la REGLA 26: el '
@@ -374,6 +385,21 @@ const APARCADOS = [
     motivo: 'La otra mitad del mismo respaldo (`settingsView.js:219`). Mismo motivo y mismo '
       + 'desbloqueo: regla 26.',
   },
+  ...[
+    '¿Qué tipo de actividad tienes?',
+    'Empresarial',
+    'No lo sé',
+  ].map((texto) => ({
+    texto,
+    motivo: 'FIRMADO Y TODAVÍA SIN PANTALLA (SCRUM-1072 comentario 19859, 16-oct-2026). Es la pregunta de '
+      + 'la actividad, junto a «Retención de IRPF», en Configuración. La mitad de servidor está hecha '
+      + '(`activityKind` en el perfil); la pantalla es `settingsView.js`, contenedor de J3, y la pinta '
+      + 'S2. «Profesional» no sale aquí porque el cruce ya la encuentra en `publicProfile.service.ts` '
+      + '(el nombre de respaldo del perfil público): es OTRO texto y NO prueba que esta pregunta esté '
+      + 'pintada. Lo desbloquea S2 al pintar '
+      + 'la pregunta: entonces estas tres líneas se QUITAN. Registro: '
+      + '`docs/microcopy/2026-10-16-SCRUM-1072-tipo-de-actividad.md`.',
+  })),
 ];
 
 /**

@@ -24,8 +24,10 @@ export function localAppData(dir) {
  *                             (`uso.mjs leer` contesta NO_PUDE_MIRAR, como una máquina recién instalada)
  * @param {object} [o]
  * @param {number} [o.edadMin] minutos de antigüedad de la lectura (por defecto, recién leída)
+ * @param {number} [o.semanal] porcentaje de la ventana semanal (SCRUM-999b: `juzgar()` la exige; sin ella
+ *                             contesta NO_PUDE_MIRAR). Por defecto 5, para que mande `usado`.
  */
-export function escribirUso(dir, usado, { edadMin = 0 } = {}) {
+export function escribirUso(dir, usado, { edadMin = 0, semanal = 5 } = {}) {
   const carpeta = path.join(localAppData(dir), 'yaqu-equipo');
   fs.mkdirSync(carpeta, { recursive: true });
   const fichero = path.join(carpeta, 'uso.json');
@@ -42,7 +44,7 @@ export function escribirUso(dir, usado, { edadMin = 0 } = {}) {
       sesion: 'banco',
       leido_en: leido,
       five_hour: { used_percentage: usado, resets_at: Math.floor(Date.now() / 1000) + 3600 },
-      seven_day: null,
+      seven_day: { used_percentage: semanal, resets_at: Math.floor(Date.now() / 1000) + 6 * 86400 },
     },
   };
   fs.writeFileSync(fichero, JSON.stringify(reg));

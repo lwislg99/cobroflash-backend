@@ -119,3 +119,216 @@ no; `data.message` sigue ganando. ② VIAJE: modal de alta de Gastos en el banco
 las dos vías de `abrirFoto`, clic en «Añadir gasto», se LEE `#exp-error`, y el gasto no sale hacia el servidor.
 Controles: un 500 sin frase → «Error al guardar.»; una frase del servidor → la suya.
 **Rojo probado:** con `api.js` y `expensesView.js` de main caen 2 de 4; el del viaje pinta exactamente «Error al guardar.».
+
+## 1233e — los dos sitios de S4: la lista de Trabajos y la firma del parte (S4, s4-15oct)
+
+**Medido contra:** `origin/main` = `73e41ab00f727fae5c6c8f1715d6eb6749133502` · 2026-10-15T16:10:09Z
+
+**Skill UI:** no cargada · no cambia nada visual: solo qué texto, ya aprobado, sale en un aviso que ya existía.
+
+- `jobsView.js` · `avisoDeFallo(prefijo, err)` (antes `:397`), el único punto por el que la lista de
+  Trabajos enseña un fallo (guardar el estado, asignar técnicos ×2, generar el cobro). Caía a
+  `err.message`: medido con el `apiRequest` real, un 500 sin frase pintaba
+  «No se pudo guardar: API 500: internal_error». Ahora `mensajeParaPersona(err, '')`: sin frase del
+  servidor, el prefijo solo. Los prefijos son los literales que ya usaba la pantalla; ningún texto nuevo.
+- `parteDetailView.js` (antes `:1276`), el aviso que esta misma tabla dejó a S4 (c.17504): el rechazo
+  de la firma que no es `parte_vacio` subía `r.error.message` crudo al contrato del pad. Ahora
+  `mensajeDelAlbaran(r.error)`, lo mismo que el albarán ante el mismo rechazo (`albaranDetailView.js`,
+  `mensajeDeFalloAlFirmar(resultado.error)`): «No hemos podido registrar la firma», con la frase del
+  servidor entre paréntesis si la mandó. `parte_vacio` sigue con su texto propio.
+- Trinquete: `jobsView.js` 1 → 0 y sale de la tabla; total 14 → 13. El censo, ejecutado con el módulo
+  de esta rama: sobre `origin/main` ve `jobsView.js:398` (control positivo) y sobre la rama, 0; 96
+  ficheros mirados en los dos.
+- No tocado: lo aparcado de `[PENDIENTE…]` (c.17568, permisos). El techo de `jobsView.js` en el trinquete
+  de SCRUM-644 dice 2 y el censo de 644 ya veía 0 ANTES de este cambio (medido sobre `origin/main`);
+  es techo, no igualdad, y no lo muevo sin saber cuándo bajó.
+- **SCRUM-1340 (`scrum811c`), la lista de heredadas encoge 4:** los merges #1952, #1954, #1961 y #1979
+  (los de 1233, 1233b, 1233c y 1233d) pasaban a «DECLARA» en cuanto esta entrada 1233e declara la skill,
+  porque el motor junta las entradas por FICHERO de registro y los cuatro escribieron en este mismo
+  `SCRUM-1233.md`. El guard cae hasta que se quitan («la lista encoge diciéndolo, no en silencio») y se
+  quitan, cada uno con su línea comentada y el motivo. No relaja nada: esos cuatro pasaban antes por la
+  lista y pasan ahora por «DECLARA». ⚠️ Lo que sí queda dicho: **no la declararon ellos**; cualquier
+  registro con una heredada dentro que reciba una entrada nueva de interfaz hará lo mismo.
+
+**Tests:** `tests/scrum1233e-trabajos-y-parte-sin-tripa.test.mjs` (6). Trabajos: un 500 y sin red dan el
+prefijo solo, con control de que el error de `api.js` SÍ lleva la tripa (si no la llevara, el test no
+probaría nada); la frase del servidor sale detrás del prefijo (control, pasa en los dos lados). Parte, en
+el banco del almacén con `firmarParte` real: 400 `firma_invalida` sin frase → el texto del albarán; con
+frase → el molde con paréntesis; `parte_vacio` → su texto (control, pasa en los dos lados).
+**Rojo probado:** con las dos vistas de `origin/main` (diff 4/5 y 1/5) caen 5 de 19: los cuatro de
+1233e que no son control y el trinquete. Vecinos: 65 ficheros que nombran estas vistas o los censos,
+600/600, 0 saltados. Suite completa NO corrida: 1.804 MB libres, por debajo del umbral (A6).
+A9: comprobación → `tests/scrum1233e-trabajos-y-parte-sin-tripa.test.mjs`
+
+## 1233f — el techo de `jobsView.js` en el trinquete de SCRUM-644, de 2 a 0 (S4, s4-15oct)
+
+**Medido contra:** `origin/main` = `d09323e92bf1302dd052d1d90ef46a2e4db928bc` · 2026-10-15T16:21:52Z
+
+Apilada sobre la rama de 1233e a propósito: las dos escriben al final de este registro y, en ramas
+hermanas, chocarían al mergear. Lo pidió el orquestador (el techo decía 2 y el censo de 644 ya veía 0).
+
+- **Quién sale, uno a uno** (contados el 2-sep sobre `19ea5a4052340cbe9598451c9ede91f2c1a07170`, con el
+  instrumento de hoy): `jobsView.js:281` `showToast(… invalid_transition … 'No se pudo guardar: ' + … err.message)`
+  y `:361` `showToast('No se pudo generar el cobro: ' + (err?.data?.message || err.message))`.
+- **Cuándo y por qué dejaron de contar:** recorrida la cadena de primer padre de `main` (9 commits que
+  tocan `jobsView.js` desde entonces), el censo pasa de 2 a 0 en el merge del PR #1134 (SCRUM-727,
+  `d1b65eb91b6940246d87d0931188c24fc92ee0d9`, 7-sep). Pasaron por `avisoDeFallo`, que pinta a través de
+  una VARIABLE: el censo de 644 no la ve; el de 1233 sí (techo 1), y 1233e lo deja a 0. O sea: el techo 2
+  llevaba desde el 7-sep sin nadie debajo, y la tripa siguió en pantalla hasta 1233e.
+- El tope de la suma (`total <= 57`) baja a 53: la tabla sumaba 55 desde SCRUM-1233 (`jobDetailView`
+  11 → 9 sin bajar el tope) y salen estos 2.
+- `jobsView.js` entra en «lo arreglado se queda en cero».
+- **Rojo probado:** sembrando `showToast('x: ' + err.message, 'error')` en `jobsView.js` (diff 1/0) caen
+  2 de 14 (el trinquete y «se queda en cero»); sin la siembra, 14 de 14.
+- **De paso, el rojo de esta rama en el CI (run del 15-oct, 16:55Z):** las dos entradas de hoy (1233e y
+  1233f) se empujaron sin su línea `A9:`, y `scrum1294` cayó con 1 fallo de 11.588. Era nuestro, no del
+  otro equipo. 1233e la recibió en `5bc0aa25ccbbbcddf10100e593aa0c03f0b1a895`, y aquí se mezcla esa
+  rama: el merge dejó aquella línea al FINAL del fichero, o sea, dentro de este tramo y no del suyo, así
+  que se ha devuelto a su sitio y este tramo lleva la suya.
+A9: comprobación → `tests/scrum644-trinquete-mensaje-crudo.test.mjs`
+
+## 1233g — visto en yaqu.app, y un banco que intercepta producción bloquea el service worker (S4, s4-16oct)
+
+**Medido contra:** `origin/main` = `48fc00f6a90089b0f172b58c49413d889288bec0` · 2026-10-16T11:11:49Z
+
+Producción servía ese mismo SHA (leído en `/version`).
+
+**Skill UI:** no cargada · no se toca ninguna pantalla: sólo se miran, en producción.
+
+**Visto en yaqu.app** (SCRUM-1233 c.19857; banco `docs/master/evidencias/SCRUM-1233/ver1233.mjs`, salida
+en `ver1233-salida-16oct.txt`). El fallo se simula en el navegador, y cualquier otra petición que no sea GET se aborta:
+
+| caso | lo que sale | control |
+|---|---|---|
+| Trabajos #77 · Agendar · 500 sin frase | `No se pudo guardar` | el mismo `err.message` vale `API 500: internal_error` |
+| ídem · sin red | `No se pudo guardar` | `err.message` = `Failed to fetch` |
+| ídem · 400 con `message` | `No se pudo guardar: <frase>` | el camino del detalle funciona |
+| parte #9 · firma del cliente · 400 `firma_invalida` | `No hemos podido registrar la firma`, botón `Reintentar`, el pad no se cierra | el parte sigue `borrador`, releído |
+| Albaranes (ya lo hacía bien) · 500 con y sin `message` | aviso sin detalle / con la frase debajo | igual que antes de 1233e |
+
+**Error mío, y repetido:** la 1.ª pasada abrió el contexto sin `serviceWorkers: 'block'`, y tres
+`PATCH /admin/jobs/77` con cuerpo `{}` llegaron a producción (~11:10Z). El #77 sigue `pendiente_agendar`,
+`scheduledAt: null`, `notes: null`. Su `updatedAt` NO se ha podido medir: ninguna lectura lo expone (lista y
+detalle, 0 veces; `/ics` → 409 `not_scheduled`), y no sé si Prisma lo mueve con `data: {}`. La cicatriz S4
+del 1-oct ya decía esto, con «sin comprobación». Ahora la tiene:
+
+- `tests/scrum1233g-banco-bloquea-el-sw.test.mjs`, por AST sobre `docs/master/evidencias/` + `scripts/`. Un
+  fichero que llama a `.route(` y abre él mismo el contexto contra `yaqu.app` lleva `serviceWorkers: 'block'`.
+  Si su contexto lo abre un import del repo, se le aplica lo mismo. Si lo abre un fichero que NO está en git,
+  el banco va nombrado en `FUERA_DEL_REPO`. Las dos mitades: uno nuevo cae, y uno de la lista que deja de
+  estarlo cae también.
+- **Segundo error mío, en el mismo ticket:** el primer censo, por regex, dio «5 de 7 bancos sin bloquear».
+  Era falso, porque contaba `yaqu.app` dentro de COMENTARIOS. Por AST, esas 5 sondas (1188e, 1227, 1231b,
+  1482b, 917i) no abren contexto: lo abre `sondas-s2/comun.mjs`, fuera del repo, y ése SÍ bloquea (medido,
+  su línea 15). Van en `FUERA_DEL_REPO`. Que dependan de un fichero que no está en git es de S2: reportado
+  al orquestador, no tocado.
+- **Rojo probado**, sobre `470b63668c573220a12a023abef75e657c6db11c` y deshecho cada vez (`git status` vacío):
+  ① quitar el `serviceWorkers: 'block'` del `newContext` de `ver1233.mjs` (diff 1/1; el de su comentario
+  se queda) → cae y lo nombra. ② sembrar una sonda que importa `./no-existe.mjs` → cae «fuera del repo» y
+  la nombra. ③ subir junto a 917i un `comun.mjs` que bloquea → cae «sácalo de FUERA_DEL_REPO». ④ el mismo
+  `comun.mjs` sin bloquear → cae «NO bloquea» con 917i. Población del verde: 895 ficheros, 8 llaman a
+  `.route(` (bloquea 3 · fuera del repo 5).
+A9: comprobación → `tests/scrum1233g-banco-bloquea-el-sw.test.mjs`
+
+## 1233h — «Copiar enlace» copiaba la PORTADA cuando la factura aún no tenía cobro (S2, s2-18oct)
+
+**Medido contra:** `origin/main` = `2cc3243ec30c41e27bbe04d0d5647f241c83c28c` · 2026-10-18T18:48:22Z
+
+**Skill UI:** cargada · cambia un componente compartido (`waFallbackBar`, api.js) y una línea de la ficha del Trabajo; ningún texto nuevo.
+
+**El defecto, medido antes de tocar nada.** La barra de fallo de WhatsApp de la ficha del Trabajo
+(`jobDetailView.js:1475`) recibía `link: token ? origin + '/pay/invoice/' + token : location.origin`. Sin
+`payToken` —la factura aún no tiene cobro— el botón «📋 Copiar enlace» copiaba `https://yaqu.app` y decía
+«✓ Enlace copiado — mándaselo por SMS». Sonda `sondas-s2/enlace-falso.mjs` (fuera del repo, arnés
+`comun.mjs` con el service worker bloqueado): código SERVIDO por yaqu.app (build `74e60ebe5`), el GET del
+trabajo #77 completado con UNA factura de mentira (QA no tiene facturas) y el POST de reenvío CONTESTADO
+por la sonda. Nada salió a producción (`noGet` = sólo ese POST, «contestada por la sonda»).
+
+| caso (respuesta del reenvío, la forma real de `invoicesAdmin.routes.ts:645-690`) | lo que copia |
+|---|---|
+| CONTROL · con token · 200 `sent:false`, `pay_token` | `https://yaqu.app/pay/invoice/tokSONDA123` |
+| cliente sin teléfono · 400 `customer_missing_phone` (el cobro no llega a crearse) | `https://yaqu.app` |
+| cobro no creado · 200 `sent:false`, `pay_token: null` | `https://yaqu.app` |
+| error de red · 500 | `https://yaqu.app` |
+
+**La forma, y por qué ésta.** Sin enlace, la barra NO pinta «Copiar enlace»; «Enviar por email» y
+«Reintentar WhatsApp» se quedan. Quien llama pasa `null`, nunca la portada. Un enlace falso con forma de
+bueno es peor que no ofrecer copiar nada. Descartadas: ① un botón deshabilitado con su motivo → pide un
+texto nuevo (regla 39); ② crear el cobro para que haya enlace → es backend y dinero (S1, STOP).
+⚠️ **Choca con la letra de A20.5** (`docs/SPRINT_DEMO_READY_EXT3.md:417`, «SIEMPRE … Copiar enlace»),
+que daba por hecho que había enlace. Con enlace, las tres salidas siguen; sin él, quedan dos. Declarado
+aquí y al orquestador.
+
+**El gemelo es de J1:** `invoiceDetailView.js:405` y `:421`, la misma rama a `location.origin`
+(para-javier §25.4). Con este cambio, su arreglo es cambiar `: location.origin` por `: null` en esas dos
+líneas, y bajar a 0 el techo de `invoiceDetailView.js` en el test. No lo toco: no es mi fichero.
+
+**Test** `tests/scrum1233h-copiar-enlace-sin-enlace.test.mjs`: ① ejecuta la `waFallbackBar` REAL, recortada
+de api.js, sobre un DOM mínimo — con control positivo (con enlace, el botón existe y copia ESE enlace) y sin
+enlace (`null`, `undefined`, `''`) no hay botón y los otros dos sí. ② censo por fichero de `location.origin`
+pasado a pelo como enlace, sobre código sin comentarios, con techo y sus dos mitades (J1: 2).
+**Rojos sembrados** y deshechos (diff limpio después): `if (link)` → `if (true)` cae ①×3 (el control sigue
+verde: la mutación es la que es); volver a `: location.origin` en jobDetailView cae ②. Tanda de los 159
+ficheros que leen `api.js` o `jobDetailView.js`: los mismos 403 rojos en rama y en `main` limpio, nombre a
+nombre (el worktree no tiene `dist`); la rama sólo suma estos 6 en verde. La tanda completa la da el CI.
+A9: comprobación → `tests/scrum1233h-copiar-enlace-sin-enlace.test.mjs`
+**Visto con la rama servida sobre yaqu.app** (build `74e60ebe5`; `enlace-falso.mjs <carpeta>` sirve `api.js` y
+`jobDetailView.js` de la rama, 18-oct ~18:55Z). Pasada con el CONTROL en verde: con token la barra trae las tres
+salidas y copia `…/pay/invoice/tokSONDA123`; sin teléfono, cobro no creado y error de red traen «Enviar por email» y
+«Reintentar WhatsApp», y no hay nada que copiar. ⚠️ En una 2.ª pasada el control no llegó a abrir el «⋯» (mi sonda,
+no el producto): esa pasada no cuenta. Prod a pelo, en la misma tanda: los tres casos siguen copiando `https://yaqu.app`.
+### 1233h · DIVERGENCIA DECLARADA de A20.5 (18-oct ~19:15Z)
+
+**Lo que dice la letra** (`docs/SPRINT_DEMO_READY_EXT3.md:417-420`, literal): «**A20.5 `[CC]` — Fallback WhatsApp
+completo (J5).** En TODO fallo de envío (UI y cron): acciones SIEMPRE ofrecidas — Copiar enlace · Enviar por email ·
+Reintentar. 131026 → "copia el enlace y mándaselo por SMS o llámale". Cron que falla registra y aparece en BO. Nunca
+fallo silencioso.»
+
+**Lo que hace ahora el código:** con enlace, las tres salidas, como siempre. SIN enlace (la factura aún no tiene cobro
+y el reenvío no devolvió `pay_token`), sólo dos: «Enviar por email» y «Reintentar WhatsApp». «Copiar enlace» no se
+pinta (`waFallbackBar`, `public/dashboard/js/api.js`, `if (link)`), y el aviso de error sigue saliendo: no es un
+fallo silencioso.
+
+**Y desde 1233i (19-oct), lo mismo con el email:** «Enviar por email» sólo se pinta si quien llama pasa `onEmail`
+(envía) o `emailDisabledReason` (desactivado, con su motivo). Sin ninguno de los dos salía ACTIVO y SIN OYENTE: se
+pulsaba y no pasaba nada. Los cuatro llamadores de hoy pasan siempre uno de los dos, así que ninguna pantalla
+cambia; el caso lo trae el llamador del albarán (S4), que no tiene envío por email y para el que el único motivo
+que existe («Este cliente no tiene email guardado») sería falso. Un botón que no hace nada, igual que un enlace
+falso, no es una salida.
+
+**Por qué:** la regla se escribió dando por hecho que había enlace. Nadie decidió «enseña un botón que copia la
+portada», y eso es lo que pasaba (medido arriba, tres casos). La letra choca; la intención («que el profesional tenga
+una salida que funcione, nunca un callejón») no: un enlace falso no la cumple, la contradice. Quitar una mentira no
+añade texto (regla 39).
+
+**Estado:** decidido por el orquestador el 18-oct que el arreglo entra con la divergencia DECLARADA. **La enmienda
+de A20.5 la lleva el orquestador al fundador: está PENDIENTE, no aprobada.** El comentario de `waFallbackBar` remite
+aquí. La parte del email (1233i) va en esta MISMA declaración, por petición del orquestador (19-oct); la enmienda
+la lleva él.
+
+### 1233i · «Enviar por email» sólo con algo que hacer (S2, 19-oct, rama `scrum-1233i-email-sin-accion-no-se-pinta`)
+
+**Medido contra:** `origin/main` = `774c32b517918c9bca567d35c0c15d881885cb64` · 2026-10-19T07:33:07Z
+
+**Skill UI:** no cargada · no cambia nada que se vea en ninguna pantalla de hoy (los cuatro llamadores pasan `onEmail`
+o `emailDisabledReason`); sólo deja de crear un botón muerto en un caso que hoy no ocurre. Cero texto nuevo.
+
+**Lo pidió** el orquestador (19-oct) con la medida de S4 contra `main` `1edb5ce4`: `bar.appendChild(emailBtn)` iba fuera
+de todo `if`. **Lo comprobé yo antes de tocar**, leyendo los cuatro llamadores en `origin/main`:
+`invoiceDetailView.js:404` y `:420` (J1), `jobDetailView.js:1475` y `quotesDetailView.js:148` pasan los dos, como
+`email ? () => … : null` y `email ? null : 'Este cliente no tiene email guardado'`. Siempre llega uno de los dos.
+
+**Cambio:** en `waFallbackBar` (`public/dashboard/js/api.js`), el botón de email se crea y se añade dentro de
+`if (onEmail || emailDisabledReason)`. Dentro, lo de siempre: el motivo gana (desactivado + `title`), y si no, el oyente.
+
+**Test** (en `tests/scrum1233h-copiar-enlace-sin-enlace.test.mjs`, junto a 1233h, sobre la `waFallbackBar` REAL):
+① sin ninguno de los dos, la barra trae sólo «Copiar enlace» y «Reintentar WhatsApp»; CONTROL: con `onEmail` el botón
+existe y su oyente envía, y con `emailDisabledReason` existe, desactivado y con el motivo en `title`. ② censo de los
+llamadores por llaves emparejadas (con su CONTROL): todos pasan `onEmail` o `emailDisabledReason`. Población hoy: 4.
+La lista `SIN_EMAIL_A_PROPOSITO` está vacía: el albarán de S4 entra en ella con su motivo.
+**Rojos sembrados**, deshechos y comprobados byte a byte: ① `api.js` de `origin/main` · ② `if (onEmail)` a secas (el
+desactivado desaparece) · ③ el oyente no se pone · ④ `jobDetailView` deja de pasar el email → cada uno cae en su caso.
+Los 78 ficheros que leen `api.js` o la barra (726 tests), con la rama y con el `api.js` de `origin/main`: ningún rojo
+nuevo; el único de la base es el caso ① de 1233i. (`tsc` con el error conocido de `activityKind`; sin `prisma generate`.)
+
+A9: comprobación → `tests/scrum1233h-copiar-enlace-sin-enlace.test.mjs`

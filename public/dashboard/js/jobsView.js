@@ -387,14 +387,15 @@ function pintarCifrasDeLaLista(zona, jobs) {
  * fichero era 2. Con el modal de técnicos habrían sido tres — y **un trinquete solo baja**. En vez
  * de subirlo, los tres caminos pasan por aquí y quedan en UNO.
  *
- * ⚠️ Esto REDUCE la superficie, no la cura: por esta rendija sigue pudiendo salir un identificador
- * del servidor. Lo que cambia es que ahora hay un único punto donde traducirlo el día que se haga,
- * en vez de tres. Traducirlo es otro ticket (el patrón es `mensajeDeErrorProveedor`, SCRUM-644).
+ * SCRUM-1233e · y ese punto ya traduce: el detalle sale de `mensajeParaPersona` (api.js), que solo
+ * deja pasar la frase que el servidor escribió para una persona (`data.message`). Antes caía a
+ * `err.message`, o sea «API 500: internal_error» o «Failed to fetch» detrás del prefijo. Sin frase
+ * del servidor, el aviso es el prefijo solo.
  *
  * Los prefijos son los literales que ya usaba esta pantalla: no se estrena microcopy (regla 30).
  */
 function avisoDeFallo(prefijo, err) {
-  const detalle = (err && err.data && err.data.message) || (err && err.message) || '';
+  const detalle = mensajeParaPersona(err, '');
   showToast(detalle ? prefijo + ': ' + detalle : prefijo, 'error');
 }
 
@@ -1189,6 +1190,28 @@ function jobRow(j, container, equipo) {
       jobsModal('Cerrar trabajo', cuerpo, () => {});
     });
   }
+
+  // ── SCRUM-1562 · LA FICHA, TAMBIÉN SIN RATÓN ──────────────────────────────────────────────
+  // El clic en la fila abre el Trabajo, pero un `<tr>` no recibe foco ni teclas. Y los botones de
+  // arriba no lo suplen: «Agendar», «▶ Empezar» y «💰 Cobrar el resto» ejecutan aquí, y los que sí
+  // llevan a la ficha («+ Nuevo albarán»…) prometen otra cosa en el rótulo. Medido el 18-oct-2026
+  // con la sonda de S3. Se resuelve como Presupuestos (`quotesListView.js`, «Ver detalle») y
+  // Clientes («📊 Historial»): un control NATIVO dentro de la fila, con el rótulo que ya usa la
+  // lista hermana. No se le da `role` a la fila: un `<tr>` con `role=button` deja de ser una fila
+  // de tabla para quien la oye.
+  //
+  // Fantasma, no secundaria: la jerarquía de SCRUM-917c no cambia —la primaria sigue siendo la del
+  // dinero, y la acción de la escalera sigue pesando más que mirar—. El clic en la fila se queda.
+  // `stopPropagation`, como Presupuestos: no navega dos veces aunque la guarda de abajo dejara de
+  // reconocer este botón.
+  const bDetalle = document.createElement('button');
+  bDetalle.className = 'btn-ghost btn-sm';
+  bDetalle.textContent = 'Ver detalle';
+  bDetalle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (window.renderAppView) window.renderAppView('jobs-detail', { jobId: j.id });
+  });
+  caja.appendChild(bDetalle);
 
   if (menu.length && typeof overflowMenu === 'function') caja.appendChild(overflowMenu(menu));
   tr.appendChild(tdAcc);

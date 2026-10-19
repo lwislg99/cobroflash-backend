@@ -58,7 +58,7 @@ import { ejecutadoDirectamente } from './_puerta-de-entrada.mjs'; // SCRUM-765
 // que ya se importaba de este módulo, para no romper a quien lo lea desde fuera.
 import {
   SALIDA_NO_RESTAURADO, marcaDe, marcarEnVuelo, borrarMarca, restaurarDesdeMarca,
-  restaurarYVerificar, redDeSeguridad, instalarRedDeSeguridad, marcasHuerfanas,
+  restaurarYVerificar, redDeSeguridad, instalarRedDeSeguridad, marcasHuerfanas, apuntarMutacion,
 } from './_marca-de-arbol.mjs';
 
 export {
@@ -319,9 +319,17 @@ export function mutacionesDeclaradas(codigo, nombre = 'x.mjs') {
  * Es la ÚNICA señal auto-declarada que hay en el árbol, y es DÉBIL EN LAS DOS DIRECCIONES —
  * medido el 17-sep-2026: de los 81 que declaran, sólo 18 se titulan guard; y de los 206 que se
  * titulan guard, sólo 18 declaran. No es un censo de guards y el rótulo lo dice en voz alta.
+ *
+ * 🔴 SCRUM-812d · se cuenta la PALABRA «guard»/«guards», no la subcadena. Hasta el 14-oct-2026 casaba
+ * con «guarda», «guardado», «guardada» (de guardar): medido sobre `origin/main` = `4f487bb17`, 303
+ * ficheros «se titulaban GUARD» por subcadena y 154 por palabra; en el subconjunto que además
+ * declara, 34 y 30. Los cuatro que salen, en el trinquete de
+ * `tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs`, con su línea.
+ * ⚠️ El final de palabra es una lista de letras y no `\b`: sin la bandera `u`, `\b` toma la «é» de
+ * «guardé» por un final de palabra.
  */
 export function seTitulaGuard(codigo) {
-  return /test\(\s*[`'"][^`'"]*GUARD/i.test(codigo);
+  return /test\(\s*[`'"][^`'"]*GUARDS?(?![a-záéíóúüñ])/i.test(codigo);
 }
 
 /**
@@ -1283,13 +1291,20 @@ export async function aplicarUna(mut, guard, limpia) {
   EN_VUELO.push(...piezas);
   try {
     const mutado = texto.replace(mut.de, mut.a);
+    // 🔴 SCRUM-1178 · cada mutación se APUNTA en la marca antes de escribirla: si muero aquí, la
+    // siguiente pasada sólo devuelve lo que reconoce como mío, nunca trabajo que vino después.
+    apuntarMutacion(DIR_MARCA, abs, mutado);
     fs.writeFileSync(abs, mutado);
     const BYTES_MUTADOS = fs.readFileSync(abs);
     if (Buffer.compare(BYTES_MUTADOS, ORIGINAL) === 0) {
       return { ok: false, ciego: 'la mutación no cambió el fichero: no probaría nada' };
     }
     // El árbol ejecutable tiene que llevar la mutación TAMBIÉN, o el guard mide el de antes.
-    if (absDist) fs.writeFileSync(absDist, emitirDesdeFuente(abs, mutado, RAIZ));
+    if (absDist) {
+      const mutadoDist = emitirDesdeFuente(abs, mutado, RAIZ);
+      apuntarMutacion(DIR_MARCA, absDist, mutadoDist);
+      fs.writeFileSync(absDist, mutadoDist);
+    }
     // 🔴 SCRUM-754 · las piezas que acabo de escribir viajan CON SUS BYTES, para que la vigilancia
     // no me denuncie a mí mismo — y para que sí denuncie si OTRO las toca mientras las uso.
     const propias = new Map([[abs, BYTES_MUTADOS]]);
@@ -1473,6 +1488,10 @@ if (ejecutadoDirectamente(import.meta.url)) {
       + 'murió con la mutación puesta.');
     console.error(`   Los bytes originales siguen en \`${path.relative(RAIZ, DIR_MARCA)}\`. `
       + 'MÍRALO A MANO: no se mide nada sobre un árbol mutado.');
+    if (pendiente.ajenos?.length) {
+      console.error('   ⚠️ Lo marcado «NO lo piso» NO es una mutación de esa pasada (SCRUM-1178): no he '
+        + 'escrito nada encima. Si es trabajo bueno, sólo sobra la marca.');
+    }
     process.exit(SALIDA_NO_RESTAURADO);
   }
   if (pendiente.reparadas.length) {

@@ -256,6 +256,8 @@ const COPY_ALBARAN_SIN_PRECARGA = 'Este albarán no está descargado y ahora no 
   + 'Podrás abrirlo cuando tengas señal.';
 const COPY_SIN_RED_NO_SE_CREA = 'Sin cobertura no puedes crear albaranes, solo firmar los que ya '
   + 'llevas descargados.';
+// SCRUM-1150d · con un 5xx, la ficha decía «No se pudo cargar el albarán: API 500: internal_error».
+const COPY_ALBARAN_NO_SE_PUDO_CARGAR = 'No se pudo cargar el albarán. Inténtalo de nuevo.'; // APROBADO · SCRUM-1150 comentario 19658
 
 /**
  * El albarán precargado, si lo hay. Devuelve `null` cuando no está o no se pudo mirar el almacén.
@@ -432,7 +434,8 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
       // 🔴 EL CONTROL NEGATIVO DEL TICKET: sin red y sin precarga, se DICE. Ni pantalla en blanco,
       // ni formulario vacío que invite a firmar algo que no se ha cargado.
       if (e && e.sinRed) { setStatus('error', COPY_ALBARAN_SIN_PRECARGA); return; }
-      setStatus('error', 'No se pudo cargar el albarán: ' + (e?.data?.message || e.message));
+      // SCRUM-1150d · el mensaje humano del servidor, si lo trae; si no, el firmado. Nunca el crudo.
+      setStatus('error', mensajeParaPersona(e, COPY_ALBARAN_NO_SE_PUDO_CARGAR));
       return;
     }
   }
@@ -505,11 +508,18 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
   // El estado del MODELO es uno de tres (borrador|emitido|firmado). Lo demás que se enseña aquí
   // son DERIVADOS y se pintan como tales, no como estados: «enviado para firmar» y el estado de
   // facturación, que tiene TRES valores y por eso no se aplana a un sí/no.
+  //
+  // SCRUM-49d · «enviado para firmar» sólo si Meta lo ACEPTÓ o lo ENTREGÓ. `enviadoParaFirma` dice
+  // que se INTENTÓ: su marca se escribe antes de llamar a Meta, y el 18-oct el #46 la llevaba con
+  // los dos intentos en `failed`. Fallido, sin rastro o sin poder leerlo: no se afirma nada, y la
+  // píldora no sale. Si el servidor no trae `entregaParaFirmar`, tampoco: no se sabe.
+  const enviadoYAceptado = !!alb.enviadoParaFirma && !!alb.entregaParaFirmar
+    && (alb.entregaParaFirmar.estado === 'entregado' || alb.entregaParaFirmar.estado === 'aceptado');
   const chips = document.createElement('div');
   chips.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 16px';
   chips.innerHTML =
     `<span class="status-pill">${esc(alb.estado)}</span>` +
-    (alb.enviadoParaFirma ? '<span class="status-pill status-pill-pending">enviado para firmar</span>' : '') +
+    (enviadoYAceptado ? '<span class="status-pill status-pill-pending">enviado para firmar</span>' : '') +
     // SCRUM-1375 · las mismas palabras que la fila «Facturación» de abajo. Un valor que no se
     // conoce no lleva píldora: la fila ya pinta su raya.
     (alb.estadoFacturacion !== 'sin_facturar' && textoDeFacturacion(alb.estadoFacturacion)
@@ -617,6 +627,29 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
     return b;
   };
 
+  // SCRUM-49e · SI EL WHATSAPP «PARA FIRMAR» NO SALE, EL ENLACE SE PUEDE COPIAR.
+  //
+  // El aviso de fallo ya dice «Copia el enlace y mándaselo por SMS o llámale» (`sendOutcome.ts`), y
+  // aquí no había nada que copiar. El token lo escribe el envío ANTES de llamar a Meta, así que tras
+  // un fallo suele existir, pero la ficha que está en pantalla puede ser de antes del primer envío:
+  // se RELEE. Sin token no se pinta nada — un enlace que no lleva a ningún sitio es peor que ninguno
+  // (SCRUM-1233h). La barra es la compartida (`waFallbackBar`): sus textos, ninguno nuevo.
+  const ofrecerCopiarEnlaceDeFirma = async () => {
+    let token = null;
+    try { token = (await apiRequest(`/admin/albaranes/${alb.id}`)).firmaToken || null; } catch { token = null; }
+    if (!token || typeof waFallbackBar !== 'function') return;
+    const box = (container.querySelector('.detail-page') || page).querySelector('.alb-status');
+    if (!box || box.style.display === 'none') return;
+    box.querySelectorAll('.wa-fallback-bar').forEach((b) => b.remove());
+    box.appendChild(waFallbackBar({
+      link: location.origin + '/albaran/' + token,
+      onRetry: () => {
+        const b = (container.querySelector('.detail-page') || page).querySelector('[data-accion="btnEnviarFirmar"]');
+        if (b) b.click();
+      },
+    }));
+  };
+
   // Los handlers son los MISMOS endpoints que usaba la fila del Trabajo: la página no inventa
   // caminos nuevos, se lleva los que ya existían.
   const botones = {
@@ -625,9 +658,10 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
       setStatus('info', TEXTO_PROCESANDO);
       try {
         const d = await apiRequest(`/admin/albaranes/${alb.id}/enviar-para-firmar`, { method: 'POST' });
-        if (waSendFailed(d)) { setStatus('error', d?.message || TEXTO_ERROR_GENERICO); return; }
+        if (waSendFailed(d)) { setStatus('error', d?.message || TEXTO_ERROR_GENERICO); await ofrecerCopiarEnlaceDeFirma(); return; }
       } catch (e) {
         setStatus('error', e?.data?.message || e.message);
+        await ofrecerCopiarEnlaceDeFirma();
         return;
       }
       // SCRUM-379 · el WhatsApp YA SALIÓ. Repetir esto manda un segundo aviso al cliente y quema
@@ -984,9 +1018,31 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
   // ── RAIL DE SOLO LECTURA ────────────────────────────────────────────────────────────────
   const rail = document.createElement('div');
   rail.className = 'detail-rail';
-  rail.style.cssText = 'margin-top:18px;display:flex;flex-direction:column;gap:8px;font-size:13px';
+  // SCRUM-1206e · EN REJILLA, NO EN UNA COLUMNA. `.detail-rail` está pensada como la columna DERECHA,
+  // de 220–300 px, de `.detail-cuerpo--con-rail` (styles.css, SCRUM-316); esta ficha no tiene cuerpo,
+  // así que se estiraba a todo el ancho con su filete. Medido en yaqu.app el 18-oct-2026 (#46 y #47):
+  // 982 px de rail a 1280 para 243 px de contenido, cinco filas de 78 px una debajo de otra. Con
+  // `auto-fit` de 220 px los datos cortos comparten fila en escritorio y a 390 sale UNA columna, igual
+  // que antes. Sin hueco entre columnas: el borde de cada fila corre seguido. Opción A del
+  // orquestador (18-oct): aquí, en el estilo que ya era de esta ficha, sin tocar `styles.css`.
+  // ⚠️ El `max(…, 25%)` (CUATRO columnas como mucho) no es estética: una fila a todo el ancho mantiene
+  // vivas las columnas vacías de `auto-fit`, y a 1920 los cuatro datos se quedaban en 928 px con el
+  // borde cortado a media tarjeta (medido con este mismo fichero servido en yaqu.app).
+  rail.style.cssText = 'margin-top:18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(max(220px,25%),1fr));gap:8px 0;font-size:13px;border-left:none';
+  // Las filas de TEXTO (presupuesto, cabecera, observaciones, fotos) ocupan la fila entera: en una
+  // celda de 220 px un texto libre se parte palabra a palabra.
+  const A_TODO_EL_ANCHO = '1 / -1';
+  // SCRUM-1206d · UN solo estilo de rótulo para TODO el rail, en versalitas. Hasta el 17-oct
+  // convivían dos: estas filas en versalitas y las de abajo (presupuesto, observaciones, fotos)
+  // con `.detail-rail-etiqueta`, gris y en minúscula — medido en yaqu.app, albaranes #46 y #48.
+  // Es el estilo Label de `DESIGN.md` (MAYÚSCULAS, `:147`) con la forma rótulo-arriba/valor-abajo
+  // que describe en `:213`; lo que `DESIGN.md` no hace es nombrar el rail entre sus usos, y ese
+  // hueco es la causa de que convivieran los dos. Aplicarlo aquí lo decidió el orquestador,
+  // 17-oct-2026. Por eso va en una constante: el rótulo que se añada mañana al rail sale igual
+  // que los demás sin tener que adivinar la clase.
+  const CLASE_ROTULO_RAIL = 'detail-total-label';
   const fila = (etiqueta, valor) =>
-    `<div><span class="detail-total-label">${esc(etiqueta)}</span><div>${esc(valor ?? '—')}</div></div>`;
+    `<div><span class="${CLASE_ROTULO_RAIL}">${esc(etiqueta)}</span><div>${esc(valor ?? '—')}</div></div>`;
   const pendientes = Array.isArray(alb.pendientes) ? alb.pendientes.filter((p) => p.pendiente > 0) : [];
   rail.innerHTML =
     fila('Trabajo', alb.job?.titulo) +
@@ -1023,9 +1079,12 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
   // enlace ausente no significa nada: o hay documento o no lo hay.
   if (alb.quote && alb.quote.id != null) {
     const filaQuote = document.createElement('div');
-    filaQuote.className = 'detail-rail-linea';
+    // SCRUM-1206d · `--nota` pone el rótulo ENCIMA del valor, como en las filas de arriba; al lado,
+    // en versalitas, se leía como otra cosa. La regla de 44 px del enlace sigue (`.detail-rail-linea a`).
+    filaQuote.className = 'detail-rail-linea detail-rail-linea--nota';
+    filaQuote.style.gridColumn = A_TODO_EL_ANCHO;
     const etiquetaQuote = document.createElement('span');
-    etiquetaQuote.className = 'detail-rail-etiqueta';
+    etiquetaQuote.className = CLASE_ROTULO_RAIL;
     etiquetaQuote.textContent = ROTULOS_RAIL_ALBARAN.presupuesto || TEXTO_ROTULO_SIN_MAPEAR;
     filaQuote.appendChild(etiquetaQuote);
     // Navegación DENTRO del dashboard, con la misma llamada que ya usa el rail del Trabajo
@@ -1038,9 +1097,51 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
       e.preventDefault();
       if (window.renderAppView) window.renderAppView('quotes-detail', { quoteId: alb.quote.id });
     });
-    filaQuote.appendChild(enlaceQuote);
+    // Dentro de su caja: suelto, `--nota` (que estira a sus hijos) lo ensanchaba a toda la fila —
+    // 320 px a 390 de pantalla, medido— y se pulsaba tocando el hueco vacío de la derecha.
+    const valorQuote = document.createElement('div');
+    valorQuote.appendChild(enlaceQuote);
+    filaQuote.appendChild(valorQuote);
     rail.appendChild(filaQuote);
   }
+
+  // ── SCRUM-1206 · LOS DOS TEXTOS DEL DOCUMENTO, LEÍDOS ───────────────────────────────────
+  //
+  // El PDF los imprime y esta ficha no los enseñaba: el profesional sólo podía leer lo que
+  // escribió descargando el papel. Van en el ORDEN DEL PAPEL (`albaranPdf.service.ts`): la
+  // cabecera arriba, las observaciones abajo.
+  //
+  // Los rótulos, firmados por el orquestador (SCRUM-1206, 16-oct-2026, delegación del fundador):
+  //   · `docHeaderText` va SIN RÓTULO, como en el PDF (SCRUM-593: «en el pdf final … solo aparece
+  //     el texto sin rótulo»). «Añadir texto en el documento» es el rótulo del FORMULARIO: encima
+  //     de un texto ya guardado se lee como un botón que no hace nada.
+  //   · `notas` lleva «Observaciones» porque ES el bloque «Observaciones» del papel: el PDF
+  //     imprime `notas` bajo ese título y el albarán no tiene otro pie (`schema.prisma`, junto a
+  //     `docHeaderText`). Mismo campo, mismo rótulo: se lee de la pieza, no se copia aquí.
+  //
+  // La fila es la de la nota del cliente en el rail del Trabajo (SCRUM-982): etiqueta encima,
+  // los saltos del profesional respetados y una palabra larga partida en 360 px. El RÓTULO no:
+  // es el del resto de este rail (SCRUM-1206d, `CLASE_ROTULO_RAIL`). Sin más estilo en línea que su
+  // ancho en la rejilla (SCRUM-1206e) y por `textContent`: el texto lo escribe el profesional.
+  // SIN DATO, SIN FILA.
+  const filaDeTexto = (etiqueta, valor) => {
+    if (valor == null || String(valor).trim() === '') return;
+    const filaTexto = document.createElement('div');
+    filaTexto.className = 'detail-rail-linea detail-rail-linea--nota';
+    filaTexto.style.gridColumn = A_TODO_EL_ANCHO;
+    if (etiqueta) {
+      const et = document.createElement('span');
+      et.className = CLASE_ROTULO_RAIL;
+      et.textContent = etiqueta;
+      filaTexto.appendChild(et);
+    }
+    const texto = document.createElement('span');
+    texto.textContent = String(valor);
+    filaTexto.appendChild(texto);
+    rail.appendChild(filaTexto);
+  };
+  filaDeTexto(null, alb.docHeaderText);
+  filaDeTexto(window.TD_TITULO_OBSERVACIONES || TEXTO_ROTULO_SIN_MAPEAR, alb.notas);
 
   // ── ② LAS FOTOS DEL PARTE ───────────────────────────────────────────────────────────────
   //
@@ -1058,9 +1159,10 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
     const lista = Array.isArray(fotos) ? fotos : [];
     if (!lista.length) return;
     const filaFotos = document.createElement('div');
-    filaFotos.className = 'detail-rail-linea';
+    filaFotos.className = 'detail-rail-linea detail-rail-linea--nota'; // rótulo encima (SCRUM-1206d)
+    filaFotos.style.gridColumn = A_TODO_EL_ANCHO;
     const etiquetaFotos = document.createElement('span');
-    etiquetaFotos.className = 'detail-rail-etiqueta';
+    etiquetaFotos.className = CLASE_ROTULO_RAIL;
     etiquetaFotos.textContent = ROTULOS_RAIL_ALBARAN.fotos || TEXTO_ROTULO_SIN_MAPEAR;
     filaFotos.appendChild(etiquetaFotos);
     const galeria = document.createElement('div');

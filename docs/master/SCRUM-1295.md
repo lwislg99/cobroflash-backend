@@ -210,3 +210,23 @@ repositorio, en la máquina de Luis), sobre el árbol ya regenerado, once casos:
 
 La última fila es lo que SCRUM-1480c cambia de verdad: con la fila de 9, la cerradura le habría cerrado a todo
 el que no fuera S3 un ayudante que usan dos guards sin dueño decidido.
+
+## 14-oct · s0 (14-oct-2026 07:58Z, `Date:` de GitHub) · SCRUM-1295b: `carriles.mjs de` contesta todas las rutas
+
+`origin/main` = `e2be1c9fda3b5ceac853b4d376f5664ac8e4df67`. Defecto de paso, arreglado en el momento y sin ticket nuevo
+(orden del fundador del 6-oct). Lo dejé apuntado el 13-oct en mi traspaso.
+
+**Lo que pasaba, reproducido en `main`:** `node scripts/carriles.mjs de scripts/carriles.mjs tests/scrum1295-carriles.test.mjs`
+contestaba SÓLO la primera ruta y salía con 0. La segunda se perdía en silencio: la misma cara que si no
+tuviera nada que decir. Y `de` sin ruta contestaba por la carpeta desde la que se lanzaba.
+
+**El arreglo:** un fichero, `scripts/carriles.mjs` (carril S0, `dos-equipos.md:177`). `de` recorre todas las rutas
+en el orden pedido; sin ruta, `NO-PUDE-MIRAR: uso: de <ruta> [<ruta>…]` y sale con 2. Con una sola ruta, la
+salida es la misma de antes (lo sostienen `scrum1480e` y el caso 2 del test nuevo).
+
+| aceptación | dónde se ve |
+| --- | --- |
+| `de a b` contesta las dos, cada una con su dueño | `tests/scrum1295b-de-con-varias-rutas.test.mjs`, caso 1 (dos rutas de dueños distintos, S0 y S1) |
+| una ruta, igual que antes | caso 2 · `tests/scrum1480e-…` |
+| sin ruta no contesta | caso 3 |
+| control rojo | con `scripts/carriles.mjs` de `main` y el test nuevo: **2 de 3 caen** (casos 1 y 3); el 2 pasa, como debe |

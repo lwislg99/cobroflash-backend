@@ -112,7 +112,10 @@ test('SCRUM-783 · 🔴 EL QUE DECIDE: marcar tres, ver una ficha y VOLVER deja 
   // ⚠️ SCRUM-792 movió el `display` de la barra al CSS (la decisión depende del ANCHO y eso sólo
   // lo sabe una `@media`), así que aquí ya NO se puede mirar `style.display`: el banco no evalúa
   // CSS. Lo que sí es contrato del JS —y lo único que este banco puede juzgar— es la CLASE.
-  // La visibilidad de verdad se mide en navegador (`scripts/guard-caja-barra-seleccion.mjs`).
+  // ⚠️ SCRUM-1177 · La visibilidad en un navegador NO la mide nadie. Aquí se citaba un guard de
+  // navegador de la barra que no ha existido nunca. Lo que sí corre: las reglas de la cascada
+  // (escritorio cierra con cero, móvil abre siempre, en la misma `@media`) las fija
+  // `tests/scrum792-barra-alcanzable-en-movil.test.mjs` — que EXISTAN, no que ganen.
   assert.equal(barra(r2.contenedor).classList.contains('barra-seleccion--vacia'), false,
     '🔴 la barra se marca como VACÍA al volver: hay tres seleccionados y el CSS la cerraría.');
 });

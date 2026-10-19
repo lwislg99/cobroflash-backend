@@ -18,9 +18,15 @@
 // copia está ALTERADA o vieja, `sesion.mjs` ya falla cerrado por su propia puerta de integridad;
 // este script no la repite.
 //
+// SCRUM-1467: la frase de una BLOQUEADA NO se redacta aquí. Se importa `motivoDeBloqueo` del
+// `sesion.mjs` de ESTE árbol (una función pura; el `main` de `sesion.mjs` no corre al importarlo).
+// Hasta el 15-oct este fichero tenía su propia copia, con el relleno que SCRUM-1095 quitó de
+// `sesion.mjs` el 26-sep: con `waitingFor: null` escribía en el issue qué esperaba la sesión, sin saberlo.
+//
 // La `gh` usada es la de la máquina (`C:/Program Files/GitHub CLI/gh.exe`, fuera del PATH).
 
 import { spawnSync } from 'node:child_process';
+import { motivoDeBloqueo } from './equipo/sesion.mjs';
 
 export const TITULO = '[vigía-jv] sesiones muertas o bloqueadas';
 const MARCA = 'vigia-sesiones-jv:ids';
@@ -39,7 +45,7 @@ export function sesionesQueAvisan(estado) {
   const lista = [];
   for (const b of bloqueadas) {
     if (!b?.avisar) continue;
-    lista.push({ id: String(b.id), nombre: String(b.nombre ?? '?'), clase: 'BLOQUEADA', motivo: `espera ${b.waitingFor || 'algo interactivo'}` });
+    lista.push({ id: String(b.id), nombre: String(b.nombre ?? '?'), clase: 'BLOQUEADA', motivo: motivoDeBloqueo(b) });
   }
   for (const r of restos) {
     if (r?.clasificacion !== 'MUERTA') continue;

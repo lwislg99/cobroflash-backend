@@ -667,7 +667,7 @@ Alcance: (a) foto de la avería adjunta a QuoteRequest (desde bot y portal); (b)
 ## S1. Roles `F1-doc (implementado; esta tabla es la verdad)`
 | Capacidad | Admin | Técnico |
 |---|---|---|
-| Quotes/clientes/productos crear-ver · enviar WA · ver landing | ✅ | ✅ |
+| Quotes/clientes crear-ver · productos: ver · enviar WA · ver landing | ✅ | ✅ |
 | Facturas: emitir/anular/R1 | ✅ | ❌ (ver sí — ⚠️ es lo que hace HOY; **decidido el 1-oct-2026: verá sólo las suyas**, sin construir → nota «Autor o asignado», más abajo) |
 | Marcar pagado / deshacer | ✅ | ❌ |
 | Configuración, datos fiscales, Connect, flags · billing/plan · equipo · exports | ✅ | ❌ |

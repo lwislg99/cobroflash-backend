@@ -314,3 +314,206 @@ los reales), más las carpetas de los otros tres runs.
 
 Para repetir el experimento entero: un push a la rama `exp-1405-force-exit` con el workflow de
 `exp-1405.yml.txt`. ⛔ Esa rama no se mergea a `main`.
+
+# APÉNDICE · 14-oct-2026 · SCRUM-1405c · La salida C, construida (J3f)
+
+**Medido contra:** `origin/main` = `6c5b3ad61fcce65bcedaad61499afa0a97167e73` · 2026-10-14T07:35:41Z (J3f del equipo de Javier, sesión `jv-j3f`, lanzada por el orquestador `cobroflash-backend-2e`. La tanda local corrió sobre `540ff2d83`; el primer obligatorio, sobre la mezcla con `main` de las 07:19Z, y lo que entró después en `main` es sólo `docs/`, `tests/` de otros tickets y `scripts/_sin-fila-declarados.json`.)
+
+A9: comprobación → `tests/scrum1405c-tuberia-bloqueante.test.mjs`
+
+**La autorización, leída en Jira y no en el encargo:** SCRUM-1405 c.19584, 14-oct-2026, el fundador:
+**«Ok la C»**. Autoriza conservar `--test-force-exit` y poner bloqueante la tubería de salida de cada
+hijo, tocando `NODE_OPTIONS` del paso de tests de `ci.yml` **o** el script `test`. NO autoriza la A
+(quitar el flag) ni la B. Cualquier otro cambio en `ci.yml` sigue siendo STOP.
+
+## Qué se ha construido
+
+| fichero | qué |
+|---|---|
+| `scripts/tuberia-bloqueante.mjs` | el módulo: si la salida estándar es una tubería, la pone bloqueante con `process.stdout._handle.setBlocking(true)`; si no puede, **lanza** |
+| `package.json`, script `test` | `--import=./scripts/tuberia-bloqueante.mjs` detrás de `--test`. **`--test-force-exit` sigue** |
+| `tests/scrum1405c-tuberia-bloqueante.test.mjs` | ① cableado · ② alcance · ③ la alarma de la pieza interna · ④ el rojo primero |
+| `scripts/_sin-fila-declarados.json` | el bloque del módulo nuevo (SCRUM-1480f): sin fila en §3.3 hasta que la S0 se la dé |
+
+**`ci.yml` no se toca.** Se eligió el script `test` y no `NODE_OPTIONS`: así lo cargan sólo el
+corredor y sus hijos, no cada proceso de node del job (ni `npm run build`, ni lo que lance un test).
+Y el CI corre `npm test`: el obligatorio lo hereda sin tocar el workflow.
+
+## Las cuatro condiciones del encargo
+
+**1 · El rojo primero.** ⚠️ **En esta máquina NO se puede ver.** Es Windows, y node ya pone ahí la
+tubería bloqueante: la cobaya (4 copias de 80 casos, ~330 KB por fichero, con el flag) pierde **0 de
+30 pasadas** sin el módulo, y 0 de 30 **también forzando `setBlocking(false)`**. No hay WSL ni Docker.
+Así que el rojo se mide donde existe: el caso ④ corre la cobaya **en el mismo proceso, primero sin el
+módulo y después con él**, 4 pasadas por brazo, y exige que sin él se pierda algo y con él nada. En
+Windows se salta, y **no por la plataforma sino por una medición**: un hijo sin el módulo escribe 1 MiB
+de un tirón a una tubería y dice cuánto le queda pendiente (aquí, 0).
+
+🔴 **En Linux, el rojo SÍ se vio, y se fue**: primer obligatorio de este PR (#2429, run `38527348767`,
+job `115731464284`, ubuntu, 07:21:57Z), dentro de la tanda y en el mismo proceso. **Sin el módulo, la
+cobaya perdió en 4 de 4 pasadas** (faltaron 20, 30, 10 y 20 de 320 casos); **con el módulo, 0 de 4**
+(320 de 320 las cuatro). Salida 0 en las ocho. Es una corrida: se suma a las 12 tandas y 200 pasadas
+de §① y §②, no las sustituye.
+
+Lo que sí se ha visto aquí: el camino del ④
+forzado en Windows sale **CIEGO** (320 de 320 informados en los dos brazos), que es lo que tiene que
+decir cuando no hay rojo que ver.
+
+**2 · 🔴 La alarma si la pieza interna desaparece.** El módulo decide si la salida es una tubería por
+API pública (`fs.fstatSync` e `instanceof net.Socket`; en Windows `fstat` de una tubería no dice nada,
+medido, por eso van las dos) y **sólo después** pide la pieza interna. Si no está, o devuelve error,
+lanza: el proceso no arranca y el fichero sale en rojo con «SCRUM-1405c · la salida estándar es una
+tubería y este node ya no ofrece…». En una tanda eso tumba **todos** los ficheros: ruidoso. Además el
+caso ③ ALARMA arranca un proceso con el módulo en cada tanda y cae si no puede.
+Visto caer, con el defecto sembrado y no prestado del árbol:
+- sin `setBlocking` → grita · sin `_handle` → grita · `setBlocking` devolviendo -22 → grita;
+- control negativo: salida a fichero y sin la pieza → no grita (ahí node ya escribe síncrono).
+
+Mutaciones del módulo y del script, las cuatro vistas en rojo y el árbol restaurado (`cmp`):
+
+| mutación | qué cae |
+|---|---|
+| el módulo nunca actúa | ② y los cuatro de ③ que no son el negativo |
+| sin la pieza devuelve en vez de lanzar | los dos sembrados de «sin la pieza» |
+| el script `test` sin el `--import` | ① y ② |
+| el script `test` sin `--test-force-exit` | ① |
+
+**3 · `sonda.mjs` NO sale de `evidencias/`.** Decidido: la C sólo necesita poner la tubería
+bloqueante, y eso es lo que se ha extraído, con su test. La sonda mide (bytes pendientes, recursos
+vivos al salir) y escribe un fichero por proceso: cargarla en cada hijo de la tanda sería meter un
+instrumento que nadie lee. Se queda como evidencia del experimento.
+
+**4 · El alcance, declarado y MEDIDO (caso ②).** Lo cargan el proceso `node --test` y **cada hijo
+que lanza por fichero** (el corredor les pasa su `execArgv`). **NO** lo cargan los procesos que un
+test lance por su cuenta, ni el envoltorio `tanda-con-veredicto.mjs`, ni `npm run build`. Es **más
+estrecho** que lo medido en §⑤, donde iba por `NODE_OPTIONS` y lo cargaba todo proceso: los hijos por
+fichero, que son los que perdían, lo reciben igual; los nietos ya no. Si el alcance cambia, ② cae.
+- Un `node --test` que un test lance dentro (`scrum928b`, `scrum858b`…) **sigue sin el módulo**.
+- **Las tres copias del flag que nombró S3 en c.18373** (`scripts/meta-guard-mutaciones.mjs`,
+  `scripts/_trinquete-de-zona-hijo.mjs`, `scripts/censo-guards-gateados.mjs`) **siguen perdiendo**:
+  la autorización es para el script `test` o el `NODE_OPTIONS` del paso de tests, y no las cubre.
+
+## La tanda completa, en local (Windows, node v24.18.0)
+
+`node scripts/tanda-con-veredicto.mjs node --test --test-force-exit --import=./scripts/tuberia-bloqueante.mjs 'tests/*.test.mjs'`,
+con `dist/` emitido con `tsc --noCheck`: **11.428 tests · 11.250 pasan · 26 caen · 152 saltan**,
+salida 1, log de 1.442.231 B, **0 «TANDA SIN VEREDICTO»**.
+- **3 de los 26 eran míos y están arreglados** en el código, no en los guards: `scrum702` (leía
+  `process.platform`; ahora el ④ decide por una medición), `scrum864c` y `scrum824` (el temporal salía
+  por una fábrica; ahora es `mkdtempSync(path.join(os.tmpdir(), …))` con `finally`).
+- **Los otros 23 no dependen del módulo:** los 12 ficheros que los dan, corridos con y sin él, dan
+  **los mismos 23 casos en rojo** (134 tests, 108 pasan, en los dos brazos). Son del worktree:
+  `express` y el CLI de Prisma no están en su `node_modules`, y la ruta corta `JAVIER~1`.
+- ⚠️ **No he repetido la tanda entera después de los tres arreglos.** Sí los cuatro ficheros
+  implicados juntos: 31 tests, 0 caen.
+
+## Lo que NO sé
+
+- **Linux.** Que la C arregla la pérdida sigue siendo lo de §① y §② (12 tandas, 200 pasadas, una
+  mañana) más lo que diga el ④ en el obligatorio de este PR. Una corrida más no es una garantía.
+- Si los nietos de la tanda (un `node --test` dentro de un test) pierden: no lo he medido, y no los cubre.
+- Una pasada accidental mía de la tanda entera sin el módulo dio 25 rojos y no 23, y no guardé los
+  nombres (abajo). NO PUDE MIRAR qué eran los 2 de más.
+
+## Mis errores
+
+- **Repetí la cicatriz de J3 del 2-oct, en el mismo ticket.** La expresión de la sonda del ④ pasó por
+  un heredoc y perdió la barra (`(d+)` en vez de `(\d+)`). Lo cazó el propio test: la sonda sin
+  respuesta sale «NO PUDE MIRAR» en vez de saltarse el caso. La cicatriz estaba escrita y no lo
+  impidió; lo paró que el `null` del instrumento es rojo.
+- **El primer módulo sólo miraba `fstat`**, y en Windows `fstat` de una tubería da los cuatro `is*` en
+  `false`: habría hecho NADA en silencio. Lo vi midiéndolo antes de usarlo. Ahora mira también el objeto.
+- **Mi primera cobaya pasaba el mismo fichero cuatro veces**; node lo cuenta una, y los tres brazos
+  «perdían» 240 casos. Lo delató que los tres brazos daban lo mismo.
+- **Corrí la tanda local sobre la base vieja, no sobre la mezcla.** El primer obligatorio cayó con UN
+  rojo, mío: `scrum1480f` (un fichero nuevo de `scripts/` sin fila en `dos-equipos.md` §3.3), un guard
+  que mi base no tenía. Tanda de 11.435 tests, 11.345 pasan, 1 cae, 0 «TANDA SIN VEREDICTO», log de
+  1.861.023 B. Arreglado por la salida que el propio guard da al equipo de Javier: declarado en
+  `scripts/_sin-fila-declarados.json` con su ticket; la S0 le da fila. Por eso hay dos empujones y
+  no uno. «CI prueba el MERGE, no la rama» (A10) ya estaba escrito.
+- **Mi comparación de los rojos ajenos corrió la tanda entera sin querer:** un `sed` falló, la lista
+  quedó vacía, y `node --test` sin ficheros lo corre todo. La repetí con un guion que se niega a correr
+  con la lista vacía.
+---
+
+## Tramo de J6j · 14-oct-2026 · el testigo dentro de UN fichero real (`scrum834`)
+
+**Medido contra:** `origin/main` = `11ca1e05f2e211a0a4eddf8941eaf738c6df98e5` · 2026-10-14T06:55:57Z (sesión `jv-j6j`, equipo de Javier, por encargo del orquestador `cobroflash-backend-2e`. Es la base de la rama del experimento y la hora es la del arranque del run `38525138304`. Al escribir esto `origin/main` iba por `76c29b57c871584b04c8206c11571f9c56c9d699`, que no toca ni `tests/scrum834-*` ni `scripts/puerta-avisador-rojo.mjs`.)
+
+A9: aviso → cicatriz J6 «Parcheé mi propio guion con un script de node pasado por un heredoc que calculaba las posiciones antes de sustituir, y dejó el fichero roto» — no se pudo comprobar: lo cazó node al no compilar, pero un parche que compile y caiga en el sitio equivocado no lo caza nadie
+
+**El hueco que cierra.** Lo de arriba decía «los casos que faltan SE EJECUTARON» con el testigo en una
+cobaya fabricada; los seis ficheros reales se midieron sin tocar, por `# tests`. Para ellos, «se
+ejecutaron» salía del mecanismo, no de un testigo suyo. Aquí UNO real lleva el testigo dentro.
+
+**Respuesta: sí, en `scrum834`, todos.** 400 pasadas con el flag y el testigo: 310 con casos ausentes,
+**5.460 casos ausentes, los 5.460 con su testigo de «empecé», 0 sin él**, siempre la cola. Sin el flag:
+400 pasadas y 0 ausentes. Ninguna pasada salió ciega.
+
+### Cómo
+
+- **El testigo.** En la copia desechable del runner cambia UNA línea del fichero real, la del
+  `import test from 'node:test'`, por un envoltorio de `test` en una sola línea (no se mueve ninguna
+  otra): apunta `DECLARADO <nombre>` al declarar el caso e `INICIO <nombre>` al entrar en su cuerpo, con
+  `appendFileSync` a un fichero aparte. **No escribe ni un byte en la tubería cuya pérdida se mide.** El
+  fichero se restaura al acabar, con su sha256 comprobado (IGUAL en las dos pasadas del run), y el paso
+  final del job comprueba `git status` vacío. En `main` y en la rama de entrega, `tests/` no cambia.
+- **Por nombre, no por recuento.** Ausente es lo declarado según el testigo que no sale en el TAP de
+  primer nivel. 53 declarados en las 800 pasadas con testigo, los mismos que las 53 líneas `test(` del
+  texto. Los casos que sí informan casan nombre a nombre con su testigo: 0 informados sin testigo.
+- **Dónde corrió.** Un workflow nuevo y aparte (SCRUM-1339 c.17951 ①) que sólo existe en la rama
+  `exp-1405-testigo-en-fichero-real`: se dispara con un push a esa rama, no es check de ningún PR y no se
+  mergea. Copia en `evidencias/SCRUM-1405/exp-1405-j6j.yml.txt`. GitHub `ubuntu-latest`, 4 hilos, node
+  v24.21.0. No toca `ci.yml`, ni el script `test`, ni `--test-force-exit`, ni nada de `area-s5`.
+
+### Los controles, antes de medir el real (los mismos `instrumentar()` y analizador)
+
+| control | qué es | qué dio (10 pasadas cada uno, 5 con el flag y 5 sin él, en el run y en local) |
+|---|---|---|
+| presente | 10 casos verdes | 0 ausentes, 10 con testigo |
+| corte | 10 casos, el 5.º hace `process.exit(0)` | 10 ausentes por pasada: 5 CON testigo (empezaron) y **5 SIN testigo (los 6 a 10, no corrieron)** |
+| ciego | el mismo fichero instrumentado sin decirle dónde apuntar | la pasada sale **CIEGA**, no «0 sin testigo» |
+| lector | un TAP fabricado con `#` y `\` escapados y un `# SKIP` | lo lee bien |
+
+El testigo dice las dos cosas: en el corte salen 50 «se ejecutó y no informó» y 50 «no se ejecutó».
+Si algún control falla, el guion sale con 1 y no mide el real.
+
+### El real, run `38525138304` (200 pasadas por brazo, los tres brazos intercalados)
+
+| brazo | carga | pasadas | con ausentes | casos ausentes | con testigo | **sin testigo** | salida |
+|---|---|---|---|---|---|---|---|
+| con el flag, con testigo | 0 | 200 | 148 | 2.790 | 2.790 | **0** | 0 las 200 |
+| con el flag, con testigo | 4 | 200 | 162 | 2.670 | 2.670 | **0** | 0 las 200 |
+| sin el flag, con testigo | 0 | 200 | 0 | 0 | – | 0 | 0 las 200 |
+| sin el flag, con testigo | 4 | 200 | 0 | 0 | – | 0 | 0 las 200 |
+| con el flag, **sin tocar** | 0 | 200 | 170 (por `# tests`) | 2.845 | sin testigo: no se puede juzgar | – | 0 las 200 |
+| con el flag, **sin tocar** | 4 | 200 | 160 (por `# tests`) | 2.363 | sin testigo: no se puede juzgar | – | 0 las 200 |
+
+- **El testigo no se come su objeto** (la objeción de c.17951): el fichero instrumentado pierde en
+  148 y 162 de 200, el mismo fichero sin tocar en 170 y 160, en las mismas máquinas e intercalados. No lo
+  he contrastado con una prueba estadística; la diferencia sin carga va en la dirección de «pierde algo
+  menos», y el veredicto no depende de ella.
+- El primer caso ausente cae entre el 15.º y el 53.º; la forma es «cola» en las 310.
+- **La salida fue 0 en las 1.200 pasadas**, también en las que perdieron casos: en verde la pérdida no
+  deja ningún rastro en el código de salida. Es lo que ya decía el registro (sólo un rojo lo deja).
+
+### Lo que NO dice
+
+- **Es UN fichero de 18.** Para los otros 17, «se ejecutaron» sigue saliendo del mecanismo y de la
+  cobaya, no de un testigo suyo. Lo que cambia es que la afirmación ya tiene un fichero real medido
+  detrás, y en él no hay excepción en 5.460.
+- El testigo dice «empecé», no «terminé en verde». Que los ausentes pasaran no lo dice el testigo: lo
+  dice que la salida fue 0 (un rojo da salida 1, 131 de 131 arriba).
+- Un tipo de runner, una mañana y una versión de node, como arriba. Windows no pierde (5 pasadas en
+  local con los tres brazos: 0 ausentes); allí el testigo no tiene nada que contar.
+- `scrum834` lo ejecuta este guion a solas, no dentro de la tanda.
+
+**Evidencias:** `evidencias/SCRUM-1405/j6j-testigo-real.mjs` (el guion) y `j6j-run-38525138304/`
+(las dos salidas, `controles.tsv`, `real-pasadas-carga{0,4}.tsv` con una fila por pasada, y
+`real-ausentes-sin-testigo-carga{0,4}.tsv`, que sólo traen la cabecera porque no hay ninguno). Para
+repetirlo: `node $E/j6j-testigo-real.mjs <carpeta de fuera> --en-sitio --pasadas 200` desde la raíz de
+una copia DESECHABLE, en Linux. ⛔ La rama `exp-1405-testigo-en-fichero-real` no se mergea a `main`.
+
+**Mis errores.** Parcheé mi propio guion con un script de node pasado por un heredoc que buscaba las
+posiciones antes de sustituir: el fichero quedó roto y lo cazó node al no compilar. La trampa del
+heredoc estaba en la memoria; la repetí. Lo arreglé con el editor y volví a pasar los controles.

@@ -313,3 +313,176 @@ Los logs no van al repositorio.
     node ultima-rafaga.mjs logs && node frontera.mjs logs   # ③
     node indice.mjs <raíz del árbol>                  # ① la posición
     node ventana.mjs <raíz del árbol> 150 3 ventana.log     # ⑦
+
+---
+
+# SCRUM-1527c · El que no completa es SIEMPRE el siguiente, y no es un fichero: en 8 colgadas decisivas salen cuatro distintos
+
+**Medido contra:** `origin/main` = `3c25452545a3b7092fb284df8a57b4f203f7a8a8` · 2026-10-14T08:17:30Z (hora de lectura del fetch)
+
+A9: aviso → A10 «Antes de llamar mecanismo a lo que has visto, di sobre cuántos elementos lo mediste: un instante no es un régimen.» — no se pudo comprobar: lo que falló aquí (1527b leyó «el sitio aguanta días» y «un fichero común a las dos lecturas» en 12 casos) es un criterio de lectura, y ningún test distingue un régimen de una coincidencia
+
+J6 (sesión `jv-j6l`, equipo de Javier), por encargo del orquestador `cobroflash-backend-2e`. Sólo
+medición: no toca `src/`, `tests/`, `scripts/`, ningún workflow ni ningún tiempo de espera. El
+ticket no se transiciona. **La causa NO está encontrada.** Lo que sí cambia: se cierra la pregunta
+de 1527b §④, y con ella se caen dos lecturas de 1527b.
+
+## En corto
+
+- **Población:** 16 colgadas desde el 17-sep (las 12 de 1527b + 4 nuevas, abajo). 15 llevan aviso
+  y se leyeron enteras; la cancelada del 29-sep no lleva aviso y estos instrumentos no la leen.
+- **8 de las 15 son decisivas** y en las 8 el que no completa es el fichero **SIGUIENTE** al último
+  entregado. El vigía tenía razón con su frase fija; 1527b §④ («no se puede decidir») queda resuelto
+  para esas 8.
+- **Pero no es un fichero:** en esas 8 el que no completa es `scrum446` (4), `scrum447` (1),
+  `scrum616` (1) y `scrum615-plazo-con-null` (2). Dentro del MISMO sitio cambia de fichero.
+  Se cae «`scrum446` es el único que sale en las dos lecturas» (1527b §④) como pista de culpable.
+- **El sitio no «aguanta días»:** el 13-oct hubo uno en `scrum445`→`scrum446` (12:14Z) y otro en
+  `scrum615`→`scrum616` (12:48Z), con 34 minutos entre medias. Contradice 1527b §①: dos números,
+  «22–23 sep, 26–29 sep, 6–13 oct» de 1527b frente a dos sitios el mismo día aquí.
+- **§⑧ de 1527b:** el paso 1 (que el vigía escriba quién vive) y el 2 (bucle en Linux) NO los he
+  podido ejecutar, y el porqué va en ④. El 3 (cotejo con node 24.21.0) está hecho y es el que abrió
+  todo lo anterior.
+
+## ① Las cuatro nuevas
+
+Filtro barato de 1527b (`1527b/pasos.mjs` + `pasos2.mjs`, sin cambiar) sobre las ejecuciones de
+`ci.yml` creadas desde 2026-10-13T10:32:31Z hasta 2026-10-14T08:07:46Z: 172 ejecuciones, 165
+completadas, **131 jobs obligatorios** (95 `success`, 30 `failure`, 6 `cancelled`). Paso «Tests» en
+`failure` y de 900 s o más: **4**. Entre 600 y 900 s: 0. Cancelados: 5, el más largo de 491 s.
+Los 4 logs llevan «TANDA SIN VEREDICTO» y pesan de 1.005.746 a 1.271.213 B (los verdes de 1527, de
+1,6 a 1,8 MB: no es el mismo fenómeno, como avisaba el encargo).
+
+| job | creado | último fichero entregado | no llega nada de |
+|---|---|---|---|
+| 115290677611 | 13-oct 12:14Z | `scrum445-cobros-sin-duplicar` | `scrum446` |
+| 115305001172 | 13-oct 12:48Z | `scrum615-plazo-con-null` | `scrum616-que-guarda-la-factura` |
+| 115728094402 | 14-oct 07:09Z (run 38526531948) | `scrum615-pedir-tipo-destinatario` | `scrum615-plazo-con-null` |
+| 115735116377 | 14-oct 07:29Z (run 38528703912, intento 1) | `scrum615-pedir-tipo-destinatario` | `scrum615-plazo-con-null` |
+
+Los dos de hoy son los del encargo. Los 4: node 24.21.0, imagen 20261004.327.1. Las dos de hoy son
+de ANTES de que entrara `scripts/tuberia-bloqueante.mjs` (#2429, mergeado 07:47:56Z): lo de abajo
+no dice nada de cómo se comporta la tanda con la tubería bloqueante.
+
+- **Testigo de 1527b §② repetido** (`1527b/testigo-pg.mjs`, sin cambiar): 4 de 4 con el error de
+  `scrum809` en el Postgres entre 2 y 3 min después del corte. Los posteriores siguen corriendo.
+- **El TAP corta en el mismo sitio** (era un «no medido» de 1527 §④): artefacto `tanda-tap` del run
+  38526531948, 2.025.480 B, sin NUL; su último caso es el `ok 7812` del mismo
+  «el módulo no escribe NI UN texto de producto propio». Uno, no todos.
+- **Huérfanos al cerrar el job:** 0 líneas «Terminate orphan process» en los 4. No separa nada: el
+  vigía mata el grupo con SIGKILL antes, y no tengo un control positivo de que el runner las escriba.
+
+## ② Lo que dice la fuente de node 24.21.0 (el paso 3 de §⑧)
+
+Bajada de `nodejs/node` en las etiquetas v24.21.0 (CI) y v24.18.0 (esta máquina):
+
+- `runTestFile` es **idéntica** en las dos (126 líneas). Espera `once(child, 'exit')` **y**
+  `finished(child.stdout)`; el `stderr` no cuenta. 1527b §④ queda cotejado.
+- El bloque de `--test-force-exit` del hijo (`test.js`, raíz) es idéntico: espera el `unpipe` de
+  cada destino de reporter y llama a `process.exit()`.
+- `FileTest.addToReport` (idéntico, 29 líneas): lo que llega de un hijo que no es el primero de la
+  cola se mete en `#reportBuffer`; ese búfer sólo se vacía cuando **ese mismo hijo** manda otro
+  mensaje siendo ya el primero, o cuando el fichero **completa** (`report()`).
+- `kExecutionOrderedEvents` = `test:enqueue`, `test:dequeue`, `test:complete` (+ `test:log` en
+  24.21): esos eventos van al reporter **sin pasar por la cola**. Es la base de la propuesta de ④.
+- La única diferencia en el runner que toca la lectura de mensajes: `fullMessageSize` pasa a
+  `>>> 0` (sin signo). Sólo cambia algo con mensajes de 2 GB o más.
+
+**Medido en local** (Windows, node v24.18.0; `1527c/` es reproducible):
+
+- Fichero `e` (un caso de 2 s) y `f` (caso rápido, caso de 6 s, caso rápido): `✔ f1` acaba en el
+  segundo 0 y sale en el 6, junto con `f2` y `f3`, aunque `f` era el primero desde el segundo 2.
+  **3 de 3.**
+- Un fichero solo, caso rápido y caso de 3 s: el rápido sale en vivo, 3 s antes. Control: lo que
+  retiene es la cola, no el reporter.
+
+## ③ La cascada: por qué 8 de 15 deciden
+
+Si un fichero completa y los siguientes ya estaban completos esperando turno, el padre los suelta
+todos en el mismo tick. Así que, si la primera línea del último fichero entregado llega a una
+fracción de milisegundo de la última del anterior, ese fichero no se imprimió en vivo: **estaba
+COMPLETO**, y el que no completa es el siguiente. Lo contrario (que la soltara un mensaje propio
+justo en ese instante) pide que su último mensaje caiga en esa misma décima de milisegundo, y en las
+8 a la vez.
+
+`1527c/frontera-final.mjs` y `1527c/cascada.mjs` sobre los 15 logs con aviso:
+
+- **Cascada, 8:** hueco de **0,06 a 0,14 ms**. Ejemplo que no admite otra lectura: en 115305001172,
+  tres casos de `scrum615-plazo` que duraron 5.266, 3.777 y 4.325 ms salen en los mismos 2 ms que
+  los de `scrum615-pedir`; la ráfaga entera son 79 casos que sumaron 15.786 ms, impresos en 11,9 ms.
+- **Sin separar, 7:** hueco de **47,86 ms a 10,8 s** (los tres de septiembre, el del 26-sep y tres
+  del 6–7 oct). Ahí al último lo soltó su propio cierre o su propio último mensaje, y con lo que
+  guarda el log no se distingue cuál.
+
+No hay nada entre 0,14 y 47 ms: el umbral de 5 ms de `cascada.mjs` no decide ninguno. El detalle,
+fichero a fichero, en `1527c/clasificados.json`.
+
+| no completa (en las 8 decisivas) | veces | sitio |
+|---|---|---|
+| `scrum446-cabecera-modal` | 4 | 445–447 |
+| `scrum447-byte-invisible-en-patrones` | 1 | 445–447 |
+| `scrum616-que-guarda-la-factura` | 1 | 615–616 |
+| `scrum615-plazo-con-null` | 2 | 615–616 |
+
+**Lo que descarta:** que se cuelgue un fichero concreto por lo que hace. `scrum446` y `scrum447` sólo
+leen con `fs` síncrono; `scrum616` importa tres módulos de `dist/`; `scrum615-plazo` hace un
+`await import` de `dist/` y un censo de varios segundos. Cuatro ficheros sin nada en común, y en
+el mismo sitio cambia cuál. Refuerza 1527 §③ (la causa no está en lo que comprueban) y retira la
+pista de 1527b §④.
+
+**Lo que NO descarta ni mide:** si el proceso del que no completa sigue vivo, si llegó a arrancar,
+o si salió y el padre no se enteró (falta el `exit` o falta el fin de su `stdout`). Eso es justo lo
+que pide el paso 1 de §⑧, y ahora sabemos a QUÉ fichero mirar.
+
+## ④ Lo que no he podido ejecutar, y la decisión que hace falta
+
+- **§⑧.1 (que el vigía escriba quién vive):** `scripts/tanda-con-veredicto.mjs` es de S5
+  (`node scripts/carriles.mjs de …`), y el encargo prohíbe tocar guards y workflows. Además, en la
+  rama de un PR no sirve: a 16 en ~2.130 jobs, harían falta cientos de pasadas para ver una.
+- **§⑧.2 (bucle en Linux):** en esta máquina no hay WSL ni Docker (medido hoy otra vez), y
+  `gh codespace` responde 403 sin el permiso `codespace`. Lanzarlo en CI pide un workflow.
+- **Una segunda vía para §⑧.1 que no toca el vigía**, medida en local (5 de 5): un tercer reporter
+  (`1527c/eventos.mjs`) que escriba `test:dequeue` y `test:complete` en el momento. Con un fichero
+  que entrega su caso y no cierra (`b.mjs`) delante de otro que sí (`c.mjs`), escribe
+  `complete FICHERO c.mjs` mientras `spec` sigue reteniendo `✔ c1`, y escribe `complete caso b1`
+  sin `complete FICHERO b.mjs`. En CI diría, al cortar, qué ficheros arrancaron, cuáles acabaron
+  sus casos y cuál no completó. **No dice** si el proceso gira o duerme: para eso sigue haciendo
+  falta lo de §⑧.1.
+  ⚠️ Si se lleva a CI, a un FICHERO y no a la salida estándar: los posteriores siguen corriendo
+  (§②), sus eventos reiniciarían el reloj de silencio del vigía y el job llegaría a sus 25 min sin
+  aviso.
+- Las dos vías tocan carril de S5 (`.github/workflows/**` o el vigía). 1527 no tiene etiquetas en
+  Jira: **dueño y carril los deciden el fundador con Luis.**
+
+## ⑤ Lo que miré y no separa
+
+| corte | resultado |
+|---|---|
+| diferencias del runner entre 24.18.0 y 24.21.0 | sólo `>>> 0` en el tamaño de mensaje, etiquetas, aislamiento `none` |
+| huérfanos al cerrar el job | 0 en 4, sin control positivo |
+| tasa en la ventana nueva | 4 de 131 jobs frente a 12 de ~2.000; con 4 casos no lo doy por tendencia |
+| búsqueda web de un fallo conocido de node con `--test-force-exit` | nada que case |
+
+## Errores míos en este tramo
+
+- Antes de medir la cascada di por buena, en mi cabeza, la lectura de 1527b («el fichero común a
+  las dos lecturas») y la extendí al sitio 615 con `scrum615-plazo` como culpable. La cascada la
+  tumbó media hora después. No llegó a ningún texto, pero estuve a punto de escribirla como pista.
+- Bajé el primer log sin `--allow-escape-sequences` y salió de 0 B; lo vi por el tamaño antes de
+  leer nada.
+- Un bucle de `grep` con la ruta sin comillas (la carpeta lleva un espacio) dio errores en vez de
+  recuentos; repetido con comillas.
+
+## Cómo se repite
+
+    gh run list --workflow ci.yml --limit 500 --json databaseId,event,headBranch,headSha,status,conclusion,createdAt > todas.json
+    # filtrar createdAt > 2026-10-13T10:32Z a runs.json; luego, en esa carpeta:
+    node 1527b/pasos.mjs && node 1527b/pasos2.mjs          # candidatos (sin cambiar)
+    gh api --allow-escape-sequences repos/lwislg99/cobroflash-backend/actions/jobs/<job>/logs > logs/<job>.log
+    node 1527b/testigo-pg.mjs logs                         # ① el testigo
+    node 1527c/cascada.mjs logs                            # ③ la última ráfaga
+    node 1527c/frontera-final.mjs logs logs-viejos         # ③ el hueco que decide
+    # ④ los de control viven como `.mjs.txt` (como `.mjs` registrarían tests que la tanda no corre: SCRUM-708)
+    D=$(mktemp -d) && for f in a b c; do cp 1527c/$f.mjs.txt $D/$f.mjs; done && cp 1527c/eventos.mjs $D/ && cd $D && \
+      node --test --test-reporter=spec --test-reporter-destination=stdout \
+        --test-reporter=./eventos.mjs --test-reporter-destination=stdout a.mjs b.mjs c.mjs   # (corta con timeout: b no cierra)

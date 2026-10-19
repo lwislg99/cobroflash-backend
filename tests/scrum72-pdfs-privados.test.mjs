@@ -161,7 +161,9 @@ test('SCRUM-72: PDFs de factura y presupuesto no son públicos (estático muerto
     // rompiera, el cliente se quedaría sin botón Y sin documento: peor que el problema
     // original. Aquí se construye el email de VERDAD y se comprueba el adjunto.
     // Nota de alcance: el outbox .eml y el adjunto del fallback los ARREGLÓ SCRUM-76 (con test
-    // propio en tests/scrum76-email-adjunto.test.mjs). Este test conserva la verificación del
+    // propio en tests/scrum76-email-adjunto.test.mjs, GATEADO por QA_DB_TEST: el CI no lo corre,
+    // así que esa cobertura NO existe en el check obligatorio — SCRUM-1178). Este test conserva la
+    // verificación del
     // ADJUNTO por su FUENTE REAL: `ensureInvoicePdf`, que es exactamente lo que sendInvoiceEmail
     // lee y adjunta (email.service.ts:29-30). Si el movimiento de directorio hubiera roto el
     // adjunto, esto falla.

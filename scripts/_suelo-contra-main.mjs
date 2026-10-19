@@ -42,6 +42,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import ts from 'typescript';
 import { lecturaDeDeclaraciones } from './meta-guard-mutaciones.mjs';
 import { temporal } from '../tests/_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
 
@@ -82,14 +83,110 @@ export const RETIRADAS_A_PROPOSITO = [
   // el navegador se bajaba y ejecutaba 266 líneas en cada visita. Medido con suelo en
   // `docs/master/evidencias/SCRUM-867/censo-modal-muerto.mjs`; el guard que impide que vuelva es
   // `tests/scrum867-el-modal-muerto.test.mjs`. No es cobertura perdida: es una pantalla menos.
-  { guard: 'ficheros-js-de-public', motivo: 'SCRUM-867: se retiró `nuevaFacturaModal.js`, muerto por uso y vivo por carga (95 → 94)', fecha: '2026-09-16' },
-  { guard: 'scripts-del-dashboard', motivo: 'SCRUM-867: el mismo fichero sale del índice y del SHELL del service worker a la vez, porque `cache.addAll` es atómico (92 → 91)', fecha: '2026-09-16' },
+  { guard: 'ficheros-js-de-public', motivo: 'SCRUM-867: se retiró `nuevaFacturaModal.js`, muerto por uso y vivo por carga (95 → 94)', fecha: '2026-09-16', antes: 95, ahora: 94 },
+  { guard: 'scripts-del-dashboard', motivo: 'SCRUM-867: el mismo fichero sale del índice y del SHELL del service worker a la vez, porque `cache.addAll` es atómico (92 → 91)', fecha: '2026-09-16', antes: 92, ahora: 91 },
   // 🔴 SCRUM-773 · SE RETIRA `tests/scrum650c-backfill-equivalencia.test.mjs` ENTERO (6 test()),
   // porque el script que verificaba (`scripts/backfill-job-assignees.mjs`) se retira con él:
   // decisión del fundador (Jira 16264) tras medir que no desbloquea nada hoy (docs/master/SCRUM-773.md,
   // apéndice 773c). No es cobertura perdida sobre código vivo: es un test sin sujeto.
-  { guard: 'tests-declarados', motivo: 'SCRUM-773: se retiran el script backfill-job-assignees.mjs y su test scrum650c (6 test) — sin script no hay qué verificar (7802 → 7796)', fecha: '2026-09-22' },
+  { guard: 'tests-declarados', motivo: 'SCRUM-773: se retiran el script backfill-job-assignees.mjs y su test scrum650c (6 test) — sin script no hay qué verificar (7802 → 7796)', fecha: '2026-09-22', antes: 7802, ahora: 7796 },
 ];
+
+// ══════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-1173 · UNA RETIRADA EXIME SU BAJA, NO LA POBLACIÓN, Y CADUCA AL ENTRAR EN LA BASE.
+//
+// Hasta aquí bastaba con que el guard apareciera en la lista para eximirlo ENTERO y PARA
+// SIEMPRE: el 27-sep, 3 de las 4 poblaciones derivadas (`tests-declarados` incluida) estaban
+// exentas por bajas de septiembre. Medido el 15-oct sobre `main` e8d27c63: borrar un fichero de
+// tests entero, sin declararlo, dejaba `scrum810b` en verde 2 de 2. «Esta baja está justificada»
+// se había convertido en «cualquier baja futura lo está».
+//
+// Ahora una retirada:
+//   · declara su baja con NÚMEROS (`antes`, `ahora`), y sólo exime una baja de ese tamaño como
+//     mucho — una mayor habla, aunque sea en la misma población;
+//   · vale sólo mientras está PENDIENTE: en cuanto la base de fusión ya la lleva en su lista, la
+//     baja está en la base y no hay nada que eximir. Se reconoce por `guard` + `fecha`;
+//   · sin números, o si no se puede leer la lista de la base, NO exime nada (fail-closed).
+// ══════════════════════════════════════════════════════════════════════════════════════════
+
+/** Una retirada se reconoce por su guard y su fecha: añadirle los números no la hace nueva. */
+const claveDeRetirada = (r) => `${r.guard}|${r.fecha}`;
+
+/**
+ * Las retiradas que declara un fuente de este mismo fichero, leídas por AST (nunca por regex:
+ * A23 nº 5). `null` si no se encuentra la lista o tiene algo que no es un literal: un fuente que
+ * no se sabe leer NO es una lista vacía.
+ */
+export function leerRetiradas(texto) {
+  const sf = ts.createSourceFile('suelo.mjs', texto, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+  let lista = null;
+  const visitar = (n) => {
+    if (lista) return;
+    if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.name.text === 'RETIRADAS_A_PROPOSITO'
+      && n.initializer && ts.isArrayLiteralExpression(n.initializer)) {
+      lista = n.initializer;
+      return;
+    }
+    ts.forEachChild(n, visitar);
+  };
+  visitar(sf);
+  if (!lista) return null;
+  const out = [];
+  for (const el of lista.elements) {
+    if (!ts.isObjectLiteralExpression(el)) return null;
+    const r = {};
+    for (const p of el.properties) {
+      if (!ts.isPropertyAssignment(p) || !ts.isIdentifier(p.name)) return null;
+      const v = p.initializer;
+      if (ts.isStringLiteral(v) || ts.isNoSubstitutionTemplateLiteral(v)) r[p.name.text] = v.text;
+      else if (ts.isNumericLiteral(v)) r[p.name.text] = Number(v.text);
+      else return null;
+    }
+    out.push(r);
+  }
+  return out;
+}
+
+/** Las retiradas de la lista de hoy que la base todavía NO lleva. Fail-closed: sin base, ninguna. */
+export function pendientesFrente(actuales, deLaBase) {
+  if (!Array.isArray(deLaBase)) return [];
+  const yaEnLaBase = new Set(deLaBase.map(claveDeRetirada));
+  return actuales.filter((r) => !yaEnLaBase.has(claveDeRetirada(r)));
+}
+
+let pendientesCacheadas = null;
+/** Las retiradas pendientes contra la base de fusión de este árbol (una vez por proceso). */
+export function retiradasPendientes(raiz = process.cwd()) {
+  if (pendientesCacheadas) return pendientesCacheadas;
+  const base = referenciaDe(raiz);
+  let deLaBase = null;
+  if (base) {
+    try {
+      deLaBase = leerRetiradas(execFileSync('git', ['show', `${base}:scripts/_suelo-contra-main.mjs`],
+        { cwd: raiz, encoding: 'utf8', maxBuffer: 1 << 24, stdio: ['ignore', 'pipe', 'pipe'] }));
+    } catch { deLaBase = null; }
+  }
+  pendientesCacheadas = pendientesFrente(RETIRADAS_A_PROPOSITO, deLaBase);
+  return pendientesCacheadas;
+}
+
+/**
+ * ¿Cubren las retiradas declaradas para `nombre` la variación `antes → ahora`? Sólo en la
+ * dirección que viola, y sólo hasta la suma de lo que declaran. Sin números no cubren nada.
+ */
+export function cubiertoPorRetiradas(nombre, antes, ahora, retiradas, direccion = 'no-encoger') {
+  const signo = direccion === 'no-crecer' ? -1 : 1; // no-encoger: lo que viola es BAJAR
+  const exceso = signo * (antes - ahora);
+  // Lo que no viola no se «cubre»: decidirlo es de quien llama. Devolver `true` aquí duplicaba esa
+  // decisión, y la mutación de «CRECER» de scrum810/810b dejaba de caer (medido, SCRUM-1173).
+  if (exceso <= 0) return false;
+  const declarado = retiradas
+    .filter((r) => r.guard === nombre && Number.isFinite(r.antes) && Number.isFinite(r.ahora))
+    .map((r) => signo * (r.antes - r.ahora))
+    .filter((d) => d > 0)
+    .reduce((s, d) => s + d, 0);
+  return exceso <= declarado;
+}
 
 /** Los ficheros CANDIDATOS de una ref. El grep sólo preselecciona: quien cuenta es el AST. */
 function candidatosEn(ref, raiz) {
@@ -147,7 +244,7 @@ export function declaracionesEnElArbol(raiz = process.cwd()) {
  * Devuelve `{ medible, perdidas, motivo }`. Si la referencia no se pudo mirar, `medible: false`
  * y NO se inventa un veredicto.
  */
-export function perdidasContraLaReferencia(actual, referencia, retiradas = RETIRADAS_A_PROPOSITO) {
+export function perdidasContraLaReferencia(actual, referencia, retiradas = retiradasPendientes()) {
   if (!referencia) {
     return {
       medible: false,
@@ -156,12 +253,11 @@ export function perdidasContraLaReferencia(actual, referencia, retiradas = RETIR
         + 'esto NO dice que no falte nada, dice que no he mirado.',
     };
   }
-  const eximido = new Set(retiradas.map((r) => r.guard));
   const perdidas = [];
   for (const [guard, antes] of referencia) {
-    if (eximido.has(guard)) continue;
     const ahora = actual.get(guard) || 0;
-    if (ahora < antes) perdidas.push({ guard, antes, ahora });
+    // SCRUM-1173 · la retirada exime SU baja (con números y pendiente), no el guard entero.
+    if (ahora < antes && !cubiertoPorRetiradas(guard, antes, ahora, retiradas)) perdidas.push({ guard, antes, ahora });
   }
   perdidas.sort((a, b) => (b.antes - b.ahora) - (a.antes - a.ahora) || a.guard.localeCompare(b.guard));
   return { medible: true, perdidas, motivo: null };
@@ -273,12 +369,13 @@ export function poblacionesContraLaBase(nombre, censo, raiz = process.cwd()) {
  * El texto de un suelo derivado, o `null` si no hay nada que decir.
  * Crecer (o menguar, según la dirección) es gratis: sólo habla la violación.
  */
-export function sueloDerivado(medida, direccion = 'no-encoger', retiradas = RETIRADAS_A_PROPOSITO) {
+export function sueloDerivado(medida, direccion = 'no-encoger', retiradas = retiradasPendientes()) {
   if (!medida.medible) return null;
-  if (retiradas.some((r) => r.guard === medida.nombre)) return null;
   const dir = DIRECCIONES[direccion];
   if (!dir) throw new RangeError(`dirección desconocida: ${direccion}`);
   if (!dir.viola(medida.ahora, medida.antes)) return null;
+  // SCRUM-1173 · antes bastaba con que el nombre estuviera en la lista: exento entero y para siempre.
+  if (cubiertoPorRetiradas(medida.nombre, medida.antes, medida.ahora, retiradas, direccion)) return null;
   return `LA POBLACIÓN «${medida.nombre}» HA ${dir.verbo} CONTRA LA BASE DE FUSIÓN: `
     + `${medida.antes} → ${medida.ahora}.\n`
     + `  Si es A PROPÓSITO, apúntala en RETIRADAS_A_PROPOSITO con su motivo, EN EL MISMO COMMIT,\n`

@@ -48,8 +48,8 @@
     hecho: 'Hecho', // APROBADO por el orquestador por delegación del fundador, 13-oct-2026 (SCRUM-1056 comentario 19401, B8)
     cambiar: 'Cambiar', // APROBADO por el orquestador por delegación del fundador, 13-oct-2026 (SCRUM-1056 comentario 19401, B9)
     marcaHoy: 'Llamar hoy', // APROBADO por el orquestador por delegación del fundador, 13-oct-2026 (SCRUM-1056 comentario 19401, B10)
-    noGuardado: 'No se ha podido guardar la llamada. Inténtalo otra vez.', // APROBADO por el orquestador por delegación del fundador, 13-oct-2026 (SCRUM-1056 comentario 19401, B12)
-    noMarcado: 'No se ha podido marcar como hecha. Inténtalo otra vez.', // APROBADO por el orquestador por delegación del fundador, 13-oct-2026 (SCRUM-1056 comentario 19453, B15)
+    noGuardado: 'No se ha podido guardar la llamada. Inténtalo de nuevo.', // APROBADO por el orquestador por delegación del fundador, 14-oct-2026 (SCRUM-1056 comentario 19649, B12)
+    noMarcado: 'No se ha podido marcar como hecha. Inténtalo de nuevo.', // APROBADO por el orquestador por delegación del fundador, 14-oct-2026 (SCRUM-1056 comentario 19649, B15)
     guardar: 'Guardar', // APROBADO por el orquestador por delegación del fundador, 13-oct-2026 (SCRUM-1056 comentario 19401, B13)
     cancelar: 'Cancelar', // APROBADO por el orquestador por delegación del fundador, 13-oct-2026 (SCRUM-1056 comentario 19401, B14)
   };

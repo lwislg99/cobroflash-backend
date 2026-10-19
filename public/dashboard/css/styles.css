@@ -1692,6 +1692,67 @@ html, body { overflow-x: clip; }
    por qué un elemento con `hidden` no se ve. */
 .quote-direccion-obra { margin-top: 8px; }
 .quote-direccion-obra[hidden] { display: none; }
+
+/* SCRUM-1158c (AB6, misma decisión de SCRUM-786, opción ③: reglas ACOTADAS, nunca `.btn-sm`
+   global). Con el banco que ya no pierde estilos (SCRUM-1158b) aparecieron 18 objetivos de 30-31 px
+   a 929 y a 390: «⚙ Personalizar» y los «Ir →» de «Completa tu configuración» en Inicio, y los
+   «1T-4T» de los dos bloques trimestrales de Informes (pestañas pegadas: tocar la de al lado
+   enseña otro trimestre). Sólo tamaño. Los selectores pesan (0,2,0) o más y ganan a `.btn.btn-sm`
+   sin `!important`; `min-height` gana al padding en línea de «Ir →». «Ir →» y «1T» llevan además
+   ancho: medidos en yaqu.app daban 39 y 38-41 px, y el árbitro de toque sólo mide el alto.
+   De paso, la fila de descargas de Informes («⬇ … CSV» y «⬇ VeriFactu XML»): 30 px en yaqu.app,
+   y el censo NO la veía porque el HTML serializado del banco la pierde (reportado, no es de S2). */
+#btn-home-prefs,
+.informes-exportar > .btn-sm { min-height: 44px; }
+.home-checklist .btn-sm,
+#vat-quarter-row > .btn-sm,
+#resumen-quarter-row > .btn-sm { min-height: 44px; min-width: 44px; }
+
+/* SCRUM-1559g (AB6, misma decisión de SCRUM-786, opción ③, el patrón de 1158c). Con el banco que
+   ya monta las fichas con datos de verdad (SCRUM-1560), S3 midió 14 botones de 30-31 px a 929 y a
+   390: en Inicio «Ver resumen», «✕» y «Ver facturas →»; en la ficha del presupuesto ocho (los tres
+   de la cabecera, los dos «↻ Reenviar», la decisión y «+ Añadir gasto a este trabajo»); en Solicitudes
+   «+ Crear presupuesto» y «✓ Marcar gestionada»; en Albaranes «Enviar para firmar». Sólo tamaño,
+   `.btn-sm` global sin tocar. La ficha va ENTERA (`.presupuesto-ficha`) y no botón a botón: el
+   censo sólo ve los que pintan sus datos, y «Confirmar aceptación», «Archivar» o el albarán son
+   la misma fila de la misma pantalla. «✕» lleva ancho: es un glifo, y el ancho es todo lo que tiene. */
+#btn-ver-resumen-trimestre,
+.home-hero-card > .btn-sm,
+.presupuesto-ficha .btn-sm,
+.solicitud-acciones > .btn-sm,
+.table--albaranes td.cell-actions > .btn-sm { min-height: 44px; }
+#btn-cerrar-resumen-trimestre { min-height: 44px; min-width: 44px; }
+
+/* ── SCRUM-1144 · «Elegir un sitio guardado», bajo el campo de la dirección de la obra ───────
+   Lo montan el editor de presupuestos y la ficha del Trabajo (`sitiosGuardados.montarSelector`).
+   Sin tokens nuevos. El botón es `.btn-ghost.btn-sm`, como «Usar plantilla»: una ayuda
+   ocasional, no la acción del paso, con su objetivo táctil de 44 px opt-in (mismo patrón que
+   SCRUM-962; `.btn-sm` global no se toca). Cada sitio es un botón de 44 px como mínimo (AB6),
+   con el nombre que le puso el profesional y debajo su dirección, que es lo que se escribirá.
+   El selector compuesto pesa (0,3,0) y gana a `.btn.btn-sm` sin `!important` (SCRUM-1167). */
+.btn-ghost.btn-sm.sitios-guardados__boton { align-self: flex-start; min-height: 44px; margin-top: 6px; }
+.sitios-guardados { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+.sitios-guardados__opcion {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-height: 44px;
+  padding: 8px 12px;
+  text-align: left;
+  font: inherit;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--input-border, var(--border));
+  border-radius: var(--radius-md, 12px);
+  cursor: pointer;
+}
+.sitios-guardados__opcion:hover { background: var(--neutral-50); }
+.sitios-guardados__opcion:focus-visible { outline: none; box-shadow: var(--ring); }
+.sitios-guardados__nombre { font-weight: 600; }
+.sitios-guardados__direccion { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.sitios-guardados__vacio { margin: 0; font-size: 13px; color: var(--muted); }
+.sitios-guardados__error { margin: 0; font-size: 13px; color: var(--danger-ink); }
 .quote-dto-global__campo { display: flex; flex-direction: column; gap: 4px; max-width: 200px; }
 
 /* SCRUM-139 F2 · RENGLÓN EN BLANCO DEL CUADERNILLO.
@@ -2076,6 +2137,16 @@ html, body { overflow-x: clip; }
 /* A2.1: selector de métodos de pago al crear presupuesto */
 .pay-methods-row { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; margin-top: 2px; }
 .pay-methods-row label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; color: var(--body); font-size: 13px; }
+/* SCRUM-1265 · 44 px (AB6) en las tres filas que usan este componente (formas de pago, datos del
+   cliente en el documento y cláusulas). La etiqueta medía 20 px y la casilla 16. El mismo patrón
+   que `.doc-asignados-fila` (SCRUM-1559g): la ETIQUETA sube a 44 —es lo que recibe el toque— y la
+   casilla gana área con un `::before` (`.casilla-tactil-44`), sin crecer a la vista: 16 + 2 × 14 = 44,
+   justo dentro de su etiqueta. `row-gap: 0`: con el hueco de 14 de antes, dos líneas de etiquetas de
+   44 dejarían 14 px muertos; pegadas no se solapan, y el área de una no entra en la de otra. */
+.pay-methods-row { row-gap: 0; }
+.pay-methods-row label { min-height: 44px; min-width: 44px; }
+.pay-methods-row input[type="checkbox"] { position: relative; }
+.pay-methods-row input[type="checkbox"]::before { content: ""; position: absolute; inset: -14px; }
 .pay-methods-note { font-size: 11.5px; color: var(--muted); margin: 4px 0 0; }
 .pay-methods-title { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin: 12px 0 6px; }
 /* SCRUM-1180 · una cláusula QUITADA de este presupuesto se ve de un vistazo: atenuada y tachada
@@ -2417,6 +2488,14 @@ html, body { overflow-x: clip; }
 .customers-card {
   overflow: visible; /* era hidden, lo que clipaba contenido en algunas vistas */
 }
+/* SCRUM-1562c · la fila de «Partes por valorar» es un `<button>` (se abre con teclado). Lo que el
+   navegador pone a un botón y la tarjeta no traía: ancho, alineación, letra y color. El fondo, el
+   borde y la sombra siguen saliendo de `.customers-card`.
+   El anillo de foco NO puede venir del `:focus-visible` global: pesa lo mismo que `.customers-card`,
+   que va después y pone su sombra encima (medido en yaqu.app: con el foco en la fila no se veía nada).
+   Va por `#po-lista` y no por una clase propia: la fila conserva la clase exacta `customers-card`. */
+#po-lista > button.customers-card { width: 100%; text-align: left; font: inherit; color: inherit; }
+#po-lista > button.customers-card:focus-visible { outline: none; box-shadow: var(--ring); }
 /* Solo clipa las cards que envuelven tablas */
 .data-card { overflow: hidden; }
 
@@ -2645,6 +2724,8 @@ html, body { overflow-x: clip; }
 /* Modal post-crear: grupo de acciones de envío dentro del cuerpo */
 .modal-share-label { font-size: 11.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin: 14px 0 8px; }
 .modal-share { display: flex; gap: 8px; flex-wrap: wrap; }
+/* SCRUM-1237 · el aviso de lo que contestó cada envío, dentro de la modal (quotesView.js). */
+.modal-share-aviso { margin: 10px 0 0; }
 /* `.quote-vat-calc` y `.quote-total-final` RETIRADAS en SCRUM-139 F3: la primera era el
    total viejo (fila `space-between` de 24 px), sustituida por `.quote-total-kpi`; la
    segunda ya estaba muerta de antes (ningun fichero la emitia). Se retiran en vez de
@@ -2950,6 +3031,10 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 .detail-dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; }
 .detail-dl dt { font-size: 13px; color: var(--muted); }
 .detail-dl dd { font-size: 13.5px; color: var(--body); margin: 0; }
+/* SCRUM-1206 · los textos del documento en la ficha del presupuesto. Los saltos los pone la pieza
+   (`textoDelDocumentoPintado`, `pre-line`); aquí, que una palabra larga (una URL) se parta en vez de
+   ensanchar la ficha a 360 px. Ni un token nuevo. */
+.quote-doc-texto { font-size: 14px; color: var(--body); overflow-wrap: anywhere; }
 
 /* ── SCRUM-597 (DOC-07) · QUIÉN LLEVA EL DOCUMENTO, y SCRUM-650 · quién ejecuta el trabajo
    Las dos pantallas COMPARTEN estas reglas en vez de tener cada una las suyas: son el mismo
@@ -2980,6 +3065,12 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 .job-asignados-fila:hover { background: var(--bg, #f6f7f5); }
 .doc-asignados-casilla,
 .job-asignados-casilla { width: 20px; height: 20px; flex: none; accent-color: var(--brand); }
+/* SCRUM-1559g · la fila (el `<label>`) mide 44, pero el área que se cuenta es la de la CASILLA, y
+   daba 21 px (medido por S3 en las fichas de presupuesto y de factura: este componente es de las
+   dos). El mecanismo de `.casilla-tactil-44` (SCRUM-786), con 12 px y no 16: 20 + 2 × 12 = 44 cabe
+   justo en su fila, y 16 se metería 2 px en la de al lado, que marca a OTRA persona. */
+.doc-asignados-casilla { position: relative; }
+.doc-asignados-casilla::before { content: ""; position: absolute; inset: -12px; }
 .doc-asignados-nombre,
 .job-asignados-nombre { font-size: 14px; color: var(--ink); }
 .doc-asignados-lectura,
@@ -4242,6 +4333,37 @@ textarea.parte-linea-desc {
 .alb-numero { font-weight: 600; color: var(--green-700); }
 .alb-chip-cobro { margin-left: 6px; white-space: nowrap; } /* SCRUM-1450: «Facturado en parte» no se parte en dos */
 
+/* SCRUM-1559g · EL NÚMERO DEL ALBARÁN, A 44 px DE TOQUE. A 390 medía 17 de alto (S3): sólo su
+   línea. Y a 929 (medido en yaqu.app), partido letra a letra en una columna de 45 px, era un
+   enlace de 17×141 con huecos entre líneas que no responden: como caja (`inline-flex`) ya no los tiene.
+   ⚠️ NO se pone en una línea, y se probó: con el número entero la tabla pide 676 px mínimo y a 929
+   tiene 631 — desborda 45 y «Enviar para firmar» se queda medio fuera; con fechas y estado también,
+   desborda 27-251 px entre 800 y 1024. Que se partan es un defecto de cuántas columnas caben a ese
+   ancho, no de toque: no se arregla aquí. */
+.table--albaranes .alb-numero { display: inline-flex; align-items: center; min-height: 44px; }
+
+/* SCRUM-1559i · LA TABLA DE ALBARANES, ENTERA DESDE 900 px (decidido A+B por el orquestador, 18-oct).
+   Entre 769 y 1279 partía número, fechas y estado LETRA A LETRA: la regla global `.table td
+   { word-break: break-word }` deja el ancho mínimo de una celda en UNA letra, y con 7 columnas el
+   navegador las estrujaba hasta ahí (medido en yaqu.app a 929: el número en 45 px, 17×141).
+   A · en esta tabla se parte por PALABRAS, nunca dentro de una; y las fechas no se parten.
+   B · entre 641 y 1279 se oculta «Emisión» (el mismo `col-hide-mobile` que ya la quita en móvil; la
+       ficha del albarán la sigue teniendo) y el relleno lateral baja a 8 px desde 769.
+   ⚠️ 769-899 queda SIN tratamiento propio, decidido el 18-oct: ahí la tabla sigue pidiendo más que su
+   carril y scrollea DENTRO de su `.table-scroll`, el patrón del design system. Se añade una forma
+   propia si aparece una medida que lo pida. Por debajo de 769 ya era así (`.table` en bloque con
+   scroll, A6.6), y por debajo de 641 es la tarjeta. */
+@media (min-width: 641px) {
+  .table--albaranes td { word-break: normal; overflow-wrap: break-word; }
+  .table--albaranes td.cell-date, .table--albaranes td.col-hide-mobile { white-space: nowrap; }
+}
+@media (min-width: 641px) and (max-width: 1279px) {
+  .table--albaranes th:nth-child(2), .table--albaranes td.col-hide-mobile { display: none; }
+}
+@media (min-width: 769px) and (max-width: 1279px) {
+  .table--albaranes th, .table--albaranes td { padding-left: 8px; padding-right: 8px; }
+}
+
 @media (max-width: 640px) {
   /* SCRUM-1450 · la marca de facturación va DEBAJO del estado, no a su lado. Con «Facturado en
      parte» las dos en línea piden 209 px y a 320 px la celda pisaba el número del albarán (medido).
@@ -4324,6 +4446,14 @@ textarea.parte-linea-desc {
    con `--danger` en un `style.cssText`, asi que el trinquete de estilos en JS arreglo las dos
    cosas de una: lo saco a su clase y de paso le quito el color que no contrasta. */
 .revision-error { margin: 6px 0 0; font-size: 13px; color: var(--danger-ink, #991b1b); }
+
+/* SCRUM-1302 · el aviso de «Crear revisión»: el enlace de la versión anterior va a dejar de valer.
+   Cero tokens nuevos: el ámbar de «pendiente» es el de `.aviso-sin-cobertura` (fondo y tinta), que
+   ya contrasta; los botones son los `.btn` de siempre. */
+.revision-aviso { margin: 8px 0 0; padding: 12px; border: 1px solid #fde68a; border-radius: var(--radius-md); background: var(--amber-50); color: #92400e; font-size: 13px; }
+.revision-aviso strong { display: block; margin: 0 0 4px; }
+.revision-aviso p { margin: 0 0 10px; }
+.revision-aviso .btn + .btn { margin-left: 8px; }
 
 /* ═══ SCRUM-920c · LA LISTA DE GASTOS, SIN TABLA (y sin `style=` en línea) ════════════════════════
    Prototipo aprobado: docs/prototipos/SCRUM-920/gastos.html. Bloque propio y todo acotado a
@@ -4453,6 +4583,35 @@ textarea.parte-linea-desc {
 }
 .gasto-foto--si { background: var(--brand-tint); color: var(--brand-tint-ink); }
 .gasto-foto--no { background: #fff7ed; color: #b45309; }
+
+/* SCRUM-1156 · LA FICHA DEL GASTO. El armazón es el de las otras fichas (`.detail-page`, `.detail-head`,
+   `.detail-section`, `.detail-dl`); aquí sólo lo suyo, y ni un token nuevo: el ámbar del «sin foto» es el
+   de `.gasto-foto--no`. AB6 · todo control a 44 px, como en la lista. */
+.gasto-ficha .btn-primary,
+.gasto-ficha .btn-secondary,
+.gasto-ficha .btn-ghost { min-height: 44px; }
+.gasto-ficha .overflow-trigger { min-width: 44px; min-height: 44px; }
+.gasto-ficha-importe { margin-left: auto; }
+.gasto-ficha-acciones { width: 100%; margin-left: 0; padding-top: 12px; border-top: 1px solid var(--border); }
+/* La foto es el justificante: delante y grande, con sus dos botones al lado (debajo, si no caben). */
+.gasto-ficha-ticket { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+.gasto-ficha-foto {
+  display: block; width: 190px; max-width: 100%; border-radius: var(--r-md);
+  border: 1px solid var(--border); background: var(--surface);
+}
+.gasto-ficha-botones { display: flex; gap: 8px; flex-wrap: wrap; flex: 1 1 200px; }
+.gasto-ficha-sinfoto {
+  border: 2px dashed var(--border); background: #fff7ed; border-radius: var(--r-md);
+  padding: 18px; text-align: center;
+}
+.gasto-ficha-sinfoto-icono { font-size: 30px; }
+.gasto-ficha-sinfoto p { margin: 6px 0 12px; font-size: 13.5px; color: #b45309; }
+.gasto-ficha .detail-dl dd { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.gasto-ficha-notas { margin: 0; font-size: 14px; color: var(--body); white-space: pre-line; overflow-wrap: anywhere; }
+.gasto-ficha-suelto { margin: 4px 0 8px; font-size: 13px; color: var(--muted); }
+@media (max-width: 560px) {
+  .detail-head .gasto-ficha-importe { margin-left: 0; }
+}
 
 @media (max-width: 900px) {
   .gasto-fila {

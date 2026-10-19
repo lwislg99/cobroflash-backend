@@ -432,6 +432,10 @@ export const merchantProfileUpdateSchema = z.object({
   retencionIrpfTipo: z.number().int()
     .refine(esTipoRetencionValido, { message: 'Tipo de retención de IRPF no admitido' })
     .nullable().optional(),
+  // SCRUM-1072 · la actividad, lista CERRADA. Tres estados que no colapsan: AUSENTE = no se toca;
+  // `null` = no consta; 'no_lo_se' es una respuesta y se guarda distinta de `null`. No toca la
+  // retención: el esquema la valida por separado y ninguna línea cruza las dos.
+  activityKind: z.enum(['profesional', 'empresarial', 'no_lo_se']).nullable().optional(),
   trade: z
     .enum([
       'electricista', 'fontanero', 'reformista', 'pintor',

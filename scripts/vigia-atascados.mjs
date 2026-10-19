@@ -46,6 +46,10 @@
 //                15-sep-2026: todos sus checks en verde desde el 8-sep, `abrir-pr-y-armar-automerge`
 //                en rojo, y el vigía decía «esperando a que pase el check obligatorio». Nadie lo
 //                va a mergear. Sale ahora porque hasta hoy el vigía no reconocía al bot (abajo).
+//   · BLOQUEADO-SIN-CAUSA  GitHub dice BLOCKED, el obligatorio terminó y no está en rojo. SCRUM-839i,
+//                16-oct-2026: hasta entonces salía ESPERANDO, «esperando a que pase el check
+//                obligatorio», con el obligatorio ya en verde. No se sabe por qué está bloqueado, y
+//                eso es lo que dice. ESPERANDO queda para el obligatorio que no ha terminado.
 //
 // 🔴 `strict_required_status_checks_policy` SE QUEDA EN `false`, Y NO ES UNA PALANCA.
 // Gobierna BEHIND, no DIRTY: subirlo no arregla un solo conflicto. Lo que sí haría es obligar
@@ -89,8 +93,10 @@
 //   · una causa que SE ARREGLA ESPERANDO (ESPERANDO, BEHIND, SIN-ESTADO) no avisa al entrar ni al
 //     cambiar a ella. Avisa al cruzar un umbral de edad, que es lo que la vuelve atasco;
 //   · las que NO se arreglan esperando (SIN-CHECKS, DIRTY, CONFLICTO-DISCREPA, ROJO-OBLIGATORIO,
-//     ROJO-SIN-LISTA, SIN-AUTO-MERGE) avisan al entrar, UNA vez por causa: hace falta un push o
-//     una persona, y esperar a las 24 h solo retrasaría lo que ya se sabe.
+//     ROJO-SIN-LISTA, SIN-AUTO-MERGE, BLOQUEADO-SIN-CAUSA) avisan al entrar, UNA vez por causa: hace
+//     falta un push o una persona, y esperar a las 24 h solo retrasaría lo que ya se sabe. (Con el
+//     obligatorio verde y el auto-merge armado ya tendría que haber entrado: si el vigía, que pasa
+//     cada 3 h, lo encuentra así, no hay nada que esperar.)
 // Un ROJO-OBLIGATORIO recién salido puede coincidir con el avisador despertando a Claude. Son
 // destinatarios distintos —aquél habla con Claude, éste con una persona—, el avisador tiene tope
 // y puerta fiscal y el vigía no puede saber si lo atendió; y como el aviso sale una vez por causa,
@@ -161,6 +167,13 @@ export const CAUSA_MAIN_PARADO = 'MAIN-PARADO';
 export const UMBRAL_MENCION_HORAS = 72;
 /** Así empieza el renglón de `main` en el aviso. Lo busca el latido para saber que el aviso habla de `main`. */
 export const MARCA_DE_MAIN_PARADO = '`main` está PARADO';
+/**
+ * (SCRUM-839i) Minutos con el obligatorio ya terminado y GitHub aún en BLOCKED desde los que se afirma
+ * BLOQUEADO-SIN-CAUSA. Medido el 16-oct-2026 sobre los 78 últimos PR fusionados (del `completed_at` del
+ * obligatorio en verde al `mergedAt`): mediana 1,4 min · p90 6,3 · p95 14,5 · máximo 55,9 (#2493), y todos
+ * entraron solos. 60 queda por encima de todos: un BLOCKED más corto es tránsito, no atasco.
+ */
+export const MINUTOS_PARA_AFIRMAR_SIN_CAUSA = 60;
 
 /**
  * Conclusiones de un check COMPLETADO que impiden el merge. `cancelled` va dentro: la cancelación
@@ -353,7 +366,50 @@ export function causaDelAtasco(obs = {}) {
   if (estado === 'UNKNOWN' || estado === '') {
     return { causa: 'SIN-ESTADO', detalle: 'GitHub no ha resuelto la mergeabilidad tras reintentar: NO se cuenta como limpio' };
   }
-  return { causa: 'ESPERANDO', detalle: `estado ${estado}: esperando a que pase el check obligatorio` };
+  // ── LO QUE QUEDA NO ES SIEMPRE «ESPERANDO» (SCRUM-839i) ─────────────────────────────────
+  // Hasta el 16-oct-2026 todo lo que llegaba aquí salía «esperando a que pase el check obligatorio»,
+  // también con el obligatorio ya en VERDE: una causa inventada con forma de dato. Con los checks a
+  // la vista son tres casos, y el tercero no tiene causa que se pueda leer:
+  //   ① el obligatorio no ha terminado (conclusión vacía) o no tiene ejecución → ESPERANDO, de verdad;
+  //   ② en rojo → ya salió arriba como ROJO-OBLIGATORIO;
+  //   ③ terminado sin rojo y GitHub dice BLOCKED, y así desde hace MINUTOS_PARA_AFIRMAR_SIN_CAUSA o más
+  //     → BLOQUEADO-SIN-CAUSA: «no sé por qué», dicho. Antes de ese plazo es la espera normal.
+  // Sin datos de checks no se sabe cuál de los tres es: se mantiene ESPERANDO (como antes), pero el
+  // detalle dice que no se pudo mirar en vez de afirmar a qué se espera.
+  if (!Array.isArray(obs.checkRuns) || !Array.isArray(obs.obligatorios) || obs.obligatorios.length === 0) {
+    return { causa: 'ESPERANDO', detalle: `estado ${estado}: sin datos de los checks obligatorios, no se ha podido ver a qué espera` };
+  }
+  const ultimas = ultimaEjecucionPorCheck(obs.checkRuns);
+  const deCadaUno = obs.obligatorios.map((nombre) => ({ nombre, run: ultimas.find((c) => c.name === nombre) }));
+  const sinTerminar = deCadaUno.filter(({ run }) => !run || run.status !== 'completed');
+  if (sinTerminar.length) {
+    return {
+      causa: 'ESPERANDO',
+      detalle: `estado ${estado}: el check obligatorio no ha terminado (`
+        + sinTerminar.map(({ nombre, run }) => `«${nombre}»: ${run ? run.status : 'sin ejecución sobre el head'}`).join(', ') + ')',
+    };
+  }
+  const como = deCadaUno.map(({ nombre, run }) => `${nombre}: ${String(run.conclusion || '(vacía)').toLowerCase()}`).join(', ');
+  if (estado === 'BLOCKED') {
+    // Sólo se afirma si PERSISTE: el último obligatorio tiene que haber terminado hace al menos
+    // MINUTOS_PARA_AFIRMAR_SIN_CAUSA. Antes es la espera normal hasta que el auto-merge dispara, y sin la
+    // hora no se sabe cuánto lleva: tampoco se afirma (si de verdad se queda, lo levanta la edad).
+    const ahora = Number.isFinite(obs.ahora) ? obs.ahora : Date.now();
+    const verdeHace = (ahora - Math.max(...deCadaUno.map(({ run }) => Date.parse(run.completed_at)))) / 60000;
+    if (!(verdeHace >= MINUTOS_PARA_AFIRMAR_SIN_CAUSA)) {
+      return {
+        causa: 'ESPERANDO',
+        detalle: Number.isFinite(verdeHace)
+          ? `GitHub dice BLOCKED con el obligatorio terminado hace ${Math.round(verdeHace)} min (${como}): dentro de la espera normal hasta el auto-merge (se afirma desde ${MINUTOS_PARA_AFIRMAR_SIN_CAUSA} min)`
+          : `GitHub dice BLOCKED con el obligatorio terminado (${como}) y no sé desde cuándo: no se afirma un atasco`,
+      };
+    }
+    return {
+      causa: 'BLOQUEADO-SIN-CAUSA',
+      detalle: `GitHub dice BLOCKED con el obligatorio terminado hace ${Math.round(verdeHace)} min y sin rojo (${como}): no sé por qué está bloqueado`,
+    };
+  }
+  return { causa: 'ESPERANDO', detalle: `estado ${estado} con el obligatorio terminado (${como}): esperando a que el auto-merge lo fusione` };
 }
 
 /**
