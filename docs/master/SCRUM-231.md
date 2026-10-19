@@ -78,3 +78,65 @@ formas. `max-age=0` no ahorra tanto como parece, y es otro argumento para SCRUM-
 
 El ticket **no se cierra con el clic en Cloudflare**, sino con la comprobación posterior: los dos
 `curl` de `docs/CACHE_POLICY.md` tienen que devolver **lo mismo** por los dos caminos.
+
+## SCRUM-231b · las descargas del panel salían sin `Cache-Control`
+
+**Medido contra:** `origin/main` = `06c6289d46d5998493ec014fa26ff3353946b58b` · 2026-10-18T17:32:44Z (punta; hora de GitHub al escribir: 17:52:22Z)
+A9: comprobación → `tests/scrum231b-exports-sin-cache-compartida.test.mjs`
+
+Carril S1 (`exports.routes.ts` es contenedor de S1) · árbol `s1-231b` · rama `scrum-231b-exports-sin-cache-compartida`.
+Encargo y autorización del orquestador (`cobroflash-backend-f3`), 18-oct-2026 ~17:45Z, tras una medida de S2 en
+producción. El número de ticket lo decide el orquestador; esto va aquí porque es la regla de SCRUM-231 —**el origen
+decide la caché**— aplicada a un sitio que la tabla de `docs/CACHE_POLICY.md` no cubría.
+
+### Qué faltaba
+
+Las respuestas de `/admin/exports/*` (los seis CSV del panel, `fees.csv`, `verifactu.xml`, `datos.zip`,
+`datos.zip/info` y `portabilidad.zip`) salían del origen **sin `Cache-Control`**; los dos `.zip`, con `no-store` a
+secas. Son datos de UN merchant —`customers.csv` lleva datos personales— y sus URL terminan en extensiones que
+Cloudflare cachea por defecto. S2 midió en producción que esas respuestas quedaban en la caché del borde. Las sondas
+de esa medida se quedan FUERA del repositorio, a propósito (el repo es público).
+
+### Qué cambia
+
+- `src/modules/exports/app/routes/exports.routes.ts`: un `router.use` al principio que pone
+  `Cache-Control: private, no-store` en TODA respuesta del router, incluidas las de error y la ruta que se añada
+  mañana. Los dos `.zip`, que lo reescribían a `no-store`, pasan a `private, no-store` (si no, pisaban al router).
+- `docs/CACHE_POLICY.md`: la fila que faltaba.
+- **La otra mitad NO es de este repo:** una regla de Cloudflare que no cachee `/admin/*`. La pide el orquestador
+  al fundador. Las dos juntas lo cierran por los dos lados; ésta no espera a aquélla.
+
+### Verificado, ejecutando
+
+- **Rojo primero:** el test sobre `dist/` de la punta, SIN el arreglo: cae, con 9 de las 11 rutas sin cabecera
+  y los dos `.zip` con `no-store` sin `private`. **Con el arreglo: 8 de 8.**
+- El test lee las rutas del `stack` del router en `dist/`, no de una lista escrita a mano. Suelo: las seis CSV del
+  panel están en esa lista y responden 200 como propietario, así que la cabecera se mide en la respuesta de la
+  ruta y no en un 401.
+- Los 30 ficheros de `tests/` que leen `exports.routes` o `/admin/exports`: **192 pasan, 0 fallan, 6 saltados**
+  (gateados, con su motivo).
+- `tsc`: sólo el error conocido de `merchantAdmin.ts:147` (cliente de Prisma viejo; sin `prisma generate`).
+
+### Lo que NO se ha medido
+
+- **En yaqu.app, tras el despliegue:** que la cabecera llega al navegador y que el borde deja de guardar copia.
+  Se mira cuando entre en `main`.
+- **El resto de `/admin/*`:** barrido de las rutas del servidor que terminan en una extensión que Cloudflare
+  cachea por defecto. Sólo salen éstas y los dos CSV de `librosAeat` (`expedidas.csv`, `recibidas.csv`), que ya
+  llevan `no-store` (fiscal: no se tocan). Las rutas sin extensión Cloudflare no las cachea por defecto; si llevan
+  cabecera o no, NO se ha mirado. La regla de Cloudflare sobre `/admin/*` es la que cubre eso.
+
+### Los 19 rojos del obligatorio, y qué eran (hora de GitHub: 19:00:37Z)
+
+El primer obligatorio de #2568 cayó con 19 rojos (run `39151663342`, medido por S5). Ninguno era un defecto del
+arreglo: eran censos que el diff obliga a anotar. **El «se queda sin memoria» que se dijo primero era falso:** el
+`FATAL … heap out of memory` del log es de `scrum1525b`, que mata a su hijo a propósito, y sale igual en una
+tanda verde de `main`.
+
+| censo | por qué cayó | qué se hizo |
+| --- | --- | --- |
+| SCRUM-267 (×15), SCRUM-859, SCRUM-976 ④ | este tramo trae su `**Medido contra:**` dentro de la entrada de primer nivel `# SCRUM-231 · CACHE-EDGE-1…`, así que esa entrada deja de estar sin ancla | sale de `HEREDADAS_SIN_ANCLA`; el recuento baja 26 → 25 y la suma de los tres censos 58 → 57, anotado en el propio test. Es una MEJORA que el trinquete obliga a declarar |
+| SCRUM-1344 ⑦ | el test hace `require` del router de exports sin armarle un `req` de sesión | declarado en `SIN_FORMA_DE_SESION`: sólo lee `router.stack` para LISTAR los GET; las rutas se llaman por HTTP contra la app entera, con la cookie del propietario |
+| SCRUM-1415 | un `test()` con nombre construido dentro de un bucle | desenrollado con `casosEscritos`: seis casos con su nombre literal |
+
+Con la rama al día con `main`: los cinco censos, el 976 y el test de 231b, **86 de 86**.
