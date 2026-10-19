@@ -1723,6 +1723,26 @@ html, body { overflow-x: clip; }
 .table--albaranes td.cell-actions > .btn-sm { min-height: 44px; }
 #btn-cerrar-resumen-trimestre { min-height: 44px; min-width: 44px; }
 
+/* SCRUM-1559j (AB6, mismo patrón de 1559g y 1265). El censo con detalle midió 7 objetivos cortos en
+   Productos a 929 y 6 a 390: «Recargar», «⬇ Exportar CSV», «⬆ Importar CSV», «Editar» y «Activar» /
+   «Desactivar» (30-31 px), «Crear producto» (36,9 a 929; a 390 ya da 44,6) y la casilla «Solo activos»
+   (14 px). Sólo tamaño, `.btn-sm` global sin tocar; la pantalla va ENTERA (`.catalogo-productos`), así
+   que los dos botones del catálogo vacío entran también. La casilla es la del navegador, 13 px: el
+   `::before` le da 13 + 2 × 16 = 45 de alto, y de lado sólo 6, el hueco que la separa de su texto, para
+   no meterse en el buscador de al lado. */
+.catalogo-productos .btn-sm,
+#pf-create-product { min-height: 44px; }
+.catalogo-productos .data-card-toolbar > label { min-height: 44px; }
+.catalogo-productos .data-card-toolbar input[type="checkbox"] { position: relative; }
+.catalogo-productos .data-card-toolbar input[type="checkbox"]::before { content: ""; position: absolute; inset: -16px -6px; }
+/* De paso, en la misma pantalla: con el catálogo VACÍO, el estado vacío vive en un `td` que abarca
+   la tabla entera (520 px a 390), dentro de una caja que scrollea de 364. «+ Añadir un servicio a
+   mano» quedaba en x 298-493 —medio botón fuera de la pantalla, medido en yaqu.app—. El estado vacío
+   toma el ancho de la CAJA que scrollea (`cqi`, con la caja como contenedor) y se queda pegado a su
+   izquierda; menos los 14 + 14 de relleno del `td`. Con la tabla llena no cambia nada. */
+.catalogo-productos .table-scroll { container-type: inline-size; }
+.catalogo-productos .empty-state { position: sticky; left: 0; box-sizing: border-box; width: calc(100cqi - 28px); }
+
 /* ── SCRUM-1144 · «Elegir un sitio guardado», bajo el campo de la dirección de la obra ───────
    Lo montan el editor de presupuestos y la ficha del Trabajo (`sitiosGuardados.montarSelector`).
    Sin tokens nuevos. El botón es `.btn-ghost.btn-sm`, como «Usar plantilla»: una ayuda

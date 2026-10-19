@@ -253,3 +253,45 @@ B; ③ el relleno sólo en `th` → cae B; ④ cambiar la regla GLOBAL → caen 
 `albaranesView.js`: 813/813 con y sin el cambio, sobre el mismo `dist` (`tsc` con el error conocido de
 `activityKind`, Prisma desfasado; no se ha corrido `prisma generate`).
 A9: comprobación → `tests/scrum1559i-tabla-albaranes-desde-900.test.mjs`
+
+
+## 1559j — Productos a 44 px, y su estado vacío dentro de la pantalla (S2, 19-oct-2026 11:27Z)
+
+**Encargo** (orquestador, 19-oct): S3 contó 8 controles cortos nuestros sin repartir; 6 de Productos, para S2.
+Medidos con el censo de `main` (`ea8dece1d`) y una copia con detalle por elemento, FUERA del árbol: en
+Productos son **7 a 929 y 6 a 390** (S3 dio 6 porque contaba a 390):
+
+| control | antes 929 | antes 390 | rama 929 | rama 390 |
+|---|---|---|---|---|
+| «Recargar», «⬇ Exportar CSV», «⬆ Importar CSV» (`.btn-sm`) | 31 | 31 | 45 | 45 |
+| casilla «Solo activos» | 14 | 14 | 46 | 46 |
+| «Crear producto» | 36,9 | 44,6 | 44,9 | 44,6 |
+| «Editar», «Activar» de cada fila (`.btn-sm`) | 30,7 | 30,8 | 44,9 | 44,8 |
+
+Censo entero: **81 → 74** distintos por debajo de 44, y la tabla por pantalla sólo cambia en las dos filas de
+Productos (comparada línea a línea). Sondas del censo: 56/56 cazadas.
+
+**Arreglo** (patrón 1559g + 1265, sólo tamaño): clase de enganche `catalogo-productos` en el `.data-card` de la vista
+y reglas acotadas en `styles.css`; `.btn-sm` global sin tocar. La casilla es la del navegador (13 px): su `::before`
+da 13 + 2 × 16 = 45 de alto y sólo 6 de lado, menos que el hueco de 10 del toolbar, para no tapar el buscador. Los dos
+botones del catálogo vacío entran también, por la regla de pantalla entera.
+
+**De paso, en la misma pantalla:** con el catálogo VACÍO, a 390 el estado vacío vivía en un `td` de 520 px dentro de
+una caja con scroll de 364: el título, el texto y «+ Añadir un servicio a mano» (x 298-493) quedaban cortados por la
+derecha. Ahora el estado vacío toma el ancho de la caja (`container-type` + `100cqi`) y se queda pegado a su izquierda:
+los dos botones caben (se apilan) a 390, y a 929 y 1280 no cambia nada visible. Con la tabla llena la regla no aplica.
+
+**Medido en yaqu.app** (cuenta QA, 0 productos; builds `ea8dece1d` y `1cdccf36c`), sirviendo `styles.css` y
+`productsView.js` de la rama; sólo GET. `sondas-s2/tactil-1559j.mjs [árbol]` con control (un botón de 12 px sale
+corto): prod 7 cortos a 1280 y 6 a 390 → rama 0 y 0. `sondas-s2/vacio-productos-390.mjs [árbol] [ancho]`: el botón
+pasa de x 298-493 (sin nada en su centro) a 94-288 dentro de la caja 13-377. Capturas antes/después fuera del repo:
+`sondas-s2/cap1559j/`.
+
+**Test** `tests/scrum1559j-productos-44px.test.mjs` (sin gate; el caso de la vista usa el banco, que pide `dist`):
+las reglas con 44, la casilla (alto ≥ 44, lado < 10), el estado vacío (contenedor + sticky + ancho) y que la vista
+pinte los controles dentro de lo que las reglas nombran. **8 mutaciones, 8 rojas** (sin la clase, sin la regla de
+`.btn-sm`, sin el `::before`, inset -14, inset lateral -12, sin `container-type`, sin `sticky`, `.btn-sm` global a 44),
+base verde. Los 280 ficheros que leen `styles.css`, `productsView.js` o el banco: 2440/2441, y el rojo era el de la
+skill sin declarar (este registro). `tsc` con el error conocido de `activityKind`; no se ha corrido `prisma generate`.
+A9: comprobación → `tests/scrum1559j-productos-44px.test.mjs`
+> **Skill UI:** cargada · `yaqu-premium-ui`: sólo tamaño (`min-height` 44 px, el área de una casilla) y el ancho del estado vacío de una pantalla; cero tokens, cero texto, cero componentes.
