@@ -1,0 +1,69 @@
+POBLACIÓN {"runs":150,"conObligatorio":106,"verde":72,"rojo":17,"cancelado":17,"otro":0,"logOk":17,"logNo":0}
+ventana 2026-10-16T13:15:03Z → 2026-10-18T19:37:33Z
+
+2026-10-18T19:37:33Z run 39159620511 push main · ℹ fail 1 · meta success
+   ✖ SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, ninguno
+
+2026-10-18T18:24:20Z run 39154000154 pull_request scrum-1300c-memoria-contra-el-arbol · ℹ fail 1 · meta success
+   ✖ SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, ninguno
+
+2026-10-18T18:05:58Z run 39152597462 pull_request scrum-1011b-lanzar-dice-por-que · ℹ fail 1 · meta cancelled
+   ✖ SCRUM-1415 · 🔴 EL ÁRBOL: las llamadas de nombre construido son exactamente las de la lista, ni una más ni una menos
+
+2026-10-18T00:52:29Z run 39084375339 pull_request scrum-1562c-partes-oficina-con-teclado · ℹ fail 4 · meta cancelled
+   ✖ SCRUM-1285 · oficina · CONTROL POSITIVO: guardar sin teclear en vuelo sigue guardando y repinta
+   ✖ SCRUM-1285 · oficina · 🔴 con el PATCH en vuelo no se puede teclear: nada que perder
+   ✖ SCRUM-1285 · oficina · control positivo de la SONDA: sin el patrón, lo tecleado en vuelo desaparece
+   ✖ SCRUM-1285 · oficina · si el guardado falla, la pantalla no se queda congelada
+
+2026-10-18T00:29:42Z run 39082953280 pull_request scrum-1562c-partes-oficina-con-teclado · ℹ fail 5 · meta cancelled
+   ✖ SCRUM-1285 · oficina · CONTROL POSITIVO: guardar sin teclear en vuelo sigue guardando y repinta
+   ✖ SCRUM-1285 · oficina · 🔴 con el PATCH en vuelo no se puede teclear: nada que perder
+   ✖ SCRUM-1285 · oficina · control positivo de la SONDA: sin el patrón, lo tecleado en vuelo desaparece
+   ✖ SCRUM-1285 · oficina · si el guardado falla, la pantalla no se queda congelada
+   ✖ SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, ninguno
+
+2026-10-18T00:07:18Z run 39081588487 push main · ℹ fail 1 · meta cancelled
+   ✖ SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, ninguno
+
+2026-10-17T23:50:09Z run 39080520369 pull_request scrum-1434-zona-roja-gh-api-sin-tumbar · ℹ fail 1 · meta cancelled
+   ✖ SCRUM-824 · 🔴 el conjunto de ficheros SIN PROBAR no crece
+
+2026-10-17T23:08:21Z run 39077845100 push main · ℹ fail 1 · meta cancelled
+   ✖ SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, ninguno
+
+2026-10-17T23:03:43Z run 39077540455 push main · ℹ fail 1 · meta cancelled
+   ✖ SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, ninguno
+
+2026-10-17T21:38:53Z run 39071824459 pull_request scrum-1156c-ficha-gasto-pantalla · ℹ fail 3 · meta cancelled
+   ✖ 🔴 en el banco: ninguna vista pide una ruta sin contrato, ni con NaN/undefined, ni pinta «undefined»
+   ✖ SCRUM-601 · el censo distingue DEPENDER DEL FLAG de estar en un ternario cualquiera
+   ✖ SCRUM-836d · 🔴 NINGUNA mutación declarada nombra un test que no existe
+
+2026-10-17T21:27:20Z run 39071008572 push main · ℹ fail 1 · meta cancelled
+   ✖ SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, ninguno
+
+2026-10-17T20:56:35Z run 39068833209 push main · ℹ fail 1 · meta success
+   ✖ SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, ninguno
+
+2026-10-17T20:45:12Z run 39068044781 pull_request scrum-1560-datos-de-muestra-con-forma-del-servidor · ℹ fail 1 · meta cancelled
+   ✖ SCRUM-737 · 🔴 el censo de cifras SIN ancla no crece, y si baja hay que anotarlo
+
+2026-10-17T20:21:19Z run 39066349718 pull_request scrum-1560-datos-de-muestra-con-forma-del-servidor · ℹ fail 5 · meta cancelled
+   ✖ SCRUM-195 · ningún script parsea una URL donde su error pueda hablar
+   ✖ SCRUM-414 · ningún `new URL` de scripts/ deja su error al alcance
+   ✖ SCRUM-694 · 🔴 no entra NINGÚN filtro de comentarios nuevo
+   ✖ SCRUM-710b · 🔴 los anclajes por NÚMERO DE LÍNEA no crecen
+   ✖ SCRUM-737 · 🔴 el censo de cifras SIN ancla no crece, y si baja hay que anotarlo
+
+2026-10-17T19:51:21Z run 39064245427 pull_request scrum-1357e-aparcado-no-es-caido · ℹ fail 2 · meta cancelled
+   ✖ SCRUM-1179-B · trinquete: todo el que captura y devuelve lleva red, y los opacos == lo declarado
+   ✖ SCRUM-1179-B · control POSITIVO y NEGATIVO de la parte ciega: reescribir lo leído sí; borrarlo, no
+
+2026-10-17T19:38:12Z run 39063315563 pull_request scrum-951h-staging-es-produccion · ℹ fail 1 · meta cancelled
+   ✖ SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, ninguno
+
+2026-10-16T13:45:32Z run 38910338111 push main · ℹ fail 1 · meta cancelled
+   ✖ SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, ninguno
+
+META-GUARD: rojo 5 · verde 28 · otros 73
