@@ -1,0 +1,4 @@
+{"push/main":{"success":13,"failure":7,"cancelled":0,"otro":0},"pull_request/rama":{"success":59,"failure":10,"cancelled":17,"otro":0}}
+(captura del 19-oct-2026 hacia las 06:45Z de GitHub, con la versión anterior del guion, que no imprimía la línea de población.
+Los 150 runs son los mismos de salida-ci-rojos.txt: ventana 2026-10-16T13:15:03Z → 2026-10-18T19:37:33Z, 106 con el job obligatorio.
+Al volver a correrlo la ventana se desplaza con cada run nuevo: la cifra de arriba es la de esa ventana, no la de hoy.)

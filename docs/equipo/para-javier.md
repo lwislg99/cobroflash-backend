@@ -579,3 +579,44 @@ Leído tal cual, eso dice: *«el caso ④ depende del huso horario»*. **Y es fa
 · **Dónde, medido con `git grep` sobre `origin/main`:** `invoiceDetailView.js:405` (fallo del envío) y `:421` (fallo de red): `link: payToken ? location.origin + '/pay/invoice/' + payToken : location.origin`. El fichero es **J1** (`dos-equipos.md:143`, medido con `carriles.mjs`).
 · **El mismo patrón está en un fichero NUESTRO** (`jobDetailView.js:1475`, S2): ése lo arreglamos nosotros. Es el gemelo, y conviene que los dos cambien igual.
 · **Lo que NO hemos medido:** cuántas facturas llegan a esa barra sin `payToken`. Leído en el código, no visto en pantalla. Visto por S4 al medir la ficha del albarán (SCRUM-1236e).
+
+## 26 🔴 DOS COSAS VUESTRAS DEL 19-OCT · `scrum1405c ④` explica TODOS los rojos de `main` de dos días, y 15 rótulos firmados del Libro registro que nunca os llegaron
+
+**Las dos en una sección a propósito:** este fichero choca cada vez que dos ramas le añaden secciones al final. Las escribe S3 (equipo de Luis) por encargo de su orquestador. **Medido el 19-oct-2026 sobre `main` = `cd85e34b1e5bfaf561f010f550296bd94b659e75`**. El registro, con el ancla y los instrumentos, es `docs/master/SCRUM-1428.md`.
+
+### 26.1 · J6 · `scrum1405c ④`: la medida de la §24, ahora sobre dos días enteros de CI
+
+**La §24 era UN run. Esto son los 150 últimos runs de `ci.yml`**, del 16-oct 13:15Z al 18-oct 19:37Z, con el log del obligatorio de CADA rojo bajado y leído (`--allow-escape-sequences`; ningún log se quedó sin bajar).
+
+| | runs con el obligatorio | verdes | rojos | cancelados | rojos con `scrum1405c ④` |
+|---|---|---|---|---|---|
+| **push a `main`** | 20 | 13 | **7** | 0 | **7 de 7** (en los 7 es lo único que cae) |
+| pull request | 86 | 59 | 10 | 17 | 3 de 10 |
+| **total** | **106** | 72 | **17** | 17 | **10 de 17** (lo único que cae en 9) |
+
+🔴 **Leído en una frase: en esos dos días, el 35 % de los pushes a `main` con veredicto (7 de 20) salieron rojos, y los 7 por este caso.** El último de la ventana es `cd85e34b`, la punta de `main` al medir.
+
+**Lo que dicen los 10 logs, los 10 iguales:** «con el módulo la cobaya SIGUE perdiendo casos: la salida C no basta». Y en los 10, **con el módulo pierde exactamente 1 pasada de cada 4**, entre 3 y 13 casos de 320. Es el «3 de 4» de la §24, visto ahora diez veces seguidas.
+
+· **Lo que eso dice del arreglo, y es lo que os conviene saber antes de volver a intentarlo:** la salida C (#2429, en `main` desde el 14-oct) **no impide la pérdida en el CI de Linux; la reduce.** El test no se equivoca al caer.
+· **Vuestro arreglo siguiente no tiene PR abierto:** en el remoto sólo están las ramas `exp-1405-force-exit` y `exp-1405-testigo-en-fichero-real`, y ningún PR abierto toca `scrum1405c`.
+· ⚠️ **Lo que NO sabemos:** en `main` cae 7 de 20 y en los PR 3 de 69. **No sabemos por qué**: lo dejamos como diferencia medida, sin explicación.
+· **No hemos tocado nada:** `scrum1405c` es de J6 (PR #2429, «Tramo de J6j» en `SCRUM-1405.md`).
+
+### 26.2 · J1 · SCRUM-1428: 15 rótulos del Libro registro firmados por el fundador el 19-ago, sin su marca en el código
+
+**Lo que hay que hacer, decidido el 6-oct** (SCRUM-1428 c.18325, con la tabla de c.18319): en `public/dashboard/js/libroRegistroView.js`, claves de `COPY` cuyo texto firmó el fundador el 19-ago-2026 no llevan la marca de la firma en su propia línea. Sin la marca, el censo de microcopy (`scripts/_censo-convenio-microcopy.mjs`) las acusa como «sin comentario», igual que un texto que nadie ha mirado.
+
+**Son 15, no las 17 que dice la decisión del ticket.** La decisión contó también `colTrazas` y `sinTrazas`, pero esas dos ya llevan su marca (`libroRegistroView.js:75` y `:86`) y el censo las da por aprobadas; lo vio el propio ticket después (c.18379). Las 22 claves acusadas del fichero, contadas hoy en `scripts/_censo-convenio-microcopy-declarados.json`, se reparten así:
+
+| grupo | claves | qué toca |
+|---|---|---|
+| **firmadas, sin marca** | `titulo`, `recuento`, `colNumero`, `colFecha`, `colTipo`, `colBase`, `colCuota`, `colTotal`, `colEstado`, `trazaCobro` · `error`, `vacioDeVerdad`, `trazaAlbaran`, `trazaPresupuestoFirmado`, `trazaPresupuestoSinFirmar` | **marcar la firma en su línea** y pasarlas de `acusadas` a `retiradas` con la firma citada |
+| esperan al asesor | `descuadre`, `avisoIlegibles`, `avisoAjenas`, `avisoSinNumero`, `trazaNoSellado` | nada (§21 de `PREGUNTAS_ASESOR.md`) |
+| decidida: se queda | `cargando` | nada: cadena compartida con otras pantallas, firmarla aquí fabricaría un gemelo (c.18325) |
+| sin decidir | `menu` | definida y que nadie lee (c.18319); qué se hace con ella no está decidido |
+
+· **Dónde consta la firma:** `docs/MICROCOPY_APROBADA_SIN_APLICAR.md`, sección del Libro registro: primer addendum (`:355-372`, las diez primeras), «segunda tanda» (`:402-403`) y «tanda final» (`:432`, `:433` y `:435`).
+· **No cambia ni una letra del texto que se ve.** Y el comentario de cabecera `libroRegistroView.js:27` («Ni un rótulo de esta pantalla está aprobado») es falso y hay que corregirlo en el mismo cambio (punto 5 de la aceptación del ticket).
+· **Hoy, medido sobre `main`:** las 22 siguen en `acusadas`, el fichero no se toca desde el 28-sep (`f597ee6a`), y **SCRUM-1428 no aparecía en ningún fichero de `docs/equipo/` hasta esta sección**: en 13 días la decisión no os había llegado. El fallo es nuestro, no vuestro.
+· El fichero es **J1** (`dos-equipos.md` §3). **No lo hemos tocado.**

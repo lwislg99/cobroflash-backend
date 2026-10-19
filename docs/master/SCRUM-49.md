@@ -107,3 +107,63 @@ enlace. Con esto, además, la página pública de firma se puede alcanzar desde 
 
 - La pantalla (la barra de copiar en `albaranDetailView.js`) es de **S4**.
 - No medido en yaqu.app.
+
+## SCRUM-49d · la píldora «enviado para firmar» sólo sale si Meta lo aceptó o lo entregó
+
+**Medido contra:** `origin/main` = `cd85e34b1e5bfaf561f010f550296bd94b659e75` (prod servía ese mismo SHA, `/version`)
+· hora de GitHub al escribir: 2026-10-19T06:40:20Z
+A9: comprobación → `tests/scrum49d-pildora-solo-si-llego.test.mjs`
+
+Carril S4 · árbol `s4-49d` · rama `scrum-49d-pildora-solo-si-llego`. Encargo del orquestador, 19-oct-2026: la mitad
+de pantalla de 49b.
+
+**Skill UI:** no cargada · a propósito: no cambia ningún estilo, ningún texto ni ningún componente: sólo DEJA de
+pintarse una píldora que ya existía, cuando lo que dice es falso.
+
+### Lo que había en yaqu.app (sólo GET, cuenta QA)
+
+| albarán | `entregaParaFirmar` | píldoras que pinta la ficha |
+|---|---|---|
+| #46 AB260001, `emitido` | `fallido` · `en_el_acto` · 2026-10-18T18:09:53Z | `emitido` · **`enviado para firmar`** |
+
+La píldora salía de `enviadoParaFirma`, que sale de `enviadoParaFirmaAt`, y esa marca se escribe ANTES de llamar a
+Meta. Los dos intentos del 18-oct quedaron en `failed` y la ficha seguía diciendo «enviado para firmar».
+
+### Qué cambia
+
+`albaranDetailView.js`, cabecera de la ficha: la píldora exige además `entregaParaFirmar.estado` ∈ {`entregado`,
+`aceptado`}. Con `fallido` (en el acto o después), `sin_rastro`, `no_se_pudo_leer`, o si el servidor no trae el
+campo, **no sale nada**. Sin texto nuevo: quitar una afirmación falsa no necesita firma (regla 39). Decirle al
+profesional que NO llegó sí sería texto nuevo, y no se ha escrito.
+
+### Verificado, ejecutando
+
+- **Rojo primero:** el test contra el `albaranDetailView.js` de `origin/main` cae en 5 de 8 (los cinco casos que no
+  deben pintar), y los 3 que ya se cumplían pasan (`entregado`, `aceptado`, y sin intento). **Con el cambio, 8 de 8.**
+- Suelo del test: la píldora del ESTADO tiene que salir siempre; sin ella, «no sale la de enviado» no probaría nada.
+
+### Lo que falta
+
+- **VISTO en yaqu.app tras el merge:** la ficha del #46 tiene que pasar de `emitido · enviado para firmar` a sólo
+  `emitido`. Hay que mirarlo ANTES de firmar el #46 en obra (lo pide `privacidad:92` de SCRUM-1236): firmado,
+  deja de tener la píldora por otro motivo y la medida ya no distinguiría nada.
+
+### 49d · VISTO en yaqu.app
+
+**Medido contra:** prod = `origin/main` = `397c772b47025b827f65d44cd157a522f6c6dd8b` (merge de #2592, 06:57:29Z;
+`/version` lo servía) · hora de GitHub al escribir: 2026-10-19T07:00:33Z
+
+Sólo GET, cuenta QA, 1280 px, service worker bloqueado (si no, el panel podía servir el JS viejo de su caché). La
+sonda aborta y cuenta todo lo que no es GET: sólo cayó `POST /admin/entorno`, del propio panel. Es
+`docs/master/evidencias/SCRUM-1236/1236f/sonda.mjs` (rama de 1236f).
+
+| albarán #46 | servidor: `enviadoParaFirma` · `entregaParaFirmar` | píldoras de la ficha |
+|---|---|---|
+| antes (`cd85e34b`) | `true` · `fallido`, `en_el_acto` | `emitido` · **`enviado para firmar`** |
+| después (`397c772b`) | `true` · `fallido`, `en_el_acto` | `emitido` |
+
+**El control es la propia fila:** el servidor dice LO MISMO en las dos medidas; lo único que cambia es la pantalla.
+Evidencias: `evidencias/SCRUM-49/49d-visto/` (`antes-*`, `despues-*`).
+
+No medido en yaqu.app: los casos `entregado`/`aceptado` (la píldora SÍ debe salir). En la cuenta QA no hay ningún
+albarán con un envío que llegara, y crearlo es mandar un WhatsApp real (fuera de R25). Los cubre el test.

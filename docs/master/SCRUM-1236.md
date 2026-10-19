@@ -278,3 +278,43 @@ de `payToken`. Eso además abre el camino de `privacidad:92`. Lo de la barra se 
   `payToken` (`invoiceDetailView.js:405` y `:421`). El gemelo es nuestro: `jobDetailView.js:1475`, S2
   (`dos-equipos.md:152`). Lo reparte el orquestador.
 
+
+
+## 1236f — `privacidad:92`, la página pública de firma del #46 EMITIDO, vista (S4, 19-oct)
+
+**Medido contra:** `origin/main` = `cd85e34b1e5bfaf561f010f550296bd94b659e75` (prod servía ese mismo SHA, `/version`)
+· hora de GitHub al escribir: 2026-10-19T06:40:20Z
+A9: sin fallo que generalice — es una medida, no un arreglo
+
+**Skill UI:** no cargada · no se toca ninguna pantalla ni ningún texto: sólo se miran páginas servidas, con GET.
+
+Con SCRUM-49c en main, `GET /admin/albaranes/46` trae `firmaToken`, y la página pública se alcanza sin enviar
+nada. Sonda: `evidencias/SCRUM-1236/1236f/sonda.mjs`; salida: `1236f/medida-19oct.json`. **Todo lo que no es GET
+se aborta y se cuenta** (sólo cayó `POST /admin/entorno`, del panel). El token no se imprime ni se guarda.
+
+**Qué se buscó.** La sonda abre `/albaran/<token>` sin cookie, con un navegador de marca propia
+(`SondaS4-49d-NAVEGADOR-MARCA`) y con la IP que Cloudflare le ve (`/cdn-cgi/trace`), y busca las dos en el HTML y en
+el texto, más cualquier IPv4. **Control positivo:** la misma búsqueda sobre un texto que lleva las dos las caza
+(`ipPropia: true`, `marcaNavegador: true`).
+
+| superficie | estado | IP propia | navegador | IPv4 | veredicto |
+|---|---|---|---|---|---|
+| `/albaran/<token>` del #46 | `emitido`, 200, «Firmar parte de trabajo» | no | no | ninguna | **no expone** |
+
+La única aparición de « IP » es el aviso que DICE que se registra («fecha, hora, IP y navegador de esta firma»,
+`albaranPublic.routes.ts:136`): informa, no expone.
+
+**Veredicto:** `privacidad:92` queda **VISTO en la página emitida**. La rama `firmado` de esa misma página sigue
+**leída, no vista**: pinta sólo la cabecera del negocio y «Gracias, <nombre>» (`albaranPublic.routes.ts:258-263`),
+sin leer `evidenciaFirma`.
+
+**Por qué no se ha visto la rama `firmado`:** el plan de 1236b era firmar el #46 en obra desde el panel (R25) y
+volver a pedir el mismo enlace. **R25 lo excluye hoy:** el perfil fiscal de la cuenta QA está vacío
+(`GET /admin/merchant`: `legalName` y `taxId` a `null`), y firmar así está fuera de R25. Rellenarlo con
+`sembrar-casos.mjs perfil-fiscal` haría que el #47, ya firmado, dejara de verificar (lo avisa el propio script). Esa
+decisión no es de S4. Y además hay que esperar a ver SCRUM-49d en yaqu.app ANTES: es el único albarán con la
+entrega en `fallido`, y firmado deja de servir para esa medida.
+
+Releído sobre `cd85e34b`: `POST /admin/albaranes/:id/firmar` (`albaranes.routes.ts:1035-1126`) no llama a ningún
+envío; guarda la IP y el navegador de quien firma en `evidenciaFirma`. Si se firma con la sonda, su marca y su IP
+quedan dentro, y la medida de la rama `firmado` buscaría exactamente eso.

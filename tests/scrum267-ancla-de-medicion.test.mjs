@@ -472,7 +472,8 @@ const SIN_HORA = 'declara la fecha pero NO la hora, y la hora no se tomó — la
 const ANTERIOR_AL_GUARD = 'anterior a SCRUM-267 — el formato existía sin el campo';
 
 const HEREDADAS_SIN_ANCLA = {
-  'SCRUM-231.md#SCRUM-231 · CACHE-EDGE-1: la cabecera que no salía del repo era de Cloudflare': ANTERIOR_AL_GUARD,
+  // SCRUM-231b (18-oct-2026): `SCRUM-231.md#SCRUM-231 · CACHE-EDGE-1…` SALE de aquí. Su tramo nuevo
+  // (`## SCRUM-231b`) vive dentro de esa entrada de primer nivel y trae su `**Medido contra:**`.
   'SCRUM-264.md#SCRUM-264 · MICROCOPY-SIN-LINEAS: los dos textos aprobados, y el copy que no llegaba a la pantalla': ANTERIOR_AL_GUARD,
 
   // Sin «Medido contra» (23 con las dos de arriba incluidas más abajo por fichero)
@@ -764,13 +765,15 @@ test('SCRUM-267 · 🔴 los números CUADRAN: con ancla + sin ancla + eximidas =
   //          SCRUM-859 baja una más: `SCRUM-313#SEGUNDA ENTREGA` YA tiene su ancla — la
   //          reconoce el formato aprendido hoy. Que el censo baje por una MEJORA es lo que
   //          este guard pide que se anote.
+  //          SCRUM-231b (18-oct-2026) baja otra: 26 → 25. `SCRUM-231#CACHE-EDGE-1` gana ancla con el
+  //          tramo de 231b, que el censo cuenta dentro de esa entrada de primer nivel.
   //   · 27 · SCRUM-532 — ídem: `SCRUM-745#APÉNDICE · FASE B` sale por la misma razón.
   //   ·  5 · SCRUM-859 — las que el troceador NUNCA vio. Motivo CERRADO: un sexto uso cae.
   //   · 28 · SCRUM-532, 15-sep-2026 — al ver los `# APÉNDICE` que el delimitador no veía
   //          (1 arreglada: `SCRUM-814.md#2`, cuyo dato estaba completo y sólo mal formateado).
   const porCenso = (censo) => eximidas.filter((e) => e.clave in censo).length;
-  assert.equal(porCenso(HEREDADAS_SIN_ANCLA), 26,
-    `🔴 el censo de SCRUM-516 declara 26 exentas y se han medido ${porCenso(HEREDADAS_SIN_ANCLA)}.\n\n`
+  assert.equal(porCenso(HEREDADAS_SIN_ANCLA), 25,
+    `🔴 el censo de SCRUM-516 declara 25 exentas y se han medido ${porCenso(HEREDADAS_SIN_ANCLA)}.\n\n`
     + '  Si has ARREGLADO una entrada, enhorabuena: bájalo aquí y quítala de '
     + '`HEREDADAS_SIN_ANCLA`.\n  Si has AÑADIDO una, no es el sitio — una entrada nueva se mide '
     + 'al escribirla.');
@@ -783,8 +786,8 @@ test('SCRUM-267 · 🔴 los números CUADRAN: con ancla + sin ancla + eximidas =
     + `está CERRADO en ${TOPE_INVISIBLE_HASTA_859}. Después de SCRUM-859 ya nada es invisible `
     + 'hasta SCRUM-859: lo que se escriba a partir de hoy lleva su ancla entera o no entra. Un '
     + 'límite declarado y no cerrado deja de ser advertencia y pasa a ser permiso.');
-  assert.equal(eximidas.length, 58,
-    `🔴 los TRES censos suman 58 y se han medido ${eximidas.length}: alguna clave está en los dos, `
+  assert.equal(eximidas.length, 57, // SCRUM-231b: 58 → 57, la misma que baja de HEREDADAS_SIN_ANCLA
+    `🔴 los TRES censos suman 57 y se han medido ${eximidas.length}: alguna clave está en los dos, `
     + 'o en ninguno.');
   assert.equal(conAncla.length + eximidas.length, todas.length,
     '🔴 «con ancla» + «exentas» no suman el total de entradas troceadas. O el troceador pierde '
