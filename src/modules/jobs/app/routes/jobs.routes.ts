@@ -14,6 +14,7 @@ import { canTransition, estadoCobroFor, importeDeReferencia, JOB_TIPOS_OPERACION
 import { recordAudit, actorDeRequest, sobreFiscal, flagsFiscalesDe } from '../../../system/audit.service'; // SCRUM-66 · SCRUM-207 · SCRUM-206b
 import { resolveBillingPlan, distributeStageAmounts, motivoSinTramo } from '../../../quotes/domain/billingPlan';
 import { buildBillingPlanView } from '../../../quotes/domain/billingPlanView'; // SCRUM-34
+import { numeroVisibleDelPresupuesto } from '../../../quotes/domain/revision'; // SCRUM-1444c
 // SCRUM-195 (rebanada 2): el CRITERIO (orden, cuál se cobra, cuánto queda) vive en su propio
 // módulo para que el test use el MISMO y no una copia.
 import { primeroConTramoPendiente } from '../../domain/presupuestosDelTrabajo';
@@ -96,6 +97,9 @@ const jobInclude = {
 // versión por lote y la de una sola fila no puedan divergir (mismos campos, misma forma).
 const QUOTE_SELECT = {
   id: true, quoteNumber: true, total: true, currency: true,
+  // SCRUM-1444c · sin la revisión, `numeroVisibleDelPresupuesto` escribiría `#12` a una `.1`: se
+  // pide, no se supone 0.
+  revision: true,
   // SCRUM-1355 · sin el estado, el serializador no distingue un BORRADOR de un aceptado, y el
   // total de un presupuesto que nadie ha aceptado salía como dinero que le deben al Trabajo.
   status: true,
@@ -534,7 +538,9 @@ async function serializeJob(job: Job, refs?: JobRefs) {
     // El motor que lo respeta es SCRUM-17; aquí solo se lee/edita en el detalle.
     tipoOperacion: job.tipoOperacion ?? 'TRABAJO_UNICO',
     quote: quote
-      ? { id: quote.id, number: quote.quoteNumber ?? quote.id, total: Number(quote.total), currency: quote.currency, paymentTerms: quote.paymentTerms }
+      ? { id: quote.id, number: quote.quoteNumber ?? quote.id,
+          numeroVisible: numeroVisibleDelPresupuesto(quote), // SCRUM-1444c: el número HECHO; `number` sigue mientras S2 migra
+          total: Number(quote.total), currency: quote.currency, paymentTerms: quote.paymentTerms }
       : null,
     remaining, // null = nada pendiente de facturar
     // SCRUM-34: para el label honesto del CTA (siguiente tramo vs resto). remaining NO cambia.

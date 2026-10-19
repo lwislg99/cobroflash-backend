@@ -987,7 +987,20 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
   // ── RAIL DE SOLO LECTURA ────────────────────────────────────────────────────────────────
   const rail = document.createElement('div');
   rail.className = 'detail-rail';
-  rail.style.cssText = 'margin-top:18px;display:flex;flex-direction:column;gap:8px;font-size:13px';
+  // SCRUM-1206e · EN REJILLA, NO EN UNA COLUMNA. `.detail-rail` está pensada como la columna DERECHA,
+  // de 220–300 px, de `.detail-cuerpo--con-rail` (styles.css, SCRUM-316); esta ficha no tiene cuerpo,
+  // así que se estiraba a todo el ancho con su filete. Medido en yaqu.app el 18-oct-2026 (#46 y #47):
+  // 982 px de rail a 1280 para 243 px de contenido, cinco filas de 78 px una debajo de otra. Con
+  // `auto-fit` de 220 px los datos cortos comparten fila en escritorio y a 390 sale UNA columna, igual
+  // que antes. Sin hueco entre columnas: el borde de cada fila corre seguido. Opción A del
+  // orquestador (18-oct): aquí, en el estilo que ya era de esta ficha, sin tocar `styles.css`.
+  // ⚠️ El `max(…, 25%)` (CUATRO columnas como mucho) no es estética: una fila a todo el ancho mantiene
+  // vivas las columnas vacías de `auto-fit`, y a 1920 los cuatro datos se quedaban en 928 px con el
+  // borde cortado a media tarjeta (medido con este mismo fichero servido en yaqu.app).
+  rail.style.cssText = 'margin-top:18px;display:grid;grid-template-columns:repeat(auto-fit,minmax(max(220px,25%),1fr));gap:8px 0;font-size:13px;border-left:none';
+  // Las filas de TEXTO (presupuesto, cabecera, observaciones, fotos) ocupan la fila entera: en una
+  // celda de 220 px un texto libre se parte palabra a palabra.
+  const A_TODO_EL_ANCHO = '1 / -1';
   // SCRUM-1206d · UN solo estilo de rótulo para TODO el rail, en versalitas. Hasta el 17-oct
   // convivían dos: estas filas en versalitas y las de abajo (presupuesto, observaciones, fotos)
   // con `.detail-rail-etiqueta`, gris y en minúscula — medido en yaqu.app, albaranes #46 y #48.
@@ -1038,6 +1051,7 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
     // SCRUM-1206d · `--nota` pone el rótulo ENCIMA del valor, como en las filas de arriba; al lado,
     // en versalitas, se leía como otra cosa. La regla de 44 px del enlace sigue (`.detail-rail-linea a`).
     filaQuote.className = 'detail-rail-linea detail-rail-linea--nota';
+    filaQuote.style.gridColumn = A_TODO_EL_ANCHO;
     const etiquetaQuote = document.createElement('span');
     etiquetaQuote.className = CLASE_ROTULO_RAIL;
     etiquetaQuote.textContent = ROTULOS_RAIL_ALBARAN.presupuesto || TEXTO_ROTULO_SIN_MAPEAR;
@@ -1076,12 +1090,14 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
   //
   // La fila es la de la nota del cliente en el rail del Trabajo (SCRUM-982): etiqueta encima,
   // los saltos del profesional respetados y una palabra larga partida en 360 px. El RÓTULO no:
-  // es el del resto de este rail (SCRUM-1206d, `CLASE_ROTULO_RAIL`). Sin estilo en línea y por
-  // `textContent`: el texto lo escribe el profesional. SIN DATO, SIN FILA.
+  // es el del resto de este rail (SCRUM-1206d, `CLASE_ROTULO_RAIL`). Sin más estilo en línea que su
+  // ancho en la rejilla (SCRUM-1206e) y por `textContent`: el texto lo escribe el profesional.
+  // SIN DATO, SIN FILA.
   const filaDeTexto = (etiqueta, valor) => {
     if (valor == null || String(valor).trim() === '') return;
     const filaTexto = document.createElement('div');
     filaTexto.className = 'detail-rail-linea detail-rail-linea--nota';
+    filaTexto.style.gridColumn = A_TODO_EL_ANCHO;
     if (etiqueta) {
       const et = document.createElement('span');
       et.className = CLASE_ROTULO_RAIL;
@@ -1113,6 +1129,7 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
     if (!lista.length) return;
     const filaFotos = document.createElement('div');
     filaFotos.className = 'detail-rail-linea detail-rail-linea--nota'; // rótulo encima (SCRUM-1206d)
+    filaFotos.style.gridColumn = A_TODO_EL_ANCHO;
     const etiquetaFotos = document.createElement('span');
     etiquetaFotos.className = CLASE_ROTULO_RAIL;
     etiquetaFotos.textContent = ROTULOS_RAIL_ALBARAN.fotos || TEXTO_ROTULO_SIN_MAPEAR;

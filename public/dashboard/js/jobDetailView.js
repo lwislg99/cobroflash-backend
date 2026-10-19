@@ -1468,11 +1468,12 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
     else list.forEach((el) => acts.appendChild(el));
   };
   // SCRUM-85: payToken (Charge.receiptToken), NUNCA el chargeId — /pay/invoice ya no acepta el id.
+  // SCRUM-1233h: sin token, `null` — la barra no ofrece copiar. Antes copiaba la portada.
   const invWaFallback = (inv, payToken, onRetry) => {
     const token = payToken || inv.payToken;
     statusBox.querySelectorAll('.wa-fallback-bar').forEach((b) => b.remove());
     statusBox.appendChild(waFallbackBar({
-      link: token ? location.origin + '/pay/invoice/' + token : location.origin,
+      link: token ? location.origin + '/pay/invoice/' + token : null,
       onEmail: job.customer?.email ? () => apiRequest(`/admin/invoices/${inv.id}/send-email`, { method: 'POST' }) : null,
       emailDisabledReason: job.customer?.email ? null : 'Este cliente no tiene email guardado',
       onRetry,

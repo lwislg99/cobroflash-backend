@@ -43,6 +43,16 @@ import { resolverSeleccion } from '../../domain/seleccionExport'; // SCRUM-138 (
 
 const router = Router();
 
+// SCRUM-231b · 🔴 NINGUNA respuesta de este router puede guardarla una caché COMPARTIDA. Son datos
+// de UN merchant (clientes con sus datos personales, facturas, cobros…) y las URL terminan en
+// `.csv`/`.zip`, extensiones que una CDN cachea por defecto. Sin cabecera, la copia se servía por
+// URL y no por sesión. `private, no-store` aquí, delante de TODAS las rutas: la que se añada mañana
+// la hereda sin acordarse. Las que ya ponían `no-store` (datos.zip, portabilidad.zip) siguen igual.
+router.use((_req, res, next) => {
+  res.setHeader('Cache-Control', 'private, no-store');
+  next();
+});
+
 // SCRUM-25 (S2/S4): deja traza de cada descarga de datos. Fire-safe (recordAudit
 // nunca tumba la petición). `rango` documenta el filtro aplicado, para saber qué
 // se llevó exactamente quien exportó.
@@ -334,7 +344,7 @@ router.get('/datos.zip', async (req, res) => {
     // ── FASE 2: cabeceras (ya con el nombre honesto) y streaming ────────────
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Disposition', `attachment; filename="${entrega.nombreZip}"`);
-    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Cache-Control', 'private, no-store'); // SCRUM-231b: el mismo valor que el router
 
     const archive = new ZipArchive({ zlib: { level: 9 } });
     // Si el cliente corta la descarga, no dejamos la petición colgada.
@@ -755,7 +765,7 @@ router.get('/portabilidad.zip', async (req, res) => {
     const dia = new Date().toISOString().slice(0, 10);
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Disposition', `attachment; filename="portabilidad-${dia}.zip"`);
-    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Cache-Control', 'private, no-store'); // SCRUM-231b: el mismo valor que el router
 
     const archive = new ZipArchive({ zlib: { level: 9 } });
     archive.pipe(res);

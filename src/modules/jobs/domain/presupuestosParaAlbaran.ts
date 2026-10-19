@@ -66,6 +66,8 @@ export interface PresupuestoCandidato {
   id: number;
   /** El número VISIBLE por merchant (`quoteNumber ?? id`), ya resuelto por quien lista. */
   number: number | string;
+  /** SCRUM-1444c · el número HECHO (`#12`, `#12.1`) que da `listQuotesAdmin`; `null` = sin número. */
+  numeroVisible?: string | null;
   customerName?: string | null;
   totalAmount?: unknown;
   currency?: string | null;
@@ -89,6 +91,8 @@ export type MotivoNoElegible = 'sin_trabajo' | 'trabajo_no_visible';
 export interface FilaPresupuestoParaAlbaran {
   quoteId: number;
   numero: number | string;
+  /** SCRUM-1444c · el número HECHO. `numero` sigue mientras la pantalla (S2) migra. */
+  numeroVisible: string | null;
   cliente: string | null;
   total: unknown;
   currency: string;
@@ -147,6 +151,7 @@ export function filasParaElegirPresupuesto(
     return {
       quoteId: c.id,
       numero: c.number,
+      numeroVisible: c.numeroVisible ?? null, // SCRUM-1444c
       cliente: c.customerName ?? null,
       total: c.totalAmount ?? null,
       currency: c.currency || 'EUR',

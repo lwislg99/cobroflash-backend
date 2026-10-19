@@ -520,3 +520,21 @@ comprobarla: se comprobó corriéndolo.
 
 Mi error: medí los retornos de carro de este registro con `grep` sobre la salida de `od` y me dio 12 en 200
 bytes; contados por bytes son 0. La trampa estaba escrita en la memoria del puesto.
+
+## 1345b · el CIEGO por plazo, a `trampas-del-entorno.md` (18-oct-2026, S3)
+
+**Medido contra:** `origin/main` = `183895cdef71c5655a3978352b716a79e1ca2b2b` · 2026-10-18T18:01:02Z
+
+A9: comprobación → `tests/scrum976-guards-entrada-con-techo.test.mjs`
+
+Sólo documentación, sin código; encargo del orquestador (18-oct), que la puso en el §11 de S3.
+Al empujar SCRUM-1158d, `npm run guards:entrada` salió dos veces seguidas con «0 hallazgos · 1 ciego →
+salida 2» a los 90,0 s, en `wt-s3-18oct-d`. Es el diseño de este ticket: pasarse del plazo no es un rojo. Lo
+que faltaba escrito es qué hace una sesión con ese 2 para no empujar a ciegas: correr los mismos ficheros sin
+plazo. Medido: los 15 de `GUARDS`, 170 de 170; con los de `FUERA_DE_LA_LISTA`, 20 ficheros, 208 de 208 en 51 s.
+
+- La lista sale del script (`GUARDS` y `FUERA_DE_LA_LISTA` son `export`; `main()` sólo corre si se lanza el
+  fichero). No se copia.
+- Un CIEGO ya ha pasado las marcas de mutación y la comprobación de ficheros que faltan: `main()` lo mira
+  antes de lanzar el runner, y si falla sale 1, no 2.
+- Lo que no cubre: Bash (no hay Git Bash en esta máquina) y el CI, que corre la tanda entera.

@@ -844,11 +844,20 @@ function nodeReal(cwd, args) {
 
 /**
  * Qué mesa usa un lanzamiento. Sin `config.mesas`, ninguna, y se DICE (el interruptor no se ha dado).
- * @returns {{ok:true, cwd:string|undefined, mesa:object} | {ok:false, veredicto:string, motivo:string}}
+ *
+ * SCRUM-1298c · sin mesa se lanza desde `config.repo`, NO desde el cwd de quien lanza. Heredarlo hacía que
+ * arrancar dependiera de dónde estuviera el orquestador al teclear: el 18-oct-2026 `sesion-0` no arrancó
+ * dos veces porque `sesion.mjs` se corrió desde la carpeta de la instalación (`AppData/Local/yaqu-equipo`),
+ * que no cuelga de ninguna carpeta de confianza, y `claude --bg` se niega ahí («Workspace not trusted»).
+ * Sin `config.repo` no se lanza: no hay de dónde.
+ * @returns {{ok:true, cwd:string, mesa:object} | {ok:false, veredicto:string, motivo:string}}
  */
 export function mesaDelLanzamiento({ config, nombre, equipo, ...io }) {
   if (config.mesas === undefined) {
-    return { ok: true, cwd: undefined, mesa: { veredicto: 'SIN-MESA', motivo: 'la instalación no declara `mesas`: la sesión hereda el cwd de quien la lanza (SCRUM-1298)' } };
+    if (typeof config.repo !== 'string' || !config.repo) {
+      return { ok: false, veredicto: 'NO-PUDE-MIRAR', motivo: 'la instalación no declara `mesas` ni `repo`: no hay desde dónde lanzar (SCRUM-1298c)' };
+    }
+    return { ok: true, cwd: config.repo, mesa: { veredicto: 'SIN-MESA', motivo: 'la instalación no declara `mesas`: la sesión arranca en el repositorio (`repo`), no en el cwd de quien la lanza (SCRUM-1298c)' } };
   }
   const p = prepararMesa({ config, nombre, equipo, ...io });
   if (!p.ok) return p;

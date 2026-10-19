@@ -63,3 +63,54 @@ citado CORRE en el check obligatorio: eso es SCRUM-1178.
 
 - La medición de la barra de selección en un navegador (opción 1 del ticket) y la del «atrás» de una ficha
   a su lista. Las dos son piezas visibles sin red; los comentarios ya lo dicen en vez de esconderlo.
+
+## 1177b · la barra de selección, medida en un navegador (18-oct-2026, S3)
+
+**Medido contra:** `origin/main` = `2cc3243ec30c41e27bbe04d0d5647f241c83c28c` · 2026-10-18T18:44:10Z
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1177/sonda-barra-en-navegador.mjs`
+
+(Es una sonda, no un test: mide, no vigila. Por qué no es un test, abajo.)
+
+**De dónde sale.** El orquestador cerró 1177 el 18-oct (c.19957) por la letra de su aceptación, y dejó dicho el
+hueco: «nadie mide en un navegador que la barra de selección sea visible de verdad». Encargó medirlo como
+continuación de este registro, sin ticket nuevo. Sólo se lee: ni la vista (`customersView.js`, J2) ni la hoja
+(`styles.css`, S2) se tocan.
+
+**Cómo.** La lista de Clientes la pinta el PRODUCTO en Edge (`scripts/_banco-lista.mjs`: los scripts del índice,
+en su orden; sólo se dobla `apiRequest`), con dos clientes de muestra. Por anchura y con 0 y 1 marcado (la casilla
+de una fila, pulsada de verdad) se mide la barra `div.barra-seleccion`: `display`, su caja y QUIÉN responde en su
+centro (`elementFromPoint`). Lo último es lo que dice si la barra GANA y no sólo si está.
+
+**Resultado: todo como dice la hoja, y ninguna anchura se queda sin vía.**
+
+| ancho | 0 marcados | 1 marcado | vías de «seleccionar todos» con 0 |
+|---|---|---|---|
+| 390 | se ve · 364×42 · gana | se ve · 364×148 | 1 (la barra) |
+| 640 | se ve · 614×42 · gana | se ve · 614×96 | 1 (la barra) |
+| 641 | oculta (`none`) | se ve · 615×96 | 1 (la cabecera) |
+| 929 | oculta (`none`) | se ve · 631×96 | 1 (la cabecera) |
+| 1280 | oculta (`none`) | se ve · 982×65 | 1 (la cabecera) |
+
+El relevo entre 640 y 641 px no deja hueco: hasta 640 la vía es la barra (allí la cabecera no gana), desde 641 la
+casilla de la cabecera. Es lo que SCRUM-792 midió a mano con cuatro casos («0 vías alcanzables» a 390 antes de su
+arreglo); aquí se repite con cinco anchuras, las dos del umbral incluidas.
+
+**Controles positivos: los tres caen, salen NO visibles.**
+- La barra ocultada a la fuerza por CSS a 390 px: `display none`.
+- La barra TAPADA por una capa transparente encima a 390 px: `display flex`, caja 364×42, y **no gana**. Sólo
+  `elementFromPoint` lo caza: un control por `display` o por caja diría «se ve».
+- La casilla de la cabecera ocultada a la fuerza a 929 px con 0 marcados: el recuento de vías da 0.
+
+**¿Cabe en el check obligatorio? NO, y éste es el motivo.** La aceptación pedía un `tests/*.test.mjs` sólo «si la
+visibilidad cabe como cascada CSS». Que la barra GANE no cabe en una cascada leída: hace falta un motor de
+maquetado. Y la suite obligatoria no arranca navegador, por decisión escrita en la casa (`package.json`,
+`//guard:lista-trabajos`: «Fuera de npm test por la misma decision que guard:contraste y guard:objetivo-tactil: la
+suite no arranca navegador»). Lo que sí cabe sin navegador, que las reglas de la cascada existan y compartan
+`@media`, ya corre en el obligatorio: `tests/scrum792-barra-alcanzable-en-movil.test.mjs`. Así que el hueco se
+cierra con una medida declarada y repetible, no con una red. Meterla en el job informativo de guards de navegador
+es una decisión de workflow (S5 y orquestador), y no la tomo aquí.
+
+**Lo que NO cubre.** Una lista con dos clientes: no se miran cientos de filas ni el scroll largo. Sólo la lista de
+Clientes, que es donde vive la barra. Sólo Edge: ni Safari ni Chrome de móvil. Y la medida vale para este árbol:
+nada la repite sola.
