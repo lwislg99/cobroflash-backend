@@ -215,3 +215,22 @@ crear ni añadir ese botón cuando no llega ninguno de los dos. Los cuatro llama
   decirle que «no llegó» sería texto nuevo (regla 39).
 - El enlace que manda Meta sigue roto (fila 2.9 de `ESTADO-DEL-PRODUCTO.md`, es del fundador). El que se copia aquí lo
   compone la pantalla con `location.origin`, así que sirve también mientras tanto.
+
+### APÉNDICE · 49e deja de depender de S2 y se empuja
+
+**Medido contra:** `origin/main` = `ea8dece1df90430ae0b269e200be137ff5462b72` (prod lo servía en `/version` al
+escribir esto) · hora de GitHub al escribir: 2026-10-19T08:3x (misma tanda que el merge)
+
+S2 empujó la condición pedida (SCRUM-1233i, PR #2602, commit `6744798d8`): `waFallbackBar` sólo crea «Enviar por
+email» con `onEmail` o `emailDisabledReason`. Mergeado a `main` las 07:49:16Z, antes de esta rama.
+
+- Se mergeó `origin/main` en `scrum-49e-copiar-enlace-de-firma` (sin conflictos).
+- El censo de `tests/scrum1233h-copiar-enlace-sin-enlace.test.mjs` (SCRUM-1233i ②) cayó señalando
+  `albaranDetailView.js` en `SIN_EMAIL_A_PROPOSITO` — la trampa que dejó S2 a propósito, convertida en guard. Se
+  añadió con su motivo: *«el albarán no tiene envío por email, sólo WhatsApp (copiar enlace + reintentar)»*.
+- **Con eso: `tests/scrum49e-copiar-enlace-de-firma.test.mjs` da 4 de 4** (sin tocar el propio test ni
+  `albaranDetailView.js`), y la suite conjunta con SCRUM-1233h/i, 14 de 14.
+- Guards de entrada (`npm run guards:entrada`): 15/15, 170 tests. Guards de árbol entero (195, 414, 694, 710b, 737):
+  38/38.
+- `tsc`: sólo el error conocido y ajeno de `merchantAdmin.ts:147` (Prisma del entorno desalineado con
+  `activityKind`; no se corre `prisma generate`, regla del entorno).
