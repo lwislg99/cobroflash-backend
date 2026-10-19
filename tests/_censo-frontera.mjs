@@ -39,6 +39,9 @@ import { PassThrough } from 'node:stream';
 const raiz = process.argv[2] ? path.resolve(process.argv[2]) : '';
 if (!raiz) { console.log('CIEGO: falta la raiz del arbol'); console.log('EXIT=2'); process.exit(2); }
 const de = (rel) => import(pathToFileURL(path.join(raiz, 'dist', rel)).href);
+// El constructor del `req` se trae del ÁRBOL que se mide, no de al lado de este fichero: los bancos de
+// SCRUM-1516 (`verlo-caer.mjs`, `la-moneda.mjs`) corren una COPIA de este censo fuera del árbol.
+const { reqDeSesion } = await import(pathToFileURL(path.join(raiz, 'tests', '_arnes-de-router.mjs')).href);
 
 // ── SCRUM-1516b · EL RESULTADO NO DEPENDE DE DESDE DÓNDE SE LANCE. Medido el 19-oct-2026: la misma
 // `dist/` daba `POST /admin/billing/accept-alcance` FILTRA lanzado desde la raíz de un árbol y NO-LLEGO
@@ -242,16 +245,18 @@ function manosDe(method, ruta) {
   return manos;
 }
 
-function peticion(rol, ruta, method) {
+// SCRUM-1516b · el `req` sale de `reqDeSesion` (el constructor de SCRUM-1344): el rol se declara SIEMPRE y
+// una vez, como lo pone `requireAuth`. `extra` es lo que el eje del comercio cambia (la sesión del 21).
+function peticion(rol, ruta, method, extra = {}) {
   const params = {};
   for (const seg of ruta.split('/')) if (seg.startsWith(':')) params[seg.slice(1)] = '102';
   const base = rol === 'admin'
-    ? { userRole: 'admin', teamMemberId: null, isOwner: true }
-    : { userRole: 'tecnico', teamMemberId: 11, isOwner: false };
+    ? { teamMemberId: null, isOwner: true }
+    : { teamMemberId: 11, isOwner: false };
   // La query lleva lo que piden los buscadores: sin `q`, /admin/search contesta vacío sin consultar.
-  return { ...base, merchantId: 1, params, query: { q: 'obra', customerId: '5', mes: '2026-09' }, body: {},
+  return reqDeSesion({ rol, ...base, merchantId: 1, params, query: { q: 'obra', customerId: '5', mes: '2026-09' }, body: {},
     headers: { 'user-agent': 'censo' }, method, path: ruta, originalUrl: ruta, url: ruta, ip: '127.0.0.1', cookies: {},
-    get() { return undefined; }, header() { return undefined; }, socket: { remoteAddress: '127.0.0.1' }, app };
+    get() { return undefined; }, header() { return undefined; }, socket: { remoteAddress: '127.0.0.1' }, app, ...extra });
 }
 
 async function pedir(manos, req) {
@@ -374,7 +379,7 @@ if (EJE === 'comercio') {
   const fc = []; const fs = [];
   for (const d of [...poblacion, ...sembradas]) {
     apuntes = []; sueltas = []; const m0 = aMeta.length;
-    const req = { ...peticion('admin', d.path, d.method), merchantId: SESION, merchant: de21('merchant') };
+    const req = peticion('admin', d.path, d.method, { merchantId: SESION, merchant: de21('merchant') });
     let out = await pedir(manosDe(d.method, d.path), req);
     // 2ª pasada, sólo si la 1ª murió en la validación sin consultar nada: el mismo pedido con un
     // cuerpo de relleno. No es el cuerpo que cada ruta espera; lo que siga sin llegar se dice.
