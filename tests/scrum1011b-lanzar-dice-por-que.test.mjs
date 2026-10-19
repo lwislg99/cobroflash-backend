@@ -15,6 +15,7 @@ import path from 'node:path';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { temporal } from './_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
+import { casosEscritos } from './_casos-escritos.mjs'; // SCRUM-1415 · un caso por fila, con su nombre escrito
 import { rastroDeClaude } from '../scripts/equipo/sesion.mjs';
 
 const SCRIPT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'scripts', 'equipo', 'sesion.mjs');
@@ -61,8 +62,9 @@ function banco() {
   return { correr, encargo: path.join(dir, 'encargo.txt') };
 }
 
-for (const accion of ['lanzar', 'relevar']) {
-  test(`SCRUM-1011b · 🔴 \`${accion}\`: claude --bg falla escribiendo en stderr → sale 2, NO lanza, y el motivo VIAJA`, () => {
+const falloDeBg = casosEscritos(['lanzar', 'relevar'],
+  (accion) => `SCRUM-1011b · 🔴 \`${accion}\`: claude --bg falla escribiendo en stderr → sale 2, NO lanza, y el motivo VIAJA`,
+  (accion) => {
     const b = banco();
     const { status, v, crudo } = b.correr(accion, 'sesion-0', b.encargo);
     assert.ok(v, `🔴 sin veredicto JSON:\n${crudo}`);
@@ -73,8 +75,10 @@ for (const accion of ['lanzar', 'relevar']) {
     assert.equal(v.status, 3, `🔴 el código de salida de claude no viaja: ${JSON.stringify(v)}`);
     assert.equal(v.salida, '', 'stdout estaba vacío, y se sigue diciendo');
     assert.equal(v.error, null);
-  }, { timeout: 30_000 });
-}
+  });
+test('SCRUM-1011b · 🔴 `lanzar`: claude --bg falla escribiendo en stderr → sale 2, NO lanza, y el motivo VIAJA', { timeout: 30_000 }, falloDeBg(0));
+test('SCRUM-1011b · 🔴 `relevar`: claude --bg falla escribiendo en stderr → sale 2, NO lanza, y el motivo VIAJA', { timeout: 30_000 }, falloDeBg(1));
+falloDeBg.todos();
 
 test('SCRUM-1011b · `rastroDeClaude`: un claude que NI ARRANCA (`error`, `status` null) también dice por qué', () => {
   const r = rastroDeClaude({ status: null, signal: null, stdout: null, stderr: null, error: Object.assign(new Error('spawnSync claude.exe ENAMETOOLONG'), { code: 'ENAMETOOLONG' }) });
