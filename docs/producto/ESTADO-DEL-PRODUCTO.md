@@ -1,6 +1,6 @@
 # Estado del producto · YaQu
 
-**Última medida: 19-oct-2026, 06:43Z** (`Date:` de GitHub) · `origin/main` = `cd85e34b1e5bfaf561f010f550296bd94b659e75` · producción (`/version`) = el mismo `cd85e34b`, leído a las 06:35Z · la escribió S0 (SCRUM-1563c). Las anteriores (18-oct, 17:13Z y 18:46Z) siguen en el historial de git. **Entre las 19:37Z del 18 y las 06:43Z del 19 no entró nada en `main`.**
+**Última medida: 19-oct-2026, 06:43Z, retocada a las 06:5xZ** (`Date:` de GitHub) · `origin/main` = `fc4186483266ae85cc744d020bcfd6db76d8c5d3` · producción (`/version`) = el mismo `fc418648`, leído a las 06:5xZ · la escribió S0 (SCRUM-1563c). Las anteriores (18-oct, 17:13Z y 18:46Z) siguen en el historial de git. **Entre las 19:37Z del 18 y las 06:48Z del 19 no entró nada en `main`; a las 06:48:54Z entró #2568 (6.11) mientras se escribía esto.**
 
 **Qué es:** UN documento que se ACTUALIZA, no un informe nuevo cada vez. Dice qué le falta al producto para estar completo, de quién depende cada cosa, qué la bloquea y cómo va. Lo pidió el fundador el 18-oct-2026: «molaría sacar un informe con todas las tareas que tenemos que cerrar para el producto y ver cómo las vamos cerrando, para tener algo controlado».
 
@@ -25,7 +25,7 @@
 4. **Quien se suscribe no recibe su fecha de fin de periodo** (5.2), así que si cancela pierde el acceso al instante, contra lo que firmó el fundador. Ya tiene ticket propio, **SCRUM-1565 (J2)**, con la autorización del fundador dentro. Está en «Tareas por hacer», sin comentarios y **sin rama en el remoto** (06:4xZ).
 5. **La primera pieza de todas sigue siendo la S.L.** (SCRUM-1561). De ella cuelgan el Convenio 017 con la AEAT, el NIF del productor, el certificado del servidor, Stripe en modo real, la suscripción y la cesión del código.
 6. **De las 66 cosas que faltan, 44 necesitan al fundador y 29 dependen SÓLO de él.** El detalle, en §3.
-7. **Lo que el equipo de Luis puede mover hoy sin esperar a nadie es UNA cosa, y ya está en marcha:** el obligatorio de #2568 (6.11), relanzado a las 06:35Z. La otra de ayer (2.2, SCRUM-1237) está hecha. **De las otras 65 filas, 63 esperan al fundador, a Javier o al asesor; las 2 que quedan (2.5 y 6.10) esperan algo que no tiene dueño** (§3).
+7. **Lo que el equipo de Luis puede mover hoy sin esperar a nadie es UNA cosa, y es pequeña:** mirar en producción, con sesión, la cabecera de caché de los CSV (6.11). El arreglo, #2568, **entró en `main` a las 06:48:54Z y producción ya lo sirve**. La otra de ayer (2.2, SCRUM-1237) está hecha. **De las otras 65 filas, 63 esperan al fundador, a Javier o al asesor; las 2 que quedan (2.5 y 6.10) esperan algo que no tiene dueño** (§3).
 
 ---
 
@@ -122,7 +122,7 @@
 | 6.8 | Las fechas que se imprimen van en UTC (un albarán de las 00:30 lleva la víspera) | SCRUM-1445 | FUNDADOR + NOSOTROS + JAVIER | «firma de las 3 líneas del concepto» | c.19437 |
 | 6.9 | La pantalla de provincia | SCRUM-1522 | JAVIER + FUNDADOR | «SCRUM-1536» | c.19338 |
 | 6.10 | Las casillas de métodos de pago miden 20 px | SCRUM-1265 | NOSOTROS (S2) | «decidir el patrón; NO CONSTA quién» | descripción (0 comentarios) |
-| 6.11 | **Las exportaciones CSV sólo están protegidas por la regla de Cloudflare:** la cabecera de caché del origen no ha entrado | SCRUM-231 (rama `scrum-231b-exports-sin-cache-compartida`) | NOSOTROS (S1) | ninguno: **#2568 sigue ABIERTO (`BLOCKED`) porque su obligatorio está CORRIENDO.** Los 5 guards del rojo de las 18:05Z se declararon en `6ee2b55` (19:06Z). Sobre ese commit, el primer intento cayó a las 19:39Z por **UN test de 11 862: SCRUM-1405c ④** (no lo ha clasificado S0). **Se relanzó (intento 2) a las 06:35:17Z** y a las 06:4xZ seguía en marcha. Si sale verde, lo mergea el bot | la mitad del fundador (SCRUM-1564) funciona: **medido por S0** a las 18:39Z del 18 (los 7 CSV) y otra vez a las 06:4xZ del 19 (`quotes.csv` y `jobs.csv`): 401 con `cf-cache-status: DYNAMIC` (§8) |
+| 6.11 | **Las exportaciones CSV sólo están protegidas por la regla de Cloudflare:** la cabecera de caché del origen no ha entrado | SCRUM-231 (Finalizada desde el 3-ago; el tramo 231b vive en `docs/master/SCRUM-231.md`). **Ningún ticket abierto sigue esta fila** | NOSOTROS (S1) | ninguno: **falta VERLO en producción.** #2568 **MERGEADO el 19-oct a las 06:48:54Z** (`fc418648`), y producción lo sirve desde las 06:5xZ. Pone `Cache-Control: private, no-store` en todo el router de exportaciones (`exports.routes.ts`). **Sin sesión no se ve:** el 401 lo da `requireRole('admin')` antes del router (`app.ts:664`); medido por S0 a las 06:5xZ, los CSV sin cookie dan 401 sin esa cabecera (control: `/version` sí devuelve la suya, `no-store`). Hace falta una descarga **con sesión**. Cómo llegó: el rojo de las 18:05Z (5 guards) se declaró en `6ee2b55`; el intento 1 sobre ese commit cayó por UN test (SCRUM-1405c ④) y el intento 2, lanzado a las 06:35Z, salió verde a las 06:48:28Z | la mitad del fundador (SCRUM-1564) funciona: **medido por S0** a las 18:39Z del 18 (los 7 CSV) y otra vez a las 06:4xZ del 19 (`quotes.csv` y `jobs.csv`): 401 con `cf-cache-status: DYNAMIC` (§8) |
 
 ### 7 · Para salir a vender
 
@@ -152,11 +152,11 @@ Sobre las **66 filas** de §2 (66 de ayer − 1 hecha, la 2.2 + 1 nueva, la 2.11
 
 Contado por máquina sobre la columna «depende de» de §2: `node docs/master/evidencias/SCRUM-1563/contar-dependencias.mjs docs/producto/ESTADO-DEL-PRODUCTO.md`. Se vuelve a correr en cada actualización. **El primer recuento, hecho a mano, daba 28 · 25 · 8 · 6 · 1, y estaba mal. Y el de la segunda medida, a mano, daba 64 filas y 44 del fundador: también mal.** Control de hoy: el mismo comando sobre la versión de ayer a las 18:46Z da lo que se publicó entonces (66 filas · 43/28 · 28/12 · 12/5 · 6/2). Diferencia: sale la 2.2 (sólo NOSOTROS) y entra la 2.11 (sólo FUNDADOR).
 
-### Lo que el equipo de Luis puede mover HOY sin esperar a nadie: UNA cosa, y ya está en marcha
+### Lo que el equipo de Luis puede mover HOY sin esperar a nadie: UNA cosa, y es pequeña
 
-| fila | qué | quién | estado a las 06:4xZ |
+| fila | qué | quién | estado a las 06:5xZ |
 |---|---|---|---|
-| 6.11 | el obligatorio de #2568 (la cabecera de caché de los CSV) | S1 | **relanzado a las 06:35Z y corriendo.** Si sale verde, lo mergea el bot y no hace falta nadie. Si vuelve a salir rojo, es de S1 |
+| 6.11 | **ver en yaqu.app, con sesión, que la descarga de un CSV trae `Cache-Control: private, no-store`** | S1 (o quien tenga la cuenta QA) | el arreglo, #2568, entró en `main` a las 06:48:54Z y producción lo sirve. Si se ve, la fila pasa a §8. **Ningún ticket abierto la sigue** (SCRUM-231 está Finalizada desde agosto) |
 
 **La cuenta de las 66 filas:**
 
@@ -194,7 +194,7 @@ Puede que estén acabados y sólo falte cerrarlos. Lo cierra el orquestador del 
 
 | ticket | equipo | qué entró | qué falta, según su registro o su último comentario | estado del ticket (19-oct) |
 |---|---|---|---|---|
-| SCRUM-1564 | sin etiqueta (orquestador de Luis) | no es un PR: **la regla de Cloudflare para `/admin/*`, puesta por el fundador.** Medida por S0: 401 con `DYNAMIC` a las 18:39Z del 18 y a las 06:4xZ del 19 | su otra mitad, el origen, es #2568 (6.11) y va en un ticket aparte (SCRUM-231) | **Acción del fundador** |
+| SCRUM-1564 | sin etiqueta (orquestador de Luis) | no es un PR: **la regla de Cloudflare para `/admin/*`, puesta por el fundador.** Medida por S0: 401 con `DYNAMIC` a las 18:39Z del 18 y a las 06:4xZ del 19 | nada de su mitad. La otra mitad, el origen, es #2568: **entró a las 06:48:54Z del 19** y falta verla con sesión (6.11) | **Acción del fundador** |
 | SCRUM-1233 | Luis | #2588, MERGEADO el 18-oct 19:37Z (1233h: sin enlace, la barra de fallo de WhatsApp ya no ofrece copiar la portada) | NO CONSTA: el ticket es un censo de pantallas, y 1233h es una pieza | En curso |
 | SCRUM-1444 | Luis (sin etiqueta de equipo) | #2584, MERGEADO el 18-oct 19:09Z (1444c: `numeroVisible` en las respuestas de S1) | NO CONSTA: el ticket es un censo de ~90 sitios | En curso |
 | SCRUM-1442 | Luis + Javier | #2559, MERGEADO el 18-oct 00:37Z (página pública, vista por S2) | el PDF, de J1 (1.5) | Tareas por hacer |
@@ -248,7 +248,7 @@ Las fechas de JQL van en la hora de Madrid. **Control:** 56 + 164 + 51 = 271.
 - **El estado de la cuenta demo** (7.8): lo midió S2; S0 no lo repite para no pisar la sesión QA compartida. **Que el correo de `demo@yaqu.app` no llegue** lo dice el orquestador; S0 sólo ha medido que el dominio tiene MX de Cloudflare. Las reglas de reenvío no se ven desde aquí.
 - **El remitente de los dos cron que mandan correo** (2.11): sólo se ve en Railway o en Resend.
 - **Lo que «vio en producción» otra sesión** (1.5, 2.7, y 2.1 y 2.2 en §8): sale de sus registros y traspasos. S0 no lo ha repetido.
-- **Si el obligatorio de #2568 sale verde** (6.11): a las 06:4xZ seguía corriendo.
+- **La cabecera de los CSV con sesión** (6.11): #2568 está en producción, pero sin sesión no se ve.
 - **Los 164 de Javier**, salvo los que nombra esta tabla. **Los 51 sin etiqueta**, lo mismo.
 - **Que cada fila cubra la aceptación de su ticket.** Las filas salen de la descripción y del último comentario, leídos el 18-oct por cuatro lectores de sólo lectura; en esta medida, S0 ha releído los que cambiaron en Jira y los registros de 1237, 1558, 1072 y 809.
 - **Tickets que no se han leído** y pueden tocar el producto: SCRUM-1509, 1517, 1523, 1529, 1535, 1444, 1215, 624, 1087, 1088, **1404** (el PDF de una factura en `pendiente_de_sellado` contesta 500, J1), y los epics 276, 280, 322, 323, 326. Y **los 54 tickets abiertos con algún merge desde el 11-oct** (§4), salvo los que nombra la tabla.
@@ -277,4 +277,4 @@ Lo que estaba en §2 y ya no falta. **No se borra.** Una fila que entra y sale e
 | 1.10 | «Presupuesto adicional» sobre un Trabajo ya en marcha (SCRUM-1190) | 18-oct-2026, cerrado 17:14Z | servidor #2495 (16-oct) y pantalla #2523 (17-oct 19:39Z), los dos en `main`. **Visto en producción por S2** sobre el build `57b0bc82`, a 1280 y 390 (SCRUM-1190 c.19951) |
 | 2.1 | El WhatsApp de PRODUCCIÓN (el número de la casa, con sus plantillas) | 18-oct-2026, 17:53Z | el fundador pulsó «Enviar para firmar» con un móvil real y Meta contestó con un código suyo: filas 451 y 452 del historial del cliente 83, `albaran_para_firmar_es`, `failed`, `131026: Message undeliverable` (`docs/master/SCRUM-1236.md:158-162`, medido por S4). El número era el inventado; con el móvil del fundador, la fila 453 salió entregada (traspaso de S4). **Lo que destapó, el enlace roto, queda en §2 como 2.9** |
 | 2.2 | Enviar a un cliente sin correo: la pantalla parecía que lo enviaba (SCRUM-1237) | 18-oct-2026, cerrado 19:06:56Z | arreglo #2521 (16-oct 13:10Z) en `main`. **Visto en producción por S2** después del merge, con producción sirviendo `214283d7` (que contiene el arreglo), a 1280 y a 390, contra la aceptación del c.19870: «Enviar por email» desactivado de entrada, el aviso dentro de la modal y a la vista, nada dado por hecho, y su control (el aviso de la página sigue tapado). Tramo 1237b de `docs/master/SCRUM-1237.md`, #2590 (19:34Z). **No medido, y lo dice el registro:** los dos errores de WhatsApp de la modal, porque mandar un WhatsApp no es una escritura que se pueda dejar salir |
-| — | Los CSV de exportación se servían sin sesión desde la caché de Cloudflare (no era fila: entró y salió el 18-oct) | 18-oct-2026 | **medido por S0 a las 18:39:38Z**: los 7 CSV de `/admin/exports/` sin cookie dan **401** con `cf-cache-status: DYNAMIC`. Lo cierra la regla de Cloudflare del fundador (SCRUM-1564). **Vuelto a medir por S0 el 19-oct a las 06:4xZ** (`quotes.csv` y `jobs.csv`): lo mismo. **La mitad del origen NO ha entrado** (#2568 abierto, con el obligatorio corriendo): queda en §2 como 6.11 |
+| — | Los CSV de exportación se servían sin sesión desde la caché de Cloudflare (no era fila: entró y salió el 18-oct) | 18-oct-2026 | **medido por S0 a las 18:39:38Z**: los 7 CSV de `/admin/exports/` sin cookie dan **401** con `cf-cache-status: DYNAMIC`. Lo cierra la regla de Cloudflare del fundador (SCRUM-1564). **Vuelto a medir por S0 el 19-oct a las 06:4xZ** (`quotes.csv` y `jobs.csv`): lo mismo. **La mitad del origen entró a las 06:48:54Z del 19** (#2568) y falta verla con sesión: queda en §2 como 6.11 |

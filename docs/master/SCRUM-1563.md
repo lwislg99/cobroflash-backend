@@ -180,6 +180,12 @@ El merge que se apunta es el **último** con su número. **Un merge no es un arr
 - **«No le llega el correo de `demo@yaqu.app`».** No lo he medido. Lo que sí está medido es que el dominio recibe correo por Cloudflare. Va en el documento como dicho por el orquestador, con mi lectura marcada como lectura.
 - Lo demás (1564 puesta y medida, 1565 con su autorización y su uuid, #2588, #2590 y #2591 en `main`, el enlace roto, el 131026, la demo en 403) casa con lo que hay en el repo, en GitHub y en Jira.
 
+### Retoque de las 06:5xZ: #2568 entró mientras se escribía
+
+- El primer empuje de este tramo (`67bf965a`, 06:4xZ) decía «#2568 corriendo». **El intento 2 salió verde a las 06:48:28Z y el bot lo mergeó a las 06:48:54Z** (`fc418648`); `/version` lo servía a las 06:5xZ.
+- **Medido por S0 después:** los CSV sin cookie siguen dando 401 **sin** `Cache-Control`, porque el 401 lo pone `requireRole('admin')` (`app.ts:664`) antes del `router.use` que añade `private, no-store`. Control: `/version` devuelve su `no-store`, así que la lectura de la cabecera funciona. **Para ver el arreglo hace falta una descarga con sesión** → la fila 6.11 sigue en §2 con eso como lo único que falta, y sigue siendo lo único movible hoy sin nadie.
+- **SCRUM-231 está Finalizada desde el 3-ago**: ningún ticket abierto sigue el VISTO. Va dicho en la fila.
+
 ### Error propio
 
 - **Busqué la rama de 1565 con un filtro de `git ls-remote` sin control positivo.** Dio vacío, y el mismo filtro con 1563 también daba vacío, porque la rama de 1563b se borró al mergear. Ese vacío no probaba nada. Lo rehice con la lista entera del remoto, filtrada después. Es la familia de «no pude mirar» igual a «no hay nada».
