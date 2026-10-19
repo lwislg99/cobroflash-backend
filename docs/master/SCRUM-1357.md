@@ -491,3 +491,93 @@ sólo escribe la foto (`PARADOS · NO PUDE MIRAR`, `mirado a las`).
 - No prueba el `claude agents --json` real: si el CLI cambia su forma, lo que lo dice es la propia foto
   (sale 2 con su motivo), no el control. El control prueba que LA LÓGICA ve lo que debe.
 - No cubre TE ESPERA por `timeline.jsonl` ni APARCADO: ésos siguen en los tests de 1357c y 1357e.
+
+## 19-oct-2026 · SCRUM-1357h · LA SALA pintaba seis verdes sin nadie vivo: el panel se comía el «no sé» del vigía
+
+**Medido contra:** `origin/main` = `cd85e34b1e5bfaf561f010f550296bd94b659e75` · hora real 2026-10-19T06:49Z
+(cabecera `Date:` de `gh api -i zen`; el reloj local va adelantado).
+
+**Este tramo no cambia nada del repo.** El arreglo vive en el plugin, que está fuera del repo
+(`D:/MILLONARIO/cobroFlash/mods-yaqu/yaqu-sala/`, sin git). Aquí queda el registro. Tiene el OK del
+orquestador a los seis puntos (19-oct, por mensaje), y el orquestador se lo cuenta al fundador.
+
+### El defecto, medido
+A las 06:36Z el fundador preguntó: «¿puede ser que LA SALA no funcione? Le doy a refrescar y me sale que
+están trabajando, y ahora no está trabajando ninguno, ¿no?». Ese mismo minuto, `parados.mjs` decía:
+«PUESTO(S) SIN NINGUNA SESIÓN VIVA: S0…S5».
+
+- **Lo que mira el fundador es el PANEL** (`/panel`, el que tiene el botón «Refrescar»), no la línea de
+  estado. El log de la extensión de VS Code (`…/exthost/Anthropic.claude-code/Claude VSCode.log`, que va con
+  `--debug`) recoge a las 06:34Z `ui.render key=yaqu-sala#0` y `ui.press`, y a continuación una medida.
+- **La línea de estado no dijo nunca «trabajando»**: son 608 repintados en 30 h y todos dicen «1 puesto(s)
+  que atender». Ese «puesto» era el AVERIA del vigía retirado, contado como si fuera un puesto. No mentía en
+  verde, pero estuvo 30 h sin decir nada útil.
+
+**Primera causa: se carga OTRA COPIA del plugin.** El marketplace `yaqu` es de tipo `directory`
+(`~/.claude/plugins/known_marketplaces.json` → `D:/MILLONARIO/cobroFlash/mods-yaqu`). Las sesiones cargan
+`mods-yaqu/yaqu-sala/hooks/register.js` (del 9-oct). La de `~/.claude/plugins/cache/yaqu/yaqu-sala/0.1.0/`
+no la carga ninguna. Los parches del 16-oct (código de salida, `VIGIA` → `sala.mjs`) y del 17-oct (APARCADO
+de 1357e) se escribieron en esa copia de la caché: no corrieron NUNCA. Lo prueban tres cosas:
+(a) `~/.claude/yaqu-sala-chivato.txt`, que sólo escribe la copia de mods-yaqu, lo reescribió una sesión de
+hoy a las 06:40:29Z; (b) el log dice `node with 2 args`, y es la copia de mods-yaqu la que pasa `'14'`;
+(c) el Pane sólo existe en esa copia. Y la caché compartida seguía diciendo «vigía RETIRADO» a las 06:46Z,
+con los seis puestos ya arrancados: ninguno corría `sala.mjs`.
+
+**Segunda causa:** esa copia apuntaba al `vigia2.mjs` del scratchpad, que es un stub desde el 17-oct: imprime
+`AVERIA|vigía RETIRADO…` y sale 2.
+
+**Tercera causa, la del verde:** `porPuesto()` sólo colocaba un renglón si su segundo campo era `s0`…`s5`,
+tiraba todos los demás, y el Pane pintaba «✅ … trabajando» a cada puesto sin renglón. La línea `AVERIA` no
+lleva puesto, así que se tiraba, y salían seis verdes **mientras el vigía decía que NO SABÍA**. Hay más:
+`sala.mjs` escribe el puesto en MAYÚSCULA (`S0`), así que aunque hubiera apuntado a `sala.mjs`, también
+habría tirado cada línea y pintado todo en verde.
+
+🔴 **El test `sala.test.ts:237` («un renglón de un puesto desconocido se ignora, no rompe el panel») hacía
+permanente el defecto.** Se ha cambiado porque **CONSAGRABA EL DEFECTO, no porque estorbe**. **NO es
+arreglar un guard en rojo (regla 41): era un test que protegía el fallo.** Quien lo vea cambiado, que no
+lo revierta: el texto viejo está en `sala.test.ts.bak-19oct-antes-de-s5`.
+
+### Lo que entra (en `mods-yaqu/yaqu-sala/`, con `.bak-19oct-antes-de-s5` de los dos ficheros)
+1. `VIGIA` → `D:/MILLONARIO/cobroFlash/_sala/scripts/equipo/sala.mjs`, sin el `'14'`.
+2. **`juzgarVigia()`**: una línea `AVERIA|…` es una avería aunque vengan más líneas con ella. Sólo dos
+   salidas cuentan como limpias: 0 sin avisos, o 1 con avisos. Cualquier otra (0 con avisos, 1 sin ninguno,
+   2 sin la avería escrita, un código que falta) es «no cuadra, NO SÉ cómo está el equipo».
+3. **`porPuesto()` ya no tira nada**: lee el puesto sin distinguir mayúsculas, admite varios avisos por
+   puesto, y lo que no casa con ningún puesto va a `sueltas`, que el Pane enseña con «❔». **Ningún puesto sale
+   ✅ si el vigía no salió limpio**: con avería, el puesto sin aviso sale «❔ no sé: el vigía no pudo mirar».
+   APARCADO se pinta aparte («⏸») y no cuenta como aviso (lo de 1357e, portado ahora a la copia que corre).
+4. **La hora de la medida va en todas partes**: en el Pane, en la línea de estado, en `/sala`, en `/panel` y
+   en `/jefe` («medido a las 06:53Z (hace 0 min)»). Si el reloj se para, se nota que la medida es vieja.
+5. La caché pasa a llamarse `~/.claude/yaqu-sala-cache-v2.json`. Así, lo que siga escribiendo una sesión
+   arrancada con la copia vieja no lo lee ninguna sesión nueva.
+6. Tests: se cambia el de :237 y se añaden seis: puesto en MAYÚSCULA → cae en su fila · `juzgarVigia` con el
+   stub y con varias líneas · la tabla de códigos de salida · **stub → `/sala` dice NO PUDE MIRAR y nunca
+   «trabajando»** · **lo mismo en `/panel`** · la hora de la medida.
+
+La copia 0.1.0 de la caché **queda marcada como muerta y NO se borra**: lleva una cabecera en su
+`register.js` y un `COPIA-MUERTA-LEEME.txt` al lado.
+
+### Comprobado
+| corrida | resultado |
+|---|---|
+| `claude plugin test .` ANTES (línea base) | 22/22 |
+| `claude plugin test .` DESPUÉS | **28/28** |
+| `claude plugin validate .` | ✔ (los avisos «gating hook without .catch» ya estaban antes) |
+| los dos tests de comportamiento contra el `register.js` VIEJO | **los 2 caen**, con el texto exacto del verde falso: «🔴 1 puesto(s) que atender: · AVERIA\|vigía RETIRADO…» y ningún «NO PUDE MIRAR» |
+| de punta a punta: `claude -p "/sala"`, que carga el plugin desde cero y corre el `sala.mjs` real | «medido a las 06:53Z (hace 0 min) · ✅ Los seis puestos trabajando», y ese verde es verdadero: `ListAgents` daba los seis `busy`. La caché v2 se escribe con su `cuando` |
+| `sala.mjs` con un puesto caído (06:41Z, antes de que arrancara S0) | salida 2: `AVERIA\|no pude mirar 1 sesión(es)…` + `VACIO\|S0\|…`. Con el código nuevo esto sale «NO PUDE MIRAR» + la fila roja de S0, y ningún ✅ |
+
+### Mis errores
+- El orquestador sospechaba que el panel contaba por puesto y no por sesión. Le pedí que me contradijera si
+  lo que veía decía otra cosa, y el log lo contradijo: la causa era otra y peor.
+- No hay ningún test del DIBUJO del Pane. **No he intentado** llamar a `ui.render` desde el arnés de
+  `claude plugin test`. Lo que sí está probado son sus entradas (`porPuesto`, `juzgarVigia`) y el texto de
+  `/panel`, que sale del mismo `ultimo`. La prueba de verdad es que el fundador lo vea.
+
+### Lo que NO hace
+- **Sólo vale en las sesiones que arranquen DESPUÉS del cambio**: un mod se carga al arrancar. La sesión de
+  VS Code del orquestador lleva abierta desde el 15-oct y **seguirá pintando verde hasta que se reinicie**.
+  Las seis `sesion-N` de hoy también llevan la copia vieja hasta su relevo.
+- `mods-yaqu` no está en git: el único historial son los `.bak`.
+- La línea de estado sigue diciendo «los 6 trabajando» cuando el vigía sale 0 limpio. Eso es lo correcto,
+  y ahora va con la hora de la medida.
