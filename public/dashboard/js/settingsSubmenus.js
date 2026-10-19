@@ -139,6 +139,8 @@ var ASIGNACION_SUBMENU = {
   // SCRUM-293 (③a) · la retención vive donde el prefijo: son las dos reglas de emisión que
   // el profesional configura una vez y no vuelve a mirar.
   retencionIrpfTipo: 'facturacion',
+  // S2: SCRUM-1072d · la actividad va JUNTO a la retención (lo pide el ticket).
+  activityKind: 'facturacion',
   // ── cobro ──
   iban: 'cobro',
   bizumPhone: 'cobro',

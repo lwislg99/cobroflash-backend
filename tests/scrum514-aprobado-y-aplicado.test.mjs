@@ -385,21 +385,6 @@ const APARCADOS = [
     motivo: 'La otra mitad del mismo respaldo (`settingsView.js:219`). Mismo motivo y mismo '
       + 'desbloqueo: regla 26.',
   },
-  ...[
-    '¿Qué tipo de actividad tienes?',
-    'Empresarial',
-    'No lo sé',
-  ].map((texto) => ({
-    texto,
-    motivo: 'FIRMADO Y TODAVÍA SIN PANTALLA (SCRUM-1072 comentario 19859, 16-oct-2026). Es la pregunta de '
-      + 'la actividad, junto a «Retención de IRPF», en Configuración. La mitad de servidor está hecha '
-      + '(`activityKind` en el perfil); la pantalla es `settingsView.js`, contenedor de J3, y la pinta '
-      + 'S2. «Profesional» no sale aquí porque el cruce ya la encuentra en `publicProfile.service.ts` '
-      + '(el nombre de respaldo del perfil público): es OTRO texto y NO prueba que esta pregunta esté '
-      + 'pintada. Lo desbloquea S2 al pintar '
-      + 'la pregunta: entonces estas tres líneas se QUITAN. Registro: '
-      + '`docs/microcopy/2026-10-16-SCRUM-1072-tipo-de-actividad.md`.',
-  })),
 ];
 
 /**
