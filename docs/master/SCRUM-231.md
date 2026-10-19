@@ -140,3 +140,34 @@ tanda verde de `main`.
 | SCRUM-1415 | un `test()` con nombre construido dentro de un bucle | desenrollado con `casosEscritos`: seis casos con su nombre literal |
 
 Con la rama al día con `main`: los cinco censos, el 976 y el test de 231b, **86 de 86**.
+
+### El segundo rojo, y la entrada en `main` (19-oct-2026)
+
+El obligatorio de la punta `6ee2b55b` (run `39156812508`) cayó con **`tests 11862 · pass 11772 · fail 1 · skipped 89`**.
+El único fallo era `tests/scrum1405c-tuberia-bloqueante.test.mjs:201` ④: un hijo perdió 7 de 320 líneas por la
+tubería. Es un caso que depende de tiempos y no toca nada del diff: **ajeno**. Se relanzó UNA vez y entró:
+**#2568 MERGEADO el 19-oct-2026 a las 06:48:54Z**, merge `fc4186483266ae85cc744d020bcfd6db76d8c5d3`.
+
+### Visto en yaqu.app
+
+Producción (`/version`) = `397c772b47025b827f65d44cd157a522f6c6dd8b`, que contiene el merge
+(`merge-base --is-ancestor`). Cuenta QA con sesión propia, sólo `GET`, a las 07:06:40Z (`Date:` del servidor):
+
+| ruta | estado | `Cache-Control` | `cf-cache-status` |
+| --- | --- | --- | --- |
+| `/admin/exports/customers.csv` | 200 `text/csv` | `private, no-store` | DYNAMIC |
+| `/admin/exports/invoices.csv` | 200 `text/csv` | `private, no-store` | DYNAMIC |
+| `/admin/exports/fees.csv` | 403 JSON | `private, no-store` | DYNAMIC |
+| `/admin/exports/charges.csv` | 200 `text/csv` | `private, no-store` | DYNAMIC |
+| `/admin/exports/jobs.csv` | 200 `text/csv` | `private, no-store` | DYNAMIC |
+| `/admin/exports/expenses.csv` | 200 `text/csv` | `private, no-store` | DYNAMIC |
+| `/admin/exports/quotes.csv` | 200 `text/csv` | `private, no-store` | DYNAMIC |
+| **control** · `/admin/me` (fuera del router) | 200 JSON | **sin cabecera** | DYNAMIC |
+
+El control es lo que hace que la tabla diga algo: la misma sesión, a una ruta de `/admin` que no pasa por este router,
+NO trae la cabecera, así que la de los siete CSV es la de 231b y no una que ponga otra capa. El 403 de `fees.csv`
+también la lleva: es lo que pedía el `router.use` (las respuestas de error, igual).
+
+**Suelo:** `DYNAMIC` en el borde ya salía antes de este merge por la regla de Cloudflare del fundador (SCRUM-1564,
+medido por S0 el 18-oct a las 18:39Z). Esta medida no separa qué mitad lo produce: dice que las dos están puestas.
+No se han medido los `.zip` ni `verifactu.xml` en producción (el test de la tanda sí los cubre).

@@ -106,3 +106,73 @@ test('scrum1233h ② ningún fichero del panel pasa la portada como enlace por e
     assert.equal(cuenta[f] || 0, techo, `${f}: el techo es ${techo} y hay ${cuenta[f] || 0} — si ha bajado, baja el techo aquí`);
   }
 });
+
+// ── SCRUM-1233i · «Enviar por email» SÓLO con algo que hacer ─────────────────────────────────────
+// Sin `onEmail` ni `emailDisabledReason`, la barra pintaba un botón ACTIVO y SIN OYENTE: se pulsaba y no
+// pasaba nada. Lo pide el llamador del albarán (S4), que no tiene envío por email.
+const email = (bar) => bar.hijos.find((b) => /Enviar por email/.test(b.textContent));
+
+test('scrum1233i ① sin `onEmail` ni `emailDisabledReason`: NO hay «Enviar por email», y copiar y reintentar siguen', () => {
+  const { waFallbackBar } = cargarBarra();
+  const bar = waFallbackBar({ link: 'https://yaqu.app/pay/invoice/tokPRUEBA', onRetry: () => {} });
+  assert.equal(email(bar), undefined, `sin acción de email no se pinta el botón; hay: ${JSON.stringify(rotulos(bar))}`);
+  assert.deepEqual(rotulos(bar), ['📋 Copiar enlace', '↻ Reintentar WhatsApp']);
+});
+
+test('scrum1233i ① CONTROL: con `onEmail` el botón está y ENVÍA; con `emailDisabledReason`, está desactivado y dice por qué', async () => {
+  const { waFallbackBar, toasts } = cargarBarra();
+  let enviado = 0;
+  const activo = email(waFallbackBar({ link: null, onEmail: () => { enviado++; return { sent: true }; }, onRetry: () => {} }));
+  assert.ok(activo && typeof activo.oyentes.click === 'function', 'con `onEmail` tiene que haber botón CON oyente');
+  await activo.oyentes.click();
+  assert.equal(enviado, 1);
+  assert.ok(toasts.includes('✓ Enviado por email'));
+  const motivo = 'Este cliente no tiene email guardado';
+  const off = email(waFallbackBar({ link: null, emailDisabledReason: motivo, onRetry: () => {} }));
+  assert.ok(off, 'con `emailDisabledReason` el botón sigue (desactivado): el profesional ve por qué no puede');
+  assert.equal(off.disabled, true);
+  assert.equal(off.title, motivo);
+});
+
+/** Los objetos literales que el panel pasa a `waFallbackBar({ … })`, por llaves emparejadas. */
+function llamadasALaBarra(codigo) {
+  const out = [];
+  const re = /\bwaFallbackBar\(\s*\{/g;
+  let m;
+  while ((m = re.exec(codigo))) {
+    let i = m.index + m[0].length - 1;
+    let prof = 0;
+    const ini = i;
+    for (; i < codigo.length; i++) {
+      if (codigo[i] === '{') prof++;
+      else if (codigo[i] === '}' && --prof === 0) break;
+    }
+    out.push(codigo.slice(ini, i + 1));
+  }
+  return out;
+}
+const pasaEmail = (obj) => /\b(onEmail|emailDisabledReason)\s*:/.test(obj);
+
+test('scrum1233i ② CONTROL: el lector de llamadas ve un objeto con llaves dentro y distingue con y sin email', () => {
+  const con = llamadasALaBarra("x(waFallbackBar({ link: a ? `${b}/x` : null, onEmail: () => f({ m: 1 }), onRetry }));");
+  const sin = llamadasALaBarra('x(waFallbackBar({ link: null, onRetry }));');
+  assert.equal(con.length, 1);
+  assert.ok(con[0].endsWith('onRetry }'), `el objeto se corta mal: ${con[0]}`);
+  assert.equal(pasaEmail(con[0]), true);
+  assert.equal(pasaEmail(sin[0]), false);
+});
+
+test('scrum1233i ② los llamadores del panel de hoy pasan `onEmail` o `emailDisabledReason`: ninguno pierde el botón', () => {
+  const llamadas = [];
+  for (const f of fs.readdirSync(JS).filter((n) => n.endsWith('.js') && n !== 'api.js')) {
+    for (const obj of llamadasALaBarra(soloCodigo(fs.readFileSync(path.join(JS, f), 'utf8'), f))) llamadas.push({ f, obj });
+  }
+  // Población medida el 19-oct: invoiceDetailView ×2, jobDetailView ×1, quotesDetailView ×1.
+  assert.ok(llamadas.length >= 4, `CIEGO: sólo ${llamadas.length} llamadas a waFallbackBar({…}) en el panel (eran 4)`);
+  const sinEmail = llamadas.filter((l) => !pasaEmail(l.obj)).map((l) => l.f);
+  // Una pantalla CON envío por email que deje de pasarlo se quedaría sin botón. Una SIN envío por
+  // email (el albarán) entra aquí a propósito: se añade a esta lista con su motivo.
+  const SIN_EMAIL_A_PROPOSITO = [];
+  assert.deepEqual(sinEmail.filter((f) => !SIN_EMAIL_A_PROPOSITO.includes(f)), [],
+    'estas pantallas llaman a la barra sin `onEmail` ni `emailDisabledReason`: ya no pintan «Enviar por email»');
+});
