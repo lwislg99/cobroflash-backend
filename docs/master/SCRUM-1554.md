@@ -137,3 +137,15 @@ Lo que eso dice de las dos salidas para los tests:
 - **No lee Jira.** Una entrada nueva hay que escribirla en el fichero. Si sólo se escribe en el ticket, el
   guard no la ve.
 - No he redactado las seis que c.19645 sólo nombra (16–21): llevan el nombre que les dio el comentario.
+
+#### Arreglo del check obligatorio (mismo día, antes de mergear)
+El `build + tests` del PR #2601 caía con `not ok 3440 - SCRUM-1480f`: `scripts/go-live/puerta.mjs` (creado en
+este mismo PR) es un script NUEVO sin fila en `docs/equipo/dos-equipos.md` §3.3. Medido el motivo: SCRUM-1554
+lleva las etiquetas `decision-jefe, equipo-javier, fundador, go-live, legal, microcopy` — NINGUNA es
+`area-*`. Por «Cómo nace la fila de un fichero de `scripts/`» (SCRUM-1480), un ticket sin UNA etiqueta de
+área hace que el criterio calle: no se le puede dar fila a un puesto. Declarado en
+`scripts/_sin-fila-declarados.json` (caso 2: lo crea el equipo de Luis en un ticket sin etiqueta de área).
+`tests/scrum1480f-un-script-nuevo-no-entra-sin-fila.test.mjs`: 6/6 verde tras el cambio.
+El rojo de `guards de navegador (fuera de la tanda)` (34 verdes, 3 rojos, 1 ciego) es PREEXISTENTE: medido
+también en rojo en el último run de `main` (39218813067, el mismo job, misma conclusión `failure`), y
+ninguno de los 4 ficheros de este PR toca `public/` ni el dashboard. No es de este PR; no se toca aquí.
