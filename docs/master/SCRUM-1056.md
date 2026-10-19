@@ -221,3 +221,31 @@ comprueba. En Jira todas las sesiones firman con la misma cuenta.
   `scrum709` (la ficha nueva nombraba a las viejas por su fichero) y `scrum811c` (faltaba esta sección).
 - 🔴 **Sin navegador:** con la pieza sin montar, en yaqu.app lo único que se puede comprobar al
   desplegar es `clienteVolverALlamar.TEXTOS.noGuardado` y `.noMarcado` en la consola.
+
+
+## SCRUM-1056e · qué falta para que se vea, y la trampa de `carriles.mjs de` (19-oct, S2)
+
+**Medido contra:** `origin/main` = `c0745ecccc0fd518b8c299c5fc24b3c8273c42cc` · 2026-10-19T11:31:31Z
+
+A9: aviso → A10 «Una herramienta que contesta por patrón contesta también por un fichero que no existe: antes de creerse el dueño, se comprueba que el fichero está.» — no se pudo comprobar: lo que lo impediría es un aviso de «no existe» en la salida de `scripts/carriles.mjs de`, y esa herramienta no es de S2.
+
+**Sesión:** S2 (`s2-19oct`), encargo del orquestador del 19-oct: «hay un cabo nuestro suelto». Sección AÑADIDA: lo
+de arriba no se toca.
+
+**Lo medido.** La pieza de S2 (1056b/c/d) está en `main`: la carga `public/dashboard/index.html:255` y la cachea
+`public/sw.js:44`. **Ninguna vista la monta.** Para que se vea faltan cuatro cosas, y ninguna es de S2:
+
+| falta | dónde | dueño |
+|---|---|---|
+| ① las columnas `callback_on` y `callback_note` en `prisma/schema.prisma` | `callback` en el esquema: 0 apariciones | nadie: es el ALTER de A5. Según `docs/MIGRATIONS_PENDING.md:2982` se aplicó SÓLO EN DEV (28-sep); de staging y producción no consta nada |
+| ② las rutas (leer, guardar, «hecho») y el `CustomerEvent` en la misma transacción | `system/customerAdmin.ts`, `customerEvents.service.ts`, `customersAdmin.routes.ts` | J2 (`dos-equipos.md`, fila de `system/customerAdmin.ts`) |
+| ③ `callbackNote` en la anonimización | `anonimizarMerchant.ts` | J3 (fila de supresión y anonimización) |
+| ④ montar la pieza en la ficha y en la lista | `customerDetailView.js` (allí vive `renderCustomer360View`, `:178`) y `customersView.js` | J2 (`dos-equipos.md:144`) |
+
+`para-javier.md` §8 ya lo decía y es correcto. No hay una tercera pantalla: la «ficha 360» no es un fichero aparte.
+Montar la pieza antes de ① y ② daría un bloque que no guarda, y no se ha hecho.
+
+**La trampa que salió por el camino.** Al buscar esa tercera pantalla, `node scripts/carriles.mjs de
+public/dashboard/js/customer360View.js` contestó «S2», con fila y exit 0, por un fichero que no existe. Escrita como
+§16 de `docs/equipo/trampas-del-entorno.md`, con cinco rutas medidas y la comprobación de 5 segundos
+(`git ls-files --error-unmatch`). La herramienta NO se ha tocado.

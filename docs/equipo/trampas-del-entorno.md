@@ -503,3 +503,47 @@ salió en verde.
 
 ⚠️ **No medido:** cuánta memoria pide la tanda en el pico, porque el log no lo dice. Tampoco hacía falta: no
 hubo ningún OOM de la tanda que medir.
+
+
+## 16 · `carriles.mjs de` da dueño a un fichero que NO EXISTE, con la misma cara que a uno que sí
+
+19-oct-2026 · SCRUM-1056e · Sesión 2.
+
+**El síntoma.** Se pregunta de quién es un fichero y la respuesta sale con su fila, su línea y su patrón, exit 0:
+
+    node scripts/carriles.mjs de public/dashboard/js/customer360View.js
+    public/dashboard/js/customer360View.js → S2 (puesto) · docs/equipo/dos-equipos.md:152 · «**S2**» · patrón public/**
+
+**Ese fichero no existe.** La ficha 360 del cliente es `renderCustomer360View`, y vive dentro de
+`customerDetailView.js` (`:178`), que es de J2 (`dos-equipos.md:144`). La respuesta de arriba dice «S2» porque la
+ruta inventada cae en la fila general `public/**`. Pasó midiendo SCRUM-1056: quien se la cree concluye «el cabo es
+nuestro», y no lo era.
+
+**La causa.** La orden `de` resuelve la ruta sólo por patrón (`reglaDe`, `scripts/carriles.mjs:151`). Nunca mira si
+la ruta está en el repositorio, aunque el script ya tiene `git ls-files` (`:28`). En parte es a propósito: `de` debe
+contestar también por un fichero que vas a CREAR (`:155` lo contempla para `scripts/`). Lo que falta es que la
+salida distinga los dos casos.
+
+**Medido el 19-oct-2026 sobre `origin/main` = `c0745ecc`.** Cinco rutas, cada una con `Test-Path` al lado:
+
+| ruta | ¿existe? | lo que contesta `de` | exit |
+|---|---|---|---|
+| `public/dashboard/js/customerDetailView.js` (control) | sí | J2 · `dos-equipos.md:144` | 0 |
+| `public/dashboard/js/customer360View.js` | no | S2 · `:152` · patrón `public/**` | 0 |
+| `public/dashboard/js/esto-no-existe-xyz.js` | no | S2 · `:152` · patrón `public/**` | 0 |
+| `src/modules/inventado/nada.ts` | no | S1 · `:136` · patrón `src/**` | 0 |
+| `publc/typo.js` | no | `sin fila en §3: nadie lo reclama` | 0 |
+
+Sólo una errata que se sale de todos los patrones lo delata. Un nombre plausible dentro de `public/` o de `src/` se
+lleva un dueño.
+
+**Cómo se distingue, en 5 segundos.** Antes de creerse el dueño, se comprueba que el fichero está:
+
+    git ls-files --error-unmatch <ruta>        # sale 1 y dice «did not match» si no existe
+
+Si no está y no lo vas a crear tú, la pregunta era otra: busca dónde vive lo que buscabas (`git grep -n
+"<función o texto>"`) y pregunta por ESE fichero. ⚠️ Y desconfía sobre todo de un patrón con `**` en la salida
+(`public/**`, `src/**`): es la fila de «todo lo demás», la que casa con cualquier cosa.
+
+⛔ **No se ha tocado la herramienta.** `scripts/carriles.mjs` no es de S2; arreglarla (avisar de «no existe» en la
+salida de `de`) es de quien la lleve.
