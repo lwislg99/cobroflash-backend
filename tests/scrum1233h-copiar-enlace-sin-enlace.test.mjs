@@ -172,7 +172,9 @@ test('scrum1233i ② los llamadores del panel de hoy pasan `onEmail` o `emailDis
   const sinEmail = llamadas.filter((l) => !pasaEmail(l.obj)).map((l) => l.f);
   // Una pantalla CON envío por email que deje de pasarlo se quedaría sin botón. Una SIN envío por
   // email (el albarán) entra aquí a propósito: se añade a esta lista con su motivo.
-  const SIN_EMAIL_A_PROPOSITO = [];
+  const SIN_EMAIL_A_PROPOSITO = [
+    'albaranDetailView.js', // SCRUM-49e: el albarán no tiene envío por email, sólo WhatsApp (copiar enlace + reintentar).
+  ];
   assert.deepEqual(sinEmail.filter((f) => !SIN_EMAIL_A_PROPOSITO.includes(f)), [],
     'estas pantallas llaman a la barra sin `onEmail` ni `emailDisabledReason`: ya no pintan «Enviar por email»');
 });
