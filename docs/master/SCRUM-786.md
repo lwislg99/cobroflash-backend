@@ -270,3 +270,52 @@ real: el área pasa a pertenecer al `<label>`, no a la casilla — ya documentad
 scrum786-irreversibles-44px, scrum562, public-js-parsea); `guard-objetivo-tactil.mjs` en verde;
 `censo-objetivo-tactil-panel.mjs` re-corrido tras el fix confirma que el checkbox ya no aparece
 entre los objetivos cortos.
+
+## SCRUM-786d · «Descargar PDF» y «Editar líneas» de la ficha del albarán a 44px, 19-oct-2026 (S4)
+
+**Medido contra:** `origin/main` = `ea8dece1df90430ae0b269e200be137ff5462b72` (prod servía ese mismo
+SHA en `/version`) · carril S4 · árbol `s4-786d-albaran-44px` · rama `scrum-786d-albaran-pdf-lineas-44px`.
+
+### De dónde sale
+
+`docs/producto/ESTADO-DEL-PRODUCTO.md` listaba «2 controles táctiles de la ficha del albarán
+(`albaranDetailView.js`)» como **«NO CONSTA si siguen»**: el fichero cambió después de la medida
+de S3 (#2579, 1206e, la ficha en rejilla), y quedaba pendiente volver a medir antes de repartirlo.
+
+**PASO 0 (`censo:tactil-panel`, medido hoy, Edge/`elementsFromPoint`):**
+
+| botón | 929 px | 390 px |
+| --- | --- | --- |
+| «Descargar PDF» (`btnPdf`) | 30,5 | 30,5 |
+| «Editar líneas» (`btnEditarLineas`) | 30,5 | 30,5 |
+
+Siguen ahí: el cambio a rejilla de 1206e no los tocó. Son los únicos 2 cortos de
+`renderAlbaranDetailView` en las dos anchuras (`Emitir`, el «⋯» y el enlace de la cabecera ya
+estaban en 44–45 px).
+
+### Qué cambia
+
+`albaranDetailView.js`: mismo opt-in por botón de SCRUM-962/1172/1142/SCRUM-786 — la clase
+`job-toolbar-btn-44` (ya existe en `styles.css`, de S2; aquí sólo se REUSA desde S4, sin tocar la
+hoja de estilos ni `.btn-sm` global) se añade a `btnPdf` y `btnEditarLineas`, igual que
+`accion-irreversible-btn-44` ya se añadía a `btnEmitir`. Ningún texto nuevo, ninguna otra acción
+tocada (control en el test).
+
+### Verificado, ejecutando
+
+- `censo:tactil-panel` tras el cambio: `renderAlbaranDetailView` pasa de 2 cortos a 0, en 929 y 390
+  px, sin afectar a ninguna otra pantalla (reconfirmado en los dos anchos con el instrumento del
+  guard, `elementsFromPoint`, no la caja CSS).
+- `tests/scrum786d-albaran-pdf-y-lineas-44.test.mjs` (4 casos, montando la vista real con el
+  banco): rojo primero quitando la línea del opt-in (1 de 4 cae, exactamente el de las clases);
+  con el cambio, 4 de 4. Incluye el CONTROL de que «Emitir» conserva su propia clase y no la de
+  éstos.
+- `npm run guards:entrada`: 15/15 (170 tests). Guards de árbol entero (195, 414, 694, 710b, 737):
+  38/38.
+- `tsc`: sólo el error conocido y ajeno de `merchantAdmin.ts:147` (Prisma del entorno desalineado
+  con `activityKind`; no se corre `prisma generate`).
+
+### Lo que no cubre
+
+- No medido en yaqu.app desplegado (se mira tras el merge, cuenta QA, albarán en `borrador`).
+- No se ha tocado `styles.css` ni se ha creado clase nueva: se reutiliza la que ya existe.
