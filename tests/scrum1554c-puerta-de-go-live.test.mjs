@@ -137,8 +137,9 @@ test('SCRUM-1554c · 🔴 algo que no es la lista NO pasa por una lista vacía',
 
 function correr(fichero) {
   const entorno = { ...process.env };
-  delete entorno.NODE_TEST_CONTEXT;
+  delete entorno.FORCE_COLOR;
   delete entorno.NODE_OPTIONS;
+  delete entorno.NODE_TEST_CONTEXT;
   return spawnSync(process.execPath, [CLI, ...(fichero ? [fichero] : [])], { encoding: 'utf8', env: entorno });
 }
 
