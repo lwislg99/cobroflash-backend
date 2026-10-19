@@ -26,6 +26,10 @@
 //     (un servidor levantado, una base) no sale.
 //   · NO sustituye a la tanda completa. El juez es el CI; esto decide qué merece la pena correr
 //     antes de empujar.
+//   · Un caminante SIN nombre (`((dir) => …)(x)`), o uno cuyo argumento no se lee escribiendo
+//     (`anda(abs)`, `lista.forEach(walk)` sobre una lista que no es un literal), no se resuelve: va a
+//     NO SÉ y entra siempre. Hasta SCRUM-1503c tres formas no dejaban NI ESE rastro y el test no entraba
+//     nunca: el caminante en el sitio, el pasado como valor y el nombre declarado dos veces.
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 import fs from 'node:fs';
 import path from 'node:path';
@@ -137,6 +141,29 @@ export function leerFuente(rel, codigo, raiz, caminantesDe = () => null) {
   };
 
   /**
+   * 🔴 SCRUM-1503 · El valor con el que se declaró un nombre, CON ÁMBITO. Antes ganaba la PRIMERA
+   * declaración del nombre en todo el fichero: `_cobertura-visual.mjs` tiene un `const dir` por función
+   * (`public/dashboard/js` y `tests`), y el listado de `tests/` se leía como si fuera el otro. Gana la
+   * del ámbito más cercano que encierra al uso; si ninguna lo encierra, la primera, como antes.
+   */
+  const inicialDe = (n) => {
+    const decls = [];
+    (function buscar(m) {
+      if (ts.isVariableDeclaration(m) && ts.isIdentifier(m.name) && m.name.text === n.text && m.initializer) decls.push(m);
+      ts.forEachChild(m, buscar);
+    })(sf);
+    const ambitoDe = (d) => {
+      for (let p = d.parent; p; p = p.parent) if (ts.isBlock(p) || ts.isSourceFile(p) || ts.isFunctionLike(p)) return p;
+      return sf;
+    };
+    const encierra = (a) => { for (let p = n; p; p = p.parent) if (p === a) return true; return false; };
+    const hondura = (a) => { let k = 0; for (let p = a; p; p = p.parent) k += 1; return k; };
+    const visibles = decls.filter((d) => encierra(ambitoDe(d)));
+    const elegida = visibles.length ? visibles.reduce((a, b) => (hondura(ambitoDe(b)) > hondura(ambitoDe(a)) ? b : a)) : decls[0];
+    return elegida ? elegida.initializer : null;
+  };
+
+  /**
    * ¿A qué apunta esta expresión? `d`/`f` con su ruta, `no-existe` (escrita, pero no está),
    * `param` (es un parámetro de la función que la encierra: lo decide quien llama) o `desconocido`.
    */
@@ -157,15 +184,25 @@ export function leerFuente(rel, codigo, raiz, caminantesDe = () => null) {
         if (i < 0) continue;
         if (fn.parameters[i].initializer) return resolver(fn.parameters[i].initializer, prof + 1);
         const nombre = nombreDe(fn);
-        return nombre ? { estado: 'param', fn: nombre, indice: i } : NO;
+        return nombre ? { estado: 'param', fn: nombre, nodo: fn, indice: i } : NO;
       }
-      let ini = null;
-      (function buscar(m) {
-        if (ini) return;
-        if (ts.isVariableDeclaration(m) && ts.isIdentifier(m.name) && m.name.text === n.text && m.initializer) ini = m.initializer;
-        ts.forEachChild(m, buscar);
-      })(sf);
+      const ini = inicialDe(n);
       return ini ? resolver(ini, prof + 1) : NO;
+    }
+    // SCRUM-1503 · `dir || DIR_POR_DEFECTO` y `dir ?? …`: gana el lado que es un directorio. Con el
+    // ámbito bien leído, `_microcopy-aprobada.mjs` lista así `docs/microcopy` y 34 tests caían en NO_SE.
+    if (ts.isBinaryExpression(n) && [ts.SyntaxKind.BarBarToken, ts.SyntaxKind.QuestionQuestionToken].includes(n.operatorToken.kind)) {
+      const a = resolver(n.left, prof + 1);
+      const b = resolver(n.right, prof + 1);
+      if (a.estado === 'd') return a;
+      if (b.estado === 'd') return b;
+      return a.estado !== 'desconocido' ? a : b;
+    }
+    // SCRUM-1503 · `dirs[0]` sobre una lista literal: el elemento escrito.
+    if (ts.isElementAccessExpression(n) && ts.isNumericLiteral(n.argumentExpression)) {
+      const l = ts.isIdentifier(n.expression) ? inicialDe(n.expression) : n.expression;
+      const el = l && ts.isArrayLiteralExpression(l) ? l.elements[Number(n.argumentExpression.text)] : null;
+      return el ? resolver(el, prof + 1) : NO;
     }
     return NO;
   };
@@ -200,11 +237,22 @@ export function leerFuente(rel, codigo, raiz, caminantesDe = () => null) {
     }
   }
 
+  // SCRUM-1503 · Y por NODO, para el caminante invocado en el sitio: un mismo fichero puede tener
+  // `(function anda(d) { readdirSync(d) })` y `(function anda(n) { ts.forEachChild(n, …) })`, y por el
+  // nombre el segundo heredaría el caminante del primero (medido en `scrum728`).
+  const porNodo = new Map();
+  const sumarNodo = (nodo, indice) => {
+    if (!porNodo.has(nodo)) porNodo.set(nodo, new Set());
+    if (porNodo.get(nodo).has(indice)) return false;
+    porNodo.get(nodo).add(indice);
+    return true;
+  };
+
   /** Decide qué hacer con el directorio que alguien lista (o le pasa a un caminante). */
   const juzgar = (arg, donde, que) => {
     const r = resolver(arg);
     if (r.estado === 'd') { listados.add(r.ruta); return false; }
-    if (r.estado === 'param') { propios.add(r.fn); return sumar(r.fn, r.indice); }
+    if (r.estado === 'param') { propios.add(r.fn); const nuevoNodo = sumarNodo(r.nodo, r.indice); return sumar(r.fn, r.indice) || nuevoNodo; }
     if (r.estado === 'desconocido') apuntarNoSe(donde, que);
     return false; // `f` y `no-existe`: escrito y resuelto, no hay nada que recorrer ahí
   };
@@ -221,6 +269,26 @@ export function leerFuente(rel, codigo, raiz, caminantesDe = () => null) {
     if (ultimo && NOMBRE_DE_FICHERO.test(ultimo)) nombres.add(ultimo);
   };
 
+  // 🔴 SCRUM-1503 · A QUIÉN SE LLAMA. Hasta aquí sólo contaba una llamada a un NOMBRE (`andar(RAIZ)`), y
+  // dos formas de la casa se quedaban fuera sin dejar rastro —ni RECORRE ni NO_SE—, así que el test no
+  // entraba nunca (medido por J3: 24 de 1.290):
+  //   · el caminante invocado EN EL SITIO: `(function anda(dir) { … })(RAIZ)` (22 de los 24);
+  //   · el caminante pasado COMO VALOR a un método de lista: `dirs.forEach(walk)` (1).
+  // Una función en el sitio SIN nombre ya caía en NO_SE (su parámetro no se puede atribuir): no cambia.
+  const enElSitio = (c) => {
+    let e = c;
+    while (e && ts.isParenthesizedExpression(e)) e = e.expression;
+    return e && (ts.isFunctionExpression(e) || ts.isArrowFunction(e)) && nombreDe(e) ? e : null;
+  };
+  /** `{ nombre }` si se llama a un nombre; `{ nombre, nodo }` si a una función con nombre escrita en el sitio. */
+  const llamadoDe = (n) => {
+    if (ts.isIdentifier(n.expression)) return { nombre: n.expression.text };
+    const nodo = enElSitio(n.expression);
+    return nodo ? { nombre: nombreDe(nodo), nodo } : null;
+  };
+  const METODOS_DE_LISTA = new Set(['forEach', 'map', 'flatMap', 'filter', 'some', 'every']);
+  const comoValor = [];
+
   const llamadas = [];
   (function mirar(n) {
     if (ts.isStringLiteralLike(n) && n.text.length < 200) apuntarNombre(n.text);
@@ -234,7 +302,10 @@ export function leerFuente(rel, codigo, raiz, caminantesDe = () => null) {
         if (t.length) apuntar(t.join('/'));
       }
       if (LISTAN.has(nom)) juzgar(n.arguments[0], n, `${nom}(${recortar(n.arguments[0])})`);
-      else if (ts.isIdentifier(c)) llamadas.push(n);
+      else if (llamadoDe(n)) llamadas.push(n);
+      if (ts.isPropertyAccessExpression(c) && METODOS_DE_LISTA.has(nom) && n.arguments[0] && ts.isIdentifier(n.arguments[0])) {
+        comoValor.push({ n, metodo: nom, caminante: n.arguments[0].text, lista: c.expression });
+      }
       // `exec*('git', ['ls-files', …])`: la lista de ficheros la da git, no el fuente.
       const a = n.arguments;
       if (/^(exec|execSync|execFile|execFileSync|spawn|spawnSync)$/.test(nom) && a[0] && ts.isStringLiteralLike(a[0])) {
@@ -253,16 +324,27 @@ export function leerFuente(rel, codigo, raiz, caminantesDe = () => null) {
   for (let crece = true; crece;) {
     crece = false;
     for (const n of llamadas) {
-      const indices = caminantes.get(n.expression.text);
+      const { nombre: quien, nodo } = llamadoDe(n);
+      const indices = nodo ? porNodo.get(nodo) : caminantes.get(quien);
       if (!indices) continue;
       // La recursión no dice nada nuevo, aunque vaya dentro de un `forEach` de la propia función.
+      // (Una función escrita en el sitio no puede estar dentro de sí misma: no se mira.)
       let recursiva = false;
-      for (let fn = funcionDe(n); fn; fn = funcionDe(fn)) if (nombreDe(fn) === n.expression.text) recursiva = true;
+      if (!nodo) for (let fn = funcionDe(n); fn; fn = funcionDe(fn)) if (nombreDe(fn) === quien) recursiva = true;
       if (recursiva) continue;
       for (const i of indices) {
         if (!n.arguments[i]) continue;
-        if (juzgar(n.arguments[i], n, `${n.expression.text}(${recortar(n.arguments[i])})`)) crece = true;
+        if (juzgar(n.arguments[i], n, `${quien}(${recortar(n.arguments[i])})`)) crece = true;
       }
+    }
+    // `lista.forEach(caminante)`: cada elemento de la lista es su primer argumento. Una lista que no se
+    // lee aquí —no es un literal `[…]`, ni un nombre declarado con uno— es NO_SE, nunca un cero.
+    for (const { n, metodo, caminante, lista } of comoValor) {
+      if (!caminantes.get(caminante)?.has(0)) continue;
+      let l = lista;
+      if (ts.isIdentifier(l)) l = inicialDe(l);
+      if (!l || !ts.isArrayLiteralExpression(l)) { apuntarNoSe(n, `${recortar(lista)}.${metodo}(${caminante})`); continue; }
+      for (const el of l.elements) if (juzgar(el, n, `${caminante}(${recortar(el)})`)) crece = true;
     }
   }
 

@@ -407,3 +407,34 @@ algo que el servidor no atiende es peor que no tenerla.
 Declarado en el censo de SCRUM-402 con **+1**, y anotado allí que el módulo tiene **siete** rótulos
 marcados: ese censo cuenta *literales con la marca*, y el módulo la factoriza en una constante.
 Quien lea el «+1» no debe deducir «un rótulo».
+
+# SCRUM-655d · DECLARADO, no arreglado — la página donde firma el cliente no sabe de apartados
+
+**Medido contra:** `origin/main` = `dd757659478e01470b01c199a07c61d9679a5c4d` · 2026-10-18T17:53:13Z (hora de GitHub al escribir: 17:57:02Z)
+A9: sin fallo que generalice — es una lectura de código para declarar un hueco, sin arreglo ni comprobación nueva.
+
+Carril S1 (`quoteDecisionLanding.routes.ts`) · árbol `s1-655d` · rama `scrum-655d-pagina-del-cliente-sin-apartados`.
+Sólo este registro. Decisión del orquestador (`cobroflash-backend-f3`), 18-oct-2026 ~18:00Z: **se declara, no se
+arregla**, y entra como hueco conocido en el documento de estado del producto para que lo decida el fundador.
+
+## Qué se ve
+
+S2 vio en la página pública del presupuesto que una cabecera de apartado sale con un icono delante («🔍», «•»),
+como una línea más. Leído en el código (no medido de nuevo en pantalla):
+
+- `renderQuoteDetail` pinta TODA línea igual: `lineIcon(l.concept)` saca el icono del TEXTO del concepto (🔧 📦 🚚 🔍,
+  y «•» si no casa nada), luego la cantidad y el importe (vacío desde SCRUM-1442).
+- **La pantalla no sabe qué es un apartado.** Es la consecuencia que este ticket aceptó por escrito (§3 y la cabecera
+  de `apartados.ts`): «una línea de cabecera es ADITIVA: el que no sepa de apartados ve una línea más». El PDF hace
+  lo mismo (no hay ninguna mención a apartados en `pdf.service.ts`).
+- Efecto en la pantalla más visible del producto: una cabecera con un icono delante y sin importe parece una línea
+  vacía del presupuesto.
+
+## Por qué no se arregla de paso
+
+Enseñarle los apartados a esa página es trabajo de producto, no un arreglo:
+
+1. Pide saber si una línea es cabecera, y `esApartado` es **privada a propósito** (SCRUM-411). Exportarla, o exportar
+   otra cosa, se razona aparte.
+2. Pintar la fila como cabecera (sin icono, sin cantidad, con otro estilo) es una decisión de UI que pasa por
+   `yaqu-premium-ui` y por el fundador.

@@ -844,11 +844,20 @@ function nodeReal(cwd, args) {
 
 /**
  * Qué mesa usa un lanzamiento. Sin `config.mesas`, ninguna, y se DICE (el interruptor no se ha dado).
- * @returns {{ok:true, cwd:string|undefined, mesa:object} | {ok:false, veredicto:string, motivo:string}}
+ *
+ * SCRUM-1298c · sin mesa se lanza desde `config.repo`, NO desde el cwd de quien lanza. Heredarlo hacía que
+ * arrancar dependiera de dónde estuviera el orquestador al teclear: el 18-oct-2026 `sesion-0` no arrancó
+ * dos veces porque `sesion.mjs` se corrió desde la carpeta de la instalación (`AppData/Local/yaqu-equipo`),
+ * que no cuelga de ninguna carpeta de confianza, y `claude --bg` se niega ahí («Workspace not trusted»).
+ * Sin `config.repo` no se lanza: no hay de dónde.
+ * @returns {{ok:true, cwd:string, mesa:object} | {ok:false, veredicto:string, motivo:string}}
  */
 export function mesaDelLanzamiento({ config, nombre, equipo, ...io }) {
   if (config.mesas === undefined) {
-    return { ok: true, cwd: undefined, mesa: { veredicto: 'SIN-MESA', motivo: 'la instalación no declara `mesas`: la sesión hereda el cwd de quien la lanza (SCRUM-1298)' } };
+    if (typeof config.repo !== 'string' || !config.repo) {
+      return { ok: false, veredicto: 'NO-PUDE-MIRAR', motivo: 'la instalación no declara `mesas` ni `repo`: no hay desde dónde lanzar (SCRUM-1298c)' };
+    }
+    return { ok: true, cwd: config.repo, mesa: { veredicto: 'SIN-MESA', motivo: 'la instalación no declara `mesas`: la sesión arranca en el repositorio (`repo`), no en el cwd de quien la lanza (SCRUM-1298c)' } };
   }
   const p = prepararMesa({ config, nombre, equipo, ...io });
   if (!p.ok) return p;
@@ -917,6 +926,24 @@ function gitReal(cwd, args, { binario = false } = {}) {
 function claude(config, args, { cwd } = {}) {
   const [orden, ...previos] = Array.isArray(config.claude) ? config.claude : [config.claude || 'claude'];
   return spawnSync(orden, [...previos, ...args], { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024, ...(cwd ? { cwd } : {}) });
+}
+
+/**
+ * SCRUM-1011b · Lo que dejó `claude` cuando no confirmó la sesión de fondo: su código, su señal, el error
+ * del propio lanzamiento y el FINAL de stdout y de stderr. Hasta aquí viajaba sólo stdout, y un `claude`
+ * que falla escribe el motivo en stderr, o no llega a arrancar (`error`, `status` null). El 18-oct-2026 el
+ * orquestador recibió dos veces `salida: ""` lanzando `sesion-0`, y no supo por qué. El veredicto sigue
+ * siendo el mismo (sale 2, no se lanza): esto sólo hace que la causa viaje.
+ */
+export function rastroDeClaude(r) {
+  const final = (t, n) => String(t || '').slice(-n);
+  return {
+    status: r && typeof r.status === 'number' ? r.status : null,
+    senal: (r && r.signal) || null,
+    error: r && r.error ? String(r.error.code || r.error.message || r.error) : null,
+    salida: final(r && r.stdout, 400),
+    errores: final(r && r.stderr, 800),
+  };
 }
 
 function leerAgentes(config) {
@@ -1144,7 +1171,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     const args = argsLanzar({ modo: 'nueva', nombre, prompt: encargo, equipo, modelo });
     const r = claude(config, args, { cwd: ml.cwd });
     const m = BACKGROUNDED.exec(r.stdout || '');
-    if (r.status !== 0 || !m) salir(2, { veredicto: 'NO-PUDE-MIRAR', motivo: 'claude no confirmó la sesión de fondo', salida: (r.stdout || '').slice(-400), mesa: ml.mesa });
+    if (r.status !== 0 || !m) salir(2, { veredicto: 'NO-PUDE-MIRAR', motivo: 'claude no confirmó la sesión de fondo', ...rastroDeClaude(r), mesa: ml.mesa });
     // SCRUM-1011: el mismo defecto que `lanzar` — «backgrounded» solo dice que `claude` aceptó el
     // encargo, no que el proceso exista. Se sondea el `pid` antes de dar RELEVADA/LANZADA por buena.
     const confirmacion = confirmarArranque(config, m[1]);
@@ -1194,7 +1221,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     const args = argsLanzar({ modo: 'nueva', nombre, prompt, equipo, modelo });
     const r = claude(config, args, { cwd: ml.cwd });
     const m = BACKGROUNDED.exec(r.stdout || '');
-    if (r.status !== 0 || !m) salir(2, { veredicto: 'NO-PUDE-MIRAR', motivo: 'claude no confirmó la sesión de fondo', salida: (r.stdout || '').slice(-400) });
+    if (r.status !== 0 || !m) salir(2, { veredicto: 'NO-PUDE-MIRAR', motivo: 'claude no confirmó la sesión de fondo', ...rastroDeClaude(r) });
     // 🔴 SCRUM-1011 · medido 4 de 4: «backgrounded» solo dice que `claude` aceptó el encargo, no
     // que el proceso exista. Sondea el `pid` (el tell de SCRUM-954) antes de dar LANZADA por buena;
     // sin esto, el orquestador se cree que tiene un puesto trabajando y reparte trabajo a nadie.

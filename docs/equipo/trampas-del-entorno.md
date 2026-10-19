@@ -251,6 +251,36 @@ marca del 1-oct sobre `homeView.js` (75.033 B) frente al `main` de ese día (85.
 
 ⛔ **Nunca se «arregla» una marca copiando `pieza-N.bin` encima del fichero a mano.** Es exactamente el defecto.
 
+### La otra cara: con la máquina cargada, `guards:entrada` sale CIEGO, y un ciego no es un verde
+
+18-oct-2026 · SCRUM-1345b (medido de paso en SCRUM-1158d) · Sesión 3. `guards:entrada` corta a su runner a
+los 90 s (`TECHO_MS`) y, si se pasa sin que haya caído nada, sale **2**: «0 hallazgos · 1 ciego». Está hecho
+así a propósito (SCRUM-1345: cuánto tarda lo decide la carga de la máquina, no la lista). La trampa no está
+en el comando: está en **leer ese 2 como «no ha salido nada rojo» y empujar.** El 18-oct, en
+`wt-s3-18oct-d`, sobre la misma entrada, salió dos veces seguidas CIEGO a los 90,0 s. Una hora antes, en otro
+árbol, había dado verde en 75 s. **Corriendo sus 15 ficheros sin plazo: 170 de 170.**
+
+| síntoma | causa | qué hacer | cómo se comprueba |
+|---|---|---|---|
+| `⟦veredicto⟧ 0 hallazgos · 1 ciego → salida 2` y `15 guards · 90.0 s · plazo 90 s` | otras sesiones ocupan los núcleos; la lista no cambió | **no empujar con eso.** Las marcas de mutación y los ficheros que faltan YA se miraron (es lo primero que hace `main()`, antes de correr nada); lo que falta es correr los tests sin plazo, con la lista que exporta el propio script (abajo) | el resumen del runner: `ℹ tests N` con N > 0 y `ℹ fail 0`. Sin esa línea, el runner no terminó |
+
+La lista se saca del script (`GUARDS` y `FUERA_DE_LA_LISTA` son `export`, y `main()` sólo corre si se
+lanza el fichero), así que no se copia a mano ni envejece. En PowerShell, desde la raíz del árbol, probado
+el 18-oct sobre `06c6289d` (20 ficheros, 208 de 208, 51 s):
+
+```powershell
+$f = node --input-type=module -e "const m = await import('./scripts/guards-entrada.mjs'); console.log([...new Set([...m.GUARDS.map((g) => g.fichero), ...m.FUERA_DE_LA_LISTA])].join('\n'))"
+$f.Count          # control: tiene que ser > 0 ANTES de seguir
+node --test --test-force-exit @f
+```
+
+- ⚠️ **Si `$f` sale vacío, `node --test` sin ficheros corre TODA la carpeta `tests/`.** Tarda minutos y sus
+  rojos no son los de la entrada. Por eso se mira `$f.Count` antes.
+- Lleva también los de árbol entero (`FUERA_DE_LA_LISTA`), que `guards:entrada` sólo nombra al final: son
+  los que tumbaron seis PR el 17-oct con el comando en verde (SCRUM-1152c).
+- No es el CI: la tanda completa corre muchos más. Es el control previo, ahora con un veredicto.
+- Bash no está probado: en esta máquina no hay Git Bash.
+
 ## 12 · Staging corre con `NODE_ENV=production` y se comporta COMO producción
 
 **Una prueba en staging NO pasa por los caminos de desarrollo.** Todo lo que el código condiciona a
@@ -384,3 +414,92 @@ herramienta. Aquí, para la mitad ① **ya existía**: la línea de S4 no puede 
 escribió a mano. Lo que falta ahí es que el comando sea el camino por defecto, y el orquestador se lo ha
 encargado a S5 (17-oct). Para la mitad ② **no existe ninguna herramienta**, el comando de antes del push no la
 miraba hasta #2538, y es la que cayó dos veces.
+
+## 14 · Un banco que busca un nodo por su clase EXACTA se queda CIEGO si le añades otra clase
+
+18-oct-2026 · SCRUM-951j · Sesión 0, con lo que midió la S2 en #2560 (SCRUM-1562c).
+
+**El caso.** Para que la fila de «Partes por valorar» se abriera con teclado, la S2 la convirtió en un botón
+y le añadió una segunda clase: `fila.className = 'customers-card parte-oficina-fila'` (commit `a92f741e`). La
+pantalla funcionaba. Pero el banco de SCRUM-1285 (`tests/scrum1285-guardado-en-vuelo.test.mjs:90`) localiza
+esa fila así:
+
+    todos(v.contenedor).find((n) => n.className === 'customers-card' && …)
+
+Es una **igualdad exacta** sobre la cadena entera. Con dos clases, `'customers-card parte-oficina-fila'` ya no
+es `'customers-card'`: el banco no encuentra la fila, y **los cuatro casos de «oficina»** caen en su propia
+guarda, `🔴 CIEGO: no sale el parte en la lista`. Run `39084375339` del CI, sobre `f096b8f2`: los cuatro, con ese
+mensaje.
+
+🔴 **Quien lee ese rojo como «he roto el guardado en vuelo» busca el defecto donde no está.** El producto no
+había cambiado de conducta: lo que cambió es que el instrumento dejó de ver. El test lo dice en la primera
+palabra del mensaje, **CIEGO**, y ésa es la que hay que leer antes que el nombre del caso.
+
+**Cómo se arregló, y por qué así** (commit `0a103940`, regla 41: se arregla el código, no el guard): la fila
+vuelve a llevar sólo `customers-card`, y su estilo de botón cuelga de un selector que no necesita la clase
+nueva, `#po-lista > button.customers-card` (`public/dashboard/css/styles.css:2487-2488`). Y el test propio de
+la S2 (`tests/scrum1562c-partes-oficina-con-teclado.test.mjs`) exige ahora la clase exacta, para que el mismo
+error caiga en su fichero y no en el de otro. Run `39147335140`, sobre `0a103940`: el obligatorio ya no tiene
+ningún rojo.
+
+**Cómo se evita, antes de empujar** (lo dijo la S2 en su traspaso): si cambias la clase o la etiqueta de un
+elemento de `public/`, busca esa clase en `tests/` y corre esos ficheros.
+
+    git grep -n "<la clase>" -- tests/
+
+**Cuántos bancos tienen esta forma.** El 18-oct-2026, sobre `origin/main` = `74e60ebe`: **49 apariciones de
+`className === '` en 26 ficheros de `tests/`** (`git grep -c "className === '" -- tests/`). La búsqueda encuentra
+`scrum1285:90`, que es el caso conocido, así que no está ciega. ⚠️ **No están clasificadas:** no todas
+localizan un nodo, y no se ha mirado cuáles llevan una guarda que diga CIEGO y cuáles fallarían de otra forma.
+La forma que no se rompe al añadir una clase, `classList.contains(…)`, sale en 6 ficheros.
+
+⚠️ **No medido por S0:** la mutación (volver a poner las dos clases y correr el banco). La hizo la S2 en
+`0a103940` («mutación con clase doble: caen los 4 del CI + el mío») y la confirma el log del CI de arriba; S0
+no la ha repetido, porque es un cambio en `public/`.
+
+## 15 · `FATAL ERROR: Reached heap limit` en el log de la tanda NO es un OOM de la tanda
+
+18-oct-2026 · SCRUM-951k · Sesión 5.
+
+**El síntoma.** En el log del job `build + tests` aparece, a media tanda:
+
+    FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory
+    ----- Native stack trace -----
+
+con unas cuarenta líneas de pila nativa. Parece que el runner se ha quedado sin memoria. **No es así: sale en
+TODAS las tandas, también en las verdes.**
+
+**La causa.** Lo imprime un test que funciona bien:
+`tests/scrum1525b-el-respaldo-por-correo.test.mjs`, «un hijo que muere por MEMORIA (sin pasar por su catch) se
+ve desde fuera y acaba en correo». Ese test lanza un hijo con `--max-old-space-size=24` y lo mata **a
+propósito**. `lanzarVolcado` (`scripts/respaldo-programado.mjs`) copia el stderr del hijo en el del padre,
+también a propósito, porque en Railway es lo que queda guardado. Las líneas de GC del volcado marcan 22-28 MB:
+es el tope de 24 MB del hijo, no el del runner. **La línea siguiente del log es el ✔ de ese test.**
+
+**Cómo se distingue, en 30 segundos.** Se busca la misma línea en una run VERDE de `main`:
+
+    gh run list -b main -w ci.yml -s success -L 1          # el id de la run
+    gh api "repos/<dueño>/<repo>/actions/runs/<id>/jobs"    # el id del job «build + tests»
+    gh api --allow-escape-sequences "repos/<dueño>/<repo>/actions/jobs/<job>/logs" | grep "FATAL ERROR"
+
+La contraprueba ya medida es la run **38524399363** (`main`, 14-oct-2026, `ℹ fail 0`). Trae la misma
+`FATAL ERROR` y el ✔ de `scrum1525b` justo debajo. ⚠️ Sin `--allow-escape-sequences`, `gh api` no escribe el
+log, sale sin nada y no da ningún error. Según el orquestador, así empezó el error del #2568: leyó ese vacío como «el
+log no dice nada», pasó a `gh run view --log-failed` y de ahí cogió la línea más alarmante. Un instrumento mudo
+le llevó a uno ruidoso.
+
+🔴 **Lo que vale para todo: el resumen final de la tanda manda sobre cualquier línea alarmante del cuerpo.**
+Ese resumen es el bloque `ℹ tests / ℹ pass / ℹ fail / ℹ skipped`, y debajo va `✖ failing tests:` con los
+nombres. Si llegó, la tanda no murió, y los rojos son los de esa lista. Un OOM de verdad de la tanda se ve de
+otra manera: el job se corta **sin** ese bloque, o hay un fichero que se queda sin resultados (§8).
+
+**El caso que lo destapó.** El 18-oct-2026, en el #2568 (`scrum-231b-exports-sin-cache-compartida`, run
+**39151663342**, job 117746392988), el FATAL salió a las 17:57:27Z. Se leyó como un OOM y se relanzó la run.
+Pero la tanda siguió viva **7 minutos más** y cerró con su resumen: `tests 11826 · pass 11718 · fail 19 ·
+skipped 89`. Los 19 rojos eran del propio diff (los censos de `scrum267`, `scrum859`, `scrum976`, `scrum1344` y
+`scrum1415`), y el relanzamiento sólo los habría repetido. Había además un dato a la vista que ya descartaba el
+OOM: **el job del trinquete de esa misma run corrió la tanda entera dos veces**, en el mismo tipo de runner, y
+salió en verde.
+
+⚠️ **No medido:** cuánta memoria pide la tanda en el pico, porque el log no lo dice. Tampoco hacía falta: no
+hubo ningún OOM de la tanda que medir.

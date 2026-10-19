@@ -103,6 +103,7 @@ const HEREDADOS_A_MANO = [
  */
 const SIN_FORMA_DE_SESION = {
   'scrum1008-ficha-articulo.test.mjs': 'importa `textoOpcional`, una función pura que el módulo del router exporta; no llama a ninguna ruta',
+  'scrum231b-exports-sin-cache-compartida.test.mjs': 'lee las capas del router de exports (`router.stack`) sólo para LISTAR sus GET; las llama por HTTP contra la app entera (`_banco-camino-real.mjs`) con la cookie de sesión del propietario, no armando un `req`',
   'scrum365-permisos-tarifario.test.mjs': 'lee las capas del router (qué rutas llevan `requireRole`) y llama al gate con `{ userRole }` y sin comercio',
 };
 

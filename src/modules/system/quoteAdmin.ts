@@ -12,6 +12,8 @@ import { tieneDescuentoGlobalConVariosIva } from '../invoicing/domain/invoiceLin
 import { ERROR_DESCUENTO_GLOBAL_VARIOS_IVA, COPY_REVISAR_CON_DESCUENTO_GLOBAL_VARIOS_IVA } from '../quotes/domain/descuentoGlobalConVariosIva'; // SCRUM-887
 import {
   numeroConRevision, vistaDeRevisiones,
+  numeroVisibleDelPresupuesto, // SCRUM-1444c
+
   // SCRUM-688 · el llamador que faltaba: crear una revision de verdad.
   nuevaRevisionDe, vigenteUnicaDe, REVISION_HEREDA,
 } from '../quotes/domain/revision'; // SCRUM-655 (T6, fase B)
@@ -125,6 +127,7 @@ export async function listQuotesAdmin(
     return {
       id: q.id,
       number: q.quoteNumber ?? q.id, // A1.2: número visible por merchant (fallback pre-backfill)
+      numeroVisible: numeroVisibleDelPresupuesto(q), // SCRUM-1444c: el número HECHO; `number` sigue mientras S2 migra
       customerName: q.customer?.name ?? '—',
       customerPhone: q.customer?.phone ?? null,
       createdAt: q.createdAt,
@@ -251,6 +254,7 @@ export async function getQuoteDetailAdmin(id: number, merchantId?: number) {
     id: r.id,
     revision: r.revision,
     numero: numeroConRevision(r),
+    numeroVisible: numeroVisibleDelPresupuesto(porId.get(r.id)!), // SCRUM-1444c
     status: porId.get(r.id)!.status,
     firmado: r.firmado,
     total: porId.get(r.id)!.total,
@@ -261,6 +265,7 @@ export async function getQuoteDetailAdmin(id: number, merchantId?: number) {
   return {
     id: quote.id,
     number: quote.quoteNumber ?? quote.id, // A1.2: número visible por merchant
+    numeroVisible: numeroVisibleDelPresupuesto(quote), // SCRUM-1444c: el número HECHO; `number` sigue mientras S2 migra
     // SCRUM-655 (T6, fase B). `number` NO se toca: un presupuesto sin revisiones sale exactamente
     // como salía —enumerado y sin «.0»—, y todo lo que ya lo consume sigue leyendo lo mismo.
     revision: quote.revision,
@@ -703,6 +708,7 @@ export async function crearRevisionDeQuote(merchantId: number, id: number) {
       id: creada.id,
       revision: creada.revision,
       numero: numeroConRevision({ numero: base, revision: creada.revision }),
+      numeroVisible: numeroVisibleDelPresupuesto(creada), // SCRUM-1444c
       status: creada.status,
       // De qué versión salió, para que la pantalla pueda decirlo sin adivinarlo.
       origenId: vigente.id,

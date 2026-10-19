@@ -63,3 +63,29 @@ A9: comprobación → `tests/scrum811c-skill-ui-declarada.test.mjs`
 (Toqué `quotesView.js` antes de cargar `yaqu-premium-ui`, y metí un `style.cssText` que la skill prohíbe.
 Me cazaron este guard y el de 713c; la primera versión del registro tampoco llevaba esta línea A9 y la
 cazó el obligatorio de #2521, `scrum1294`.)
+
+## 1237b — VISTO en yaqu.app después del merge (S2, s2-18oct)
+
+**Medido contra:** `origin/main` = `b40c2121de7ccf4db2850b8c1970e6a20933dd31` · 2026-10-18T19:05:07Z
+
+**Skill UI:** no cargada · no se toca ninguna pantalla: sólo se mira, en producción.
+
+El registro de arriba se verificó **sirviendo la rama**; tras el merge (#2521, `a1afb7e74`) nadie lo había mirado
+en producción (lo cazó S0). Producción servía `214283d7958a13b0280e2b64ac041856ad275cf2` (leído en la meta
+`yaqu-build`), que CONTIENE `a1afb7e74` (`git merge-base --is-ancestor`, 0). Misma sonda, sin servir nada local y
+EXIGIENDO la aceptación: `sondas-s2/sin-correo-1237.mjs prod [movil]`. Mismas cero escrituras: `POST /quote/create`
+lo contesta la sonda con el #205; sólo sale `POST /admin/quotes/205/send-email`, y el servidor contesta 400 antes de
+enviar. Control de la puerta en las dos pasadas: otro POST y el `send-whatsapp` del #205, cortados. El #205 sigue `draft`.
+
+| aceptación (orquestador, c.19870) | 1280 | 390 |
+|---|---|---|
+| ② «✉ Enviar por email» desactivado de entrada, con el título de la ficha | ✅ `disabled`, «El cliente no tiene email configurado.» | ✅ igual |
+| ① el aviso del envío, DENTRO de la modal y a la vista (reactivado a mano: el camino de cuando el detalle no se pudo leer) | ✅ «Este cliente no tiene email; añádelo en su ficha.»; `elementFromPoint` lo alcanza; en la vista | ✅ igual, en la vista tras el desplazamiento |
+| no se da por hecho | ✅ ningún «Enviado»/«Hecho» | ✅ |
+| CONTROL: el aviso de la PÁGINA sigue tapado por la modal (la sonda distingue «se ve» de «está escrito») | `alcanzable: false` | `alcanzable: false` |
+
+Capturas fuera del repo: `sondas-s2/cap1237/prod-18oct{,-movil}-{al-abrir,tras-enviar}.png`. El PDF de la modal sale
+en blanco en las capturas: es `chrome-headless-shell`, que no pinta PDF, igual que en las del 16-oct.
+**No medido, igual que entonces:** los dos errores de WhatsApp de la modal en navegador (mandar un WhatsApp no es una
+escritura que se pueda dejar salir; pasan por la misma `copiarAvisoALaModal()` y el test los exige).
+A9: comprobación → `tests/scrum1237-aviso-dentro-de-la-modal.test.mjs`

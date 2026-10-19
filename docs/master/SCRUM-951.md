@@ -484,3 +484,47 @@ En los dos casos los tres rojos son los mismos: «declara contra qué main…»,
 
 A9: aviso → A10 «Cuando dos personas distintas se equivocan igual el mismo día, no falta cuidado: falta una herramienta, o que la que ya existe sea el camino por defecto.» — no se pudo comprobar: el ancla mala la caza `scrum267`, y la A9 que falta, `scrum1294`; lo que ningún guard ve es si el ancla se escribió a mano. Hacer de `ancla.mjs` el camino por defecto y meter `scrum1294` en `guards:entrada` es de S5
 A9: aviso → cicatriz S0 «Expliqué un rojo de CI con la premisa del encargo sin leer qué test había caído» — no se pudo comprobar: leer el nombre del test antes de explicar un rojo es una conducta, y ningún guard ve la explicación que se escribe sin leerlo
+
+## SCRUM-951j · Un banco que busca un nodo por su clase EXACTA se queda CIEGO si le añades otra clase (18-oct-2026)
+
+**Medido contra:** `origin/main` = `214283d7958a13b0280e2b64ac041856ad275cf2` · 2026-10-18T18:55:56Z
+
+A9: comprobación → `tests/scrum1562c-partes-oficina-con-teclado.test.mjs`
+
+Trampa §14 de `docs/equipo/trampas-del-entorno.md`. La reportó la S2 tras el rojo de #2560 y llevaba en el traspaso de la S0 desde la tarde del 18-oct, sin escribir. Se escribe con lo medido, no con lo recordado.
+
+| qué | dónde se mide | resultado |
+|---|---|---|
+| el cambio que la disparó | `git show a92f741e -- public/dashboard/js/parteOficinaView.js` | `fila.className = 'customers-card parte-oficina-fila'` |
+| cómo localiza el banco | `tests/scrum1285-guardado-en-vuelo.test.mjs:90` | `n.className === 'customers-card'`, igualdad exacta |
+| el rojo | run `39084375339` (sobre `f096b8f2`), `gh run view --log-failed` | los 4 casos de «oficina» de SCRUM-1285, con `🔴 CIEGO: no sale el parte en la lista` |
+| el arreglo | commit `0a103940`; `styles.css:2487-2488` en `main` | la fila vuelve a `customers-card` a secas; el CSS cuelga de `#po-lista > button.customers-card` |
+| el verde | run `39147335140` (sobre `0a103940`) | ninguna línea roja en el obligatorio |
+| cuántos bancos tienen la forma | `git grep -c "className === '" origin/main -- tests/` sobre `74e60ebe` | 49 apariciones en 26 ficheros, sin clasificar; control: sale `scrum1285:90` |
+
+**No medido por S0:** la mutación de la clase doble. La hizo la S2 (`0a103940`) y la confirma el log del CI; repetirla es tocar `public/`.
+
+La comprobación de la línea A9 es el test de la S2, que exige la clase exacta y cae en su propio fichero si alguien vuelve a añadir una segunda.
+## SCRUM-951k · `FATAL ERROR: Reached heap limit` en el log de la tanda es de un test que lo hace a propósito (18-oct-2026)
+
+**Medido contra:** `origin/main` = `214283d7958a13b0280e2b64ac041856ad275cf2` · 2026-10-18T18:59:35Z
+
+Puesto S5. **Encargo del orquestador:** medir el «OOM» que tumbó el #2568 (el arreglo del `Cache-Control` de los CSV). Medido, no hay ningún OOM. Después, por decisión suya, la trampa entra en `trampas-del-entorno.md` para que la próxima sesión que lea ese log no muerda igual.
+
+| Qué | Dónde |
+|---|---|
+| El síntoma, la causa, cómo se distingue en 30 s, la regla del resumen final y el caso del #2568 | `docs/equipo/trampas-del-entorno.md` §15 |
+
+**Medido** en la run `39151663342`, intento 1, job `117746392988`:
+
+| pregunta | respuesta |
+|---|---|
+| ¿Quién escribe el FATAL de las 17:57:27Z? | `tests/scrum1525b-el-respaldo-por-correo.test.mjs`, el test del hijo que «muere por MEMORIA». Lanza un hijo con `--max-old-space-size=24`, y `lanzarVolcado` copia su stderr en el del padre. La línea siguiente del log es su ✔ |
+| ¿Sale también en verde? | Sí: run `38524399363` (`main`, 14-oct-2026), con `ℹ fail 0` y la misma línea |
+| ¿Murió la tanda? | No. Cerró a las 18:04:52Z con `tests 11826 · pass 11718 · fail 19 · skipped 89` |
+| ¿Cabe la tanda en el runner? | El job del trinquete de la misma run (`117746393184`) la corrió entera dos veces y salió `success` |
+| ¿Qué la tumbó? | 19 rojos, todos del diff del PR. El `SCRUM-231.md` del PR le dio ancla a una entrada que el censo tenía sin ella: caen `scrum267`, `scrum859` y `scrum976`④. El test nuevo cae en dos censos: `scrum1344`⑦ (un router de /admin sin req de sesión) y `scrum1415` (un `test()` con nombre construido). El CIEGO del meta-guard en `scrum859` tiene la misma causa |
+
+Los arreglos del PR los lleva S1, que es la dueña de la rama. El `eco:false` en `lanzarVolcado`, que quitaría el ruido del log, lo lleva el orquestador a J6. No he tocado ninguno de los dos.
+
+A9: aviso → cicatriz S0 «Expliqué un rojo de CI con la premisa del encargo sin leer qué test había caído» — no se pudo comprobar: el encargo traía la causa («OOM») y ningún guard ve que una explicación se apoya en una línea del log y no en el resumen ni en los nombres de los tests caídos; por eso la regla va escrita en `trampas-del-entorno.md` §15

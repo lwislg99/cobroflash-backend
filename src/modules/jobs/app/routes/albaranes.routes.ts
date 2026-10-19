@@ -15,6 +15,7 @@ import { prisma } from '../../../../core/db/prisma';
 import { recordAudit, actorDeRequest, requestIp } from '../../../system/audit.service'; // SCRUM-207
 import { requireActivePlan } from '../../../../core/http/authMiddleware'; // SCRUM-47 (S1: enviar WA ✅ técnico, sin requireRole)
 import { sendAlbaranFirmadoWhatsApp, sendAlbaranParaFirmarWhatsApp, type AlbaranFirmadoSendResult } from '../../domain/albaranWhatsApp.service'; // SCRUM-47/49
+import { leerEntregaParaFirmar } from '../../domain/entregaParaFirmar'; // SCRUM-49b
 import { sendSuccessBody, sendFailureBody, type SendFailureReason } from '../../../../lib/sendOutcome'; // SCRUM-126
 import {
   ALBARAN_MODOS_VALORACION,
@@ -82,6 +83,7 @@ import {
 } from '../../domain/albaranAFactura';
 // SCRUM-195: el número del adicional se reserva DENTRO de su transacción, igual que el del alta.
 import { allocateQuoteNumber } from '../../../quotes/domain/quoteNumber.service';
+import { numeroVisibleDelPresupuesto } from '../../../quotes/domain/revision'; // SCRUM-1444c
 // SCRUM-728 · la sección crítica de la serie saturada: se traduce a un aviso legible en vez
 // de un `internal_error`. NO sube el timeout ni toca el cerrojo.
 import { esCerrojoSaturado, cuerpoCerrojoSaturado, ESTADO_CERROJO_SATURADO } from '../../../invoicing/domain/cerrojoSaturado';
@@ -887,7 +889,7 @@ router.get('/:id', async (req, res) => {
     const quote = job?.quoteId
       ? await prisma.quote.findFirst({
           where: { id: job.quoteId, merchantId: req.merchantId },
-          select: { id: true, quoteNumber: true },
+          select: { id: true, quoteNumber: true, revision: true }, // SCRUM-1444c: la revisión se pide, no se supone 0
         })
       : null;
 
@@ -903,6 +905,8 @@ router.get('/:id', async (req, res) => {
     const fotos = await prisma.attachment.count({
       where: { merchantId: req.merchantId, entityType: 'albaran', entityId: albaran.id },
     });
+    // SCRUM-49b · lo que de verdad pasó con el último WhatsApp «para firmar». Sólo LEE.
+    const entregaParaFirmar = await leerEntregaParaFirmar(req.merchantId, albaran.id, albaran.enviadoParaFirmaAt);
 
     return res.json({
       ...serializeAlbaran(albaran),
@@ -911,13 +915,27 @@ router.get('/:id', async (req, res) => {
       customer,
       // Del DOCUMENTO. `null` cuando el Trabajo no vino de un presupuesto (`Job.quoteId` es
       // nullable): el rail lo omite en vez de pintar un enlace que no lleva a ningún sitio.
-      quote: quote ? { id: quote.id, number: quote.quoteNumber ?? quote.id } : null,
+      quote: quote
+        ? { id: quote.id, number: quote.quoteNumber ?? quote.id,
+            numeroVisible: numeroVisibleDelPresupuesto(quote) } // SCRUM-1444c: `number` sigue mientras S4 migra
+        : null,
       // Los TRES valores, no un booleano (SCRUM-170/302).
       estadoFacturacion,
       // Lo que queda por facturar, por línea: es lo que hace verdadero el «parcial».
       pendientes: pendientePorLinea(lineas, facturado),
       // Derivado, NO un estado (Parte L intacta): el modelo solo tiene borrador|emitido|firmado.
       enviadoParaFirma: !!albaran.enviadoParaFirmaAt && albaran.estado === 'emitido',
+      // SCRUM-49b · `enviadoParaFirma` dice que se INTENTÓ (la marca se escribe antes de llamar a
+      // Meta), no que llegara. Lo que se puede afirmar sale de aquí: entregado · aceptado ·
+      // fallido (en el acto o después) · sin rastro · no se pudo leer · nunca enviado.
+      entregaParaFirmar,
+      // SCRUM-49c · la credencial de la página pública de firma (`/albaran/<token>`), para que el
+      // comercio pueda copiar el enlace: el mismo precedente que `quote.payToken` e `invoice.payToken`,
+      // y la misma credencial que ya viaja dentro del WhatsApp. Va AQUÍ y no en `serializeAlbaran`, a
+      // propósito: sale sólo en la ficha, que ya pasó por tenencia y por «es suyo» (SCRUM-467), y no en
+      // listas ni en otras respuestas. `null` hasta el primer envío para firmar, que es quien lo crea:
+      // esta ruta sólo LEE, no lo genera.
+      firmaToken: albaran.firmaToken ?? null,
       cabenMasFotos: fotos < FOTOS_MAX_POR_ALBARAN, // SCRUM-1302 (G)
     });
   } catch (err: any) {

@@ -4,6 +4,7 @@ import { estadoCobroFor } from '../../jobs/domain/job.service'; // SCRUM-24: mis
 import { isFieldMember } from '../../../core/http/roleCapabilities'; // SCRUM-147
 import { ensamblarMetricasEquipo } from './metricasEquipo'; // SCRUM-236
 import { ensamblarActividadEquipo } from './actividadEquipo'; // SCRUM-1341
+import { numeroVisibleDelPresupuesto } from '../../quotes/domain/revision'; // SCRUM-1444c
 
 export async function getHomeMetrics(merchantId: number) {
   const now = new Date();
@@ -155,6 +156,7 @@ export async function getHomeMetrics(merchantId: number) {
       type: 'quote' as const,
       id: q.id,
       quoteNumber: q.quoteNumber, // SCRUM-43: número por merchant (A1.2); el id global queda solo para navegar
+      numeroVisible: numeroVisibleDelPresupuesto(q), // SCRUM-1444c: el número HECHO; `quoteNumber` sigue mientras S2 migra
       status: q.status,
       customer: q.customer?.name ?? '—',
       total: Number(q.total),
@@ -232,6 +234,7 @@ export async function getInicioOperario(merchantId: number, recorte: Prisma.Quot
       type: 'quote' as const,
       id: q.id,
       quoteNumber: q.quoteNumber,
+      numeroVisible: numeroVisibleDelPresupuesto(q), // SCRUM-1444c
       status: q.status,
       customer: q.customer?.name ?? '—',
       total: Number(q.total),

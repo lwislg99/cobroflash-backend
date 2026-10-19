@@ -117,8 +117,48 @@ export async function escritura(fetchFn, metodo, ruta, { cuenta, cuerpo = {} } =
 }
 
 const corto = (v) => { const s = JSON.stringify(v); return s === undefined ? 'undefined' : s.length > 120 ? s.slice(0, 117) + '…' : s; };
-const igual = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
-const lista = (x, que) => { if (!Array.isArray(x)) throw new NoPude(`${que} no devolvió una lista`); return x; };
+
+/**
+ * 🔴 SCRUM-1466 · COMPARAR SIN EL ORDEN DE LAS CLAVES. Aquí había `JSON.stringify(a) === JSON.stringify(b)`,
+ * que depende del orden: el mismo perfil con las claves de un objeto en otro orden salía «DISTINTO» o
+ * «CAMBIÓ SIN ENVIARSE» (lo midió S2 el 29-sep-2026 al verificar SCRUM-1227; nota en SCRUM-1268 c.17523).
+ * Esta herramienta existe para cazar PÉRDIDA DE DATOS en el perfil, y un rojo falso enseña a no mirarla.
+ *
+ * Se compara la ESTRUCTURA con la semántica de JSON (lo `undefined` cae como en `JSON.stringify`, y `null`
+ * y `undefined` sueltos valen lo mismo, como antes): las claves de un objeto, sin orden; las LISTAS, con
+ * orden, porque dos cláusulas en otro orden no son el mismo perfil. Devuelve DÓNDE difiere
+ * (`{ ruta, a, b }`, ruta vacía = el valor entero) o `null` si son iguales.
+ */
+export function diferencia(a, b) {
+  const norm = (v) => { const s = JSON.stringify(v ?? null); return s === undefined ? null : JSON.parse(s); };
+  const tipo = (v) => (v === null ? 'null' : Array.isArray(v) ? 'lista' : typeof v);
+  const unir = (ruta, k) => (ruta ? `${ruta}.${k}` : k);
+  return (function dif(x, y, ruta) {
+    if (tipo(x) !== tipo(y)) return { ruta, a: x, b: y };
+    if (tipo(x) === 'lista') {
+      for (let i = 0; i < Math.max(x.length, y.length); i++) {
+        if (i >= x.length || i >= y.length) return { ruta: `${ruta}[${i}]`, a: x[i], b: y[i] };
+        const d = dif(x[i], y[i], `${ruta}[${i}]`);
+        if (d) return d;
+      }
+      return null;
+    }
+    if (tipo(x) === 'object') {
+      for (const k of [...new Set([...Object.keys(x), ...Object.keys(y)])].sort()) {
+        if (!(k in x) || !(k in y)) return { ruta: unir(ruta, k), a: x[k], b: y[k] };
+        const d = dif(x[k], y[k], unir(ruta, k));
+        if (d) return d;
+      }
+      return null;
+    }
+    return x === y ? null : { ruta, a: x, b: y };
+  })(norm(a), norm(b), '');
+}
+/** « · difiere en clausulas[1].texto: "a" ≠ "b"» cuando la diferencia está DENTRO del valor de la clave k; nada si es el valor entero. */
+const donde = (d, k) => (d && d.ruta
+  ? ` · difiere en ${k}${d.ruta.startsWith('[') ? '' : '.'}${d.ruta}: ${d.a === undefined ? '(falta)' : corto(d.a)} ≠ ${d.b === undefined ? '(falta)' : corto(d.b)}`
+  : '');
+const lista =(x, que) => { if (!Array.isArray(x)) throw new NoPude(`${que} no devolvió una lista`); return x; };
 
 /** El caso de prueba completo, sin duplicar. Devuelve las líneas del informe. */
 export async function sembrar(fetchFn, cookie) {
@@ -236,12 +276,13 @@ export async function guardarPerfil(fetchFn, cookie, valores) {
   const lineas = [`cuenta comprobada en el servidor: merchant ${cuenta.merchantId}, owner · PUT /admin/merchant hecho · lo de abajo es la RELECTURA`];
   let distintos = 0;
   for (const [k, v] of Object.entries(valores)) {
-    const ok = igual(v, despues[k]);
-    if (!ok) distintos++;
-    lineas.push(`${ok ? '  OK        ' : '🔴 DISTINTO '} ${k}: enviado ${corto(v)} · releído ${corto(despues[k])}`);
+    const d = diferencia(v, despues[k]);
+    if (d) distintos++;
+    lineas.push(`${d ? '🔴 DISTINTO ' : '  OK        '} ${k}: enviado ${corto(v)} · releído ${corto(despues[k])}${donde(d, k)}`);
   }
-  const sinEnviar = Object.keys({ ...antes, ...despues }).filter((k) => !(k in valores) && !igual(antes[k], despues[k]));
-  for (const k of sinEnviar) lineas.push(`🔴 CAMBIÓ SIN ENVIARSE ${k}: antes ${corto(antes[k])} · después ${corto(despues[k])}`);
+  const sinEnviar = Object.keys({ ...antes, ...despues }).filter((k) => !(k in valores))
+    .map((k) => [k, diferencia(antes[k], despues[k])]).filter(([, d]) => d);
+  for (const [k, d] of sinEnviar) lineas.push(`🔴 CAMBIÓ SIN ENVIARSE ${k}: antes ${corto(antes[k])} · después ${corto(despues[k])}${donde(d, k)}`);
   lineas.push(`resumen: ${Object.keys(valores).length} enviados · ${distintos} no se releen igual · ${sinEnviar.length} cambiaron sin enviarse`);
   return lineas;
 }
