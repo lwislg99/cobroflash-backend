@@ -275,3 +275,17 @@ Sólo lectura. Carril, por `node scripts/carriles.mjs de`: `customerPortal.route
 
 **El modo de emisión:** el portal no lo mira para los números, y ningún importe depende de él. La palabra
 «Factura» es otra cosa (SCRUM-1567).
+
+### 🔴 Aviso (fila F3): el IVA del papel de la factura y el del registro fiscal salen de dos cálculos
+
+El PDF de la factura agrupa el IVA por tipo con su propio `vatMap` (`pdf.service.ts`, bloque «Agrupar IVA por
+tipo»): suma base y cuota sin redondear y sólo redondea al pintar. El registro fiscal —la cuota del XML de
+VeriFactu (`verifactu.service.ts:297`, `calcVatCuotaTotal`), el libro y el 303— sale de `calcVatBreakdown`, que
+redondea base y cuota por tipo. **El documento que recibe el cliente y lo que se declara a Hacienda son dos
+cálculos del mismo IVA.** Hoy no muerde (`INVOICING_ES_ENABLED` OFF, sin clientes reales); antes de SIF-1, sí.
+
+No lo he medido yo, y no hace falta empezar de cero: **SCRUM-623 ya lo midió** al decidir no unificarlos
+(comentario de `pdf.service.ts`, bloque «DE DÓNDE SALEN LAS CIFRAS»): sobre 4.006 combinaciones, unificarlos
+cambiaría una cifra impresa en 547. Y SCRUM-624 (MEDICIÓN 2) ya lo nombra como patrón: «el papel que ve el
+cliente y el registro que ve Hacienda se calculan por dos motores distintos». Lo que falta es medirlo sobre el
+camino de emisión de hoy (facturas por tramos incluidas, ver SCRUM-624c). Lo mide S3 (orquestador, 19-oct).
