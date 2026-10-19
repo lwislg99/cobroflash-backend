@@ -76,3 +76,110 @@ Encargo del orquestador (18-oct, tras la primera foto): actualizar el documento 
 
 1. **En la primera foto puse como movible «la mitad (a) de 1558», que llevaba dos días en `main`** (#2522, 16-oct). No miré `main` para esa frase. Esa cifra era la que decidía el reparto de mañana. Va al documento como paso 7 de §7.
 2. **Volví a contar a mano antes que a máquina:** escribí 64 filas y 44 del fundador; eran 66 y 43. Lo cazó el contador antes de empujar, que es justo para lo que está.
+
+## Tramo 1563c · la foto del 19-oct (S0)
+
+**Medido contra:** `origin/main` = `cd85e34b1e5bfaf561f010f550296bd94b659e75` · 2026-10-19T06:43:12Z
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1563/contar-dependencias.mjs`
+
+Encargo del orquestador (19-oct): poner el documento al día, rehacer la cifra de «lo que podemos mover hoy sin esperar a nadie» y, si da tiempo, volver a medir §4.
+
+### Qué cambia en el documento
+
+- **1 fila pasa a §8 «Hecho»:** 2.2 (SCRUM-1237, cerrado a las 19:06:56Z del 18, visto en producción por S2: tramo 1237b, #2590).
+- **1 fila nueva:** 2.11 (SCRUM-1115: dos de los tres programas que mandan correo pueden seguir saliendo como «PresuFácil»). La encontró la nueva medida de §4.
+- **Corregidas:** 5.2 (ya tiene ticket, SCRUM-1565, J2, sin rama), 6.11 (#2568: los 5 guards se declararon, el primer intento sobre `6ee2b55` cayó por UN test y el segundo corre desde las 06:35Z), 7.8 (el correo de la demo no llega; el dominio sí tiene MX), 2.10 (las plantillas se dan de alta a mano en Meta).
+- **§3 rehecha con una tabla que suma 66:** 62 esperan al fundador, a Javier o al asesor; 1 es nuestra pero espera una firma (2.4); 2 no tienen dueño (2.5, 6.10); **1 se mueve hoy sin nadie (6.11), y ya está en marcha.**
+- **§4 re-medida a máquina** (no de memoria), con 14 filas: entran 1564, 1233, 1444, 1115 y 529, y sale 1237.
+- §5 con su tercera fila; §6 al día.
+
+### Cómo se midió
+
+| qué | comando | resultado |
+|---|---|---|
+| ¿cambió algún ticket de §2? | JQL `key in (…62…) AND updated >= "2026-10-18 20:20"` | **0**. Control: sin el filtro de fecha devuelve **62**; el más reciente es 1562 (18-oct 00:12Z) |
+| los seis del encargo + 1563/1564/1565 | JQL por clave | 1183 (18:09Z), 1177 (18:11Z), 1237 (19:06Z), 1503 (19:29Z), 1466 (19:30Z) y 1434 (19:31Z), Finalizada. 1564 en «Acción del fundador», sin etiquetas. 1565 «Tareas por hacer», 0 comentarios, creado 19:32Z |
+| ¿tiene rama 1565? | `git ls-remote origin` entero, filtrado por `1565` | sólo `refs/pull/1565/head` (un PR antiguo con ese número), ninguna rama `scrum-1565…`. ⚠️ El filtro `git ls-remote origin "refs/heads/*1563*"` da 0 aunque 1563b existió: la rama se borra al mergear, así que **ese filtro no tiene control positivo** y no se usó como prueba |
+| las seis cuentas de §5 | JQL con `searchResultMode: count` | 268 · 53 · 165 · 50 · 45 · 10. Control: 53 + 165 + 50 = 268 |
+| por qué los cerrados suben +4 y no +5 | historial de SCRUM-1559 | se cerró a las 16:41:10Z del 18, antes de la medida anterior; su «actualizado» de las 19:06Z es posterior |
+| #2568 | `gh pr view` + `gh api …/runs/39156812508` + `--log-failed` del intento 1 | `BLOCKED`; intento 1 sobre `6ee2b55` en FAILURE a las 19:39Z: `ℹ fail 1` de `ℹ tests 11862`, **SCRUM-1405c ④**; intento 2 lanzado a las 06:35:17Z, en curso |
+| producción | `GET https://yaqu.app/version` | `cd85e34b…`, la punta de `main` |
+| los CSV sin sesión | `GET` sin cookie a `quotes.csv` y `jobs.csv` | **401**, `cf-cache-status: DYNAMIC` |
+| el enlace roto, visto por el cliente | `GET /albaran/%7B%7B1%7D%7Dtokenfalso0000` y, de control, `/albaran/tokenfalso0000` | los dos **404** «Documento no disponible… pide al profesional que te reenvíe el enlace». Sólo lectura, con un token inventado |
+| ¿recibe correo `yaqu.app`? | `Resolve-DnsName yaqu.app -Type MX` (control: `gmail.com`) | `route1/2/3.mx.cloudflare.net` (Cloudflare Email Routing). Las reglas de reenvío no se ven desde aquí |
+| §4: ¿qué hay en `main` con el ticket abierto? | `git log origin/main --merges --since=2026-10-11` → número de cada rama `scrum-<n>…` → JQL `status != 10004 AND key in (…)` | **110** tickets con merge, **54** siguen abiertos (lista abajo). Se miró el título del PR de los 22 que tocan una fila o el producto: muchos son sólo `docs/` |
+| §3 | el contador | 66 filas · 44/29 · 28/12 · 11/4 · 6/2. Control: sobre la versión de ayer 18:46Z da lo publicado (66 · 43/28 · 28/12 · 12/5 · 6/2) |
+| controles táctiles fuera de las filas | `git log 57b0bc82..origin/main -- public/dashboard/js/{productsView,albaranDetailView}.js` | `productsView.js` sin cambios desde la medida de S3; `albaranDetailView.js` cambió con 1206e (#2579) → sus 2 controles, «NO CONSTA» |
+
+### Los 54 tickets abiertos con algún merge en `main` desde el 11-oct
+
+El merge que se apunta es el **último** con su número. **Un merge no es un arreglo:** esta lista es de dónde se eligieron las filas de §4, no una lista de cosas por cerrar.
+
+| ticket | estado (19-oct 06:4xZ) | último PR | fecha |
+|---|---|---|---|
+| 529 | En curso | #2409 | 2026-10-14 |
+| 534 | Acción del fundador | #2425 | 2026-10-14 |
+| 911 | Tareas por hacer | #2488 | 2026-10-15 |
+| 913 | Tareas por hacer | #2503 | 2026-10-15 |
+| 996 | Tareas por hacer | #2507 | 2026-10-16 |
+| 999 | Tareas por hacer | #2514 | 2026-10-16 |
+| 1016 | En curso | #2444 | 2026-10-14 |
+| 1056 | Tareas por hacer | #2401 | 2026-10-13 |
+| 1072 | En curso | #2506 | 2026-10-16 |
+| 1115 | Tareas por hacer | #2433 | 2026-10-14 |
+| 1215 | En curso | #2403 | 2026-10-13 |
+| 1233 | En curso | #2588 | 2026-10-18 |
+| 1236 | Tareas por hacer | #2576 | 2026-10-18 |
+| 1257 | Tareas por hacer | #2439 | 2026-10-14 |
+| 1295 | En curso | #2434 | 2026-10-14 |
+| 1298 | En curso | #2575 | 2026-10-18 |
+| 1300 | Tareas por hacer | #2505 | 2026-10-16 |
+| 1331 | En curso | #2371 | 2026-10-13 |
+| 1339 | En curso | #2423 | 2026-10-14 |
+| 1345 | En curso | #2574 | 2026-10-18 |
+| 1356 | Tareas por hacer | #2499 | 2026-10-15 |
+| 1387 | Tareas por hacer | #2406 | 2026-10-14 |
+| 1404 | En curso | #2412 | 2026-10-14 |
+| 1405 | En curso | #2429 | 2026-10-14 |
+| 1442 | Tareas por hacer | #2559 | 2026-10-18 |
+| 1444 | En curso | #2584 | 2026-10-18 |
+| 1490 | Acción del fundador | #2468 | 2026-10-14 |
+| 1496 | Tareas por hacer | #2430 | 2026-10-14 |
+| 1502 | Tareas por hacer | #2419 | 2026-10-14 |
+| 1506 | Tareas por hacer | #2492 | 2026-10-15 |
+| 1517 | Tareas por hacer | #2363 | 2026-10-13 |
+| 1522 | Tareas por hacer | #2374 | 2026-10-13 |
+| 1523 | Tareas por hacer | #2362 | 2026-10-13 |
+| 1524 | Tareas por hacer | #2369 | 2026-10-13 |
+| 1525 | Tareas por hacer | #2370 | 2026-10-13 |
+| 1527 | Tareas por hacer | #2450 | 2026-10-14 |
+| 1529 | Tareas por hacer | #2375 | 2026-10-13 |
+| 1532 | Tareas por hacer | #2360 | 2026-10-13 |
+| 1533 | Tareas por hacer | #2358 | 2026-10-13 |
+| 1536 | En curso | #2410 | 2026-10-14 |
+| 1537 | Tareas por hacer | #2385 | 2026-10-13 |
+| 1538 | Tareas por hacer | #2384 | 2026-10-13 |
+| 1543 | Tareas por hacer | #2426 | 2026-10-14 |
+| 1546 | Acción del fundador | #2465 | 2026-10-14 |
+| 1548 | Tareas por hacer | #2421 | 2026-10-14 |
+| 1550 | Tareas por hacer | #2416 | 2026-10-14 |
+| 1551 | Tareas por hacer | #2418 | 2026-10-14 |
+| 1552 | Tareas por hacer | #2422 | 2026-10-14 |
+| 1553 | Tareas por hacer | #2431 | 2026-10-14 |
+| 1555 | Acción del fundador | #2456 | 2026-10-14 |
+| 1557 | Tareas por hacer | #2484 | 2026-10-15 |
+| 1558 | Tareas por hacer | #2522 | 2026-10-16 |
+| 1562 | Tareas por hacer | #2566 | 2026-10-18 |
+| 1563 | En curso | #2587 | 2026-10-18 |
+
+### Lo que el encargo traía y no aguantó la medida, o hay que matizar
+
+- **«#2568 sigue BLOCKED».** Es cierto, pero no por el rojo de ayer: su obligatorio está **corriendo** (intento 2, lanzado a las 06:35Z). El rojo de las 18:05Z (5 guards) se declaró en `6ee2b55`; el intento 1 sobre ese commit cayó por **un** test que no tiene nada que ver con los 5.
+- **«CERRADOS ayer: 1183, 1177, 1237, 1503, 1466 y 1434».** Los seis están cerrados, pero **1183 y 1177 ya estaban en la medida de las 18:4xZ**. Lo nuevo desde entonces son cuatro.
+- **«No le llega el correo de `demo@yaqu.app`».** No lo he medido. Lo que sí está medido es que el dominio recibe correo por Cloudflare. Va en el documento como dicho por el orquestador, con mi lectura marcada como lectura.
+- Lo demás (1564 puesta y medida, 1565 con su autorización y su uuid, #2588, #2590 y #2591 en `main`, el enlace roto, el 131026, la demo en 403) casa con lo que hay en el repo, en GitHub y en Jira.
+
+### Error propio
+
+- **Busqué la rama de 1565 con un filtro de `git ls-remote` sin control positivo.** Dio vacío, y el mismo filtro con 1563 también daba vacío, porque la rama de 1563b se borró al mergear. Ese vacío no probaba nada. Lo rehice con la lista entera del remoto, filtrada después. Es la familia de «no pude mirar» igual a «no hay nada».
