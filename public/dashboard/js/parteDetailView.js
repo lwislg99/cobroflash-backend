@@ -841,7 +841,12 @@
       // SCRUM-1266 · la descripción se corrige AQUÍ, antes de que entre en el parte: era un texto de
       // sólo lectura y un dato inventado sólo se podía arreglar ya dentro, a un paso del congelado.
       // Mismo rótulo accesible que el campo de descripción de la tabla del parte.
-      '<input type="text" data-propuesta-desc="1" value="' + esc(linea.descripcion) + '" ' +
+      //
+      // SCRUM-1493 c.19818/19819 · nombrado sin ticket: salía como caja estrecha de borde fino,
+      // distinta de las casillas de las líneas YA guardadas. Mismo arreglo: la clase que ya usan
+      // esas casillas (`parte-linea-desc`, `styles.css` de S2, no se toca). El `font-size:14px`
+      // inline se queda — no era parte de la queja y cambiarlo sería un segundo cambio sin medir.
+      '<input type="text" class="parte-linea-desc" data-propuesta-desc="1" value="' + esc(linea.descripcion) + '" ' +
       'aria-label="' + esc(TEXTOS.descripcion) + '" style="flex:1;min-width:160px;font-size:14px">' +
       // 🔴 La cantidad retirada NO desaparece: se dice, en la línea a la que le falta. Texto
       // APROBADO (regla 30) y en SINGULAR porque el aviso es de línea, no un resumen — viene del
