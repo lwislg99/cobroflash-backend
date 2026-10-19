@@ -583,3 +583,169 @@ La copia 0.1.0 de la caché **queda marcada como muerta y NO se borra**: lleva u
 - `mods-yaqu` no está en git: el único historial son los `.bak`.
 - La línea de estado sigue diciendo «los 6 trabajando» cuando el vigía sale 0 limpio. Eso es lo correcto,
   y ahora va con la hora de la medida.
+
+## 19-oct-2026 · SCRUM-1357i · PROPUESTA (NO construida): el hook `Notification` avisa en el momento del
+permiso colgado, sin sonda ni polling
+
+**Esto es una propuesta para que el fundador diga sí o no. No se ha tocado `.claude/hooks/` ni
+`.claude/settings.json`: los dos son suyos (regla 36; derivados del máster). Nada de lo de abajo está
+instalado.**
+
+### El hueco que cierra
+Medido por S5 el 19-oct (traspaso): `state=working` + `tempo=blocked` + `needs`, **sin evento en el
+timeline** — un permiso a mitad de turno (el `approve Entering worktree` que colgó a S3 7 minutos hoy).
+`notify_when_idle` no puede avisar de esto por definición: la sesión no está `idle`, sigue `working`,
+sólo que esperando una aprobación. Hoy sólo lo cazan `parados.mjs` o la sala, y las dos hay que CORRERLAS;
+nadie las corre a mitad de turno.
+
+### El mecanismo
+Claude Code ya dispara el evento de hook `Notification` en el instante en que aparece un prompt de
+permiso (o cuando Claude queda esperando input), **dentro del proceso de la propia sesión colgada**.
+Hoy `.claude/settings.json` sólo registra `SessionStart`, `PreToolUse` (`guard-dangerous.sh`,
+`carril.mjs`) y `Stop` — ningún `Notification`. ⚠️ **No medido en vivo en este repo**: me baso en el
+contrato publicado de los hooks de Claude Code (los campos por `stdin`: `session_id`, `transcript_path`,
+`cwd`, `hook_event_name`, y para `Notification`, `message`), no lo he podido ejercitar aquí sin tocar
+`.claude/`. Si el fundador da el OK, el primer paso de la construcción es precisamente comprobar esa
+forma exacta con una sesión de prueba, ANTES de fiarse de este texto.
+
+### 1 · El contenido exacto de `.claude/hooks/permiso-colgado.mjs` (propuesto)
+```js
+#!/usr/bin/env node
+// .claude/hooks/permiso-colgado.mjs — PROPUESTA SCRUM-1357i, sesión S5, 19-oct-2026. NO INSTALADO.
+//
+// Hook `Notification`: Claude Code lo llama con el evento en stdin EN EL MOMENTO en que aparece un
+// prompt de permiso o la sesión queda esperando input. No está en el camino de aprobación — a
+// diferencia de `PreToolUse` (regla: su exit 2 SÍ bloquea), el exit code de `Notification` no gatea
+// nada. Aun así este script está escrito para NUNCA poder colgar el prompt ni la sesión:
+//   · todo I/O es SÍNCRONO (sin red, sin `child_process`, sin await que pueda quedarse esperando);
+//   · todo vive dentro de un único try/catch, y un `uncaughtException`/`unhandledRejection` fuerza
+//     `process.exit(0)` igual que el camino feliz;
+//   · `timeout: 5` en el registro de abajo pone un tope aunque algo se saliera de lo previsto.
+// Si falla, falla EN SILENCIO: pierde el aviso, nunca el turno de la sesión.
+
+process.on('uncaughtException', () => process.exit(0));
+process.on('unhandledRejection', () => process.exit(0));
+
+const FICHERO = 'C:\\Users\\Admin\\AppData\\Local\\yaqu-equipo\\permisos-colgados.jsonl';
+
+try {
+  const fs = await import('node:fs');
+  const path = await import('node:path');
+
+  let entrada = '';
+  try {
+    // stdin es pequeño (un JSON de una sesión): leerlo síncrono no es un riesgo de bloqueo real.
+    entrada = fs.readFileSync(0, 'utf8');
+  } catch { /* sin stdin legible: se registra igual, con lo que se pueda */ }
+
+  let evento = {};
+  try { evento = JSON.parse(entrada || '{}'); } catch { /* JSON roto: sigue con {} */ }
+
+  // Mejor esfuerzo: quién es esta mesa, leyendo el fichero que ya escribe el generador de identidad
+  // (SCRUM-1295). Si no existe o no se puede leer, el puesto sale «?» — nunca hace caer el hook.
+  let puesto = '?';
+  let nombreDeLanzamiento = null;
+  try {
+    const ruta = path.join(evento.cwd || '.', '.yaqu-puesto.json');
+    const j = JSON.parse(fs.readFileSync(ruta, 'utf8'));
+    puesto = j.puesto || '?';
+    nombreDeLanzamiento = j.nombre || null;
+  } catch { /* sin mesa, o sin identidad escrita: se registra igual */ }
+
+  const linea = {
+    ts: new Date().toISOString(),
+    puesto,
+    nombre: nombreDeLanzamiento,
+    sessionId: evento.session_id || null,
+    mensaje: String(evento.message || '').slice(0, 300),
+    cwd: evento.cwd || null,
+  };
+
+  try {
+    fs.mkdirSync(path.dirname(FICHERO), { recursive: true });
+    fs.appendFileSync(FICHERO, JSON.stringify(linea) + '\n');
+  } catch { /* disco lleno, permiso denegado, etc.: se pierde el aviso, no el turno */ }
+} catch {
+  // Cualquier otra cosa no prevista: se traga aquí. El catch de arriba es el cinturón; éste, el tirante.
+}
+
+process.exit(0);
+```
+
+### 2 · El diff exacto de `.claude/settings.json` (propuesto)
+Una clave nueva, `Notification`, al mismo nivel que `SessionStart`/`PreToolUse`/`Stop`. No toca ninguna
+de las tres que ya hay:
+```diff
+ {
+   "hooks": {
+     "SessionStart": [ … ],
+     "PreToolUse": [ … ],
++    "Notification": [
++      {
++        "hooks": [
++          {
++            "type": "command",
++            "command": "node .claude/hooks/permiso-colgado.mjs",
++            "timeout": 5
++          }
++        ]
++      }
++    ],
+     "Stop": [ … ]
+   }
+ }
+```
+
+### 3 · Qué escribe y dónde
+Una línea JSON por evento, en `C:\Users\Admin\AppData\Local\yaqu-equipo\permisos-colgados.jsonl`
+(fuera del repo, al lado de `config.json`, `sesiones.json` y `cementerio.json`, que ya viven ahí y ya
+los lee este equipo). Formato JSONL: un objeto por línea, se puede hacer `tail` o parsear con
+`JSON.parse` línea a línea. Ejemplo:
+```json
+{"ts":"2026-10-19T13:42:07.331Z","puesto":"S3","nombre":"sesion-3","sessionId":"f24ef1a2-9e3b-4c11-9b2a-0d7e5f1c8a90","mensaje":"Claude needs your permission to use PowerShell","cwd":"D:/MILLONARIO/cobroFlash/mesa-s3"}
+```
+El fichero sólo CRECE (el hook sólo añade); quién lo lee (un `parados.mjs` ampliado, un `tail` por
+tarea programada, o a mano) decide qué cuenta como «ya visto».
+
+### 4 · Por qué no puede bloquear nada (y cómo se demuestra, no sólo se afirma)
+- **El evento `Notification` no está en el camino de aprobación.** El prompt de permiso ya se muestra
+  de por sí; `PreToolUse` es el único hook cuyo exit code (2) puede impedir una acción. `Notification`
+  es un efecto lateral informativo — esto es lo que dice el contrato publicado de hooks de Claude Code;
+  queda como lo primero a comprobar si se construye (ver arriba, «no medido en vivo»).
+- **El script no hace nada que pueda colgarse de verdad**: sin red, sin `child_process`, sin await,
+  sólo `fs` síncrono sobre un fichero pequeño y local. Lo peor que le puede pasar es fallar al escribir
+  (disco lleno, permiso denegado), y eso está atrapado.
+- **Tres redes, no una**: el `try/catch` interno de cada paso, el `try/catch` exterior que envuelve
+  todo, y `process.on('uncaughtException'|'unhandledRejection', …)` para lo que se escape de los dos
+  anteriores. Los tres caminos terminan en `process.exit(0)`.
+- **`timeout: 5` en el registro**: aunque el contrato de arriba resultara estar mal leído y Claude Code
+  sí esperara al hook, el tope son 5 segundos, no un cuelgue indefinido.
+- **Comparación con lo que ya corre hoy**: `guard-dangerous.sh` y `carril.mjs` (en `PreToolUse`) SÍ
+  pueden bloquear — es su trabajo — y llevan corriendo en producción desde antes de esta sesión. Este
+  hook pide MENOS permiso que los dos que ya se confían: no gatea nada, sólo escribe un fichero.
+
+### 5 · Cómo se quita
+Una línea: borrar el bloque `"Notification": [...]` de `.claude/settings.json` y listo — sin ese
+registro, Claude Code no vuelve a llamar al script. El fichero `permiso-colgado.mjs` puede quedarse sin
+usarse, o borrarse también; ninguna de las dos cosas afecta a nada más. Un PR, una línea, reversible
+sin tocar ningún otro fichero.
+
+### Lo que esta propuesta NO decide (Capa B, deliberadamente fuera)
+Cómo se empuja el contenido de `permisos-colgados.jsonl` hacia alguien que no está mirando (el
+orquestador o el fundador) sigue SIN decidir, a propósito — me lo pidió el orquestador. Dos caminos
+nombrados, ninguno medido:
+1. Una tarea programada corta (2-3 min, como las `yaqu-equipo-0800/1305/1810` que ya existen) que haga
+   `tail` del fichero y lance un aviso del propio sistema operativo (p. ej. un toast de Windows) si hay
+   algo nuevo. No lanza ningún `claude`.
+2. Que algo inyecte el aviso directamente en la sesión del orquestador. **No comprobado a propósito**
+   (me pidieron no intentarlo).
+
+### Lo que NO hace
+- No lee Jira ni el panel del fundador: sólo escribe lo que el propio evento `Notification` trae.
+- No sabe si el permiso YA SE RESOLVIÓ: cada entrada es un hecho puntual («aquí hubo un prompt»), no un
+  estado que se borre solo. Quien lo consuma decide qué cuenta como atendido.
+- No identifica la mesa si `.yaqu-puesto.json` no existe o no es legible (equipo de Javier, o una mesa
+  sin preparar): sale `puesto: "?"`, nunca hace caer el hook por eso.
+- No se ha escrito el consumidor (ninguna Capa B): sin alguien que lea el fichero, esto es sólo un
+  registro que crece sin que nadie lo mire — sigue siendo mejor que el hueco de hoy, porque al menos
+  EXISTE el dato, pero no es la pieza completa hasta que la Capa B se decida.
