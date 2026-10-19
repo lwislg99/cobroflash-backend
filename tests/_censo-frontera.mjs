@@ -23,7 +23,12 @@
 //   NO-LLEGO       · las cuatro corridas acabaron en 4xx/5xx sin consultar ningún documento: NO MEDIDA
 //   CIEGO          · no encontré la ruta montada
 //
-// Uso: node censo-que-ve-el-tecnico.mjs <raiz del arbol, con dist/> [--eje=comercio]
+// SCRUM-1516b · VIVE AQUÍ desde el 19-oct-2026: nació como `docs/evidencias/scrum1390/censo-que-ve-el-tecnico.mjs.txt`
+// y nadie lo corría. Ahora lo corre `tests/scrum1516b-frontera-en-el-obligatorio.test.mjs` en cada PR, y ese
+// test es quien exige que lo que CRUZA y lo que NO-DISTINGUE sean exactamente las rutas declaradas allí.
+// Con el `.test.` fuera del nombre, `npm test` no lo coge como test: es el instrumento, no el juicio.
+//
+// Uso: node tests/_censo-frontera.mjs <raiz del arbol, con dist/> [--eje=comercio]
 //   Sale 0 si los controles SEMBRADOS salen como deben y la conducta correcta del árbol se mantiene;
 //   1 si no; 2 si está CIEGO (no pudo medir, o le falta la siembra). Las dos que NO son medición,
 //   para verlo caer: `--sin-sembrar` (sale 2) y, en el eje del comercio, `--doble-sordo` (sale 1).
