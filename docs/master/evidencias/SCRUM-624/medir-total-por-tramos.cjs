@@ -23,7 +23,9 @@ if (process.argv.includes('--help') || process.argv.length < 3) {
 const raiz = path.resolve(process.argv[2]);
 const N_REAL = Number(process.argv[3] || 300);
 const N_CELDA = Number(process.argv[4] || 3000);
-process.chdir(fs.mkdtempSync(path.join(os.tmpdir(), 'scrum624c-')));
+const temporal = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum624c-'));
+process.chdir(temporal);
+process.on('exit', () => { process.chdir(os.tmpdir()); fs.rmSync(temporal, { recursive: true, force: true }); });
 
 const d = (p) => path.join(raiz, 'dist', p);
 const PDFDocument = createRequire(d('index.js'))('pdfkit');
