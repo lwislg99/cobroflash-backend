@@ -133,3 +133,59 @@ con una fecha que avanza un milisegundo en cada petición. Con el `canon` de ant
   se lee exactamente igual que un éxito». Lo repetí sobre el `main` real, que ya traía el arreglo.
 - Di por buena durante unos minutos la lectura «la ficha se equivoca: el positivo sigue vivo en `main`». Era
   cierto a las 08:04Z y dejó de serlo a las 08:13Z. Va con su hora en ①.
+
+---
+
+## SCRUM-1516b · El censo de frontera entra en el obligatorio, con los conjuntos declarados y un trinquete
+
+**Medido contra:** `origin/main` = `5b14238041a96466da2b2072d9a5bb0443e6a5e0` · 2026-10-19T07:20:59Z
+
+A9: sin fallo que generalice — los dos rojos de este tramo (scrum1344 al mover el censo a `tests/`, y el veredicto que cambiaba con el `cwd`) los cazaron instrumentos antes de empujar, y los dos arreglos están en el código
+
+19-oct-2026 · **S3** (equipo de Luis), por encargo de su orquestador (`cobroflash-backend-f3`, mensaje del 19-oct, que lo aprueba con una condición: «SIN el trinquete, no sirve»). Lo que faltaba de este ticket, en el «Lo que NO está hecho» de arriba: **«El censo no corre en CI ni lo lanza nadie por calendario.»** El ticket es del equipo de Javier; a su equipo lo avisa el orquestador, no esta sesión.
+
+### Qué cambia
+
+| fichero | qué |
+|---|---|
+| `tests/_censo-frontera.mjs` | es el censo, movido con `git mv` desde `docs/evidencias/scrum1390/censo-que-ve-el-tecnico.mjs.txt`. Con el `_` delante, `npm test` no lo coge como test. Dos cambios de instrumento, abajo |
+| `tests/scrum1516b-frontera-en-el-obligatorio.test.mjs` | lo corre en los dos ejes y exige que lo que CRUZA y lo que NO-DISTINGUE sean EXACTAMENTE las rutas declaradas, cada una con su motivo; un suelo de población; y que el censo no esté mudo |
+| `docs/master/SCRUM-1514.md:5`, `evidencias/SCRUM-1516/verlo-caer.mjs`, `la-moneda.mjs` | la ruta nueva del censo (una línea cada uno). Sin ella, `scrum1294` cae: la A9 de 1514 apuntaba al fichero viejo |
+
+### Por qué el trinquete, y no «sale 0»
+
+**El censo salió 0 con las dos fugas inyectadas** (rojos A y B, abajo): sus controles son los sembrados y la conducta correcta que ya conoce, y una ruta nueva que cruce no toca ninguno. Por eso el juicio es del test, por CONJUNTOS:
+
+| eje | conjunto declarado hoy | si entra una | si sale una |
+|---|---|---|---|
+| comercio | CRUZA: `GET /admin/referral`, `GET /admin/billing/plans` (las dos globales a propósito, SCRUM-1514) | rojo: «filtra por `req.merchantId`, o decláralo con su motivo» | rojo: «quítala de la lista en este PR» (que no baje en silencio) |
+| rol | NO-DISTINGUE: 6 rutas, una ACEPTADA (`actividad-equipo`, decisión «1-B» de SCRUM-1341) y cinco deuda o sin decidir (SCRUM-1390) | rojo | rojo |
+
+Suelo de población: 78 rutas del rol y 194 del comercio, las del 19-oct sobre `397c772b`. **Lo que no ve, y lo imprime en cada pasada:** las NO-LLEGO (15 y 25), que acaban en 4xx/5xx sin consultar nada.
+
+### Los dos cambios del instrumento, y que no mueven ningún veredicto
+
+1. **El resultado dependía de DESDE DÓNDE se lanzara.** Por la mañana, lanzado desde el checkout compartido, `POST /admin/billing/accept-alcance` salía FILTRA; desde otra carpeta, NO-LLEGO (500 `legal_doc_missing`). La causa es que `readLegalDoc` fija `docs/legal` con el `cwd` AL IMPORTAR. Y `dotenv` lee el `.env` del `cwd`, así que desde un worktree con claves de base el censo se declaraba CIEGO. Ahora el censo pone el `cwd` en la raíz que mide y le quita a `dotenv` la lectura de ficheros antes de importar la app. Medido con `comparar-veredictos.mjs` (pares veredicto-ruta, no cuentas): rol idéntico 78 de 78; comercio, sólo esa ruta pasa de NO-LLEGO a FILTRA (`salida-comparar-cwd.txt`); y con el arreglo, la misma salida desde tres carpetas distintas.
+2. **El `req` sale de `reqDeSesion`** (`tests/_arnes-de-router.mjs`, SCRUM-1344). En `tests/`, `scrum1344` acusaba al censo de armar un `req` de sesión sin rol: lo llevaba, pero dentro de un `...base`. Es el arreglo que pide el propio guard; el constructor se trae del árbol medido, porque los bancos de 1516 corren una copia del censo fuera del árbol. Veredictos idénticos: 78 de 78 y 194 de 194. `scrum1344` 27 de 27, y el censo queda en su clase «import de dist sin resolver, ningún `req` sin rol a la vista».
+
+### El rojo primero (`evidencias/SCRUM-1516b/rojo-primero.ps1`, sobre `5d93b115`)
+
+| inyección | test | por qué cae |
+|---|---|---|
+| A · `getExpense` sin `merchantId` en el `where` | 1 | `[comercio] CRUZA con rutas que NO están declaradas: GET /admin/expenses/:id` |
+| B · `GET /admin/quotes/:id/pdf` sin la puerta del Técnico de SCRUM-1555 | 1 | `[rol] NO-DISTINGUE con rutas que NO están declaradas: GET /admin/quotes/:id/pdf` |
+| C · una ruta declarada que no cruza | 1 | `declaradas en CRUZA que ya NO salen` |
+| D · el suelo del rol a 79 | 1 | `el censo vio 78 rutas y el suelo es 79` |
+
+Cada una con su `git diff --numstat` al lado (se aplicó), compilando entre A y B, revertidas con `git restore --source=HEAD` y el árbol limpio al final. Las salidas están en `rojo-*-test.txt`. El banco de mutaciones del censo (`verlo-caer.mjs`) sigue en 15 de 15 desde el sitio nuevo (`salida-verlo-caer-19oct.txt`).
+
+### Coste y entorno
+
+El test tarda ~5 s (cuatro lanzamientos del censo). Lanza el censo SIN las variables de base y de integración, con el mismo patrón que mira el censo: si las viera, se declararía CIEGO. Visto con `DATABASE_URL` y `WHATSAPP_ACCESS_TOKEN` puestos: el censo solo sale 2 y el test pasa 4 de 4. También sin `NODE_TEST_CONTEXT` ni `NODE_OPTIONS`.
+
+### Lo que NO está hecho
+
+- Las cinco rutas «deuda» del eje del rol siguen como estaban: este test impide que crezcan, no las arregla. `GET /admin/jobs/:id/ics` es el hallazgo aparte que SCRUM-1390 ya nombró (el Técnico baja el `.ics` de un Trabajo ajeno); es de servidor (S1) y no se toca aquí.
+- Las NO-LLEGO no están medidas: una ruta que cruce y no llegue no la caza.
+- La tanda completa no la he corrido. Lo corrido, en la entrega.
+- `dist/` compilado con el cliente de Prisma compartido, que va por detrás del esquema (`activityKind`): tsc emite con errores de tipos. No regenero (⛔ de la tanda).

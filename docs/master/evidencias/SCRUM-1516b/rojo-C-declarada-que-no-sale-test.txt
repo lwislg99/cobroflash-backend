@@ -1,0 +1,40 @@
+[comercio] código 0 · población 194 (suelo 194) · CRUZA 2 · NO-LLEGO (no medidas) 25
+[rol] código 0 · población 78 (suelo 78) · NO-DISTINGUE 6 · NO-LLEGO (no medidas) 15
+✖ SCRUM-1516b · 🔴 eje del COMERCIO: lo que cruza la frontera es exactamente lo declarado, y sólo puede bajar (5563.8671ms)
+✔ SCRUM-1516b · 🔴 eje del ROL: lo que un Técnico recibe igual que el administrador es exactamente lo declarado (1335.458ms)
+✔ SCRUM-1516b · el censo NO está mudo en esta máquina: sin su siembra dice CIEGO, y con el doble sordo cae (2386.3691ms)
+✔ SCRUM-1516b · cada ruta declarada lleva su MOTIVO, no sólo su nombre (0.3104ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 9345.897
+
+✖ failing tests:
+
+test at tests\scrum1516b-frontera-en-el-obligatorio.test.mjs:117:1
+✖ SCRUM-1516b · 🔴 eje del COMERCIO: lo que cruza la frontera es exactamente lo declarado, y sólo puede bajar (5563.8671ms)
+  AssertionError [ERR_ASSERTION]: [comercio] declaradas en CRUZA que ya NO salen: GET /admin/una-que-ya-no-cruza. Si es porque se arregló, quítalas de la lista en este PR; si no, el censo ha dejado de verlas.
+  + actual - expected
+  
+  + [
+  +   'GET /admin/una-que-ya-no-cruza'
+  + ]
+  - []
+  
+      at juzgar (file:///D:/MILLONARIO/cobroFlash/wt-s3-19oct-1516b/tests/scrum1516b-frontera-en-el-obligatorio.test.mjs:113:10)
+      at TestContext.<anonymous> (file:///D:/MILLONARIO/cobroFlash/wt-s3-19oct-1516b/tests/scrum1516b-frontera-en-el-obligatorio.test.mjs:118:3)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.start (node:internal/test_runner/test:1003:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'GET /admin/una-que-ya-no-cruza' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

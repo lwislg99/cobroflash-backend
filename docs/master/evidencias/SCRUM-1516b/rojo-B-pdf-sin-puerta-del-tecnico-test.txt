@@ -1,0 +1,42 @@
+[comercio] código 0 · población 194 (suelo 194) · CRUZA 2 · NO-LLEGO (no medidas) 25
+[rol] código 0 · población 78 (suelo 78) · NO-DISTINGUE 7 · NO-LLEGO (no medidas) 15
+✔ SCRUM-1516b · 🔴 eje del COMERCIO: lo que cruza la frontera es exactamente lo declarado, y sólo puede bajar (2688.4405ms)
+✖ SCRUM-1516b · 🔴 eje del ROL: lo que un Técnico recibe igual que el administrador es exactamente lo declarado (1375.8016ms)
+✔ SCRUM-1516b · el censo NO está mudo en esta máquina: sin su siembra dice CIEGO, y con el doble sordo cae (2356.3957ms)
+✔ SCRUM-1516b · cada ruta declarada lleva su MOTIVO, no sólo su nombre (0.3005ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6485.9242
+
+✖ failing tests:
+
+test at tests\scrum1516b-frontera-en-el-obligatorio.test.mjs:120:1
+✖ SCRUM-1516b · 🔴 eje del ROL: lo que un Técnico recibe igual que el administrador es exactamente lo declarado (1375.8016ms)
+  AssertionError [ERR_ASSERTION]: [rol] NO-DISTINGUE con rutas que NO están declaradas: GET /admin/quotes/:id/pdf. Un Técnico recibe lo mismo que el administrador: recórtalo, o declárala con su motivo y su decisión.
+  + actual - expected
+  
+  + [
+  +   'GET /admin/quotes/:id/pdf'
+  + ]
+  - []
+  
+      at juzgar (file:///D:/MILLONARIO/cobroFlash/wt-s3-19oct-1516b/tests/scrum1516b-frontera-en-el-obligatorio.test.mjs:108:10)
+      at TestContext.<anonymous> (file:///D:/MILLONARIO/cobroFlash/wt-s3-19oct-1516b/tests/scrum1516b-frontera-en-el-obligatorio.test.mjs:121:3)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'GET /admin/quotes/:id/pdf' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
