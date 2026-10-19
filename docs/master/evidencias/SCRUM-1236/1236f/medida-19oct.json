@@ -1,0 +1,54 @@
+{
+  "etiqueta": "antes-del-merge",
+  "version": "cd85e34b1e5bfaf561f010f550296bd94b659e75",
+  "panel": {
+    "numero": "AB260001",
+    "pildoras": [
+      "emitido",
+      "enviado para firmar"
+    ]
+  },
+  "ficha": {
+    "estado": "emitido",
+    "enviadoParaFirma": true,
+    "entregaParaFirmar": {
+      "estado": "fallido",
+      "fallo": "en_el_acto",
+      "at": "2026-10-18T18:09:53.752Z"
+    },
+    "firmaToken": "len32"
+  },
+  "abortadasPanel": [
+    "POST /admin/entorno"
+  ],
+  "publica": {
+    "status": 200,
+    "titulo": "Firmar parte de trabajo",
+    "haySaludo": true,
+    "hayFirmar": true,
+    "yaFirmado": false,
+    "ipConocida": true,
+    "controlPositivo": {
+      "ipPropia": true,
+      "marcaNavegador": true
+    },
+    "enElHtml": {
+      "ipPropia": false,
+      "marcaNavegador": false,
+      "ipv4": [],
+      "palabras": [
+        " IP "
+      ]
+    },
+    "enElTexto": {
+      "ipPropia": false,
+      "marcaNavegador": false,
+      "ipv4": [],
+      "palabras": [
+        " IP "
+      ]
+    },
+    "bytesHtml": 16176,
+    "abortadas": []
+  }
+}
