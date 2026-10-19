@@ -147,3 +147,23 @@ profesional que NO llegó sí sería texto nuevo, y no se ha escrito.
 - **VISTO en yaqu.app tras el merge:** la ficha del #46 tiene que pasar de `emitido · enviado para firmar` a sólo
   `emitido`. Hay que mirarlo ANTES de firmar el #46 en obra (lo pide `privacidad:92` de SCRUM-1236): firmado,
   deja de tener la píldora por otro motivo y la medida ya no distinguiría nada.
+
+### 49d · VISTO en yaqu.app
+
+**Medido contra:** prod = `origin/main` = `397c772b47025b827f65d44cd157a522f6c6dd8b` (merge de #2592, 06:57:29Z;
+`/version` lo servía) · hora de GitHub al escribir: 2026-10-19T07:00:33Z
+
+Sólo GET, cuenta QA, 1280 px, service worker bloqueado (si no, el panel podía servir el JS viejo de su caché). La
+sonda aborta y cuenta todo lo que no es GET: sólo cayó `POST /admin/entorno`, del propio panel. Es
+`docs/master/evidencias/SCRUM-1236/1236f/sonda.mjs` (rama de 1236f).
+
+| albarán #46 | servidor: `enviadoParaFirma` · `entregaParaFirmar` | píldoras de la ficha |
+|---|---|---|
+| antes (`cd85e34b`) | `true` · `fallido`, `en_el_acto` | `emitido` · **`enviado para firmar`** |
+| después (`397c772b`) | `true` · `fallido`, `en_el_acto` | `emitido` |
+
+**El control es la propia fila:** el servidor dice LO MISMO en las dos medidas; lo único que cambia es la pantalla.
+Evidencias: `evidencias/SCRUM-49/49d-visto/` (`antes-*`, `despues-*`).
+
+No medido en yaqu.app: los casos `entregado`/`aceptado` (la píldora SÍ debe salir). En la cuenta QA no hay ningún
+albarán con un envío que llegara, y crearlo es mandar un WhatsApp real (fuera de R25). Los cubre el test.
