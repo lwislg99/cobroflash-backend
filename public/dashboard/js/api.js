@@ -989,6 +989,12 @@ window.waCollectRestSent = waCollectRestSent;
 // ⚠️ DIVERGE A PROPÓSITO de la LETRA de A20.5 («SIEMPRE … Copiar enlace»), no de su intención: la
 // regla daba por hecho que había enlace. Declarado en docs/master/SCRUM-1233.md §1233h; la enmienda
 // está PENDIENTE del fundador, no aprobada.
+//
+// SCRUM-1233i · «Enviar por email» SÓLO si hay algo que hacer con él: `onEmail` (se envía) o
+// `emailDisabledReason` (se ve desactivado y dice por qué). Sin ninguno de los dos salía un botón
+// ACTIVO SIN OYENTE: se pulsaba y no pasaba nada. Ningún llamador de hoy cae ahí (los cuatro pasan
+// uno de los dos); lo pide el del albarán, que no tiene envío por email y para el que el único
+// motivo que existe («sin email guardado») sería falso. Misma divergencia de A20.5, misma declaración.
 function waFallbackBar({ link, onEmail, onRetry, emailDisabledReason }) {
   const bar = document.createElement('div');
   bar.className = 'wa-fallback-bar';
@@ -1009,31 +1015,33 @@ function waFallbackBar({ link, onEmail, onRetry, emailDisabledReason }) {
     bar.appendChild(copyBtn);
   }
 
-  const emailBtn = document.createElement('button');
-  emailBtn.className = 'btn-secondary btn-sm';
-  emailBtn.textContent = '✉️ Enviar por email';
-  if (emailDisabledReason) {
-    emailBtn.disabled = true;
-    emailBtn.title = emailDisabledReason;
-    emailBtn.style.opacity = '.55';
-  } else if (onEmail) {
-    emailBtn.addEventListener('click', async () => {
+  if (onEmail || emailDisabledReason) {
+    const emailBtn = document.createElement('button');
+    emailBtn.className = 'btn-secondary btn-sm';
+    emailBtn.textContent = '✉️ Enviar por email';
+    if (emailDisabledReason) {
       emailBtn.disabled = true;
-      emailBtn.textContent = 'Enviando…';
-      try {
-        const result = await onEmail();
-        // SCRUM-115: apiRequest() solo rechaza en HTTP≠2xx. Los 2 endpoints /send-email
-        // responden 200+sent:false cuando el envío falla — sin este chequeo, esta barra
-        // (compartida por facturas, presupuestos y trabajos) siempre decía "✓ Enviado".
-        if (waSendFailed(result)) throw { data: result, message: result.message };
-        showToast('✓ Enviado por email'); emailBtn.textContent = '✉️ Enviado';
-      } catch (e) {
-        showToast('Email falló: ' + (e?.data?.message || e.message), 'error');
-        emailBtn.disabled = false; emailBtn.textContent = '✉️ Enviar por email';
-      }
-    });
+      emailBtn.title = emailDisabledReason;
+      emailBtn.style.opacity = '.55';
+    } else {
+      emailBtn.addEventListener('click', async () => {
+        emailBtn.disabled = true;
+        emailBtn.textContent = 'Enviando…';
+        try {
+          const result = await onEmail();
+          // SCRUM-115: apiRequest() solo rechaza en HTTP≠2xx. Los 2 endpoints /send-email
+          // responden 200+sent:false cuando el envío falla — sin este chequeo, esta barra
+          // (compartida por facturas, presupuestos y trabajos) siempre decía "✓ Enviado".
+          if (waSendFailed(result)) throw { data: result, message: result.message };
+          showToast('✓ Enviado por email'); emailBtn.textContent = '✉️ Enviado';
+        } catch (e) {
+          showToast('Email falló: ' + (e?.data?.message || e.message), 'error');
+          emailBtn.disabled = false; emailBtn.textContent = '✉️ Enviar por email';
+        }
+      });
+    }
+    bar.appendChild(emailBtn);
   }
-  bar.appendChild(emailBtn);
 
   if (onRetry) {
     const retryBtn = document.createElement('button');

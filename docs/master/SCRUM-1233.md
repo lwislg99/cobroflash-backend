@@ -289,6 +289,13 @@ y el reenvío no devolvió `pay_token`), sólo dos: «Enviar por email» y «Rei
 pinta (`waFallbackBar`, `public/dashboard/js/api.js`, `if (link)`), y el aviso de error sigue saliendo: no es un
 fallo silencioso.
 
+**Y desde 1233i (19-oct), lo mismo con el email:** «Enviar por email» sólo se pinta si quien llama pasa `onEmail`
+(envía) o `emailDisabledReason` (desactivado, con su motivo). Sin ninguno de los dos salía ACTIVO y SIN OYENTE: se
+pulsaba y no pasaba nada. Los cuatro llamadores de hoy pasan siempre uno de los dos, así que ninguna pantalla
+cambia; el caso lo trae el llamador del albarán (S4), que no tiene envío por email y para el que el único motivo
+que existe («Este cliente no tiene email guardado») sería falso. Un botón que no hace nada, igual que un enlace
+falso, no es una salida.
+
 **Por qué:** la regla se escribió dando por hecho que había enlace. Nadie decidió «enseña un botón que copia la
 portada», y eso es lo que pasaba (medido arriba, tres casos). La letra choca; la intención («que el profesional tenga
 una salida que funcione, nunca un callejón») no: un enlace falso no la cumple, la contradice. Quitar una mentira no
@@ -296,4 +303,32 @@ añade texto (regla 39).
 
 **Estado:** decidido por el orquestador el 18-oct que el arreglo entra con la divergencia DECLARADA. **La enmienda
 de A20.5 la lleva el orquestador al fundador: está PENDIENTE, no aprobada.** El comentario de `waFallbackBar` remite
-aquí.
+aquí. La parte del email (1233i) va en esta MISMA declaración, por petición del orquestador (19-oct); la enmienda
+la lleva él.
+
+### 1233i · «Enviar por email» sólo con algo que hacer (S2, 19-oct, rama `scrum-1233i-email-sin-accion-no-se-pinta`)
+
+**Medido contra:** `origin/main` = `774c32b517918c9bca567d35c0c15d881885cb64` · 2026-10-19T07:33:07Z
+
+**Skill UI:** no cargada · no cambia nada que se vea en ninguna pantalla de hoy (los cuatro llamadores pasan `onEmail`
+o `emailDisabledReason`); sólo deja de crear un botón muerto en un caso que hoy no ocurre. Cero texto nuevo.
+
+**Lo pidió** el orquestador (19-oct) con la medida de S4 contra `main` `1edb5ce4`: `bar.appendChild(emailBtn)` iba fuera
+de todo `if`. **Lo comprobé yo antes de tocar**, leyendo los cuatro llamadores en `origin/main`:
+`invoiceDetailView.js:404` y `:420` (J1), `jobDetailView.js:1475` y `quotesDetailView.js:148` pasan los dos, como
+`email ? () => … : null` y `email ? null : 'Este cliente no tiene email guardado'`. Siempre llega uno de los dos.
+
+**Cambio:** en `waFallbackBar` (`public/dashboard/js/api.js`), el botón de email se crea y se añade dentro de
+`if (onEmail || emailDisabledReason)`. Dentro, lo de siempre: el motivo gana (desactivado + `title`), y si no, el oyente.
+
+**Test** (en `tests/scrum1233h-copiar-enlace-sin-enlace.test.mjs`, junto a 1233h, sobre la `waFallbackBar` REAL):
+① sin ninguno de los dos, la barra trae sólo «Copiar enlace» y «Reintentar WhatsApp»; CONTROL: con `onEmail` el botón
+existe y su oyente envía, y con `emailDisabledReason` existe, desactivado y con el motivo en `title`. ② censo de los
+llamadores por llaves emparejadas (con su CONTROL): todos pasan `onEmail` o `emailDisabledReason`. Población hoy: 4.
+La lista `SIN_EMAIL_A_PROPOSITO` está vacía: el albarán de S4 entra en ella con su motivo.
+**Rojos sembrados**, deshechos y comprobados byte a byte: ① `api.js` de `origin/main` · ② `if (onEmail)` a secas (el
+desactivado desaparece) · ③ el oyente no se pone · ④ `jobDetailView` deja de pasar el email → cada uno cae en su caso.
+Los 78 ficheros que leen `api.js` o la barra (726 tests), con la rama y con el `api.js` de `origin/main`: ningún rojo
+nuevo; el único de la base es el caso ① de 1233i. (`tsc` con el error conocido de `activityKind`; sin `prisma generate`.)
+
+A9: comprobación → `tests/scrum1233h-copiar-enlace-sin-enlace.test.mjs`
