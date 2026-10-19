@@ -497,7 +497,7 @@ sólo escribe la foto (`PARADOS · NO PUDE MIRAR`, `mirado a las`).
 **Medido contra:** `origin/main` = `cd85e34b1e5bfaf561f010f550296bd94b659e75` · hora real 2026-10-19T06:49Z
 (cabecera `Date:` de `gh api -i zen`; el reloj local va adelantado).
 
-A9: aviso → cicatriz S5 «Dos parches a la sala (16 y 17-oct) fueron a una copia del plugin que no carga ninguna sesión: un mod se arregla en la copia que se CARGA (mods-yaqu, marketplace directory) y se comprueba con su chivato o con el log de VS Code, no leyendo el fichero» — no se pudo comprobar: el plugin vive fuera del repo y ningún test de la tanda lo ve
+A9: aviso → cicatriz S5 «Dos parches del orquestador a la sala (16 y 17-oct; los hizo él, no S5) fueron a una copia del plugin que no carga ninguna sesión: un mod se arregla en la copia que se CARGA (mods-yaqu, marketplace directory) y se comprueba con su chivato o con el log de VS Code, no leyendo el fichero» — no se pudo comprobar: el plugin vive fuera del repo y ningún test de la tanda lo ve
 
 **Este tramo no cambia nada del repo** (salvo esta línea y su cicatriz). El arreglo vive en el plugin, que está fuera del repo
 (`D:/MILLONARIO/cobroFlash/mods-yaqu/yaqu-sala/`, sin git). Aquí queda el registro. Tiene el OK del
