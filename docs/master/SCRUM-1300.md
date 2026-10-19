@@ -108,3 +108,70 @@ llegan.
 
 **Una pregunta, no un hecho:** hoy las sesiones se llaman `sN-16oct`, y `sesion.mjs` sólo admite los puestos del
 config (`sesion-N`). No he medido cómo se lanzaron. Si fue sin `sesion.mjs`, encender `mesas` no basta.
+
+## SCRUM-1300c · PIEZA 8 construida: la memoria del orquestador contra el árbol (18-oct-2026, Sesión 5)
+
+**Medido contra:** `origin/main` = `fa1633398d1057e88c2af30a4f1a6572c0934556` · 2026-10-18T18:19:31Z
+
+A9: comprobación → `tests/scrum1300c-memoria-contra-el-arbol.test.mjs`
+
+**Dueño:** el «S0 o S5, sin decidir» de c.17878 lo resolvió el orquestador el 18-oct: **S5** (un instrumento
+con su control es del carril de S5; S0 es normas y auditoría).
+
+**Por qué hoy.** El 18-oct la memoria del orquestador le atribuyó a un guion suyo (`quien-me-espera.mjs`) un
+acierto que era de `sala.mjs`, y con eso pidió llevarlo a `main`; medido, el guion salía 0 sin mirar a nadie.
+Su índice ya tenía «mi memoria cuenta como ENTREGADO lo que vive en un PR ABIERTO (2x en 2 días)»: la única
+defensa era acordarse de acordarse.
+
+### Lo que entra
+`node scripts/equipo/memoria-contra-el-arbol.mjs <carpeta de memoria> [--todo] [--json]`. Sólo LEE. La
+carpeta llega por argumento: la memoria vive fuera del repo y el guion no sabe dónde.
+
+| afirmación (por tramo: la línea partida por `·`, `|`, `;`, ` — `) | se comprueba con | si no se sostiene |
+|---|---|---|
+| `#N` + EN MAIN / MERGED / mergeado | `gh pr list --state all` (una llamada) | 🔴 FALSA |
+| `#N` + ABIERTO | lo mismo | 🟡 CADUCADA (foto vieja, no alarma) |
+| sha + EN MAIN | `git merge-base --is-ancestor <sha> origin/main` | 🔴 FALSA |
+| sha + EMPUJADO / punta | `git branch -r --contains` | 🔴 FALSA |
+| `` `ruta/con/carpeta.ext` `` + EN MAIN | `git cat-file -e origin/main:<ruta>` | 🔴 FALSA |
+
+- Se quita antes lo citado entre «…» y "…": ahí la memoria cita lo que alguien dijo, muchas veces el
+  error mismo («convertí "empujado" en "mergeado"»).
+- No se juzga un tramo con negación (no, sin, falta, nunca) ni uno que diga EN MAIN y ABIERTO a la vez.
+  Se cuenta aparte: mejor callar que inventar una falsedad.
+- Un sha que no existe es FALSA sólo si el texto dice que es un commit (punta, commit, sha, `` `…` ``). Si
+  no, se aparta como «¿id de sesión?». Medido: en la primera pasada salió FALSA `ed676fd1`, que era una
+  transcripción y no un commit.
+- Por defecto se juzgan `MEMORY.md` y `project_*` (el ESTADO). Con `--todo`, también las lecciones
+  (`feedback_*`), que son historia.
+
+**El control va DENTRO, en cada pasada, con las MISMAS consultas de verdad.** El último PR mergeado en
+`main`, afirmado ABIERTO, tiene que salir CADUCADA. La punta de `origin/main`, afirmada EN MAIN, tiene
+que salir bien. Un commit que no existe, afirmado EN MAIN, tiene que salir FALSA. Si no los clava, sale 2.
+
+**Salida:** 0 = se sostiene (las caducadas se enseñan) · 1 = alguna FALSA · 2 = NO PUDE MIRAR. Sale 2 si
+no hay carpeta o ficheros, si no reconoce ninguna afirmación, si el `fetch` falla, si `gh` no contesta o
+si el control no caza. El 2 gana al 1.
+
+**Lo que NO cubre, y lo dice en cada salida:** el estado de un ticket en Jira (no hay credencial); **una
+afirmación que atribuye un hecho a la pieza EQUIVOCADA** («lo vio X» cuando lo vio Y), que es la que más
+ha mordido y no sale de un patrón de texto; ni cifras ni fechas.
+
+### Comprobado
+| corrida | resultado |
+|---|---|
+| contra la memoria REAL (73 ficheros, por defecto) | 175 juzgadas: **0 FALSAS**, 19 CADUCADAS (PR que la memoria daba por ABIERTOS y ya entraron), 1 apartada (`ed676fd1`, id de sesión) · control 3/3 · salida 0 |
+| lo mismo con `--todo` | 178 juzgadas, 0 FALSAS, 20 CADUCADAS |
+| **una COPIA de la memoria real con dos mentiras plantadas**: un PR que existe y está ABIERTO (#2577) dado por EN MAIN, y un commit empujado pero no mergeado (`c7b65d83`) dado por EN MAIN | **las dos salen FALSAS, con su fichero y su línea · salida 1**. La copia se borró después |
+| test nuevo (sin red: consultas dobladas, extractor, juez y control de verdad) | 16/16 |
+| mutación: el control no tumba la pasada | cae «EL CONTROL DE DENTRO» |
+| mutación: un PR ABIERTO cuenta como EN MAIN | caen «EL CASO QUE LO HIZO NACER» y «sale 1 y la NOMBRA» |
+| `scrum723` | declaradas sus tres órdenes y su mención fuera de los argumentos, con motivo y quién las retira (su sujeto es la punta) |
+| `scrum824`, `scrum836`, `scrum381` | 824 en verde. 836 y 381 caen sólo por el `dist/` de un árbol nuevo sin compilar (`scrum608`, «el fichero NO EXISTE») |
+
+Una prueba que se buscó y salió al revés: la primera mentira plantada fue «#2552 EN MAIN». No salió FALSA
+porque #2552 ya se había mergeado mientras tanto. Era verdad, y el guion acertó.
+
+### Con esto, el recuento de arriba
+La pieza 8 pasa a **HECHA como script, sin rutina**. Nadie la corre sola todavía: correrla en cada turno
+(o desde el latido) es decisión del orquestador. Queda **sin hacer** la 7.
