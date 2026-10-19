@@ -256,4 +256,22 @@ papel: los dos usan el mismo motor y los dos se equivocan igual.
 - Nada arreglado ni propuesto como texto: la fila 1 es formato (firma del fundador) y el redondeo toca el motor
   fiscal (STOP, J1).
 - No se ha pintado ni leído un PDF de verdad: las cifras salen de las funciones que el PDF llama, no del papel.
-- La factura en el portal (`customerPortal.routes.ts:400`) y el recibo no están en esta tabla.
+
+### Segunda tabla: el portal del cliente y el recibo (19-oct, encargo del orquestador)
+
+Sólo lectura. Carril, por `node scripts/carriles.mjs de`: `customerPortal.routes.ts` → J2 · `receipt.routes.ts` → J2
+· `pdf.service.ts` → J1. El PDF de la factura es camino de emisión: leído, no medido.
+
+| # | concepto | lo calcula el portal / recibo | lo calcula el documento | ¿misma función? | ¿coinciden hoy? |
+| --- | --- | --- | --- | --- | --- |
+| P1 | presupuesto: importe de línea | portal :349, `qty\|\|1 × price\|\|0 × (1+tax)`, con IVA, sin `dto` | PDF :985, con IVA, sin `dto` | **NO**, dos copias | sí en «sumar» sin apartados. **NO** en «IVA no incluido» (el PDF la pinta sin IVA) ni en un apartado: el portal pinta «0,00 €» y el PDF la deja vacía |
+| P2 | presupuesto: descuentos | el portal no los pinta | `pieDePresupuesto` | — | 🔴 **candidato a cifra falsa** (avisado al orquestador): con descuento, las líneas del portal suman más que el total de la tarjeta y no hay ninguna fila que lo explique. 2 × 100 € al 21 % con 10 %: línea 242,00 € · total 217,80 € |
+| P3 | presupuesto: base e IVA | el portal no los pinta | — | — | — |
+| P4 | presupuesto: total | `quote.total` | `quote.total` | mismo dato | sí en «sumar»; **NO** en «no incluido», el mismo hueco que la página |
+| F1 | factura: importe de línea | portal :400, `qty\|\|1 × price\|\|0 × (1+tax)` | PDF :493, `cantidadDeLinea(qty) × price × (1+tax)` | **NO**, dos copias, y con distinta cantidad por defecto | sí con líneas normales: la factura ya lleva el `dto` en el precio y el global como línea negativa (`lineasParaFacturar`, SCRUM-887) |
+| F2 | factura: total | `inv.total`, el guardado | PDF :562, `grandTotal` recalculado (suma flotante) | **NO** | defecto ② de SCRUM-624, ya conocido. Frecuencia no medida |
+| F3 | factura: IVA por tipo | el portal no lo pinta | PDF :548, su propio `vatMap` (no `calcVatBreakdown`) | — | el XML sí usa `calcVatBreakdown`: el IVA del papel y el del registro son dos cálculos (leído, no medido) |
+| R1 | recibo: importe | página :311, `ch.amount` (el cobro) | su PDF es la FACTURA (`ensureInvoicePdf`, :498), con el total de F2 | dato distinto | coinciden si el cobro es de la factura entera. La factura se encuentra por el evento `invoiced` de ese cobro, que es la correcta; el atajo por `quote.chargeId` casi no se usa (sólo lo hereda una revisión). No medido |
+
+**El modo de emisión:** el portal no lo mira para los números, y ningún importe depende de él. La palabra
+«Factura» es otra cosa (SCRUM-1567).
