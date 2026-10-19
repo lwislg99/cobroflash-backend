@@ -195,7 +195,7 @@ Ninguna ruta de emisión. Añadir un campo leído no cambia nada de lo que se fa
 ## SCRUM-1444d · el mismo documento en pantalla y en papel, aplicado al DINERO (sólo medido)
 
 **Medido contra:** `origin/main` = `ea8dece1df90430ae0b269e200be137ff5462b72` · 2026-10-19T11:35:20Z (hora de GitHub al escribir; los ficheros medidos no cambian hasta `afc677a2`)
-A9: aviso → cicatriz S1 «Juzgué una cifra de línea sin leer las filas del pie que van debajo» — no se pudo comprobar: es lectura de la sesión, no pasa por ningún guard
+A9: aviso → cicatriz S1 «Una cifra de una tabla se juzga con las filas del pie que van debajo: una línea en bruto con su descuento en otra fila no es una cifra falsa.» — no se pudo comprobar: es lectura de la sesión y ningún guard la mira
 
 Carril S1 · árbol `s1-1444d`. Encargo del orquestador (19-oct): por cada importe que el cliente final ve en la página
 pública del presupuesto (donde acepta y firma) y en su PDF, y en el albarán, **¿lo calculan con la misma función o
