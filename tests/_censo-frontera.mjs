@@ -36,9 +36,22 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { PassThrough } from 'node:stream';
 
-const raiz = process.argv[2];
+const raiz = process.argv[2] ? path.resolve(process.argv[2]) : '';
 if (!raiz) { console.log('CIEGO: falta la raiz del arbol'); console.log('EXIT=2'); process.exit(2); }
 const de = (rel) => import(pathToFileURL(path.join(raiz, 'dist', rel)).href);
+
+// ── SCRUM-1516b · EL RESULTADO NO DEPENDE DE DESDE DÓNDE SE LANCE. Medido el 19-oct-2026: la misma
+// `dist/` daba `POST /admin/billing/accept-alcance` FILTRA lanzado desde la raíz de un árbol y NO-LLEGO
+// lanzado desde otra carpeta, porque `readLegalDoc` fija `docs/legal` con el `cwd` AL IMPORTAR. Y `dotenv`
+// lee el `.env` del `cwd`: desde un worktree con claves de base el censo se declaraba CIEGO, y desde otro
+// no. Así que, ANTES de importar nada de la app: el `cwd` pasa a ser la raíz que se mide (la ruta va en
+// absoluto arriba, para que `de` no dependa de él) y `dotenv` no lee ningún fichero. Lo único que ve el
+// censo es el entorno con el que lo lanzan, y la comprobación de PELIGRO de abajo mira justo ése.
+{
+  const { createRequire: requireDe } = await import('node:module');
+  requireDe(path.join(raiz, 'dist', 'core', 'config', 'loadEnv.js'))('dotenv').config = () => ({ parsed: {} });
+  process.chdir(raiz);
+}
 
 // ── SCRUM-1514 · SEGUNDO EJE, declarado: `--eje=comercio`. Sin esa bandera este fichero hace lo
 // mismo que hacía (el eje del ROL, sobre TECNICO_ALLOWED). Con ella mide OTRA cosa, con OTRA
@@ -88,7 +101,8 @@ const { prisma } = await de('core/db/prisma.js');
 // ninguna base, pero una integración con credenciales SÍ saldría a la red. La primera pasada se
 // lanzó sin mirar esto y sólo no envió nada porque el árbol no tenía ninguna («Credenciales no
 // configuradas, mensaje omitido» en su stderr): eso fue suerte medida después, no un control.
-// Se mira DESPUÉS de importar la app, que es cuando `loadEnv` ya ha cargado lo que hubiera.
+// Se mira DESPUÉS de importar la app, que es cuando `loadEnv` ya ha cargado lo que hubiera (desde
+// SCRUM-1516b, nada: `dotenv` no lee ficheros aquí, y lo que se mira es el entorno de quien lo lanza).
 const PELIGRO = Object.keys(process.env).filter((k) => process.env[k]
   && /WHATSAPP|RESEND|GEMINI|ANTHROPIC|OPENAI|STRIPE|MERCADOPAGO|DATABASE_URL|SMTP|MAILER/i.test(k));
 if (PELIGRO.length) {
