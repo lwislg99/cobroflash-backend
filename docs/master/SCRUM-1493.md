@@ -69,6 +69,35 @@ El aviso mide 366×42 (una línea) o 366×63 (dos) en móvil; letra 13,5 px, a 8
 ## Visto de paso, sin tocar
 
 - Un `PATCH` rechazado con 409 (el parte se firmó en otro sitio) dice lo mismo, «vuelve a intentarlo», y ahí repetir no va a salir nunca. Ya era así antes de este cambio; en «Ordenar» SCRUM-1302 (C) lo resuelve releyendo el parte, y aquí no se ha hecho.
+
+## SCRUM-1493c · la casilla de la descripción, en la propuesta, con el mismo estilo que las líneas ya guardadas (19-oct-2026, S4)
+
+**Medido contra:** `origin/main` = `ea8dece1df90430ae0b269e200be137ff5462b72` (prod servía ese mismo SHA en `/version`) · carril S4 · árbol `s4-1493c-casilla-propuesta` · rama `scrum-1493c-casilla-propuesta-mismo-estilo`.
+
+**Skill UI:** no cargada · a propósito: no hay decisión de diseño nueva — se reutiliza, tal cual, una clase de `styles.css` que ya existe y ya está aprobada (SCRUM-1287) para el mismo tipo de casilla, en la misma pantalla.
+
+### De dónde sale
+
+Nombrado sin ticket en c.19818/c.19819 de este mismo ticket (15-oct-2026), al ver de paso la captura del 500 simulado de SCRUM-1493b: «en la propuesta, la casilla de la descripción sale como una caja estrecha de borde fino, distinta de las casillas de las líneas guardadas que hay justo debajo». Quedó dicho «lo reparto cuando sepa de qué carril es el estilo» — es el mío: `parteDetailView.js`.
+
+### La causa
+
+`pintarLineaPropuesta` (línea ~844) pinta `<input type="text" data-propuesta-desc="1">` **sin ninguna clase**, sólo el estilo inline `flex:1;min-width:160px;font-size:14px`. Sin clase, hereda el borde y la altura por defecto del navegador. Las líneas YA guardadas (`pintarFilaParte`, el `<textarea class="parte-linea-desc">`) llevan `min-height:44px`, `padding:8px 10px` y un borde de 1,5px con los tokens de color — de ahí el contraste que se nombró.
+
+### Qué cambia
+
+Se añade `class="parte-linea-desc"` al `<input>` de la propuesta. Es la MISMA clase que ya usan las líneas guardadas (`styles.css`, de S2 — **no se toca, ni se crea clase nueva**: mismo patrón de reuso cross-carril que `job-toolbar-btn-44` en SCRUM-786d). El `font-size:14px` inline se queda tal cual: no era parte de la queja, y tocarlo habría sido un segundo cambio sin medir. La casilla de UNIDADES (al lado) no se toca: la queja era sólo de la descripción.
+
+### Verificado, ejecutando
+
+- `tests/scrum1493c-casilla-propuesta-mismo-estilo.test.mjs` (4 casos, montando la ficha real con el banco — dictar → «Ordenar en líneas» → propuesta en pantalla, mismo montaje de SCRUM-1266/1302C): rojo primero quitando la clase (1 de 4 cae, exactamente el de la clase); con el cambio, 4 de 4. Incluye el CONTROL de que la casilla de unidades no cambia.
+- `npm run guards:entrada`: 15/15 (170 tests). Guards de árbol entero (195, 414, 694, 710b, 737): 38/38.
+- `tsc`: sólo el error conocido y ajeno de `merchantAdmin.ts:147`.
+
+### Lo que no cubre
+
+- No medido en yaqu.app desplegado (se mira tras el merge, cuenta QA, dictando sobre un parte en borrador).
+- Es un arreglo cosmético (borde/alto); no toca la lógica de `ordenarElDictado` ni ningún camino de los que protege SCRUM-1493/1493b.
 - Una línea propuesta sin cantidad no entra al añadir, y tras guardar la propuesta se repinta sin ella. Es el diseño (lo dice su aviso «Falta la cantidad»), pero lo dictado de esa línea se va con el repintado.
 
 ## SCRUM-1493b · «Añadir al parte» con un 409 relee el parte, como «Ordenar» (S4, 15-oct-2026)
