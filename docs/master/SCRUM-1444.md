@@ -191,3 +191,69 @@ Ninguna ruta de emisión. Añadir un campo leído no cambia nada de lo que se fa
 - Ninguna pantalla lee todavía `numeroVisible`: lo hace S2 (y S4 la del albarán, J3 la de `teamView`).
 - La serie `P260012.1` sigue fuera (es otra decisión: la función escribe hoy lo mismo que el papel).
 - Las filas de título (arriba).
+
+## SCRUM-1444d · el mismo documento en pantalla y en papel, aplicado al DINERO (sólo medido)
+
+**Medido contra:** `origin/main` = `ea8dece1df90430ae0b269e200be137ff5462b72` · 2026-10-19T11:35:20Z (hora de GitHub al escribir; los ficheros medidos no cambian hasta `afc677a2`)
+A9: aviso → cicatriz S1 «Juzgué una cifra de línea sin leer las filas del pie que van debajo» — no se pudo comprobar: es lectura de la sesión, no pasa por ningún guard
+
+Carril S1 · árbol `s1-1444d`. Encargo del orquestador (19-oct): por cada importe que el cliente final ve en la página
+pública del presupuesto (donde acepta y firma) y en su PDF, y en el albarán, **¿lo calculan con la misma función o
+cada uno por su cuenta?** Dos cálculos independientes del mismo número ya están rotos aunque hoy coincidan. **No se
+arregla nada aquí.** Las cifras de frecuencia salen de EJECUTAR las funciones reales de `dist/` sobre 20.000
+presupuestos simulados por población (guiones fuera del repo, sólo leen `dist/`), con control negativo previo.
+
+### Corrección a mi propia tabla de c.20043 (fila 7)
+
+Escribí que en la página de firma «con descuento, las líneas no suman la base» como defecto. **No lo es.** Con
+descuento, la página pinta el pie del PDF (`pieDePresupuesto`, SCRUM-888, firmado en c.15788): «Suma de líneas»
+(la suma SIN descuento) · «Descuento» · base. Con 2 × 100 € y 10 %: línea 200 · suma 200 · descuento −20 · base
+180. Cuadra. La línea va en bruto y el descuento en su fila, igual en la página y en el papel.
+
+### La tabla
+
+Presupuesto: página = `quoteDecisionLanding.routes.ts` (S1) · PDF = `pdf.service.ts` (J1). Albarán: pantalla =
+`albaranPublicVista.ts` · PDF = `albaranPdf.service.ts`.
+
+| # | concepto | lo calcula la pantalla | lo calcula el PDF | ¿misma función? | ¿coinciden hoy? |
+| --- | --- | --- | --- | --- | --- |
+| 1 | importe de cada línea | `importeDeLinea` (:322), `qty × price`, SIN IVA, rótulo «Importe» | :985, `qty × price × (1 + tax)`, CON IVA, rótulo «Total» (y columna «IVA%») | **NO**, cada uno a mano | **NO** en todo presupuesto con IVA: 1 × 100 € al 21 % → 100,00 € en pantalla, 121,00 en papel. Ninguna es falsa (cada una con su rótulo, y los totales cuadran por separado). **DECLARADO, no defecto** (orquestador, 19-oct): cuál vale es formato y lleva firma |
+| 2 | línea de la tarjeta de cada opción | `importeDeLinea` (:341), sin IVA | :910, con IVA | **NO** | **NO**, igual que la 1 |
+| 3 | suma de líneas · descuento · descuento global | `pieDePresupuesto` | `pieDePresupuesto` | SÍ | sí |
+| 4 | base imponible sin descuento | `calcVatBreakdown(...).base` | `pieDePresupuesto` → la misma primitiva | SÍ | sí |
+| 5 | IVA por tipo, SIN descuento | `calcVatBreakdown`: suma sin redondear y redondea una vez (`vat.service.ts:84`) | `pieDePresupuesto`: redondea la base del tipo y LUEGO la multiplica (`presentacionIva.ts:179`) | **NO**: dos cálculos (lo dice el propio comentario de la página, :476-478) | **NO siempre.** Con cantidades enteras, iguales. Con cantidades decimales (m², horas), un solo tipo: difieren en 1 céntimo en el **5,9 %** (21 %) y el **4,6 %** (10 %) de los presupuestos |
+| 6 | IVA por tipo, CON descuento | `pieDePresupuesto` | `pieDePresupuesto` | SÍ | sí |
+| 7 | total | `quote.total` (el guardado) | `quote.total` (el guardado, `presupuestoParaPdf.ts:147`) | mismo dato | sí en modo «sumar». **En «IVA no incluido» NO:** el PDF resta el IVA (`pdf.service.ts:1119`, SCRUM-1302m) y la página enseña el guardado con «Total · IVA incluido». Hueco ya declarado en la página (:474, SCRUM-888 (c)) |
+| 8 | total de cada opción | `tier.total` | `tier.total` (menos IVA en «no incluido», :921) | mismo dato | igual que la 7 |
+| 9 | tramos de cobro / señal | `buildBillingPlanView`, compartida con la emisión | el PDF del presupuesto no los pinta | — | — |
+| 10 | albarán: importe de cada línea | `albaranPublicVista.ts:106`, `precioUnitario × cantidad` | `albaranPdf.service.ts:307`, la misma fórmula | **NO**: dos copias | sí, hoy |
+| 11 | albarán: base y total | `calcAlbaranTotales` (en céntimos) | `calcAlbaranTotales` | SÍ | sí |
+
+**Por su cuenta, el mismo importe: 4 conceptos** (1, 2, 5 y 10), y en el 7/8 la regla de «no incluido» vive sólo
+en el PDF. Los de las filas 1, 2 y 5 son de J1 por el lado del papel; el 10 es de S1 por la fila general.
+
+### 🔴 Lo que NO cuadra con su propio total (avisado al orquestador al encontrarlo)
+
+**Base + IVA ≠ total del mismo documento, por 1 céntimo, en la página Y en el papel.** No es pantalla frente a
+papel: los dos usan el mismo motor y los dos se equivocan igual.
+
+- **Caso que se comprueba a mano:** 1 × 22,50 € al 21 %. IVA exacto 4,725 → 4,73. YaQu pinta IVA **4,72**, base
+  22,50 y total 27,23: 22,50 + 4,72 = 27,22. Y al revés, 1 × 1.002,50 € al 21 %: IVA 210,53 (bien) y total
+  **1.213,02** (es 1.213,03).
+- **Causa:** `round2 = Math.round(n * 100) / 100` (`vat.service.ts:23`; la misma forma en `calcTotal`). En un empate
+  de medio céntimo decide el número binario: 22,5 × 0,21 = 4,7249999… y baja. **No es una convención de redondeo**
+  (SCRUM-619/623/624): con un solo tipo y cantidades enteras, por aritmética base + IVA = total siempre.
+  Frecuencia en esa población: **0,30 %** al 21 %, **0,84 %** al 10 %, 0 al 4 %. No consta en `docs/` ni en `src/`;
+  `pdf.service.ts:1084` dice «si el guardado y la suma se separasen […] hoy no se ha visto separarse».
+- **Con cantidades decimales se suma la convención** (base y cuota redondeadas por separado frente al total de una
+  vez): base + IVA ≠ total en el 25-30 % de esa población. Ésa ya está en la asesoría con SCRUM-619/623/624.
+- **MI LECTURA, NO MEDIDA:** `calcVatBreakdown` es el motor fiscal; `verifactu.service.ts:297` saca la cuota del
+  XML de `calcVatCuotaTotal` = `calcVatBreakdown(...).cuota`. Es camino de emisión: ⛔ sólo leído. Hoy no muerde
+  (`INVOICING_ES_ENABLED` OFF, sin clientes reales).
+
+### Lo que NO está hecho
+
+- Nada arreglado ni propuesto como texto: la fila 1 es formato (firma del fundador) y el redondeo toca el motor
+  fiscal (STOP, J1).
+- No se ha pintado ni leído un PDF de verdad: las cifras salen de las funciones que el PDF llama, no del papel.
+- La factura en el portal (`customerPortal.routes.ts:400`) y el recibo no están en esta tabla.
