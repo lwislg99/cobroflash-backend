@@ -928,6 +928,24 @@ function claude(config, args, { cwd } = {}) {
   return spawnSync(orden, [...previos, ...args], { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024, ...(cwd ? { cwd } : {}) });
 }
 
+/**
+ * SCRUM-1011b · Lo que dejó `claude` cuando no confirmó la sesión de fondo: su código, su señal, el error
+ * del propio lanzamiento y el FINAL de stdout y de stderr. Hasta aquí viajaba sólo stdout, y un `claude`
+ * que falla escribe el motivo en stderr, o no llega a arrancar (`error`, `status` null). El 18-oct-2026 el
+ * orquestador recibió dos veces `salida: ""` lanzando `sesion-0`, y no supo por qué. El veredicto sigue
+ * siendo el mismo (sale 2, no se lanza): esto sólo hace que la causa viaje.
+ */
+export function rastroDeClaude(r) {
+  const final = (t, n) => String(t || '').slice(-n);
+  return {
+    status: r && typeof r.status === 'number' ? r.status : null,
+    senal: (r && r.signal) || null,
+    error: r && r.error ? String(r.error.code || r.error.message || r.error) : null,
+    salida: final(r && r.stdout, 400),
+    errores: final(r && r.stderr, 800),
+  };
+}
+
 function leerAgentes(config) {
   const r = claude(config, ['agents', '--json']);
   if (r.error || r.status !== 0) return null;
@@ -1153,7 +1171,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     const args = argsLanzar({ modo: 'nueva', nombre, prompt: encargo, equipo, modelo });
     const r = claude(config, args, { cwd: ml.cwd });
     const m = BACKGROUNDED.exec(r.stdout || '');
-    if (r.status !== 0 || !m) salir(2, { veredicto: 'NO-PUDE-MIRAR', motivo: 'claude no confirmó la sesión de fondo', salida: (r.stdout || '').slice(-400), mesa: ml.mesa });
+    if (r.status !== 0 || !m) salir(2, { veredicto: 'NO-PUDE-MIRAR', motivo: 'claude no confirmó la sesión de fondo', ...rastroDeClaude(r), mesa: ml.mesa });
     // SCRUM-1011: el mismo defecto que `lanzar` — «backgrounded» solo dice que `claude` aceptó el
     // encargo, no que el proceso exista. Se sondea el `pid` antes de dar RELEVADA/LANZADA por buena.
     const confirmacion = confirmarArranque(config, m[1]);
@@ -1203,7 +1221,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     const args = argsLanzar({ modo: 'nueva', nombre, prompt, equipo, modelo });
     const r = claude(config, args, { cwd: ml.cwd });
     const m = BACKGROUNDED.exec(r.stdout || '');
-    if (r.status !== 0 || !m) salir(2, { veredicto: 'NO-PUDE-MIRAR', motivo: 'claude no confirmó la sesión de fondo', salida: (r.stdout || '').slice(-400) });
+    if (r.status !== 0 || !m) salir(2, { veredicto: 'NO-PUDE-MIRAR', motivo: 'claude no confirmó la sesión de fondo', ...rastroDeClaude(r) });
     // 🔴 SCRUM-1011 · medido 4 de 4: «backgrounded» solo dice que `claude` aceptó el encargo, no
     // que el proceso exista. Sondea el `pid` (el tell de SCRUM-954) antes de dar LANZADA por buena;
     // sin esto, el orquestador se cree que tiene un puesto trabajando y reparte trabajo a nadie.
