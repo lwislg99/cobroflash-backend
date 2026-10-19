@@ -627,6 +627,29 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
     return b;
   };
 
+  // SCRUM-49e · SI EL WHATSAPP «PARA FIRMAR» NO SALE, EL ENLACE SE PUEDE COPIAR.
+  //
+  // El aviso de fallo ya dice «Copia el enlace y mándaselo por SMS o llámale» (`sendOutcome.ts`), y
+  // aquí no había nada que copiar. El token lo escribe el envío ANTES de llamar a Meta, así que tras
+  // un fallo suele existir, pero la ficha que está en pantalla puede ser de antes del primer envío:
+  // se RELEE. Sin token no se pinta nada — un enlace que no lleva a ningún sitio es peor que ninguno
+  // (SCRUM-1233h). La barra es la compartida (`waFallbackBar`): sus textos, ninguno nuevo.
+  const ofrecerCopiarEnlaceDeFirma = async () => {
+    let token = null;
+    try { token = (await apiRequest(`/admin/albaranes/${alb.id}`)).firmaToken || null; } catch { token = null; }
+    if (!token || typeof waFallbackBar !== 'function') return;
+    const box = (container.querySelector('.detail-page') || page).querySelector('.alb-status');
+    if (!box || box.style.display === 'none') return;
+    box.querySelectorAll('.wa-fallback-bar').forEach((b) => b.remove());
+    box.appendChild(waFallbackBar({
+      link: location.origin + '/albaran/' + token,
+      onRetry: () => {
+        const b = (container.querySelector('.detail-page') || page).querySelector('[data-accion="btnEnviarFirmar"]');
+        if (b) b.click();
+      },
+    }));
+  };
+
   // Los handlers son los MISMOS endpoints que usaba la fila del Trabajo: la página no inventa
   // caminos nuevos, se lleva los que ya existían.
   const botones = {
@@ -635,9 +658,10 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
       setStatus('info', TEXTO_PROCESANDO);
       try {
         const d = await apiRequest(`/admin/albaranes/${alb.id}/enviar-para-firmar`, { method: 'POST' });
-        if (waSendFailed(d)) { setStatus('error', d?.message || TEXTO_ERROR_GENERICO); return; }
+        if (waSendFailed(d)) { setStatus('error', d?.message || TEXTO_ERROR_GENERICO); await ofrecerCopiarEnlaceDeFirma(); return; }
       } catch (e) {
         setStatus('error', e?.data?.message || e.message);
+        await ofrecerCopiarEnlaceDeFirma();
         return;
       }
       // SCRUM-379 · el WhatsApp YA SALIÓ. Repetir esto manda un segundo aviso al cliente y quema
