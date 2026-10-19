@@ -167,3 +167,70 @@ Evidencias: `evidencias/SCRUM-49/49d-visto/` (`antes-*`, `despues-*`).
 
 No medido en yaqu.app: los casos `entregado`/`aceptado` (la píldora SÍ debe salir). En la cuenta QA no hay ningún
 albarán con un envío que llegara, y crearlo es mandar un WhatsApp real (fuera de R25). Los cubre el test.
+
+
+## SCRUM-49e · tras fallar «Enviar para firmar», la ficha ofrece copiar el enlace de firma
+
+**Medido contra:** `origin/main` = `1edb5ce43cc9da8b1e0dc6e0477557c9cb5e0960` · hora de GitHub al escribir: 2026-10-19T07:32:47Z
+A9: comprobación → `tests/scrum49e-copiar-enlace-de-firma.test.mjs`
+
+Carril S4 · árbol `s4-1236g` · rama `scrum-49e-copiar-enlace-de-firma`. Luz verde del orquestador, 19-oct-2026.
+
+**Skill UI:** no cargada · a propósito: no hay estilo, texto ni componente nuevo; se reutiliza la barra compartida
+(`waFallbackBar`) con sus textos de siempre.
+
+### Qué faltaba
+
+El aviso de fallo del envío dice «No se pudo enviar por WhatsApp. Copia el enlace y mándaselo por SMS o llámale.»
+(`sendOutcome.ts:41`, K1) y en la ficha del albarán no había nada que copiar. SCRUM-49c dejó `firmaToken` en la ficha.
+
+### Qué cambia
+
+`albaranDetailView.js`: si «Enviar para firmar» falla (`sent:false` o la petición revienta), se RELEE la ficha y, con
+`firmaToken`, se pinta `waFallbackBar({ link: origin + '/albaran/<token>', onRetry })` dentro del aviso. Se relee porque
+la ficha en pantalla puede ser de antes del primer envío (sin token), y el envío escribe el token antes de llamar a
+Meta (`albaranWhatsApp.service.ts:132-133`). Sin token, no se pinta nada (SCRUM-1233h).
+
+### 🔴 Depende de S2, y por eso NO se empuja hasta que lo suyo esté en `main`
+
+`waFallbackBar` (`api.js`, contenedor de S2) crea y añade «✉️ Enviar por email» SIEMPRE. Sin `onEmail` y sin
+`emailDisabledReason` sale ACTIVO y SIN listener: se pulsa y no pasa nada. El albarán no se envía por email, y el único
+motivo que existe («Este cliente no tiene email guardado») sería falso aquí. Pedido a S2, por el orquestador: no
+crear ni añadir ese botón cuando no llega ninguno de los dos. Los cuatro llamadores de hoy pasan siempre uno
+(`invoiceDetailView.js:404` y `:420`, `jobDetailView.js:1475`, `quotesDetailView.js:148`), así que no cambian.
+
+### Verificado, ejecutando
+
+| árbol | resultado del test (4) |
+|---|---|
+| `albaranDetailView.js` de `origin/main` | 2 caen (no hay barra; botón de email) · 2 pasan (sin token, envío correcto) |
+| con el cambio, `api.js` de `origin/main` | 3 pasan · **cae el del email: es el rojo que espera a S2** |
+| con el cambio y la condición de S2 aplicada SÓLO en local (no entra en esta rama) | 4 de 4 |
+
+53 ficheros de `tests/` que leen la ficha del albarán o `waSendFailed`: 476 de 477; el único rojo es el de arriba.
+
+### Lo que no cubre
+
+- La barra sólo sale en el momento del fallo. Al volver más tarde a la ficha de un envío `fallido` no se ofrece nada:
+  decirle que «no llegó» sería texto nuevo (regla 39).
+- El enlace que manda Meta sigue roto (fila 2.9 de `ESTADO-DEL-PRODUCTO.md`, es del fundador). El que se copia aquí lo
+  compone la pantalla con `location.origin`, así que sirve también mientras tanto.
+
+### APÉNDICE · 49e deja de depender de S2 y se empuja
+
+**Medido contra:** `origin/main` = `ea8dece1df90430ae0b269e200be137ff5462b72` (prod lo servía en `/version` al
+escribir esto) · hora de GitHub al escribir: 2026-10-19T08:3x (misma tanda que el merge)
+
+S2 empujó la condición pedida (SCRUM-1233i, PR #2602, commit `6744798d8`): `waFallbackBar` sólo crea «Enviar por
+email» con `onEmail` o `emailDisabledReason`. Mergeado a `main` las 07:49:16Z, antes de esta rama.
+
+- Se mergeó `origin/main` en `scrum-49e-copiar-enlace-de-firma` (sin conflictos).
+- El censo de `tests/scrum1233h-copiar-enlace-sin-enlace.test.mjs` (SCRUM-1233i ②) cayó señalando
+  `albaranDetailView.js` en `SIN_EMAIL_A_PROPOSITO` — la trampa que dejó S2 a propósito, convertida en guard. Se
+  añadió con su motivo: *«el albarán no tiene envío por email, sólo WhatsApp (copiar enlace + reintentar)»*.
+- **Con eso: `tests/scrum49e-copiar-enlace-de-firma.test.mjs` da 4 de 4** (sin tocar el propio test ni
+  `albaranDetailView.js`), y la suite conjunta con SCRUM-1233h/i, 14 de 14.
+- Guards de entrada (`npm run guards:entrada`): 15/15, 170 tests. Guards de árbol entero (195, 414, 694, 710b, 737):
+  38/38.
+- `tsc`: sólo el error conocido y ajeno de `merchantAdmin.ts:147` (Prisma del entorno desalineado con
+  `activityKind`; no se corre `prisma generate`, regla del entorno).
