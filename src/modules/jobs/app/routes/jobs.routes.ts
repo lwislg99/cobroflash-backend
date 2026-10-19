@@ -1153,6 +1153,11 @@ router.get('/:id/ics', async (req, res) => {
     if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
     const job = await prisma.job.findFirst({ where: { id, merchantId: req.merchantId } });
     if (!job) return res.status(404).json({ error: 'not_found' });
+    // SCRUM-1390b: la misma comprobación que `GET /:id` (SCRUM-23). Sin ella, un técnico que no
+    // puede abrir el Trabajo de otro se bajaba su cita, con el cliente y las notas dentro.
+    if (seesOnlyOwnJobs(req.userRole) && job.operarioId !== req.teamMemberId) {
+      return res.status(404).json({ error: 'not_found' });
+    }
     if (!job.scheduledAt) return res.status(409).json({ error: 'not_scheduled' });
 
     const s = await serializeJob(job);
