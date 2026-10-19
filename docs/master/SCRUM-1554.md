@@ -96,6 +96,38 @@ function puertaDeGoLiveLibre(): boolean {
 3. **El ratón y el gato del guard**: una entrada cerrada sin arreglar de verdad pasa el guard igual. B no lo
    arregla; lo que lo sujeta es que el cierre lleve `por`, `motivo` y `sha`, y que el diff lo vea un humano.
 
+**🔢 La cifra de los 33, medida después (19-oct, sólo lectura, sobre `8ff423895`).** La pidió el orquestador
+para que el fundador no decida B a ciegas:
+
+| cómo encienden el flag | ficheros |
+|---|---|
+| **`merchant.flags = { INVOICING_ES_ENABLED: true }`** en un objeto que el test pasa a funciones de dominio (`getEmissionMode`, `allocateInvoiceNumber`, `modoDocumentoSuelto`…), o en un Prisma falso o en el banco desechable | **31** (incluidos `_banco-emision-con-estado.mjs`, `scrum974` con su `ENCENDIDA` y `scrum1097`, que es un guard que mide comercios encendidos) |
+| **`process.env.INVOICING_ES_ENABLED = 'true'`** | **2** (`emission.test.mjs`, `flags.test.mjs`; el segundo prueba además el override) |
+| sustituyen `isFlagEnabled` o su módulo | **0** |
+
+Lo que eso dice de las dos salidas para los tests:
+- **(a) la puerta sólo rige con `NODE_ENV=production`**: no toca ninguno de los 33, porque ninguno pone
+  `NODE_ENV=production`. ⚠️ Sigue sin medir qué `NODE_ENV` tienen staging y producción.
+- **(b) inyectar la lista por `FlagContext`**: 31 de los 33 NO llaman a `isFlagEnabled`: llegan a él a través
+  del dominio. Habría que pasar el parámetro por cada función, y eso es mucho más invasivo de lo que parecía.
+  Una variante menos invasiva es un interruptor en memoria exportado por `flags.ts` que sólo llaman los tests.
+  No se puede poner desde Railway, pero sí desde cualquier código del proceso. Tampoco se elige aquí.
+
+**Dos cosas que YA existen y cambian la pregunta:**
+- **`scripts/guard-acreditacion-invoicing-es.mjs` (SCRUM-1097)** es de sólo lectura (lo verifica por AST) y
+  contesta la duda 2: si hay hoy algún comercio ES, que no sea la demo, con el override encendido o con alguna
+  factura fiscal emitida. **El fundador puede correrlo contra producción antes de decidir B**, sin escribir
+  nada nuevo. Dice en su cabecera que no ve la variable de entorno; para eso tiene su brazo (b): ¿se ha emitido
+  algo fiscal?
+- **Ese guard EXCLUYE A LA DEMO (id=1) a propósito, por la regla 8.** B, tal como está escrita arriba, le
+  apagaría la facturación a la demo si tiene el override encendido. Si la regla 8 la deja fuera de la puerta,
+  eso lo decide el fundador. Una excepción por id fijo no es el agujero de «eximir cuentas de prueba» (no
+  depende de ningún dato que se pueda poner desde fuera), pero tampoco lo propongo yo.
+- **`scripts/cambiar-flag-fiscal.mjs`** es, según SCRUM-1097/1099, **la única vía humana y deliberada** de
+  encender el override por comercio. Que ese guion se niegue con entradas abiertas cerraría UNO de los dos
+  caminos sin tocar `flags.ts` (la variable de Railway seguiría abierta). Se nombra; no se propone ni se ha
+  leído entero.
+
 ### Lo que NO hace
 - **No impide encender el interruptor.** Hasta que exista B, esto es una lista vigilada, no una puerta.
   **La fila c3-17 de la página del fundador NO se cierra con A**: queda a medias, y la cierra B.
