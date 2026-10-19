@@ -4383,6 +4383,18 @@ textarea.parte-linea-desc {
 @media (min-width: 769px) and (max-width: 1279px) {
   .table--albaranes th, .table--albaranes td { padding-left: 8px; padding-right: 8px; }
 }
+/* SCRUM-1559k · LA BANDA 769-899 (V5, aprobada por el orquestador el 19-oct). La causa por la que
+   ajustar columnas no bastaba: el suelo GLOBAL `.table-scroll .table { min-width: 520px }`. A 769 el
+   carril mide 471, así que la tabla desborda como mínimo 49 px haga lo que haga con sus columnas
+   (medido: partir el botón o quitar una columna se quedaban las dos en 49 / 18 / 0 a 769 / 800 / 850).
+   ① se oculta «Entrega» en la lista, como B hizo con «Emisión»; la ficha la conserva.
+   ② el suelo se anula SÓLO para esta tabla y sólo en esta banda; el global no se toca.
+   Medido en yaqu.app: desborda 13 a 769 (dentro de su `.table-scroll`, que scrollea; la página +0)
+   y 0 desde 800; «Enviar para firmar» sigue en una línea. Antes: 106 / 75 / 25. */
+@media (min-width: 769px) and (max-width: 899px) {
+  .table--albaranes th:nth-child(3), .table--albaranes td.cell-date { display: none; }
+  .table-scroll .table--albaranes { min-width: 0; }
+}
 
 @media (max-width: 640px) {
   /* SCRUM-1450 · la marca de facturación va DEBAJO del estado, no a su lado. Con «Facturado en

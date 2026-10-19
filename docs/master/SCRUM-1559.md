@@ -255,6 +255,55 @@ B; ③ el relleno sólo en `th` → cae B; ④ cambiar la regla GLOBAL → caen 
 A9: comprobación → `tests/scrum1559i-tabla-albaranes-desde-900.test.mjs`
 
 
+## 1559k — la tabla de Albaranes en la banda 769-899 (S2, 19-oct-2026)
+
+**Medido contra:** `origin/main` = `2bb11dc7cc68b2e2b5f9e192326173a3e7d1a1b6` · 2026-10-19T11:45:19Z
+
+A9: comprobación → `tests/scrum1559k-albaranes-769-899.test.mjs`
+> **Skill UI:** cargada · `yaqu-premium-ui`: sólo CSS acotado a `.table--albaranes` en una banda, sin texto, sin tokens; una pantalla.
+
+**El encargo.** 1559i dejó 769-899 «fea, no rota». El orquestador pidió una forma pequeña de mejorarla, sin tarjeta
+nueva y con la medida. Propuse V5 y la aprobó el 19-oct, con condiciones: declarar lo que queda a 769, no tocar el
+suelo global y un test con mutaciones.
+
+**La causa que ajustar columnas no tocaba.** Hay un suelo GLOBAL, `.table-scroll .table { min-width: 520px }`
+(`styles.css`, «Table scroll wrapper»). **A 769 el carril mide 471, así que la tabla desborda como mínimo 49 px haga
+lo que haga con sus columnas.** Por eso las dos primeras variantes se quedaron clavadas en la misma cifra: V1
+(partir «Enviar para firmar» dentro de su botón) y V3 (ocultar «Entrega») dan las dos **49 / 18 / 0** a
+769 / 800 / 850. Esto vale para cualquier tabla con scroll que alguien intente estrechar: por debajo de
+520 + rellenos, el suelo manda.
+
+**V5, lo construido.** Sólo en `@media (min-width: 769px) and (max-width: 899px)`:
+① se oculta «Entrega» en la lista (`th:nth-child(3)`, `td.cell-date`), como B hizo con «Emisión»; la ficha la conserva;
+② `.table-scroll .table--albaranes { min-width: 0 }`. **El suelo global no se toca**: movería tablas no medidas.
+V6 (V5 más el botón partible) cabía en toda la banda, pero partía «Enviar para firmar», el botón principal de la
+pantalla, en tres líneas. Descartada.
+
+**Medido en yaqu.app** (build `2bb11dc7c`, cuenta QA, 3 albaranes), sirviendo el `styles.css` de la rama; sólo GET.
+Sonda `sondas-s2/albaranes-tabla-medida.mjs [css]`. «Desborda» es lo que la tabla pide de más **dentro de su
+`.table-scroll`, que scrollea**; «página» es el scroll horizontal de la PÁGINA.
+
+| ancho | prod: desborda | rama: desborda | página (las dos) |
+|---|---|---|---|
+| 700 · 768 | 0 · 0 | 0 · 0 (igual) | +0 |
+| 769 | 106 (botón 24 fuera) | **13** | +0 |
+| 780 | 95 (botón 13 fuera) | **2** | +0 |
+| 800 | 75 | 0 | +0 |
+| 850 | 25 | 0 | +0 |
+| 899 | 0 | 0 | +0 |
+| 900 · 929 · 1280 | 0 | 0 (igual) | +0 |
+
+⚠️ **No es un 0 redondo:** entre 769 y ~782 quedan 13 → 0 px, y se recorren con el scroll de su carril. «Enviar para
+firmar» va en una línea en toda la banda. A 850-899 las filas bajan de 108 / 87 a 69 px. Fuera de la banda, la rama
+da exactamente lo mismo que prod. Capturas fuera del repo:
+`sondas-s2/cap-albaranes-929/albaranes-{769,800,899}-rama-1559k.png` y las `-prod-19oct`.
+
+**Test** `tests/scrum1559k-albaranes-769-899.test.mjs` (sin gate; el caso de la vista usa el banco, que pide `dist`):
+CONTROL (el lector ve el suelo global), las dos reglas EN SU `@media`, lo acotado (el suelo global sigue en 520 y
+nada fuera de la banda esconde «Entrega» ni anula el suelo), y que la 3.ª columna sea «Entrega» y la ÚNICA celda con
+`cell-date`. **6 mutaciones, 6 rojas**: sin ocultar la cabecera, sin anular el suelo, la banda ensanchada a 1279, el
+suelo global tocado, «Entrega» oculta desde 900 y otra celda con `cell-date`. Base verde. `tsc` con el error conocido
+de `activityKind`; no se ha corrido `prisma generate`.
 ## 1559j — Productos a 44 px, y su estado vacío dentro de la pantalla (S2, 19-oct-2026 11:27Z)
 
 **Encargo** (orquestador, 19-oct): S3 contó 8 controles cortos nuestros sin repartir; 6 de Productos, para S2.
