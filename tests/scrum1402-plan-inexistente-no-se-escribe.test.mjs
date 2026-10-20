@@ -382,10 +382,11 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: 'checkout.session.completed con un plan que NO existe',
   },
   {
-    // Puerta 2: la suscripción activa.
+    // Puerta 2: la suscripción activa. (SCRUM-1565: la pregunta abre ahora un bloque, porque dentro se
+    // lee el fin de periodo antes de escribir; la mutación sigue siendo la misma: quitar la pregunta.)
     fichero: 'src/modules/billing/app/routes/stripe.routes.ts',
-    de: "        if (st === 'active' || st === 'trialing') {\n          if (planQueExiste(planId, merchantId, event)) await prisma.merchant.update({",
-    a: "        if (st === 'active' || st === 'trialing') {\n          await prisma.merchant.update({",
+    de: "        if (st === 'active' || st === 'trialing') {\n          if (planQueExiste(planId, merchantId, event)) {",
+    a: "        if (st === 'active' || st === 'trialing') {\n          if (true) {",
     cae: '(active, trialing) con un plan que NO existe',
   },
   {
