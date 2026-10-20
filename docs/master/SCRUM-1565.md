@@ -100,6 +100,30 @@ scrum475 y scrum512. **72 tests, 64 pasan y 8 se saltan** (scrum809 necesita Pos
 - `tests/scrum815-idempotencia-del-webhook.test.mjs`: se añade `finDePeriodo: 1` al censo de efectos, con su motivo,
   como hizo SCRUM-1402 con `planQueExiste`. No es un efecto: no escribe en BD ni sale del proceso. El reparto de
   reversibles no cambia.
+- `tests/scrum1402-plan-inexistente-no-se-escribe.test.mjs`: la «Puerta 2» de `MUTACIONES_QUE_ME_TUMBAN` estaba anclada
+  a `if (planQueExiste(…)) await prisma.merchant.update({`, y ahora la pregunta abre un bloque. La cazó
+  `scrum836` en la tanda. Se reancla a `if (planQueExiste(planId, merchantId, event)) {` → `if (true) {`, que es la
+  misma mutación: quitar la pregunta. **Aplicada a mano y medida:** scrum1402 cae en
+  «(active, trialing) con un plan que NO existe» y en «el rechazo NO es un fallo de entrega». Después se deshizo,
+  `git diff -- src` salió vacío y scrum836 quedó en verde.
+
+## La tanda entera (en este árbol)
+
+`node --test 'tests/*.test.mjs'`, con el TAP a un fichero fuera del árbol: **11.977 tests, 11.797 pasan, 24 fallan y
+156 se saltan.** Los 24 se agrupan en 13 ficheros:
+
+- 1 era mío: scrum836, por el ancla de arriba. Ya está arreglado.
+- Los otros 23, en 12 ficheros, son del ENTORNO: scrum1199, 1298b, 222, 235, 245, 252, 385, 461, 471, 475, 476 y 733.
+  Este árbol no tiene `node_modules` propio, hereda los del checkout compartido, y el cliente de Prisma de ahí no
+  casa con `schema.prisma`. Los mensajes lo dicen: «no hay CLI de Prisma en node_modules», «EL CLIENTE DE PRISMA NO
+  CORRESPONDE A schema.prisma», «no hay `node_modules` en este árbol», `Cannot find module …/node_modules/express`.
+  **Ninguno de esos 12 ficheros nombra** `stripe.routes`, scrum815, scrum1402 ni SCRUM-1565 (lo comprobé con un
+  guion sobre el TAP).
+- **No los corrí contra `main` en este mismo árbol**, así que lo de «son del entorno» se apoya en el mensaje de cada
+  uno y no en un control. El veredicto que vale es el del CI.
+
+`tsc --noEmit`: 17 errores, todos en ficheros ajenos (`quotes.routes.ts`, `quotesAdmin.routes.ts`,
+`merchantAdmin.ts` y `quoteAdmin.ts`), por el mismo cliente desfasado. En `stripe.routes.ts` hay 0.
 
 ## Error propio
 
