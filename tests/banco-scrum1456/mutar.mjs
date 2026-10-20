@@ -50,6 +50,10 @@ const ESPERADO = {
     ['GET customers /:id/detail · `id` (params)'],
     ['GET customers /:id/fusion-preview · `id` (params)'],
     ['GET customers /:id/fusion-preview · `con` (query)'],
+    // SCRUM-1456b (J2): las tres lecturas que pasan a `cabeEnColumnaInt`, en el orden del fuente.
+    ['DELETE customers /:id · `id` (params)'],
+    ['POST customers /:id/fusionar · `id` (params)'],
+    ['POST customers /:id/fusionar · `con` (body)'],
   ],
   [FACTURAS]: [
     ['GET invoices /:id · `id` (params)'],
