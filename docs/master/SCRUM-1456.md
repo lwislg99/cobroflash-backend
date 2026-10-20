@@ -247,3 +247,62 @@ y los tres son los «→ 400» de arriba. Suelos y control negativo, en verde.
 
 `DELETE /admin/customers/5`, con un cliente de OTRO comercio, contesta **204 sin borrar nada**. La tenencia
 aguanta, pero la respuesta afirma lo que no hizo. El ticket lo abre el orquestador.
+
+## J2 · SCRUM-1456b · el arreglo: DELETE y fusionar validan con `cabeEnColumnaInt`
+
+**Medido contra:** `origin/main` = `e0c32fb5297e0ea98383d9f983ed8abfa67553c2` · 2026-10-20T09:50:25Z (hora de GitHub al escribir: 2026-10-20T10:18:28Z; sesión J2 `jv-j2a`, encima de la punta `02f2f9809` de J3, por encargo del orquestador `cobroflash-backend-09`)
+A9: comprobación → `tests/banco-scrum1456/mutar.mjs`
+
+El arreglo está en `customersAdmin.routes.ts`, en dos líneas. En `:620` (DELETE `/:id`), `Number.isNaN(id)` pasa a
+`!cabeEnColumnaInt(id)`. En `:658` (fusionar), los dos `Number.isInteger(` pasan a `cabeEnColumnaInt(`.
+`enteroDeColumna.ts` (S1) sólo se usa, no se toca. El test de J3 pasa de 3 rojos a verde: con scrum1126, 73 de 73.
+
+### Lo medido, con el arreglo
+
+- **La sonda de J3, sin cambiar** (`sonda-borrar.despues.salida.txt`). Antes, el **control rojo**: lanzada como
+  «DESPUES» sobre un `dist` SIN el arreglo, se niega con «CIEGA … EXIT=2». Con el arreglo, el detector dice
+  ARREGLADO. Resultados:
+  - `DELETE /1.5`: **400, no borra nada** (antes 204 y borraba el 1).
+  - `DELETE /2`: sigue en **204 y borra el 2, y sólo el 2**.
+  - `/abc`: 400, como antes. `/5`, de otro comercio: 204 sin borrar, como antes.
+  - `fusionar 3 con 4`: sigue en 200.
+- **Los ids que no caben, medidos, no deducidos:** `DELETE /2147483648`, `/10000000000` y `/99999999999999999999`,
+  y `fusionar` con `2147483648` en el principal o en `con`, **pasan de 500 a 400**. Ninguno borra nada, ni antes ni
+  ahora.
+- **El control negativo de los bordes** (`sonda-bordes.mjs.txt`, mismo montaje y mismo detector; salida
+  `sonda-bordes.salida.txt`). `-1`, `0`, `2147483647`, `-2147483648` y `1e3` siguen llegando al borrado (204).
+  `-2147483649` e `Infinity` dan 400. `/2` borra el 2. **8 de 8 como se esperaba.**
+  - Un cambio que el encargo no nombraba: **`Infinity` antes pasaba** la comprobación (`Number.isNaN` no lo para) y
+    llegaba a la base. Ahora da 400.
+
+### La condición ② del fundador (c.18731), EJECUTADA y no sólo leída
+
+`condicion2-panel.mjs.txt` monta la ficha 360 real con el banco de la casa (`tests/_banco-vistas.mjs`, el de
+scrum1126), pulsa «Fusionar» con la red doblada y compara la pantalla. Salida en `condicion2-panel.salida.txt`:
+
+| respuesta | aviso | modal | «confirmar» | reintento |
+|---|---|---|---|---|
+| 400 `invalid_id` (lo nuevo) | «No se ha podido completar la acción. Vuelve a intentarlo.» | abierto | activo | sale otro POST |
+| 500 `internal_error` (lo de antes) | el mismo | abierto | activo | sale otro POST |
+| 409 `mismo_cliente` (control) | «Elige un cliente distinto.» | abierto | **desactivado** | **no** sale |
+
+**El 400 y el 500 producen la misma pantalla.** El 409 sale distinto, y eso demuestra que el comparador no estaba
+ciego. Del DELETE no hay pantalla que medir: ningún `method: 'DELETE'` de `public/` apunta a `/admin/customers/:id`
+(los seis que hay son de otras rutas).
+
+### El banco de mutación, con las tres lecturas nuevas
+
+Las tres lecturas nuevas van a `ESPERADO` en `tests/banco-scrum1456/mutar.mjs`. **56 mutaciones (28 llamadas × 2):
+caen 56, ninguna viva, ninguna ciega, ninguna mal repartida.** El árbol queda intacto, con el sha256 de los 4
+ficheros. Salida en `mutar.despues.salida.txt`.
+
+### Error propio
+
+En la tabla del banco puse el DELETE **detrás** de `fusion-preview`, pero en el fuente va delante (`:620` antes que
+`:638`). El banco lo cazó en la primera pasada con «mal repartidas 6»: cada mutación caía en el test de la fila de
+al lado. Se corrigió la tabla, no el banco.
+
+### Lo que sigue, y no es de este PR
+
+`chargesAdmin.routes.ts` (`:34`, `:117`, `:167`) y `psp.routes.ts:37` son de J2 y van después, con la condición ②
+medida línea a línea. `psp` es un webhook: allí un 400 nuevo cambia lo que hace Stripe.
