@@ -71,6 +71,10 @@ export const VOCABULARIO_PERSONAL = Object.freeze([
  */
 export const NUCLEOS_PERSONALES = Object.freeze([
   'email', 'phone', 'name', 'taxId', 'address', 'direccion', 'notes', 'iban',
+  // EL DOMICILIO EN TROZOS. `address` sólo ve la calle; la ciudad, el código postal y la provincia
+  // de una persona física son el resto de su casa. Ninguno contenía una palabra del vocabulario, así
+  // que eran el caso que c.20092 declaró sin medir: salieron cuatro en `customerSite` (SCRUM-1569).
+  'city', 'postalCode', 'province', 'country',
 ]);
 
 /** ¿El nombre de columna ACABA en un núcleo, en frontera de camelCase? `contactName` sí, `nameSearch` no. */
