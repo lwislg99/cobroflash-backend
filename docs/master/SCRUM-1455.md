@@ -68,3 +68,103 @@ año y el trimestre de la query; el año acaba en `new Date(año, …)` (`rangoT
 
 - 9 de 16 lecturas (tabla de Ⓐ). **Este ticket no se cierra con este PR.**
 - No visto en yaqu.app: la cuenta QA está caducada.
+
+---
+
+## J1 · SCRUM-1455b · un id decimal ANULA Y SELLA la factura que no es — medido por la ruta real, sin arreglo
+
+**Medido contra:** `origin/main` = `f4cac4820bf65d7cc737ed3a7672e423a7fc1547` · 2026-10-20T15:13:39Z (hora de GitHub; sesión J1 `jv-j1a`, por encargo del orquestador `cobroflash-backend-09`)
+
+A9: comprobación → `docs/evidencias/scrum1455/sonda-factura.mjs.txt`
+
+[Escrito por J1, una sesión; no por el fundador.] El fallo propio que esa línea ata: en la primera pasada
+de la sonda, `unpay`, `rectify` y `regenerate-pdf` salían «no» con un control que TAMPOCO actuaba (409 y
+500 por la siembra: una F1 no se des-paga, el flag ES apagado, una factura sin sellar). Eso no era «no»: era
+«no lo he podido juzgar», y lo habría entregado como un no. Ahora el veredicto tiene tres valores y un SIN
+JUZGAR deja la sonda en CIEGA. Su rojo: con la siembra de entonces (`SONDA_SIN_EXTRA=1`) sale «2 de 16 rutas
+SIN JUZGAR · EXIT=2» (`sonda-factura.sin-juzgar.salida.txt`).
+
+### 🔴 La respuesta a ③: SÍ
+
+`POST /admin/invoices/31.5/annul` **anula la factura 31 y SELLA su anulación en la cadena VeriFactu** del
+comercio: `status` → `annulled`, `vfAnulHash` escrito, `vfAnulPrevHash` encadenado al eslabón anterior, y
+la auditoría dice `factura_anulada` sobre la 31. La respuesta es 200 con `"number":"2026-S-0031"`,
+`"veriFactu":true`. No es un código de error: es un registro de anulación de un documento fiscal que nadie
+pidió anular, y un eslabón sellado no se deshace (regla 29).
+
+Y no es la única: `POST /admin/invoices/34.5/rectify` **emite una R1 (`2026-CF-R-001`) sellada que rectifica
+la 34**.
+
+### ① El censo, re-medido: 16 lecturas en 16 líneas
+
+`invoicesAdmin.routes.ts` (15) e `invoice.routes.ts:62` (1). Carril: `node scripts/carriles.mjs de
+src/modules/system/app/routes/invoicesAdmin.routes.ts` → **J1**. El test lo ata: sus 16 filas son, como
+conjunto, las rutas con `:id` de los dos routers, leídas del `dist` (no de un grep).
+
+| Cómo valida hoy | Rutas | Un `1.5` |
+|---|---|---|
+| `cabeEnColumnaInt` | `GET /:id`, `dispute-package`, `tags`, `resend-whatsapp`, `send-reminder`, `GET /:id/pdf`, `asignados` | 400 |
+| `Number.isInteger` | `payment-anomaly`, `invoice.routes.ts` `paid-webhook` | 400 |
+| **`Number.isNaN`** | **`status`, `pay`, `unpay`, `send-email`, `annul`, `rectify`, `regenerate-pdf`** | **pasa, y Prisma lo trunca** |
+
+### ② Lo que hace HOY cada una, por la ruta real
+
+Montaje de SCRUM-1456 sin cambios de fondo: routers de `dist/` (build de `main` `f4cac482`, `tsc --noCheck`),
+Prisma de verdad, Postgres de verdad (PGlite por socket en loopback, base desechable con el DDL de
+`prisma migrate diff --from-empty`), sólo la sesión doblada (y `requireInternalSecret` en el webhook
+interno). Por ruta se siembran tres facturas —la del decimal, la del control y una de OTRO comercio— y tras
+cada petición se mira QUÉ FILA cambia, qué filas nacen y qué auditoría se escribe. **112 peticiones, 16
+rutas × 7 casos.** `INVOICING_ES_ENABLED` va encendido SÓLO en la fila del comercio desechable: sin él la R1
+no llega a emitirse. Sonda: `docs/evidencias/scrum1455/sonda-factura.mjs.txt`; salida:
+`sonda-factura.antes.salida.txt`.
+
+| Ruta | `x.5` | `2147483648` / `1e20` | id correcto (control) | otro comercio |
+|---|---|---|---|---|
+| `PUT /:id/status` | 🔴 200, **marca pagada la x** | 500 | 200, la suya | 404 |
+| `POST /:id/pay` | 🔴 200, **marca pagada la x** | 500 | 200, la suya | 404 |
+| `POST /:id/unpay` (justificante) | 🔴 200, **des-paga la x** | 500 | 200, la suya | 404 |
+| `POST /:id/send-email` | 🔴 200, **manda el correo de la x** (`invoice-2026-S-0025.eml`) | 200 `sent:false` | 200, la suya | 404 |
+| `POST /:id/annul` | 🔴 200, **anula y sella la x** | 500 | 200, la suya | 404 |
+| `POST /:id/rectify` | 🔴 201, **emite la R1 de la x** | 500 | 201, la suya | 404 |
+| `POST /:id/regenerate-pdf` | 🔴 200, **regenera el PDF de la x** | 500 | 200, la suya | 404 |
+| `POST /:id/payment-anomaly` | 400 | **500** | 200 | 404 |
+| `POST /invoice/:id/paid-webhook` | 400 | **500** | 200 | sin comercio (ruta interna) |
+| las otras siete | 400 | 400 | 2xx, salvo `GET /:id/pdf` (500: la factura sembrada no está sellada) | 404 |
+
+**④ Los dos controles, medidos:** el id correcto sigue llegando a SU factura en las 16 (la columna
+«control»), y **ninguna factura de otro comercio cambia en ninguna de las 30 peticiones de tenencia** (15 rutas × 2): todas
+las consultas filtran por `merchantId`, y la fila a la que resuelve el decimal es del comercio de la sesión.
+El webhook interno no tiene comercio: busca por id a secas, por diseño, y no entra en este control.
+
+El correo no salió de la máquina: sin `RESEND_API_KEY` ni `SMTP_URL`, el servicio lo deja en un `.eml` del
+directorio de trabajo de la sonda (fuera del árbol), y el nombre del fichero dice de qué factura es.
+
+### La sonda y el test, contra lo que harían con el arreglo — sin tocar `src/`
+
+`tests/scrum1455b-un-decimal-no-llega-a-otra-factura.test.mjs` (base doblada que anota los números que llegan
+a cada consulta): contra el build de `main`, **33 casos, 26 pasan, 7 caen**, y los 7 son el «decimal → 400»
+de las siete de `Number.isNaN`; el censo y los 16 controles, en verde (`test.rojo-contra-main.salida.txt`).
+Es otra sonda, independiente de la de Postgres, y caza el mismo conjunto.
+
+Para saber si el test SABE ponerse verde, se parcheó SÓLO el `dist/` compilado (que no se sube) con
+`Number.isNaN(id)` → `!cabeEnColumnaInt(id)` en esas siete: **33 de 33** (`test.dist-parcheado.salida.txt`),
+y la sonda dice **los 16 decimales → 400 y los 16 controles siguen actuando** (`sonda-factura.dist-parcheado.salida.txt`).
+Después se recompiló y el `dist` volvió a su sha256. La sonda se niega si la etiqueta no casa con el código
+que lee: «DESPUES» sobre `main` y «ANTES» sobre el parcheado salen CIEGA, exit 2 (`sonda-factura.control-etiqueta.salida.txt`).
+
+### 🔴 ESTE PR SALE ROJO A PROPÓSITO — no se toca el test para ponerlo verde
+
+Siete casos de `scrum1455b` caen hasta que entre el arreglo. **El arreglo toca el camino de emisión, y es
+STOP (regla 40):** `annul` (sella la anulación), `rectify` (emite y sella la R1) y `regenerate-pdf` (el
+documento) son emisión; `status`, `pay` y `unpay` son cobro; `send-email`, con un id que no cabe, pasaría de
+200 a 400 (la pregunta de pantalla que dejó abierta SCRUM-1456 c.18414). Las siete van al fundador desde
+c.18414. Qué es el arreglo, para que se decida sobre algo concreto: **un token por línea en siete líneas de
+`invoicesAdmin.routes.ts`** (`:550`, `:594`, `:615`, `:700`, `:875`, `:1027`, `:1190`), el `import` ya está y
+ninguna firma ni consulta cambia.
+
+### De paso, sin arreglar
+
+- `payment-anomaly` y `paid-webhook` siguen dando **500** a un id que no cabe: su `Number.isInteger` para el
+  decimal y no el tamaño. No es el defecto del decimal; `paid-webhook` es webhook (al fundador, c.18414) y
+  `payment-anomaly` no la nombra c.18414.
+- **No visto en yaqu.app.** No lo he intentado: anular por URL una factura real es justo lo que no se hace.

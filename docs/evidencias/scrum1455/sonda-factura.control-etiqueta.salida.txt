@@ -1,0 +1,4 @@
+CODIGO MEDIDO (annul): SIN ARREGLO (leído del dist, no de la etiqueta «DESPUES»)
+CIEGA: la etiqueta dice ARREGLADO y el dist está SIN ARREGLO · EXIT=2
+CODIGO MEDIDO (annul): ARREGLADO (leído del dist, no de la etiqueta «ANTES»)
+CIEGA: la etiqueta dice SIN ARREGLO y el dist está ARREGLADO · EXIT=2
