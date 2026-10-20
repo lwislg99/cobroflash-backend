@@ -387,3 +387,187 @@ Los 132 se leyeron. Que salga cero no quiere decir que todo se pudiera verificar
 | los controles | tabla «Los controles, corridos»: 5 bien, 2 en rojo y explicados |
 | la población declarada | 132 clasificados · 0 sin mirar · 128 por un lector, 4 releídos por mí |
 | reusar `tabla-ya-esta.mjs` | «La población, otra vez» |
+
+## 20-oct-2026 · SCRUM-1496d · Los 169 abiertos de `equipo-javier`, en cuatro veredictos: 42 TERMINADOS, 50 TRABAJO, 77 ESPERAN, 0 sin mirar
+
+**Medido contra:** `origin/main` = `dc1b2b4db78e75b1af0fcbc495912b29395938af` · 2026-10-20T09:14:22Z
+
+A9: aviso → cicatriz J4 «conté a quién esperan los 77 ESPERA buscando «fundador» en la fila entera y casó con el rótulo «ESPERA AL FUNDADOR» del propio veredicto: el recuento salía inflado por mi columna, no por el dato» — no se pudo comprobar: la cuenta es una línea de node de un solo uso fuera del repo; lo cazó que dos lotes de solo asesor salían con fundador
+
+J4 (`jv-j4a`), por encargo del orquestador del equipo de Javier (`cobroflash-backend-2e`). **Es LECTURA.** No se ha
+cerrado, transicionado, comentado ni etiquetado ningún ticket, y no se ha tocado `src/`, ningún test, guard o
+workflow, el esquema ni ninguna base. La pregunta: de los abiertos de `equipo-javier`, cuáles están TERMINADOS y
+solo les falta cerrarse, y cuáles son TRABAJO que se puede repartir hoy. Viene de SCRUM-1543: estaba arreglado
+desde el 14-oct (#2426) y Jira seguía diciendo «Tareas por hacer».
+
+### La población: 169, no 40
+
+- **Jira, 09:15Z.** `project = SCRUM AND labels = equipo-javier AND statusCategory != Done`, en dos páginas (100 +
+  69) y la segunda sin página siguiente: **169** claves, **169 únicas** (96 «Tareas por hacer», 51 «En curso», 19
+  «Acción del fundador», 3 «En revisión»). El encargo decía «eran 40» y no sé de dónde sale ese número. El 14-oct, el
+  censo por número daba **40 NADA EN MAIN** sobre 172 (tramo 1496c): quizá venga de ahí. Foto:
+  `docs/master/evidencias/SCRUM-1496d/foto-jira-2026-10-20T0915Z.tsv`.
+- **El censo por número**, con el instrumento de siempre y sin cambiarlo, en 5 min 8 s:
+  `node docs/master/evidencias/SCRUM-1496/tabla-ya-esta.mjs --jira <foto> --ref dc1b2b4db… --lineas <fuera del árbol>`
+  → **132 ALGO EN MAIN · 37 NADA EN MAIN · 0 NO HE PODIDO MIRAR**, salida 0, y el control SCRUM-9999 a tres ceros.
+  La tabla está en `tabla-dc1b2b4db.md`. Las 1.035 líneas «queda» no se suben, porque el comando las regenera.
+- **Clasificados: 169 de 169. Sin clasificar: 0.**
+
+### Cómo se decidió, y no es un censo nuevo
+
+El método es el de 1496c con dos cambios: LE FALTA ALGO se parte en TRABAJO y ESPERA, y cada TRABAJO lleva su
+carril (`node scripts/carriles.mjs de <ruta>`) y su dolor. El criterio se escribió ANTES de leer ningún ticket y sin
+los controles dentro; está tal cual en `docs/master/evidencias/SCRUM-1496d/criterio-de-lectura.md`. Para que todos
+los lectores leyeran la misma foto, volqué los 169 de Jira a texto con TODOS sus comentarios (recibidos = total en
+los 169; unos 2,5 MB). Catorce lectores, uno por lote de 9 a 13 tickets, midieron cada parte por efecto en
+`dc1b2b4db`. Cada uno recibió como PISTA, marcada «re-mídela», la fila de 1496c y los commits de main desde el
+14-oct (638). La salida de los catorce, sin retocar, está en `veredictos-por-lote.md` (169 filas).
+
+### Los controles
+
+| control | tenía que salir | salió | |
+|---|---|---|---|
+| SCRUM-9999 en el censo | tres ceros | tres ceros, NADA EN MAIN | ✅ |
+| población de los lectores | 169 filas, una por ticket | 169 filas, 169 únicas, ninguna falta, ninguna sobra | ✅ |
+| **SCRUM-1543** (el caso del encargo; lo miré DESPUÉS de clasificar y el lector no lo sabía) | TERMINADO | **TERMINADO** (lote-03): ①②④ c.19551 · (b) `botFlow.service.ts:636`, `:694` · (a) `tests/bot-suite.test.mjs:336-337` · `tests/scrum1543-handoff-se-guarda-antes-de-enviar.test.mjs` · `97f52883e` es ancestro de `dc1b2b4db` | ✅ |
+| los 6 TERMINADOS nuevos respecto de 1496c (1023, 1320, 1331, 1408, 1543, 1553) | releídos por mí | aguantan los seis: 1023 por `docs/legal/ENVIO_ASESOR_2026-09-28.md:55-62`, 1331 por c.19596, 1408 por `asignacionDeDocumento.ts:13-15`, 1553 por `tests/scrum1553c-…`, 1320 por `tests/scrum1320-…:178-181` | ✅ |
+
+### ✅ TERMINADOS: 42, se pueden cerrar después de leer el enunciado (A13)
+
+`529` `1018` `1022` `1023` `1104` `1108` `1110` `1113` `1116` `1119` `1120` `1126` `1128` `1130` `1214` `1245` `1246`
+`1253` `1259` `1313` `1315` `1320` `1321` `1323` `1327` `1329` `1331` `1336` `1345` `1392` `1394` `1408` `1472` `1477`
+`1478` `1481` `1514` `1537` `1543` `1548` `1550` `1553`
+
+**De los 41 TERMINADOS de 1496c, 36 siguen abiertos y nadie los ha tocado desde el 14-oct.** El tablero no miente
+solo en 1543: lleva seis días mintiendo en 36. Respecto de 1496c, tres ya se cerraron (1258, 1304 y 1319) y dos
+dejan de estar terminados: **1344**, porque nadie ha leído por nombre `scrum389` y `scrum728` en un obligatorio
+(`SCRUM-1344.md:108-109`), y **1551**, porque c.20051 (19-oct) añade dos frases servidas de `public/terminos.html`
+(`:48`, `:80`). Entran 1023, 1320, 1331, 1408, 1543 y 1553.
+
+Lo que hay que saber antes de cerrar (cada uno, con su cita, en `veredictos-por-lote.md`):
+- **1259** sigue abierto como sede del barrido por decisión del orquestador (`SCRUM-1259.md:187`). Ciérralo solo si esa
+  decisión ya no vale.
+- **1023**: la decisión que preparaba («dar por buenas las 17») no se tomó tal cual. La sustituyó otra: mandar las 28
+  al asesor (`ENVIO_ASESOR_2026-09-28.md:59-60`).
+- **1108**: la lista «quién me debe» no tiene pantalla. Viaja con 1043, que es TRABAJO.
+- **1126, 1130** (yaqu.app) y **1116** (un correo real): terminados según el enunciado, pero nadie los ha visto en
+  producción.
+- **529**: «Verlo en yaqu.app · NO HECHO» (`SCRUM-529.md:42`) no forma parte de su «Hecho =».
+- **1477**: el «NO HECHO» de la ④ en su registro está caducado; el aviso es SCRUM-1465 c.18790.
+- **1543**: no se ha medido si A8.4 ha vuelto a caer en CI después del 14-oct.
+- **1550** es de J3, y lo da por terminado un lector, no su autor.
+- Estados o etiquetas caducados que dicen otra cosa: **1018** y **1022** («Acción del fundador»), **1023** y **1253**
+  (`decision-jefe`), **1116** (`stop-fundador`), **1408**, **1481**, **1548** y **1550** (`listo-para-construir`).
+
+### 🔵 TRABAJO: 50, y no todo es para una sesión
+
+**Para una sesión, ordenados por lo que más duele hoy** (🔴 usuario, dinero, datos o afirmación pública · 🟠
+bloquea a otro o al CI · 🟡 instrumento o documento · ⚪ sin víctima):
+
+| # | ticket | qué falta, exactamente | carril | dolor |
+|---|---|---|---|---|
+| 1 | **1456** | las 6 lecturas de id autorizadas en c.18731 (`customersAdmin.routes.ts:620`, `:658`; `chargesAdmin.routes.ts:34`, `:117`, `:167`; `psp.routes.ts:37`), y antes de cada una medir que nada reacciona distinto a un 400 (c.18731 ②) | J2 | 🔴 `DELETE /admin/customers/1.5` borraría el cliente 1 (c.18431) |
+| 2 | **1455** | las 8 lecturas autorizadas (`invoicesAdmin.routes.ts:550`, `:594`, `:615`, `:875`, `:1027`, `:1190`, `:310`; `invoice.routes.ts:63`) con la misma medición previa; `send-email` (`:700`) espera una decisión del ORQ | J1 | 🔴 `/admin/invoices/1.5/annul` actúa sobre la factura 1 (c.18437) |
+| 3 | **1016** | aplicar el subtítulo firmado: `public/index.html:427` sigue diciendo «…y te paga — con tarjeta, Bizum o transferencia», y ya no hay guard que lo bloquee (`21c4df4dd`). Declarar muerta la rama `origin/scrum-1016e-titular-aplicado` | J3 | 🔴 la portada promete cobro (regla 24) |
+| 4 | **1551** | proponer la redacción de `public/terminos.html:48` y `:80` y llevarla a la puerta de SCRUM-1554 junto con R1-R6/D1; después, la firma del fundador | J4 propone, J3 aplica | 🔴 /terminos afirma en presente que se factura y se cobra |
+| 5 | **1565** | el arreglo según la receta de S1 (`finDelPeriodo`; `stripe.routes.ts:175` sigue con `current_period_end`). Antes, el ORQ elige: responder 200 o anotarlo en `gateway_events` | J2 | 🔴 quien cancela pierde el acceso al instante, y Stripe reintenta sin fin |
+| 6 | **1449** | los tres textos firmados (c.18285) en `payMp.routes.ts:31`, `:71` y `:102` | J2 | 🔴 el cliente final lee «merchant» y una promesa que no se cumple |
+| 7 | **1509** | lo firmado en c.19620: el límite delante de `POST /webhooks/whatsapp`, y que el tope BLOQUEE cuando no puede comprobar (`whatsapp.ts:382`, `:414`). Antes, volver a medir contra SCRUM-1513 | J2 | 🔴 regla 28: 100 mensajes del cliente producen 100 plantillas |
+| 8 | **1149** | regla de 44 px por contenedor en la fila de Clientes y retirar las dos excepciones de `guard-objetivo-tactil.mjs:694-695` (opción ③, `SCRUM-786.md:197`) | J2 | 🔴 leve: botones de 31 px en una pantalla de uso diario |
+| 9 | **1527** | recontar las colgadas con `docs/master/evidencias/SCRUM-1527/s3-reproduce-hoy.mjs` sobre más de 100 jobs; si sigue en 0, cerrar por «causa no demostrada» | sin fila (evidencias) | 🟠 PR de los dos equipos sin veredicto |
+| 10 | **1410** | ① y ②, en solo lectura: cuántas veces `claude[bot]` empujó a una rama con una sesión viva (positivos: #2128 y #2380), y las salidas con su coste. Cambiar el workflow es de S5 y pasa por el fundador | S5 (el cambio) | 🟠 |
+| 11 | **1260** | retirar la rama `type:'JUST'` de `src/lib/invoicing.ts:432`. La decisión está TOMADA (c.19616, «tumbalo ya»), pero es camino de emisión: **antes, el ORQ confirma que eso cuenta como el GO de la regla 40** | J1 | 🟡 |
+| 12 | **1395** | la opción ② firmada (c.18744): `censo-mudez.mjs` escribe su veredicto en un JSON versionado y scrum719 lo exige. Pide turno. Ya estaba asignado a J4 (c.18420) | SIN CERRADURA / sin fila | 🟡 |
+| 13 | **1556** | las tres filas de §3 en `dos-equipos.md` (decisión del fundador del 14-oct; en c.19641 la S0 dice que son vuestras). Antes, decidir qué fichero es «cotejo» | S0 (por decisión, del equipo J) | 🟡 |
+| 14 | **1554** | añadir la entrada 24 (`terminos.html:79-80`), redactar las 16-21 y resolver el #2428. La mitad B espera al fundador | sin fila | 🟡 |
+| 15 | **1311** | el suelo de `tests/scrum173-cadena-verifactu-serializada.test.mjs:138`, con turno de staging | sin fila | 🟡 |
+| 16 | **1330** | ③: correr scrum173 con la B (turno de staging). ② se da por declarado citando SCRUM-1333 | sin fila | 🟡 |
+| 17 | **1039** | llevar 1039b a `CONTABILIDAD.md` §3-§4 (todavía dice «sin fuente») y el visto bueno de J4 a la sección Q-C | J4 | 🟡 |
+| 18 | **1101** | ④: un registro persistente por ejecución (hoy solo sale por stdout), o que el ORQ diga que con stdout basta | SIN CERRADURA | 🟡 |
+| 19 | **1347** | medir las filas 3 y 4 de S1 contra el código. La fila 2 (`YAQU_MASTER.md:671`) contradice al código: eso es del ORQ | un jefe | 🟡 |
+| 20 | **1346** | ⑤, el censo de nombres (solo lectura). `YAQU_MASTER.md:671/:687` contradice al código: eso es del ORQ | un jefe | 🟡 |
+| 21 | **1511** | medir el CONTENIDO de las 149 rastreables; decidir ② es del ORQ | SIN CERRADURA | 🟡 |
+| 22 | **1390** | medir si un fallo de carga acaba en el mismo cartel que el vacío (`homeView.js:645-648`) | S2 (equipo de Luis) | 🟡 |
+| 23 | **1244** | adelgazar los tests pesados (`SCRUM-1244.md:242`) y volver a medir la tanda local | S5 / sin fila | 🟡 |
+| 24 | **665** | medir qué costaría congelar el PDF emitido (almacenamiento). Construirlo pide GO del fundador | J1 | 🟡 sin víctima: 0 facturas selladas |
+| 25 | **1328** | leer un artefacto `tanda-tap` de CI posterior al arreglo; el ORQ decide si es duplicado de 1289 | S3 | 🟡 |
+| 26 | **1043** | la mitad de pantalla (filtro «con deuda», orden, columna de saldo, captura a 390 px); el texto necesita firma | J2 | ⚪ |
+| 27 | **1132** | la tarjeta de notas con los 4 literales firmados en c.19617 (decisión TOMADA; sobran `decision-jefe` y `sin-firma`) | J2 | ⚪ |
+| 28 | **1145** (con **1044** dentro) | la pestaña «Sitios» y su «Cómo llegar» en cada fila | J2 | ⚪ |
+| 29 | **1457** | `supresion.routes.ts:34` (autorizada); las tres de Stripe esperan al fundador | J3 | ⚪ |
+| 30 | **1250** | retirar `pay`/`unpay` (`invoicesAdmin.routes.ts:591`, `:612`) con todo lo que depende de ellas | J1 | ⚪ |
+| 31 | **1251** | volver a medir el defecto y proponer desde dónde se descarga `evidencias.zip` | J1 | ⚪ |
+| 32 | **1159** | identificar qué botones son y medirlos en un navegador real | J2 | ⚪ |
+| 33 | **1064** | la pantalla del 303 sobre `GET /admin/modelo-303`; el texto y el nombre necesitan firma | **S2** (fichero nuevo bajo `public/**`) | ⚪ |
+| 34 | **658** | medir `maintenancePlan`/SCRUM-354 y diseñar B1/B2; construir pide un GO por cada pieza | **S1** (patrón `src/**`) | ⚪ |
+
+**Lo que solo depende del ORQUESTADOR** (una decisión o una verificación tuya; hasta que la tomes no hay nada que
+repartir), 15 tickets:
+- **1507**: decidir si el PR-2 de 1404 va entero o partido (c.19511) · 🟠
+- **1339**: la revisión del 15-oct no consta. Hay que volver a medir la tasa después de `f13e8664a` y decidir qué
+  criterio hace que bloquee · 🟠
+- **1538**: el porqué de A8.4 ya lo contesta **1543** (c.19551). Solo quedan las 5 colgadas, que son el tema de 1527
+- **1405**: cerrar con la C y decidir qué se hace con las tres copias del flag
+- **1218**: decidir si se migran los 42
+- **1332**: elegir entre A, B y C
+- **1335**: cerrarlo citando 1405
+- **1344**: leer por nombre scrum389 y scrum728 en un obligatorio
+- **524**: 1127b contesta su ②; falta escribirlo
+- **1536**: añadir una línea al máster (regla 44)
+- **1058**: cruzarlo con J1
+- **1248**: decidir si lo absorbe 1281
+- **1092**: comprobar `config.mesas` en esta máquina
+- **1391**: dar `staging-gated` por SIN JUZGAR o darle turno
+- **1549**: la parte (B) es de S0/S5 del equipo de Luis, y ① vive fuera del repo
+
+### ⛔ ESPERAN: 77
+
+Este reparto por a quién esperan **es orientativo**: lo saqué contando palabras en la columna «a quién espera», y
+la primera pasada me salió mal (ver la línea A9). La fila de cada ticket está en `veredictos-por-lote.md`.
+
+| espera a | n | tickets |
+|---|---|---|
+| fundador | 30 | 143 612 870 906 1000 1005 1028 1066 1109 1115 1195 1247 1252 1257 1310 1322 1401 1402 1403 1406 1447 1470 1471 1497 1499 1501 1502 1508 1510 1566 |
+| fundador + asesor | 15 | 19 20 1052 1054 1063 1065 1076 1102 1106 1129 1240 1264 1314 1316 1446 |
+| fundador + equipo de Luis | 11 | 957 1105 1238 1324 1387 1389 1393 1396 1498 1506 1552 |
+| equipo de Luis | 5 | 1194 1242 1404 1496 1505 |
+| asesor | 5 | 18 142 1055 1067 1077 |
+| fundador + asesor + equipo de Luis | 4 | 523 534 825 1103 |
+| caso real (con o sin fundador o asesor) | 7 | 657 998 1050 1051 1053 1073 1448 |
+
+**Decisiones que ya se tomaron y que la etiqueta no refleja** (el lector encontró la decisión con su cita): 1022
+(c.16597), 1023, 1116 (c.16979), 1132 (c.19617), 1253 (c.17441), 1260 (c.19616), 1330 (c.17724), 1346
+(c.17828/17932/17952), 1395 (c.18744), 1402 (④, c.18019), 1405 (c.19584), 1509 (c.19620), 1549 (c.19615), 1455 y
+1456 (c.18731), 1565 (descripción, 18-oct) y 524 (por 1127b). **En los ESPERA, que la decisión esté tomada no basta
+para moverlos:** 998, 1028, 1053 y 1396 están decididos, pero lo decidido es que esperen. En 1066 (D2), 1310 (i) y
+1264 se decidió una parte y otra sigue abierta.
+
+**Hoy no hay asesor.** c.19623 (SCRUM-1264): «no tenemos asesor fiscal»; c.20088: «lo arreglo cuando tengamos la
+SL». **Los 24 que esperan al asesor esperan, de hecho, a SCRUM-143** (constituir la SL).
+
+### Lo que NO se ha hecho y lo que NO se ha medido
+
+- **El veredicto de 163 de los 169 lo da un lector, no yo.** Releí yo los 6 TERMINADOS nuevos y el cruce entre 1538
+  y 1543. Los otros 36 TERMINADOS los han leído dos lectores distintos, con seis días de diferencia (1496c y este).
+  Esto dice por dónde empezar, no da permiso para cerrar.
+- **Ningún lector miró CI, yaqu.app ni una base de datos.** Lo que solo se ve allí no está medido: 1543 en CI, y
+  1126, 1130 y 1116 en producción.
+- **Un lector se salió del criterio.** El del lote-08 ejecutó `import('./scripts/_carriles.mjs')` para leer
+  `puestoDeNombre`. Es una función pura y de solo lectura, y lo declaró él mismo. El dato que sacó también está
+  escrito en `_carriles.mjs:195-205`.
+- **El dolor lo pone el lector**, con una línea de motivo. El orden de la tabla es mío: por ese dolor y, dentro del
+  🔴, primero datos y dinero, después afirmaciones públicas y por último lo táctil.
+- La foto de Jira es de las 09:15-09:24Z. Un comentario posterior no está mirado.
+- La capa de contenido de SCRUM-1550 no hizo falta: la lectura ya cubre los 37 NADA EN MAIN.
+
+### Aceptación (del encargo de `cobroflash-backend-2e`) → dónde se ve
+
+| lo pedido | dónde |
+|---|---|
+| población re-medida y declarada | «La población»: 169 (no 40), 169 clasificados, 0 sin clasificar |
+| cuatro veredictos con evidencia | `evidencias/SCRUM-1496d/veredictos-por-lote.md` y las secciones de arriba |
+| enunciado entero, cada parte por efecto | `criterio-de-lectura.md` (escrito antes) y la columna de partes |
+| ¿la decisión ya se tomó? | «Decisiones que ya se tomaron y que la etiqueta no refleja» |
+| TRABAJO con qué falta y su carril, ordenado | la tabla (35 tickets en 34 filas) y la lista de 15 del ORQ |
+| reusar 1496c, sin censo nuevo | `tabla-ya-esta.mjs` sin cambios; la pista de 1496c en cada lote |
+| control 1543, mirado después | «Los controles»: TERMINADO ✅ |
