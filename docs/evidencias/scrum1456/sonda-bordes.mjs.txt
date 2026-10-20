@@ -1,0 +1,72 @@
+// sonda-bordes.mjs — SCRUM-1456b (J2, 20-oct). El control negativo que `sonda-borrar.mjs` no pide:
+// ¿sigue pasando lo que cabe en la columna, signo incluido? Mismo montaje (router de dist/, Prisma de
+// verdad, PGlite por socket en loopback, solo la SESIÓN doblada). Mismo detector de etiqueta: si el
+// dist no está ARREGLADO, sale CIEGA (exit 2) sin medir.
+// Uso: node sonda-bordes.mjs <raiz con dist/> <ddl.sql>
+import fs from 'node:fs';
+import path from 'node:path';
+import net from 'node:net';
+import { createRequire } from 'node:module';
+import { PGlite } from '@electric-sql/pglite';
+import { PGLiteSocketServer } from '@electric-sql/pglite-socket';
+
+const [raiz, ddl] = process.argv.slice(2);
+if (!raiz || !ddl) { console.log('CIEGA: faltan argumentos'); process.exit(2); }
+const fuenteDist = fs.readFileSync(path.join(raiz, 'dist', 'modules', 'system', 'app', 'routes', 'customersAdmin.routes.js'), 'utf8');
+const i = fuenteDist.indexOf("router.delete('/:id'");
+const trozo = fuenteDist.slice(i, i + 400);
+const arreglado = i >= 0 && /cabeEnColumnaInt\)?\(id\)/.test(trozo) && !/Number\.isNaN\(id\)/.test(trozo);
+console.log(`CODIGO MEDIDO: ${arreglado ? 'ARREGLADO' : 'SIN ARREGLO'} (leído del dist)`);
+if (!arreglado) { console.log('CIEGA: este control negativo es del código ARREGLADO · EXIT=2'); process.exit(2); }
+
+const puertoLibre = () => new Promise((ok) => {
+  const s = net.createServer(); s.listen(0, '127.0.0.1', () => { const p = s.address().port; s.close(() => ok(p)); });
+});
+const db = new PGlite();
+await db.exec(fs.readFileSync(ddl, 'utf8'));
+const puertoPg = await puertoLibre();
+const servidorPg = new PGLiteSocketServer({ db, port: puertoPg, host: '127.0.0.1' });
+await servidorPg.start();
+process.env.DATABASE_URL = 'postgresql://postgres@127.0.0.1:' + puertoPg + '/sonda_1456b_bordes_test?connection_limit=1&pgbouncer=true';
+process.env.DISABLE_CRONS = 'true';
+process.env.WHATSAPP_DRY_RUN = '1';
+process.env.NODE_ENV = 'test';
+
+const requiere = createRequire(path.join(raiz, 'dist', 'x.js'));
+const { prisma } = requiere('./core/db/prisma.js');
+const express = requiere('express');
+
+await prisma.merchant.create({ data: { name: 'Relleno (id del demo)', country: 'ES' } });
+const comercio = await prisma.merchant.create({ data: { name: 'Sonda 1456b bordes', country: 'ES' } });
+const cli = [];
+for (const n of ['Uno', 'Dos']) cli.push(await prisma.customer.create({ data: { merchantId: comercio.id, name: n } }));
+
+const app = express();
+app.use(express.json());
+app.use('/admin/customers', (req, _res, next) => { req.merchantId = comercio.id; req.userRole = 'admin'; req.teamMemberId = null; next(); },
+  requiere('./modules/system/app/routes/customersAdmin.routes.js').default);
+const http = await new Promise((ok) => { const s = app.listen(0, '127.0.0.1', () => ok(s)); });
+const origen = 'http://127.0.0.1:' + http.address().port;
+const vivos = async () => (await prisma.customer.findMany({ select: { id: true }, orderBy: { id: 'asc' } })).map((c) => c.id);
+console.error = () => {};
+
+// Lo que CABE en la columna tiene que seguir llegando al borrado (204), y lo que no, quedarse en 400.
+const CASOS = [
+  ['-1', 204], ['0', 204], ['2147483647', 204], ['-2147483648', 204],
+  ['-2147483649', 400], ['1e3', 204], ['Infinity', 400],
+  [String(cli[1].id), 204], // el control del control: un cliente que existe se borra
+];
+let malos = 0;
+console.log(`SONDA BORDES · POBLACION=${CASOS.length} peticiones · comercio ${comercio.id} · clientes ${cli.map((c) => c.id).join(',')}`);
+for (const [id, espera] of CASOS) {
+  const antes = await vivos();
+  const r = await fetch(origen + '/admin/customers/' + id, { method: 'DELETE' });
+  const despues = await vivos();
+  const desaparecen = antes.filter((x) => !despues.includes(x));
+  const ok = r.status === espera;
+  if (!ok) malos += 1;
+  console.log(`${ok ? 'ok ' : 'MAL'} ${r.status} (espera ${espera})  DELETE /${id}  · desaparecen: [${desaparecen}]`);
+}
+console.log(`VIVOS AL FINAL: [${await vivos()}] · ${malos} fuera de lo esperado · EXIT=${malos ? 1 : 0}`);
+http.close(); await prisma.$disconnect(); await servidorPg.stop(); await db.close();
+process.exit(malos ? 1 : 0);

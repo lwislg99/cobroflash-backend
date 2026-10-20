@@ -617,7 +617,7 @@ router.get('/:id/detail', async (req, res) => {
 router.delete('/:id', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' }); // SCRUM-1456: `1.5` borraba el 1
     await deleteCustomer(req.merchantId, id);
     res.status(204).send();
   } catch (err) {
@@ -655,7 +655,7 @@ router.post('/:id/fusionar', requireRole('admin'), async (req, res) => {
   try {
     const principalId = Number(req.params.id);
     const fusionadoId = Number(req.body?.con);
-    if (!Number.isInteger(principalId) || principalId <= 0 || !Number.isInteger(fusionadoId) || fusionadoId <= 0) {
+    if (!cabeEnColumnaInt(principalId) || principalId <= 0 || !cabeEnColumnaInt(fusionadoId) || fusionadoId <= 0) {
       return res.status(400).json({ error: 'invalid_id' });
     }
     const resultado = await fusionarClientes(req.merchantId, principalId, fusionadoId);

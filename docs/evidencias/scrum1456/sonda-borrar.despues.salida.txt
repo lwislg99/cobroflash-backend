@@ -1,0 +1,16 @@
+CODIGO MEDIDO: ARREGLADO (leído del dist, no de la etiqueta «DESPUES»)
+SONDA BORRAR DESPUES · POBLACION=12 peticiones · comercio 2 · clientes 1,2,3,4 · ajeno 5 (comercio 3)
+400  DELETE /admin/customers/1.5  ->  {"error":"invalid_id"}  · desaparecen: []
+204  DELETE /admin/customers/2  ->    · desaparecen: [2]
+400  DELETE /admin/customers/2147483648  ->  {"error":"invalid_id"}  · desaparecen: []
+400  DELETE /admin/customers/10000000000  ->  {"error":"invalid_id"}  · desaparecen: []
+400  DELETE /admin/customers/99999999999999999999  ->  {"error":"invalid_id"}  · desaparecen: []
+400  DELETE /admin/customers/abc  ->  {"error":"invalid_id"}  · desaparecen: []
+204  DELETE /admin/customers/5  ->    · desaparecen: []
+400  POST /admin/customers/3.5/fusionar {"con":4}  ->  {"error":"invalid_id"}  · desaparecen: []
+400  POST /admin/customers/3/fusionar {"con":4.5}  ->  {"error":"invalid_id"}  · desaparecen: []
+400  POST /admin/customers/2147483648/fusionar {"con":4}  ->  {"error":"invalid_id"}  · desaparecen: []
+400  POST /admin/customers/3/fusionar {"con":2147483648}  ->  {"error":"invalid_id"}  · desaparecen: []
+200  POST /admin/customers/3/fusionar {"con":4}  ->  {"principalId":3,"fusionadoId":4,"quotesMovidos":0,"jobsMovi  · desaparecen: [4]
+VIVOS AL FINAL: [1,3,5]
+EXIT=0
