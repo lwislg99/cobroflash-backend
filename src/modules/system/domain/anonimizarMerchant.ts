@@ -68,6 +68,20 @@ export const CAMPOS_PERSONALES: Readonly<Record<string, readonly string[]>> = Ob
   // `providerId` en el correo: no es un dato del interesado y es lo que cruza un webhook de
   // entrega con su fila—, y `type`/`templateName`/`status`/las fechas son el hecho, no la persona.
   whatsAppMessage: ['toPhone'],
+  // SCRUM-914 · los EQUIPOS del cliente (la caldera, el cuadro, la alarma). Dos campos, y por dos
+  // motivos distintos:
+  //   · `serialNumber` IDENTIFICA un aparato concreto instalado en casa de una persona, y el
+  //     registro de garantía del fabricante lo cruza con su dueño y su domicilio. Es un
+  //     identificador indirecto aunque el cliente ya no tenga nombre en `customers`.
+  //   · `name` es TEXTO LIBRE que el profesional escribe sobre el aparato de OTRA persona
+  //     («Caldera de la Sra. Pérez»). NO es el caso de `product.name` ni de `quoteTemplate.name`,
+  //     que nombran el catálogo del propio profesional, no algo de un tercero.
+  //
+  // ⚠️ NO entran `type`, `brand`, `modelName`, `installedOn` ni `warrantyUntil`. Tipo, marca y
+  // modelo son de catálogo (miles de calderas iguales), y las dos fechas, sin número de serie ni
+  // cliente con nombre, no señalan a nadie. Un test comprueba que siguen INTACTAS después de
+  // suprimir, para que esta lista no anonimice de más sin que nadie lo decida.
+  equipment: ['name', 'serialNumber'],
 });
 
 /** Lo que NUNCA se toca, con su motivo. Sirve de documentación y de guard a la vez. */
