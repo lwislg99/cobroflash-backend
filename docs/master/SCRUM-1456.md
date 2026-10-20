@@ -172,3 +172,78 @@ fundador `annul`, `rectify`, `regenerate-pdf`, `status`, `pay`, `unpay`, `invoic
   La aceptación 1 se ve en el test y en la sonda; en producción, NO.
 - **Aceptación 3 (regla 2):** no se ha tocado ninguna consulta; el diff son las líneas de validación y
   el `import`.
+
+---
+
+## J3 · SCRUM-1456b · el borrado y la fusión de clientes: el rojo, medido por la ruta real
+
+**Medido contra:** `origin/main` = `e0c32fb5297e0ea98383d9f983ed8abfa67553c2` · 2026-10-20T10:06:27Z (sesión J3 `jv-j3a`, por encargo del orquestador `cobroflash-backend-09`; GO del fundador para estas rutas en c.18731)
+
+A9: aviso → cicatriz J3 «Repetí la del 6-oct al pie de la letra: lancé la sonda «después» en paralelo con dos ediciones que la cerradura de carril denegó, y medí el código sin arreglo bajo la etiqueta del arreglado; apuntarla no lo impidió.» — no se pudo comprobar: lanzar órdenes en paralelo es cómo trabaja una sesión y ningún test del árbol lo ve; la sonda ahora deduce su etiqueta del dist y se niega si no casa
+
+### 🔴 EL PR DE ESTA RAMA SALE ROJO A PROPÓSITO — no toques el test para ponerlo verde
+
+Esta rama lleva **el test y la evidencia, sin una línea de `src/`**. El arreglo es de J2: la cerradura de
+carril (`.claude/hooks/carril.mjs`) bloqueó a J3 al editar `customersAdmin.routes.ts`, y el cruce no se
+puede declarar sin tocar `docs/equipo/dos-equipos.md` §3.4, que es de S0. El orquestador la pasa a `jv-j2a` (J2).
+Caen, en `tests/scrum1456-ids-que-no-caben-en-la-columna.test.mjs`:
+- «DELETE customers /:id · `id` (params) · 🔴 un id que no cabe en la columna → 400, sin tocar la base»
+- «POST customers /:id/fusionar · `id` (params) · 🔴 un id que no cabe en la columna → 400, sin tocar la base»
+- «POST customers /:id/fusionar · `con` (body) · 🔴 un id que no cabe en la columna → 400, sin tocar la base»
+
+**Qué lo pone en verde:** las dos líneas de J2 encima, en esta misma rama. `customersAdmin.routes.ts:620`
+`Number.isNaN(id)` → `!cabeEnColumnaInt(id)`, y `:658` los dos `Number.isInteger(` → `cabeEnColumnaInt(`.
+El `import` ya está en el fichero. `enteroDeColumna.ts` es de S1: se USA, no se cambia.
+
+### Lo medido por la ruta real: `DELETE /admin/customers/1.5` BORRA EL CLIENTE 1
+
+c.18431 lo dejó «leído, deliberadamente no ejecutado». Ejecutado ahora con el montaje de J2e sin cambios:
+router de `dist/` (build de `main` `e0c32fb52`), Prisma de verdad, Postgres de verdad (PGlite por socket en
+loopback, DDL de `prisma migrate diff --from-empty`), con solo la sesión doblada. Se siembran 4 clientes
+(ids 1-4) en el comercio 2 y uno (id 5) en el comercio 3, y tras cada petición se mira QUÉ FILA desaparece.
+`docs/evidencias/scrum1456/sonda-borrar.mjs.txt` y su salida `sonda-borrar.antes.salida.txt`:
+
+| Petición | Respuesta | Desaparece |
+|---|---|---|
+| `DELETE /1.5` | **204** | **[1]** 🔴 |
+| `DELETE /2` (control negativo) | 204 | [2] y sólo [2] |
+| `DELETE /2147483648`, `/10000000000`, `/99999999999999999999` | 500 | nada |
+| `DELETE /abc` | 400 | nada |
+| `DELETE /5` (cliente de OTRO comercio) | 204 | nada |
+| `fusionar` con decimal en el principal o en `con` | 400 (ya lo paraba `Number.isInteger`) | nada |
+| `fusionar` con `2147483648` en cualquiera de los dos | 500 | nada |
+| `fusionar 3 con 4` (control positivo) | 200 | [4] |
+
+**Los cuatro límites, literales:** no cruza comercios · hace falta sesión admin · hay que escribir el
+decimal a mano en la URL (ninguna pantalla lo produce) · **no está visto en producción**.
+
+`fusionar` no tiene el defecto del decimal: sólo el 500 del id que no cabe.
+
+### La condición ② del fundador (c.18731): nada reacciona distinto a un 400 que a un 500 — LEÍDO
+
+- `DELETE /admin/customers/:id`: **ningún fichero de `public/` lo llama**.
+- `fusionar`: `customerDetailView.js:986` sólo distingue el **409**. Un 400 y un 500 van al mismo texto
+  (`mensajeParaPersona` no mira el estado, `api.js:333`) y dejan el botón activo.
+- Estrictamente protector (condición ⑥): con `cabeEnColumnaInt` sigue pasando todo lo que pasaba antes y
+  cabe en la columna, incluidos `-1` y `0`. Sólo se rechazan decimales, los que no caben e `Infinity`.
+
+### El rojo primero, y su control negativo
+
+Test, tres lecturas nuevas al final del censo (29: 22 de clientes y 7 de facturas) y un control negativo
+(un id correcto SIGUE llegando al borrado y contesta 204). Contra `main`: **62 tests, 59 verdes, 3 rojos**,
+y los tres son los «→ 400» de arriba. Suelos y control negativo, en verde.
+
+### Lo que NO está medido
+
+- **El después.** No hay arreglo en esta rama. Una primera sonda «después» corrió EN PARALELO con las dos
+  ediciones que la cerradura denegó, y midió el código SIN arreglo bajo esa etiqueta: se descartó entera.
+  La sonda ahora lee el handler del `DELETE` en el `dist/` que mide y se niega (CIEGA, exit 2) si la etiqueta
+  no casa. Control rojo: «DESPUES» sobre el `dist` de `main` → se niega. Control positivo: el detector, sobre
+  un `dist` fabricado con el arreglo, dice ARREGLADO (`sonda-borrar.control-detector.mjs.txt`).
+- `chargesAdmin.routes.ts` `:34` `:117` `:167` y `psp.routes.ts:37`: sin empezar. Son de J2
+  (`src/modules/billing/**`) y piden la condición ② línea a línea; `psp` es webhook.
+
+### Encontrado de paso, no arreglado aquí
+
+`DELETE /admin/customers/5`, con un cliente de OTRO comercio, contesta **204 sin borrar nada**. La tenencia
+aguanta, pero la respuesta afirma lo que no hizo. El ticket lo abre el orquestador.
