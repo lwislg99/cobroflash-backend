@@ -2,6 +2,7 @@
 
 **Medido contra:** `origin/main` = `3fadf8eba46be56c209e5eb491cbeab155bc2314` · 2026-10-20T10:36:51Z (hora de GitHub al escribir: 2026-10-20T11:16:00Z; al escribir, `main` ya era `523ccd90`, y entre los dos no cambia ninguno de los cinco ficheros de este registro: `git diff --stat`, vacío)
 A9: comprobación → `scripts/guard-lista-trabajos.mjs`
+**Skill UI:** cargada
 
 J2 (sesión `jv-j2a`, equipo de Javier), por encargo del orquestador `cobroflash-backend-09`. Carril: `customersView.js` es
 J2 (`dos-equipos.md:144`). `styles.css` es un **contenedor de S2** (`:150`): se añade un bloque marcado «J2» y no se
