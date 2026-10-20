@@ -125,5 +125,17 @@ documentos que pueden estar sellados. **Límite declarado** en el test: `surname
 
 ## Lo que se ha corrido
 
-- `scrum497`: 14 ✔ (arriba).
-- La tanda, `guards:entrada` y los nombrados: en el tramo siguiente.
+Sobre la punta `17fa0a409ef949a2179ca281e2a51eea3207d35a`, en esta máquina (`dist` con `tsc --noCheck`: el cliente de
+Prisma compartido va por detrás del esquema, le faltan `Merchant.activityKind` y `Quote.archivedAt`):
+
+| qué | población | resultado |
+|---|---|---|
+| `scrum497` | 14 tests | 14 ✔ |
+| a mano: scrum497, 192, 237, 976, 267, 1294, 244 (×6), 440, 1295 | 134 tests | 131 ✔ · 2 ✖ (mi cicatriz mal formada, corregida y repetida: `scrum1294` 4/4 ✔; el ④ de 976 cae por lo mismo, por arrastrar `guards:entrada`) · 1 saltado |
+| `npm run guards:entrada` | 15 guards | EXIT=0 |
+| los 5 de árbol entero que sólo corren en CI (SCRUM-1560) | 38 tests | 38 ✔ |
+| la tanda entera, `'tests/*.test.mjs'` | 11.981 tests | 11.803 ✔ · **22 ✖** · 156 saltados · EXIT=1 |
+| **línea base**: los 11 ficheros de esos 22 rojos, en un worktree limpio de `origin/main` e0c32fb5 con su propio `dist` | 115 tests | 22 ✖ en los dos árboles, **el mismo conjunto, nombre a nombre** (`diff` vacío), y es el de la tanda |
+
+Los 22 son del cliente de Prisma de esta máquina (scrum222, 235, 245, 252, 385, 461, 471, 475, 733, 1199,
+1298b), no de esta rama. No se ha esperado el CI (orden del encargo).
