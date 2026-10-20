@@ -113,13 +113,8 @@ const SIN_DECIDIR = Object.freeze({
   'customer.billingProvince': 'la provincia de facturación del cliente: misma pregunta que customer.billingAddress',
   'customer.billingCountry': 'el país de facturación del cliente: misma pregunta que customer.billingAddress',
   'merchant.country': 'el país del profesional: decide su régimen (ES o no); ¿se redacta con su dirección o es configuración?',
-  // 🔴 DECIDIDO Y SIN ESCRIBIR. Se anonimiza (orquestador del equipo de Javier, 20-oct-2026), pero la
-  // línea va en `anonimizarMerchant.ts`, que es del carril J3, y la mete J3 en su propio commit. Hasta
-  // entonces es lo que es: un nombre de persona que hoy NO se anonimiza. El día que entre la línea,
-  // `contactName` pasa a «cubierto», el trinquete de abajo BAJA uno y se pone ROJO: esa es la
-  // dependencia, escrita como guard y no en un mensaje. Quien meta la línea quita ESTA entrada y baja
-  // el número en el mismo commit.
-  'customerSite.contactName': 'DECIDIDO, falta la línea: el nombre del contacto en obra se anonimiza (SCRUM-1569); la mete J3 en anonimizarMerchant.ts',
+  // SCRUM-1569 · `customerSite.contactName` estuvo aquí como «DECIDIDO, falta la línea» hasta que J3
+  // la metió en `anonimizarMerchant.ts` (20-oct-2026): ahora está cubierto y sale de esta lista.
 });
 
 // ── 0 · 🔴 SUELO Y AUTOPRUEBA · antes de creerse ningún reparto ─────────────────────────────
@@ -234,7 +229,7 @@ test('SCRUM-497 · 🔴 ninguna columna personal del esquema queda SIN CLASIFICA
     + 'el camino, así que ninguno de sus números significa nada.');
 });
 
-test('SCRUM-497 · 🔴 TRINQUETE: cuarenta y cinco datos personales siguen sin anonimizar, y van NOMBRADOS', () => {
+test('SCRUM-497 · 🔴 TRINQUETE: cuarenta y cuatro datos personales siguen sin anonimizar, y van NOMBRADOS', () => {
   const reparto = repartir(SCHEMA, CAMPOS_PERSONALES, FUERA_DE_ANONIMIZADO, SIN_DECIDIR);
 
   // 🔴 EL SUELO VA PRIMERO: cero no es mejor que dieciséis. Si baja, lo primero que hay que
@@ -245,11 +240,10 @@ test('SCRUM-497 · 🔴 TRINQUETE: cuarenta y cinco datos personales siguen sin 
     + '  o a `FUERA_DE_ANONIMIZADO` y baja este número a mano, en el mismo commit.\n'
     + '  Si no, el censo ha dejado de verlos y «cero pendientes» significa «no supe mirar».');
 
-  assert.equal(reparto.sinDecidir.length, 45,
-    `🔴 el trinquete da ${reparto.sinDecidir.length} pendientes y eran 45 (SCRUM-1569 sumó, el 20-oct-2026 ` +
+  assert.equal(reparto.sinDecidir.length, 44,
+    `🔴 el trinquete da ${reparto.sinDecidir.length} pendientes y eran 44 (SCRUM-1569 sumó, el 20-oct-2026 ` +
     'y sobre 16, las 19 que el censo por nombre exacto no veía, los 9 trozos de domicilio y ' +
-    '`customerSite.contactName`, decidido y a la espera de su línea en J3 — si BAJA a 44 porque entró ' +
-    'esa línea, quita su entrada de `SIN_DECIDIR` y pon 44 aquí; SCRUM-1014 sumó ' +
+    '`customerSite.contactName`, que bajó a 44 el mismo día al entrar su línea en J3; SCRUM-1014 sumó ' +
     `\`customerSite.address\` el 25-sep-2026, sobre 15 medidos el 12-ago-2026).\n`
     + `    ${reparto.sinDecidir.join('\n    ')}\n\n`
     + '  Si SUBE, ha nacido un dato personal que nadie anonimiza: nómbralo o cúbrelo.\n'
