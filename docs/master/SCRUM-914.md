@@ -117,6 +117,27 @@ Control en esa misma copia: con el `anonimizarMerchant` de `origin/main` en vez 
 `scrum497` cae en «ninguna columna personal del esquema queda SIN CLASIFICAR» nombrando
 `equipment.name` y `equipment.serialNumber`. El segundo sólo lo ve porque esta rama lo añade al vocabulario.
 
+### 🔴 EL PR DE ESTA RAMA SALE ROJO, Y ES LO ESPERADO — no quites `'equipment'` del orden
+
+Por decisión del fundador (20-oct, transmitida por el orquestador: «Venga pues dale para que commitee»),
+esta rama se empuja SOLA, sin esperar a la de S1. Su obligatorio va a caer en:
+- `tests/scrum192-borrado-merchant.test.mjs:54` · «SCRUM-192 · el orden no inventa modelos que el schema no tiene»;
+- `tests/scrum314-wipedemo-derivado.test.mjs:130` · «SCRUM-314 · CONTROL: ningún borrado sale sin filtro del demo» (27 ≠ 28).
+
+**Por qué cae:** los dos esperan el `model Equipment` de `prisma/schema.prisma`, que es de S1 (regla 40)
+y no está en `main`. No es un defecto de este commit.
+
+**Qué lo pone en verde:** que entre en `main` el esquema de S1 **con** su línea en
+`tests/_merchant-fixture.mjs` (`'equipment'` antes de `'customer'` en `MODELOS_POR_MERCHANT`;
+sin ella cae SCRUM-172, medido en ⓪). Con eso, este PR pasa a verde sin tocar nada.
+
+**Lo demás, verde:** `guards:entrada` (15 guards, 170 tests), los 5 de árbol entero (38/38) y los
+ficheros afectados (100 tests, 0 rojos, 3 saltos de `LIBRO_PG_URL`). Los diez ficheros del commit
+están declarados uno a uno en SCRUM-914 c.20091.
+
+⛔ Quitar `'equipment'` del orden para ponerlo verde es arreglar el guard en vez del código (regla 41).
+Lo que falta es el código de otro equipo.
+
 ### ① DÓNDE va `equipment` en el orden — derivado de a quién apunta
 
 Del `.sql`: `equipments` → `merchants` y `customers` con FK RESTRICT; → `customer_sites` SIN FK.
