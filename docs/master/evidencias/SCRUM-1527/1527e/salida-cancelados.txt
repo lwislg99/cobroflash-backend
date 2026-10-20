@@ -1,0 +1,21 @@
+SCRUM-1527e · cancelados con paso «Tests» de 300 s o más, creados desde 2026-10-14T07:47:56Z: 12 · control (success, paso de 600 s o más): 115
+control: el silencio más largo entre dos casos en 115 tandas enteras es de 102 s
+   job 115992078973 · 2026-10-14T17:11:50Z · paso 562 s · casos 11163 · hueco máx 73 s · cola hasta la cancelación 3 s · aviso no
+   job 115993630445 · 2026-10-14T17:14:57Z · paso 561 s · casos 10762 · hueco máx 87 s · cola hasta la cancelación 0 s · aviso no
+   job 117940297841 · 2026-10-19T07:27:45Z · paso 488 s · casos 9802 · hueco máx 93 s · cola hasta la cancelación 0 s · aviso no
+   job 115745775150 · 2026-10-14T07:59:24Z · paso 467 s · casos 9372 · hueco máx 86 s · cola hasta la cancelación 6 s · aviso no
+   job 117927432037 · 2026-10-19T06:48:29Z · paso 419 s · casos 10366 · hueco máx 68 s · cola hasta la cancelación 1 s · aviso no
+   job 117752520421 · 2026-10-18T18:20:50Z · paso 414 s · casos 9186 · hueco máx 75 s · cola hasta la cancelación 14 s · aviso no
+   job 116975082971 · 2026-10-16T12:35:58Z · paso 413 s · casos 9061 · hueco máx 87 s · cola hasta la cancelación 2 s · aviso no
+   job 118046331315 · 2026-10-19T11:57:16Z · paso 412 s · casos 9243 · hueco máx 79 s · cola hasta la cancelación 4 s · aviso no
+   job 117513077262 · 2026-10-17T21:50:03Z · paso 406 s · casos 7203 · hueco máx 14 s · cola hasta la cancelación 83 s · aviso no
+   job 117486360766 · 2026-10-17T19:41:36Z · paso 342 s · casos 9941 · hueco máx 58 s · cola hasta la cancelación 2 s · aviso no
+   job 116944430669 · 2026-10-16T11:12:53Z · paso 338 s · casos 7085 · hueco máx 14 s · cola hasta la cancelación 32 s · aviso no
+   job 115974581688 · 2026-10-14T16:35:59Z · paso 335 s · casos 6964 · hueco máx 14 s · cola hasta la cancelación 48 s · aviso no
+exit=0
+
+── control positivo (misma versión del instrumento): el colgado CANCELADO del 29-sep (1527b §①) + una tanda entera de control
+SCRUM-1527e · cancelados con paso «Tests» de 300 s o más, creados desde 2026-09-01T00:00:00Z: 1 · control (success, paso de 600 s o más): 1
+control: el silencio más largo entre dos casos en 1 tandas enteras es de 96 s
+   job 109503839889 · 2026-09-29T16:22:00Z · paso 938 s · casos 4246 · hueco máx 11 s · cola hasta la cancelación 792 s · aviso no  ← cola MÁS LARGA que cualquier silencio sano
+exit=0
