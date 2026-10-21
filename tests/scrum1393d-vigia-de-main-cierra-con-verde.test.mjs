@@ -87,7 +87,7 @@ test('SCRUM-1393d · el modo de consola (`--accion-del-issue`) dice sus pasos y 
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1393d-'));
   try {
     const env = { ...process.env, URL_RUN: 'https://x/p' };
-    delete env.NODE_TEST_CONTEXT; delete env.NODE_OPTIONS;
+    delete env.NODE_TEST_CONTEXT; delete env.NODE_OPTIONS; delete env.FORCE_COLOR;
     const correr = (veredictos, estado, previos = '') => {
       fs.writeFileSync(path.join(dir, 'v.json'), JSON.stringify({ ahora: AHORA, origen: 'siembra', veredictos }));
       fs.writeFileSync(path.join(dir, 'p.txt'), previos);
