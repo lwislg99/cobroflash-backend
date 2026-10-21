@@ -54,11 +54,16 @@
 //   node scripts/vigia-silencio-de-main.mjs                      lee GitHub (≈ 270 peticiones)
 //   node scripts/vigia-silencio-de-main.mjs --historial <jsonl> --ahora <ISO>
 //                                                                reproduce sobre un historial guardado
+//   node scripts/vigia-silencio-de-main.mjs --commit <sha40> [--json f]   SCRUM-1393c: ESE commit
+//   node scripts/vigia-silencio-de-main.mjs --commits <fichero> [--json f]   un sha por línea
+//   node scripts/vigia-silencio-de-main.mjs --desde-de-la-red      desde cuándo mira la red diaria
 // SALIDAS: 0 = leído, nada que avisar · 1 = leído, HAY aviso · 2 = no supe medir (CIEGO).
+// En el modo por commit, un commit CIEGO (nadie lo probó) es un AVISO y sale 1, no 2: el 2 queda
+// para cuando el que no supo mirar es el vigía. Quien lo llame avisa TAMBIÉN con el 2.
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 import { execFile } from 'node:child_process';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { RUTAS_GH } from './equipo/ancla.mjs';
 import { checksObligatoriosDeReglas } from './vigia-atascados.mjs';
@@ -381,6 +386,138 @@ export function informe(v, { ahora, origen, poblacion }) {
   return l.join('\n');
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1393c · EL MODO POR COMMIT: ¿ESTE commit de `main` está probado?
+//
+// Lo de arriba avisa por RACHAS (5 rojos, 22 runs sin ejecutar): un único commit cuyo CI se
+// canceló con 0 jobs no llega nunca a un umbral, y sirvió en producción sin verificar (cae4c5cc,
+// 1-oct). Esto juzga un commit con su propio run del CI. El fundador fijó en SCRUM-1393 c.20144
+// (C) un workflow al acabar cada CI de `main` y (B) uno diario de red; los dos llaman aquí, y el
+// workflow lo escribe S5 (su carril). Lo que más urge es el CIEGO, no el rojo.
+//
+//   VERDE      el run acabó en success y CADA job declarado del CI corrió y salió success
+//   ROJO       algún job salió failure (obligatorio o no: el que no bloquea es el que nadie ve)
+//   CIEGO      no hubo run · run con 0 jobs · job cancelado, saltado, con timeout o ausente ·
+//              run sin acabar más allá del tope (colgado o en cola) · conclusión que contradice
+//              a sus jobs. «Nadie ha probado este commit», que NO es verde.
+//   CORRIENDO  run sin acabar dentro del tope: ni verde ni rojo, y no avisa (se declara).
+//   SIN-LEER   GitHub no contestó por ese commit: no se sabe, y tampoco es verde.
+//
+// El TOPE de un run sin acabar no se elige: es la suma de los `timeout-minutes` de `ci.yml`
+// (`topeDeCorridaDelCI`), lo más que puede durar aunque sus jobs corrieran uno detrás de otro.
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+
+/** Los jobs del workflow CI que se exigen en cada commit de `main`: los de `JOBS_DE_MAIN`. */
+export const JOBS_DEL_CI = JOBS_DE_MAIN.filter((j) => j.workflow === 'CI').map((j) => j.job);
+
+/** Lo más que puede durar un run del CI, en minutos: la suma de sus `timeout-minutes`. `null` si no hay ninguno. */
+export function topeDeCorridaDelCI(textoCiYml) {
+  const minutos = [...String(textoCiYml).matchAll(/^\s+timeout-minutes:\s*(\d+)\s*$/gm)].map((m) => Number(m[1]));
+  return minutos.length ? minutos.reduce((a, b) => a + b, 0) : null;
+}
+
+/**
+ * EL VEREDICTO DE UN COMMIT. Función PURA.
+ *
+ * @param {object}      e
+ * @param {string}      e.sha        el commit de `main`
+ * @param {object|null} e.run        el run del CI por `push` de ese commit (`status`, `conclusion`,
+ *                                   `created_at`, `html_url`) o `null` si no hay ninguno
+ * @param {object[]|null} e.jobs     sus jobs (`name`, `status`, `conclusion`); `null` = no se leyeron
+ * @param {string}      e.ahora      ISO
+ * @param {number|null} e.topeMin    `topeDeCorridaDelCI`; `null` = no se sabe, y un run sin acabar es SIN-LEER
+ * @returns {{ sha: string, estado: string, motivo: string, url: string|null, jobs: object[] }}
+ */
+export function veredictoDeCommit({ sha, run, jobs, ahora, topeMin, declarados = JOBS_DEL_CI }) {
+  const r = (estado, motivo, lista = []) => ({ sha, estado, motivo, url: run?.html_url ?? null, jobs: lista });
+  if (!run) return r('CIEGO', 'ningún run del CI por push para este commit: no corrió');
+  if (run.status !== 'completed') {
+    const min = Math.round((Date.parse(ahora) - Date.parse(run.created_at)) / 60000);
+    if (topeMin == null) return r('SIN-LEER', `run «${run.status}» desde hace ${min} min y no se sabe el tope del CI`);
+    return min > topeMin
+      ? r('CIEGO', `run «${run.status}» desde hace ${min} min, más que el tope del CI (${topeMin} min): colgado o en cola`)
+      : r('CORRIENDO', `run «${run.status}» desde hace ${min} min (tope ${topeMin} min): aún sin veredicto`);
+  }
+  if (!Array.isArray(jobs)) return r('SIN-LEER', `run «${run.conclusion}», pero no se pudieron leer sus jobs`);
+  if (jobs.length === 0) return r('CIEGO', `run «${run.conclusion}» con 0 jobs`);
+
+  const rojos = jobs.filter((j) => j.conclusion === 'failure');
+  if (rojos.length) return r('ROJO', `en rojo: ${rojos.map((j) => `«${j.name}»`).join(', ')}`, rojos);
+
+  const noCorrieron = jobs.filter((j) => j.status !== 'completed' || j.conclusion !== 'success');
+  const nombres = new Set(jobs.map((j) => j.name));
+  const ausentes = declarados.filter((n) => !nombres.has(n));
+  if (noCorrieron.length || ausentes.length) {
+    const partes = [
+      ...noCorrieron.map((j) => `«${j.name}» ${j.status === 'completed' ? j.conclusion : j.status}`),
+      ...ausentes.map((n) => `«${n}» ausente`),
+    ];
+    return r('CIEGO', `sin probar: ${partes.join(', ')}`, noCorrieron);
+  }
+  if (run.conclusion !== 'success') return r('CIEGO', `run «${run.conclusion}» con todos sus jobs en success: no cuadra`);
+  return r('VERDE', `${jobs.length} jobs en success`);
+}
+
+/** La salida de un lote: 1 si hay ROJO o CIEGO (avisar), 2 si no lo hay pero algo no se leyó, 0 si no. */
+export function salidaDeCommits(veredictos) {
+  if (veredictos.some((v) => v.estado === 'ROJO' || v.estado === 'CIEGO')) return SALIDA_AVISO;
+  if (veredictos.length === 0 || veredictos.some((v) => v.estado === 'SIN-LEER')) return SALIDA_CIEGO;
+  return SALIDA_OK;
+}
+
+/**
+ * EL SUELO DEL MODO POR COMMIT: seis cebos FABRICADOS aquí, uno por estado y dos de CIEGO (el que
+ * no corrió y el cancelado con 0 jobs, que son los dos que pasaron el 1-oct). `juez` se puede
+ * cambiar para comprobar que un juez ciego NO pasa el suelo.
+ */
+export function sueloPorCommit(juez = veredictoDeCommit) {
+  const ahora = '2026-01-01T12:00:00Z';
+  const job = (name, conclusion) => ({ name, status: 'completed', conclusion });
+  const todos = (c) => JOBS_DEL_CI.map((n) => job(n, c));
+  const run = (status, conclusion, creado = '2026-01-01T11:50:00Z') => ({ status, conclusion, created_at: creado, html_url: null });
+  const cebos = [
+    { sha: 'cebo-verde', run: run('completed', 'success'), jobs: todos('success'), esperado: 'VERDE' },
+    { sha: 'cebo-rojo', run: run('completed', 'failure'), jobs: [...todos('success').slice(1), job(JOBS_DEL_CI[0], 'failure')], esperado: 'ROJO' },
+    { sha: 'cebo-cancelado', run: run('completed', 'cancelled'), jobs: [], esperado: 'CIEGO' },
+    { sha: 'cebo-sin-run', run: null, jobs: null, esperado: 'CIEGO' },
+    { sha: 'cebo-colgado', run: run('in_progress', null, '2026-01-01T06:00:00Z'), jobs: null, esperado: 'CIEGO' },
+    { sha: 'cebo-corriendo', run: run('in_progress', null), jobs: null, esperado: 'CORRIENDO' },
+  ];
+  const estado = Object.fromEntries(cebos.map((c) => [c.sha, juez({ ...c, ahora, topeMin: 130 }).estado]));
+  const ok = cebos.every((c) => estado[c.sha] === c.esperado);
+  return { ok, estado, detalle: `suelo por commit: ${ok ? 'reconoce' : 'NO reconoce'} sus seis cebos (${JSON.stringify(estado)})` };
+}
+
+/** El informe del modo por commit: primera línea la POBLACIÓN, la de recuento SIEMPRE, última el `EXIT=`. */
+export function informeDeCommits(veredictos, { ahora, origen }) {
+  const n = (e) => veredictos.filter((v) => v.estado === e).length;
+  const l = [`POBLACION commits=${veredictos.length} · medido ${ahora} · ${origen}`];
+  for (const v of veredictos) l.push(`${v.estado.padEnd(10)} ${v.sha.slice(0, 12)} · ${v.motivo}${v.url ? ` · ${v.url}` : ''}`);
+  l.push(`${veredictos.length} commits mirados · ${n('ROJO')} rojos · ${n('CIEGO')} ciegos (sin verificar) · ${n('CORRIENDO')} corriendo · ${n('SIN-LEER')} sin leer · ${n('VERDE')} verdes`);
+  l.push(`EXIT=${salidaDeCommits(veredictos)}`);
+  return l.join('\n');
+}
+
+/** La marca de un aviso: una por commit y estado, para que el cron diario no repita lo que (C) ya dijo. */
+export const marcaDeAviso = (v) => `<!-- vigia-de-main:${v.sha}:${v.estado} -->`;
+
+/**
+ * EL CUERPO DEL AVISO (SCRUM-1393c), PURO: lo que `.github/workflows/vigia-de-main.yml` comenta en
+ * su Issue. Sólo los ROJO, CIEGO y SIN-LEER que aún no tienen su marca en `previos` (el texto de
+ * los comentarios ya publicados). `''` = nada nuevo que decir. Sin la mención que despierta a
+ * Claude: este aviso es para una persona (el mismo invariante que `vigia-atascados`).
+ */
+export function cuerpoDelAviso({ veredictos, ahora, origen, urlDelRun }, previos = '') {
+  const nuevos = veredictos.filter((v) => ['ROJO', 'CIEGO', 'SIN-LEER'].includes(v.estado) && !String(previos).includes(marcaDeAviso(v)));
+  if (!nuevos.length) return '';
+  const l = [`**Vigía de main** · ${ahora} · ${origen}`, '', informeDeCommits(veredictos, { ahora, origen }).split('\n').at(-2), ''];
+  for (const v of nuevos) l.push(`- **${v.estado}** \`${v.sha.slice(0, 12)}\` — ${v.motivo}${v.url ? ` · [run](${v.url})` : ''} ${marcaDeAviso(v)}`);
+  l.push('', 'CIEGO = nadie ha probado ese commit en `main`; NO es verde. ROJO = un job cayó, bloquee o no.', `Pasada: ${urlDelRun}`);
+  const cuerpo = l.join('\n');
+  if (/@claude/i.test(cuerpo)) throw new Error('el aviso del vigía de main contiene la mención que despierta a Claude');
+  return cuerpo;
+}
+
 // ── LA LECTURA DE GITHUB (sólo aquí hay red) ─────────────────────────────────────────────────
 // Qué `gh` se usa NO se decide mirando en qué máquina corre: se prueban en orden los de `RUTAS_GH`
 // (los mismos del ancla, SCRUM-360), aquí y en CI. Uno que no existe (ENOENT) deja paso al
@@ -434,9 +571,70 @@ async function leerDeGitHub(jobs) {
   return { runs, obligatorios, commits, sinLeer };
 }
 
+// SCRUM-1393c · la lectura del modo por commit. El run es el último del CI por `push` de ESE sha
+// en `main`; sus jobs, el último intento. Un fallo de la API deja ese commit en SIN-LEER.
+async function leerCommitDeGitHub(sha, idDelCI) {
+  const pagina = await gh(`repos/${REPO}/actions/workflows/${idDelCI}/runs?head_sha=${sha}&event=push&branch=main&per_page=20`);
+  const run = [...pagina.workflow_runs].sort((a, b) => b.created_at.localeCompare(a.created_at))[0] ?? null;
+  if (!run || run.status !== 'completed') return { run, jobs: null };
+  return { run, jobs: (await gh(`repos/${REPO}/actions/runs/${run.id}/jobs?per_page=100&filter=latest`)).jobs };
+}
+
+/**
+ * Desde cuándo mira la red diaria: las 24 h del cron MÁS el retraso de cron medido
+ * (`UMBRAL_HORAS_DE_CRON`), para que un cron que llega tarde no deje commits sin mirar.
+ */
+export const desdeDeLaRed = (ahora = new Date()) => new Date(ahora.getTime() - (24 + UMBRAL_HORAS_DE_CRON) * 3600000).toISOString();
+
+async function modoPorCommit(args, opcion) {
+  const suelo = sueloPorCommit();
+  console.log(suelo.detalle);
+  const ciego = (motivo) => { console.log(`POBLACION commits=0 · ${motivo}`); console.log(`CIEGO — ${motivo}`); console.log(`EXIT=${SALIDA_CIEGO}`); return SALIDA_CIEGO; };
+  if (!suelo.ok) return ciego('el vigía no reconoce sus cebos: esta pasada no puede afirmar nada');
+
+  let topeMin = null;
+  try { topeMin = topeDeCorridaDelCI(readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), '..', '.github', 'workflows', 'ci.yml'), 'utf8')); } catch { /* queda null: un run sin acabar sale SIN-LEER */ }
+
+  // `--commit <sha>`: el (C), un commit. `--commits <fichero>`: el (B), un sha por línea. La lista
+  // la saca quien llama (`git log --first-parent --since=<desdeDeLaRed>`): este motor no lee git.
+  let shas;
+  let origen;
+  if (args.includes('--commit')) {
+    shas = [opcion('--commit')];
+    origen = `GitHub ${REPO} · un commit`;
+  } else {
+    try { shas = readFileSync(opcion('--commits'), 'utf8').split(/\r?\n/).map((s) => s.trim()).filter(Boolean); } catch (e) { return ciego(`no pude leer la lista de commits: ${e.message}`); }
+    origen = `GitHub ${REPO} · ${shas.length} commits de ${opcion('--commits')}`;
+  }
+  const malo = shas.find((s) => !/^[0-9a-f]{40}$/.test(s ?? ''));
+  if (malo !== undefined) return ciego(`cada commit va con su sha COMPLETO (40 hex); llegó «${malo}»`);
+
+  let idDelCI;
+  try {
+    idDelCI = (await gh(`repos/${REPO}/actions/workflows?per_page=100`)).workflows.find((w) => w.name === 'CI')?.id;
+  } catch (e) { return ciego(e.message); }
+  if (!idDelCI) return ciego('no encuentro el workflow «CI»');
+
+  const ahora = new Date().toISOString();
+  const veredictos = [];
+  for (const sha of shas) {
+    try {
+      veredictos.push(veredictoDeCommit({ sha, ...(await leerCommitDeGitHub(sha, idDelCI)), ahora, topeMin }));
+    } catch (e) {
+      veredictos.push({ sha, estado: 'SIN-LEER', motivo: e.message, url: null, jobs: [] });
+    }
+  }
+  console.log(informeDeCommits(veredictos, { ahora, origen }));
+  const json = opcion('--json');
+  if (json) writeFileSync(json, JSON.stringify({ ahora, origen, salida: salidaDeCommits(veredictos), veredictos }, null, 2));
+  return salidaDeCommits(veredictos);
+}
+
 async function principal() {
   const args = process.argv.slice(2);
   const opcion = (n) => { const i = args.indexOf(n); return i === -1 ? null : args[i + 1]; };
+  if (args.includes('--desde-de-la-red')) { console.log(desdeDeLaRed()); return SALIDA_OK; }
+  if (args.includes('--commit') || args.includes('--commits')) return modoPorCommit(args, opcion);
 
   const suelo = sueloDelVigia();
   console.log(suelo.detalle);
