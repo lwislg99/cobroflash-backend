@@ -170,11 +170,18 @@ test('SCRUM-1456c · ✅ condición ②: con /webhooks/psp en 400 o en 500, Stri
     });
     const firma = firmador.webhooks.generateTestHeaderString({ payload, secret: WHSEC_JUGUETE });
     const callar = console.error; console.error = () => {};
+    // Con `node:http` y sin agente, no con `fetch` (SCRUM-560): con `fetch` el proceso moría al salir
+    // (0xC0000409 en Windows con `--test-force-exit`) con los diez casos en verde. Medido el 21-oct en
+    // este fichero: 4 de 4 pasadas, y 3 de 3 con este caso solo y SIN el arreglo de `src/`.
     try {
-      const r = await fetch(`http://127.0.0.1:${srv.address().port}/webhooks/stripe`, {
-        method: 'POST', headers: { 'content-type': 'application/json', 'stripe-signature': firma }, body: payload,
+      return await new Promise((resolve, reject) => {
+        const peticion = http.request({
+          host: '127.0.0.1', port: srv.address().port, path: '/webhooks/stripe', method: 'POST', agent: false,
+          headers: { 'content-type': 'application/json', 'stripe-signature': firma, 'content-length': Buffer.byteLength(payload) },
+        }, (r) => { r.resume(); r.on('end', () => resolve({ status: r.statusCode })); });
+        peticion.on('error', reject);
+        peticion.end(payload);
       });
-      return { status: r.status };
     } finally { console.error = callar; }
   };
   try {
@@ -191,7 +198,7 @@ test('SCRUM-1456c · ✅ condición ②: con /webhooks/psp en 400 o en 500, Stri
     assert.deepEqual(vistos[400], vistos[500],
       `🔴 Stripe recibe cosas distintas con un 400 y con un 500 del psp: ${JSON.stringify(vistos)}. Cambiar el 500 por un 400 cambiaría lo que hace Stripe.`);
   } finally {
-    srv.close();
-    servidorPsp.close();
+    await new Promise((ok) => srv.close(ok));
+    await new Promise((ok) => servidorPsp.close(ok));
   }
 });
