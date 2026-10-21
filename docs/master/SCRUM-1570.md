@@ -71,3 +71,45 @@ verde. Lo cazó mirar el `numstat` antes de leer el resultado (A23 ⑧); se repi
 - `guard:escalera-por-estado`: causa medida en #2561 (SCRUM-1562d, carril **S4**, equipo de Luis). Va al ticket.
 - `guard:cls-barra-anuncio`: causa en la carga de la fuente de la landing; el arreglo es una decisión visual. Va al
   ticket.
+
+## SCRUM-1570b (relevo) · el guard deja de fabricarse su filtro de comentarios: `soloCodigo`
+
+**Medido contra:** `origin/main` = `b10c9b6ca79e2f0b38368098615dc98140bc063d` · 2026-10-21T13:18:39Z (hora de GitHub al escribir: 2026-10-21T13:19:49Z; los rojos de abajo se midieron sobre `3c60a7fd0147eb56d36f5089ecc9c70e2dcbd2ee`, y entre los dos no entra ninguno de los ficheros de este tramo)
+
+A9: comprobación → `tests/scrum694-los-guards-migrados.test.mjs`
+
+Relevo de jv-j3p (PARADA) por jv-j3s, puesto J3. Encargo del orquestador `cobroflash-backend-5f`, con GO para
+seguir sin leer Jira en esta sesión (sin MCP de Atlassian): la entrega va a SCRUM-1570 por su mano.
+
+**El rojo.** El obligatorio de #2636 caía en 1 de 12.015 (dato del orquestador, no recontado):
+`scrum694` «no entra NINGÚN filtro de comentarios nuevo», 40 sobre un tope de 39. El nº 40 era el recorte por
+líneas que el tramo de arriba añadió en `vistasDelRouter()` (`l.replace(` + el corte en `//` hasta fin de línea).
+
+**El arreglo.** `app.js` se lee entero con `soloCodigo()` de `tests/_solo-codigo.mjs` (el filtro de la casa,
+SCRUM-694; ya lo importan tres ficheros de `scripts/`), y el `case` se recorre sobre ese texto. Conserva longitud
+y líneas, así que el `matchAll` de los `case` no se descoloca. Ni el tope ni `scrum694` se tocan.
+
+| medición (Edge local, Windows) | resultado |
+|---|---|
+| derivación con el filtro a mano vs. con `soloCodigo`, sobre el `app.js` real (67.818 B) | las mismas **27** vistas y las mismas **7** con id; conjunto comparado: `IGUALES: true` |
+| `scrum694` con el arreglo | 7 tests · 7 pass · 0 fail |
+| 🔴 `scrum694` con el guard de la punta vieja (`0e4eb2dcd`) sobre el árbol fusionado (numstat `5 6`) | 6 pass · **1 fail**: «hay 40 guards fabricándose su filtro de comentarios, y el tope es 39» |
+| guard con el arreglo | salida 0 · 0 hallazgos · 0 ciegos · 29 vistas × 3 estados, **93 casos** · con id: 7 |
+| 🔴 R2 de jv-j3p repetido: marcador en el `h2` de la ficha del gasto (numstat `1 1 expensesView.js`) | **salida 1**, «VISTA NUEVA CON MARCADOR: `expenses-detail` pinta 2» |
+| 🔴 sin `expenses-detail`: el `state.expenseId` de la llamada del router SÓLO dentro de un comentario de bloque (numstat `1 1 app.js`) | **salida 2**, con id: 6, «3 par(es) CIEGOS», los tres de `expenses-detail` |
+| la misma siembra con el guard de la punta vieja | **salida 0, verde**, con id: 7 — el comentario de bloque le colaba un `state.` |
+| árbol tras cada siembra | `git restore --source=HEAD` + `git status --porcelain` vacío |
+
+**De paso:** la última fila cierra el «NO medido» del tramo de arriba («que un comentario con una llamada
+`state.<id>` no cuente: no se ha sembrado»). Sembrado, el recorte por líneas NO lo cumplía con un comentario de
+bloque: daba verde con el router sin pasar el id. Con `soloCodigo` sale CIEGO. Lo arregla el mismo cambio.
+
+**Error mío, confesado:** la primera vuelta del contraste la escribí con `git show … > fichero` encadenado al
+commit; el hook `guard-dangerous` la bloqueó entera (truncar un fichero versionado) y no corrió nada, commit
+incluido. Se rehízo con `git restore --source=<sha>`, que no trunca.
+
+### NO medido
+
+- **En el runner de CI**: se verá en el obligatorio y en el job de navegador de este empujón.
+- El job «guards de navegador» seguirá rojo por `cls-barra-anuncio` y `escalera-por-estado` (otros carriles):
+  el veredicto de este tramo es obligatorio verde + `guard:marcadores-en-pantalla` verde, no el job entero.
