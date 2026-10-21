@@ -290,3 +290,66 @@ Los 9 ficheros que leen `CAMPOS_PERSONALES`, la supresión o el censo (`grep -l`
 `scrum267` y `scrum976`. Resultado al final del registro, en la línea `MINI-TANDA`.
 
 MINI-TANDA (rama, tras el arreglo): 13 ficheros · 135 tests · 134 pass · 0 fail · 1 skip (`SCRUM-244 · CONTRA POSTGRES`, sin `LIBRO_PG_URL`) · 134 + 0 + 1 = 135 · EXIT=0. `npm run guards:entrada`: 15 guards, EXIT=0.
+
+# SCRUM-1569 · 1569e — dev contra main: qué le falta a `yaqu_dev_javier` respecto al esquema de `origin/main` (J5, solo lectura)
+
+**Medido contra:** `origin/main` = `c47288f7e82fb9dea4473f71e161a3836ac788f3` · 2026-10-21T14:28:47Z (merge de #2645, hora de GitHub; hora de GitHub al medir: 2026-10-21T14:33:28Z)
+A9: aviso → A10 «Una prohibición sin mecanismo es una frase.» — no se pudo comprobar: `scripts/preview-migracion.mjs` no llama a `_clave-vs-destino.mjs` (sin import; lee el `DATABASE_URL` que haya), así que «preview con el guard de destino» lo hizo esta sesión a mano; ponerlo dentro es código fuera de un encargo de solo lectura
+
+Encargo del orquestador `cobroflash-backend-5f` (21-oct): preview de `prisma/schema.prisma` de `origin/main` contra
+DEV, clasificar el diff, y entregar el DDL aditivo para que lo aplique el colaborador (A5). **Nada aplicado.**
+
+## Cómo se midió
+
+- `previewMigracion()` de la casa, sin tocarla; solo se le inyecta el ejecutor: el CLI fijado (`prisma` 6.18.0) del
+  checkout compartido, porque el árbol anidado no tiene `node_modules` (`rutaCliLocal` daría `null`).
+  `DATABASE_URL` = el valor de `DATABASE_URL_DEV` del `.env` compartido; antes de lanzar, `comprobarClaveVsDestino` y
+  `comprobarCredencialDeProduccion` dieron los dos `cuadra` → `acela.proxy.rlwy.net/yaqu_dev_javier`. Script:
+  `evidencias/SCRUM-1569e/preview-dev.mjs`; salida: `salida-preview-dev-contra-main.txt` (3.235 B de diff).
+- **Control positivo:** schema entero contra vacío → **33 `CREATE TABLE`** (33 `model` en el schema). Clase `con_cambios`.
+- Sonda de solo `SELECT` (`sonda-assignees.cjs` → `salida-sonda-assignees.txt`): 33 tablas en `public`,
+  `customer_sites` no existe, `equipments` sí. 33 = 33 de main − `customer_sites` + `equipments`: cuadra con lo
+  medido por el orquestador (c.20145). Positivo de la sonda de FK: `invoices` 5, `quotes` 3; `*_assignees` 0.
+- Las URL: barrido `postgres(ql)://` sobre la evidencia → 0 ficheros; el mismo barrido sobre
+  `scripts/preview-migracion.mjs` (que lleva una URL de relleno) → 1. Solo salen host y base.
+
+## (a) Lo que a dev le FALTA de main — hueco a cerrar (27 líneas de DDL)
+
+| Ticket | Qué | `.sql` de la casa |
+|---|---|---|
+| SCRUM-1008 | `products.sku`, `supplier_ref`, `unit` | `docs/sql/scrum-1008-ficha-articulo.sql` |
+| SCRUM-1014 | tabla `customer_sites` + 2 índices + 2 FK | `docs/sql/scrum-1014-customer-site.sql` |
+| SCRUM-597 | los 4 FK de `quote_assignees` / `invoice_assignees` | ⚠️ `docs/sql/scrum-597-asignados-de-documento.sql` NO vale: `CREATE TABLE IF NOT EXISTS` con los FK dentro, y en dev las tablas ya existen sin ellos |
+
+DDL listo: `evidencias/SCRUM-1569e/ddl-dev-al-dia-con-main.sql`, copiado literal del preview y cotejado línea a línea
+en los dos sentidos (27 líneas no-DROP en el preview, 27 en el fichero, 0 sobrantes en cada lado). Los FK caben:
+las dos tablas tienen 0 filas y 0 huérfanos.
+
+## (b) Lo que dev tiene y main no — NO se borra: paso ② de A5 adelantado
+
+Ninguno es basura. Los seis tienen un `.sql` aditivo mergeado en `docs/sql/` y les falta el PR ③ que toca el esquema.
+Un `db push` contra dev los borraría (20 sentencias destructivas en el preview).
+
+| En dev, no en main | Dueño probable (por contenido) | Estado |
+|---|---|---|
+| tabla `equipments` + `equipment_id` en `albaranes`, `jobs`, `maintenance_plans`, `partes_trabajo` (+4 índices) | SCRUM-914 · `docs/sql/scrum-914-equipos-del-cliente.sql` (#1832) | PR #2621 ABIERTO (J3), «rojo a propósito hasta que entre el esquema de S1» |
+| `customers.callback_note`, `callback_on` + índice `customers_merchant_id_callback_on_idx` | SCRUM-1056 · `docs/sql/scrum-1056-volver-a-llamar.sql` (#1836); 1056e: «ALTER solo en dev» | sin PR ③ encontrado |
+| `customers.pay_methods_por_defecto` | SCRUM-586 · `docs/sql/scrum-586-paso-1-anadir-columna.sql` («dev ✅ aplicado el 6-sep-2026») | sin PR ③ encontrado |
+| `albaranes.firmado_en_dispositivo_at`, `ventana_suelo_at`, `ventana_suelo_fuente` | SCRUM-359 / 1184 · `docs/sql/scrum-359-ventana-de-firma.sql` | sin PR ③ encontrado |
+| `invoices.retencion_irpf_importe` | SCRUM-1146 · `docs/sql/scrum-1146-retencion-irpf-importe.sql` (#1822) | sin PR ③ encontrado |
+| `quote_templates.discount_global_amount` | SCRUM-930 · `docs/sql/scrum-930-descuento-de-plantilla.sql` (#1825; #2247: «el descuento global sigue esperando su ALTER») | sin PR ③ encontrado |
+
+«Sin PR ③ encontrado» = `gh pr list --state all --search "SCRUM-<n> in:title"`: busca por TÍTULO; un PR ③ con otro
+número en el título no lo vería. El dueño sale del `.sql` y del registro, no de quién lo aplicó en dev (no medido).
+
+## Errores propios
+
+- La sonda abre con `SET TRANSACTION READ ONLY` fuera de una transacción: en Postgres eso no protege nada. La sonda
+  solo lanza `SELECT`, y eso es lo que la hace de lectura; la línea no añade nada y lo digo para que nadie la copie
+  como si fuera una barrera.
+
+## Lo que NO se ha hecho
+
+- Ningún ALTER aplicado, ningún `db push`, nada contra staging ni producción. Esquema y emisión: sin tocar.
+- No se ha medido staging (el 34 frente a 33 del orquestador queda sin explicar aquí).
+- Jira caído: este tramo no tiene comentario propio; lo publica el orquestador en SCRUM-1569.
