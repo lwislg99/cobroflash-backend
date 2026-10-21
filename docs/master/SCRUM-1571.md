@@ -103,3 +103,79 @@ El test nuevo construía en un bucle (`${verbo}`) los nombres de los cuatro caso
 local. **Es la misma línea que dejé en mis cicatrices el 13-oct** (SCRUM-1522b), con la comprobación al lado. Esta vez
 la comprobación funcionó porque **la corrí antes de empujar**: esa es la diferencia con el 13-oct, no que me acordara.
 No añado otra cicatriz: el guard ya existe y es el que me paró.
+
+# SCRUM-1571b · ¿Dónde más se contesta «hecho» sin haber hecho nada en un recurso de OTRO comercio?
+
+**Medido contra:** `origin/main` = `5dcc9fe1e7b9e097d6a697203e3326bfcee6aa9d` · 2026-10-21T14:22:31Z (hora de GitHub)
+A9: comprobación → `tests/scrum1571b-escritura-ajena-no-contesta-hecho.test.mjs`
+
+Puesto J2 (`jv-j2q`) · árbol `j2q-1571b` · rama `scrum-1571b-escrituras-ajenas-404`. Encargo del orquestador
+`cobroflash-backend-5f`: el «NO medido» de SCRUM-1571 (ediciones y borrados fuera de `customersAdmin`).
+Jira no respondía al arrancar (el MCP de Atlassian seguía conectando); el encargo dice que todo está en el repo.
+
+## PASO 0
+
+`git log origin/main --grep=1571` → sólo SCRUM-1571 (#2640). Ni rama `scrum-1571[a-z]-` en el remoto ni tramo 1571b.
+
+## El censo (por AST, no grep)
+
+`tests/_censo-escrituras-sobre-id.mjs`: compila `src/` con TypeScript, toma toda llamada
+`<x>.delete|put|patch|post('/<ruta literal>', …)`, sigue con el checker las funciones de `src/` que llaman sus
+manejadores (hasta 4 niveles) y recoge cada `updateMany`/`deleteMany`: si su `where` nombra `merchantId` y qué
+se hace con el resultado (`count leído`, `devuelto`, `tirado`, `en $transaction`). SOSPECHOSA = escritura con
+`merchantId` cuyo resultado se tira o se devuelve, sin `.count` leído en la cadena y sin `404`/`'not_found'` en
+el manejador ni en lo que llama directamente.
+
+**Población:** 328 ficheros `.ts` de `src/` · 128 rutas · **80 sobre un `:id`/`:token`** · 14 alcanzan un
+`updateMany`/`deleteMany` con `merchantId` · **0 sospechosas**. Control positivo SEMBRADO: una ruta fabricada
+(`DELETE /semilla/:id`, fichero que no existe en el árbol) con el defecto → SOSPECHOSA; quitándola, el censo dice
+CIEGO (sale 2), no verde. Rojo con defecto REAL: quitando cada `if (count === 0)` de SCRUM-1571 en
+`customersAdmin.routes.ts` (commit `51a4183a4`, `git diff --numstat` 1/2 cada vez), el test cae y nombra
+`DELETE /:id` en un caso y `PUT /:id` + `PATCH /:id` en el otro; restaurado con `git restore --source=HEAD`.
+
+Las 14 con escritura, revisadas a mano: 5 son de clientes (las de 1571, ya con 404, y `DELETE /:id/sites/:siteId`);
+`POST /:id/fusionar` lee el `count` y contesta 409 `cliente_no_encontrado` (lo dejó así 1571); `PUT /admin/expenses/:id`
+tira el `count` de `provider.updateMany`, pero es el NIF del proveedor de lado (SCRUM-937), no la escritura del
+gasto. Las demás leen el `count` y contestan 404. Las 5 con escritura SIN `merchantId` en el `where`
+(asignados de trabajos y documentos, sesiones del equipo, supresión) van detrás de un `findFirst` con
+`merchantId` → 404, o de la puerta de J3.
+
+Las 16 sobre `:id` sin `404` literal en el manejador: albaranes y partes contestan con `found.status` de un
+ayudante (`not_found`), `dev.routes` es de desarrollo, `POST /quote/:token/reject` es de S1 por token, y
+`app.ts:574` es sólo el montaje de `requireActivePlan`.
+
+## Lo que contesta cada carril (lista; nada tocado fuera del mío)
+
+| carril | rutas sobre `:id` con escritura | qué contesta con un id ajeno |
+|---|---|---|
+| **J2** clientes (`customersAdmin`, `customerPortal`) | 9 | 404 `not_found` en todas (las de 1571 incluidas) |
+| **J2** cobros (`chargesAdmin`, `payBizum`, `receipt`) — STOP, sólo lista | 5 | `findFirst`/`findUnique` → 404 |
+| **J1** facturas (`invoicesAdmin`, `invoice.routes`) — STOP, sólo lista | 13 | `PUT /:id/tags` y `POST /:id/annul` leen el `count` → 404; el resto, `findFirst` → 404 |
+| **J3** supresión | 1 | lee el `count` |
+| **S1** (equipo de Luis: quotes, jobs, albaranes, partes, expenses, providers, products, maintenance, team, templates, quoteRequests, landing) | 46 | 404 o `found.status`; ninguna sospechosa |
+| `dev.routes` | 5 | desarrollo |
+
+**No hay nada que arreglar en mi carril**: el único caso real era el de SCRUM-1571, ya en `main`. El test queda
+como comprobación para todo `src/`, para que el patrón no vuelva en una ruta nueva de ningún carril.
+
+## Lo que NO mide (dicho en la misma frase que lo que sí)
+
+- **«200 con cuerpo `null`»** sin `updateMany` (un `findFirst` que devuelve `null` y la ruta lo pinta): no lo
+  censa; lo revisé a mano sólo en las 16 rutas sin 404 literal, no en las otras 64.
+- Rutas con camino no literal o montadas de otra forma (`router.route(…)`): 0 por grep, con su positivo
+  (127 llamadas con camino literal por el mismo grep). `update`/`delete` por clave única no entran: un id
+  ajeno ahí es un `P2025` (500), no un «hecho».
+- El criterio de 404 es de texto en el AST: un `404` en lo que el manejador llama directamente cuenta como
+  «contesta 404» aunque sea de otra rama del código. Es un falso negativo posible, no medido.
+
+## Tests
+
+`tests/scrum1571b-escritura-ajena-no-contesta-hecho.test.mjs`: 4 casos, sin base ni saltos, ~8 s (compila `src/`
+con TypeScript; no lee `dist/`). Nombres literales (scrum1415).
+
+## Lo que hice mal
+
+La primera pasada del censo dijo «81 sobre un `:id`» y «15 con escritura»: contaba la ruta sembrada. Son 80 y 14.
+Lo vi al repasar el JSON, antes de escribir aquí; la salida a mano ahora lo avisa en su primera línea. Y mi primer
+criterio de 404 miraba sólo el manejador, lo que habría dado sospechosas en albaranes y partes, que contestan
+`not_found` desde un ayudante: lo ensanché al nivel 1, y eso abre el falso negativo de arriba.

@@ -181,6 +181,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const c = censar({ semilla });
   if (process.argv.includes('--json')) console.log(JSON.stringify(c, null, 1));
   else {
+    if (semilla) console.log('(las cuentas de RUTAS incluyen la sembrada: una más en cada una; la de ficheros, no)');
     console.log(`POBLACIÓN · ficheros .ts en src/: ${c.ficheros} · rutas delete/put/patch/post con ruta literal: ${c.rutas.length} · sobre un :id: ${c.conId.length}`);
     console.log(`  · que alcanzan un updateMany/deleteMany con merchantId: ${c.conEscritura.length} · SOSPECHOSAS: ${c.sospechosas.length}`);
     for (const r of c.conEscritura) {
