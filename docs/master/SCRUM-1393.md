@@ -336,3 +336,71 @@ En `docs/master/evidencias/SCRUM-1393/checks-sin-leer/`. Sin red:
 `node clasifica.mjs datos-pr.json datos-reglas-main.json datos-main-primer-padre.txt` (`salida-1-checks.txt`).
 Con red: `node recoge-pr.mjs <desde ISO> <hasta ISO> <salida.json>` y
 `node lee-logs.mjs datos-pr.json <carpeta fuera del árbol> 2292` (`salida-2-logs.txt`; baja 20 logs).
+
+## Tercer tramo · SCRUM-1393c · El vigía de `main`: cada commit, verde, rojo o CIEGO — al acabar cada CI y diario de red
+
+**Medido contra:** `origin/main` = `fe65a8b7fca8b1e42448c8134e26d880d96b9ba7` · 2026-10-20T15:35:30Z
+
+A9: aviso → cicatriz J6 «Arranqué sin la lectura de norma.mjs --arranque y me medí una sola vez en lugar de dos: fui directa a Jira y al PASO 0» — no se pudo comprobar: ningún hook de este árbol comprueba que la sesión leyó la norma ni que leyó su usage en los dos puntos
+
+J6 (`jv-j6n`), por encargo del orquestador del equipo de Javier (`cobroflash-backend-5f`). Decisión del fundador:
+SCRUM-1393 **c.20144** ((C) al acabar cada CI de `main` como principal, (B) diario como red, (D) no). Carril:
+**c.20147**, la excepción para que J6 escriba UN workflow nuevo; está declarada en `docs/equipo/dos-equipos.md` §3.4
+y `.claude/carriles.json` está regenerado. El PASO 0 que paró primero por carril es el **c.20146**.
+
+## Qué entra
+
+| fichero | qué |
+|---|---|
+| `scripts/vigia-silencio-de-main.mjs` | modo **por commit** del motor de SCRUM-1324 (sin segundo censo): `veredictoDeCommit`, `salidaDeCommits`, `sueloPorCommit`, `informeDeCommits`, `cuerpoDelAviso`, `topeDeCorridaDelCI`, y las opciones `--commit` / `--commits` / `--json` |
+| `.github/workflows/vigia-de-main.yml` | **nuevo**: (C) `workflow_run` del CI en `main` (push y de este repo), con todas sus conclusiones; (B) `cron '17 6 * * *'`; aviso en UN Issue, `[vigía] main sin verificar`, con `GITHUB_TOKEN` |
+| `tests/scrum1393c-vigia-de-main-por-commit.test.mjs` | la siembra y sus controles, sin red |
+| `docs/equipo/dos-equipos.md` §3.4 + `.claude/carriles.json` | la excepción de c.20147 |
+
+No se toca ningún workflow de S5: `ci.yml`, `avisador-rojo.yml` y `vigia-*.yml` quedan igual.
+
+## La interfaz del motor (lo que llama el .yml)
+
+1. `node scripts/vigia-silencio-de-main.mjs --commit <sha de 40>` juzga ESE commit (es el (C), con `workflow_run.head_sha`). `--commits <fichero>` juzga una lista de shas, uno por línea (es la (B)). La lista la saca el workflow con `git log --first-parent --since=<desde>`, y `<desde>` lo da `--desde-de-la-red`: 24 h + `UMBRAL_HORAS_DE_CRON` (10 h de retraso de cron medido). El motor no lee git: así no entra en la lista de `scrum723`.
+2. Lee GitHub con `gh` y `GH_TOKEN`, y solo lee. Para cada commit: el último run del CI por `push` en `main` y sus jobs (`filter=latest`).
+3. Estados: **VERDE** (run en success y los 6 jobs de `JOBS_DE_MAIN` del CI en success) · **ROJO** (algún job en failure, obligatorio o no) · **CIEGO** (sin run, run con 0 jobs, un job cancelado, saltado, con timeout o ausente, run sin acabar por encima del tope, o una conclusión que contradice a sus jobs) · **CORRIENDO** (run sin acabar dentro del tope: no avisa) · **SIN-LEER** (la API no contestó). El tope es la suma de los `timeout-minutes` de `ci.yml` (`topeDeCorridaDelCI`): se calcula, no se elige.
+4. Salida: **0** = nada que avisar · **1** = hay ROJO o CIEGO · **2** = el vigía no supo mirar (suelo fallido, ningún commit, o solo SIN-LEER). El workflow avisa con **1 y con 2**. En el texto, la primera línea es `POBLACION commits=N`, la penúltima es SIEMPRE `N commits mirados · K rojos · M ciegos · C corriendo · S sin leer · V verdes`, y la última es `EXIT=`.
+5. `--json <f>` escribe `{ ahora, origen, salida, veredictos[] }`. `cuerpoDelAviso(json, previos)` devuelve el comentario con solo lo NUEVO (una marca por commit y estado, `<!-- vigia-de-main:<sha>:<estado> -->`), o `''` si no hay nada nuevo. Nunca lleva `@claude`.
+
+## Lo probado DE VERDAD
+
+* **La siembra** (el test): un rojo, dos CIEGO (cancelado con 0 jobs, y sin run) y un colgado, todos fabricados, salen como tales; el verde calla; un CORRIENDO no es aviso. **Al quitarlos:** cero commits sale **2** (CIEGO, no verde), y un juez que siempre dice verde **no pasa el suelo**. 6/6 en local, con `scrum1324` y `scrum1295` al lado: 22 de 22.
+* **Rojo primero:** con «0 jobs» mutado a VERDE, caen 3 de 6. El motor se restauró copiando la copia previa, y se comprobó que no quedaba la marca de la mutación.
+* **Con datos reales de GitHub** (21-oct, ~12:16Z, máquina local): `cae4c5cc` → **CIEGO** «run cancelled con 0 jobs» (run 36881969807). `cadf00bc` → **ROJO** meta-guard (run 36886780786). Son los dos casos del enunciado, cada uno en su clase. La punta `fe65a8b7` → **ROJO** «guards de navegador».
+* **La pasada diaria real** (antes del cambio a lista: `--commits 2026-10-19T00:00:00Z`; ver «Errores» abajo): **34 commits mirados · 14 rojos · 20 ciegos · 0 corriendo · 0 sin leer · 0 verdes.** Los 20 CIEGO son, los 20, «run cancelled con 0 jobs». Los 14 ROJOS llevan todos «guards de navegador», y dos además meta-guard o «build + tests».
+
+## Lo que NO se puede saber hasta que corra en GitHub: CIEGO declarado, no verde
+
+* Que (C) salte con un `workflow_run` real, que el `if` de push/repositorio deje pasar los de `main`, y que (B) llegue (GitHub retrasa los cron hasta unas 10 h, SCRUM-1324).
+* Que el Issue se cree y que la dedupe por marca funcione contra la API de verdad. Solo está probada la función pura.
+* Que `gh` del runner conteste con la misma forma. Si no lo hace, el juez sale 2 y el workflow avisa.
+* No hay un verde REAL en la ventana: que un commit verde de verdad calle está probado solo con siembra.
+
+## Para decidir (no lo he decidido yo)
+
+Hoy **ningún** commit de `main` de los dos últimos días sale verificado. (C) comentará en cada merge. Con la «lectura generosa» (c.18787: un CIEGO sustituido por un commit posterior VERDE no avisa), callarían los CIEGO por sustitución, pero no los rojos del navegador. Lo decide el fundador o el orquestador; el motor no lo hace.
+
+## Los guards de navegador que caen (para repartir)
+
+Leído en el log de UN job de los 14 rojos: «guards de navegador» del run 39449841582, sha `fe65a8b7fca8b1e42448c8134e26d880d96b9ba7` (139.811 B, `gh run view --log-failed`). El resumen del propio job: 38 guards, 35 verdes, 1 CIEGO, 2 rojos (35 + 1 + 2 = 38):
+
+| guard | fichero | estado |
+|---|---|---|
+| `guard:cls-barra-anuncio` | `scripts/guard-cls-barra-anuncio.mjs` | rojo (1), 3 hallazgos |
+| `guard:escalera-por-estado` | `scripts/guard-escalera-por-estado.mjs` | rojo (1), 2 hallazgos |
+| `guard:marcadores-en-pantalla` | `scripts/guard-marcadores-en-pantalla.mjs` | CIEGO (2), 3 pares (vista, estado) ciegos |
+
+No medido: los otros 13 logs. No sé si en los 14 caen los mismos tres.
+
+## Pendiente (lo encarga el orquestador)
+
+La dedupe actual ya da UNA Issue abierta, `[vigía] main sin verificar`: la crea la primera pasada y las siguientes comentan solo lo nuevo, nunca una Issue por merge. **No está hecho:** que se cierre sola con el primer commit VERDE.
+
+### Errores propios de este tramo
+
+* El primer empaquetado iba en `docs/master/SCRUM-1393c.md` (lo tumbó `scrum273`: va como apéndice aquí) y el motor leía `git log` contra la referencia móvil (lo tumbó `scrum723`). Los dos los cacé con `guards:entrada` ANTES de empujar. La pasada real de 34 commits se hizo con la versión que leía git; después, solo cambió de dónde sale la lista de shas, no el juez.
