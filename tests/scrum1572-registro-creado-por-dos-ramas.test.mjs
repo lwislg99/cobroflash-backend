@@ -44,8 +44,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // Mirar los que se MODIFICAN en vez de los que se crean: el caso de la unión sana.
     fichero: 'tests/scrum1572-registro-creado-por-dos-ramas.test.mjs',
-    de: "'--diff-filter=A'",
-    a: "'--diff-filter=M'",
+    de: "    const creados = (p) => g('diff', '--name-only', '--no-renames', '--diff-filter=A', base, p, '--', 'docs/master/')\n",
+    a: "    const creados = (p) => g('diff', '--name-only', '--no-renames', '--diff-filter=M', base, p, '--', 'docs/master/')\n",
     cae: '🔴 POSITIVO SEMBRADO: dos ramas crean el mismo registro y la unión lo entrelaza',
   },
   {
@@ -65,8 +65,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // El suelo apagado: una siembra que no cae dejaría pasar el árbol como verde.
     fichero: 'tests/scrum1572-registro-creado-por-dos-ramas.test.mjs',
-    de: "if (!siembra || siembra.hallazgos.length !== 1) return 'CIEGO';",
-    a: "if (!siembra) return 'CIEGO';",
+    de: "  if (!siembra || siembra.hallazgos.length !== 1) return 'CIEGO';\n",
+    a: "  if (!siembra) return 'CIEGO';\n",
     cae: '🔴 CIEGO: sin la siembra',
   },
 ];
