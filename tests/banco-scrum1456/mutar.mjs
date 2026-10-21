@@ -7,7 +7,8 @@
 //   · «entero»  → `Number.isInteger(`      : el defecto de antes. Deja pasar `1e20`.
 //   · «seguro»  → `Number.isSafeInteger(`  : el arreglo que PARECE bueno. Deja pasar `10000000000`.
 // Se aplica al FUENTE (y se comprueba que se aplicó), se transpila ESE fichero a su sitio en `dist/`,
-// se corre `tests/scrum1456-…` y se apunta qué casos caen, POR NOMBRE. Después se restauran fuente y
+// se corre el test de ese fichero (`PRUEBA`: `tests/scrum1456-…`, o `tests/scrum1456c-…` para cobros
+// y psp) y se apunta qué casos caen, POR NOMBRE. Después se restauran fuente y
 // `dist/` byte a byte, y al final se comprueba por CONTENIDO (sha256) que han vuelto a ser los que eran.
 //
 // La pasada «T0» transpila los ficheros SIN mutar: si el test sigue en verde, un rojo de después es
