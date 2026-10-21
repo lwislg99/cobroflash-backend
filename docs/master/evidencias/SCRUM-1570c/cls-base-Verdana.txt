@@ -1,0 +1,19 @@
+⟦arranque⟧ 0.6 s COMPLETA · proceso+ws 0.6 s · primera-página 0.0 s
+vendidas   360 retraso  rota · CLS 0 · obs 0 · barra 116 · inter false
+vendidas   390 retraso  rota · CLS 0 · obs 0 · barra 116 · inter false
+vendidas   360 retraso   600 · CLS 0.005 · obs 1 · barra 116 · inter true
+      0.005@704 NAV.nav-links 107→107 h94→94 | DIV.stage 770→741 h10→39 | DIV.win 0→759 h0→21 | SPAN.lbls 0→762 h0→18 | SPAN#ann-plazas 82→82 h22→22
+vendidas   390 retraso   600 · CLS 0.048 · obs 1 · barra 95 · inter true
+      0.048@867 ::before 181→160 h599→620 | NAV.nav-links 86→86 h94→94 | ::after 69→47 h47→47 | SPAN#ann-plazas 82→60 h22→22 | A 81→59 h24→24
+cero       360 retraso  rota · CLS 0 · obs 0 · barra 116 · inter false
+cero       390 retraso  rota · CLS 0 · obs 0 · barra 116 · inter false
+cero       360 retraso   600 · CLS 0.006 · obs 1 · barra 116 · inter true
+      0.006@698 NAV.nav-links 107→107 h94→94 | DIV.stage 770→741 h10→39 | DIV.win 0→759 h0→21 | ::after 69→69 h47→47 | A 81→81 h24→24
+cero       390 retraso   600 · CLS 0.047 · obs 1 · barra 95 · inter true
+      0.047@1344 ::before 181→160 h599→620 | NAV.nav-links 86→86 h94→94 | ::after 69→47 h47→47 | A 81→59 h24→24
+roto       360 retraso  rota · CLS 0 · obs 0 · barra 116 · inter false
+roto       390 retraso  rota · CLS 0 · obs 0 · barra 116 · inter false
+roto       360 retraso   600 · CLS 0.005 · obs 1 · barra 116 · inter true
+      0.005@722 NAV.nav-links 107→107 h94→94 | DIV.stage 770→741 h10→39 | DIV.win 0→759 h0→21 | ::after 0→762 h0→18 | SPAN.dot 714→714 h4→4
+roto       390 retraso   600 · CLS 0.042 · obs 1 · barra 95 · inter true
+      0.042@701 ::before 181→160 h599→620 | NAV.nav-links 86→86 h94→94

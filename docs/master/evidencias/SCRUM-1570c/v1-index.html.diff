@@ -1,0 +1,12 @@
+diff --git a/public/index.html b/public/index.html
+index 7c1cd66ba..0bdc0f0a7 100644
+--- a/public/index.html
++++ b/public/index.html
+@@ -128,6 +128,7 @@
+   .announce a::after{content:"";position:absolute;left:0;right:0;top:-12px;bottom:-12px;z-index:1}
+   .announce a:hover{border-color:#fff}
+   @media(max-width:600px){.announce .sep,.announce .hide-sm{display:none}.announce-in{gap:4px 12px}}
++  @media(max-width:600px){.announce-in{min-height:94.8px;align-content:center}}@media(max-width:362px){.announce-in{min-height:116.4px}}
+ 
+   .nav{position:sticky;top:0;z-index:40;background:rgba(246,247,245,.85);backdrop-filter:saturate(180%) blur(12px);border-bottom:1px solid var(--border)}
+   .nav-in{display:flex;align-items:center;justify-content:space-between;height:64px}

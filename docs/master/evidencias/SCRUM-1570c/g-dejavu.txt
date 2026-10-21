@@ -1,0 +1,21 @@
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s
+salto de la primera pantalla (CLS) — SCRUM-544 · Edge, 4G emulada, límite 0.1
+
+   vendidas  360 px · CLS 0.005  · FCP 2436 · LCP 2436 · barra VISIBLE(116px) · escasez VISIBLE
+             saltos: 0.005@2436ms
+             barra: «Oferta de lanzamiento: 9,90 €/mes para siempre, mientras mantengas la suscripción activa p»
+   vendidas  390 px · CLS 0.042  · FCP 2344 · LCP 2344 · barra VISIBLE(95px) · escasez VISIBLE
+             saltos: 0.042@2380ms
+             barra: «Oferta de lanzamiento: 9,90 €/mes para siempre, mientras mantengas la suscripción activa p»
+   cero      360 px · CLS 0.005  · FCP 2308 · LCP 2308 · barra VISIBLE(116px) · escasez oculta
+             saltos: 0.005@2346ms
+             barra: «Oferta de lanzamiento: 9,90 €/mes para siempre, mientras mantengas la suscripción activa p»
+   cero      390 px · CLS 0.042  · FCP 2280 · LCP 2280 · barra VISIBLE(95px) · escasez oculta
+             saltos: 0.042@2325ms
+             barra: «Oferta de lanzamiento: 9,90 €/mes para siempre, mientras mantengas la suscripción activa p»
+   roto      360 px · CLS 0.005  · FCP 2296 · LCP 2296 · barra oculta · escasez oculta
+             saltos: 0.005@2336ms
+   roto      390 px · CLS 0.042  · FCP 2312 · LCP 2312 · barra oculta · escasez oculta
+             saltos: 0.042@2377ms
+
+✓ ningún caso pasa de 0.1 de CLS

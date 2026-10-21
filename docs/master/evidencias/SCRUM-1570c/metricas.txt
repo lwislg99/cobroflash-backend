@@ -1,0 +1,16 @@
+⟦arranque⟧ 0.4 s COMPLETA · proceso+ws 0.4 s · primera-página 0.0 s
+muestra: 166 nodos de texto visibles de public/index.html a 390 px, 4735 caracteres
+control: familia inexistente 2009.63 = serif 2009.63 ≠ Inter 400 2355.07 (em sobre la muestra entera)
+Inter: upm 2048 · hhea 1984/-494/0 · typo 1984/-494/0 · win 2269/660
+tramo 100 500: 59 nodos, 2905 caracteres (101 mayúsculas)
+   arial   size-adjust 106.29% · ascent-override 91.14% · descent-override 22.69% · line-gap-override 0.00%
+   segoe   size-adjust 107.91% · ascent-override 89.77% · descent-override 22.35% · line-gap-override 0.00%
+   dejavu  size-adjust 94.16% · ascent-override 102.89% · descent-override 25.62% · line-gap-override 0.00%
+tramo 600 700: 50 nodos, 968 caracteres (51 mayúsculas)
+   arial   size-adjust 102.21% · ascent-override 94.78% · descent-override 23.60% · line-gap-override 0.00%
+   segoe   size-adjust 104.64% · ascent-override 92.58% · descent-override 23.05% · line-gap-override 0.00%
+   dejavu  size-adjust 86.26% · ascent-override 112.31% · descent-override 27.96% · line-gap-override 0.00%
+tramo 800 900: 57 nodos, 862 caracteres (151 mayúsculas)
+   arial   size-adjust 103.13% · ascent-override 93.94% · descent-override 23.39% · line-gap-override 0.00%
+   segoe   size-adjust 105.65% · ascent-override 91.70% · descent-override 22.83% · line-gap-override 0.00%
+   dejavu  size-adjust 87.72% · ascent-override 110.44% · descent-override 27.50% · line-gap-override 0.00%
