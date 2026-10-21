@@ -93,6 +93,25 @@ test('SCRUM-1393f · SIEMBRA: sin run de OTRA rama → no se absuelve, ni cierra
   assert.deepEqual(accionDelIssue(pasada([SIN_RUN(S), ROJO(P)]), { estado: 'abierto' }).pasos, ['comentar']);
 });
 
+test('SCRUM-1393f · SIEMBRA (orden del orquestador): sin run sin NINGÚN posterior con run → ESPERA, sin reloj; con uno que ya lo tiene y sin verde → CIEGO', () => {
+  // la punta sin run: nadie por encima tiene run todavía → espera, ni avisa ni cierra
+  const punta = accionDelIssue(pasada([SIN_RUN(P), VERDE(W)], [P, W]), { previos: marcaDeCierre(W), estado: 'cerrado' });
+  assert.deepEqual(punta.pasos, [], punta.motivo);
+  assert.ok(absolucionDeSustituidos([SIN_RUN(P), VERDE(W)], [P, W]).enEspera.has(P));
+  // tres seguidos sin run, como c47288f7e/f53289026/e155c60fd el 21-oct: los tres esperan
+  const linea = [P, S, W];
+  const tres = absolucionDeSustituidos([SIN_RUN(P), SIN_RUN(S), SIN_RUN(W)], linea);
+  assert.deepEqual([...tres.enEspera].sort(), [P, S, W].sort());
+  assert.deepEqual(accionDelIssue(pasada([SIN_RUN(P), SIN_RUN(S), SIN_RUN(W)], linea), { estado: 'abierto' }).pasos, []);
+  // en cuanto un posterior tiene run (aquí ROJO) y no hay verde: el sin run de debajo es CIEGO y se avisa
+  const conRojo = accionDelIssue(pasada([ROJO(P), SIN_RUN(S)]), { previos: marcaDeCierre(W), estado: 'cerrado' });
+  assert.deepEqual(conRojo.pasos, ['reabrir', 'comentar'], conRojo.motivo);
+  assert.ok(conRojo.cuerpo.includes(marcaDeAviso(SIN_RUN(S))));
+  // y uno con posterior con run pero sucesor inmediato sin run (cdbaaedd8 «de verdad»): CIEGO, no espera
+  const v = absolucionDeSustituidos([ROJO(P), SIN_RUN(S), SIN_RUN(W)], linea);
+  assert.ok(!v.enEspera.has(W) && !v.absueltos.has(W) && !v.enEspera.has(S));
+});
+
 test('SCRUM-1393f · la bajada sigue por un sin run con sucesor con run, y para en el sin run cuyo sucesor no lo tiene', async () => {
   const [A, B, C, D, E] = ['1', '2', '3', '4', '5'].map((c) => c.repeat(40));
   const linea = [A, B, C, D, E];

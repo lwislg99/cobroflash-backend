@@ -578,6 +578,9 @@ export function absolucionDeSustituidos(veredictos, linea = null) {
   const corriendo = enLinea('CORRIENDO');
   for (const v of veredictos) {
     if (v.estado !== 'CIEGO' || !pos.has(v.sha)) continue;
+    // SCRUM-1393f (orden del orquestador del 21-oct, sin reloj): un «sin run» sin NINGÚN posterior
+    // de la línea con run (la punta incluida) aún no se juzga: el run puede llegar tarde. ESPERA.
+    if (v.sinRun && !veredictos.some((w) => pos.has(w.sha) && pos.get(w.sha) < pos.get(v.sha) && conRun(w))) { enEspera.add(v.sha); continue; }
     if (v.causa !== CAUSA_SUSTITUIDO && !sinRunPorSustitucion(v, veredictos, linea)) continue;
     const p = pos.get(v.sha);
     const contenedores = verdes.filter((w) => pos.get(w.sha) < p).sort((a, b) => pos.get(b.sha) - pos.get(a.sha));

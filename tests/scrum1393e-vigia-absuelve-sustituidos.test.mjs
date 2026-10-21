@@ -108,8 +108,11 @@ test('SCRUM-1393e · SIEMBRA: la punta de CONTEXTO sin run no se avisa, pero tam
   const a = accionDelIssue(pasada([VERDE(W), sinRun], [P, W]), { previos: marcaDeCierre(W), estado: 'cerrado' });
   assert.deepEqual(a.pasos, [], a.motivo);
   assert.match(a.motivo, /la punta .* sale CIEGO/);
-  // la misma punta, sin la marca de contexto (venía en la lista), sí se avisa
-  assert.deepEqual(accionDelIssue(pasada([VERDE(W), juez(P, null, null)], [P, W]), { previos: marcaDeCierre(W), estado: 'cerrado' }).pasos, ['reabrir', 'comentar']);
+  // la misma punta, sin la marca de contexto (venía en la lista): hasta 1393f se avisaba; desde 1393f
+  // (orden del orquestador del 21-oct) un «sin run» sin ningún posterior con run ESPERA, y ella no lo tiene
+  const sinMarca = accionDelIssue(pasada([VERDE(W), juez(P, null, null)], [P, W]), { previos: marcaDeCierre(W), estado: 'cerrado' });
+  assert.deepEqual(sinMarca.pasos, [], sinMarca.motivo);
+  assert.match(sinMarca.motivo, /la punta .* sale CIEGO/, 'espera, pero no cierra');
   // y una punta de contexto VERDE cierra como cualquier otra
   assert.deepEqual(accionDelIssue(pasada([SUSTITUIDO(V), { ...VERDE(P), contexto: true }]), { estado: 'abierto' }).pasos, ['comentar', 'cerrar']);
 });
