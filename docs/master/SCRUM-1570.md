@@ -113,3 +113,83 @@ incluido. Se rehízo con `git restore --source=<sha>`, que no trunca.
 - **En el runner de CI**: se verá en el obligatorio y en el job de navegador de este empujón.
 - El job «guards de navegador» seguirá rojo por `cls-barra-anuncio` y `escalera-por-estado` (otros carriles):
   el veredicto de este tramo es obligatorio verde + `guard:marcadores-en-pantalla` verde, no el job entero.
+
+## SCRUM-1570c · la reserva con las medidas de Inter, y la barra de anuncio con su alto (opción (a) + V1)
+
+**Medido contra:** `origin/main` = `99654a927d3b34893be77c82032c15efc534ba50` · 2026-10-21T13:26:46Z (hora de GitHub al escribir: 2026-10-21T13:59:42Z; la rama se puso al día después con `0adcc1b2ff90af4aa0f0d43ef710da4c8d65a163`, y su `public/index.html` es byte a byte el que se midió como «antes»)
+
+A9: aviso → cicatriz J3 «Tomé por cifra una emulación sin su control» — no se pudo comprobar: el banco corre a mano fuera de la tanda; lo que queda es que `banco-a.mjs` lleva la fila «antes» que tiene que reproducir una cifra ya medida (0,043 de c.20169) y se lee antes que las de «después»
+
+**Skill UI:** cargada · `yaqu-premium-ui`: sólo la landing (`public/index.html`), cero texto, cero tokens nuevos, cero componentes; con Inter cargada no cambia ninguna caja.
+
+Puesto J3, sesión jv-j3t (relevo de jv-j3r, sobre su banco). Orquestador `cobroflash-backend-5f`. Decisión del
+fundador: SCRUM-1570 c.20170 («Ok la A»), leída en el encargo; **esta sesión arrancó sin herramientas de Jira**
+y no ha leído los comentarios en Jira.
+
+**El cambio** (`public/index.html`, nada más):
+- **V1** de jv-j3r, tal cual estaba en `evidencias/SCRUM-1570c/v1-index.html.diff`: `min-height` de `.announce-in`
+  igual al alto que tiene con Inter (94,8 px hasta 600; 116,4 px hasta 362).
+- **(a)**: dos familias de reserva entre Inter y `system-ui` en `--font`: `'YaQu Reserva Arial'`
+  (`local()` de Arial / Liberation Sans / Arimo, que tienen las mismas anchuras) y `'YaQu Reserva DejaVu'`
+  (la de Ubuntu). Tres caras cada una, por tramo de grosor (100-500, 600-700, 800-900), con `size-adjust`,
+  `ascent-override`, `descent-override` y `line-gap-override`. `unicode-range` = el de Inter latin + latin-ext:
+  con Inter cargada, la reserva no pinta ningún carácter.
+- **No va en `inter.css`**: `scrum1234` exige sus 35 `@font-face` exactas, y una cara de reserva sólo actúa si
+  su familia está en la pila de la página. Las otras 15 superficies quedan igual, byte a byte.
+
+**De dónde salen los números** (`evidencias/SCRUM-1570c/metricas.mjs` → `metricas.txt`): el navegador mide con
+`measureText` el texto que la landing PINTA (166 nodos visibles, 4.735 caracteres, con su `text-transform`),
+repartido por tramo de grosor, con Inter a su grosor real y cada reserva cargada desde su fichero.
+`size-adjust` = ancho Inter / ancho reserva; los tres overrides verticales = hhea de Inter (1984 / −494 / 0 de
+2048) / `size-adjust`. Control: una familia inexistente mide igual que `serif` y distinto de Inter.
+
+| tramo | Arial | DejaVu Sans |
+|---|---|---|
+| 100-500 (2.905 car.) | 106,29 % · 91,14 / 22,69 / 0 | 94,16 % · 102,89 / 25,62 / 0 |
+| 600-700 (968 car.) | 102,21 % · 94,78 / 23,60 / 0 | 86,26 % · 112,31 / 27,96 / 0 |
+| 800-900 (862 car.) | 103,13 % · 93,94 / 23,39 / 0 | 87,72 % · 110,44 / 27,50 / 0 |
+
+**CLS, antes → después** (`banco-a.mjs` → `banco-a.txt`; Edge de Windows, 4G emulada como el guard, mismo
+observador, los tres casos de `founding-status`; 2 repeticiones por fila, idénticas en las 48 filas):
+
+| reserva | 360 | 390 |
+|---|---|---|
+| sistema (Windows: antes Segoe UI; después la cara Arial) | 0,025 → **0** | 0,004 → **0** |
+| Arial / Liberation | 0,023 → **0** | 0,011 → **0** |
+| DejaVu (Ubuntu sin fonts-liberation) | 0,005 → **0,015** | 0,043 → **0,002** |
+| control: Inter rota (woff2 → 404), las seis | 0 → 0 | 0 → 0 |
+
+(Caso `roto`, sin barra: 0,022-0,023 antes a 360 con Segoe/Arial y 0 después; los demás iguales que la tabla.)
+La fila «antes» con DejaVu reproduce la de jv-j3r (0,005 / 0,042-0,043): es la calibración del banco.
+
+🔴 **Lo que empeora: DejaVu a 360, 0,005 → 0,015.** Lo mide `eyebrow.mjs` → `eyebrow.txt`: el eyebrow del
+hero («El ERP por WhatsApp para los oficios», 800, mayúsculas) con Inter ocupa 293,4 + 24 px = 317,4 en un hueco
+de 316 y parte en DOS líneas por 1,4 px; con la DejaVu ajustada ocupa 314,7 y cabe en una. Al llegar Inter pasa
+a dos y empuja el hero 12 px. No lo he afinado: calibrar el tramo 800 contra una sola frase que está a 1,4 px del
+corte es elegir el número a ojo, y en Linux el hinting mueve los subpíxeles. Queda muy por debajo de 0,1.
+
+**Aspecto con Inter cargada** (`cajas.mjs` → `cajas.txt`): 566 de 566 cajas idénticas (x, y, ancho, alto, a
+0,5 px) a 360, 390, 768 y 1.280, y el mismo alto de página. Control sembrado (subtítulo del hero a 17 px):
+362 cajas distintas en cada ancho. **Panel**: `inter.css`, `tokens.css` y `public/dashboard/**` no se tocan.
+
+**Errores míos, confesados:**
+1. La primera muestra fue el texto del HTML en bruto (casi todo minúsculas): la negrita de DejaVu quedaba
+   estrecha en mayúsculas y a 360 subía a 0,016. Se ve en `banco-a-1-muestra-en-bruto.txt`, que además lleva
+   mi segundo error: marqué CIEGO toda fila sin saltos, porque el observador de `layout-shift` no dispara si no
+   hay saltos (ahora cuenta también el de LCP, como el guard).
+2. Emulé DejaVu con un data: URI de 1,9 MB dentro del HTML: bajo 4G retrasaba el primer pintado hasta después
+   de Inter y daba CLS 0 en «antes», donde jv-j3r medía 0,043. Lo cazó la fila «antes». Ahora la fuente se
+   registra con `FontFace` desde un ArrayBuffer, sin red.
+3. Por tercera vez un parche pasado por heredoc perdió las barras de una expresión regular (`\{` → `{`). Esta
+   vez no cambiaba el resultado; se corrigió con Edit.
+
+### NO medido
+
+- **La cifra de Linux.** Es la entrega: el job «guards de navegador» de este PR, fila `cls-barra-anuncio`. Ese
+  runner trae Chrome, y su paquete instala `fonts-liberation` (no lo he comprobado en el runner): si es así, la
+  pila coge la cara Arial y no la DejaVu.
+- El 0,127 de CI a 360: ninguna reserva local lo reproduce, ni antes ni después.
+- Safari y Firefox: sólo Edge (Chromium). `size-adjust` y los overrides los soportan Chrome 92+, Firefox 92+ y
+  Safari 17+ (de memoria, no medido); en uno que no los soporte, la reserva se pinta sin escalar.
+- Que ningún carácter con Inter cargada lo pinte la reserva: lo dicen el `unicode-range` y las 566 cajas, no
+  una lectura glifo a glifo.
