@@ -162,16 +162,26 @@ ${scripts.map((s) => `<script src="${url('js/' + s)}"></script>`).join('\n')}
 }
 
 // Las vistas y su función se DERIVAN del `switch` del router, no de una lista a mano aquí.
+//
+// 🔴 SCRUM-1570b · Y QUÉ VISTAS PIDEN UN ID, TAMBIÉN. Hasta hoy eso SÍ era una lista a mano (las
+// seis fichas de detalle), y SCRUM-1156c añadió la séptima —`expenses-detail`— sin entrar en ella.
+// El banco la llamaba sin id, la ficha hacía lo correcto (sin id no pide nada: SCRUM-1560) y el
+// guard salía CIEGO en `main` desde el 17-oct: tres pares «no pintó ningún nodo», sin hallazgo.
+// La pantalla no tenía nada mal; lo que estaba mal era la lista que decide qué se mira.
+// Ahora pide id la vista cuyo `case` llama a su render con un `state.<algo>`: es lo que el router
+// le pasa como id. Se lee sin comentarios, por líneas (A23 ②③): un comentario que cite la
+// llamada no la convierte en una.
+const ID_DEL_ESTADO = /\b(render[A-Za-z0-9]+View)\s*\([^)]*\bstate\.[A-Za-z0-9_]+/;
 function vistasDelRouter() {
   const app = fs.readFileSync(path.join(PANEL, 'js', 'app.js'), 'utf8');
-  const conArg = new Set(['quotes-detail', 'jobs-detail', 'customer-360', 'albaran-detail', 'parte-detail', 'invoice-detail']);
   const fuera = new Set(['home']); // se pinta en varios `case`; su render se mide en el suyo
   const vistas = [];
   for (const m of app.matchAll(/case '([a-z0-9-]+)':([\s\S]*?)break;/g)) {
     const fn = [...m[2].matchAll(/\b(render[A-Za-z0-9]+View)\s*\(/g)].map((x) => x[1])
       .filter((f) => f !== 'renderHomeView' || m[1] === 'home')[0];
     if (!fn || (fuera.has(m[1]) && vistas.length)) continue;
-    vistas.push([m[1], fn, conArg.has(m[1]) ? 1 : null]);
+    const codigo = m[2].split(/\r?\n/).map((l) => l.replace(/\/\/.*$/, '')).join('\n');
+    vistas.push([m[1], fn, ID_DEL_ESTADO.test(codigo) ? 1 : null]);
   }
   // Estas dos no tienen `case` propio con render (el router las resuelve por otro camino), pero
   // son pantallas del panel y tienen marcadores en su fuente: se miden igual.
@@ -185,7 +195,16 @@ if (VISTAS.length < 15) {
   noSupeMirar(`🔴 CIEGO: sólo ${VISTAS.length} vistas derivadas del router. No estoy mirando el panel.`);
   cerrar();
 }
-decir(`SCRUM-722 · marcadores en el DOM renderizado — ${VISTAS.length} vistas × ${ESTADOS.length} estados · ${scripts} scripts\n`);
+// SCRUM-1570b · el SUELO de la derivación de arriba: si ninguna vista sale con id, la expresión se
+// ha descarriado (o el router dejó de pasar `state.<id>`), y las fichas de detalle se pintarían
+// vacías sin que nada lo dijera. Se declara la población: qué vistas reciben id.
+const CON_ID = VISTAS.filter(([, , arg]) => arg != null).map(([v]) => v);
+if (!CON_ID.length) {
+  noSupeMirar('🔴 CIEGO: ninguna vista del router recibe id. Las fichas de detalle no se estarían mirando.');
+  cerrar();
+}
+decir(`SCRUM-722 · marcadores en el DOM renderizado — ${VISTAS.length} vistas × ${ESTADOS.length} estados · ${scripts} scripts`);
+decir(`  con id (${CON_ID.length}, derivadas de \`state.<id>\` en el router): ${CON_ID.join(', ')}\n`);
 
 const navegador = await puppeteer.launch({ executablePath: rutaDelNavegador(), headless: 'new', args: argsDeAislamiento() });
 const page = await navegador.newPage();
@@ -228,6 +247,15 @@ async function medir(vista, fn, arg, estado, inyectar, estadoAlbaran = 'borrador
         return { customer: { id: 3, name: 'Cliente' }, quotes: [], invoices: [], stats: {}, events: [] };
       }
       if (/\/admin\/me|merchant/.test(ruta)) return { id: 7, name: 'Negocio', plan: 'pro', formaJuridica: 'SL' };
+      // SCRUM-1570b · la ficha del gasto lee `r.item` (expensesView.js, renderExpenseDetailView).
+      // Con la forma genérica de abajo recibía un objeto sin `item`, pintaba la caja vacía y se
+      // daba por mirada sin haber pintado un solo campo.
+      if (/\/admin\/expenses\/\d+$/.test(String(ruta).split('?')[0])) {
+        return { item: { id: 1, concept: 'Gasto 1', amount: 121, baseAmount: 100, vatAmount: 21, vatRate: 21,
+          category: 'material', date: '2026-09-01T09:00:00.000Z', notes: 'N', providerInvoiceNumber: 'PF-1',
+          providerInvoiceDate: '2026-09-01T09:00:00.000Z', job: { id: 1, titulo: 'Trabajo 1' },
+          quote: { id: 1, number: 'PR-1' }, tieneFoto: false, lineas: [] } };
+      }
       const uno = (i) => ({
         id: i, numero: 'N-' + i, number: 'N-' + i, quoteNumber: 'PR-' + i, invoiceNumber: 'F-' + i,
         name: 'Cliente ' + i, titulo: 'Trabajo ' + i, descripcion: 'D', description: 'D',
