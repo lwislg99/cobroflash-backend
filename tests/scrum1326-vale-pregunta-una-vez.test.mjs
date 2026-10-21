@@ -80,7 +80,11 @@ const R_RUTA = R('modules/whatsappBot/app/routes/whatsappIncoming.routes.js');
 const { config } = require_('./dist/core/config/env.js');
 const poner = (r, e) => { require_.cache[r] = { id: r, filename: r, loaded: true, exports: e }; };
 
-const CLIENTE = '34611222333';
+// SCRUM-1509h: el webhook admite 20 entrantes por número y hora, y este fichero escribe muchos más
+// en un solo proceso. Cada conversación escribe desde SU número, para que el límite no se meta en
+// lo que aquí se mide.
+let serieCliente = 0;
+const otroCliente = () => `3461122${String(++serieCliente).padStart(4, '0')}`;
 const PRO = '34600111222';
 const SECRETO = 'secreto-de-prueba-scrum1326';
 const LECTURAS = new Set(['findMany', 'findUnique', 'findFirst', 'count']);
@@ -94,6 +98,7 @@ let serie = 0;
  */
 async function conversacion({ quoteNumber = 'P-0011', botEncendido = false, enCaptacion = false } = {}) {
   const presupuesto = { id: 11, merchantId: 42, customerId: 3, status: 'sent', quoteNumber, total: 250, currency: 'EUR' };
+  const CLIENTE = otroCliente();
   const escrituras = [];
   const trabajos = [];
   const envios = [];
@@ -185,6 +190,7 @@ async function conversacion({ quoteNumber = 'P-0011', botEncendido = false, enCa
       trabajos: trabajos.slice(desde.trabajos),
       alBot: alBot.slice(desde.alBot),
       envios: suyos,
+      cliente: CLIENTE,
       alCliente: suyos.filter((e) => e.to === CLIENTE).map((e) => e.text),
       alPro: suyos.filter((e) => e.to === PRO).map((e) => e.text),
     };
@@ -343,7 +349,7 @@ test('SCRUM-1326 · la pregunta es una RESPUESTA a quien escribió: un envío, a
   const r = await escribe('vale');
   assert.equal(r.envios.length, 1, '🔴 «vale» provoca más de un envío');
   const [e] = r.envios;
-  assert.equal(e.to, CLIENTE, '🔴 la pregunta sale hacia alguien que no es quien escribió');
+  assert.equal(e.to, r.cliente, '🔴 la pregunta sale hacia alguien que no es quien escribió');
   assert.equal(e.merchantId, 42, 'el envío es del negocio del presupuesto');
   assert.equal(e.exentoDelDemo, 'respuesta-a-entrante');
   assert.equal(e.exentoDeLaBaja, 'respuesta-a-entrante');
