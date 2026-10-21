@@ -78,3 +78,142 @@ SCRUM-244). El ③ no se cierra sin:
 ## Qué desbloquea
 
 SCRUM-1019 (espera a 914). El ③ de 914 y las pantallas de S4 esperan al ALTER aplicado.
+
+---
+
+## J3 (equipo de Javier) · criterio 3 del ③: `equipment` en el borrado y en el anonimizado
+
+**Medido contra:** `origin/main` = `dc1b2b4db78e75b1af0fcbc495912b29395938af` · 2026-10-20T09:12:21Z (sesión J3 `jv-j3a`; trabajo cruzado decidido por el fundador, SCRUM-914 c.19414 / c.20087)
+
+A9: comprobación → `tests/scrum497-dato-personal-no-sobrevive.test.mjs`
+
+(Por qué esa ruta: `serialNumber` no estaba en el vocabulario de `tests/_censo-datos-personales.mjs`, así
+que `equipment.serialNumber` habría nacido invisible para el censo de scrum497 — igual que hoy lo es
+`customerSite.contactName`. Ahora está, y el control de abajo, ⓪, lo vio cazar los dos campos.)
+
+Lo tocado: `src/modules/system/domain/borradoMerchant.ts`, `src/modules/system/domain/anonimizarMerchant.ts`
+y sus tests (`tests/scrum914-equipos-borrado-y-anonimizado.test.mjs`, nuevo; los dobles de `scrum244` y
+`scrum440`; el vocabulario de `_censo-datos-personales.mjs` y su mensaje en `scrum497`; los inventarios
+de `scrum411` y `scrum419`, que cuentan el fichero nuevo). Ni
+`prisma/schema.prisma`, ni el dominio de equipos, ni rutas, ni ninguna base.
+
+### ⓪ ¿Puede ir este commit ANTES que el esquema? — NO. Medido.
+
+Con sólo `'equipment'` en `ORDEN_BORRADO_MERCHANT` y el schema de `origin/main` (sin `model Equipment`),
+`tests/scrum192-borrado-merchant.test.mjs` cae en «el orden no inventa modelos que el schema no tiene»:
+`🔴 el orden nombra modelos que ya no tienen merchantId (equipment)`. 13 de 14 en verde, 1 rojo. Lo
+mismo `scrum314` («hay recorridos que no acabaron en un borrado», 27 ≠ 28: su espía se construye desde
+el schema). → **Este commit va DESPUÉS del de S1**, en su rama.
+
+Al revés, medido en una COPIA del árbol (fuera del repo) con el candidato `model Equipment` del `.sql`
+(líneas 61-84) escrito en su schema (`prisma validate`: válido): con este commit encima, **80 tests,
+73 verdes, 3 saltos (LIBRO_PG_URL), 4 rojos — los cuatro el MISMO, `SCRUM-172: todo modelo con
+merchantId está en MODELOS_POR_MERCHANT`** (`tests/_merchant-fixture.mjs`, la lista del fixture de
+tests). Ese rojo lo pone el schema de S1 por sí solo, con o sin esta mitad: **el commit de S1 tiene
+que añadir `'equipment'` al fixture** (antes de `customer`, que el `merchant.delete` del fixture
+choca con la FK RESTRICT).
+
+Control en esa misma copia: con el `anonimizarMerchant` de `origin/main` en vez del de esta rama,
+`scrum497` cae en «ninguna columna personal del esquema queda SIN CLASIFICAR» nombrando
+`equipment.name` y `equipment.serialNumber`. El segundo sólo lo ve porque esta rama lo añade al vocabulario.
+
+### 🔴 EL PR DE ESTA RAMA SALE ROJO, Y ES LO ESPERADO — no quites `'equipment'` del orden
+
+Por decisión del fundador (20-oct, transmitida por el orquestador: «Venga pues dale para que commitee»),
+esta rama se empuja SOLA, sin esperar a la de S1. Su obligatorio va a caer en:
+- `tests/scrum192-borrado-merchant.test.mjs:54` · «SCRUM-192 · el orden no inventa modelos que el schema no tiene»;
+- `tests/scrum314-wipedemo-derivado.test.mjs:130` · «SCRUM-314 · CONTROL: ningún borrado sale sin filtro del demo» (27 ≠ 28).
+
+**Por qué cae:** los dos esperan el `model Equipment` de `prisma/schema.prisma`, que es de S1 (regla 40)
+y no está en `main`. No es un defecto de este commit.
+
+**Qué lo pone en verde:** que entre en `main` el esquema de S1 **con** su línea en
+`tests/_merchant-fixture.mjs` (`'equipment'` antes de `'customer'` en `MODELOS_POR_MERCHANT`;
+sin ella cae SCRUM-172, medido en ⓪). Con eso, este PR pasa a verde sin tocar nada.
+
+**Lo demás, verde:** `guards:entrada` (15 guards, 170 tests), los 5 de árbol entero (38/38) y los
+ficheros afectados (100 tests, 0 rojos, 3 saltos de `LIBRO_PG_URL`). Los diez ficheros del commit
+están declarados uno a uno en SCRUM-914 c.20091.
+
+⛔ Quitar `'equipment'` del orden para ponerlo verde es arreglar el guard en vez del código (regla 41).
+Lo que falta es el código de otro equipo.
+
+### ① DÓNDE va `equipment` en el orden — derivado de a quién apunta
+
+Del `.sql`: `equipments` → `merchants` y `customers` con FK RESTRICT; → `customer_sites` SIN FK.
+Y le apuntan SIN FK `jobs`, `maintenance_plans`, `albaranes` y `partes_trabajo` por `equipment_id`.
+
+- Los cuatro documentos son sus HIJOS (sin red): van **antes** que el equipo. Si el equipo cayera antes
+  y el bucle se cortara a mitad, quedarían documentos apuntando a un equipo inexistente sin que nada
+  proteste — el mismo motivo de `emailMessage` y `parteTrabajo` en el propio fichero.
+- `customerSite` es su PADRE (sin red): va **después** del equipo.
+- `customer` es padre de los dos con FK RESTRICT: va después de ambos.
+
+Queda `…, 'teamMember', 'equipment', 'customerSite', 'customer'`. **Eso obliga a sacar `customerSite`
+del primer bloque**, donde lo puso SCRUM-1014. Se puede porque **a `customer_sites` no le apunta
+nadie más** (medido en el schema: sólo `CustomerSite[]` en Merchant y en Customer). La propuesta de S1
+(«antes de `customer` y de `customerSite`», sin mover nada) ponía el equipo en el primer bloque,
+**antes** que los cuatro documentos que le apuntan: no la tomo, por esa razón.
+
+`FUERA_DEL_BARRIDO_GENERICO` no aplica: `equipment` tiene `merchantId` NOT NULL, se borra por merchant
+como cualquier otro, y `barridoDemo` lo recorre sin paso propio.
+
+### ② QUÉ campos son dato personal — `name` y `serialNumber`
+
+- `serialNumber`: **identifica un aparato concreto en casa de una persona**, y el registro de
+  garantía del fabricante lo cruza con su dueño y su domicilio. Identificador indirecto aunque el
+  cliente ya no tenga nombre. Es la razón fuerte, más que el texto libre.
+- `name`: texto libre que el profesional escribe sobre lo de OTRA persona («Caldera de la Sra. Pérez»).
+  No es `product.name` ni `quoteTemplate.name`, que nombran su propio catálogo.
+- FUERA: `type`, `brand`, `modelName` (catálogo) y `installedOn`, `warrantyUntil` (sin nº de serie
+  ni cliente con nombre no señalan a nadie).
+
+⚠️ Coincide con S1, pero choca con un precedente de la casa: `customerSite.name` («Piso 3ºB») se
+declaró FUERA en scrum497 como «etiqueta del sitio». Con mi criterio esa etiqueta también es texto
+sobre lo de un tercero (y «Piso 3ºB» es media dirección). No la toco aquí: va a quien reparte.
+
+### Los dos rojos, con el código real contra Postgres
+
+Banco desechable PGlite en memoria (fuera del repo), DDL de `prisma migrate diff --from-empty` sobre
+el schema de `origin/main` (33 tablas = 33 modelos) + `docs/sql/scrum-914-equipos-del-cliente.sql`
+**aplicado tal cual**. Control: `pg_constraint` de `equipments` da `customer_id_fkey=r`,
+`merchant_id_fkey=r`. Siembra: comercio, cliente, sitio, equipo en ese sitio, trabajo ligado al equipo.
+Se pasa por `borrarMerchant` y `suprimirMerchant` del `dist` de `origin/main` y del de esta rama; el
+cliente de Prisma, por un traductor mínimo a SQL (quien decide las FK es el motor).
+
+| | `dist` de `origin/main` | `dist` de esta rama |
+|---|---|---|
+| ① borrado | `ok=false`, 2 errores: `customer` («violates foreign key constraint "equipments_customer_id_fkey"») y `merchant` («…"customers_merchant_id_fkey"»). Quedan merchant 1, cliente 1, **equipo 1, sitio 0** (el equipo se queda apuntando a un sitio borrado) | `ok=true`, 0 errores, no queda ninguna fila |
+| ② anonimizado | `ok=true` y el equipo **intacto**: `name`=«Caldera de la Sra. Pérez», `serial_number`=«SN-914-QA» | `name` y `serial_number` = `[borrado a petición del interesado]`; `type`, `brand`, `model_name`, las dos fechas y `customer_site_id` **sin tocar** |
+
+El ② en `main` es el «creerías haber cumplido»: la supresión dice `ok=true`.
+
+El test de la casa (`scrum914-…`) repite los dos con `LIBRO_PG_URL` en CI. **NO lo he podido correr
+con Prisma**: en esta máquina no hay Postgres y el cliente generado no tiene `Equipment` hasta el
+commit de S1. Su lógica es la del arnés de arriba, pero su primer verde será el de CI en la rama de S1.
+
+### La tanda, y lo que cazó de MÍO
+
+Tanda entera sobre esta rama (`node --test 'tests/*.test.mjs'`, TAP a fichero): **11.975 tests, 11.788
+verdes, 158 saltos, 29 rojos.** Separados contra un árbol limpio de `origin/main` `dc1b2b4db` con los
+mismos 17 ficheros que fallaron (mismos `node_modules`): `main` da 22 rojos ahí, y esta rama los
+**mismos 22 más dos**, scrum192 y scrum314, los de ⓪, que esperan el schema de S1. Los otros 5 los
+puso MI test nuevo, y los guards tenían razón: lo arreglé a él, no a ellos.
+- scrum113: creaba el comercio a mano → ahora va por `withMerchant`.
+- scrum262: sembraba teléfonos `+34 6XX`, que pueden ser de alguien → ahora sin teléfonos.
+- scrum411 y scrum419 (2): son inventarios declarados de quién llama a `borrarMerchant` (13 → 14) y
+  de qué no corre sin banco (+2). Se actualizan con el fichero nuevo, como manda su propio texto.
+Los 22 de base (deriva de `node_modules` y del cliente de Prisma heredados del checkout compartido,
+CLI local, latido…) son de la máquina, no de esta rama: no los toco.
+
+`guards:entrada`: verde (15 guards, 170 tests). Los 5 de árbol entero que pide su salida: 38/38.
+
+### Encontrado de paso, no arreglado aquí (va a quien reparte)
+
+- `customerSite.contactName` (el nombre del contacto en obra, una persona) **no se anonimiza** y el
+  censo no lo ve: `contactName` no está en su vocabulario. El comentario de `CAMPOS_PERSONALES` dice
+  que «su único rastro es este teléfono», y el schema tiene también su nombre.
+- Mis propios tropiezos: el primer intento de editar `scrum497` lo pasé por `node -e` desde bash con
+  backticks dentro (lo que mi memoria dice que no se hace). Lo paró la comprobación de ancla del propio
+  script, que salió en error sin escribir; lo rehíce con Edit. Y el arnés falló dos veces por montaje
+  (ruta con espacio codificada, `public/` sin copiar) antes de medir: ninguno llegó a un resultado.

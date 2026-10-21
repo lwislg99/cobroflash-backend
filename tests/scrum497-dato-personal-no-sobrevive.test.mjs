@@ -128,7 +128,7 @@ test('SCRUM-497 · 🔴 SUELO: la derivación ve las columnas personales del esq
 
   // Y que el vocabulario no se haya quedado vacío: con él vacío, el cero de arriba sería trivial.
   assert.ok(VOCABULARIO_PERSONAL.length >= 10,
-    `🔴 el vocabulario de dato personal trae ${VOCABULARIO_PERSONAL.length} nombres y son 14 (13 hasta SCRUM-529, que sumó \`toPhone\`).`);
+    `🔴 el vocabulario de dato personal trae ${VOCABULARIO_PERSONAL.length} nombres y son 15 (13 hasta SCRUM-529, que sumó \`toPhone\`; SCRUM-914 sumó \`serialNumber\`).`);
 });
 
 test('SCRUM-497 · 🔴 AUTOPRUEBA: la derivación distingue un dato personal de una bandera', () => {

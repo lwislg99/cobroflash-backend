@@ -49,6 +49,7 @@ export const VOCABULARIO_PERSONAL = Object.freeze([
   'address', 'direccion',                   // domicilios y direcciones de trabajo
   'notes', 'internalNotes',                 // texto libre sobre personas
   'iban',                                   // cuenta bancaria
+  'serialNumber',                           // nº de serie de un aparato en casa de alguien (SCRUM-914)
 ]);
 
 /**
