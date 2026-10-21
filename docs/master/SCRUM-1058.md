@@ -399,3 +399,69 @@ Hasta entonces, el bloqueo `factura_emitida` de SCRUM-1057 se queda como está.
   reflejar la fusión es lo que se quiere.
 
 A9: aviso → A10 «Cero resultados con tu vocabulario no es silencio del documento.» — no se pudo comprobar: el censo de §1bis buscó `customerId` y `clienteDelDocumento`, y el libro reescribe el destinatario con `clienteId`; ningún guard puede saber qué nombre lleva un campo un fichero más abajo, y el que vigilaría «todo destinatario sale de `clienteDelDocumento`» toca el camino fiscal (condición 1, STOP).
+
+---
+
+## 1058c · el ROJO del libro de expedidas, y el arreglo preparado sin aplicar
+
+**Medido contra:** `origin/main` = `f53289026390853176eb2d8ba4ad2bbd51bc9d6d` · 2026-10-21T14:39:02Z
+
+Sesión `jv-j1p`, carril J1. **Cero líneas de `src/` en esta rama** (regla 38): un test que sólo LEE
+el camino y un diff guardado como evidencia. Jira no se pudo leer (caído desde ~13:40Z).
+
+### El test, por la ruta montada
+
+`tests/scrum1058c-libro-expedidas-lee-el-congelado.test.mjs` arranca `dist/app.js` con el banco de
+SCRUM-597 y pide `GET /admin/libros/expedidas.csv?año=2026&trimestre=3` como propietario (pasa por
+`requireAuth`, `requireRole('admin')` y el montaje de `app.ts:600`). El doble **respeta el `select`**:
+si el lector no pide las columnas congeladas, no le llegan. Las columnas las escribe
+`congelarDesdeFicha`, no el test.
+
+Población: 2 facturas del merchant (F-CONG congelada a `Fusionado SL` / `B11111111`; F-ANTIGUA con
+las cinco columnas a NULL) + 1 de otro merchant que no debe salir → 2 filas. 5 casos.
+
+| caso | sin arreglo (`aa68b01af`) | con el arreglo |
+|---|---|---|
+| suelo: 200 y las 2 facturas, nada ajeno | ✔ | ✔ |
+| control: ficha sin cambiar → `B11111111` / `Fusionado SL` | ✔ | ✔ |
+| 🔴 ficha corregida a `B22222222` / `Principal SA` → la congelada sigue con `B11111111` | **✖** (sale `B22222222`) | ✔ |
+| la anterior al escritor sale con la ficha viva | ✔ | ✔ |
+| ninguna escritura en el banco | ✔ | ✔ |
+
+Sin arreglo: 5 tests, 4 pass + 1 fail. **Por eso esta rama no se empuja**: tumbaría el obligatorio.
+
+### El arreglo: `docs/master/evidencias/SCRUM-1058/arreglo-1058c.diff` — NO aplicado
+
+Probado en un worktree temporal (`j1p-1058c-arreglo-tmp`, ya retirado con `git worktree remove`): 42
+ficheros de test del libro, del 303, de las evidencias, del lector A6 y los guards de suite (scrum237,
+scrum976, scrum622) → **365 casos: 359 pass, 6 skip, 0 fail**. Los 6 skip son por `LIBRO_PG_URL`: los
+de Postgres NO se han corrido. `tsc --noEmit`: los mismos 17 errores que sobre `main` sin tocar (todos
+de `archivedAt`, cliente de Prisma compartido viejo), ninguno nuevo. `git apply --check` limpio.
+
+⚠️ **El arreglo es MÁS que «cambiar de dónde se lee»**, y es lo que hay que enseñarle al fundador:
+
+1. **Toca A6** (`libroRegistro.repo.ts` + `libroRegistro.ts`): tres columnas más en `CAMPOS_FACTURA`
+   y un campo nuevo en `AsientoLibro`, `clienteCongelado`. Consecuencia: `GET /admin/libro-registro`
+   (que hace `res.json(libro)`) empieza a servir el nombre, la razón social y el NIF congelados de
+   cada factura. Hoy sirve sólo `clienteId`.
+2. **Cambia una firma**: `filasLibroExpedidas` acepta, además del mapa por `clienteId`, una función
+   del asiento. Hace falta porque dos facturas del mismo cliente pueden llevar dos NIF congelados
+   distintos, y un mapa por cliente no puede decir eso.
+3. **Por qué no la vía corta.** La primera versión leía las columnas con un `invoice.findMany` dentro
+   de `librosAeat.repo.ts` y sólo tocaba ese módulo. La tumbó el R5 de
+   `tests/scrum325-libros-por-periodo.test.mjs` («este módulo está leyendo facturas por su cuenta»).
+   El guard no se relaja (regla 41), así que el congelado tiene que llegar por A6.
+
+### Otros lectores con el mismo patrón (sólo lista: no se tocan)
+
+| lector | qué lee de la ficha viva | ¿mismo defecto? |
+|---|---|---|
+| `GET /admin/libros/recibidas.csv` y `.json` (`librosAeat.repo.ts:85-110`) | NIF y nombre del PROVEEDOR desde `Provider` | **leído en el esquema, no corrido**: `model Expense` no tiene columnas congeladas de proveedor (sólo `providerId`, `providerInvoiceNumber`, `providerInvoiceDate`), así que no hay congelado que perder; corregir un proveedor reescribe el libro de recibidas pasado. Es otro defecto (falta el dato), no este |
+| `GET /admin/exports/invoices.csv` (`exportData.ts:203-216`) | «Cliente» y «Email cliente» | sí en el patrón, sin NIF; carril de exportaciones, no J1 |
+| paquete de evidencias (`paquete.repo.ts:85-95`) | nombre del cliente del Trabajo para recalcular el sobre del albarán | conocido y declarado: SCRUM-431/438 (`atestiguamiento.ts:8-12`) |
+| XML VeriFactu, registro para la cola, PDF, regeneración de admin | — | no: pasan por `clienteDelDocumento` (tramo «1058 · visto bueno de J1») |
+
+Error propio de esta tanda: escribí la primera versión del arreglo sin leer antes los guards del
+módulo, y el R5 de scrum325 la tumbó en el banco. Lo hará igual con quien lo intente.
+
+A9: comprobación → `tests/scrum325-libros-por-periodo.test.mjs`
