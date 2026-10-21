@@ -28,6 +28,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
@@ -92,43 +93,102 @@ const LA_SALIDA =
  * Se mira con AST y no con `grep` porque hay que saber si el `fetch` está DENTRO de un bucle, y
  * eso el texto plano no lo distingue.
  */
+//
+// SCRUM-1218b (21-oct-2026) · DOS CIEGOS que dejaban fuera el caso de SCRUM-1456c, que murió al salir
+// con `0xC0000409` y sus 10 casos en verde:
+//   ① el servidor se buscaba por el TEXTO `app.listen(0)`, y 1456c escribía `app.listen(0, '127.0.0.1', …)`;
+//   ② el `fetch` se buscaba DENTRO del bucle, y en 1456c estaba en `const emitir = async () => {…}`,
+//      a la que el bucle `for (const estado of […]) await emitir()` llama.
+// Ahora el servidor es cualquier llamada `<x>.listen(0, …)` del código, y cada llamada a una función
+// con nombre DEL PROPIO FICHERO cuenta los `fetch` de esa función en el sitio desde el que se llama.
+// ⚠️ Sigue CIEGO a: funciones importadas de otro fichero, métodos (`obj.pedir()`), `fetch` por otro
+// nombre (`globalThis.fetch`, `const f = fetch`) y procesos hijos.
 export function enPatronPeligroso(fuente, nombre = 'anonimo.mjs') {
-  if (!/app\.listen\(0\)/.test(fuente)) return { peligroso: false, motivo: 'no levanta servidor propio' };
-
   const sf = ts.createSourceFile(nombre, fuente, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
+
+  const esFuncion = (n) => n && (ts.isArrowFunction(n) || ts.isFunctionExpression(n));
+  const funciones = new Map();
+  let servidor = false;
+  const registra = (n) => {
+    if (ts.isFunctionDeclaration(n) && n.name && n.body) funciones.set(n.name.text, n);
+    if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && esFuncion(n.initializer)) {
+      funciones.set(n.name.text, n.initializer);
+    }
+    if (ts.isCallExpression(n) && ts.isPropertyAccessExpression(n.expression)
+      && n.expression.name.text === 'listen' && n.arguments.length > 0
+      && ts.isNumericLiteral(n.arguments[0]) && n.arguments[0].text === '0') servidor = true;
+    ts.forEachChild(n, registra);
+  };
+  registra(sf);
+  if (!servidor) return { peligroso: false, motivo: 'no levanta servidor propio' };
+
+  const esBucle = (p) => ts.isForStatement(p) || ts.isForOfStatement(p) || ts.isForInStatement(p)
+    || ts.isWhileStatement(p) || ts.isDoStatement(p)
+    || (ts.isCallExpression(p) && ts.isPropertyAccessExpression(p.expression)
+      && /^(map|forEach|flatMap|filter|reduce)$/.test(p.expression.name.text));
+  const definiciones = new Set(funciones.values());
+  const alcanzadas = new Set();
   let sueltos = 0, enBucle = 0;
 
-  const dentroDeBucle = (n) => {
-    for (let p = n.parent; p; p = p.parent) {
-      if (ts.isForStatement(p) || ts.isForOfStatement(p) || ts.isForInStatement(p)
-        || ts.isWhileStatement(p) || ts.isDoStatement(p)) return true;
-      if (ts.isCallExpression(p) && ts.isPropertyAccessExpression(p.expression)
-        && /^(map|forEach|flatMap|filter|reduce)$/.test(p.expression.name.text)) return true;
+  // Recorre de arriba abajo. Una función con nombre NO se recorre donde se define, sino en cada
+  // sitio que la llama, con el «en bucle» de ese sitio. `pila` corta la recursión.
+  const recorre = (n, bucle, pila) => {
+    if (definiciones.has(n) && !pila.includes(n)) return;
+    const b = bucle || esBucle(n);
+    if (ts.isCallExpression(n) && ts.isIdentifier(n.expression)) {
+      if (n.expression.text === 'fetch') b ? enBucle++ : sueltos++;
+      const f = funciones.get(n.expression.text);
+      if (f && !pila.includes(f)) { alcanzadas.add(f); recorre(f, b, [...pila, f]); }
     }
-    return false;
+    ts.forEachChild(n, (h) => recorre(h, b, pila));
   };
-
-  const visita = (n) => {
-    if (ts.isCallExpression(n) && n.expression.getText(sf) === 'fetch') {
-      dentroDeBucle(n) ? enBucle++ : sueltos++;
-    }
-    ts.forEachChild(n, visita);
-  };
-  visita(sf);
+  recorre(sf, false, []);
+  // Una función con nombre que nadie del fichero llama (exportada, o pasada como valor) cuenta una vez.
+  for (const f of definiciones) if (!alcanzadas.has(f)) recorre(f, false, [f]);
 
   if (enBucle > 0) return { peligroso: true, motivo: `${enBucle} \`fetch\` DENTRO DE UN BUCLE (cuenta por muchas peticiones, no por una)` };
   if (sueltos >= 3) return { peligroso: true, motivo: `${sueltos} \`fetch\` sobre su propio servidor (el umbral de SCRUM-100 son 3)` };
   return { peligroso: false, motivo: `${sueltos} \`fetch\`: por debajo del patrón` };
 }
 
-/** Los ficheros de `tests/` que hoy caen en el patrón. */
+/**
+ * LA SIEMBRA (SCRUM-1218b): la forma de SCRUM-1456c, fabricada aquí y escrita a un temporal FUERA del
+ * árbol en cada pasada, que el censo lee por el mismo camino que los de `tests/`. Si no sale, el censo
+ * está CIEGO y lo dice. No se toma prestado un fichero real: el día que alguien lo arreglara, el control
+ * se quedaría mudo y seguiría en verde.
+ */
+const SIEMBRA = 'siembra-scrum1218b-forma-1456c.mjs';
+const FUENTE_SIEMBRA = [
+  "const srv = await new Promise((ok) => { const s = app.listen(0, '127.0.0.1', () => ok(s)); });",
+  'const emitir = async () => {',
+  "  const r = await fetch(`http://127.0.0.1:${srv.address().port}/webhooks/stripe`, { method: 'POST' });",
+  '  return { status: r.status };',
+  '};',
+  'for (const estado of [400, 500, 200]) { await emitir(); }',
+].join('\n');
+
+/** Los ficheros de `tests/` que hoy caen en el patrón, con la siembra leída al lado. */
 function censar() {
-  const out = [];
-  for (const f of fs.readdirSync(DIR).filter((x) => x.endsWith('.test.mjs'))) {
-    const r = enPatronPeligroso(fs.readFileSync(path.join(DIR, f), 'utf8'), f);
-    if (r.peligroso) out.push({ f, motivo: r.motivo });
+  const dirSiembra = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1218b-'));
+  fs.writeFileSync(path.join(dirSiembra, SIEMBRA), FUENTE_SIEMBRA);
+  try {
+    const out = [];
+    let vioLaSiembra = false;
+    const leer = (dir, filtro) => fs.readdirSync(dir).filter(filtro).map((f) => [dir, f]);
+    for (const [dir, f] of [...leer(DIR, (x) => x.endsWith('.test.mjs')), ...leer(dirSiembra, () => true)]) {
+      const r = enPatronPeligroso(fs.readFileSync(path.join(dir, f), 'utf8'), f);
+      if (!r.peligroso) continue;
+      if (dir === dirSiembra && f === SIEMBRA) vioLaSiembra = true;
+      else out.push({ f, motivo: r.motivo });
+    }
+    assert.ok(vioLaSiembra,
+      `🔴 CIEGO: la siembra \`${SIEMBRA}\` (la forma de SCRUM-1456c: \`fetch\` en una función con nombre `
+      + 'a la que llama un bucle, y `listen(0, host, cb)`) no sale en el censo. Sin ella, «ningún fichero '
+      + 'nuevo» no significa que no los haya: significa que el censo no los ve.');
+    return out;
+  } finally {
+    fs.rmSync(dirSiembra, { recursive: true, force: true });
   }
-  return out;
 }
 
 // ── ① SUELO ─────────────────────────────────────────────────────────────────────────────────
@@ -168,6 +228,33 @@ test('SCRUM-560 · AUTOPRUEBA: el detector caza el patrón y NO acusa a `node:ht
   const sinServidor = 'for (const r of rutas) { await fetch(URL_EXTERNA + r); }';
   assert.equal(enPatronPeligroso(sinServidor).peligroso, false,
     '🔴 acusa a un `fetch` que no va contra un servidor propio: el patrón necesita las DOS piezas.');
+
+  // SCRUM-1218b · los dos ciegos de SCRUM-1456c, cada uno por separado.
+  const conHost = "const s = app.listen(0, '127.0.0.1', listo);\nfor (const r of rutas) { await fetch(BASE + r); }";
+  assert.equal(enPatronPeligroso(conHost).peligroso, true,
+    '🔴 no ve el servidor de `app.listen(0, host, cb)`: era el ciego ① de SCRUM-1456c.');
+  const servidorEnComentario = '// app.listen(0)\nfor (const r of rutas) { await fetch(BASE + r); }';
+  assert.equal(enPatronPeligroso(servidorEnComentario).peligroso, false,
+    '🔴 un `app.listen(0)` en un COMENTARIO cuenta como servidor: el servidor se busca en el código, no en el texto.');
+
+  const porLaLlamada = 'const s = app.listen(0);\nconst emitir = async () => { await fetch(BASE); };\n'
+    + 'for (const e of [1, 2, 3]) { await emitir(); }';
+  assert.equal(enPatronPeligroso(porLaLlamada).peligroso, true,
+    '🔴 no ve el `fetch` a través de la llamada: era el ciego ② de SCRUM-1456c.');
+  const porLaDeclaracion = 'const s = app.listen(0);\nasync function emitir() { await fetch(BASE); }\n'
+    + 'for (const e of [1, 2, 3]) { await emitir(); }';
+  assert.equal(enPatronPeligroso(porLaDeclaracion).peligroso, true,
+    '🔴 ve la función de flecha y no la `function` declarada: es la misma forma.');
+  const unaLlamadaSuelta = 'const s = app.listen(0);\nconst emitir = async () => { await fetch(BASE); };\nawait emitir();';
+  assert.equal(enPatronPeligroso(unaLlamadaSuelta).peligroso, false,
+    '🔴 acusa a una función con UN `fetch` llamada UNA vez fuera de un bucle: es una petición.');
+  const tresLlamadasSueltas = 'const s = app.listen(0);\nconst emitir = async () => { await fetch(BASE); };\n'
+    + 'await emitir(); await emitir(); await emitir();';
+  assert.equal(enPatronPeligroso(tresLlamadasSueltas).peligroso, true,
+    '🔴 no cuenta las llamadas: tres llamadas a una función con un `fetch` son tres peticiones.');
+  const recursiva = 'const s = app.listen(0);\nfunction otra(n) { if (n) otra(n - 1); }\nawait fetch(a);';
+  assert.equal(enPatronPeligroso(recursiva).peligroso, false,
+    '🔴 una función recursiva sin `fetch` dispara el detector: la recursión tiene que cortarse sin contar.');
 });
 
 // ── ③ EL TRINQUETE ──────────────────────────────────────────────────────────────────────────
