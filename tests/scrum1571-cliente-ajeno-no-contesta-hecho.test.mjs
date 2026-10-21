@@ -121,21 +121,24 @@ test('SCRUM-1571 · CONTROL NEGATIVO: DELETE de un cliente PROPIO sigue contesta
   assert.deepEqual(ids(), [1, 3, 4, 5]);
 });
 
-for (const verbo of ['PUT', 'PATCH']) {
-  test(`SCRUM-1571 · 🔴 ${verbo} del cliente de OTRO comercio → 404 not_found, y su fila no cambia`, async () => {
-    tabla = SIEMBRA();
-    const r = await pedir(verbo, '/admin/customers/5', { name: 'Pisado' });
-    assert.equal(r.status, 404, `🔴 contesta ${r.status} con ${JSON.stringify(r.cuerpo)}: «guardado» sin haber guardado nada`);
-    assert.deepEqual(r.cuerpo, { error: 'not_found' });
-    assert.equal(tabla.find((f) => f.id === 5).name, 'Cinco ajeno');
-  });
-
-  test(`SCRUM-1571 · CONTROL NEGATIVO: ${verbo} de un cliente PROPIO sigue contestando 200 con la fila editada`, async () => {
-    tabla = SIEMBRA();
-    const r = await pedir(verbo, '/admin/customers/3', { name: 'Tres editado' });
-    assert.equal(r.status, 200, `🔴 una edición legítima contesta ${r.status}`);
-    assert.equal(r.cuerpo?.id, 3);
-    assert.equal(r.cuerpo?.name, 'Tres editado');
-    assert.equal(tabla.find((f) => f.id === 5).name, 'Cinco ajeno');
-  });
-}
+// PUT y PATCH comparten handler (SCRUM-1138), pero son dos rutas: cada una lleva su caso, con nombre
+// literal (los nombres construidos en un bucle los vigila `scrum1415`).
+const editarAjeno = (verbo) => async () => {
+  tabla = SIEMBRA();
+  const r = await pedir(verbo, '/admin/customers/5', { name: 'Pisado' });
+  assert.equal(r.status, 404, `🔴 contesta ${r.status} con ${JSON.stringify(r.cuerpo)}: «guardado» sin haber guardado nada`);
+  assert.deepEqual(r.cuerpo, { error: 'not_found' });
+  assert.equal(tabla.find((f) => f.id === 5).name, 'Cinco ajeno');
+};
+const editarPropio = (verbo) => async () => {
+  tabla = SIEMBRA();
+  const r = await pedir(verbo, '/admin/customers/3', { name: 'Tres editado' });
+  assert.equal(r.status, 200, `🔴 una edición legítima contesta ${r.status}`);
+  assert.equal(r.cuerpo?.id, 3);
+  assert.equal(r.cuerpo?.name, 'Tres editado');
+  assert.equal(tabla.find((f) => f.id === 5).name, 'Cinco ajeno');
+};
+test('SCRUM-1571 · 🔴 PUT del cliente de OTRO comercio → 404 not_found, y su fila no cambia', editarAjeno('PUT'));
+test('SCRUM-1571 · CONTROL NEGATIVO: PUT de un cliente PROPIO sigue contestando 200 con la fila editada', editarPropio('PUT'));
+test('SCRUM-1571 · 🔴 PATCH del cliente de OTRO comercio → 404 not_found, y su fila no cambia', editarAjeno('PATCH'));
+test('SCRUM-1571 · CONTROL NEGATIVO: PATCH de un cliente PROPIO sigue contestando 200 con la fila editada', editarPropio('PATCH'));
