@@ -42,6 +42,10 @@ Caso nuevo, «SCRUM-1574 · ④ la decisión», que corre en **toda** tanda (tam
 
 **Regla 41:** `CON_MAX_POR_PASADA` y `CON_MAX_PASADAS_QUE_PIERDEN` no se tocan.
 
+## La mini-tanda, en local (Windows, `dist/` con `tsc --noCheck`)
+
+390 ficheros: los que nombran `docs/master`, `MUTACIONES_QUE_ME_TUMBAN` o leen `tests/`, más los de suite (`scrum237`, `scrum976`, `scrum836`, `scrum710b`, `scrum1387`, `scrum1480f`, `scrum850`), sobre la rama ya mezclada con `main` y con este registro dentro: **3.755 tests · 3.721 pasan · 10 caen · 24 saltan** (suman). Los 10 son de 5 ficheros (`scrum1298b`, `scrum245`, `scrum461`, `scrum475`, `scrum476`: hooks, `tsc`, el cliente y el CLI de Prisma, `node_modules`), y **sobre un árbol de `main` (`67dde0caf`) sin mi cambio caen los mismos 10 por nombre** (46 tests, 35 pasan, 10 caen, 1 salta): son de este worktree, que no tiene `node_modules` propio. No he corrido la tanda entera.
+
 ## Lo que NO sé, o no he medido
 
 - **El camino «mide» de ④ en Linux no lo he visto correr con este cambio**: aquí es Windows y ④ se salta. Lo que lo prueba es la función, en toda tanda; el cableado (que ④ llame a la función y obedezca su estado) sólo se verá en el obligatorio de este PR. Y un obligatorio no es un régimen.
