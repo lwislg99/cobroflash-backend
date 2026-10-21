@@ -448,3 +448,28 @@ El cuerpo de #2641 lleva dos CIEGO, `3c60a7fd0147` y `b10c9b6ca79e`, los dos «r
 * Que el `sort_by(...)` del `-q` dé lo mismo con el `gh` del runner (aquí, el de esta máquina).
 * El YAML del workflow no lo ha parseado nada en esta máquina (no hay librería de YAML en el árbol); sí pasó `bash -n` el guion del paso.
 * Que la punta VERDE cierre de verdad: no ha habido ninguna punta verde para verlo.
+
+## Quinto tramo · SCRUM-1393d (relevo) · El rojo del obligatorio de #2642 era del propio test de 1393d
+
+**Medido contra:** `origin/main` = `cf25030c8e94560725075313227e70177868e0f2` · 2026-10-21T13:55:32Z
+
+A9: comprobación → `tests/scrum1349-entorno-prestado-solo-baja.test.mjs`
+
+J6 (`jv-j6s`), relevo de `jv-j6r` (parada) por encargo del orquestador (`cobroflash-backend-5f`). Sin Jira (el MCP no
+conectó: CONNECT_TIMEOUT); lo publica el orquestador.
+
+**El rojo.** Obligatorio de #2642 sobre `d822268b282d4d9886a8362a9c1d6a7bf3e94ea7`: run 39609608390, job 119254697995,
+acabado 13:49:06Z. Log completo (2.002.210 B, 0 «TANDA SIN VEREDICTO»); población 12042 = 11951 pass + 2 fail + 89
+skipped. Los dos `not ok` son de `scrum1349` (casos 2313 y 2315, el segundo en cascada: «la base no está limpia»), y el
+acusado nuevo es `tests/scrum1393d-vigia-de-main-cierra-con-verde.test.mjs:94`: el hijo de `execFileSync` heredaba
+`FORCE_COLOR` (se borraban `NODE_TEST_CONTEXT` y `NODE_OPTIONS`, no la tercera).
+
+**El arreglo.** `delete env.FORCE_COLOR;` en esa línea. No se usó `entornoLimpio` de `scripts/_trinquete-de-zona.mjs`
+porque además fija `TZ`, que este test no necesita. El guard no se toca.
+
+**Lo probado.** En local, `scrum1349` + `scrum1393d`: 17 tests, 17 pass, 0 fail. **En rojo primero:** con el test de
+1393d devuelto a `d822268b2`, `scrum1349` sale 9 tests, 7 pass, 2 fail, y el fallo nombra a `scrum1393d`. Lo que NO se
+ha medido: la tanda completa en local (sin `node_modules` ni `dist/` propios en este árbol); la mide el obligatorio.
+
+**Error propio:** ninguno en este tramo; el de `jv-j6r` (un hijo de `node --test` con el entorno a medias) ya lo caza el
+guard de la línea `A9:`, que es la que lo vio.
