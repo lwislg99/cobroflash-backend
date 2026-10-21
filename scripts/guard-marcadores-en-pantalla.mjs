@@ -44,6 +44,7 @@ import puppeteer from 'puppeteer-core';
 import { rutaDelNavegador, argsDeAislamiento } from './_navegador.mjs';
 import { temporal } from '../tests/_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
 import { veredictoDe, recorrerCasos } from './_hallazgos-y-ciegos.mjs';
+import { soloCodigo } from '../tests/_solo-codigo.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PANEL = path.join(RAIZ, 'public', 'dashboard');
@@ -169,19 +170,19 @@ ${scripts.map((s) => `<script src="${url('js/' + s)}"></script>`).join('\n')}
 // guard salía CIEGO en `main` desde el 17-oct: tres pares «no pintó ningún nodo», sin hallazgo.
 // La pantalla no tenía nada mal; lo que estaba mal era la lista que decide qué se mira.
 // Ahora pide id la vista cuyo `case` llama a su render con un `state.<algo>`: es lo que el router
-// le pasa como id. Se lee sin comentarios, por líneas (A23 ②③): un comentario que cite la
-// llamada no la convierte en una.
+// le pasa como id. Se lee sin comentarios (A23 ②): un comentario que cite la llamada no la
+// convierte en una. Con `soloCodigo`, el filtro de la casa (SCRUM-694): conserva longitud y líneas,
+// y no corta el código detrás del `//` de una URL.
 const ID_DEL_ESTADO = /\b(render[A-Za-z0-9]+View)\s*\([^)]*\bstate\.[A-Za-z0-9_]+/;
 function vistasDelRouter() {
-  const app = fs.readFileSync(path.join(PANEL, 'js', 'app.js'), 'utf8');
+  const app = soloCodigo(fs.readFileSync(path.join(PANEL, 'js', 'app.js'), 'utf8'), 'app.js');
   const fuera = new Set(['home']); // se pinta en varios `case`; su render se mide en el suyo
   const vistas = [];
   for (const m of app.matchAll(/case '([a-z0-9-]+)':([\s\S]*?)break;/g)) {
     const fn = [...m[2].matchAll(/\b(render[A-Za-z0-9]+View)\s*\(/g)].map((x) => x[1])
       .filter((f) => f !== 'renderHomeView' || m[1] === 'home')[0];
     if (!fn || (fuera.has(m[1]) && vistas.length)) continue;
-    const codigo = m[2].split(/\r?\n/).map((l) => l.replace(/\/\/.*$/, '')).join('\n');
-    vistas.push([m[1], fn, ID_DEL_ESTADO.test(codigo) ? 1 : null]);
+    vistas.push([m[1], fn, ID_DEL_ESTADO.test(m[2]) ? 1 : null]);
   }
   // Estas dos no tienen `case` propio con render (el router las resuelve por otro camino), pero
   // son pantallas del panel y tienen marcadores en su fuente: se miden igual.
