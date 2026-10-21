@@ -211,3 +211,101 @@ mirando otro sitio. Queda escrito en el propio banco.
 **Cómo se mide el efecto tras el merge (no se da por hecho):** en las horas siguientes, `gh run list --workflow ci.yml --event push --branch main` y contar `cancelled`. Esperado: los `cancelled` que queden son pendientes sustituidos (sin `startedAt`), no runs con jobs a medias. Si siguen muriendo runs con jobs en curso, la línea no surtió efecto.
 
 **Ficheros:** `.github/workflows/ci.yml` (la línea y dos comentarios), `tests/scrum935b-main-no-cancela.test.mjs`, este apartado.
+
+## SCRUM-935c · por qué el meta-guard vuelve al techo: medición y propuesta (no construida)
+
+**Medido contra:** `origin/main` = `c47288f7e82fb9dea4473f71e161a3836ac788f3` · 2026-10-21T14:31:09Z
+J6 (`jv-j6t`, equipo de Javier) · **sólo mide y propone**: `scripts/meta-guard-mutaciones.mjs` es de S3,
+`tests/scrum813-trinquete-de-zona.test.mjs` y SCRUM-1494 son de S5, y `ci.yml` es de S5 y del fundador.
+Aquí no se toca ninguno. Jira no conectó en toda la sesión (`CONNECT_TIMEOUT` del MCP): el ticket NO se leyó.
+
+**El encargo:** el job meta-guard del run 39610056116 (PR #2640) dijo «1508 s · 83 % del presupuesto».
+Medido: **el 83 % es un superviviente.** Desde el 16-oct el job **muere en el techo de 30 min**.
+
+### 1 · La serie (población declarada)
+
+`muestrear-runs.mjs`: de cada día entre el 20-sep y el 21-oct, 4 runs de `ci.yml` repartidos en la lista
+del día (la API da 100 por página: en los días con más de 100, la muestra sale de los 100 más recientes)
+y, de 2 de ellos, el log entero. **104 runs**: 46 logs COMPLETOS, 20 jobs `cancelled`, 19 sin el job
+(saltado), 19 sin log bajado. Los 6 días sin runs (3-5 y 10-12 oct) los da así la API: no lo crucé.
+Controles del analizador, sembrados (`salida-controles-sembrados.tsv`): un log cortado sale CORTADO, uno
+vacío sale CIEGO, uno con una línea de resultado de más sale NO-CASA y el real sale COMPLETO. En los 46,
+las líneas de resultado suman exactamente `vivas + mudas + ciegas + muertos`.
+
+| fecha | N (mutaciones) | fase de mutación | s/mutación |
+|---|---|---|---|
+| 20-sep | 310 | 577-698 s | 1,86-2,25 |
+| 1-oct | 418 | 1.146 s | 2,74 |
+| 6-oct | 510 | 1.337 s | 2,62 |
+| 14-oct | 589 | 1.602 s | 2,72 |
+| 15-oct | 593 | 1.634 s | 2,76 |
+| 19-oct | 615 | 1.732 s | 2,82 |
+| 21-oct | 622 | 1.646 s | 2,65 |
+
+* **N se ha duplicado en 31 días** (310 → 622, unas 10 mutaciones al día). El coste por mutación del
+  runner va de 1,8 a 2,8 s, sin tendencia: es el sorteo del runner, que ya midió el tramo de arriba.
+* 🔴 **En el techo:** 7 jobs `cancelled` con el paso a 1.769-1.779 s, **todos desde el 16-oct** (3 el
+  16, 2 el 18, 2 el 20: dos de ellos son `push` a `main`). Desde el 16-oct, de los 14 jobs muestreados que
+  llegaron al final o al techo, **7 murieron en el techo**. Un job cortado no llega a su resumen: es
+  CIEGO, no lento. jv-j3u midió lo mismo sobre otra población (1.029 runs, 128 cortes; PR #2648): mi
+  muestra lo confirma por separado, y no copio su cifra.
+
+### 2 · Coste por guard y desde qué commit
+
+El instrumento corre los guards **en serie**: una pasada limpia del fichero y otra **del fichero entero
+por cada mutación**, y cada resultado sale en el log con su hora. Así que el coste de un guard es
+`(mutaciones + 1) × lo que tarda en cargarse y correr su fichero` (`analizar.mjs` → `guards-<run>.tsv`).
+
+Último log completo (run 39605052252, 21-oct, 622 mutaciones, 162 guards, 1.646 s): **los 10 guards más
+caros suman 761 s (el 46 %)**, y `scrum813-trinquete-de-zona` sola **286 s (el 17 %)**.
+
+Descomposición 20-sep → 21-oct (`salida-comparar-20sep-21oct.txt`, normalizada por el runner con la
+mediana de 49 guards que no cambiaron): base 691 s **+ 639 s de 69 guards nuevos** (279 mutaciones)
+**+ 286 s de que la MISMA mutación tarde más** + 31 s de mutaciones nuevas en guards viejos = 1.646 s
+(cuadra con lo medido).
+
+**Los 286 s son casi enteros de UN commit.** `scrum813` costaba unos 45 s (22 mutaciones a ~2 s) hasta el
+15-oct y **~285 s (26 a ~11 s)** desde el 17-oct. Entre medias entró el merge de #2486
+(`574e538065dd51f45cfdca078b3787d7f32fbb5a`, 16-oct 11:18:48Z, SCRUM-1494c «el hijo de zona corta por
+test y por pared»). Ese PR añadió un banco sembrado de cuelgues con una pared de 4 s y su repesca, **y lo
+corre en el nivel superior del módulo**: se paga en CADA carga del fichero, y el meta-guard lo carga 27
+veces. **A/B en local, 3 pasadas por lado** (`salida-ab-813-y-carga.txt`): 1,84-1,91 s antes del merge,
+11,44-11,62 s después. Un patrón de nombre que no casa con ningún test sigue tardando 11,2 s: el coste
+está en la carga, no en los tests.
+
+**Los otros siete caros siguen otro patrón** (`salida-cae-vs-lento.txt`). Cargan en 0,07-0,4 s, y casi
+todo su tiempo es UN test lento (el 83-97 % del fichero: comandos reales, esperas). **23 de sus 25
+mutaciones declaran como `cae` otro test que tarda ≤ 2,6 s**, pero cada una paga el fichero entero:
+`scrum976` (6 × 16 s), `scrum710b` (5 × 16 s), `scrum853c`, `scrum775`, `scrum1007-1011-1026`, `scrum858b`
+y `scrum959b`. Sólo la 3.ª de `scrum858b` (8,7 s) y la 2.ª de `scrum775` (4,8 s) apuntan a su test lento.
+
+### 3 · Propuesta (para S3 y S5, vía el orquestador; no la construyo)
+
+No se sube el techo, que lo dice el propio aviso. Cifras sobre el runner del run 39605052252:
+
+| | qué | de quién | cuánto quita | qué cuesta |
+|---|---|---|---|---|
+| A | sacar el banco de «cortados» de SCRUM-1494c a su PROPIO fichero de test, con sus 4 mutaciones | S5 | **~190 s** (`scrum813`: 286 → ~94: 23 cargas a ~2 s + 5 a ~9,5 s) | nada en lo que mide; un fichero más |
+| B | en la pasada MUTADA, correr sólo el test `cae` (la limpia sigue entera) | S3 | **~300 s** en los 7 medidos (estimado: tiempo local de cada `cae` escalado a CI); el resto de los 162, SIN MEDIR | pierde el recuento de colaterales (hoy informativo: «ninguno cambia un veredicto») y estrecha el diagnóstico de corte de SCRUM-1321 a un test |
+| C | partir el job en `k` trozos equilibrados por el coste medido de cada guard (`guards-<run>.tsv`), con `k = ⌈coste / 900 s⌉` (hoy 2) | S3 (argumento de trozo) + S5/fundador (`ci.yml`) | la mitad del reloj por trozo (~823 s + ~30 s de arranque) | un runner más por PR |
+| D | la comprobación que lo habría parado el 16-oct: el instrumento imprime `limpia × (mutaciones + 1)` por guard y avisa, NOMBRÁNDOLO, del que pase de 60 s | S3 | 0 s: no recorta, **nombra** | — |
+
+* **A + B ≈ 490 s**: 1.646 → ~1.150 s, y ~1.230 s con el runner más lento visto (2,82 s/mut). Con +10
+  mutaciones al día (~26 s/día), eso vuelve a los 1.800 s en **unas 3 semanas**. Por eso A y B solos no
+  bastan, y C lleva su `k` DERIVADO del coste: un número fijo de trozos es otro techo fijo.
+* **Lo que cubre los 128 cortes de jv-j3u es A (o C) YA:** sin A, un runner por encima de ~2,9 s por
+  mutación (1.800 / 622) se come el techo con N=622, y el más lento visto ya va a 2,82. Con A, ese mismo
+  runner queda en ~1.550 s. B y D no lo cubren solos.
+* ⚠️ Ni A ni B están medidos en CI: son estimaciones con tiempos de Windows. La de A está anclada al A/B
+  de arriba y a los logs de CI del 15 y del 17-oct (45 s → 285 s). La de B sólo a tiempos locales.
+
+**Discrepancia con la medición de jv-j3u, dicha y no resuelta:** él da `scrum813` de 11 a 26 mutaciones y
+de 29 a 284 s. En mis logs tiene 11 hasta el 2-oct, **22 desde el 6-oct** y 26 desde el 17-oct; el salto
+de coste por mutación es el del 16-oct en los dos. Puede ser la fecha de referencia de cada uno: no lo crucé.
+
+**Evidencias:** `docs/master/evidencias/SCRUM-935c/` — los instrumentos (`muestrear-runs.mjs`,
+`analizar.mjs`, `comparar.mjs`, `tests-lentos.mjs`, `cae-vs-lento.mjs`), la serie (`serie-104-runs.tsv`),
+cuatro perfiles por guard (20-sep, 15-oct, 17-oct y 21-oct) y las salidas. Los logs crudos NO entran:
+llevan secuencias de escape (A22) y caducan a los 90 días; los perfiles `.tsv` son lo que queda de ellos.
+
+A9: aviso → cicatriz J6 «Medí el coste de un fichero de test quitándole tests con un filtro de nombre, y el coste estaba en la carga del módulo: el filtro no lo toca» — no se pudo comprobar: es un hábito al aislar dónde se va el tiempo, y lo cazó medir la carga sola; un instrumento que lo impida tendría que ser el de S3 (propuesta D)
