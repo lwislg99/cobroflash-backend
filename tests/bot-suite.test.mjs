@@ -95,7 +95,19 @@ test('A8.4: suite completa del bot (webhook + dry-run)', { skip: !ENABLED && 'si
   const server = await new Promise((resolve) => { const s = app.listen(0, () => resolve(s)); });
   const base = `http://127.0.0.1:${server.address().port}`;
   const sign = (bodyStr) => 'sha256=' + crypto.createHmac('sha256', process.env.WHATSAPP_APP_SECRET).update(bodyStr).digest('hex');
+  // SCRUM-1509i: el webhook admite ENTRANTES_POR_HORA mensajes por número y hora y descarta el resto
+  // EN SILENCIO (SCRUM-1509h, firma del fundador en c.20141). Aquí se veía como un «NO MEDIDO» de
+  // buzón a medias, 20 pasos más abajo del sitio. Se cuenta cada wamid distinto por número (un
+  // reintento con el mismo wamid no gasta cupo), y la conversación que vaya a pasarse lo dice aquí.
+  const { ENTRANTES_POR_HORA } = await import('../dist/modules/whatsappBot/domain/limiteDeEntrantes.js');
+  const wamidsPorNumero = new Map();
   const post = (msg) => {
+    const vistos = wamidsPorNumero.get(msg.from) ?? new Set();
+    vistos.add(msg.id);
+    wamidsPorNumero.set(msg.from, vistos);
+    if (vistos.size > ENTRANTES_POR_HORA) {
+      throw new Error(`SCRUM-1509i: el entrante n.º ${vistos.size} desde ${msg.from}; el webhook admite ${ENTRANTES_POR_HORA} por número y hora y descartaría éste sin contestar. Escribe esta conversación desde otro cliente (telefonosDe), no subas el tope.`);
+    }
     const body = JSON.stringify(metaEnvelope(msg));
     return fetch(`${base}/webhooks/whatsapp`, {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Hub-Signature-256': sign(body) }, body,
@@ -126,6 +138,7 @@ test('A8.4: suite completa del bot (webhook + dry-run)', { skip: !ENABLED && 'si
 
   const MARKER = '(suite A8.4) fuga en la cocina de prueba';
   let savedMerchantId;
+  let savedPhones = [];
   let failed = false;
   try {
     // El merchant + cliente EFÍMEROS y TODO el flujo, dentro de withMerchant: su finally
@@ -145,16 +158,30 @@ test('A8.4: suite completa del bot (webhook + dry-run)', { skip: !ENABLED && 'si
       // Ambos comprueban que el PRO recibe el aviso, que el bot envía a merchant.whatsappPhone.
       // Sin él, ese envío no tiene destino y los dos fallan. NO es residuo del seed demo: es
       // cobertura de un comportamiento real del bot (avisar al pro). NO lo quites al limpiar
-      // fixtures. `pro` va DISTINTO de `cliente` (34601 vs 34600) porque 8f asierta
-      // `m.to !== TEST_PHONE`: si colisionaran, ese aserto pasaría SIN comprobar nada (verde falso
-      // justo donde crees tener cobertura). Ambos salen del fixture — misma fuente, SCRUM-180.
+      // fixtures. `pro` va DISTINTO de `cliente` (34601 vs 34600): si colisionaran, el aviso al pro
+      // y la respuesta al cliente serían indistinguibles. Todos salen del fixture — misma fuente, SCRUM-180.
+      // SCRUM-1509i: los asertos del aviso al pro miran `m.to === PRO_PHONE`, no `!== TEST_PHONE`. Con
+      // tres clientes, un mensaje tardío al cliente ANTERIOR también es «distinto de TEST_PHONE», y el
+      // aserto pasaría sin que el pro hubiera recibido nada.
       const PRO_PHONE = phones.pro;
       await prisma.merchant.update({ where: { id: merchant.id }, data: { whatsappPhone: PRO_PHONE } });
 
-      const customer = await prisma.customer.create({
+      await prisma.customer.create({
         data: { merchantId: MERCHANT_ID, name: 'José Luis Martín QA', phone: TEST_PHONE },
         select: { id: true },
       });
+      // SCRUM-1509i: tres conversaciones, tres clientes. Pasos 1-7 desde `cliente`, 8-8h desde
+      // `segundoCliente` y 9-11 desde `tercerCliente`: juntas eran 26 entrantes desde un número, y el
+      // webhook admite 20 por hora. Cada cliente es un `customer` del merchant, como el primero.
+      await prisma.customer.create({
+        data: { merchantId: MERCHANT_ID, name: 'Marta Ruiz QA', phone: phones.segundoCliente },
+        select: { id: true },
+      });
+      const customer = await prisma.customer.create({
+        data: { merchantId: MERCHANT_ID, name: 'Andrés Gil QA', phone: phones.tercerCliente },
+        select: { id: true },
+      });
+      savedPhones = [phones.cliente, phones.segundoCliente, phones.tercerCliente];
 
       // ── 1. "hola" → menú (lista con las 4 opciones) ─────────────────────────
       await post(textMsg('hola'));
@@ -225,6 +252,7 @@ test('A8.4: suite completa del bot (webhook + dry-run)', { skip: !ENABLED && 'si
 
       // ── 8. Pedir presupuesto: validación + confirmación (A18) → QuoteRequest ─
       await settle(); // el paso 7 remata con menú — que no pise el last() de aquí
+      TEST_PHONE = phones.segundoCliente; // SCRUM-1509i: segunda conversación, otro cliente
       len = outbox.length;
       await post(listMsg('bot_request'));
       await waitOutbox(len + 1);
@@ -280,10 +308,10 @@ test('A8.4: suite completa del bot (webhook + dry-run)', { skip: !ENABLED && 'si
       // SCRUM-876f: el aviso al profesional sale DESPUÉS del «¡Listo!» y sin esperarlo. Mirarlo en
       // cuanto llegaba el primer mensaje lo decidía el reloj (medido dentro de un tramo de la
       // tanda: cayó aquí). Se espera a la condición; si el techo vence, no hay veredicto.
-      await esperarCondicion(() => outbox.slice(len).some((m) => m.to !== TEST_PHONE), {
+      await esperarCondicion(() => outbox.slice(len).some((m) => m.to === PRO_PHONE), {
         techoMs: 6000, pasoMs: 100, que: 'el aviso al profesional (8f)',
       });
-      assert.ok(outbox.slice(len).some((m) => m.to !== TEST_PHONE), '8f aviso al PRO enviado');
+      assert.ok(outbox.slice(len).some((m) => m.to === PRO_PHONE), '8f aviso al PRO enviado');
       log('8 pedir presupuesto (validación + confirmación) → QuoteRequest', true);
 
       // ── 8.2 (FASE 3 · MEDIA-1): foto entrante → se adjunta a la solicitud recién
@@ -324,11 +352,12 @@ test('A8.4: suite completa del bot (webhook + dry-run)', { skip: !ENABLED && 'si
 
       // ── 9. Handoff (botón) + registro A8.3 ──────────────────────────────────
       await settle(); // la solicitud remata avisando al pro
+      TEST_PHONE = phones.tercerCliente; // SCRUM-1509i: tercera conversación, otro cliente
       len = outbox.length;
       await post(listMsg('bot_human'));
       await waitOutbox(len + 2);
       assert.ok(outbox.slice(len).some((m) => /le he avisado/i.test(m.text || '')), 'expectativa al cliente');
-      assert.ok(outbox.slice(len).some((m) => m.to !== TEST_PHONE && /quiere hablar contigo/i.test(m.text || '')), 'aviso al pro con contexto');
+      assert.ok(outbox.slice(len).some((m) => m.to === PRO_PHONE && /quiere hablar contigo/i.test(m.text || '')), 'aviso al pro con contexto');
       // SCRUM-1543: el buzón y la sesión son dos escrituras, y ver la primera no dice que la segunda
       // haya llegado. Leerla al instante cayó 4 veces en 65 logs de CI con `'menu' !== 'handoff'`.
       // Se espera a la condición; si el techo vence, no hay veredicto (y si el bot nunca escribe
@@ -368,7 +397,7 @@ test('A8.4: suite completa del bot (webhook + dry-run)', { skip: !ENABLED && 'si
       // SCRUM-876f: el aviso de la baja al profesional sale detrás y sin esperarlo, y deja su fila
       // en `whatsAppMessage`. Si la suite acaba antes de que llegue, la limpieza puede adelantarse
       // a esa fila. Se espera el aviso y a que el buzón se quede quieto.
-      await esperarCondicion(() => outbox.slice(len).some((m) => m.to !== TEST_PHONE && /se ha dado de baja/i.test(m.text || '')), {
+      await esperarCondicion(() => outbox.slice(len).some((m) => m.to === PRO_PHONE && /se ha dado de baja/i.test(m.text || '')), {
         techoMs: 6000, pasoMs: 100, que: 'el aviso de la baja al profesional (11)',
       });
       await settle();
@@ -411,9 +440,11 @@ test('A8.4: suite completa del bot (webhook + dry-run)', { skip: !ENABLED && 'si
       if (waLeft > 0) console.error(`🔴 SCRUM-159 LIMPIEZA INCOMPLETA: ${waLeft} whatsAppMessage del merchant efímero ${savedMerchantId} sobrevivieron (sin FK → fallo mudo) — contaminarían el proceso siguiente del runner.`);
       if (attLeft > 0) console.error(`🔴 SCRUM-159 LIMPIEZA INCOMPLETA: ${attLeft} attachment del merchant efímero ${savedMerchantId} sobrevivieron.`);
     }
-    if (TEST_PHONE) {
-      sessLeft = (await countOrNull('botSession', () => prisma.botSession.count({ where: { phone: TEST_PHONE } }))) ?? 0;
-      if (sessLeft > 0) console.error(`🔴 SCRUM-174 LIMPIEZA INCOMPLETA: ${sessLeft} botSession con phone ${TEST_PHONE} sobrevivieron — el barrido por phone del fixture (withMerchant) no las alcanzó.`);
+    // SCRUM-1509i: las sesiones de los TRES clientes, no sólo la del último que escribió.
+    const telefonosClientes = savedPhones.length ? savedPhones : (TEST_PHONE ? [TEST_PHONE] : []);
+    if (telefonosClientes.length) {
+      sessLeft = (await countOrNull('botSession', () => prisma.botSession.count({ where: { phone: { in: telefonosClientes } } }))) ?? 0;
+      if (sessLeft > 0) console.error(`🔴 SCRUM-174 LIMPIEZA INCOMPLETA: ${sessLeft} botSession con phone ${telefonosClientes.join('/')} sobrevivieron — el barrido por phone del fixture (withMerchant) no las alcanzó.`);
     }
     // Conteo POSITIVO, SIEMPRE (no solo si >0): ver el conteo, no la ausencia de error. Un 0
     // silencioso se lee igual que "la contraprueba no corrió".
