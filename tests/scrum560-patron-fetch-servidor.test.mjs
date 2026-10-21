@@ -72,6 +72,34 @@ const CON_EL_PATRON_YA = [
   'scrum90-pay-bank-mp-token.test.mjs',
   'scrum92-login-operario.test.mjs',
   'tenancy-permisos.test.mjs',
+  // ── SCRUM-1218b (21-oct-2026): NO son ficheros nuevos con el patrón: son los que el censo NO VEÍA.
+  // 22 salieron al arreglar sus dos ciegos (el `listen(0, host, cb)` y el `fetch` a través de una
+  // llamada); `scrum893` y `scrum910` se migraron a `node:http` en el mismo commit y no están. La lista
+  // se RECALCULA con el censo, no se elige (regla 41). Quedan, y el motivo de cada grupo está en
+  // `docs/master/SCRUM-1218.md` (tramo 1218b):
+  //   · del equipo de Luis (se le avisa, no se tocan): scrum1188d, scrum1489, scrum912;
+  //   · de J2, sólo corren con `LIBRO_PG_URL` (Postgres desechable): scrum1346, scrum1397, scrum1403;
+  //   · el resto, gateados por `QA_DB_TEST` o `BOT_SUITE_TEST`: sus veredictos sólo se miden en staging.
+  'bot-suite.test.mjs',
+  'scrum1188d-tiers-tambien-se-vacia.test.mjs',
+  'scrum120-patch-job-roles.test.mjs',
+  'scrum1346-el-tecnico-ve-documentos-ajenos.test.mjs',
+  'scrum1397-el-tecnico-ve-sus-facturas.test.mjs',
+  'scrum1403-el-tecnico-y-las-otras-puertas.test.mjs',
+  'scrum148-filtro-por-miembro.test.mjs',
+  'scrum1489-la-busqueda-recorta-al-tecnico.test.mjs',
+  'scrum17-recapitulativa.test.mjs',
+  'scrum22-operario-readpath.test.mjs',
+  'scrum24-operarios-metrics.test.mjs',
+  'scrum25-export-zip.test.mjs',
+  'scrum25-exports.test.mjs',
+  'scrum47-enviar-albaran-wa.test.mjs',
+  'scrum50-bot-albaranes.test.mjs',
+  'scrum66-tipo-operacion.test.mjs',
+  'scrum814-carrera-del-tramo.gated.test.mjs',
+  'scrum912-leer-ticket-gasto.test.mjs',
+  'scrum94-register-teammember.test.mjs',
+  'scrum992-partes-recortan-por-rol.test.mjs',
 ];
 
 /** La salida, que va en todos los mensajes: un guard que no la dice acaba en una lista de excepciones. */
