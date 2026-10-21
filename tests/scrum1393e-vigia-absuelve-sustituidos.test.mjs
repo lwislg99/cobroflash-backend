@@ -134,7 +134,7 @@ test('SCRUM-1393e · la bajada por la línea juzga los sustituidos de debajo de 
   // también para en un CIEGO que NO es sustitución (cancelado con trabajo): debajo ya no son suyos
   const conTrabajo = { [B]: SUSTITUIDO(B), [C]: CANCELADO_CON_JOBS(C), [D]: SUSTITUIDO(D) };
   const otros = [];
-  await bajarPorSustituidos([VERDE(A)], linea, async (sha) => { otros.push(sha); return conTrabajo[sha]; });
+  await bajarPorSustituidos([VERDE(A)], linea, async (sha) => { otros.push(sha); return conTrabajo[sha] ?? SUSTITUIDO(sha); });
   assert.deepEqual(otros, [B, C], 'para en C y no pide D');
   // un commit que no está en la línea no hace bajar nada
   const nada = [];
