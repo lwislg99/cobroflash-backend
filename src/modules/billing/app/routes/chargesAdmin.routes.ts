@@ -10,6 +10,7 @@ import { BASE_URL } from '../../../../core/config/env';
 import { internalHeaders } from '../../../../core/http/internalAuth';
 import { isFlagEnabled } from '../../../../core/flags';
 import { resolverFechaDeCobro } from '../../domain/fechaDeCobro'; // SCRUM-397
+import { cabeEnColumnaInt } from '../../../../core/validation/enteroDeColumna'; // SCRUM-1456c
 import { datosDeCobroPagado } from '../../domain/instanteDeCobro'; // SCRUM-397 (SCRUM-1107: mismo generador)
 import { zonaDelMerchant, diaExiste, inicioDelDiaEn } from '../../../../core/zonaDelMerchant'; // SCRUM-1093 (SCRUM-1108b: el día de liberación)
 import { envioDelDocumento } from '../../domain/envioDelDocumento'; // SCRUM-885
@@ -31,7 +32,7 @@ const router = Router();
 router.post('/:id/confirm-bizum', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     // Multi-tenant: el cobro debe ser del merchant de la sesión
     // SCRUM-860 (trinquete del select) + SCRUM-1093: `select`, no `include` — antes bastaba con
@@ -114,7 +115,7 @@ router.post('/:id/confirm-bizum', async (req, res) => {
 router.post('/:id/garantia', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     const charge = await prisma.charge.findFirst({
       where: { id, merchantId: req.merchantId }, // regla 2
@@ -164,7 +165,7 @@ router.post('/:id/garantia', requireRole('admin'), async (req, res) => {
 router.post('/:id/garantia/liberar', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     const original = await prisma.charge.findFirst({
       where: { id, merchantId: req.merchantId }, // regla 2
