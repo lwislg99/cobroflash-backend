@@ -118,7 +118,7 @@ incluido. Se rehízo con `git restore --source=<sha>`, que no trunca.
 
 **Medido contra:** `origin/main` = `99654a927d3b34893be77c82032c15efc534ba50` · 2026-10-21T13:26:46Z (hora de GitHub al escribir: 2026-10-21T13:59:42Z; la rama se puso al día después con `0adcc1b2ff90af4aa0f0d43ef710da4c8d65a163`, y su `public/index.html` es byte a byte el que se midió como «antes»)
 
-A9: aviso → cicatriz J3 «Tomé por cifra una emulación sin su control» — no se pudo comprobar: el banco corre a mano fuera de la tanda; lo que queda es que `banco-a.mjs` lleva la fila «antes» que tiene que reproducir una cifra ya medida (0,043 de c.20169) y se lee antes que las de «después»
+A9: aviso → cicatriz J3 «Tomé por cifra una emulación sin su control: dos sesiones en el mismo banco, y la segunda sacó CLS 0 de una fuente que retrasaba el primer pintado.» — no se pudo comprobar: el banco corre a mano fuera de la tanda; lo que queda es que `banco-a.mjs` lleva la fila «antes» que tiene que reproducir una cifra ya medida (0,043 de c.20169) y se lee antes que las de «después»
 
 **Skill UI:** cargada · `yaqu-premium-ui`: sólo la landing (`public/index.html`), cero texto, cero tokens nuevos, cero componentes; con Inter cargada no cambia ninguna caja.
 
