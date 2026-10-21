@@ -588,7 +588,8 @@ export function pendientesDelIssue(previos = '') {
  */
 export function accionDelIssue({ veredictos, ahora, origen, urlDelRun, punta, linea = null }, { previos = '', estado = 'ninguno' } = {}) {
   const { absueltos, enEspera } = absolucionDeSustituidos(veredictos, linea);
-  const callados = new Set([...absueltos.keys(), ...enEspera]);
+  // `contexto` (SCRUM-1393e): la punta juzgada sólo para decidir; no se avisa por ella aquí.
+  const callados = new Set([...absueltos.keys(), ...enEspera, ...veredictos.filter((v) => v.contexto).map((v) => v.sha)]);
   const aviso = cuerpoDelAviso({ veredictos, ahora, origen, urlDelRun, callados }, previos);
   const deLaPunta = veredictos.find((v) => v.sha === punta);
   const juzgados = new Set(veredictos.filter((v) => v.estado === 'VERDE' || v.estado === 'ROJO').map((v) => v.sha));
@@ -747,6 +748,14 @@ async function modoPorCommit(args, opcion) {
     return veredictos.at(-1);
   };
   for (const sha of [...new Set(shas)]) await juzgar(sha);
+  // SCRUM-1393e · `--contexto <sha>`: la punta, juzgada para decidir el cierre y la espera, pero sin
+  // aviso propio si no venía en la lista (la juzga su propio CI, y la red diaria). Medido el 21-oct:
+  // un merge de las 13:56:26Z seguía SIN run del CI a las 14:04Z; avisarlo sería un CIEGO falso.
+  const contexto = opcion('--contexto');
+  if (contexto && !veredictos.some((v) => v.sha === contexto)) {
+    if (!/^[0-9a-f]{40}$/.test(contexto)) return ciego(`el contexto va con su sha COMPLETO (40 hex); llegó «${contexto}»`);
+    (await juzgar(contexto)).contexto = true;
+  }
 
   // SCRUM-1393e: desde cada VERDE o CORRIENDO que esté en la `linea`, se baja por sus padres
   // juzgando mientras salgan CIEGO «sustituido»: son los commits a los que ese run sustituyó, y

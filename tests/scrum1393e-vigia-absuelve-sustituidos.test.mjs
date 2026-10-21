@@ -102,6 +102,18 @@ test('SCRUM-1393e · SIEMBRA: con el sustituto aún CORRIENDO, ESPERA — ni rea
   assert.equal(absolucionDeSustituidos([SUSTITUIDO(V), VERDE(W), CORRIENDO(P)], linea).absueltos.get(V), W);
 });
 
+test('SCRUM-1393e · SIEMBRA: la punta de CONTEXTO sin run no se avisa, pero tampoco deja cerrar', () => {
+  const sinRun = { ...juez(P, null, null), contexto: true };
+  assert.equal(sinRun.estado, 'CIEGO');
+  const a = accionDelIssue(pasada([VERDE(W), sinRun], [P, W]), { previos: marcaDeCierre(W), estado: 'cerrado' });
+  assert.deepEqual(a.pasos, [], a.motivo);
+  assert.match(a.motivo, /la punta .* sale CIEGO/);
+  // la misma punta, sin la marca de contexto (venía en la lista), sí se avisa
+  assert.deepEqual(accionDelIssue(pasada([VERDE(W), juez(P, null, null)], [P, W]), { previos: marcaDeCierre(W), estado: 'cerrado' }).pasos, ['reabrir', 'comentar']);
+  // y una punta de contexto VERDE cierra como cualquier otra
+  assert.deepEqual(accionDelIssue(pasada([SUSTITUIDO(V), { ...VERDE(P), contexto: true }]), { estado: 'abierto' }).pasos, ['comentar', 'cerrar']);
+});
+
 test('SCRUM-1393e · el verde que absuelve es el MÁS CERCANO de los que lo contienen', () => {
   const X = 'd'.repeat(40);
   const { absueltos } = absolucionDeSustituidos([VERDE(P), VERDE(X), SUSTITUIDO(V)], [P, X, V]);
@@ -119,6 +131,11 @@ test('SCRUM-1393e · la bajada por la línea juzga los sustituidos de debajo de 
   const a = accionDelIssue(pasada(veredictos, linea, A), { estado: 'abierto' });
   assert.deepEqual(a.pasos, ['comentar', 'cerrar']);
   assert.equal((a.cuerpo.match(/absuelto por el verde de/g) ?? []).length, 2);
+  // también para en un CIEGO que NO es sustitución (cancelado con trabajo): debajo ya no son suyos
+  const conTrabajo = { [B]: SUSTITUIDO(B), [C]: CANCELADO_CON_JOBS(C), [D]: SUSTITUIDO(D) };
+  const otros = [];
+  await bajarPorSustituidos([VERDE(A)], linea, async (sha) => { otros.push(sha); return conTrabajo[sha]; });
+  assert.deepEqual(otros, [B, C], 'para en C y no pide D');
   // un commit que no está en la línea no hace bajar nada
   const nada = [];
   await bajarPorSustituidos([VERDE(W)], linea, async (sha) => { nada.push(sha); return SUSTITUIDO(sha); });
@@ -151,9 +168,8 @@ test('SCRUM-1393e · el workflow lee el Issue ANTES de juzgar y le da al motor l
   const avisar = yml.indexOf('- name: Avisar o cerrar en el Issue');
   assert.ok(leer > 0 && leer < juzgar && juzgar < avisar, `orden de los pasos: ${leer} ${juzgar} ${avisar}`);
   assert.match(yml, /git rev-list --first-parent "\$PUNTA" > linea\.txt/);
-  assert.match(yml, /echo "\$PUNTA" >> commits\.txt/);
   assert.match(yml, /--pendientes previos\.txt >> commits\.txt/);
-  assert.match(yml, /--commits commits\.txt --linea linea\.txt --json vigia\.json/);
+  assert.match(yml, /--commits commits\.txt --contexto "\$PUNTA" --linea linea\.txt --json vigia\.json/);
   assert.match(yml, /--accion-del-issue vigia\.json --punta "\$PUNTA" --linea linea\.txt/);
   for (const v of ['NUM', 'ESTADO', 'PUNTA']) assert.match(yml.slice(avisar), new RegExp(`^\\s+${v}: \\$\\{\\{ steps\\.(issue|juez)\\.outputs\\.`, 'm'), `el paso de avisar recibe ${v}`);
 });

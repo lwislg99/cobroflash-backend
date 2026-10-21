@@ -120,10 +120,10 @@ jobs:
             DESDE="$(node scripts/vigia-silencio-de-main.mjs --desde-de-la-red)"
             git log --first-parent --format=%H --since="$DESDE" origin/main > commits.txt
           fi
-          # SCRUM-1393e: más la punta y los pendientes del Issue, juzgados otra vez con el dato de GitHub.
-          echo "$PUNTA" >> commits.txt
+          # SCRUM-1393e: más los pendientes del Issue, juzgados otra vez con el dato de GitHub, y la punta
+          # como CONTEXTO (decide el cierre y la espera; no avisa por ella si no venía en la lista).
           node scripts/vigia-silencio-de-main.mjs --pendientes previos.txt >> commits.txt
-          node scripts/vigia-silencio-de-main.mjs --commits commits.txt --linea linea.txt --json vigia.json
+          node scripts/vigia-silencio-de-main.mjs --commits commits.txt --contexto "$PUNTA" --linea linea.txt --json vigia.json
           codigo=$?
           echo "salida=$codigo" >> "$GITHUB_OUTPUT"
           echo "- salida del juez: **$codigo** (0 nada · 1 rojo o CIEGO · 2 el vigía no supo mirar)" >> "$GITHUB_STEP_SUMMARY"
