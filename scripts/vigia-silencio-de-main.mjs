@@ -518,6 +518,67 @@ export function cuerpoDelAviso({ veredictos, ahora, origen, urlDelRun }, previos
   return cuerpo;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1393d · CUÁNDO SE CIERRA EL ISSUE, Y CUÁNDO SE REABRE
+//
+// Se cierra cuando la pasada juzga la PUNTA de `main` VERDE, sin un CIEGO ni un SIN-LEER en la
+// pasada, y sin un CIEGO pendiente en el Issue. Pendiente = un commit cuya ÚLTIMA marca desde el
+// último cierre es CIEGO o SIN-LEER, y que esta pasada no ha juzgado VERDE o ROJO. Un CIEGO no lo
+// absuelve un verde POSTERIOR (decisión del orquestador, sin «lectura generosa»): nadie probó ese
+// commit, y se sirvió igual. Un ROJO sí: un rojo se arregla con otro commit, y ése es el verde.
+// Si después vuelve un ROJO o un CIEGO con el Issue cerrado, se REABRE el mismo (no otro).
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+
+/** La marca de un cierre: los pendientes se cuentan desde la última. */
+export const marcaDeCierre = (sha) => `<!-- vigia-de-main:cerrado:${sha} -->`;
+
+/** Los commits que el Issue tiene pendientes (CIEGO o SIN-LEER en su última marca desde el último cierre). */
+export function pendientesDelIssue(previos = '') {
+  const texto = String(previos);
+  const corte = texto.lastIndexOf('<!-- vigia-de-main:cerrado:');
+  const ultima = new Map();
+  for (const m of texto.slice(corte === -1 ? 0 : corte).matchAll(/<!-- vigia-de-main:([^:\s]+):([A-Z-]+) -->/g)) {
+    if (m[1] !== 'cerrado') ultima.set(m[1], m[2]);
+  }
+  return [...ultima].filter(([, estado]) => estado === 'CIEGO' || estado === 'SIN-LEER').map(([sha]) => sha);
+}
+
+/**
+ * QUÉ HACER CON EL ISSUE, PURO. `estado` es el del Issue del vigía: 'abierto', 'cerrado' o
+ * 'ninguno'. Devuelve `{ pasos, cuerpo, motivo }`; `pasos` es una lista de 'crear', 'reabrir',
+ * 'comentar' y 'cerrar', en ese orden de ejecución, y vacía si no hay nada que hacer.
+ */
+export function accionDelIssue({ veredictos, ahora, origen, urlDelRun, punta }, { previos = '', estado = 'ninguno' } = {}) {
+  const aviso = cuerpoDelAviso({ veredictos, ahora, origen, urlDelRun }, previos);
+  const deLaPunta = veredictos.find((v) => v.sha === punta);
+  const juzgados = new Set(veredictos.filter((v) => v.estado === 'VERDE' || v.estado === 'ROJO').map((v) => v.sha));
+  const pendientes = pendientesDelIssue(`${previos}\n${aviso}`).filter((s) => !juzgados.has(s));
+  const ciegos = veredictos.filter((v) => v.estado === 'CIEGO' || v.estado === 'SIN-LEER');
+  let motivo = null;
+  if (!punta) motivo = 'no sé cuál es la punta de main';
+  else if (!deLaPunta) motivo = `la punta ${punta.slice(0, 12)} no está en esta pasada`;
+  else if (deLaPunta.estado !== 'VERDE') motivo = `la punta ${punta.slice(0, 12)} sale ${deLaPunta.estado}`;
+  else if (ciegos.length) motivo = `${ciegos.length} commit(s) CIEGO o SIN-LEER en esta pasada`;
+  else if (pendientes.length) motivo = `${pendientes.length} CIEGO pendiente(s) en el Issue: ${pendientes.map((s) => s.slice(0, 12)).join(', ')}`;
+
+  if (!motivo) {
+    if (estado !== 'abierto') return { pasos: [], cuerpo: '', motivo: 'main verificado y ningún Issue abierto: nada que decir' };
+    const recuento = informeDeCommits(veredictos, { ahora, origen }).split('\n').at(-2);
+    const cierre = [
+      `**Vigía de main · CERRADO** · ${ahora} · ${origen}`, '',
+      `La punta de \`main\`, \`${punta.slice(0, 12)}\`, sale **VERDE** (${deLaPunta.motivo}), sin ningún CIEGO pendiente.`,
+      `Población de esta pasada: ${recuento}.`, `Pasada: ${urlDelRun} ${marcaDeCierre(punta)}`,
+    ].join('\n');
+    const cuerpo = aviso ? `${aviso}\n\n---\n\n${cierre}` : cierre;
+    if (/@claude/i.test(cuerpo)) throw new Error('el cierre del vigía de main contiene la mención que despierta a Claude');
+    return { pasos: ['comentar', 'cerrar'], cuerpo, motivo: `se cierra: punta ${punta.slice(0, 12)} VERDE` };
+  }
+  if (!aviso) return { pasos: [], cuerpo: '', motivo: `sin nada nuevo que avisar; no se cierra: ${motivo}` };
+  const pasos = { ninguno: ['crear'], cerrado: ['reabrir', 'comentar'], abierto: ['comentar'] }[estado];
+  if (!pasos) throw new Error(`estado del Issue desconocido: «${estado}»`);
+  return { pasos, cuerpo: aviso, motivo: `se avisa; no se cierra: ${motivo}` };
+}
+
 // ── LA LECTURA DE GITHUB (sólo aquí hay red) ─────────────────────────────────────────────────
 // Qué `gh` se usa NO se decide mirando en qué máquina corre: se prueban en orden los de `RUTAS_GH`
 // (los mismos del ancla, SCRUM-360), aquí y en CI. Uno que no existe (ENOENT) deja paso al
@@ -634,6 +695,17 @@ async function principal() {
   const args = process.argv.slice(2);
   const opcion = (n) => { const i = args.indexOf(n); return i === -1 ? null : args[i + 1]; };
   if (args.includes('--desde-de-la-red')) { console.log(desdeDeLaRed()); return SALIDA_OK; }
+  // SCRUM-1393d · `--accion-del-issue <vigia.json> --punta <sha> --estado-issue <abierto|cerrado|ninguno>
+  // --previos <fichero> --cuerpo <fichero>`: escribe el cuerpo y dice los pasos en `PASOS=`. Sin red.
+  if (args.includes('--accion-del-issue')) {
+    const j = JSON.parse(readFileSync(opcion('--accion-del-issue'), 'utf8'));
+    const previos = opcion('--previos') ? readFileSync(opcion('--previos'), 'utf8') : '';
+    const a = accionDelIssue({ ...j, urlDelRun: process.env.URL_RUN ?? null, punta: opcion('--punta') }, { previos, estado: opcion('--estado-issue') });
+    writeFileSync(opcion('--cuerpo'), a.cuerpo);
+    console.log(a.motivo);
+    console.log(`PASOS=${a.pasos.join(',')}`);
+    return SALIDA_OK;
+  }
   if (args.includes('--commit') || args.includes('--commits')) return modoPorCommit(args, opcion);
 
   const suelo = sueloDelVigia();
