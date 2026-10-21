@@ -460,3 +460,181 @@ con dos ramas.
 Detalle completo, batería de tests y el bloqueo de `SCRUM-525d` (3 citas de línea que este mismo
 cambio desplazó) resuelto junto a esto: `docs/master/SCRUM-1051.md`, PASO 5. Rama
 `scrum-1051-isp-obra-subcontrata` (PR #1715, en borrador).
+
+---
+
+# SCRUM-524c — Las cuatro preguntas de ④ para el asesor, redactadas (no están en `PREGUNTAS_ASESOR.md`)
+
+*21-oct-2026 · rama `scrum-524c-preguntas-asesor` · puesto J5 (jv-j5m)*
+
+**Medido contra:** `origin/main` = `cf25030c8e94560725075313227e70177868e0f2` · 2026-10-21T13:54:49Z
+
+> **Carril.** `docs/legal/` es de J4 (`docs/equipo/dos-equipos.md` §3: «J4 propone · firma un jefe»), y
+> SCRUM-1264 se declara en Jira el sitio único de las preguntas al asesor. Por eso las preguntas viven
+> aquí, en el registro de este ticket, y **no** en `docs/legal/PREGUNTAS_ASESOR.md`. Lo decidió el
+> orquestador del equipo de Javier (`cobroflash-backend-5f`) por mensaje, el 21-oct-2026: él las lleva
+> a SCRUM-1264 cuando vuelva Jira, y J4 las pasa al documento. **Documento interno: no hay aquí ninguna
+> frase para un cliente** (reglas 26/30/39). Cero líneas de `src/`; el camino de emisión, sólo **leído**.
+>
+> **Jira no se ha leído en esta tanda:** el MCP de Atlassian no expuso herramientas (4 búsquedas, 0).
+> El PASO 0 contra SCRUM-1264 está **sin hacer**.
+
+## ① PASO 0 · ¿ya estaban preguntadas, con otra redacción?
+
+Población: `docs/legal/PREGUNTAS_ASESOR.md` en `origin/main`, **113.929 B, 1.410 líneas, leído en
+fichero** (no recortado). Buscado por número **y por contenido** (`1242|4141|1287|SistemaInformatico|
+suspensi|escap|&quot;|IdSistema|NombreSistema|NumeroInstalacion|TipoUsoPosible|DescripcionOperacion|
+sistema inform`).
+
+| pregunta de ④ | en `PREGUNTAS_ASESOR.md` | veredicto |
+| --- | --- | --- |
+| 1 · 1242 | 0 apariciones; nada sobre «alta» o «registro» del sistema ante la AEAT | **falta** |
+| 2 · 4141 | 0 apariciones; nada sobre suspensión | **falta** |
+| 3 · 1287 y el escape | 0 apariciones de `1287`, `escap` o `&quot;` | **falta** |
+| 4 · `SistemaInformatico` | **sí, en parte**: P19 (¿dos personas físicas como productor?) y la respuesta B2 (quién es el productor) | **se reduce** a lo que P19/B2 no preguntan (P4 abajo) |
+
+Control positivo del mismo barrido: `SistemaInformatico` **sí** sale (P14 (C), P19, B2). El patrón ve el
+fichero. Y en `src/`: los ficheros que tratan `1242` o `4141` son **0** (control: `1177`, 4 ficheros;
+`AceptadoConErrores`, 3).
+
+**La premisa de ④.4 ya estaba corregida por 524b** (②, «una premisa falsa»): los valores del bloque
+**sí** viven en el código, en `src/modules/fiscal/verifactu/productor.ts` (SCRUM-247). Medido hoy, el
+nombre del productor ya **no** empieza por `<` (el hallazgo ⑤.1 de 524b no se reproduce en el árbol).
+Quién es el productor lo pregunta P19. Lo que queda sin preguntar son los dos subpuntos de P4.
+
+## ② Las preguntas, en el formato de `PREGUNTAS_ASESOR.md`
+
+Fuente común de los literales AEAT: `docs/legal/fuentes/aeat-errores.properties`. Es el
+`errores.properties` oficial bajado el **29-jul-2026** de
+`prewww2.aeat.es/…/tikeV1.0/cont/ws/errores.properties` (`docs/legal/SEMAFORO_CALIBRACION.md` §0).
+Su SHA-256 es `152fec33…`, el mismo hoy en el repo. ⚠️ El de **producción** (`www2.agenciatributaria.gob.es`,
+bajado el 28-sep-2026, SCRUM-1211 A2) tiene **otro** SHA-256 (`06519ceb…`). **No he comparado si cambian
+estos cuatro códigos entre las dos copias.**
+
+### P-524.1 · `1242` «No existe el sistema informático»: ¿hay que dar de ALTA el sistema ante la AEAT? (bloquea el tratamiento de la respuesta en la remisión, S1-D)
+
+**Literal AEAT (1xxx, rechaza la factura):** «No existe el sistema informático.» Su vecino, `1241`, es
+«Error técnico al obtener el SistemaInformatico».
+
+**La discrepancia, dentro de nuestra propia documentación:**
+- `docs/legal/SEMAFORO_CALIBRACION.md` (29-jul-2026), en la fila de `1242` del bloque
+  `SistemaInformatico`, dice que salta **«hasta que el SIF esté dado de alta»**.
+- La skill `verifactu` §6 (actualizada el 19-ago-2026) dice que la declaración responsable **«NO se
+  presenta ante la AEAT»**: es un requisito del propio programa (art. 13 RRSIF + art. 15 de la Orden).
+- SCRUM-524 ④.1 lo planteó como «¿se refiere a la consulta y no al alta?».
+
+Las dos premisas no pueden ser ciertas a la vez **si «alta» significa presentar algo antes del primer
+envío**.
+
+**1)** ¿Existe algún trámite (alta, comunicación o registro del sistema informático) que el productor o
+el obligado tengan que hacer ante la AEAT **antes** de remitir el primer registro? Si existe, ¿cuál y
+quién lo hace?
+
+**2)** Si no existe: ¿cómo «conoce» la AEAT el sistema para poder responder `1242`? ¿Lo da de alta el
+primer envío correcto con ese `NIF` + `IdSistemaInformatico` + `Version`? ¿Y un cambio de `Version` o
+de productor (P19) puede hacer saltar `1242` en el siguiente envío?
+
+**3)** Ante un `1242`, ¿se reintenta igual el mismo registro, o se para la remisión de ese sistema
+hasta corregir algo? ¿Y qué se corrige?
+
+**Lo que NO sabemos:** de dónde sacó «dado de alta» `SEMAFORO_CALIBRACION.md`. La fila no cita
+artículo, y no lo he rastreado. **El articulado no está en el repositorio**: `PREGUNTAS_ASESOR.md` (E)
+dice que en `docs/legal/fuentes/` no hay copia ni del RD 1007/2023 ni de la Orden HAC/1177/2024.
+
+---
+
+### P-524.2 · `4141` suspensión temporal de acceso: ¿cómo se degrada sin perder registros? (bloquea el diseño de la cola de remisión, S1-D / ROAD-29)
+
+**Literal AEAT (4xxx, rechaza el ENVÍO COMPLETO):** «Le informamos que su acceso al sistema VERIFACTU
+ha sido suspendido temporalmente para realizar cualquier solicitud. Para resolver este inconveniente,
+le solicitamos que se ponga en contacto con nuestro equipo de soporte a través del buzón de correo
+electrónico verifactu@correo.aeat.es, donde le atenderán con la mayor brevedad posible.»
+
+**Por qué no basta la cola de reintentos:** según SCRUM-524 ④.2, el reintento periódico que pide la
+norma ante una **caída del servicio** (art. 16.4, «≥ 1/hora»; cita de 524, **no releída por mí en el
+BOE**) no resuelve una **suspensión**. El literal no promete fecha de fin y manda escribir a un buzón,
+así que reintentar a ciegas contra ella puede agravarla.
+
+**1)** Una suspensión, ¿a quién afecta: al **certificado** que remite (el de YaQu como colaborador
+social o apoderado, apartado A de `PREGUNTAS_ASESOR.md`), al **obligado** o al **sistema** (`IdSistemaInformatico`)? Si es
+al certificado de YaQu, una sola suspensión para la remisión de **todos** los comercios.
+
+**2)** Mientras dura, ¿cuenta como la imposibilidad de remitir por causas ajenas que contempla la
+norma? ¿O el obligado incumple por cada registro que no llega? ¿Hay plazo máximo para remitir lo
+acumulado?
+
+**3)** ¿Hay que avisar a algún sitio, además del buzón? ¿Y debe enterarse el **obligado** (el
+profesional), dado que la responsabilidad del cumplimiento sigue siendo suya (art. 6 RRSIF, citado en
+la respuesta A de `PREGUNTAS_ASESOR.md`)?
+
+**Lo que NO sabemos:** qué provoca una suspensión. El literal no lo dice y no hay otra fuente en el
+repositorio. Tampoco cuánto puede durar.
+
+---
+
+### P-524.3 · `1287` y el escape XML: ¿la AEAT valida el texto escapado o el desescapado? (bloquea si hace falta sanear en la ENTRADA los campos de texto libre)
+
+**Literal AEAT (1xxx, rechaza la factura):** «El valor del campo %s contiene carácteres no validos (<,
+>, ", ', =).» (sic). El `%s` dice que se aplica **a cualquier campo**, no sólo a la serie.
+
+**Lo que hace hoy el código, leído (no modificado):** el texto que escribe el profesional
+(`concept`) llega a `<sum1:DescripcionOperacion>`, y el nombre del cliente a `<sum1:NombreRazon>`
+del destinatario, pasados por `xmlEscape` (`src/modules/invoicing/domain/verifactu.service.ts`). Esa
+función sustituye `& < > " '` por `&amp; &lt; &gt; &quot; &apos;`. **El `=` no se escapa: no hace
+falta en XML.** Sólo `NumSerieFactura` se sanea en la entrada (`fiscalInput.ts`, `PROHIBIDOS_SERIE`).
+
+Ejemplos reales del oficio: «Cambio de llave 1/2"», un cliente «D'Ors», «potencia >= 3 kW».
+
+**1)** El validador de la AEAT, ¿aplica `1287` al valor **después** de interpretar el XML (con lo que
+`&quot;` vuelve a ser `"` y se rechaza) o al texto tal cual llega?
+
+**2)** Si es lo primero: ¿qué hacemos con lo que escribe el profesional? ¿Sustituir los caracteres
+(¿por cuáles?), quitarlos o rechazar la línea al crearla? ¿Y el **nombre de un cliente** que lleva un
+apóstrofo, que es su nombre legal?
+
+**3)** El `=` no lo toca nadie hoy en estos dos campos. ¿Confirmas que también provoca `1287` en
+`DescripcionOperacion`?
+
+**Lo que NO sabemos:** la respuesta se podría **medir** contra el entorno de pruebas de la AEAT, y hoy no
+tenemos remisión ni certificado para hacerlo (SCRUM-524 ④.3). **Una factura emitida no se edita**
+(regla 29): si la respuesta es «se desescapa», el arreglo es en la entrada, antes de emitir.
+
+---
+
+### P-524.4 · Dos valores del bloque `SistemaInformatico` en un SaaS con muchos obligados — **candidata, sin cotejar con la Orden HAC/1177/2024** (bloquea dar por buenos los valores de `productor.ts` y de los dos generadores)
+
+Lo que va en cada registro hoy, **leído en el código**: `NumeroInstalacion` = `"1"`
+(`VERIFACTU_NUM_INSTALACION`, `productor.ts`), y `TipoUsoPosibleMultiOT` = `S` e
+`IndicadorMultiplesOT` = `S`, fijos en los dos generadores (`registro.builder.ts` los comenta como
+«SaaS multi-tenant → 'S'»; `verifactu.service.ts` los escribe literales). XSD vendorizado
+(`SuministroInformacion.xsd`, `SistemaInformaticoType`): `NumeroInstalacion` es texto de hasta 100
+caracteres; los otros dos, `S`/`N`.
+
+**1)** `NumeroInstalacion`: en un SaaS en el que **un** sistema emite para **muchos** obligados, ¿es una
+sola instalación (`"1"` para todos) o hay que numerar una por obligado, o por comercio? Si es por
+obligado, ¿quién asigna el número y debe ser estable en el tiempo?
+
+**2)** `IndicadorMultiplesOT` = `S`: ¿describe el **sistema** (YaQu atiende a varios obligados) o la
+**instalación** desde la que se remite (este obligado usa el sistema con otros)? Si es lo segundo, un
+comercio que sólo factura para sí mismo, ¿debería llevar `N`?
+
+**Lo que NO sabemos:** el significado normativo de los dos campos. **No hay copia de la Orden en el
+repositorio y no la he leído.** Por eso la pregunta va marcada como candidata: puede que la Orden la
+conteste sin asesor. Los códigos de error de estos campos (`1212`, `1213` y `1226` en SCRUM-524
+②/524b) sólo comprueban que el valor sea `S` o `N`, no que sea el **correcto**.
+
+## ③ Lo que esto NO hace
+
+- **No escribe en `docs/legal/`** (carril J4) **ni en Jira** (no lo pude leer). Las preguntas pasan a
+  SCRUM-1264 y al documento por mano del orquestador y de J4.
+- **No cambia ningún valor de `productor.ts` ni de los generadores**: camino de emisión, regla 38/40.
+- **No da por contestada ninguna.** P-524.4 puede salir de leer la Orden; las otras tres, no.
+
+## ④ ¿SCRUM-524 queda listo para cerrar?
+
+**No, por dos cosas que no dependen de este tramo:** (a) que estas cuatro lleguen a SCRUM-1264 y al
+documento del asesor; (b) que alguien con Jira lea el hilo de SCRUM-524 entero. **No he medido** que
+SCRUM-1127b cubra ⑤ (`VfSubmission`, `AceptadoConErrores`): sólo he visto que esa cadena sale en 3
+ficheros de `src/`.
+
+A9: sin fallo que generalice — la única caída propia fue un `git fetch && git rev-parse` que salió con 128 y se relanzó sin sacar cifra de él; la otra cosa que pudo salir mal (escribir en carril de J4) la paró la norma A20 antes de la primera línea

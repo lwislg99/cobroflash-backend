@@ -251,7 +251,9 @@ caso.todos();
 // borrar a su cliente. El 1.5 de arriba no llega a la base; el 7 sí, y la ruta contesta 204.
 test('SCRUM-1456 · DELETE customers /:id · un id CORRECTO sigue llegando al borrado y contesta 204', async () => {
   const pedir = pedidor(LECTURAS[26]);
-  const r = await pedir('7');
+  // SCRUM-1571: el 7 EXISTE (el borrado toca una fila). Con la base vacía, el 204 era el defecto de
+  // 1571 —«borrado» sin borrar nada—, y ahora esa ruta contesta 404: `scrum1571-…` lo mide.
+  const r = await pedir('7', { 'customer.deleteMany': { count: 1 } });
   assert.ok(r.consultas > 0, '🔴 con un id correcto el borrado no ha llegado a la base');
   assert.equal(r.status, 204, `🔴 un id correcto ya no borra: la ruta contesta ${r.status}`);
 });
