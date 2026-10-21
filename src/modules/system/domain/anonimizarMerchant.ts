@@ -55,7 +55,12 @@ export const CAMPOS_PERSONALES: Readonly<Record<string, readonly string[]>> = Ob
   // mismo caso que `product.name`, declarado fuera en el censo (`tests/…scrum497…`), y por
   // tanto no entra aquí. `address` (la dirección del sitio) queda SIN DECIDIR, misma pregunta
   // que `job.direccion`.
-  customerSite: ['phone'],
+  //
+  // SCRUM-1569 · `contactName` es el NOMBRE de esa misma persona («Luis el portero»), y se
+  // quedaba en claro junto a su teléfono redactado (medido en PGlite por J4, c.20092). Mismo
+  // criterio que `phone`: SE ANONIMIZA. `city`/`postalCode`/`province`/`country` no entran aquí:
+  // esperan decisión, como `address`.
+  customerSite: ['phone', 'contactName'],
   // SCRUM-529 · `whatsapp_messages.to_phone` guarda el NÚMERO al que se mandó cada WhatsApp: el
   // teléfono del cliente, fuera de `customers`. Sin esta línea se redacta `customer.phone` y el
   // mismo número queda en claro una tabla más allá.

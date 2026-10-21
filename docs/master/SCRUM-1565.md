@@ -139,3 +139,53 @@ el instrumento sale 1 cuando su veredicto no cuadra.
 - **La cuenta QA no se corrige sola.** Hay que reenviar desde el panel de Stripe la entrega fallida de
   `customer.subscription.updated`, después del despliegue. Antes del despliegue sólo repite el 400. Lo hace el fundador.
 - Por qué `created` salió 200: sin medir (arriba).
+
+## SCRUM-1565b · Sin víctima HOY, y cuánto duró: 1 evento, 3 entregas
+
+**Medido contra:** `origin/main` = `e0c32fb5297e0ea98383d9f983ed8abfa67553c2` · 2026-10-20T09:50:25Z (hora de GitHub al escribir: 2026-10-20T10:03:14Z)
+A9: sin fallo que generalice — este tramo sólo registra lo que trajeron el fundador y el orquestador, y el CI ya leído; aquí no se mide nada nuevo.
+
+El arreglo de arriba entró en `main` con el PR #2619 (merge `47a78ef4`, 2026-10-20T09:47:30Z).
+
+### Cómo se cuenta: bomba con fecha, no daño hecho
+
+- **El defecto estaba VIVO en el código** desde que el endpoint pasó a la versión `clover`.
+- **No tiene víctima HOY.** Stripe no está activado: no puede estarlo hasta que exista la SL (mediados de noviembre,
+  SCRUM-143). El único comercio que tocó la suscripción es **una cuenta de prueba del equipo de Luis**. Literal del
+  fundador, transmitido por el orquestador (`cobroflash-backend-09`): «no podemos hasta que tengamos la SL por eso no
+  te preocupes».
+- **La habría tenido el día del go-live** si no entra el arreglo: el primero que cancelara.
+
+Donde arriba dice «le pasa a todo suscriptor nuevo» y «al cancelar, 403 al instante», es lo que **haría** el código.
+**No hubo profesionales afectados.**
+
+### Cuánto duró, por `gateway_events`
+
+La consulta de solo lectura sobre `gateway_events` (filas de `customer.subscription.*` de Stripe con
+`processed_at IS NULL` y `planExpiresAt` en el error) la corrió **el fundador**, no esta sesión. Su resultado, tal
+como lo trajo el orquestador: **1 evento, 3 entregas, desde el 2026-10-18 a las 17:23:40**, igual en producción y en
+staging. Las dos variantes de la consulta (con y sin el filtro por el texto del error) dan las mismas filas, así que
+ese filtro no escondía nada. **Fueron dos días, no meses.**
+
+- **Queda aparcado** reenviar la entrega fallida desde el panel de Stripe (arriba, «Lo que queda fuera»): era para
+  recuperar el plan de una cuenta de prueba.
+
+### El rojo de «guards de navegador» del PR #2619: no es de este ticket
+
+Ese job no es el obligatorio, y el obligatorio («build + tests») salió en verde. El de navegador terminó con
+veredicto, no colgado: «34 verdes · 1 CIEGO · 3 rojos» (`guard:cls-barra-anuncio`, `guard:objetivo-tactil` y
+`guard:escalera-por-estado`, más `guard:marcadores-en-pantalla` CIEGO). El PR sólo toca `stripe.routes.ts`, tests y
+`docs/master/`. **Control:** sobre `main` sale la misma anotación, letra por letra, en la base del PR (`dc1b2b4db`) y en `a60e12bf6`.
+En la historia de `main`, leída de las anotaciones de los runs de CI:
+
+| desde (el primer run de `main` en rojo que he visto) | qué aparece |
+|---|---|
+| ≤ `17a2d891b` 2026-10-16T12:57Z (el más antiguo leído) | `cls-barra-anuncio` |
+| `4aae2b7d8` 2026-10-17T20:02Z (#2535) | + `objetivo-tactil` |
+| `4d4c43773` 2026-10-17T22:33Z (#2548) | + `marcadores-en-pantalla` CIEGO |
+| `57b0bc822` 2026-10-18T00:52Z (#2561, toca `public/dashboard/js/jobsView.js`) | + `escalera-por-estado` |
+
+⚠️ **De quién es cada uno: SIN medir.** Que el rojo aparezca en un merge no quiere decir que ese merge lo cause.
+#2535 y #2548 no tocan `public/` ni `scripts/guard-*`. Sólo #2561 toca una pantalla, y es una causa plausible que
+nadie ha comprobado. Los guards son `scripts/guard-cls-barra-anuncio.mjs`, `scripts/guard-objetivo-tactil.mjs`,
+`scripts/guard-escalera-por-estado.mjs` y `scripts/guard-marcadores-en-pantalla.mjs`. No se arreglan aquí: el ticket lo abre el orquestador.

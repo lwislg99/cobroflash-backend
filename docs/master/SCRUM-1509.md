@@ -749,3 +749,90 @@ El guion sale 2 si alguno de sus cinco positivos da 0. Un manejador que revienta
 
 Reproducir: `tsc --noCheck` y `node docs/master/evidencias/SCRUM-1509f/limite.cjs dist` (rojo a propósito:
 `--esperado-menos-uno`).
+
+# SCRUM-1509g · El tope BLOQUEA cuando no se puede comprobar — construido (sólo la parte firmada)
+
+**Medido contra:** `origin/main` = `3fadf8eba46be56c209e5eb491cbeab155bc2314` · 2026-10-20T10:36:51Z (hora de GitHub al escribir: 2026-10-20T10:45:09Z)
+A9: comprobación → `tests/scrum1509g-el-tope-bloquea.test.mjs`
+
+J2 (sesión `jv-j2a`, equipo de Javier), por encargo del orquestador `cobroflash-backend-09`.
+
+**La decisión** está en SCRUM-1509 c.19620 (14-oct-2026). Literal del fundador: «Ok que el tope bloquee». Aquí se
+construye **sólo** la primera de sus dos partes.
+
+## 0 · PASO 0: qué estaba hecho y qué seguía vivo
+
+- `main` tenía cinco tramos de medición de 1509 (b, c, d, e, f) y **ningún arreglo**.
+- **SCRUM-1513 ya había cerrado la carrera** (#2325, 8-oct, antes de la firma). La pregunta y la fila van juntas bajo
+  un cerrojo por comercio (`reservarPlantilla`). Por eso C1 de 1509c («falla la escritura, el tope cuenta 0») ya no es
+  como se midió: ahora la escritura es parte de la reserva.
+- **Lo que seguía vivo** era el `catch` de `whatsapp.ts:415-416`: «Error comprobando topes A3.2 (no se bloquea)». Si la
+  reserva lanzaba, la plantilla salía. 1513d lo dejó escrito («si la base no contesta, la reserva LANZA: qué se hace
+  entonces lo decide quien llama»), y `SCRUM-1496.md:475` lo apunta como lo firmado: «que el tope BLOQUEE cuando no
+  puede comprobar (`whatsapp.ts:382`, `:414`)».
+
+## 1 · El arreglo (`src/integrations/whatsapp.ts`, carril J2)
+
+- Si `reservarPlantilla` lanza, la plantilla **no sale**: `logFailure` y `{ ok: false, reason: 'tope_no_comprobable' }`.
+- **El motivo es propio** (`MOTIVO_TOPE_NO_COMPROBABLE`). No es `daily_cap` ni `customer_daily_cap`, porque no se sabe
+  si el tope está alcanzado.
+- **Sin texto nuevo (regla 39).** El motivo no está en `SEND_FAILURE_MESSAGES`, igual que `baja_no_comprobable`
+  (SCRUM-1262, `whatsapp.ts:199-206`), así que la ruta lo lleva a la frase que ya da para la baja sin comprobar. El
+  test lo compara letra a letra.
+
+## 2 · El rojo primero, por la ruta real
+
+`tests/scrum1509g-el-tope-bloquea.test.mjs` usa el banco de scrum1478: el handler real de
+`POST /admin/invoices/:id/send-reminder` (`dist`), la base doblada y el dry-run de la casa, contando lo que llega al
+buzón. Diez recordatorios seguidos con la base rota:
+
+| caso | `whatsapp.ts` de `main` | con el arreglo |
+|---|---|---|
+| suelo: base sana, 1 recordatorio | 1 sale | 1 sale |
+| suelo: tope del negocio alcanzado | 0, `daily_cap` | 0, `daily_cap` |
+| falla la LECTURA del tope (`whatsAppMessage.count`) | **10 de 10** | 0 |
+| falla la ESCRITURA de la reserva (`whatsAppMessage.create`) | **10 de 10** | 0 |
+| falla el CERROJO del comercio (`$executeRaw`, con control de que se pidió las 10 veces) | **10 de 10** | 0 |
+| el cuerpo que ve la pantalla, frente al de la baja sin comprobar | — (no existe el motivo) | idéntico |
+
+## 3 · Tres tests que cambian, y por qué ninguno se debilita
+
+- **`scrum1262` y `scrum590`:** sus dobles caseros devolvían `undefined` para todo lo que empieza por `$`, también
+  `$transaction`. La reserva lanzaba un `TypeError` y el «no se bloquea» lo tapaba: **esos bancos no ejercitaban el
+  tope**, y su verde dependía de la puerta que esto cierra. Al arreglarlo cayeron 6 casos: 1262 ③ (×2) y 590 (×4).
+  Ahora el doble ejecuta el callback de la transacción, como Prisma. Las aserciones no se han tocado.
+  Resultado: 41 de 41.
+- **`scrum529:140`:** decía «el tope es best-effort: sale igual», que es justo lo que el fundador revocó. Se reescribe
+  para lo decidido (no sale, motivo `tope_no_comprobable`, nada al proveedor), y se conserva lo que fija el 529: la
+  fila que queda lleva el número. Resultado: 12 de 12.
+
+## 4 · Lo corrido
+
+- La tanda dirigida: los 42 ficheros que nombran el envío de plantillas o el tope, más scrum836, scrum745 y
+  scrum1508. **375 tests: 365 pasan, 2 caen y 8 se saltan.**
+- Los 2 que caen son `SCRUM-245 · el fixture que OMITE el merchant NO compila` y su control. Compilan contra el
+  cliente de Prisma del checkout compartido, que está desfasado, y ya caían en la tanda entera de este árbol de esta
+  mañana, antes de cualquier cambio de este tramo. Manda el CI.
+
+## 5 · Lo que NO se ha construido, y por qué
+
+- **El límite delante de `POST /webhooks/whatsapp`.** Está firmado que va, pero **no hay número ni comportamiento
+  decididos**: cuántos mensajes, por quién (número, cliente o comercio), en qué ventana, y qué se hace con lo que
+  sobra (descartar en silencio, contestar algo al cliente, avisar). Elegir cualquiera de esas cosas es inventar un
+  límite de canal (reglas 27 y 30). Medido en 1509f: hoy no hay ninguno, y 120 mensajes de un cliente producen 120
+  avisos y 100 plantillas.
+- **La salida A–E del recordatorio de facturas:** sin elegir (c.19620 lo dice expresamente).
+- **Los cuatro llamadores que no pasan cliente** (1509d) siguen sin tope por cliente. Lo de aquí sólo cierra la puerta
+  de «no se pudo comprobar».
+- **Visto de paso, en mi carril y sin tocar:** con el arreglo, en `registrarEnviado` el camino que hace
+  `recordWaMessage` al salir (`reservaId === null` con comercio) ya no se alcanza, porque con comercio o hay reserva o
+  no se envía. Sin comercio, `registrarEnviado` vuelve antes. Era lo único que ejercitaba el antiguo 529 `:140`. No se
+  quita en este PR por si algún censo de escritores lo cuenta. Queda nombrado aquí.
+
+## 6 · Errores propios
+
+- **El primer test tenía un caso ciego.** «Falla la transacción entera» rompía `$transaction` en `respuestas`, y el
+  doble de `_envio-doblado.mjs` la ejecuta siempre sin mirar `respuestas`. Ese caso no rompía nada: su «10 de 10» de
+  antes del arreglo salía por un motivo equivocado. Lo delató que siguiera en 10 con el arreglo puesto. Se cambió por
+  el cerrojo, con un control que cuenta que se pidió, y se vio caer contra `main` por el motivo bueno.
+- Escribí el test primero en la rama de 1456c. Lo pasé a esta antes de comitear nada.

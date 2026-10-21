@@ -4730,6 +4730,21 @@ textarea.parte-linea-desc {
   .data-card:has(#quotes-count) td.cell-actions > div > .btn-sm { min-height: 44px; }
 }
 
+/* ── J2 · SCRUM-1149 (AB6, grupo B de SCRUM-786, opción ③) ── lista de Clientes: «⬆ Importar
+   clientes» y «⬇ Clientes CSV» de la cabecera, y «Editar», «Portal» y «📊 Historial» de cada fila,
+   medían 30,8–31,0 px de toque a 929 y a 390. Regla ACOTADA A ESTA LISTA, solo tamaño: `.btn-sm`
+   global no se toca. Mismos mínimos y misma forma que la lista de presupuestos (SCRUM-1148, arriba):
+   36 en escritorio, 44 hasta el corte de móvil (768).
+   El ancla es la barra de selección, hija directa de la tarjeta y que sólo pinta esta lista
+   (`customersView.js`). SIN clase nueva en el marcado: `guard:lista-trabajos` compara por hash el
+   HTML de Clientes con el de la base, y una clase en la tarjeta lo cambia (medido: salió rojo). */
+.data-card:has(> .barra-seleccion) .data-card-header > div > .btn-sm,
+.data-card:has(> .barra-seleccion) td.cell-actions > div > .btn-sm { min-height: 36px; }
+@media (max-width: 768px) {
+  .data-card:has(> .barra-seleccion) .data-card-header > div > .btn-sm,
+  .data-card:has(> .barra-seleccion) td.cell-actions > div > .btn-sm { min-height: 44px; }
+}
+
 /* SCRUM-1056 · «Volver a llamar»: la nota es texto libre del profesional. Una palabra muy larga
    (un enlace, una referencia) se parte en vez de salirse de la tarjeta: medido a 390 px. */
 .volver-a-llamar-nota { overflow-wrap: anywhere; }

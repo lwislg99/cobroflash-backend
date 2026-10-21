@@ -48,8 +48,13 @@ const ESPERADO = {
     ['DELETE customers /:id/sites/:siteId · `id` (params)'],
     ['DELETE customers /:id/sites/:siteId · `siteId` (params)'],
     ['GET customers /:id/detail · `id` (params)'],
+    // SCRUM-1456b (J2): las tres lecturas que pasan a `cabeEnColumnaInt`, en el orden del fuente
+    // (el DELETE va ANTES de fusion-preview; fusionar, después).
+    ['DELETE customers /:id · `id` (params)'],
     ['GET customers /:id/fusion-preview · `id` (params)'],
     ['GET customers /:id/fusion-preview · `con` (query)'],
+    ['POST customers /:id/fusionar · `id` (params)'],
+    ['POST customers /:id/fusionar · `con` (body)'],
   ],
   [FACTURAS]: [
     ['GET invoices /:id · `id` (params)'],
