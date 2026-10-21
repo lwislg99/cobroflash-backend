@@ -22,6 +22,7 @@ import assert from 'node:assert/strict';
 import http from 'node:http';
 import { createRequire } from 'node:module';
 import { inyectarBase, moduloDeDist } from './_envio-doblado.mjs';
+import { reqDeSesion } from './_arnes-de-router.mjs';
 
 const requiere = createRequire(import.meta.url);
 
@@ -60,7 +61,7 @@ const router = moduloDeDist('../dist/modules/system/app/routes/customersAdmin.ro
 async function pedir(metodo, ruta, cuerpo) {
   const app = express();
   app.use(express.json());
-  app.use((req, _res, next) => { req.merchantId = MIO; req.userRole = 'admin'; next(); });
+  app.use((req, _res, next) => { Object.assign(req, reqDeSesion({ rol: 'admin', merchantId: MIO })); next(); });
   app.use('/admin/customers', router);
   const srv = await new Promise((ok) => { const s = app.listen(0, '127.0.0.1', () => ok(s)); });
   const callar = console.error; console.error = () => {};
