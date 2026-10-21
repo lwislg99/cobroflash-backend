@@ -528,7 +528,8 @@ Los 8 ROJO son del job «guards de navegador (fuera de la tanda)» (y uno tambi�
 sustituye al que espera en la cola. En la simulación, `cdbaaedd8` (13:33:52Z) y `6964d489b` (13:56:22Z, 4 s antes de
 `0adcc1b2f`) no tienen ningún run del CI, y sus vecinos sí tienen «cancelled» con 0 jobs. La decisión deja «sin run»
 fuera de la absolución, así que esos dos bloquean el cierre para siempre. NO se ha medido si GitHub registra un run
-tardío para ellos: es una foto de 2 sobre 20 commits.
+tardío para ellos: es una foto de 2 sobre 20 commits. **Pendiente de decisión del fundador; NO se ha metido aquí**
+(orden del orquestador, 21-oct 14:27Z): si dice que sí, va en 1393f.
 
 ### Lo que NO se puede saber hasta que corra en GitHub: CIEGO declarado, no verde
 
