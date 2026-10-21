@@ -304,3 +304,106 @@ El rojo más repetido de la ventana es `scrum1405c` caso ④ (**63** caídas, 13
 
 - El control de CR de la línea A9. Y medí mi contexto al acabar el arranque (118.971), pero **no** al acabar
   de leer Jira, porque Jira no respondió: esa segunda cifra no existe.
+
+## SCRUM-1538d · qué dejó de colgar las tandas el 14-oct: la tanda, con #2429 (1405c) dentro de la base; el trinquete, nada de lo que cambió ese día
+
+**Medido contra:** `origin/main` = `7b176514255877d4b3e85029b8a3a4ad1bcd881f` · 2026-10-21T14:48:36Z
+
+A9: aviso → cicatriz J3 «Medí mi contexto a 184.389 sin haberlo medido al acabar el arranque, que era la orden escrita del prompt.» — no se pudo comprobar: cuándo se mide una sesión es orden del prompt y ningún test del árbol la ve
+
+Sesión `jv-j3v`, puesto J3, por encargo del orquestador `cobroflash-backend-5f`. Jira no respondía (el
+conector de Atlassian dio `CONNECT_TIMEOUT`): **no he leído el ticket**; todo sale del repo y de la API de
+GitHub. El hook de inicio dijo «SIN IDENTIDAD» (SCRUM-1498): seguí con la orden escrita. La rama nació de
+la de #2648 (`fbd51095a`) y, cuando #2648 entró (14:41:28Z), se puso al día con `git merge origin/main`.
+
+**Sólo medición.** No toca `tests/`, `scripts/`, `src/` ni workflows. Guiones y salidas en
+`docs/master/evidencias/SCRUM-1538d/`: `a-cabeceras.mjs` (baja los primeros 64 KB del log de cada job, con
+`Range`, y saca runner, imagen, node, acciones y la BASE de `main` que se probó — el `Merge <rama> into
+<base>` del checkout en un PR, el propio sha en un push) y `b-tasas.mjs` (tasas, rachas y los commits de
+`main` que entraron alrededor del corte). Los dos llevan siembra: con `--sin-siembra` salen CIEGO (exit 4),
+comprobado. Población: el listado de `e-listar.mjs` de 1538c, re-ejecutado (1.029 runs del 6-oct 13:43Z al
+21-oct 13:59Z; una llamada falló, run 39244881162 del 19-oct, fuera de la ventana que decide) + los jobs
+de los 211 runs limpios hasta las 11:18Z del 16-oct (entrada de 1494c). **984 jobs juzgados, 984 cabeceras
+leídas, 0 sin base identificable, las 33 colgadas encontradas** (`a-salida.txt`, `a-jobs-con-cabecera.tsv`).
+
+### Qué NO cambió (descartado para las dos familias)
+
+| | valor en las 33 colgadas | valor después del corte | veredicto |
+|---|---|---|---|
+| runner | `2.337.0` | `2.337.0` (todos los 984) | no cambió |
+| node | `24.21.0` | `24.21.0` (todos) | no cambió |
+| `actions/checkout`, `actions/setup-node` | `11d5960a…`, `49933ea5…` | los mismos (todos) | no cambiaron |
+| imagen `ubuntu-24.04` | `20260927.320.1` (6 trinquete, 2 tanda) y `20261004.327.1` (17 y 8) | `20261004.327.1` hasta el 15-oct 16:46Z; `20261012.334.1` **desde el 14-oct 16:00Z** | **no explica el corte:** la imagen nueva llega 7 h después de las 09:00Z, y en esas horas, con la MISMA imagen de las colgadas, 0 de 38 trinquetes y 0 de 55 tandas colgaron. Débil por tamaño (con la tasa de esa imagen, ver 0 tiene p ≈ 0,13 y 0,27), pero la hora no casa |
+| `ci.yml`, `scripts/trinquete-de-zona.mjs`, `_trinquete-de-zona*.mjs`, `tanda-con-veredicto.mjs` | — | ningún commit de `main` les toca del 5 al 16-oct salvo `package.json` | ver abajo |
+| los cuatro tests donde paraba la tanda (`scrum446`, `447`, `615`, `616`) | — | ningún commit desde el 5-oct | descartados como «se arregló el test» |
+
+`package.json` sí cambió cinco veces en la ventana; cuatro son líneas de scripts sueltos (`e2e:critico`,
+`parados`, `guard:modo-en-ajustes`, un comentario). **La única que cambia cómo corre algo de CI es #2429**.
+
+### La tanda (`build + tests`): #2429 es el primer commit de `main` tras la última base que colgó
+
+- Última colgada: 14-oct 07:29:56Z, base `6c5b3ad61` (#2761 en primer padre). El commit **siguiente** de
+  `main` es `e2be1c9fd` = merge de #2429 (07:47:56Z), que añade `--import=./scripts/tuberia-bloqueante.mjs`
+  al `test` de `package.json`: lo carga la tanda de CI (`npm test`) y cada hijo de `node --test`.
+- Por base, en la ventana: **sin #2429, 10 colgadas de 369; con #2429, 0 de 138** (y 0 de 333 hasta el
+  21-oct según `h-salida.txt` de 1538c). Con la tasa de antes (2,5 %), ver 0 en 331 tiene p ≈ 2,2·10⁻⁴;
+  con la de 13-oct→corte (3,7 %), 4,3·10⁻⁶ (`b-salida.txt`). La racha limpia más larga antes del corte fue
+  de 78 jobs; después, 331 y sigue.
+- 06:00-09:00Z del 14-oct: 2 colgadas y 12 limpias **sin** #2429 en la base; 0 colgadas y 28 limpias **con** él.
+- 🔴 **Lo que no se puede separar con estos datos:** contenido y hora van juntos. Desde las 07:48Z toda tanda
+  lleva #2429 (un PR se mezcla con el `main` del momento), y ningún job posterior probó una base anterior.
+  Así que «lo quitó #2429» y «lo quitó algo del mundo a esa hora» dan la misma tabla. Lo que sí se mide: el
+  módulo **sigue en `main`** (leído hoy en `package.json`), así que tampoco hay una retirada que lo refute.
+  **El mecanismo (cómo una tubería no bloqueante deja a `node --test` callado 905 s) NO está medido**;
+  1405c midió nombres perdidos, no cuelgues. Separarlo pide repetir la tanda sin el `--import` sobre una base
+  vieja muchas veces (a ~3 % por tanda, decenas): **no lo he hecho**, es una carrera de CI y no era el encargo.
+
+### El trinquete: #2429 no le llega y su última colgada ya lo llevaba
+
+- El trinquete corre `node scripts/trinquete-de-zona.mjs`, que lanza `_trinquete-de-zona-hijo.mjs` con
+  `spawnSync(process.execPath, [HIJO, …])` y éste usa `run({ forceExit: true })`: **no pasa por `npm test`
+  y no lleva el `--import`** (leído en `e2be1c9fd`). Y la última colgada (14-oct 08:57:18Z, job
+  115768210763) probó la base `ebe2b932c` (#2769), que **contiene** #2429 (`git merge-base --is-ancestor`).
+  #2429 queda descartado para esta familia, por código y por contraejemplo; #2426 (1543) también, por base.
+- **El trinquete no se apagó el 14-oct: ya se había apagado casi del todo el 13.** Por día: 6-oct 7 de 36,
+  7-oct 7 de 75, 8-oct 6 de 56, 9-oct 0 de 25; **del 10 al 12 no hubo CI**; 13-oct 2 de 116 (las dos antes
+  de las 07:30Z), 14-oct 1 de 114. Antes del corte la racha limpia más larga es **149, del 13-oct 07:30Z al
+  14-oct 08:57Z**: la colgada de las 08:57Z es la única en 150 jobs. La tasa cae del 12 % (6-8 oct) al 1,6 %
+  (13-oct→corte) **sin ningún cambio en sus scripts, en `ci.yml`, en el runner, en node ni en la imagen**.
+  Con el 1,6 %, ver 0 en 313 tiene p ≈ 6,2·10⁻³: el silencio de después sí es un cambio, pero el grande fue
+  entre el 8 y el 13, sobre el que la base sólo dice que las de esos días son anteriores a #2676-#2693.
+- «Las dos familias paran a la vez» (tramo 1538c) **es cierto por la última colgada y engañoso por la
+  tasa**: la tanda pasa de 3,7 % a 0 en la mañana del 14; el trinquete pasa de 12 % a 1,6 % entre el 8 y el
+  13, y tiene un rezagado el 14 a las 08:57. **No hay ninguna causa medida que explique las dos.**
+
+### Respuesta al encargo
+
+| candidato | ¿tanda? | ¿trinquete? |
+|---|---|---|
+| #2429 (1405c, `--import` de la tubería bloqueante) | **compatible:** primer commit tras la última base colgada; 10/369 sin él, 0/138 con él; mecanismo y separación de la hora SIN MEDIR | **descartado:** no llega a sus procesos, y su última colgada lo llevaba |
+| #2426 (1543) y todo `main` hasta #2761 | descartado (bases con colgada) | descartado (hasta #2769) |
+| imagen del runner `20261012.334.1` | no casa con la hora (llega a las 16:00Z) | ídem |
+| runner, node, acciones, `ci.yml`, scripts del trinquete y de la tanda, los 4 tests | no cambiaron | no cambiaron |
+| algo del 8 al 13-oct | — | **SIN MEDIR**: es donde cae el trinquete, y ningún cambio de entorno ni de sus scripts lo explica |
+
+**¿Volverán?** La tanda: si la causa es #2429, sólo si alguien lo quita; eso no está medido. El trinquete:
+no sé qué lo quitó, así que no sé si vuelve; desde 1494c (16-oct) si cuelga, nombra el fichero.
+
+### Lo que NO se ha medido
+
+- Nada ejecutado fuera de lectura: API de GitHub (cabeceras de 984 logs, 64 KB cada una) y git local.
+- Las 10 colgadas de la tanda no se re-derivan aquí: son las 10 `COLGADA` de `g-clasificar.mjs` de 1538c
+  (los 10 logs de `build-failure` de menos de 1,3 MB de su `f-bajados.tsv`); sus ids van copiados en los
+  guiones. Las de después del corte se dan por 0 sobre la medición de 1538c (`h-salida.txt`), no re-leída.
+- La carga de GitHub, la hora del día, la máquina física y el contenido de los ~1.000 ficheros de test.
+- Por qué el trinquete cae entre el 8 y el 13-oct. Jira, entero.
+
+### Mis errores
+
+- **No me medí al acabar la lectura de arranque**, que era la orden. La primera cifra es de ya entrado el
+  trabajo: 184.389 (usage del último turno del jsonl). Está en la línea A9 de arriba.
+- Mi primera pasada de `b-tasas.mjs` ordenaba los jobs por su hora de ARRANQUE y los runs limpios por la de
+  CREACIÓN: la colgada de las 08:57:18Z arrancó a las 09:08Z y salía «1 colgada después del corte». Ahora
+  todo va por la hora de creación del run, como en 1538c. Y la primera ventana de `a-cabeceras.mjs` empezaba
+  el 12-oct: la imagen vieja (`320.1`) salía con «6 colgadas de 6», un 100 % que era sólo que no había bajado
+  sus limpias; con la ventana entera son 6 de 91.
