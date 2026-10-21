@@ -29,6 +29,11 @@
 //      el caso caía en el 12,6 % de los obligatorios (38 de 302) sin que el código cambiara: el
 //      módulo reduce la pérdida, no la lleva a cero (SCRUM-1559h, commit 13d392ac1). Las dos cifras
 //      de abajo son las MEDIDAS, no elegidas; población, ventana y salida en docs/master/SCRUM-1405.md, APÉNDICE SCRUM-1405d.
+//
+//   SCRUM-1574 · ④ ya no se salta porque lo diga la sonda: la sonda dio 0 en 14 de 316 obligatorios de
+//      Linux, donde la tubería NO bloquea, y esos jobs salieron verdes sin medir nada. Ahora se salta
+//      sólo si el brazo SIN módulo no pierde, y el salto dice «NO MEDIDO» con lo que midió
+//      (`decidirCuarto`; registro en docs/master/SCRUM-1574.md).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -183,16 +188,29 @@ const CUERPO_COBAYA = [
   '',
 ].join('\n');
 
-/** ¿Pierde ESTE node sin el módulo? Se MIDE, no se deduce del sistema: un hijo SIN el módulo escribe
- *  1 MiB de un tirón a una tubería y dice cuánto le queda sin escribir al volver de `write()`. Con la
- *  tubería bloqueante, 0 (medido en Windows, también forzando `setBlocking(false)`); sin ella, lo que
- *  no cupo. `null` = no se pudo medir. */
-function tuberiaNativaNoBloqueante() {
+/** La sonda: un hijo SIN el módulo escribe 1 MiB de un tirón a una tubería y dice cuánto le queda sin
+ *  escribir al volver de `write()`. `null` = no contestó.
+ *  SCRUM-1574 · más de 0 PRUEBA que la tubería no bloquea; 0 NO prueba que bloquee. En Linux node nunca
+ *  la pone bloqueante (sólo en Windows: lib/net.js:655-658 de v24.21.0) y la salida del hijo es un
+ *  socketpair (deps/uv/src/unix/process.c:207), así que un 0 sólo dice que el lector la vació a tiempo.
+ *  Pasó en 14 de los 316 obligatorios de SCRUM-1405d, y ④ se saltó diciendo «ya escribe BLOQUEANTE». */
+function bytesPendientesDeLaSonda() {
   const r = lanzar(['-e', "process.stdout.write(Buffer.alloc(1 << 20, 120)); process.stderr.write('PENDIENTE=' + process.stdout.writableLength)"]);
   const m = /PENDIENTE=(\d+)/.exec(r.stderr || '');
-  return m ? Number(m[1]) > 0 : null;
+  return m ? Number(m[1]) : null;
 }
-const NATIVA_NO_BLOQUEANTE = tuberiaNativaNoBloqueante();
+
+/** Qué hace ④ con lo que ha visto (SCRUM-1574). Quien decide si hay rojo que ver es el brazo SIN el
+ *  módulo, no la sonda: `pendiente` son los bytes de la sonda y `sinFaltan` los casos que pierde cada
+ *  pasada sin el módulo. Estados: 'medir' (se juzga el brazo CON), 'no-medido' (se salta, con el motivo
+ *  medido en el log), 'ciego' y 'no-pude' (rojo). */
+function decidirCuarto(pendiente, sinFaltan) {
+  if (pendiente === null) return { estado: 'no-pude', motivo: '🔴 NO PUDE MIRAR: la sonda de la tubería nativa no contestó' };
+  const sinPierde = sinFaltan.some((x) => x > 0);
+  if (sinPierde) return { estado: 'medir', motivo: '' };
+  if (pendiente > 0) return { estado: 'ciego', motivo: `🔴 CIEGO: la sonda dejó ${pendiente} bytes pendientes (la tubería NO bloquea) y aun así, sin el módulo, la cobaya NO pierde en ${sinFaltan.length} pasadas: el verde de abajo no probaría nada. ¿Ha arreglado node la pérdida (nodejs/node#64833)? Entonces hay que decidir si la C sigue haciendo falta.` };
+  return { estado: 'no-medido', motivo: `NO MEDIDO: sin el módulo la cobaya no pierde en ${sinFaltan.length} pasadas (faltan ${sinFaltan.join(',')}) y la sonda dejó 0 bytes pendientes tras 1 MiB: en este node no hay rojo que ver. Pasa en Windows (J3f: 0 de 30 pasadas de cobaya pierden). Se mide en el CI de Linux.` };
+}
 
 // Lo que la cobaya pierde CON el módulo en el CI de Linux, medido el 21-oct-2026 sobre origin/main
 // fe65a8b7fca8b1e42448c8134e26d880d96b9ba7 (el módulo y este caso, sin cambios desde f13e8664a):
@@ -225,11 +243,9 @@ function brazo(ficheros, extra) {
 }
 
 test('SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, no más de lo medido (SCRUM-1405d)',
-  { skip: NATIVA_NO_BLOQUEANTE === false
-    ? 'este node ya escribe BLOQUEANTE en una tubería sin el módulo (medido: 0 bytes pendientes tras 1 MiB): no hay rojo que ver. Pasa en Windows (J3f: 0 de 30 pasadas de cobaya pierden). Se mide en el CI de Linux.'
-    : false },
   (t) => {
-    assert.notEqual(NATIVA_NO_BLOQUEANTE, null, '🔴 NO PUDE MIRAR: la sonda de la tubería nativa no contestó');
+    const pendiente = bytesPendientesDeLaSonda();
+    assert.notEqual(pendiente, null, decidirCuarto(null, []).motivo);
     const { token } = tokenDelScript();
     assert.ok(token, '🔴 NO PUDE MIRAR: sin el token del script `test` (ver ①)');
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), `yaqu-1405c-${process.pid}-`));
@@ -241,13 +257,20 @@ test('SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE c
         ficheros.push(f);
       }
       const sin = brazo(ficheros, []);
+      for (const f of sin) {
+        assert.equal(f.codigo, 0, `🔴 NO PUDE MIRAR: una pasada de la cobaya no salió con 0. sin el módulo: ${JSON.stringify(sin)}`);
+      }
+      const decision = decidirCuarto(pendiente, sin.map((f) => f.faltan));
+      if (decision.estado === 'no-medido') {
+        t.skip(decision.motivo);
+        return;
+      }
+      assert.equal(decision.estado, 'medir', `${decision.motivo} sonda: ${pendiente} bytes · sin el módulo: ${JSON.stringify(sin)}`);
       const con = brazo(ficheros, [token]);
-      const resumen = `sin el módulo: ${JSON.stringify(sin)} · con el módulo: ${JSON.stringify(con)}`;
-      for (const f of [...sin, ...con]) {
+      const resumen = `sonda: ${pendiente} bytes · sin el módulo: ${JSON.stringify(sin)} · con el módulo: ${JSON.stringify(con)}`;
+      for (const f of con) {
         assert.equal(f.codigo, 0, `🔴 NO PUDE MIRAR: una pasada de la cobaya no salió con 0. ${resumen}`);
       }
-      assert.ok(sin.some((f) => f.faltan > 0),
-        `🔴 CIEGO: sin el módulo la cobaya NO pierde en ${PASADAS} pasadas, así que el verde de abajo no probaría nada. ¿Ha arreglado node la pérdida (nodejs/node#64833)? Entonces hay que decidir si la C sigue haciendo falta. ${resumen}`);
       assert.deepEqual(juzgarConModulo(con.map((f) => f.faltan)), [],
         `🔴 con el módulo la cobaya pierde MÁS de lo medido el 21-oct-2026 (SCRUM-1405d): la salida C ha empeorado. ${resumen}`);
       t.diagnostic(`SCRUM-1405c · ${resumen}`);
@@ -287,6 +310,27 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: '  return [];\n}',
     cae: 'SCRUM-1405d · ④ el juez',
   },
+  {
+    // SCRUM-1574 · vuelta al salto por la sonda: con 0 bytes pendientes no se mide aunque el brazo SIN pierda.
+    fichero: 'tests/scrum1405c-tuberia-bloqueante.test.mjs',
+    de: "  if (sinPierde) return { estado: 'medir'",
+    a: "  if (sinPierde && pendiente > 0) return { estado: 'medir'",
+    cae: 'SCRUM-1574 · ④ la decisión',
+  },
+  {
+    // SCRUM-1574 · el salto mudo: se salta sin decir que no midió.
+    fichero: 'tests/scrum1405c-tuberia-bloqueante.test.mjs',
+    de: "  return { estado: 'no-medido', motivo: `NO MEDIDO: sin el módulo",
+    a: "  return { estado: 'no-medido', motivo: `sin el módulo",
+    cae: 'SCRUM-1574 · ④ la decisión',
+  },
+  {
+    // SCRUM-1574 · sin CIEGO: una tubería que no bloquea y una cobaya que no pierde pasarían a saltarse.
+    fichero: 'tests/scrum1405c-tuberia-bloqueante.test.mjs',
+    de: "  if (pendiente > 0) return { estado: 'ciego'",
+    a: "  if (false) return { estado: 'ciego'",
+    cae: 'SCRUM-1574 · ④ la decisión',
+  },
 ];
 
 // El juez de ④ corre en Linux; éste, en TODA tanda (también en Windows, donde ④ se salta). Las filas
@@ -310,5 +354,35 @@ test('SCRUM-1405d · ④ el juez: lo peor medido CON el módulo pasa; el brazo S
   };
   for (const [nombre, faltan] of Object.entries(rojos)) {
     assert.notDeepEqual(juzgarConModulo(faltan), [], `🔴 el juez deja pasar una pérdida que el módulo NO logra: ${nombre}`);
+  }
+});
+
+// SCRUM-1574 · la decisión de ④ corre en TODA tanda (en Windows ④ se salta). Los brazos SIN módulo son
+// filas reales del CI (job entre paréntesis); la sonda a 0 es lo que dijo en los 14 jobs de SCRUM-1574, y
+// 983040 (1 MiB menos 64 KiB) es una cifra fabricada: el log no imprime lo que deja la sonda.
+test('SCRUM-1574 · ④ la decisión: una sonda a 0 no salta si el brazo SIN módulo pierde; un salto dice NO MEDIDO', () => {
+  const casos = [
+    // El positivo sembrado: el caso de los 14 jobs. Antes se saltaba; ahora tiene que medir.
+    { nombre: 'sonda a 0 y el brazo SIN pierde (115745643294)', pendiente: 0, sin: [28, 12, 29, 13], espera: 'medir' },
+    { nombre: 'sonda a 0 y el brazo SIN pierde en una pasada', pendiente: 0, sin: [0, 0, 1, 0], espera: 'medir' },
+    // El negativo: un job normal mide.
+    { nombre: 'sonda con pendientes y el brazo SIN pierde (117734088229)', pendiente: 983040, sin: [14, 10, 27, 31], espera: 'medir' },
+    { nombre: 'sonda a 0 y el brazo SIN no pierde (Windows)', pendiente: 0, sin: [0, 0, 0, 0], espera: 'no-medido' },
+    { nombre: 'sonda con pendientes y el brazo SIN no pierde', pendiente: 983040, sin: [0, 0, 0, 0], espera: 'ciego' },
+    { nombre: 'la sonda no contestó', pendiente: null, sin: [], espera: 'no-pude' },
+  ];
+  for (const estado of ['medir', 'no-medido', 'ciego', 'no-pude']) {
+    assert.ok(casos.some((c) => c.espera === estado), `🔴 CIEGO: no hay ningún caso sembrado que deba dar «${estado}»`);
+  }
+  assert.ok(casos.some((c) => c.pendiente === 0 && c.espera === 'medir'),
+    '🔴 CIEGO: falta el caso de SCRUM-1574 (sonda a 0 con el brazo SIN perdiendo)');
+  for (const c of casos) {
+    const d = decidirCuarto(c.pendiente, c.sin);
+    assert.equal(d.estado, c.espera, `🔴 ${c.nombre}: sale «${d.estado}» y tiene que salir «${c.espera}». ${d.motivo}`);
+    if (d.estado === 'no-medido') {
+      assert.match(d.motivo, /^NO MEDIDO: /, `🔴 ${c.nombre}: el salto no dice que no midió: ${d.motivo}`);
+      assert.ok(d.motivo.includes(`faltan ${c.sin.join(',')}`), `🔴 ${c.nombre}: el salto no dice lo que midió: ${d.motivo}`);
+    }
+    if (d.estado === 'ciego' || d.estado === 'no-pude') assert.match(d.motivo, /^🔴 /, `🔴 ${c.nombre}: un rojo sin motivo: ${d.motivo}`);
   }
 });
