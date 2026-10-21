@@ -20,6 +20,7 @@ import { handleBotMessage, handleUnsupportedMedia, handleIncomingPhoto, isMidInt
 import { parseDecision } from '../../domain/decisionPorTexto';
 import { ensureJobForQuote } from '../../../jobs/domain/job.service';
 import { handleMaintenanceButton } from '../../../maintenance/domain/maintenance.service';
+import { admitirEntrante, descartesDeEntrantes, ENTRANTES_POR_HORA } from '../../domain/limiteDeEntrantes';
 
 const router = Router();
 
@@ -131,6 +132,14 @@ router.post('/', async (req, res) => {
 
           // A8.2: entrega duplicada del mismo mensaje (reintento de Meta) → fuera
           if (isDuplicateWamid(String(msg.id || ''))) continue;
+
+          // SCRUM-1509h: más de 20 por número y hora → fuera, EN SILENCIO (ni respuesta al
+          // cliente ni aviso al profesional) y contado (fundador, SCRUM-1509 c.20141). Va
+          // después del duplicado, para que un reintento de Meta no gaste cupo.
+          if (!admitirEntrante(from)) {
+            console.warn(`[WA in] DESCARTADO por el límite de ${ENTRANTES_POR_HORA} entrantes por número y hora: from=${maskPhone(normalizePhone(from))} · descartes desde el arranque: ${descartesDeEntrantes()}`);
+            continue;
+          }
 
           // A5.2: CUALQUIER entrante (texto, tap de botón/lista, audio…) abre o
           // renueva la ventana de servicio de 24 h → se registra para que los
