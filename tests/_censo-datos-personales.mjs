@@ -49,6 +49,9 @@ export const VOCABULARIO_PERSONAL = Object.freeze([
   'address', 'direccion',                   // domicilios y direcciones de trabajo
   'notes', 'internalNotes',                 // texto libre sobre personas
   'iban',                                   // cuenta bancaria
+  // SCRUM-1569d · el móvil del cliente y la cuenta mexicana: ninguna familia los leía (estaban en las
+  // 157 de SCRUM-1569), así que quitarlos de `CAMPOS_PERSONALES` no lo habría visto nadie.
+  'mobile', 'clabe',
 ]);
 
 /**
