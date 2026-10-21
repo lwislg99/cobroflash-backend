@@ -577,8 +577,8 @@ con 0 jobs».
 
 ### Lo probado DE VERDAD
 
-* `scrum1393f` (7 casos: las cuatro siembras del encargo, la bajada, el sucesor que falta y los cebos), con `scrum1393c`,
-  `d` y `e`: 32 tests, 32 `ok`, 0 `not ok`, y 7 de los 32 son de 1393f (control de que el fichero corrió).
+* `scrum1393f` (8 casos: las cuatro siembras del encargo, la espera sin reloj, la bajada, el sucesor que falta y los cebos), con `scrum1393c`,
+  `d` y `e`: 33 tests, 33 `ok`, 0 `not ok`, y 8 de los 33 son de 1393f (control de que el fichero corrió).
 * Mutaciones de UNA línea, con la base verde antes: absolver cualquier `sinRun` sin mirar el sucesor → 2 fail; que ningún
   `sinRun` califique → 4 fail. En las dos, los 11 de 1393e siguen verdes; el árbol, limpio después.
 
@@ -596,13 +596,22 @@ Resultado: 10 ROJO, 15 CIEGO, 1 CORRIENDO (`aa68b01af`), 0 VERDE. Pasos: **`come
 `e155c60fd1d0` sale CIEGO, sin run aún); **12 en espera**, entre ellos los dos `sinRun` que califican (`5dcc9fe1e`,
 `cdbaaedd8`). Sin 1393f, esos dos se habrían avisado como CIEGO y habrían bloqueado el cierre para siempre.
 
-### Lo que no he arreglado: lo nombro
+### El CIEGO falso de lo recién entrado: espera SIN reloj (orden del orquestador, 21-oct, por mensaje)
 
-**Un «sin run» que sólo es run TARDÍO se avisa como CIEGO en la red diaria.** La punta y sus dos padres (`c47288f7e`,
-`f53289026`, `e155c60fd`) no tenían run a las 14:47Z, minutos después de entrar, y salen en el comentario. Ni son por
-sustitución (sus sucesores tampoco tienen run) ni se sabe aún si lo tendrán. 1393e lo resolvió para la punta (contexto);
-para un commit de la lista haría falta una espera por tiempo, y una ventana fija es una tolerancia disfrazada: es una
-decisión, no la tomo aquí. Cuando aparezca su run, el siguiente juicio del pendiente lo corrige.
+La simulación de 14:47Z lo destapó: la punta y sus dos padres (`c47288f7e`, `f53289026`, `e155c60fd`) no tenían run
+minutos después de entrar y salían en el comentario como CIEGO. La lectura que propuse («el sucesor tiene run y un verde
+que lo contiene lo absuelve») la **confirmó el orquestador**, y ordenó para esto un criterio sin ventana de tiempo: un
+`sinRun` para el que NINGÚN commit posterior de la línea, la punta incluida, tiene run (`conRun`) **espera**, igual que
+el «sustituto CORRIENDO». En cuanto alguno lo tenga, se aplica la regla de arriba.
+
+* Siembra: punta sin run → espera; tres seguidos sin run → los tres esperan; un posterior con run (ROJO) y sin verde →
+  el de debajo es CIEGO y se avisa; un posterior con run pero el sucesor inmediato sin run → CIEGO, no espera.
+* Mutación (anular esa línea) → 2 fail: el caso nuevo de 1393f y el de 1393e de abajo.
+* **Cambia un caso de 1393e, y lo digo:** «la misma punta, sin la marca de contexto, sí se avisa» pasa a «espera, y no
+  cierra». Era la conducta que la orden cambia, no un guard que se relaja: la aserción nueva sigue exigiendo que no cierre.
+* En seco otra vez (14:51:34Z, punta `b7e8ebef9bf8`, 33 líneas): `PASOS=comentar` con **sólo los 7 ROJO**; ninguno de
+  los cinco sin run de arriba (`b7e8ebef9`, `7b1765142`, `e155c60fd`, `f53289026`, `c47288f7e`) ni `cdbaaedd8` sale en
+  el cuerpo. Y otro run tardío: `5dcc9fe1e`, sin run a las 14:47Z, salía CORRIENDO a las 14:51Z.
 
 ### Lo que NO se puede saber hasta que corra en GitHub: CIEGO declarado, no verde
 
