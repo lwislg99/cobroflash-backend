@@ -1,0 +1,36 @@
+⟦arranque⟧ 0.6 s COMPLETA · proceso+ws 0.6 s · primera-página 0.0 s
+vendidas   360 retraso     0 · CLS 0.029 · obs 1 · barra 116 · inter true
+      0.029@413 SECTION.hero 160→181 h620→599 | NAV.nav-links 107→107 h94→94 | ::after 47→69 h47→47 | SPAN#ann-plazas 60→82 h22→22 | A 59→81 h24→24
+vendidas   390 retraso     0 · CLS 0.089 · obs 2 · barra 95 · inter true
+      0.046@211 SECTION.hero 160→181 h620→599 | NAV.nav-links 107→107 h94→94
+      0.043@278 ::before 181→160 h599→620 | NAV.nav-links 86→86 h94→94 | ::after 69→47 h47→47 | SPAN#ann-plazas 82→60 h22→22 | A 81→59 h24→24
+vendidas   360 retraso  1000 · CLS 0.068 · obs 2 · barra 116 · inter true
+      0.06@284 SECTION.hero 160→181 h620→599 | NAV.nav-links 107→107 h94→94 | DIV.win 732→0 h48→0 | SPAN.lbls 735→0 h18→0 | ::after 768→0 h9→0
+      0.008@1293 NAV.nav-links 107→107 h94→94 | DIV.stage 770→741 h10→39 | DIV.win 0→759 h0→21 | SPAN#ann-plazas 82→82 h22→22 | ::after 0→758 h0→22
+vendidas   390 retraso  1000 · CLS 0.107 · obs 2 · barra 95 · inter true
+      0.046@304 SECTION.hero 160→181 h620→599 | NAV.nav-links 107→107 h94→94
+      0.061@1317 ::before 181→160 h599→620 | NAV.nav-links 86→86 h94→94 | ::after 69→47 h47→47 | SPAN#ann-plazas 82→60 h22→22 | A 81→59 h24→24
+cero       360 retraso     0 · CLS 0.066 · obs 2 · barra 116 · inter true
+      0.06@297 SECTION.hero 160→181 h620→599 | NAV.nav-links 107→107 h94→94 | DIV.win 732→0 h48→0 | SPAN.lbls 735→0 h18→0 | ::after 768→0 h9→0
+      0.005@380 NAV.nav-links 107→107 h94→94 | DIV.stage 770→741 h10→39 | DIV.win 0→759 h0→21 | ::after 69→69 h47→47 | A 81→81 h24→24
+cero       390 retraso     0 · CLS 0.088 · obs 2 · barra 95 · inter true
+      0.046@208 SECTION.hero 160→181 h620→599 | NAV.nav-links 107→107 h94→94
+      0.043@267 ::before 181→160 h599→620 | NAV.nav-links 86→86 h94→94 | ::after 69→47 h47→47 | A 81→59 h24→24
+cero       360 retraso  1000 · CLS 0.068 · obs 2 · barra 116 · inter true
+      0.06@232 SECTION.hero 160→181 h620→599 | NAV.nav-links 107→107 h94→94 | DIV.win 732→0 h48→0 | SPAN.lbls 735→0 h18→0 | ::after 768→0 h9→0
+      0.008@1243 NAV.nav-links 107→107 h94→94 | DIV.stage 770→741 h10→39 | DIV.win 0→759 h0→21 | ::after 69→69 h47→47 | A 81→81 h24→24
+cero       390 retraso  1000 · CLS 0.106 · obs 2 · barra 95 · inter true
+      0.046@239 SECTION.hero 160→181 h620→599 | NAV.nav-links 107→107 h94→94
+      0.06@1264 ::before 181→160 h599→620 | NAV.nav-links 86→86 h94→94 | ::after 69→47 h47→47 | A 81→59 h24→24
+roto       360 retraso     0 · CLS 0.065 · obs 2 · barra 116 · inter true
+      0.06@231 SECTION.hero 160→181 h620→599 | NAV.nav-links 107→107 h94→94 | DIV.win 732→0 h48→0 | SPAN.lbls 735→0 h18→0 | ::after 768→0 h9→0
+      0.005@298 NAV.nav-links 107→107 h94→94 | DIV.stage 770→741 h10→39 | DIV.win 0→759 h0→21 | ::after 0→765 h0→10 | SPAN.dot 714→714 h4→4
+roto       390 retraso     0 · CLS 0.088 · obs 2 · barra 95 · inter true
+      0.046@199 SECTION.hero 160→181 h620→599 | NAV.nav-links 107→107 h94→94
+      0.042@252 ::before 181→160 h599→620 | NAV.nav-links 86→86 h94→94
+roto       360 retraso  1000 · CLS 0.067 · obs 2 · barra 116 · inter true
+      0.06@229 SECTION.hero 160→181 h620→599 | NAV.nav-links 107→107 h94→94 | DIV.win 732→0 h48→0 | SPAN.lbls 735→0 h18→0 | ::after 768→0 h9→0
+      0.007@1227 NAV.nav-links 107→107 h94→94 | DIV.stage 770→741 h10→39 | DIV.win 0→759 h0→21 | ::after 0→758 h0→22 | SPAN.dot 714→714 h4→4
+roto       390 retraso  1000 · CLS 0.105 · obs 2 · barra 95 · inter true
+      0.046@271 SECTION.hero 160→181 h620→599 | NAV.nav-links 107→107 h94→94
+      0.059@1275 ::before 181→160 h599→620 | NAV.nav-links 86→86 h94→94
