@@ -126,7 +126,14 @@ test('SCRUM-413 · SUELO: si el censo no encuentra tipos, se declara CIEGO y fal
       '  y significan lo contrario. Con cero, el test de abajo pasaría por vacío y este fichero\n' +
       '  daría verde sobre un mecanismo que no corre.',
   );
-  assert.ok(valores.size >= 3, `🔴 el censo ve ${valores.size} tipos y se midieron 3 (F1, JUST, R1)`);
+  // SCRUM-1260c: hasta aquí este suelo exigía ver 3 tipos escritos (F1, JUST, R1). Los seis escritores
+  // de `JUST` se retiraron con firma del fundador (SCRUM-1260, comentarios 19616, 20143 y 20148: «Sí los
+  // 6»), así que el conjunto escrito es ahora exactamente F1 y R1. Se exige el CONJUNTO, no un mínimo:
+  // perder uno, ganar otro o que vuelva `JUST` lo tumba igual. `JUST` sigue DECLARADO (lo leen las filas
+  // ya emitidas, regla 29): lo que cambia es que nadie lo escribe.
+  assert.deepEqual([...valores.keys()].sort(), ['F1', 'R1'],
+    `🔴 el censo ve [${[...valores.keys()].sort().join(', ')}] y se midieron [F1, R1]` +
+      (valores.has('JUST') ? `: vuelve a escribirse JUST en ${valores.get('JUST').join(', ')}, y se retiró con firma (SCRUM-1260 c.20148)` : ''));
 });
 
 // ── EL CONJUNTO, CERRADO POR CENSO ──────────────────────────────────────────────────────

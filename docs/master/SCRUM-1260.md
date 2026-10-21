@@ -137,3 +137,137 @@ También fuera: las dos semillas de `scripts/seed-demo.mjs:384` y `:441`.
 
     node ../../../node_modules/typescript/bin/tsc --noCheck   # desde el worktree anidado
     node --test tests/scrum1260b-el-emisor-ya-no-escribe-just.test.mjs tests/scrum1027-atajo-flag-off-sin-documento.test.mjs
+
+# SCRUM-1260c · los otros cinco escritores ya no escriben `type: 'JUST'`
+
+**Medido contra:** `origin/main` = `67dde0caf421c9c246775098ab75aee6e8cc41e7` · 2026-10-21T12:58:05Z (hora de GitHub, cabecera `Date:` de `gh api -i zen`)
+A9: aviso → cicatriz J1 «Lancé `node --test "$f"` con `$f` sacado de un `ls` que no casó, y node corrió la suite entera en segundo plano: el fichero se busca por contenido y se comprueba con `test -f` antes de lanzarlo» — no se pudo comprobar: lo impediría un hook sobre la orden, y los hooks no son de este puesto
+
+J1 (sesión `jv-j1n`, equipo de Javier), por encargo del orquestador `cobroflash-backend-5f`. Carril:
+`src/lib/invoicing.ts` es J1 (`puesto-j1.md`); las tres rutas (`jobs`, `quotes`, `quotesAdmin`) **no son
+de J1**: entran por el GO del fundador, que nombra los seis sitios, y el encargo del orquestador. El
+trabajo se midió sobre `fe65a8b7` y la rama se puso al día con `git merge origin/main` (entró #2635,
+SCRUM-1260b, en `67dde0ca`); después del merge se recompiló y se repitió lo de abajo.
+
+## La firma
+
+- **c.20148** (21-oct-2026, registrada por `cobroflash-backend-5f`): ampliación del GO de la regla 40 a
+  los seis escritores. Literal del fundador: «Sí los 6». Alcance escrito allí: «retirar la rama que escribe
+  `type: 'JUST'` en los SEIS sitios […] con las consecuencias mecánicas directas (tests que exigen esos
+  escritores, imports sin uso, comentarios que pasarían a mentir), declaradas. […] Nada más del camino de
+  emisión. Regla 29 intacta: ninguna factura emitida se edita ni se borra; no se tocan datos.»
+- El de `emitInvoice` es el sexto, y es el tramo 1260b de arriba.
+
+## Qué se ha hecho
+
+En los cinco, identificados por contenido (las líneas son las de `fe65a8b7`):
+
+| sitio | antes | después |
+|---|---|---|
+| `src/lib/invoicing.ts:432` (`ensureInvoiceForCharge`) | `type: isReceiptNumber(number) ? 'JUST' : 'F1', // V0-0: …` | `type: 'F1',` |
+| `src/modules/jobs/app/routes/jobs.routes.ts:1554` | `type: isReceiptNumber(invoiceNumber) ? 'JUST' : 'F1', // V0-0 (regla 26)` | `type: 'F1',` |
+| `src/modules/quotes/app/routes/quotes.routes.ts:663` | `type: isReceiptNumber(invoiceNumber) ? 'JUST' : 'F1', // V0-0` | `type: 'F1',` |
+| `src/modules/system/app/routes/quotesAdmin.routes.ts:368` | ídem | `type: 'F1',` |
+| `src/modules/system/app/routes/quotesAdmin.routes.ts:661` | ídem | `type: 'F1',` |
+
+Consecuencias mecánicas, todas en el diff: en los cuatro ficheros, `isReceiptNumber` sale del import
+(`import { allocateInvoiceNumber, isReceiptNumber }` → `import { allocateInvoiceNumber }`), porque era su
+único uso. El comentario `V0-0` de cada línea se va con ella: describía la rama.
+
+**No se ha tocado:** ninguna firma, ningún helper, nada movido. `isReceiptNumber`, `RECEIPT_NUMBER_PREFIX`,
+`TipoDocumento` con `'JUST'` y todos los LECTORES del tipo (`receipt.routes.ts`, `libroRegistro.repo.ts`,
+`pdf.service.ts`, `invoiceAdmin.ts`) se quedan: leen las filas ya emitidas (regla 29). Tampoco
+`invoiceNumber.service.ts:431` (`tipoFactura: esJustificante ? 'JUST' : …`, el payload de auditoría): no
+escribe `Invoice.type` y no está entre los seis.
+
+**Comentarios que se quedan, leídos uno a uno:** en `quotesAdmin.routes.ts` quedan tres que nombran el
+justificante («V0-0: nunca a justificantes» ×2 y «`no_aplica` NO es un fallo: los justificantes J- […] no
+entran en la cadena»). Describen lo que hace `sellarTrasEmision` con cualquier factura, no que esta ruta
+escriba `JUST`, así que no pasan a mentir; no se tocan. Los registros fechados que listan los cinco
+(`SCRUM-1257.md` §1, `SCRUM-1523.md` §3.2, `SCRUM-1496.md` fila 11) tampoco: dicen lo que había el día
+en que se midieron.
+
+## Por qué era inalcanzable — medido hoy
+
+En los cinco, el número que llega a la rama es un `const` cuyo único valor es
+`await allocateInvoiceNumber(tx, …)` sin `rectifying`. `allocateInvoiceNumber` lanza
+`invoicing_es_disabled` en modo `receipt` (SCRUM-1027) y, si no, devuelve `formatInvoiceNumber`:
+`F<AA><NNNN>` o `<año>-<prefijo>-<NNN>`. Ninguno empieza por `J-`.
+
+`tests/scrum1260c-los-cinco-escritores-sin-just.test.mjs`:
+
+- **① el cableado, por AST** (`typescript`, no `grep`): en los cuatro ficheros hay 5 llamadas a
+  `allocateInvoiceNumber` (1 + 1 + 1 + 2); cada una inicializa un `const`, no pasa `rectifying`, y ese
+  `const` es el `number` de exactamente un objeto con `type`. Si alguien mete otra fuente de número, cae.
+- **② el alcance, por `allocateInvoiceNumber` compilado**: 4 comercios (ES con el flag ON, fuera de
+  España, demo, ES con el flag OFF; el modo de cada uno se COMPRUEBA con `getEmissionMode`) × 5 prefijos
+  de serie (`CF`, `FG`, `J-`, ` J-`, `j-`) × 2 fechas (30 días antes y después de `CORTE_FORMATO_F`,
+  derivadas de él) = **40 llamadas: 30 números, 10 rechazos** `invoicing_es_disabled` (todos del modo
+  receipt), las dos formas de número vistas, y **0 de 30 números `J-`**. Verde con las ramas y sin ellas:
+  eso es lo que demuestra que quitarlas no le quita nada a nadie.
+- **③ el texto, por AST**: en los cinco el `type` es el literal `'F1'`, y ninguno de los cuatro ficheros
+  nombra el identificador `isReceiptNumber` ni el literal `'JUST'`. Éste es el que cae si una rama vuelve.
+
+⚠️ **No se entra por las rutas HTTP.** Lo que ata cada ruta al reservador es ① (el número es ese `const`
+y nada más); ② mide el reservador. Una ruta que mañana sacara el número de otro sitio tumba ①.
+
+## Rojo primero, verde después, y quitar cada pieza
+
+| pasada | resultado |
+|---|---|
+| test nuevo sobre `fe65a8b7` sin cambiar nada | 3 pass · **1 fail** (③: «`src/lib/invoicing.ts:408`: el type es `isReceiptNumber(number) ? 'JUST' : 'F1'`») · ① y ② verdes: inalcanzable hoy |
+| con el cambio | 4 pass · 0 fail |
+| mutación: devuelvo UNA rama, la de `quotesAdmin.routes.ts:661`, escrita sin `isReceiptNumber` (`(invoiceNumber as string).startsWith('J-') ? 'JUST' : 'F1'`) | 3 pass · **1 fail** (③ la nombra en `:653`, la línea de su reserva) · restaurado, diff igual |
+| control de ceguera: `ESCRITORES` vacío, en una copia | 2 pass · **2 fail**, los dos «CIEGO» (① «0 escritores leídos de 5», ③ «0 type leídos de 5») |
+
+## Lo que se ha corrido
+
+- `tsc --noEmit`: 17 errores, **todos** del cliente de Prisma compartido viejo (`archivedAt`,
+  `activityKind`, `charge`), en líneas que no son las tocadas. Sin `dist/` propio: `tsc --noCheck`.
+- **Tanda dirigida** (`npm run tanda:dirigida`, sobre `fe65a8b7` + el cambio sin commitear): 439 ficheros
+  de 1.426 · **4.091 tests · 4.073 pass · 5 fail** (y 13 que no son ni pass ni fail; no los he mirado). Los
+  cinco: `scrum1298b` ×2 y `scrum476` son los de entorno del árbol anidado que ya midió 1260b; `scrum854`
+  ② pedía este registro, que aún no estaba escrito; `scrum754b` («`fs.watch` MUDO») salió 22/22 dos veces
+  corrido solo. No he medido si los tres de entorno caen igual sin el cambio.
+- Después del merge de `origin/main`: lo que dice la sección «Después del merge», abajo.
+
+## Después del merge: el test que exigía los escritores (`scrum413`)
+
+Sobre el árbol fusionado (`67dde0ca` + esta rama, recompilado), la dirigida dio **459 ficheros · 4.304
+tests · 4.287 pass · 4 fail**: los tres de entorno de arriba y uno nuevo y mío, `scrum413` «SUELO: si el
+censo no encuentra tipos» → «el censo ve 2 tipos y se midieron 3 (F1, JUST, R1)». Su suelo exigía ver
+`JUST` ESCRITO en `src/`, y los seis escritores eran justo eso: un positivo tomado del árbol, que se jubila
+el día que el defecto se arregla. Es la consecuencia mecánica que nombra c.20148 («tests que exigen esos
+escritores»), y no se afloja: el `>= 3` pasa a exigir el **conjunto exacto** `['F1', 'R1']`, con un mensaje
+que nombra el sitio si `JUST` vuelve. Medido: verde con el cambio (7/7); con la rama devuelta en
+`quotesAdmin.routes.ts:661`, cae con «el censo ve [F1, JUST, R1] y se midieron [F1, R1]: vuelve a
+escribirse JUST en src/modules/system/app/routes/quotesAdmin.routes.ts:661». El suelo de ceguera
+(`nodos > 50.000`, `valores.size > 0`) no se toca. Su segundo caso (todo valor escrito está declarado)
+tampoco: `JUST` sigue declarado, porque lo leen las filas ya emitidas.
+
+⚠️ Lo cazó la dirigida y no la lectura: el `grep` del PASO 0 buscó tests que nombraran
+`isReceiptNumber(…) ? 'JUST'`, y `scrum413` no nombra ningún escritor: los cuenta.
+
+Además, sobre el árbol fusionado: `npm run guards:entrada` 170/170 · los cinco de árbol entero que
+nombra (`scrum195`, `414`, `694`, `710b`, `737`) 38/38 · `scrum1260c`, `1260b`, `1027`, `273`, `267`,
+`854`, `622`, `237`, `976` 78/78.
+
+## Lo que NO se ha hecho
+
+- Ninguna base de datos medida (ni cuántas filas `JUST` hay): fuera del encargo. No se tocan datos.
+- No verificado en yaqu.app: el cambio no tiene superficie visible (las ramas no se tomaban).
+- Las dos semillas de `scripts/seed-demo.mjs` (`J-…` / `JUST`) siguen: no son ninguno de los seis.
+- La tanda completa no se ha corrido en local; se mira el obligatorio del PR.
+
+## Errores propios
+
+- Para repetir `scrum754b` solo lancé `node --test "$f"` con `$f` sacado de `ls tests/scrum754b*`, que no
+  casó con nada (el fichero se llama `scrum754-…`). Con la variable vacía, `node --test` descubrió la suite
+  entera y la corrió en segundo plano hasta que la paré (905.450 B de salida). Medido después: sin
+  `DATABASE_URL` ni `QA_DB_TEST` en el entorno, `git status` limpio; el aviso de «staging» que sale en ella
+  es un test unitario de `_merchant-fixture.mjs` con Prisma falso. Va a mis cicatrices (línea `A9:`).
+
+## Cómo se repite
+
+    node ../../../node_modules/typescript/bin/tsc --noCheck   # desde el worktree anidado
+    node --test tests/scrum1260c-los-cinco-escritores-sin-just.test.mjs
