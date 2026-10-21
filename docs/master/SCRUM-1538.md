@@ -309,7 +309,7 @@ El rojo más repetido de la ventana es `scrum1405c` caso ④ (**63** caídas, 13
 
 **Medido contra:** `origin/main` = `7b176514255877d4b3e85029b8a3a4ad1bcd881f` · 2026-10-21T14:48:36Z
 
-A9: aviso → cicatriz J3 «Medí mi contexto a 184.389 sin haberlo medido al acabar el arranque» — no se pudo comprobar: cuándo se mide una sesión es orden del prompt y ningún test del árbol la ve
+A9: aviso → cicatriz J3 «Medí mi contexto a 184.389 sin haberlo medido al acabar el arranque, que era la orden escrita del prompt.» — no se pudo comprobar: cuándo se mide una sesión es orden del prompt y ningún test del árbol la ve
 
 Sesión `jv-j3v`, puesto J3, por encargo del orquestador `cobroflash-backend-5f`. Jira no respondía (el
 conector de Atlassian dio `CONNECT_TIMEOUT`): **no he leído el ticket**; todo sale del repo y de la API de
