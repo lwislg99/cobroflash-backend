@@ -1,0 +1,17 @@
+    if (err)
+      throw new ErrnoException(err, 'open');
+
+    this[async_id_symbol] = this._handle.getAsyncId();
+
+    if ((fd === 1 || fd === 2) &&
+        (this._handle instanceof Pipe) && isWindows) {
+      // Make stdout and stderr blocking on Windows
+      err = this._handle.setBlocking(true);
+      if (err)
+        throw new ErrnoException(err, 'setBlocking');
+
+      this._writev = null;
+      this._write = makeSyncWrite(fd);
+      // makeSyncWrite adjusts this value like the original handle would, so
+      // we need to let it do that by turning it into a writable, own
+      // property.
