@@ -540,3 +540,72 @@ tardío para ellos: es una foto de 2 sobre 20 commits. **Pendiente de decisión 
 **Error propio:** al meter la punta en la pasada de (C), la puse como un commit más de la lista. La simulación lo cazó:
 `0adcc1b2` llevaba 8 minutos sin run del CI (el retraso de GitHub) y habría salido como un CIEGO falso. Ahora entra como
 contexto, y lo cubre la siembra «la punta de CONTEXTO sin run no se avisa» de la línea `A9:`.
+
+## Séptimo tramo · SCRUM-1393f · El «sin run» por sustitución en la cola se absuelve, si su sucesor tiene run
+
+**Medido contra:** `origin/main` = `e155c60fd1d0c67af27e2cb365d0f2d71cea8966` · 2026-10-21T14:48:27Z
+
+A9: comprobación → `tests/scrum1393f-vigia-absuelve-sin-run.test.mjs`
+
+J6 (`jv-j6u`), por encargo del orquestador (`cobroflash-backend-5f`). Carril: la excepción de **c.20147** (motor y
+workflow del vigía son de J6). Sin Jira (el MCP no conectó: `CONNECT_TIMEOUT` a los 30 s); la decisión se copia del
+encargo, no de Jira: **decisión del fundador del 21-oct, en el chat, «2-A»**: un commit sin run porque otro posterior le
+quitó el sitio en la cola se absuelve igual que el «cancelled con 0 jobs», siempre que el commit que vino detrás tenga CI
+y salga VERDE (y lo contenga). La rama nace de la punta de 1393e (`5d43354e1`, #2649) y se pone al día con `git merge
+origin/main` cuando entre. El workflow NO se toca: ya le da al motor la línea y los pendientes.
+
+### Lo que cambia (sólo el motor)
+
+* `veredictoDeCommit`: el CIEGO «ningún run» lleva `sinRun: true`. Es el dato; su `causa` sigue `null` (la de 1393e no
+  cambia).
+* `conRun(v)`: el veredicto viene de un run que existe: VERDE, ROJO, CORRIENDO o CIEGO «sustituido». Un run atascado
+  (CIEGO por tope) **no cuenta**: es conservador, y está sembrado.
+* `sinRunPorSustitucion(v, veredictos, linea)`, pura: un `sinRun` cuyo **sucesor inmediato** en la línea de primer padre
+  tiene run. Eso es lo que lo separa de «GitHub no disparó», donde el sucesor tampoco lo tiene. Que el run del sucesor sea
+  posterior no se mira aparte: el sucesor tiene a éste por padre, y su run nace de su propio push.
+* `absolucionDeSustituidos`: un `sinRun` que lo cumpla entra igual que un «sustituido» (verde más cercano que lo contiene;
+  si no, espera con un descendiente CORRIENDO). El cierre lo lista con «· SIN run: el siguiente commit le quitó el sitio
+  en la cola».
+* `bajarPorSustituidos` sigue también por un `sinRun` cuando el que acaba de juzgar (su sucesor) tiene run.
+* `juzgarSucesoresDeSinRun`: si un `sinRun` de la pasada (un pendiente del Issue, p. ej.) tiene el sucesor sin juzgar, se
+  juzga como **contexto** (decide, no se avisa por él).
+
+**Lectura mía, para que la confirme el orquestador:** «el commit que vino detrás tenga CI y salga VERDE» lo leo como
+«el sucesor tiene run, y un verde que lo contiene lo absuelve». Con la lectura estricta (el sucesor INMEDIATO tiene que
+salir verde) no se absolvería ninguno de los dos casos medidos: el sucesor de `cdbaaedd8` es `cf25030c8`, un «cancelled
+con 0 jobs».
+
+### Lo probado DE VERDAD
+
+* `scrum1393f` (7 casos: las cuatro siembras del encargo, la bajada, el sucesor que falta y los cebos), con `scrum1393c`,
+  `d` y `e`: 32 tests, 32 `ok`, 0 `not ok`, y 7 de los 32 son de 1393f (control de que el fichero corrió).
+* Mutaciones de UNA línea, con la base verde antes: absolver cualquier `sinRun` sin mirar el sucesor → 2 fail; que ningún
+  `sinRun` califique → 4 fail. En las dos, los 11 de 1393e siguen verdes; el árbol, limpio después.
+
+### El dato nuevo de GitHub (14:42-14:47Z, sólo lectura)
+
+* `6964d489b` **sí tiene run**: `39614164838`, cancelled, creado a las 14:08:08Z, 12 min después del commit. Era un run
+  TARDÍO, no un «sin run». `cdbaaedd8` (13:33:52Z) seguía sin ninguno a las 14:47Z, y apareció otro: `5dcc9fe1e`
+  (14:21:02Z), con sucesor `9415ff9df` cancelled.
+* El retraso de los runs hoy: de 1 a 12 min entre el commit y la creación del run, en 6 commits de la línea.
+
+### Lo que haría HOY con #2641 (en seco, sólo lectura, 14:47:14Z)
+
+Issue ABIERTO, 4.802 B de avisos previos, 5 pendientes. Red diaria: 26 commits + 5 pendientes (31 líneas, 26 distintos).
+Resultado: 10 ROJO, 15 CIEGO, 1 CORRIENDO (`aa68b01af`), 0 VERDE. Pasos: **`comentar`**; **no cierra** (la punta
+`e155c60fd1d0` sale CIEGO, sin run aún); **12 en espera**, entre ellos los dos `sinRun` que califican (`5dcc9fe1e`,
+`cdbaaedd8`). Sin 1393f, esos dos se habrían avisado como CIEGO y habrían bloqueado el cierre para siempre.
+
+### Lo que no he arreglado: lo nombro
+
+**Un «sin run» que sólo es run TARDÍO se avisa como CIEGO en la red diaria.** La punta y sus dos padres (`c47288f7e`,
+`f53289026`, `e155c60fd`) no tenían run a las 14:47Z, minutos después de entrar, y salen en el comentario. Ni son por
+sustitución (sus sucesores tampoco tienen run) ni se sabe aún si lo tendrán. 1393e lo resolvió para la punta (contexto);
+para un commit de la lista haría falta una espera por tiempo, y una ventana fija es una tolerancia disfrazada: es una
+decisión, no la tomo aquí. Cuando aparezca su run, el siguiente juicio del pendiente lo corrige.
+
+### Lo que NO se puede saber hasta que corra en GitHub: CIEGO declarado, no verde
+
+* Que GitHub no cree NUNCA el run de `cdbaaedd8`: a los 73 min no estaba; si aparece, sale «sustituido» y 1393e lo
+  absuelve igual.
+* Que `juzgarSucesoresDeSinRun` pida a la API un sucesor fuera de la red: sólo sembrado.
