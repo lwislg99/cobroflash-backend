@@ -433,7 +433,9 @@ export function topeDeCorridaDelCI(textoCiYml) {
  */
 export function veredictoDeCommit({ sha, run, jobs, ahora, topeMin, declarados = JOBS_DEL_CI }) {
   const r = (estado, motivo, lista = [], causa = null) => ({ sha, estado, motivo, url: run?.html_url ?? null, jobs: lista, causa });
-  if (!run) return r('CIEGO', 'ningún run del CI por push para este commit: no corrió');
+  // SCRUM-1393f: `sinRun` es el dato («GitHub no tiene run de este commit»); si fue por sustitución
+  // en la cola lo decide la línea (`sinRunPorSustitucion`), no este veredicto, que no ve vecinos.
+  if (!run) return { ...r('CIEGO', 'ningún run del CI por push para este commit: no corrió'), sinRun: true };
   if (run.status !== 'completed') {
     const min = Math.round((Date.parse(ahora) - Date.parse(run.created_at)) / 60000);
     if (topeMin == null) return r('SIN-LEER', `run «${run.status}» desde hace ${min} min y no se sabe el tope del CI`);
@@ -542,7 +544,24 @@ export function cuerpoDelAviso({ veredictos, ahora, origen, urlDelRun, callados 
 // lista como «no verificados, absueltos por el verde de <sha>». Si no hay verde que lo contenga
 // pero sí un descendiente CORRIENDO, ESPERA: ni avisa ni reabre (orden del orquestador del 21-oct).
 // Sin `linea` no se absuelve nada. Cualquier otro CIEGO sigue como arriba.
+//
+// SCRUM-1393f · Y EL «SIN RUN» POR SUSTITUCIÓN EN LA COLA (decisión del fundador del 21-oct, «2-A»):
+// en `main` el CI no cancela el run en curso (`ci.yml`, `cancel-in-progress`), y el commit nuevo
+// sustituye al que espera en la cola, que se queda SIN NINGÚN run. Se absuelve igual que el
+// «sustituido», pero sólo si su SUCESOR inmediato en la línea TIENE run (`conRun`): eso es lo que lo
+// separa de un «GitHub no disparó», donde el sucesor tampoco lo tiene. Que ese run sea posterior al
+// commit no se mira aparte: el sucesor tiene a este por padre, y su run nace de su push.
 // ═══════════════════════════════════════════════════════════════════════════════════════════
+
+/** SCRUM-1393f · el veredicto viene de un run del CI que existe. El único CIEGO con run que cuenta es el «sustituido». */
+export const conRun = (v) => !!v && (['VERDE', 'ROJO', 'CORRIENDO'].includes(v.estado) || (v.estado === 'CIEGO' && v.causa === CAUSA_SUSTITUIDO));
+
+/** SCRUM-1393f · el CIEGO `sinRun` cuyo sucesor inmediato en `linea` (la punta primero) tiene run. PURO. */
+export function sinRunPorSustitucion(v, veredictos, linea) {
+  if (!v?.sinRun || v.estado !== 'CIEGO' || !Array.isArray(linea)) return false;
+  const p = linea.indexOf(v.sha);
+  return p > 0 && conRun(veredictos.find((w) => w.sha === linea[p - 1]));
+}
 
 /**
  * Qué CIEGO «sustituido» de la pasada se absuelve y cuál espera, PURO. Un commit que no está en
@@ -558,7 +577,8 @@ export function absolucionDeSustituidos(veredictos, linea = null) {
   const verdes = enLinea('VERDE');
   const corriendo = enLinea('CORRIENDO');
   for (const v of veredictos) {
-    if (v.estado !== 'CIEGO' || v.causa !== CAUSA_SUSTITUIDO || !pos.has(v.sha)) continue;
+    if (v.estado !== 'CIEGO' || !pos.has(v.sha)) continue;
+    if (v.causa !== CAUSA_SUSTITUIDO && !sinRunPorSustitucion(v, veredictos, linea)) continue;
     const p = pos.get(v.sha);
     const contenedores = verdes.filter((w) => pos.get(w.sha) < p).sort((a, b) => pos.get(b.sha) - pos.get(a.sha));
     if (contenedores.length) absueltos.set(v.sha, contenedores[0].sha);
@@ -608,11 +628,12 @@ export function accionDelIssue({ veredictos, ahora, origen, urlDelRun, punta, li
   if (!motivo) {
     if (estado !== 'abierto') return { pasos: [], cuerpo: '', motivo: 'main verificado y ningún Issue abierto: nada que decir' };
     const recuento = informeDeCommits(veredictos, { ahora, origen }).split('\n').at(-2);
-    const lista = [...absueltos].map(([s, por]) => `- \`${s.slice(0, 12)}\` — no verificado, absuelto por el verde de \`${por.slice(0, 12)}\``);
+    const sinRun = new Set(veredictos.filter((v) => v.sinRun).map((v) => v.sha));
+    const lista = [...absueltos].map(([s, por]) => `- \`${s.slice(0, 12)}\` — no verificado, absuelto por el verde de \`${por.slice(0, 12)}\`${sinRun.has(s) ? ' · SIN run: el siguiente commit le quitó el sitio en la cola' : ''}`);
     const cierre = [
       `**Vigía de main · CERRADO** · ${ahora} · ${origen}`, '',
       `La punta de \`main\`, \`${punta.slice(0, 12)}\`, sale **VERDE** (${deLaPunta.motivo}), sin ningún CIEGO pendiente.`,
-      ...(lista.length ? ['', `${lista.length} CIEGO «sustituido» (run cancelado con 0 jobs) no verificados, absueltos por el verde de un commit posterior que los contiene:`, ...lista, ''] : []),
+      ...(lista.length ? ['', `${lista.length} CIEGO «sustituido» (run cancelado con 0 jobs, o sin run porque el siguiente le quitó el sitio en la cola) no verificados, absueltos por el verde de un commit posterior que los contiene:`, ...lista, ''] : []),
       `Población de esta pasada: ${recuento}.`, `Pasada: ${urlDelRun} ${marcaDeCierre(punta)}`,
     ].join('\n');
     const cuerpo = aviso ? `${aviso}\n\n---\n\n${cierre}` : cierre;
@@ -697,14 +718,30 @@ export const desdeDeLaRed = (ahora = new Date()) => new Date(ahora.getTime() - (
  * SCRUM-1393e · desde cada VERDE o CORRIENDO de `veredictos` que esté en `linea`, baja por sus
  * padres juzgando (`juzgar(sha)` → veredicto, que además lo añade a `veredictos`) mientras salgan
  * CIEGO «sustituido», y para en el primero que no lo sea. Un commit ya juzgado no se vuelve a pedir.
+ * SCRUM-1393f: también sigue por un CIEGO `sinRun` si el que acaba de juzgar (su sucesor) tiene run.
  */
 export async function bajarPorSustituidos(veredictos, linea, juzgar) {
   const yaJuzgado = (sha) => veredictos.find((v) => v.sha === sha);
   for (const desde of veredictos.filter((v) => v.estado === 'VERDE' || v.estado === 'CORRIENDO').map((v) => v.sha)) {
+    let sucesor = yaJuzgado(desde);
     for (let i = linea.indexOf(desde) + 1; i > 0 && i < linea.length; i += 1) {
       const v = yaJuzgado(linea[i]) ?? await juzgar(linea[i]);
-      if (v.estado !== 'CIEGO' || v.causa !== CAUSA_SUSTITUIDO) break;
+      if (v.estado !== 'CIEGO') break;
+      if (v.causa !== CAUSA_SUSTITUIDO && !(v.sinRun && conRun(sucesor))) break;
+      sucesor = v;
     }
+  }
+}
+
+/**
+ * SCRUM-1393f · un CIEGO `sinRun` de la pasada (p. ej. un pendiente del Issue) cuyo sucesor en `linea`
+ * no está juzgado: se juzga el sucesor, como CONTEXTO (decide, pero no se avisa por él), porque sin
+ * él no se sabe si lo sustituyeron en la cola. Un commit fuera de la línea, o la punta, no tiene.
+ */
+export async function juzgarSucesoresDeSinRun(veredictos, linea, juzgar) {
+  for (const v of veredictos.filter((x) => x.sinRun && x.estado === 'CIEGO')) {
+    const p = linea.indexOf(v.sha);
+    if (p > 0 && !veredictos.some((w) => w.sha === linea[p - 1])) (await juzgar(linea[p - 1])).contexto = true;
   }
 }
 
@@ -764,6 +801,7 @@ async function modoPorCommit(args, opcion) {
   if (opcion('--linea')) {
     try { linea = readFileSync(opcion('--linea'), 'utf8').split(/\r?\n/).map((s) => s.trim()).filter(Boolean); } catch (e) { return ciego(`no pude leer la línea de primer padre: ${e.message}`); }
     await bajarPorSustituidos(veredictos, linea, juzgar);
+    await juzgarSucesoresDeSinRun(veredictos, linea, juzgar);
     origen += ` · línea de primer padre de ${linea.length} commits`;
   }
   console.log(informeDeCommits(veredictos, { ahora, origen }));
