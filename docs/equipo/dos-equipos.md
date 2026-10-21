@@ -243,6 +243,7 @@ obligatorio sale rojo (`tests/scrum1295-carriles.test.mjs`). «quién» es `todo
 | ruta | quién | motivo | ticket |
 |---|---|---|---|
 | `docs/equipo/00-normas-siempre.md` | todos | A9: el aviso que no se pudo convertir en comprobación va a A10, donde lo leen todas. Cada puesto añade SU línea, en su PR; el resto del fichero es de la S0 | SCRUM-1294 |
+| `.github/workflows/vigia-de-main.yml` | J6 | el vigía del CI de `main` (al acabar cada CI y diario de red), UN workflow nuevo; ningún otro workflow de S5 se toca. Excepción firmada por el fundador en SCRUM-1393 c.20147 | SCRUM-1393 |
 
 ## 4 · Jira: las etiquetas y el ciclo del ticket
 
