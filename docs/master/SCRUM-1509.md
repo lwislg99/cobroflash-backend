@@ -935,3 +935,72 @@ VEZ en peticiones distintas (aquí el contador es síncrono dentro de un proceso
   declaración del test.
 - La ficha del encargo pedía `docs/master/SCRUM-1509h.md`; A8 manda anexar al fichero del número, y en el árbol hay
   0 ficheros `SCRUM-<n><letra>.md`. Anexado aquí.
+
+---
+
+# SCRUM-1509i · El rojo de #2633: la suite del bot escribía 26 entrantes desde un número, y el límite se comía el 21.º
+
+**Medido contra:** `origin/main` = `3c60a7fd0147eb56d36f5089ecc9c70e2dcbd2ee` · 2026-10-21T13:14:08Z (hora de GitHub al escribir)
+A9: aviso → A10 «Un test gateado que se salta en local es un test que no corriste: su verde no habla de él.» — no se pudo comprobar: sin banco el salto es lo querido, y lo único que lo corre es el CI con `LIBRO_PG_URL`, después del empujón
+
+J2 (sesión `jv-j2o`, equipo de Javier), relevo de `jv-j2n` por encargo del orquestador `cobroflash-backend-5f`. Sobre la
+rama de #2633 (`scrum-1509h-veinte-por-hora` @ `5bc9a9a15`), con `origin/main` fusionado (A4). Ni `src/` ni el 20 se
+tocan: el 20 es firma del fundador (c.20141) y el arreglo es del TEST.
+
+## 0 · El rojo, confirmado en el log
+
+Run 39600073687, job 119222039233, log de 1.984.677 B (`--allow-escape-sequences`): **12.007 tests, 1 cae**, A8.4
+(`tests/bot-suite.test.mjs:81`), `NoMedido` «26 mensaje(s) en el buzon». Una sola traza `[WA in] DESCARTADO … from=34••••••005`.
+Ojo al leer el log: el enmascarado deja 3 cifras, así que las 60 líneas `[WA in] from=34••••••005` mezclan procesos y
+números (la suite del bot es `34600000005` en un banco virgen; `scrum1509h` y `scrum1326` escriben otros que acaban igual).
+
+Contados los `post` de la suite (el duplicado del paso 5 no gasta cupo): el 21.º admitido es `reparación urgente (suite
+loc)` del paso 8h, la línea 318 del stack. **Reproducido en local, idéntico**: banco PGlite desechable en
+`127.0.0.1:55432/yaqu_libro_test` (esquema de `migrate diff --from-empty`, sin tocar ninguna base), mismo `NoMedido`
+tras el paso 8g, y una sonda `--require` sobre `admitirEntrante` (sin tocar `src` ni `dist`): **21 llamadas desde
+`34600000002`, 1 rechazo**.
+
+## 1 · Quién más se pasa de 20 (población, no sólo el que cayó)
+
+Los 14 ficheros de `tests/` que hablan con el webhook de entrantes (`webhooks/whatsapp`, la ruta o el sobre de Meta;
+buscar por `messaging_product`/`whatsapp_business_account` no añade ninguno, y el runner gateado sólo corre
+`tests/*.test.mjs`). Con la sonda: el máximo por número y proceso de los que corren sin base es 9 (`scrum1322`);
+`scrum1326` usa 55 números con 2 como mucho; `scrum1509h` llega a 120 a propósito (es el **control positivo**: 100
+rechazos). Los gateados, leídos: `scrum50` manda 3, `webhooks-idempotencia` es el webhook de PSP (0). **Sólo
+`bot-suite` pasaba de 20.**
+
+## 2 · El arreglo
+
+- `tests/bot-suite.test.mjs`: tres conversaciones, tres clientes del merchant — pasos 1-7 desde `cliente` (7
+  entrantes), 8-8h desde `segundoCliente` (16), 9-11 desde `tercerCliente` (3). Medido con la sonda: 3 números,
+  máximo 16, 0 rechazos.
+- Los tres asertos del aviso al profesional (8f, 9, 11) pasan de `m.to !== TEST_PHONE` a `m.to === PRO_PHONE`: con
+  varios clientes, un mensaje tardío al cliente ANTERIOR también es «distinto de TEST_PHONE», y el aserto pasaría sin
+  que el pro recibiera nada. La contraprueba de limpieza cuenta `botSession` de los tres clientes, no sólo del último.
+- `post()` cuenta wamids distintos por número y, si una conversación va a pasar de `ENTRANTES_POR_HORA` (leído de
+  `dist`, no copiado), falla CON NOMBRE en el sitio, en vez de un `NoMedido` de buzón veinte pasos más abajo.
+- `tests/_merchant-fixture.mjs`: `telefonosDe` gana `segundoCliente` (`34605…`) y `tercerCliente` (`34606…`), de la
+  misma fuente (SCRUM-180) y alcanzados por el barrido por phone (`Object.values`). 34602-34604 no: otras suites
+  los usan con sufijo del reloj; 34605-34609 no aparecen en `tests/`, `scripts/`, `src/` ni `docs/QA`.
+
+**Qué pieza trabaja**: quitando las dos líneas que cambian de cliente, la suite cae en el entrante n.º 21 con el
+mensaje de `post()` («el entrante n.º 21 desde 34600000004 …»), tras el paso 8g, como en CI. Copia mutada borrada;
+árbol limpio después.
+
+## 3 · Lo corrido
+
+- Contra el banco PGlite: `bot-suite`, `scrum50`, `a55-window-quote`, `merchant-fixture`: **16 casos · 16 pasan · 0
+  caen · 0 saltados**. La suite: 14 pasos, «SUITE OK — 33 mensajes simulados, 0 llamadas a Meta», limpieza a 0.
+- Sin base: los 14 del webhook + `merchant-fixture`, `scrum681`, `scrum419`, `scrum172`, `scrum495`, `scrum498`,
+  `scrum113`, `scrum1415`, `scrum237*`, `scrum976*`: **202 · 199 pasan · 0 caen · 3 saltados** (los gateados). Suma cuadra.
+
+**No medido:** Postgres real (PGlite es una sola sesión: hizo falta `pgbouncer=true` y `connection_limit=1`, así que
+no prueba nada de concurrencia); la tanda completa en local; los otros 80 ficheros que usan `withMerchant` contra un
+banco (el cambio sólo añade dos teléfonos al `deleteMany` por phone); que el barrido por phone, y no el de
+`merchantId`, sea el que borra las sesiones de los clientes nuevos. El obligatorio, en la entrega de Jira.
+
+## 4 · Errores propios
+
+- Dejé un commit «wip» debajo de un merge con `main`; sin empujar, lo rehice con `reset --keep` y `cherry-pick -n`.
+- Mi primera sonda no arrancó (la ruta con espacio partía `NODE_OPTIONS`) y mi primer banco cayó por SSL y por
+  sentencias preparadas con nombre: ninguno de los dos dio un número falso, los tres fallaron en alto.
