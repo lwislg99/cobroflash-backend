@@ -3,6 +3,7 @@
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { PSPWebhookSchema } from '../../../../core/validation/schemas';
+import { cabeEnColumnaInt } from '../../../../core/validation/enteroDeColumna'; // SCRUM-1456c
 import { ensureInvoiceForCharge, ensureChargeReceiptToken } from '../../../../lib/invoicing';
 import { sendInvoiceEmail } from '../../../../lib/email';
 import { canalDeWhatsApp, tieneNumeroDeContacto } from '../../../../core/contacto/canalDeWhatsApp'; // SCRUM-590 (CONT-19)
@@ -34,7 +35,7 @@ router.post('/', async (req, res) => {
     const body = PSPWebhookSchema.parse(req.body);
     const chargeId =
       typeof body.charge_id === 'number' ? body.charge_id : Number(body.charge_id);
-    if (!Number.isInteger(chargeId)) {
+    if (!cabeEnColumnaInt(chargeId)) {
       return res.status(400).json({ error: 'invalid_charge_id' });
     }
 
