@@ -404,3 +404,72 @@ La dedupe actual ya da UNA Issue abierta, `[vigía] main sin verificar`: la crea
 ### Errores propios de este tramo
 
 * El primer empaquetado iba en `docs/master/SCRUM-1393c.md` (lo tumbó `scrum273`: va como apéndice aquí) y el motor leía `git log` contra la referencia móvil (lo tumbó `scrum723`). Los dos los cacé con `guards:entrada` ANTES de empujar. La pasada real de 34 commits se hizo con la versión que leía git; después, solo cambió de dónde sale la lista de shas, no el juez.
+
+## Cuarto tramo · SCRUM-1393d · El Issue del vigía se cierra con la punta VERDE y se reabre con un ROJO o CIEGO
+
+**Medido contra:** `origin/main` = `99654a927d3b34893be77c82032c15efc534ba50` · 2026-10-21T13:26:46Z
+
+A9: aviso → cicatriz J6 «Escribí la regla de cierre del vigía antes de medir contra el Issue real cuántos CIEGO pendientes tenía, y tenía dos» — no se pudo comprobar: lo que se mide es el Issue vivo de GitHub, y ningún test sin red lo ve
+
+J6 (`jv-j6r`), por encargo del orquestador del equipo de Javier (`cobroflash-backend-5f`). Es el «Pendiente» del tramo
+1393c. Carril: la excepción de **c.20147** (los dos ficheros son de J6); no se toca ningún otro workflow ni se pide
+permiso nuevo del token (`issues: write` ya estaba). Decisión del orquestador, copiada de su encargo: **nada de
+«lectura generosa»; un CIEGO no lo absuelve un verde posterior.** Esta sesión arrancó sin herramientas de Jira: no
+he leído c.20144, c.20147 ni c.20150; uso lo que el orquestador copió en el encargo. El hook de arranque dijo
+«SIN IDENTIDAD» (SCRUM-1498) y seguí, como manda el encargo.
+
+### La regla (`accionDelIssue`, pura, en el motor)
+
+| la pasada | Issue abierto | Issue cerrado | sin Issue |
+|---|---|---|---|
+| punta VERDE, ningún CIEGO/SIN-LEER en la pasada ni pendiente | comenta (sha + población) y **cierra** | nada | nada |
+| hay ROJO, CIEGO o SIN-LEER nuevo (sin su marca) | comenta | **reabre** el mismo y comenta | crea |
+| nada nuevo y no se puede cerrar | nada | nada | nada |
+
+* **Pendiente** = un commit cuya ÚLTIMA marca desde el último cierre (`<!-- vigia-de-main:cerrado:<sha> -->`) es CIEGO o SIN-LEER, y que esta pasada no ha vuelto a juzgar VERDE o ROJO.
+* Un **ROJO** viejo sí lo absuelve la punta VERDE: un rojo se arregla con otro commit. Un **CIEGO** no: nadie probó ese commit.
+* No cierra si no sabe la punta, si la punta no está en la pasada (un (C) de un commit que ya no es la punta), o si la punta sale CORRIENDO.
+* La punta la pone el workflow con `git rev-parse origin/main` del propio job. El paso corre ahora también con salida 0 (es la que cierra), busca el Issue con `--state all` (para reabrir y no duplicar) y sólo ejecuta los `PASOS=` que devuelve `--accion-del-issue`; ya no hay `node -e` en el workflow.
+
+### Lo probado DE VERDAD
+
+* `tests/scrum1393d-vigia-de-main-cierra-con-verde.test.mjs`, 8 casos sembrados: un verde que cierra, un ciego que no (en la punta, en la pasada y pendiente en el Issue), un rojo que reabre, el modo de consola, y que el workflow tiene una rama para cada paso que el motor puede pedir. Con `scrum1393c`, `scrum237` y `scrum976`: **33 de 33** (`^ok` = 33, `not ok` = 0, 8 de ellos 1393d).
+* **Rojo primero**, sobre el commit `ea2edc820f020bc52e0a6b6b2c6e6d3f4a6fb30f`, una mutación cada vez (`numstat` 1/1) y restaurada con `git restore --source=HEAD`: sin los pendientes (la lectura generosa) cae 1 caso; sin reabrir, 2; con un CIEGO en la pasada que no frena, 1; sin cerrar nunca, 4; y quitando la rama `reabrir)` del workflow, 1. Las cinco mueren; `git status` vacío después.
+* **La búsqueda del Issue contra GitHub (lectura)**: devuelve `2641 OPEN` para el título real y `null null` (→ ninguno) para uno que no existe.
+* **En seco con datos reales** (13:31Z, sólo lectura, nada escrito en el Issue): la punta `99654a927d3b` salía CORRIENDO → `PASOS=` vacío, «no se cierra: la punta sale CORRIENDO».
+
+### Lo que la regla hace con el Issue de HOY — para decidir (no lo decido yo)
+
+El cuerpo de #2641 lleva dos CIEGO, `3c60a7fd0147` y `b10c9b6ca79e`, los dos «run cancelled con 0 jobs». Simulando la punta VERDE contra ese cuerpo real: **«no se cierra: 2 CIEGO pendiente(s)»**. Es la regla pedida, pero su consecuencia es ésta: en el tramo 1393c, 20 de 34 commits salían CIEGO por «cancelled con 0 jobs», así que **el cierre automático casi nunca va a saltar** mientras no se relance el CI de esos commits (dentro de la ventana de la red, 34 h) o alguien cierre el Issue a mano. Un cierre a mano se respeta: el Issue no se reabre hasta que haya un aviso nuevo.
+
+### Lo que NO se puede saber hasta que corra en GitHub: CIEGO declarado, no verde
+
+* Que `gh issue close` y `gh issue reopen` contesten con el `GITHUB_TOKEN` del runner. No lo he intentado: hacerlo sería escribir en el Issue de verdad.
+* Que el `sort_by(...)` del `-q` dé lo mismo con el `gh` del runner (aquí, el de esta máquina).
+* El YAML del workflow no lo ha parseado nada en esta máquina (no hay librería de YAML en el árbol); sí pasó `bash -n` el guion del paso.
+* Que la punta VERDE cierre de verdad: no ha habido ninguna punta verde para verlo.
+
+## Quinto tramo · SCRUM-1393d (relevo) · El rojo del obligatorio de #2642 era del propio test de 1393d
+
+**Medido contra:** `origin/main` = `cf25030c8e94560725075313227e70177868e0f2` · 2026-10-21T13:55:32Z
+
+A9: comprobación → `tests/scrum1349-entorno-prestado-solo-baja.test.mjs`
+
+J6 (`jv-j6s`), relevo de `jv-j6r` (parada) por encargo del orquestador (`cobroflash-backend-5f`). Sin Jira (el MCP no
+conectó: CONNECT_TIMEOUT); lo publica el orquestador.
+
+**El rojo.** Obligatorio de #2642 sobre `d822268b282d4d9886a8362a9c1d6a7bf3e94ea7`: run 39609608390, job 119254697995,
+acabado 13:49:06Z. Log completo (2.002.210 B, 0 «TANDA SIN VEREDICTO»); población 12042 = 11951 pass + 2 fail + 89
+skipped. Los dos `not ok` son de `scrum1349` (casos 2313 y 2315, el segundo en cascada: «la base no está limpia»), y el
+acusado nuevo es `tests/scrum1393d-vigia-de-main-cierra-con-verde.test.mjs:94`: el hijo de `execFileSync` heredaba
+`FORCE_COLOR` (se borraban `NODE_TEST_CONTEXT` y `NODE_OPTIONS`, no la tercera).
+
+**El arreglo.** `delete env.FORCE_COLOR;` en esa línea. No se usó `entornoLimpio` de `scripts/_trinquete-de-zona.mjs`
+porque además fija `TZ`, que este test no necesita. El guard no se toca.
+
+**Lo probado.** En local, `scrum1349` + `scrum1393d`: 17 tests, 17 pass, 0 fail. **En rojo primero:** con el test de
+1393d devuelto a `d822268b2`, `scrum1349` sale 9 tests, 7 pass, 2 fail, y el fallo nombra a `scrum1393d`. Lo que NO se
+ha medido: la tanda completa en local (sin `node_modules` ni `dist/` propios en este árbol); la mide el obligatorio.
+
+**Error propio:** ninguno en este tramo; el de `jv-j6r` (un hijo de `node --test` con el entorno a medias) ya lo caza el
+guard de la línea `A9:`, que es la que lo vio.

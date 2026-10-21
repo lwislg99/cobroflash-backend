@@ -20,6 +20,10 @@
 # por commit y estado: el cron no repite lo que ya dijo (C)). Con `GITHUB_TOKEN`: sin secreto nuevo,
 # y sus comentarios no despiertan a ninguna sesión. Salida 2 (el vigía no supo mirar) también avisa.
 #
+# CUÁNDO SE CIERRA (SCRUM-1393d): cuando una pasada juzga la PUNTA de `main` VERDE, sin CIEGO en la
+# pasada ni CIEGO pendiente en el Issue, con un comentario que dice el sha y la población. Un CIEGO
+# nunca cierra, ni lo absuelve un verde posterior. Si después vuelve un ROJO o CIEGO, se REABRE el mismo.
+#
 # ⚠️ Lo que NO se pudo probar fuera de GitHub, declarado en `docs/master/SCRUM-1393c.md`: que los
 # disparadores salten, que el cron llegue, y que el Issue se escriba. Hasta su primera pasada, CIEGO.
 name: Vigía de main
@@ -84,8 +88,10 @@ jobs:
           echo "- salida del juez: **$codigo** (0 nada · 1 rojo o CIEGO · 2 el vigía no supo mirar)" >> "$GITHUB_STEP_SUMMARY"
           exit 0
 
-      - name: Avisar en el Issue
-        if: steps.juez.outputs.salida != '0'
+      - name: Avisar o cerrar en el Issue
+        # SCRUM-1393d: corre también con salida 0, porque un VERDE en la punta es lo que CIERRA el
+        # Issue. Qué se hace lo decide `accionDelIssue` del motor (pura y probada sin red); aquí sólo
+        # se ejecutan sus pasos.
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
@@ -97,38 +103,48 @@ jobs:
           if [ ! -f vigia.json ]; then
             printf '**Vigía de main** · salida %s y SIN veredicto escrito: el vigía no supo mirar.\n\nPasada: %s\n' "$SALIDA" "$URL_RUN" > cuerpo.md
           fi
-          # Si no se puede BUSCAR el Issue, se para: un NUM vacío crearía otro (SCRUM-853c).
-          if ! NUM="$(gh issue list --repo "$REPO" --state open --search "$TITULO in:title" --json number,title \
-                      -q "[.[] | select(.title==\"$TITULO\")] | .[0].number" 2>/dev/null)"; then
+          # Si no se puede BUSCAR el Issue, se para: un NUM vacío crearía otro (SCRUM-853c). Se busca en
+          # TODOS los estados (SCRUM-1393d): un ROJO o CIEGO con el Issue cerrado REABRE ese, no crea otro.
+          if ! FILA="$(gh issue list --repo "$REPO" --state all --search "$TITULO in:title" --json number,title,state \
+                      -q "[.[] | select(.title==\"$TITULO\")] | sort_by(.state != \"OPEN\", -.number) | .[0] | \"\(.number) \(.state)\"" 2>/dev/null)"; then
             echo "::error::No se pudo buscar el Issue del vigía de main: NO se ha avisado."
             exit 1
           fi
-          [ "$NUM" = "null" ] && NUM=""
-          PREVIOS=""
+          NUM="${FILA%% *}"
+          case "${FILA##* }" in OPEN) ESTADO=abierto ;; CLOSED) ESTADO=cerrado ;; *) ESTADO=ninguno; NUM="" ;; esac
+          : > previos.txt
           if [ -n "$NUM" ]; then
             # El cuerpo del Issue también: el aviso que lo creó lleva sus marcas ahí, no en un comentario.
-            if ! PREVIOS="$(gh issue view "$NUM" --repo "$REPO" --json body -q .body 2>/dev/null && \
-                            gh api "repos/$REPO/issues/$NUM/comments" --paginate -q '.[].body' 2>/dev/null)"; then
+            if ! { gh issue view "$NUM" --repo "$REPO" --json body -q .body && \
+                   gh api "repos/$REPO/issues/$NUM/comments" --paginate -q '.[].body'; } > previos.txt 2>/dev/null; then
               echo "::error::No se pudieron leer los avisos previos de #$NUM: NO se ha avisado."
               exit 1
             fi
           fi
           if [ -f vigia.json ]; then
-            PREVIOS="$PREVIOS" URL_RUN="$URL_RUN" node -e "
-              import('./scripts/vigia-silencio-de-main.mjs').then(({ cuerpoDelAviso }) => {
-                const j = JSON.parse(require('fs').readFileSync('vigia.json', 'utf8'));
-                const c = cuerpoDelAviso({ ...j, urlDelRun: process.env.URL_RUN }, process.env.PREVIOS);
-                require('fs').writeFileSync('cuerpo.md', c);
-              });"
+            # La punta de `main` es la de ESTE job: si (C) juzgó un commit que ya no es la punta, no cierra.
+            PUNTA="$(git rev-parse origin/main)"
+            if ! URL_RUN="$URL_RUN" node scripts/vigia-silencio-de-main.mjs --accion-del-issue vigia.json --punta "$PUNTA" \
+                   --estado-issue "$ESTADO" --previos previos.txt --cuerpo cuerpo.md > accion.txt; then
+              echo "::error::El motor no supo decidir qué hacer con el Issue: NO se ha avisado."
+              exit 1
+            fi
+            sed 's/^/    /' accion.txt >> "$GITHUB_STEP_SUMMARY"
+            PASOS="$(sed -n 's/^PASOS=//p' accion.txt)"
+          else
+            case "$ESTADO" in ninguno) PASOS=crear ;; cerrado) PASOS=reabrir,comentar ;; *) PASOS=comentar ;; esac
           fi
-          if [ ! -s cuerpo.md ]; then
-            echo "- **YA-AVISADO** — todo lo que dice esta pasada ya tiene su marca en #$NUM." >> "$GITHUB_STEP_SUMMARY"
+          if [ -z "$PASOS" ]; then
+            echo "- **NADA** — ni aviso nuevo ni cierre (Issue: ${NUM:-ninguno}, $ESTADO)." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-          if [ -z "$NUM" ]; then
-            gh issue create --repo "$REPO" --title "$TITULO" --body-file cuerpo.md
-            echo "- **ISSUE-CREADO**" >> "$GITHUB_STEP_SUMMARY"
-          else
-            gh issue comment "$NUM" --repo "$REPO" --body-file cuerpo.md
-            echo "- **AVISADO** en #$NUM" >> "$GITHUB_STEP_SUMMARY"
-          fi
+          for p in ${PASOS//,/ }; do
+            case "$p" in
+              crear) gh issue create --repo "$REPO" --title "$TITULO" --body-file cuerpo.md ;;
+              reabrir) gh issue reopen "$NUM" --repo "$REPO" ;;
+              comentar) gh issue comment "$NUM" --repo "$REPO" --body-file cuerpo.md ;;
+              cerrar) gh issue close "$NUM" --repo "$REPO" --reason completed ;;
+              *) echo "::error::paso desconocido «$p»: NO se ha seguido."; exit 1 ;;
+            esac
+            echo "- **$p** ${NUM:+#$NUM}" >> "$GITHUB_STEP_SUMMARY"
+          done

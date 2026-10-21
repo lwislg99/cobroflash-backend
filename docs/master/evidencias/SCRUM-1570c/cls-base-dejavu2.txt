@@ -1,0 +1,25 @@
+⟦arranque⟧ 0.4 s COMPLETA · proceso+ws 0.4 s · primera-página 0.0 s
+vendidas   360 retraso  rota · CLS 0 · obs 0 · barra 116 · inter false
+vendidas   390 retraso  rota · CLS 0 · obs 0 · barra 116 · inter false
+vendidas   360 retraso     0 · CLS 0 · obs 0 · barra 116 · inter true
+vendidas   390 retraso     0 · CLS 0 · obs 0 · barra 95 · inter true
+vendidas   360 retraso  1000 · CLS 0.005 · obs 1 · barra 116 · inter true
+      0.005@1321 NAV.nav-links 107→107 h94→94 | DIV.stage 770→741 h10→39 | DIV.win 0→759 h0→21 | SPAN.lbls 0→762 h0→18 | SPAN#ann-plazas 82→82 h22→22
+vendidas   390 retraso  1000 · CLS 0.043 · obs 1 · barra 95 · inter true
+      0.043@1316 ::before 181→160 h599→620 | NAV.nav-links 86→86 h94→94 | ::after 69→47 h47→47 | SPAN#ann-plazas 82→60 h22→22 | A 81→59 h24→24
+cero       360 retraso  rota · CLS 0 · obs 0 · barra 116 · inter false
+cero       390 retraso  rota · CLS 0 · obs 0 · barra 116 · inter false
+cero       360 retraso     0 · CLS 0 · obs 0 · barra 116 · inter true
+cero       390 retraso     0 · CLS 0 · obs 0 · barra 95 · inter true
+cero       360 retraso  1000 · CLS 0.005 · obs 1 · barra 116 · inter true
+      0.005@1332 NAV.nav-links 107→107 h94→94 | DIV.stage 770→741 h10→39 | DIV.win 0→759 h0→21 | ::after 69→69 h47→47 | A 81→81 h24→24
+cero       390 retraso  1000 · CLS 0.043 · obs 1 · barra 95 · inter true
+      0.043@1339 ::before 181→160 h599→620 | NAV.nav-links 86→86 h94→94 | ::after 69→47 h47→47 | A 81→59 h24→24
+roto       360 retraso  rota · CLS 0 · obs 0 · barra 116 · inter false
+roto       390 retraso  rota · CLS 0 · obs 0 · barra 116 · inter false
+roto       360 retraso     0 · CLS 0 · obs 0 · barra 116 · inter true
+roto       390 retraso     0 · CLS 0 · obs 0 · barra 95 · inter true
+roto       360 retraso  1000 · CLS 0.005 · obs 1 · barra 116 · inter true
+      0.005@1309 NAV.nav-links 107→107 h94→94 | DIV.stage 770→741 h10→39 | DIV.win 0→759 h0→21 | ::after 0→762 h0→16 | SPAN.dot 714→714 h4→4
+roto       390 retraso  1000 · CLS 0.042 · obs 1 · barra 95 · inter true
+      0.042@1305 ::before 181→160 h599→620 | NAV.nav-links 86→86 h94→94

@@ -638,3 +638,52 @@ SCRUM-1127b cubra ⑤ (`VfSubmission`, `AceptadoConErrores`): sólo he visto que
 ficheros de `src/`.
 
 A9: sin fallo que generalice — la única caída propia fue un `git fetch && git rev-parse` que salió con 128 y se relanzó sin sacar cifra de él; la otra cosa que pudo salir mal (escribir en carril de J4) la paró la norma A20 antes de la primera línea
+
+---
+
+# SCRUM-524d — Las cuatro de 524c, pasadas a `PREGUNTAS_ASESOR.md` como P22–P25
+
+*21-oct-2026 · rama `scrum-524d-preguntas-al-documento`, nacida de `scrum-524c-preguntas-asesor` @ `3de2e0b02` · puesto J4 (jv-j4i)*
+
+**Medido contra:** `origin/main` = `0adcc1b2ff90af4aa0f0d43ef710da4c8d65a163` · 2026-10-21T13:56:26Z
+
+> **Carril.** `docs/legal/` es de J4 («J4 propone · firma un jefe», `docs/equipo/dos-equipos.md`).
+> Encargo del orquestador `cobroflash-backend-5f`, 21-oct-2026. **Documento interno**: ninguna frase
+> nueva para un cliente. Cero líneas de `src/`. **Jira no se ha leído**: el MCP de Atlassian conectó
+> pero no expuso ninguna herramienta de Jira (3 búsquedas, 0). Sin cotejar con SCRUM-1264.
+
+## ① PASO 0 · ¿ya estaban?
+
+Población: `docs/legal/PREGUNTAS_ASESOR.md` en `origin/main`, **113.929 B, 1.410 líneas**, idéntico al
+de la rama de 524c. Recuento por patrón: `1242` 1 · `4141` 0 · `1287` 0 · `NumeroInstalacion` 0 ·
+`MultiplesOT` 0 · `SCRUM-524` 0. **El único `1242` es un rango de líneas** (`:1240-1242`, en la
+respuesta B sobre `S1`/`S2`), no el código de error: 524c ① escribió «0 apariciones», y la cifra
+exacta es 1 que no es la pregunta. El veredicto no cambia: **faltan las cuatro**. Control positivo
+del mismo barrido: `SistemaInformatico` sale 3 veces. Y ningún otro PR abierto toca el documento
+(15 abiertos; control: el que toca `SCRUM-524.md` sí sale, #2646).
+
+## ② Lo que hace
+
+- Las cuatro, como **P22, P23, P24 y P25**, al final de las preguntas (después de P20, antes de
+  «RESPUESTAS · 22-sep-2026»), en el formato del documento: `# P<n>.`, cita de origen, puntos
+  **1)**, `---`. Cada una cita «SCRUM-524c». P25 lleva **CANDIDATA** en el título y en la cita.
+- **Por qué no P21:** `§21` ya es una pregunta (los cinco avisos del Libro registro, 21.1–21.5), y
+  así la citan `docs/master/SCRUM-1041.md`, `SCRUM-1428.md` y `docs/equipo/para-javier.md`. Un
+  «P21» haría dos preguntas 21.
+- **Contenido, sin cambios.** Medido: de las 84 líneas no vacías del texto de 524c ②, 79 están
+  literales en el documento; las 5 que no son los 4 títulos (`### P-524.n ·` → `# P2n.`) y el
+  arranque de «Fuente común de los literales», que dice ahora «de P22 a P25» y va una sola vez,
+  en P22. Control sembrado: una línea alterada a propósito sale como ausente.
+- **Ningún ancla movida:** lo más bajo que se cita de este documento por número de línea es la
+  1097, y lo insertado empieza en la 1162. Finales de línea medidos por bytes: 0 CR, sin BOM, antes
+  y después.
+
+## ③ Lo que falta, y no es de J4
+
+- **Firma de un jefe** (`dos-equipos.md`: «firma un jefe») para que P22–P25 entren en la lista de la
+  cita. J4 no firma.
+- **P25 se coteja con la Orden HAC/1177/2024 antes de la cita**: puede contestarse sin asesor.
+- **SCRUM-1264** (el sitio único de las preguntas, según el encargo) recibe las cuatro por mano del
+  orquestador; nadie ha comparado aún si coinciden.
+
+A9: sin fallo que generalice — un recuento de CR con `od -c | grep -c` dio 3.897 sobre un fichero que tiene 0; no lo usé y lo rehice por bytes antes de escribir nada, que es lo que ya pide la casa
