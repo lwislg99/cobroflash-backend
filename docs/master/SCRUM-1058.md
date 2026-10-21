@@ -298,3 +298,104 @@ vería el profesional ya EXISTE: es el mismo 409 con motivo `factura_emitida` qu
   motivo en el selector de S2) no se propone aquí — depende de qué opción apruebe J1.
 - Recuento real de facturas "sin congelar" en cualquier entorno: no medible desde esta máquina
   (sin Postgres). Quien lo mida, que lo haga contra staging con el turno, no a ojo.
+
+---
+
+## 1058 · visto bueno de J1
+
+**Medido contra:** `origin/main` = `cf25030c8e94560725075313227e70177868e0f2` · 2026-10-21T13:51:47Z
+
+Revisión de J1 (sesión `jv-j1o`), carril de facturas: el diseño de arriba leído contra el código
+de HOY. Sólo LECTURA del camino de emisión (regla 38): cero líneas de `src/` en esta rama.
+**Jira no se pudo leer**: el MCP de Atlassian dio `CONNECT_TIMEOUT` al arrancar (~13:45Z), así que
+c.16565 y c.16596 NO se han leído; esta revisión se apoya sólo en el registro del repo.
+
+### Veredicto
+
+**Opción A: NO OK tal como está escrita.** Su premisa —«para una factura congelada, ningún
+lector que reconstruya el documento mira `customerId`»— es FALSA hoy: hay un quinto lector que
+el censo de §1bis no vio, **el libro de facturas expedidas para la AEAT**, y ése resuelve el
+destinatario (NIF y nombre) desde la ficha VIVA a través de `customerId`, para TODAS las
+facturas, congeladas o no. Reasignar `Invoice.customerId` cambia el destinatario que ese libro
+declara. **Corrido, no razonado** (abajo). Pasa a OK sólo si se cumplen las DOS condiciones de
+«Qué haría falta», y las dos son de un jefe.
+
+**Opción B: NO OK.** **Opción C: OK en lo fiscal**; su coste (ALTER + todos los lectores de
+`Customer`) es decisión de producto, no de este carril.
+
+### El hallazgo, corrido
+
+- `src/modules/fiscal/librosAeat/librosAeat.repo.ts:51-65` — junta los `clienteId` del libro y
+  hace `customer.findMany({ id in ids })`: `nifDestinatario = c.taxId`, `nombreDestinatario =
+  nombreParaDocumento(c, …)`. Ficha viva.
+- `src/modules/invoicing/domain/libroRegistro.repo.ts:100-117` (`CAMPOS_FACTURA`) — el libro ni
+  siquiera SELECCIONA las cinco columnas congeladas; `libroRegistro.ts:213` las cambia por
+  `clienteId: f.customerId`. Por eso §1bis lo dio por «agrupa/filtra, no reescribe destinatario»:
+  el destinatario se reescribe un fichero más abajo, y con otro nombre de campo (`clienteId`).
+- Montado: `src/app.ts:600` → `GET /admin/libros/expedidas.csv` (`librosAeat.routes.ts:45`).
+- **Sonda:** `docs/master/evidencias/SCRUM-1058/sonda-libro.cjs`, código real de
+  `leerLibroExpedidasDelTrimestre` compilado con `tsc --noCheck` a una carpeta temporal, base en
+  memoria. La MISMA factura, con sus cinco columnas congeladas a `Fusionado SL` / `B11111111`:
+  con `customerId=10` el libro da `B11111111` (control positivo: el instrumento ve el valor
+  bueno); con `customerId=20` —lo que haría el `updateMany` de la Opción A— da `B22222222` /
+  `Principal SA`. Salida entera en `sonda-libro.salida.txt` (2 vueltas, 1 fila cada una).
+- **No es sólo de la fusión: es un defecto de HOY**, el de SCRUM-729 en un quinto lector.
+  Corregir el NIF de la ficha de un cliente reescribe ya, sin fusión ninguna, el libro de
+  expedidas de sus facturas pasadas, mientras el PDF y el XML (que sí pasan por
+  `clienteDelDocumento`) siguen con el congelado: libro y registro pueden declarar a la AEAT dos
+  destinatarios distintos para la misma factura. NO medido: si algún merchant ha descargado ese
+  libro en algún entorno.
+
+### Caso por caso
+
+| caso | veredicto | por qué, con fichero:línea de hoy |
+|---|---|---|
+| Regla 29 (A) | **NO OK sin decisión** | El `UPDATE` de `customerId` cambia lo que declara el libro (arriba). Y el propio código dice que reasignarla «sería tocar un documento YA EMITIDO — regla 29, prohibido siempre» (`src/modules/system/domain/fusionClientes.ts:11-15`): diseño y código se contradicen, y elegir entre los dos es interpretar la regla 29 → fundador. |
+| Regla 29 (B) | **NO OK** | Escribe las cinco columnas en facturas emitidas. Lo escrito es la ficha del día de la FUSIÓN, no la del día de la EMISIÓN: es justo el backfill que prohíbe `clienteCongelado.ts:32-35` («escribiría un NIF que el día de la emisión no constaba»), y el NIF decide si la factura lleva `Destinatarios` (`verifactu.service.ts:1074-1077`, `MODO_SIN_DESTINATARIO`). |
+| Huella encadenada | **OK** | `computeVeriFactuHash` (`verifactu.service.ts:136-155`): 8 campos, ninguno del cliente. Anulación igual (`:165-180`). La cadena no se toca. |
+| `IDEmisorFactura` / NIF del emisor | **OK** | Es el del merchant, congelado al emitir (SCRUM-665 B, `schema.prisma:776-796`); la fusión no toca `Merchant`. |
+| XML a la AEAT (`Destinatarios`) | **OK** para congeladas | `clienteDelDocumento(inv, inv.customer)` (`verifactu.service.ts:1074`): con `customerName` presente manda la columna (`clienteCongelado.ts:222-231`). |
+| Cola de remisión (`VfSubmission`) | **OK** — nuevo desde el 23-sep | SCRUM-1296 (30-sep) guarda el `registroXml` YA CONSTRUIDO al emitir (`encolarRemision.ts:42-69`) con FK a `Invoice` (`schema.prisma:1829`), no a `Customer`: la fusión no lo alcanza. |
+| PDF (dos generadores) y regeneración de admin | **OK** para congeladas | `src/lib/invoicing.ts:133` y `:292`, `invoicesAdmin.routes.ts:1237`, todos por `clienteDelDocumento`. |
+| Libro de expedidas AEAT | **NO OK** | El hallazgo de arriba. |
+| Rectificativas (R1) | **OK**, con el libro como en A | La R1 nace con `customerId: original.customerId` (`invoicesAdmin.routes.ts:1103`) y hereda el congelado del original (`clienteCongelado.ts:197-204`); el `updateMany` mueve las dos juntas. Si el original está a NULL, A ya bloquea. La R1 arrastra el mismo defecto del libro que su original. |
+| Series / numeración | **OK** | `@@unique([merchantId, number])` (`schema.prisma:974`); `invoiceNumber.service.ts` no nombra `customerId` (0 apariciones). |
+| NIF distinto entre los dos | **NO OK** | §5 dice «el NIF impreso en cada una sigue siendo el que tenía». Cierto en PDF y XML; FALSO en el libro: tras la fusión, las facturas del fusionado salen en el libro con el NIF del principal (la sonda es exactamente este caso). 1057 sólo AVISA de NIF distintos (`fusionClientes.ts:131-132`), no bloquea. |
+| Facturas sin congelar (bloqueo de A) | **OK** | Bloquear con `customerName: null` es la frontera correcta (`clienteCongelado.ts:15-28`). Bloquea también por las del PRINCIPAL, que no se mueven: conservador, no incorrecto. |
+
+### Lo que ha cambiado desde el 23-sep (comparado por contenido)
+
+- `clienteCongelado.ts` y `crearFacturaEmitida.ts`: sin cambios (`git diff 62176956c..cf25030c8`
+  vacío para los dos).
+- `fusionClientes.ts`: SCRUM-1291 (`c785afe13`) añadió `CustomerSite`. Hoy reasigna **diez**
+  tablas (`:177-191`), así que la de `Invoice` sería la undécima, no «la décima» de §4.
+- `VfSubmission` existe (SCRUM-1296): ver la tabla. Juega a favor de A.
+- Las líneas que cita §1bis se han movido; el contenido es el mismo: `schema.prisma` 723-730 →
+  768-775, 912 → 957, 925 → 974 · `invoicing.ts` 131 → 133, 277 → 292 · `invoicesAdmin.routes.ts`
+  1185 → 1237 · `verifactu.service.ts` 891 → 1074. Lo que §1bis daba por completo era el censo,
+  y no lo era (el libro).
+
+### Qué haría falta para que A pase a OK (las dos son de un jefe)
+
+1. **El libro de expedidas lee el destinatario por `clienteDelDocumento`** (columna primero,
+   ficha viva sólo si `customerName` es NULL), igual que los otros cuatro lectores. Es modificar
+   `src/modules/fiscal/librosAeat/` y el `select` de `libroRegistro.repo.ts`: camino fiscal,
+   **STOP del fundador** (regla 38; SCRUM-1151 ya trató `librosAeat` como «regla 38, no se
+   modifica»). Arregla además el defecto de HOY de arriba, con fusión o sin ella. Va ANTES que
+   cualquier construcción de A.
+2. **El fundador decide si reasignar `Invoice.customerId` de una emitida es «editar»** en el
+   sentido de la regla 29. Con (1) hecho, ningún documento fiscal cambiaría; la opinión de J1 es
+   que entonces no lo es (es un enlace administrativo, como `quoteId` o `chargeId`), pero la
+   regla es suya y hoy el código dice lo contrario (`fusionClientes.ts:11-15`).
+
+Hasta entonces, el bloqueo `factura_emitida` de SCRUM-1057 se queda como está.
+
+### Avisos de otros carriles (no son del veredicto)
+
+- `src/modules/exports/domain/exportData.ts:215` — el CSV de facturas pone «Cliente» y «Email
+  cliente» de la ficha viva. Tras una fusión saldría el principal. Sin NIF; no es el libro.
+- Admin, WhatsApp de la factura y recordatorios (`invoiceAdmin.ts:151`,
+  `invoiceWhatsApp.service.ts:112`, `invoiceReminder.service.ts:133`) leen la ficha viva: ahí
+  reflejar la fusión es lo que se quiere.
+
+A9: aviso → A10 «Cero resultados con tu vocabulario no es silencio del documento.» — no se pudo comprobar: el censo de §1bis buscó `customerId` y `clienteDelDocumento`, y el libro reescribe el destinatario con `clienteId`; ningún guard puede saber qué nombre lleva un campo un fichero más abajo, y el que vigilaría «todo destinatario sale de `clienteDelDocumento`» toca el camino fiscal (condición 1, STOP).
