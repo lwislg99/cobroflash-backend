@@ -7,7 +7,8 @@
 //   · «entero»  → `Number.isInteger(`      : el defecto de antes. Deja pasar `1e20`.
 //   · «seguro»  → `Number.isSafeInteger(`  : el arreglo que PARECE bueno. Deja pasar `10000000000`.
 // Se aplica al FUENTE (y se comprueba que se aplicó), se transpila ESE fichero a su sitio en `dist/`,
-// se corre `tests/scrum1456-…` y se apunta qué casos caen, POR NOMBRE. Después se restauran fuente y
+// se corre el test de ese fichero (`PRUEBA`: `tests/scrum1456-…`, o `tests/scrum1456c-…` para cobros
+// y psp) y se apunta qué casos caen, POR NOMBRE. Después se restauran fuente y
 // `dist/` byte a byte, y al final se comprueba por CONTENIDO (sha256) que han vuelto a ser los que eran.
 //
 // La pasada «T0» transpila los ficheros SIN mutar: si el test sigue en verde, un rojo de después es
@@ -25,8 +26,18 @@ import ts from 'typescript';
 
 const RAIZ = path.resolve(import.meta.dirname, '../..');
 const TEST = 'tests/scrum1456-ids-que-no-caben-en-la-columna.test.mjs';
+const TEST_C = 'tests/scrum1456c-cobros-y-psp-id-que-cabe.test.mjs'; // SCRUM-1456c
 const CLIENTES = 'src/modules/system/app/routes/customersAdmin.routes.ts';
 const FACTURAS = 'src/modules/system/app/routes/invoicesAdmin.routes.ts';
+const COBROS = 'src/modules/billing/app/routes/chargesAdmin.routes.ts'; // SCRUM-1456c
+const PSP = 'src/modules/billing/app/routes/psp.routes.ts'; // SCRUM-1456c
+// Qué test mide cada fichero, y con qué prefijo nombra sus casos.
+const PRUEBA = {
+  [CLIENTES]: [TEST, 'SCRUM-1456'],
+  [FACTURAS]: [TEST, 'SCRUM-1456'],
+  [COBROS]: [TEST_C, 'SCRUM-1456c'],
+  [PSP]: [TEST_C, 'SCRUM-1456c'],
+};
 
 // Qué casos «🔴 … → 400» tiene que tumbar cada llamada, en el ORDEN en que aparecen en el fuente.
 // Es la misma tabla que `LECTURAS` del test, leída por fichero. `PUT` y `PATCH /:id` comparten línea.
@@ -65,6 +76,15 @@ const ESPERADO = {
     ['GET invoices /:id/pdf · `id` (params)'],
     ['PATCH invoices /:id/asignados · `id` (params)'],
   ],
+  // SCRUM-1456c (J2): las cuatro de dinero, con la firma del fundador (SCRUM-1456 c.20139).
+  [COBROS]: [
+    ['POST charges /:id/confirm-bizum · `id` (params)'],
+    ['POST charges /:id/garantia · `id` (params)'],
+    ['POST charges /:id/garantia/liberar · `id` (params)'],
+  ],
+  [PSP]: [
+    ['POST webhooks/psp / · `charge_id` (body)'],
+  ],
 };
 const VARIANTES = [['entero', 'Number.isInteger('], ['seguro', 'Number.isSafeInteger(']];
 const AGUJA = 'cabeEnColumnaInt(';
@@ -83,7 +103,7 @@ const opciones = ts.parseJsonConfigFileContent(
   ts.readConfigFile(abs('tsconfig.json'), ts.sys.readFile).config, ts.sys, RAIZ,
 ).options;
 
-const FICHEROS = [CLIENTES, FACTURAS];
+const FICHEROS = [CLIENTES, FACTURAS, COBROS, PSP];
 const original = Object.fromEntries(FICHEROS.flatMap((f) => [[abs(f), fs.readFileSync(abs(f))], [enDist(f), fs.readFileSync(enDist(f))]]));
 const huella = Object.fromEntries(Object.keys(original).map((f) => [f, sha(f)]));
 
@@ -106,7 +126,7 @@ function llamadas(texto) {
 }
 
 let pasada = 0;
-function correr() {
+function correr(test) {
   pasada += 1;
   const tap = path.join(fuera, `pasada-${String(pasada).padStart(2, '0')}.tap`);
   fs.rmSync(tap, { force: true });
@@ -116,7 +136,7 @@ function correr() {
   delete env.NODE_OPTIONS;
   delete env.FORCE_COLOR;
   const r = spawnSync(process.execPath, [
-    '--test', '--test-force-exit', '--test-reporter=tap', `--test-reporter-destination=${tap}`, TEST,
+    '--test', '--test-force-exit', '--test-reporter=tap', `--test-reporter-destination=${tap}`, test,
   ], { cwd: RAIZ, env, encoding: 'utf8' });
   const texto = fs.existsSync(tap) ? fs.readFileSync(tap, 'utf8') : '';
   const total = Number((texto.match(/^# tests (\d+)$/m) || [])[1] ?? NaN);
@@ -129,11 +149,15 @@ let ciego = null;
 try {
   // T0 · el transpilado SIN mutar deja el test como estaba.
   for (const f of FICHEROS) transpilar(f, fs.readFileSync(abs(f), 'utf8'));
-  const t0 = correr();
-  if (!(t0.total > 0) || t0.caen.length > 0 || t0.status !== 0) {
-    ciego = `T0 no está en verde (total=${t0.total}, caen=${t0.caen.length}, status=${t0.status})`;
-  } else {
-    console.log(`T0 · transpilado sin mutar: ${t0.total} casos, 0 caen`);
+  for (const test of new Set(Object.values(PRUEBA).map(([t]) => t))) {
+    const t0 = correr(test);
+    if (!(t0.total > 0) || t0.caen.length > 0 || t0.status !== 0) {
+      ciego = `T0 no está en verde en ${test} (total=${t0.total}, caen=${t0.caen.length}, status=${t0.status})`;
+      break;
+    }
+    console.log(`T0 · transpilado sin mutar · ${test}: ${t0.total} casos, 0 caen`);
+  }
+  if (!ciego) {
     for (const f of FICHEROS) {
       const texto = fs.readFileSync(abs(f), 'utf8');
       const pos = llamadas(texto);
@@ -149,10 +173,11 @@ try {
           // Que la mutación SE APLICÓ: el fuente en disco lleva una llamada menos.
           const aplicada = llamadas(fs.readFileSync(abs(f), 'utf8')).length === pos.length - 1;
           transpilar(f, mutado);
-          const r = correr();
+          const [test, prefijo] = PRUEBA[f];
+          const r = correr(test);
           fs.writeFileSync(abs(f), original[abs(f)]);
           fs.writeFileSync(enDist(f), original[enDist(f)]);
-          const esperan = ESPERADO[f][k].map((n) => `SCRUM-1456 · ${n} · 🔴 un id que no cabe en la columna → 400, sin tocar la base`);
+          const esperan = ESPERADO[f][k].map((n) => `${prefijo} · ${n} · 🔴 un id que no cabe en la columna → 400, sin tocar la base`);
           const faltan = esperan.filter((n) => !r.caen.includes(n));
           const sobran = r.caen.filter((n) => !esperan.includes(n));
           let veredicto = 'CAE';
@@ -175,7 +200,7 @@ for (const x of filas) {
 }
 const cuenta = (v) => filas.filter((x) => x.veredicto === v).length;
 console.log(`POBLACION=${filas.length} mutaciones (${Object.values(ESPERADO).flat().length} llamadas × ${VARIANTES.length}) · caen ${cuenta('CAE')} · vivas ${cuenta('VIVA')} · ciegas ${cuenta('CIEGA')} · mal repartidas ${cuenta('CAE DE MÁS O DE MENOS')}`);
-console.log(`ÁRBOL: ${intacto ? 'intacto (sha256 de los 4 ficheros igual que al empezar)' : '🔴 NO HA VUELTO A SER EL QUE ERA'}`);
+console.log(`ÁRBOL: ${intacto ? `intacto (sha256 de los ${Object.keys(original).length} ficheros igual que al empezar)` : '🔴 NO HA VUELTO A SER EL QUE ERA'}`);
 if (ciego || !intacto || cuenta('CIEGA') > 0) {
   console.log(`CIEGO: ${ciego ?? 'ver arriba'} · EXIT=2`);
   process.exit(2);

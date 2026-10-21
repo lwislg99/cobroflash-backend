@@ -23,6 +23,12 @@
 //      forzando `setBlocking(false)`). Si el brazo sin módulo deja de perder, el caso cae: el verde
 //      del brazo con módulo ya no probaría nada (puede que node arreglara nodejs/node#64833;
 //      entonces hay que decidir si la C sigue haciendo falta).
+//
+//   SCRUM-1405d · el brazo CON módulo ya no afirma «ninguno»: afirma lo que el módulo LOGRA, medido.
+//      Decisión B del fundador (SCRUM-1405 c.20140, 21-oct-2026: «Ok vamos con la B»). Con «ninguno»
+//      el caso caía en el 12,6 % de los obligatorios (38 de 302) sin que el código cambiara: el
+//      módulo reduce la pérdida, no la lleva a cero (SCRUM-1559h, commit 13d392ac1). Las dos cifras
+//      de abajo son las MEDIDAS, no elegidas; población, ventana y salida en docs/master/SCRUM-1405.md, APÉNDICE SCRUM-1405d.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -188,6 +194,26 @@ function tuberiaNativaNoBloqueante() {
 }
 const NATIVA_NO_BLOQUEANTE = tuberiaNativaNoBloqueante();
 
+// Lo que la cobaya pierde CON el módulo en el CI de Linux, medido el 21-oct-2026 sobre origin/main
+// fe65a8b7fca8b1e42448c8134e26d880d96b9ba7 (el módulo y este caso, sin cambios desde f13e8664a):
+// los 302 obligatorios con esta línea de ci.yml entre el 14-oct 07:59Z y el 20-oct 15:35Z, 1.208
+// pasadas. Pierden 41 (3,4 %; 3,3 % y 3,5 % en cada mitad). Máximo por pasada: 15 de 320, igual en
+// las dos mitades. Pasadas que pierden en un mismo job: 0 en 264, 1 en 35, 2 en 3, nunca 3 o 4.
+// SIN el módulo, en los mismos 302: pierden 3 o 4 pasadas de 4 en todos (0 de 302 con 2 o menos).
+// Si una cifra sube, el módulo pierde más que cuando se midió: se mide otra vez, no se ensancha.
+const CON_MAX_POR_PASADA = 15;
+const CON_MAX_PASADAS_QUE_PIERDEN = 2;
+
+/** Los `faltan` de las pasadas CON el módulo, contra lo medido. Devuelve los motivos de rojo ([] = verde). */
+function juzgarConModulo(faltan) {
+  const motivos = [];
+  const peor = Math.max(...faltan);
+  if (peor > CON_MAX_POR_PASADA) motivos.push(`una pasada pierde ${peor} de ${COPIAS * CASOS} (medido: como mucho ${CON_MAX_POR_PASADA})`);
+  const pierden = faltan.filter((x) => x > 0).length;
+  if (pierden > CON_MAX_PASADAS_QUE_PIERDEN) motivos.push(`pierden ${pierden} pasadas de ${faltan.length} (medido: como mucho ${CON_MAX_PASADAS_QUE_PIERDEN})`);
+  return motivos;
+}
+
 function brazo(ficheros, extra) {
   const filas = [];
   for (let p = 0; p < PASADAS; p++) {
@@ -198,7 +224,7 @@ function brazo(ficheros, extra) {
   return filas;
 }
 
-test('SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, ninguno',
+test('SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, no más de lo medido (SCRUM-1405d)',
   { skip: NATIVA_NO_BLOQUEANTE === false
     ? 'este node ya escribe BLOQUEANTE en una tubería sin el módulo (medido: 0 bytes pendientes tras 1 MiB): no hay rojo que ver. Pasa en Windows (J3f: 0 de 30 pasadas de cobaya pierden). Se mide en el CI de Linux.'
     : false },
@@ -222,10 +248,67 @@ test('SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE c
       }
       assert.ok(sin.some((f) => f.faltan > 0),
         `🔴 CIEGO: sin el módulo la cobaya NO pierde en ${PASADAS} pasadas, así que el verde de abajo no probaría nada. ¿Ha arreglado node la pérdida (nodejs/node#64833)? Entonces hay que decidir si la C sigue haciendo falta. ${resumen}`);
-      assert.ok(con.every((f) => f.faltan === 0),
-        `🔴 con el módulo la cobaya SIGUE perdiendo casos: la salida C no basta. ${resumen}`);
+      assert.deepEqual(juzgarConModulo(con.map((f) => f.faltan)), [],
+        `🔴 con el módulo la cobaya pierde MÁS de lo medido el 21-oct-2026 (SCRUM-1405d): la salida C ha empeorado. ${resumen}`);
       t.diagnostic(`SCRUM-1405c · ${resumen}`);
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }
   });
+
+// SCRUM-1405d · las mutaciones del juez, para el meta-guard. Cada una afloja lo que el módulo tiene que
+// cumplir, y el caso «el juez» tiene que caer con todas.
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // Sin el tope de pasadas que pierden: el brazo SIN módulo de 117751198316 (0,10,8,7) pasaría.
+    fichero: 'tests/scrum1405c-tuberia-bloqueante.test.mjs',
+    de: '  if (pierden > CON_MAX_PASADAS_QUE_PIERDEN) motivos.push',
+    a: '  if (false) motivos.push',
+    cae: 'SCRUM-1405d · ④ el juez',
+  },
+  {
+    // El tope por pasada, al máximo medido SIN módulo (52).
+    fichero: 'tests/scrum1405c-tuberia-bloqueante.test.mjs',
+    de: '  if (peor > CON_MAX_POR_PASADA) motivos',
+    a: '  if (peor > 52) motivos',
+    cae: 'SCRUM-1405d · ④ el juez',
+  },
+  {
+    // Vuelta al «ninguno» de 1405c: lo que el módulo SÍ logra pasa a ser rojo.
+    fichero: 'tests/scrum1405c-tuberia-bloqueante.test.mjs',
+    de: '  const pierden = faltan.filter((x) => x > 0).length;',
+    a: '  const pierden = faltan.filter((x) => x > 0).length * (CON_MAX_PASADAS_QUE_PIERDEN + 1);',
+    cae: 'SCRUM-1405d · ④ el juez',
+  },
+  {
+    // Un juez que no mira nada.
+    fichero: 'tests/scrum1405c-tuberia-bloqueante.test.mjs',
+    de: '  return motivos;\n}',
+    a: '  return [];\n}',
+    cae: 'SCRUM-1405d · ④ el juez',
+  },
+];
+
+// El juez de ④ corre en Linux; éste, en TODA tanda (también en Windows, donde ④ se salta). Las filas
+// son pasadas REALES del CI (job de GitHub Actions entre paréntesis), salvo los bordes, que salen de
+// las dos constantes.
+test('SCRUM-1405d · ④ el juez: lo peor medido CON el módulo pasa; el brazo SIN módulo (el módulo roto) cae', () => {
+  const verdes = {
+    'una pasada en el máximo (116542397959)': [15, 0, 0, 0],
+    'dos pasadas que pierden (116953966815)': [0, 7, 14, 0],
+    'dos pasadas que pierden (118033018003)': [0, 14, 0, 4],
+    'borde: las dos cifras justas': [CON_MAX_POR_PASADA, CON_MAX_POR_PASADA, 0, 0],
+  };
+  for (const [nombre, faltan] of Object.entries(verdes)) {
+    assert.deepEqual(juzgarConModulo(faltan), [], `🔴 el juez tumba lo que el módulo SÍ logra: ${nombre}`);
+  }
+  const rojos = {
+    'sin módulo, el único job de 302 con las 4 pasadas en 15 o menos (117751198316)': [0, 10, 8, 7],
+    'sin módulo, el job de SCRUM-1559h (117734088229)': [14, 10, 27, 31],
+    'borde: una pasada uno por encima': [CON_MAX_POR_PASADA + 1, 0, 0, 0],
+    'borde: una pasada que pierde de más': Array.from({ length: CON_MAX_PASADAS_QUE_PIERDEN + 1 }, () => 1),
+  };
+  for (const [nombre, faltan] of Object.entries(rojos)) {
+    assert.notDeepEqual(juzgarConModulo(faltan), [], `🔴 el juez deja pasar una pérdida que el módulo NO logra: ${nombre}`);
+  }
+});

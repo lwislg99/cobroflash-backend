@@ -1,0 +1,103 @@
+// condicion2-cobros.mjs — SCRUM-1456c (J2, 21-oct). La condición ② del fundador (c.18731), EJECUTADA para
+// `chargesAdmin`: «que nada reaccione distinto a un 400 que a un 500». Monta las DOS pantallas reales que
+// llaman a `POST /admin/charges/:id/confirm-bizum` —la ficha de factura (`invoiceDetailView.js`, con `fetch`)
+// y la del trabajo (`jobDetailView.js`, con el `apiRequest` real de `api.js`)— con el banco de la casa
+// (`tests/_banco-vistas.mjs`), pulsa «Confirmar Bizum» con su doble toque y la red doblada, y compara entre
+// un 400 `invalid_id` (lo que contesta ahora un id que no cabe) y un 500 `internal_error` (lo de antes):
+// el aviso pintado, los toasts, el estado del botón y si se puede volver a confirmar.
+// Las dos de garantía (`/garantia`, `/garantia/liberar`) no se miden aquí: ningún fichero de `public/` las llama.
+// Uso: node condicion2-cobros.mjs <raiz del árbol>
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+
+const RAIZ = path.resolve(process.argv[2] || '.');
+const { cargarDashboard, pintarVista, todos } = await import(pathToFileURL(path.join(RAIZ, 'tests', '_banco-vistas.mjs')).href);
+const espera = (ms = 30) => new Promise((r) => setTimeout(r, ms));
+const json = (status, cuerpo) => ({ ok: status >= 200 && status < 300, status, statusText: '',
+  headers: { get: () => 'application/json' }, json: async () => cuerpo, text: async () => JSON.stringify(cuerpo) });
+
+const CHARGE = 14567;
+const FACTURA = { id: 7, number: 'F-2026-0007', status: 'pending', type: 'F1', total: 121, currency: 'EUR',
+  createdAt: '2026-09-01T09:00:00.000Z', customer: { id: 1, name: 'ZZCLIENTE 1456c' }, items: [], rectifiedBy: [],
+  chargeId: CHARGE };
+const TRABAJO = { id: 42, status: 'terminado', createdAt: '2026-09-01T09:00:00Z', titulo: 'Caldera 1456c',
+  customer: { id: 5, name: 'ZZCLIENTE 1456c', phone: null, mobile: null }, asignados: [], operario: null,
+  albaranes: [], gastos: [], notes: '', quote: null, direccion: null, totalAceptado: 121, totalCobrado: 0,
+  invoices: [{ id: 7, number: 'F-1', currency: 'EUR', createdAt: '2026-09-02T09:00:00Z', type: 'F1', rectifiesId: null,
+    paidAt: null, chargeId: CHARGE, total: 121, status: 'pending' }] };
+
+const BIZUM = /\/admin\/charges\/\d+\/confirm-bizum$/;
+
+/** Lo que se ve: el texto de cada `.alert` visible, los toasts, y el botón de Bizum. */
+function foto(cuerpo, toasts, boton) {
+  const alertas = todos(cuerpo).filter((n) => String(n.className || '').split(' ').includes('alert')
+    && n.style?.display !== 'none' && String(n.textContent || '').trim())
+    .map((n) => `${n.className}: ${String(n.textContent).trim()}`);
+  return { alertas, toasts: toasts.slice(), boton: { texto: boton.textContent, desactivado: !!boton.disabled } };
+}
+
+async function medir(pantalla, respuesta) {
+  let posts = 0;
+  const red = { fetch: async (url, opts = {}) => {
+    const u = String(url);
+    if (BIZUM.test(u) && String(opts.method || 'GET').toUpperCase() === 'POST') {
+      posts += 1;
+      return json(respuesta.status, { error: respuesta.error });
+    }
+    if (/\/admin\/invoices\/7$/.test(u)) return json(200, FACTURA);
+    if (/\/admin\/jobs\/42/.test(u)) return json(200, TRABAJO);
+    if (/\/admin\/partes/.test(u)) return json(200, { partes: [] });
+    if (/\/admin\/merchant/.test(u)) return json(200, { name: 'Epipe' });
+    return json(200, []);
+  } };
+  const banco = cargarDashboard(RAIZ, { rol: 'admin', red });
+  if (banco.fallos.length) throw new Error('CIEGA: un script del panel no cargó: ' + JSON.stringify(banco.fallos));
+  const toasts = []; banco.ctx.showToast = (m, tipo) => toasts.push(`${tipo || ''}:${m}`);
+  banco.ctx.appUserRole = 'admin';
+  banco.ctx.window.appBizumManualEnabled = true;
+  banco.ctx.appBizumManualEnabled = true;
+  banco.ctx.window.appModoEmision = 'invoice';
+  // Los ítems del «⋯» no cuelgan del contenedor hasta que se abre el menú: se capturan al pasar por `overflowMenu`.
+  let menu = [];
+  const original = banco.ctx.overflowMenu;
+  if (typeof original === 'function') banco.ctx.overflowMenu = (els, o) => { menu = menu.concat(els); return original(els, o); };
+  const r = pantalla === 'factura'
+    ? await pintarVista(banco, 'renderInvoiceDetailView', 7)
+    : (banco.ctx.window.appState = { ...(banco.ctx.window.appState || {}), jobId: 42 }, await pintarVista(banco, 'renderJobDetailView', 42));
+  if (r.error) throw new Error(`CIEGA: la ficha de ${pantalla} no montó: ${r.error.message}`);
+  await espera();
+  const cuerpo = banco.ctx.document.body;
+  const candidatos = todos(cuerpo).concat(menu.flatMap((m) => todos(m)));
+  const boton = candidatos.find((n) => n.tagName === 'BUTTON' && /Bizum/.test(String(n.textContent || '')));
+  if (!boton) throw new Error(`CIEGA: en la ficha de ${pantalla} no hay botón de Bizum`);
+  const inicial = boton.textContent;
+  await boton.disparar('click'); await espera(); // 1.er toque: arma
+  await boton.disparar('click'); await espera(); // 2.º toque: confirma → POST
+  const tras1 = { ...foto(cuerpo, toasts, boton), posts };
+  await boton.disparar('click'); await espera();
+  await boton.disparar('click'); await espera(); // ¿se puede volver a confirmar?
+  return { inicial, ...tras1, postsTrasReintento: posts };
+}
+
+let todoBien = true; let ciega = false;
+for (const pantalla of ['factura', 'trabajo']) {
+  try {
+    const r400 = await medir(pantalla, { status: 400, error: 'invalid_id' });
+    const r500 = await medir(pantalla, { status: 500, error: 'internal_error' });
+    // CONTROL POSITIVO del comparador: un 409 `charge_not_pending` SÍ cambia la pantalla (las dos lo traducen).
+    const r409 = await medir(pantalla, { status: 409, error: 'charge_not_pending' });
+    console.log(`[${pantalla}] 400 invalid_id     →`, JSON.stringify(r400));
+    console.log(`[${pantalla}] 500 internal_error →`, JSON.stringify(r500));
+    console.log(`[${pantalla}] 409 charge_not_pending →`, JSON.stringify(r409), '(control: tiene que salir DISTINTO del 500)');
+    const iguales = JSON.stringify(r400) === JSON.stringify(r500);
+    const distingue = JSON.stringify(r409) !== JSON.stringify(r500);
+    const midio = r500.posts === 1 && (r500.alertas.length > 0 || r500.toasts.length > 0) && distingue;
+    console.log(`[${pantalla}] midió de verdad (un POST, un aviso pintado y el 409 distinto) = ${midio} · 400 y 500 reaccionan IGUAL = ${iguales}`);
+    if (!midio) ciega = true; else if (!iguales) todoBien = false;
+  } catch (e) {
+    console.log(`[${pantalla}] ${e.message}`);
+    ciega = true;
+  }
+}
+console.log(`POBLACION=2 pantallas × 3 respuestas · ${ciega ? 'CIEGA' : todoBien ? 'IGUAL en las dos' : 'DISTINTO en alguna'}`);
+process.exit(ciega ? 2 : todoBien ? 0 : 1);
