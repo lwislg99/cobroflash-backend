@@ -240,3 +240,74 @@ producción: NO LO SÉ** (no hay consulta corrida; sin clientes reales, previsib
 forma medida es la que ya usa la factura.** Lo que sigue siendo decisión es lo de antes: **B no va sin C** (el
 empate) y **lo que B no cierra lo cierra D** (el total firmado), que cambia lo que el cliente firma y es de la
 asesoría. El reparto entre tipos sigue donde lo dejó SCRUM-887: bloqueado, esperando a la asesoría.
+
+---
+
+## SCRUM-1566 (c) · LA CONSULTA DE SÓLO LECTURA — una autorización, tres preguntas (C heredados · 1490 · zona horaria)
+
+**Medido contra:** `origin/main` = `f02e48be2c66ae2e0dae8701401c8fcbc4fff14b` · 2026-10-22T09:51:35Z
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1566/probar-consulta.mjs`
+
+Encargo del orquestador (22-oct): preparar la consulta que cuenta los «C heredados» (descuento global con
+varios IVA, que no se pueden facturar), juntarla con la de SCRUM-1490 y con la pregunta de S4 (cuántos
+negocios tienen zona horaria), y probarla en un Postgres desechable. **⛔ NO se ha corrido contra
+producción**: no tengo claves y no debo tenerlas. La dispara quien tenga el acceso, cuando el fundador lo
+autorice. ⚠️ Producción está congelada: lo que se lea ahí es el estado de ese despliegue.
+
+**El fichero:** `evidencias/SCRUM-1566/consulta-solo-lectura.sql`. Se pega entero en una consola SQL.
+
+| bloque | pregunta | lo que imprime |
+|---|---|---|
+| ① SCRUM-1566 (c) | ¿cuántos presupuestos no se pueden facturar? | total · sin el demo · negocios · **firmados o aceptados** · vivos · ya facturados antes del bloqueo · por estado · fechas · ids (máx. 50) |
+| ② SCRUM-1490 | la causa del error 500 (aceptación 6) | su fila, **tal cual** se probó el 19-oct |
+| ③ SCRUM-1445 | ¿cuántos negocios tienen zona horaria? | total · con zona declarada · con zona válida · sin zona (fechas en UTC) · las zonas |
+
+**No es una sola consulta: son tres preguntas con UNA autorización.** Van en una sola transacción
+`READ ONLY` y se leen sobre la misma foto de la base (`REPEATABLE READ`). Sólo devuelven recuentos, ids de
+presupuesto y nombres de zona: ni nombres de cliente, ni importes.
+
+**Por qué ① no dice si el C «cuadra»:** no cambia la respuesta. Todo C está atascado, cuadre o no. Y
+calcularlo en SQL sería una quinta copia de la cuenta del pie. La siembra sí lleva un C que cuadra y otro
+que no: los dos se cuentan.
+
+### Las dos barreras contra la escritura
+
+1. **Postgres:** el fichero abre `BEGIN … READ ONLY` y cierra con `ROLLBACK`. Probado: con un `INSERT`
+   inyectado dentro, Postgres contesta `cannot execute INSERT in a read-only transaction` y no entra
+   ninguna fila.
+2. **`guard-solo-lectura.mjs`** (estático, se corre antes de pegarla): limpia comentarios, literales e
+   identificadores, y exige `BEGIN … READ ONLY` al principio, `ROLLBACK` al final y sólo `SET LOCAL` de
+   tiempos y `WITH`/`SELECT` en medio, sin palabras que escriban, bloqueen o tiren de una secuencia.
+   **Rechaza los seis mutantes:** un `UPDATE`, `COMMIT` en vez de `ROLLBACK`, sin `READ ONLY`,
+   `SELECT … INTO`, `nextval()`, y un `DELETE` escondido delante de un comentario.
+
+### La prueba (`probar-consulta.mjs`, salida en `salida-probar-consulta.txt`)
+
+Postgres 16.4 portable con el esquema que genera Prisma (no hay cambios de esquema desde el 18-oct). El
+probador se para si la URL no es loopback y una base `…_test`.
+
+- **Control negativo:** 7 presupuestos que NO son C, incluidos los casos frontera (el segundo IVA sólo en
+  una cabecera, base 0, global 0, el mismo IVA uno como texto, `lines` que no es una lista) → **0**. La
+  función real (`tieneDescuentoGlobalConVariosIva`) dice lo mismo de cada uno.
+- **Siembra:** 7 C (uno que cuadra consigo y otro que no, **firmado**; uno del demo, uno archivado, uno ya
+  facturado, IVA y cantidad como texto, una línea sin tipo) → **las 10 medidas iguales** a las que da la
+  función real sobre las mismas filas.
+- **② SCRUM-1490:** corre sobre este esquema y caza la revisión sembrada (`revision_en_otro_anio` 0 → 1).
+- **③ zona:** cinco negocios (sin zona, `Europe/Madrid`, una inventada, en blanco, `atlantic/canary` en
+  minúsculas) → declarada 3, válida 2, **igual que `zonaValida` real**.
+
+### 🔴 Un fallo mío que cazó la propia prueba
+
+La primera versión de ① filtraba las cabeceras con `NOT (… AND e.l -> 'apartado' = true)`. En una línea
+sin esa clave, `->` da `NULL`, el `NOT` da `NULL` y la línea queda fuera. **La consulta contaba 0 siempre.**
+Contra producción ese 0 se habría leído como «no hay ningún presupuesto atascado». Lo cazó la siembra
+(daba 0 donde la función real daba 7). Corregido con `IS DISTINCT FROM`.
+
+### Lo que no cubre, declarado
+
+- **Valores raros de `Number()` de JavaScript** (`"0x1A"`, `"Infinity"`) y los empates de medio punto en
+  `Math.round` frente a `round` de Postgres: no se replican. En datos que pasan por la validación de
+  `schemas.ts` no deberían existir.
+- **③ «válida»** la decide `pg_timezone_names` y el código usa `Intl`: es la misma base IANA, pero no el
+  mismo programa. Coinciden en los cinco casos sembrados, no en todos los posibles.
