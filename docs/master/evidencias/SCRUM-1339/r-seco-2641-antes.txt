@@ -1,0 +1,28 @@
+suelo por commit: reconoce sus seis cebos ({"cebo-verde":"VERDE","cebo-rojo":"ROJO","cebo-cancelado":"CIEGO","cebo-sin-run":"CIEGO","cebo-colgado":"CIEGO","cebo-corriendo":"CORRIENDO"})
+POBLACION commits=24 · medido 2026-10-22T09:19:48.512Z · GitHub lwislg99/cobroflash-backend · 34 commits de C:\Users\Javier Pereira\.claude\jobs\a96784b5/tmp/sim/commits.txt · línea de primer padre de 2970 commits
+ROJO       75884928b170 · en rojo: «guards de navegador (fuera de la tanda)» · https://github.com/lwislg99/cobroflash-backend/actions/runs/39628953329
+CIEGO      4d6752d1eaaf · run «cancelled» con 0 jobs · https://github.com/lwislg99/cobroflash-backend/actions/runs/39627522518
+CIEGO      2ab577501431 · run «cancelled» con 0 jobs · https://github.com/lwislg99/cobroflash-backend/actions/runs/39626458516
+CIEGO      ed2878e43653 · run «cancelled» con 0 jobs · https://github.com/lwislg99/cobroflash-backend/actions/runs/39625581602
+CIEGO      b7e8ebef9bf8 · ningún run del CI por push para este commit: no corrió
+ROJO       7b1765142558 · en rojo: «guards de navegador (fuera de la tanda)» · https://github.com/lwislg99/cobroflash-backend/actions/runs/39620781606
+ROJO       e155c60fd1d0 · en rojo: «guards de navegador (fuera de la tanda)» · https://github.com/lwislg99/cobroflash-backend/actions/runs/39625990144
+CIEGO      f53289026390 · run «cancelled» con 0 jobs · https://github.com/lwislg99/cobroflash-backend/actions/runs/39626791828
+CIEGO      c47288f7e82f · run «cancelled» con 0 jobs · https://github.com/lwislg99/cobroflash-backend/actions/runs/39626520827
+ROJO       aa68b01afb68 · en rojo: «guards de navegador (fuera de la tanda)», «meta-guard · los guards caen cuando deben» · https://github.com/lwislg99/cobroflash-backend/actions/runs/39617471945
+CIEGO      9415ff9df6a0 · run «cancelled» con 0 jobs · https://github.com/lwislg99/cobroflash-backend/actions/runs/39617448928
+CIEGO      5dcc9fe1e7b9 · run «cancelled» con 0 jobs · https://github.com/lwislg99/cobroflash-backend/actions/runs/39620044675
+ROJO       0adcc1b2ff90 · en rojo: «guards de navegador (fuera de la tanda)» · https://github.com/lwislg99/cobroflash-backend/actions/runs/39613708786
+CIEGO      6964d489bcd0 · run «cancelled» con 0 jobs · https://github.com/lwislg99/cobroflash-backend/actions/runs/39614164838
+CIEGO      cf25030c8e94 · run «cancelled» con 0 jobs · https://github.com/lwislg99/cobroflash-backend/actions/runs/39610512525
+CIEGO      cdbaaedd8bb2 · ningún run del CI por push para este commit: no corrió
+ROJO       99654a927d3b · en rojo: «guards de navegador (fuera de la tanda)» · https://github.com/lwislg99/cobroflash-backend/actions/runs/39608197965
+CIEGO      b10c9b6ca79e · run «cancelled» con 0 jobs · https://github.com/lwislg99/cobroflash-backend/actions/runs/39606876542
+CIEGO      3c60a7fd0147 · run «cancelled» con 0 jobs · https://github.com/lwislg99/cobroflash-backend/actions/runs/39606147410
+ROJO       321ce160b0d5 · en rojo: «guards de navegador (fuera de la tanda)», «meta-guard · los guards caen cuando deben» · https://github.com/lwislg99/cobroflash-backend/actions/runs/39605731375
+CIEGO      67dde0caf421 · run «cancelled» con 0 jobs · https://github.com/lwislg99/cobroflash-backend/actions/runs/39602691820
+CIEGO      b26de3f68dbb · run «cancelled» con 0 jobs · https://github.com/lwislg99/cobroflash-backend/actions/runs/39602027416
+CIEGO      1e00b1b9d9ed · run «cancelled» con 0 jobs · https://github.com/lwislg99/cobroflash-backend/actions/runs/39601941821
+ROJO       e2cd370cc227 · en rojo: «guards de navegador (fuera de la tanda)» · https://github.com/lwislg99/cobroflash-backend/actions/runs/39601605945
+24 commits mirados · 8 rojos · 16 ciegos (sin verificar) · 0 corriendo · 0 sin leer · 0 verdes
+EXIT=1
