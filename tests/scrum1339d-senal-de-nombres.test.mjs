@@ -88,6 +88,27 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: '  if (r.medible === true && r.ausentes > 1) salida = 1; // tolera uno, a proposito',
     cae: 'SCRUM-1339t · UN SOLO nombre ausente basta para que el guion salga 1; con cero sale 0',
   },
+  {
+    // el ciego vuelve a salir 0: «no pude medir» deja de bloquear (SCRUM-1339v, c.20282)
+    fichero: 'scripts/senal-de-nombres.mjs',
+    de: '  salida = EN_TASA ? 0 : SALIDA_NO_PUDE_MEDIR;',
+    a: '  salida = 0; // el ciego sale 0 otra vez, a proposito',
+    cae: 'SCRUM-1339v · ④ 🔴 EL GUION ROTO A PROPÓSITO sale 2 y DICE que no pudo medir; con --tasa sale 0: nunca calla',
+  },
+  {
+    // el ciego que dice el MÓDULO (TAP vacío o cortado) sale 0 aunque el del guion salga 2
+    fichero: 'scripts/senal-de-nombres.mjs',
+    de: '  if (r.medible !== true) salida = SALIDA_NO_PUDE_MEDIR;',
+    a: '  if (r.medible !== true && false) salida = SALIDA_NO_PUDE_MEDIR; // el ciego del modulo sale 0, a proposito',
+    cae: 'SCRUM-1339v · ④ 🔴 EL GUION ROTO A PROPÓSITO sale 2 y DICE que no pudo medir; con --tasa sale 0: nunca calla',
+  },
+  {
+    // la tasa también bloquea: quien revisa desde fuera recibe un 2
+    fichero: 'scripts/senal-de-nombres.mjs',
+    de: "const EN_TASA = process.argv.slice(2).includes('--tasa');",
+    a: 'const EN_TASA = false; // la tasa tambien bloquea, a proposito',
+    cae: 'SCRUM-1339v · ④ 🔴 EL GUION ROTO A PROPÓSITO sale 2 y DICE que no pudo medir; con --tasa sale 0: nunca calla',
+  },
 ];
 
 // ── los fabricados ────────────────────────────────────────────────────────────────────────
