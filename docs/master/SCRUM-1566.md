@@ -311,3 +311,36 @@ Contra producción ese 0 se habría leído como «no hay ningún presupuesto ata
   `schemas.ts` no deberían existir.
 - **③ «válida»** la decide `pg_timezone_names` y el código usa `Intl`: es la misma base IANA, pero no el
   mismo programa. Coinciden en los cinco casos sembrados, no en todos los posibles.
+
+---
+
+## Para el asesor (SCRUM-1264) — las preguntas del expediente, redactadas para contestar
+
+*(Añadido el 22-oct, a petición del orquestador: S0 midió que la pregunta del redondeo NO está en la lista
+del asesor. Son preguntas internas para la asesoría, no texto de producto.)*
+
+**Contexto común:** YaQu calcula el IVA de una factura agrupando las líneas por tipo. Por cada tipo suma
+las bases y las cuotas (base × tipo) sin redondear, redondea al céntimo la base y la cuota del tipo, y el
+total es la suma de esas cifras ya redondeadas. Eso es lo que va al registro VeriFactu (`BaseImponible`,
+`CuotaRepercutida` por tipo, `CuotaTotal`, `ImporteTotal`).
+
+1. **El medio céntimo.** Cuando la cuota de un tipo cae exactamente en medio céntimo (1 × 22,50 € al 21 % =
+   4,725 €), hoy se declara **4,72**. ¿Debe ser **4,73** (el medio céntimo se redondea hacia arriba)? ¿O
+   es admisible cualquiera de los dos? Y si la AEAT comprueba que `CuotaRepercutida` = `BaseImponible` ×
+   `TipoImpositivo` (su error 1142), **¿qué margen admite**: ninguno, un céntimo, otro?
+2. **Por tipo o por línea.** Con varias líneas al mismo tipo, ¿es correcto calcular la cuota sobre la suma
+   de las bases (redondeando una vez por tipo), o la norma exige redondear la cuota de cada línea y sumar?
+   (Entre una forma y otra cambia un céntimo en el 1-30 % de las facturas, según cuántas líneas y tipos.)
+3. **El total que firma el cliente en el presupuesto.** Hoy sale de sumar los importes con IVA de todas
+   las líneas y redondear una vez. La factura, en cambio, suma base y cuota ya redondeadas por tipo, así
+   que puede diferir del presupuesto firmado en un céntimo. ¿Puede el presupuesto mostrar el total
+   calculado igual que la factura (aunque eso cambie en un céntimo el importe que firma el cliente
+   respecto al de hoy)? ¿O el presupuesto, que no es factura, puede seguir su propio cálculo?
+4. **Descuento global con varios tipos de IVA** (bloqueado desde SCRUM-887 esperando a la asesoría). Un
+   descuento en euros sobre un presupuesto con líneas al 21 % y al 10 %: ¿cómo se reparte entre los tipos
+   (¿en proporción a la base de cada uno?), y a qué tipo va el céntimo que sobra del reparto?
+   ⚠️ **No he podido comprobar si esta pregunta está ya en SCRUM-1264** (Jira no está disponible esta
+   sesión). Si no está, es la misma situación que la 1.
+
+**Lo que contesta cada una:** la 1 decide el arreglo C; la 2 confirma o cambia la cuenta de la que
+dependen A y B; la 3 decide D; la 4 desbloquea los presupuestos «C» (SCRUM-1566 (c) los cuenta).
