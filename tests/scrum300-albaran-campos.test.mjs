@@ -206,16 +206,19 @@ test('SCRUM-300 · el papel IMPRIME el emisor y el receptor, que son las partes 
 // alguien le pone `timeZone` al formateador, este test cae y avisa de que el fixture ya puede
 // volver a medianoche. Y si alguien añade un formateador nuevo SIN zona, también.
 // ─────────────────────────────────────────────────────────────────────────────────────────
-test('SCRUM-640 · CARACTERIZACIÓN: el PDF del albarán formatea SIN `timeZone` (zona del proceso)', () => {
+// SCRUM-1445 · LA DECISIÓN QUE ESTE TEST PEDÍA, YA TOMADA: el PDF fija `timeZone` en TODAS sus
+// llamadas (los instantes en la zona del negocio, el día de entrega en UTC). Antes afirmaba «0 con
+// zona»; ahora afirma «todas con zona», que es más estricto: un formateador nuevo SIN zona lo tumba.
+test('SCRUM-640 → SCRUM-1445 · el PDF del albarán fija `timeZone` en TODAS sus llamadas a `toLocaleDateString`', () => {
   const fuente = fs.readFileSync('src/modules/jobs/infra/albaranPdf.service.ts', 'utf8');
   const r = llamadasToLocaleDateString(fuente);
   assert.ok(r.total > 0,
     '🔴 CIEGO: no encuentro ni una llamada a `toLocaleDateString` en el generador del PDF. O ha '
     + 'cambiado de nombre, o el detector dejó de ver: en cualquier caso esto ya no caracteriza nada.');
-  assert.equal(r.conZona, 0,
-    `CARACTERIZACIÓN: ${r.conZona} de ${r.total} llamadas ya fijan \`timeZone\`. Si es a propósito, `
-    + 'bien: entonces el PDF ya no depende de la zona del proceso y el fixture de `fechaEntrega` '
-    + 'puede volver a medianoche UTC. Actualiza este test con la decisión, no lo relajes.');
+  assert.equal(r.conZona, r.total,
+    `🔴 ${r.total - r.conZona} de ${r.total} llamadas formatean SIN \`timeZone\`, o sea con la zona del `
+    + 'PROCESO (UTC en producción): un albarán de las 00:30 en España vuelve a imprimir la víspera. '
+    + 'Instante → `zonaDelNegocio`; día `AAAA-MM-DD` → `UTC` (SCRUM-1445).');
 });
 
 test('SCRUM-640 · CONTROL del detector: distingue una llamada CON zona de una SIN zona', () => {
