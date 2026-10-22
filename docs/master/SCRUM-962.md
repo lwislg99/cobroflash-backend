@@ -213,3 +213,77 @@ A9: sin fallo que generalice — mi medidor tuvo dos defectos (el ancho del elem
 **El hallazgo de método, escrito como regla:** **un control positivo que usa un caso de DENTRO de la población no prueba la población.** La sonda del censo es un `<button>`, y un botón siempre está en el selector: prueba que la superficie se mide, nunca que la población esté completa. Para probar la población, la sonda tiene que ser de una clase que el selector podría dejar fuera (aquí, un `<select>`).
 
 **Banco:** `dist/` compilado con `tsc` en el worktree (sale 1 error de tipos en `src/modules/system/merchantAdmin.ts:147` por el cliente de Prisma compartido desfasado — `activityKind`; no afecta al front y `dist/` se emite igual). **No se ha corrido `prisma generate`** ni la suite.
+
+---
+
+## Tramo 962c (S2, 22-oct-2026) · El editor de presupuestos: lo que no se pinta al montar
+
+**SÓLO LECTURA. No se ha arreglado nada.** Encargo del orquestador: de los 112 controles que no se pintan al arrancar la pantalla (tramo 962b), los 55 del editor de presupuestos, porque es donde el profesional pasa el día. Mismo método que 962b (2): **primero se separa el artefacto del defecto con un clic real, y después se dan cifras.**
+**Skill UI:** no cargada · no se toca ninguna pantalla ni ningún CSS; sólo se mide.
+**Medido contra:** `origin/main` = `0077bd1d51a7cb64b1c18d85781117b71936fd38`, fusionado en la rama (`c7c1c736c`) y **servido en local**. Hora de GitHub: 2026-10-22 10:14 GMT. `origin/main` avanzó después 2 commits (`808af5b44`) y **ninguno toca `public/`, `_medidor-de-toque.mjs` ni `_banco-lista.mjs`**. **Producción sigue congelada en `fe65a8b7`: nada de esto se ha visto en yaqu.app.**
+**Rama:** `scrum-962c-editor-presupuestos-44`, apilada sobre `scrum-962b-poblacion-del-censo-44` (PR #2668, abierto), porque escribe en el mismo registro.
+
+A9: sin fallo que generalice — dos defectos de mi recorrido, cazados antes de dar cifras: una segunda línea vacía desordenó el «Continuar» (el paso 3 se midió en el 2; lo delató el listado), y la prueba del radio daba «no activa» cuando el radio ya estaba marcado (ahora mira que quede marcado tras el clic).
+
+### Cómo se recorre
+
+Con la vista **viva** (`scripts/_banco-lista.mjs`) y **como el profesional**: cada estado se alcanza pulsando lo que la pantalla ofrece, con clics de ratón reales. Los pasos del editor no se pueden abrir «a mano» sin falsear el estado (`abrirPaso`, `quotesView.js:5362`, no salta hacia delante un paso incompleto). **28 estados a cada anchura (390 y 929), todos alcanzados:**
+1. **Cliente:** el arranque; el menú «⋯» de la página; el alta de cliente; «Ver documento»; con cliente elegido.
+2. **Conceptos:** con una línea escrita; el menú «⋯» de la línea; los ajustes de la línea (IVA, coste, descripción, descuento); «📋 Ver las 5» (modal de plantillas); «✨ Sugerir con IA»; el descuento global. Con plantillas guardadas y conceptos frecuentes, salen sus accesos rápidos.
+3. **Condiciones:** las 4 filas abiertas una a una (cobro, formas de pago, validez, ajustes del documento) y la dirección de obra personalizada.
+4. **Revisar**, y su menú «⋯».
+
+**Datos:** un cliente con **descuento pactado** (`dtoPorDefecto: 10`) y **forma de pago pactada** (`payMethodsPorDefecto: ['bizum']`), para que salgan las dos propuestas («Aplicar a las líneas», «Aplicar»). **Las dos salieron.**
+
+**Medida:** todo el documento menos la barra lateral, porque el menú «⋯» se cuelga de `document.body` (`api.js:1307-1321`). Mismo árbitro que el censo (`__areaDeToque`), con el selector ampliado de 962b.
+
+**Prueba de la etiqueta:** a cada corto con etiqueta asociada se le mide el área de la etiqueta y se le da un **clic real en el punto de la etiqueta más alejado del control**. ¿Lo activa (marca la casilla o el radio, o enfoca el campo)?
+- Si la etiqueta mide ≥44 y lo activa, el dedo tiene la etiqueta: **artefacto del medidor**.
+- En un `<select>`, enfocarlo no prueba que el desplegable se abra: **dudoso**.
+
+### Las cifras
+
+**109 controles distintos** en los 28 estados. Lo que el censo mide (los del arranque y dentro de su selector) son 68. **33 bajan de 44 a alguna anchura:**
+
+| veredicto | cuántos | qué son |
+|---|---|---|
+| ✅ **cumplen DESIGN.md §5** (≥44 a 390 y ≥36 a 929) | **21** | `Atrás` / `Ver documento` / `Continuar` / `Generar presupuesto` y los botones de los modales: 44,5–45 a 390, 36,5–37 a 929. Los ítems de los menús «⋯»: 51,7–52,2 a 390, 42–42,7 a 929 |
+| 🔵 **artefacto del medidor** | **3** | los radios **Empresa / Persona** del alta de cliente (17 px; etiqueta envolvente de 44,7/44,8 que los marca) y **Descuento global** (21,6 px; etiqueta envolvente de 44,6 que lo enfoca) |
+| 🟠 **dudoso** | **1** | el `select` **IVA %** de los ajustes de la línea: 21,8 px; su etiqueta envolvente de 44,6 lo enfoca, pero no consta que abra el desplegable |
+| 🔴 **defecto** | **8 filas = 6 controles** | abajo. Los tres «Cerrar» son la misma pieza |
+
+**Los defectos, por gravedad real.** La gravedad la da el objetivo EFECTIVO: el control o, si su etiqueta lo activa, la etiqueta.
+
+| # | control | objetivo efectivo @390 | dónde | carril | por qué es defecto |
+|---|---|---|---|---|---|
+| 1 | radio **«Razón social»** | **20,4** (radio 17; etiqueta envolvente 20,4 que sí lo marca) | Condiciones › Ajustes del documento | **S2** · `quotesView.js` (~:1500) | la etiqueta lo activa pero es tan baja como el radio |
+| 2 | radio **«Nombre comercial»** | **20,4** | ídem | **S2** · ídem | ídem |
+| 3 | casilla **«Incluir descripción en el PDF»** | **21,1** (casilla 17; etiqueta 21,1) | ídem | **S2** · `quotesView.js:960` | ídem |
+| 4 | **«?» (Guía de inicio)** de la cabecera de los modales | **26,6–26,9** | **los 5 modales del editor**: alta de cliente, Ver documento, ajustes de línea, plantillas, IA | **S2** · `modalHeader.js` (`cabeceraModal`, `.modal-ayuda`) | botón suelto, sin etiqueta |
+| 5 | **«×» (Cerrar)** de la misma cabecera | **30,6–31,0** | los mismos 5 modales | **S2** · `modalHeader.js` (`.modal-close`) | ídem |
+| 6 | casilla **«Baja de WhatsApp»** del alta de cliente | **41,3** (casilla 14; etiqueta envolvente 41,3 que sí la marca) | alta de cliente (modal) | **J2** · `customersView.js:1532` | le faltan 2,7 px a la etiqueta: el menos grave |
+
+⚠️ **Mi deduplicación entre estados fusiona los «?» y los «×» que no llevan `id`** (alta, Ver documento, ajustes de línea). Por eso salen 3 filas de «Cerrar» y 1 de «?» en la tabla del guion. Medidos estado a estado, son **5 «?» (26,6–26,9) y 5 «×» (30,6–31,0)**: 10 apariciones de **una sola pieza**, `cabeceraModal`. Y esa pieza se usa en más modales del panel que no he medido.
+
+**Lo que esto dice del censo, en esta pantalla:**
+- De los 6 defectos reales del editor, el censo **no ve ninguno**: 5 están ocultos al arrancar y los dos radios ni siquiera entran en su selector.
+- De lo que sí ve al arrancar, marcaría como cortos **2** botones (`Ver documento` y `Continuar`, 37 px a 929) que **cumplen** la regla de escritorio.
+
+**Lo que es de S2 y lo que no:** 5 de los 6 defectos son de **S2** (`quotesView.js` y `modalHeader.js`); uno es de **J2** (`customersView.js`). El CSS de todos vive en `styles.css`, que es contenedor de S2. **Nada de `src/`.**
+
+**Los «55» del encargo:** salen del banco serializado (tramo 962b, selector ampliado, 390). La misma pantalla, viva y con sus datos, tiene **52** controles ocultos al arrancar (`editor-inventario.mjs`). No he perseguido la diferencia de 3: banco y vista viva montan con datos distintos.
+
+### Sin mirar (no es cero)
+
+- **«Elegir un sitio guardado»:** sin sitios guardados en el dato, el botón no abre nada.
+- **Las cláusulas del presupuesto** (`clausulasWrap`), que sólo salen con cláusulas guardadas en el comercio.
+- **Lo que hay después de «Generar presupuesto»**: no lo he pulsado, porque es un POST.
+- **Un borrador abierto para editar**, y el alta rápida desde la opción del `<select>` de clientes.
+- **El documento suelto** (`renderDocumentoSueltoView`, 22 ocultos en 962b): comparte este código con `esDocumentoSuelto`, pero no lo he recorrido.
+- **Las candidatas de 962b (2):** los 2 radios de Productos, `INPUT.inv-row-check` y un `INPUT` de 14 px. No caían de camino y **no están medidas**. Pista fuerte, sin medir: los radios de Productos salen de `switchTipoArticulo.js` con la misma clase `segmented-input` que los de `switchFormaJuridica.js`, y éstos han salido **artefacto** aquí (Empresa/Persona, etiqueta 44,7).
+
+### Cómo se reproduce
+
+    node docs/master/evidencias/scrum962c/editor-inventario.mjs <raiz> 390                  # qué está oculto al montar y quién lo oculta
+    node docs/master/evidencias/scrum962c/editor-recorrido.mjs <raiz> <tmp>/editor.json [--listar]
+    node docs/master/evidencias/scrum962c/editor-analisis.mjs <tmp>/editor.json [--md]
