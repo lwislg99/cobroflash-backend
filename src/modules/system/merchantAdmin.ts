@@ -5,6 +5,7 @@ import { isDemoMerchant } from '../invoicing/domain/emission.service'; // SCRUM-
 import { bloqueoCambioDeSerie, numerosDeLaSerie, anioDeLaSerie } from '../../core/validation/fiscalInput';
 import { prisma } from '../../core/db/prisma';
 import { normalizarClausulasParaGuardar } from '../quotes/domain/clausulas';
+import { TEXTO_FORAL_EN_AJUSTES } from '../auth/domain/territorioDeAlta'; // SCRUM-1536d
 
 export const DEFAULT_MERCHANT_ID = 1; // de momento trabajamos con el merchant demo
 
@@ -33,6 +34,8 @@ export type MerchantProfileInput = {
   slug?: string | null;
   profileZones?: string[] | null;
   profileYears?: number | null;
+  // SCRUM-1536d: el «Sí» se rechaza en `updateMerchantProfile` (forales fuera de YaQu por ahora)
+  domicilioFiscalForal?: boolean | null;
 };
 
 // A14.1 — rutas/palabras que un slug JAMÁS puede pisar (master Parte R: "lista
@@ -60,6 +63,14 @@ export class SlugError extends Error {
  * no en un 500 — lo que se le niega al profesional es una acción legítima de su negocio, así que
  * tiene derecho a saber exactamente por qué y con qué números.
  */
+/** SCRUM-1536d · el «Sí» foral en Ajustes. La ruta lo traduce a 409 con el texto firmado. */
+export class TerritorioError extends Error {
+  public code = 'territorio_excluido' as const;
+  constructor() {
+    super(TEXTO_FORAL_EN_AJUSTES);
+  }
+}
+
 export class SerieError extends Error {
   constructor(
     public code: 'serie_ya_emitida',
@@ -163,6 +174,12 @@ export async function updateMerchantProfile(
   merchantId: number = DEFAULT_MERCHANT_ID,
   data: MerchantProfileInput,
 ) {
+  // SCRUM-1536d · el domicilio fiscal foral NO entra en YaQu por ahora (Jira c.20218): marcar «Sí»
+  // en Ajustes se rechaza ENTERO, antes de leer o escribir nada, con el texto firmado en c.20225
+  // (T2a: «No hemos guardado este cambio», y no se guarda ningún campo). «No» y «no consta» pasan.
+  // Ningún estado nuevo y nada se borra (registro 1536c, pieza B).
+  if (data.domicilioFiscalForal === true) throw new TerritorioError();
+
   // A14.1 — el slug tiene reglas propias (reservados, unicidad, 1 cambio/30d)
   if (data.slug !== undefined) {
     const current = await prisma.merchant.findUnique({
