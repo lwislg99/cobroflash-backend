@@ -2441,3 +2441,66 @@ fundador; (c) dejar que avise. No elijo.
 2. Empecé a diseñar 2b pensando que el corte a 30 min «ya salía CIEGO», porque `cancelled` es CIEGO en el
    motor. Era verdad sólo con todo lo demás en verde, y en `main` no pasaba nunca. Lo destapó la
    simulación, no el código.
+
+# SCRUM-1339s · La salida C de 1405 llega al meta-guard: el hijo de `correr()` carga la tubería bloqueante
+
+**Medido contra:** `origin/main` = `8ad167195af03cf4153337ccc1bf1b80d04c10f8` · 2026-10-22T09:42:38Z
+**S3** · Windows, node v24.8.0 · la rama nació en `9839aa6c2baee741f6a38de4e99c7fc29a3fe807` y trajo `main` con merge antes de empujar.
+
+**El encargo:** extender la salida C de SCRUM-1405 (c.19584) a las tres copias del flag que la S3 señaló en c.18373,
+aprobado por Javier en c.20219. **Se hace UNA de las tres.** Carril medido con `node scripts/carriles.mjs de` sobre
+`9839aa6c`, una por una:
+
+| fichero | flag (línea real) | dueño | qué se hace |
+|---|---|---|---|
+| `scripts/meta-guard-mutaciones.mjs` | `:945`, `run()` de `correr()` | **S3** (fila propia) | este tramo |
+| `scripts/_trinquete-de-zona-hijo.mjs` | `:119` | sin dueño (sólo la fila general de `scripts/`) | NO se toca: el orquestador pide a la S0 que le declare dueño |
+| `scripts/censo-guards-gateados.mjs` | `:71` | sin dueño (fila general) | ídem |
+
+Los números de línea del encargo (`:841`, `:53`) eran de una nota anterior; los de la tabla son los del árbol.
+
+**Qué cambia:** `correr()` pasa a `run()` `execArgv: ['--import=<URL de scripts/tuberia-bloqueante.mjs>']`. Por URL
+(`pathToFileURL`) y no por ruta: en Windows `--import=D:\…` no es un especificador válido. Se conserva `forceExit`
+(la C no autoriza quitarlo). Medido antes que nada que `run({ execArgv })` existe y llega al hijo en node 24.8.
+
+**Guard:** `tests/scrum1339s-el-metaguard-hereda-la-tuberia.test.mjs`, por EFECTO: `correr()` lanza una cobaya de fuera
+del árbol que sólo pasa si `globalThis[Symbol.for('yaqu.scrum1405c.tuberiaBloqueante')]` existe en SU proceso; el
+control positivo lanza la MISMA cobaya con `run()` sin el `--import` y exige que caiga.
+
+**Rojo → arreglo → mutación:**
+* `0f271e024ff5bcf21efea8db8e9de1c5902344ef` — primer guard: ROJO, pero por el instrumento. `run()` llamado DENTRO de un
+  fichero de test no corre nada («run() is being called recursively within a test file. skipping running files»).
+  Lo cazó el propio suelo de población del guard («NO PUDE MIRAR: de la cobaya no llegó ningún test»).
+* `97b6ef56386b8946fadea9aeacd204f2bd5d81d8` — a un proceso aparte con `node -e`: los dos casos ROJOS y otra vez por el
+  instrumento. Con `--input-type=module -e` el hijo de `run()` hereda ese flag, no arranca sobre un fichero, y
+  node:test lo informa como **el FICHERO «pasado» con cero tests**: el control positivo habría salido verde sin
+  medir nada. Desde ahí el suelo exige que llegue el NOMBRE de la cobaya, no «algún test».
+* `b5debea3ff70343d7e6509b86059eec9aef2f57f` — guion aparte: el rojo BUENO. Caso 1 rojo («el hijo de correr() NO cargó
+  scripts/tuberia-bloqueante.mjs: … caídos ["cobaya 1339s: …"]»), control positivo verde.
+* `67fef8b27e260c494b6839b947017cef953a5f50` — el arreglo: 2 de 2 en verde.
+* Mutación declarada (`execArgv: [`--import=…`]` → `execArgv: []`), inyectada a mano, `git diff --numstat` = `1 1`: cae el
+  caso 1 y el control sigue verde. Restaurado con `git restore --source=HEAD`, `git status --porcelain` vacío. Ancla
+  única (1 ocurrencia, medido).
+* Los 33 ficheros de `tests/` que importan el meta-guard: 289 tests · 284 pass · 1 fail · 4 skip. El fail es
+  `scrum1321` «PUERTA 1b», que sale CIEGO por entorno («el temporal no se alcanza desde la raíz del repo (¿otra
+  unidad?)»): el repo está en `D:` y el temporal en `C:`. No depende de este cambio.
+
+**Lo que NO sé:**
+* Si en Linux deja de perderse la cola en el meta-guard. Lo que se sabe es que el módulo llega al hijo; que el
+  módulo arregla la pérdida es lo medido en SCRUM-1405 (0 de 12 tandas; 0 de 4 pasadas en el obligatorio de #2429).
+  Dónde mirarlo: las CIEGAS de `scrum859` en el job del meta-guard (36 en los 135 cortes del 15 al 21-oct,
+  SCRUM-935d). Si tras el merge siguen, esto no basta.
+* La suite completa no la he corrido en local (memoria libre 1.850 MB, por debajo del umbral de 2.200, y una pasada
+  del meta-guard en marcha): la corre el obligatorio.
+
+**De paso:** un hijo de `run()` que no arranca sale como el FICHERO «pasado» con cero tests (arriba). Queda dicho
+aquí; no es de este ticket arreglarlo en node:test.
+
+**Ficheros:** `scripts/meta-guard-mutaciones.mjs` (+7 −1), `tests/scrum1339s-el-metaguard-hereda-la-tuberia.test.mjs`,
+este apartado.
+
+**Mi error:** escribí el guard dos veces con un instrumento que no medía (el `run()` dentro del test, y el `-e`), y la
+segunda vez el control positivo daba por «pasado» un fichero que no había arrancado. Lo que lo frenó fue que el suelo
+contara la población; lo que impide que vuelva es que ahora exige el NOMBRE de la cobaya, no «algún test».
+
+A9: comprobación → `tests/scrum1339s-el-metaguard-hereda-la-tuberia.test.mjs`
