@@ -157,8 +157,9 @@ de 23`: eso es lo que DECLARA la lista. Lo que faltaba — y lo que pidió el or
 SIGUE siendo verdad hoy, una por una, contra el árbol y contra producción, porque una entrada «abierta» en el
 JSON no se vuelve a comprobar sola. **No se tocó `docs/go-live/puerta.json` ni el guard: esto es sólo la medida.**
 
-**Medido contra:** `origin/main` = `eee7d2b4bcea348a05d0020a1e912db73a894cfe` (19-oct-2026) · producción
-(`https://yaqu.app/version`) = el mismo `eee7d2b4b`: **el deploy está al día**, así que lo leído en el árbol vale
+**Medido contra:** `origin/main` = `eee7d2b4bcea348a05d0020a1e912db73a894cfe` · 2026-10-19T12:10:48Z (hora del commit `9708bbaa3`; la medida es anterior)
+
+Producción (`https://yaqu.app/version`) = el mismo `eee7d2b4b`: **el deploy está al día**, así que lo leído en el árbol vale
 también para lo que sirve yaqu.app hoy en las páginas públicas. S0, equipo de Luis, con 4 sesiones en paralelo
 (una por bloque de entradas), todas sólo lectura: sin tocar `src/`, `public/`, el esquema, ningún flag, ningún
 guard, sin login en producción, sin Playwright.
@@ -208,4 +209,80 @@ y este tramo es sólo la medida. Queda señalado para quien mantenga el fichero.
 `PAYMENTS_CONNECT_ENABLED`, `BOT_INBOUND_ENABLED`), ninguna variable de Railway, ninguna fila de `merchants.flags`,
 ningún test. Sin login en producción (sólo GET públicos a páginas sin sesión) y sin Playwright.
 
-A9: comprobación → ninguna (tramo de sólo lectura, nada que correr en la tanda).
+A9: sin fallo que generalice — tramo de sólo lectura (corregido el 22-oct en 1554e: decía «comprobación → ninguna», que no es ninguno de los cuatro formatos y tumbaba `scrum1294`).
+
+## 22-oct-2026 · SCRUM-1554e · Las entradas 17 y 18, redactadas para que se puedan medir — PROPUESTA, no toca `puerta.json`
+
+**Medido contra:** `origin/main` = `cef60b27265f7354fdd683f019f6da84de2dfe04` · 2026-10-22T09:57Z (`Date:` de GitHub)
+
+S0, equipo de Luis, por encargo del orquestador. **Sólo lectura:** repo, Jira y las transcripciones del
+orquestador. No se ha tocado `docs/go-live/puerta.json`, ni su guard, ni `src/`. Lo que dice una condición de la
+puerta decide cuándo se puede facturar: **esto se propone, y lo firma el fundador.**
+
+**Este PR trae además el tramo 1554d**, que llevaba desde el 19-oct en la rama `s0-scrum1554-puerta-golive`
+(`9708bbaa3`) **sin PR y fuera de `main`**: `pr-automatico.yml` sólo abre PR a ramas `scrum-*`. Al traerlo, su
+línea A9 no tenía formato válido y `scrum1294` caía; se ha corregido esa línea y su ancla, nada más.
+
+### De dónde salen las dos (el origen común)
+
+c.19645 dice que el orquestador «movió siete puntos de la lista del fundador». Esa lista es `yaqu-jefe.json`, un
+fichero del orquestador que **no está en el repo**. En su transcripción del 14-oct a las 08:05Z las dos entradas
+se llamaban así:
+
+- «SCRUM-1490 · dos líneas en albaranes.routes.ts, DEBAJO del sellado»
+- «Las tres preguntas fiscales para la asesora»
+
+Al pasar a c.19645 perdieron el fichero y la palabra «asesora». Por eso 1554d no las encontró: buscó «bajo el
+sellado» en el repo, y la frase sólo estaba en Jira y con otra palabra («debajo»).
+
+### Entrada 17 · «Las dos líneas bajo el sellado» → **SOBRA como condición de go-live**
+
+| | |
+|---|---|
+| **Qué dice hoy** | «Las dos líneas bajo el sellado.» · `de_donde`: SCRUM-1490 |
+| **De dónde salió** | SCRUM-1490 c.19429 (13-oct, S1): «OK del fundador para dos líneas (`const { seq: quoteNumber, year: seriesYear } = …` y `seriesYear` en el `data`)». c.20041 (19-oct) las sitúa en `albaranes.routes.ts:1707` y `:1710`, 22 líneas por debajo de `sellarTrasEmision` (`:1685`). **Comprobado hoy en `cef60b272`: siguen en esas tres líneas.** |
+| **Qué quiso decir** | El OK del fundador para tocar el camino de emisión (reglas 38 y 40). Con él, el presupuesto ADICIONAL que nace en `POST /admin/albaranes/:id/convertir-en-factura` guardaría el año de su serie. Hoy nace con `seriesYear` a NULL. Lo declara `SIN_ANIO_POR_SER_CAMINO_DE_EMISION` (`tests/scrum1490-el-anio-de-la-serie.test.mjs:306`), que es exacto en los dos sentidos. |
+| **¿Es falso algo el día del go-live sin esas dos líneas?** | **No.** Una fila sin año se lee con `anioDeLaSerie` (`src/core/documentos/grupoDelPresupuesto.ts:40-50`), que toma el año del `createdAt` **en la zona del negocio**. `allocateQuoteNumber` numera en esa misma zona. Misma zona y mismo instante dan el mismo año. Sólo se leería mal si la zona **cambiara después** de numerar. |
+| **¿Puede cambiar la zona hoy?** | No. Desde el 13-oct (`409e05317`, SCRUM-1522e) la zona **se escribe una sola vez, en el alta** (`auth.service.ts:344-355`). Busqué en `src/` todos los sitios que escriben `timezone` y sólo sale ese: `timezone:` con un valor que no sea `true`, y la forma abreviada `timezone,`/`timezone}`. El control es que la misma búsqueda sí encuentra el `create` del alta. Ninguna ruta la actualiza. |
+| **Propuesta** | **Cerrarla:** `"estado": "cerrada"` y `cerrada: {por, motivo, sha, fecha}`, con este motivo: «No es condición de go-live: la zona se fija en el alta y nada la cambia, así que el adicional sin año se lee en la misma zona en que se numeró. El OK pendiente sigue en SCRUM-1490 ("Acción del fundador") y en la excepción exacta de `scrum1490:306`. Lo que de verdad dispara el riesgo es la primera ruta que permita CAMBIAR `Merchant.timezone`, y eso no es este interruptor.» Además hay que añadir `17` a `CERRADAS` en `tests/scrum1554c-puerta-de-go-live.test.mjs`. |
+| **Si el fundador prefiere mantenerla** | Redacción medible: «El presupuesto adicional de `convertir-en-factura` guarda el año de su serie: `SIN_ANIO_POR_SER_CAMINO_DE_EMISION` es `[]` en `origin/main`. Necesita el OK del fundador para `albaranes.routes.ts:1707` y `:1710`.» **Cómo se comprueba:** leer esa constante en `origin/main`. El test cae si las líneas entran y la constante no se vacía, así que no puede mentir en ninguno de los dos sentidos. |
+
+### Entrada 18 · «Las tres preguntas fiscales» → **SE QUEDA, redactada, y le falta una pregunta que no está escrita en ningún sitio**
+
+| | |
+|---|---|
+| **Qué dice hoy** | «Las tres preguntas fiscales.» · `de_donde`: «no lo dice el comentario» |
+| **De dónde salió** | La frase es anterior a la puerta. SCRUM-624 c.14046 (1-sep): «NO SE TOCA mientras las tres preguntas fiscales sigan sin contestar», y el céntimo «es la tercera pregunta para la asesoría». c.14322 (3-sep): «va a la asesoría con SCRUM-619 y SCRUM-623». Desde el 2-oct a las 18:19Z, el orquestador la lleva en la lista del fundador como «las tres preguntas fiscales juntas para la asesora (las dos del IVA más el céntimo del papel)». |
+| **Cuáles son** | (a) **SCRUM-619**, los suplidos → **SCRUM-1264 B4**. (b) **SCRUM-623**, la base al 0 % (exenta, no sujeta o con inversión del sujeto pasivo) → **SCRUM-1264 B3**. (c) **SCRUM-624**, qué redondeo gobierna el total y la cuota de una factura, y por tanto qué número vale cuando el papel y el registro difieren en un céntimo (c.14405 ②: «NO se decide todavía CUÁL de los dos números es el correcto») → **no está en SCRUM-1264.** |
+| **Estado hoy** | B3 y B4: «Lo que ya tenemos: IA · 22-sep». El propio SCRUM-1264 dice que eso **no es una respuesta**. (c) **no está preguntada**. En Jira, la búsqueda de «céntimo» entre los tickets del asesor no devuelve 1264 (control: sí devuelve 1048 y 16). En el repo, `git grep -i "céntimo\|redondeo\|624"` sobre `docs/legal/*ASESOR*` no da ninguna línea sobre esto (control: «redondeo» sí sale en `PREGUNTAS_ASESOR.md:689`, de otro tema). |
+| **Por qué no sobra** | Es una condición previa al interruptor escrita en el propio ticket. SCRUM-624 c.14405 ③, rotulada «DECISIÓN DEL FUNDADOR», dice: «Ésta es la única ventana que va a existir… Va a la lista de lo que tiene que estar cerrado **antes** de levantar `INVOICING_ES_ENABLED`». ⚠️ Ese comentario está publicado con la cuenta que comparten el fundador y el orquestador: la autoría humana no la he comprobado en la transcripción. |
+| **Riesgo de leerla mal** | Desde el 19-oct hay **otro trío**. c.20049 dice que 1566, 623 re-encuadrado (PDF frente al XML, 13,7 %) y 624② (hasta el 30 % por tramos) «se deciden juntas o no se deciden». Por eso la redacción nombra cada pregunta por su ticket y su letra en 1264, no por un número. |
+| **Redacción nueva** (`que`) | «Las tres preguntas fiscales para la asesoría, contestadas por un asesor identificado: (a) los suplidos, SCRUM-1264 B4 (de SCRUM-619); (b) el 0 % — exenta, no sujeta o inversión del sujeto pasivo —, SCRUM-1264 B3 (de SCRUM-623); (c) qué redondeo gobierna el total y la cuota de una factura, y qué número vale cuando el papel y el registro difieren en un céntimo (SCRUM-624 c.14405 ②; arrastra SCRUM-623 re-encuadrado y SCRUM-1566, que se deciden juntos, c.20049). La (c) hay que añadirla primero a SCRUM-1264.» · `de_donde`: «SCRUM-624 c.14046, c.14322 y c.14405» |
+| **Cómo se comprueba, y con qué** | Se lee la descripción de SCRUM-1264 (`getJiraIssue`). **Cada una** de B3, B4 y la pregunta nueva (c) tiene su línea «**Lo que ya tenemos:**» empezando por `ASESOR · <fecha>`, con el autor nombrado. No valen `IA · 22-sep` ni `«ASESOR» · 23-sep`: es la clasificación que el propio 1264 ya usa. Para (c) hace falta además un comentario en SCRUM-624 con la decisión del fundador sobre qué número gobierna, citando esa respuesta. **Cerrada** sólo con las tres. Si una respuesta obliga a construir algo (B4: «hoy la aplicación no lo tiene»), eso entra como **entrada nueva** en el mismo cambio que cierra la 18. |
+| **Lo que no puede ver el guard** | Esto vive en Jira, que es el «sitio único» por decisión de 1264. El guard de la puerta no lee Jira (c.19645, punto 2), así que esta condición la comprueba **una persona en la revisión**, no la CI. Queda dicho para que nadie la tome por automatizada. |
+
+### Quién lo aplicaría (carriles medidos con `node scripts/carriles.mjs de …`)
+
+| fichero | carril | quién lo creó |
+|---|---|---|
+| `docs/go-live/puerta.json` | **sin fila en §3: nadie lo reclama** | S5, SCRUM-1554c (`f9f832ebc`, 19-oct) |
+| `tests/scrum1554c-puerta-de-go-live.test.mjs` (hay que tocar `CERRADAS` para cerrar la 17) | **sin fila en §3** | S5, SCRUM-1554c |
+| `scripts/go-live/puerta.mjs` (no hay que tocarlo) | sólo la fila general de `scripts/`: «S0, sólo verificación o censo de consulta»; **su dueño no lo ha decidido nadie** | S5, SCRUM-1554c |
+
+Para aplicarlo hace falta que **el orquestador dé fila a esos dos ficheros** (por autoría, S5) y que **el fundador
+firme el contenido**. El guard no vigila el texto de una entrada, sólo cuántas hay y cómo se cierran: reescribir la
+18 no lo pone en rojo, y cerrar la 17 sólo si `CERRADAS` no lo dice.
+
+### Hallazgos de otros carriles (anotados, sin tocar)
+
+- **S1 · `src/core/documentos/grupoDelPresupuesto.ts:29`** dice «Hoy nadie escribe `Merchant.timezone`». **Es
+  falso desde el 13-oct** (`409e05317`): lo escribe el alta. La conclusión del comentario sigue en pie, porque el
+  riesgo está en *cambiar* la zona y no en escribirla. Pero «la pantalla que lo permita no debe salir antes del
+  relleno» es **sólo un comentario**: ningún test hace el censo de quién actualiza `timezone` (`scrum1522e` comprueba
+  el alta, no que nadie más la escriba). La misma premisa vieja está en SCRUM-1490 c.19446 y c.20041.
+- **SCRUM-1566** lleva las etiquetas `go-live` y `stop-fundador` y **no está en la puerta**. Con la redacción (c)
+  de la 18 quedaría cubierto. Sin ella, nada en `puerta.json` lo nombra.
+- **SCRUM-1264 es del equipo de Javier** (`equipo-javier`). Añadirle la pregunta (c) y subir su contador de 28 a 29
+  cruza de equipo y va por los jefes. S0 no lo escribe.
+
+A9: sin fallo que generalice — tramo de redacción y sólo lectura; lo que falló (1554d sin PR por el nombre de su rama) ya lo dice `pr-automatico.yml:9` y lo enseña `npm run ramas:sin-mergear`.
