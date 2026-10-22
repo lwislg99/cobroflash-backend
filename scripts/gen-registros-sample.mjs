@@ -20,7 +20,7 @@ const sistema = {
   numeroInstalacion: '1',
   soloVerifactu: 'S',
   multiOT: 'S',
-  indicadorMultiplesOT: 'S',
+  indicadorMultiplesOT: 'N', // SCRUM-524g: por usuario del SaaS, una facturación → N
 };
 
 const nif = 'B12345678';
