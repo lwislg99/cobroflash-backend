@@ -2498,3 +2498,9 @@ aquí; no es de este ticket arreglarlo en node:test.
 
 **Ficheros:** `scripts/meta-guard-mutaciones.mjs` (+7 −1), `tests/scrum1339s-el-metaguard-hereda-la-tuberia.test.mjs`,
 este apartado.
+
+**Mi error:** escribí el guard dos veces con un instrumento que no medía (el `run()` dentro del test, y el `-e`), y la
+segunda vez el control positivo daba por «pasado» un fichero que no había arrancado. Lo que lo frenó fue que el suelo
+contara la población; lo que impide que vuelva es que ahora exige el NOMBRE de la cobaya, no «algún test».
+
+A9: comprobación → `tests/scrum1339s-el-metaguard-hereda-la-tuberia.test.mjs`
