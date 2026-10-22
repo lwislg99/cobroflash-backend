@@ -84,6 +84,13 @@ tumba SÓLO lo suyo y el control sigue verde en las cuatro:
 - `tests/scrum300-albaran-campos.test.mjs`: la caracterización de SCRUM-640 afirmaba «0 llamadas con
   zona» y pedía, con esas palabras, «actualiza este test con la decisión, no lo relajes». Ahora afirma
   **«todas con zona»**, que es más estricto: un formateador nuevo sin zona lo tumba.
+- El **fixture** del mismo `scrum300` ponía las fechas a mediodía LOCAL para esquivar la zona del proceso.
+  Con el PDF ya independiente de esa zona, **caía en `Pacific/Kiritimati` (+14)**, una de las dos zonas
+  del trinquete de zona del CI: medido antes de empujar, 14 de 15 allí. Ahora dice las fechas en UTC, y
+  `fechaEntrega` vuelve a medianoche UTC, que es como llega de verdad. **Ninguna aserción cambia.**
+  Medido después: los 20 ficheros que generan el PDF del albarán, más el censo de fechas, dan 205 de 207
+  (2 saltados, los de base de datos) en Kiritimati y en Midway. Y los 2 ficheros del albarán, 15 de 15 en
+  UTC, Madrid, Kiritimati y Midway.
 
 ## Comentario falso, arreglado de paso (encargo del orquestador; lo vio S0)
 
