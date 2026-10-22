@@ -104,7 +104,7 @@ function despues(id) {
   const loc = getLocale(f.country);
   return {
     country: f.country,
-    timezone: f.timezone ?? null,
+    timezone: f.timezone === undefined ? null : f.timezone,
     defaultCurrency: f.defaultCurrency ?? '(sin escribir; la pone la base)',
     domicilioFiscalForal: f.domicilioFiscalForal === undefined ? '(sin escribir)' : f.domicilioFiscalForal,
     'getEmissionMode · flag sin poner': conFlag(undefined, () => getEmissionMode(m)),
