@@ -465,3 +465,33 @@ Error propio de esta tanda: escribí la primera versión del arreglo sin leer an
 módulo, y el R5 de scrum325 la tumbó en el banco. Lo hará igual con quien lo intente.
 
 A9: comprobación → `tests/scrum325-libros-por-periodo.test.mjs`
+
+---
+
+## 1058c (aplicado) · GO del fundador, c.20207
+
+**Medido contra:** `origin/main` = `75884928b170ec0ec02e35921426e5bd711cbb0f` · 2026-10-22T09:01:07Z
+
+Sesión `jv-j1q`, carril J1. GO del fundador por la regla 40 en SCRUM-1058 c.20207 («1-Go para A» y
+«1-GO»): aplicar `arreglo-1058c.diff` **tal cual** — libro de expedidas + libro de registro A6 + la firma
+de `filasLibroExpedidas`. Nada más del camino de emisión: recibidas.csv, exports/invoices.csv y
+`paquete.repo.ts` siguen sin tocar.
+
+- El diff, antes de aplicarlo: 0 CR y 134 LF, `git apply --check` rc=0; ninguno de los 4 ficheros de
+  `src/` cambió en `main` entre `8a8b51d96` y `75884928b`. Aplicado con `git apply`: 4 ficheros, +45/−12.
+- Población: 46 ficheros de test (los que nombran `librosAeat`/`libroRegistro`/`filasLibroExpedidas`/
+  `construirLibroRegistro`, los del libro, el 303, scrum325, scrum729, los guards 237/976 y scrum622),
+  contra `dist/` de `tsc --noCheck`:
+
+| | casos | pass | fail | skip |
+|---|---|---|---|---|
+| sin arreglo | 455 | 448 | 1 (el 🔴 de scrum1058c) | 6 |
+| con el arreglo | 455 | 449 | 0 | 6 |
+| con el arreglo, tras `git merge origin/main` | 455 | 449 | 0 | 6 |
+
+  Los tres con el MISMO conjunto de 455 nombres (`diff` de las listas ordenadas: vacío). Los 6 skip son de
+  `LIBRO_PG_URL`: los de Postgres **no se han corrido**. `tsc --noEmit`: 17 errores, todos fuera de los 4
+  ficheros (16 de `archivedAt`/`activityKind` y uno en cascada en `quotesAdmin.routes.ts:1005`): el cliente
+  de Prisma compartido va por detrás del esquema; no se regeneró (árbol anidado). El tipado real lo da CI.
+
+A9: comprobación → `tests/scrum1058c-libro-expedidas-lee-el-congelado.test.mjs`
