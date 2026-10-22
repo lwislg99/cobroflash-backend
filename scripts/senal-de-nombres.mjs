@@ -9,10 +9,14 @@
 // El veredicto vive en `_senal-de-nombres.mjs`, que es PURO. Aquí sólo se leen ficheros y se
 // imprime — el mismo reparto que `suelo-de-la-tanda.mjs` / `_suelo-de-la-tanda.mjs`.
 //
-// 🔴 ESTE GUION SALE SIEMPRE 0, Y NO POR INTENCIÓN: POR CONSTRUCCIÓN (SCRUM-1339 c.17954).
-// La señal AVISA; no bloquea (c.17935). «Termina con `exit 0`» es una promesa: un guion que
-// revienta ANTES de llegar ahí —un `import` que no resuelve, un fichero que no está, un JSON que
-// no parsea— sale 1 igual. Por eso:
+// 🔴 CÓDIGO DE SALIDA (SCRUM-1339t, decisión del fundador en SCRUM-1339 c.20228, opción a):
+//   · 1 → MEDIDO con UN nombre ausente o más. Umbral 0, derivado de los 71 obligatorios con
+//     ausentes=0 desde 1405c. Desde aquí la señal BLOQUEA; hasta el 22-oct sólo avisaba (c.17935).
+//   · 0 → medido y completo, o NO PUDE MEDIR. Lo segundo NO cambia con c.20228, que sólo habla de
+//     ausentes: «no pude medir» sigue saliendo 0 DICIÉNDOLO (c.17954). `--tasa` sale siempre 0.
+// Y el 0 de «no pude medir» es POR CONSTRUCCIÓN, no por intención. «Termina con `exit 0`» es una
+// promesa: un guion que revienta ANTES de llegar ahí —un `import` que no resuelve, un fichero que
+// no está, un JSON que no parsea— sale 1 igual, y se leería como «faltan nombres». Por eso:
 //   · NO hay ni un `import` estático de nada que pueda faltar: el módulo puro y el censo se
 //     cargan con `import()` DENTRO del `try`;
 //   · todo el trabajo va dentro de un `try` de nivel superior;
@@ -28,6 +32,9 @@ const RAIZ_POR_DEFECTO = path.resolve(import.meta.dirname, '..');
 // Las líneas `::notice` / `::warning` se imprimen SIEMPRE, también fuera del CI, donde son sólo
 // texto. A propósito: un guion que hace una cosa en el CI y otra en local no se comprueba en
 // ninguno de los dos (SCRUM-702), y así el test corre exactamente lo que corre el paso.
+
+/** 1 sólo si se MIDIÓ y faltan nombres (c.20228). Lo pone `medir`; nadie más lo sube. */
+let salida = 0;
 
 const unaLinea = (e) => String(e && e.message ? e.message : e).split('\n')[0];
 const escaparDato = (s) => String(s).replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
@@ -87,6 +94,7 @@ async function medir({ tap, raiz }) {
   console.log('\n' + texto2 + '\n');
   for (const c of m.comandosDeAnotacion(r)) console.log(c);
   alResumen(texto2);
+  if (r.medible === true && r.ausentes > 0) salida = 1;
 }
 
 async function tasa(ruta) {
@@ -107,6 +115,7 @@ try {
   const a = argumentos(process.argv.slice(2));
   if (a.tasa !== null) await tasa(a.tasa); else await medir(a);
 } catch (e) {
+  salida = 0;
   noPudeMedir(`el guion reventó: ${unaLinea(e)}`);
 }
-process.exitCode = 0;
+process.exitCode = salida;

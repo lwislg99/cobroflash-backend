@@ -513,3 +513,41 @@ Y la del ticket, releída contra `main`:
   que es lo primero que verá una sesión suya; el texto para su orquestador va en la entrega de Jira.
 - **Los 225 siguen sin puesto.** El trinquete no reparte nada: impide que la cuenta crezca callada.
 - **No he corrido la suite completa** (memoria de la máquina): la dirigida sobre lo tocado y `guards:entrada`.
+
+---
+
+## SCRUM-1480g · Dos de `scripts/` sin dueño, escritos como PREGUNTA en §7 (no como fila)
+
+**Medido contra:** `origin/main` = `9839aa6c2baee741f6a38de4e99c7fc29a3fe807` · 2026-10-22T09:26:26Z
+A9: sin fallo que generalice — sólo docs: una pregunta añadida a §7 y el generado regenerado
+
+S0 (`cobroflash-backend-s0`), por encargo del orquestador (22-oct): declarar con fila propia
+`scripts/_trinquete-de-zona-hijo.mjs` y `scripts/censo-guards-gateados.mjs`, que S3 necesita tocar. La
+inferencia de dueño es de S3, y el encargo pide escribirla como lo que es: una propuesta.
+
+**No los he declarado en §3, y el motivo es medido.** Una fila de §3 la aplica la cerradura
+(`.claude/hooks/carril.mjs`): no hay forma de escribir ahí una propuesta. Y el criterio de §3.3 para un
+fichero de `scripts/` («el área del ticket que creó cada uno», filas 180-187) no decide nada aquí:
+
+| fichero | lo creó | etiqueta de área del ticket | quién lo usa | propuesta (S3) | lo que añado |
+|---|---|---|---|---|---|
+| `scripts/_trinquete-de-zona-hijo.mjs` | SCRUM-813 (`45294b31d`, 7-sep) | ninguna | sólo `scripts/_trinquete-de-zona.mjs` y `tests/scrum813-…` | S5, por SCRUM-1494c (`area-s5`) | 1494c lo CAMBIÓ, no lo creó. Su padre tampoco tiene fila: declarar el hijo solo deja el hueco un fichero más arriba |
+| `scripts/censo-guards-gateados.mjs` | SCRUM-754c (`b751f88c0`, 8-sep) | ninguna (SCRUM-754) | `npm run censo:gateados` y dos tests que importan `veredictoDelCenso` (`scrum754`, `scrum846b`) | S0, por ser un censo | no es sólo de consulta: lo importan dos tests |
+
+**Quién los escribió** (pedido por el orquestador después del primer commit de esta rama): SCRUM-813 y
+SCRUM-754 los abrió en Jira la cuenta de Javier (creador y responsable, 7-sep y 5-sep), y los commits que crean
+los dos ficheros son suyos (`45294b31d` y `b751f88c0`, autor `javier.pereirafe@gmail.com`, ramas
+`scrum-813-…` y `scrum-754-…`). Fue antes del 18-sep, cuando aún no había dos equipos, así que eso no dice de
+qué equipo son hoy: sólo que la pregunta es de los dos jefes y no la cierra el criterio de la casa. El hijo de
+zona lo cambió después nuestro equipo (SCRUM-1494c, S5).
+
+Comandos: `node scripts/carriles.mjs de <ruta>` (los tres ficheros, incluido el padre: «sólo lo cubre la
+fila general») · Jira `key in (SCRUM-813, SCRUM-754, SCRUM-1494)` → 813 y 754 sin etiquetas, 1494 `area-s5` ·
+`git log --format="%h %ad %s" -- <ruta>` · `git grep -n censo-guards-gateados -- tests package.json`.
+
+Lo que se cambia: `docs/equipo/dos-equipos.md` §7 punto 4, una viñeta con la pregunta, y
+`.claude/carriles.json` regenerado (sólo cambia el sha de la tabla: `comprobar` → IGUAL; las mismas 189
+reglas y 71 filas). Corridos: `scrum1295`, `1408`, `1480e`, `1480f`, `514` en verde.
+
+⚠️ Esta rama y la de SCRUM-1507d (#2660) cambian las dos la línea `sha` de `carriles.json`: la segunda que
+entre lo hace después de traer `main` y regenerar (A4: una cifra derivada se regenera, no se elige).

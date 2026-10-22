@@ -519,6 +519,55 @@ momento».
 - `arbol:mio` dio «CIEGO» la primera vez porque lo pasé con la HEAD desacoplada, antes de crear la
   rama. Lo repetí después de crearla y dio `MIO`, antes de la primera escritura.
 
+# SCRUM-1536d · Forales y Canarias fuera del alta y del «Sí» foral en Ajustes, con los textos firmados (CONSTRUIDO)
+
+**Medido contra:** `origin/main` = `595884b20b8baa3fad91151879214554b9f6e2e2` · 2026-10-22T09:39:30Z (hora de GitHub)
+
+A9: aviso → cicatriz J3 «Medí al acabar el arranque (152.817) y no volví a medirme hasta 329.079, con el código ya hecho: el aviso de 200k no llegó.» — no se pudo comprobar: cuándo se mide una sesión no lo ve ningún test del árbol.
+
+**Skill UI:** cargada (`yaqu-premium-ui`; el cambio de pantalla es sólo qué texto pinta el aviso de error que ya existía).
+
+22-oct-2026 · sesión `jv-j3w`, puesto J3, por encargo del orquestador (`cobroflash-backend-5f`).
+[Escrito por la sesión, no por Javier.] Lo desbloquean **SCRUM-1536 c.20218** (forales y Canarias
+fuera de YaQu por ahora), **c.20223** (diseño, tramo 1536c de arriba) y **c.20225** (Canarias por
+las dos vías, «Ok las 2»; Q1, T1a, su variante y T2a firmadas, «Ok firmo todas»). Entrega completa
+en Jira, **c.20235**. Carril J3 a mano; el hook de arranque dijo «SIN IDENTIDAD» (SCRUM-1498).
+
+### Lo construido
+
+- **A · alta.** `src/modules/auth/domain/territorioDeAlta.ts`, llamada por `registerMerchant` justo
+  después de `zonaDeAlta` y antes del `create`. Con España, las dos respuestas Q1 son obligatorias
+  (`domicilio_fiscal_required`); foral o Canarias «sí» → `territorio_excluido` (motivo `domicilio`,
+  T1a); zona `Atlantic/Canary` → `territorio_excluido` (motivo `trabajo`, su variante). Con «no» y
+  «no» se guarda `domicilioFiscalForal = false` en la columna que ya existía: **sin ALTER**. Fuera de
+  España no se pregunta. La consola gana `--domicilio-foral` y `--domicilio-canarias` (`si|no`).
+- **B · Ajustes.** `updateMerchantProfile` lanza `TerritorioError` con el «Sí» foral antes de leer o
+  escribir nada; `PUT /admin/merchant` da 409 con T2a (bloque `// J3:` en `src/app.ts`, contenedor de
+  S1: sin él salía un 500); `settingsView.js` pinta el texto sin «Error al guardar:».
+- **C · `register.html`: no aplica hoy** (la ruta da 409). Q1b, firmada, queda en `APARCADOS` de
+  `tests/scrum514-aprobado-y-aplicado.test.mjs`. **E, B′ y `schemas.ts`: sin tocar.**
+- Ficha: `docs/microcopy/2026-10-22-SCRUM-1536-exclusion-territorial.md`.
+
+### Medido
+
+- `tests/scrum1536d-forales-y-canarias-fuera.test.mjs`: **4 de 4**, por la consola real y por la
+  ruta real (detalle en c.20235). Tres mutaciones declaradas en `MUTACIONES_QUE_ME_TUMBAN` (el
+  meta-guard las lee, visto con `--solo-censo`): **3 de 3 VIVAS**, árbol restaurado idéntico.
+- Mini-tanda de los 248 ficheros que leen lo tocado: **2.058 = 1.979 + 9 + 70**. Arreglados los 4
+  míos (1102f, 411, 514, 709); los 6 ficheros afectados, después: **88 de 88**. Dos de `scrum1199`
+  caen por entorno (`express` no está en este árbol); no medido sobre `main`.
+- Tests que la decisión invierte, cambiados y dicho por qué: `scrum1522e`, `scrum1515`, `scrum1102f`.
+
+### No medido
+
+`scrum1515` (pide `LIBRO_PG_URL`; lo corre el CI) · la tanda completa · el obligatorio · yaqu.app ·
+`tsc` con tipos: 17 errores del cliente de Prisma compartido, ninguno en lo tocado.
+
+### Errores propios
+
+- Crucé 200k sin avisar (la línea `A9:`).
+- La ficha nombraba otra ficha por su fichero y `scrum709` lo cazó.
+- Declaré las mutaciones con campos que el meta-guard no lee; lo vi en su contrato antes del commit.
 # SCRUM-1536e · La línea firmada de la regla 44 entra al final de la regla 33 del máster
 
 **Medido contra:** `origin/main` = `595884b20b8baa3fad91151879214554b9f6e2e2` · 2026-10-22T09:33:37Z (hora de GitHub)
