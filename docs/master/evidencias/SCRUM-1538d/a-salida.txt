@@ -1,0 +1,89 @@
+SIEMBRA OK   log fabricado entero
+SIEMBRA OK   log vacío no inventa nada
+
+POBLACIÓN · runs del listado 1029 · runs limpios de la ventana con jobs pedidos 211 · fallos de llamada 0
+ventana 2026-10-06T13:43:02Z → 2026-10-16T11:18:00Z · jobs juzgados 984 (trinquete 477, tanda 507) · colgadas 33 (de 33 esperadas) · colgadas de la tanda que no están en el listado 0
+cabeceras sin leer 0 · sin base de main identificable 0
+
+══ TRINQUETE · 477 jobs con base · 23 colgadas
+  colgadas (creado · base de main · cuándo entró esa base · imagen · runner · node):
+    2026-10-06T14:02:04Z · push · base ee4331a46 (#2560, 2026-10-06T14:02:00Z) · ubuntu-24.04 20261004.327.1 · runner 2.337.0 · prov 20261002.596 · node 24.21.0
+    2026-10-06T14:26:18Z · pull_request · base 577f1fb47 (#2561, 2026-10-06T15:23:34+01:00) · ubuntu-24.04 20260927.320.1 · runner 2.337.0 · prov 20260901.588 · node 24.21.0
+    2026-10-06T17:10:40Z · pull_request · base f8da1ec83 (#2565, 2026-10-06T17:02:20Z) · ubuntu-24.04 20261004.327.1 · runner 2.337.0 · prov 20261002.596 · node 24.21.0
+    2026-10-06T17:33:44Z · pull_request · base 78426f7ad (#2567, 2026-10-06T17:29:33Z) · ubuntu-24.04 20260927.320.1 · runner 2.337.0 · prov 20260901.588 · node 24.21.0
+    2026-10-06T18:21:22Z · push · base 317c0bab5 (#2571, 2026-10-06T18:21:18Z) · ubuntu-24.04 20261004.327.1 · runner 2.337.0 · prov 20261002.596 · node 24.21.0
+    2026-10-06T18:30:16Z · pull_request · base 317c0bab5 (#2571, 2026-10-06T18:21:18Z) · ubuntu-24.04 20261004.327.1 · runner 2.337.0 · prov 20261002.596 · node 24.21.0
+    2026-10-06T19:39:34Z · push · base 282225174 (#2575, 2026-10-06T19:39:30Z) · ubuntu-24.04 20261004.327.1 · runner 2.337.0 · prov 20261002.596 · node 24.21.0
+    2026-10-07T15:29:16Z · pull_request · base 5f1bb361a (#2596, 2026-10-07T08:13:20Z) · ubuntu-24.04 20260927.320.1 · runner 2.337.0 · prov 20260901.588 · node 24.21.0
+    2026-10-07T15:42:52Z · pull_request · base 5f1bb361a (#2596, 2026-10-07T08:13:20Z) · ubuntu-24.04 20261004.327.1 · runner 2.337.0 · prov 20261002.596 · node 24.21.0
+    2026-10-07T15:55:33Z · pull_request · base e883e586d (#2601, 2026-10-07T15:49:45Z) · ubuntu-24.04 20260927.320.1 · runner 2.337.0 · prov 20260901.588 · node 24.21.0
+    2026-10-07T16:45:56Z · pull_request · base b2188ed99 (#2609, 2026-10-07T16:45:50Z) · ubuntu-24.04 20260927.320.1 · runner 2.337.0 · prov 20260901.588 · node 24.21.0
+    2026-10-07T16:46:21Z · pull_request · base b2188ed99 (#2609, 2026-10-07T16:45:50Z) · ubuntu-24.04 20261004.327.1 · runner 2.337.0 · prov 20261002.596 · node 24.21.0
+    2026-10-07T17:40:57Z · push · base 58fb1028b (#2620, 2026-10-07T17:40:52Z) · ubuntu-24.04 20261004.327.1 · runner 2.337.0 · prov 20261002.596 · node 24.21.0
+    2026-10-07T23:41:42Z · push · base edfbd86e7 (#2627, 2026-10-07T23:41:39Z) · ubuntu-24.04 20261004.327.1 · runner 2.337.0 · prov 20261002.596 · node 24.21.0
+    2026-10-08T01:14:17Z · pull_request · base fc639ef96 (#2633, 2026-10-08T00:54:25Z) · ubuntu-24.04 20260927.320.1 · runner 2.337.0 · prov 20260901.588 · node 24.21.0
+    2026-10-08T02:20:14Z · pull_request · base 453d3a513 (#2644, 2026-10-08T02:18:41Z) · ubuntu-24.04 20261004.327.1 · runner 2.337.0 · prov 20261002.596 · node 24.21.0
+    2026-10-08T08:01:18Z · pull_request · base 4f8c473da (#2653, 2026-10-08T07:53:46Z) · ubuntu-24.04 20261004.327.1 · runner 2.337.0 · prov 20261002.596 · node 24.21.0
+    2026-10-08T08:28:24Z · pull_request · base 7079aaf38 (#2658, 2026-10-08T08:26:15Z) · ubuntu-24.04 20261004.327.1 · runner 2.337.0 · prov 20261002.596 · node 24.21.0
+    2026-10-08T08:34:43Z · pull_request · base 7079aaf38 (#2658, 2026-10-08T08:26:15Z) · ubuntu-24.04 20261004.327.1 · runner 2.337.0 · prov 20261002.596 · node 24.21.0
+    2026-10-08T09:34:29Z · pull_request · base 497f51671 (#2663, 2026-10-08T08:55:17Z) · ubuntu-24.04 20261004.327.1 · runner 2.337.0 · prov 20261002.596 · node 24.21.0
+    2026-10-13T00:08:22Z · pull_request · base 0472952cd (#2676, 2026-10-09T12:06:05Z) · ubuntu-24.04 20261004.327.1 · runner 2.337.0 · prov 20261002.596 · node 24.21.0
+    2026-10-13T07:26:43Z · pull_request · base 9226d0f2d (#2693, 2026-10-13T07:10:34Z) · ubuntu-24.04 20261004.327.1 · runner 2.337.0 · prov 20261002.596 · node 24.21.0
+    2026-10-14T08:57:18Z · pull_request · base ebe2b932c (#2769, 2026-10-14T08:53:44Z) · ubuntu-24.04 20261004.327.1 · runner 2.337.0 · prov 20261002.596 · node 24.21.0
+  CONTENIDO · base más nueva que colgó: ebe2b932c (#2769, entró 2026-10-14T08:53:44Z): todo commit de main hasta ahí queda DESCARTADO para esta familia
+  ¿hay jobs DESPUÉS de 2026-10-14T09:00:00Z con base igual o anterior a esa? 2 · colgadas entre ellos 0
+    2026-10-14T09:00:30Z · scrum-1254-reaper-segundo-plano · base #2769 · LIMPIA
+    2026-10-14T09:01:51Z · scrum-812d-titula-guard-por-palabra · base #2769 · LIMPIA
+  jobs con base POSTERIOR a la última colgada: 97 · el primero creado 2026-10-14T09:12:42Z
+  ventana: antes del corte 23 colgadas de 378 · después 0 de 99
+  ENTORNO · imagenVersion:
+    20260927.320.1     colgadas  6 · limpias  85 · antes del corte  91 · después   0 · de 2026-10-06T13:47:41Z a 2026-10-08T10:19:01Z
+    20261004.327.1     colgadas 17 · limpias 308 · antes del corte 287 · después  38 · de 2026-10-06T14:02:04Z a 2026-10-15T16:46:15Z
+    20261012.334.1     colgadas  0 · limpias  61 · antes del corte   0 · después  61 · de 2026-10-14T16:00:33Z a 2026-10-16T11:09:00Z
+  ENTORNO · runner:
+    2.337.0            colgadas 23 · limpias 454 · antes del corte 378 · después  99 · de 2026-10-06T13:47:41Z a 2026-10-16T11:09:00Z
+  ENTORNO · provisioner:
+    20260901.588       colgadas  6 · limpias  85 · antes del corte  91 · después   0 · de 2026-10-06T13:47:41Z a 2026-10-08T10:19:01Z
+    20261002.596       colgadas 17 · limpias 308 · antes del corte 287 · después  38 · de 2026-10-06T14:02:04Z a 2026-10-15T16:46:15Z
+    20261012.601       colgadas  0 · limpias  61 · antes del corte   0 · después  61 · de 2026-10-14T16:00:33Z a 2026-10-16T11:09:00Z
+  ENTORNO · node:
+    24.21.0            colgadas 23 · limpias 454 · antes del corte 378 · después  99 · de 2026-10-06T13:47:41Z a 2026-10-16T11:09:00Z
+  ENTORNO · checkout:
+    11d5960a326750d5838078e36cf38b85af677262 colgadas 23 · limpias 454 · antes del corte 378 · después  99 · de 2026-10-06T13:47:41Z a 2026-10-16T11:09:00Z
+  ENTORNO · setupNode:
+    49933ea5288caeca8642d1e84afbd3f7d6820020 colgadas 23 · limpias 454 · antes del corte 378 · después  99 · de 2026-10-06T13:47:41Z a 2026-10-16T11:09:00Z
+
+══ TANDA · 507 jobs con base · 10 colgadas
+  colgadas (creado · base de main · cuándo entró esa base · imagen · runner · node):
+    2026-10-06T18:31:42Z · pull_request · base 317c0bab5 (#2571, 2026-10-06T18:21:18Z) · ubuntu-24.04 20260927.320.1 · runner 2.337.0 · prov 20260901.588 · node 24.21.0
+    2026-10-07T16:45:56Z · pull_request · base b2188ed99 (#2609, 2026-10-07T16:45:50Z) · ubuntu-24.04 20260927.320.1 · runner 2.337.0 · prov 20260901.588 · node 24.21.0
+    2026-10-08T08:14:51Z · pull_request · base d47dad333 (#2655, 2026-10-08T08:13:13Z) · ubuntu-24.04 20261004.327.1 · runner 2.337.0 · prov 20261002.596 · node 24.21.0
+    2026-10-13T00:11:55Z · pull_request · base 0472952cd (#2676, 2026-10-09T12:06:05Z) · ubuntu-24.04 20261004.327.1 · runner 2.337.0 · prov 20261002.596 · node 24.21.0
+    2026-10-13T00:24:23Z · pull_request · base 6834c4b8d (#2679, 2026-10-13T00:19:39Z) · ubuntu-24.04 20261004.327.1 · runner 2.337.0 · prov 20261002.596 · node 24.21.0
+    2026-10-13T04:47:58Z · pull_request · base dfda86d65 (#2681, 2026-10-13T00:37:11Z) · ubuntu-24.04 20261004.327.1 · runner 2.337.0 · prov 20261002.596 · node 24.21.0
+    2026-10-13T12:14:23Z · pull_request · base eebc104d9 (#2712, 2026-10-13T12:07:34Z) · ubuntu-24.04 20261004.327.1 · runner 2.337.0 · prov 20261002.596 · node 24.21.0
+    2026-10-13T12:48:28Z · pull_request · base 9308125e7 (#2717, 2026-10-13T12:47:56Z) · ubuntu-24.04 20261004.327.1 · runner 2.337.0 · prov 20261002.596 · node 24.21.0
+    2026-10-14T07:09:32Z · pull_request · base cd99c7139 (#2757, 2026-10-14T07:08:57Z) · ubuntu-24.04 20261004.327.1 · runner 2.337.0 · prov 20261002.596 · node 24.21.0
+    2026-10-14T07:29:56Z · pull_request · base 6c5b3ad61 (#2761, 2026-10-14T07:27:41Z) · ubuntu-24.04 20261004.327.1 · runner 2.337.0 · prov 20261002.596 · node 24.21.0
+  CONTENIDO · base más nueva que colgó: 6c5b3ad61 (#2761, entró 2026-10-14T07:27:41Z): todo commit de main hasta ahí queda DESCARTADO para esta familia
+  ¿hay jobs DESPUÉS de 2026-10-14T09:00:00Z con base igual o anterior a esa? 0 · colgadas entre ellos 0
+  jobs con base POSTERIOR a la última colgada: 138 · el primero creado 2026-10-14T07:47:59Z
+  ventana: antes del corte 10 colgadas de 397 · después 0 de 110
+  ENTORNO · imagenVersion:
+    20260927.320.1     colgadas  2 · limpias 108 · antes del corte 110 · después   0 · de 2026-10-06T13:47:41Z a 2026-10-08T10:33:48Z
+    20261004.327.1     colgadas  8 · limpias 334 · antes del corte 287 · después  55 · de 2026-10-06T17:09:13Z a 2026-10-15T16:40:53Z
+    20261012.334.1     colgadas  0 · limpias  55 · antes del corte   0 · después  55 · de 2026-10-14T16:17:17Z a 2026-10-16T11:09:00Z
+  ENTORNO · runner:
+    2.337.0            colgadas 10 · limpias 497 · antes del corte 397 · después 110 · de 2026-10-06T13:47:41Z a 2026-10-16T11:09:00Z
+  ENTORNO · provisioner:
+    20260901.588       colgadas  2 · limpias 108 · antes del corte 110 · después   0 · de 2026-10-06T13:47:41Z a 2026-10-08T10:33:48Z
+    20261002.596       colgadas  8 · limpias 334 · antes del corte 287 · después  55 · de 2026-10-06T17:09:13Z a 2026-10-15T16:40:53Z
+    20261012.601       colgadas  0 · limpias  55 · antes del corte   0 · después  55 · de 2026-10-14T16:17:17Z a 2026-10-16T11:09:00Z
+  ENTORNO · node:
+    24.21.0            colgadas 10 · limpias 497 · antes del corte 397 · después 110 · de 2026-10-06T13:47:41Z a 2026-10-16T11:09:00Z
+  ENTORNO · checkout:
+    11d5960a326750d5838078e36cf38b85af677262 colgadas 10 · limpias 497 · antes del corte 397 · después 110 · de 2026-10-06T13:47:41Z a 2026-10-16T11:09:00Z
+  ENTORNO · setupNode:
+    49933ea5288caeca8642d1e84afbd3f7d6820020 colgadas 10 · limpias 497 · antes del corte 397 · después 110 · de 2026-10-06T13:47:41Z a 2026-10-16T11:09:00Z
+
+EXIT=0

@@ -178,7 +178,8 @@ function renderProductsView(container) {
     container.innerHTML = "";
   
     const wrap = document.createElement("div");
-    wrap.className = "data-card";
+    // SCRUM-1559j · `catalogo-productos` es el enganche de las reglas de 44 px de styles.css.
+    wrap.className = "data-card catalogo-productos";
     container.appendChild(wrap);
 
     const header = document.createElement("div");

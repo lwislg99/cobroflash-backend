@@ -959,6 +959,10 @@ async function renderAlbaranDetailView(container, albaranId, opciones = {}) {
     // SCRUM-786 (AB6): «Emitir» es irreversible (regla 29) — objetivo táctil de 44px, solo este
     // botón del carrusel, sin tocar el resto de acciones ni `.btn-sm` en general.
     if (accion.id === 'btnEmitir') b.classList.add('accion-irreversible-btn-44');
+    // SCRUM-786d · re-medido el 19-oct (ESTADO-DEL-PRODUCTO.md, tras el cambio a rejilla de 1206e):
+    // «Descargar PDF» y «Editar líneas» siguen a 30 px. Mismo opt-in de SCRUM-962/1172
+    // (`job-toolbar-btn-44`), sin tocar `.btn-sm` global ni `styles.css` (es de S2).
+    if (accion.id === 'btnPdf' || accion.id === 'btnEditarLineas') b.classList.add('job-toolbar-btn-44');
     cubos[destino].push(b);
   }
 

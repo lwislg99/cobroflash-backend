@@ -690,10 +690,12 @@ for (const c of recorridoLanding.ciegos) noSupeMirar(`   🔴 NO SUPE MIRAR · $
  * QUIÉN LA RETIRA: el fundador, decidiendo qué hacer con `.btn-sm` (subirla a 44, o darle área con
  * un pseudo como se ha hecho aquí con la casilla). El día que se decida, esta lista se vacía.
  */
-const EXCEPCIONES_PANEL = [
-  { sel: 'BUTTON.btn-secondary.btn-sm', motivo: 'clase compartida `.btn-sm` (30 px de caja) — «Importar CSV», «Editar», «Portal». Pre-existente, medido 30,8–31,0 px. Lo retira el fundador al decidir sobre `.btn-sm`.' },
-  { sel: 'BUTTON.btn-ghost.btn-sm', motivo: 'clase compartida `.btn-sm` — «📊 Historial». Pre-existente, medido 30,9 px.' },
-];
+// SCRUM-1149 (J2, 20-oct-2026) · VACÍA. El fundador decidió el 21-sep (SCRUM-786 c.16266) la opción ③:
+// reglas por contenedor, nunca `.btn-sm` global. La de la lista de Clientes (`.clientes-lista`,
+// styles.css) da 36/44 px a «⬆ Importar clientes», «⬇ Clientes CSV», «Editar», «Portal» y
+// «📊 Historial», y este guard pidió borrar las dos entradas por sobrantes. Una entrada nueva aquí
+// vuelve a dejar sin vigilar a TODOS los botones de su selector en esta lista.
+const EXCEPCIONES_PANEL = [];
 
 // ═══ SCRUM-782 · SEGUNDA SUPERFICIE: EL PANEL (lista de Clientes) ═══════════════════════════
 //

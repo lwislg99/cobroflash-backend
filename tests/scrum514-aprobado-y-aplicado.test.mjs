@@ -339,6 +339,15 @@ const APARCADOS = [
       + 'adelantado»; registro en `docs/microcopy/2026-09-07-SCRUM-814-tramo-tomado.md`.',
   },
   {
+    texto: '¿Tienes el domicilio fiscal en Canarias?',
+    motivo: 'APROBADO Y SIN PANTALLA DONDE PINTARSE TODAVÍA (SCRUM-1536d, 22-oct-2026). Es la segunda '
+      + 'pregunta Q1 del alta, firmada por el fundador en SCRUM-1536 c.20225. Su sitio es la pantalla '
+      + 'pública de alta, y está cerrada: `POST /auth/register` contesta siempre 409 (SCRUM-1515). '
+      + 'Hoy la pregunta la hace quien lanza la consola de alta (`--domicilio-canarias si|no`). Lo '
+      + 'desbloquea J3 el día que se reabra el alta (pieza C del tramo 1536c): se pinta entonces, '
+      + 'literal, en `public/register.html`. Registro: `docs/master/SCRUM-1536.md`, tramo 1536d.',
+  },
+  {
     texto: '2. Líneas',
     motivo: 'SUSTITUIDO POR UNA FIRMA POSTERIOR (SCRUM-915d, 18-sep-2026). Era el título del bloque '
       + 'de líneas del editor. La v3 del editor, APROBADA por el fundador, convierte los bloques en '
@@ -385,21 +394,6 @@ const APARCADOS = [
     motivo: 'La otra mitad del mismo respaldo (`settingsView.js:219`). Mismo motivo y mismo '
       + 'desbloqueo: regla 26.',
   },
-  ...[
-    '¿Qué tipo de actividad tienes?',
-    'Empresarial',
-    'No lo sé',
-  ].map((texto) => ({
-    texto,
-    motivo: 'FIRMADO Y TODAVÍA SIN PANTALLA (SCRUM-1072 comentario 19859, 16-oct-2026). Es la pregunta de '
-      + 'la actividad, junto a «Retención de IRPF», en Configuración. La mitad de servidor está hecha '
-      + '(`activityKind` en el perfil); la pantalla es `settingsView.js`, contenedor de J3, y la pinta '
-      + 'S2. «Profesional» no sale aquí porque el cruce ya la encuentra en `publicProfile.service.ts` '
-      + '(el nombre de respaldo del perfil público): es OTRO texto y NO prueba que esta pregunta esté '
-      + 'pintada. Lo desbloquea S2 al pintar '
-      + 'la pregunta: entonces estas tres líneas se QUITAN. Registro: '
-      + '`docs/microcopy/2026-10-16-SCRUM-1072-tipo-de-actividad.md`.',
-  })),
 ];
 
 /**

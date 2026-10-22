@@ -411,3 +411,66 @@ leído 135 de las 377 líneas de este mismo fichero. Las fases B y C, y la decis
 4-sep, estaban más abajo.
 
 **No medido:** el PDF de verdad · facturas por tramos y recapitulativas · facturas reales.
+
+---
+
+# SCRUM-624c · el PDF de verdad y las facturas POR TRAMOS (19-oct-2026)
+
+**Medido contra:** `origin/main` = `eee7d2b4bcea348a05d0020a1e912db73a894cfe` · 2026-10-19T11:58:43Z
+A9: aviso → cicatriz S1 «Se deja de leer cuando el texto te da la razón: un registro se lee ENTERO antes de citarlo.» — no se pudo comprobar: nada mide cuánto de un fichero ha leído una sesión antes de afirmar algo sobre él
+
+Sesión S1, encargo del orquestador (19-oct): el defecto ② (`Invoice.total` guardado frente al TOTAL que imprime el
+PDF de factura) «sin cifra». **No era así:** la remedición del 2-oct (arriba) ya lo midió para la factura única. Lo
+que faltaba son dos de sus «no medido»: **el PDF de verdad** y **las facturas por tramos**. Eso es lo que añade este
+tramo. **Sólo evidencia: ni `src/` ni `tests/`; camino de emisión sólo leído.**
+
+`docs/master/evidencias/SCRUM-624/medir-total-por-tramos.cjs` — `node <guion> <árbol con dist/> [300] [3000]`.
+
+- **Fase 1, el PDF de verdad.** Llama a `generateInvoicePdf` de `dist/` con `PDFDocument.prototype.text` espiado (sin
+  tocar `src/` ni `dist/`) y lee el texto que sigue a «TOTAL:». **582 facturas: la réplica de la fase 2 da el mismo
+  TOTAL en las 582.** En 87, el PDF real imprime un TOTAL distinto del guardado. Primer caso real: plan 30/40/30, 7
+  líneas, **guardado 8.809,58 · impreso 8.809,57**. El guion se para si la réplica difiere del PDF en una sola, o si la
+  muestra real no produce ningún descuadre (un 0 % que no habría visto nada).
+- **Control negativo:** una línea de 1 × 100 € al 21 % en factura única imprime su guardado.
+- **Las facturas salen del camino de emisión real:** `lineasParaFacturar` → `stageLinesReconciled` con el objetivo de
+  `distributeStageAmounts(calcTotal)` → `grossOfLines`, que es lo que se guarda (`quotesAdmin.routes.ts`,
+  `tramoTrasEmitidas`). Precios de 0 a 400 € con céntimos, un 10 % de líneas con `dto`, sin descuento global.
+- El guion escribe sus PDF en un temporal del sistema (se cambia de directorio antes de cargar `dist/`), nunca en el
+  repositorio. Comprobado: `git status` igual antes y después.
+
+### Fase 2: % de facturas cuyo PDF imprime un TOTAL distinto del guardado (3.000 presupuestos por celda)
+
+| plan | líneas | cantidad entera, 21 % | entera, 21/10/4 % | decimal, 21 % | decimal, 21/10/4 % |
+| --- | --- | --- | --- | --- | --- |
+| factura única | 1-3 | 0,17 % | 1,33 % | 1,23 % | 3,63 % |
+| factura única | 4-10 | 0,53 % | 9,43 % | 1,10 % | 11,67 % |
+| factura única | 11-40 | 0,00 % | 11,33 % | 2,03 % | 13,40 % |
+| 50/50 | 1-3 | 8,78 % | 12,98 % | 12,30 % | 17,15 % |
+| 50/50 | 4-10 | 11,80 % | 25,67 % | 13,77 % | 24,95 % |
+| 50/50 | 11-40 | 13,98 % | 30,33 % | 14,40 % | 24,73 % |
+| 30/40/30 | 1-3 | 10,06 % | 12,63 % | 10,00 % | 12,80 % |
+| 30/40/30 | 4-10 | 8,77 % | 18,38 % | 9,38 % | 19,88 % |
+| 30/40/30 | 11-40 | 8,24 % | 20,98 % | 10,67 % | 26,47 % |
+
+El descuadre es siempre de 1 o 2 céntimos.
+
+### Lo que dice la tabla
+
+- **Lo que más pesa NO es el número de líneas: son los TRAMOS y mezclar tipos.** Con un solo tipo, una factura única
+  descuadra en el 0-2 %, tenga 3 líneas o 40. Una factura de tramo descuadra en el **8-14 %** con un solo tipo: el
+  reparto (`stageLines`, `precio × porcentaje`) y la reconciliación (pasos de 0,0005 € / cantidad) dejan en las líneas
+  guardadas **precios con fracciones de céntimo**, y el PDF los suma sin redondear mientras `grossOfLines` redondea
+  base y cuota por tipo. Mezclando 21/10/4 % sube al 20-30 %.
+- Con varios tipos sí crece con las líneas en la factura única (1,33 % → 11,33 %): hay más tipos presentes a la vez.
+- Cuadra en orden de magnitud con el 2-oct (0,2-0,3 % con un tipo). Con tipos mezclados el 2-oct daba ~25 % en
+  factura única y aquí 1-13 %: las poblaciones no son iguales (allí cantidad 1 y tipos alternados línea a línea; aquí
+  cantidad de 1 a 8 y tipo al azar entre tres, así que un presupuesto corto suele salir con un solo tipo).
+
+### Lo que NO está hecho
+
+- **Nada arreglado.** Es camino de emisión (regla 38, STOP), y la decisión de fondo (qué convención manda) sigue
+  donde la dejaron la fase C y la asesoría.
+- Ni recapitulativas, ni factura final de tramos (`finalInvoice.service.ts`), ni facturas reales: la consulta de
+  sólo lectura sigue siendo la de la fase C, y la corre el fundador.
+- **El IVA por tipo del papel frente al del XML** (el `vatMap` del PDF frente a `calcVatBreakdown`) no se mide aquí:
+  es la medición de SCRUM-623 (547 de 4.006 combinaciones) y no se mezcla con este porcentaje.

@@ -49,7 +49,46 @@ export const VOCABULARIO_PERSONAL = Object.freeze([
   'address', 'direccion',                   // domicilios y direcciones de trabajo
   'notes', 'internalNotes',                 // texto libre sobre personas
   'iban',                                   // cuenta bancaria
+  // SCRUM-1569d · el móvil del cliente y la cuenta mexicana: ninguna familia los leía (estaban en las
+  // 157 de SCRUM-1569), así que quitarlos de `CAMPOS_PERSONALES` no lo habría visto nadie.
+  'mobile', 'clabe',
 ]);
+
+/**
+ * 🔴 SCRUM-1569 · LOS NÚCLEOS: casar por FAMILIA, no sólo por el nombre que ya se conocía.
+ *
+ * Con la lista exacta sola, el censo veía `phone` y no `contactName`: el nombre de una persona se
+ * quedaba en claro tras suprimir y el guard seguía verde, porque una columna que el vocabulario no
+ * sabe leer no está «fuera», **no existe** para el instrumento. Nadie la decidió y nadie se entera.
+ *
+ * Un núcleo es la ÚLTIMA palabra del nombre en camelCase: lo que la columna ES. `contactName`,
+ * `customerTaxId` o `billingAddress` son un nombre, un NIF y una dirección. Las palabras de delante
+ * sólo dicen de quién.
+ *
+ * ⚠️ NO es una subcadena, y eso es lo que separa ensanchar de abrir. Con una subcadena entran
+ * `nameSearch` (un índice de búsqueda) y `shippingAddressMode` (un modo), que no son de nadie. Por
+ * núcleo, no entran. `templateName` sí entra, porque su núcleo es «name». Y queda a la vista: hay que
+ * declararlo fuera con su motivo, que es justo lo que este censo existe para obligar.
+ *
+ * Aditivo: la lista exacta de arriba sigue mandando para lo que no es un núcleo (`serialNumber`).
+ */
+export const NUCLEOS_PERSONALES = Object.freeze([
+  'email', 'phone', 'name', 'taxId', 'address', 'direccion', 'notes', 'iban',
+  // EL DOMICILIO EN TROZOS. `address` sólo ve la calle; la ciudad, el código postal y la provincia
+  // de una persona física son el resto de su casa. Ninguno contenía una palabra del vocabulario, así
+  // que eran el caso que c.20092 declaró sin medir: salieron cuatro en `customerSite` (SCRUM-1569).
+  'city', 'postalCode', 'province', 'country',
+]);
+
+/** ¿El nombre de columna ACABA en un núcleo, en frontera de camelCase? `contactName` sí, `nameSearch` no. */
+export function nucleoDe(campo) {
+  for (const n of NUCLEOS_PERSONALES) {
+    if (campo === n) return n;
+    const cola = n[0].toUpperCase() + n.slice(1);
+    if (campo.length > cola.length && campo.endsWith(cola) && /[a-z0-9]/.test(campo[campo.length - cola.length - 1])) return n;
+  }
+  return null;
+}
 
 /** `Merchant` → `merchant`, `EmailMessage` → `emailMessage`: la clave que usa `CAMPOS_PERSONALES`. */
 export const enCamel = (modelo) => modelo[0].toLowerCase() + modelo.slice(1);
@@ -72,7 +111,7 @@ export function camposPersonalesDelSchema(schemaText) {
     // es el correo de nadie, y un `Json` de qué se envió es el hecho, no la persona.
     const campo = /^\s*(\w+)\s+String(\?)?(\s|$)/.exec(linea);
     if (!campo) continue;
-    if (!vocab.has(campo[1])) continue;
+    if (!vocab.has(campo[1]) && !nucleoDe(campo[1])) continue;
     out.push({ modelo: enCamel(modelo), campo: campo[1], clave: `${enCamel(modelo)}.${campo[1]}` });
   }
   return out;

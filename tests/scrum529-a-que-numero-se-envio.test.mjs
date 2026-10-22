@@ -137,13 +137,19 @@ test('SCRUM-529 · 🔴 la RESERVA de la plantilla nace con el número, antes de
   assert.equal(c.filas[0].data.toPhone, c.buzon[0].to, 'y es el mismo que se le dio al proveedor');
 });
 
-test('SCRUM-529 · 🔴 la plantilla SIN reserva (la base no contestó al tope) apunta el número al salir', async () => {
+// SCRUM-1509g · Este caso decía «el tope es best-effort: sale igual». El fundador lo cambió en
+// SCRUM-1509 c.19620 («Ok que el tope bloquee»): sin reserva NO sale. Lo que el 529 fija sigue en
+// pie —la fila que queda lleva el número—, ahora sobre la fila del corte.
+test('SCRUM-529 · 🔴 la plantilla SIN reserva (la base no contestó al tope) NO sale, y la fila del corte lleva el número', async () => {
   const c = await caso({ meta: 'responde', reservaRota: true }, () => enviar('sendWhatsAppTemplate'));
-  assert.equal(c.resultado.ok, true, 'el tope es best-effort: sale igual');
+  assert.equal(c.resultado.ok, false, 'sin poder comprobar el tope, la plantilla no sale (c.19620)');
+  assert.equal(c.resultado.reason, 'tope_no_comprobable');
+  assert.equal(c.buzon.length, 0, 'no se le ha dado nada al proveedor');
   assert.equal(c.filas.length, 1);
-  assert.equal(c.filas[0].data.status, 'sent', 'sin reserva, la fila se crea al salir');
+  assert.equal(c.filas[0].data.status, 'failed', 'la fila es la del corte');
+  assert.equal(c.filas[0].data.error, 'tope_no_comprobable');
   assert.equal(c.filas[0].data.type, 'template');
-  assert.equal(c.filas[0].data.toPhone, TELEFONO);
+  assert.equal(c.filas[0].data.toPhone, TELEFONO, 'la fila del corte no dice a qué número se iba a mandar');
 });
 
 test('SCRUM-529 · 🔴 ventana-first: la fila del corte por baja lleva el número', async () => {

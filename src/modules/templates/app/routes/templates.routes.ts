@@ -4,8 +4,17 @@ import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { jsonAnulable } from '../../../../core/db/jsonAnulable'; // SCRUM-1188d
 import { requireRole } from '../../../../core/http/authMiddleware';
+import { CreateQuoteSchema } from '../../../../core/validation/schemas'; // SCRUM-1545c
 
 const router = Router();
+
+// SCRUM-1545c: la forma de `tiers` es la MISMA que acepta un presupuesto de 3 opciones; lo que el
+// presupuesto rechazaría no se guarda en una plantilla. `null` vacía, como en SCRUM-1188d.
+function tiersParaLaBase(valor: unknown) {
+  const forma = valor === null ? null : CreateQuoteSchema.shape.tiers.safeParse(valor);
+  if (forma && !forma.success) return { ok: false as const };
+  return { ok: true as const, valor: jsonAnulable(forma?.data ?? null) };
+}
 
 // GET /admin/templates — listar plantillas del merchant
 router.get('/', async (req, res) => {
@@ -39,12 +48,13 @@ router.post('/', requireRole('admin'), async (req, res) => {
     const lines        = req.body?.lines;
     // SCRUM-1188d: «sin niveles» es NULL de SQL. Un `null` de JS aquí guardaba el valor JSON `null`
     // y la columna dejaba de estar vacía (medido contra Postgres).
-    const tiers        = jsonAnulable(req.body?.tiers ?? null);
+    const tiers        = tiersParaLaBase(req.body?.tiers ?? null);
     const paymentTerms = req.body?.paymentTerms ?? null;
 
     if (!name)                   return res.status(400).json({ error: 'name_required' });
     if (!Array.isArray(lines) || lines.length === 0)
       return res.status(400).json({ error: 'lines_required' });
+    if (!tiers.ok)               return res.status(400).json({ error: 'invalid_tiers' });
 
     const template = await prisma.quoteTemplate.create({
       data: {
@@ -52,7 +62,7 @@ router.post('/', requireRole('admin'), async (req, res) => {
         name,
         currency,
         lines,
-        tiers,
+        tiers: tiers.valor,
         paymentTerms,
       },
     });
@@ -81,7 +91,11 @@ router.put('/:id', requireRole('admin'), async (req, res) => {
     // SCRUM-1188c: la clave AUSENTE no toca el cobro (renombrar); la clave a `null` lo VACÍA, igual
     // que el `null` del POST. Con `!= null` los dos cuerpos eran el mismo y no se podía vaciar.
     // SCRUM-1188d: lo mismo para `tiers`, la otra columna anulable, que además es `Json?`.
-    if (req.body?.tiers        !== undefined) data.tiers        = jsonAnulable(req.body.tiers);
+    if (req.body?.tiers        !== undefined) {
+      const tiers = tiersParaLaBase(req.body.tiers);
+      if (!tiers.ok) return res.status(400).json({ error: 'invalid_tiers' });
+      data.tiers = tiers.valor;
+    }
     if (req.body?.paymentTerms !== undefined) data.paymentTerms = req.body.paymentTerms;
 
     const updated = await prisma.quoteTemplate.update({ where: { id }, data });

@@ -454,6 +454,36 @@ function renderSettingsView(container) {
     wrapRetencion.appendChild(labRetencion);
     wrapRetencion.appendChild(selRetencion);
     colocar("retencionIrpfTipo", wrapRetencion);
+
+    // S2: ── SCRUM-1072d · EL TIPO DE ACTIVIDAD, junto a la retención ─────────────────────────
+    // S2: Bloque de S2 en el contenedor de J3 (regla de contenedores, `dos-equipos.md:95`). Los
+    // S2: cuatro textos están firmados (`docs/microcopy/2026-10-16-SCRUM-1072-tipo-de-actividad.md`).
+    // S2: «no consta» (`null`) es la opción VACÍA y sin texto: un rótulo para ella no está firmado.
+    // S2: Sólo se GUARDA: nada decide una retención con este campo (`scrum1072` ⑥).
+    const ACT_NO_CONSTA = "";
+    const selActividad = document.createElement("select");
+    selActividad.id = "actividad-tipo";
+    selActividad.name = "activityKind";   // S2: lo lee el censo de Configuración, como en la retención
+    selActividad.className = "input";
+    [
+      { value: ACT_NO_CONSTA, texto: "" },
+      { value: "profesional", texto: "Profesional" },
+      { value: "empresarial", texto: "Empresarial" },
+      { value: "no_lo_se", texto: "No lo sé" },
+    ].forEach(function (o) {
+      const op = document.createElement("option");
+      op.value = o.value; op.textContent = o.texto;
+      selActividad.appendChild(op);
+    });
+    const wrapActividad = document.createElement("div");
+    wrapActividad.className = "form-group";
+    const labActividad = document.createElement("label");
+    labActividad.textContent = "¿Qué tipo de actividad tienes?";
+    labActividad.htmlFor = selActividad.id;
+    wrapActividad.appendChild(labActividad);
+    wrapActividad.appendChild(selActividad);
+    colocar("activityKind", wrapActividad);
+    // S2: ── fin SCRUM-1072d ──────────────────────────────────────────────────────────────────
     colocar("logoUrl", fLogoUrl.wrapper);
 
     // ── SCRUM-D1 · LA PUERTA DE ÚLTIMA OPORTUNIDAD ───────────────────────────
@@ -922,6 +952,9 @@ function renderSettingsView(container) {
         selRetencion.value = merchant.retencionIrpfDeclarada
           ? (merchant.retencionIrpfTipo == null ? RET_NO_RETIENE : String(merchant.retencionIrpfTipo))
           : RET_NO_CONSTA;
+        // S2: SCRUM-1072d · un valor que no es de la lista cerrada se queda en «no consta», no se inventa.
+        selActividad.value = ["profesional", "empresarial", "no_lo_se"].includes(merchant.activityKind)
+          ? merchant.activityKind : ACT_NO_CONSTA;
         fLogoUrl.input.value = merchant.logoUrl || "";
         refreshLogoUI(); // preview del logo actual (URL antigua o data-URI)
         montarDatosDeEjemplo(merchant); // SCRUM-314 (D3)
@@ -1125,6 +1158,8 @@ function renderSettingsView(container) {
           selRetencion.value === RET_NO_CONSTA || selRetencion.value === RET_NO_RETIENE
             ? null
             : Number(selRetencion.value),
+        // S2: SCRUM-1072d · «no consta» viaja como NULL, igual que los otros estados fiscales.
+        activityKind: selActividad.value === ACT_NO_CONSTA ? null : selActividad.value,
         logoUrl: fLogoUrl.input.value.trim() || null,
         // A2.5: normalizar — si pegan "g.page/r/…" sin protocolo, anteponer https://
         googleReviewUrl: (function () {
@@ -1165,7 +1200,10 @@ function renderSettingsView(container) {
         await updateMerchantProfile(payload);
         setAlert("success", "Datos de empresa guardados correctamente.");
       } catch (err) {
-        setAlert("error", "Error al guardar: " + err.message);
+        // SCRUM-1536d · «Sí» en el domicilio foral: el servidor no guarda NADA y manda el texto
+        // firmado en SCRUM-1536 c.20225 (T2a). Se pinta ése, entero y sin el «Error al guardar:».
+        if (err && err.code === "territorio_excluido") setAlert("error", mensajeParaPersona(err, ""));
+        else setAlert("error", "Error al guardar: " + err.message);
       } finally {
         saveBtn.disabled = false;
         saveBtn.textContent = "Guardar cambios";

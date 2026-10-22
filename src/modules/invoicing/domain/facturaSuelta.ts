@@ -41,7 +41,7 @@
 // retira el tipo `JUST` ni sus usos (eso es SCRUM-825, que va firmado antes — regla 27): esto
 // solo cierra la PUERTA por la que se llegaba a pedir uno.
 //
-// Y el `type` no hubo ni que tocarlo: `emitInvoice` seguiría forzando `JUST` si la serie saliera
+// Y el `type` no hubo ni que tocarlo: `emitInvoice` forzaba `JUST` (hasta SCRUM-1260b) si la serie saliera
 // `J-`, pero ahora nunca sale — `allocateInvoiceNumber` rechaza el modo `receipt` para los siete
 // caminos (SCRUM-1027, `invoiceNumber.service.ts`). El camino de emisión no se modifica para
 // esto: se endurece el ÚNICO punto que ya decidía (regla 38).

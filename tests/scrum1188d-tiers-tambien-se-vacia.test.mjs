@@ -44,7 +44,8 @@ after(async () => {
 });
 
 const LINEAS = [{ concept: 'Alicatado', qty: 1, price: 100 }];
-const NIVELES = [{ id: 'good', lines: LINEAS }, { id: 'better', lines: LINEAS }, { id: 'best', lines: LINEAS }];
+// SCRUM-1545c: la ruta valida la forma (la del presupuesto), así que cada nivel lleva su `label`.
+const NIVELES = [{ id: 'good', label: 'Básico', lines: LINEAS }, { id: 'better', label: 'Completo', lines: LINEAS }, { id: 'best', label: 'Premium', lines: LINEAS }];
 
 /** Lo que hay DE VERDAD en la columna: por Prisma un NULL de SQL y el JSON `null` se leen igual. */
 async function enLaBase(prisma, id) {

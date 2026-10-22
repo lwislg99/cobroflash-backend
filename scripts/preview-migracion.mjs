@@ -51,9 +51,54 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { esInvocacionDirecta } from './_prisma-client-guard.mjs';
+import { comprobarCredencialDeProduccion, OK } from './_clave-vs-destino.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const SCHEMA_POR_DEFECTO = path.join(RAIZ, 'prisma', 'schema.prisma');
+
+// Una URL que no lleva a ninguna parte: el schema declara `env("DATABASE_URL")` y Prisma exige que
+// la variable EXISTA aunque el diff no conecte (ver `ejecutorLocal`).
+export const URL_QUE_NO_LLEVA_A_NADA = 'postgresql://nadie:nadie@127.0.0.1:1/nada';
+
+/**
+ * LA url que recibe el hijo de Prisma. Una sola función para el guard y para el ejecutor: si cada
+ * uno la leyera por su cuenta, el guard podría aprobar una y el hijo conectar con otra.
+ */
+export function urlDelHijo(env = process.env) {
+  return env.DATABASE_URL || URL_QUE_NO_LLEVA_A_NADA;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-1575 · ANTES DE CONECTAR, EL DESTINO
+//
+// Hasta el 22-oct-2026 este fichero conectaba con el `DATABASE_URL` que hubiera en el entorno sin
+// preguntar adónde iba, mientras `CLAUDE.md` decía que «desde SCRUM-418 el guard lo hace cumplir
+// por DESTINO». Para el preview, esa frase no era verdad.
+//
+// ⚠️ La pregunta es la de SCRUM-418 (`comprobarCredencialDeProduccion`), NO la de SCRUM-383
+// (`exigirDestinoCorrecto`). Medido con URLs fabricadas sobre la clave `DATABASE_URL`, que en
+// `DESTINOS_ESPERADOS` PROMETE PRODUCCIÓN: la de 383 sólo aprueba producción y la de 418 sólo la
+// rechaza. Juntas, el preview se negaría siempre, también contra dev.
+//
+// El modo `--desde` es datamodel→datamodel: no conecta, y no se le pide URL.
+
+/** PURA salvo por `env`, que se inyecta: no conecta ni lee ficheros. */
+export function destinoDelPreview({ desde = null, env = process.env, worktree = RAIZ } = {}) {
+  if (desde) return { ok: true, veredicto: 'offline', mensaje: null };
+  if (!env.DATABASE_URL) {
+    return {
+      ok: false,
+      veredicto: 'sin_url',
+      motivo:
+        '🔴 NO HAY DATABASE_URL EN EL ENTORNO, y sin `--desde` el preview compara contra una base.\n\n' +
+        '   No se sigue: sin destino no hay nada contra lo que comparar. Para revisar un cambio\n' +
+        '   propio sin tocar ninguna base: `--desde <schema viejo>`.',
+    };
+  }
+  const r = comprobarCredencialDeProduccion('DATABASE_URL', urlDelHijo(env), worktree);
+  if (r.veredicto !== OK) return { ok: false, veredicto: r.veredicto, motivo: r.mensaje };
+  return { ok: true, veredicto: r.veredicto, mensaje: r.mensaje };
+}
 
 /**
  * El CLI LOCAL, por ruta. `npx prisma` se descarga otro de la red cuando el local falta, y esa
@@ -77,7 +122,7 @@ export function ejecutorLocal(raiz = RAIZ) {
       // `migrate diff` no necesita conectar en la forma datamodel→datamodel, pero el schema
       // declara `env("DATABASE_URL")` y Prisma exige que la variable EXISTA para resolverlo.
       // Se le da una que no lleva a ninguna parte: así no puede tocar nada por accidente.
-      env: { ...process.env, DATABASE_URL: process.env.DATABASE_URL || 'postgresql://nadie:nadie@127.0.0.1:1/nada' },
+      env: { ...process.env, DATABASE_URL: urlDelHijo() },
     });
     if (r.error) return { ok: false, salida: '', error: r.error.message };
     return { ok: r.status === 0, salida: r.stdout || '', error: (r.stderr || '').trim() };
@@ -162,6 +207,15 @@ export function sentenciasDestructivas(sql) {
 if (esInvocacionDirecta(import.meta.url, process.argv[1])) {
   const i = process.argv.indexOf('--desde');
   const desde = i > 0 ? process.argv[i + 1] : null;
+
+  // SCRUM-1575 · lo primero, antes de lanzar nada: adónde iría.
+  const destino = destinoDelPreview({ desde });
+  if (!destino.ok) {
+    console.error(destino.motivo);
+    process.exit(1);
+  }
+  if (destino.mensaje) console.log(destino.mensaje);
+
   const r = previewMigracion({ desde });
 
   if (!r.ok) {

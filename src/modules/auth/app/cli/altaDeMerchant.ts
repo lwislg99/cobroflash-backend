@@ -12,14 +12,19 @@
 // zona con la que nace el comercio (domain/zonaDeLaProvincia.ts); sin ella no se crea nada. Con
 // otro país no se admite: no hay tabla de ningún otro, y ese comercio nace sin zona, como hasta hoy.
 //
-// Sale: 0 creado · 2 argumentos que la ruta también rechazaba, mal escritos, o sin provincia · 3 ese correo ya es
+// SCRUM-1536d: con España, también `--domicilio-foral si|no` y `--domicilio-canarias si|no`, las dos
+// OBLIGATORIAS: son las dos preguntas Q1 firmadas en SCRUM-1536 c.20225. Con un «si», o con una
+// provincia de Canarias, no se crea nada y la consola devuelve en `texto` la frase firmada que hay
+// que decirle a esa persona (`domain/territorioDeAlta.ts`): hoy se la dice quien lanza el alta.
+//
+// Sale: 0 creado · 2 argumentos que la ruta también rechazaba, mal escritos, sin provincia o sin domicilio, o territorio excluido · 3 ese correo ya es
 // un merchant (no se llama a nada) · 4 ese correo es de un operario · 1 cualquier otro fallo.
 // Lo que dice va a la consola de quien lo lanza, en una línea de JSON. No lo lee ningún usuario.
 import '../../../../core/config/loadEnv'; // PRIMERO, como en src/index.ts
 import { prisma } from '../../../../core/db/prisma';
 import { registerMerchant } from '../../domain/auth.service';
 
-const ARGUMENTOS = ['name', 'email', 'country', 'ref', 'source', 'provincia'] as const;
+const ARGUMENTOS = ['name', 'email', 'country', 'ref', 'source', 'provincia', 'domicilio-foral', 'domicilio-canarias'] as const;
 type Argumento = (typeof ARGUMENTOS)[number];
 
 /** `--clave valor` → { clave: valor }. `null` si hay algo que no es uno de los admitidos. */
@@ -51,7 +56,17 @@ function camposDeAlta(crudo: Partial<Record<Argumento, string>>) {
   // SCRUM-1522e: la provincia NO viene de la ruta (nunca la pidió). Sólo se le quitan los espacios:
   // quién es cada una lo decide `zonaDeAlta`, dentro de `registerMerchant`.
   const provincia = String(crudo.provincia || '').trim();
-  return { name, email, country, ref: ref || undefined, source: source || undefined, provincia: provincia || undefined };
+  // SCRUM-1536d: «si» o «no»; sin el argumento, sin contestar. Cualquier otra cosa no llega aquí
+  // (`respuesta` la devuelve como `null` y `principal` la rechaza como argumento mal escrito).
+  const domicilio = { foral: respuesta(crudo['domicilio-foral']), canarias: respuesta(crudo['domicilio-canarias']) };
+  return { name, email, country, ref: ref || undefined, source: source || undefined, provincia: provincia || undefined, domicilio };
+}
+
+/** «si»/«sí» → true · «no» → false · sin el argumento → undefined · cualquier otra cosa → null. */
+function respuesta(valor: string | undefined): boolean | undefined | null {
+  if (valor === undefined) return undefined;
+  const plano = valor.normalize('NFD').replace(/\p{M}/gu, '').trim().toLowerCase();
+  return plano === 'si' ? true : plano === 'no' ? false : null;
 }
 
 const decir = (algo: Record<string, unknown>) => console.log(JSON.stringify(algo));
@@ -63,7 +78,13 @@ async function principal(): Promise<void> {
     process.exitCode = 2;
     return;
   }
-  const campos = camposDeAlta(crudo);
+  const { domicilio: respuestas, ...resto } = camposDeAlta(crudo);
+  if (respuestas.foral === null || respuestas.canarias === null) {
+    decir({ resultado: 'rechazado', error: 'argumentos', admite: ['--domicilio-foral si|no', '--domicilio-canarias si|no'] });
+    process.exitCode = 2;
+    return;
+  }
+  const campos = { ...resto, domicilio: { foral: respuestas.foral, canarias: respuestas.canarias } };
   // Los dos rechazos de la ruta, con sus mismos códigos y en su mismo orden.
   const error = !campos.name ? 'name_required' : !campos.email || !campos.email.includes('@') ? 'invalid_email' : null;
   if (error) {
@@ -90,6 +111,14 @@ async function principal(): Promise<void> {
     // Se dice cuáles admite (las trae el propio rechazo): lo lee quien da de alta, en su consola.
     if (codigo === 'provincia_required' || codigo === 'provincia_desconocida') {
       decir({ resultado: 'rechazado', error: codigo, provincias: (err as { provincias?: string[] }).provincias });
+      process.exitCode = 2;
+      return;
+    }
+    // SCRUM-1536d: sin las dos respuestas, o fuera por territorio. No se ha creado nada; con
+    // `territorio_excluido` va el texto firmado que se le dice a esa persona, y por qué vía cayó.
+    if (codigo === 'domicilio_fiscal_required' || codigo === 'domicilio_fiscal_desconocido' || codigo === 'territorio_excluido') {
+      const { motivo, texto } = err as { motivo?: string; texto?: string };
+      decir({ resultado: 'rechazado', error: codigo, ...(motivo ? { motivo, texto } : {}) });
       process.exitCode = 2;
       return;
     }

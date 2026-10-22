@@ -1,0 +1,107 @@
+// sonda-borrar.mjs — SCRUM-1456 (J3, 20-oct). Derivada de docs/evidencias/scrum1456/sonda-real.mjs.txt (J2e):
+// mismo montaje (routers de dist/, Prisma de verdad, PGlite por socket en loopback, solo la SESION doblada).
+// Lo que añade: pasa por la RUTA REAL el DELETE y el fusionar con un id decimal y con uno que no cabe,
+// y mira QUÉ FILA desaparece, no solo el código.
+// Uso: node sonda-borrar.mjs <raiz con dist/> <ddl.sql> [etiqueta]
+import fs from 'node:fs';
+import path from 'node:path';
+import net from 'node:net';
+import { createRequire } from 'node:module';
+import { PGlite } from '@electric-sql/pglite';
+import { PGLiteSocketServer } from '@electric-sql/pglite-socket';
+
+const [raiz, ddl, etiqueta = ''] = process.argv.slice(2);
+if (!raiz || !ddl) { console.log('CIEGA: faltan argumentos'); process.exit(2); }
+
+// 🔴 LA ETIQUETA LA PONE EL CÓDIGO MEDIDO, NO QUIEN LANZA LA SONDA (A9 de J3, 20-oct).
+// El 20-oct esta sonda corrió como «DESPUES» en paralelo con dos ediciones que la cerradura de carril
+// DENEGÓ: midió el código sin arreglo bajo la etiqueta del arreglado. Ahora lee el handler del DELETE
+// en el `dist/` que va a medir, decide ella si está arreglado, y si la etiqueta dice otra cosa, se niega.
+const fuenteDist = fs.readFileSync(path.join(raiz, 'dist', 'modules', 'system', 'app', 'routes', 'customersAdmin.routes.js'), 'utf8');
+const trozo = fuenteDist.slice(fuenteDist.indexOf("router.delete('/:id'"), fuenteDist.indexOf("router.delete('/:id'") + 400);
+if (!trozo.startsWith("router.delete('/:id'")) { console.log('CIEGA: no encuentro el DELETE /:id en el dist'); process.exit(2); }
+const arreglado = /cabeEnColumnaInt\)?\(id\)/.test(trozo) && !/Number\.isNaN\(id\)/.test(trozo);
+const estado = arreglado ? 'ARREGLADO' : 'SIN ARREGLO';
+const dice = /DESPU/i.test(etiqueta) ? 'ARREGLADO' : /ANTES/i.test(etiqueta) ? 'SIN ARREGLO' : null;
+console.log(`CODIGO MEDIDO: ${estado} (leído del dist, no de la etiqueta «${etiqueta}»)`);
+if (dice && dice !== estado) {
+  console.log(`CIEGA: la etiqueta dice ${dice} y el dist que se iba a medir está ${estado} · EXIT=2`);
+  process.exit(2);
+}
+const puertoLibre = () => new Promise((ok) => {
+  const s = net.createServer(); s.listen(0, '127.0.0.1', () => { const p = s.address().port; s.close(() => ok(p)); });
+});
+
+const db = new PGlite();
+await db.exec(fs.readFileSync(ddl, 'utf8'));
+const puertoPg = await puertoLibre();
+const servidorPg = new PGLiteSocketServer({ db, port: puertoPg, host: '127.0.0.1' });
+await servidorPg.start();
+process.env.DATABASE_URL = 'postgresql://postgres@127.0.0.1:' + puertoPg + '/sonda_1456b_test?connection_limit=1&pgbouncer=true';
+process.env.DISABLE_CRONS = 'true';
+process.env.WHATSAPP_DRY_RUN = '1';
+process.env.NODE_ENV = 'test';
+
+const requiere = createRequire(path.join(raiz, 'dist', 'x.js'));
+const { prisma } = requiere('./core/db/prisma.js');
+const express = requiere('express');
+
+// El id 1 es el demo (regla 8): se quema con un comercio de relleno para que la sonda no mida al demo.
+await prisma.merchant.create({ data: { name: 'Relleno (id del demo)', country: 'ES' } });
+const comercio = await prisma.merchant.create({ data: { name: 'Sonda 1456b', country: 'ES' } });
+const otro = await prisma.merchant.create({ data: { name: 'Otro comercio', country: 'ES' } });
+const cli = [];
+for (const n of ['Uno', 'Dos', 'Tres', 'Cuatro']) cli.push(await prisma.customer.create({ data: { merchantId: comercio.id, name: n } }));
+const ajeno = await prisma.customer.create({ data: { merchantId: otro.id, name: 'Ajeno' } });
+
+const app = express();
+app.use(express.json());
+const sesion = (req, _res, next) => { req.merchantId = comercio.id; req.userRole = 'admin'; req.teamMemberId = null; next(); };
+app.use('/admin/customers', sesion, requiere('./modules/system/app/routes/customersAdmin.routes.js').default);
+const http = await new Promise((ok) => { const s = app.listen(0, '127.0.0.1', () => ok(s)); });
+const origen = 'http://127.0.0.1:' + http.address().port;
+
+const vivos = async () => (await prisma.customer.findMany({ select: { id: true }, orderBy: { id: 'asc' } })).map((c) => c.id);
+const callar = console.error; console.error = () => {};
+const filas = [];
+async function pedir(verbo, ruta, cuerpo) {
+  const antes = await vivos();
+  const r = await fetch(origen + ruta, {
+    method: verbo, headers: cuerpo ? { 'content-type': 'application/json' } : {},
+    body: cuerpo ? JSON.stringify(cuerpo) : undefined,
+  });
+  const texto = (await r.text()).slice(0, 60).replace(/\s+/g, ' ');
+  const despues = await vivos();
+  const desaparecen = antes.filter((x) => !despues.includes(x));
+  filas.push({ que: verbo + ' ' + ruta + (cuerpo ? ' ' + JSON.stringify(cuerpo) : ''), estado: r.status, texto, desaparecen });
+}
+
+const [c1, c2, c3, c4] = cli.map((c) => c.id);
+// ① el decimal sobre un cliente que existe
+await pedir('DELETE', '/admin/customers/' + c1 + '.5');
+// ② CONTROL NEGATIVO: un id correcto borra ESE y ningún otro
+await pedir('DELETE', '/admin/customers/' + c2);
+// ③ los que no caben y el que no es número
+for (const v of ['2147483648', '10000000000', '99999999999999999999', 'abc']) await pedir('DELETE', '/admin/customers/' + v);
+// ④ tenencia: el cliente de OTRO comercio no se toca
+await pedir('DELETE', '/admin/customers/' + ajeno.id);
+// ⑤ fusionar: decimal y que no cabe, en principal y en `con`; y el control que funciona
+await pedir('POST', '/admin/customers/' + c3 + '.5/fusionar', { con: c4 });
+await pedir('POST', '/admin/customers/' + c3 + '/fusionar', { con: c4 + 0.5 });
+await pedir('POST', '/admin/customers/2147483648/fusionar', { con: c4 });
+await pedir('POST', '/admin/customers/' + c3 + '/fusionar', { con: 2147483648 });
+await pedir('POST', '/admin/customers/' + c3 + '/fusionar', { con: c4 });
+console.error = callar;
+
+console.log(`SONDA BORRAR ${etiqueta} · POBLACION=${filas.length} peticiones · comercio ${comercio.id} · clientes ${[c1, c2, c3, c4].join(',')} · ajeno ${ajeno.id} (comercio ${otro.id})`);
+for (const f of filas) console.log(`${f.estado}  ${f.que}  ->  ${f.texto}  · desaparecen: [${f.desaparecen.join(',')}]`);
+console.log('VIVOS AL FINAL: [' + (await vivos()).join(',') + ']');
+
+await prisma.$disconnect().catch(() => {});
+await new Promise((ok) => http.close(ok));
+await servidorPg.stop().catch(() => {});
+// SUELO: el control negativo tiene que haber borrado exactamente c2; si no, la sonda no midió la ruta.
+const ctl = filas[1];
+const sano = ctl.estado === 204 && ctl.desaparecen.length === 1 && ctl.desaparecen[0] === c2;
+console.log(sano ? 'EXIT=0' : `CIEGA: el control (DELETE ${c2}) dio ${ctl.estado} y borró [${ctl.desaparecen}] · EXIT=2`);
+process.exit(sano ? 0 : 2);

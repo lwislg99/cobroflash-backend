@@ -1,0 +1,10 @@
+⟦arranque⟧ 0.5 s COMPLETA · proceso+ws 0.5 s · primera-página 0.0 s
+SCRUM-1570c · cajas con Inter cargada · antes = origin/main, después = este árbol
+360px · antes↔después: 566 cajas comparadas (566/566), 0 difieren · alto de página 8340→8340 · familias cargadas antes [Inter] después [Inter,YaQu Reserva Arial]
+        control sembrado (subtítulo a 17px): 362 difieren
+390px · antes↔después: 566 cajas comparadas (566/566), 0 difieren · alto de página 7989→7989 · familias cargadas antes [Inter] después [Inter,YaQu Reserva Arial]
+        control sembrado (subtítulo a 17px): 362 difieren
+768px · antes↔después: 566 cajas comparadas (566/566), 0 difieren · alto de página 6477→6477 · familias cargadas antes [Inter] después [Inter,YaQu Reserva Arial]
+        control sembrado (subtítulo a 17px): 362 difieren
+1280px · antes↔después: 566 cajas comparadas (566/566), 0 difieren · alto de página 5386→5386 · familias cargadas antes [Inter] después [Inter,YaQu Reserva Arial]
+        control sembrado (subtítulo a 17px): 362 difieren

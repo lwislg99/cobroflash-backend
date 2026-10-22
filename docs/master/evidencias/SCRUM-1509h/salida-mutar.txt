@@ -1,0 +1,6 @@
+cuadra  BASE sin mutar · esperado verde · 0 de 8 caen
+cuadra  «if (!admitirEntrante(from)) {» → «if (false) {» · tiene que caer «EL ROJO DE 1509f» · 4 de 8 caen
+cuadra  «dentro.length < ENTRANTES_POR_HORA» → «dentro.length <= ENTRANTES_POR_HORA» · tiene que caer «EL BORDE» · 4 de 8 caen
+cuadra  «.filter((t) => t > desde)» → «.filter(() => true)» · tiene que caer «LA HORA ES DESLIZANTE» · 1 de 8 caen
+cuadra  «else descartes += 1;» → «» · tiene que caer «EL ROJO DE 1509f» · 4 de 8 caen
+mutaciones declaradas: 4 · ciegas 0 · no cuadran 0

@@ -749,3 +749,258 @@ El guion sale 2 si alguno de sus cinco positivos da 0. Un manejador que revienta
 
 Reproducir: `tsc --noCheck` y `node docs/master/evidencias/SCRUM-1509f/limite.cjs dist` (rojo a propósito:
 `--esperado-menos-uno`).
+
+# SCRUM-1509g · El tope BLOQUEA cuando no se puede comprobar — construido (sólo la parte firmada)
+
+**Medido contra:** `origin/main` = `3fadf8eba46be56c209e5eb491cbeab155bc2314` · 2026-10-20T10:36:51Z (hora de GitHub al escribir: 2026-10-20T10:45:09Z)
+A9: comprobación → `tests/scrum1509g-el-tope-bloquea.test.mjs`
+
+J2 (sesión `jv-j2a`, equipo de Javier), por encargo del orquestador `cobroflash-backend-09`.
+
+**La decisión** está en SCRUM-1509 c.19620 (14-oct-2026). Literal del fundador: «Ok que el tope bloquee». Aquí se
+construye **sólo** la primera de sus dos partes.
+
+## 0 · PASO 0: qué estaba hecho y qué seguía vivo
+
+- `main` tenía cinco tramos de medición de 1509 (b, c, d, e, f) y **ningún arreglo**.
+- **SCRUM-1513 ya había cerrado la carrera** (#2325, 8-oct, antes de la firma). La pregunta y la fila van juntas bajo
+  un cerrojo por comercio (`reservarPlantilla`). Por eso C1 de 1509c («falla la escritura, el tope cuenta 0») ya no es
+  como se midió: ahora la escritura es parte de la reserva.
+- **Lo que seguía vivo** era el `catch` de `whatsapp.ts:415-416`: «Error comprobando topes A3.2 (no se bloquea)». Si la
+  reserva lanzaba, la plantilla salía. 1513d lo dejó escrito («si la base no contesta, la reserva LANZA: qué se hace
+  entonces lo decide quien llama»), y `SCRUM-1496.md:475` lo apunta como lo firmado: «que el tope BLOQUEE cuando no
+  puede comprobar (`whatsapp.ts:382`, `:414`)».
+
+## 1 · El arreglo (`src/integrations/whatsapp.ts`, carril J2)
+
+- Si `reservarPlantilla` lanza, la plantilla **no sale**: `logFailure` y `{ ok: false, reason: 'tope_no_comprobable' }`.
+- **El motivo es propio** (`MOTIVO_TOPE_NO_COMPROBABLE`). No es `daily_cap` ni `customer_daily_cap`, porque no se sabe
+  si el tope está alcanzado.
+- **Sin texto nuevo (regla 39).** El motivo no está en `SEND_FAILURE_MESSAGES`, igual que `baja_no_comprobable`
+  (SCRUM-1262, `whatsapp.ts:199-206`), así que la ruta lo lleva a la frase que ya da para la baja sin comprobar. El
+  test lo compara letra a letra.
+
+## 2 · El rojo primero, por la ruta real
+
+`tests/scrum1509g-el-tope-bloquea.test.mjs` usa el banco de scrum1478: el handler real de
+`POST /admin/invoices/:id/send-reminder` (`dist`), la base doblada y el dry-run de la casa, contando lo que llega al
+buzón. Diez recordatorios seguidos con la base rota:
+
+| caso | `whatsapp.ts` de `main` | con el arreglo |
+|---|---|---|
+| suelo: base sana, 1 recordatorio | 1 sale | 1 sale |
+| suelo: tope del negocio alcanzado | 0, `daily_cap` | 0, `daily_cap` |
+| falla la LECTURA del tope (`whatsAppMessage.count`) | **10 de 10** | 0 |
+| falla la ESCRITURA de la reserva (`whatsAppMessage.create`) | **10 de 10** | 0 |
+| falla el CERROJO del comercio (`$executeRaw`, con control de que se pidió las 10 veces) | **10 de 10** | 0 |
+| el cuerpo que ve la pantalla, frente al de la baja sin comprobar | — (no existe el motivo) | idéntico |
+
+## 3 · Tres tests que cambian, y por qué ninguno se debilita
+
+- **`scrum1262` y `scrum590`:** sus dobles caseros devolvían `undefined` para todo lo que empieza por `$`, también
+  `$transaction`. La reserva lanzaba un `TypeError` y el «no se bloquea» lo tapaba: **esos bancos no ejercitaban el
+  tope**, y su verde dependía de la puerta que esto cierra. Al arreglarlo cayeron 6 casos: 1262 ③ (×2) y 590 (×4).
+  Ahora el doble ejecuta el callback de la transacción, como Prisma. Las aserciones no se han tocado.
+  Resultado: 41 de 41.
+- **`scrum529:140`:** decía «el tope es best-effort: sale igual», que es justo lo que el fundador revocó. Se reescribe
+  para lo decidido (no sale, motivo `tope_no_comprobable`, nada al proveedor), y se conserva lo que fija el 529: la
+  fila que queda lleva el número. Resultado: 12 de 12.
+
+## 4 · Lo corrido
+
+- La tanda dirigida: los 42 ficheros que nombran el envío de plantillas o el tope, más scrum836, scrum745 y
+  scrum1508. **375 tests: 365 pasan, 2 caen y 8 se saltan.**
+- Los 2 que caen son `SCRUM-245 · el fixture que OMITE el merchant NO compila` y su control. Compilan contra el
+  cliente de Prisma del checkout compartido, que está desfasado, y ya caían en la tanda entera de este árbol de esta
+  mañana, antes de cualquier cambio de este tramo. Manda el CI.
+
+## 5 · Lo que NO se ha construido, y por qué
+
+- **El límite delante de `POST /webhooks/whatsapp`.** Está firmado que va, pero **no hay número ni comportamiento
+  decididos**: cuántos mensajes, por quién (número, cliente o comercio), en qué ventana, y qué se hace con lo que
+  sobra (descartar en silencio, contestar algo al cliente, avisar). Elegir cualquiera de esas cosas es inventar un
+  límite de canal (reglas 27 y 30). Medido en 1509f: hoy no hay ninguno, y 120 mensajes de un cliente producen 120
+  avisos y 100 plantillas.
+- **La salida A–E del recordatorio de facturas:** sin elegir (c.19620 lo dice expresamente).
+- **Los cuatro llamadores que no pasan cliente** (1509d) siguen sin tope por cliente. Lo de aquí sólo cierra la puerta
+  de «no se pudo comprobar».
+- **Visto de paso, en mi carril y sin tocar:** con el arreglo, en `registrarEnviado` el camino que hace
+  `recordWaMessage` al salir (`reservaId === null` con comercio) ya no se alcanza, porque con comercio o hay reserva o
+  no se envía. Sin comercio, `registrarEnviado` vuelve antes. Era lo único que ejercitaba el antiguo 529 `:140`. No se
+  quita en este PR por si algún censo de escritores lo cuenta. Queda nombrado aquí.
+
+## 6 · Errores propios
+
+- **El primer test tenía un caso ciego.** «Falla la transacción entera» rompía `$transaction` en `respuestas`, y el
+  doble de `_envio-doblado.mjs` la ejecuta siempre sin mirar `respuestas`. Ese caso no rompía nada: su «10 de 10» de
+  antes del arreglo salía por un motivo equivocado. Lo delató que siguiera en 10 con el arreglo puesto. Se cambió por
+  el cerrojo, con un control que cuenta que se pidió, y se vio caer contra `main` por el motivo bueno.
+- Escribí el test primero en la rama de 1456c. Lo pasé a esta antes de comitear nada.
+
+# SCRUM-1509h · El límite de mensajes ENTRANTES: 20 por número y hora, descartados en silencio y contados
+
+**Medido contra:** `origin/main` = `fe65a8b7fca8b1e42448c8134e26d880d96b9ba7` · 2026-10-21T12:18:48Z (hora de GitHub al escribir)
+A9: comprobación → `tests/scrum1509h-veinte-entrantes-por-hora.test.mjs`
+
+J2 (sesión `jv-j2n`, equipo de Javier), por encargo del orquestador `cobroflash-backend-5f`. Carril J2: los dos
+ficheros de `src/` caen bajo `src/modules/whatsappBot/**` (`dos-equipos.md:124`, medido con `scripts/carriles.mjs`).
+
+**La decisión** está en SCRUM-1509 c.20141 (21-oct-2026). Literal del fundador: «ok vamos con tu recomendación», a
+«20 mensajes por número de teléfono y hora, descartando el exceso en silencio pero contándolo». Es la segunda parte
+de c.19620 («y el límite va también delante del webhook de entrantes»); la primera es SCRUM-1509g.
+
+## 0 · PASO 0
+
+Sin rama `scrum-1509h*` en el remoto ni commit 1509h en `main`. El registro de 1509g decía «el límite del webhook
+queda sin construir (sin número decidido)»; el defecto se volvió a ver HOY corriendo (§2), no leyendo.
+
+## 1 · Lo construido
+
+- `src/modules/whatsappBot/domain/limiteDeEntrantes.ts` (nuevo): `admitirEntrante(from)` —ventana DESLIZANTE de
+  60 min por número normalizado, `ENTRANTES_POR_HORA = 20`— y `descartesDeEntrantes()`, el recuento desde el arranque.
+- `whatsappIncoming.routes.ts`: una llamada por MENSAJE (no por petición), después del descarte de duplicados (un
+  reintento de Meta no gasta cupo) y antes de todo lo demás. El mensaje descartado no se registra, no se marca como
+  leído, no contesta al cliente y no avisa al profesional. Deja UNA traza por descarte en el log:
+  `[WA in] DESCARTADO por el límite de 20 entrantes por número y hora: from=<enmascarado> · descartes desde el arranque: <n>`.
+- Ningún texto nuevo al cliente, ningún aviso nuevo al profesional, nada de plantillas ni de Meta, ni esquema.
+  Los estados de entrega (`statuses`) no pasan por el límite: no son mensajes del cliente.
+
+**Dónde se cuenta, y qué pierde.** En memoria del proceso, porque contarlo en la base sería columna o tabla nueva
+(regla 40, orden A5) y nadie la ha decidido. Pierde: **al reiniciar**, las ventanas y el contador vuelven a cero;
+**con más de una instancia**, cada una contaría lo suyo (no he medido cuántas corre Railway). Lo que dura es la traza
+del log, una por descarte, con el total corrido. La lectura del contador no tiene pantalla ni ruta: sólo el log.
+
+**Un efecto de paso, deducido y no medido:** el mensaje descartado tampoco renueva la ventana de 24 h
+(`recordInboundWaMessage`). Como los 20 admitidos de esa misma hora sí la renovaron, el registro puede ir como mucho
+una hora por detrás de la ventana real: en el peor caso un envío iría por plantilla cuando podía ir por texto. Es el
+lado conservador.
+
+## 2 · El rojo primero, por la ruta real
+
+`tests/scrum1509h-veinte-entrantes-por-hora.test.mjs` pide a la APP ENTERA (`dist/app.js`) por HTTP, con la firma
+de Meta; base en memoria con estado (la de `evidencias/SCRUM-1509f/limite.cjs`) y WhatsApp en dry-run (un proceso de
+test sin él lo bloquea, SCRUM-180). Cada cliente en su comercio, para que el tope de 100 plantillas no mezcle casos.
+
+Contra el `dist` de `main` sin tocar (`evidencias/SCRUM-1509h/rojo-sobre-main.txt`): **8 casos, 3 pasan y 5 caen.**
+El caso de 1509f salió `{"avisos":120,"alProfesional":120,"entrantesRegistrados":120,"descartes":0}`: los 120.
+Con el límite: **8 de 8**. Lo que miden:
+
+| caso | `main` | con el límite |
+|---|---|---|
+| el módulo existe y su constante es la firmada (20, 1 h) | cae | pasa |
+| POSITIVO: 1 mensaje → 1 aviso, 1 registro, 0 descartes | pasa | pasa |
+| 120 textos, uno por petición → 20 avisos, 20 acuses al cliente, 100 descartes y 100 trazas | 120 / 0 | 20 / 100 |
+| una petición con 120 mensajes dentro → 20 | 120 | 20 |
+| 30 reintentos de UNA entrega gastan 1; pasa el 20.º y cae el 21.º | el 21.º pasa | cae |
+| con un número en su límite, otro cliente sigue entrando | pasa | pasa |
+| 120 peticiones con la firma mala no gastan cupo | pasa | pasa |
+| un minuto antes de cumplirse la hora sigue fuera; un minuto después entra | entra | fuera / entra |
+
+El rojo de `evidencias/SCRUM-1509h/rojo-sobre-main.txt` es el test en su versión final contra un `dist` cuya ruta se
+emitió desde `origin/main` y sin el módulo nuevo (el guion que lo hizo no está comiteado: es de un solo uso).
+
+**Qué pieza trabaja.** El test declara cuatro `MUTACIONES_QUE_ME_TUMBAN` (contrato de SCRUM-745; las corre la red de
+la casa). `evidencias/SCRUM-1509h/mutar.mjs` las LEE de ahí (sin lista propia, SCRUM-1387), compila cada una con el
+compilador del proyecto, la escribe sólo en su `.js` de `dist/` y lo devuelve a sus bytes (sha256). Salida en
+`salida-mutar.txt`: base sin mutar verde (0 de 8); la ruta no pregunta al límite, 4 de 8 caen; `<` a `<=`, 4; la
+hora no caduca, 1; el descarte no se cuenta, 4. **En las cuatro cae el caso que la declara.**
+
+**Dos tests de fuera que tocó este cambio, y por qué ninguno se debilita:**
+- `tests/scrum1326-vale-pregunta-una-vez.test.mjs` escribía sus 16 casos desde UN solo número, más de 20 mensajes
+  en un proceso: con el límite, 10 casos cayeron (visto). Ahora cada conversación escribe desde su número, y la
+  aserción «la pregunta sale hacia quien escribió» compara con el número de ESA conversación. 16 de 16.
+- `scrum411` (exports que nadie consume): mi primera versión exportaba la ventana sólo para el test. Ya no se
+  exporta; el test usa la hora firmada.
+
+⚠️ `evidencias/SCRUM-1509f/limite.cjs` describe el `main` de antes: corrido sobre el `dist` nuevo, sus esperados de
+120 avisos ya no cuadrarán. Es la foto del defecto, no un test; no lo he tocado ni corrido sobre el `dist` nuevo.
+
+## 3 · Lo corrido, y lo que NO
+
+33 ficheros (el nuevo, los de registro, los guards de entrada y los 13 que piden el webhook de entrantes):
+**300 casos · 298 pasan · 0 caen · 2 saltados** (gateados por base: `scrum50`, `webhooks-idempotencia`). Tipos:
+`tsc --noEmit` da 17 errores, ninguno en estos ficheros (el cliente de Prisma compartido no trae `archivedAt`).
+La tanda completa y el obligatorio, en la entrega de Jira. **No medido:** Postgres
+real; el proxy de producción; cuántas instancias corre Railway; si Meta limita de su lado; mensajes que llegan A LA
+VEZ en peticiones distintas (aquí el contador es síncrono dentro de un proceso, así que no hay carrera entre
+`admitir` y `contar`, pero no lo he ejecutado en paralelo); la rama CIEGA de `mutar.mjs` no la he visto saltar.
+
+## 4 · Errores propios
+
+- Escribí en el test, sin ejecutarlo, que «al cliente no se le contesta nada» por los 120. El rojo dijo otra cosa:
+  la ruta YA contesta un acuse por cada mensaje admitido. Corregido el esperado a 20 acuses (los admitidos), no 0.
+- Mi primer banco doblaba axios en vez de usar el dry-run, y el guard de SCRUM-180 bloqueó cada envío en silencio:
+  el positivo dio «1 aviso, 0 salidas al profesional». Lo cazó el POSITIVO, no el rojo.
+- Mi primer `mutar.mjs` traía su propia lista: `scrum1387` (vía `guards:entrada`) lo tumbó. Rehecho sobre la
+  declaración del test.
+- La ficha del encargo pedía `docs/master/SCRUM-1509h.md`; A8 manda anexar al fichero del número, y en el árbol hay
+  0 ficheros `SCRUM-<n><letra>.md`. Anexado aquí.
+
+---
+
+# SCRUM-1509i · El rojo de #2633: la suite del bot escribía 26 entrantes desde un número, y el límite se comía el 21.º
+
+**Medido contra:** `origin/main` = `3c60a7fd0147eb56d36f5089ecc9c70e2dcbd2ee` · 2026-10-21T13:14:08Z (hora de GitHub al escribir)
+A9: aviso → A10 «Un test gateado que se salta en local es un test que no corriste: su verde no habla de él.» — no se pudo comprobar: sin banco el salto es lo querido, y lo único que lo corre es el CI con `LIBRO_PG_URL`, después del empujón
+
+J2 (sesión `jv-j2o`, equipo de Javier), relevo de `jv-j2n` por encargo del orquestador `cobroflash-backend-5f`. Sobre la
+rama de #2633 (`scrum-1509h-veinte-por-hora` @ `5bc9a9a15`), con `origin/main` fusionado (A4). Ni `src/` ni el 20 se
+tocan: el 20 es firma del fundador (c.20141) y el arreglo es del TEST.
+
+## 0 · El rojo, confirmado en el log
+
+Run 39600073687, job 119222039233, log de 1.984.677 B (`--allow-escape-sequences`): **12.007 tests, 1 cae**, A8.4
+(`tests/bot-suite.test.mjs:81`), `NoMedido` «26 mensaje(s) en el buzon». Una sola traza `[WA in] DESCARTADO … from=34••••••005`.
+Ojo al leer el log: el enmascarado deja 3 cifras, así que las 60 líneas `[WA in] from=34••••••005` mezclan procesos y
+números (la suite del bot es `34600000005` en un banco virgen; `scrum1509h` y `scrum1326` escriben otros que acaban igual).
+
+Contados los `post` de la suite (el duplicado del paso 5 no gasta cupo): el 21.º admitido es `reparación urgente (suite
+loc)` del paso 8h, la línea 318 del stack. **Reproducido en local, idéntico**: banco PGlite desechable en
+`127.0.0.1:55432/yaqu_libro_test` (esquema de `migrate diff --from-empty`, sin tocar ninguna base), mismo `NoMedido`
+tras el paso 8g, y una sonda `--require` sobre `admitirEntrante` (sin tocar `src` ni `dist`): **21 llamadas desde
+`34600000002`, 1 rechazo**.
+
+## 1 · Quién más se pasa de 20 (población, no sólo el que cayó)
+
+Los 14 ficheros de `tests/` que hablan con el webhook de entrantes (`webhooks/whatsapp`, la ruta o el sobre de Meta;
+buscar por `messaging_product`/`whatsapp_business_account` no añade ninguno, y el runner gateado sólo corre
+`tests/*.test.mjs`). Con la sonda: el máximo por número y proceso de los que corren sin base es 9 (`scrum1322`);
+`scrum1326` usa 55 números con 2 como mucho; `scrum1509h` llega a 120 a propósito (es el **control positivo**: 100
+rechazos). Los gateados, leídos: `scrum50` manda 3, `webhooks-idempotencia` es el webhook de PSP (0). **Sólo
+`bot-suite` pasaba de 20.**
+
+## 2 · El arreglo
+
+- `tests/bot-suite.test.mjs`: tres conversaciones, tres clientes del merchant — pasos 1-7 desde `cliente` (7
+  entrantes), 8-8h desde `segundoCliente` (16), 9-11 desde `tercerCliente` (3). Medido con la sonda: 3 números,
+  máximo 16, 0 rechazos.
+- Los tres asertos del aviso al profesional (8f, 9, 11) pasan de `m.to !== TEST_PHONE` a `m.to === PRO_PHONE`: con
+  varios clientes, un mensaje tardío al cliente ANTERIOR también es «distinto de TEST_PHONE», y el aserto pasaría sin
+  que el pro recibiera nada. La contraprueba de limpieza cuenta `botSession` de los tres clientes, no sólo del último.
+- `post()` cuenta wamids distintos por número y, si una conversación va a pasar de `ENTRANTES_POR_HORA` (leído de
+  `dist`, no copiado), falla CON NOMBRE en el sitio, en vez de un `NoMedido` de buzón veinte pasos más abajo.
+- `tests/_merchant-fixture.mjs`: `telefonosDe` gana `segundoCliente` (`34605…`) y `tercerCliente` (`34606…`), de la
+  misma fuente (SCRUM-180) y alcanzados por el barrido por phone (`Object.values`). 34602-34604 no: otras suites
+  los usan con sufijo del reloj; 34605-34609 no aparecen en `tests/`, `scripts/`, `src/` ni `docs/QA`.
+
+**Qué pieza trabaja**: quitando las dos líneas que cambian de cliente, la suite cae en el entrante n.º 21 con el
+mensaje de `post()` («el entrante n.º 21 desde 34600000004 …»), tras el paso 8g, como en CI. Copia mutada borrada;
+árbol limpio después.
+
+## 3 · Lo corrido
+
+- Contra el banco PGlite: `bot-suite`, `scrum50`, `a55-window-quote`, `merchant-fixture`: **16 casos · 16 pasan · 0
+  caen · 0 saltados**. La suite: 14 pasos, «SUITE OK — 33 mensajes simulados, 0 llamadas a Meta», limpieza a 0.
+- Sin base: los 14 del webhook + `merchant-fixture`, `scrum681`, `scrum419`, `scrum172`, `scrum495`, `scrum498`,
+  `scrum113`, `scrum1415`, `scrum237*`, `scrum976*`: **202 · 199 pasan · 0 caen · 3 saltados** (los gateados). Suma cuadra.
+
+**No medido:** Postgres real (PGlite es una sola sesión: hizo falta `pgbouncer=true` y `connection_limit=1`, así que
+no prueba nada de concurrencia); la tanda completa en local; los otros 80 ficheros que usan `withMerchant` contra un
+banco (el cambio sólo añade dos teléfonos al `deleteMany` por phone); que el barrido por phone, y no el de
+`merchantId`, sea el que borra las sesiones de los clientes nuevos. El obligatorio, en la entrega de Jira.
+
+## 4 · Errores propios
+
+- Dejé un commit «wip» debajo de un merge con `main`; sin empujar, lo rehice con `reset --keep` y `cherry-pick -n`.
+- Mi primera sonda no arrancó (la ruta con espacio partía `NODE_OPTIONS`) y mi primer banco cayó por SSL y por
+  sentencias preparadas con nombre: ninguno de los dos dio un número falso, los tres fallaron en alto.

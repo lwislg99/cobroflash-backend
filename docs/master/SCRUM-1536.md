@@ -282,3 +282,339 @@ No se ha tocado el guard, ni `tests/_catalogo-obligatorio.mjs`, ni ningún nombr
 - El hook de arranque dijo «SIN IDENTIDAD». Se construyó con la orden del orquestador, que dice
   haber medido que la puerta instalada (`sesion.mjs`) contesta «ALTERADO»; esta sesión no lo ha
   reproducido.
+
+# SCRUM-1536c · Excluir forales y Canarias: dónde, con qué dato y qué texto (DISEÑO; nada construido)
+
+**Medido contra:** `origin/main` = `75884928b170ec0ec02e35921426e5bd711cbb0f` · 2026-10-22T09:09:16Z (hora de GitHub)
+
+A9: aviso → A10 «Una red de seguridad que no caza tiene el mismo aspecto que una que no tuvo nada que cazar.» — no se pudo comprobar: escribí este tramo con `##`, `scrum267` no lo veía y seguía en verde sin ancla (abajo, «De paso»); que un tramo nuevo vaya con `#` no lo exige ningún guard, y exigirlo es tocar `scrum267` (regla 41, de otro puesto).
+
+22-oct-2026 · sesión `jv-j5o`, puesto J5, por encargo del orquestador (`cobroflash-backend-5f`).
+[Escrito por la sesión, no por Javier.] Lo desbloquea **SCRUM-1536 c.20218**: el fundador decide
+que forales (Álava, Bizkaia, Gipuzkoa, Navarra) y Canarias **quedan excluidos de YaQu por ahora,
+no sólo sin facturación**. Leídos en Jira: el ticket entero, sus 10 comentarios (c.19355 a c.20218).
+El encargo traía `main` = `fe65a8b7f`; medido aquí, `75884928b`.
+
+**Carril a mano.** El hook de arranque dijo «SIN IDENTIDAD» (SCRUM-1498); se siguió, como manda la
+ficha del día. Sólo se escribe en `docs/master/`. **No se ha construido nada**: ni `src/`, ni
+`public/`, ni `tests/`, ni el esquema, ni ningún texto de usuario. Los textos de ⑤ son PROPUESTA
+(regla 39) y no están en ningún fichero de producto. Ninguna base mirada (③).
+
+### ① PASO 0: de la exclusión no hay nada construido
+
+- `git log origin/main --grep=SCRUM-1536`: `1a6cf221f` (registro), `f9a50e547` y `a9b3273d4`
+  (guiones de evidencia), más `d95bbac93` (SCRUM-997b, la cicatriz de J5). Ninguno toca `src/`.
+  Sin rama `scrum-1536*` en el remoto (`ls-remote` anclado al nombre; control: el listado sí
+  devuelve ramas de hoy).
+- **`zonaDeAlta` vuelta a ejecutar hoy** (copia del fichero de `main` con
+  `node --experimental-strip-types`, sin compilar `dist/`): Álava, Bizkaia, Gipuzkoa y Navarra →
+  `Europe/Madrid`, **el mismo valor que Madrid**; Las Palmas y Santa Cruz de Tenerife →
+  `Atlantic/Canary`. Controles: «Narnia» lanza `provincia_desconocida`; `MX` sin provincia → `null`.
+  8 de 8 casos. Lo que medía c.19355 sigue igual.
+- `getEmissionMode` (`src/modules/invoicing/domain/emission.service.ts:36`), leída hoy: sigue
+  leyendo país, demo y flag, nada de territorio. El único freno sigue siendo el flag en OFF.
+
+### ② Dónde se sabe hoy la provincia y el domicilio fiscal
+
+| dato | dónde se pide | se guarda | obligatorio | se valida | quién lo lee después |
+| --- | --- | --- | --- | --- | --- |
+| provincia («dónde trabajas») | en el alta: `altaDeMerchant.ts --provincia`, **la única puerta hoy** (`POST /auth/register` contesta siempre 409, `auth.routes.ts:44`) | **no**: sólo produce `timezone` | sí, con país ES | sí, contra las 52; lanza **antes** del `create` | nadie |
+| zona horaria | se deriva en el alta | `merchants.timezone` | — | — | el día del comercio; **no se puede cambiar después** (no está en `merchantProfileUpdateSchema`) |
+| domicilio fiscal foral | Ajustes → Empresa: «¿Tienes el domicilio fiscal en el País Vasco o en Navarra?» (`settingsView.js:338`, firmado en SCRUM-1102 c.17709) | `merchants.domicilio_fiscal_foral`, `Boolean?` de tres estados | **no**, y **no se pregunta en el alta** | sí / no / no consta (`schemas.ts:422`) | **ninguna puerta** (`schema.prisma:55-58` lo dice) |
+| domicilio fiscal canario | **no existe** | — | — | — | — |
+| dirección | Ajustes, texto libre | `merchants.address` | no | `min(1)` | nadie para esto; no hay columna de código postal ni de provincia en `Merchant` |
+| país | en el alta (`--country`, ES por defecto) y **en Ajustes** (`settingsView.js:373`) | `merchants.country` | — | dos letras | `getEmissionMode` |
+
+**El punto del alta donde se puede excluir sin dejar un comercio a medias** es el que ya usa la
+provincia: `registerMerchant` (`src/modules/auth/domain/auth.service.ts:343-344`) resuelve la zona
+**antes** del referido, del `merchant.create`, del correo de bienvenida y del enlace de acceso, y si
+lanza no queda nada. Un rechazo puesto al lado de `zonaDeAlta` hereda esa propiedad, y la CLI de
+hoy y la ruta pública de mañana pasan las dos por ahí.
+
+### ③ Población: NO medida. Se deja la consulta
+
+El árbol no tiene claves de base: `node scripts/comprobar-claves-bd.mjs` (hoy, ~09:05Z) dice
+`DATABASE_URL_STAGING`, `_DEV` y `_TESTS` **AUSENTES** y «SUELO: no se leyó ni una sola cadena de
+conexión». No las he buscado en ningún otro sitio. **No sé si hay hoy un comercio foral o canario
+en ninguna de las tres bases.**
+
+Consulta para quien tenga acceso, **sólo lectura**, la misma en las tres bases. No saca ni nombre,
+ni correo, ni dirección:
+
+```sql
+-- 1) Población. Tiene que salir total > 0 (la demo, id = 1, está en las tres).
+SELECT count(*) AS total,
+       count(*) FILTER (WHERE country = 'ES') AS es,
+       count(domicilio_fiscal_foral) AS foral_contestado
+FROM merchants;
+
+-- 2) Positivo SEMBRADO del patrón de dirección. Tiene que devolver 2 filas (Bilbao y Álava), no 3.
+SELECT v.a FROM (VALUES ('C/ Gran Via 1, 48001 Bilbao'),
+                        ('Vitoria-Gasteiz (Álava)'),
+                        ('Calle Alcala 1, 28001 Madrid')) AS v(a)
+WHERE v.a ~ '(^|[^0-9])(01|20|31|35|38|48)[0-9]{3}([^0-9]|$)'
+   OR translate(lower(v.a), 'áéíóúü', 'aeiouu')
+      ~ '(alava|araba|bizkaia|vizcaya|gipuzkoa|guipuzcoa|navarra|nafarroa|canarias|las palmas|tenerife|gran canaria|lanzarote|fuerteventura|la gomera|el hierro)';
+
+-- 3) Candidatos, y por qué sale cada uno.
+SELECT id, country, timezone, domicilio_fiscal_foral, status, plan, created_at,
+       (domicilio_fiscal_foral IS TRUE)  AS por_respuesta_foral,
+       (timezone = 'Atlantic/Canary')    AS por_zona_canaria,
+       (coalesce(address, '') ~ '(^|[^0-9])(01|20|31|35|38|48)[0-9]{3}([^0-9]|$)'
+        OR translate(lower(coalesce(address, '')), 'áéíóúü', 'aeiouu')
+           ~ '(alava|araba|bizkaia|vizcaya|gipuzkoa|guipuzcoa|navarra|nafarroa|canarias|las palmas|tenerife|gran canaria|lanzarote|fuerteventura|la gomera|el hierro)')
+                                         AS por_direccion
+FROM merchants
+WHERE id <> 1
+  AND (domicilio_fiscal_foral IS TRUE
+       OR timezone = 'Atlantic/Canary'
+       OR coalesce(address, '') ~ '(^|[^0-9])(01|20|31|35|38|48)[0-9]{3}([^0-9]|$)'
+       OR translate(lower(coalesce(address, '')), 'áéíóúü', 'aeiouu')
+          ~ '(alava|araba|bizkaia|vizcaya|gipuzkoa|guipuzcoa|navarra|nafarroa|canarias|las palmas|tenerife|gran canaria|lanzarote|fuerteventura|la gomera|el hierro)')
+ORDER BY id;
+```
+
+El patrón de dirección es un **candidato, no una prueba**: los prefijos postales 01, 20, 31, 35, 38
+y 48 son los de las seis provincias, y la dirección es texto libre. Calibrado en `node` con
+casos sembrados: 6 de 6 positivos (Bilbao, Las Palmas, Pamplona, «Álava», Tenerife, Donostia) y 0
+de 5 negativos (Madrid, un teléfono `600120345`, «Calle 20 n 31», Barcelona, «piso 48»). «La
+Palma» se deja fuera a propósito: casa con calles de otras provincias. **Que el dialecto de
+expresiones de Postgres se comporte igual que el de `node` no está medido**; por eso la consulta 2
+lleva el positivo sembrado y se corre antes que la 3.
+
+**Qué les pasaría a los que salgan: lo decide el fundador, no este tramo.** Con el flag en OFF no
+emiten documentos, igual que Madrid. Lo que haya que hacer con ellos (avisarles, dejarlos o darlos
+de baja) toca datos de clientes y estados cerrados de la Parte L: es STOP.
+
+### ④ Diseño propuesto
+
+**La idea: excluir en la PUERTA, con un dato declarado, antes de crear nada, y no tocar el camino
+de emisión.** Cinco piezas:
+
+**A · El alta (J3).** `registerMerchant` pide, para país ES, una respuesta **obligatoria** sobre el
+domicilio fiscal, de valores cerrados: `comun` · `foral` · `canarias`. Con `foral` o `canarias`
+lanza `territorio_excluido` en el mismo punto que `provincia_required` (②), así que no se crea
+nada. Con `comun` crea el comercio y escribe `domicilioFiscalForal = false` en la columna que ya
+existe: **sin ALTER**. La CLI gana `--domicilio-fiscal`. Coste: del tamaño de SCRUM-1522e, una
+función de dominio más sus tests. Ahí se dobla una pregunta para el fundador:
+
+- **Forales: por domicilio fiscal, no por provincia** (c.19355 §4 ②, art. 1.3 del RD 1007/2023).
+  Uno que trabaja en Bilbao con domicilio en Burgos entra; uno con domicilio en Bilbao que trabaja
+  en Burgos, no.
+- **Canarias: el motivo es otro.** Canarias está DENTRO del Reglamento (c.19355 §4 ①); se la
+  excluye porque YaQu no sabe hacer IGIC. Y el IGIC podría depender de **dónde se trabaja**, no de
+  dónde se tiene el domicilio. **No está medido**: va a la lista del asesor (SCRUM-1264).
+  **Propuesta:** excluir a Canarias **por las dos vías** (domicilio declarado canario **o**
+  provincia de trabajo canaria, que ya se conoce en el alta). Para los forales, sólo por el
+  domicilio.
+- **Guardar el «no» de Canarias** pediría una columna nueva (ALTER aditivo, orden A5, decisión de un
+  jefe). Propuesta: no guardarlo. Los excluidos no llegan a tener fila, y la vía de la provincia ya
+  queda en `timezone`.
+
+**B · Ajustes, después del alta (J3).** Hoy se puede pasar «¿Tienes el domicilio fiscal en el País
+Vasco o en Navarra?» a «Sí». Propuesta: `updateMerchantProfile` rechaza el `true` con el mismo
+`territorio_excluido` y la pantalla enseña el texto T2. **No cambia nada más**: ningún estado
+nuevo (regla 5) y nada se borra. La provincia y la zona no se pueden cambiar después del alta, así
+que no hay nada que vigilar ahí.
+
+🔴 **El país sí se cambia en Ajustes, y eso se lleva por delante esta exclusión y también el flag.**
+El esquema acepta `country: "MX"`, medido en SCRUM-1102 (`docs/master/evidencias/SCRUM-1102/hoy.txt:16`).
+`updateMerchantProfile` lo escribe tal cual (`...rest`, `merchantAdmin.ts:253-256`, leído). Y
+`getEmissionMode` da `fiscal` a todo país que no sea ES (`emission.service.ts:38`, leído). Así que un
+comercio de España que se cambie el país a México deja de pasar por el flag. **Leído, no ejecutado
+de punta a punta** (pide base). No es de este ticket: toca la emisión (J1) y Ajustes (J3), y lo
+decide un jefe.
+
+**C · La pantalla pública de alta (J3), cuando se reabra.** `public/register.html` lleva hoy el
+409 firmado y ninguna provincia. El día que vuelva a dar altas, le hacen falta la pregunta de A y
+el texto T1. Hasta entonces, a quien se excluye se lo dice por su cuenta el miembro del equipo que
+lanza la CLI, y le dice T1.
+
+**D · El máster (un jefe; `docs/YAQU_MASTER.md` no tiene cerradura).** Hoy dice lo contrario que
+c.20218 en tres sitios: la **regla 33** (`:248`, «Onboarding bloquea facturación ES a domicilios
+forales (PV/Navarra) con aviso digno»), **B2 punto 6** (`:105`) y la **Parte M** (`:422`). Los tres
+dicen «facturación off + aviso TicketBAI»; la decisión dice «no entran». Canarias no sale en el
+máster. Y la **regla 44** (`:276`) pide que una decisión del fundador que condiciona trabajo futuro
+deje UNA línea en el máster con el enlace a su comentario. **Mientras eso no cambie, quien lea el
+máster construye la versión vieja.**
+
+**E · El camino de emisión: no se toca** (reglas 38 y 40). Con la puerta en el alta no hace falta.
+Lo que sí queda: un comercio creado **antes** de la exclusión sigue teniendo como único freno el
+flag (cicatriz de J5 del 13-oct). Por eso ③ va antes que encender nada.
+
+| pieza | qué | carril (`node scripts/carriles.mjs de`, hoy) | coste | firma o decisión |
+| --- | --- | --- | --- | --- |
+| A | rechazo en `registerMerchant` + `--domicilio-fiscal` en la CLI | **J3** (`src/modules/auth/**`, `dos-equipos.md:126`) | pequeño, sin ALTER | fundador: Canarias por las dos vías o sólo por domicilio |
+| B | rechazo del «Sí» foral en Ajustes | **J3** (contenedor `merchantAdmin.ts`, `:127`; `settingsView.js`, `:146`) | pequeño | firma de T2 |
+| B′ | el país que se cambia en Ajustes | **J1** (`emission.service.ts`, `:117`) + **J3** | sin estimar | un jefe; es emisión (regla 40) |
+| C | pregunta y T1 en `register.html` | **J3** (`:147`) | cuando se reabra el alta | firma de Q y T1 |
+| D | regla 33, B2.6, Parte M + la línea de la regla 44 | **un jefe** (`:195`) | una línea por sitio | jefe |
+| — | `schemas.ts`, por si B se hiciera en el esquema | **S1, equipo de Luis** (`src/core/**`, `:136`) | — | **evitarlo**: B cabe en `merchantAdmin.ts` |
+
+### ⑤ Texto propuesto: PROPUESTA, sin aplicar (regla 39)
+
+Condiciones que cumplen todas: **ningún claim fiscal** (ni «VeriFactu», ni «TicketBAI», ni
+«factura»: regla 7, cero claims hasta SIF-1, aunque el máster viejo dijera «aviso TicketBAI»).
+**Ninguna fecha ni promesa** («pronto», «en 2027»). Y **nada de «tu territorio no usa VeriFactu»**,
+que en Canarias es falso (c.19355 §4 ①). «De momento» sale del literal del fundador: «por el
+momento».
+
+**Q · La pregunta del alta**
+- **Q1 (recomendada):** la ya firmada «¿Tienes el domicilio fiscal en el País Vasco o en Navarra?»
+  (SCRUM-1102 c.17709) más una nueva, «¿Tienes el domicilio fiscal en Canarias?». Dos sí/no, y
+  sólo una pide firma.
+- **Q2:** «¿Dónde tienes el domicilio fiscal?», con «En el País Vasco o en Navarra» · «En Canarias»
+  · «En el resto de España». Una sola pregunta, pero los cuatro textos son nuevos.
+
+**T1 · Quien queda fuera en el alta**
+- **T1a (recomendada):** «De momento YaQu no está disponible si tienes el domicilio fiscal en el
+  País Vasco, Navarra o Canarias.»
+- **T1b:** «Lo sentimos: de momento YaQu no está disponible en el País Vasco, Navarra ni
+  Canarias.» Más corta, pero habla de territorio y no de domicilio: el de Bilbao con domicilio en
+  Burgos leería que no puede, y sí puede.
+- **T1c:** T1a + «Si quieres que te avisemos cuando lo esté, escríbenos.» Es la opción (b) del
+  enunciado (recoger el contacto). Promete un aviso y da por hecho que «lo estará». Sólo si el
+  fundador quiere recoger contactos y dice adónde van.
+- Si Canarias se excluye también por provincia (pieza A), T1a no basta para quien trabaja en
+  Canarias con el domicilio fuera. Variante: «De momento YaQu no está disponible para trabajos en
+  Canarias.»
+
+**T2 · En Ajustes, al marcar «Sí» en la pregunta foral**
+- **T2a (recomendada):** «De momento YaQu no está disponible con el domicilio fiscal en el País
+  Vasco o en Navarra. No hemos guardado este cambio.»
+- **T2b:** T2a + «Si de verdad lo tienes allí, escríbenos.» Sirve para enterarse de un comercio que
+  ya está dentro, pero pide saber quién lee ese correo.
+
+### Lo que NO se ha medido
+
+- **Ninguna base** (③): ni dev, ni staging, ni producción.
+- **Que las expresiones de Postgres casen como las de `node`**: lo cubre el positivo sembrado de la
+  consulta 2, que no se ha corrido.
+- **Qué dato decide en Canarias** (domicilio o lugar de los trabajos): asesor, SCRUM-1264.
+- **La normativa foral** (TicketBAI, Batuz, Navarra), el Concierto y el Convenio: sigue sin medir
+  por nadie, como decía c.19355.
+- **Cambiar el país en Ajustes de punta a punta** (B′): esquema medido en SCRUM-1102, escritura y
+  puerta leídas, nada ejecutado.
+- **Nada en yaqu.app**: no hay pantalla de alta que ver (409) y Ajustes no se ha abierto.
+- **Tests:** sólo se ha tocado este registro. Corridos 15 ficheros: los diez de registro
+  (`scrum1294`, `267`, `273`, `237`, `976`, `921c`, `864c`, `1387`, `622`, `1536b`) y los cinco de
+  árbol entero que nombra `guards:entrada` (`195`, `414`, `694`, `710b`, `737`): **125 = 125 pasan
+  + 0 caen + 0 saltan**. `guards:entrada`: 15 de 15. La tanda completa, no. `dist/` construido con
+  `tsc --noCheck` (sin él, `scrum622` daba dos `ERR_MODULE_NOT_FOUND`, que no son rojos).
+- **Vistos en rojo antes de fiarse:** sin la línea `A9:`, `scrum1294` cae sobre este tramo
+  (`:288`); sin el ancla, `scrum267` cae sobre él (3 casos). Fichero restaurado byte a byte las dos
+  veces (`cmp`).
+
+### De paso
+
+- Este tramo empezó con `##`, como los dos de SCRUM-1536b, y así **`scrum267` no lo veía**: sólo
+  corta entradas por `# SCRUM-<n>` o `# …APÉNDICE…` (`esEncabezadoDeEntrada`), y quitarle el ancla
+  daba 14 de 14 en verde. Ahora va con `#`. Los dos tramos de 1536b siguen con `##`: llevan su ancla,
+  pero el guard no la mira. No se han tocado porque son mediciones de otra sesión.
+
+### Errores propios
+
+- La primera llamada a Jira fue con el `cloudId` del nombre del repositorio, no con el del sitio.
+  Falló con error y la repetí con el bueno; no dejó ningún dato.
+- `arbol:mio` dio «CIEGO» la primera vez porque lo pasé con la HEAD desacoplada, antes de crear la
+  rama. Lo repetí después de crearla y dio `MIO`, antes de la primera escritura.
+
+# SCRUM-1536d · Forales y Canarias fuera del alta y del «Sí» foral en Ajustes, con los textos firmados (CONSTRUIDO)
+
+**Medido contra:** `origin/main` = `595884b20b8baa3fad91151879214554b9f6e2e2` · 2026-10-22T09:39:30Z (hora de GitHub)
+
+A9: aviso → cicatriz J3 «Medí al acabar el arranque (152.817) y no volví a medirme hasta 329.079, con el código ya hecho: el aviso de 200k no llegó.» — no se pudo comprobar: cuándo se mide una sesión no lo ve ningún test del árbol.
+
+**Skill UI:** cargada (`yaqu-premium-ui`; el cambio de pantalla es sólo qué texto pinta el aviso de error que ya existía).
+
+22-oct-2026 · sesión `jv-j3w`, puesto J3, por encargo del orquestador (`cobroflash-backend-5f`).
+[Escrito por la sesión, no por Javier.] Lo desbloquean **SCRUM-1536 c.20218** (forales y Canarias
+fuera de YaQu por ahora), **c.20223** (diseño, tramo 1536c de arriba) y **c.20225** (Canarias por
+las dos vías, «Ok las 2»; Q1, T1a, su variante y T2a firmadas, «Ok firmo todas»). Entrega completa
+en Jira, **c.20235**. Carril J3 a mano; el hook de arranque dijo «SIN IDENTIDAD» (SCRUM-1498).
+
+### Lo construido
+
+- **A · alta.** `src/modules/auth/domain/territorioDeAlta.ts`, llamada por `registerMerchant` justo
+  después de `zonaDeAlta` y antes del `create`. Con España, las dos respuestas Q1 son obligatorias
+  (`domicilio_fiscal_required`); foral o Canarias «sí» → `territorio_excluido` (motivo `domicilio`,
+  T1a); zona `Atlantic/Canary` → `territorio_excluido` (motivo `trabajo`, su variante). Con «no» y
+  «no» se guarda `domicilioFiscalForal = false` en la columna que ya existía: **sin ALTER**. Fuera de
+  España no se pregunta. La consola gana `--domicilio-foral` y `--domicilio-canarias` (`si|no`).
+- **B · Ajustes.** `updateMerchantProfile` lanza `TerritorioError` con el «Sí» foral antes de leer o
+  escribir nada; `PUT /admin/merchant` da 409 con T2a (bloque `// J3:` en `src/app.ts`, contenedor de
+  S1: sin él salía un 500); `settingsView.js` pinta el texto sin «Error al guardar:».
+- **C · `register.html`: no aplica hoy** (la ruta da 409). Q1b, firmada, queda en `APARCADOS` de
+  `tests/scrum514-aprobado-y-aplicado.test.mjs`. **E, B′ y `schemas.ts`: sin tocar.**
+- Ficha: `docs/microcopy/2026-10-22-SCRUM-1536-exclusion-territorial.md`.
+
+### Medido
+
+- `tests/scrum1536d-forales-y-canarias-fuera.test.mjs`: **4 de 4**, por la consola real y por la
+  ruta real (detalle en c.20235). Tres mutaciones declaradas en `MUTACIONES_QUE_ME_TUMBAN` (el
+  meta-guard las lee, visto con `--solo-censo`): **3 de 3 VIVAS**, árbol restaurado idéntico.
+- Mini-tanda de los 248 ficheros que leen lo tocado: **2.058 = 1.979 + 9 + 70**. Arreglados los 4
+  míos (1102f, 411, 514, 709); los 6 ficheros afectados, después: **88 de 88**. Dos de `scrum1199`
+  caen por entorno (`express` no está en este árbol); no medido sobre `main`.
+- Tests que la decisión invierte, cambiados y dicho por qué: `scrum1522e`, `scrum1515`, `scrum1102f`.
+
+### No medido
+
+`scrum1515` (pide `LIBRO_PG_URL`; lo corre el CI) · la tanda completa · el obligatorio · yaqu.app ·
+`tsc` con tipos: 17 errores del cliente de Prisma compartido, ninguno en lo tocado.
+
+### Errores propios
+
+- Crucé 200k sin avisar (la línea `A9:`).
+- La ficha nombraba otra ficha por su fichero y `scrum709` lo cazó.
+- Declaré las mutaciones con campos que el meta-guard no lee; lo vi en su contrato antes del commit.
+# SCRUM-1536e · La línea firmada de la regla 44 entra al final de la regla 33 del máster
+
+**Medido contra:** `origin/main` = `595884b20b8baa3fad91151879214554b9f6e2e2` · 2026-10-22T09:33:37Z (hora de GitHub)
+
+A9: sin fallo que generalice — el texto se copió del ADF de c.20229 y se comparó por bytes con lo escrito (422 = 422, con un control mutado que sí difiere); el único tropiezo, el orden de la medición de contexto (abajo), ya lo cubre la ficha del orquestador, que dice «en ese punto exacto».
+
+22-oct-2026 · **J5** (sesión `jv-j5p`, equipo de Javier), por encargo del orquestador (`cobroflash-backend-5f`).
+[Escrito por la sesión, no por Javier. Leído en Jira: SCRUM-1536 entero, 14 comentarios, hasta c.20229.]
+
+**Carril a mano.** El hook de arranque dijo «SIN IDENTIDAD» (SCRUM-1498); se siguió, como manda la ficha
+del día. Etiquetas leídas en SCRUM-1536: `area-fiscal`, `equipo-javier`; estado En curso.
+`docs/YAQU_MASTER.md` es carril de un jefe (`dos-equipos.md:195`): el jefe firmó y esta sesión lo aplica,
+como se aplicaron las reglas 43 y 44 (SCRUM-1552, `165f116f0`).
+
+## Qué es esto
+
+Rama puesta al día con `git merge origin/main` tras entrar #2658 (1536c), que va justo encima. Encabezado con `#` y no con `##`, porque el tramo 1536c midió que `scrum267` no ve los de `##`.
+
+**Un cambio de máster, no un registro.** Lo firma el fundador en SCRUM-1536 **c.20229** («FIrmo la linea»),
+y la regla 44 lo pide: una decisión que condiciona trabajo deja UNA línea en el máster con el enlace al
+comentario. La decisión está en c.20218 (forales y Canarias excluidos de YaQu por ahora) y c.20225.
+
+Toca SOLO `docs/YAQU_MASTER.md:248`, la línea del bloque «**v5.3:**»: la línea firmada se añade al final de
+la regla 33, detrás de «TicketBAI = cajón F3.» y delante de «34)». Va **dentro de la misma línea física**,
+así que **no se mueve ninguna línea** del máster (1.911 antes y después; `git diff` da un solo tramo,
+`@@ -248 +248 @@`) y nadie que cite el máster por número de línea queda desplazado.
+
+**B2.6 (`:105`) y la Parte M (`:422`) no se tocan.** Lo dice el fundador en c.20229: «Ok basta con el
+aviiiso». El aviso de la regla 33 es el único sitio que cambia; la propia línea firmada dice que deja
+sin efecto lo de B2.6 y la Parte M.
+
+## Cómo se copió el texto
+
+Del cuerpo ADF de c.20229 (no del markdown, ni de la ficha del orquestador): el único `blockquote` del
+comentario, con sus dos negritas. Se escribe sin el `>` de cita, porque va dentro del párrafo de la
+regla. Comparación: lo escrito, quitándole los `**`, es igual al texto del ADF (422 B = 422 B); el mismo
+comparador con una tilde quitada («tambien») da distinto. Las negritas, en los mismos dos tramos que en
+el ADF.
+
+## Lo que NO se ha medido
+
+- No se ha mirado si algún texto de usuario, guard o documento fuera de `tests/` repite el «facturación
+  ES off + aviso TicketBAI» de la regla 33: el encargo era sólo la línea.
+- El obligatorio de esta rama: se lee después del empujón y va en la entrega, no aquí.
+- Visto en yaqu.app: NO HECHO → no hay pantalla; es el máster.
+
+## Errores propios
+
+- La ficha pedía medir el contexto al acabar la lectura de arranque y otra vez al acabar Jira. Leí Jira
+  primero y el arranque después, así que sólo hay un punto: **130.145** al terminar las dos.

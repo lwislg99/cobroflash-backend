@@ -1723,6 +1723,26 @@ html, body { overflow-x: clip; }
 .table--albaranes td.cell-actions > .btn-sm { min-height: 44px; }
 #btn-cerrar-resumen-trimestre { min-height: 44px; min-width: 44px; }
 
+/* SCRUM-1559j (AB6, mismo patrón de 1559g y 1265). El censo con detalle midió 7 objetivos cortos en
+   Productos a 929 y 6 a 390: «Recargar», «⬇ Exportar CSV», «⬆ Importar CSV», «Editar» y «Activar» /
+   «Desactivar» (30-31 px), «Crear producto» (36,9 a 929; a 390 ya da 44,6) y la casilla «Solo activos»
+   (14 px). Sólo tamaño, `.btn-sm` global sin tocar; la pantalla va ENTERA (`.catalogo-productos`), así
+   que los dos botones del catálogo vacío entran también. La casilla es la del navegador, 13 px: el
+   `::before` le da 13 + 2 × 16 = 45 de alto, y de lado sólo 6, el hueco que la separa de su texto, para
+   no meterse en el buscador de al lado. */
+.catalogo-productos .btn-sm,
+#pf-create-product { min-height: 44px; }
+.catalogo-productos .data-card-toolbar > label { min-height: 44px; }
+.catalogo-productos .data-card-toolbar input[type="checkbox"] { position: relative; }
+.catalogo-productos .data-card-toolbar input[type="checkbox"]::before { content: ""; position: absolute; inset: -16px -6px; }
+/* De paso, en la misma pantalla: con el catálogo VACÍO, el estado vacío vive en un `td` que abarca
+   la tabla entera (520 px a 390), dentro de una caja que scrollea de 364. «+ Añadir un servicio a
+   mano» quedaba en x 298-493 —medio botón fuera de la pantalla, medido en yaqu.app—. El estado vacío
+   toma el ancho de la CAJA que scrollea (`cqi`, con la caja como contenedor) y se queda pegado a su
+   izquierda; menos los 14 + 14 de relleno del `td`. Con la tabla llena no cambia nada. */
+.catalogo-productos .table-scroll { container-type: inline-size; }
+.catalogo-productos .empty-state { position: sticky; left: 0; box-sizing: border-box; width: calc(100cqi - 28px); }
+
 /* ── SCRUM-1144 · «Elegir un sitio guardado», bajo el campo de la dirección de la obra ───────
    Lo montan el editor de presupuestos y la ficha del Trabajo (`sitiosGuardados.montarSelector`).
    Sin tokens nuevos. El botón es `.btn-ghost.btn-sm`, como «Usar plantilla»: una ayuda
@@ -3588,6 +3608,31 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 .modal-ayuda:hover { color: var(--ink); }
 .modal-ayuda + .modal-close { margin-left: 0; }
 
+/* S2: ── SCRUM-962d · la pareja «?»/«×» de la cabecera del modal, a 44 px DE TOQUE (AB6) ───────────
+   S2: Medido (962c) en los 5 modales del editor, y es la misma pieza en las 28 cabeceras del panel:
+   S2: «?» 27,5×26 y «×» 30×30 de área, a 320, 390 y 929. Se amplía el ÁREA, no el dibujo: un
+   S2: `::before` de 44×44 posicionado, así que la caja, el círculo, el foco y el alto de la cabecera
+   S2: no se mueven ni un píxel (lo mide `docs/master/evidencias/scrum962d/cabecera-banco.mjs`).
+   S2: Cada uno crece HACIA FUERA de la pareja y nunca hacia el otro: el «×» hacia la derecha (sobre
+   S2: los 24 px de padding de la cabecera) y el «?» hacia la izquierda (sobre el hueco del título).
+   S2: Así ninguno le roba al otro el punto que hay entre los dos.
+   S2: ACOTADO a `.modal-header >`: el aviso de error de `api.js` reutiliza `.modal-close` a 24 px
+   S2: dentro de una tostada, y ahí un área que se sale taparía la página de debajo. */
+.modal-header > .modal-ayuda,
+.modal-header > .modal-close { position: relative; }
+.modal-header > .modal-ayuda::before,
+.modal-header > .modal-close::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translateY(-50%);
+}
+.modal-header > .modal-ayuda::before { right: 0; }
+.modal-header > .modal-close::before { left: 0; }
+/* S2: ── fin SCRUM-962d ─────────────────────────────────────────────────────────────────────── */
+
 /* SCRUM-655 · APARTADOS Y DESCRIPCIÓN LARGA EN EL DETALLE DEL PRESUPUESTO.
    El apartado es un RENGLÓN DE TÍTULO a todo lo ancho, no una fila que cobre: por eso no lleva
    importe y se separa con peso y espacio, no con color inventado.
@@ -4209,6 +4254,9 @@ textarea.parte-linea-desc {
    (medido en staging el 17-sep-2026). Se retira de la fila y, sin nadie que la pinte, de la hoja. */
 
 .jobs-acciones { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+/* S4 · SCRUM-1562f · la celda de acciones de la fila: «Ver detalle» y, al lado, `.jobs-acciones`.
+   Las mismas reglas de caja que `.jobs-acciones`, para que el botón siga en la misma línea. */
+.jobs-celda-acciones { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .jobs-vacio-filtro { text-align: center; color: var(--muted); font-size: 13px; padding: 18px; }
 
 /* El modal de la casa, con su cuerpo. `.modal-overlay`/`.modal` ya existen: esto solo viste lo
@@ -4362,6 +4410,18 @@ textarea.parte-linea-desc {
 }
 @media (min-width: 769px) and (max-width: 1279px) {
   .table--albaranes th, .table--albaranes td { padding-left: 8px; padding-right: 8px; }
+}
+/* SCRUM-1559k · LA BANDA 769-899 (V5, aprobada por el orquestador el 19-oct). La causa por la que
+   ajustar columnas no bastaba: el suelo GLOBAL `.table-scroll .table { min-width: 520px }`. A 769 el
+   carril mide 471, así que la tabla desborda como mínimo 49 px haga lo que haga con sus columnas
+   (medido: partir el botón o quitar una columna se quedaban las dos en 49 / 18 / 0 a 769 / 800 / 850).
+   ① se oculta «Entrega» en la lista, como B hizo con «Emisión»; la ficha la conserva.
+   ② el suelo se anula SÓLO para esta tabla y sólo en esta banda; el global no se toca.
+   Medido en yaqu.app: desborda 13 a 769 (dentro de su `.table-scroll`, que scrollea; la página +0)
+   y 0 desde 800; «Enviar para firmar» sigue en una línea. Antes: 106 / 75 / 25. */
+@media (min-width: 769px) and (max-width: 899px) {
+  .table--albaranes th:nth-child(3), .table--albaranes td.cell-date { display: none; }
+  .table-scroll .table--albaranes { min-width: 0; }
 }
 
 @media (max-width: 640px) {
@@ -4696,6 +4756,21 @@ textarea.parte-linea-desc {
 @media (max-width: 768px) {
   .data-card:has(#quotes-count) .data-card-header > div > .btn-sm,
   .data-card:has(#quotes-count) td.cell-actions > div > .btn-sm { min-height: 44px; }
+}
+
+/* ── J2 · SCRUM-1149 (AB6, grupo B de SCRUM-786, opción ③) ── lista de Clientes: «⬆ Importar
+   clientes» y «⬇ Clientes CSV» de la cabecera, y «Editar», «Portal» y «📊 Historial» de cada fila,
+   medían 30,8–31,0 px de toque a 929 y a 390. Regla ACOTADA A ESTA LISTA, solo tamaño: `.btn-sm`
+   global no se toca. Mismos mínimos y misma forma que la lista de presupuestos (SCRUM-1148, arriba):
+   36 en escritorio, 44 hasta el corte de móvil (768).
+   El ancla es la barra de selección, hija directa de la tarjeta y que sólo pinta esta lista
+   (`customersView.js`). SIN clase nueva en el marcado: `guard:lista-trabajos` compara por hash el
+   HTML de Clientes con el de la base, y una clase en la tarjeta lo cambia (medido: salió rojo). */
+.data-card:has(> .barra-seleccion) .data-card-header > div > .btn-sm,
+.data-card:has(> .barra-seleccion) td.cell-actions > div > .btn-sm { min-height: 36px; }
+@media (max-width: 768px) {
+  .data-card:has(> .barra-seleccion) .data-card-header > div > .btn-sm,
+  .data-card:has(> .barra-seleccion) td.cell-actions > div > .btn-sm { min-height: 44px; }
 }
 
 /* SCRUM-1056 · «Volver a llamar»: la nota es texto libre del profesional. Una palabra muy larga

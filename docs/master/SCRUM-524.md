@@ -460,3 +460,403 @@ con dos ramas.
 Detalle completo, batería de tests y el bloqueo de `SCRUM-525d` (3 citas de línea que este mismo
 cambio desplazó) resuelto junto a esto: `docs/master/SCRUM-1051.md`, PASO 5. Rama
 `scrum-1051-isp-obra-subcontrata` (PR #1715, en borrador).
+
+---
+
+# SCRUM-524c — Las cuatro preguntas de ④ para el asesor, redactadas (no están en `PREGUNTAS_ASESOR.md`)
+
+*21-oct-2026 · rama `scrum-524c-preguntas-asesor` · puesto J5 (jv-j5m)*
+
+**Medido contra:** `origin/main` = `cf25030c8e94560725075313227e70177868e0f2` · 2026-10-21T13:54:49Z
+
+> **Carril.** `docs/legal/` es de J4 (`docs/equipo/dos-equipos.md` §3: «J4 propone · firma un jefe»), y
+> SCRUM-1264 se declara en Jira el sitio único de las preguntas al asesor. Por eso las preguntas viven
+> aquí, en el registro de este ticket, y **no** en `docs/legal/PREGUNTAS_ASESOR.md`. Lo decidió el
+> orquestador del equipo de Javier (`cobroflash-backend-5f`) por mensaje, el 21-oct-2026: él las lleva
+> a SCRUM-1264 cuando vuelva Jira, y J4 las pasa al documento. **Documento interno: no hay aquí ninguna
+> frase para un cliente** (reglas 26/30/39). Cero líneas de `src/`; el camino de emisión, sólo **leído**.
+>
+> **Jira no se ha leído en esta tanda:** el MCP de Atlassian no expuso herramientas (4 búsquedas, 0).
+> El PASO 0 contra SCRUM-1264 está **sin hacer**.
+
+## ① PASO 0 · ¿ya estaban preguntadas, con otra redacción?
+
+Población: `docs/legal/PREGUNTAS_ASESOR.md` en `origin/main`, **113.929 B, 1.410 líneas, leído en
+fichero** (no recortado). Buscado por número **y por contenido** (`1242|4141|1287|SistemaInformatico|
+suspensi|escap|&quot;|IdSistema|NombreSistema|NumeroInstalacion|TipoUsoPosible|DescripcionOperacion|
+sistema inform`).
+
+| pregunta de ④ | en `PREGUNTAS_ASESOR.md` | veredicto |
+| --- | --- | --- |
+| 1 · 1242 | 0 apariciones; nada sobre «alta» o «registro» del sistema ante la AEAT | **falta** |
+| 2 · 4141 | 0 apariciones; nada sobre suspensión | **falta** |
+| 3 · 1287 y el escape | 0 apariciones de `1287`, `escap` o `&quot;` | **falta** |
+| 4 · `SistemaInformatico` | **sí, en parte**: P19 (¿dos personas físicas como productor?) y la respuesta B2 (quién es el productor) | **se reduce** a lo que P19/B2 no preguntan (P4 abajo) |
+
+Control positivo del mismo barrido: `SistemaInformatico` **sí** sale (P14 (C), P19, B2). El patrón ve el
+fichero. Y en `src/`: los ficheros que tratan `1242` o `4141` son **0** (control: `1177`, 4 ficheros;
+`AceptadoConErrores`, 3).
+
+**La premisa de ④.4 ya estaba corregida por 524b** (②, «una premisa falsa»): los valores del bloque
+**sí** viven en el código, en `src/modules/fiscal/verifactu/productor.ts` (SCRUM-247). Medido hoy, el
+nombre del productor ya **no** empieza por `<` (el hallazgo ⑤.1 de 524b no se reproduce en el árbol).
+Quién es el productor lo pregunta P19. Lo que queda sin preguntar son los dos subpuntos de P4.
+
+## ② Las preguntas, en el formato de `PREGUNTAS_ASESOR.md`
+
+Fuente común de los literales AEAT: `docs/legal/fuentes/aeat-errores.properties`. Es el
+`errores.properties` oficial bajado el **29-jul-2026** de
+`prewww2.aeat.es/…/tikeV1.0/cont/ws/errores.properties` (`docs/legal/SEMAFORO_CALIBRACION.md` §0).
+Su SHA-256 es `152fec33…`, el mismo hoy en el repo. ⚠️ El de **producción** (`www2.agenciatributaria.gob.es`,
+bajado el 28-sep-2026, SCRUM-1211 A2) tiene **otro** SHA-256 (`06519ceb…`). **No he comparado si cambian
+estos cuatro códigos entre las dos copias.**
+
+### P-524.1 · `1242` «No existe el sistema informático»: ¿hay que dar de ALTA el sistema ante la AEAT? (bloquea el tratamiento de la respuesta en la remisión, S1-D)
+
+**Literal AEAT (1xxx, rechaza la factura):** «No existe el sistema informático.» Su vecino, `1241`, es
+«Error técnico al obtener el SistemaInformatico».
+
+**La discrepancia, dentro de nuestra propia documentación:**
+- `docs/legal/SEMAFORO_CALIBRACION.md` (29-jul-2026), en la fila de `1242` del bloque
+  `SistemaInformatico`, dice que salta **«hasta que el SIF esté dado de alta»**.
+- La skill `verifactu` §6 (actualizada el 19-ago-2026) dice que la declaración responsable **«NO se
+  presenta ante la AEAT»**: es un requisito del propio programa (art. 13 RRSIF + art. 15 de la Orden).
+- SCRUM-524 ④.1 lo planteó como «¿se refiere a la consulta y no al alta?».
+
+Las dos premisas no pueden ser ciertas a la vez **si «alta» significa presentar algo antes del primer
+envío**.
+
+**1)** ¿Existe algún trámite (alta, comunicación o registro del sistema informático) que el productor o
+el obligado tengan que hacer ante la AEAT **antes** de remitir el primer registro? Si existe, ¿cuál y
+quién lo hace?
+
+**2)** Si no existe: ¿cómo «conoce» la AEAT el sistema para poder responder `1242`? ¿Lo da de alta el
+primer envío correcto con ese `NIF` + `IdSistemaInformatico` + `Version`? ¿Y un cambio de `Version` o
+de productor (P19) puede hacer saltar `1242` en el siguiente envío?
+
+**3)** Ante un `1242`, ¿se reintenta igual el mismo registro, o se para la remisión de ese sistema
+hasta corregir algo? ¿Y qué se corrige?
+
+**Lo que NO sabemos:** de dónde sacó «dado de alta» `SEMAFORO_CALIBRACION.md`. La fila no cita
+artículo, y no lo he rastreado. **El articulado no está en el repositorio**: `PREGUNTAS_ASESOR.md` (E)
+dice que en `docs/legal/fuentes/` no hay copia ni del RD 1007/2023 ni de la Orden HAC/1177/2024.
+
+---
+
+### P-524.2 · `4141` suspensión temporal de acceso: ¿cómo se degrada sin perder registros? (bloquea el diseño de la cola de remisión, S1-D / ROAD-29)
+
+**Literal AEAT (4xxx, rechaza el ENVÍO COMPLETO):** «Le informamos que su acceso al sistema VERIFACTU
+ha sido suspendido temporalmente para realizar cualquier solicitud. Para resolver este inconveniente,
+le solicitamos que se ponga en contacto con nuestro equipo de soporte a través del buzón de correo
+electrónico verifactu@correo.aeat.es, donde le atenderán con la mayor brevedad posible.»
+
+**Por qué no basta la cola de reintentos:** según SCRUM-524 ④.2, el reintento periódico que pide la
+norma ante una **caída del servicio** (art. 16.4, «≥ 1/hora»; cita de 524, **no releída por mí en el
+BOE**) no resuelve una **suspensión**. El literal no promete fecha de fin y manda escribir a un buzón,
+así que reintentar a ciegas contra ella puede agravarla.
+
+**1)** Una suspensión, ¿a quién afecta: al **certificado** que remite (el de YaQu como colaborador
+social o apoderado, apartado A de `PREGUNTAS_ASESOR.md`), al **obligado** o al **sistema** (`IdSistemaInformatico`)? Si es
+al certificado de YaQu, una sola suspensión para la remisión de **todos** los comercios.
+
+**2)** Mientras dura, ¿cuenta como la imposibilidad de remitir por causas ajenas que contempla la
+norma? ¿O el obligado incumple por cada registro que no llega? ¿Hay plazo máximo para remitir lo
+acumulado?
+
+**3)** ¿Hay que avisar a algún sitio, además del buzón? ¿Y debe enterarse el **obligado** (el
+profesional), dado que la responsabilidad del cumplimiento sigue siendo suya (art. 6 RRSIF, citado en
+la respuesta A de `PREGUNTAS_ASESOR.md`)?
+
+**Lo que NO sabemos:** qué provoca una suspensión. El literal no lo dice y no hay otra fuente en el
+repositorio. Tampoco cuánto puede durar.
+
+---
+
+### P-524.3 · `1287` y el escape XML: ¿la AEAT valida el texto escapado o el desescapado? (bloquea si hace falta sanear en la ENTRADA los campos de texto libre)
+
+**Literal AEAT (1xxx, rechaza la factura):** «El valor del campo %s contiene carácteres no validos (<,
+>, ", ', =).» (sic). El `%s` dice que se aplica **a cualquier campo**, no sólo a la serie.
+
+**Lo que hace hoy el código, leído (no modificado):** el texto que escribe el profesional
+(`concept`) llega a `<sum1:DescripcionOperacion>`, y el nombre del cliente a `<sum1:NombreRazon>`
+del destinatario, pasados por `xmlEscape` (`src/modules/invoicing/domain/verifactu.service.ts`). Esa
+función sustituye `& < > " '` por `&amp; &lt; &gt; &quot; &apos;`. **El `=` no se escapa: no hace
+falta en XML.** Sólo `NumSerieFactura` se sanea en la entrada (`fiscalInput.ts`, `PROHIBIDOS_SERIE`).
+
+Ejemplos reales del oficio: «Cambio de llave 1/2"», un cliente «D'Ors», «potencia >= 3 kW».
+
+**1)** El validador de la AEAT, ¿aplica `1287` al valor **después** de interpretar el XML (con lo que
+`&quot;` vuelve a ser `"` y se rechaza) o al texto tal cual llega?
+
+**2)** Si es lo primero: ¿qué hacemos con lo que escribe el profesional? ¿Sustituir los caracteres
+(¿por cuáles?), quitarlos o rechazar la línea al crearla? ¿Y el **nombre de un cliente** que lleva un
+apóstrofo, que es su nombre legal?
+
+**3)** El `=` no lo toca nadie hoy en estos dos campos. ¿Confirmas que también provoca `1287` en
+`DescripcionOperacion`?
+
+**Lo que NO sabemos:** la respuesta se podría **medir** contra el entorno de pruebas de la AEAT, y hoy no
+tenemos remisión ni certificado para hacerlo (SCRUM-524 ④.3). **Una factura emitida no se edita**
+(regla 29): si la respuesta es «se desescapa», el arreglo es en la entrada, antes de emitir.
+
+---
+
+### P-524.4 · Dos valores del bloque `SistemaInformatico` en un SaaS con muchos obligados — **candidata, sin cotejar con la Orden HAC/1177/2024** (bloquea dar por buenos los valores de `productor.ts` y de los dos generadores)
+
+Lo que va en cada registro hoy, **leído en el código**: `NumeroInstalacion` = `"1"`
+(`VERIFACTU_NUM_INSTALACION`, `productor.ts`), y `TipoUsoPosibleMultiOT` = `S` e
+`IndicadorMultiplesOT` = `S`, fijos en los dos generadores (`registro.builder.ts` los comenta como
+«SaaS multi-tenant → 'S'»; `verifactu.service.ts` los escribe literales). XSD vendorizado
+(`SuministroInformacion.xsd`, `SistemaInformaticoType`): `NumeroInstalacion` es texto de hasta 100
+caracteres; los otros dos, `S`/`N`.
+
+**1)** `NumeroInstalacion`: en un SaaS en el que **un** sistema emite para **muchos** obligados, ¿es una
+sola instalación (`"1"` para todos) o hay que numerar una por obligado, o por comercio? Si es por
+obligado, ¿quién asigna el número y debe ser estable en el tiempo?
+
+**2)** `IndicadorMultiplesOT` = `S`: ¿describe el **sistema** (YaQu atiende a varios obligados) o la
+**instalación** desde la que se remite (este obligado usa el sistema con otros)? Si es lo segundo, un
+comercio que sólo factura para sí mismo, ¿debería llevar `N`?
+
+**Lo que NO sabemos:** el significado normativo de los dos campos. **No hay copia de la Orden en el
+repositorio y no la he leído.** Por eso la pregunta va marcada como candidata: puede que la Orden la
+conteste sin asesor. Los códigos de error de estos campos (`1212`, `1213` y `1226` en SCRUM-524
+②/524b) sólo comprueban que el valor sea `S` o `N`, no que sea el **correcto**.
+
+## ③ Lo que esto NO hace
+
+- **No escribe en `docs/legal/`** (carril J4) **ni en Jira** (no lo pude leer). Las preguntas pasan a
+  SCRUM-1264 y al documento por mano del orquestador y de J4.
+- **No cambia ningún valor de `productor.ts` ni de los generadores**: camino de emisión, regla 38/40.
+- **No da por contestada ninguna.** P-524.4 puede salir de leer la Orden; las otras tres, no.
+
+## ④ ¿SCRUM-524 queda listo para cerrar?
+
+**No, por dos cosas que no dependen de este tramo:** (a) que estas cuatro lleguen a SCRUM-1264 y al
+documento del asesor; (b) que alguien con Jira lea el hilo de SCRUM-524 entero. **No he medido** que
+SCRUM-1127b cubra ⑤ (`VfSubmission`, `AceptadoConErrores`): sólo he visto que esa cadena sale en 3
+ficheros de `src/`.
+
+A9: sin fallo que generalice — la única caída propia fue un `git fetch && git rev-parse` que salió con 128 y se relanzó sin sacar cifra de él; la otra cosa que pudo salir mal (escribir en carril de J4) la paró la norma A20 antes de la primera línea
+
+---
+
+# SCRUM-524d — Las cuatro de 524c, pasadas a `PREGUNTAS_ASESOR.md` como P22–P25
+
+*21-oct-2026 · rama `scrum-524d-preguntas-al-documento`, nacida de `scrum-524c-preguntas-asesor` @ `3de2e0b02` · puesto J4 (jv-j4i)*
+
+**Medido contra:** `origin/main` = `0adcc1b2ff90af4aa0f0d43ef710da4c8d65a163` · 2026-10-21T13:56:26Z
+
+> **Carril.** `docs/legal/` es de J4 («J4 propone · firma un jefe», `docs/equipo/dos-equipos.md`).
+> Encargo del orquestador `cobroflash-backend-5f`, 21-oct-2026. **Documento interno**: ninguna frase
+> nueva para un cliente. Cero líneas de `src/`. **Jira no se ha leído**: el MCP de Atlassian conectó
+> pero no expuso ninguna herramienta de Jira (3 búsquedas, 0). Sin cotejar con SCRUM-1264.
+
+## ① PASO 0 · ¿ya estaban?
+
+Población: `docs/legal/PREGUNTAS_ASESOR.md` en `origin/main`, **113.929 B, 1.410 líneas**, idéntico al
+de la rama de 524c. Recuento por patrón: `1242` 1 · `4141` 0 · `1287` 0 · `NumeroInstalacion` 0 ·
+`MultiplesOT` 0 · `SCRUM-524` 0. **El único `1242` es un rango de líneas** (`:1240-1242`, en la
+respuesta B sobre `S1`/`S2`), no el código de error: 524c ① escribió «0 apariciones», y la cifra
+exacta es 1 que no es la pregunta. El veredicto no cambia: **faltan las cuatro**. Control positivo
+del mismo barrido: `SistemaInformatico` sale 3 veces. Y ningún otro PR abierto toca el documento
+(15 abiertos; control: el que toca `SCRUM-524.md` sí sale, #2646).
+
+## ② Lo que hace
+
+- Las cuatro, como **P22, P23, P24 y P25**, al final de las preguntas (después de P20, antes de
+  «RESPUESTAS · 22-sep-2026»), en el formato del documento: `# P<n>.`, cita de origen, puntos
+  **1)**, `---`. Cada una cita «SCRUM-524c». P25 lleva **CANDIDATA** en el título y en la cita.
+- **Por qué no P21:** `§21` ya es una pregunta (los cinco avisos del Libro registro, 21.1–21.5), y
+  así la citan `docs/master/SCRUM-1041.md`, `SCRUM-1428.md` y `docs/equipo/para-javier.md`. Un
+  «P21» haría dos preguntas 21.
+- **Contenido, sin cambios.** Medido: de las 84 líneas no vacías del texto de 524c ②, 79 están
+  literales en el documento; las 5 que no son los 4 títulos (`### P-524.n ·` → `# P2n.`) y el
+  arranque de «Fuente común de los literales», que dice ahora «de P22 a P25» y va una sola vez,
+  en P22. Control sembrado: una línea alterada a propósito sale como ausente.
+- **Ningún ancla movida:** lo más bajo que se cita de este documento por número de línea es la
+  1097, y lo insertado empieza en la 1162. Finales de línea medidos por bytes: 0 CR, sin BOM, antes
+  y después.
+
+## ③ Lo que falta, y no es de J4
+
+- **Firma de un jefe** (`dos-equipos.md`: «firma un jefe») para que P22–P25 entren en la lista de la
+  cita. J4 no firma.
+- **P25 se coteja con la Orden HAC/1177/2024 antes de la cita**: puede contestarse sin asesor.
+- **SCRUM-1264** (el sitio único de las preguntas, según el encargo) recibe las cuatro por mano del
+  orquestador; nadie ha comparado aún si coinciden.
+
+A9: sin fallo que generalice — un recuento de CR con `od -c | grep -c` dio 3.897 sobre un fichero que tiene 0; no lo usé y lo rehice por bytes antes de escribir nada, que es lo que ya pide la casa
+
+---
+
+# SCRUM-524e — P25 contestada leyendo la Orden HAC/1177/2024 y la FAQ de desarrolladores de la AEAT: los dos valores de hoy NO casan con lo que dice la AEAT para un SaaS
+
+*22-oct-2026 · rama `scrum-524e-p25-leida-en-la-orden` · puesto J5 (jv-j5q)*
+
+**Medido contra:** `origin/main` = `8ad167195af03cf4153337ccc1bf1b80d04c10f8` · 2026-10-22T09:47:32Z
+
+> **Desbloqueo.** SCRUM-524 c.20209 (22-oct-2026): el fundador aprueba con un «OK» que la P25 **no
+> vaya al asesor todavía** y que una sesión lea la Orden. **Documento interno**: ninguna frase para un
+> cliente. **Cero líneas de `src/`**: el camino de emisión se ha **leído**, y lo que la respuesta pide
+> cambiar va abajo como STOP (regla 38/40). `docs/legal/PREGUNTAS_ASESOR.md` es de J4: no se toca;
+> el texto propuesto va en ④.
+
+## ① Las fuentes, con su fecha y su control de vigencia
+
+| fuente | cómo se obtuvo | vigencia |
+|---|---|---|
+| **Orden HAC/1177/2024** (BOE-A-2024-22138) | API de legislación consolidada del BOE, `…/legislacion-consolidada/id/BOE-A-2024-22138/texto`, 22-oct-2026 09:45Z (cabecera `Date:`) | metadatos: `estado_consolidacion` = Finalizado, `fecha_actualizacion` 2025-12-20; sus **40 bloques** llevan **una sola versión, de 2024-10-29**: la Orden no se ha modificado |
+| **Anexo, apartado 2.6 «SistemaInformatico»** | el texto consolidado no lo trae como texto: son **dos imágenes** (`22138_14945631_1.png` y `_2.png`, `boe.es/datos/imagenes/disp/2024/260/`), leídas una a una | las de la publicación original; ningún bloque modificado |
+| **RD 1007/2023** (BOE-A-2023-24840) | la misma API, mismo día | **control positivo de la API**: trae versiones de 2025-04-03 y de 2025-12-04 (las modificaciones), así que sí devuelve el texto VIGENTE y no el original |
+| **AEAT · «Aclaraciones a dudas de los desarrolladores», versión 1.3, 4-dic-2025** | `sede.agenciatributaria.gob.es/static_files/AEAT_Desarrolladores/EEDD/IVA/VERI-FACTU/FAQs-Desarrolladores.pdf`, 691.549 B, `last-modified` 10-dic-2025, bajado el 22-oct-2026 09:46Z | es la que sirve hoy la sede en esa ruta. **No es norma:** es el criterio publicado de la AEAT |
+
+## ② Lo que dicen, literal
+
+**Orden, anexo 2.6, `NumeroInstalacion`** (Alfanumérico 100): «Número de instalación del sistema
+informático de facturación (SIF) utilizado. Deberá distinguirlo de otros posibles SIF utilizados para
+realizar la facturación del obligado a expedir facturas, es decir, de otras posibles instalaciones de SIF
+pasadas, presentes o futuras utilizadas para realizar la facturación del obligado a expedir facturas,
+incluso aunque en dichas instalaciones se emplee el mismo SIF de un productor.»
+
+**Orden, anexo 2.6, `TipoUsoPosibleMultiOT`**: «Especifica si el sistema informático de facturación
+permite llevar independientemente la facturación de varios obligados tributarios (valor "S") o solo de
+uno (valor "N").»
+
+**Orden, anexo 2.6, `IndicadorMultiplesOT`**: «Indicador de que el sistema informático, en el momento
+de la generación de este registro, está soportando la facturación de más de un obligado tributario. Este
+valor deberá obtenerlo automáticamente el sistema informático a partir del número de obligados
+tributarios contenidos y/o gestionados en él en ese momento, independientemente de su estado operativo
+(alta, baja...), no pudiendo obtenerse a partir de otra información ni ser introducido directamente por
+el usuario del sistema informático ni cambiado por él. El valor "N" significará que el sistema
+informático solo contiene y/o gestiona un único obligado tributario (de alta o de baja o en cualquier
+otro estado), que se corresponderá con el obligado a expedir factura de este registro de facturación.
+En cualquier otro caso, se deberá informar este campo con el valor "S".»
+
+**Orden, art. 2** (varios obligados en un mismo sistema): «se deberá comportar como si fueran sistemas
+informáticos independientes para cada obligado tributario gestionado», y la letra c): «Deberá permitir
+el funcionamiento como sistema informático «VERI*FACTU» de forma independiente para cada obligado
+tributario.»
+
+**FAQ AEAT v1.3, apartado 4** («Cómo identificar un SIF…»), págs. 9-10:
+
+- «Un SIF se identifica universalmente por la "concatenación" de tres campos: Id.OEF (NIF) + Id.SIF (*)
+  + NºInstalación(**).»
+- «(**) El Nº de instalación es una forma de completar una identificación unívoca de cada SIF -por si
+  tuviera varios- de un mismo OEF, y así distinguirse de cualquier otro SIF de ese OEF en cualquier
+  momento del tiempo (pasado, presente o futuro). […] no puede repetirse nunca: por ejemplo, incluso si
+  se formatea el ordenador donde estaba instalado un SIF y se reinstala el mismo software de nuevo en
+  ese mismo ordenador, el nuevo SIF así constituido debe llevar otro nº de instalación diferente al
+  anterior que tenía, y que no coincida con la de ningún otro SIF de ese OEF (pasado, presente o futuro).»
+- «Por ello, como valores recomendados de número de instalación, se propone alguno de los dos
+  siguientes […]: - "Timestamp" (al menos fecha+hora+minuto+segundo) en que se efectuó la instalación
+  del producto de facturación (momento en el cual se constituye como SIF). - Asignar un nº secuencial
+  […] que no se repita nunca entre las distintas instalaciones de los diferentes SIF para ese OEF: 1, 2,
+  3... n.»
+- «Ha de tenerse en cuenta que si se utiliza un SIF que permite llevar distintas facturaciones, como
+  contempla el artículo 7.a) del RRSIF, cada una de esas facturaciones distintas (sean de distintos OEF o
+  del mismo OEF pero de distintos centros de facturación independientes, como tiendas) debe tener un nº
+  de instalación propio y distinto al resto (pasado, presente o futuro) porque se consideran SIF
+  independientes, como si fueran "SIF virtuales", dentro de un producto SIF más completo que los
+  gestiona y administra.»
+- «[…] en el caso de SIF en la nube, tipo SaaS (Software as a Service), que se ofrecen a muchos
+  usuarios, […] se aclara a continuación cuándo poner el valor "S" en el campo 'IndicadorMultiplesOT'
+  del bloque 'SistemaInformatico' de los registros de facturación y de evento: este valor deberá
+  calcularse de forma independiente por cada usuario del SIF SaaS (no a nivel global del SIF SaaS) y se
+  informará con "S" en todos los registros de facturación (y, en su caso, de evento) de aquellos
+  usuarios que tengan creadas más de una facturación en el SIF SaaS, independientemente del estado de
+  dichas facturaciones (alta, baja…) y de si son de igual o de distinto OEF. En caso contrario, o sea,
+  cuando el usuario solo tiene una facturación en el SIF SaaS, se informará con "N".»
+
+## ③ Las respuestas a la P25
+
+**(1) `NumeroInstalacion`: NO es «"1" fijo para todos».** La Orden sólo exige que distinga la
+instalación de cualquier otra del **mismo obligado**, pasada, presente o futura. La AEAT lo concreta
+para un SIF que lleva varias facturaciones: **cada facturación —cada obligado, y cada centro de
+facturación independiente de un mismo obligado— lleva un número propio y distinto al resto**, porque
+cada una es un «SIF virtual». Y la identidad de cada SIF es NIF del obligado + Id.SIF + nº de
+instalación.
+- **¿Quién lo asigna?** Ni la Orden ni la FAQ nombran a nadie. La FAQ **recomienda** dos formas: la
+  marca de tiempo de la instalación (con segundos, como mínimo) o un número secuencial que nunca se
+  repita para ese obligado. En un SaaS, quien crea la facturación es el sistema. **Que lo asigne el
+  sistema al dar de alta la facturación del comercio es lectura mía, no texto de la norma.**
+- **¿Estable?** Sí, por construcción: es parte de la identidad del SIF, «no puede repetirse nunca», y
+  la FAQ (pág. 8) dice que un cambio permanente de la forma de facturar convierte el SIF en «otro SIF».
+  Un número que cambie sin cambiar de instalación partiría la identidad del SIF de ese obligado.
+
+**(2) `TipoUsoPosibleMultiOT` = `S`: correcto, y describe el SISTEMA.** Lo dice la Orden: «si el sistema
+informático de facturación permite llevar independientemente la facturación de varios obligados». YaQu
+lo permite. Es además lo que se declara en la letra f) de la declaración responsable (art. 15.1.f).
+
+**(2 bis) `IndicadorMultiplesOT` = `S` fijo: NO casa con la AEAT.** El anexo dice que el valor se
+obtiene **automáticamente** a partir del número de obligados que el sistema contiene o gestiona, y que
+nadie lo introduce a mano; un literal fijo no es eso. Y para un SaaS la AEAT dice cómo se calcula:
+**por usuario del SaaS, no a nivel global**. Un usuario con **una sola facturación lleva `N`**; con más de
+una (de cualquier estado, del mismo obligado o de varios), `S`. **Así que un comercio que sólo factura
+para sí mismo lleva `N`**, que es la sospecha de la pregunta.
+
+> ⚠️ **Lo que el anexo solo NO decide, y lo decide la FAQ.** Leído aislado, «el sistema informático
+> […] contiene y/o gestiona» casa también con «el SaaS entero», que daría `S` para todos. Así lo iba a
+> contestar yo antes de leer la FAQ (ver «Mis errores»). La respuesta de arriba se apoya en la FAQ, que
+> es **criterio publicado de la AEAT, no norma**. Que la FAQ prevalezca sobre la otra lectura del anexo
+> es juicio mío; la AEAT es quien valida los registros.
+
+**Lo que ni la Orden ni la FAQ contestan, y queda para quien decida (no para el asesor de entrada):**
+qué es «un usuario» y qué es «una facturación» en YaQu. **NO MEDIDO**: si una cuenta de YaQu puede
+llevar más de un comercio, o un comercio más de un centro de facturación. Si hoy es «un comercio = una
+cuenta = una facturación», lo de arriba da `N` en todos los registros y un número de instalación por
+comercio.
+
+## ④ Lo que esto pide cambiar · STOP (camino de emisión, regla 38/40) — NO tocado
+
+Leído en `origin/main` a la hora del ancla:
+
+| dónde | qué hay | qué pediría la respuesta |
+|---|---|---|
+| `src/modules/fiscal/verifactu/productor.ts:51` | `VERIFACTU_NUM_INSTALACION = "1"`, constante global | un número **por facturación** (por comercio, si ③ se confirma), asignado una vez, que no se reutilice nunca. Necesita un sitio donde guardarse por comercio: **esquema**, así que A5 (decisión + ALTER antes) |
+| `src/modules/invoicing/domain/verifactu.service.ts:716` y `:1232` | `numInstalacion: VERIFACTU_NUM_INSTALACION` | leer el número del comercio |
+| `src/modules/invoicing/domain/verifactu.service.ts:1022` y `:1132` | `<sum1:IndicadorMultiplesOT>S</sum1:IndicadorMultiplesOT>` literal | calcularlo por usuario: `N` con una facturación, `S` con más |
+| `src/modules/invoicing/domain/verifactu.service.ts:1021` y `:1131` | `TipoUsoPosibleMultiOT` = `S` | **nada**: ya es correcto |
+| `src/modules/fiscal/verifactu/registro.builder.ts:25` y `:27-28` | comentarios «(SaaS: '1')» y «SaaS multi-tenant → 'S'»; el valor lo pone quien llama | el de la línea 25 dice lo contrario que la FAQ; los valores, los mismos dos cambios. En `src/` **nadie** asigna `indicadorMultiplesOT`: sólo `scripts/gen-registros-sample.mjs`, `scripts/sobre-soap-prueba-aeat.mjs` y cuatro tests (cruzado por el nombre del campo, 7 ficheros con el builder incluido) |
+
+**Lo que NO cambia la huella:** el art. 13.1.a) de la Orden no pone ninguno de estos dos campos entre los
+datos de la huella del registro de alta (sí el nº de instalación en la del registro de **evento**, que en
+VERI*FACTU no se usa). Cambiarlos no rompe el encadenamiento ya calculado. **NO MEDIDO:** si hay
+registros con «1» y `S` en alguna base (ni producción, ni staging, ni dev); con `INVOICING_ES_ENABLED`
+apagado no debería haber registros de comercios españoles reales, pero no lo he contado.
+
+## ⑤ Texto propuesto para `PREGUNTAS_ASESOR.md` (carril J4: lo pasa J4 con firma de un jefe)
+
+Sustituir el título de **P25** («— **CANDIDATA, sin cotejar con la Orden HAC/1177/2024**») por
+«— **CONTESTADA sin asesor (SCRUM-524e)**», y añadir debajo de su texto, antes del `---`:
+
+> **Respuesta (SCRUM-524e, 22-oct-2026, sin asesor, por OK del fundador en SCRUM-524 c.20209).** Fuentes:
+> Orden HAC/1177/2024, anexo 2.6 (texto consolidado del BOE, sin modificaciones) y AEAT, «Aclaraciones a
+> dudas de los desarrolladores» v1.3, 4-dic-2025, apartado 4. **1)** No vale un «1» para todos: cada
+> facturación (cada obligado, y cada centro independiente de un obligado) lleva un número propio, que no
+> se repite nunca; la AEAT recomienda una marca de tiempo de la instalación o un secuencial. Nadie dice
+> quién lo asigna. **2)** `TipoUsoPosibleMultiOT` = `S` describe el sistema y es correcto.
+> `IndicadorMultiplesOT` se calcula por usuario del SaaS: `N` si el usuario sólo tiene una facturación,
+> `S` si tiene más. Un comercio que sólo factura para sí lleva `N`. **Cambiar los dos valores es camino de
+> emisión: STOP, decisión de los fundadores** (detalle en `docs/master/SCRUM-524.md`, tramo 524e).
+
+Se queda para el asesor **solo** si los fundadores no aceptan la FAQ de la AEAT como criterio; la
+pregunta pasaría a ser «¿nos podemos apartar de la FAQ v1.3 en estos dos campos?».
+
+## 🔴 Mis errores, esta tanda
+
+- **Iba a contestar (2 bis) al revés.** Leído el anexo, tenía escrita en la cabeza «`S` es correcto: el
+  SaaS contiene muchos obligados, y el art. 2.d) lo confirma». El resumen de una búsqueda me trajo la
+  frase contraria de la FAQ; **no me fié del resumen**, bajé el PDF y leí el literal, que es lo que va
+  arriba. Sin esa búsqueda, la respuesta habría salido con dos citas literales y equivocada.
+- **El encargo daba `main` = `fe65a8b7f`**; al arrancar medí `8ad167195`. Main se movió: no es un error
+  de nadie, pero el ancla de arriba es la medida, no la de la ficha.
+- **El control positivo de `ls-remote` me salió 0**: busqué la rama de #2659, que ya se había borrado al
+  mergear. Lo rehíce con la búsqueda de PR por `head:scrum-524`, que sí trae 524, 524b, 524c y 524d.
+
+## Lo NO tocado
+
+`src/` (camino de emisión, sólo leído) · `prisma/schema.prisma` · `docs/legal/` (J4) · Jira (sólo
+comentario de entrega) · ninguna base de datos.
+
+A9: aviso → cicatriz J5 «Casi contesto `IndicadorMultiplesOT` con el anexo de la Orden HAC/1177/2024 solo (S para todo el SaaS), y la FAQ de desarrolladores de la AEAT v1.3 dice lo contrario para un SaaS: por usuario, no a nivel global» — no se pudo comprobar: ningún guard puede saber qué fuentes leyó una sesión antes de concluir sobre un texto legal; lo que lo para es leer la FAQ de desarrolladores de la AEAT junto al anexo, cada vez

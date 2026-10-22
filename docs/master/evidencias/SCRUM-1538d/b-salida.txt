@@ -1,0 +1,47 @@
+SIEMBRA OK   racha fabricada
+SIEMBRA OK   sin limpias, racha 0
+POBLACIÓN · runs 1029 · limpios (1 job por familia, sin pedir) 223 · jobs pedidos 3444
+
+══ TRINQUETE · 691 jobs con veredicto o colgados
+  antes del corte: 23 colgadas de 378 (6.1 %) · después: 0 de 313
+  si la tasa de antes siguiera, la probabilidad de ver 0 en 313 es 2.9e-9
+  sólo 13-oct → corte: 3 de 186 (1.6 %) · con esa tasa, ver 0 en 313 tiene probabilidad 6.2e-3
+  racha más larga SIN colgada antes del corte: 149 jobs · después del corte: 313
+    racha de 149 limpias · de 2026-10-13T07:30:24Z hasta la colgada de 2026-10-14T08:57:18Z
+    racha de 32 limpias · de 2026-10-06T19:48:48Z hasta la colgada de 2026-10-07T15:29:16Z
+    racha de 31 limpias · de 2026-10-13T00:11:55Z hasta la colgada de 2026-10-13T07:26:43Z
+  por día (jobs · colgadas): 10-06 36·7 | 10-07 75·7 | 10-08 56·6 | 10-09 25·0 | 10-13 116·2 | 10-14 114·1 | 10-15 52·0 | 10-16 42·0 | 10-17 39·0 | 10-18 56·0 | 10-19 41·0 | 10-20 19·0 | 10-21 20·0
+
+══ TANDA · 728 jobs con veredicto o colgados
+  antes del corte: 10 colgadas de 397 (2.5 %) · después: 0 de 331
+  si la tasa de antes siguiera, la probabilidad de ver 0 en 331 es 2.2e-4
+  sólo 13-oct → corte: 7 de 191 (3.7 %) · con esa tasa, ver 0 en 331 tiene probabilidad 4.3e-6
+  racha más larga SIN colgada antes del corte: 78 jobs · después del corte: 331
+    racha de 78 limpias · de 2026-10-07T16:45:56Z hasta la colgada de 2026-10-08T08:14:51Z
+    racha de 77 limpias · de 2026-10-13T12:48:28Z hasta la colgada de 2026-10-14T07:09:32Z
+    racha de 61 limpias · de 2026-10-06T18:50:39Z hasta la colgada de 2026-10-07T16:45:56Z
+  por día (jobs · colgadas): 10-06 37·1 | 10-07 81·1 | 10-08 62·1 | 10-09 26·0 | 10-13 117·5 | 10-14 125·2 | 10-15 55·0 | 10-16 49·0 | 10-17 40·0 | 10-18 55·0 | 10-19 41·0 | 10-20 20·0 | 10-21 20·0
+
+② main de primer padre DESPUÉS de 6c5b3ad61 (última base colgada de la tanda) y hasta las 16:00Z del 14-oct: 19 commits
+   (· = ninguno de sus ficheros está entre los candidatos; ⇒ = ésta es la base de la última colgada del trinquete)
+  e2be1c9fd 2026-10-14T07:47:56Z · Merge pull request #2429 from lwislg99/scrum-1405c-tuberia-b · 6 ficheros · CANDIDATOS: package.json, scripts/_sin-fila-declarados.json
+  0f0e67f38 2026-10-14T08:09:27Z · Merge pull request #2431 from lwislg99/scrum-1553c-controles · 2 ficheros ·
+  3c2545254 2026-10-14T08:12:20Z · Merge pull request #2432 from lwislg99/scrum-1016l-aplica-ti · 3 ficheros ·
+  515a14d90 2026-10-14T08:18:23Z · Merge pull request #2433 from lwislg99/scrum-1115-el-remite- · 2 ficheros ·
+  ca0e2501b 2026-10-14T08:27:52Z · Merge pull request #2438 from lwislg99/scrum-1302o-version-e · 5 ficheros · CANDIDATOS: tests/_huerfanos-declarados.mjs
+  0e8c20aff 2026-10-14T08:44:55Z · Merge pull request #2442 from lwislg99/scrum-418b-claves-bd- · 2 ficheros ·
+  4f487bb17 2026-10-14T08:53:08Z · Merge pull request #2439 from lwislg99/scrum-1257e-modo-en-a · 12 ficheros · CANDIDATOS: package.json, scripts/_sin-fila-declarados.json, tests/_guards-de-navegador-declarados.mjs
+⇒ ebe2b932c 2026-10-14T08:53:44Z · Merge pull request #2445 from lwislg99/scrum-1302p-el-enlace · 19 ficheros ·
+  7f5e1dd22 2026-10-14T09:09:51Z · Merge pull request #2447 from lwislg99/scrum-1016m-titular-y · 7 ficheros · CANDIDATOS: scripts/_registro-de-lo-aprobado.mjs
+  79531cf84 2026-10-14T09:10:43Z · Merge pull request #2434 from lwislg99/scrum-1295b-de-con-va · 3 ficheros ·
+  78100767b 2026-10-14T09:18:43Z · Merge pull request #2436 from lwislg99/scrum-1463c-cierres-e · 3 ficheros ·
+  fd6584302 2026-10-14T09:22:56Z · Merge pull request #2444 from lwislg99/scrum-1016m-scrum331- · 2 ficheros ·
+  fa0ceccf7 2026-10-14T09:23:31Z · Merge pull request #2440 from lwislg99/scrum-1527c-el-siguie · 8 ficheros ·
+  ad4048f6d 2026-10-14T09:24:56Z · Merge pull request #2450 from lwislg99/scrum-1527d-reproduce · 2 ficheros ·
+  93952c4e7 2026-10-14T09:28:26Z · Merge pull request #2443 from lwislg99/scrum-1540-borrables- · 5 ficheros ·
+  2fca0221c 2026-10-14T09:38:32Z · Merge pull request #2453 from lwislg99/scrum-812d-titula-gua · 3 ficheros ·
+  1d7a88b5c 2026-10-14T09:39:20Z · SCRUM-1056d: los avisos de fallo de «Volver a llamar» acaban · 8 ficheros ·
+  5d076797d 2026-10-14T09:51:04Z · Merge pull request #2457 from lwislg99/scrum-1150d-el-hash-n · 5 ficheros ·
+  becfaf830 2026-10-14T15:58:31Z · Merge pull request #2456 from lwislg99/scrum-1555-el-tecnico · 9 ficheros ·
+
+EXIT=0
