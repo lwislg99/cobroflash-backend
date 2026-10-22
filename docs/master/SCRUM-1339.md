@@ -2444,8 +2444,8 @@ fundador; (c) dejar que avise. No elijo.
 
 # SCRUM-1339s · La salida C de 1405 llega al meta-guard: el hijo de `correr()` carga la tubería bloqueante
 
-**Medido contra:** `origin/main` = `9839aa6c2baee741f6a38de4e99c7fc29a3fe807` (rama nacida ahí; `main` traído con merge a
-`8ad167195af03cf4153337ccc1bf1b80d04c10f8` antes de empujar) · 22-oct-2026 09:41Z (GitHub) · **S3** · Windows, node v24.8.0.
+**Medido contra:** `origin/main` = `8ad167195af03cf4153337ccc1bf1b80d04c10f8` · 2026-10-22T09:42:38Z
+**S3** · Windows, node v24.8.0 · la rama nació en `9839aa6c2baee741f6a38de4e99c7fc29a3fe807` y trajo `main` con merge antes de empujar.
 
 **El encargo:** extender la salida C de SCRUM-1405 (c.19584) a las tres copias del flag que la S3 señaló en c.18373,
 aprobado por Javier en c.20219. **Se hace UNA de las tres.** Carril medido con `node scripts/carriles.mjs de` sobre
