@@ -571,3 +571,124 @@ SL». **Los 24 que esperan al asesor esperan, de hecho, a SCRUM-143** (constitui
 | TRABAJO con qué falta y su carril, ordenado | la tabla (35 tickets en 34 filas) y la lista de 15 del ORQ |
 | reusar 1496c, sin censo nuevo | `tabla-ya-esta.mjs` sin cambios; la pista de 1496c en cada lote |
 | control 1543, mirado después | «Los controles»: TERMINADO ✅ |
+
+## 22-oct-2026 · SCRUM-1496e · De los 125 abiertos con algo en `main`, 37 están TERMINADOS y 88 no
+
+**Medido contra:** `origin/main` = `8ad167195af03cf4153337ccc1bf1b80d04c10f8` · 2026-10-22T09:58:13Z
+
+A9: aviso → cicatriz J3 «Metí como controles ciegos dos tickets ya cerrados y el lector vio «Finalizada» en Jira: un control cuyo resultado el sujeto puede leer no mide al lector.» — no se pudo comprobar: elegir los controles de una lectura es un juicio de quien reparte los lotes, y ningún test del árbol lo ve
+
+J3 (`jv-j3y`), por encargo del orquestador del equipo de Javier (`cobroflash-backend-5f`). **Es LECTURA.** No se ha
+cerrado, transicionado, comentado ni etiquetado ningún ticket salvo este (el comentario de entrega), y no se ha tocado
+`src/`, ningún test, guard o workflow, el esquema ni ninguna base. Pregunta: de los abiertos de `equipo-javier`,
+¿cuáles están YA hechos y se pueden cerrar? Por qué: en dos días se repartió dos veces trabajo que ya estaba en `main`
+(SCRUM-1548 y SCRUM-1408). El hook de inicio dijo SIN IDENTIDAD; seguí con la orden escrita del orquestador.
+
+### La población
+
+- **Jira, ~09:48Z.** `project = SCRUM AND labels = equipo-javier AND statusCategory != Done`, dos páginas (100 + 66,
+  la segunda sin página siguiente): **166** claves, **166 únicas** (99 «Tareas por hacer», 48 «En curso», 17 «Acción
+  del fundador», 2 «En revisión»). Foto: `evidencias/SCRUM-1496e/foto-jira-2026-10-22.tsv`.
+- **Censo por número**, el mismo instrumento sin tocarlo, en 3 min 49 s:
+  `node docs/master/evidencias/SCRUM-1496/tabla-ya-esta.mjs --jira <foto> --ref 8ad167195… --control 9999 --lineas <fuera del árbol>`
+  → **130 ALGO EN MAIN · 36 NADA EN MAIN · 0 NO HE PODIDO MIRAR**, salida 0, control SCRUM-9999 a tres ceros.
+  Tabla: `tabla-8ad167195.md`.
+- **Cinco de los 130 llevan también `equipo-luis`**: 870, 1092, 1505, 1506 y 1507. Están contados aquí y no se han leído.
+- **Leídos: 125 abiertos**, más 1548 y 1331 como controles (127 filas, 127 únicas, ni falta ni sobra ninguna).
+  **Los 36 NADA EN MAIN no se han leído**: el encargo pedía leer los que tienen ALGO.
+
+### Cómo se decidió, y no es un censo nuevo
+
+El criterio es el de 1496c con tres veredictos (TERMINADO / LE FALTA ALGO / NO HE PODIDO MIRAR). Dentro de LE FALTA
+ALGO, la clase de lo que falta: TRABAJO, ORQ o ESPERA. La pista de cada ticket es la fila de 1496d, marcada «re-mídela».
+El criterio se escribió ANTES de leer ningún ticket y sin los controles dentro (`criterio-de-lectura.md`).
+
+Trece lectores, uno por lote de 9 o 10 tickets repartidos por turno (`hacer-lotes.cjs`, `lotes/`), leyeron Jira en
+vivo, con todos los comentarios, entre las ~10:00Z y las ~10:15Z, y midieron cada parte por efecto en `8ad167195`.
+Su salida, sin retocar, está en `veredictos-por-lote.md`. La cuenta sale de `consolida.cjs`, que lee el veredicto de
+SU columna y no del texto de la fila. La tabla de entrega es `tabla-entrega.md`: una fila por ticket, con la clase
+y lo que falta.
+
+### Los controles
+
+| control | tenía que salir | salió | |
+|---|---|---|---|
+| SCRUM-9999 en el censo | tres ceros | tres ceros, NADA EN MAIN | ✅ |
+| población de los lectores | 127 filas, una por ticket | 127, 127 únicas, ni falta ni sobra ninguna | ✅ |
+| **SCRUM-1536** (abierto, y el lector no sabía que era control) | LE FALTA ALGO | LE FALTA ALGO (lote-08): las ramas 1536d y 1536e siguen sin mergear | ✅ |
+| **SCRUM-1548** (cerrado) | TERMINADO | TERMINADO (lote-12) | ✅ pero no ciego: el lector vio «Finalizada (c.20168)» |
+| **SCRUM-1331** (cerrado) | TERMINADO | TERMINADO (lote-03) | ✅ pero no ciego: el lector vio «Finalizada (c.20216)» |
+| ningún TERMINADO de 1496d que siga abierto vuelve atrás | — | 0 vuelven atrás | ✅ |
+| 1260 releído por mí (toca el camino de emisión) | `'JUST'` fuera de `invoicing.ts` | 0 líneas en `8ad167195`; en `dc1b2b4db`, `:432` sí la tiene (positivo) | ✅ |
+
+### ✅ TERMINADOS: 37 abiertos que solo esperan a que se cierren (A13: los cierra el orquestador)
+
+`1106` `1116` `1119` `1120` `1126` `1128` `1130` `1214` `1245` `1246` `1253` `1259` `1260` `1313` `1315` `1320` `1321`
+`1323` `1327` `1329` `1335` `1336` `1345` `1392` `1394` `1408` `1472` `1477` `1478` `1481` `1514` `1537` `1538` `1543`
+`1550` `1553` `1572`
+
+**Respecto de 1496d:** 32 siguen igual. **Diez ya se han cerrado** desde el 20-oct (529, 1018, 1022, 1023, 1104, 1108,
+1110, 1113, 1331 y 1548). Entran **cinco nuevos**: 1106 (la decisión estaba tomada en SCRUM-1053 c.16660 y 1496d no
+la vio), 1260 (#2635 y #2639), 1335, 1538 y 1572 (este no existía el 20-oct).
+
+Lo que hay que saber antes de cerrar (cada cosa con su cita en `veredictos-por-lote.md`):
+- **1259**: sigue abierto como sede del barrido por decisión del orquestador. Ciérralo solo si esa decisión ya no vale.
+- **1335**: desde c.18387 su dueño es S3, del equipo de Luis, aunque las etiquetas sigan diciendo `equipo-javier`
+  y `area-j6`. Lo cierra el equipo dueño.
+- **1538**: queda una «NO HECHO» en `SCRUM-1538.md:290` (por qué se colgó el trinquete). Según el lector, c.20213
+  decide no perseguirlo. Si se cierra, es «cerrado, causa no demostrada» (A18). Esa cita no la he releído yo.
+- **1477**: el «NO HECHO» de su registro (`:134`) está caducado; el aviso es SCRUM-1465 c.18790.
+- **1126 y 1130**: nadie los ha visto en yaqu.app, y verlos no forma parte de su enunciado. **1543**: el CI de
+  después no se ha consultado.
+- **1550** es de J3, igual que yo. Lo da por terminado un lector, no su autor.
+- Etiquetas o estados caducados: `stop-fundador` en 1106, 1116 y 1260 · `decision-jefe` en 1253.
+- **De paso**, del lector de 1572: `docs/master/SCRUM-964.md` y `SCRUM-1289.md` siguen rotos en `main` y no tienen
+  ticket. No son de mi carril y no los he tocado.
+
+### 🔴 LE FALTA ALGO: 88
+
+Agrupados por la PRIMERA clase que nombra el lector. **Es orientativo**: sale de buscar una palabra en una columna,
+igual que la tabla de 1496d, que avisa de este mismo error en su línea A9. La fila buena es la de `tabla-entrega.md`.
+
+| primera clase | n | tickets |
+|---|---|---|
+| TRABAJO (una sesión, hoy) | 19 | 524 665 1016 1039 1064 1218 1244 1311 1324 1330 1339 1346 1390 1395 1449 1455 1536 1551 1554 |
+| ORQ (solo decides o verificas tú) | 15 | 1149 1328 1332 1344 1391 1393 1405 1456 1510 1527 1565 1569 1570 1571 1574 |
+| ESPERA (fundador, asesor, caso real o equipo de Luis) | 42 | 523 534 612 657 906 998 1000 1050 1051 1055 1058 1065 1067 1076 1077 1102 1103 1105 1109 1115 1129 1194 1195 1240 1247 1252 1257 1316 1322 1389 1402 1403 1446 1447 1448 1470 1471 1498 1502 1508 1509 1552 |
+| la columna no nombra clase | 12 | 20 825 1043 1063 1066 1238 1387 1401 1404 1457 1496 1511 |
+
+Los que se han movido desde 1496d sin llegar a TERMINADO, según sus lectores:
+- **1456**: el código ya está en `main`. Falta verlo en yaqu.app (ORQ).
+- **1149**: construido (#2627). Falta verlo en yaqu.app (`SCRUM-1149.md:77`).
+- **1565**: el arreglo y su test están en `main`. Falta ratificar «200 + console.warn» frente a `gateway_events` (ORQ).
+- **1332**: la decisión ya la tomó 1218 (c.20156). Queda enlazarlo y cerrarlo como absorbido (ORQ).
+- **1218**: la migración ya ha empezado: quedan 37 de 39 (c.20160).
+- **1551**: R1-R6 y D1 ya están en `main`; faltan las dos frases de `terminos.html:48` y `:80`, con su firma.
+- **1016**: el subtítulo firmado sigue sin aplicar; la línea es ahora `index.html:442`, y en 1496d era la `:427`.
+
+### Lo que NO se ha hecho y lo que NO se ha medido
+
+- **El veredicto de 125 de los 127 lo da un lector, no yo.** Releí yo 1260 por efecto y miré solo el registro de 1538.
+  Los otros 35 TERMINADOS ya los habían leído otros lectores con dos días de diferencia (1496d) o, si son nuevos,
+  solo uno. Sirve para decidir por dónde empezar; no da permiso para cerrar.
+- **Ningún lector miró CI, yaqu.app ni una base de datos.** Lo que solo se ve allí sigue sin medir.
+- **Un lector se saltó parte del criterio:** el del lote-13 no leyó la descripción de 1039, 1102 y 1257, solo los
+  comentarios. En los tres había ya una falta citada, así que el veredicto no cambia. Ese mismo lector vio que en 1039
+  y 1102 el censo cuenta más comentarios (8 y 16) que el `total` de la API (4 y 8). No lo he medido.
+- **Los 36 NADA EN MAIN no se han leído**, y el contenido no se ha medido. Un trabajo que entró bajo otro número sale
+  NADA EN MAIN.
+- **Los controles 1548 y 1331 no fueron ciegos** (la línea A9 de arriba). El único ciego de verdad fue 1536.
+- La foto de Jira es de ~09:48Z. Lo que se haya comentado después de ~10:15Z no está mirado.
+
+### Aceptación (del encargo de `cobroflash-backend-5f`) → dónde se ve
+
+| lo pedido | dónde |
+|---|---|
+| lista actual de abiertos `equipo-javier` | «La población» y `foto-jira-2026-10-22.tsv` (166) |
+| censo por número sobre el `main` de hoy, sin motor nuevo | `tabla-8ad167195.md`: `tabla-ya-esta.mjs` sin cambios |
+| leer cada ALGO EN MAIN según 1496c, cada parte por efecto | `criterio-de-lectura.md` y `veredictos-por-lote.md` (127 filas) |
+| agentes por lotes de ~10, con el criterio pegado | `lotes/` (13), `hacer-lotes.cjs` |
+| controles 1548 y 1331 TERMINADOS, 1536 no | «Los controles»: ✅ los tres (los dos cerrados, sin ser ciegos) |
+| tabla ticket · veredicto · evidencia | `tabla-entrega.md` |
+| los de `equipo-luis`, solo contados | 870, 1092, 1505, 1506 y 1507 |
+| no cerrar ni transicionar | ninguno tocado |
