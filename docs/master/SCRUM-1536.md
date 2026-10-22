@@ -568,3 +568,53 @@ en Jira, **c.20235**. Carril J3 a mano; el hook de arranque dijo «SIN IDENTIDAD
 - Crucé 200k sin avisar (la línea `A9:`).
 - La ficha nombraba otra ficha por su fichero y `scrum709` lo cazó.
 - Declaré las mutaciones con campos que el meta-guard no lee; lo vi en su contrato antes del commit.
+# SCRUM-1536e · La línea firmada de la regla 44 entra al final de la regla 33 del máster
+
+**Medido contra:** `origin/main` = `595884b20b8baa3fad91151879214554b9f6e2e2` · 2026-10-22T09:33:37Z (hora de GitHub)
+
+A9: sin fallo que generalice — el texto se copió del ADF de c.20229 y se comparó por bytes con lo escrito (422 = 422, con un control mutado que sí difiere); el único tropiezo, el orden de la medición de contexto (abajo), ya lo cubre la ficha del orquestador, que dice «en ese punto exacto».
+
+22-oct-2026 · **J5** (sesión `jv-j5p`, equipo de Javier), por encargo del orquestador (`cobroflash-backend-5f`).
+[Escrito por la sesión, no por Javier. Leído en Jira: SCRUM-1536 entero, 14 comentarios, hasta c.20229.]
+
+**Carril a mano.** El hook de arranque dijo «SIN IDENTIDAD» (SCRUM-1498); se siguió, como manda la ficha
+del día. Etiquetas leídas en SCRUM-1536: `area-fiscal`, `equipo-javier`; estado En curso.
+`docs/YAQU_MASTER.md` es carril de un jefe (`dos-equipos.md:195`): el jefe firmó y esta sesión lo aplica,
+como se aplicaron las reglas 43 y 44 (SCRUM-1552, `165f116f0`).
+
+## Qué es esto
+
+Rama puesta al día con `git merge origin/main` tras entrar #2658 (1536c), que va justo encima. Encabezado con `#` y no con `##`, porque el tramo 1536c midió que `scrum267` no ve los de `##`.
+
+**Un cambio de máster, no un registro.** Lo firma el fundador en SCRUM-1536 **c.20229** («FIrmo la linea»),
+y la regla 44 lo pide: una decisión que condiciona trabajo deja UNA línea en el máster con el enlace al
+comentario. La decisión está en c.20218 (forales y Canarias excluidos de YaQu por ahora) y c.20225.
+
+Toca SOLO `docs/YAQU_MASTER.md:248`, la línea del bloque «**v5.3:**»: la línea firmada se añade al final de
+la regla 33, detrás de «TicketBAI = cajón F3.» y delante de «34)». Va **dentro de la misma línea física**,
+así que **no se mueve ninguna línea** del máster (1.911 antes y después; `git diff` da un solo tramo,
+`@@ -248 +248 @@`) y nadie que cite el máster por número de línea queda desplazado.
+
+**B2.6 (`:105`) y la Parte M (`:422`) no se tocan.** Lo dice el fundador en c.20229: «Ok basta con el
+aviiiso». El aviso de la regla 33 es el único sitio que cambia; la propia línea firmada dice que deja
+sin efecto lo de B2.6 y la Parte M.
+
+## Cómo se copió el texto
+
+Del cuerpo ADF de c.20229 (no del markdown, ni de la ficha del orquestador): el único `blockquote` del
+comentario, con sus dos negritas. Se escribe sin el `>` de cita, porque va dentro del párrafo de la
+regla. Comparación: lo escrito, quitándole los `**`, es igual al texto del ADF (422 B = 422 B); el mismo
+comparador con una tilde quitada («tambien») da distinto. Las negritas, en los mismos dos tramos que en
+el ADF.
+
+## Lo que NO se ha medido
+
+- No se ha mirado si algún texto de usuario, guard o documento fuera de `tests/` repite el «facturación
+  ES off + aviso TicketBAI» de la regla 33: el encargo era sólo la línea.
+- El obligatorio de esta rama: se lee después del empujón y va en la entrega, no aquí.
+- Visto en yaqu.app: NO HECHO → no hay pantalla; es el máster.
+
+## Errores propios
+
+- La ficha pedía medir el contexto al acabar la lectura de arranque y otra vez al acabar Jira. Leí Jira
+  primero y el arranque después, así que sólo hay un punto: **130.145** al terminar las dos.
