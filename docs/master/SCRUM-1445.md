@@ -109,3 +109,67 @@ son ciertos.
   negocio, así que papel y rotura del mes dicen lo mismo.
 - **Producción está congelada** (sirve `fe65a8b7`): esto no se puede ver en yaqu.app hasta que se
   desbloquee el despliegue.
+
+---
+
+# SCRUM-1445 (b) · Censo: ¿cuántos controles de tests/ están anclados a algo que se mueve?
+
+**Medido contra:** `origin/main` = `0077bd1d51a7cb64b1c18d85781117b71936fd38` · 2026-10-22T09:56:47Z
+
+A9: sin fallo que generalice — censo de sólo lectura; no se ha tocado ningún test
+
+Encargo del orquestador (22-oct), a partir del hallazgo de paso de arriba (el control ④ de `scrum1093h`).
+**Sólo lectura: no se ha arreglado nada.** Los tests son de S3, o no los reclama nadie: aquí se mide y el
+orquestador reparte. Árbol `origin/main` limpio, separado, sin compilar.
+
+## La respuesta: NO es sistémico. Hay UNO que pasa en vacío.
+
+| familia | población | apuntan a algo que ya no está | de ésos, pasan EN VACÍO |
+|---|---:|---:|---:|
+| **número de línea** (`f.linea >= N`, `lineas[N]`, `.slice(N, M)` sobre `split('\n')`) | **3** comparaciones en 2 controles | 1 control | **1: `scrum1093h` ④** |
+| **texto del código** (`X.indexOf('…')`, `.includes`, `/…/.test(X)`, `assert.match(X, /…/)`, con X = un fichero de `src/` o `public/`) | **935** anclas con el fichero resuelto | 97 ausentes: **85** son controles NEGATIVOS a propósito («esto no debe volver»), **12** revisados a mano | **0** |
+| **identidad `fichero::nombre`** (en `tests/` y `scripts/`) | **72** (62 distintas) | 16 | **0**: las 16 son fixtures sintéticos o controles hechos para no existir (`estoNoExisteEnNingunSitio`, `src/no/existe.ts`…). Las **56 reales siguen vivas** |
+
+**El que pasa en vacío:** `tests/scrum1093h-censo-fecha-sin-zona.test.mjs:132` (control ④). Busca filas del
+censo en las líneas **132-134** de `albaranPdf.service.ts` y exige que no haya ninguna, como prueba de que
+`fmtQty` («`toLocaleString` sobre un número») no se acusa. Pero `fmtQty` **ya no llama a `toLocaleString`**
+(delega en `formatNumeroEs`, SCRUM-743) y además **cambió de línea**. Su negativo no puede fallar. Su
+segunda mitad («el fichero tiene alguna fila») sigue viva gracias al sello temporal. Arreglarlo es de quien
+el orquestador decida; no lo toco.
+
+**El otro ancla a línea es sano:** `tests/_huerfanos-en-modulos-vivos.mjs:223` (`?.linea === 4`) mira un
+fichero sintético que escribe el propio test. Si se moviera, el control fallaría a la vista.
+
+## Por qué el texto del código sale limpio, y qué NO dice eso
+
+Truco del método: **la tanda está en verde.** Un ancla positiva que ya no estuviera en su fichero haría
+caer su test, salvo que pase en vacío. Así que sólo hay que mirar las ausentes, y entre ellas, las que no
+tienen forma negativa. Las 12 se revisaron una a una:
+- 2 sólo detectan el fin de línea (`includes('\r\n')`);
+- 2 son negativas con `|| []` y `deepEqual(…, [])` (`scrum132`);
+- 7 miran una cadena DERIVADA, no el fichero tal cual (un `mutado`, un `movido`, el cuerpo de una
+  función, el texto sin comentarios) — límite del escáner, no un ancla rota;
+- 1 mira un fichero sintético de un banco (`scrum778`).
+
+**Lo que este censo NO puede decir:** si un control NEGATIVO sigue siendo útil. «Esto no debe volver»
+pasa igual si se arregló que si alguien lo reescribió con otro nombre (`scrum598` busca «Margen» por cuatro
+formas de código concretas). Es una limitación propia de cualquier control negativo por texto, no un ancla
+que se ha movido. Tampoco ve anclas que no son literales directos (una cadena armada en tiempo de
+ejecución, o un helper que recibe la cadena por parámetro).
+
+## Primer escáner, error propio
+
+La primera pasada dio **45** anclas ausentes no negativas. **33 eran falsas:** varios tests reutilizan el
+mismo nombre (`src`, `fuente`) para ficheros distintos, y yo atribuía cada uso a la declaración por nombre
+en todo el fichero. Corregido: cada uso se resuelve contra la declaración del bloque más cercano. Con eso,
+de 703 anclas resueltas se pasó a 935 y las ausentes por revisar bajaron a 12.
+
+## Evidencia
+
+`docs/master/evidencias/SCRUM-1445/`:
+- `censo-anclas.cjs` y `contexto-anclas.cjs`: escriben su intermedio en el temporal del sistema, no en el
+  árbol.
+- `censo-identidades.cjs`.
+- Las dos salidas, `salida-censo-anclas.txt` y `salida-censo-identidades.txt`.
+
+Uso: `node <guion> <árbol> <ruta de typescript>`. Es todo AST: un comentario no cuenta.
