@@ -559,10 +559,14 @@ export const DECLARADOS = [
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
     motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
     exports: ['entraEnLaCadena'] },
-  { modulo: 'src/modules/invoicing/domain/selladoEstado.ts',
-    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
-    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
-    exports: ['SELLADO_NO_APLICA'] },
+  // SCRUM-1507 · `reintentoSellado.ts` pasa a estar vivo (lo importa la tarea de `cron.ts`, PR-2 de
+  // SCRUM-1404). `SELLADO_NO_APLICA` de `selladoEstado.ts` sale de aquí: ahora la consume él.
+  { modulo: 'src/modules/invoicing/domain/reintentoSellado.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-10-22',
+    motivo: 'SCRUM-1507 · las usa `reintentarSelladosPendientes`, dentro del módulo; el `export` lo lee `tests/scrum1404b-el-reintento-del-sellado.test.mjs`, que las prueba sueltas (la fecha, el tope, la espera, el plazo y la población).',
+    exports: ['ACCION_DEL_SELLADO_FALLIDO', 'entraEnElReintento', 'ESPERA_INICIAL_S', 'esperaTrasFalloS', 'fechaDeCorte',
+      'LOTE_DEL_REINTENTO', 'plazoDeAgotamientoS', 'REINTENTO_ACTIVO_DESDE', 'SUELO_DE_LA_FECHA_DE_CORTE', 'TOPE_DE_FALLOS',
+      'turnoDe'] },
   { modulo: 'src/modules/invoicing/domain/tipoDocumento.ts',
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
     motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
