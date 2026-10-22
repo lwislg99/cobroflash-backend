@@ -98,9 +98,9 @@ async function whereDeLaPasada(desde) {
 // ───────────────────────────────── ① INERTE ─────────────────────────────────────────────────
 
 test('SCRUM-1404 · ① sin fecha de corte la pasada no lee ni escribe NADA, y lo dice', async () => {
-  // SCRUM-1507 (PR-2): la fecha ya no es `null` en el fichero; lo que se sigue sujetando es que,
-  // SIN fecha, la pasada no toca nada. Se le pasa el `null` explícito. La fecha puesta la mira
-  // `tests/scrum1507-el-cron-del-reintento.test.mjs` ④.
+  // SCRUM-1507 (PR-2): el PR-2 va SIN fecha (c.20227) y el día que el fundador la escriba esto no
+  // debe cambiar: SIN fecha, la pasada no toca nada. Por eso se le pasa el `null` explícito. Que la
+  // constante siga a `null` lo sujeta `tests/scrum1507-el-cron-del-reintento.test.mjs` ④.
   const base = baseDe(POBLACION);
   const sellados = [];
   const parte = await R.reintentarSelladosPendientes({ ahora: AHORA, corte: R.fechaDeCorte(null), prisma: base, sellar: async (f) => { sellados.push(f.id); return { estado: 'sellado' }; } });

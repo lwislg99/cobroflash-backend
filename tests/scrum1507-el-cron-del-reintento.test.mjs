@@ -9,8 +9,8 @@
 //      recibe `schedule`;
 //   ③ qué dice el log en cada conclusión, y a qué hora: el callback real, con la pasada doblada y
 //      el reloj fijado;
-//   ④ que la fecha de corte está puesta, es legible, no es anterior al mecanismo y no está en el
-//      futuro (una fecha futura es un reintento apagado que dice estar encendido).
+//   ④ el estado decidido por el fundador (c.20227): el PR-2 va SIN fecha de corte, así que la
+//      tarea corre, no consulta la base y dice «inactivo». Encenderlo es un paso aparte suyo.
 //
 // ⚠️ LO QUE NO SUJETA: aquí no se sella nada ni se toca ninguna base. La pasada en sí la sujeta
 // `tests/scrum1404b-el-reintento-del-sellado.test.mjs`; que no re-sella, `scrum1330`. Cuántas
@@ -144,14 +144,15 @@ const parteDe = (sobre) => ({
   conHuellaSinMarcar: [], fueraDePlazo: [], ...sobre,
 });
 
-/** Corre el callback real con la pasada doblada y el reloj fijado; devuelve qué escribió y dónde. */
+/** Corre el callback real con la pasada doblada y el reloj fijado; devuelve qué escribió y dónde.
+ *  `resultado` es el parte que devuelve la pasada, un Error que lanza, o la pasada misma (función). */
 async function pasada(t, minuto, resultado) {
   const { montadas, parte } = montar();
   const i = parte.programados.indexOf(NOMBRE);
   assert.ok(i >= 0, `la tarea no está montada: ${parte.programados.join(' | ')}`);
   const callback = montadas[i].callback;
   const original = REINTENTO.reintentarSelladosPendientes;
-  REINTENTO.reintentarSelladosPendientes = async () => {
+  REINTENTO.reintentarSelladosPendientes = typeof resultado === 'function' ? resultado : async () => {
     if (resultado instanceof Error) throw resultado;
     return resultado;
   };
@@ -204,15 +205,41 @@ test('SCRUM-1507 · ③ una pasada que no pudo leer las candidatas lo dice: no s
   assert.match(e[0][1], /la pasada no miró nada.*la base no contesta/);
 });
 
-// ── ④ la fecha de corte ────────────────────────────────────────────────────────────────────────
+// ── ④ la fecha de corte: el PR-2 va SIN fecha (c.20227) ────────────────────────────────────────
+//
+// Decisión del fundador (SCRUM-1507 c.20227, «Sí» a la opción (a)): el PR-2 entra SIN fecha, y
+// encender el reintento —escribir `REINTENTO_ACTIVO_DESDE`— es un paso aparte suyo. Este caso
+// sujeta ese estado con la constante REAL y el callback REAL; sólo la base va doblada.
+// ⚠️ LO QUE NO PUEDE: distinguir una fecha firmada de una sin firmar. La firma vive en Jira y este
+// test no la ve, y un registro escrito por quien pone la fecha no es su firma (A10). Por eso afirma
+// `null` a secas: el día que el fundador encienda, este caso cae y se cambia EN EL MISMO PR que la
+// fecha, citando su comentario. Que la fecha sea legible y no anterior al mecanismo lo sujeta
+// `tests/scrum1404b-el-reintento-del-sellado.test.mjs` ②.
 
-test('SCRUM-1507 · ④ la fecha de corte está puesta, es legible, no es anterior al mecanismo ni futura', () => {
-  const valor = REINTENTO.REINTENTO_ACTIVO_DESDE;
-  assert.equal(typeof valor, 'string', 'el PR de activación pone la fecha (SCRUM-1507 c.20220; el sí de la fecha, c.19511)');
-  const corte = REINTENTO.fechaDeCorte();
-  assert.equal(corte.motivo, null, `la fecha se lee: ${corte.motivo}`);
-  assert.ok(corte.desde.getTime() >= new Date(REINTENTO.SUELO_DE_LA_FECHA_DE_CORTE).getTime());
-  assert.ok(corte.desde.getTime() <= Date.now(), `fecha futura (${valor}): el reintento estaría apagado diciendo estar encendido`);
-  // Control: el mismo lector, con null, dice que no actúa. Sin esto «se lee» no distingue nada.
-  assert.equal(REINTENTO.fechaDeCorte(null).desde, null);
+const PASADA_REAL = REINTENTO.reintentarSelladosPendientes;
+/** Una base doblada que apunta cada consulta y no devuelve nada. */
+function baseQueCuenta() {
+  const llamadas = [];
+  return { llamadas, invoice: { findMany: async (a) => { llamadas.push(a.where); return []; } } };
+}
+
+test('SCRUM-1507 · ④ sin fecha (c.20227): la tarea corre, no consulta la base y dice INACTIVO en punto', async (t) => {
+  assert.equal(REINTENTO.REINTENTO_ACTIVO_DESDE, null,
+    'c.20227: el PR-2 va SIN fecha; escribirla es el encendido del fundador, y cambia este caso en su mismo PR');
+  const base = baseQueCuenta();
+  const real = (o = {}) => PASADA_REAL({ ...o, prisma: base });
+  assert.deepEqual(await pasada(t, 7, real), [], 'inactivo, minuto 7: calla');
+  const aviso = await pasada(t, 0, real);
+  assert.deepEqual(aviso.map(([c]) => c), ['warn'], 'inactivo, en punto: un aviso');
+  assert.match(aviso[0][1], /⚠️.*INACTIVO: sin fecha de corte/);
+  assert.equal(base.llamadas.length, 0, 'con la constante de hoy, ni una consulta a la base');
+
+  // Control SEMBRADO: la misma pasada real, con una fecha válida pasada por parámetro, SÍ consulta
+  // y ya no dice «inactivo». Sin esto, el cero de arriba no distingue una base muda.
+  const activa = baseQueCuenta();
+  const conFecha = (o = {}) => PASADA_REAL({ ...o, prisma: activa, corte: REINTENTO.fechaDeCorte(REINTENTO.SUELO_DE_LA_FECHA_DE_CORTE) });
+  const enPunto = await pasada(t, 0, conFecha);
+  assert.ok(activa.llamadas.length >= 1, `con fecha la pasada consulta: ${activa.llamadas.length} consultas`);
+  assert.deepEqual(enPunto.map(([c]) => c), ['log'], 'con fecha y nada pendiente: «nada que mirar», no el aviso de inactivo');
+  assert.match(enPunto[0][1], /candidatas 0/);
 });
