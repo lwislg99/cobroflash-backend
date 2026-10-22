@@ -129,9 +129,17 @@ try {
     for (const estado of ESTADOS) {
       for (const ancho of ANCHOS) {
         const r = await medir(browser, srv.puerto, estado, ancho);
-        if (!r.filas || !r.hayBoton) {
+        // Sin fila no hay nada que medir: ciego. Pero una fila SIN «Ver detalle» en el DESPUÉS no es
+        // ceguera, es el defecto: el arreglo que pone verde el guard quitando el botón deja la fila
+        // sin camino de teclado. Medido con ese mutante el 22-oct: la primera versión lo daba como
+        // «no supe mirar» (salida 2).
+        if (!r.filas || (!r.hayBoton && nombre === 'ANTES')) {
           console.error(`   🔴 NO SUPE MIRAR · ${nombre} ${estado} ${ancho}: ${!r.filas ? 'sin fila' : 'sin «Ver detalle»'}`);
           ciego += 1; continue;
+        }
+        if (!r.hayBoton) {
+          console.error(`   🔴 ${estado} ${ancho}: la fila no tiene «Ver detalle» → con teclado no se abre la ficha`);
+          fallos += 1; continue;
         }
         const intro = r.intro === UNA_A_LA_FICHA;
         const espacio = r.espacio === UNA_A_LA_FICHA;
