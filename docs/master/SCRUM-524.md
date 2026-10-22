@@ -956,7 +956,7 @@ nuevo, la constante global retirada de `productor.ts`, y en `verifactu.service.t
 escritura del sellado y el número del comercio en los dos llamadores (`buildVerifactuRegistrosXml` y
 `registroParaRemision`), que **ya tienen cargada la fila entera del comercio** (`findUnique` sin
 `select`): no añade consultas. `numInstalacion` sigue dentro del objeto `productor` **a propósito**:
-así la guarda que vigila `tests/scrum844c` sigue mirando los mismos cinco campos sin que se toque.
+así la guarda que vigila `tests/scrum844c` sigue mirando los mismos cinco campos sin que se toque. *[Corregido el 22-oct-2026, SCRUM-524g: cierto para el test de la GUARDA de `scrum844c`, que sigue verde; falso para el de EL ENLACE (`tests/scrum844c-el-xml-que-se-remite.test.mjs`), que compara las claves de `PRODUCTOR_VERIFACTU` con los cinco campos y cayó con 4 !== 5. Fue el tercer guard movido: ver tramo 524g ③.]*
 
 **Lo que ese fichero NO lleva, y el GO tiene que incluir** (lo escribí en el árbol desechable hasta que
 el clasificador de permisos me paró la edición: ver «Mis errores»):
@@ -1054,3 +1054,135 @@ no lo he contado.
 `docs/legal/` (J4) · Jira (sólo el comentario de entrega) · el auto-merge.
 
 A9: aviso → cicatriz J1 «Apliqué el diff propuesto del camino de emisión en un árbol desechable creyendo que no era modificarlo porque no se commiteaba; la regla 38 no distingue el árbol» — no se pudo comprobar: lo que lo paró fue el clasificador de permisos del arnés, que no es de este repositorio, y ningún guard de aquí ve un worktree que no se empuja
+
+---
+
+# SCRUM-524g — Aplicado el diseño 524f, variante B: el número de instalación es el `id` del comercio e `IndicadorMultiplesOT` se calcula (`N`)
+
+*22-oct-2026 · rama `scrum-524g-aplicar-numero-instalacion` · puesto J1 (jv-j1w lo aplicó y se cortó sin commitear este tramo; lo cierra jv-j1x)*
+
+**Medido contra:** `origin/main` = `82f3ea4115723db78ca56c4b2e1c426a810a0433` · 2026-10-22T14:04:08Z (jv-j1w midió sobre `15655ca4a012e9afd7e0627a92b4233b74d4f96f`, y la dirigida «antes» fue sobre `a593817dd933b3dcc36224ff8594fdedff3d8b96`. jv-j1x mergeó `82f3ea411`: 85 ficheros de `main` y ninguno de los 24 de esta rama, medido con `git diff --stat HEAD...origin/main` con y sin filtro de rutas; merge sin conflictos)
+
+> **Desbloqueo.** SCRUM-524 c.20291 (el fundador elige **B**), c.20292/c.20294 (recuentos: 0 envíos
+> guardados y 0 comercios con sellado en las tres bases; 2 NIF repetidos en producción) y **el GO
+> explícito de la regla 40, el comentario siguiente a c.20294**: «Sí cuentas de prueba, dale go».
+> Alcance del GO: el diff de 524f en B, más mover `scrum247` (5 → 4) y el ancla 1226 del catálogo de
+> 524b, recalculando. **El tercer guard (③) lo autorizó el orquestador `cobroflash-backend-5f` por
+> mensaje el 22-oct**, como consecuencia mecánica del diff B y con sus condiciones, que están abajo.
+> Esta rama trae mergeada la de 524f (`7e85bcc3b`), que nunca tuvo PR: diseño y aplicación entran juntos.
+
+## ① Lo aplicado
+
+| fichero | qué |
+|---|---|
+| `src/modules/fiscal/verifactu/instalacion.ts` (nuevo) | `numeroInstalacion(merchantId)` = `String(merchantId)`; `FACTURACIONES_POR_CUENTA = 1`; `indicadorMultiplesOT(n)` = `S` si `n > 1`, si no `N` |
+| `src/modules/fiscal/verifactu/productor.ts` | retirada `VERIFACTU_NUM_INSTALACION`; `PRODUCTOR_VERIFACTU` pasa de cinco claves a cuatro |
+| `src/modules/invoicing/domain/verifactu.service.ts` | los dos llamadores (`buildVerifactuRegistrosXml`, `registroParaRemision`) ponen el número y el indicador del comercio; las dos plantillas (alta y anulación) escriben `${productor.indicadorMultiplesOT}`; el tipo `ContextoRegistro` lleva el campo nuevo. **Sin cambiar de número ninguna línea anterior a la 1172**: las coordenadas de `docs/legal/` que citan este fichero (hasta la 930) siguen en su sitio |
+| `src/modules/fiscal/verifactu/registro.builder.ts` | sólo los dos comentarios que decían «SaaS: '1'» y nada del indicador |
+| `scripts/sobre-soap-prueba-aeat.mjs` | ya no importa la constante retirada: «1» escrito con su porqué (sobres de PRUEBAS a mano, con el NIF del titular), e indicador `N` |
+| `scripts/gen-registros-sample.mjs` | indicador `S` → `N` |
+
+Lo que **no** se ha tocado: `prisma/schema.prisma` (B no lo necesita), la huella (ninguno de los dos
+campos entra en la del alta, art. 13.1.a; medido abajo: las huellas del XML no cambian), el sellado
+(`applyVeriFactu`: B no escribe nada nuevo), ninguna factura emitida (regla 29), `TipoUsoPosibleMultiOT`
+(sigue en `S`).
+
+## ② El XML, antes y después — sólo cambian esos dos valores
+
+`docs/master/evidencias/scrum524g/xml-muestra.mjs` construye, con el `dist/` del árbol y una base falsa,
+la exportación de un comercio id=7 (dos altas y una anulación: tres bloques `SistemaInformatico`) y su
+remisión. Corrido sobre la base y sobre la rama: `docs/master/evidencias/scrum524g/xml-antes-despues.diff`.
+**16 líneas `-`/`+`, que son 8 cambios: en cada uno de los cuatro bloques, `NumeroInstalacion` 1 → 7 e
+`IndicadorMultiplesOT` S → N.** Nada más: mismo tamaño (8.203 B la exportación), mismos `count=2` y
+`excluidos=[]`, mismas huellas.
+
+## ③ Los guards movidos — TRES, no dos
+
+1. **`tests/scrum247-productor-constante.test.mjs`** (del GO): la lista pasa de cinco nombres a cuatro;
+   el mensaje dice dónde se vigila ahora el quinto.
+2. **El ancla 1226 de `scripts/_tabla-verifactu-catalogo.mjs`** (del GO). Era `elementoFijo … 'S'`, y ya no
+   hay literal. **Recalculada**: el instrumento da **14 de 41 comprobadas antes y después**, y 1226 sigue
+   comprobada con 4/4 anclas: la `condicional` que lo calcula en `instalacion.ts`, las dos `llamada` de
+   los llamadores y un tipo de ancla NUEVO, `elementoCalculado` (`scripts/tabla-verifactu.mjs`). Hizo falta
+   porque una `referencia` a `productor.indicadorMultiplesOT` **no habría visto que UNA de las dos
+   plantillas lo pierde** (la otra lo sigue nombrando), y la `elementoFijo` de antes sí lo veía: con una
+   `referencia` el guard habría salido más ciego que antes. Control negativo: el catálogo nuevo sobre el
+   `src/` de `main` (sin el diff) da **1226 ROTO, 0/4 anclas**. En el trinquete
+   (`tests/scrum524b-trinquete-de-la-tabla.test.mjs`) la mutación 18 cambia de cobaya (la plantilla con el
+   valor calculado; cae 1226) y entran tres: el cálculo deja de dar S/N (cae 1226), la exportación deja de
+   calcularlo (cae 1226) y un NEGATIVO (espacios dentro de la expresión: no cae nada).
+3. 🔴 **`tests/scrum844c-el-xml-que-se-remite.test.mjs`, caso «EL ENLACE» — el tercero, que NO recogían ni
+   el GO ni el diseño 524f.** Lo destapó la dirigida: compara las claves de `PRODUCTOR_VERIFACTU` (ahora 4)
+   con los cinco campos de la guarda, y cayó con `4 !== 5`. 524f ④ decía que 844c seguía «sin que se
+   toque»: era cierto para el test de la guarda y falso para el del enlace (corregido en su sitio). Con el
+   sí del orquestador: la aserción pasa a «4 constantes + 1 del comercio = 5» y se añade que
+   `numeroInstalacion(1)` y `numeroInstalacion(7)` no salen vacíos. `CAMPOS_DEL_PRODUCTOR` y el test de la
+   guarda no se tocan. **Sus dos rojos, como pidió** (`docs/master/evidencias/scrum524g/rojo-844c.mjs`,
+   salida en `rojo-844c.salida.txt`; la copia sana pasa 1/1):
+   - `numeroInstalacion` devuelve vacío para el id 7 → cae: «numeroInstalacion() sale vacío para el comercio 7 …»
+   - `CAMPOS_DEL_PRODUCTOR` sin `version` → cae: «el productor ya no tiene cuatro datos (+ el número de instalación del comercio = cinco) … 5 !== 4»
+
+## ④ Los tests de 524f, en verde — y el que no aplica
+
+`tests/scrum524g-numero-instalacion-por-comercio.test.mjs`: los casos de
+`docs/master/evidencias/scrum524f/rojo-antes-del-go.mjs` pasados a `node:test` y a B, más tres: el demo
+(id=1) sigue en «1», el indicador se calcula (1 → N, 2 → S), y **una cuenta = un comercio = una
+facturación leído de `prisma/schema.prisma`** (`Merchant.email` `@unique`, un solo `taxId` que no es
+lista, `TeamMember.merchantId` uno solo y una sola relación a `Merchant`, `TeamMember.email` `@unique`).
+Ese último, visto en rojo sobre copias del esquema en un temporal, sin tocar el real
+(`docs/master/evidencias/scrum524g/rojo-esquema.mjs`, salida en `rojo-esquema.salida.txt`): la copia
+sana sale 0 y las cinco mutaciones salen 1. (Los `pass=undefined` de esa salida son del lector del
+banco, que no entiende el reporter por defecto; el veredicto es el código de salida.)
+
+El script de 524f sobre la rama: **10 casos · 9 pasan · 1 cae**, y el que cae es «[A] sin número
+asignado NO se emite», que su propio comentario declara sólo de la variante A. Sobre la base daba
+10 · 3 · 7, como midió jv-j1t.
+
+## ⑤ La dirigida, antes y después
+
+`docs/master/evidencias/scrum524g/dirigida.mjs` con la lista de `npm run tests:que-cubren` sobre los
+ficheros tocados (incluye `scrum622`, que la dirigida de 1336 no listaba):
+
+| | ficheros | tests | pasan | caen | saltan |
+|---|---|---|---|---|---|
+| antes (base, sin el diff) | 386 | 3.659 | 3.641 | 3 | 15 |
+| después, primera pasada | 398 | 3.825 | 3.802 | 8 | 15 |
+| después, con `main` mergeado (jv-j1x) | 426 | 4.096 | 4.076 | 5 | 15 |
+| después, final (jv-j1x, con el arreglo de abajo) | 426 | 4.096 | 4.078 | 3 | 15 |
+
+Los 3 de la base son los mismos antes y después y no nombran ningún fichero de esta rama: `scrum1298b` ×2
+(miden el árbol principal) y `scrum476` (el censo de `node_modules`, que un árbol anidado no tiene). Los 5
+de la primera pasada eran míos y están arreglados (ver «Mis errores»).
+
+**De paso (jv-j1x).** Los otros 2 de la pasada con `main` eran UNA causa, y de este tramo: `scrum1294` y
+`scrum976` ④ (que corre `guards:entrada`, y dentro el mismo `scrum1294`). La cicatriz acababa en
+«(SCRUM-524f → 524g)», que `RE_ORIGEN` no reconoce como origen, así que la frase de la cicatriz era la línea
+entera; y el aviso `A9:` de abajo citaba sólo su primera mitad. Arreglado el TEXTO (origen `(SCRUM-524g)` y
+el aviso con la frase completa), no el guard. jv-j1w no lo vio porque no llegó a correr la tanda con el
+registro escrito. Las cifras de esa pasada suman: 4.076 + 5 + 15 = 4.096. El cliente de Prisma compartido va
+por detrás del esquema de `main` en dos campos ajenos a esta rama (`Merchant.activityKind`,
+`Quote.archivedAt`; `_prisma-client-guard.mjs`); árbol anidado, no regenerado.
+
+## 🔴 Mis errores, esta tanda
+
+- **Cuatro rojos míos en la primera dirigida**, todos en mi código y cazados antes del commit:
+  `scrum409` (mi caso del demo usaba el id 1 sin la marca), `scrum694` y `scrum700` (mi lector del esquema
+  quitaba comentarios con una regex propia), y `scrum525d` (mis cuatro líneas de `import` desplazaban dos
+  coordenadas de `docs/legal/AUDITORIA_CAMINO_EMISION.md`; la arreglé dejando el import con el mismo número
+  de líneas, no moviendo las citas, que son de J4).
+- **Mi primera mutación del esquema salió VERDE**: el `replace` de `merchantId Int @map("merchant_id")`
+  cayó en otro modelo (línea 1054), no en `TeamMember` (1182). Lo cacé por el verde inesperado; la arreglé
+  anclando la mutación al bloque del modelo.
+- **Un `sed` sobre el banco de 844c no casó y salió con 0**; lo vi leyendo la línea después.
+- Leí Jira antes de la lectura de arranque (lo pedía la orden cero), así que la primera medida de
+  contexto es «después de Jira» y no «después del arranque».
+
+## Lo NO tocado
+
+`prisma/schema.prisma` · ninguna base de datos · `applyVeriFactu` ni nada del sellado · la huella ·
+`docs/legal/` (J4) · Jira (sólo el comentario de entrega) · el auto-merge · ningún guard fuera de los tres
+de ③.
+
+A9: aviso → cicatriz J1 «Di por contados los guards que mueve un diff leyéndolos por nombre, sin correr la tanda con el diff aplicado: el tercero (`scrum844c`, EL ENLACE) sólo salió en la dirigida de quien lo aplicó, y el diseño era de 524f» — no se pudo comprobar: antes del GO aplicar el diff es STOP (regla 38), así que el diseño no puede pasar por la tanda; sólo la cazó la dirigida de quien lo aplicó
+
+---
