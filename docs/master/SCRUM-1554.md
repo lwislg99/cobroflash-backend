@@ -168,6 +168,92 @@ facturación» (A y C)— y **cuatro listas** que reparten condiciones entre ell
 decisión que queda es de qué lista cuelga cada condición. Mi lectura, no medida: lo que exige un
 mecanismo cuelga de A y B, que lo tienen o lo tendrán, y C y D se citan desde ahí en vez de repetirse.
 
+### Anexo 2 · UNA tabla, por CONDICIÓN — la que sirve para decidir (pedida por el orquestador)
+
+**Población:** las 23 entradas de A (`puerta.json` en `origin/main`), las 10 de 1554f (F1–F10), las 5 de ROAD (D)
+y las 4 cláusulas de B (`CLAUSULAS_DEPENDIENTES`, `avisoPuerta.service.ts:26-44`): **42**. Quedan en **40 filas**
+porque una condición está en tres sitios: el respaldo es F7, ROAD-6 y la cláusula 4 de B. C (U1.3) entra entera
+como F1. «De quién» sale de `node scripts/carriles.mjs de <fichero>` cuando la entrada nombra un fichero (la
+ruta real, comprobada con `git ls-files`); si no, de la etiqueta de área del ticket o del máster.
+
+**Las columnas:**
+- **Momento** es **MI LECTURA**, no una medida. **CR** = «entra el primer cliente real» (lo ve o lo sufre un
+  profesional desde el alta, con el interruptor aún apagado). **FA** = «se enciende la facturación». **—** =
+  ninguno de los dos.
+- **¿Lo impide algo?** pregunta si hay algo que IMPIDA llegar a ese momento con la condición sin cumplir.
+- **¿Lo vigila algo?** distingue «avisa» (B: cron diario + WhatsApp al fundador), «lista» (A: un guard de CI
+  que sólo comprueba que la lista está bien formada y que ninguna entrada desaparece) y «nada».
+
+| # | condición | momento | listas | ¿lo impide algo? | ¿lo vigila algo? | de quién |
+|---|---|---|---|---|---|---|
+| A1 | los 7 literales de P2 (ALCANCE_BETA), sin firma | CR | A | no | lista | fundador (firma) · `docs/legal/` lo propone J4 |
+| A2 | R1–R6 del documento legal servido | CR | A | no | lista | fundador (firma) · J4 |
+| A3 | D1: el BORRADOR no se sirve; sí los [REVISAR ASESOR] | CR | A | no | lista | J4 |
+| A4 | P1 con asteriscos sueltos | — | A | **cerrada** (#2425) | lista | — |
+| A5 | cinco marcas de microcopy sin firma (el 409 al emitir es FA) | CR | A | no | lista | fundador (firma), varios carriles |
+| A6 | la oferta founding enseña el iframe de cobro con OFF | CR | A | no | lista | J3 (`founding.ts`) |
+| A7 | `terminos.html:48` en presente (y `:79-80`, sin entrada) | CR | A | no | lista | J3 + firma |
+| A8 | el guard de SCRUM-406 no ve `docs/legal` | CR | A | no | lista | no medido |
+| A9 | `readLegalDoc` parte las viñetas | CR | A | no | lista | J3 (`legalPages.routes.ts`) |
+| A10 | las cicatrices de puesto no las lee nadie | — | A | no | lista | orquestador |
+| A11 | `index.html:638` «Tarjeta» sin Connect | CR | A | no | lista | J3 |
+| A12 | `index.html:432` aria-label «a cobro» | CR | A | no | lista | J3 + firma |
+| A13 | `index.html:739` llamada final | CR | A | no | lista | J3 + firma |
+| A14 | `index.html:427` subtítulo firmado sin aplicar | CR | A | no | lista | J3 |
+| A15 | bot «¡Estás al día!» (otro interruptor: `BOT_INBOUND_ENABLED`) | — | A | no | lista | J2 + máster K1 |
+| A16 | fechas del albarán en UTC | CR | A | no | lista | S1 (`albaranPdf.service.ts`) |
+| A17 | dos líneas bajo el sellado (1554e: **sobra**) | FA | A | no | lista | S1 + OK del fundador |
+| A18 | las tres preguntas fiscales (suplidos, 0 %, redondeo) | FA | A · tema compartido con C (S1-F) y D (ROAD-5) | no | lista | asesor + fundador |
+| A19 | textos del albarán (CR) y del libro registro (FA) | CR+FA | A | no | lista | S1 · J1 (`libroRegistroView.js`) |
+| A20 | Stripe en inglés, `connect.routes.ts:70` | FA | A | no | lista | J2 |
+| A21 | la puerta de producción de SCRUM-418 | CR | A | no | lista | fundador |
+| A22 | «Trabajos CSV» sin año (SCRUM-1183) | CR | A | no | lista | S2 + firma |
+| A23 | `sendInvoiceEmail` dice «enviado» sin proveedor | FA | A | no | lista | S1 (`email.service.ts`) · STOP del fundador |
+| F1 | SIF-1 v2 8/8 (U1.3) | FA | C | no | nada | fundador + J1 |
+| F2 | 1566: base + IVA = total | FA | ninguna (sólo la etiqueta `go-live`) | no | nada | J1 |
+| F3 | una sellada no se re-sella (1330) | FA | ninguna | no | nada | J1 |
+| F4 | el PDF de una emitida no se regenera (665) | FA | ninguna | no | nada | J1 |
+| F5 | los recordatorios de cobro cumplen J6 (1509) | FA | ninguna | no | nada | J2 |
+| F6 | excepción The Pioneer: llamada anotada, llave por merchant, variable global sin tocar | FA | ninguna (texto de la Parte P) | no | nada | fundador |
+| **F7 = D6 = B4** | **copia de seguridad que existe y está probada** | **CR** | **B · D · (SCRUM-1525)**; **no en A** | no | **avisa** | fundador (Railway) · J6 (los scripts, 1525b) |
+| F8 | mitad B: con una entrada abierta, el interruptor no se enciende | FA | ninguna | **no: es justo lo que falta** | nada | S1 (`src/core/flags.ts`) con GO; la propuesta es de S5 |
+| F9 | el alta excluye forales y Canarias (1536) | CR | ninguna | no | nada | equipo de Javier (`area-fiscal`) |
+| F10 | el valor real del flag en producción (1097) | FA | ninguna | no | nada | fundador |
+| D4 | la SL existe | FA (Modelo A) | D · C (el productor, S1-E / SCRUM-870) | no | nada | fundadores |
+| D5 | Hacienda resuelta: 6 preguntas, 1 contestada | FA | D · tema compartido con C (S1-F) y A18 | no | nada | fundadores + asesor |
+| D12 | un profesional real con factura emitida desde YaQu | después (es el resultado) | D | — | nada | fundadores |
+| D19 | usuarios 2 y 3 sin captación a mano | después | D | — | nada | fundadores |
+| B1 | la regla fechada de los datos de producción (máster) | CR | B | no | avisa | fundador |
+| B2 | el backfill de `MIGRATIONS_PENDING.md` | CR | B | no | avisa | **nadie** (`carriles.mjs`: «sin fila en §3») |
+| B3 | microcopy de Bizum (SCRUM-402) antes de encender la bandera | FA (Bizum) | B | no | avisa | fundador (firma). ⚠️ 402 está Finalizada y la cláusula sigue: **no he comprobado** si sigue haciendo falta |
+
+**Recuento (columna «¿lo impide algo?»): 0 de 37.** Las 37 son las 40 filas menos A4 (cerrada) y D12/D19 (no
+son condiciones). Ninguna, en ninguna de las cuatro listas, tiene algo que impida llegar a su momento sin
+cumplirla: **4 avisan** (B), **22 viven en una lista** que nadie lee al encender (A) y **11 no las vigila nada**
+(4 + 22 + 11 = 37).
+⇒ **Hoy el fundador no tiene una puerta: tiene cuatro listas de deseos.** Lo único que de verdad para algo es el
+propio interruptor apagado (regla 24), y lo que lo enciende —la llave `cambiar-flag-fiscal.mjs`— no mira
+ninguna de las cuatro.
+
+**Momento (mi lectura), sobre las 40 filas: CR 19 · FA 15 · CR+FA 1 (A19) · después 2 · ninguno 3** (A4, A10,
+A15). 🔴 **De las 22 abiertas de A, 15 son CR**, una es mixta (A19), y sólo 4 son FA (A17, A18, A20, A23): son textos que lee un profesional desde el alta (landing, documentos legales, panel, albarán) con el
+interruptor aún apagado. A se definió como «antes de encender», y la mayor parte de lo que contiene llega
+**antes**, el día que entra el primer cliente real. Ese día lo detecta B, y B no las nombra.
+
+**Solapes, medidos:** el respaldo en B, D y 1525, y no en A · Hacienda en D, C y A18, con preguntas DISTINTAS
+(A18 trae suplidos, 0 % y redondeo; ROAD-5, enero, quién factura, el IVA de la suscripción, el dinero, la
+conservación y el encargado): mismo tema, no la misma condición · la SL en D y en C (vía el productor).
+
+**PROPUESTA — MI LECTURA, no forma parte de la medida.**
+1. **Dos momentos, dos listas con mecanismo:** lo CR cuelga de **B**, que ya salta sola en producción; lo FA,
+   de **A**, que se convierte en puerta de verdad cuando exista la mitad B (F8). C y D no se copian: **se citan**
+   desde la fila que les toca (F1 cita U1.3; F7 cita ROAD-6 y SCRUM-1525).
+2. **B nombra a A:** que su aviso diga «y las N de `puerta.json` que son CR siguen abiertas». Así el día que
+   entra el primer cliente real llegan las 15 CR de A con él, y no se quedan esperando a un interruptor que
+   igual tarda semanas.
+3. **ROAD se cierra o se cita**, pero no se mantiene como cuarta lista: está dormida desde el 20-ago y es
+   anterior a los dos equipos.
+
 ## 19-oct-2026 · SCRUM-1554c · La puerta en un fichero, con un guard que no deja borrar renglones (A); el cierre en ejecución, sólo propuesto (B)
 
 **Medido contra:** `origin/main` = `8ff423895024c7d2ce1c6bcb96054da11a227b90` (base de la rama) · 2026-10-19T07:26Z (hora real, cabecera
