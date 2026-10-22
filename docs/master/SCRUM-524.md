@@ -859,4 +859,4 @@ pregunta pasaría a ser «¿nos podemos apartar de la FAQ v1.3 en estos dos camp
 `src/` (camino de emisión, sólo leído) · `prisma/schema.prisma` · `docs/legal/` (J4) · Jira (sólo
 comentario de entrega) · ninguna base de datos.
 
-A9: aviso → cicatriz J5 «casi contesto un campo del XSD con el anexo de la Orden solo» — no se pudo comprobar: ningún guard puede saber qué fuentes leyó una sesión antes de concluir sobre un texto legal; lo que lo para es leer la FAQ de desarrolladores de la AEAT junto al anexo, cada vez
+A9: aviso → cicatriz J5 «Casi contesto `IndicadorMultiplesOT` con el anexo de la Orden HAC/1177/2024 solo (S para todo el SaaS), y la FAQ de desarrolladores de la AEAT v1.3 dice lo contrario para un SaaS: por usuario, no a nivel global» — no se pudo comprobar: ningún guard puede saber qué fuentes leyó una sesión antes de concluir sobre un texto legal; lo que lo para es leer la FAQ de desarrolladores de la AEAT junto al anexo, cada vez
