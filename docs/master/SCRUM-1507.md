@@ -62,3 +62,50 @@ Error mío: escribí el suelo de población de `retiradas` a ojo (>50) y había 
 caso al correrlo, antes del commit.
 
 A9: comprobación → `tests/scrum1404b-el-reintento-del-sellado.test.mjs`
+
+## SCRUM-1507d · el PR-2 va SIN fecha: el caso ④ afirma «inactivo hasta que el fundador la escriba»
+
+**Medido contra:** `origin/main` = `75884928b170ec0ec02e35921426e5bd711cbb0f` (la base de esta rama: aún sin traer `main`, ver abajo) · 2026-10-22T09:48:14Z (hora de GitHub)
+
+J1 del equipo de Javier (sesión `jv-j1s`, relevo de `jv-j1r`), por encargo del orquestador
+`cobroflash-backend-5f`. **Carril, a mano (SCRUM-1506):** lo mismo que en 1507c; este tramo no toca
+`cron.ts`, sólo tests y este registro. El hook de arranque dijo «SIN IDENTIDAD» (SCRUM-1498); sigo
+por el encargo, que lo prevé.
+
+**Decisión que lo mueve:** SCRUM-1507 c.20227 (el fundador, «Sí» a la opción (a)): el PR-2 va **sin
+fecha** y encender el reintento —escribir `REINTENTO_ACTIVO_DESDE`— es un paso aparte suyo.
+
+### Qué cambia
+
+| pieza | antes (1507c) | ahora |
+|---|---|---|
+| `tests/scrum1507-el-cron-del-reintento.test.mjs` ④ | exigía la fecha puesta; caía a propósito | afirma `REINTENTO_ACTIVO_DESDE === null` y, con la constante REAL por el callback REAL (sólo la base doblada): minuto 7 calla, minuto 0 un `warn` «INACTIVO: sin fecha de corte», **0 consultas**. Control SEMBRADO: la misma pasada real con una fecha válida por parámetro consulta (≥ 1) y dice «nada que mirar» |
+| `tests/scrum1404b-el-reintento-del-sellado.test.mjs` ① | comentario: «la fecha ya no es `null` en el fichero» | comentario corregido: ya no es cierto con c.20227. Ninguna aserción cambia |
+
+**Lo que el caso NO puede:** distinguir una fecha firmada de una sin firmar. La firma vive en Jira y
+el test no la ve; un registro escrito por quien pone la fecha no es su firma (A10). Así que afirma
+`null` a secas: el día que el fundador encienda, ④ cae y se cambia **en el mismo PR que la fecha**,
+citando su comentario. Que la fecha sea legible y no anterior al mecanismo ya lo sujeta `scrum1404b` ②.
+
+### Lo corrido
+
+* Base sin mutar: `scrum1507` 8 de 8; con `scrum1404b`, 25 de 25, 0 saltan.
+* M1, una fecha escrita en el compilado (`dist/`, no `src/`): cae ④, y sólo ④, por la aserción del `null`.
+* M2, la base doblada muda (no apunta las consultas): cae ④ por el control («0 consultas»): sin
+  control que vea, el caso sale CIEGO, no verde.
+* Ninguna base, ni producción ni staging. La tanda completa, no.
+
+### Por qué no se empuja todavía
+
+La línea de `dos-equipos.md` §3.4 con `src/core/cron/cron.ts | J1` está en el PR #2660 de la S0
+(c.20234), **OPEN y sin mergear** a las 09:44:56Z; en `origin/main` = `8ad167195af03cf4153337ccc1bf1b80d04c10f8`
+el `grep` de `cron` en `dos-equipos.md` da 0 (control: el mismo fichero, 39.891 B, sí tiene la §3.4
+en su línea 235). El encargo dice: sin esa línea en `main`, commit local y no se empuja. Cuando
+entre: `git merge origin/main`, la dirigida otra vez, y un solo empujón.
+
+Error mío: la primera pasada de M1 la lancé con la ruta de la carpeta temporal sin comillas (lleva
+un espacio): node no arrancó (`EPERM … 'C:\Users\Javier'`) y la restauración del compilado también
+falló, dejando la fecha inyectada en `dist/`. Lo vi en la salida, lo restauré y lo comprobé por sha256
+antes de seguir; las mutaciones buenas van en un guion con todas las rutas entre comillas.
+
+A9: comprobación → `tests/scrum1507-el-cron-del-reintento.test.mjs`
