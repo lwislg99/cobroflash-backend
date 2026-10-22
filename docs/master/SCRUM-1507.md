@@ -65,7 +65,7 @@ A9: comprobación → `tests/scrum1404b-el-reintento-del-sellado.test.mjs`
 
 ## SCRUM-1507d · el PR-2 va SIN fecha: el caso ④ afirma «inactivo hasta que el fundador la escriba»
 
-**Medido contra:** `origin/main` = `75884928b170ec0ec02e35921426e5bd711cbb0f` (la base de esta rama: aún sin traer `main`, ver abajo) · 2026-10-22T09:48:14Z (hora de GitHub)
+**Medido contra:** `origin/main` = `f02e48be2c66ae2e0dae8701401c8fcbc4fff14b` (traído a la rama con `git merge`) · 2026-10-22T09:50:46Z (hora de GitHub)
 
 J1 del equipo de Javier (sesión `jv-j1s`, relevo de `jv-j1r`), por encargo del orquestador
 `cobroflash-backend-5f`. **Carril, a mano (SCRUM-1506):** lo mismo que en 1507c; este tramo no toca
@@ -90,18 +90,23 @@ citando su comentario. Que la fecha sea legible y no anterior al mecanismo ya lo
 ### Lo corrido
 
 * Base sin mutar: `scrum1507` 8 de 8; con `scrum1404b`, 25 de 25, 0 saltan.
+* Dirigida de 16 ficheros tras traer `main` y recompilar (`tsc --noCheck`): los de 1507c más
+  `scrum1295-carriles` y `scrum1058c` (nuevo en `main`, toca `src/`): **178 casos, 178 pasan, 0 caen,
+  0 saltan** (los `ok` y `not ok` de primer nivel suman los 178 declarados).
 * M1, una fecha escrita en el compilado (`dist/`, no `src/`): cae ④, y sólo ④, por la aserción del `null`.
 * M2, la base doblada muda (no apunta las consultas): cae ④ por el control («0 consultas»): sin
   control que vea, el caso sale CIEGO, no verde.
 * Ninguna base, ni producción ni staging. La tanda completa, no.
 
-### Por qué no se empuja todavía
+### El cruce, ya declarado
 
-La línea de `dos-equipos.md` §3.4 con `src/core/cron/cron.ts | J1` está en el PR #2660 de la S0
-(c.20234), **OPEN y sin mergear** a las 09:44:56Z; en `origin/main` = `8ad167195af03cf4153337ccc1bf1b80d04c10f8`
-el `grep` de `cron` en `dos-equipos.md` da 0 (control: el mismo fichero, 39.891 B, sí tiene la §3.4
-en su línea 235). El encargo dice: sin esa línea en `main`, commit local y no se empuja. Cuando
-entre: `git merge origin/main`, la dirigida otra vez, y un solo empujón.
+A las 09:44:56Z el PR #2660 de la S0 (c.20234) estaba OPEN y en `origin/main` =
+`8ad167195af03cf4153337ccc1bf1b80d04c10f8` el `grep` de `cron` en `dos-equipos.md` daba 0 (control:
+el mismo fichero, 39.891 B, sí tenía la §3.4 en su línea 235): commit local, sin empujar. #2660
+mergeó a las 09:48:06Z; en `origin/main` = `f02e48be2c66ae2e0dae8701401c8fcbc4fff14b` la fila
+`src/core/cron/cron.ts | J1 | … | SCRUM-1507` está en `dos-equipos.md:247`. Traído con `git merge`
+(sin conflictos; ninguno de los 29 ficheros que cambió `main` es de esta rama: el mismo patrón ve
+7 en el diff de la rama), y empujado una vez.
 
 Error mío: la primera pasada de M1 la lancé con la ruta de la carpeta temporal sin comillas (lleva
 un espacio): node no arrancó (`EPERM … 'C:\Users\Javier'`) y la restauración del compilado también
