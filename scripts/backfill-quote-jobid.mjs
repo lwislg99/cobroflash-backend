@@ -30,8 +30,10 @@
 //   node scripts/backfill-quote-jobid.mjs                 # PREVIEW (no escribe)
 //   node scripts/backfill-quote-jobid.mjs --aplicar       # escribe, tras leer el preview
 
+import path from 'node:path';
 import { PrismaClient } from '@prisma/client';
 import { describirBD, parseBDSegura, PROD_HOST } from './_db-guard.mjs';
+import { comprobarCredencialDeProduccion, OK } from './_clave-vs-destino.mjs';
 
 const aplicar = process.argv.includes('--aplicar');
 const url = process.env.DATABASE_URL;
@@ -56,7 +58,14 @@ console.log(`   base    : ${describirBD(url)}`);
 console.log(`   host    : ${host}${host === PROD_HOST ? '   ⚠️  ES PRODUCCIÓN' : ''}`);
 console.log(`   modo    : ${aplicar ? '🔴 APLICAR (escribe)' : '👁  PREVIEW (no escribe)'}\n`);
 
-const prisma = new PrismaClient();
+// SCRUM-1575b · el aviso de arriba avisa y sigue. Esto se NIEGA: producción o un destino sin
+// declarar no se conectan, y el cliente recibe la MISMA url que se ha comprobado.
+const destino = comprobarCredencialDeProduccion('DATABASE_URL', url, path.basename(process.cwd()));
+if (destino.veredicto !== OK) {
+  console.error(destino.mensaje);
+  process.exit(1);
+}
+const prisma = new PrismaClient({ datasources: { db: { url } } });
 const n = (r) => Number(Object.values(r[0])[0]);
 
 try {

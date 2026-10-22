@@ -519,6 +519,165 @@ momento».
 - `arbol:mio` dio «CIEGO» la primera vez porque lo pasé con la HEAD desacoplada, antes de crear la
   rama. Lo repetí después de crearla y dio `MIO`, antes de la primera escritura.
 
+# SCRUM-1536f · B′: el país se cambia en Ajustes, y con él se salta el flag y la exclusión (MEDIDO; nada construido)
+
+**Medido contra:** `origin/main` = `8ad167195af03cf4153337ccc1bf1b80d04c10f8` · 2026-10-22T09:40:24Z (hora de GitHub)
+
+A9: aviso → A10 «Un laboratorio que le presta su entorno al sujeto mide la suma de los dos.» — no se pudo comprobar: la base en memoria de 1522e numera desde 1, el id 1 es el DEMO (regla 8) y mi segunda pasada midió «demo» en vez de lo preguntado; lo que queda es que `sonda-1536f.mjs` ocupa el id 1 con una fila de relleno y se declara CIEGA si un comercio suyo nace con él. Arreglarlo en el doble compartido cambia lo que miden otros tests.
+
+22-oct-2026 · sesión `jv-j3x`, puesto J3, por encargo del orquestador (`cobroflash-backend-5f`).
+[Escrito por la sesión, no por Javier.] Es el **B′** del diseño 1536c (c.20223 §④) que c.20225 dejó
+«pendiente, se encarga aparte». Leídos en Jira: el ticket entero, sus 16 comentarios (c.19355 a
+c.20235), y los 8 de SCRUM-1102. El encargo traía `main` = `fe65a8b7f`; medido aquí, `8ad167195`
+(después entró `f02e48be2`, que no toca `src/`, `public/` ni `prisma/`). Hook de arranque: «SIN
+IDENTIDAD» (SCRUM-1498); se siguió. **Encargo: MEDIR y PROPONER.** Sólo se escribe en `docs/master/`:
+este tramo, `evidencias/SCRUM-1536/sonda-1536f.mjs` y su salida. Ni `src/`, ni `public/`, ni
+`tests/`, ni el esquema, ni ningún texto de usuario. Lo que toca emisión, sólo se nombra.
+
+## ① Ejecutado: el país se cambia, y se guarda
+
+`sonda-1536f.mjs`, corrida dos veces: sobre `main` y sobre una copia (fuera de git) de la rama de
+1536d de jv-j3w (`scrum-1536d-exclusion-territorial` @ `441e3f0af395135a235971231b4c87aedff7a696`,
+sólo local). Las dos con `tsc --noCheck`. El alta, por `registerMerchant` de `dist/` (la consola
+`altaDeMerchant` lo llama: leída, no lanzada); el cambio, por la RUTA `PUT /admin/merchant` de
+`dist/app.js` por HTTP, con su `requireAuth` y su `requireRole('admin')`, que es la que llaman
+Configuración › Empresa (`settingsView.js:373`, `:1171`) y el paso 1 del asistente
+(`onboardingView.js:162-168`), los dos con un selector de seis países. Base: la de memoria de 1522e.
+
+| petición | `main` | rama 1536d |
+| --- | --- | --- |
+| comercio ES (Madrid) → `country: 'MX'` | **200, guardado** | **200, guardado** |
+| → `country: 'ZZ'` (no está en ningún selector) | **200, guardado** | **200, guardado** |
+| → `country: 'ES'` (vuelta) | 200 | 200 |
+| comercio nacido en MX → `country: 'ES'` | **200, guardado** | **200, guardado** |
+| **control** · `country: 'ESP'` | 400 `validation_error` | 400 |
+| **control** · alta ES Bizkaia con domicilio foral «sí» | se crea | **`territorio_excluido`** |
+| **control** · alta ES Las Palmas, «no»/«no» | se crea | **`territorio_excluido`** |
+| `domicilioFiscalForal: true` con el país ya en MX | 200 | **409** `territorio_excluido` |
+
+La única regla del país es la del esquema de la ruta: `z.string().length(2)` (`schemas.ts:478`).
+`updateMerchantProfile` lo escribe tal cual (`merchantAdmin.ts`, sin ninguna comprobación de
+`country`). En la base, `country String` sin default (`schema.prisma:93`).
+
+## ② Qué cambia después — con la fila tal como quedó guardada
+
+Funciones de `dist/` llamadas con esa fila (NIF puesto a mano para las dos últimas). Flag por entorno.
+
+| | ES (antes) | **ES → MX** (o `ZZ`) | **MX → ES** |
+| --- | --- | --- | --- |
+| `getEmissionMode`, flag OFF | `receipt` | **`fiscal`** | `receipt` |
+| `getEmissionMode`, flag ON | `fiscal` | `fiscal` | `fiscal` |
+| `getEmissionMode`, flag OFF **y** override del comercio `false` | `receipt` | **`fiscal`** | `receipt` |
+| `isFlagEnabled('INVOICING_ES_ENABLED')`, flag ON | `true` | `false` | `true` |
+| `modoDocumentoSuelto`, flag OFF | `no` | **`factura`** | `no` |
+| `debeEstarEnLaCadena` (VeriFactu) | `true` | **`false`** | `true` |
+| `estadoAlNacer` del sellado | `pendiente_de_sellado` | **`no_aplica`** | `pendiente_de_sellado` |
+| `timezone` | `Europe/Madrid` | `Europe/Madrid` (no cambia) | **`null`** |
+| `domicilioFiscalForal` (rama 1536d) | `false` | `false` | **sin escribir (NULL)** |
+| idioma (`getLocale`) | EUR · IVA 21 % · Presupuesto | MXN · IVA 16 % · Cotización | EUR · IVA 21 % · Presupuesto |
+
+Lo que eso significa, por separado (cicatriz ⑨ del prompt: declarado ≠ escrito ≠ alcanzable):
+
+- **ES → otro país rompe la regla 24 y el «Done» de V0-0** (`YAQU_MASTER.md:1004`: «imposible
+  emitir NINGÚN documento a un merchant ES real con el interruptor en OFF, e imposible cobrarle por
+  YaQu»). `getEmissionMode` devuelve `fiscal` antes de mirar el flag (`emission.service.ts:37-38`),
+  y es la puerta de documento **y** de cobro: la llaman 16 sitios, entre ellos el botón de pago
+  (`quoteDecisionLanding.routes.ts:765`), los avisos de cobro (`lifecycle.service.ts:141, 164, 205`)
+  y la numeración (`invoiceNumber.service.ts:448`). Ni el override por comercio lo para: el país se
+  mira primero. **Y la factura que saldría no entra en la cadena VeriFactu** (`no_aplica`):
+  numeración real, sin sello, para un negocio español. Alcanzable desde dos pantallas, con rol
+  `admin`, y reversible (vuelve a ES y todo vuelve).
+- **MX → ES se salta entera la exclusión de 1536d.** Fuera de España el alta no pregunta el
+  domicilio (`territorioDeAlta.ts:64`, rama 1536d) ni la provincia; al pasar a ES en Ajustes queda un
+  comercio español **sin las dos respuestas de Q1 y sin zona** (`timezone` NULL: el día contado en
+  UTC, el defecto de SCRUM-1522e). Un domiciliado canario entra así: Canarias no tiene columna ni
+  pregunta en Ajustes. El foral no puede marcar después el «Sí» (409, el B de 1536d sí vale con
+  cualquier país), pero nunca se le preguntó.
+- **Moneda: no cambia.** `defaultCurrency` es otra columna y el cambio de país no la escribe; el
+  idioma sí (MXN, «Cotización»), así que un ES→MX queda con euros y vocabulario mexicano.
+- **Plantillas de WhatsApp: no dependen del país.** De los 47 ficheros de `src/` que nombran
+  `country` (`grep -rln`, comentarios incluidos), ninguno está en `src/integrations/` (0); el mismo
+  barrido sí ve el bot, que sólo lo usa para el flag del perfil público (`botFlow.service.ts:259`).
+  Leído, no ejecutado.
+
+## ③ ¿Hay regla sobre cambiar el país? No. La que manda es la 24.
+
+- **Máster:** ninguna línea dice si el país se puede cambiar. Barrido con `node` (no `grep`: con la
+  tilde entre corchetes daba 0 líneas de «país», control incluido) sobre los 1.487 `.md` de `docs/`:
+  278 líneas con «país» (control), 13 aciertos de las cuatro formas de «cambiar el país / país fijo
+  / inmutable»; ninguno es una regla. Lo único que obliga es **V0-0 / regla 24**, arriba.
+- **Jira:** seis formas de la frase («país se cambia», «se cambie el país», «cambiar de país»…) dan
+  **2 tickets**, los dos ya leídos: SCRUM-1536 (este diseño) y **SCRUM-1102 c.17784**, donde J6f lo
+  dejó como hallazgo el 1-oct: «el país se cambia desde Configuración […] y fuera de `ES` el modo es
+  `fiscal` sin mirar el flag. […] No he encontrado ticket que lo nombre. Medido en el esquema; no
+  ejecutado contra una base». **Lleva tres semanas sin dueño.** Control positivo: «forales y
+  Canarias» da 4 tickets.
+
+## ④ Propuesta, con su coste (decide un jefe)
+
+| | qué | cierra ES→X | cierra MX→ES | coste |
+| --- | --- | --- | --- | --- |
+| **(a) recomendada** | el país **no se cambia después del alta** desde la app: la ruta rechaza un `country` distinto del guardado (error tipado antes del `update`, como `SerieError`), y las dos pantallas lo enseñan como texto | sí | sí | `merchantAdmin.ts` ~15 líneas · traducción a 409 en `app.ts` (bloque `// J3:`, como 1536d) · `settingsView.js` y `onboardingView.js` · 1 test por la ruta. **Sin esquema, sin emisión** |
+| (b) | se puede cambiar, pero pasa por las comprobaciones del alta | **no**: el alta no comprueba nada fuera de ES; haría falta además «quien ya es ES no sale», que es (a) para ES | sí, si Ajustes pide provincia + Q1 al pasar a ES | (a) + una pantalla nueva con la provincia y las dos preguntas · textos nuevos |
+| (c) | lista cerrada de países en la ruta | no | no | arregla sólo `ZZ`; `schemas.ts` es de S1 (equipo de Luis) |
+| (d) | que la emisión no se fíe del país (p. ej. NIF español ⇒ ES) | sí | — | **camino de emisión: J1 + STOP (regla 40)**. No lo recomiendo: es el arreglo caro de lo que (a) impide en la puerta |
+
+**Por qué (a):** es la única que cierra las dos direcciones sin tocar emisión ni esquema; el alta
+pública está cerrada (SCRUM-1515), así que hoy el país lo pone el equipo con la consola y un error
+se corrige por el mismo camino; y en producción no hay comercios reales que lo necesiten (c.20225:
+0 forales/canarios; el recuento por país **no** está medido, abajo). **Lo que (a) NO decide:** cómo
+se corrige un país mal puesto. Hoy no hay herramienta: sería una orden de consola nueva (J3) o un
+cambio a mano en la base (STOP: datos de clientes).
+
+**Texto (regla 39) — PROPUESTA, nada aplicado:**
+
+- **Pantallas:** el país se enseña como texto con lo que ya dicen: la etiqueta «País» y el nombre
+  del selector («España», «México»…). Sin texto nuevo, y sin un campo que parezca editable y no lo
+  sea (A10: «Si parece un campo y no se puede escribir, la pantalla ha mentido.»).
+- **La ruta, si alguien manda otro país** (sólo se alcanza saltándose la pantalla):
+  **P1 (propuesta):** «El país no se puede cambiar una vez creada la cuenta. Escríbenos por WhatsApp
+  y lo vemos contigo.» La segunda frase es la ya firmada de `MSG_SERIE_YA_EMITIDA`
+  (`merchantAdmin.ts`, 5-ago); la primera es nueva y **necesita firma**. Alternativa sin texto: el
+  409 con el código y la pantalla con su aviso genérico.
+
+## ⑤ De quién es cada pieza (`node scripts/carriles.mjs de`, hoy)
+
+| pieza | fichero | carril |
+| --- | --- | --- |
+| rechazar el cambio en la ruta | `src/modules/system/merchantAdmin.ts` | **J3** (contenedor) |
+| traducir el error a 409 | `src/app.ts` | **S1** (contenedor) → bloque `// J3:` |
+| el país como texto en Empresa | `public/dashboard/js/settingsView.js` | **J3** (contenedor; Empresa es lo general) |
+| el país como texto en el asistente | `public/dashboard/js/onboardingView.js` | **J3** |
+| (c) lista cerrada | `src/core/validation/schemas.ts` | **S1**, equipo de Luis |
+| (d) la puerta del modo | `src/modules/invoicing/domain/emission.service.ts` | **J1**, camino de emisión (regla 40) |
+| el país de la cuenta de Stripe Connect (`connect.routes.ts:49`) | `src/modules/payments/connect/` | **J2** — no medido qué pasa si cambia después de conectar |
+| el flag por país (`flags.ts:72-75`) | `src/core/flags.ts` | **S1** — no hace falta tocarlo con (a) |
+
+Con (a), **todo es de J3** salvo el bloque en `app.ts`, que va marcado como hizo 1536d.
+
+## Población — NO medida
+
+Este árbol no tiene claves de base y no las he buscado. La consulta, de sólo lectura y sin datos
+personales, para quien las tenga: `SELECT country, count(*) FROM merchants GROUP BY country ORDER BY
+2 DESC;`. Si sale algún país distinto de `ES` con NIF español, es exactamente el caso de ②.
+
+## Lo que NO se ha medido
+
+Ninguna base · Postgres (el doble no sabe de tipos) · una factura emitida de verdad tras el cambio
+(pide base: de la emisión sólo se llamaron sus puertas puras) · las pantallas en un navegador ni en
+yaqu.app (lo de `settingsView.js` y `onboardingView.js` está leído) · Stripe Connect tras el cambio ·
+la consola `altaDeMerchant` lanzada (se llamó la función que usa) · la tanda completa.
+
+## Errores propios
+
+- **Primera pasada, CIEGA:** la sonda tapaba toda la tabla `authSession` para dar la sesión, y el
+  alta la usa para su enlace; ningún comercio se creó. Lo dijo la propia salida (`creado: false`).
+- **Segunda pasada, midiendo otra cosa:** el comercio ES salió `demo` con el flag apagado. Era el id 1
+  del doble (el DEMO, regla 8), no el país. Es el `A9:` de este tramo.
+- **Un `grep` con `pa[ií]s` dio 0** sobre el máster, control incluido: la tilde entre corchetes, que
+  A10 ya tiene escrita. Lo cazó el control a cero; se rehízo en `node`.
+- Mi primera búsqueda en Jira usaba frases que **no casaban ni con c.20223**, que sé que habla de
+  esto; con ese positivo delante cambié las frases.
 # SCRUM-1536d · Forales y Canarias fuera del alta y del «Sí» foral en Ajustes, con los textos firmados (CONSTRUIDO)
 
 **Medido contra:** `origin/main` = `595884b20b8baa3fad91151879214554b9f6e2e2` · 2026-10-22T09:39:30Z (hora de GitHub)
@@ -618,3 +777,73 @@ el ADF.
 
 - La ficha pedía medir el contexto al acabar la lectura de arranque y otra vez al acabar Jira. Leí Jira
   primero y el arranque después, así que sólo hay un punto: **130.145** al terminar las dos.
+# SCRUM-1536g · B′ (a): el país no se cambia después del alta (CONSTRUIDO)
+
+**Medido contra:** `origin/main` = `0077bd1d51a7cb64b1c18d85781117b71936fd38` · 2026-10-22T09:56:47Z (hora de GitHub)
+
+A9: aviso → cicatriz J3 «Medí al acabar el arranque (152.817) y no volví a medirme hasta 329.079, con el código ya hecho: el aviso de 200k no llegó.» — no se pudo comprobar: me pasó otra vez (102.598 → 239.064), y cuándo se mide una sesión no lo ve ningún test del árbol; el defecto del producto sí queda atado por `tests/scrum1536g-el-pais-no-se-cambia.test.mjs`.
+
+**Skill UI:** cargada (`yaqu-premium-ui`; el cambio de pantalla es quitar dos selectores y enseñar el país como texto, sin texto nuevo).
+
+22-oct-2026 · sesión `jv-j3z`, puesto J3, por encargo del orquestador (`cobroflash-backend-5f`).
+[Escrito por la sesión, no por Javier.] Lo desbloquea **SCRUM-1536 c.20245** (opción (a), «Sí de
+momento la A»; texto firmado, «Ok me parece bien»), sobre la medición de 1536f (tramo de arriba,
+c.20242). Entrega en Jira, **c.20279**. Carril J3 a mano, con el bloque `// J3:` en `src/app.ts`
+(contenedor de S1). El hook de arranque dijo «SIN IDENTIDAD» (SCRUM-1498). Medido sobre ese `main`
+MÁS la rama de 1536d (`bc62de1f8e73aaa47617df6242eed5ea3b7766e7`), mergeada en local porque #2674
+seguía abierto: la exclusión de 1536d y este cambio tocan los mismos tres ficheros.
+
+### Lo construido
+
+- **Regla.** `src/modules/system/merchantAdmin.ts`: `PaisError` y `MSG_PAIS_NO_CAMBIABLE`.
+  `updateMerchantProfile` lee el país guardado y, si el cuerpo trae otro, lanza ANTES de escribir
+  nada. El mismo país pasa (Empresa lo mandaba en cada guardado). Una fila sin país pasa: la columna
+  es NOT NULL (`prisma/schema.prisma:102`) y no ocurre en la base; ocurre en los bancos de ida y
+  vuelta de `scrum1227` y `scrum1269`, que caían con la primera versión.
+- **Ruta.** `src/app.ts`, bloque `// J3: SCRUM-1536g`: `PaisError` → 409
+  `{ error: 'pais_no_cambiable', message }`. Sin él, 500.
+- **Pantallas.** Empresa (`settingsView.js`) y el paso 1 del asistente (`onboardingView.js`): el
+  selector pasa a `<output>` con el nombre del país (o su código si no está en la lista) y ninguna
+  manda ya `country`. El `.name = "country"` se queda en el `<output>` para el censo de SCRUM-284. Se
+  quita la nota «Cambia el idioma de los documentos…», que describía un cambio que ya no existe.
+- **Texto.** Copiado de c.20242 y comparado por bytes con c.20242 y c.20245 (99 B; el control sin
+  tilde no casa en ninguno). Ficha: `docs/microcopy/2026-10-22-SCRUM-1536-pais-no-se-cambia.md`.
+- **Ni emisión ni esquema.** Un comercio nacido fuera de España sigue en su país y con su modo de
+  emisión de siempre: esto sólo impide CAMBIARLO.
+- **De paso:** el comentario de `SerieError` había quedado separado de su clase al entrar
+  `TerritorioError` (1536d); vuelve a estar encima de ella.
+
+### Medido
+
+- Sonda de jv-j3x (`sonda-1536f.mjs`) sobre el `dist/` de antes y de después:
+  `salida-sonda-1536g-antes.txt` y `salida-sonda-1536g-despues.txt` (resumen con
+  `resumen-sonda-1536g.cjs`). ES→`MX`, ES→`ZZ` y MX→`ES`: **200 → 409**; el comercio español sigue
+  ES y en `receipt` con el flag apagado. Controles: el mismo país, 200; `ESP`, 400.
+- `tests/scrum1536g-el-pais-no-se-cambia.test.mjs`: **3 de 3**, por la ruta real con su sesión.
+  Contra el `dist/` de antes salía CIEGO (no existía la constante), no rojo: el rojo de comportamiento
+  lo dan la sonda y las mutaciones.
+- Mutaciones (`mutar-1536g.mjs`, lee las declaradas con el lector del meta-guard; salida en
+  `salida-mutar-1536g.txt`): base 3/3, **2 de 2 VIVAS**, árbol restaurado con 3/3.
+- Mini-tanda de 205 ficheros (los que leen las dos pantallas, `merchantAdmin`, `app.ts`, la
+  microcopia o el mapa de submenús, más los guards de registro): **1.846 = 1.838 + 2 + 6**. Los 2 son
+  `scrum1199`, que pide `express` en `node_modules` de este árbol (no lo tiene); no medido sobre `main`.
+- Con el registro escrito, los 312 ficheros que leen `docs/master`, evidencias, microcopia o
+  cicatrices: **2.937 = 2.900 + 8 + 29**. De entorno (este árbol no tiene `node_modules` propio):
+  `scrum1199` ×2, `scrum475` ×3, `scrum476`. Míos: `scrum553` (un extractor de mi test con el `>`
+  pegado; arreglado en el test) y `scrum713c`, el trinquete de estilos en JS, que BAJA de 335 a 334
+  porque la nota quitada se pintaba con `style.cssText`: el techo se aprieta a 334, como pide el
+  propio guard, con su línea de historia. Después, los 8 afectados (553, 713c, 1363, 1536g, 267,
+  1294, 514 ×2): **86 de 86**.
+
+### No medido
+
+yaqu.app · las pantallas en un navegador · Postgres · la tanda completa · el obligatorio (el empujón
+lo hace el orquestador cuando entre #2674) · `tsc` con tipos · el 335 de `scrum713c` sin este
+cambio (no recontado: es el techo que había).
+
+### Errores propios
+
+- Crucé 200k sin avisar en el momento: 102.598 al acabar Jira y arranque, 239.064 al avisar.
+- Mi primer instrumento de mutación salió CIEGO: importaba el test en el proceso padre y el hijo
+  heredaba `NODE_TEST_CONTEXT` (0 verdes en la base). Lo cazó la fila BASE, antes de creer nada.
+- Mi test cargaba `merchantAdmin.js` antes que el doble de base y se quedaba con el Prisma real.

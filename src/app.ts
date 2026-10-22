@@ -106,6 +106,7 @@ import { barridoDemo } from './modules/system/domain/barridoDemo';
 import { isDemoMerchant } from './modules/invoicing/domain/emission.service';
 import { getMerchantProfile, updateMerchantProfile, SlugError, SerieError } from './modules/system/merchantAdmin';
 import { TerritorioError } from './modules/system/merchantAdmin'; // J3: SCRUM-1536d
+import { PaisError } from './modules/system/merchantAdmin'; // J3: SCRUM-1536g
 // SCRUM-313 (D2): el arranque de serie usa las piezas puras de A4 y la vista previa que
 // IMPORTA a quien decide (regla 38: leer ese camino no es STOP, modificarlo si).
 import { TIT_SERIE_YA_EMITIDA, MSG_SERIE_YA_EMITIDA } from './modules/system/merchantAdmin';
@@ -753,6 +754,10 @@ app.put('/admin/merchant', requireRole('admin'), async (req, res, next) => {
     }
     // J3: SCRUM-1536d · el «Sí» foral en Ajustes no se guarda; el mensaje es el texto firmado (c.20225).
     if (err instanceof TerritorioError) {
+      return res.status(409).json({ error: err.code, message: err.message });
+    }
+    // J3: SCRUM-1536g · el país no se cambia una vez creada la cuenta; el mensaje es el texto firmado (c.20245).
+    if (err instanceof PaisError) {
       return res.status(409).json({ error: err.code, message: err.message });
     }
     // A14.1: reglas del slug del perfil público → error humano, no 500
