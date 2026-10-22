@@ -28,6 +28,7 @@ import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { montarAppReal, bancoDePrisma, sesionesDe } from './_banco-camino-real.mjs';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
+import { telefonoDePrueba } from '../scripts/_telefonos-prueba.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
@@ -39,8 +40,11 @@ const ses = sesionesDe(MIO, { id: 9, role: 'tecnico', merchantId: MIO });
 const { congelarDesdeFicha, CAMPOS_CONGELADOS } = require('../dist/modules/invoicing/domain/clienteCongelado.js');
 
 const DIA = new Date('2026-08-10T10:00:00.000Z');
-const FICHA_AL_EMITIR = { id: 10, merchantId: MIO, name: 'Fusionado', legalName: 'Fusionado SL', taxId: 'B11111111', email: 'antes@x.test', phone: '+34600000001', notes: null };
-const FICHA_CORREGIDA = { ...FICHA_AL_EMITIR, name: 'Principal', legalName: 'Principal SA', taxId: 'B22222222', email: 'hoy@x.test', phone: '+34600000002' };
+// SCRUM-262 · teléfonos del rango imposible: ninguno puede ser de una persona.
+const TEL_AL_EMITIR = telefonoDePrueba(15761);
+const TEL_HOY = telefonoDePrueba(15762);
+const FICHA_AL_EMITIR = { id: 10, merchantId: MIO, name: 'Fusionado', legalName: 'Fusionado SL', taxId: 'B11111111', email: 'antes@x.test', phone: TEL_AL_EMITIR, notes: null };
+const FICHA_CORREGIDA = { ...FICHA_AL_EMITIR, name: 'Principal', legalName: 'Principal SA', taxId: 'B22222222', email: 'hoy@x.test', phone: TEL_HOY };
 const SIN_CONGELAR = Object.fromEntries(CAMPOS_CONGELADOS.map((c) => [c, null]));
 const merchant = { ...ses.merchant, country: 'ES', taxId: 'B00000000', flags: null, legalName: 'QA SL', address: null, whatsappPhone: null, defaultCurrency: 'EUR', logoUrl: null };
 
@@ -155,22 +159,23 @@ test('SCRUM-1576b · ficha · la factura anterior al escritor sigue con la ficha
 // ── el paquete de disputa: la ruta ES la pantalla (HTML imprimible) ──────────────────────────
 async function clienteDelPaquete(id, ficha) {
   const r = await pedir(`/admin/invoices/${id}/dispute-package`, ficha);
-  const m = /<th>Cliente<\/th><td>([^<]*)<\/td>/.exec(r.texto);
+  // SCRUM-553 · sin el `>` pegado: la fila se sigue encontrando si alguien le pone una clase.
+  const m = /<th\b[^>]*>Cliente<\/th>\s*<td\b[^>]*>([^<]*)<\/td>/.exec(r.texto);
   assert.ok(m, '🔴 CIEGO: el paquete no pinta la fila «Cliente».');
   return m[1].replace(/\s+/g, ' ').trim();
 }
 
 test('SCRUM-1576b · disputa · control: con la ficha sin cambiar, «Cliente» lleva nombre, teléfono y email congelados', async () => {
-  assert.equal(await clienteDelPaquete(1, FICHA_AL_EMITIR), 'Fusionado · +34600000001 antes@x.test');
+  assert.equal(await clienteDelPaquete(1, FICHA_AL_EMITIR), `Fusionado · ${TEL_AL_EMITIR} antes@x.test`);
 });
 
 test('SCRUM-1576b · disputa · 🔴 con la ficha corregida, el paquete sigue con el cliente de la factura', async () => {
-  assert.equal(await clienteDelPaquete(1, FICHA_CORREGIDA), 'Fusionado · +34600000001 antes@x.test',
+  assert.equal(await clienteDelPaquete(1, FICHA_CORREGIDA), `Fusionado · ${TEL_AL_EMITIR} antes@x.test`,
     '🔴 el paquete de disputa —la evidencia que se le da al banco— nombra al cliente con la ficha de HOY.');
 });
 
 test('SCRUM-1576b · disputa · la factura anterior al escritor sigue con la ficha viva', async () => {
-  assert.equal(await clienteDelPaquete(2, FICHA_CORREGIDA), 'Principal · +34600000002 hoy@x.test');
+  assert.equal(await clienteDelPaquete(2, FICHA_CORREGIDA), `Principal · ${TEL_HOY} hoy@x.test`);
 });
 
 test('SCRUM-1576b · las tres sólo LEEN: ninguna escritura en el banco', async () => {
