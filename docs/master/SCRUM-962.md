@@ -252,7 +252,7 @@ Pasada final: **0 sondas fallidas en 56**, 18 estados abiertos, 0 que no abren.
 
 **El control de que se ha ARREGLADO el medidor y no cambiado por otro:** con la población, la vara y el estado VIEJOS, el censo nuevo imprime **72 distintos · 93 mediciones · 33 con `btn-sm` · 39 sin** — exactamente lo que daba el viejo en este árbol (`censo-antes.txt`). El árbitro no se ha movido.
 
-**Test:** `tests/scrum962c-censo-tactil-poblacion-vara-etiqueta.test.mjs`, 11 casos contra medidas fabricadas (sin navegador). **12 mutaciones** que reintroducen cada avería (vara fija de 44, `btn-sm` sin separar, campos sumados a cortos, `sinMirar` ciego, población vieja, árbitro de etiqueta con casillas, cada sonda desactivada, la etiqueta sin `label.control`, las sondas viejas, el estado que no abre sin salir 2): **12/12 MUERTAS**, base 11/11 verde, árbol restaurado (`mutar.txt`, `git diff --numstat` al lado de cada una).
+**Test:** `tests/scrum962c-censo-tactil-poblacion-vara-etiqueta.test.mjs`, 11 casos contra medidas fabricadas (sin navegador). **12 mutaciones** que reintroducen cada avería (vara fija de 44, `btn-sm` sin separar, campos sumados a cortos, `sinMirar` ciego, población vieja, árbitro de etiqueta con casillas, cada sonda desactivada, la etiqueta sin `label.control`, las sondas viejas, el estado que no abre sin salir 2): **12/12 MUERTAS, cada una por el test que nombra su `cae`**, base 11/11 verde, árbol restaurado (`mutar.txt`, `git diff --numstat` al lado de cada una). Viven en el test como `MUTACIONES_QUE_ME_TUMBAN` (las corre el meta-guard; SCRUM-1387) y `mutar.mjs` las toma de ahí.
 
 ### La cifra (pasada final, `docs/master/evidencias/SCRUM-962c/censo-final.txt`)
 
