@@ -3608,6 +3608,31 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 .modal-ayuda:hover { color: var(--ink); }
 .modal-ayuda + .modal-close { margin-left: 0; }
 
+/* S2: ── SCRUM-962d · la pareja «?»/«×» de la cabecera del modal, a 44 px DE TOQUE (AB6) ───────────
+   S2: Medido (962c) en los 5 modales del editor, y es la misma pieza en las 28 cabeceras del panel:
+   S2: «?» 27,5×26 y «×» 30×30 de área, a 320, 390 y 929. Se amplía el ÁREA, no el dibujo: un
+   S2: `::before` de 44×44 posicionado, así que la caja, el círculo, el foco y el alto de la cabecera
+   S2: no se mueven ni un píxel (lo mide `docs/master/evidencias/scrum962d/cabecera-banco.mjs`).
+   S2: Cada uno crece HACIA FUERA de la pareja y nunca hacia el otro: el «×» hacia la derecha (sobre
+   S2: los 24 px de padding de la cabecera) y el «?» hacia la izquierda (sobre el hueco del título).
+   S2: Así ninguno le roba al otro el punto que hay entre los dos.
+   S2: ACOTADO a `.modal-header >`: el aviso de error de `api.js` reutiliza `.modal-close` a 24 px
+   S2: dentro de una tostada, y ahí un área que se sale taparía la página de debajo. */
+.modal-header > .modal-ayuda,
+.modal-header > .modal-close { position: relative; }
+.modal-header > .modal-ayuda::before,
+.modal-header > .modal-close::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translateY(-50%);
+}
+.modal-header > .modal-ayuda::before { right: 0; }
+.modal-header > .modal-close::before { left: 0; }
+/* S2: ── fin SCRUM-962d ─────────────────────────────────────────────────────────────────────── */
+
 /* SCRUM-655 · APARTADOS Y DESCRIPCIÓN LARGA EN EL DETALLE DEL PRESUPUESTO.
    El apartado es un RENGLÓN DE TÍTULO a todo lo ancho, no una fila que cobre: por eso no lleva
    importe y se separa con peso y espacio, no con color inventado.
