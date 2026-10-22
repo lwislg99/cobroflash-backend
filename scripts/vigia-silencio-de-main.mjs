@@ -67,6 +67,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { RUTAS_GH } from './equipo/ancla.mjs';
 import { checksObligatoriosDeReglas } from './vigia-atascados.mjs';
+import { registroDesdeLinea, TITULO as TITULO_DE_LA_SENAL } from './_senal-de-nombres.mjs';
 
 export const SALIDA_OK = 0;
 export const SALIDA_AVISO = 1;
@@ -451,6 +452,46 @@ export function ciegoDelMetaGuard(jobs) {
     : null;
 }
 
+// SCRUM-1339u · EL CIEGO DE LA SEÑAL DE NOMBRES (decisión del fundador del 22-oct, SCRUM-1339 c.20240, «a»).
+// `scripts/senal-de-nombres.mjs` sale 0 cuando NO PUEDE MEDIR (c.17954): el job sigue verde, y nadie
+// sabe si el TAP traía todos los casos. Se lee por el DATO que deja en las anotaciones del job
+// «build + tests», no por el texto del log: su `::notice` lleva SIEMPRE la línea de registro
+// (`[señal de nombres v1] medible=…`, que se lee con `registroDesdeLinea`, la de la casa), y cuando el
+// guion revienta antes de llegar ahí deja un `::warning` titulado «señal de nombres · NO PUDE MEDIR».
+// Sin ninguna de las dos, el paso no corrió o el guion no está: tampoco midió. Como el del meta-guard,
+// este CIEGO manda aunque otro job esté en rojo (va nombrado) y NO se absuelve.
+
+/** La causa de un CIEGO de la señal de nombres: no midió. No se absuelve. */
+export const CAUSA_SENAL = 'señal de nombres';
+/** El job donde corre la señal, por IDENTIDAD; el test lo busca en `ci.yml`. */
+export const JOB_DE_LA_SENAL = 'build + tests (con banco desechable)';
+
+/**
+ * Qué dice la señal en las anotaciones de su job, PURO. `null` = no se pudieron leer.
+ * → `{ estado: 'midio', ausentes }` · `{ estado: 'no-pudo', motivo }` · `{ estado: 'sin-registro' }` · `null`
+ */
+export function lecturaDeLaSenal(anotaciones) {
+  if (!Array.isArray(anotaciones)) return null;
+  const titulo = (a) => String(a?.title ?? '');
+  const aviso = anotaciones.find((a) => a?.annotation_level === 'warning' && titulo(a) === `${TITULO_DE_LA_SENAL} · NO PUDE MEDIR`);
+  const registros = anotaciones.filter((a) => a?.annotation_level === 'notice' && titulo(a).startsWith(`${TITULO_DE_LA_SENAL} · `))
+    .map((a) => registroDesdeLinea(a.message)).filter(Boolean);
+  if (aviso || registros.some((r) => !r.medible)) return { estado: 'no-pudo', motivo: aviso ? String(aviso.message ?? '').split('\n')[0] : 'medible=no en su línea de registro' };
+  if (registros.length !== 1) return { estado: 'sin-registro', registros: registros.length };
+  return { estado: 'midio', ausentes: registros[0].ausentes };
+}
+
+/** Por qué la señal de este run es CIEGO, o `null` si midió (o no se intentó leer: `senal` sin definir). PURO. */
+export function ciegoDeLaSenal(jobs) {
+  const j = (Array.isArray(jobs) ? jobs : []).find((x) => x.name === JOB_DE_LA_SENAL);
+  // Un job cancelado o sin acabar ya es CIEGO por su cuenta («sin probar» o el run entero): no se duplica.
+  if (!j || j.status !== 'completed' || !['success', 'failure'].includes(j.conclusion) || j.senal === undefined) return null;
+  if (j.senal === null) return 'no se pudieron leer las anotaciones de su job: no se sabe si midió';
+  if (j.senal.estado === 'no-pudo') return `NO PUDO MEDIR: ${j.senal.motivo}`;
+  if (j.senal.estado === 'sin-registro') return `su job no dejó una línea de registro (deja ${j.senal.registros}): el paso no corrió o el guion no está`;
+  return null;
+}
+
 /** Los jobs del workflow CI que se exigen en cada commit de `main`: los de `JOBS_DE_MAIN`. */
 export const JOBS_DEL_CI = JOBS_DE_MAIN.filter((j) => j.workflow === 'CI').map((j) => j.job);
 
@@ -492,10 +533,17 @@ export function veredictoDeCommit({ sha, run, jobs, ahora, topeMin, declarados =
 
   const rojos = jobs.filter((j) => j.conclusion === 'failure');
   const delMetaGuard = ciegoDelMetaGuard(jobs);
+  // SCRUM-1339u: el CIEGO de la señal se nombra también junto al del meta-guard; la causa es la del primero.
+  const deLaSenal = ciegoDeLaSenal(jobs);
+  const yLaSenal = deLaSenal ? ` · CIEGO de la señal de nombres: ${deLaSenal}` : '';
   if (delMetaGuard) {
     const otros = rojos.filter((j) => j.name !== JOB_META_GUARD);
     const ademas = otros.length ? ` · además en rojo: ${otros.map((j) => `«${j.name}»`).join(', ')}` : '';
-    return r('CIEGO', `CIEGO del meta-guard: ${delMetaGuard}${ademas}`, jobs.filter((j) => j.name === JOB_META_GUARD || j.conclusion === 'failure'), CAUSA_META_GUARD);
+    return r('CIEGO', `CIEGO del meta-guard: ${delMetaGuard}${yLaSenal}${ademas}`, jobs.filter((j) => j.name === JOB_META_GUARD || j.conclusion === 'failure'), CAUSA_META_GUARD);
+  }
+  if (deLaSenal) {
+    const ademas = rojos.length ? ` · además en rojo: ${rojos.map((j) => `«${j.name}»`).join(', ')}` : '';
+    return r('CIEGO', `CIEGO de la señal de nombres: ${deLaSenal}${ademas}`, jobs.filter((j) => j.name === JOB_DE_LA_SENAL || j.conclusion === 'failure'), CAUSA_SENAL);
   }
   // Un meta-guard en `failure` cuyo código no se pudo LEER (`null`; `undefined` = no se intentó) puede
   // ser su 2: sigue ROJO, que avisa, pero lo dice.
@@ -527,7 +575,8 @@ export function salidaDeCommits(veredictos) {
 /**
  * EL SUELO DEL MODO POR COMMIT: cebos FABRICADOS aquí, uno por estado y dos de CIEGO (el que
  * no corrió y el cancelado con 0 jobs, que son los dos que pasaron el 1-oct), más los dos del
- * meta-guard (SCRUM-1339r: su 2 es CIEGO, su 1 es ROJO). `juez` se puede
+ * meta-guard (SCRUM-1339r: su 2 es CIEGO, su 1 es ROJO) y los dos de la señal de nombres
+ * (SCRUM-1339u: no pudo medir es CIEGO, midió 0 es VERDE). `juez` se puede
  * cambiar para comprobar que un juez ciego NO pasa el suelo.
  */
 export function sueloPorCommit(juez = veredictoDeCommit) {
@@ -538,6 +587,10 @@ export function sueloPorCommit(juez = veredictoDeCommit) {
   const metaGuard = (codigo, otros = []) => [
     ...todos('success').filter((j) => j.name !== JOB_META_GUARD && !otros.some((o) => o.name === j.name)), ...otros,
     { ...job(JOB_META_GUARD, 'failure'), steps: [{ name: PASO_DEL_META_GUARD, conclusion: 'failure' }], codigoDeSalida: codigo },
+  ];
+  const senal = (lectura, otros = []) => [
+    ...todos('success').filter((j) => j.name !== JOB_DE_LA_SENAL && !otros.some((o) => o.name === j.name)), ...otros,
+    { ...job(JOB_DE_LA_SENAL, 'success'), senal: lectura },
   ];
   const cebos = [
     { sha: 'cebo-verde', run: run('completed', 'success'), jobs: todos('success'), esperado: 'VERDE' },
@@ -550,6 +603,9 @@ export function sueloPorCommit(juez = veredictoDeCommit) {
     // es CIEGO; con su 1 (un guard MUDO) es ROJO.
     { sha: 'cebo-meta-guard-2', run: run('completed', 'failure'), jobs: metaGuard(2, [job(JOBS_DEL_CI[1], 'failure')]), esperado: 'CIEGO' },
     { sha: 'cebo-meta-guard-1', run: run('completed', 'failure'), jobs: metaGuard(1), esperado: 'ROJO' },
+    // SCRUM-1339u: la señal que no pudo medir es CIEGO, también con otro job en rojo; la que midió 0, VERDE.
+    { sha: 'cebo-senal-no-pudo', run: run('completed', 'failure'), jobs: senal({ estado: 'no-pudo', motivo: 'cebo' }, [job(JOBS_DEL_CI[1], 'failure')]), esperado: 'CIEGO' },
+    { sha: 'cebo-senal-midio', run: run('completed', 'success'), jobs: senal({ estado: 'midio', ausentes: 0 }), esperado: 'VERDE' },
   ];
   const estado = Object.fromEntries(cebos.map((c) => [c.sha, juez({ ...c, ahora, topeMin: 130 }).estado]));
   const ok = cebos.every((c) => estado[c.sha] === c.esperado);
@@ -614,7 +670,7 @@ export function cuerpoDelAviso({ veredictos, ahora, origen, urlDelRun, callados 
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 
 /** SCRUM-1393f · el veredicto viene de un run del CI que existe: los CIEGO con run son el «sustituido» y (SCRUM-1339r) el del meta-guard. */
-export const conRun = (v) => !!v && (['VERDE', 'ROJO', 'CORRIENDO'].includes(v.estado) || (v.estado === 'CIEGO' && [CAUSA_SUSTITUIDO, CAUSA_META_GUARD].includes(v.causa)));
+export const conRun = (v) => !!v && (['VERDE', 'ROJO', 'CORRIENDO'].includes(v.estado) || (v.estado === 'CIEGO' && [CAUSA_SUSTITUIDO, CAUSA_META_GUARD, CAUSA_SENAL].includes(v.causa)));
 
 /** SCRUM-1393f · el CIEGO `sinRun` cuyo sucesor inmediato en `linea` (la punta primero) tiene run. PURO. */
 export function sinRunPorSustitucion(v, veredictos, linea) {
@@ -774,6 +830,12 @@ async function leerCommitDeGitHub(sha, idDelCI) {
   for (const j of jobs) {
     if (j.name !== JOB_META_GUARD || j.conclusion !== 'failure') continue;
     try { j.codigoDeSalida = codigoDeSalidaDeAnotaciones(await gh(`repos/${REPO}/check-runs/${j.id}/annotations?per_page=100`)); } catch { j.codigoDeSalida = null; }
+  }
+  // SCRUM-1339u: lo que midió la señal de nombres está en las anotaciones de su job (la misma `checks: read`).
+  // Si no se pueden leer, `null`: CIEGO de la señal, que lo dice; no pasa a verde.
+  for (const j of jobs) {
+    if (j.name !== JOB_DE_LA_SENAL || j.status !== 'completed' || !['success', 'failure'].includes(j.conclusion)) continue;
+    try { j.senal = lecturaDeLaSenal(await gh(`repos/${REPO}/check-runs/${j.id}/annotations?per_page=100`)); } catch { j.senal = null; }
   }
   return { run, jobs };
 }
