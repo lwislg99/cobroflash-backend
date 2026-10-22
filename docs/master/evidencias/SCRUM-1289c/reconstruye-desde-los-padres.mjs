@@ -1,7 +1,7 @@
 // SCRUM-1289c · ¿Un registro que dejó la unión de git (merge=union) está ROTO, o es lo que habría dado
 // una fusión correcta? Se contesta RECONSTRUYENDO desde los padres, no mirando la forma del texto.
 //
-// Solo lectura: lee blobs con `git show`, escribe en una carpeta temporal del sistema y la borra.
+// Solo lectura: lee blobs con `git show`, escribe en una carpeta temporal (helper `temporal`, que la borra al salir).
 //
 //   node reconstruye-desde-los-padres.mjs <merge> <ruta> [<base>] [--salida=<fichero>]
 //
@@ -27,9 +27,9 @@
 //   · `identicaAlMerge`: la reconstrucción es byte a byte el blob del merge → NO HAY DAÑO de contenido.
 // Sale 2 (NO PUDE MIRAR) si falta un blob o git no responde.
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { temporal } from '../../../../tests/_temporal.mjs';
 
 const salidaA = process.argv.find((a) => a.startsWith('--salida='))?.slice('--salida='.length);
 const [merge, ruta, base] = process.argv.slice(2).filter((a) => !a.startsWith('--'));
@@ -51,7 +51,7 @@ try {
   process.exit(2);
 }
 
-const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'reconstruye-'));
+const dir = temporal('reconstruye-');
 for (const [k, v] of Object.entries(blobs)) fs.writeFileSync(path.join(dir, k), v);
 let salida, conflictos = 0;
 try {
