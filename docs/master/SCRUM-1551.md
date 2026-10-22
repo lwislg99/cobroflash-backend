@@ -713,3 +713,77 @@ Fuera de `docs/legal/`, `VERI*FACTU` no aparece en ninguna página servida de la
 | la negrita rota de VERI*FACTU: dónde se ve, propuesta, si es firmada | §4: ya arreglada (SCRUM-534r); firmada en c.19531/c.19585 |
 | carril de cada fichero; lo del equipo de Luis, listado | §5 |
 | firma de T1, T2, L1, L2 | **NO HECHO** → la lleva el orquestador al fundador; aplicar es de J3 |
+
+---
+
+# APÉNDICE · 22-oct-2026 · SCRUM-1551d · T1, T2, L1 y L2 aplicados (firma c.20256), y T3
+
+**Medido contra:** `origin/main` = `82f3ea4115723db78ca56c4b2e1c426a810a0433` · 2026-10-22T15:02:43Z
+
+A9: sin fallo que generalice — el único rojo del tramo (`scrum564`, 3 casos) era la consecuencia esperada de cambiar un texto que su catálogo declara, y se arregló actualizando el texto declarado; no quedó ninguna lección que no esté ya en A10
+
+**Skill UI:** cargada
+
+**Quién:** jv-j3ab (puesto J3, equipo de Javier), por encargo del orquestador `cobroflash-backend-62`; aplica en
+local lo que dejó jv-j3aa (commit `2ddbb37986aa7e87676400585bf34b6895de26a4`). Carril a mano: el hook de inicio
+dijo «SIN IDENTIDAD» (SCRUM-1498). `public/terminos.html` y `public/index.html` son de J3 (§5 de 1551c).
+
+## 1 · Qué entra
+
+| propuesta (tramo 1551c) | fichero | cambio |
+|---|---|---|
+| T1 (T1a, sin «sin cambio de precio») | `public/terminos.html:48` | §1 «Descripción del servicio», el literal propuesto entero |
+| T2 | `public/terminos.html:80` | §6, el literal propuesto entero; el título de §6 se queda |
+| T3 | `public/terminos.html:43` | «Última actualización: 3 de junio de 2026» → «22 de octubre de 2026» |
+| L1 | `public/index.html:746` | FAQ «¿Para qué esto?»: «facturas» → «albaranes» |
+| L2 | `public/index.html:7` y `:15` | `description` y `og:description`: «facturas» → «albaranes» |
+| consecuencia de L1 | `scripts/_afirmaciones-publicadas.mjs` (`faq/div#1`) | el texto declarado pasa a ser el del marcado; mismas anclas |
+
+Sólo cambia texto: ninguna clase, ningún estilo, ninguna etiqueta. Ni `src/`, ni `docs/legal/`, ni el esquema.
+
+## 2 · El literal, cotejado por programa
+
+Los cinco literales se sacaron del §3 del tramo 1551c (los bloques «Propuesto») y se buscaron tal cual en
+`public/`: **5 de 5 casan**. Control positivo sembrado (una frase de T2 que no cambia): casa. Control negativo
+(«emitir facturas y gestionar cobros», el texto viejo de T1): no casa.
+
+⚠️ **Contra Jira (c.20249 y c.20256) NO está cotejado todavía:** a la hora del ancla el MCP de Atlassian no
+conectaba (`CONNECT_TIMEOUT`, ~13:53Z y otra vez después). Por orden del orquestador, este tramo no se empuja
+hasta leerlos. Si la firma eligió T1b, o no cubre T3, esta tabla se corrige antes del empujón.
+
+## 3 · `scrum564`: qué compara y por qué no es relajarlo
+
+`tests/scrum564-afirmaciones-publicadas.test.mjs` compara el catálogo `ANCLAS_564` con el marcado de la landing
+de ESTE árbol (`leerLanding`, no un commit). Con L1 aplicado caían 3 casos: `faq/div#1` dejaba de estar declarada
+y su texto ya no era el del marcado. Se cambió la palabra en el texto declarado. Ningún caso quitado, ninguna
+entrada borrada, ningún número tocado (19 afirmaciones; 14 / 2 / 1 / 2 por grupo). Después: 25 de 25 (564 y 564b).
+
+## 4 · Lo que sigue diciendo «facturas» y NO se toca (fuera de lo firmado)
+
+- `public/index.html:35` · JSON-LD: «…gestión de clientes, gastos y facturas.»
+- `public/index.html:442` · subtítulo: «…Y llevas clientes, gastos y facturas en el mismo sitio.» (fila 14 de la
+  puerta; recambio firmado en SCRUM-1016, sin aplicar)
+- `public/index.html:749` · FAQ «¿Y si un día lo dejo?»: «…presupuestos, facturas, cobros, trabajos y gastos se
+  exportan en CSV…» (1551c lo da por no chocante)
+
+## 5 · Tests
+
+Mini-tanda en local sobre el árbol fusionado con `82f3ea41…`: los 213 ficheros que leen `index.html`,
+`terminos`, el catálogo de 564 o `public/`, más 267, 273, 1294, 811c, 976, 237, 812, 850, 299 y 400. Antes de este
+tramo: 1.968 casos · 1.961 pasan · 5 se saltan · 2 caen (`scrum811c`/1340, que pide este tramo con su
+`**Skill UI:**`, y `scrum976` ④, que corre esos guards). Después: ver la entrega.
+
+## 6 · Lo que NO se ha hecho
+
+- Verificar en yaqu.app: producción no despliega desde el 20-oct 15:35Z. Nada de esto está servido.
+- El cotejo con Jira (§2).
+- Abrir un navegador: el cambio es de palabras dentro de nodos que ya existían.
+
+## 7 · Aceptación → dónde se ve
+
+| aceptación | dónde se ve |
+|---|---|
+| T1, T2, L1, L2 aplicados con el literal firmado | `public/terminos.html:48`, `:80`; `public/index.html:7`, `:15`, `:746` |
+| la fecha de los términos, al día | `public/terminos.html:43` |
+| el catálogo de 564 dice lo que dice la landing | `tests/scrum564-afirmaciones-publicadas.test.mjs` |
+| servido en yaqu.app | **NO HECHO** → producción sin desplegar desde el 20-oct; lo mira quien despliegue |
