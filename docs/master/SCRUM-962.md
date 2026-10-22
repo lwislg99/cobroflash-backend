@@ -249,7 +249,7 @@ Con la vista **viva** (`scripts/_banco-lista.mjs`) y **como el profesional**: ca
 |---|---|---|
 | ✅ **cumplen DESIGN.md §5** (≥44 a 390 y ≥36 a 929) | **21** | `Atrás` / `Ver documento` / `Continuar` / `Generar presupuesto` y los botones de los modales: 44,5–45 a 390, 36,5–37 a 929. Los ítems de los menús «⋯»: 51,7–52,2 a 390, 42–42,7 a 929 |
 | 🔵 **artefacto del medidor** | **3** | los radios **Empresa / Persona** del alta de cliente (17 px; etiqueta envolvente de 44,7/44,8 que los marca) y **Descuento global** (21,6 px; etiqueta envolvente de 44,6 que lo enfoca) |
-| 🟠 **dudoso** | **1** | el `select` **IVA %** de los ajustes de la línea: 21,8 px; su etiqueta envolvente de 44,6 lo enfoca, pero no consta que abra el desplegable |
+| 🟠 **dudoso** → 🔴 **DEFECTO** (resuelto en 962d) | **1** | el `select` **IVA %** de los ajustes de la línea: 21,8 px; su etiqueta envolvente de 44,6 lo enfoca, pero **NO abre el desplegable** (toque real medido en 962d). Son **7** defectos, no 6 |
 | 🔴 **defecto** | **8 filas = 6 controles** | abajo. Los tres «Cerrar» son la misma pieza |
 
 **Los defectos, por gravedad real.** La gravedad la da el objetivo EFECTIVO: el control o, si su etiqueta lo activa, la etiqueta.
@@ -287,3 +287,81 @@ Con la vista **viva** (`scripts/_banco-lista.mjs`) y **como el profesional**: ca
     node docs/master/evidencias/scrum962c/editor-inventario.mjs <raiz> 390                  # qué está oculto al montar y quién lo oculta
     node docs/master/evidencias/scrum962c/editor-recorrido.mjs <raiz> <tmp>/editor.json [--listar]
     node docs/master/evidencias/scrum962c/editor-analisis.mjs <tmp>/editor.json [--md]
+
+---
+
+## Tramo 962d (S2, 22-oct-2026) · ARREGLO: el «?» y el «×» de la cabecera de los modales, a 44 px de toque
+
+**Autorizado por el orquestador** tras 962c («① `modalHeader.js`: el «?» y el «×». Un componente, el de más alcance»).
+**Skill UI:** cargada (`yaqu-premium-ui`). DESIGN.md §5 manda: 44 en móvil y 36 en escritorio. Aquí se dan 44 a todas las anchuras porque el área no se ve. **Una pieza, no un rediseño:** no cambia ningún token, color ni medida visible.
+**Microcopy:** ninguna. No se ha tocado ningún literal.
+**Medido contra:** rama `scrum-962d-cabecera-modal-44`, apilada sobre 962c, con `origin/main` = `fa9cb22e8` fusionado (`b87380cb1`; ese merge no trae nada en `public/`). **Servido en local.** Hora de GitHub: 2026-10-22 10:28 GMT. **Producción sigue congelada en `fe65a8b7`: no se ha visto en yaqu.app.**
+
+A9: sin fallo que generalice — tres defectos de mis medidores, cazados por su control antes de dar cifras: medía el modal a mitad de su animación de entrada (el centro «no era suyo»); la sonda, colgada detrás del «×», la tapaba el área nueva; y el menú «⋯» de escritorio se cerraba con mi `scrollIntoView` (se cierra al desplazar). Los tres se dicen en sus guiones.
+
+### Primero, el DUDOSO de 962c: es DEFECTO
+
+El `select` «IVA %» de los ajustes de la línea (21,8 px), con móvil emulado (390, táctil) y el árbitro `select.matches(':open')` (`docs/master/evidencias/scrum962d/select-iva-abre.mjs`):
+- **Control positivo:** un toque directo en el `select` lo abre (`:open` = true).
+- **Toque en la etiqueta:** la enfoca (`activeElement` = el `select`), pero **NO la abre** (`:open` = false).
+
+⇒ El dedo no tiene la etiqueta: **son 7 defectos en el editor, no 6.** El séptimo es de S2 (`quotesView.js`, modal de ajustes de línea, ~:3915) y va en el lote ②.
+
+### El arreglo
+
+**Sólo `public/dashboard/css/styles.css`** (contenedor de S2; bloque marcado `S2:`). **`modalHeader.js` no se toca:** la pieza ya pinta el «?» y el «×» como hijos directos de `.modal-header`, que es lo que la regla nombra.
+- `.modal-header > .modal-ayuda` y `.modal-header > .modal-close` pasan a `position: relative`.
+- Cada uno lleva un `::before` de **44×44**, absoluto y centrado en vertical.
+- El del «×» se ancla a **su izquierda**, así que crece hacia la derecha, sobre los 24 px de margen interior de la cabecera.
+- El del «?» se ancla a **su derecha**, así que crece hacia la izquierda, sobre el hueco del título.
+- **Ninguno crece hacia el otro.**
+- **Acotado a `.modal-header >`:** `api.js:902` reutiliza `.modal-close` a 24 px en la tostada de error, y ahí un área que se sale taparía la página.
+
+**Alcance real:** `cabeceraModal` se llama en **28 sitios de 17 ficheros**. Son **28 «?» y 25 «×»**: tres cabeceras van sin cierre (`customerDetailView.js:877`, `:1063`; `quotesView.js:152`).
+
+### ANTES y DESPUÉS, medido con el mismo guion
+
+**① Banco de la pieza real** (`cabecera-banco.mjs`: `modalHeader.js` y `styles.css` reales; 4 variantes × 320/390/929; sonda de 12 px cazada en las tres anchuras, antes y después):
+
+| | antes | después |
+|---|---|---|
+| alto de la cabecera (corto / medio / largo @320·@390·@929 / sin cierre) | 50 / 50 / 119,2·94,4·69,6 / 46 | **50 / 50 / 119,2·94,4·69,6 / 46** (idéntico) |
+| alto del título | 24,8 (largo: 99,2 · 74,4 · 49,6) | **idéntico** |
+| caja visible «?» / «×» | 28,1×26 / 30×30 | **idéntica** |
+| **área de toque «?»** (ancho×alto) | 27,5×26 (28,5 a 929) | **43,5×44** (44,5 sin cierre; el ,5 de menos es el paso de 0,5 px del medidor) |
+| **área de toque «×»** | 30×30 | **44×44** |
+| el punto entre los dos es de… | el «×» | el «×» (sin cambio) |
+| el borde de arriba del primer campo del cuerpo, ¿sigue siendo suyo? | sí | **sí** |
+
+**Capturas de la cabecera, píxel a píxel** (`comparar-png.mjs`):
+- **A 320 y 390, las 8 son IDÉNTICAS** (0 píxeles distintos).
+- A 929 la captura **no es determinista ni con el mismo CSS**: dos ANTES seguidos difieren hasta 191/255 en un caso, por el desenfoque del fondo del modal. ANTES/DESPUÉS difiere como mucho en **2/255** de canal, por debajo del ruido. **No se ve distinto.**
+
+**② Los 5 modales VIVOS del editor** (`cabecera-viva.mjs`, abiertos con clics reales, 390 y 929; 10 de 10 abiertos):
+
+| modal | cabecera antes → después | «?» área antes → después | «×» área antes → después |
+|---|---|---|---|
+| alta de cliente · Ver documento · ajustes de línea · plantillas · IA (los 5, a 390) | 50 → **50** | 27,5×26 → **43,5×44** | 30×30 → **44×44** |
+| los mismos 5, a 929 | 50 → **50** | 28,5×26 → **43,5×44** | 29,5–30×30 → **44×44** |
+
+### El test
+
+`tests/scrum962d-cabecera-modal-44.test.mjs` (sin gate, corre en cada PR) vigila cuatro cosas:
+- ① que exista el `::before` de 44×44, absoluto, con su padre relativo;
+- ② que cada uno crezca hacia fuera de la pareja;
+- ③ que esté acotado a `.modal-header >`;
+- ④ que la pieza siga pintando los dos botones como hijos directos (banco de vistas).
+
+**Probado en rojo con 6 mutaciones, y mueren las 6** (`mutar-962d.mjs`; restaura desde HEAD y se niega con cambios sin comitar):
+- la BASE, que es el CSS de antes del arreglo;
+- sin `position: relative`;
+- el `::before` a 40 px;
+- el «×» creciendo hacia el «?»;
+- el `::before` sin acotar;
+- la pieza envolviendo el «?» en un `div`.
+
+**Tests relacionados:** los **85 ficheros** que leen `styles.css` o tocan la cabecera de los modales, corridos a la vez: **775 pass · 0 fail · 0 skipped**. No se ha corrido la suite completa (sin turno, y 1,7–3,4 GB libres frente al umbral de 2.200 MB).
+
+**Trinquete:** ninguno que mover. Ni `censo:tactil-panel` ni `guard:objetivo-tactil` miran modales (es justo lo que encontró 962b).
+
+**Pendiente:** verlo en yaqu.app cuando producción se descongele, a 390 y 1280, en un modal cualquiera: el «×» y el «?» tienen que responder hasta 7 px por encima y por debajo de su dibujo.

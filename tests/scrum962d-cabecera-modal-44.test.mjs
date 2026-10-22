@@ -21,6 +21,41 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cargarDashboard } from './_banco-vistas.mjs';
 
+// El catálogo del meta-guard (`scripts/meta-guard-mutaciones.mjs`, SCRUM-1387): cada defecto que este test
+// promete cazar, con el texto exacto que lo produce y la prueba que TIENE que ponerse roja.
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    fichero: 'public/dashboard/css/styles.css',
+    de: '.modal-header > .modal-close { position: relative; }',
+    a: '.modal-header > .modal-close { }',
+    cae: 'SCRUM-962d ① ·',
+  },
+  {
+    fichero: 'public/dashboard/css/styles.css',
+    de: '  width: 44px;\n  height: 44px;\n  transform: translateY(-50%);',
+    a: '  width: 40px;\n  height: 44px;\n  transform: translateY(-50%);',
+    cae: 'SCRUM-962d ① ·',
+  },
+  {
+    fichero: 'public/dashboard/css/styles.css',
+    de: '.modal-header > .modal-close::before { left: 0; }',
+    a: '.modal-header > .modal-close::before { right: 0; }',
+    cae: 'SCRUM-962d ② ·',
+  },
+  {
+    fichero: 'public/dashboard/css/styles.css',
+    de: '.modal-header > .modal-ayuda::before,\n.modal-header > .modal-close::before {',
+    a: '.modal-header > .modal-ayuda::before,\n.modal-close::before {',
+    cae: 'SCRUM-962d ③ ·',
+  },
+  {
+    fichero: 'public/dashboard/js/modalHeader.js',
+    de: '      header.appendChild(ayuda);',
+    a: "      const envoltorio = document.createElement('div'); envoltorio.appendChild(ayuda); header.appendChild(envoltorio);",
+    cae: 'SCRUM-962d ④ ·',
+  },
+];
+
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CSS = fs.readFileSync(path.join(RAIZ, 'public/dashboard/css/styles.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
 const reglas = () => CSS.replace(/@media[^{]*\{/g, '').split('}')
