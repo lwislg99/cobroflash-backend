@@ -85,6 +85,15 @@ tumba SÓLO lo suyo y el control sigue verde en las cuatro:
   zona» y pedía, con esas palabras, «actualiza este test con la decisión, no lo relajes». Ahora afirma
   **«todas con zona»**, que es más estricto: un formateador nuevo sin zona lo tumba.
 
+## Comentario falso, arreglado de paso (encargo del orquestador; lo vio S0)
+
+`src/core/documentos/grupoDelPresupuesto.ts:29` decía «Hoy nadie escribe `Merchant.timezone`». **Falso
+desde `409e05317` (13-oct-2026, SCRUM-1522e):** el alta la escribe en el mismo `create` que crea el
+negocio (`zonaDeAlta`, `auth.service.ts:344`). Medido hoy: es la **única** escritura de `timezone` en
+`src/`, y ninguna pantalla la cambia. El comentario dice ahora eso, con el commit. Ningún otro comentario
+del árbol afirmaba lo mismo: los de `auth.service.ts:342` y `zonaDeLaProvincia.ts:4` hablan en pasado y
+son ciertos.
+
 ## Hallazgo de paso, NO arreglado
 
 - **El control ④ de `tests/scrum1093h-censo-fecha-sin-zona.test.mjs` ya no mide lo que dice.** Busca
