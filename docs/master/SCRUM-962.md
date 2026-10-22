@@ -306,6 +306,8 @@ DESIGN.md §5 «Inputs / Fields» da estilo (fondo, borde, radio, `padding 11px 
 
 Recomiendo P1 porque §6 ya lo dice sin excepción y el estilo de §5 ya lo da. Para elegirla hay que escribirla en DESIGN.md (S2 propone, el fundador firma) y quitar la cuenta aparte del censo (una línea: `veredicto()` deja de devolver `'campo'`, y las mutaciones M3 y M9 pasan a esperar lo contrario).
 
+**Trinquete `scrum812`: 31 → 32** (el test nuevo declara mutaciones y su título nombra a los guards; el propio trinquete lo pidió: «LA COBERTURA HA SUBIDO a 32»). ⚠️ La rama `scrum-935d-metaguard-pasada-filtrada` (S3, abierta) sube el mismo número 31 → 32 por otro fichero: la que entre segunda tiene un conflicto de cifra derivada, y se resuelve **regenerando con el trinquete** sobre el árbol fusionado (33), no eligiendo lado (A4).
+
 ### De paso (para quien mide, no es de esta tarea)
 
 **Una pantalla que se abre VACÍA con los datos de muestra la da por limpia cualquier censo que use esos datos.** Aquí, las pestañas «Tu página pública» (sin `slug`) y «Cumplimiento» (sin modo fiscal) de Configuración. El censo ahora lo dice; los demás instrumentos que usan `_datos-del-censo.mjs` no lo sé. Reportado al orquestador aparte.
