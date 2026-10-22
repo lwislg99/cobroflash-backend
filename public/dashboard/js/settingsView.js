@@ -1200,7 +1200,10 @@ function renderSettingsView(container) {
         await updateMerchantProfile(payload);
         setAlert("success", "Datos de empresa guardados correctamente.");
       } catch (err) {
-        setAlert("error", "Error al guardar: " + err.message);
+        // SCRUM-1536d · «Sí» en el domicilio foral: el servidor no guarda NADA y manda el texto
+        // firmado en SCRUM-1536 c.20225 (T2a). Se pinta ése, entero y sin el «Error al guardar:».
+        if (err && err.code === "territorio_excluido") setAlert("error", mensajeParaPersona(err, ""));
+        else setAlert("error", "Error al guardar: " + err.message);
       } finally {
         saveBtn.disabled = false;
         saveBtn.textContent = "Guardar cambios";
