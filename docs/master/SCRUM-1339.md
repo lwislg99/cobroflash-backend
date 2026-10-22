@@ -2441,3 +2441,54 @@ fundador; (c) dejar que avise. No elijo.
 2. Empecé a diseñar 2b pensando que el corte a 30 min «ya salía CIEGO», porque `cancelled` es CIEGO en el
    motor. Era verdad sólo con todo lo demás en verde, y en `main` no pasaba nunca. Lo destapó la
    simulación, no el código.
+
+# SCRUM-1339t · 2a, la parte de J6: la señal de nombres sale 1 con UN ausente medido; «no pude medir» sigue en 0
+
+**Medido contra:** `origin/main` = `f02e48be2c66ae2e0dae8701401c8fcbc4fff14b` · 2026-10-22T09:53:05Z
+
+A9: comprobación → `.claude/hooks/guard-dangerous.sh`
+
+Carril J6, sesión jv-j6w, rama `scrum-1339t-senal-sale-1-con-ausentes` (el sufijo `s` ya lo tenía la rama
+de S5 `scrum-1339s-tuberia-bloqueante-en-el-metaguard`). Decisión: c.20228, opción (a), literal «La A»,
+leída en Jira y no en la ficha. El `continue-on-error` de `ci.yml` es de S5: PR #2663
+(`scrum-1339-senal-bloquea`), abierto al escribir esto. Este PR no toca `ci.yml` ni ningún workflow.
+
+**Qué cambia.** `scripts/senal-de-nombres.mjs` sale **1** cuando la tanda se MIDIÓ y `ausentes > 0`. Sale
+**0** cuando se midió completa, cuando **no pudo medir**, y siempre con `--tasa`.
+
+⚠️ **Premisa del encargo que no se cumplía:** el encargo decía «que siga saliendo 2/CIEGO cuando no pueda
+medir». Hoy, en `main`, «NO PUDE MEDIR» sale **0**, no 2 (c.17954: «Salida 0 siempre», y lo exige el ④ de
+`scrum1339d`). c.20228 sólo decide sobre los ausentes. Por eso lo dejo en 0, que es lo firmado, y no lo subo a 2.
+Subirlo, con #2663 en main, pondría `build + tests` en rojo cada vez que la señal no pueda medir: es otra
+decisión, y la tiene que tomar el fundador.
+
+**Rojo primero** (commit `1bfacb9484b21fba487a9160acff7b31c7c27d7a`, sólo el test): 18 casos, 16 pass y 2 fail.
+Los dos caen por el código de salida (`actual: 0`), no por la siembra: «EL GUION, de punta a punta… sale 1» y
+el nuevo «SCRUM-1339t · UN SOLO nombre ausente basta…». La siembra es un TAP de 5 de los 6 tests del fabricado,
+y la línea de registro dice `ausentes=1`. **Arreglo** (`ed3c54233aab51ea8a7165c6be49ea42b5d8cf8c`): 18 de 18.
+
+**Mutación** (declarada en `MUTACIONES_QUE_ME_TUMBAN`, la sexta): `ausentes > 0` → `ausentes > 1`. Con ella,
+17 pass y 1 fail, y el que cae es justo el que nombra su `cae`. Se deshizo con el `sed` inverso: `git status`
+quedó vacío. `meta-guard-mutaciones.mjs --solo-censo` sale 0 y cuenta 633 declaraciones. No medí la cifra
+de `main` para ver el +1.
+
+**¿Habría salido 1 algún obligatorio reciente?** No. Medido sobre los logs: `t-barrido-senal.mjs` y su salida,
+`t-barrido-senal.txt`, en `docs/master/evidencias/SCRUM-1339/`. La población son los 90 runs de `ci.yml` que
+habían acabado entre los 100 últimos (19-oct 12:05Z → 22-oct 09:44Z):
+
+| runs | qué |
+|---|---|
+| 64 | job «build + tests» con log y línea de la señal: **64 con `medible=si ausentes=0`** (55 success, 9 failure) |
+| 22 | sin job «build + tests» |
+| 4 | job cancelado: CIEGO, no cuentan |
+
+Ningún log medido trae «NO PUDE MEDIR». Los logs pesan entre 1.868.356 y 1.930.024 B: completos (④ de las
+cicatrices). **Control positivo:** el mismo lector, sobre el job 113113442033 de #2303, da
+`medible=si ausentes=18`, la cifra que cita c.20228.
+
+**Tests corridos, en el worktree:** `scrum1339d` (18/18) y los de suite y vecinos `scrum237`, `scrum976`,
+`scrum812`, `scrum1177`, `scrum1415` y `scrum1294`: 38/38. No corrí la tanda completa.
+
+**Error propio.** Encadené el `git restore` que deshacía la mutación en la misma orden que el commit del arreglo
+y que la mutación. El hook `guard-dangerous` paró la orden entera antes de que corriera nada: el arreglo
+todavía no estaba commiteado. Lo comiteé en una orden aparte, y deshice la mutación con un `sed` inverso.
