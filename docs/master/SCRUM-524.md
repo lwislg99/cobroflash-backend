@@ -687,3 +687,176 @@ del mismo barrido: `SistemaInformatico` sale 3 veces. Y ningún otro PR abierto 
   orquestador; nadie ha comparado aún si coinciden.
 
 A9: sin fallo que generalice — un recuento de CR con `od -c | grep -c` dio 3.897 sobre un fichero que tiene 0; no lo usé y lo rehice por bytes antes de escribir nada, que es lo que ya pide la casa
+
+---
+
+# SCRUM-524e — P25 contestada leyendo la Orden HAC/1177/2024 y la FAQ de desarrolladores de la AEAT: los dos valores de hoy NO casan con lo que dice la AEAT para un SaaS
+
+*22-oct-2026 · rama `scrum-524e-p25-leida-en-la-orden` · puesto J5 (jv-j5q)*
+
+**Medido contra:** `origin/main` = `8ad167195af03cf4153337ccc1bf1b80d04c10f8` · 2026-10-22T09:47:32Z
+
+> **Desbloqueo.** SCRUM-524 c.20209 (22-oct-2026): el fundador aprueba con un «OK» que la P25 **no
+> vaya al asesor todavía** y que una sesión lea la Orden. **Documento interno**: ninguna frase para un
+> cliente. **Cero líneas de `src/`**: el camino de emisión se ha **leído**, y lo que la respuesta pide
+> cambiar va abajo como STOP (regla 38/40). `docs/legal/PREGUNTAS_ASESOR.md` es de J4: no se toca;
+> el texto propuesto va en ④.
+
+## ① Las fuentes, con su fecha y su control de vigencia
+
+| fuente | cómo se obtuvo | vigencia |
+|---|---|---|
+| **Orden HAC/1177/2024** (BOE-A-2024-22138) | API de legislación consolidada del BOE, `…/legislacion-consolidada/id/BOE-A-2024-22138/texto`, 22-oct-2026 09:45Z (cabecera `Date:`) | metadatos: `estado_consolidacion` = Finalizado, `fecha_actualizacion` 2025-12-20; sus **40 bloques** llevan **una sola versión, de 2024-10-29**: la Orden no se ha modificado |
+| **Anexo, apartado 2.6 «SistemaInformatico»** | el texto consolidado no lo trae como texto: son **dos imágenes** (`22138_14945631_1.png` y `_2.png`, `boe.es/datos/imagenes/disp/2024/260/`), leídas una a una | las de la publicación original; ningún bloque modificado |
+| **RD 1007/2023** (BOE-A-2023-24840) | la misma API, mismo día | **control positivo de la API**: trae versiones de 2025-04-03 y de 2025-12-04 (las modificaciones), así que sí devuelve el texto VIGENTE y no el original |
+| **AEAT · «Aclaraciones a dudas de los desarrolladores», versión 1.3, 4-dic-2025** | `sede.agenciatributaria.gob.es/static_files/AEAT_Desarrolladores/EEDD/IVA/VERI-FACTU/FAQs-Desarrolladores.pdf`, 691.549 B, `last-modified` 10-dic-2025, bajado el 22-oct-2026 09:46Z | es la que sirve hoy la sede en esa ruta. **No es norma:** es el criterio publicado de la AEAT |
+
+## ② Lo que dicen, literal
+
+**Orden, anexo 2.6, `NumeroInstalacion`** (Alfanumérico 100): «Número de instalación del sistema
+informático de facturación (SIF) utilizado. Deberá distinguirlo de otros posibles SIF utilizados para
+realizar la facturación del obligado a expedir facturas, es decir, de otras posibles instalaciones de SIF
+pasadas, presentes o futuras utilizadas para realizar la facturación del obligado a expedir facturas,
+incluso aunque en dichas instalaciones se emplee el mismo SIF de un productor.»
+
+**Orden, anexo 2.6, `TipoUsoPosibleMultiOT`**: «Especifica si el sistema informático de facturación
+permite llevar independientemente la facturación de varios obligados tributarios (valor "S") o solo de
+uno (valor "N").»
+
+**Orden, anexo 2.6, `IndicadorMultiplesOT`**: «Indicador de que el sistema informático, en el momento
+de la generación de este registro, está soportando la facturación de más de un obligado tributario. Este
+valor deberá obtenerlo automáticamente el sistema informático a partir del número de obligados
+tributarios contenidos y/o gestionados en él en ese momento, independientemente de su estado operativo
+(alta, baja...), no pudiendo obtenerse a partir de otra información ni ser introducido directamente por
+el usuario del sistema informático ni cambiado por él. El valor "N" significará que el sistema
+informático solo contiene y/o gestiona un único obligado tributario (de alta o de baja o en cualquier
+otro estado), que se corresponderá con el obligado a expedir factura de este registro de facturación.
+En cualquier otro caso, se deberá informar este campo con el valor "S".»
+
+**Orden, art. 2** (varios obligados en un mismo sistema): «se deberá comportar como si fueran sistemas
+informáticos independientes para cada obligado tributario gestionado», y la letra c): «Deberá permitir
+el funcionamiento como sistema informático «VERI*FACTU» de forma independiente para cada obligado
+tributario.»
+
+**FAQ AEAT v1.3, apartado 4** («Cómo identificar un SIF…»), págs. 9-10:
+
+- «Un SIF se identifica universalmente por la "concatenación" de tres campos: Id.OEF (NIF) + Id.SIF (*)
+  + NºInstalación(**).»
+- «(**) El Nº de instalación es una forma de completar una identificación unívoca de cada SIF -por si
+  tuviera varios- de un mismo OEF, y así distinguirse de cualquier otro SIF de ese OEF en cualquier
+  momento del tiempo (pasado, presente o futuro). […] no puede repetirse nunca: por ejemplo, incluso si
+  se formatea el ordenador donde estaba instalado un SIF y se reinstala el mismo software de nuevo en
+  ese mismo ordenador, el nuevo SIF así constituido debe llevar otro nº de instalación diferente al
+  anterior que tenía, y que no coincida con la de ningún otro SIF de ese OEF (pasado, presente o futuro).»
+- «Por ello, como valores recomendados de número de instalación, se propone alguno de los dos
+  siguientes […]: - "Timestamp" (al menos fecha+hora+minuto+segundo) en que se efectuó la instalación
+  del producto de facturación (momento en el cual se constituye como SIF). - Asignar un nº secuencial
+  […] que no se repita nunca entre las distintas instalaciones de los diferentes SIF para ese OEF: 1, 2,
+  3... n.»
+- «Ha de tenerse en cuenta que si se utiliza un SIF que permite llevar distintas facturaciones, como
+  contempla el artículo 7.a) del RRSIF, cada una de esas facturaciones distintas (sean de distintos OEF o
+  del mismo OEF pero de distintos centros de facturación independientes, como tiendas) debe tener un nº
+  de instalación propio y distinto al resto (pasado, presente o futuro) porque se consideran SIF
+  independientes, como si fueran "SIF virtuales", dentro de un producto SIF más completo que los
+  gestiona y administra.»
+- «[…] en el caso de SIF en la nube, tipo SaaS (Software as a Service), que se ofrecen a muchos
+  usuarios, […] se aclara a continuación cuándo poner el valor "S" en el campo 'IndicadorMultiplesOT'
+  del bloque 'SistemaInformatico' de los registros de facturación y de evento: este valor deberá
+  calcularse de forma independiente por cada usuario del SIF SaaS (no a nivel global del SIF SaaS) y se
+  informará con "S" en todos los registros de facturación (y, en su caso, de evento) de aquellos
+  usuarios que tengan creadas más de una facturación en el SIF SaaS, independientemente del estado de
+  dichas facturaciones (alta, baja…) y de si son de igual o de distinto OEF. En caso contrario, o sea,
+  cuando el usuario solo tiene una facturación en el SIF SaaS, se informará con "N".»
+
+## ③ Las respuestas a la P25
+
+**(1) `NumeroInstalacion`: NO es «"1" fijo para todos».** La Orden sólo exige que distinga la
+instalación de cualquier otra del **mismo obligado**, pasada, presente o futura. La AEAT lo concreta
+para un SIF que lleva varias facturaciones: **cada facturación —cada obligado, y cada centro de
+facturación independiente de un mismo obligado— lleva un número propio y distinto al resto**, porque
+cada una es un «SIF virtual». Y la identidad de cada SIF es NIF del obligado + Id.SIF + nº de
+instalación.
+- **¿Quién lo asigna?** Ni la Orden ni la FAQ nombran a nadie. La FAQ **recomienda** dos formas: la
+  marca de tiempo de la instalación (con segundos, como mínimo) o un número secuencial que nunca se
+  repita para ese obligado. En un SaaS, quien crea la facturación es el sistema. **Que lo asigne el
+  sistema al dar de alta la facturación del comercio es lectura mía, no texto de la norma.**
+- **¿Estable?** Sí, por construcción: es parte de la identidad del SIF, «no puede repetirse nunca», y
+  la FAQ (pág. 8) dice que un cambio permanente de la forma de facturar convierte el SIF en «otro SIF».
+  Un número que cambie sin cambiar de instalación partiría la identidad del SIF de ese obligado.
+
+**(2) `TipoUsoPosibleMultiOT` = `S`: correcto, y describe el SISTEMA.** Lo dice la Orden: «si el sistema
+informático de facturación permite llevar independientemente la facturación de varios obligados». YaQu
+lo permite. Es además lo que se declara en la letra f) de la declaración responsable (art. 15.1.f).
+
+**(2 bis) `IndicadorMultiplesOT` = `S` fijo: NO casa con la AEAT.** El anexo dice que el valor se
+obtiene **automáticamente** a partir del número de obligados que el sistema contiene o gestiona, y que
+nadie lo introduce a mano; un literal fijo no es eso. Y para un SaaS la AEAT dice cómo se calcula:
+**por usuario del SaaS, no a nivel global**. Un usuario con **una sola facturación lleva `N`**; con más de
+una (de cualquier estado, del mismo obligado o de varios), `S`. **Así que un comercio que sólo factura
+para sí mismo lleva `N`**, que es la sospecha de la pregunta.
+
+> ⚠️ **Lo que el anexo solo NO decide, y lo decide la FAQ.** Leído aislado, «el sistema informático
+> […] contiene y/o gestiona» casa también con «el SaaS entero», que daría `S` para todos. Así lo iba a
+> contestar yo antes de leer la FAQ (ver «Mis errores»). La respuesta de arriba se apoya en la FAQ, que
+> es **criterio publicado de la AEAT, no norma**. Que la FAQ prevalezca sobre la otra lectura del anexo
+> es juicio mío; la AEAT es quien valida los registros.
+
+**Lo que ni la Orden ni la FAQ contestan, y queda para quien decida (no para el asesor de entrada):**
+qué es «un usuario» y qué es «una facturación» en YaQu. **NO MEDIDO**: si una cuenta de YaQu puede
+llevar más de un comercio, o un comercio más de un centro de facturación. Si hoy es «un comercio = una
+cuenta = una facturación», lo de arriba da `N` en todos los registros y un número de instalación por
+comercio.
+
+## ④ Lo que esto pide cambiar · STOP (camino de emisión, regla 38/40) — NO tocado
+
+Leído en `origin/main` a la hora del ancla:
+
+| dónde | qué hay | qué pediría la respuesta |
+|---|---|---|
+| `src/modules/fiscal/verifactu/productor.ts:51` | `VERIFACTU_NUM_INSTALACION = "1"`, constante global | un número **por facturación** (por comercio, si ③ se confirma), asignado una vez, que no se reutilice nunca. Necesita un sitio donde guardarse por comercio: **esquema**, así que A5 (decisión + ALTER antes) |
+| `src/modules/invoicing/domain/verifactu.service.ts:716` y `:1232` | `numInstalacion: VERIFACTU_NUM_INSTALACION` | leer el número del comercio |
+| `src/modules/invoicing/domain/verifactu.service.ts:1022` y `:1132` | `<sum1:IndicadorMultiplesOT>S</sum1:IndicadorMultiplesOT>` literal | calcularlo por usuario: `N` con una facturación, `S` con más |
+| `src/modules/invoicing/domain/verifactu.service.ts:1021` y `:1131` | `TipoUsoPosibleMultiOT` = `S` | **nada**: ya es correcto |
+| `src/modules/fiscal/verifactu/registro.builder.ts:25` y `:27-28` | comentarios «(SaaS: '1')» y «SaaS multi-tenant → 'S'»; el valor lo pone quien llama | el de la línea 25 dice lo contrario que la FAQ; los valores, los mismos dos cambios. En `src/` **nadie** asigna `indicadorMultiplesOT`: sólo `scripts/gen-registros-sample.mjs`, `scripts/sobre-soap-prueba-aeat.mjs` y cuatro tests (cruzado por el nombre del campo, 7 ficheros con el builder incluido) |
+
+**Lo que NO cambia la huella:** el art. 13.1.a) de la Orden no pone ninguno de estos dos campos entre los
+datos de la huella del registro de alta (sí el nº de instalación en la del registro de **evento**, que en
+VERI*FACTU no se usa). Cambiarlos no rompe el encadenamiento ya calculado. **NO MEDIDO:** si hay
+registros con «1» y `S` en alguna base (ni producción, ni staging, ni dev); con `INVOICING_ES_ENABLED`
+apagado no debería haber registros de comercios españoles reales, pero no lo he contado.
+
+## ⑤ Texto propuesto para `PREGUNTAS_ASESOR.md` (carril J4: lo pasa J4 con firma de un jefe)
+
+Sustituir el título de **P25** («— **CANDIDATA, sin cotejar con la Orden HAC/1177/2024**») por
+«— **CONTESTADA sin asesor (SCRUM-524e)**», y añadir debajo de su texto, antes del `---`:
+
+> **Respuesta (SCRUM-524e, 22-oct-2026, sin asesor, por OK del fundador en SCRUM-524 c.20209).** Fuentes:
+> Orden HAC/1177/2024, anexo 2.6 (texto consolidado del BOE, sin modificaciones) y AEAT, «Aclaraciones a
+> dudas de los desarrolladores» v1.3, 4-dic-2025, apartado 4. **1)** No vale un «1» para todos: cada
+> facturación (cada obligado, y cada centro independiente de un obligado) lleva un número propio, que no
+> se repite nunca; la AEAT recomienda una marca de tiempo de la instalación o un secuencial. Nadie dice
+> quién lo asigna. **2)** `TipoUsoPosibleMultiOT` = `S` describe el sistema y es correcto.
+> `IndicadorMultiplesOT` se calcula por usuario del SaaS: `N` si el usuario sólo tiene una facturación,
+> `S` si tiene más. Un comercio que sólo factura para sí lleva `N`. **Cambiar los dos valores es camino de
+> emisión: STOP, decisión de los fundadores** (detalle en `docs/master/SCRUM-524.md`, tramo 524e).
+
+Se queda para el asesor **solo** si los fundadores no aceptan la FAQ de la AEAT como criterio; la
+pregunta pasaría a ser «¿nos podemos apartar de la FAQ v1.3 en estos dos campos?».
+
+## 🔴 Mis errores, esta tanda
+
+- **Iba a contestar (2 bis) al revés.** Leído el anexo, tenía escrita en la cabeza «`S` es correcto: el
+  SaaS contiene muchos obligados, y el art. 2.d) lo confirma». El resumen de una búsqueda me trajo la
+  frase contraria de la FAQ; **no me fié del resumen**, bajé el PDF y leí el literal, que es lo que va
+  arriba. Sin esa búsqueda, la respuesta habría salido con dos citas literales y equivocada.
+- **El encargo daba `main` = `fe65a8b7f`**; al arrancar medí `8ad167195`. Main se movió: no es un error
+  de nadie, pero el ancla de arriba es la medida, no la de la ficha.
+- **El control positivo de `ls-remote` me salió 0**: busqué la rama de #2659, que ya se había borrado al
+  mergear. Lo rehíce con la búsqueda de PR por `head:scrum-524`, que sí trae 524, 524b, 524c y 524d.
+
+## Lo NO tocado
+
+`src/` (camino de emisión, sólo leído) · `prisma/schema.prisma` · `docs/legal/` (J4) · Jira (sólo
+comentario de entrega) · ninguna base de datos.
+
+A9: aviso → cicatriz J5 «casi contesto un campo del XSD con el anexo de la Orden solo» — no se pudo comprobar: ningún guard puede saber qué fuentes leyó una sesión antes de concluir sobre un texto legal; lo que lo para es leer la FAQ de desarrolladores de la AEAT junto al anexo, cada vez
