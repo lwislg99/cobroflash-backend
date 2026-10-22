@@ -291,3 +291,88 @@ lo que dice medir.
 - El censo táctil sigue declarando Partes de oficina en «NO MEDIDAS», con 12 nodos. Es el umbral de
   20 nodos del censo (`if (nodos < 20)` en `scripts/censo-objetivo-tactil-panel.mjs`), no la vista:
   dicho, no tocado.
+
+## 22-oct-2026 · S4 · 1562f — «Ver detalle» sale de `.jobs-acciones` (el guard de la escalera, en verde)
+
+**Skill UI:** cargada (`yaqu-premium-ui`) antes de tocar `jobsView.js` y `styles.css`. Cero texto, cero
+tokens, cero componentes: el mismo `<button>` con la misma clase, y una caja flex con las reglas de
+`.jobs-acciones`.
+
+**Medido contra:** `origin/main` = `595884b20b8baa3fad91151879214554b9f6e2e2` · 2026-10-22T09:37:09Z
+
+Ancla de `node scripts/equipo/ancla.mjs`. Las medidas se hicieron sobre `9839aa6c2baee741f6a38de4e99c7fc29a3fe807`;
+los dos commits de `main` que entraron entre medias sólo tocan `docs/master/SCRUM-1536.md`.
+
+A9: comprobación → `tests/scrum1562f-ver-detalle-fuera-de-acciones.test.mjs`
+
+**El defecto, y es de este puesto.** 1562d (#2561) metió «Ver detalle» DENTRO de `.jobs-acciones`.
+`guard:escalera-por-estado` lee esa caja (`.jobs-acciones > button`) como «la acción de la fila» y la
+compara con la del detalle. En un Trabajo CERRADO, «Ver detalle» era el único botón de la caja: la lista
+«proponía» «Ver detalle» y el detalle nada → **2 hallazgos** en el job de navegador de `main`, durante
+días (SCRUM-1570 c.20159). Se rompió la población que medía otro guard sin censar quién la medía (A12).
+El test nuevo lleva esa pregunta DENTRO de la tanda obligatoria: el guard corre en un job informativo y
+su rojo no lo miraba nadie.
+
+**Lo que se decidió (no yo):** opción (a) del fundador, SCRUM-1570 c.20161 («Ok seguimos tu
+recomedación»): «Ver detalle» sale de `.jobs-acciones` y **el guard no se toca**.
+`git diff origin/main -- scripts/guard-escalera-por-estado.mjs` → vacío.
+
+**Lo que se ha hecho.** La celda `td.cell-actions` lleva ahora `div.jobs-celda-acciones` con DOS
+hermanos: «Ver detalle» (mirar) y `.jobs-acciones` (actuar: la escalera y el «⋯»). Es el mismo
+`<button>` nativo, con `btn-ghost btn-sm` y su `stopPropagation`, en la misma celda. Va DELANTE, como
+en Presupuestos (`quotesListView.js:342`), para que el «⋯» siga cerrando la fila. **No** se ha quitado
+el botón ni se le ha dado `tabindex`/`role` a la fila: un `<tr role=button>` deja de ser una fila para
+un lector de pantalla (1562d), y quitarlo deja la fila sin teclado (ver M2).
+`styles.css` (contenedor de S2): un bloque de una regla, marcado `S4 · SCRUM-1562f`.
+
+**El guard, rojo primero y SIN TOCAR** (Edge, Windows, banco `scripts/_banco-lista.mjs`):
+
+| árbol | `cerrado`: lista / detalle | ③ lista cerrada | veredicto |
+|---|---|---|---|
+| base `9839aa6c` | «Ver detalle» / (ninguna) 🔴 | propone «Ver detalle» 🔴 | **2 hallazgos · 0 ciegos → salida 1** (los mismos 2 que en el CI) |
+| con el arreglo | (ninguna) / (ninguna) | sin acción principal (72 nodos) | **salida 0** · suelo: 4 rótulos distintos en 5 estados |
+
+**El teclado, medido** con `docs/master/evidencias/SCRUM-1562/sonda-1562f-teclado.mjs`: Edge real, los
+5 estados × 1280 y 390, ANTES (el `public/` del punto de partida) y DESPUÉS. Tab REAL desde la página
+cargada hasta «Ver detalle», Intro real, Espacio real (página nueva) y clic real sobre el nombre del
+cliente. Control positivo: en el ANTES el botón TIENE que estar dentro de `.jobs-acciones`.
+
+| | en `.jobs-acciones` | misma línea que la acción | alto de fila (1280 / 390) | Tab hasta él | anillo | Intro | Espacio | ratón |
+|---|---|---|---|---|---|---|---|---|
+| ANTES (10 casos) | sí ×10 | sí ×10 | 91 / 148-167 | 11 (cerrado 10) | ✅ ×10 | ✅ ×10 | ✅ ×10 | ✅ ×10 |
+| DESPUÉS (10 casos) | **no ×10** | sí ×10 | **91 / 148-167, igual** | 10 | ✅ ×10 | ✅ ×10 | ✅ ×10 | ✅ ×10 |
+
+Intro, Espacio y ratón = exactamente UNA navegación a `jobs-detail {jobId: 1}`. La parada de Tab baja
+en uno porque ahora «Ver detalle» va antes que la acción de la escalera. Salida de la sonda: **0**.
+
+**Mutaciones** (sobre el commit `c63229da5efa6b1826ae99e588a7c5ef0951eea7`, árbol limpio después de cada una):
+
+| mutante | guard escalera | `scrum1562f` (3) | `scrum1562d` (6) | sonda |
+|---|---|---|---|---|
+| M1 · «Ver detalle» otra vez dentro de `.jobs-acciones` (el defecto) | **1** (2 hallazgos) | **2 fail** | 6 pass | **1** |
+| M2 · quitar el botón (el arreglo que la condición prohíbe) | **0 — VERDE** | 3 fail | **4 fail** | **1** |
+
+M2 es la razón de la condición del encargo: **el guard se pone verde quitando el botón y la fila se
+queda sin teclado.** Sólo lo cazan los tests y la sonda.
+
+**Otros instrumentos sobre la misma fila (A12), con el arreglo:** `guard:lista-trabajos` salida 0 (16
+filas) · `guard:lista-trabajos-917` salida 0 (50 comprobaciones, 1280 y 390) · `guard:objetivo-tactil`
+0 hallazgos · 0 ciegos. Los 102 ficheros de test que nombran `jobsView`, `renderJobsView` o
+`styles.css`: **951 tests · 951 pass · 0 fail · 0 skip**.
+
+**Lo que NO está medido, con su motivo:**
+- **yaqu.app: no.** Producción está congelada en `fe65a8b7` (orquestador, 22-oct 09:12Z): nada de esto
+  se puede ver ahí hasta que despliegue. Todo lo de arriba es «medido con la rama servida» en local.
+- **La tanda entera: no.** Memoria libre 2.127 MB (umbral 2.200) y sin turno pedido: la corre el
+  obligatorio del PR.
+- **`npm run build` en este worktree sale 2** por `Merchant.activityKind`, que falta en el cliente de
+  Prisma COMPARTIDO (lo dice el guard del cliente). No es de este cambio, que no toca TypeScript. No se
+  ha regenerado (A1). `tsc` emitió `dist/` igual, y los tests de arriba corren contra él.
+- Lector de pantalla: no.
+
+**Errores míos, cazados por los controles de la sonda:**
+1. La primera versión pulsaba el centro de `td.cell-client`, caía en el desplegable de técnicos
+   (`[data-fila-no-navega]`) y daba «ratón 🔴» en el ANTES y en el DESPUÉS por igual. Delató a la sonda
+   que fallaran los dos lados. Ahora pulsa `.jobs-fila-cliente`.
+2. Con M2, la sonda decía «NO SUPE MIRAR» (salida 2): en el DESPUÉS, una fila sin «Ver detalle» no es
+   ceguera, es el defecto. Corregida (`2d75bccf1468e6add9aae8df53bb403d7f7d9f7a`) y re-medida con M2 → salida 1.

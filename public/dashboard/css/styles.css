@@ -4229,6 +4229,9 @@ textarea.parte-linea-desc {
    (medido en staging el 17-sep-2026). Se retira de la fila y, sin nadie que la pinte, de la hoja. */
 
 .jobs-acciones { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+/* S4 · SCRUM-1562f · la celda de acciones de la fila: «Ver detalle» y, al lado, `.jobs-acciones`.
+   Las mismas reglas de caja que `.jobs-acciones`, para que el botón siga en la misma línea. */
+.jobs-celda-acciones { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .jobs-vacio-filtro { text-align: center; color: var(--muted); font-size: 13px; padding: 18px; }
 
 /* El modal de la casa, con su cuerpo. `.modal-overlay`/`.modal` ya existen: esto solo viste lo
