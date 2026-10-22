@@ -1,0 +1,152 @@
+[lifecycle] (sin RESEND) email a 6dad3617@test.local: ¡Bienvenido a YaQu! 🎉
+[magic-link] to=reformas-madrid-1536f@test.local link=http://localhost:3000/auth/verify?token=662cddd097f36300e80683a3d30033cca28b6ae05c06a0812d81219dd71659d0
+[aviso] {"evento":"aviso_no_entregado","aviso":"bienvenida","destinatario":"6dad3617@test.local","estado":"fallo_envio","idProveedor":null,"motivo":"no se pudo enviar el email (sin_transporte)"}
+[magic-link] ERROR enviando email a 6dad3617@test.local: no se pudo enviar el email (sin_transporte)
+[aviso] {"evento":"aviso_no_entregado","aviso":"enlace_de_acceso","destinatario":"6dad3617@test.local","estado":"fallo_envio","idProveedor":null,"motivo":"no se pudo enviar el email (sin_transporte)"}
+[lifecycle] (sin RESEND) email a c1535c5a@test.local: ¡Bienvenido a YaQu! 🎉
+[magic-link] to=reformas-mexico-1536f@test.local link=http://localhost:3000/auth/verify?token=dedbfa277a31bc4ed20677f04d09d6ead977dc5fef10366998c601d5422c74bb
+[aviso] {"evento":"aviso_no_entregado","aviso":"bienvenida","destinatario":"c1535c5a@test.local","estado":"fallo_envio","idProveedor":null,"motivo":"no se pudo enviar el email (sin_transporte)"}
+[magic-link] ERROR enviando email a c1535c5a@test.local: no se pudo enviar el email (sin_transporte)
+[aviso] {"evento":"aviso_no_entregado","aviso":"enlace_de_acceso","destinatario":"c1535c5a@test.local","estado":"fallo_envio","idProveedor":null,"motivo":"no se pudo enviar el email (sin_transporte)"}
+{
+ "etiqueta": "antes-1536g",
+ "raiz": "C:\\Users\\Javier Pereira\\cobroflash-backend\\.claude\\worktrees\\j3x-1536f",
+ "exclusion1536d": true,
+ "pasos": [
+  {
+   "paso": "① alta ES Madrid",
+   "creado": true,
+   "id": 2
+  },
+  {
+   "paso": "① estado tras el alta",
+   "country": "ES",
+   "timezone": "Europe/Madrid",
+   "defaultCurrency": "(sin escribir; la pone la base)",
+   "domicilioFiscalForal": false,
+   "getEmissionMode · flag sin poner": "receipt",
+   "getEmissionMode · flag=false": "receipt",
+   "getEmissionMode · flag=true": "fiscal",
+   "getEmissionMode · flag=false y override del comercio false": "receipt",
+   "isFlagEnabled(INVOICING_ES_ENABLED) · flag=true": true,
+   "modoDocumentoSuelto · flag=false": "no",
+   "debeEstarEnLaCadena(2026-A-0001) (con NIF)": true,
+   "estadoAlNacer(2026-A-0001) (con NIF)": "pendiente_de_sellado",
+   "locale · moneda / impuesto / documento": "EUR / IVA 0.21 / Presupuesto"
+  },
+  {
+   "paso": "① PUT country=MX",
+   "status": 200,
+   "cuerpo": "{\"id\":2,\"lifecycleEmailsSent\":null,\"createdAt\":\"2026-10-22T10:04:36.732Z\",\"name\":\"Reformas Madrid 1536f\",\"email\":\"reformas-madrid-1536f@test.local\",\"country\":\"M"
+  },
+  {
+   "paso": "① estado tras pasar a MX",
+   "country": "MX",
+   "timezone": "Europe/Madrid",
+   "defaultCurrency": "(sin escribir; la pone la base)",
+   "domicilioFiscalForal": false,
+   "getEmissionMode · flag sin poner": "fiscal",
+   "getEmissionMode · flag=false": "fiscal",
+   "getEmissionMode · flag=true": "fiscal",
+   "getEmissionMode · flag=false y override del comercio false": "fiscal",
+   "isFlagEnabled(INVOICING_ES_ENABLED) · flag=true": false,
+   "modoDocumentoSuelto · flag=false": "factura",
+   "debeEstarEnLaCadena(2026-A-0001) (con NIF)": false,
+   "estadoAlNacer(2026-A-0001) (con NIF)": "no_aplica",
+   "locale · moneda / impuesto / documento": "MXN / IVA 0.16 / Cotización"
+  },
+  {
+   "paso": "① PUT country=MX + domicilioFiscalForal=true",
+   "status": 409,
+   "cuerpo": "{\"error\":\"territorio_excluido\",\"message\":\"De momento YaQu no está disponible con el domicilio fiscal en el País Vasco o en Navarra. No hemos guardado este cambi"
+  },
+  {
+   "paso": "① PUT country=ZZ (no está en la lista de la pantalla)",
+   "status": 200,
+   "cuerpo": "{\"id\":2,\"lifecycleEmailsSent\":null,\"createdAt\":\"2026-10-22T10:04:36.732Z\",\"name\":\"Reformas Madrid 1536f\",\"email\":\"reformas-madrid-1536f@test.local\",\"country\":\"Z"
+  },
+  {
+   "paso": "① estado tras ZZ",
+   "country": "ZZ",
+   "timezone": "Europe/Madrid",
+   "defaultCurrency": "(sin escribir; la pone la base)",
+   "domicilioFiscalForal": false,
+   "getEmissionMode · flag sin poner": "fiscal",
+   "getEmissionMode · flag=false": "fiscal",
+   "getEmissionMode · flag=true": "fiscal",
+   "getEmissionMode · flag=false y override del comercio false": "fiscal",
+   "isFlagEnabled(INVOICING_ES_ENABLED) · flag=true": false,
+   "modoDocumentoSuelto · flag=false": "factura",
+   "debeEstarEnLaCadena(2026-A-0001) (con NIF)": false,
+   "estadoAlNacer(2026-A-0001) (con NIF)": "no_aplica",
+   "locale · moneda / impuesto / documento": "EUR / IVA 0.21 / Presupuesto"
+  },
+  {
+   "paso": "① PUT country=ES (vuelta)",
+   "status": 200,
+   "cuerpo": "{\"id\":2,\"lifecycleEmailsSent\":null,\"createdAt\":\"2026-10-22T10:04:36.732Z\",\"name\":\"Reformas Madrid 1536f\",\"email\":\"reformas-madrid-1536f@test.local\",\"country\":\"E"
+  },
+  {
+   "paso": "① estado tras volver a ES",
+   "country": "ES",
+   "timezone": "Europe/Madrid",
+   "defaultCurrency": "(sin escribir; la pone la base)",
+   "domicilioFiscalForal": false,
+   "getEmissionMode · flag sin poner": "receipt",
+   "getEmissionMode · flag=false": "receipt",
+   "getEmissionMode · flag=true": "fiscal",
+   "getEmissionMode · flag=false y override del comercio false": "receipt",
+   "isFlagEnabled(INVOICING_ES_ENABLED) · flag=true": true,
+   "modoDocumentoSuelto · flag=false": "no",
+   "debeEstarEnLaCadena(2026-A-0001) (con NIF)": true,
+   "estadoAlNacer(2026-A-0001) (con NIF)": "pendiente_de_sellado",
+   "locale · moneda / impuesto / documento": "EUR / IVA 0.21 / Presupuesto"
+  },
+  {
+   "paso": "② alta MX",
+   "creado": true,
+   "id": 3
+  },
+  {
+   "paso": "② PUT country=ES",
+   "status": 200,
+   "cuerpo": "{\"id\":3,\"lifecycleEmailsSent\":null,\"createdAt\":\"2026-10-22T10:04:36.860Z\",\"name\":\"Reformas Mexico 1536f\",\"email\":\"reformas-mexico-1536f@test.local\",\"country\":\"E"
+  },
+  {
+   "paso": "② estado tras pasar a ES",
+   "country": "ES",
+   "timezone": null,
+   "defaultCurrency": "(sin escribir; la pone la base)",
+   "domicilioFiscalForal": "(sin escribir)",
+   "getEmissionMode · flag sin poner": "receipt",
+   "getEmissionMode · flag=false": "receipt",
+   "getEmissionMode · flag=true": "fiscal",
+   "getEmissionMode · flag=false y override del comercio false": "receipt",
+   "isFlagEnabled(INVOICING_ES_ENABLED) · flag=true": true,
+   "modoDocumentoSuelto · flag=false": "no",
+   "debeEstarEnLaCadena(2026-A-0001) (con NIF)": true,
+   "estadoAlNacer(2026-A-0001) (con NIF)": "pendiente_de_sellado",
+   "locale · moneda / impuesto / documento": "EUR / IVA 0.21 / Presupuesto"
+  },
+  {
+   "paso": "② PUT domicilioFiscalForal=true (ya ES)",
+   "status": 409,
+   "cuerpo": "{\"error\":\"territorio_excluido\",\"message\":\"De momento YaQu no está disponible con el domicilio fiscal en el País Vasco o en Navarra. No hemos guardado este cambi"
+  },
+  {
+   "paso": "③ alta ES Bizkaia, domicilio foral «sí»",
+   "creado": false,
+   "error": "territorio_excluido"
+  },
+  {
+   "paso": "③ alta ES Las Palmas, «no»/«no»",
+   "creado": false,
+   "error": "territorio_excluido"
+  },
+  {
+   "paso": "④ PUT country=ESP (3 letras)",
+   "status": 400,
+   "cuerpo": "{\"error\":\"validation_error\",\"details\":{\"formErrors\":[],\"fieldErrors\":{\"country\":[\"Too big: expected string to have <=2 characters\"]}}}"
+  }
+ ]
+}

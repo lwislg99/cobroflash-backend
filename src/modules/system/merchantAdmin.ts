@@ -5,6 +5,7 @@ import { isDemoMerchant } from '../invoicing/domain/emission.service'; // SCRUM-
 import { bloqueoCambioDeSerie, numerosDeLaSerie, anioDeLaSerie } from '../../core/validation/fiscalInput';
 import { prisma } from '../../core/db/prisma';
 import { normalizarClausulasParaGuardar } from '../quotes/domain/clausulas';
+import { TEXTO_FORAL_EN_AJUSTES } from '../auth/domain/territorioDeAlta'; // SCRUM-1536d
 
 export const DEFAULT_MERCHANT_ID = 1; // de momento trabajamos con el merchant demo
 
@@ -33,6 +34,8 @@ export type MerchantProfileInput = {
   slug?: string | null;
   profileZones?: string[] | null;
   profileYears?: number | null;
+  // SCRUM-1536d: el «Sí» se rechaza en `updateMerchantProfile` (forales fuera de YaQu por ahora)
+  domicilioFiscalForal?: boolean | null;
 };
 
 // A14.1 — rutas/palabras que un slug JAMÁS puede pisar (master Parte R: "lista
@@ -51,6 +54,28 @@ export class SlugError extends Error {
   constructor(public code: 'slug_reserved' | 'slug_taken' | 'slug_cooldown', message: string,
               public nextChangeAt?: Date) {
     super(message);
+  }
+}
+
+/** SCRUM-1536d · el «Sí» foral en Ajustes. La ruta lo traduce a 409 con el texto firmado. */
+export class TerritorioError extends Error {
+  public code = 'territorio_excluido' as const;
+  constructor() {
+    super(TEXTO_FORAL_EN_AJUSTES);
+  }
+}
+
+/**
+ * SCRUM-1536g · el país no se cambia una vez creada la cuenta (decisión (a) del fundador, Jira
+ * SCRUM-1536 c.20245). Medido en 1536f: pasar de ES a otro país encendía la factura sin VeriFactu
+ * y con cobro (regla 24), y de otro país a ES se saltaba la exclusión territorial de 1536d.
+ * Texto firmado en c.20245, copiado de c.20242. La ruta lo traduce a 409.
+ */
+export const MSG_PAIS_NO_CAMBIABLE = 'El país no se puede cambiar una vez creada la cuenta. Escríbenos por WhatsApp y lo vemos contigo.';
+export class PaisError extends Error {
+  public code = 'pais_no_cambiable' as const;
+  constructor() {
+    super(MSG_PAIS_NO_CAMBIABLE);
   }
 }
 
@@ -163,6 +188,22 @@ export async function updateMerchantProfile(
   merchantId: number = DEFAULT_MERCHANT_ID,
   data: MerchantProfileInput,
 ) {
+  // SCRUM-1536d · el domicilio fiscal foral NO entra en YaQu por ahora (Jira c.20218): marcar «Sí»
+  // en Ajustes se rechaza ENTERO, antes de leer o escribir nada, con el texto firmado en c.20225
+  // (T2a: «No hemos guardado este cambio», y no se guarda ningún campo). «No» y «no consta» pasan.
+  // Ningún estado nuevo y nada se borra (registro 1536c, pieza B).
+  if (data.domicilioFiscalForal === true) throw new TerritorioError();
+
+  // SCRUM-1536g · el país se fija en el alta y desde aquí no se cambia: un país DISTINTO del
+  // guardado se rechaza entero, antes de escribir nada. El mismo país (Empresa lo mandaba en cada
+  // guardado) pasa. No toca la emisión (regla 38): decide si se admite un cambio de AJUSTE.
+  // Sin país guardado no hay nada que cambiar: la columna es NOT NULL y en la base no ocurre, pero
+  // los bancos de ida y vuelta (scrum1227, scrum1269) guardan sobre una fila sin él.
+  if (data.country !== undefined) {
+    const actual = await prisma.merchant.findUnique({ where: { id: merchantId }, select: { country: true } });
+    if (actual?.country && actual.country !== data.country) throw new PaisError();
+  }
+
   // A14.1 — el slug tiene reglas propias (reservados, unicidad, 1 cambio/30d)
   if (data.slug !== undefined) {
     const current = await prisma.merchant.findUnique({
