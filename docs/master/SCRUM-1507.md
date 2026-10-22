@@ -1,0 +1,64 @@
+# SCRUM-1507 — la tarea programada del reintento de sellado (PR-2 de SCRUM-1404)
+
+## SCRUM-1507c · el bloque de `cron.ts`, construido; la fecha de corte, DENEGADA por el control de permisos
+
+**Medido contra:** `origin/main` = `75884928b170ec0ec02e35921426e5bd711cbb0f` · 2026-10-22T09:14:18Z (hora de GitHub)
+
+J1 del equipo de Javier (sesión `jv-j1r`), por encargo del orquestador `cobroflash-backend-5f`.
+**Carril, a mano (SCRUM-1506):** `src/core/cron/cron.ts` es de S1; lo escribe J1 con la conformidad
+del dueño (c.19344 §4: «ese bloque y sólo ese bloque») y la decisión del fundador de cómo se
+entrega (c.20220: opción 1). El cruce **todavía no está declarado** en `dos-equipos.md` §3.4: por
+eso esta rama NO se empuja hasta que la S0 lo declare. La cerradura de carril no me paró al editar
+`cron.ts` (lo esperado: SCRUM-1506).
+
+### Qué lleva
+
+| pieza | dónde | estado |
+|---|---|---|
+| la tarea, tal como la escribió S1 en c.19344 §3 | `src/core/cron/cron.ts` (el `import` y el bloque detrás del de «sellos de albarán») | HECHO, compilado con chequeo de tipos |
+| su test, visto en ROJO antes de escribirla | `tests/scrum1507-el-cron-del-reintento.test.mjs` | 8 casos; contra `main` caen 7 de 8 (el que pasa es el control sembrado del lector) |
+| las transiciones que los guards prescriben para «el PR que cablea» | `scrum1404b` ① (de «nadie importa» a «sólo `cron.ts`»), `scrum411` (tope 6 → 5), `_sin-consumir-declarados.json` (3 claves a `retiradas`), `_huerfanos-declarados.mjs` (+11 de `reintentoSellado.ts`, −`SELLADO_NO_APLICA`) | HECHO |
+| **la fecha de corte** | `src/modules/invoicing/domain/reintentoSellado.ts:74`, `REINTENTO_ACTIVO_DESDE` | **NO HECHO: el control de permisos de Claude Code denegó la edición** («Production Deploy»), el mismo que paró a S1 en c.19344 §5. No lo he rodeado |
+| la respuesta (el `catch` de las dos rutas del PDF) | — | fuera del GO de este encargo; c.18783 permite el reintento antes que la respuesta, no al revés |
+
+### Lo corrido
+
+* `tsc --noEmit` sobre el árbol: 17 errores, **ninguno en `cron.ts`**; los 17 son el cliente de Prisma
+  compartido desfasado (`archivedAt` y similares; `_prisma-client-guard` lo nombra). Control: con
+  `{ noOverlap: 7 }` inyectado salen 18 y el nuevo es `cron.ts:176` («number no es boolean»):
+  el chequeo ve la opción con los tipos de `node-cron` 4.2.1.
+* Dirigida de 14 ficheros (los de cron, `scrum1404b`, `scrum411`, `scrum1185`, `scrum1330`,
+  `scrum1480e`, `scrum622`, `scrum237`, `scrum976`): **170 casos, 169 pasan, 1 cae, 0 saltan**.
+  El que cae es `scrum1507` ④: la fecha sigue a `null`. Cae a propósito: el PR-2 no está completo
+  sin ella.
+* No corrida: la tanda completa. Ninguna base, ni producción ni staging.
+
+### Qué enciende el reintento en producción, exactamente
+
+Dos cosas, y las dos en `main` (Railway despliega desde `main`):
+
+1. la tarea en `cron.ts` (este commit), que sin fecha corre cada minuto y contesta «inactivo»
+   (c.19406 §1), con un aviso en el minuto 0 de cada hora;
+2. **la fecha** en `REINTENTO_ACTIVO_DESDE`: un instante ISO en UTC copiado de la cabecera `Date:`
+   de GitHub al escribirlo. Hoy la escritura la bloquea el permiso; la levanta el fundador (regla
+   de permiso para esa edición, o escribirla él).
+
+El merge del PR con las dos es el encendido. Premisa del GO (13-oct): «no hay facturas reales en
+producción». **No la he medido** (el encargo lo prohíbe).
+
+### Lo que no he medido
+
+* Que PR-1 corre en producción: se deduce del despliegue automático desde `main` (mergeado el 8-oct).
+* Cuántas réplicas corren los crons: `noOverlap` no protege entre procesos.
+* `SCRUM-1404 c.18869 ②` (plazo derivado de la cadencia): con una pasada por minuto no cambia nada.
+
+### De paso
+
+* `tests/scrum929-el-total-del-borrador.test.mjs:189` cita `cron.ts:87` en un comentario; con el
+  `import` nuevo esa línea pasa a ser la 89. Es un comentario, no lo lee nada; lo nombro y no lo toco
+  (no es de mi carril).
+
+Error mío: escribí el suelo de población de `retiradas` a ojo (>50) y había 39; lo cazó el propio
+caso al correrlo, antes del commit.
+
+A9: comprobación → `tests/scrum1404b-el-reintento-del-sellado.test.mjs`
