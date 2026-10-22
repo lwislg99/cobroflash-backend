@@ -366,3 +366,79 @@ El `select` «IVA %» de los ajustes de la línea (21,8 px), con móvil emulado 
 **Trinquete:** ninguno que mover. Ni `censo:tactil-panel` ni `guard:objetivo-tactil` miran modales (es justo lo que encontró 962b).
 
 **Pendiente:** verlo en yaqu.app cuando producción se descongele, a 390 y 1280, en un modal cualquiera: el «×» y el «?» tienen que responder hasta 7 px por encima y por debajo de su dibujo.
+
+---
+
+## Tramo 962f (S2, 22-oct-2026) · ARREGLO: los cuatro de `quotesView.js` a 44 px de toque
+
+**Autorizado por el orquestador** («② Después, los tres de `quotesView.js`… en otro PR»). Son cuatro y no tres: el dudoso de 962c resultó defecto (962d).
+**Sufijo:** iba a ser 962e. El control de antes del primer push encontró `scrum-962e-censo-tactil-cuatro-averias` de S3 (el arreglo del censo, ya renombrado por S3 desde 962c porque esa la ocupaba yo, #2681). Esta rama se rehízo como 962f antes de empujar nada: ningún commit suyo dice «962e».
+**Skill UI:** cargada (`yaqu-premium-ui`). Ningún token nuevo. **Microcopy:** ninguna.
+**Medido contra:** rama `scrum-962f-editor-cuatro-44`, apilada sobre 962d, con `origin/main` = `a593817dd` fusionado (`38928636f`; trae sólo un cambio en `settingsView.js`, que no toca nada de esto). **Servido en local.** Hora de GitHub: 2026-10-22 10:44 GMT. **Producción sigue congelada: no se ha visto en yaqu.app.**
+
+A9: sin fallo que generalice — mi medidor medía «Razón social» desde «marcado» (lo había marcado yo justo antes con un toque) y guardaba una COPIA de la fila, así que el control positivo del select no salía; los dos cazados al leer la primera salida, antes de comparar.
+
+### Por qué los radios NO son el caso de las casillas de Avisos
+
+Las casillas de Avisos (962b) y los radios Empresa/Persona (962c) eran **artefactos**: su etiqueta envolvente medía ≥44 y los activaba, así que el dedo ya tenía 44 aunque el `<input>` midiera 17.
+Aquí la etiqueta **también** los activa (toque real: «sin marcar → marcado»), pero **mide lo mismo que el control**: 19,4 px los radios y 20,1 la casilla. **Es defecto, y el arreglo no puede ser «no hacer nada»:** hay que subir la ETIQUETA a 44. Quien vea un `<input>` de 16 px con etiqueta que lo activa no debe darlo por artefacto sin medir la etiqueta.
+
+### ¿Comparten pieza con otras pantallas?
+
+| pieza | quién más la usa | decisión |
+|---|---|---|
+| `.radio-label` / `.inline-options` | **nadie**: sólo esta fila (`quotesView.js:1495-1507`) | acotado igual a `.quote-ajustes`, por si mañana se reutiliza |
+| `.inline-checkbox` | **la ficha 360 de J2** (`customerDetailView.js:1052`, «Baja de WhatsApp»), **Avisos de J3** (`settingsView.js:698`) y el suplido del propio editor | **acotado a `.quote-ajustes`**: no se toca la pantalla de otro puesto. Una regla global llegaría a esas pantallas, y es decisión de sus dueños |
+| `.quote-ajustes-campos` | **nadie**: es la hoja de ajustes de la línea | — |
+
+⇒ A diferencia de la cabecera de los modales, **este arreglo no vale para más sitios**: son cuatro controles de una pantalla. El único candidato a «pieza» es `.inline-checkbox`, y es de otros carriles.
+
+### El arreglo (sólo `styles.css`, bloques marcados `S2:`)
+
+- **Radios y casilla del PDF** (patrón de `.pay-methods-row`, SCRUM-1265, la fila que tienen justo encima):
+  - `.quote-ajustes .radio-label` y `.quote-ajustes .inline-checkbox label` suben a `min-height: 44px`;
+  - el control lleva un `::before` de 44×44 anclado a su **izquierda**, así que crece sólo hacia su propio texto. Centrado, el de «Nombre comercial» se comería el final de «Razón social».
+- **`select` «IVA %»:** entra en la regla de `.quote-ajustes-campos input`, que es la de sus hermanos «Coste» y «Dto. %»: 44 px, borde, radio y fuente 16 de DESIGN.md §5 (Inputs).
+  - Lleva `height: 44px`, porque con sólo `min-height` daba 45 y se desalineaba un píxel.
+  - **Y entra en `:disabled`.** El IVA bloqueado (al marcar suplido) **es este select**, y la regla «El IVA bloqueado tiene que PARECER bloqueado» sólo nombraba `input`. Medido: **antes, el select bloqueado salía con fondo blanco y cursor normal**, un defecto latente que nadie había visto; **ahora sale gris y con `not-allowed`**.
+  - ⚠️ **Es el único cambio que SE VE:** el select pasa de nativo a campo de la casa, igual que sus hermanos.
+
+### ANTES → DESPUÉS (`lote2-medida.mjs`, editor vivo recorrido con toques reales; 390 táctil y 929 ratón)
+
+| control | antes (caja · área · etiqueta) | después (caja · área · etiqueta) |
+|---|---|---|
+| radio «Razón social» | 16×16 · **16×16** · 91,6×19,4 | 16×16 · **44×44** · 91,6×**44** |
+| radio «Nombre comercial» | 16×16 · **16×16** · 126,8×19,4 | 16×16 · **44×44** · 126,8×**44** |
+| casilla «Incluir descripción en el PDF» | 16×16 · **16×16** · 324×20,1 (591 a 929) | 16×16 · **44×44** · ×**44** |
+| `select` «IVA %» | 342×**21** · nativo | 342×**44** (sus hermanos: 44 y 44) |
+| `select` «IVA %» bloqueado (suplido) | fondo **blanco**, cursor normal | fondo `rgb(241, 242, 238)`, cursor `not-allowed` |
+
+- **Las etiquetas siguen activando su control** («sin marcar → marcado» en los tres).
+- **La frontera entre los dos radios** sigue intacta: el final de «Razón social» es suyo y el principio de «Nombre comercial» es suyo, antes y después.
+- **Control positivo del `select`:** el toque directo lo abre (`:open`), antes y después.
+- **Lo que CRECE la pantalla**, dicho con su cifra: el bloque «Ajustes del documento» pasa de **882,9 a 931,4 px a 390** y de **714,2 a 762,7 a 929** (+48,5: las dos filas de etiquetas suben a 44). El modal de ajustes de línea pasa de **634,1 a 657,1** (+23, el select). Es el precio de los 44 px, el mismo que pagó `.pay-methods-row`.
+
+### El trinquete: sus dos mitades
+
+`guard:objetivo-tactil` mide el editor con todos los pasos abiertos. **Con este arreglo dio CIEGO** (0 cortos donde esperaba 1) **y EXCEPCIÓN SOBRANTE** (`INPUT`, «casillas del editor a 17,0 px… Sin decidir»).
+- Con el CSS de antes (962d) da verde: el corto que desaparece es el que arregla este ticket.
+- Se bajan las dos mitades: `distintosEsperados` del editor, de 1 → 0, y se retira la excepción `INPUT`, con su motivo escrito.
+- **Después, verde.** Los 11 tests que leen ese guard, en verde.
+
+⚠️ **Corrección a 962c:** dije que el censo «no ve ninguno» de los defectos del editor. Es cierto del **censo** (`censo:tactil-panel`, sólo el estado del arranque), pero **no de este guard**: `guard:objetivo-tactil` sí abría los pasos y **sí veía estas casillas**. Las tenía **excusadas** como «Sin decidir» desde SCRUM-787. Lo que faltaba no era mirarlas, era decidir.
+
+### El test
+
+`tests/scrum962f-editor-cuatro-44.test.mjs` (sin gate) tiene seis pruebas:
+- ① las etiquetas a 44 y el `::before` de 44×44;
+- ② anclado a la izquierda, sin `right` ni `inset`;
+- ③ todo acotado a `.quote-ajustes`;
+- ④ el select en la regla de sus hermanos, con `height: 44px` y en `:disabled`;
+- ⑤ el IVA es un `SELECT` (pieza real del banco) y cuelga de `.quote-ajustes-campos` (cableado leído del fuente, **declarado**: el banco no pinta ninguna línea al montar, medido);
+- ⑥ el editor pinta los radios y la casilla dentro de `.quote-ajustes` (banco de vistas).
+
+**7 mutaciones en el catálogo del meta-guard** (`MUTACIONES_QUE_ME_TUMBAN`). Réplica local `mutar-962f.mjs <raiz> e698edbb1`: **las 7 tumban SU prueba, y la BASE (el CSS de antes) también cae.**
+
+**Tests relacionados:** los **154 ficheros** que leen `styles.css` o `quotesView.js`, o nombran estas clases o la cabecera de los modales: **1.467 pass · 0 fail · 0 skipped**. Guards de navegador: `guard:objetivo-tactil` (con el trinquete bajado), `guard:pasos-del-editor` y `guard-915i-cabecera`, **los tres a 0**.
+
+**Pendiente:** verlo en yaqu.app al descongelar. A 390, en Condiciones › Ajustes del documento, los dos radios y la casilla tienen que responder en todo el alto de 44 de su fila. En ⋯ › Ajustes de la línea, el «IVA %» tiene que verse como «Coste».

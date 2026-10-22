@@ -1,4 +1,4 @@
-// tests/scrum962e-editor-cuatro-44.test.mjs — SCRUM-962e
+// tests/scrum962f-editor-cuatro-44.test.mjs — SCRUM-962f
 //
 // Sin gate: lee styles.css y monta el editor de presupuestos en el banco con los datos del censo. Ni BD, ni red,
 // ni navegador.
@@ -12,7 +12,7 @@
 //   · el <select> «IVA %» de los ajustes de la línea: nativo a 21 px. Su etiqueta lo ENFOCA pero NO lo abre
 //     (medido con `:open`), así que la etiqueta no le presta el área: el control tiene que medir 44, como
 //     «Coste» y «Dto. %», que ya lo hacían con `.quote-ajustes-campos input`.
-// La GEOMETRÍA la mide en navegador `docs/master/evidencias/scrum962e/lote2-medida.mjs`; este test vigila lo
+// La GEOMETRÍA la mide en navegador `docs/master/evidencias/scrum962f/lote2-medida.mjs`; este test vigila lo
 // que la sostiene, en las reglas y en el producto.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -28,43 +28,43 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     fichero: 'public/dashboard/css/styles.css',
     de: '.quote-ajustes .inline-checkbox label { min-height: 44px; cursor: pointer; }',
     a: '.quote-ajustes .inline-checkbox label { min-height: 20px; cursor: pointer; }',
-    cae: 'SCRUM-962e ① ·',
+    cae: 'SCRUM-962f ① ·',
   },
   {
     fichero: 'public/dashboard/css/styles.css',
     de: '  left: 0;\n  width: 44px;\n  height: 44px;',
     a: '  left: -14px;\n  width: 44px;\n  height: 44px;',
-    cae: 'SCRUM-962e ② ·',
+    cae: 'SCRUM-962f ② ·',
   },
   {
     fichero: 'public/dashboard/css/styles.css',
     de: '.quote-ajustes .radio-label,\n.quote-ajustes .inline-checkbox label {',
     a: '.radio-label,\n.inline-checkbox label {',
-    cae: 'SCRUM-962e ③ ·',
+    cae: 'SCRUM-962f ③ ·',
   },
   {
     fichero: 'public/dashboard/css/styles.css',
     de: '.quote-ajustes-campos input,\n.quote-ajustes-campos select /*',
     a: '.quote-ajustes-campos input,\n.quote-ajustes-campos textarea /*',
-    cae: 'SCRUM-962e ④ ·',
+    cae: 'SCRUM-962f ④ ·',
   },
   {
     fichero: 'public/dashboard/css/styles.css',
     de: '.quote-ajustes-campos select:disabled, /*',
     a: '.quote-ajustes-campos textarea:disabled, /*',
-    cae: 'SCRUM-962e ④ ·',
+    cae: 'SCRUM-962f ④ ·',
   },
   {
     fichero: 'public/dashboard/js/quotesView.js',
     de: 'ajustesCampos.appendChild(vatTd);',
     a: 'void vatTd;',
-    cae: 'SCRUM-962e ⑤ ·',
+    cae: 'SCRUM-962f ⑤ ·',
   },
   {
     fichero: 'public/dashboard/js/quotesView.js',
     de: 'lbl.className = "radio-label";',
     a: 'lbl.className = "opcion-nombre";',
-    cae: 'SCRUM-962e ⑥ ·',
+    cae: 'SCRUM-962f ⑥ ·',
   },
 ];
 
@@ -77,7 +77,7 @@ const cuerpoDe = (s) => con(s).map((r) => r.cuerpo).join(';');
 const CONTROLES = ['.quote-ajustes .radio-label input[type="radio"]', '.quote-ajustes .inline-checkbox input[type="checkbox"]'];
 const ETIQUETAS = ['.quote-ajustes .radio-label', '.quote-ajustes .inline-checkbox label'];
 
-test('SCRUM-962e ① · las etiquetas suben a 44, y radio y casilla llevan su `::before` de 44×44 contra un padre relativo', () => {
+test('SCRUM-962f ① · las etiquetas suben a 44, y radio y casilla llevan su `::before` de 44×44 contra un padre relativo', () => {
   for (const s of ETIQUETAS) assert.match(cuerpoDe(s), /min-height:\s*44px/, `🔴 ${s} no tiene min-height de 44 px: la etiqueta vuelve a medir lo que el control.`);
   for (const s of CONTROLES) {
     assert.match(cuerpoDe(s), /position:\s*relative/, `🔴 ${s} no es \`position: relative\`.`);
@@ -89,7 +89,7 @@ test('SCRUM-962e ① · las etiquetas suben a 44, y radio y casilla llevan su `:
   }
 });
 
-test('SCRUM-962e ② · el área del radio y de la casilla crece hacia SU texto, nunca hacia la etiqueta vecina', () => {
+test('SCRUM-962f ② · el área del radio y de la casilla crece hacia SU texto, nunca hacia la etiqueta vecina', () => {
   for (const s of CONTROLES) {
     const p = cuerpoDe(`${s}::before`);
     assert.match(p, /(^|[;\s])left:\s*0(;|\s|$)/, `🔴 ${s}::before no está anclado a su izquierda con left: 0: se sale hacia la etiqueta de al lado.`);
@@ -97,14 +97,14 @@ test('SCRUM-962e ② · el área del radio y de la casilla crece hacia SU texto,
   }
 });
 
-test('SCRUM-962e ③ · todo está ACOTADO al editor (`.inline-checkbox` la comparten la ficha 360 de J2 y Avisos de J3)', () => {
+test('SCRUM-962f ③ · todo está ACOTADO al editor (`.inline-checkbox` la comparten la ficha 360 de J2 y Avisos de J3)', () => {
   const sueltas = reglas().flatMap((r) => r.sel.map((s) => ({ s, cuerpo: r.cuerpo })))
     .filter(({ s, cuerpo }) => /(\.radio-label|\.inline-checkbox)/.test(s) && /min-height:\s*44px|::before/.test(s + cuerpo) && !/^\.quote-ajustes /.test(s))
     .map(({ s }) => s);
   assert.deepEqual(sueltas, [], `🔴 hay reglas de 44 px de esta familia SIN acotar a \`.quote-ajustes\`: ${sueltas.join(' · ')}`);
 });
 
-test('SCRUM-962e ④ · el <select> «IVA %» es un campo de 44 como sus hermanos, y bloqueado PARECE bloqueado', () => {
+test('SCRUM-962f ④ · el <select> «IVA %» es un campo de 44 como sus hermanos, y bloqueado PARECE bloqueado', () => {
   assert.ok(con('.quote-ajustes-campos select').some((r) => r.sel.includes('.quote-ajustes-campos input') && /min-height:\s*44px/.test(r.cuerpo)),
     '🔴 `.quote-ajustes-campos select` ya no va en la misma regla que sus hermanos `input`: vuelve a ser nativo a 21 px.');
   assert.match(cuerpoDe('.quote-ajustes-campos select'), /(^|[;\s])height:\s*44px/, '🔴 el select sin `height: 44px` mide 45 y no se alinea con sus hermanos.');
@@ -112,7 +112,7 @@ test('SCRUM-962e ④ · el <select> «IVA %» es un campo de 44 como sus hermano
     '🔴 el IVA bloqueado ES este select: sin él en la regla de `:disabled`, con fondo propio, deja de parecer bloqueado.');
 });
 
-test('SCRUM-962e ⑥ · el editor pinta los radios y la casilla DENTRO de lo que las reglas nombran', async () => {
+test('SCRUM-962f ⑥ · el editor pinta los radios y la casilla DENTRO de lo que las reglas nombran', async () => {
   const fn = 'renderQuotesView';
   const dc = datosDelCenso(); dc.enVista(fn);
   const r = await pintarVista(cargarDashboard(RAIZ, { datos: dc.datos }), fn, ...(ARGUMENTOS_DEL_CENSO[fn] || []));
@@ -138,11 +138,11 @@ test('SCRUM-962e ⑥ · el editor pinta los radios y la casilla DENTRO de lo que
   assert.ok(dentro(pdf[0].pila, 'inline-checkbox') && dentro(pdf[0].pila, 'quote-ajustes'), '🔴 la casilla del PDF salió de `.quote-ajustes .inline-checkbox`.');
 });
 
-test('SCRUM-962e ⑤ · el «IVA %» de la línea es un <select> y vive en `.quote-ajustes-campos`', () => {
+test('SCRUM-962f ⑤ · el «IVA %» de la línea es un <select> y vive en `.quote-ajustes-campos`', () => {
   // ⚠️ El banco NO pinta ninguna línea al montar (medido: cero `.quote-ajustes-campos` en el árbol; la línea
   // llega después, con `addLine`). Así que aquí no se puede mirar el árbol pintado: se mira la PIEZA real
   // (`tiposDeIva.montar`, cargada por el banco) y el CABLEADO en el fuente. La geometría en vivo la da
-  // `docs/master/evidencias/scrum962e/lote2-medida.mjs`, que abre el modal con clics reales.
+  // `docs/master/evidencias/scrum962f/lote2-medida.mjs`, que abre el modal con clics reales.
   const { ctx } = cargarDashboard(RAIZ);
   assert.equal(typeof (ctx.tiposDeIva && ctx.tiposDeIva.montar), 'function', '🔴 NO PUDE MIRAR: el banco no expone `tiposDeIva.montar`.');
   assert.equal(ctx.tiposDeIva.montar(null).tagName, 'SELECT', '🔴 el IVA de la línea ya no es un <select>: la regla `.quote-ajustes-campos select` no le llega.');

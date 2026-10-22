@@ -352,12 +352,12 @@ const SUPERFICIES_791 = [
   // producto oculta con `hidden` y el mini-DOM pintaba (no reflejaba la propiedad). Con el banco
   // arreglado ese campo ya no sale en la página serializada y el botón mide sus 44. Lo nombró el
   // detector de sobrantes, medido con ESTE guard antes y después. Sigue: las casillas de 17 px.
-  // S2: 🔴 SCRUM-962e · 1 → 0. El último corto eran las casillas de «Ajustes del documento» a 17 px
+  // S2: 🔴 SCRUM-962f · 1 → 0. El último corto eran las casillas de «Ajustes del documento» a 17 px
   // S2: (radios «Razón social / Nombre comercial» y «Incluir descripción en el PDF»): ahora su etiqueta
-  // S2: sube a 44 y el control lleva un `::before` de 44 (styles.css, bloque SCRUM-962e). Medido con
+  // S2: sube a 44 y el control lleva un `::before` de 44 (styles.css, bloque SCRUM-962f). Medido con
   // S2: ESTE guard antes (1, verde) y después (0: CIEGO + excepción SOBRANTE, que es lo que pide bajar).
   { ruta: '/__quotes', vista: 'renderQuotesView', titulo: 'editor de presupuesto', distintosEsperados: 0,
-    origen: 'SCRUM-962e (22-oct-2026, casillas de Ajustes del documento a 44)', preparar: abrirTodosLosPasos },
+    origen: 'SCRUM-962f (22-oct-2026, casillas de Ajustes del documento a 44)', preparar: abrirTodosLosPasos },
   // 🔴 SCRUM-848 · `datos` NO es una excepción nueva ni un número tocado: es la SUPERFICIE.
   //
   // Sin él, el banco montaba esta ficha con `{}` — un Trabajo SIN `status`, que el producto no
@@ -805,7 +805,7 @@ const EXCEPCIONES_791 = {
     // Los dos miden 36,7 px a 929 y cumplen a 390: sólo existían porque el guard exigía 44 en
     // escritorio, más de lo que dice DESIGN.md. Con el mínimo por ancho, el detector de sobrantes
     // las nombró a las dos. (La de «Limpiar formulario» ya había perdido una víctima en SCRUM-794.)
-    // S2: SCRUM-962e · aquí estaba `INPUT` «casillas del editor a 17,0 px… Sin decidir». Decidido y
+    // S2: SCRUM-962f · aquí estaba `INPUT` «casillas del editor a 17,0 px… Sin decidir». Decidido y
     // S2: hecho: se les da área EN ESTE SITIO (acotado a `.quote-ajustes`), como pedía el motivo. Cumple a
     // S2: 929 y a 390; la nombró el detector de sobrantes. Retirada.
   ],
