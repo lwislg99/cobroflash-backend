@@ -17,6 +17,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
+import { casosEscritos } from './_casos-escritos.mjs'; // SCRUM-1415 · un caso por fila, con su nombre escrito
 import { analizarConexion, censarConexiones, SIEMBRA, CLASES } from '../scripts/_censo-conexiones-a-base.mjs';
 import { comprobarCredencialDeProduccion, OK, PRODUCCION_EN_ARBOL } from '../scripts/_clave-vs-destino.mjs';
 
@@ -133,8 +134,15 @@ function variableComprobadaYEntregada(fuente) {
 const PRODUCCION_FABRICADA = 'postgresql://u:p@autorack.proxy.rlwy.net:5432/railway';
 const DEV_FABRICADA = 'postgresql://u:p@acela.proxy.rlwy.net:5432/yaqu_dev_javier';
 
-for (const [script, nombre] of [['backfill-quote-numbers.mjs', 'numbers'], ['backfill-quote-jobid.mjs', 'jobid']]) {
-  test(`SCRUM-1575b · ${nombre} · la url que comprueba el guard es la que recibe el cliente: producción se niega y dev pasa`, () => {
+const BACKFILLS = [
+  { script: 'backfill-quote-numbers.mjs', nombre: 'numbers' },
+  { script: 'backfill-quote-jobid.mjs', nombre: 'jobid' },
+];
+
+{
+  const decideUrl = casosEscritos(BACKFILLS,
+    (f) => `SCRUM-1575b · ${f.nombre} · la url que comprueba el guard es la que recibe el cliente: producción se niega y dev pasa`,
+    ({ script }) => {
     const fuente = fs.readFileSync(path.join(RAIZ, 'scripts', script), 'utf8');
     assert.ok(variableComprobadaYEntregada(fuente),
       `🔴 ${script} no comprueba con comprobarCredencialDeProduccion('DATABASE_URL', x) la MISMA x que le da al cliente, ANTES de construirlo.`);
@@ -144,7 +152,9 @@ for (const [script, nombre] of [['backfill-quote-numbers.mjs', 'numbers'], ['bac
       '🔴 CONTROL POSITIVO: un destino declarado no-producción tampoco pasa; el guard se negaría siempre.');
   });
 
-  test(`SCRUM-1575b · ${nombre} · se NIEGA ante un destino no declarado, antes de construir el cliente`, () => {
+  const decideDestino = casosEscritos(BACKFILLS,
+    (f) => `SCRUM-1575b · ${f.nombre} · se NIEGA ante un destino no declarado, antes de construir el cliente`,
+    ({ script }) => {
     const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1575b-cwd-'));
     try {
       const r = spawnSync(process.execPath, [path.join(RAIZ, 'scripts', script)], {
@@ -157,4 +167,11 @@ for (const [script, nombre] of [['backfill-quote-numbers.mjs', 'numbers'], ['bac
       fs.rmSync(cwd, { recursive: true, force: true });
     }
   });
+
+  test('SCRUM-1575b · numbers · la url que comprueba el guard es la que recibe el cliente: producción se niega y dev pasa', decideUrl(0));
+  test('SCRUM-1575b · jobid · la url que comprueba el guard es la que recibe el cliente: producción se niega y dev pasa', decideUrl(1));
+  test('SCRUM-1575b · numbers · se NIEGA ante un destino no declarado, antes de construir el cliente', decideDestino(0));
+  test('SCRUM-1575b · jobid · se NIEGA ante un destino no declarado, antes de construir el cliente', decideDestino(1));
+  decideUrl.todos();
+  decideDestino.todos();
 }
