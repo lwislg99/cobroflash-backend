@@ -63,7 +63,11 @@ caso al correrlo, antes del commit.
 
 A9: comprobación → `tests/scrum1404b-el-reintento-del-sellado.test.mjs`
 
-## SCRUM-1507d · el PR-2 va SIN fecha: el caso ④ afirma «inactivo hasta que el fundador la escriba»
+## SCRUM-1507e · el PR-2 va SIN fecha: el caso ④ afirma «inactivo hasta que el fundador la escriba»
+
+*(La letra «d» ya la usó la S0 para el cruce de §3.4: rama `scrum-1507d-cruce-del-cron`, PR #2660.
+El encargo me la daba como «1507d»; la cazó el control del sufijo antes del empujón. Los dos
+primeros commits de este tramo dicen «SCRUM-1507d» en su título: no los reescribo.)*
 
 **Medido contra:** `origin/main` = `f02e48be2c66ae2e0dae8701401c8fcbc4fff14b` (traído a la rama con `git merge`) · 2026-10-22T09:50:46Z (hora de GitHub)
 
