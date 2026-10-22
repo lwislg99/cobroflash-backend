@@ -36,6 +36,10 @@ const faltan = ['dist/app.js', 'dist/modules/auth/domain/auth.service.js', 'test
 if (faltan.length) { console.log(`CIEGO · ${ETIQUETA} · faltan: ${faltan.join(', ')}`); process.exit(2); }
 
 const { db, filas } = desde('tests/_scrum1522e-doble-de-base.cjs');
+// El doble numera desde 1, y el id 1 es el comercio DEMO (regla 8): `getEmissionMode` le da «demo»
+// sea cual sea su país. La segunda pasada de esta sonda midió eso y no lo que pregunta. Una fila de
+// relleno ocupa el 1 y los comercios de la sonda nacen del 2 en adelante (se comprueba abajo).
+filas.push({ id: 1, email: 'relleno-del-id-1@test.local', name: 'relleno' });
 const { registerMerchant } = desde('dist/modules/auth/domain/auth.service.js');
 const { getEmissionMode } = desde('dist/modules/invoicing/domain/emission.service.js');
 const { isFlagEnabled } = desde('dist/core/flags.js');
@@ -57,7 +61,10 @@ const sesion = {
   },
 };
 const fP = requiere.resolve(path.join(RAIZ, 'dist', 'core', 'db', 'prisma.js'));
-requiere.cache[fP].exports.prisma = new Proxy({}, { get: (_t, n) => (n === 'authSession' ? sesion : db[n]) });
+// Sólo se pone delante `findUnique`: el alta usa `authSession.create` para su enlace de acceso, y
+// tapar la tabla entera la tumbaba (primera pasada de esta sonda, CIEGA por eso).
+const sesiones = new Proxy({}, { get: (_t, metodo) => (metodo === 'findUnique' ? sesion.findUnique : db.authSession[metodo]) });
+requiere.cache[fP].exports.prisma = new Proxy({}, { get: (_t, n) => (n === 'authSession' ? sesiones : db[n]) });
 const { app } = desde('dist/app.js');
 const server = app.listen(0);
 await new Promise((r) => server.once('listening', r));
@@ -79,7 +86,9 @@ async function alta(nombre, params) {
     return { creado: false, error: e.code || e.message };
   }
   if (filas.length !== antes + 1) return { creado: false, error: `filas ${antes} → ${filas.length}` };
-  return { creado: true, id: filas.at(-1).id };
+  const id = filas.at(-1).id;
+  if (id === 1) { console.log(`CIEGO · ${ETIQUETA} · un comercio de la sonda nació con el id del DEMO`); process.exit(2); }
+  return { creado: true, id };
 }
 
 const conFlag = (valor, fn) => {
