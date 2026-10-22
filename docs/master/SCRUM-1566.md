@@ -330,7 +330,8 @@ total es la suma de esas cifras ya redondeadas. Eso es lo que va al registro Ver
    `TipoImpositivo` (su error 1142), **¿qué margen admite**: ninguno, un céntimo, otro?
 2. **Por tipo o por línea.** Con varias líneas al mismo tipo, ¿es correcto calcular la cuota sobre la suma
    de las bases (redondeando una vez por tipo), o la norma exige redondear la cuota de cada línea y sumar?
-   (Entre una forma y otra cambia un céntimo en el 1-30 % de las facturas, según cuántas líneas y tipos.)
+   (Ejemplo medido en SCRUM-624: 3 líneas de 9,99 € al 21 % dan **36,27 €** redondeando por línea y
+   **36,26 €** por tipo. Con qué frecuencia difieren las dos formas en general no está medido.)
 3. **El total que firma el cliente en el presupuesto.** Hoy sale de sumar los importes con IVA de todas
    las líneas y redondear una vez. La factura, en cambio, suma base y cuota ya redondeadas por tipo, así
    que puede diferir del presupuesto firmado en un céntimo. ¿Puede el presupuesto mostrar el total
