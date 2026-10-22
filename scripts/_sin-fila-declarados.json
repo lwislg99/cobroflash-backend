@@ -21,6 +21,11 @@
       "equipo": "javier",
       "motivo": "Lo crea el carril J2 (equipo de Javier) para SCRUM-1257e, el guard de navegador del modo de emisión en Ajustes, que no edita la tabla de §3.3; la S0 le da fila cuando su orquestador diga el puesto."
     },
+    "scripts/_censo-conexiones-a-base.mjs": {
+      "ticket": "SCRUM-1575",
+      "equipo": "javier",
+      "motivo": "Lo crea J5 (equipo de Javier) en SCRUM-1575b, que no edita la tabla de §3.3; la S0 le da fila cuando su orquestador diga el puesto."
+    },
     "scripts/go-live/puerta.mjs": {
       "ticket": "SCRUM-1554",
       "equipo": "luis",

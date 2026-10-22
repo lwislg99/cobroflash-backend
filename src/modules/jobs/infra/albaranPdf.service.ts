@@ -19,6 +19,7 @@ import { TITULO_OBSERVACIONES } from '../../invoicing/infra/pdf/pdf.service'; //
 import { partirConceptoYDescripcion } from '../../invoicing/infra/pdf/conceptoLinea'; // SCRUM-603 (DOC-13)
 import { documentoEnsenaPrecios } from '../domain/albaranPrecios'; // SCRUM-607 (ALB-02)
 import { textoParaDocumento } from '../../../core/documentos/sinMarcadorPendiente'; // SCRUM-903
+import { zonaDelMerchant } from '../../../core/zonaDelMerchant'; // SCRUM-1445: el sitio unico de la zona
 
 export async function generateAlbaranPdf(params: {
   merchantId: number; // SCRUM-48: prefija el nombre de archivo (mata la colisión entre merchants)
@@ -52,6 +53,9 @@ export async function generateAlbaranPdf(params: {
     address?: string | null;
     logoUrl?: string | null;
     whatsappPhone?: string | null;
+    // SCRUM-1445 · la zona del negocio, para imprimir sus fechas en SU día. Mismo cajón: el sello
+    // no la nombra. Ausente = `ZONA_POR_DEFECTO` (UTC), que es lo que el papel hacía hasta hoy.
+    timezone?: string | null;
   };
   customer: { taxId?: string | null };
   // ── LOS CINCO QUE EL SOBRE CONGELA, YA RESUELTOS POR EL LLAMADOR ───────────────────────────
@@ -126,8 +130,21 @@ export async function generateAlbaranPdf(params: {
   brandBand();
   doc.on('pageAdded', brandBand);
 
-  function fmtDate(d: Date | null | undefined) {
-    return d ? new Date(d).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
+  // SCRUM-1445 · DOS CLASES DE FECHA, y cada una con su zona.
+  //
+  // Un INSTANTE (la emisión, `fecha`, la firma) se imprime en la zona del negocio: con el proceso
+  // en UTC, un albarán hecho a las 00:30 del día 5 en España salía con la víspera. La zona sale del
+  // sitio único (`zonaDelMerchant`), igual que el PDF del presupuesto (`pdf.service.ts`, «Firmado el»).
+  //
+  // Un DÍA (`fechaEntrega`) llega del editor como `AAAA-MM-DD` y se guarda a las 00:00 UTC
+  // (`jobDetailView.js`, `<input type=date>`). Ése se imprime en UTC: en la zona del negocio, uno
+  // al oeste de Greenwich (`America/Lima`) imprimiría el día ANTERIOR al que escribió.
+  const zonaDelNegocio = zonaDelMerchant(params.merchant);
+  function fmtInstante(d: Date | null | undefined) {
+    return d ? new Date(d).toLocaleDateString('es-ES', { timeZone: zonaDelNegocio, day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
+  }
+  function fmtDia(d: Date | null | undefined) {
+    return d ? new Date(d).toLocaleDateString('es-ES', { timeZone: 'UTC', day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
   }
   // SCRUM-743: DELEGA en el sitio unico, como `fmtMoney`. `toLocaleString('es-ES')` a pelo no
   // agrupa los enteros de cuatro cifras (CLDR): escribia `1500` donde el producto escribe `1.500`.
@@ -159,7 +176,7 @@ export async function generateAlbaranPdf(params: {
     .text(`Albarán ${params.numero} · Versión ${params.version}`, { width: W, align: 'right' })
     // SCRUM-67: fecha de EMISIÓN del documento y fecha de ENTREGA/EJECUCIÓN por separado
     // (esta última es la que cuenta para el mes natural de la recapitulativa, SCRUM-17).
-    .text(`Emitido: ${fmtDate(params.emisionAt)} · Entrega/ejecución: ${fmtDate(params.fecha)}`, { width: W, align: 'right' });
+    .text(`Emitido: ${fmtInstante(params.emisionAt)} · Entrega/ejecución: ${fmtInstante(params.fecha)}`, { width: W, align: 'right' });
   doc.fillColor('#000');
   doc.y = Math.max(doc.y, hY + (logoBuf ? 46 : 0));
   doc.moveDown(1);
@@ -201,7 +218,7 @@ export async function generateAlbaranPdf(params: {
   }
   if (params.fechaEntrega) {
     doc.font('Helvetica-Bold').fillColor(INK).text(`${ALBARAN_ROTULOS.fechaEntrega}: `, { continued: true })
-      .font('Helvetica').fillColor(BODY).text(fmtDate(params.fechaEntrega));
+      .font('Helvetica').fillColor(BODY).text(fmtDia(params.fechaEntrega));
   }
   if (params.referenciaTrabajo) {
     doc.font('Helvetica-Bold').fillColor(INK).text('Referencia: ', { continued: true })
@@ -359,7 +376,7 @@ export async function generateAlbaranPdf(params: {
       const base64 = params.signatureData.replace(/^data:image\/\w+;base64,/, '');
       const imgBuffer = Buffer.from(base64, 'base64');
       const signDate = (params.firmadoAt ? new Date(params.firmadoAt) : new Date())
-        .toLocaleDateString('es', { day: '2-digit', month: 'long', year: 'numeric' });
+        .toLocaleDateString('es', { timeZone: zonaDelNegocio, day: '2-digit', month: 'long', year: 'numeric' });
 
       if (doc.y + 130 > doc.page.height - doc.page.margins.bottom) doc.addPage();
 

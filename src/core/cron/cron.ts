@@ -10,6 +10,8 @@ import { barrerSellosAlbaran, resumenDelBarrido } from '../../modules/jobs/domai
 // SCRUM-475 · los partes de los dos emisores que recorren merchants, y qué avisos deja sin salir un
 // job que no llegó a programarse.
 import { resumenDelParte, type Aviso } from '../../modules/messaging/domain/avisoConstancia';
+// SCRUM-1507 · bloque de S1 (c.19344 §3) que lleva el PR-2 de SCRUM-1404, del equipo de Javier (c.20220).
+import { reintentarSelladosPendientes, conclusionDelReintento, resumenDelReintento } from '../../modules/invoicing/domain/reintentoSellado';
 
 /**
  * 🔴 SCRUM-475 · QUÉ QUEDÓ PROGRAMADO DE VERDAD.
@@ -155,6 +157,23 @@ export function startCronJobs(): ParteDeProgramacion {
       console.error('[cron] Error en barrerSellosAlbaran:', err?.message);
     }
   }));
+
+  // SCRUM-1404 / SCRUM-1507 · Cada minuto: el reintento del sellado de las facturas nacidas desde la
+  // fecha de corte y sin huella. Bloque escrito por S1, dueño de este fichero (SCRUM-1507 c.19344 §3).
+  programar('reintento de sellado (cada minuto)', cron.schedule('* * * * *', async () => {
+    try {
+      const parte = await reintentarSelladosPendientes();
+      const conclusion = conclusionDelReintento(parte);
+      const resumen = resumenDelReintento(parte);
+      if (conclusion === 'hay_que_mirar') console.error('[cron] 🔴', resumen);
+      else if (conclusion === 'todo_en_orden') console.log('[cron]', resumen);
+      else if (new Date().getMinutes() !== 0) return;
+      else if (conclusion === 'inactivo') console.warn('[cron] ⚠️', resumen);
+      else console.log('[cron]', resumen);
+    } catch (err: any) {
+      console.error('[cron] 🔴 Error en reintentarSelladosPendientes (la pasada no miró nada):', err?.message);
+    }
+  }, { noOverlap: true }));
 
   // SCRUM-475 · DERIVADA de lo que se montó, no escrita a mano. La línea de antes enumeraba seis
   // jobs sin haber comprobado ninguno: si alguien borraba un `cron.schedule`, seguía afirmándolo.
