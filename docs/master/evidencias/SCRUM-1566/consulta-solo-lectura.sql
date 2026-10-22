@@ -1,4 +1,10 @@
--- SCRUM-1566 (c) + SCRUM-1490 · CONSULTA DE SÓLO LECTURA PARA PRODUCCIÓN — UNA autorización, DOS preguntas.
+-- SCRUM-1566 (c) + SCRUM-1490 + SCRUM-1445 · CONSULTA DE SÓLO LECTURA PARA PRODUCCIÓN — UNA autorización, TRES preguntas.
+--
+-- 🛑 ANTES DE PEGARLA, DOS COSAS:
+--   1. `node docs/master/evidencias/SCRUM-1566/guard-solo-lectura.mjs <este fichero>` tiene que decir «✔ sólo lectura».
+--   2. La primera sentencia de lo que pegas es `BEGIN TRANSACTION … READ ONLY` y la última `ROLLBACK`. Si no, NO se pega.
+--
+-- Devuelve sólo recuentos, ids de presupuesto y nombres de zona horaria: ni datos de clientes ni importes.
 --
 -- ⛔ NO se ha corrido contra producción. La dispara quien tenga el acceso, cuando el fundador lo autorice.
 --    Se puede pegar entera en una consola SQL (la de Railway, psql…): abre una transacción READ ONLY,
