@@ -60,17 +60,23 @@ function enOtroProceso(codigo) {
   try {
     const fichero = path.join(dir, 'cobaya.test.mjs');
     fs.writeFileSync(fichero, COBAYA);
+    // ⚠️ Un GUION, no `node -e`: con `--input-type=module -e` el hijo de `run()` hereda ese flag,
+    // no arranca sobre un fichero, y node:test lo informa como el FICHERO «pasado» con cero tests.
+    // Medido al escribir esto: un falso verde del control positivo con forma de resultado.
+    const guion = path.join(dir, 'medir.mjs');
+    fs.writeFileSync(guion, codigo);
     const env = { ...process.env };
     delete env.NODE_TEST_CONTEXT; delete env.NODE_OPTIONS; delete env.FORCE_COLOR;
-    const r = spawnSync(process.execPath, ['--input-type=module', '-e', codigo, fichero],
+    const r = spawnSync(process.execPath, [guion, fichero],
       { cwd: RAIZ, env, encoding: 'utf8', timeout: 120000 });
     const linea = String(r.stdout || '').split(/\r?\n/).find((l) => l.startsWith('RESULTADO '));
     assert.ok(linea, `NO PUDE MIRAR: el proceso aparte no devolvió resultado (status ${r.status}, `
       + `stderr ${String(r.stderr || '').slice(0, 400)})`);
     const res = JSON.parse(linea.slice('RESULTADO '.length));
-    // Población: la cobaya tiene UN test. Si no llega ninguno, no se ha medido nada.
-    assert.ok(res.pasados.length + res.caidos.length >= 1,
-      `NO PUDE MIRAR: de la cobaya no llegó ningún test (${linea})`);
+    // Población: la cobaya tiene UN test, y tiene que llegar CON SU NOMBRE. Contar «algo llegó» no
+    // basta: un hijo que no arranca llega como el fichero «pasado» (lo de arriba).
+    assert.ok(paso(res, NOMBRE_COBAYA) || cayo(res, NOMBRE_COBAYA),
+      `NO PUDE MIRAR: el test de la cobaya no llegó con su nombre (${linea})`);
     return res;
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
@@ -79,7 +85,7 @@ function enOtroProceso(codigo) {
 
 test('SCRUM-1339s · 🔴 el hijo que lanza correr() carga la tubería bloqueante', () => {
   const r = enOtroProceso(`const { correr } = await import(${JSON.stringify(META)});
-const r = await correr(process.argv[1]);
+const r = await correr(process.argv[2]);
 console.log('RESULTADO ' + JSON.stringify({ pasados: r.pasados, caidos: r.caidos }));`);
   assert.ok(paso(r, NOMBRE_COBAYA),
     `el hijo de correr() NO cargó scripts/tuberia-bloqueante.mjs: pasados ${JSON.stringify(r.pasados)} · caídos ${JSON.stringify(r.caidos)}`);
@@ -88,7 +94,7 @@ console.log('RESULTADO ' + JSON.stringify({ pasados: r.pasados, caidos: r.caidos
 test('SCRUM-1339s · control positivo: sin el --import, la MISMA cobaya cae', () => {
   const r = enOtroProceso(`import { run } from 'node:test';
 const pasados = []; const caidos = [];
-for await (const ev of run({ files: [process.argv[1]], forceExit: true, timeout: 60000 })) {
+for await (const ev of run({ files: [process.argv[2]], forceExit: true, timeout: 60000 })) {
   if (ev.type === 'test:pass' && !ev.data.skip) pasados.push(ev.data.name);
   else if (ev.type === 'test:fail') caidos.push(ev.data.name);
 }
