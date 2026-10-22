@@ -309,3 +309,45 @@ cuatro perfiles por guard (20-sep, 15-oct, 17-oct y 21-oct) y las salidas. Los l
 llevan secuencias de escape (A22) y caducan a los 90 días; los perfiles `.tsv` son lo que queda de ellos.
 
 A9: aviso → cicatriz J6 «Medí el coste de un fichero de test quitándole tests con un filtro de nombre, y el coste estaba en la carga del módulo: el filtro no lo toca» — no se pudo comprobar: es un hábito al aislar dónde se va el tiempo, y lo cazó medir la carga sola; un instrumento que lo impida tendría que ser el de S3 (propuesta D)
+
+## SCRUM-935d · propuesta A construida: el banco de cortados sale de `scrum813`
+
+**Medido contra:** `origin/main` = `9839aa6c2baee741f6a38de4e99c7fc29a3fe807` · hora real 2026-10-22T09:32Z
+(cabecera `Date:` de GitHub) · S5, equipo de Luis · rama `scrum-935-banco-cortados-fuera-813`.
+
+**Carril:** `scrum813` es de S5. Lo dicen este registro (935c, «`tests/scrum813-…` y SCRUM-1494 son de
+S5») y `dos-equipos.md:171` («el test de un ticket → el puesto que trabaja el ticket»).
+`scripts/carriles.mjs de` contesta «sin fila» para cualquier `tests/*.test.mjs`, también para los que
+no existen, así que no decide nada aquí. El fichero nuevo NO se llama `_banco-*` a propósito: ese
+patrón es de S3.
+
+**Qué:** el banco sembrado de cuelgues de SCRUM-1494c (pared de 4 s; corre en el NIVEL SUPERIOR del
+módulo) y sus tres tests pasan a `tests/scrum1494-cortados-de-zona.test.mjs`, con las DOS mutaciones
+cuyo `cae` los necesita (㉓ y ㉔). Las otras dos de 1494 (㉕ y ㉖) se quedan en `scrum813`: sus tests
+son de datos fabricados (`medidaFalsa`, `entrada`) y no miran el banco. Llevarlas al fichero nuevo
+haría que el banco se pagara 5 veces en vez de 3. Los nombres de los tests no cambian, así que los
+`cae` casan igual.
+
+Se comprobó que el fichero editado es el que SE CARGA: `meta-guard-mutaciones.mjs:342` lista
+`tests/*.test.mjs` del árbol con `readdirSync`, y las medidas de abajo se tomaron sobre esas rutas.
+
+**Antes y después, en local** (Windows, node v24.8.0, `node --test` de un fichero suelto, 3 pasadas):
+
+| fichero | antes | después |
+|---|---|---|
+| `scrum813-trinquete-de-zona` | 13,16 · 11,89 · 11,91 s · 48 tests | 6,72 (la primera, en frío) · 3,36 · 2,58 s · 45 tests |
+| `scrum1494-cortados-de-zona` | — | 10,69 · 10,08 · 10,27 s · 3 tests |
+
+Todo en verde, 0 fallos, 0 saltos. El «antes» casa con el A/B de J6 (11,44-11,62 s).
+
+**Lo que eso da en el meta-guard. Es una PROYECCIÓN, no una pasada del instrumento:** el coste de un
+guard es `(mutaciones + 1) × carga`. Antes: 27 × ~12 s ≈ 320 s. Después: 25 × ~3 s + 3 × ~10,3 s
+≈ 106 s. Unos **210 s menos en local**. NO he corrido `meta:mutaciones`, porque el worktree no tiene
+`node_modules`, y el CI tampoco lo ha medido. La cifra de verdad se lee en el resumen del job
+meta-guard del primer run tras el merge: el paso `if: always()` de 935 imprime la duración.
+
+**Lo que bloquea el empuje:** `scripts/_suelo-contra-main.mjs` cuenta las declaraciones POR fichero,
+y `scrum813` baja de 26 a 24. Su control positivo (`tests/scrum810-el-suelo-a-la-primera.test.mjs`)
+corre en `npm test`. Hace falta una línea en `RETIRADAS_A_PROPOSITO` que diga que ㉓ y ㉔ se MUDAN.
+Ese fichero es de S3, y la línea se ha pedido al orquestador. No se ha rodeado: nada de declarar dos
+mutaciones de relleno en `scrum813` para que el recuento no baje.
