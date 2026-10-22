@@ -771,7 +771,8 @@ entrada borrada, ningún número tocado (19 afirmaciones; 14 / 2 / 1 / 2 por gru
 Mini-tanda en local sobre el árbol fusionado con `82f3ea41…`: los 213 ficheros que leen `index.html`,
 `terminos`, el catálogo de 564 o `public/`, más 267, 273, 1294, 811c, 976, 237, 812, 850, 299 y 400. Antes de este
 tramo: 1.968 casos · 1.961 pasan · 5 se saltan · 2 caen (`scrum811c`/1340, que pide este tramo con su
-`**Skill UI:**`, y `scrum976` ④, que corre esos guards). Después: ver la entrega.
+`**Skill UI:**`, y `scrum976` ④, que corre esos guards). Después, con este tramo comiteado: 1.968 casos ·
+1.963 pasan · 5 se saltan · 0 caen (las tres cifras suman el total; 1.968 líneas `ok` de primer nivel en el TAP).
 
 ## 6 · Lo que NO se ha hecho
 
