@@ -1063,9 +1063,13 @@ function jobRow(j, container, equipo) {
   // ⑤ Acción principal + el «⋯»
   const tdAcc = document.createElement('td');
   tdAcc.className = 'cell-actions';
+  // SCRUM-1562f · la celda lleva DOS zonas: «Ver detalle» (mirar) y `.jobs-acciones` (actuar). Ver
+  // el porqué junto a `bDetalle`, más abajo.
+  const celda = document.createElement('div');
+  celda.className = 'jobs-celda-acciones';
+  tdAcc.appendChild(celda);
   const caja = document.createElement('div');
   caja.className = 'jobs-acciones';
-  tdAcc.appendChild(caja);
 
   // 🔴 DOS BOTONES CON EL MISMO RÓTULO, uno que navega y otro que cobra. `jobNextAction` devuelve
   // `💰 Cobrar el resto (importe)` para un terminado con saldo — la MISMA cadena que el botón de
@@ -1204,6 +1208,15 @@ function jobRow(j, container, equipo) {
   // dinero, y la acción de la escalera sigue pesando más que mirar—. El clic en la fila se queda.
   // `stopPropagation`, como Presupuestos: no navega dos veces aunque la guarda de abajo dejara de
   // reconocer este botón.
+  //
+  // ── SCRUM-1562f · …Y FUERA DE `.jobs-acciones` ─────────────────────────────────────────────
+  // `.jobs-acciones` es la acción de la ESCALERA: la que cambia con el estado del Trabajo, y la que
+  // `guard:escalera-por-estado` compara con la del detalle. «Ver detalle» sale igual en los cinco
+  // estados, así que no es la acción de la fila: dentro de esa caja, en un Trabajo CERRADO era el
+  // único botón y la lista «proponía» algo que el detalle no propone. Decisión (a) del fundador,
+  // SCRUM-1570 c.20161: sale de la caja y el guard no se toca. Sigue siendo el MISMO `<button>`
+  // nativo en la misma celda —el teclado de SCRUM-1562 no cambia— y va DELANTE, como en
+  // Presupuestos, para que el «⋯» siga cerrando la fila.
   const bDetalle = document.createElement('button');
   bDetalle.className = 'btn-ghost btn-sm';
   bDetalle.textContent = 'Ver detalle';
@@ -1211,7 +1224,8 @@ function jobRow(j, container, equipo) {
     e.stopPropagation();
     if (window.renderAppView) window.renderAppView('jobs-detail', { jobId: j.id });
   });
-  caja.appendChild(bDetalle);
+  celda.appendChild(bDetalle);
+  celda.appendChild(caja);
 
   if (menu.length && typeof overflowMenu === 'function') caja.appendChild(overflowMenu(menu));
   tr.appendChild(tdAcc);
