@@ -118,6 +118,56 @@ máster.
 2. **¿Quién es el primer negocio real: The Pioneer, con su excepción (F6), o uno cualquiera tras el 8/8 (F1)?**
    Las dos puertas son distintas, y la puerta de hoy no tiene ninguna de las dos.
 
+### Anexo (misma tanda, ~10:40Z, pedido por el orquestador) · Las otras puertas: no son dos, son CUATRO
+
+**Población:** ROAD-4, 5, 6, 12 y 19 leídas enteras (descripción, comentarios, autor, fechas); `project = ROAD`
+entero (**56** tickets); `project = ROAD AND updated >= 2026-09-01` → **0**, con control positivo: el mismo
+proyecto sin el filtro de fecha devuelve 56, y el más reciente es ROAD-56, del 20-ago. En el repo,
+`git grep -i "scrum-390"` en `src/ scripts/ tests/ .github/` → 6 ficheros, y se leyeron los dos de `src/`.
+
+**Las cinco de ROAD.** Las creó la cuenta de Javier el **14-ago-2026, entre las 20:27 y las 20:29**. Son
+épicas de un plan por etapas (ROAD-1 «Poner la casa en orden», ROAD-2 «El primer usuario», ROAD-3
+«Repetirlo»). La última edición de cualquiera de ellas es del 19-ago. Son **de antes de los dos equipos**:
+`docs/equipo/` nace el 7-sep (`1e8014a0b`) y `dos-equipos.md` el 18-sep (`5e9096f7a`). Es el mismo caso que
+los dos ficheros de `scripts/` sin dueño.
+
+| ROAD | qué exige («Hecho =») | ¿en `puerta.json`? | ¿en algún ticket SCRUM? | estado |
+|---|---|---|---|---|
+| **4** · La sociedad existe | escritura + CIF + cuenta a nombre de la SL. Dice que NO bloquea VeriFactu (Modelo C), y que la SL hace falta para el Modelo A y para Stripe en live | no | SCRUM-143 (Acción del fundador), SCRUM-870 (el productor espera el NIF de la SL), SCRUM-41 | **sin empezar**, en lo que consta en Jira (los fundadores decidieron reparto y objeto social el 17-ago) |
+| **5** · Hacienda resuelta | «respuesta escrita a todas, dada por alguien que responde de ella»: ventana sin VeriFactu hasta enero (contestada el 17-ago), y ABIERTAS la fecha exacta, si YaQu factura al profesional, el IVA de la suscripción, si YaQu toca el dinero, cuántos años se conservan las facturas, el contrato de encargado del tratamiento | no | en parte: SCRUM-1264 (la lista del asesor) y la entrada 18 de la puerta. **No he comprobado** cuáles de las cinco abiertas están en 1264 | **a medias** (1 de 6 contestada) |
+| **6** · Copia de seguridad probada | las cuatro: copia automática · se sabe cada cuánto y cuánto se guarda · restaurada en un entorno aparte · escrito quién la restaura y cómo | **no** | **SCRUM-242** (Finalizada, cerrada por una de sus cuatro partes) → **SCRUM-1525** (Por hacer: «la COPIA no se dispara») | **a medias**: según el código, la restauración está probada (§R14, `scripts/backup-restore.mjs`) y la copia no existe. En `src/core/cron/cron.ts`, `.github/` y `package.json` hay **0** referencias a `backup`; el control, `avisarSiEntroClienteReal` en `cron.ts`, sale 3. Si se lanza desde Railway, no se ve desde aquí: **no medido** |
+| **12** · Un profesional real ha hecho el ciclo entero | filas en producción de un profesional que no es ninguno de los dos fundadores, con presupuesto → firma del cliente → **factura emitida desde YaQu**, y el cobro fuera de YaQu (redacción del 19-ago, ROAD-37) | no | ninguno | **sin empezar**. 🔴 **No es una condición previa: es el RESULTADO.** Exige que el interruptor ya esté encendido para ese merchant |
+| **19** · Usuarios 2 y 3 cobrando sin captación uno a uno | dos profesionales más cobrando, y que la respuesta a «¿cómo se enteró?» no sea «nos lo dijeron» | no | ninguno | **sin empezar**. Es posterior al primer negocio real por definición |
+
+**🔴 La puerta que nadie había nombrado hoy, y que SÍ corre en producción: SCRUM-390,
+`src/modules/system/domain/puertaClienteReal.ts`.** La evalúa el cron diario (`src/core/cron/cron.ts:97`) y
+se abre sola con dos señales: un merchant con suscripción de Stripe, o más merchants que las
+`CUENTAS_DE_PRUEBA_DECLARADAS` (= 13). Al abrirse manda un WhatsApp al fundador con sus cláusulas
+(`avisoPuerta.service.ts:26-44`). Son cuatro: la regla fechada de los datos de producción del máster, el
+backfill de `MIGRATIONS_PENDING.md`, la microcopy de Bizum de SCRUM-402 y **«SCRUM-242 — hay copia de
+seguridad de la base (restaurar ya está probado; la COPIA no existe)»**. ⇒ **El respaldo SÍ estaba en una
+puerta: en ésta.** El «0 coincidencias» de S5 es cierto para `puerta.json` y no para el proyecto.
+
+**¿Son la misma lista con dos nombres? No. Son cuatro listas, y cada una salta con otra cosa:**
+
+| lista | qué contiene | qué la dispara | ¿mecanismo? | desde |
+|---|---|---|---|---|
+| **A** · `docs/go-live/puerta.json` (SCRUM-1554) | textos falsos hasta que esté construido (regla 43) | encender `INVOICING_ES_ENABLED` | un guard de CI que sólo comprueba que la lista está bien formada; la mitad B no está construida | 14-oct |
+| **B** · `puertaClienteReal.ts` (SCRUM-390) | 4 decisiones tomadas «mientras no haya cliente real», el respaldo entre ellas | detecta que ha entrado el primer cliente real (paga, o hay más de 13 merchants) | **SÍ**: cron diario + WhatsApp. Avisa, no impide | 9/10-ago |
+| **C** · U1.3 del máster (SIF-1 v2, 8/8) | lo fiscal: AEAT, declaración, asesor, evidencias | encender `INVOICING_ES_ENABLED` a reales | ninguno: texto | jun |
+| **D** · ROAD, etiqueta `puerta` | hitos de empresa por etapas (SL, Hacienda, respaldo, primer usuario, usuarios 2-3) | ninguno | ninguno; dormido desde el 20-ago | 14-ago |
+
+**Dónde se solapan, medido:** el **respaldo** está en B (cláusula), en D (ROAD-6) y en SCRUM-1525, y **no está
+en A**. Lo de **Hacienda** está a la vez en D (ROAD-5), en C (S1-F, el asesor) y en A (la 18). **La SL** está
+en D (ROAD-4) y, a través del productor, en C. Fuera de eso no se tocan: ROAD-12 y ROAD-19 son resultados,
+no condiciones, y lo que da A (textos) no lo tiene ninguna de las otras tres.
+
+⇒ **No hay que unificar dos listas, ni elegir una de las dos.** Hay **dos instantes** —«entra el primer
+cliente real» (B, que salta ANTES si el alta del Pioneer sube el padrón a 14; el padrón de hoy no lo he medido) y «se enciende la
+facturación» (A y C)— y **cuatro listas** que reparten condiciones entre ellos sin saber unas de otras. La
+decisión que queda es de qué lista cuelga cada condición. Mi lectura, no medida: lo que exige un
+mecanismo cuelga de A y B, que lo tienen o lo tendrán, y C y D se citan desde ahí en vez de repetirse.
+
 ## 19-oct-2026 · SCRUM-1554c · La puerta en un fichero, con un guard que no deja borrar renglones (A); el cierre en ejecución, sólo propuesto (B)
 
 **Medido contra:** `origin/main` = `8ff423895024c7d2ce1c6bcb96054da11a227b90` (base de la rama) · 2026-10-19T07:26Z (hora real, cabecera
