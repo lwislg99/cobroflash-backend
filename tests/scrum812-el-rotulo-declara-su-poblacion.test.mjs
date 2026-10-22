@@ -172,9 +172,12 @@ function tituladosQueDeclaran() {
  * declara dos mutaciones sobre el vigía de `main`. Cuenta como «titulado GUARD» porque sus casos
  * nombran al «meta-guard»; el fichero es un test del vigía, no se llama guard a sí mismo. Este test
  * en local sobre la rama, base `75884928b170ec0ec02e35921426e5bd711cbb0f`: «LA COBERTURA HA SUBIDO a 31».
+ * ⬆️ **32** (SCRUM-935d, 22-oct-2026, S3): entra `scrum935d-el-corte-dice-lo-que-deja.test.mjs`, que declara
+ * cuatro mutaciones sobre el corte del meta-guard. Este test en local sobre la rama, base
+ * `0077bd1d51a7cb64b1c18d85781117b71936fd38`: «LA COBERTURA HA SUBIDO a 32 (el suelo decía 31)».
  * ═════════════════════════════════════════════════════════════════════════════════════════════
  */
-export const SUELO_GUARD_QUE_DECLARAN = 31;
+export const SUELO_GUARD_QUE_DECLARAN = 32;
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 // ① SUELO · ¿he mirado algo? Un cero de población no es «no hay»: es «no he mirado».
