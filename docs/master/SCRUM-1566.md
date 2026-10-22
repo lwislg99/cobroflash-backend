@@ -144,3 +144,99 @@ nada de lo que se llama aquí).
 - **Nada arreglado.** A y C son camino de emisión y carril J1; B es carril S1, pero no puede ir sin C.
 - **El trinquete de las dos mitades** que dejó pendiente el tramo de S3 en 623 sigue sin construir.
   El de este expediente se puede montar sobre este mismo guion el día que entre A.
+
+---
+
+## SCRUM-1566 (b) · B CON DESCUENTO GLOBAL — el hueco que dejó declarado el tramo de arriba
+
+**Medido contra:** `origin/main` = `8ad167195af03cf4153337ccc1bf1b80d04c10f8` · 2026-10-22T09:41:52Z
+
+A9: sin fallo que generalice — sólo lectura, ni `src/` ni `tests/`; la premisa del encargo se corrige abajo con su fuente
+
+Encargo del orquestador (22-oct): «B se simuló sin descuento global; con él, `pieDePresupuesto` reparte el
+descuento entre tipos y B pide elegir cómo. Mídelo: forma de repartir · qué cambia en el pie · qué cambia
+frente a la factura · %». **Sólo lectura.**
+
+### 🔴 Lo primero: el reparto entre tipos NO es una decisión viva — ya está bloqueado
+
+Un descuento global con **varios** tipos de IVA (el «caso C» de SCRUM-887) **no se guarda, no se revisa y
+no se factura** desde el 17-sep (decisión de SCRUM-887, comentario 15697): `quotes.routes.ts:149` (400 al
+crear), `quoteAdmin.ts:667` (no hay revisión), `invoiceLines.service.ts:128` (las líneas salen a 0 y el
+portón de SCRUM-246 no emite). El propio fichero lo dice: «repartir el global entre tipos es la convención
+que espera a la asesoría». **Así que B no tiene que elegir ningún reparto:** el único caso vivo con descuento
+global es el de **UN SOLO tipo**, y ahí el descuento entero va a ese tipo.
+
+Y otra cosa que cambia el encuadre: **con descuento, 1566 no existe.** La página de firma y el PDF del
+presupuesto ya usan los dos `pieDePresupuesto` (`quoteDecisionLanding.routes.ts:480-491`, `pdf.service.ts:1093`),
+así que no pueden discrepar entre sí. Lo que B mueve con descuento es otra cosa: **el presupuesto frente a la
+factura** y **el presupuesto frente a sí mismo**.
+
+### Lo que sí hay que elegir con un solo tipo: CÓMO se calcula la cuota tras quitar el descuento
+
+Tres formas (ninguna inventada: F0 es la de hoy, F1 la que ya declara la factura, F2 la otra natural):
+
+| forma | cuota del tipo, con `q` € de descuento global |
+|---|---|
+| **F0 · hoy** (`presentacionIva.ts:179`) | redondea la base, le quita `q`, multiplica: `R((R(base) − q) × tipo)` |
+| **F1 · la de la factura** | la canónica sobre las líneas **más la línea negativa** de `−q` que ya pone `lineasParaFacturar` (`invoiceLines.service.ts:136-139`): `R(Σ cuota − q × tipo)` |
+| **F2** | cuota de las líneas menos cuota del descuento, cada una redondeada: `R(Σ cuota) − R(q × tipo)` |
+
+% de presupuestos (4.000 por fila, todos con descuento global, un solo tipo; mitad en euros redondos, mitad
+con céntimos, del 2 al 30 % de la base). Salida entera en `evidencias/SCRUM-1566/salida-descuento-global.txt`.
+
+| población · forma | IVA presupuesto ≠ factura (hoy) | IVA presupuesto ≠ factura (con D) | presupuesto no cuadra consigo (hoy) | presupuesto no cuadra consigo (con D) |
+|---|---|---|---|---|
+| entera 21 % · **F0 hoy** | 5,2 % | 3,0 % | 13,8 % | 3,7 % |
+| entera 21 % · **F1 factura** | **2,1 %** | **0,0 %** | **10,7 %** | **0,7 %** |
+| entera 21 % · F2 | 10,6 % | 10,3 % | 17,3 % | 11,0 % |
+| decimal 21 % · **F0 hoy** | 10,5 % | 6,3 % | 31,3 % | 7,0 % |
+| decimal 21 % · **F1 factura** | **4,3 %** | **0,0 %** | **25,0 %** | **0,7 %** |
+| decimal 21 % · F2 | 14,2 % | 11,8 % | 26,4 % | 11,5 % |
+| decimal 10 % · **F0 hoy** | 5,0 % | 5,0 % | 27,2 % | 5,7 % |
+| decimal 10 % · **F1 factura** | **0,0 %** | **0,0 %** | **22,1 %** | **0,7 %** |
+| decimal 10 % · F2 | 12,8 % | 12,8 % | 27,3 % | 13,4 % |
+
+(Entera 10 % da lo mismo en forma: F1 la mejor en las cuatro columnas, 0,0 % frente a la factura con D.)
+
+**Lo que dice la tabla:**
+
+- **F1 es la mejor en TODAS las celdas de las cuatro poblaciones, y no es una convención nueva:** es
+  `calcVatBreakdown` sobre `lineasParaFacturar(quote)`, las dos ya existentes. Con F1, B se puede escribir en
+  una frase que vale con y sin descuento: **«el IVA del pie del presupuesto es el que declarará su factura»**.
+- 🔴 **F2 se DESCARTA en voz alta:** es la peor en todas las celdas y, con D, deja el presupuesto sin cuadrar
+  consigo en el **11-13 %**, frente al 0,7 % de F1. Redondear la cuota del descuento por separado mete un
+  segundo redondeo que nadie más hace.
+- **F0 (hoy) también queda peor que F1 en todo**, y con D no baja del 3-7 %.
+- **Sin D, ninguna forma cuadra el presupuesto consigo** (10-31 %): el total firmado sale de `calcTotal`, otra
+  cuenta. Y el IVA frente a la factura no baja a cero porque la reconciliación (`stageLinesReconciled`) mueve
+  precios de la factura hasta dar ese total firmado. **Es D otra vez, no B.**
+- **El 0,7 % que queda con F1 + D es el empate (C):** cuotas en medio céntimo EXACTO (701,055 →
+  701,05 o 701,06) donde el binario decide según el orden de la suma —el presupuesto suma la línea negativa
+  al final, la factura al principio—. Comprobado caso a caso en seis ejemplos; con un redondeo decimal (C)
+  los dos lados dan lo mismo. *(Guion del residuo: fuera del repositorio, no se publica.)*
+
+### Los C heredados (varios tipos + global, anteriores al bloqueo) — no son de B
+
+3.383 de la población sintética: **en el 60,2 % el tipo que «absorbe el céntimo» del reparto es distinto en
+`calcTotal` y en el pie** — `calcTotal` reparte en el orden en que APARECE cada tipo (`utils.ts:262-268`, un
+`Map`) y `pieDePresupuesto` en orden DESCENDENTE (`presentacionIva.ts:164-171`). Su pie no cuadra con lo
+firmado en el **40-52 %** según la forma. No se pueden facturar, así que no llegan a Hacienda; **cuántos hay en
+producción: NO LO SÉ** (no hay consulta corrida; sin clientes reales, previsiblemente ninguno real).
+
+### Controles
+
+- **La réplica del pie con F0 da EXACTAMENTE lo que da `pieDePresupuesto` real** (todas sus filas, con
+  descuento de línea y global) en **5.000** presupuestos; si uno solo difiere, el guion se para.
+- **Control positivo:** el guion busca un caso en que F0 y F1 difieran y se para si no lo encuentra
+  (encontrado: 25,22 × 198,38 € al 21 %, global 500,31 → 945,59 frente a 945,60).
+- La factura sale del camino real (`lineasParaFacturar` → `stageLinesReconciled` con el objetivo de
+  `distributeStageAmounts(calcTotal)`). No se genera ningún PDF ni se escribe nada.
+- `dist/` del árbol `s1-624c`: 0 commits en `src/modules/quotes`, `src/modules/invoicing` y `src/core/utils`
+  entre `9839aa6c2` y este `main`, y los de antes ya se revisaron en el tramo de arriba.
+
+### Cómo queda la decisión de B
+
+**B no es una decisión disfrazada: con descuento global sólo hay un caso vivo (un tipo), y en él la mejor
+forma medida es la que ya usa la factura.** Lo que sigue siendo decisión es lo de antes: **B no va sin C** (el
+empate) y **lo que B no cierra lo cierra D** (el total firmado), que cambia lo que el cliente firma y es de la
+asesoría. El reparto entre tipos sigue donde lo dejó SCRUM-887: bloqueado, esperando a la asesoría.
