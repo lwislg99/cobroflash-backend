@@ -2321,6 +2321,12 @@ orquestador 5b, no al fundador (④): no hubo que corregirla.
 **Medido contra:** `origin/main` = `9839aa6c2baee741f6a38de4e99c7fc29a3fe807` · hora real 2026-10-22T09:32:43Z
 (cabecera `Date:` de GitHub) · S5, equipo de Luis · rama `scrum-1339-senal-bloquea`.
 
+A9: comprobación → `tests/scrum1294-a9-leccion-en-a10.test.mjs`
+
+**Error propio:** empujé esta sección sin su línea A9. Mi propio traspaso lo dejaba escrito («un registro nuevo
+pasa scrum1294 y scrum267 ANTES de empujar») y no lo corrí. Lo cazó `build + tests` del PR #2663 (run 39757281615,
+2 fallos: `scrum1294` y `scrum976` ④, que corre `guards:entrada`, y éste a su vez `scrum1294`).
+
 **Encargo** (orquestador de Luis, que trae la decisión de Javier, c.20228): la señal bloquea con UN
 solo nombre perdido. A S5 le toca `ci.yml`: quitar el `continue-on-error: true` del paso. El guion
 (`scripts/senal-de-nombres.mjs`) y `tests/scrum1339d-…` los cambia el equipo de Javier en su PR.
