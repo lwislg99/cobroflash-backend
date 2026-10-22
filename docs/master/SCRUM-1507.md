@@ -118,3 +118,51 @@ falló, dejando la fecha inyectada en `dist/`. Lo vi en la salida, lo restauré 
 antes de seguir; las mutaciones buenas van en un guion con todas las rutas entre comillas.
 
 A9: comprobación → `tests/scrum1507-el-cron-del-reintento.test.mjs`
+
+## SCRUM-1507f · el `getMinutes()` del bloque, clasificado en el censo de fecha sin zona
+
+**Medido contra:** `origin/main` = `808af5b4466d2649a1006d4c554d1f22e7eba47c` (traído a la rama con `git merge`) · 2026-10-22T10:18:39Z (hora de GitHub)
+
+J1 del equipo de Javier (sesión `jv-j1v`, relevo de `jv-j1s`), por encargo del orquestador
+`cobroflash-backend-5f`. **Carril, a mano (SCRUM-1506):** el único fichero que toca este tramo es
+`scripts/_censo-fecha-sin-zona.mjs`, sin fila propia en `dos-equipos.md` §3.3: cae en la fila general
+de `scripts/` (S0, censos). Es una entrada de `USO`, como la que añadió SCRUM-1522b (J2), y el propio
+mensaje del trinquete pide que la clase la escriba quien mete la llamada. `cron.ts` no se toca: el
+bloque es literal de S1 (c.19344 §3). El hook de arranque dijo «SIN IDENTIDAD» (SCRUM-1498).
+
+**El rojo:** el obligatorio de `5502385e8` (job 119758521318, medido por el orquestador) cayó en 1 de
+12.099: `SCRUM-1093h · 🔴 RATCHET`, con la fila nueva
+`src/core/cron/cron.ts::startCronJobs (src/core/cron/cron.ts:170, getMinutes)`.
+
+### La clase: AGREGADO, y por qué
+
+`new Date().getMinutes() !== 0` sólo decide en qué minuto de cada hora el log dice «inactivo» o «nada
+que mirar» (una línea por hora en vez de 1.440 al día, c.19344 §3 ③). Es el borde de una ventana
+horaria de una línea de log del servidor, que no es de ningún comercio: no NUMERA, no GUARDA, no la
+lee el cliente (no IMPRIME), no es un código (no REFERIDO).
+
+¿Importa la zona? Medido con un guion que barre 2026 entero cada 7 minutos (75.086 instantes), un
+proceso hijo por `TZ`: el minuto local sale igual que el de UTC en **0 de 75.086** con `UTC`,
+`Europe/Madrid`, `Atlantic/Canary`, `America/Mexico_City` y `America/Bogota`. **Control positivo:**
+`Asia/Kolkata` y `Asia/Kathmandu` (desfase de media hora y de 45 min) salen distintos en **75.086 de
+75.086**. O sea, la zona sólo movería el minuto del latido en una zona de media hora, y ni así cambia
+qué se avisa: sólo cuándo. Por eso no es STOP.
+
+### Lo corrido
+
+* Sin la entrada (el fichero de `HEAD`): `scrum1093h` cae en 1 de 21, el RATCHET, con esa misma fila.
+  Con la entrada, 21 de 21. Restaurado y cotejado por sha256.
+* Dirigida de 9 ficheros tras traer `main` y recompilar (`tsc --noCheck`): `scrum1093h`, `scrum1507`,
+  `scrum1404b`, `scrum237`, `scrum976`, `scrum622`, `scrum267`, `scrum273`, `scrum1294`: **101 casos,
+  101 pasan, 0 caen, 0 saltan.**
+* No corrida: la tanda completa (la corre el obligatorio). Ninguna base.
+
+**Lo que esta entrada NO sujeta:** la identidad es la función (`startCronJobs`), no la línea. Otra
+llamada de la familia dentro de `startCronJobs` entraría ya como AGREGADO sin que nadie la mire. Es
+cómo identifica el censo (SCRUM-710b) y no lo cambio aquí.
+
+Error mío: la primera pasada de la medición de zonas la lancé con `TZ=Europe/Madrid` desde Git Bash, y
+el control positivo (Kolkata) salió 0 distintos: la `TZ` con barra no llegaba al proceso (node la
+imprimía `undefined`). Lo cazó el control, no yo; la buena va lanzada desde node, `env` a mano.
+
+A9: comprobación → `tests/scrum1093h-censo-fecha-sin-zona.test.mjs`

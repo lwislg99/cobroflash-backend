@@ -393,6 +393,7 @@ export const USO = new Map([
   ['src/modules/reports/app/routes/reports.routes.ts::GET /resumen-trimestre', { uso: AGREGADO }],
   ['src/modules/messaging/domain/weeklyDigest.service.ts::sendWeeklyDigests', { uso: AGREGADO }],
   ['src/modules/messaging/domain/weeklyDigest.service.ts::getDigestPreview', { uso: AGREGADO }],
+  ['src/core/cron/cron.ts::startCronJobs', { uso: AGREGADO, motivo: 'getMinutes() del reintento de sellado: sólo elige el minuto de la hora en que el log dice «inactivo»/«nada que mirar» (borde de la ventana horaria de una línea de log del servidor, de ningún comercio); no numera, no persiste, no lo lee el cliente. Medido: mismo minuto que UTC en Europe/Madrid y Atlantic/Canary en un año entero — sólo cambiaría en zonas de media hora (SCRUM-1507f)', ref: 'SCRUM-1507' }],
 ]);
 
 /**
