@@ -2316,6 +2316,56 @@ Antes de empujar se cotejó el texto contra las ocho salidas `q-*` (30/50, 644 c
 y 19 ficheros, 47 de 50 TAP con `# fail 0`) y casan. La atribución del criterio del 5 % ya iba al
 orquestador 5b, no al fundador (④): no hubo que corregirla.
 
+## SCRUM-1339 · S5 · el paso de la señal deja de llevar `continue-on-error` (22-oct-2026)
+
+**Medido contra:** `origin/main` = `9839aa6c2baee741f6a38de4e99c7fc29a3fe807` · hora real 2026-10-22T09:32:43Z
+(cabecera `Date:` de GitHub) · S5, equipo de Luis · rama `scrum-1339-senal-bloquea`.
+
+A9: comprobación → `tests/scrum1294-a9-leccion-en-a10.test.mjs`
+
+**Error propio:** empujé esta sección sin su línea A9. Mi propio traspaso lo dejaba escrito («un registro nuevo
+pasa scrum1294 y scrum267 ANTES de empujar») y no lo corrí. Lo cazó `build + tests` del PR #2663 (run 39757281615,
+2 fallos: `scrum1294` y `scrum976` ④, que corre `guards:entrada`, y éste a su vez `scrum1294`).
+
+**Encargo** (orquestador de Luis, que trae la decisión de Javier, c.20228): la señal bloquea con UN
+solo nombre perdido. A S5 le toca `ci.yml`: quitar el `continue-on-error: true` del paso. El guion
+(`scripts/senal-de-nombres.mjs`) y `tests/scrum1339d-…` los cambia el equipo de Javier en su PR.
+⚠️ Jira no se leyó en esta sesión (conector caído): c.20228 se cita como lo trae el orquestador.
+
+**Qué cambia:** en el job `build + tests`, el paso «¿Faltan casos declarados en el TAP?» pierde el
+`continue-on-error: true`, cambia «avisa, no bloquea» por «bloquea» en su nombre y su cabecera, y
+los comentarios dicen ahora quién decide el código de salida. Nada más en `ci.yml`: ni jobs, ni `if`,
+ni el `run:`.
+
+**① ¿Da 0 la señal hoy?** Medido en el log del CI, no en la medida de los 71:
+
+| run | sha | resultado del paso |
+|---|---|---|
+| 39628953329 (`push` a main, el último que acabó) | `75884928b` | `ausentes=0` · declarados 11998 · `tap_fail=0` · «Los 11998 nombres literales … están en el TAP» |
+| 39754396513 (`push` a main, la punta) | `9839aa6c2` | **NO PUDE MIRAR**: el run estaba `pending` a las 09:3xZ |
+
+**② En rojo, y lo que dice:**
+
+| caso | montaje | salida |
+|---|---|---|
+| nombres perdidos con el guion de HOY | TAP de 1 test contra 12003 declarados | `ausentes=12003` · **EXIT 0** |
+| el guion no está | `node scripts/no-existe-senal.mjs` | **EXIT 1** |
+
+🔴 **Con el guion de hoy, quitar el `continue-on-error` NO hace que un nombre perdido tumbe el check:**
+el guion sale 0 siempre (`scripts/senal-de-nombres.mjs:42` y `:112`, a propósito, c.17935). Lo que
+bloquea hoy es sólo que el guion no llegue a correr. El bloqueo de verdad llega con el PR del equipo
+de Javier, el que cambia el código de salida, y **su rojo por efecto se mira cuando estén los dos
+en main**, no antes.
+
+**Orden entre los dos PR**, deducido de lo de arriba y NO probado en GitHub: este PR solo no cambia
+ningún veredicto mientras el guion salga 0 siempre. El de ellos solo, con el `continue-on-error`
+todavía puesto, deja una ✗ dentro de un job verde. El riesgo real está en el momento en que
+coincidan los dos: si entonces la señal no da 0, `build + tests` cae para todo el mundo.
+
+**Tests que leen `ci.yml`** (los 32 `tests/*.test.mjs` que lo nombran), sobre esta rama: 305 · 299 pass
+· 1 fail · 5 skip. El fallo es `scrum687-constancia-del-alter` por `ERR_MODULE_NOT_FOUND` de
+`dist/…/constanciaDelAlter.js`: el worktree nace sin `dist`, así que ese test queda **sin mirar**.
+Los 5 skip: banco desechable (4) y el ④ de 1405c, que se salta solo cuando no hay medida.
 
 # SCRUM-1339r · 2b: el vigía de `main` recoge el CIEGO del meta-guard (su 2 y su corte a 30 min); 2a, PARADA: bloquear pide tocar `ci.yml`, y la cifra de 1405d es de otra población
 
