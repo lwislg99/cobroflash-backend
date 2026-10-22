@@ -534,6 +534,13 @@ fichero de `scripts/` («el área del ticket que creó cada uno», filas 180-187
 | `scripts/_trinquete-de-zona-hijo.mjs` | SCRUM-813 (`45294b31d`, 7-sep) | ninguna | sólo `scripts/_trinquete-de-zona.mjs` y `tests/scrum813-…` | S5, por SCRUM-1494c (`area-s5`) | 1494c lo CAMBIÓ, no lo creó. Su padre tampoco tiene fila: declarar el hijo solo deja el hueco un fichero más arriba |
 | `scripts/censo-guards-gateados.mjs` | SCRUM-754c (`b751f88c0`, 8-sep) | ninguna (SCRUM-754) | `npm run censo:gateados` y dos tests que importan `veredictoDelCenso` (`scrum754`, `scrum846b`) | S0, por ser un censo | no es sólo de consulta: lo importan dos tests |
 
+**Quién los escribió** (pedido por el orquestador después del primer commit de esta rama): SCRUM-813 y
+SCRUM-754 los abrió en Jira la cuenta de Javier (creador y responsable, 7-sep y 5-sep), y los commits que crean
+los dos ficheros son suyos (`45294b31d` y `b751f88c0`, autor `javier.pereirafe@gmail.com`, ramas
+`scrum-813-…` y `scrum-754-…`). Fue antes del 18-sep, cuando aún no había dos equipos, así que eso no dice de
+qué equipo son hoy: sólo que la pregunta es de los dos jefes y no la cierra el criterio de la casa. El hijo de
+zona lo cambió después nuestro equipo (SCRUM-1494c, S5).
+
 Comandos: `node scripts/carriles.mjs de <ruta>` (los tres ficheros, incluido el padre: «sólo lo cubre la
 fila general») · Jira `key in (SCRUM-813, SCRUM-754, SCRUM-1494)` → 813 y 754 sin etiquetas, 1494 `area-s5` ·
 `git log --format="%h %ad %s" -- <ruta>` · `git grep -n censo-guards-gateados -- tests package.json`.

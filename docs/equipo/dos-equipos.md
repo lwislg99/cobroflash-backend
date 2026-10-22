@@ -326,8 +326,11 @@ efecto y se le cuenta al jefe en plano.
      rutas del repo que llevan un puesto en el nombre. **¿Se le da la carpeta a S5 con una fila, o se renombra?**
    - **Dos de `scripts/` que S3 necesita tocar y nadie ha decidido de quién son** (SCRUM-1480g, 22-oct-2026,
      sobre `9839aa6c`). El criterio de §3.3 («el área del ticket que creó cada uno») no decide nada aquí: los
-     dos tickets que los crearon, SCRUM-813 y SCRUM-754, no llevan etiqueta de área. Lo de abajo es una
-     PROPUESTA (la inferencia es de S3), no una fila: una fila en §3 la aplica la cerradura como decisión.
+     dos tickets que los crearon, SCRUM-813 y SCRUM-754, no llevan etiqueta de área. Los dos los abrió la
+     cuenta de Javier en Jira (5 y 7-sep), y los dos ficheros los escribió Javier (`45294b31d` y
+     `b751f88c0`, autor `javier.pereirafe@gmail.com`), antes de que hubiera dos equipos (18-sep). Lo de abajo
+     es una PROPUESTA (la inferencia es de S3), no una fila: una fila en §3 la aplica la cerradura como
+     decisión, y ésta es de los dos jefes.
      - `scripts/_trinquete-de-zona-hijo.mjs`: S3 propone **S5**, porque SCRUM-1494c (`area-s5`) es el último
        que lo cambió. Pero ese ticket lo cambió, no lo creó. Y si se declara, la fila tiene que llevar también
        a su padre, `scripts/_trinquete-de-zona.mjs`, que es el único que lo lanza y tampoco tiene fila.
