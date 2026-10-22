@@ -315,6 +315,12 @@ A9: aviso → cicatriz J6 «Medí el coste de un fichero de test quitándole tes
 **Medido contra:** `origin/main` = `9839aa6c2baee741f6a38de4e99c7fc29a3fe807` · hora real 2026-10-22T09:32Z
 (cabecera `Date:` de GitHub) · S5, equipo de Luis · rama `scrum-935-banco-cortados-fuera-813`.
 
+A9: comprobación → `tests/scrum810-el-suelo-a-la-primera.test.mjs`
+
+**Error propio:** construí la mudanza sin mirar antes quién cuenta las declaraciones POR fichero. Lo vi
+después de escribir el código y antes de empujar: el control positivo de `scrum810` habría puesto en rojo el
+obligatorio. Se probó en los dos sentidos (abajo).
+
 **Carril:** `scrum813` es de S5. Lo dicen este registro (935c, «`tests/scrum813-…` y SCRUM-1494 son de
 S5») y `dos-equipos.md:171` («el test de un ticket → el puesto que trabaja el ticket»).
 `scripts/carriles.mjs de` contesta «sin fila» para cualquier `tests/*.test.mjs`, también para los que
@@ -340,14 +346,38 @@ Se comprobó que el fichero editado es el que SE CARGA: `meta-guard-mutaciones.m
 
 Todo en verde, 0 fallos, 0 saltos. El «antes» casa con el A/B de J6 (11,44-11,62 s).
 
-**Lo que eso da en el meta-guard. Es una PROYECCIÓN, no una pasada del instrumento:** el coste de un
-guard es `(mutaciones + 1) × carga`. Antes: 27 × ~12 s ≈ 320 s. Después: 25 × ~3 s + 3 × ~10,3 s
-≈ 106 s. Unos **210 s menos en local**. NO he corrido `meta:mutaciones`, porque el worktree no tiene
-`node_modules`, y el CI tampoco lo ha medido. La cifra de verdad se lee en el resumen del job
-meta-guard del primer run tras el merge: el paso `if: always()` de 935 imprime la duración.
+**El meta-guard DE VERDAD, sobre estos dos guards.** Un arnés fuera del árbol llama a las MISMAS
+funciones del bucle principal de `scripts/meta-guard-mutaciones.mjs` (`mutacionesDeclaradas`, `correr`,
+`aplicarUna`), sólo para los guards que se le dan. Corrió una vez por lado, en la misma máquina y en la
+misma hora, con el árbol limpio al acabar (`git status` sin cambios en `tests/` ni `scripts/`):
 
-**Lo que bloquea el empuje:** `scripts/_suelo-contra-main.mjs` cuenta las declaraciones POR fichero,
-y `scrum813` baja de 26 a 24. Su control positivo (`tests/scrum810-el-suelo-a-la-primera.test.mjs`)
-corre en `npm test`. Hace falta una línea en `RETIRADAS_A_PROPOSITO` que diga que ㉓ y ㉔ se MUDAN.
-Ese fichero es de S3, y la línea se ha pedido al orquestador. No se ha rodeado: nada de declarar dos
-mutaciones de relleno en `scrum813` para que el recuento no baje.
+| | mutaciones | vivas | limpia | total |
+|---|---|---|---|---|
+| ANTES: `scrum813` de main (`8ad167195`) | 26 | 26 | 14,0 s | **370,1 s** |
+| DESPUÉS: `scrum813` | 24 | 24 | 4,3 s | 136,3 s |
+| DESPUÉS: `scrum1494-cortados-de-zona` | 2 | 2 | 11,5 s | 36,4 s |
+| DESPUÉS, los dos | 26 | 26 | | **172,7 s** |
+
+**197 s menos en local, con 26 de 26 vivas antes y después.** La máquina iba cargada (otras sesiones):
+por mutación, `scrum813` tardó 2,9-9,8 s, cuando suelto carga en 2,6-3,4 s. Por eso la cifra vale como
+comparación ANTES/DESPUÉS en la misma pasada, no como lo que tardará el CI. Lo del CI se lee en el resumen
+del job meta-guard del primer run tras el merge: el paso `if: always()` de 935 imprime la duración.
+
+**El suelo contra main, y el cruce de carril.** `scripts/_suelo-contra-main.mjs` cuenta las declaraciones
+POR fichero, y `scrum813` baja de 26 a 24: contadas con `lecturaDeDeclaraciones`, el lector real, sobre la
+base y sobre esta rama (base 26 · ahora 24 · fichero nuevo 2). Se añade UNA línea a `RETIRADAS_A_PROPOSITO`.
+🔴 **Cruce de carril declarado:** ese fichero es de S3. La línea la redactó S3 para este PR (vía el
+orquestador, 22-oct). Su `motivo` decía ㉕ ㉖; se corrigió a ㉓ ㉔, que son las que se mudan, y S3 lo
+confirmó. Va en el MISMO PR que la bajada, no antes, porque una retirada sólo exime mientras está pendiente
+frente a la base de fusión (SCRUM-1173): S3 lo midió en 6 escenarios (la línea sola primero: 14/15; juntas:
+15/15).
+
+| `scrum810` | resultado |
+|---|---|
+| CON la línea | 6/6 |
+| SIN la línea (`git diff --numstat` = 0/1, restaurado con `git restore`) | 5/6: cae «CONTROL POSITIVO: con el árbol tal cual, el suelo CALLA», con `scrum813-trinquete-de-zona.test.mjs: 26 → 24` |
+
+⚠️ **Lo que el suelo NO comprueba (hallazgo de S3):** la lista no distingue mudanza de retirada. El suelo
+recorre sólo los guards de la BASE y el fichero nuevo no está en ella. Una mudanza cuyo destino no llevara
+los `cae` saldría igual de verde. Ésta sí los lleva (lo dice el arnés de arriba: ㉓ y ㉔ VIVAS en
+`scrum1494`), pero eso lo mide esta pasada, no el instrumento. S3 lo cierra después de este PR.
