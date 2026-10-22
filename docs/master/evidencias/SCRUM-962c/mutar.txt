@@ -1,0 +1,15 @@
+﻿BASE {"code":0,"tests":11,"pass":11,"fail":0}
+MUERTA  M1 ⒞ vara fija de 44                       tests 11 fail 2 · numstat «1	1	scripts/_censo-distintos.mjs»
+MUERTA  M2 ⒞ btn-sm no se separa                   tests 11 fail 2 · numstat «1	1	scripts/_censo-distintos.mjs»
+MUERTA  M3 ⒜ campos sumados a cortos               tests 11 fail 2 · numstat «1	1	scripts/_censo-distintos.mjs»
+MUERTA  M4 ⒝ sinMirar no mira lo visto             tests 11 fail 1 · numstat «1	1	scripts/_censo-distintos.mjs»
+MUERTA  M5 ⒜ población vieja                       tests 11 fail 2 · numstat «1	1	scripts/_censo-distintos.mjs»
+MUERTA  M6 ⒟ árbitro de etiqueta con casillas      tests 11 fail 1 · numstat «1	1	scripts/_censo-distintos.mjs»
+MUERTA  M7 ⒟ sonda: no compara envuelta y suelta   tests 11 fail 1 · numstat «1	1	scripts/_censo-distintos.mjs»
+MUERTA  M8 ⒝ sonda: no mira la oculta              tests 11 fail 1 · numstat «1	1	scripts/_censo-distintos.mjs»
+MUERTA  M9 ⒜ sonda: no mira el campo               tests 11 fail 1 · numstat «1	1	scripts/_censo-distintos.mjs»
+MUERTA  M10 ⒟ censo: etiqueta sin exigir control   tests 11 fail 1 · numstat «1	1	scripts/censo-objetivo-tactil-panel.mjs»
+MUERTA  M11 censo: sondas viejas                   tests 11 fail 1 · numstat «1	1	scripts/censo-objetivo-tactil-panel.mjs»
+MUERTA  M12 ⒝ censo: estado que no abre no sale 2  tests 11 fail 1 · numstat «1	1	scripts/censo-objetivo-tactil-panel.mjs»
+vivas 0 · ciegas 0 · de 12 · árbol restaurado: sí
+EXIT=0
