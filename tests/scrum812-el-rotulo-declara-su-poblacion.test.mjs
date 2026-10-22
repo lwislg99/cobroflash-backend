@@ -378,8 +378,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // ④ El trinquete se afloja una unidad: deja hueco para que la cobertura baje sin aviso.
     fichero: 'tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs',
-    de: 'export const SUELO_GUARD_QUE_DECLARAN = 31;',
-    a: 'export const SUELO_GUARD_QUE_DECLARAN = 30;',
+    de: 'export const SUELO_GUARD_QUE_DECLARAN = 32;',
+    a: 'export const SUELO_GUARD_QUE_DECLARAN = 31;',
     cae: 'SCRUM-812 · 🔴 EL TRINQUETE del GUARD: la cobertura auto-declarada NO BAJA',
   },
   {
