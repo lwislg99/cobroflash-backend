@@ -17,6 +17,11 @@
 //     su `timezone` deja de compararse con la foto (que guarda el NULL de antes): se comprueba por
 //     su regla. Es el ÚNICO campo que sale de la comparación por valor, y sólo en A; B es de otro
 //     país, sigue naciendo sin zona y se sigue comparando con la foto.
+//     🔵 SCRUM-1536d (22-oct-2026, decisión del fundador en Jira SCRUM-1536 c.20218 y c.20225):
+//     Canarias ya no entra, tampoco por dónde se trabaja, así que A deja Las Palmas por BIZKAIA
+//     —que sí entra: lo foral va por el domicilio, no por la provincia— y contesta «no» a las dos
+//     preguntas del domicilio fiscal. Su `domicilioFiscalForal` (la foto guarda NULL) sale también
+//     de la comparación por valor y se comprueba por su regla: `false`. Sólo en A.
 //   · B: los cinco campos, con `ref` = el código de A y un `source` de más de 200 caracteres.
 //
 // 🔴 Y EL CONTROL QUE DE VERDAD PUEDE SALIR MAL: `login` y `verify` viven en el mismo fichero que
@@ -121,7 +126,7 @@ test('SCRUM-1515 · el merchant que crea nuestro guion nace igual que nacía el 
 
   const sello = Date.now().toString(36).toUpperCase().slice(-6);
   // SUCIOS a propósito: espacios, mayúsculas, un `source` de 230 y un país con espacios.
-  const A = { name: `  ${sello}A Reformas Ñandú  `, email: `  Alta-A-1515-${sello}@Test.Local `, provincia: '  las PALMAS ' };
+  const A = { name: `  ${sello}A Reformas Ñandú  `, email: `  Alta-A-1515-${sello}@Test.Local `, provincia: '  BIZKAIA ', 'domicilio-foral': ' No ', 'domicilio-canarias': 'no' };
   const B = { name: ` ${sello}B Fontanería Güell `, email: ` Alta-B-1515-${sello}@TEST.local  `, country: ' PT ', source: `  ${'origen/medio/campaña-'.repeat(11)}  ` };
   const limpio = (correo) => correo.trim().toLowerCase();
 
@@ -250,7 +255,7 @@ ${gA.salida}`);
       const r = ruta[cual].fila; const g = guion[cual].fila;
       const faltan = Object.keys(r).filter((k) => !(k in g));
       assert.deepEqual(faltan, [], `🔴 ${cual}: la fila de hoy ya no tiene campos que la ruta sí dejaba`);
-      const campos = Object.keys(r).filter((k) => !POR_REGLA.includes(k) && !(cual === 'B' && k === 'referredBy') && !(cual === 'A' && k === 'timezone'));
+      const campos = Object.keys(r).filter((k) => !POR_REGLA.includes(k) && !(cual === 'B' && k === 'referredBy') && !(cual === 'A' && (k === 'timezone' || k === 'domicilioFiscalForal')));
       assert.ok(campos.length >= 50, `🔴 CIEGO: sólo ${campos.length} campos que comparar por valor en ${cual}`);
       const distintos = campos.filter((k) => JSON.stringify(r[k]) !== JSON.stringify(g[k]))
         .map((k) => `${k}: ruta=${JSON.stringify(r[k])} guion=${JSON.stringify(g[k])}`);
@@ -275,8 +280,11 @@ ${gA.salida}`);
     assert.equal(guion.A.fila.country, 'ES');
     // SCRUM-1522e: la zona, por su regla. La foto es de cuando nadie la escribía.
     assert.deepEqual([ruta.A.fila.timezone, ruta.B.fila.timezone], [null, null], '🔴 CIEGO: la foto no guarda el NULL con el que nacía un comercio antes de SCRUM-1522e');
-    assert.equal(guion.A.fila.timezone, 'Atlantic/Canary', '🔴 A se dio de alta en Las Palmas y su fila no guarda la hora de Canarias');
+    assert.equal(guion.A.fila.timezone, 'Europe/Madrid', '🔴 A se dio de alta en Bizkaia y su fila no guarda la hora peninsular');
     assert.equal(guion.B.fila.timezone, null, '🔴 B es de otro país y no tenía que nacer con zona');
+    // SCRUM-1536d: el «no» foral del alta, en la columna; la foto guarda el NULL de antes.
+    assert.deepEqual([ruta.A.fila.domicilioFiscalForal, ruta.B.fila.domicilioFiscalForal], [null, null], '🔴 CIEGO: la foto no guarda el NULL foral de antes de SCRUM-1536d');
+    assert.deepEqual([guion.A.fila.domicilioFiscalForal, guion.B.fila.domicilioFiscalForal], [false, null], '🔴 A contestó «no» foral y B es de otro país: la base no guarda false y NULL');
     assert.equal(guion.A.fila.acquisitionSource, null);
     assert.deepEqual(guion.A.fila.lifecycleEmailsSent, { welcome: 1 }, '🔴 la bienvenida no llegó a anotarse: el buzón de laboratorio no está haciendo su papel');
     assert.equal(guion.A.cartas.length, 2, `🔴 el alta manda 2 correos (bienvenida y enlace) y veo ${guion.A.cartas.length}`);
@@ -340,6 +348,13 @@ ${gA.salida}`);
     const sinProvincia = await porElGuion({ name: 'Sin provincia', email: `sin-provincia-1515-${sello.toLowerCase()}@test.local` });
     assert.deepEqual([sinProvincia.codigo, sinProvincia.dicho.at(-1)?.error], [2, 'provincia_required'], `🔴 un comercio de España sin provincia tiene que rechazarse
 ${sinProvincia.salida}`);
+    // SCRUM-1536d: forales y Canarias, fuera (Jira SCRUM-1536 c.20218 y c.20225), contra la base de verdad.
+    const foral = await porElGuion({ name: 'Foral', email: `foral-1515-${sello.toLowerCase()}@test.local`, provincia: 'Madrid', 'domicilio-foral': 'si', 'domicilio-canarias': 'no' });
+    const enCanarias = await porElGuion({ name: 'En Canarias', email: `canarias-1515-${sello.toLowerCase()}@test.local`, provincia: 'Las Palmas', 'domicilio-foral': 'no', 'domicilio-canarias': 'no' });
+    assert.deepEqual([foral.codigo, foral.dicho.at(-1)?.error, foral.dicho.at(-1)?.motivo, enCanarias.codigo, enCanarias.dicho.at(-1)?.error, enCanarias.dicho.at(-1)?.motivo],
+      [2, 'territorio_excluido', 'domicilio', 2, 'territorio_excluido', 'trabajo'], `🔴 un domicilio foral y un trabajo en Canarias tienen que quedarse fuera
+${foral.salida}
+${enCanarias.salida}`);
 
     // SCRUM-94: el correo de un operario no puede acabar en un merchant. Por el guion sale 4; por
     // la ruta cerrada recibe lo MISMO que cualquiera (ya no se distingue a un operario de un extraño).
@@ -347,7 +362,7 @@ ${sinProvincia.salida}`);
     const deOperario = await porElGuion({ name: 'Negocio del operario', email: operario.email });
     assert.equal(deOperario.codigo, 4, `🔴 el correo de un operario: el guion tiene que salir 4 y salió ${deOperario.codigo}\n${deOperario.salida}`);
     assert.deepEqual(await porLaRuta({ name: 'Negocio del operario', email: operario.email }), cerradaA, '🔴 la ruta cerrada contesta distinto al correo de un operario');
-    assert.equal(await prisma.merchant.count({ where: { email: { in: [operario.email, `sin-nombre-1515-${sello.toLowerCase()}@test.local`, `mal-1515-${sello.toLowerCase()}@test.local`, `sin-provincia-1515-${sello.toLowerCase()}@test.local`] } } }), 0,
+    assert.equal(await prisma.merchant.count({ where: { email: { in: [operario.email, `sin-nombre-1515-${sello.toLowerCase()}@test.local`, `mal-1515-${sello.toLowerCase()}@test.local`, `sin-provincia-1515-${sello.toLowerCase()}@test.local`, `foral-1515-${sello.toLowerCase()}@test.local`, `canarias-1515-${sello.toLowerCase()}@test.local`] } } }), 0,
       '🔴 un alta rechazada dejó un merchant');
     assert.equal(await cuantos(), alEmpezar + 2, '🔴 al acabar hay más merchants que los dos del guion');
 
