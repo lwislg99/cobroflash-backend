@@ -38,7 +38,19 @@
 // corto. La superficie que no lo caza **no está medida**, aunque devuelva cero. La sonda va en el
 // HTML que se sirve, en memoria: **no se toca ningún fichero del árbol**.
 //
-// SALIDAS: 0 censo completo · 2 no supe medir (sonda fallida, o cero superficies).
+// ── SCRUM-962e · LA POBLACIÓN, LA VARA, LOS ESTADOS Y LA ETIQUETA, DECLARADOS ─────────────────
+// S2 midió que este censo fallaba en las dos direcciones (SCRUM-962, tramos 962b y 962b (2)).
+// Desde 962e (el porqué de cada pieza, en `_censo-distintos.mjs`):
+//   ⒜ mide `POBLACION` = controles + campos de formulario, y lo dice. Los campos NO tienen vara
+//     escrita en DESIGN.md: se cuentan aparte y no se suman a los cortos.
+//   ⒝ abre los estados que sabe abrir (`ESTADOS`, con control de que se abrieron) y lo que no se
+//     pinta en ninguno sale como SIN MIRAR, con su número y su pantalla.
+//   ⒞ juzga con `minimoPara(ancho)` y separa los `btn-sm` exentos por §5.
+//   ⒟ una casilla dentro de una `<label>` que la controla se mide por la etiqueta.
+// Y siete sondas por superficie y anchura (`SONDAS_HTML`), una por avería, de clases que el
+// selector podría dejar fuera. La cifra vieja se sigue imprimiendo al final, para comparar.
+//
+// SALIDAS: 0 censo completo · 2 no supe medir (sonda fallida, estado que no abre, o cero superficies).
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 import fs from 'node:fs';
 import path from 'node:path';
@@ -46,18 +58,28 @@ import http from 'node:http';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
 import { lanzarNavegador } from './_navegador.mjs';
-import { FUENTE_MEDIDOR, INTERACTIVOS, MINIMO_TACTIL } from './_medidor-de-toque.mjs';
+import { FUENTE_MEDIDOR, INTERACTIVOS, MINIMO_TACTIL, MINIMO_ESCRITORIO, CORTE_MOVIL } from './_medidor-de-toque.mjs';
 import { serializar, paginaDeClientes } from './_pagina-panel.mjs';
 import { cargarDashboard, pintarVista, todos } from '../tests/_banco-vistas.mjs';
-import { cortosDistintos } from './_censo-distintos.mjs';
+import {
+  cortosDistintos, distintosCon, sinMirar, veredicto, juzgarSondas,
+  CONTROLES, CAMPOS, CASILLAS, POBLACION, ARBITRO_ETIQUETA, SONDAS_HTML,
+} from './_censo-distintos.mjs';
 import { datosDelCenso, ARGUMENTOS_DEL_CENSO, parametrosDe, avisoDeVistaSinPedir, avisoDeRutaSinContrato } from './_datos-del-censo.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = path.join(RAIZ, 'public');
 const ANCHOS = [929, 390];
-const SONDA_TEXTO = '.';
-const SONDA = '<button id="__sonda" style="width:12px;height:12px;padding:0;border:0">' + SONDA_TEXTO + '</button>';
 const MINIMO_SUPERFICIES = 10;
+
+// ⒝ LOS ESTADOS QUE EL CENSO SABE ABRIR. El HTML se sirve serializado, sin JS: no se puede pulsar
+// la pestaña, así que se reproduce lo que hace el producto al pulsarla. Configuración:
+// `pintarNav` (settingsView.js) pone su panel en `flex` y los demás en `none`. S2 lo midió así y
+// pulsando de verdad, y las dos medidas difieren en ≤0,5 px (SCRUM-962, tramo 962b ②).
+// Cada estado abierto se COMPRUEBA (su panel se pinta y los demás no): si no, sale 2.
+const ESTADOS = {
+  renderSettingsView: { paneles: '.settings-panel[data-submenu]', clave: 'submenu', mostrar: 'flex' },
+};
 
 let salida = 0;
 const decir = (s) => console.log(s);
@@ -150,7 +172,7 @@ const pagina = (cuerpo) => '<!doctype html><html lang="es"><head><meta charset="
 const rutas = new Map();
 for (const s of superficies) {
   rutas.set('/' + s.fn, pagina(s.html));
-  rutas.set('/' + s.fn + '__sonda', pagina(s.html + SONDA));
+  rutas.set('/' + s.fn + '__sonda', pagina(s.html + SONDAS_HTML));
 }
 const TIPOS = { '.css': 'text/css; charset=utf-8' };
 const srv = http.createServer((rq, res) => {
@@ -165,99 +187,210 @@ const PUERTO = await new Promise((ok) => srv.listen(0, '127.0.0.1', () => ok(srv
 
 // El recorrido: mismo criterio que el guard —censo derivado del DOM, con scroll, y el área de
 // toque como árbitro—, escrito una vez aquí en vez de copiar el medidor.
-const MEDIR = `(async (SEL, MIN) => {
+// SCRUM-962e · sobre `POBLACION` (⒜), con la clase de cada elemento, y la casilla envuelta medida
+// por su etiqueta (⒟). `viejo` y `tocablePropio` guardan lo que medía el censo antes, para la cifra
+// de comparación del final.
+const MEDIR = `(async (SEL, CAMPOS, CASILLAS, ARB_ETQ, VIEJO) => {
   const nodos = [...document.querySelectorAll(SEL)];
   const medidos = [], sinPintar = [], noTocables = [];
   const nombreDe = (el) => {
     let c = '';
     if (el.className && typeof el.className === 'string') c = el.className.trim().split(/\\s+/).filter(Boolean).join('.');
-    return el.tagName + (c ? '.' + c : '');
+    // 962e · el tipo del \`input\`: «INPUT» a secas no distingue una casilla de un color o una fecha.
+    const t = el.tagName === 'INPUT' ? '[' + (el.getAttribute('type') || 'text') + ']' : '';
+    return el.tagName + t + (c ? '.' + c : '');
   };
+  const pinta = (x) => { const r = x.getBoundingClientRect(); return !!(r.width && r.height); };
   for (const [i, el] of nodos.entries()) {
-    const r0 = el.getBoundingClientRect();
+    const clase = el.matches(CAMPOS) ? 'campo' : el.matches(CASILLAS) ? 'casilla' : 'control';
     // SCRUM-1559b · \`i\` es la identidad del elemento a los dos anchos (ver _censo-distintos.mjs).
-    const ficha = { i, sel: nombreDe(el), texto: (el.textContent || '').replace(/\\s+/g, ' ').trim().slice(0, 34) || '(sin texto)' };
-    if (!r0.width || !r0.height) { sinPintar.push(ficha); continue; }
-    const m = await window.__areaDeToque(el, SEL, { scroll: true });
-    if (m.error) { noTocables.push({ ...ficha, motivo: m.error }); continue; }
-    medidos.push({ ...ficha, caja: m.caja, tocable: m.tocable, cumple: m.tocable >= MIN });
+    // ⒟ la etiqueta cuenta sólo si ENVUELVE a la casilla y la controla (\`label.control\`): una
+    // etiqueta con \`for\` puesta en otro sitio es otro objetivo, no el mismo más grande.
+    const lab = clase === 'casilla' ? el.closest('label') : null;
+    const etq = lab && lab.control === el && pinta(lab) ? lab : null;
+    const rotulo = el.textContent || (el.labels && el.labels[0] && el.labels[0].textContent) || el.getAttribute('aria-label') || el.getAttribute('placeholder') || '';
+    const ficha = { i, id: el.id || '', sel: nombreDe(el), clase, viejo: el.matches(VIEJO),
+      texto: rotulo.replace(/\\s+/g, ' ').trim().slice(0, 34) || '(sin texto)' };
+    if (!pinta(el) && !etq) { sinPintar.push(ficha); continue; }
+    const propio = pinta(el) ? await window.__areaDeToque(el, SEL, { scroll: true }) : { error: 'la casilla no se pinta' };
+    const deEtq = etq ? await window.__areaDeToque(etq, ARB_ETQ, { scroll: true }) : null;
+    const buenos = [propio, deEtq].filter((m) => m && !m.error);
+    if (!buenos.length) { noTocables.push({ ...ficha, motivo: propio.error || (deEtq && deEtq.error) }); continue; }
+    const tocable = Math.max(...buenos.map((m) => m.tocable));
+    medidos.push({ ...ficha, caja: propio.caja ?? (deEtq && deEtq.caja), tocable,
+      tocablePropio: propio.error ? null : propio.tocable,
+      viaEtiqueta: !!(deEtq && !deEtq.error && deEtq.tocable === tocable && deEtq.tocable > (propio.tocable || 0)) });
   }
   return { medidos, sinPintar, noTocables, total: nodos.length };
 })`;
-const EVAL = `${FUENTE_MEDIDOR};${MEDIR}(${JSON.stringify(INTERACTIVOS)}, ${MINIMO_TACTIL})`;
+const EVAL = `${FUENTE_MEDIDOR};${MEDIR}(${[POBLACION, CAMPOS, CASILLAS, ARBITRO_ETIQUETA, INTERACTIVOS].map((s) => JSON.stringify(s)).join(', ')})`;
+
+// ⒝ Abre el estado `clave` de una superficie y COMPRUEBA que se abrió. `null` lista las claves.
+const ABRIR = (e) => `((clave) => {
+  const ps = [...document.querySelectorAll(${JSON.stringify(e.paneles)})];
+  if (clave == null) return ps.map((p) => p.dataset[${JSON.stringify(e.clave)}]);
+  for (const p of ps) p.style.display = p.dataset[${JSON.stringify(e.clave)}] === clave ? ${JSON.stringify(e.mostrar)} : 'none';
+  const pinta = (p) => { const r = p.getBoundingClientRect(); return !!(r.width && r.height); };
+  const suyo = (p) => p.dataset[${JSON.stringify(e.clave)}] === clave;
+  const abierto = ps.every((p) => (getComputedStyle(p).display !== 'none') === suyo(p)) && !ps.some((p) => !suyo(p) && pinta(p));
+  // Abierto y sin altura = el panel está VACÍO con estos datos (no es lo mismo que no abrirlo).
+  return { abierto, vacio: abierto && !ps.filter(suyo).some(pinta) };
+})`;
 
 const navegador = await lanzarNavegador(puppeteer, {});
 const resultados = [];
 const sondasFallidas = [];
+const estadosFallidos = [];
+const estadosVacios = [];
 for (const ancho of ANCHOS) {
   for (const s of superficies) {
     const page = await navegador.newPage();
     await page.setViewport({ width: ancho, height: 900 });
 
     await page.goto(`http://127.0.0.1:${PUERTO}/${s.fn}__sonda`, { waitUntil: 'load' });
-    const rs = await page.evaluate(EVAL);
-    const sonda = rs.medidos.find((m) => m.sel === 'BUTTON' && m.texto === SONDA_TEXTO);
-    if (!sonda || sonda.cumple !== false) {
-      sondasFallidas.push(`${s.fn} @${ancho}px (${sonda ? 'medida pero NO marcada corta' : 'ni siquiera medida'})`);
-    }
+    for (const f of juzgarSondas(await page.evaluate(EVAL), ancho)) sondasFallidas.push(`${s.fn} @${ancho}px · ${f}`);
 
     await page.goto(`http://127.0.0.1:${PUERTO}/${s.fn}`, { waitUntil: 'load' });
-    resultados.push({ fn: s.fn, ancho, ...(await page.evaluate(EVAL)) });
+    resultados.push({ fn: s.fn, ancho, estado: null, ...(await page.evaluate(EVAL)) });
+
+    const e = ESTADOS[s.fn];
+    if (e) {
+      const claves = await page.evaluate(`${ABRIR(e)}(null)`);
+      if (!claves.length) estadosFallidos.push(`${s.fn} @${ancho}px: no encuentra ningún «${e.paneles}»`);
+      for (const clave of claves) {
+        await page.goto(`http://127.0.0.1:${PUERTO}/${s.fn}`, { waitUntil: 'load' });
+        const ab = await page.evaluate(`${ABRIR(e)}(${JSON.stringify(clave)})`);
+        if (!ab.abierto) {
+          estadosFallidos.push(`${s.fn}#${clave} @${ancho}px: al abrirlo su panel sigue oculto, o se ve otro`);
+          continue;
+        }
+        if (ab.vacio) estadosVacios.push(`${s.fn}#${clave} @${ancho}px`);
+        resultados.push({ fn: s.fn, ancho, estado: clave, ...(await page.evaluate(EVAL)) });
+      }
+    }
     await page.close();
   }
 }
 await navegador.close();
 srv.close();
+for (const r of resultados) for (const m of r.medidos) { m.veredicto = veredicto(m, r.ancho); m.cumple = m.veredicto === 'cumple'; }
 
-decir('\n═══ ✅ LA SONDA ═══');
+decir('\n═══ ✅ LAS SONDAS (una por avería: ⒜ campo · ⒝ oculto · ⒞ 40 px y btn-sm · ⒟ casilla envuelta y suelta) ═══');
 decir(`superficies × anchuras: ${superficies.length * ANCHOS.length} · sondas NO cazadas: ${sondasFallidas.length}`);
-for (const s of sondasFallidas) decir('   🔴 SUPERFICIE NO MEDIDA: ' + s);
+for (const s of sondasFallidas) decir('   🔴 NO SUPE MEDIR: ' + s);
 if (sondasFallidas.length) {
-  noSupe('🔴 hay superficies que no cazan un objetivo de 12 px: sus ceros no valen y el total está incompleto.');
+  noSupe('🔴 hay sondas que no cazan su avería: los números de abajo no valen y el total está incompleto.');
 }
+const abiertos = resultados.filter((r) => r.estado).length;
+decir(`estados abiertos además del montaje: ${abiertos} · que NO se abrieron: ${estadosFallidos.length}`);
+for (const s of estadosFallidos) decir('   🔴 ESTADO NO ABIERTO: ' + s);
+decir(`abiertos y VACÍOS con los datos de muestra (lo que pintarían con otros datos no está en la población): ${estadosVacios.length}`);
+for (const s of estadosVacios) decir('   ⚠️ ' + s);
+if (estadosFallidos.length) noSupe('🔴 un estado declarado en ESTADOS no se abre: lo de dentro no está medido.');
 
 // ═══ ③ EL NÚMERO ═════════════════════════════════════════════════════════════════════════════
-decir('\n═══ ③ POR PANTALLA Y ANCHURA ═══');
-decir('pantalla'.padEnd(30) + 'ancho  medidos  cortos  sinPintar  noTocables');
+decir('\n═══ ③ POR PANTALLA, ANCHURA Y ESTADO ═══');
+decir(`población: controles (${CONTROLES})`);
+decir(`         + campos (${CAMPOS})`);
+decir(`vara: ${MINIMO_TACTIL} px hasta ${CORTE_MOVIL} px de ancho, ${MINIMO_ESCRITORIO} por encima (DESIGN.md §5) · btn-sm exento · campos sin vara escrita`);
+decir('pantalla'.padEnd(42) + 'ancho  medidos  cortos  exentos  campos  sinPintar  noTocables');
+const cuenta = (r, v) => r.medidos.filter((m) => m.veredicto === v).length;
 for (const r of resultados) {
-  decir(r.fn.padEnd(30) + String(r.ancho).padEnd(7) + String(r.medidos.length).padEnd(9)
-    + String(r.medidos.filter((m) => !m.cumple).length).padEnd(8)
+  decir((r.fn + (r.estado ? '#' + r.estado : '')).padEnd(42) + String(r.ancho).padEnd(7) + String(r.medidos.length).padEnd(9)
+    + String(cuenta(r, 'corto')).padEnd(8) + String(cuenta(r, 'exento')).padEnd(9) + String(cuenta(r, 'campo')).padEnd(8)
     + String(r.sinPintar.length).padEnd(11) + r.noTocables.length);
 }
 
-// Un elemento es el MISMO aunque se mida a dos anchuras: pantalla + su posición en el DOM servido.
-// 🔴 SCRUM-1559b · era pantalla + selector + texto, y los tres «💬» de Clientes contaban UNO.
-const distintos = cortosDistintos(resultados);
-const mediciones = resultados.reduce((t, r) => t + r.medidos.filter((m) => !m.cumple).length, 0);
-const esSm = (sel) => sel.includes('btn-sm');
-const smDistintos = [...distintos.values()].filter((v) => esSm(v.sel)).length;
+const cortos = distintosCon(resultados, 'corto');
+const exentos = distintosCon(resultados, 'exento');
+const camposBajo = distintosCon(resultados, 'campo');
+const sinVer = sinMirar(resultados);
+const poblacion = new Map();
+for (const r of resultados) {
+  for (const m of [...r.medidos, ...r.noTocables, ...r.sinPintar]) poblacion.set(`${r.fn}|${m.i}`, m.clase);
+}
+const porClase = (c) => [...poblacion.values()].filter((x) => x === c).length;
+const noTocablesDistintos = new Set();
+const medidosDistintos = new Set();
+for (const r of resultados) {
+  for (const m of r.medidos) medidosDistintos.add(`${r.fn}|${m.i}`);
+  for (const m of r.noTocables) noTocablesDistintos.add(`${r.fn}|${m.i}`);
+}
+for (const k of medidosDistintos) noTocablesDistintos.delete(k);
+const porEtiqueta = new Map();
+for (const r of resultados) {
+  for (const m of r.medidos) {
+    const k = `${r.fn}|${m.i}`;
+    if (m.viaEtiqueta && (!porEtiqueta.has(k) || m.tocable < porEtiqueta.get(k).tocable)) porEtiqueta.set(k, { fn: r.fn, sel: m.sel, texto: m.texto, tocable: m.tocable, propio: m.tocablePropio });
+  }
+}
+// A qué anchuras salió cada distinto con ese veredicto: un corto sólo en móvil no es uno de escritorio.
+const anchosCon = (cual) => {
+  const a = new Map();
+  for (const r of resultados) for (const m of r.medidos) if (m.veredicto === cual) {
+    const k = `${r.fn}|${m.i}`;
+    if (!a.has(k)) a.set(k, new Set());
+    a.get(k).add(r.ancho);
+  }
+  return a;
+};
 
-decir('\n═══ ③ POR CLASE (elementos DISTINTOS, sin duplicar por anchura) ═══');
-const porClase = new Map();
-for (const v of distintos.values()) {
-  if (!porClase.has(v.sel)) porClase.set(v.sel, { n: 0, min: Infinity, max: 0, pant: new Set(), ej: new Set() });
-  const e = porClase.get(v.sel);
-  e.n += 1; e.min = Math.min(e.min, v.tocable); e.max = Math.max(e.max, v.tocable);
-  e.pant.add(v.fn); if (e.ej.size < 3) e.ej.add(v.texto);
+const lista = (titulo, mapa, cual) => {
+  const anchos = anchosCon(cual);
+  decir(`\n═══ ${titulo} · ${mapa.size} ═══`);
+  for (const [k, v] of [...mapa.entries()].sort((a, b) => a[1].fn.localeCompare(b[1].fn) || a[1].tocable - b[1].tocable)) {
+    const en = [...(anchos.get(k) || [])].sort((x, y) => x - y).join('+');
+    decir(`   ${v.fn.padEnd(30)} ${String(v.tocable).padStart(5)} px @${en.padEnd(7)} ${v.sel.slice(0, 44).padEnd(44)} «${v.texto}»`);
+  }
+};
+lista('CORTOS con la vara de DESIGN.md §5 (la lista que se arregla)', cortos, 'corto');
+lista('CAMPOS bajo la vara de los botones (DESIGN.md no les da altura: NO son cortos hasta que se fije)', camposBajo, 'campo');
+lista('EXENTOS por DESIGN.md §5 (btn-sm por debajo de la vara)', exentos, 'exento');
+decir(`\n═══ CASILLAS medidas por su ETIQUETA envolvente (⒟: sola, la casilla mide lo de «propio») · ${porEtiqueta.size} ═══`);
+for (const v of [...porEtiqueta.values()].sort((a, b) => a.fn.localeCompare(b.fn))) {
+  decir(`   ${v.fn.padEnd(30)} ${String(v.tocable).padStart(5)} px (propio ${v.propio ?? '—'})  ${v.sel.slice(0, 36).padEnd(36)} «${v.texto}»`);
 }
-for (const [sel, e] of [...porClase.entries()].sort((a, b) => b[1].n - a[1].n)) {
-  decir(`   ${String(e.n).padStart(3)}  ${sel.padEnd(42)} ${e.min.toFixed(1)}–${e.max.toFixed(1)} px · ${e.pant.size} pantalla(s) · p.ej. ${[...e.ej].join(' / ')}`);
-}
+
+decir(`\n═══ SIN MIRAR (no se pintan en ningún estado abierto: NO son cero) · ${sinVer.size} ═══`);
+const sinPorPantalla = new Map();
+for (const v of sinVer.values()) sinPorPantalla.set(v.fn, (sinPorPantalla.get(v.fn) || 0) + 1);
+for (const [fn, n] of [...sinPorPantalla.entries()].sort((a, b) => b[1] - a[1])) decir(`   ${String(n).padStart(4)}  ${fn}`);
+
+// La cifra VIEJA, con lo que medía antes (población INTERACTIVOS, el <input> solo, 44 a las dos
+// anchuras y sólo el montaje), para que el salto se pueda leer. Va al final: el resumen del CI copia
+// de «EL NÚMERO» hasta la línea «SIN .btn-sm».
+const viejos = cortosDistintos(resultados.filter((r) => !r.estado).map((r) => ({
+  ...r, medidos: r.medidos.filter((m) => m.viejo && m.tocablePropio != null)
+    .map((m) => ({ ...m, tocable: m.tocablePropio, cumple: m.tocablePropio >= MINIMO_TACTIL })),
+})));
+const mediciones = resultados.filter((r) => !r.estado)
+  .reduce((t, r) => t + r.medidos.filter((m) => m.viejo && m.tocablePropio != null && m.tocablePropio < MINIMO_TACTIL).length, 0);
+const esSm = (sel) => sel.includes('btn-sm');
+const smDistintos = [...viejos.values()].filter((v) => esSm(v.sel)).length;
 
 decir('\n═══ EL NÚMERO ═══');
-decir(`   elementos DISTINTOS por debajo de ${MINIMO_TACTIL} px: ${distintos.size}`);
+decir(`   población: ${poblacion.size} elementos distintos en ${new Set(resultados.map((r) => r.fn)).size} pantallas (controles ${porClase('control')} · casillas ${porClase('casilla')} · campos ${porClase('campo')})`);
+decir(`   CORTOS con la vara de DESIGN.md §5: ${cortos.size}`);
+decir(`   exentos por §5 (btn-sm bajo la vara): ${exentos.size}`);
+decir(`   campos bajo la vara, SIN vara escrita en DESIGN.md: ${camposBajo.size}`);
+decir(`   casillas medidas por su etiqueta envolvente: ${porEtiqueta.size}`);
+decir(`   SIN MIRAR (no pintados en ningún estado): ${sinVer.size} · no tocables: ${noTocablesDistintos.size}`);
+decir(`   — la cifra VIEJA, para comparar (INTERACTIVOS, sólo el <input>, ${MINIMO_TACTIL} a las dos anchuras, sólo el montaje):`);
+decir(`   elementos DISTINTOS por debajo de ${MINIMO_TACTIL} px: ${viejos.size}`);
 decir(`   mediciones (pantalla × anchura × elemento): ${mediciones}`);
-decir(`   de los distintos, con .btn-sm: ${smDistintos} (${distintos.size ? (100 * smDistintos / distintos.size).toFixed(1) : '—'} %)`);
-decir(`   de los distintos, SIN .btn-sm: ${distintos.size - smDistintos}`);
+decir(`   de los distintos, con .btn-sm: ${smDistintos} (${viejos.size ? (100 * smDistintos / viejos.size).toFixed(1) : '—'} %)`);
+decir(`   de los distintos, SIN .btn-sm: ${viejos.size - smDistintos}`);
 
 // ═══ ✅ CONTROL POSITIVO FINAL: reproducir lo que el guard imprime para Clientes ══════════════
 decir('\n═══ ✅ CONTROL POSITIVO · Clientes, contra lo que imprime el guard ═══');
 for (const ancho of ANCHOS) {
-  const r = resultados.find((x) => x.fn === 'renderCustomersView' && x.ancho === ancho);
+  const r = resultados.find((x) => x.fn === 'renderCustomersView' && x.ancho === ancho && !x.estado);
   if (!r) { noSupe(`   🔴 no he medido Clientes a ${ancho}px`); continue; }
-  const cortos = r.medidos.filter((m) => !m.cumple);
-  decir(`   @${ancho}px → medidos ${r.medidos.length} · cortos ${cortos.length} · no tocables ${r.noTocables.length}`);
-  for (const c of cortos) decir(`        ${c.sel.padEnd(34)} ${String(c.tocable).padEnd(6)} «${c.texto}»`);
+  // Con la población y la vara del guard (las viejas), que es contra lo que se compara.
+  const comoElGuard = r.medidos.filter((m) => m.viejo && m.tocablePropio != null);
+  const cortosGuard = comoElGuard.filter((m) => m.tocablePropio < MINIMO_TACTIL);
+  decir(`   @${ancho}px → medidos ${comoElGuard.length} · cortos ${cortosGuard.length} · no tocables ${r.noTocables.filter((m) => m.viejo).length}`);
+  for (const c of cortosGuard) decir(`        ${c.sel.padEnd(34)} ${String(c.tocablePropio).padEnd(6)} «${c.texto}»`);
 }
 decir('   (el guard imprime, hoy: 929 → 20 medidos / 11 cortos / 6 no tocables · 390 → 19 / 2 / 6)');
 

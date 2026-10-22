@@ -1,0 +1,15 @@
+﻿BASE tests 11 fail 0
+MUERTA M1   cae «⒞ la vara es la de DESIGN.md §5: depende del ancho» · tests 11 fail 2 · numstat «1	1	scripts/_censo-distintos.mjs»
+MUERTA M2   cae «⒞ btn-sm va APARTE» · tests 11 fail 2 · numstat «1	1	scripts/_censo-distintos.mjs»
+MUERTA M3   cae «⒜ un campo bajo la vara NO es corto» · tests 11 fail 2 · numstat «1	1	scripts/_censo-distintos.mjs»
+MUERTA M4   cae «⒝ SIN MIRAR» · tests 11 fail 1 · numstat «1	1	scripts/_censo-distintos.mjs»
+MUERTA M5   cae «⒜ la población contiene TODO» · tests 11 fail 2 · numstat «1	1	scripts/_censo-distintos.mjs»
+MUERTA M6   cae «⒟ el árbitro de la etiqueta NO contiene las casillas» · tests 11 fail 1 · numstat «1	1	scripts/_censo-distintos.mjs»
+MUERTA M7   cae «las sondas CAZAN al censo viejo» · tests 11 fail 1 · numstat «1	1	scripts/_censo-distintos.mjs»
+MUERTA M8   cae «las sondas CAZAN al censo viejo» · tests 11 fail 1 · numstat «1	1	scripts/_censo-distintos.mjs»
+MUERTA M9   cae «las sondas CAZAN al censo viejo» · tests 11 fail 1 · numstat «1	1	scripts/_censo-distintos.mjs»
+MUERTA M10  cae «el censo usa todo esto» · tests 11 fail 1 · numstat «1	1	scripts/censo-objetivo-tactil-panel.mjs»
+MUERTA M11  cae «el censo usa todo esto» · tests 11 fail 1 · numstat «1	1	scripts/censo-objetivo-tactil-panel.mjs»
+MUERTA M12  cae «el censo usa todo esto» · tests 11 fail 1 · numstat «1	1	scripts/censo-objetivo-tactil-panel.mjs»
+no muertas 0 de 12 · árbol restaurado: sí
+EXIT=0

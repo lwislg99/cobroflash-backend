@@ -1,0 +1,6 @@
+﻿🔴 árbol con cambios sin comitear en scripts/ o tests/; comitéalos antes de mutar:
+M scripts/_censo-distintos.mjs
+ M scripts/censo-objetivo-tactil-panel.mjs
+ M tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs
+ M tests/scrum962e-censo-tactil-poblacion-vara-etiqueta.test.mjs
+EXIT=2
