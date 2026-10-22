@@ -409,4 +409,7 @@ mutación que estaba en vuelo: por eso el margen lleva una pasada dentro.
 A9: comprobación → `tests/scrum935d-el-corte-dice-lo-que-deja.test.mjs`
 
 **Ficheros:** `scripts/meta-guard-mutaciones.mjs`, `tests/scrum935d-el-corte-dice-lo-que-deja.test.mjs`,
+`tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs` (el trinquete de cobertura sube de 31 a 32 por el guard nuevo,
+y su mutación ④ cita la constante nueva; sin la subida caía «LA COBERTURA HA SUBIDO a 32»), los 35 ficheros que
+importan el meta-guard: 304 tests, 1 fail que es `scrum1321` CIEGO por entorno (temporal en `C:`, repo en `D:`),
 `docs/master/evidencias/SCRUM-935d/` (instrumentos y `.tsv`; los logs crudos NO: llevan ANSI, A22), este apartado.
