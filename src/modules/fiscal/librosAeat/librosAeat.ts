@@ -331,10 +331,14 @@ export function filasDeAsiento(a: AsientoLibro, destinatario: DatosDestinatario)
 /**
  * El libro de expedidas del periodo, ya en filas. `destinatarios` resuelve `clienteId` → NIF y
  * nombre; lo que no se pueda resolver sale VACÍO, nunca inventado ni rellenado con el id.
+ *
+ * SCRUM-1058c · también puede ser una FUNCIÓN del asiento: el destinatario de una factura emitida
+ * es el que se congeló en ELLA, y dos facturas del mismo cliente pueden llevar dos NIF distintos
+ * (el cliente corrigió su ficha entre una y otra). Un mapa por `clienteId` no puede decir eso.
  */
 export function filasLibroExpedidas(
   libro: LibroRegistro,
-  destinatarios: Map<number, DatosDestinatario>,
+  destinatarios: Map<number, DatosDestinatario> | ((a: AsientoLibro) => DatosDestinatario | null | undefined),
   periodo?: { desde: Date; hasta: Date },
 ): FilaLibro[] {
   exigirLibroLegible(libro);
@@ -343,7 +347,9 @@ export function filasLibroExpedidas(
     : libro.asientos;
 
   return dentro.flatMap((a) => {
-    const d = (a.clienteId != null ? destinatarios.get(a.clienteId) : null) ?? { nombre: null, nif: null };
+    const d = (typeof destinatarios === 'function'
+      ? destinatarios(a)
+      : (a.clienteId != null ? destinatarios.get(a.clienteId) : null)) ?? { nombre: null, nif: null };
     return filasDeAsiento(a, d);
   });
 }

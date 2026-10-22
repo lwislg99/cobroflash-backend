@@ -1,7 +1,7 @@
 // tests/scrum341-condicion-precio-publicada.test.mjs — SCRUM-341
 //
 // La landing promete la PERMANENCIA del precio founding («9,90 €/mes para siempre» / «de por vida»),
-// pero la CONDICIÓN vinculante —«mientras mantengas la suscripción activa» (ALCANCE_BETA.md:38, regla
+// pero la CONDICIÓN vinculante —«mientras mantengas la suscripción activa» (ALCANCE_BETA.md:42, regla
 // 25)— vivía DESPUÉS del checkout, donde el visitante no la ve antes de decidir. Decisión tomada
 // (SCRUM-341): la condición sube a la superficie donde se hace la promesa, COPIADA del documento.
 //
