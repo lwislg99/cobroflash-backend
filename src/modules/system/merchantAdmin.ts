@@ -57,12 +57,6 @@ export class SlugError extends Error {
   }
 }
 
-/**
- * SCRUM-291 (A4) · el cambio de serie con facturas ya emitidas. Mismo patrón que `SlugError`:
- * error TIPADO lanzado antes del `update`, para que la ruta lo convierta en un 409 con motivo y
- * no en un 500 — lo que se le niega al profesional es una acción legítima de su negocio, así que
- * tiene derecho a saber exactamente por qué y con qué números.
- */
 /** SCRUM-1536d · el «Sí» foral en Ajustes. La ruta lo traduce a 409 con el texto firmado. */
 export class TerritorioError extends Error {
   public code = 'territorio_excluido' as const;
@@ -71,6 +65,26 @@ export class TerritorioError extends Error {
   }
 }
 
+/**
+ * SCRUM-1536g · el país no se cambia una vez creada la cuenta (decisión (a) del fundador, Jira
+ * SCRUM-1536 c.20245). Medido en 1536f: pasar de ES a otro país encendía la factura sin VeriFactu
+ * y con cobro (regla 24), y de otro país a ES se saltaba la exclusión territorial de 1536d.
+ * Texto firmado en c.20245, copiado de c.20242. La ruta lo traduce a 409.
+ */
+export const MSG_PAIS_NO_CAMBIABLE = 'El país no se puede cambiar una vez creada la cuenta. Escríbenos por WhatsApp y lo vemos contigo.';
+export class PaisError extends Error {
+  public code = 'pais_no_cambiable' as const;
+  constructor() {
+    super(MSG_PAIS_NO_CAMBIABLE);
+  }
+}
+
+/**
+ * SCRUM-291 (A4) · el cambio de serie con facturas ya emitidas. Mismo patrón que `SlugError`:
+ * error TIPADO lanzado antes del `update`, para que la ruta lo convierta en un 409 con motivo y
+ * no en un 500 — lo que se le niega al profesional es una acción legítima de su negocio, así que
+ * tiene derecho a saber exactamente por qué y con qué números.
+ */
 export class SerieError extends Error {
   constructor(
     public code: 'serie_ya_emitida',
@@ -179,6 +193,16 @@ export async function updateMerchantProfile(
   // (T2a: «No hemos guardado este cambio», y no se guarda ningún campo). «No» y «no consta» pasan.
   // Ningún estado nuevo y nada se borra (registro 1536c, pieza B).
   if (data.domicilioFiscalForal === true) throw new TerritorioError();
+
+  // SCRUM-1536g · el país se fija en el alta y desde aquí no se cambia: un país DISTINTO del
+  // guardado se rechaza entero, antes de escribir nada. El mismo país (Empresa lo mandaba en cada
+  // guardado) pasa. No toca la emisión (regla 38): decide si se admite un cambio de AJUSTE.
+  // Sin país guardado no hay nada que cambiar: la columna es NOT NULL y en la base no ocurre, pero
+  // los bancos de ida y vuelta (scrum1227, scrum1269) guardan sobre una fila sin él.
+  if (data.country !== undefined) {
+    const actual = await prisma.merchant.findUnique({ where: { id: merchantId }, select: { country: true } });
+    if (actual?.country && actual.country !== data.country) throw new PaisError();
+  }
 
   // A14.1 — el slug tiene reglas propias (reservados, unicidad, 1 cambio/30d)
   if (data.slug !== undefined) {

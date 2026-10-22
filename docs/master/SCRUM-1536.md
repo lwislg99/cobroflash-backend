@@ -777,3 +777,73 @@ el ADF.
 
 - La ficha pedía medir el contexto al acabar la lectura de arranque y otra vez al acabar Jira. Leí Jira
   primero y el arranque después, así que sólo hay un punto: **130.145** al terminar las dos.
+# SCRUM-1536g · B′ (a): el país no se cambia después del alta (CONSTRUIDO)
+
+**Medido contra:** `origin/main` = `0077bd1d51a7cb64b1c18d85781117b71936fd38` · 2026-10-22T09:56:47Z (hora de GitHub)
+
+A9: aviso → cicatriz J3 «Medí al acabar el arranque (152.817) y no volví a medirme hasta 329.079, con el código ya hecho: el aviso de 200k no llegó.» — no se pudo comprobar: me pasó otra vez (102.598 → 239.064), y cuándo se mide una sesión no lo ve ningún test del árbol; el defecto del producto sí queda atado por `tests/scrum1536g-el-pais-no-se-cambia.test.mjs`.
+
+**Skill UI:** cargada (`yaqu-premium-ui`; el cambio de pantalla es quitar dos selectores y enseñar el país como texto, sin texto nuevo).
+
+22-oct-2026 · sesión `jv-j3z`, puesto J3, por encargo del orquestador (`cobroflash-backend-5f`).
+[Escrito por la sesión, no por Javier.] Lo desbloquea **SCRUM-1536 c.20245** (opción (a), «Sí de
+momento la A»; texto firmado, «Ok me parece bien»), sobre la medición de 1536f (tramo de arriba,
+c.20242). Entrega en Jira, **c.20279**. Carril J3 a mano, con el bloque `// J3:` en `src/app.ts`
+(contenedor de S1). El hook de arranque dijo «SIN IDENTIDAD» (SCRUM-1498). Medido sobre ese `main`
+MÁS la rama de 1536d (`bc62de1f8e73aaa47617df6242eed5ea3b7766e7`), mergeada en local porque #2674
+seguía abierto: la exclusión de 1536d y este cambio tocan los mismos tres ficheros.
+
+### Lo construido
+
+- **Regla.** `src/modules/system/merchantAdmin.ts`: `PaisError` y `MSG_PAIS_NO_CAMBIABLE`.
+  `updateMerchantProfile` lee el país guardado y, si el cuerpo trae otro, lanza ANTES de escribir
+  nada. El mismo país pasa (Empresa lo mandaba en cada guardado). Una fila sin país pasa: la columna
+  es NOT NULL (`prisma/schema.prisma:102`) y no ocurre en la base; ocurre en los bancos de ida y
+  vuelta de `scrum1227` y `scrum1269`, que caían con la primera versión.
+- **Ruta.** `src/app.ts`, bloque `// J3: SCRUM-1536g`: `PaisError` → 409
+  `{ error: 'pais_no_cambiable', message }`. Sin él, 500.
+- **Pantallas.** Empresa (`settingsView.js`) y el paso 1 del asistente (`onboardingView.js`): el
+  selector pasa a `<output>` con el nombre del país (o su código si no está en la lista) y ninguna
+  manda ya `country`. El `.name = "country"` se queda en el `<output>` para el censo de SCRUM-284. Se
+  quita la nota «Cambia el idioma de los documentos…», que describía un cambio que ya no existe.
+- **Texto.** Copiado de c.20242 y comparado por bytes con c.20242 y c.20245 (99 B; el control sin
+  tilde no casa en ninguno). Ficha: `docs/microcopy/2026-10-22-SCRUM-1536-pais-no-se-cambia.md`.
+- **Ni emisión ni esquema.** Un comercio nacido fuera de España sigue en su país y con su modo de
+  emisión de siempre: esto sólo impide CAMBIARLO.
+- **De paso:** el comentario de `SerieError` había quedado separado de su clase al entrar
+  `TerritorioError` (1536d); vuelve a estar encima de ella.
+
+### Medido
+
+- Sonda de jv-j3x (`sonda-1536f.mjs`) sobre el `dist/` de antes y de después:
+  `salida-sonda-1536g-antes.txt` y `salida-sonda-1536g-despues.txt` (resumen con
+  `resumen-sonda-1536g.cjs`). ES→`MX`, ES→`ZZ` y MX→`ES`: **200 → 409**; el comercio español sigue
+  ES y en `receipt` con el flag apagado. Controles: el mismo país, 200; `ESP`, 400.
+- `tests/scrum1536g-el-pais-no-se-cambia.test.mjs`: **3 de 3**, por la ruta real con su sesión.
+  Contra el `dist/` de antes salía CIEGO (no existía la constante), no rojo: el rojo de comportamiento
+  lo dan la sonda y las mutaciones.
+- Mutaciones (`mutar-1536g.mjs`, lee las declaradas con el lector del meta-guard; salida en
+  `salida-mutar-1536g.txt`): base 3/3, **2 de 2 VIVAS**, árbol restaurado con 3/3.
+- Mini-tanda de 205 ficheros (los que leen las dos pantallas, `merchantAdmin`, `app.ts`, la
+  microcopia o el mapa de submenús, más los guards de registro): **1.846 = 1.838 + 2 + 6**. Los 2 son
+  `scrum1199`, que pide `express` en `node_modules` de este árbol (no lo tiene); no medido sobre `main`.
+- Con el registro escrito, los 312 ficheros que leen `docs/master`, evidencias, microcopia o
+  cicatrices: **2.937 = 2.900 + 8 + 29**. De entorno (este árbol no tiene `node_modules` propio):
+  `scrum1199` ×2, `scrum475` ×3, `scrum476`. Míos: `scrum553` (un extractor de mi test con el `>`
+  pegado; arreglado en el test) y `scrum713c`, el trinquete de estilos en JS, que BAJA de 335 a 334
+  porque la nota quitada se pintaba con `style.cssText`: el techo se aprieta a 334, como pide el
+  propio guard, con su línea de historia. Después, los 8 afectados (553, 713c, 1363, 1536g, 267,
+  1294, 514 ×2): **86 de 86**.
+
+### No medido
+
+yaqu.app · las pantallas en un navegador · Postgres · la tanda completa · el obligatorio (el empujón
+lo hace el orquestador cuando entre #2674) · `tsc` con tipos · el 335 de `scrum713c` sin este
+cambio (no recontado: es el techo que había).
+
+### Errores propios
+
+- Crucé 200k sin avisar en el momento: 102.598 al acabar Jira y arranque, 239.064 al avisar.
+- Mi primer instrumento de mutación salió CIEGO: importaba el test en el proceso padre y el hijo
+  heredaba `NODE_TEST_CONTEXT` (0 verdes en la base). Lo cazó la fila BASE, antes de creer nada.
+- Mi test cargaba `merchantAdmin.js` antes que el doble de base y se quedaba con el Prisma real.
