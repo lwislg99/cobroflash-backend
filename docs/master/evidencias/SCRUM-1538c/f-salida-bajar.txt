@@ -1,0 +1,7 @@
+POBLACIÓN · filas de e-jobs.tsv: 3456 · logs pedidos: 356
+  build-failure	pedidos 185	SIN LOG (<1.000 B o error) 0	de 921462 a 2002210 B
+  trinquete-colgada	pedidos 23	SIN LOG (<1.000 B o error) 0	de 37418 a 40304 B
+  meta-colgada	pedidos 128	SIN LOG (<1.000 B o error) 0	de 128083 a 141928 B
+  meta-verde-control	pedidos 10	SIN LOG (<1.000 B o error) 0	de 141312 a 144346 B
+  trinquete-verde-control	pedidos 10	SIN LOG (<1.000 B o error) 0	de 42873 a 44707 B
+EXIT=0

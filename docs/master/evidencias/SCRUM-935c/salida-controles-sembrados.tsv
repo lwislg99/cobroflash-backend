@@ -1,0 +1,5 @@
+dia	run	evento	rama	conclusion_job	paso_seg_api	estado_log	log_bytes	N_lineas	vivas	ciegas	muertos	guards	fase_seg	seg_por_mutacion
+x	cortado	s	s	s		CORTADO		385				103	752	1.95
+x	vacio	s	s	s		CIEGO		0						
+x	nocasa	s	s	s		NO-CASA		627	624	1	1	164	1508	2.41
+x	real	s	s	s		COMPLETO		626	624	1	1	163	1508	2.41
