@@ -24,6 +24,25 @@ import { soloCodigo } from './_solo-codigo.mjs';
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const partes = (sel) => sel.split(',').map((s) => s.trim());
 
+// Cada mutación reintroduce UNA avería del censo viejo; `cae` es el test que tiene que tumbarla.
+// Las corre el meta-guard, y `docs/master/evidencias/SCRUM-962c/mutar.mjs` las toma de aquí.
+const D = 'scripts/_censo-distintos.mjs';
+const C = 'scripts/censo-objetivo-tactil-panel.mjs';
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  { fichero: D, de: "if (m.tocable >= minimoPara(ancho)) return 'cumple';", a: "if (m.tocable >= 44) return 'cumple';", cae: '⒞ la vara es la de DESIGN.md §5: depende del ancho' },
+  { fichero: D, de: "if (m.clase === 'control' && esBtnSm(m.sel)) return 'exento';", a: '', cae: '⒞ btn-sm va APARTE' },
+  { fichero: D, de: "if (m.clase === 'campo') return 'campo';", a: '', cae: '⒜ un campo bajo la vara NO es corto' },
+  { fichero: D, de: 'if (!vistos.has(k) && !sin.has(k))', a: 'if (!sin.has(k))', cae: '⒝ SIN MIRAR' },
+  { fichero: D, de: "export const POBLACION = CONTROLES + ', ' + CAMPOS;", a: 'export const POBLACION = INTERACTIVOS;', cae: '⒜ la población contiene TODO' },
+  { fichero: D, de: ".filter((s) => s !== 'input[type=\"checkbox\"]' && s !== 'input[type=\"radio\"]')", a: '.filter(() => true)', cae: '⒟ el árbitro de la etiqueta NO contiene las casillas' },
+  { fichero: D, de: 'debe(!(env && sue) || env.tocable !== sue.tocable,', a: 'debe(true,', cae: 'las sondas CAZAN al censo viejo' },
+  { fichero: D, de: "debe(rs.sinPintar.some((s) => s.id === '__sonda-oculta'),", a: 'debe(true,', cae: 'las sondas CAZAN al censo viejo' },
+  { fichero: D, de: "debe(campo && campo.clase === 'campo' && v('__sonda-campo') === 'campo',", a: 'debe(true,', cae: 'las sondas CAZAN al censo viejo' },
+  { fichero: C, de: 'lab && lab.control === el && pinta(lab)', a: 'lab && pinta(lab)', cae: 'el censo usa todo esto' },
+  { fichero: C, de: 'pagina(s.html + SONDAS_HTML)', a: "pagina(s.html + '<button id=\"__sonda\">.</button>')", cae: 'el censo usa todo esto' },
+  { fichero: C, de: 'if (estadosFallidos.length) noSupe(', a: 'if (false) noSupe(', cae: 'el censo usa todo esto' },
+];
+
 test('⒜ la población contiene TODO lo que miden los guards, y además campos y radios', () => {
   const pob = partes(POBLACION);
   for (const s of partes(INTERACTIVOS)) assert.ok(pob.includes(s), `se ha perdido «${s}» de INTERACTIVOS`);

@@ -213,3 +213,105 @@ A9: sin fallo que generalice — mi medidor tuvo dos defectos (el ancho del elem
 **El hallazgo de método, escrito como regla:** **un control positivo que usa un caso de DENTRO de la población no prueba la población.** La sonda del censo es un `<button>`, y un botón siempre está en el selector: prueba que la superficie se mide, nunca que la población esté completa. Para probar la población, la sonda tiene que ser de una clase que el selector podría dejar fuera (aquí, un `<select>`).
 
 **Banco:** `dist/` compilado con `tsc` en el worktree (sale 1 error de tipos en `src/modules/system/merchantAdmin.ts:147` por el cliente de Prisma compartido desfasado — `activityKind`; no afecta al front y `dist/` se emite igual). **No se ha corrido `prisma generate`** ni la suite.
+
+---
+
+## Tramo 962c (S3, 22-oct-2026) · El censo de los 44 px, arreglado en las dos direcciones
+
+**Medido contra:** `origin/main` = `808af5b4466d2649a1006d4c554d1f22e7eba47c` · 2026-10-22T10:31Z
+A9: sin fallo que generalice — mi control de estados dio «no se abrió» a dos pestañas que se abren VACÍAS con los datos de muestra (4 de 18 estados); salió 2 él solo y lo separé antes de dar ninguna cifra.
+
+**Encargo del orquestador** (mensaje a S3, 22-oct): arreglar el MEDIDOR (`scripts/censo-objetivo-tactil-panel.mjs`, carril S3) con las cuatro averías que S2 midió en los tramos 962b y 962b (2), con los controles positivos que le faltaban. **No se ha arreglado ningún control de pantalla** (eso es de J3 y de S2). `_medidor-de-toque.mjs` (compartido, sin dueño, lo usan los guards) **no se ha tocado**: `INTERACTIVOS` de los guards sigue igual.
+**Rama:** `scrum-962c-censo-tactil-cuatro-averias`. Tras medir entró en `main` el #2668 (962b) y otros siete commits; `git diff --stat 808af5b4..origin/main` sobre `public/`, el medidor, el banco y el censo sale **vacío**: la medida vale para la punta.
+**Banco:** worktree propio con `node_modules` propio (`npm ci --ignore-scripts`, sin `prisma generate`); `dist/` con `tsc` (el mismo error de tipos de `merchantAdmin.ts:147` que vio S2, sin efecto en el front). Navegador: UNA pasada con paso del orquestador (S2 tenía el suyo), cerrado al acabar y comprobado (0 Chrome míos vivos).
+
+### Lo que cambia, avería por avería
+
+| avería | antes | ahora | dónde |
+|---|---|---|---|
+| **⒜ qué es un control** | `INTERACTIVOS`, sin decir qué dejaba fuera (0 de 36 `select`) | `POBLACION` = **controles** (lo de antes + `radio`, `input` color/file/range/reset/image, roles ARIA de control) **+ campos** (`select`, `textarea`, `input` de texto/fecha/número/búsqueda). La salida imprime los dos selectores. **Los campos se miden pero van en cuenta APARTE**: DESIGN.md no les da altura (propuesta abajo) | `_censo-distintos.mjs` (`CONTROLES`, `CAMPOS`, `POBLACION`) |
+| **⒝ el estado** | sólo el montaje; lo oculto en una columna `sinPintar` que no contaba | abre los estados declarados en `ESTADOS` (hoy: las 9 pestañas de Configuración, como `pintarNav`) **con control**: si su panel no queda visible y los demás ocultos, **sale 2**. Lo que no se pinta en NINGÚN estado ni anchura sale como **SIN MIRAR**, con número y pantalla. Un panel que se abre y mide 0 de alto sale aparte como **«abierto y VACÍO con los datos de muestra»** | `ESTADOS`, `ABRIR`, `sinMirar()` |
+| **⒞ la vara** | 44 a las dos anchuras; `btn-sm` mezclado | `minimoPara(ancho)` (44 hasta 768, 36 por encima, DESIGN.md §5); `btn-sm` va a **exentos**, contados aparte | `veredicto()` |
+| **⒟ la casilla** | el `<input>` solo | si una `<label>` la ENVUELVE y la controla (`label.control === el`), se mide la etiqueta con un árbitro que excluye las casillas (un enlace dentro de la etiqueta le quita su toque). Con `for` separado, la casilla sola | `MEDIR`, `ARBITRO_ETIQUETA` |
+
+### Los controles positivos — siete sondas por superficie y anchura (56 × 7)
+
+La sonda que había era un `<button>`: de DENTRO de la población, así que probaba que la pantalla se mide, nunca que la población esté completa (la regla de S2 en 962b (2)). Ahora cada avería tiene la suya, de una clase que el selector podría dejar fuera (`SONDAS_HTML`, juzgadas por `juzgarSondas()`); una que no caza → **sale 2**:
+
+| sonda | tiene que salir | caza |
+|---|---|---|
+| `<button>` 12 px | corto | la superficie se mide |
+| `<select>` 20 px | medido, clase campo, bajo la vara | ⒜ |
+| `<button>` 40 px | corto a 390, **cumple** a 929; y midiendo entre 36 y 44 | ⒞ la vara depende del ancho |
+| `btn btn-sm` 30 px | exento, no corto | ⒞ |
+| casilla dentro de una `<label>` de 60 px | **larga** (por la etiqueta) | ⒟ |
+| casilla con la MISMA etiqueta de 60 px separada por `for` | **corta**; y distinta de la anterior | ⒟ distingue |
+| botón dentro de `display:none` | en «sin pintar», no ausente | ⒝ |
+
+Pasada final: **0 sondas fallidas en 56**, 18 estados abiertos, 0 que no abren.
+
+**El control de que se ha ARREGLADO el medidor y no cambiado por otro:** con la población, la vara y el estado VIEJOS, el censo nuevo imprime **72 distintos · 93 mediciones · 33 con `btn-sm` · 39 sin** — exactamente lo que daba el viejo en este árbol (`censo-antes.txt`). El árbitro no se ha movido.
+
+**Test:** `tests/scrum962c-censo-tactil-poblacion-vara-etiqueta.test.mjs`, 11 casos contra medidas fabricadas (sin navegador). **12 mutaciones** que reintroducen cada avería (vara fija de 44, `btn-sm` sin separar, campos sumados a cortos, `sinMirar` ciego, población vieja, árbitro de etiqueta con casillas, cada sonda desactivada, la etiqueta sin `label.control`, las sondas viejas, el estado que no abre sin salir 2): **12/12 MUERTAS**, base 11/11 verde, árbol restaurado (`mutar.txt`, `git diff --numstat` al lado de cada una).
+
+### La cifra (pasada final, `docs/master/evidencias/SCRUM-962c/censo-final.txt`)
+
+Población: **417 elementos distintos en 28 pantallas** — controles 281 · casillas 45 · campos 91.
+
+| cuenta | n | qué es |
+|---|---|---|
+| **CONTROLES cortos con la vara de DESIGN.md §5** | **11** (10 seguros + 1 en disputa) | la lista que se arregla, abajo |
+| **CAMPOS bajo la vara de los botones** | **28** | NO son cortos: DESIGN.md no les da altura. 26 sólo a 390; 2 también a 929 (`renderQuoteRequestsView` 33,5 y `renderReportsView` 34, dos `select` sin `.input`) |
+| exentos por §5 (`btn-sm` bajo la vara) | 23 | contados, no cortos |
+| casillas medidas por su etiqueta | 12 | 6 de Exportar (54,8), los 2 `radio` de Productos (44,5) y las 4 de Configuración |
+| **SIN MIRAR** | **88** | no se pintan en ningún estado abierto: Presupuestos 55 · Documento suelto 22 · Facturas 3 · Trabajo 3 · Configuración 2 · Clientes 1 · Productos 1 · Lista de presupuestos 1 |
+| no tocables | 19 | el árbitro no los alcanza ni en su centro: no medidos |
+| y además, fuera | — | `renderPartesOficinaView` (no medida) · pestañas «publica» y «cumplimiento» VACÍAS con los datos de muestra · todo lo que no es una `render*View` (modales, onboarding, login) |
+
+**Los 11 controles cortos:**
+
+| pantalla | control | toque | a | nota |
+|---|---|---|---|---|
+| Configuración | «Añadir condición» (`<button>` sin clase) | 22 | 390+929 | = el nº 1 de S2 |
+| Configuración | `input[type=color]` | 38,7 | 390 | = el nº 3 de S2 (antes de esta corrección lo contaba como campo) |
+| Configuración | casilla «Enseñar la foto del técnico» | 42,3 | 390 | 🟠 **EN DISPUTA**, ver abajo |
+| Facturas | casilla `INPUT.inv-row-check` | 14 | 929 | sin etiqueta envolvente: candidata de S2 → **corta de verdad** |
+| Facturas | casilla `INPUT` (sin clase) | 14 | 929 | ídem (la de 14 px de S2) |
+| Planes | «Mensual» · «Anual -17%» (`<button>`) | 29,9 | 390+929 | |
+| Planes | `BUTTON.plan-btn` «Quiero mi plaza founding…» | 41,9 | 390 | |
+| Albaranes | `A.alb-enlace` «Reforma de baño» | 19 | 929 | ⚪ posible enlace EN LÍNEA (sin comprobar) |
+| Cobros | `<a>` «factura F-2026-0021» | 17 | 390+929 | ⚪ posible enlace EN LÍNEA (sin comprobar) |
+| Ficha de gasto | `A.gasto-trab-enlace` | 36 | 390 | |
+
+⚪ Los dos enlaces que pueden ir dentro de una frase caen en la misma pregunta que el nº 2 de S2 (WCAG 2.5.8 exime los enlaces en línea; DESIGN.md §6 no): **lo decide quien firma la regla**, y no lo he comprobado uno a uno.
+
+**Las candidatas de S2 a artefacto, resueltas:** los 2 `radio` de Productos → **artefacto** (la etiqueta envolvente da 44,5); `INPUT.inv-row-check` y el `INPUT` de 14 px → **cortos de verdad** (no tienen etiqueta que las envuelva). Las 3 casillas de Avisos → artefacto.
+
+**Cuadra con S2:** mis 11 + 28 = 39, más las 5 que ahora se miden por su etiqueta (3 de Avisos + 2 `radio`) = **44**, la cifra B de S2 en el banco. Dos instrumentos independientes, la misma población.
+
+### 🟠 La discrepancia que queda: el banco no tiene el MARCO de la app
+
+La casilla «Enseñar la foto del técnico» da **42,3 px** a 390 por su etiqueta en este censo; S2 la midió en la vista VIVA en **62,4**. No es el árbitro: la etiqueta es un `flex` con título y pista debajo (`createToggle`, `settingsView.js`), así que su alto es el número de líneas de texto. El censo sirve la vista serializada en un `<body>` desnudo, **sin el marco de la app**: el contenido es más ancho que en la app real, el texto parte en menos líneas y la etiqueta sale más baja. *Lectura mía, no medida:* no he medido el ancho del contenido en las dos.
+⇒ Ese corto **no se da por bueno**: 10 seguros, 1 en disputa. Y vale para todo control cuyo alto dependa de que el texto parta, no sólo para éste. **Montar el marco de la app en el banco es la siguiente avería del censo, y no está hecha.**
+
+### ⒜ PROPUESTA (no elegida): la vara de los campos
+
+DESIGN.md §5 «Inputs / Fields» da estilo (fondo, borde, radio, `padding 11px 13px`) y **ninguna altura**; §6 dice «targets ≥44px» sin excepciones. El censo no elige: cuenta los campos aparte. Tres opciones para quien firma DESIGN.md (`dos-equipos.md`: «S2 propone»):
+
+| opción | qué dice | con lo medido hoy |
+|---|---|---|
+| **P1** (la que recomiendo) | los campos, misma vara que los botones: ≥44 en móvil, 36 en escritorio | **28 campos incumplen**: 26 sólo en móvil (filtros y buscadores de barra a 37–39) y 2 también en escritorio. Los campos de formulario con el estilo de §5 ya dan 44,5, así que el estilo escrito ya cumple: lo que incumple son las variantes compactas de las barras |
+| P2 | exentos, como `btn-sm` | 0. Hay que escribir la excepción y su frontera, como la de SCRUM-412 |
+| P3 | 44 los de formulario; una variante compacta de barra exenta y declarada por clase | depende de cómo se nombre la variante; hoy no tiene clase propia (`.input` en las dos) |
+
+Recomiendo P1 porque §6 ya lo dice sin excepción y el estilo de §5 ya lo da. Para elegirla hay que escribirla en DESIGN.md (S2 propone, el fundador firma) y quitar la cuenta aparte del censo (una línea: `veredicto()` deja de devolver `'campo'`, y las mutaciones M3 y M9 pasan a esperar lo contrario).
+
+### De paso (para quien mide, no es de esta tarea)
+
+**Una pantalla que se abre VACÍA con los datos de muestra la da por limpia cualquier censo que use esos datos.** Aquí, las pestañas «Tu página pública» (sin `slug`) y «Cumplimiento» (sin modo fiscal) de Configuración. El censo ahora lo dice; los demás instrumentos que usan `_datos-del-censo.mjs` no lo sé. Reportado al orquestador aparte.
+
+### Cómo se reproduce
+
+    npm run censo:tactil-panel                                              # el censo, salida 0/2
+    node --test tests/scrum962c-censo-tactil-poblacion-vara-etiqueta.test.mjs
+    node docs/master/evidencias/SCRUM-962c/mutar.mjs                        # desde la raíz: 12 mutaciones
