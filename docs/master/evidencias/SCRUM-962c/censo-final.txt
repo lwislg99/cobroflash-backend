@@ -1,0 +1,234 @@
+﻿═══ ① SUPERFICIES ═══
+vistas que publica el banco: 29 · montadas y serializadas: 28 · NO medidas: 1 (renderPartesOficinaView) · sin argumentos: 0 · rutas SIN contrato: 0
+✅ CONTROL POSITIVO · ¿está la de Clientes, que ya está montada en el guard? sí
+
+NO MEDIDAS (no se cuentan como cero — se dicen):
+   ⚠️ renderPartesOficinaView → sólo 12 nodos con 1 petición(es) servida(s): la vista es así de pequeña con estos datos, o el dato de su contrato no la llena
+
+VISTAS QUE NO PIDIERON NADA (SCRUM-1560e) · 0
+
+DATOS DE MUESTRA (SCRUM-1560) · rutas servidas con su contrato: 46 · SIN contrato: 0
+node : ⟦arranque⟧ 0.5 s COMPLETA · proceso+ws 0.5 s · primera-página 0.0 s
+En línea: 1 Carácter: 478
++ ... lyContinue; node scripts/censo-objetivo-tactil-panel.mjs > C:\Users\A ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (⟦arranque⟧ 0.5 ...ra-página 0.0 s:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+═══ ✅ LAS SONDAS (una por avería: ⒜ campo · ⒝ oculto · ⒞ 40 px y btn-sm · ⒟ casilla envuelta y suelta) ═══
+superficies × anchuras: 56 · sondas NO cazadas: 0
+estados abiertos además del montaje: 18 · que NO se abrieron: 0
+abiertos y VACÍOS con los datos de muestra (lo que pintarían con otros datos no está en la población): 4
+   ⚠️ renderSettingsView#publica @929px
+   ⚠️ renderSettingsView#cumplimiento @929px
+   ⚠️ renderSettingsView#publica @390px
+   ⚠️ renderSettingsView#cumplimiento @390px
+
+═══ ③ POR PANTALLA, ANCHURA Y ESTADO ═══
+población: controles (a[href], button, [role="button"], summary, input[type="submit"], input[type="button"], input[type="checkbox"], input[type="radio"], input[type="reset"], input[type="image"], input[type="color"], input[type="file"], input[type="range"], [role="tab"], [role="switch"], [role="radio"], [role="checkbox"], [role="menuitem"])
+         + campos (select, textarea, input:not([type="hidden"]):not([type="checkbox"]):not([type="submit"]):not([type="button"]):not([type="radio"]):not([type="reset"]):not([type="image"]):not([type="color"]):not([type="file"]):not([type="range"]))
+vara: 44 px hasta 768 px de ancho, 36 por encima (DESIGN.md §5) · btn-sm exento · campos sin vara escrita
+pantalla                                  ancho  medidos  cortos  exentos  campos  sinPintar  noTocables
+renderAlbaranDetailView                   929    5        0       0        0       0          0
+renderAlbaranesView                       929    10       1       0        0       0          0
+renderCobrosView                          929    7        1       0        0       0          0
+renderCustomer360View                     929    15       0       7        0       0          0
+renderCustomersView                       929    36       0       0        0       1          7
+renderDocumentoSueltoView                 929    8        0       0        0       22         0
+renderExpenseDetailView                   929    6        0       0        0       0          0
+renderExpensesView                        929    8        0       0        0       0          0
+renderExportView                          929    13       0       0        0       0          0
+renderFacturasRecibidasView               929    4        0       0        0       0          0
+renderHomeView                            929    14       0       0        0       0          0
+renderInvoiceDetailView                   929    8        0       4        0       0          0
+renderInvoicesView                        929    10       2       1        0       3          0
+renderJobDetailView                       929    12       0       0        0       3          7
+renderJobsView                            929    16       0       0        0       0          2
+renderLibroRegistroView                   929    0        0       0        0       0          0
+renderParteDetailView                     929    6        0       0        0       0          3
+renderPlansView                           929    4        2       0        0       0          0
+renderProductsView                        929    19       0       0        0       1          0
+renderProvidersView                       929    10       0       2        0       0          0
+renderQuoteDetailView                     929    12       0       0        0       0          0
+renderQuoteRequestsView                   929    3        0       0        1       0          0
+renderQuotesListView                      929    9        0       0        0       1          0
+renderQuotesView                          929    8        0       0        0       55         0
+renderReportsView                         929    16       0       0        1       0          0
+renderSettingsView                        929    22       0       1        0       20         0
+renderSettingsView#empresa                929    22       0       1        0       20         0
+renderSettingsView#facturacion            929    16       1       1        0       26         0
+renderSettingsView#cobro                  929    15       0       1        0       27         0
+renderSettingsView#avisos                 929    17       0       2        0       25         0
+renderSettingsView#publica                929    12       0       1        0       30         0
+renderSettingsView#marca                  929    15       0       3        0       27         0
+renderSettingsView#datos                  929    13       0       1        0       29         0
+renderSettingsView#cumplimiento           929    12       0       1        0       30         0
+renderSettingsView#equipo                 929    14       0       1        0       28         0
+renderTeamView                            929    5        0       5        0       0          0
+renderTemplatesView                       929    6        0       0        0       0          0
+renderAlbaranDetailView                   390    5        0       0        0       0          0
+renderAlbaranesView                       390    10       0       0        2       0          0
+renderCobrosView                          390    7        1       0        0       0          0
+renderCustomer360View                     390    13       0       5        1       0          2
+renderCustomersView                       390    32       0       0        3       5          7
+renderDocumentoSueltoView                 390    8        0       0        0       22         0
+renderExpenseDetailView                   390    6        1       0        0       0          0
+renderExpensesView                        390    8        0       0        0       0          0
+renderExportView                          390    13       0       0        4       0          0
+renderFacturasRecibidasView               390    4        0       0        2       0          0
+renderHomeView                            390    14       0       0        0       0          0
+renderInvoiceDetailView                   390    8        0       4        1       0          0
+renderInvoicesView                        390    8        0       1        4       5          0
+renderJobDetailView                       390    12       0       0        0       3          7
+renderJobsView                            390    16       0       0        0       0          2
+renderLibroRegistroView                   390    0        0       0        0       0          0
+renderParteDetailView                     390    6        0       0        0       0          3
+renderPlansView                           390    4        3       0        0       0          0
+renderProductsView                        390    19       0       0        1       1          0
+renderProvidersView                       390    10       0       0        0       0          0
+renderQuoteDetailView                     390    12       0       0        1       0          0
+renderQuoteRequestsView                   390    3        0       0        1       0          0
+renderQuotesListView                      390    9        0       0        4       1          0
+renderQuotesView                          390    8        0       0        0       55         0
+renderReportsView                         390    16       0       0        1       0          0
+renderSettingsView                        390    22       0       1        1       20         0
+renderSettingsView#empresa                390    22       0       1        1       20         0
+renderSettingsView#facturacion            390    16       1       1        3       26         0
+renderSettingsView#cobro                  390    15       0       1        1       27         0
+renderSettingsView#avisos                 390    17       0       2        1       25         0
+renderSettingsView#publica                390    12       0       1        1       30         0
+renderSettingsView#marca                  390    15       1       3        1       27         0
+renderSettingsView#datos                  390    13       0       1        1       29         0
+renderSettingsView#cumplimiento           390    12       0       1        1       30         0
+renderSettingsView#equipo                 390    14       1       1        1       28         0
+renderTeamView                            390    5        0       5        0       0          0
+renderTemplatesView                       390    6        0       0        0       0          0
+
+═══ CORTOS con la vara de DESIGN.md §5 (la lista que se arregla) · 11 ═══
+   renderAlbaranesView               19 px @929     A.alb-enlace                                 «Reforma de baño»
+   renderCobrosView                  17 px @390+929 A                                            «factura F-2026-0021»
+   renderExpenseDetailView           36 px @390     A.gasto-trab-enlace                          «Reforma de baño»
+   renderInvoicesView                14 px @929     INPUT[checkbox]                              «(sin texto)»
+   renderInvoicesView                14 px @929     INPUT[checkbox].inv-row-check                «(sin texto)»
+   renderPlansView                 29.9 px @390+929 BUTTON                                       «Mensual»
+   renderPlansView                 29.9 px @390+929 BUTTON                                       «Anual-17%»
+   renderPlansView                 41.9 px @390     BUTTON.plan-btn                              «Quiero mi plaza founding — 9,90 €/»
+   renderSettingsView                22 px @390+929 BUTTON                                       «Añadir condición»
+   renderSettingsView              38.7 px @390     INPUT[color]                                 «(sin texto)»
+   renderSettingsView              42.3 px @390     INPUT[checkbox]                              «Enseñar la foto del técnico al cli»
+
+═══ CAMPOS bajo la vara de los botones (DESIGN.md no les da altura: NO son cortos hasta que se fije) · 28 ═══
+   renderAlbaranesView               37 px @390     INPUT[search].input                          «Buscar albaranes»
+   renderAlbaranesView               39 px @390     SELECT.input                                 «Facturación: todos (1)Sin facturar»
+   renderCustomer360View           36.9 px @390     INPUT[text].input                            «(sin texto)»
+   renderCustomersView               37 px @390     INPUT[text].input                            «Buscar por nombre, teléfono, email»
+   renderCustomersView               39 px @390     SELECT.input                                 «Todas las etiquetasadministradormo»
+   renderCustomersView               39 px @390     SELECT.input                                 «Más recientesNombre A-Z»
+   renderExportView                36.7 px @390     INPUT[number].input                          «Año»
+   renderExportView                38.7 px @390     SELECT.input                                 «T1T2T3T4»
+   renderExportView                38.8 px @390     INPUT[date].input                            «Desde»
+   renderExportView                38.8 px @390     INPUT[date].input                            «Hasta»
+   renderFacturasRecibidasView     36.6 px @390     INPUT[number].input                          «Año»
+   renderFacturasRecibidasView     38.6 px @390     SELECT.input                                 «T1T2T3T4»
+   renderInvoiceDetailView         36.9 px @390     INPUT[text].input                            «(sin texto)»
+   renderInvoicesView                37 px @390     INPUT[text].input                            «Buscar por nº, cliente…»
+   renderInvoicesView                39 px @390     SELECT.input                                 «Todos los estadosPendientesPagadas»
+   renderInvoicesView                39 px @390     INPUT[date].input                            «(sin texto)»
+   renderInvoicesView                39 px @390     INPUT[date].input                            «(sin texto)»
+   renderProductsView                37 px @390     INPUT[text].input                            «Buscar producto…»
+   renderQuoteDetailView           36.8 px @390     INPUT[text].input                            «(sin texto)»
+   renderQuoteRequestsView         33.5 px @390+929 SELECT                                       «PendientesTodasCompletadas»
+   renderQuotesListView              37 px @390     INPUT[text].input                            «Buscar por cliente, ID o teléfono…»
+   renderQuotesListView              39 px @390     SELECT.input                                 «Todos los estadosPendiente de apro»
+   renderQuotesListView              39 px @390     INPUT[date].input                            «(sin texto)»
+   renderQuotesListView              39 px @390     INPUT[date].input                            «(sin texto)»
+   renderReportsView                 34 px @390+929 SELECT                                       «20262025202420232022»
+   renderSettingsView              38.9 px @390     SELECT.input                                 «No constaNo aplico retención»
+   renderSettingsView              38.9 px @390     SELECT.input                                 «ProfesionalEmpresarialNo lo sé»
+   renderSettingsView              41.5 px @390     INPUT[text]                                  «(sin texto)»
+
+═══ EXENTOS por DESIGN.md §5 (btn-sm por debajo de la vara) · 23 ═══
+   renderCustomer360View           30.5 px @390+929 BUTTON.btn-ghost.btn-sm                      «← Volver a Clientes»
+   renderCustomer360View           30.6 px @390+929 BUTTON.btn-ghost.btn-sm                      «Ver →»
+   renderCustomer360View           30.7 px @390+929 BUTTON.btn-secondary.btn-sm                  «✎ Editar»
+   renderCustomer360View           30.7 px @390+929 BUTTON.btn-secondary.btn-sm                  «🔗 Portal»
+   renderCustomer360View           30.7 px @390+929 BUTTON.btn-secondary.btn-sm                  «📇 Guardar en mis contactos»
+   renderCustomer360View             31 px @929     BUTTON.btn-secondary.btn-sm                  «Fusionar con otro cliente»
+   renderCustomer360View             31 px @929     BUTTON.btn-primary.btn-sm                    «+ Nuevo presupuesto»
+   renderInvoiceDetailView         30.5 px @390+929 BUTTON.btn-primary.btn-sm                    «Marcar como cobrada»
+   renderInvoiceDetailView         30.5 px @390+929 BUTTON.btn-secondary.btn-sm                  «Descargar PDF»
+   renderInvoiceDetailView         30.5 px @390+929 BUTTON.btn-secondary.btn-sm                  «Enviar por WhatsApp»
+   renderInvoiceDetailView           31 px @390+929 BUTTON.btn-secondary.btn-sm                  «← Volver a facturas»
+   renderInvoicesView                31 px @390+929 A.btn-secondary.btn-sm                       «⬇ CSV»
+   renderProvidersView             30.7 px @929     BUTTON.btn.btn-secondary.btn-sm              «Editar»
+   renderProvidersView             30.7 px @929     BUTTON.btn.btn-secondary.btn-sm              «Activar»
+   renderSettingsView              30.5 px @390+929 BUTTON.btn.btn-primary.btn-sm                «Copiar link»
+   renderSettingsView              30.5 px @390+929 BUTTON.btn-ghost.btn-sm                      «Vista previa»
+   renderSettingsView              30.5 px @390+929 BUTTON.btn.btn-secondary.btn-sm              «⬆ Subir logo»
+   renderSettingsView              30.7 px @390+929 BUTTON.btn-secondary.btn-sm                  «Sin color (por defecto)»
+   renderTeamView                  30.7 px @390+929 BUTTON.btn-primary.btn-sm                    «+ Añadir miembro»
+   renderTeamView                  30.7 px @390+929 BUTTON.btn-ghost.btn-sm                      «Ver su trabajo →»
+   renderTeamView                  30.7 px @390+929 BUTTON.btn-ghost.btn-sm                      «Editar»
+   renderTeamView                  30.7 px @390+929 BUTTON.btn-danger.btn-sm                     «Suspender»
+   renderTeamView                  30.8 px @390+929 BUTTON.btn-ghost.btn-sm                      «Ver su trabajo →»
+
+═══ CASILLAS medidas por su ETIQUETA envolvente (⒟: sola, la casilla mide lo de «propio») · 12 ═══
+   renderExportView                54.8 px (propio 46)  INPUT[checkbox].export-ds.casilla-ta «FacturasCSV + el PDF de cada una»
+   renderExportView                54.8 px (propio 46)  INPUT[checkbox].export-ds.casilla-ta «CobrosQué se cobró, cuándo y por q»
+   renderExportView                54.8 px (propio 46)  INPUT[checkbox].export-ds.casilla-ta «GastosTus costes, para el margen r»
+   renderExportView                54.8 px (propio 46)  INPUT[checkbox].export-ds.casilla-ta «PresupuestosEnviados, aceptados y »
+   renderExportView                54.8 px (propio 46)  INPUT[checkbox].export-ds.casilla-ta «TrabajosPor fecha de ejecución pre»
+   renderExportView                54.8 px (propio 46)  INPUT[checkbox].export-ds.casilla-ta «ClientesLos que aparecen en lo que»
+   renderProductsView              44.5 px (propio 17)  INPUT[radio].segmented-input         «Producto»
+   renderProductsView              44.5 px (propio 17)  INPUT[radio].segmented-input         «Servicio»
+   renderSettingsView              42.3 px (propio 17)  INPUT[checkbox]                      «Recibir email cuando un cliente pa»
+   renderSettingsView              42.3 px (propio 17)  INPUT[checkbox]                      «Recibir email cuando un cliente ac»
+   renderSettingsView              62.4 px (propio 17)  INPUT[checkbox]                      «Recibir resumen semanal por emailC»
+   renderSettingsView              42.3 px (propio 17)  INPUT[checkbox]                      «Enseñar la foto del técnico al cli»
+
+═══ SIN MIRAR (no se pintan en ningún estado abierto: NO son cero) · 88 ═══
+     55  renderQuotesView
+     22  renderDocumentoSueltoView
+      3  renderInvoicesView
+      3  renderJobDetailView
+      2  renderSettingsView
+      1  renderCustomersView
+      1  renderProductsView
+      1  renderQuotesListView
+
+═══ EL NÚMERO ═══
+   población: 417 elementos distintos en 28 pantallas (controles 281 · casillas 45 · campos 91)
+   CORTOS con la vara de DESIGN.md §5: 11
+   exentos por §5 (btn-sm bajo la vara): 23
+   campos bajo la vara, SIN vara escrita en DESIGN.md: 28
+   casillas medidas por su etiqueta envolvente: 12
+   SIN MIRAR (no pintados en ningún estado): 88 · no tocables: 19
+   — la cifra VIEJA, para comparar (INTERACTIVOS, sólo el <input>, 44 a las dos anchuras, sólo el montaje):
+   elementos DISTINTOS por debajo de 44 px: 72
+   mediciones (pantalla × anchura × elemento): 93
+   de los distintos, con .btn-sm: 33 (45.8 %)
+   de los distintos, SIN .btn-sm: 39
+
+═══ ✅ CONTROL POSITIVO · Clientes, contra lo que imprime el guard ═══
+   @929px → medidos 32 · cortos 18 · no tocables 7
+        BUTTON.btn-secondary.btn-sm        37     «⬆ Importar clientes»
+        A.btn-secondary.btn-sm             37     «⬇ Clientes CSV»
+        BUTTON.btn-primary                 37     «Nuevo clienteN»
+        A.contacto-link                    41.8   «34000000001»
+        A.contacto-link.contacto-link--icono 37     «💬»
+        BUTTON.btn-secondary.btn-sm        36.9   «Editar»
+        BUTTON.btn-secondary.btn-sm        36.9   «Portal»
+        BUTTON.btn-ghost.btn-sm            36.9   «📊 Historial»
+        A.contacto-link                    41.8   «34000000002»
+        A.contacto-link.contacto-link--icono 37     «💬»
+        BUTTON.btn-secondary.btn-sm        36.9   «Editar»
+        BUTTON.btn-secondary.btn-sm        36.9   «Portal»
+        BUTTON.btn-ghost.btn-sm            36.9   «📊 Historial»
+        A.contacto-link                    41.8   «34000000003»
+        A.contacto-link.contacto-link--icono 37     «💬»
+        BUTTON.btn-secondary.btn-sm        36.8   «Editar»
+        BUTTON.btn-secondary.btn-sm        36.8   «Portal»
+        BUTTON.btn-ghost.btn-sm            36.8   «📊 Historial»
+   @390px → medidos 28 · cortos 0 · no tocables 7
+   (el guard imprime, hoy: 929 → 20 medidos / 11 cortos / 6 no tocables · 390 → 19 / 2 / 6)
