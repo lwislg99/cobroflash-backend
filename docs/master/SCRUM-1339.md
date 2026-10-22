@@ -2583,6 +2583,9 @@ PR caerían sin culpa» de la opción (b), sí: con estos datos serían 0 de 247
   las dos **VIVAS**, y las dos de 1339r, también VIVAS después de mi cambio (`u-salida-mutar.txt`). La primera
   (sin el CIEGO de la señal) es el comportamiento de `main` en el caso sembrado: es el rojo primero.
 - En local: los 8 ficheros del vigía (1324, 1339r, 1339u, 1393c/d/e/f, 1458), **68 de 68**, y mis 9 casos en el TAP.
+- De paso, como en 1339r: el trinquete de `scrum812` cayó con «LA COBERTURA HA SUBIDO a 32», porque un caso mío
+  nombra al «meta-guard». Subo `SUELO_GUARD_QUE_DECLARAN` de 31 a 32 con su entrada y muevo su mutación ④: es
+  anotar lo que pide el trinquete, no aflojarlo. Las 5 mutaciones de `scrum812`, VIVAS después del cambio.
 - **Simulación en seco contra #2641** (el `previos` real con sus 17 comentarios, la línea de primer padre de
   la punta `808af5b44` y la red de 34 h; 33 commits): motor de `main` contra el mío, **idénticos** (2 ROJO,
   29 CIEGO, 2 CORRIENDO; sólo cambia el minuto de la punta que corría). Para que ese «idénticos» no fuera un
