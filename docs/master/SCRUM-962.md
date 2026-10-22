@@ -161,7 +161,7 @@ Fuera del censo y cortos, por pantalla (banco, criterio A):
 
 ### Para repartir (no se ha tocado nada)
 
-- **Configuración (J3):** los 2 `select` de Facturación (38,9), «Añadir condición» (22), las 4 casillas de Avisos/Equipo (17), «Vista previa», «Subir logo», «Sin color», el color de marca (38,7), «ref-link» (41,8), «Copiar link», «Guardar página» y «Descargar QR» (30–31), y el enlace a la página pública (18). Junto a los dos defectos de colocación/estilo ya anotados en el comentario 20052.
+- **Configuración (J3):** ~~los 16~~ → **separados en el tramo 962b (2), más abajo: 4 defectos seguros + 1 discutible.** Las 4 casillas y el campo de sólo lectura son artefactos del medidor; los 6 `btn-sm` están exentos por DESIGN.md §5.
 - **El censo (S3, `scripts/` es su carril):** tres decisiones que no son mías: ① ampliar `INTERACTIVOS` (o un selector propio del censo) a campos de formulario, con DESIGN.md §5 delante — hoy las «Inputs / Fields» no tienen altura escrita, sólo el «targets ≥44px» de §6; ② abrir los estados ocultos o, como mínimo, contar `sinPintar` como «no medido»; ③ medir 929 contra `minimoPara()` y separar `btn-sm` (la cifra de 72 mezcla tres cosas).
 
 ### Cómo se reproduce
@@ -175,5 +175,41 @@ Los guiones están en `docs/master/evidencias/scrum962b/` (sólo leen; reciben l
     node docs/master/evidencias/scrum962b/tabla-viva.mjs <tmp>/viva.json <tmp>/viva-datos-del-censo.json
 
 (`configuracion-viva.mjs` lleva el comercio completo; para la columna «¿en la población del censo?» hace falta una segunda pasada con el comercio `{id, name}` del censo, que es el segundo argumento de `tabla-viva.mjs`.)
+
+### Tramo 962b (2) · los 16 de Configuración, separados: pantalla, regla o instrumento
+
+**Pedido por el orquestador** tras la entrega: «de los 16, cuáles son defecto de pantalla y cuáles artefacto del medidor», ordenados por gravedad real. Mismo árbol (`9839aa6c`); `origin/main` avanzó 12 commits mientras tanto y **ninguno toca** `settingsView.js`, `styles.css`, `_medidor-de-toque.mjs` ni `_banco-lista.mjs` (`git diff --stat`, vacío).
+
+**Cómo:** Configuración viva (`_banco-lista.mjs`), pestaña a pestaña, a 390 y 929. Para cada control corto, sus etiquetas asociadas (`el.labels`), el área de toque de cada etiqueta con el mismo árbitro, y un **clic de ratón REAL** en el punto de la etiqueta más alejado del control que siga perteneciéndole: ¿cambia el estado? (`docs/master/evidencias/scrum962b/dieciseis.mjs`). Salen los mismos 16 a las dos anchuras.
+
+A9: sin fallo que generalice — mi medidor tuvo dos defectos (el ancho del elemento pisaba el de la ventana; las marcas `data-etiq` no se limpiaban entre pestañas y Avisos leía la etiqueta de Facturación); los cazó el control (16 esperados, 0 medidos; «sin punto» en 3 de 4 casillas iguales) antes de dar ninguna cifra.
+
+**Los 16, por gravedad:**
+
+| # | pestaña | control | toque @390 | veredicto | por qué |
+|---|---|---|---|---|---|
+| 1 | facturacion | **«Añadir condición»** (`<button>` nativo, sin clase, `font-size:13px`, `settingsView.js:1115`) | **22** | 🔴 **DEFECTO de pantalla** | Botón suelto, sin etiqueta, sin estilo de la casa. **Es el MISMO elemento que el defecto 3 del comentario 20052** («sale sin estilo de botón»): un solo arreglo cierra los dos |
+| 2 | publica | enlace `yaqu.app/p/… ↗` | **18** | 🟠 **DEFECTO discutible** | Está EN LÍNEA dentro de una frase («Tu página está **activa**: …», `settingsView.js:1534`). WCAG 2.5.8 exime los enlaces en línea; DESIGN.md §6 dice «targets ≥44px» sin esa excepción. Lo decide quien firma la regla, no la medida |
+| 3 | marca | selector de color (`input[type=color]`, `style="height:38px"` en línea, `settingsView.js:809`) | **38,7** | 🔴 **DEFECTO de pantalla** | Sin etiqueta asociada; la altura está escrita a mano en el propio control |
+| 4 | facturacion | `select` **Retención de IRPF** | **38,9** | 🔴 **DEFECTO de pantalla** | Su etiqueta (`for=`, 21 px, ENCIMA) enfoca el `select` al pulsarla, pero no lo continúa: es otro objetivo, no el mismo más grande. Y los otros 7 `select` de la misma pantalla dan 44 |
+| 5 | facturacion | `select` **¿Qué tipo de actividad tienes?** | **38,9** | 🔴 **DEFECTO de pantalla** | Igual que el 4 (y es bloque de S2 en contenedor de J3: `settingsView.js:458-486`) |
+| 6 | publica | «Guardar página» (`btn btn-primary btn-sm`) | 30,5 | ⚪ **EXENTO por la regla escrita** · ⚠️ con duda | `btn-sm` está exento en DESIGN.md §5. Pero la exención vale **porque una acción primaria nunca usa la variante pequeña** (SCRUM-412), y éste es un `btn-primary btn-sm` que guarda la tarjeta: **posible choque con esa frontera**. Decisión, no medida |
+| 7 | (fuera de paneles) | «Copiar link» (`btn btn-primary btn-sm`) | 30,7 | ⚪ **EXENTO** · ⚠️ con duda | Mismo caso que el 6 (tarjeta «Invita y gana») |
+| 8 | avisos | «Vista previa» (`btn-ghost btn-sm`) | 30,8 | ⚪ **EXENTO por la regla escrita** | `btn-sm` secundario |
+| 9 | publica | «⬇ Descargar QR» (`btn btn-secondary btn-sm`) | 30,9 | ⚪ **EXENTO** | ídem |
+| 10 | marca | «⬆ Subir logo» (`btn btn-secondary btn-sm`) | 30,5 | ⚪ **EXENTO** | ídem |
+| 11 | marca | «Sin color (por defecto)» (`btn-secondary btn-sm`) | 30,7 | ⚪ **EXENTO** | ídem |
+| 12 | avisos | casilla «Recibir email cuando un cliente paga» | 17 | 🔵 **ARTEFACTO del medidor** | La ENVUELVE su `<label>` de **62,4 px** de toque, y un clic real en la etiqueta, lejos de la casilla, la **marca**. El dedo tiene 62 px; el medidor mide sólo el `<input>` |
+| 13 | avisos | casilla «… acepta un presupuesto» | 17 | 🔵 **ARTEFACTO** | etiqueta envolvente 83,5 px · clic real ACTIVA |
+| 14 | avisos | casilla «Recibir resumen semanal» | 17 | 🔵 **ARTEFACTO** | etiqueta envolvente 82,5 px · clic real ACTIVA |
+| 15 | equipo | casilla «Enseñar la foto del técnico» | 17 | 🔵 **ARTEFACTO** | etiqueta envolvente 62,4 px · clic real ACTIVA |
+| 16 | (fuera de paneles) | `#ref-link` (campo `readonly` que muestra el enlace de «Invita y gana») | 41,8 | 🔵 **ARTEFACTO de MI selector** (dudoso) | No es un control: es un campo de sólo lectura; la acción es «Copiar link» (el 7). Lo metió mi selector ampliado (`input` no oculto). Le faltan 2,2 px, por si alguien lo quiere contar |
+
+**Resumen de los 16:** 🔴 **4 defectos de pantalla** (1, 3, 4, 5) · 🟠 **1 discutible** (2) · ⚪ **6 exentos por DESIGN.md §5**, dos de ellos (6, 7) con duda sobre la frontera de SCRUM-412 · 🔵 **5 artefactos del medidor** (4 casillas + el campo de sólo lectura).
+⇒ **A J3 van 4 seguros + 1 a decidir**, no 16. Los 6 `btn-sm` no son defecto según la regla escrita: si se quiere cambiar la regla, es otra conversación. Los defectos 2 y 3 del comentario 20052 siguen aparte: el 3 es el mismo elemento que el nº 1 de esta tabla, y el 2 (colocación del rótulo de IRPF) no se mide en píxeles de toque.
+
+**Y esto alcanza a las cifras de ③ y al censo.** El árbitro mide el `<input>`, nunca `input ∪ su etiqueta`. Así que **toda casilla o `radio` con etiqueta envolvente sale corta aunque no lo sea**: aquí, 4 de 4. En el panel hay más del mismo tipo, y **no las he comprobado una a una**: los 2 `radio` de Productos (17 px) de mi lista, y en la población del propio censo `INPUT.inv-row-check` y un `INPUT` de 14 px. Son candidatas a artefacto, **sin medir**.
+
+**El hallazgo de método, escrito como regla:** **un control positivo que usa un caso de DENTRO de la población no prueba la población.** La sonda del censo es un `<button>`, y un botón siempre está en el selector: prueba que la superficie se mide, nunca que la población esté completa. Para probar la población, la sonda tiene que ser de una clase que el selector podría dejar fuera (aquí, un `<select>`).
 
 **Banco:** `dist/` compilado con `tsc` en el worktree (sale 1 error de tipos en `src/modules/system/merchantAdmin.ts:147` por el cliente de Prisma compartido desfasado — `activityKind`; no afecta al front y `dist/` se emite igual). **No se ha corrido `prisma generate`** ni la suite.
