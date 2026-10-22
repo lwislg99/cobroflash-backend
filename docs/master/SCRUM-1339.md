@@ -2605,64 +2605,6 @@ contara la población; lo que impide que vuelva es que ahora exige el NOMBRE de 
 
 A9: comprobación → `tests/scrum1339s-el-metaguard-hereda-la-tuberia.test.mjs`
 
-# SCRUM-1339v · La señal de nombres sale 2 cuando NO PUDO MEDIR; `--tasa` sigue en 0
-
-**Medido contra:** `origin/main` = `a593817dd933b3dcc36224ff8594fdedff3d8b96` · 2026-10-22T10:38:35Z
-
-A9: aviso → A10 «Un prefijo no es un nombre, y una subcadena tampoco.» — no se pudo comprobar: la sonda de este tramo ya sale CIEGO si no encuentra el job, pero la siguiente sonda que busque un job por nombre no lo hereda
-
-Carril J6, sesión jv-j6y, rama `scrum-1339v-no-pudo-medir-sale-2`. Decisión: c.20282, opción (b), literal «Ok la b»,
-leída en Jira; con la corrección c.20284. **Este PR no toca `ci.yml` ni ningún workflow.**
-
-**Qué cambia.** `scripts/senal-de-nombres.mjs` sale **2** cuando NO PUDO MEDIR, por los dos caminos que lo dicen: el
-del guion (`noPudeMedir`: sin TAP, TAP ilegible, módulo ausente, el guion revienta) y el del módulo (TAP vacío o
-cortado, `medible !== true`, que antes no pasaba por `noPudeMedir` y habría seguido en 0). Medido completo, 0; con
-ausentes, 1 (1339t, sin cambio). `--tasa` sale **siempre 0**, también cuando no puede leer sus registros: lo decide
-`process.argv` antes de leer nada más, para que un fallo al leer los argumentos no la ponga en 2.
-
-**Por qué 2 y no 1.** Es el vocabulario de la casa: `SALIDA_NO_SUPE_MEDIR = 2` en `scripts/_hallazgos-y-ciegos.mjs`
-(SCRUM-1320), «un ciego no es un verde», y tampoco es «faltan nombres», que es el 1. El guion no lo importa porque no
-tiene ni un `import` estático (es lo que le permite decir «no pude medir» cuando falta un módulo); el test sí lo
-importa y exige que el guion salga con ESE valor.
-
-**El ④ de `scrum1339d` cambia con la decisión.** Exigía 0 al no medir (c.17954, «Salida 0 siempre»); ahora exige 2
-en los seis casos del guion y 0 en los cuatro de `--tasa` (uno nuevo: `--tasa` con el módulo ausente). Su título
-pasa de «SCRUM-1339d · ④ … sale 0 … nunca tumba el job» a «SCRUM-1339v · ④ … sale 2 … con --tasa sale 0: nunca
-calla», y la mutación ⑤ (el catch que se calla) se re-ancla a ese título.
-
-⚠️ **Lo que NO bloquea todavía.** El paso de la señal en `ci.yml` sigue con `continue-on-error: true`: lo quita S5
-en el **#2663**, OPEN al escribir esto. Hasta que entre, ni el 1 de 1339t ni el 2 de este tramo tumban el
-obligatorio; cuando entre, los dos bloquean. El comentario de ese paso en `ci.yml` («el guion sale 0 hasta cuando
-revienta») queda desfasado con este PR: es de S5 y no lo toco; se lo digo al orquestador.
-
-**Rojo primero.** Commit `f0bfca192f42f417f5559782e24cc9c615d7b1bb`, sólo el test, contra el guion de main:
-18 = 17 pass + 1 fail, «sin argumentos tiene que salir 2 y salió 0». Con el arreglo: 18 de 18.
-
-**Mutaciones.** Tres nuevas en `MUTACIONES_QUE_ME_TUMBAN` (el ciego vuelve a 0 · el ciego del módulo vuelve a 0 ·
-la tasa sale 2); con el driver de 1339r copiado (`evidencias/SCRUM-1339/v-mutar.mjs`): **9 de 9 VIVAS**, base
-limpia 18 pasados · 0 caídos · 0 saltados, y el árbol sin cambios después (`v-salida-mutar.txt`).
-
-**¿Habría caído algún obligatorio reciente?** No. Sonda propia, sin el vigía de 1339u (que no está en main):
-`evidencias/SCRUM-1339/v-salida-en-los-runs.mjs`, que lee las anotaciones del job «build + tests (con banco
-desechable)» y deduce la salida por dos caminos (título y línea de registro). Sobre los últimos **400** runs acabados
-del CI (16-oct 11:08Z → 22-oct 10:28Z): `saldria-0` 246 · `saldria-2` **0** · sin anotación 0 · sin el job 110 ·
-job cancelado 44 · suma 400. Las dos sondas, 0 discrepancias. Control positivo con el mismo lector: el job
-110501932336 ve el 2 por los dos caminos (`titulo=1+2 linea=1+2`: corrió el guion tres veces). Coincide con lo de
-jv-j6x en c.20280 (247 midieron, 0 «no pudo», sobre otra ventana de 400).
-
-**Mis errores.** ① La primera pasada de la sonda buscaba el job por «build + tests», un prefijo, y dio **400 de 400
-«sin-job»**: un cero que no miraba nada. Lo vi por la clase, no por el resultado; está guardada como
-`v-salida-en-los-runs-CIEGA-prefijo.txt`, y la sonda ahora sale CIEGO si ningún run tiene el job. ② Su primera
-versión tomaba la ÚLTIMA anotación del job, y el control positivo salió 1 en vez de 2 porque ese job mezcla tres
-pasadas; ahora cada sonda da el conjunto de salidas, y un run con más de una sale como `mezcla`. ③ Intenté crear
-la rama con cambios sin commitear y el hook me paró; commiteé el rojo en el HEAD desacoplado y la creé con el
-árbol limpio.
-
-**En local:** los ficheros de la señal, de registro y de suite (abajo, en la entrega). **No he corrido la tanda
-completa.**
-
-**Ficheros:** `scripts/senal-de-nombres.mjs`, `tests/scrum1339d-senal-de-nombres.test.mjs`,
-`docs/master/evidencias/SCRUM-1339/v-*`, este apartado.
 # SCRUM-1339u · El vigía de `main` recoge «la señal de nombres no pudo medir» como CIEGO; medido antes: en 400 runs del CI (15 al 22-oct) no ha pasado ninguna vez
 
 **Medido contra:** `origin/main` = `808af5b4466d2649a1006d4c554d1f22e7eba47c` · 2026-10-22T10:12:52Z
@@ -2766,3 +2708,62 @@ PR caerían sin culpa» de la opción (b), sí: con estos datos serían 0 de 247
 2. Mi segunda mutación nació MUDA: el módulo escribe siempre el aviso junto a `medible=no`, así que quitar la
    rama de `medible=no` no cambiaba nada con lo que se escribe hoy. Le sembré su propio caso (la línea de
    registro sin el aviso) antes de declararla.
+
+# SCRUM-1339v · La señal de nombres sale 2 cuando NO PUDO MEDIR; `--tasa` sigue en 0
+
+**Medido contra:** `origin/main` = `a593817dd933b3dcc36224ff8594fdedff3d8b96` · 2026-10-22T10:38:35Z
+
+A9: aviso → A10 «Un prefijo no es un nombre, y una subcadena tampoco.» — no se pudo comprobar: la sonda de este tramo ya sale CIEGO si no encuentra el job, pero la siguiente sonda que busque un job por nombre no lo hereda
+
+Carril J6, sesión jv-j6y, rama `scrum-1339v-no-pudo-medir-sale-2`. Decisión: c.20282, opción (b), literal «Ok la b»,
+leída en Jira; con la corrección c.20284. **Este PR no toca `ci.yml` ni ningún workflow.**
+
+**Qué cambia.** `scripts/senal-de-nombres.mjs` sale **2** cuando NO PUDO MEDIR, por los dos caminos que lo dicen: el
+del guion (`noPudeMedir`: sin TAP, TAP ilegible, módulo ausente, el guion revienta) y el del módulo (TAP vacío o
+cortado, `medible !== true`, que antes no pasaba por `noPudeMedir` y habría seguido en 0). Medido completo, 0; con
+ausentes, 1 (1339t, sin cambio). `--tasa` sale **siempre 0**, también cuando no puede leer sus registros: lo decide
+`process.argv` antes de leer nada más, para que un fallo al leer los argumentos no la ponga en 2.
+
+**Por qué 2 y no 1.** Es el vocabulario de la casa: `SALIDA_NO_SUPE_MEDIR = 2` en `scripts/_hallazgos-y-ciegos.mjs`
+(SCRUM-1320), «un ciego no es un verde», y tampoco es «faltan nombres», que es el 1. El guion no lo importa porque no
+tiene ni un `import` estático (es lo que le permite decir «no pude medir» cuando falta un módulo); el test sí lo
+importa y exige que el guion salga con ESE valor.
+
+**El ④ de `scrum1339d` cambia con la decisión.** Exigía 0 al no medir (c.17954, «Salida 0 siempre»); ahora exige 2
+en los seis casos del guion y 0 en los cuatro de `--tasa` (uno nuevo: `--tasa` con el módulo ausente). Su título
+pasa de «SCRUM-1339d · ④ … sale 0 … nunca tumba el job» a «SCRUM-1339v · ④ … sale 2 … con --tasa sale 0: nunca
+calla», y la mutación ⑤ (el catch que se calla) se re-ancla a ese título.
+
+⚠️ **Lo que NO bloquea todavía.** El paso de la señal en `ci.yml` sigue con `continue-on-error: true`: lo quita S5
+en el **#2663**, OPEN al escribir esto. Hasta que entre, ni el 1 de 1339t ni el 2 de este tramo tumban el
+obligatorio; cuando entre, los dos bloquean. El comentario de ese paso en `ci.yml` («el guion sale 0 hasta cuando
+revienta») queda desfasado con este PR: es de S5 y no lo toco; se lo digo al orquestador.
+
+**Rojo primero.** Commit `f0bfca192f42f417f5559782e24cc9c615d7b1bb`, sólo el test, contra el guion de main:
+18 = 17 pass + 1 fail, «sin argumentos tiene que salir 2 y salió 0». Con el arreglo: 18 de 18.
+
+**Mutaciones.** Tres nuevas en `MUTACIONES_QUE_ME_TUMBAN` (el ciego vuelve a 0 · el ciego del módulo vuelve a 0 ·
+la tasa sale 2); con el driver de 1339r copiado (`evidencias/SCRUM-1339/v-mutar.mjs`): **9 de 9 VIVAS**, base
+limpia 18 pasados · 0 caídos · 0 saltados, y el árbol sin cambios después (`v-salida-mutar.txt`).
+
+**¿Habría caído algún obligatorio reciente?** No. Sonda propia, sin el vigía de 1339u (que no está en main):
+`evidencias/SCRUM-1339/v-salida-en-los-runs.mjs`, que lee las anotaciones del job «build + tests (con banco
+desechable)» y deduce la salida por dos caminos (título y línea de registro). Sobre los últimos **400** runs acabados
+del CI (16-oct 11:08Z → 22-oct 10:28Z): `saldria-0` 246 · `saldria-2` **0** · sin anotación 0 · sin el job 110 ·
+job cancelado 44 · suma 400. Las dos sondas, 0 discrepancias. Control positivo con el mismo lector: el job
+110501932336 ve el 2 por los dos caminos (`titulo=1+2 linea=1+2`: corrió el guion tres veces). Coincide con lo de
+jv-j6x en c.20280 (247 midieron, 0 «no pudo», sobre otra ventana de 400).
+
+**Mis errores.** ① La primera pasada de la sonda buscaba el job por «build + tests», un prefijo, y dio **400 de 400
+«sin-job»**: un cero que no miraba nada. Lo vi por la clase, no por el resultado; está guardada como
+`v-salida-en-los-runs-CIEGA-prefijo.txt`, y la sonda ahora sale CIEGO si ningún run tiene el job. ② Su primera
+versión tomaba la ÚLTIMA anotación del job, y el control positivo salió 1 en vez de 2 porque ese job mezcla tres
+pasadas; ahora cada sonda da el conjunto de salidas, y un run con más de una sale como `mezcla`. ③ Intenté crear
+la rama con cambios sin commitear y el hook me paró; commiteé el rojo en el HEAD desacoplado y la creé con el
+árbol limpio.
+
+**En local:** los ficheros de la señal, de registro y de suite (abajo, en la entrega). **No he corrido la tanda
+completa.**
+
+**Ficheros:** `scripts/senal-de-nombres.mjs`, `tests/scrum1339d-senal-de-nombres.test.mjs`,
+`docs/master/evidencias/SCRUM-1339/v-*`, este apartado.
