@@ -181,6 +181,7 @@ El segundo es el que importa: sin él, C podría estar comprobando sólo que exi
 ### Y la lección que se lleva la sesión
 
 🔒 **El guard de navegador encontró esto en 9,6 segundos y sin turno de staging.** El recorrido manual sigue haciendo falta —está abajo, pendiente—, pero **ya no es donde se descubre**: es donde se confirma. Los tres casos habrían llegado a staging para que una persona viera lo mismo media hora después.
+
 ## ANEXO (rama `scrum-964c-parsea-antes-de-empujar`) · `public-js-parsea` entra en `guards:entrada`
 
 **Medido contra:** `origin/main` = `35d25d1c58954930b529ad9f736878018c0f9870` · 2026-09-20T19:45:07Z
@@ -248,3 +249,33 @@ Guards vecinos en verde tras el cambio: `scrum711-guards-sin-sitio`, `scrum928`,
   PASO 0 son el techo del mecanismo, no la media de un profesional real.
 - **La caché de la foto.** Va `no-store` a propósito, por no tener `ETag`. Con `ETag` la vista
   previa se abriría sin volver a bajarla; queda dicho, no hecho.
+
+---
+
+## SCRUM-964d · La línea en blanco que se tragó la unión de git, repuesta desde los padres
+
+**Medido contra:** `origin/main` = `8ad167195af03cf4153337ccc1bf1b80d04c10f8` · 2026-10-22T09:43:50Z
+A9: sin fallo que generalice — el fallo de esta medición (el instrumento sin `--diff3`) lo cuentan SCRUM-1289c y su cicatriz S0
+
+S0 (`cobroflash-backend-s0`), por encargo del orquestador. El detector de SCRUM-1572 (J6) dio este fichero
+como roto por el merge `18c3e3686` (yaqu-bot, «Merge main (557990fe) en el PR #1544»), y nadie lo había
+vuelto a tocar. Las dos mitades son de S1, del equipo de Luis: el tramo «🔴 El guard de navegador salió
+ROJO» (rama `scrum-964-lista-sin-fotos`, `6b62cef52`) y el «ANEXO» de 964c (rama
+`scrum-964c-parsea-antes-de-empujar`, `9fdb41644`).
+
+**Reconstruido desde los padres, no elegido a ojo.** Las dos ramas parten del mismo commit del registro,
+`afd2655bd`, que está en los dos padres. La fusión fue cruzada (dos bases: `ae43a3fd1` sin el fichero,
+`3a629b3c2` con él). Fusión de tres vías sobre `afd2655bd` con `git merge-file --diff3`: 1 conflicto, los
+dos tramos insertados en el mismo punto, y se conservan los dos, primero el de la rama del PR. El resultado
+tiene 252 líneas; el fichero que dejó la unión, 251. **La única diferencia es una línea en blanco**: la unión
+fundió en una las dos líneas en blanco que cerraban cada tramo, así que «…media hora después.» quedaba
+pegado a `## ANEXO (rama scrum-964c…)`. Nada más falta, sobra ni cambia de orden. Se repone esa línea, y el
+fichero queda **byte a byte igual a la reconstrucción** (16.596 bytes; sin contar este tramo).
+
+Comando: `node docs/master/evidencias/SCRUM-1289c/reconstruye-desde-los-padres.mjs 18c3e3686 docs/master/SCRUM-964.md afd2655bd --salida=<fichero>`
+(el instrumento entra con SCRUM-1289c, PR aparte; su tabla de controles está en `docs/master/SCRUM-1289.md`).
+
+⚠️ El detector de SCRUM-1572 **acertaba**: es un daño real, aunque sea de una línea. Yo había dicho lo
+contrario con la primera versión del instrumento, y lo corregí antes de que llegara al fundador.
+
+Corrido: `scrum267`, `scrum273` y `scrum1294` en verde sobre esta rama. La tanda completa no la he corrido.
