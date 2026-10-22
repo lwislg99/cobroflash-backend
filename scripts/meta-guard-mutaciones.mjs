@@ -167,6 +167,120 @@ export function sueloDeEjecucion({ vivas, mudas }) {
 }
 
 /**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 SCRUM-935d · UN CORTE QUE NO DICE QUÉ DEJÓ FUERA NO DICE «NO HAY FALLOS»: NO DICE NADA.
+ *
+ * MEDIDO en los logs de CI del 15 al 21-oct-2026 (`docs/master/SCRUM-935.md`, tramo 935d; 313 jobs
+ * leídos, 0 ciegos): 135 jobs de este instrumento murieron en el `timeout-minutes` del job. GitHub
+ * los da como `cancelled`, y este proceso NO escribe nada al morir: el último veredicto y, 0,7 s
+ * después, «The operation was canceled.». En esos 135 se quedaron ~3.034 veredictos sin emitir
+ * —siempre la COLA del censo: `utils` y `vigia-atascados` en los 135—, y lo que sí se juzgó y salió
+ * mal (39 CIEGAS y 1 FICHERO MUERTO en un push a `main`) quedó enterrado sin código de salida.
+ *
+ * Por eso el corte lo hace ESTE instrumento, antes de la pared, y lo dice: deja de empezar trabajo
+ * cuando se le acaba el presupuesto, nombra lo que no ha juzgado y sale CIEGO. Un `cancelled` se lee
+ * como un gris; un CIEGO con la lista delante, no.
+ *
+ * El presupuesto NO se teclea aquí: se LEE del `timeout-minutes` del job del meta-guard en
+ * `ci.yml` (un número escrito dos veces son dos números que divergen), menos `MARGEN_DEL_JOB_S`.
+ * `META_PRESUPUESTO_S` lo sustituye (para provocar el corte a mano). Fuera de CI y sin esa
+ * variable no hay presupuesto: en local nadie corta.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ */
+// Lo que el job gasta FUERA del paso de mutación (checkout, `npm ci`, build, post): medido en los
+// 313 jobs, 24-73 s (p50 37, p99 50). Más una pasada en vuelo, que puede durar ~20 s (`scrum813`).
+export const MARGEN_DEL_JOB_S = 150;
+
+/**
+ * El `timeout-minutes` (en segundos) del job de `ci.yml` que CORRE este instrumento, o `null` si no
+ * lo encuentro. El job se reconoce por su paso `npm run meta:mutaciones`, no por su clave ni por su
+ * nombre: los dos se pueden renombrar y el paso es lo que de verdad me lanza. Si DOS jobs lo
+ * corren, `null`: no sé de cuál soy.
+ */
+export function techoDelJob(ciYml) {
+  const lineas = String(ciYml || '').split(/\r?\n/);
+  const jobs = [];
+  let dentro = false;
+  for (const l of lineas) {
+    if (/^jobs:\s*$/.test(l)) { dentro = true; continue; }
+    if (!dentro) continue;
+    if (/^\S/.test(l)) { dentro = false; continue; }
+    if (/^ {2}[\w-]+:\s*$/.test(l)) jobs.push([]);
+    else if (jobs.length) jobs.at(-1).push(l);
+  }
+  // `- run:` (paso de una línea) o `run:` (bajo un `- name:`): las dos formas de YAML del mismo paso.
+  const mios = jobs.filter((j) => j.some((l) => /^\s+(?:-\s+)?run:\s*npm run meta:mutaciones\s*$/.test(l)));
+  if (mios.length !== 1) return null;
+  const techo = mios[0].map((l) => /^ {4}timeout-minutes:\s*(\d+)\s*$/.exec(l)).find(Boolean);
+  return techo ? Number(techo[1]) * 60 : null;
+}
+
+/**
+ * ¿Cuántos segundos puede trabajar el paso? `{ limiteS, origen }`, o `{ limiteS: null, origen }`
+ * si no hay presupuesto. Pura: recibe el entorno y el texto de `ci.yml`.
+ */
+export function presupuestoDelPaso({ env = {}, ciYml = '' } = {}) {
+  const forzado = env.META_PRESUPUESTO_S;
+  if (forzado !== undefined && forzado !== '') {
+    const n = Number(forzado);
+    if (!Number.isFinite(n) || n < 0) return { limiteS: null, origen: `META_PRESUPUESTO_S ilegible («${forzado}»): SIN presupuesto` };
+    return { limiteS: n, origen: `META_PRESUPUESTO_S=${n}` };
+  }
+  if (env.GITHUB_ACTIONS !== 'true') return { limiteS: null, origen: 'fuera de CI y sin META_PRESUPUESTO_S: sin presupuesto' };
+  const techo = techoDelJob(ciYml);
+  if (techo === null) {
+    return { limiteS: null, origen: 'en CI y SIN PODER LEER el `timeout-minutes` del job que corre `npm run meta:mutaciones` en ci.yml: si el job me corta, NO podré decir qué quedó sin juzgar' };
+  }
+  return { limiteS: Math.max(0, techo - MARGEN_DEL_JOB_S), origen: `ci.yml, job de \`npm run meta:mutaciones\`: ${techo} s − ${MARGEN_DEL_JOB_S} s de margen` };
+}
+
+/** ¿Hay que dejar de empezar trabajo? */
+export function debeCortar(transcurridoS, presupuesto) {
+  return Number.isFinite(presupuesto?.limiteS) && transcurridoS >= presupuesto.limiteS;
+}
+
+/** Lo que queda sin juzgar desde la mutación `desde` del guard nº `guardIdx` del censo. */
+export function pendientesDesde(censo, guardIdx, desde = 0) {
+  const pendientes = [];
+  for (let g = guardIdx; g < censo.length; g++) {
+    const muts = censo[g].mutaciones || [];
+    const resto = g === guardIdx ? muts.slice(desde) : muts;
+    if (resto.length) pendientes.push({ guard: censo[g].guard, mutaciones: resto.length });
+  }
+  return pendientes;
+}
+
+export const GUARD_CARO_S = 60;
+
+/**
+ * Las líneas que nombran a los guards que pasan de `GUARD_CARO_S` (limpia + todas sus mutaciones),
+ * de más caro a más barato, con la población declarada. `costes` va en orden de ejecución con el
+ * segundo en que empezó cada uno; el último termina en `finS`.
+ */
+export function guardsCaros(costes, finS) {
+  const medidos = costes.map((c, i) => ({ ...c, s: (i + 1 < costes.length ? costes[i + 1].inicioS : finS) - c.inicioS }));
+  const caros = medidos.filter((c) => c.s > GUARD_CARO_S).sort((a, b) => b.s - a.s);
+  const total = medidos.reduce((n, c) => n + c.s, 0);
+  return [
+    `\ncoste por guard: ${medidos.length} guards medidos, ${Math.round(total)} s en total · `
+      + `${caros.length} pasan de ${GUARD_CARO_S} s${caros.length ? ':' : ''}`,
+    ...caros.map((c) => `   ⏱ ${c.guard} · ${Math.round(c.s)} s (${c.mutaciones} mutaciones + la limpia, `
+      + `~${(c.s / (c.mutaciones + 1)).toFixed(1)} s por pasada)`),
+  ];
+}
+
+export function mensajeDeCorte({ juzgadas, pendientes, transcurridoS, presupuesto }) {
+  const sinJuzgar = pendientes.reduce((n, p) => n + p.mutaciones, 0);
+  return `🔴 CORTO YO, ANTES DEL TECHO: llevo ${Math.round(transcurridoS)} s y el presupuesto es `
+    + `${presupuesto.limiteS} s (${presupuesto.origen}).\n`
+    + `   Juzgadas ${juzgadas} de ${juzgadas + sinJuzgar} mutaciones. SIN JUZGAR ${sinJuzgar}, en `
+    + `${pendientes.length} guard(s):\n`
+    + pendientes.map((p) => `      · ${p.guard} (${p.mutaciones})`).join('\n')
+    + '\n   Eso NO es «no hay fallos» en esos guards: es que no los he mirado. Antes esto salía '
+    + '`cancelled` y sin una línea (SCRUM-935d).';
+}
+
+/**
  * Lee las mutaciones declaradas en un fichero, POR AST y sin ejecutarlo.
  *
  * Devuelve `[]` si no declara ninguna — no es un error: la mayoría de los guards todavía no lo
@@ -1599,7 +1713,16 @@ if (ejecutadoDirectamente(import.meta.url)) {
   const muertos = [];
   let vivas = 0;
   let colaterales = 0;
-  for (const { guard, mutaciones, incompletas } of censo) {
+  // 🔴 SCRUM-935d · el presupuesto se lee UNA vez, y se dice siempre: sin él en CI, el corte del job
+  // vuelve a ser mudo, y eso se tiene que ver en el log aunque nadie corte.
+  let ciYml = '';
+  try { ciYml = fs.readFileSync(path.join(RAIZ, '.github', 'workflows', 'ci.yml'), 'utf8'); } catch { /* lo dice `origen` */ }
+  const presupuesto = presupuestoDelPaso({ env: process.env, ciYml });
+  console.log(`presupuesto del paso: ${presupuesto.limiteS === null ? 'NINGUNO' : `${presupuesto.limiteS} s`} · ${presupuesto.origen}`);
+  let corte = null; // { guardIdx, desde, transcurridoS }
+  let juzgadas = 0;
+  const costes = []; // { guard, mutaciones, inicioS } — la duración sale del inicio del siguiente
+  bucle: for (const [guardIdx, { guard, mutaciones, incompletas }] of censo.entries()) {
     // 🔴 UNA DECLARACIÓN A LA QUE LE FALTA UN CAMPO NO ES UNA DECLARACIÓN MENOS: ES UN HUECO.
     // Se descartaba en silencio y el recuento bajaba sin que nadie lo dijera — «parece cobertura»,
     // que es el defecto que este mecanismo entero vino a cerrar. Provocado el 5-sep-2026 al perder
@@ -1616,10 +1739,21 @@ if (ejecutadoDirectamente(import.meta.url)) {
       console.log(`  ? ${guard} · CIEGO (declaración que no se puede evaluar)`);
     }
     if (!mutaciones.length) continue;
+    if (debeCortar(process.uptime(), presupuesto)) {
+      corte = { guardIdx, desde: 0, transcurridoS: process.uptime() };
+      break;
+    }
     // La línea base se corre UNA VEZ por guard, no por mutación: es la misma pasada limpia para
     // todas las suyas y duplicarla sólo costaría reloj.
+    const inicioGuard = process.uptime();
     const limpia = await correr(guard);
-    for (const mut of mutaciones) {
+    costes.push({ guard, mutaciones: mutaciones.length, inicioS: inicioGuard });
+    for (const [desde, mut] of mutaciones.entries()) {
+      if (debeCortar(process.uptime(), presupuesto)) {
+        corte = { guardIdx, desde, transcurridoS: process.uptime() };
+        break bucle;
+      }
+      juzgadas += 1;
       const r = await aplicarUna(mut, guard, limpia);
       if (r.ok) {
         vivas += 1;
@@ -1630,6 +1764,20 @@ if (ejecutadoDirectamente(import.meta.url)) {
       else if (r.mudo) { mudos.push(`${guard} · ${r.mudo}`); console.log(`  ✖ ${guard} · MUDO`); }
       else { ciegos.push(`${guard} · ${r.ciego}`); console.log(`  ? ${guard} · CIEGO`); }
     }
+  }
+  // 🔴 SCRUM-935d · el corte entra como una CIEGA más, con la lista: así sale por la misma puerta
+  // (código 2) y no puede leerse como un verde. Va antes del suelo de ejecución a propósito: si el
+  // corte llega antes de la primera mutación, «no he medido nada» es verdad, pero el MOTIVO es éste.
+  // 📌 SCRUM-935c (propuesta D) · el coste de cada guard, NOMBRADO. El 16-oct un solo commit subió
+  // `scrum813` de ~45 s a ~285 s y nadie lo vio hasta que el job empezó a morir en el techo.
+  for (const linea of guardsCaros(costes, process.uptime())) console.log(linea);
+  if (corte) {
+    const msg = mensajeDeCorte({
+      juzgadas, pendientes: pendientesDesde(censo, corte.guardIdx, corte.desde),
+      transcurridoS: corte.transcurridoS, presupuesto,
+    });
+    console.log(`\n${msg}`);
+    ciegos.push(msg);
   }
   // 🔴 SCRUM-754 · el recuento va CON la condición en la que se tomó. «vivas N · mudas 0» sin
   // decir sobre qué árbol es exactamente lo que se pudo creer una vez y no era verdad.
