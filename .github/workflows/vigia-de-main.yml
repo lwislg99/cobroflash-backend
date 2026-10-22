@@ -28,6 +28,10 @@
 # un descendiente aún CORRIENDO, espera sin avisar. Para eso cada pasada vuelve a juzgar la punta y
 # los pendientes del Issue con el dato de GitHub, y le da al motor la línea (`git rev-list`).
 #
+# EL CIEGO DEL META-GUARD (SCRUM-1339r, decisión del fundador c.20219 · 2b): su job cortado o cancelado,
+# o salido con 2 en el paso de las mutaciones, es CIEGO con causa propia, no ROJO: no lo absuelve un
+# verde posterior, y manda aunque otro job del run esté en rojo (va nombrado en el motivo).
+#
 # ⚠️ Lo que NO se pudo probar fuera de GitHub, declarado en `docs/master/SCRUM-1393c.md`: que los
 # disparadores salten, que el cron llegue, y que el Issue se escriba. Hasta su primera pasada, CIEGO.
 name: Vigía de main
@@ -44,6 +48,9 @@ on:
 permissions:
   contents: read
   actions: read
+  # SCRUM-1339r (excepción de c.20147, ensanchada por c.20219 · 2b): el 2 del meta-guard sólo se ve en
+  # la anotación del paso que cae («Process completed with exit code 2.»), y leerla pide esto.
+  checks: read
   issues: write
 
 concurrency:

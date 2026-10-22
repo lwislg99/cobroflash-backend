@@ -2360,3 +2360,128 @@ coincidan los dos: si entonces la señal no da 0, `build + tests` cae para todo 
 · 1 fail · 5 skip. El fallo es `scrum687-constancia-del-alter` por `ERR_MODULE_NOT_FOUND` de
 `dist/…/constanciaDelAlter.js`: el worktree nace sin `dist`, así que ese test queda **sin mirar**.
 Los 5 skip: banco desechable (4) y el ④ de 1405c, que se salta solo cuando no hay medida.
+
+# SCRUM-1339r · 2b: el vigía de `main` recoge el CIEGO del meta-guard (su 2 y su corte a 30 min); 2a, PARADA: bloquear pide tocar `ci.yml`, y la cifra de 1405d es de otra población
+
+**Medido contra:** `origin/main` = `75884928b170ec0ec02e35921426e5bd711cbb0f` · 2026-10-22T09:09:03Z
+
+A9: comprobación → `tests/scrum1339r-vigia-ciego-del-metaguard.test.mjs`
+
+J6 (`jv-j6v`, equipo de Javier), por encargo del orquestador `cobroflash-backend-5f`. Decisión: SCRUM-1339
+c.20219 (22-oct, tres «Ok tu recomendación» del fundador, copiadas por el orquestador de su documento).
+Carril: J6. `.github/workflows/vigia-de-main.yml` es de J6 por la excepción de SCRUM-1393 c.20147
+(`dos-equipos.md` §3.4), y c.20219 la ensancha a esto. `scripts/vigia-silencio-de-main.mjs` no tiene fila
+(SCRUM-1324, J6). Hook de arranque: «SIN IDENTIDAD» (SCRUM-1498); seguí, como dice la ficha.
+
+## En corto
+
+| pieza | estado | dónde se ve |
+|---|---|---|
+| 2b · el 2 del meta-guard es CIEGO, no ROJO | hecho | `scripts/vigia-silencio-de-main.mjs` (`ciegoDelMetaGuard`), `tests/scrum1339r-…` |
+| 2b · el corte a 30 min (`cancelled`) es CIEGO del meta-guard aunque otro job esté en rojo | hecho | lo mismo |
+| 2b · simulación en seco contra el Issue #2641 | hecho, sólo lectura | `evidencias/SCRUM-1339/r-seco-2641-*.txt` |
+| 2a · la señal de nombres BLOQUEA si empeora | **NO HECHO, parado**: pide `ci.yml` (S5 y fundador) | abajo, «2a» |
+| 2c · las tres copias del flag | no es de este tramo (S3/S5, lo pasa el orquestador) | — |
+
+## 2b · Lo que medí antes de escribir la regla
+
+`r-meta-guard-de-main.mjs` (sólo lectura): los últimos **60** runs del CI por `push` a `main`, del
+19-oct al 21-oct. **37** con 0 jobs (sustituidos). De los **23** con el job del meta-guard: **15**
+`cancelled` cortados en el techo (30,3 min; anotación «The job has exceeded the maximum execution time
+of 30m0s»), **3** `failure` con «Process completed with exit code 2.» en el paso de las mutaciones,
+**5** `success` y **0** con salida 1. 15 + 3 + 5 = 23.
+
+🔴 **Lo que cambió el diseño:** los 18 que no son verdes llevaban **«guards de navegador» en rojo** al
+lado. El vigía miraba los rojos ANTES que los cancelados, así que los 18 salían ROJO: el corte del
+meta-guard no se nombraba nunca, y su 2 se leía como un rojo más, que un verde posterior absuelve. Por
+eso el CIEGO del meta-guard **manda aunque haya otro job en rojo**, y ese rojo va nombrado en el motivo.
+
+## 2b · La regla
+
+- Meta-guard `cancelled` o `timed_out` **con algún otro job del run que no se canceló** → CIEGO, causa
+  `meta-guard`, «cortado o cancelado: no llegó a su resumen». Si se cancelaron TODOS los jobs, el CIEGO
+  es del run (lo de siempre, sin causa): eso lo exige `scrum1393e`, que me cayó con mi primera versión.
+- Meta-guard `failure` con UN solo paso caído, el de las mutaciones, y código **2** leído de su
+  anotación → CIEGO del meta-guard. El código se ata a la `SALIDA_CIEGO` del instrumento en el test.
+  Con 2 en otro paso (`tsc` también sale con 2) o con 1 (un guard MUDO) → ROJO, como antes.
+- Si la anotación no se puede leer → ROJO, con «el código de salida del meta-guard no se pudo leer:
+  puede ser su CIEGO (2)». No se calla ni pasa a verde.
+- Ese CIEGO **no se absuelve** (no es «sustituido») y cuenta como «con run» para 1393f.
+- El workflow pide `checks: read`, porque la anotación sale de `check-runs/<id>/annotations`.
+- El suelo del modo por commit pasa de 6 a 8 cebos: el 2 con un rojo al lado es CIEGO, y el 1 es ROJO.
+
+## 2b · Simulación en seco contra el Issue #2641
+
+Los mismos pasos del workflow, con el `previos` real del Issue (cuerpo y 16 comentarios), la línea de
+primer padre de la punta `75884928b` y la red de 34 h. Motor de `main` contra el mío
+(`r-seco-2641-antes.txt` / `-despues.txt`):
+
+| | antes | después |
+|---|---|---|
+| commits mirados | 24 | 24 |
+| ROJO | 8 | **1** |
+| CIEGO | 16 | **23** (7 del meta-guard · 14 sustituidos · 2 sin causa) |
+| la punta `75884928b170` | ROJO | CIEGO del meta-guard (cortado), con el navegador en rojo nombrado |
+| acción sobre el Issue | comentar, no cierra | comentar, no cierra |
+
+Cambian **7 de 24**: 5 cortados y 2 que salieron con 2 (`aa68b01afb68`, `321ce160b0d5`). Control de cero: el
+único que sigue ROJO, `7b1765142558`, tiene el meta-guard en `success` y sólo el navegador en rojo.
+Positivo: los dos con 2 son los dos que el Issue ya listaba con el meta-guard en rojo.
+
+**Lo que esto trae, y no es mío decidirlo:** esos 7 commits quedan **pendientes para siempre** en el
+Issue (un CIEGO sólo lo quita volver a juzgar ESE commit en verde), y la primera pasada los vuelve a avisar
+una vez, ahora como CIEGO (la marca es por commit y estado). Hoy el Issue tampoco cerraba: la punta lleva
+el navegador en rojo. Con un meta-guard que se corta en casi cada run desde el 16-oct (935c), el Issue
+queda abierto hasta que se arregle el techo (propuestas A–D de SCRUM-935c).
+
+## 2b · Rojo sembrado y mutación
+
+- 7 casos en `tests/scrum1339r-…`, con las anotaciones literales de dos jobs reales (115146037750, que
+  salió con 2, y el meta-guard de 75884928b, cortado). Se siembran el 2 con el navegador en rojo, el corte
+  con el navegador en rojo, el run entero cancelado, el 1, el 2 de `tsc` y el código sin leer. El suelo
+  con el juez de antes (el 2 como ROJO) sale «NO reconoce».
+- Dos mutaciones declaradas (`MUTACIONES_QUE_ME_TUMBAN`), pasadas con `correr` y `aplicarUna` del
+  instrumento de la casa (`r-mutar.mjs`, `r-salida-mutar.txt`): las dos **VIVAS**. Como control positivo,
+  sobre `scrum1405c` en la misma pasada: 7 de 7 vivas. Árbol limpio después (`git status` vacío).
+- En local: los 7 míos y los de 1393c/d/e/f y 1324, 48 de 48. Con los guards de registro, de suite y
+  los 5 de árbol entero de SCRUM-1560 (30 ficheros), 291 de 291, con `dist/` de `tsc --noCheck`.
+- De paso: el trinquete de `scrum812` cayó con «LA COBERTURA HA SUBIDO a 31», porque mis casos nombran
+  al «meta-guard». Subo `SUELO_GUARD_QUE_DECLARAN` de 30 a 31, con su entrada y su mutación ④ movida a la
+  vez (como hizo SCRUM-1257e). Es subir lo que pide el propio trinquete, no aflojarlo. Las 5 mutaciones
+  de `scrum812`, VIVAS después del cambio.
+- ⚠️ Coste: dos mutaciones más para un meta-guard que ya muere en su techo. El fichero carga en
+  milisegundos (son funciones puras), pero no lo he medido en CI.
+
+## 2a · Por qué paro
+
+1. **Con el script no basta.** El paso de la señal en `ci.yml` lleva `continue-on-error: true` (es el
+   de «¿Faltan casos declarados en el TAP?»), así que el job no cae aunque el script salga 1. Bloquear
+   pide quitar eso o poner otro paso: `ci.yml`, de S5 y del fundador. Además `scrum1339d` vigila que el
+   script salga siempre 0.
+2. **La cifra de 1405d no es de esta población.** «≤15 por pasada y ≤2 de 4» mide la COBAYA del caso ④
+   de `scrum1405c` (320 casos × 4 pasadas). La señal mide la tanda entera (11.998 declarados en 1.436
+   ficheros, del último run). Usar 15 como umbral de la señal sería ELEGIR un número.
+3. **Lo que da hoy la señal** (`r-senal-en-los-obligatorios.mjs`, de las anotaciones del check): de los
+   últimos 100 runs del CI (19-oct 11:28Z a 21-oct 15:48Z), **71** obligatorios juzgados (59 success y 12
+   failure), y en los 71 **ausentes=0**. Positivo, con el mismo lector: el job 113113442033 (#2303) da
+   ausentes=18. Desde 1405c la línea base de la tanda es 0, y «empeorar» sería «cualquier ausente».
+
+Se lo pasé al orquestador con tres salidas: (a) S5 quita el `continue-on-error` y el script sale 1 con
+ausentes > 0 (umbral 0, derivado de los 71); (b) lo mismo con otra cifra, que tendría que firmar el
+fundador; (c) dejar que avise. No elijo.
+
+## Lo que NO he medido
+
+- Que `checks: read` deje leer la anotación con el `GITHUB_TOKEN` del workflow. Lo leí con mi cuenta. Si
+  no deja, cada 2 sale ROJO con «no se pudo leer»: avisa igual, pero no queda pendiente. Hasta su primera
+  pasada en GitHub, CIEGO.
+- El coste de las dos mutaciones en CI. Nada en Linux.
+- La tanda completa: no corrida (sólo los ficheros del vigía y los guards de registro).
+
+## Mis errores
+
+1. Mi primera regla daba «CIEGO del meta-guard» también cuando se cancela el run ENTERO, que es el caso de
+   1393e. Lo cazó `scrum1393e`, y arreglé el código, no el test.
+2. Empecé a diseñar 2b pensando que el corte a 30 min «ya salía CIEGO», porque `cancelled` es CIEGO en el
+   motor. Era verdad sólo con todo lo demás en verde, y en `main` no pasaba nunca. Lo destapó la
+   simulación, no el código.
