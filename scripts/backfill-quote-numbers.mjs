@@ -8,10 +8,22 @@
  * Uso:  node scripts/backfill-quote-numbers.mjs           (dry-run, no escribe)
  *       node scripts/backfill-quote-numbers.mjs --apply   (escribe)
  */
+import 'dotenv/config';
+import path from 'node:path';
 import { PrismaClient } from '@prisma/client';
+import { comprobarCredencialDeProduccion, OK } from './_clave-vs-destino.mjs';
 
 const APPLY = process.argv.includes('--apply');
-const prisma = new PrismaClient();
+
+// SCRUM-1575b · antes de conectar, el guard de destino sobre la MISMA url que recibe el cliente:
+// producción, un destino sin declarar o una URL ilegible → no se conecta.
+const url = process.env.DATABASE_URL;
+const destino = comprobarCredencialDeProduccion('DATABASE_URL', url, path.basename(process.cwd()));
+if (destino.veredicto !== OK) {
+  console.error(destino.mensaje);
+  process.exit(1);
+}
+const prisma = new PrismaClient({ datasources: { db: { url } } });
 
 const merchants = await prisma.merchant.findMany({
   select: { id: true, name: true, nextQuoteNumber: true },
