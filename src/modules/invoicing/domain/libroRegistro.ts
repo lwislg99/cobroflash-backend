@@ -41,6 +41,10 @@ export interface FacturaParaLibro {
   currency: string | null;
   status: string | null;
   customerId: number | null;
+  /** SCRUM-1058c · las columnas congeladas al emitir (`clienteCongelado.ts`). Opcionales: el 303 no las pide. */
+  customerName?: string | null;
+  customerLegalName?: string | null;
+  customerTaxId?: string | null;
   quoteId: number | null;
   chargeId: number | null;
   albaranRefs: unknown;
@@ -52,6 +56,11 @@ export interface AsientoLibro {
   fecha: string | null;
   tipo: string | null;
   clienteId: number | null;
+  /**
+   * SCRUM-1058c · el destinatario que se CONGELÓ en la factura. `null` = factura anterior al
+   * escritor (`customerName` a NULL): ahí sólo queda la ficha viva. Se copia, no se resuelve.
+   */
+  clienteCongelado: { name: string; legalName: string | null; taxId: string | null } | null;
   base: number | null;
   cuota: number | null;
   /**
@@ -211,6 +220,9 @@ export function construirLibroRegistro(params: {
         : (typeof f.createdAt === 'string' ? f.createdAt : null),
       tipo: f.type ?? null,
       clienteId: typeof f.customerId === 'number' ? f.customerId : null,
+      clienteCongelado: f.customerName != null
+        ? { name: f.customerName, legalName: f.customerLegalName ?? null, taxId: f.customerTaxId ?? null }
+        : null,
       base: tieneLineas ? desglose.base : null,
       cuota: tieneLineas ? desglose.cuota : null,
       // Mismo `desglose`, misma llamada: el 303 suma ESTO, así que no hay dos caminos que puedan

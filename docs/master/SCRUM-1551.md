@@ -324,3 +324,127 @@ Va a mis cicatrices (línea A9 de arriba).
 | ③ aceptaciones, y re-comprobar `4deaa1a6d479` | ③ (más el origen de `48e3140b2083`, que es nuevo) |
 | ④ proponer redacción con estado real y coste | ④, R1-R6, D1 y «Coste de aplicar» |
 | aplicar | **NO HECHO, por mandato**: espera la firma del fundador sobre R1-R6 y su decisión sobre D1 |
+
+---
+
+# APÉNDICE · 22-oct-2026 · SCRUM-1551b · R1-R6 y D1 (a) aplicadas en `/legal/alcance-beta`
+
+**Medido contra:** `origin/main` = `75884928b170ec0ec02e35921426e5bd711cbb0f` · 2026-10-22T09:03:57Z
+
+A9: aviso → cicatriz J4 «en el cotejo de las R1-R6 puse «WhatsApp» a secas entre los textos que tenían que haber desaparecido, y el documento lo dice con razón en otra viñeta: el control habría dado «NO COINCIDE» para siempre, y al arreglar el fallo habría tentado quitar el control entero» — no se pudo comprobar: el cotejo es de un solo uso y vive fuera del repo
+
+**Quién:** jv-j4j (puesto J4, equipo de Javier), por encargo del orquestador `cobroflash-backend-5f`.
+Carril a mano: el hook de inicio dijo «SIN IDENTIDAD» (SCRUM-1498); se construye con la orden del
+orquestador. Etiquetas leídas en el ticket: `area-j4`, `equipo-javier`, `decision-jefe`, `fundador`,
+`legal`, `microcopy`, `sin-firma`, `verifactu`. Ninguna de equipo-luis.
+
+## 1 · Las firmas, leídas en Jira
+
+- `SCRUM-1551 c.20208` (22-oct, escrito por el orquestador; la firma es del fundador, dada en el
+  chat): **«Firmo todas»** sobre R1-R6 de §④ de este registro.
+- `SCRUM-1551 c.20217` (22-oct, igual): D1 → **«1-A»**, la opción (a), con el literal de §④ D1. En el
+  mismo PR que R1-R6, un solo cambio de versión. (b) y (c), descartadas.
+
+Los siete textos se han copiado de §④ de este registro, no de los comentarios ni del encargo.
+
+## 2 · PASO 0
+
+- SCRUM-534q **sí está en `main`**: `#2415`, merge `11ca1e05f`; la línea 29 de `main` ya llevaba P2.
+  R5 se apoya en texto que `main` tiene.
+- R1-R6 y D1 no estaban aplicadas: en el `ALCANCE_BETA.md` de `main` seguían «Cobro integrado»,
+  «Justificantes de cobro», «email y WhatsApp», «YaQu emite justificantes» y «mientras tanto», y el
+  único aviso de borrador estaba en la cabecera `>`, que no se sirve.
+- Ninguna rama `scrum-1551<letra>-` en el remoto; el único PR con ese prefijo es `#2418` (MERGED).
+
+## 3 · Lo aplicado: un solo cambio de versión
+
+| qué | texto | líneas (antes → después) |
+|---|---|---|
+| D1 (a) | «Borrador pendiente de revisión legal: …», párrafo propio, FUERA de la cita `>` | — → L9 (+ L10 en blanco) |
+| R1 | «Cobro integrado…» → «**Albaranes y partes de trabajo** de cada trabajo.» | L21 → L23 |
+| R2 | fuera la viñeta «Justificantes de cobro…» | L22 → — |
+| R3 | «soporte / por email y WhatsApp.» → «soporte / por email.» | L23-24 → L24-25 |
+| R4 | viñeta nueva, primera de §2, DELANTE de la facturación («del punto siguiente» es cierto) | — → L29-31 |
+| R5 | «YaQu emite / justificantes de cobro (no facturas fiscales)» → «YaQu no emite / facturas ni ningún otro documento de cobro» | L29-30 → L33-34 |
+| R6 | tarjeta, sin el «mientras tanto» | L33-34 → L37-38 |
+
+El documento pasa de 53 a 57 líneas. Fin de línea LF, sin BOM, como estaba.
+
+**Dónde va D1, y por qué ahí:** es la primera línea que se sirve después del título. Servida por el
+`readLegalDoc` real sale como `<h1>` → `<p>Borrador pendiente…</p>` → `<hr/>` → el contrato: se lee
+antes de las partes, de §1-§5 y de la casilla de aceptar. Va como texto llano, sin negrita: el literal
+firmado no la lleva.
+
+**Cotejo byte a byte con §④** (scripts de un solo uso, fuera del repo):
+- R1, R4, R5, R6: extrae los cuatro bloques «Propuesto» con sangría de §④ y los busca literales; R3
+  por su frase con el salto; R2 por ausencia; y que no quede ninguna de las cinco frases retiradas.
+  Sobre la rama: **4 de 4, R2 y R3 sí, 0 retiradas → COINCIDE.** Controles: el fichero de `main` →
+  NO COINCIDE (0 de 4); la rama con UNA tilde quitada («señal» → «senal») → NO COINCIDE.
+- D1: el literal se EXTRAE de §④ D1 por programa (96 caracteres, con el salto de línea del registro
+  hecho espacio) y se inserta tal cual; aparece 1 vez en el documento.
+
+## 4 · La versión del documento
+
+Con el `readLegalDoc` REAL de `dist` (compilado con `tsc --noCheck`), cambiando de carpeta ANTES de
+cargar el módulo (la cicatriz de 1551):
+
+| qué | versión |
+|---|---|
+| fichero de `main` | `597cbb48f4b9` |
+| `GET https://yaqu.app/legal/alcance-beta`, 22-oct ~08:59Z: HTTP 200, 4.563 B | `597cbb48f4b9` (producción sirve `main`) |
+| esta rama (R1-R6 + D1) | **`ac7349fd0b84`** |
+
+En el texto servido de la rama, «Cobro integrado» ya no se ve y «Albaranes y partes» sí; en el de
+`main`, al revés.
+
+## 5 · Citas por línea, re-medidas
+
+`git grep` de `ALCANCE_BETA` seguido de `:N`, `L`, «línea» o `§`, fuera de `docs/master/`: 3 citas.
+D1 suma dos líneas antes de todo, R2 resta una y R4 suma tres.
+
+| quién | antes | ahora | qué se hizo |
+|---|---|---|---|
+| `docs/legal/INVENTARIO_AFIRMACIONES_VERIFACTU.md:320` (C9) | `:28-29` | `:32-33` | corregida (sólo el número; la cita de C9 es un texto viejo y no se toca) |
+| `tests/scrum341-condicion-precio-publicada.test.mjs:4` (comentario) | `:38` | `:42` | corregida; el test lee el TEXTO de la condición, no la línea |
+| `docs/go-live/puerta.json:35`, fila 4 CERRADA | `:28` | — | **no se toca**: es el motivo de un cierre del 14-oct y describe la línea de aquel día |
+
+`MICROCOPY_BLOQUEADA` (`tests/scrum302-rotulos-completos.test.mjs:78`): una sola entrada,
+`btnConvertirFactura`. Ningún texto de aquí espera al asesor por esa lista.
+
+## 6 · Lo que NO se ha hecho
+
+- **La consulta de aceptaciones de ③ NO se ha lanzado**: es contra producción. Queda pendiente y la
+  pide el orquestador. Hasta tenerla, que nadie haya aceptado `597cbb48f4b9` no está medido.
+- Las filas 2 (R1-R6) y 3 (D1) de `docs/go-live/puerta.json` siguen `abierta`: cerrarlas pide el sha
+  de merge, que no existe hasta que entre.
+- D1 hace visible el aviso; NO arregla las partes en blanco ni los tres «[REVISAR ASESOR]» (§④ D1 ya
+  lo decía).
+- `public/terminos.html` (c.20051) y el `<p>` partido de las viñetas largas (fila 9 de la puerta: R4
+  tiene tres líneas y se servirá partida igual que las demás) no son de este tramo.
+- La página con el texto nuevo en `yaqu.app`: hasta el merge, producción sirve `597cbb48f4b9`.
+
+## 7 · Aceptación → dónde se ve
+
+| aceptación (del encargo) | dónde se ve |
+|---|---|
+| re-medir quién cita `ALCANCE_BETA.md` por línea y corregir las que se mueven | §5; diff de C9 y de `scrum341:4` |
+| R1-R6 (y D1, c.20217) en UN commit / PR, un único cambio de versión | `docs/legal/ALCANCE_BETA.md` en esta rama; §4 (`ac7349fd0b84`) |
+| consulta de aceptaciones de ③ | NO HECHO → contra producción; la pide el orquestador |
+| tests que leen el documento y guards de microcopy y legales en verde | §8 |
+
+## 8 · Tests
+
+Corridos en este árbol con `dist` de `tsc --noCheck`, sobre 283 ficheros (los que leen `docs/legal/`,
+`docs/master/` o las cicatrices, los de anclas, y 1554c, 406, 273, 237, 850, 1294, 1572). Recuento en
+el comentario de entrega de Jira.
+
+## Dos errores míos, contados
+
+1. En el cotejo puse «WhatsApp» a secas entre las frases que tenían que haber desaparecido. El
+   documento la dice, con razón, en otra viñeta («envío al cliente final por WhatsApp», L18): el
+   cotejo salía «NO COINCIDE» con el texto ya bien puesto. Lo cacé leyendo qué línea casaba antes de
+   tocar el documento; el término pasó a ser la frase retirada entera, «email y WhatsApp». Va a mis
+   cicatrices.
+2. En la primera versión de este tramo, la línea `A9:` citaba un TROZO de esa cicatriz. El guard de la
+   A9 (`tests/scrum1294-a9-leccion-en-a10.test.mjs`) compara la frase ENTERA y cayó: lo cazó el guard,
+   no yo. Ahora va la frase entera.
