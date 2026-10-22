@@ -48,7 +48,7 @@
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url'; // SCRUM-730: `pathname` no decodifica
+import { fileURLToPath, pathToFileURL } from 'node:url'; // SCRUM-730: `pathname` no decodifica
 import { run } from 'node:test'; // SCRUM-745 (adopción): eventos, no reporter
 import ts from 'typescript';
 import { ejecutadoDirectamente } from './_puerta-de-entrada.mjs'; // SCRUM-765
@@ -76,6 +76,7 @@ import {
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIR_TESTS = path.join(RAIZ, 'tests');
+const TUBERIA_BLOQUEANTE = pathToFileURL(path.join(RAIZ, 'scripts', 'tuberia-bloqueante.mjs')).href; // SCRUM-1339s
 
 export const SALIDA_MUDO = 1;
 export const SALIDA_CIEGO = 2;
@@ -1057,6 +1058,11 @@ export async function correr(guard, propias = null) {
     files: [path.isAbsolute(guard) ? guard : path.join(DIR_TESTS, guard)],
     cwd: RAIZ,
     forceExit: true,
+    // 🔴 SCRUM-1339s · la salida C de SCRUM-1405 (c.19584), extendida aquí por SCRUM-1339 c.20219.
+    // Con `forceExit` el hijo sale con la cola de su informe sin escribir, y en Linux se pierde: los
+    // NO APARECE de `porQueNoCayo`. El módulo pone bloqueante su tubería, como la tanda desde #2429.
+    // Por URL y no por ruta: en Windows `--import=D:\…` no es un especificador válido.
+    execArgv: [`--import=${TUBERIA_BLOQUEANTE}`],
     timeout: TIMEOUT_MS,
   });
   // ⚠️ EL FLUJO HAY QUE CONSUMIRLO. Con sólo suscribirse a `test:pass` no arranca: salen CERO

@@ -410,6 +410,47 @@ export function informe(v, { ahora, origen, poblacion }) {
 /** La causa de un CIEGO que se puede absolver (SCRUM-1393e): run cancelado con 0 jobs. */
 export const CAUSA_SUSTITUIDO = 'sustituido';
 
+// SCRUM-1339r · EL CIEGO DEL META-GUARD (decisión del fundador del 22-oct, SCRUM-1339 c.20219, 2b).
+// El meta-guard sale con 2 cuando no supo juzgar algún guard, y GitHub lo pinta `failure`: aquí era
+// un ROJO, y un verde posterior lo absolvía. Y cortado a sus 30 min (128 veces desde el 15-oct,
+// SCRUM-1538/935c) sale `cancelled` sin llegar a su resumen. Las dos cosas son «nadie sabe si los
+// guards caen cuando deben»: CIEGO, con su causa, que NO se absuelve, y que manda aunque otro job
+// del mismo run esté en rojo (ese rojo va nombrado en el motivo). El 2 se lee de la anotación que
+// GitHub deja al paso que cae («Process completed with exit code 2.»), y SÓLO si el paso que cae
+// es el de las mutaciones: un `npm run build` que cae también puede salir con 2 (`tsc`).
+
+/** La causa de un CIEGO del meta-guard: cortado, cancelado o salido con su 2. No se absuelve. */
+export const CAUSA_META_GUARD = 'meta-guard';
+/** El job y su paso, por IDENTIDAD; el test los busca en `ci.yml`. */
+export const JOB_META_GUARD = 'meta-guard · los guards caen cuando deben';
+export const PASO_DEL_META_GUARD = 'Cada guard cae con la mutación que declara';
+/** «No supe juzgar»: `SALIDA_CIEGO` de `scripts/meta-guard-mutaciones.mjs` (el test ata las dos). */
+export const SALIDA_CIEGO_DEL_META_GUARD = 2;
+
+/** El código de salida que GitHub anota al paso que cae, PURO. `null` si no hay exactamente uno. */
+export function codigoDeSalidaDeAnotaciones(anotaciones) {
+  const codigos = (Array.isArray(anotaciones) ? anotaciones : [])
+    .filter((a) => a?.annotation_level === 'failure')
+    .map((a) => /^Process completed with exit code (\d+)\.$/.exec(String(a.message ?? '').trim()))
+    .filter(Boolean).map((m) => Number(m[1]));
+  return codigos.length === 1 ? codigos[0] : null;
+}
+
+/** Por qué el meta-guard de este run es CIEGO, o `null` si no lo es. PURO. */
+export function ciegoDelMetaGuard(jobs) {
+  const j = (Array.isArray(jobs) ? jobs : []).find((x) => x.name === JOB_META_GUARD);
+  if (!j || j.status !== 'completed') return null;
+  // Cancelado él SOLO: si se canceló el run entero (todos sus jobs), el CIEGO es del run, no suyo (1393e).
+  const propio = jobs.some((x) => x.name !== JOB_META_GUARD && x.status === 'completed' && x.conclusion !== 'cancelled');
+  if (j.conclusion === 'cancelled' || j.conclusion === 'timed_out') return propio ? `cortado o cancelado («${j.conclusion}»): no llegó a su resumen` : null;
+  if (j.conclusion !== 'failure') return null;
+  const caidos = (j.steps ?? []).filter((s) => s.conclusion === 'failure').map((s) => s.name);
+  if (caidos.length !== 1 || caidos[0] !== PASO_DEL_META_GUARD) return null;
+  return j.codigoDeSalida === SALIDA_CIEGO_DEL_META_GUARD
+    ? `salió con ${SALIDA_CIEGO_DEL_META_GUARD} en «${PASO_DEL_META_GUARD}»: no supo juzgar algún guard`
+    : null;
+}
+
 /** Los jobs del workflow CI que se exigen en cada commit de `main`: los de `JOBS_DE_MAIN`. */
 export const JOBS_DEL_CI = JOBS_DE_MAIN.filter((j) => j.workflow === 'CI').map((j) => j.job);
 
@@ -450,7 +491,17 @@ export function veredictoDeCommit({ sha, run, jobs, ahora, topeMin, declarados =
   if (jobs.length === 0) return r('CIEGO', `run «${run.conclusion}» con 0 jobs`, [], run.conclusion === 'cancelled' ? CAUSA_SUSTITUIDO : null);
 
   const rojos = jobs.filter((j) => j.conclusion === 'failure');
-  if (rojos.length) return r('ROJO', `en rojo: ${rojos.map((j) => `«${j.name}»`).join(', ')}`, rojos);
+  const delMetaGuard = ciegoDelMetaGuard(jobs);
+  if (delMetaGuard) {
+    const otros = rojos.filter((j) => j.name !== JOB_META_GUARD);
+    const ademas = otros.length ? ` · además en rojo: ${otros.map((j) => `«${j.name}»`).join(', ')}` : '';
+    return r('CIEGO', `CIEGO del meta-guard: ${delMetaGuard}${ademas}`, jobs.filter((j) => j.name === JOB_META_GUARD || j.conclusion === 'failure'), CAUSA_META_GUARD);
+  }
+  // Un meta-guard en `failure` cuyo código no se pudo LEER (`null`; `undefined` = no se intentó) puede
+  // ser su 2: sigue ROJO, que avisa, pero lo dice.
+  const sinCodigo = rojos.some((j) => j.name === JOB_META_GUARD && j.codigoDeSalida === null)
+    ? ' · el código de salida del meta-guard no se pudo leer: puede ser su CIEGO (2)' : '';
+  if (rojos.length) return r('ROJO', `en rojo: ${rojos.map((j) => `«${j.name}»`).join(', ')}${sinCodigo}`, rojos);
 
   const noCorrieron = jobs.filter((j) => j.status !== 'completed' || j.conclusion !== 'success');
   const nombres = new Set(jobs.map((j) => j.name));
@@ -474,8 +525,9 @@ export function salidaDeCommits(veredictos) {
 }
 
 /**
- * EL SUELO DEL MODO POR COMMIT: seis cebos FABRICADOS aquí, uno por estado y dos de CIEGO (el que
- * no corrió y el cancelado con 0 jobs, que son los dos que pasaron el 1-oct). `juez` se puede
+ * EL SUELO DEL MODO POR COMMIT: cebos FABRICADOS aquí, uno por estado y dos de CIEGO (el que
+ * no corrió y el cancelado con 0 jobs, que son los dos que pasaron el 1-oct), más los dos del
+ * meta-guard (SCRUM-1339r: su 2 es CIEGO, su 1 es ROJO). `juez` se puede
  * cambiar para comprobar que un juez ciego NO pasa el suelo.
  */
 export function sueloPorCommit(juez = veredictoDeCommit) {
@@ -483,6 +535,10 @@ export function sueloPorCommit(juez = veredictoDeCommit) {
   const job = (name, conclusion) => ({ name, status: 'completed', conclusion });
   const todos = (c) => JOBS_DEL_CI.map((n) => job(n, c));
   const run = (status, conclusion, creado = '2026-01-01T11:50:00Z') => ({ status, conclusion, created_at: creado, html_url: null });
+  const metaGuard = (codigo, otros = []) => [
+    ...todos('success').filter((j) => j.name !== JOB_META_GUARD && !otros.some((o) => o.name === j.name)), ...otros,
+    { ...job(JOB_META_GUARD, 'failure'), steps: [{ name: PASO_DEL_META_GUARD, conclusion: 'failure' }], codigoDeSalida: codigo },
+  ];
   const cebos = [
     { sha: 'cebo-verde', run: run('completed', 'success'), jobs: todos('success'), esperado: 'VERDE' },
     { sha: 'cebo-rojo', run: run('completed', 'failure'), jobs: [...todos('success').slice(1), job(JOBS_DEL_CI[0], 'failure')], esperado: 'ROJO' },
@@ -490,10 +546,14 @@ export function sueloPorCommit(juez = veredictoDeCommit) {
     { sha: 'cebo-sin-run', run: null, jobs: null, esperado: 'CIEGO' },
     { sha: 'cebo-colgado', run: run('in_progress', null, '2026-01-01T06:00:00Z'), jobs: null, esperado: 'CIEGO' },
     { sha: 'cebo-corriendo', run: run('in_progress', null), jobs: null, esperado: 'CORRIENDO' },
+    // SCRUM-1339r: el meta-guard con su 2, con otro job en rojo al lado (lo que dio `main` el 19-21 oct),
+    // es CIEGO; con su 1 (un guard MUDO) es ROJO.
+    { sha: 'cebo-meta-guard-2', run: run('completed', 'failure'), jobs: metaGuard(2, [job(JOBS_DEL_CI[1], 'failure')]), esperado: 'CIEGO' },
+    { sha: 'cebo-meta-guard-1', run: run('completed', 'failure'), jobs: metaGuard(1), esperado: 'ROJO' },
   ];
   const estado = Object.fromEntries(cebos.map((c) => [c.sha, juez({ ...c, ahora, topeMin: 130 }).estado]));
   const ok = cebos.every((c) => estado[c.sha] === c.esperado);
-  return { ok, estado, detalle: `suelo por commit: ${ok ? 'reconoce' : 'NO reconoce'} sus seis cebos (${JSON.stringify(estado)})` };
+  return { ok, estado, detalle: `suelo por commit: ${ok ? 'reconoce' : 'NO reconoce'} sus ${cebos.length} cebos (${JSON.stringify(estado)})` };
 }
 
 /** El informe del modo por commit: primera línea la POBLACIÓN, la de recuento SIEMPRE, última el `EXIT=`. */
@@ -553,8 +613,8 @@ export function cuerpoDelAviso({ veredictos, ahora, origen, urlDelRun, callados 
 // commit no se mira aparte: el sucesor tiene a este por padre, y su run nace de su push.
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 
-/** SCRUM-1393f · el veredicto viene de un run del CI que existe. El único CIEGO con run que cuenta es el «sustituido». */
-export const conRun = (v) => !!v && (['VERDE', 'ROJO', 'CORRIENDO'].includes(v.estado) || (v.estado === 'CIEGO' && v.causa === CAUSA_SUSTITUIDO));
+/** SCRUM-1393f · el veredicto viene de un run del CI que existe: los CIEGO con run son el «sustituido» y (SCRUM-1339r) el del meta-guard. */
+export const conRun = (v) => !!v && (['VERDE', 'ROJO', 'CORRIENDO'].includes(v.estado) || (v.estado === 'CIEGO' && [CAUSA_SUSTITUIDO, CAUSA_META_GUARD].includes(v.causa)));
 
 /** SCRUM-1393f · el CIEGO `sinRun` cuyo sucesor inmediato en `linea` (la punta primero) tiene run. PURO. */
 export function sinRunPorSustitucion(v, veredictos, linea) {
@@ -708,7 +768,14 @@ async function leerCommitDeGitHub(sha, idDelCI) {
   const pagina = await gh(`repos/${REPO}/actions/workflows/${idDelCI}/runs?head_sha=${sha}&event=push&branch=main&per_page=20`);
   const run = [...pagina.workflow_runs].sort((a, b) => b.created_at.localeCompare(a.created_at))[0] ?? null;
   if (!run || run.status !== 'completed') return { run, jobs: null };
-  return { run, jobs: (await gh(`repos/${REPO}/actions/runs/${run.id}/jobs?per_page=100&filter=latest`)).jobs };
+  const jobs = (await gh(`repos/${REPO}/actions/runs/${run.id}/jobs?per_page=100&filter=latest`)).jobs;
+  // SCRUM-1339r: el 2 del meta-guard sólo está en la anotación del paso que cae (pide `checks: read`).
+  // Si no se puede leer, `null`: el veredicto sigue ROJO y lo dice; no se calla ni pasa a verde.
+  for (const j of jobs) {
+    if (j.name !== JOB_META_GUARD || j.conclusion !== 'failure') continue;
+    try { j.codigoDeSalida = codigoDeSalidaDeAnotaciones(await gh(`repos/${REPO}/check-runs/${j.id}/annotations?per_page=100`)); } catch { j.codigoDeSalida = null; }
+  }
+  return { run, jobs };
 }
 
 /**
