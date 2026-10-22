@@ -1,4 +1,4 @@
-// tests/scrum962c-censo-tactil-poblacion-vara-etiqueta.test.mjs — SCRUM-962c
+// tests/scrum962e-censo-tactil-poblacion-vara-etiqueta.test.mjs — SCRUM-962e
 //
 // `censo:tactil-panel` estaba roto en las DOS direcciones (medido por S2, SCRUM-962 tramos 962b y
 // 962b (2)): se le escapaban 42 controles y, de sus 72 cortos, sólo 8 incumplían DESIGN.md tal cual.
@@ -25,7 +25,7 @@ const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const partes = (sel) => sel.split(',').map((s) => s.trim());
 
 // Cada mutación reintroduce UNA avería del censo viejo; `cae` es el test que tiene que tumbarla.
-// Las corre el meta-guard, y `docs/master/evidencias/SCRUM-962c/mutar.mjs` las toma de aquí.
+// Las corre el meta-guard, y `docs/master/evidencias/SCRUM-962e/mutar.mjs` las toma de aquí.
 // (Los campos van como literales: el meta-guard las lee sin ejecutar el fichero.)
 export const MUTACIONES_QUE_ME_TUMBAN = [
   { fichero: 'scripts/_censo-distintos.mjs', de: "if (m.tocable >= minimoPara(ancho)) return 'cumple';", a: "if (m.tocable >= 44) return 'cumple';", cae: '⒞ la vara es la de DESIGN.md §5: depende del ancho' },

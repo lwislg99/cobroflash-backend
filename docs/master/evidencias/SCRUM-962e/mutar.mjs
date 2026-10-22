@@ -1,14 +1,19 @@
-// Banco de mutaciones de SCRUM-962c. Las mutaciones NO viven aquí: son MUTACIONES_QUE_ME_TUMBAN del
+// Banco de mutaciones de SCRUM-962e. Las mutaciones NO viven aquí: son MUTACIONES_QUE_ME_TUMBAN del
 // test del ticket (las mismas que corre el meta-guard; SCRUM-1387). Cada una reintroduce una avería
 // del censo viejo y tiene que tumbar el test que nombra su `cae`.
-// Uso, desde la raíz del repo:  node docs/master/evidencias/SCRUM-962c/mutar.mjs
+// Uso, desde la raíz del repo:  node docs/master/evidencias/SCRUM-962e/mutar.mjs
 import fs from 'node:fs';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import path from 'node:path';
 
-const TEST = 'tests/scrum962c-censo-tactil-poblacion-vara-etiqueta.test.mjs';
+const TEST = 'tests/scrum962e-censo-tactil-poblacion-vara-etiqueta.test.mjs';
 const { MUTACIONES_QUE_ME_TUMBAN } = await import(pathToFileURL(path.resolve(TEST)).href);
+// Cada mutación se deshace con `git restore --source=HEAD`: lo que no esté comiteado en scripts/ o
+// tests/ se perdería en silencio. Se perdió una vez en este mismo ticket (un `git add` que abortó
+// entero por una ruta que ya no existía): con el árbol sucio, el banco NO arranca.
+const sucio = execFileSync('git', ['status', '--porcelain', '--', 'scripts', 'tests'], { encoding: 'utf8' }).trim();
+if (sucio) { console.log('🔴 árbol con cambios sin comitear en scripts/ o tests/; comitéalos antes de mutar:\n' + sucio); console.log('EXIT=2'); process.exit(2); }
 const env = { ...process.env }; delete env.FORCE_COLOR;
 const correr = () => {
   const r = spawnSync(process.execPath, ['--test', TEST], { encoding: 'utf8', env });

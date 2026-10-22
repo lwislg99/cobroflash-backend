@@ -38,9 +38,9 @@
 // corto. La superficie que no lo caza **no está medida**, aunque devuelva cero. La sonda va en el
 // HTML que se sirve, en memoria: **no se toca ningún fichero del árbol**.
 //
-// ── SCRUM-962c · LA POBLACIÓN, LA VARA, LOS ESTADOS Y LA ETIQUETA, DECLARADOS ─────────────────
+// ── SCRUM-962e · LA POBLACIÓN, LA VARA, LOS ESTADOS Y LA ETIQUETA, DECLARADOS ─────────────────
 // S2 midió que este censo fallaba en las dos direcciones (SCRUM-962, tramos 962b y 962b (2)).
-// Desde 962c (el porqué de cada pieza, en `_censo-distintos.mjs`):
+// Desde 962e (el porqué de cada pieza, en `_censo-distintos.mjs`):
 //   ⒜ mide `POBLACION` = controles + campos de formulario, y lo dice. Los campos NO tienen vara
 //     escrita en DESIGN.md: se cuentan aparte y no se suman a los cortos.
 //   ⒝ abre los estados que sabe abrir (`ESTADOS`, con control de que se abrieron) y lo que no se
@@ -187,7 +187,7 @@ const PUERTO = await new Promise((ok) => srv.listen(0, '127.0.0.1', () => ok(srv
 
 // El recorrido: mismo criterio que el guard —censo derivado del DOM, con scroll, y el área de
 // toque como árbitro—, escrito una vez aquí en vez de copiar el medidor.
-// SCRUM-962c · sobre `POBLACION` (⒜), con la clase de cada elemento, y la casilla envuelta medida
+// SCRUM-962e · sobre `POBLACION` (⒜), con la clase de cada elemento, y la casilla envuelta medida
 // por su etiqueta (⒟). `viejo` y `tocablePropio` guardan lo que medía el censo antes, para la cifra
 // de comparación del final.
 const MEDIR = `(async (SEL, CAMPOS, CASILLAS, ARB_ETQ, VIEJO) => {
@@ -196,7 +196,7 @@ const MEDIR = `(async (SEL, CAMPOS, CASILLAS, ARB_ETQ, VIEJO) => {
   const nombreDe = (el) => {
     let c = '';
     if (el.className && typeof el.className === 'string') c = el.className.trim().split(/\\s+/).filter(Boolean).join('.');
-    // 962c · el tipo del \`input\`: «INPUT» a secas no distingue una casilla de un color o una fecha.
+    // 962e · el tipo del \`input\`: «INPUT» a secas no distingue una casilla de un color o una fecha.
     const t = el.tagName === 'INPUT' ? '[' + (el.getAttribute('type') || 'text') + ']' : '';
     return el.tagName + t + (c ? '.' + c : '');
   };

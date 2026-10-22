@@ -216,13 +216,15 @@ A9: sin fallo que generalice — mi medidor tuvo dos defectos (el ancho del elem
 
 ---
 
-## Tramo 962c (S3, 22-oct-2026) · El censo de los 44 px, arreglado en las dos direcciones
+## Tramo 962e (S3, 22-oct-2026) · El censo de los 44 px, arreglado en las dos direcciones
 
 **Medido contra:** `origin/main` = `808af5b4466d2649a1006d4c554d1f22e7eba47c` · 2026-10-22T10:31Z
 A9: sin fallo que generalice — mi control de estados dio «no se abrió» a dos pestañas que se abren VACÍAS con los datos de muestra (4 de 18 estados); salió 2 él solo y lo separé antes de dar ninguna cifra.
+A9: comprobación → `docs/master/evidencias/SCRUM-962e/mutar.mjs`
+(Lo que pasó: al renombrar, un `git add` abortó entero por una ruta que ya no existía, el commit salió sólo con los renombrados, y el banco de mutaciones, que restaura desde HEAD, deshizo los cambios sin comitear de los dos scripts. Sólo eran comentarios e id, y se rehicieron; es la casilla 9 de A23 y la incumplí yo. Desde ahora el banco no arranca con `scripts/` o `tests/` sucios.)
 
 **Encargo del orquestador** (mensaje a S3, 22-oct): arreglar el MEDIDOR (`scripts/censo-objetivo-tactil-panel.mjs`, carril S3) con las cuatro averías que S2 midió en los tramos 962b y 962b (2), con los controles positivos que le faltaban. **No se ha arreglado ningún control de pantalla** (eso es de J3 y de S2). `_medidor-de-toque.mjs` (compartido, sin dueño, lo usan los guards) **no se ha tocado**: `INTERACTIVOS` de los guards sigue igual.
-**Rama:** `scrum-962c-censo-tactil-cuatro-averias`. Tras medir entró en `main` el #2668 (962b) y otros siete commits; `git diff --stat 808af5b4..origin/main` sobre `public/`, el medidor, el banco y el censo sale **vacío**: la medida vale para la punta.
+**Rama:** `scrum-962e-censo-tactil-cuatro-averias`. Nació como «962c»; el control del sufijo antes del primer push encontró `962c` (#2681) y `962d` (#2685) de S2, abiertos, y se renombró todo a 962e. Tras medir entró en `main` el #2668 (962b) y otros siete commits; `git diff --stat 808af5b4..origin/main` sobre `public/`, el medidor, el banco y el censo sale **vacío**: la medida vale para la punta.
 **Banco:** worktree propio con `node_modules` propio (`npm ci --ignore-scripts`, sin `prisma generate`); `dist/` con `tsc` (el mismo error de tipos de `merchantAdmin.ts:147` que vio S2, sin efecto en el front). Navegador: UNA pasada con paso del orquestador (S2 tenía el suyo), cerrado al acabar y comprobado (0 Chrome míos vivos).
 
 ### Lo que cambia, avería por avería
@@ -252,9 +254,9 @@ Pasada final: **0 sondas fallidas en 56**, 18 estados abiertos, 0 que no abren.
 
 **El control de que se ha ARREGLADO el medidor y no cambiado por otro:** con la población, la vara y el estado VIEJOS, el censo nuevo imprime **72 distintos · 93 mediciones · 33 con `btn-sm` · 39 sin** — exactamente lo que daba el viejo en este árbol (`censo-antes.txt`). El árbitro no se ha movido.
 
-**Test:** `tests/scrum962c-censo-tactil-poblacion-vara-etiqueta.test.mjs`, 11 casos contra medidas fabricadas (sin navegador). **12 mutaciones** que reintroducen cada avería (vara fija de 44, `btn-sm` sin separar, campos sumados a cortos, `sinMirar` ciego, población vieja, árbitro de etiqueta con casillas, cada sonda desactivada, la etiqueta sin `label.control`, las sondas viejas, el estado que no abre sin salir 2): **12/12 MUERTAS, cada una por el test que nombra su `cae`**, base 11/11 verde, árbol restaurado (`mutar.txt`, `git diff --numstat` al lado de cada una). Viven en el test como `MUTACIONES_QUE_ME_TUMBAN` (las corre el meta-guard; SCRUM-1387) y `mutar.mjs` las toma de ahí.
+**Test:** `tests/scrum962e-censo-tactil-poblacion-vara-etiqueta.test.mjs`, 11 casos contra medidas fabricadas (sin navegador). **12 mutaciones** que reintroducen cada avería (vara fija de 44, `btn-sm` sin separar, campos sumados a cortos, `sinMirar` ciego, población vieja, árbitro de etiqueta con casillas, cada sonda desactivada, la etiqueta sin `label.control`, las sondas viejas, el estado que no abre sin salir 2): **12/12 MUERTAS, cada una por el test que nombra su `cae`**, base 11/11 verde, árbol restaurado (`mutar.txt`, `git diff --numstat` al lado de cada una). Viven en el test como `MUTACIONES_QUE_ME_TUMBAN` (las corre el meta-guard; SCRUM-1387) y `mutar.mjs` las toma de ahí.
 
-### La cifra (pasada final, `docs/master/evidencias/SCRUM-962c/censo-final.txt`)
+### La cifra (pasada final, `docs/master/evidencias/SCRUM-962e/censo-final.txt`)
 
 Población: **417 elementos distintos en 28 pantallas** — controles 281 · casillas 45 · campos 91.
 
@@ -315,5 +317,5 @@ Recomiendo P1 porque §6 ya lo dice sin excepción y el estilo de §5 ya lo da. 
 ### Cómo se reproduce
 
     npm run censo:tactil-panel                                              # el censo, salida 0/2
-    node --test tests/scrum962c-censo-tactil-poblacion-vara-etiqueta.test.mjs
-    node docs/master/evidencias/SCRUM-962c/mutar.mjs                        # desde la raíz: 12 mutaciones
+    node --test tests/scrum962e-censo-tactil-poblacion-vara-etiqueta.test.mjs
+    node docs/master/evidencias/SCRUM-962e/mutar.mjs                        # desde la raíz: 12 mutaciones

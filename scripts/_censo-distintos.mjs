@@ -12,7 +12,7 @@
 
 import { INTERACTIVOS, minimoPara } from './_medidor-de-toque.mjs';
 
-// ═══ SCRUM-962c · LA POBLACIÓN, LA VARA Y LO QUE NO SE MIRÓ, DECLARADOS ═══════════════════════════
+// ═══ SCRUM-962e · LA POBLACIÓN, LA VARA Y LO QUE NO SE MIRÓ, DECLARADOS ═══════════════════════════
 // S2 midió (SCRUM-962, tramos 962b y 962b (2)) que el censo fallaba en las DOS direcciones: se le
 // escapaban 42 controles y, de sus 72 cortos, sólo 8 incumplían DESIGN.md tal cual. Cuatro averías:
 //   ⒜ la población era `INTERACTIVOS` sin decir qué dejaba fuera: 0 de 36 `select` entraban;
@@ -102,7 +102,7 @@ export function sinMirar(resultados) {
  * así que demostraba que la pantalla se mide, nunca que la población esté completa.
  */
 const BLOQUE = 'display:block;box-sizing:border-box;width:160px;min-height:0;padding:0;border:0;margin:12px 0';
-export const SONDAS_HTML = '<div id="__sondas-962c">'
+export const SONDAS_HTML = '<div id="__sondas-962e">'
   + '<button id="__sonda" style="width:12px;height:12px;padding:0;border:0">.</button>'
   // ⒜ de la clase que el selector viejo dejaba FUERA
   + '<select id="__sonda-campo" style="' + BLOQUE + ';height:20px"><option>.</option></select>'

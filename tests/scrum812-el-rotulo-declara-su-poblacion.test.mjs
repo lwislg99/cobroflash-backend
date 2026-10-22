@@ -173,7 +173,7 @@ function tituladosQueDeclaran() {
  * nombran al «meta-guard»; el fichero es un test del vigía, no se llama guard a sí mismo. Este test
  * en local sobre la rama, base `75884928b170ec0ec02e35921426e5bd711cbb0f`: «LA COBERTURA HA SUBIDO a 31».
  *
- * ⬆️ **32** (SCRUM-962c, 22-oct-2026): entra `scrum962c-censo-tactil-poblacion-vara-etiqueta.test.mjs`,
+ * ⬆️ **32** (SCRUM-962e, 22-oct-2026): entra `scrum962e-censo-tactil-poblacion-vara-etiqueta.test.mjs`,
  * que declara doce mutaciones sobre el censo táctil del panel. Cuenta como «titulado GUARD» porque
  * sus casos nombran a «los guards» (la población que el censo no puede perder). Este test en local
  * sobre la rama, base `fa9cb22e8fec284eab3683c71d1f945381fe4561`: «LA COBERTURA HA SUBIDO a 32».
