@@ -46,7 +46,10 @@ const clientes = [{ id: CLIENTE, merchantId: MERCHANT, phone: TELEFONO, name: 'C
 const casa = (fila, where) => Object.entries(where || {}).every(([k, v]) => {
   if (v === null || typeof v !== 'object') return fila[k] === v;
   if (Array.isArray(v.in)) return v.in.includes(fila[k]);
-  return true; // operadores que esta sonda no necesita (gte, not…): no filtran
+  // SCRUM-1518b (S1): `not` SÍ filtra. El arreglo es `type: { not: 'inbound' }`, y con `not` ignorado
+  // la sonda seguía diciendo «reproducido» con el arreglo puesto: pasaba en vacío para esa forma.
+  if ('not' in v && (v.not === null || typeof v.not !== 'object')) return fila[k] !== v.not;
+  return true; // el resto de operadores (gte…) no los necesita esta sonda: no filtran
 });
 const propias = {
   'customer.findMany': (a) => clientes.filter((c) => casa(c, a && a.where)),

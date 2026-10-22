@@ -52,3 +52,55 @@ REPRODUCIDO». La sonda distingue el arreglo.
 entrantes en `historialWhatsAppDelCliente.ts` → S1; que el chip no diga «Enviado» de lo que no conoce
 (`api.js`) → S2. Mostrar los entrantes con su propio rótulo es otra cosa: cambia lo que la pestaña firmó
 en SCRUM-1133 («los WhatsApp que se le han ENVIADO»), y eso va al fundador como decisión de alcance.
+
+## 22-oct-2026 · S1 · 1518b — el arreglo: la ficha sólo enseña lo que se le ha ENVIADO al cliente
+
+**Medido contra:** `origin/main` = `c1e874b366e1851073a1a5075794b4373d228639` · 2026-10-22T10:28:14Z
+
+A9: comprobación → `tests/scrum1518b-la-ficha-no-ensena-entrantes.test.mjs`
+
+Rama `scrum-1518b-la-ficha-sin-entrantes`, **apilada sobre la de S4** (PR #2683), para que este registro
+tenga un único linaje y no lo creen dos ramas a la vez (SCRUM-1572). Entre la base de S4 (`0077bd1d`) y
+este `main` no hay ningún commit en los ficheros que se tocan aquí, ni en `whatsappLog.service.ts`.
+Carril: `historialWhatsAppDelCliente.ts` → **S1**. El chip (`api.js`, S2) y la pestaña
+(`customerDetailView.js`, J2) **no se han tocado**.
+
+**Corrección a la premisa del encargo:** el encargo decía que `historialWhatsAppDelCliente.ts:35-37`
+«filtra por `type: { not: 'inbound' }`». **No filtraba nada por `type`**: el `where` era
+`{ merchantId, customerId }`, como medía la fila ③ de S4. Ese filtro es justo el arreglo.
+
+**El cambio:** `where: { merchantId, customerId, type: { not: 'inbound' } }`. La pestaña se firmó como
+«los WhatsApp que se le han ENVIADO al cliente» (SCRUM-1133), así que un entrante está fuera de lo firmado:
+**ningún texto nuevo, nada que firmar.** El «(n)» de la pestaña cuenta esta misma lista (no hay ningún
+recuento aparte en el servidor), así que también deja de contarlos.
+
+### 🔴 La sonda de S4 pasaba EN VACÍO para este arreglo — arreglada de paso
+
+Su doble de la base ignoraba el operador `not` («operadores que esta sonda no necesita (gte, not…): no
+filtran»). La mutación de S4 usaba `type: 'template'`, una igualdad, y por eso a él le funcionó. Con el
+arreglo de verdad, **la sonda ORIGINAL contra el `dist` arreglado dice «🔴 REPRODUCIDO» y sale 0**
+(medido). Ahora el doble entiende `not`:
+
+| sonda | `dist` con el arreglo | `dist` sin el arreglo (mutado) |
+|---|---|---|
+| original de S4 | **0 · REPRODUCIDO** (falso) | 0 · REPRODUCIDO |
+| con `not` | **1 · NO REPRODUCIDO**, «WhatsApp (1)» | 0 · REPRODUCIDO, «WhatsApp (2)» |
+
+En las dos pasadas el control positivo (el envío sale «✓✓ WhatsApp: Entregado») sigue en pie.
+
+### La comprobación que va al obligatorio
+
+`tests/scrum1518b-la-ficha-no-ensena-entrantes.test.mjs`, **contra Postgres de verdad**. No se usa un
+doble precisamente por lo de arriba. Es gateado como `scrum1062`, y el CI lo corre con su banco
+desechable. Queda declarado en `tests/scrum419-ci-declara-lo-que-no-corre.test.mjs`.
+- El entrante no sale, y los dos envíos (plantilla y servicio) sí. **Control positivo:** el entrante
+  ESTÁ en la tabla.
+- Páginas con 5 entrantes intercalados entre 21 envíos: salen 20 + 1, ninguno repetido y ningún
+  entrante, y el cursor de la página siguiente es siempre un envío.
+- **Medido en un Postgres 16.4 desechable** (base `yaqu_1518_test`, apagado al terminar): con el arreglo,
+  2 de 2 (éste y `scrum1062`), 0 saltados. **Mutante** (sin el filtro, sólo en `dist/`): cae éste y
+  `scrum1062` sigue verde, o sea, el filtro no rompe nada de lo que ya garantizaba.
+
+**Lo que no se toca:** que el chip no diga «Enviado» de un estado que no conoce es de S2 (`api.js:1448`).
+Enseñar los entrantes con su propio rótulo cambia lo firmado en SCRUM-1133, y eso es decisión del fundador.
+**No verificado en yaqu.app:** producción está congelada.
