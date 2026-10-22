@@ -45,7 +45,7 @@ function leer() {
   const filas = r.stdout.trim().split(/\r?\n/).map((l) => l.split('|'));
   const c = Object.fromEntries(filas.filter((f) => f.length === 3).map(([o, m, v]) => [Number(o), { m: m.trim(), v }]));
   const f1490 = filas.find((f) => f.length === 7);
-  if (Object.keys(c).length !== 15 || !f1490) falla(`CIEGO: la salida no trae las 10 medidas de ①, la fila de ② y las 5 de ③:\n${r.stdout}`);
+  if (Object.keys(c).length !== 18 || !f1490) falla(`CIEGO: la salida no trae las 10 medidas de ①, la fila de ②, las 5 de ③ y las 3 de ④:\n${r.stdout}`);
   return { c, f1490: f1490.map(Number), crudo: r.stdout };
 }
 
@@ -181,5 +181,24 @@ const esperado = {
   const esperado = { 11: '5', 12: String(declaradas.length), 13: String(validas.length), 14: String(5 - validas.length) };
   for (const [k, v] of Object.entries(esperado)) if (c[k].v !== v) falla(`③ medida ${k} («${c[k].m}»): la consulta da «${c[k].v}», zonaValida real «${v}»`);
   console.log(`5 · ③ zona: 5 negocios (sin zona, Madrid, inventada, en blanco, «atlantic/canary» en minúsculas) → declarada ${c[12].v}, válida ${c[13].v}, igual que zonaValida real`);
+}
+// ── 6 · ④ estados de WhatsApp: el recuento, contra lo sembrado ────────────────────────────────────
+{
+  const vacio = leer().c;
+  if (vacio[21].v !== '0' || vacio[22].v !== '—' || vacio[23].v !== '—') falla(`④ sin mensajes: ${JSON.stringify([vacio[21], vacio[22], vacio[23]])}`);
+  // Un estado de hoy, uno que el código ya no escribe (`viejo_desconocido`) y `received`, el que S4 midió.
+  const sembrar = [['delivered', 'template', 3], ['received', 'text', 2], ['viejo_desconocido', 'template', 1], ['read', 'template', 1]];
+  for (const [status, type, n] of sembrar) for (let i = 0; i < n; i++) {
+    sql(`INSERT INTO whatsapp_messages (merchant_id, type, status, to_phone, updated_at) VALUES (7, '${type}', '${status}', '+34600000000', now())`);
+  }
+  const { c, crudo } = leer();
+  const total = sembrar.reduce((a, [, , n]) => a + n, 0);
+  const estados = [...new Set(sembrar.map(([s]) => s))].sort().join(' · ');
+  const porTipo = [...sembrar].sort((a, b) => (a[0] + a[1] < b[0] + b[1] ? -1 : 1)).map(([s, t, n]) => `${s} / ${t}: ${n}`).join(' · ');
+  if (c[21].v !== String(total)) falla(`④ total: «${c[21].v}», sembrados ${total}`);
+  if (c[22].v !== estados) falla(`④ estados: «${c[22].v}», esperaba «${estados}»`);
+  if (c[23].v !== porTipo) falla(`④ por estado y tipo: «${c[23].v}», esperaba «${porTipo}»`);
+  if (/\+34600000000/.test(crudo)) falla('④ la salida enseña un teléfono');
+  console.log(`6 · ④ WhatsApp: ${total} mensajes sembrados (incluido un estado que el código ya no escribe) → total, estados y recuento por tipo iguales; ningún teléfono en la salida`);
 }
 console.log('✔ todo en verde');

@@ -1,10 +1,10 @@
--- SCRUM-1566 (c) + SCRUM-1490 + SCRUM-1445 · CONSULTA DE SÓLO LECTURA PARA PRODUCCIÓN — UNA autorización, TRES preguntas.
+-- SCRUM-1566 (c) + SCRUM-1490 + SCRUM-1445 + SCRUM-1518 · CONSULTA DE SÓLO LECTURA PARA PRODUCCIÓN — UNA autorización, CUATRO preguntas.
 --
 -- 🛑 ANTES DE PEGARLA, DOS COSAS:
 --   1. `node docs/master/evidencias/SCRUM-1566/guard-solo-lectura.mjs <este fichero>` tiene que decir «✔ sólo lectura».
 --   2. La primera sentencia de lo que pegas es `BEGIN TRANSACTION … READ ONLY` y la última `ROLLBACK`. Si no, NO se pega.
 --
--- Devuelve sólo recuentos, ids de presupuesto y nombres de zona horaria: ni datos de clientes ni importes.
+-- Devuelve sólo recuentos, ids de presupuesto, nombres de zona horaria y estados de mensaje: ni datos de clientes, ni teléfonos, ni importes.
 --
 -- ⛔ NO se ha corrido contra producción. La dispara quien tenga el acceso, cuando el fundador lo autorice.
 --    Se puede pegar entera en una consola SQL (la de Railway, psql…): abre una transacción READ ONLY,
@@ -22,6 +22,8 @@
 --    según el traspaso de S1; Jira no se ha podido releer hoy).
 -- ③ SCRUM-1445 · cuántos negocios tienen zona horaria válida (sin ella, sus fechas salen en UTC).
 --    Sólo recuentos y nombres de zona: ningún dato de negocio.
+-- ④ SCRUM-1518 · qué estados hay guardados en los mensajes de WhatsApp (el indicador pinta «Enviado» ante uno que no conoce).
+--    Sólo recuentos por estado y tipo: ni teléfonos ni textos.
 --    No es la misma pregunta que ①: comparten la autorización, no el criterio.
 
 BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY;
@@ -172,6 +174,18 @@ SELECT orden, medida, valor FROM (
   UNION ALL SELECT 14, '   sin zona o no válida: sus fechas salen en UTC',    count(*)::text FROM v WHERE NOT valida
   UNION ALL SELECT 15, '   zonas (máx. 10)',                                  coalesce(string_agg(zona || ': ' || n, ' · ' ORDER BY n DESC, zona), '—')
                                                                               FROM (SELECT zona, count(*) AS n FROM v WHERE zona IS NOT NULL GROUP BY zona ORDER BY n DESC, zona LIMIT 10) z
+) r ORDER BY orden;
+
+-- ④ ─────────────────────────────────────────────────────────────────────────────────────────
+-- SCRUM-1518 (lo reprodujo S4) · ¿qué estados hay GUARDADOS en los mensajes de WhatsApp? El indicador
+-- pinta «Enviado» ante cualquier estado que no conoce. Con el código de hoy el único alcanzable que no
+-- conoce es `received`, pero las filas viejas las escribió código anterior. Sólo el recuento por estado y
+-- tipo: ni teléfonos, ni textos, ni clientes.
+SELECT orden, medida, valor FROM (
+  SELECT 21 AS orden, '④ mensajes de WhatsApp · TOTAL' AS medida, count(*)::text AS valor FROM whatsapp_messages
+  UNION ALL SELECT 22, '   estados distintos guardados', coalesce(string_agg(DISTINCT status, ' · ' ORDER BY status), '—') FROM whatsapp_messages
+  UNION ALL SELECT 23, '   por estado y tipo', coalesce(string_agg(status || ' / ' || type || ': ' || n, ' · ' ORDER BY status, type), '—')
+                                              FROM (SELECT status, type, count(*) AS n FROM whatsapp_messages GROUP BY status, type) g
 ) r ORDER BY orden;
 
 ROLLBACK;

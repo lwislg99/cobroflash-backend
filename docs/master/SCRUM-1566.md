@@ -345,3 +345,20 @@ total es la suma de esas cifras ya redondeadas. Eso es lo que va al registro Ver
 
 **Lo que contesta cada una:** la 1 decide el arreglo C; la 2 confirma o cambia la cuenta de la que
 dependen A y B; la 3 decide D; la 4 desbloquea los presupuestos «C» (SCRUM-1566 (c) los cuenta).
+
+---
+
+## SCRUM-1566 (c) · añadido el 22-oct: el bloque ④ (SCRUM-1518), cuarta pregunta con la misma autorización
+
+A petición del orquestador, a partir de lo que reprodujo S4 en SCRUM-1518: el indicador pinta «Enviado»
+ante cualquier estado de mensaje que no conoce. Con el código de hoy, el único estado alcanzable que no
+conoce es `received`. Pero las filas viejas las escribió código anterior y nadie sabe qué estados tienen.
+
+- **④ devuelve:** el total de mensajes, los estados distintos guardados y el recuento por estado y tipo.
+  **Ni teléfonos, ni textos, ni clientes.**
+- **Probado en el mismo banco** (fase 6 de `probar-consulta.mjs`): vacío → 0 y «—». Con 7 mensajes
+  sembrados (`delivered`, `received`, `read` y un estado inventado que el código ya no escribe), el total,
+  los estados y el recuento coinciden con lo sembrado, y la salida no enseña el teléfono sembrado.
+- **El guard estático sigue aceptando el fichero, y las cinco fases anteriores siguen en verde.** Salida
+  en `evidencias/SCRUM-1566/salida-probar-consulta.txt`.
+- **Sigue sin haberse corrido contra producción.** El banco desechable se apagó al terminar.
