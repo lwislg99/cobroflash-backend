@@ -118,7 +118,7 @@ máster.
 2. **¿Quién es el primer negocio real: The Pioneer, con su excepción (F6), o uno cualquiera tras el 8/8 (F1)?**
    Las dos puertas son distintas, y la puerta de hoy no tiene ninguna de las dos.
 
-### Anexo (misma tanda, ~10:40Z, pedido por el orquestador) · Las otras puertas: no son dos, son CUATRO
+### Anexo (misma tanda, 10:24Z según Jira, c.20283; pedido por el orquestador) · Las otras puertas: no son dos, son CUATRO
 
 **Población:** ROAD-4, 5, 6, 12 y 19 leídas enteras (descripción, comentarios, autor, fechas); `project = ROAD`
 entero (**56** tickets); `project = ROAD AND updated >= 2026-09-01` → **0**, con control positivo: el mismo
