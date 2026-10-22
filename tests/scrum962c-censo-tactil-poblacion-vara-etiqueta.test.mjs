@@ -30,9 +30,10 @@ test('⒜ la población contiene TODO lo que miden los guards, y además campos 
   for (const s of ['select', 'textarea', 'input[type="radio"]']) assert.ok(pob.includes(s), `falta «${s}»`);
   assert.ok(pob.some((s) => s.startsWith('input:not(')), 'faltan los input de texto, fecha, número, color…');
   // Los campos no se tragan las casillas ni los botones: cada elemento es de UNA clase.
-  for (const t of ['checkbox', 'radio', 'submit', 'button', 'hidden']) assert.match(CAMPOS, new RegExp(`:not\\(\\[type="${t}"\\]\\)`), `CAMPOS acepta type=${t}`);
+  for (const t of ['checkbox', 'radio', 'submit', 'button', 'hidden', 'color', 'file', 'range']) assert.match(CAMPOS, new RegExp(`:not\\(\\[type="${t}"\\]\\)`), `CAMPOS acepta type=${t}`);
   assert.deepEqual(partes(CASILLAS), ['input[type="checkbox"]', 'input[type="radio"]']);
-  assert.ok(partes(CONTROLES).includes('input[type="radio"]'));
+  // Una muestra de color es un botón que abre un selector, no un campo sin vara (962b (2) nº 3).
+  for (const t of ['radio', 'color', 'file', 'range']) assert.ok(partes(CONTROLES).includes(`input[type="${t}"]`), `type=${t} no es control`);
 });
 
 test('⒟ el árbitro de la etiqueta NO contiene las casillas (si las tuviera, la etiqueta nunca sería suya)', () => {

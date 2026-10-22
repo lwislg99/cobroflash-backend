@@ -27,10 +27,13 @@ export const CASILLAS = 'input[type="checkbox"], input[type="radio"]';
 /**
  * ⒜ Controles: `INTERACTIVOS` (la definición de los guards, que NO se cambia aquí) más lo que se
  * pulsa igual y no estaba: el `radio` (hermano de la casilla), los `input` que son botones y los
- * roles ARIA de control.
+ * roles ARIA de control. `color`, `file` y `range` son controles y no campos: no se escribe en
+ * ellos ni llevan el estilo de «Inputs / Fields» de §5 (una muestra de color es un botón que abre
+ * un selector; S2 midió el de Configuración como defecto de pantalla, 962b (2) nº 3).
  */
+const INPUTS_CONTROL = ['radio', 'reset', 'image', 'color', 'file', 'range'];
 export const CONTROLES = INTERACTIVOS
-  + ', input[type="radio"], input[type="reset"], input[type="image"]'
+  + INPUTS_CONTROL.map((t) => `, input[type="${t}"]`).join('')
   + ', [role="tab"], [role="switch"], [role="radio"], [role="checkbox"], [role="menuitem"]';
 
 /**
@@ -38,8 +41,8 @@ export const CONTROLES = INTERACTIVOS
  * «targets ≥44px» genérico de §6): no hay vara escrita, así que van en su propia cuenta y NO se
  * suman a los cortos. Elegir su vara no es del censo: está propuesto en `docs/master/SCRUM-962.md`.
  */
-export const CAMPOS = 'select, textarea, input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"])'
-  + ':not([type="submit"]):not([type="button"]):not([type="reset"]):not([type="image"])';
+export const CAMPOS = 'select, textarea, input'
+  + ['hidden', 'checkbox', 'submit', 'button', ...INPUTS_CONTROL].map((t) => `:not([type="${t}"])`).join('');
 
 export const POBLACION = CONTROLES + ', ' + CAMPOS;
 
