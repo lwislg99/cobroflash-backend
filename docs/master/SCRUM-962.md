@@ -352,13 +352,14 @@ El `select` «IVA %» de los ajustes de la línea (21,8 px), con móvil emulado 
 - ③ que esté acotado a `.modal-header >`;
 - ④ que la pieza siga pintando los dos botones como hijos directos (banco de vistas).
 
-**Probado en rojo con 6 mutaciones, y mueren las 6** (`mutar-962d.mjs`; restaura desde HEAD y se niega con cambios sin comitar):
-- la BASE, que es el CSS de antes del arreglo;
-- sin `position: relative`;
-- el `::before` a 40 px;
-- el «×» creciendo hacia el «?»;
-- el `::before` sin acotar;
-- la pieza envolviendo el «?» en un `div`.
+**Probado en rojo.** Las mutaciones van **en el catálogo del meta-guard**: el test exporta `MUTACIONES_QUE_ME_TUMBAN` (SCRUM-1387, que lo exige y me cazó la primera versión con una lista propia). `meta-guard-mutaciones.mjs --solo-censo` las acepta (639 declaraciones, salida 0). Réplica local con `mutar-962d.mjs <raiz> f7928979b`: **las 5 tumban SU prueba**.
+- sin `position: relative` → cae ①;
+- el `::before` a 40 px → cae ①;
+- el «×» creciendo hacia el «?» → cae ②;
+- el `::before` sin acotar → cae ③;
+- la pieza envolviendo el «?» en un `div` → cae ④.
+
+**Y la BASE también cae:** el `styles.css` de ANTES del arreglo tumba el test. Va fuera del catálogo, porque no se escribe como `de`/`a`.
 
 **Tests relacionados:** los **85 ficheros** que leen `styles.css` o tocan la cabecera de los modales, corridos a la vez: **775 pass · 0 fail · 0 skipped**. No se ha corrido la suite completa (sin turno, y 1,7–3,4 GB libres frente al umbral de 2.200 MB).
 
