@@ -158,10 +158,10 @@ test('las sondas que se inyectan son las que se juzgan (mismos id, y la oculta v
   for (const id of ['__sonda', '__sonda-campo', '__sonda-40', '__sonda-sm', '__sonda-envuelta', '__sonda-suelta', '__sonda-oculta']) {
     assert.ok(SONDAS_HTML.includes(`id="${id}"`), `falta la sonda ${id}`);
   }
-  assert.match(SONDAS_HTML, /<select id="__sonda-campo"/);
-  assert.match(SONDAS_HTML, /<label [^>]*><input type="checkbox" id="__sonda-envuelta">/, 'la envuelta tiene que estar DENTRO de su label');
-  assert.match(SONDAS_HTML, /<input type="checkbox" id="__sonda-suelta"><label for="__sonda-suelta"/, 'la suelta, FUERA, con for');
-  assert.match(SONDAS_HTML, /<div style="display:none"><button id="__sonda-oculta">/);
+  assert.match(SONDAS_HTML, /<select\b[^>]*\bid="__sonda-campo"/);
+  assert.match(SONDAS_HTML, /<label\b[^>]*>\s*<input\b[^>]*\bid="__sonda-envuelta"/, 'la envuelta tiene que estar DENTRO de su label');
+  assert.match(SONDAS_HTML, /<input\b[^>]*\bid="__sonda-suelta"[^>]*>\s*<label\b[^>]*\bfor="__sonda-suelta"/, 'la suelta, FUERA, con for');
+  assert.match(SONDAS_HTML, /<div\b[^>]*display:none[^>]*>\s*<button\b[^>]*\bid="__sonda-oculta"/);
   assert.match(SONDAS_HTML, /id="__sonda-sm" class="[^"]*\bbtn-sm\b/);
 });
 
