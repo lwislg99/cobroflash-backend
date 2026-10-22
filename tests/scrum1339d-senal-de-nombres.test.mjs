@@ -7,8 +7,9 @@
 //   ② 🔴 EL POSITIVO .. un TAP completo no lleva NINGÚN aviso. Es el que puede tumbar la señal: una
 //                      que avisa sobre tandas sanas se apaga sola a las dos semanas.
 //   ③ LA LÍNEA ....... sale SIEMPRE, con su población: con 0, con ausentes y sin poder medir.
-//   ④ EL GUION ....... sale 0 pase lo que pase —TAP ausente, JSON inválido, su propio módulo
+//   ④ EL GUION ....... sale 0 cuando NO PUEDE MEDIR —TAP ausente, JSON inválido, su propio módulo
 //                      borrado— y DICE que no pudo medir. Un catch que se calla es un CIEGO.
+//                      Con UN nombre ausente medido sale 1 (SCRUM-1339t, c.20228): eso ya no avisa, bloquea.
 //
 // Aquí todo es FABRICADO: fuentes y TAP escritos a mano, con la respuesta sabida. La pasada sobre
 // los TAP de verdad (114 artefactos del CI, cada uno contra el árbol que probó su job) y el cruce
@@ -75,6 +76,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     de: '  noPudeMedir(`el guion reventó: ${unaLinea(e)}`);',
     a: '  void e; // el catch se calla, a proposito',
     cae: 'SCRUM-1339d · ④ 🔴 EL GUION ROTO A PROPÓSITO sale 0 y DICE que no pudo medir: nunca calla y nunca tumba el job',
+  },
+  {
+    // el umbral sube de 0 a 1 en silencio: un ausente suelto vuelve a pasar (SCRUM-1339t, c.20228)
+    fichero: 'scripts/senal-de-nombres.mjs',
+    de: '  if (r.medible === true && r.ausentes > 0) salida = 1;',
+    a: '  if (r.medible === true && r.ausentes > 1) salida = 1; // tolera uno, a proposito',
+    cae: 'SCRUM-1339t · UN SOLO nombre ausente basta para que el guion salga 1; con cero sale 0',
   },
 ];
 
@@ -528,7 +536,7 @@ function correr(guion, args, resumen = null) {
 }
 const avisosDe = (texto) => texto.split(NL).filter((l) => l.startsWith('::warning'));
 
-test('SCRUM-1339d · EL GUION, de punta a punta sobre un árbol fabricado: anota el rojo, calla en el completo, y sale 0 las dos veces', () => {
+test('SCRUM-1339d · EL GUION, de punta a punta sobre un árbol fabricado: anota el rojo y sale 1, calla en el completo y sale 0', () => {
   // un árbol de mentira con `tests/a.test.mjs` (los seis) y un TAP al que le falta la cola
   const rojo = temporal('scrum1339d-rojo-');
   fs.mkdirSync(path.join(rojo, 'tests'));
@@ -538,7 +546,7 @@ test('SCRUM-1339d · EL GUION, de punta a punta sobre un árbol fabricado: anota
   const resumen = path.join(rojo, 'resumen.md');
 
   const r = correr(GUION, [tapRojo, '--raiz', rojo], resumen);
-  assert.equal(r.salida, 0, 'avisar es anotar, no fallar');
+  assert.equal(r.salida, 1, 'con ausentes la señal BLOQUEA (SCRUM-1339 c.20228, opción a)');
   assert.match(r.texto, /^\[señal de nombres v1\] medible=si ausentes=3 ficheros_con_ausentes=1 /m);
   assert.match(r.texto, /^::notice title=señal de nombres · FALTAN al menos 3 en 1 fichero\(s\)::\[señal de nombres v1\] medible=si ausentes=3 /m);
   assert.equal(avisosDe(r.texto).length, 1);
@@ -557,6 +565,27 @@ test('SCRUM-1339d · EL GUION, de punta a punta sobre un árbol fabricado: anota
   assert.match(c.texto, /^::notice title=señal de nombres · completo · 0 ausentes::\[señal de nombres v1\] medible=si ausentes=0 /m);
   assert.equal(avisosDe(c.texto).length, 0, 'un run completo no anota NADA');
   assert.match(c.texto, /Los 6 nombres literales que el árbol declara están en el TAP/);
+});
+
+// SCRUM-1339t · el umbral es 0 (c.20228): derivado de los 71 obligatorios con ausentes=0 desde 1405c,
+// y re-medido sobre 64 jobs de «build + tests» (19-oct → 22-oct), los 64 con ausentes=0. Así que
+// UNO solo basta, y el borde se prueba con uno, no con tres: con tres, `> 2` también pasaría.
+test('SCRUM-1339t · UN SOLO nombre ausente basta para que el guion salga 1; con cero sale 0', () => {
+  const raiz = temporal('scrum1339t-uno-');
+  fs.mkdirSync(path.join(raiz, 'tests'));
+  fs.writeFileSync(path.join(raiz, 'tests', 'a.test.mjs'), FUENTE_SEIS);
+  const tapUno = path.join(raiz, 'uno.tap');
+  fs.writeFileSync(tapUno, tap(SEIS.slice(0, 5)));
+  const tapCero = path.join(raiz, 'cero.tap');
+  fs.writeFileSync(tapCero, tap(SEIS));
+
+  const uno = correr(GUION, [tapUno, '--raiz', raiz]);
+  assert.match(uno.texto, /^\[señal de nombres v1\] medible=si ausentes=1 ficheros_con_ausentes=1 /m, 'la siembra no dio UN ausente');
+  assert.equal(uno.salida, 1, `con 1 ausente tiene que salir 1 y salió ${uno.salida}`);
+
+  const cero = correr(GUION, [tapCero, '--raiz', raiz]);
+  assert.match(cero.texto, /^\[señal de nombres v1\] medible=si ausentes=0 /m);
+  assert.equal(cero.salida, 0);
 });
 
 test('SCRUM-1339d · ④ 🔴 EL GUION ROTO A PROPÓSITO sale 0 y DICE que no pudo medir: nunca calla y nunca tumba el job', () => {
