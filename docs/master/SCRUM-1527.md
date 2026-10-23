@@ -670,3 +670,68 @@ la sonda probada en positivo (ve 5 `node.exe` del sistema).
     gh api 'repos/lwislg99/cobroflash-backend/actions/workflows/ci.yml/runs?created=2026-09-29T16:22:00Z..2026-10-06T13:48:00Z&per_page=1' --jq .total_count   # ③
     # ④ con el node.exe del zip oficial de cada versión (v24.21.0 y v24.8.0), en una carpeta propia:
     <node-de-esa-version> docs/master/evidencias/SCRUM-1520/la-cola-que-cae.mjs    # la línea «E» del RESUMEN
+
+# SCRUM-1527f · Qué bloqueaba #2629: un rojo de main ya arreglado (scrum1405c ④), y una colgada nueva el 22-oct
+
+**Medido contra:** `origin/main` = `1ad1968523fed7c2ffb833d5a3feafe4dd1c79f8` · 2026-10-23T02:56:58Z (cabecera `Date:` de GitHub)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1527/1527f/censo1405c.mjs`
+
+Escribe J6 (sesión `jv-j6af`, equipo de Javier). Sólo lectura de CI y este tramo: no toca `src/`,
+`tests/`, `scripts/` ni workflows. La causa del cuelgue sigue sin encontrar, y el vigía de
+`scripts/tanda-con-veredicto.mjs` es carril S5: no lo toco.
+
+## En corto
+
+- #2629 estaba `BLOCKED` con `MERGEABLE` (no `DIRTY`): el check obligatorio, «build + tests (con
+  banco desechable)», salió `failure` el 20-oct (job 118717000197). La regla de `main` sólo exige
+  ese check. El meta-guard también salió rojo (CIEGO en `scrum859`), pero no es obligatorio.
+- El log pesa 1.945.951 B y no lleva «TANDA SIN VEREDICTO»: no es una colgada, es un rojo de
+  verdad. 11.909 pasan + 1 cae + 89 saltados = 11.999 declarados: la suma cuadra.
+- El caso que cae es `tests/scrum1405c-tuberia-bloqueante.test.mjs:201` (④): «con el módulo la
+  cobaya SIGUE perdiendo casos», con 3 casos perdidos en una de las 4 pasadas. El PR sólo añade
+  ficheros bajo `docs/master/`, así que **el rojo no es suyo: es de main**.
+- En 33 obligatorios en rojo (del 19 al 23-oct), ese caso cae en **11**, en ramas que no tienen
+  nada que ver entre sí y también en un `push` a main (117937381146, el 19-oct). La última vez es
+  del 21-oct a las 12:24Z. #2634 (SCRUM-1405d) cambió ese caso, para que afirme la pérdida medida,
+  y entró en main el 21-oct a las 12:43:49Z. Desde entonces, 0 de los 14 rojos lo traen (3 del 21-oct y 11 del
+  22-oct, contados uno a uno en `salida-censo1405c.txt`).
+- Por eso la rama se pone al día con `git merge origin/main` (el merge sale limpio y lo único que
+  difiere de main son los ficheros del PR), y se empuja una sola vez.
+
+## Lo nuevo para el ticket: una colgada después de #2429
+
+Job 119769715166 (rama `scrum-962c-editor-presupuestos-44`, creado el 22-oct a las 10:21Z): log
+de 1.357.234 B con «TANDA SIN VEREDICTO», 907 s de silencio. Lo último que llegó es un caso de
+`scrum615-pedir-tipo-destinatario`: el mismo sitio que las dos colgadas del 14-oct de 1527d.
+El «0 colgadas en 372 jobs» de 1527e sigue siendo cierto para su ventana (hasta el 20-oct), pero
+ha dejado de ser cierto desde entonces: en esta ventana hay **1 colgada en 179 jobs**. Ese
+recuento es por debajo: sólo he mirado los jobs en `failure`, y no los 20 cancelados (el hueco ②
+de 1527e).
+
+## Controles
+
+- **Positivo:** el job de #2629 (118717000197) entra en la población y sale marcado.
+- **Cero:** un verde (120208755966) sale sin marcar.
+- **Tamaño antes de contar:** los 33 logs van de 1.357.234 B (la colgada) a 1.943.896 B; ninguno
+  es un 404 de 215 B.
+- **Población:** 239 ejecuciones de `ci.yml` creadas desde el 19-oct a las 00:00Z, 179 jobs
+  obligatorios: 123 success · 33 failure · 20 cancelled · 3 sin conclusión.
+- **El caso se busca anclado al inicio de línea** (marca de fallo + `SCRUM-1405c · ④`), no por la
+  cruz a secas.
+
+## Lo que no he medido
+
+- Si el obligatorio del empujón de este tramo sale verde. Lo leo y lo digo en Jira.
+- La tasa con la que caía 1405c ④ en los verdes: el instrumento sólo abre los rojos.
+- Por qué `scrum859` sale CIEGO en el meta-guard. No bloquea y no es de este ticket (c.19716).
+
+## Errores míos en este tramo
+
+- El primer control de sufijo, buscando «1527» en el título de los PR, no sacó #2629, que existe.
+  Lo repetí anclado al nombre de la rama y sí salió. Con el primero habría dado 1527f por libre
+  sin haberlo comprobado.
+
+## Cómo se repite
+
+    node docs/master/evidencias/SCRUM-1527/1527f/censo1405c.mjs 2026-10-19T00:00:00Z <carpeta>
