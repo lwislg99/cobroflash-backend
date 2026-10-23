@@ -2810,3 +2810,64 @@ Cerrado sin mergear; la rama se queda. Limitación: el job habría caído igual 
 bloquea por sí sola se lee en que su paso concluye `failure`.
 
 **No medido:** la tanda completa en local (este tramo no toca código).
+
+# SCRUM-1339x · El paso de la señal no puede volver a llevar `continue-on-error` sin que caiga 1339u
+
+**Medido contra:** `origin/main` = `6e336715359500c41fb252371934101b46498267` · 2026-10-23T19:46:36Z
+
+A9: comprobación → `tests/scrum1339u-vigia-ciego-de-la-senal.test.mjs`
+
+Escribe jv-j6aw (J6). GO del orquestador J: SCRUM-1339 c.20638, sobre el hueco que dejó jv-j6av en c.20631 §2:
+la señal bloquea desde #2663 + #2696 (rojo por efecto en el PR desechable #2764, c.20637), pero ningún test
+vigilaba que su paso siguiera SIN `continue-on-error`. Si volvía, la señal dejaba de bloquear sin que cayera nada.
+
+## Lo que hay
+
+Un caso nuevo en `tests/scrum1339u-vigia-ciego-de-la-senal.test.mjs`, «SCRUM-1339x · el paso de la señal NO lleva
+continue-on-error: su rojo tumba el obligatorio». Sólo LEE `ci.yml`; no se toca ningún workflow.
+
+* **Por identidad:** busca los pasos cuyo `run` empieza por `node scripts/senal-de-nombres.mjs ` (con `name:` delante
+  o en la forma `- run:`), no por nombre, posición ni línea. Exige que haya **exactamente uno**: cero o dos no pasan
+  por limpio.
+* **Sin comentarios:** quita las líneas `#` antes de leer. El propio paso lleva hoy uno que cita
+  `continue-on-error` (`ci.yml`, el que empieza «🔴 SIN `continue-on-error`»), y no lo hace caer.
+* **Sólo las claves propias del paso**, a su sangría: un `continue-on-error` en el paso de antes o en el de después
+  no lo activa ni lo calla. En el `ci.yml` real hay otras 6 claves (`grep -cE '^\s*continue-on-error:'`), todas en otros
+  pasos o jobs.
+* Cualquier valor de `continue-on-error` cae, no sólo `true`: una expresión `${{ … }}` también lo apagaría.
+
+## Rojo primero
+
+Sembrado dentro del propio caso (no tomado del árbol): el `ci.yml` real con `continue-on-error: true` delante de la
+línea del `run` → cae; la forma `- run:` con la clave → cae; un YAML con la clave en el paso vecino, en el de después
+y en un comentario del paso → pasa; el `ci.yml` sin el paso → cae con «UNA vez».
+
+Mutación declarada en `MUTACIONES_QUE_ME_TUMBAN` (fichero `.github/workflows/ci.yml`). Aplicada a mano en local sobre
+el commit `e2503fa859c526de5c5957555d6456ce0dc9b407`: `git diff --numstat` = `1 0 .github/workflows/ci.yml`; 1339u
+da **10 = 9 pass + 1 fail**, y el que cae es el 1339x con «🔴 el paso de la señal lleva `continue-on-error`». Los
+otros nueve no la ven: sin este caso, la mutación vivía. Revertida con el inverso exacto; `git status --porcelain`
+vacío después. Sin mutar: **10 de 10**.
+
+## Guards
+
+237, 976, 824, 836, 419, 702, 700, 719, 1415, 745, 757, 765 y 1339u en una pasada: **148 = 147 pass + 1 fail**. El
+fail era 836 por `scrum608` anclado a `dist/`, y este árbol anidado no traía `dist/`. Con `tsc --noCheck`, 836:
+**17 de 17**. Los de registro y el obligatorio: en la entrega.
+
+## Lo que NO he medido
+
+* Si un `continue-on-error` a nivel de **job** («build + tests») apagaría el check obligatorio: no lo he medido, y
+  este caso no lo mira.
+* La tanda completa en local.
+
+## Mis errores
+
+1. Corrí los guards de suite antes de compilar `dist/` y me salió un rojo ajeno (836). Es la nota de memoria
+   «dist viejo da rojos ajenos»: la tenía y no la apliqué hasta ver el rojo.
+2. Para revertir la mutación encadené `git restore` en el mismo comando que el test; el hook lo paró entero. Revertí
+   con el inverso exacto de la mutación, sin la llave de un uso.
+3. De los 54 comentarios de SCRUM-1339 leí enteros c.20371, c.20506, c.20631, c.20637 y c.20638; los otros no.
+4. `node scripts/carriles.mjs de` dice del test «sin fila en §3: nadie lo reclama». Lo trato como J6 porque nació en
+   1339u con «carril J6» en su commit (`0a66ee4f8`); no hay fila que lo diga.
+
+**Ficheros:** `tests/scrum1339u-vigia-ciego-de-la-senal.test.mjs`, este apartado.
