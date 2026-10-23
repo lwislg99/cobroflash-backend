@@ -41,3 +41,16 @@ Iría al final de la misma línea W3bis o en la siguiente. ⛔ **No se aplica si
 - Qué ve el profesional si intenta invitar a alguien durante la prueba (hoy 409 `user_limit`): sin decidir, y es texto nuevo (regla 39). Lo dice `c.20517`.
 - `CLAUDE.md` no necesita esta línea (`c.20488`).
 - No he tocado el máster, `CLAUDE.md`, el código ni el estado del ticket (A13). No he mirado yaqu.app.
+
+## ② 23-oct: W3bis y las 300 de WhatsApp, APLICADAS al máster (carril un jefe, por encargo)
+
+**Medido contra:** `origin/main` = `a3c13611ed6f078fa7fe5af5882b0b8b2d1b2d3f` · 2026-10-23T14:14:13Z (hora de GitHub)
+A9: sin fallo que generalice — el único riesgo (copiar la línea de este registro o del encargo en vez de la firma) se cerró copiando de `c.20516` y `c.20525`, y el diff da 0 líneas borradas
+
+J4 (`jv-j4s`, equipo de Javier). Carril «un jefe» (`dos-equipos.md:197`), aplicado por encargo del orquestador `cobroflash-backend-62`: el fundador decidió en `c.20525` («Tú, como jefe») que las líneas las aplique el orquestador de su equipo.
+
+- **W3bis**, debajo de la línea de W3 de la Parte W: copiada **byte a byte de `c.20516`**, con la negrita cerrada antes de `` `trial` `` tal como la guarda Jira. No la he puesto entera en negrita (la propuesta del tramo de arriba): el encargo decía que, en la duda, manda `c.20516`.
+- **Las 300 plantillas**, en la línea siguiente: la frase **firmada en `c.20525`** (Javier: «Firmo»), la misma que propuso `c.20522`.
+- Diff: `docs/YAQU_MASTER.md` +2 / −0. `CLAUDE.md` no la lleva (`c.20488`).
+- El código ya lo cumplía (`src/core/entitlements.ts:18`): no se construye nada.
+- Sin mirar: yaqu.app (es texto del máster, no se sirve). No transiciono (A13).
