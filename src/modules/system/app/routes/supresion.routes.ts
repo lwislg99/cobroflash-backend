@@ -11,6 +11,7 @@ import { prisma } from '../../../../core/db/prisma';
 import { isFlagEnabled } from '../../../../core/flags';
 import { suprimirMerchant } from '../../domain/supresionMerchant.service';
 import { actorDeRequest } from '../../audit.service';
+import { cabeEnColumnaInt } from '../../../../core/validation/enteroDeColumna'; // SCRUM-1457a
 
 const router = Router();
 
@@ -31,7 +32,7 @@ router.post('/:merchantId', async (req, res) => {
     if (!isFlagEnabled('MERCHANT_DELETE_ENABLED')) return res.status(404).json({ error: 'not_found' });
 
     const merchantId = Number(req.params.merchantId);
-    if (!Number.isInteger(merchantId) || merchantId <= 0) return res.status(400).json({ error: 'merchant_invalido' });
+    if (!cabeEnColumnaInt(merchantId) || merchantId <= 0) return res.status(400).json({ error: 'merchant_invalido' });
 
     // ── 🔴 SCRUM-440 · TENENCIA. VA ANTES DE MIRAR NADA. ────────────────────────────────────
     //
