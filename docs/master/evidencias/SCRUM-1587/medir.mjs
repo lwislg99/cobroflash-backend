@@ -126,7 +126,7 @@ for (const s of SUPERFICIES) {
       if (process.env.CAPTURAS_EN) fs.writeFileSync(path.join(process.env.CAPTURAS_EN, `sin-${ancho}.png`), sin);
       // Positivo sembrado: el mismo `::before`, pintado. TIENE que salir distinto; si no, el
       // comparador no ve nada y el «idénticas» de arriba no vale.
-      await page.evaluate(`(() => { const st = document.createElement('style'); st.textContent = ${JSON.stringify(REALES + ' { position: relative !important; } ' + REALES + '::before { content: "" !important; position: absolute !important; inset: -7px 0 !important; background: rgba(255,0,0,.5); }')}; document.head.appendChild(st); })()`);
+      await page.evaluate(`(() => { const st = document.createElement('style'); st.textContent = ${JSON.stringify(REALES + ' { position: relative !important; } ' + REALES + '::before { content: "" !important; position: absolute !important; inset: -8px 0 !important; background: rgba(255,0,0,.5); }')}; document.head.appendChild(st); })()`);
       const pintado = await fila.screenshot();
       const igual = Buffer.compare(con, sin) === 0;
       const ve = Buffer.compare(con, pintado) !== 0;
