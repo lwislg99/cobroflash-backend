@@ -253,18 +253,21 @@ const FUSION_CLIENTE = {
 if (typeof window !== 'undefined') window.fusionCliente = FUSION_CLIENTE;
 
 /**
- * SCRUM-1132 · LA TARJETA DE NOTAS: las notas con fecha y autor de `GET /admin/customers/:id/notes`
- * (SCRUM-1036) y el campo para añadir una con `POST` a la misma ruta.
+ * SCRUM-1132 · LA PESTAÑA «NOTAS»: las notas con fecha y autor de `GET /admin/customers/:id/notes`
+ * (SCRUM-1036) y el campo para añadir una con `POST` a la misma ruta. SCRUM-1132c (c.20627): es
+ * una pestaña y no una tarjeta, y la lista se pide al ABRIRLA, como la de «Sitios».
  *
- * ✅ TEXTOS FIRMADOS por el fundador (14-oct-2026, SCRUM-1132 c.19617; registro en
- * `docs/microcopy/2026-10-14-SCRUM-1132-notas-del-cliente.md`). Ni uno más: la fecha y el autor son
- * datos del servidor, y el campo se nombra con el título de la tarjeta.
+ * ✅ TEXTOS FIRMADOS por el fundador: los cuatro de SCRUM-1132 c.19617 (registro en
+ * `docs/microcopy/2026-10-14-SCRUM-1132-notas-del-cliente.md`) y el respaldo de c.20435
+ * (`docs/microcopy/2026-10-23-SCRUM-1132-notas-respaldo.md`). Ni uno más: la fecha y el autor son
+ * datos del servidor, y el campo se nombra con el rótulo de la pestaña.
  *
  * 🔴 LA «NOTA FIJA» NO SE PINTA AQUÍ. Es `customer.notes`, que ya va en la cabecera de la ficha, y
  * la forma firmada es la (B): sólo en la cabecera. El servidor la manda al final con `esFija`.
  *
  * Detrás de «No se pudo guardar:» va el motivo del servidor SÓLO si viene en `message`
- * (`mensajeParaPersona`, api.js): nunca un código interno ni el «Failed to fetch» del navegador.
+ * (`mensajeParaPersona`, api.js); sin él, el respaldo. Nunca un código interno ni el «Failed to
+ * fetch» del navegador.
  */
 const NOTAS_CLIENTE = {
   TEXTOS: {
@@ -272,6 +275,7 @@ const NOTAS_CLIENTE = {
     vacio: 'Sin notas',
     boton: 'Añadir nota',
     error: 'No se pudo guardar:',
+    respaldo: 'No se pudo guardar: inténtalo de nuevo', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1132 comentario 20435)
   },
   /** Las que se pintan: las del servidor, sin la Nota fija. */
   conFecha(notas) { return (Array.isArray(notas) ? notas : []).filter((n) => n && !n.esFija); },
@@ -284,27 +288,26 @@ const NOTAS_CLIENTE = {
   /** El error que se le enseña a la persona. */
   textoDelError(err) {
     const motivo = window.mensajeParaPersona(err, '');
-    return motivo ? NOTAS_CLIENTE.TEXTOS.error + ' ' + motivo : NOTAS_CLIENTE.TEXTOS.error;
+    return motivo ? NOTAS_CLIENTE.TEXTOS.error + ' ' + motivo : NOTAS_CLIENTE.TEXTOS.respaldo;
   },
 };
 if (typeof window !== 'undefined') window.notasCliente = NOTAS_CLIENTE;
 
-/** Monta la tarjeta en `card` y la llena. Las dos rutas son `requireRole('admin')`: sólo se llama para admin. */
-function montarNotasDelCliente(card, customerId) {
+/**
+ * Monta la pestaña en `card` y la llena. Las dos rutas son `requireRole('admin')`: sólo se llama
+ * para admin. `viva()` dice si esta apertura sigue siendo la última: la lista que llega tarde no pinta.
+ */
+function montarNotasDelCliente(card, customerId, viva = () => true) {
   const T = NOTAS_CLIENTE.TEXTOS;
-  card.className = 'customers-card notas-cliente';
+  card.classList.add('notas-cliente');
   card.dataset.tarjeta = 'notas';
-  const titulo = document.createElement('h3');
-  titulo.className = 'notas-cliente-titulo';
-  titulo.id = 'notas-360-titulo';
-  titulo.textContent = T.titulo;
   const lista = document.createElement('ul');
   lista.className = 'notas-cliente-lista';
   const form = document.createElement('div');
   form.className = 'field notas-cliente-form';
   const campo = document.createElement('textarea');
   campo.rows = 2;
-  campo.setAttribute('aria-labelledby', titulo.id);
+  campo.setAttribute('aria-label', T.titulo);
   const boton = document.createElement('button');
   boton.type = 'button';
   boton.className = 'btn-secondary';
@@ -315,7 +318,7 @@ function montarNotasDelCliente(card, customerId) {
   error.setAttribute('role', 'alert');
   error.hidden = true;
   form.append(campo, boton, error);
-  card.append(titulo, lista, form);
+  card.append(lista, form);
 
   function pintar(notas) {
     lista.textContent = '';
@@ -344,6 +347,7 @@ function montarNotasDelCliente(card, customerId) {
 
   async function cargar() {
     const r = await apiRequest(`/admin/customers/${customerId}/notes`);
+    if (!viva()) return;
     pintar(r && r.notas);
   }
 
@@ -363,7 +367,7 @@ function montarNotasDelCliente(card, customerId) {
     }
   });
 
-  // Si la lista no llega, la tarjeta se queda sin filas y el resto de la ficha sale igual.
+  // Si la lista no llega, la pestaña se queda sin filas y el resto de la ficha sale igual.
   cargar().catch(() => {});
 }
 
@@ -634,13 +638,6 @@ async function renderCustomer360View(container, customerId) {
     wrap.appendChild(linea);
   });
 
-  // SCRUM-1132 · las notas con fecha y autor. Rutas `requireRole('admin')`: al técnico, ni se piden.
-  if (window.appUserRole === 'admin') {
-    const notasCard = document.createElement('section');
-    wrap.appendChild(notasCard);
-    montarNotasDelCliente(notasCard, id);
-  }
-
   // ── Actividad / historial de comunicaciones (ENT-3) ───────────────────
   if (Array.isArray(events) && events.length) {
     const actCard = document.createElement('div');
@@ -723,18 +720,28 @@ async function renderCustomer360View(container, customerId) {
   // SCRUM-1145 · la quinta, sin número: su lista se pide al abrirla, no antes.
   const tabSitios = makeTab(SITIOS_CLIENTE.TEXTOS.pestana, 'sitios');
   tabsWrap.appendChild(tabSitios);
+  // SCRUM-1132c · la sexta, igual que «Sitios»: sin número, y sus notas se piden al abrirla.
+  // Rutas `requireRole('admin')`: al técnico ni se le pinta la pestaña ni se le piden.
+  if (window.appUserRole === 'admin') tabsWrap.appendChild(makeTab(NOTAS_CLIENTE.TEXTOS.titulo, 'notas'));
   wrap.appendChild(tabsWrap);
   wrap.appendChild(tabContent);
 
   const STATUS_LABELS = { draft:'Borrador', sent:'Enviado', accepted:'Aceptado', rejected:'Rechazado', pending:'Pendiente', paid:'Pagada', expired:'Caducada', pending_approval:'Pend. aprob.' };
   const STATUS_CLASS  = { accepted:'status-pill-accepted', paid:'status-pill-accepted', sent:'status-pill-pending', pending:'status-pill-pending', rejected:'status-pill-rejected', expired:'status-pill-draft', draft:'status-pill-draft', pending_approval:'status-pill-approval' };
 
+  // Numera cada apertura de «Notas», como `peticionSitios`.
+  let peticionNotas = 0;
   function renderTab(key) {
     tabContent.innerHTML = '';
     const card = document.createElement('div');
     card.className = 'data-card';
     tabContent.appendChild(card);
     if (key === 'sitios') { pintarSitios(card); return; }
+    if (key === 'notas') {
+      const esta = ++peticionNotas;
+      montarNotasDelCliente(card, id, () => esta === peticionNotas);
+      return;
+    }
 
     const scroll = document.createElement('div');
     scroll.className = 'table-scroll';

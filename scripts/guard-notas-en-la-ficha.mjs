@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// scripts/guard-notas-en-la-ficha.mjs — SCRUM-1132 · LA TARJETA DE NOTAS, MEDIDA EN NAVEGADOR
+// scripts/guard-notas-en-la-ficha.mjs — SCRUM-1132 · LA PESTAÑA «NOTAS», MEDIDA EN NAVEGADOR
 //
 //   npm run guard:notas-en-la-ficha            (necesita `dist/`: npm run build)
 //
@@ -8,6 +8,11 @@
 //
 // SCRUM-1036 dejó `GET`/`POST /admin/customers/:id/notes` y se cerró sin pantalla: la ficha del
 // cliente no las pedía ni dejaba escribirlas. Este guard abre la ficha y mide lo que ve una persona.
+//
+// ── SCRUM-1132c: ES UNA PESTAÑA, Y SE ABRE CON UN CLIC ───────────────────────────────────────
+// Las notas se piden al ABRIR la pestaña «Notas», como las de «Sitios» (c.20627). El censo táctil,
+// que no hace clic, ya no las ve: este guard es quien las cubre. Pintada la ficha, comprueba que NO
+// se ha pedido `/notes` todavía, y después pulsa la pestaña como una persona.
 //
 // ── 🔴 TODO ES DE VERDAD MENOS LA BASE ───────────────────────────────────────────────────────
 // La vista (`customerDetailView.js`) y `api.js` son los del árbol, y `apiRequest` hace un `fetch`
@@ -18,8 +23,9 @@
 // `/detail` y `/historial` salen de un fijo: no son lo que se mide.
 //
 // ── LOS LITERALES SALEN DEL REGISTRO DE LA FIRMA, NO DE AQUÍ ─────────────────────────────────
-// `docs/microcopy/2026-10-14-SCRUM-1132-notas-del-cliente.md`, por el buscador de la casa. Si el
-// registro no está o no trae los cuatro, el guard sale CIEGO: sin literal no hay con qué comparar.
+// `docs/microcopy/2026-10-14-SCRUM-1132-notas-del-cliente.md` y `…-2026-10-23-SCRUM-1132-notas-respaldo.md`,
+// por el buscador de la casa. Si un registro no está o no trae los suyos, el guard sale CIEGO: sin
+// literal no hay con qué comparar.
 //
 // SALIDAS: 0 todo en su sitio · 1 hallazgo (haya ciegos o no) · 2 sólo ciegos.
 // ═════════════════════════════════════════════════════════════════════════════════════════════
@@ -40,9 +46,11 @@ const DIST = pathToFileURL(path.join(RAIZ, 'dist')).href + '/';
 const CAPTURAS = process.env.NOTAS_CAPTURAS || '';
 
 // ── LOS LITERALES FIRMADOS ────────────────────────────────────────────────────────────────────
-const registro = aprobacionesDeMicrocopy().find((a) => a.ticket === 'SCRUM-1132' && a.ranura === 'notas-del-cliente');
-const L = registro ? registro.literales : [];
-const [TITULO, VACIO, BOTON, ERROR] = ['Notas', 'Sin notas', 'Añadir nota', 'No se pudo guardar:'].map((x) => (L.includes(x) ? x : null));
+const L = aprobacionesDeMicrocopy()
+  .filter((a) => a.ticket === 'SCRUM-1132' && (a.ranura === 'notas-del-cliente' || a.ranura === 'notas-respaldo'))
+  .flatMap((a) => a.literales);
+const [TITULO, VACIO, BOTON, ERROR, RESPALDO] = ['Notas', 'Sin notas', 'Añadir nota', 'No se pudo guardar:', 'No se pudo guardar: inténtalo de nuevo']
+  .map((x) => (L.includes(x) ? x : null));
 
 // ── LA BASE DOBLADA ───────────────────────────────────────────────────────────────────────────
 const COMERCIO = 1;
@@ -192,13 +200,13 @@ const CASOS = [
   { nombre: 'admin sin notas', rol: 'admin', cliente: CLIENTE_SIN_NADA },
   { nombre: 'técnico', rol: 'tecnico', cliente: CLIENTE },
 ];
-const ANCHOS = [390, 768, 1280];
+const ANCHOS = [320, 390, 1280];
 
 const navegador = await lanzarNavegador(puppeteer, {});
 let cuentas;
 const filas = [];
 
-/** Lo que una persona ve en la tarjeta, leído del DOM. */
+/** Lo que una persona ve en la pestaña abierta, leído del DOM. */
 async function leerTarjeta(page) {
   return page.evaluate(() => {
     const t = document.querySelector('#ficha [data-tarjeta="notas"]');
@@ -207,7 +215,7 @@ async function leerTarjeta(page) {
     const campo = t.querySelector('textarea');
     const r = boton ? boton.getBoundingClientRect() : null;
     return {
-      titulo: (t.querySelector('h3') || {}).textContent || '',
+      titulo: (document.querySelector('#ficha .c360-pestanas [data-key="notas"]') || {}).textContent || '',
       texto: t.innerText,
       notas: [...t.querySelectorAll('[data-nota]')].map((n) => n.innerText),
       boton: boton ? boton.textContent.trim() : null,
@@ -224,8 +232,8 @@ try {
   cuentas = await recorrerCasos(CASOS, async (caso, suyas) => {
     const ciegos = [];
     const suyos = suyas.hallazgos;
-    if (!TITULO || !VACIO || !BOTON || !ERROR) {
-      return { hallazgos: [], ciegos: [`sin los cuatro literales en el registro de la firma (leídos: ${JSON.stringify(L)})`] };
+    if (!TITULO || !VACIO || !BOTON || !ERROR || !RESPALDO) {
+      return { hallazgos: [], ciegos: [`sin los cinco literales en los registros de las firmas (leídos: ${JSON.stringify(L)})`] };
     }
     for (const ancho of ANCHOS) {
       sembrar(); forzar500 = false; peticiones.length = 0; casoActual = caso;
@@ -236,24 +244,36 @@ try {
       // SUELO: la ficha tiene que haber pintado algo suyo. Sin ancla, «no hay tarjeta» no dice nada.
       const pinto = await page.evaluate(() => Boolean(document.querySelector('#ficha #btn-edit-360')));
       if (!pinto) { ciegos.push(`${ancho}px: la ficha no ha pintado (sin #btn-edit-360)`); continue; }
-      const t = await leerTarjeta(page);
+      // SUELO de la fila de pestañas: «Sitios» la tiene todo rol. Sin ella, «no hay pestaña» no dice nada.
+      const hayFila = await page.evaluate(() => Boolean(document.querySelector('#ficha .c360-pestanas [data-key="sitios"]')));
+      if (!hayFila) { ciegos.push(`${ancho}px: la ficha no ha pintado su fila de pestañas`); continue; }
       const cabecera = await page.evaluate(() => (document.querySelector('#ficha .customers-card') || {}).innerText || '');
-      if (CAPTURAS) await page.screenshot({ path: path.join(CAPTURAS, `${caso.nombre.replace(/\W+/g, '-')}-${ancho}.png`), fullPage: true });
+      // Pintada la ficha y SIN abrir la pestaña, las notas no se han pedido (c.20627).
+      if (peticiones.some((p) => p.endsWith('/notes'))) suyos.push(`${ancho}px: la ficha pide /notes al pintarse, sin abrir la pestaña`);
+      const pestana = await page.$('#ficha .c360-pestanas [data-key="notas"]');
 
       if (caso.rol === 'tecnico') {
-        if (t) suyos.push(`${ancho}px: al técnico se le pinta la tarjeta, y las dos rutas son requireRole('admin')`);
+        if (pestana) suyos.push(`${ancho}px: al técnico se le pinta la pestaña, y las dos rutas son requireRole('admin')`);
         if (peticiones.some((p) => p.endsWith('/notes'))) suyos.push(`${ancho}px: la ficha del técnico pide /notes (sería un 403)`);
-        filas.push({ caso: caso.nombre, ancho, tarjeta: Boolean(t) });
+        if (CAPTURAS) await page.screenshot({ path: path.join(CAPTURAS, `${caso.nombre.replace(/\W+/g, '-')}-${ancho}.png`), fullPage: true });
+        filas.push({ caso: caso.nombre, ancho, tarjeta: Boolean(pestana) });
         continue;
       }
-      if (!t) { suyos.push(`${ancho}px: la ficha NO tiene tarjeta de notas`); filas.push({ caso: caso.nombre, ancho, tarjeta: false }); continue; }
-      if (t.titulo.trim() !== TITULO) suyos.push(`${ancho}px: el título es ${JSON.stringify(t.titulo)}, no «${TITULO}»`);
+      if (!pestana) { suyos.push(`${ancho}px: la ficha NO tiene pestaña «${TITULO}»`); filas.push({ caso: caso.nombre, ancho, tarjeta: false }); continue; }
+      // ── EL CLIC REAL en la pestaña ──
+      await pestana.click();
+      await page.waitForNetworkIdle({ idleTime: 150 });
+      if (!peticiones.some((p) => p.endsWith('/notes'))) suyos.push(`${ancho}px: al abrir la pestaña no se piden las notas`);
+      const t = await leerTarjeta(page);
+      if (CAPTURAS) await page.screenshot({ path: path.join(CAPTURAS, `${caso.nombre.replace(/\W+/g, '-')}-${ancho}.png`), fullPage: true });
+      if (!t) { suyos.push(`${ancho}px: al abrir la pestaña no se pintan las notas`); filas.push({ caso: caso.nombre, ancho, tarjeta: false }); continue; }
+      if (t.titulo.trim() !== TITULO) suyos.push(`${ancho}px: el rótulo de la pestaña es ${JSON.stringify(t.titulo)}, no «${TITULO}»`);
       if (t.boton !== BOTON) suyos.push(`${ancho}px: el botón dice ${JSON.stringify(t.boton)}, no «${BOTON}»`);
       if (!t.campoNombrado) suyos.push(`${ancho}px: el campo de la nota no tiene nombre accesible`);
-      if (ancho === 390 && t.altoBoton < 44) suyos.push(`390px: el botón mide ${t.altoBoton}px de alto (< 44)`);
+      if (ancho <= 390 && t.altoBoton < 44) suyos.push(`${ancho}px: el botón mide ${t.altoBoton}px de alto (< 44)`);
       if (t.desborda) suyos.push(`${ancho}px: la página desborda a lo ancho`);
       if (t.texto.includes('NOTA DE OTRO COMERCIO')) suyos.push(`${ancho}px: 🔴 sale la nota de OTRO comercio (regla 2)`);
-      if (t.texto.includes('Texto fijo de la cabecera')) suyos.push(`${ancho}px: la tarjeta repite la Nota fija; la forma firmada es la (B): sólo en la cabecera`);
+      if (t.texto.includes('Texto fijo de la cabecera')) suyos.push(`${ancho}px: la pestaña repite la Nota fija; la forma firmada es la (B): sólo en la cabecera`);
 
       if (caso.cliente === CLIENTE) {
         if (!cabecera.includes('Texto fijo de la cabecera')) suyos.push(`${ancho}px: la Nota fija ha desaparecido de la cabecera`);
@@ -289,11 +309,11 @@ try {
         await page.waitForNetworkIdle({ idleTime: 150 });
         const fallo = await leerTarjeta(page);
         forzar500 = false;
-        if (!fallo || !fallo.error.startsWith(ERROR)) suyos.push(`${ancho}px: el 500 no empieza por «${ERROR}»: ${JSON.stringify(fallo && fallo.error)}`);
+        if (!fallo || fallo.error !== RESPALDO) suyos.push(`${ancho}px: el 500 sin motivo no dice el respaldo firmado «${RESPALDO}»: ${JSON.stringify(fallo && fallo.error)}`);
         if (fallo && /API \d|internal_error|Failed to fetch/.test(fallo.error)) suyos.push(`${ancho}px: el 500 enseña la tripa del sistema: ${JSON.stringify(fallo.error)}`);
         filas.push({ caso: caso.nombre, ancho, tarjeta: true, notas: t.notas.length, error: vacio && vacio.error, fallo: fallo && fallo.error });
       } else {
-        if (!t.texto.includes(VACIO)) suyos.push(`${ancho}px: sin notas, la tarjeta no dice «${VACIO}»`);
+        if (!t.texto.includes(VACIO)) suyos.push(`${ancho}px: sin notas, la pestaña no dice «${VACIO}»`);
         if (t.notas.length) suyos.push(`${ancho}px: sin notas pinta ${t.notas.length}`);
         filas.push({ caso: caso.nombre, ancho, tarjeta: true, notas: 0 });
       }
@@ -307,9 +327,9 @@ try {
 }
 
 console.log(`\n${'═'.repeat(84)}`);
-console.log('LA TARJETA DE NOTAS · medida en NAVEGADOR, con la ruta real · ' + ANCHOS.join(' / ') + ' px');
+console.log('LA PESTAÑA «NOTAS» · medida en NAVEGADOR, con la ruta real · ' + ANCHOS.join(' / ') + ' px');
 console.log(`${'═'.repeat(84)}`);
-for (const f of filas) console.log(`  ${f.caso.padEnd(18)}${String(f.ancho).padEnd(6)}${f.tarjeta ? 'tarjeta' : 'SIN TARJETA'}${f.notas !== undefined ? ` · ${f.notas} nota(s)` : ''}${f.error ? ` · vacío: ${f.error}` : ''}${f.fallo ? ` · 500: ${f.fallo}` : ''}`);
+for (const f of filas) console.log(`  ${f.caso.padEnd(18)}${String(f.ancho).padEnd(6)}${f.tarjeta ? 'pestaña' : 'SIN PESTAÑA'}${f.notas !== undefined ? ` · ${f.notas} nota(s)` : ''}${f.error ? ` · vacío: ${f.error}` : ''}${f.fallo ? ` · 500: ${f.fallo}` : ''}`);
 
 const { hallazgos, ciegos } = cuentas;
 if (ciegos.length) console.error(`\n🔴 NO SUPE MEDIR — de esto no se da ningún veredicto:\n   · ${ciegos.join('\n   · ')}\n`);

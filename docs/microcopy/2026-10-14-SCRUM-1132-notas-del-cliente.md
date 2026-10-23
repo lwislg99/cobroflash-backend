@@ -31,7 +31,9 @@ Es nuevo: la pantalla de las notas no existía (SCRUM-1036 dejó el servidor y l
 llegó). La forma es la (B) de c.19617: la «Nota fija» (el texto heredado de `Customer.notes`) se
 queda en la cabecera de la ficha, donde ya se pintaba, y la tarjeta NO la repite.
 
-## Queda sin firmar
+## El respaldo, firmado aparte
 
-El motivo de respaldo para los fallos sin `message` (404, 500, sin red): pedido al orquestador el
-23-oct-2026, que lo lleva al fundador. Hasta que llegue, no se empuja.
+El motivo de respaldo para los fallos sin `message` (404, 500, sin red) lo firmó el fundador el
+23-oct-2026 (comentario 20435): `docs/microcopy/2026-10-23-SCRUM-1132-notas-respaldo.md`.
+Desde SCRUM-1132c (comentario 20627) «Notas» es el rótulo de una pestaña de la ficha, no el título
+de una tarjeta.

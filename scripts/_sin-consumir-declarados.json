@@ -158,8 +158,8 @@
     {"clave":"export · src/modules/fiscal/retenciones/casillas.ts::FUENTE_115","donde":"src/modules/fiscal/retenciones/casillas.ts:27","carril":"J1","ticket":"SCRUM-1066","motivo":"J1: solo la consume construirBorradorRetenciones, sin ruta (arriba)"}
   ],
   "retiradas": [
-    {"clave":"ruta · GET /admin/customers/:id/notes","motivo":"SCRUM-1132: conectada en customerDetailView.js (la tarjeta «Notas» de la ficha del cliente, sólo admin)"},
-    {"clave":"ruta · POST /admin/customers/:id/notes","motivo":"SCRUM-1132: conectada en customerDetailView.js (la tarjeta «Notas» de la ficha del cliente, sólo admin)"},
+    {"clave":"ruta · GET /admin/customers/:id/notes","motivo":"SCRUM-1132: conectada en customerDetailView.js (la pestaña «Notas» de la ficha del cliente, al abrirla; sólo admin)"},
+    {"clave":"ruta · POST /admin/customers/:id/notes","motivo":"SCRUM-1132: conectada en customerDetailView.js (la pestaña «Notas» de la ficha del cliente, al abrirla; sólo admin)"},
     {"clave":"ruta · POST /admin/customers/:id/sites","motivo":"SCRUM-1145: conectada en customerDetailView.js («+ Nuevo sitio» y «Guardar» del formulario de la pestaña «Sitios»)"},
     {"clave":"ruta · PUT /admin/customers/:id/sites/:siteId","motivo":"SCRUM-1145: conectada en customerDetailView.js («Editar» y «Guardar» en cada sitio de la pestaña «Sitios»)"},
     {"clave":"ruta · DELETE /admin/customers/:id/sites/:siteId","motivo":"SCRUM-1145: conectada en customerDetailView.js («🗑 Eliminar» en cada sitio de la pestaña «Sitios», sin confirmación: c.20592)"},

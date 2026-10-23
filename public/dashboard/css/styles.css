@@ -4816,10 +4816,11 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
    (un enlace, una referencia) se parte en vez de salirse de la tarjeta: medido a 390 px. */
 .volver-a-llamar-nota { overflow-wrap: anywhere; }
 
-/* J2: SCRUM-1132 · la tarjeta de notas de la ficha del cliente (customerDetailView.js,
-   `montarNotasDelCliente`). Título con la misma letra que «Actividad reciente»; cada nota, el texto
-   en Tinta y debajo la fecha y el autor en Apagado. El texto es libre: una palabra larga se parte. */
-.notas-cliente-titulo { margin: 0 0 14px; font-size: 13px; font-weight: 700; color: var(--neutral-600); text-transform: uppercase; letter-spacing: .04em; }
+/* J2: SCRUM-1132 · la pestaña «Notas» de la ficha del cliente (customerDetailView.js,
+   `montarNotasDelCliente`; SCRUM-1132c: era una tarjeta). El panel lleva el mismo relleno que el de
+   «Sitios»; cada nota, el texto en Tinta y debajo la fecha y el autor en Apagado. El texto es libre:
+   una palabra larga se parte. */
+.notas-cliente { padding: 16px; }
 .notas-cliente-lista { list-style: none; margin: 0 0 14px; padding: 0; }
 .notas-cliente-nota { padding: 10px 0; border-bottom: 1px solid var(--neutral-100); }
 .notas-cliente-nota:first-child { padding-top: 0; }

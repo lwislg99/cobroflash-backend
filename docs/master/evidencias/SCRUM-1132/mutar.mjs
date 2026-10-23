@@ -1,4 +1,4 @@
-// docs/master/evidencias/SCRUM-1132/mutar.mjs — EL ROJO de la tarjeta de notas, en la tanda Y en navegador.
+// docs/master/evidencias/SCRUM-1132/mutar.mjs — EL ROJO de la pestaña «Notas», en la tanda Y en navegador.
 //
 // Uso (desde la raíz, con `dist/` compilado):  node docs/master/evidencias/SCRUM-1132/mutar.mjs
 //
@@ -21,7 +21,7 @@ const sha = (b) => crypto.createHash('sha256').update(b).digest('hex');
 const correr = (args) => spawnSync(process.execPath, args, { cwd: RAIZ, encoding: 'utf8', timeout: 240000 });
 
 const suyas = mutacionesDeclaradas(fs.readFileSync(path.join(RAIZ, TEST), 'utf8'), TEST);
-if (suyas.length !== 6) { console.log(`CIEGO: esperaba las 6 mutaciones de ${TEST} y leo ${suyas.length}`); process.exit(2); }
+if (suyas.length !== 8) { console.log(`CIEGO: esperaba las 8 mutaciones de ${TEST} y leo ${suyas.length}`); process.exit(2); }
 
 // BASE sin mutar: los dos en verde, o no hay nada que medir.
 const baseTest = correr(['--test', TEST]);
