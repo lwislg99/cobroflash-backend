@@ -4799,7 +4799,14 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
    `.input` (padding 8px, sin mínimo), que es de todas las pantallas: aquí sólo se les da tamaño, y sólo
    hasta el corte de móvil (768), como SCRUM-1149 arriba; en escritorio ya llegan a 36. Mismo ancla sin
    clase nueva que 1149 (la barra de selección sólo la pinta esta lista). Medido con el medidor de
-   SCRUM-1584 (mide `select` e `input`): `guard:objetivo-tactil` daba 4 hallazgos y da 0. */
+   SCRUM-1584 (mide `select` e `input`): `guard:objetivo-tactil` daba 4 hallazgos y da 0.
+   SCRUM-1592b: «en escritorio ya llegan a 36» era cierto sólo con la fuente de Windows. Sin mínimo, el
+   alto de `.input` es padding + borde + el interlineado de la fuente que haya: 36 en el Chromium de
+   Windows y 34 en el de Linux de CI, donde el buscador y el campo de `#c360-meta` daban 35 de toque a
+   929 contra 36. Un mínimo explícito de 38 (el alto que ya tienen los dos `select` de la barra) no
+   depende de la fuente ni del redondeo; en móvil manda el de 44, que va detrás. */
+.data-card:has(> .barra-seleccion) .data-card-toolbar > .input,
+#c360-meta .input { min-height: 38px; }
 @media (max-width: 768px) {
   .data-card:has(> .barra-seleccion) .data-card-toolbar > .input,
   #c360-meta .input { min-height: 44px; }

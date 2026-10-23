@@ -18,6 +18,7 @@ import { fileURLToPath } from 'node:url';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
 import { parsearReglas } from './_censo-anillo-foco.mjs';
 import { CLIENTES_DE_MUESTRA, DETALLE_360_DE_MUESTRA, ARGUMENTOS_DE_VISTA } from '../scripts/_pagina-panel.mjs';
+import { MINIMO_ESCRITORIO } from '../scripts/_medidor-de-toque.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const esperar = async () => { for (let i = 0; i < 6; i++) await new Promise((res) => setImmediate(res)); };
@@ -39,6 +40,22 @@ test('SCRUM-1592 · los cuatro campos de Clientes llevan min-height de 44 dentro
     assert.equal(r.length, 1, `🔴 no está \`${sel}\` dentro del corte de móvil: el campo vuelve a quedarse por debajo de ${MINIMO} px a 390.`);
     const alto = /^(\d+)px$/.exec(r[0].decls.get('min-height') || '');
     assert.ok(alto && Number(alto[1]) >= MINIMO, `🔴 \`${sel}\` declara ${alto ? alto[1] + 'px' : 'ningún min-height'}: por debajo de ${MINIMO}.`);
+  }
+});
+
+// SCRUM-1592b · en escritorio el mínimo es el de la casa (36), y sin `min-height` el alto de `.input` lo
+// pone el interlineado de la fuente: 36 en el Chromium de Windows, 34 en el de Linux de CI (35 de toque).
+// La regla va FUERA de todo `@media`, con un margen sobre el mínimo que no dependa del redondeo.
+const MARGEN = 2;
+test('SCRUM-1592b · el buscador y el campo de #c360-meta llevan un min-height de escritorio que no depende de la fuente', () => {
+  const sueltas = REGLAS.filter((r) => r.medias.length === 0);
+  assert.ok(sueltas.length > 0, '🔴 CIEGO: no encuentro ninguna regla fuera de `@media` en styles.css.');
+  for (const sel of [BARRA, META]) {
+    const r = sueltas.filter((x) => x.selectores.includes(sel));
+    assert.equal(r.length, 1, `🔴 no está \`${sel}\` fuera de los @media: en escritorio su alto vuelve a depender de la fuente (35 en CI).`);
+    const alto = /^(\d+)px$/.exec(r[0].decls.get('min-height') || '');
+    assert.ok(alto && Number(alto[1]) >= MINIMO_ESCRITORIO + MARGEN,
+      `🔴 \`${sel}\` declara ${alto ? alto[1] + 'px' : 'ningún min-height'} en escritorio: por debajo de ${MINIMO_ESCRITORIO} + ${MARGEN}.`);
   }
 });
 
