@@ -81,6 +81,14 @@ function cuerpoDe(decl) {
   return null;
 }
 
+// SCRUM-1600 · Los `SourceFile` leídos de DISCO se comparten entre las llamadas a `censar` del mismo proceso.
+// Los dos tests llaman dos veces (con y sin semilla) y cada `ts.createProgram` con un host nuevo volvía a parsear
+// los mismos ficheros (src/, la lib, `@types`, prisma), y el pico del proceso casi se doblaba con basura del primer
+// programa que V8 no recogía (medición, con su hora, en `docs/master/SCRUM-1600.md`). Es la palanca de SCRUM-1244
+// (`scripts/_censo-fecha-sin-zona.mjs`). La SEMILLA no entra nunca en la caché: se fabrica antes de consultarla, y
+// sin semilla no existe.
+const DE_DISCO = new Map();
+
 export function censar({ semilla = true } = {}) {
   const ficheros = listar(SRC);
   if (semilla) ficheros.push(SEMILLA);
@@ -90,7 +98,14 @@ export function censar({ semilla = true } = {}) {
   };
   const host = ts.createCompilerHost(opciones);
   const getSF = host.getSourceFile.bind(host);
-  host.getSourceFile = (f, v, ...r) => (semilla && f === SEMILLA ? ts.createSourceFile(f, TEXTO_SEMILLA, v, true) : getSF(f, v, ...r));
+  host.getSourceFile = (f, v, onError, nuevo) => {
+    if (f === SEMILLA) return semilla ? ts.createSourceFile(f, TEXTO_SEMILLA, v, true) : undefined;
+    const clave = `${f}|${typeof v === 'object' && v ? `${v.languageVersion}|${v.impliedNodeFormat}` : v}`;
+    if (!nuevo && DE_DISCO.has(clave)) return DE_DISCO.get(clave);
+    const sf = getSF(f, v, onError, nuevo);
+    if (sf) DE_DISCO.set(clave, sf);
+    return sf;
+  };
   const existe = host.fileExists.bind(host);
   host.fileExists = (f) => (f === SEMILLA ? semilla : existe(f));
   const programa = ts.createProgram(ficheros, opciones, host);
