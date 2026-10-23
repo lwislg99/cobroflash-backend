@@ -14,8 +14,14 @@
 //  1. `DATABASE_URL` EN EL ENTORNO. No se lee `.env` a propósito: `.env` apunta a PRODUCCIÓN,
 //     y "ser amables" leyéndolo es exactamente cómo se enciende la facturación del merchant
 //     equivocado con un mensaje bonito delante. Sin destino elegido, no se ejecuta.
-//  2. `FLAG_CONFIRM=<hostname>` — hay que NOMBRAR la base. Patrón de `seed-video`/`seed-demo`:
+//  2. `FLAG_CONFIRM=<clave del destino>` — hay que NOMBRAR la base. Patrón de `seed-video`/`seed-demo`:
 //     no se prohíbe apuntar a producción, se obliga a decirlo. Deja de ser posible por accidente.
+//     SCRUM-1575e: hasta aquí se nombraba el HOSTNAME, y staging y desarrollo comparten host
+//     (`acela`): con `FLAG_CONFIRM=<host de acela>`, una `DATABASE_URL` a `yaqu_dev_*` pasaba igual
+//     que una a staging. Ahora se nombra la CLAVE que promete el destino (`DATABASE_URL_STAGING`,
+//     `DATABASE_URL_DEV`, `DATABASE_URL_TESTS`, o `DATABASE_URL` para producción) y
+//     `exigirDestinoCorrecto` (`_clave-vs-destino.mjs`) compara host Y base contra lo que esa clave
+//     promete, sobre la MISMA URL que usará el cliente, antes de importar nada que conecte.
 //  3. `--email` con el email EXACTO del merchant. Un id es un número que se confunde; un email
 //     hay que ir a buscarlo. Lo valida el servicio, no este script.
 //
@@ -23,9 +29,15 @@
 // `_db-guard.mjs` son los únicos que la tocan, y no hay camino por el que devuelvan la cadena.
 //
 // USO:
-//   DATABASE_URL=<url> FLAG_CONFIRM=<hostname> node scripts/cambiar-flag-fiscal.mjs \
+//   DATABASE_URL=<url> FLAG_CONFIRM=DATABASE_URL_STAGING node scripts/cambiar-flag-fiscal.mjs \
 //     --merchant 7 --flag INVOICING_ES_ENABLED --valor on --email pro@ejemplo.es
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describirBD, parseBDSegura, redactarSecretos } from './_db-guard.mjs';
+import { DESTINOS_ESPERADOS, exigirDestinoCorrecto } from './_clave-vs-destino.mjs';
+
+// La raíz del árbol: `DATABASE_URL_TESTS` promete una base distinta según el worktree.
+const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 const abortar = (msg) => { console.error('\n❌ ABORTADO: ' + msg + '\n'); process.exit(1); };
 
@@ -40,7 +52,7 @@ function confirmarDestino() {
       '  Ojo: eso no significa "sin destino". Prisma cargaría `.env`, que apunta a PRODUCCIÓN,\n' +
       '  y este script cambia el INTERRUPTOR FISCAL de un merchant.\n\n' +
       '  Elige la base a mano y nómbrala:\n\n' +
-      '    DATABASE_URL=<url-de-la-bd> FLAG_CONFIRM=<hostname-de-esa-bd> \\\n' +
+      '    DATABASE_URL=<url-de-la-bd> FLAG_CONFIRM=<clave-de-ese-destino> \\\n' +
       '      node scripts/cambiar-flag-fiscal.mjs --merchant <id> --flag <FLAG> --valor on|off --email <email>',
     );
   }
@@ -48,13 +60,20 @@ function confirmarDestino() {
   const bd = parseBDSegura(dbUrl); // jamás `new URL` suelto: su error lleva la contraseña dentro
   if (!bd) abortar('DATABASE_URL no es una URL válida. (No se imprime: llevaría la credencial.)');
 
-  if (process.env.FLAG_CONFIRM !== bd.host) {
+  const clave = process.env.FLAG_CONFIRM || '';
+  if (!Object.hasOwn(DESTINOS_ESPERADOS, clave)) {
     abortar(
       `Confirma la base de forma EXPLÍCITA. DATABASE_URL apunta a:\n\n    ${describirBD(dbUrl)}\n\n` +
-      `  Si es la correcta, re-ejecuta nombrándola:\n\n` +
-      `    FLAG_CONFIRM=${bd.host} node scripts/cambiar-flag-fiscal.mjs …\n\n` +
+      '  Nombra el DESTINO con la clave que lo promete (se comprueban host Y base):\n\n' +
+      Object.entries(DESTINOS_ESPERADOS).map(([k, d]) => `    FLAG_CONFIRM=${k}   (${d.comoSeLlama})\n`).join('') + '\n' +
+      '  El hostname ya no vale (SCRUM-1575e): staging y desarrollo comparten host.\n' +
       '  Si NO es la que querías, no toques FLAG_CONFIRM: cambia DATABASE_URL.',
     );
+  }
+  try {
+    exigirDestinoCorrecto(clave, dbUrl, RAIZ);
+  } catch (e) {
+    abortar(e.message);
   }
   return bd;
 }

@@ -571,3 +571,63 @@ SL». **Los 24 que esperan al asesor esperan, de hecho, a SCRUM-143** (constitui
 | TRABAJO con qué falta y su carril, ordenado | la tabla (35 tickets en 34 filas) y la lista de 15 del ORQ |
 | reusar 1496c, sin censo nuevo | `tabla-ya-esta.mjs` sin cambios; la pista de 1496c en cada lote |
 | control 1543, mirado después | «Los controles»: TERMINADO ✅ |
+
+## 23-oct-2026 · SCRUM-1496f · Re-censo por EFECTO y por CONTENIDO de los 142 abiertos: 17 TERMINADOS
+
+**Medido contra:** `origin/main` = `c26f7d6dd5af600e154919e7d341c0d8be2fc684` · 2026-10-23T03:15:05Z
+
+A9: aviso → cicatriz J3 «Publiqué en Jira una comparación con el censo anterior escrita de memoria, con interrogaciones, en vez de cruzar las dos listas: salió mal en cinco números, y lo corregí en el comentario siguiente.» — no se pudo comprobar: el texto de un comentario de Jira no lo lee ningún test del árbol; lo que queda es el cruce impreso abajo
+
+J3 (`jv-j3ak`), encargo de `cobroflash-backend-62`. Lectura: nada cerrado, transicionado ni etiquetado (A13). Jira: c.20385 (la entrega) y c.20386 (mi corrección). **No depende de 1496e** (#2682, en DIRTY al escribir esto y sin mergear: su tramo no está en este fichero en `main`).
+
+### Qué cambia en el instrumento (por eso hay tramo)
+
+`tabla-ya-esta.mjs` corre sin cambios. Lo que cambia es la capa de lectura de 1496e, en `evidencias/SCRUM-1496f/`:
+
+1. **Los lectores van ciegos:** sin la pista del censo anterior y sin pedir el estado de Jira (en 1496e los dos controles cerrados no fueron ciegos).
+2. **Cinco veredictos** en vez de dos: TERMINADO · PARCIAL · SIN EMPEZAR · ESPERA · NO HE PODIDO MIRAR.
+3. **La búsqueda por CONTENIDO es obligatoria** (`git grep` / `git log -S` y JQL `text ~`), también en los «NADA EN MAIN», que 1496e no leyó.
+4. **Controles sembrados** (cicatriz ②): 99998 (hecho bajo 996d → TERMINADO), 99997 (un fichero que no existe → SIN EMPEZAR) y 99996 en un lote de NADA (la capa de 1550 → TERMINADO bajo SCRUM-1550). `consolida.cjs` sale 2 si un control falla o **no tiene fila** (CIEGO); visto en rojo con `salida/` vacía.
+
+### Resultado
+
+142 abiertos (`foto-jira-2026-10-23T0320Z.tsv`) → censo por número 106 ALGO · 36 NADA · 0 ciego, 9999 a tres ceros (`tabla-c26f7d6dd.md`). Fuera los 5 que llevan también `equipo-luis` (870 1092 1505 1506 1507). 137 + 1574 + 3 semillas = 141 filas, 141 únicas (`salida-consolida.txt`).
+
+| veredicto | n | tickets |
+|---|---|---|
+| TERMINADO | 17 | 1149 1214 1244 1245 1253 1257 1259 1260 1321 1344 1392 1393 1508 1514 1538 1565 1569 |
+| PARCIAL | 26 | 658 957 1016 1043 1063 1066 1101 1103 1105 1218 1311 1324 1328 1330 1335 1346 1390 1391 1395 1403 1404 1449 1570 1571 1575 1576 |
+| SIN EMPEZAR | 8 | 1044 1064 1077 1132 1145 1410 1549 1556 |
+| ESPERA | 85 | la lista en `salida-consolida.txt` |
+| NO HE PODIDO MIRAR | 1 | 1159 (hace falta un navegador) |
+
+La evidencia por parte de los 17 está en c.20385 y en `veredictos-por-lote.md`. Controles: 99998, 99997 y 99996 ✅; 1574 (cerrado el 22-oct) → TERMINADO; 1514 → TERMINADO, con `serializeJob` atribuido a SCRUM-1519 como «de paso».
+
+**Por contenido, en los 36 NADA:** ninguno TERMINADO bajo otro número; nueve con alguna parte bajo otro: 18 658 957 1028 1053 1101 1347 1497 1499.
+
+**Cruce con 1496e** (sale de `filas.json` contra la lista de 37 de c.20248): 26 ya cerrados · 11 siguen abiertos → 9 siguen TERMINADO (1214 1245 1253 1259 1260 1321 1392 1514 1538), 2 cambian (1106 → ESPERA, 1335 → PARCIAL) · 8 TERMINADO nuevos (1149 1244 1257 1344 1393 1508 1565 1569).
+
+### Lo que NO se ha hecho ni medido
+
+* Los veredictos los dan 11 lectores; yo no he releído ninguno por efecto. En 1149, 1245, 1259 y 1565 el lector declara 0/0 comentarios: no he comprobado que tengan cero.
+* En 1105 el lector vio su fila de 1496c/d por un `git grep`: ahí no fue ciego.
+* PARCIAL, SIN EMPEZAR y ESPERA están contados, no revisados. La columna «bajo otro número» de esas filas la saca un patrón y trae autocitas.
+* Nadie ha mirado CI, yaqu.app ni ninguna base. No se ha subido `lineas.tsv` (198 KB; lo regenera `--lineas`).
+
+### Repetirlo
+
+```
+node docs/master/evidencias/SCRUM-1496/tabla-ya-esta.mjs --jira <foto.tsv> --ref <sha> --lineas <fuera del árbol>   # → tabla.md
+# algo.txt / nada.txt = claves ALGO / NADA de tabla.md
+node docs/master/evidencias/SCRUM-1496f/hacer-lotes.cjs      # en el directorio de trabajo
+# un lector por lote con criterio-de-lectura.md
+node docs/master/evidencias/SCRUM-1496f/consolida.cjs        # salida 0 = controles bien
+```
+
+| aceptación (encargo de c.20385) | dónde se ve |
+|---|---|
+| censo por EFECTO de los abiertos de `equipo-javier` sobre el main de hoy | `evidencias/SCRUM-1496f/veredictos-por-lote.md` |
+| TERMINADO con commit/PR por parte | c.20385, tabla de los 17 |
+| PARCIAL / SIN EMPEZAR / ESPERA | `salida-consolida.txt`; contados, NO HECHO revisarlos (prioridad 3 del orquestador) |
+| búsqueda por CONTENIDO | columna 7 de cada `salida/veredicto-lote-*.md`; semilla 99996 ✅ |
+| 1574 y 1514 salen como lo que son | `salida-consolida.txt`: TERMINADO los dos |
