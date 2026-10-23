@@ -169,3 +169,61 @@ Lo midió S1 en su gemelo del albarán (SCRUM-1589, PR #2731) y nos pasó el nú
   fundador. No visto en yaqu.app: pendiente de despliegue, y hará falta un presupuesto firmado
   nuevo, porque el PDF de uno ya firmado puede servirse del disco (no lo he comprobado en el
   presupuesto; S1 lo midió en el albarán).
+
+## SCRUM-1470c · El PDF de la FACTURA imprime el día de su registro fiscal (J1, jv-j1aq, 23-oct-2026)
+
+**Medido contra:** `origin/main` = `01edf6213c16417989a4fbf50e9d28b9f707e881` · 2026-10-23T14:26:12Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum1470c-la-factura-imprime-el-dia-de-su-registro.test.mjs`
+
+**La decisión (aceptación 2).** Jira SCRUM-1470 c.20530: el orquestador de Javier transcribe la
+pregunta («¿das permiso (toca el PDF de factura) para que imprima el MISMO día que su registro
+fiscal, calculado con la zona del negocio como ya hace la numeración?») y la respuesta del fundador:
+«Sí, el mismo día». Es el GO de regla 40 con este alcance: `dateStr` del PDF de FACTURA usa el día
+natural del registro, sin tocar sellado, XML ni libros; sin zona declarada no cambia nada.
+
+**El rojo, ejecutado antes de tocar `src/`** (`tests/_sonda-fecha-de-la-factura.mjs`, proceso en
+UTC, PDF generado de verdad y leído; el registro, con `formatDateES(createdAt, zonaDelMerchant(m))`,
+que es la función que escribe la `FechaExpedicionFactura`): factura del 3-oct a las 00:30 de Madrid
+→ PDF `02/10/2026`, registro `03/10/2026`. Mediodía y negocio sin zona: los dos iguales. Después del
+arreglo: `03/10/2026` en los dos, y los otros dos casos sin moverse.
+
+**Qué se ha cambiado.**
+- `pdf.service.ts`, `generateInvoicePdf`: `dateStr` pinta `diaNaturalEn(d, zonaDelMerchant({ timezone: params.zona }))`
+  en vez de `getDate()/getMonth()/getFullYear()`. Entra el parámetro `zona` (crudo, como en
+  `generateQuotePdf`), **obligatorio**: un llamador que no lo pase no compila (comprobado con `tsc`
+  sobre una llamada sembrada fuera del árbol, que da TS2345; la misma con `zona: null` compila).
+- Los tres llamadores de `src/` pasan `merchant.timezone`: `src/lib/invoicing.ts` (los dos
+  generadores) e `invoicesAdmin.routes.ts` (regenerar PDF). Los tres ya cargaban la fila entera del
+  merchant: no hay consulta nueva. Es el único cambio fuera del cuerpo del PDF y no toca sellado,
+  huella, XML ni libros.
+- `tests/_cambios-autorizados-de-la-factura.mjs`: la entrada de este cambio (firma SCRUM-1470 c.20530),
+  con las cuatro huellas copiadas de `docs/master/evidencias/SCRUM-1446d/huellas.mjs` sobre la base
+  `9a9518c2e42f50a3d95d884f076ed58e647750e6`. Sin ella, `scrum603b` y `scrum723` caían (medido).
+- Censo (`scripts/_censo-fecha-sin-zona.mjs`): `pdf.service.ts::dateStr` sale de `USO` y entra en
+  `RETIRADAS`; el test de SCRUM-1470 pasa de 6 a 3 llamadas que imprimen en sus cinco ficheros.
+
+**Mutaciones sobre `dist/`** (restaurado byte a byte después): M1 ignora la zona → caen 2 casos ·
+M2 Madrid fijo → cae «sin zona» · M3 vuelve `getDate` → caen 2.
+
+**Aceptación 3.** De las filas de J1 en la clase IMPRIME quedan 2, con su motivo en `USO`: el sello
+«(hora del servidor)» de `generateQuotePdf` y `fD` del paquete de disputa (su gemelo es ese sello, y
+el literal necesita firma, regla 39). Salen las 3 de `dateStr`.
+
+**Aceptación 4 · el gemelo del portal: DECLARADO, no hecho.** `customerPortal.routes.ts::fechaDeLaFactura`
+es del carril J2 y no lo he escrito. Sigue en SCRUM-1471 (J2, En curso), con su motivo en `USO`. Hasta
+que entre, en un negocio CON zona el portal y el PDF de la misma factura dicen días distintos de
+madrugada: es la contradicción que la regla del ticket quiere evitar, y se dice aquí para que no se
+pierda. Hoy sólo la puede ver un negocio con `timezone` puesta (los 13 del relleno de SCRUM-643, todos
+de prueba, según su registro; no lo he contado en ninguna base).
+
+**De paso:** el caso «DECLARADO» de SCRUM-1471 en `tests/scrum1470-…` decía que el portal seguía el
+reloj del proceso «como la del PDF de la factura»; ya no es cierto, y su texto lo dice.
+
+**Error mío, cazado antes de correrlo:** escribí el suelo exigiendo tres desplazamientos distintos
+para verano, invierno y Canarias; Canarias en julio va a +60, igual que Madrid en enero. Ahora el
+suelo compara la lista entera `[120, 60, 60]`.
+
+**No medido:** yaqu.app (falta el despliegue; si una factura ya emitida sirve su PDF del disco o lo
+regenera, no lo he comprobado),
+ninguna base de datos, y la tanda completa (sólo los guards de suite que tocan lo cambiado).
