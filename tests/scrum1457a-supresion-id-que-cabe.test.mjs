@@ -19,6 +19,30 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { montarAppReal, bancoDePrisma, sesionesDe } from './_banco-camino-real.mjs';
 
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // Volver a la guarda de antes: un entero que no cabe vuelve a pasar la entrada.
+    fichero: 'src/modules/system/app/routes/supresion.routes.ts',
+    de: 'if (!cabeEnColumnaInt(merchantId) || merchantId <= 0) return',
+    a: 'if (!Number.isInteger(merchantId) || merchantId <= 0) return',
+    cae: 'SCRUM-1457a · 🔴 un merchantId entero que no cabe en la columna',
+  },
+  {
+    // `isSafeInteger` deja pasar hasta 2^53: `10000000000` es «seguro» y no cabe.
+    fichero: 'src/modules/system/app/routes/supresion.routes.ts',
+    de: 'if (!cabeEnColumnaInt(merchantId) || merchantId <= 0) return',
+    a: 'if (!Number.isSafeInteger(merchantId) || merchantId <= 0) return',
+    cae: 'SCRUM-1457a · 🔴 un merchantId entero que no cabe en la columna',
+  },
+  {
+    // Perder el suelo `<= 0`: el 0 y el -1, que la guarda vieja rechazaba, dejarían de salir en 400.
+    fichero: 'src/modules/system/app/routes/supresion.routes.ts',
+    de: 'if (!cabeEnColumnaInt(merchantId) || merchantId <= 0) return',
+    a: 'if (!cabeEnColumnaInt(merchantId)) return',
+    cae: 'SCRUM-1457a · ⑥ RECHAZA MÁS, NUNCA MENOS',
+  },
+];
+
 const M = 7;
 const app = await montarAppReal();
 const ses = sesionesDe(M, { id: 9, role: 'tecnico', name: 'T', status: 'active', merchantId: M });
