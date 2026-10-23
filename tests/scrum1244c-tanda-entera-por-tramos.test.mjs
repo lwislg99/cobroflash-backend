@@ -22,14 +22,19 @@ const PASA = "import { test } from 'node:test';\ntest('pasa', () => {});\n";
 const CAE = "import { test } from 'node:test';\ntest('cae a proposito', () => { throw new Error('sembrado'); });\n";
 // Mata al `node --test` que lo ejecuta: lo mismo que le hace el reaper a la tanda entera.
 const MATA = "import { test } from 'node:test';\ntest('mata a su runner', () => { process.kill(process.ppid, 'SIGKILL'); });\n";
-const TARDA = "import { test } from 'node:test';\ntest('tarda', async () => { await new Promise((ok) => setTimeout(ok, 60000)); });\n";
+const TARDA = "import { test } from 'node:test';\ntest('tarda', async () => { await new Promise((ok) => setTimeout(ok, 20000)); });\n";
 
-function sembrar(ficheros) {
+/** Siembra los ficheros en un banco temporal, se lo pasa a `cuerpo` y lo borra pase lo que pase. */
+function conBanco(ficheros, cuerpo) {
   const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-1244c-'));
-  const dir = path.join(raiz, 'tests');
-  fs.mkdirSync(dir);
-  for (const [nombre, cuerpo] of Object.entries(ficheros)) fs.writeFileSync(path.join(dir, nombre), cuerpo);
-  return { raiz, dir };
+  try {
+    const dir = path.join(raiz, 'tests');
+    fs.mkdirSync(dir);
+    for (const [nombre, texto] of Object.entries(ficheros)) fs.writeFileSync(path.join(dir, nombre), texto);
+    cuerpo({ raiz, dir });
+  } finally {
+    fs.rmSync(raiz, { recursive: true, force: true });
+  }
 }
 
 function correr({ raiz, dir }, args, extra = {}) {
@@ -39,23 +44,19 @@ function correr({ raiz, dir }, args, extra = {}) {
   return { status: r.status, out: `${r.stdout}${r.stderr}` };
 }
 
-const limpiar = ({ raiz }) => fs.rmSync(raiz, { recursive: true, force: true });
-
 test('SCRUM-1244c · CONTROL: los dos tramos en verde dan VERDE, con la población sembrada', () => {
-  const b = sembrar({ 'a.test.mjs': PASA, 'b.test.mjs': PASA, 'c.test.mjs': PASA, 'd.test.mjs': PASA });
-  try {
+  conBanco({ 'a.test.mjs': PASA, 'b.test.mjs': PASA, 'c.test.mjs': PASA, 'd.test.mjs': PASA }, (b) => {
     assert.equal(correr(b, ['--tramo', '1/2']).status, 0);
     assert.equal(correr(b, ['--tramo', '2/2']).status, 0);
     const r = correr(b, ['--resumen', '2']);
     assert.equal(r.status, 0, r.out);
     assert.match(r.out, /vistos 2 de 2 \(1, 2\) · 4 ficheros · 4 tests · 4 pass · 0 fail/);
     assert.match(r.out, /VEREDICTO DE LA PASADA: VERDE/);
-  } finally { limpiar(b); }
+  });
 });
 
 test('SCRUM-1244c · 🔴 EL CASO: un tramo cuyo runner muere a mitad sale CIEGO, y la pasada también', () => {
-  const b = sembrar({ 'a.test.mjs': PASA, 'b.test.mjs': PASA, 'c.test.mjs': MATA, 'd.test.mjs': PASA });
-  try {
+  conBanco({ 'a.test.mjs': PASA, 'b.test.mjs': PASA, 'c.test.mjs': MATA, 'd.test.mjs': PASA }, (b) => {
     assert.equal(correr(b, ['--tramo', '1/2']).status, 0);
     const t2 = correr(b, ['--tramo', '2/2']);
     assert.equal(t2.status, 2, t2.out);
@@ -64,37 +65,34 @@ test('SCRUM-1244c · 🔴 EL CASO: un tramo cuyo runner muere a mitad sale CIEGO
     assert.equal(r.status, 2, r.out);
     assert.match(r.out, /VEREDICTO DE LA PASADA: CIEGO/);
     assert.doesNotMatch(r.out, /VEREDICTO DE LA PASADA: VERDE/);
-  } finally { limpiar(b); }
+  });
 });
 
 test('SCRUM-1244c · 🔴 un tramo que no llegó a apuntar nada deja la pasada CIEGA aunque lo visto sea verde', () => {
-  const b = sembrar({ 'a.test.mjs': PASA, 'b.test.mjs': PASA, 'c.test.mjs': PASA, 'd.test.mjs': PASA });
-  try {
+  conBanco({ 'a.test.mjs': PASA, 'b.test.mjs': PASA, 'c.test.mjs': PASA, 'd.test.mjs': PASA }, (b) => {
     assert.equal(correr(b, ['--tramo', '1/2']).status, 0);
     const r = correr(b, ['--resumen', '2']);
     assert.equal(r.status, 2, r.out);
     assert.match(r.out, /faltan los tramos 2 de 2/);
-  } finally { limpiar(b); }
+  });
 });
 
 test('SCRUM-1244c · 🔴 un tramo que pasa del tope se para y sale CIEGO, no verde', () => {
-  const b = sembrar({ 'a.test.mjs': TARDA });
-  try {
+  conBanco({ 'a.test.mjs': TARDA }, (b) => {
     const t = correr(b, ['--tramo', '1/1'], { TANDA_TRAMOS_TOPE_MS: '3000' });
     assert.equal(t.status, 2, t.out);
     assert.match(t.out, /CIEGO · no cupo/);
     assert.equal(correr(b, ['--resumen', '1']).status, 2);
-  } finally { limpiar(b); }
+  });
 });
 
 test('SCRUM-1244c · un caído de verdad sale ROJO, con su nombre', () => {
-  const b = sembrar({ 'a.test.mjs': PASA, 'b.test.mjs': CAE });
-  try {
+  conBanco({ 'a.test.mjs': PASA, 'b.test.mjs': CAE }, (b) => {
     assert.equal(correr(b, ['--tramo', '1/1']).status, 1);
     const r = correr(b, ['--resumen', '1']);
     assert.equal(r.status, 1, r.out);
     assert.match(r.out, /not ok · cae a proposito/);
-  } finally { limpiar(b); }
+  });
 });
 
 test('SCRUM-1244c · el registro: cuentas que no suman, cancelados o cero tests no dejan decir verde', () => {

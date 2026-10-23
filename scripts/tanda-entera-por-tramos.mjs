@@ -103,26 +103,37 @@ function leerArgumentos(args) {
   return o;
 }
 
+// El árbol entero, no sólo el runner: sus trabajadores, huérfanos, seguirían comiendo memoria. Se mira
+// la HERRAMIENTA y no la plataforma (scrum702 pone tope a quien lee la plataforma): si `taskkill` no
+// existe, se para el runner y `--test-force-exit` se lleva a los suyos.
 function pararArbol(hijo) {
-  if (process.platform === 'win32') spawnSync('taskkill', ['/PID', String(hijo.pid), '/T', '/F'], { stdio: 'ignore' });
-  else try { process.kill(-hijo.pid, 'SIGKILL'); } catch { hijo.kill('SIGKILL'); }
+  const r = spawnSync('taskkill', ['/PID', String(hijo.pid), '/T', '/F'], { stdio: 'ignore' });
+  if (r.error || r.status !== 0) hijo.kill('SIGKILL');
 }
 
 async function correrTramo({ i, n }, ficheros, dirPasada) {
   const entorno = { ...process.env };
   for (const k of ['FORCE_COLOR', 'NODE_OPTIONS', 'NODE_TEST_CONTEXT']) delete entorno[k];
-  const tap = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-tramo-')), `tramo-${i}.tap`);
-  const t0 = Date.now();
-  const hijo = spawn(process.execPath, ['--test', '--test-force-exit', `--test-concurrency=${CONCURRENCIA}`,
-    '--import=./scripts/tuberia-bloqueante.mjs', '--test-reporter=tap', `--test-reporter-destination=${tap}`, ...ficheros],
-  { cwd: RAIZ, env: entorno, stdio: ['ignore', 'inherit', 'inherit'], detached: process.platform !== 'win32', windowsHide: true });
+  const dirTap = fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-tramo-'));
+  let texto = '';
+  let fin;
+  let ms;
   let agotado = false;
-  const reloj = setTimeout(() => { agotado = true; pararArbol(hijo); }, Number(process.env.TANDA_TRAMOS_TOPE_MS) || TOPE_MS);
-  const { status, signal } = await new Promise((ok) => hijo.on('exit', (status, signal) => ok({ status, signal })));
-  clearTimeout(reloj);
-  const ms = Date.now() - t0;
-  const texto = fs.existsSync(tap) ? fs.readFileSync(tap, 'utf8') : '';
-  fs.rmSync(path.dirname(tap), { recursive: true, force: true });
+  try {
+    const tap = path.join(dirTap, `tramo-${i}.tap`);
+    const t0 = Date.now();
+    const hijo = spawn(process.execPath, ['--test', '--test-force-exit', `--test-concurrency=${CONCURRENCIA}`,
+      '--import=./scripts/tuberia-bloqueante.mjs', '--test-reporter=tap', `--test-reporter-destination=${tap}`, ...ficheros],
+    { cwd: RAIZ, env: entorno, stdio: ['ignore', 'inherit', 'inherit'], windowsHide: true });
+    const reloj = setTimeout(() => { agotado = true; pararArbol(hijo); }, Number(process.env.TANDA_TRAMOS_TOPE_MS) || TOPE_MS);
+    fin = await new Promise((ok) => hijo.on('exit', (status, signal) => ok({ status, signal })));
+    clearTimeout(reloj);
+    ms = Date.now() - t0;
+    texto = fs.existsSync(tap) ? fs.readFileSync(tap, 'utf8') : '';
+  } finally {
+    fs.rmSync(dirTap, { recursive: true, force: true });
+  }
+  const { status, signal } = fin;
   const declarados = leerCiegosDeclarados(path.join(RAIZ, 'scripts', '_ciegos-por-entorno-declarados.json'));
   const r = registroDelTramo({ i, n, ficheros: ficheros.length, texto, status, signal: agotado ? null : signal, ms, agotado },
     declarados, { raiz: RAIZ, tmp: path.dirname(path.dirname(dirPasada)) });
