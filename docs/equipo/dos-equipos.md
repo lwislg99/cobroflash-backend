@@ -185,6 +185,8 @@ clasificados por carpeta y nombre, y **por contenido** donde el nombre engañaba
 | `scripts/_ciegos-por-entorno-declarados.json`, `scripts/_entorno-prestado-declarados.json`, `scripts/_version-de-fila-dudosa-declaradas.json` (tres listas de declarados de instrumentos de S3) | **S3** (contenedor) | nacieron en SCRUM-1412, 1349 y 1381, con `area-s3`. Son listas donde un puesto apunta o retira lo suyo: medido en una de las tres (en SCRUM-1359 la S5 retiró sus cuatro entradas de la del entorno prestado); las otras dos sólo llevan el commit que las creó. Contenedor por lo mismo que la de arriba, y también lo añade la S0 (SCRUM-1480) |
 | `scripts/_detalle-917.mjs`, `scripts/_trabajos-917.mjs`, `scripts/capturas-lista-trabajos-917.mjs`, `scripts/guard-detalle-trabajo-917.mjs`, `scripts/guard-lista-trabajos-917.mjs` (los guards de navegador de la lista y del detalle del Trabajo, con sus dos ayudantes, que sólo importan ellos) | **S4** | por el área del ticket que los creó: SCRUM-917, con `area-s4`. Decisión del orquestador de Luis, 9-oct-2026 (SCRUM-1480) |
 | `scripts/_censo-bytes-control.mjs`, `scripts/arbol-mio.mjs`, `scripts/estado-antes-del-go.mjs` | **S5** | por el área del ticket que creó cada uno: SCRUM-942, 774 y 568, con `area-s5`. Decisión del orquestador de Luis, 9-oct-2026 (SCRUM-1480) |
+| `scripts/guards-entrada.mjs`, `tests/_censo-por-posicion.mjs` (el recuento de `npm run guards:entrada` y el censo de las dos formas de referenciar por posición) | **J3** | estaban sin dueño: el primero sólo en la fila general (sus tickets, SCRUM-414 y 928, no llevan etiqueta de área) y el segundo sin ninguna fila. Pasan al equipo de Javier por decisión del fundador del 14-oct-2026 en SCRUM-1556 («Ok nos lo quedamos nosotros»), y su orquestador da el puesto J3 (encargo del 23-oct-2026). Escrita por el equipo de Javier con el visto de la S0 en SCRUM-1556 c.19641 («son vuestras»). El tercer fichero de ese ticket, el cotejo, no va aquí: es `docs/master/evidencias/scrum1500/cotejo.cjs` (el único que corre en la tanda), lo creó SCRUM-1500, con `area-j5`, y su fila la decide el orquestador de Javier |
+| `docs/master/evidencias/scrum1500/cotejo.cjs` (el cotejo de los comentarios del esquema contra la Parte L del máster; de los cotejos de las evidencias del máster, el único que corre en el check obligatorio, desde SCRUM-1500b) | **J5** | es el tercer fichero de SCRUM-1556, el que la fila J3 de arriba deja sin dueño. Pasa al equipo de Javier por la misma decisión del fundador del 14-oct-2026 («Ok nos lo quedamos nosotros»), y su orquestador da el puesto J5 (encargo del 23-oct-2026) por el área del ticket que lo creó: SCRUM-1500, con `area-j5`. Escrita por el equipo de Javier con el visto de la S0 en SCRUM-1556 c.19641 («son vuestras») |
 | `scripts/_suelo-*` | **S3** | |
 | `docs/equipo/cicatrices/*.md` | cada puesto, la suya | A9 (SCRUM-1294): en qué se equivoca ese puesto, con su comprobación al lado |
 | `docs/master/SCRUM-*.md` | quien trabaja el ticket | un fichero por ticket; si ya existe, se ANEXA una sección (A8) |
@@ -243,6 +245,8 @@ obligatorio sale rojo (`tests/scrum1295-carriles.test.mjs`). «quién» es `todo
 | ruta | quién | motivo | ticket |
 |---|---|---|---|
 | `docs/equipo/00-normas-siempre.md` | todos | A9: el aviso que no se pudo convertir en comprobación va a A10, donde lo leen todas. Cada puesto añade SU línea, en su PR; el resto del fichero es de la S0 | SCRUM-1294 |
+| `.github/workflows/vigia-de-main.yml` | J6 | el vigía del CI de `main` (al acabar cada CI y diario de red), UN workflow nuevo; ningún otro workflow de S5 se toca. Excepción firmada por el fundador en SCRUM-1393 c.20147 | SCRUM-1393 |
+| `src/core/cron/cron.ts` | J1 | el `import` de `reintentoSellado.ts` y el bloque «reintento de sellado (cada minuto)», escritos por S1 (dueño) en SCRUM-1507 c.19344 §3, y sólo ese bloque (conformidad c.19344 §4); lo lleva el PR-2 de SCRUM-1404 del equipo de Javier por decisión del fundador (c.20220, opción 1). El resto del fichero sigue siendo de S1 | SCRUM-1507 |
 
 ## 4 · Jira: las etiquetas y el ciclo del ticket
 
@@ -323,6 +327,20 @@ efecto y se le cuenta al jefe en plano.
      (9 ficheros): la carpeta dice S5 y la fila «`scripts/` → S0» dice S0. Tiene fila y manda la tabla, pero
      quien lee la carpeta y quien lee la tabla llegan a conclusiones opuestas. Es el único caso entre las 47
      rutas del repo que llevan un puesto en el nombre. **¿Se le da la carpeta a S5 con una fila, o se renombra?**
+   - **Dos de `scripts/` que S3 necesita tocar y nadie ha decidido de quién son** (SCRUM-1480g, 22-oct-2026,
+     sobre `9839aa6c`). El criterio de §3.3 («el área del ticket que creó cada uno») no decide nada aquí: los
+     dos tickets que los crearon, SCRUM-813 y SCRUM-754, no llevan etiqueta de área. Los dos los abrió la
+     cuenta de Javier en Jira (5 y 7-sep), y los dos ficheros los escribió Javier (`45294b31d` y
+     `b751f88c0`, autor `javier.pereirafe@gmail.com`), antes de que hubiera dos equipos (18-sep). Lo de abajo
+     es una PROPUESTA (la inferencia es de S3), no una fila: una fila en §3 la aplica la cerradura como
+     decisión, y ésta es de los dos jefes.
+     - `scripts/_trinquete-de-zona-hijo.mjs`: S3 propone **S5**, porque SCRUM-1494c (`area-s5`) es el último
+       que lo cambió. Pero ese ticket lo cambió, no lo creó. Y si se declara, la fila tiene que llevar también
+       a su padre, `scripts/_trinquete-de-zona.mjs`, que es el único que lo lanza y tampoco tiene fila.
+       Declarar el hijo solo deja el mismo hueco un fichero más arriba.
+     - `scripts/censo-guards-gateados.mjs`: S3 propone **S0**, por ser un censo, que es lo que la fila
+       general de `scripts/` le da a la S0. Matiz: no es sólo de consulta (`npm run censo:gateados`), porque
+       dos tests importan su `veredictoDelCenso` (`scrum754`, `scrum846b`).
 5. **`.claude/**` es «de un jefe», y hoy entra sin que un jefe lo firme** (lo destapó SCRUM-1356, 1-oct-2026).
    La fila de §3.3 dice que `.claude/**` lo firma un jefe y que la S0 prepara la propuesta. El encargo de
    SCRUM-1356 le dio a la S0 «hooks y `settings.json`» como carril propio, y su PR (#2097: dos hooks y su

@@ -306,3 +306,115 @@ al lado. Se corrigió la tabla, no el banco.
 
 `chargesAdmin.routes.ts` (`:34`, `:117`, `:167`) y `psp.routes.ts:37` son de J2 y van después, con la condición ②
 medida línea a línea. `psp` es un webhook: allí un 400 nuevo cambia lo que hace Stripe.
+
+## J2 · SCRUM-1456c · cobros y psp: `confirm-bizum`, las dos de garantía y `/webhooks/psp` validan con `cabeEnColumnaInt`
+
+**Medido contra:** `origin/main` = `fe65a8b7fca8b1e42448c8134e26d880d96b9ba7` · 2026-10-21T12:16:04Z (mezclado dentro de la rama, A4; sesión J2 `jv-j2m`, por encargo del orquestador `cobroflash-backend-5f`)
+A9: comprobación → `.claude/hooks/guard-dangerous.sh`
+
+[Escrito por `jv-j2m`, una sesión; no por el fundador. He leído SCRUM-1456 entero en Jira, con sus siete
+comentarios hasta c.20139.] El hook de arranque dijo «SIN IDENTIDAD» (SCRUM-1498); el orquestador ordena
+seguir, y lo dejo escrito.
+
+**La firma:** SCRUM-1456 **c.20139**, del fundador (copiada por el orquestador desde «YaQu - decisiones
+pendientes 20-oct»): «Ok autorizo». Cubre exactamente esas cuatro líneas y ese cambio; la petición entera es
+c.20104. Cualquier otra línea del flujo de cobro sigue siendo STOP, y no se ha tocado ninguna.
+
+### El cambio, y dónde están hoy las cuatro líneas
+
+Identificadas por contenido sobre `fe65a8b7`. Están donde las midió c.20104: `chargesAdmin.routes.ts:34`,
+`:117` y `:167` (`if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });`) y
+`psp.routes.ts:37` (`if (!Number.isInteger(chargeId)) {`). En las cuatro, `Number.isInteger(` pasa a
+`cabeEnColumnaInt(`. Con el `import` las líneas bajan una: **`:35`, `:118`, `:168` y `psp:38`**.
+
+- **Lo que la firma no nombra y he hecho igual: un `import` por fichero** (`chargesAdmin.routes.ts:13` y
+  `psp.routes.ts:6`). Sin él no compila. Es la consecuencia mecánica del cambio autorizado y el ticket ya lo
+  decía («Más UNA línea de `import` por fichero»). No he tocado nada más de `src/`.
+- `enteroDeColumna.ts` (S1) se usa y no se toca.
+
+### El rojo pasa a verde, por el handler real
+
+`tests/scrum1456c-cobros-y-psp-id-que-cabe.test.mjs` (el commit del rojo, `ce0d607f`, que dejó escrito
+`jv-j2a`):
+
+| `dist/` | casos | caen | pasan | los que caen |
+|---|---|---|---|---|
+| sin el arreglo (fuente de `HEAD~`, transpilado a `dist/`) | 10 | 4 | 6 | los cuatro «🔴 un id que no cabe»: responden **500** con `99999999999999999999` |
+| con el arreglo | 10 | 0 | 10 | — (8 pasadas seguidas, todas con código de salida 0) |
+
+Los cuatro SUELOS siguen en verde con y sin arreglo: `1`, `2147483647`, `-1` y `0` llegan a la base y dan 404.
+
+### De paso: el test del rojo salía ROJO con sus diez casos en VERDE
+
+Con el arreglo puesto, el FICHERO caía con `exitCode 3221226505` (0xC0000409), 4 de 4 pasadas, con los diez
+casos `ok`. No era el arreglo: el caso de Stripe, corrido solo y **sin** el arreglo, cae igual (3 de 3). Es el
+patrón de SCRUM-560: un `fetch` a un servidor que levanta el propio test, con `--test-force-exit`. Arreglado en
+el test, con la receta de la casa (`scrum893b`): `node:http` con `agent: false` y los dos servidores cerrados
+con `await`. Ninguna aserción cambia. Después: 8 de 8 pasadas limpias, y sin el arreglo de `src/` sigue cayendo
+en los mismos 4 casos.
+
+⚠️ **Lo que no he arreglado y hay que mirar:** `tests/scrum560-patron-fetch-servidor.test.mjs` sale **verde**
+con este fichero dentro (4 casos de 4, en una pasada). El `fetch` está en una función (`emitir`) a la que se llama desde un bucle, y
+el detector busca el `fetch` DENTRO del bucle. No es mi carril ni lo toco: se dice aquí y en la entrega.
+
+### Lo que ve Stripe con `psp` en 400 o en 500 (la condición ② para `psp`)
+
+El mismo test monta la ruta de Stripe real (firma HMAC local) y reenvía un `payment_intent.payment_failed` con
+`charge_id` = `2147483648` a un `/webhooks/psp` falso. Medido hoy:
+`{"200":{"status":200},"400":{"status":400},"500":{"status":400}}`. Con `psp` en 400 o en 500, Stripe recibe
+**400 las dos veces**; el 200 de control sí cambia lo que recibe.
+
+🔵 **Corrige la última línea de la sección de 1456b**, que decía «`psp` es un webhook: allí un 400 nuevo cambia
+lo que hace Stripe». No lo llama Stripe: está detrás de `requireInternalSecret` y lo llaman nuestras rutas (lo
+midió `jv-j2a`, c.20104), y lo que Stripe ve no cambia.
+
+### La condición ② para `chargesAdmin`, EJECUTADA y no sólo leída
+
+`docs/evidencias/scrum1456/condicion2-cobros.mjs.txt` monta las DOS pantallas que llaman a
+`POST /admin/charges/:id/confirm-bizum` con el banco de la casa (`tests/_banco-vistas.mjs`): la ficha de factura
+(`invoiceDetailView.js`, con `fetch`) y la del trabajo (`jobDetailView.js`, con el `apiRequest` real de
+`api.js`). Pulsa los dos toques de «Confirmar Bizum» con la red doblada, y otros dos para ver si se puede
+reintentar. Salida en `condicion2-cobros.salida.txt`:
+
+| pantalla | respuesta | aviso pintado | botón después | reintento |
+|---|---|---|---|---|
+| factura | 400 `invalid_id` (lo nuevo) | «No se pudo confirmar. Inténtalo de nuevo.» | activo, «📲 Confirmar Bizum recibido» | sale otro POST |
+| factura | 500 `internal_error` (lo de antes) | el mismo | el mismo | sale otro POST |
+| factura | 409 `charge_not_pending` (control) | «Este cobro ya no está pendiente.» | el mismo | sale otro POST |
+| trabajo | 400 `invalid_id` | «No se pudo confirmar el Bizum.» | activo, «📲 Confirmar Bizum recibido» | sale otro POST |
+| trabajo | 500 `internal_error` | el mismo | el mismo | sale otro POST |
+| trabajo | 409 `charge_not_pending` (control) | «Este cobro ya no está pendiente.» | el mismo | sale otro POST |
+
+**En las dos pantallas, el 400 y el 500 se ven igual.** El 409 sale distinto, así que el comparador no está
+ciego. Y el control de la propia sonda: sin cobro en la factura y en el trabajo (`chargeId: null`) no hay botón,
+y dice **CIEGA** con salida 2.
+
+`/garantia` y `/garantia/liberar` no se miden en pantalla: **ningún fichero de `public/` las llama**. El mismo
+`grep` sí encuentra las dos llamadas a `confirm-bizum`.
+
+### El banco de mutación, con las cuatro llamadas nuevas
+
+`tests/banco-scrum1456/mutar.mjs` cubre ahora `chargesAdmin.routes.ts` y `psp.routes.ts`. Cada fichero se mide
+con su test (`PRUEBA`). T0 en verde en los dos tests: 62 y 10 casos. **64 mutaciones (32 llamadas × 2): caen
+64, ninguna viva, ninguna ciega, ninguna mal repartida.** Las 8 nuevas caen cada una sólo en su caso: `:35`,
+`:118`, `:168` y `psp:38`, en sus variantes «entero» y «seguro». Árbol intacto, con el sha256 de los 8
+ficheros. Salida en `docs/evidencias/scrum1456/mutar.1456c.salida.txt`.
+
+### Error propio
+
+Para medir el `dist/` sin arreglo lancé un `git checkout --` sobre mis dos ficheros de `src/`, con el arreglo
+sin comitear y su `git apply` encadenado en la misma orden. Lo paró `guard-dangerous`. Si el `apply` hubiera
+fallado, el arreglo se habría perdido. Lo medí sin tocar `src/`: transpilé la versión de `HEAD` directamente a
+`dist/`, que es lo que ya hace el banco.
+
+Y una desviación del encargo, dicha: el orquestador pedía `docs/master/SCRUM-1456c.md`. A8 dice «un fichero por
+número de ticket; si ya existe, ANEXAS una sección», y en `docs/master/` no hay ningún fichero con letra (0 de
+1.146). Por eso va aquí, como 1456b.
+
+### Lo que NO está medido
+
+- **En yaqu.app, nada.** Son tres `POST` de dinero y un endpoint interno: no se ejecutan contra producción.
+- **Contra Postgres de verdad, tampoco**: el banco del test lanza como Postgres con un número que no cabe en
+  int4. La sonda con Postgres de 1456 cubrió otras rutas, no estas cuatro.
+- Lo que ve Stripe está medido con una firma local y un `psp` falso, no con una cuenta de Stripe (no la hay).
+- La tanda completa no la he corrido: sólo este test, sus vecinos y los del check (en la entrega).

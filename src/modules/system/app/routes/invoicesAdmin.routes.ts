@@ -360,6 +360,9 @@ router.get('/:id/dispute-package', requireRole('admin'), async (req, res) => {
     if (!invoice) return res.status(404).json({ error: 'not_found' });
 
     const quote = invoice.quote;
+    // SCRUM-1576b · el paquete es la evidencia de ESTE documento: su cliente es el congelado al
+    // emitir (nombre, teléfono y email), no la ficha de hoy. La viva sólo si es anterior al escritor.
+    const cliente = clienteDelDocumento(invoice, invoice.customer);
     const messages = await prisma.whatsAppMessage.findMany({
       where: {
         merchantId: req.merchantId,
@@ -412,7 +415,7 @@ router.get('/:id/dispute-package', requireRole('admin'), async (req, res) => {
   <tr><th>Emitido</th><td>${fD(invoice.createdAt)}</td></tr>
   <tr><th>Importe</th><td>${money(invoice.total)}</td></tr>
   <tr><th>Pagado el</th><td>${fD(invoice.paidAt)}</td></tr>
-  <tr><th>Cliente</th><td>${esc(invoice.customer?.name)} · ${esc(invoice.customer?.phone ?? '')} ${esc(invoice.customer?.email ?? '')}</td></tr>
+  <tr><th>Cliente</th><td>${esc(cliente.name)} · ${esc(cliente.phone ?? '')} ${esc(cliente.email ?? '')}</td></tr>
 </table>
 
 <h2>3 · Cobro y referencia del procesador</h2>
@@ -775,6 +778,9 @@ router.post('/:id/send-reminder', requireRole('admin'), async (req, res) => {
           currency: invoice.currency,
           urlToken: payToken as string,
         }),
+        // SCRUM-1509k (fundador, SCRUM-1509 c.20569: «Pasar el cliente»): sin el cliente, el tope
+        // por cliente y día no se le preguntaba a este botón (uno de los cuatro de SCRUM-1509d).
+        log: { customerId: invoice.customerId, relatedType: 'invoice', relatedId: id },
       });
       sent = result.ok;
       if (!result.ok) {
@@ -1245,6 +1251,7 @@ router.post('/:id/regenerate-pdf', requireRole('admin'), async (req, res) => {
       rectifiesNumber: invoice.rectifies?.number ?? null,
       watermark: isDemoMerchant(merchant) ? DEMO_WATERMARK : null,
       stageLabel: invoice.stageLabel, // SCRUM-33
+      zona: merchant.timezone, // SCRUM-1470c: el día de la «Fecha:», el de su registro
     });
 
     await prisma.invoice.update({

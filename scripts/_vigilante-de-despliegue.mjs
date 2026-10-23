@@ -240,8 +240,13 @@ export function veredictoDeDespliegue(datos) {
       + '   ⚠️ LA WEB PUEDE ESTAR FUNCIONANDO PERFECTAMENTE Y AUN ASÍ SER ESTO. Cuando un\n'
       + '   despliegue falla el healthcheck, Railway mantiene vivo el anterior: no hay caída,\n'
       + '   no hay alerta, y el síntoma es «no cambia nada». Así se perdieron nueve días.\n'
-      + '   Primer sitio donde mirar: los logs de arranque. Si es `schemaDrift`, dirá qué\n'
-      + '   tabla y qué columna faltan, y entonces falta un `ALTER` en producción.',
+      // SCRUM-1123f · aquí sólo estaba la avería de septiembre, y el 21-22 oct fue la otra.
+      + '   Son DOS averías con este mismo síntoma (SCRUM-1123f), y el aviso por Issue dice cuál\n'
+      + '   es leyendo los estados de Railway del commit:\n'
+      + '     A · Railway NO HA VISTO el commit (ni un estado suyo en GitHub): no hay logs que\n'
+      + '         mirar; mirar la conexión del servicio con GitHub en Railway.\n'
+      + '     B · lo vio y FALLÓ: los logs de arranque. Si es `schemaDrift`, dirá qué tabla y\n'
+      + '         qué columna faltan, y entonces falta un `ALTER` en producción.',
   };
 }
 

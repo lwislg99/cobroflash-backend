@@ -1,0 +1,44 @@
+// mutar.mjs — jv-j2w, SCRUM-1403b. Cada mutación: cambia UNA cosa del src, recompila, corre el
+// fichero de test en el banco PGlite, restaura (y comprueba por CONTENIDO que restauró).
+// Uso: node mutar.mjs <raiz> <ddl> <dirSalida>
+import fs from 'node:fs';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+
+const [raiz, ddl, dir] = process.argv.slice(2);
+const TEST = 'tests/scrum1403-el-tecnico-y-las-otras-puertas.test.mjs';
+const RUTA = 'src/modules/system/app/routes/customersAdmin.routes.ts';
+const SERV = 'src/modules/system/customerEvents.service.ts';
+const VISTA = 'public/dashboard/js/customerDetailView.js';
+// Las del catálogo del meta-guard (SCRUM-1387) se toman del test; aquí se añaden las que sólo caza un
+// caso con base, que el meta-guard no puede correr (su job no tiene Postgres).
+const { MUTACIONES_QUE_ME_TUMBAN } = await import(new URL(`file:///${path.join(raiz, TEST).replace(/\\/g, '/')}`).href);
+const MUTACIONES = [
+  ...MUTACIONES_QUE_ME_TUMBAN.map((m, i) => ({ id: `C${i + 1}-catalogo`, f: m.fichero, de: m.de, a: m.a })),
+  { id: 'M1-eventos-enteros', f: RUTA, de: 'events: sinDinero ? eventosSinImporte(events) : events,', a: 'events: sinDinero ? events : events,' },
+  { id: 'M2-cifras-al-tecnico', f: RUTA, de: '...(sinDinero ? {} : {', a: '...(false ? {} : {' },
+  { id: 'M3-vista-sin-filtro', f: VISTA, de: "].filter((k) => !k.cifra || stats[k.cifra] !== undefined);", a: '];' },
+  { id: 'M4-anomalia-fuera-de-la-lista', f: SERV, de: "'dispute_created', 'payment_anomaly',", a: "'dispute_created'," },
+  { id: 'M5-detalle-se-queda', f: SERV, de: '{ ...e, detail: null }', a: '{ ...e }' },
+];
+const tsc = () => spawnSync(process.execPath, [path.join(raiz, 'node_modules/typescript/bin/tsc'), '--noCheck'], { cwd: raiz, encoding: 'utf8' }).status;
+for (const m of MUTACIONES) {
+  const p = path.join(raiz, m.f);
+  const original = fs.readFileSync(p, 'utf8');
+  const n = original.split(m.de).length - 1;
+  if (n !== 1) { console.log(`${m.id} · CIEGO: el texto a mutar aparece ${n} veces`); continue; }
+  try {
+    fs.writeFileSync(p, original.replace(m.de, m.a));
+    if (tsc() !== 0) { console.log(`${m.id} · CIEGO: no compila`); continue; }
+    const r = spawnSync(process.execPath, [path.join(path.dirname(fileURLToPath(import.meta.url)), 'banco.mjs'), raiz, ddl, path.join(dir, `${m.id}.tap`), TEST], { encoding: 'utf8', timeout: 280000 });
+    const lineas = (r.stdout || '').split('\n');
+    const caen = lineas.filter((l) => l.startsWith('not ok')).map((l) => '    · ' + l.slice(7, 110));
+    const resumen = lineas.find((l) => l.startsWith('exit=')) || 'SIN RESUMEN (CIEGO)';
+    console.log(`${m.id} · ${caen.length ? 'VIVA→CAZADA' : 'MUDA'} · ${resumen}\n${caen.join('\n')}`);
+  } finally {
+    fs.writeFileSync(p, original);
+    if (fs.readFileSync(p, 'utf8') !== original) console.log(`🔴 ${m.id}: NO SE RESTAURÓ ${m.f}`);
+  }
+}
+console.log(`restaurar dist: tsc=${tsc()}`);

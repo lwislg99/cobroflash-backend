@@ -139,3 +139,217 @@ Prisma compartido va por detrás del esquema, le faltan `Merchant.activityKind` 
 
 Los 22 son del cliente de Prisma de esta máquina (scrum222, 235, 245, 252, 385, 461, 471, 475, 733, 1199,
 1298b), no de esta rama. No se ha esperado el CI (orden del encargo).
+
+# SCRUM-1569 · ① J3 — la línea de `contactName` en `CAMPOS_PERSONALES`
+
+**Medido contra:** `origin/main` = `3fadf8eba46be56c209e5eb491cbeab155bc2314` · 2026-10-20T10:36:51Z (el merge de #2624; el banco se midió sobre `e0c32fb5297e0ea98383d9f983ed8abfa67553c2` y entre los dos solo entraron #2623, que no toca nada de aquí, y #2624, cuyo trinquete se mide abajo ya mergeado)
+A9: comprobación → `tests/scrum497-dato-personal-no-sobrevive.test.mjs`
+
+Puesto J3 (`jv-j3b`) · árbol `j3b-1569-la-linea`. Encargo del orquestador `cobroflash-backend-09`. La medición
+de partida es de `jv-j3a` y `jv-j4b` (SCRUM-1569 c.20092, c.20101, c.20103; PR #2624) y **no** se ha repetido salvo
+el banco de antes/después de esta línea.
+
+## La línea
+
+`src/modules/system/domain/anonimizarMerchant.ts`: `customerSite: ['phone']` → `customerSite: ['phone', 'contactName']`.
+Solo se añade; no se quita ninguna entrada.
+
+**`phone` ya estaba cubierto, y por esta misma línea**: `main` llevaba `customerSite: ['phone']` desde SCRUM-1014.
+El literal que midió J4 (`['phone', 'contactName']`) sobraba a medias: lo único nuevo es `contactName`. Ninguna otra
+vía de `suprimirMerchant` toca `customer_sites` (`borradoMerchant.ts` lo lista, pero ese es el borrado, no el
+anonimizado: lo dice su propio comentario de la línea 76).
+
+## El rojo primero: banco PGlite de J4, sin escribir otro
+
+`docs/master/evidencias/SCRUM-1569/banco-sitio.mjs` de #2624 (`da3c41e80`), byte a byte el mismo que el `sitio.mjs`
+del banco de `jv-j4b` (`cmp` sin diferencias). PGlite copiada de ese banco, DDL regenerado desde el esquema de esta
+rama (`migrate diff --from-empty`, 33 `CREATE TABLE` = 33 modelos). `dist` con `tsc --noCheck`, dos veces: con el
+fichero de `origin/main` y con el de esta rama.
+
+| campo de `customer_sites` | A, antes (`main`) | A, después (esta rama) | B, el vecino, en los dos |
+|---|---|---|---|
+| `contact_name` («Luis el portero») | **EN CLARO** | redactado | intacto |
+| `phone` | redactado | redactado | intacto |
+| `name`, `address`, `city`, `postal_code`, `province`, `country` | en claro | **en claro (control negativo)** | intacto |
+
+`suprimir: ok=true` en los dos. `updateMany` pedido al sitio: antes `customerSite:phone`, después
+`customerSite:phone,contactName`. Testigo del banco al final de las dos salidas: `TESTIGO: el banco corrio entero · EXIT=0`.
+
+## El trinquete: en `main` no se mueve; con #2624 baja de 45 a 44
+
+- **Sobre `main`** (censo por nombre exacto): `scrum497` + los seis `scrum244` = 64 tests, 63 ✔, 0 ✖, 1 saltado
+  (el de Postgres, «sin LIBRO_PG_URL»). El trinquete sigue en **16**: ese censo no ve `contactName`, así que añadirlo
+  no lo mueve.
+- **Con los dos ficheros de test de #2624 puestos un momento encima** (`git checkout da3c41e80 --` de
+  `tests/_censo-datos-personales.mjs` y `tests/scrum497-…`, restaurados después; `git status` solo enseña el `.ts`):
+  14 tests, 13 ✔, **1 ✖, el TRINQUETE**: «el trinquete da 44 pendientes y eran 45 (…) si BAJA a 44 porque entró esa
+  línea, quita su entrada de `SIN_DECIDIR` y pon 44 aquí». Lo que nombra es **`customerSite.contactName`**, y nada más.
+
+**Después de entrar #2624** (`3fadf8eb`, 10:36:51Z), con `main` mergeado en esta rama: `scrum497` sale ROJO en
+`main` + esta línea (14 tests, 13 ✔, 1 ✖, «da 44 pendientes y eran 45»). Se quita `customerSite.contactName` de
+`SIN_DECIDIR` y el trinquete pasa a 44; no se toca nada más de ese fichero.
+
+⚠️ **Los dos PR crearon este fichero, y git NO dio conflicto: lo UNIÓ línea a línea.** El registro de J4 quedó
+metido dentro de la tabla de este tramo, sin un solo marcador (0 líneas `<<<<<<<`), y el merge automático de
+yaqu-bot (`fa1897e48`) dejó el mismo árbol. Se rehízo a mano: el de J4 entero, tal como está en `main`, y este
+tramo debajo.
+
+# SCRUM-1569 · ② J3 (1569d) — Cinco campos más al anonimizado: móvil del cliente, IBAN, CLABE, Bizum y el nombre del sitio
+
+**Medido contra:** `origin/main` = `fe65a8b7fca8b1e42448c8134e26d880d96b9ba7` · 2026-10-20T15:35:31Z (merge de #2625, hora de GitHub; hora de GitHub al escribir: 2026-10-21T12:14:19Z)
+A9: comprobación → `tests/scrum497-dato-personal-no-sobrevive.test.mjs`
+
+Puesto J3 (`jv-j3o`) · árbol `j3o-1569d` · rama `scrum-1569d-cinco-campos-al-anonimizado`. Encargo del orquestador del
+equipo de Javier (`cobroflash-backend-5f`). Carril: `anonimizarMerchant.ts` es **J3** (`dos-equipos.md:128`); el censo
+`tests/_censo-datos-personales.mjs` y `scrum497` no tienen dueño (SCRUM-1569 c.20101).
+
+## La decisión
+
+SCRUM-1569 **c.20142** (21-oct-2026), copiada por el orquestador del documento que rellenó el fundador:
+
+- ① `customer.mobile`, `merchant.iban`, `merchant.clabe` y `merchant.bizumPhone` → **«Ok tu recomendación»**: entran.
+- ② `customerSite.name` → **«ok decidimos que sí»**: sale de la excepción firmada y entra.
+
+Víctimas medidas por Javier (solo lectura, Railway): producción 1 cliente con móvil, 4 comercios con IBAN, 2 con Bizum,
+0 con CLABE, 0 sitios. Dev: c.20145 (dev no tiene la tabla `customer_sites`). Aquí **no se ha mirado ninguna base**.
+
+## Lo que entra
+
+| qué | dónde |
+|---|---|
+| `merchant`: + `bizumPhone`, `iban`, `clabe` · `customer`: + `mobile` · `customerSite`: + `name` | `src/modules/system/domain/anonimizarMerchant.ts` (`CAMPOS_PERSONALES`) |
+| `customerSite.name` sale de `FUERA_DE_ANONIMIZADO`; su motivo antiguo queda citado en un comentario con c.20142 | `tests/scrum497-dato-personal-no-sobrevive.test.mjs` |
+| `merchant.iban` y `merchant.bizumPhone` salen de `SIN_DECIDIR` · trinquete **44 → 42** | ídem |
+| el censo aprende `mobile` y `clabe` (ninguna familia los leía: estaban en las 157 de SCRUM-1569) | `tests/_censo-datos-personales.mjs` (`VOCABULARIO_PERSONAL`) |
+| dos tests nuevos: los cinco se redactan tras suprimir (+ `merchant.country` intacto) · siembra: una lista sin `mobile`/`clabe` cae | `scrum497`, tramo 6 |
+| el ④ de SCRUM-505 cayó con «el inventario del ticket se quedó atrás y hay que re-medirlo». `merchant.iban` y `merchant.bizumPhone` siguen en su inventario (su suelo `>= 9` no se toca, regla 41) y pasan a comprobarse al revés: que SÍ están cubiertos | `tests/scrum505-dato-personal-en-contenido.test.mjs` |
+
+**El trinquete, recalculado y no elegido:** iban y bizumPhone estaban en la población del censo y en `SIN_DECIDIR`
+→ pasan a cubiertos: 44 − 2 = **42**. `customerSite.name` estaba FUERA, no en el trinquete: no lo mueve. `mobile` y
+`clabe` no estaban en la población: entran en ella directamente como cubiertos, tampoco lo mueven. El test lo midió:
+con la lista nueva da 42 (verde) y con la de main daba rojo por `sinClasificar` (abajo).
+
+## El rojo primero, y el verde
+
+**Unidad** (`node --test tests/scrum497-dato-personal-no-sobrevive.test.mjs`):
+
+- Tests nuevos contra el `dist` de main (`tsc --noCheck` de `fe65a8b7f`): **16 tests · 11 pass · 5 fail** (11 + 5 = 16).
+  Caen: «ninguna columna personal… SIN CLASIFICAR» (iban, bizumPhone y `customerSite.name` sin cubo), «CONTROL: la
+  supresión sigue cubriendo merchant y customer», «el sitio pierde lo declarado» (`name` sin redactar), y los dos de 1569d.
+- Con el arreglo: **16 tests · 16 pass · 0 fail**.
+
+**Ejecución en PGlite** (`evidencias/SCRUM-1569d/banco-cinco.mjs`, derivado del banco de J4): dos comercios iguales con
+los cinco campos rellenos; se suprime A, B es el vecino.
+
+| | main (`salida-1-origin-main-ROJO.txt`) | rama (`salida-2-con-el-arreglo-VERDE.txt`) |
+|---|---|---|
+| de los 5 de c.20142, EN CLARO | **5** | **0** |
+| control positivo: los 6 que ya se redactaban | 6/6 redactados | 6/6 redactados |
+| control negativo: los 6 SIN DECIDIR (`merchant.country`, domicilio del sitio) tocados | 0/6 | 0/6 |
+| vecino B tocado | 0 | 0 |
+
+El banco se niega a correr si una de las columnas sembradas nace vacía («SIEMBRA ROTA»): sin eso, «redactado» y «no
+sembrado» se leerían igual. El esquema de PGlite sale de `prisma migrate diff --from-empty` sobre el `schema.prisma` de
+la rama (33 tablas; no se toca el esquema).
+
+## 🔴 Lo que lee después el IBAN redactado → SCRUM-1573
+
+**Leído en el código, NO ejecutado.** El texto de redacción es una cadena **no vacía**, así que después de suprimir:
+
+- `payBank.routes.ts:27-47` busca el cargo por `receiptToken` sin mirar si el comercio está suprimido y pinta
+  «IBAN: [borrado a petición del interesado]» con «Copiar IBAN».
+- `transferenciaDisponible.ts:66-67` y `viasDeCobro.ts:79` dan la transferencia por disponible.
+- `payBizum.routes.ts:143` y `payInvoice.routes.ts:78` (`bizumPhone || whatsappPhone`) ofrecen Bizum al texto.
+
+No desvía dinero (se pinta la redacción, no una cuenta ajena), la clase ya existía con `whatsappPhone`, y la supresión
+va tras `MERCHANT_DELETE_ENABLED` (OFF). Ningún lector en `src/modules/invoicing`, `fiscal` ni `albaranes` (grep: 0
+ficheros; el mismo grep sí los encuentra en `billing/`). Arreglar el cobro es STOP del fundador: **SCRUM-1573**
+(`equipo-javier`, `area-j2`, `stop-fundador`). El orquestador decidió que esto no era la parada del encargo
+(mensaje del 21-oct; el efecto no rompe el cobro, lo pinta para un comercio suprimido).
+
+## Lo que NO se ha hecho
+
+- Ninguna base mirada ni tocada; nada contra producción ni staging. Esquema, emisión y código de cobro: sin tocar.
+- No se ha corrido la tanda completa: solo la mini-tanda de abajo.
+- `exportData.ts` sin el móvil y `botSession` por `mobile` (c.20105, cabos de portabilidad y borrado): no son de este
+  encargo, siguen sin medir.
+
+## Errores propios
+
+- Lancé el banco la primera vez con el `dist` compilado FUERA del árbol: no encontró `@prisma/client` y murió antes
+  de sembrar (EXIT=1, sin testigo). No se leyó como resultado porque el banco imprime su testigo solo al acabar; se
+  repitió con el `dist` dentro del árbol.
+- Escribí el registro en `docs/master/SCRUM-1569d.md`, como decía el encargo, sin mirar la regla del nombre: lo paró
+  `tests/scrum273-registro-por-fichero.test.mjs` (vía `scrum976`, en la mini-tanda, antes de empujar). Va como apéndice
+  aquí. Las evidencias sí van en `evidencias/SCRUM-1569d/`, que es como las nombran otros (`SCRUM-1100d`, `SCRUM-1257e`).
+
+## Mini-tanda
+
+Los 9 ficheros que leen `CAMPOS_PERSONALES`, la supresión o el censo (`grep -l` de `anonimizarMerchant`,
+`supresionMerchant`, `_censo-datos-personales`, `CAMPOS_PERSONALES` en `tests/*.test.mjs`) + `scrum1294`, `scrum237`,
+`scrum267` y `scrum976`. Resultado al final del registro, en la línea `MINI-TANDA`.
+
+MINI-TANDA (rama, tras el arreglo): 13 ficheros · 135 tests · 134 pass · 0 fail · 1 skip (`SCRUM-244 · CONTRA POSTGRES`, sin `LIBRO_PG_URL`) · 134 + 0 + 1 = 135 · EXIT=0. `npm run guards:entrada`: 15 guards, EXIT=0.
+
+# SCRUM-1569 · 1569e — dev contra main: qué le falta a `yaqu_dev_javier` respecto al esquema de `origin/main` (J5, solo lectura)
+
+**Medido contra:** `origin/main` = `c47288f7e82fb9dea4473f71e161a3836ac788f3` · 2026-10-21T14:28:47Z (merge de #2645, hora de GitHub; hora de GitHub al medir: 2026-10-21T14:33:28Z)
+A9: aviso → A10 «Una prohibición sin mecanismo es una frase.» — no se pudo comprobar: `scripts/preview-migracion.mjs` no llama a `_clave-vs-destino.mjs` (sin import; lee el `DATABASE_URL` que haya), así que «preview con el guard de destino» lo hizo esta sesión a mano; ponerlo dentro es código fuera de un encargo de solo lectura
+
+Encargo del orquestador `cobroflash-backend-5f` (21-oct): preview de `prisma/schema.prisma` de `origin/main` contra
+DEV, clasificar el diff, y entregar el DDL aditivo para que lo aplique el colaborador (A5). **Nada aplicado.**
+
+## Cómo se midió
+
+- `previewMigracion()` de la casa, sin tocarla; solo se le inyecta el ejecutor: el CLI fijado (`prisma` 6.18.0) del
+  checkout compartido, porque el árbol anidado no tiene `node_modules` (`rutaCliLocal` daría `null`).
+  `DATABASE_URL` = el valor de `DATABASE_URL_DEV` del `.env` compartido; antes de lanzar, `comprobarClaveVsDestino` y
+  `comprobarCredencialDeProduccion` dieron los dos `cuadra` → `acela.proxy.rlwy.net/yaqu_dev_javier`. Script:
+  `evidencias/SCRUM-1569e/preview-dev.mjs`; salida: `salida-preview-dev-contra-main.txt` (3.235 B de diff).
+- **Control positivo:** schema entero contra vacío → **33 `CREATE TABLE`** (33 `model` en el schema). Clase `con_cambios`.
+- Sonda de solo `SELECT` (`sonda-assignees.cjs` → `salida-sonda-assignees.txt`): 33 tablas en `public`,
+  `customer_sites` no existe, `equipments` sí. 33 = 33 de main − `customer_sites` + `equipments`: cuadra con lo
+  medido por el orquestador (c.20145). Positivo de la sonda de FK: `invoices` 5, `quotes` 3; `*_assignees` 0.
+- Las URL: barrido `postgres(ql)://` sobre la evidencia → 0 ficheros; el mismo barrido sobre
+  `scripts/preview-migracion.mjs` (que lleva una URL de relleno) → 1. Solo salen host y base.
+
+## (a) Lo que a dev le FALTA de main — hueco a cerrar (27 líneas de DDL)
+
+| Ticket | Qué | `.sql` de la casa |
+|---|---|---|
+| SCRUM-1008 | `products.sku`, `supplier_ref`, `unit` | `docs/sql/scrum-1008-ficha-articulo.sql` |
+| SCRUM-1014 | tabla `customer_sites` + 2 índices + 2 FK | `docs/sql/scrum-1014-customer-site.sql` |
+| SCRUM-597 | los 4 FK de `quote_assignees` / `invoice_assignees` | ⚠️ `docs/sql/scrum-597-asignados-de-documento.sql` NO vale: `CREATE TABLE IF NOT EXISTS` con los FK dentro, y en dev las tablas ya existen sin ellos |
+
+DDL listo: `evidencias/SCRUM-1569e/ddl-dev-al-dia-con-main.sql`, copiado literal del preview y cotejado línea a línea
+en los dos sentidos (27 líneas no-DROP en el preview, 27 en el fichero, 0 sobrantes en cada lado). Los FK caben:
+las dos tablas tienen 0 filas y 0 huérfanos.
+
+## (b) Lo que dev tiene y main no — NO se borra: paso ② de A5 adelantado
+
+Ninguno es basura. Los seis tienen un `.sql` aditivo mergeado en `docs/sql/` y les falta el PR ③ que toca el esquema.
+Un `db push` contra dev los borraría (20 sentencias destructivas en el preview).
+
+| En dev, no en main | Dueño probable (por contenido) | Estado |
+|---|---|---|
+| tabla `equipments` + `equipment_id` en `albaranes`, `jobs`, `maintenance_plans`, `partes_trabajo` (+4 índices) | SCRUM-914 · `docs/sql/scrum-914-equipos-del-cliente.sql` (#1832) | PR #2621 ABIERTO (J3), «rojo a propósito hasta que entre el esquema de S1» |
+| `customers.callback_note`, `callback_on` + índice `customers_merchant_id_callback_on_idx` | SCRUM-1056 · `docs/sql/scrum-1056-volver-a-llamar.sql` (#1836); 1056e: «ALTER solo en dev» | sin PR ③ encontrado |
+| `customers.pay_methods_por_defecto` | SCRUM-586 · `docs/sql/scrum-586-paso-1-anadir-columna.sql` («dev ✅ aplicado el 6-sep-2026») | sin PR ③ encontrado |
+| `albaranes.firmado_en_dispositivo_at`, `ventana_suelo_at`, `ventana_suelo_fuente` | SCRUM-359 / 1184 · `docs/sql/scrum-359-ventana-de-firma.sql` | sin PR ③ encontrado |
+| `invoices.retencion_irpf_importe` | SCRUM-1146 · `docs/sql/scrum-1146-retencion-irpf-importe.sql` (#1822) | sin PR ③ encontrado |
+| `quote_templates.discount_global_amount` | SCRUM-930 · `docs/sql/scrum-930-descuento-de-plantilla.sql` (#1825; #2247: «el descuento global sigue esperando su ALTER») | sin PR ③ encontrado |
+
+«Sin PR ③ encontrado» = `gh pr list --state all --search "SCRUM-<n> in:title"`: busca por TÍTULO; un PR ③ con otro
+número en el título no lo vería. El dueño sale del `.sql` y del registro, no de quién lo aplicó en dev (no medido).
+
+## Errores propios
+
+- La sonda abre con `SET TRANSACTION READ ONLY` fuera de una transacción: en Postgres eso no protege nada. La sonda
+  solo lanza `SELECT`, y eso es lo que la hace de lectura; la línea no añade nada y lo digo para que nadie la copie
+  como si fuera una barrera.
+
+## Lo que NO se ha hecho
+
+- Ningún ALTER aplicado, ningún `db push`, nada contra staging ni producción. Esquema y emisión: sin tocar.
+- No se ha medido staging (el 34 frente a 33 del orquestador queda sin explicar aquí).
+- Jira caído: este tramo no tiene comentario propio; lo publica el orquestador en SCRUM-1569.

@@ -30,6 +30,7 @@ const TOTAL = 23;
 // Las cerradas, una por línea. Sólo crece: una entrada cerrada no se reabre sin decirlo aquí.
 const CERRADAS = [
   4,
+  14,
 ];
 
 // ── la lista de verdad ──────────────────────────────────────────────────────

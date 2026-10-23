@@ -4,7 +4,7 @@ import { config } from '../../../../core/config/env';
 import { customerCreateSchema, customerUpdateSchema } from '../../../../core/validation/schemas';
 import { prisma } from '../../../../core/db/prisma';
 import { cabeEnColumnaInt } from '../../../../core/validation/enteroDeColumna'; // SCRUM-1379
-import { listCustomerEvents } from '../../customerEvents.service';
+import { listCustomerEvents, eventosSinImporte } from '../../customerEvents.service';
 import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 (D2: borrado = admin)
 // SCRUM-578 (CONT-05): el aviso de duplicado. La lista de campos identificadores vive en UN sitio.
 import {
@@ -193,8 +193,12 @@ async function actualizarClienteHandler(req: Request, res: Response) {
     const id = Number(req.params.id);
     if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
     const parsed = customerUpdateSchema.parse(req.body);
-    await updateCustomer(req.merchantId, id, parsed);
+    // SCRUM-1571: lo mismo que el DELETE. Sin mirar el `count`, un cliente ajeno daba 200 con `null`.
+    const { count } = await updateCustomer(req.merchantId, id, parsed);
+    if (count === 0) return res.status(404).json({ error: 'not_found' });
     const updated = await getCustomer(req.merchantId, id);
+    // SCRUM-1571c: borrado por otra petición entre el update y esta relectura → daba 200 con `null`.
+    if (!updated) return res.status(404).json({ error: 'not_found' });
     res.json(updated);
   } catch (err: any) {
     if (err?.name === 'ZodError') return res.status(400).json({ error: 'validation_error', details: err.issues }); // SCRUM-1199, ver el POST
@@ -210,11 +214,45 @@ async function actualizarClienteHandler(req: Request, res: Response) {
 router.put('/:id', actualizarClienteHandler);
 router.patch('/:id', actualizarClienteHandler);
 
+/**
+ * SCRUM-1390e · ¿Se le puede dar a quien pregunta el enlace del portal de ESTE cliente?
+ *
+ * El portal (`GET /cliente/:token`) enseña TODOS los presupuestos y facturas del cliente y no mira
+ * ningún rol. Con el enlace, un Técnico rodeaba la regla «ve sólo lo suyo» (fundador, SCRUM-1390
+ * c.17962; medido por efecto en SCRUM-1390d c.20457). Así que se le da sólo si vería TODO lo que
+ * enseña, por las MISMAS puertas que la pestaña de documentos de la ficha (SCRUM-1403): no es un
+ * criterio nuevo. Quien ve todo el negocio (`null` = sin recorte) no hace ninguna consulta de más.
+ *
+ * Se cuentan los dos lados en vez de buscar «uno que NO sea suyo»: un `NOT` sobre `teamMemberId`
+ * deja fuera las filas con `NULL` (las de la oficina), justo las que son ajenas.
+ * ⚠️ El token es del CLIENTE y no caduca: lo que se añada después a ese cliente lo enseñará el mismo
+ * enlace. Eso no lo cierra esta pregunta (SCRUM-1390.md, tramo 1390e).
+ */
+async function puedeLlevarseElPortal(req: Request, customerId: number): Promise<boolean> {
+  const quien = quienPideDe(req);
+  const recortePresupuestos = await wherePresupuestosVisibles(quien);
+  const recorteFacturas = await whereFacturasVisibles(quien);
+  if (recortePresupuestos === null && recorteFacturas === null) return true;
+  const soloSusPresupuestos = recortePresupuestos ? [recortePresupuestos] : undefined;
+  const soloSusFacturas = recorteFacturas ? [recorteFacturas] : undefined;
+  // `where` LITERALES (los censos de tenencia y de origen leen el filtro del texto).
+  const [presupuestos, suyos, facturas, suyas] = await Promise.all([
+    prisma.quote.count({ where: { customerId, merchantId: req.merchantId } }),
+    prisma.quote.count({ where: { customerId, merchantId: req.merchantId, AND: soloSusPresupuestos } }),
+    prisma.invoice.count({ where: { customerId, merchantId: req.merchantId } }),
+    prisma.invoice.count({ where: { customerId, merchantId: req.merchantId, AND: soloSusFacturas } }),
+  ]);
+  return presupuestos === suyos && facturas === suyas;
+}
+
 // GET /admin/customers/:id/portal-url — genera token si no existe, devuelve URL del portal
 router.get('/:id/portal-url', async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
+    // SCRUM-1390e: ANTES de escribir el token. El rechazo es el de un cliente que no existe: ni
+    // texto nuevo ni la pista de que este cliente tiene algo de un compañero.
+    if (!(await puedeLlevarseElPortal(req, id))) return res.status(404).json({ error: 'not_found' });
     const token = await ensurePortalToken(req.merchantId, id);
     const portalUrl = `${config.PUBLIC_BASE_URL}/cliente/${token}`;
     return res.json({ portalUrl, token });
@@ -536,8 +574,7 @@ router.get('/:id/detail', async (req, res) => {
     // de presupuestos y de facturas: un Técnico ve aquí los suyos (autor, asignado o Trabajo) y el
     // admin, todos (`null` = sin recorte, el `where` sale como salía). La ficha del cliente se le
     // sigue abriendo entera: lo que se recorta son los documentos ajenos, no el cliente.
-    // ⚠️ Las CIFRAS (`stats`) y los eventos NO se tocan aquí: qué recibe de ellos un Técnico está
-    // sin decidir (SCRUM-1403, pregunta al fundador).
+    // Las CIFRAS (`stats`) y los eventos con importe, más abajo (SCRUM-1403b).
     const quien = quienPideDe(req);
     const [recortePresupuestos, recorteFacturas] = await Promise.all([
       wherePresupuestosVisibles(quien), whereFacturasVisibles(quien),
@@ -581,26 +618,37 @@ router.get('/:id/detail', async (req, res) => {
 
     const totalBilled = Number(facturado._sum.total ?? 0);
     const totalPaid   = Number(cobrado._sum.total ?? 0);
+    // SCRUM-1390e: el enlace que `portal-url` le niega no se le sirve aquí en crudo. Para él sale
+    // como un cliente sin token, que es un estado que la ficha ya pinta (pide el enlace al pulsar).
+    if (customer.portalToken && !(await puedeLlevarseElPortal(req, id))) customer.portalToken = null;
     const portalUrl   = customer.portalToken
       ? `${config.PUBLIC_BASE_URL}/cliente/${customer.portalToken}`
       : null;
+
+    // SCRUM-1403b · las cinco cifras de dinero son el panel del negocio repartido por cliente: mismo
+    // criterio que el saldo (SCRUM-1043) y la garantía (SCRUM-1108), el técnico no las recibe. Y los
+    // eventos que llevan el importe en el texto le llegan sin él. Decisión del fundador, SCRUM-1403
+    // c.20375 (salida 1 y «sin el texto del detalle»). La ficha no pinta la tarjeta de una cifra ausente.
+    const sinDinero = seesOnlyOwnJobs(req.userRole);
 
     return res.json({
       customer: { ...customer, portalUrl },
       quotes,
       invoices,
-      events,
+      events: sinDinero ? eventosSinImporte(events) : events,
       stats: {
         totalQuotes,
         acceptedQuotes,
-        totalBilled,
-        totalPaid,
-        // SCRUM-1035 · lo que el cliente debe (facturas `pending`): la misma cifra que la ficha
-        // sumaba en el navegador sobre 20 filas. SCRUM-1043 (la lista «quién me debe») reutiliza este cálculo.
-        totalPending: pendiente.get(id)?.total ?? 0,
+        // SCRUM-1035 · `totalPending` es lo que el cliente debe (facturas `pending`): la misma cifra que la
+        // ficha sumaba en el navegador sobre 20 filas. SCRUM-1043 (la lista «quién me debe») reutiliza este cálculo.
+        ...(sinDinero ? {} : {
+          totalBilled,
+          totalPaid,
+          totalPending: pendiente.get(id)?.total ?? 0,
+          totalExpenses: Number(expenses._sum.amount ?? 0),
+          profit: totalPaid - Number(expenses._sum.amount ?? 0),
+        }),
         pendingCount: pendiente.get(id)?.count ?? 0,
-        totalExpenses: Number(expenses._sum.amount ?? 0),
-        profit: totalPaid - Number(expenses._sum.amount ?? 0),
         // SCRUM-1108 · ausente = no tiene (ausente no es cero). `aviso` = ya se puede reclamar y sigue sin cobrar.
         ...(garantias?.has(id) ? { garantiaRetenida: garantias.get(id)! } : {}),
       },
@@ -618,7 +666,10 @@ router.delete('/:id', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' }); // SCRUM-1456: `1.5` borraba el 1
-    await deleteCustomer(req.merchantId, id);
+    // SCRUM-1571: un cliente de otro comercio (o que no existe) no casa el `where` y el borrado toca
+    // 0 filas. Contestar 204 ahí afirmaba un borrado que no hubo; se contesta lo mismo que `GET /:id`.
+    const { count } = await deleteCustomer(req.merchantId, id);
+    if (count === 0) return res.status(404).json({ error: 'not_found' });
     res.status(204).send();
   } catch (err) {
     console.error('[DELETE /admin/customers/:id]', err);

@@ -3608,6 +3608,31 @@ body:has(.modal-overlay) #tut-help-btn { display: none !important; }
 .modal-ayuda:hover { color: var(--ink); }
 .modal-ayuda + .modal-close { margin-left: 0; }
 
+/* S2: ── SCRUM-962d · la pareja «?»/«×» de la cabecera del modal, a 44 px DE TOQUE (AB6) ───────────
+   S2: Medido (962c) en los 5 modales del editor, y es la misma pieza en las 28 cabeceras del panel:
+   S2: «?» 27,5×26 y «×» 30×30 de área, a 320, 390 y 929. Se amplía el ÁREA, no el dibujo: un
+   S2: `::before` de 44×44 posicionado, así que la caja, el círculo, el foco y el alto de la cabecera
+   S2: no se mueven ni un píxel (lo mide `docs/master/evidencias/scrum962d/cabecera-banco.mjs`).
+   S2: Cada uno crece HACIA FUERA de la pareja y nunca hacia el otro: el «×» hacia la derecha (sobre
+   S2: los 24 px de padding de la cabecera) y el «?» hacia la izquierda (sobre el hueco del título).
+   S2: Así ninguno le roba al otro el punto que hay entre los dos.
+   S2: ACOTADO a `.modal-header >`: el aviso de error de `api.js` reutiliza `.modal-close` a 24 px
+   S2: dentro de una tostada, y ahí un área que se sale taparía la página de debajo. */
+.modal-header > .modal-ayuda,
+.modal-header > .modal-close { position: relative; }
+.modal-header > .modal-ayuda::before,
+.modal-header > .modal-close::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translateY(-50%);
+}
+.modal-header > .modal-ayuda::before { right: 0; }
+.modal-header > .modal-close::before { left: 0; }
+/* S2: ── fin SCRUM-962d ─────────────────────────────────────────────────────────────────────── */
+
 /* SCRUM-655 · APARTADOS Y DESCRIPCIÓN LARGA EN EL DETALLE DEL PRESUPUESTO.
    El apartado es un RENGLÓN DE TÍTULO a todo lo ancho, no una fila que cobre: por eso no lleva
    importe y se separa con peso y espacio, no con color inventado.
@@ -4229,6 +4254,9 @@ textarea.parte-linea-desc {
    (medido en staging el 17-sep-2026). Se retira de la fila y, sin nadie que la pinte, de la hoja. */
 
 .jobs-acciones { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+/* S4 · SCRUM-1562f · la celda de acciones de la fila: «Ver detalle» y, al lado, `.jobs-acciones`.
+   Las mismas reglas de caja que `.jobs-acciones`, para que el botón siga en la misma línea. */
+.jobs-celda-acciones { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .jobs-vacio-filtro { text-align: center; color: var(--muted); font-size: 13px; padding: 18px; }
 
 /* El modal de la casa, con su cuerpo. `.modal-overlay`/`.modal` ya existen: esto solo viste lo
@@ -4745,6 +4773,44 @@ textarea.parte-linea-desc {
   .data-card:has(> .barra-seleccion) td.cell-actions > div > .btn-sm { min-height: 44px; }
 }
 
+/* ── J2 · SCRUM-1583 (AB6) ── lista de Cobros: el enlace al documento de cada fila («factura F-…»,
+   `cobrosView.js`) medía 17 px de toque a 320 y 390 y 19 a 1280 (caja 16/18, Edge). Sólo toque: el
+   área crece con un `::before` (el mecanismo de `.casilla-tactil-44`), 16 + 2 × 14 = 44, sin mover
+   nada a la vista — un `min-height` en el enlace subía la fila de escritorio de 45 a más de 60.
+   Ancla SIN clase nueva: `href="#invoice-detail"` dentro de `td.cell-id` sólo lo pinta Cobros.
+   Medido con `docs/master/evidencias/SCRUM-1583/medir.mjs`, también con el aviso «Enviar de nuevo»
+   en la misma celda (`--con-aviso`): su toque no baja. */
+td.cell-id > a[href="#invoice-detail"] { position: relative; }
+td.cell-id > a[href="#invoice-detail"]::before { content: ""; position: absolute; inset: -14px 0; }
+
+/* ── J2 · SCRUM-1587 (AB6) ── lista de Cobros: el botón «Enviar de nuevo» del aviso de correo
+   fallido (`avisoCorreoNoSalio`, `cobrosView.js`) medía 30,7 px de toque a 320 y 390 y 30,9 a 1280
+   (caja 30, Edge). Sólo toque, como el enlace de arriba: `::before`. Va 8 y no 7 porque el
+   `::before` se ancla al RELLENO y `.btn-secondary` lleva 1 px de borde: con 7 medía 43. El botón sigue
+   midiendo 30 a la vista — `btn-sm` se queda pequeño a propósito (DESIGN.md, Buttons) — y no se toca
+   `.btn-sm` global. Ancla SIN clase nueva: `[data-correo-no-salio]` sólo lo pinta ese aviso.
+   Medido con `docs/master/evidencias/SCRUM-1587/medir.mjs` (con el enlace de SCRUM-1583 al lado). */
+td.cell-id [data-correo-no-salio] > button { position: relative; }
+td.cell-id [data-correo-no-salio] > button::before { content: ""; position: absolute; inset: -8px 0; }
+
+/* ── J2 · SCRUM-1592 (AB6) ── los campos de Clientes a 390 px: el buscador (37 de toque), los dos
+   `select` de etiqueta y orden (39) de la barra de la lista, y el campo de etiquetas de la ficha 360
+   (`#c360-meta`, 36,9; lo pinta `etiquetasDelDocumento.js`, de S2, y no se toca). Su altura sale de
+   `.input` (padding 8px, sin mínimo), que es de todas las pantallas: aquí sólo se les da tamaño, y sólo
+   hasta el corte de móvil (768), como SCRUM-1149 arriba; en escritorio ya llegan a 36. Mismo ancla sin
+   clase nueva que 1149 (la barra de selección sólo la pinta esta lista). Medido con el medidor de
+   SCRUM-1584 (mide `select` e `input`): `guard:objetivo-tactil` daba 4 hallazgos y da 0. */
+@media (max-width: 768px) {
+  .data-card:has(> .barra-seleccion) .data-card-toolbar > .input,
+  #c360-meta .input { min-height: 44px; }
+}
+
 /* SCRUM-1056 · «Volver a llamar»: la nota es texto libre del profesional. Una palabra muy larga
    (un enlace, una referencia) se parte en vez de salirse de la tarjeta: medido a 390 px. */
 .volver-a-llamar-nota { overflow-wrap: anywhere; }
+
+/* -- J2 · SCRUM-1043a -- lista de Clientes, columna «Pendiente de cobro»: la celda parte sus líneas.
+   `.table td` lleva `white-space: nowrap` en el móvil, y la línea de garantía retenida (literal
+   firmado de SCRUM-1108, unos 70 caracteres) se salía de la tarjeta: medido 453 px a 320 px de ancho
+   con `docs/master/evidencias/SCRUM-1043a/pagina.mjs`. */
+.table td.cell-pendiente { white-space: normal; }

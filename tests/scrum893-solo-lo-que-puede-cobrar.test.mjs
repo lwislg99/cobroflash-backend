@@ -113,10 +113,19 @@ async function pedir({ rutaModulo, montaje, url, prisma, espiaStripe }) {
   app.use(montaje, require_(rutaModulo).default);
   const server = http.createServer(app);
   await new Promise((r) => server.listen(0, '127.0.0.1', r));
-  const res = await fetch(`http://127.0.0.1:${server.address().port}${url}`, { redirect: 'manual' });
-  const cuerpo = await res.text();
+  // `node:http` sin agente y no `fetch` (SCRUM-1218b): `fetch` contra un servidor propio puede
+  // abortar el proceso al salir (SCRUM-560). Tampoco sigue redirecciones, como el `redirect: 'manual'` de antes.
+  const res = await new Promise((ok, mal) => {
+    const req = http.request({ host: '127.0.0.1', port: server.address().port, path: url, method: 'GET', agent: false }, (r) => {
+      let d = ''; r.setEncoding('utf8');
+      r.on('data', (t) => { d += t; });
+      r.on('end', () => ok({ status: r.statusCode, cuerpo: d, location: r.headers.location ?? null }));
+    });
+    req.on('error', mal);
+    req.end();
+  });
   await new Promise((r) => server.close(r));
-  return { status: res.status, cuerpo, location: res.headers.get('location') };
+  return res;
 }
 
 const prismaDeCobro = (ch) => ({

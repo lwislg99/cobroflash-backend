@@ -222,7 +222,11 @@ async function fetchInvoiceDetail(id) {
     dataSec.innerHTML = '<h3 class="detail-section-title">Datos</h3>';
     const dl = document.createElement('dl');
     dl.className = 'detail-dl';
-    addDefRow(dl, 'Cliente', invoice.customer?.name);
+    // SCRUM-1576b · el cliente congelado al emitir (`customerName`); la ficha viva sólo si la
+    // factura es anterior al escritor. La misma regla que `clienteDelDocumento` (clienteCongelado.ts).
+    // El teléfono y el email de esta ficha siguen siendo los de HOY a propósito: son el destino de
+    // los envíos, no el documento (SCRUM-1576, clase c).
+    addDefRow(dl, 'Cliente', invoice.customerName != null ? invoice.customerName : invoice.customer?.name);
     addDefRow(dl, 'Creada', invoice.createdAt ? new Date(invoice.createdAt).toLocaleString('es-ES') : null);
     addDefRow(dl, 'Pagada', invoice.paidAt ? new Date(invoice.paidAt).toLocaleString('es-ES') : null);
     addDefRow(dl, 'Rectifica a', invoice.rectifies ? invoice.rectifies.number : null);

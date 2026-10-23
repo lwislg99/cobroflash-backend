@@ -16,7 +16,7 @@ import { pieDePresupuesto, leerModoIva } from '../../../quotes/domain/presentaci
 import { clausulasParaDocumento } from '../../../quotes/domain/clausulas';
 // SCRUM-688 · el número con su revisión lo forma el DOMINIO, no este documento.
 import { numeroConRevision } from '../../../quotes/domain/revision';
-import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-1470
+import { zonaDelMerchant, diaNaturalEn } from '../../../../core/zonaDelMerchant'; // SCRUM-1470 · 1470c
 // SCRUM-602 (DOC-12) · el resolvedor de los tres modos y el rótulo, del dominio: la maqueta no decide.
 import { resolverDireccionObra, ROTULO_DIRECCION_OBRA_PDF, type ClienteConFacturacion } from '../../../../core/documentos/direccionObra';
 
@@ -310,6 +310,10 @@ export async function generateInvoicePdf(params: {
   // `IPSI` (Ceuta y Melilla), `IGV`… Viene de FUERA porque la maqueta no puede saberlo: ver
   // `NOMBRE_IMPUESTO_POR_DEFECTO`. Sin él, el documento sale exactamente como hasta hoy.
   taxName?: string | null;
+  // SCRUM-1470c · LA ZONA DEL NEGOCIO (`Merchant.timezone`, en crudo), para la «Fecha:» de la factura.
+  // Obligatoria a propósito: un llamador que no la pase no compila, en vez de imprimir otra vez la
+  // víspera. `null` = sin zona declarada = UTC (`zonaDelMerchant`, decisión A del 2-sep).
+  zona: string | null;
 }) {
   const fileName = `${params.merchantId}-${params.number}.pdf`; // SCRUM-72
   const outPath  = path.join(invoicesDir, fileName);
@@ -381,9 +385,14 @@ export async function generateInvoicePdf(params: {
     return fmtImporte(v);
   }
 
+  // SCRUM-1470c (GO del fundador, SCRUM-1470 c.20530: «Sí, el mismo día») · el MISMO día natural que
+  // la `FechaExpedicionFactura` de su registro, que `verifactu.service` saca de `createdAt` en la zona
+  // del negocio. Con `getDate()` salía del reloj del proceso (UTC en Railway): una factura de las
+  // 00:30 de Madrid imprimía la víspera de su registro.
   function dateStr(d: Date | null | undefined) {
     if (!d) return '—';
-    return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+    const [a, m, dia] = diaNaturalEn(d, zonaDelMerchant({ timezone: params.zona })).split('-');
+    return `${dia}/${m}/${a}`;
   }
 
   // ── 1. CABECERA SUPERIOR ─────────────────────────────────────────────────
@@ -531,7 +540,7 @@ export async function generateInvoicePdf(params: {
       }
       doc.text(fmt(qty),              XQ,  rowY + 4, { width: WQ,  align: 'right' });
       doc.text(fmt(price),            XP,  rowY + 4, { width: WP,  align: 'right' });
-      doc.text(taxR > 0 ? `${(taxR*100).toFixed(0)}%` : '—', XIV, rowY + 4, { width: WIV, align: 'right' });
+      doc.text(taxR > 0 ? `${rotuloDeTipo(tipoEnPorcentaje(taxR))}%` : '—', XIV, rowY + 4, { width: WIV, align: 'right' });
       doc.font('Helvetica-Bold')
         .text(fmt(lineTotal),         XT,  rowY + 4, { width: WT,  align: 'right' });
       doc.font('Helvetica');
@@ -553,7 +562,7 @@ export async function generateInvoicePdf(params: {
       const t    = Number(l.tax)   || 0;
       const base = qty * p;
       subtotal += base;
-      const key = `${(t*100).toFixed(0)}%`;
+      const key = `${rotuloDeTipo(tipoEnPorcentaje(t))}%`;
       if (!vatMap[key]) vatMap[key] = { base: 0, vat: 0 };
       vatMap[key].base += base;
       vatMap[key].vat  += base * t;
@@ -643,7 +652,7 @@ export async function generateInvoicePdf(params: {
       const wRot  = totalsW * 0.21;
       const wCuota = totalsW * 0.32;
       [...tiposDeIva]
-        .sort((a, b) => parseFloat(b[0]) - parseFloat(a[0]))
+        .sort((a, b) => parseFloat(b[0].replace(',', '.')) - parseFloat(a[0].replace(',', '.')))
         .forEach(([rate, g]) => {
           const vy = doc.y;
           doc.text(rate, totalsX, vy, { width: wTipo })
@@ -1172,8 +1181,13 @@ if (params.signatureData) {
     doc.moveDown(0.5);
     doc.fontSize(10).fillColor('black').text('Firma del cliente:', CONTENT_X, doc.y);
     doc.moveDown(0.3);
+    // SCRUM-1470b: con `y` explícito pdfkit NO baja el cursor tras la imagen, y `moveDown(5)` a
+    // 10 pt Helvetica son 57,8 pt: la caja mide 70, así que el trazo pisaba «Firmado digitalmente
+    // por». Se baja a la caja ENTERA (el pad, ≤470×190, siempre la llena de alto) y un hueco fijo:
+    // el mismo número que el gemelo del albarán (SCRUM-1589, `albaranPdf.service.ts`).
+    const arribaFirma = doc.y;
     doc.image(imgBuffer, CONTENT_X, doc.y, { width: 180, height: 70, fit: [180, 70] });
-    doc.moveDown(5);
+    doc.y = arribaFirma + 70 + 4;
     doc.fontSize(8).fillColor('#444')
       .text(`Firmado digitalmente por ${params.customer.name || 'el cliente'} el ${signDate}`, CONTENT_X, doc.y);
     doc.moveDown(0.5);

@@ -20,6 +20,8 @@ paths:
   - "public/dashboard/js/plansView.js"
   - "public/dashboard/js/teamView.js"
   - "public/dashboard/js/tutorial.js"
+  - "tests/_censo-por-posicion.mjs"
+  - "scripts/guards-entrada.mjs"
   - "public/js/atribucion.js"
   - "public/privacidad.html"
   - "public/register.html"

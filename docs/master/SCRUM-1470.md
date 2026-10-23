@@ -135,3 +135,108 @@ Corrido en local sobre la mezcla, con el TAP a fichero: 12 ficheros (`scrum1470`
 **149 pruebas, 0 caen, 0 saltos**; 15 «SCRUM-147x · » por nombre y un nombre inventado que da 0.
 Los guards de registro, aparte. La tanda completa local sigue sin correrse; la comprobación de
 tipos local sigue dando los 6 errores ajenos de arriba, ninguno en el fichero tocado.
+
+## SCRUM-1470b · La firma del presupuesto no pisa «Firmado digitalmente por…» (J1, jv-j1ap, 23-oct-2026)
+
+**Medido contra:** `origin/main` = `391212830da7698fed4bccf1da95f668292710ee` · 2026-10-23T13:46:55Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum1470b-la-firma-no-pisa-el-texto.test.mjs`
+
+Lo midió S1 en su gemelo del albarán (SCRUM-1589, PR #2731) y nos pasó el número en el comentario
+20507 de este ticket. Aquí, en `generateQuotePdf` (`pdf.service.ts`), el mismo `moveDown(5)` tras
+`fit: [180, 70]`. Es el PDF del PRESUPUESTO: `generateInvoicePdf` no se ha tocado.
+
+- **El rojo, ejecutado antes de tocar `src/`** (PDF real por `paramsDePresupuestoParaPdf` +
+  `generateQuotePdf`, pdfkit envuelto desde fuera en el proceso hijo): 3 de 3 rojos con
+  **12,2 pt de solape**, no 10,5. La diferencia es medida, no un error de S1: aquí el cursor baja
+  a 10 pt Helvetica normal (5 × 11,56 = 57,8 pt) y en el albarán a Helvetica-Bold (59,5 pt).
+- **Arreglo:** el mismo número que S1, para que no haya dos soluciones: el cursor va a
+  `arriba + 70 + 4`. La línea de `doc.image` queda idéntica. Ningún texto cambia (regla 39).
+- **Salto de página:** la reserva de este bloque es `doc.y + 120`, no 130. Con el arreglo el
+  bloque mide **105,2 pt** (raya → fin de la línea de debajo): cabe, con 14,8 pt de margen. El test
+  lee la reserva del fuente y lo comprueba de dos formas: el bloque medido cabe en ella, y un
+  barrido de 91 papeles (13 tamaños de tabla × 7 de observaciones) que cruza el borde por los dos
+  lados y se le acerca a ≤ 6 pt (lo mide y lo exige) nunca lo parte.
+- **Mutaciones sobre `dist/`** (nunca reescribiendo `src/`), base verde 5/5 antes:
+  M1 `moveDown(5)` de vuelta → caen 3 (los de solape); M2 hueco de 30 pt → caen 5;
+  M3 reserva 120 → 90 → cae el barrido («con 19 líneas y 6 de observaciones … texto p.2»).
+  Control del barrido sembrado: sin observaciones se queda a 14,8 pt del borde y dice CIEGO.
+- **Error mío, cazado antes de empujar:** el primer barrido iba de 18 en 18 pt (sólo filas de
+  tabla) y M2 salió viva para él, porque su ventana de fallo era de 11 pt y la saltaba. Y su
+  control de población (`pagina > 0`) era una tautología: las páginas empiezan en 1. Lo que lo
+  impide ahora es el propio test: exige cruzar el borde y acercarse a ≤ 6 pt, o dice CIEGO.
+- **No tocado:** la aceptación 2 (`dateStr`, la fecha del PDF de la FACTURA) sigue esperando al
+  fundador. No visto en yaqu.app: pendiente de despliegue, y hará falta un presupuesto firmado
+  nuevo, porque el PDF de uno ya firmado puede servirse del disco (no lo he comprobado en el
+  presupuesto; S1 lo midió en el albarán).
+
+## SCRUM-1470c · El PDF de la FACTURA imprime el día de su registro fiscal (J1, jv-j1aq, 23-oct-2026)
+
+**Medido contra:** `origin/main` = `01edf6213c16417989a4fbf50e9d28b9f707e881` · 2026-10-23T14:26:12Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum1470c-la-factura-imprime-el-dia-de-su-registro.test.mjs`
+
+**La decisión (aceptación 2).** Jira SCRUM-1470 c.20530: el orquestador de Javier transcribe la
+pregunta («¿das permiso (toca el PDF de factura) para que imprima el MISMO día que su registro
+fiscal, calculado con la zona del negocio como ya hace la numeración?») y la respuesta del fundador:
+«Sí, el mismo día». Es el GO de regla 40 con este alcance: `dateStr` del PDF de FACTURA usa el día
+natural del registro, sin tocar sellado, XML ni libros; sin zona declarada no cambia nada.
+
+**El rojo, ejecutado antes de tocar `src/`** (`tests/_sonda-fecha-de-la-factura.mjs`, proceso en
+UTC, PDF generado de verdad y leído; el registro, con `formatDateES(createdAt, zonaDelMerchant(m))`,
+que es la función que escribe la `FechaExpedicionFactura`): factura del 3-oct a las 00:30 de Madrid
+→ PDF `02/10/2026`, registro `03/10/2026`. Mediodía y negocio sin zona: los dos iguales. Después del
+arreglo: `03/10/2026` en los dos, y los otros dos casos sin moverse.
+
+**Qué se ha cambiado.**
+- `pdf.service.ts`, `generateInvoicePdf`: `dateStr` pinta `diaNaturalEn(d, zonaDelMerchant({ timezone: params.zona }))`
+  en vez de `getDate()/getMonth()/getFullYear()`. Entra el parámetro `zona` (crudo, como en
+  `generateQuotePdf`), **obligatorio**: un llamador que no lo pase no compila (comprobado con `tsc`
+  sobre una llamada sembrada fuera del árbol, que da TS2345; la misma con `zona: null` compila).
+- Los tres llamadores de `src/` pasan `merchant.timezone`: `src/lib/invoicing.ts` (los dos
+  generadores) e `invoicesAdmin.routes.ts` (regenerar PDF). Los tres ya cargaban la fila entera del
+  merchant: no hay consulta nueva. Es el único cambio fuera del cuerpo del PDF y no toca sellado,
+  huella, XML ni libros.
+- `tests/_cambios-autorizados-de-la-factura.mjs`: la entrada de este cambio (firma SCRUM-1470 c.20530),
+  con las cuatro huellas copiadas de `docs/master/evidencias/SCRUM-1446d/huellas.mjs` sobre la base
+  `9a9518c2e42f50a3d95d884f076ed58e647750e6`. Sin ella, `scrum603b` y `scrum723` caían (medido).
+- Censo (`scripts/_censo-fecha-sin-zona.mjs`): `pdf.service.ts::dateStr` sale de `USO` y entra en
+  `RETIRADAS`; el test de SCRUM-1470 pasa de 6 a 3 llamadas que imprimen en sus cinco ficheros.
+
+**Mutaciones sobre `dist/`** (restaurado byte a byte después): M1 ignora la zona → caen 2 casos ·
+M2 Madrid fijo → cae «sin zona» · M3 vuelve `getDate` → caen 2.
+
+**Aceptación 3.** De las filas de J1 en la clase IMPRIME quedan 2, con su motivo en `USO`: el sello
+«(hora del servidor)» de `generateQuotePdf` y `fD` del paquete de disputa (su gemelo es ese sello, y
+el literal necesita firma, regla 39). Salen las 3 de `dateStr`.
+
+**Aceptación 4 · el gemelo del portal: DECLARADO, no hecho.** `customerPortal.routes.ts::fechaDeLaFactura`
+es del carril J2 y no lo he escrito. Sigue en SCRUM-1471 (J2, En curso; aviso en su c.20542), con su
+motivo en `USO`. MEDIDO por la ruta real, no leído: el portal de `origin/main` ya pinta con la zona
+del negocio la fecha del presupuesto y el «Pagada» (`dateShort`, desde #2220), pero la fecha de la
+FACTURA sale de `fechaDeLaFactura`, sin zona. La sonda de SCRUM-1470 pide el portal por su ruta con el
+proceso en UTC, y en mi tanda pasó el caso «SCRUM-1471 · DECLARADO»: a las 00:30 de verano, invierno
+y Canarias el portal dice la víspera de la factura, y el PDF (este tramo) el día de su registro.
+**Falta esa fila: el gemelo NO está hecho.** Es la contradicción que la regla del ticket quiere evitar,
+y se dice aquí para que no se pierda. Hoy sólo la puede ver un negocio con `timezone` puesta (los 13 del relleno de SCRUM-643, todos
+de prueba, según su registro; no lo he contado en ninguna base).
+
+**De paso:** el caso «DECLARADO» de SCRUM-1471 en `tests/scrum1470-…` decía que el portal seguía el
+reloj del proceso «como la del PDF de la factura»; ya no es cierto, y su texto lo dice. Y la línea
+nueva del primer llamador movió la puerta `exigirDocumentoEmitible` de `src/lib/invoicing.ts:261` a
+`:262`: `scrum525d` lo cazó en la dirigida y `docs/legal/AUDITORIA_CAMINO_EMISION.md` apunta ya a `:262`.
+
+**Dirigida** (`npm run tanda:dirigida`, base `01edf621`): 466 ficheros · 4.432 tests · 4.411 pass ·
+5 fail. Uno era mío (525d, arriba, ya verde: 8/8). Los otros cuatro (`scrum1298b` ×2, `scrum351`,
+`scrum476`) miden la topología de `node_modules` y los hooks del árbol principal; este worktree no
+tiene `node_modules` propio, y ninguno de los tres ficheros nombra nada de lo que toca esta rama
+(grep, con control positivo sobre la sonda). NO los he corrido sobre la base: «son del entorno» es
+lectura, no medición. Los 16 que faltan para sumar 4.432 no los imprime la herramienta: no los he contado.
+
+**Error mío, cazado antes de correrlo:** escribí el suelo exigiendo tres desplazamientos distintos
+para verano, invierno y Canarias; Canarias en julio va a +60, igual que Madrid en enero. Ahora el
+suelo compara la lista entera `[120, 60, 60]`.
+
+**No medido:** yaqu.app (falta el despliegue; si una factura ya emitida sirve su PDF del disco o lo
+regenera, no lo he comprobado),
+ninguna base de datos, y la tanda completa (sólo los guards de suite que tocan lo cambiado).

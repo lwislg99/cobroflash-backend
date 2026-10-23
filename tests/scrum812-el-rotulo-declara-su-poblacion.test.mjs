@@ -167,9 +167,25 @@ function tituladosQueDeclaran() {
  * El total de titulados baja con ellos, de 303 a 154. Medido sobre `origin/main` =
  * `4f487bb177c42a7ee02042b0029f8c90b7e9e77e`. CONTROL POSITIVO: con el matcher viejo, los cuatro
  * vuelven a contarse y este trinquete da «HA SUBIDO a 34» (es la mutación ⑤ de abajo).
+ *
+ * ⬆️ **31** (SCRUM-1339r, 22-oct-2026): entra `scrum1339r-vigia-ciego-del-metaguard.test.mjs`, que
+ * declara dos mutaciones sobre el vigía de `main`. Cuenta como «titulado GUARD» porque sus casos
+ * nombran al «meta-guard»; el fichero es un test del vigía, no se llama guard a sí mismo. Este test
+ * en local sobre la rama, base `75884928b170ec0ec02e35921426e5bd711cbb0f`: «LA COBERTURA HA SUBIDO a 31».
+ *
+ * ⬆️ **32** (SCRUM-1339u, 22-oct-2026): entra `scrum1339u-vigia-ciego-de-la-senal.test.mjs`, que
+ * declara dos mutaciones sobre el vigía de `main`. Mismo motivo que el de arriba: un caso nombra al
+ * «meta-guard». Este test en local sobre la rama, base `808af5b4466d2649a1006d4c554d1f22e7eba47c`:
+ * «LA COBERTURA HA SUBIDO a 32».
+ *
+ * ⬆️ **33** (SCRUM-935d, 22-oct-2026, S3; regenerado al fundir main el 23-oct): entra
+ * `scrum935d-el-corte-dice-lo-que-deja.test.mjs`, que declara cuatro mutaciones sobre el corte del
+ * meta-guard. Las dos subidas a 32 (ésta y la de 1339u) chocaron al fundir; el número no se eligió
+ * de un lado: este test en local sobre la rama fundida con `origin/main` = `6c8706dae`: «LA
+ * COBERTURA HA SUBIDO a 33».
  * ═════════════════════════════════════════════════════════════════════════════════════════════
  */
-export const SUELO_GUARD_QUE_DECLARAN = 30;
+export const SUELO_GUARD_QUE_DECLARAN = 33;
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 // ① SUELO · ¿he mirado algo? Un cero de población no es «no hay»: es «no he mirado».
@@ -370,8 +386,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // ④ El trinquete se afloja una unidad: deja hueco para que la cobertura baje sin aviso.
     fichero: 'tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs',
-    de: 'export const SUELO_GUARD_QUE_DECLARAN = 30;',
-    a: 'export const SUELO_GUARD_QUE_DECLARAN = 29;',
+    de: 'export const SUELO_GUARD_QUE_DECLARAN = 33;',
+    a: 'export const SUELO_GUARD_QUE_DECLARAN = 32;',
     cae: 'SCRUM-812 · 🔴 EL TRINQUETE del GUARD: la cobertura auto-declarada NO BAJA',
   },
   {

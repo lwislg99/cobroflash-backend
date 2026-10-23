@@ -1,0 +1,8 @@
+⟦arranque⟧ 0.6 s COMPLETA · proceso+ws 0.6 s · primera-página 0.0 s
+ancho 360 · «El ERP por WhatsApp para los oficios» · hueco del contenedor 316px
+  inter    texto en una línea 293.4px · caja 316×38.4 · líneas 2
+  reserva  texto en una línea 290.7px · caja 314.7×19.2 · líneas 1
+⟦arranque⟧ 0.4 s COMPLETA · proceso+ws 0.4 s · primera-página 0.0 s
+ancho 390 · «El ERP por WhatsApp para los oficios» · hueco del contenedor 346px
+  inter    texto en una línea 293.4px · caja 317.4×19.2 · líneas 1
+  reserva  texto en una línea 290.7px · caja 314.7×19.2 · líneas 1

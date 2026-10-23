@@ -12,16 +12,15 @@
 // correr (`config.WHATSAPP_PHONE_NUMBER_ID`/`WHATSAPP_TOKEN` vacíos → los senders devuelven
 // `not_configured` sin tocar la red, `whatsapp.ts:632`). Si alguna estuviera puesta, se aborta.
 import fs from 'node:fs';
-import { cargarSecretos, imp, WT } from './_entorno.mjs';
+import { cargarSecretos, exigirStaging, imp, WT } from './_entorno.mjs';
 
 const secretos = cargarSecretos();
 process.env.DATABASE_URL = secretos.DATABASE_URL_STAGING;
 delete process.env.WHATSAPP_PHONE_NUMBER_ID;
 delete process.env.WHATSAPP_TOKEN;
 
-const { parseBDSegura, STAGING_HOST } = await imp('scripts/_db-guard.mjs');
-const p = parseBDSegura(process.env.DATABASE_URL);
-if (!p || p.host !== STAGING_HOST) throw new Error(`NO ES STAGING (host=${p?.host ?? 'ilegible'})`);
+// SCRUM-1575d · por DESTINO (host Y base), no sólo por host: desarrollo comparte el host de staging.
+exigirStaging(process.env.DATABASE_URL);
 
 const { config } = await imp('dist/core/config/env.js');
 const creds = { id: !!config.WHATSAPP_PHONE_NUMBER_ID, token: !!config.WHATSAPP_TOKEN };

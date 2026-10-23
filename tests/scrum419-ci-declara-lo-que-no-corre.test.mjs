@@ -165,6 +165,10 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // (dos merchants), que un documento borrado no se lleva el mensaje por delante (tabla suelta,
   // ENT-3) y las páginas de 20 con cursor.
   'scrum1062-historial-whatsapp-cliente.test.mjs': 1,
+  // SCRUM-1518b: la misma función, y que el entrante del cliente NO sale. Necesita banco porque el
+  // filtro es un operador de Prisma (`not`): el doble en memoria de la sonda de S4 lo ignoraba y
+  // daba verde con el arreglo y sin él.
+  'scrum1518b-la-ficha-no-ensena-entrantes.test.mjs': 1,
   // SCRUM-1014: los sitios del cliente. Necesita banco porque vigila la TENENCIA (merchant y
   // cliente) en las cuatro funciones, el orden estable, y que crear/editar un sitio no escribe
   // `Quote.shippingAddress` (P2/DOC-12).
@@ -216,7 +220,13 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // documentos de la ficha de cliente contra Prisma de verdad. Necesitan banco por el mismo motivo
   // que los de SCRUM-1397: lo que vigilan es el WHERE (el recorte en AND con la busqueda y con el
   // filtro por autor, los ejes del Trabajo, las revisiones), y eso lo contesta Postgres, no un doble.
-  'scrum1403-el-tecnico-y-las-otras-puertas.test.mjs': 3,
+  // SCRUM-1403b: y el CUARTO, el de los eventos con importe y las cifras de la ficha. Necesita banco
+  // porque entra por la RUTA real con sesiones guardadas en la base (Tecnica, administradora y duena)
+  // y mira lo que `GET /admin/customers/:id/detail` arma con los eventos y facturas que lee de
+  // Postgres; luego pinta la ficha con ESA respuesta. Con un doble se probaria el doble, no la ruta.
+  // Lo que se lee sin base (los 7 sitios que escriben un importe, el criterio `seesOnlyOwnJobs`)
+  // va en los dos casos AST del mismo fichero, que corren siempre.
+  'scrum1403-el-tecnico-y-las-otras-puertas.test.mjs': 4,
   // SCRUM-1489: el buscador de arriba pasa por esas mismas dos puertas (fila 9 del censo de
   // SCRUM-1390). Necesita banco por el mismo motivo: lo que vigila es el WHERE que la busqueda
   // manda con el recorte en AND, y que ese filtro deja fuera lo ajeno lo contesta Postgres. La
@@ -234,6 +244,12 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // y que su lectura del grupo, lanzada tras conseguir el cerrojo, ve la revision que acaba de
   // confirmar la primera. La mitad con Prisma doblado (cuatro casos) corre siempre.
   'scrum1150c-carrera-de-la-revision-postgres.test.mjs': 2,
+  // SCRUM-1390e: los CUATRO que piden el enlace del portal por la RUTA, con sesiones de verdad: el
+  // Tecnico no se lo lleva si el cliente tiene un documento ajeno, si se lo lleva cuando todo es suyo,
+  // la administradora y la duena sin cambios, y la ficha no lo sirve en crudo. Necesitan banco porque
+  // lo que vigilan es la CUENTA de documentos con el recorte de las dos puertas, y eso lo contesta
+  // Postgres. Los dos casos AST corren siempre.
+  'scrum1390e-el-portal-solo-lo-suyo.test.mjs': 4,
 });
 const TOTAL_DECLARADO = Object.values(GATEADOS_DECLARADOS).reduce((a, b) => a + b, 0);
 

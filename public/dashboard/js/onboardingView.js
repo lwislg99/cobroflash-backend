@@ -21,6 +21,14 @@ const OB_COUNTRIES = [
   { value: 'CL', label: 'Chile' },
 ];
 
+// SCRUM-1536g · el país se fija en el alta y el asistente sólo lo ENSEÑA (decisión (a), Jira
+// SCRUM-1536 c.20245): ya no hay selector ni se manda al guardar. Hasta que llega el perfil no se
+// pinta nada — pintar el «ES» por defecto le diría «España» a un negocio de otro país. Un país
+// fuera de la lista sale con su código: sin texto nuevo.
+function obCountryLabel(value) {
+  return (OB_COUNTRIES.find((c) => c.value === value) || {}).label || value || '';
+}
+
 function obTradeLabel(value) {
   return (OB_TRADES.find((t) => t.value === value) || {}).label || '';
 }
@@ -113,8 +121,9 @@ function showOnboardingWizard(onComplete) {
   getMerchantProfile().then((m) => {
     if (m && m.country) {
       state.country = String(m.country).toUpperCase();
-      const sel = document.getElementById('ob-country');
-      if (sel) sel.value = state.country;
+      state.paisLeido = true;
+      const texto = document.getElementById('ob-country');
+      if (texto) texto.textContent = obCountryLabel(state.country);
     }
     if (m && m.name && !state.name) {
       state.name = m.name;
@@ -144,9 +153,7 @@ function showOnboardingWizard(onComplete) {
           </div>
           <div>
             <label style="font-size:13px;font-weight:600;color:#333c37;display:block;margin-bottom:5px">País</label>
-            <select id="ob-country" style="width:100%;padding:11px 13px;border:1px solid #cdd2cb;border-radius:9px;font-size:14px;background:#fff">
-              ${OB_COUNTRIES.map((c) => `<option value="${c.value}" ${state.country === c.value ? 'selected' : ''}>${c.label}</option>`).join('')}
-            </select>
+            <output id="ob-country">${esc(state.paisLeido ? obCountryLabel(state.country) : '')}</output>
           </div>
           <div>
             <label style="font-size:13px;font-weight:600;color:#333c37;display:block;margin-bottom:5px">Tu WhatsApp <span style="font-weight:400;color:#6b756f">(te avisamos ahí cuando te acepten o paguen)</span></label>
@@ -159,13 +166,11 @@ function showOnboardingWizard(onComplete) {
       save: async () => {
         state.name    = document.getElementById('ob-name')?.value.trim() || state.name;
         state.trade   = document.getElementById('ob-trade')?.value || '';
-        state.country = document.getElementById('ob-country')?.value || state.country;
         state.phone   = document.getElementById('ob-phone')?.value.trim() || '';
         if (state.phone) await updateMerchantProfile({ whatsappPhone: state.phone }).catch(() => {});
         await updateMerchantProfile({
           name: state.name,
           trade: state.trade || null,
-          country: state.country,
         }).catch(() => {});
       },
     },
