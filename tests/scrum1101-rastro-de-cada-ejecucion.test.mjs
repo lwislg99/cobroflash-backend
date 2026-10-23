@@ -165,9 +165,12 @@ test('SCRUM-1101 · sin bandera también queda rastro (una ejecución es una eje
 });
 
 test('SCRUM-1101 · si el rastro NO se puede escribir, no se mide: CIEGO antes de conectar', async (t) => {
-  const dir = banco(t);
-  const noEsCarpeta = path.join(dir, 'soy-un-fichero');
-  fs.writeFileSync(noEsCarpeta, 'x');
+  // El temporal se crea AQUÍ y no con `banco()`: el censo de SCRUM-824 tiene que VER que la
+  // escritura cuelga de `os.tmpdir()`, y no sigue una llamada a otra función.
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1101-'));
+  t.after(() => fs.rmSync(d, { recursive: true, force: true }));
+  fs.writeFileSync(path.join(d, 'soy-un-fichero'), 'x');
+  const noEsCarpeta = path.join(d, 'soy-un-fichero');
   const { crearPrisma, llamadas } = doble([merchant({ id: 2 })]);
   const codigo = await ejecutar({
     argv: ['--prod-ro'], env: envConfirmado(noEsCarpeta), crearPrisma, hosts: HOSTS_LOCALES,

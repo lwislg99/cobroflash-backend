@@ -37,4 +37,10 @@ Censos de la casa que podían moverse con un script y un test nuevos (1185, 1320
 
 **No medido:** ninguna ejecución contra staging ni producción (por encargo). Que la carpeta por defecto exista y se pueda escribir en la máquina de quien lo lance, tampoco: si no, sale CIEGO y lo dice.
 
-A9: comprobación → `tests/scrum1101-rastro-de-cada-ejecucion.test.mjs`
+## El primer obligatorio salió ROJO, y el fallo era mío
+
+PR #2707, punta `4db1c95d26273556049fb7b742aeee723bab38ed`, run 39933135569, job «build + tests»: **12.219 casos = 12.129 pass + 1 fail + 89 saltados** (suman). El único rojo: `tests/scrum824-temporales-fuera-del-arbol.test.mjs`, «el conjunto de ficheros SIN PROBAR no crece», con mi test como fichero nuevo. El `writeFileSync` del caso «si el rastro NO se puede escribir» escribía en una ruta sacada de `banco()`, y el censo de temporales no sigue una llamada a otra función: no podía demostrar que cayera fuera del árbol. Ese censo no estaba en la lista que corrí en local.
+
+Arreglo en el TEST, no en el censo: ese caso crea su temporal en el propio cuerpo, con `os.tmpdir()` a la vista. `clasificaFuente` pasa de `DESCONOCIDO` a `TMP` en esa línea, y scrum824 + scrum1101 salen 20 de 20 en local, con el caso «SIN PROBAR» presente y en verde.
+
+A9: comprobación → `tests/scrum824-temporales-fuera-del-arbol.test.mjs`
