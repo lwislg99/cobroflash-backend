@@ -37,6 +37,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: 'const lanzar = { args, env: process.env, movidos: [] }; // sin mover los reporters, a proposito',
     cae: 'CON el envoltorio, el TAP de una tanda ROJA',
   },
+  {
+    // Un lector que no mira la integridad cuenta saltos sobre un TAP pisado: «0 saltos» donde no miró.
+    fichero: 'tests/scrum1328-skips-con-motivo-en-el-tap.test.mjs',
+    de: '  if (!integ.ok) return { ciego: true, motivo: integ.motivo };',
+    a: '  // sin mirar la integridad, a proposito',
+    cae: 'CONTROL SEMBRADO: SIN el envoltorio el mismo lector dice CIEGO',
+  },
 ];
 
 // ═══ EL LECTOR ═══════════════════════════════════════════════════════════════════════════
