@@ -574,3 +574,86 @@ cuenta por qué se aprobaron de una vez queda como historia, avisado.
 - Ningún texto visible, ni ninguna otra marca, ni la lógica de ningún guard.
 - No he visto ninguna de las cinco en yaqu.app.
 - Tanda completa: no corrida (guards dirigidos, en la entrega).
+
+---
+
+## SCRUM-1502e · Tramo 6 (J4, 23-oct-2026): las seis marcas que no pinta ninguna pantalla, preguntadas y contestadas; las dos firmas de un mismo hueco; y el efecto medido de `sinCitas`
+
+**Medido contra:** `origin/main` = `28098fe4b1a160303526f5a4002d52556d2c5b22` · 2026-10-23T19:13:18Z (hora de GitHub)
+A9: aviso → cicatriz J4 «pedí cinco tickets ENTEROS a Jira, con todos sus comentarios devueltos al chat» — no se pudo comprobar: la herramienta de Jira no deja pedir un comentario suelto, y lo que lo evita (salida a fichero y extraer los ids citados) no lo obliga nada
+
+Sólo `docs/`: ninguna marca, ningún texto, ningún guard ni su número tocados. Los literales de las
+marcas viven en Jira (c.20628) y en el código; **aquí se nombran por fichero:línea** (tramo 1, §4; la
+lección de c.19543: copiarlos aquí los absuelve).
+
+### ① Las seis, preguntadas al fundador (c.20628) y contestadas (c.20629)
+
+Lista sacada con `docs/master/evidencias/scrum1502/lista.mjs` sobre este `origin/main`: **25 sin
+respaldo**, `scrum921c` 13 de 13, las seis entre las 25. Dos cambiaron de línea respecto al encargo:
+`parteDictado.ts` es la :401 (no :402) y `scrum716` la :127 (no :130).
+
+| marca | qué gobierna | qué constaba antes de preguntar | respuesta del fundador (c.20629) |
+|---|---|---|---|
+| `src/modules/jobs/domain/parteDictado.ts:401` | la instrucción a la IA del parte dictado (`parteDictado.ts:428-449`, la usa `ai.service.ts:416`) | sólo `docs/master/SCRUM-683.md`, sin decir quién; la cabecera de su propia sección (`:398`) la sigue llamando propuesta pendiente | ✅ la firma |
+| `tests/scrum320-que-falta-para-cobrar.test.mjs:36` | los datos de prueba del test de «Qué falta para cobrar»; nada visible | en SCRUM-320 la cifra sale como medida y como ejemplo de una línea; el ejemplo entero, en ningún sitio | ✅ lo aprobó |
+| `tests/scrum683-parte-dictado.test.mjs:85` | la cantidad por defecto en el PRESUPUESTO sugerido por la IA (`src/modules/ai/domain/lineasSugeridas.ts:40-43`) | sólo `docs/master/SCRUM-683.md:38`; en SCRUM-683, nada | ✅ en presupuesto, 1 |
+| `tests/scrum586-forma-de-pago-por-cliente.test.mjs:178` y `:392` | que la forma de pago pactada del cliente se propone y no se aplica sin un clic | sólo `docs/master/SCRUM-586.md:49`; en SCRUM-586, nada del 5-sep | ✅ se propone — **una respuesta para las dos marcas**, preguntada así a propósito |
+| `tests/scrum716-ritmo-de-despliegue.test.mjs:127` | el permiso con el que se enchufó el ritmo de despliegue al vigía (commit `8de07cb31`) | sólo `docs/master/SCRUM-716.md:465`; y Jira lo contradecía (abajo) | ✅ lo autorizó |
+
+**La contradicción de `scrum716`, con sus dos citas.** SCRUM-716 c.14645 (7-sep, 01:41Z) dice que el
+vigilante es del fundador y que sin su autorización explícita una sesión sólo puede medir; c.14648
+(02:06Z) deja la pieza sin conectar, con un test que se pone rojo si alguien la enchufa. La marca y el
+registro (de la misma mano que hizo el cambio, 02:36Z) dicen que se autorizó. Ningún comentario de Jira
+lo recogía. El fundador lo confirma en c.20629: el permiso existió; lo que faltaba era el papel.
+
+🔴 **Respuesta del fundador = c.20629, NO un ancla.** Que las siete marcas (las seis y la de ②) citen
+c.20629 en su comentario lo hace **otra sesión** (orden del orquestador `cobroflash-backend-62`), y
+`SIN_RESPALDO` lo baja la medición de quien lo haga, no este tramo. Hasta entonces el trinquete sigue
+en 25: Jira no lo lee (tramo 2).
+
+### ② `public/dashboard/js/jobDetailView.js:217` — dos firmas para un mismo hueco
+
+El hueco del Trabajo aceptado y sin ningún documento tiene dos textos «aprobados» en SCRUM-320:
+
+- **A** — c.12636 (6-ago, al cerrar): decisión del fundador de que el cuarto hueco va, con su línea.
+  Es el que sale hoy, y el que repite `docs/master/SCRUM-320.md:257`.
+- **B** — c.13271 (11-ago, por delegación): otro literal para el mismo hueco. Medido: está en **0**
+  líneas de `src/` y `public/`. Se escribió sobre una premisa caducada: daba el hueco por pendiente
+  citando `SCRUM-320.md:85-97`, cuando ya estaba construido desde el 6-ago (`SCRUM-320.md:167`).
+- SCRUM-1215 c.19084, el ancla que lleva la línea hoy, **no firma ningún literal**: remite al
+  registro de SCRUM-320 y no nombra c.13271.
+
+Los papeles no decidían solos. **Respuesta del fundador (c.20629): manda A; B no se aplica.** No
+cambia nada en pantalla. Lo que queda —que la marca de :217 cite c.20629 y no c.19084— es de **S2**.
+
+### ③ `sinCitas` en el índice de fuentes — efecto medido, sin tocar el guard
+
+La propuesta del tramo 1 (leer cada fuente con `sinCitas`), aplicada en un worktree desechable fijado a
+este `origin/main`, **fuera de este árbol**, por `docs/master/evidencias/scrum1502e/sincitas.mjs`;
+salida en `salida-sincitas.txt` del mismo directorio. Población: las 246 marcas que reparte `porNivel`.
+
+| caso | sin respaldo | documental | qué marca se mueve |
+|---|---|---|---|
+| base (el árbol tal cual) | 25 | 24 | — |
+| con `sinCitas` | **25** | **24** | **ninguna**: 0 salen, 0 entran; anclado sigue en 18 |
+| base + cobaya con la frase entre `[[cita]]` (POSITIVO sembrado) | 24 | 25 | sale `homeView.js:779`: la cita la absuelve |
+| `sinCitas` + la misma cobaya | 25 | 24 | ninguna: la cita ya no absuelve |
+| `sinCitas` + la frase a pelo | 24 | 25 | sale `homeView.js:779`: a pelo sigue absolviendo |
+
+**Efecto sobre el árbol de hoy: ninguna marca cambia de nivel** — ni de anclada ni de documental a sin
+respaldo. Era lo esperable para anclada (el ancla se lee en el comentario de la marca, no en las
+fuentes), y para documental lo dice la medición: hoy ningún respaldo vive dentro de un `[[cita]]` (en
+`docs/master`, `[[cita]]` sólo aparece en las evidencias y en prosa que explica el delimitador). El
+positivo sembrado demuestra que el instrumento ve el caso: sin la propuesta, la cobaya baja a 24; con
+ella, no. Cobaya y mutación retiradas: el guion termina con «árbol restaurado: true».
+
+⛔ **No aplicado** (regla 41): cambia el guard del obligatorio de los dos equipos, lo deciden los jefes.
+
+### Lo que no se hizo
+
+- Ninguna marca cita c.20629 todavía: es de otra sesión (y la de :217, de S2).
+- No he abierto yaqu.app: ninguna de las seis es pantalla, y ② no cambia nada visible.
+- De SCRUM-1215 sólo he leído c.19084; SCRUM-320, 586, 683 y 716, enteros.
+- ③ medido en esta máquina; la copia desechable usó el `node_modules` del checkout compartido por una
+  unión de sólo lectura (sin `generate`).
+- Tanda completa: no corrida (guards de registro dirigidos, en la entrega).
