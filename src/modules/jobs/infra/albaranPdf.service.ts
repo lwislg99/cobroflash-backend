@@ -389,10 +389,10 @@ export async function generateAlbaranPdf(params: {
       // 10 pt son 59,5 pt: la caja mide 70, así que el trazo pisaba «Firmado por». Se baja a la
       // caja ENTERA (el pad, ≤470×190, siempre la llena de alto) y un hueco fijo.
       // ⚠️ GEMELO sin tocar: `pdf.service.ts` (firma del presupuesto, J1) tiene el mismo `moveDown(5)`.
-      const ALTO_FIRMA = 70;
+      // (La línea de `doc.image` queda idéntica: es el ancla de F14 en tests/_censo-dos-fronts.mjs.)
       const arribaFirma = doc.y;
-      doc.image(imgBuffer, M, arribaFirma, { width: 180, height: ALTO_FIRMA, fit: [180, ALTO_FIRMA] });
-      doc.y = arribaFirma + ALTO_FIRMA + 4;
+      doc.image(imgBuffer, M, doc.y, { width: 180, height: 70, fit: [180, 70] });
+      doc.y = arribaFirma + 70 + 4;
       // SCRUM-300 (C5): el trazo deja de ir sin nombre. Cada línea solo se pinta si HAY dato —
       // los albaranes firmados antes de la 300 los tienen a null y su bloque sale idéntico al
       // de siempre, que es la retrocompatibilidad exigida.

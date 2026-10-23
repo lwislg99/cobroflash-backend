@@ -16,6 +16,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { casosEscritos } from './_casos-escritos.mjs';
 import { ALBARAN_ROTULOS } from '../dist/modules/jobs/domain/albaranFirmante.js';
 
 const HIJO = `
@@ -79,8 +80,8 @@ const FIRMAS = [
   { nombre: 'firma cuadrada, 1×1', W: 1, H: 1 },
 ];
 
-for (const f of FIRMAS) {
-  test(`SCRUM-1589 · ${f.nombre}: «${ALBARAN_ROTULOS.pdfFirmadoPor.trim()}» empieza DEBAJO de la firma, no encima`, () => {
+const caso = casosEscritos(FIRMAS, (f) => `SCRUM-1589 · ${f.nombre}: «${ALBARAN_ROTULOS.pdfFirmadoPor.trim()}» empieza DEBAJO de la firma, no encima`, (f) => {
+  {
     const m = marcas(f.W, f.H);
     const imagenes = m.filter((x) => x.que === 'imagen');
     // La firma es la única imagen del papel de prueba (sin logo): si aparece otra, el test mira mal.
@@ -95,5 +96,9 @@ for (const f of FIRMAS) {
       + `que empieza en ${nombre.y.toFixed(1)}: ${(firma.abajo - nombre.y).toFixed(1)} pt de solape`);
     // Y nada se queda colgando lejos: el nombre va pegado a la firma (menos de una línea de hueco).
     assert.ok(nombre.y - firma.abajo < 12, `🔴 el nombre se ha ido ${(nombre.y - firma.abajo).toFixed(1)} pt por debajo de la firma`);
-  });
-}
+  }
+});
+test('SCRUM-1589 · pad en escritorio, 470×190: «Firmado por:» empieza DEBAJO de la firma, no encima', caso(0));
+test('SCRUM-1589 · pad en un móvil estrecho, 240×190: «Firmado por:» empieza DEBAJO de la firma, no encima', caso(1));
+test('SCRUM-1589 · firma cuadrada, 1×1: «Firmado por:» empieza DEBAJO de la firma, no encima', caso(2));
+caso.todos();
