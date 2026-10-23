@@ -314,3 +314,117 @@ del punto ciego de abajo.
   `$transaction` ya cuenta como consulta. La quité en vez de dejar código que nada distingue.
 - Escribí en el árbol fabricado que el `_staging-db.mjs` de pega saldría como fila, y no conecta: el error era
   de la expectativa, no del censo.
+
+## SCRUM-1575d · Staging se comprueba por DESTINO en el banco 911, y el censo ve las escrituras por servicio de `dist/`
+
+**Medido contra:** `origin/main` = `c26f7d6dd5af600e154919e7d341c0d8be2fc684` · 2026-10-23T03:16:19Z (hora de GitHub, cabecera `Date:`)
+A9: comprobación → `tests/scrum1575d-staging-por-destino.test.mjs`
+
+23-oct-2026 · **J5** (sesión `jv-j5w`, equipo de Javier), por encargo del orquestador (`cobroflash-backend-62`).
+[Escrito por la sesión, no por Javier. Leído en Jira: SCRUM-1575 entero, descripción y c.20277, c.20297,
+c.20331 y c.20369.] Carril a mano: el hook dijo «SIN IDENTIDAD» (SCRUM-1498). `tests/banco-scrum911/*` sale
+«sin fila en §3: nadie lo reclama» y `scripts/_censo-conexiones-a-base.mjs`, SIN CERRADURA
+(`dos-equipos.md:172`), según `node scripts/carriles.mjs de`. PASO 0: nada de `1575d` en `origin/main` ni rama
+en el remoto. El censo se midió sobre `bdcefe50c`; de ahí a `c26f7d6dd` sólo entra #2699 (SCRUM-1577), que no
+toca ninguno de estos ficheros.
+
+### Corrección al encargo: no eran 7 «guard_propio», eran 24
+
+Los 7 de c.20369 son los que ENTRARON en esa clase con 1575c; la clase entera tenía 24 sobre `bdcefe50c`. Qué
+compara cada uno y si separa staging de dev (que comparten el host `acela`). «Ejecutado» es con URLs
+fabricadas a `127.0.0.1:1` o, para mostrar el hueco, al host de staging en un árbol SIN `node_modules` ni
+`dist/`: si la comprobación deja pasar, el script cae al importar el cliente, sin red. Nada contra una base real.
+
+| fichero | compara | escribe | ¿separa staging de dev? | cómo se midió |
+|---|---|---|---|---|
+| `scripts/aviso-programado-acreditacion-invoicing-es.mjs` | host (staging o prod-ro) | no | no — solo lee | lectura |
+| `scripts/guard-acreditacion-invoicing-es.mjs` | host (staging o prod-ro) | no | no — solo lee | lectura |
+| `scripts/censo-etiquetas-del-documento.mjs` | host ≠ producción | no | no — solo lee | lectura |
+| `scripts/censo-tipo-cliente.mjs` | host ≠ producción | no | no — solo lee | lectura |
+| `scripts/preflight-schema-drift.mjs` | host ≠ producción | no (`migrate diff`) | no — solo lee | lectura |
+| `scripts/conciliar-auditoria-fiscal.mjs` | host clasificado (prod / staging / local) | no: transacción `READ ONLY` con sonda; su `$executeRawUnsafe` es `SET TRANSACTION`/`SAVEPOINT` (el censo lo cuenta como escritor: falso positivo, sin arreglar) | no — solo lee | lectura |
+| `scripts/backup-bd.mjs` | host ≠ producción en origen y verificación; verificación ≠ origen y VACÍA antes de restaurar | `pg_restore`/`psql` en la base de verificación | no lo necesita: sólo escribe en una base vacía distinta del origen | lectura |
+| `scripts/medir-concurrencia-emision.mjs` | base = `yaqu_dev_javier` | sí | **sí, por base** (no mira el host) | condición evaluada sobre URLs fabricadas: `acela/yaqu_dev_javier` → pasa, `acela/railway` → se niega; el script no corre aquí (importa `node_modules` antes) |
+| `scripts/renumerar-documentos.mjs` | base = `yaqu_dev_javier` | sí (`--aplicar`) | **sí, por base** | igual que la fila anterior |
+| `tests/scrum592-…`, `scrum767-…`, `scrum781-…`, `scrum793-…` | base = `yaqu_dev_javier` (`assert`) | sí | **sí, por base** | igual; gateados por `QA_DB_TEST` |
+| `tests/scrum814-carrera-de-tramos-postgres.test.mjs` | loopback + `_test` + lista de prohibidas | sí | sí (ni staging ni dev) | lectura |
+| `scripts/cambiar-flag-fiscal.mjs` | `FLAG_CONFIRM` = host | **sí, por `cambiarFlagFiscal()` de `dist/`** | **NO** | ejecutado: `127.0.0.1:1/yaqu_dev_x` y `127.0.0.1:1/railway` con `FLAG_CONFIRM=127.0.0.1` pasan las dos y caen al importar `dist/core/db/prisma.js` |
+| `tests/banco-scrum911/_entorno.mjs` (`prismaStaging`) | host = staging | — (abre para otros) | **NO** → arreglado | ejecutado, abajo |
+| `tests/banco-scrum911/limpiar.mjs`, `paso1-alta.mjs`, `restaurar.mjs` | host (vía `_entorno`) + `current_database() = 'railway'` | sí | **sí, pero DESPUÉS de conectar** (la consulta de la base es una lectura previa a escribir) → arreglado | lectura + ejecutado |
+| `tests/banco-scrum911/paso2-ciclo.mjs`, `paso6-iva-929.mjs` | host + `current_database() = 'railway'` | `paso6` sí; `paso2` por servicio | sí, después de conectar → arreglado | lectura + ejecutado |
+| `tests/banco-scrum911/paso3-botones.mjs`, `paso4-api-y-ficha.mjs` | **solo host** | **sí** (`.create`/`.update`/`.updateMany` + servicios) | **NO** → arreglado | ejecutado, abajo |
+| `tests/banco-scrum911/estado.mjs` | host (vía `_entorno`) | no | no — solo lee → arreglado con `_entorno` | ejecutado |
+
+**Corrección a c.20369:** `limpiar.mjs` sí separaba staging de dev antes de su `deleteMany`: comprueba
+`base !== 'railway'` con lo que contesta el servidor (`select current_database()`). Lo que no hacía es
+comprobarlo ANTES de abrir la conexión. Los dos que escribían sin separar eran `paso3` y `paso4`.
+
+### Lo que cambia (punto 2)
+
+`tests/banco-scrum911/_entorno.mjs` exporta `exigirStaging(url)`: llama a `exigirDestinoCorrecto('DATABASE_URL_STAGING', url, WT)`
+de `scripts/_clave-vs-destino.mjs` (host Y base `railway`, por el mapa de la casa) y devuelve la MISMA url.
+`prismaStaging` la llama antes de construir el cliente; `paso2`, `paso3`, `paso4` y `paso6` la llaman en lugar
+de su `host !== STAGING_HOST`, antes de importar `dist/`. Las comprobaciones de `current_database()` se quedan.
+
+Ejecutado, los 8 recorridos que abren, con `YAQU_ENV_FILE` fabricado (el fichero real no se lee):
+
+| `DATABASE_URL_STAGING` fabricada | antes (main) | ahora |
+|---|---|---|
+| `127.0.0.1:1/railway` | `NO ES STAGING` (los 3 probados) | los 8: `LA CLAVE NO APUNTA A DONDE DICE SU NOMBRE` |
+| **rojo sembrado:** host de staging + base `yaqu_dev_x` | **pasa** y cae al importar el cliente (`limpiar`, `paso3`, `paso4` probados) | los 8: `LA CLAVE NO APUNTA…`, `Apunta a: acela…/yaqu_dev_x` |
+| positivo: host de staging + `railway` | pasa | pasa el guard y cae al importar `node_modules/@prisma/client` o `dist/` (no hay en este árbol): no llega a conectar |
+
+### Lo que cambia (punto 3): el censo ve la escritura a través de un servicio de `dist/modules/`
+
+Una llamada a algo importado de `dist/modules/` cuenta como «puede escribir» cuando (a) la fuente del módulo en
+`src/` nombra el cliente de la base (`core/db/prisma` o `PrismaClient`) y (b) el fichero ya conecta o nombra
+una clave de base. Si es lo único que conecta, la conexión es esa llamada. Tercera siembra (`SIEMBRA_SERVICIO`):
+si no la ve, el CLI dice CIEGO. La salida declara la población: «servicios de dist/modules leídos en src/: 44
+hablan con la base · 109 no · 12 sin fuente (cuentan como sí)».
+
+**Sobre el árbol real**, contra el censo de 1575c: 145 filas (eran 144). Cambian de clase 10: los 9 del banco
+911 (`guard_propio` → `protegido`, por el arreglo) y `scrum692-guardado-parcial-en-base` (no salía → `protegido`,
+vía `_staging-db`). 44 filas más ganan escrituras por servicio sin cambiar de clase, `cambiar-flag-fiscal.mjs`
+entre ellas. **`sin_guard_escribe` sigue en 0.** Una primera versión sin la condición (a) subía
+`puerta-cliente-real.mjs` a `sin_guard_escribe`: llama a `evaluarPuerta`/`textoDelAviso`, que son puros
+(`src/modules/system/domain/puertaClienteReal.ts`: 0 apariciones de `prisma`). Era ruido del instrumento, no un hallazgo.
+
+**No arreglado, a propósito (punto 3 del encargo):** `cambiar-flag-fiscal.mjs` escribe por su servicio y solo
+compara el host. No se le puede poner `exigirDestinoCorrecto`: su `DATABASE_URL` puede ser la de producción,
+fuera de un árbol, a mano del fundador. Separar dev de staging ahí cambia su interfaz (`FLAG_CONFIRM` tendría
+que nombrar host/base), y además es el interruptor fiscal: es decisión de un jefe, no un arreglo trivial.
+
+### Rojo, verde y mutaciones (local; ningún caso conecta con nada)
+
+- `tests/scrum1575d-staging-por-destino.test.mjs`: 5 pass + 0 fail. Con 1575c, 1575b y 1575: 23 pass + 0 fail = 23.
+- Contra el `_entorno.mjs` de main: el fichero cae al importar (`exigirStaging` no existe): rojo débil.
+- Seis mutaciones, una por pieza, cada una restaurada desde `HEAD` y con `git status` limpio al final:
+
+| mutación | resultado |
+|---|---|
+| A · `exigirStaging` compara solo el host | 3 pass + 2 fail |
+| B · `paso3` vuelve a `host !== STAGING_HOST` | 4 pass + 1 fail |
+| C · `prismaStaging` construye el cliente antes de comprobar | 4 pass + 1 fail |
+| D · el censo no mira servicios | 3 pass + 2 fail |
+| E · el censo no lee la fuente del servicio | 4 pass + 1 fail |
+| F · sin exigir que el fichero hable con una base | 4 pass + 1 fail |
+
+### Lo que NO se ha medido
+
+- El censo es por FICHERO: `estado.mjs` sale protegido «vía `sesionQA`», que no es un guard; y un `paso3` que
+  volviera al host a mano seguiría saliendo protegido (por importar `cargarSecretos` de `_entorno`). Eso lo
+  caza el test, no el censo.
+- Un servicio que llama a OTRO módulo que escribe, o uno llamado como `S.metodo(…)`, no se ve. La fuente se lee
+  como texto: un comentario que nombre `PrismaClient` cuenta como «habla con la base».
+- Los que comparan solo la base (`yaqu_dev_javier`) no miran el host: separan staging de dev, pero un loopback
+  con ese nombre pasaría. No es lo que pedía este tramo.
+- Los recorridos del banco 911 no se han corrido contra staging (encargo: nada contra bases reales). Visto en
+  yaqu.app: NO HECHO, no hay pantalla (son tests de desarrollo; además, producción no despliega desde el 20-oct).
+
+### Errores propios
+
+- La comprobación de orden de mi test buscaba la primera `exigirStaging(` del fichero, y en `_entorno.mjs` es la
+  DECLARACIÓN: la mutación C salía MUDA. Y la primera mutación C movía el `import` del cliente, no el `new`: no
+  cambiaba cuándo se conecta, así que tampoco podía caer. Arreglados los dos antes del commit.
+- La primera versión del criterio de servicios contaba cualquier módulo de `dist/modules/` y fabricó un
+  `sin_guard_escribe` que no existía (`puerta-cliente-real.mjs`). Lo vi al comparar el censo entero fila a fila.

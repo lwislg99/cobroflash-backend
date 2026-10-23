@@ -197,6 +197,8 @@ async function actualizarClienteHandler(req: Request, res: Response) {
     const { count } = await updateCustomer(req.merchantId, id, parsed);
     if (count === 0) return res.status(404).json({ error: 'not_found' });
     const updated = await getCustomer(req.merchantId, id);
+    // SCRUM-1571c: borrado por otra petición entre el update y esta relectura → daba 200 con `null`.
+    if (!updated) return res.status(404).json({ error: 'not_found' });
     res.json(updated);
   } catch (err: any) {
     if (err?.name === 'ZodError') return res.status(400).json({ error: 'validation_error', details: err.issues }); // SCRUM-1199, ver el POST

@@ -78,14 +78,12 @@ const CON_EL_PATRON_YA = [
   // se RECALCULA con el censo, no se elige (regla 41). Quedan, y el motivo de cada grupo está en
   // `docs/master/SCRUM-1218.md` (tramo 1218b):
   //   · del equipo de Luis (se le avisa, no se tocan): scrum1188d, scrum1489, scrum912;
-  //   · de J2, sólo corren con `LIBRO_PG_URL` (Postgres desechable): scrum1346, scrum1397, scrum1403;
   //   · el resto, gateados por `QA_DB_TEST` o `BOT_SUITE_TEST`: sus veredictos sólo se miden en staging.
+  // Los tres de J2 que sólo corren con `LIBRO_PG_URL` (scrum1346, scrum1397, scrum1403) se migraron en
+  // SCRUM-1218c (23-oct-2026), medidos con un Postgres desechable: la lista baja de 40 a 37.
   'bot-suite.test.mjs',
   'scrum1188d-tiers-tambien-se-vacia.test.mjs',
   'scrum120-patch-job-roles.test.mjs',
-  'scrum1346-el-tecnico-ve-documentos-ajenos.test.mjs',
-  'scrum1397-el-tecnico-ve-sus-facturas.test.mjs',
-  'scrum1403-el-tecnico-y-las-otras-puertas.test.mjs',
   'scrum148-filtro-por-miembro.test.mjs',
   'scrum1489-la-busqueda-recorta-al-tecnico.test.mjs',
   'scrum17-recapitulativa.test.mjs',

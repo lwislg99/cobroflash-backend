@@ -40,10 +40,29 @@ const TEXTO_SEMILLA = [
   '  await borrarAjeno(Number(req.params.id), req.merchantId);',
   '  res.status(204).end();',
   '});',
+  // SCRUM-1571c: dos lecturas con el defecto (directa y a través de un servicio, ésta con `{}`) y una sin él.
+  'async function leerAjeno(id: number, merchantId: number) {',
+  '  return prisma.semilla.findFirst({ where: { id, merchantId } });',
+  '}',
+  "router.get('/semilla/:id', async (req: any, res: any) => {",
+  '  const fila = await prisma.semilla.findFirst({ where: { id: Number(req.params.id), merchantId: req.merchantId } });',
+  '  res.json(fila);',
+  '});',
+  "router.get('/semilla/:id/servicio', async (req: any, res: any) => {",
+  '  const fila = await leerAjeno(Number(req.params.id), req.merchantId);',
+  '  res.json({ ...fila });',
+  '});',
+  "router.get('/semilla/:id/con-404', async (req: any, res: any) => {",
+  '  const fila = await leerAjeno(Number(req.params.id), req.merchantId);',
+  "  if (!fila) return res.status(404).json({ error: 'not_found' });",
+  '  res.json(fila);',
+  '});',
   '',
 ].join('\n');
+export const SEMILLAS_LECTURA = { conDefecto: ['GET /semilla/:id', 'GET /semilla/:id/servicio'], sinDefecto: ['GET /semilla/:id/con-404'] };
 
 const VERBOS = new Set(['delete', 'put', 'patch', 'post']);
+const VERBOS_LECTURA = new Set(['get', ...VERBOS]);
 
 function listar(dir, out = []) {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -152,28 +171,146 @@ export function censar({ semilla = true } = {}) {
     return { escrituras, leeCount, contesta404 };
   };
 
+  // ── SCRUM-1571c · la lectura que no encuentra y contesta 200 con `null` (o `{}`) ──────────────────────────
+  // Un valor es ANULABLE si sale de un `findFirst`/`findUnique` cuyo primer argumento nombra `merchantId`, de una
+  // función de `src/` que lo devuelve sin mirarlo (hasta 4 niveles), o de un `c ? x : null`. Se da por MIRADO si su
+  // nombre aparece tras `!`, en un `==`/`===`/`!=`/`!==`, como condición de un `if` o de un `? :`, o a la izquierda
+  // de `&&`/`||`/`??` (salvo `v || {}` / `v ?? {}`, que es el `{}` vacío del defecto).
+  const pelar = (e) => {
+    while (e && (ts.isAwaitExpression(e) || ts.isParenthesizedExpression(e) || ts.isAsExpression(e) || ts.isNonNullExpression(e))) e = e.expression;
+    return e;
+  };
+  const esFind = (e) => ts.isCallExpression(e) && ts.isPropertyAccessExpression(e.expression)
+    && (e.expression.name.text === 'findFirst' || e.expression.name.text === 'findUnique')
+    && !!e.arguments[0] && /merchantId/.test(e.arguments[0].getText());
+  const objetoVacio = (e) => { e = pelar(e); return !!e && ts.isObjectLiteralExpression(e) && e.properties.length === 0; };
+  const propias = (fn, f) => { // recorre fn sin entrar en funciones anidadas
+    const ver = (m) => { if (m !== fn && ts.isFunctionLike(m)) return; f(m); ts.forEachChild(m, ver); };
+    ver(fn);
+  };
+  const mirado = (nombre, fn) => {
+    let si = false;
+    propias(fn, (m) => {
+      if (!ts.isIdentifier(m) || m.text !== nombre) return;
+      let hijo = m; let p = m.parent;
+      while (p && ts.isParenthesizedExpression(p)) { hijo = p; p = p.parent; }
+      if (!p) return;
+      if (ts.isPrefixUnaryExpression(p) && p.operator === ts.SyntaxKind.ExclamationToken) si = true;
+      else if (ts.isIfStatement(p) && p.expression === hijo) si = true;
+      else if (ts.isConditionalExpression(p) && p.condition === hijo) si = true;
+      else if (ts.isBinaryExpression(p)) {
+        const op = p.operatorToken.kind; const K = ts.SyntaxKind;
+        if ([K.EqualsEqualsToken, K.EqualsEqualsEqualsToken, K.ExclamationEqualsToken, K.ExclamationEqualsEqualsToken].includes(op)) si = true;
+        else if (p.left === hijo && op === K.AmpersandAmpersandToken) si = true;
+        else if (p.left === hijo && (op === K.BarBarToken || op === K.QuestionQuestionToken) && !objetoVacio(p.right)) si = true;
+      }
+    });
+    return si;
+  };
+  const memo = new Map();
+  const devuelveAnulable = (fn, prof) => {
+    if (memo.has(fn)) return memo.get(fn);
+    memo.set(fn, false);
+    let r = false;
+    if (ts.isArrowFunction(fn) && !ts.isBlock(fn.body)) r = anulable(fn.body, fn, prof);
+    else if (fn.body) propias(fn, (m) => { if (ts.isReturnStatement(m) && m.expression && anulable(m.expression, fn, prof)) r = true; });
+    memo.set(fn, r);
+    return r;
+  };
+  function anulable(expr, fn, prof) {
+    const e = pelar(expr);
+    if (!e) return false;
+    if (esFind(e)) return true;
+    if (ts.isConditionalExpression(e)) return [e.whenTrue, e.whenFalse].some((b) => pelar(b).kind === ts.SyntaxKind.NullKeyword);
+    if (ts.isCallExpression(e) && prof < 4) return resolver(e.expression).some((f) => devuelveAnulable(f, prof + 1));
+    if (ts.isIdentifier(e)) {
+      let ini = null;
+      propias(fn, (m) => { if (ts.isVariableDeclaration(m) && ts.isIdentifier(m.name) && m.name.text === e.text && m.initializer) ini = m.initializer; });
+      return !!ini && anulable(ini, fn, prof) && !mirado(e.text, fn);
+    }
+    return false;
+  }
+  // Lo que decide el CUERPO de `res.json(…)`/`res.send(…)`: el argumento entero; un objeto literal de UNA sola
+  // propiedad (`{ ...v }` da `{}`, `{ v }` da `{ v: null }`: el cuerpo no lleva nada más); y la izquierda de un
+  // `v || {}` / `v ?? {}`. Un anulable que es UNA propiedad entre varias (`{ customer, quote: q ? … : null }`) no
+  // cuenta: es un dato opcional dentro de una respuesta que sí lleva algo, no un 200 vacío.
+  const valoresQueLlegan = (arg) => {
+    const e = pelar(arg);
+    if (!e) return [];
+    if (ts.isObjectLiteralExpression(e)) {
+      if (e.properties.length !== 1) return [];
+      const p = e.properties[0];
+      return ts.isShorthandPropertyAssignment(p) ? [p.name]
+        : ts.isPropertyAssignment(p) ? valoresQueLlegan(p.initializer) : ts.isSpreadAssignment(p) ? valoresQueLlegan(p.expression) : [];
+    }
+    if (ts.isBinaryExpression(e) && objetoVacio(e.right)
+      && (e.operatorToken.kind === ts.SyntaxKind.BarBarToken || e.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken)) return [e.left];
+    return [e];
+  };
+  const raiz = (e) => { while (ts.isPropertyAccessExpression(e) || ts.isCallExpression(e)) e = e.expression; return e; };
+  const analizarLectura = (manejadores) => {
+    const fns = [];
+    for (const h of manejadores) {
+      if (ts.isArrowFunction(h) || ts.isFunctionExpression(h)) fns.push(h);
+      else if (ts.isIdentifier(h) || ts.isPropertyAccessExpression(h)) fns.push(...resolver(h));
+    }
+    const lecturas = []; const nulos = [];
+    for (const fn of fns) {
+      const p2 = fn.parameters?.[1];
+      const resNombre = p2 && ts.isIdentifier(p2.name) ? p2.name.text : 'res';
+      propias(fn, (m) => {
+        if (ts.isCallExpression(m) && esFind(m)) lecturas.push(`${rel(m.getSourceFile())}:${linea(m)}`);
+        if (!ts.isCallExpression(m) || !ts.isPropertyAccessExpression(m.expression)) return;
+        if (m.expression.name.text !== 'json' && m.expression.name.text !== 'send') return;
+        const r = raiz(m.expression.expression);
+        if (!ts.isIdentifier(r) || r.text !== resNombre) return;
+        for (const v of m.arguments.flatMap(valoresQueLlegan)) {
+          if (anulable(v, fn, 0)) nulos.push({ envio: `${rel(m.getSourceFile())}:${linea(m)}`, valor: v.getText().slice(0, 60) });
+        }
+      });
+    }
+    return { analizable: fns.length > 0, lecturas, nulos };
+  };
+
   const rutas = [];
+  const rutasLectura = [];
   for (const sf of programa.getSourceFiles()) {
     if (!esDeSrc(sf)) continue;
     const visita = (n) => {
-      if (ts.isCallExpression(n) && ts.isPropertyAccessExpression(n.expression) && VERBOS.has(n.expression.name.text)
+      if (ts.isCallExpression(n) && ts.isPropertyAccessExpression(n.expression) && VERBOS_LECTURA.has(n.expression.name.text)
           && n.arguments.length >= 2 && ts.isStringLiteralLike(n.arguments[0]) && n.arguments[0].text.startsWith('/')) {
         const r = n.arguments[0].text;
-        const fila = { verbo: n.expression.name.text.toUpperCase(), ruta: r, sitio: `${rel(sf)}:${linea(n)}`, conId: r.includes(':') };
-        if (fila.conId) Object.assign(fila, analizarRuta(n.arguments.slice(1)));
-        rutas.push(fila);
+        const verbo = n.expression.name.text;
+        const fila = { verbo: verbo.toUpperCase(), ruta: r, sitio: `${rel(sf)}:${linea(n)}`, conId: r.includes(':') };
+        if (fila.conId) rutasLectura.push({ verbo: fila.verbo, ruta: r, sitio: fila.sitio, ...analizarLectura(n.arguments.slice(1)) });
+        if (VERBOS.has(verbo)) {
+          if (fila.conId) Object.assign(fila, analizarRuta(n.arguments.slice(1)));
+          rutas.push(fila);
+        }
       }
       ts.forEachChild(n, visita);
     };
     visita(sf);
   }
+  const conNulo = rutasLectura.filter((r) => r.nulos.length > 0);
+  const nombre = (r) => `${r.verbo} ${r.ruta}`;
+  const deSemilla = (r) => r.sitio.includes('__semilla_scrum1571b__');
+  const lectura = {
+    rutas: rutasLectura,
+    conLectura: rutasLectura.filter((r) => r.lecturas.length > 0),
+    sinManejador: rutasLectura.filter((r) => !r.analizable),
+    sospechosas: conNulo,
+    semillaVista: SEMILLAS_LECTURA.conDefecto.every((n) => conNulo.some((r) => deSemilla(r) && nombre(r) === n)),
+    semillaLimpiaCallada: SEMILLAS_LECTURA.sinDefecto.every((n) => rutasLectura.some((r) => deSemilla(r) && nombre(r) === n)
+      && !conNulo.some((r) => deSemilla(r) && nombre(r) === n)),
+  };
 
   const conId = rutas.filter((r) => r.conId);
   const conEscritura = conId.filter((r) => r.escrituras.some((w) => w.merchantId));
   const sospechosas = conEscritura.filter((r) => !r.leeCount && !r.contesta404
     && r.escrituras.some((w) => w.merchantId && (w.destino === 'tirado' || w.destino === 'devuelto')));
   const semillaVista = sospechosas.some((r) => r.sitio.includes('__semilla_scrum1571b__'));
-  return { ficheros: ficheros.length - (semilla ? 1 : 0), rutas, conId, conEscritura, sospechosas, semillaVista };
+  return { ficheros: ficheros.length - (semilla ? 1 : 0), rutas, conId, conEscritura, sospechosas, semillaVista, lectura };
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
@@ -191,6 +328,16 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     }
     console.log(`CONTROL POSITIVO SEMBRADO (DELETE /semilla/:id): ${semilla ? (c.semillaVista ? 'visto' : 'NO VISTO') : 'no sembrado'}`);
     console.log(c.semillaVista ? 'VEREDICTO: el censo ve' : 'VEREDICTO: CIEGO — el positivo no aparece; ninguna fila de arriba vale');
+    const l = c.lectura;
+    console.log(`\nSCRUM-1571c · LECTURAS · rutas get/delete/put/patch/post sobre un :id: ${l.rutas.length} · con manejador que se pudo leer: ${l.rutas.length - l.sinManejador.length}`
+      + ` · con findFirst/findUnique + merchantId en el propio manejador: ${l.conLectura.length} · SOSPECHOSAS (200 con null o {}): ${l.sospechosas.length}`);
+    for (const r of l.sospechosas) {
+      console.log(`SOSPECHOSA ${r.verbo} ${r.ruta} · ${r.sitio}`);
+      for (const n of r.nulos) console.log(`             envía «${n.valor}» · ${n.envio}`);
+    }
+    console.log(`CONTROL POSITIVO SEMBRADO (${SEMILLAS_LECTURA.conDefecto.join(', ')}): ${semilla ? (l.semillaVista ? 'visto' : 'NO VISTO') : 'no sembrado'}`);
+    console.log(`CONTROL NEGATIVO SEMBRADO (${SEMILLAS_LECTURA.sinDefecto.join(', ')}): ${semilla ? (l.semillaLimpiaCallada ? 'callado' : 'SEÑALADO o no visto') : 'no sembrado'}`);
+    console.log(l.semillaVista && l.semillaLimpiaCallada ? 'VEREDICTO: el censo de lecturas ve' : 'VEREDICTO: CIEGO — las lecturas de arriba no valen');
   }
-  process.exit(c.semillaVista ? 0 : 2);
+  process.exit(c.semillaVista && c.lectura.semillaVista && c.lectura.semillaLimpiaCallada ? 0 : 2);
 }
