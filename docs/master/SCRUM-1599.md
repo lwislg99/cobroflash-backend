@@ -68,3 +68,59 @@ la regla 18/23 (tarjeta sólo con Connect); el segundo, el formato de serie de S
    en un caso propio con un merchant con Connect?
 4. **`scrum17`:** ¿la factura consolidada usa el mismo formato `F<AA><NNNN>` que firmaste en SCRUM-780? Si es que sí,
    la aserción pasa de `/^\d{4}-/` a `/^F\d{6}$/`, que es MÁS estricta, no más laxa.
+
+## J2 · SCRUM-1599c · scrum85 con Connect activo en el merchant A, como decidió el fundador
+
+**Medido contra:** `origin/main` = `2c45bf589aeae007eb12ed388b3e0f4d2d8d98ed` · 2026-10-23T20:59:34Z (hora de GitHub al acabar las pasadas; sesión J2 `jv-j2ay` en su propio árbol `jv-j2ay`, por encargo del orquestador `cobroflash-backend-62`)
+
+A9: comprobación → `.claude/hooks/guard-dangerous.sh`
+
+(El fallo: para la mutación y para restaurar el fichero intenté primero truncar un test con `>` y después un
+`git checkout --` sobre un cambio sin commitear; el hook paró los dos, y se hizo con el editor y con
+`git show HEAD:<fichero>` a un temporal. Mi primera línea `A9:` llevaba esta explicación detrás de la ruta y
+`scrum1294` la tumbó en local, antes del empujón.)
+
+**Decisión que se aplica:** SCRUM-1599 c.20650 ② (respuesta literal «Connect activo en el test»), sobre la medición
+de c.20647. Sólo el test: 0 líneas de `src/`, 0 aserciones tocadas.
+
+### ⓪ La alta del árbol (SCRUM-1218 c.20665)
+
+`scripts/_clave-vs-destino.mjs` gana UNA entrada, `'jv-j2ay': 'yaqu_dev_javier'`, y `tests/scrum383-clave-vs-destino.test.mjs`
+la declara en su lista exacta, con un caso que exige la misma base que `cobroflash-backend` (la forma de 1218e).
+
+- `node scripts/comprobar-claves-bd.mjs`, sin tubería: `rc=1` («DATABASE_URL_TESTS NO SE PUEDE COMPROBAR») antes,
+  `rc=0` después.
+- Control de no declarado, llamando a `comprobarClaveVsDestino`: `jv-j6ap` y `jv-j6ba` siguen saliendo
+  `worktree_no_declarado`; `jv-j2ay` y `jv-j6ar` salen `cuadra`.
+- `scrum383`: 14/14 con la alta; quitando sólo la línea del módulo, 13/14.
+
+### ① Lo que cambia en `tests/scrum85-pay-routes-token.test.mjs`
+
+- El merchant A nace con `connectStatus: 'active'`, `stripeAccountId: 'acct_QAS85'` y
+  `flags: { PAYMENTS_CONNECT_ENABLED: true }`: la misma forma que usan `scrum893` y `scrum923`. Con eso
+  `cardChargeMode` deja de dar `'refuse'` y `/pay/invoice/:token` vuelve a enlazar `/pay/card/<token>`.
+- `STRIPE_SECRET_KEY` se vacía antes de cargar `dist/` (dotenv no pisa una variable que ya existe): la cuenta
+  conectada es ficticia y `/pay/card` no puede llamar a Stripe, haya o no clave en el `.env`. Contesta 501.
+- Un comentario que decía «este fixture ES un merchant real sin Connect» se corrige; la aserción de al lado, no.
+
+### ② Con el turno (base del carril `yaqu_dev_javier`, de 20:56:13Z a ~21:00Z, `QA_DB_TEST=1 WHATSAPP_DRY_RUN=1`)
+
+| pasada | casos | ok | not ok | SKIP |
+|---|---|---|---|---|
+| ANTES (el fichero de main) | 1 | 0 | 1 («el link a /pay/card debe llevar el TOKEN») | 0 |
+| DESPUÉS, 3 pasadas | 1 | 1 | 0 | 0 |
+| MUTACIÓN: el merchant A sin `...CONNECT_ACTIVO` | 1 | 0 | 1 (el mismo error que el ANTES) | 0 |
+
+En las tres pasadas del DESPUÉS, `/pay/card/<token>` da 501 (diagnóstico SCRUM-119, «Stripe ausente») y el id
+numérico da 404: el IDOR sigue probado. Evidencia: `docs/master/evidencias/SCRUM-1599/{antes,despues,mutacion}-1599c.salida.txt`.
+
+### ③ Sin medir
+
+- La rama 303 del test (redirect a Stripe Checkout): con la clave vacía no se ejerce, ni antes de este cambio se
+  ejercía en esta base.
+- Que vaciar la clave impida la llamada con una clave PRESENTE en el `.env`: en este árbol no hay ninguna (0 líneas
+  `STRIPE*`, con 1 de `DATABASE_URL_TESTS` como positivo); se apoya en leer `loadEnv.ts`, que llama a
+  `dotenv.config()` sin `override`.
+- La tanda gateada entera: el turno se usó fichero a fichero, como en 1218e/f.
+- Este tramo y el de 1599b (#2784) se añaden los dos al final de este fichero: el que entre segundo tiene que
+  mezclar `origin/main` y conservar los dos.
