@@ -33,6 +33,7 @@ import { spawnSync } from 'node:child_process';
 import { entornoLimpio } from '../scripts/_trinquete-de-zona.mjs';
 import { clavesDelConstructor, puertasSinLosCampos } from './_puertas-del-presupuesto.mjs';
 import { censar, clasifica, IMPRIME, RETIRADAS } from '../scripts/_censo-fecha-sin-zona.mjs';
+import { diaNaturalEn } from '../dist/core/zonaDelMerchant.js'; // SCRUM-1471b · el día del registro
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const MADRID = 'Europe/Madrid';
@@ -237,15 +238,21 @@ test('SCRUM-1471 · la fecha del presupuesto en el portal es la del negocio, igu
   }
 });
 
-test('SCRUM-1471 · DECLARADO: la fecha de la FACTURA en el portal sigue con el reloj del proceso, como la del PDF de la factura', () => {
-  // Su gemelo es la «Fecha:» del PDF de la factura (`dateStr`), que es fiscal y espera la decisión
-  // del fundador (SCRUM-1470, aceptación 2). Cambian juntas: el día que se decida, este caso se
-  // sustituye por la comparación del portal con ese PDF.
+test('SCRUM-1471b · 🔴 la fecha de la FACTURA en el portal es el día natural de su registro, el mismo que imprime su PDF (SCRUM-1470c)', () => {
+  // Decisión del fundador (SCRUM-1470 c.20530, «Sí, el mismo día»): la «Fecha:» del PDF de la factura
+  // es el día natural de su registro, `diaNaturalEn(createdAt, zonaDelMerchant(...))`. SCRUM-1470c lo
+  // comprueba en el PDF (`tests/scrum1470c-la-factura-imprime-el-dia-de-su-registro.test.mjs`); aquí,
+  // el portal contra ese mismo día. Hasta este tramo el portal pintaba la víspera, y la tarjeta
+  // mezclaba dos relojes: «02 oct 2026 · Pagada 03 oct 2026».
   for (const nombre of CRUCES) {
     const p = papel(nombre);
-    assert.ok(p.portalFactura.startsWith(`${PAPELES[nombre].visperaCorta} · `),
-      `🔴 ${nombre}: la fecha de la factura del portal ha cambiado («${p.portalFactura}») sin que cambie la del PDF de la factura: `
-      + 'el papel y su gemelo cambian juntos o no cambian');
+    const c = PAPELES[nombre];
+    assert.equal(p.portalFactura, `${c.corto} · Pagada ${c.corto}`,
+      `🔴 ${nombre}: la tarjeta de la factura del portal dice «${p.portalFactura}»: su fecha no es el día del negocio`);
+    // El día del registro, con la función de la casa que usan el registro y el PDF.
+    const [, , dia] = diaNaturalEn(new Date(c.instante), c.zona).split('-');
+    assert.equal(p.portalFactura.slice(0, 2), dia,
+      `🔴 ${nombre}: el portal fecha la factura el ${p.portalFactura.slice(0, 2)} y su registro (y su PDF) el ${dia}`);
   }
 });
 
@@ -318,7 +325,7 @@ const FICHEROS = [
   'src/modules/messaging/domain/weeklyDigest.service.ts',
 ];
 
-test('SCRUM-1470 · SCRUM-1471 · SCRUM-1472 · el censo: de las 12 llamadas que IMPRIMÍAN en estos cinco ficheros quedan 6, y cada una con su motivo', () => {
+test('SCRUM-1470 · SCRUM-1471 · SCRUM-1472 · el censo: de las 12 llamadas que IMPRIMÍAN en estos cinco ficheros quedan 5, y cada una con su motivo (SCRUM-1471b retiró `fechaDeLaFactura`)', () => {
   const real = censar();
   assert.ok(real.ficheros > 250, `🔴 CIEGO: el censo miró ${real.ficheros} ficheros`);
   const quedan = real.filas.filter((f) => FICHEROS.includes(f.fichero) && clasifica(f) === IMPRIME)
@@ -328,12 +335,12 @@ test('SCRUM-1470 · SCRUM-1471 · SCRUM-1472 · el censo: de las 12 llamadas que
     'src/modules/invoicing/infra/pdf/pdf.service.ts::dateStr · getFullYear',
     'src/modules/invoicing/infra/pdf/pdf.service.ts::dateStr · getMonth',
     'src/modules/invoicing/infra/pdf/pdf.service.ts::generateQuotePdf · toLocaleString',
-    'src/modules/system/app/routes/customerPortal.routes.ts::fechaDeLaFactura · toLocaleDateString',
     'src/modules/system/app/routes/invoicesAdmin.routes.ts::fD · toLocaleString',
-  ], '🔴 las llamadas que IMPRIMEN sin zona en estos ficheros no son las seis declaradas: o ha vuelto una arreglada, o ha nacido otra');
+  ], '🔴 las llamadas que IMPRIMEN sin zona en estos ficheros no son las cinco declaradas: o ha vuelto una arreglada, o ha nacido otra');
   for (const id of [
     'src/modules/billing/app/routes/receipt.routes.ts::GET /:token',
     'src/modules/system/app/routes/customerPortal.routes.ts::dateShort',
+    'src/modules/system/app/routes/customerPortal.routes.ts::fechaDeLaFactura',
     'src/modules/messaging/domain/weeklyDigest.service.ts::sendDigestForMerchant',
   ]) {
     assert.ok(RETIRADAS.has(id), `🔴 «${id}» se arregló y no está en RETIRADAS: mejorar se declara`);

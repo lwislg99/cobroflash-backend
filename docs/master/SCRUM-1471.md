@@ -57,3 +57,50 @@ es fiscal. La regla del ticket —«cambian juntos o no cambian»— manda dejar
 
 - **No está visto en yaqu.app:** la rama no está mergeada.
 - El PDF de la factura no se ha ejecutado ni tocado.
+
+## SCRUM-1471b · La fecha de la FACTURA en el portal es el día de su registro (J2, jv-j2ak, 23-oct-2026)
+
+**Medido contra:** `origin/main` = `f1c0ff3094c004ea7b99ffe2f1d13a21213c5ad1` · 2026-10-23T14:50:33Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum1470-la-fecha-impresa-es-la-del-negocio.test.mjs`
+
+Lo desbloquea la decisión del fundador en SCRUM-1470 c.20530 («Sí, el mismo día»): la «Fecha:» del PDF
+de la factura imprime el día natural de su registro. Lo hace SCRUM-1470c (J1, rama
+`scrum-1470c-factura-dia-del-registro`, sin mergear al escribir esto). Este tramo es su gemelo en el portal (regla del ticket: el papel y su gemelo cambian juntos).
+
+**Qué cambia.** `fechaDeLaFactura` (`customerPortal.routes.ts`) pide el día a
+`diaNaturalEn(createdAt, zonaDelMerchant(m))`, la MISMA función que usan el registro y el `dateStr` de
+1470c, y sólo le pone la forma corta (`timeZone: 'UTC'` sobre ese día). No usa `dateShort`, aunque
+daría el mismo día: así el portal no puede decir un día distinto del registro aunque las dos formas de
+calcularlo divergieran. Ningún texto cambia: la forma sigue siendo «03 oct 2026».
+
+**El rojo, por la ruta real y con el proceso en UTC** (`tests/_sonda-fecha-impresa.mjs`, `GET /portal/:token`),
+antes de tocar `src/`: el caso nuevo cae con «02 oct 2026 · Pagada 03 oct 2026» (verano, 00:30 de Madrid),
+y cae también el censo. Después: 15 de 15, 0 caen, 0 saltos.
+
+**Sin zona declarada no cambia nada:** lo sujeta el caso «CONTROL» que ya existía (`sinZona` y
+`zonaRota` siguen diciendo «02 oct 2026 · Pagada 02 oct 2026», y mediodía no se mueve en verano ni en
+invierno). Pasa sin tocarlo.
+
+**Mutaciones**, con la base sin mutar en verde:
+- M1 (`dist/`: la tarjeta recibe `'UTC'` en vez de la zona del negocio) → cae el caso «SCRUM-1471b».
+- M2 (`src/`: se quita `timeZone: 'UTC'` del formato) → este fichero NO la ve, porque el proceso del
+  test ya va en UTC. La caza `tests/scrum1093h-censo-fecha-sin-zona.test.mjs`: caen «RATCHET» y
+  «ninguna entrada de RETIRADAS ha vuelto». Base de ese fichero con el cambio: 21 de 21.
+
+**Censo:** `customerPortal.routes.ts::fechaDeLaFactura` sale de `USO` y entra en `RETIRADAS`. En los cinco
+ficheros del test quedan 5 filas que IMPRIMEN, no 6.
+
+**Choque con 1470c, declarado:** las dos ramas tocan las mismas líneas del test (el caso «DECLARADO» y la
+lista del censo) y de `scripts/_censo-fecha-sin-zona.mjs`. La que entre segunda tendrá un conflicto de
+texto. Se resuelve quitando las tres filas de `dateStr` y la de `fechaDeLaFactura` (quedan 2), y
+dejando las dos identidades en `RETIRADAS`. El caso «DECLARADO» de 1470c desaparece: lo sustituye el de aquí.
+
+| aceptación (literal) | dónde se ve |
+|---|---|
+| 2. La fecha del presupuesto y de la factura en el portal es la misma que imprime su PDF. | Factura: `tests/scrum1470-la-fecha-impresa-es-la-del-negocio.test.mjs` · «SCRUM-1471b · 🔴 la fecha de la FACTURA en el portal…»: contra el día escrito a mano y contra `diaNaturalEn`, que es el día del PDF (lo comprueba `tests/scrum1470c-…` en la rama de J1). La comparación directa portal ↔ PDF de la factura NO está hecha: el PDF de la factura no está en main todavía. |
+| 3. Las 3 filas salen de la clase IMPRIME del censo, o quedan con su motivo escrito. | `censar()`: salen las 3 (`fechaDeLaFactura` en `RETIRADAS`) · `tests/scrum1093h-censo-fecha-sin-zona.test.mjs` |
+
+**Lo que no se ha mirado:** yaqu.app (sin mergear); la tanda completa (sólo la muestra de guards de la
+entrega); el typecheck completo da 17 errores en cuatro ficheros de presupuestos que este tramo no
+toca (árbol anidado con el cliente de Prisma compartido); no lo he cruzado con un árbol limpio.
