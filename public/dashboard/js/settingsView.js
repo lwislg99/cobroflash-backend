@@ -1046,7 +1046,7 @@ function renderSettingsView(container) {
         'value="' + escapaAtributo(c.titulo || '') + '" style="width:100%;margin-bottom:4px">' +
         '<textarea data-clausula-texto="1" rows="2" placeholder="' + TX.clausulaTexto + '" ' +
         'style="width:100%">' + escapaTexto(c.texto || '') + '</textarea>' +
-        '<button type="button" data-clausula-quitar="' + i + '" style="font-size:13px">' +
+        '<button type="button" class="btn btn-ghost" data-clausula-quitar="' + i + '">' +
         TX.clausulaQuitar + '</button></div>';
     }
 
@@ -1105,7 +1105,9 @@ function renderSettingsView(container) {
       '<label style="display:block;font-weight:600;margin-bottom:2px">' + TX.clausulasTitulo + '</label>' +
       '<p style="font-size:12px;color:var(--muted);margin:2px 0 6px">' + TX.clausulasPista + '</p>' +
       '<div id="clausulas-lista"></div>' +
-      '<button type="button" id="clausulas-anadir" style="font-size:13px">' + TX.clausulaAnadir + '</button>';
+      // AB6 (SCRUM-962b): era un `<button>` nativo de 22 px de toque y sin estilo de la casa. Con
+      // `btn btn-secondary` mide lo que manda DESIGN.md §5: 44 en móvil, 36 en escritorio.
+      '<button type="button" class="btn btn-secondary" id="clausulas-anadir">' + TX.clausulaAnadir + '</button>';
     colocar('clausulasPresupuesto', cajaClausulas);
 
     cajaClausulas.addEventListener('click', function (ev) {
