@@ -7,7 +7,8 @@
 //   · el comprobador de forma SABE fallar (forma mala → cae) y sabe absolver (forma buena → pasa);
 //   · las respuestas VIEJAS del censo, con su forma, caen contra el contrato del servidor;
 //   · cada ruta recibe SU dato (su ejemplo casa con su contrato, no con el de otra);
-//   · ninguna vista pide una ruta sin contrato, y ninguna pinta «undefined» ni «NaN».
+//   · ninguna vista pide una ruta sin contrato, y ninguna pinta «undefined» ni «NaN»;
+//   · y (SCRUM-1560g) cada vista PINTA algo, y cada panel de Configuración también salvo los declarados.
 // Sin BD ni red: lee ficheros y monta el banco en memoria.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -19,7 +20,7 @@ import {
   parametrosDe, avisoDeVistaSinPedir, avisoDeRutaSinContrato,
 } from '../scripts/_datos-del-censo.mjs';
 import { serializar, CLIENTES_DE_MUESTRA, TRABAJO_DE_MUESTRA } from '../scripts/_pagina-panel.mjs';
-import { cargarDashboard, pintarVista } from './_banco-vistas.mjs';
+import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
 import { soloCodigo } from './_solo-codigo.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -193,6 +194,25 @@ test('el censo usa ESTOS datos y estos argumentos, no un relleno propio (código
   assert.match(fuente, /DC\.sinContrato\.size\)\s*\{\s*noSupe\(/, 'una ruta sin contrato ya no hace salir al censo con 2');
 });
 
+// SCRUM-1560g · LOS PANELES DE CONFIGURACIÓN QUE CON ESTOS DATOS NO PUEDEN PINTAR, ESCRITOS.
+//
+// «Ninguna pinta undefined» lo cumple también una pantalla que no pinta NADA: medido por mutación
+// en SCRUM-1560f (`docs/master/evidencias/SCRUM-1560f/c-mutar.mjs`), este caso seguía 12/12 en verde
+// con Trabajos, Configuración o Cobros vaciadas. Ahora cada vista tiene que pintar algo, y cada panel
+// de Configuración también, salvo éstos, que con el banco de hoy NO PUEDEN: no es que estén limpios,
+// es que nadie los ha visto. Si uno empieza a pintar, su línea caduca y el caso cae hasta que se quite.
+const PANELES_SIN_PINTAR_DECLARADOS = Object.freeze({
+  // 23-oct-2026 · el `/admin/merchant` de muestra es `{ id, name }` (su contrato dice «claves completas
+  // SIN medir») y `settingsView.js` corta con `if (m.slug === undefined) return`: el banco pinta el
+  // perfil reducido del Operario, no el del dueño. Lo cierra completar ese contrato (la (a) de
+  // SCRUM-1560f), que mueve lo que miden los 14 consumidores de estos datos: sin decidir.
+  publica: 'el merchant de muestra no trae `slug`',
+  // 23-oct-2026 · el panel sólo pinta `if (window.appModoEmision)`, y ese global lo pone `app.js` desde
+  // `/auth/me` al arrancar, cosa que el banco no hace: el modo vale «no se sabe» y el producto, a
+  // propósito, no enseña ninguno. Completar el merchant NO lo arregla: hace falta que el banco dé la sesión.
+  cumplimiento: 'el banco no pone `window.appModoEmision` (lo da `/auth/me` al arrancar)',
+});
+
 test('🔴 en el banco: ninguna vista pide una ruta sin contrato, ni con NaN/undefined, ni pinta «undefined»', async () => {
   const dc = datosDelCenso();
   const b0 = cargarDashboard(RAIZ);
@@ -200,13 +220,29 @@ test('🔴 en el banco: ninguna vista pide una ruta sin contrato, ni con NaN/und
   // Suelo: con cero vistas o cero rutas, los «ninguna» de abajo no dirían nada.
   assert.ok(vistas.length >= 25, `sólo ${vistas.length} vistas en el banco`);
   const pintan = [];
+  const vacias = [];
+  let paneles = null;
   for (const fn of vistas) {
     dc.enVista(fn);
     const r = await pintarVista(cargarDashboard(RAIZ, { datos: dc.datos }), fn, ...(ARGUMENTOS_DEL_CENSO[fn] || []));
     assert.ok(!r.error, `${fn} no monta: ${r.error && r.error.message}`);
     const n = (serializar(r.contenedor).match(/\bundefined\b|\bNaN\b/g) || []).length;
     if (n) pintan.push(`${fn} ×${n}`);
+    const nodos = todos(r.contenedor).slice(1);
+    if (!nodos.length) vacias.push(fn);
+    if (fn === 'renderSettingsView') {
+      paneles = nodos.filter((p) => p.dataset && p.dataset.submenu && p.tagName !== 'BUTTON')
+        .map((p) => ({ panel: p.dataset.submenu, nodos: todos(p).length - 1 }));
+    }
   }
+  // «Ninguna pinta undefined» no dice nada de una vista que no pintó: se exige que pinte.
+  assert.deepEqual(vacias, [], 'vistas que no pintan NADA con los datos del censo: su «ningún undefined» es por vacío');
+  assert.ok(paneles && paneles.length >= 5,
+    `🔴 CIEGO: Configuración da ${paneles ? paneles.length : 'ningún'} panel(es) con \`data-submenu\` y tiene nueve; no sé qué pinta cada uno`);
+  const sinDeclarar = paneles.filter((p) => !p.nodos && !(p.panel in PANELES_SIN_PINTAR_DECLARADOS)).map((p) => p.panel);
+  assert.deepEqual(sinDeclarar, [], 'paneles de Configuración que no pintan NADA y no están en PANELES_SIN_PINTAR_DECLARADOS');
+  const caducadas = Object.keys(PANELES_SIN_PINTAR_DECLARADOS).filter((k) => !paneles.some((p) => p.panel === k && !p.nodos));
+  assert.deepEqual(caducadas, [], 'declarados sin pintar que YA pintan (o ya no existen): quita su línea de PANELES_SIN_PINTAR_DECLARADOS');
   assert.ok(dc.servidas.size >= 40, `sólo ${dc.servidas.size} rutas servidas: el banco ya no pide por aquí`);
   assert.deepEqual([...dc.sinContrato.keys()], [], 'rutas pedidas SIN contrato (reciben null)');
   const rotas = [...dc.servidas.keys()].filter((k) => /NaN|undefined|null/.test(k));
