@@ -77,6 +77,27 @@ pendiente de cobro» (1), su casilla en «Columnas» (1), el `<th>` «Pendiente 
   ROJO «ha cambiado MÁS de lo declarado». Corridas antes de dar a la casilla el hueco de atributos del
   `<span>` (SCRUM-553 lo pidió: lo había escrito con el `>` pegado); después, el guard sigue verde.
 
+## Los 8 rojos del primer obligatorio (#2751, job 120488735970) — relevo jv-j2am
+
+Tabla y diagnóstico en c.20574; arreglos y medición en c.20581.
+
+- **1157 ①③ · 1215g · 1215i:** cada clave de `TEXTOS_DEUDA` lleva la firma en SU línea (`// APROBADO por el
+  fundador el 23-oct-2026 (SCRUM-1043 comentario 20536, <n.º>)`). No se toca «porGrupo».
+- **409:** el test 1043a usa los merchants 71/72, no el demo.
+- **709:** el registro de microcopy cita SCRUM-1108 c.17000, no el nombre de su fichero.
+- **864c:** `evidencias/SCRUM-1043a/pagina.mjs` exige la carpeta de salida; ya no crea temporal.
+- **698:** `renderCustomersView` 82 → 89, declarado por identidad en el propio test y autorizado en
+  c.20582. Delta medido por firma (etiqueta + clase + texto) con el banco de la rama sobre `public/` de
+  main 5da02178a: +7 (`div.customers-tabs`, `button.customers-tab` «Con cobro pendiente», `option` «Más
+  pendiente de cobro», `th` «Pendiente de cobro», `label.columnas-opcion` + `input` + `span`), nada resta;
+  rama contra rama, 0. Mutación (un `<span>` más en la barra del filtro): ROJO «monta 90 nodos y antes
+  montaba 89»; restaurado con `git diff` vacío.
+- **Suite entera, local, en primer plano** (antes de 698): `# tests 12329` = 12141 pasan + 26 caen + 162
+  saltados. 24 de los 26 son del entorno del árbol anidado (sin `node_modules` propio, ruta 8.3) y salieron
+  verdes en el obligatorio de esta rama; 1266b cae sólo con la tanda entera (15/15 suelto, dos veces).
+- **Error propio:** la salida `dot` de esa tanda, mandada a `/dev/null` desde Git Bash, la escribió node
+  como un fichero `nul` de 94 KB en la raíz del árbol. Lo vio `git status` antes del commit y se borró.
+
 ## Lo que NO cubre
 
 - **No se ha visto en yaqu.app**: sin sesión de comercio en esta máquina. Las capturas son del banco.
