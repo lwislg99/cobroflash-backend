@@ -37,6 +37,28 @@ import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-159 (①)
 // SCRUM-681: esperar la CONDICION, no el reloj — y un techo vencido no produce veredicto.
 import { esperarCondicion, esperarQuieto } from './_espera-quieta.mjs';
 import { cortarSalida } from './_sin-salida.mjs'; // SCRUM-876f
+import http from 'node:http';
+
+// `node:http` sin agente y no `fetch` (SCRUM-1218d): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de `fetch`
+// (status, headers.get, text, json). No sigue redirecciones: medido, las únicas 3xx son las de /auth/verify, que ya iban con `redirect: 'manual'`.
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    let d = ''; r.setEncoding('utf8');
+    r.on('data', (t) => { d += t; });
+    r.on('end', () => ok({
+      status: r.statusCode,
+      headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+      text: async () => d,
+      json: async () => JSON.parse(d),
+    }));
+  });
+  req.on('error', mal);
+  req.end(body);
+});
 
 // SCRUM-876f: con `BOT_SUITE_TEST=1` nada cambia (staging). Sin ese gate y con `LIBRO_PG_URL`, la
 // suite corre contra el banco desechable, y ahí se corta además toda conexión hacia fuera: el
@@ -109,7 +131,7 @@ test('A8.4: suite completa del bot (webhook + dry-run)', { skip: !ENABLED && 'si
       throw new Error(`SCRUM-1509i: el entrante n.º ${vistos.size} desde ${msg.from}; el webhook admite ${ENTRANTES_POR_HORA} por número y hora y descartaría éste sin contestar. Escribe esta conversación desde otro cliente (telefonosDe), no subas el tope.`);
     }
     const body = JSON.stringify(metaEnvelope(msg));
-    return fetch(`${base}/webhooks/whatsapp`, {
+    return pedirSinAgente(`${base}/webhooks/whatsapp`, {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Hub-Signature-256': sign(body) }, body,
     });
   };

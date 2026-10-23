@@ -48,7 +48,6 @@ const DIR = path.join(RAIZ, 'tests');
  * SI ARREGLAS UNO, quítalo de aquí en el mismo commit. El test de abajo lo exige.
  */
 const CON_EL_PATRON_YA = [
-  'albaran.test.mjs',
   'pdfs.test.mjs',
   'scrum127-paywall-bloquea.test.mjs',
   'scrum170-facturacion-parcial.test.mjs',
@@ -59,9 +58,6 @@ const CON_EL_PATRON_YA = [
   // «segundo que aborta» que esta lista se dejó anotado como condición para reabrirse: 24 de 24
   // instancias en paralelo caían con `fetch failed`, y su rojo tenía forma de 404, así que acusó
   // a la landing y se abrió un Highest contra un sistema sano. Arreglado con este mismo patrón.
-  'scrum49-firma-remota.test.mjs',
-  'scrum68-evidencias-firma.test.mjs',
-  'scrum72-pdfs-privados.test.mjs',
   'scrum73-verifactu-gate.test.mjs',
   'scrum74-recibo-token.test.mjs',
   'scrum82-zip-verifactu.test.mjs',
@@ -79,18 +75,14 @@ const CON_EL_PATRON_YA = [
   // SCRUM-1218c (23-oct-2026), medidos con un Postgres desechable: la lista baja de 40 a 37.
   // SCRUM-1218e (23-oct-2026): nueve gateados por `QA_DB_TEST` (scrum51, 57, 58, 92, 120, 22, 24, 66 y
   // 94), medidos con el turno sobre la base de pruebas del carril: la lista baja nueve más.
-  'bot-suite.test.mjs',
   'scrum1188d-tiers-tambien-se-vacia.test.mjs',
   'scrum148-filtro-por-miembro.test.mjs',
   'scrum1489-la-busqueda-recorta-al-tecnico.test.mjs',
   'scrum17-recapitulativa.test.mjs',
   'scrum25-export-zip.test.mjs',
   'scrum25-exports.test.mjs',
-  'scrum47-enviar-albaran-wa.test.mjs',
-  'scrum50-bot-albaranes.test.mjs',
   'scrum814-carrera-del-tramo.gated.test.mjs',
   'scrum912-leer-ticket-gasto.test.mjs',
-  'scrum992-partes-recortan-por-rol.test.mjs',
 ];
 
 /** La salida, que va en todos los mensajes: un guard que no la dice acaba en una lista de excepciones. */
