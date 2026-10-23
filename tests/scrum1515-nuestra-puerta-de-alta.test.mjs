@@ -165,7 +165,12 @@ test('SCRUM-1515 · el merchant que crea nuestro guion nace igual que nacía el 
     const r = await pedir('POST', '/auth/register', { cuerpo: campos });
     return { status: r.status, cuerpo: JSON.parse(r.texto) };
   };
-  const cuantos = () => prisma.merchant.count();
+  // SCRUM-1579: se cuentan los merchants de ESTE caso, no la tabla. El banco lo comparte la tanda
+  // entera, y un merchant que cree otro test mientras corre éste hacía caer el caso (3 !== 2, job
+  // 120215050589) sin que el alta hubiera fallado. Todo correo que este caso manda lleva el sello,
+  // salvo los dos de la ruta cerrada que van sin él. El número que se exige no cambia: el `+ 2`.
+  const deEsteCaso = { OR: [{ email: { contains: sello, mode: 'insensitive' } }, { email: { in: ['x@y.es', 'sin-arroba'] } }] };
+  const cuantos = () => prisma.merchant.count({ where: deEsteCaso });
 
   // El guion se lanza como lo lanzaría una persona: otro proceso, con SU entorno escrito a mano
   // (nada del runner) y desde una carpeta vacía, para que no encuentre ningún `.env`.
@@ -201,8 +206,15 @@ test('SCRUM-1515 · el merchant que crea nuestro guion nace igual que nacía el 
   };
   const entrar = async (correo) => { const { galleta, ...resto } = await visitar(ultimoEnlace(correo)); return resto; };
 
+  let ajeno = null;
   try {
     const alEmpezar = await cuantos();
+    // 🔴 SCRUM-1579 · EL CONTROL: un merchant AJENO, creado ya empezado el caso, como lo crearía otro
+    // test de la tanda. Sin el filtro de arriba, el primer recuento cae (alEmpezar + 1).
+    const correoAjeno = `ajeno-1579-${process.pid}-${Math.random().toString(36).slice(2, 8)}@test.local`;
+    assert.ok(!correoAjeno.includes(sello.toLowerCase()), '🔴 CIEGO: el correo del ajeno lleva el sello de este caso');
+    ajeno = await prisma.merchant.create({ data: { name: 'Ajeno 1579', email: correoAjeno, country: 'ES' } });
+    assert.ok(await prisma.merchant.findUnique({ where: { id: ajeno.id } }), '🔴 CIEGO: el merchant ajeno no está en la base');
 
     // ── LA RUTA, CERRADA ─────────────────────────────────────────────────────────────────────
     // Con los datos con los que ANTES daba de alta (los de la foto): ahora dice que no.
@@ -375,6 +387,7 @@ ${enCanarias.salida}`);
       for (const tabla of colgadas) await prisma[tabla].deleteMany({ where: { merchantId: m.id } }).catch(() => {});
       await prisma.merchant.delete({ where: { id: m.id } }).catch((e) => logReal(`⚠️ SCRUM-1515: no se pudo borrar el merchant ${m.id}: ${e.message}`));
     }
+    if (ajeno) await prisma.merchant.delete({ where: { id: ajeno.id } }).catch((e) => logReal(`⚠️ SCRUM-1579: no se pudo borrar el merchant ajeno ${ajeno.id}: ${e.message}`));
     server.close();
     buzon.servidor.close();
     await prisma.$disconnect();

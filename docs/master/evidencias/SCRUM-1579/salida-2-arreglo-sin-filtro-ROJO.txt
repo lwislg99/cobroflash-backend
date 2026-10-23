@@ -1,0 +1,30 @@
+BANCO: PGlite en 127.0.0.1:63899 · 33 tablas · test: tests/_v1579-r1-sin-filtro.mjs
+✖ SCRUM-1515 · el merchant que crea nuestro guion nace igual que nacía el de POST /auth/register, y esa ruta ya no da de alta (953.3283ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1134.9736
+
+✖ failing tests:
+
+test at tests\_v1579-r1-sin-filtro.mjs:98:1
+✖ SCRUM-1515 · el merchant que crea nuestro guion nace igual que nacía el de POST /auth/register, y esa ruta ya no da de alta (953.3283ms)
+  AssertionError [ERR_ASSERTION]: 🔴 LA RUTA CERRADA HA DADO DE ALTA A ALGUIEN
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/j3al-1579/tests/_v1579-r1-sin-filtro.mjs:230:12)
+      at async Test.run (node:internal/test_runner/test:1332:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+BANCO: merchants que quedan al terminar: 0 · EXIT=1
