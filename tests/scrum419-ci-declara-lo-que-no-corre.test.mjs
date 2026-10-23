@@ -238,6 +238,12 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // que arma cada ruta (con su recorte o sin el), y lo contesta Postgres. El caso sin base (la
   // lista del trinquete solo nombra sondas que existen) corre siempre.
   'scrum1346-el-tecnico-ve-documentos-ajenos.test.mjs': 4,
+  // SCRUM-1145: el que crea, edita y borra un sitio por la RUTA real, con sesiones de verdad en dos
+  // merchants. Necesita banco porque lo que vigila es la tenencia (un merchant no ve ni toca el
+  // sitio de otro: la consulta la contesta Postgres) y que borrar un sitio deja intacta la dirección
+  // ya copiada en un presupuesto, que es otra fila. La pantalla (once casos en el banco de vistas)
+  // corre siempre.
+  'scrum1145-pestana-sitios.test.mjs': 1,
   // SCRUM-1150c: los DOS que miran que dos «Crear revision» a la vez no dejan dos filas con la
   // misma revision. Necesitan banco porque lo que vigilan es del MOTOR: que
   // `pg_advisory_xact_lock` hace esperar de verdad a la segunda creacion (se mira en `pg_locks`)

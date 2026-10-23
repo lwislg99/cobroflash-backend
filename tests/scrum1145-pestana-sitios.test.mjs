@@ -15,17 +15,40 @@
 // (registro: docs/microcopy/2026-10-23-SCRUM-1145-sitios-del-cliente.md).
 import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import path from 'node:path';
 import http from 'node:http';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
 import { constaAprobado } from './_microcopy-aprobada.mjs';
+import { ejecutableDe } from './_guard-texto.mjs';
 import { parseBDSegura } from '../scripts/_db-guard.mjs';
 import { withMerchant } from './_merchant-fixture.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const espera = () => new Promise((r) => setTimeout(r, 30));
+
+// El catálogo del meta-guard (SCRUM-1387): cada defecto que este fichero tiene que cazar, con el
+// caso que lo caza. Lo corre `npm run meta:mutaciones`; en local, `docs/master/evidencias/SCRUM-1145/mutar.mjs`.
+const VISTA = 'public/dashboard/js/customerDetailView.js';
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  { fichero: VISTA, de: "  const tabSitios = makeTab(SITIOS_CLIENTE.TEXTOS.pestana, 'sitios');",
+    a: "  apiRequest(`/admin/customers/${id}/sites`).catch(() => null);\n  const tabSitios = makeTab(SITIOS_CLIENTE.TEXTOS.pestana, 'sitios');",
+    cae: 'la lista se pide AL ABRIRLA' },
+  { fichero: VISTA, de: 'const filaFiscal = fiscal ? fila(T.fiscal, fiscal) : null;', a: 'const filaFiscal = null;',
+    cae: 'la PRIMERA fila es la dirección fiscal' },
+  { fichero: VISTA, de: '    function borrar(s, boton) {\n', a: '    function borrar(s, boton) {\n      if (!window.confirm(T.eliminar)) return;\n',
+    cae: 'SIN preguntar' },
+  { fichero: VISTA, de: "out[k] = k === 'name' ? t : (t === '' ? null : t);", a: 'out[k] = t;', cae: 'ALTA:' },
+  { fichero: VISTA, de: '        if (llegar) acciones.appendChild(llegar);\n', a: '',
+    cae: '«Cómo llegar» en cada sitio CON dirección' },
+  { fichero: VISTA, de: '        avisar(window.mensajeParaPersona(err, T.errorCarga));', a: '        pintarLista([]);',
+    cae: 'si la lista no carga' },
+  { fichero: VISTA, de: '`/admin/customers/${id}/sites/${sitio.id}`', a: '`/admin/customers/${id}/sites/${id}`', cae: 'EDICIÓN:' },
+  { fichero: VISTA, de: "  tabsWrap.className = 'c360-pestanas';\n", a: '', cae: 'PARTE LÍNEA' },
+  { fichero: 'public/dashboard/css/styles.css', de: '.c360-pestanas { flex-wrap: wrap; }', a: '.c360-pestanas { }', cae: 'PARTE LÍNEA' },
+];
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 // SIN BASE · la pantalla
@@ -39,7 +62,7 @@ const CLIENTE = {
 const SIN_FISCAL = { ...CLIENTE, billingAddress: null, billingPostalCode: null, billingCity: null, billingProvince: null, billingCountry: null };
 const STATS = { totalQuotes: 0, acceptedQuotes: 0, totalBilled: 0, totalPaid: 0, totalExpenses: 0, profit: 0 };
 const SITIOS = [
-  { id: 71, name: 'Nave del polígono', address: 'Polígono Sur, nave 4', city: 'Getafe', postalCode: '28906', province: 'Madrid', country: 'ES', contactName: 'Portero', phone: '600000000' },
+  { id: 71, name: 'Nave del polígono', address: 'Polígono Sur, nave 4', city: 'Getafe', postalCode: '28906', province: 'Madrid', country: 'ES', contactName: 'Portero', phone: '34000000004' },
   { id: 72, name: 'Piso 3ºB', address: null, city: null, postalCode: null, province: null, country: null, contactName: null, phone: null },
 ];
 
@@ -120,7 +143,7 @@ test('SCRUM-1044 · «Cómo llegar» en cada sitio CON dirección, y en el que n
   assert.ok(enlaceNave, '🔴 un sitio con dirección no tiene «Cómo llegar»');
   assert.equal(enlaceNave.href, f.banco.ctx.hrefAbrirEnMapa('Polígono Sur, nave 4, 28906, Getafe, Madrid, ES'));
   assert.equal(enlaceNave.target, '_blank');
-  assert.match(f.texto(nave), /Portero · 600000000/, 'el contacto del sitio no se pinta');
+  assert.match(f.texto(nave), /Portero · 34000000004/, 'el contacto del sitio no se pinta');
   assert.equal(todos(piso).filter((n) => n.tagName === 'A').length, 0, '🔴 un enlace al mapa sin dirección abre un mapa vacío');
   assert.ok(f.boton(nave, 'editar') && f.boton(nave, 'eliminar'), 'cada sitio guardado lleva «Editar» y «🗑 Eliminar»');
 });
@@ -245,13 +268,28 @@ test('SCRUM-1145 · el Técnico también tiene la pestaña (las cuatro rutas le 
   assert.ok(!f.peticiones.some((p) => /\/whatsapp$/.test(p.u)), 'al técnico no se le pide /whatsapp, como antes');
 });
 
+test('SCRUM-1145 · la fila de pestañas PARTE LÍNEA: con cinco no cabe a 390 (medido 456 px), y a 320 ya no cabían cuatro', async () => {
+  const f = await montarFicha();
+  const fila = f.pestana()._padre;
+  assert.ok(fila.classList.contains('c360-pestanas'), '🔴 la fila de pestañas perdió su clase: la regla de abajo ya no le llega');
+  // El quitacomentarios de la casa (SCRUM-700) con suelo (SCRUM-1395); en CSS `#` es un selector.
+  const css = ejecutableDe(fs.readFileSync(path.join(RAIZ, 'public/dashboard/css/styles.css'), 'utf8'),
+    { ancla: '.c360-pestanas', donde: 'styles.css', almohadillaEsComentario: false });
+  assert.match(css, /\.c360-pestanas\s*\{[^}]*flex-wrap:\s*wrap/, '🔴 sin `flex-wrap: wrap` la quinta pestaña queda fuera de la pantalla en el móvil');
+});
+
 test('SCRUM-1145 · cada texto de la pestaña consta firmado en SCRUM-1145, y uno parecido no', async () => {
   const banco = cargarDashboard(RAIZ, { datos: () => [] });
   const TX = banco.ctx.sitiosCliente.TEXTOS;
   const planos = Object.entries(TX).flatMap(([k, v]) => (k === 'CAMPOS' ? Object.values(v) : [v]));
   assert.equal(planos.length, 20, `esperaba 20 textos (12 de c.20592, 7 de c.20598 y «Cómo llegar» de SCRUM-1004) y veo ${planos.length}`);
+  // Contra SU ficha, por ruta exacta (SCRUM-1306): «¿consta en alguna?» no distingue una firma
+  // vigente de una superada. «Cómo llegar» es de SCRUM-1004; los demás, de SCRUM-1145.
   for (const t of planos) {
-    assert.ok(constaAprobado(t).some((fich) => /-SCRUM-1145-|-SCRUM-1003-1004-/.test(fich)), `🔴 «${t}» no consta firmado`);
+    const FICHA = t === 'Cómo llegar'
+      ? 'docs/microcopy/2026-09-22-SCRUM-1003-1004-vcard-como-llegar.md'
+      : 'docs/microcopy/2026-10-23-SCRUM-1145-sitios-del-cliente.md';
+    assert.ok(constaAprobado(t).includes(FICHA), `🔴 «${t}» no consta en ${FICHA}`);
   }
   assert.deepEqual(constaAprobado('Todavía no hay sitios guardados.'), [], 'CONTROL NEGATIVO: uno parecido no consta');
 });
@@ -269,7 +307,6 @@ if (URL_BANCO) {
   process.env.DATABASE_URL = URL_BANCO;
 }
 const CON_BASE = URL_BANCO !== '';
-const SALTO = !CON_BASE && 'sin LIBRO_PG_URL (banco desechable): corre en el check obligatorio del CI';
 
 after(async () => {
   if (!CON_BASE) return;
@@ -314,7 +351,7 @@ const pedir = (port, token, metodo, ruta, cuerpo) => new Promise((ok, mal) => {
   req.end();
 });
 
-test('SCRUM-1145 · 🔴 por la ruta real: crear, editar y borrar; otro merchant no ve ni toca; borrar CONSERVA lo copiado al presupuesto', { skip: SALTO }, async () => {
+test('SCRUM-1145 · 🔴 por la ruta real: crear, editar y borrar; otro merchant no ve ni toca; borrar CONSERVA lo copiado al presupuesto', { skip: !CON_BASE && 'sin LIBRO_PG_URL (banco desechable): corre en el check obligatorio del CI' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const sello = Date.now();

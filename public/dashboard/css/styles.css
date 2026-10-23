@@ -4819,6 +4819,10 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
    guardados y su formulario. Regla 4: nada de esto va como `style.cssText` desde JS. Nombres,
    direcciones y contactos los escribe el profesional: una palabra larga se parte en vez de salirse
    de la tarjeta. El formulario va a dos columnas en escritorio y a una en el móvil. */
+/* La fila de pestañas de la ficha PARTE LÍNEA. Con la quinta («Sitios») medía 456 px a 390 y la
+   pestaña quedaba fuera de la pantalla, sin barra con la que llegar a ella; y a 320 px ya se salían
+   las cuatro de antes de un admin (unos 386 px). Medido con `docs/master/evidencias/SCRUM-1145/pagina.mjs`. */
+.c360-pestanas { flex-wrap: wrap; }
 .sitios-cliente { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
 .sitios-cliente__nuevo { align-self: flex-start; }
 .sitios-cliente__lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }

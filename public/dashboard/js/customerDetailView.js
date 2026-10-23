@@ -94,10 +94,9 @@ if (typeof window !== 'undefined') window.whatsappCliente = WHATSAPP_CLIENTE;
  * tenencia en las cuatro). La lista se pide AL ABRIR la pestaña, no al pintar la ficha: abrir la
  * ficha no hace ninguna petición más que antes.
  *
- * ✅ TEXTOS FIRMADOS por el fundador en SCRUM-1145 c.20592 (registro en
+ * Los textos llevan su firma en SU línea (registro en
  * `docs/microcopy/2026-10-23-SCRUM-1145-sitios-del-cliente.md`). «Cómo llegar» es el de SCRUM-1004,
- * y «Dirección fiscal» el rótulo de la primera fila (SCRUM-1044). Los seis de debajo de `CAMPOS`
- * y el ejemplo del nombre, firmados por el fundador en SCRUM-1145 c.20598 (pedidos en c.20595).
+ * y «Dirección fiscal» el rótulo de la primera fila (SCRUM-1044).
  *
  * 🔴 La primera fila es la dirección FISCAL, de sólo lectura: se compone al pintar con los
  * `billing*` del cliente, que se siguen editando donde siempre. No es un `CustomerSite`.
@@ -108,28 +107,28 @@ if (typeof window !== 'undefined') window.whatsappCliente = WHATSAPP_CLIENTE;
  */
 const SITIOS_CLIENTE = {
   TEXTOS: {
-    pestana: 'Sitios',
-    nuevo: '+ Nuevo sitio',
-    vacio: 'Todavía no hay sitios guardados para este cliente.',
-    fiscal: 'Dirección fiscal',
-    comoLlegar: 'Cómo llegar',
-    ejemploNombre: 'Piso 3ºB / Nave del polígono',
+    pestana: 'Sitios', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1145 comentario 20592)
+    nuevo: '+ Nuevo sitio', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1145 comentario 20592)
+    vacio: 'Todavía no hay sitios guardados para este cliente.', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1145 comentario 20592)
+    fiscal: 'Dirección fiscal', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1145 comentario 20592)
+    comoLlegar: 'Cómo llegar', // APROBADO por el orquestador por delegación del fundador el 22-sep-2026 (SCRUM-1004 comentario 16402)
+    ejemploNombre: 'Piso 3ºB / Nave del polígono', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1145 comentario 20598)
     CAMPOS: {
-      name: 'Nombre del sitio',
-      address: 'Dirección',
-      city: 'Ciudad',
-      postalCode: 'Código postal',
-      province: 'Provincia',
-      country: 'País',
-      contactName: 'Contacto en el sitio',
-      phone: 'Teléfono del contacto',
+      name: 'Nombre del sitio', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1145 comentario 20592)
+      address: 'Dirección', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1145 comentario 20592)
+      city: 'Ciudad', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1145 comentario 20592)
+      postalCode: 'Código postal', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1145 comentario 20592)
+      province: 'Provincia', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1145 comentario 20592)
+      country: 'País', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1145 comentario 20592)
+      contactName: 'Contacto en el sitio', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1145 comentario 20592)
+      phone: 'Teléfono del contacto', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1145 comentario 20592)
     },
-    editar: 'Editar',
-    eliminar: '🗑 Eliminar',
-    guardar: 'Guardar',
-    cancelar: 'Cancelar',
-    errorCarga: 'No se pudieron cargar los sitios guardados. Inténtalo de nuevo.',
-    generico: 'No se ha podido completar la acción. Vuelve a intentarlo.',
+    editar: 'Editar', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1145 comentario 20598)
+    eliminar: '🗑 Eliminar', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1145 comentario 20598)
+    guardar: 'Guardar', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1145 comentario 20598)
+    cancelar: 'Cancelar', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1145 comentario 20598)
+    errorCarga: 'No se pudieron cargar los sitios guardados. Inténtalo de nuevo.', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1145 comentario 20598)
+    generico: 'No se ha podido completar la acción. Vuelve a intentarlo.', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1145 comentario 20598)
   },
   /** El orden del formulario. `name` es el único obligatorio (como en `customerSiteCreateSchema`). */
   ORDEN: ['name', 'address', 'city', 'postalCode', 'province', 'country', 'contactName', 'phone'],
@@ -559,6 +558,7 @@ async function renderCustomer360View(container, customerId) {
 
   // ── Tabs: Presupuestos / Facturas ─────────────────────────────────────
   const tabsWrap = document.createElement('div');
+  tabsWrap.className = 'c360-pestanas';
   tabsWrap.style.cssText = 'display:flex;gap:4px;border-bottom:2px solid var(--neutral-200);margin-bottom:-2px';
 
   const tabContent = document.createElement('div');
@@ -1111,8 +1111,10 @@ async function renderCustomer360View(container, customerId) {
         if (!cuerpo.name) { campos.name.value = ''; campos.name.reportValidity && campos.name.reportValidity(); return; }
         guardar.disabled = true;
         errorForm.hidden = true;
-        const ruta = sitio ? `/admin/customers/${id}/sites/${sitio.id}` : `/admin/customers/${id}/sites`;
-        apiRequest(ruta, { method: sitio ? 'PUT' : 'POST', body: JSON.stringify(cuerpo) }).then(() => {
+        const peticion = sitio
+          ? apiRequest(`/admin/customers/${id}/sites/${sitio.id}`, { method: 'PUT', body: JSON.stringify(cuerpo) })
+          : apiRequest(`/admin/customers/${id}/sites`, { method: 'POST', body: JSON.stringify(cuerpo) });
+        peticion.then(() => {
           if (!viva()) return;
           cerrar();
           cargar();
