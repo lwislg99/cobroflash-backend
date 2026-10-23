@@ -72,10 +72,21 @@ async function sesionDe(prisma, merchantId, teamMemberId) {
   return token;
 }
 
-const pedir = async (port, token, ruta) => {
-  const r = await fetch(`http://127.0.0.1:${port}${ruta}`, { headers: { cookie: `pf_session=${token}` } });
-  return { status: r.status, cuerpo: await r.json().catch(() => null) };
-};
+// `node:http` sin agente y no `fetch` (SCRUM-1218c): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Un cuerpo que no es JSON da `null`, como el `.catch` de antes.
+const pedir = (port, token, ruta) => new Promise((ok, mal) => {
+  const req = http.request({ host: '127.0.0.1', port, path: ruta, method: 'GET', headers: { cookie: `pf_session=${token}` }, agent: false }, (r) => {
+    let d = ''; r.setEncoding('utf8');
+    r.on('data', (t) => { d += t; });
+    r.on('end', () => {
+      let cuerpo = null;
+      try { cuerpo = JSON.parse(d); } catch { cuerpo = null; }
+      ok({ status: r.statusCode, cuerpo });
+    });
+  });
+  req.on('error', mal);
+  req.end();
+});
 
 /** Un negocio con dos Técnicos y una administradora, y los creadores que usan los casos. */
 async function equipoDe(prisma, merchant, marca) {
