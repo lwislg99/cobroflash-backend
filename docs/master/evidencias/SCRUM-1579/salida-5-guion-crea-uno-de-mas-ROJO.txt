@@ -1,5 +1,5 @@
-BANCO: PGlite en 127.0.0.1:63136 · 33 tablas · test: tests/_v1579-m1-guion-de-mas.mjs
-✖ SCRUM-1515 · el merchant que crea nuestro guion nace igual que nacía el de POST /auth/register, y esa ruta ya no da de alta (2351.0943ms)
+BANCO: PGlite en 127.0.0.1:54555 · 33 tablas · test: tests/_v1579-m1-guion-de-mas.mjs
+✖ SCRUM-1515 · el merchant que crea nuestro guion nace igual que nacía el de POST /auth/register, y esa ruta ya no da de alta (4563.4153ms)
 ℹ tests 1
 ℹ suites 0
 ℹ pass 0
@@ -7,17 +7,19 @@ BANCO: PGlite en 127.0.0.1:63136 · 33 tablas · test: tests/_v1579-m1-guion-de-
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 2487.782
+ℹ duration_ms 5139.0541
 
 ✖ failing tests:
 
-test at tests\_v1579-m1-guion-de-mas.mjs:98:1
-✖ SCRUM-1515 · el merchant que crea nuestro guion nace igual que nacía el de POST /auth/register, y esa ruta ya no da de alta (2351.0943ms)
+test at tests\_v1579-m1-guion-de-mas.mjs:99:1
+✖ SCRUM-1515 · el merchant que crea nuestro guion nace igual que nacía el de POST /auth/register, y esa ruta ya no da de alta (4563.4153ms)
   AssertionError [ERR_ASSERTION]: 🔴 el guion no ha dejado exactamente dos merchants
   
   3 !== 2
   
-      at TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/j3al-1579/tests/_v1579-m1-guion-de-mas.mjs:261:12)
+      at file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/j3al-1579/tests/_v1579-m1-guion-de-mas.mjs:262:14
+      at async withMerchant (file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/j3al-1579/tests/_merchant-fixture.mjs:296:12)
+      at async TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/j3al-1579/tests/_v1579-m1-guion-de-mas.mjs:217:5)
       at async Test.run (node:internal/test_runner/test:1332:7)
       at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
     generatedMessage: false,

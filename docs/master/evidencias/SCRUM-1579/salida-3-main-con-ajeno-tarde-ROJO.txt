@@ -1,9 +1,9 @@
-BANCO: PGlite en 127.0.0.1:63958 · 33 tablas · test: tests/_v1579-r2-main-ajeno-tarde.mjs
-[magic-link] to=alta-a-1515-krgb0p@test.local link=http://localhost:3000/auth/verify?token=f38670885d9c0279963f658972bee493fe08a566eb4b767e4ba8f4fe9105115b
-[correo] {"evento":"enviado","via":"smtp","id":null,"origen":"auth","to":"a74cca51@test.local","asunto":"Tu enlace de acceso a YaQu"}
-[magic-link] email enviado OK a a74cca51@test.local
-[magic-link] intento de login con email no registrado: 70c6891d@test.local
-✖ SCRUM-1515 · el merchant que crea nuestro guion nace igual que nacía el de POST /auth/register, y esa ruta ya no da de alta (4302.7085ms)
+BANCO: PGlite en 127.0.0.1:54394 · 33 tablas · test: tests/_v1579-r2-main-ajeno-tarde.mjs
+[magic-link] to=alta-a-1515-ks6b9c@test.local link=http://localhost:3000/auth/verify?token=aac5c48c1926dd6fd1662464713f061ef29150b1a15ebe985bbf720332fff84e
+[correo] {"evento":"enviado","via":"smtp","id":null,"origen":"auth","to":"4b7d07c8@test.local","asunto":"Tu enlace de acceso a YaQu"}
+[magic-link] email enviado OK a 4b7d07c8@test.local
+[magic-link] intento de login con email no registrado: d32c78f3@test.local
+✖ SCRUM-1515 · el merchant que crea nuestro guion nace igual que nacía el de POST /auth/register, y esa ruta ya no da de alta (8145.0381ms)
 ℹ tests 1
 ℹ suites 0
 ℹ pass 0
@@ -11,12 +11,12 @@ BANCO: PGlite en 127.0.0.1:63958 · 33 tablas · test: tests/_v1579-r2-main-ajen
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 4566.1463
+ℹ duration_ms 8569.0157
 
 ✖ failing tests:
 
 test at tests\_v1579-r2-main-ajeno-tarde.mjs:98:1
-✖ SCRUM-1515 · el merchant que crea nuestro guion nace igual que nacía el de POST /auth/register, y esa ruta ya no da de alta (4302.7085ms)
+✖ SCRUM-1515 · el merchant que crea nuestro guion nace igual que nacía el de POST /auth/register, y esa ruta ya no da de alta (8145.0381ms)
   AssertionError [ERR_ASSERTION]: 🔴 al acabar hay más merchants que los dos del guion
   
   3 !== 2

@@ -1,0 +1,13 @@
+✔ SCRUM-113: el detector NO está ciego (guarda de calibración) (88.3318ms)
+ℹ censo 26 · migrados 23 · pendientes 3
+✔ SCRUM-113: ningún fichero NUEVO nace con el patrón viejo (2156.216ms)
+✔ SCRUM-113: la lista de pendientes solo mengua (ratchet + caducidad) (3.6269ms)
+ℹ pendientes de migrar: 3/3 · plazo 2026-10-31
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2629.0441

@@ -55,3 +55,38 @@ La foto campo a campo (`foto(correo)`) sigue exigiendo que A y B existan con su 
   en el banco y en qué orden corrieron).
 - PGlite no es el Postgres 16 del CI. El verde en CI se lee en el obligatorio de esta rama.
 - La tanda completa no la he corrido en local; sí los guards de registro y de suite (entrega).
+
+## Tramo 2 · el merchant ajeno nace con `withMerchant` (relevo `jv-j3ap`, J3)
+
+**Medido contra:** `origin/main` = `3f889f9e7d9c39c3d7875c7ab297549a076f4a3c` · 2026-10-23T09:36:24Z (hora de GitHub al escribir: 2026-10-23T09:42:46Z)
+A9: comprobación → `tests/scrum113-migracion-fixtures.test.mjs`
+
+**El error (del tramo 1):** el control permanente creaba el merchant ajeno con `prisma.merchant.create` a mano. El
+obligatorio de #2704 @ `3c9fe5070` (job 120341102399, log de 2.017.399 B, sin «TANDA SIN VEREDICTO») cayó en un caso,
+y era éste: `SCRUM-113: ningún fichero NUEVO nace con el patrón viejo` → `scrum1515-nuestra-puerta-de-alta.test.mjs`.
+Lo cazó el ratchet de SCRUM-113 en el check obligatorio; los guards que se corrieron en local en el tramo 1 no lo
+incluían. No se añade a `MIGRACION_PENDIENTE` (la lista sólo mengua; regla 41).
+
+**El arreglo:** el ajeno nace con `withMerchant` de `tests/_merchant-fixture.mjs`, y el resto del caso corre dentro de
+su función: queda registrado al nacer y lo borra el fixture, caiga o no el caso. `alEmpezar` se sigue tomando ANTES
+de que nazca, así que sin el filtro el primer recuento sigue cayendo. Se quitan el `let ajeno` y su borrado en el
+`finally`. El cuerpo se reindenta dos espacios (`git diff -w` son 4 líneas añadidas y 3 quitadas); las cuatro líneas
+de continuación de plantillas multilínea (`${gA.salida}`…) se dejan en la columna 0 para no cambiar ningún mensaje.
+
+**Medido** (mismo banco PGlite y mismas variantes de `variantes.mjs`, ahora sobre el código de este tramo; las
+salidas 1 a 5 se han vuelto a medir y SUSTITUYEN a las del tramo 1):
+
+| pasada | resultado | salida |
+| --- | --- | --- |
+| scrum113 con el fichero de `3c9fe5070` (ajeno a mano) | **cae** 2 pass · 1 fail, nombra `scrum1515-nuestra-puerta-de-alta.test.mjs` — el rojo del CI | `salida-6-scrum113-con-el-ajeno-a-mano-ROJO.txt` |
+| scrum113 con el arreglo | 3 pass · 0 fail (censo 26 · pendientes 3/3) | `salida-7-scrum113-con-withMerchant-VERDE.txt` |
+| el arreglo | 1 pass · 0 fail | `salida-1-arreglo-VERDE.txt` |
+| el arreglo SIN el filtro | **cae** «LA RUTA CERRADA HA DADO DE ALTA A ALGUIEN» `1 !== 0` | `salida-2-arreglo-sin-filtro-ROJO.txt` |
+| test de `main` + ajeno tardío | **cae** «al acabar hay más merchants que los dos del guion» `3 !== 2` | `salida-3-main-con-ajeno-tarde-ROJO.txt` |
+| el arreglo + ajeno tardío | 1 pass · 0 fail | `salida-4-arreglo-con-ajeno-tarde-VERDE.txt` |
+| mutación: el guion crea un tercero con correo del caso | **cae** «el guion no ha dejado exactamente dos merchants» `3 !== 2` | `salida-5-guion-crea-uno-de-mas-ROJO.txt` |
+
+En las cinco pasadas del banco quedan 0 merchants al terminar, también en las tres que caen.
+
+**Sin medir:** PGlite no es el Postgres 16 del CI; la tanda completa no la he corrido en local. El veredicto lo da el
+obligatorio de este empujón.
