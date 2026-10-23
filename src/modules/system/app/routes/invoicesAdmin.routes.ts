@@ -778,6 +778,9 @@ router.post('/:id/send-reminder', requireRole('admin'), async (req, res) => {
           currency: invoice.currency,
           urlToken: payToken as string,
         }),
+        // SCRUM-1509k (fundador, SCRUM-1509 c.20569: «Pasar el cliente»): sin el cliente, el tope
+        // por cliente y día no se le preguntaba a este botón (uno de los cuatro de SCRUM-1509d).
+        log: { customerId: invoice.customerId, relatedType: 'invoice', relatedId: id },
       });
       sent = result.ok;
       if (!result.ok) {
