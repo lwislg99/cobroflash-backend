@@ -176,6 +176,10 @@ function renderCustomersView(container) {
   let ordenActivo = FC.POR_DEFECTO.orden;
   let etiquetaActiva = FC.POR_DEFECTO.etiqueta; // SCRUM-580 (CONT-07)
   let visitaActiva = FC.POR_DEFECTO.visita; // SCRUM-979
+  // SCRUM-1043 · «quién me debe». Es dinero: al técnico no se le pinta NADA de esto, sin texto
+  // (c.20532), y el servidor tampoco le manda el saldo. Filtro y orden los resuelve el servidor.
+  const conDinero = FC.veDinero(window.appUserRole);
+  let soloConDeuda = false;
 
   const pestanas = createElement("div", "customers-tabs");
   const botonesPestana = FC.PESTANAS.map((p) => {
@@ -195,10 +199,30 @@ function renderCustomersView(container) {
   });
   toolbar.appendChild(pestanas);
 
+  // SCRUM-1043 · un botón de ALTERNAR, no una pestaña más: las pestañas filtran por tipo de
+  // cliente y éste se SUMA a ellas. El mismo componente (`.customers-tab` con `aria-pressed`)
+  // en su propia barra: cero CSS nuevo.
+  if (conDinero) {
+    const barraDeuda = createElement("div", "customers-tabs");
+    const botonDeuda = document.createElement("button");
+    botonDeuda.type = "button";
+    botonDeuda.className = "customers-tab";
+    botonDeuda.dataset.filtro = "conDeuda";
+    botonDeuda.textContent = FC.TEXTOS_DEUDA.filtro;
+    botonDeuda.setAttribute("aria-pressed", "false");
+    botonDeuda.addEventListener("click", () => {
+      soloConDeuda = !soloConDeuda;
+      botonDeuda.setAttribute("aria-pressed", String(soloConDeuda));
+      loadCustomers(searchInput.value.trim());
+    });
+    barraDeuda.appendChild(botonDeuda);
+    toolbar.appendChild(barraDeuda);
+  }
+
   const ordenSelect = document.createElement("select");
   ordenSelect.className = "input";
   ordenSelect.style.cssText = "max-width:220px";
-  FC.ORDENES.forEach((o) => {
+  FC.ordenesPara(conDinero).forEach((o) => {
     const op = document.createElement("option");
     op.value = o.id;
     op.textContent = FC.etiqueta(o);
@@ -284,7 +308,14 @@ function renderCustomersView(container) {
     visitaSelect.hidden = !hay;
   }
 
-  ordenSelect.addEventListener("change", () => { ordenActivo = ordenSelect.value; pintar(); });
+  ordenSelect.addEventListener("change", () => {
+    const antes = ordenActivo;
+    ordenActivo = ordenSelect.value;
+    // SCRUM-1043: el orden por saldo lo da el SERVIDOR; entrar o salir de él vuelve a pedir el lote
+    // (salir también: «Más recientes» es el orden en que llegó, y el de saldo ya no lo es).
+    if (antes === FC.ORDEN_SALDO.id || ordenActivo === FC.ORDEN_SALDO.id) loadCustomers(searchInput.value.trim());
+    else pintar();
+  });
   toolbar.appendChild(ordenSelect);
 
   // ═════════════════════════════════════════════════════════════════════════════════════
@@ -309,7 +340,7 @@ function renderCustomersView(container) {
   columnasBox.appendChild(columnasResumen);
 
   const columnasLista = createElement("div", "columnas-lista");
-  FC.columnasElegibles().forEach((col) => {
+  FC.columnasElegibles(conDinero).forEach((col) => {
     const fila = document.createElement("label");
     fila.className = "columnas-opcion";
     const casilla = document.createElement("input");
@@ -338,7 +369,7 @@ function renderCustomersView(container) {
 
   /** Repinta SOLO las clases de la cabecera: los `<th>` no se recrean, se les cambia la clase. */
   function pintarCabecera() {
-    FC.columnasDeLaTabla().forEach((col) => {
+    FC.columnasDeLaTabla(conDinero).forEach((col) => {
       const th = thPorColumna[col.id];
       if (th) th.className = FC.claseDeColumna(col.id, columnasEncendidas);
     });
@@ -361,7 +392,7 @@ function renderCustomersView(container) {
   // salen del MISMO sitio, así que no pueden descuadrarse entre sí — y un vacío descuadrado
   // no lo ve ninguna tanda.
   const thPorColumna = {};
-  FC.columnasDeLaTabla().forEach((col) => {
+  FC.columnasDeLaTabla(conDinero).forEach((col) => {
     const th = document.createElement("th");
     th.textContent = col.texto;
     th.dataset.columna = col.id;
@@ -624,15 +655,30 @@ function renderCustomersView(container) {
   let ultimoLote = [];
   let ultimaBusqueda = "";
 
+  // SCRUM-1043: con el filtro o el orden de deuda se piden en paralelo dos lotes distintos; sólo
+  // pinta el ÚLTIMO pedido, o una respuesta lenta pondría la lista sin filtro bajo el botón pulsado.
+  let turnoDeCarga = 0;
+
   async function loadCustomers(searchText = "") {
     setAlert(null, "");
     setCount("Cargando…");
     uiSkeletonRows(tbody, 7, 6);
+    const turno = ++turnoDeCarga;
     try {
-      ultimoLote = await getCustomers(searchText);
+      const deuda = FC.consultaDeDeuda(conDinero, soloConDeuda, ordenActivo);
+      let lote;
+      if (deuda.length === 0) {
+        lote = await getCustomers(searchText);
+      } else {
+        const q = new URLSearchParams(searchText ? [["search", searchText]].concat(deuda) : deuda);
+        lote = await apiRequest("/admin/customers?" + q.toString());
+      }
+      if (turno !== turnoDeCarga) return;
+      ultimoLote = lote;
       ultimaBusqueda = searchText;
       pintar();
     } catch (err) {
+      if (turno !== turnoDeCarga) return;
       setCount("");
       setAlert("error", "Error cargando clientes: " + err.message);
     }
@@ -669,7 +715,7 @@ function renderCustomersView(container) {
       if (lote.length > 0 && data.length === 0) {
         const tr = document.createElement("tr");
         const td = document.createElement("td");
-        td.colSpan = FC.colSpanDeLaTabla(); // SCRUM-584: del mismo sitio que la cabecera
+        td.colSpan = FC.colSpanDeLaTabla(conDinero); // SCRUM-584: del mismo sitio que la cabecera
         // SCRUM-581 · DOS líneas (microcopy aprobada, 2-sep-2026). Se reutiliza el componente
         // de vacío que ya existe —`.empty-state-title` y `.empty-state-desc`—: cero tokens nuevos.
         // Con `textContent` y no concatenando en el `innerHTML`: el texto es de la pieza, no del
@@ -684,10 +730,26 @@ function renderCustomersView(container) {
         return;
       }
 
+      // SCRUM-1043 · con «Con cobro pendiente» puesto y nadie que deba, el servidor devuelve un lote
+      // vacío: «Añade a tu primer cliente» sería falso. UNA línea firmada, sin segunda. Con búsqueda
+      // escrita manda el vacío de la búsqueda: ahí la causa puede ser lo tecleado.
+      if (lote.length === 0 && soloConDeuda && !searchText) {
+        const tr = document.createElement("tr");
+        const td = document.createElement("td");
+        td.colSpan = FC.colSpanDeLaTabla(conDinero);
+        td.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👥</div>'
+          + '<div class="empty-state-title"></div></div>';
+        td.querySelector('.empty-state-title').textContent = FC.TEXTOS_DEUDA.vacio;
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        setCount("0 clientes");
+        return;
+      }
+
       if (!Array.isArray(data) || data.length === 0) {
         const tr = document.createElement("tr");
         const td = document.createElement("td");
-        td.colSpan = FC.colSpanDeLaTabla(); // SCRUM-584: del mismo sitio que la cabecera
+        td.colSpan = FC.colSpanDeLaTabla(conDinero); // SCRUM-584: del mismo sitio que la cabecera
         td.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👥</div>'
           + '<div class="empty-state-title">' + (searchText ? 'Sin resultados para tu búsqueda' : 'Añade a tu primer cliente') + '</div>'
           + '<div class="empty-state-desc">' + (searchText ? 'Prueba con otro nombre, teléfono o email.' : 'Guárdalo una vez y podrás enviarle cotizaciones profesionales por WhatsApp en segundos.') + '</div>'
@@ -731,6 +793,7 @@ function renderCustomersView(container) {
         addCell(tr, "#" + c.id);
         addCell(tr, c.name || "Cliente sin nombre", "cell-title");
         celdaDeTelefonos(addCell(tr, "", "cell-date"), c);
+        if (conDinero) celdaDePendiente(addCell(tr, "", FC.claseDeColumna("pendiente", columnasEncendidas)), c);
         celdaDeCorreo(addCell(tr, "", FC.claseDeColumna("email", columnasEncendidas)), c);
         const notesCell = addCell(tr, c.notes || "", FC.claseDeColumna("notas", columnasEncendidas));
         notesCell.style.cssText += "max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)";
@@ -850,6 +913,21 @@ function renderCustomersView(container) {
       if (l.enlace) fila.appendChild(enlaceDeContacto(l.enlace.href, l.enlace.texto));
       else fila.appendChild(document.createTextNode(l.texto));
       if (l === conWa) fila.appendChild(enlaceDeContacto(k.whatsapp.href, "💬", true, "WhatsApp"));
+      td.appendChild(fila);
+    });
+  }
+
+  // SCRUM-1043 · «{importe} sin cobrar» y una línea por garantía retenida, con `.badge` del
+  // inventario: rojo la deuda (como la cifra de la ficha), ámbar la garantía ya liberable y azul la
+  // que aún no (como `.alert warning`/`.alert info` de la ficha). Sin deuda, la celda queda VACÍA:
+  // ni cifra ni marca, y en el móvil `td:empty` ni ocupa sitio.
+  function celdaDePendiente(td, c) {
+    FC.lineasDeDeuda(c, (n) => fmtMoneyEs(n)).forEach((l) => {
+      const fila = document.createElement("div");
+      const marca = document.createElement("span");
+      marca.className = "badge " + (l.tipo === "saldo" ? "badge-red" : (l.aviso ? "badge-amber" : "badge-blue"));
+      marca.textContent = l.texto;
+      fila.appendChild(marca);
       td.appendChild(fila);
     });
   }
