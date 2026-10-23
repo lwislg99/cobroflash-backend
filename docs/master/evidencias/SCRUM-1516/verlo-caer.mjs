@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url';
 const raiz = process.argv[2];
 if (!raiz || !fs.existsSync(path.join(raiz, 'dist', 'app.js'))) { console.log('CIEGO: falta la raiz del arbol, con dist/'); console.log('EXIT=2'); process.exit(2); }
 const aqui = path.dirname(fileURLToPath(import.meta.url));
-const CENSO = path.join(aqui, '..', '..', '..', 'evidencias', 'scrum1390', 'censo-que-ve-el-tecnico.mjs.txt');
+const CENSO = path.join(aqui, '..', '..', '..', '..', 'tests', '_censo-frontera.mjs');
 const fuente = fs.readFileSync(CENSO, 'utf8');
 
 const COM = ['--eje=comercio'];

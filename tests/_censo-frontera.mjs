@@ -23,7 +23,12 @@
 //   NO-LLEGO       · las cuatro corridas acabaron en 4xx/5xx sin consultar ningún documento: NO MEDIDA
 //   CIEGO          · no encontré la ruta montada
 //
-// Uso: node censo-que-ve-el-tecnico.mjs <raiz del arbol, con dist/> [--eje=comercio]
+// SCRUM-1516b · VIVE AQUÍ desde el 19-oct-2026: nació como `docs/evidencias/scrum1390/censo-que-ve-el-tecnico.mjs.txt`
+// y nadie lo corría. Ahora lo corre `tests/scrum1516b-frontera-en-el-obligatorio.test.mjs` en cada PR, y ese
+// test es quien exige que lo que CRUZA y lo que NO-DISTINGUE sean exactamente las rutas declaradas allí.
+// Con el `.test.` fuera del nombre, `npm test` no lo coge como test: es el instrumento, no el juicio.
+//
+// Uso: node tests/_censo-frontera.mjs <raiz del arbol, con dist/> [--eje=comercio]
 //   Sale 0 si los controles SEMBRADOS salen como deben y la conducta correcta del árbol se mantiene;
 //   1 si no; 2 si está CIEGO (no pudo medir, o le falta la siembra). Las dos que NO son medición,
 //   para verlo caer: `--sin-sembrar` (sale 2) y, en el eje del comercio, `--doble-sordo` (sale 1).
@@ -31,9 +36,25 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { PassThrough } from 'node:stream';
 
-const raiz = process.argv[2];
+const raiz = process.argv[2] ? path.resolve(process.argv[2]) : '';
 if (!raiz) { console.log('CIEGO: falta la raiz del arbol'); console.log('EXIT=2'); process.exit(2); }
 const de = (rel) => import(pathToFileURL(path.join(raiz, 'dist', rel)).href);
+// El constructor del `req` se trae del ÁRBOL que se mide, no de al lado de este fichero: los bancos de
+// SCRUM-1516 (`verlo-caer.mjs`, `la-moneda.mjs`) corren una COPIA de este censo fuera del árbol.
+const { reqDeSesion } = await import(pathToFileURL(path.join(raiz, 'tests', '_arnes-de-router.mjs')).href);
+
+// ── SCRUM-1516b · EL RESULTADO NO DEPENDE DE DESDE DÓNDE SE LANCE. Medido el 19-oct-2026: la misma
+// `dist/` daba `POST /admin/billing/accept-alcance` FILTRA lanzado desde la raíz de un árbol y NO-LLEGO
+// lanzado desde otra carpeta, porque `readLegalDoc` fija `docs/legal` con el `cwd` AL IMPORTAR. Y `dotenv`
+// lee el `.env` del `cwd`: desde un worktree con claves de base el censo se declaraba CIEGO, y desde otro
+// no. Así que, ANTES de importar nada de la app: el `cwd` pasa a ser la raíz que se mide (la ruta va en
+// absoluto arriba, para que `de` no dependa de él) y `dotenv` no lee ningún fichero. Lo único que ve el
+// censo es el entorno con el que lo lanzan, y la comprobación de PELIGRO de abajo mira justo ése.
+{
+  const { createRequire: requireDe } = await import('node:module');
+  requireDe(path.join(raiz, 'dist', 'core', 'config', 'loadEnv.js'))('dotenv').config = () => ({ parsed: {} });
+  process.chdir(raiz);
+}
 
 // ── SCRUM-1514 · SEGUNDO EJE, declarado: `--eje=comercio`. Sin esa bandera este fichero hace lo
 // mismo que hacía (el eje del ROL, sobre TECNICO_ALLOWED). Con ella mide OTRA cosa, con OTRA
@@ -83,7 +104,8 @@ const { prisma } = await de('core/db/prisma.js');
 // ninguna base, pero una integración con credenciales SÍ saldría a la red. La primera pasada se
 // lanzó sin mirar esto y sólo no envió nada porque el árbol no tenía ninguna («Credenciales no
 // configuradas, mensaje omitido» en su stderr): eso fue suerte medida después, no un control.
-// Se mira DESPUÉS de importar la app, que es cuando `loadEnv` ya ha cargado lo que hubiera.
+// Se mira DESPUÉS de importar la app, que es cuando `loadEnv` ya ha cargado lo que hubiera (desde
+// SCRUM-1516b, nada: `dotenv` no lee ficheros aquí, y lo que se mira es el entorno de quien lo lanza).
 const PELIGRO = Object.keys(process.env).filter((k) => process.env[k]
   && /WHATSAPP|RESEND|GEMINI|ANTHROPIC|OPENAI|STRIPE|MERCADOPAGO|DATABASE_URL|SMTP|MAILER/i.test(k));
 if (PELIGRO.length) {
@@ -104,18 +126,23 @@ const faltan = DOCUMENTO.filter((m) => !modelos.includes(m));
 if (faltan.length) { console.log('CIEGO: el cliente no tiene los modelos ' + faltan.join(', ')); console.log('EXIT=2'); process.exit(2); }
 
 const ahora = new Date();
-const trabajoAjeno = { id: 77, merchantId: 1, operarioId: 12, assignedUserId: 12, assignees: [{ teamMemberId: 12 }],
+// SCRUM-1516b (hallazgo S5, guard scrum409): el merchant de este fixture NO puede ser el 1 — es
+// el DEMO, y `whatsappPolicy`/el PDF/la pasarela se comportan distinto con él. 71 es un id
+// inventado, sin significado de producto (el mismo rango que ya sugiere scrum409 en su mensaje).
+const MID = 71;
+const trabajoAjeno = { id: 77, merchantId: MID, operarioId: 12, assignedUserId: 12, assignees: [{ teamMemberId: 12 }],
   status: 'en_curso', titulo: 'T', direccion: 'D', tipoOperacion: 'TRABAJO_UNICO', quoteId: 102, customerId: 5,
   createdAt: ahora, updatedAt: ahora, albaranes: [], quotes: [], invoices: [], totalAceptado: 900, totalCobrado: 0 };
 const AJENO = {
-  id: 102, merchantId: 1, teamMemberId: 12, operarioId: 12, assignedUserId: 12, assignees: [{ teamMemberId: 12 }],
+  id: 102, merchantId: MID, teamMemberId: 12, operarioId: 12, assignedUserId: 12, assignees: [{ teamMemberId: 12 }],
   asignados: [], status: 'accepted', estado: 'emitido', total: 900, subtotal: 743.8, tax: 156.2, currency: 'EUR',
   quoteNumber: 2, number: 'A-2', numero: 'ALB-2026-002', type: 'F1', lines: [], lineas: [], invoices: [], albaranes: [],
   createdAt: ahora, updatedAt: ahora, fecha: ahora, paidAt: null, jobId: 77, quoteId: 102, customerId: 5,
   modoValoracion: 'SIN_VALORAR', pdfPath: null, pdfUrl: null, publicToken: 'tok', token: 'tok',
-  customer: { id: 5, merchantId: 1, name: 'Cliente', phone: '600000000', email: null },
-  merchant: { id: 1, name: 'Negocio', legalName: 'Negocio SL', flags: {}, country: 'ES', currency: 'EUR' },
-  job: trabajoAjeno, quote: { id: 102, merchantId: 1, teamMemberId: 12, quoteNumber: 2, total: 900, jobId: 77, job: trabajoAjeno },
+  // SCRUM-262 (hallazgo S5): teléfono en el rango IMPOSIBLE (34 0 + 8 dígitos), nunca un móvil real.
+  customer: { id: 5, merchantId: MID, name: 'Cliente', phone: '34000000005', email: null },
+  merchant: { id: MID, name: 'Negocio', legalName: 'Negocio SL', flags: {}, country: 'ES', currency: 'EUR' },
+  job: trabajoAjeno, quote: { id: 102, merchantId: MID, teamMemberId: 12, quoteNumber: 2, total: 900, jobId: 77, job: trabajoAjeno },
   charge: null, tags: [], internalNotes: null,
 };
 
@@ -156,7 +183,10 @@ const SEMBRADAS = EJE === 'comercio'
 if (!SIN_SEMBRAR && EJE === 'comercio') {
   const { createRequire } = await import('node:module');
   const axiosDeDist = createRequire(path.join(raiz, 'dist', 'integrations', 'whatsapp.js'))('axios'); // el mismo que dobla el eje
-  const envia = (f) => axiosDeDist.post('https://graph.facebook.com/sembrada-por-el-censo', { type: 'template', to: f.customer.phone });
+  // SCRUM-1516b (hallazgo S5, guard scrum124/r28): el adaptador de axios está DOBLADO (línea de
+  // arriba) y no mira la URL para nada — el host real de Meta no hace falta aquí, y escribirlo tal
+  // cual activaría el guard que vigila que SOLO whatsapp.ts hable con el host de la Graph API.
+  const envia = (f) => axiosDeDist.post('https://meta-simulado.invalid/sembrada-por-el-censo', { type: 'template', to: f.customer.phone });
   // La que CRUZA: busca la factura sólo por `id` y le escribe a su cliente. Es el defecto de SCRUM-1514, a propósito.
   app.post(SEMBRADAS.cruza.path, async (req, res) => {
     const f = await prisma.invoice.findUnique({ where: { id: Number(req.params.id) } });
@@ -223,16 +253,19 @@ function manosDe(method, ruta) {
   return manos;
 }
 
-function peticion(rol, ruta, method) {
+// SCRUM-1516b · el `req` sale de `reqDeSesion` (el constructor de SCRUM-1344): el rol se declara SIEMPRE y
+// una vez, como lo pone `requireAuth`. `extra` es lo que el eje del comercio cambia (la sesión del 21).
+function peticion(rol, ruta, method, extra = {}) {
   const params = {};
   for (const seg of ruta.split('/')) if (seg.startsWith(':')) params[seg.slice(1)] = '102';
   const base = rol === 'admin'
-    ? { userRole: 'admin', teamMemberId: null, isOwner: true }
-    : { userRole: 'tecnico', teamMemberId: 11, isOwner: false };
+    ? { teamMemberId: null, isOwner: true }
+    : { teamMemberId: 11, isOwner: false };
   // La query lleva lo que piden los buscadores: sin `q`, /admin/search contesta vacío sin consultar.
-  return { ...base, merchantId: 1, params, query: { q: 'obra', customerId: '5', mes: '2026-09' }, body: {},
+  // SCRUM-1516b (hallazgo S5, guard scrum409): 71, nunca 1 — el 1 es el merchant DEMO.
+  return reqDeSesion({ rol, ...base, merchantId: 71, params, query: { q: 'obra', customerId: '5', mes: '2026-09' }, body: {},
     headers: { 'user-agent': 'censo' }, method, path: ruta, originalUrl: ruta, url: ruta, ip: '127.0.0.1', cookies: {},
-    get() { return undefined; }, header() { return undefined; }, socket: { remoteAddress: '127.0.0.1' }, app };
+    get() { return undefined; }, header() { return undefined; }, socket: { remoteAddress: '127.0.0.1' }, app, ...extra });
 }
 
 async function pedir(manos, req) {
@@ -307,7 +340,7 @@ if (EJE === 'comercio') {
   const SORDO = process.argv.includes('--doble-sordo');
   const RELLENO = { name: 'Relleno', nombre: 'Relleno', tags: ['a'], status: 'paid', estado: 'paid', reason: 'motivo de prueba', motivo: 'motivo de prueba',
     type: 'otro', tipo: 'otro', amount: 10, importe: 10, total: 10, concept: 'c', concepto: 'c', price: 10, description: 'd', date: '2026-10-01', fecha: '2026-10-01',
-    address: 'd', direccion: 'd', label: 'l', phone: '600000000', notes: 'n', ids: [102], targetId: 102, sourceId: 102, keepId: 102, mergeId: 102, otherId: 102,
+    address: 'd', direccion: 'd', label: 'l', phone: '34000000009', notes: 'n', ids: [102], targetId: 102, sourceId: 102, keepId: 102, mergeId: 102, otherId: 102,
     lines: [{ concept: 'c', qty: 1, price: 10, tax: 0.21 }], stages: [], plan: [], confirm: true, category: 'otros', paidAt: '2026-10-01', method: 'transfer' };
   const atada = (m, w) => {
     if (SORDO) return true;
@@ -355,7 +388,7 @@ if (EJE === 'comercio') {
   const fc = []; const fs = [];
   for (const d of [...poblacion, ...sembradas]) {
     apuntes = []; sueltas = []; const m0 = aMeta.length;
-    const req = { ...peticion('admin', d.path, d.method), merchantId: SESION, merchant: de21('merchant') };
+    const req = peticion('admin', d.path, d.method, { merchantId: SESION, merchant: de21('merchant') });
     let out = await pedir(manosDe(d.method, d.path), req);
     // 2ª pasada, sólo si la 1ª murió en la validación sin consultar nada: el mismo pedido con un
     // cuerpo de relleno. No es el cuerpo que cada ruta espera; lo que siga sin llegar se dice.

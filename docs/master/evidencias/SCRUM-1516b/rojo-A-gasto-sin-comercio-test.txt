@@ -1,0 +1,40 @@
+[comercio] código 0 · población 194 (suelo 194) · CRUZA 3 · NO-LLEGO (no medidas) 25
+[rol] código 0 · población 78 (suelo 78) · NO-DISTINGUE 6 · NO-LLEGO (no medidas) 15
+✖ SCRUM-1516b · 🔴 eje del COMERCIO: lo que cruza la frontera es exactamente lo declarado, y sólo puede bajar (9837.0038ms)
+✔ SCRUM-1516b · 🔴 eje del ROL: lo que un Técnico recibe igual que el administrador es exactamente lo declarado (1335.933ms)
+✔ SCRUM-1516b · el censo NO está mudo en esta máquina: sin su siembra dice CIEGO, y con el doble sordo cae (2378.8695ms)
+✔ SCRUM-1516b · cada ruta declarada lleva su MOTIVO, no sólo su nombre (0.2966ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 13614.4162
+
+✖ failing tests:
+
+test at tests\scrum1516b-frontera-en-el-obligatorio.test.mjs:116:1
+✖ SCRUM-1516b · 🔴 eje del COMERCIO: lo que cruza la frontera es exactamente lo declarado, y sólo puede bajar (9837.0038ms)
+  AssertionError [ERR_ASSERTION]: [comercio] CRUZA con rutas que NO están declaradas: GET /admin/expenses/:id. Una ruta de /admin alcanza el recurso de OTRO comercio (regla 2): filtra por req.merchantId. Si de verdad es global, declárala con su motivo.
+  + actual - expected
+  
+  + [
+  +   'GET /admin/expenses/:id'
+  + ]
+  - []
+  
+      at juzgar (file:///D:/MILLONARIO/cobroFlash/wt-s3-19oct-1516b/tests/scrum1516b-frontera-en-el-obligatorio.test.mjs:108:10)
+      at TestContext.<anonymous> (file:///D:/MILLONARIO/cobroFlash/wt-s3-19oct-1516b/tests/scrum1516b-frontera-en-el-obligatorio.test.mjs:117:3)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.start (node:internal/test_runner/test:1003:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'GET /admin/expenses/:id' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

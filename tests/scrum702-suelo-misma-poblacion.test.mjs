@@ -267,7 +267,14 @@ test('SCRUM-702 · CONTROL NEGATIVO: por encima del suelo y sin mudos, no dice n
 // que no cambia con el entorno: un guard en rojo cae en los dos sitios. La señal se lee por
 // PRESENCIA (existe la variable, valga lo que valga), y el caso imprime SIEMPRE «presupuesto juzgado:
 // SÍ / NO», también cuando juzga, para que el modo de cada pasada conste.
-const TOPE_LEEN_EL_ENTORNO = 20;
+// SCRUM-1516b (19-oct-2026) · 20 → 21, y la nueva ESCRIBE, no LEE para decidir: `tests/_censo-
+// frontera.mjs` fija `process.env.NODE_ENV = 'development'` antes de montar la app real para el
+// eje del comercio, para que las rutas de /admin no caigan en las ramas de sólo-producción
+// (`isProd` de authMiddleware, el `throw` de env.ts). No condiciona ningún `assert` de este censo
+// ni del test que lo juzga: es al revés de lo que este tope vigila — busca que la app se monte
+// igual pase lo que pase en el entorno de quien lo lanza, la misma decisión que ya tomaron
+// `scrum727`/`scrum716c` al NEUTRALIZAR una señal en vez de leerla para ramificar.
+const TOPE_LEEN_EL_ENTORNO = 21;
 
 /**
  * 🔴 PARTIDAS A PROPÓSITO, para que el censo NO SE CACE A SÍ MISMO. Escritas enteras, este
