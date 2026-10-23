@@ -51,3 +51,51 @@ contradicción queda para quien la decida.
 
 Las cuatro líneas. **Este ticket no tiene nada construido en este PR:** lo que lleva es la medición
 de por qué no se construye sin una decisión.
+
+---
+
+## J3 · SCRUM-1457a · la línea de supresión, con la guarda de la casa
+
+**Medido contra:** `origin/main` = `99eb366dc953d377353b30909643e5f3850ea1b2` · 2026-10-23T16:17:16Z (mezclado dentro de la rama, A4; sesión J3 `jv-j3at`, por encargo del orquestador `cobroflash-backend-62`; GO del fundador en SCRUM-1456 c.18731, y las tres de Stripe fuera por SCRUM-1457 c.20594)
+
+A9: comprobación → `tests/scrum1387-banco-nuevo-va-al-catalogo.test.mjs`
+
+**Error propio, y lo cazó esa comprobación:** escribí el banco de mutaciones con su lista propia, que es
+justo lo que SCRUM-1387 prohíbe desde el 13-oct. Salió rojo en la primera pasada de los guards de suite
+(`scrum976` → `guards:entrada` → `scrum1387`), antes de empujar. Ahora el test declara
+`MUTACIONES_QUE_ME_TUMBAN` y el banco local las lee de ahí con `mutacionesDeclaradas`.
+De paso, otro mío: la primera población de ⑥ llevaba la cadena vacía, que no llega a la ruta
+(`/admin/supresion/` no casa con `/:merchantId`); salió como un falso «⑥ ROTA» y la quité, con su motivo escrito.
+
+### Qué cambia
+
+`src/modules/system/app/routes/supresion.routes.ts`: en la guarda de entrada, `Number.isInteger(merchantId)`
+pasa a `cabeEnColumnaInt(merchantId)` (`src/core/validation/enteroDeColumna.ts`, de S1, sin tocar), más
+una línea de `import`. Por el `import`, la guarda baja de `:34` a `:35`. Ninguna otra línea, ningún texto
+nuevo (el 400 `merchant_invalido` ya estaba en la línea), el flag `MERCHANT_DELETE_ENABLED` sin tocar.
+`stripe.routes.ts` :97/:139/:177 **no se tocan** (c.18731 ④ y c.20594: «No tocarlo»).
+
+### Aceptación → dónde se ve
+
+| aceptación (literal) | dónde se ve |
+|---|---|
+| 1 · Un `merchantId` de `99999999999999999999` o `10000000000` → 400 en la ruta de supresión, sin llegar a la base | `tests/scrum1457a-supresion-id-que-cabe.test.mjs`, caso «🔴 un merchantId entero que no cabe»: por la app real (`dist/app.js`, `requireAuth`, `requireRole('admin')`, HTTP), también con `2147483648`; 0 lecturas del merchant y 0 escrituras. Antes del arreglo contestaba **404** (la tenencia de SCRUM-440 lo paraba antes de la base, como midió c.18438): el cambio es 404 → 400 |
+| 2 · Controles: `abc` sigue en 400; un id válido sigue haciendo lo que hace hoy | el mismo test: `abc` en la población de ⑥ (400); el id propio llega a leer el merchant y a la confirmación (409); `2147483647` ajeno, 404 sin tocar la base; con el flag apagado, 404 para todo |
+| 3 · En el webhook: … ninguna respuesta a Stripe cambia | **FUERA DEL ALCANCE** por decisión del fundador (c.20594, «No tocarlo»): las tres líneas se quedan como están |
+| c.18731 ⑥ · rechaza más, nunca menos | el caso «⑥ RECHAZA MÁS, NUNCA MENOS»: 25 entradas; para cada una calcula lo que decidía la guarda VIEJA (copiada en el test) y exige que todo lo que rechazaba siga en 400 sin leer la base. Reparto medido sobre la `POBLACION` del fichero: 12 seguían rechazadas, 4 rechazos nuevos (los que no caben), 9 iguales (lo escribí primero de memoria como 13/3/9, y estaba mal). También se deduce del helper: `cabeEnColumnaInt(n)` implica `Number.isInteger(n)` |
+| c.18731 ② · que nada reaccione distinto | ninguna pantalla llama a la ruta: `grep -rln "admin/supresion" public` → **0** ficheros, con control positivo `admin/customers` → **12**. Fuera de `public/`, sólo la nombran `src/app.ts` (el montaje) y `src/core/http/adminOnlyRoutes.ts` (el censo de rutas de admin) |
+| verlo en yaqu.app | **NO HECHO**: la ruta borra datos y va detrás de un flag apagado; no se ejecuta contra ninguna base real |
+
+### Rojo → verde y mutaciones
+
+- Rojo (punta `c8105df7`, test sin arreglo): 4 casos, **caen 2** (los del cambio, contestan 404), pasan 2.
+- Verde (con el arreglo): **4 de 4**.
+- Mutaciones (`docs/evidencias/scrum1457a/mutar-1457a.mjs.txt` → `.salida.txt`): base 4 de 4 en verde;
+  **3 de 3 caen el caso declarado** (vuelta a `Number.isInteger`, `Number.isSafeInteger`, sin el suelo `<= 0`,
+  que sólo tumba ⑥). `git status` limpio al restaurar.
+- Guards de suite y vecinos (113, 237, 419, 700, 702, 719, 824, 824b ×2, 836, 976, 1387, 244, 440,
+  tenancy-permisos, 1379, 1456 y el nuevo): **213 = 210 pasan + 0 caen + 3 saltados** (`LIBRO_PG_URL` y
+  `QA_DB_TEST`, no corridos aquí).
+
+**Sin medir:** Postgres de verdad (el banco dobla Prisma); el flag encendido en producción (no se enciende);
+yaqu.app.
