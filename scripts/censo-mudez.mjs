@@ -54,7 +54,7 @@ import {
 // 🔴 SCRUM-1395b · el veredicto se GUARDA en `tests/_veredicto-mudez.json` y lo exige `scrum719`.
 // La huella, la clasificación y la población que exige el test viven en esa pieza, no aquí.
 import {
-  poblacionMudez, clasificar, huella, huellaDe, leerVeredicto, serializarVeredicto, RUTA_VEREDICTO, RUTA_FILTRO,
+  poblacionMudez, clasificar, huella, huellaDe, leerVeredicto, serializarVeredicto, RUTA_VEREDICTO, RUTA_FILTRO, SIN_JUZGAR,
 } from '../tests/_veredicto-mudez.mjs';
 
 // `--escribir` guarda el veredicto; sin `--todo`, sólo vuelve a medir lo que falta o caducó.
@@ -163,7 +163,9 @@ const conCuerpo = (linea) => ORIGINAL.replace(FIRMA, FIRMA + linea);
 const FILTRO_HOY = huella(ORIGINAL);
 const HUELLAS = new Map(FICHEROS.map((f) => [f, huellaDe(RAIZ, path.join('tests', f))]));
 const GUARDADO = leerVeredicto(RAIZ);
-const vale = (f) => GUARDADO && GUARDADO.filtro === FILTRO_HOY && GUARDADO.ficheros?.[f]?.[1] === HUELLAS.get(f);
+// Lo que salió sin juzgar (CIEGO, YA ROJO) se reintenta en cada pasada: «no se pudo» no caduca solo.
+const vale = (f) => GUARDADO && GUARDADO.filtro === FILTRO_HOY && GUARDADO.ficheros?.[f]?.[1] === HUELLAS.get(f)
+  && !SIN_JUZGAR.includes(GUARDADO.ficheros[f][0]);
 const A_MEDIR = TODO ? FICHEROS : FICHEROS.filter((f) => !vale(f));
 console.log(`A medir: ${A_MEDIR.length} de ${FICHEROS.length}`
   + `${TODO ? '' : ` (el resto, ${FICHEROS.length - A_MEDIR.length}, tiene ficha al día en \`${RUTA_VEREDICTO}\`)`}`);
