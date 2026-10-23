@@ -14,18 +14,18 @@
 //     Σ cuota de los gastos con retención anotada = retenciones del 111 + del 115 + sin clasificar
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
-// EL 111 Y EL 115 SE SEPARAN POR EL DATO, Y HOY EL DATO SÓLO ALCANZA AL 111
+// EL 111 Y EL 115 SE SEPARAN POR EL DATO
 //
-// Nada en `Expense` dice que un gasto sea el ALQUILER de un inmueble (su `category` es
-// materiales|desplazamiento|herramientas|subcontrata|otros). Lo único que hay es el tipo de
-// retención guardado:
+// SCRUM-1066e · el dato es la CATEGORÍA del gasto: `alquiler` (rótulo firmado «Alquiler de local»,
+// SCRUM-1066 c.20497; sin esquema: `Expense.category` es texto libre, c.20485). Un gasto de esa
+// categoría con retención anotada va al 115, sea cual sea su tipo. El resto, por el tipo:
 //   · 15 % y 7 % — los tipos de la actividad PROFESIONAL (RIRPF art. 95.1, citado en
 //     `docs/producto/CONTABILIDAD.md` §3) → actividades económicas del 111.
 //   · 19 % — el del alquiler (RIRPF art. 100, verificado en SCRUM-1066b), pero NO sólo el del
-//     alquiler: meterlo en el 115 sería clasificar por el tipo, no por el dato.
-// Decisión A del orquestador (22-oct-2026): el 19 % y cualquier otro tipo quedan SIN CLASIFICAR,
-// y el 115 sale a cero con `vacioPorque`. El dato que lo arreglaría (una categoría «alquiler») es
-// esquema: propuesta para el fundador, no construida.
+//     alquiler: sin la categoría, meterlo en el 115 sería clasificar por el tipo, no por el dato.
+// Decisión A del orquestador (22-oct-2026), que sigue en pie para lo que no lleva la categoría:
+// el 19 % y cualquier otro tipo quedan SIN CLASIFICAR. El 115 sale a cero con `vacioPorque`
+// cuando ningún gasto del trimestre es un alquiler.
 //
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // REGLA 38 · esto es LECTURA. No toca el camino de emisión: no compone, no sella, no escribe.
@@ -40,8 +40,8 @@ const r2 = (n: number) => Math.round(n * 100) / 100;
 
 /** Tipos (en %) que se colocan en «actividades económicas» del 111. Procedencia: arriba. */
 export const TIPOS_111_ACTIVIDADES: ReadonlySet<number> = new Set([15, 7]);
-/** Tipos que se colocan en el 115. VACÍO por la decisión A: ningún dato dice «alquiler». */
-export const TIPOS_115: ReadonlySet<number> = new Set<number>();
+/** SCRUM-1066e · la clave interna de la categoría que lleva un gasto al 115. El profesional no la ve. */
+export const CATEGORIA_ALQUILER = 'alquiler';
 
 /** Las columnas de `Expense` que este borrador lee. */
 export interface GastoConRetencion {
@@ -50,6 +50,7 @@ export interface GastoConRetencion {
   date: Date | string;
   providerId: number | null;
   currency?: string | null;
+  category?: string | null;
   baseAmount: unknown;
   retencionPracticadaTipo: number | null;
   retencionPracticadaCuota: unknown;
@@ -150,6 +151,7 @@ export function construirBorradorRetenciones(params: {
   const perceptores115 = new Set<number>();
   let importe111 = 0, cuota111 = 0, base115 = 0, cuota115 = 0;
   let sinRetencion = 0, sinDatoDeRetencion = 0;
+  let hayAlquiler = false;
   let moneda = 'EUR';
 
   for (const g of params.gastos) {
@@ -157,6 +159,7 @@ export function construirBorradorRetenciones(params: {
       throw new Error(`🔴 SCRUM-1066c · un gasto del merchant ${g.merchantId} ha llegado al borrador del ${params.merchantId} (regla 2).`);
     }
     if (g.currency) moneda = g.currency;
+    if (g.category === CATEGORIA_ALQUILER) hayAlquiler = true;
     const tipo = g.retencionPracticadaTipo;
     const cuotaCruda = g.retencionPracticadaCuota;
     const cuota = num(cuotaCruda);
@@ -171,8 +174,8 @@ export function construirBorradorRetenciones(params: {
     if (tipo === null) { aparte('sin_tipo'); continue; }
     if (cuota === null) { aparte('sin_cuota'); continue; }
 
-    const a111 = TIPOS_111_ACTIVIDADES.has(tipo);
-    const a115 = TIPOS_115.has(tipo);
+    const a115 = g.category === CATEGORIA_ALQUILER;
+    const a111 = !a115 && TIPOS_111_ACTIVIDADES.has(tipo);
     if (!a111 && !a115) { aparte('tipo_sin_modelo'); continue; }
     if (g.baseAmount !== null && g.baseAmount !== undefined && base === null) { aparte('importe_ilegible'); continue; }
     if (base === null) { aparte('sin_base'); continue; }
@@ -221,7 +224,7 @@ export function construirBorradorRetenciones(params: {
       retenciones: { casilla: CASILLAS_115.retenciones, valor: r2(cuota115) },
       aDeducir: { casilla: CASILLAS_115.aDeducir, valor: 0 },
       resultado: { casilla: CASILLAS_115.resultado, valor: r2(cuota115) },
-      vacioPorque: perceptores115.size === 0 && TIPOS_115.size === 0 ? 'sin_dato_de_arrendamiento' : null,
+      vacioPorque: perceptores115.size === 0 && !hayAlquiler ? 'sin_dato_de_arrendamiento' : null,
     },
     sinClasificar,
     miradas: params.gastos.length,

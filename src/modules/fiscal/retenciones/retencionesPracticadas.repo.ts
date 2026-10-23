@@ -17,6 +17,7 @@ const CAMPOS = {
   date: true,
   providerId: true,
   currency: true,
+  category: true,
   baseAmount: true,
   retencionPracticadaTipo: true,
   retencionPracticadaCuota: true,
