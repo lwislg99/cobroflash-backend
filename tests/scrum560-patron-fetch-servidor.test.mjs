@@ -60,9 +60,6 @@ const CON_EL_PATRON_YA = [
   // instancias en paralelo caían con `fetch failed`, y su rojo tenía forma de 404, así que acusó
   // a la landing y se abrió un Highest contra un sistema sano. Arreglado con este mismo patrón.
   'scrum49-firma-remota.test.mjs',
-  'scrum51-job-sin-quote.test.mjs',
-  'scrum57-operario-propagacion.test.mjs',
-  'scrum58-jobs-n1.test.mjs',
   'scrum68-evidencias-firma.test.mjs',
   'scrum72-pdfs-privados.test.mjs',
   'scrum73-verifactu-gate.test.mjs',
@@ -70,7 +67,6 @@ const CON_EL_PATRON_YA = [
   'scrum82-zip-verifactu.test.mjs',
   'scrum85-pay-routes-token.test.mjs',
   'scrum90-pay-bank-mp-token.test.mjs',
-  'scrum92-login-operario.test.mjs',
   'tenancy-permisos.test.mjs',
   // ── SCRUM-1218b (21-oct-2026): NO son ficheros nuevos con el patrón: son los que el censo NO VEÍA.
   // 22 salieron al arreglar sus dos ciegos (el `listen(0, host, cb)` y el `fetch` a través de una
@@ -81,22 +77,19 @@ const CON_EL_PATRON_YA = [
   //   · el resto, gateados por `QA_DB_TEST` o `BOT_SUITE_TEST`: sus veredictos sólo se miden en staging.
   // Los tres de J2 que sólo corren con `LIBRO_PG_URL` (scrum1346, scrum1397, scrum1403) se migraron en
   // SCRUM-1218c (23-oct-2026), medidos con un Postgres desechable: la lista baja de 40 a 37.
+  // SCRUM-1218e (23-oct-2026): nueve gateados por `QA_DB_TEST` (scrum51, 57, 58, 92, 120, 22, 24, 66 y
+  // 94), medidos con el turno sobre la base de pruebas del carril: la lista baja nueve más.
   'bot-suite.test.mjs',
   'scrum1188d-tiers-tambien-se-vacia.test.mjs',
-  'scrum120-patch-job-roles.test.mjs',
   'scrum148-filtro-por-miembro.test.mjs',
   'scrum1489-la-busqueda-recorta-al-tecnico.test.mjs',
   'scrum17-recapitulativa.test.mjs',
-  'scrum22-operario-readpath.test.mjs',
-  'scrum24-operarios-metrics.test.mjs',
   'scrum25-export-zip.test.mjs',
   'scrum25-exports.test.mjs',
   'scrum47-enviar-albaran-wa.test.mjs',
   'scrum50-bot-albaranes.test.mjs',
-  'scrum66-tipo-operacion.test.mjs',
   'scrum814-carrera-del-tramo.gated.test.mjs',
   'scrum912-leer-ticket-gasto.test.mjs',
-  'scrum94-register-teammember.test.mjs',
   'scrum992-partes-recortan-por-rol.test.mjs',
 ];
 

@@ -1,0 +1,59 @@
+// banco-1218e.mjs — SCRUM-1218e (J6, 23-oct-2026). Corre UN fichero de test gateado por QA_DB_TEST
+// contra la base de pruebas del carril (DATABASE_URL_TESTS del .env del árbol, con el TURNO tomado
+// antes con `npm run turno:tomar`), con el MISMO entorno que el hijo QA de `scripts/staging-gated.mjs`
+// (QA_DB_TEST=1, WHATSAPP_DRY_RUN=1, sin A55_DB_TEST ni BOT_SUITE_TEST), y devuelve sus casos y veredictos.
+// Es el banco de 1218d con la base cambiada: sin PGlite.
+// Uso: node banco-1218e.mjs <raiz del worktree> <tests/fichero.test.mjs> <pasadas> <salida.json>
+// Por pasada guarda: código de salida, si la salida trae la firma del aborto (UV_HANDLE_CLOSING /
+// async.c / 0xC0000409), el CONJUNTO de casos (nombre → ok/not ok/skip), anclado al inicio de línea,
+// y las respuestas del servidor que anota la sonda de 1218c (método ruta status).
+import fs from 'node:fs';
+import path from 'node:path';
+import { spawn } from 'node:child_process';
+
+const [raiz, fichero, pasadasTxt, salidaRel] = process.argv.slice(2);
+const salida = salidaRel && path.resolve(salidaRel);
+if (!raiz || !fichero || !pasadasTxt || !salida) { console.log('CIEGO: faltan argumentos'); process.exit(2); }
+const pasadas = Number(pasadasTxt);
+
+const FIRMA = /UV_HANDLE_CLOSING|async\.c|0xC0000409|3221226505/;
+// El caso se ancla al INICIO de la línea (con su sangría de subtest): un «not ok» dentro del NOMBRE no cuenta.
+const CASO = /^(\s*)(ok|not ok) \d+ - (.*?)(?: # (SKIP|TODO)\b.*)?$/;
+
+const entorno = { ...process.env };
+for (const k of ['NODE_TEST_CONTEXT', 'NODE_OPTIONS', 'FORCE_COLOR', 'A55_DB_TEST', 'BOT_SUITE_TEST']) delete entorno[k];
+
+const resultado = { fichero, pasadas: [] };
+for (let i = 0; i < pasadas; i++) {
+  const tap = path.join(path.dirname(salida), `tap-${path.basename(fichero)}-${i}.tap`);
+  fs.rmSync(tap, { force: true });
+  const respuestas = path.join(path.dirname(salida), `resp-${path.basename(fichero)}-${i}.txt`);
+  fs.rmSync(respuestas, { force: true });
+  const sonda = new URL('./sonda-respuestas.mjs', import.meta.url).href;
+  const hijo = spawn(process.execPath, [
+    `--import=${sonda}`, '--test', '--test-force-exit', '--test-reporter=tap', `--test-reporter-destination=${tap}`, fichero,
+  ], {
+    cwd: raiz,
+    env: { ...entorno, QA_DB_TEST: '1', WHATSAPP_DRY_RUN: '1', SONDA_RESPUESTAS: respuestas },
+  });
+  let texto = '';
+  hijo.stdout.on('data', (d) => { texto += d; });
+  hijo.stderr.on('data', (d) => { texto += d; });
+  const codigo = await new Promise((ok) => hijo.on('close', (c, s) => ok(c ?? s)));
+  const lineas = fs.existsSync(tap) ? fs.readFileSync(tap, 'utf8').split(/\r?\n/) : [];
+  const casos = {};
+  for (const l of lineas) {
+    const m = CASO.exec(l);
+    if (!m) continue;
+    casos[`${m[1].length / 4}|${m[3]}`] = m[4] ? m[4].toLowerCase() : m[2];
+  }
+  const total = lineas.find((l) => /^# tests \d+/.test(l));
+  const resp = fs.existsSync(respuestas) ? fs.readFileSync(respuestas, 'utf8').split('\n').filter(Boolean).sort() : [];
+  const p = { i, codigo, firma: FIRMA.test(texto), bytesTap: lineas.join('\n').length, total: total || null, casos, resp };
+  resultado.pasadas.push(p);
+  const v = Object.values(casos);
+  console.log(`${v.length === 0 ? 'CIEGO · ' : ''}${path.basename(fichero)} · pasada ${i} · exit=${codigo} · firma=${p.firma} · casos=${v.length} (ok=${v.filter((x) => x === 'ok').length} not_ok=${v.filter((x) => x === 'not ok').length} skip=${v.filter((x) => x === 'skip').length}) · ${total || 'SIN TOTAL'} · respuestas=${resp.length}`);
+  if (codigo !== 0 && i === 0) console.log(texto.slice(-3000));
+}
+fs.writeFileSync(salida, JSON.stringify(resultado, null, 1));
+console.log(`POBLACION=${resultado.pasadas.length} pasadas · EXIT=0`);
