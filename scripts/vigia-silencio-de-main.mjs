@@ -67,6 +67,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { RUTAS_GH } from './equipo/ancla.mjs';
 import { checksObligatoriosDeReglas } from './vigia-atascados.mjs';
+import { registroDesdeLinea, TITULO as TITULO_DE_LA_SENAL } from './_senal-de-nombres.mjs';
 
 export const SALIDA_OK = 0;
 export const SALIDA_AVISO = 1;
@@ -407,6 +408,90 @@ export function informe(v, { ahora, origen, poblacion }) {
 // (`topeDeCorridaDelCI`), lo más que puede durar aunque sus jobs corrieran uno detrás de otro.
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 
+/** La causa de un CIEGO que se puede absolver (SCRUM-1393e): run cancelado con 0 jobs. */
+export const CAUSA_SUSTITUIDO = 'sustituido';
+
+// SCRUM-1339r · EL CIEGO DEL META-GUARD (decisión del fundador del 22-oct, SCRUM-1339 c.20219, 2b).
+// El meta-guard sale con 2 cuando no supo juzgar algún guard, y GitHub lo pinta `failure`: aquí era
+// un ROJO, y un verde posterior lo absolvía. Y cortado a sus 30 min (128 veces desde el 15-oct,
+// SCRUM-1538/935c) sale `cancelled` sin llegar a su resumen. Las dos cosas son «nadie sabe si los
+// guards caen cuando deben»: CIEGO, con su causa, que NO se absuelve, y que manda aunque otro job
+// del mismo run esté en rojo (ese rojo va nombrado en el motivo). El 2 se lee de la anotación que
+// GitHub deja al paso que cae («Process completed with exit code 2.»), y SÓLO si el paso que cae
+// es el de las mutaciones: un `npm run build` que cae también puede salir con 2 (`tsc`).
+
+/** La causa de un CIEGO del meta-guard: cortado, cancelado o salido con su 2. No se absuelve. */
+export const CAUSA_META_GUARD = 'meta-guard';
+/** El job y su paso, por IDENTIDAD; el test los busca en `ci.yml`. */
+export const JOB_META_GUARD = 'meta-guard · los guards caen cuando deben';
+export const PASO_DEL_META_GUARD = 'Cada guard cae con la mutación que declara';
+/** «No supe juzgar»: `SALIDA_CIEGO` de `scripts/meta-guard-mutaciones.mjs` (el test ata las dos). */
+export const SALIDA_CIEGO_DEL_META_GUARD = 2;
+
+/** El código de salida que GitHub anota al paso que cae, PURO. `null` si no hay exactamente uno. */
+export function codigoDeSalidaDeAnotaciones(anotaciones) {
+  const codigos = (Array.isArray(anotaciones) ? anotaciones : [])
+    .filter((a) => a?.annotation_level === 'failure')
+    .map((a) => /^Process completed with exit code (\d+)\.$/.exec(String(a.message ?? '').trim()))
+    .filter(Boolean).map((m) => Number(m[1]));
+  return codigos.length === 1 ? codigos[0] : null;
+}
+
+/** Por qué el meta-guard de este run es CIEGO, o `null` si no lo es. PURO. */
+export function ciegoDelMetaGuard(jobs) {
+  const j = (Array.isArray(jobs) ? jobs : []).find((x) => x.name === JOB_META_GUARD);
+  if (!j || j.status !== 'completed') return null;
+  // Cancelado él SOLO: si se canceló el run entero (todos sus jobs), el CIEGO es del run, no suyo (1393e).
+  const propio = jobs.some((x) => x.name !== JOB_META_GUARD && x.status === 'completed' && x.conclusion !== 'cancelled');
+  if (j.conclusion === 'cancelled' || j.conclusion === 'timed_out') return propio ? `cortado o cancelado («${j.conclusion}»): no llegó a su resumen` : null;
+  if (j.conclusion !== 'failure') return null;
+  const caidos = (j.steps ?? []).filter((s) => s.conclusion === 'failure').map((s) => s.name);
+  if (caidos.length !== 1 || caidos[0] !== PASO_DEL_META_GUARD) return null;
+  return j.codigoDeSalida === SALIDA_CIEGO_DEL_META_GUARD
+    ? `salió con ${SALIDA_CIEGO_DEL_META_GUARD} en «${PASO_DEL_META_GUARD}»: no supo juzgar algún guard`
+    : null;
+}
+
+// SCRUM-1339u · EL CIEGO DE LA SEÑAL DE NOMBRES (decisión del fundador del 22-oct, SCRUM-1339 c.20240, «a»).
+// `scripts/senal-de-nombres.mjs` sale 0 cuando NO PUEDE MEDIR (c.17954): el job sigue verde, y nadie
+// sabe si el TAP traía todos los casos. Se lee por el DATO que deja en las anotaciones del job
+// «build + tests», no por el texto del log: su `::notice` lleva SIEMPRE la línea de registro
+// (`[señal de nombres v1] medible=…`, que se lee con `registroDesdeLinea`, la de la casa), y cuando el
+// guion revienta antes de llegar ahí deja un `::warning` titulado «señal de nombres · NO PUDE MEDIR».
+// Sin ninguna de las dos, el paso no corrió o el guion no está: tampoco midió. Como el del meta-guard,
+// este CIEGO manda aunque otro job esté en rojo (va nombrado) y NO se absuelve.
+
+/** La causa de un CIEGO de la señal de nombres: no midió. No se absuelve. */
+export const CAUSA_SENAL = 'señal de nombres';
+/** El job donde corre la señal, por IDENTIDAD; el test lo busca en `ci.yml`. */
+export const JOB_DE_LA_SENAL = 'build + tests (con banco desechable)';
+
+/**
+ * Qué dice la señal en las anotaciones de su job, PURO. `null` = no se pudieron leer.
+ * → `{ estado: 'midio', ausentes }` · `{ estado: 'no-pudo', motivo }` · `{ estado: 'sin-registro' }` · `null`
+ */
+export function lecturaDeLaSenal(anotaciones) {
+  if (!Array.isArray(anotaciones)) return null;
+  const titulo = (a) => String(a?.title ?? '');
+  const aviso = anotaciones.find((a) => a?.annotation_level === 'warning' && titulo(a) === `${TITULO_DE_LA_SENAL} · NO PUDE MEDIR`);
+  const registros = anotaciones.filter((a) => a?.annotation_level === 'notice' && titulo(a).startsWith(`${TITULO_DE_LA_SENAL} · `))
+    .map((a) => registroDesdeLinea(a.message)).filter(Boolean);
+  if (aviso || registros.some((r) => !r.medible)) return { estado: 'no-pudo', motivo: aviso ? String(aviso.message ?? '').split('\n')[0] : 'medible=no en su línea de registro' };
+  if (registros.length !== 1) return { estado: 'sin-registro', registros: registros.length };
+  return { estado: 'midio', ausentes: registros[0].ausentes };
+}
+
+/** Por qué la señal de este run es CIEGO, o `null` si midió (o no se intentó leer: `senal` sin definir). PURO. */
+export function ciegoDeLaSenal(jobs) {
+  const j = (Array.isArray(jobs) ? jobs : []).find((x) => x.name === JOB_DE_LA_SENAL);
+  // Un job cancelado o sin acabar ya es CIEGO por su cuenta («sin probar» o el run entero): no se duplica.
+  if (!j || j.status !== 'completed' || !['success', 'failure'].includes(j.conclusion) || j.senal === undefined) return null;
+  if (j.senal === null) return 'no se pudieron leer las anotaciones de su job: no se sabe si midió';
+  if (j.senal.estado === 'no-pudo') return `NO PUDO MEDIR: ${j.senal.motivo}`;
+  if (j.senal.estado === 'sin-registro') return `su job no dejó una línea de registro (deja ${j.senal.registros}): el paso no corrió o el guion no está`;
+  return null;
+}
+
 /** Los jobs del workflow CI que se exigen en cada commit de `main`: los de `JOBS_DE_MAIN`. */
 export const JOBS_DEL_CI = JOBS_DE_MAIN.filter((j) => j.workflow === 'CI').map((j) => j.job);
 
@@ -429,8 +514,10 @@ export function topeDeCorridaDelCI(textoCiYml) {
  * @returns {{ sha: string, estado: string, motivo: string, url: string|null, jobs: object[] }}
  */
 export function veredictoDeCommit({ sha, run, jobs, ahora, topeMin, declarados = JOBS_DEL_CI }) {
-  const r = (estado, motivo, lista = []) => ({ sha, estado, motivo, url: run?.html_url ?? null, jobs: lista });
-  if (!run) return r('CIEGO', 'ningún run del CI por push para este commit: no corrió');
+  const r = (estado, motivo, lista = [], causa = null) => ({ sha, estado, motivo, url: run?.html_url ?? null, jobs: lista, causa });
+  // SCRUM-1393f: `sinRun` es el dato («GitHub no tiene run de este commit»); si fue por sustitución
+  // en la cola lo decide la línea (`sinRunPorSustitucion`), no este veredicto, que no ve vecinos.
+  if (!run) return { ...r('CIEGO', 'ningún run del CI por push para este commit: no corrió'), sinRun: true };
   if (run.status !== 'completed') {
     const min = Math.round((Date.parse(ahora) - Date.parse(run.created_at)) / 60000);
     if (topeMin == null) return r('SIN-LEER', `run «${run.status}» desde hace ${min} min y no se sabe el tope del CI`);
@@ -439,10 +526,30 @@ export function veredictoDeCommit({ sha, run, jobs, ahora, topeMin, declarados =
       : r('CORRIENDO', `run «${run.status}» desde hace ${min} min (tope ${topeMin} min): aún sin veredicto`);
   }
   if (!Array.isArray(jobs)) return r('SIN-LEER', `run «${run.conclusion}», pero no se pudieron leer sus jobs`);
-  if (jobs.length === 0) return r('CIEGO', `run «${run.conclusion}» con 0 jobs`);
+  // SCRUM-1393e: «cancelled» con 0 jobs es el run que GitHub cancela al llegar el siguiente commit
+  // (sustitución). Es el ÚNICO CIEGO que un verde posterior que lo contiene puede absolver, y se
+  // marca por el dato (`causa`), no por el texto del motivo.
+  if (jobs.length === 0) return r('CIEGO', `run «${run.conclusion}» con 0 jobs`, [], run.conclusion === 'cancelled' ? CAUSA_SUSTITUIDO : null);
 
   const rojos = jobs.filter((j) => j.conclusion === 'failure');
-  if (rojos.length) return r('ROJO', `en rojo: ${rojos.map((j) => `«${j.name}»`).join(', ')}`, rojos);
+  const delMetaGuard = ciegoDelMetaGuard(jobs);
+  // SCRUM-1339u: el CIEGO de la señal se nombra también junto al del meta-guard; la causa es la del primero.
+  const deLaSenal = ciegoDeLaSenal(jobs);
+  const yLaSenal = deLaSenal ? ` · CIEGO de la señal de nombres: ${deLaSenal}` : '';
+  if (delMetaGuard) {
+    const otros = rojos.filter((j) => j.name !== JOB_META_GUARD);
+    const ademas = otros.length ? ` · además en rojo: ${otros.map((j) => `«${j.name}»`).join(', ')}` : '';
+    return r('CIEGO', `CIEGO del meta-guard: ${delMetaGuard}${yLaSenal}${ademas}`, jobs.filter((j) => j.name === JOB_META_GUARD || j.conclusion === 'failure'), CAUSA_META_GUARD);
+  }
+  if (deLaSenal) {
+    const ademas = rojos.length ? ` · además en rojo: ${rojos.map((j) => `«${j.name}»`).join(', ')}` : '';
+    return r('CIEGO', `CIEGO de la señal de nombres: ${deLaSenal}${ademas}`, jobs.filter((j) => j.name === JOB_DE_LA_SENAL || j.conclusion === 'failure'), CAUSA_SENAL);
+  }
+  // Un meta-guard en `failure` cuyo código no se pudo LEER (`null`; `undefined` = no se intentó) puede
+  // ser su 2: sigue ROJO, que avisa, pero lo dice.
+  const sinCodigo = rojos.some((j) => j.name === JOB_META_GUARD && j.codigoDeSalida === null)
+    ? ' · el código de salida del meta-guard no se pudo leer: puede ser su CIEGO (2)' : '';
+  if (rojos.length) return r('ROJO', `en rojo: ${rojos.map((j) => `«${j.name}»`).join(', ')}${sinCodigo}`, rojos);
 
   const noCorrieron = jobs.filter((j) => j.status !== 'completed' || j.conclusion !== 'success');
   const nombres = new Set(jobs.map((j) => j.name));
@@ -466,8 +573,10 @@ export function salidaDeCommits(veredictos) {
 }
 
 /**
- * EL SUELO DEL MODO POR COMMIT: seis cebos FABRICADOS aquí, uno por estado y dos de CIEGO (el que
- * no corrió y el cancelado con 0 jobs, que son los dos que pasaron el 1-oct). `juez` se puede
+ * EL SUELO DEL MODO POR COMMIT: cebos FABRICADOS aquí, uno por estado y dos de CIEGO (el que
+ * no corrió y el cancelado con 0 jobs, que son los dos que pasaron el 1-oct), más los dos del
+ * meta-guard (SCRUM-1339r: su 2 es CIEGO, su 1 es ROJO) y los dos de la señal de nombres
+ * (SCRUM-1339u: no pudo medir es CIEGO, midió 0 es VERDE). `juez` se puede
  * cambiar para comprobar que un juez ciego NO pasa el suelo.
  */
 export function sueloPorCommit(juez = veredictoDeCommit) {
@@ -475,6 +584,14 @@ export function sueloPorCommit(juez = veredictoDeCommit) {
   const job = (name, conclusion) => ({ name, status: 'completed', conclusion });
   const todos = (c) => JOBS_DEL_CI.map((n) => job(n, c));
   const run = (status, conclusion, creado = '2026-01-01T11:50:00Z') => ({ status, conclusion, created_at: creado, html_url: null });
+  const metaGuard = (codigo, otros = []) => [
+    ...todos('success').filter((j) => j.name !== JOB_META_GUARD && !otros.some((o) => o.name === j.name)), ...otros,
+    { ...job(JOB_META_GUARD, 'failure'), steps: [{ name: PASO_DEL_META_GUARD, conclusion: 'failure' }], codigoDeSalida: codigo },
+  ];
+  const senal = (lectura, otros = []) => [
+    ...todos('success').filter((j) => j.name !== JOB_DE_LA_SENAL && !otros.some((o) => o.name === j.name)), ...otros,
+    { ...job(JOB_DE_LA_SENAL, 'success'), senal: lectura },
+  ];
   const cebos = [
     { sha: 'cebo-verde', run: run('completed', 'success'), jobs: todos('success'), esperado: 'VERDE' },
     { sha: 'cebo-rojo', run: run('completed', 'failure'), jobs: [...todos('success').slice(1), job(JOBS_DEL_CI[0], 'failure')], esperado: 'ROJO' },
@@ -482,10 +599,17 @@ export function sueloPorCommit(juez = veredictoDeCommit) {
     { sha: 'cebo-sin-run', run: null, jobs: null, esperado: 'CIEGO' },
     { sha: 'cebo-colgado', run: run('in_progress', null, '2026-01-01T06:00:00Z'), jobs: null, esperado: 'CIEGO' },
     { sha: 'cebo-corriendo', run: run('in_progress', null), jobs: null, esperado: 'CORRIENDO' },
+    // SCRUM-1339r: el meta-guard con su 2, con otro job en rojo al lado (lo que dio `main` el 19-21 oct),
+    // es CIEGO; con su 1 (un guard MUDO) es ROJO.
+    { sha: 'cebo-meta-guard-2', run: run('completed', 'failure'), jobs: metaGuard(2, [job(JOBS_DEL_CI[1], 'failure')]), esperado: 'CIEGO' },
+    { sha: 'cebo-meta-guard-1', run: run('completed', 'failure'), jobs: metaGuard(1), esperado: 'ROJO' },
+    // SCRUM-1339u: la señal que no pudo medir es CIEGO, también con otro job en rojo; la que midió 0, VERDE.
+    { sha: 'cebo-senal-no-pudo', run: run('completed', 'failure'), jobs: senal({ estado: 'no-pudo', motivo: 'cebo' }, [job(JOBS_DEL_CI[1], 'failure')]), esperado: 'CIEGO' },
+    { sha: 'cebo-senal-midio', run: run('completed', 'success'), jobs: senal({ estado: 'midio', ausentes: 0 }), esperado: 'VERDE' },
   ];
   const estado = Object.fromEntries(cebos.map((c) => [c.sha, juez({ ...c, ahora, topeMin: 130 }).estado]));
   const ok = cebos.every((c) => estado[c.sha] === c.esperado);
-  return { ok, estado, detalle: `suelo por commit: ${ok ? 'reconoce' : 'NO reconoce'} sus seis cebos (${JSON.stringify(estado)})` };
+  return { ok, estado, detalle: `suelo por commit: ${ok ? 'reconoce' : 'NO reconoce'} sus ${cebos.length} cebos (${JSON.stringify(estado)})` };
 }
 
 /** El informe del modo por commit: primera línea la POBLACIÓN, la de recuento SIEMPRE, última el `EXIT=`. */
@@ -507,8 +631,9 @@ export const marcaDeAviso = (v) => `<!-- vigia-de-main:${v.sha}:${v.estado} -->`
  * los comentarios ya publicados). `''` = nada nuevo que decir. Sin la mención que despierta a
  * Claude: este aviso es para una persona (el mismo invariante que `vigia-atascados`).
  */
-export function cuerpoDelAviso({ veredictos, ahora, origen, urlDelRun }, previos = '') {
-  const nuevos = veredictos.filter((v) => ['ROJO', 'CIEGO', 'SIN-LEER'].includes(v.estado) && !String(previos).includes(marcaDeAviso(v)));
+export function cuerpoDelAviso({ veredictos, ahora, origen, urlDelRun, callados = new Set() }, previos = '') {
+  // `callados` (SCRUM-1393e): los CIEGO «sustituido» absueltos o en espera; no se avisan.
+  const nuevos = veredictos.filter((v) => ['ROJO', 'CIEGO', 'SIN-LEER'].includes(v.estado) && !callados.has(v.sha) && !String(previos).includes(marcaDeAviso(v)));
   if (!nuevos.length) return '';
   const l = [`**Vigía de main** · ${ahora} · ${origen}`, '', informeDeCommits(veredictos, { ahora, origen }).split('\n').at(-2), ''];
   for (const v of nuevos) l.push(`- **${v.estado}** \`${v.sha.slice(0, 12)}\` — ${v.motivo}${v.url ? ` · [run](${v.url})` : ''} ${marcaDeAviso(v)}`);
@@ -527,7 +652,59 @@ export function cuerpoDelAviso({ veredictos, ahora, origen, urlDelRun }, previos
 // absuelve un verde POSTERIOR (decisión del orquestador, sin «lectura generosa»): nadie probó ese
 // commit, y se sirvió igual. Un ROJO sí: un rojo se arregla con otro commit, y ése es el verde.
 // Si después vuelve un ROJO o un CIEGO con el Issue cerrado, se REABRE el mismo (no otro).
+//
+// SCRUM-1393e · LA ÚNICA EXCEPCIÓN (decisión del fundador del 21-oct, opción (a)): un CIEGO con
+// `causa` «sustituido» (run cancelado con 0 jobs) se ABSUELVE si en la pasada hay un VERDE que lo
+// CONTIENE: un descendiente suyo en la línea de primer padre de la punta (`linea`, la lista de
+// `git rev-list --first-parent <punta>` que da el workflow; el motor no lee git). El cierre los
+// lista como «no verificados, absueltos por el verde de <sha>». Si no hay verde que lo contenga
+// pero sí un descendiente CORRIENDO, ESPERA: ni avisa ni reabre (orden del orquestador del 21-oct).
+// Sin `linea` no se absuelve nada. Cualquier otro CIEGO sigue como arriba.
+//
+// SCRUM-1393f · Y EL «SIN RUN» POR SUSTITUCIÓN EN LA COLA (decisión del fundador del 21-oct, «2-A»):
+// en `main` el CI no cancela el run en curso (`ci.yml`, `cancel-in-progress`), y el commit nuevo
+// sustituye al que espera en la cola, que se queda SIN NINGÚN run. Se absuelve igual que el
+// «sustituido», pero sólo si su SUCESOR inmediato en la línea TIENE run (`conRun`): eso es lo que lo
+// separa de un «GitHub no disparó», donde el sucesor tampoco lo tiene. Que ese run sea posterior al
+// commit no se mira aparte: el sucesor tiene a este por padre, y su run nace de su push.
 // ═══════════════════════════════════════════════════════════════════════════════════════════
+
+/** SCRUM-1393f · el veredicto viene de un run del CI que existe: los CIEGO con run son el «sustituido» y (SCRUM-1339r) el del meta-guard. */
+export const conRun = (v) => !!v && (['VERDE', 'ROJO', 'CORRIENDO'].includes(v.estado) || (v.estado === 'CIEGO' && [CAUSA_SUSTITUIDO, CAUSA_META_GUARD, CAUSA_SENAL].includes(v.causa)));
+
+/** SCRUM-1393f · el CIEGO `sinRun` cuyo sucesor inmediato en `linea` (la punta primero) tiene run. PURO. */
+export function sinRunPorSustitucion(v, veredictos, linea) {
+  if (!v?.sinRun || v.estado !== 'CIEGO' || !Array.isArray(linea)) return false;
+  const p = linea.indexOf(v.sha);
+  return p > 0 && conRun(veredictos.find((w) => w.sha === linea[p - 1]));
+}
+
+/**
+ * Qué CIEGO «sustituido» de la pasada se absuelve y cuál espera, PURO. Un commit que no está en
+ * `linea` no contiene ni es contenido por nada. Devuelve `{ absueltos: Map<sha, sha del verde>,
+ * enEspera: Set<sha> }`; el verde que absuelve es el MÁS CERCANO de los que lo contienen.
+ */
+export function absolucionDeSustituidos(veredictos, linea = null) {
+  const absueltos = new Map();
+  const enEspera = new Set();
+  if (!Array.isArray(linea) || !linea.length) return { absueltos, enEspera };
+  const pos = new Map(linea.map((s, i) => [s, i]));
+  const enLinea = (e) => veredictos.filter((v) => v.estado === e && pos.has(v.sha));
+  const verdes = enLinea('VERDE');
+  const corriendo = enLinea('CORRIENDO');
+  for (const v of veredictos) {
+    if (v.estado !== 'CIEGO' || !pos.has(v.sha)) continue;
+    // SCRUM-1393f (orden del orquestador del 21-oct, sin reloj): un «sin run» sin NINGÚN posterior
+    // de la línea con run (la punta incluida) aún no se juzga: el run puede llegar tarde. ESPERA.
+    if (v.sinRun && !veredictos.some((w) => pos.has(w.sha) && pos.get(w.sha) < pos.get(v.sha) && conRun(w))) { enEspera.add(v.sha); continue; }
+    if (v.causa !== CAUSA_SUSTITUIDO && !sinRunPorSustitucion(v, veredictos, linea)) continue;
+    const p = pos.get(v.sha);
+    const contenedores = verdes.filter((w) => pos.get(w.sha) < p).sort((a, b) => pos.get(b.sha) - pos.get(a.sha));
+    if (contenedores.length) absueltos.set(v.sha, contenedores[0].sha);
+    else if (corriendo.some((w) => pos.get(w.sha) < p)) enEspera.add(v.sha);
+  }
+  return { absueltos, enEspera };
+}
 
 /** La marca de un cierre: los pendientes se cuentan desde la última. */
 export const marcaDeCierre = (sha) => `<!-- vigia-de-main:cerrado:${sha} -->`;
@@ -548,35 +725,44 @@ export function pendientesDelIssue(previos = '') {
  * 'ninguno'. Devuelve `{ pasos, cuerpo, motivo }`; `pasos` es una lista de 'crear', 'reabrir',
  * 'comentar' y 'cerrar', en ese orden de ejecución, y vacía si no hay nada que hacer.
  */
-export function accionDelIssue({ veredictos, ahora, origen, urlDelRun, punta }, { previos = '', estado = 'ninguno' } = {}) {
-  const aviso = cuerpoDelAviso({ veredictos, ahora, origen, urlDelRun }, previos);
+export function accionDelIssue({ veredictos, ahora, origen, urlDelRun, punta, linea = null }, { previos = '', estado = 'ninguno' } = {}) {
+  const { absueltos, enEspera } = absolucionDeSustituidos(veredictos, linea);
+  // `contexto` (SCRUM-1393e): la punta juzgada sólo para decidir; no se avisa por ella aquí.
+  const callados = new Set([...absueltos.keys(), ...enEspera, ...veredictos.filter((v) => v.contexto).map((v) => v.sha)]);
+  const aviso = cuerpoDelAviso({ veredictos, ahora, origen, urlDelRun, callados }, previos);
   const deLaPunta = veredictos.find((v) => v.sha === punta);
   const juzgados = new Set(veredictos.filter((v) => v.estado === 'VERDE' || v.estado === 'ROJO').map((v) => v.sha));
-  const pendientes = pendientesDelIssue(`${previos}\n${aviso}`).filter((s) => !juzgados.has(s));
-  const ciegos = veredictos.filter((v) => v.estado === 'CIEGO' || v.estado === 'SIN-LEER');
+  const pendientes = pendientesDelIssue(`${previos}\n${aviso}`).filter((s) => !juzgados.has(s) && !callados.has(s));
+  const ciegos = veredictos.filter((v) => (v.estado === 'CIEGO' || v.estado === 'SIN-LEER') && !callados.has(v.sha));
+  const espera = (enEspera.size ? ` · ${enEspera.size} CIEGO «sustituido» en espera de su sustituto: ${[...enEspera].map((s) => s.slice(0, 12)).join(', ')}` : '')
+    + (absueltos.size ? ` · ${absueltos.size} CIEGO «sustituido» absuelto(s): ${[...absueltos].map(([s, por]) => `${s.slice(0, 12)} por ${por.slice(0, 12)}`).join(', ')}` : '');
   let motivo = null;
   if (!punta) motivo = 'no sé cuál es la punta de main';
   else if (!deLaPunta) motivo = `la punta ${punta.slice(0, 12)} no está en esta pasada`;
   else if (deLaPunta.estado !== 'VERDE') motivo = `la punta ${punta.slice(0, 12)} sale ${deLaPunta.estado}`;
   else if (ciegos.length) motivo = `${ciegos.length} commit(s) CIEGO o SIN-LEER en esta pasada`;
   else if (pendientes.length) motivo = `${pendientes.length} CIEGO pendiente(s) en el Issue: ${pendientes.map((s) => s.slice(0, 12)).join(', ')}`;
+  else if (enEspera.size) motivo = 'hay CIEGO «sustituido» en espera';
 
   if (!motivo) {
     if (estado !== 'abierto') return { pasos: [], cuerpo: '', motivo: 'main verificado y ningún Issue abierto: nada que decir' };
     const recuento = informeDeCommits(veredictos, { ahora, origen }).split('\n').at(-2);
+    const sinRun = new Set(veredictos.filter((v) => v.sinRun).map((v) => v.sha));
+    const lista = [...absueltos].map(([s, por]) => `- \`${s.slice(0, 12)}\` — no verificado, absuelto por el verde de \`${por.slice(0, 12)}\`${sinRun.has(s) ? ' · SIN run: el siguiente commit le quitó el sitio en la cola' : ''}`);
     const cierre = [
       `**Vigía de main · CERRADO** · ${ahora} · ${origen}`, '',
       `La punta de \`main\`, \`${punta.slice(0, 12)}\`, sale **VERDE** (${deLaPunta.motivo}), sin ningún CIEGO pendiente.`,
+      ...(lista.length ? ['', `${lista.length} CIEGO «sustituido» (run cancelado con 0 jobs, o sin run porque el siguiente le quitó el sitio en la cola) no verificados, absueltos por el verde de un commit posterior que los contiene:`, ...lista, ''] : []),
       `Población de esta pasada: ${recuento}.`, `Pasada: ${urlDelRun} ${marcaDeCierre(punta)}`,
     ].join('\n');
     const cuerpo = aviso ? `${aviso}\n\n---\n\n${cierre}` : cierre;
     if (/@claude/i.test(cuerpo)) throw new Error('el cierre del vigía de main contiene la mención que despierta a Claude');
-    return { pasos: ['comentar', 'cerrar'], cuerpo, motivo: `se cierra: punta ${punta.slice(0, 12)} VERDE` };
+    return { pasos: ['comentar', 'cerrar'], cuerpo, motivo: `se cierra: punta ${punta.slice(0, 12)} VERDE${absueltos.size ? ` · ${absueltos.size} absuelto(s)` : ''}` };
   }
-  if (!aviso) return { pasos: [], cuerpo: '', motivo: `sin nada nuevo que avisar; no se cierra: ${motivo}` };
+  if (!aviso) return { pasos: [], cuerpo: '', motivo: `sin nada nuevo que avisar; no se cierra: ${motivo}${espera}` };
   const pasos = { ninguno: ['crear'], cerrado: ['reabrir', 'comentar'], abierto: ['comentar'] }[estado];
   if (!pasos) throw new Error(`estado del Issue desconocido: «${estado}»`);
-  return { pasos, cuerpo: aviso, motivo: `se avisa; no se cierra: ${motivo}` };
+  return { pasos, cuerpo: aviso, motivo: `se avisa; no se cierra: ${motivo}${espera}` };
 }
 
 // ── LA LECTURA DE GITHUB (sólo aquí hay red) ─────────────────────────────────────────────────
@@ -638,7 +824,20 @@ async function leerCommitDeGitHub(sha, idDelCI) {
   const pagina = await gh(`repos/${REPO}/actions/workflows/${idDelCI}/runs?head_sha=${sha}&event=push&branch=main&per_page=20`);
   const run = [...pagina.workflow_runs].sort((a, b) => b.created_at.localeCompare(a.created_at))[0] ?? null;
   if (!run || run.status !== 'completed') return { run, jobs: null };
-  return { run, jobs: (await gh(`repos/${REPO}/actions/runs/${run.id}/jobs?per_page=100&filter=latest`)).jobs };
+  const jobs = (await gh(`repos/${REPO}/actions/runs/${run.id}/jobs?per_page=100&filter=latest`)).jobs;
+  // SCRUM-1339r: el 2 del meta-guard sólo está en la anotación del paso que cae (pide `checks: read`).
+  // Si no se puede leer, `null`: el veredicto sigue ROJO y lo dice; no se calla ni pasa a verde.
+  for (const j of jobs) {
+    if (j.name !== JOB_META_GUARD || j.conclusion !== 'failure') continue;
+    try { j.codigoDeSalida = codigoDeSalidaDeAnotaciones(await gh(`repos/${REPO}/check-runs/${j.id}/annotations?per_page=100`)); } catch { j.codigoDeSalida = null; }
+  }
+  // SCRUM-1339u: lo que midió la señal de nombres está en las anotaciones de su job (la misma `checks: read`).
+  // Si no se pueden leer, `null`: CIEGO de la señal, que lo dice; no pasa a verde.
+  for (const j of jobs) {
+    if (j.name !== JOB_DE_LA_SENAL || j.status !== 'completed' || !['success', 'failure'].includes(j.conclusion)) continue;
+    try { j.senal = lecturaDeLaSenal(await gh(`repos/${REPO}/check-runs/${j.id}/annotations?per_page=100`)); } catch { j.senal = null; }
+  }
+  return { run, jobs };
 }
 
 /**
@@ -646,6 +845,37 @@ async function leerCommitDeGitHub(sha, idDelCI) {
  * (`UMBRAL_HORAS_DE_CRON`), para que un cron que llega tarde no deje commits sin mirar.
  */
 export const desdeDeLaRed = (ahora = new Date()) => new Date(ahora.getTime() - (24 + UMBRAL_HORAS_DE_CRON) * 3600000).toISOString();
+
+/**
+ * SCRUM-1393e · desde cada VERDE o CORRIENDO de `veredictos` que esté en `linea`, baja por sus
+ * padres juzgando (`juzgar(sha)` → veredicto, que además lo añade a `veredictos`) mientras salgan
+ * CIEGO «sustituido», y para en el primero que no lo sea. Un commit ya juzgado no se vuelve a pedir.
+ * SCRUM-1393f: también sigue por un CIEGO `sinRun` si el que acaba de juzgar (su sucesor) tiene run.
+ */
+export async function bajarPorSustituidos(veredictos, linea, juzgar) {
+  const yaJuzgado = (sha) => veredictos.find((v) => v.sha === sha);
+  for (const desde of veredictos.filter((v) => v.estado === 'VERDE' || v.estado === 'CORRIENDO').map((v) => v.sha)) {
+    let sucesor = yaJuzgado(desde);
+    for (let i = linea.indexOf(desde) + 1; i > 0 && i < linea.length; i += 1) {
+      const v = yaJuzgado(linea[i]) ?? await juzgar(linea[i]);
+      if (v.estado !== 'CIEGO') break;
+      if (v.causa !== CAUSA_SUSTITUIDO && !(v.sinRun && conRun(sucesor))) break;
+      sucesor = v;
+    }
+  }
+}
+
+/**
+ * SCRUM-1393f · un CIEGO `sinRun` de la pasada (p. ej. un pendiente del Issue) cuyo sucesor en `linea`
+ * no está juzgado: se juzga el sucesor, como CONTEXTO (decide, pero no se avisa por él), porque sin
+ * él no se sabe si lo sustituyeron en la cola. Un commit fuera de la línea, o la punta, no tiene.
+ */
+export async function juzgarSucesoresDeSinRun(veredictos, linea, juzgar) {
+  for (const v of veredictos.filter((x) => x.sinRun && x.estado === 'CIEGO')) {
+    const p = linea.indexOf(v.sha);
+    if (p > 0 && !veredictos.some((w) => w.sha === linea[p - 1])) (await juzgar(linea[p - 1])).contexto = true;
+  }
+}
 
 async function modoPorCommit(args, opcion) {
   const suelo = sueloPorCommit();
@@ -678,12 +908,33 @@ async function modoPorCommit(args, opcion) {
 
   const ahora = new Date().toISOString();
   const veredictos = [];
-  for (const sha of shas) {
+  const juzgar = async (sha) => {
     try {
       veredictos.push(veredictoDeCommit({ sha, ...(await leerCommitDeGitHub(sha, idDelCI)), ahora, topeMin }));
     } catch (e) {
-      veredictos.push({ sha, estado: 'SIN-LEER', motivo: e.message, url: null, jobs: [] });
+      veredictos.push({ sha, estado: 'SIN-LEER', motivo: e.message, url: null, jobs: [], causa: null });
     }
+    return veredictos.at(-1);
+  };
+  for (const sha of [...new Set(shas)]) await juzgar(sha);
+  // SCRUM-1393e · `--contexto <sha>`: la punta, juzgada para decidir el cierre y la espera, pero sin
+  // aviso propio si no venía en la lista (la juzga su propio CI, y la red diaria). Medido el 21-oct:
+  // un merge de las 13:56:26Z seguía SIN run del CI a las 14:04Z; avisarlo sería un CIEGO falso.
+  const contexto = opcion('--contexto');
+  if (contexto && !veredictos.some((v) => v.sha === contexto)) {
+    if (!/^[0-9a-f]{40}$/.test(contexto)) return ciego(`el contexto va con su sha COMPLETO (40 hex); llegó «${contexto}»`);
+    (await juzgar(contexto)).contexto = true;
+  }
+
+  // SCRUM-1393e: desde cada VERDE o CORRIENDO que esté en la `linea`, se baja por sus padres
+  // juzgando mientras salgan CIEGO «sustituido»: son los commits a los que ese run sustituyó, y
+  // sin juzgarlos el cierre no podría listarlos. Para en el primero que no lo sea.
+  let linea = null;
+  if (opcion('--linea')) {
+    try { linea = readFileSync(opcion('--linea'), 'utf8').split(/\r?\n/).map((s) => s.trim()).filter(Boolean); } catch (e) { return ciego(`no pude leer la línea de primer padre: ${e.message}`); }
+    await bajarPorSustituidos(veredictos, linea, juzgar);
+    await juzgarSucesoresDeSinRun(veredictos, linea, juzgar);
+    origen += ` · línea de primer padre de ${linea.length} commits`;
   }
   console.log(informeDeCommits(veredictos, { ahora, origen }));
   const json = opcion('--json');
@@ -695,12 +946,20 @@ async function principal() {
   const args = process.argv.slice(2);
   const opcion = (n) => { const i = args.indexOf(n); return i === -1 ? null : args[i + 1]; };
   if (args.includes('--desde-de-la-red')) { console.log(desdeDeLaRed()); return SALIDA_OK; }
+  // SCRUM-1393e · `--pendientes <fichero>`: los commits que el Issue tiene pendientes, uno por línea,
+  // para que el workflow los vuelva a juzgar con el dato de GitHub (sus marcas no llevan la causa).
+  if (args.includes('--pendientes')) {
+    for (const sha of pendientesDelIssue(readFileSync(opcion('--pendientes'), 'utf8'))) console.log(sha);
+    return SALIDA_OK;
+  }
   // SCRUM-1393d · `--accion-del-issue <vigia.json> --punta <sha> --estado-issue <abierto|cerrado|ninguno>
   // --previos <fichero> --cuerpo <fichero>`: escribe el cuerpo y dice los pasos en `PASOS=`. Sin red.
   if (args.includes('--accion-del-issue')) {
     const j = JSON.parse(readFileSync(opcion('--accion-del-issue'), 'utf8'));
     const previos = opcion('--previos') ? readFileSync(opcion('--previos'), 'utf8') : '';
-    const a = accionDelIssue({ ...j, urlDelRun: process.env.URL_RUN ?? null, punta: opcion('--punta') }, { previos, estado: opcion('--estado-issue') });
+    // SCRUM-1393e: `--linea <fichero>` (un sha por línea, de `git rev-list --first-parent <punta>`).
+    const linea = opcion('--linea') ? readFileSync(opcion('--linea'), 'utf8').split(/\r?\n/).map((s) => s.trim()).filter(Boolean) : null;
+    const a = accionDelIssue({ ...j, urlDelRun: process.env.URL_RUN ?? null, punta: opcion('--punta'), linea }, { previos, estado: opcion('--estado-issue') });
     writeFileSync(opcion('--cuerpo'), a.cuerpo);
     console.log(a.motivo);
     console.log(`PASOS=${a.pasos.join(',')}`);

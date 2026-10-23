@@ -1,0 +1,160 @@
+SIEMBRA OK   rojo A8.4
+SIEMBRA OK   verde con la cruz en el NOMBRE
+SIEMBRA OK   colgada
+SIEMBRA OK   sin resumen
+SIEMBRA OK   zona cortada en la 2.ª
+SIEMBRA OK   meta cortado
+
+① build + tests en failure: 185 logs · ROJO 175 · COLGADA 10
+   casos distintos que caen: 93 · caídas: 304
+    63  tests/scrum1405c-tuberia-bloqueante.test.mjs · SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, ninguno  [main 13]
+    22  tests/scrum1294-a9-leccion-en-a10.test.mjs · SCRUM-1294 · todo registro desde el corte lleva su línea A9, y lo que dice se cumple  [main 0]
+    15  tests/scrum267-ancla-de-medicion.test.mjs · SCRUM-267 · 🔴 LAS EXENTAS SON EXACTAMENTE ÉSTAS: la lista no puede crecer  [main 0]
+    15  tests/scrum267-ancla-de-medicion.test.mjs · SCRUM-267 · 🔴 los números CUADRAN: con ancla + sin ancla + eximidas = el total  [main 0]
+    12  tests/scrum864c-el-temporal-no-vuelve.test.mjs · SCRUM-864c · 🔴 ③ NINGÚN temporal nuevo nace sin borrarse: las cuatro categorías de fuga = 0  [main 0]
+    10  tests/scrum267-ancla-de-medicion.test.mjs · SCRUM-267 · toda entrada NUEVA del registro declara contra qué main se midió, y cuándo  [main 0]
+     9  tests/scrum1415-nombres-construidos.test.mjs · SCRUM-1415 · 🔴 EL ÁRBOL: las llamadas de nombre construido son exactamente las de la lista, ni una más ni una menos  [main 0]
+     9  tests/scrum622-desconocido-no-es-verde.test.mjs · SCRUM-622 · 🔴 EL CENSO: queda UNA red benigna, y es la que espera decisión  [main 0]
+     8  tests/scrum1387-banco-nuevo-va-al-catalogo.test.mjs · SCRUM-1387 · 🔴 en el árbol: ningún banco de mutación nuevo queda fuera del catálogo  [main 1]
+     6  tests/scrum553-etiquetas-pegadas.test.mjs · SCRUM-553 · 🔴 el número de etiquetas con el `>` pegado NO SUBE  [main 0]
+     6  tests/scrum1480f-un-script-nuevo-no-entra-sin-fila.test.mjs · SCRUM-1480f · NO SUBE: ningún script sin fila que no estuviera en la foto o no esté declarado  [main 0]
+     6  tests/scrum976-guards-entrada-con-techo.test.mjs · SCRUM-976 ④ mitad POSITIVA: el comando de verdad sale 0 y ejecutó los guards; el presupuesto se juzga en CI  [main 0]
+     5  tests/scrum124-r28-graph-facebook-guard.test.mjs · SCRUM-124 (r28): ninguna llamada a graph.facebook.com fuera de whatsapp.ts  [main 0]
+     5  tests/bot-suite.test.mjs · A8.4: suite completa del bot (webhook + dry-run)  [main 2]
+     5  tests/scrum694-los-guards-migrados.test.mjs · SCRUM-694 · 🔴 no entra NINGÚN filtro de comentarios nuevo  [main 0]
+     5  tests/scrum267-ancla-de-medicion.test.mjs · SCRUM-267 · el censo heredado no crece, y si BAJA hay que anotarlo  [main 0]
+     4  tests/scrum262-telefonos-de-prueba.test.mjs · SCRUM-262 · todo teléfono sembrado está en el rango imposible  [main 0]
+     4  tests/scrum710b-anclaje-por-identidad.test.mjs · SCRUM-710b · 🔴 los anclajes por NÚMERO DE LÍNEA no crecen  [main 0]
+     4  tests/scrum737-cifra-con-arbol-y-hora.test.mjs · SCRUM-737 · 🔴 el censo de cifras SIN ancla no crece, y si baja hay que anotarlo  [main 0]
+     3  tests/scrum942-bytes-de-control-en-el-arbol.test.mjs · SCRUM-942 · ✅ POSITIVO: el árbol de hoy pasa limpio — cero hallazgos sin exenciones nuevas  [main 0]
+     3  tests/scrum1344-arnes-de-prueba-con-rol.test.mjs · SCRUM-1344 · ⑤ un arnés NUEVO no declara el rol a mano: usa `reqDeSesion` (la lista de heredados no crece)  [main 0]
+     3  tests/scrum824-temporales-fuera-del-arbol.test.mjs · SCRUM-824 · 🔴 el conjunto de ficheros SIN PROBAR no crece  [main 0]
+     2  tests/a55-window-quote.test.mjs · A5.5: ventana abierta → envío de presupuesto por SESIÓN (service), no plantilla  [main 0]
+     2  tests/scrum804b-el-barrido-de-la-42.test.mjs · SCRUM-804b · 🔴 SUELO y CONTROLES: el criterio reconoce lo que SÍ está y lo que NO  [main 0]
+     2  tests/scrum708-el-fichero-que-no-corre.test.mjs · SCRUM-708 · 🔴 NINGÚN fichero registra tests fuera de lo que la tanda ejecuta  [main 0]
+     2  tests/scrum700-filtros-de-comentario.test.mjs · SCRUM-700 · 🔴 el número de filtros que CIEGAN CÓDIGO no sube  [main 0]
+     2  tests/scrum1349-entorno-prestado-solo-baja.test.mjs · SCRUM-1349 · 🔴 los que prestan el entorno son EXACTAMENTE los declarados: ni uno más, y el que se arregla se borra  [main 0]
+     2  tests/scrum1349-entorno-prestado-solo-baja.test.mjs · SCRUM-1349 · 🔴 CONTROL POSITIVO DEL TRINQUETE: un acusado de mentira SALTA, y uno arreglado también  [main 0]
+     2  tests/scrum480-fin-de-linea.test.mjs · SCRUM-480 · 🔴 ningún blob de TEXTO lleva CR (salvo lo declarado)  [main 0]
+     2  tests/scrum1285-guardado-en-vuelo.test.mjs · SCRUM-1285 · oficina · CONTROL POSITIVO: guardar sin teclear en vuelo sigue guardando y repinta  [main 0]
+     2  tests/scrum1285-guardado-en-vuelo.test.mjs · SCRUM-1285 · oficina · 🔴 con el PATCH en vuelo no se puede teclear: nada que perder  [main 0]
+     2  tests/scrum1285-guardado-en-vuelo.test.mjs · SCRUM-1285 · oficina · control positivo de la SONDA: sin el patrón, lo tecleado en vuelo desaparece  [main 0]
+     2  tests/scrum1285-guardado-en-vuelo.test.mjs · SCRUM-1285 · oficina · si el guardado falla, la pantalla no se queda congelada  [main 0]
+     1  tests/scrum1473-latido-disco-y-barrido.test.mjs · SCRUM-1473 · 🔴 al barrer sólo se vacía el CONTENIDO de `tmp` de lo listado: `state.json`, lo de fuera de `tmp` y los de  [main 0]
+     1  tests/scrum643-zona-del-merchant.test.mjs · SCRUM-643 · 🔴 la DECISIÓN de qué zona usar vive en UN sitio  [main 0]
+     1  tests/scrum1350-latido.test.mjs · SCRUM-1378 · `leerTrabajos` no saca PR de `children`, y el lector de ramas es el del hook de cierre  [main 1]
+     1  tests/scrum411-exports-inalcanzables.test.mjs · SCRUM-411 · 🔴 CONTROL POSITIVO: los 190 de hoy, DECLARADOS, no hacen ruido  [main 0]
+     1  tests/scrum411-exports-inalcanzables.test.mjs · SCRUM-411 · 🔴 las categorías SUMAN el total: un censo cuyas partes no suman no es un censo  [main 0]
+     1  tests/scrum1452-gemelo-crudo.test.mjs · SCRUM-1452 · 🔴 TRINQUETE: ninguna entrada declarada ha BAJADO sin declararlo  [main 0]
+     1  tests/scrum921c-firma-con-respaldo-en-codigo.test.mjs · SCRUM-921c · el trinquete tampoco baja en silencio  [main 0]
+     1  tests/scrum475-schema-vs-sql.test.mjs · SCRUM-475 · el modelo de `schema.prisma` es el de la entrada de máster, línea a línea  [main 0]
+     1  tests/scrum1308-scripts-sin-nombre-de-test.test.mjs · SCRUM-1308 · 🔴 fuera de tests/ NINGÚN fichero se llama como un test (node --test lo ejecutaría)  [main 0]
+     1  tests/scrum1185-trinquete-sin-consumir.test.mjs · SCRUM-1185 · 🔴 ① ninguna pieza NUEVA construida y sin consumir (ni ciega sin clasificar)  [main 0]
+     1  tests/scrum1325b-expresiones-sobre-texto-de-persona.test.mjs · 🔴 SCRUM-1325 · ninguna expresión de src/ mira texto de persona sin normalizar, y ninguna está sin declarar  [main 0]
+     1  tests/scrum1325b-expresiones-sobre-texto-de-persona.test.mjs · 🔴 SCRUM-1325 · veneno en el fuente real: quitar `sinTildes(` de cada sitio arreglado da rojo  [main 0]
+     1  tests/scrum1325b-expresiones-sobre-texto-de-persona.test.mjs · 🔴 SCRUM-1325 · veneno en el fuente real: devolver la tilde al patrón, o colar una expresión nueva, da rojo  [main 0]
+     1  tests/scrum205-fallo-de-sellado-no-entrega.test.mjs · SCRUM-205 · ① un `sellado_fallido` registrado va atado a un estado que bloquea  [main 0]
+     1  tests/scrum289-censo-origen-factura.test.mjs · SCRUM-289 · todo sitio que ata una factura a su origen está CENSADO  [main 0]
+     1  tests/scrum411-exports-inalcanzables.test.mjs · SCRUM-411 · los módulos de dominio inalcanzables NO crecen  [main 0]
+     1  tests/scrum1093h-censo-fecha-sin-zona.test.mjs · SCRUM-1093h · 🔴 RATCHET: toda fila del censo real tiene una entrada en `USO`  [main 0]
+     1  tests/scrum728-seccion-critica-de-la-serie.test.mjs · SCRUM-728 · ③ ninguna transacción sube el timeout por su cuenta  [main 0]
+     1  tests/scrum1331-sin-red-se-dice.test.mjs · SCRUM-1331 · 🔴 el envoltorio dice al final qué rojos NO son un caso que falle, y no cambia el código de salida  [main 0]
+     1  tests/scrum719-el-suelo-de-los-doce.test.mjs · SCRUM-1395 · ② un test NUEVO no llama al filtro sin suelo (la lista de heredados no crece)  [main 0]
+     1  tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs · SCRUM-812 · 🔴 EL TRINQUETE del GUARD: la cobertura auto-declarada NO BAJA  [main 0]
+     1  tests/scrum1185-trinquete-sin-consumir.test.mjs · SCRUM-1185 · 🔴 ② una pieza declarada que YA SE CONSUME sale de la lista (a `retiradas`)  [main 0]
+     1  tests/scrum480-fin-de-linea.test.mjs · SCRUM-480 · 🔴 el ÁRBOL DE TRABAJO no tiene ni un `\r` — es lo que leen los guards  [main 0]
+     1  tests/scrum480-fin-de-linea.test.mjs · SCRUM-533 · 🔴 los ficheros que TOCA ESTA RAMA no llevan ni un CR en disco  [main 0]
+     1  tests/scrum745-comparar-por-identidad.test.mjs · SCRUM-745 · 🔴 una declaración INCOMPLETA se DENUNCIA, no se descarta en silencio  [main 0]
+     1  tests/scrum757-la-declaracion-que-nadie-lee.test.mjs · SCRUM-757 · ✅ POSITIVO: el ÁRBOL REAL sigue dando el mismo número, y CERO ilegibles  [main 0]
+     1  tests/scrum765-la-puerta-y-el-suelo.test.mjs · SCRUM-765 · el meta-guard ARRANCA de verdad al invocarlo por su ruta  [main 0]
+     1  tests/scrum836-ancla-de-mutacion-viva.test.mjs · SCRUM-836 · 🔴 NINGUNA mutación declarada tiene el ancla caducada  [main 0]
+     1  tests/scrum525d-anclas-que-apuntan.test.mjs · SCRUM-525d · 🔴 toda coordenada CON TESTIGO apunta a lo que dice  [main 0]
+     1  tests/scrum237-negacion-respaldada.test.mjs · SCRUM-237 · ninguna negación de la suite se queda SIN respaldo (NINGUNO = 0)  [main 0]
+     1  tests/scrum273-registro-por-fichero.test.mjs · SCRUM-273 · los ficheros de docs/master/ se llaman como su ticket  [main 0]
+     1  tests/scrum289-censo-origen-factura.test.mjs · SCRUM-289 · el censo no describe sitios que ya no existen (trinquete)  [main 0]
+     1  tests/scrum854-todo-merge-deja-entrada.test.mjs · SCRUM-854 · 🔴 ② esta rama, si toca código, trae su entrada de registro  [main 0]
+     1  tests/scrum808-el-arbol-que-queda-mutado.test.mjs · SCRUM-1179-B · trinquete: todo el que captura y devuelve lleva red, y los opacos == lo declarado  [main 0]
+     1  tests/scrum808-el-arbol-que-queda-mutado.test.mjs · SCRUM-1179-B · control POSITIVO y NEGATIVO de la parte ciega: reescribir lo leído sí; borrarlo, no  [main 0]
+     1  tests/scrum195-url-bd-sin-fuga.test.mjs · SCRUM-195 · ningún script parsea una URL donde su error pueda hablar  [main 0]
+     1  tests/scrum414-url-a-mano.test.mjs · SCRUM-414 · ningún `new URL` de scripts/ deja su error al alcance  [main 0]
+     1  tests/scrum1560-datos-de-muestra-con-forma.test.mjs · 🔴 en el banco: ninguna vista pide una ruta sin contrato, ni con NaN/undefined, ni pinta «undefined»  [main 0]
+     1  tests/scrum601-copy-del-documento-vs-flag.test.mjs · SCRUM-601 · el censo distingue DEPENDER DEL FLAG de estar en un ternario cualquiera  [main 0]
+     1  tests/scrum836-ancla-de-mutacion-viva.test.mjs · SCRUM-836d · 🔴 NINGUNA mutación declarada nombra un test que no existe  [main 0]
+     1  tests/scrum1344-arnes-de-prueba-con-rol.test.mjs · SCRUM-1344 · ⑦ «carga un router de /admin y no le arma ningún req de sesión» es lista cerrada  [main 0]
+     1  tests/scrum859-identidad-y-motivo-cerrado.test.mjs · SCRUM-859 · ✅ cada clave exenta apunta a UNA entrada real — una por una  [main 0]
+     1  tests/scrum409-fixtures-sin-merchant-demo.test.mjs · SCRUM-409 · ningún fixture usa el merchant DEMO salvo donde se prueba el demo  [main 0]
+     1  tests/scrum702-suelo-misma-poblacion.test.mjs · SCRUM-702 · 🔴 no entra NINGUNA dependencia del entorno nueva sin declararla  [main 0]
+     1  tests/scrum1516b-frontera-en-el-obligatorio.test.mjs · SCRUM-1516b · 🔴 eje del ROL: lo que un Técnico recibe igual que el administrador es exactamente lo declarado  [main 0]
+     1  tests/scrum192-borrado-merchant.test.mjs · SCRUM-192 · el orden no inventa modelos que el schema no tiene  [main 0]
+     1  tests/scrum244-supresion-y-anonimizado.test.mjs · SCRUM-244 · CONTRA POSTGRES: se anonimiza, la ANOTACIÓN sobrevive y la CADENA verifica  [main 0]
+     1  tests/scrum314-wipedemo-derivado.test.mjs · SCRUM-314 · CONTROL: ningún borrado sale sin filtro del demo  [main 0]
+     1  tests/scrum914-equipos-borrado-y-anonimizado.test.mjs · SCRUM-914 · CONTRA POSTGRES: un comercio con equipos SE BORRA entero, sin errores  [main 0]
+     1  tests/scrum914-equipos-borrado-y-anonimizado.test.mjs · SCRUM-914 · CONTRA POSTGRES: se anonimizan nombre y nº de serie, y lo demás del equipo sigue INTACTO  [main 0]
+     1  tests/scrum1456-ids-que-no-caben-en-la-columna.test.mjs · SCRUM-1456 · DELETE customers /:id · `id` (params) · 🔴 un id que no cabe en la columna → 400, sin tocar la base  [main 0]
+     1  tests/scrum1456-ids-que-no-caben-en-la-columna.test.mjs · SCRUM-1456 · POST customers /:id/fusionar · `id` (params) · 🔴 un id que no cabe en la columna → 400, sin tocar   [main 0]
+     1  tests/scrum1456-ids-que-no-caben-en-la-columna.test.mjs · SCRUM-1456 · POST customers /:id/fusionar · `con` (body) · 🔴 un id que no cabe en la columna → 400, sin tocar l  [main 0]
+     1  tests/scrum1455b-un-decimal-no-llega-a-otra-factura.test.mjs · SCRUM-1455b · PUT /admin/invoices /:id/status · 🔴 un id decimal → 400, y ninguna consulta recibe un decima  [main 0]
+     1  tests/scrum1455b-un-decimal-no-llega-a-otra-factura.test.mjs · SCRUM-1455b · POST /admin/invoices /:id/pay · 🔴 un id decimal → 400, y ninguna consulta recibe un decimal  [main 0]
+     1  tests/scrum1455b-un-decimal-no-llega-a-otra-factura.test.mjs · SCRUM-1455b · POST /admin/invoices /:id/unpay · 🔴 un id decimal → 400, y ninguna consulta recibe un decima  [main 0]
+     1  tests/scrum1455b-un-decimal-no-llega-a-otra-factura.test.mjs · SCRUM-1455b · POST /admin/invoices /:id/send-email · 🔴 un id decimal → 400, y ninguna consulta recibe un d  [main 0]
+     1  tests/scrum1455b-un-decimal-no-llega-a-otra-factura.test.mjs · SCRUM-1455b · POST /admin/invoices /:id/annul · 🔴 un id decimal → 400, y ninguna consulta recibe un decima  [main 0]
+     1  tests/scrum1455b-un-decimal-no-llega-a-otra-factura.test.mjs · SCRUM-1455b · POST /admin/invoices /:id/rectify · 🔴 un id decimal → 400, y ninguna consulta recibe un deci  [main 0]
+     1  tests/scrum1455b-un-decimal-no-llega-a-otra-factura.test.mjs · SCRUM-1455b · POST /admin/invoices /:id/regenerate-pdf · 🔴 un id decimal → 400, y ninguna consulta recibe   [main 0]
+   sin caso que caiga (el rojo es de otro paso, o no hay tanda):
+    10  COLGADA · TANDA SIN VEREDICTO, y sin resumen
+   control de la suma (pass+fail+skipped+cancelled+todo = tests): 175 de 175 cuadran
+
+② A8.4 (tests/bot-suite.test.mjs): 5 rojos
+   2026-10-13T07:37:22Z · push · main · 9358f02b1 · run 38363823572 · job 115185474035 · intento 1 · 1 caídos en esa tanda · saltos 93 · 16037.779008 ms
+      A8.4: suite completa del bot (webhook + dry-run) ¦ AssertionError [ERR_ASSERTION]: sesión en handoff (registro BO A8.3) ¦ 'menu' !== 'handoff' ¦ at file:///home/runner/work/cobroflash-backend/cobroflash-backend/tests/bot-suite.test.mjs:333:14 ¦ at async withMerchant (file:///home/runner/work/cobroflash-backend/cobroflash-backend/tests/_merchant-fixt
+   2026-10-13T11:24:50Z · pull_request · scrum-1339p-el-27-por-ciento-del-metaguard · 73a7e5bb5 · run 38390036398 · job 115271284880 · intento 1 · 1 caídos en esa tanda · saltos 89 · 15960.649608 ms
+      A8.4: suite completa del bot (webhook + dry-run) ¦ AssertionError [ERR_ASSERTION]: sesión en handoff (registro BO A8.3) ¦ 'menu' !== 'handoff' ¦ at file:///home/runner/work/cobroflash-backend/cobroflash-backend/tests/bot-suite.test.mjs:333:14 ¦ at async withMerchant (file:///home/runner/work/cobroflash-backend/cobroflash-backend/tests/_merchant-fixt
+   2026-10-13T13:57:53Z · pull_request · scrum-1357b-parados-por-sesion · b3cb0295e · run 38409305251 · job 115337104180 · intento 1 · 1 caídos en esa tanda · saltos 89 · 15967.371217 ms
+      A8.4: suite completa del bot (webhook + dry-run) ¦ AssertionError [ERR_ASSERTION]: sesión en handoff (registro BO A8.3) ¦ 'menu' !== 'handoff' ¦ at file:///home/runner/work/cobroflash-backend/cobroflash-backend/tests/bot-suite.test.mjs:333:14 ¦ at async withMerchant (file:///home/runner/work/cobroflash-backend/cobroflash-backend/tests/_merchant-fixt
+   2026-10-13T15:42:25Z · push · main · 055648dc3 · run 38424352986 · job 115391241077 · intento 1 · 1 caídos en esa tanda · saltos 89 · 16404.210352 ms
+      A8.4: suite completa del bot (webhook + dry-run) ¦ AssertionError [ERR_ASSERTION]: sesión en handoff (registro BO A8.3) ¦ 'menu' !== 'handoff' ¦ at file:///home/runner/work/cobroflash-backend/cobroflash-backend/tests/bot-suite.test.mjs:333:14 ¦ at async withMerchant (file:///home/runner/work/cobroflash-backend/cobroflash-backend/tests/_merchant-fixt
+   2026-10-21T12:29:59Z · pull_request · scrum-1509h-veinte-por-hora · 5bc9a9a15 · run 39600073687 · job 119222039233 · intento 1 · 1 caídos en esa tanda · saltos 89 · 19428.443127 ms
+      A8.4: suite completa del bot (webhook + dry-run) ¦ NoMedido: NO MEDIDO · se esperaba «26 mensaje(s) en el buzon» y el techo de 6000 ms venció sin que llegara. ¦ Ese número es HASTA DÓNDE SE MIRÓ, no lo que tardó: lo que habría tardado no lo sabe ¦ nadie, porque se dejó de mirar. ¦ 🔴 Esto NO es «no ha pasado nada»: es que no se ha llegado a comproba
+
+③ trinquete de zona cortado a ≥ 40 min: 23
+   2026-10-06T14:02:04Z · push · main · ee4331a46 · job 112314349590 · 2720 s · acabó: Pacific/Kiritimati 10561 pruebas · 310 s · colgada en la 2.ª zona · huérfanos 5 (2839) (npm run trinquete:zona, 2850) (sh, 2851) (MainThread, 31316) (MainThread, 43432) (MainThread)
+   2026-10-06T14:26:18Z · pull_request · scrum-1472-fecha-impresa-zona-del-negoci · 8739fd455 · job 112322386599 · 2720 s · acabó: Pacific/Kiritimati 10610 pruebas · 371 s · colgada en la 2.ª zona · huérfanos 5 (2857) (npm run trinquete:zona, 2868) (sh, 2869) (MainThread, 31280) (MainThread, 43404) (MainThread)
+   2026-10-06T17:10:40Z · pull_request · scrum-1295-carriles-e-identidad · 9f3a096a2 · job 112399408709 · 2719 s · acabó: Pacific/Kiritimati 10629 pruebas · 300 s · colgada en la 2.ª zona · huérfanos 5 (2870) (npm run trinquete:zona, 2881) (sh, 2882) (MainThread, 31267) (MainThread, 43498) (MainThread)
+   2026-10-06T17:33:44Z · pull_request · scrum-1480b-filas-de-scripts-de-workflow · 7dd0f1ecc · job 112409588333 · 2751 s · acabó: ninguna · colgada en la 1.ª zona · huérfanos 5 (2830) (npm run trinquete:zona, 2841) (sh, 2842) (MainThread, 2886) (MainThread, 14580) (MainThread)
+   2026-10-06T18:21:22Z · push · main · 317c0bab5 · job 112432961307 · 2717 s · acabó: Pacific/Kiritimati 10721 pruebas · 493 s · colgada en la 2.ª zona · huérfanos 5 (3084) (npm run trinquete:zona, 3095) (sh, 3096) (MainThread, 32580) (MainThread, 47210) (MainThread)
+   2026-10-06T18:30:16Z · pull_request · scrum-1295-carriles-e-identidad · 6ca10013f · job 112434587039 · 2751 s · acabó: Pacific/Kiritimati 10719 pruebas · 310 s · colgada en la 2.ª zona · huérfanos 5 (2813) (npm run trinquete:zona, 2824) (sh, 2825) (MainThread, 31631) (MainThread, 43994) (MainThread)
+   2026-10-06T19:39:34Z · push · main · 282225174 · job 112472123426 · 2718 s · acabó: Pacific/Kiritimati 10725 pruebas · 309 s · colgada en la 2.ª zona · huérfanos 5 (2857) (npm run trinquete:zona, 2868) (sh, 2869) (MainThread, 31976) (MainThread, 46248) (MainThread)
+   2026-10-07T15:29:16Z · pull_request · scrum-1184b-ventana-de-firma-declarada · a3715ea79 · job 112870964892 · 2718 s · acabó: ninguna · colgada en la 1.ª zona · huérfanos 5 (2868) (npm run trinquete:zona, 2879) (sh, 2880) (MainThread, 2926) (MainThread, 15149) (MainThread)
+   2026-10-07T15:42:52Z · pull_request · scrum-1484c-la-a19-dice-que-el-latido-av · 5d6214c92 · job 112877412968 · 2720 s · acabó: Pacific/Kiritimati 10805 pruebas · 381 s · colgada en la 2.ª zona · huérfanos 5 (2852) (npm run trinquete:zona, 2863) (sh, 2864) (MainThread, 32050) (MainThread, 44723) (MainThread)
+   2026-10-07T15:55:33Z · pull_request · scrum-1496-censo-de-abiertos-tres-hechos · e5d93571a · job 112883431831 · 2719 s · acabó: Pacific/Kiritimati 10860 pruebas · 496 s · colgada en la 2.ª zona · huérfanos 5 (3080) (npm run trinquete:zona, 3091) (sh, 3092) (MainThread, 32753) (MainThread, 45740) (MainThread)
+   2026-10-07T16:45:56Z · pull_request · scrum-1498-la-cola-la-retiene-el-job-mas · b54082075 · job 112906404262 · 2718 s · acabó: ninguna · colgada en la 1.ª zona · huérfanos 5 (2819) (npm run trinquete:zona, 2830) (sh, 2831) (MainThread, 2877) (MainThread, 15161) (MainThread)
+   2026-10-07T16:46:21Z · pull_request · scrum-1449-cuando-sale-cada-frase · cf1d3cc70 · job 112906587066 · 2721 s · acabó: ninguna · colgada en la 1.ª zona · huérfanos 5 (2855) (npm run trinquete:zona, 2866) (sh, 2867) (MainThread, 2913) (MainThread, 15338) (MainThread)
+   2026-10-07T17:40:57Z · push · main · 58fb1028b · job 112931567843 · 2718 s · acabó: ninguna · colgada en la 1.ª zona · huérfanos 5 (2852) (npm run trinquete:zona, 2863) (sh, 2864) (MainThread, 2912) (MainThread, 15491) (MainThread)
+   2026-10-07T23:41:42Z · push · main · edfbd86e7 · job 113072953269 · 2716 s · acabó: Pacific/Kiritimati 10975 pruebas · 305 s · colgada en la 2.ª zona · huérfanos 5 (3007) (npm run trinquete:zona, 3018) (sh, 3019) (MainThread, 32503) (MainThread, 38663) (MainThread)
+   2026-10-08T01:14:17Z · pull_request · scrum-1396-censo-mkdtemp-por-variable · 3a2d51f47 · job 113099496505 · 2717 s · acabó: Pacific/Kiritimati 10994 pruebas · 340 s · colgada en la 2.ª zona · huérfanos 5 (2811) (npm run trinquete:zona, 2822) (sh, 2823) (MainThread, 32186) (MainThread, 46709) (MainThread)
+   2026-10-08T02:20:14Z · pull_request · scrum-1509e-el-tope-de-la-ruta-manual · 2c74d2a07 · job 113116942063 · 2717 s · acabó: ninguna · colgada en la 1.ª zona · huérfanos 5 (3030) (npm run trinquete:zona, 3041) (sh, 3042) (MainThread, 3088) (MainThread, 17634) (MainThread)
+   2026-10-08T08:01:18Z · pull_request · scrum-1514b-el-unico-cruce-real · aa01a6500 · job 113211022541 · 2720 s · acabó: Pacific/Kiritimati 11004 pruebas · 523 s · colgada en la 2.ª zona · huérfanos 5 (3023) (npm run trinquete:zona, 3034) (sh, 3035) (MainThread, 33109) (MainThread, 46369) (MainThread)
+   2026-10-08T08:28:24Z · pull_request · scrum-1514c-las-veinticinco-sin-medir · 52703e030 · job 113220808757 · 2719 s · acabó: ninguna · colgada en la 1.ª zona · huérfanos 5 (2822) (npm run trinquete:zona, 2833) (sh, 2834) (MainThread, 2880) (MainThread, 15579) (MainThread)
+   2026-10-08T08:34:43Z · pull_request · scrum-1339m-los-dieciocho-nombres-ausent · 883acb86d · job 113223120653 · 2718 s · acabó: ninguna · colgada en la 1.ª zona · huérfanos 5 (3060) (npm run trinquete:zona, 3071) (sh, 3072) (MainThread, 3118) (MainThread, 15799) (MainThread)
+   2026-10-08T09:34:29Z · pull_request · scrum-1513d-el-cerrojo-del-tope · 4e255d2cd · job 113246394407 · 2644 s · acabó: Pacific/Kiritimati 11010 pruebas · 371 s · colgada en la 2.ª zona · huérfanos 5 (2847) (npm run trinquete:zona, 2858) (sh, 2859) (MainThread, 32552) (MainThread, 45620) (MainThread)
+   2026-10-13T00:08:22Z · pull_request · scrum-1522-el-dia-del-tope · 8af81ea26 · job 115063884464 · 2718 s · acabó: ninguna · colgada en la 1.ª zona · huérfanos 5 (2926) (npm run trinquete:zona, 2937) (sh, 2938) (MainThread, 2987) (MainThread, 15759) (MainThread)
+   2026-10-13T07:26:43Z · pull_request · scrum-1532-cancelar-un-cobro · 4c83fe47e · job 115180372568 · 2719 s · acabó: Pacific/Kiritimati 11102 pruebas · 403 s · colgada en la 2.ª zona · huérfanos 5 (2859) (npm run trinquete:zona, 2870) (sh, 2871) (MainThread, 32838) (MainThread, 46179) (MainThread)
+   2026-10-14T08:57:18Z · pull_request · scrum-1527d-reproduce-hoy · 63bf5f803 · job 115768210763 · 2719 s · acabó: ninguna · colgada en la 1.ª zona · huérfanos 5 (2923) (npm run trinquete:zona, 2934) (sh, 2935) (MainThread, 2983) (MainThread, 18057) (MainThread)
+   en qué zona estaba: la 2.ª zona 13 · la 1.ª zona 10
+   control: 10 verdes · Pacific/Kiritimati 11933 pruebas · 561 s + Pacific/Midway 11901 pruebas · 564 s | Pacific/Kiritimati 11898 pruebas · 465 s + Pacific/Midway 11936 pruebas · 464 s | Pacific/Kiritimati 11942 pruebas · 514 s + Pacific/Midway 11893 pruebas · 500 s | Pacific/Kiritimati 11945 pruebas · 534 s + Pacific/Midway 11918 pruebas · 539 s | Pacific/Kiritimati 11910 pruebas · 474 s + Pacific/Midway 11930 pruebas · 479 s | Pacific/Kiritimati 11907 pruebas · 624 s + Pacific/Midway 11939 pruebas · 629 s | Pacific/Kiritimati 11953 pruebas · 605 s + Pacific/Midway 11953 pruebas · 607 s | Pacific/Kiritimati 11959 pruebas · 582 s + Pacific/Midway 11932 pruebas · 590 s | Pacific/Kiritimati 11956 pruebas · 601 s + Pacific/Midway 11957 pruebas · 603 s | Pacific/Kiritimati 11959 pruebas · 623 s + Pacific/Midway 11959 pruebas · 619 s
+
+④ meta-guard cortado a ≥ 29 min: 128 · con resumen «vivas … mudas»: 0
+   líneas juzgadas al cortarse: de 522 a 607 · ficheros: de 140 a 159
+   último fichero juzgado al cortarse (los 8 más frecuentes):
+    72  scrum959b-el-arranque-no-duplica-el-equipo.test.mjs
+    19  scrum954-vivo-no-es-listado.test.mjs
+    15  scrum951a-equipo-configurable.test.mjs
+    14  scrum976-guards-entrada-con-techo.test.mjs
+     3  scrum951d-ensayo-instalacion.test.mjs
+     2  scrum949-el-suelo-como-cociente.test.mjs
+     1  scrum996d-a1-no-regenera-a-ciegas.test.mjs
+     1  scrum899d-aviso-de-uso.test.mjs
+   control: 10 verdes · líneas juzgadas de 615 a 623 · ficheros de 161 a 163 · segundos de 1436 a 1768 · con resumen 10
+
+POBLACIÓN · logs leídos 356 de 356 · siembra 6 de 6
+EXIT=0

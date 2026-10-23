@@ -98,10 +98,13 @@ const sistema = {
   nombreSistema: 'YaQu',
   idSistema: productor.VERIFACTU_ID_SISTEMA,
   version: productor.VERIFACTU_VERSION,
-  numeroInstalacion: productor.VERIFACTU_NUM_INSTALACION,
+  // SCRUM-524g: el «1» global salió de `productor.ts` (cada comercio lleva su id). Aquí se queda
+  // «1» ESCRITO, a propósito: estos sobres se suben a mano al entorno de PRUEBAS con el NIF del
+  // titular, y cambiarle el número partiría la identidad del SIF de pruebas que ya consta allí.
+  numeroInstalacion: '1',
   soloVerifactu: 'S',
   multiOT: 'S',
-  indicadorMultiplesOT: 'S',
+  indicadorMultiplesOT: 'N', // SCRUM-524g: una sola facturación por usuario → N (FAQ AEAT v1.3, apdo. 4)
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════════

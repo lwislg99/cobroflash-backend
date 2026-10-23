@@ -7,8 +7,12 @@
 //   ② 🔴 EL POSITIVO .. un TAP completo no lleva NINGÚN aviso. Es el que puede tumbar la señal: una
 //                      que avisa sobre tandas sanas se apaga sola a las dos semanas.
 //   ③ LA LÍNEA ....... sale SIEMPRE, con su población: con 0, con ausentes y sin poder medir.
-//   ④ EL GUION ....... sale 0 pase lo que pase —TAP ausente, JSON inválido, su propio módulo
+//   ④ EL GUION ....... sale 2 cuando NO PUEDE MEDIR —TAP ausente, TAP vacío, su propio módulo
 //                      borrado— y DICE que no pudo medir. Un catch que se calla es un CIEGO.
+//                      Con UN nombre ausente medido sale 1 (SCRUM-1339t, c.20228): eso ya no avisa, bloquea.
+//                      Hasta SCRUM-1339v el ciego salía 0 (c.17954); desde la decisión (b) de c.20282
+//                      sale 2, el «no supe medir» de `_hallazgos-y-ciegos.mjs`. `--tasa` sale SIEMPRE 0,
+//                      también cuando no puede leer sus registros: la corre quien revisa, no el CI.
 //
 // Aquí todo es FABRICADO: fuentes y TAP escritos a mano, con la respuesta sabida. La pasada sobre
 // los TAP de verdad (114 artefactos del CI, cada uno contra el árbol que probó su job) y el cruce
@@ -25,6 +29,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { temporal } from './_temporal.mjs';
+import { SALIDA_NO_SUPE_MEDIR } from '../scripts/_hallazgos-y-ciegos.mjs';
 import { testsDeclarados, testsDeclaradosEn } from './_poblacion-de-tests.mjs';
 import {
   escaparComoTap, llamadasDeclaradas, declaradosDelArbol, leerTap, senalDeNombres, describirBloque,
@@ -74,7 +79,35 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     fichero: 'scripts/senal-de-nombres.mjs',
     de: '  noPudeMedir(`el guion reventó: ${unaLinea(e)}`);',
     a: '  void e; // el catch se calla, a proposito',
-    cae: 'SCRUM-1339d · ④ 🔴 EL GUION ROTO A PROPÓSITO sale 0 y DICE que no pudo medir: nunca calla y nunca tumba el job',
+    cae: 'SCRUM-1339v · ④ 🔴 EL GUION ROTO A PROPÓSITO sale 2 y DICE que no pudo medir; con --tasa sale 0: nunca calla',
+  },
+  {
+    // el umbral sube de 0 a 1 en silencio: un ausente suelto vuelve a pasar (SCRUM-1339t, c.20228)
+    fichero: 'scripts/senal-de-nombres.mjs',
+    de: '  if (r.medible === true && r.ausentes > 0) salida = 1;',
+    a: '  if (r.medible === true && r.ausentes > 1) salida = 1; // tolera uno, a proposito',
+    cae: 'SCRUM-1339t · UN SOLO nombre ausente basta para que el guion salga 1; con cero sale 0',
+  },
+  {
+    // el ciego vuelve a salir 0: «no pude medir» deja de bloquear (SCRUM-1339v, c.20282)
+    fichero: 'scripts/senal-de-nombres.mjs',
+    de: '  salida = EN_TASA ? 0 : SALIDA_NO_PUDE_MEDIR;',
+    a: '  salida = 0; // el ciego sale 0 otra vez, a proposito',
+    cae: 'SCRUM-1339v · ④ 🔴 EL GUION ROTO A PROPÓSITO sale 2 y DICE que no pudo medir; con --tasa sale 0: nunca calla',
+  },
+  {
+    // el ciego que dice el MÓDULO (TAP vacío o cortado) sale 0 aunque el del guion salga 2
+    fichero: 'scripts/senal-de-nombres.mjs',
+    de: '  if (r.medible !== true) salida = SALIDA_NO_PUDE_MEDIR;',
+    a: '  if (r.medible !== true && false) salida = SALIDA_NO_PUDE_MEDIR; // el ciego del modulo sale 0, a proposito',
+    cae: 'SCRUM-1339v · ④ 🔴 EL GUION ROTO A PROPÓSITO sale 2 y DICE que no pudo medir; con --tasa sale 0: nunca calla',
+  },
+  {
+    // la tasa también bloquea: quien revisa desde fuera recibe un 2
+    fichero: 'scripts/senal-de-nombres.mjs',
+    de: "const EN_TASA = process.argv.slice(2).includes('--tasa');",
+    a: 'const EN_TASA = false; // la tasa tambien bloquea, a proposito',
+    cae: 'SCRUM-1339v · ④ 🔴 EL GUION ROTO A PROPÓSITO sale 2 y DICE que no pudo medir; con --tasa sale 0: nunca calla',
   },
 ];
 
@@ -528,7 +561,7 @@ function correr(guion, args, resumen = null) {
 }
 const avisosDe = (texto) => texto.split(NL).filter((l) => l.startsWith('::warning'));
 
-test('SCRUM-1339d · EL GUION, de punta a punta sobre un árbol fabricado: anota el rojo, calla en el completo, y sale 0 las dos veces', () => {
+test('SCRUM-1339d · EL GUION, de punta a punta sobre un árbol fabricado: anota el rojo y sale 1, calla en el completo y sale 0', () => {
   // un árbol de mentira con `tests/a.test.mjs` (los seis) y un TAP al que le falta la cola
   const rojo = temporal('scrum1339d-rojo-');
   fs.mkdirSync(path.join(rojo, 'tests'));
@@ -538,7 +571,7 @@ test('SCRUM-1339d · EL GUION, de punta a punta sobre un árbol fabricado: anota
   const resumen = path.join(rojo, 'resumen.md');
 
   const r = correr(GUION, [tapRojo, '--raiz', rojo], resumen);
-  assert.equal(r.salida, 0, 'avisar es anotar, no fallar');
+  assert.equal(r.salida, 1, 'con ausentes la señal BLOQUEA (SCRUM-1339 c.20228, opción a)');
   assert.match(r.texto, /^\[señal de nombres v1\] medible=si ausentes=3 ficheros_con_ausentes=1 /m);
   assert.match(r.texto, /^::notice title=señal de nombres · FALTAN al menos 3 en 1 fichero\(s\)::\[señal de nombres v1\] medible=si ausentes=3 /m);
   assert.equal(avisosDe(r.texto).length, 1);
@@ -559,7 +592,28 @@ test('SCRUM-1339d · EL GUION, de punta a punta sobre un árbol fabricado: anota
   assert.match(c.texto, /Los 6 nombres literales que el árbol declara están en el TAP/);
 });
 
-test('SCRUM-1339d · ④ 🔴 EL GUION ROTO A PROPÓSITO sale 0 y DICE que no pudo medir: nunca calla y nunca tumba el job', () => {
+// SCRUM-1339t · el umbral es 0 (c.20228): derivado de los 71 obligatorios con ausentes=0 desde 1405c,
+// y re-medido sobre 64 jobs de «build + tests» (19-oct → 22-oct), los 64 con ausentes=0. Así que
+// UNO solo basta, y el borde se prueba con uno, no con tres: con tres, `> 2` también pasaría.
+test('SCRUM-1339t · UN SOLO nombre ausente basta para que el guion salga 1; con cero sale 0', () => {
+  const raiz = temporal('scrum1339t-uno-');
+  fs.mkdirSync(path.join(raiz, 'tests'));
+  fs.writeFileSync(path.join(raiz, 'tests', 'a.test.mjs'), FUENTE_SEIS);
+  const tapUno = path.join(raiz, 'uno.tap');
+  fs.writeFileSync(tapUno, tap(SEIS.slice(0, 5)));
+  const tapCero = path.join(raiz, 'cero.tap');
+  fs.writeFileSync(tapCero, tap(SEIS));
+
+  const uno = correr(GUION, [tapUno, '--raiz', raiz]);
+  assert.match(uno.texto, /^\[señal de nombres v1\] medible=si ausentes=1 ficheros_con_ausentes=1 /m, 'la siembra no dio UN ausente');
+  assert.equal(uno.salida, 1, `con 1 ausente tiene que salir 1 y salió ${uno.salida}`);
+
+  const cero = correr(GUION, [tapCero, '--raiz', raiz]);
+  assert.match(cero.texto, /^\[señal de nombres v1\] medible=si ausentes=0 /m);
+  assert.equal(cero.salida, 0);
+});
+
+test('SCRUM-1339v · ④ 🔴 EL GUION ROTO A PROPÓSITO sale 2 y DICE que no pudo medir; con --tasa sale 0: nunca calla', () => {
   const raiz = temporal('scrum1339d-roto-');
   fs.mkdirSync(path.join(raiz, 'tests'));
   fs.writeFileSync(path.join(raiz, 'tests', 'a.test.mjs'), FUENTE_SEIS);
@@ -578,20 +632,27 @@ test('SCRUM-1339d · ④ 🔴 EL GUION ROTO A PROPÓSITO sale 0 y DICE que no pu
   const guionSolo = path.join(huerfano, 'scripts', 'senal-de-nombres.mjs');
   fs.copyFileSync(GUION, guionSolo);
 
+  // [caso, guion, args, lo que dice, la salida]. La salida del ciego es la de la casa (SALIDA_NO_SUPE_MEDIR,
+  // SCRUM-1320), importada y no escrita: si alguien la mueve allí, esto lo ve aquí.
+  const CIEGO = SALIDA_NO_SUPE_MEDIR;
   const ROTOS = [
-    ['sin argumentos', GUION, [], /NO PUDE MEDIR: falta la ruta del TAP/],
-    ['el TAP no existe', GUION, [path.join(raiz, 'no-existe.tap'), '--raiz', raiz], /NO PUDE MEDIR: no pude leer el TAP/],
-    ['la raíz no tiene tests/', GUION, [rutaTap, '--raiz', path.join(raiz, 'no-existe')], /NO PUDE MEDIR: el guion reventó: ENOENT/],
-    ['el TAP es una carpeta', GUION, [raiz, '--raiz', raiz], /NO PUDE MEDIR: no pude leer el TAP/],
-    ['el TAP está vacío', GUION, [tapVacio, '--raiz', raiz], /NO PUDE MEDIR: el TAP está vacío/],
-    ['--tasa con JSON inválido', GUION, ['--tasa', registrosRotos], /NO PUDE MEDIR: no pude leer los registros/],
-    ['--tasa con algo que no es una lista', GUION, ['--tasa', noEsLista], /NO PUDE MEDIR: los registros de .* no son una lista/],
-    ['--tasa sin fichero', GUION, ['--tasa'], /NO PUDE MEDIR: no pude leer los registros/],
-    ['el módulo puro NO ESTÁ', guionSolo, [rutaTap, '--raiz', raiz], /NO PUDE MEDIR: el guion reventó: Cannot find module/],
+    ['sin argumentos', GUION, [], /NO PUDE MEDIR: falta la ruta del TAP/, CIEGO],
+    ['el TAP no existe', GUION, [path.join(raiz, 'no-existe.tap'), '--raiz', raiz], /NO PUDE MEDIR: no pude leer el TAP/, CIEGO],
+    ['la raíz no tiene tests/', GUION, [rutaTap, '--raiz', path.join(raiz, 'no-existe')], /NO PUDE MEDIR: el guion reventó: ENOENT/, CIEGO],
+    ['el TAP es una carpeta', GUION, [raiz, '--raiz', raiz], /NO PUDE MEDIR: no pude leer el TAP/, CIEGO],
+    ['el TAP está vacío', GUION, [tapVacio, '--raiz', raiz], /NO PUDE MEDIR: el TAP está vacío/, CIEGO],
+    ['--tasa con JSON inválido', GUION, ['--tasa', registrosRotos], /NO PUDE MEDIR: no pude leer los registros/, 0],
+    ['--tasa con algo que no es una lista', GUION, ['--tasa', noEsLista], /NO PUDE MEDIR: los registros de .* no son una lista/, 0],
+    ['--tasa sin fichero', GUION, ['--tasa'], /NO PUDE MEDIR: no pude leer los registros/, 0],
+    ['el módulo puro NO ESTÁ', guionSolo, [rutaTap, '--raiz', raiz], /NO PUDE MEDIR: el guion reventó: Cannot find module/, CIEGO],
+    ['--tasa con el módulo puro que NO ESTÁ', guionSolo, ['--tasa', registrosRotos], /NO PUDE MEDIR: el guion reventó: Cannot find module/, 0],
   ];
-  for (const [caso, guion, args, dice] of ROTOS) {
+  assert.equal(CIEGO, 2, 'el «no supe medir» de la casa dejó de ser 2: lee SCRUM-1320 antes de seguir');
+  // control de la población: hay de los dos, y los dos caminos (`medir` y `--tasa`) pasan por el módulo ausente
+  assert.deepEqual([ROTOS.filter((x) => x[4] === CIEGO).length, ROTOS.filter((x) => x[4] === 0).length], [6, 4]);
+  for (const [caso, guion, args, dice, espera] of ROTOS) {
     const r = correr(guion, args);
-    assert.equal(r.salida, 0, `«${caso}» tiene que salir 0 y salió ${r.salida}: ${r.texto.slice(0, 300)}`);
+    assert.equal(r.salida, espera, `«${caso}» tiene que salir ${espera} y salió ${r.salida}: ${r.texto.slice(0, 300)}`);
     assert.match(r.texto, dice, `«${caso}» no dijo qué le pasó`);
     assert.equal(avisosDe(r.texto).filter((l) => l.startsWith('::warning title=señal de nombres · NO PUDE MEDIR::')).length, 1, `«${caso}» no dejó su aviso en el run`);
     assert.equal(r.texto.split(NL).filter((l) => /^\[señal de nombres v1\] medible=si /.test(l)).length, 0, `«${caso}» no puede salir como medido`);

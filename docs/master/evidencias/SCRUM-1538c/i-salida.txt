@@ -1,0 +1,27 @@
+SIEMBRA OK · reparto de 3 líneas fabricadas
+primeros: 10 verdes (2026-10-06T13:47:41Z → 2026-10-07T15:58:17Z) · leídos 10 · ficheros juzgados 139 · paso meta:mutaciones de 1017 a 1366 s, media 1233 s
+ultimos: 10 verdes (2026-10-19T12:13:35Z → 2026-10-21T13:17:08Z) · leídos 10 · ficheros juzgados 163 · paso meta:mutaciones de 1404 a 1732 s, media 1595 s
+ficheros que ENTRAN en el meta-guard: 24 · suman 205 s de media
+   +  90 s  scrum710b-anclaje-por-identidad.test.mjs
+   +  20 s  scrum1503c-el-lector-ve-el-caminante.test.mjs
+   +   9 s  scrum1330-una-sellada-no-se-resella.test.mjs
+   +   9 s  scrum1257e-modo-en-ajustes-tres-modos.test.mjs
+   +   8 s  scrum1536b-los-tres-estados-de-los-guiones.test.mjs
+   +   8 s  scrum1540-borrables-por-la-punta-viva.test.mjs
+   +   8 s  scrum1542c-el-hueco-se-fecha-por-entrada.test.mjs
+   +   7 s  scrum1298b-latido-arbol-de-arranque.test.mjs
+   +   6 s  scrum1302p-el-aviso-antes-de-crear-la-revision.test.mjs
+   +   5 s  scrum1302m-el-total-y-la-leyenda.test.mjs
+   +   4 s  scrum1387-banco-nuevo-va-al-catalogo.test.mjs
+   +   4 s  scrum1509h-veinte-entrantes-por-hora.test.mjs
+ficheros que SALEN: 0 · suman 0 s
+ficheros en los dos: 139 · su diferencia suma 157 s · los 8 que más crecen:
+   + 254 s  scrum813-trinquete-de-zona.test.mjs  (29 → 284)
+   +  10 s  scrum1331-sin-red-se-dice.test.mjs  (5 → 15)
+   +   6 s  scrum1485-censo-rutas-de-maquina.test.mjs  (5 → 11)
+   +   6 s  scrum1486-insertbefore-del-banco.test.mjs  (5 → 11)
+   +   3 s  scrum1367-sembrar-casos.test.mjs  (4 → 7)
+   +   3 s  scrum1343-un-hijo-que-no-arranca-es-ciego.test.mjs  (11 → 13)
+   +   2 s  scrum899d-aviso-de-uso.test.mjs  (3 → 5)
+   +   2 s  scrum1458-vigia-main-parado.test.mjs  (4 → 6)
+EXIT=0

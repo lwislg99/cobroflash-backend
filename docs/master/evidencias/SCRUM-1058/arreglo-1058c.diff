@@ -1,0 +1,134 @@
+diff --git a/src/modules/fiscal/librosAeat/librosAeat.repo.ts b/src/modules/fiscal/librosAeat/librosAeat.repo.ts
+index bfb5df326..629b049ed 100644
+--- a/src/modules/fiscal/librosAeat/librosAeat.repo.ts
++++ b/src/modules/fiscal/librosAeat/librosAeat.repo.ts
+@@ -20,6 +20,8 @@ import {
+ } from './librosAeat';
+ import { criterioDelMerchantParaElLibro } from '../../invoicing/domain/criterioDelMerchant'; // SCRUM-294 fase C
+ import { nombreParaDocumento } from '../../../core/documentos/nombreParaDocumento'; // SCRUM-577
++import { clienteDelDocumento } from '../../invoicing/domain/clienteCongelado'; // SCRUM-1058c
++import type { AsientoLibro } from '../../invoicing/domain/libroRegistro';
+ 
+ export interface ClienteDeLibros extends ClienteDelLibro {
+   customer: { findMany(args: any): Promise<any[]> };
+@@ -53,18 +55,27 @@ export async function leerLibroExpedidasDelTrimestre(
+     where: { merchantId, id: { in: ids } },
+     select: { id: true, name: true, legalName: true, taxId: true },
+   });
++  const fichas = new Map<number, any>(clientes.map((c: any) => [c.id, c]));
+ 
+-  const destinatarios = new Map<number, DatosDestinatario>(
+-    clientes.map((c: any) => [c.id, {
+-      // La razón social manda sobre el nombre comercial: en un libro identifica a quien factura.
+-      // SCRUM-577: el criterio sale del SITIO UNICO. Mismo resultado que antes; el respaldo
+-      // sigue siendo `null`, que es lo que este libro esperaba.
+-      nombre: nombreParaDocumento(c, null),
+-      nif: c.taxId || null,
+-    }]),
+-  );
++  // 🔴 SCRUM-1058c · EL DESTINATARIO ES EL QUE SE CONGELÓ EN LA FACTURA, no el de la ficha de hoy.
++  // Hasta aquí este libro resolvía `clienteId` contra la ficha VIVA: corregir el NIF de un cliente
++  // reescribía el libro de sus facturas pasadas mientras el PDF y el XML conservaban el congelado.
++  // El congelado lo trae A6 en cada asiento (`clienteCongelado`): este módulo no lee facturas por
++  // su cuenta (R5 de SCRUM-325). Se resuelve con `clienteDelDocumento`, como los otros lectores.
++  const destinatario = (a: AsientoLibro): DatosDestinatario | null => {
++    const viva = a.clienteId != null ? fichas.get(a.clienteId) : null;
++    const doc = a.clienteCongelado
++      ? { customerName: a.clienteCongelado.name, customerLegalName: a.clienteCongelado.legalName, customerTaxId: a.clienteCongelado.taxId }
++      : {};
++    // Sin congelado y sin ficha: VACÍO, como antes. Nunca inventado.
++    if (!a.clienteCongelado && !viva) return null;
++    const c = clienteDelDocumento(doc, viva);
++    // La razón social manda sobre el nombre comercial: en un libro identifica a quien factura.
++    // SCRUM-577: el criterio sale del SITIO UNICO; el respaldo sigue siendo `null`.
++    return { nombre: nombreParaDocumento(c, null), nif: c.taxId || null };
++  };
+ 
+-  return { filas: filasLibroExpedidas(libro, destinatarios), miradas: libro.miradas, desde, hasta };
++  return { filas: filasLibroExpedidas(libro, destinatario), miradas: libro.miradas, desde, hasta };
+ }
+ 
+ /**
+diff --git a/src/modules/fiscal/librosAeat/librosAeat.ts b/src/modules/fiscal/librosAeat/librosAeat.ts
+index ee4ba02ec..76e160ccb 100644
+--- a/src/modules/fiscal/librosAeat/librosAeat.ts
++++ b/src/modules/fiscal/librosAeat/librosAeat.ts
+@@ -331,10 +331,14 @@ export function filasDeAsiento(a: AsientoLibro, destinatario: DatosDestinatario)
+ /**
+  * El libro de expedidas del periodo, ya en filas. `destinatarios` resuelve `clienteId` → NIF y
+  * nombre; lo que no se pueda resolver sale VACÍO, nunca inventado ni rellenado con el id.
++ *
++ * SCRUM-1058c · también puede ser una FUNCIÓN del asiento: el destinatario de una factura emitida
++ * es el que se congeló en ELLA, y dos facturas del mismo cliente pueden llevar dos NIF distintos
++ * (el cliente corrigió su ficha entre una y otra). Un mapa por `clienteId` no puede decir eso.
+  */
+ export function filasLibroExpedidas(
+   libro: LibroRegistro,
+-  destinatarios: Map<number, DatosDestinatario>,
++  destinatarios: Map<number, DatosDestinatario> | ((a: AsientoLibro) => DatosDestinatario | null | undefined),
+   periodo?: { desde: Date; hasta: Date },
+ ): FilaLibro[] {
+   exigirLibroLegible(libro);
+@@ -343,7 +347,9 @@ export function filasLibroExpedidas(
+     : libro.asientos;
+ 
+   return dentro.flatMap((a) => {
+-    const d = (a.clienteId != null ? destinatarios.get(a.clienteId) : null) ?? { nombre: null, nif: null };
++    const d = (typeof destinatarios === 'function'
++      ? destinatarios(a)
++      : (a.clienteId != null ? destinatarios.get(a.clienteId) : null)) ?? { nombre: null, nif: null };
+     return filasDeAsiento(a, d);
+   });
+ }
+diff --git a/src/modules/invoicing/domain/libroRegistro.repo.ts b/src/modules/invoicing/domain/libroRegistro.repo.ts
+index 390ab2e91..5ab2c6824 100644
+--- a/src/modules/invoicing/domain/libroRegistro.repo.ts
++++ b/src/modules/invoicing/domain/libroRegistro.repo.ts
+@@ -110,6 +110,10 @@ const CAMPOS_FACTURA = {
+   currency: true,
+   status: true,
+   customerId: true,
++  // SCRUM-1058c: el destinatario CONGELADO al emitir. Es el que declara el libro de expedidas.
++  customerName: true,
++  customerLegalName: true,
++  customerTaxId: true,
+   quoteId: true,
+   chargeId: true,
+   albaranRefs: true,
+diff --git a/src/modules/invoicing/domain/libroRegistro.ts b/src/modules/invoicing/domain/libroRegistro.ts
+index f0755ff55..d413ffcf8 100644
+--- a/src/modules/invoicing/domain/libroRegistro.ts
++++ b/src/modules/invoicing/domain/libroRegistro.ts
+@@ -41,6 +41,10 @@ export interface FacturaParaLibro {
+   currency: string | null;
+   status: string | null;
+   customerId: number | null;
++  /** SCRUM-1058c · las columnas congeladas al emitir (`clienteCongelado.ts`). Opcionales: el 303 no las pide. */
++  customerName?: string | null;
++  customerLegalName?: string | null;
++  customerTaxId?: string | null;
+   quoteId: number | null;
+   chargeId: number | null;
+   albaranRefs: unknown;
+@@ -52,6 +56,11 @@ export interface AsientoLibro {
+   fecha: string | null;
+   tipo: string | null;
+   clienteId: number | null;
++  /**
++   * SCRUM-1058c · el destinatario que se CONGELÓ en la factura. `null` = factura anterior al
++   * escritor (`customerName` a NULL): ahí sólo queda la ficha viva. Se copia, no se resuelve.
++   */
++  clienteCongelado: { name: string; legalName: string | null; taxId: string | null } | null;
+   base: number | null;
+   cuota: number | null;
+   /**
+@@ -211,6 +220,9 @@ export function construirLibroRegistro(params: {
+         : (typeof f.createdAt === 'string' ? f.createdAt : null),
+       tipo: f.type ?? null,
+       clienteId: typeof f.customerId === 'number' ? f.customerId : null,
++      clienteCongelado: f.customerName != null
++        ? { name: f.customerName, legalName: f.customerLegalName ?? null, taxId: f.customerTaxId ?? null }
++        : null,
+       base: tieneLineas ? desglose.base : null,
+       cuota: tieneLineas ? desglose.cuota : null,
+       // Mismo `desglose`, misma llamada: el 303 suma ESTO, así que no hay dos caminos que puedan

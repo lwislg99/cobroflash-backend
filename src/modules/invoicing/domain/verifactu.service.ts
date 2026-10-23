@@ -17,9 +17,9 @@ import { declarabilidadDe } from './tipoDocumento'; // SCRUM-413
 import { config } from '../../../core/config/env';
 // SCRUM-247: la identidad del PRODUCTOR es constante del repo, no configuración de panel.
 import {
-  VERIFACTU_PRODUCTOR_NOMBRE, VERIFACTU_PRODUCTOR_NIF, VERIFACTU_ID_SISTEMA,
-  VERIFACTU_VERSION, VERIFACTU_NUM_INSTALACION,
+  VERIFACTU_PRODUCTOR_NOMBRE, VERIFACTU_PRODUCTOR_NIF, VERIFACTU_ID_SISTEMA, VERIFACTU_VERSION,
 } from '../../fiscal/verifactu/productor';
+import { numeroInstalacion, indicadorMultiplesOT, FACTURACIONES_POR_CUENTA } from '../../fiscal/verifactu/instalacion'; // SCRUM-524g: del COMERCIO
 // SCRUM-209: el desglose lo construye UN solo sitio del proyecto (registro.builder.ts).
 // SCRUM-240: y el SOBRE que los envuelve, también.
 import {
@@ -713,7 +713,7 @@ export async function buildVerifactuRegistrosXml(
     nif: VERIFACTU_PRODUCTOR_NIF,
     idSistema: VERIFACTU_ID_SISTEMA,
     version: VERIFACTU_VERSION,
-    numInstalacion: VERIFACTU_NUM_INSTALACION,
+    numInstalacion: numeroInstalacion(merchant.id), indicadorMultiplesOT: indicadorMultiplesOT(FACTURACIONES_POR_CUENTA), // SCRUM-524g: del COMERCIO
   };
   if (!productor.nombre || !productor.nif || !productor.idSistema || !productor.version || !productor.numInstalacion) {
     throw new Error('verifactu_productor_no_configurado');
@@ -1019,7 +1019,7 @@ function construirRegistro(inv: FacturaParaRegistro, contexto: ContextoRegistro)
         <sum1:NumeroInstalacion>${xmlEscape(productor.numInstalacion)}</sum1:NumeroInstalacion>
         <sum1:TipoUsoPosibleSoloVerifactu>S</sum1:TipoUsoPosibleSoloVerifactu>
         <sum1:TipoUsoPosibleMultiOT>S</sum1:TipoUsoPosibleMultiOT>
-        <sum1:IndicadorMultiplesOT>S</sum1:IndicadorMultiplesOT>
+        <sum1:IndicadorMultiplesOT>${productor.indicadorMultiplesOT}</sum1:IndicadorMultiplesOT>
       </sum1:SistemaInformatico>
       <!-- SCRUM-145: el sello REAL que entró en la huella (vfTimestamp). El fallback a
            createdAt es solo para las filas selladas ANTES de existir la columna: ahí la
@@ -1129,7 +1129,7 @@ function construirRegistro(inv: FacturaParaRegistro, contexto: ContextoRegistro)
         <sum1:NumeroInstalacion>${xmlEscape(productor.numInstalacion)}</sum1:NumeroInstalacion>
         <sum1:TipoUsoPosibleSoloVerifactu>S</sum1:TipoUsoPosibleSoloVerifactu>
         <sum1:TipoUsoPosibleMultiOT>S</sum1:TipoUsoPosibleMultiOT>
-        <sum1:IndicadorMultiplesOT>S</sum1:IndicadorMultiplesOT>
+        <sum1:IndicadorMultiplesOT>${productor.indicadorMultiplesOT}</sum1:IndicadorMultiplesOT>
       </sum1:SistemaInformatico>
       <sum1:FechaHoraHusoGenRegistro>${formatFechaHoraHuso(inv.vfAnulTimestamp, zona)}</sum1:FechaHoraHusoGenRegistro>
       <sum1:TipoHuella>01</sum1:TipoHuella>
@@ -1169,7 +1169,12 @@ export type FacturaParaRegistro = Prisma.InvoiceGetPayload<{
 export interface ContextoRegistro {
   zona: string;
   emisorFichaViva: FichaDeEmisor;
-  productor: { nombre: string; nif: string; idSistema: string; version: string; numInstalacion: string };
+  productor: {
+    nombre: string; nif: string; idSistema: string; version: string;
+    /** SCRUM-524g: del COMERCIO (`numeroInstalacion(merchant.id)`), no del productor. */
+    numInstalacion: string;
+    indicadorMultiplesOT: 'S' | 'N';
+  };
   /** Facturas con huella del emisor, por su `vfHash`: de aquí sale el `RegistroAnterior` del alta. */
   porHuella: ReadonlyMap<string, { number: string; createdAt: Date }>;
   /** La cadena entera ordenada por sello: sólo la usa el registro de ANULACIÓN. */
@@ -1229,7 +1234,8 @@ export async function registroParaRemision(invoiceId: number, prismaClient = def
       nif: VERIFACTU_PRODUCTOR_NIF,
       idSistema: VERIFACTU_ID_SISTEMA,
       version: VERIFACTU_VERSION,
-      numInstalacion: VERIFACTU_NUM_INSTALACION,
+      numInstalacion: numeroInstalacion(merchant.id),
+      indicadorMultiplesOT: indicadorMultiplesOT(FACTURACIONES_POR_CUENTA),
     },
     porHuella: new Map(anterior ? [[inv.vfPrevHash as string, anterior]] : []),
     registrosOrdenados: [],

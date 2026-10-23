@@ -364,31 +364,24 @@ function renderSettingsView(container) {
     );
     const fLogoUrl = createField("Logo (URL opcional)", "logoUrl", "text", false);
 
-    // País / locale
+    // País — SCRUM-1536g: se fija en el alta y aquí sólo se LEE (decisión (a), Jira SCRUM-1536
+    // c.20245). Era un selector: cambiarlo encendía la factura sin VeriFactu para un negocio
+    // español o se saltaba la exclusión territorial. Un `<output>` y no un selector bloqueado: lo
+    // que no se puede escribir no se pinta como campo. Su `.name` sigue declarando la columna para
+    // el censo de Configuración (SCRUM-284), y el guardado ya no la manda. Sin texto nuevo: la
+    // etiqueta y el nombre del país, que ya estaban; la nota «Cambia el idioma…» se quita porque
+    // describía un cambio que ya no existe.
+    const NOMBRE_DE_PAIS = { ES: "España", MX: "México", CO: "Colombia", AR: "Argentina", PE: "Perú", CL: "Chile" };
     const fCountryWrapper = document.createElement("div");
     fCountryWrapper.className = "field";
     const fCountryLabel = document.createElement("label");
     fCountryLabel.textContent = "País";
-    const fCountrySelect = document.createElement("select");
-    fCountrySelect.name = "country";
-    [
-      { value: "ES", label: "España" },
-      { value: "MX", label: "México" },
-      { value: "CO", label: "Colombia" },
-      { value: "AR", label: "Argentina" },
-      { value: "PE", label: "Perú" },
-      { value: "CL", label: "Chile" },
-    ].forEach(({ value, label }) => {
-      const opt = document.createElement("option");
-      opt.value = value; opt.textContent = label;
-      fCountrySelect.appendChild(opt);
-    });
-    const fCountryNote = document.createElement("p");
-    fCountryNote.style.cssText = "font-size:12px;color:var(--muted);margin:2px 0 0";
-    fCountryNote.textContent = 'Cambia el idioma de los documentos ("Presupuesto" vs "Cotización") y la moneda por defecto.';
+    const fCountryTexto = document.createElement("output");
+    fCountryTexto.name = "country";
+    fCountryTexto.id = "settings-country";
+    fCountryLabel.htmlFor = "settings-country";
     fCountryWrapper.appendChild(fCountryLabel);
-    fCountryWrapper.appendChild(fCountrySelect);
-    fCountryWrapper.appendChild(fCountryNote);
+    fCountryWrapper.appendChild(fCountryTexto);
     const fGoogleReviewUrl = createField("URL de reseñas en Google (opcional)", "googleReviewUrl", "text", false);
     const fIban  = createField("IBAN (para pagos por transferencia — España/Europa)", "iban", "text", false);
     const fClabe = createField("CLABE interbancaria (para pagos por transferencia — México)", "clabe", "text", false);
@@ -421,7 +414,7 @@ function renderSettingsView(container) {
     selRetencion.id = "retencion-irpf-tipo";
     // SCRUM-293 (③a-bis) · EL `.name` NO ES DECORACIÓN: es cómo un `<select>` construido a mano
     // DECLARA qué columna de `Merchant` persiste. Sus dos hermanos —`fCriterioCaja` y
-    // `fCountrySelect`— lo declaran, y el censo de Configuración (SCRUM-284) lee justo eso.
+    // `fCountrySelect`, hoy `fCountryTexto` (SCRUM-1536g)— lo declaran, y el censo de Configuración (SCRUM-284) lee justo eso.
     // Sin esta línea el campo era invisible para el censo y su clave en el mapa de submenús salía
     // como fantasma: el guard acusaba de «este ajuste ya no existe en la pantalla» a un ajuste que
     // sí está. Medido: 19 de las 20 claves de `colocar(…)` se veían; ésta era la única que no.
@@ -969,7 +962,7 @@ function renderSettingsView(container) {
         // clave, `!!undefined` da `false`, que es justo ese defecto.
         homePrefsCargados = merchant.homePrefs || {};
         tFotoTecnico.chk.checked = !!homePrefsCargados.showTechPhotoToClient;
-        if (merchant.country) fCountrySelect.value = merchant.country;
+        if (merchant.country) fCountryTexto.textContent = NOMBRE_DE_PAIS[merchant.country] || merchant.country;
         if (merchant.brandColor) {
           brandColorEnabled = true;
           brandColorInput.value = merchant.brandColor;
@@ -1168,7 +1161,6 @@ function renderSettingsView(container) {
           if (!/^https?:\/\//i.test(v)) v = 'https://' + v;
           return v;
         })(),
-        country: fCountrySelect.value || undefined,
         iban:  fIban.input.value.trim().replace(/\s/g, '') || null,
         clabe: fClabe.input.value.trim() || null,
         bizumPhone: fBizumPhone.input.value.trim() || null, // C1-4
@@ -1200,7 +1192,10 @@ function renderSettingsView(container) {
         await updateMerchantProfile(payload);
         setAlert("success", "Datos de empresa guardados correctamente.");
       } catch (err) {
-        setAlert("error", "Error al guardar: " + err.message);
+        // SCRUM-1536d · «Sí» en el domicilio foral: el servidor no guarda NADA y manda el texto
+        // firmado en SCRUM-1536 c.20225 (T2a). Se pinta ése, entero y sin el «Error al guardar:».
+        if (err && err.code === "territorio_excluido") setAlert("error", mensajeParaPersona(err, ""));
+        else setAlert("error", "Error al guardar: " + err.message);
       } finally {
         saveBtn.disabled = false;
         saveBtn.textContent = "Guardar cambios";

@@ -1,0 +1,10 @@
+CONTROL POSITIVO: {"ok":true,"tablas":33}
+RESULTADO: {
+  "ok": true,
+  "sql": "-- AlterTable\nALTER TABLE \"merchants\" ADD COLUMN     \"vf_num_instalacion\" TEXT;\n\n-- CreateIndex\nCREATE UNIQUE INDEX \"merchants_vf_num_instalacion_key\" ON \"merchants\"(\"vf_num_instalacion\");",
+  "clase": "con_cambios",
+  "control": {
+    "ok": true,
+    "tablas": 33
+  }
+}

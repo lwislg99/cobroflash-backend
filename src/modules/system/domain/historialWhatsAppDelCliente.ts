@@ -32,8 +32,13 @@ export async function historialWhatsAppDelCliente(
   });
   if (!cliente) return null;
 
+  // 🔴 SCRUM-1518 · SÓLO LO QUE SE LE HA ENVIADO. La pestaña se firmó como «los WhatsApp que se le
+  // han ENVIADO al cliente» (SCRUM-1133). Un mensaje que ESCRIBE el cliente se guarda en esta misma
+  // tabla como `type: 'inbound'` (`recordInboundWaMessage`, estado `received`), y sin este filtro
+  // salía en su ficha como un envío nuestro, con el chip «Enviado». El «(n)» de la pestaña cuenta
+  // esta misma lista, así que también deja de contarlos.
   const pagina = await prisma.whatsAppMessage.findMany({
-    where: { merchantId, customerId },
+    where: { merchantId, customerId, type: { not: 'inbound' } },
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     take: MENSAJES_POR_PAGINA + 1, // uno de más para saber si hay página siguiente, sin contar
     ...(op.despuesDe ? { cursor: { id: op.despuesDe }, skip: 1 } : {}),
