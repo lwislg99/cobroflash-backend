@@ -665,7 +665,7 @@ Jira; eso lo mira quien revisa el PR.
 |---|---|---|---|
 | tal cual (`37311b67`) | pasa | pasa | 17 de 17 |
 | con el parche, sin la vía | **cae** | **cae** | 15 + 2 = 17 |
-| con el parche y la vía | ver §6 | ver §6 | |
+| con el parche y la vía | pasa | pasa | 20 de 20, con `scrum1446d` (§6) |
 
 ### 3 · El control que manda: 10 % y 21 %, idénticos por bytes
 
@@ -691,3 +691,48 @@ línea salvo la cabecera, a `evidencias/SCRUM-1446c/salida-que-cambia.txt` del 8
 - Lo que exigen `scrum603b` y `scrum723`, su ámbito y sus mensajes: sin tocar.
 - Los ficheros de carril ajeno de SCRUM-1446b (`quoteDescuentos.js`, `presentacionIva.ts`,
   `quoteDecisionLanding.routes.ts`): sin tocar.
+
+### 5 · Las mutaciones, cada una sobre el commit y revertida con `git restore`
+
+Población: `scrum603b` + `scrum723` + `scrum1446d` (20 casos), y para M4 `scrum1446` + `scrum603b` + `scrum723` (26).
+
+| mutación | cae | total |
+|---|---|---|
+| M1 · `CAMBIOS_AUTORIZADOS` vacía | `603b · byte a byte`, `723 · ÁMBITO ENTERO`, `1446d · ③` | 17 + 3 = 20 |
+| M2 · el parche MÁS un espacio dentro de `generateInvoicePdf` | `603b · byte a byte`, `723 · ÁMBITO ENTERO` | 18 + 2 = 20 |
+| M3 · `cambioAutorizado` deja de mirar la huella de la base | `1446d · ②` | 19 + 1 = 20 |
+| M4 · `src/` sin el parche (con `dist/` reconstruido) | `1447 · ② ARREGLADO` y sólo él; 603b y 723 pasan, igual que en la base | 25 + 1 = 26 |
+
+### 6 · Los tests
+
+- Con el parche y la vía: `scrum603b`, `scrum723` y `scrum1446d`, 20 de 20.
+- Guards de suite y de registro (237, 976, 824, 836, 267, 273, 1294, 921c, 622, 1446, 1572, 811c,
+  1325b, 710b, 812, 850, 603b, 723, 1446d): 19 ficheros, **190 de 190**, 0 saltados. En la primera
+  pasada cayeron dos, los dos por mí: `scrum921c` (mi comentario citaba una ruta de plantilla como
+  si fuera un fichero) y `SCRUM-1447 · ② DECLARADO`, que es el caso que fijaba el «8%» y pide, en su
+  propio mensaje, pasar a ARREGLADO en el mismo commit. Hecho: `DECLARADOS` 3 → 2.
+- De paso en ese mismo caso: su lector del pie buscaba `IVA (\d+%)`, así que con «IVA 7,5%:» el pie
+  salía VACÍO en vez de caer. Ahora `[\d,]+%`, el mismo patrón que ya usaba para la fila.
+- La dirigida de `tests:que-cubren` (409 de 1463 ficheros, base `37311b67`): 3.890 casos, 3.879
+  pasan, 4 caen, 7 saltan. Los 4 (`SCRUM-1298b` ×2, `SCRUM-351`, `SCRUM-476`) caen IGUAL, por
+  nombre, en un árbol de la base sin mis cambios (29 + 4 de 34, 1 saltado): son del árbol anidado
+  sin `node_modules` propio, no de esta rama. Ninguno de los tres ficheros lo toca mi diff.
+
+### 7 · Lo que no he hecho
+
+- La tanda completa ni `tsc --noEmit` (árbol anidado; `dist/` con `tsc --noCheck`). Ningún
+  `prisma generate`.
+- Generar un PDF y mirarlo a ojo: lo medido es el texto que saca el lector de la casa.
+- Comprobar en Jira lo que no comprueba la tanda: que c.20473 diga lo que la cita dice. Lo leí yo,
+  byte a byte, el 23-oct; el test sólo comprueba que la cita está aquí.
+- Contar facturas reales al 7,5 % (no consulto ninguna base). Las ya emitidas siguen con «8%».
+- Los rótulos de pantalla y los dos sitios de carril ajeno que listó SCRUM-1446b: sin tocar.
+
+### 8 · Errores míos
+
+- Creé la rama como `scrum-1446c-…` sin hacer antes el control del sufijo de A4: el `c` lo había
+  gastado #2300. Lo vi al ir a escribir este tramo, antes de empujar nada, y pasé a `1446d`.
+- Mi comentario de `tests/_cambios-autorizados-de-la-factura.mjs` citaba una ruta con `N` de
+  plantilla y `scrum921c` la contó como procedencia fantasma. Cazado en local.
+- Crucé los 200k de contexto sin avisar en el momento: lo medí después de la dirigida (239k) y
+  avisé entonces.
