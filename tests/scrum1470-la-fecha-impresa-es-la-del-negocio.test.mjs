@@ -237,15 +237,16 @@ test('SCRUM-1471 · la fecha del presupuesto en el portal es la del negocio, igu
   }
 });
 
-test('SCRUM-1471 · DECLARADO: la fecha de la FACTURA en el portal sigue con el reloj del proceso, como la del PDF de la factura', () => {
-  // Su gemelo es la «Fecha:» del PDF de la factura (`dateStr`), que es fiscal y espera la decisión
-  // del fundador (SCRUM-1470, aceptación 2). Cambian juntas: el día que se decida, este caso se
-  // sustituye por la comparación del portal con ese PDF.
+test('SCRUM-1471 · DECLARADO: la fecha de la FACTURA en el portal sigue con el reloj del proceso; su PDF ya no (SCRUM-1470c)', () => {
+  // Su gemelo es la «Fecha:» del PDF de la factura (`dateStr`). El fundador decidió (SCRUM-1470
+  // c.20530) que imprima el día de su registro, y SCRUM-1470c lo hizo en el PDF
+  // (`tests/scrum1470c-la-factura-imprime-el-dia-de-su-registro.test.mjs`). El portal es de J2 y lo
+  // sigue en SCRUM-1471: cuando entre, este caso se sustituye por la comparación del portal con ese PDF.
   for (const nombre of CRUCES) {
     const p = papel(nombre);
     assert.ok(p.portalFactura.startsWith(`${PAPELES[nombre].visperaCorta} · `),
-      `🔴 ${nombre}: la fecha de la factura del portal ha cambiado («${p.portalFactura}») sin que cambie la del PDF de la factura: `
-      + 'el papel y su gemelo cambian juntos o no cambian');
+      `🔴 ${nombre}: la fecha de la factura del portal ha cambiado («${p.portalFactura}»): `
+      + 'si ya imprime el día del negocio, este caso se sustituye por la comparación con el PDF de la factura (SCRUM-1471)');
   }
 });
 
@@ -318,23 +319,21 @@ const FICHEROS = [
   'src/modules/messaging/domain/weeklyDigest.service.ts',
 ];
 
-test('SCRUM-1470 · SCRUM-1471 · SCRUM-1472 · el censo: de las 12 llamadas que IMPRIMÍAN en estos cinco ficheros quedan 6, y cada una con su motivo', () => {
+test('SCRUM-1470 · SCRUM-1471 · SCRUM-1472 · el censo: de las 12 llamadas que IMPRIMÍAN en estos cinco ficheros quedan 3, y cada una con su motivo (SCRUM-1470c retiró las 3 de `dateStr`)', () => {
   const real = censar();
   assert.ok(real.ficheros > 250, `🔴 CIEGO: el censo miró ${real.ficheros} ficheros`);
   const quedan = real.filas.filter((f) => FICHEROS.includes(f.fichero) && clasifica(f) === IMPRIME)
     .map((f) => `${f.identidad} · ${f.metodo}`).sort();
   assert.deepEqual(quedan, [
-    'src/modules/invoicing/infra/pdf/pdf.service.ts::dateStr · getDate',
-    'src/modules/invoicing/infra/pdf/pdf.service.ts::dateStr · getFullYear',
-    'src/modules/invoicing/infra/pdf/pdf.service.ts::dateStr · getMonth',
     'src/modules/invoicing/infra/pdf/pdf.service.ts::generateQuotePdf · toLocaleString',
     'src/modules/system/app/routes/customerPortal.routes.ts::fechaDeLaFactura · toLocaleDateString',
     'src/modules/system/app/routes/invoicesAdmin.routes.ts::fD · toLocaleString',
-  ], '🔴 las llamadas que IMPRIMEN sin zona en estos ficheros no son las seis declaradas: o ha vuelto una arreglada, o ha nacido otra');
+  ], '🔴 las llamadas que IMPRIMEN sin zona en estos ficheros no son las tres declaradas: o ha vuelto una arreglada, o ha nacido otra');
   for (const id of [
     'src/modules/billing/app/routes/receipt.routes.ts::GET /:token',
     'src/modules/system/app/routes/customerPortal.routes.ts::dateShort',
     'src/modules/messaging/domain/weeklyDigest.service.ts::sendDigestForMerchant',
+    'src/modules/invoicing/infra/pdf/pdf.service.ts::dateStr',
   ]) {
     assert.ok(RETIRADAS.has(id), `🔴 «${id}» se arregló y no está en RETIRADAS: mejorar se declara`);
   }
