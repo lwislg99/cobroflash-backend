@@ -177,6 +177,12 @@ obligatorio, contra `postgres:16` y sobre el merge.**
 
 A9: aviso → cicatriz J2 «un banco PGlite por socket se quedó colgado sin decir por qué: Prisma abre la conexión pidiendo SSL y pglite-socket no contesta; jv-j2u perdió 5 h y yo lo vi al tercer intento, con `sslmode=disable` en la URL arranca en 3 s» — no se pudo comprobar: el banco vive en un temporal de la sesión y no en el repositorio, así que no hay fichero que un guard pueda leer; lo cerraría un banco de la casa que se niegue a arrancar sin `sslmode=disable`, y eso es de J6.
 
+Error del empujón (relevo `jv-j2aa`): el caso nuevo con base (eventos y cifras) se empujó sin declararlo en el
+inventario de gateados (3 → 4) y el obligatorio de #2715 cayó en 2 casos de ese guard; la pasada local de 66
+vecinos no lo llevaba. Declarado con su motivo; el guard que lo cazó:
+
+A9: comprobación → `tests/scrum419-ci-declara-lo-que-no-corre.test.mjs`
+
 Carril: J2. La decisión es del fundador en SCRUM-1403 **c.20375** (23-oct-2026), leída en Jira: a la pregunta 1
 de c.18040, **salida 1**, «no recibe los agregados»; a la pregunta 2, «mandárselos sin el texto del detalle».
 Lo de #2130 (presupuestos y pestaña de documentos por rol) no se toca.
