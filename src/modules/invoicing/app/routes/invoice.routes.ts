@@ -2,6 +2,7 @@
 import { Router } from 'express';
 import { IssueInvoiceSchema } from '../../../../core/validation/schemas';
 import { prisma } from '../../../../core/db/prisma';
+import { cabeEnColumnaInt } from '../../../../core/validation/enteroDeColumna'; // SCRUM-1455c
 
 // ⚠️ Igual que en otros puntos: seguimos usando lib/invoicing
 // Asegúrate de tener srcNew/lib/invoicing.ts copiado desde src/lib/invoicing.ts
@@ -60,7 +61,7 @@ router.post('/issue', async (req, res) => {
 router.post('/:id/paid-webhook', async (req, res) => {
   try {
     const invoiceId = Number(req.params.id);
-    if (!Number.isInteger(invoiceId)) {
+    if (!cabeEnColumnaInt(invoiceId)) {
       return res.status(400).json({ error: 'invalid_invoice_id' });
     }
 
