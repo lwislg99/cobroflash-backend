@@ -26,6 +26,11 @@
       "equipo": "javier",
       "motivo": "Lo crea J5 (equipo de Javier) en SCRUM-1575b, que no edita la tabla de §3.3; la S0 le da fila cuando su orquestador diga el puesto."
     },
+    "scripts/tanda-entera-por-tramos.mjs": {
+      "ticket": "SCRUM-1244",
+      "equipo": "javier",
+      "motivo": "Lo crea J6 (equipo de Javier) en SCRUM-1244c, que lleva area-j6 y no edita la tabla de §3.3; la S0 le da fila cuando su orquestador diga el puesto."
+    },
     "scripts/go-live/puerta.mjs": {
       "ticket": "SCRUM-1554",
       "equipo": "luis",
