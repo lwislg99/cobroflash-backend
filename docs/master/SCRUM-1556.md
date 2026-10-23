@@ -97,7 +97,7 @@ Los 14 ficheros de `tests/` que nombran `dos-equipos`, `carriles` o `_sin-fila-d
 
 **Medido contra:** `origin/main` = `7fa745dc20865ec9a66f08a04c52ee2b2958fd74` · 2026-10-23T10:45:19Z (hora de GitHub, cabecera `Date:`)
 
-A9: aviso → cicatriz J5 «Puse en la primera celda de una fila de §3 una carpeta entre comillas invertidas como explicación, y el lector la convirtió en regla» — no se pudo comprobar: que una ruta de la primera celda sea la que se quiere reclamar es intención de quien escribe, y ningún guard sabe qué fila quería
+A9: aviso → cicatriz J5 «Puse en la primera celda de una fila de §3 una carpeta entre comillas invertidas como explicación, y el lector la convirtió en regla: `docs/master/evidencias/**` → J5, las evidencias de los dos equipos; `carriles.mjs comprobar` dio IGUAL y sólo lo vio leer el diff de `.claude/carriles.json`» — no se pudo comprobar: que una ruta de la primera celda sea la que se quiere reclamar es intención de quien escribe, y ningún guard sabe qué fila quería
 
 23-oct-2026 · **J5** (sesión `jv-j5aa`, equipo de Javier), por encargo del orquestador (`cobroflash-backend-62`).
 [Escrito por J5. El ticket se leyó entero en Jira: descripción y sus cuatro comentarios, hasta c.20467.]
@@ -137,4 +137,10 @@ quería. Lo vi leyendo el diff de `.claude/carriles.json`. Arreglado sin comilla
 
 ### Mutaciones (con el código quieto)
 
-Ver la subsección «Mutaciones de 1556b», abajo.
+Sobre el commit `420166ab`, y restauradas con `git checkout` (después, `comprobar` = IGUAL y el cotejo, J5):
+
+- **M1:** el dueño pasa a «**J5** (cotejo)» → `de` del cotejo da `SIN CERRADURA` y `comprobar` da `DISTINTO de la
+  tabla: .claude/carriles.json, .claude/rules/carril-j5.md`.
+- **M2:** vuelve la carpeta entre comillas a la primera celda y se regenera → `cotejo-once.cjs` contesta
+  `J5 · patrón docs/master/evidencias/**` y `comprobar` sigue en **IGUAL**: es el error de arriba, reproducido.
+  Lo caza el control negativo (`de` de un hermano), no el guard.
