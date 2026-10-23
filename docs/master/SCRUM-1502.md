@@ -575,7 +575,7 @@ cuenta por qué se aprobaron de una vez queda como historia, avisado.
 - No he visto ninguna de las cinco en yaqu.app.
 - Tanda completa: no corrida (guards dirigidos, en la entrega).
 
-## SCRUM-1502f · Tramo 6 (J1, 23-oct-2026): las firmas de c.20629 al código — cinco marcas de `tests/` aquí; la de `parteDictado.ts` y la de `jobDetailView.js`, para el equipo de Luis
+## SCRUM-1502f · Tramo 7 (J1, 23-oct-2026): las firmas de c.20629 al código — cinco marcas de `tests/` aquí; la de `parteDictado.ts` y la de `jobDetailView.js`, para el equipo de Luis
 
 **Medido contra:** `origin/main` = `28098fe4b1a160303526f5a4002d52556d2c5b22` · 2026-10-23T18:05:00Z (hora de GitHub)
 A9: comprobación → `tests/scrum921c-firma-con-respaldo-en-codigo.test.mjs`
@@ -648,8 +648,8 @@ Y por el mismo motivo se reescribe `tests/_veredicto-mudez.json` con `npm run ce
 - Ningún texto visible, ni ninguna otra marca, ni la lógica de ningún guard.
 - No he visto nada en yaqu.app: ninguna de las cinco es pantalla.
 - Tanda completa: no corrida (guards dirigidos, en la entrega).
----
 
+---
 ## SCRUM-1502e · Tramo 6 (J4, 23-oct-2026): las seis marcas que no pinta ninguna pantalla, preguntadas y contestadas; las dos firmas de un mismo hueco; y el efecto medido de `sinCitas`
 
 **Medido contra:** `origin/main` = `28098fe4b1a160303526f5a4002d52556d2c5b22` · 2026-10-23T19:13:18Z (hora de GitHub)
@@ -729,4 +729,29 @@ ella, no. Cobaya y mutación retiradas: el guion termina con «árbol restaurado
 - De SCRUM-1215 sólo he leído c.19084; SCRUM-320, 586, 683 y 716, enteros.
 - ③ medido en esta máquina; la copia desechable usó el `node_modules` del checkout compartido por una
   unión de sólo lectura (sin `generate`).
+- Tanda completa: no corrida (guards de registro dirigidos, en la entrega).
+
+---
+
+## SCRUM-1502g · Tramo 8 (J4, 23-oct-2026): dos tramos titulados «Tramo 6», renumerados sin mover una línea
+
+**Medido contra:** `origin/main` = `b6dd5d1a8d64abd0bf835141e8d9bac6d5d2055f` · 2026-10-23T20:18:15Z (hora de GitHub)
+A9: sin fallo que generalice — el número de tramo lo eligió cada rama contando los tramos que veía, y las dos ramas corrían a la vez; la identidad de cada tramo es su letra (1502e, 1502f), que no se repitió. Ningún guard caza dos tramos con el mismo título, y no lo he escrito: de 1.174 registros de `docs/master/`, sólo 15 títulos llevan «Tramo N» (este es el único repetido), así que el guard mediría una convención que nadie acordó.
+
+Sólo `docs/`. Lo dijo J1 en c.20645 (errores, punto 1): la unión de `merge=union` dejó dos títulos «Tramo 6» y un `---` pegado al último punto del tramo de 1502f.
+
+**El orden en que entraron**, leído en `git log origin/main --merges`: #2767 (1502e) a las 19:47:46Z; #2769 (1502f) a las 19:59:31Z. Así que 1502e es el Tramo 6 y 1502f pasa a **Tramo 7**. Los dos comentarios de entrega (c.20636 y c.20645) dicen «Tramo 6»: son de antes de este arreglo, y no se tocan.
+
+**Qué cambia, sin añadir ni quitar líneas** (hay citas por línea a este fichero: `:348` en `docs/master/evidencias/SCRUM-1496c/veredictos-por-lote.md` y en `SCRUM-1496d/`, `:377` en `SCRUM-1496d/`; medido con `git grep -nE 'SCRUM-1502\.md(:|#L)[0-9]'` sobre `origin/main`):
+
+- `:578`, el título de 1502f: «Tramo 6» → «Tramo 7». Sólo esa palabra.
+- `:651-652`: el `---` y la línea en blanco cambian de sitio, y el separador deja de ir pegado al último punto. Las dos líneas siguen siendo dos.
+- Este tramo, al final del fichero: no mueve ninguna línea de encima.
+
+Los tramos siguen en el orden físico en que los dejó la unión (1502f antes que 1502e), como ya pasaba con el 3 delante del 2: reordenarlos movía 155 líneas para nada. El número dice el orden de entrada.
+
+### Lo que no se hizo
+
+- Ningún ancla «Medido contra:», ninguna marca, ningún guard ni su número.
+- No hay pantalla: nada que ver en yaqu.app.
 - Tanda completa: no corrida (guards de registro dirigidos, en la entrega).

@@ -1,0 +1,8 @@
+desde\hacia queued sent delivered read failed received deleted
+queued     ..     SI   SI        SI   SI     ..       ..     
+sent       ..     ..   SI        SI   SI     ..       ..     
+delivered  ..     ..   ..        SI   SI     ..       ..     
+read       ..     ..   ..        ..   SI     ..       ..     
+failed     SI     SI   SI        SI   SI     ..       ..     
+received   SI     SI   SI        SI   SI     ..       ..     
+CONTROL queued→sent true · read→delivered false
