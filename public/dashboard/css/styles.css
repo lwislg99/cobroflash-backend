@@ -4783,6 +4783,16 @@ textarea.parte-linea-desc {
 td.cell-id > a[href="#invoice-detail"] { position: relative; }
 td.cell-id > a[href="#invoice-detail"]::before { content: ""; position: absolute; inset: -14px 0; }
 
+/* ── J2 · SCRUM-1587 (AB6) ── lista de Cobros: el botón «Enviar de nuevo» del aviso de correo
+   fallido (`avisoCorreoNoSalio`, `cobrosView.js`) medía 30,7 px de toque a 320 y 390 y 30,9 a 1280
+   (caja 30, Edge). Sólo toque, como el enlace de arriba: `::before`. Va 8 y no 7 porque el
+   `::before` se ancla al RELLENO y `.btn-secondary` lleva 1 px de borde: con 7 medía 43. El botón sigue
+   midiendo 30 a la vista — `btn-sm` se queda pequeño a propósito (DESIGN.md, Buttons) — y no se toca
+   `.btn-sm` global. Ancla SIN clase nueva: `[data-correo-no-salio]` sólo lo pinta ese aviso.
+   Medido con `docs/master/evidencias/SCRUM-1587/medir.mjs` (con el enlace de SCRUM-1583 al lado). */
+td.cell-id [data-correo-no-salio] > button { position: relative; }
+td.cell-id [data-correo-no-salio] > button::before { content: ""; position: absolute; inset: -8px 0; }
+
 /* SCRUM-1056 · «Volver a llamar»: la nota es texto libre del profesional. Una palabra muy larga
    (un enlace, una referencia) se parte en vez de salirse de la tarjeta: medido a 390 px. */
 .volver-a-llamar-nota { overflow-wrap: anywhere; }

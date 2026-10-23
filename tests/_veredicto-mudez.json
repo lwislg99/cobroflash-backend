@@ -16,6 +16,7 @@
     "scrum153b-annulled-vistas.test.mjs": ["VIVO","eb791184cf6c03d4"],
     "scrum153c-ciclo-anulacion.test.mjs": ["VIVO","96e09d502a77fdd7"],
     "scrum153d-ui-anular.test.mjs": ["VIVO","b3149176f3fb868e"],
+    "scrum1587-reenviar-correo-cobros-44.test.mjs": ["VIVO","5eb08e5b49a7f51d"],
     "scrum161-evidencia-tanda.test.mjs": ["VIVO","4413c07cc5dc3bd3"],
     "scrum188-turno-staging.test.mjs": ["VIVO","eeca922cabd4cb21"],
     "scrum191-paid-via.test.mjs": ["VIVO","50d2542b26d22087"],

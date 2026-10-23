@@ -16,7 +16,7 @@ import { pieDePresupuesto, leerModoIva } from '../../../quotes/domain/presentaci
 import { clausulasParaDocumento } from '../../../quotes/domain/clausulas';
 // SCRUM-688 · el número con su revisión lo forma el DOMINIO, no este documento.
 import { numeroConRevision } from '../../../quotes/domain/revision';
-import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-1470
+import { zonaDelMerchant, diaNaturalEn } from '../../../../core/zonaDelMerchant'; // SCRUM-1470 · 1470c
 // SCRUM-602 (DOC-12) · el resolvedor de los tres modos y el rótulo, del dominio: la maqueta no decide.
 import { resolverDireccionObra, ROTULO_DIRECCION_OBRA_PDF, type ClienteConFacturacion } from '../../../../core/documentos/direccionObra';
 
@@ -310,6 +310,10 @@ export async function generateInvoicePdf(params: {
   // `IPSI` (Ceuta y Melilla), `IGV`… Viene de FUERA porque la maqueta no puede saberlo: ver
   // `NOMBRE_IMPUESTO_POR_DEFECTO`. Sin él, el documento sale exactamente como hasta hoy.
   taxName?: string | null;
+  // SCRUM-1470c · LA ZONA DEL NEGOCIO (`Merchant.timezone`, en crudo), para la «Fecha:» de la factura.
+  // Obligatoria a propósito: un llamador que no la pase no compila, en vez de imprimir otra vez la
+  // víspera. `null` = sin zona declarada = UTC (`zonaDelMerchant`, decisión A del 2-sep).
+  zona: string | null;
 }) {
   const fileName = `${params.merchantId}-${params.number}.pdf`; // SCRUM-72
   const outPath  = path.join(invoicesDir, fileName);
@@ -381,9 +385,14 @@ export async function generateInvoicePdf(params: {
     return fmtImporte(v);
   }
 
+  // SCRUM-1470c (GO del fundador, SCRUM-1470 c.20530: «Sí, el mismo día») · el MISMO día natural que
+  // la `FechaExpedicionFactura` de su registro, que `verifactu.service` saca de `createdAt` en la zona
+  // del negocio. Con `getDate()` salía del reloj del proceso (UTC en Railway): una factura de las
+  // 00:30 de Madrid imprimía la víspera de su registro.
   function dateStr(d: Date | null | undefined) {
     if (!d) return '—';
-    return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+    const [a, m, dia] = diaNaturalEn(d, zonaDelMerchant({ timezone: params.zona })).split('-');
+    return `${dia}/${m}/${a}`;
   }
 
   // ── 1. CABECERA SUPERIOR ─────────────────────────────────────────────────
