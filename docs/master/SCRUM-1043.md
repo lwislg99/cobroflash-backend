@@ -12,3 +12,55 @@ Los criterios 1-2 y 4-6 del ticket en lo que es API. **Queda para S2 y para FIRM
 
 ## El juez: `tests/scrum1043-quien-me-debe-servidor.test.mjs` (sin banco)
 Handler real sobre un mini-Prisma: 3 clientes del merchant (deuda 500, sin deuda, deuda parcial 700 sobre 1.000) y otro merchant con facturas propias incluso sobre el mismo id; orden por saldo distinto del orden de la lista; técnico sin saldos. Mutaciones (4, en rojo; restaurado, verde): técnico con saldos · sin `merchantId` · sin orden · filtro roto. `scrum1035` sigue verde con el helper compartido.
+
+---
+
+## SCRUM-1043a · «Quién me debe»: la mitad de PANTALLA en la lista de Clientes
+
+**Medido contra:** `origin/main` = `f1c0ff3094c004ea7b99ffe2f1d13a21213c5ad1` · 2026-10-23T14:48:14Z
+**Fecha:** 23-oct-2026 · **Rama:** `scrum-1043a-quien-me-debe-pantalla` · **Carril:** J2 (Clientes y cobro) · solo lectura (dinero)
+**Skill UI:** cargada
+
+Lo construyó jv-j2ah (dos commits, punta `5261b85271e5132c11c452d9e7291f5856a63f10`) y paró por contexto
+sin empujar (Jira c.20543). El relevo (jv-j2al) revisó el diff, escribió este tramo, trajo `main` y empujó.
+
+## Textos — firmados en c.20536 (todas las A de c.20533)
+
+Registro: `docs/microcopy/2026-10-23-SCRUM-1043-quien-me-debe.md`. El texto vive en `filtroClientes.js`
+(`TEXTOS_DEUDA`, `ORDEN_SALDO`, la columna `pendiente` y `lineasDeDeuda`). **Comparados por programa** con
+los literales de Jira, cargando el módulo y no leyéndolo: filtro, orden, cabecera, cifra, garantía y vacío,
+6 de 6 iguales en NFC; control sembrado («Con deuda» frente a «Con cobro pendiente») sale DISTINTO. La
+garantía es el literal de SCRUM-1108, igual carácter a carácter que `customerDetailView.js:441`. Al
+técnico: ni orden de saldo, ni columna, ni consulta de deuda (`veDinero`, solo `admin`, como `seesAllJobs`).
+
+## Lo que cambia
+
+- `public/dashboard/js/filtroClientes.js`: textos, `veDinero`, `ordenesPara`, `consultaDeDeuda`,
+  `lineasDeDeuda` y la columna `pendiente` con `dinero: true`. `fijarDinero(false)` la saca de cabecera,
+  selector y `colSpan` a la vez (los tres salen de `columnasDeLaTabla()`, SCRUM-584).
+- `public/dashboard/js/customersView.js`: botón de alternar «Con cobro pendiente» (el componente
+  `.customers-tab`, en su propia barra), opción de orden, celda con `.badge-red` y una `.alert` por
+  garantía, vacío de una línea. Filtro y orden los resuelve el SERVIDOR (`?conDeuda=1`, `?orden=saldo`,
+  c.16244: «ordenar y filtrar en servidor»); sólo pinta la respuesta del último pedido.
+- `public/dashboard/css/styles.css`: un bloque J2 de una línea, `.table td.cell-pendiente { white-space:
+  normal }`. La clase sólo la pone esta celda (`grep cell-pendiente public/` = la regla y su uso).
+- **De paso** (carril J2, `src/modules/system/customerAdmin.ts`): un saldo ≤ 0 (un abono) ya no entra en
+  `conDeuda`. Lo pide c.16244 («saldo negativo por un abono no cuenta como deuda»). La cifra que se manda
+  no cambia; el orden tampoco.
+
+## El juez
+
+`tests/scrum1043a-quien-me-debe-pantalla.test.mjs`: 3 clientes (deuda, sin deuda, parcial), orden,
+filtro, vacío, técnico, aislamiento entre merchants y abono. Capturas a 320/390/1280 en
+`docs/master/evidencias/SCRUM-1043a/`, sobre la vista montada por el banco de la casa (`pagina.mjs`).
+
+## Lo que NO cubre
+
+- **No se ha visto en yaqu.app**: sin sesión de comercio en esta máquina. Las capturas son del banco.
+- Las 6 mutaciones que jv-j2ah dio por muertas las corrió con un `mutar.mjs` de su temporal, que NO está
+  en git: el relevo no las ha repetido.
+- AB6 «importes grandes (9.999,99 €)»: no medido en captura.
+- La segunda línea del vacío de pestaña («Marca cada cliente como empresa o persona al editarlo.»), falsa
+  con otros filtros: otro ticket con su firma (c.20536).
+
+A9: comprobación → `tests/scrum584-selector-de-columnas.test.mjs`
