@@ -1,0 +1,989 @@
+[
+ {
+  "k": "SCRUM-20",
+  "clase": "ESPERA",
+  "lote": "A01",
+  "falta": "'R1' \\",
+  "otro": "'JUST'`, «'ANT' (anticipo) NO está, y es deliberado… Entra cuando P16.2 diga con qué TipoFactura se sella». ③-⑥ sin verificar por parte"
+ },
+ {
+  "k": "SCRUM-906",
+  "clase": "ESPERA",
+  "lote": "A01",
+  "falta": "c.5/c.7: «Holded y Quipu siguen bloqueados… nada más pendiente salvo que el fundador autorice un alias nuevo de Holded o confirme teléfono para Quipu». Decisión del fundador pendiente (alta Quipu con teléfono real / nuevo alias). c.7 pide además que el orquestador confirme y cierre",
+  "otro": "no: busqué `Verifacturamos`, `Holded`, `capturas/` en c26f7d6dd; todo cuelga de SCRUM-906"
+ },
+ {
+  "k": "SCRUM-1055",
+  "clase": "ESPERA",
+  "lote": "A01",
+  "falta": "Espera la respuesta del asesor a Q-C6 (c.1: «Lo que desbloquea esto: la respuesta a Q-C6. Nada más.»). El defecto colateral del botón individual (`updateInvoiceStatusAdmin`) quedó medido en el registro, no es parte del encargo",
+  "otro": "no: busqué `Q-C6`, `criterioCaja`, `paidAt` en docs/legal y src"
+ },
+ {
+  "k": "SCRUM-1077",
+  "clase": "SIN EMPEZAR",
+  "lote": "A01",
+  "falta": "Falta todo el trabajo. Lleva etiqueta `listo-para-construir`; queda abierto si Q-C8 «de IA» basta o espera revisión del asesor (no hay decisión escrita al respecto en el ticket)",
+  "otro": "no: busqué `modelo 390` (Jira: solo 1104, 1077, 1039, 1012, ninguno lo construye), `390` en src"
+ },
+ {
+  "k": "SCRUM-1149",
+  "clase": "TERMINADO",
+  "lote": "A01",
+  "falta": "Nada del enunciado. Declarado en el registro §5: no mirado en yaqu.app ni capturas (no lo pide la aceptación)",
+  "otro": "no aplica"
+ },
+ {
+  "k": "SCRUM-1245",
+  "clase": "TERMINADO",
+  "lote": "A01",
+  "falta": "Nada. Matiz: el verde se midió en réplica de 1.063 ficheros, no con la suite real",
+  "otro": "no aplica"
+ },
+ {
+  "k": "SCRUM-1316",
+  "clase": "ESPERA",
+  "lote": "A01",
+  "falta": "c.1: «④ la E6: no está en el repo. Del fundador.» «Decidir dónde viven [las preguntas al asesor] es del fundador.» Además espera al asesor (efectivo/Bizum) y la convalidación del RDL 29 en el Congreso (hecho ajeno). Trabajo derivado (recotejar 78+66+32 citas) va a ticket propio",
+  "otro": "no aplica"
+ },
+ {
+  "k": "SCRUM-1339",
+  "clase": "ESPERA",
+  "lote": "A01",
+  "falta": "2c a medias: `SCRUM-1339.md` tramo 1339s, tabla: `_trinquete-de-zona-hijo.mjs:119` y `censo-guards-gateados.mjs:71` «NO se toca: el orquestador pide a la S0 que le declare dueño» → espera a S0 (equipo de Luis). Reproductor Linux con testigo (autorizado c.16): c.24 «NO HECHO». Decisión A–E de la causa (c.29, c.34 «sigue abierta») sin tomar",
+  "otro": "no: todo bajo 1339<letra>; #2663 es de S5 con el mismo número"
+ },
+ {
+  "k": "SCRUM-1393",
+  "clase": "TERMINADO",
+  "lote": "A01",
+  "falta": "Nada de lo pedido falta. Declarado CIEGO en el registro (`SCRUM-1393.md` «Lo que NO se puede saber hasta que corra en GitHub»): cierre/reapertura real del Issue con GITHUB_TOKEN no visto; no lo puedo verificar sin CI",
+  "otro": "no aplica"
+ },
+ {
+  "k": "SCRUM-1447",
+  "clase": "ESPERA",
+  "lote": "A01",
+  "falta": "Espera decisión sobre las «dos vías» de SCRUM-1446c (la base de scrum603b/scrum723 es un commit, no un fichero; «ninguna la decide una sesión») y la firma del rótulo (texto de documento fiscal, regla 39/40). Luego, trabajo: aplicar los `toFixed(0)`",
+  "otro": "Sí: el arreglo del cálculo entró bajo SCRUM-1446b (c2971829e); la medición, bajo SCRUM-1446 (PR #2289)"
+ },
+ {
+  "k": "SCRUM-1496",
+  "clase": "ESPERA",
+  "lote": "A01",
+  "falta": "c.1: «script reutilizable en scripts/ · NO HECHO → scripts/equipo/ es del carril S5»; c.19528: «cruza de equipo, así que va en el aviso a Luis». Espera a S5 (equipo de Luis). Además rama VIVA sin mergear `origin/scrum-1496e-cuales-cerrar-22oct` (no es ancestro de c26f7d6dd)",
+  "otro": "no aplica"
+ },
+ {
+  "k": "SCRUM-1527",
+  "clase": "ESPERA",
+  "lote": "A01",
+  "falta": "Espera a S5 (equipo de Luis): el vigía que diga qué proceso vive (c.2 «Queda pendiente de acuerdo entre equipos»; c.4, c.7). Falta también trabajo: causa, paralelismo; rama VIVA `origin/scrum-1527e-cero-tras-2429-y-e-descartada` sin mergear (c.11: 1527f empujado, obligatorio en curso). c.11: «#2429 no lo ha curado»",
+  "otro": "no: busqué `TANDA SIN VEREDICTO`, `tanda-con-veredicto`; la tubería bloqueante (#2429, SCRUM-1405c) no lo curó"
+ },
+ {
+  "k": "SCRUM-1570",
+  "clase": "PARCIAL",
+  "lote": "A01",
+  "falta": "③ incompleto: objetivo-tactil, c.1 «Por qué empezó a salir el 17-oct y no el 16-sep: NO MEDIDO… Queda abierto en este ticket»; cls-barra, c.2 «Que sea #2447 se deduce por descarte, no está comprobado». Es trabajo de medición que una sesión puede hacer",
+  "otro": "Sí: los arreglos entraron bajo SCRUM-1149 (#2627) y SCRUM-1562f (#2664)"
+ },
+ {
+  "k": "SCRUM-523",
+  "clase": "ESPERA",
+  "lote": "A02",
+  "falta": "Decisión del fundador: NIF/identidad del productor y si el disparador de SCRUM-870 se parte en dos (c.16571, 23-sep, pedido «en el chat», sin respuesta escrita). Y además falta el trabajo de ①–⑥: ninguna pantalla ni documento de declaración en `src/`/`public/`",
+  "otro": "no: busqué «DECLARACIÓN RESPONSABLE DEL SISTEMA», `declaracionResponsable`, `IdSistemaInformatico` en src/public → sólo el campo XML"
+ },
+ {
+  "k": "SCRUM-998",
+  "clase": "ESPERA",
+  "lote": "A02",
+  "falta": "El PASO 0 está entero, pero c.16609 (decisión de Javier, 23-sep): «NO se hace nada hoy… El ticket sigue abierto, no se cierra: no está resuelto, está decidido que espere», hasta que se encienda la facturación ES o aparezca un foral real. Nota: SCRUM-1536 (c.20218, 22-oct) cambió después la decisión de fondo (forales excluidos del alta, construido en #2674); este ticket no recoge ese cambio",
+  "otro": "parcialmente: la exclusión foral entró bajo SCRUM-1536d (PR #2674, `src/modules/auth/domain/territorioDeAlta.ts`)"
+ },
+ {
+  "k": "SCRUM-1058",
+  "clase": "ESPERA",
+  "lote": "A02",
+  "falta": "Decisión del fundador: si reasignar `Invoice.customerId` es «editar» (regla 29) — c.20207: «La fusión (opción A) sigue bloqueada: necesita además la decisión…»; registro `SCRUM-1058.md:353` «NO OK sin decisión… → fundador». ④ no puede hacerse sin esa decisión",
+  "otro": "no (el arreglo del libro va bajo el mismo número, 1058c)"
+ },
+ {
+  "k": "SCRUM-1102",
+  "clase": "ESPERA",
+  "lote": "A02",
+  "falta": "La puerta: ninguna parte de `src/` actúa sobre `llevaLibrosPorSii` (sólo validación y escritura). c.17727: «El ticket no queda resuelto con esto: falta la puerta». Las formas W/V/M (c.17784) están propuestas y no hay decisión escrita de cuál se construye (c.17709: «la puerta… ticket aparte y STOP aparte»). Decisión del orquestador/fundador + trabajo",
+  "otro": "parcialmente: lo foral se lee en el alta bajo SCRUM-1536d (`auth.service.ts:350`, `merchantAdmin.ts:195`); lo del SII, no"
+ },
+ {
+  "k": "SCRUM-1194",
+  "clase": "ESPERA",
+  "lote": "A02",
+  "falta": "②: «Propuesta — para Luis, no aplicada» (final del registro). Integrarla es del dueño de la sonda de 1185 (equipo de Luis); el enunciado: «No se construye nada… hasta que alguien decida el método»",
+  "otro": "no: busqué `censo-vocabulario`, `CAMPOS_CLIENTE` → sólo el instrumento de evidencias de 1194"
+ },
+ {
+  "k": "SCRUM-1247",
+  "clase": "ESPERA",
+  "lote": "A02",
+  "falta": "L1′/L2′ de la política «van a Javier» y la pregunta de si `ANTHROPIC_API_KEY` está en Railway (c.17425, sin respuesta escrita); R3 «no se firma todavía», depende de SCRUM-1182 (`aiQuoteAssistant.js:190` sigue diciendo «Claude redactará…»); el registro 1247b lo deja así (`SCRUM-1247.md:203-207`)",
+  "otro": "no"
+ },
+ {
+  "k": "SCRUM-1321",
+  "clase": "TERMINADO",
+  "lote": "A02",
+  "falta": "Nada del encargo. Declarado fuera: la pérdida de eventos que deja CIEGO a scrum859 1 de cada 4 runs es SCRUM-908 (`SCRUM-1321.md:126-131`), otro ticket",
+  "otro": "no"
+ },
+ {
+  "k": "SCRUM-1344",
+  "clase": "TERMINADO",
+  "lote": "A02",
+  "falta": "Nada del encargo. Matiz: la migración de `scrum389`/`scrum728` sólo la ejecuta CI (`SCRUM-1344.md:108-109`); el PR mergeó tras el obligatorio, pero ese log no lo he leído",
+  "otro": "no"
+ },
+ {
+  "k": "SCRUM-1395",
+  "clase": "PARCIAL",
+  "lote": "A02",
+  "falta": "④ «PARCIAL» y ⑥ «NO HECHO» según la propia entrega (c.18435). El fundador decidió construir la opción ② (veredicto del censo guardado y exigido en la tanda; c.18744 «Ok que pase») y no está construida: no hay ningún JSON de veredicto de mudez en tests/scripts. Trabajo que una sesión puede hacer (c.18744 pide resolver antes su condición ③)",
+  "otro": "no: busqué «veredicto guardado», ficheros `*mudez*.json` → sólo las salidas de evidencia de SCRUM-1391"
+ },
+ {
+  "k": "SCRUM-1448",
+  "clase": "ESPERA",
+  "lote": "A02",
+  "falta": "2: «NO HECHA. No tengo ninguna base a la que preguntar» (c.18844); registro: «No medido: ninguna factura real». Falta un hecho de fuera (acceso de solo lectura a una base con facturas reales, que hoy no existen). Cambiar la fuente del total espera a la asesoría (decisión de SCRUM-624, c.18238)",
+  "otro": "parcialmente: la medición entró bajo SCRUM-1446 (PR #2289)"
+ },
+ {
+  "k": "SCRUM-1498",
+  "clase": "ESPERA",
+  "lote": "A02",
+  "falta": "La decisión del enunciado («La decisión que queda encima de la mesa… es de S5 y del fundador», reformulada en c.18769/c.18772: ¿el siguiente commit tiene que esperar a dos jobs no obligatorios?) no consta tomada",
+  "otro": "no"
+ },
+ {
+  "k": "SCRUM-1536",
+  "clase": "ESPERA",
+  "lote": "A02",
+  "falta": "Pieza C (`public/register.html`): «NO APLICA HOY», el alta da 409 siempre (SCRUM-1515); la segunda pregunta de Q1 («¿Tienes el domicilio fiscal en Canarias?») queda «firmada y aparcada» en `tests/scrum514-aprobado-y-aplicado.test.mjs` hasta que se reabra el alta (c.20235). Espera ese hecho; lo demás está en main",
+  "otro": "no (todo bajo 1536b–g)"
+ },
+ {
+  "k": "SCRUM-1571",
+  "clase": "PARCIAL",
+  "lote": "A02",
+  "falta": "③ ampliado (1571c): los 2 casos reales que encontró (PUT/PATCH `/admin/customers/:id` contestan 200 `null` en la carrera; arreglo `if (!updated)` → 404) NO están en main: rama VIVA `origin/scrum-1571c-findfirst-null-404` @ 75e178587, no es ancestro de c26f7d6dd; `if (!updated)` da 0 en ese fichero. Obligatorio en rojo por un test ajeno (c.20382)",
+  "otro": "no"
+ },
+ {
+  "k": "SCRUM-524",
+  "clase": "ESPERA",
+  "lote": "A03",
+  "falta": "③ decisión de diseño «aceptado con errores» sin tomar (estados nuevos/ALTER = fundador, SCRUM-524.md:234). P23 (4141) y P24 (1287) esperan al asesor; P22-P25 sin llevar a SCRUM-1264 (c.20209 «Pendiente»). 524g: la verificación en yaqu.app NO HECHA (c.20374)",
+  "otro": "no: el trabajo entró bajo su propio número (524b-g)"
+ },
+ {
+  "k": "SCRUM-1000",
+  "clase": "ESPERA",
+  "lote": "A03",
+  "falta": "hecho ajeno: Javier tiene que crear la tarea programada del poller (docs/master/SCRUM-1000.md:84-90 «§4 · Para Javier»; c.2 «Pendiente de Javier»). El ① es estado de la máquina y no se puede verificar en main",
+  "otro": "no: busqué vigia-sesiones-jv y el instalador"
+ },
+ {
+  "k": "SCRUM-1063",
+  "clase": "PARCIAL",
+  "lote": "A03",
+  "falta": "3: «suplid» da 0 aciertos en src/modules/fiscal/modelo303 y en libroRecibidas.ts → la exclusión de los suplidos no se ve · 5: sin pantalla ni marca de borrador (es SCRUM-1064) · el test «resultado 147» no aparece (grep de 147 en tests/scrum1063b → 0) · recargo sin rastro en el 303 · Q-C8 solo respondida por IA",
+  "otro": "no: busqué suplid, recargo, 147"
+ },
+ {
+  "k": "SCRUM-1103",
+  "clase": "PARCIAL",
+  "lote": "A03",
+  "falta": "1 solo a medias: las rutas POST/PUT /admin/expenses y la pantalla de captura NO se tocan (SCRUM-1103.md tramo 1103b: «Las rutas HTTP … NO se tocan») → el usuario todavía no puede meter el dato · 2 la categoría de alquiler, las excepciones y el cubo de tipos 111/115 se dejan a SCRUM-1066 (SCRUM-1103.md:252-256) · 3 no construido",
+  "otro": "no: busqué retencionPracticada (solo en expenses.service.ts)"
+ },
+ {
+  "k": "SCRUM-1195",
+  "clase": "ESPERA",
+  "lote": "A03",
+  "falta": "pay/unpay: retirarlas necesita «el sí de un jefe» (c.1), y siguen montadas en src/modules/system/app/routes/invoicesAdmin.routes.ts:610,615 · evidencias.zip sin pantalla y sin ticket (c.1) · modelo-303 depende de SCRUM-1064",
+  "otro": "sí, en parte: libros/recibidas.csv entró bajo SCRUM-1249"
+ },
+ {
+  "k": "SCRUM-1252",
+  "clase": "ESPERA",
+  "lote": "A03",
+  "falta": "puntos B y C de c.17723 sin decidir (texto con firma y camino de emisión; c.18440 «necesitan decisión») · el censo de los 5 documentos necesita una consulta a la base que tiene el fundador (c.18440)",
+  "otro": "no"
+ },
+ {
+  "k": "SCRUM-1322",
+  "clase": "ESPERA",
+  "lote": "A03",
+  "falta": "2.ª parte: texto, necesita la firma del fundador (regla 39; enunciado y SCRUM-1322.md:122-123). Sigue igual en whatsappIncoming.routes.ts:508. También abierta la pregunta de producto «ok/vale» (c.2)",
+  "otro": "no"
+ },
+ {
+  "k": "SCRUM-1346",
+  "clase": "PARCIAL",
+  "lote": "A03",
+  "falta": "④ recuento de facturas sin autor ni asignado: no medido (necesita base) · ⑤ censo de nombres: «nombre» da 0 en SCRUM-1346.md y SCRUM-1555.md · rótulo «Tus presupuestos recientes» (firmado en SCRUM-1390): 0 en src/public · YAQU_MASTER.md:687 sigue diciendo «HOY NO ESTÁ CONSTRUIDA» · SCRUM-1555.md:67 yaqu.app NO medido",
+  "otro": "sí: SCRUM-1397 (#2121) y SCRUM-1555 (#2456)"
+ },
+ {
+  "k": "SCRUM-1401",
+  "clase": "ESPERA",
+  "lote": "A03",
+  "falta": "② a medias: EmailMessage schema.prisma:1577,1585 siguen enumerando (sacadas a propósito por scrum475; c.18794 «necesita la FIRMA … no ha llegado») · clase C → SCRUM-1499 (cambio de máster, fundador) · el arreglo de las tres vivas, a decisión del orquestador (c.18785)",
+  "otro": "no"
+ },
+ {
+  "k": "SCRUM-1449",
+  "clase": "PARCIAL",
+  "lote": "A03",
+  "falta": "NADA construido: payMp.routes.ts:31 sigue con «Mercado Pago no está configurado para este merchant.» en texto plano, y :102 con «Te notificaremos pronto.» Trabajo de J2 con la firma ya puesta. Además quedan abiertas dos decisiones (c.2): avisar cuando el pago se rechaza, y mantener o no la ruta",
+  "otro": "no: busqué «no se puede pagar con Mercado Pago» → 0"
+ },
+ {
+  "k": "SCRUM-1502",
+  "clase": "ESPERA",
+  "lote": "A03",
+  "falta": "④ el fundador tiene que decir cuáles de las 11 que NO CONSTAN reconoce (c.19543, 5 que ve un profesional) · ⑤ propuesta sinCitas NO aplicada (`sinCitas` da 0 en tests/_respaldo-de-firma.mjs); «lo decide un jefe» (c.18797)",
+  "otro": "no"
+ },
+ {
+  "k": "SCRUM-1538",
+  "clase": "TERMINADO",
+  "lote": "A03",
+  "falta": "— (la causa de las colgadas queda SIN MEDIR y declarada, como pide ⑤; el orquestador decidió no seguir, c.20213)",
+  "otro": "en parte: el arreglo de A8.4 entró bajo SCRUM-1543 (#2426)"
+ },
+ {
+  "k": "SCRUM-1574",
+  "clase": "TERMINADO",
+  "lote": "A03",
+  "falta": "— (sin medir y declarado: una mutación del cableado cazada en Linux)",
+  "otro": "no"
+ },
+ {
+  "k": "SCRUM-534",
+  "clase": "ESPERA",
+  "lote": "A04",
+  "falta": "(a) la «décima», `DECLARACION_RESPONSABLE.md:43` `TipoUsoPosibleSoloVerifactu: Sí`, espera a P14 del ASESOR (c.7, c.8) · (b) ④ clase C: c.10 mide 15 de 16 vivas; nadie ha decidido sobre ellas · (c) trabajo: bebedor S1-G sigue citando el inexistente `docs/VERIFACTU_EVIDENCIAS.md` (`YAQU_MASTER.md:1069`), que c.1/c.9 pedían corregir junto a la Parte L",
+  "otro": "no: busqué «certificación», «VERIFACTU_EVIDENCIAS», «TipoUsoPosibleSoloVerifactu», «remisión telemática»"
+ },
+ {
+  "k": "SCRUM-1016",
+  "clase": "PARCIAL",
+  "lote": "A04",
+  "falta": "④ subtítulo vivo SIN aplicar: `public/index.html:442` sigue «…y te paga — con tarjeta, Bizum o transferencia. Y llevas clientes, gastos y facturas…»; el registro (SCRUM-1016m) dice «el subtítulo vivo sigue fuera»; su bloqueo (scrum331:121) ya cayó con #2444, así que es trabajo. Rama viva sin mergear `origin/scrum-1016e-titular-aplicado` (5e438697f). Las 13 líneas de «cobro» se fueron a SCRUM-1086 (c.7/c.10)",
+  "otro": "parte bajo SCRUM-1090 (guard familia B, ac4cf05f6) y SCRUM-1086 (literales de cobro)"
+ },
+ {
+  "k": "SCRUM-1064",
+  "clase": "SIN EMPEZAR",
+  "lote": "A04",
+  "falta": "modelo303\"` en `public/` da 0 consumidores de `/admin/modelo-303` (solo `src/app.ts:605`, la ruta). `public/dashboard/js/reportsView.js:427` «IVA repercutido · modelo 303» es el resumen antiguo de `/admin/reports/vat` (fe40b9343), no la pantalla pedida",
+  "otro": "la pantalla entera. Su dependencia avanzó (SCRUM-1063b, PR #1763; SCRUM-1039b, PR #1731), aunque el registro `SCRUM-1064.md` (22-sep) aún la da por bloqueada. El texto y el nombre del modelo los firma el fundador (regla 39) cuando haya propuesta"
+ },
+ {
+  "k": "SCRUM-1105",
+  "clase": "PARCIAL",
+  "lote": "A04",
+  "falta": "⑤ NO hecho: `SCRUM-1105.md` §4.1 «Suelo declarado: ningún seed se ha corrido hasta escribir»; tampoco la primera ejecución del seed de vídeo de SCRUM-1098 §5. Es trabajo, pero exige `DATABASE_URL_DEV` en el árbol (CLAUDE.md, medición del 14-oct: ningún árbol la tenía)",
+  "otro": "no: busqué «fijarDestinoPorBandera», «seed-video.mjs --dev»"
+ },
+ {
+  "k": "SCRUM-1214",
+  "clase": "TERMINADO",
+  "lote": "A04",
+  "falta": "— (unificar las listas queda fuera por el propio enunciado; el hueco de la forma mixta va en SCRUM-1224, c.1)",
+  "otro": "—"
+ },
+ {
+  "k": "SCRUM-1253",
+  "clase": "TERMINADO",
+  "lote": "A04",
+  "falta": "— (decisión del fundador tomada en c.2; la ejecución va a SCRUM-1255 y SCRUM-1256)",
+  "otro": "—"
+ },
+ {
+  "k": "SCRUM-1324",
+  "clase": "PARCIAL",
+  "lote": "A04",
+  "falta": "② a medias: `package.json:121` dice «Hoy no lo lanza nada: enchufarlo a un workflow es decision del fundador»; el registro §⑥ «sin aplicar»; c.5 «Sigue pendiente, sin construir: el workflow nuevo con schedule». Ya está decidido (c.4), así que es trabajo. Ojo: `.github/workflows/vigia-de-main.yml` (SCRUM-1393c) usa el mismo script en modo por commit; no lo cuento como la opción (b), porque `package.json:121` sigue diciendo que nada lo lanza",
+  "otro": "parcialmente bajo SCRUM-1393c (`vigia-de-main.yml`, commit 2e9e449f2), que juzga commits, no rachas de N runs por job"
+ },
+ {
+  "k": "SCRUM-1387",
+  "clase": "ESPERA",
+  "lote": "A04",
+  "falta": "① NO hecho: `scripts/meta-guard-mutaciones.mjs:1560-1567` llama a `rotuloDelCenso` solo dentro de `if (soloCenso)`; la pasada completa (`:1644`) imprime «vivas · mudas · ciegas» sin población. El registro (`SCRUM-1387.md:96`) dice «NO HECHO → S3». El fichero es del carril S3 (equipo de Luis, SCRUM-1480; c.2, c.3): espera a ese equipo",
+  "otro": "no: busqué «rotuloDelCenso», «_catalogo-obligatorio»"
+ },
+ {
+  "k": "SCRUM-1402",
+  "clase": "ESPERA",
+  "lote": "A04",
+  "falta": "② sin medir: §Ⓑ «Qué hay hoy en ese panel no lo he medido ni lo puedo medir: esta sesión no toca claves». Hace falta acceso a Stripe, que es del fundador (secretos, regla 9). Tampoco consta cómo se activa `equipo`",
+  "otro": "no: busqué «planQueExiste», «PLANES_CONOCIDOS»"
+ },
+ {
+  "k": "SCRUM-1455",
+  "clase": "ESPERA",
+  "lote": "A04",
+  "falta": "siguen sin el helper `:310` (payment-anomaly), `:553` (status), `:597` (pay), `:618` (unpay), `:703` (send-email), `:878` (annul), `:1030` (rectify), `:1193` (regenerate-pdf) e `invoice.routes.ts:63`. c.2 los da «NO HECHO → fundador» (GO del camino de emisión, reglas 38/40) y send-email «→ decisión». yaqu.app sin medir. Rama viva `origin/scrum-1455b-factura-decimal-medida` (308449ba8: «un id decimal anula y sella la factura que no es», sin arreglo)",
+  "otro": "sí, en parte: entró bajo SCRUM-1456 (PR #2223)"
+ },
+ {
+  "k": "SCRUM-1508",
+  "clase": "TERMINADO",
+  "lote": "A04",
+  "falta": "— (elegir la salida es el siguiente paso, fuera de este ticket por su propio enunciado, aunque lleve `decision-jefe`)",
+  "otro": "—"
+ },
+ {
+  "k": "SCRUM-1551",
+  "clase": "ESPERA",
+  "lote": "A04",
+  "falta": "firma del fundador sobre la propuesta de c.15 para `public/index.html:35` (JSON-LD), `:442` (subtítulo) y `:749` (FAQ CSV): «firma del fundador NO HECHO → la lleva el orquestador». Sin verificar en yaqu.app (c.9, c.14: los despliegues de producción están parados desde el 20-oct)",
+  "otro": "no: busqué «Cobro integrado», «Justificantes de cobro», «Borrador pendiente», «En España»"
+ },
+ {
+  "k": "SCRUM-1575",
+  "clase": "PARCIAL",
+  "lote": "A04",
+  "falta": "1575d en una rama VIVA sin mergear: `origin/scrum-1575d-guard-por-destino-banco` @ 42a1d6de6 (PR y check obligatorio sin ver, c.5). Además `scripts/cambiar-flag-fiscal.mjs` no separa staging de dev y queda sin arreglar: lo decide un jefe (c.5)",
+  "otro": "no: busqué «destinoDelPreview», «comprobarCredencialDeProduccion»"
+ },
+ {
+  "k": "SCRUM-612",
+  "clase": "ESPERA",
+  "lote": "A05",
+  "falta": "③ E-3, ⑤ E-5 y ⑥ E-6 siguen abiertas: «E-3, E-5 y E-6 siguen donde estaban» (c.15), «de J4, y los firma un jefe» (c.16); el registro lo repite (`docs/master/SCRUM-612.md:258-261`, `:647-658`, `:891`). Las 12 líneas comerciales que chocan con B están señaladas y sin texto (c.16). E-3 depende de un hecho ajeno (la SL / declaración responsable)",
+  "otro": "no: busqué «no emite ningún documento», «ni documento ni cobro por YaQu» (están, bajo este número)"
+ },
+ {
+  "k": "SCRUM-1039",
+  "clase": "ESPERA",
+  "lote": "A05",
+  "falta": "③ falta el visto bueno de J4 y la revisión del asesor: c.3 «pasan a la cola de Javier para su confirmación final»; etiqueta `esperando-confirmacion-j4`; `PREGUNTAS_ASESOR.md:846` «todas se envían al asesor». Trabajo pendiente además: las casillas de 130/131, 111, 115 y 347 no extraídas (c.4); `SCRUM-1039.md:43` «Pendiente (no cerrado por esta tanda)»",
+  "otro": "parte por SCRUM-1039b/c (mismo número) y SCRUM-1261 (re-etiquetado IA); no otro número para lo que falta"
+ },
+ {
+  "k": "SCRUM-1065",
+  "clase": "ESPERA",
+  "lote": "A05",
+  "falta": "espera la respuesta Q-C8 del asesor (c.1; `SCRUM-1065.md` «Ninguno para J1 hasta SCRUM-1039 + Q-C8»); Q-C8 sigue «RESPUESTA DE IA … SIN REVISIÓN PROFESIONAL … pendiente» (`PREGUNTAS_ASESOR.md:978`). Depende también de SCRUM-1048. Cuando llegue, falta todo el trabajo",
+  "otro": "no: busqué `modelo 130`, `pago fraccionado`, `pagoFraccionado`, `\\b130\\b` en `src/` (sólo un comentario en `resumenTrimestre.ts:8` y casualidades: precio 130, SCRUM-130); JQL «modelo 130» → 1065, 1039, 1012, 280 (ninguno lo construye)"
+ },
+ {
+  "k": "SCRUM-1106",
+  "clase": "ESPERA",
+  "lote": "A05",
+  "falta": "④ la decisión del fundador sobre 1053 («si la retención emitida de este perfil es cero, ¿se construye igual?») no consta tomada: «No decido esto yo: queda marcado como decisión del fundador» (`SCRUM-1106.md:45-46`, c.2). Su premisa (Q-C5) es ahora una respuesta de IA sin revisar (`SCRUM-1106.md:115-116`), así que espera también al asesor. Etiqueta `stop-fundador`",
+  "otro": "no: busqué la decisión en `SCRUM-1053.md` (no existe en c26f7d6dd) y en `SCRUM-1106.md`"
+ },
+ {
+  "k": "SCRUM-1218",
+  "clase": "PARCIAL",
+  "lote": "A05",
+  "falta": "③ falta migrar el resto: en main `CON_EL_PATRON_YA` (`scrum560…:50`) sigue con 40 entradas; 1218c (scrum1346/1397/1403) está en la rama viva `origin/scrum-1218c-tres-de-j2-a-node-http` @ 4659a427, **no ancestro de c26f7d6dd**; y 34 gateados de staging sin migrar (c.2: «NO HECHO para 37»). Trabajo que una sesión puede hacer (los 34 piden turno de staging)",
+  "otro": "no: busqué `agent: false` en `tests/scrum1403*` (0 en main) y la rama 1218c"
+ },
+ {
+  "k": "SCRUM-1257",
+  "clase": "TERMINADO",
+  "lote": "A05",
+  "falta": "nada de su enunciado. Fuera de alcance y declarado así: la pregunta de `SCRUM-1257.md` §6 («no se resuelve aquí») y lo que decide SCRUM-1252. La etiqueta `sin-firma` está caducada: P1-P8 firmados por delegación (c.1, c.2)",
+  "otro": "el grupo A entró bajo SCRUM-825 (PR #1943), según c.2"
+ },
+ {
+  "k": "SCRUM-1328",
+  "clase": "PARCIAL",
+  "lote": "A05",
+  "falta": "④ parte `# SKIP`: ningún caso de los dos tests ni de `scrum1328*` comprueba que los SKIP con motivo sigan leyéndose (grep -i «skip» = 0). Trabajo que una sesión puede hacer hoy. No verificado por mí: que el artefacto `tanda-tap` del CI llegue hoy legible (pide bajar artefactos de CI)",
+  "otro": "sí: el arreglo entró bajo SCRUM-1289 (PR #2000 y #1990)"
+ },
+ {
+  "k": "SCRUM-1389",
+  "clase": "ESPERA",
+  "lote": "A05",
+  "falta": "①, ②, ⑤ (como aserción) y ⑥ NO HECHO, «→ decisión de los dos equipos; salidas A, B, C y D» (c.2; `SCRUM-1389.md:20`). Además `tanda-con-veredicto.mjs` y `_huella-de-la-caida.mjs` son de S5 (equipo de Luis) desde SCRUM-1480 (c.2). Cuando se decida, falta el trabajo",
+  "otro": "no: busqué «no arrancaron», «proceso no creado», «nunca existió» en `scripts/`: sólo `guards-visuales.mjs:354`, `:381`, que es de SCRUM-1343 y anterior"
+ },
+ {
+  "k": "SCRUM-1403",
+  "clase": "PARCIAL",
+  "lote": "A05",
+  "falta": "El fundador decidió el 23-oct (c.4): salida 1 (el técnico no recibe los agregados) y «b» (eventos sin el texto del detalle). **Sin construir:** `src/modules/system/app/routes/customersAdmin.routes.ts:584-605` sigue mandando `totalBilled`, `totalPaid`, `totalPending`, `totalExpenses`, `profit` a cualquier rol (sólo `garantiaRetenida` se le niega, `:581`). ④ no se cumple todavía (c.3: «salen dos de tres»). Trabajo de carril J2 hoy (con la condición de c.4 sobre texto nuevo)",
+  "otro": "no: busqué `totalPaid` (JQL → 1403, 1397, 1035, 1031; ninguno lo recorta por rol) y `seesOnlyOwnJobs` en `customersAdmin`"
+ },
+ {
+  "k": "SCRUM-1456",
+  "clase": "ESPERA",
+  "lote": "A05",
+  "falta": "aceptación 1 en yaqu.app: **NO HECHO** «la cuenta QA está caducada; lo ve quien tenga sesión» (c.4), y en 1456c «NO HECHO: son tres POST de dinero» (c.8). Espera un hecho ajeno: una cuenta QA o sesión válida. `stripe.routes.ts` 84/124/189 y `connectWebhook` 52/112: fuera, por decisión (c.3, c.5 ③)",
+  "otro": "no: todo bajo este número (1456, 1456b, 1456c)"
+ },
+ {
+  "k": "SCRUM-1509",
+  "clase": "ESPERA",
+  "lote": "A05",
+  "falta": "Falta la decisión de la salida A–E del recordatorio de FACTURAS: «sigue sin elegir … el recordatorio se queda esperando su letra» (c.16); `SCRUM-1509.md:824` «La salida A–E del recordatorio de facturas: sin elegir (c.19620 lo dice expresamente)». Etiquetas `stop-fundador`, `decision-jefe`. Después hará falta construirla",
+  "otro": "no: JQL «invoiceReminder» → 1532, 1508, 1436, 1108, 931…; ninguno decide la salida A–E"
+ },
+ {
+  "k": "SCRUM-1552",
+  "clase": "ESPERA",
+  "lote": "A05",
+  "falta": "② sin decidir: «La regla 44 NO trae mecanismo … **Sin decidir.**» (c.2; también c.1). ③ es del equipo de Luis (SCRUM-997) y va en el aviso a Luis (enunciado); no consta respuesta",
+  "otro": "no: busqué el literal de la 44 en el máster (está, bajo este número)"
+ },
+ {
+  "k": "SCRUM-1576",
+  "clase": "PARCIAL",
+  "lote": "A05",
+  "falta": "② el resto de la clase (a) está «leído, no corrido» (`docs/master/SCRUM-1576.md:81`; c.1: «el resto NO HECHO (leído, no corrido)»): falta reproducir por ruta real, entre otros, los seis lectores del albarán y el paquete de disputa antes del arreglo. Trabajo que una sesión puede hacer hoy",
+  "otro": "arreglos de la clase (a) bajo 1576b (mismo número); no otro número"
+ },
+ {
+  "k": "SCRUM-657",
+  "clase": "ESPERA",
+  "lote": "A06",
+  "falta": "facturae\\b\"` en src/prisma/public = 0 (quitando los XSD)",
+  "otro": "② «PENDIENTE, declarado como SUELO» (SCRUM-657.md, §PASO 0 punto 2). El enunciado dice «No se construye hasta que se conteste el PASO 0 y el fundador decida». c.1: guardar el DIR3 en la ficha del cliente es «Decisión del fundador» y no hay rastro de que se tomara. La firma del XML reabre la pregunta del certificado (PREGUNTAS_ASESOR punto 1, c.2)"
+ },
+ {
+  "k": "SCRUM-1043",
+  "clase": "PARCIAL",
+  "lote": "A06",
+  "falta": "Falta la mitad del front, que es trabajo de J2 (c.4, reetiquetado a equipo-javier): `git grep -i \"conDeuda\\",
+  "otro": "saldoPendiente\\"
+ },
+ {
+  "k": "SCRUM-1066",
+  "clase": "PARCIAL",
+  "lote": "A06",
+  "falta": "③ y ④ SIN CONSTRUIR: `git grep -i \"modelo ?111\\",
+  "otro": "modelo ?115\"` en src/public solo da los comentarios de `retencionIrpf.ts:110,129`. SCRUM-1066.md:175 «Falta, antes de construir… (b) casillas exactas del [anexo PDF]». Además, el texto de pantalla espera firma (regla 39, c.2)"
+ },
+ {
+  "k": "SCRUM-1109",
+  "clase": "ESPERA",
+  "lote": "A06",
+  "falta": "Espera un hecho del fundador: `SCRUM-1114.md` «Acción del fundador: Añadir RESEND_API_KEY al servicio cron», y «esto no queda probado hasta que llegue un correo». `SCRUM-1109.md:159-167` §8 «Siguiente paso (del fundador)»; el apéndice SCRUM-1109b de la primera pasada real no existe (`git grep SCRUM-1109b` = solo esa línea). La periodicidad no está decidida. Ticket `stop-fundador`",
+  "otro": "completado en parte bajo SCRUM-1112 y SCRUM-1114 (753fbe4ab, 55ff13f23)"
+ },
+ {
+  "k": "SCRUM-1238",
+  "clase": "ESPERA",
+  "lote": "A06",
+  "falta": "El defecto sigue en main: `scripts/equipo/sesion.mjs:1004-1005` `terminal: cuando !== null \\",
+  "otro": "\\"
+ },
+ {
+  "k": "SCRUM-1259",
+  "clase": "TERMINADO",
+  "lote": "A06",
+  "falta": "—",
+  "otro": "no hace falta"
+ },
+ {
+  "k": "SCRUM-1330",
+  "clase": "PARCIAL",
+  "lote": "A06",
+  "falta": "③ sin medir: c.3 «`tests/scrum173` real con la B: no lo ha corrido nadie todavía»; c.6 «Quedan el ② … y el ③ …, y ninguno de los dos está medido»; `SCRUM-1330.md:156` «No medido: … y `tests/scrum173` real». Es trabajo (correr scrum173 gateado con turno de staging)",
+  "otro": "la parte ② se apoya en SCRUM-1333"
+ },
+ {
+  "k": "SCRUM-1390",
+  "clase": "PARCIAL",
+  "lote": "A06",
+  "falta": "El censo deja 15 rutas en NO-LLEGO, «**no medida**» (`SCRUM-1390.md` tabla Ⓓ y «Lo que este censo NO ha medido»), y el enunciado pedía «Por efecto donde se pueda y por AST donde no». Falta medir esas 15 (trabajo). Además está sin medir qué enseña el bloque si la carga falla (c.1)",
+  "otro": "la fila :664 la lleva SCRUM-1347; la 9ª fila del censo, SCRUM-1489; /jobs/:id/ics, SCRUM-1390b"
+ },
+ {
+  "k": "SCRUM-1404",
+  "clase": "PARCIAL",
+  "lote": "A06",
+  "falta": "PR-2 sin hacer: `reintentoSellado.ts:74` `REINTENTO_ACTIVO_DESDE … = null` (sigue inerte); el catch del PDF solo reconoce `esErrorSinSellar` (`invoicesAdmin.routes.ts:1294-1303`), y `invoice_pendiente_de_sellado` (`src/lib/invoicing.ts:62`) sigue saliendo como 500. El plazo derivado de la cadencia (c.19 ②) también va en PR-2. Ya no espera ninguna decisión (c.23 GO, mientras no haya facturas reales): es trabajo",
+  "otro": "la línea del cron entró por S1 bajo el GO de c.23 (en cron.ts, sin número propio); la sonda viene de SCRUM-1507 c.19509"
+ },
+ {
+  "k": "SCRUM-1457",
+  "clase": "ESPERA",
+  "lote": "A06",
+  "falta": "Las cuatro líneas siguen igual: `supresion.routes.ts:34`, `stripe.routes.ts:133,175,228` con `Number.isInteger(merchantId)`. ① espera el GO del fundador (borrado de datos; c.0, c.1 «NO HECHO → fundador»). ③ espera una decisión: «las dos mitades no caben juntas» (c.1; SCRUM-1457.md §Ⓑ)",
+  "otro": "no: busqué `cabeEnColumnaInt` en esos dos ficheros → 0"
+ },
+ {
+  "k": "SCRUM-1510",
+  "clase": "ESPERA",
+  "lote": "A06",
+  "falta": "④ es una decisión del orquestador o un jefe que no se ha tomado: `SCRUM-1510.md:120-124` «Para la decisión ④ (que no es de una sesión)… Lo que sigue sin estar escrito es la cabecera de `scrum205`»; `git grep \"1510\\",
+  "otro": "punto ciego\\"
+ },
+ {
+  "k": "SCRUM-1554",
+  "clase": "ESPERA",
+  "lote": "A06",
+  "falta": "c.6: «la mitad B de este ticket —que el sistema lo IMPIDA de verdad— sigue esperando el permiso del fundador: toca un interruptor global». c.8 (1554f): «Lo que tiene que decidir el fundador»: qué es la puerta y quién es el primer negocio real. 1554e/1554f (17/18 redactadas, F1–F10) son PROPUESTAS sin aplicar a puerta.json (c.7, c.8)",
+  "otro": "no"
+ },
+ {
+  "k": "SCRUM-1577",
+  "clase": "ESPERA",
+  "lote": "A06",
+  "falta": "②③ esperan a que `origin/scrum-962f-editor-cuatro-44` (#2692) entre en main; medido: VIVA, no es ancestro de c26f7d6dd (enunciado; c.2 «NO HECHO»). ④ decisión de quien firma DESIGN.md §6 (c.2). ⑤ producción congelada desde el 20-oct (c.2). Hechos ajenos y decisión; cuando entre #2692 queda trabajo de J3",
+  "otro": "no"
+ },
+ {
+  "k": "SCRUM-665",
+  "clase": "ESPERA",
+  "lote": "A07",
+  "falta": "Falta la vía (a)/opción A: guardar el PDF expedido y servir siempre ese mismo fichero. Sigue sin estar: `src/lib/invoicing.ts:79` todavía regenera con `!fs.existsSync(diskPath)`, `package.json` no tiene SDK de almacenamiento y en `src/` no hay versión de plantilla. Construirla es regla 40 y supone coste de infraestructura nuevo: espera el GO del fundador (c.9: «Lo que SÍ sigue siendo decisión del fundador»). La rectificativa (heredar el emisor de la factura original o congelar el de hoy) va al asesor (c.4). Además hace falta el trabajo de construirla.",
+  "otro": "no: busqué `templateVersion`/`pdfSha`/`pdfHash`/SDK de almacenamiento (0)"
+ },
+ {
+  "k": "SCRUM-1050",
+  "clase": "ESPERA",
+  "lote": "A07",
+  "falta": "noSujet` en `src/`: solo aparecen `exentoDeLaBaja`/`exentoDelDemo` de WhatsApp, que no tienen relación",
+  "otro": "Decisión de Javier del 23-sep, «NO se construye todavía» (c.2). La reabre un caso real (c.3, etiqueta `esperando-caso-real`)"
+ },
+ {
+  "k": "SCRUM-1067",
+  "clase": "ESPERA",
+  "lote": "A07",
+  "falta": "Espera la orden del 347 citada y Q-C8 con cita verificada. Q-C8 tiene «RESPUESTA DE IA … SIN REVISIÓN PROFESIONAL» (`docs/producto/CONTABILIDAD.md:131`, `docs/legal/PREGUNTAS_ASESOR.md:978`) y el 347 está «NO VERIFICADO» (`CONTABILIDAD.md:5`). Lo pidió c.2 y el punto 1 de la aceptación. La etiqueta `listo-para-construir` no lo refleja en el texto",
+  "otro": "no: busqué `347`/`modelo347` en src/public (0)"
+ },
+ {
+  "k": "SCRUM-1115",
+  "clase": "ESPERA",
+  "lote": "A07",
+  "falta": "Falta que el fundador verifique `EMAIL_FROM` de los otros dos servicios, el cron de acreditación (`scripts/aviso-programado-acreditacion-invoicing-es.mjs:333`) y el respaldo programado (`scripts/respaldo-programado.mjs:345`): «sólo lo confirma el fundador, servicio por servicio» (c.5)",
+  "otro": "no: es configuración, no código"
+ },
+ {
+  "k": "SCRUM-1240",
+  "clase": "ESPERA",
+  "lote": "A07",
+  "falta": "② no está: `src/modules/fiscal/verifactu/registro.builder.ts:313` y `:328` siguen con `CLAVE_REGIMEN_GENERAL` fijo (`:55` = '01') · ③ falta la mención (c.2 (a)) y un texto firmado (regla 39). Es STOP de regla 40 y necesita el GO del fundador (enunciado y c.2: «Sigue siendo STOP de regla 40»). Además falta el trabajo",
+  "otro": "no: busqué `criterioCaja`/`ClaveRegimen` en registro.builder.ts (sigue fijo)"
+ },
+ {
+  "k": "SCRUM-1260",
+  "clase": "TERMINADO",
+  "lote": "A07",
+  "falta": "«verificado en yaqu.app: NO HECHO, sin superficie visible» (c.4/c.6). No es una parte del enunciado",
+  "otro": "no hace falta (entró con su número)"
+ },
+ {
+  "k": "SCRUM-1332",
+  "clase": "ESPERA",
+  "lote": "A07",
+  "falta": "② la clase (69 ficheros de tests/ con `fetch(` hoy) queda sin decidir entre A/B/C: «la decisión no es mía» (c.3, `SCRUM-1332.md:146`). Sigue listada como decisión pendiente en `docs/master/SCRUM-1496.md:512` («1332: elegir entre A, B y C»). Cerca: SCRUM-1218 declaró no migrar",
+  "otro": "parcialmente relacionado con SCRUM-1405 (la salida C de 1405 cubre otra cosa, la pérdida de cola)"
+ },
+ {
+  "k": "SCRUM-1391",
+  "clase": "PARCIAL",
+  "lote": "A07",
+  "falta": "① no está entera: `staging-gated` no se pudo lanzar, pide base (`SCRUM-1345.md:236`, `:432`: «staging-gated entera no se ejecutó, ni el censo:gateados de verdad») · ② sin medir la distancia de puerta-claude-empuje ni la de los `before` de los gateados reales (c.2). Lo puede hacer una sesión con turno de staging",
+  "otro": "no hace falta"
+ },
+ {
+  "k": "SCRUM-1405",
+  "clase": "ESPERA",
+  "lote": "A07",
+  "falta": "Quedan sin cubrir dos copias del flag: `scripts/_trinquete-de-zona-hijo.mjs:119` y `scripts/censo-guards-gateados.mjs:71` (`forceExit: true`, sin tubería bloqueante). El meta-guard ya lo carga (`scripts/meta-guard-mutaciones.mjs:79`). Según c.8 «necesitan su propia decisión»: la autorización no las cubre. ④4 NO HECHO (c.2). Los 14 jobs con ④ saltado no se arreglan «porque cambia cuándo corre ④ y no es lo que se decidió en c.20140» (c.11, `SCRUM-1405.md:557`). Espera decisión, y luego trabajo",
+  "otro": "el meta-guard se cubrió bajo SCRUM-1339s"
+ },
+ {
+  "k": "SCRUM-1470",
+  "clase": "ESPERA",
+  "lote": "A07",
+  "falta": "2: «NO HECHO → el fundador» (c.2, `SCRUM-1470.md:66`). Además, el sello «(hora del servidor)» espera firma del fundador sobre el literal (regla 39, `SCRUM-1470.md:56`)",
+  "otro": "entró en la rama de SCRUM-1472 (PR #2220)"
+ },
+ {
+  "k": "SCRUM-1511",
+  "clase": "ESPERA",
+  "lote": "A07",
+  "falta": "② sin decidir: «El nombre del nivel sigue prometiendo… no tocado» (c.12 punto 4, c.13). `tests/_respaldo-de-firma.mjs:137` sigue devolviendo `'anclado'` solo por la forma. Etiqueta `decision-jefe` · ③ «SIN MEDIR y no se construye hoy» (c.13) · el contenido de las 149 rastreables sigue sin medir (c.2, c.12)",
+  "otro": "no hace falta"
+ },
+ {
+  "k": "SCRUM-1565",
+  "clase": "TERMINADO",
+  "lote": "A07",
+  "falta": "Fuera del alcance según el propio enunciado: reenviar la entrega fallida de la cuenta QA (aparcado, `SCRUM-1565.md` 1565b) y el porqué del 200 en `created`, que el enunciado declara «NO explicado»",
+  "otro": "el nombre real es `finDePeriodo`, no `finDelPeriodo`"
+ },
+ {
+  "k": "SCRUM-99997",
+  "clase": "SIN EMPEZAR",
+  "lote": "A07",
+  "falta": "todo",
+  "otro": "no: busqué `99997`, `semilla 99997`, `recenso-semilla` (0)"
+ },
+ {
+  "k": "SCRUM-825",
+  "clase": "ESPERA",
+  "lote": "A08",
+  "falta": "'R1' \\",
+  "otro": "'JUST'`, `libroRegistro.repo.ts:96`, `pdf.service.ts:318`, `invoiceNumber.service.ts:431`; ③ con #1940 (c.17450); ⑤ #1941"
+ },
+ {
+  "k": "SCRUM-1051",
+  "clase": "ESPERA",
+  "lote": "A08",
+  "falta": "3 leyenda: la firma el fundador (regla 39) y la fija el asesor — sin rastro de firma; 6 validación NIF: FUERA del GO c.16594 («si la toca, se para y vuelve al fundador»), registro PASO 4 lo confirma; 1 UI: «no hay UI» (registro §PASO 4.4) — trabajo pendiente; 4 lo fija Q-C2",
+  "otro": "no: busqué `S2`, `sujeto pasivo`, `causa`"
+ },
+ {
+  "k": "SCRUM-1076",
+  "clase": "ESPERA",
+  "lote": "A08",
+  "falta": "espera SCRUM-1039 (plazos citados) y Q-C8 del asesor (aceptación 1; c.16418)",
+  "otro": "no: busqué los símbolos de arriba; JQL «llevado a mi asesor» → sólo SCRUM-1076"
+ },
+ {
+  "k": "SCRUM-1129",
+  "clase": "ESPERA",
+  "lote": "A08",
+  "falta": "③ es STOP regla 40 + decisión de producto (campo régimen en Merchant → ALTER + texto regla 39) que nadie ha tomado (c.17364, c.17405); SIN DETERMINAR (a) clave 18 al asesor (c.17387)",
+  "otro": "no: busqué `claveRegimen`, régimen en schema.prisma (0)"
+ },
+ {
+  "k": "SCRUM-1244",
+  "clase": "TERMINADO",
+  "lote": "A08",
+  "falta": "— (el reaper `CLAUDE_CODE_DISABLE_BG_SHELL_PRESSURE_REAP` y la línea «se corre desde Git Bash» quedan como propuestas del fundador, no pedidas por el enunciado)",
+  "otro": "sí: ③ entró bajo SCRUM-858b; ④ bajo SCRUM-1245"
+ },
+ {
+  "k": "SCRUM-1311",
+  "clase": "PARCIAL",
+  "lote": "A08",
+  "falta": "④ falta `tests/scrum173-cadena-verifactu-serializada.test.mjs` (0 coincidencias de CIEGO/SCRUM-1311): registro §«Lo que NO se ha hecho» — «queda para quien tenga el turno de staging»",
+  "otro": "no"
+ },
+ {
+  "k": "SCRUM-1335",
+  "clase": "PARCIAL",
+  "lote": "A08",
+  "falta": "el registro en main dice sobre la condición 3 «**sin medir todavía**: hace falta que el job corra con este código» (`docs/master/SCRUM-1335.md:222`); la serie de c.18526 no está en el repo (vive en `D:\\MILLONARIO\\…\\_tmp-s3-6octh`). Trabajo: llevar esa serie al registro. La causa de la pérdida va a SCRUM-1405 y el cuelgue a SCRUM-1494 (no son de este enunciado)",
+  "otro": "no"
+ },
+ {
+  "k": "SCRUM-1392",
+  "clase": "TERMINADO",
+  "lote": "A08",
+  "falta": "— (límite declarado c.18778: la 3.ª cuenta sólo ve listas del recorrido; los 3 guards de caja/portal no se ejercitaron por no tener camino alcanzable)",
+  "otro": "no"
+ },
+ {
+  "k": "SCRUM-1446",
+  "clase": "ESPERA",
+  "lote": "A08",
+  "falta": "① NO tocado: espera la DECISIÓN de convención «¿qué manda en el papel, el TOTAL o la suma de las líneas?» (c.18878) y, para ③, la asesoría (SCRUM-624 c.14405, citado en c.18234); el rótulo «8%» del PDF de FACTURA sigue (c.18918) y espera permiso NUEVO del fundador para la vía A de los guards scrum603b/723 (c.18895)",
+  "otro": "no: busqué `Math.round` en pdf/vat; SCRUM-1447/1448 son hermanos, no lo cierran"
+ },
+ {
+  "k": "SCRUM-1471",
+  "clase": "ESPERA",
+  "lote": "A08",
+  "falta": "2 factura: «NO HECHO → espera la aceptación 2 de SCRUM-1470 (decide el fundador)» (`docs/master/SCRUM-1471.md:53`; c.18834); `src/modules/system/app/routes/customerPortal.routes.ts:56,426` `fechaDeLaFactura` con el reloj del proceso",
+  "otro": "sí: entró bajo el commit compartido SCRUM-1470·1471·1472 (PR #2220)"
+ },
+ {
+  "k": "SCRUM-1514",
+  "clase": "TERMINADO",
+  "lote": "A08",
+  "falta": "— (de paso, no del enunciado: `serializeJob` → SCRUM-1519, c.20376; positivo caducado del censo → SCRUM-1516)",
+  "otro": "no"
+ },
+ {
+  "k": "SCRUM-1569",
+  "clase": "TERMINADO",
+  "lote": "A08",
+  "falta": "— (quedan como decisiones escritas en `SIN_DECIDIR`, no pedidas por el enunciado: domicilio del sitio y los 17-18 de invoice/albarán, regla 29; derivados a SCRUM-1573 y SCRUM-1578)",
+  "otro": "no"
+ },
+ {
+  "k": "SCRUM-99998",
+  "clase": "TERMINADO",
+  "lote": "A08",
+  "falta": "—",
+  "otro": "sí: entró bajo SCRUM-996 (PR #1588) y SCRUM-996d (PR #2482)"
+ },
+ {
+  "k": "SCRUM-18",
+  "clase": "ESPERA",
+  "lote": "N01",
+  "falta": "espera al asesor (Q de devengo y conformidad), a SIF-1 y a la F3 post-SIF (c.16281: «Sigue aparcado»; regla 24). Después falta además el trabajo de ① y ④",
+  "otro": "en parte: la retención de garantía entró bajo SCRUM-1107 (#1758). Las certificaciones no: busqué `Certificacion`, `pctEjecutado` y «certificación de obra», 0 resultados"
+ },
+ {
+  "k": "SCRUM-143",
+  "clase": "ESPERA",
+  "lote": "N01",
+  "falta": "espera al fundador y a su gestoría: pasos 4-8 de la SL (c.20086, c.19619/19621). ④ es trabajo pendiente, pero necesita los correos, que tiene el fundador",
+  "otro": "no: busqué «colaboración social», «elevado número de solicitudes», «comunicacion.sepri» y «Registro de apoderamientos» en docs/"
+ },
+ {
+  "k": "SCRUM-1005",
+  "clase": "ESPERA",
+  "lote": "N01",
+  "falta": "audio`. No hay customer ni PDF · ② `public/dashboard/js/customerDetailView.js`: sin pestaña de adjuntos («Documentos» en :19 es una columna de la tabla de trabajos) · ③④ no constan",
+  "otro": "c.17173: espera el tope de tamaño por fichero y por cliente (lo fija J4/Javier) y el ALTER en las tres bases. Después falta todo el trabajo"
+ },
+ {
+  "k": "SCRUM-1052",
+  "clase": "ESPERA",
+  "lote": "N01",
+  "falta": "la descripción dice «Hasta responderse [Q-C1], NO se implementa», y es STOP fiscal (GO del fundador). No hay asesor: SCRUM-1264 c.19623/c.20088 lo aplazan hasta la SL. Ninguna parte está construida",
+  "otro": "no: busqué `materiales` + 40, «reforma de vivienda» y `reformaVivienda`"
+ },
+ {
+  "k": "SCRUM-1073",
+  "clase": "ESPERA",
+  "lote": "N01",
+  "falta": "la descripción espera Q-C5 (asesor; no hay asesor, SCRUM-1264 c.20088), SCRUM-1053 y el ALTER del cliente, más el GO del fundador (STOP fiscal)",
+  "otro": "no: busqué `reten*` en el modelo Customer y en el esquema entero"
+ },
+ {
+  "k": "SCRUM-1145",
+  "clase": "SIN EMPEZAR",
+  "lote": "N01",
+  "falta": "todo el trabajo; además, la firma de los textos (orquestador del equipo de Javier)",
+  "otro": "no: busqué `customers/.*sites`, `CustomerSite` y «Nuevo sitio» en public/. Lo cercano es SCRUM-1144, que es otro alcance"
+ },
+ {
+  "k": "SCRUM-1248",
+  "clase": "ESPERA",
+  "lote": "N01",
+  "falta": "espera un hecho ajeno: que `scrum753` vuelva a caer por esa causa (criterio de disparo de la descripción, c.17430). No hay trabajo que hacer hasta entonces",
+  "otro": "no: busqué «failed to copy file» y «1248» en docs y tests (los aciertos de «1248» son otra cosa: PR #1248 y el código AEAT 1248)"
+ },
+ {
+  "k": "SCRUM-1264",
+  "clase": "ESPERA",
+  "lote": "N01",
+  "falta": "espera al fundador: la SL y la contratación del asesor (c.20088), y las cuatro decisiones de c.19609",
+  "otro": "no aplica (es el contenedor de las preguntas, no construye nada en el repo)"
+ },
+ {
+  "k": "SCRUM-1347",
+  "clase": "ESPERA",
+  "lote": "N01",
+  "falta": "② espera el literal firmado de la nota (decisión del orquestador o del fundador, SCRUM-1016.md:749); no hay rastro de que se haya pedido ni firmado",
+  "otro": "sí: ① y ③ entraron bajo SCRUM-1016l (#2432, merge 3c2545254)"
+ },
+ {
+  "k": "SCRUM-1410",
+  "clase": "SIN EMPEZAR",
+  "lote": "N01",
+  "falta": "① y ② son trabajo de lectura que una sesión puede hacer hoy. ③④ esperan después la autorización del fundador para el workflow (descripción, «Los límites»)",
+  "otro": "no: busqué «1410» en docs, .github y scripts (los aciertos son repartos o el PR #1410, otra cosa) y miré el comentario de `.github/workflows/claude.yml`"
+ },
+ {
+  "k": "SCRUM-1501",
+  "clase": "ESPERA",
+  "lote": "N01",
+  "falta": "quote \\",
+  "otro": "magic_link \\"
+ },
+ {
+  "k": "SCRUM-1566",
+  "clase": "ESPERA",
+  "lote": "N01",
+  "falta": "espera el GO del fundador (STOP, reglas 29/40: «No se construye nada hasta ese GO», descripción, y c.20045 «Sigue sin tocarse nada»). Las preguntas R-1 a R-4 van al asesor (SCRUM-1264 c.20330), que no existe hasta la SL",
+  "otro": "no: `round2` está igual en vat.service.ts, criterioCaja, finalInvoice e invoiceLines"
+ },
+ {
+  "k": "SCRUM-99996",
+  "clase": "TERMINADO",
+  "lote": "N01",
+  "falta": "nada",
+  "otro": "sí: entró bajo SCRUM-1550 (PR #2416)"
+ },
+ {
+  "k": "SCRUM-19",
+  "clase": "ESPERA",
+  "lote": "N02",
+  "falta": "SetupIntent` en src/ y prisma/ da 0",
+  "otro": "La DECISIÓN de alcance (c.1 = 11304: pasa a colgar de MANT-1; STOP de esquema y cambio de máster en la Parte L; c.2 = 16282: «al retomarlo, decidir primero el alcance»), más hechos ajenos: CONNECT-1 → SCRUM-41 (Stripe en live), el mandato visado por el asesor y la regla 24. Todo el trabajo está también sin hacer"
+ },
+ {
+  "k": "SCRUM-658",
+  "clase": "PARCIAL",
+  "lote": "N02",
+  "falta": "El bloqueo de diseño y construcción se levantó en c.2 (15708, fundador 17-sep: «hay que dejarlo limpio»). Falta TRABAJO: B2 entero (`abonado`/`C.R.A.` = 0 aciertos). B3 ESPERA al asesor (lo dice el enunciado: «se confirma con el asesor antes de construir»). La emisión real sigue detrás de SIF-1",
+  "otro": "B1 entró bajo SCRUM-290 (#505)"
+ },
+ {
+  "k": "SCRUM-1028",
+  "clase": "ESPERA",
+  "lote": "N02",
+  "falta": "D-1, la consulta de aceptaciones en producción: Javier la aplazó en c.2 (16369) hasta el go live, y `docs/master/SCRUM-1551.md:416,432` la da como «NO HECHO → contra producción». Es un hecho ajeno: solo la corre el fundador. Además falta un trabajo pequeño: las filas 2 y 3 de `docs/go-live/puerta.json` (R1-R6 y D1) siguen en `abierta` aunque el texto ya está aplicado",
+  "otro": "sí: el texto entró bajo SCRUM-1551b (#2657)"
+ },
+ {
+  "k": "SCRUM-1053",
+  "clase": "ESPERA",
+  "lote": "N02",
+  "falta": "Decisión TOMADA de aparcarlo (c.2 = 16660, fundador 23-sep: «Ok aparca»): espera un caso real, que es que YaQu admita profesionales en módulos que facturan a empresas. Mientras tanto no se construye",
+  "otro": "parte 2 sí, bajo SCRUM-1269 (commit e298313b2)"
+ },
+ {
+  "k": "SCRUM-1101",
+  "clase": "PARCIAL",
+  "lote": "N02",
+  "falta": "④: el registro sale solo por stdout (`:200` console.log), sin fichero que guarde fecha, host, consulta y recuento. Lo confirma `docs/master/SCRUM-1259.md:163`. ②: falta la confirmación por nombre de host, que el enunciado pide «con el mismo patrón». Las dos son trabajo",
+  "otro": "sí: bajo SCRUM-1097 (#1744)"
+ },
+ {
+  "k": "SCRUM-1159",
+  "clase": "NO HE PODIDO MIRAR",
+  "lote": "N02",
+  "falta": "El ticket no dice qué botones son (c.1 = 17188). Ese mismo comentario pide medir en un navegador real porque el mini-DOM pierde el `minHeight` en línea. La medición necesita navegador, y no puedo usarlo",
+  "otro": "no: busqué `minHeight 44` en cobrosView, selectorMetodoCobro e invoiceDetailView, y reglas `.btn-sm` de 44 px en styles.css"
+ },
+ {
+  "k": "SCRUM-1250",
+  "clase": "ESPERA",
+  "lote": "N02",
+  "falta": "La retirada está aplazada a propósito por decisión del orquestador escrita en el enunciado («no se retiran hoy… se retiran cuando alguien esté trabajando en ese fichero»). Espera ese hecho ajeno. No hay nada hecho",
+  "otro": "no: busqué `'/:id/pay'` y `'/:id/unpay'` (siguen ahí)"
+ },
+ {
+  "k": "SCRUM-1310",
+  "clase": "ESPERA",
+  "lote": "N02",
+  "falta": "(ii) «sigue abierta» (c.1): nadie ha decidido hacerlo, y es la tarea grande. `invoices_rectifies_id_fkey` sigue sin DDL en docs/sql, prisma y scripts (0 aciertos)",
+  "otro": "no: busqué `invoices_rectifies_id_fkey` y `*_fkey` de auth_sessions/team_members en docs/sql → 0"
+ },
+ {
+  "k": "SCRUM-1396",
+  "clase": "ESPERA",
+  "lote": "N02",
+  "falta": "Decisión TOMADA de dejarlo aparcado (c.11 = 19362, fundador 13-oct: «Ok para él entonces»). Para reabrirlo hay que elegir la 1 (24 llamadas, 11/11 entre equipos) o la 1' (2 ficheros de Luis), y eso pide coordinar con el equipo de Luis",
+  "otro": "no: busqué `enlazador` en el censo y `tests/scrum1396*` → 0"
+ },
+ {
+  "k": "SCRUM-1497",
+  "clase": "ESPERA",
+  "lote": "N02",
+  "falta": "③ y el cierre esperan a que el fundador decida abrir territorio («Quién lo retira: el fundador», en el enunciado). El ticket existe a propósito para quedarse abierto",
+  "otro": "① entró bajo SCRUM-997c"
+ },
+ {
+  "k": "SCRUM-1549",
+  "clase": "SIN EMPEZAR",
+  "lote": "N02",
+  "falta": "Falta todo el trabajo de (B) y de la parte 2. Ojo: `sesion.mjs` es del equipo de Luis (S5) y hay que coordinar con su PR #2434 (c.1). La parte 1 es la instalación de la máquina, fuera del repo, y no la puedo verificar sin ejecutar",
+  "otro": "no: busqué `SCRUM-1549` (solo aparece en registros que lo citan) y leí `prefijo + p` y `puestoDeNombre`"
+ },
+ {
+  "k": "SCRUM-1573",
+  "clase": "ESPERA",
+  "lote": "N02",
+  "falta": "anonimiz\\",
+  "otro": "borrado a petición` en src/modules/billing → 0"
+ },
+ {
+  "k": "SCRUM-142",
+  "clase": "ESPERA",
+  "lote": "N03",
+  "falta": "El dictamen P1 del asesor (descripción; c.1 RECON: «NO hay parte construible sin P1»). Después queda todo el trabajo",
+  "otro": "no: busqué devengoAt, nextAntInvoiceNumber, CF-A-, 'ANT' en git; Jira (nextAntInvoiceNumber) solo devuelve el propio 142"
+ },
+ {
+  "k": "SCRUM-957",
+  "clase": "PARCIAL",
+  "lote": "N03",
+  "falta": "CimInstance\\",
+  "otro": "ENOENT` dan 0 en trampas-del-entorno.md; solo lo nombra `docs/equipo/traspaso-javier.md:95` como pendiente"
+ },
+ {
+  "k": "SCRUM-1044",
+  "clase": "SIN EMPEZAR",
+  "lote": "N03",
+  "falta": "Las dos partes. Antes tiene que existir la pestaña Sitios (SCRUM-1145), que tampoco está en main",
+  "otro": "no: busqué hrefAbrirEnMapa, /sites, Sitios y CustomerSite en public/; Jira (hrefAbrirEnMapa) solo devuelve 1044"
+ },
+ {
+  "k": "SCRUM-1054",
+  "clase": "ESPERA",
+  "lote": "N03",
+  "falta": "Las respuestas del asesor Q-C4 y Q-C3 (SCRUM-1039, en la descripción) y el GO del fundador por STOP fiscal (reglas 29/38/40). Después, todo el trabajo",
+  "otro": "no: busqué recargo, suplido y calcularRecargoDeFactura (sin llamadores)"
+ },
+ {
+  "k": "SCRUM-1132",
+  "clase": "SIN EMPEZAR",
+  "lote": "N03",
+  "falta": "Las dos partes de pantalla. Se pueden construir hoy (J2), con la condición de c.9: mirar antes la pantalla",
+  "otro": "no: busqué /notes, «Añadir nota» y «Sin notas» («Sin notas» solo sale en `parteDetailView.js:251`, que es otra pantalla)"
+ },
+ {
+  "k": "SCRUM-1242",
+  "clase": "ESPERA",
+  "lote": "N03",
+  "falta": "Que la S0 (equipo de Luis) acepte la norma y la escriba. Es una propuesta por el cauce de `dos-equipos.md` §5 y no tiene ningún comentario de la S0",
+  "otro": "no está como norma: busqué los literales de la propuesta; la aplicación de hecho sale en los registros de SCRUM-1232 y SCRUM-1240"
+ },
+ {
+  "k": "SCRUM-1251",
+  "clase": "ESPERA",
+  "lote": "N03",
+  "falta": "La decisión de producto sobre desde dónde se descarga (en la descripción, «no lo decido yo»), y que antes se resuelva SCRUM-1232 (el criterio del justificante). Después, el trabajo de pantalla",
+  "otro": "no: busqué evidencias.zip en public/; Jira solo devuelve 297/322/1195/1249/1252, que son el origen o el contexto"
+ },
+ {
+  "k": "SCRUM-1314",
+  "clase": "ESPERA",
+  "lote": "N03",
+  "falta": "La decisión del fundador entre (a), (b) y (c), más la pregunta al asesor sobre qué exige la AEAT (en la descripción). STOP regla 40",
+  "otro": "no: busqué P1-1303 y 1314 en docs"
+ },
+ {
+  "k": "SCRUM-1406",
+  "clase": "ESPERA",
+  "lote": "N03",
+  "falta": "Las dos preguntas del fundador (en la descripción: «abierto SIN decisión»)",
+  "otro": "no: busqué trial en el máster y en entitlements"
+ },
+ {
+  "k": "SCRUM-1499",
+  "clase": "ESPERA",
+  "lote": "N03",
+  "falta": "'service'` y `:1288` sigue enumerando sin `received`",
+  "otro": "La decisión del fundador sobre `type:'inbound'` en la Parte J. Después, el comentario del esquema (②③, regla 40)"
+ },
+ {
+  "k": "SCRUM-1556",
+  "clase": "SIN EMPEZAR",
+  "lote": "N03",
+  "falta": "Todo. Se puede hacer hoy (J3/J6). Antes hay que elegir cuál de los ficheros de cotejo es el instrumento (c.1), y eso lo resuelve quien construya al medir",
+  "otro": "no: busqué guards-entrada, _censo-por-posicion y cotejo en la tabla y en carriles.json; Jira (_censo-por-posicion) solo devuelve 1556"
+ },
+ {
+  "k": "SCRUM-1578",
+  "clase": "ESPERA",
+  "lote": "N03",
+  "falta": "El STOP del fundador (exportación de datos de clientes) y su firma del rótulo de la columna (regla 39). Además, decidir qué equipo lo construye: el carril es S1 (en la descripción). Después, el trabajo",
+  "otro": "no: busqué mobile y Móvil en exportData.ts"
+ }
+]
