@@ -71,6 +71,7 @@ const F = {
   exports: 'src/modules/exports/app/routes/exports.routes.ts',
   servicio: 'src/modules/invoicing/domain/verifactu.service.ts',
   builder: 'src/modules/fiscal/verifactu/registro.builder.ts',
+  instalacion: 'src/modules/fiscal/verifactu/instalacion.ts',
   env: 'src/core/config/env.ts',
   arranque: 'src/index.ts',
 };
@@ -358,7 +359,16 @@ export const CATALOGO = Object.freeze([
   {
     codigo: '1226', que: '`IndicadorMultiplesOT` sólo N o S',
     categoria: 'comprobada', capa: 'construcción',
-    anclas: [{ tipo: 'elementoFijo', ...REG, elemento: 'IndicadorMultiplesOT', valor: 'S' }],
+    // SCRUM-524g: hasta aquí era `elementoFijo … 'S'`. Ya no hay literal: el valor se CALCULA por
+    // usuario del SaaS (FAQ AEAT v1.3, apdo. 4) y sólo puede salir S o N. Lo sujetan la condición
+    // que lo calcula, el constructor que lo escribe y los dos llamadores que se lo pasan.
+    anclas: [
+      { tipo: 'condicional', fichero: F.instalacion, dentroDe: 'indicadorMultiplesOT',
+        condicion: 'facturacionesDelUsuario>1', siVerdad: { contiene: 'S' }, siFalso: "'N'" },
+      { tipo: 'elementoCalculado', ...REG, elemento: 'IndicadorMultiplesOT', expresion: 'productor.indicadorMultiplesOT' },
+      { tipo: 'llamada', fichero: F.servicio, dentroDe: 'buildVerifactuRegistrosXml', llamada: 'indicadorMultiplesOT' },
+      { tipo: 'llamada', fichero: F.servicio, dentroDe: 'registroParaRemision', llamada: 'indicadorMultiplesOT' },
+    ],
   },
   {
     codigo: '1241', que: 'error técnico al obtener el `SistemaInformatico`',

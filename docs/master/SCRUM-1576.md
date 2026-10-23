@@ -79,3 +79,53 @@ lleva su control (con la ficha del día tiene que salir lo del día, o dice CIEG
 | `/admin/search`, factura | Fusionado | Principal | LEE EL VIVO |
 
 Población: 3 casos · 0 CIEGO · ninguna escritura en el banco. El resto de la lista (a) **está leído, no corrido**.
+
+## 22-oct-2026 · SCRUM-1576b · J1 · lista, ficha y paquete de disputa de facturas nombran al cliente congelado
+
+**Medido contra:** `origin/main` = `82f3ea4115723db78ca56c4b2e1c426a810a0433` · 2026-10-22T13:58:26Z (arreglo y mutaciones sobre `0077bd1d51a7cb64b1c18d85781117b71936fd38`, 10:27Z, sesión `jv-j1u`; rojo/verde repetidos por `jv-j1y` tras `git merge origin/main`)
+A9: comprobación → `tests/scrum1576b-facturas-pintan-el-cliente-congelado.test.mjs`
+
+**Skill UI:** cargada (`yaqu-premium-ui`, y `yaqu-verifactu-sif` por tocar la ruta del paquete de disputa). Ningún texto nuevo, ninguna clase ni token nuevos: cambia de dónde sale el nombre.
+
+Puesto J1 · árbol `j1u-1576b` · rama `scrum-1576b-facturas-pintan-el-cliente-congelado`. Los tres lectores (a) de
+J1 que el §2 de arriba deja fuera del carril de J2.
+
+| lector | antes | después |
+|---|---|---|
+| lista de facturas (`invoicesView.js`, celda del cliente) | la ficha viva | `customerName` de la factura si no es `null`; si no, la ficha |
+| ficha de la factura (`invoiceDetailView.js`, fila «Cliente») | la ficha viva | la misma regla |
+| paquete de disputa (`invoicesAdmin.routes.ts`, `dispute-package`) | `invoice.customer` (vivo) | `clienteDelDocumento(invoice, invoice.customer)` para nombre, teléfono y email |
+
+Es la regla de `clienteDelDocumento`: una factura vieja sin columnas congeladas sigue pintando la ficha. Teléfono y
+email de la ficha de la factura siguen VIVOS a propósito: son el destino de los envíos (clase (c) del §2). La ruta
+del paquete de disputa no es camino de emisión: no sella, no escribe, sólo lee lo guardado.
+
+`tests/scrum1576b-facturas-pintan-el-cliente-congelado.test.mjs`: ruta real (`_banco-camino-real`) → JSON → vista
+(`_banco-vistas`); la ficha cambia después de la factura.
+
+| | casos | pass | fail |
+|---|---|---|---|
+| sin el arreglo (los tres ficheros en `e1bb76d75`, `dist/` recompilado) | 10 | 7 | 3 (los tres 🔴) |
+| con el arreglo | 10 | 10 | 0 |
+
+Mutación (`jv-j1u`, sobre `0077bd1d`, no repetida tras el merge): deshacer cada uno de los tres arreglos por separado
+da 9/1, y cae SÓLO su caso. Main no tocó ninguno de los tres ficheros ni los dos bancos entre `0077bd1d` y `82f3ea41`
+(`git diff --stat`, vacío).
+
+Vecinos, tras el merge, contra `dist/` de `tsc --noCheck`: el test, `scrum1576` (J2), `scrum811c` (el de SCRUM-1340),
+`scrum854`, `scrum976`, `scrum267`, `scrum273`, `scrum262` y `scrum553`. Antes de este tramo: **104 casos, 101 pass, 3 fail**
+(811c, 854 y 976: la rama toca `public/` y no escribía en `docs/master/`). La pasada de `tests:que-cubren` de `jv-j1u`
+(654 ficheros, 5.801 casos, sobre `0077bd1d`) dio 10 fallos: 5 de entorno (árbol anidado sin `node_modules`, ruta 8.3:
+scrum1199 ×2, scrum1298b ×2, scrum476), 2 suyos ya arreglados en la rama (262, 553) y los 3 de arriba. **No repetida tras el merge.**
+
+**Sin tocar, a propósito:**
+- (b) el libro de recibidas lee al proveedor vivo (`src/modules/fiscal/librosAeat/librosAeat.repo.ts:105`): falta guardar el dato, esquema (regla 40).
+- STOP: el sobre del paquete de evidencias lee al cliente vivo (`src/modules/fiscal/evidencias/paquete.repo.ts:85`): fiscal, ya en SCRUM-431/438.
+
+**Errores propios:**
+- `jv-j1u` trajo A23 DESPUÉS de escribir el test; su primera mutación se hizo con el arreglo sin comitear (A23 #9), y se restauró por copia y `cmp`.
+- `jv-j1u` puso en el fixture teléfonos reales y un `<th>` pegado: los cazaron `scrum262` y `scrum553`, y están arreglados en el tercer commit.
+- `jv-j1y` sacó el `norma.mjs` de `main` con `git --work-tree=… checkout origin/main --`, que escribe el ÍNDICE del worktree propio: cinco ficheros de `docs/equipo/` quedaron `MM`. Se devolvió con `git restore --staged` y se comprobó con `git status` (0 líneas).
+- El traspaso llamaba «scrum1340» a un test que no existe con ese nombre: es `scrum811c-skill-ui-declarada` (lo cita por SCRUM-1340). Se buscó por contenido antes de lanzar nada.
+
+**No visto en yaqu.app:** producción no despliega desde el 20-oct 15:35Z (despliegues pausados en Railway). No lo he intentado.

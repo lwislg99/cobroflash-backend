@@ -22,10 +22,10 @@ export interface SistemaInformatico {
   nombreSistema: string;        // 'YaQu' (TextMax30)
   idSistema: string;            // código de 2 caracteres asignado por el productor (ej. '01')
   version: string;              // versión del SIF declarada
-  numeroInstalacion: string;    // identificador de la instalación (SaaS: '1')
+  numeroInstalacion: string;    // uno por facturación (cada comercio), nunca repetido: SCRUM-524e/524g
   soloVerifactu: 'S' | 'N';     // YaQu: 'S' (solo modalidad VERI*FACTU)
   multiOT: 'S' | 'N';           // soporta varios obligados: SaaS multi-tenant → 'S'
-  indicadorMultiplesOT: 'S' | 'N';
+  indicadorMultiplesOT: 'S' | 'N'; // por usuario del SaaS, no global: 'N' con una facturación (524e)
 }
 
 export interface Encadenamiento {
