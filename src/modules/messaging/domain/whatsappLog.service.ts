@@ -297,12 +297,14 @@ const STATUS_RANK: Record<string, number> = { queued: 0, sent: 1, delivered: 2, 
  * ¿Debe aplicarse la transición de `current` a `next`? Solo avanza (un `delivered` que llega
  * tras un `read` no degrada el estado, y Meta puede entregar los callbacks fuera de orden).
  * SCRUM-1601 (Parte L, regla 27): `failed` solo desde `queued|sent`, y de `failed`, `received`
- * o un estado desconocido no se sale. Pura → testeable sin BD.
+ * o un estado desconocido no se sale. SCRUM-1601c: el único salto firmado es `sent → read`
+ * (c.20673); desde `queued` sólo se va a `sent` (o a `failed`), decisión c.20709. Pura → testeable sin BD.
  */
 export function shouldApplyStatus(current: string, next: string): boolean {
   const cur = STATUS_RANK[current] ?? -1;
   if (cur < 0) return false;
   if (next === 'failed') return cur <= STATUS_RANK.sent;
+  if (cur === STATUS_RANK.queued) return next === 'sent';
   const nxt = STATUS_RANK[next] ?? -1;
   return nxt > cur;
 }
