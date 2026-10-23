@@ -104,10 +104,10 @@ type Candado = 'reminder7SentAt' | 'reminder14SentAt';
  */
 async function reservarCandado(id: number, campo: Candado): Promise<boolean> {
   try {
-    const { count } = await prisma.invoice.updateMany({
-      where: { id, [campo]: null },
-      data: { [campo]: new Date() },
-    });
+    // Cada candado con su nombre LITERAL: el censo de la regla 29 (scrum878) no clasifica un `[campo]`.
+    const { count } = campo === 'reminder7SentAt'
+      ? await prisma.invoice.updateMany({ where: { id, reminder7SentAt: null }, data: { reminder7SentAt: new Date() } })
+      : await prisma.invoice.updateMany({ where: { id, reminder14SentAt: null }, data: { reminder14SentAt: new Date() } });
     return count === 1;
   } catch (e: any) {
     console.error(`[invoiceReminder] no se pudo reservar ${campo} de inv #${id}; NO se envía (SCRUM-1509j):`, e?.message);
@@ -122,10 +122,11 @@ async function reservarCandado(id: number, campo: Candado): Promise<boolean> {
  */
 async function liberarCandado(id: number, campo: Candado): Promise<void> {
   try {
-    await prisma.invoice.updateMany({
-      where: { id, [campo]: { not: null } },
-      data: { [campo]: null },
-    });
+    if (campo === 'reminder7SentAt') {
+      await prisma.invoice.updateMany({ where: { id, reminder7SentAt: { not: null } }, data: { reminder7SentAt: null } });
+    } else {
+      await prisma.invoice.updateMany({ where: { id, reminder14SentAt: { not: null } }, data: { reminder14SentAt: null } });
+    }
   } catch (e: any) {
     console.error(`[invoiceReminder] no se pudo liberar ${campo} de inv #${id}; ese aviso NO se reintentará (SCRUM-1509j):`, e?.message);
   }

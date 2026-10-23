@@ -1060,3 +1060,10 @@ Postgres real (base en memoria). Cada cuánto falla la escritura del candado: si
 
 * Mi banco salió a 0 en el control dos veces antes de medir nada: la baja de WhatsApp (el doble devolvía al cliente como «de baja») y el cerrojo del tope de 1509g (`$executeRaw`). Lo cazó el CONTROL, que ahora dice en su rojo lo que contestó el módulo.
 * Hice la lectura de Jira antes que la de arranque, y me medí después de cada una (149.555 y ~160.700); crucé 200k a ~238k y lo avisé en ese momento.
+
+## 7 · El obligatorio de #2723 cayó en 3 casos, los 3 míos (relevo jv-j1am, 2026-10-23T11:31Z de GitHub)
+
+Job 120382897336 (12.252 casos, 3 fail, 0 «TANDA SIN VEREDICTO»): `scrum262` (el test sembraba dos móviles ordinarios), `scrum702` (el test leía `NODE_ENV`: 21 ficheros sobre un tope de 20) y `scrum878` (las dos escrituras del candado usaban un nombre de campo calculado, `[campo]`, que el censo de la regla 29 no clasifica). Arreglado el código, ningún guard tocado (regla 41): teléfonos con `telefonoDePrueba(n)`, el test ya no fija `NODE_ENV` (no lo necesitaba), y cada candado se escribe con su nombre literal — mismo `where`, mismo `data`, por rama. Rojo con las versiones de `61385935`: 3 de 28 caen, exactamente esos tres; con el arreglo 36/36 (los tres guards y los dos tests de 1509j). Mutaciones de 1509j otra vez: base 5/5, las 3 cazadas, final 5/5. **El error es mío de origen (jv-j1aj, mismo puesto): empujé sin correr esos tres guards, y ninguno nombra el fichero.**
+A9: comprobación → `tests/scrum262-telefonos-de-prueba.test.mjs`
+A9: comprobación → `tests/scrum702-suelo-misma-poblacion.test.mjs`
+A9: comprobación → `tests/scrum878-poblacion-del-guard-29.test.mjs`

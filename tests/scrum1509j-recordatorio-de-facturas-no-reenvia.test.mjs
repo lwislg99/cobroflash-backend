@@ -22,9 +22,9 @@
 // una llamada al cron; la factura tiene 30 días, así que entran el aviso de 7 y el de 14.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { telefonoDePrueba } from '../scripts/_telefonos-prueba.mjs';
 
 process.env.WHATSAPP_DRY_RUN = '1';
-process.env.NODE_ENV = 'test';
 
 const MID = 7;
 const CID = 50;
@@ -36,8 +36,8 @@ let factura;
 let fallos; // { candado: n|Infinity, liberar: n, envio: n } — cuántas veces más falla cada cosa
 let cuenta;
 
-const cliente = { id: CID, merchantId: MID, name: 'Cliente 1509j', phone: '34600111222', mobile: null, waOptOut: false };
-const merchant = { id: MID, name: 'Taller 1509j', whatsappPhone: '34600999888', country: 'ES' };
+const cliente = { id: CID, merchantId: MID, name: 'Cliente 1509j', phone: telefonoDePrueba(15091), mobile: null, waOptOut: false };
+const merchant = { id: MID, name: 'Taller 1509j', whatsappPhone: telefonoDePrueba(15092), country: 'ES' };
 
 function reiniciar(f = {}) {
   factura = {
