@@ -437,3 +437,85 @@ el arreglo de la suerte: demuestra que el cambio no altera lo que miden); Linux/
 escrito no cuenta. Sí corridos: los guards de suite y de registro (`scrum237`, `976`, `824`, `836`, `419`, `702`,
 `700`, `719`, `560`, `267`, `273`, `1294`, `850`) y los que nombran los árboles declarados (`scrum383`, `395`,
 `480`, `774`): 188/188 en 17 ficheros. La suite la hace el check obligatorio.
+
+## J6 · SCRUM-1218f · seis gateados más a `node:http`, y cuatro que salen ROJOS en la base de pruebas sin tocarlos
+
+**Medido contra:** `origin/main` = `28098fe4b1a160303526f5a4002d52556d2c5b22` · 2026-10-23T19:28:21Z (hora de GitHub al acabar las pasadas; sesión J6 `jv-j6at` en el árbol `jv-j6ar`, por encargo del orquestador `cobroflash-backend-62`; el árbol es el dado de alta en c.20596)
+
+A9: aviso → cicatriz J6 «Lancé una tanda de 30 pasadas en primer plano sin cronometrar el canario» — no se pudo comprobar: el canario prueba que el banco arranca, no cuánto dura, y ningún hook multiplica pasadas por duración antes de lanzar
+
+### ⓪ El lote, medido otra vez
+
+De los 17 que dejó 1218e se miró, fichero a fichero, qué leen de la respuesta. Siete leen algo que
+`pedirSinAgente` no da (`arrayBuffer()` en `pdfs`, `scrum221`, `scrum74`, `scrum82`, `scrum25-export-zip` y
+`scrum25-exports`; `scrum148` ya importa `node:http`): no entran. Los otros diez sólo leen `status`,
+`headers.get`, `text` y `json` (los `r.ok` de `scrum170` y `scrum17` son de funciones puras, no de una
+respuesta). Ninguno de los diez es del equipo S: `carriles.mjs de <ruta>`, corrido ANTES de tocar, da «nadie
+lo reclama» en los diez.
+
+### ① 🔴 Cuatro de los diez salen ROJOS en el ANTES, sin haber tocado nada
+
+Banco `banco-1218e`, con el entorno del hijo QA de `staging-gated.mjs` (`QA_DB_TEST=1`, `WHATSAPP_DRY_RUN=1`,
+que es el `env` de la entrada `qa` de `HIJOS_SPEC` en `scripts/_evidencia-tanda.mjs`), contra
+`DATABASE_URL_TESTS` con el turno tomado. Tres pasadas de cada uno, y las tres iguales:
+
+| fichero | caso que cae | error | respuestas | causa |
+| --- | --- | --- | --- | --- |
+| `scrum178-emision-manual` | «SCRUM-178: emisión manual — emite UNA vez, con líneas, y cierra las cuatro puertas» (1 de 2) | debía emitir; devolvió 409 `facturacion_no_disponible` | `GET /auth/verify` 302 · `POST /admin/quotes/:id/invoice-manual` 409 | regla 24: el comercio de la fixture está en modo `receipt` (`quotesAdmin.routes.ts`, gate de SCRUM-1027) |
+| `scrum814-carrera-del-tramo.gated` | los 3 de 3 («dos peticiones simultáneas…», «plan 30/70…», «dos peticiones SECUENCIALES…») | se esperaban 2 facturas y hay 0; A y B 409 `facturacion_no_disponible` | `POST /admin/quotes/:id/invoice` 409, en las cinco | regla 24, el mismo gate |
+| `scrum85-pay-routes-token` | «SCRUM-85: /pay/card, /pay/bizum, /pay/invoice cierran el IDOR…» (1 de 1) | `el link a /pay/card debe llevar el TOKEN` | `GET /pay/invoice/<id>` 404 · `GET /pay/invoice/<token>` 200 | `/pay/card`: la página del cobro no lleva el enlace con el token; **causa sin medir** |
+| `scrum17-recapitulativa` | «SCRUM-17: consolidar → rotura por mes (N facturas), IVA mixto, guards, tenancy» (1 de 12) | `número de serie FISCAL (no J-)`, con `actual: 'F260001'` | `GET /auth/verify` 302 · `POST /admin/jobs/:id/consolidar-albaranes` 201 | **sin clasificar**: ni 409 ni `/pay/card`; no he leído qué espera la aserción |
+
+Salen del lote: un test que cae en su segunda petición no ejercita el resto de sus `fetch`, y «igual antes y
+después» sobre un rojo sólo compara el prefijo. **No se arreglan aquí**: lo de la regla 24 es el camino de
+emisión y sus flags (STOP), y tocar las aserciones es la regla 41. Detalle (con los tokens de un solo uso
+tapados): `evidencias/SCRUM-1218/rojos-1218f.salida.txt`. En CI no se ven: los cuatro sólo se encienden con
+`QA_DB_TEST`, y el job obligatorio no lo pone. Los abre en ticket el orquestador.
+
+### ② Los seis, y el instrumento
+
+Migrados con `migrar-1218d`: `scrum127-paywall-bloquea`, `scrum170-facturacion-parcial`,
+`scrum171a-consolidar-cliente`, `scrum73-verifactu-gate`, `scrum90-pay-bank-mp-token` y `tenancy-permisos`.
+32 llamadas, 0 `fetch(` restantes (`migrar-1218f.salida.txt`). **Ninguna aserción cambia:**
+`diff-idem-1218f.mjs.txt` comprueba, como multiconjunto, que cada una de las 32 líneas quitadas reaparece
+idéntica cambiando sólo `fetch(` por `pedirSinAgente(`; con una quitada alterada sembrada, la da como «FALTA» (control VIVO).
+
+Turno tomado a las 19:03:29Z y soltado a las 19:31:02Z (`turno:estado` = LIBRE). Como en 1218e, no es
+`npm run test:staging:gated` entero: el runner no separa los casos por fichero; el turno, la base y el entorno
+son los suyos. Comparador: `comparar-1218d` (no pliega el status).
+
+| fichero | casos (0 SKIP) | respuestas/pasada | antes | después | casos | respuestas |
+| --- | --- | --- | --- | --- | --- | --- |
+| scrum127 | 1 ok | 12 | 3/3, 0 abortos | 3/3, 0 | IGUAL | IGUAL |
+| scrum170 | 7 ok | 7 | 3/3, 0 | 3/3, 0 | IGUAL | IGUAL |
+| scrum171a | 1 ok | 8 | 3/3, 0 | 3/3, 0 | IGUAL | IGUAL |
+| scrum73 | 1 ok | 5 | 3/3, 0 | 3/3, 0 | IGUAL | IGUAL |
+| scrum90 | 1 ok | 6 | 3/3, 0 | 3/3, 0 | IGUAL | IGUAL |
+| tenancy-permisos | 2 ok | 97 | 3/3, 0 | 3/3, 0 | IGUAL | IGUAL |
+
+Salidas: `evidencias/SCRUM-1218/pasadas-1218f.salida.txt` y `comparar-1218f.salida.txt`.
+
+Controles:
+
+- **El banco enciende el test:** 0 `# SKIP` en las 36 pasadas.
+- **Comparador:** su control sembrado (veredicto + respuesta de más, y sólo un status cambiado) sale DISTINTO
+  en los seis: VIVO.
+- **Redirecciones:** `scrum73`/`scrum90`/`tenancy-permisos` tenían `fetch` sin `redirect: 'manual'`, que
+  sigue redirecciones y `node:http` no. Las respuestas salen IGUALES (97 en `tenancy-permisos`): ninguna se
+  seguía.
+- **Mutación:** con el `status` del ayudante a 599 en `scrum90`, el caso cae (`not ok`, exit 1); el fichero se
+  restauró desde copia y `cmp` lo da idéntico.
+- **La lista:** `CON_EL_PATRON_YA` baja de 20 a 14. Con la lista vieja, `scrum560` cae nombrando exactamente
+  esos seis.
+
+### ③ Lo que queda (14)
+
+- 4 rojos de ① (`scrum178`, `scrum814…gated`, `scrum85`, `scrum17`): esperan su ticket.
+- 6 con `arrayBuffer()` y `scrum148`: una pasada ANTES de cada uno, sin migrar, sale VERDE (0 SKIP; en
+  `pasadas-1218f.salida.txt`, «SONDEO»). Son el siguiente lote, y piden decidir si el ayudante gana
+  `arrayBuffer` o se escribe otro.
+- 3 de Luis (`scrum1188d`, `scrum1489`, `scrum912`), sin tocar.
+
+**Sin medir:** la tabla de 1218c con el comparador arreglado (se dejó montado PGlite 0.5.11 + socket 0.2.14 y
+el DDL de 33 tablas, y no se corrió: el orquestador lo pasó detrás del empujón); 20 pasadas por fichero;
+Linux/CI; la tanda gateada completa; la suite entera local.
