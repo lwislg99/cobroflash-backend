@@ -70,8 +70,9 @@ A9: comprobación → `tests/scrum1327-el-veredicto-no-se-decide-a-mano.test.mjs
   al nacer una pieza (1185: las dos rutas pasan a `retiradas`; 1215g/i: los seis literales a `porGrupo`;
   1480f: el script a `_sin-fila-declarados.json`; 522 y 548: el guard declarado fuera de la tanda y con
   destino no derivable), uno una negación sin hermano positivo en mi test (237) y **uno que no es mío
-  de arreglar** (1560, punto 2 de arriba). Los 13 arreglados: **119 pass · 0 fail** salvo 1560.
-  ⚠️ No se ha repetido la tanda completa después de los arreglos: se repitieron los ficheros caídos.
+  de arreglar** (1560, punto 2 de arriba).
+  **Repetida entera tras los arreglos:** **12.185 tests · 12.003 pass · 25 fail · 157 skipped** (suman
+  el total). Caen **14 ficheros: los 13 que caen igual en la base, y `scrum1560`**. Ninguno más.
 
 ## El fallo propio (A9)
 
