@@ -1,0 +1,5 @@
+﻿runs listados: 447 (2026-10-15 → 2026-10-22)
+POBLACIÓN · runs 447 · con job meta-guard 327 · sin job 120 · CIEGOS (listado de jobs falló) 0 · CIEGOS (listado de runs) 0
+  success 92 · failure 34 · cancelled 197 · otros 4
+  cancelled con job ≥ 1.770 s (el techo de 30 min): 135
+  cancelled con paso de mutación cancelado y ≥ 1.700 s: 135

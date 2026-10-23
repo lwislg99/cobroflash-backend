@@ -1,0 +1,26 @@
+﻿0 · guard estático: acepta el fichero y rechaza los 6 mutantes
+1 · control negativo: 7 presupuestos que NO son C (casos frontera incluidos) → 0, y la función real dice lo mismo
+2 · siembra: 7 C (uno que cuadra consigo, uno que no y firmado) → las 10 medidas iguales a la función real
+      ① C heredados (global + varios IVA) · TOTAL = 7
+         sin el negocio demo (id 1) = 6
+         negocios distintos = 3
+         FIRMADOS o aceptados (acceptedAt / evidencia / firma) = 1
+         vivos: ni archivados, ni rechazados, ni caducados = 5
+         con alguna factura ya emitida (anterior al bloqueo) = 1
+         por estado = accepted: 1 · draft: 2 · expired: 1 · paid: 1 · rejected: 1 · sent: 1
+         creado entre = 2026-08-02 y 2026-09-15
+         ids (máx. 50) = 108, 109, 110, 111, 112, 113, 114
+         control: presupuestos leídos en total = 14
+      ③ negocios · TOTAL = 3
+         con zona declarada (no vacía) = 0
+         con zona válida: sus fechas salen en su hora = 0
+         sin zona o no válida: sus fechas salen en UTC = 3
+         zonas (máx. 10) = —
+      ④ mensajes de WhatsApp · TOTAL = 0
+         estados distintos guardados = —
+         por estado y tipo = —
+3 · escritura: Postgres rechaza el INSERT («psql:C:/Users/Admin/AppData/Local/Temp/c1566-Mjvbpn/c.sql:32: ERROR:  cannot execute INSERT in a read-only transaction») y merchants sigue en 3
+4 · SCRUM-1490: su bloque corre sobre este esquema y caza la revisión sembrada (revision_en_otro_anio 0 → 1)
+5 · ③ zona: 5 negocios (sin zona, Madrid, inventada, en blanco, «atlantic/canary» en minúsculas) → declarada 3, válida 2, igual que zonaValida real
+6 · ④ WhatsApp: 7 mensajes sembrados (incluido un estado que el código ya no escribe) → total, estados y recuento por tipo iguales; ningún teléfono en la salida
+✔ todo en verde

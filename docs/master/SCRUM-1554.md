@@ -1,5 +1,104 @@
 # SCRUM-1554 · Puerta de go-live
 
+## 23-oct-2026 · SCRUM-1554g · Las condiciones de TEXTO, contra lo que SIRVE yaqu.app hoy — sólo medida, no toca `puerta.json`
+
+**Medido contra:** `origin/main` = `6c8706daef7399513e69e6872068aa7bed25b760` · 2026-10-23T12:45:52Z (cabecera `Date:` de GitHub al escribir; las medidas, de 12:27Z a 12:45Z)
+
+A9: aviso → cicatriz S0 «En 1554d conté como resuelta la entrada 3 de la puerta con una medida que confirmaba el defecto que la entrada denuncia» — no se pudo comprobar: es la lectura de una columna, y ningún test lee qué significa un veredicto escrito en un registro
+
+S0, equipo de Luis, encargo del orquestador (23-oct). **Producción** = `https://yaqu.app/version` y `/health` →
+`6c8706daef7399513e69e6872068aa7bed25b760`, el mismo sha que `origin/main` y que este worktree (12:27:49Z). Sólo GET
+públicos y un navegador sin sesión (Playwright); **no he entrado con la cuenta QA**. No se tocó
+`docs/go-live/puerta.json`, ningún flag, ningún guard, nada de `src/` ni de `public/`.
+
+### La respuesta corta
+
+1. **Hoy árbol y producción NO discrepan en nada de lo que se lee sin sesión.** Tres sondas independientes:
+   **137 de 137** ficheros de `public/` iguales byte a byte a lo servido (quitando dos transformaciones del camino,
+   abajo) · `/legal/alcance-beta` con la misma versión en los dos (`ac7349fd0b84`) y el cuerpo contenido entero ·
+   el texto VISIBLE renderizado en un navegador, frase por frase.
+2. **Desde el censo del 19-oct (1554d), en producción se han arreglado tres condiciones de texto enteras y dos a
+   medias:** la **2** (R1–R6), la **7** (las dos frases de `terminos.html`) y la **14** (el subtítulo del héroe,
+   ya cerrada en la lista) — y la **3** (el aviso de borrador ya se sirve; los marcadores internos, no) y la **16**
+   (el PDF del albarán; lo que queda es del camino de emisión). **En `puerta.json` la 2, la 3, la 7 y la 16 siguen
+   `abierta`**: la lista va por detrás de lo que sirve producción.
+3. **La pregunta del deshielo: SÍ hubo arreglos dados por hechos en `main` y que producción no servía.** **Entre
+   el 20-oct 15:35:37Z y el 23-oct 02:49:24Z no hay NINGÚN despliegue registrado** en GitHub: no fallaron, no
+   existen (`gh api …/deployments`, 100 últimos). Así que **R1–R6 + D1** (en `main` el 22-oct 09:18:14Z, #2657)
+   y el **PDF del albarán** (22-oct 11:26:01Z, #2675) estuvieron **~17 h 34 min y ~15 h 26 min** «arreglados» en
+   el árbol mientras `yaqu.app/legal/alcance-beta` seguía sirviendo «Cobro integrado», «Justificantes de cobro» y
+   «soporte por email y WhatsApp». Llegaron a producción con el primer despliegue del deshielo, `f749dee46`
+   (`in_progress` 02:49:24Z → `success` 02:52:17Z). **Nadie los dio por cerrados en la lista** —1554f, el 22-oct,
+   medía si la puerta estaba completa, no si cada entrada era verdad—, así que el error no llegó a escribirse.
+   **Al revés (producción bien y árbol mal): ninguno.**
+4. **Dos datos del encargo ya no son ciertos, y gana lo medido:** `terminos.html:79-80` ya NO dice «…documentos
+   de cotización y factura…» (dice «YaQu te ayuda a generar documentos de cotización. En España, hasta que se
+   active la facturación, YaQu no emite facturas ni ningún otro documento de cobro.»), y el subtítulo VISIBLE ya
+   NO promete «te paga — con tarjeta, Bizum o transferencia»: esa frase sólo queda en los bytes de
+   `#heroe-f4`, una propuesta con `hidden` (`display: none` medido) y `data-microcopy="PENDIENTE_FUNDADOR"`.
+5. **Siguen igual que el 19-oct, y servidas:** 6, 9, 11, 12, 13, 15, 19, 20, 22, 23 (y la 5, que es una firma).
+   La **9 ha empeorado en lo que parte**: ahora corta en dos bloques la frase R4 recién firmada.
+
+### Las sondas, y sus controles
+
+| sonda | población | resultado | control |
+|---|---|---|---|
+| ① `public/` byte a byte (`comparar-public.mjs`) | **137** ficheros de `git ls-files public` en HEAD | 134 idénticos · 3 distintos | los 3 distintos demuestran que la sonda ve diferencias; deshechas dos transformaciones conocidas (`normalizar.mjs`), **los 3 quedan idénticos**: 4 correos de `terminos`/`privacidad` reescritos por la *Email Obfuscation* de Cloudflare, y 103 sellos `?v=` + `__BUILD_ID__` en `dashboard/index.html` |
+| ② `/legal/alcance-beta` (`legal.mjs`) | el único documento de `docs/legal/` que se sirve (`git grep readLegalDoc -- src`: `legalPages.routes.ts` y `subscriptions.routes.ts`, los dos `ALCANCE_BETA.md`) | versión árbol `ac7349fd0b84` = versión servida; el HTML renderizado está contenido entero en lo servido | la versión es el sha-256 del HTML: un solo carácter distinto la cambia |
+| ③ texto VISIBLE (Playwright, `document.body.innerText`, sin sesión) | `/`, `/terminos`, `/legal/alcance-beta` | por frase, abajo | la frase NUEVA de cada arreglo sale 1 vez (control positivo de que ve la página), y `#heroe-f4` sale 0 en lo visible y 1 en los bytes |
+| ④ las mismas frases en tres versiones del código (`frases.mjs`) | `fe65a8b7f` (la producción congelada) · `808af5b44` (el `main` de 1554f) · HEAD | tabla en `docs/master/evidencias/SCRUM-1554g/` | las frases que deben APARECER tras un arreglo pasan de 0 a 1 |
+
+Todo en `docs/master/evidencias/SCRUM-1554g/` (sondas + salidas: `public-vs-prod.json`, `despliegues.txt`).
+
+### La tabla, por condición
+
+**«¿Sigue siendo falsa?»** pregunta si el DEFECTO que describe la entrada sigue presente en lo que sirve producción.
+«Árbol» = HEAD (`6c8706dae`); «producción» = lo servido y, donde dice «visible», lo que pinta el navegador.
+
+| # | condición | qué dice el árbol | 🔴 qué dice PRODUCCIÓN | ¿coinciden? | ¿sigue siendo falsa? | vs 1554d (19-oct) |
+|---|---|---|---|---|---|---|
+| 2 | R1–R6 del documento legal | `ALCANCE_BETA.md`: 0 «Cobro integrado», 0 «Justificantes de cobro», soporte «por email.», 0 «mientras tanto», 1 «no emite … documento de cobro» | visible igual; versión `ac7349fd0b84` | sí | **NO: arreglada en producción** desde el 23-oct ~02:52Z. Sólo queda cómo se PARTE la R4 (es la 9) | **cambió** (6118056b1, #2657) |
+| 3 | D1: el aviso de borrador no se sirve; sí 3 [REVISAR ASESOR] y los huecos | aviso en la línea 9, fuera de la cita `>` | visible: 1 «Borrador pendiente de revisión legal…» · 3 «[REVISAR ASESOR» · 2 «[NIF]» · 1 «[fecha]» · 2 «[Nombre…» | sí | **A MEDIAS:** el aviso ya se ve; los marcadores internos y los huecos, también (SCRUM-1551.md §6: D1 «NO arregla» eso) | **cambió a medias** (mismo commit) · y ver el A9 de arriba |
+| 4 | P1 con asteriscos sueltos (cerrada) | — | visible: 0 «**», 1 «VERI*FACTU» | sí | no | igual |
+| 7 | `terminos.html:48` y `:79-80` en presente | `:48` «…YaQu no cobra por ti y no emite facturas ni ningún otro documento de cobro»; `:80`, la frase del punto 4 de arriba | visible: 0 «emitir facturas y gestionar cobros» · 0 «cotización y factura» · 2 «no emite facturas ni ningún otro documento de cobro» · «Última actualización: 22 de octubre de 2026» | sí | **NO: arreglada en producción** (#2697, 1551d T1/T2, en `main` el 23-oct 02:50:09Z; su despliegue `d09951f48` se creó a las 02:50:14Z, su estado no lo he leído) | **cambió** |
+| 8 | el guard de SCRUM-406 no ve `docs/legal` | `tests/scrum406-…` sin commits desde el 19-oct | la frase que se coló ya no se sirve («soporte por email.») | sí | **el síntoma, no; el agujero, sí**: el guard sigue sin recorrer `docs/legal/` | síntoma corregido por R3 |
+| 9 | `readLegalDoc` parte las viñetas | `legalPages.routes.ts` sin commits | visible: **5 viñetas partidas** (9 líneas de continuación servidas como `<p>`), y una es R4: «…Hasta ese momento YaQu no emite» \| «facturas ni ningún otro documento de cobro; …» en dos bloques | sí | **SÍ** — y ahora corta una frase firmada | igual (lo que parte, peor) |
+| 11 | `index.html` tarjeta «Cobros»: «Tarjeta, Bizum o transferencia» | 1 | visible 1: «Tarjeta, Bizum o transferencia. Cobra trabajos completos o por adelantado, con recordatorios que persiguen solos.» | sí | **SÍ**, con la reserva de 1554d: el valor de Connect no lo he intentado medir (S4 sugiere que la API autenticada contesta cosas de este tipo) | igual |
+| 12 | `aria-label` «…de presupuesto a cobro» | 1 | en el DOM servido: «Demostración: de presupuesto a cobro»; la animación acaba en «Firmado» | sí | **SÍ** | igual |
+| 13 | llamada final «…sin perseguir presupuestos» | 1 | visible 1 | sí | **SÍ**, si es cierto que no hay clientes reales: eso es un dato del equipo, no medido por mí | igual (era «no pude mirar») |
+| 14 | subtítulo del héroe (cerrada el 23-oct) | héroe visible: «…Y llevas clientes, gastos y albaranes en el mismo sitio.»; 0 «gastos y facturas» | visible: esa frase 1 vez; «te paga» 0 visibles, 1 en bytes (en `#heroe-f4`, `hidden`) | sí | **no, en lo visible.** En la producción congelada (`fe65a8b7f`) «te paga — con tarjeta» salía 2 veces, una visible: hasta el despliegue `809527fa6` del 23-oct 10:07:53Z el dato del encargo era verdad | **cambió** (8b069ba50, #2711) |
+| 15 | bot «¡Estás al día! No tienes ningún pago pendiente con…» | `botFlow.service.ts`, la cadena 1 vez | no se ve por GET; el código que corre es el del árbol (mismo sha) | sí, por sha | **SÍ** | igual |
+| 16 | fechas impresas del albarán en UTC | PDF: emisión, ejecución y «Firmado el» en la zona del negocio (`albaranPdf.service.ts:144`, `:379`) | corre ese código (sha contiene `15a844f0e`) desde el 23-oct ~02:52Z. **No observable en vivo:** la cuenta QA tiene `timezone: null` (medido por S4 hoy) y a esta hora UTC y Madrid dan el mismo día | sí, por sha | **lo de «entra el primer cliente», no.** Quedan el concepto de la factura (`albaranes.routes.ts:1349`, `:1601`, sin `timeZone`) y el sello «(hora del servidor)»: los dos FA, camino de emisión, fuera de 1445 a propósito | **cambió a medias** (#2675) |
+| 19 | textos del albarán y del libro registro | `libroRegistroView.js` sin commits | servido = árbol (sonda ①) | sí | **SÍ** | igual |
+| 20 | Stripe en inglés, `connect.routes.ts:70` | sin commits; antepone `err?.message` | no observable sin Connect | sí, por sha | **SÍ** (con el matiz de 1554d) | igual |
+| 22 | «Trabajos CSV» sin año | `exportView.js` sin commits | servido = árbol | sí | **SÍ** | igual |
+| 23 | `sendInvoiceEmail` dice «ok» sin proveedor | `email.service.ts` sin commits | corre el mismo código | sí, por sha | **SÍ** (STOP del fundador) | igual |
+| 5 | cinco marcas «aprobado» sin firma que conste | el JS servido = árbol | — | sí | es una FIRMA, no un texto: no se mide aquí | no re-medido |
+| 6 | la oferta founding enseña el iframe de cobro con OFF | `plansView.js` y `founding.ts` sin commits | servido = árbol; **no lo he intentado con sesión** | sí | **SÍ** por código. S4 midió hoy que la cuenta QA (merchant 46) está en `receipt`: con ella se puede ver en pantalla | igual |
+| 1 · 10 · 17 · 18 · 21 | firma en bloque · cicatrices · sellado · preguntas fiscales · claves de BD | — | no son texto servido | — | no medidas en este tramo | — |
+
+**Recuento sobre las 17 que 1554d dio «igual que el día que se apuntaron»** (1, 2, 5, 6, 7, 8, 9, 10, 11, 12, 14,
+15, 16, 19, 20, 22, 23): hoy **3 arregladas en producción** (2, 7 y 14; la 14 ya cerrada en la lista, la 2 y la 7
+no), **1 a medias** (16), **1 con el síntoma corregido y el agujero abierto** (8) y **12 igual** (1, 5, 6, 9, 10,
+11, 12, 15, 19, 20, 22, 23): 3 + 1 + 1 + 12 = 17. Y la **3**, que 1554d contó entre las verdaderas, estaba abierta
+(A9 de arriba) y hoy está a medias.
+
+### Lo que este tramo NO dice
+
+- Que la variable global `INVOICING_ES_ENABLED` esté en OFF. S4 midió `"modoEmision": "receipt"` en el merchant 46:
+  vale para ESE merchant, porque `merchants.flags` manda sobre el entorno (`src/core/flags.ts`).
+- Nada del panel con sesión, ni del bot: ahí «coinciden» quiere decir «mismo sha», no «lo he visto».
+- Por qué no hubo despliegues entre el 20-oct 15:35Z y el 23-oct 02:49Z: sólo que **no consta ninguno**.
+- Cloudflare reescribe `hola@yaqu.app` en `terminos` y `privacidad`: con JavaScript se lee bien (medido: 1 visible,
+  0 «email protected»); un lector sin JavaScript ve «[email protected]». No es una condición de la puerta.
+
+### Hallazgos de otros carriles (sin tocar)
+
+- `#heroe-f4` (`public/index.html:517-522`, J3): la propuesta oculta todavía promete «te paga — con tarjeta, Bizum
+  o transferencia». Si alguien la enciende, la 14 vuelve.
+- `puerta.json` (sin dueño; S5 la pide): la 2 y la 7 se pueden cerrar con el sha de su merge; la 3 y la 16, partir.
+  Es la firma del fundador; aquí sólo se mide.
+
 ## SCRUM-1554b · Los 57 que «esperan al fundador», por tipo de decisión: 27 esperan de verdad, 27 ya no hace falta decidirlos, 3 están aparcados en esta misma puerta
 
 **Medido contra:** `origin/main` = `76c29b57c871584b04c8206c11571f9c56c9d699` · 2026-10-14T07:02:30Z
