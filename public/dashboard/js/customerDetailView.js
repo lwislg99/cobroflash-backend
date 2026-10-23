@@ -175,6 +175,121 @@ const FUSION_CLIENTE = {
 };
 if (typeof window !== 'undefined') window.fusionCliente = FUSION_CLIENTE;
 
+/**
+ * SCRUM-1132 · LA TARJETA DE NOTAS: las notas con fecha y autor de `GET /admin/customers/:id/notes`
+ * (SCRUM-1036) y el campo para añadir una con `POST` a la misma ruta.
+ *
+ * ✅ TEXTOS FIRMADOS por el fundador (14-oct-2026, SCRUM-1132 c.19617; registro en
+ * `docs/microcopy/2026-10-14-SCRUM-1132-notas-del-cliente.md`). Ni uno más: la fecha y el autor son
+ * datos del servidor, y el campo se nombra con el título de la tarjeta.
+ *
+ * 🔴 LA «NOTA FIJA» NO SE PINTA AQUÍ. Es `customer.notes`, que ya va en la cabecera de la ficha, y
+ * la forma firmada es la (B): sólo en la cabecera. El servidor la manda al final con `esFija`.
+ *
+ * Detrás de «No se pudo guardar:» va el motivo del servidor SÓLO si viene en `message`
+ * (`mensajeParaPersona`, api.js): nunca un código interno ni el «Failed to fetch» del navegador.
+ */
+const NOTAS_CLIENTE = {
+  TEXTOS: {
+    titulo: 'Notas',
+    vacio: 'Sin notas',
+    boton: 'Añadir nota',
+    error: 'No se pudo guardar:',
+  },
+  /** Las que se pintan: las del servidor, sin la Nota fija. */
+  conFecha(notas) { return (Array.isArray(notas) ? notas : []).filter((n) => n && !n.esFija); },
+  /** «1 oct 2026, 11:30 · Autor»; sin autor, sólo la fecha. */
+  linea(n) {
+    const d = new Date(n.fecha);
+    const fecha = isNaN(d.getTime()) ? '' : d.toLocaleString('es-ES', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    return [fecha, n.autor || ''].filter(Boolean).join(' · ');
+  },
+  /** El error que se le enseña a la persona. */
+  textoDelError(err) {
+    const motivo = window.mensajeParaPersona(err, '');
+    return motivo ? NOTAS_CLIENTE.TEXTOS.error + ' ' + motivo : NOTAS_CLIENTE.TEXTOS.error;
+  },
+};
+if (typeof window !== 'undefined') window.notasCliente = NOTAS_CLIENTE;
+
+/** Monta la tarjeta en `card` y la llena. Las dos rutas son `requireRole('admin')`: sólo se llama para admin. */
+function montarNotasDelCliente(card, customerId) {
+  const T = NOTAS_CLIENTE.TEXTOS;
+  card.className = 'customers-card notas-cliente';
+  card.dataset.tarjeta = 'notas';
+  const titulo = document.createElement('h3');
+  titulo.className = 'notas-cliente-titulo';
+  titulo.id = 'notas-360-titulo';
+  titulo.textContent = T.titulo;
+  const lista = document.createElement('ul');
+  lista.className = 'notas-cliente-lista';
+  const form = document.createElement('div');
+  form.className = 'field notas-cliente-form';
+  const campo = document.createElement('textarea');
+  campo.rows = 2;
+  campo.setAttribute('aria-labelledby', titulo.id);
+  const boton = document.createElement('button');
+  boton.type = 'button';
+  boton.className = 'btn-secondary';
+  boton.textContent = T.boton;
+  const error = document.createElement('div');
+  error.className = 'alert error';
+  error.dataset.errorNota = '';
+  error.setAttribute('role', 'alert');
+  error.hidden = true;
+  form.append(campo, boton, error);
+  card.append(titulo, lista, form);
+
+  function pintar(notas) {
+    lista.textContent = '';
+    const visibles = NOTAS_CLIENTE.conFecha(notas);
+    if (!visibles.length) {
+      const li = document.createElement('li');
+      li.className = 'notas-cliente-vacio';
+      li.textContent = T.vacio;
+      lista.appendChild(li);
+      return;
+    }
+    visibles.forEach((n) => {
+      const li = document.createElement('li');
+      li.className = 'notas-cliente-nota';
+      li.dataset.nota = String(n.id);
+      const texto = document.createElement('p');
+      texto.className = 'notas-cliente-texto';
+      texto.textContent = n.texto;
+      const meta = document.createElement('p');
+      meta.className = 'notas-cliente-meta';
+      meta.textContent = NOTAS_CLIENTE.linea(n);
+      li.append(texto, meta);
+      lista.appendChild(li);
+    });
+  }
+
+  async function cargar() {
+    const r = await apiRequest(`/admin/customers/${customerId}/notes`);
+    pintar(r && r.notas);
+  }
+
+  boton.onclick = async () => {
+    error.hidden = true;
+    error.textContent = '';
+    boton.disabled = true;
+    try {
+      await apiRequest(`/admin/customers/${customerId}/notes`, { method: 'POST', body: JSON.stringify({ texto: campo.value }) });
+      campo.value = '';
+      await cargar();
+    } catch (err) {
+      error.textContent = NOTAS_CLIENTE.textoDelError(err);
+      error.hidden = false;
+    } finally {
+      boton.disabled = false;
+    }
+  };
+
+  // Si la lista no llega, la tarjeta se queda sin filas y el resto de la ficha sale igual.
+  cargar().catch(() => {});
+}
+
 async function renderCustomer360View(container, customerId) {
   container.innerHTML = '';
 
@@ -438,6 +553,13 @@ async function renderCustomer360View(container, customerId) {
     linea.textContent = `Garantía retenida: ${fmt(r.importe)} · liberación desde el ${d}/${m}/${y} · sin cobrar`;
     wrap.appendChild(linea);
   });
+
+  // SCRUM-1132 · las notas con fecha y autor. Rutas `requireRole('admin')`: al técnico, ni se piden.
+  if (window.appUserRole === 'admin') {
+    const notasCard = document.createElement('section');
+    wrap.appendChild(notasCard);
+    montarNotasDelCliente(notasCard, id);
+  }
 
   // ── Actividad / historial de comunicaciones (ENT-3) ───────────────────
   if (Array.isArray(events) && events.length) {
