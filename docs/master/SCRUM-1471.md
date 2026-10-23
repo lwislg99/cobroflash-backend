@@ -60,13 +60,14 @@ es fiscal. La regla del ticket —«cambian juntos o no cambian»— manda dejar
 
 ## SCRUM-1471b · La fecha de la FACTURA en el portal es el día de su registro (J2, jv-j2ak, 23-oct-2026)
 
-**Medido contra:** `origin/main` = `f1c0ff3094c004ea7b99ffe2f1d13a21213c5ad1` · 2026-10-23T14:50:33Z (hora de GitHub)
+**Medido contra:** `origin/main` = `5da02178a4fc1499b90618bdbe4db29aa0ab90f4` · 2026-10-23T15:11:27Z (hora de GitHub)
 
 A9: comprobación → `tests/scrum1470-la-fecha-impresa-es-la-del-negocio.test.mjs`
 
 Lo desbloquea la decisión del fundador en SCRUM-1470 c.20530 («Sí, el mismo día»): la «Fecha:» del PDF
 de la factura imprime el día natural de su registro. Lo hace SCRUM-1470c (J1, rama
-`scrum-1470c-factura-dia-del-registro`, sin mergear al escribir esto). Este tramo es su gemelo en el portal (regla del ticket: el papel y su gemelo cambian juntos).
+`scrum-1470c-factura-dia-del-registro`), que entró en main con el PR #2748 (`5da02178a4fc1499b90618bdbe4db29aa0ab90f4`)
+mientras este tramo esperaba su obligatorio. Este tramo es su gemelo en el portal (regla del ticket: el papel y su gemelo cambian juntos).
 
 **Qué cambia.** `fechaDeLaFactura` (`customerPortal.routes.ts`) pide el día a
 `diaNaturalEn(createdAt, zonaDelMerchant(m))`, la MISMA función que usan el registro y el `dateStr` de
@@ -83,22 +84,33 @@ y cae también el censo. Después: 15 de 15, 0 caen, 0 saltos.
 invierno). Pasa sin tocarlo.
 
 **Mutaciones**, con la base sin mutar en verde:
-- M1 (`dist/`: la tarjeta recibe `'UTC'` en vez de la zona del negocio) → cae el caso «SCRUM-1471b».
+- M1 (`dist/`: la tarjeta recibe `'UTC'` en vez de la zona del negocio) → cae el caso «SCRUM-1471b»
+  (antes del merge, sobre la versión sin `split`).
 - M2 (`src/`: se quita `timeZone: 'UTC'` del formato) → este fichero NO la ve, porque el proceso del
   test ya va en UTC. La caza `tests/scrum1093h-censo-fecha-sin-zona.test.mjs`: caen «RATCHET» y
   «ninguna entrada de RETIRADAS ha vuelto». Base de ese fichero con el cambio: 21 de 21.
 
-**Censo:** `customerPortal.routes.ts::fechaDeLaFactura` sale de `USO` y entra en `RETIRADAS`. En los cinco
-ficheros del test quedan 5 filas que IMPRIMEN, no 6.
+**Censo:** `customerPortal.routes.ts::fechaDeLaFactura` sale de `USO` y entra en `RETIRADAS`. Con 1470c
+ya en main, en los cinco ficheros del test quedan 2 filas que IMPRIMEN (el sello de `generateQuotePdf` y
+`fD`, las dos con su motivo).
 
-**Choque con 1470c, declarado:** las dos ramas tocan las mismas líneas del test (el caso «DECLARADO» y la
-lista del censo) y de `scripts/_censo-fecha-sin-zona.mjs`. La que entre segunda tendrá un conflicto de
-texto. Se resuelve quitando las tres filas de `dateStr` y la de `fechaDeLaFactura` (quedan 2), y
-dejando las dos identidades en `RETIRADAS`. El caso «DECLARADO» de 1470c desaparece: lo sustituye el de aquí.
+**El merge con 1470c (`git merge origin/main` dentro de la rama, A4).** Hubo conflicto en el test, en el censo
+y en las cicatrices de J2, el que se había previsto. Se resolvió así:
+- las tres filas de `dateStr` y la de `fechaDeLaFactura` salen de la lista (quedan 2);
+- las dos identidades quedan en `RETIRADAS`;
+- el caso «DECLARADO» de 1470c desaparece, porque lo sustituye el de aquí;
+- las dos cicatrices se quedan.
+
+Con el PDF de la factura ya en main, el caso «SCRUM-1471b» compara el portal **con ese PDF**, generado de
+verdad por la sonda de 1470c (`tests/_sonda-fecha-de-la-factura.mjs`, proceso en UTC). Lo compara en los 11
+casos: madrugada, controles, sin zona y zona rota.
+**M3** (`dist/`: el `dateStr` del PDF vuelve a `getDate()`, con el portal bien) → cae, y sólo por la
+comparación con el gemelo: «el portal fecha la factura «03 oct 2026» y su PDF «02/10/2026»».
+Tras el merge: 50 de 50 en el test, el de 1470c, `scrum1093h`, `scrum1177` y `scrum747`.
 
 | aceptación (literal) | dónde se ve |
 |---|---|
-| 2. La fecha del presupuesto y de la factura en el portal es la misma que imprime su PDF. | Factura: `tests/scrum1470-la-fecha-impresa-es-la-del-negocio.test.mjs` · «SCRUM-1471b · 🔴 la fecha de la FACTURA en el portal…»: contra el día escrito a mano y contra `diaNaturalEn`, que es el día del PDF (lo comprueba `tests/scrum1470c-…` en la rama de J1). La comparación directa portal ↔ PDF de la factura NO está hecha: el PDF de la factura no está en main todavía. |
+| 2. La fecha del presupuesto y de la factura en el portal es la misma que imprime su PDF. | Factura: `tests/scrum1470-la-fecha-impresa-es-la-del-negocio.test.mjs` · «SCRUM-1471b · 🔴 la fecha de la FACTURA en el portal…»: portal contra el PDF real de la factura en los 11 casos, con el proceso en UTC. |
 | 3. Las 3 filas salen de la clase IMPRIME del censo, o quedan con su motivo escrito. | `censar()`: salen las 3 (`fechaDeLaFactura` en `RETIRADAS`) · `tests/scrum1093h-censo-fecha-sin-zona.test.mjs` |
 
 **Error mío: el primer empujón (`7b988f0a4`, PR #2750) salió ROJO en el obligatorio, con 2 fallos de 12.318, y los dos eran míos.**

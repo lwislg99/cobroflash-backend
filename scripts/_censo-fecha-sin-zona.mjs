@@ -362,7 +362,6 @@ export const USO = new Map([
   //     literal es firma del fundador (regla 39).
   //   · `fD` (más abajo): el paquete de disputa. Su gemelo es ese sello —el banco recibe los dos
   //     papeles— y cambian juntos o no cambian.
-  ['src/modules/invoicing/infra/pdf/pdf.service.ts::dateStr', { uso: IMPRIME, motivo: 'la «Fecha:» del PDF de la FACTURA (sólo de la factura): fiscal, espera la decisión del fundador — SCRUM-1470, aceptación 2', ref: 'SCRUM-1470' }],
   ['src/modules/invoicing/infra/pdf/pdf.service.ts::generateQuotePdf', { uso: IMPRIME, motivo: 'el sello de la evidencia, que se declara «(hora del servidor)»: literal firmado, no se mueve sin cambiar el literal (regla 39). La fecha de la firma ya va en la zona del negocio', ref: 'SCRUM-1470' }],
   ['src/modules/jobs/infra/albaranPdf.service.ts::fmtDate', { uso: IMPRIME, motivo: 'fecha impresa en el PDF de albarán' }],
   ['src/modules/jobs/infra/albaranPdf.service.ts::generateAlbaranPdf', { uso: IMPRIME, motivo: 'fecha impresa en el PDF de albarán' }],
@@ -433,6 +432,10 @@ export const USO = new Map([
  *     esa identidad sigue en `USO` por el «Sello temporal … (hora del servidor)», que no se toca sin
  *     firma porque su rótulo declara la hora del servidor. En el papel real:
  *     `tests/scrum1445-fechas-del-albaran.test.mjs`.
+ *   · `src/modules/invoicing/infra/pdf/pdf.service.ts::dateStr` — SCRUM-1470c (GO del fundador,
+ *     SCRUM-1470 c.20530). La «Fecha:» del PDF de la FACTURA es el día natural de su registro:
+ *     `diaNaturalEn(createdAt, zonaDelMerchant(...))`. Comparada contra `formatDateES` del registro,
+ *     con el proceso en UTC, en `tests/scrum1470c-la-factura-imprime-el-dia-de-su-registro.test.mjs`.
  */
 export const RETIRADAS = new Set([
   'src/modules/messaging/domain/whatsappLog.service.ts::getWhatsAppMetrics',
@@ -447,6 +450,7 @@ export const RETIRADAS = new Set([
   'src/app.ts::POST /admin/onboarding/serie',
   'src/modules/system/merchantAdmin.ts::updateMerchantProfile',
   'src/modules/jobs/infra/albaranPdf.service.ts::fmtDate',
+  'src/modules/invoicing/infra/pdf/pdf.service.ts::dateStr',
   'src/modules/system/app/routes/customerPortal.routes.ts::fechaDeLaFactura',
 ]);
 

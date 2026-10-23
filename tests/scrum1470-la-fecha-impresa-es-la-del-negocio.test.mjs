@@ -33,7 +33,6 @@ import { spawnSync } from 'node:child_process';
 import { entornoLimpio } from '../scripts/_trinquete-de-zona.mjs';
 import { clavesDelConstructor, puertasSinLosCampos } from './_puertas-del-presupuesto.mjs';
 import { censar, clasifica, IMPRIME, RETIRADAS } from '../scripts/_censo-fecha-sin-zona.mjs';
-import { diaNaturalEn } from '../dist/core/zonaDelMerchant.js'; // SCRUM-1471b · el día del registro
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const MADRID = 'Europe/Madrid';
@@ -238,20 +237,50 @@ test('SCRUM-1471 · la fecha del presupuesto en el portal es la del negocio, igu
   }
 });
 
-test('SCRUM-1471b · 🔴 la fecha de la FACTURA en el portal es el día natural de su registro, el mismo que imprime su PDF (SCRUM-1470c)', () => {
+// SCRUM-1471b · el PDF de la FACTURA de cada caso, generado por la sonda de 1470c en UTC. UNA vez.
+let pdfs;
+function pdfDeLaFactura(nombre) {
+  if (!pdfs) {
+    const encargo = Object.values(PAPELES).map((c) => ({ zona: c.zona || null, instante: c.instante }));
+    const r = spawnSync(process.execPath,
+      [path.join(RAIZ, 'tests', '_sonda-fecha-de-la-factura.mjs'), 'UTC', JSON.stringify(encargo)],
+      { cwd: RAIZ, encoding: 'utf8', env: entornoLimpio(), timeout: 120_000 });
+    let j = null;
+    try { j = JSON.parse(String(r.stdout).trim().split('\n').pop()); } catch { /* CIEGO abajo */ }
+    assert.ok(j, `🔴 CIEGO: la sonda de la factura no devolvió JSON (estado ${r.status}). stderr: ${String(r.stderr).slice(-1500)}`);
+    assert.ok(!j.ciego, `🔴 CIEGO: la sonda de la factura dice «${j.ciego}»`);
+    assert.equal(j.zonaDelProceso, 'UTC', '🔴 CIEGO: la sonda de la factura no arrancó en UTC');
+    assert.equal(j.casos.length, encargo.length, '🔴 CIEGO: la sonda de la factura no recorrió todos los casos');
+    pdfs = j.casos;
+  }
+  const i = Object.keys(PAPELES).indexOf(nombre);
+  assert.equal(pdfs[i].instante, PAPELES[nombre].instante, `🔴 SUELO: el caso «${nombre}» no está en su sitio en la sonda de la factura`);
+  return pdfs[i].pdf;
+}
+
+test('SCRUM-1471b · 🔴 la fecha de la FACTURA en el portal es el día de su registro, el mismo que imprime su PDF', () => {
   // Decisión del fundador (SCRUM-1470 c.20530, «Sí, el mismo día»): la «Fecha:» del PDF de la factura
-  // es el día natural de su registro, `diaNaturalEn(createdAt, zonaDelMerchant(...))`. SCRUM-1470c (J1,
-  // en su rama al escribir esto) lo comprueba en el PDF; aquí, el portal contra ese mismo día. Hasta este tramo el portal pintaba la víspera, y la tarjeta
-  // mezclaba dos relojes: «02 oct 2026 · Pagada 03 oct 2026».
+  // es el día natural de su registro, y SCRUM-1470c lo comprueba en el PDF
+  // (`tests/scrum1470c-la-factura-imprime-el-dia-de-su-registro.test.mjs`). Aquí, el portal contra
+  // ESE PDF, generado de verdad por la sonda de 1470c con el proceso en UTC. Hasta este tramo el
+  // portal pintaba la víspera y la tarjeta mezclaba dos relojes: «02 oct 2026 · Pagada 03 oct 2026».
   for (const nombre of CRUCES) {
     const p = papel(nombre);
     const c = PAPELES[nombre];
     assert.equal(p.portalFactura, `${c.corto} · Pagada ${c.corto}`,
       `🔴 ${nombre}: la tarjeta de la factura del portal dice «${p.portalFactura}»: su fecha no es el día del negocio`);
-    // El día del registro, con la función de la casa que usan el registro y el PDF.
-    const [, , dia] = diaNaturalEn(new Date(c.instante), c.zona).split('-');
-    assert.equal(p.portalFactura.slice(0, 2), dia,
-      `🔴 ${nombre}: el portal fecha la factura el ${p.portalFactura.slice(0, 2)} y su registro (y su PDF) el ${dia}`);
+  }
+  // El gemelo: en TODOS los casos (los de madrugada, los de control y los de sin zona) el portal y el
+  // PDF de la factura dicen el mismo día.
+  for (const nombre of Object.keys(PAPELES)) {
+    const pdf = pdfDeLaFactura(nombre);
+    const m = pdf.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    assert.ok(m, `🔴 ${nombre}: el PDF de la factura no trae una «Fecha:» legible («${pdf}»)`);
+    const comoPortal = new Date(`${m[3]}-${m[2]}-${m[1]}T00:00:00Z`)
+      .toLocaleDateString('es', { timeZone: 'UTC', day: '2-digit', month: 'short', year: 'numeric' });
+    const portal = papel(nombre).portalFactura.split(' · ')[0];
+    assert.equal(portal, comoPortal,
+      `🔴 ${nombre}: el portal fecha la factura «${portal}» y su PDF «${pdf}»: el papel y su gemelo dicen días distintos`);
   }
 });
 
@@ -324,23 +353,21 @@ const FICHEROS = [
   'src/modules/messaging/domain/weeklyDigest.service.ts',
 ];
 
-test('SCRUM-1470 · SCRUM-1471 · SCRUM-1472 · el censo: de las 12 llamadas que IMPRIMÍAN en estos cinco ficheros quedan 5, y cada una con su motivo (SCRUM-1471b retiró `fechaDeLaFactura`)', () => {
+test('SCRUM-1470 · SCRUM-1471 · SCRUM-1472 · el censo: de las 12 llamadas que IMPRIMÍAN en estos cinco ficheros quedan 2, y cada una con su motivo (SCRUM-1470c retiró las 3 de `dateStr`, y SCRUM-1471b `fechaDeLaFactura`)', () => {
   const real = censar();
   assert.ok(real.ficheros > 250, `🔴 CIEGO: el censo miró ${real.ficheros} ficheros`);
   const quedan = real.filas.filter((f) => FICHEROS.includes(f.fichero) && clasifica(f) === IMPRIME)
     .map((f) => `${f.identidad} · ${f.metodo}`).sort();
   assert.deepEqual(quedan, [
-    'src/modules/invoicing/infra/pdf/pdf.service.ts::dateStr · getDate',
-    'src/modules/invoicing/infra/pdf/pdf.service.ts::dateStr · getFullYear',
-    'src/modules/invoicing/infra/pdf/pdf.service.ts::dateStr · getMonth',
     'src/modules/invoicing/infra/pdf/pdf.service.ts::generateQuotePdf · toLocaleString',
     'src/modules/system/app/routes/invoicesAdmin.routes.ts::fD · toLocaleString',
-  ], '🔴 las llamadas que IMPRIMEN sin zona en estos ficheros no son las cinco declaradas: o ha vuelto una arreglada, o ha nacido otra');
+  ], '🔴 las llamadas que IMPRIMEN sin zona en estos ficheros no son las dos declaradas: o ha vuelto una arreglada, o ha nacido otra');
   for (const id of [
     'src/modules/billing/app/routes/receipt.routes.ts::GET /:token',
     'src/modules/system/app/routes/customerPortal.routes.ts::dateShort',
     'src/modules/system/app/routes/customerPortal.routes.ts::fechaDeLaFactura',
     'src/modules/messaging/domain/weeklyDigest.service.ts::sendDigestForMerchant',
+    'src/modules/invoicing/infra/pdf/pdf.service.ts::dateStr',
   ]) {
     assert.ok(RETIRADAS.has(id), `🔴 «${id}» se arregló y no está en RETIRADAS: mejorar se declara`);
   }
