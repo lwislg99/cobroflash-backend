@@ -4773,6 +4773,16 @@ textarea.parte-linea-desc {
   .data-card:has(> .barra-seleccion) td.cell-actions > div > .btn-sm { min-height: 44px; }
 }
 
+/* ── J2 · SCRUM-1583 (AB6) ── lista de Cobros: el enlace al documento de cada fila («factura F-…»,
+   `cobrosView.js`) medía 17 px de toque a 320 y 390 y 19 a 1280 (caja 16/18, Edge). Sólo toque: el
+   área crece con un `::before` (el mecanismo de `.casilla-tactil-44`), 16 + 2 × 14 = 44, sin mover
+   nada a la vista — un `min-height` en el enlace subía la fila de escritorio de 45 a más de 60.
+   Ancla SIN clase nueva: `href="#invoice-detail"` dentro de `td.cell-id` sólo lo pinta Cobros.
+   Medido con `docs/master/evidencias/SCRUM-1583/medir.mjs`, también con el aviso «Enviar de nuevo»
+   en la misma celda (`--con-aviso`): su toque no baja. */
+td.cell-id > a[href="#invoice-detail"] { position: relative; }
+td.cell-id > a[href="#invoice-detail"]::before { content: ""; position: absolute; inset: -14px 0; }
+
 /* SCRUM-1056 · «Volver a llamar»: la nota es texto libre del profesional. Una palabra muy larga
    (un enlace, una referencia) se parte en vez de salirse de la tarjeta: medido a 390 px. */
 .volver-a-llamar-nota { overflow-wrap: anywhere; }
