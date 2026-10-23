@@ -31,22 +31,21 @@ const espera = () => new Promise((r) => setTimeout(r, 30));
 
 // El catálogo del meta-guard (SCRUM-1387): cada defecto que este fichero tiene que cazar, con el
 // caso que lo caza. Lo corre `npm run meta:mutaciones`; en local, `docs/master/evidencias/SCRUM-1145/mutar.mjs`.
-const VISTA = 'public/dashboard/js/customerDetailView.js';
 export const MUTACIONES_QUE_ME_TUMBAN = [
-  { fichero: VISTA, de: "  const tabSitios = makeTab(SITIOS_CLIENTE.TEXTOS.pestana, 'sitios');",
+  { fichero: 'public/dashboard/js/customerDetailView.js', de: "  const tabSitios = makeTab(SITIOS_CLIENTE.TEXTOS.pestana, 'sitios');",
     a: "  apiRequest(`/admin/customers/${id}/sites`).catch(() => null);\n  const tabSitios = makeTab(SITIOS_CLIENTE.TEXTOS.pestana, 'sitios');",
     cae: 'la lista se pide AL ABRIRLA' },
-  { fichero: VISTA, de: 'const filaFiscal = fiscal ? fila(T.fiscal, fiscal) : null;', a: 'const filaFiscal = null;',
+  { fichero: 'public/dashboard/js/customerDetailView.js', de: 'const filaFiscal = fiscal ? fila(T.fiscal, fiscal) : null;', a: 'const filaFiscal = null;',
     cae: 'la PRIMERA fila es la dirección fiscal' },
-  { fichero: VISTA, de: '    function borrar(s, boton) {\n', a: '    function borrar(s, boton) {\n      if (!window.confirm(T.eliminar)) return;\n',
+  { fichero: 'public/dashboard/js/customerDetailView.js', de: '    function borrar(s, boton) {\n', a: '    function borrar(s, boton) {\n      if (!window.confirm(T.eliminar)) return;\n',
     cae: 'SIN preguntar' },
-  { fichero: VISTA, de: "out[k] = k === 'name' ? t : (t === '' ? null : t);", a: 'out[k] = t;', cae: 'ALTA:' },
-  { fichero: VISTA, de: '        if (llegar) acciones.appendChild(llegar);\n', a: '',
+  { fichero: 'public/dashboard/js/customerDetailView.js', de: "out[k] = k === 'name' ? t : (t === '' ? null : t);", a: 'out[k] = t;', cae: 'ALTA:' },
+  { fichero: 'public/dashboard/js/customerDetailView.js', de: '        if (llegar) acciones.appendChild(llegar);\n', a: '',
     cae: '«Cómo llegar» en cada sitio CON dirección' },
-  { fichero: VISTA, de: '        avisar(window.mensajeParaPersona(err, T.errorCarga));', a: '        pintarLista([]);',
+  { fichero: 'public/dashboard/js/customerDetailView.js', de: '        avisar(window.mensajeParaPersona(err, T.errorCarga));', a: '        pintarLista([]);',
     cae: 'si la lista no carga' },
-  { fichero: VISTA, de: '`/admin/customers/${id}/sites/${sitio.id}`', a: '`/admin/customers/${id}/sites/${id}`', cae: 'EDICIÓN:' },
-  { fichero: VISTA, de: "  tabsWrap.className = 'c360-pestanas';\n", a: '', cae: 'PARTE LÍNEA' },
+  { fichero: 'public/dashboard/js/customerDetailView.js', de: '`/admin/customers/${id}/sites/${sitio.id}`', a: '`/admin/customers/${id}/sites/${id}`', cae: 'EDICIÓN:' },
+  { fichero: 'public/dashboard/js/customerDetailView.js', de: "  tabsWrap.className = 'c360-pestanas';\n", a: '', cae: 'PARTE LÍNEA' },
   { fichero: 'public/dashboard/css/styles.css', de: '.c360-pestanas { flex-wrap: wrap; }', a: '.c360-pestanas { }', cae: 'PARTE LÍNEA' },
 ];
 
