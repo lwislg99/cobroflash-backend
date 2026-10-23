@@ -19,7 +19,7 @@
       ④ mensajes de WhatsApp · TOTAL = 0
          estados distintos guardados = —
          por estado y tipo = —
-3 · escritura: Postgres rechaza el INSERT («psql:C:/Users/Admin/AppData/Local/Temp/c1566-qrJmhj/c.sql:32: ERROR:  cannot execute INSERT in a read-only transaction») y merchants sigue en 3
+3 · escritura: Postgres rechaza el INSERT («psql:C:/Users/Admin/AppData/Local/Temp/c1566-Mjvbpn/c.sql:32: ERROR:  cannot execute INSERT in a read-only transaction») y merchants sigue en 3
 4 · SCRUM-1490: su bloque corre sobre este esquema y caza la revisión sembrada (revision_en_otro_anio 0 → 1)
 5 · ③ zona: 5 negocios (sin zona, Madrid, inventada, en blanco, «atlantic/canary» en minúsculas) → declarada 3, válida 2, igual que zonaValida real
 6 · ④ WhatsApp: 7 mensajes sembrados (incluido un estado que el código ya no escribe) → total, estados y recuento por tipo iguales; ningún teléfono en la salida

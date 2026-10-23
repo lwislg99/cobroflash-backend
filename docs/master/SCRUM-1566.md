@@ -362,3 +362,11 @@ conoce es `received`. Pero las filas viejas las escribió código anterior y nad
 - **El guard estático sigue aceptando el fichero, y las cinco fases anteriores siguen en verde.** Salida
   en `evidencias/SCRUM-1566/salida-probar-consulta.txt`.
 - **Sigue sin haberse corrido contra producción.** El banco desechable se apagó al terminar.
+- **23-oct · el rojo del PR #2662 (run 39762348172, 1 fallo de 12.101) era MÍO:** el guard de SCRUM-864c
+  marcaba `probar-consulta.mjs:36` como `NO_GARANTIZADA` — el `mkdtempSync` de `correrFichero` sólo se
+  borraba si `writeFileSync` y `spawnSync` no lanzaban. Arreglado en el código (borrado en `finally`), el
+  guard sin tocar: en ROJO con la rama como estaba (3/4) y en VERDE después (4/4). Re-probado el guion
+  entero con `main` mezclado, en una base desechable nueva (`yaqu_c2_test`, esquema por
+  `migrate diff --from-empty`, 33 modelos): las seis fases en verde y **0** directorios `c1566-*` en TEMP
+  (la fase 3 enseña que se crearon ahí). El temporal de `expediente-tres-centimos.cjs` ya se borraba
+  (`process.on('exit')`) y el guard no lo marca.

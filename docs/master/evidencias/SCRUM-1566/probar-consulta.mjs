@@ -33,11 +33,15 @@ const { calcTotal } = req('./core/utils/utils.js');
 const falla = (m) => { console.log(`✖ ${m}`); process.exit(1); };
 const sql = (texto) => execFileSync(psql, ['-q', '-At', '-F', '|', '-v', 'ON_ERROR_STOP=1', '-d', url, '-c', texto], { encoding: 'utf8' });
 const correrFichero = (texto) => {
-  const tmp = path.join(fs.mkdtempSync(path.join((process.env.TEMP || process.env.TMPDIR || '/tmp'), 'c1566-')), 'c.sql');
-  fs.writeFileSync(tmp, texto);
-  const r = spawnSync(psql, ['-q', '-At', '-F', '|', '-v', 'ON_ERROR_STOP=1', '-d', url, '-f', tmp], { encoding: 'utf8' });
-  fs.rmSync(path.dirname(tmp), { recursive: true, force: true });
-  return r;
+  // El borrado va en `finally`: si escribir el fichero o lanzar psql lanza, el directorio no se queda (SCRUM-864c).
+  const dir = fs.mkdtempSync(path.join((process.env.TEMP || process.env.TMPDIR || '/tmp'), 'c1566-'));
+  try {
+    const tmp = path.join(dir, 'c.sql');
+    fs.writeFileSync(tmp, texto);
+    return spawnSync(psql, ['-q', '-At', '-F', '|', '-v', 'ON_ERROR_STOP=1', '-d', url, '-f', tmp], { encoding: 'utf8' });
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 };
 function leer() {
   const r = correrFichero(SQL);
