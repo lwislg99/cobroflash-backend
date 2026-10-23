@@ -652,7 +652,7 @@ de la rama del demo, o el demo deja de emitir.
 
 **Medido contra:** `origin/main` = `0b8af73d34d95a762b18fad1cd6232ce7f621b1f` · 2026-10-23T11:07:27Z (cabecera `Date:` de GitHub; la rama salió de `37311b671`, y entre los dos `main` no tocó ninguno de mis ficheros)
 
-A9: aviso → cicatriz J1 «Para el rojo primero sobrescribí un fichero de `src/` con `git show … > $F`» — no se pudo comprobar: el hook `guard-dangerous` sólo ve el destino escrito literal, y los hooks no son de este puesto
+A9: aviso → cicatriz J1 «Para el rojo primero sobrescribí un fichero de `src/` con `git show … > $F`: el hook de truncado no ve un destino en variable, y aquel rojo era además CIEGO (sin `tsc` ni `dist/`); el rojo se saca mutando `dist/`, nunca reescribiendo `src/`» — no se pudo comprobar: el hook `guard-dangerous` sólo ve el destino escrito literal, y los hooks no son de este puesto
 
 Sesión `jv-j1al` (puesto J1), 23-oct-2026, por encargo del orquestador `cobroflash-backend-62`.
 **GO del fundador en SCRUM-1102 c.20472** («W + V ahora», regla 40, alcance: ni sellado ni XML).
