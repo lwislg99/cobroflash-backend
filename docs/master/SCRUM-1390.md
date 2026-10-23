@@ -273,3 +273,146 @@ Vecinos: los 95 ficheros de `tests/` que leen `jobs.routes`, `/admin/jobs` o los
 
 **Lo que NO se ha medido.** En yaqu.app, con un técnico de verdad: el plan de prueba sólo abre
 propietarios (la misma limitación que SCRUM-1555). Se mira cuando eso exista.
+
+## SCRUM-1390c · qué pinta Inicio si la carga falla, y las 15 NO-LLEGO (éstas, sin medir)
+
+[Anexado por J4 (sesión jv-j4n), equipo de Javier, el 23-oct-2026 a las 09:41Z (`Date:` de GitHub), sobre
+`origin/main` `00179a513a5fb11ca12d61fe25b1b2dec26b51ca`. Encargo del orquestador (`cobroflash-backend-62`).
+No toca nada de lo de arriba. Ni `src/`, ni `public/`, ni `prisma/`, ni tests: un banco en
+`docs/master/evidencias/SCRUM-1390c/` y una línea en `docs/equipo/cicatrices/J4.md`. Entrega en Jira, c.20438.]
+
+A9: aviso → cicatriz J4 «mi fetch doblado no hacía caso a la señal de aborto y el banco dijo que Inicio se quedaba en esqueletos para siempre, un cuelgue que el navegador no tiene porque api.js aborta a su plazo» — no se pudo comprobar: el banco es de un solo ticket y nada obliga a un doble a cumplir la parte del contrato que la vista usa
+
+**Partido por contexto, por orden del orquestador:** la parte ① está medida; la ② no (va a traspaso).
+
+### ① ¿Un fallo de carga cae en el mismo sitio que el vacío? (la pregunta de c.17963)
+
+**Instrumento:** `inicio-si-falla-la-carga.mjs`. Usa el `index.html` real del panel, con sus 96 scripts en su orden, en
+Edge sin cabeza (`puppeteer-core` y `scripts/_navegador.mjs`). `fetch` va doblado dentro de la página. Se llama a
+`renderHomeView` con el rol puesto y se lee el texto del bloque `[data-home-block="activity"]` ya pintado.
+`PLAZO_RED_MS` baja a 1,5 s: es lo único del panel que se cambia, y se dice. **Población:** 2 roles × 10
+escenarios = 20 celdas, ninguna ciega. **Salida:** `inicio-salida.txt`.
+
+| la ruta de métricas contesta… | técnico | admin |
+|---|---|---|
+| 200, `recentActivity: []` | «Sin actividad reciente» | «Sin actividad reciente» |
+| 200, un presupuesto (sembrado) | el presupuesto | el presupuesto |
+| 500 · 502 sin JSON · 401 · 403 · sin red · 200 que no es JSON · se cuelga (vence el plazo) | estado de error en el bloque: «No pudimos cargar tus métricas. Revisa tu conexión.» + Reintentar | error en `#kpi-grid`; **el bloque de actividad queda en blanco bajo su título** |
+| 🔴 200 **sin** la clave `recentActivity` | **«Sin actividad reciente»: igual que el vacío** | igual que el vacío |
+
+**Controles.** El positivo se siembra: un cliente inventado tiene que salir en «con datos», y sale en los dos
+roles; además, «vacío» y «con datos» tienen que dar textos distintos. Rojo visto: con `--lector-roto` lee un
+bloque que no existe, dice CIEGO y sale 2 (`inicio-salida-rojo-lector-roto.txt`). Mutante: una COPIA del panel
+fuera del árbol, con el `catch` cambiado a `renderActivity([]); return;` (la línea mutada se imprimió y se leyó
+antes de correr). Con ella, las 16 celdas de fallo salen «IGUAL QUE EL VACÍO»
+(`inicio-salida-mutante-catch-pinta-vacio.txt`). El instrumento distingue, por tanto, las dos conductas.
+
+**Lo que se le pasa a quien construya los textos firmados de c.17963:**
+
+1. **No hace falta un tercer texto por el fallo de carga.** Un fallo no cae en el cartel de vacío: tiene su
+   propio estado de error.
+2. 🔴 **Una respuesta 200 sin `recentActivity` sí cae en el vacío**, por `data.recentActivity || []`
+   (`public/dashboard/js/homeView.js:144`; en Jira, c.20438, puse `:142` por error). Con el texto firmado, el
+   técnico leería «Todavía no tienes presupuestos…» sobre una respuesta rota. La propuesta no lleva texto
+   nuevo: si falta la clave, se va al estado de error.
+3. El aviso de error dice «tus métricas», y para el técnico el bloque pasa a llamarse «Tus presupuestos
+   recientes». Si eso pide otro texto lo decide el fundador (regla 39). **No propongo ningún literal.**
+4. El título se queda en pantalla cuando hay error. Cuando dependa del rol, tiene que estar puesto antes de
+   la carga.
+5. **Leído, NO ejecutado:** el `catch` envuelve también lo que viene DESPUÉS de pintar la actividad (la lista de
+   puesta en marcha, los avisos, los globos). Una excepción ahí cambiaría un bloque ya bueno por el error.
+
+**De paso, leído y no medido en yaqu.app:** el censo del rol de hoy da `GET /admin/metrics/inicio` con
+`quote=RECORTA` (autor o asignado), pero `homeView.js` sigue pintando «Actividad reciente» (`:93`) y
+«Sin actividad reciente» (`:647`) a los dos roles. Los textos de c.17962 y c.17963 no están construidos.
+
+**Mi error en este banco** (es la línea `A9:`). La primera pasada salió «se cuelga → esqueletos para siempre»
+(`inicio-salida-primera-pasada-fetch-sin-senal.txt`). El defecto no era del panel: era mi `fetch` doblado, que
+no atendía la señal de aborto que `api.js` usa para cortar a su plazo. Corregido, la celda vence a los 1,5 s
+y pinta el error. Antes de eso, la primera corrida entera se colgó en `page.evaluate`, porque esperaba a
+`renderHomeView` sin tope. Ahora espera con tope, y un «no volvió» queda como dato de la celda.
+
+### ② Las 15 NO-LLEGO de Ⓓ — NO MEDIDAS
+
+Sobre `00179a513` el censo del rol da NO-DISTINGUE 5 · RECORTA 41 · SIN-DOCUMENTO 17 · NO-LLEGO 15 · suma 78.
+Su sección NO-LLEGO es la de `docs/evidencias/scrum1390/censo-que-ve-el-tecnico.salida.txt`, sin un byte de
+diferencia (`diff` vacío). La copia de hoy está en `censo-rol-de-entrada.txt`.
+
+**`medir-las-15.mjs` está ESCRITO y NO CORRIDO.** Lo escribí antes de que llegara la orden de partir. Nadie lo
+ha visto en verde ni en rojo, así que su presencia en el repo no dice que funcione. Lleva tres cosas: las 8
+recetas de SCRUM-1514c (importadas de su `recetas.mjs`, no copiadas), 7 recetas propias y un par sembrado con
+validación delante. **Siguiente paso:** `dist/` con `tsc --noCheck`. Después,
+`node medir-las-15.mjs <raíz> censo-rol-de-entrada.txt --sin-sembrar`, que tiene que salir 2, y la misma
+orden sin `--sin-sembrar`.
+
+Por dónde empezar, **leído, sin ejecutar** (ninguna de estas mira el rol):
+
+- `POST /admin/ai/quote-message` con `quoteId`: busca el presupuesto por `id` y comercio
+  (`ai.routes.ts:148`).
+- `GET /admin/attachments/:id`: busca por `id` y comercio y sirve los bytes (`attachments.routes.ts:11`). Lo
+  que sirve son las fotos de los albaranes.
+- `POST /admin/expenses` con `quoteId`.
+- La cadena `GET /admin/customers/:id/portal-url` → `GET /cliente/:token`, que ya se leyó en c.17964.
+
+### Lo corrido, y lo que no
+
+- Las tres pasadas del banco de Inicio y su mutante, con las salidas al lado.
+- El censo del rol, una vez, sobre `dist/` construido con `tsc --noCheck` desde este árbol.
+- ⚠️ El cliente de Prisma, que es compartido, va 2 campos por detrás del esquema (`Merchant.activityKind` y
+  `Quote.archivedAt`, según `_prisma-client-guard`). No se ha regenerado, y Prisma va doblado.
+- **En yaqu.app, nada:** no hay sesión de técnico en producción (SCRUM-1555). No lo he intentado.
+
+## SCRUM-1390d · las 15 NO-LLEGO, medidas por efecto
+
+[Anexado por J4 (sesión jv-j4o), equipo de Javier, el 23-oct-2026 a las 10:16Z (`Date:` de GitHub), sobre
+`origin/main` `809527fa691056443c545901152443d0d2a072dc`. Encargo del orquestador (`cobroflash-backend-62`).
+No toca nada de lo de arriba. Ni `src/`, ni `public/`, ni `prisma/`, ni tests: arregla el banco
+`docs/master/evidencias/SCRUM-1390c/medir-las-15.mjs`, deja sus salidas en `docs/master/evidencias/SCRUM-1390d/` y
+añade una línea en `docs/equipo/cicatrices/J4.md`. Entrega en Jira, c.20457 (y c.20458, que corrige una cifra).]
+
+A9: aviso → cicatriz J4 «el doble de medir-las-15 devolvía la fila ajena, con sus marcas, en todo modelo y en todo create: un alta de cliente entregaba al técnico el presupuesto del compañero» — no se pudo comprobar: el banco es de un solo ticket y nada obliga a un doble a devolver sólo lo que la consulta pidió
+
+### El instrumento, antes de fiarse de él: cuatro fallos
+
+1. **No arrancaba en una ruta con espacios.** La ruta a `recetas.mjs` salía de `URL.pathname` (con `%20`), y el
+   fichero acababa con código 1 y la salida vacía. → `fileURLToPath`.
+2. 🔴 **El doble fabricaba la fuga.** Devolvía la fila AJENA, con sus marcas, para todo modelo y también en
+   `create`. En la primera pasada salían **5** rutas con marca del ajeno, y **4** las ponía el doble (`POST /admin/customers`,
+   `POST /admin/customers/:id/sites`, `PATCH /admin/quote-requests/:id`, `POST /admin/expenses`). Ahora las marcas solo
+   viven en los cinco modelos de documento, y lo recién creado nace sin `quoteId` ni `jobId`.
+   Salida de aquella pasada: `las-15-primera-pasada-doble-con-marcas-en-todo.txt`.
+3. **Reventaba en la cadena del portal**, porque `export default` compilado a CJS llega como `{ default: router }`. Ahora
+   cualquier reventón del propio instrumento sale **CIEGO con código 2**: visto con ese mismo fallo todavía puesto.
+4. **La IA, cortada, no medía nada:** 502 en las cuatro rutas. Ahora va doblada en el transporte. Apunta el cuerpo que le
+   llega y lo devuelve como texto: mide que el documento **viaja**, no lo que contestaría un modelo real.
+
+**Controles:** el par sembrado de jv-j4n, más uno nuevo para el eje de la IA (la sembrada que no distingue manda el
+ajeno al modelo; la que recorta, no). `--sin-sembrar` → CIEGO, EXIT=2 (`las-15-sin-sembrar.txt`). **Mutante** en `dist/`,
+restaurado y comprobado con `cmp`: `GET /admin/attachments/:id` niega al técnico → la fila dice «le NIEGA el ajeno» y las
+marcas bajan de 2 a 1 (`las-15-mutante-attachments-niega-al-tecnico.txt`). Dos pasadas finales idénticas byte a byte.
+
+### Lo medido (`las-15-salida.txt`)
+
+**Población:** las 15 de la sección NO-LLEGO del censo del rol, corrido hoy sobre `809527fa6`: la salida es idéntica byte
+a byte a `SCRUM-1390c/censo-rol-de-entrada.txt`. Las 15 llevan receta. Dos roles por dos pasadas cada una.
+
+| ruta | qué le pasa al técnico con el documento del compañero |
+|---|---|
+| `GET /admin/attachments/:id` | 🔴 le llega la foto del albarán del compañero; no mira de qué albarán es el adjunto |
+| `GET /admin/customers/:id/portal-url` → `GET /cliente/:token` | 🔴 consigue el enlace de cualquier cliente, y la página lleva el concepto del presupuesto del compañero |
+| `POST /admin/ai/quote-message` con `quoteId` | 🔴 el cliente y el concepto del presupuesto del compañero viajan a la IA (`quote.findFirst {id, merchantId}`) |
+| `POST /admin/expenses` con `quoteId` | 🔴 escritura: imputa un gasto al presupuesto del compañero (201) |
+| `POST /admin/ai/suggest-albaran-lines` | lee el albarán ajeno sin mirar el rol, pero solo usa `estado` y `modoValoracion` (`ai.routes.ts:119-133`): no viaja contenido; queda saber si existe y está en borrador (leído, no medido contra una IA real) |
+| `GET /admin/me` | lee solo los números de factura del comercio, para la serie |
+| `POST /admin/jobs` | solo consulta documentos del Trabajo que acaba de crear; el 500 lo provoca el doble; el 201 real, sin medir |
+| las otras 8 | no leen ningún documento |
+
+Totales del instrumento: NO-DISTINGUE 5 · NO-LLEGO 2 · SIN-DOCUMENTO 8 · RECORTA 0 · suma 15. Leídos a mano, dos de los
+cinco NO-DISTINGUE (`/admin/me` y `POST /admin/jobs`) no dejan pasar nada ajeno. Cuántos tickets salen de las cuatro
+puertas, lo decide el orquestador: aquí no se arregla ninguna.
+
+### Lo que no
+
+- **yaqu.app:** sin sesión de técnico en producción (SCRUM-1555). No lo he intentado.
+- La respuesta de una IA real, y el 201 real de `POST /admin/jobs`.
+- Error mío: escribí en c.20457 «6 rutas» de memoria; eran 5 (c.20458).

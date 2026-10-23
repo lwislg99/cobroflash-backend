@@ -10,6 +10,42 @@ import { createMpPreference } from '../../../../integrations/mercadopago';
 
 const router = Router();
 
+// SCRUM-1449 · textos firmados por el fundador en Jira (c.18285). Los lee el CLIENTE FINAL: ni
+// «merchant» ni una promesa de aviso que no siempre se cumple.
+const MSG_MP_NO_DISPONIBLE = 'Ahora mismo no se puede pagar con Mercado Pago. Contacta con el profesional.';
+const MSG_MP_SIN_CONEXION  = 'Error al conectar con Mercado Pago. Inténtalo de nuevo.';
+
+/**
+ * SCRUM-1449 · el 503 y el 502 de `/pay/mp/:token`, en la misma página que el resultado y no en
+ * texto plano. Solo el envoltorio: qué rama contesta lo sigue decidiendo la ruta.
+ */
+function avisoMpHtml(msg: string): string {
+  return `<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta name="robots" content="noindex"/>
+  <title>${esc(msg)} — YaQu</title>
+  <link rel="stylesheet" href="/fonts/inter.css"/>
+  <style>
+    :root{--ink:#0f1c17;--muted:#6b756f;--bg:#f6f7f5;--surface:#fff;--border:#e7e9e5}
+    *{box-sizing:border-box}
+    body{font-family:'Inter',system-ui,-apple-system,sans-serif;font-feature-settings:"cv11","ss01";margin:0;background:var(--bg);color:var(--ink);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem;-webkit-font-smoothing:antialiased}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:0 1px 2px rgba(16,24,40,.04),0 12px 32px -12px rgba(16,24,40,.12);padding:2.5rem 2rem;max-width:420px;width:100%;text-align:center}
+    .emoji{font-size:3rem;margin-bottom:1rem}
+    h1{margin:0;font-size:1.15rem;font-weight:600;line-height:1.45;color:var(--ink);text-wrap:balance}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="emoji">⚠️</div>
+    <h1>${esc(msg)}</h1>
+  </div>
+</body>
+</html>`;
+}
+
 /**
  * GET /pay/mp/:token
  * Crea (o reutiliza) una preferencia de Mercado Pago y redirige al checkout.
@@ -28,7 +64,8 @@ router.get('/mp/:token', async (req, res) => {
 
   const accessToken = (charge.merchant as any)?.mpAccessToken || config.MP_ACCESS_TOKEN;
   if (!accessToken) {
-    return res.status(503).send('Mercado Pago no está configurado para este merchant.');
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    return res.status(503).send(avisoMpHtml(MSG_MP_NO_DISPONIBLE));
   }
 
   try {
@@ -68,7 +105,8 @@ router.get('/mp/:token', async (req, res) => {
     return res.redirect(checkoutUrl);
   } catch (err: any) {
     console.error('[payMp] Error creando preferencia MP:', err?.response?.data || err?.message);
-    return res.status(502).send('Error al conectar con Mercado Pago. Inténtalo de nuevo.');
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    return res.status(502).send(avisoMpHtml(MSG_MP_SIN_CONEXION));
   }
 });
 
@@ -99,7 +137,7 @@ router.get('/mp/:token/result', async (req, res) => {
   const statusMap: Record<string, { emoji: string; title: string; msg: string; color: string }> = {
     approved: { emoji: '✅', title: '¡Pago aprobado!',        msg: 'Tu pago ha sido procesado correctamente.',                  color: '#16a34a' },
     rejected: { emoji: '❌', title: 'Pago rechazado',          msg: 'El pago no pudo procesarse. Inténtalo de nuevo.',           color: '#dc2626' },
-    pending:  { emoji: '⏳', title: 'Pago en proceso',         msg: 'Tu pago está siendo procesado. Te notificaremos pronto.',   color: '#d97706' },
+    pending:  { emoji: '⏳', title: 'Pago en proceso',         msg: 'Tu pago está siendo procesado.',                            color: '#d97706' },
     expired:  { emoji: '⚠️', title: 'Cobro vencido',           msg: 'Este cobro ha vencido. Contacta con el profesional.',       color: '#6b756f' },
   };
 
