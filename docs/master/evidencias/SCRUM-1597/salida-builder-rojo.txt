@@ -1,0 +1,42 @@
+== CENSO POR AST · población: 2415 ficheros (src, tests, scripts, public) ==
+cuadra S0 SUELO de población  {"porEncimaDelSuelo":true}
+cuadra C0 SEMBRADO: 2 llamadas, 1 import; el prefijo y el comentario no cuentan  {"llamadas":2,"total":3}
+cuadra C1 CERO: un nombre que no existe  {"apariciones":0}
+
+-- buildPaymentConfirmation --
+   declaracion src/integrations/whatsappTemplates.ts:183                  función buildPaymentConfirmation
+   import      tests/scrum931-un-solo-importe-de-plantilla.test.mjs:53    nivel superior
+   cadena      tests/scrum931-un-solo-importe-de-plantilla.test.mjs:92    const BUILDERS
+   llamada     tests/scrum931-un-solo-importe-de-plantilla.test.mjs:95    const BUILDERS
+   import      tests/whatsappTemplates.test.mjs:6                         nivel superior
+   llamada     tests/whatsappTemplates.test.mjs:64                        test «payment_confirmation_es: 4 vars (orden distinto) y SIN botones»
+   llamada     tests/whatsappTemplates.test.mjs:78                        test «todas: cuerpo de exactamente 4 variables (lo que exige Meta)»
+   llamada     tests/whatsappTemplates.test.mjs:89                        test «validación J7: lo que sale de los builders pasa la validación»
+   llamada     tests/whatsappTemplates.test.mjs:111                       test «validación J7: botón obligatorio que falta / botón de más se detectan»
+   llamada     scripts/wa-prueba.mjs:93                                   nivel superior
+
+-- buildPaymentConfirmationInvoice --
+   import      src/integrations/whatsappNotifications.ts:11               nivel superior
+   llamada     src/integrations/whatsappNotifications.ts:87               función sendPaymentConfirmationInvoice
+   declaracion src/integrations/whatsappTemplates.ts:207                  función buildPaymentConfirmationInvoice
+   import      tests/scrum931-un-solo-importe-de-plantilla.test.mjs:54    nivel superior
+   cadena      tests/scrum931-un-solo-importe-de-plantilla.test.mjs:101   const BUILDERS
+   llamada     tests/scrum931-un-solo-importe-de-plantilla.test.mjs:104   const BUILDERS
+   import      tests/whatsappTemplates.test.mjs:7                         nivel superior
+   llamada     tests/whatsappTemplates.test.mjs:130                       test «payment_confirmation_invoice_es: 4 vars + botón = urlToken (→ /recibo/{{1}}, SCRUM-74: token opaco, no el id)»
+   llamada     tests/whatsappTemplates.test.mjs:144                       test «payment_confirmation_invoice_es: copy neutro — el builder no impone la palabra "factura"»
+   llamada     scripts/wa-prueba.mjs:95                                   nivel superior
+cuadra C2 POSITIVO: la hermana del builder tiene llamada en src/  {"llamadasEnSrc":true}
+
+== LO QUE SE PREGUNTA ==
+ROJO   P1 llamadas a buildPaymentConfirmation por carpeta  {"src":0,"tests":5,"scripts":1,"public":0}  <<< src: esperado 1, salió 0
+cuadra C3 POSITIVO de P2: buildPaymentConfirmationInvoice dentro de sendPaymentConfirmationInvoice  {"llamadas":1}
+cuadra P2 dentro de sendPaymentConfirmationInvoice  {"llamadas":0}
+   tests que la llaman (5):
+      tests/scrum931-un-solo-importe-de-plantilla.test.mjs · const BUILDERS
+      tests/whatsappTemplates.test.mjs · test «payment_confirmation_es: 4 vars (orden distinto) y SIN botones»
+      tests/whatsappTemplates.test.mjs · test «todas: cuerpo de exactamente 4 variables (lo que exige Meta)»
+      tests/whatsappTemplates.test.mjs · test «validación J7: lo que sale de los builders pasa la validación»
+      tests/whatsappTemplates.test.mjs · test «validación J7: botón obligatorio que falta / botón de más se detectan»
+
+ROJO: no cuadran 1: P1 llamadas a buildPaymentConfirmation por carpeta

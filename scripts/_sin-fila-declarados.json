@@ -35,6 +35,11 @@
       "ticket": "SCRUM-1554",
       "equipo": "luis",
       "motivo": "Lo crea S5 (equipo de Luis), pero SCRUM-1554 lleva 'decision-jefe, equipo-javier, fundador, go-live, legal, microcopy': NINGUNA etiqueta `area-*`. El criterio calla (ni una sola etiqueta de área); no se da fila."
+    },
+    "scripts/guard-notas-en-la-ficha.mjs": {
+      "ticket": "SCRUM-1132",
+      "equipo": "javier",
+      "motivo": "Lo crea el carril J2 (equipo de Javier), que no edita la tabla de §3.3; la S0 le da fila cuando su orquestador diga el puesto."
     }
   }
 }

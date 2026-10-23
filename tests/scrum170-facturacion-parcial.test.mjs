@@ -18,6 +18,28 @@ import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 import {
   estadoCobroAlbaran, facturadoPorLinea, pendientePorLinea, validarPeticionParcial,
 } from '../dist/modules/jobs/domain/albaranFacturacion.js';
+import http from 'node:http';
+
+// `node:http` sin agente y no `fetch` (SCRUM-1218d): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de `fetch`
+// (status, headers.get, text, json) y, como el `redirect: 'manual'` de antes, no sigue redirecciones.
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    let d = ''; r.setEncoding('utf8');
+    r.on('data', (t) => { d += t; });
+    r.on('end', () => ok({
+      status: r.statusCode,
+      headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+      text: async () => d,
+      json: async () => JSON.parse(d),
+    }));
+  });
+  req.on('error', mal);
+  req.end(body);
+});
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
@@ -127,11 +149,11 @@ test('SCRUM-170: emitir parte, ver el pendiente, y que la consolidación NO se l
         await prisma.authSession.create({
           data: { merchantId: merchant.id, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) },
         });
-        const verify = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
+        const verify = await pedirSinAgente(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
         const cookie = (verify.headers.get('set-cookie') || '').split(';')[0];
         assert.ok(cookie.startsWith('pf_session='), 'no se obtuvo cookie de sesión');
 
-        const facturarParcial = (body) => fetch(`${base}/admin/albaranes/${albaran.id}/facturar-parcial`, {
+        const facturarParcial = (body) => pedirSinAgente(`${base}/admin/albaranes/${albaran.id}/facturar-parcial`, {
           method: 'POST', headers: { cookie, 'Content-Type': 'application/json' }, body: JSON.stringify(body),
         });
 
@@ -170,7 +192,7 @@ test('SCRUM-170: emitir parte, ver el pendiente, y que la consolidación NO se l
         assert.equal(await prisma.invoice.count({ where: { merchantId: merchant.id } }), 1, 'y no emite nada');
 
         // ── LA CONSOLIDACIÓN NO PUEDE TRAGARSE UN ALBARÁN A MEDIAS ────────
-        const rCons = await fetch(`${base}/admin/jobs/${job.id}/consolidar-albaranes`, {
+        const rCons = await pedirSinAgente(`${base}/admin/jobs/${job.id}/consolidar-albaranes`, {
           method: 'POST', headers: { cookie, 'Content-Type': 'application/json' },
           body: JSON.stringify({ albaranIds: [albaran.id] }),
         });
@@ -204,10 +226,10 @@ test('SCRUM-170: emitir parte, ver el pendiente, y que la consolidación NO se l
         });
         const token = 'qa170a-' + crypto.randomBytes(12).toString('hex');
         await prisma.authSession.create({ data: { merchantId: mA.id, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) } });
-        const verify = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
+        const verify = await pedirSinAgente(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
         const cookieA = (verify.headers.get('set-cookie') || '').split(';')[0];
 
-        const res = await fetch(`${base}/admin/albaranes/${aB.id}/facturar-parcial`, {
+        const res = await pedirSinAgente(`${base}/admin/albaranes/${aB.id}/facturar-parcial`, {
           method: 'POST', headers: { cookie: cookieA, 'Content-Type': 'application/json' },
           body: JSON.stringify({ lineas: [{ index: 0, cantidad: 1 }] }),
         });

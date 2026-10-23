@@ -39,7 +39,7 @@
     {"clave":"export · src/core/validation/tiposIvaEmitibles.ts::esErrorTipoIvaNoEmitible","donde":"src/core/validation/tiposIvaEmitibles.ts:101","carril":"S1","ticket":"SCRUM-1185"},
     {"clave":"export · src/integrations/stripe.ts::stripeEnabled","donde":"src/integrations/stripe.ts:11","carril":"J2","ticket":"SCRUM-1185"},
     {"clave":"export · src/integrations/whatsapp.ts::sendWhatsAppDocument","donde":"src/integrations/whatsapp.ts:873","carril":"S1","ticket":"SCRUM-1185"},
-    {"clave":"export · src/integrations/whatsappTemplates.ts::buildPaymentConfirmation","donde":"src/integrations/whatsappTemplates.ts:183","carril":"J2","ticket":"SCRUM-1596"},
+    {"clave":"export · src/integrations/whatsappTemplates.ts::buildPaymentConfirmation","donde":"src/integrations/whatsappTemplates.ts:183","carril":"J2","ticket":"SCRUM-1597","motivo":"J2 · SCRUM-1597: NO se retira. Por AST no la llama nada en src/ ni la hermana sendPaymentConfirmationInvoice, pero la usan tests que no son suyos: tres de whatsappTemplates.test.mjs (el de las 4 variables de todas, y los dos de la validación J7, donde es el fixture SIN botón del validador) y el BUILDERS de scrum931; y scripts/wa-prueba.mjs. Medido en docs/master/evidencias/SCRUM-1597/medir-builder.mjs"},
     {"clave":"export · src/modules/billing/domain/avisoBizumSinTelefono.ts::hayQueAvisar","donde":"src/modules/billing/domain/avisoBizumSinTelefono.ts:64","carril":"J2","ticket":"SCRUM-1185"},
     {"clave":"export · src/modules/billing/domain/cobros.service.ts::diasDeDeuda","donde":"src/modules/billing/domain/cobros.service.ts:157","carril":"J2","ticket":"SCRUM-1185"},
     {"clave":"export · src/modules/billing/domain/fechaDeCobro.ts::COPY_LOTE_UNA_FECHA","donde":"src/modules/billing/domain/fechaDeCobro.ts:102","carril":"J2","ticket":"SCRUM-1185"},
@@ -126,7 +126,6 @@
     {"clave":"front-window · public/dashboard/js/homeView.js::appHomePrefs","donde":"public/dashboard/js/homeView.js:146","carril":"S2","ticket":"SCRUM-1185","motivo":"PREMISA FALSA (S2, 29-sep, SCRUM-1185): SÍ se consume. homeView.js la escribe (:146, :1488) y la LEE (:120, :1455) en el mismo fichero; el detector solo busca lectores fuera. No se «conecta» nada: está conectada."},
     {"clave":"front-window · public/dashboard/js/quoteRevisiones.js::puedeEditarseLaRevision","donde":"public/dashboard/js/quoteRevisiones.js:214","carril":"S2","ticket":"SCRUM-1185","motivo":"RESTO (S2, 29-sep): alias en window para el test scrum655c; el módulo usa su puedeEditarse interno."},
     {"clave":"ruta · GET /admin/albaranes/consolidables","donde":"src/modules/jobs/app/routes/albaranes.routes.ts:297","carril":"S4","ticket":"SCRUM-1185"},
-    {"clave":"ruta · GET /admin/customers/:id/notes","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:383","carril":"J2","ticket":"SCRUM-1132"},
     {"clave":"ruta · GET /admin/evidencias.zip","donde":"src/modules/fiscal/evidencias/evidencias.routes.ts:15","carril":"J1","ticket":"SCRUM-1185"},
     {"clave":"ruta · GET /admin/expenses/categories","donde":"src/modules/expenses/app/routes/expenses.routes.ts:78","carril":"S2","ticket":"SCRUM-1185","motivo":"RESTO / GEMELA (S2, 29-sep): la lista de categorías vive COPIADA en el front, CATEGORY_LABELS de public/dashboard/js/expensesView.js. Si se conecta esta ruta, hay que retirar esa copia en el mismo cambio, o habrá dos fuentes de las categorías."},
     {"clave":"ruta · GET /admin/exports/fees.csv","donde":"src/modules/exports/app/routes/exports.routes.ts:450","carril":"J2","ticket":"SCRUM-1185"},
@@ -137,7 +136,6 @@
     {"clave":"ruta · GET /precios","donde":"src/app.ts:292","carril":"J3","ticket":"SCRUM-1185"},
     {"clave":"ruta · POST /admin/charges/:id/garantia","donde":"src/modules/billing/app/routes/chargesAdmin.routes.ts:114","carril":"J2","ticket":"SCRUM-1185"},
     {"clave":"ruta · POST /admin/charges/:id/garantia/liberar","donde":"src/modules/billing/app/routes/chargesAdmin.routes.ts:164","carril":"J2","ticket":"SCRUM-1185"},
-    {"clave":"ruta · POST /admin/customers/:id/notes","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:400","carril":"J2","ticket":"SCRUM-1132"},
     {"clave":"ruta · POST /admin/invoices/:id/pay","donde":"src/modules/system/app/routes/invoicesAdmin.routes.ts:569","carril":"J1","ticket":"SCRUM-1185"},
     {"clave":"ruta · POST /admin/invoices/:id/unpay","donde":"src/modules/system/app/routes/invoicesAdmin.routes.ts:590","carril":"J1","ticket":"SCRUM-1185"},
     {"clave":"ruta · POST /admin/supresion/:merchantId","donde":"src/modules/system/app/routes/supresion.routes.ts:29","carril":"operación","ticket":"SCRUM-1185"},
@@ -160,6 +158,8 @@
     {"clave":"export · src/modules/fiscal/retenciones/casillas.ts::FUENTE_115","donde":"src/modules/fiscal/retenciones/casillas.ts:27","carril":"J1","ticket":"SCRUM-1066","motivo":"J1: solo la consume construirBorradorRetenciones, sin ruta (arriba)"}
   ],
   "retiradas": [
+    {"clave":"ruta · GET /admin/customers/:id/notes","motivo":"SCRUM-1132: conectada en customerDetailView.js (la pestaña «Notas» de la ficha del cliente, al abrirla; sólo admin)"},
+    {"clave":"ruta · POST /admin/customers/:id/notes","motivo":"SCRUM-1132: conectada en customerDetailView.js (la pestaña «Notas» de la ficha del cliente, al abrirla; sólo admin)"},
     {"clave":"ruta · POST /admin/customers/:id/sites","motivo":"SCRUM-1145: conectada en customerDetailView.js («+ Nuevo sitio» y «Guardar» del formulario de la pestaña «Sitios»)"},
     {"clave":"ruta · PUT /admin/customers/:id/sites/:siteId","motivo":"SCRUM-1145: conectada en customerDetailView.js («Editar» y «Guardar» en cada sitio de la pestaña «Sitios»)"},
     {"clave":"ruta · DELETE /admin/customers/:id/sites/:siteId","motivo":"SCRUM-1145: conectada en customerDetailView.js («🗑 Eliminar» en cada sitio de la pestaña «Sitios», sin confirmación: c.20592)"},

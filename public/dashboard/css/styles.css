@@ -4816,6 +4816,21 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
    (un enlace, una referencia) se parte en vez de salirse de la tarjeta: medido a 390 px. */
 .volver-a-llamar-nota { overflow-wrap: anywhere; }
 
+/* J2: SCRUM-1132 · la pestaña «Notas» de la ficha del cliente (customerDetailView.js,
+   `montarNotasDelCliente`; SCRUM-1132c: era una tarjeta). El panel lleva el mismo relleno que el de
+   «Sitios»; cada nota, el texto en Tinta y debajo la fecha y el autor en Apagado. El texto es libre:
+   una palabra larga se parte. */
+.notas-cliente { padding: 16px; }
+.notas-cliente-lista { list-style: none; margin: 0 0 14px; padding: 0; }
+.notas-cliente-nota { padding: 10px 0; border-bottom: 1px solid var(--neutral-100); }
+.notas-cliente-nota:first-child { padding-top: 0; }
+.notas-cliente-texto { margin: 0; font-size: 14px; color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; }
+.notas-cliente-meta { margin: 2px 0 0; font-size: 12.5px; color: var(--muted); }
+.notas-cliente-vacio { font-size: 13.5px; color: var(--muted); }
+.notas-cliente-form { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; margin: 0; }
+.notas-cliente-form textarea { width: 100%; }
+.notas-cliente-form .alert { width: 100%; }
+
 /* -- J2 · SCRUM-1043a -- lista de Clientes, columna «Pendiente de cobro»: la celda parte sus líneas.
    `.table td` lleva `white-space: nowrap` en el móvil, y la línea de garantía retenida (literal
    firmado de SCRUM-1108, unos 70 caracteres) se salía de la tarjeta: medido 453 px a 320 px de ancho

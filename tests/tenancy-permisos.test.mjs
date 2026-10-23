@@ -20,6 +20,28 @@ import crypto from 'node:crypto';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 import { diagnosticarAusencia } from './_tenancy-diag.mjs'; // SCRUM-259: (a)filtro/(b)borrado/(c)no-comprobable
 import { exigirTodas } from './_evidencia.mjs'; // SCRUM-270: las dos preguntas, en la misma corrida
+import http from 'node:http';
+
+// `node:http` sin agente y no `fetch` (SCRUM-1218d): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de `fetch`
+// (status, headers.get, text, json) y, como el `redirect: 'manual'` de antes, no sigue redirecciones.
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    let d = ''; r.setEncoding('utf8');
+    r.on('data', (t) => { d += t; });
+    r.on('end', () => ok({
+      status: r.statusCode,
+      headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+      text: async () => d,
+      json: async () => JSON.parse(d),
+    }));
+  });
+  req.on('error', mal);
+  req.end(body);
+});
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
@@ -95,7 +117,7 @@ test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', 
     await prisma.authSession.create({
       data: { merchantId: merchantB.id, teamMemberId, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) },
     });
-    const res = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
+    const res = await pedirSinAgente(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
     const cookie = (res.headers.get('set-cookie') || '').split(';')[0];
     assert.ok(cookie.startsWith('pf_session='), 'no se obtuvo cookie de sesión');
     return cookie;
@@ -114,9 +136,9 @@ test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', 
     await prisma.authSession.create({
       data: { merchantId: merchantA.id, token: tokenA, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) },
     });
-    const cookieAdminA = ((await fetch(`${base}/auth/verify?token=${tokenA}`, { redirect: 'manual' }))
+    const cookieAdminA = ((await pedirSinAgente(`${base}/auth/verify?token=${tokenA}`, { redirect: 'manual' }))
       .headers.get('set-cookie') || '').split(';')[0];
-    const propioTxt = await (await fetch(`${base}/admin/quotes/${quoteA.id}`, { headers: { cookie: cookieAdminA } })).text();
+    const propioTxt = await (await pedirSinAgente(`${base}/admin/quotes/${quoteA.id}`, { headers: { cookie: cookieAdminA } })).text();
     assert.ok(
       propioTxt.includes(CANARIO_A),
       `🔴 CANARIO ROTO (no es un pase): "${CANARIO_A}" no aparece ni cuando lo pide su propio\n` +
@@ -144,7 +166,7 @@ test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', 
     ];
 
     for (const [method, path, body] of tenancyTargets) {
-      const res = await fetch(base + path, {
+      const res = await pedirSinAgente(base + path, {
         method,
         headers: { cookie: cookieAdminB, 'Content-Type': 'application/json' },
         body: body ? JSON.stringify(body) : undefined,
@@ -189,7 +211,7 @@ test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', 
         `comprobar permisos de verdad y el guard se queda flojo sin avisar.`,
       );
 
-      const res = await fetch(base + path, {
+      const res = await pedirSinAgente(base + path, {
         method: r.method,
         headers: { cookie: cookieTecnicoB, 'Content-Type': 'application/json' },
         body: r.body ? JSON.stringify(r.body) : undefined,
@@ -249,7 +271,7 @@ test('SCRUM-23: el técnico solo ve/accede SUS Trabajos (row-level, mismo mercha
     await prisma.authSession.create({
       data: { merchantId: merchant.id, teamMemberId, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) },
     });
-    const res = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
+    const res = await pedirSinAgente(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
     const cookie = (res.headers.get('set-cookie') || '').split(';')[0];
     assert.ok(cookie.startsWith('pf_session='), 'no se obtuvo cookie de sesión');
     return cookie;
@@ -257,7 +279,7 @@ test('SCRUM-23: el técnico solo ve/accede SUS Trabajos (row-level, mismo mercha
 
     const cookieTecA = await mkCookie(tecA.id);
     const cookieAdmin = await mkCookie(null); // owner = admin implícito
-    const get = (path, cookie) => fetch(`${base}${path}`, { headers: { cookie } });
+    const get = (path, cookie) => pedirSinAgente(`${base}${path}`, { headers: { cookie } });
 
     // (a) la LISTA del técnico A solo trae los suyos
     const listA = await (await get('/admin/jobs', cookieTecA)).json();
