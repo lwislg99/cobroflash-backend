@@ -2,7 +2,7 @@
 
 ## 23-oct-2026 · J6 · `INTERACTIVOS` incluye `select`, `textarea` e `input:not([type="hidden"])` (opción B)
 
-**Medido contra:** `origin/main` = `a3c13611ed6f078fa7fe5af5882b0b8b2d1b2d3f` · 2026-10-23T14:17:47Z
+**Medido contra:** `origin/main` = `5fd212a49c6f915e53a47e2a925ea3dcf8a1de01` · 2026-10-23T15:39:32Z
 
 A9: aviso → cicatriz J6 «Atribuí dos select al fichero que guarda su decisión y no al que los crea, y con ello el carril del arreglo» — no se pudo comprobar: el guard nombra el elemento (`SELECT.input`), no el fichero que lo crea, y ningún instrumento cruza una cosa con la otra
 
@@ -22,6 +22,11 @@ jv-j6al sobre `37311b671`; no re-medido sobre `a3c13611e`).
 se añaden excepciones. **B entra cuando estén arreglados los 4** → SCRUM-1592 (J2: los crea `customersView.js:137-220`
 y el componente `etiquetasDelDocumento.js` dentro de `#c360-meta`; el arreglo es una regla acotada en el bloque de J2
 de `styles.css`, como `.gastos-pantalla select.input`).
+
+**Entra ahora (jv-j6aq, re-medido sobre `5fd212a49`):** SCRUM-1592 está en main (PR #2749, merge `27385379e`). Con la
+rama fusionada con ese main, `node scripts/guard-objetivo-tactil.mjs` da `⟦veredicto⟧ 0 hallazgos · 0 ciegos`, salida 0,
+12 censos (superficie × ancho); la sonda sale cazada en los 8 que la declaran (landing y lista de Clientes no imprimen
+sonda en su línea; no he mirado si en main es igual), y en la población ya salen `TEXTAREA` e `INPUT.input` (B activo). `EXCEPCIONES` sin tocar.
 
 **Corrección a c.20491:** allí los dos `select` salían en `filtroClientes.js`. Ese fichero guarda la DECISIÓN del filtro
 y no tiene DOM; los crea `customersView.js:198-220`.
