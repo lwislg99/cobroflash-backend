@@ -343,3 +343,38 @@ Puesto S0. **Encargo del orquestador de Luis:** escribir la regla que él decidi
 **Error propio.** El primer barrido de los handlers miró una ventana fija de ~125 líneas desde cada `router.post` y sólo las rutas del panel. Con eso, «firmar no envía nada» salía limpio. Al leer cada handler entero, y también el del enlace público, apareció el auto-envío. Sin esa segunda lectura, R25 habría dicho que ninguna firma envía.
 
 A9: aviso → A10 «Una ventana fija es una tolerancia disfrazada.» — no se pudo comprobar: no hay instrumento que diga dónde acaba un handler sin abrir el fichero; el barrido entero desde `router.post` hasta el siguiente es la receta, y va en este registro
+
+## SCRUM-1367h · 23-oct-2026 · S4 · el mapa de lo que la cuenta QA NO puede verificar (R26)
+
+**Medido contra:** `origin/main` = `6c8706daef7399513e69e6872068aa7bed25b760` · 2026-10-23T12:49:01Z ·
+`yaqu.app/version` = el mismo SHA.
+
+A9: sin fallo que generalice — leer el código y escribir una tabla; el estado de la cuenta se mide con dos GET de `sesion-panel.mjs`, que ya existe
+
+Encargo del orquestador del equipo de Luis (23-oct), después de que a S4 se le cortaran el mismo día dos
+verificaciones a mitad de camino: SCRUM-1445c (el merchant QA no tiene zona) y R25 (el perfil fiscal está
+vacío). Pidió una tabla con cuatro columnas: qué no se puede verificar, por qué, qué haría falta y de quién
+depende. Y una pregunta encima: ¿cuántas filas se arreglan sembrando dos campos? **No se ha sembrado nada,
+ni creado ninguna cuenta, ni tocado la base.** El mapa vive en `docs/RUNBOOKS.md` como **R26**, al lado de
+R24 y R25, que son lo más parecido a una ficha de la cuenta QA que hay en el repositorio.
+
+**El estado de la cuenta, medido** con `GET /admin/merchant` y `GET /admin/me` (merchant 46). Va en la
+cabecera de R26, sin valores personales: el JSON de `/admin/jobs` lleva el móvil del cliente #83, que es el
+real del fundador, y no se sube crudo.
+
+**Cómo se buscaron las filas.**
+- Qué escribe el panel: `merchantProfileUpdateSchema` (`src/core/validation/schemas.ts:390-508`). Admite el perfil fiscal, los teléfonos, el IBAN, el slug y el país. No admite `timezone`, `flags`, `connectStatus` ni el plan.
+- Qué estados piden cada dato: la puerta del modo (`emission.service.ts:36-41`), las vías de cobro (`viasDeCobro.ts:78`), los flags (`flags.ts:68-90`, con la precedencia merchant > entorno > tabla), el tope de usuarios (`entitlements.ts:19`) y la regla de plan activo (`authMiddleware.ts:72`). Esta última sólo corta `trial`, y el plan de QA es `pro`, así que no entra en la tabla.
+- Las fechas por zona: los 26 ficheros que llaman a `zonaDelMerchant(`. **Clasificados por fichero, no llamada por llamada:**
+  - **Sin factura (13):** `albaranPdf.service.ts`, `albaranNumber.service.ts`, `albaranSerie.ts`, `quoteNumber.service.ts`, `presupuestoParaPdf.ts`, `validez.ts`, `quoteDecisionLanding.routes.ts`, `grupoDelPresupuesto.ts`, `partes.routes.ts`, `albaranes.routes.ts`, `pendientesFacturar.service.ts`, `whatsappLog.service.ts` y `weeklyDigest.service.ts`.
+  - **Con factura o cobro (13):** `invoicesAdmin.routes.ts`, `invoiceNumber.service.ts`, `verifactu.service.ts`, `pdf.service.ts`, `receipt.routes.ts`, `chargesAdmin.routes.ts`, `psp.routes.ts`, `garantiasRetenidas.ts`, `customerPortal.routes.ts`, `modelo303.routes.ts`, `evidencias.routes.ts`, `exports.routes.ts` y `fiscalInput.ts`.
+
+**Lo que este trabajo destapó, además del mapa:**
+1. **El aviso de R24 sobre el perfil fiscal parece desfasado (MI LECTURA, no medida).** El aviso dice: «uno firmado ANTES dejará de verificar». Pero desde `c5b38a4bd` (10-ago-2026) la versión en curso del sobre es la 3, y la receta v:3 toma emisor y NIF del bloque congelado. El #47 (14-oct) sería v:3, así que rellenar el perfil no lo rompería. Ese miedo fue parte de lo que paró rellenar el perfil el 19-oct. La API no expone la versión del sobre, así que no la he podido leer.
+2. **`country` es editable por el panel**, y cambiarlo pondría QA en modo `fiscal`. Va en R26 como «NO es una vía», para que nadie lo use para llegar a las facturas.
+3. **Acotación de SCRUM-1445c (encargo del orquestador, a partir de una observación de S1):** «¿el PDF del #47 era el del 14-oct, servido desde disco?». **No.** Los dos PDF bajados el 23-oct llevan `/CreationDate (D:20261023123134Z)`, que es el mismo segundo que la cabecera `Date` de la respuesta (12:31:34 GMT). Se generaron con el build vivo, así que «el proceso de Railway va en UTC» está medido HOY. Y la ventana de S1 entra en R26: con Madrid, de 22:00 a 23:59Z; desde el 25-oct, sólo de 23:00 a 23:59Z.
+
+**La respuesta a la pregunta de los dos campos** está al pie de R26. En corto:
+- El perfil fiscal desbloquea firmar por R25. Es un minuto del fundador y la base no se toca.
+- La zona desbloquea a medias (13 ficheros, de noche o con una zona inventada), y pide escribir en la base.
+- El bloque grande, el de facturas y cobros, no se mueve con ninguno de los dos: espera a SIF-1.
