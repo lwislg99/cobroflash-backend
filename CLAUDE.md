@@ -148,6 +148,11 @@ rm -f "${TMPDIR:-/tmp}/yaqu-tanda.tap"
 node --test --test-force-exit --test-reporter=spec --test-reporter-destination=stdout \
      --test-reporter=tap --test-reporter-destination="${TMPDIR:-/tmp}/yaqu-tanda.tap" 'tests/*.test.mjs'
 grep "# SKIP" "${TMPDIR:-/tmp}/yaqu-tanda.tap"
+# Con el equipo trabajando, la tanda entera NO cabe en un comando (2.020 s el 23-oct-2026, SCRUM-1244):
+# se corre por tramos, uno por comando en primer plano, y vale el veredicto del resumen.
+node scripts/tanda-entera-por-tramos.mjs --plan
+node scripts/tanda-entera-por-tramos.mjs --tramo 1/13    # … hasta 13/13
+node scripts/tanda-entera-por-tramos.mjs --resumen 13    # 0 verde · 1 rojo · 2 CIEGO (falta un tramo o uno no terminó)
 npm run test:staging:gated   # los gateados por QA_DB_TEST / A55_DB_TEST / BOT_SUITE_TEST.
                              # Toma el TURNO de staging y lo suelta (detalle en RUNBOOKS y en
                              # docs/QA/SUITE_REGRESION.md). NO lo lances con `| tail`.
