@@ -1172,8 +1172,13 @@ if (params.signatureData) {
     doc.moveDown(0.5);
     doc.fontSize(10).fillColor('black').text('Firma del cliente:', CONTENT_X, doc.y);
     doc.moveDown(0.3);
+    // SCRUM-1470b: con `y` explícito pdfkit NO baja el cursor tras la imagen, y `moveDown(5)` a
+    // 10 pt Helvetica son 57,8 pt: la caja mide 70, así que el trazo pisaba «Firmado digitalmente
+    // por». Se baja a la caja ENTERA (el pad, ≤470×190, siempre la llena de alto) y un hueco fijo:
+    // el mismo número que el gemelo del albarán (SCRUM-1589, `albaranPdf.service.ts`).
+    const arribaFirma = doc.y;
     doc.image(imgBuffer, CONTENT_X, doc.y, { width: 180, height: 70, fit: [180, 70] });
-    doc.moveDown(5);
+    doc.y = arribaFirma + 70 + 4;
     doc.fontSize(8).fillColor('#444')
       .text(`Firmado digitalmente por ${params.customer.name || 'el cliente'} el ${signDate}`, CONTENT_X, doc.y);
     doc.moveDown(0.5);
