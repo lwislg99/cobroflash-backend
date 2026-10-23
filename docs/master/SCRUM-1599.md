@@ -124,3 +124,54 @@ numérico da 404: el IDOR sigue probado. Evidencia: `docs/master/evidencias/SCRU
 - La tanda gateada entera: el turno se usó fichero a fichero, como en 1218e/f.
 - Este tramo y el de 1599b (#2784) se añaden los dos al final de este fichero: el que entre segundo tiene que
   mezclar `origin/main` y conservar los dos.
+## J1 · SCRUM-1599b · scrum178, scrum814.gated y scrum17, al día con lo que decidió el fundador
+
+**Medido contra:** `origin/main` = `b6dd5d1a8d64abd0bf835141e8d9bac6d5d2055f` · 2026-10-23T20:29:13Z (hora de GitHub al soltar el turno; sesión J1 `jv-j1ax` en el árbol `jv-j6ar`, por encargo del orquestador `cobroflash-backend-62`. Al escribir, `main` ya era `5d7ed59e0c6d6b313c2303d9498bb6c125299430`: entró 1599a (sólo docs) y SCRUM-1598, que toca `invoicesAdmin.routes.ts` —el marcado masivo de pagadas—, fuera de las tres rutas que miden estos tests: `invoice-manual`, `/:id/invoice` y la consolidación)
+
+A9: aviso → A10 «Cero resultados con tu vocabulario no es silencio del documento.» — no se pudo comprobar: en el PASO 0 busqué el PR de 1599a con `gh pr list --search "1599 in:title"`, dio `[]` y el título del PR sí lleva «SCRUM-1599a»; lo cazó el positivo (la rama existía en `ls-remote`) y `--head <rama>` dio #2775. Una búsqueda de `gh` no pasa por ningún guard del repositorio
+
+**Decisión que se aplica:** SCRUM-1599 c.20650 (respuestas literales «Flag ON + caso del 409» y «Sí, F<AA><NNNN>»), sobre
+la medición de c.20647. `scrum85` es de J2 y no entra aquí. Sólo tests: 0 líneas de `src/`, 0 del camino de emisión.
+
+### ① Lo que cambia, test por test
+
+| test | cambio | ¿se relaja alguna aserción? |
+|---|---|---|
+| `tests/scrum178-emision-manual.test.mjs` | su merchant ES lleva `FISCAL_ON` (`flags.INVOICING_ES_ENABLED = true`, la forma del hermano `scrum814-carrera-de-tramos-postgres`) | no: el dato de partida |
+| ídem | fuera el `if (isReceiptNumber(…))` con la rama del justificante `J-…`: con el flag ON la rama fiscal es OBLIGATORIA, y se añade `isReceiptNumber(number) === false` | no: se ENDURECE (antes un `J-` pasaba por la otra rama) |
+| ídem | caso NUEVO: merchant ES con NIF y `FISCAL_OFF` explícito → `invoice-manual` da 409 `facturacion_no_disponible` y deja 0 filas en `Invoice` | nuevo |
+| `tests/scrum814-carrera-del-tramo.gated.test.mjs` | `FISCAL_ON` en sus tres merchants | no: 0 aserciones tocadas |
+| `tests/scrum17-recapitulativa.test.mjs` | `:176`: `/^\d{4}-/` → `/^F\d{6}$/` | no: se ENDURECE (casa `F260001`; no casa `2026-0001`, `J-260001`, `F2600011` ni `F26001`) |
+
+El OFF del caso nuevo va **explícito** en la columna, no «ausente»: `isFlagEnabled` (`src/core/flags.ts:83`) da
+prioridad a la columna sobre el env, así que el caso no depende de cómo esté el `INVOICING_ES_ENABLED` del entorno.
+
+### ② Antes y después, con el turno
+
+Base del carril `yaqu_dev_javier` (`DATABASE_URL_TESTS`; `comprobar-claves-bd.mjs` rc=0, ninguna clave de producción),
+turno tomado 20:25:58Z y soltado ~20:29Z, `QA_DB_TEST=1 WHATSAPP_DRY_RUN=1`, `dist/` de `tsc --noCheck` sobre la base
+de arriba. Los tres ficheros en una pasada; canario: 35 s.
+
+| pasada | casos | ok | not ok | SKIP | salida |
+|---|---|---|---|---|---|
+| ANTES (los tres ficheros de `origin/main`) | 17 | 12 | 5 | 0 | `docs/master/evidencias/SCRUM-1599/antes-1599b.salida.txt` |
+| DESPUÉS | 18 | 18 | 0 | 0 | `docs/master/evidencias/SCRUM-1599/despues-1599b.salida.txt` |
+| MUTACIÓN: el merchant del caso nuevo, de `FISCAL_OFF` a `FISCAL_ON` | 3 | 2 | 1 | 0 | `docs/master/evidencias/SCRUM-1599/mutacion-1599b.salida.txt` |
+
+- ANTES cae lo mismo que en c.20647: `scrum17` 11/12 (`'F260001'`), `scrum178` 1/2 (409 donde esperaba 201) y
+  `scrum814.gated` 0/3 (0 facturas donde esperaba 2; 409 donde esperaba 201). 12 + 5 = 17.
+- DESPUÉS, `scrum178` emite `F260001` (F1, VeriFactu true) en la base del carril; el fixture borra el merchant al acabar.
+- La mutación cae donde debe: 409 esperado, 201 recibido. La de «quitar el OFF» a secas NO se usó a propósito: sin la
+  columna decide el env, que en esta base está apagado, y el caso seguiría verde — sería una mutación muda.
+
+### ③ Guards
+
+Los de suite (237, 976, 824 ×3, 836, 419, 702, 700, 719, 1415, 113, 262, 745, 757, 765): 16 ficheros, 155 casos,
+155 ok, 0 not ok, 0 SKIP, sin `QA_DB_TEST`.
+
+### ④ Lo que NO se ha hecho, ni medido
+
+- `scrum85` (J2) y el ③ de 1599 (aviso de un gateado N días en rojo, J6/S5): fuera de este tramo.
+- Una pasada por punto, no tres.
+- El DESPUÉS se midió sobre `b6dd5d1a8`, no sobre `5d7ed59e0`: lo que entró entre medias no toca estas rutas (arriba),
+  pero no lo he corrido.
