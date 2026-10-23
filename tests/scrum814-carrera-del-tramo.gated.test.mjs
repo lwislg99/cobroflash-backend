@@ -68,6 +68,12 @@ const TOTAL = '1210.00';
 const PLAN_50_50 = [{ percentage: 0.5, label: 'Anticipo' }, { percentage: 0.5, label: 'Final' }];
 const PLAN_30_70 = [{ percentage: 0.3, label: 'Anticipo' }, { percentage: 0.7, label: 'Final' }];
 
+// SCRUM-1599b (decisión del fundador, SCRUM-1599 c.20650): desde SCRUM-1027 (regla 24), un merchant
+// ES con el interruptor OFF no emite NINGÚN documento por `/:id/invoice`: 409 en las cinco
+// peticiones, y la carrera se mediría sobre cero facturas. Se enciende POR MERCHANT, como en el
+// hermano `scrum814-carrera-de-tramos-postgres`; el caso con el interruptor apagado lo mide aquél.
+const FISCAL_ON = { flags: { INVOICING_ES_ENABLED: true } };
+
 /** Lanza el cliente en su PROPIO proceso y devuelve lo que imprimió. */
 function lanzarCliente(base, cookie, quoteId, t0) {
   return new Promise((resolve, reject) => {
@@ -159,7 +165,7 @@ test('SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo',
   try {
     await withMerchant(
       prisma,
-      { name: 'QA S814 carrera', email: `qa-s814-${Date.now()}@test.local`, country: 'ES', taxId: 'B12345678' },
+      { name: 'QA S814 carrera', email: `qa-s814-${Date.now()}@test.local`, country: 'ES', taxId: 'B12345678', ...FISCAL_ON },
       async (merchant) => {
         const customer = await prisma.customer.create({ data: { merchantId: merchant.id, name: 'Cliente S814' } });
         const quote = await prisma.quote.create({
@@ -222,7 +228,7 @@ test('SCRUM-814 · plan 30/70: lo facturable NO puede quedar por debajo del pres
   try {
     await withMerchant(
       prisma,
-      { name: 'QA S814 dinero', email: `qa-s814d-${Date.now()}@test.local`, country: 'ES', taxId: 'B12345678' },
+      { name: 'QA S814 dinero', email: `qa-s814d-${Date.now()}@test.local`, country: 'ES', taxId: 'B12345678', ...FISCAL_ON },
       async (merchant) => {
         const customer = await prisma.customer.create({ data: { merchantId: merchant.id, name: 'Cliente S814 dinero' } });
         const quote = await prisma.quote.create({
@@ -284,7 +290,7 @@ test('SCRUM-814 · dos peticiones SECUENCIALES siguen emitiendo «Anticipo» y l
   try {
     await withMerchant(
       prisma,
-      { name: 'QA S814 secuencial', email: `qa-s814s-${Date.now()}@test.local`, country: 'ES', taxId: 'B12345678' },
+      { name: 'QA S814 secuencial', email: `qa-s814s-${Date.now()}@test.local`, country: 'ES', taxId: 'B12345678', ...FISCAL_ON },
       async (merchant) => {
         const customer = await prisma.customer.create({ data: { merchantId: merchant.id, name: 'Cliente S814 sec' } });
         const quote = await prisma.quote.create({

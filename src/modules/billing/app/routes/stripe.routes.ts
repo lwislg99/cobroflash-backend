@@ -204,9 +204,16 @@ router.post('/', async (req, res) => {
             });
           }
         } else if (st === 'past_due' || st === 'unpaid') {
-          if (planQueExiste(planId, merchantId, event)) await prisma.merchant.update({
+          // J3 · SCRUM-1402e — decisión del fundador (SCRUM-1402, comentario 20651, «Marcar el impago»):
+          // con un plan que no existe el impago SE MARCA igual, y lo único que no se escribe es el plan.
+          // Es el mismo estado de la Parte L que con un plan conocido (`past_due`) y el mismo aviso: el
+          // banner del panel que lee ese campo. Ni texto nuevo ni transición nueva.
+          const planConocido = planQueExiste(planId, merchantId, event);
+          await prisma.merchant.update({
             where: { id: merchantId },
-            data: { plan: planId, subscriptionStatus: 'past_due', stripeSubscriptionId: sub.id },
+            data: planConocido
+              ? { plan: planId, subscriptionStatus: 'past_due', stripeSubscriptionId: sub.id }
+              : { subscriptionStatus: 'past_due' },
           });
         } else if (st === 'canceled' || st === 'incomplete_expired') {
           await prisma.merchant.update({
