@@ -201,7 +201,7 @@ escribe el plan. El premio al referido y el correo de primer pago no salen por e
 
 # SCRUM-1402e · El impago de una suscripción con un plan que no existe se marca igual · carril J3 (su bloque en `stripe.routes.ts`, contenedor de J2)
 
-**Medido contra:** `origin/main` = `b6dd5d1a86f2b3f1e1c2bd8a0b1d0e9b5e6d4c3a` · 2026-10-23T20:34:24Z
+**Medido contra:** `origin/main` = `cc06e4a72a62accb2ca8c0115d1bf40ded968924` · 2026-10-23T20:36:12Z
 
 A9: comprobación → `tests/scrum1402e-impago-con-plan-desconocido.test.mjs`
 
@@ -264,7 +264,19 @@ como antes). Base sin mutar primero.
 
 ## Lo corrido
 
-Ver la tabla del final de este tramo (se rellena tras la tanda de guards).
+Sobre la rama con `origin/main` = `cc06e4a72` ya mezclado (no tocaba ninguno de estos ficheros), `dist/`
+re-emitido después del merge y sin `FORCE_COLOR`.
+
+| qué | resultado |
+|---|---|
+| el test nuevo + `scrum1402`, `scrum815-idempotencia`, `scrum1565`, antes del merge | 4 ficheros · 30 casos · 30 pasan · 0 caen |
+| 32 ficheros: los dos de este ticket, `scrum1342`, `scrum1565`, los seis `scrum815*`, los de suite (`scrum237`, `976`, `824`, `824b`×2, `836`, `419`, `702`, `700`, `719`, `1415`, `113`, `262`) y los de registro (`scrum267`, `273`, `1294`, `525d`, `859`, `1306`, `921`, `921c`, `710b`) | 299 casos · 299 pasan · 0 caen · 0 saltan (TAP de 129.088 B; 12 líneas nombran `SCRUM-1402e`) |
+| `npm run guards:entrada` | 15 guards · 170 casos · 0 caen |
+| los 5 de árbol entero que nombra esa salida (`scrum195`, `414`, `694`, `710b`, `737`) | 38 casos · 38 pasan · 0 caen |
+
+**No corrido:** la tanda completa (la da el obligatorio), los gateados por base (`scrum809`, `scrum340`,
+`scrum330`, que recorren este webhook contra un Postgres) y `npm run meta:mutaciones`. La fila de 32 ficheros
+se corrió con este tramo ya escrito salvo esta tabla; los de registro se vuelven a correr tras escribirla.
 
 ## Límites de lo medido
 
