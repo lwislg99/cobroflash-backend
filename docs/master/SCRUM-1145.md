@@ -1,7 +1,7 @@
 # SCRUM-1145 · la pestaña «Sitios» en la ficha del cliente (con SCRUM-1044: la fila fiscal y «Cómo llegar»)
 
 **Medido contra:** `origin/main` = `c81f07621b6e21204722d42d3021e36965382949` · 2026-10-23T16:57:00Z (hora de GitHub al escribir)
-A9: aviso → cicatriz J2 «crucé los 200k y los 300k de contexto sin avisar» — no se pudo comprobar: la medición la hace la propia sesión con su contador, y ningún hook del repositorio la lee al acabar una tanda
+A9: aviso → cicatriz J2 «crucé los 200k y los 300k de contexto sin avisar y avisé a 367k: no me medí al acabar la tanda entera» — no se pudo comprobar: la medición la hace la propia sesión con su contador, y ningún hook del repositorio la lee al acabar una tanda
 **Skill UI:** cargada · `yaqu-premium-ui`, por jv-j2ao antes de construir y otra vez por jv-j2ar al revisar (checklist AB6, abajo)
 
 Puesto J2. Construido por `jv-j2ao` y cerrado por `jv-j2ar` (relevo). Rama `scrum-1145a-pestana-sitios`. Encargo del orquestador del
