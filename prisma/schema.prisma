@@ -1281,11 +1281,11 @@ model WhatsAppMessage {
   merchantId Int  @map("merchant_id")
   customerId Int? @map("customer_id")
 
-  type         String // 'template' | 'service'
+  type         String // valores CERRADOS (regla 27): los fija el máster, Parte L («WhatsAppMessage»)
   templateName String? @map("template_name")
   waMessageId  String? @unique @map("wa_message_id") // id que devuelve Meta (wamid.*)
   toPhone      String? @map("to_phone") // SCRUM-529: el número al que se mandó, tal cual se le dio a Meta. NULL = anterior a la columna, o entrante. Va en esta línea, que estaba en blanco, para no mover las de debajo: hay documentos que las citan por número.
-  status String  @default("queued") // queued → sent → delivered → read | failed
+  status String  @default("queued") // estados CERRADOS (regla 27): los fija el máster, Parte L («WhatsAppMessage»)
   error  String?
 
   // Documento relacionado para el chip de entrega. Los valores: WaRelatedType (src/modules/messaging/domain/whatsappLog.service.ts).
