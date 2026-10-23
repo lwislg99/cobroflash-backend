@@ -26,6 +26,28 @@ import crypto from 'node:crypto';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 // SCRUM-270 · las 4 respuestas ya están en la mano cuando se assertea: se reportan las 4.
 import { observarRespuesta, exigirTodas } from './_evidencia.mjs';
+import http from 'node:http';
+
+// `node:http` sin agente y no `fetch` (SCRUM-1218d): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de `fetch`
+// (status, headers.get, text, json) y, como el `redirect: 'manual'` de antes, no sigue redirecciones.
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    let d = ''; r.setEncoding('utf8');
+    r.on('data', (t) => { d += t; });
+    r.on('end', () => ok({
+      status: r.statusCode,
+      headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+      text: async () => d,
+      json: async () => JSON.parse(d),
+    }));
+  });
+  req.on('error', mal);
+  req.end(body);
+});
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 const SIG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
@@ -45,7 +67,7 @@ test('SCRUM-127: requireActivePlan bloquea de verdad las 4 rutas gateadas (y sol
   const mkCookie = async (merchantId) => {
     const token = 'qa127-' + crypto.randomBytes(12).toString('hex');
     await prisma.authSession.create({ data: { merchantId, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) } });
-    const res = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
+    const res = await pedirSinAgente(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
     const cookie = (res.headers.get('set-cookie') || '').split(';')[0];
     assert.ok(cookie.startsWith('pf_session='), 'no se obtuvo cookie de sesión');
     return cookie;
@@ -73,16 +95,16 @@ test('SCRUM-127: requireActivePlan bloquea de verdad las 4 rutas gateadas (y sol
 
   // Llama a las 4 rutas gateadas contra las fixtures de UN merchant y devuelve sus 4 status.
   const llamarLas4 = async (cookie, fx, merchantId) => {
-    const rEnviarWa = await fetch(`${base}/admin/albaranes/${fx.albaranFirmado.id}/enviar-whatsapp`, {
+    const rEnviarWa = await pedirSinAgente(`${base}/admin/albaranes/${fx.albaranFirmado.id}/enviar-whatsapp`, {
       method: 'POST', headers: { cookie, 'content-type': 'application/json' },
     });
-    const rEnviarFirmar = await fetch(`${base}/admin/albaranes/${fx.albaranEmitido.id}/enviar-para-firmar`, {
+    const rEnviarFirmar = await pedirSinAgente(`${base}/admin/albaranes/${fx.albaranEmitido.id}/enviar-para-firmar`, {
       method: 'POST', headers: { cookie, 'content-type': 'application/json' },
     });
-    const rQuoteWa = await fetch(`${base}/admin/quotes/${fx.quote.id}/send-whatsapp`, {
+    const rQuoteWa = await pedirSinAgente(`${base}/admin/quotes/${fx.quote.id}/send-whatsapp`, {
       method: 'POST', headers: { cookie, 'content-type': 'application/json' },
     });
-    const rQuoteCreate = await fetch(`${base}/quote/create`, {
+    const rQuoteCreate = await pedirSinAgente(`${base}/quote/create`, {
       method: 'POST', headers: { cookie, 'content-type': 'application/json' },
       body: JSON.stringify({
         merchant_id: merchantId, customer_id: fx.customer.id, currency: 'EUR',
@@ -157,7 +179,7 @@ test('SCRUM-127: requireActivePlan bloquea de verdad las 4 rutas gateadas (y sol
     await withMerchant(prisma, { name: 'QA S127 pro', email: `qa-s127-pro-${stamp}@test.local`, plan: 'pro', planExpiresAt: PASADA() }, async (merchantPro) => {
       const fx = await montarFixtures(merchantPro.id);
       const cookie = await mkCookie(merchantPro.id);
-      const rQuoteCreate = await fetch(`${base}/quote/create`, {
+      const rQuoteCreate = await pedirSinAgente(`${base}/quote/create`, {
         method: 'POST', headers: { cookie, 'content-type': 'application/json' },
         body: JSON.stringify({
           merchant_id: merchantPro.id, customer_id: fx.customer.id, currency: 'EUR',

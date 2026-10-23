@@ -49,21 +49,15 @@ const DIR = path.join(RAIZ, 'tests');
  */
 const CON_EL_PATRON_YA = [
   'pdfs.test.mjs',
-  'scrum127-paywall-bloquea.test.mjs',
-  'scrum170-facturacion-parcial.test.mjs',
-  'scrum171a-consolidar-cliente.test.mjs',
   'scrum178-emision-manual.test.mjs',
   'scrum221-export-fiscal-cero-bytes.test.mjs',
   // 🔴 `scrum329-legal-pagina-publica.test.mjs` SALE DE AQUÍ (SCRUM-822, 8-sep-2026). Era el
   // «segundo que aborta» que esta lista se dejó anotado como condición para reabrirse: 24 de 24
   // instancias en paralelo caían con `fetch failed`, y su rojo tenía forma de 404, así que acusó
   // a la landing y se abrió un Highest contra un sistema sano. Arreglado con este mismo patrón.
-  'scrum73-verifactu-gate.test.mjs',
   'scrum74-recibo-token.test.mjs',
   'scrum82-zip-verifactu.test.mjs',
   'scrum85-pay-routes-token.test.mjs',
-  'scrum90-pay-bank-mp-token.test.mjs',
-  'tenancy-permisos.test.mjs',
   // ── SCRUM-1218b (21-oct-2026): NO son ficheros nuevos con el patrón: son los que el censo NO VEÍA.
   // 22 salieron al arreglar sus dos ciegos (el `listen(0, host, cb)` y el `fetch` a través de una
   // llamada); `scrum893` y `scrum910` se migraron a `node:http` en el mismo commit y no están. La lista
@@ -75,6 +69,8 @@ const CON_EL_PATRON_YA = [
   // SCRUM-1218c (23-oct-2026), medidos con un Postgres desechable: la lista baja de 40 a 37.
   // SCRUM-1218e (23-oct-2026): nueve gateados por `QA_DB_TEST` (scrum51, 57, 58, 92, 120, 22, 24, 66 y
   // 94), medidos con el turno sobre la base de pruebas del carril: la lista baja nueve más.
+  // SCRUM-1218f (23-oct-2026): seis más (scrum127, 170, 171a, 73, 90 y tenancy-permisos), con el mismo
+  // banco y el mismo turno: de 20 a 14.
   'scrum1188d-tiers-tambien-se-vacia.test.mjs',
   'scrum148-filtro-por-miembro.test.mjs',
   'scrum1489-la-busqueda-recorta-al-tecnico.test.mjs',
