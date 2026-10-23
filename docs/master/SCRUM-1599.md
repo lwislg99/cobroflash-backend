@@ -180,7 +180,7 @@ Los de suite (237, 976, 824 ×3, 836, 419, 702, 700, 719, 1415, 113, 262, 745, 7
 
 **Medido contra:** `origin/main` = `09f51b1c7db6f6a8f7b6532a03c30a4809b48e86` · 2026-10-23T22:32:06Z (hora de GitHub al escribir la salida de la sonda; sesión J6 `jv-j6bg` en su árbol `jv-j6bg`, por encargo del orquestador `cobroflash-backend-62`. La sonda dinámica va sobre `a7855fd70`, el commit del último CI verde de main)
 
-A9: aviso → cicatriz J6 «Lancé cuatro pasadas de una sonda nueva encadenadas sin cronometrar antes UNA» — no se pudo comprobar: ningún hook multiplica pasadas por duración antes de lanzar, y la cicatriz de SCRUM-1218f, que dice lo mismo, no lo impidió
+A9: aviso → cicatriz J6 «Lancé cuatro pasadas de una sonda nueva encadenadas sin cronometrar antes UNA, y el arnés las mandó a segundo plano en un encargo que las prohibía: la misma que en SCRUM-1218f, dos tandas después» — no se pudo comprobar: ningún hook multiplica pasadas por duración antes de lanzar, y la cicatriz de SCRUM-1218f, que dice lo mismo, no lo impidió
 
 Sólo se MIDE y se PROPONE: 0 líneas de `src/`, de `tests/` o de `.github/`. Sin base, sin turno: todo sale de `git`
 y del log de CI. Sonda: `evidencias/SCRUM-1599/sonda-1599d.mjs`; su salida, `evidencias/SCRUM-1599/sonda-1599d.salida.txt`.
