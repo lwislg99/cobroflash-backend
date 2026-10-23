@@ -307,7 +307,7 @@ router.post('/:id/payment-anomaly', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
     const amount = Number(req.body?.amount);
-    if (!Number.isInteger(id) || !Number.isFinite(amount) || amount < 0) {
+    if (!cabeEnColumnaInt(id) || !Number.isFinite(amount) || amount < 0) {
       return res.status(400).json({ error: 'invalid_input' });
     }
     const invoice = await prisma.invoice.findFirst({

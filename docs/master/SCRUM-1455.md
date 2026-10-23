@@ -221,3 +221,71 @@ ese efecto es el que firmó c.20593. **No lo he ejecutado en un panel real.**
   con las siete guardas devueltas a `Number.isNaN` (2 de 4), y `scrum1266b` pasa 15 de 15 suelto, dos
   veces, con el cambio. Lo que decide es el obligatorio de CI.
 - **No visto en yaqu.app**: no lo he intentado; la prueba sería anular o sellar por URL, que no se hace.
+
+## J1 · SCRUM-1455c · las dos que quedaban: `payment-anomaly` y `paid-webhook` pasan a `cabeEnColumnaInt`
+
+**Medido contra:** `origin/main` = `28098fe4b1a160303526f5a4002d52556d2c5b22` · 2026-10-23T19:04:31Z (hora de GitHub; sesión J1 `jv-j1au`, por encargo del orquestador `cobroflash-backend-62`)
+
+A9: comprobación → `tests/scrum1455c-anomalia-y-webhook-id-que-cabe.test.mjs`
+
+[Escrito por J1, una sesión; no por el fundador.] La línea `A9:` apunta al caso «condición ②» de ese test:
+el tramo anterior dejó la condición ② de `paid-webhook` «sin medir», y ahora es un censo que cae en
+rojo el día que alguien del repositorio empiece a llamar a esa ruta, que es justo cuando un 400 y un 500
+dejarían de ser indistinguibles.
+
+**Firma:** SCRUM-1456 **c.18731** (fundador, 7-oct-2026, «1-La autorizo»), que nombra las dos en su tabla:
+`payment-anomaly` 309 e `invoice.routes.ts:63`. Leída entera en Jira el 23-oct. Ninguna otra.
+
+### El cambio
+
+- `src/modules/system/app/routes/invoicesAdmin.routes.ts:310` (`POST /:id/payment-anomaly`):
+  `!Number.isInteger(id)` → `!cabeEnColumnaInt(id)`. El `import` ya estaba (`:30`).
+- `src/modules/invoicing/app/routes/invoice.routes.ts:64` (`POST /:id/paid-webhook`, era `:63`):
+  `!Number.isInteger(invoiceId)` → `!cabeEnColumnaInt(invoiceId)`, más la línea del `import` (`:4`).
+
+Las dos líneas **ya contestaban 400** (`invalid_input` e `invalid_invoice_id`) a un id que no es entero: no
+nace ninguna respuesta nueva, ningún texto cambia. Ninguna consulta, sellado, numeración ni huella se toca
+(condición ⑤ de c.18731; regla 40). El helper es de S1 y no se toca.
+
+### Rojo → verde, por la ruta
+
+`tests/scrum1455c-anomalia-y-webhook-id-que-cabe.test.mjs`: las peticiones entran por HTTP en un `express`
+montado como `src/app.ts` (`/invoice` detrás del `requireInternalSecret` de `dist/`, con su cabecera;
+`/admin/invoices` con el `requireRole` de la propia ruta). Sólo `requireAuth` se sustituye, por
+`reqDeSesion`. La base doblada lanza, como Postgres, si le llega un número que no cabe en un int4.
+
+- **Antes del arreglo** (`dist/` de la rama sin tocar `src/`): 8 casos, **6 pasan, 2 caen**: las dos rutas
+  contestan **500** con `2147483648`.
+- **Después:** 8 de 8, junto con `scrum1455b` (33): **41 de 41**.
+- Casos: id que no cabe (`2147483648`, `10000000000`, `99999999999999999999`, `-2147483649`) → 400 y cero
+  consultas · `abc` y `1.5` siguen en 400 · SUELO: `1`, `2147483647`, `0` y `-1` llegan a la base y dan 404
+  (la doble no tiene la factura) · sin el secreto, `/invoice` sigue en 404 sin consultar.
+- **Mutación sobre `dist/`:** cada una de las dos guardas vuelta a `Number.isInteger`: **2 de 2 caen, y cada
+  una sólo en el caso «no cabe» de su ruta** (7 pasan + 1 cae = 8). `dist/` restaurado byte a byte.
+
+### La condición ② de c.18731 (que nada reaccione distinto a un 400 que a un 500)
+
+- `paid-webhook`: **nadie del repositorio la llama.** Censo del test: `src/`, `public/` y `scripts/`, más de
+  100 ficheros; la palabra sólo está en el router que la declara (el positivo) y en un comentario de
+  `src/app.ts` («legacy n8n […] Sin llamadas internas»). Desde fuera, sin el secreto, contesta 404 antes
+  de llegar al id. **No medido:** un llamante fuera del repositorio con el secreto; no existe ninguno que
+  yo pueda ver, y n8n está prohibido (regla 1).
+- `payment-anomaly`: la llaman `invoiceDetailView.js:475` y `jobDetailView.js:2234`, con `invoice.id` leído
+  de la base, y las dos acaban en el mismo `catch` con cualquier respuesta que no sea 2xx. **Leído, no
+  ejecutado en un panel real.**
+
+### Lo que no hace este tramo, dicho
+
+- **`POST /admin/invoices/bulk-paid` (`invoicesAdmin.routes.ts:464`)**: lee los ids del CUERPO con
+  `.filter(Number.isInteger)`, así que un id que no cabe llega a la base. **c.18731 no la nombra** y es
+  marcar como pagada (flujo de cobro): **no se toca**; va al orquestador. No medido qué contesta hoy.
+- **Error propio, cazado por un guard:** la primera versión del test construía tres nombres de `test()`
+  en un bucle; `tests/scrum1415-nombres-construidos.test.mjs` la tumbó en la dirigida (932 tests, 1 cae).
+  Ahora van seis nombres literales; ni la lista de 1415 ni ninguna aserción se tocaron.
+- **Dirigida local** (89 ficheros: los guards de suite y de registro del encargo más todo test que nombra
+  estas rutas o `cabeEnColumnaInt`): **932 tests, pasan 924, caen 0, se saltan 8** (suman; 6 sin
+  `LIBRO_PG_URL` y 2 sin `QA_DB_TEST`), con el test ya corregido.
+- **Suite entera local: NO CORRIDA.** Lanzada una vez en primer plano, no acabó en los 10 min del arnés,
+  que la pasó a segundo plano; la paré sin leerla. El obligatorio de CI hace de suite.
+- **No visto en yaqu.app:** no lo he intentado (una es un POST que anota en la ficha y la otra exige el
+  secreto interno).
