@@ -373,3 +373,85 @@ J4 (`jv-j4s`, equipo de Javier). Carril «un jefe» (`dos-equipos.md:197`), apli
 - **`CLAUDE.md`**, «Comandos»: las dos líneas de comentario del diff ⑧, encima de `npm test`.
 - Diff: `docs/YAQU_MASTER.md` +1 / −0 · `CLAUDE.md` +2 / −0.
 - El «51» es parte del literal firmado: no se re-mide (lo dice ⑧).
+
+## ⑩ 23-oct: la tanda entera no cabe en UN comando con el equipo trabajando — y por tramos sí, con un veredicto que no confunde «no terminé» con verde
+
+**Medido contra:** `origin/main` = `0f1f4fb8758d991708d68e3eb335548f07b4406a` · 2026-10-23T20:24:51Z (hora de GitHub; la medición ① se hizo sobre `28098fe4b1a160303526f5a4002d52556d2c5b22`, 19:02-19:41Z)
+A9: comprobación → `tests/scrum1244c-tanda-entera-por-tramos.test.mjs`
+
+J6 (`jv-j6au`), encargo del orquestador `cobroflash-backend-62`, tras la reapertura de `c.20605`. Windows 11 · Node `v24.18.0` · 12 núcleos · 16.299 MB. Cada número es del 23-oct y lleva su hora.
+
+### ① Dónde muere hoy: en el TIEMPO de un comando, y la memoria es lo que impide comprarlo con concurrencia
+
+La tanda entera en 8 trozos, en primer plano, a concurrencia 4, con un muestreador por segundo (memoria libre y suma de `node.exe` de TODA la máquina) y una sonda `maxRSS` por hijo (instrumentos de un solo uso, fuera del árbol).
+
+| trozo | hora (GitHub) | sesiones (`claude agents`) | s | tests | fail | libre mínimo | `node.exe` de la máquina, máx. |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 0-100 | 19:04:32Z | 11 | 29 | 739 | 0 | 832 MB | 3.774 MB |
+| 100-300 | 19:05:12Z | 9 (8 activas) | 130 | 1.234 | 5 | **473 MB** | 4.857 MB |
+| 300-500 | 19:07:24Z | 9 (9) | 178 | 1.910 | 0 | 989 MB | 6.229 MB |
+| 500-700 | 19:10:27Z | 9 (8) | 382 | 1.442 | 2 | **318 MB** | 6.657 MB |
+| 700-900 | 19:19:01Z | 10 (9) | 272 | 1.829 | 4 | 1.934 MB | 4.792 MB |
+| 900-1100 | 19:23:46Z | 9 (8) | **501** | 2.007 | 5 | **312 MB** | 7.429 MB |
+| 1100-1250 | 19:32:31Z | 8 (7) | 241 | 1.256 | 0 | 1.467 MB | 5.144 MB |
+| 1250-1482 | 19:36:41Z | 8 (7) | 287 | 1.980 | 4 | 868 MB | 6.073 MB |
+| **total** | | | **2.020** | **12.397** | **20** | | |
+
+Población: 1.482 ficheros, sondados 1.482 de 1.482; pass + fail + skipped (12.214 + 20 + 163) = 12.397.
+
+- **El tiempo.** Entera, a concurrencia 4, son 2.020 s: 3,4 veces los 600 s que la herramienta Bash deja en primer plano. Medido: los tres trozos 100-700 lanzados en UN comando no cupieron, y el arnés lo pasó a segundo plano a los 600 s. Es lo que le pasó a `jv-j3at` (`c.20605`). Lo que queda en segundo plano lo mata el reaper (tramo ⑤).
+- **La memoria.** Con sólo 4 trabajadores la libre bajó a 312 MB. Subir la concurrencia para que quepa en el tiempo es justo lo que la acaba. Los picos por fichero (`maxRSS` del hijo, sin nietos): `scrum1571c` **1.270 MB**, `scrum1571b` **1.199 MB** (van seguidos en orden alfabético y corren a la vez), `scrum775` 876, `scrum1537` 843, `scrum1093h` 740 (690 el 28-sep), `scrum846c` 687. Los demás, por debajo de 662.
+- **El agregador.** No es él: el TAP entero son 3,1 MB repartidos en 8 ficheros. Su memoria propia no la he medido aparte.
+- **Los 20 fallos** son de entorno de este árbol anidado (sin `node_modules` propio, y midiendo el árbol principal): `scrum1199` ×2 (`MODULE_NOT_FOUND`), `scrum1298b` ×2, `scrum245` ×2, `scrum351`, `scrum385` ×3, `scrum471`, `scrum475` ×3, `scrum476`, `scrum932` ×4. Más uno que cae sólo con carga: `scrum1266b` pasa solo.
+
+### ② La forma que cabe: `scripts/tanda-entera-por-tramos.mjs` (`npm run tanda:tramos`)
+
+    npm run build
+    node scripts/tanda-entera-por-tramos.mjs --plan          # 1.486 ficheros → 13 tramos de hasta 115
+    node scripts/tanda-entera-por-tramos.mjs --tramo 1/13    # uno por comando, en primer plano
+    …
+    node scripts/tanda-entera-por-tramos.mjs --resumen 13    # 0 verde · 1 rojo · 2 ciego
+
+- **Reutiliza, sin tocarlo**, lo que S3 ya tenía para la dirigida (`_tanda-por-tramos.mjs`, SCRUM-1412): el reparto contiguo, la huella de la pasada (ficheros + n + estado del árbol, con `estadoDelArbol` de `tests-que-cubren.mjs`) y `resumenDeTramos`, que nace CIEGO y sólo dice VERDE con los n tramos vistos. Lo nuevo es la tanda ENTERA, los criterios de CIEGO de cada tramo y el tope de tiempo.
+- 🔴 **Un tramo que no termina no suma como verde:** sin `# tests N`, con cuentas que no suman N, con `cancelled`, con cero tests, con salida ≠ 0 sin caídos, o pasado el tope de **540 s** (se para su árbol de procesos), el tramo sale CIEGO. Y si muere el comando entero, no deja registro: al resumen le falta, y sale CIEGO.
+- **Concurrencia 4**: la medida. **120 ficheros por tramo**, derivado del peor tramo medido (412 s para 149, abajo): 332 s, el 61 % del tope. La primera cifra, 150, la derivé de 2,5 s por fichero y la segunda pasada la dejó en el 76 %: la recalculé.
+
+**Rojo primero.** El test siembra tramos de muestra. Uno de ellos mata a su propio `node --test`, como el reaper. Con las dos reglas que dejan CIEGO a un tramo sin recuento quitadas a la vez, `EL CASO` cae con `0 !== 2`: el tramo muerto salía verde. Restauradas, 6/6. Con una sola regla quitada, el caso caía sólo por el TEXTO: la otra seguía diciendo CIEGO (abajo, «mis errores»).
+
+### ③ Por efecto: dos pasadas enteras, con la máquina como está
+
+| pasada | sobre | de | a | sesiones | tramos | ficheros | tests | fail | tramo más largo | suma |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | `3a7ecc3f2` (antes del merge de main) | 19:58:27Z | 20:17:23Z+1m30s | 5-7 | **10 de 10** | 1.483 | 12.403 | 24 | 3m23s | 19m04s |
+| 2 | `18af39600` (con main `0f1f4fb87` dentro) | 20:25:33Z | 20:51:29Z+2m28s | 6-11 | **10 de 10** | 1.486 | 12.424 | 21 | **6m52s** | 26m42s |
+
+Libre al empezar cada tramo, entre 2.017 y 5.833 MB. Las dos pasadas dieron **un veredicto: ROJO**, y cuadra con lo visto.
+- Pasada 1: 20 de entorno, más 4 míos que cazaron los guards de la casa y ya están arreglados: `scrum702`, `scrum864c`, `scrum775` (SCRUM-1179-B) y `scrum854`, que pide este registro.
+- Pasada 2: los mismos de entorno, menos `scrum864c`, más `scrum854` (el registro aún no estaba) y `scrum1351`, que pasa solo (36/36): cae con carga.
+
+Sobre el árbol con este registro dentro **no he corrido** una tercera pasada. Lo que dicen las dos: con 5-11 sesiones vivas, ningún tramo pasó del tope, y cada comando acabó en primer plano.
+
+### Propuesta para `CLAUDE.md`, NO aplicada (carril «un jefe», regla 35)
+
+En «Comandos», debajo del bloque del TAP:
+
+    # Con el equipo trabajando, la tanda entera NO cabe en un comando (2.020 s el 23-oct-2026, SCRUM-1244):
+    # se corre por tramos, uno por comando en primer plano, y vale el veredicto del resumen.
+    node scripts/tanda-entera-por-tramos.mjs --plan
+    node scripts/tanda-entera-por-tramos.mjs --tramo 1/13    # … hasta 13/13
+    node scripts/tanda-entera-por-tramos.mjs --resumen 13    # 0 verde · 1 rojo · 2 CIEGO (falta un tramo o uno no terminó)
+
+### Lo que no he hecho, o no he medido
+
+- No he tocado `CLAUDE.md`, el máster, ni los ficheros de S3 o S5 (`_tanda-por-tramos.mjs`, `tests-que-cubren.mjs` y `tanda-con-veredicto.mjs`: se leen o se importan).
+- El script no tiene fila en `dos-equipos.md` §3.3, que es de la S0: queda declarado en `scripts/_sin-fila-declarados.json`.
+- Sin medir: si en Linux, parado por el tope, el runner se lleva a sus trabajadores. Allí `taskkill` no existe y el script cae a `SIGKILL` del runner. Su caso del test lo correrá el CI.
+- Sin medir: el umbral exacto del reaper (sigue como en ⑤), y si una concurrencia 3 cabría con más margen de memoria.
+- `scrum702` pone tope a quien lee `process.platform`. No lo he subido (regla 41): el script mira si existe `taskkill`, no la plataforma.
+
+### Mis errores en esta entrega
+
+- **Los guards de la casa me cazaron cuatro veces en un fichero nuevo:** una ruta del temporal con un token mío en vez de `tokenDeSesion` (`scrum258`), un `mkdtemp` sin `finally` (`scrum864c`), leer la plataforma (`scrum702`) y propiedades que el censo no veía nacer (`scrum775`). Los cuatro estaban escritos antes de que yo empezara.
+- **Di casi por buena una mutación que no movía el veredicto.** Quité una regla y el test cayó, pero por el texto: la segunda regla seguía diciendo CIEGO. Y mi primera mutación con `sed` no se aplicó entera, sin avisar: el recuento la delató. La rehice con un script que sale con error si no encuentra lo que va a quitar.
+- **Derivé el tamaño del tramo con una pasada, y la segunda lo dejó al 76 % del tope:** lo recalculé.
+- **Fecha sin año en un comentario de código** (lo arregla el relevo `jv-j6bd`): el comentario de `FICHEROS_POR_TRAMO` decía «medido el 23-oct» y repetía el valor de la constante. `scrum737` no acepta una fecha sin año como ancla y contó dos cifras nuevas: el obligatorio de #2787 cayó por ese caso. Arreglado sin mover líneas: el valor se nombra por la constante (③) y la medición lleva el año (④). Lo caza ya `tests/scrum737-cifra-con-arbol-y-hora.test.mjs`; el `CENSO_CONGELADO` no se ha tocado.
