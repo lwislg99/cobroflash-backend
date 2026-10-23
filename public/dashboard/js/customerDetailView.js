@@ -404,17 +404,20 @@ async function renderCustomer360View(container, customerId) {
       .filter((i) => String(i.status).toLowerCase() === 'pending')
       .reduce((a, i) => a + Number(i.total || 0), 0);
 
+  // SCRUM-1403b: al técnico el servidor no le manda las cifras de dinero (SCRUM-1403 c.20375). Una
+  // tarjeta con `cifra` se pinta sólo si esa cifra viene: ausente no es cero, y la deuda calculada aquí
+  // sobre SUS facturas diría otra cosa bajo el mismo rótulo. No se añade texto: se quita la tarjeta.
   const kpis = [
-    { label: 'Pendiente de cobro', value: fmt(debt),
+    { cifra: 'totalPending', label: 'Pendiente de cobro', value: fmt(debt),
       // SCRUM-1108b: con garantía retenida sin cobrar, «al día ✓» es falso. No se añade texto: se quita.
       sub: debt > 0 ? `${stats.pendingCount ?? invoices.filter(i=>String(i.status).toLowerCase()==='pending').length} sin cobrar` : (stats.garantiaRetenida ? '' : 'al día ✓'),
       color: debt > 0 ? 'var(--red-600)' : 'var(--green-600)' },
     { label: `${L.quotePlural || 'Presupuestos'}`, value: stats.totalQuotes, sub: `${stats.acceptedQuotes} aceptados` },
     { label: 'Facturas',  value: invoices.length, sub: `${invoices.filter(i=>i.status==='paid').length} pagadas` },
-    { label: 'Facturado', value: fmt(stats.totalBilled), sub: '' },
-    { label: 'Cobrado',   value: fmt(stats.totalPaid), sub: '', color: 'var(--green-600)' },
-    { label: 'Beneficio', value: fmt(stats.profit), sub: '', color: stats.profit >= 0 ? 'var(--green-600)' : 'var(--red-600)' },
-  ];
+    { cifra: 'totalBilled', label: 'Facturado', value: fmt(stats.totalBilled), sub: '' },
+    { cifra: 'totalPaid', label: 'Cobrado',   value: fmt(stats.totalPaid), sub: '', color: 'var(--green-600)' },
+    { cifra: 'profit', label: 'Beneficio', value: fmt(stats.profit), sub: '', color: stats.profit >= 0 ? 'var(--green-600)' : 'var(--red-600)' },
+  ].filter((k) => !k.cifra || stats[k.cifra] !== undefined);
 
   kpis.forEach(({ label, value, sub, color }) => {
     const k = document.createElement('div');

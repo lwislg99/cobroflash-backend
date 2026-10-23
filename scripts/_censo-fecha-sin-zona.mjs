@@ -393,6 +393,7 @@ export const USO = new Map([
   ['src/modules/reports/app/routes/reports.routes.ts::GET /resumen-trimestre', { uso: AGREGADO }],
   ['src/modules/messaging/domain/weeklyDigest.service.ts::sendWeeklyDigests', { uso: AGREGADO }],
   ['src/modules/messaging/domain/weeklyDigest.service.ts::getDigestPreview', { uso: AGREGADO }],
+  ['src/core/cron/cron.ts::startCronJobs', { uso: AGREGADO, motivo: 'getMinutes() del reintento de sellado: sólo elige el minuto de la hora en que el log dice «inactivo»/«nada que mirar» (borde de la ventana horaria de una línea de log del servidor, de ningún comercio); no numera, no persiste, no lo lee el cliente. Medido: mismo minuto que UTC en Europe/Madrid y Atlantic/Canary en un año entero — sólo cambiaría en zonas de media hora (SCRUM-1507f)', ref: 'SCRUM-1507' }],
 ]);
 
 /**
@@ -424,6 +425,12 @@ export const USO = new Map([
  *     del proceso; el «Hoy» y el mes del panel van ahora en la zona del comercio, con el mismo
  *     filtro que el tope. Sale de `USO` y entra aquí: si vuelve a leer el reloj del proceso, cae.
  *     Comparada contra el tope en `tests/scrum1522b-el-panel-cuenta-lo-mismo.test.mjs`.
+ *   · `src/modules/jobs/infra/albaranPdf.service.ts::fmtDate` — SCRUM-1445. Se partió en dos: los
+ *     instantes (emisión, entrega/ejecución) en la zona del negocio y el DÍA de entrega en UTC, los
+ *     dos con `timeZone` en la llamada. «Firmado el …» (en `generateAlbaranPdf`) también lleva la zona;
+ *     esa identidad sigue en `USO` por el «Sello temporal … (hora del servidor)», que no se toca sin
+ *     firma porque su rótulo declara la hora del servidor. En el papel real:
+ *     `tests/scrum1445-fechas-del-albaran.test.mjs`.
  */
 export const RETIRADAS = new Set([
   'src/modules/messaging/domain/whatsappLog.service.ts::getWhatsAppMetrics',
@@ -437,6 +444,7 @@ export const RETIRADAS = new Set([
   'src/app.ts::POST /admin/onboarding/serie/previa',
   'src/app.ts::POST /admin/onboarding/serie',
   'src/modules/system/merchantAdmin.ts::updateMerchantProfile',
+  'src/modules/jobs/infra/albaranPdf.service.ts::fmtDate',
 ]);
 
 /** ¿Esta fila se acusa? Todo lo que no esté declarado AGREGADO — incluida una identidad NUEVA que

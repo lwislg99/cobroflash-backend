@@ -1,0 +1,7 @@
+limpia scrum1339r-vigia-ciego-del-metaguard.test.mjs: pasados=7 caidos=0 saltados=0
+VIVA · SCRUM-1339r · SIEMBRA: el meta-guard con su 2 y «guards de navegador» en rojo es CIEGO del meta-guard
+VIVA · SCRUM-1339r · SIEMBRA: el meta-guard cortado a los 30 min con otro rojo al lado es CIEGO
+limpia scrum1339u-vigia-ciego-de-la-senal.test.mjs: pasados=9 caidos=0 saltados=0
+VIVA · SCRUM-1339u · SIEMBRA: la señal que no pudo medir con «guards de navegador» en rojo es CIEGO de la señal
+VIVA · SCRUM-1339u · la línea de registro con medible=no basta sola
+POBLACION guards=2 de 2 pedidos · vivas=4 · no vivas=0
