@@ -29,7 +29,6 @@
 // ⛔ NO sustituye al CI: el juez obligatorio sigue siendo él.
 // ═════════════════════════════════════════════════════════════════════════════════════════
 import { spawn, spawnSync } from 'node:child_process';
-import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -39,6 +38,7 @@ import {
   huellaDeLaPasada, dirDeLaPasada, guardarTramo, leerTramos, resumenDeTramos, lineasDelResumen, lineaDeLote,
 } from './_tanda-por-tramos.mjs';
 import { estadoDelArbol } from './tests-que-cubren.mjs';
+import { tokenDeSesion } from './_identidad-sesion.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -103,10 +103,6 @@ function leerArgumentos(args) {
   return o;
 }
 
-function token(raiz) {
-  return crypto.createHash('sha256').update(path.resolve(raiz).toLowerCase()).digest('hex').slice(0, 12);
-}
-
 function pararArbol(hijo) {
   if (process.platform === 'win32') spawnSync('taskkill', ['/PID', String(hijo.pid), '/T', '/F'], { stdio: 'ignore' });
   else try { process.kill(-hijo.pid, 'SIGKILL'); } catch { hijo.kill('SIGKILL'); }
@@ -152,7 +148,7 @@ async function main() {
     return;
   }
   const n = o.tramo ? o.tramo.n : o.resumen;
-  const base = o.base || path.join(os.tmpdir(), `yaqu-tanda-tramos-${token(RAIZ)}`);
+  const base = o.base || path.join(os.tmpdir(), `yaqu-tanda-tramos-${tokenDeSesion(RAIZ)}`);
   // `TANDA_TRAMOS_ARBOL` sólo lo pone su test: sus tramos de muestra corren mientras la tanda del CI
   // escribe en el árbol, y la huella del árbol real cambiaría entre su tramo 1 y su resumen.
   const arbol = process.env.TANDA_TRAMOS_ARBOL || estadoDelArbol(RAIZ);
