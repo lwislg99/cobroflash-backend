@@ -279,6 +279,10 @@ montado como `src/app.ts` (`/invoice` detrás del `requireInternalSecret` de `di
 - **`POST /admin/invoices/bulk-paid` (`invoicesAdmin.routes.ts:464`)**: lee los ids del CUERPO con
   `.filter(Number.isInteger)`, así que un id que no cabe llega a la base. **c.18731 no la nombra** y es
   marcar como pagada (flujo de cobro): **no se toca**; va al orquestador. No medido qué contesta hoy.
-- **Tanda entera en local:** ver la entrega en Jira; si no se corrió, lo dice allí.
+- **Error propio, cazado por un guard:** la primera versión del test construía tres nombres de `test()`
+  en un bucle; `tests/scrum1415-nombres-construidos.test.mjs` la tumbó en la dirigida (932 tests, 1 cae).
+  Ahora van seis nombres literales; ni la lista de 1415 ni ninguna aserción se tocaron.
+- **Dirigida local** (89 ficheros: los guards de suite y de registro del encargo más todo test que nombra
+  estas rutas o `cabeEnColumnaInt`): ver la entrega en Jira, con su recuento.
 - **No visto en yaqu.app:** no lo he intentado (una es un POST que anota en la ficha y la otra exige el
   secreto interno).

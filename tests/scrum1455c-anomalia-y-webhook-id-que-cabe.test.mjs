@@ -107,29 +107,36 @@ async function pedir([, ruta, cabeceras], id) {
   } finally { console.error = callar; }
 }
 
-for (const r of RUTAS) {
-  test(`SCRUM-1455c · ${r[0]} · 🔴 un id que no cabe en la columna → 400, sin llegar a la base`, async () => {
-    for (const id of ['2147483648', '10000000000', '99999999999999999999', '-2147483649']) {
-      const res = await pedir(r, id);
-      assert.equal(res.status, 400, `🔴 con ${id} responde ${res.status}: el id ha llegado a la base`);
-      assert.equal(res.consultas, 0, `🔴 con ${id} la ruta ha consultado la base ${res.consultas} veces`);
-    }
-  });
-  test(`SCRUM-1455c · ${r[0]} · CONTROL: \`abc\` y un decimal siguen en 400`, async () => {
-    for (const id of ['abc', '1.5']) {
-      const res = await pedir(r, id);
-      assert.equal(res.status, 400, `con ${id} responde ${res.status}`);
-      assert.equal(res.consultas, 0, `con ${id} la ruta ha consultado la base`);
-    }
-  });
-  test(`SCRUM-1455c · ${r[0]} · SUELO: un id que cabe llega a la base y no se rechaza (1, 2147483647, 0, -1)`, async () => {
-    for (const id of ['1', '2147483647', '0', '-1']) {
-      const res = await pedir(r, id);
-      assert.ok(res.consultas > 0, `🔴 CIEGO: con ${id} la ruta no ha consultado la base (status ${res.status})`);
-      assert.equal(res.status, 404, `con ${id} responde ${res.status}: la base doblada no tiene la factura, toca 404`);
-    }
-  });
-}
+// Los nombres van LITERALES (SCRUM-1415): la señal por nombres no puede echar de menos uno construido.
+const noCabe = (r) => async () => {
+  for (const id of ['2147483648', '10000000000', '99999999999999999999', '-2147483649']) {
+    const res = await pedir(r, id);
+    assert.equal(res.status, 400, `🔴 con ${id} responde ${res.status}: el id ha llegado a la base`);
+    assert.equal(res.consultas, 0, `🔴 con ${id} la ruta ha consultado la base ${res.consultas} veces`);
+  }
+};
+const siguenEn400 = (r) => async () => {
+  for (const id of ['abc', '1.5']) {
+    const res = await pedir(r, id);
+    assert.equal(res.status, 400, `con ${id} responde ${res.status}`);
+    assert.equal(res.consultas, 0, `con ${id} la ruta ha consultado la base`);
+  }
+};
+const suelo = (r) => async () => {
+  for (const id of ['1', '2147483647', '0', '-1']) {
+    const res = await pedir(r, id);
+    assert.ok(res.consultas > 0, `🔴 CIEGO: con ${id} la ruta no ha consultado la base (status ${res.status})`);
+    assert.equal(res.status, 404, `con ${id} responde ${res.status}: la base doblada no tiene la factura, toca 404`);
+  }
+};
+const [ANOMALIA, WEBHOOK] = RUTAS;
+
+test('SCRUM-1455c · POST /admin/invoices/:id/payment-anomaly · 🔴 un id que no cabe en la columna → 400, sin llegar a la base', noCabe(ANOMALIA));
+test('SCRUM-1455c · POST /admin/invoices/:id/payment-anomaly · CONTROL: `abc` y un decimal siguen en 400', siguenEn400(ANOMALIA));
+test('SCRUM-1455c · POST /admin/invoices/:id/payment-anomaly · SUELO: un id que cabe llega a la base y no se rechaza (1, 2147483647, 0, -1)', suelo(ANOMALIA));
+test('SCRUM-1455c · POST /invoice/:id/paid-webhook · 🔴 un id que no cabe en la columna → 400, sin llegar a la base', noCabe(WEBHOOK));
+test('SCRUM-1455c · POST /invoice/:id/paid-webhook · CONTROL: `abc` y un decimal siguen en 400', siguenEn400(WEBHOOK));
+test('SCRUM-1455c · POST /invoice/:id/paid-webhook · SUELO: un id que cabe llega a la base y no se rechaza (1, 2147483647, 0, -1)', suelo(WEBHOOK));
 
 test('SCRUM-1455c · CONTROL del montaje: sin el secreto interno, `/invoice` sigue contestando 404 y no consulta', async () => {
   const res = await pedir([null, '/invoice/{id}/paid-webhook', () => ({})], '1');
