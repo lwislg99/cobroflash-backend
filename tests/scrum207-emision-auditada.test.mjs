@@ -40,7 +40,7 @@ function txFalso({ auditFalla = false, merchant = {} } = {}) {
     $executeRaw: async () => 0,
     merchant: {
       findUnique: async () => ({
-        id: MERCHANT_ID, email: 'pro@x.es', country: 'ES', flags: { INVOICING_ES_ENABLED: true },
+        id: MERCHANT_ID, email: 'pro@x.es', country: 'ES', flags: { INVOICING_ES_ENABLED: true }, llevaLibrosPorSii: false,
         invoiceSeriesPrefix: 'CF', nextInvoiceNumber: 7, nextRectInvoiceNumber: 1,
         invoiceSeriesYear: new Date().getFullYear(), ...merchant,
       }),
@@ -112,7 +112,7 @@ test('SCRUM-207 · GATEADO: si el registro falla, la EMISIÓN NO OCURRE (rollbac
   await withMerchant(prisma, {
     name: 'SCRUM-207 rollback', email: `s207-${Date.now()}@test.local`,
     country: 'ES', taxId: 'B12345678', invoiceSeriesPrefix: 'S207',
-    flags: { INVOICING_ES_ENABLED: true },
+    flags: { INVOICING_ES_ENABLED: true }, llevaLibrosPorSii: false,
   }, async (merchant) => {
     const customer = await prisma.customer.create({
       data: { merchantId: merchant.id, name: 'Cliente 207', phone: `+34600${String(merchant.id).padStart(6, '0')}` },
@@ -175,7 +175,7 @@ test('SCRUM-207 · GATEADO: camino feliz — la factura y su registro se confirm
   await withMerchant(prisma, {
     name: 'SCRUM-207 ok', email: `s207ok-${Date.now()}@test.local`,
     country: 'ES', taxId: 'B12345678', invoiceSeriesPrefix: 'S207',
-    flags: { INVOICING_ES_ENABLED: true },
+    flags: { INVOICING_ES_ENABLED: true }, llevaLibrosPorSii: false,
   }, async (merchant) => {
     const customer = await prisma.customer.create({
       data: { merchantId: merchant.id, name: 'Cliente 207', phone: `+34601${String(merchant.id).padStart(6, '0')}` },

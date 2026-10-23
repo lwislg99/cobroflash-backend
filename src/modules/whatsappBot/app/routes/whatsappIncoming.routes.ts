@@ -515,6 +515,8 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
       select: {
         id: true, email: true, name: true, notifyEmailOnQuoteAccepted: true, whatsappPhone: true,
         country: true, flags: true,
+        // SCRUM-1585 (carril J1, declarado): el modo mira el SII; obligatorio en `MerchantLike`.
+        llevaLibrosPorSii: true,
       },
     });
     const customer = await prisma.customer.findUnique({

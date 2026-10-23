@@ -32,7 +32,7 @@ const texto = (n) => String((n && n.textContent) || (n && n._html && !/</.test(n
 
 // ⚠️ `id` REAL: `isDemoMerchant` es `id === 1` o `demo@yaqu.app` (ver scrum298).
 const ES_REAL = { id: 7, email: 'pro@fontaneria.es', country: 'ES', flags: null };
-const ES_CON_FLAG = { ...ES_REAL, flags: { INVOICING_ES_ENABLED: true } };
+const ES_CON_FLAG = { ...ES_REAL, flags: { INVOICING_ES_ENABLED: true }, llevaLibrosPorSii: false };
 // El marcador se arma por trozos: aquí sólo sirve para reproducir lo que manda el servidor.
 const MARCADOR = '[PENDIENTE' + ' microcopy oficial]';
 const FIRMADO_1160 = 'Desde tu cuenta todavía no se pueden generar facturas.';

@@ -121,6 +121,8 @@ router.post('/', requireRole('admin'), async (req, res) => {
       // congelado sale a coste cero, porque el viaje ya se hacía.
       select: {
         id: true, email: true, country: true, flags: true, defaultCurrency: true,
+        // SCRUM-1585: el modo mira el SII; obligatorio en `MerchantLike`.
+        llevaLibrosPorSii: true,
         name: true, legalName: true, taxId: true, address: true, logoUrl: true, whatsappPhone: true,
       },
     });

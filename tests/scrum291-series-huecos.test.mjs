@@ -344,8 +344,20 @@ const EMISOR = 'src/modules/invoicing/domain/invoiceNumber.service.ts';
 // rechazo del modo `receipt`, los contadores, la serie F y la auditoría NO SE TOCAN. SE QUEDAN
 // `isReceiptNumber` y `RECEIPT_NUMBER_PREFIX`: los J- ya emitidos los necesitan (regla 29).
 //
-//   nuevo:    4ff56cab14efc1ddd7acb5d4d5f1d131bad6a784aa90bf679b1c34f9406cb6c2   (SCRUM-825)
-const EMISOR_SHA256 = '4ff56cab14efc1ddd7acb5d4d5f1d131bad6a784aa90bf679b1c34f9406cb6c2';
+//   anterior: 4ff56cab14efc1ddd7acb5d4d5f1d131bad6a784aa90bf679b1c34f9406cb6c2   (SCRUM-825)
+//
+// ── SCRUM-1585 · 23-oct-2026 · GO de regla 40 del fundador en Jira, SCRUM-1585 comentario 20531 (D0
+// «Sí, ahora»: la comprobación del SII en el camino de emisión, sin tocar sellado ni XML; D1: «el
+// servidor puede construirse antes con el código de error»; D2: el dato del SII OBLIGATORIO en cada
+// consulta que alimente la emisión). El cambio: UN campo más en el `select` de
+// `allocateInvoiceNumber` (`llevaLibrosPorSii`, columna que ya existe) y, en el rechazo del modo
+// `receipt`, el mensaje del error pasa a ser `motivoSiiSinEmision(m) ?? 'invoicing_es_disabled'`
+// (`sii_declarado` / `sii_no_consta` cuando lo que deja el modo en `receipt` es el SII). El
+// `pg_advisory_xact_lock`, el reinicio anual, los dos contadores, la serie F, las rectificativas y la
+// auditoría NO SE TOCAN. Lo prueba `scrum1585-sii-en-cada-emision`.
+//
+//   nuevo:    0651d86336d084a924e9314c22d39a3d52deb0dabeb9674075de0b5de37be539   (SCRUM-1585)
+const EMISOR_SHA256 = '0651d86336d084a924e9314c22d39a3d52deb0dabeb9674075de0b5de37be539';
 
 test('SCRUM-291 · el camino de emisión sigue INTACTO (regla 38)', () => {
   // El fundador puso el límite y esto lo COMPRUEBA en vez de prometerlo. Si algún día hace falta
