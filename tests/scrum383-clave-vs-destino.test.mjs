@@ -190,10 +190,14 @@ test('SCRUM-383 · el worktree se identifica por su NOMBRE, venga suelto o como 
 
 test('SCRUM-383 · los cuatro worktrees del reparto están declarados', () => {
   const mapa = DESTINOS_ESPERADOS.DATABASE_URL_TESTS.porWorktree;
+  // `jv-j6ar` entra por DECISIÓN del fundador (SCRUM-1218 c.20596, «No, hazlo tú»): la misma base
+  // de pruebas que el árbol del equipo de Javier. Cualquier otro árbol sigue sin declarar.
   assert.deepEqual(Object.keys(mapa).sort(),
-    ['cobroflash-b1', 'cobroflash-b2', 'cobroflash-b3', 'cobroflash-backend']);
+    ['cobroflash-b1', 'cobroflash-b2', 'cobroflash-b3', 'cobroflash-backend', 'jv-j6ar']);
   // El reparto MEDIDO: el principal aislado en dev, los tres carriles b compartiendo staging.
   assert.equal(mapa['cobroflash-backend'], 'yaqu_dev_javier');
+  assert.equal(mapa['jv-j6ar'], mapa['cobroflash-backend'],
+    '🔴 c.20596 autorizó la base del árbol del equipo de Javier, no otra.');
   assert.equal(mapa['cobroflash-b1'], 'railway');
   assert.notEqual(mapa['cobroflash-backend'], mapa['cobroflash-b1'],
     '🔴 si los cuatro carriles apuntaran a la misma base, este ticket habría cambiado el ' +

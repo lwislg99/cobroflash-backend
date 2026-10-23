@@ -1,0 +1,10 @@
+scrum51-job-sin-quote: fetch( 3 → 0 · llamadas a pedirSinAgente( 3 · imports hasta la línea 26
+scrum57-operario-propagacion: fetch( 3 → 0 · llamadas a pedirSinAgente( 3 · imports hasta la línea 11
+scrum58-jobs-n1: fetch( 3 → 0 · llamadas a pedirSinAgente( 3 · imports hasta la línea 19
+scrum120-patch-job-roles: fetch( 2 → 0 · llamadas a pedirSinAgente( 2 · imports hasta la línea 15
+scrum22-operario-readpath: fetch( 2 → 0 · llamadas a pedirSinAgente( 2 · imports hasta la línea 12
+scrum24-operarios-metrics: fetch( 2 → 0 · llamadas a pedirSinAgente( 2 · imports hasta la línea 14
+scrum66-tipo-operacion: fetch( 2 → 0 · llamadas a pedirSinAgente( 2 · imports hasta la línea 11
+scrum92-login-operario: fetch( 4 → 0 · llamadas a pedirSinAgente( 4 · imports hasta la línea 20
+scrum94-register-teammember: fetch( 1 → 0 · llamadas a pedirSinAgente( 1 · imports hasta la línea 28
+POBLACION=9 ficheros · malos=0 · EXIT=0

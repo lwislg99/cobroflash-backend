@@ -84,6 +84,7 @@ export const DESTINOS_ESPERADOS = Object.freeze({
       'cobroflash-b1': 'railway',
       'cobroflash-b2': 'railway',
       'cobroflash-b3': 'railway',
+      'jv-j6ar': 'yaqu_dev_javier',
     }),
     comoSeLlama: 'BASE DE PRUEBAS DEL CARRIL',
   },

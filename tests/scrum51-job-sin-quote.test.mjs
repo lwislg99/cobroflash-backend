@@ -24,6 +24,28 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { withMerchant } from './_merchant-fixture.mjs';
+import http from 'node:http';
+
+// `node:http` sin agente y no `fetch` (SCRUM-1218d): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de `fetch`
+// (status, headers.get, text, json) y, como el `redirect: 'manual'` de antes, no sigue redirecciones.
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    let d = ''; r.setEncoding('utf8');
+    r.on('data', (t) => { d += t; });
+    r.on('end', () => ok({
+      status: r.statusCode,
+      headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+      text: async () => d,
+      json: async () => JSON.parse(d),
+    }));
+  });
+  req.on('error', mal);
+  req.end(body);
+});
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
@@ -64,7 +86,7 @@ test('SCRUM-51: el detalle incluye albaranes[] en un Job sin quoteId (y sigue ig
     const mkCookie = async () => {
       const token = 'qa51-' + crypto.randomBytes(12).toString('hex');
       await prisma.authSession.create({ data: { merchantId: merchant.id, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) } });
-      const res = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
+      const res = await pedirSinAgente(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
       const cookie = (res.headers.get('set-cookie') || '').split(';')[0];
       assert.ok(cookie.startsWith('pf_session='), 'no se obtuvo cookie de sesión');
       return cookie;
@@ -76,14 +98,14 @@ test('SCRUM-51: el detalle incluye albaranes[] en un Job sin quoteId (y sigue ig
       const cookie = await mkCookie();
 
       // (a) Job SIN quote → albaranes[] presente (bug SCRUM-51 corregido); invoices=[]/charge=null
-      const detailSin = await (await fetch(`${base}/admin/jobs/${jobSinQuote.id}`, { headers: { cookie } })).json();
+      const detailSin = await (await pedirSinAgente(`${base}/admin/jobs/${jobSinQuote.id}`, { headers: { cookie } })).json();
       assert.ok(Array.isArray(detailSin.albaranes) && detailSin.albaranes.length === 1, 'Job sin quote: el detalle incluye su albarán');
       assert.equal(detailSin.albaranes[0].numero, `ALB-QA51A-${stamp}`, 'es el albarán correcto');
       assert.deepEqual(detailSin.invoices, [], 'sin quote → sin facturas');
       assert.equal(detailSin.charge, null, 'sin quote → sin charge');
 
       // (b) Job CON quote → albaranes[] sigue presente (regresión)
-      const detailCon = await (await fetch(`${base}/admin/jobs/${jobConQuote.id}`, { headers: { cookie } })).json();
+      const detailCon = await (await pedirSinAgente(`${base}/admin/jobs/${jobConQuote.id}`, { headers: { cookie } })).json();
       assert.ok(Array.isArray(detailCon.albaranes) && detailCon.albaranes.length === 1, 'Job con quote: albaranes[] sin regresión');
       assert.equal(detailCon.albaranes[0].numero, `ALB-QA51B-${stamp}`);
 

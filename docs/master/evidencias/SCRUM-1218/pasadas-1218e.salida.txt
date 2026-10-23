@@ -1,0 +1,82 @@
+# SCRUM-1218e · pasadas ANTES y DESPUÉS (banco-1218e, 3 por fichero, turno tomado 16:21:53Z, soltado tras la mutación)
+## antes
+pdfs.test.mjs · pasada 0 · exit=0 · firma=false · casos=4 (ok=4 not_ok=0 skip=0) · # tests 4 · respuestas=3
+pdfs.test.mjs · pasada 1 · exit=0 · firma=false · casos=4 (ok=4 not_ok=0 skip=0) · # tests 4 · respuestas=3
+pdfs.test.mjs · pasada 2 · exit=0 · firma=false · casos=4 (ok=4 not_ok=0 skip=0) · # tests 4 · respuestas=3
+POBLACION=3 pasadas · EXIT=0
+scrum120-patch-job-roles.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=10
+scrum120-patch-job-roles.test.mjs · pasada 1 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=10
+scrum120-patch-job-roles.test.mjs · pasada 2 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=10
+POBLACION=3 pasadas · EXIT=0
+scrum22-operario-readpath.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=6
+scrum22-operario-readpath.test.mjs · pasada 1 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=6
+scrum22-operario-readpath.test.mjs · pasada 2 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=6
+POBLACION=3 pasadas · EXIT=0
+scrum24-operarios-metrics.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=4
+scrum24-operarios-metrics.test.mjs · pasada 1 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=4
+scrum24-operarios-metrics.test.mjs · pasada 2 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=4
+POBLACION=3 pasadas · EXIT=0
+scrum51-job-sin-quote.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=3
+scrum51-job-sin-quote.test.mjs · pasada 1 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=3
+scrum51-job-sin-quote.test.mjs · pasada 2 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=3
+POBLACION=3 pasadas · EXIT=0
+scrum57-operario-propagacion.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=3
+scrum57-operario-propagacion.test.mjs · pasada 1 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=3
+scrum57-operario-propagacion.test.mjs · pasada 2 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=3
+POBLACION=3 pasadas · EXIT=0
+scrum58-jobs-n1.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=4
+scrum58-jobs-n1.test.mjs · pasada 1 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=4
+scrum58-jobs-n1.test.mjs · pasada 2 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=4
+POBLACION=3 pasadas · EXIT=0
+scrum66-tipo-operacion.test.mjs · pasada 0 · exit=0 · firma=false · casos=2 (ok=2 not_ok=0 skip=0) · # tests 2 · respuestas=7
+scrum66-tipo-operacion.test.mjs · pasada 1 · exit=0 · firma=false · casos=2 (ok=2 not_ok=0 skip=0) · # tests 2 · respuestas=7
+scrum66-tipo-operacion.test.mjs · pasada 2 · exit=0 · firma=false · casos=2 (ok=2 not_ok=0 skip=0) · # tests 2 · respuestas=7
+POBLACION=3 pasadas · EXIT=0
+scrum92-login-operario.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=4
+scrum92-login-operario.test.mjs · pasada 1 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=4
+scrum92-login-operario.test.mjs · pasada 2 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=4
+POBLACION=3 pasadas · EXIT=0
+scrum94-register-teammember.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=5
+scrum94-register-teammember.test.mjs · pasada 1 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=5
+scrum94-register-teammember.test.mjs · pasada 2 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=5
+POBLACION=3 pasadas · EXIT=0
+## despues
+scrum120-patch-job-roles.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=10
+scrum120-patch-job-roles.test.mjs · pasada 1 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=10
+scrum120-patch-job-roles.test.mjs · pasada 2 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=10
+POBLACION=3 pasadas · EXIT=0
+scrum22-operario-readpath.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=6
+scrum22-operario-readpath.test.mjs · pasada 1 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=6
+scrum22-operario-readpath.test.mjs · pasada 2 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=6
+POBLACION=3 pasadas · EXIT=0
+scrum24-operarios-metrics.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=4
+scrum24-operarios-metrics.test.mjs · pasada 1 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=4
+scrum24-operarios-metrics.test.mjs · pasada 2 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=4
+POBLACION=3 pasadas · EXIT=0
+scrum51-job-sin-quote.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=3
+scrum51-job-sin-quote.test.mjs · pasada 1 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=3
+scrum51-job-sin-quote.test.mjs · pasada 2 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=3
+POBLACION=3 pasadas · EXIT=0
+scrum57-operario-propagacion.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=3
+scrum57-operario-propagacion.test.mjs · pasada 1 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=3
+scrum57-operario-propagacion.test.mjs · pasada 2 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=3
+POBLACION=3 pasadas · EXIT=0
+scrum58-jobs-n1.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=4
+scrum58-jobs-n1.test.mjs · pasada 1 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=4
+scrum58-jobs-n1.test.mjs · pasada 2 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=4
+POBLACION=3 pasadas · EXIT=0
+scrum66-tipo-operacion.test.mjs · pasada 0 · exit=0 · firma=false · casos=2 (ok=2 not_ok=0 skip=0) · # tests 2 · respuestas=7
+scrum66-tipo-operacion.test.mjs · pasada 1 · exit=0 · firma=false · casos=2 (ok=2 not_ok=0 skip=0) · # tests 2 · respuestas=7
+scrum66-tipo-operacion.test.mjs · pasada 2 · exit=0 · firma=false · casos=2 (ok=2 not_ok=0 skip=0) · # tests 2 · respuestas=7
+POBLACION=3 pasadas · EXIT=0
+scrum92-login-operario.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=4
+scrum92-login-operario.test.mjs · pasada 1 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=4
+scrum92-login-operario.test.mjs · pasada 2 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=4
+POBLACION=3 pasadas · EXIT=0
+scrum94-register-teammember.test.mjs · pasada 0 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=5
+scrum94-register-teammember.test.mjs · pasada 1 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=5
+scrum94-register-teammember.test.mjs · pasada 2 · exit=0 · firma=false · casos=1 (ok=1 not_ok=0 skip=0) · # tests 1 · respuestas=5
+POBLACION=3 pasadas · EXIT=0
+## mutación (scrum51, json() devuelve {})
+scrum51-job-sin-quote.test.mjs · pasada 0 · exit=1 · firma=false · casos=1 (ok=0 not_ok=1 skip=0) · # tests 1 · respuestas=2
+POBLACION=1 pasadas · EXIT=0
