@@ -179,6 +179,7 @@ function renderCustomersView(container) {
   // SCRUM-1043 · «quién me debe». Es dinero: al técnico no se le pinta NADA de esto, sin texto
   // (c.20532), y el servidor tampoco le manda el saldo. Filtro y orden los resuelve el servidor.
   const conDinero = FC.veDinero(window.appUserRole);
+  FC.fijarDinero(conDinero); // ANTES de montar cabecera, selector y vacíos: los tres leen esta lista
   let soloConDeuda = false;
 
   const pestanas = createElement("div", "customers-tabs");
@@ -340,7 +341,7 @@ function renderCustomersView(container) {
   columnasBox.appendChild(columnasResumen);
 
   const columnasLista = createElement("div", "columnas-lista");
-  FC.columnasElegibles(conDinero).forEach((col) => {
+  FC.columnasElegibles().forEach((col) => {
     const fila = document.createElement("label");
     fila.className = "columnas-opcion";
     const casilla = document.createElement("input");
@@ -369,7 +370,7 @@ function renderCustomersView(container) {
 
   /** Repinta SOLO las clases de la cabecera: los `<th>` no se recrean, se les cambia la clase. */
   function pintarCabecera() {
-    FC.columnasDeLaTabla(conDinero).forEach((col) => {
+    FC.columnasDeLaTabla().forEach((col) => {
       const th = thPorColumna[col.id];
       if (th) th.className = FC.claseDeColumna(col.id, columnasEncendidas);
     });
@@ -392,7 +393,7 @@ function renderCustomersView(container) {
   // salen del MISMO sitio, así que no pueden descuadrarse entre sí — y un vacío descuadrado
   // no lo ve ninguna tanda.
   const thPorColumna = {};
-  FC.columnasDeLaTabla(conDinero).forEach((col) => {
+  FC.columnasDeLaTabla().forEach((col) => {
     const th = document.createElement("th");
     th.textContent = col.texto;
     th.dataset.columna = col.id;
@@ -715,7 +716,7 @@ function renderCustomersView(container) {
       if (lote.length > 0 && data.length === 0) {
         const tr = document.createElement("tr");
         const td = document.createElement("td");
-        td.colSpan = FC.colSpanDeLaTabla(conDinero); // SCRUM-584: del mismo sitio que la cabecera
+        td.colSpan = FC.colSpanDeLaTabla(); // SCRUM-584: del mismo sitio que la cabecera
         // SCRUM-581 · DOS líneas (microcopy aprobada, 2-sep-2026). Se reutiliza el componente
         // de vacío que ya existe —`.empty-state-title` y `.empty-state-desc`—: cero tokens nuevos.
         // Con `textContent` y no concatenando en el `innerHTML`: el texto es de la pieza, no del
@@ -736,7 +737,7 @@ function renderCustomersView(container) {
       if (lote.length === 0 && soloConDeuda && !searchText) {
         const tr = document.createElement("tr");
         const td = document.createElement("td");
-        td.colSpan = FC.colSpanDeLaTabla(conDinero);
+        td.colSpan = FC.colSpanDeLaTabla();
         td.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👥</div>'
           + '<div class="empty-state-title"></div></div>';
         td.querySelector('.empty-state-title').textContent = FC.TEXTOS_DEUDA.vacio;
@@ -749,7 +750,7 @@ function renderCustomersView(container) {
       if (!Array.isArray(data) || data.length === 0) {
         const tr = document.createElement("tr");
         const td = document.createElement("td");
-        td.colSpan = FC.colSpanDeLaTabla(conDinero); // SCRUM-584: del mismo sitio que la cabecera
+        td.colSpan = FC.colSpanDeLaTabla(); // SCRUM-584: del mismo sitio que la cabecera
         td.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👥</div>'
           + '<div class="empty-state-title">' + (searchText ? 'Sin resultados para tu búsqueda' : 'Añade a tu primer cliente') + '</div>'
           + '<div class="empty-state-desc">' + (searchText ? 'Prueba con otro nombre, teléfono o email.' : 'Guárdalo una vez y podrás enviarle cotizaciones profesionales por WhatsApp en segundos.') + '</div>'
@@ -793,7 +794,8 @@ function renderCustomersView(container) {
         addCell(tr, "#" + c.id);
         addCell(tr, c.name || "Cliente sin nombre", "cell-title");
         celdaDeTelefonos(addCell(tr, "", "cell-date"), c);
-        if (conDinero) celdaDePendiente(addCell(tr, "", FC.claseDeColumna("pendiente", columnasEncendidas)), c);
+        // `cell-pendiente` deja partir la línea de garantía (styles.css, bloque J2 · SCRUM-1043a).
+        if (conDinero) celdaDePendiente(addCell(tr, "", (FC.claseDeColumna("pendiente", columnasEncendidas) + " cell-pendiente").trim()), c);
         celdaDeCorreo(addCell(tr, "", FC.claseDeColumna("email", columnasEncendidas)), c);
         const notesCell = addCell(tr, c.notes || "", FC.claseDeColumna("notas", columnasEncendidas));
         notesCell.style.cssText += "max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)";
@@ -917,17 +919,23 @@ function renderCustomersView(container) {
     });
   }
 
-  // SCRUM-1043 · «{importe} sin cobrar» y una línea por garantía retenida, con `.badge` del
-  // inventario: rojo la deuda (como la cifra de la ficha), ámbar la garantía ya liberable y azul la
-  // que aún no (como `.alert warning`/`.alert info` de la ficha). Sin deuda, la celda queda VACÍA:
-  // ni cifra ni marca, y en el móvil `td:empty` ni ocupa sitio.
+  // SCRUM-1043 · «{importe} sin cobrar» con `.badge-red` (el rojo de la cifra de la ficha), y una
+  // línea por garantía retenida con el MISMO componente que la ficha: `.alert warning` si ya es
+  // liberable, `.alert info` si no. No van en `.badge`: es `inline-flex` y no parte el texto, y a
+  // 390 px la línea de garantía se salía de la tarjeta (medido: 428 px de 390). Sin deuda, la celda
+  // queda VACÍA: ni cifra ni marca, y en el móvil `td:empty` ni ocupa sitio.
   function celdaDePendiente(td, c) {
     FC.lineasDeDeuda(c, (n) => fmtMoneyEs(n)).forEach((l) => {
       const fila = document.createElement("div");
-      const marca = document.createElement("span");
-      marca.className = "badge " + (l.tipo === "saldo" ? "badge-red" : (l.aviso ? "badge-amber" : "badge-blue"));
-      marca.textContent = l.texto;
-      fila.appendChild(marca);
+      if (l.tipo === "saldo") {
+        const marca = document.createElement("span");
+        marca.className = "badge badge-red";
+        marca.textContent = l.texto;
+        fila.appendChild(marca);
+      } else {
+        fila.className = l.aviso ? "alert warning" : "alert info";
+        fila.textContent = l.texto;
+      }
       td.appendChild(fila);
     });
   }

@@ -426,7 +426,8 @@
     { id: 'nombre', texto: 'Nombre', fija: true, ocultaEnMovil: false },
     { id: 'telefono', texto: 'Teléfono', fija: false, ocultaEnMovil: false },
     // SCRUM-1043 · visible en el móvil, donde la cabecera no se ve: por eso la celda dice «sin cobrar».
-    // `dinero: true` la deja FUERA de la tabla, del selector y del `colSpan` para quien no ve dinero.
+    // `dinero: true` la deja FUERA de la tabla, del selector y del `colSpan` para quien no ve dinero
+    // (`fijarDinero(false)`).
     { id: 'pendiente', texto: TEXTOS_DEUDA.columna, fija: false, ocultaEnMovil: false, dinero: true },
     { id: 'email', texto: 'Email', fija: false, ocultaEnMovil: true },
     { id: 'notas', texto: 'Notas', fija: false, ocultaEnMovil: true },
@@ -437,8 +438,8 @@
   ];
 
   /** Las que el profesional puede tocar. Las fijas no salen en el control. */
-  function columnasElegibles(conDinero) {
-    return columnasDeLaTabla(conDinero).filter(function (c) { return !c.fija; });
+  function columnasElegibles() {
+    return columnasDeLaTabla().filter(function (c) { return !c.fija; });
   }
 
   /**
@@ -464,9 +465,14 @@
    * la esconde en móvil. Se deja explícito para que quien lea sepa que aquí no se borran
    * columnas del DOM — borrarlas descuadraría el `colSpan` de las filas vacías.
    */
-  // SCRUM-1043: las de dinero, sólo con `conDinero === true`. Sin argumento, sin ellas: el lado seguro.
-  function columnasDeLaTabla(conDinero) {
-    return conDinero === true ? COLUMNAS : COLUMNAS.filter(function (c) { return !c.dinero; });
+  // SCRUM-1043 · LAS DE DINERO, sólo si la vista lo fijó para quien mira (`fijarDinero`). Se fija UNA
+  // vez y no por argumento a propósito: cabecera, selector y `colSpan` siguen saliendo de la MISMA
+  // lista sin que cada llamada tenga que acordarse del rol (SCRUM-584). La vista lo fija SIEMPRE desde
+  // `veDinero(appUserRole)` antes de pintar; sin fijar es la lista entera, la de los guards de 584.
+  var conDineroFijado = true;
+  function fijarDinero(conDinero) { conDineroFijado = conDinero === true; }
+  function columnasDeLaTabla() {
+    return conDineroFijado ? COLUMNAS : COLUMNAS.filter(function (c) { return !c.dinero; });
   }
 
   /**
@@ -490,7 +496,7 @@
    * escritos a mano, y otra sesión los tuvo que recalcular al entrar «Etiquetas»: un número
    * copiado envejece en silencio y **un vacío descuadrado no lo ve ninguna tanda**.
    */
-  function colSpanDeLaTabla(conDinero) { return columnasDeLaTabla(conDinero).length; }
+  function colSpanDeLaTabla() { return columnasDeLaTabla().length; }
 
   // ═══════════════════════════════════════════════════════════════════════════════════════
   // SCRUM-582 (CONT-09) · EL MECANISMO DE SELECCIÓN. SÓLO EL MECANISMO.
@@ -709,6 +715,7 @@
     TEXTOS_DEUDA: TEXTOS_DEUDA,
     ORDEN_SALDO: ORDEN_SALDO,
     veDinero: veDinero,
+    fijarDinero: fijarDinero,
     ordenesPara: ordenesPara,
     consultaDeDeuda: consultaDeDeuda,
     lineasDeDeuda: lineasDeDeuda,

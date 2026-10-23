@@ -17,6 +17,7 @@ import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
 import { constaAprobado } from './_microcopy-aprobada.mjs';
+import { reqDeSesion } from './_arnes-de-router.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const FC = createRequire(import.meta.url)(path.join(RAIZ, 'public/dashboard/js/filtroClientes.js'));
@@ -75,12 +76,18 @@ test('SCRUM-1043a · A · al técnico no se le pide ni se le ofrece nada de dine
   assert.deepEqual(FC.ordenesPara(false).map((o) => o.id), ['RECIENTES', 'AZ']);
   assert.deepEqual(FC.ordenesPara(true).map((o) => o.id), ['RECIENTES', 'AZ', 'SALDO']);
   const ids = (cs) => cs.map((c) => c.id);
-  assert.ok(ids(FC.columnasDeLaTabla(true)).includes('pendiente'));
-  assert.ok(!ids(FC.columnasDeLaTabla(false)).includes('pendiente'));
-  assert.ok(!ids(FC.columnasDeLaTabla()).includes('pendiente'), 'sin decir nada, el lado seguro');
-  assert.ok(ids(FC.columnasElegibles(true)).includes('pendiente'), 'en el selector «Columnas»');
-  assert.ok(!ids(FC.columnasElegibles(false)).includes('pendiente'));
-  assert.equal(FC.colSpanDeLaTabla(true), FC.colSpanDeLaTabla(false) + 1);
+  try {
+    FC.fijarDinero(true);
+    assert.ok(ids(FC.columnasDeLaTabla()).includes('pendiente'));
+    assert.ok(ids(FC.columnasElegibles()).includes('pendiente'), 'en el selector «Columnas»');
+    const conCol = FC.colSpanDeLaTabla();
+    FC.fijarDinero(false);
+    assert.ok(!ids(FC.columnasDeLaTabla()).includes('pendiente'));
+    assert.ok(!ids(FC.columnasElegibles()).includes('pendiente'));
+    assert.equal(FC.colSpanDeLaTabla(), conCol - 1, 'el colSpan sale de la MISMA lista que la cabecera');
+    FC.fijarDinero('admin');
+    assert.ok(!ids(FC.columnasDeLaTabla()).includes('pendiente'), 'sólo `true` enciende: una cadena no');
+  } finally { FC.fijarDinero(true); }
   assert.equal(FC.claseDeColumna('pendiente', []), '', 'se ve en el móvil sin encenderla');
   assert.deepEqual(ids(FC.aplicar([DEUDA, SIN, PARCIAL], 'TODOS', 'SALDO')), [1, 2, 3], 'el orden de saldo lo da el servidor');
 });
@@ -136,8 +143,8 @@ test('SCRUM-1043a · B · admin: columna, cifra en la fila y nada en el cliente 
   assert.match(parcial, /700,00 € sin cobrar/);
   assert.match(parcial, /Garantía retenida: 50,00 € · liberación desde el 01\/09\/2026 · sin cobrar/);
   assert.match(parcial, /Garantía retenida: 40,00 € · liberación desde el 15\/03\/2027 · sin cobrar/);
-  const marcas = todos(celdas(2)[iCol]).filter((n) => n.tagName === 'SPAN').map((n) => n.className);
-  assert.deepEqual(marcas, ['badge badge-red', 'badge badge-amber', 'badge badge-blue']);
+  const marcas = todos(celdas(2)[iCol]).filter((n) => /\b(badge|alert)\b/.test(n.className || '')).map((n) => n.className);
+  assert.deepEqual(marcas, ['badge badge-red', 'alert warning', 'alert info'], 'la garantía, con el componente de la ficha');
   const sel = todos(m.c).filter((n) => n.tagName === 'INPUT' && n.dataset?.columna).map((n) => n.dataset.columna);
   assert.ok(sel.includes('pendiente'), 'está en el selector «Columnas»');
   assert.ok(m.pedidas.every((p) => !p.includes('conDeuda') && !p.includes('orden=')), 'sin tocar nada, la lista de siempre');
@@ -220,7 +227,7 @@ test('SCRUM-1043a · C · `conDeuda=1` deja fuera el saldo ≤ 0 y aísla mercha
     const res = { status() { return res; }, json(b) { cuerpo = b; return res; } };
     try {
       const capa = router.stack.find((l) => l.route?.path === '/' && l.route.methods.get);
-      await capa.route.stack.at(-1).handle({ merchantId, userRole: 'admin', teamMemberId: 9, query }, res);
+      await capa.route.stack.at(-1).handle(reqDeSesion({ rol: 'admin', merchantId, teamMemberId: 9, query }), res);
     } finally { for (const k of Object.keys(orig)) prisma[k] = orig[k]; }
     return cuerpo;
   };
