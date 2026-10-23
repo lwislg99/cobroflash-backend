@@ -309,6 +309,138 @@ cuatro perfiles por guard (20-sep, 15-oct, 17-oct y 21-oct) y las salidas. Los l
 llevan secuencias de escape (A22) y caducan a los 90 días; los perfiles `.tsv` son lo que queda de ellos.
 
 A9: aviso → cicatriz J6 «Medí el coste de un fichero de test quitándole tests con un filtro de nombre, y el coste estaba en la carga del módulo: el filtro no lo toca» — no se pudo comprobar: es un hábito al aislar dónde se va el tiempo, y lo cazó medir la carga sola; un instrumento que lo impida tendría que ser el de S3 (propuesta D)
+## SCRUM-935d · lo que tapaban los cortes, y el meta-guard corta ANTES del techo diciendo qué deja
+
+**Medido contra:** `origin/main` = `0077bd1d51a7cb64b1c18d85781117b71936fd38` · 2026-10-22T09:58:23Z
+**S3** · Windows, node v24.8.0 · la rama nació en `9839aa6c2baee741f6a38de4e99c7fc29a3fe807` y trajo `main` con merge.
+Encargo del orquestador (22-oct): la propuesta B de 935c y, sobre todo, «cuántos guards no se estaban comprobando en
+los cortes». El orden cambió por el camino a ① ¿está muerto `scrum813`? ② 1339s ③ la D de 935c. La A es de S5.
+
+### ① Lo que tapaban los cortes (evidencias `a-*`, `b-*`, `c-*`)
+
+**Población:** 447 runs de `ci.yml` creados del 15-oct 00:00Z al 22-oct (la API, troceada por día; 0 consultas
+ciegas) → 327 con job de meta-guard → 313 con paso de mutación → **313 logs bajados y leídos, 0 CIEGOS**. Logs del
+15-oct 15:34Z al 21-oct 15:48Z. Controles sembrados del lector: un log fabricado con 3 veredictos y sin resumen sale
+CORTADO con 3; uno con resumen, COMPLETO; uno vacío, CIEGO. La primera pasada salió **313 de 313 CIEGOS** porque
+`gh api` se niega a escribir un log con ANSI sin `--allow-escape-sequences`: el lector lo dijo como CIEGO, no como cero.
+
+| | jobs |
+|---|---|
+| COMPLETOS (con resumen y código de salida) | 124 (92 verdes, 32 rojos) |
+| **CORTADOS POR EL TECHO** (job ≥ 1.770 s, sin resumen, `cancelled`) | **135** |
+| cortados antes del techo (concurrencia: un push nuevo SUSTITUYE al run; no tapa) | 54 |
+
+* **Sin juzgar en los 135:** ~3.034 veredictos de mutación (3,7 % de ~82.400). Por corte, p50 17 mutaciones / 4 guards,
+  p90 41 / 8, máx 93 / 21. Siempre la COLA del censo: 22 guards distintos, `utils.test.mjs` y
+  `vigia-atascados.test.mjs` en 135 de 135, `scrum996d` en 134, `scrum976` en 121 (`c-guards-fuera.tsv`). La población
+  de cada corte sale del job COMPLETO más cercano en el tiempo: aproximación de ± unas pocas, declarada.
+* **Juzgado y ENTERRADO** (impreso, sin código de salida): MUDAS 0 · CIEGAS 39 en 38 jobs (`scrum859` ×36, la pérdida de
+  cola de SCRUM-1405; `scrum757` ×3) · **1 FICHERO MUERTO en un push a `main`** (`scrum813`, run 39601605945, sha
+  `e2cd370cc2277504172af141bc1f257a8d5b6746`, 21-oct 12:41Z).
+* **Sin NINGÚN meta-guard completo:** 92 de 181 ramas de PR y 30 de 51 commits de `main`.
+* La cifra es 135 y no la de 128 de jv-j3u: otra ventana. No se copia.
+
+### ② ¿Está muerto `scrum813`? No (evidencias `e-*`)
+
+Sus 26 mutaciones, hoy, con las mismas `correr()` + `aplicarUna()`: limpia 48/0/0 en 14,5 s; **26 VIVAS**. En los 313
+logs tiene 6.802 VIVA y 3 ☠ (15, 17 y 21-oct), cada uno en una mutación DISTINTA (#21, #26, #19), y los dos que llegaron a
+imprimir el detalle dicen «el fichero salió rojo por su ruta y el test declarado no llegó con nombre; faltan 27 / 3 de
+la limpia»: la firma de la pérdida de cola de 1405, que tapa SCRUM-1339s (ya en `main`). El del 15-oct es anterior al
+banco de #2486: la lentitud de carga no lo causa (lectura, no medida).
+
+### ③ La D: el corte lo hace el instrumento, y lo dice
+
+Al corte de GitHub el proceso muere sin escribir nada: último veredicto y, 0,7 s después, «The operation was
+canceled.» (medido en el log de un corte). Un manejador de señal no tiene a quién hablar. Así que:
+
+* **Presupuesto:** `timeout-minutes` del job que corre `npm run meta:mutaciones`, LEÍDO de `ci.yml` (se reconoce por el
+  paso, no por la clave, que es `meta-mutaciones` y no `meta-guard`), menos `MARGEN_DEL_JOB_S = 150`: lo que el job
+  gasta FUERA del paso medido en los 313 jobs es 24-73 s (p50 37, p99 50), más una pasada en vuelo (~20 s la más cara,
+  `scrum813`). `META_PRESUPUESTO_S` lo sustituye. Fuera de CI y sin la variable, sin presupuesto. En CI sin techo
+  legible lo DICE. El presupuesto se imprime siempre al empezar.
+* Antes de cada pasada limpia y de cada mutación: si se acabó, **deja de empezar trabajo, nombra cada guard sin juzgar
+  con cuántas le faltan y sale CIEGO (2)** por la misma puerta que las demás ciegas. Antes del suelo de ejecución, para
+  que el motivo de «no he medido nada» sea éste.
+* **Y nombra los guards de más de 60 s** (`guardsCaros`), con la población: la comprobación que habría parado el 16-oct.
+
+⚠️ **Consecuencia en CI, y es a propósito:** un run que hoy tardaría más de 1.650 s en el paso deja de salir `cancelled`
+y sale ROJO (CIEGO) con la lista. El meta-guard no es obligatorio: no bloquea, pero ya no se lee como un gris.
+
+**Guard:** `tests/scrum935d-el-corte-dice-lo-que-deja.test.mjs`, 8 casos. El techo se lee del `ci.yml` REAL y se cruza
+con una segunda vía (el número del bloque `meta-mutaciones` a mano). Que el BUCLE usa las piezas lo mira el AST del
+bloque principal impreso sin comentarios (A23 nº 2). El recorrido entero NO va en la tanda: correr el meta-guard dentro
+movería el árbol bajo los demás tests.
+
+**Rojo y mutaciones:** el guard nació después del código (A23 nº 9 incumplida en el orden; lo digo). Su primera pasada
+salió ROJA de verdad: 1 de 8, el lector del techo no reconocía `- run:` (la forma de una línea), sólo `run:` bajo un
+`- name:`. Arreglado en el código. Después, las 4 mutaciones declaradas, una a una (`f-*`): base 8/8; cada una con
+`git diff --numstat` = `1 1` y **las 4 CAEN** en su caso; árbol restaurado (`git status` vacío).
+
+**Control positivo del corte, corrido de verdad** (`g-salida-corte-a-mano.txt`): `META_PRESUPUESTO_S=45 node
+scripts/meta-guard-mutaciones.mjs` → «🔴 CORTO YO, ANTES DEL TECHO: llevo 52 s y el presupuesto es 45 s … Juzgadas 3 de
+634 mutaciones. SIN JUZGAR 631, en 164 guard(s): …» con la lista, **salida 2**, árbol limpio. Los 7 s de más son la
+mutación que estaba en vuelo: por eso el margen lleva una pasada dentro.
+
+### La propuesta B: NO construida, y por qué
+
+* 🔴 **Tal como está escrita da VIVAS FALSAS.** Medido con una sonda (`h-*`): con `testNamePatterns` un test que depende
+  de otro anterior del mismo fichero CAE al correr solo («segundo depende del primero»: `0 !== 1`). En la pasada mutada
+  eso se leería como «la mutación lo tumbó». Y los tests filtrados no salen ni como saltados: no salen.
+* La forma honrada: una línea base FILTRADA por cada `cae` (si ahí no pasa, ese guard se mide entero), y todo veredicto
+  que no sea VIVA se confirma con el fichero entero. Así B sólo puede acelerar, nunca cambiar un veredicto.
+* Lo que ahorra no está medido con la A puesta (S5 la está metiendo; 935c lo estimó en ~300 s en 7 guards con tiempos
+  de Windows). Un filtro no quita coste de CARGA (cicatriz J6 en 935c). Se mide cuando la A esté en `main`.
+
+### De paso (sin ticket)
+
+* El orden seguro para la A de S5 (`d-*`): la línea de `RETIRADAS_A_PROPOSITO` va EN EL MISMO PR que la bajada. Medido
+  en un clon con `origin/main` movido a mano y `scrum810`+`810b` reales: la línea sola en `main` antes de la bajada deja
+  ROJO el PR de S5 (una retirada sólo exime mientras está PENDIENTE frente a la base, SCRUM-1173).
+* Hallazgo para después, de mi carril: `_suelo-contra-main.mjs` no distingue una MUDANZA de una retirada (sólo recorre
+  los guards de la base). Lo arreglo cuando entre lo de S5, para no moverle el suelo debajo.
+
+### Mis errores
+
+1. Transcribí ㉓ ㉔ como ㉕ ㉖ en la simulación y en el motivo de la línea que le di a S5. El orden medido no cambia (la
+   simulación mueve DOS declaraciones, sean cuales sean); el motivo sí, y se corrigió por mensaje.
+2. Escribí el código de la D antes que su guard.
+3. El primer lector de logs no pasaba `--allow-escape-sequences` y salió 313 de 313 ciegos: lo cazó su propio CIEGO.
+
+A9: comprobación → `tests/scrum935d-el-corte-dice-lo-que-deja.test.mjs`
+
+**Ficheros:** `scripts/meta-guard-mutaciones.mjs`, `tests/scrum935d-el-corte-dice-lo-que-deja.test.mjs`,
+`tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs` (el trinquete de cobertura sube de 31 a 32 por el guard nuevo,
+y su mutación ④ cita la constante nueva; sin la subida caía «LA COBERTURA HA SUBIDO a 32»), los 35 ficheros que
+importan el meta-guard: 304 tests, 1 fail que es `scrum1321` CIEGO por entorno (temporal en `C:`, repo en `D:`),
+`docs/master/evidencias/SCRUM-935d/` (instrumentos y `.tsv`; los logs crudos NO: llevan ANSI, A22), este apartado.
+
+### Las dos puertas que el PR #2676 no pasaba (23-oct-2026, S3)
+
+El obligatorio del run `39767863385` (sobre `ca697e7e8`) cayó con 2 de 12.114, y los dos eran guards de
+DECLARACIÓN que apuntaban a lo que trajo la D. Reproducidos en local con la rama tal cual, ANTES de tocar nada:
+
+| guard | rojo en local, rama tal cual | causa | arreglo |
+|---|---|---|---|
+| `scrum702` · ninguna dependencia del entorno sin declarar | «hay 22 ficheros… el tope es 20» | DOS lecturas nuevas de `GITHUB_ACTIONS`, no una: el meta-guard (`presupuestoDelPaso`) y el `env` escrito a mano del test | declaradas al lado de `TOPE_LEEN_EL_ENTORNO`, que sube 20 → 22, diciendo qué hace cada una |
+| `scrum708` · ningún fichero registra tests fuera de la tanda | `docs/master/evidencias/SCRUM-935d/h-cobaya.mjs` | la cobaya de la sonda vivía como fichero de test en `evidencias/` | la cobaya pasa a ser plantilla de texto dentro de `h-sonda-filtro.mjs`, que la escribe en un temporal y la borra (como SCRUM-1405) |
+
+⚠️ El diagnóstico que me llegó apuntaba a `META_PRESUPUESTO_S` (702) y al test nuevo (708). Medido, no era así:
+`META_PRESUPUESTO_S` no está entre las señales que mira el censo, y el que registraba tests fuera era la cobaya.
+De paso, la sonda abría `cobaya.test.mjs` junto a sí misma, y ese fichero no existía en el repo (sólo `h-cobaya.mjs`):
+tal como estaba, no se podía volver a correr. Corrida otra vez tras el arreglo: los mismos resultados que su salida guardada
+`h-salida-sonda.txt` (cambian los milisegundos, y la línea de `execArgv`, que allí está recortada a mano).
+
+Al fundir `origin/main` (`6c8706dae`) chocó el trinquete de `scrum812`: 1339u y esta rama lo subían los dos a 32. El número
+no se eligió de un lado, se REGENERÓ: con el suelo a 34 el trinquete cae diciendo «33 ficheros se titulan GUARD y declaran»,
+así que queda en **33**, y su mutación ④ pasa a citar 33 → 32.
+
+Después: `scrum702`, `scrum708` y `scrum935d`, 24/24 en verde; `scrum812` 6/6. Ningún guard se tocó salvo en su sitio
+de declaración (el tope y su comentario; el suelo del trinquete y su mutación).
+
+🔵 **El otro rojo del run, el del meta-guard (job informativo), es la D funcionando:** cortó a los 1.650 s («CORTO YO, ANTES
+DEL TECHO»), juzgadas 613 de 641, y nombró las 28 sin juzgar en 7 guards; antes eso salía `cancelled` y sin una línea. El
+último meta-guard de `main` (run `39948261197`, sin la D) tardó 1.397 s y salió verde. Lo que queda abierto, y no lo arregla
+este PR: la D da 150 s de margen, y un run que antes acababa entre los 1.650 y los 1.800 s ahora sale CIEGO en vez de verde.
 
 ## SCRUM-935d · propuesta A construida: el banco de cortados sale de `scrum813`
 
@@ -458,3 +590,44 @@ lee, lista ni importa documentación, y ningún subproceso nombra `docs/`. Lo no
 
 **Ficheros:** este apartado y `docs/master/evidencias/SCRUM-935e/` (instrumentos y salidas, sin rutas
 locales ni logs crudos). Nada de `ci.yml` ni de `scripts/`: no hay arreglo que meter.
+## SCRUM-935e · el margen del corte, DERIVADO: 150 → 105 s (23-oct-2026, S3)
+
+Rama desde `origin/main` = `655f1252e`. Lo decidió el orquestador el 23-oct, sobre la medida de abajo. Un solo
+cambio: `MARGEN_DEL_JOB_S` en `scripts/meta-guard-mutaciones.mjs`, con la derivación escrita al lado.
+
+**Por qué.** Con la D, un run que habría acabado entre el corte y el techo sale CIEGO pudiendo terminar: un
+CIEGO falso. Los 150 s eran 73 + ~20 medidos más 57 que no salían de ninguna medida.
+
+**¿La ventana es alcanzable hoy? Sí.** #2677 entró el 22-oct a las 10:58Z, así que todos los runs de abajo ya lo llevan.
+14 jobs del meta-guard del 23-oct (`gh api …/actions/jobs/<id>`, pasos con su hora):
+
+| | segundos |
+|---|---|
+| antes del paso (checkout, `npm ci`, tsc) | 22-38 |
+| el paso, en los 8 verdes | 1.329-1.608 (tres a 42-64 s del corte de 1.650) |
+| el paso, en los 6 que mató el techo | 1.777-1.779 |
+
+**La pasada en vuelo, medida.** Los logs de CI llevan hora por línea. El hueco entre dos veredictos seguidos es
+una pasada. Al cambiar de guard, ese hueco es la limpia más la primera mutación. Tres runs, 1.977 veredictos (dos enteros de
+`main`, 39948879101 y 39944683225, y el cortado de #2676, 39767863385):
+
+* pasada suelta: **21,9 s** como mucho;
+* limpia + 1.ª mutación: hasta 42,9 s (`scrum710b`, con su media de 21,6 s por pasada: su limpia ronda los 21 s). El
+  siguiente hueco es el de `scrum976`, 30,4 s, que acota su limpia; el resto queda por debajo de 26,1 s.
+* El corte se mira antes de cada limpia y de cada mutación, así que en vuelo sólo queda UNA: ≤ 30,4 s.
+
+⚠️ Corrección a lo que mandé el mismo día: di «≤ 30 s» como cota con un argumento sacado del log de un run CORTADO,
+que sólo lista los guards juzgados antes del corte. Ahí no estaban `vigia-atascados` ni `scrum976`. El número se
+sostiene; la población de la que lo saqué, no. Ésta sí es la de runs enteros.
+
+**Margen = 73 (máximo fuera del paso, 313 jobs) + 31 (pasada en vuelo) + 1 (el propio corte) = 105 s.** El corte en CI
+pasa de 1.650 a **1.695 s** (`presupuestoDelPaso` con el `ci.yml` de hoy: «1800 s − 105 s de margen»).
+
+**Lo que esto NO cierra.** Cualquier margen que cubra el peor caso deja como CIEGO a un run con arranque rápido que habría
+acabado: con 22-38 s fuera del paso hoy, son entre 35 y 50 s de ventana. Lo que la cerraría es contar desde el inicio del
+JOB y no desde el paso. Escrito, NO empezado (decisión del orquestador, 23-oct).
+
+**Verificado:** `tests/scrum935d-el-corte-dice-lo-que-deja.test.mjs` y `scrum702`, 18/18. El caso del presupuesto
+compara contra `techoDelJob − MARGEN_DEL_JOB_S`: sigue la constante y no un número escrito.
+
+A9: sin fallo que generalice — es afinar una cifra con su medida; el error propio (una cota sacada de una población cortada) ya es la trampa de la ficha de S3, «el instrumento le miente primero»

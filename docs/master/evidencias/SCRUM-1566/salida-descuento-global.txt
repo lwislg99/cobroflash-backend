@@ -1,0 +1,33 @@
+﻿CONTROL · 25.22 × 198.38 € al 21 %, global 500.31: F0 IVA 21=945,59 · F1 IVA 21=945,60 · el comparador los distingue
+
+## un tipo · cantidad entera · 21 % · 4000 presupuestos con descuento global (y su factura única)
+forma | IVA del presupuesto ≠ IVA de la factura | idem con D (la factura sin reconciliar: su objetivo ya es su total) | presupuesto no cuadra consigo (total firmado = calcTotal) | idem con D (total = el de la factura) | total firmado ≠ total de la factura
+F0 hoy · R((R(base) − q) × tipo) | 5,2 % | 3,0 % | 13,8 % | 3,7 % | 0,2 %
+F1 factura · R(Σcuota − q × tipo) | 2,1 % | 0,0 % | 10,7 % | 0,7 % | 0,2 %
+F2 R(Σcuota) − R(q × tipo) | 10,6 % | 10,3 % | 17,3 % | 11,0 % | 0,2 %
+
+## un tipo · cantidad entera · 10 % · 4000 presupuestos con descuento global (y su factura única)
+forma | IVA del presupuesto ≠ IVA de la factura | idem con D (la factura sin reconciliar: su objetivo ya es su total) | presupuesto no cuadra consigo (total firmado = calcTotal) | idem con D (total = el de la factura) | total firmado ≠ total de la factura
+F0 hoy · R((R(base) − q) × tipo) | 1,7 % | 2,4 % | 13,0 % | 3,1 % | 0,0 %
+F1 factura · R(Σcuota − q × tipo) | 0,7 % | 0,0 % | 12,0 % | 0,7 % | 0,0 %
+F2 R(Σcuota) − R(q × tipo) | 10,9 % | 11,2 % | 20,0 % | 11,4 % | 0,0 %
+
+## un tipo · cantidad decimal · 21 % · 4000 presupuestos con descuento global (y su factura única)
+forma | IVA del presupuesto ≠ IVA de la factura | idem con D (la factura sin reconciliar: su objetivo ya es su total) | presupuesto no cuadra consigo (total firmado = calcTotal) | idem con D (total = el de la factura) | total firmado ≠ total de la factura
+F0 hoy · R((R(base) − q) × tipo) | 10,5 % | 6,3 % | 31,3 % | 7,0 % | 0,7 %
+F1 factura · R(Σcuota − q × tipo) | 4,3 % | 0,0 % | 25,0 % | 0,7 % | 0,7 %
+F2 R(Σcuota) − R(q × tipo) | 14,2 % | 11,8 % | 26,4 % | 11,5 % | 0,7 %
+
+## un tipo · cantidad decimal · 10 % · 4000 presupuestos con descuento global (y su factura única)
+forma | IVA del presupuesto ≠ IVA de la factura | idem con D (la factura sin reconciliar: su objetivo ya es su total) | presupuesto no cuadra consigo (total firmado = calcTotal) | idem con D (total = el de la factura) | total firmado ≠ total de la factura
+F0 hoy · R((R(base) − q) × tipo) | 5,0 % | 5,0 % | 27,2 % | 5,7 % | 0,0 %
+F1 factura · R(Σcuota − q × tipo) | 0,0 % | 0,0 % | 22,1 % | 0,7 % | 0,0 %
+F2 R(Σcuota) − R(q × tipo) | 12,8 % | 12,8 % | 27,3 % | 13,4 % | 0,0 %
+
+## caso C heredado (varios tipos + global) · 3383 presupuestos · NO se pueden facturar
+el tipo que absorbe el céntimo es distinto en calcTotal y en el pie: 60,2 %
+F0 hoy · R((R(base) − q) × tipo) | presupuesto no cuadra consigo: 40,5 %
+F1 factura · R(Σcuota − q × tipo) | presupuesto no cuadra consigo: 39,9 %
+F2 R(Σcuota) − R(q × tipo) | presupuesto no cuadra consigo: 52,4 %
+
+CONTROL · réplica del pie (F0) comprobada contra pieDePresupuesto real en 5000 presupuestos con descuento global
