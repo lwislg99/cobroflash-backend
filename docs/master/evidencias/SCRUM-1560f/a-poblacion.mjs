@@ -93,7 +93,7 @@ for (const rel of universo) {
 
 const conocido = filas.some((f) => f.rel === 'scripts/censo-objetivo-tactil-panel.mjs' && f.nombres.includes('datosDelCenso'));
 if (fallosControl.length || !conocido || universo.length < 500) {
-  console.log(`CIEGO · control del clasificador: ${fallosControl.length ? 'falla en ' + fallosControl.join(', ') : 'ok'}`
+  console.log(`CIEGO · control del clasificador: ${casos.length - fallosControl.length}/${casos.length} bien, fallan [${fallosControl.join(', ')}]`
     + ` · ve al censo táctil: ${conocido ? 'sí' : 'NO'} · universo: ${universo.length} ficheros`);
   process.exit(2);
 }

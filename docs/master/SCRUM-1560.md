@@ -358,7 +358,7 @@ Las 29 `render*View` del banco, montadas como las montan sus consumidores, y los
   Operario, y lo mismo pasa con la lista de primeros pasos (`:1346`). **El banco no mide un estado vacío: mide a OTRA persona.**
   Con estos datos, cualquier medidor ve Configuración como la ve un Operario, no como la ve el dueño.
 
-### ③ ¿Distingue cada consumidor «nada corto» de «nada que mirar»? Por MUTACIÓN, no por lectura (`c-mutar.mjs`, `c-salida.txt`)
+### ③ ¿Distingue cada consumidor «nada corto» de «nada que mirar»? Por MUTACIÓN, no por lectura (`c-salida.txt`; el guion, ver ⑤)
 
 Por cada par (consumidor, vista que monta) se vacía la vista (un `return;` al principio de su función,
 localizada por AST) y se corre el consumidor. Si sigue verde, da por buena una pantalla que no pintó nada.
@@ -383,7 +383,7 @@ caso «en el banco: ninguna vista pide una ruta sin contrato, ni con NaN/undefin
 «undefined»». Una vista que no pinta nada no pinta «undefined», y pasa. Sus suelos (`vistas ≥ 25`,
 `servidas ≥ 40`) son de la tanda entera, y una vista vacía no los mueve.
 
-### ④ El censo táctil, en navegador (`d-censo-tactil.mjs`, `d-salida.txt`)
+### ④ El censo táctil, en navegador (`d-salida.txt`; el guion, ver ⑤)
 
 | pasada | resultado |
 |---|---|
@@ -419,5 +419,19 @@ ficha concreta para reproducir un importe. No se volvieron a correr: lo que dije
 
 A9: sin fallo que generalice — el error propio (seguir el literal del import en vez de la ruta) ya es la trampa escrita en la ficha de S3; lo hallado se entrega como medida, y los dos arreglos son tickets que decide el orquestador
 
-**Ficheros:** `docs/master/evidencias/SCRUM-1560f/` (`a-poblacion.mjs`, `b-estados.mjs`, `c-mutar.mjs`,
-`d-censo-tactil.mjs` y sus cuatro `*-salida.txt`), este apartado.
+### ⑤ Por qué los guiones de ③ y ④ NO están en el repo
+
+Estaban en el primer push de #2732 y el obligatorio los tumbó: `scrum1387` (y `scrum976` ④ por `guards:entrada`) por
+`c-mutar.mjs`; `scrum864c` por un temporal de `d-censo-tactil.mjs` que no se borraba. Los dos mutan el producto con una
+lista PROPIA, y la regla de SCRUM-1387 (comentario 18016, del fundador) dice que un banco de mutación nuevo toma sus
+mutaciones del catálogo (`MUTACIONES_QUE_ME_TUMBAN`). No pueden: auditan tests de otros, que no declaran nada. A
+`d-censo-tactil.mjs` el guard no lo veía, porque su nombre no lleva «mut», pero muta igual, así que sale igual.
+Renombrarlos habría sido esquivar el guard por la forma. Decidido por el orquestador el 23-oct (opción A).
+
+* Lo que queda: las salidas (`c-salida.txt`, `d-salida.txt`) y el método de ③ y ④, como medida FECHADA que no se puede volver a correr.
+* Lo que vigila el hallazgo de forma permanente es SCRUM-1560g (#2735): sus dos mutaciones van en el catálogo, y el meta-guard las corre en cada pasada.
+* El camino para tener otra vez ejecutables los bancos que auditan consumidores sería una excepción del fundador a 1387. NO se ha pedido:
+  es una regla firmada (STOP), y su cola de respuestas lleva dos días parada.
+* El censo de ① lo hace ahora sobre 17 importadores: al comitear, `b-estados.mjs` (que importa `datosDelCenso` y sólo describe, sin veredicto) se cuenta a sí mismo. Los 16 de la tabla son de antes de comitear.
+
+**Ficheros:** `docs/master/evidencias/SCRUM-1560f/` (`a-poblacion.mjs`, `b-estados.mjs` y las cuatro `*-salida.txt`), este apartado.
