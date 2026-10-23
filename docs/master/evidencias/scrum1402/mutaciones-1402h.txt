@@ -1,0 +1,15 @@
+
+tests/scrum1402h-sin-plan-como-plan-desconocido.test.mjs · BASE sin mutar: 7 pasan, 0 caen (exit 0)
+  VIVA (cae) · cae «una cancelación SIN plan SE APLICA» · caen 4: SCRUM-1402h · 🔴 un impago SIN plan SE MARCA: escribe `past_ | SCRUM-1402h · 🔴 una cancelación SIN plan SE APLICA: la mism | SCRUM-1402h · ✅ control · activar y renovar SIN plan siguen  | SCRUM-1402h · ✅ control · regla 2: la cancelación y el impag
+  VIVA (cae) · cae «un impago SIN plan SE MARCA» · caen 2: SCRUM-1402h · 🔴 un impago SIN plan SE MARCA: escribe `past_ | SCRUM-1402h · ✅ control · regla 2: la cancelación y el impag
+  VIVA (cae) · cae «activar y renovar SIN plan siguen sin escribir nada» · caen 2: SCRUM-1402h · 🔴 un impago SIN plan SE MARCA: escribe `past_ | SCRUM-1402h · ✅ control · activar y renovar SIN plan siguen 
+
+tests/scrum1402e-impago-con-plan-desconocido.test.mjs · BASE sin mutar: 6 pasan, 0 caen (exit 0)
+  VIVA (cae) · cae «con un plan que NO existe SE MARCA» · caen 2: SCRUM-1402e · 🔴 un impago (past_due, unpaid) con un plan qu | SCRUM-1402e · ✅ control · regla 2: el impago marca SOLO al m
+  VIVA (cae) · cae «con un plan que NO existe SE MARCA» · caen 1: SCRUM-1402e · 🔴 un impago (past_due, unpaid) con un plan qu
+  VIVA (cae) · cae «un impago con un plan legítimo, igual que hoy» · caen 1: SCRUM-1402e · ✅ control · un impago con un plan legítimo, ig
+
+tests/scrum1402-plan-inexistente-no-se-escribe.test.mjs · BASE sin mutar: 10 pasan, 2 caen (exit 1)
+  CIEGO: la base no está verde
+
+mutaciones ejecutadas: 6 · dist reconstruido limpio
