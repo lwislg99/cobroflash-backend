@@ -43,10 +43,11 @@ import { tokenDeSesion } from './_identidad-sesion.mjs';
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 /**
- * 150 ficheros por tramo, DERIVADO de la medición del 23-oct: el trozo más lento fue de 2,5 s por fichero
- * (900-1100: 501 s para 200), así que 150 dan 375 s en el peor caso medido, el 69 % de TOPE_MS.
+ * 120 ficheros por tramo, DERIVADO del peor tramo medido el 23-oct: 412 s para 149 ficheros (el 7/10 de la
+ * segunda pasada, 20:38Z, 8 sesiones vivas), 2,77 s por fichero. 120 dan 332 s, el 61 % de TOPE_MS.
+ * (La primera cifra, 150, salía de 2,5 s por fichero; la segunda pasada la dejó en el 76 %.)
  */
-export const FICHEROS_POR_TRAMO = 150;
+export const FICHEROS_POR_TRAMO = 120;
 /** 4: la concurrencia con la que se midió. Con ella la memoria libre ya bajó a 312 MB. */
 export const CONCURRENCIA = 4;
 /** 540 s: los 600 del primer plano de la herramienta Bash, menos 60 para el arranque y el registro. */
