@@ -135,3 +135,37 @@ Corrido en local sobre la mezcla, con el TAP a fichero: 12 ficheros (`scrum1470`
 **149 pruebas, 0 caen, 0 saltos**; 15 «SCRUM-147x · » por nombre y un nombre inventado que da 0.
 Los guards de registro, aparte. La tanda completa local sigue sin correrse; la comprobación de
 tipos local sigue dando los 6 errores ajenos de arriba, ninguno en el fichero tocado.
+
+## SCRUM-1470b · La firma del presupuesto no pisa «Firmado digitalmente por…» (J1, jv-j1ap, 23-oct-2026)
+
+**Medido contra:** `origin/main` = `391212830da7698fed4bccf1da95f668292710ee` · 2026-10-23T13:46:55Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum1470b-la-firma-no-pisa-el-texto.test.mjs`
+
+Lo midió S1 en su gemelo del albarán (SCRUM-1589, PR #2731) y nos pasó el número en el comentario
+20507 de este ticket. Aquí, en `generateQuotePdf` (`pdf.service.ts`), el mismo `moveDown(5)` tras
+`fit: [180, 70]`. Es el PDF del PRESUPUESTO: `generateInvoicePdf` no se ha tocado.
+
+- **El rojo, ejecutado antes de tocar `src/`** (PDF real por `paramsDePresupuestoParaPdf` +
+  `generateQuotePdf`, pdfkit envuelto desde fuera en el proceso hijo): 3 de 3 rojos con
+  **12,2 pt de solape**, no 10,5. La diferencia es medida, no un error de S1: aquí el cursor baja
+  a 10 pt Helvetica normal (5 × 11,56 = 57,8 pt) y en el albarán a Helvetica-Bold (59,5 pt).
+- **Arreglo:** el mismo número que S1, para que no haya dos soluciones: el cursor va a
+  `arriba + 70 + 4`. La línea de `doc.image` queda idéntica. Ningún texto cambia (regla 39).
+- **Salto de página:** la reserva de este bloque es `doc.y + 120`, no 130. Con el arreglo el
+  bloque mide **105,2 pt** (raya → fin de la línea de debajo): cabe, con 14,8 pt de margen. El test
+  lee la reserva del fuente y lo comprueba de dos formas: el bloque medido cabe en ella, y un
+  barrido de 91 papeles (13 tamaños de tabla × 7 de observaciones) que cruza el borde por los dos
+  lados y se le acerca a ≤ 6 pt (lo mide y lo exige) nunca lo parte.
+- **Mutaciones sobre `dist/`** (nunca reescribiendo `src/`), base verde 5/5 antes:
+  M1 `moveDown(5)` de vuelta → caen 3 (los de solape); M2 hueco de 30 pt → caen 5;
+  M3 reserva 120 → 90 → cae el barrido («con 19 líneas y 6 de observaciones … texto p.2»).
+  Control del barrido sembrado: sin observaciones se queda a 14,8 pt del borde y dice CIEGO.
+- **Error mío, cazado antes de empujar:** el primer barrido iba de 18 en 18 pt (sólo filas de
+  tabla) y M2 salió viva para él, porque su ventana de fallo era de 11 pt y la saltaba. Y su
+  control de población (`pagina > 0`) era una tautología: las páginas empiezan en 1. Lo que lo
+  impide ahora es el propio test: exige cruzar el borde y acercarse a ≤ 6 pt, o dice CIEGO.
+- **No tocado:** la aceptación 2 (`dateStr`, la fecha del PDF de la FACTURA) sigue esperando al
+  fundador. No visto en yaqu.app: pendiente de despliegue, y hará falta un presupuesto firmado
+  nuevo, porque el PDF de uno ya firmado puede servirse del disco (no lo he comprobado en el
+  presupuesto; S1 lo midió en el albarán).
