@@ -442,7 +442,7 @@ escrito no cuenta. Sí corridos: los guards de suite y de registro (`scrum237`, 
 
 **Medido contra:** `origin/main` = `28098fe4b1a160303526f5a4002d52556d2c5b22` · 2026-10-23T19:28:21Z (hora de GitHub al acabar las pasadas; sesión J6 `jv-j6at` en el árbol `jv-j6ar`, por encargo del orquestador `cobroflash-backend-62`; el árbol es el dado de alta en c.20596)
 
-A9: aviso → cicatriz J6 «Lancé una tanda de 30 pasadas en primer plano sin cronometrar el canario» — no se pudo comprobar: el canario prueba que el banco arranca, no cuánto dura, y ningún hook multiplica pasadas por duración antes de lanzar
+A9: aviso → cicatriz J6 «Lancé una tanda de 30 pasadas en primer plano sin cronometrar el canario: pasó de los 600 s y el arnés la mandó a segundo plano, en un encargo que las prohibía» — no se pudo comprobar: el canario prueba que el banco arranca, no cuánto dura, y ningún hook multiplica pasadas por duración antes de lanzar
 
 ### ⓪ El lote, medido otra vez
 
