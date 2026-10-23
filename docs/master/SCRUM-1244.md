@@ -316,3 +316,48 @@ o PowerShell, los tests que lanzan `bash` salen en rojo sin serlo».
 `build + tests` salió rojo en #2033 **sólo por los dos trinquetes de fecha** (9.343 tests, 2 fail): no es
 de este cambio, que es sólo registro. El meta-guard también salió rojo, por dos mudos de `scrum853` y un
 ciego de `scrum859`, ninguno tocado aquí.
+
+## ⑧ 23-oct: la línea de Git Bash, firmada — el diff exacto para el máster y `CLAUDE.md`, sin aplicar (carril de un jefe)
+
+**Medido contra:** `origin/main` = `6b7b18db9fcbae42fbcb2c90a5795f4b4a7e6780` · 2026-10-23T13:51:36Z (hora de GitHub)
+A9: sin fallo que generalice — este tramo sólo prepara un diff; el literal se copió de `c.20515` y no de la propuesta ni de la ficha del encargo
+
+J4 (`jv-j4q`, equipo de Javier).
+
+### Lo firmado
+
+- **SCRUM-1244 comentario 20481** (decisión): añadir la línea; entra en el máster por cambio de máster y `CLAUDE.md` la copia (regla 35).
+- **SCRUM-1244 comentario 20515** (firma del literal): la opción A de la propuesta `c.20489` (jv-j4p). Va al máster, Parte AA, AA1, al final del punto 3, y `CLAUDE.md` la copia en «Comandos» encima de `npm test`.
+
+El «51» del literal lo midió `c.20489` sobre 10 ficheros (95 tests: 0 rojos con `bash` en el PATH, 51 sin él) y dice que es un mínimo. Es parte del texto firmado: se copia tal cual, no se re-mide.
+
+### Por qué no lo meto yo
+
+`node scripts/carriles.mjs de docs/YAQU_MASTER.md` y `… de CLAUDE.md` → «SIN CERRADURA · `docs/equipo/dos-equipos.md:197` · **un jefe**». El encargo decía: si es de S0 o del fundador, no se toca; se deja el diff.
+
+### Diff 1 · `docs/YAQU_MASTER.md` (manda; regla 35)
+
+Sitio: `## AA1. Protocolo de sesión (obligatorio)`, el punto que empieza por `3. Tests relevantes en verde antes de commit` (hoy la línea 1803).
+
+```diff
+-3. Tests relevantes en verde antes de commit; verificación en **yaqu.app** (no localhost) antes de cerrar tarea.
++3. Tests relevantes en verde antes de commit; verificación en **yaqu.app** (no localhost) antes de cerrar tarea. La tanda de pruebas (`npm test`) se corre desde Git Bash. Desde cmd o PowerShell, si `bash` no está en el PATH, los tests que lanzan `bash` salen en rojo sin serlo: 51 el 23-oct-2026 (SCRUM-1244).
+```
+
+### Diff 2 · `CLAUDE.md` (copia)
+
+Sitio: el bloque de código de `## Comandos`, encima de la línea `npm test                 # compila + node --test (tests/*.test.mjs contra dist/)` (hoy la 136). Va como comentario de shell, igual que los avisos de SCRUM-850 y SCRUM-1245 de debajo.
+
+```diff
+ npm run build            # tsc → dist/
++# La tanda de pruebas (`npm test`) se corre desde Git Bash. Desde cmd o PowerShell, si `bash` no está en el PATH,
++# los tests que lanzan `bash` salen en rojo sin serlo: 51 el 23-oct-2026 (SCRUM-1244).
+ npm test                 # compila + node --test (tests/*.test.mjs contra dist/)
+```
+
+⚠️ El corte en dos líneas y el `# ` delante son forma de comentario, no cambian el literal. Si quien lo aplique prefiere una sola línea, es la misma frase.
+
+### Lo que no he hecho
+
+- No he tocado el máster ni `CLAUDE.md`, ni el estado del ticket (A13).
+- No he medido si algún guard lee `CLAUDE.md` o el punto 3 de AA1 y cambiaría al aplicar el diff: lo tiene que correr quien lo aplique.
