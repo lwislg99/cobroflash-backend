@@ -66,6 +66,9 @@ justo lo que SCRUM-1387 prohíbe desde el 13-oct. Salió rojo en la primera pasa
 `MUTACIONES_QUE_ME_TUMBAN` y el banco local las lee de ahí con `mutacionesDeclaradas`.
 De paso, otro mío: la primera población de ⑥ llevaba la cadena vacía, que no llega a la ruta
 (`/admin/supresion/` no casa con `/:merchantId`); salió como un falso «⑥ ROTA» y la quité, con su motivo escrito.
+Y un tercero, que cazó el obligatorio del primer empujón (PR #2758, `71ce76b1`, 12.379 = 12.289 + 1 + 89): el
+nombre del caso ⑥ iba en plantilla (`${POBLACION.length}`) y `tests/scrum1415-nombres-construidos.test.mjs` exige
+nombres literales; no estaba en mi mini-tanda. Ahora el nombre es literal y el caso comprueba que la población es 25.
 
 ### Qué cambia
 

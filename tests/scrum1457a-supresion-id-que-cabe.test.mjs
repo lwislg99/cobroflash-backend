@@ -112,7 +112,9 @@ const POBLACION = [
   '2147483648', '10000000000', '99999999999999999999', '9007199254740993',
 ];
 
-test(`SCRUM-1457a · ⑥ RECHAZA MÁS, NUNCA MENOS: ${POBLACION.length} entradas contra la guarda vieja`, async () => {
+test('SCRUM-1457a · ⑥ RECHAZA MÁS, NUNCA MENOS: 25 entradas contra la guarda vieja', async () => {
+  // El nombre es literal (SCRUM-1415): si la población cambia, este número se recalcula aquí y en el nombre.
+  assert.equal(POBLACION.length, 25, '🔴 la población ya no es la que dice el nombre del caso');
   const cuenta = { rechazabaYSigue: 0, nuevoRechazo: 0, igual: 0 };
   for (const v of POBLACION) {
     const r = await pedir(v);
