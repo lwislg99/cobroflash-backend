@@ -18,6 +18,28 @@ import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TE
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
+import http from 'node:http';
+
+// `node:http` sin agente y no `fetch` (SCRUM-1218d): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de `fetch`
+// (status, headers.get, text, json) y, como el `redirect: 'manual'` de antes, no sigue redirecciones.
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    let d = ''; r.setEncoding('utf8');
+    r.on('data', (t) => { d += t; });
+    r.on('end', () => ok({
+      status: r.statusCode,
+      headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+      text: async () => d,
+      json: async () => JSON.parse(d),
+    }));
+  });
+  req.on('error', mal);
+  req.end(body);
+});
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
@@ -61,7 +83,7 @@ test('SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy
     assert.equal(magicSession.merchantId, merchant.id, 'el AuthSession debe llevar el merchantId CORRECTO del operario (tenancy)');
 
     // Verificación end-to-end REAL: canjear el token → cookie de sesión → getSession → rol/tenancy.
-    const rVerify = await fetch(`${base}/auth/verify?token=${magicSession.token}`, { redirect: 'manual' });
+    const rVerify = await pedirSinAgente(`${base}/auth/verify?token=${magicSession.token}`, { redirect: 'manual' });
     assert.equal(rVerify.status, 302, `GET /auth/verify con el token del operario debe redirigir (302) y fue ${rVerify.status}`);
     const cookie = (rVerify.headers.get('set-cookie') || '').split(';')[0];
     assert.ok(cookie.startsWith('pf_session='), 'debe fijar la cookie pf_session');
@@ -75,7 +97,7 @@ test('SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy
 
     // Prueba HTTP real: con esa cookie, una ruta admin-only debe dar 403 — el operario
     // NO puede colarse como admin por este camino nuevo.
-    const rAdminOnly = await fetch(`${base}/admin/exports/verifactu.xml`, { headers: { cookie } });
+    const rAdminOnly = await pedirSinAgente(`${base}/admin/exports/verifactu.xml`, { headers: { cookie } });
     assert.equal(rAdminOnly.status, 403, `un operario con sesión vía SCRUM-92 debe seguir dando 403 en rutas admin-only y fue ${rAdminOnly.status}`);
 
     // ── Caso 1b: TeamMember 'invited' también puede pedir login (se activa al canjear, igual que la invitación) ──
@@ -105,8 +127,8 @@ test('SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy
 
     // La respuesta HTTP de /auth/login es SIEMPRE la misma genérica, exista o no el email
     // (regla anti-enumeración, no tocada por este fix) — probado a nivel de ruta:
-    const rLoginGhost = await fetch(`${base}/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: ghostEmail }) });
-    const rLoginReal = await fetch(`${base}/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: tecnico.email }) });
+    const rLoginGhost = await pedirSinAgente(`${base}/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: ghostEmail }) });
+    const rLoginReal = await pedirSinAgente(`${base}/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: tecnico.email }) });
     assert.equal(rLoginGhost.status, rLoginReal.status, 'el status HTTP de /auth/login debe ser igual exista o no el email');
     const [bodyGhost, bodyReal] = await Promise.all([rLoginGhost.json(), rLoginReal.json()]);
     assert.deepEqual(bodyGhost, bodyReal, 'el body de /auth/login debe ser IDÉNTICO exista o no el email (sin enumeración)');

@@ -17,6 +17,11 @@
 //   · `--antes`: sirve `styles.css` de `origin/main` (git show) en vez del del árbol: los cuatro TIENEN
 //     que salir cortos a 320 y 390. Es la foto de antes.
 //   · `CAPTURAS_EN=<dir>`: PNG de la barra y del bloque `#c360-meta` por anchura.
+//   · `--fuente-corta` (SCRUM-1592b): inyecta `.input { font-size: 11px }` para que el alto NATURAL de `.input`
+//     baje de 36, como en el Chromium de Linux de CI (34 de caja a 929 sin mínimo, contra 36 en Windows).
+//     No imita la fuente de Linux: sólo la consecuencia. `line-height` no sirve (Chromium no lo aplica al
+//     alto de un `input`: medido, la semilla salió CIEGA). En ese modo la semilla TIENE que salir corta
+//     también en escritorio.
 //
 // Mínimo por anchura: el de la casa (`minimoPara`: 44 hasta el corte de móvil, 36 por encima).
 // Salidas: 0 todos cumplen · 1 alguno corto · 2 CIEGO.
@@ -32,9 +37,10 @@ import { paginaDeClientes, paginaDeVista, DETALLE_360_DE_MUESTRA, ARGUMENTOS_DE_
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../..');
 const PUBLICO = path.join(RAIZ, 'public');
-const ANCHOS = [320, 390, 1280];
+const ANCHOS = [320, 390, 929, 1280];
 const ANTES = process.argv.includes('--antes');
 const SEMBRAR = !process.argv.includes('--sin-semilla');
+const FUENTE_CORTA = process.argv.includes('--fuente-corta');
 const SEL = 'a[href], button, [role="button"], summary, input:not([type="hidden"]), select, textarea';
 const BARRA = '.data-card:has(> .barra-seleccion) .data-card-toolbar > .input:not([hidden])';
 const META = '#c360-meta .input';
@@ -99,7 +105,7 @@ const MEDIR = `(async (Q, SEL) => {
 
 const { browser, quien } = await abrirNavegador(puppeteer);
 let cortos = 0, ciego = 0;
-console.log(`navegador: ${quien} · CSS ${ANTES ? 'de origin/main (ANTES)' : 'del árbol'} · semilla ${SEMBRAR ? 'sí' : 'NO'} · población declarada 4 por anchura`);
+console.log(`navegador: ${quien} · CSS ${ANTES ? 'de origin/main (ANTES)' : 'del árbol'} · semilla ${SEMBRAR ? 'sí' : 'NO'} · fuente ${FUENTE_CORTA ? 'CORTA (.input a 11px)' : 'la del sistema'} · población declarada 4 por anchura`);
 for (const s of SUPERFICIES) {
   for (const ancho of ANCHOS) {
     const MIN = minimoPara(ancho);
@@ -107,11 +113,12 @@ for (const s of SUPERFICIES) {
     await page.setViewport({ width: ancho, height: 900 });
     await page.goto(`http://127.0.0.1:${puerto}${s.ruta}`, { waitUntil: 'load' });
     await page.addStyleTag({ content: '*, *::before, *::after { transition: none !important; animation: none !important; caret-color: transparent !important; }' });
+    if (FUENTE_CORTA) await page.addStyleTag({ content: '.input { font-size: 11px; }' });
     if (process.env.CAPTURAS_EN) {
       const el = await page.$(s.foto);
       await el.evaluate((e) => e.scrollIntoView({ block: 'center' }));
       await page.mouse.move(1, 1);
-      fs.writeFileSync(path.join(process.env.CAPTURAS_EN, `${ANTES ? 'antes' : 'despues'}-${s.nombre}-${ancho}.png`), await el.screenshot());
+      fs.writeFileSync(path.join(process.env.CAPTURAS_EN, `${ANTES ? 'antes' : 'despues'}${FUENTE_CORTA ? '-fuente-corta' : ''}-${s.nombre}-${ancho}.png`), await el.screenshot());
     }
     await page.evaluate(FUENTE_MEDIDOR);
     if (SEMBRAR) await page.evaluate(SEMBRAR_JS(s.foto));
@@ -120,7 +127,7 @@ for (const s of SUPERFICIES) {
     const cab = `${s.nombre} @${ancho}px (mínimo ${MIN})`;
     if (r.reales.length !== s.esperados) { ciego++; console.log(`🔴 CIEGO ${cab}: población ${r.reales.length}, declarada ${s.esperados}`); continue; }
     const sem = r.semilla;
-    if (ancho < 768) {
+    if (ancho < 768 || FUENTE_CORTA) {
       if (!sem || sem.error || !(sem.tocable < MIN)) {
         ciego++; console.log(`🔴 CIEGO ${cab}: la semilla ${sem ? `salió ${sem.error || sem.tocable + ' px'}` : 'no está'} — los verdes de aquí no valen`);
       } else console.log(`✅ semilla ${cab}: ${sem.tocable} px (corta, como debe)`);
