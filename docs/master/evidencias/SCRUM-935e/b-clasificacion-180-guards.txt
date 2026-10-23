@@ -1,0 +1,194 @@
+guards 180 · DEPENDEN 95 (381 mut.) · NO 85 (309 mut.)
+coste local estimado de mutaciones (n × línea base): dependen 3252 s · no dependen 797 s · líneas base 1011 s
+motivos: { 'SIN TRAZA': 0, subproceso: 76, docs: 37 }
+
+── los que mutan documentación (tienen que estar en DEPENDEN):
+  ✔ DEPENDE scrum1336-un-ciego-no-se-pinta-de-hallazgo.test.mjs · docs: lee:docs/master/evidencias/scrum1336/linea.mjs, lee:docs/master/evidencias/scrum1336/antes-resumen.json, lee:docs/master/evidencias/scrum1336/despues-resumen.json (+4)
+  ✔ DEPENDE scrum1536b-los-tres-estados-de-los-guiones.test.mjs · subproceso: node.exe docs/master/evidencias/SCRUM-1536/barrido.mjs <raíz> | node.exe docs/master/evidencias/SCRUM-1536/mutar-sembrar.mjs docs/master/evidencias/SCRUM-1536/barrido.mjs | node.exe <tmp>\scrum1536b-XP1AMR\b-centinela.mjs <raíz> · docs: lee:docs/master/evidencias/SCRUM-1536/veredicto.mjs, import:docs/master/evidencias/SCRUM-1536/veredicto.mjs
+  ✔ DEPENDE scrum758-cabecera-no-miente.test.mjs · docs: lee:docs/MIGRATIONS_PENDING.md
+  ✔ DEPENDE scrum769-el-motivo-de-las-dos-que-no.test.mjs · docs: lee:docs/equipo/limites-del-fundador.md, lee:docs/microcopy, lee:docs/microcopy/2026-09-03-SCRUM-402-abrir-parte-fallo.md (+149)
+  ✔ DEPENDE scrum996d-a1-no-regenera-a-ciegas.test.mjs · docs: lee:docs/equipo/00-normas-comunes.md
+
+── DEPENDEN
+  scrum1007-1011-1026-relevo-lanzar-bloqueo.test.mjs (3) · subproceso: git init -q | git -c core.autocrlf=false | git -C <tmp>\scrum1011-1026-aa1ivW\repo
+  scrum1245b-patron-de-la-tanda-entre-comillas.test.mjs (2) · docs: lee:CLAUDE.md, lee:docs, lee:docs/capturas (+445)
+  scrum1258-el-tipo-del-registro-es-el-de-la-huella.test.mjs (2) · docs: lee:docs/equipo/limites-del-fundador.md, lee:docs/microcopy, lee:docs/microcopy/2026-09-03-SCRUM-402-abrir-parte-fallo.md (+149)
+  scrum1263-gancho-pre-push.test.mjs (2) · subproceso: git init -q | git clone -q | git config user.name
+  scrum1270-pr-mudo-avisado-en-el-pr.test.mjs (3) · subproceso: node.exe <raíz>\scripts\vigia-pasada.mjs
+  scrum1289-por-que-cayo.test.mjs (6) · subproceso: node.exe <raíz>\scripts\equipo\por-que-cayo.mjs <raíz>\no-existe-scrum1289.tap | node.exe <raíz>\scripts\equipo\por-que-cayo.mjs --integridad
+  scrum1298-mesa-por-puesto.test.mjs (2) · subproceso: git init -q | git -C <tmp>\yaqu-1298-8ANiPW\semilla | git clone -q
+  scrum1298b-latido-arbol-de-arranque.test.mjs (4) · subproceso: git -C <tmp>\scrum1298b-iMDPmu\remoto.git | git clone -q | git -C <tmp>\scrum1298b-iMDPmu\principal
+  scrum1321-el-resumen-no-prueba-el-final.test.mjs (1) · subproceso: node.exe <tmp>\scrum1321-sonda-RL9BQt\sonda.mjs <tmp>\scrum1321-sonda-RL9BQt\cobaya.mjs | node.exe <tmp>\scrum1321-sonda-s9UGmI\sonda.mjs <tmp>\scrum1321-sonda-s9UGmI\cobaya.mjs
+  scrum1328-skips-con-motivo-en-el-tap.test.mjs (2) · subproceso: node.exe <raíz>\scripts\tanda-con-veredicto.mjs node | node.exe --test --test-force-exit
+  scrum1331-sin-red-se-dice.test.mjs (3) · subproceso: node.exe --test --test-reporter=tap | node.exe --input-type=module -e | node.exe --test a-sano.test.mjs
+  scrum1332-la-caida-no-tapa-lo-de-despues.test.mjs (1) · subproceso: node.exe <raíz>\scripts\tanda-con-veredicto.mjs node
+  scrum1336-un-ciego-no-se-pinta-de-hallazgo.test.mjs (8) · docs: lee:docs/master/evidencias/scrum1336/linea.mjs, lee:docs/master/evidencias/scrum1336/antes-resumen.json, lee:docs/master/evidencias/scrum1336/despues-resumen.json (+4)
+  scrum1339d-senal-de-nombres.test.mjs (9) · subproceso: node.exe <raíz>\scripts\senal-de-nombres.mjs <tmp>\scrum1339d-rojo-zwoKqs\tanda.tap | node.exe <raíz>\scripts\senal-de-nombres.mjs <tmp>\scrum1339d-completo-AsS6Zj\tanda.tap | node.exe <raíz>\scripts\senal-de-nombres.mjs <tmp>\scrum1339t-uno-52zmis\uno.tap
+  scrum1339s-el-metaguard-hereda-la-tuberia.test.mjs (1) · subproceso: node.exe <tmp>\scrum1339s-P75NdU\medir.mjs <tmp>\scrum1339s-P75NdU\cobaya.test.mjs | node.exe <tmp>\scrum1339s-X3zus9\medir.mjs <tmp>\scrum1339s-X3zus9\cobaya.test.mjs
+  scrum1343-un-hijo-que-no-arranca-es-ciego.test.mjs (17) · subproceso: scrum1343-este-binario-no-existe-24736 guard.mjs | node.exe <tmp>\scrum1343-gjQ38W\guard.mjs | node.exe <tmp>\scrum1343-FRq92R\guard.mjs
+  scrum1349-entorno-prestado-solo-baja.test.mjs (3) · subproceso: git rev-parse --is-shallow-repository | git log -1 | git log --merges
+  scrum1349-no-se-empuja-con-una-mutacion-puesta.test.mjs (1) · subproceso: node.exe -e  | node.exe <raíz>\scripts\guards-entrada.mjs
+  scrum1363-tests-que-cubren.test.mjs (2) · subproceso: node.exe <raíz>\scripts\tests-que-cubren.mjs --porque · docs: lee:docs/master/SCRUM-1405.md, salida C., lee:docs/equipo/dos-equipos.md, lee:docs/equipo/sesion- (+398)
+  scrum1387-banco-nuevo-va-al-catalogo.test.mjs (5) · subproceso: git -c user.name=banco | git -c core.quotepath=false · docs: lee:docs/evidencias, lee:docs/evidencias/demo-caps, lee:docs/evidencias/demo-final (+430)
+  scrum1398-la-sonda-de-colision.test.mjs (3) · subproceso: node.exe <tmp>\scrum1398-sonda-DKiEWM\scripts\sobre-soap-prueba-aeat.mjs --nif | node.exe <tmp>\scrum1398-sonda-zoOA6R\scripts\sobre-soap-prueba-aeat.mjs --nif | node.exe <tmp>\scrum1398-sonda-33VkKS\scripts\sobre-soap-prueba-aeat.mjs --nif
+  scrum1399-el-anterior-de-una-anulacion.test.mjs (5) · subproceso: node.exe <tmp>\scrum1399-anterior-A9YPxE\scripts\sobre-soap-prueba-aeat.mjs --nif | node.exe <tmp>\scrum1399-anterior-6Y2NVS\scripts\sobre-soap-prueba-aeat.mjs --nif | node.exe <tmp>\scrum1399-anterior-MsaoTP\scripts\sobre-soap-prueba-aeat.mjs --nif
+  scrum1405c-tuberia-bloqueante.test.mjs (7) · subproceso: node.exe --test --test-force-exit | node.exe --import=file:///<raíz>/scripts/tuberia-bloqueante.mjs -e | node.exe --import=data:text/javascript,Object.defineProperty(process.stdout._handle%2C%20'setBlocking'%2C%20%7B%20value%3A%20undefined%20%7D)%3B --import=file:///<raíz>/scripts/tuberia-bloqueante.mjs
+  scrum1434-zona-roja-gh-caido.test.mjs (4) · subproceso: bash -c FALLA=BUSCAR GH_LOG=/dev/null gh api repos/o/r/issues/1/comments; echo "exit=$?"; command -v node >/dev/null && echo node=si | bash -e -c | bash -e <tmp>/yaqu-1434-18300-vf2tyj/paso.sh
+  scrum1449b-la-pagina-de-mercado-pago.test.mjs (7) · docs: lee:docs/master/evidencias/SCRUM-1449/firma-c18285.json
+  scrum1458-vigia-main-parado.test.mjs (6) · subproceso: git init -q | git -c user.name=scrum1458 | git update-ref refs/remotes/origin/main
+  scrum1463b-cierre-sin-clic.test.mjs (4) · subproceso: node.exe <raíz>\scripts\equipo\cierre-sin-clic.mjs --jira | node.exe <raíz>\scripts\equipo\cierre-sin-clic.mjs | node.exe <raíz>\scripts\equipo\cierre-sin-clic.mjs consultas
+  scrum1463c-latido-cierres-sin-clic.test.mjs (2) · subproceso: node.exe <raíz>\scripts\equipo\cierre-sin-clic.mjs --jira
+  scrum1484c-la-a19-dice-lo-que-dice-el-latido.test.mjs (2) · docs: lee:docs/equipo/00-normas-comunes.md
+  scrum1494-cortados-de-zona.test.mjs (2) · subproceso: node.exe <raíz>\scripts\_trinquete-de-zona-hijo.mjs <tmp>\scrum1494-g3Fg0N\cortados\ficheros.json
+  scrum1503c-el-lector-ve-el-caminante.test.mjs (5) · docs: lee:docs/master/SCRUM-1405.md, salida C., lee:docs/equipo/dos-equipos.md, lee:docs/equipo/sesion- (+398)
+  scrum1536b-los-tres-estados-de-los-guiones.test.mjs (5) · subproceso: node.exe docs/master/evidencias/SCRUM-1536/barrido.mjs <raíz> | node.exe docs/master/evidencias/SCRUM-1536/mutar-sembrar.mjs docs/master/evidencias/SCRUM-1536/barrido.mjs | node.exe <tmp>\scrum1536b-XP1AMR\b-centinela.mjs <raíz> · docs: lee:docs/master/evidencias/SCRUM-1536/veredicto.mjs, import:docs/master/evidencias/SCRUM-1536/veredicto.mjs
+  scrum1536d-forales-y-canarias-fuera.test.mjs (3) · subproceso: node.exe --require <raíz>\tests\_scrum1522e-doble-de-base.cjs · docs: lee:docs/equipo/limites-del-fundador.md, lee:docs/microcopy, lee:docs/microcopy/2026-09-03-SCRUM-402-abrir-parte-fallo.md (+149)
+  scrum1536g-el-pais-no-se-cambia.test.mjs (2) · docs: lee:docs/equipo/limites-del-fundador.md, lee:docs/microcopy, lee:docs/microcopy/2026-09-03-SCRUM-402-abrir-parte-fallo.md (+149)
+  scrum1540-borrables-por-la-punta-viva.test.mjs (3) · subproceso: git init -q | git clone -q | git config user.email
+  scrum1542c-el-hueco-se-fecha-por-entrada.test.mjs (6) · subproceso: git init -q | git config user.email | git config user.name
+  scrum1572-registro-creado-por-dos-ramas.test.mjs (4) · subproceso: git init -q | git config core.autocrlf | git config user.email · docs: lee:docs/master/SCRUM-1569.md
+  scrum534d-extractores-a-mano.test.mjs (2) · subproceso: git show a79a6b29^:scripts/_documentos-citados.mjs | git show a79a6b29:scripts/_documentos-citados.mjs
+  scrum547-el-documento-que-nadie-mira.test.mjs (2) · docs: lee:docs, lee:docs/capturas, lee:docs/capturas/scrum-283 (+783)
+  scrum554-el-censo-no-confunde-el-numero.test.mjs (1) · subproceso: node.exe -e process.exit(1) | node.exe -e process.exit(0) | node.exe -e process.exit(143)
+  scrum586-forma-de-pago-por-cliente.test.mjs (6) · subproceso: git show HEAD:public/dashboard/js/quotesView.js | git show HEAD:public/dashboard/js/formaDePagoPorDefecto.js · docs: lee:docs/microcopy, lee:docs/master/SCRUM-586.md
+  scrum596-la-nota-interna-no-sale.test.mjs (2) · subproceso: git show HEAD:src/modules/quotes/domain/presupuestoParaPdf.ts | git show HEAD:src/modules/system/app/routes/quoteDecisionLanding.routes.ts
+  scrum608-tipo-de-documento-en-la-cabecera.test.mjs (3) · subproceso: git show HEAD:dist/modules/jobs/infra/albaranPdf.service.js | git show HEAD:dist/modules/invoicing/infra/pdf/pdf.service.js
+  scrum631-la-unicidad-tiene-vigilante.test.mjs (2) · docs: lee:docs/microcopy
+  scrum641-nombre-cogido-sin-500.test.mjs (2) · docs: lee:docs/microcopy
+  scrum649-el-ancla-que-no-apunta.test.mjs (1) · subproceso: git rev-parse --is-shallow-repository | git rev-parse HEAD | git cat-file --batch-check · docs: lee:docs/master, lee:docs/master/SCRUM-1000.md, lee:docs/master/SCRUM-1001.md (+1162)
+  scrum738-el-tablero-contra-el-arbol.test.mjs (2) · subproceso: git rev-parse --verify | git rev-parse --is-shallow-repository | git config --get · docs: lee:docs/master/SCRUM-684.md, lee:docs/master, lee:docs/master/SCRUM-695.md (+2)
+  scrum750-los-dos-calendarios.test.mjs (4) · subproceso: node.exe <raíz>\tests\_sonda-calendarios.mjs Pacific/Auckland | node.exe <raíz>\tests\_sonda-calendarios.mjs Europe/Madrid | node.exe <raíz>\tests\_sonda-calendarios.mjs America/New_York
+  scrum753-censo-de-alcanzabilidad.test.mjs (5) · subproceso: git init -q | git config user.email | git config user.name · docs: lee:docs/master
+  scrum754-el-juez-que-oscila.test.mjs (7) · subproceso: node.exe <raíz>\tests\_sonda-saltados.mjs <tmp>\scrum754c-poVZVy\fixture.test.mjs | node.exe <raíz>\tests\_sonda-saltados.mjs <tmp>\scrum754c-4Zbv7j\fixture.test.mjs
+  scrum758-cabecera-no-miente.test.mjs (5) · docs: lee:docs/MIGRATIONS_PENDING.md
+  scrum759-el-guard-ciego-fuera-de-su-fichero.test.mjs (4) · subproceso: git merge-base HEAD | git archive --format=tar | tar --force-local -xf · docs: lee:docs/master/evidencias/scrum1336/linea.mjs
+  scrum760-iva-de-voz-rechazado.test.mjs (5) · subproceso: git show HEAD:src/modules/ai/domain/ai.service.ts | git show HEAD:public/dashboard/js/jobDetailView.js
+  scrum763-restaurar-el-arbol.test.mjs (2) · docs: lista:(raíz)
+  scrum765-la-puerta-y-el-suelo.test.mjs (5) · subproceso: node.exe tests/_sonda-puerta.mjs | node.exe <raíz>\tests\_sonda-puerta.mjs | node.exe ..\tests\_sonda-puerta.mjs
+  scrum766-el-grep-que-cuenta-lineas.test.mjs (2) · subproceso: bash -c echo ok | bash -c uname -o | bash -c echo "$MACHTYPE" · docs: lee:.agents/skills/impeccable/SKILL.md, lee:.agents/skills/impeccable/reference/adapt.md, lee:.agents/skills/impeccable/reference/animate.md (+4444)
+  scrum769-el-motivo-de-las-dos-que-no.test.mjs (3) · docs: lee:docs/equipo/limites-del-fundador.md, lee:docs/microcopy, lee:docs/microcopy/2026-09-03-SCRUM-402-abrir-parte-fallo.md (+149)
+  scrum771-el-emisor-no-valida-el-tipo.test.mjs (3) · subproceso: git show HEAD:src/modules/jobs/domain/recapitulativa.service.ts | git show HEAD:src/modules/system/app/routes/invoicesAdmin.routes.ts | git show HEAD:src/core/validation/tiposIvaEmitibles.ts
+  scrum775-suelo-que-no-dispara.test.mjs (3) · subproceso: git init -q | git config user.email | git config user.name · docs: lee:docs/master
+  scrum781-concurrencia-de-la-factura.test.mjs (3) · subproceso: git show HEAD:scripts/medir-concurrencia-emision.mjs
+  scrum783-seleccion-sobrevive-navegacion.test.mjs (2) · subproceso: git show HEAD:public/dashboard/js/customersView.js
+  scrum797-el-dueno-se-escribe.test.mjs (3) · docs: lista:(raíz), lista:data, lista:data/catalogs (+4)
+  scrum804-el-guard-no-es-el-numero.test.mjs (3) · subproceso: git show HEAD:scripts/censo-abiertos-vs-guards.mjs
+  scrum808-el-arbol-que-queda-mutado.test.mjs (4) · subproceso: git show cc0bf7e1^:scripts/meta-guard-mutaciones.mjs | git show cc0bf7e1:scripts/meta-guard-mutaciones.mjs
+  scrum810-el-suelo-a-la-primera.test.mjs (3) · subproceso: git rev-parse --verify | git merge-base HEAD | git show 6c8706daef7399513e69e6872068aa7bed25b760:scripts/_suelo-contra-main.mjs
+  scrum810b-los-suelos-derivados.test.mjs (4) · subproceso: git merge-base HEAD | git archive --format=tar | tar --force-local -xf · docs: lee:docs/master
+  scrum813-trinquete-de-zona.test.mjs (24) · subproceso: node.exe <raíz>\scripts\_trinquete-de-zona-hijo.mjs <tmp>\scrum813-nYGQNA\ficheros.json | node.exe <raíz>\scripts\_trinquete-de-zona-hijo.mjs <tmp>\scrum813-nYGQNA\sembrado\ficheros.json | node.exe -e process.stdout.write(Intl.DateTimeFormat().resolvedOptions().timeZone)
+  scrum829b-la-ref-rancia-se-poda.test.mjs (2) · subproceso: git init -q | git symbolic-ref HEAD | git config user.email
+  scrum832-atras-vuelve-a-la-lista.test.mjs (3) · docs: lee:docs/equipo/limites-del-fundador.md, lee:docs/microcopy, lee:docs/microcopy/2026-09-03-SCRUM-402-abrir-parte-fallo.md (+149)
+  scrum836-ancla-de-mutacion-viva.test.mjs (1) · docs: lee:docs/master/evidencias/scrum1336/linea.mjs, lee:docs/master/evidencias/SCRUM-1536/barrido.mjs, lee:docs/master/evidencias/SCRUM-1536/veredicto.mjs (+3)
+  scrum839c-la-pasada-se-ejecuta.test.mjs (3) · subproceso: node.exe <raíz>\scripts\vigia-pasada.mjs
+  scrum839d-union-solo-en-el-registro.test.mjs (6) · subproceso: git ls-files -z | git -c core.attributesFile= | git init -q
+  scrum839e-solo-pr-armados.test.mjs (8) · subproceso: git init -q | git config core.autocrlf | git config user.email
+  scrum850-la-poblacion-del-instrumento.test.mjs (3) · subproceso: bash -c "C:\Program Files\nodejs\node.exe" -e "process.exit(1)" | bash -c "C:\Program Files\nodejs\node.exe" -e "process.exit(0)" | bash -c true && "C:\Program Files\nodejs\node.exe" -e "process.exit(1)" · docs: lee:CLAUDE.md, lee:docs/RUNBOOKS.md, lee:docs/equipo/00-normas-comunes.md
+  scrum850b-las-formas-que-mienten.test.mjs (1) · subproceso: bash -c "C:/Program Files/nodejs/node.exe" --test --test-force-exit "<tmp>/tanda850b-tYArgW/rojo.test.mjs" "<tmp>/tanda850b-tYArgW/verde.test.mjs" 2>&1 | bash -c "C:/Program Files/nodejs/node.exe" --test --test-force-exit "<tmp>/tanda850b-tYArgW/rojo.test.mjs" "<tmp>/tanda850b-tYArgW/verde.test.mjs" | bash -c "C:/Program Files/nodejs/node.exe" --test --test-force-exit "<tmp>/tanda850b-l5ZYGM/rojo.test.mjs" "<tmp>/tanda850b-l5ZYGM/verde.test.mjs" >/dev/null 2>&1 · docs: lee:CLAUDE.md, lee:docs/RUNBOOKS.md, lee:docs/equipo/00-normas-comunes.md
+  scrum853-lecturas-que-fallan-cerrado.test.mjs (5) · subproceso: bash -c FALLA=PR gh api repos/o/r/commits/x/pulls -q .x; echo "exit=$?"; command -v node >/dev/null && echo node=si | bash -e <tmp>/yaqu-853-18060-qY6bSo/paso.sh | bash -e <tmp>/yaqu-853-18060-BBGDC7/paso.sh
+  scrum853c-el-vigia-no-se-cree-un-error.test.mjs (3) · subproceso: node.exe -e console.log(1) | bash -e <tmp>/yaqu-853c-19428-HSlBRu/paso.sh | bash -c gh api repos/o/r/commits/x -q .commit.committer.date 2>/dev/null; echo "exit=$?"
+  scrum853d-cortacircuitos.test.mjs (4) · subproceso: bash -e <tmp>/yaqu-853d-25808-scXWZl/paso.sh | bash -e <tmp>/yaqu-853d-25808-IC0bet/paso.sh | bash -e <tmp>/yaqu-853d-25808-p09mRj/paso.sh
+  scrum858b-la-tanda-sin-veredicto.test.mjs (3) · subproceso: node.exe <raíz>\scripts\tanda-con-veredicto.mjs node | powershell.exe -NoProfile -NonInteractive | node.exe --test a.test.mjs
+  scrum859-identidad-y-motivo-cerrado.test.mjs (2) · subproceso: git rev-parse --is-shallow-repository | git rev-parse HEAD | git cat-file --batch-check · docs: lee:docs/master, lee:docs/master/SCRUM-1000.md, lee:docs/master/SCRUM-1001.md (+1162)
+  scrum864c-el-temporal-no-vuelve.test.mjs (2) · docs: lista:(raíz), lista:.agents, lista:.agents/skills (+1205)
+  scrum899-sesion-lista-blanca.test.mjs (7) · subproceso: git init -q | git -c core.autocrlf=false | git -C <tmp>\scrum899-d2PEEs\repo
+  scrum899b-arranque-de-la-tanda.test.mjs (6) · subproceso: git init -q | git -c core.autocrlf=false | git -C <tmp>\scrum899b-WNyxOI\repo
+  scrum899c-relevar-y-contexto.test.mjs (8) · docs: lee:docs/equipo/orquestador-autonomo.md
+  scrum899d-aviso-de-uso.test.mjs (8) · subproceso: node.exe <raíz>\scripts\equipo\uso.mjs leer | node.exe <raíz>\scripts\equipo\uso.mjs escribir
+  scrum900-push-de-claude-con-la-app.test.mjs (1) · subproceso: git init -q | git -C <tmp>\scrum900-1HDy8y\repo | git -C <tmp>\scrum900-c3h0UD\repo
+  scrum928b-el-veredicto-que-el-color-tapa.test.mjs (2) · subproceso: node.exe -e console.log(7) | node.exe <raíz>\scripts\tanda-con-veredicto.mjs node
+  scrum938-la-lista-como-fixture.test.mjs (2) · subproceso: git show 2b317011:scripts/_trinquete-de-zona.mjs | git show 2b317011:tests/scrum813-trinquete-de-zona.test.mjs | node.exe --test --test-force-exit
+  scrum939b-trinquete-de-las-skills.test.mjs (5) · subproceso: git ls-files -z · docs: lee:docs/YAQU_MASTER.md
+  scrum949-el-suelo-como-cociente.test.mjs (6) · subproceso: node.exe --test --test-reporter=spec | git ls-files -z | git init -q
+  scrum951a-equipo-configurable.test.mjs (13) · subproceso: git init -q | git -c core.autocrlf=false | git -C <tmp>\scrum951a-jVY0dv\repo
+  scrum954-vivo-no-es-listado.test.mjs (3) · subproceso: git init -q | git -c core.autocrlf=false | git -C <tmp>\scrum954-ekVh4N\repo
+  scrum959b-el-arranque-no-duplica-el-equipo.test.mjs (2) · subproceso: git init -q | git -c core.autocrlf=false | git -C <tmp>\scrum959b-5TAgT1\repo · docs: lee:docs/master/evidencias/scrum959/agents-21sep.json
+  scrum976-guards-entrada-con-techo.test.mjs (6) · subproceso: node.exe <raíz>\scripts\guards-entrada.mjs | node.exe --test cae.test.mjs | node.exe --test pasa.test.mjs
+  scrum996d-a1-no-regenera-a-ciegas.test.mjs (2) · docs: lee:docs/equipo/00-normas-comunes.md
+
+── NO DEPENDEN
+  restauracion-del-arbol-ejecutable.test.mjs (3) 3.5 s
+  scrum1066c-borrador-111-115.test.mjs (10) 0.1 s
+  scrum1066e-alquiler-de-local.test.mjs (7) 0.1 s
+  scrum1100d-el-rojo-dice-lo-que-sabe.test.mjs (2) 0.4 s
+  scrum1179c-censo-accion-informativo.test.mjs (3) 0.1 s
+  scrum1179c-censo-clics-informativo.test.mjs (3) 0.1 s
+  scrum1179c-censo-tactil-informativo.test.mjs (1) 0.1 s
+  scrum1257e-modo-en-ajustes-tres-modos.test.mjs (4) 1.9 s
+  scrum1268-sembrar-qa.test.mjs (6) 0.6 s
+  scrum1282-contexto-nombres-de-hoy.test.mjs (2) 0.1 s
+  scrum1284-minutos-actions.test.mjs (5) 0.1 s
+  scrum1286-intermitente-1281.test.mjs (5) 0.1 s
+  scrum1293-cargador-de-marcadores.test.mjs (3) 0.2 s
+  scrum1302m-el-total-y-la-leyenda.test.mjs (5) 1.1 s
+  scrum1302p-el-aviso-antes-de-crear-la-revision.test.mjs (3) 1.9 s
+  scrum1302p-la-pagina-de-una-revision-antigua.test.mjs (3) 0.8 s
+  scrum1302r-el-post-rechaza-la-version-vieja.test.mjs (1) 1.8 s
+  scrum1302s-dos-firmas-del-parte-a-la-vez.test.mjs (2) 0.8 s
+  scrum1302t-el-5xx-de-la-aceptacion.test.mjs (2) 0.6 s
+  scrum1330-una-sellada-no-se-resella.test.mjs (1) 4.8 s
+  scrum1339r-vigia-ciego-del-metaguard.test.mjs (2) 0.4 s
+  scrum1339u-vigia-ciego-de-la-senal.test.mjs (2) 0.4 s
+  scrum1342-plan-desconocido-no-calla.test.mjs (6) 0.4 s
+  scrum1367-sembrar-casos.test.mjs (13) 1.5 s
+  scrum1367b-sembrar-albaranes.test.mjs (5) 2.0 s
+  scrum1367c-albaran-de-cliente-sin-movil.test.mjs (3) 1.7 s
+  scrum1390e-el-portal-solo-lo-suyo.test.mjs (4) 0.8 s
+  scrum1402-plan-inexistente-no-se-escribe.test.mjs (8) 3.1 s
+  scrum1403-el-tecnico-y-las-otras-puertas.test.mjs (2) 2.7 s
+  scrum1412-tanda-por-tramos.test.mjs (5) 0.9 s
+  scrum1466-sembrar-qa-compara-sin-orden.test.mjs (2) 0.7 s
+  scrum1473-latido-disco-y-barrido.test.mjs (8) 2.4 s
+  scrum1474-latido-relevo.test.mjs (7) 0.5 s
+  scrum1485-censo-rutas-de-maquina.test.mjs (4) 6.2 s
+  scrum1486-insertbefore-del-banco.test.mjs (13) 1.7 s
+  scrum1509h-veinte-entrantes-por-hora.test.mjs (4) 24.3 s
+  scrum1509j-lectores-de-la-auditoria.test.mjs (2) 2.3 s
+  scrum1509j-recordatorio-de-facturas-no-reenvia.test.mjs (3) 1.3 s
+  scrum1557-contexto-aparta-los-restos.test.mjs (2) 0.6 s
+  scrum1577-configuracion-44.test.mjs (4) 0.2 s
+  scrum443-toast-legible.test.mjs (2) 1.5 s
+  scrum599-navegacion-documentos-y-atajo.test.mjs (3) 2.0 s
+  scrum600d-el-envio-tras-emitir.test.mjs (3) 2.8 s
+  scrum691-contraste-de-tokens.test.mjs (2) 0.4 s
+  scrum710b-anclaje-por-identidad.test.mjs (5) 43.8 s
+  scrum716-ritmo-de-despliegue.test.mjs (8) 1.0 s
+  scrum736-el-suelo-que-no-avisa.test.mjs (1) 12.8 s
+  scrum739-informes-al-sitio-unico.test.mjs (2) 1.1 s
+  scrum740-carrera-por-el-arbol.test.mjs (2) 4.3 s
+  scrum743-tercera-forma.test.mjs (2) 1.4 s
+  scrum745-comparar-por-identidad.test.mjs (4) 9.9 s
+  scrum748-no-lo-se-no-es-al-dia.test.mjs (2) 1.2 s
+  scrum749-la-primitiva-que-normaliza.test.mjs (1) 1.1 s
+  scrum751-clave-duplicada-en-silencio.test.mjs (2) 6.1 s
+  scrum755-el-contador-que-cuadro-solo.test.mjs (2) 2.5 s
+  scrum756-el-rechazo-se-ve.test.mjs (3) 2.0 s
+  scrum757-la-declaracion-que-nadie-lee.test.mjs (4) 6.9 s
+  scrum764-margen-negativo.test.mjs (6) 2.2 s
+  scrum767-portal-token.test.mjs (3) 0.9 s
+  scrum768-listas-sin-atajo.test.mjs (1) 12.5 s
+  scrum777-el-modal-escondido-no-mata-la-n.test.mjs (2) 1.2 s
+  scrum778-la-lista-cableada.test.mjs (3) 3.6 s
+  scrum784-el-cuarto-veredicto.test.mjs (5) 2.8 s
+  scrum785-productos-y-proveedores-descuelgan.test.mjs (2) 1.3 s
+  scrum792-barra-alcanzable-en-movil.test.mjs (2) 0.7 s
+  scrum793-condicion-en-el-where.test.mjs (3) 0.5 s
+  scrum794-un-solo-anadir-linea.test.mjs (2) 0.9 s
+  scrum795-el-portal-en-la-ficha.test.mjs (2) 0.4 s
+  scrum801-el-respaldo-de-la-n.test.mjs (3) 2.6 s
+  scrum805-que-firmo-el-cliente.test.mjs (3) 0.8 s
+  scrum809b-paywall-sin-banco.test.mjs (3) 0.5 s
+  scrum812-el-rotulo-declara-su-poblacion.test.mjs (5) 3.7 s
+  scrum834-puerta-avisador-rojo.test.mjs (2) 0.1 s
+  scrum853-avisador-solo-obligatorio.test.mjs (9) 0.1 s
+  scrum858c-el-cierre-con-indice.test.mjs (2) 0.8 s
+  scrum876e-el-segundo-destino.test.mjs (4) 0.8 s
+  scrum876f-el-seco-se-decide-al-enviar.test.mjs (2) 0.9 s
+  scrum877-la-novena-a-pelo.test.mjs (2) 3.3 s
+  scrum880-el-empate-del-sello.test.mjs (2) 2.3 s
+  scrum881-el-detector-sin-fecha.test.mjs (1) 1.0 s
+  scrum908-la-muda-se-explica.test.mjs (2) 1.2 s
+  scrum951d-ensayo-instalacion.test.mjs (6) 0.6 s
+  scrum962d-cabecera-modal-44.test.mjs (5) 1.2 s
+  utils.test.mjs (1) 0.5 s
+  vigia-atascados.test.mjs (8) 0.3 s

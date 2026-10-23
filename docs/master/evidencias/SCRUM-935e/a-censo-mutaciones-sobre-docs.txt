@@ -1,0 +1,7 @@
+declarantes 180 · declaraciones 690
+guards con mutación sobre documentación: 5 · declaraciones 12
+  scrum1336-un-ciego-no-se-pinta-de-hallazgo.test.mjs  (1/8)  → docs/master/evidencias/scrum1336/linea.mjs
+  scrum1536b-los-tres-estados-de-los-guiones.test.mjs  (5/5)  → docs/master/evidencias/SCRUM-1536/barrido.mjs, docs/master/evidencias/SCRUM-1536/veredicto.mjs
+  scrum758-cabecera-no-miente.test.mjs  (3/5)  → docs/MIGRATIONS_PENDING.md
+  scrum769-el-motivo-de-las-dos-que-no.test.mjs  (1/3)  → docs/microcopy/2026-09-06-SCRUM-769-las-cinco-pantallas.md
+  scrum996d-a1-no-regenera-a-ciegas.test.mjs  (2/2)  → docs/equipo/00-normas-comunes.md
