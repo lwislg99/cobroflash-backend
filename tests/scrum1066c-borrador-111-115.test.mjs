@@ -11,31 +11,30 @@ const { construirBorradorRetenciones } = await import('../dist/modules/fiscal/re
 const casillas = await import('../dist/modules/fiscal/retenciones/casillas.js');
 const { leerBorradorRetenciones } = await import('../dist/modules/fiscal/retenciones/retencionesPracticadas.repo.js');
 
-const F = 'src/modules/fiscal/retenciones/retencionesPracticadas.ts';
 
 /** Lo que este test tiene que tumbar (SCRUM-1387: la red de la casa, `npm run meta:mutaciones`). */
 export const MUTACIONES_QUE_ME_TUMBAN = [
-  { fichero: F, de: 'export const TIPOS_115: ReadonlySet<number> = new Set<number>();',
+  { fichero: 'src/modules/fiscal/retenciones/retencionesPracticadas.ts', de: 'export const TIPOS_115: ReadonlySet<number> = new Set<number>();',
     a: 'export const TIPOS_115: ReadonlySet<number> = new Set<number>([19]);',
     cae: 'SCRUM-1066c · el alquiler del local (19 %) NO entra en el 115' },
-  { fichero: F, de: '    if (g.merchantId !== params.merchantId) {', a: '    if (false) {',
+  { fichero: 'src/modules/fiscal/retenciones/retencionesPracticadas.ts', de: '    if (g.merchantId !== params.merchantId) {', a: '    if (false) {',
     cae: 'SCRUM-1066c · 🔴 regla 2' },
-  { fichero: F, de: 'perceptores111.add(g.providerId);', a: 'perceptores111.add(g.id);',
+  { fichero: 'src/modules/fiscal/retenciones/retencionesPracticadas.ts', de: 'perceptores111.add(g.providerId);', a: 'perceptores111.add(g.id);',
     cae: 'SCRUM-1066c · cifras a mano por perceptor' },
-  { fichero: F, de: "motivos.push('ninguna_retencion_anotada');", a: 'void 0;',
+  { fichero: 'src/modules/fiscal/retenciones/retencionesPracticadas.ts', de: "motivos.push('ninguna_retencion_anotada');", a: 'void 0;',
     cae: 'SCRUM-1066c · «no lleva retención» y «nadie lo dijo»' },
-  { fichero: F, de: 'if (tipo === 0 || g.retencionPracticadaDeclarada === false)', a: 'if (g.retencionPracticadaDeclarada === false)',
+  { fichero: 'src/modules/fiscal/retenciones/retencionesPracticadas.ts', de: 'if (tipo === 0 || g.retencionPracticadaDeclarada === false)', a: 'if (g.retencionPracticadaDeclarada === false)',
     cae: 'SCRUM-1066c · «no lleva retención» y «nadie lo dijo»' },
   { fichero: 'src/modules/fiscal/retenciones/casillas.ts', de: "retenciones: '09'", a: "retenciones: '9'",
     cae: 'SCRUM-1066c · las casillas son las de los impresos' },
   { fichero: 'src/modules/fiscal/retenciones/retencionesPracticadas.repo.ts',
     de: '      merchantId: params.merchantId,\n      date: {', a: '      date: {',
     cae: 'SCRUM-1066c · el lector filtra por merchant' },
-  { fichero: F, de: "? 'sin_dato_de_arrendamiento' : null", a: '? null : null',
+  { fichero: 'src/modules/fiscal/retenciones/retencionesPracticadas.ts', de: "? 'sin_dato_de_arrendamiento' : null", a: '? null : null',
     cae: 'SCRUM-1066c · 🔴 CONTROL NEGATIVO: trimestre sin gastos' },
-  { fichero: F, de: 'cuota111 += cuota;', a: 'cuota111 += base * tipo / 100;',
+  { fichero: 'src/modules/fiscal/retenciones/retencionesPracticadas.ts', de: 'cuota111 += cuota;', a: 'cuota111 += base * tipo / 100;',
     cae: 'SCRUM-1066c · la cuota es la GUARDADA' },
-  { fichero: F, de: 'if (g.providerId === null || g.providerId === undefined) {', a: 'if (false) {',
+  { fichero: 'src/modules/fiscal/retenciones/retencionesPracticadas.ts', de: 'if (g.providerId === null || g.providerId === undefined) {', a: 'if (false) {',
     cae: 'SCRUM-1066c · lo que no se puede colocar se declara' },
 ];
 
