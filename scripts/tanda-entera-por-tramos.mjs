@@ -84,12 +84,18 @@ export function registroDelTramo({ i, n, ficheros, texto, status, signal, ms, ag
 }
 
 export function listaDeTests(dir) {
-  return fs.readdirSync(dir).filter((f) => f.endsWith('.test.mjs')).sort()
-    .map((f) => path.relative(RAIZ, path.join(dir, f)).replace(/\\/g, '/'));
+  const lista = [];
+  for (const f of fs.readdirSync(dir).filter((x) => x.endsWith('.test.mjs')).sort()) {
+    lista.push(path.relative(RAIZ, path.join(dir, f)).replace(/\\/g, '/'));
+  }
+  return lista;
 }
 
 function leerArgumentos(args) {
-  const o = { dir: path.join(RAIZ, 'tests'), base: process.env.TANDA_TRAMOS_BASE || null, porTramo: FICHEROS_POR_TRAMO };
+  const o = {
+    dir: path.join(RAIZ, 'tests'), base: process.env.TANDA_TRAMOS_BASE || null, porTramo: FICHEROS_POR_TRAMO,
+    plan: false, tramo: null, resumen: null, error: null,
+  };
   for (let k = 0; k < args.length; k++) {
     const [clave, enLinea] = args[k].split('=');
     const valor = () => enLinea ?? args[++k];
