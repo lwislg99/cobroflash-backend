@@ -1021,3 +1021,18 @@ pase por `readLegalDoc`, este guard no lo ve (sin medir: no hay hoy otra ruta qu
 | suelo de población | ídem, caso «SUELO: el guard mira los documentos legales que el servidor SIRVE» |
 | lo que hoy pasa sigue pasando, ningún texto cambia | §3; el diff no toca `public/` ni `docs/legal/` |
 | fila 8 cerrada como 1551g | `docs/go-live/puerta.json`, entrada 8; `tests/scrum1554c-puerta-de-go-live.test.mjs` (`CERRADAS`) |
+
+## 5 · Relevo (jv-j6bb, 23-oct-2026 ~21:20Z): el obligatorio de #2780 cayó por SCRUM-710b
+
+- **Lo que cayó:** «SCRUM-710b · los anclajes por NÚMERO DE LÍNEA no crecen», con
+  `tests/scrum406-canal-prometido-existe.test.mjs  sembrado.ts  (declarados 0, hay 1)`. El caso sembrado del AST
+  comparaba la llamada sin resolver como el texto «fichero, dos puntos y su línea 4», o sea, por POSICIÓN y como dato.
+  Lo cazó el guard en CI, no la sesión que lo escribió: la mini-tanda de 22 ficheros de §3 no llevaba 710b.
+- **Arreglo, en el código del test:** cada llamada sin resolver es ahora `{ fichero, argumento, linea }`, y se
+  identifica por su fichero y el TEXTO de su argumento (`a.getText(sf)`, lo que la llamada ES). El caso sembrado
+  compara `[['sembrado.ts', 'nombre']]`. La línea sólo viaja al mensaje del SUELO. No se trocea ni se arma ninguna
+  cita, y 710b no se toca.
+- **Los dos positivos sembrados siguen cayendo con la cita nueva:** mutante «el lector no declara CIEGO» → cae sólo
+  «el lector de AST ve el literal y declara CIEGO…» (8 casos · 7 pasan · 1 cae); mutante «cerrar la unidad en cada
+  línea» → cae sólo «una promesa PARTIDA en dos líneas…» (8 · 7 · 1). Restaurado con `git restore --source=HEAD`,
+  árbol limpio después de cada uno.
