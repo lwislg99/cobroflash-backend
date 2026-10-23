@@ -1,0 +1,44 @@
+[
+ {
+  "sha": "655f1252e4b0d095da15ae2857b37a5d9b3f7ecd",
+  "leido": true,
+  "estados": [
+   {
+    "context": "comfortable-nourishment - cobroflash-backend",
+    "state": "success",
+    "description": "Success - yaqu.app"
+   },
+   {
+    "context": "comfortable-nourishment - yaqu-staging",
+    "state": "success",
+    "description": "Success - yaqu-staging-production.up.railway.app"
+   },
+   {
+    "context": "comfortable-nourishment - guard-acreditacion",
+    "state": "failure",
+    "description": "Deployment failed"
+   }
+  ]
+ },
+ {
+  "sha": "fbf9701d1ee65e5cbcd49d02626156b03bbd87f6",
+  "leido": true,
+  "estados": [
+   {
+    "context": "comfortable-nourishment - cobroflash-backend",
+    "state": "success",
+    "description": "Success - yaqu.app"
+   },
+   {
+    "context": "comfortable-nourishment - guard-acreditacion",
+    "state": "success",
+    "description": "Success"
+   },
+   {
+    "context": "comfortable-nourishment - yaqu-staging",
+    "state": "success",
+    "description": "Success - yaqu-staging-production.up.railway.app"
+   }
+  ]
+ }
+]

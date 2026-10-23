@@ -504,3 +504,73 @@ del tramo 2: anclada no es verificada.
 - No se ha preguntado al fundador: las cinco urgentes van en el comentario de entrega.
 - Tanda completa: no corrida. El cambio es este registro, dos ficheros bajo
   `docs/master/evidencias/scrum1502c/` y una línea en A10.
+
+## SCRUM-1502d · Tramo 5 (J4, 23-oct-2026): las cinco firmas de c.20514 al código — dos aquí, tres en tickets para el equipo de Luis
+
+**Medido contra:** `origin/main` = `fbf9701d1ee65e5cbcd49d02626156b03bbd87f6` · 2026-10-23T13:45:17Z (hora de GitHub)
+**Skill UI:** no cargada · el cambio en `public/` son líneas de comentario de `settingsSubmenus.js`: no cambia nada que se pinte
+A9: aviso → cicatriz J4 «para dar al otro equipo el número medido escribí, y luego quité, una línea de ancla en tres ficheros de S1 y S2 de mi árbol» — no se pudo comprobar: el hook de carril mira las herramientas de edición y no un `sed -i` de bash, y lo que no se empuja no lo ve ningún guard
+
+### Qué firmó el fundador y dónde
+
+SCRUM-1502 **comentario 20514** (23-oct, transcrito por el orquestador `cobroflash-backend-62`): los
+cinco textos que el tramo 4 dejó en «no consta» y pinta un profesional, preguntados uno a uno sobre la
+propuesta de `c.20490` (jv-j4p). El segundo, firmado como bloque entero. Los literales viven en Jira y
+en el código; **aquí se nombran por fichero**, por lo que mide este ticket (tramo 1, §4).
+
+### Carril de cada marca (`node scripts/carriles.mjs de <ruta>`, desde este árbol)
+
+| marca | carril | qué se ha hecho |
+|---|---|---|
+| `public/dashboard/js/settingsSubmenus.js:36` | J3 (contenedor), `dos-equipos.md:146` | ancla puesta aquí, y «diez» → «nueve» |
+| `tests/scrum291-series-huecos.test.mjs:99` (el texto vive en `merchantAdmin.ts`, J3) | `tests/`: sin fila; `dos-equipos.md:171`, «el test de un ticket → el puesto que trabaja el ticket». Lo trabaja J4 en SCRUM-1502 | ancla puesta aquí |
+| `src/modules/system/app/routes/quotesAdmin.routes.ts:408` | **S1**, `dos-equipos.md:136` | NO tocado → **SCRUM-1591** |
+| `public/dashboard/js/reportsView.js:1204` | **S2**, `dos-equipos.md:152` | NO tocado → **SCRUM-1590** |
+| `public/dashboard/js/jobRailBlocks.js:19` | **S2**, `dos-equipos.md:152` | NO tocado → **SCRUM-1590** |
+
+Cruce declarado: J4 escribe en un comentario de un contenedor de J3 (`settingsSubmenus.js`) y en un
+test de un ticket cerrado (SCRUM-291, sin etiquetas). Ningún literal visible cambia: sólo comentarios.
+
+### El orden (c.18892 lo exige así)
+
+| paso | árbol | `congeladas()` | `scrum921c` | `scrum387` |
+|---|---|---|---|---|
+| ① | `main` tal cual | 27, las dos en la lista | — | — |
+| ② ③ | con las dos líneas `Consta en: SCRUM-1502 comentario 20514.`, números sin tocar | **25**; salen exactamente `settingsSubmenus.js:36` y `scrum291:99`, no entra ninguna; anclado 16 → 18 | cae «el trinquete tampoco baja en silencio», y sólo ése | cae «tampoco baja en silencio» (16 → 15) |
+| ④ | con `SIN_RESPALDO = 25` y `SIN_PROCEDENCIA = 15` | 25 | verde | verde |
+
+Medido con `node docs/master/evidencias/scrum1502/lista.mjs`, que usa la misma `congeladas()` que el
+guard. **El 15 sale de `settingsSubmenus.js`**: con la línea de `scrum291` quitada sigue dando 16 → 15.
+
+🔴 **El 25 es «bien escrito», NO «verificado». Y el 15, igual.** Los dos trinquetes aceptan la línea por
+su FORMA: no comprueban que el ticket exista, ni el comentario, ni que diga lo que la marca afirma
+(tramo 2, caso C). Que la referencia es verdadera lo sé porque leí `c.20514` entero; el guard no lo sabe.
+Los dos cambios de número salen de las mismas dos líneas de comentario: no son dos decisiones.
+
+### Por qué no es 22, como pedía el encargo
+
+22 es el número con las cinco, y tres son del equipo de Luis. Simulado en este árbol con las tres
+líneas de S1 y S2 puestas y retiradas (no empujadas): `congeladas()` = **22**, salen exactamente las
+tres y no entra ninguna; `scrum387` pasaría de 15 a 12. Cada ticket baja su número al hacerlo.
+
+### 🔴 Lo que va a romper la de S1, medido: un control positivo tomado del árbol
+
+Con la línea de `quotesAdmin.routes.ts` puesta cae además
+`SCRUM-921c · 🔴 sólo PROSA respalda: un código de error no es una microcopy`
+(`tests/scrum921c-firma-con-respaldo-en-codigo.test.mjs:326`). Su segunda parte comprueba que esa marca
+**sigue acusada**: usa una marca real sin respaldo como control positivo, y el día que la marca
+encuentra su respaldo, el control cae. No es un trinquete y no se baja un número: hay que sembrar el
+caso. Es tocar un guard (A23, regla 41) y va en SCRUM-1591 para que lo decida un jefe. No lo he tocado.
+
+### De paso, en mi carril
+
+La marca de `settingsSubmenus.js` decía «diez» y son nueve desde SCRUM-483 (12-ago, `af263005e`).
+Corregido en la marca y en el comentario de dos líneas de encima, que decía lo mismo; el párrafo que
+cuenta por qué se aprobaron de una vez queda como historia, avisado.
+
+### Lo que NO se ha hecho
+
+- `quotesAdmin.routes.ts`, `reportsView.js` y `jobRailBlocks.js`: sin tocar (tickets 1590 y 1591).
+- Ningún texto visible, ni ninguna otra marca, ni la lógica de ningún guard.
+- No he visto ninguna de las cinco en yaqu.app.
+- Tanda completa: no corrida (guards dirigidos, en la entrega).

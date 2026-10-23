@@ -402,6 +402,68 @@ o `vigia-despliegue`, más `scrum854`, `737`, `836`, `710b`, `976`, `850` y `393
 corriendo las suyas). Otros 49 tests que casan con lo tocado piden `dist/` y no se corrieron. Un rojo mío ahí lo
 dirá el CI.
 
+## SCRUM-1123f · el aviso dice QUÉ AVERÍA ES (Railway no vio el commit, o lo vio y falló) y MENCIONA a alguien
+
+**Medido contra:** `origin/main` = `fbf9701d1ee65e5cbcd49d02626156b03bbd87f6` · 2026-10-23T13:43:01Z
+· S5, equipo de Luis · rama `scrum-1123f-vigia-tipo-a-o-b` · encargo del orquestador `cobroflash-backend-90`,
+sobre la medida y la propuesta de S0 (SCRUM-1123e, PR #2736).
+
+A9: comprobación → `tests/scrum1123f-tipo-a-o-b-y-a-quien.test.mjs`
+
+**El fallo, que es de este puesto:** el vigía es carril S5, y su aviso tenía UNA causa escrita, la del 24/25-sep
+(«logs de arranque… falta un `ALTER`»). Del 21 al 22-oct Railway no vio 55 commits, el vigía cantó 8 veces con
+razón y las 8 mandó a mirar unos logs que no existían. La lectura «el despliegue falla el arranque» que llegó al
+fundador la sugería el propio aviso. Y el aviso no mencionaba a nadie (9 comentarios del bot en #2455, 0 menciones).
+
+**Qué cambia:**
+
+| sitio | antes | ahora |
+|---|---|---|
+| `scripts/vigia-despliegue-aviso.mjs` | un párrafo fijo: «logs de arranque… `ALTER`» | `tipoDeAveria` decide entre **A** (`railway-no-lo-vio`), **B** (`fallo-el-despliegue`), en curso y **no se sabe**; `dondeMirar` escribe el sitio de CADA una, con la tabla de commits mirados |
+| idem | sin mención | `@` del dueño del repositorio lo PRIMERO del cuerpo; una mención mal formada se dice («no menciona a nadie»), no se pinta |
+| `.github/workflows/vigia-despliegue.yml` · paso de aviso | sólo los Issues | lee los estados de los 5 commits más nuevos de primer padre de `prod..main` (shas del renglón del vigía) con `gh api …/commits/:sha/status` y el `GITHUB_TOKEN` que ya tenía; pasa `VIGIA_ESTADOS_JSON` y `VIGIA_MENCION`; deja el tipo en el resumen del job |
+| `scripts/_vigilante-de-despliegue.mjs` · texto del log | «primer sitio: logs de arranque» | las dos averías y dónde se mira cada una |
+
+**Las tres reglas, y de dónde salen:**
+- **Manda el servicio de producción (`cobroflash-backend`), no el estado combinado.** Medido: `655f1252e` está en
+  producción sirviendo y su estado combinado es `failure`, por `guard-acreditacion`. Con el combinado, un
+  despliegue sano saldría «tipo B».
+- **A = ninguno de los commits mirados tiene un estado de Railway.** Un estado ajeno (que no sea `<proyecto> - <servicio>`
+  de los tres servicios medidos) no cuenta como «Railway lo vio».
+- **«No pude leer» NO es «cero estados».** Si la API no contesta para un commit, va `leido:false` y la avería queda
+  en NO SE SABE, nombrando las dos. Y un diagnóstico imposible no calla el aviso: sale igual, diciendo que no lo sabe.
+
+**Probado con los commits REALES** (`docs/master/evidencias/SCRUM-1123f/`: `capturar-estados.mjs` lee la API con la
+forma del YAML; `los-cinco-casos.mjs` corre el CLI de verdad; salida en `salida-los-cinco-casos.txt`):
+
+| caso | commits | sale |
+|---|---|---|
+| tipo A · 21-oct (los 5 más nuevos de los 55: `prod=fe65a8b7`, `main=82f3ea41`) | `82f3ea411` … `2c75e8935`, 0 estados cada uno | `railway-no-lo-vio` → «la conexión del servicio con GitHub», sin `ALTER` |
+| tipo B · 24/25-sep | `db7714316` (`cobroflash-backend` failure) | `fallo-el-despliegue` → logs de arranque y `ALTER` |
+| tipo B · 23-oct | `3c255d98a` (`cobroflash-backend` failure) | `fallo-el-despliegue` |
+| SANO con OTRO servicio en rojo | `207a66186` (`guard-acreditacion` failure) | `no-se-sabe`, **NO tipo B** |
+| SANO de hoy | `655f1252e`, `fbf9701d1` | `no-se-sabe`, **NO tipo A ni B** |
+
+Los sanos no los vería el aviso (el vigía no canta con producción al día); están para demostrar que la decisión no
+pinta A ni B donde no lo hay. El test lleva esos mismos estados copiados dentro, sin leer `docs/` (SCRUM-935e).
+
+**Visto en rojo:** `tests/scrum1123f-…` declara 4 mutaciones, aplicadas con `correr` + `aplicarUna` del meta-guard
+(`arnes-mutaciones.mjs`): 14 tests en limpio, **4 de 4 VIVAS** (leer como cero estados · mandar cualquier servicio ·
+quitar la mención · el tipo A vuelve a los logs). `git status` después: sólo los ficheros de la rama.
+Más `scrum1123`, `scrum1542c` y `scrum677`: 57 de 57.
+
+**El bash del paso:** `bash -n` del bloque `run:` extraído pasa, y con un `done` roto cae (exit 2): la sonda ve. La
+sangría del bloque, comprobada línea a línea (0 mal sangradas).
+
+**Lo que NO está medido, dicho:**
+- **El `jq` del paso no se ha ejecutado en esta máquina** (no hay `jq`; en `ubuntu-latest` sí). Si fallara, cada commit
+  sale `leido:false` → «no sé qué avería es», y el aviso sale igual: falla cerrado. Lo dirá la primera corrida que
+  cante, o un simulacro (`gh workflow run vigia-despliegue.yml -f simulacro=true`), que ahora también menciona.
+- **Si la cuenta del fundador RECIBE la mención** no lo puedo mirar: el `gh` de esta máquina no tiene el permiso
+  `notifications` (S0 midió el 404). No se deduce de que la mención esté escrita.
+- **Que `@<dueño del repositorio>` sea la persona que tiene que actuar en Railway** es lo único que el workflow puede
+  nombrar sin inventar; si es otra, se cambia `VIGIA_MENCION`.
+- `#2736` (S0) añade su apartado al final de este mismo registro: el segundo en entrar resuelve el conflicto de cola.
 ## 23-oct-2026 · SCRUM-1123e · 59 h sin desplegar: Railway NO VIO los commits (no fue un arranque fallido), el vigía cantó la verdad 8 veces y su aviso apuntaba a la causa de septiembre — sólo lectura
 
 **Medido contra:** `origin/main` = `66d8846230e99561e88f1f3460fb46a066d33162` · 2026-10-23T13:20:27Z (cabecera `Date:` de GitHub; las medidas, de 13:05Z a 13:20Z)
