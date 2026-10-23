@@ -193,14 +193,17 @@ test('SCRUM-383 · los cuatro worktrees del reparto están declarados', () => {
   // `jv-j6ar` entra por DECISIÓN del fundador (SCRUM-1218 c.20596, «No, hazlo tú»): la misma base
   // de pruebas que el árbol del equipo de Javier. Cualquier otro árbol sigue sin declarar.
   // `jv-j2ay` entra por la ampliación del orquestador (SCRUM-1218 c.20665), con las mismas condiciones.
+  // `jv-j6ba` entra por la ampliación del orquestador (SCRUM-1218 c.20665), con la misma base.
   assert.deepEqual(Object.keys(mapa).sort(),
-    ['cobroflash-b1', 'cobroflash-b2', 'cobroflash-b3', 'cobroflash-backend', 'jv-j2ay', 'jv-j6ar']);
+    ['cobroflash-b1', 'cobroflash-b2', 'cobroflash-b3', 'cobroflash-backend', 'jv-j2ay', 'jv-j6ar', 'jv-j6ba']);
   // El reparto MEDIDO: el principal aislado en dev, los tres carriles b compartiendo staging.
   assert.equal(mapa['cobroflash-backend'], 'yaqu_dev_javier');
   assert.equal(mapa['jv-j6ar'], mapa['cobroflash-backend'],
     '🔴 c.20596 autorizó la base del árbol del equipo de Javier, no otra.');
   assert.equal(mapa['jv-j2ay'], mapa['cobroflash-backend'],
     '🔴 c.20665 autorizó la base del árbol del equipo de Javier, no otra.');
+  assert.equal(mapa['jv-j6ba'], mapa['cobroflash-backend'],
+    '🔴 c.20665 amplió c.20596 con la misma base, no otra.');
   assert.equal(mapa['cobroflash-b1'], 'railway');
   assert.notEqual(mapa['cobroflash-backend'], mapa['cobroflash-b1'],
     '🔴 si los cuatro carriles apuntaran a la misma base, este ticket habría cambiado el ' +
