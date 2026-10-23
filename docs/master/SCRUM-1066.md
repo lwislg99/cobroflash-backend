@@ -297,3 +297,85 @@ Un gasto de otro comercio rompe (regla 2), no se descarta en silencio.
   y lo dijo.
 - Lancé el meta-guard completo en primer plano sin medir antes cuánto duraba: pasó a segundo plano y
   la máquina lo mató.
+
+---
+
+# SCRUM-1066d · La categoría «alquiler»: el ALTER que pedía la decisión NO EXISTE
+
+**Medido contra:** `origin/main` = `37311b671db107cc48a31fc359104fe36525ad2e` · 2026-10-23T10:56:12Z
+**Rama:** `scrum-1066d-alquiler-alter-propuesta` · **Puesto:** J5 (sesión `jv-j5ac`) · **Encargo:** orquestador `cobroflash-backend-62`, 23-oct-2026 · **Decisión:** Jira c.20479 («Sí, añadirla»)
+
+A9: aviso → A10 «Una idea de un jefe es una hipótesis con su literal, no una orden de construir.» — no se pudo comprobar: la premisa «es un cambio en la base de datos» venía en la pregunta al fundador, y ningún guard lee el tipo de una columna antes de que un encargo pida su ALTER
+
+## PASO 0
+
+- `git log origin/main --grep=1066`: 1066, 1066b y 1066c (#2703, `00179a513`). Ninguno añade la categoría.
+- `git log origin/main -S"'alquiler'" -- src public`: vacío. `gh pr list --search "1066d OR alquiler in:title"`: `[]`. `ls-remote` `scrum-1066*`: ninguna rama viva.
+- Etiquetas de SCRUM-1066: `equipo-javier`, `area-j1`. Comentarios leídos: 5 de 5 (c.16416 → c.20479).
+
+## La medición: añadir «alquiler» no pide DDL
+
+`Expense.category` es `String @default("otros")` (`prisma/schema.prisma:987`). La lista de valores
+vive en un **comentario** de esa línea y en el código, **no en la base**:
+
+- `src/modules/expenses/domain/expenses.service.ts:6`: `EXPENSE_CATEGORIES`, que valida la ruta (`:349`, y `expenses.routes.ts:257,364` devuelve 400).
+- No hay `enum` de Prisma ni `CHECK` declarado. En `docs/MIGRATIONS_PENDING.md` (203.167 B) hay 0 líneas
+  con `expenses` + `categor|check|constraint`. Control positivo del mismo grep: 17 líneas con `expenses`
+  y 12 con `constraint|CHECK (`.
+
+Sonda offline (`--desde`, datamodel→datamodel, sin `DATABASE_URL`), con `previewMigracion` y el CLI
+Prisma 6.18.0 del checkout compartido (`migrate diff` no escribe nada), clasificada con `_clasificador-sql.mjs`:
+
+| caso | qué cambia en el esquema | DDL | clasificador |
+| --- | --- | --- | --- |
+| control de la herramienta | esquema entero contra vacío | 33 `CREATE TABLE` | — |
+| N · negativo | nada (el esquema contra sí mismo) | `-- This is an empty migration.` | sin sentencias |
+| **A · lo decidido** | el comentario de `category` pasa a `…subcontrata\|alquiler\|otros` | **`-- This is an empty migration.`** | **sin sentencias** |
+| P · positivo sembrado | `sondaPositivo1066d String? @map("sonda_positivo_1066d")` | `ALTER TABLE "expenses" ADD COLUMN "sonda_positivo_1066d" TEXT;` | ✅ ADD COLUMN ×1 (permitida) |
+
+**Conclusión:** el paso ② de A5 (ALTER aplicado por el colaborador en las tres bases) **no tiene
+contenido**, y no hay nada que pedirle a Javier. Todo es paso ③: código y tests, más el comentario
+de `schema.prisma:987`, que no genera DDL.
+
+⚠️ **No medido:** que ninguna de las tres bases tenga un `CHECK` puesto a mano fuera del esquema. Este
+árbol no tiene claves de base y no se conecta con ninguna. Con la base al día, el preview normal
+(`node scripts/preview-migracion.mjs` contra staging, con su turno) lo enseñaría como diferencia.
+La sonda es de esta sesión y no se ha comiteado.
+
+## El rótulo, para la firma del fundador (regla 39)
+
+La clave interna sería `alquiler` y el profesional no la ve. Lo que ve es la etiqueta de
+`CATEGORY_LABELS` (`public/dashboard/js/expensesView.js:5-11`), junto a «Materiales», «Desplazamiento»,
+«Herramientas», «Subcontrata» y «Otros».
+
+| opción | literal | por qué |
+| --- | --- | --- |
+| **A (recomendada)** | **Alquiler de local** | El 115 sólo recoge arrendamientos de **inmuebles urbanos** (SCRUM-1106; RIRPF art. 100, verificado en 1066b). «Alquiler» a secas también invita a apuntar la furgoneta, el andamio o la maquinaria, que no van al 115. |
+| B | Alquiler | Es la más corta y la más parecida a las otras cinco, pero tiene la ambigüedad de A. |
+| C | Local o nave | Nombra el inmueble y no el contrato. Es la que más se aleja del vocabulario de las otras. |
+
+Ninguna se ha escrito en el código: se propone, no se da por buena.
+
+## Lo que tiene que hacer el paso ③ (no construido aquí)
+
+1. `EXPENSE_CATEGORIES` y el comentario de `schema.prisma:987`, con la clave `alquiler`.
+2. `CATEGORY_LABELS` y una píldora `.gasto-cat--alquiler` en `styles.css` (UI: `yaqu-premium-ui`, DESIGN.md).
+3. **303** (`modelo303.ts:172`): `alquiler` no está en `CATEGORIAS_CORRIENTES`, y sin tocarlo cae en
+   `categoria_desconocida`, fuera de la 28/29. Hay que decidir si el alquiler del local es gasto
+   corriente (la decisión A de 1063b sólo aparta «herramientas»).
+4. **115** (`retencionesPracticadas.ts:43`): se clasifica por **categoría** + retención anotada, no por el 19 %
+   (decisión A). El invariante del 111+115+sin clasificar se mantiene.
+5. Tests con cifras a mano y, antes, en rojo.
+
+## STOP respetado
+
+No se ha tocado `prisma/schema.prisma`, el camino de emisión, ningún texto de pantalla, ningún flag
+ni ninguna base. Lo único que cambia es este tramo.
+
+## Mis errores
+
+- Busqué un `CHECK` con un `grep -r` sobre `docs` entero, sin filtrar, y me volvieron 978 KB de JSON de
+  evidencias. Lo repetí acotado a `docs/MIGRATIONS_PENDING.md`.
+- La primera pasada de la sonda no corrió: le pasé rutas con forma de bash a `node` en Windows, y
+  `import.meta.url` dejó un `%20` en la ruta temporal. No dio ningún resultado que pudiera leerse como bueno,
+  y la repetí.
