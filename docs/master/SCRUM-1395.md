@@ -342,7 +342,9 @@ de normalizar CRLF) cae ⑧ · M7 (la pieza pierde un nombre del filtro) cae ④
 - `CENSO_MUDEZ_EN_CURSO=1` salta los casos ①②③ (los pone el censo a sus hijos). Ningún workflow lo pone hoy; no hay guard que lo impida.
 - Corrido: `scrum719`, `scrum237`, `scrum976`, `scrum1415`, `scrum1185`, `scrum411`, `scrum808`,
   `scrum1178b`, `restauracion-del-arbol-ejecutable`, `scrum589`, `scrum850`: 139 de 139 sobre 11 ficheros.
-  **NO corrido: la tanda completa.**
+  Registro (`scrum267`, `scrum1294`, `scrum525d`, `scrum273`, `scrum1185`): 43 de 43. `guards:entrada`:
+  15 guards, 170 tests, verde. Los 5 de árbol entero que nombra (`scrum195`, `414`, `694`, `710b`,
+  `737`): 38 de 38. **NO corrido: la tanda completa.**
 
 ## Errores propios (J6)
 
