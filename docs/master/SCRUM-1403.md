@@ -168,3 +168,80 @@ obligatorio, contra `postgres:16` y sobre el merge.**
 - Mi primer control positivo del «¿hay ya rama de este ticket?» usó la rama de SCRUM-1388, que ya
   estaba mergeada y borrada: salió vacío y no probaba nada. Lo repetí con una rama viva (la de 1334).
 - Medí mi contexto por primera vez a 361.789; el encargo pedía avisar a 200.000.
+
+## J2 · SCRUM-1403b · la decisión del fundador: el Técnico no recibe las cifras, y los eventos con importe le llegan sin el detalle
+
+**Medido contra:** `origin/main` = `3f889f9e7d9c39c3d7875c7ab297549a076f4a3c` · 2026-10-23T09:48:35Z (hora de GitHub; sesión J2 `jv-j2w`, por encargo del orquestador `cobroflash-backend-62`)
+
+**Skill UI:** cargada (`yaqu-premium-ui`, antes de dar por buena la vista)
+
+A9: aviso → cicatriz J2 «un banco PGlite por socket se quedó colgado sin decir por qué: Prisma abre la conexión pidiendo SSL y pglite-socket no contesta; jv-j2u perdió 5 h y yo lo vi al tercer intento, con `sslmode=disable` en la URL arranca en 3 s» — no se pudo comprobar: el banco vive en un temporal de la sesión y no en el repositorio, así que no hay fichero que un guard pueda leer; lo cerraría un banco de la casa que se niegue a arrancar sin `sslmode=disable`, y eso es de J6.
+
+Carril: J2. La decisión es del fundador en SCRUM-1403 **c.20375** (23-oct-2026), leída en Jira: a la pregunta 1
+de c.18040, **salida 1**, «no recibe los agregados»; a la pregunta 2, «mandárselos sin el texto del detalle».
+Lo de #2130 (presupuestos y pestaña de documentos por rol) no se toca.
+
+### ① Lo construido
+
+- **Servidor** · `GET /admin/customers/:id/detail` (`customersAdmin.routes.ts`): con `seesOnlyOwnJobs(req.userRole)`
+  —la misma pregunta que el saldo (SCRUM-1043) y la garantía (SCRUM-1108)— `stats` no lleva `totalBilled`,
+  `totalPaid`, `totalPending`, `totalExpenses` ni `profit`. `pendingCount`, `totalQuotes` y `acceptedQuotes` siguen
+  (son recuentos, no dinero, y c.20375 nombra cinco cifras). Los eventos pasan por `eventosSinImporte`.
+- **Eventos** · `customerEvents.service.ts`: `TIPOS_CON_IMPORTE_EN_EL_DETALLE` = `payment_received`,
+  `invoice_issued`, `quote_sent`, `dispute_created`, `payment_anomaly`. **Son 7 sitios, no 6**: a los seis de
+  c.18040 se suma `payment_anomaly` (`invoicesAdmin.routes.ts`, «Recibidos X de Y (faltan Z)»). Se quita sólo
+  el `detail`; el título se queda y ninguno de esos títulos lleva importe (lo comprueba el test). Ninguno de los
+  siete escribe `meta`. **Ningún evento queda vacío y no hace falta ningún rótulo nuevo**: la condición de c.20375
+  no salta.
+- **Vista** · `customerDetailView.js`: una tarjeta con cifra de dinero («Pendiente de cobro», «Facturado»,
+  «Cobrado», «Beneficio») se pinta sólo si su cifra viene. Sin texto nuevo, sin tokens nuevos (skill
+  `yaqu-premium-ui` leída: se quitan tarjetas, la rejilla `auto-fill` se recoloca). «Pendiente de cobro» también
+  se quita: la vista tenía un respaldo que la sumaba sobre las facturas de la pestaña, que al Técnico sólo trae
+  las suyas — misma cifra bajo el mismo rótulo diciendo otra cosa.
+- **Dueño y administrador, sin cambios**: lo demuestra el test por la ruta real (abajo).
+
+### ② El test cambia con la decisión — no es relajarlo
+
+`tests/scrum1403-el-tecnico-y-las-otras-puertas.test.mjs`: el caso ④ sujetaba `equal(porCifras, TOTAL)` como
+SUELO de «sigue abierto, espera al fundador». Con c.20375 pasa a `notEqual` y a `0`: el control ④ del ticket es
+exigible. Añade el historial (los «Pago recibido» con importe en el texto) y, como positivo por el MISMO sumador,
+que la administradora y la dueña (sesión sin miembro) siguen sacando 1.050 por pestaña, cifras e historial.
+Casos nuevos: los 7 sitios uno a uno (Técnico sin detalle y con título; dos eventos sin dinero, enteros;
+administradora y dueña, enteros) con la ficha **pintada en el banco de vistas con la respuesta real de la ruta**;
+un censo AST de los sitios que escriben un evento (con positivo sembrado: si no ve el importe de un
+`detail,` a secas, dice CIEGO) que exige que todo detalle con dinero sea de un tipo de la lista; y que la ruta
+pregunte a `seesOnlyOwnJobs`.
+
+### ③ Lo corrido
+
+Banco: PGlite por socket en loopback, base `yaqu_libro_test`, DDL de `prisma migrate diff --from-empty`
+(`evidencias/SCRUM-1403/banco-1403b.mjs.txt`, derivado del de SCRUM-1218c). ⚠️ PGlite es Postgres 18; el
+obligatorio corre 16.
+
+| pasada | resultado | población |
+| --- | --- | --- |
+| línea base, código de `main` | 6 ok | declarado 6, 0 saltados |
+| rojo, test nuevo contra código de `main` | 4 not ok · «🔴 las cifras de la ficha de cliente dan el total del negocio (1050 = 1050)» | declarado 9 |
+| verde | 9 ok | declarado 9, 0 saltados |
+| mutaciones (7) | 7 de 7 cazadas, árbol idéntico byte a byte (`evidencias/SCRUM-1403/mutar-1403b.salida.txt`) | 9 por pasada |
+| 64 ficheros vecinos, antes del registro | 543 ok · 1 not ok (`scrum976`: faltaba este registro) · 2 saltados | declarado 546 |
+| 66 ficheros vecinos (+ `scrum1387`, `scrum811c`), al final | 579 ok · 0 not ok · 2 saltados | declarado 581 |
+| `npm run guards:entrada` | salida 0 · 170 casos ✔ | — |
+
+Los 2 saltados piden `QA_DB_TEST` (staging): **no corridos**. Dos de las mutaciones (C1, C2) son
+`MUTACIONES_QUE_ME_TUMBAN` del test, para el meta-guard (SCRUM-1387): sólo las que caza un caso sin base y sin
+`dist/`, porque su job no tiene Postgres; las que piden base (M1-M5) las corre el guion de evidencias. C2 salió
+CIEGA la primera vez (su texto aparecía también en la lista de clientes): renombré la variable de la ficha a
+`sinDinero` para que el texto sea único. Por el camino, `guards:entrada` cazó tres cosas mías: el registro sin
+`**Skill UI:**`, el mutador fuera del catálogo y la frase `A9:` recortada (exige la frase ENTERA de la cicatriz).
+
+**No corrido:** la tanda completa; los gateados de staging; **un navegador de verdad** — la ficha se ha pintado
+en el banco de vistas (`tests/_banco-vistas.mjs`) con la respuesta real de la ruta, no en Chromium; y yaqu.app,
+que pide estar mergeado y una sesión de Técnico.
+
+### ④ Mis errores
+
+- Mi mutador salió CIEGO dos veces en las cinco: la ruta al banco llevaba el `%20` de «Javier Pereira». La
+  primera corrección la pasé por `node -e` en bash y no casó (la cicatriz de J2 del 1-oct, otra vez); la tercera,
+  con la herramienta de edición. El instrumento dijo CIEGO y no verde, que es lo que lo salvó.
+- No medí el contexto al acabar el arranque por separado: la primera cifra (101,6k) es ya la de después de Jira.
