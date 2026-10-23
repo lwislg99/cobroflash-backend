@@ -135,6 +135,11 @@ Control sembrado: el 502 sin una tilde sale «NO CASA». Salida: `procedencia-sa
   caídos. Dos eran míos y los corregí (1294 y 1387); por el título, la mayoría son de este árbol
   anidado sin `node_modules` ni cliente de Prisma propios (1199 lo leí: `express` sin resolver), y
   tres ficheros enteros (534b, 553, 615) no los miré. Lo que no llegó a correr lo dice el obligatorio.
+- **Corrección, tras el primer obligatorio** (run 39935632392, 12.214 casos, 12.123 pasan, 2
+  caen): los dos rojos eran míos y ya habían caído en local, entre los que no leí. SCRUM-553 cazó
+  las regex `<h1>`/`<p>` del test, con el `>` pegado (ahora `<h1\b[^>]*>`); SCRUM-622 cazó en
+  `mutar-1449b.mjs` un `fail ? 'ROJO' : 'VERDE'` que daría verde sin saber (ahora es CIEGO salvo
+  que se vea pasar todo). Con el arreglo: 553, 622, 1387 y el test, 42 de 42; mutaciones, igual.
 
 ## Lo que NO lleva
 

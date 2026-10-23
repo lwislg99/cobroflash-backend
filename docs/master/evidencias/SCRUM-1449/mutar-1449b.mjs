@@ -27,7 +27,11 @@ function correr() {
   const total = n('tests'), pass = n('pass'), fail = n('fail');
   if (!(total > 0) || pass + fail !== total) return { veredicto: `CIEGO (tests=${total} pass=${pass} fail=${fail})` };
   const caidos = [...t.stdout.matchAll(/^not ok \d+ - (.*)$/gm)].map((m) => m[1]);
-  return { veredicto: fail ? 'ROJO' : 'VERDE', total, pass, fail, caidos };
+  // Verde sólo si se ha VISTO pasar todo; lo que no se sabe se queda CIEGO (SCRUM-622).
+  let veredicto = 'CIEGO';
+  if (fail > 0 && caidos.length > 0) veredicto = 'ROJO';
+  else if (fail === 0 && pass === total) veredicto = 'VERDE';
+  return { veredicto, total, pass, fail, caidos };
 }
 
 const filas = [];

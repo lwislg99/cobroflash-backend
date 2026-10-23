@@ -112,7 +112,7 @@ async function llamar(handle, token) {
 function esPaginaConTitular(r, literal) {
   assert.match(String(r.tipo), /^text\/html; charset=utf-8$/, `🔴 sin cabecera HTML (Content-Type «${r.tipo}»)`);
   assert.ok(typeof r.cuerpo === 'string' && /^<!doctype html>/i.test(r.cuerpo), `🔴 texto plano, no página: «${String(r.cuerpo).slice(0, 80)}»`);
-  assert.equal((/<h1>([^<]*)<\/h1>/.exec(r.cuerpo) || [])[1], literal);
+  assert.equal((/<h1\b[^>]*>([^<]*)<\/h1>/.exec(r.cuerpo) || [])[1], literal);
   assert.ok(r.cuerpo.includes('href="/fonts/inter.css"'), '🔴 la página no carga la Inter de la casa');
 }
 const RELLENO = 'relleno-de-test'; // no es una credencial: Mercado Pago está doblado
@@ -157,6 +157,6 @@ test('SCRUM-1449b · un cobro ya pagado sigue yendo al resultado aprobado, tenga
 test('SCRUM-1449b · 🔴 cobro pendiente: la página dice el recorte firmado y no promete aviso', async () => {
   reiniciar('pending');
   const r = await llamar(resultadoH, RELLENO);
-  assert.equal((/<p>([^<]*)<\/p>/.exec(String(r.cuerpo)) || [])[1], LPENDIENTE);
+  assert.equal((/<p\b[^>]*>([^<]*)<\/p>/.exec(String(r.cuerpo)) || [])[1], LPENDIENTE);
   assert.ok(!r.cuerpo.includes('Te notificaremos'), '🔴 la página sigue prometiendo un aviso');
 });
