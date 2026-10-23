@@ -1,0 +1,40 @@
+población: marcas=248 documental=25 fuentes=1339
+A · docs/master fuera: pierden 18 de 25
+  src/modules/fiscal/librosAeat/librosAeat.ts:183
+  src/modules/jobs/domain/albaranFirmante.ts:246
+  public/dashboard/js/albaranDetailView.js:292
+  public/dashboard/js/jobDetailView.js:401
+  public/dashboard/js/jobDetailView.js:484
+  public/dashboard/js/productsView.js:1178
+  public/dashboard/js/productsView.js:1214
+  tests/scrum244-menu-portabilidad.test.mjs:43
+  tests/scrum257-albaran-desde-presupuesto.test.mjs:26
+  tests/scrum299-copy-factura-publico.test.mjs:27
+  tests/scrum324-aviso-simplificado-ui.test.mjs:30
+  tests/scrum338-carga-de-catalogo-no-muda.test.mjs:109
+  tests/scrum344-cierre-con-saldo.test.mjs:30
+  tests/scrum364-cambiar-gremio.test.mjs:138
+  tests/scrum394-plan-mudo.test.mjs:264
+  tests/scrum428-terminado-sin-cobrar.test.mjs:120
+  tests/scrum580-tags-por-contacto.test.mjs:319
+  tests/scrum593b-superficie-texto-del-documento.test.mjs:21
+B · atribución a ±10 líneas: pierden 5 de 25
+  src/modules/whatsappBot/domain/botFlow.service.ts:129
+  public/dashboard/js/productsView.js:1214
+  tests/scrum257-albaran-desde-presupuesto.test.mjs:26
+  tests/scrum338-carga-de-catalogo-no-muda.test.mjs:109
+  tests/scrum581-pestanas-y-orden-clientes.test.mjs:137
+C · atribución a ±3 líneas: pierden 13 de 25
+  src/modules/fiscal/librosAeat/librosAeat.ts:183
+  src/modules/jobs/domain/albaranFirmante.ts:246
+  src/modules/whatsappBot/domain/botFlow.service.ts:129
+  public/dashboard/js/jobDetailView.js:401
+  public/dashboard/js/productsView.js:1178
+  public/dashboard/js/productsView.js:1214
+  tests/scrum257-albaran-desde-presupuesto.test.mjs:26
+  tests/scrum299-copy-factura-publico.test.mjs:27
+  tests/scrum338-carga-de-catalogo-no-muda.test.mjs:109
+  tests/scrum344-cierre-con-saldo.test.mjs:30
+  tests/scrum428-terminado-sin-cobrar.test.mjs:120
+  tests/scrum581-pestanas-y-orden-clientes.test.mjs:137
+  tests/scrum683-parte-dictado.test.mjs:253

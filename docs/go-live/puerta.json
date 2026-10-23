@@ -81,7 +81,13 @@
       "que": "El guard de SCRUM-406 sólo mira public/ y no ve lo que se sirve desde docs/legal: por ahí se coló «soporte por email y WhatsApp».",
       "de_donde": "SCRUM-1551",
       "consta_en": "SCRUM-1554, descripción, fila 8",
-      "estado": "abierta"
+      "estado": "cerrada",
+      "cerrada": {
+        "por": "jv-j6az (puesto J6, equipo de Javier), SCRUM-1551h",
+        "motivo": "tests/scrum406-canal-prometido-existe.test.mjs mira también los documentos de docs/legal/ que el servidor sirve: la lista sale por AST de las llamadas a readLegalDoc en src/ (hoy 1 documento, ALCANCE_BETA.md, desde 2 fuentes) y una viñeta partida en varias líneas se lee como una frase. Visto en rojo: con «soporte⏎  por email y WhatsApp.» inyectado en ALCANCE_BETA.md:24-25, el guard nuevo cae y el de main (b6dd5d1a8) sale verde 5/5. El sha es el del commit que lo hace, no un merge: entra en main con el PR de esta misma rama.",
+        "sha": "c1581273d73cf3ff7a1cee3d4aa2724061923a2d",
+        "fecha": "2026-10-23"
+      }
     },
     {
       "numero": 9,
