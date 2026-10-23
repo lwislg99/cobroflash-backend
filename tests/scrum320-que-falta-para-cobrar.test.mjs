@@ -33,7 +33,8 @@ const REPARTO = require_(path.join(RAIZ, 'public/dashboard/js/jobDocsReparto.js'
 
 const fmt = (n) => `${Number(n).toFixed(2)} EUR`;
 
-/** El ejemplo aprobado por el fundador, con sus números exactos. */
+/** El ejemplo aprobado por el fundador, con sus números exactos.
+ *  Consta en: SCRUM-1502 comentario 20629. */
 const jobDelEjemplo = () => ({
   totalAceptado: 853.05,
   totalCobrado: 300,
