@@ -126,6 +126,18 @@ function plantillasDeHoy(merchantId: number, zona: string, ahora: Date) {
   };
 }
 
+/**
+ * Lo mismo, sin los avisos al profesional: es lo que gasta el cupo de los clientes (SCRUM-1596b). Lo
+ * piden el tope y el «Hoy» del panel, para que los dos sigan contando lo mismo (SCRUM-1597 c.20635).
+ * Las filas sin nombre SÍ cuentan: `{ not }` a secas las dejaría fuera en SQL (NULL <> x no es verdad).
+ */
+function sinLosAvisosAlProfesional<T extends object>(filtro: T) {
+  return {
+    ...filtro,
+    AND: [{ OR: [{ templateName: null }, { templateName: { not: PLANTILLA_AVISO_AL_PROFESIONAL } }] }],
+  };
+}
+
 export async function reservarPlantilla(db: ClienteDeLaBase, input: {
   merchantId: number;
   customerId?: number | null;
@@ -153,11 +165,7 @@ export async function reservarPlantilla(db: ClienteDeLaBase, input: {
           return { ok: false as const, reason: 'daily_cap' as const, cuenta: avisosHoy, tope: TOPE_AVISOS_AL_PROFESIONAL };
         }
       } else {
-        // Las filas sin nombre SÍ cuentan: `{ not }` a secas las dejaría fuera en SQL (NULL <> x no es verdad).
-        const sinLosAvisos = {
-          ...cuentaParaElTope,
-          AND: [{ OR: [{ templateName: null }, { templateName: { not: PLANTILLA_AVISO_AL_PROFESIONAL } }] }],
-        };
+        const sinLosAvisos = sinLosAvisosAlProfesional(cuentaParaElTope);
         const sentToday = await tx.whatsAppMessage.count({ where: sinLosAvisos });
         if (sentToday >= input.topeComercio) {
           return { ok: false as const, reason: 'daily_cap' as const, cuenta: sentToday, tope: input.topeComercio };
@@ -286,20 +294,22 @@ export async function isServiceWindowOpen(
 const STATUS_RANK: Record<string, number> = { queued: 0, sent: 1, delivered: 2, read: 3 };
 
 /**
- * ¿Debe aplicarse la transición de `current` a `next`? `failed` siempre se aplica;
- * el resto solo avanza (un `delivered` que llega tras un `read` no degrada el estado,
- * y Meta puede entregar los callbacks fuera de orden). Pura → testeable sin BD.
+ * ¿Debe aplicarse la transición de `current` a `next`? Solo avanza (un `delivered` que llega
+ * tras un `read` no degrada el estado, y Meta puede entregar los callbacks fuera de orden).
+ * SCRUM-1601 (Parte L, regla 27): `failed` solo desde `queued|sent`, y de `failed`, `received`
+ * o un estado desconocido no se sale. Pura → testeable sin BD.
  */
 export function shouldApplyStatus(current: string, next: string): boolean {
-  if (next === 'failed') return true;
   const cur = STATUS_RANK[current] ?? -1;
+  if (cur < 0) return false;
+  if (next === 'failed') return cur <= STATUS_RANK.sent;
   const nxt = STATUS_RANK[next] ?? -1;
   return nxt > cur;
 }
 
 /**
  * Actualiza el estado de un mensaje por su waMessageId (webhook `statuses` de Meta).
- * Nunca retrocede el estado, salvo `failed`, que siempre se registra.
+ * Nunca retrocede el estado; qué transiciones aplica lo decide `shouldApplyStatus`.
  */
 export async function updateWaMessageStatus(
   waMessageId: string,
@@ -485,8 +495,11 @@ export async function getWhatsAppMetrics(merchantId: number, now = new Date()): 
       select: { createdAt: true },
     });
     const channel = {
-      // Lo mismo que cuenta el tope, pedido con su mismo filtro: sin las rechazadas (c.19157 ③).
-      templateToday: await prisma.whatsAppMessage.count({ where: plantillasDeHoy(merchantId, zona, now) }),
+      // Lo mismo que cuenta el tope, pedido con su mismo filtro: sin las rechazadas (c.19157 ③) y sin
+      // los avisos al profesional, que no gastan el cupo de los clientes (SCRUM-1597 c.20635).
+      templateToday: await prisma.whatsAppMessage.count({
+        where: sinLosAvisosAlProfesional(plantillasDeHoy(merchantId, zona, now)),
+      }),
       windowToday: windowRows.filter((r) => r.createdAt >= dayStart).length,
       windowMonth: windowRows.length,
       savedEurMonth: Math.round(windowRows.length * WA_UTILITY_COST_ES * 1000) / 1000,

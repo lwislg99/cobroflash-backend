@@ -1,0 +1,52 @@
+# SCRUM-1599a · SONDA (a)/(b): el MISMO test de main a08813ddf con UNA variable cambiada, en el árbol desechable j6ax-sonda-1599 (nunca en la rama). Turno 20:07Z-20:09:22Z, base yaqu_dev_javier, QA_DB_TEST=1 WHATSAPP_DRY_RUN=1
+# cambios de la sonda (git diff del árbol desechable, sólo las líneas añadidas):
++    assert.match(fMar.number, /^F\d{6}$/,'número de serie FISCAL (no J-)');
++      { name: 'QA S178', email: `qa-s178-${stamp}@test.local`, country: 'ES', taxId: 'B12345678', flags: { INVOICING_ES_ENABLED: true } },
++      { name: 'QA S814 carrera', email: `qa-s814-${Date.now()}@test.local`, country: 'ES', taxId: 'B12345678', flags: { INVOICING_ES_ENABLED: true } },
++      { name: 'QA S814 dinero', email: `qa-s814d-${Date.now()}@test.local`, country: 'ES', taxId: 'B12345678', flags: { INVOICING_ES_ENABLED: true } },
++      { name: 'QA S814 secuencial', email: `qa-s814s-${Date.now()}@test.local`, country: 'ES', taxId: 'B12345678', flags: { INVOICING_ES_ENABLED: true } },
++    await withMerchant(prisma, { name: 'QA S85 A', email: `qa-s85-A-${stamp}@test.local`, flags: { PAYMENTS_CONNECT_ENABLED: true }, connectStatus: 'active', stripeAccountId: 'acct_sonda1599' }, (mA) =>
+
+## sonda · scrum178-emision-manual · 1219 B
+ok 1 - SCRUM-178 (aritmética, sin BD): el tramo único al 100 % reproduce las líneas y el total EXACTOS
+ok 2 - SCRUM-178: emisión manual — emite UNA vez, con líneas, y cierra las cuatro puertas
+# documento F260001 (F1) · VeriFactu: true
+# tests 2
+# pass 2
+# fail 0
+# skipped 0
+
+## sonda · scrum814-carrera-del-tramo.gated · 1760 B
+ok 1 - SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo
+ok 2 - SCRUM-814 · plan 30/70: lo facturable NO puede quedar por debajo del presupuesto
+ok 3 - SCRUM-814 · dos peticiones SECUENCIALES siguen emitiendo «Anticipo» y luego «Final»
+# tests 3
+# pass 3
+# fail 0
+# skipped 0
+
+## sonda · scrum85-pay-routes-token · 1005 B
+ok 1 - SCRUM-85: /pay/card, /pay/bizum, /pay/invoice cierran el IDOR — numérico 404 sin fuga, token funciona
+# ⚠️ SCRUM-119: Stripe ausente — IDOR de /pay/card verificado (numérico 404 ≠ token 501); el redirect a Stripe Checkout (303) NO se ejerció aquí.
+# tests 1
+# pass 1
+# fail 0
+# skipped 0
+
+## sonda · scrum17-recapitulativa · 2812 B
+ok 1 - mesNaturalKey/Label: YYYY-MM y etiqueta legible
+ok 2 - groupByRotura: 2 meses distintos → 2 grupos ordenados por mes
+ok 3 - groupByRotura: 1 mes → 1 grupo; vacío → []
+ok 4 - validarConsolidacion: caso feliz → ok
+ok 5 - validarConsolidacion: selección vacía → seleccion_vacia
+ok 6 - validarConsolidacion: TRABAJO_UNICO → consolidacion_no_aplica
+ok 7 - validarConsolidacion: no firmado → albaran_no_firmado
+ok 8 - validarConsolidacion: SIN_VALORAR → albaran_sin_precios
+ok 9 - validarConsolidacion: ya facturado → albaran_ya_facturado
+ok 10 - validarConsolidacion: cliente distinto → cliente_mixto
+ok 11 - calcAlbaranTotales: líneas con IVA mixto suman en céntimos enteros
+ok 12 - SCRUM-17: consolidar → rotura por mes (N facturas), IVA mixto, guards, tenancy
+# tests 12
+# pass 12
+# fail 0
+# skipped 0

@@ -1,0 +1,66 @@
+ficheros: 7
+   indice.csv 102 B
+   libro-registro.csv 79 B
+   modelo-303.csv 139 B
+   albaranes-verificacion.csv 46 B
+   entregas-por-linea.csv 63 B
+   alcance-de-la-verificacion.txt 824 B
+   manifiesto.json 1428 B
+avisos: ["no se examinó ningún albarán firmado: el sello no se ha comprobado"]
+control FICHEROS ⊆ salida: true (7 declarados)
+llamadas a la base: merchant.findUnique invoice.findMany albaran.findMany expense.findMany
+manifiesto: {
+  "version": 1,
+  "merchantId": 777,
+  "periodo": {
+    "desde": "2026-06-30T23:00:00.000Z",
+    "hasta": "2026-09-30T22:59:59.999Z",
+    "año": 2026,
+    "trimestre": 3
+  },
+  "resumen": {
+    "asientos": 0,
+    "miradas": 0,
+    "albaranesExaminados": 0,
+    "albaranesQueCuadran": 0,
+    "albaranesConHallazgo": 0,
+    "facturasSinAlbaran": 0,
+    "facturasSueltas": 0
+  },
+  "avisos": [
+    "no se examinó ningún albarán firmado: el sello no se ha comprobado"
+  ],
+  "ficheros": [
+    {
+      "nombre": "indice.csv",
+      "bytes": 102,
+      "sha256": "14b6cf2be7404151a43243329f5e97f07ae4d01f6a079270224f783a2415b25c"
+    },
+    {
+      "nombre": "libro-registro.csv",
+      "bytes": 79,
+      "sha256": "2f486f003cfb47350b410bde0503a214417c3e3d1ef0ff41703d67f8408d4046"
+    },
+    {
+      "nombre": "modelo-303.csv",
+      "bytes": 139,
+      "sha256": "ab1ba0dfbd7ee57f3ef977880ccab86d09c6ca2b2b0dda3bbc38e2c9b797b83a"
+    },
+    {
+      "nombre": "albaranes-verificacion.csv",
+      "bytes": 46,
+      "sha256": "e691a2f9f6046756d7ac5055493e8a7093f524822c0de0c645e4834277546b57"
+    },
+    {
+      "nombre": "entregas-por-linea.csv",
+      "bytes": 63,
+      "sha256": "95a6287b6a85b48703e83d9534c9ce65cae2c50721ad3fc2d9318af0b5c0d91f"
+    },
+    {
+      "nombre": "alcance-de-la-verificacion.txt",
+      "bytes": 824,
+      "sha256": "95421273d3bf099d8e346b1c7f9f35c32a6c3b058781d7cf43bcb9013f7479e1"
+    }
+  ]
+}
+modelo-303.csv: "﻿casilla_base;casilla_tipo;casilla_cuota;tipo;base;cuota\r\n1;2;3;4;0,00;0,00\r\n4;5;6;10;0,00;0,00\r\n7;8;9;21;0,00;0,00\r\n;;27;TOTAL;0,00;0,00"

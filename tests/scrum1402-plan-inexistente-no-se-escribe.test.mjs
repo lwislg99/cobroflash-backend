@@ -268,12 +268,15 @@ test('SCRUM-1402 · 🔴 customer.subscription.updated y .created (active, trial
     `\n🔴 LA SUSCRIPCIÓN HA ESCRITO UN PLAN QUE NO EXISTE. ${escritos.length} de ${n}:\n` + escritos.map((e) => `   · ${e}`).join('\n') + '\n');
 });
 
+// SCRUM-1402e (comentario 20651, «Marcar el impago»): el impago SÍ escribe ahora `past_due`; lo que sigue
+// sin escribirse es el PLAN. Que el impago se marque lo mide `scrum1402e-impago-con-plan-desconocido`.
 test('SCRUM-1402 · 🔴 un impago (past_due, unpaid) con un plan que NO existe tampoco lo escribe, y avisa', async () => {
   const escritos = [];
   for (const status of ['past_due', 'unpaid']) {
     for (const plan of INVENTADOS) {
       const r = await emitir('customer.subscription.updated', suscripcion(plan, status));
-      if (r.escrituras.length) { escritos.push(`${status} ${JSON.stringify(plan)} → ${JSON.stringify(r.escrituras[0].data)}`); continue; }
+      const conPlan = r.escrituras.filter((e) => 'plan' in (e.data ?? {}));
+      if (conPlan.length) { escritos.push(`${status} ${JSON.stringify(plan)} → ${JSON.stringify(conPlan[0].data)}`); continue; }
       exigeAvisoCompleto(r, plan, `customer.subscription.updated (${status})`);
     }
   }
@@ -390,10 +393,11 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: '(active, trialing) con un plan que NO existe',
   },
   {
-    // Puerta 3: el impago.
+    // Puerta 3: el impago. (SCRUM-1402e: el impago con plan desconocido escribe ahora `past_due`; la
+    // mutación sigue siendo la del defecto: que con ese plan se escriba también el plan.)
     fichero: 'src/modules/billing/app/routes/stripe.routes.ts',
-    de: "        } else if (st === 'past_due' || st === 'unpaid') {\n          if (planQueExiste(planId, merchantId, event)) await prisma.merchant.update({",
-    a: "        } else if (st === 'past_due' || st === 'unpaid') {\n          await prisma.merchant.update({",
+    de: "              : { subscriptionStatus: 'past_due' },",
+    a: "              : { plan: planId, subscriptionStatus: 'past_due', stripeSubscriptionId: sub.id },",
     cae: 'un impago (past_due, unpaid) con un plan que NO existe',
   },
   {
