@@ -33,6 +33,26 @@ import path from 'node:path';
 import { ejecutorLocal, controlPositivo, SCHEMA_POR_DEFECTO } from '../scripts/preview-migracion.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
+
+// SCRUM-1501: comparar sólo estructura no puede volverse más laxo. Cada una cambia la estructura
+// del bloque aprobado y TIENE que tumbar el caso «línea a línea»; un comentario distinto, ya no.
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  { fichero: 'docs/master/SCRUM-475.md', de: '  relatedId   Int?    @map("related_id")',
+    a: '  relatedId   Int?    @map("related_id")\n  extra       Int?',
+    cae: 'SCRUM-475 · el modelo de `schema.prisma` es el de la entrada de máster, línea a línea' },
+  { fichero: 'docs/master/SCRUM-475.md', de: '  merchantId Int     @map("merchant_id")',
+    a: '  merchantId BigInt  @map("merchant_id")',
+    cae: 'SCRUM-475 · el modelo de `schema.prisma` es el de la entrada de máster, línea a línea' },
+  { fichero: 'docs/master/SCRUM-475.md', de: 'providerId String? @unique @map("provider_id")',
+    a: 'providerId String? @map("provider_id")',
+    cae: 'SCRUM-475 · el modelo de `schema.prisma` es el de la entrada de máster, línea a línea' },
+  { fichero: 'docs/master/SCRUM-475.md', de: '  @@index([merchantId, createdAt])',
+    a: '  @@index([merchantId, updatedAt])',
+    cae: 'SCRUM-475 · el modelo de `schema.prisma` es el de la entrada de máster, línea a línea' },
+  { fichero: 'docs/master/SCRUM-475.md', de: '  error  String?',
+    a: '  // error  String?',
+    cae: 'SCRUM-475 · el modelo de `schema.prisma` es el de la entrada de máster, línea a línea' },
+];
 const FICHERO_SQL = 'docs/sql/scrum-475-email-messages.sql';
 const TABLA = 'email_messages';
 
@@ -260,9 +280,74 @@ test('SCRUM-475 · el modelo de `schema.prisma` es el de la entrada de máster, 
   const mSchema = esquema.match(/model EmailMessage \{[\s\S]*?\n\}/);
   assert.ok(mSchema, '🔴 NO SUPE MIRAR: `model EmailMessage` no está en prisma/schema.prisma.');
 
-  const norm = (s) => s.replace(/\r\n/g, '\n').split('\n').map((l) => l.replace(/\s+/g, ' ').trim())
-    .filter(Boolean).join('\n');
-  assert.equal(norm(mSchema[0]), norm(mDoc[1]),
+  assert.equal(estructuraDelModelo(mSchema[0]), estructuraDelModelo(mDoc[1]),
     '🔴 el modelo pegado en `schema.prisma` NO es el que aprobó la entrada de máster. Se comparan '
-    + 'sin sangría ni líneas vacías, así que la diferencia es de CONTENIDO. Reportar, no arreglar.');
+    + 'sin sangría, sin líneas vacías y sin comentarios `//` (SCRUM-1501), así que la diferencia es '
+    + 'de ESTRUCTURA: un campo, un tipo, un atributo o un índice. Reportar, no arreglar.');
+});
+
+// ── SCRUM-1501 · la comparación de arriba mira la ESTRUCTURA, no los comentarios ───────────
+//
+// Decisión del fundador (SCRUM-1501 c.20653): «Que compare solo estructura». Hasta entonces el
+// caso de arriba comparaba también los comentarios `//`, y eso obligaba a que el comentario del
+// esquema y el bloque de `docs/master/SCRUM-475.md` repitieran la MISMA lista de valores: dos
+// comentarios firmados en SCRUM-1401 c.18780 no pudieron entrar. Con la condición de la firma:
+// comparar sólo estructura NO puede volverse más laxo para el esquema.
+//
+// Por eso se quita el comentario y NADA MÁS: un `//` dentro de una cadena (`@default("a//b")`)
+// es estructura y se queda. Prisma no tiene comentarios de bloque; `///` empieza por `//`.
+
+/** La línea sin su comentario `//`, respetando las cadenas entre comillas dobles. */
+function sinComentarioPrisma(linea) {
+  let enCadena = false;
+  for (let i = 0; i < linea.length; i++) {
+    const c = linea[i];
+    if (enCadena && c === '\\') { i++; continue; }
+    if (c === '"') enCadena = !enCadena;
+    else if (!enCadena && c === '/' && linea[i + 1] === '/') return linea.slice(0, i);
+  }
+  return linea;
+}
+
+/** Un modelo de Prisma reducido a su estructura: sin comentarios, sin sangría, sin líneas vacías. */
+function estructuraDelModelo(s) {
+  return s.split(/\r?\n/).map((l) => sinComentarioPrisma(l).replace(/\s+/g, ' ').trim())
+    .filter(Boolean).join('\n');
+}
+
+test('SCRUM-1501 · AUTOPRUEBA: sin comentarios, la comparación sigue viendo cada cambio de estructura', () => {
+  // Sembrado aquí, no prestado del árbol: si el esquema cambia, estas siguen comprobando lo mismo.
+  const modelo = [
+    'model X {',
+    '  id    Int     @id @default(autoincrement())',
+    '  a     String  @map("a") // lista | de | valores',
+    '  b     String? @unique @map("b")',
+    '  url   String  @default("https://x//y")',
+    '  @@index([a, id])',
+    '}',
+  ].join('\n');
+  const base = estructuraDelModelo(modelo);
+  assert.ok(base.includes('@default("https://x//y")'),
+    '🔴 el `//` de DENTRO de una cadena se ha tomado por comentario: se está borrando estructura.');
+
+  // Lo que la decisión quita: un comentario distinto ya NO es una diferencia.
+  assert.equal(estructuraDelModelo(modelo.replace('// lista | de | valores', '// apunta a quien decide')), base);
+  assert.equal(estructuraDelModelo(modelo.replace(' // lista | de | valores', '')), base);
+
+  // Lo que NO puede dejar de ver.
+  const tienenQueDiferir = [
+    ['un campo de más', '  @@index([a, id])', '  extra Int?\n  @@index([a, id])'],
+    ['un tipo cambiado', '  id    Int ', '  id    BigInt '],
+    ['una nulabilidad', '  a     String ', '  a     String? '],
+    ['un @unique quitado', '@unique @map("b")', '@map("b")'],
+    ['un índice distinto', '@@index([a, id])', '@@index([id, a])'],
+    ['un campo comentado', '  b     String?', '  // b     String?'],
+    ['un default dentro de cadena', '"https://x//y"', '"https://x//z"'],
+  ];
+  for (const [que, de, a] of tienenQueDiferir) {
+    const mutado = modelo.replace(de, a);
+    assert.notEqual(mutado, modelo, `🔴 NO SUPE MIRAR: la mutación «${que}» no cambió el modelo sembrado.`);
+    assert.notEqual(estructuraDelModelo(mutado), base,
+      `🔴 la comparación sin comentarios NO ve ${que}: se ha vuelto más laxa para la estructura.`);
+  }
 });
