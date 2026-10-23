@@ -43,7 +43,7 @@ import { tokenDeSesion } from './_identidad-sesion.mjs';
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 /**
- * 120 ficheros por tramo, DERIVADO del peor tramo medido el 23-oct: 412 s para 149 ficheros (el 7/10 de la
+ * FICHEROS_POR_TRAMO, DERIVADO del peor tramo medido el 23-oct-2026: 412 s para 149 ficheros (el 7/10 de la
  * segunda pasada, 20:38Z, 8 sesiones vivas), 2,77 s por fichero. 120 dan 332 s, el 61 % de TOPE_MS.
  * (La primera cifra, 150, salía de 2,5 s por fichero; la segunda pasada la dejó en el 76 %.)
  */
