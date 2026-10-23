@@ -22,6 +22,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
+import ts from 'typescript';
 
 const RAIZ = path.resolve(fileURLToPath(new URL('..', import.meta.url)));
 const DIR_JS = path.join(RAIZ, 'public/dashboard/js');
@@ -48,7 +49,90 @@ const WA_DECLARADOS = {
 
 // ── ① LA PROMESA ────────────────────────────────────────────────────────────────────────────────
 
-/** Toda frase del producto que promete soporte, venga de HTML o de JS. */
+// SCRUM-1551h · LO QUE SE SIRVE DESDE `docs/legal/` TAMBIÉN PROMETE. Hasta el 23-oct-2026 este
+// guard sólo miraba `public/`, y por ahí se coló «soporte por email y WhatsApp» en
+// `ALCANCE_BETA.md`, que se sirve en vivo en `/legal/alcance-beta` y se da a ACEPTAR en el alta
+// founding (SCRUM-1551 c.19542). La lista de documentos NO se escribe a mano: sale de las
+// llamadas a `readLegalDoc` en `src/`, leídas por AST, que es la misma que usa el servidor.
+const DIR_SRC = path.join(RAIZ, 'src');
+const DIR_LEGAL = path.join(RAIZ, 'docs/legal'); // = `LEGAL_DIR` de legalPages.routes.ts
+
+/**
+ * Los documentos que pasa `readLegalDoc` en una fuente TypeScript, por AST. Un argumento que no es
+ * un literal no se puede resolver sin ejecutar: va a `sinResolver`, y eso es CIEGO, no verde.
+ */
+function llamadasAReadLegalDoc(fuente, rel = 'fuente.ts') {
+  const sf = ts.createSourceFile(rel, fuente, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  const docs = []; const sinResolver = [];
+  const visitar = (n) => {
+    if (ts.isCallExpression(n)) {
+      const e = n.expression;
+      const nombre = ts.isIdentifier(e) ? e.text : ts.isPropertyAccessExpression(e) ? e.name.text : null;
+      if (nombre === 'readLegalDoc') {
+        const a = n.arguments[0];
+        const linea = sf.getLineAndCharacterOfPosition(n.getStart()).line + 1;
+        if (a && (ts.isStringLiteral(a) || ts.isNoSubstitutionTemplateLiteral(a))) docs.push({ doc: a.text, en: `${rel}:${linea}` });
+        else sinResolver.push(`${rel}:${linea}`);
+      }
+    }
+    ts.forEachChild(n, visitar);
+  };
+  visitar(sf);
+  return { docs, sinResolver };
+}
+
+function ficherosTs(dir, out = []) {
+  for (const d of fs.readdirSync(dir, { withFileTypes: true })) {
+    const abs = path.join(dir, d.name);
+    if (d.isDirectory()) ficherosTs(abs, out);
+    else if (d.name.endsWith('.ts')) out.push(abs);
+  }
+  return out;
+}
+
+/** Los documentos de `docs/legal/` que el servidor sirve, con quién los llama. */
+function documentosLegalesServidos() {
+  const porDoc = new Map(); const sinResolver = []; let fuentes = 0;
+  for (const abs of ficherosTs(DIR_SRC)) {
+    const fuente = fs.readFileSync(abs, 'utf8');
+    if (!fuente.includes('readLegalDoc')) continue; // filtro barato; el AST decide
+    fuentes++;
+    const r = llamadasAReadLegalDoc(fuente, path.relative(RAIZ, abs).split(path.sep).join('/'));
+    sinResolver.push(...r.sinResolver);
+    for (const { doc, en } of r.docs) porDoc.set(doc, [...(porDoc.get(doc) || []), en]);
+  }
+  return { docs: [...porDoc.keys()].sort(), llamadas: porDoc, sinResolver, fuentes };
+}
+
+/**
+ * Las promesas de soporte de un Markdown legal, leídas como las lee una persona: una viñeta o un
+ * párrafo partido en varias líneas es UNA frase. ⚠️ Leído línea a línea, «soporte⏎  por email.»
+ * (`ALCANCE_BETA.md`, 23-oct-2026) no casa nunca, y el guard saldría verde sin haber mirado.
+ * Las líneas `>` se quitan porque `mdToHtml` no las sirve. La captura para en `.` o `;`: al unir
+ * líneas, la frase siguiente no puede prestarle su canal a esta.
+ */
+function promesasEnMarkdown(texto, rel) {
+  const out = [];
+  let unidad = null;
+  const cerrar = () => {
+    if (!unidad) return;
+    const re = /Soporte por ([^.;]+)/gi;
+    for (const m of unidad.texto.matchAll(re)) out.push({ fichero: rel, linea: unidad.linea, canales: m[1] });
+    unidad = null;
+  };
+  texto.split(/\r?\n/).forEach((l, i) => {
+    if (/^\s*>/.test(l)) { cerrar(); return; }
+    const nueva = /^\s*$/.test(l) || /^#{1,6}\s/.test(l) || /^\s*[-*]\s+/.test(l) || /^---+\s*$/.test(l);
+    if (nueva) cerrar();
+    if (/^\s*$/.test(l)) return;
+    if (!unidad) unidad = { linea: i + 1, texto: '' };
+    unidad.texto += ' ' + l.trim();
+  });
+  cerrar();
+  return out;
+}
+
+/** Toda frase del producto que promete soporte, venga de HTML, de JS o de un documento legal servido. */
 function promesasDeSoporte() {
   const out = [];
   const mirar = (rel) => {
@@ -66,6 +150,11 @@ function promesasDeSoporte() {
   mirar('public/precios.html');
   mirar('public/index.html');
   for (const f of fs.readdirSync(DIR_JS)) if (f.endsWith('.js')) mirar('public/dashboard/js/' + f);
+  for (const doc of documentosLegalesServidos().docs) {
+    const abs = path.join(DIR_LEGAL, doc);
+    // Que no exista NO se salta: lo tumba el SUELO de abajo.
+    if (fs.existsSync(abs)) out.push(...promesasEnMarkdown(fs.readFileSync(abs, 'utf8'), 'docs/legal/' + doc));
+  }
   return out;
 }
 
@@ -76,6 +165,57 @@ test('SCRUM-406 · SUELO: el buscador de promesas encuentra la promesa', () => {
   assert.ok(p.length >= 2,
     `🔴 el buscador solo ve ${p.length} promesa(s) de soporte y debería ver al menos 2 `
     + '(precios.html y plansView.js): si dejó de encontrarlas, no está vigilando nada');
+});
+
+test('SCRUM-1551h · SUELO: el guard mira los documentos legales que el servidor SIRVE', (t) => {
+  const s = documentosLegalesServidos();
+  t.diagnostic(`población legal: ${s.docs.length} documento(s) servido(s) [${s.docs.join(', ')}] `
+    + `desde ${s.fuentes} fuente(s) de src/ que nombran readLegalDoc`);
+  assert.deepEqual(s.sinResolver, [],
+    '🔴 hay llamadas a `readLegalDoc` con un argumento que no es un literal: este guard no sabe '
+    + 'qué documento sirven, así que no lo mira. Pásale el nombre literal, o enséñale a resolverlo.');
+  assert.ok(s.docs.length >= 1,
+    `🔴 el AST no encuentra NINGUNA llamada a \`readLegalDoc\` en ${s.fuentes} fuente(s): o el servidor `
+    + 'dejó de servir documentos legales, o este buscador dejó de verlos. Cero es «no he mirado».');
+  const ausentes = s.docs.filter((d) => !fs.existsSync(path.join(DIR_LEGAL, d)));
+  assert.deepEqual(ausentes, [],
+    `🔴 el servidor sirve documentos que no están en docs/legal/: ${ausentes.join(', ')}`);
+});
+
+test('SCRUM-1551h · el lector de AST ve el literal y declara CIEGO lo que no puede resolver', () => {
+  // Positivo SEMBRADO (no tomado del árbol): una fuente fabricada con una llamada resoluble, una
+  // por propiedad y una con variable. Y la DECLARACIÓN de la función no cuenta como llamada.
+  const r = llamadasAReadLegalDoc([
+    "export function readLegalDoc(fileBase: string) { return null; }",
+    "const a = readLegalDoc('SEMBRADO_1551h.md');",
+    "const b = mod.readLegalDoc(`OTRO_1551h.md`);",
+    "const c = readLegalDoc(nombre);",
+  ].join('\n'), 'sembrado.ts');
+  assert.deepEqual(r.docs.map((d) => d.doc), ['SEMBRADO_1551h.md', 'OTRO_1551h.md']);
+  assert.deepEqual(r.sinResolver, ['sembrado.ts:4']);
+  assert.deepEqual(llamadasAReadLegalDoc('const x = 1;').docs, [], 'sin llamadas no inventa ninguna');
+});
+
+test('SCRUM-1551h · 🔴 una promesa PARTIDA en dos líneas de un documento legal se ve', () => {
+  // Positivo SEMBRADO: un documento servido con «soporte por un canal que no existe», partido como
+  // lo parte `ALCANCE_BETA.md`. El lector línea a línea de `public/` no lo ve; éste, sí.
+  const md = [
+    '# Documento sembrado (SCRUM-1551h)',
+    '',
+    '> BORRADOR — Soporte por teléfono (esta línea no se sirve: no cuenta)',
+    '',
+    '- Clientes y gastos sin límites; soporte',
+    '  por email y WhatsApp. Envío al cliente por teléfono.',
+    '- Albaranes de cada trabajo.',
+  ].join('\n');
+  const p = promesasEnMarkdown(md, 'sembrado.md');
+  assert.equal(p.length, 1, `🔴 debería ver 1 promesa y ve ${p.length}: ${JSON.stringify(p)}`);
+  assert.equal(p[0].linea, 5);
+  assert.match(p[0].canales, /whats\s*app/i);
+  assert.doesNotMatch(p[0].canales, /tel[eé]fono/i, 'la frase siguiente no presta su canal');
+  // El contraste: leído línea a línea (como `public/`), el mismo texto da CERO promesas.
+  const lineaALinea = md.split('\n').filter((l) => /Soporte por ([^<'"\n]+)/i.test(l) && !/^\s*>/.test(l));
+  assert.equal(lineaALinea.length, 0, 'el contraste ya no contrasta: revisa el sembrado');
 });
 
 test('SCRUM-406 · 🔴 el producto no promete un canal que no existe', () => {
