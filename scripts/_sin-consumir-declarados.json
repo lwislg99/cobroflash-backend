@@ -1,6 +1,8 @@
 {
   "leeme": "SCRUM-1185 · Piezas CONSTRUIDAS Y SIN CONSUMIR que ya estaban así el 27-sep-2026 (censo de S0, base f888a039). NO es un suelo: es la lista, pieza a pieza. El guard `tests/scrum1185-trinquete-sin-consumir.test.mjs` falla si aparece una pieza que no está aquí, si una de aquí deja de salir (se conectó: muévela a `retiradas` con su motivo) o si una de `retiradas` vuelve. `donde` es informativo (las líneas se mueven); la identidad es `clave`. `ticket: SCRUM-1185` = sin ticket propio todavía.",
   "declaradas": [
+    {"clave":"ciega-lector-cuerpo · POST /admin/customers/:id/sites","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:484","carril":"J2","ticket":"SCRUM-1145","motivo":"J2: la consume la pestaña «Sitios» de customerDetailView.js; el handler pasa el cuerpo entero a customerSiteCreateSchema y la sonda no ve qué campos lee"},
+    {"clave":"ciega-lector-cuerpo · PUT /admin/customers/:id/sites/:siteId","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:500","carril":"J2","ticket":"SCRUM-1145","motivo":"J2: la consume la pestaña «Sitios» de customerDetailView.js; el handler pasa el cuerpo entero a customerSiteUpdateSchema y la sonda no ve qué campos lee"},
     {"clave":"ciega-lector-cuerpo · PATCH /admin/jobs/:id","donde":"src/modules/jobs/app/routes/jobs.routes.ts:934","carril":"S0","ticket":"SCRUM-1185"},
     {"clave":"ciega-lector-cuerpo · PATCH /admin/partes/:id","donde":"src/modules/jobs/app/routes/partes.routes.ts:461","carril":"S0","ticket":"SCRUM-1185"},
     {"clave":"ciega-lector-cuerpo · POST /admin/customers","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:157","carril":"S0","ticket":"SCRUM-1185"},
@@ -123,7 +125,6 @@
     {"clave":"front-window · public/dashboard/js/colaDeFirmas.js::subirFirmaDeLaCola","donde":"public/dashboard/js/colaDeFirmas.js:491","carril":"S4","ticket":"SCRUM-1185"},
     {"clave":"front-window · public/dashboard/js/homeView.js::appHomePrefs","donde":"public/dashboard/js/homeView.js:146","carril":"S2","ticket":"SCRUM-1185","motivo":"PREMISA FALSA (S2, 29-sep, SCRUM-1185): SÍ se consume. homeView.js la escribe (:146, :1488) y la LEE (:120, :1455) en el mismo fichero; el detector solo busca lectores fuera. No se «conecta» nada: está conectada."},
     {"clave":"front-window · public/dashboard/js/quoteRevisiones.js::puedeEditarseLaRevision","donde":"public/dashboard/js/quoteRevisiones.js:214","carril":"S2","ticket":"SCRUM-1185","motivo":"RESTO (S2, 29-sep): alias en window para el test scrum655c; el módulo usa su puedeEditarse interno."},
-    {"clave":"ruta · DELETE /admin/customers/:id/sites/:siteId","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:478","carril":"J2","ticket":"SCRUM-1145"},
     {"clave":"ruta · GET /admin/albaranes/consolidables","donde":"src/modules/jobs/app/routes/albaranes.routes.ts:297","carril":"S4","ticket":"SCRUM-1185"},
     {"clave":"ruta · GET /admin/customers/:id/notes","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:383","carril":"J2","ticket":"SCRUM-1132"},
     {"clave":"ruta · GET /admin/evidencias.zip","donde":"src/modules/fiscal/evidencias/evidencias.routes.ts:15","carril":"J1","ticket":"SCRUM-1185"},
@@ -137,14 +138,12 @@
     {"clave":"ruta · POST /admin/charges/:id/garantia","donde":"src/modules/billing/app/routes/chargesAdmin.routes.ts:114","carril":"J2","ticket":"SCRUM-1185"},
     {"clave":"ruta · POST /admin/charges/:id/garantia/liberar","donde":"src/modules/billing/app/routes/chargesAdmin.routes.ts:164","carril":"J2","ticket":"SCRUM-1185"},
     {"clave":"ruta · POST /admin/customers/:id/notes","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:400","carril":"J2","ticket":"SCRUM-1132"},
-    {"clave":"ruta · POST /admin/customers/:id/sites","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:439","carril":"J2","ticket":"SCRUM-1145"},
     {"clave":"ruta · POST /admin/invoices/:id/pay","donde":"src/modules/system/app/routes/invoicesAdmin.routes.ts:569","carril":"J1","ticket":"SCRUM-1185"},
     {"clave":"ruta · POST /admin/invoices/:id/unpay","donde":"src/modules/system/app/routes/invoicesAdmin.routes.ts:590","carril":"J1","ticket":"SCRUM-1185"},
     {"clave":"ruta · POST /admin/supresion/:merchantId","donde":"src/modules/system/app/routes/supresion.routes.ts:29","carril":"operación","ticket":"SCRUM-1185"},
     {"clave":"export · src/modules/auth/domain/auth.service.ts::registerMerchant","donde":"src/modules/auth/domain/auth.service.ts:307","carril":"J3","ticket":"SCRUM-1515"},
     {"clave":"ruta · POST /auth/test-login","donde":"src/modules/auth/app/routes/auth.routes.ts:95","carril":"operación","ticket":"SCRUM-1185"},
     {"clave":"ruta · POST /schema-check","donde":"src/app.ts:328","carril":"operación","ticket":"SCRUM-1185"},
-    {"clave":"ruta · PUT /admin/customers/:id/sites/:siteId","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:455","carril":"J2","ticket":"SCRUM-1145"},
     {"clave":"ruta-inalcanzable · POST /admin/ai/quote-message","donde":"src/modules/ai/app/routes/ai.routes.ts:147","carril":"S2","ticket":"SCRUM-1182"},
     {"clave":"vista-sin-puerta · operarios","donde":"public/dashboard/js/app.js","carril":"S2","ticket":"SCRUM-1185"},
     {"clave":"export · src/modules/fiscal/verifactu/sif.procesador.ts::procesarObligado","donde":"src/modules/fiscal/verifactu/sif.procesador.ts:70","carril":"J1","ticket":"SCRUM-1296","motivo":"SE QUEDA SIN ENCHUFAR a proposito (decision D2 = X del orquestador): el envio llega inyectado y engancharlo a un cron con enviarSobre exige el certificado, cuya custodia no es de ninguna sesion. Se enchufa cuando se decida la custodia; ese dia el guard de SCRUM-1128 vera el llamante"},
@@ -161,6 +160,9 @@
     {"clave":"export · src/modules/fiscal/retenciones/casillas.ts::FUENTE_115","donde":"src/modules/fiscal/retenciones/casillas.ts:27","carril":"J1","ticket":"SCRUM-1066","motivo":"J1: solo la consume construirBorradorRetenciones, sin ruta (arriba)"}
   ],
   "retiradas": [
+    {"clave":"ruta · POST /admin/customers/:id/sites","motivo":"SCRUM-1145: conectada en customerDetailView.js («+ Nuevo sitio» y «Guardar» del formulario de la pestaña «Sitios»)"},
+    {"clave":"ruta · PUT /admin/customers/:id/sites/:siteId","motivo":"SCRUM-1145: conectada en customerDetailView.js («Editar» y «Guardar» en cada sitio de la pestaña «Sitios»)"},
+    {"clave":"ruta · DELETE /admin/customers/:id/sites/:siteId","motivo":"SCRUM-1145: conectada en customerDetailView.js («🗑 Eliminar» en cada sitio de la pestaña «Sitios», sin confirmación: c.20592)"},
     {"clave":"export · src/integrations/whatsappNotifications.ts::sendPaymentConfirmation","motivo":"SCRUM-1596b: RETIRADA, no conectada (fundador, c.20602): 0 llamadores por AST. Su builder, buildPaymentConfirmation, queda declarado arriba: lo usan scripts/wa-prueba.mjs y los tests de la plantilla, no src/"},
     {"clave":"front-funcion · public/dashboard/js/textoDelDocumento.js::textoDelDocumentoPintado","motivo":"SCRUM-1206: conectada en quotesDetailView.js (la ficha del presupuesto pinta la cabecera, sin rótulo, y las Observaciones, docFooterText, en el orden del papel)"},
     {"clave":"ruta · POST /admin/quotes/:id/archivar","motivo":"SCRUM-1273: conectada en quotesDetailView.js (botón «Archivar» de la ficha del presupuesto, sólo admin)"},

@@ -4821,3 +4821,31 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
    firmado de SCRUM-1108, unos 70 caracteres) se salía de la tarjeta: medido 453 px a 320 px de ancho
    con `docs/master/evidencias/SCRUM-1043a/pagina.mjs`. */
 .table td.cell-pendiente { white-space: normal; }
+
+/* -- J2 · SCRUM-1145/1044 -- la pestaña «Sitios» de la ficha 360: la fila fiscal, los sitios
+   guardados y su formulario. Regla 4: nada de esto va como `style.cssText` desde JS. Nombres,
+   direcciones y contactos los escribe el profesional: una palabra larga se parte en vez de salirse
+   de la tarjeta. El formulario va a dos columnas en escritorio y a una en el móvil. */
+/* La fila de pestañas de la ficha PARTE LÍNEA. Con la quinta («Sitios») medía 456 px a 390 y la
+   pestaña quedaba fuera de la pantalla, sin barra con la que llegar a ella; y a 320 px ya se salían
+   las cuatro de antes de un admin (unos 386 px). Medido con `docs/master/evidencias/SCRUM-1145/pagina.mjs`. */
+.c360-pestanas { flex-wrap: wrap; }
+.sitios-cliente { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.sitios-cliente__nuevo { align-self: flex-start; }
+.sitios-cliente__lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.sitios-cliente__fila { border: 1px solid var(--border); border-radius: var(--r-md); padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; overflow-wrap: anywhere; }
+.sitios-cliente__fila--fiscal { background: var(--neutral-50); }
+.sitios-cliente__nombre { font-size: 14px; font-weight: 700; color: var(--neutral-900); }
+.sitios-cliente__direccion { font-size: 13px; color: var(--neutral-700); }
+.sitios-cliente__contacto { font-size: 13px; color: var(--muted); }
+.sitios-cliente__acciones { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; margin-top: 4px; }
+.sitios-cliente__vacio { font-size: 13px; color: var(--muted); padding: 12px 2px; }
+.sitios-cliente__error { margin: 0; font-size: 13px; color: var(--danger-ink); }
+.sitios-cliente__form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; border: 1px solid var(--border); border-radius: var(--r-md); padding: 16px; }
+.sitios-cliente__form > .field:first-child,
+.sitios-cliente__form > .sitios-cliente__error,
+.sitios-cliente__pie { grid-column: 1 / -1; }
+.sitios-cliente__pie { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+@media (max-width: 768px) {
+  .sitios-cliente__form { grid-template-columns: minmax(0, 1fr); }
+}
