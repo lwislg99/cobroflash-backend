@@ -401,3 +401,103 @@ o `vigia-despliegue`, más `scrum854`, `737`, `836`, `710b`, `976`, `850` y `393
 **Límite, y es memoria:** `dist/` no se construyó (de 300 a 900 MB libres durante la tanda, con otras sesiones
 corriendo las suyas). Otros 49 tests que casan con lo tocado piden `dist/` y no se corrieron. Un rojo mío ahí lo
 dirá el CI.
+
+## 23-oct-2026 · SCRUM-1123e · 59 h sin desplegar: Railway NO VIO los commits (no fue un arranque fallido), el vigía cantó la verdad 8 veces y su aviso apuntaba a la causa de septiembre — sólo lectura
+
+**Medido contra:** `origin/main` = `66d8846230e99561e88f1f3460fb46a066d33162` · 2026-10-23T13:20:27Z (cabecera `Date:` de GitHub; las medidas, de 13:05Z a 13:20Z)
+
+A9: aviso → A10 «Un instrumento declara su población, no sólo su resultado.» — no se pudo comprobar: mi primera lista de Issues (`issues?state=all&since=…`, UNA página de 100) devolvió sólo el #2641 porque la página se llenó de PR, que el filtro descartó después; habría escrito «el vigía no avisó». Lo cazó que el paso «Avisar…» saliera `success` en las dos corridas que miré, y el Issue #2455 salió leyendo el log. Es una conducta de quien consulta, y ningún test ve una consulta escrita a mano
+
+S0, equipo de Luis, pregunta del orquestador (23-oct, tras 1554g): **¿por qué no hubo ningún despliegue en 59 h,
+y está arreglado el mecanismo o fue un empujón a mano?** Sólo lectura de GitHub (despliegues, estados de commit,
+corridas, Issues) y de dos páginas públicas de estado. **No he tocado Railway ni ningún flag**, y no tengo acceso
+a Railway.
+
+### La respuesta corta
+
+1. **No fue un despliegue que fallara el arranque: Railway no llegó a ver los commits.** Los 55 merges seguidos a
+   `main` del **21-oct 12:41:21Z al 22-oct 12:35:51Z** no tienen NI un despliegue NI un solo estado de Railway en
+   ninguno de sus tres servicios (`cobroflash-backend`, `yaqu-staging`, `guard-acreditacion`). Los 11 commits de
+   alrededor tienen los tres estados cada uno. Y el CI no estaba en rojo: `build + tests` salió `success` en 19 de
+   los 66 commits de la ventana ampliada y `failure` en ninguno (en el resto no hay corrida completada en `main`).
+2. **Las 59 h son 55 commits sin ver + dos ratos de `main` quieto.** Del 20-oct 15:35:30Z (`fe65a8b7f`, desplegado
+   en 7 s) al 21-oct 12:41Z no entró nada en `main`; del 22-oct 12:35Z al 23-oct 02:49Z, tampoco.
+3. **El deshielo no fue un redespliegue a mano del atraso:** ninguno de los 55 commits —tampoco la punta,
+   `82f3ea411`— tiene despliegue NUNCA. Lo que pasó es que el primer merge tras el silencio (`f749dee46`,
+   02:49:18Z) **se desplegó solo a los 6 s**, y desde entonces **41 de 41** commits de `main` traen el suyo (hasta
+   `66d884623`, 13:17:36Z, cuyo despliegue estaba `in_progress` a las 13:20Z). ⇒ **Railway volvió a escuchar en
+   algún momento entre el 22-oct 12:35:51Z y el 23-oct 02:49:18Z.** Qué lo hizo volver —alguien en Railway, o que
+   se arregló solo— **no consta en GitHub**: vive en Railway, y es una pregunta para el fundador.
+4. **El vigía dijo la verdad, y su aviso sí llegó a escribirse:** 8 corridas en rojo seguidas (21-oct 19:43Z → 23-oct
+   02:16Z), y en cada una **comentó el Issue #2455** con el hueco creciendo: 7,0 h · 10,2 · 13,5 · 20,3 · 26,0 ·
+   30,9 · 34,1 · 37,6 h. **Pero** el texto del aviso dice «Primer sitio donde mirar: los logs de arranque en
+   Railway. Si dicen `[schema] DERIVA`, falta un `ALTER`…», que es la causa del congelado de SEPTIEMBRE
+   (SCRUM-1122), no la de éste: con un commit que Railway no ha visto no hay logs de arranque que mirar. **La lectura
+   «el despliegue falla el arranque» la sugería el propio aviso.**
+5. **Y el aviso no llama a nadie:** #2455 tiene 9 comentarios, todos de `github-actions[bot]`, 0 menciones, 0
+   reacciones, 0 eventos y ningún asignado. Si la cuenta del fundador recibe esos comentarios **no lo he podido
+   mirar**: `GET /repos/…/subscription` contestó 404 con «This API operation needs the "notifications" scope».
+
+### Las dos averías, y cómo se distinguen desde GitHub (medido con la misma sonda en los cuatro congelados)
+
+| tipo | qué se ve en GitHub | casos |
+|---|---|---|
+| **A · Railway no ve el commit** | 0 despliegues y 0 estados `comfortable-nourishment - …` en el commit | **4–5 de junio** (33 commits seguidos) · **29-sep** (8) · **21–22-oct** (55) |
+| **B · Railway lo ve y el despliegue falla** | despliegue creado y estado `failure` («Deployment failed») | **24/25-sep** (`db7714316`: `cobroflash-backend=failure`, `yaqu-staging=failure`; SCRUM-1122) · y dos de hoy, que se curaron con el siguiente merge: `3c255d98a` (11:36Z, `cobroflash-backend=failure`) y `207a66186` (11:44Z, `guard-acreditacion=failure`) |
+
+Población: 3.030 commits de `main` (primer padre) desde el 15-may y 2.907 despliegues, todos creados por
+`railway-app[bot]`. 123 commits no tienen despliegue; las tres rachas de arriba suman 96 y el resto son rachas de 1
+a 4. **El disparador vive en Railway, no en GitHub**: ningún workflow del repo crea despliegues.
+
+### Lo que NO explica la racha (contrapruebas)
+
+- **«Railway espera al CI»:** `fe65a8b7f` tenía `guards de navegador = failure` y se desplegó en 7 s; dentro de la
+  racha, `build + tests` fue `success` en todo lo que terminó. Y un servicio que espera deja estado; aquí no hay ninguno.
+- **La incidencia pública de GitHub «Delays for Pull Requests and Webhook deliveries»** (21-oct 14:52:49Z → 19:22:52Z,
+  `githubstatus.com/api/v2/incidents.json`) **encaja en el tiempo y NO explica la racha:** de los 55 commits, 20
+  entraron ANTES de que empezara, 4 durante y **31 después de resuelta**. Como mucho, una parte. **MI LECTURA:** no
+  es la causa.
+- **Railway:** su historial **no lo he podido leer**. `status.railway.com` es una página de JavaScript (un GET
+  devuelve el HTML vacío), y el RSS de `railway.instatus.com` (que enlaza a `status.railway.com`) acaba en el 25-mar-2026:
+  **ciego** para octubre, no «sin incidencias».
+
+### Para el fundador (no se puede contestar desde GitHub)
+
+1. ¿Alguien tocó Railway entre el **22-oct 12:35Z y el 23-oct 02:49Z** (reconectar el repositorio, cambiar la rama,
+   reinstalar la app de GitHub)? En Railway: el servicio → *Settings* → *Source*, y su registro de actividad.
+2. Si nadie lo tocó, volvió solo, y **no hay nada que impida que vuelva a pasar**: es la **tercera** vez del tipo A
+   (junio, 29-sep, 21-oct), y el **cuarto** congelado contando el de tipo B del 24/25-sep.
+
+### PROPUESTA — MI LECTURA, carril **S5** (`scripts/vigia-despliegue-aviso.mjs` y `scripts/vigilante-de-despliegue.mjs`, medido con `carriles.mjs`)
+
+El vigía ya tiene `GITHUB_TOKEN`, y los estados de un commit se leen con él. Que, antes de escribir el aviso, mire
+los estados de Railway del commit de `main` que no llega:
+- **0 estados** → «Railway no ha visto este commit: mirar la conexión con GitHub del servicio, no los logs».
+- **`failure`** → «el despliegue falló: logs de arranque; si dicen `[schema] DERIVA`, falta un `ALTER`» (lo de hoy).
+- Y que el aviso **mencione** a quien tiene que actuar: hoy no menciona a nadie.
+
+### La entrada 9 de la puerta (pedida en la misma tanda; sin tocar)
+
+- **Carril:** el renderizador (`src/modules/system/app/routes/legalPages.routes.ts`) es de **J3**; el texto
+  (`docs/legal/ALCANCE_BETA.md`) lo propone **J4**. El renderizador no se toca desde el 5-jul (`328c18838`).
+- **No es un defecto nuevo: es el de siempre, alcanzando un texto firmado, y estaba anunciado.** 1551b metió R4
+  partida en tres líneas físicas, como el resto del documento, y `docs/master/SCRUM-1551.md` §6 ya lo decía: «R4 tiene
+  tres líneas y se servirá partida igual que las demás».
+- ⚠️ **Cualquiera de los dos arreglos cambia la versión del documento** (`version` = sha-256 del HTML servido,
+  `legalPages.routes.ts:53`), y con ella dejan de valer las aceptaciones de la versión anterior para el checkout
+  founding (A10.1). Hoy no hay clientes reales; es lo que hay que saber al decidirlo.
+
+### Las sondas
+
+En `docs/master/evidencias/SCRUM-1123e/`: `huecos.mjs` (huecos entre despliegues y cobertura de `main` por día),
+`bordes.mjs` (los dos bordes de la ventana y las rachas de toda la historia), `estados.ps1` (estados de Railway y
+`build + tests` por commit), y sus salidas: `deploys-all.txt` (los 2.907, con `--paginate`), `estados.txt` (66
+commits), `vigia-runs.txt` (las 17 corridas del vigía del 20 al 23-oct).
+
+**Controles:** los 11 commits de alrededor de la racha tienen 3 estados cada uno, así que la sonda de estados ve
+estados cuando los hay · la cobertura del 15 al 20-oct es 100 % (25/25, 28/28, 20/20, 39/39, 26/26, 8/8), así que
+«sin despliegue» no es un fallo de la sonda · el 24/25-sep sale como tipo B (con despliegue y `failure`), así que la
+sonda distingue los dos tipos.
+
+**Lo que NO dice:** por qué Railway dejó de escuchar ni por qué volvió; si la cuenta del fundador ve #2455; nada
+dentro de Railway.
