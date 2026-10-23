@@ -84,6 +84,7 @@ test('SCRUM-683 · 🔴 Y CAE CON EL MECANISMO VIEJO: `cantidadUtilizable` aprue
 
   // El motor de presupuestos, sobre las mismas entradas. No es un defecto suyo: para un
   // presupuesto el fundador decidió justo esto el 2-ago-2026. Es la decisión que aquí se invierte.
+  // Consta en: SCRUM-1502 comentario 20629.
   assert.equal(cantidadUtilizable(undefined), 1, 'el motor viejo inventa un 1 donde no hay nada');
   assert.equal(cantidadUtilizable(1), 1, 'y deja pasar el 1 que el modelo se saca solo');
   assert.equal(cantidadUtilizable(4), 4, 'y el 4 que el dictado no dice en ninguna parte');

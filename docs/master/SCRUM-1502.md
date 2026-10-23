@@ -574,3 +574,77 @@ cuenta por qué se aprobaron de una vez queda como historia, avisado.
 - Ningún texto visible, ni ninguna otra marca, ni la lógica de ningún guard.
 - No he visto ninguna de las cinco en yaqu.app.
 - Tanda completa: no corrida (guards dirigidos, en la entrega).
+
+## SCRUM-1502f · Tramo 6 (J1, 23-oct-2026): las firmas de c.20629 al código — cinco marcas de `tests/` aquí; la de `parteDictado.ts` y la de `jobDetailView.js`, para el equipo de Luis
+
+**Medido contra:** `origin/main` = `28098fe4b1a160303526f5a4002d52556d2c5b22` · 2026-10-23T18:05:00Z (hora de GitHub)
+A9: comprobación → `tests/scrum921c-firma-con-respaldo-en-codigo.test.mjs`
+
+### Qué firmó el fundador y dónde
+
+SCRUM-1502 **comentario 20629** (23-oct, transcrito por el orquestador `cobroflash-backend-62`): las
+respuestas, una a una, a las preguntas de `c.20628` (jv-j4u) sobre las seis marcas que no son texto
+visible, y la de la ranura de `jobDetailView.js`. Los literales viven en Jira y en el código; **aquí se
+nombran por fichero:línea** (tramo 1, §4: citarlos aquí los absolvería).
+
+### Carril de cada marca (`node scripts/carriles.mjs de <ruta>`, desde este árbol)
+
+| marca (en `28098fe4b`) | carril | qué se ha hecho |
+|---|---|---|
+| `tests/scrum320-que-falta-para-cobrar.test.mjs:36` | `tests/`: sin fila; el test de un ticket → quien trabaja el ticket | ancla puesta |
+| `tests/scrum683-parte-dictado.test.mjs:85` | ídem | ancla puesta |
+| `tests/scrum586-forma-de-pago-por-cliente.test.mjs:178` | ídem | ancla puesta (misma firma que la de :392, c.20629 lo dice) |
+| `tests/scrum586-forma-de-pago-por-cliente.test.mjs:392` | ídem | ancla puesta |
+| `tests/scrum716-ritmo-de-despliegue.test.mjs:127` | ídem | ancla puesta |
+| `src/modules/jobs/domain/parteDictado.ts:401` | **S1**, `dos-equipos.md:136` | NO tocado: ni el ancla ni la cabecera de :398 |
+| `public/dashboard/js/jobDetailView.js:217` | **S2**, `dos-equipos.md:152` | NO tocado |
+
+Sólo una línea de comentario por marca: ni el texto de ninguna marca, ni el código que gobiernan.
+
+### El orden (c.18892)
+
+| paso | árbol | `congeladas()` | `scrum921c` | `scrum387` |
+|---|---|---|---|---|
+| ① | `main` tal cual | 25; las cinco de `tests/` en la lista (sin respaldo) | 13 de 13 | — |
+| ② ③ | con las cinco líneas `Consta en: SCRUM-1502 comentario 20629.`, número sin tocar | **20**; salen exactamente las cinco; anclado 18 → 23 | cae «el trinquete tampoco baja en silencio», y sólo ése (12 de 13) | 5 de 5: `SIN_PROCEDENCIA` sigue en 15 |
+| ④ | con `SIN_RESPALDO = 20` | 20 | verde | verde, sin tocar |
+
+Medido con `node docs/master/evidencias/scrum1502/lista.mjs`, la misma `congeladas()` del guard,
+comparando las dos listas por `fichero:línea`. ⚠️ El diff de las dos listas da **seis** salidas y una
+entrada: `scrum320:252` sale y entra `scrum320:253`. Es la MISMA marca, empujada una línea por el ancla
+de :36 (el texto de la línea es idéntico en `main` :252 y en la rama :253). La lista identifica por
+posición, así que cualquier ancla que añada una línea mueve el nombre de las marcas de debajo.
+
+`scrum387` no se mueve porque las cinco ya tenían procedencia rastreable o no estaban en su población;
+no lo he desglosado marca a marca.
+
+🔴 **El 20 es «bien escrito», NO «verificado».** El trinquete acepta la línea por su FORMA (tramo 2,
+caso C). Que la referencia es verdadera lo sé porque leí `c.20628` y `c.20629` enteros; el guard no lo sabe.
+
+### Lo que el encargo no preveía: un TERCER trinquete, el de `scrum921`
+
+La dirigida, con `SIN_RESPALDO = 20`, cayó en `SCRUM-921 · el trinquete tampoco baja en silencio`
+(`tests/scrum921-firmas-con-respaldo.test.mjs`, `SIN_PROCEDENCIA`): quedan 26 y dice 27. Su censo
+(`censarFirmas`, marca canónica) cuenta la marca de `scrum320:36` y ya ve la procedencia del ancla.
+Rojo primero, con el fichero de `main` puesto en su sitio y luego restaurado (comprobado byte a byte):
+**27**, y `scrum320:36` sin procedencia; con el ancla, **26**, y sólo ésa cambia. Las otras cuatro no
+llevan la marca canónica de ese censo. Bajado a 26 en el mismo PR: es la misma línea de comentario, no
+una decisión aparte, y es el mismo caso que c.18892 resolvió para el segundo trinquete (`scrum387`).
+Y por el mismo motivo se reescribe `tests/_veredicto-mudez.json` con `npm run censo:mudez -- --escribir`
+(dos fichas caducadas, `scrum320` y `scrum586`; las dos VIVO): lo pedía `scrum719`.
+
+### Por qué no es 18 (las seis más la de :217)
+
+- **`parteDictado.ts` es de S1.** El encargo pedía, además del ancla de :401, corregir la cabecera de
+  :398, que titula la sección como pendiente y con `c.20629` ya no es verdad; decía «si el carril no es
+  J1, PARAS». Paro en ese fichero. Con su ancla, `congeladas()` bajaría a 19 (no simulado: no escribo en
+  un fichero de otro equipo ni en mi árbol, cicatriz J4 de 1502d).
+- **`jobDetailView.js:217` es de S2** y no está entre las 25 (ya es «anclado», a `SCRUM-1215 comentario
+  19084`). Cambiar su cita a `c.20629` no mueve ningún número; lo hace S2.
+
+### Lo que NO se ha hecho
+
+- `parteDictado.ts` (ancla de :401 y cabecera de :398) y `jobDetailView.js:217`: sin tocar, para S1 y S2.
+- Ningún texto visible, ni ninguna otra marca, ni la lógica de ningún guard.
+- No he visto nada en yaqu.app: ninguna de las cinco es pantalla.
+- Tanda completa: no corrida (guards dirigidos, en la entrega).
