@@ -42,6 +42,7 @@ const RUTAS = fs.readFileSync(
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // LOS OCHO TEXTOS APROBADOS POR EL FUNDADOR (4-ago-2026). LITERALES.
+// Consta en: SCRUM-1502 comentario 20702.
 //
 // ⚠️ ESTA DUPLICACIÓN ES DELIBERADA, y es lo contrario de las listas que este repo lleva la
 // semana desmontando. Allí había dos copias de un DATO y ninguna era la autoridad, así que
