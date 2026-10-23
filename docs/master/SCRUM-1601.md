@@ -67,3 +67,31 @@ eslabón (`sent → read`)». Lo decide el fundador.
   diga, y producción no se mira. Si lo hiciera, desde hoy ese `failed` no se guarda; el fallo sí sale en los
   logs de Railway (`[WA webhook] POST recibido`), pero no el contenido del estado.
 - Ninguna base real: sólo el banco en memoria.
+
+## SCRUM-1601b · 23-oct: el salto `sent → read`, FIRMADO, aplicado a la Parte L (carril un jefe, por encargo)
+
+**Medido contra:** `origin/main` = `ba587af0205aef949bdedc4b7d479e5ca598950e` · 2026-10-23T22:07:09Z (hora de GitHub)
+A9: aviso → cicatriz J4 «pedí cinco tickets ENTEROS a Jira, con todos sus comentarios devueltos al chat, cuando de cuatro sólo necesitaba uno o dos comentarios, y crucé los 200k a mitad del encargo» — no se pudo comprobar: volví a pedir SCRUM-1499 entero (9 comentarios) para leer sólo c.20703; esta vez no crucé los 200k, pero la herramienta sigue sin dejar pedir un comentario suelto y nada obliga a mandar la salida a fichero
+
+J4 (`jv-j4aa`, equipo de Javier). Carril «un jefe», aplicado por encargo del orquestador `cobroflash-backend-62`.
+Firma del fundador: **c.20673** («Sí, se añade»), que responde a la propuesta de c.20671 §3. Se aplica
+después de #2783 (1499b), que tocaba la misma línea: mergeado como `94583f1ac` (c.20703).
+
+- **Parte L, línea 409:** se AÑADE al final, copiado de c.20673, «Los avisos de entrega sólo avanzan por la
+  cadena y pueden saltarse un eslabón (`sent → read`).» y una nota en el formato de las que ya lleva la línea:
+  *(SCRUM-1601: el salto no estaba fijado en esta línea; entra por decisión del fundador, SCRUM-1601 c.20673.)*
+  No se borra nada.
+- **Cotejo por programa:** diff del máster +1 −1, 1.913 líneas antes y después (no se mueve ninguna); la línea
+  409 contiene la frase firmada byte a byte; sin NBSP ni CRLF en el fichero.
+- **No se añade** (c.20673): volver atrás desde `failed`. La Parte J no se toca: desde 1499b apunta aquí.
+- **Control: ¿algún test lee la Parte L y dice ahora otra cosa que el código de #2785?** Ninguno la PARSEA:
+  `tests/scrum1601-transiciones-del-webhook-wa.test.mjs` y `tests/whatsappLog.test.mjs` llevan las flechas
+  escritas a mano (`FIJADAS`, 5) y los saltos en un conjunto aparte (`SALTOS`) que miden sin afirmar. Los
+  otros 24 ficheros que nombran «Parte L» son de otras entidades (albaranes, facturas, trabajos).
+- 🔴 **Discrepancia, sin tocar código (regla 27; va al orquestador):** `shouldApplyStatus` aplica, además de
+  `sent → read`, `queued → delivered` y `queued → read`. La línea firmada nombra sólo `sent → read`, y
+  `queued → read` se salta DOS eslabones. Según el registro de 1601 (arriba), ninguna de las dos se alcanza
+  (las `queued` no llevan `waMessageId`); eso está leído, no re-medido aquí. Y el comentario de cabecera de
+  `scrum1601-transiciones-del-webhook-wa.test.mjs:15-16` sigue diciendo que si los saltos están fijados «es
+  una pregunta»: carril J2.
+- Sin mirar: yaqu.app (el máster no se sirve). No transiciono (A13).
