@@ -373,3 +373,85 @@ opción más barata es no construir nada y dejarlo escrito; las tres cuestan má
 - `tsc --noCheck` sobre el árbol, salida 0. Banco: 12 filas, 0 ciegas; con `SABOTEO=1`, 12 ciegas.
 - `git status` después de cada pasada: sólo los ficheros de este anexo.
 - Tests: no he corrido la tanda; este PR sólo lleva docs.
+
+## Anexo SCRUM-1252e · que ninguna `F1` nazca, ni se convierta, con número `J-`
+
+**Medido contra:** `origin/main` = `5262c70d97afa074d63c7dfc859700c23249f9b3` · 2026-10-23T21:51:55Z (hora de GitHub, `gh api -i zen`)
+
+A9: comprobación → `tests/scrum1252e-f1-con-j-no-nace.test.mjs`
+
+El fallo que generaliza es el del enunciado: el código dejó nacer cinco `F1` con `J-` (censo del
+10-ago) y nada lo impedía por construcción. Desde este tramo lo impide un test que lee el código.
+
+Sesión J1ba (`jv-j1ba`), 23-oct-2026, por encargo del orquestador de Javier
+(`cobroflash-backend-62`), tras c.20683 (decisión: con cero filas, sólo un guard), c.20698 y
+c.20700 (producción: 2 filas, 0 `F1`, 2 con `J-`). **Sólo se LEE el camino de emisión** (regla 38):
+no se modifica ni se extrae nada de `src/`. No se tocan los tres sitios del enunciado, el 303 ni
+`registro.builder.ts`.
+
+### ① Las dos puertas
+
+Una `F1` con `J-` sólo puede aparecer de dos formas: **nacer** así (una creación cuyo `number`
+empiece por `J-`) o **convertirse** (un update que reescriba `type` o `number` de una fila que ya
+existe: las dos filas `J-` de producción son justificantes, y un `type: 'F1'` encima las haría `F1`
+con `J-`). Medido por AST sobre el árbol: 30 escrituras en `src/` (23 llamadas a `invoice.*` + 7 al
+envoltorio `crearFacturaEmitida`; el `grep` da las mismas 23 y 7 comentarios), más 4 en `scripts/`.
+
+### ② Las creaciones: de dónde sale el `type` y de dónde la serie del número
+
+| sitio | `type` | `number` |
+|---|---|---|
+| `src/lib/invoicing.ts:417` (cobro → factura, C6) | `'F1'` literal | `const` de `allocateInvoiceNumber` |
+| `src/modules/invoicing/domain/invoicing.service.ts:109` (`emitInvoice`) | `input.type ?? 'F1'`; sus 4 llamadores (`albaranes.routes.ts:1377` y `:1657`, `recapitulativa.service.ts:109`, `invoicesAdmin.routes.ts:173`) pasan `'F1'` literal | `const` del reservador |
+| `src/modules/jobs/app/routes/jobs.routes.ts:1549` | `'F1'` | `const` del reservador |
+| `src/modules/quotes/app/routes/quotes.routes.ts:658` | `'F1'` | `const` del reservador |
+| `src/modules/system/app/routes/invoicesAdmin.routes.ts:1107` (R1) | `'R1'` | del reservador con `rectifying` |
+| `src/modules/system/app/routes/quotesAdmin.routes.ts:363` y `:656` | `'F1'` | `const` del reservador |
+| `scripts/seed-demo.mjs:377` y `:437`, `scripts/seed-video.mjs:551` | `isReceiptNumber(number) ? 'JUST' : 'F1'` | del reservador (SCRUM-203) |
+
+**La serie.** `allocateInvoiceNumber` tiene un solo `return`: un `const` de `formatInvoiceNumber`, que
+devuelve `formatoNumeroDocumento(SERIES.factura, …)` (`F<AA><NNNN>`, con `SERIES.factura = 'F'`) o
+`` `${year}-…` `` (empieza por el año). En modo `receipt` lanza (SCRUM-1027). **Ningún número nuevo
+puede empezar por `J-`**, sea cual sea el prefijo de serie del comercio.
+
+### ③ Los updates
+
+22 escrituras de `invoice` en `src/` y 1 en `scripts/`, del censo de la casa
+(`scripts/_censo-escrituras-sin-version.mjs`). Ninguna escribe `type` ni `number`. Las dos que el
+censo deja OPACAS se resuelven en el test, no a ojo: `invoicesAdmin.routes.ts:817` →
+`{reminder7SentAt, reminder14SentAt}` y `invoiceAdmin.ts:303` → `{status, paidAt, paidVia}`. Cero
+SQL en crudo que actualice `invoices` en 639 ficheros de `src/` y `scripts/`.
+
+### ④ El test, y lo que hace caer
+
+`tests/scrum1252e-f1-con-j-no-nace.test.mjs`, 8 casos, sin base, sin `dist/`:
+
+- ① ningún update de `invoice` escribe `type` ni `number`; un opaco que no se resuelve es ROJO.
+- ② el reservador sólo devuelve serie `F` o de año (AST de los `return`).
+- ③ toda creación toma el número del reservador (`_embudo-factura.mjs`) en un `const`: SCRUM-203
+  mira sólo el inicializador, y un `let` reescrito después pasaba.
+- ④ ningún SQL en crudo hace `UPDATE invoices`.
+- Cuatro positivos SEMBRADOS, uno por detector, con su negativo al lado.
+
+**Mutación declarada** (`MUTACIONES_QUE_ME_TUMBAN`): `invoiceReminder.service.ts`, el `data` del
+recordatorio de 7 días gana `type: 'F1'`. Vista en ROJO con el árbol comiteado en `c181e6a7`: cae
+① nombrando `invoiceReminder.service.ts:109 (updateMany) · escribe type`; `git diff --numstat` 1/1;
+restaurado con `git restore --source=HEAD`, `git status --porcelain` vacío. No muto el camino de
+emisión, ni siquiera en local: los sembrados ② y ③ cubren esas formas.
+
+### ⑤ Lo que no se mide aquí
+
+- Filas: staging y dev siguen sin medir (los cinco del 10-ago pueden estar ahí).
+- Un receptor con alias (`const t = tx.invoice`) y el SQL fuera de `src/` y `scripts/`: lo mismo
+  que declara SCRUM-203.
+
+### Lo que hice mal
+
+Al arrancar redirigí a `$T/fichero` sin comillas con una ruta que lleva un espacio: bash dio
+«ambiguous redirect» y no escribió nada. Avisó en voz alta y lo repetí con comillas; no generaliza
+más allá de la trampa ya conocida de esta máquina.
+
+Y crucé los 200k de contexto sin avisar al cruzarlos: medí al acabar el arranque (111.079) y Jira
+(122.434), y la siguiente medida, tras la tanda de guards, ya daba 246.598. Lo avisé en ese momento,
+tarde. La lectura del ticket por la herramienta de Jira, la salida de los tests y la del censo
+fueron más gruesas de lo que estimé, y entre medias no me medí.
