@@ -132,6 +132,8 @@ export async function medirAcreditacion(prisma) {
       select: {
         id: true,
         flags: true,
+        llevaLibrosPorSii: true,
+        domicilioFiscalForal: true,
         Invoice: { where: { type: { in: [...TIPOS_FISCALES] } }, select: { id: true }, take: 1 },
       },
     });
@@ -148,16 +150,40 @@ export async function medirAcreditacion(prisma) {
     };
   }
 
-  const acreditados = candidatos
-    .filter((m) => {
-      const flags = m.flags;
-      const flagOn = flags != null && typeof flags === 'object' && !Array.isArray(flags) && flags[FLAG_INVOICING_ES] === true;
-      const tieneFiscal = Array.isArray(m.Invoice) && m.Invoice.length > 0;
-      return flagOn || tieneFiscal;
-    })
-    .map((m) => ({ id: m.id }));
+  const acreditadosCompletos = candidatos.filter((m) => {
+    const flags = m.flags;
+    const flagOn = flags != null && typeof flags === 'object' && !Array.isArray(flags) && flags[FLAG_INVOICING_ES] === true;
+    const tieneFiscal = Array.isArray(m.Invoice) && m.Invoice.length > 0;
+    return flagOn || tieneFiscal;
+  });
+  const acreditados = acreditadosCompletos.map((m) => ({ id: m.id }));
 
-  return { ciego: false, floor: candidatos.length, filas: acreditados };
+  return { ciego: false, floor: candidatos.length, filas: acreditados, ...declaradoPorAcreditados(acreditadosCompletos) };
+}
+
+/**
+ * SCRUM-1102h · V: de los acreditados, quién tiene declarado el SII distinto de «No» — la
+ * respuesta CADUCA (art. 68 bis RIVA) y la puerta de encendido de `cambiarFlagFiscal` no ve
+ * a quien lo declara DESPUÉS. `=== false` y no `!== true`: «No consta» (NULL) no es «No», y
+ * una fila sin la columna (`undefined`) se cuenta como «No consta». La foral va APARTE y no
+ * es hallazgo propio: es una inferencia que espera al asesor (SCRUM-1264).
+ */
+export function declaradoPorAcreditados(acreditados) {
+  return {
+    siiDeclarado: acreditados.filter((m) => m.llevaLibrosPorSii === true).map((m) => ({ id: m.id })),
+    siiNoConsta: acreditados.filter((m) => m.llevaLibrosPorSii !== true && m.llevaLibrosPorSii !== false).map((m) => ({ id: m.id })),
+    foralPendienteAsesor: acreditados.filter((m) => m.domicilioFiscalForal === true).map((m) => ({ id: m.id })),
+  };
+}
+
+/** Las líneas de V que acompañan a un HALLAZGO; vacías si ningún acreditado declara nada. */
+export function lineasDeclarado(r) {
+  const ids = (xs) => xs.map((f) => f.id).join(', ');
+  const out = [];
+  if (r.siiDeclarado?.length) out.push(`SII declarado (llevaLibrosPorSii=true): id ${ids(r.siiDeclarado)}`);
+  if (r.siiNoConsta?.length) out.push(`SII sin contestar (No consta): id ${ids(r.siiNoConsta)}`);
+  if (r.foralPendienteAsesor?.length) out.push(`domicilio foral declarado, pendiente del asesor (SCRUM-1264), no bloquea: id ${ids(r.foralPendienteAsesor)}`);
+  return out;
 }
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
@@ -285,7 +311,13 @@ export async function ejecutar({
   if (resultado.filas.length > 0) {
     console.log('\n🔴 HALLAZGO — estos merchants NO deberían poder facturar con efectos fiscales hoy:');
     for (const f of resultado.filas) console.log(`   merchant id=${f.id}`);
-    return cerrar(1, 'HALLAZGO', medido);
+    for (const l of lineasDeclarado(resultado)) console.log(`   🔴 ${l}`);
+    return cerrar(1, 'HALLAZGO', {
+      ...medido,
+      siiDeclarado: resultado.siiDeclarado.map((f) => f.id),
+      siiNoConsta: resultado.siiNoConsta.map((f) => f.id),
+      foralPendienteAsesor: resultado.foralPendienteAsesor.map((f) => f.id),
+    });
   }
   console.log('\n✔ CERO — ningún merchant ES no-demo acreditado para facturación fiscal hoy.');
   return cerrar(0, 'LIMPIO', medido);

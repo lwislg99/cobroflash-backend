@@ -647,3 +647,61 @@ de la rama del demo, o el demo deja de emitir.
     node docs/master/evidencias/SCRUM-1102/sonda-lectores-y-escritores.mjs .
     node scripts/censo-usos-de-campo.mjs flags
     node scripts/censo-usos-de-campo.mjs llevaLibrosPorSii
+
+# SCRUM-1102h · W + V: el SII cierra el encendido, y el guard de 1097 lo vigila después
+
+**Medido contra:** `origin/main` = `0b8af73d34d95a762b18fad1cd6232ce7f621b1f` · 2026-10-23T11:07:27Z (cabecera `Date:` de GitHub; la rama salió de `37311b671`, y entre los dos `main` no tocó ninguno de mis ficheros)
+
+A9: aviso → cicatriz J1 «Para el rojo primero sobrescribí un fichero de `src/` con `git show … > $F`» — no se pudo comprobar: el hook `guard-dangerous` sólo ve el destino escrito literal, y los hooks no son de este puesto
+
+Sesión `jv-j1al` (puesto J1), 23-oct-2026, por encargo del orquestador `cobroflash-backend-62`.
+**GO del fundador en SCRUM-1102 c.20472** («W + V ahora», regla 40, alcance: ni sellado ni XML).
+M va a **SCRUM-1585** (abierto por esta sesión, enlazado). Diseño de J6f en el anexo 1102g, §⑤-§⑦.
+
+## ① Qué entra
+
+- **W** · `cambiarFlagFiscal` (`flagFiscal.service.ts`) trae `llevaLibrosPorSii` y
+  `domicilioFiscalForal` en su `select` y se niega a ENCENDER `INVOICING_ES_ENABLED` si el SII no es
+  `false`: «Sí» → `sii_declarado`; «No consta» (NULL) o columna ausente → `sii_no_consta`. Apagar no se
+  bloquea; `SIF_ENABLED` no lo gobierna esta puerta. La negativa va DESPUÉS de la confirmación del
+  email. La fila `cambio_flag` guarda lo declarado en el instante del cambio (las dos columnas).
+- **W, el guion** · `scripts/cambiar-flag-fiscal.mjs` enseña las dos respuestas antes de cambiar
+  nada. La foral no bloquea (inferencia, espera a SCRUM-1264).
+- **V** · `medirAcreditacion` (guard de SCRUM-1097) selecciona las dos columnas y devuelve, de los
+  acreditados, `siiDeclarado`, `siiNoConsta` y `foralPendienteAsesor`. El guard las imprime y las
+  guarda en su rastro; el aviso programado de SCRUM-1109 las añade al cuerpo del correo de HALLAZGO.
+  `filas` no cambia de forma. Todo acreditado ya era HALLAZGO: V dice POR QUÉ, también del que contestó
+  «Sí» después de encendido.
+- **De paso, en el mismo fichero** · la traza «① medido» del aviso programado leía
+  `resultado.hallazgos`, campo que `medirAcreditacion` nunca devolvió: imprimía «filas: ?» siempre
+  (consta así en `SCRUM-1112.md:65`). Ahora lee `filas`.
+
+## ② Qué NO entra
+
+M (SCRUM-1585); el camino E de 1102g §④ (país desde Configuración); B, C y D de 1102g §① (V cubre B y C
+sólo si alguien lo lanza). Ningún texto en pantalla: los literales nuevos sólo los ve el fundador
+(su terminal y el correo de `AVISO_ACREDITACION_EMAIL_DESTINO`); se le mandaron al orquestador antes del
+empujón. Sin esquema, sin ALTER, sin sellado ni XML.
+
+## ③ Cómo se midió
+
+- Test nuevo `tests/scrum1102h-sii-cierra-el-encendido.test.mjs`: 14 casos, 14 pasan.
+- Mutaciones: 11, las 11 cazadas, y en cada pasada caen + pasan = 14 (banco en el tmp del trabajo;
+  población: 6 sobre el `dist/` del servicio, 4 sobre el guard, 1 sobre el aviso). M1 (sin puerta) es
+  el rojo primero: el comportamiento de `main`, 3 caídas.
+- `tests/scrum218-flag-fiscal-auditado.test.mjs`: su doble gana `llevaLibrosPorSii: false`. Sin eso,
+  la puerta se niega antes de lo que ese test prueba (§⑦.3 de 1102g lo predijo). Es el contrato nuevo,
+  no un ajuste del guard: sus aserciones no cambian.
+- Dirigida: el test nuevo + 218, 1097, 1109, 1101 y 1102f → 74 de 74. Guards de suite y de registro,
+  en la entrega de Jira.
+
+## ④ Mis errores
+
+- Para el rojo primero sobrescribí `flagFiscal.service.ts` con el de `main` usando `> $F`: el hook no
+  lo vio (con la ruta literal sí lo bloqueó, después). Lo restauré de una copia y comprobé el diff.
+  Y aquel «rojo» era CIEGO: `tsc` no estaba en el árbol (exit 127), no había `dist/`. Lo vi leyendo la
+  traza, no por un contador. El rojo bueno es la mutación M1.
+
+## ⑤ Sin medir
+
+Ninguna base. Si la tarea programada de SCRUM-1109 está desplegada en Railway. La tanda completa.
