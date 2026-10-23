@@ -455,3 +455,17 @@ En «Comandos», debajo del bloque del TAP:
 - **Di casi por buena una mutación que no movía el veredicto.** Quité una regla y el test cayó, pero por el texto: la segunda regla seguía diciendo CIEGO. Y mi primera mutación con `sed` no se aplicó entera, sin avisar: el recuento la delató. La rehice con un script que sale con error si no encuentra lo que va a quitar.
 - **Derivé el tamaño del tramo con una pasada, y la segunda lo dejó al 76 % del tope:** lo recalculé.
 - **Fecha sin año en un comentario de código** (lo arregla el relevo `jv-j6bd`): el comentario de `FICHEROS_POR_TRAMO` decía «medido el 23-oct» y repetía el valor de la constante. `scrum737` no acepta una fecha sin año como ancla y contó dos cifras nuevas: el obligatorio de #2787 cayó por ese caso. Arreglado sin mover líneas: el valor se nombra por la constante (③) y la medición lleva el año (④). Lo caza ya `tests/scrum737-cifra-con-arbol-y-hora.test.mjs`; el `CENSO_CONGELADO` no se ha tocado.
+
+## ⑪ 23-oct: la receta de la tanda por tramos, APLICADA a `CLAUDE.md` (carril un jefe, por encargo)
+
+**Medido contra:** `origin/main` = `7fa6d89cbc761ad8daacce60e85947c5a1539341` · 2026-10-23T22:25:20Z (hora de GitHub)
+A9: sin fallo que generalice — el bloque se copió por programa del tramo ⑩, se cotejó byte a byte con `c.20689`, y el número de tramos sale de `--plan`, no de la firma
+
+J6 (`jv-j6bf`, equipo de Javier). Carril «un jefe» (`node scripts/carriles.mjs de CLAUDE.md` → `docs/equipo/dos-equipos.md:197`), aplicado por encargo del orquestador `cobroflash-backend-62` **como jefe**, con el mismo precedente que SCRUM-1406 `c.20525`. El encargo cubre sólo este bloque.
+
+- **Firma:** `c.20689` («✅ Sí, cuando entre #2787»). #2787 está en main: `ba587af0205aef949bdedc4b7d479e5ca598950e` (`c.20708`).
+- **`CLAUDE.md`**, «Comandos»: las cinco líneas del bloque firmado, justo debajo de `grep "# SKIP" …`, la última línea del bloque del TAP. Diff: +5 / −0, 0 bytes CR.
+- **Copiado por programa:** un script lee las líneas sangradas de «Propuesta para `CLAUDE.md`» del tramo ⑩ y las compara con el bloque de código de `c.20689`. Salen iguales (5 de 5), y el script sólo escribe si el ancla aparece una única vez.
+- **El número de tramos, recalculado:** `node scripts/tanda-entera-por-tramos.mjs --plan` sobre `7fa6d89cb` da **1491 ficheros → 13 tramos de hasta 115** (control: `ls tests/*.test.mjs` cuenta 1491). Es el mismo 13 de la firma y de `c.20708` (1488 ficheros), así que el literal no cambia. La fecha de la medición va aquí y no dentro del bloque: el bloque es literal firmado.
+- **Casa con el script de hoy:** `--plan`, `--tramo i/n` y `--resumen n` (`scripts/tanda-entera-por-tramos.mjs:103-105`); el resumen sale 0 · 1 · 2 (`:178`).
+- No he tocado `docs/YAQU_MASTER.md` ni ninguna otra parte de `CLAUDE.md`. El master no recoge esta receta: la firma la pidió sólo en `CLAUDE.md`.
