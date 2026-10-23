@@ -1,0 +1,3 @@
+== A · CENSO POR AST · población: 2411 ficheros (src, tests, scripts, public) ==
+ROJO   A0 SEMBRADO: 2 llamadas (una por nombre), 0 por el prefijo y 0 por el comentario  {"llamadas":0,"total":0}  <<< llamadas: esperado 2, salió 0 | total: esperado 4, salió 0
+CIEGO: el censo no ve el fichero sembrado.

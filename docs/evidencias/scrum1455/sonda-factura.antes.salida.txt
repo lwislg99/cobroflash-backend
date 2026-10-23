@@ -1,0 +1,134 @@
+CODIGO MEDIDO (annul): SIN ARREGLO (leído del dist, no de la etiqueta «ANTES»)
+SONDA FACTURA ANTES · POBLACION=112 peticiones sobre 16 rutas · comercio 2 · otro 3
+estado · ruta · caso · id pedido · filas de factura cambiadas · facturas nuevas · auditoría · nº de factura en la respuesta
+400  GET /admin/invoices/:id  [decimal] 1.5  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 1 es 2026-S-0001)  ->  {"error":"invalid_id"}
+400  GET /admin/invoices/:id  [no cabe] 2147483648  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"invalid_id"}
+400  GET /admin/invoices/:id  [no cabe] 99999999999999999999  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"invalid_id"}
+400  GET /admin/invoices/:id  [no es número] abc  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"invalid_id"}
+200  GET /admin/invoices/:id  [CONTROL id correcto] 2  · cambian:[] · nuevas:[] · audit:[] · nº:2026-S-0002 (la 2 es 2026-S-0002)  ->  {"id":2,"merchantId":2,"customerId":1,"quoteId":null,"chargeId":null,"customerName":null,"customerLegalName":n
+404  GET /admin/invoices/:id  [tenencia (otro comercio)] 3  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 3 es 2026-S-0003)  ->  {"error":"not_found"}
+400  GET /admin/invoices/:id  [tenencia decimal] 3.5  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 3 es 2026-S-0003)  ->  {"error":"invalid_id"}
+400  POST /admin/invoices/:id/payment-anomaly  [decimal] 4.5  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 4 es 2026-S-0004)  ->  {"error":"invalid_input"}
+500  POST /admin/invoices/:id/payment-anomaly  [no cabe] 2147483648  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"internal_error"}  · log: [POST /admin/invoices/:id/payment-anomaly] Invalid `prisma_1.prisma.invoice.findFirst()` invocation in <raiz>\dist\modules\system\app\routes
+500  POST /admin/invoices/:id/payment-anomaly  [no cabe] 99999999999999999999  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"internal_error"}  · log: [POST /admin/invoices/:id/payment-anomaly] Invalid `prisma_1.prisma.invoice.findFirst()` invocation in <raiz>\dist\modules\system\app\routes
+400  POST /admin/invoices/:id/payment-anomaly  [no es número] abc  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"invalid_input"}
+200  POST /admin/invoices/:id/payment-anomaly  [CONTROL id correcto] 5  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 5 es 2026-S-0005)  ->  {"ok":true,"kind":"parcial","message":"Recibidos 10,00 de 121,00 € (faltan 111,00). La factura SIGUE pendiente
+404  POST /admin/invoices/:id/payment-anomaly  [tenencia (otro comercio)] 6  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 6 es 2026-S-0006)  ->  {"error":"not_found"}
+400  POST /admin/invoices/:id/payment-anomaly  [tenencia decimal] 6.5  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 6 es 2026-S-0006)  ->  {"error":"invalid_input"}
+400  GET /admin/invoices/:id/dispute-package  [decimal] 7.5  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 7 es 2026-S-0007)  ->  {"error":"invalid_id"}
+400  GET /admin/invoices/:id/dispute-package  [no cabe] 2147483648  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"invalid_id"}
+400  GET /admin/invoices/:id/dispute-package  [no cabe] 99999999999999999999  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"invalid_id"}
+400  GET /admin/invoices/:id/dispute-package  [no es número] abc  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"invalid_id"}
+200  GET /admin/invoices/:id/dispute-package  [CONTROL id correcto] 8  · cambian:[] · nuevas:[] · audit:[] · nº:2026-S-0008 (la 8 es 2026-S-0008)  ->  <!doctype html><html lang="es"><head><meta charset="utf-8"/> <title>Paquete de disputa · 2026-S-0008</title> <
+404  GET /admin/invoices/:id/dispute-package  [tenencia (otro comercio)] 9  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 9 es 2026-S-0009)  ->  {"error":"not_found"}
+400  GET /admin/invoices/:id/dispute-package  [tenencia decimal] 9.5  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 9 es 2026-S-0009)  ->  {"error":"invalid_id"}
+400  PUT /admin/invoices/:id/tags  [decimal] 10.5  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 10 es 2026-S-0010)  ->  {"error":"invalid_id"}
+400  PUT /admin/invoices/:id/tags  [no cabe] 2147483648  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"invalid_id"}
+400  PUT /admin/invoices/:id/tags  [no cabe] 99999999999999999999  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"invalid_id"}
+400  PUT /admin/invoices/:id/tags  [no es número] abc  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"invalid_id"}
+200  PUT /admin/invoices/:id/tags  [CONTROL id correcto] 11  · cambian:[11{tags=["sonda"]}] · nuevas:[] · audit:[] · nº:- (la 11 es 2026-S-0011)  ->  {"ok":true}
+404  PUT /admin/invoices/:id/tags  [tenencia (otro comercio)] 12  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 12 es 2026-S-0012)  ->  {"error":"invoice_not_found"}
+400  PUT /admin/invoices/:id/tags  [tenencia decimal] 12.5  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 12 es 2026-S-0012)  ->  {"error":"invalid_id"}
+🔴 200  PUT /admin/invoices/:id/status  [decimal] 13.5  · cambian:[13{status="paid",paidAt="2026-10-20T15:12:}] · nuevas:[] · audit:[marcar_pagado_manual@13] · nº:2026-S-0013 (la 13 es 2026-S-0013)  ->  {"id":13,"merchantId":2,"customerId":1,"quoteId":null,"chargeId":null,"customerName":null,"customerLegalName":
+500  PUT /admin/invoices/:id/status  [no cabe] 2147483648  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"internal_error"}  · log: [PUT /admin/invoices/:id/status] Invalid `prisma_1.prisma.invoice.findFirst()` invocation in <raiz>\dist\modules\system\invoiceAdmin.js:222:
+500  PUT /admin/invoices/:id/status  [no cabe] 99999999999999999999  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"internal_error"}  · log: [PUT /admin/invoices/:id/status] Invalid `prisma_1.prisma.invoice.findFirst()` invocation in <raiz>\dist\modules\system\invoiceAdmin.js:222:
+400  PUT /admin/invoices/:id/status  [no es número] abc  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"invalid_id"}
+200  PUT /admin/invoices/:id/status  [CONTROL id correcto] 14  · cambian:[14{status="paid",paidAt="2026-10-20T15:12:}] · nuevas:[] · audit:[marcar_pagado_manual@14] · nº:2026-S-0014 (la 14 es 2026-S-0014)  ->  {"id":14,"merchantId":2,"customerId":1,"quoteId":null,"chargeId":null,"customerName":null,"customerLegalName":
+404  PUT /admin/invoices/:id/status  [tenencia (otro comercio)] 15  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 15 es 2026-S-0015)  ->  {"error":"not_found"}
+404  PUT /admin/invoices/:id/status  [tenencia decimal] 15.5  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 15 es 2026-S-0015)  ->  {"error":"not_found"}
+🔴 200  POST /admin/invoices/:id/pay  [decimal] 16.5  · cambian:[16{status="paid",paidAt="2026-10-20T15:12:}] · nuevas:[] · audit:[marcar_pagado_manual@16] · nº:2026-S-0016 (la 16 es 2026-S-0016)  ->  {"id":16,"merchantId":2,"customerId":1,"quoteId":null,"chargeId":null,"customerName":null,"customerLegalName":
+500  POST /admin/invoices/:id/pay  [no cabe] 2147483648  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"internal_error"}  · log: [POST /admin/invoices/:id/pay] Invalid `prisma_1.prisma.invoice.findFirst()` invocation in <raiz>\dist\modules\system\invoiceAdmin.js:222:52
+500  POST /admin/invoices/:id/pay  [no cabe] 99999999999999999999  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"internal_error"}  · log: [POST /admin/invoices/:id/pay] Invalid `prisma_1.prisma.invoice.findFirst()` invocation in <raiz>\dist\modules\system\invoiceAdmin.js:222:52
+400  POST /admin/invoices/:id/pay  [no es número] abc  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"invalid_id"}
+200  POST /admin/invoices/:id/pay  [CONTROL id correcto] 17  · cambian:[17{status="paid",paidAt="2026-10-20T15:12:}] · nuevas:[] · audit:[marcar_pagado_manual@17] · nº:2026-S-0017 (la 17 es 2026-S-0017)  ->  {"id":17,"merchantId":2,"customerId":1,"quoteId":null,"chargeId":null,"customerName":null,"customerLegalName":
+404  POST /admin/invoices/:id/pay  [tenencia (otro comercio)] 18  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 18 es 2026-S-0018)  ->  {"error":"not_found"}
+404  POST /admin/invoices/:id/pay  [tenencia decimal] 18.5  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 18 es 2026-S-0018)  ->  {"error":"not_found"}
+🔴 200  POST /admin/invoices/:id/unpay  [decimal] 19.5  · cambian:[19{status="pending",paidAt=null,paidVia=null}] · nuevas:[] · audit:[deshacer_pago@19] · nº:- (la 19 es J-2026-0019)  ->  {"id":19,"merchantId":2,"customerId":1,"quoteId":null,"chargeId":null,"customerName":null,"customerLegalName":
+500  POST /admin/invoices/:id/unpay  [no cabe] 2147483648  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"internal_error"}  · log: [POST /admin/invoices/:id/unpay] Invalid `prisma_1.prisma.invoice.findFirst()` invocation in <raiz>\dist\modules\system\invoiceAdmin.js:222:
+500  POST /admin/invoices/:id/unpay  [no cabe] 99999999999999999999  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"internal_error"}  · log: [POST /admin/invoices/:id/unpay] Invalid `prisma_1.prisma.invoice.findFirst()` invocation in <raiz>\dist\modules\system\invoiceAdmin.js:222:
+400  POST /admin/invoices/:id/unpay  [no es número] abc  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"invalid_id"}
+200  POST /admin/invoices/:id/unpay  [CONTROL id correcto] 20  · cambian:[20{status="pending",paidAt=null,paidVia=null}] · nuevas:[] · audit:[deshacer_pago@20] · nº:- (la 20 es J-2026-0020)  ->  {"id":20,"merchantId":2,"customerId":1,"quoteId":null,"chargeId":null,"customerName":null,"customerLegalName":
+404  POST /admin/invoices/:id/unpay  [tenencia (otro comercio)] 21  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 21 es J-2026-0021)  ->  {"error":"not_found"}
+404  POST /admin/invoices/:id/unpay  [tenencia decimal] 21.5  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 21 es J-2026-0021)  ->  {"error":"not_found"}
+400  POST /admin/invoices/:id/resend-whatsapp  [decimal] 22.5  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 22 es 2026-S-0022)  ->  {"ok":false,"error":"invalid_id"}
+400  POST /admin/invoices/:id/resend-whatsapp  [no cabe] 2147483648  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"ok":false,"error":"invalid_id"}
+400  POST /admin/invoices/:id/resend-whatsapp  [no cabe] 99999999999999999999  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"ok":false,"error":"invalid_id"}
+400  POST /admin/invoices/:id/resend-whatsapp  [no es número] abc  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"ok":false,"error":"invalid_id"}
+200  POST /admin/invoices/:id/resend-whatsapp  [CONTROL id correcto] 23  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 23 es 2026-S-0023)  ->  {"ok":true,"sent":false,"error":"whatsapp_send_failed","message":"No se pudo enviar por WhatsApp. Copia el enl  · log: [invoiceWhatsApp] charge error: request to http://localhost:3000/charges failed, reason: 
+404  POST /admin/invoices/:id/resend-whatsapp  [tenencia (otro comercio)] 24  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 24 es 2026-S-0024)  ->  {"ok":false,"error":"invoice_not_found","message":"Factura no encontrada."}
+400  POST /admin/invoices/:id/resend-whatsapp  [tenencia decimal] 24.5  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 24 es 2026-S-0024)  ->  {"ok":false,"error":"invalid_id"}
+🔴 200  POST /admin/invoices/:id/send-email  [decimal] 25.5  · cambian:[25{pdfUrl="/admin/invoices/2}] · nuevas:[] · audit:[] · nº:- (la 25 es 2026-S-0025)  ->  {"ok":true,"sent":true,"to":"c@sonda.invalid"}
+200  POST /admin/invoices/:id/send-email  [no cabe] 2147483648  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"ok":true,"sent":false,"error":"email_send_failed","message":"No sabemos si el email ha salido. Pregúntale a   · log: [POST /admin/invoices/:id/send-email] Invalid `prisma_1.prisma.invoice.findFirst()` invocation in <raiz>\dist\modules\system\app\routes\invo
+200  POST /admin/invoices/:id/send-email  [no cabe] 99999999999999999999  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"ok":true,"sent":false,"error":"email_send_failed","message":"No sabemos si el email ha salido. Pregúntale a   · log: [POST /admin/invoices/:id/send-email] Invalid `prisma_1.prisma.invoice.findFirst()` invocation in <raiz>\dist\modules\system\app\routes\invo
+400  POST /admin/invoices/:id/send-email  [no es número] abc  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"ok":false,"error":"invalid_id"}
+200  POST /admin/invoices/:id/send-email  [CONTROL id correcto] 26  · cambian:[26{pdfUrl="/admin/invoices/2}] · nuevas:[] · audit:[] · nº:- (la 26 es 2026-S-0026)  ->  {"ok":true,"sent":true,"to":"c@sonda.invalid"}
+404  POST /admin/invoices/:id/send-email  [tenencia (otro comercio)] 27  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 27 es 2026-S-0027)  ->  {"ok":false,"error":"not_found"}
+404  POST /admin/invoices/:id/send-email  [tenencia decimal] 27.5  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 27 es 2026-S-0027)  ->  {"ok":false,"error":"not_found"}
+400  POST /admin/invoices/:id/send-reminder  [decimal] 28.5  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 28 es 2026-S-0028)  ->  {"error":"invalid_id"}
+400  POST /admin/invoices/:id/send-reminder  [no cabe] 2147483648  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"invalid_id"}
+400  POST /admin/invoices/:id/send-reminder  [no cabe] 99999999999999999999  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"invalid_id"}
+400  POST /admin/invoices/:id/send-reminder  [no es número] abc  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"invalid_id"}
+200  POST /admin/invoices/:id/send-reminder  [CONTROL id correcto] 29  · cambian:[29{reminder7SentAt="2026-10-20T15:12:}] · nuevas:[] · audit:[] · nº:- (la 29 es 2026-S-0029)  ->  {"ok":true,"sent":true,"via":"text","phone":"34600000001"}
+404  POST /admin/invoices/:id/send-reminder  [tenencia (otro comercio)] 30  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 30 es 2026-S-0030)  ->  {"ok":false,"error":"not_found"}
+400  POST /admin/invoices/:id/send-reminder  [tenencia decimal] 30.5  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 30 es 2026-S-0030)  ->  {"error":"invalid_id"}
+🔴 200  POST /admin/invoices/:id/annul  [decimal] 31.5  · cambian:[31{status="annulled",vfAnulHash="0AEB1CF39101EB3B3,vfAnulTimestamp="2026-10-20T15:12:,vfAnulPrevHash="AAAAAAAAAAAAAAAAA}] · nuevas:[] · audit:[factura_anulada@31] · nº:2026-S-0031 (la 31 es 2026-S-0031)  ->  {"ok":true,"status":"annulled","number":"2026-S-0031","motivo":"duplicada","veriFactu":true,"liberados":{"alba  · log: [verifactu] ANULACION invoice=2026-S-0031 hash=0AEB1CF39101EB3B…
+500  POST /admin/invoices/:id/annul  [no cabe] 2147483648  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"internal_error"}  · log: [POST /admin/invoices/:id/annul] Invalid `prisma_1.prisma.invoice.findFirst()` invocation in <raiz>\dist\modules\system\app\routes\invoicesA
+500  POST /admin/invoices/:id/annul  [no cabe] 99999999999999999999  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"internal_error"}  · log: [POST /admin/invoices/:id/annul] Invalid `prisma_1.prisma.invoice.findFirst()` invocation in <raiz>\dist\modules\system\app\routes\invoicesA
+400  POST /admin/invoices/:id/annul  [no es número] abc  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"invalid_id"}
+200  POST /admin/invoices/:id/annul  [CONTROL id correcto] 32  · cambian:[32{status="annulled",vfAnulHash="A5C54B7AD87EC1387,vfAnulTimestamp="2026-10-20T15:12:,vfAnulPrevHash="0AEB1CF39101EB3B3}] · nuevas:[] · audit:[factura_anulada@32] · nº:2026-S-0032 (la 32 es 2026-S-0032)  ->  {"ok":true,"status":"annulled","number":"2026-S-0032","motivo":"duplicada","veriFactu":true,"liberados":{"alba  · log: [verifactu] ANULACION invoice=2026-S-0032 hash=A5C54B7AD87EC138…
+404  POST /admin/invoices/:id/annul  [tenencia (otro comercio)] 33  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 33 es 2026-S-0033)  ->  {"error":"not_found"}
+404  POST /admin/invoices/:id/annul  [tenencia decimal] 33.5  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 33 es 2026-S-0033)  ->  {"error":"not_found"}
+🔴 201  POST /admin/invoices/:id/rectify  [decimal] 34.5  · cambian:[] · nuevas:[37{type=R1,number=2026-CF-R-001,rectifiesId=34}] · audit:[factura_emitida@null,encolado_fallido@37,factura_rectificada@34] · nº:2026-S-0034 (la 34 es 2026-S-0034)  ->  {"ok":true,"id":37,"number":"2026-CF-R-001","total":"-121","currency":"EUR","rectifies":{"id":34,"number":"202  · log: [verifactu] invoice=2026-CF-R-001 hash=0F40626A0DEE0CE7…
+500  POST /admin/invoices/:id/rectify  [no cabe] 2147483648  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"internal_error"}  · log: [POST /admin/invoices/:id/rectify] Invalid `prisma_1.prisma.invoice.findFirst()` invocation in <raiz>\dist\modules\system\app\routes\invoice
+500  POST /admin/invoices/:id/rectify  [no cabe] 99999999999999999999  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"internal_error"}  · log: [POST /admin/invoices/:id/rectify] Invalid `prisma_1.prisma.invoice.findFirst()` invocation in <raiz>\dist\modules\system\app\routes\invoice
+400  POST /admin/invoices/:id/rectify  [no es número] abc  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"invalid_id"}
+201  POST /admin/invoices/:id/rectify  [CONTROL id correcto] 35  · cambian:[] · nuevas:[38{type=R1,number=2026-CF-R-002,rectifiesId=35}] · audit:[factura_emitida@null,encolado_fallido@38,factura_rectificada@35] · nº:2026-S-0035 (la 35 es 2026-S-0035)  ->  {"ok":true,"id":38,"number":"2026-CF-R-002","total":"-121","currency":"EUR","rectifies":{"id":35,"number":"202  · log: [verifactu] invoice=2026-CF-R-002 hash=A1EBA66EB556BB23…
+404  POST /admin/invoices/:id/rectify  [tenencia (otro comercio)] 36  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 36 es 2026-S-0036)  ->  {"error":"not_found"}
+404  POST /admin/invoices/:id/rectify  [tenencia decimal] 36.5  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 36 es 2026-S-0036)  ->  {"error":"not_found"}
+🔴 200  POST /admin/invoices/:id/regenerate-pdf  [decimal] 39.5  · cambian:[39{pdfUrl="/admin/invoices/3}] · nuevas:[] · audit:[] · nº:- (la 39 es 2026-S-0037)  ->  {"ok":true,"pdfUrl":"/admin/invoices/39/pdf","veriFactu":true}
+500  POST /admin/invoices/:id/regenerate-pdf  [no cabe] 2147483648  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"internal_error"}  · log: [POST /admin/invoices/:id/regenerate-pdf] Invalid `prisma_1.prisma.invoice.findFirst()` invocation in <raiz>\dist\modules\system\app\routes\
+500  POST /admin/invoices/:id/regenerate-pdf  [no cabe] 99999999999999999999  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"internal_error"}  · log: [POST /admin/invoices/:id/regenerate-pdf] Invalid `prisma_1.prisma.invoice.findFirst()` invocation in <raiz>\dist\modules\system\app\routes\
+400  POST /admin/invoices/:id/regenerate-pdf  [no es número] abc  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"invalid_id"}
+200  POST /admin/invoices/:id/regenerate-pdf  [CONTROL id correcto] 40  · cambian:[40{pdfUrl="/admin/invoices/4}] · nuevas:[] · audit:[] · nº:- (la 40 es 2026-S-0038)  ->  {"ok":true,"pdfUrl":"/admin/invoices/40/pdf","veriFactu":true}
+404  POST /admin/invoices/:id/regenerate-pdf  [tenencia (otro comercio)] 41  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 41 es 2026-S-0039)  ->  {"error":"not_found"}
+404  POST /admin/invoices/:id/regenerate-pdf  [tenencia decimal] 41.5  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 41 es 2026-S-0039)  ->  {"error":"not_found"}
+400  GET /admin/invoices/:id/pdf  [decimal] 42.5  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 42 es 2026-S-0040)  ->  {"error":"invalid_id"}
+400  GET /admin/invoices/:id/pdf  [no cabe] 2147483648  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"invalid_id"}
+400  GET /admin/invoices/:id/pdf  [no cabe] 99999999999999999999  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"invalid_id"}
+400  GET /admin/invoices/:id/pdf  [no es número] abc  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"invalid_id"}
+500  GET /admin/invoices/:id/pdf  [CONTROL id correcto] 43  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 43 es 2026-S-0041)  ->  {"error":"pdf_generation_failed"}  · log: [GET /admin/invoices/:id/pdf] invoice_pendiente_de_sellado
+404  GET /admin/invoices/:id/pdf  [tenencia (otro comercio)] 44  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 44 es 2026-S-0042)  ->  {"error":"not_found"}
+400  GET /admin/invoices/:id/pdf  [tenencia decimal] 44.5  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 44 es 2026-S-0042)  ->  {"error":"invalid_id"}
+400  PATCH /admin/invoices/:id/asignados  [decimal] 45.5  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 45 es 2026-S-0043)  ->  {"error":"invalid_id"}
+400  PATCH /admin/invoices/:id/asignados  [no cabe] 2147483648  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"invalid_id"}
+400  PATCH /admin/invoices/:id/asignados  [no cabe] 99999999999999999999  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"invalid_id"}
+400  PATCH /admin/invoices/:id/asignados  [no es número] abc  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"invalid_id"}
+200  PATCH /admin/invoices/:id/asignados  [CONTROL id correcto] 46  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 46 es 2026-S-0044)  ->  {"ok":true,"asignados":[]}
+404  PATCH /admin/invoices/:id/asignados  [tenencia (otro comercio)] 47  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 47 es 2026-S-0045)  ->  {"error":"not_found"}
+400  PATCH /admin/invoices/:id/asignados  [tenencia decimal] 47.5  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 47 es 2026-S-0045)  ->  {"error":"invalid_id"}
+400  POST /invoice/:id/paid-webhook  [decimal] 48.5  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 48 es 2026-S-0046)  ->  {"error":"invalid_invoice_id"}
+500  POST /invoice/:id/paid-webhook  [no cabe] 2147483648  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"internal_error"}  · log: [POST /invoice/:id/paid-webhook] error Invalid `prisma_1.prisma.invoice.findUnique()` invocation in <raiz>\dist\modules\invoicing\app\routes
+500  POST /invoice/:id/paid-webhook  [no cabe] 99999999999999999999  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"internal_error"}  · log: [POST /invoice/:id/paid-webhook] error Invalid `prisma_1.prisma.invoice.findUnique()` invocation in <raiz>\dist\modules\invoicing\app\routes
+400  POST /invoice/:id/paid-webhook  [no es número] abc  · cambian:[] · nuevas:[] · audit:[] · nº:-  ->  {"error":"invalid_invoice_id"}
+200  POST /invoice/:id/paid-webhook  [CONTROL id correcto] 49  · cambian:[49{status="paid",paidAt="2026-10-20T15:12:}] · nuevas:[] · audit:[] · nº:2026-S-0047 (la 49 es 2026-S-0047)  ->  {"ok":true,"status":"paid","invoice":{"id":49,"number":"2026-S-0047","status":"paid","total":"121","currency":
+200  POST /invoice/:id/paid-webhook  [tenencia (otro comercio)] 50  · cambian:[50{status="paid",paidAt="2026-10-20T15:12:}] · nuevas:[] · audit:[] · nº:2026-S-0048 (la 50 es 2026-S-0048)  ->  {"ok":true,"status":"paid","invoice":{"id":50,"number":"2026-S-0048","status":"paid","total":"121","currency":
+400  POST /invoice/:id/paid-webhook  [tenencia decimal] 50.5  · cambian:[] · nuevas:[] · audit:[] · nº:- (la 50 es 2026-S-0048)  ->  {"error":"invalid_invoice_id"}
+
+RESUMEN · ¿el decimal <x>.5 actúa sobre / devuelve la factura x?
+no  400 GET /admin/invoices/:id  · decimal cambia:[] nuevas:[] · no cabe → 400/400 · control 200 cambia:[] · tenencia 404/400 intacta
+no  400 POST /admin/invoices/:id/payment-anomaly  · decimal cambia:[] nuevas:[] · no cabe → 500/500 · control 200 cambia:[] · tenencia 404/400 intacta
+no  400 GET /admin/invoices/:id/dispute-package  · decimal cambia:[] nuevas:[] · no cabe → 400/400 · control 200 cambia:[] · tenencia 404/400 intacta
+no  400 PUT /admin/invoices/:id/tags  · decimal cambia:[] nuevas:[] · no cabe → 400/400 · control 200 cambia:[11] · tenencia 404/400 intacta
+SÍ  200 PUT /admin/invoices/:id/status  · decimal cambia:[13] nuevas:[] · no cabe → 500/500 · control 200 cambia:[14] · tenencia 404/404 intacta
+SÍ  200 POST /admin/invoices/:id/pay  · decimal cambia:[16] nuevas:[] · no cabe → 500/500 · control 200 cambia:[17] · tenencia 404/404 intacta
+SÍ  200 POST /admin/invoices/:id/unpay  · decimal cambia:[19] nuevas:[] · no cabe → 500/500 · control 200 cambia:[20] · tenencia 404/404 intacta
+no  400 POST /admin/invoices/:id/resend-whatsapp  · decimal cambia:[] nuevas:[] · no cabe → 400/400 · control 200 cambia:[] · tenencia 404/400 intacta
+SÍ  200 POST /admin/invoices/:id/send-email  · decimal cambia:[25] nuevas:[] · no cabe → 200/200 · control 200 cambia:[26] · tenencia 404/404 intacta
+no  400 POST /admin/invoices/:id/send-reminder  · decimal cambia:[] nuevas:[] · no cabe → 400/400 · control 200 cambia:[29] · tenencia 404/400 intacta
+SÍ  200 POST /admin/invoices/:id/annul  · decimal cambia:[31] nuevas:[] · no cabe → 500/500 · control 200 cambia:[32] · tenencia 404/404 intacta
+SÍ  201 POST /admin/invoices/:id/rectify  · decimal cambia:[] nuevas:[37] · no cabe → 500/500 · control 201 cambia:[] · tenencia 404/404 intacta
+SÍ  200 POST /admin/invoices/:id/regenerate-pdf  · decimal cambia:[39] nuevas:[] · no cabe → 500/500 · control 200 cambia:[40] · tenencia 404/404 intacta
+no  400 GET /admin/invoices/:id/pdf  · decimal cambia:[] nuevas:[] · no cabe → 400/400 · control 500 cambia:[] · tenencia 404/400 intacta
+no  400 PATCH /admin/invoices/:id/asignados  · decimal cambia:[] nuevas:[] · no cabe → 400/400 · control 200 cambia:[] · tenencia 404/400 intacta
+no  400 POST /invoice/:id/paid-webhook  · decimal cambia:[] nuevas:[] · no cabe → 500/500 · control 200 cambia:[49] · tenencia 200/400 sin tenencia (ruta interna, sin comercio)
+VEREDICTOS=16 de 16 rutas · SIN JUZGAR=0 · EXIT=0
