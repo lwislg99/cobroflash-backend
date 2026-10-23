@@ -1004,3 +1004,59 @@ banco (el cambio sólo añade dos teléfonos al `deleteMany` por phone); que el 
 - Dejé un commit «wip» debajo de un merge con `main`; sin empujar, lo rehice con `reset --keep` y `cherry-pick -n`.
 - Mi primera sonda no arrancó (la ruta con espacio partía `NODE_OPTIONS`) y mi primer banco cayó por SSL y por
   sentencias preparadas con nombre: ninguno de los dos dio un número falso, los tres fallaron en alto.
+
+# SCRUM-1509j · El recordatorio de FACTURAS no reenvía si no puede guardar su candado (A), y una alarma ante lectores nuevos de la auditoría (E)
+
+**Medido contra:** `origin/main` = `37311b671db107cc48a31fc359104fe36525ad2e` · 2026-10-23T10:56:12Z (hora de GitHub al escribir: 2026-10-23T11:06:38Z)
+A9: comprobación → `tests/scrum1509j-recordatorio-de-facturas-no-reenvia.test.mjs`
+
+Sesión `jv-j1aj` (puesto J1, equipo de Javier). **Carril J2 a mano** (`invoiceReminder.service.ts` → J2, `dos-equipos.md:120`), por encargo del orquestador `cobroflash-backend-62`, que lo confirmó por mensaje. Decisión del fundador: **«A + E»** (SCRUM-1508 c.20470, transcrita en SCRUM-1509 c.20471). Regla 28: es un FRENO a un envío que ya existe; en el camino sano sale lo mismo, al mismo cliente y el mismo día.
+
+## 0 · PASO 0
+
+`git log origin/main --grep=1509`: 1509b–i en main, ninguno toca `invoiceReminder.service.ts` (1509b lo midió sin tocarlo). Ninguna rama `scrum-1509*` viva en el remoto. El defecto, corrido hoy (abajo): **60 envíos en 30 pasadas** con el candado roto, lo mismo que midió J2 el 8-oct (c.18886).
+
+## 1 · El arreglo (A) — `src/modules/billing/domain/invoiceReminder.service.ts`
+
+Antes: enviar, y DESPUÉS escribir `reminder7SentAt` / `reminder14SentAt` con el error tragado. Si esa escritura fallaba, la factura seguía «sin recordar» y el cron diario la volvía a mandar.
+
+Ahora el candado se **reserva antes de enviar** (`updateMany` condicionado a que siga a `null`, que además impide que dos pasadas a la vez manden el mismo aviso). Los tres caminos de fallo:
+
+| camino | qué pasa | caso del test |
+|---|---|---|
+| ① la reserva no se puede escribir | no se envía; la pasada siguiente lo intenta | `CAMINO ①` y `EL ROJO DE 1509b` |
+| ② el envío falla | la reserva se libera y mañana se reintenta (SCRUM-116 intacto) | `CAMINO ②` |
+| ③ el envío falla y liberar también | el candado se queda puesto: ese aviso **no se reintenta**, y el log lo dice | `CAMINO ③` |
+
+⚠️ El ③ es el coste aceptado de «si no puede anotar, se para»: un aviso legítimo se pierde si fallan seguidos el envío y la escritura que lo devolvería. Y un proceso que muere entre la reserva y el envío también lo pierde. No hay dato de cada cuánto pasa ninguno de los dos.
+
+## 2 · El rojo primero y el verde (base falsa en memoria, WhatsApp en dry-run, 30 pasadas)
+
+| caso | `main` | con el arreglo |
+|---|---|---|
+| CONTROL · todo sano | 2 | 2 |
+| candado roto siempre | **60** | **0** |
+| la reserva falla UNA vez | **4** | 2 |
+| el envío falla una vez | 2 | 2 |
+| el envío falla y liberar también | **2** | 1 |
+
+Test: `tests/scrum1509j-recordatorio-de-facturas-no-reenvia.test.mjs` — `main` 2 de 5 pasan; con el arreglo 5 de 5. **Qué pieza trabaja:** declara 3 `MUTACIONES_QUE_ME_TUMBAN` y `docs/master/evidencias/SCRUM-1509j/mutar.mjs` las aplica (recompila `dist`, corre, restaura byte a byte): base 5/5, las tres CAZADAS, final 5/5 (`salida-mutar.txt`). La rama CIEGA del guion no la he visto saltar.
+
+## 3 · La alarma (E) — `tests/scrum1509j-lectores-de-la-auditoria.test.mjs`
+
+AST de TypeScript sobre los `.ts` de `src/`: un lector es `<cliente>.auditLog.<lectura>(…)` o un texto que nombre la tabla `audit_log`. Los lectores de hoy son exactamente los 3 de SCRUM-1508 (2 en `solicitudesPendientes`, 1 en `reintentarSelladosPendientes`), y la lista es el conjunto exacto: cae si aparece uno nuevo y si uno conocido desaparece. Controles: POSITIVO sembrado (4 formas, las 4 vistas), CERO (escritura, otra tabla, un campo homónimo: 0), población declarada en el mensaje del rojo. Dos mutaciones, vistas caer a mano: quitar `count` tumba el positivo; bajar a 0 un lector conocido tumba la alarma.
+
+**Límite:** lo que no vea el AST (un `prisma[variable]` con el nombre del modelo en otra variable) no lo caza. No toca `audit.service.ts` (S1).
+
+## 4 · Lo que NO se hace aquí
+
+El recordatorio de PRESUPUESTOS (`reminder.service.ts`) es de S1 (c.18881): no tocado. La misma forma de A para ése es de S1: queda para el equipo de Luis, sin ticket abierto por esta sesión (lo decide el orquestador). Ninguna plantilla, ningún texto, nada de esquema.
+
+## 5 · Lo que NO se midió
+
+Postgres real (base en memoria). Cada cuánto falla la escritura del candado: sin dato. `tsc --noEmit`: 17 errores, ninguno en este fichero (cliente de Prisma compartido). Verificación en yaqu.app: no se puede ver un candado que falla en producción; no lo he intentado.
+
+## 6 · Errores propios
+
+* Mi banco salió a 0 en el control dos veces antes de medir nada: la baja de WhatsApp (el doble devolvía al cliente como «de baja») y el cerrojo del tope de 1509g (`$executeRaw`). Lo cazó el CONTROL, que ahora dice en su rojo lo que contestó el módulo.
+* Hice la lectura de Jira antes que la de arranque, y me medí después de cada una (149.555 y ~160.700); crucé 200k a ~238k y lo avisé en ese momento.
