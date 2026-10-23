@@ -103,10 +103,14 @@ const { isFlagEnabled } = await import('../dist/core/flags.js');
 const leerEfectivo = async () => {
   const m = await prisma.merchant.findUnique({
     where: { id: merchantId },
-    select: { id: true, email: true, country: true, flags: true },
+    select: { id: true, email: true, country: true, flags: true, llevaLibrosPorSii: true, domicilioFiscalForal: true },
   });
   return m ? { merchant: m, valor: isFlagEnabled(flag, { merchant: m }) } : null;
 };
+
+// SCRUM-1102h: lo que el merchant ha declarado se enseña ANTES de cambiar nada. El SII lo
+// decide el servicio (se niega a encender si no es «No»); la foral no bloquea y sólo se ve.
+const declarado = (v) => (v === true ? 'Sí' : v === false ? 'No' : 'No consta');
 
 console.log(`\n🎯 Base de datos: ${describirBD(process.env.DATABASE_URL)}`);
 console.log(`🏷️  Flag: ${flag} · merchant #${merchantId} · valor pedido: ${valorNuevo ? 'ON' : 'OFF'}`);
@@ -121,6 +125,7 @@ try {
   if (!antes) abortar(`No existe el merchant #${merchantId} en ${BD.host}/${BD.base}.`);
   console.log(`\n── VALOR EFECTIVO ANTES ─────────────────────────────`);
   console.log(`   ${flag} = ${antes.valor ? 'ON' : 'OFF'}   (merchant: ${antes.merchant.email})`);
+  console.log(`   SII declarado: ${declarado(antes.merchant.llevaLibrosPorSii)} · domicilio foral declarado: ${declarado(antes.merchant.domicilioFiscalForal)} (no bloquea; pendiente del asesor, SCRUM-1264)`);
 
   const r = await cambiarFlagFiscal({
     merchantId,
