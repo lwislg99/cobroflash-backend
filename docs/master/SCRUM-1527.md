@@ -486,3 +486,252 @@ que pide el paso 1 de §⑧, y ahora sabemos a QUÉ fichero mirar.
     D=$(mktemp -d) && for f in a b c; do cp 1527c/$f.mjs.txt $D/$f.mjs; done && cp 1527c/eventos.mjs $D/ && cd $D && \
       node --test --test-reporter=spec --test-reporter-destination=stdout \
         --test-reporter=./eventos.mjs --test-reporter-destination=stdout a.mjs b.mjs c.mjs   # (corta con timeout: b no cierra)
+
+---
+
+# SCRUM-1527e · Desde #2429, 0 colgadas en 372 jobs; y la variante E (el mensaje partido) queda descartada como mecanismo en el node de CI
+
+**Medido contra:** `origin/main` = `f4cac4820bf65d7cc737ed3a7672e423a7fc1547` · 2026-10-20T15:22:37Z (hora de lectura del fetch)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1527/1527e/jobs-con-reintento.mjs`
+
+J6 (sesión `jv-j6a`, equipo de Javier), por encargo del orquestador `cobroflash-backend-09`. Sólo
+medición: no toca `src/`, `tests/`, `scripts/`, ningún workflow ni ningún tiempo de espera. El
+ticket no se transiciona. **La causa NO está encontrada.**
+
+## En corto
+
+- **§⑧.1 (que el vigía escriba quién vive) y §⑧.2 (bucle en Linux) siguen SIN ejecutar.** El
+  vigía es carril de S5 y este encargo prohíbe tocarlo; en esta máquina sigue sin haber WSL
+  («no está instalado», medido hoy) ni Docker. Lo que sí he podido ejecutar está aquí abajo, y
+  sólo separa una cosa: descarta un mecanismo.
+- **Población:** 696 ejecuciones de `ci.yml` desde el 13-oct 04:00Z (GitHub declara 696), 545 jobs
+  «build + tests» con reintentos. **Después de #2429 (14-oct 07:47:56Z): 372 jobs con paso «Tests»
+  y 0 con «TANDA SIN VEREDICTO»**, 0 con el paso de 900 s o más (el más largo, 681 s), y 0 cuelgues
+  escondidos en los 12 cancelados que podían esconder uno (②). Antes del corte, 5 de 160, los mismos de 1527d.
+- **«Hoy ha vuelto a pasar» no lo encuentro.** La última ejecución de `ci.yml` es de las
+  2026-10-20T11:32:31Z, y entre el 14-oct 07:29Z y esa hora no hay ninguna tanda con el aviso ni
+  ningún paso de 900 s. Si el encargo se refería a un job concreto, ese job no está en esta
+  población, o no es una colgada (por ejemplo, el rojo de `scrum1405c`, que sí tiene veredicto y es
+  SCRUM-1405).
+- **Esto NO prueba que #2429 lo haya curado** (③): ya hubo un hueco sin cuelgues más largo que este
+  sin arreglo de por medio.
+- **Descartado:** la variante E de SCRUM-1520 (el hijo sale con un mensaje partido y el padre se
+  queda esperando) no puede ser la colgada de CI (④). En la versión de node de CI no cuelga
+  (6 pasadas de 6), y donde sí cuelga (v24.8.0, 3 de 3) lo hace girando en el PADRE, que es justo lo
+  contrario de lo que se ve en CI (1527b §②: los ficheros posteriores siguen corriendo).
+
+## ① El recuento de 1527d, a más de 100 jobs
+
+Lo pedía `SCRUM-1496.md:477` («recontar sobre más de 100 jobs»), y Luis lo dejó en 0 de 42
+(c.19716). Instrumento de 1527d **sin cambiar**: `s3-reproduce-hoy.mjs 2026-10-13T04:00:00Z <carpeta>
+2026-10-14T07:47:56Z --de-cache`. La primera pasada SIN caché murió a mitad: un HTTP 502 de GitHub en
+la ejecución 39071288778, y el instrumento no reintenta ni escribe nada. La lista la hace ahora
+`1527e/jobs-con-reintento.mjs`, con el mismo filtro y los mismos campos: reintenta cada consulta (hubo
+3 con 502) y sale 2 si las ejecuciones leídas no son las que declara GitHub. El recuento sigue
+siendo el de 1527d.
+
+| tramo | jobs con paso «Tests» | con «TANDA SIN VEREDICTO» | paso de 900 s o más |
+|---|---|---|---|
+| antes de #2429 (13-oct 04:00Z → 14-oct 07:47:56Z) | 160 | **5** | 5 |
+| después de #2429 (→ última ejecución, 20-oct 11:32:31Z) | **372** | **0** | 0 |
+
+- **Control positivo:** el colgado conocido 115134364145 sale con su aviso.
+- **Tamaño antes de contar:** 175 logs bajados (los candidatos de 600 s o más), el menor de 992.509
+  B. Ninguno por debajo de 1.000 B y ningún CIEGO.
+- **El corte de duración ya no es limpio, y no hace falta:** después de #2429 una tanda sana tarda
+  590 s de mediana (p90 630, máximo 681), así que 167 de 372 son candidatos. Se leyeron todos.
+  Ninguno lleva el aviso.
+- Salida entera: `1527e/salida-recuento.txt`. Lista: `1527e/jobs.json`.
+
+## ② El hueco del filtro: un cuelgue que se cancela antes de los 900 s
+
+Lo declaraba Luis en c.19651: con el job a 25 min y tandas de ~600 s, un cuelgue podía acabar
+`cancelled` y sin aviso. Además, cualquier push nuevo cancela el job de su rama. El filtro de 1527d
+no ve ninguno de los dos.
+
+`1527e/cancelados.mjs` lee los jobs cancelados después del corte con el paso «Tests» sin terminar
+y de 300 s o más (**12**). Mide la cola: los segundos entre el último caso y la línea de
+cancelación del runner. El silencio sano se mide en la misma población: el hueco más largo entre
+dos casos en las **115** tandas enteras (`success`, 600 s o más) es de **102 s**.
+
+- **Resultado:** las 12 colas van de 0 a 83 s. Ninguna pasa de 102 s.
+- **Control positivo:** el mismo instrumento sobre el único colgado cancelado conocido (29-sep, job
+  109503839889, 1527b §①) da **792 s** de cola, la cifra que midió 1527b por otra vía, y lo marca.
+- **Lo que no ve:** un cuelgue cancelado menos de ~102 s después de empezar no se distingue de un
+  silencio sano. Tampoco los cancelados de menos de 300 s (22 de los 35 con paso).
+- Salida: `1527e/salida-cancelados.txt`, con la pasada del control al final.
+
+## ③ Por qué 0 de 372 no es una cura
+
+| tasa supuesta | de dónde | P(0 en 372) |
+|---|---|---|
+| 3,13 % (5/160) | la ventana de 1527d | 0,0007 % |
+| 0,75 % (16/~2.130) | desde el 17-sep, 1527c | **6,05 %** |
+
+La primera es la tasa de un racimo (1527c, y c.19651 lo avisa: cinco cuelgues en dos rachas de 34 y
+20 min). La que no depende de dónde se corta es la segunda, y con ella sacar 0 sale una vez de cada
+16. Y hay un dato que pesa más que la cuenta: **entre el 29-sep 16:22Z y el 6-oct 13:48Z no hubo
+ningún cuelgue en 685 ejecuciones de `ci.yml`** (~536 jobs, a 545/696 jobs por ejecución), sin
+ningún arreglo por medio. El silencio de ahora lleva **495 ejecuciones**: todavía es más corto que
+uno que ya se acabó solo. Control de la consulta por rango: del 17-sep 13:54Z al 13-oct 10:32Z
+devuelve 2.398 ejecuciones, y 1527b leyó 2.400 en esa ventana.
+
+Con 0 de 372, la cota superior al 95 % de la tasa de ahora es del 0,80 %, y el 0,75 % de antes cabe
+dentro. **El recuento no separa «#2429 lo curó» de «racha sin cuelgues».** Lo separará una ventana
+más larga que la de 685 ejecuciones, o un cuelgue.
+
+## ④ La variante E: por qué no es el mecanismo de la colgada de CI
+
+La pista de c.19642 (Luis): en el banco de SCRUM-1520 (`la-cola-que-cae.mjs`), la variante E (el
+informe del hijo se corta a mitad de un mensaje, y el hijo sale) cuelga al padre 2 de 2 con node
+v24.8.0. En v24.18.0 no cuelga. La v24.21.0 de CI no estaba probada. Si E fuera el mecanismo, la
+tubería bloqueante de #2429 (que impide justo ese corte) explicaría el 0 de ①.
+
+**Medido, con los binarios oficiales** (zip de nodejs.org, sha256 cotejado con `SHASUMS256.txt`),
+Windows 11, el banco sin cambiar:
+
+| node | pasadas | E se cuelga | controles del banco |
+|---|---|---|---|
+| v24.21.0 (CI) | 6 | **0**: sale 1, «sólo se ve que cae el FICHERO» | 7 de 7 en las 6 |
+| v24.8.0 | 3 | **3**: `ETIMEDOUT` a los 180 s | 7 de 7 en las 3 |
+
+**Por qué, en la fuente** (`lib/internal/test_runner/runner.js` bajado por etiqueta):
+
+- En v24.8.0, `#drainRawBuffer()` es `while (this.#rawBuffer.length > 0) this.#processRawBuffer();`.
+  Con un mensaje partido, `#processRawBuffer` no consume nada y el bucle no termina. Es un bucle
+  **síncrono dentro del padre**.
+- Desde v24.18.0 hay una guarda: si una vuelta no cambia ni la longitud ni el tamaño del búfer,
+  emite el primer byte como `test:stdout` y avanza (`prevBufferSize`, en la :392 de 24.18.0 y en la
+  :412 de 24.20.0; v24.21.0 :420). **No está** en 24.10, 24.11, 24.12, 24.13, 24.14, 24.15, 24.16 ni
+  24.17. **Está** en 24.18, 24.20 y 24.21. Las 16 colgadas medidas (1527b, 1527c) corrieron en 24.20.0 o 24.21.0.
+- **Medido en el proceso colgado** (v24.8.0, pasada 2): el padre `node --test` pasa de 19,1 a
+  24,25 s de CPU en 5 s (un núcleo entero) y no le queda ningún hijo de fichero vivo.
+
+**Lo que descarta, por dos lados independientes:**
+
+1. En la versión de CI, un mensaje partido no cuelga (6 de 6, y la guarda está en la fuente).
+2. Aunque colgara, colgaría el PADRE girando, y un padre girando no lanza más ficheros. En CI se
+   siguen lanzando: 1527b §② (11 de 11) y 1527c ① (4 de 4) ven a `scrum809` escribir en el Postgres
+   minutos después del corte.
+
+Consecuencia para ③: si el silencio de ahora fuera la cura, el mecanismo que cura #2429 **no es E**,
+y sigue sin nombre. La tubería bloqueante cambia más cosas que el corte: por ejemplo, cómo escribe el
+hijo mientras el padre no lee. Eso **no lo he medido**.
+
+**Lo que no mide:** Linux. Pero lo que decide E es JavaScript del runner, y es el mismo en los dos
+sistemas. Lo que sí depende del sistema es si el corte llega a ocurrir, y eso es SCRUM-1405, no esto.
+Salida: `1527e/salida-banco-E.txt`. Huérfanos tras las 9 pasadas: 0 procesos del node bajado, con
+la sonda probada en positivo (ve 5 `node.exe` del sistema).
+
+## ⑤ Lo que miré y no separa
+
+| corte | resultado |
+|---|---|
+| recuento después de #2429 | 0 de 372, pero dentro de lo que ya dio una racha sin arreglo (③) |
+| cancelados después de #2429 | 0 de 12 con cola larga; ciego por debajo de ~102 s y de 300 s (②) |
+
+## ⑥ Lo que falta, por orden de lo que más separa
+
+1. **§⑧.1 de 1527b, sin cambios:** que el vigía escriba quién vive antes de matar. Sigue siendo lo
+   único que contesta en el PRÓXIMO cuelgue. Es carril de S5 y el dueño lo decide el fundador con
+   Luis (1527c ④). Con ③ hay un matiz: si #2429 lo hubiera curado, ese próximo cuelgue no llegará
+   nunca, y el vigía no tendría nada que contar.
+2. **Repetir ① cuando el silencio pase de ~700 ejecuciones** desde el 14-oct 07:47:56Z (al ritmo de
+   esta semana, ~80 al día: hacia el 23-oct). Si sigue en 0, el silencio es más largo que cualquiera
+   medido desde el 17-sep. Si aparece uno, es población nueva y la pregunta de ③ queda contestada.
+   Las dos órdenes, abajo.
+3. §⑧.2 (bucle en Linux), igual que antes: sin WSL ni Docker aquí, y en CI pide un workflow.
+
+## Errores míos en este tramo
+
+- Lancé el recuento grande SIN caché antes de saber que el instrumento muere con un 5xx, y perdí
+  todas las consultas de esa pasada (no medí cuánto tardó). Lo hice después de dos canarios que salieron bien, pero un canario corto no
+  da con un 502. La lista ahora la hace `jobs-con-reintento.mjs`, que reintenta y además comprueba
+  el `total_count`.
+- La primera versión de `cancelados.mjs` metía un job cancelado cuyo paso «Tests» había acabado en
+  `success` (117751462298). No puede esconder un cuelgue. Lo cazó su propia línea CIEGO («sin línea
+  de cancelación»), y el filtro ahora lo excluye.
+- Un `sed` para quitar la ruta de mi máquina de `salida-banco-E.txt` estaba mal escrito y no cambió
+  nada. Lo vi en el `grep` de comprobación de detrás y lo arreglé con el editor.
+- El encargo decía que el registro tenía «DOS tramos»; tenía tres (1527c incluido). Lo leí entero
+  antes de empezar.
+- Repetí la cicatriz de J6 del 13-oct (SCRUM-1539): no me medí el contexto hasta antes de empujar, y
+  ya iba por 229.284 (`usage` de mi jsonl), por encima del aviso de 200k.
+- `scrum622` cae 2 de 12 en este árbol, que no tiene `dist/` (`ERR_MODULE_NOT_FOUND`). Cae igual
+  con mis cambios guardados aparte, así que no es de este diff; su CENSO (el caso que cazó a 1527b)
+  pasa con los dos `.mjs` nuevos dentro.
+
+## Cómo se repite
+
+    node docs/master/evidencias/SCRUM-1527/1527e/jobs-con-reintento.mjs 2026-10-13T04:00:00Z <carpeta>
+    node docs/master/evidencias/SCRUM-1527/s3-reproduce-hoy.mjs 2026-10-13T04:00:00Z <carpeta> 2026-10-14T07:47:56Z --de-cache   # ①
+    node docs/master/evidencias/SCRUM-1527/1527e/cancelados.mjs <carpeta>/jobs.json <carpeta> 2026-10-14T07:47:56Z 300          # ②
+    gh api 'repos/lwislg99/cobroflash-backend/actions/workflows/ci.yml/runs?created=2026-09-29T16:22:00Z..2026-10-06T13:48:00Z&per_page=1' --jq .total_count   # ③
+    # ④ con el node.exe del zip oficial de cada versión (v24.21.0 y v24.8.0), en una carpeta propia:
+    <node-de-esa-version> docs/master/evidencias/SCRUM-1520/la-cola-que-cae.mjs    # la línea «E» del RESUMEN
+
+# SCRUM-1527f · Qué bloqueaba #2629: un rojo de main ya arreglado (scrum1405c ④), y una colgada nueva el 22-oct
+
+**Medido contra:** `origin/main` = `1ad1968523fed7c2ffb833d5a3feafe4dd1c79f8` · 2026-10-23T02:56:58Z (cabecera `Date:` de GitHub)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1527/1527f/censo1405c.mjs`
+
+Escribe J6 (sesión `jv-j6af`, equipo de Javier). Sólo lectura de CI y este tramo: no toca `src/`,
+`tests/`, `scripts/` ni workflows. La causa del cuelgue sigue sin encontrar, y el vigía de
+`scripts/tanda-con-veredicto.mjs` es carril S5: no lo toco.
+
+## En corto
+
+- #2629 estaba `BLOCKED` con `MERGEABLE` (no `DIRTY`): el check obligatorio, «build + tests (con
+  banco desechable)», salió `failure` el 20-oct (job 118717000197). La regla de `main` sólo exige
+  ese check. El meta-guard también salió rojo (CIEGO en `scrum859`), pero no es obligatorio.
+- El log pesa 1.945.951 B y no lleva «TANDA SIN VEREDICTO»: no es una colgada, es un rojo de
+  verdad. 11.909 pasan + 1 cae + 89 saltados = 11.999 declarados: la suma cuadra.
+- El caso que cae es `tests/scrum1405c-tuberia-bloqueante.test.mjs:201` (④): «con el módulo la
+  cobaya SIGUE perdiendo casos», con 3 casos perdidos en una de las 4 pasadas. El PR sólo añade
+  ficheros bajo `docs/master/`, así que **el rojo no es suyo: es de main**.
+- En 33 obligatorios en rojo (del 19 al 23-oct), ese caso cae en **11**, en ramas que no tienen
+  nada que ver entre sí y también en un `push` a main (117937381146, el 19-oct). La última vez es
+  del 21-oct a las 12:24Z. #2634 (SCRUM-1405d) cambió ese caso, para que afirme la pérdida medida,
+  y entró en main el 21-oct a las 12:43:49Z. Desde entonces, 0 de los 14 rojos lo traen (3 del 21-oct y 11 del
+  22-oct, contados uno a uno en `salida-censo1405c.txt`).
+- Por eso la rama se pone al día con `git merge origin/main` (el merge sale limpio y lo único que
+  difiere de main son los ficheros del PR), y se empuja una sola vez.
+
+## Lo nuevo para el ticket: una colgada después de #2429
+
+Job 119769715166 (rama `scrum-962c-editor-presupuestos-44`, creado el 22-oct a las 10:21Z): log
+de 1.357.234 B con «TANDA SIN VEREDICTO», 907 s de silencio. Lo último que llegó es un caso de
+`scrum615-pedir-tipo-destinatario`: el mismo sitio que las dos colgadas del 14-oct de 1527d.
+El «0 colgadas en 372 jobs» de 1527e sigue siendo cierto para su ventana (hasta el 20-oct), pero
+ha dejado de ser cierto desde entonces: en esta ventana hay **1 colgada en 179 jobs**. Ese
+recuento es por debajo: sólo he mirado los jobs en `failure`, y no los 20 cancelados (el hueco ②
+de 1527e).
+
+## Controles
+
+- **Positivo:** el job de #2629 (118717000197) entra en la población y sale marcado.
+- **Cero:** un verde (120208755966) sale sin marcar.
+- **Tamaño antes de contar:** los 33 logs van de 1.357.234 B (la colgada) a 1.943.896 B; ninguno
+  es un 404 de 215 B.
+- **Población:** 239 ejecuciones de `ci.yml` creadas desde el 19-oct a las 00:00Z, 179 jobs
+  obligatorios: 123 success · 33 failure · 20 cancelled · 3 sin conclusión.
+- **El caso se busca anclado al inicio de línea** (marca de fallo + `SCRUM-1405c · ④`), no por la
+  cruz a secas.
+
+## Lo que no he medido
+
+- Si el obligatorio del empujón de este tramo sale verde. Lo leo y lo digo en Jira.
+- La tasa con la que caía 1405c ④ en los verdes: el instrumento sólo abre los rojos.
+- Por qué `scrum859` sale CIEGO en el meta-guard. No bloquea y no es de este ticket (c.19716).
+
+## Errores míos en este tramo
+
+- El primer control de sufijo, buscando «1527» en el título de los PR, no sacó #2629, que existe.
+  Lo repetí anclado al nombre de la rama y sí salió. Con el primero habría dado 1527f por libre
+  sin haberlo comprobado.
+
+## Cómo se repite
+
+    node docs/master/evidencias/SCRUM-1527/1527f/censo1405c.mjs 2026-10-19T00:00:00Z <carpeta>
