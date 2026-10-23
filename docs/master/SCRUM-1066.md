@@ -181,3 +181,115 @@ campo — y regla 39 exige firma del fundador antes de escribir ese texto: no lo
 
 No se ha tocado `prisma/schema.prisma`, el camino de emisión, ningún flag, ni se ha escrito texto
 de pantalla. Solo lectura, dos descargas BOE por `curl` (no persistidas) y este documento.
+
+---
+
+# SCRUM-1066c · El borrador del 111 y del 115, sin pantalla
+
+**Medido contra:** `origin/main` = `c4921cd1284049bff83dcb32d2cba551e3072233` · 2026-10-23T04:09:12Z
+**Rama:** `scrum-1066c-borrador-111-115` · **Puesto:** J1 (sesión `jv-j1ah`) · **Encargo:** orquestador `cobroflash-backend-62`, 22-oct-2026 · **Desbloqueo:** D2, Jira c.16699
+
+A9: comprobación → `tests/scrum1387-banco-nuevo-va-al-catalogo.test.mjs`
+
+## PASO 0
+
+- `src/`: ningún constructor de 111/115. `retencionPracticada` sólo aparece en `expenses.service.ts`.
+- `git log origin/main --grep=SCRUM-1066`: 1066 y 1066b, los dos de medición, sin código. Y con `-S "modelo111"` desde el 20-sep, nada.
+- JQL `text ~ "modelo 111" OR text ~ "modelo 115"`: 16 tickets, ninguno construye el borrador con otro número.
+- Etiquetas de SCRUM-1066: `equipo-javier`, `area-j1`.
+
+## Qué se ha hecho
+
+| fichero | qué |
+|---|---|
+| `src/modules/fiscal/retenciones/casillas.ts` | las casillas, cada una con su fuente (orden, anexo, página y URL de la imagen) |
+| `src/modules/fiscal/retenciones/retencionesPracticadas.ts` | `construirBorradorRetenciones`: pura, sin base de datos |
+| `src/modules/fiscal/retenciones/retencionesPracticadas.repo.ts` | `leerBorradorRetenciones`: un `findMany` filtrado por `merchantId` y por el trimestre (fecha del apunte, el mismo criterio que el 303 y el libro de recibidas) |
+| `tests/scrum1066c-borrador-111-115.test.mjs` | 10 casos con datos fabricados y cifras a mano por perceptor, más `MUTACIONES_QUE_ME_TUMBAN` (10) |
+| `docs/master/evidencias/scrum1066/casillas-111-115.md` | la transcripción de los dos impresos |
+| `scripts/_sin-consumir-declarados.json` | las 9 piezas sin consumidor, declaradas como J1 y con motivo (SCRUM-1185): no hay ruta, a propósito |
+
+**Sin ruta, sin pantalla, sin texto que vea el usuario, sin esquema y sin tocar la emisión.** El aviso
+viaja dentro del resultado, y es el MISMO `AVISO_ORIENTATIVO` del 303, importado: no hay texto nuevo.
+Los motivos van como códigos (`gastos_sin_clasificar`, `ninguna_retencion_anotada`), no como frases.
+
+## Casillas: de dónde salen
+
+Método de SCRUM-1039b: `curl` del BOE y lectura visual del PNG del anexo, porque el articulado no las
+trae. La leyó un subagente y yo volví a mirar las dos páginas por mi cuenta: coinciden.
+
+- **111** · Orden EHA/586/2011, Anexo I, pág. 1 (`https://www.boe.es/datos/imagenes/disp/2011/66/04948_001.png`).
+  Consolidado sin sustitución del anexo («Texto inicial publicado el 18/03/2011»).
+- **115** · Orden de 20-nov-2000, Anexo II (euros), pág. 1 (`https://www.boe.es/datos/imagenes/disp/2000/285/21430_005.png`).
+
+⚠️ **NO comprobado:** que sea el impreso que la AEAT usa HOY. Lo único que se sabe es que el BOE no
+registra ninguna sustitución de esos anexos, y eso dice que son los últimos PUBLICADOS. No se ha
+cotejado con el formulario electrónico vigente: va al asesor.
+
+## Población cubierta — qué casillas sí y cuáles no
+
+| modelo | casilla | ¿se rellena? | por qué |
+|---|---|---|---|
+| 111 | 07 · 08 · 09 (actividades económicas, dinerarios) | **sí** | gastos con retención anotada al 15 % o al 7 % (RIRPF art. 95.1) |
+| 111 | 28 (suma de retenciones) | **sí** | = 09: es el único sumando con dato |
+| 111 | 29 (a deducir) | a 0 | sólo existe en la complementaria, que no está construida |
+| 111 | 30 (resultado) | **sí** | 28 − 29 |
+| 111 | 01-06 (trabajo) | **no** | no hay nóminas en el esquema (`TeamMember` es una cuenta de acceso) |
+| 111 | 10-12 (actividades en especie), 13-18 (premios), 19-24 (aprovechamientos forestales), 25-27 (derechos de imagen) | **no** | ningún dato de YaQu los representa |
+| 115 | 1 · 2 · 3 · 5 | **a 0, con `vacioPorque: 'sin_dato_de_arrendamiento'`** | ver abajo |
+| 115 | 4 (a deducir) | a 0 | complementaria |
+
+**Por qué el 115 sale a cero.** Nada en `Expense` dice que un gasto sea el ALQUILER de un inmueble
+(`category` = materiales|desplazamiento|herramientas|subcontrata|otros). El 19 % es el tipo del alquiler
+(RIRPF art. 100, verificado en 1066b), pero no es el único 19 %. **Decisión A del orquestador
+(22-oct-2026):** clasificar por el tipo sería inventarse el dato. El 19 %, y cualquier tipo que no sea
+15 o 7, va a `sinClasificar` con su dinero (`tipo_sin_modelo`). **La opción C —una categoría «alquiler»
+en el gasto— es una propuesta de esquema para el fundador. No está construida.**
+
+Además, fuera de la población: la periodicidad MENSUAL (grandes empresas) y el 190/180 anuales.
+
+**El invariante**, que el test comprueba al céntimo: Σ cuota anotada = 09 + 3 + sin clasificar.
+Lo que no se coloca se declara, cada cosa con su motivo: `sin_tipo`, `sin_cuota` (la cuota se guarda,
+no se recalcula), `sin_base`, `sin_perceptor` (sin proveedor no hay «nº de perceptores»),
+`importe_ilegible` y `tipo_sin_modelo`. «No lleva retención» (tipo 0 o `declarada === false`) y
+«nadie lo dijo» (todo a `null`) se cuentan aparte, y si TODOS los gastos del periodo están en el
+segundo caso sale `ninguna_retencion_anotada`: un 111 a cero no informa de nada, y tiene que decirlo.
+Un gasto de otro comercio rompe (regla 2), no se descarta en silencio.
+
+## Aceptación → dónde se ve
+
+| aceptación (literal) | dónde se ve |
+|---|---|
+| 1. Primero, MEDIR (sin código): qué datos de retenciones practicadas guarda YaQu hoy… | tramo SCRUM-1066 y 1066b de este fichero |
+| 2. Si los datos no existen: … el ALTER aditivo para Javier (A5) | ya hecho: SCRUM-1103 (PR #1745) |
+| 3. Si existen: borrador de cada modelo con la casilla de la orden (citada) en cada importe, marcado «borrador para tu asesor», sin presentar nada (regla 7). | `src/modules/fiscal/retenciones/` · `tests/scrum1066c-borrador-111-115.test.mjs`. **El marcado** viaja como `avisoObligatorio` (el del 303, sin aprobar todavía: lleva `[PENDIENTE microcopy oficial]`) → NO HECHO como texto de pantalla: pide la firma del fundador (regla 39) |
+| 4. Solo para quien practique retenciones, según lo que confirme el asesor. | NO HECHO → es una pantalla, y no la hay. El dato para decidirlo ya sale: `miradas`, `sinRetencion` y `sinDatoDeRetencion` |
+| 5. Documentos emitidos y libros intactos. | el diff no toca `src/modules/invoicing/` ni los libros; el lector es un `findMany` (lo comprueba el test del lector) |
+| Tests: con datos, cifras a mano por perceptor | `tests/scrum1066c-borrador-111-115.test.mjs`, caso «cifras a mano por perceptor» |
+| Tests: sin datos, la pantalla no aparece | NO HECHO → no hay pantalla |
+| Tests: `npm test` completo en verde | NO lo corrí entero (ver abajo). Lo juzga el CI |
+
+## Lo que se corrió, con su población
+
+- El test nuevo: **10 de 10** en verde.
+- Mutación con la red de la casa (`node scripts/meta-guard-mutaciones.mjs`): **las 10 de este test caen**.
+  Por memoria, la máquina mató la pasada completa después de mis 10, así que de las demás no hay
+  veredicto. Al morir dejó un mutante puesto en `tests/scrum303-albaran-una-pantalla.test.mjs`. Quité
+  esa línea a mano y comprobé que el fichero vuelve a ser idéntico a HEAD (`git diff --quiet`).
+- Dirigida (`tests-que-cubren --lanzar`, por tramos): 385 ficheros de 1.456, en 4 tramos. Rojos:
+  - `scrum1298b`: cae 2 de 8 también sobre `origin/main` limpio (c4921cd1).
+  - `scrum351` y `scrum476`: este worktree no tiene `node_modules` propio. Son del entorno.
+  - `scrum854`: faltaba este registro.
+  - `scrum1185` y `scrum1387`: eran míos y están arreglados (ver abajo).
+- Tipos: `tsc --noEmit` da 17 errores, todos de `archivedAt` en `quotes`/`system` (el cliente de Prisma
+  compartido va desfasado) y **ninguno en `src/modules/fiscal/retenciones/`**.
+
+## Mis errores
+
+- Escribí un banco de mutación con su propia lista (`mutar.mjs`), en vez de declarar
+  `MUTACIONES_QUE_ME_TUMBAN` en el test. Lo cazó `scrum1387`. El banco se ha ido y las mutaciones
+  están en el test. Eso es la línea `A9:` de arriba.
+- La primera versión del catálogo nombraba el fichero con una variable. El meta-guard exige literales,
+  y lo dijo.
+- Lancé el meta-guard completo en primer plano sin medir antes cuánto duraba: pasó a segundo plano y
+  la máquina lo mató.

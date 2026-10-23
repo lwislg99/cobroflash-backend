@@ -2,7 +2,8 @@
 
 - **Fecha de descarga:** 2026-10-23.
 - **Método:** `curl` contra boe.es (HTML consolidado, página de análisis `buscar/doc.php?id=…` y PNG de los anexos) + lectura visual del PNG con la herramienta Read. Ni memoria ni web de la AEAT: cada número y cada concepto de las tablas es lo que imprime la imagen citada.
-- **Carpeta de descarga (fuera del repositorio):** `C:\Users\Javier Pereira\.claude\jobs\c0b9970f\tmp\boe\`.
+- **Carpeta de descarga:** temporal de la sesión, fuera del repositorio y no persistida. Cada imagen se vuelve a bajar con su URL.
+- **Doble lectura:** la página 1 de cada impreso (`04948_001.png` y `21430_005.png`) la volvió a mirar la sesión que encargó la transcripción (`jv-j1ah`), por separado. Coinciden.
 
 ## Modelo 111 — Orden EHA/586/2011, de 9 de marzo (BOE-A-2011-4948)
 
