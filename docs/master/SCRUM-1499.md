@@ -190,3 +190,53 @@ la propuesta tampoco movía nada.
   revisión, sin mirar.
 - De paso, sin tocar: `evidencias/scrum1342/censo-salida.txt:16-17` copia los dos comentarios viejos.
   Es una evidencia fechada.
+
+## SCRUM-1499d · 23-oct: los comentarios ③ y ④ FIRMADOS, aplicados en `schema.prisma`
+
+**Medido contra:** `origin/main` = `0a46fe57247ed77be7b8e8dc2cf16cf7c9493e1e` · 2026-10-23T22:09:02Z (hora de GitHub)
+A9: sin fallo que generalice — el cambio se hizo por programa con el ANTES exigido byte a byte, y las dos medidas (preview y lectores del esquema) llevan su positivo sembrado y su base sin mutar.
+
+Sesión J5 (`jv-j5ag`, equipo de Javier), encargo del orquestador (`cobroflash-backend-62`). Firma del
+fundador: **SCRUM-1499 c.20692** (cambios ③ y ④ de c.20687 §1). #2783 (1499b, Parte L con `type`)
+está en `main` desde `94583f1ac`, así que la condición del ③ se cumple.
+
+### Ⓚ Qué cambia
+
+- `prisma/schema.prisma:1284` y `:1288`: sólo la cola `//`, con los DESPUÉS del tramo 1499c (Ⓖ),
+  copiados por programa de ese tramo. El programa exige que la línea de `main` case con el ANTES y que
+  la parte anterior a `//` quede igual byte a byte. Diff: +2 −2; 1.848 líneas antes y después; 0 CR.
+- Ningún campo, tipo, `@map` ni `@default` cambia. No se mueve ninguna línea.
+
+### Ⓛ Las condiciones de c.20692
+
+| condición | medido |
+|---|---|
+| sólo la cola `//`, sin mover líneas | diff +2 −2 en `:1284` y `:1288`; mismo número de líneas |
+| ③ después de #2783 en `main` | `merge-base --is-ancestor 94583f1ac origin/main` = sí; la `:409` del máster recoge `type` |
+| `preview-migracion --desde` = «sin cambios» | ver Ⓜ |
+| CODEOWNERS y revisión del dueño | `.github/CODEOWNERS:22` asigna el fichero; el ruleset de `main` (`gh api …/rules/branches/main`, 4 reglas leídas) dice `require_code_owner_review: false`. La protección clásica (`…/branches/main/protection`) da 404: no sé si es que no existe o que la cuenta no puede leerla |
+
+### Ⓜ `preview-migracion --desde`
+
+`previewMigracion({ desde })` de `scripts/preview-migracion.mjs`, con copias fuera del árbol y el CLI
+6.18.0 del checkout compartido por ruta (este árbol no tiene `node_modules`: sin él, la herramienta
+dice «LA HERRAMIENTA NO RESPONDE», no «sin cambios»). Sólo `migrate diff` datamodel→datamodel.
+
+| desde `main` → | control positivo | clase | SQL |
+|---|---|---|---|
+| `main` | 33 tablas | `sin_cambios` | `-- This is an empty migration.` |
+| **la rama** | 33 tablas | `sin_cambios` | `-- This is an empty migration.` |
+| semilla `semilla1499d String?` | 33 tablas | `con_cambios` | `ALTER TABLE "whatsapp_messages" ADD COLUMN "semilla1499d" TEXT;` |
+
+### Ⓝ Guards en local
+
+101 ficheros: los 83 `tests/*.test.mjs` que nombran `schema.prisma`, más 237, 976, 824, 836, 419, 702,
+700, 719, 1415, 267, 273, 1294, 921, 921c, 1572, 1387, 850 y 812. No hay ningún test con el número 1499.
+Resultado: **1.111 = 1.099 pasan + 3 caen + 9 saltan**. Los 3 son de scrum475 (SQL: «SUELO», «lo
+mismo» y «cuatro índices») y caen igual con el esquema de `main` (base sin mutar: 37 = 34 + 3 + 0):
+piden el CLI de Prisma en el `node_modules` del árbol. Lo que miden (que el SQL no cambia) lo da Ⓜ.
+
+### Ⓞ Lo que no se ha medido
+
+- Los 9 saltados y la tanda completa. El obligatorio de este PR, cuando se escribe esto, sin leer.
+- yaqu.app: un comentario del esquema no se sirve.
