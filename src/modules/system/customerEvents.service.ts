@@ -72,6 +72,26 @@ export async function existeEventoDePlan(
 }
 
 /**
+ * SCRUM-1403b · los tipos de evento cuyo `detail` lleva un IMPORTE escrito en el texto (siete sitios:
+ * pago recibido ×2, factura enviada, presupuesto enviado ×2, disputa e importe distinto). Los eventos
+ * no guardan a qué documento se refieren, así que sólo se pueden recortar por tipo (c.18040). Que la
+ * lista no se quede corta lo vigila `tests/scrum1403-el-tecnico-y-las-otras-puertas.test.mjs`, que
+ * lee por AST todos los sitios que escriben un evento.
+ */
+export const TIPOS_CON_IMPORTE_EN_EL_DETALLE: readonly string[] = Object.freeze([
+  'payment_received', 'invoice_issued', 'quote_sent', 'dispute_created', 'payment_anomaly',
+]);
+
+/**
+ * SCRUM-1403b · los eventos de esos tipos SIN su detalle, para quien no ve el dinero del negocio
+ * (decisión del fundador, SCRUM-1403 c.20375: «mandárselos sin el texto del detalle»). El título
+ * se queda: dice que hubo un pago, una factura, un envío o una disputa, y ninguno lleva importe.
+ */
+export function eventosSinImporte<T extends { type: string; detail?: string | null }>(eventos: T[]): T[] {
+  return eventos.map((e) => (TIPOS_CON_IMPORTE_EN_EL_DETALLE.includes(e.type) ? { ...e, detail: null } : e));
+}
+
+/**
  * Lista los eventos de un cliente (más recientes primero). Devuelve [] si falla.
  *
  * 🔴 SCRUM-1036 · EXCLUYE `type: 'nota'` A PROPÓSITO. Esta lista alimenta «Actividad reciente»
