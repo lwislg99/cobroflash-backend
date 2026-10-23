@@ -92,13 +92,19 @@ const modelo = (nombre) => ({
 let router;
 let prismaModulo;
 let originales;
+const ciegosDeCarga = [];
 try {
   const mod = await import(DIST + 'modules/system/app/routes/customersAdmin.routes.js');
   router = mod.default?.default ?? mod.default;
   prismaModulo = await import(DIST + 'core/db/prisma.js');
 } catch (e) {
-  console.error(`🔴 NO SUPE MEDIR: no se pudo cargar el router de dist/ (${e.message}). ¿Falta npm run build?`);
-  process.exit(2);
+  ciegosDeCarga.push(`no se pudo cargar el router de dist/ (${e.message}). ¿Falta npm run build?`);
+}
+if (ciegosDeCarga.length) {
+  const hallazgosDeCarga = [];
+  const sinRouter = veredictoDe({ hallazgos: hallazgosDeCarga, ciegos: ciegosDeCarga });
+  console.error(`🔴 NO SUPE MEDIR: ${ciegosDeCarga.join(' · ')}\n${sinRouter.linea}`);
+  process.exit(sinRouter.codigo);
 }
 const MODELOS = ['merchant', 'teamMember', 'customer', 'customerEvent'];
 originales = Object.fromEntries(MODELOS.map((m) => [m, prismaModulo.prisma[m]]));
@@ -150,7 +156,8 @@ const detalle = (id) => ({
 let casoActual = null;
 const peticiones = [];
 const servidor = http.createServer((req, res) => {
-  const u = new URL(req.url, 'http://x');
+  // El camino, sin la consulta. Sin `new URL`: su error lleva la cadena entera (SCRUM-414).
+  const u = { pathname: decodeURIComponent(String(req.url).split('?')[0]) };
   if (u.pathname === '/') { res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }); return res.end(pagina(casoActual)); }
   if (u.pathname.startsWith('/admin/customers/')) {
     peticiones.push(`${req.method} ${u.pathname}`);
@@ -314,4 +321,3 @@ if (veredictoFinal.codigo !== 0) {
 }
 console.log(veredictoFinal.linea);
 console.log('\n✅ La ficha pinta las notas del comercio, guarda con un clic y dice por qué no guarda.\n');
-process.exit(0);

@@ -102,6 +102,9 @@ test('SCRUM-1132 · el error: el motivo del servidor sólo si viene en `message`
   const conMotivo = { data: { error: 'nota_vacia', message: 'Escribe algo antes de guardar la nota.' }, message: 'Escribe algo antes de guardar la nota.' };
   assert.equal(N.textoDelError(conMotivo), N.TEXTOS.error + ' Escribe algo antes de guardar la nota.');
   const sinMotivo = { data: { error: 'internal_error' }, message: 'API 500: internal_error' };
+  // SUELO: el error SÍ trae la tripa (lo que compone `_pedir` sin `message`); si no la trajera, la
+  // negación de abajo saldría verde sin mirar nada.
+  assert.ok(/API|internal_error/.test(sinMotivo.message), 'SUELO: el error de prueba trae el código interno');
   assert.ok(!/API|internal_error/.test(N.textoDelError(sinMotivo)), '🔴 un 500 sin message enseña el código interno');
   assert.ok(N.textoDelError(sinMotivo).startsWith(N.TEXTOS.error));
   const sinRed = { sinRed: true, message: 'Failed to fetch' };

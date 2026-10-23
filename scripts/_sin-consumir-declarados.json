@@ -125,7 +125,6 @@
     {"clave":"front-window · public/dashboard/js/quoteRevisiones.js::puedeEditarseLaRevision","donde":"public/dashboard/js/quoteRevisiones.js:214","carril":"S2","ticket":"SCRUM-1185","motivo":"RESTO (S2, 29-sep): alias en window para el test scrum655c; el módulo usa su puedeEditarse interno."},
     {"clave":"ruta · DELETE /admin/customers/:id/sites/:siteId","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:478","carril":"J2","ticket":"SCRUM-1145"},
     {"clave":"ruta · GET /admin/albaranes/consolidables","donde":"src/modules/jobs/app/routes/albaranes.routes.ts:297","carril":"S4","ticket":"SCRUM-1185"},
-    {"clave":"ruta · GET /admin/customers/:id/notes","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:383","carril":"J2","ticket":"SCRUM-1132"},
     {"clave":"ruta · GET /admin/evidencias.zip","donde":"src/modules/fiscal/evidencias/evidencias.routes.ts:15","carril":"J1","ticket":"SCRUM-1185"},
     {"clave":"ruta · GET /admin/expenses/categories","donde":"src/modules/expenses/app/routes/expenses.routes.ts:78","carril":"S2","ticket":"SCRUM-1185","motivo":"RESTO / GEMELA (S2, 29-sep): la lista de categorías vive COPIADA en el front, CATEGORY_LABELS de public/dashboard/js/expensesView.js. Si se conecta esta ruta, hay que retirar esa copia en el mismo cambio, o habrá dos fuentes de las categorías."},
     {"clave":"ruta · GET /admin/exports/fees.csv","donde":"src/modules/exports/app/routes/exports.routes.ts:450","carril":"J2","ticket":"SCRUM-1185"},
@@ -136,7 +135,6 @@
     {"clave":"ruta · GET /precios","donde":"src/app.ts:292","carril":"J3","ticket":"SCRUM-1185"},
     {"clave":"ruta · POST /admin/charges/:id/garantia","donde":"src/modules/billing/app/routes/chargesAdmin.routes.ts:114","carril":"J2","ticket":"SCRUM-1185"},
     {"clave":"ruta · POST /admin/charges/:id/garantia/liberar","donde":"src/modules/billing/app/routes/chargesAdmin.routes.ts:164","carril":"J2","ticket":"SCRUM-1185"},
-    {"clave":"ruta · POST /admin/customers/:id/notes","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:400","carril":"J2","ticket":"SCRUM-1132"},
     {"clave":"ruta · POST /admin/customers/:id/sites","donde":"src/modules/system/app/routes/customersAdmin.routes.ts:439","carril":"J2","ticket":"SCRUM-1145"},
     {"clave":"ruta · POST /admin/invoices/:id/pay","donde":"src/modules/system/app/routes/invoicesAdmin.routes.ts:569","carril":"J1","ticket":"SCRUM-1185"},
     {"clave":"ruta · POST /admin/invoices/:id/unpay","donde":"src/modules/system/app/routes/invoicesAdmin.routes.ts:590","carril":"J1","ticket":"SCRUM-1185"},
@@ -152,6 +150,8 @@
     {"clave":"export · src/modules/fiscal/verifactu/sif.cola.ts::recuperarEnviadoSinCierre","donde":"src/modules/fiscal/verifactu/sif.cola.ts:99","carril":"J1","ticket":"SCRUM-1192","motivo":"VUELVE de «retiradas» (SCRUM-1192): mismo caso que decidirTrasEnvio; su unico llamador es sif.procesador.ts, que no es alcanzable desde src/index.ts"}
   ],
   "retiradas": [
+    {"clave":"ruta · GET /admin/customers/:id/notes","motivo":"SCRUM-1132: conectada en customerDetailView.js (la tarjeta «Notas» de la ficha del cliente, sólo admin)"},
+    {"clave":"ruta · POST /admin/customers/:id/notes","motivo":"SCRUM-1132: conectada en customerDetailView.js (la tarjeta «Notas» de la ficha del cliente, sólo admin)"},
     {"clave":"front-funcion · public/dashboard/js/textoDelDocumento.js::textoDelDocumentoPintado","motivo":"SCRUM-1206: conectada en quotesDetailView.js (la ficha del presupuesto pinta la cabecera, sin rótulo, y las Observaciones, docFooterText, en el orden del papel)"},
     {"clave":"ruta · POST /admin/quotes/:id/archivar","motivo":"SCRUM-1273: conectada en quotesDetailView.js (botón «Archivar» de la ficha del presupuesto, sólo admin)"},
     {"clave":"ruta · POST /admin/quotes/:id/desarchivar","motivo":"SCRUM-1273: conectada en quotesDetailView.js (botón «Desarchivar» del aviso de archivado de la ficha, sólo admin)"},
