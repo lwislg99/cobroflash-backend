@@ -125,7 +125,7 @@ async function correrTramo({ i, n }, ficheros, dirPasada) {
   fs.rmSync(path.dirname(tap), { recursive: true, force: true });
   const declarados = leerCiegosDeclarados(path.join(RAIZ, 'scripts', '_ciegos-por-entorno-declarados.json'));
   const r = registroDelTramo({ i, n, ficheros: ficheros.length, texto, status, signal: agotado ? null : signal, ms, agotado },
-    declarados, { raiz: RAIZ, tmp: os.tmpdir() });
+    declarados, { raiz: RAIZ, tmp: path.dirname(path.dirname(dirPasada)) });
   guardarTramo(dirPasada, r);
   console.log(lineaDeLote({ i, n, ficheros: r.ficheros, tests: r.tests, fail: r.fail, ms }));
   for (const c of r.ciegos) console.log(`  🔴 CIEGO · ${c}`);
