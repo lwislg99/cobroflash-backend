@@ -201,6 +201,26 @@ test('el censo usa ESTOS datos y estos argumentos, no un relleno propio (código
 // con Trabajos, Configuración o Cobros vaciadas. Ahora cada vista tiene que pintar algo, y cada panel
 // de Configuración también, salvo éstos, que con el banco de hoy NO PUEDEN: no es que estén limpios,
 // es que nadie los ha visto. Si uno empieza a pintar, su línea caduca y el caso cae hasta que se quite.
+// Lo que el meta-guard comprueba en cada pasada (SCRUM-1387: un banco toma sus mutaciones de aquí).
+// Las dos son del PRODUCTO, no de este fichero: una vista que deja de pintar, y un panel que se
+// queda vacío sin que nadie lo declare.
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // ① Trabajos no pinta nada: «ningún undefined» seguía verde con ella (SCRUM-1560f, medido).
+    fichero: 'public/dashboard/js/jobsView.js',
+    de: 'async function renderJobsView(container) {',
+    a: 'async function renderJobsView(container) { return;',
+    cae: '🔴 en el banco: ninguna vista pide una ruta sin contrato, ni con NaN/undefined, ni pinta «undefined»',
+  },
+  {
+    // ② El panel «datos» se queda vacío (su única tarjeta deja de colocarse) y no está declarado.
+    fichero: 'public/dashboard/js/settingsView.js',
+    de: 'renderDescargarDatosCard(panelDeSuperficie("renderDescargarDatosCard"));',
+    a: 'void panelDeSuperficie;',
+    cae: '🔴 en el banco: ninguna vista pide una ruta sin contrato, ni con NaN/undefined, ni pinta «undefined»',
+  },
+];
+
 const PANELES_SIN_PINTAR_DECLARADOS = Object.freeze({
   // 23-oct-2026 · el `/admin/merchant` de muestra es `{ id, name }` (su contrato dice «claves completas
   // SIN medir») y `settingsView.js` corta con `if (m.slug === undefined) return`: el banco pinta el
