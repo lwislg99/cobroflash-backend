@@ -190,7 +190,12 @@ resumen; la receta de `CLAUDE.md` es derivada del máster y no la he tocado.
 **Mis errores.** ① Escribí que el nombre trampa daba UNA línea más en el `grep` y dio dos (la cabecera
 `# Subtest:`): lo cazó el primer verde que no salió; corregí la expectativa, no el lector. ② Medí mi contexto
 al acabar el arranque en la misma tanda de órdenes que la lectura de Jira, así que no tengo la segunda cifra
-separada.
+separada. ③ El primer obligatorio (`49d47d05`, run 39934257078) cayó por 1 de 12.213: el ancla `de` de mi
+segunda mutación casaba también con su propia declaración (`tests/scrum836-ancla-de-mutacion-viva.test.mjs`,
+caso de SCRUM-1321). Ese guard estaba en mi primera mini-tanda de 416 ficheros, que paré a los 10 min por
+larga, y no en la de 21 que corrí después, elegida por nombre. Alargada el ancla con la línea de antes
+(1 ocurrencia, y la mutación sigue tumbando los 2 casos que debe); el guard no se ha tocado. Eso costó un
+segundo empujón.
 
 **Lo que NO está medido.** Nada en Linux (el CI es la primera pasada allí). Ninguna tanda completa en local:
 lo corrido está en la entrega. Si un TAP real del CI trae saltos sin motivo hoy, no lo he mirado (lo vigila
