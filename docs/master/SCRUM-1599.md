@@ -175,3 +175,137 @@ Los de suite (237, 976, 824 ×3, 836, 419, 702, 700, 719, 1415, 113, 262, 745, 7
 - Una pasada por punto, no tres.
 - El DESPUÉS se midió sobre `b6dd5d1a8`, no sobre `5d7ed59e0`: lo que entró entre medias no toca estas rutas (arriba),
   pero no lo he corrido.
+
+## J6 · SCRUM-1599d · el ③: medir quién ve un gateado en rojo, y tres diseños para el aviso
+
+**Medido contra:** `origin/main` = `09f51b1c7db6f6a8f7b6532a03c30a4809b48e86` · 2026-10-23T22:32:06Z (hora de GitHub al escribir la salida de la sonda; sesión J6 `jv-j6bg` en su árbol `jv-j6bg`, por encargo del orquestador `cobroflash-backend-62`. La sonda dinámica va sobre `a7855fd70`, el commit del último CI verde de main)
+
+A9: aviso → cicatriz J6 «Lancé cuatro pasadas de una sonda nueva encadenadas sin cronometrar antes UNA» — no se pudo comprobar: ningún hook multiplica pasadas por duración antes de lanzar, y la cicatriz de SCRUM-1218f, que dice lo mismo, no lo impidió
+
+Sólo se MIDE y se PROPONE: 0 líneas de `src/`, de `tests/` o de `.github/`. Sin base, sin turno: todo sale de `git`
+y del log de CI. Sonda: `evidencias/SCRUM-1599/sonda-1599d.mjs`; su salida, `evidencias/SCRUM-1599/sonda-1599d.salida.txt`.
+(El encargo decía `evidencias/scrum1599/`; la carpeta que ya existe es `SCRUM-1599/` y va ahí.)
+
+### ① Qué está gateado, y por qué variable
+
+Dos sondas independientes que tienen que casar (A3):
+
+- **Estática**: el motivo literal de cada `skip: !X && '…'` de los `tests/*.test.mjs` de la ref, leídos con `git show`.
+- **Dinámica**: los casos `﹣ … # motivo` del log del job «build + tests» del último CI verde de main (run 40023657436,
+  job 120656131758, 1.983.145 B). Cada caso saltado por `QA_DB_TEST` se busca por su título en los ficheros.
+
+| motivo del salto nombra | ficheros (estática, main de hoy) | ¿corre en CI? |
+|---|---|---|
+| `QA_DB_TEST` solo | 48 (46 de verdad + 2 meta-tests que enseñan el literal: `scrum419`, `scrum754`) | **NO** — 83 casos saltados en CI, en 46 ficheros |
+| `QA_DB_TEST` o `LIBRO_PG_URL` | 20 | sí, con el banco desechable del runner (`ci.yml:236`) |
+| `LIBRO_PG_URL` solo | 20 | sí, ídem |
+| `A55_DB_TEST` o `LIBRO_PG_URL` (`a55-window-quote`) | 1 | sí, ídem (SCRUM-876f) |
+| `BOT_SUITE_TEST` o `LIBRO_PG_URL` (`bot-suite`) | 1 | sí, ídem |
+| sin literal pero leen `process.env.<gate>` | 2 | sin clasificar |
+
+- Población: 1.491 ficheros `.test.mjs` hoy (1.485 en `a7855fd70`); los números de gateados son iguales en los dos.
+- Del log: `tests 12427 = pass 12338 + skipped 89`, y 89 líneas de salto leídas. De esos 89, **83** son `QA_DB_TEST`;
+  los otros 6 no son de base (4 de Windows, 1 de la hora de GitHub, 1 `TRAMOS_PG_URL`, que corre en otro paso).
+- Cruce: los 46 ficheros de la dinámica están TODOS en la estática; la estática tiene 2 más, los dos meta-tests.
+  Los 83 casos casan con un fichero; 0 sin casar.
+- Controles SEMBRADOS: una línea de log fabricada con el título de un caso que encontró la estática tiene que casar
+  con su fichero (casa); una con un título inventado no puede casar (no casa).
+- Mutaciones: sin el positivo sembrado, la sonda sale **CIEGO** (rc=2); con el log cortado a 50.000 B, **CIEGO** (rc=2).
+
+**La población que NADIE ve son esos 46 ficheros / 83 casos.** Los cuatro de este ticket estaban dentro (scrum17,
+178, 814.gated y 85). Lo que corre con `LIBRO_PG_URL`, `A55` o `BOT_SUITE` sí lo ve el check obligatorio en cada PR.
+
+### ② Quién los corre, cuándo, y qué rastro deja
+
+- **CI no**, por decisión del fundador del 27-jul-2026: la base de staging no entra en GitHub Actions
+  (`scripts/_evidencia-tanda.mjs`, cabecera; `ci.yml:13`).
+- **`npm run test:staging:gated`** (`scripts/staging-gated.mjs`) los corre a mano, con el turno. Al acabar escribe
+  el recibo de SCRUM-161, `.claude/evidencia-tanda.json`, que está en `.gitignore` y vive en el árbol donde se corrió.
+- **Quién exige el recibo:** sólo `/yaqu-release-check` (`.claude/skills/yaqu-release-check/SKILL.md:19`). Ningún
+  hook ni ningún job.
+- **Recibos en esta máquina:** 1 en 369 árboles (el checkout compartido más los 368 de `.claude/worktrees/`).
+  Es del **4-sep-2026 a las 22:46:26Z**, sobre `8fec4abe7`. Y su bloque QA, el de estos 46, sale **`null`**: el
+  hijo duró 2.700.065 ms contra un límite de 2.700.000 y no llegó a dar resultado.
+- **El recibo no guarda resultado por fichero**, sólo por hijo (`a55`, `bot`, `scrum180`, `qa`).
+
+**¿Hay rastro con fecha de la última vez que cada uno salió verde?** No. En esta máquina, la última tanda gateada
+con recibo es de hace 49 días, y no terminó el bloque de estos 46. Lo que sí hay son corridas FICHERO A FICHERO con
+turno, apuntadas a mano en registros (SCRUM-1218e/f, 1599a/b/c). No las he barrido.
+
+### ③ Cuánto tiempo estuvieron en rojo sin que nadie lo viera
+
+Inicio: el `merged_at` del PR que metió en main el commit que los tumbó (bisect de 1599a). Fin: el `merged_at` del
+arreglo. «Visto»: la creación de este ticket, 2026-10-23T19:51:56Z. Horas de GitHub (`gh api …/commits/<sha>/pulls`,
+`gh pr view`), no fechas de commit.
+
+| test | lo tumbó | entró en main | arreglo | días en rojo | días sin verse |
+|---|---|---|---|---|---|
+| `scrum17` | `ba1cd2d55` SCRUM-780 | #1154 · 2026-09-07T21:00:42Z | #2784 · 2026-10-23T21:11:11Z | **46,0** | 45,95 |
+| `scrum85` | `6491b4288` SCRUM-893 | #1421 · 2026-09-17T13:19:26Z | #2789 · 2026-10-23T21:30:54Z | **36,3** | 36,27 |
+| `scrum178`, `scrum814.gated` | `b8e3f81a6` SCRUM-1027 | #1608 · 2026-09-22T08:42:54Z | #2784 · 2026-10-23T21:11:11Z | **31,5** | 31,46 |
+
+Los tres arranques caen DESPUÉS del único recibo de la máquina (4-sep). Ninguna tanda gateada con recibo los vio
+caer.
+
+### ④ Tres diseños para el aviso
+
+Ninguno se ha construido. Carriles leídos con `node scripts/carriles.mjs de <ruta>`.
+
+**B · Que dejen de estar fuera de CI: migrarlos al banco desechable.** *(recomendado)*
+
+- **Qué hace:** cada uno de los 46 aprende a correr también con `LIBRO_PG_URL`, como los 20 que ya lo hacen (forma
+  `CON_BANCO` de SCRUM-876f, la que siguen los lotes de SCRUM-1218). Entonces CI los corre en cada PR, y un rojo
+  bloquea el merge el mismo día. Ya no hay que contar días.
+- **Qué toca:** `tests/**`, el carril de J6 en los lotes de 1218. Nada de `.github/`, porque `ci.yml` ya levanta el banco.
+- **Coste:** unos 5 o 6 lotes de 8 a 10 ficheros. La cifra sale de los lotes de 1218d/f; para estos 46 no está medida.
+  Que todos se puedan migrar tampoco está medido: alguno puede necesitar staging de verdad, y ése se queda para A.
+- **Que no se quede mudo:** un trinquete en `npm test` con la sonda estática de aquí. Cuenta EXACTA de ficheros
+  «sólo `QA_DB_TEST`» (46): si sube o baja, cae y pide una decisión (A10). Su positivo se siembra con un fichero
+  fabricado con un `skip` de `QA_DB_TEST` en un temporal. Sin él, el trinquete tiene que decir CIEGO.
+
+**A · Recibo por fichero y aviso en el latido.** *(para lo que no se pueda migrar)*
+
+- **Qué hace:** el runner guarda, para cada fichero, la fecha y el veredicto de su última pasada. El latido dice
+  «`<fichero>` · N días sin verde» y «la última tanda gateada fue hace N días».
+- **Qué toca:** `scripts/staging-gated.mjs` y `scripts/_evidencia-tanda.mjs`. Hoy están SIN CERRADURA, y su fila
+  nace en el mismo PR (`dos-equipos.md:172`), con el área de J6. Y `scripts/equipo/latido.mjs`, que es de **S5**
+  (`dos-equipos.md:166`): o lo hace S5, o se declara la excepción.
+- **Coste:** un PR mediano en un fichero de 42.903 B que toma el turno. Ningún coste fijo.
+- **Límite medido:** sólo avisa si alguien corre la tanda, y en esta máquina eso no pasa desde el 4-sep. Pero
+  «hace 49 días» es ya un aviso, así que no se queda mudo. Es local: lo ve sólo la máquina que corrió.
+- **Que no se quede mudo:** el latido imprime su población («recibos leídos: n · ficheros con fecha: m»). Con 0
+  recibos dice CIEGO, no verde. Con un recibo fabricado de N+1 días tiene que avisar, y si se le quita, CIEGO.
+
+**C · El recibo, publicado en GitHub, con un vigía programado.**
+
+- **Qué hace:** al acabar, la tanda publica su recibo (con el desglose de A) en un Issue fijo. Un workflow programado
+  avisa cuando el último recibo, o un fichero, pasa de N días. Es la forma de `vigia-de-main.yml`.
+- **Qué toca:** un workflow nuevo, que es de **S5** (`dos-equipos.md:167`), más el paso de publicar en el runner.
+- **Coste:** un workflow y un canal nuevo hacia fuera. Es lo único de los tres que ven los dos equipos.
+- **Que no se quede mudo:** el vigía comenta en CADA pasada, también en verde, con la edad del último recibo. Sin
+  recibo, comenta CIEGO. Hasta su primera pasada, CIEGO, como dice `vigia-de-main.yml:36`.
+
+Sin medir en los tres: cuánto alarga el job de CI meter 83 casos más (B), y qué ve la máquina del otro equipo (A, C).
+
+### ⑤ Preguntas para el fundador (✅/❌)
+
+1. **B.** ¿Los 46 ficheros que sólo corren con `QA_DB_TEST` pasan, por lotes, al banco desechable que CI ya levanta,
+   con un trinquete que no deje cambiar el 46 sin decisión? ✅/❌
+2. **A.** ¿Para los que no se puedan migrar, el runner guarda fecha y veredicto POR FICHERO, y el latido dice «N días
+   sin verde»? ✅/❌ (toca `latido.mjs`, de S5)
+3. **C.** ¿El recibo de cada tanda gateada se publica en un Issue de GitHub, y un vigía programado de S5 avisa a los
+   N días? ✅/❌ (workflow nuevo y canal hacia fuera)
+4. **Umbral, sólo si A o C.** ¿El aviso dice SIEMPRE la edad de cada fichero, sin umbral? ✅ = sin umbral · ❌ = con
+   umbral fijo, y entonces cuál. («Una ventana fija es una tolerancia disfrazada», A10.)
+
+### ⑥ Lo que NO se ha hecho, ni medido
+
+- Ningún diseño construido; ningún workflow tocado.
+- El rastro de corridas fichero a fichero en los registros `docs/master/` no se ha barrido: puede haber pasadas
+  verdes con fecha de algunos de los 46.
+- La otra máquina (equipo de Luis): sus recibos no se ven desde aquí.
+- Los 2 ficheros «sin literal pero leen `process.env.<gate>`» no se han abierto.
+- La sonda casa títulos por sus 40 primeros caracteres: dos casos con el mismo arranque en ficheros distintos
+  contarían en los dos. Hoy no ha pasado (83 casos → 46 ficheros, 0 sin casar), pero no lo impide.
+- De paso, confieso dos cosas. La primera pasada de `carriles.mjs` la lancé con la ruta mal
+  (`scripts/equipo/carriles.mjs`). Y la tirada que escribía la salida se fue a segundo plano: la línea A9.
