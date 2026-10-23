@@ -283,6 +283,9 @@ montado como `src/app.ts` (`/invoice` detrás del `requireInternalSecret` de `di
   en un bucle; `tests/scrum1415-nombres-construidos.test.mjs` la tumbó en la dirigida (932 tests, 1 cae).
   Ahora van seis nombres literales; ni la lista de 1415 ni ninguna aserción se tocaron.
 - **Dirigida local** (89 ficheros: los guards de suite y de registro del encargo más todo test que nombra
-  estas rutas o `cabeEnColumnaInt`): ver la entrega en Jira, con su recuento.
+  estas rutas o `cabeEnColumnaInt`): **932 tests, pasan 924, caen 0, se saltan 8** (suman; 6 sin
+  `LIBRO_PG_URL` y 2 sin `QA_DB_TEST`), con el test ya corregido.
+- **Suite entera local: NO CORRIDA.** Lanzada una vez en primer plano, no acabó en los 10 min del arnés,
+  que la pasó a segundo plano; la paré sin leerla. El obligatorio de CI hace de suite.
 - **No visto en yaqu.app:** no lo he intentado (una es un POST que anota en la ficha y la otra exige el
   secreto interno).
