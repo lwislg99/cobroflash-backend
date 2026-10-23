@@ -168,3 +168,50 @@ ninguna firma ni consulta cambia.
   decimal y no el tamaño. No es el defecto del decimal; `paid-webhook` es webhook (al fundador, c.18414) y
   `payment-anomaly` no la nombra c.18414.
 - **No visto en yaqu.app.** No lo he intentado: anular por URL una factura real es justo lo que no se hace.
+
+## J1 · SCRUM-1455b (relevo) · el arreglo: las siete de `Number.isNaN` pasan a `cabeEnColumnaInt`, con la firma que ya existía
+
+**Medido contra:** `origin/main` = `e306a6a5e5b45a2e98792d30eee02fdec5ea2362` · 2026-10-23T16:03:34Z (hora de GitHub; mezclado en la rama, A4; sesión J1 `jv-j1at`, por encargo del orquestador `cobroflash-backend-62`)
+
+A9: aviso → cicatriz J1 «Declaré en un registro que un arreglo esperaba la firma del fundador sin leer los comentarios de los tickets hermanos, y la firma ya existía desde el 7-oct en otro ticket» — no se pudo comprobar: la firma vive en un comentario de Jira, y ningún guard del repositorio lee Jira
+
+[Escrito por J1, una sesión; no por el fundador.] **Corrección al tramo anterior, que es de este mismo
+puesto:** «Las siete van al fundador desde c.18414» era falso el 20-oct. El fundador ya había firmado seis
+el **7-oct, en SCRUM-1456 c.18731** («1-La autorizo», opción A): `status`, `pay`, `unpay`, `annul`,
+`rectify` y `regenerate-pdf` (más `payment-anomaly` e `invoice.routes.ts:63`). El tramo y el PR #2628 no la
+citaban. Lo encontró el PASO 0 del orquestador. La séptima, `send-email`, la firmó el **23-oct en
+SCRUM-1455 c.20593** («Sí, también esa»), con su efecto aceptado: 400 en lugar de 200 con `sent:false`.
+
+### El cambio
+
+Un token en siete líneas de `src/modules/system/app/routes/invoicesAdmin.routes.ts`: `Number.isNaN(id)` →
+`!cabeEnColumnaInt(id)`, en `:553` (`status`), `:597` (`pay`), `:618` (`unpay`), `:703` (`send-email`),
+`:881` (`annul`), `:1033` (`rectify`) y `:1196` (`regenerate-pdf`), leídas en el árbol tras el merge. El
+`import` ya estaba (`:30`). Diff: 7 líneas por 7, y en ninguna cambia la respuesta ni el texto (las siete ya
+contestaban `400 invalid_id`). **Ninguna consulta, firma, sellado, numeración ni huella se toca**: es la
+guarda de entrada, antes de leer nada (condición ⑤ de c.18731; regla 40).
+
+### Rojo → verde, por la ruta
+
+`tests/scrum1455b-un-decimal-no-llega-a-otra-factura.test.mjs`, sin tocarle una aserción, contra `dist/`
+recompilado del árbol (`tsc --noCheck`): antes **33 casos, 26 pasan, 7 caen** (tramo anterior,
+`test.rojo-contra-main.salida.txt`); ahora **33 de 33**, 0 caen, 0 saltan.
+
+**Mutación, sobre `dist/` y no sobre `src/`:** las 14 guardas `cabeEnColumnaInt(id)` del fichero compilado
+vueltas una a una a `Number.isNaN(id)`: **14 de 14 caen, y cada una sólo en el caso «decimal → 400» de su
+ruta** (32 pasan + 1 cae = 33). El `dist/` volvió idéntico al final de la pasada.
+
+### La condición ② de c.18731 (que nada reaccione distinto a un 400 que a un 500): LEÍDA, no ejecutada
+
+Las pantallas que llaman a estas rutas (`invoiceDetailView.js` `status` :494, `rectify` :657,
+`regenerate-pdf` :747, `annul` :878; `quotesDetailView.js` :1072; `jobDetailView.js` :2240) sólo
+distinguen `!r.ok`, nunca 400 de 500, y todas mandan `invoice.id` leído de la base: ninguna produce un
+decimal ni un id que no quepa. `send-email` es la única que cambia de rama (200 `sent:false` → 400), y
+ese efecto es el que firmó c.20593. **No lo he ejecutado en un panel real.**
+
+### Lo que no hace este tramo, dicho
+
+- `payment-anomaly` (`:310`) y `invoice.routes.ts:63` (`paid-webhook`) siguen con `Number.isInteger`: el
+  decimal ya da 400, pero un id que no cabe sigue dando **500**. c.18731 las autoriza; este encargo no las
+  incluía, y `paid-webhook` es webhook (condición ② sin medir). Quedan para quien las reparta.
+- **No visto en yaqu.app**: no lo he intentado; la prueba sería anular o sellar por URL, que no se hace.

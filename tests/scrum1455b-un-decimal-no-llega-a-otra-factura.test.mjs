@@ -7,10 +7,10 @@
 // `34.5` emite una R1 que rectifica la 34. Es un acto fiscal sobre un documento que no es el pedido
 // (regla 29), dentro del mismo comercio: no cruza la tenencia.
 //
-// 🔴 ESTE FICHERO SALE ROJO A PROPÓSITO EN SIETE CASOS. La rama no lleva arreglo: las siete rutas son
-// cobro y camino de emisión (`status`, `pay`, `unpay`, `send-email`, `annul`, `rectify`,
-// `regenerate-pdf`), y tocarlas es STOP del fundador (regla 40; SCRUM-1456 c.18414 las mandó a él). Lo
-// pone en verde cambiar `Number.isNaN(id)` por `!cabeEnColumnaInt(id)` en esas siete líneas, no este test.
+// Nació ROJO en siete casos: las siete rutas son cobro y camino de emisión (`status`, `pay`, `unpay`,
+// `send-email`, `annul`, `rectify`, `regenerate-pdf`). Las puso en verde cambiar `Number.isNaN(id)` por
+// `!cabeEnColumnaInt(id)` en esas siete líneas, con la firma del fundador (SCRUM-1456 c.18731 para seis,
+// SCRUM-1455 c.20593 para `send-email`), no este test.
 //
 // ── EL BANCO ──────────────────────────────────────────────────────────────────────────────
 // La base doblada de `scrum1456`: anota cada consulta y los números que viajan en ella. La propiedad que
