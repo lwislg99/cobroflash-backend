@@ -98,3 +98,7 @@ envuelto en un `span` en `cobrosView.js`. Base sin mutar: 2 de 2.
   20 ficheros elegidos a mano más los 105 que leen `styles.css` o `cobrosView.js`, y `scrum700` no estaba en ninguno.
   Arreglado con el de la casa, `soloEjecutable(…, { almohadillaEsComentario: false })` (en CSS `#` es selector); el guard
   no se toca. Lo caza ya `tests/scrum700-filtros-de-comentario.test.mjs`, en el obligatorio.
+- Y el segundo empujón (`f4ab245c1`, job `120463355656`) cayó en 2 de 12.301 por ese mismo arreglo, en
+  `scrum719`: SCRUM-1395 ② (llamaba a `soloEjecutable` sin suelo) y 1395b ① (mi test sin ficha en
+  `tests/_veredicto-mudez.json`). Arreglado como dice el propio rojo: `ejecutableDe` con el selector del `::before` de
+  ancla, y `npm run censo:mudez -- --escribir` (1 medido: VIVO). Otra vez no corrí `scrum719` en local antes de empujar.
