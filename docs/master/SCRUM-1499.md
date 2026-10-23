@@ -107,6 +107,31 @@ líneas 315 y 409: iguales.
 - Nada contra una base. Del resto del máster sólo se barrió la lista `'template'|'service'`: sale en
   la línea 315 y en ninguna otra.
 
+## SCRUM-1499b · 23-oct: los dos cambios FIRMADOS, aplicados al máster (carril un jefe, por encargo)
+
+**Medido contra:** `origin/main` = `89574068d1ef1a925bb71ff0c94a650be5551136` · 2026-10-23T20:41:12Z (hora de GitHub)
+A9: aviso → cicatriz J4 «leí las normas de arranque (`norma.mjs --arranque`) después de aplicar el cambio al máster, no antes; el encargo las nombraba como lectura obligatoria de cada tanda» — no se pudo comprobar: nada para a una sesión que edita sin haberlas leído; lo cazó repasar el encargo antes de escribir este tramo
+
+J4 (`jv-j4w`, equipo de Javier). Carril «un jefe», aplicado por encargo del orquestador `cobroflash-backend-62`.
+Firma del fundador: **c.20660** (los dos ✅). Texto: los DESPUÉS de **c.20654 §3 y §4**.
+
+- **Cambio ①, Parte J, línea 315:** sustituida por el DESPUÉS de c.20654 §3. Una línea por una línea.
+- **Cambio ②, Parte L, línea 409:** se añade al final el texto de c.20654 §4; el hueco
+  «c.‹número del comentario de firma›» queda como **c.20660**, que es lo que dice la firma. No se borra nada.
+- **Cotejo, byte a byte y por programa** (no a ojo): los dos ANTES casaron con `origin/main` (la
+  edición se hizo con reemplazo exacto de la línea entera, que falla si no casa), y las dos líneas
+  resultantes son idénticas a los bloques DESPUÉS de los tramos Ⓓ y Ⓔ de arriba (hueco rellenado).
+  Sobre las 1.914 líneas del máster, **2 distintas** de `origin/main`: la 315 y la 409. Control
+  sembrado: cambiar un byte de la línea 1 da 3. Sin NBSP en el «0 €»; sin CRLF.
+- `'template'|'service'` salía 1 vez en el máster de `origin/main`; ahora 0. `CLAUDE.md`, `.claude/`
+  y `docs/equipo/` no repiten la lista: no se tocan.
+- Entre `b6dd5d1a8` (la base del tramo de arriba) y `89574068d` el máster no cambió (diff vacío).
+- **La rama sale de la punta de 1499a** (`a1722f5dc`, PR #2779, sin mergear cuando escribo esto), con
+  un solo commit encima: si saliera de main, las dos ramas CREARÍAN este registro y la unión lo
+  entrelazaría (scrum1572).
+- Sigue pendiente, aparte (c.20660): los comentarios de `prisma/schema.prisma` (`:1284`, `:1288`)
+  siguen enumerando; pasarlos a punteros es regla 40 y lleva su propia firma. No se tocan.
+- Sin mirar: yaqu.app (es texto del máster, no se sirve). No transiciono (A13).
 ## SCRUM-1499c · 23-oct: los comentarios del esquema de `WhatsAppMessage`, redactados como punteros (para firmar)
 
 **Medido contra:** `origin/main` = `6a38e5a238f80f6e8df7197507dc01359e076e06` · 2026-10-23T21:08:11Z (hora de GitHub)
