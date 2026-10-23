@@ -20,7 +20,7 @@ import { createRequire } from 'node:module';
 import { montarAppReal, bancoDePrisma } from './_banco-camino-real.mjs';
 import { telefonoDePrueba } from '../scripts/_telefonos-prueba.mjs';
 
-// Las corre el meta-guard. Medidas a mano sobre dist el 23-oct, las cuatro mueren: M1 tumba 4 casos.
+// Las corre el meta-guard. Medidas a mano sobre dist antes de pasarlas aquí: todas mueren (registro de SCRUM-1596b, 23-oct-2026).
 export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // Como antes: el aviso entra por el cupo de comercio (y ese cupo ya no lo ve): el 31.º sale.
@@ -61,11 +61,11 @@ const { config } = require('../dist/core/config/env.js');
 const { normalizePhone } = require('../dist/core/utils/utils.js');
 const wa = require('../dist/integrations/whatsapp.js');
 const notif = require('../dist/integrations/whatsappNotifications.js');
-const { TOPE_AVISOS_AL_PROFESIONAL } = require('../dist/modules/messaging/domain/whatsappLog.service.js');
+// El tope no se exporta (scrum411): es el de la decisión del fundador (c.20602), y lo fijan los casos del borde de abajo.
 const AVISO = 'merchant_alert_es';
 const D = Number(config.WA_DAILY_TEMPLATE_CAP);
 const C = Number(config.WA_CUSTOMER_DAILY_CAP);
-const A = TOPE_AVISOS_AL_PROFESIONAL;
+const A = 30;
 
 const MIO = 15965;
 const PROF = normalizePhone(telefonoDePrueba(15965));
@@ -164,7 +164,6 @@ async function alCliente(c) {
 const bloqueadas = (filas, plantilla) => filas.filter((f) => f.status === 'failed' && f.error === 'daily_cap' && f.templateName === plantilla).length;
 
 test('SCRUM-1596b · SUELO: topes leídos de dist, y con todo libre el aviso sale como plantilla por la ruta real', async () => {
-  assert.equal(A, 30, 'el tope de avisos es el de la decisión del fundador (c.20602)');
   assert.ok(D > A && C >= 1, `🔴 CIEGO: topes no leídos (comercio ${D}, cliente ${C})`);
   assert.ok(PROF && PAGA.phone && OTRO.phone && new Set([PROF, PAGA.phone, OTRO.phone]).size === 3);
   programar();

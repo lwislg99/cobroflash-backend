@@ -93,7 +93,7 @@ const TOPE_WA_LOCK_NS = 1751;
 // Ahora cuenta sólo contra los suyos (30 por comercio y día) y el cupo de comercio no la cuenta.
 // El que no cabe se pierde y queda anotado como `daily_cap`. Sin esquema: se cuenta por el nombre.
 // Los avisos por texto (ventana abierta) no pasan por aquí: siguen gastando 0.
-export const TOPE_AVISOS_AL_PROFESIONAL = 30;
+const TOPE_AVISOS_AL_PROFESIONAL = 30;
 const PLANTILLA_AVISO_AL_PROFESIONAL = WA_TEMPLATES.merchantAlert;
 
 export type ReservaDePlantilla =

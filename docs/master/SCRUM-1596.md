@@ -208,3 +208,12 @@ Reproducir: `tsc --noCheck`; `node --test tests/scrum1596b-tope-de-avisos-al-pro
   `whatsappTemplates`, 931 y el nuevo). Resultado: 334 casos, 334 pasan, 0 caen, 0 saltados.
 - **Suite entera local: NO CORRIDA.** La lancé una vez y la cortó mi `timeout` a los 590 s, sin veredicto. Después el
   orquestador ordenó no correrla: hoy el arnés la mata por memoria. Hace de suite el obligatorio.
+
+## Tras el primer empujón
+
+El obligatorio de `aeb6052edf25fb7dc6433160db38cc76da24c8cf` (PR #2760) salió ROJO: 12.384 casos, de los que 3 caen, y los
+3 son míos. scrum411 (2 casos): `TOPE_AVISOS_AL_PROFESIONAL` estaba exportado y sólo lo usaba el test, así que deja de
+exportarse y el test fija el 30 por el borde. scrum737: un comentario del test afirmaba un recuento sin ancla, y se
+reformula. Ninguno de los dos guards estaba en mi muestra local de 37 ficheros. Con ellos dentro: 81 de 81. «guards de
+navegador» (no obligatorio) también cae, con los dos `INPUT.input` de 35 px, igual que en `main` @ `7083e0ddc`, y mi diff
+no toca `public/`.
