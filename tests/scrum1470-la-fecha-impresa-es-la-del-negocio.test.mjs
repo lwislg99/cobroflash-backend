@@ -240,9 +240,8 @@ test('SCRUM-1471 · la fecha del presupuesto en el portal es la del negocio, igu
 
 test('SCRUM-1471b · 🔴 la fecha de la FACTURA en el portal es el día natural de su registro, el mismo que imprime su PDF (SCRUM-1470c)', () => {
   // Decisión del fundador (SCRUM-1470 c.20530, «Sí, el mismo día»): la «Fecha:» del PDF de la factura
-  // es el día natural de su registro, `diaNaturalEn(createdAt, zonaDelMerchant(...))`. SCRUM-1470c lo
-  // comprueba en el PDF (`tests/scrum1470c-la-factura-imprime-el-dia-de-su-registro.test.mjs`); aquí,
-  // el portal contra ese mismo día. Hasta este tramo el portal pintaba la víspera, y la tarjeta
+  // es el día natural de su registro, `diaNaturalEn(createdAt, zonaDelMerchant(...))`. SCRUM-1470c (J1,
+  // en su rama al escribir esto) lo comprueba en el PDF; aquí, el portal contra ese mismo día. Hasta este tramo el portal pintaba la víspera, y la tarjeta
   // mezclaba dos relojes: «02 oct 2026 · Pagada 03 oct 2026».
   for (const nombre of CRUCES) {
     const p = papel(nombre);

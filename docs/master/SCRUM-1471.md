@@ -101,6 +101,18 @@ dejando las dos identidades en `RETIRADAS`. El caso «DECLARADO» de 1470c desap
 | 2. La fecha del presupuesto y de la factura en el portal es la misma que imprime su PDF. | Factura: `tests/scrum1470-la-fecha-impresa-es-la-del-negocio.test.mjs` · «SCRUM-1471b · 🔴 la fecha de la FACTURA en el portal…»: contra el día escrito a mano y contra `diaNaturalEn`, que es el día del PDF (lo comprueba `tests/scrum1470c-…` en la rama de J1). La comparación directa portal ↔ PDF de la factura NO está hecha: el PDF de la factura no está en main todavía. |
 | 3. Las 3 filas salen de la clase IMPRIME del censo, o quedan con su motivo escrito. | `censar()`: salen las 3 (`fechaDeLaFactura` en `RETIRADAS`) · `tests/scrum1093h-censo-fecha-sin-zona.test.mjs` |
 
+**Error mío: el primer empujón (`7b988f0a4`, PR #2750) salió ROJO en el obligatorio, con 2 fallos de 12.318, y los dos eran míos.**
+Mi muestra local de 18 guards, elegidos a mano, no llevaba ninguno de los dos:
+- `tests/scrum1177-la-red-citada-existe.test.mjs`: el comentario del test citaba
+  `tests/scrum1470c-…test.mjs` por su ruta entera, y ese fichero sólo existe en la rama de J1.
+- `tests/scrum747-validar-antes-de-normalizar.test.mjs`: la primera versión troceaba el día con
+  `split('-').map(Number)` y lo pasaba a `Date.UTC`.
+
+Arreglado en el código, sin tocar ningún guard: el comentario ya no cita esa ruta, y el día se
+construye desde la cadena de `diaNaturalEn` (`new Date('<día>T00:00:00Z')`). Con la versión empujada,
+esos dos ficheros caen en local igual que en el CI; con el arreglo, 44 de 44. M1 se ha repetido sobre el
+`dist/` nuevo y sigue cayendo.
+
 **Lo que no se ha mirado:** yaqu.app (sin mergear); la tanda completa (sólo la muestra de guards de la
-entrega); el typecheck completo da 17 errores en cuatro ficheros de presupuestos que este tramo no
+entrega, más los dos que cayeron); el typecheck completo da 17 errores en cuatro ficheros de presupuestos que este tramo no
 toca (árbol anidado con el cliente de Prisma compartido); no lo he cruzado con un árbol limpio.

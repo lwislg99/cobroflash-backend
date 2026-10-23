@@ -55,8 +55,8 @@ function dateShort(d: Date | string, zona: string) {
 // día que el registro aunque las dos formas de calcularlo divergieran. Sólo se le pone la forma corta.
 // Sin zona declarada, `zonaDelMerchant` da UTC y la tarjeta dice lo que decía.
 function fechaDeLaFactura(d: Date | string, zona: string) {
-  const [a, m, dia] = diaNaturalEn(new Date(d), zona).split('-').map(Number);
-  return new Date(Date.UTC(a, m - 1, dia)).toLocaleDateString('es', { timeZone: 'UTC', day: '2-digit', month: 'short', year: 'numeric' });
+  const dia = new Date(`${diaNaturalEn(new Date(d), zona)}T00:00:00Z`);
+  return dia.toLocaleDateString('es', { timeZone: 'UTC', day: '2-digit', month: 'short', year: 'numeric' });
 }
 
 function css() {
