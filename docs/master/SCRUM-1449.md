@@ -91,7 +91,7 @@ Contra lo medido:
 
 **Medido contra:** `origin/main` = `00179a513a5fb11ca12d61fe25b1b2dec26b51ca` · 2026-10-23T09:30:01Z (hora de GitHub)
 
-A9: aviso → cicatriz J2 «tomé de control positivo del ls-remote la rama de un PR recién mergeado, que el merge había borrado, y el control dio 0» — no se pudo comprobar: el control lo escribe a mano cada sesión en su consola y ningún guard lo ve
+A9: aviso → cicatriz J2 «tomé de control positivo del ls-remote la rama de un PR recién mergeado, que el merge había borrado, y el control dio 0; lo vi antes de fiarme y lo cambié por una rama viva» — no se pudo comprobar: el control lo escribe a mano cada sesión en su consola y ningún guard lo ve
 
 Sesión J2 (`jv-j2x`, 23-oct), carril J2. Rama `scrum-1449b-pagina-mercado-pago`.
 
@@ -124,9 +124,17 @@ Control sembrado: el 502 sin una tilde sale «NO CASA». Salida: `procedencia-sa
   Mercado Pago doblados. Población: 6 casos (control del instrumento, 503, 502, redirección al pago,
   cobro pagado, resultado pendiente). **Rojo primero**, con el código de main: 3 caen y 3 pasan de 6,
   y caen los tres del defecto (sin cabecera HTML en 503 y 502; la frase con la promesa). Con el arreglo: 6 de 6.
-- Mutación (`mutar-1449b.mjs`, salida `mutar-1449b-salida.txt`): base verde y luego 7 mutantes,
-  uno por pieza (las dos cabeceras, la página del 503, «merchant» de vuelta, una tilde menos en el
-  502, la promesa de vuelta, y sin token llamando igual a Mercado Pago): **los 7 caen**, fichero restaurado.
+- Mutación: los 7 mutantes viven en el test como `MUTACIONES_QUE_ME_TUMBAN` (catálogo del
+  meta-guard, SCRUM-1387), uno por pieza (las dos cabeceras, la página del 503, «merchant» de
+  vuelta, una tilde menos en el 502, la promesa de vuelta, y sin token llamando igual a Mercado
+  Pago). `mutar-1449b.mjs` los lee con `mutacionesDeclaradas` y los corre en local: base verde,
+  **los 7 caen por el caso que declaran**, fichero restaurado (`mutar-1449b-salida.txt`).
+  `npm run meta:mutaciones` entero no lo he corrido.
+- Vecinos: `guards:entrada` 15 de 15; los 5 de árbol entero que pide su salida, más 1387 y 745:
+  63 de 63. La tanda completa **no terminó**: la corté a los 590 s con 8.718 casos escritos y 28
+  caídos. Dos eran míos y los corregí (1294 y 1387); por el título, la mayoría son de este árbol
+  anidado sin `node_modules` ni cliente de Prisma propios (1199 lo leí: `express` sin resolver), y
+  tres ficheros enteros (534b, 553, 615) no los miré. Lo que no llegó a correr lo dice el obligatorio.
 
 ## Lo que NO lleva
 

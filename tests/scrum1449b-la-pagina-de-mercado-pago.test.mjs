@@ -25,6 +25,24 @@ import path from 'node:path';
 import { createRequire } from 'node:module';
 import { dobleDeLaBase } from './_envio-doblado.mjs';
 
+/** Lo que este test tiene que tumbar (SCRUM-1387: la red de la casa, `npm run meta:mutaciones`). */
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  { fichero: 'src/modules/billing/app/routes/payMp.routes.ts', de: "    res.setHeader('Content-Type', 'text/html; charset=utf-8');\n    return res.status(503)", a: '    return res.status(503)',
+    cae: 'SCRUM-1449b · 🔴 sin token de Mercado Pago: 503 en página' },
+  { fichero: 'src/modules/billing/app/routes/payMp.routes.ts', de: "    res.setHeader('Content-Type', 'text/html; charset=utf-8');\n    return res.status(502)", a: '    return res.status(502)',
+    cae: 'SCRUM-1449b · 🔴 Mercado Pago no contesta: 502 en página' },
+  { fichero: 'src/modules/billing/app/routes/payMp.routes.ts', de: 'res.status(503).send(avisoMpHtml(MSG_MP_NO_DISPONIBLE))', a: 'res.status(503).send(MSG_MP_NO_DISPONIBLE)',
+    cae: 'SCRUM-1449b · 🔴 sin token de Mercado Pago: 503 en página' },
+  { fichero: 'src/modules/billing/app/routes/payMp.routes.ts', de: "'Ahora mismo no se puede pagar con Mercado Pago. Contacta con el profesional.'", a: "'Mercado Pago no está configurado para este merchant.'",
+    cae: 'SCRUM-1449b · 🔴 sin token de Mercado Pago: 503 en página' },
+  { fichero: 'src/modules/billing/app/routes/payMp.routes.ts', de: "'Error al conectar con Mercado Pago. Inténtalo de nuevo.'", a: "'Error al conectar con Mercado Pago. Intentalo de nuevo.'",
+    cae: 'SCRUM-1449b · 🔴 Mercado Pago no contesta: 502 en página' },
+  { fichero: 'src/modules/billing/app/routes/payMp.routes.ts', de: "msg: 'Tu pago está siendo procesado.',", a: "msg: 'Tu pago está siendo procesado. Te notificaremos pronto.',",
+    cae: 'SCRUM-1449b · 🔴 cobro pendiente: la página dice el recorte firmado' },
+  { fichero: 'src/modules/billing/app/routes/payMp.routes.ts', de: '  if (!accessToken) {\n', a: '  if (!accessToken && false) {\n',
+    cae: 'SCRUM-1449b · 🔴 sin token de Mercado Pago: 503 en página' },
+];
+
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const requiere = createRequire(import.meta.url);
 const rutaDe = (r) => requiere.resolve(path.join(RAIZ, r));
