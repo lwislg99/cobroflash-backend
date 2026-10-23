@@ -17,6 +17,10 @@
 //   · `--sin-semilla`: no se siembra nada → el instrumento TIENE que decir CIEGO (salida 2).
 //   · `--mutar`: anula la regla de SCRUM-1583 con una hoja inyectada → el enlace TIENE que salir
 //     corto. Es lo que demuestra qué pieza trabaja.
+//   · `--con-aviso`: la fila trae el aviso de correo fallido; se mide también su botón.
+//   · `--captura`: PNG de la fila con y sin la regla, que TIENEN que salir idénticos; con dos
+//     controles: la misma captura repetida (determinismo) y el `::before` pintado (TIENE que salir
+//     distinto). `CAPTURAS_EN=<dir>` guarda los PNG.
 //
 // Salidas: 0 todos ≥ 44 · 1 alguno corto · 2 CIEGO (población o semilla no cuadran) · 3 navegador.
 import path from 'node:path';
@@ -41,6 +45,7 @@ const REALES = 'td.cell-id > a[href="#invoice-detail"]';
 // aviso con su botón «Enviar de nuevo». Un `::before` posicionado se pinta encima del contenido en
 // flujo: si el área ampliada alcanzara el botón, le robaría el toque. Se mide el botón también.
 const CON_AVISO = process.argv.includes('--con-aviso');
+const CAPTURA = process.argv.includes('--captura');
 const CUBOS = metodo.cubosDeMetodo(metodo.ROTULO_SIN_METODO);
 const conAviso = (c) => c.ruta.test('/admin/cobros') && CON_AVISO
   ? c.dato().map((x) => x.invoiceId != null ? { ...x, correoNoSalio: { clase: 'invoice', invoiceId: x.invoiceId } } : x)
@@ -64,7 +69,7 @@ const SUPERFICIES = [{ ruta: '/cobros', fnVista: 'renderCobrosView', datos: regl
 const SEMBRAR_JS = `(() => { const a = document.querySelector(${JSON.stringify(REALES)}); const s = document.createElement('a');
   s.href = '#semilla'; s.id = '__semilla'; s.textContent = 'SEMILLA'; a.parentNode.appendChild(s); })()`;
 const MUTAR_JS = `(() => { const st = document.createElement('style');
-  st.textContent = ${JSON.stringify(REALES + '::before { content: none !important; }')};
+  st.textContent = ${JSON.stringify(REALES + ' { position: static !important; } ' + REALES + '::before { content: none !important; }')};
   document.head.appendChild(st); })()`;
 
 const MEDIR = `(async (REALES, SEL) => {
@@ -98,6 +103,40 @@ for (const s of SUPERFICIES) {
     if (MUTAR) await page.evaluate(MUTAR_JS);
     if (SEMBRAR && hay) await page.evaluate(SEMBRAR_JS);
     const r = await page.evaluate(`${MEDIR}(${JSON.stringify(REALES)}, ${JSON.stringify(INTERACTIVOS)})`);
+    // `--captura` (AB6, capturas antes/después): la fila tal cual y la misma con el `::before`
+    // anulado. Si el arreglo sólo toca el toque, los dos PNG salen IDÉNTICOS byte a byte. La semilla
+    // se quita antes, para que no salga en ninguna de las dos.
+    if (CAPTURA && !MUTAR && hay) {
+      await page.evaluate(() => { const s = document.getElementById('__semilla'); if (s) s.remove(); });
+      const fila = await page.$(`${REALES}`).then((a) => a.evaluateHandle((el) => el.closest('tr')));
+      // Sin esto la captura NO es determinista (medido: dos seguidas salían distintas): la tarjeta
+      // queda en `:hover` (`tbody tr:hover`) según dónde quedó el puntero, con su transición.
+      await page.addStyleTag({ content: '*, *::before, *::after { transition: none !important; animation: none !important; caret-color: transparent !important; }' });
+      await fila.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+      await page.mouse.move(1, 1);
+      await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+      const con = await fila.screenshot();
+      const otra = await fila.screenshot();
+      if (process.env.CAPTURAS_EN) {
+        const fs = await import('node:fs');
+        fs.writeFileSync(path.join(process.env.CAPTURAS_EN, `con-${ancho}.png`), con);
+      }
+      console.log(`   · captura @${ancho}px repetida sin cambiar nada: ${Buffer.compare(con, otra) === 0 ? 'IDÉNTICA (la captura es determinista)' : 'DISTINTA — la captura no es determinista: lo de abajo no vale'}`);
+      await page.evaluate(MUTAR_JS);
+      const sin = await fila.screenshot();
+      if (process.env.CAPTURAS_EN) {
+        const fs = await import('node:fs');
+        fs.writeFileSync(path.join(process.env.CAPTURAS_EN, `sin-${ancho}.png`), sin);
+      }
+      // Positivo sembrado: el mismo `::before`, pintado. TIENE que salir distinto; si no, el
+      // comparador no ve nada y el «idénticas» de arriba no vale.
+      await page.evaluate(`(() => { const st = document.createElement('style'); st.textContent = ${JSON.stringify(REALES + '::before { content: "" !important; background: rgba(255,0,0,.5); }')}; document.head.appendChild(st); })()`);
+      const pintado = await fila.screenshot();
+      const igual = Buffer.compare(con, sin) === 0;
+      const ve = Buffer.compare(con, pintado) !== 0;
+      if (!ve) ciego++; else if (!igual) cortos++;
+      console.log(`   ${!ve ? '🔴 CIEGO' : igual ? '✅' : '❌'} captura @${ancho}px: con y sin el ::before ${igual ? 'IDÉNTICAS' : 'DISTINTAS'} (${con.length} B / ${sin.length} B) · positivo pintado ${ve ? 'DISTINTO, como debe' : 'IGUAL: comparador ciego'}`);
+    }
     await page.close();
     const cab = `${s.fnVista} @${ancho}px`;
     if (errores.length) console.log(`   ⚠️ ${cab} errores de página: ${errores.join(' | ').slice(0, 160)}`);

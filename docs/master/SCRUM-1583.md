@@ -2,6 +2,7 @@
 
 **Medido contra:** `origin/main` = `0b8af73d34d95a762b18fad1cd6232ce7f621b1f` · 2026-10-23T11:03:57Z (hora de GitHub al escribir: 2026-10-23T11:06:28Z)
 A9: comprobación → `tests/scrum1583-enlace-documento-cobros-44.test.mjs`
+**Skill UI:** cargada · tarde: después de escribir la regla, cuando `scrum811c` (dentro de `guards:entrada`) tumbó la tanda local; revisado el cambio contra su checklist AB6 después, y de ahí salieron las capturas
 
 Puesto J2 (`jv-j2ad`) · rama `scrum-1583a-enlace-factura-44`. Encargo del orquestador del equipo de Javier
 (`cobroflash-backend-62`). Sale de SCRUM-1159 (hallazgo 1 de c.20459, abierto por `jv-j2z`). El hook de arranque dijo
@@ -33,7 +34,9 @@ td.cell-id > a[href="#invoice-detail"]::before { content: ""; position: absolute
 - **Por qué `::before` y no `min-height`:** a 1280 la fila mide 45,4 px y el enlace 18; un `min-height: 44px` en el enlace
   la sube (44 + el relleno de la celda). El `::before` es el mecanismo de `.casilla-tactil-44` (SCRUM-786): crece el área
   que recibe el toque y no mueve nada. Sólo en vertical (`inset: -14px 0`): de ancho ya mide 107-120.
-- Sin texto nuevo, sin cambio de aspecto medido por alto de fila y ancho del enlace (abajo). **No comparé capturas.**
+- Sin texto nuevo, y sin cambio de aspecto: alto de fila y ancho del enlace iguales, y capturas de la fila **idénticas
+  byte a byte** con y sin la regla (abajo). Sin tokens, colores ni sombras nuevos; el foco no cambia (el `::before` es
+  transparente y no lleva `outline`).
 
 ## Medición en Edge (`docs/master/evidencias/SCRUM-1583/medir.mjs`)
 
@@ -54,6 +57,9 @@ Controles, corridos con el código de salida del propio proceso (sin tubería):
 - **`--con-aviso`** (la fila trae `correoNoSalio`, y en la MISMA celda, debajo del enlace, sale «Enviar de nuevo»): un
   `::before` posicionado se pinta encima del contenido en flujo y podía robarle toque al botón. Medido antes y después:
   **30,7 / 30,7 / 30,9 px en los dos**; no baja. (Que ese botón esté a 30,7 es otro corto, de `.btn-sm`: abajo.)
+- **`--captura`** (AB6, antes/después): PNG de la fila con la regla y con la regla anulada (`position` y `::before`), a
+  320/390/1280, con y sin el aviso: **6 de 6 idénticas byte a byte**. Dos controles en cada una: la misma captura repetida
+  sin cambiar nada sale idéntica (determinismo), y el `::before` pintado de rojo sale distinto (el comparador ve).
 
 ## Censo y guards de navegador
 
@@ -76,11 +82,18 @@ Cobros siga pintando el enlace con ese `href` como hijo directo de `td.cell-id`.
 
 ## Sin medir
 
-- yaqu.app tras el despliegue (no está mergeado). Capturas antes/después. Más de una fila con factura (el contrato trae
+- yaqu.app tras el despliegue (no está mergeado). La matriz de dispositivos de AB6 (Android/iPhone/tablet): sólo Edge
+  emulando anchuras. Más de una fila con factura (el contrato trae
   una): con dos seguidas a 1280 el `::before` de cada una invade ~0,3 px la de al lado — calculado, no medido.
 
-## Fallo propio
+## Fallos propios
 
-La primera `--mutar` anulaba `display`/`min-height`, que no es la pieza que trabaja: salió **MUDA** (todo en verde con la
+1. **No cargué `yaqu-premium-ui` antes de tocar `styles.css`**, aunque el encargo lo pedía. Lo cazó `scrum811c` en la
+   tanda local antes de empujar; la cargué entonces y la revisión destapó que faltaban las capturas. Ese guard ya es la
+   comprobación, y por eso no va aparte.
+2. **Las primeras capturas salieron «DISTINTAS» y no era el arreglo:** la misma captura repetida también salía distinta
+   (la tarjeta quedaba en `:hover` según dónde estaba el puntero). Lo vi porque metí el control de determinismo antes
+   de creerme el resultado; ahora el instrumento retira el puntero y congela las transiciones.
+3. La primera `--mutar` anulaba `display`/`min-height`, que no es la pieza que trabaja: salió **MUDA** (todo en verde con la
 mutación puesta). Lo vi al leer su salida y la cambié para que anule el `::before`. El test cubre esa mitad
 (`sin ::before` lo tumba), y por eso la `A9:` apunta al test.
