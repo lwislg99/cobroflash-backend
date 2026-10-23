@@ -1,10 +1,13 @@
-{"nombre":"BASE (sin mutar)","veredicto":"VIVE","tests":12,"pass":11,"fail":0,"skip":1,"caidos":[],"bytes":3440}
-{"nombre":"main (sin la pestaña)","veredicto":"MUERE","tests":12,"pass":0,"fail":11,"skip":1,"caidos":["SCRUM-1145 · 🔴 la ficha tiene la pestaña «Sitios», y la lista se pide","SCRUM-1044 · 🔴 la PRIMERA fila es la dirección fiscal, de sólo lectur","SCRUM-1044 · «Cómo llegar» en cada sitio CON dirección, y en el que no","SCRUM-1145 · lista vacía: el texto firmado, debajo de la fiscal; sin f","SCRUM-1145 · si la lista no carga: el error firmado, y la fiscal sigue","SCRUM-1145 · 🔴 ALTA: «+ Nuevo sitio» abre el formulario, y «Guardar» ","SCRUM-1145 · EDICIÓN: «Editar» trae el sitio relleno, y «Guardar» hace","SCRUM-1145 · BORRADO: «🗑 Eliminar» hace DELETE a su id SIN preguntar,","SCRUM-1145 · si guardar o borrar falla: el genérico firmado, y nada se","SCRUM-1145 · el Técnico también tiene la pestaña (las cuatro rutas le ","SCRUM-1145 · cada texto de la pestaña consta firmado en SCRUM-1145, y "],"bytes":11381}
-{"nombre":"pide los sitios al pintar la ficha","veredicto":"MUERE","tests":12,"pass":8,"fail":3,"skip":1,"caidos":["SCRUM-1145 · 🔴 la ficha tiene la pestaña «Sitios», y la lista se pide","SCRUM-1145 · 🔴 ALTA: «+ Nuevo sitio» abre el formulario, y «Guardar» ","SCRUM-1145 · BORRADO: «🗑 Eliminar» hace DELETE a su id SIN preguntar,"],"bytes":5681}
-{"nombre":"sin fila fiscal","veredicto":"MUERE","tests":12,"pass":4,"fail":7,"skip":1,"caidos":["SCRUM-1044 · 🔴 la PRIMERA fila es la dirección fiscal, de sólo lectur","SCRUM-1044 · «Cómo llegar» en cada sitio CON dirección, y en el que no","SCRUM-1145 · lista vacía: el texto firmado, debajo de la fiscal; sin f","SCRUM-1145 · si la lista no carga: el error firmado, y la fiscal sigue","SCRUM-1145 · EDICIÓN: «Editar» trae el sitio relleno, y «Guardar» hace","SCRUM-1145 · BORRADO: «🗑 Eliminar» hace DELETE a su id SIN preguntar,","SCRUM-1145 · si guardar o borrar falla: el genérico firmado, y nada se"],"bytes":8583}
-{"nombre":"borrar pregunta","veredicto":"MUERE","tests":12,"pass":10,"fail":1,"skip":1,"caidos":["SCRUM-1145 · BORRADO: «🗑 Eliminar» hace DELETE a su id SIN preguntar,"],"bytes":4181}
-{"nombre":"en blanco viaja \"\"","veredicto":"MUERE","tests":12,"pass":9,"fail":2,"skip":1,"caidos":["SCRUM-1145 · 🔴 ALTA: «+ Nuevo sitio» abre el formulario, y «Guardar» ","SCRUM-1145 · EDICIÓN: «Editar» trae el sitio relleno, y «Guardar» hace"],"bytes":5420}
-{"nombre":"sin «Cómo llegar» en los sitios","veredicto":"MUERE","tests":12,"pass":10,"fail":1,"skip":1,"caidos":["SCRUM-1044 · «Cómo llegar» en cada sitio CON dirección, y en el que no"],"bytes":4056}
-{"nombre":"el error de carga dice «no hay sitios»","veredicto":"MUERE","tests":12,"pass":10,"fail":1,"skip":1,"caidos":["SCRUM-1145 · si la lista no carga: el error firmado, y la fiscal sigue"],"bytes":4281}
-{"nombre":"PUT al id equivocado","veredicto":"MUERE","tests":12,"pass":10,"fail":1,"skip":1,"caidos":["SCRUM-1145 · EDICIÓN: «Editar» trae el sitio relleno, y «Guardar» hace"],"bytes":4291}
-restaurado por contenido: true
+POBLACION · 9 mutaciones declaradas · node v24.18.0
+BASE sin mutar · exit 0 · 13 = 12 pass + 0 fail + 1 skip
+origin/main (sin la pestaña) · MUERE · caen 12 de 13
+MUERE · public/dashboard/js/customerDetailView.js · cae «la lista se pide AL ABRIRLA» · caídas 3 de 13
+MUERE · public/dashboard/js/customerDetailView.js · cae «la PRIMERA fila es la dirección fiscal» · caídas 7 de 13
+MUERE · public/dashboard/js/customerDetailView.js · cae «SIN preguntar» · caídas 1 de 13
+MUERE · public/dashboard/js/customerDetailView.js · cae «ALTA:» · caídas 2 de 13
+MUERE · public/dashboard/js/customerDetailView.js · cae ««Cómo llegar» en cada sitio CON dirección» · caídas 1 de 13
+MUERE · public/dashboard/js/customerDetailView.js · cae «si la lista no carga» · caídas 1 de 13
+MUERE · public/dashboard/js/customerDetailView.js · cae «EDICIÓN:» · caídas 1 de 13
+MUERE · public/dashboard/js/customerDetailView.js · cae «PARTE LÍNEA» · caídas 1 de 13
+MUERE · public/dashboard/css/styles.css · cae «PARTE LÍNEA» · caídas 1 de 13
+todas MUEREN por su caso
