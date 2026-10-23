@@ -53,6 +53,7 @@ import path from 'node:path';
 // admitía el espacio, y dos meses después otro censo nació con el mismo fallo). Mi primera
 // versión llevaba su propio /docs/[w./-]+.md/ y ese guard la cazó.
 import { citasPorLinea, resuelve, mismoNombreEnOtroSitio } from '../scripts/_documentos-citados.mjs';
+import { sinCitas } from './_cita-declarada.mjs';
 
 /** Fuente 1 — Jira. Sólo comprobable por su FORMA: el ticket y el id del comentario. */
 export const RE_ANCLA_JIRA = /SCRUM-\d+\s*[·,—-]?\s*comentario\s+(\d{3,})/i;
@@ -77,11 +78,24 @@ export function fuentesLocales(raiz) {
 
 /**
  * El índice de fuentes, leído UNA vez: son ~900 ficheros y se consulta por cada marca.
+ *
+ * 🔴 SCRUM-1502h: LO CITADO EN UNA FUENTE TAMPOCO RESPALDA. Cada fuente se lee con `sinCitas`,
+ * así que una frase entre `[[cita]]` y `[[/cita]]` en un registro ni aporta el literal ni aporta
+ * la atribución. Medido el 7-oct (SCRUM-1502 c.18795) y el 23-oct (c.20636): sin esto, citar la
+ * frase de una marca en un `docs/master/` nuevo la absolvía igual entre `[[cita]]` que a pelo.
+ * Decisión del fundador: SCRUM-1502 comentario 20690. Sobre el árbol de ese día no cambió de
+ * nivel ninguna marca (`docs/master/SCRUM-1502.md`, tramo 1502h).
+ *
+ * ⚠️ LO QUE NO CIERRA, DICHO AQUÍ: la frase copiada A PELO sigue respaldando. El respaldo
+ * documental ES «el literal, a pelo, en un fichero que atribuye»: la mayoría de las documentales de
+ * ese día sólo constan así en `docs/master/` (cifra en el tramo 1502h), y ninguna regla de forma separa una cita de un
+ * registro que documenta la firma. Lo que las separa es quién lo escribió y cuándo.
+ *
  * @returns {{ruta:string, texto:string, atribuye:boolean}[]}
  */
 export function indiceDeFuentes(raiz) {
   return fuentesLocales(raiz).map((ruta) => {
-    const texto = fs.readFileSync(path.join(raiz, ruta), 'utf8');
+    const texto = sinCitas(fs.readFileSync(path.join(raiz, ruta), 'utf8'));
     return { ruta, texto, atribuye: RE_ATRIBUCION.test(texto) };
   });
 }
