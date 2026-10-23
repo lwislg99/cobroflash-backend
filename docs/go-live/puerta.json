@@ -108,7 +108,7 @@
       "que": "public/index.html:427, el subtítulo vivo: tiene recambio firmado (SCRUM-1016 c.19607) y falta aplicarlo. Carril J3.",
       "de_donde": "SCRUM-1236 c.19745",
       "consta_en": "SCRUM-1554 c.19746, fila 14",
-      "condicion": "Aplicarlo, sin firma nueva.",
+      "condicion": "Superada el 23-oct por la firma S3 (SCRUM-1551 c.20437): el recambio de c.19607 NO se aplica. S3 lo aplica SCRUM-1551e en public/index.html:442; se cierra con el sha de su merge.",
       "estado": "abierta"
     },
     {
