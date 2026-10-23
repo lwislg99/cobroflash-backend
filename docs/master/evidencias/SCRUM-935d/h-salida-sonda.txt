@@ -1,0 +1,42 @@
+
+### sin filtro (400 ms)
+  stdout CARGA-DEL-MODULO
+  pass d0 «primero pone estado»
+  pass d0 «segundo depende del primero»
+  stdout EXECARGV=[…flags de node recortados; en la pasada con execArgv el último es "--no-warnings"…]
+  pass d0 «lento»
+  pass d1 «interno con (paréntesis) y [corchetes] y *»
+  pass d1 «interno dos»
+  pass d0 «grupo exterior»
+  pass d0 «marca execArgv»
+  summary {"tests":6,"failed":0,"passed":6,"cancelled":0,"skipped":0,"todo":0,"topLevel":5,"suites":1} file=cobaya.test.mjs
+  summary {"tests":6,"failed":0,"passed":6,"cancelled":0,"skipped":0,"todo":0,"topLevel":5,"suites":1} file=-
+
+### filtro exacto «segundo depende del primero» (104 ms)
+  stdout CARGA-DEL-MODULO
+  FAIL d0 «segundo depende del primero» Expected values to be strictly equal:
+
+0 !== 1
+
+  summary {"tests":1,"failed":1,"passed":0,"cancelled":0,"skipped":0,"todo":0,"topLevel":1,"suites":0} file=cobaya.test.mjs
+  summary {"tests":1,"failed":1,"passed":0,"cancelled":0,"skipped":0,"todo":0,"topLevel":1,"suites":0} file=-
+
+### filtro exacto interno con caracteres (83 ms)
+  stdout CARGA-DEL-MODULO
+  pass d1 «interno con (paréntesis) y [corchetes] y *»
+  pass d0 «grupo exterior»
+  summary {"tests":1,"failed":0,"passed":1,"cancelled":0,"skipped":0,"todo":0,"topLevel":1,"suites":1} file=cobaya.test.mjs
+  summary {"tests":1,"failed":0,"passed":1,"cancelled":0,"skipped":0,"todo":0,"topLevel":1,"suites":1} file=-
+
+### filtro que no casa (130 ms)
+  stdout CARGA-DEL-MODULO
+  summary {"tests":0,"failed":0,"passed":0,"cancelled":0,"skipped":0,"todo":0,"topLevel":0,"suites":0} file=cobaya.test.mjs
+  pass d0 «<tmp>\cobaya.test.mjs»
+  summary {"tests":1,"failed":0,"passed":1,"cancelled":0,"skipped":0,"todo":0,"topLevel":1,"suites":0} file=-
+
+### execArgv (111 ms)
+  stdout CARGA-DEL-MODULO
+  stdout EXECARGV=[…flags de node recortados; en la pasada con execArgv el último es "--no-warnings"…]
+  pass d0 «marca execArgv»
+  summary {"tests":1,"failed":0,"passed":1,"cancelled":0,"skipped":0,"todo":0,"topLevel":1,"suites":0} file=cobaya.test.mjs
+  summary {"tests":1,"failed":0,"passed":1,"cancelled":0,"skipped":0,"todo":0,"topLevel":1,"suites":0} file=-
