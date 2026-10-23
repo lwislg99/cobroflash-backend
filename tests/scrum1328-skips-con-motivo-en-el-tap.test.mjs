@@ -40,8 +40,9 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // Un lector que no mira la integridad cuenta saltos sobre un TAP pisado: «0 saltos» donde no miró.
     fichero: 'tests/scrum1328-skips-con-motivo-en-el-tap.test.mjs',
-    de: '  if (!integ.ok) return { ciego: true, motivo: integ.motivo };',
-    a: '  // sin mirar la integridad, a proposito',
+    // Con la línea de antes: a secas, el ancla casaba también con esta misma declaración (SCRUM-1321).
+    de: '  const integ = integridadTap(buf);\n  if (!integ.ok) return { ciego: true, motivo: integ.motivo };',
+    a: '  const integ = integridadTap(buf);\n  // sin mirar la integridad, a proposito',
     cae: 'CONTROL SEMBRADO: SIN el envoltorio el mismo lector dice CIEGO',
   },
 ];
