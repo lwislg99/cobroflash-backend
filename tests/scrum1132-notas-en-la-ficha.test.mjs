@@ -53,9 +53,11 @@ const DETAIL = {
   quotes: [], invoices: [], events: [],
   stats: { totalQuotes: 0, acceptedQuotes: 0, totalBilled: 0, totalPaid: 0, totalExpenses: 0, profit: 0 },
 };
+// SCRUM-1132d: mitad de mes y mediodía UTC, para que sea octubre de UTC−12 a UTC+14 (el trinquete
+// de zona corre en Midway y Kiritimati); con el 1 a las 09:30Z, en Midway era el 30 de septiembre.
 const NOTAS = {
   notas: [
-    { id: 2, texto: 'Trae repuesto de la marca de siempre', fecha: '2026-10-01T09:30:00Z', autor: 'Marta 1132', esFija: false },
+    { id: 2, texto: 'Trae repuesto de la marca de siempre', fecha: '2026-10-15T12:00:00Z', autor: 'Marta 1132', esFija: false },
     { id: 'fija', texto: FIJA, fecha: null, autor: null, esFija: true },
   ],
 };
