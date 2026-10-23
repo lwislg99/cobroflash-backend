@@ -211,10 +211,14 @@ M2 Madrid fijo → cae «sin zona» · M3 vuelve `getDate` → caen 2.
 el literal necesita firma, regla 39). Salen las 3 de `dateStr`.
 
 **Aceptación 4 · el gemelo del portal: DECLARADO, no hecho.** `customerPortal.routes.ts::fechaDeLaFactura`
-es del carril J2 y no lo he escrito. Sigue en SCRUM-1471 (J2, En curso), con su motivo en `USO`. Hasta
-que entre, en un negocio CON zona el portal y el PDF de la misma factura dicen días distintos de
-madrugada: es la contradicción que la regla del ticket quiere evitar, y se dice aquí para que no se
-pierda. Hoy sólo la puede ver un negocio con `timezone` puesta (los 13 del relleno de SCRUM-643, todos
+es del carril J2 y no lo he escrito. Sigue en SCRUM-1471 (J2, En curso; aviso en su c.20542), con su
+motivo en `USO`. MEDIDO por la ruta real, no leído: el portal de `origin/main` ya pinta con la zona
+del negocio la fecha del presupuesto y el «Pagada» (`dateShort`, desde #2220), pero la fecha de la
+FACTURA sale de `fechaDeLaFactura`, sin zona. La sonda de SCRUM-1470 pide el portal por su ruta con el
+proceso en UTC, y en mi tanda pasó el caso «SCRUM-1471 · DECLARADO»: a las 00:30 de verano, invierno
+y Canarias el portal dice la víspera de la factura, y el PDF (este tramo) el día de su registro.
+**Falta esa fila: el gemelo NO está hecho.** Es la contradicción que la regla del ticket quiere evitar,
+y se dice aquí para que no se pierda. Hoy sólo la puede ver un negocio con `timezone` puesta (los 13 del relleno de SCRUM-643, todos
 de prueba, según su registro; no lo he contado en ninguna base).
 
 **De paso:** el caso «DECLARADO» de SCRUM-1471 en `tests/scrum1470-…` decía que el portal seguía el
