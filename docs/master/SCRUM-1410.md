@@ -12,7 +12,7 @@ La medición entera, con sus tablas, está en el comentario **c.20524** del tick
 Las sondas están en `docs/master/evidencias/SCRUM-1410/`. Son de un solo uso y se corren desde una carpeta de trabajo con `pr.git` al lado:
 
 1. `git init --bare pr.git`, con `objects/info/alternates` apuntando a los objetos del clon. Después, `git fetch <remoto> '+refs/pull/*/head:refs/pr/*' '+refs/heads/*:refs/heads/*'`. Se hace en un repositorio APARTE para no meter 2.732 refs en el `.git` que comparten los worktrees.
-2. `git log --all --author='claude\[bot\]' --format='%H %aI %s' > bot-commits.txt` → **161**.
+2. `git log --all --author='claude\[bot\]' --format='%H %aI' > bot-commits.txt` → **161**. Sin el asunto: ver el tramo del 23-oct, 15:08Z.
 3. `medir.mjs` asigna cada commit a su PR y marca los commits de sesión PARALELOS: los que no son antepasado ni descendiente del commit del bot. `medir2.mjs` recupera 3 commits que ya estaban en main y clasifica a 6 h. `medir3.mjs` saca las 916 ejecuciones de `claude.yml` y cruza las dos sondas.
 
 ## Lo que salió (c.20524)
@@ -33,3 +33,12 @@ Las dos sondas casan: **161/161** commits del bot caen dentro de una ejecución,
 ## Lo que no entra
 
 ③ y ④ → fundador y S5. Las salidas de ② van con su coste en c.20524, **sin elegir**.
+
+# SCRUM-1410 · la lista de commits del bot, sin el asunto (el obligatorio de #2745 cayó en scrum766)
+
+**Medido contra:** `origin/main` = `5da02178a4fc1499b90618bdbe4db29aa0ab90f4` · 2026-10-23T15:08:27Z
+A9: comprobación → `tests/scrum766-el-grep-que-cuenta-lineas.test.mjs`
+
+Puesto J4 (`jv-j4t`, relevo de `jv-j4r`). El obligatorio del run 39967390577 cayó en un único caso de scrum766: la línea 124 de `evidencias/SCRUM-1410/bot-commits.txt`. Esa línea era el asunto del commit `b3082c3a` (SCRUM-849), que cita el idioma que el censo prohíbe. Lo metió la receta `--format='%H %aI %s'`, que guardaba los asuntos tal cual. El guard no se toca (regla 41). Tampoco tiene una exclusión declarada para datos, y SCRUM-849 resolvió el mismo choque quitando el literal.
+
+**Arreglo:** la receta pasa a `--format='%H %aI'`. `medir.mjs` parte el asunto en un campo `asunto` que ninguna sonda vuelve a leer: el análisis usa el sha y la fecha. `pr.git` ya no existe, así que el fichero no sale de repetir el `git log --all`: sale de `git log --no-walk --format='%H %aI'` sobre los 161 shas de antes, y es idéntico byte a byte a quitar el tercer campo de la versión anterior. Control: con una línea alterada, la comparación sí falla. Los 161 son de `claude[bot]` (`%an`). Las demás sondas, sus salidas y `filas3.json` (que conserva el asunto escapado en JSON y el censo no lo caza) no se tocan, así que ninguna cifra de c.20524 cambia: siguen 161, 11 de clase A y 3 después de SCRUM-1263.

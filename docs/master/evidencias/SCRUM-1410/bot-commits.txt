@@ -1,161 +1,161 @@
-6331860d8a8e11b7bc802169571d3a1d393750f6 2026-10-23T13:32:22Z SCRUM-1589: la linea de doc.image vuelve a ser el ancla de F14 y los casos llevan nombre literal
-c4186ad60364e3184235bbfba2fa41d020ae51e0 2026-10-22T12:20:30Z SCRUM-1575b · nombres de caso escritos (casosEscritos) y el censo declarado sin fila (equipo Javier)
-9fdf9315fb6520cffd4e651b9b7b17f70ebe390f 2026-10-22T12:17:54Z SCRUM-962e: las aserciones de las sondas toleran atributos (el tope de SCRUM-553 vuelve a 20)
-be59f44d5491f89516e66b1cdf8a7f88eb62b907 2026-10-22T12:06:17Z SCRUM-962d: el ancla de la mutación width 44→40 se alarga hasta ser única (casaba también en el bloque de 962f, línea 2203)
-f294f4e8465825d5b938640d81bc96fe8f63ab1e 2026-10-22T12:02:18Z SCRUM-1536f · la sonda no decide la zona: sin '?? null' sobre timezone (guard SCRUM-643)
-1f1e23bbea8e2f90e1e0f957e687a0d0e4f456d4 2026-10-22T10:39:04Z SCRUM-1289c: el script de reconstruccion crea su temporal con temporal() (guard SCRUM-864c), sin tocar el guard
-5bc0aa25ccbbbcddf10100e593aa0c03f0b1a895 2026-10-15T17:24:51Z SCRUM-1233e: línea A9 en el registro (la exige scrum1294)
-de673cc4e37b6deabafe1218706676bf99cccf2d 2026-10-15T16:17:56Z SCRUM-999c: línea A9 que faltaba en el registro (guard SCRUM-1294)
-2e791fbaf73edaf52c99faf87674cb74975ad22c 2026-10-15T16:15:41Z SCRUM-996c: línea A9 del registro (el guard SCRUM-1294 la exigía)
-3c49d305f7de38a7be33d2f239c8053078019fcb 2026-10-14T08:52:13Z SCRUM-1527c: los ficheros de control pasan a .mjs.txt (SCRUM-708: registraban tests que la tanda no corre)
-f4db1745b28606de1f4d09f02cec0777892219d4 2026-10-13T15:44:35Z SCRUM-1302k: el test arma su req con reqDeSesion, no con userRole a mano (guard SCRUM-1344 ⑤)
-5b46be141fb56fbd4f133eff3e98cdee432383ce 2026-10-13T12:54:39Z SCRUM-1537: la cita de prueba se arma en ejecucion, no es un ancla por linea (710b)
-50b9ee255d6ccb41114b9443fd44d58dccac93a2 2026-10-13T12:48:56Z SCRUM-1215h: la sonda quien-la-vio usa temporal() en vez de mkdtempSync (guard SCRUM-864c)
-6f44fa9a9a8895fbef00a408912082ecced433f1 2026-10-13T11:43:51Z SCRUM-1331b: línea A9 del registro y su frase en A10
-4849bf4e5cc06a338dcafe5de04c0d43bba8cd7f 2026-10-13T11:41:07Z SCRUM-1525b: declara scripts/respaldo-programado.mjs en _sin-fila-declarados.json (salida 2 de SCRUM-1480f)
-35ce4d5c022f9f1d5dd09e3327a531d9393e5f33 2026-10-13T10:56:27Z SCRUM-1523b: el banco de camino-del-pdf.mjs nace con temporal() y se borra siempre (guard SCRUM-864c)
-49495b99d597db245ebcabe1fd8731cb639fbb92 2026-10-13T05:13:37Z SCRUM-1524: la copia de por-que-no-las-ve.mjs nace con temporal() y no con mkdtempSync (guard 864c)
-624f2552a30252aec860feb41f70695afd71082f 2026-10-08T08:23:36Z SCRUM-1513: tope-postgres.cjs borra su carpeta temporal tambien en process.exit (guard SCRUM-864c intacto)
-e9e0b3e2040cac1d2d1d553ca4845e2db0ecc545 2026-10-08T03:07:44Z SCRUM-1509: medir.cjs no lleva el literal del host de Meta (guard r28 intacto)
-58a0477c75f62ee652be664965a893a3605c0246 2026-10-08T02:50:54Z SCRUM-1512: evidencias sin el literal del host de Meta ni bytes ESC (guards SCRUM-124/942 en verde, sin tocarlos)
-7d40a8fe8e52221be2cb420ed13aaefcf0f24482 2026-10-08T00:03:01Z SCRUM-1446: la sonda crea su temporal con temporal() (guard SCRUM-864c), sin tocar el guard
-f4b9267c97267f5d21048a6573df6101e570d4bb 2026-10-06T11:44:13Z SCRUM-1454: los dos hijos que quedaban prestando el entorno (lanzar y sinNumero) lo limpian, para que el censo de 1349 no acuse a este test
-cfba03e9fe55e1083d610f9b59e28c76c0f0b63c 2026-10-02T12:47:50Z SCRUM-1414: un par [nombre, minutos] por linea en el test (guard SCRUM-710b)
-88fc81817332f56fd343de572517b247016221e6 2026-10-02T06:48:55Z SCRUM-1403: el teléfono sembrado de la ficha del cliente va en el rango imposible (guard de SCRUM-262)
-ebdc2146e1d80ec9fbd814053ea64149a20a8dbc 2026-10-02T06:22:07Z SCRUM-1399: el puntero viejo se planta dentro de raizAislada, donde el censo de SCRUM-824 prueba que cuelga de os.tmpdir()
-cea8d2044f7067a7df921eebb4c9a3088bf081ec 2026-10-02T03:45:37Z SCRUM-1252: el test propuesto pasa a .mjs.txt: el guard de SCRUM-708 cazaba un .mjs que registra tests fuera de la tanda
-c8a344a75da37040dcb93ad0c8fbc2b68cf7bfea 2026-10-01T11:33:02Z SCRUM-1285: where con updatedAt como literal (el spread lo volvia OPACO para el censo 1285c)
-f54e1440042fa73280c08dab8043cec58a2d3b17 2026-10-01T08:20:22Z SCRUM-1338: el test propio deja hueco a los atributos y no escribe un recuento sin ancla (rojo de scrum553 y scrum737)
-3efc4f659a14e63f074a244618a371abbd09aae4 2026-10-01T06:30:52Z SCRUM-1331: los tres rojos del CI eran del codigo nuevo (ancla por posicion, cifra sin ancla, clasificarVentana sin caso)
-731c43ccfcf88a78aeb3911f4a34bd9eb7986515 2026-09-29T09:35:02Z SCRUM-1266: el test usa soloCodigo() en vez de fabricarse su filtro de comentarios (tope SCRUM-694 en 39)
-b10183967feee5dbd31d5020e79edacc0b425b38 2026-09-29T09:20:08Z SCRUM-1215: el test usa soloCodigo en vez de su propio filtro de comentarios (scrum694 topa en 39)
-6787a7f000cf0e07996d8577fe083392c0830017 2026-09-28T23:05:51Z SCRUM-1261: las dos citas a PREGUNTAS_ASESOR.md llevan testigo (RESPONDIDA); :848 -> :847, donde está la marca
-008fbd5105aeebf6cd1e8cede0fe969eec35a969 2026-09-28T22:42:34Z SCRUM-825: entrada de registro del lado panel (puntero a SCRUM-1257c), la exige SCRUM-854
-8abbcc10d023f2720c8e4773b6fcf93e86e2fab7 2026-09-28T22:40:32Z SCRUM-1259: el test compara fichero y linea por campos (sin literal fichero:linea que el guard 710b lee como ancla por posicion)
-f8180aac67666d978b5a30c7d3aa8448a9403d92 2026-09-28T22:10:07Z SCRUM-1257: el censo cuenta comentarios con el parser, no con ts.createScanner (guard SCRUM-718)
-a771d413acb6fcd5c03bf9141e0d75b5dd71c453 2026-09-28T22:09:21Z SCRUM-1136: los teléfonos del test nuevo, al rango imposible (guard SCRUM-262)
-ddf1c1c21070afec195d887ae411231673ec3266 2026-09-28T20:55:13Z SCRUM-1249: la descarga no pinta de verde un «no lo sé» (censo de SCRUM-622)
-a49af405b572bc178f6a59360cce422b77394445 2026-09-28T16:51:45Z SCRUM-1179-B: arregla el rojo del CI — estado en ruta fija, cifras sin ancla y suelo de cobertura por bajo
-4332772408d144528254a7bc1e4e35fb2e9fa2f1 2026-09-28T16:51:43Z SCRUM-1179: arregla el CI rojo de ec16ae80 — código, no el guard (regla 41)
-71aee0d0865ab903dfbab4a30856609bc2b80acf 2026-09-28T16:51:01Z SCRUM-1179-B: arregla el CI rojo, no los guards (regla 41)
-649db38c60d0ff7ac789ad025b39f4493a893302 2026-09-28T16:48:19Z SCRUM-1179-B: arregla el CI rojo, no los guards que lo detectaron
-19ce792577b1da50f20f7095d22f1418aaf71570 2026-09-28T16:41:53Z SCRUM-1157b: nombra el destino de la cita «regla 1» (SCRUM-189)
-5fa199e148f10173b181200bf92176280bbaaec1 2026-09-28T15:28:34Z SCRUM-1214: respalda el token de SCRUM-237 en el test del clasificador
-336a2a26429385b81249679bb038ae92ff189e97 2026-09-28T15:07:37Z SCRUM-1204: ancla con fecha la cifra sin ancla que rompía SCRUM-737
-866644a0dc281bd6c0116ea9818cd803d28bf365 2026-09-27T17:00:46Z SCRUM-1093h: quita el anclaje por linea que tumbaba scrum710b
-4882bf82f0080bacb5d208569f7d9661c8551806 2026-09-27T15:51:08Z SCRUM-999: corrige el ancla de medición y el cae inventado que tumbaban el CI
-2d0ec6dc8a2411372cc3734d7c4e71026b5ae455 2026-09-27T15:50:31Z SCRUM-1100c: arregla el ancla de medición inválida (~16:15Z no es ISO-8601)
-4676ab909e005ba2013d9395473e374e30fc7cf7 2026-09-27T15:48:29Z SCRUM-1153b: registra el expediente que exigía el guard SCRUM-854
-ac2eb5d5e721f3cd8cb013e957506393d8469fa3 2026-09-26T13:28:43Z SCRUM-631: completa el ancla de medicion de SCRUM-631b con su hora
-7f39dbcd27cb26e72e041ece9a04fc788ff43244 2026-09-26T12:50:29Z SCRUM-1091: repoConVictima usa temporal() en vez de mkdtempSync suelto
-b7ba3f1a17b12f2db57b852e1204b44ddd64aa57 2026-09-26T12:32:46Z SCRUM-938: ancla de medición con sha de 40 e ISO-8601 completo
-36600f6670deca9b18422daaeb9a3ffabc59c1f7 2026-09-26T06:57:51Z SCRUM-786: registro del incremento de la casilla export-datos (SCRUM-854)
-019024e14d83c096c0aa95fb67550cf679f2a6e4 2026-09-26T06:42:15Z SCRUM-1048: registra en BUGS.md el trinquete de zona rojo por vigia-atascados (otro carril)
-8df89673b243478ccbf879878ce41c3ec5e81582 2026-09-26T06:24:16Z SCRUM-1128: raiz() como const arrow para que el censo de SCRUM-824 la trace
-b9cd0afb5bcac1dbe3eddc5b1191fb510a5f6f39 2026-09-26T06:19:27Z SCRUM-1124: arregla dos anclas caducadas (meta-guard + SCRUM-267)
-ebe00a4ca9cd1d5964bd08dfedd94ba76891caa0 2026-09-26T06:17:41Z SCRUM-1048: arregla el CI rojo — ancla de medición y exports huérfanos
-ef9b056f148bd95f327640cbcff0f2c9d796af67 2026-09-26T06:15:25Z SCRUM-1134: declara el ancla de medición en el registro
-387944094bc369855cc89377010c26281748954d 2026-09-25T18:15:17Z SCRUM-917 (apendice): re-elige el NEGATIVO caducado del barrido de la 42
-4754a2cd45e30799f3893b0ebf94153bc5314bd5 2026-09-25T17:59:45Z SCRUM-1075: arregla el CI en rojo (SCRUM-409, SCRUM-457, SCRUM-601)
-a168820e77da5b82979b180bac6fc4b4e9929740 2026-09-25T17:55:23Z SCRUM-1049: arregla el NEGATIVO caducado de scrum804b (CI rojo, quinta vez)
-509b0fda9b56bf258b98949d641a591b53ae7a1a 2026-09-25T17:36:39Z SCRUM-1049: arregla los trinquetes que el diff movía (CI rojo)
-3d35c1324c38b02e75957901f0f94428e9220c50 2026-09-25T16:54:18Z SCRUM-786: fix — teléfono de prueba fuera del rango imposible
-e2df95219bbc484582fe858e0d9fa8c35078b79f 2026-09-25T15:47:13Z SCRUM-1108: re-aplica el relevo de SCRUM-1096 en el negativo de 804b
-5062d088cf0ad2a16efeeb5a8d332708b3a7617b 2026-09-25T15:41:15Z SCRUM-1113: rota el NEGATIVO caducado del scrum804b (1107 -> 1118)
-1504b9ad9024727e80046c6683ed0fb235061bf6 2026-09-25T15:30:07Z SCRUM-1107: rota el NEGATIVO caducado del barrido de la 42 (1107 -> 1118)
-2010ced5bf8f260c7d1298c27edb0475171320d1 2026-09-25T15:19:17Z SCRUM-1096: re-elige el ticket vivo del test 804b (1107 ya mergeo)
-cab1e2bb34545a9d819e9be7d3627b2ca5d01603 2026-09-25T12:38:42Z SCRUM-1090: entrada de registro que faltaba (docs/master/SCRUM-1090.md)
-284572305497f80708a33bbc451f4ec1734228d1 2026-09-23T18:46:30Z SCRUM-1097: declarar el guard de acreditación en SCRUM-711 (CI en rojo)
-d05fa00e5d47ea0a50f5cc45fee81f78dbc1c73a 2026-09-23T17:28:18Z SCRUM-1100: quitar el 'ok' literal del log del repro, evita el censo SCRUM-622
-85b520dbe254a1836826ac5f7305e3f386288d94 2026-09-23T17:15:33Z SCRUM-804b: registra el diagnóstico del rojo de CI en docs/master/SCRUM-804.md
-1061a9d24f9057bae5be9aebbf56622582417591 2026-09-23T17:14:52Z SCRUM-804b: arregla el meta-guard mudo de scrum738 y el NEGATIVO caducado del 42
-9220dc414f88f1ee569a1eb2ffa070acc25b416d 2026-09-23T17:05:58Z SCRUM-1031: arreglar el CI rojo (censo caduco + ancla de medición)
-29bc8db73614aefa97035a6c6b940cab2cf948e4 2026-09-23T17:05:52Z SCRUM-1099: ancla el registro y quita la cifra sin fecha que rompía SCRUM-267/737
-c43c25b6b7e159455dbfc0d5e291ea1a3dcf7e22 2026-09-23T11:22:53Z SCRUM-1089: declara scrum1089b en SIN_PROBAR_CONOCIDOS del guard 824
-f0095cd0d5e4639f4f4ed5afd22ac5a55708c71a 2026-09-23T09:29:39Z SCRUM-534m: desempata por id el orden de fotos en historialDelCliente
-661324bd1359549b483e62091aad55577028d740 2026-09-23T08:51:45Z SCRUM-1086d: cierra el bloque D de LITERALES_COBRO_WEB_PENDIENTES tras aplicarlo
-6f4614cf8a1576983d3aeb9bb88fc8fef30920e7 2026-09-23T08:37:28Z SCRUM-1016: declara Skill UI en el apéndice SCRUM-1016j (guard SCRUM-811)
-2558be7c88a24b4493fb916dae134cf8b0c546a7 2026-09-23T08:31:12Z SCRUM-1039: ancla de medición y testigos que el CI exigía
-809c356514858e920afaa384ca16d332dce81e0f 2026-09-22T23:40:07Z SCRUM-1087: anclas de P19 con testigo en su propio paréntesis
-55b649d7d32582425b3721767b8bbf7643123085 2026-09-22T23:25:12Z ci: reintenta el check obligatorio tras cuelgue de tanda (SCRUM-858)
-e510d007f6c0b64d96c61fdb9078f4d29b031eaf 2026-09-22T23:02:07Z SCRUM-1086: pon testigo a la cita del máster y enlaza el documento pendiente
-db1e7c98f6e55a26946a78c291484cfdca77792e 2026-09-22T10:46:37Z SCRUM-1057: declarar el updateMany de la fusión en el guard scrum508
-8eb65d1fdd54c0109adb426075581330cc2f83a2 2026-09-22T10:29:58Z SCRUM-1057: la fusión reasigna email_messages por el emisor único, no por su cuenta
-08cdc68adc79db85d4a01b88ab111e37093a5db8 2026-09-22T09:43:46Z SCRUM-1037: corrige el formato del ancla de medición en el encabezado
-3b9678264c704c2a9590ed0bfe12dff860fcdae3 2026-09-22T09:20:15Z SCRUM-774: arregla el check obligatorio en rojo — cita ambigua y fuga de temporales
-2043b5d53f460d93bbd05722de7316d6bd81c665 2026-09-22T09:13:43Z SCRUM-1047: censa beneficioBaseImponible.ts en el censo de IVA (SCRUM-389)
-3b69fab3735938179b806166da7383a041b2d024 2026-09-22T09:11:58Z fix: entrada caduca del censo de guard-marcadores-en-pantalla (export)
-cf6b454da3b214cff6a517df8a60246f66c2d55e 2026-09-22T08:46:48Z fix: entrada caduca del censo de guard-marcadores-en-pantalla (export)
-43bc48d2747784b2eb66f7d0d336c40b960c2123 2026-09-22T08:43:04Z SCRUM-1062: GET .../whatsapp declara rol (requireRole admin)
-5e20d98083e5444e0d5e8963087c956b609f5bb2 2026-09-21T15:26:16Z SCRUM-1012: añade el ancla de medición que faltaba en el registro
-68fc706c32d4c55e1f970cfe07cf93bb1358d1b7 2026-09-21T14:39:14Z SCRUM-996: un elemento por línea en el array esperado (dedupe por message.id)
-aefab86c962e362785507ba0645f325e917d6ce7 2026-09-21T08:27:27Z SCRUM-980: arregla el CI en rojo sin tocar guards
-d03462e63df33155099768fca5a1bc0d155b283f 2026-09-21T08:13:50Z SCRUM-979: el select de última visita a clase CSS, no style.cssText
-ef9a4c2e578f185462a33556b3230017fa9e3c0d 2026-09-21T07:20:01Z fix(SCRUM-973): declara el nuevo banco en el censo de referencia movil
-542bd04af8148dc85139350cc78f95b804e09291 2026-09-20T19:43:20Z SCRUM-944b: listExpenses sin '??' para no despistar el censo de SCRUM-747
-11e45a8934a3f664880e452d7b3134bb7f6149cd 2026-09-20T19:40:28Z SCRUM-965: usar soloEjecutable en vez de un filtro casero de comentarios
-79c65e1f7c98cef892e214ec1f7f556aa35b2c53 2026-09-20T14:12:05Z SCRUM-960: el test nuevo respeta los guards SCRUM-262 y SCRUM-409
-03a54c39e5799da2641500f4169d466fdf42ed23 2026-09-18T09:32:38Z SCRUM-949: correrSuelo hereda NODE_OPTIONS de la tanda y el hijo revienta
-3c6cb99c8ebf9b9f825ba0854e06d2b6642d905b 2026-09-17T14:01:46Z SCRUM-895: el test de la fila del Trabajo sigue a SCRUM-905, ya en main
-746916c4f23229b02c450ac724d4f229869b2437 2026-09-17T10:23:20Z SCRUM-899: declara el nuevo test en los tres censos que el CI puso en rojo
-9ff07948dca888a887a711fec39cad94a5b510ca 2026-09-17T08:39:50Z SCRUM-887b: entrada de master del PR 2 (B, rojo) — SCRUM-854 pedía este commit
-564848952151f99ca12f77bc9a445cffcc2084f4 2026-09-16T19:09:57Z SCRUM-854: entrada de registro que le faltaba al commit 9f396783
-63156546b43828b08bbc9ee322bf514684c5dee2 2026-09-16T19:06:20Z SCRUM-888g: registro en docs/master/SCRUM-888.md + P3-META-859 (meta-guard mudo, heredado de main, no de esta rama)
-9f396783788a54be05cb2d7f48db8038543e24b8 2026-09-16T18:38:20Z SCRUM-859: la mutación #2 del meta-guard apuntaba al fichero equivocado
-26fefac5fdcfab0d8995a251423568d4dc9af125 2026-09-16T07:06:18Z SCRUM-853c: respalda la negación NaN|message del guard SCRUM-237
-8bb6686dbe1c268af017f0a3065368e524888df3 2026-09-15T14:36:04Z docs: registrar CIEGO del meta-guard en SCRUM-850/850b (BUGS.md)
-34b2630029746463d434c84b65d4db25b19b1e42 2026-09-15T14:13:29Z SCRUM-844: fix declaraciones CIEGAS del meta-guard (regla 41 intacta)
-3d89640b4b5d55ae17d23594c440dc09ee10c030 2026-09-15T13:59:46Z fix(SCRUM-850b): meta-guard CIEGO — `cae` no nombraba ningún test real
-59a17a9105d0b09b3d6ab82bf2a1ff0e4e003e89 2026-09-15T13:43:16Z fix: SCRUM-850 - los 3 cae de MUTACIONES_QUE_ME_TUMBAN no nombraban ningun test
-155e3ead1b71232070a290ff30c16e101c0816a7 2026-09-15T13:33:36Z fix: SCRUM-850 - los 3 cae de MUTACIONES_QUE_ME_TUMBAN no nombraban ningun test
-001805897cb82a52357c71fc5512282f0f846962 2026-09-15T13:33:05Z fix(SCRUM-850): las tres declaraciones del meta-guard apuntan a un test real
-49b97856b298867a26eb0c59cb1300f034623d67 2026-09-15T13:07:52Z SCRUM-850: las tres redes que MUTACIONES_QUE_ME_TUMBAN declaraba sin tener
-bd643aa9d952d52cdaee577983b4ac08eb7bfb2f 2026-09-15T13:06:06Z SCRUM-846/834: el meta-guard salía CIEGO por dos declaraciones caducadas de SCRUM-850
-1f1062a748dab753f91676bb3cf5b2eb4a398840 2026-09-15T10:39:59Z fix: refresca el ancla caducada de scrum716 (mutación #3) tras SCRUM-824b
-b17d468c51366e7c290a5e0ff241aa3bf33acc65 2026-09-15T10:36:30Z SCRUM-716: el ancla de la mutacion 3 seguia el filtro de antes de SCRUM-824b
-b31f7a0825075db42475bb48ef93f86d621bde1e 2026-09-15T10:33:20Z SCRUM-851: renueva el ancla caducada de la mutación ③ de SCRUM-716
-cac1b5bdbed1c79a3fe1eaec642b37cf41b5380f 2026-09-15T10:32:02Z meta-guard: el ancla de la mutación ③ (shaLegible) había caducado
-29e5d49fdd6d1fdd502b24019c07266ef7e4a9f6 2026-09-15T10:23:23Z meta-guard: actualizar ancla caducada de scrum716 tras SCRUM-824b
-bdf294a6348221f4f49e4c8066279132afb3fa80 2026-09-15T10:20:21Z docs: registrar en BUGS.md los dos colaterales de CI que destapó el run de SCRUM-824
-ffe0564ec85e94d1e1de5a7db008fbb418ef247d 2026-09-15T10:19:30Z SCRUM-824: el ancla del meta-guard en scrum716 apuntaba a una línea que SCRUM-824b ya había partido en dos
-b5f6acd0570b2420005261478df2732e29d96a1f 2026-09-15T10:17:45Z fix: reancla la mutación ③ de scrum716 al filtro partido de SCRUM-824b
-a3f987b487556bd4ab16c9708a16a338e5f1cedd 2026-09-15T10:15:25Z revert: no se puede tocar .github/workflows/ci.yml desde esta sesión
-929803703067a33166ac9a5a8b58e21202ab4f47 2026-09-15T10:14:35Z fix(CI): meta-guard CIEGO por ancla caducada + guards de navegador sin merge-base
-b3082c3adf1efcf63d921376e186af471856c6ac 2026-09-15T09:55:27Z SCRUM-849: la cita literal de `grep -c $'\r'` en el doc tumbaba el guard SCRUM-766
-b8e456293feef61f6403df6f9f0d2745fdfbf61b 2026-09-15T09:52:12Z fix(SCRUM-716): actualiza el ancla caducada de la mutación ③ tras SCRUM-824b
-f1f10730d5f40322bf075093549242b1705c9ce5 2026-09-15T09:43:30Z fix(SCRUM-716): re-ancla la mutación ③ del meta-guard tras SCRUM-824b
-059a32a3b354f929b9055e1b65dfe9ce28d7da09 2026-09-15T09:42:39Z fix(scrum716): re-ancla la mutación ③ del meta-guard tras SCRUM-824b
-1de547da7af238062eeff1315286b13335dfdefb 2026-09-15T09:37:25Z fix(meta-guard): re-ancla la mutación ③ de scrum716 al filtro que hoy distingue reloj de commit
-fa60ad61bd92019659954d224af284606cf198f1 2026-09-15T09:36:48Z fix(SCRUM-716): la mutación ③ del meta-guard apunta a la línea de hoy
-6567ec21f85b156c50eb868d73690b3e92fa1e5c 2026-09-15T09:30:35Z SCRUM-716: la declaración de la mutación ③ se puso al día con SCRUM-824b
-989f580bd0e5d0e13282b758659948d07747aadd 2026-09-15T09:24:44Z SCRUM-837: pone al día el ancla ③ de scrum716-ritmo-de-despliegue
-30f75fea42c44e04cd36cfd8c27cd9055cd2a81b 2026-09-15T09:20:02Z SCRUM-716: la declaración de la mutación ③ se puso al día con SCRUM-824b
-024d5994133c7c6bc29473f30cb3a9ffc0ecb8fb 2026-09-15T09:05:34Z fix(CI): re-ancla la mutación ③ del meta-guard tras SCRUM-824b
-4eeddfc62796d53c40d55c91d4a38599e37727a6 2026-09-15T09:02:34Z SCRUM-804d (CI): actualiza el ancla caducada del meta-guard de scrum716
-f87b908263aa663a47ee1bbd1854734adb078ca1 2026-09-15T08:34:02Z revert(ci.yml): el bot de GitHub App no tiene permiso `workflows`
-43218398b8bfc9fc55a09f232d436bfafdd7a52c 2026-09-15T08:33:38Z fix(CI): dos causas del rojo del run 34946190654, ninguna es el guard
-636fcb81d97834870780633caded0de6588af190 2026-09-15T08:32:31Z fix(SCRUM-716): re-anclar la mutación ③ del meta-guard tras SCRUM-824b
-ba6a2e2f67409ef491d43ab6c68ce633149c74d7 2026-09-15T08:11:46Z revert: no se puede tocar .github/workflows/ci.yml desde esta sesión
-b1f1fc6ec76648fae3824f715116d36eab5a1559 2026-09-15T08:10:46Z fix(ci): guards de navegador sin base de fusión + ancla caducada de scrum716
-b05f820140a1561ace9d21c23b831ff673270231 2026-09-09T15:49:12Z fix(SCRUM-844): re-anclar la mutación ③ del meta-guard tras SCRUM-824b
-abdf49456b92c5514e2f8e8a0568449c76cadb90 2026-09-09T15:35:34Z CI en rojo: ancla caducada de SCRUM-824b y fixture sin status de SCRUM-823
-c729daaf8fa9b5c548f8861385cfe38e8f4f131d 2026-09-09T15:29:04Z fix: reancla la mutación ③ de scrum716 al filtro partido de SCRUM-824b
-56b1ad59ee26b6e000224b1042adbde5cfa5e9b7 2026-09-09T15:25:13Z fix: dos declaraciones caducadas que ponían el CI en rojo
-99a40d88cfb66ce30728b22ca16bfd400058d120 2026-09-09T15:23:07Z SCRUM-834d: dos anclas caducadas por cambios legítimos, no dos guards relajados
-c74f1b501bb1e7e81f6e4793845d7bb2452e7662 2026-09-09T15:15:27Z CI en rojo: dos declaraciones caducadas, no dos guards que relajar
-543f0d0cf673bfa4017a0a38fd36f09b07d7f009 2026-09-09T15:14:06Z SCRUM-842: repara el ancla caducada del meta-guard en scrum716-ritmo-de-despliegue
-0ba096730954555a1e24a7502fda7b35c932ec71 2026-09-09T15:03:57Z SCRUM-842: dos anclas caducadas por cambios legítimos, no dos guards relajados
-caf1e865e319496b22b1313350630dd98e3e22e6 2026-09-09T14:52:47Z SCRUM-842: repara el ancla caducada del meta-guard en scrum716-ritmo-de-despliegue
-c5559de746c7f52b3b10435cb08afca209a61ef3 2026-09-09T14:38:35Z SCRUM-716: repara el ancla caducada de la mutación ③ tras SCRUM-824b
-aa07c3b05b87b54638a3a43d95b39871ad16d66a 2026-09-09T14:35:10Z SCRUM-838: actualiza el ancla caducada de la mutación 3 en scrum716
-c1f57b9ed217889745d211d68b1ee550316caa3b 2026-09-09T14:34:28Z SCRUM-716: reancla la mutación ③ tras el split de SCRUM-824b
-7e6fcc01a4836b7ab3245e833d3689658be43a29 2026-09-09T09:03:00Z fix: sincroniza dos guards con cambios ya mergeados (CI en rojo tras #1214)
-121d4b3ac1b058e186c76c7d3be7668d9823ccf2 2026-09-09T08:51:54Z SCRUM-716: el ancla de la mutación ③ vuelve a apuntar al código real tras SCRUM-824b
-260c13b19ae43b2c598302c2cf501bc88ab526cd 2026-09-09T08:48:16Z SCRUM-716: el ancla de la mutación 3 sigue al refactor de SCRUM-824b
-99898a74c9444ed6e695a436813ad59658b6050b 2026-09-09T08:40:36Z fix: actualiza el ancla caducada de la mutación ③ en scrum716
-86b7a7f77c74b770feeab39713b30a896e2bb913 2026-09-09T08:35:39Z fix: actualiza el ancla caducada de la mutación 3 en scrum716
-c3c2c15adc87bab627bf82b498ee20581da419fc 2026-09-09T08:21:12Z SCRUM-716: reancla mutación ③ del meta-guard al filtro de formato de shaLegible
-ec9a1c69f9832f4e00ac10e8279328614fa67bfa 2026-09-09T08:17:37Z SCRUM-834b: actualiza el ancla caducada de scrum716 (meta-guard CIEGO)
-6b26235b4528c9dcc345a714cf33b590283ae161 2026-09-09T08:16:13Z SCRUM-716: reancla la mutación ③ del meta-guard al filtro de formato de shaLegible
-c430b2e6b08bde28b49eeb1b9db408a957309a46 2026-09-09T08:08:14Z SCRUM-836: reparar el ancla de la mutación ③ (scrum716-ritmo-de-despliegue)
-faebb1e67003867674c58594a70170a7c57617e5 2026-09-09T08:04:46Z meta-guard: re-anclar dos MUTACIONES_QUE_ME_TUMBAN caducadas
+6331860d8a8e11b7bc802169571d3a1d393750f6 2026-10-23T13:32:22Z
+c4186ad60364e3184235bbfba2fa41d020ae51e0 2026-10-22T12:20:30Z
+9fdf9315fb6520cffd4e651b9b7b17f70ebe390f 2026-10-22T12:17:54Z
+be59f44d5491f89516e66b1cdf8a7f88eb62b907 2026-10-22T12:06:17Z
+f294f4e8465825d5b938640d81bc96fe8f63ab1e 2026-10-22T12:02:18Z
+1f1e23bbea8e2f90e1e0f957e687a0d0e4f456d4 2026-10-22T10:39:04Z
+5bc0aa25ccbbbcddf10100e593aa0c03f0b1a895 2026-10-15T17:24:51Z
+de673cc4e37b6deabafe1218706676bf99cccf2d 2026-10-15T16:17:56Z
+2e791fbaf73edaf52c99faf87674cb74975ad22c 2026-10-15T16:15:41Z
+3c49d305f7de38a7be33d2f239c8053078019fcb 2026-10-14T08:52:13Z
+f4db1745b28606de1f4d09f02cec0777892219d4 2026-10-13T15:44:35Z
+5b46be141fb56fbd4f133eff3e98cdee432383ce 2026-10-13T12:54:39Z
+50b9ee255d6ccb41114b9443fd44d58dccac93a2 2026-10-13T12:48:56Z
+6f44fa9a9a8895fbef00a408912082ecced433f1 2026-10-13T11:43:51Z
+4849bf4e5cc06a338dcafe5de04c0d43bba8cd7f 2026-10-13T11:41:07Z
+35ce4d5c022f9f1d5dd09e3327a531d9393e5f33 2026-10-13T10:56:27Z
+49495b99d597db245ebcabe1fd8731cb639fbb92 2026-10-13T05:13:37Z
+624f2552a30252aec860feb41f70695afd71082f 2026-10-08T08:23:36Z
+e9e0b3e2040cac1d2d1d553ca4845e2db0ecc545 2026-10-08T03:07:44Z
+58a0477c75f62ee652be664965a893a3605c0246 2026-10-08T02:50:54Z
+7d40a8fe8e52221be2cb420ed13aaefcf0f24482 2026-10-08T00:03:01Z
+f4b9267c97267f5d21048a6573df6101e570d4bb 2026-10-06T11:44:13Z
+cfba03e9fe55e1083d610f9b59e28c76c0f0b63c 2026-10-02T12:47:50Z
+88fc81817332f56fd343de572517b247016221e6 2026-10-02T06:48:55Z
+ebdc2146e1d80ec9fbd814053ea64149a20a8dbc 2026-10-02T06:22:07Z
+cea8d2044f7067a7df921eebb4c9a3088bf081ec 2026-10-02T03:45:37Z
+c8a344a75da37040dcb93ad0c8fbc2b68cf7bfea 2026-10-01T11:33:02Z
+f54e1440042fa73280c08dab8043cec58a2d3b17 2026-10-01T08:20:22Z
+3efc4f659a14e63f074a244618a371abbd09aae4 2026-10-01T06:30:52Z
+731c43ccfcf88a78aeb3911f4a34bd9eb7986515 2026-09-29T09:35:02Z
+b10183967feee5dbd31d5020e79edacc0b425b38 2026-09-29T09:20:08Z
+6787a7f000cf0e07996d8577fe083392c0830017 2026-09-28T23:05:51Z
+008fbd5105aeebf6cd1e8cede0fe969eec35a969 2026-09-28T22:42:34Z
+8abbcc10d023f2720c8e4773b6fcf93e86e2fab7 2026-09-28T22:40:32Z
+f8180aac67666d978b5a30c7d3aa8448a9403d92 2026-09-28T22:10:07Z
+a771d413acb6fcd5c03bf9141e0d75b5dd71c453 2026-09-28T22:09:21Z
+ddf1c1c21070afec195d887ae411231673ec3266 2026-09-28T20:55:13Z
+a49af405b572bc178f6a59360cce422b77394445 2026-09-28T16:51:45Z
+4332772408d144528254a7bc1e4e35fb2e9fa2f1 2026-09-28T16:51:43Z
+71aee0d0865ab903dfbab4a30856609bc2b80acf 2026-09-28T16:51:01Z
+649db38c60d0ff7ac789ad025b39f4493a893302 2026-09-28T16:48:19Z
+19ce792577b1da50f20f7095d22f1418aaf71570 2026-09-28T16:41:53Z
+5fa199e148f10173b181200bf92176280bbaaec1 2026-09-28T15:28:34Z
+336a2a26429385b81249679bb038ae92ff189e97 2026-09-28T15:07:37Z
+866644a0dc281bd6c0116ea9818cd803d28bf365 2026-09-27T17:00:46Z
+4882bf82f0080bacb5d208569f7d9661c8551806 2026-09-27T15:51:08Z
+2d0ec6dc8a2411372cc3734d7c4e71026b5ae455 2026-09-27T15:50:31Z
+4676ab909e005ba2013d9395473e374e30fc7cf7 2026-09-27T15:48:29Z
+ac2eb5d5e721f3cd8cb013e957506393d8469fa3 2026-09-26T13:28:43Z
+7f39dbcd27cb26e72e041ece9a04fc788ff43244 2026-09-26T12:50:29Z
+b7ba3f1a17b12f2db57b852e1204b44ddd64aa57 2026-09-26T12:32:46Z
+36600f6670deca9b18422daaeb9a3ffabc59c1f7 2026-09-26T06:57:51Z
+019024e14d83c096c0aa95fb67550cf679f2a6e4 2026-09-26T06:42:15Z
+8df89673b243478ccbf879878ce41c3ec5e81582 2026-09-26T06:24:16Z
+b9cd0afb5bcac1dbe3eddc5b1191fb510a5f6f39 2026-09-26T06:19:27Z
+ebe00a4ca9cd1d5964bd08dfedd94ba76891caa0 2026-09-26T06:17:41Z
+ef9b056f148bd95f327640cbcff0f2c9d796af67 2026-09-26T06:15:25Z
+387944094bc369855cc89377010c26281748954d 2026-09-25T18:15:17Z
+4754a2cd45e30799f3893b0ebf94153bc5314bd5 2026-09-25T17:59:45Z
+a168820e77da5b82979b180bac6fc4b4e9929740 2026-09-25T17:55:23Z
+509b0fda9b56bf258b98949d641a591b53ae7a1a 2026-09-25T17:36:39Z
+3d35c1324c38b02e75957901f0f94428e9220c50 2026-09-25T16:54:18Z
+e2df95219bbc484582fe858e0d9fa8c35078b79f 2026-09-25T15:47:13Z
+5062d088cf0ad2a16efeeb5a8d332708b3a7617b 2026-09-25T15:41:15Z
+1504b9ad9024727e80046c6683ed0fb235061bf6 2026-09-25T15:30:07Z
+2010ced5bf8f260c7d1298c27edb0475171320d1 2026-09-25T15:19:17Z
+cab1e2bb34545a9d819e9be7d3627b2ca5d01603 2026-09-25T12:38:42Z
+284572305497f80708a33bbc451f4ec1734228d1 2026-09-23T18:46:30Z
+d05fa00e5d47ea0a50f5cc45fee81f78dbc1c73a 2026-09-23T17:28:18Z
+85b520dbe254a1836826ac5f7305e3f386288d94 2026-09-23T17:15:33Z
+1061a9d24f9057bae5be9aebbf56622582417591 2026-09-23T17:14:52Z
+9220dc414f88f1ee569a1eb2ffa070acc25b416d 2026-09-23T17:05:58Z
+29bc8db73614aefa97035a6c6b940cab2cf948e4 2026-09-23T17:05:52Z
+c43c25b6b7e159455dbfc0d5e291ea1a3dcf7e22 2026-09-23T11:22:53Z
+f0095cd0d5e4639f4f4ed5afd22ac5a55708c71a 2026-09-23T09:29:39Z
+661324bd1359549b483e62091aad55577028d740 2026-09-23T08:51:45Z
+6f4614cf8a1576983d3aeb9bb88fc8fef30920e7 2026-09-23T08:37:28Z
+2558be7c88a24b4493fb916dae134cf8b0c546a7 2026-09-23T08:31:12Z
+809c356514858e920afaa384ca16d332dce81e0f 2026-09-22T23:40:07Z
+55b649d7d32582425b3721767b8bbf7643123085 2026-09-22T23:25:12Z
+e510d007f6c0b64d96c61fdb9078f4d29b031eaf 2026-09-22T23:02:07Z
+db1e7c98f6e55a26946a78c291484cfdca77792e 2026-09-22T10:46:37Z
+8eb65d1fdd54c0109adb426075581330cc2f83a2 2026-09-22T10:29:58Z
+08cdc68adc79db85d4a01b88ab111e37093a5db8 2026-09-22T09:43:46Z
+3b9678264c704c2a9590ed0bfe12dff860fcdae3 2026-09-22T09:20:15Z
+2043b5d53f460d93bbd05722de7316d6bd81c665 2026-09-22T09:13:43Z
+3b69fab3735938179b806166da7383a041b2d024 2026-09-22T09:11:58Z
+cf6b454da3b214cff6a517df8a60246f66c2d55e 2026-09-22T08:46:48Z
+43bc48d2747784b2eb66f7d0d336c40b960c2123 2026-09-22T08:43:04Z
+5e20d98083e5444e0d5e8963087c956b609f5bb2 2026-09-21T15:26:16Z
+68fc706c32d4c55e1f970cfe07cf93bb1358d1b7 2026-09-21T14:39:14Z
+aefab86c962e362785507ba0645f325e917d6ce7 2026-09-21T08:27:27Z
+d03462e63df33155099768fca5a1bc0d155b283f 2026-09-21T08:13:50Z
+ef9a4c2e578f185462a33556b3230017fa9e3c0d 2026-09-21T07:20:01Z
+542bd04af8148dc85139350cc78f95b804e09291 2026-09-20T19:43:20Z
+11e45a8934a3f664880e452d7b3134bb7f6149cd 2026-09-20T19:40:28Z
+79c65e1f7c98cef892e214ec1f7f556aa35b2c53 2026-09-20T14:12:05Z
+03a54c39e5799da2641500f4169d466fdf42ed23 2026-09-18T09:32:38Z
+3c6cb99c8ebf9b9f825ba0854e06d2b6642d905b 2026-09-17T14:01:46Z
+746916c4f23229b02c450ac724d4f229869b2437 2026-09-17T10:23:20Z
+9ff07948dca888a887a711fec39cad94a5b510ca 2026-09-17T08:39:50Z
+564848952151f99ca12f77bc9a445cffcc2084f4 2026-09-16T19:09:57Z
+63156546b43828b08bbc9ee322bf514684c5dee2 2026-09-16T19:06:20Z
+9f396783788a54be05cb2d7f48db8038543e24b8 2026-09-16T18:38:20Z
+26fefac5fdcfab0d8995a251423568d4dc9af125 2026-09-16T07:06:18Z
+8bb6686dbe1c268af017f0a3065368e524888df3 2026-09-15T14:36:04Z
+34b2630029746463d434c84b65d4db25b19b1e42 2026-09-15T14:13:29Z
+3d89640b4b5d55ae17d23594c440dc09ee10c030 2026-09-15T13:59:46Z
+59a17a9105d0b09b3d6ab82bf2a1ff0e4e003e89 2026-09-15T13:43:16Z
+155e3ead1b71232070a290ff30c16e101c0816a7 2026-09-15T13:33:36Z
+001805897cb82a52357c71fc5512282f0f846962 2026-09-15T13:33:05Z
+49b97856b298867a26eb0c59cb1300f034623d67 2026-09-15T13:07:52Z
+bd643aa9d952d52cdaee577983b4ac08eb7bfb2f 2026-09-15T13:06:06Z
+1f1062a748dab753f91676bb3cf5b2eb4a398840 2026-09-15T10:39:59Z
+b17d468c51366e7c290a5e0ff241aa3bf33acc65 2026-09-15T10:36:30Z
+b31f7a0825075db42475bb48ef93f86d621bde1e 2026-09-15T10:33:20Z
+cac1b5bdbed1c79a3fe1eaec642b37cf41b5380f 2026-09-15T10:32:02Z
+29e5d49fdd6d1fdd502b24019c07266ef7e4a9f6 2026-09-15T10:23:23Z
+bdf294a6348221f4f49e4c8066279132afb3fa80 2026-09-15T10:20:21Z
+ffe0564ec85e94d1e1de5a7db008fbb418ef247d 2026-09-15T10:19:30Z
+b5f6acd0570b2420005261478df2732e29d96a1f 2026-09-15T10:17:45Z
+a3f987b487556bd4ab16c9708a16a338e5f1cedd 2026-09-15T10:15:25Z
+929803703067a33166ac9a5a8b58e21202ab4f47 2026-09-15T10:14:35Z
+b3082c3adf1efcf63d921376e186af471856c6ac 2026-09-15T09:55:27Z
+b8e456293feef61f6403df6f9f0d2745fdfbf61b 2026-09-15T09:52:12Z
+f1f10730d5f40322bf075093549242b1705c9ce5 2026-09-15T09:43:30Z
+059a32a3b354f929b9055e1b65dfe9ce28d7da09 2026-09-15T09:42:39Z
+1de547da7af238062eeff1315286b13335dfdefb 2026-09-15T09:37:25Z
+fa60ad61bd92019659954d224af284606cf198f1 2026-09-15T09:36:48Z
+6567ec21f85b156c50eb868d73690b3e92fa1e5c 2026-09-15T09:30:35Z
+989f580bd0e5d0e13282b758659948d07747aadd 2026-09-15T09:24:44Z
+30f75fea42c44e04cd36cfd8c27cd9055cd2a81b 2026-09-15T09:20:02Z
+024d5994133c7c6bc29473f30cb3a9ffc0ecb8fb 2026-09-15T09:05:34Z
+4eeddfc62796d53c40d55c91d4a38599e37727a6 2026-09-15T09:02:34Z
+f87b908263aa663a47ee1bbd1854734adb078ca1 2026-09-15T08:34:02Z
+43218398b8bfc9fc55a09f232d436bfafdd7a52c 2026-09-15T08:33:38Z
+636fcb81d97834870780633caded0de6588af190 2026-09-15T08:32:31Z
+ba6a2e2f67409ef491d43ab6c68ce633149c74d7 2026-09-15T08:11:46Z
+b1f1fc6ec76648fae3824f715116d36eab5a1559 2026-09-15T08:10:46Z
+b05f820140a1561ace9d21c23b831ff673270231 2026-09-09T15:49:12Z
+abdf49456b92c5514e2f8e8a0568449c76cadb90 2026-09-09T15:35:34Z
+c729daaf8fa9b5c548f8861385cfe38e8f4f131d 2026-09-09T15:29:04Z
+56b1ad59ee26b6e000224b1042adbde5cfa5e9b7 2026-09-09T15:25:13Z
+99a40d88cfb66ce30728b22ca16bfd400058d120 2026-09-09T15:23:07Z
+c74f1b501bb1e7e81f6e4793845d7bb2452e7662 2026-09-09T15:15:27Z
+543f0d0cf673bfa4017a0a38fd36f09b07d7f009 2026-09-09T15:14:06Z
+0ba096730954555a1e24a7502fda7b35c932ec71 2026-09-09T15:03:57Z
+caf1e865e319496b22b1313350630dd98e3e22e6 2026-09-09T14:52:47Z
+c5559de746c7f52b3b10435cb08afca209a61ef3 2026-09-09T14:38:35Z
+aa07c3b05b87b54638a3a43d95b39871ad16d66a 2026-09-09T14:35:10Z
+c1f57b9ed217889745d211d68b1ee550316caa3b 2026-09-09T14:34:28Z
+7e6fcc01a4836b7ab3245e833d3689658be43a29 2026-09-09T09:03:00Z
+121d4b3ac1b058e186c76c7d3be7668d9823ccf2 2026-09-09T08:51:54Z
+260c13b19ae43b2c598302c2cf501bc88ab526cd 2026-09-09T08:48:16Z
+99898a74c9444ed6e695a436813ad59658b6050b 2026-09-09T08:40:36Z
+86b7a7f77c74b770feeab39713b30a896e2bb913 2026-09-09T08:35:39Z
+c3c2c15adc87bab627bf82b498ee20581da419fc 2026-09-09T08:21:12Z
+ec9a1c69f9832f4e00ac10e8279328614fa67bfa 2026-09-09T08:17:37Z
+6b26235b4528c9dcc345a714cf33b590283ae161 2026-09-09T08:16:13Z
+c430b2e6b08bde28b49eeb1b9db408a957309a46 2026-09-09T08:08:14Z
+faebb1e67003867674c58594a70170a7c57617e5 2026-09-09T08:04:46Z
