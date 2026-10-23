@@ -12,9 +12,10 @@
 // LO QUE SE DOBLA: la base (una en memoria con estado, la técnica de SCRUM-1509h). A Meta no se
 // llama (`WHATSAPP_DRY_RUN`, y `fetch` revienta si alguien lo usa).
 //
-// Lo que NO juzga este fichero: los SALTOS hacia delante (`queued → delivered`, `sent → read`…).
-// El código los aplica y la Parte L sólo dibuja la cadena; si están fijados o no es una pregunta
-// para el máster (SCRUM-1601), no algo que un test decida. Se miden y se imprimen; no se afirman.
+// Los SALTOS hacia delante ya están decididos. `sent → read` lo firmó el fundador (SCRUM-1601
+// c.20673; la frase de la Parte L entra con SCRUM-1601b). `queued → delivered` y `queued → read`
+// nadie los firmó, y se quitan del código (decisión c.20709, SCRUM-1601c): una fila `queued` no
+// lleva `waMessageId`, así que el webhook no la encuentra y quitarlos no pierde ningún estado.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
@@ -38,6 +39,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     de: 'return cur <= STATUS_RANK.sent;',
     a: 'return true;',
     cae: 'HACIA failed',
+  },
+  {
+    // SCRUM-1601c · `queued` vuelve a saltar a `delivered` o a `read`, que nadie firmó.
+    fichero: 'src/modules/messaging/domain/whatsappLog.service.ts',
+    de: "if (cur === STATUS_RANK.queued) return next === 'sent';",
+    a: '',
+    cae: 'DESDE queued',
   },
 ];
 
@@ -84,8 +92,8 @@ const ORIGENES = ['queued', 'sent', 'delivered', 'read', 'failed', 'received'];
 const DESTINOS = [...ORIGENES, 'deleted'];
 // Las que la Parte L dibuja como flecha, una a una.
 const FIJADAS = new Set(['queued>sent', 'sent>delivered', 'delivered>read', 'queued>failed', 'sent>failed']);
-// Saltos hacia delante dentro de la cadena: sin juzgar (ver la cabecera).
-const SALTOS = new Set(['queued>delivered', 'queued>read', 'sent>read']);
+// El único salto firmado (ver la cabecera).
+const SALTO_FIRMADO = 'sent>read';
 
 function pedir(cuerpo) {
   const firma = 'sha256=' + crypto.createHmac('sha256', SECRETO).update(Buffer.from(cuerpo)).digest('hex');
@@ -142,6 +150,14 @@ test('SCRUM-1601 · POSITIVO: las cinco flechas de la Parte L se aplican', () =>
   assert.equal(f.error, '131026: laboratorio', 'el error de Meta no se guardó con el failed');
 });
 
+test('SCRUM-1601c · el salto firmado sent → read se aplica', () => {
+  assert.equal(aplicada.get(SALTO_FIRMADO), true, 'sent → read está firmado (c.20673) y no se aplicó');
+});
+
+test('SCRUM-1601c · DESDE queued: sólo a sent o a failed (queued → delivered y queued → read no se aplican)', () => {
+  for (const d of ['delivered', 'read']) assert.equal(aplicada.get(`queued>${d}`), false, `queued → ${d} se aplicó`);
+});
+
 test('SCRUM-1601 · HACIA failed: sólo desde queued o sent (delivered → failed y read → failed no se aplican)', () => {
   for (const o of ['delivered', 'read']) assert.equal(aplicada.get(`${o}>failed`), false, `${o} → failed se aplicó`);
 });
@@ -156,7 +172,7 @@ test('SCRUM-1601 · lo demás tampoco: ni hacia atrás, ni repetido, ni a queued
   const resto = [];
   for (const o of ORIGENES) for (const d of DESTINOS) {
     const par = `${o}>${d}`;
-    if (FIJADAS.has(par) || SALTOS.has(par) || o === 'failed' || o === 'received' || d === 'failed') continue;
+    if (FIJADAS.has(par) || par === SALTO_FIRMADO || o === 'failed' || o === 'received' || d === 'failed') continue;
     resto.push(par);
   }
   assert.ok(resto.length > 0);
