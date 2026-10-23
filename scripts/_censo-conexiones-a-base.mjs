@@ -30,6 +30,14 @@
 //   · La protección indirecta se da si el fichero llama a CUALQUIER cosa importada de un módulo
 //     local que llama a un guard, no necesariamente a la que guarda.
 //   · Ficheros que no son JS/TS (`scripts/db-push-prod`, `.ps1`): fuera del AST. Se declaran.
+//   · SCRUM-1575c · Un test que llama a un SERVICIO de `dist/` que escribe por dentro con el
+//     singleton: aquí sólo cuenta quien consulta el singleton con sus propias manos.
+//
+// SCRUM-1575c · 1575b sólo contaba como conexión `new PrismaClient`, el SQL crudo y los procesos
+// hijo. Ahora también: el singleton `dist/core/db/prisma.js` consultado (`SIEMBRA_SINGLETON`), una
+// consulta de modelo (`x.modelo.método({…})`) sobre un cliente que le pasan o que le abre un módulo
+// local (`abiertoPor`), el guard que corre al importar (`import './_staging-db.mjs'`) y la posición de
+// la conexión en la PRIMERA CONSULTA, no en el `new` (Prisma conecta al consultar).
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -45,6 +53,11 @@ export const GUARDAS = Object.freeze({
 
 const EJECUTA = /^(execFileSync|execFile|spawnSync|spawn|exec|execSync|execa)$/;
 const ESCRIBE_PRISMA = /^(create|createMany|createManyAndReturn|update|updateMany|upsert|delete|deleteMany)$/;
+// SCRUM-1575c · las lecturas de modelo. Sin ellas, quien sólo LEE con un cliente que le pasan no salía.
+const LEE_PRISMA = /^(findFirst|findFirstOrThrow|findUnique|findUniqueOrThrow|findMany|count|aggregate|groupBy)$/;
+// SCRUM-1575c · el cliente de la aplicación (`src/core/db/prisma.ts`): `new PrismaClient()` con la
+// `DATABASE_URL` del entorno. Quien lo importa y consulta ABRE una conexión, aunque no construya nada.
+const SINGLETON = /(^|\/)core\/db\/prisma(\.js|\.ts)?$/;
 const EJECUTA_SQL_CRUDO = /^\$(executeRaw|executeRawUnsafe)$/;
 const LEE_SQL_CRUDO = /^\$(queryRaw|queryRawUnsafe)$/;
 const URL_DE_MIGRATE = /^--(from-url|to-url|from-schema-datasource|to-schema-datasource|from-migrations|shadow-database-url|url)(=|$)/;
@@ -65,10 +78,20 @@ export function analizarConexion(rel, fuente) {
   const claves = new Set();
   const guardas = new Set();
   const importados = new Map();   // nombre local → { modulo, importado }
+  const importsDeEfecto = [];     // SCRUM-1575c · `import './_staging-db.mjs'`: se ejecuta sin nombrar nada
   const llamadas = [];            // { nombre, pos } de identificadores llamados
+  const consultas = [];           // SCRUM-1575c · { pos } de cada `x.modelo.método(…)` y `x.$queryRaw…`
   let primeraConexion = Infinity;
+  let primerCliente = Infinity;   // SCRUM-1575c · `new PrismaClient` no conecta: conecta su primera consulta
   let primeraGuarda = Infinity;
+  let primerProceso = Infinity;   // SCRUM-1575c · la llamada que lanza el hijo, no la posición 0
   let ejecutaProceso = false;
+  // `prisma.quote.findMany` → `prisma`; `(await prismaStaging()).quote…` → null.
+  const raizDe = (x) => { while (ts.isPropertyAccessExpression(x)) x = x.expression; return ts.isIdentifier(x) ? x.text : null; };
+  const alias = new Map();        // SCRUM-1575c · nombre local → el cliente del que es otro nombre
+  const sinAlias = (r) => { for (let k = 0; r && alias.has(r) && k < 8; k++) r = alias.get(r); return r; };
+  // El SDK de Stripe también tiene `stripe.prices.create({…})`: ni es Prisma ni conecta con la base.
+  const NO_ES_PRISMA = /^stripe$/i;
   let guardPropio = false;        // compara el host con PROD_HOST a mano, sin la función de la casa
   const literales = [];           // literales de una sola palabra, o que EMPIEZAN por un comando
 
@@ -86,21 +109,49 @@ export function analizarConexion(rel, fuente) {
   const marcaConexion = (senal, pos) => { conecta.add(senal); primeraConexion = Math.min(primeraConexion, pos); };
 
   const rec = (n) => {
+    // SCRUM-1575c · `const db = prisma`: otro nombre, el mismo cliente.
+    if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer && ts.isIdentifier(n.initializer)) {
+      alias.set(n.name.text, n.initializer.text);
+    }
+    // `prisma.$transaction(async (tx) => …)` ya es una consulta de `prisma`: lo que haga `tx` dentro no
+    // cambia quién abre (por eso no se sigue el nombre `tx`).
+    if (ts.isCallExpression(n) && ts.isPropertyAccessExpression(n.expression) && n.expression.name.text === '$transaction') {
+      consultas.push({ pos: n.getStart(sf), receptor: raizDe(n.expression.expression) });
+    }
+    // SCRUM-1575c · `({ prisma } = await import('../dist/core/db/prisma.js'))`: por asignación, sin `const`.
+    if (ts.isBinaryExpression(n) && n.operatorToken.kind === ts.SyntaxKind.EqualsToken && ts.isObjectLiteralExpression(n.left)) {
+      const ini = ts.isAwaitExpression(n.right) ? n.right.expression : n.right;
+      const modulo = ts.isCallExpression(ini) && ini.expression.kind === ts.SyntaxKind.ImportKeyword ? textoDe(ini.arguments[0]) : null;
+      if (modulo) {
+        for (const p of n.left.properties) {
+          if (ts.isShorthandPropertyAssignment(p)) importados.set(p.name.text, { modulo, importado: p.name.text });
+          if (ts.isPropertyAssignment(p) && ts.isIdentifier(p.initializer) && ts.isIdentifier(p.name)) importados.set(p.initializer.text, { modulo, importado: p.name.text });
+        }
+      }
+    }
     // `const { X } = await import('./m.mjs')` y `await import(pathToFileURL(RAIZ + '/scripts/m.mjs').href)`:
-    // el módulo es el literal que acaba en .mjs/.js dentro de la llamada.
+    // el módulo es el literal que acaba en .mjs/.js dentro de la llamada. SCRUM-1575c · también a
+    // través de un envoltorio local (`await imp('dist/core/db/prisma.js')`, `tests/banco-scrum911/`).
     if (ts.isVariableDeclaration(n) && n.initializer && ts.isObjectBindingPattern(n.name)) {
       const ini = ts.isAwaitExpression(n.initializer) ? n.initializer.expression : n.initializer;
-      if (ts.isCallExpression(ini) && ini.expression.kind === ts.SyntaxKind.ImportKeyword) {
+      const esImport = ts.isCallExpression(ini) && (ini.expression.kind === ts.SyntaxKind.ImportKeyword
+        || (ts.isIdentifier(ini.expression) && ini.arguments.length === 1 && /\.m?js$/.test(textoDe(ini.arguments[0]) ?? '')));
+      if (esImport) {
         let modulo = null;
         const busca = (x) => { const t = textoDe(x); if (t && !modulo && /(\.m?js|@prisma\/client)$/.test(t)) modulo = t; ts.forEachChild(x, busca); };
         busca(ini);
         if (modulo) {
           if (/^\//.test(modulo)) modulo = '.' + modulo.replace(/^\/(scripts|tests)\//, '/');
+          // Una ruta desde la raíz del repositorio se pasa a relativa a este fichero.
+          else if (/^(scripts|tests|dist|src)\//.test(modulo)) modulo = path.posix.relative(path.posix.dirname(rel), modulo).replace(/^(?!\.)/, './');
           for (const el of n.name.elements) {
             if (ts.isIdentifier(el.name)) importados.set(el.name.text, { modulo, importado: el.propertyName && ts.isIdentifier(el.propertyName) ? el.propertyName.text : el.name.text });
           }
         }
       }
+    }
+    if (ts.isImportDeclaration(n) && !n.importClause && ts.isStringLiteral(n.moduleSpecifier)) {
+      importsDeEfecto.push(n.moduleSpecifier.text);
     }
     if (ts.isImportDeclaration(n) && n.importClause && ts.isStringLiteral(n.moduleSpecifier)) {
       const modulo = n.moduleSpecifier.text;
@@ -116,10 +167,14 @@ export function analizarConexion(rel, fuente) {
       const lados = [n.left, n.right].map((x) => x.getText(sf));
       if (lados.some((t) => /(^|\.)(base|host)$/.test(t) || /_HOST$|HOST_PRODUCCION$/.test(t)) && decide(n)) guardPropio = true;
     }
+    // SCRUM-1575c · `if (!HOSTS_PERMITIDOS.includes(info.host)) …`: la misma comprobación, por lista.
+    if (ts.isCallExpression(n) && ts.isPropertyAccessExpression(n.expression) && n.expression.name.text === 'includes'
+      && n.arguments.length === 1 && /(^|\.)(base|host)$/.test(n.arguments[0].getText(sf)) && decide(n)) guardPropio = true;
     if (ts.isNewExpression(n)) {
       const t = n.expression.getText(sf);
       if (/(^|\.)PrismaClient$/.test(t)) {
-        marcaConexion('new PrismaClient', n.getStart(sf));
+        conecta.add('new PrismaClient');
+        primerCliente = Math.min(primerCliente, n.getStart(sf));
         // Sin argumentos, Prisma toma la URL del `env("DATABASE_URL")` del esquema.
         if (!n.arguments || n.arguments.length === 0) claves.add('DATABASE_URL (implícita)');
       }
@@ -131,6 +186,7 @@ export function analizarConexion(rel, fuente) {
       if (ts.isIdentifier(e)) llamadas.push({ nombre: e.text, pos: n.getStart(sf) });
       if (EJECUTA.test(nom) && ts.isCallExpression(n)) {
         ejecutaProceso = true;
+        primerProceso = Math.min(primerProceso, n.getStart(sf));
         // Una orden entera («npx prisma db push») sólo cuenta si es el ARGUMENTO del proceso: en
         // un test del hook la misma cadena es la entrada que se le da a leer, y no conecta.
         for (const a of n.arguments) {
@@ -138,13 +194,24 @@ export function analizarConexion(rel, fuente) {
           if (/^(npx\s+)?(prisma|psql|pg_dump|pg_restore)\s/.test(t)) literales.push(t);
         }
       }
-      if (EJECUTA_SQL_CRUDO.test(nom)) { escribe.add(nom); marcaConexion(nom, n.getStart(sf)); }
-      if (LEE_SQL_CRUDO.test(nom)) marcaConexion(nom, n.getStart(sf));
+      if (EJECUTA_SQL_CRUDO.test(nom)) { escribe.add(nom); marcaConexion(nom, n.getStart(sf)); consultas.push({ pos: n.getStart(sf), receptor: raizDe(e) }); }
+      if (LEE_SQL_CRUDO.test(nom)) { marcaConexion(nom, n.getStart(sf)); consultas.push({ pos: n.getStart(sf), receptor: raizDe(e) }); }
       // `prisma.modelo.update(...)`: el receptor es OTRO acceso a propiedad. Así no casan
       // `hash.update(...)` ni `crypto.createHash(...).update(...)`.
       if (ESCRIBE_PRISMA.test(nom) && ts.isPropertyAccessExpression(e) && ts.isPropertyAccessExpression(e.expression)) {
         escribe.add(`.${nom}`);
       }
+      // SCRUM-1575c · `x.modelo.método({…})` o `x.modelo.findMany()`: una CONSULTA, abra quien abra el
+      // cliente. El argumento tiene que ser un objeto literal (o ninguno): `this.pendientes.delete(id)`
+      // o `mapa.claves.update(k)` no son Prisma.
+      if ((ESCRIBE_PRISMA.test(nom) || LEE_PRISMA.test(nom)) && ts.isCallExpression(n) && ts.isPropertyAccessExpression(e)
+        && ts.isPropertyAccessExpression(e.expression)
+        && !NO_ES_PRISMA.test(raizDe(e) ?? '')
+        && (n.arguments.length === 0 ? /^(findMany|findFirst|count|deleteMany|aggregate)$/.test(nom) : ts.isObjectLiteralExpression(n.arguments[0]))) {
+        marcaConexion('.modelo', n.getStart(sf));
+        consultas.push({ pos: n.getStart(sf), receptor: raizDe(e) });
+      }
+      if (nom === '$connect' && ts.isPropertyAccessExpression(e)) consultas.push({ pos: n.getStart(sf), receptor: raizDe(e) });
     }
     // process.env.X y process.env['X']
     if (ts.isPropertyAccessExpression(n) && /^process\.env$/.test(n.expression.getText(sf)) && CLAVE_DE_BASE.test(n.name.text)) claves.add(n.name.text);
@@ -169,18 +236,35 @@ export function analizarConexion(rel, fuente) {
     const fichas = literales.flatMap((l) => l.split(/\s+/));
     const tiene = (x) => fichas.includes(x);
     const prisma = fichas.some((f) => f === 'prisma' || /prisma[\\/]build[\\/]index\.js$/.test(f));
+    // SCRUM-1575c · la posición es la del primer `spawn`/`exec…`: con 0, todo guard salía «DESPUÉS».
+    const pp = primerProceso;
     if (prisma && tiene('db') && (tiene('push') || tiene('execute') || tiene('pull') || tiene('seed'))) {
-      marcaConexion('prisma db', 0);
+      marcaConexion('prisma db', pp);
       if (tiene('push') || tiene('execute') || tiene('seed')) escribe.add('prisma db push/execute/seed');
     }
     if (prisma && tiene('migrate')) {
-      if (fichas.some((f) => URL_DE_MIGRATE.test(f)) || tiene('deploy') || tiene('reset') || tiene('resolve')) marcaConexion('prisma migrate', 0);
+      if (fichas.some((f) => URL_DE_MIGRATE.test(f)) || tiene('deploy') || tiene('reset') || tiene('resolve')) marcaConexion('prisma migrate', pp);
       if (tiene('deploy') || tiene('reset') || tiene('resolve') || tiene('dev')) escribe.add('prisma migrate deploy/reset/resolve/dev');
     }
-    if (tiene('psql')) { marcaConexion('psql', 0); escribe.add('psql (puede escribir)'); }
-    if (tiene('pg_restore')) { marcaConexion('pg_restore', 0); escribe.add('pg_restore'); }
-    if (tiene('pg_dump')) marcaConexion('pg_dump', 0);
+    if (tiene('psql')) { marcaConexion('psql', pp); escribe.add('psql (puede escribir)'); }
+    if (tiene('pg_restore')) { marcaConexion('pg_restore', pp); escribe.add('pg_restore'); }
+    if (tiene('pg_dump')) marcaConexion('pg_dump', pp);
   }
+
+  // ── SCRUM-1575c · el singleton de la aplicación ──
+  // `import { prisma } from '../dist/core/db/prisma.js'` (o su `await import`) y una consulta sobre ese
+  // nombre: ABRE con la `DATABASE_URL` del entorno, sin `new` a la vista. Importarlo sin consultar no cuenta.
+  const delSingleton = new Set([...importados].filter(([, i]) => SINGLETON.test(i.modulo)).map(([local]) => local));
+  const consultasAlSingleton = consultas.filter((c) => delSingleton.has(sinAlias(c.receptor)));
+  if (consultasAlSingleton.length > 0) {
+    marcaConexion('singleton core/db/prisma', Math.min(...consultasAlSingleton.map((c) => c.pos)));
+    claves.add('DATABASE_URL (implícita)');
+  }
+  // Prisma conecta en la primera consulta, no al construirse (medido por jv-j5t con Prisma 6.18:
+  // cambia `DATABASE_URL` entre el `new` y la consulta, y usa la NUEVA). El `new` sólo vale de
+  // posición si no hay ninguna consulta a la vista.
+  if (consultas.length > 0) primeraConexion = Math.min(primeraConexion, ...consultas.map((c) => c.pos));
+  else if (primerCliente < Infinity) primeraConexion = Math.min(primeraConexion, primerCliente);
 
   // ── Guards llamados directamente ──
   for (const { nombre, pos } of llamadas) {
@@ -204,6 +288,7 @@ export function analizarConexion(rel, fuente) {
     guardas: [...guardas].sort(),
     guardaAntes: guardas.size > 0 ? primeraGuarda <= primeraConexion : null,
     importsLocales: [...importados.values()].filter((i) => i.modulo.startsWith('.')).map((i) => i.modulo),
+    importsDeEfecto: importsDeEfecto.filter((m) => m.startsWith('.')),
     llamadosImportados: llamadas.filter((l) => importados.has(l.nombre)).map((l) => ({ nombre: l.nombre, ...importados.get(l.nombre) })),
     bancoDesechable: BANCO_DESECHABLE.test(fuente),
   };
@@ -241,21 +326,33 @@ export function censarConexiones(raiz = RAIZ) {
   const guardianes = new Set([...analisis.values()].filter((a) => a.guardas.length > 0).map((a) => a.rel));
   const resolver = (desde, modulo) => path.posix.normalize(path.posix.join(path.posix.dirname(desde), modulo));
 
+  // SCRUM-1575c · un módulo local que ABRE un cliente y lo entrega (`tests/banco-scrum911/_entorno.mjs`:
+  // `prismaStaging()`) le pasa a quien lo llama su conexión y su comprobación de destino a mano.
+  const abridores = new Map([...analisis.values()].filter((a) => a.abre).map((a) => [a.rel, a]));
+
   const filas = [];
   for (const a of analisis.values()) {
     if (a.conecta.length === 0) continue;
     if (/^scripts\/_(clave-vs-destino|db-guard)\.mjs$/.test(a.rel)) continue;
-    const indirectas = [...new Set(a.llamadosImportados
-      .filter((l) => l.modulo.startsWith('.') && guardianes.has(resolver(a.rel, l.modulo)))
-      .map((l) => `${path.posix.basename(l.modulo)}:${l.importado}`))].sort();
+    const locales = (l) => l.modulo.startsWith('.');
+    const indirectas = [...new Set([
+      ...a.llamadosImportados.filter((l) => locales(l) && guardianes.has(resolver(a.rel, l.modulo)))
+        .map((l) => `${path.posix.basename(l.modulo)}:${l.importado}`),
+      // `import './_staging-db.mjs'`: el guard corre al importarlo, sin que se llame nada.
+      ...a.importsDeEfecto.filter((m) => guardianes.has(resolver(a.rel, m))).map((m) => `${path.posix.basename(m)}:(import)`),
+    ])].sort();
+    const abiertoPor = a.abre ? null : [...new Set(a.llamadosImportados.filter(locales)
+      .map((l) => resolver(a.rel, l.modulo)).filter((m) => abridores.has(m)))].sort()[0] ?? null;
+    const abre = a.abre || abiertoPor !== null;
+    const guardPropio = a.guardPropio || (abiertoPor !== null && abridores.get(abiertoPor).guardPropio);
     const protegido = a.guardas.length > 0 || indirectas.length > 0;
     const clase = protegido ? 'protegido'
       : a.rel.startsWith('tests/') && a.bancoDesechable ? 'banco_desechable'
-      : !a.abre ? 'usa_cliente_ajeno'
-      : a.guardPropio ? 'guard_propio'
+      : !abre ? 'usa_cliente_ajeno'
+      : guardPropio ? 'guard_propio'
       : a.escribe.length > 0 ? 'sin_guard_escribe'
       : 'sin_guard_lee';
-    filas.push({ rel: a.rel, clase, conecta: a.conecta, escribe: a.escribe, claves: a.claves,
+    filas.push({ rel: a.rel, clase, conecta: a.conecta, escribe: a.escribe, claves: a.claves, abiertoPor,
       guardas: a.guardas, guardasIndirectas: indirectas, guardaAntes: a.guardaAntes });
   }
   filas.sort((x, y) => x.rel.localeCompare(y.rel));
@@ -273,24 +370,41 @@ export const SIEMBRA = Object.freeze({
     'await p.quote.deleteMany({});\n',
 });
 
+/**
+ * SCRUM-1575c · la segunda siembra: el hueco que tuvo 1575b. Un test que importa el singleton y
+ * borra, sin `new` a la vista. El censo de 1575b no lo veía: si deja de verlo, CIEGO.
+ */
+export const SIEMBRA_SINGLETON = Object.freeze({
+  rel: 'tests/__siembra-1575c.test.mjs',
+  fuente: "import { prisma } from '../dist/core/db/prisma.js';\n" +
+    'await prisma.quote.deleteMany({ where: { merchantId: 1 } });\n',
+});
+
+/** ¿El instrumento ve sus dos siembras como lo que son: abren, escriben y no llaman a ningún guard? */
+export function veSusSiembras() {
+  return [SIEMBRA, SIEMBRA_SINGLETON].every(({ rel, fuente }) => {
+    const a = analizarConexion(rel, fuente);
+    return a.abre && a.escribe.length > 0 && a.guardas.length === 0;
+  });
+}
+
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const raiz = process.argv[2] ? path.resolve(process.argv[2]) : RAIZ;
-  const sembrada = analizarConexion(SIEMBRA.rel, SIEMBRA.fuente);
   const { poblacion, filas } = censarConexiones(raiz);
-  const ve = sembrada.conecta.length > 0 && sembrada.escribe.length > 0 && sembrada.guardas.length === 0;
+  const ve = veSusSiembras();
   if (!ve || poblacion.parseados === 0 || filas.length === 0) {
-    console.log(`CIEGO · siembra vista=${ve} · parseados=${poblacion.parseados} · filas=${filas.length}`);
+    console.log(`CIEGO · siembras vistas=${ve} · parseados=${poblacion.parseados} · filas=${filas.length}`);
     process.exit(2);
   }
   const porClase = {};
   for (const f of filas) (porClase[f.clase] ??= []).push(f);
-  console.log(`censo-conexiones · ${poblacion.ficheros} ficheros en scripts/ y tests/ · ${poblacion.parseados} parseados por AST · ${filas.length} conectan · siembra vista`);
+  console.log(`censo-conexiones · ${poblacion.ficheros} ficheros en scripts/ y tests/ · ${poblacion.parseados} parseados por AST · ${filas.length} conectan · siembras vistas (2)`);
   console.log(`fuera del AST: ${poblacion.fueraDelAst.join(', ') || '(ninguno)'}`);
   for (const clase of CLASES) {
     const xs = porClase[clase] ?? [];
     console.log(`\n## ${clase} · ${xs.length}`);
     for (const f of xs) {
-      console.log(`- ${f.rel} · conecta: ${f.conecta.join('+')} · escribe: ${f.escribe.join('+') || '—'} · claves: ${f.claves.join(',') || '—'}` +
+      console.log(`- ${f.rel} · conecta: ${f.conecta.join('+')}${f.abiertoPor ? ` (abre ${f.abiertoPor})` : ''} · escribe: ${f.escribe.join('+') || '—'} · claves: ${f.claves.join(',') || '—'}` +
         (f.guardas.length || f.guardasIndirectas.length ? ` · guard: ${[...f.guardas, ...f.guardasIndirectas.map((g) => `vía ${g}`)].join(',')}${f.guardaAntes === false ? ' (DESPUÉS en el texto)' : ''}` : ''));
     }
   }
