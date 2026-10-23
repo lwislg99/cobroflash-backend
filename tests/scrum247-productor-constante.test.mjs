@@ -52,23 +52,27 @@ import {
 import { invalidVerifactuIdSistema } from '../dist/core/config/env.js';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+// SCRUM-524g: eran cinco. `VERIFACTU_NUM_INSTALACION` salió del productor porque no era suyo: el
+// número de instalación es de cada comercio (`instalacion.ts`, derivado de su id, nunca vacío), y
+// que el registro no salga con ese hueco lo sigue vigilando la guarda del emisor
+// (`!productor.numInstalacion`) y `tests/scrum524g-numero-instalacion-por-comercio.test.mjs`.
 const NOMBRES = [
   'VERIFACTU_PRODUCTOR_NOMBRE', 'VERIFACTU_PRODUCTOR_NIF', 'VERIFACTU_ID_SISTEMA',
-  'VERIFACTU_VERSION', 'VERIFACTU_NUM_INSTALACION',
+  'VERIFACTU_VERSION',
 ];
 
 // ── ② EL RELEVO: ninguna vacía ───────────────────────────────────────────────────────────
 
-test('SCRUM-247 · las cinco constantes del productor tienen valor', () => {
+test('SCRUM-247 · las cuatro constantes del productor tienen valor', () => {
   // Suelo: si el módulo dejara de exportarlas, el bucle de abajo recorrería cero y pasaría en
   // verde sin comprobar nada. Un cero que puede significar «todo bien» o «no miré» no es medición.
   assert.deepEqual(Object.keys(PRODUCTOR_VERIFACTU).sort(), [...NOMBRES].sort(),
-    '🔴 el módulo del productor ya no exporta las cinco: lo de abajo no estaría comprobando nada');
+    '🔴 el módulo del productor ya no exporta las cuatro: lo de abajo no estaría comprobando nada');
 
   const vacias = NOMBRES.filter((k) => !String(PRODUCTOR_VERIFACTU[k] ?? '').trim());
   assert.deepEqual(vacias, [],
     '🔴 HAY CONSTANTES DEL PRODUCTOR VACÍAS: ' + vacias.join(', ') + '\n\n' +
-    '  Estas cinco identifican a YaQu como fabricante del software ante la AEAT y viajan dentro\n' +
+    '  Estas cuatro identifican a YaQu como fabricante del software ante la AEAT y viajan dentro\n' +
     '  de cada registro emitido. Con una vacía, el emisor falla en claro\n' +
     '  (`verifactu_productor_no_configurado`) y NO SE EMITE NADA — que es lo correcto, pero el\n' +
     '  sitio donde eso se tiene que ver es AQUÍ, en el PR, no en producción al encender la\n' +

@@ -649,7 +649,10 @@ async function fetchInvoices(options = {}) {
 
           const tdCustomer = document.createElement('td');
           tdCustomer.className = 'cell-client';
-          tdCustomer.textContent = (inv.customer && inv.customer.name) || '—';
+          // SCRUM-1576b · el cliente de una factura EMITIDA es el que se congeló al emitirla
+          // (`customerName`, que la API ya manda); la ficha viva sólo si es anterior al escritor.
+          // La misma regla que `clienteDelDocumento` (clienteCongelado.ts).
+          tdCustomer.textContent = (inv.customerName != null ? inv.customerName : (inv.customer && inv.customer.name)) || '—';
           tr.appendChild(tdCustomer);
 
           const tdTotal = document.createElement('td');

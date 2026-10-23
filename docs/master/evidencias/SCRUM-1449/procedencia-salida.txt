@@ -1,0 +1,8 @@
+base 00179a513a5fb11ca12d61fe25b1b2dec26b51ca · payMp.routes.ts 6885 B
+CASA  · 502: el literal firmado es el que ya pintaba el código
+CASA  · pending: el recorte es el principio exacto de la frase vieja
+CASA  · 503: el cierre firmado es el de «Cobro vencido»
+CASA  · 503: la primera frase no estaba en el código (sólo la respalda Jira)
+503: caracteres no ASCII en la primera frase = 0 ([])
+CASA  · CONTROL: un 502 sin la tilde NO casa (debe salir NO CASA → se invierte)
+POBLACION: 3 literales · 0 fallos · EXIT=0

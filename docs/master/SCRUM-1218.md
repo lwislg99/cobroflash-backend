@@ -185,3 +185,73 @@ registrado, así que «0/20 después» no habría separado nada de «0/20 antes�
 
 *(Corrección propia: al sacar la lista de los 42 parcheé mi sonda con `sed` y la dejé sin compilar, que es la
 cicatriz de J6 del 14-oct repetida. Fue en un temporal, no en el árbol; la rehice con la herramienta de escritura.)*
+
+## J6 · SCRUM-1218c · los tres de J2 que piden `LIBRO_PG_URL`, migrados y medidos con un Postgres desechable
+
+**Medido contra:** `origin/main` = `1ad1968523fed7c2ffb833d5a3feafe4dd1c79f8` · 2026-10-23T03:19:23Z (hora de GitHub al acabar las pasadas; sesión J6 `jv-j6ag`, por encargo del orquestador `cobroflash-backend-62`; el disparo está en c.20156)
+
+A9: comprobación → `scripts/_prisma-client-guard.mjs`
+
+Carril: J6. **Los tres ficheros son de J2 (`area-j2`): carril J2 cruzado a mano, por el encargo del
+orquestador `cobroflash-backend-62` (el que dejó pendientes el tramo 1218b), y sólo para migrar su `fetch`
+a `node:http`.**
+
+### ① Lo que se ha cambiado
+
+En `scrum1346`, `scrum1397` y `scrum1403`, la función `pedir` pasa de `fetch` a `http.request(…, { agent: false })`.
+Lo demás del fichero no se toca. Un JSON que no se puede leer sigue dando `null`, como el `.catch(() => null)`
+de antes. `fetch` seguía redirecciones y `node:http` no; por eso se mide también del lado del servidor (②).
+`CON_EL_PATRON_YA` de `scrum560` baja de **40 a 37**: lo **recalculó el censo**, que en rojo nombraba
+exactamente esos tres («✅ ESTOS YA NO USAN `fetch` SOBRE SU SERVIDOR»). No se eligió.
+
+### ② El banco: mismos casos, mismos veredictos, mismas respuestas
+
+En esta máquina no hay Postgres (ni servicio en 5432 ni `C:\Program Files\PostgreSQL`), así que se usó PGlite
+0.5.11 con pglite-socket 0.2.14 en loopback. Están instalados en el tmp del puesto, fuera del repo. La base se
+llama `yaqu_libro_test`, y el guard de los tests la acepta sin tocarlo. El esquema sale de
+`prisma migrate diff --from-empty` (33 `CREATE TABLE`, uno por `model`).
+
+Cada pasada usa un PGlite NUEVO y corre `node --test --test-force-exit` con el fichero solo. El TAP va a un
+fichero y los casos se cuentan anclados al inicio de línea. Una sonda precargada con `--import` anota, del lado del
+SERVIDOR, el método, la ruta y el status de cada respuesta. El servidor no cambia, así que la lista tiene que
+salir igual, y una redirección que `fetch` seguía saldría como una petición de más en el ANTES.
+
+| fichero | casos (0 SKIP) | respuestas por pasada | antes: pasadas limpias / abortos | después | casos y respuestas, como conjunto |
+| --- | --- | --- | --- | --- | --- |
+| `scrum1346-el-tecnico-ve-documentos-ajenos` | 5 · 5 ok | 46 | 20 / 0 | 20 / 0 | IGUAL · 1 variante en las 40 pasadas |
+| `scrum1397-el-tecnico-ve-sus-facturas` | 5 · 5 ok | 106 | 20 / 0 | 20 / 0 | IGUAL · 1 variante |
+| `scrum1403-el-tecnico-y-las-otras-puertas` | 6 · 6 ok | 67 | 20 / 0 | 20 / 0 | IGUAL · 1 variante |
+
+Por status, en la pasada 0 del ANTES de los tres: 186 de 200, 6 de 400 y 27 de 404. **Ningún 3xx.**
+
+Los controles de los instrumentos, vistos:
+- **El comparador** lleva un control SEMBRADO: una copia del ANTES con un veredicto cambiado y un `302` de más.
+  Salió DISTINTO en las dos patas de los tres ficheros (VIVO).
+- **Mutación del arreglo:** con `pedir` devolviendo el cuerpo a `null`, caen 3 de 5, 2 de 5 y 3 de 6 casos.
+  Los casos leen el cuerpo que trae `node:http`, y no pasan en vacío. La mutación se deshizo con el editor.
+- **El banco sin argumentos dice CIEGO**, no verde. Lo vi por un error mío (abajo).
+
+`scrum560`: 4 de 4 en verde con la lista en 37. Antes de quitarlos de la lista, 3 de 4.
+
+Banco, comparador, sonda y la salida del comparador: `docs/master/evidencias/SCRUM-1218/`. Van como `.mjs.txt`
+para no dejar en el árbol piezas sin consumidor. Para correrlos, se copian a un directorio con
+`@electric-sql/pglite` y `@electric-sql/pglite-socket` y se les quita el `.txt`.
+
+⚠️ **Sin medir:** Linux/CI con las 20 pasadas (en el check obligatorio estos tres corren con el Postgres del
+runner, una vez). Y lo mismo que en 893/910: **ninguno de los tres tenía un aborto registrado, y antes salió 0/20
+en los tres**, así que el «0/20 después» de esta máquina no separa el arreglo de la suerte. Lo que sí demuestra
+es que el cambio no altera nada de lo que los tests miden.
+
+### ③ Lo que queda de la lista (37)
+
+- Del equipo de Luis: `scrum1188d`, `scrum1489` y `scrum912`. Se avisan y no se tocan.
+- Los 34 gateados por `QA_DB_TEST` / `BOT_SUITE_TEST`: sus veredictos sólo se miden en staging, con su turno.
+  Quedan fuera de esta tanda.
+
+*(Corrección propia, y es la que lleva el `A9:`. Para correr estos tres hizo falta un `node_modules` PROPIO.
+El cliente de Prisma compartido iba dos campos por detrás de `schema.prisma` (`Merchant.activityKind` y
+`Quote.archivedAt`), y las listas de presupuestos que miden 1346 y 1403 filtran por `archivedAt`. Lo dijo
+`_prisma-client-guard.mjs` antes de correr nada. Se arregló con `npm ci` en este worktree y `generate` desde
+él. `npm run topologia` dice «directorio propio», así que no se tocó el compartido. Otra, sin consecuencia: en un
+comando usé una variable que no había definido, y el banco salió CIEGO («faltan argumentos») en vez de dar un
+verde. Repetí la pasada.)*

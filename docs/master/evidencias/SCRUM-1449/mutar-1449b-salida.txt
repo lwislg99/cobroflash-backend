@@ -1,0 +1,9 @@
+VERDE    · BASE sin mutar · 0/6 caen
+ROJO     · src/modules/billing/app/routes/payMp.routes.ts · «    res.setHeader('Content-Type', 'text/html; char» · 1/6 caen · declara que cae «SCRUM-1449b · 🔴 sin token de Mercado Pago: 503 en página»
+ROJO     · src/modules/billing/app/routes/payMp.routes.ts · «    res.setHeader('Content-Type', 'text/html; char» · 1/6 caen · declara que cae «SCRUM-1449b · 🔴 Mercado Pago no contesta: 502 en página»
+ROJO     · src/modules/billing/app/routes/payMp.routes.ts · «res.status(503).send(avisoMpHtml(MSG_MP_NO_DISPONI» · 1/6 caen · declara que cae «SCRUM-1449b · 🔴 sin token de Mercado Pago: 503 en página»
+ROJO     · src/modules/billing/app/routes/payMp.routes.ts · «'Ahora mismo no se puede pagar con Mercado Pago. C» · 1/6 caen · declara que cae «SCRUM-1449b · 🔴 sin token de Mercado Pago: 503 en página»
+ROJO     · src/modules/billing/app/routes/payMp.routes.ts · «'Error al conectar con Mercado Pago. Inténtalo de » · 1/6 caen · declara que cae «SCRUM-1449b · 🔴 Mercado Pago no contesta: 502 en página»
+ROJO     · src/modules/billing/app/routes/payMp.routes.ts · «msg: 'Tu pago está siendo procesado.',» · 1/6 caen · declara que cae «SCRUM-1449b · 🔴 cobro pendiente: la página dice el recorte firmado»
+ROJO     · src/modules/billing/app/routes/payMp.routes.ts · «  if (!accessToken) {⏎» · 1/6 caen · declara que cae «SCRUM-1449b · 🔴 sin token de Mercado Pago: 503 en página»
+POBLACION: 7 mutantes declarados + base · vivos, ciegos u otro = 0 · restaurado = true

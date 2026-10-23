@@ -360,6 +360,9 @@ router.get('/:id/dispute-package', requireRole('admin'), async (req, res) => {
     if (!invoice) return res.status(404).json({ error: 'not_found' });
 
     const quote = invoice.quote;
+    // SCRUM-1576b · el paquete es la evidencia de ESTE documento: su cliente es el congelado al
+    // emitir (nombre, teléfono y email), no la ficha de hoy. La viva sólo si es anterior al escritor.
+    const cliente = clienteDelDocumento(invoice, invoice.customer);
     const messages = await prisma.whatsAppMessage.findMany({
       where: {
         merchantId: req.merchantId,
@@ -412,7 +415,7 @@ router.get('/:id/dispute-package', requireRole('admin'), async (req, res) => {
   <tr><th>Emitido</th><td>${fD(invoice.createdAt)}</td></tr>
   <tr><th>Importe</th><td>${money(invoice.total)}</td></tr>
   <tr><th>Pagado el</th><td>${fD(invoice.paidAt)}</td></tr>
-  <tr><th>Cliente</th><td>${esc(invoice.customer?.name)} · ${esc(invoice.customer?.phone ?? '')} ${esc(invoice.customer?.email ?? '')}</td></tr>
+  <tr><th>Cliente</th><td>${esc(cliente.name)} · ${esc(cliente.phone ?? '')} ${esc(cliente.email ?? '')}</td></tr>
 </table>
 
 <h2>3 · Cobro y referencia del procesador</h2>

@@ -90,6 +90,7 @@ export const RETIRADAS_A_PROPOSITO = [
   // decisión del fundador (Jira 16264) tras medir que no desbloquea nada hoy (docs/master/SCRUM-773.md,
   // apéndice 773c). No es cobertura perdida sobre código vivo: es un test sin sujeto.
   { guard: 'tests-declarados', motivo: 'SCRUM-773: se retiran el script backfill-job-assignees.mjs y su test scrum650c (6 test) — sin script no hay qué verificar (7802 → 7796)', fecha: '2026-09-22', antes: 7802, ahora: 7796 },
+  { guard: 'scrum813-trinquete-de-zona.test.mjs', motivo: 'SCRUM-935d: ㉓ ㉔ se MUDAN a scrum1494-cortados-de-zona, no se retiran (26 → 24)', fecha: '2026-10-22', antes: 26, ahora: 24 },
 ];
 
 // ══════════════════════════════════════════════════════════════════════════════════════════

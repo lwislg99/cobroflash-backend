@@ -187,3 +187,96 @@ criterio de 404 miraba sólo el manejador, lo que habría dado sospechosas en al
 `not_found` desde un ayudante: lo ensanché al nivel 1, y eso abre el falso negativo de arriba. Y la primera versión
 de este registro llevaba una tabla por carril con cifras escritas sin recontar (S1 decía 46; son 47) y frases de
 «`findFirst` → 404» para rutas que no había leído: la rehice con el censo por fichero antes de empujar.
+
+# SCRUM-1571c · «200 con cuerpo null»: la lectura que no encuentra y se manda igual
+
+**Medido contra:** `origin/main` = `f53289026390853176eb2d8ba4ad2bbd51bc9d6d` · 2026-10-21T14:34:50Z (hora de GitHub)
+A9: comprobación → `tests/scrum1571c-lectura-ajena-no-contesta-null.test.mjs`
+
+Puesto J2 (`jv-j2r`) · árbol `j2r-1571c` · rama `scrum-1571c-findfirst-null-404`, nacida de la de 1571b
+(`413057ea2`, PR #2650, abierto y sin mergear al medir) con `origin/main` mergeado encima. Encargo del orquestador
+`cobroflash-backend-5f`: el primer «NO mide» de 1571b. Jira no conectó (el MCP de Atlassian dio `CONNECT_TIMEOUT`):
+no he leído el ticket ni sus comentarios; trabajo sobre el encargo y el repo.
+
+## PASO 0
+
+`git log origin/main --grep=1571` → sólo SCRUM-1571 (#2640). En el remoto, sólo `scrum-1571b-escrituras-ajenas-404`.
+Ningún tramo 1571c. El defecto existe hoy: el rojo de abajo, sobre `e1a83b2a4` (antes del arreglo).
+
+## El censo: el MISMO de 1571b, ampliado
+
+`tests/_censo-escrituras-sobre-id.mjs`, bloque 1571c (no un censo nuevo). Toma toda ruta
+`get|delete|put|patch|post('/<literal con :>', …)` y, en cada manejador (función en línea o importada, resuelta por
+el checker), mira lo que decide el CUERPO de cada `res.json(…)`/`res.send(…)`: el argumento entero, un objeto literal
+de UNA sola propiedad (`{ ...v }` → `{}`, `{ v }` → `{ v: null }`) y la izquierda de `v || {}` / `v ?? {}`. Es
+SOSPECHOSA si ese valor es ANULABLE —sale de un `findFirst`/`findUnique` cuyo primer argumento nombra `merchantId`,
+de una función de `src/` que lo devuelve (hasta 4 niveles), o de un `c ? x : null`— y la variable no se MIRA en el
+manejador (`!v`, `==`/`===`/`!=`/`!==`, condición de `if` o de `? :`, izquierda de `&&`, `||` o `??` salvo `|| {}`).
+
+**Población** (sin semilla): 328 ficheros · **119 rutas sobre un `:id`/`:token`** (39 GET + las 80 de 1571b) · 119
+con manejador legible, 0 sin él · 44 con `findFirst`/`findUnique` + `merchantId` en el propio manejador ·
+**SOSPECHOSAS antes del arreglo: 2** (`PUT` y `PATCH /admin/customers/:id`) · **después: 0**.
+
+**Controles SEMBRADOS** (en el fichero que no existe en el árbol, el mismo de 1571b): `GET /semilla/:id` (manda el
+`findFirst` tal cual) y `GET /semilla/:id/servicio` (lo lee un servicio y manda `{ ...fila }`) tienen que salir
+SOSPECHOSAS; `GET /semilla/:id/con-404` (la misma lectura con su `if (!fila) 404`) tiene que salir callada. Sin la
+semilla, `lectura.semillaVista` es `false` y la salida a mano dice CIEGO y sale 2 (medido).
+
+La primera pasada daba 8 sospechosas: 6 eran objetos de varias propiedades con un dato opcional dentro
+(`customer: job ? {…} : null` en albaranes, la decisión del presupuesto, el pago de la factura, `portalUrl` en la
+ficha del cliente). No es un 200 vacío: el cuerpo lleva algo. Por eso el criterio mira sólo lo que decide el cuerpo.
+
+## El rojo, por la ruta real
+
+`PUT`/`PATCH /admin/customers/:id` miran el `count` del `updateMany` desde SCRUM-1571, pero después RELEEN el cliente
+con `getCustomer` (`findFirst` + `merchantId`) y lo mandan sin mirarlo. Si otra petición lo borra entre las dos
+consultas, contestan `200` con `null`. El banco provoca esa carrera (el `updateMany` doblado borra la fila que acaba
+de tocar) contra el router de `dist/` montado en Express y pedido por `node:http`, con el arnés de SCRUM-1571.
+Sobre `e1a83b2a4`: **9 casos, 6 pasan, 3 caen** — el censo (nombra las dos rutas) y los dos casos de la carrera,
+`🔴 contesta 200 con «null»`. Los controles del banco (la misma edición sin carrera → 200 con la fila) pasan.
+
+## El arreglo
+
+`customersAdmin.routes.ts`, una línea: `if (!updated) return res.status(404).json({ error: 'not_found' })`. Es el
+mismo 404 que ya contestan `GET /:id` y la propia ruta cuando el `count` es 0: ningún texto nuevo (regla 39).
+Con él: 21 de 21 en `scrum1571`, `scrum1571b` y `scrum1571c`, 0 saltos.
+
+## Lo que contesta cada carril (lista; nada tocado fuera del mío)
+
+Recontado con el censo por fichero: 119 rutas sobre `:id`, 44 con lectura + `merchantId` en el manejador,
+**0 sospechosas en todos los carriles** tras el arreglo. Por carril (rutas / con lectura): **J2** clientes
+(`customersAdmin`, `customerPortal`) 18 / 2; **J2** cobros (`chargesAdmin`, `payBank`, `payBizum`, `payCard`,
+`payInvoice`, `payMp`, `receipt`) 13 / 3, STOP, sólo lista; **J1** facturas (`invoicesAdmin`, `invoice.routes`)
+16 / 9, STOP, sólo lista; **J3** supresión 1 / 1; **S1**, equipo de Luis (quotes, quotesAdmin, quoteDecisionLanding,
+jobs, albaranes, albaranPublic, partes, expenses, providers, products, maintenance, team, templates,
+quoteRequests, attachments, publicProfile) y `app.ts` 66 / 29; `dev.routes` 5 / 0. Nada que pasar a nadie.
+
+## El falso negativo del 404 indirecto (el segundo «NO mide» de 1571b)
+
+Con el criterio de escrituras: de las 14 rutas con `updateMany`/`deleteMany` + `merchantId`, **4** no leen `.count`
+y se salvan SÓLO por tener un `404` en el texto: `PUT`, `PATCH` y `DELETE /admin/customers/:id` y
+`PUT /admin/expenses/:id`. Leídas a mano las 4: las tres de clientes leen el `count` por desestructuración
+(`const { count } = …; if (count === 0) 404`, que el censo no cuenta como lectura) y su 404 es el de verdad; el
+`updateMany` que tira el `DELETE` es el de desvincular la empresa (`customerAdmin.ts`, 0 filas es lo normal), y el de
+gastos es el NIF del proveedor (SCRUM-937, ya dicho en 1571b). **Falsos negativos medidos: 0 de 4.** No cambié el
+criterio para que cuente la desestructuración: entonces quitar sólo el `if (count === 0)` dejaría de dar rojo, que
+es la mutación con la que 1571b demostró su test.
+
+## Lo que NO mide (dicho en la misma frase que lo que sí)
+
+- Un `where` en una variable (`findFirst({ where })`) no se ve con `merchantId`: no cuenta como lectura anulable.
+- «Mirado» es por nombre en todo el manejador, sin orden: un `if (v)` DESPUÉS del envío lo da por mirado.
+- Un anulable que es una propiedad entre varias, o que pasa por una función que lo formatea, no cuenta.
+- Lo que el manejador manda desde una función a la que le pasa `res`, no lo ve: sólo los envíos de su propio cuerpo.
+- La carrera de `PUT`/`PATCH` está probada con un banco doblado, no con dos peticiones contra Postgres.
+
+## Tests
+
+`tests/scrum1571c-lectura-ajena-no-contesta-null.test.mjs`: 9 casos, sin base ni saltos (el censo compila `src/`;
+la carrera usa `dist/`). Nombres literales (scrum1415).
+
+## Lo que hice mal
+
+Mi primer criterio contaba como «200 con null» cualquier anulable dentro del objeto que se manda, y dio 6
+sospechosas falsas de S1 y J1 que habría listado como hallazgos para otros carriles. Lo vi al leer las 8 antes de
+escribir nada: el defecto del ticket es el cuerpo vacío, no un campo opcional. Y no leí Jira: el MCP no conectó.
