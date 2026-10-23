@@ -22,7 +22,7 @@
 // Uso: node medir-las-15.mjs <raíz del árbol, con dist/> <salida del censo del rol> [--sin-sembrar]
 import fs from 'node:fs';
 import path from 'node:path';
-import { pathToFileURL } from 'node:url';
+import { pathToFileURL, fileURLToPath } from 'node:url';
 import { PassThrough } from 'node:stream';
 import { createRequire } from 'node:module';
 
@@ -30,6 +30,8 @@ const raiz = process.argv[2]; const ficheroCenso = process.argv[3];
 const ciego = (m) => { console.log('CIEGO: ' + m); console.log('EXIT=2'); process.exit(2); };
 if (!raiz || !ficheroCenso) ciego('faltan la raíz del árbol y la salida del censo del rol');
 const SIN_SEMBRAR = process.argv.includes('--sin-sembrar');
+// SCRUM-1390d: un reventón del propio instrumento salía con código 1, el mismo que «un control falso».
+for (const ev of ['uncaughtException', 'unhandledRejection']) process.on(ev, (e) => ciego('el instrumento reventó (' + ev + '): ' + String((e && e.stack) || e).split('\n').slice(0, 2).join(' · ')));
 const de = (rel) => import(pathToFileURL(path.join(raiz, 'dist', rel)).href);
 
 // ── La población, leída
@@ -59,7 +61,14 @@ dns.lookup = function (host, ...resto) {
 const destino = (a) => String(a[0] && (a[0].href || a[0].host || a[0].hostname || a[0]));
 for (const m of ['request', 'get']) https[m] = function (...a) { fugas.push('https:' + destino(a)); throw new Error('INSTRUMENTO: https cortado'); };
 for (const m of ['request', 'get']) http[m] = function (...a) { fugas.push('http:' + destino(a)); throw new Error('INSTRUMENTO: http cortado'); };
-globalThis.fetch = (u) => { let h = '?'; try { h = new URL(String(u && u.url ? u.url : u)).hostname; } catch { /* se apunta igual */ } fugas.push('fetch:' + h); throw new Error('INSTRUMENTO: fetch cortado: ' + h); };
+// SCRUM-1390d: la IA, DOBLADA en el transporte. Sin esto las cuatro rutas de IA salían 502 con la red
+// cortada y no se veía si el documento ajeno VIAJA al modelo. El doble apunta el cuerpo que le llega y
+// contesta con ese mismo cuerpo como texto: mide que viaja; lo que un modelo real devolvería, NO.
+const aIA = [];
+globalThis.fetch = async (u, init) => { let h = '?'; try { h = new URL(String(u && u.url ? u.url : u)).hostname; } catch { /* se apunta igual */ }
+  if (h === 'generativelanguage.googleapis.com') { const cuerpo = String((init && init.body) || ''); aIA.push(cuerpo);
+    return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: 'ECO-IA-1390D ' + cuerpo }] } }] }), { status: 200, headers: { 'content-type': 'application/json' } }); }
+  fugas.push('fetch:' + h); throw new Error('INSTRUMENTO: fetch cortado: ' + h); };
 process.env.PUBLIC_BASE_URL = 'http://127.0.0.1:9';
 process.env.NODE_ENV = 'development';
 process.env.DISABLE_CRONS = 'true';
@@ -77,7 +86,10 @@ config.PUBLIC_BASE_URL = 'http://127.0.0.1:9';
 const { app } = await de('app.js');
 const { getAdminMounts } = await de('core/http/adminMounts.js');
 const { prisma } = await de('core/db/prisma.js');
-const portal = (await de('modules/system/app/routes/customerPortal.routes.js')).default;
+// SCRUM-1390d: `export default router` compilado a CJS llega aquí como { default: router }.
+const portalMod = (await de('modules/system/app/routes/customerPortal.routes.js')).default;
+const portal = portalMod && portalMod.stack ? portalMod : portalMod && portalMod.default;
+if (!portal || !portal.stack) ciego('no encuentro el router del portal del cliente en dist/');
 
 const PELIGRO = Object.keys(process.env).filter((k) => process.env[k]
   && /WHATSAPP|RESEND|GEMINI|ANTHROPIC|OPENAI|STRIPE|MERCADOPAGO|DATABASE_URL|SMTP|MAILER/i.test(k));
@@ -107,8 +119,17 @@ const AJENO = {
   charge: null, tags: [], internalNotes: null,
 };
 let pasada = 'A'; let apuntes = []; let parche = {};
-const base = (m) => (m === 'job' ? trabajoAjeno : m === 'merchant' ? { ...AJENO.merchant } : AJENO);
+// SCRUM-1390d: hasta aquí TODO modelo devolvía la fila AJENA, con sus marcas, y también en `create`:
+// un alta de cliente o de gasto «entregaba» el ajeno porque el doble lo ponía en la respuesta. Ahora
+// las marcas sólo viven en los modelos de DOCUMENTO (o en lo que una receta parchee a propósito).
+const NEUTRO = { ...AJENO, name: 'NEUTRO-1390D', teamMember: { id: 12, merchantId: 1, name: 'NEUTRO-1390D' }, lines: [], customer: { ...AJENO.customer, name: 'NEUTRO-1390D' }, job: { ...trabajoAjeno }, quote: { ...AJENO.quote, job: { ...trabajoAjeno } } };
+const base = (m) => (m === 'job' ? trabajoAjeno : m === 'merchant' ? { ...AJENO.merchant } : DOCUMENTO.includes(m) ? AJENO : NEUTRO);
 const fila = (m) => ({ ...base(m), ...(parche[m] || {}) });
+// Lo recién creado no nace enlazado a ningún documento: con `quoteId: 102` heredado, `serializeJob` iba a
+// leer el presupuesto ajeno y el alta de un Trabajo salía NO-DISTINGUE por obra del doble.
+const CREADA = { id: 501, merchantId: 1, createdAt: ahora, updatedAt: ahora, name: 'NEUTRO-1390D', status: 'pendiente', estado: 'borrador',
+  customerId: 5, customer: { ...NEUTRO.customer }, assignees: [], asignados: [], albaranes: [], quotes: [], invoices: [], quoteId: null, jobId: null, operarioId: null, assignedUserId: null };
+const filaCreada = (m) => ({ ...(m === 'merchant' ? AJENO.merchant : CREADA), ...(parche[m] || {}) });
 for (const m of modelos) {
   const d = prisma[m];
   const apunta = (op, args) => { apuntes.push({ modelo: m, op, where: args && args.where !== undefined ? args.where : null }); };
@@ -120,7 +141,7 @@ for (const m of modelos) {
   d.groupBy = async (args) => { apunta('groupBy', args); return []; };
   for (const op of ESCRITURAS) d[op] = async (args) => { apunta(op, args); if (/Many$/.test(op)) return { count: 1 };
     const dados = op === 'create' && args && args.data && typeof args.data === 'object' ? Object.fromEntries(Object.entries(args.data).filter(([, v]) => v === null || typeof v !== 'object' || v instanceof Date)) : {};
-    return { ...fila(m), ...dados }; };
+    return { ...(op === 'create' || op === 'upsert' ? filaCreada(m) : fila(m)), ...dados }; };
 }
 prisma.$transaction = async (x) => (typeof x === 'function' ? x(prisma) : Promise.all(x));
 prisma.$queryRaw = async () => { apuntes.push({ modelo: '$raw', op: '$queryRaw', where: null }); return []; };
@@ -136,6 +157,8 @@ if (!SIN_SEMBRAR) {
     if (!req.body || !req.body.sembrada) return res.status(400).json({ error: 'falta_sembrada' });
     const q = await prisma.quote.findFirst({ where: { id: Number(req.body.sembrada), merchantId: req.merchantId } });
     if (!q) return res.status(404).json({ error: 'not_found' });
+    // SCRUM-1390d: el positivo del eje de la IA. Manda el documento leído al modelo, por el mismo transporte.
+    await fetch('https://generativelanguage.googleapis.com/v1beta/models/sembrada:generateContent', { method: 'POST', body: JSON.stringify({ texto: q.customer.name }) });
     return res.json({ cliente: q.customer.name });
   });
   app.post(SEMBRADAS.recorta.path, async (req, res) => {
@@ -208,9 +231,9 @@ async function corre(d, extra) {
   const manos = manosDe(d.method, d.path); const r = {};
   try {
     for (const p of ['A', 'B']) for (const rol of ['admin', 'tecnico']) {
-      pasada = p; apuntes = []; const m0 = aMeta.length;
+      pasada = p; apuntes = []; const m0 = aMeta.length; const i0 = aIA.length;
       const out = await pedir(manos, peticion(rol, d.path, d.method, x));
-      r[p + rol] = { ...out, apuntes, envios: aMeta.length - m0 };
+      r[p + rol] = { ...out, apuntes, envios: aMeta.length - m0, ia: aIA.slice(i0) };
     }
   } finally { parche = {}; for (const [k, v] of Object.entries(guardada)) config[k] = v; }
   const C = ['Aadmin', 'Atecnico', 'Badmin', 'Btecnico'];
@@ -226,13 +249,16 @@ async function corre(d, extra) {
   return { v, porModelo, niegaB, manos: manos.length, r,
     estados: `A adm ${r.Aadmin.estado} tec ${r.Atecnico.estado} · B adm ${r.Badmin.estado} tec ${r.Btecnico.estado}`,
     marcasTecB: marcasEn(r.Btecnico.cuerpo), marcasAdmB: marcasEn(r.Badmin.cuerpo),
+    iaTecB: { llamadas: r.Btecnico.ia.length, marcas: marcasEn(r.Btecnico.ia.join('\n')) },
     whereTec: firma(r.Btecnico.apuntes) || firma(r.Atecnico.apuntes),
     otros: [...new Set(C.flatMap((k) => r[k].apuntes.filter((a) => !DOCUMENTO.includes(a.modelo)).map((a) => a.modelo + '.' + a.op)))],
     envios: C.reduce((n, k) => n + r[k].envios, 0) };
 }
 
 // ── LAS RECETAS: ocho de SCRUM-1514c (importadas) y siete de aquí. Cada una dice qué leyó.
-const { RECETAS: RECETAS_1514C } = await import(pathToFileURL(path.join(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')), '..', 'SCRUM-1514c', 'recetas.mjs')).href);
+// SCRUM-1390d: era `new URL(import.meta.url).pathname`, que deja `%20` en una ruta con espacios y
+// reventaba aquí con código 1 y salida vacía, antes de medir nada. `fileURLToPath` la decodifica.
+const { RECETAS: RECETAS_1514C } = await import(pathToFileURL(path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'SCRUM-1514c', 'recetas.mjs')).href);
 const IA = { GEMINI_API_KEY: 'texto-de-laboratorio-1390c' }; // un texto en memoria, no una clave: la red está cortada
 const RECETAS_1390C = {
   'POST /admin/customers': { leido: 'customersAdmin.routes.ts:161 (customerCreateSchema, schemas.ts:547: name)',
@@ -269,7 +295,7 @@ for (const d of [...poblacion, ...Object.values(SEMBRADAS)]) {
   const vs = [];
   if (rec) for (const va of rec.variantes) vs.push({ nombre: va.nombre, ...(await corre(d, va)) });
   const peor = vs.length ? ORDEN.find((o) => vs.some((x) => x.v === o)) : 'SIN-RECETA';
-  filas.push({ ...d, clave, g, vs, v: peor, origen: deDonde(clave), leido: rec && rec.leido, entrega: vs.some((x) => x.marcasTecB.length) });
+  filas.push({ ...d, clave, g, vs, v: peor, origen: deDonde(clave), leido: rec && rec.leido, entrega: vs.some((x) => x.marcasTecB.length), aLaIA: vs.some((x) => x.iaTecB.marcas.length) });
 }
 const sembradas = filas.filter((f) => f.path.startsWith(S + '/'));
 const medidas = filas.filter((f) => !f.path.startsWith(S + '/'));
@@ -286,6 +312,7 @@ for (const o of [...ORDEN, 'SIN-RECETA']) {
       const pm = Object.entries(x.porModelo).map(([m, y]) => m + '=' + y).join(' · ');
       console.log(`         · ${x.nombre} → ${x.v}${pm ? ' [' + pm + ']' : ''} · ${x.estados}` + (x.niegaB ? ' (al técnico le NIEGA el ajeno)' : '') + (x.envios ? ' · envíos a Meta (doblado): ' + x.envios : ''));
       console.log(`           al técnico, en B, le llega: ${x.marcasTecB.length ? '🔴 ' + x.marcasTecB.join(', ') : 'ninguna marca del ajeno'} · contesta: ${corto(texto(x.r.Btecnico.cuerpo), 160)}` + (x.r.Btecnico.error ? ' · error: ' + x.r.Btecnico.error : ''));
+      if (x.iaTecB.llamadas) console.log(`           a la IA (doblada), desde el técnico en B: ${x.iaTecB.llamadas} llamada(s) · ${x.iaTecB.marcas.length ? '🔴 viaja ' + x.iaTecB.marcas.join(', ') : 'ninguna marca del ajeno'}`);
       if (x.whereTec) console.log('           consulta del técnico: ' + corto(x.whereTec, 300));
       if (x.otros.length) console.log('           otros modelos: ' + corto(x.otros.join(', '), 300));
     }
@@ -319,13 +346,16 @@ const c2 = nd.v === 'NO-DISTINGUE' && nd.entrega === true;
 const c3 = rc.v === 'RECORTA' && rc.entrega === false;
 const c4 = medidas.length === declaradas;
 const c5 = fugas.length === 0;
+const c6 = nd.aLaIA === true && rc.aLaIA === false;
 console.log('  sin su cuerpo, las dos sembradas salen NO-LLEGO (lo que el censo veía)  ' + c1 + '  (' + nd.g.v + ', ' + rc.g.v + ')');
 console.log('  con su cuerpo, la que no distingue sale NO-DISTINGUE y entrega el ajeno  ' + c2 + '  (' + nd.v + ', entrega ' + nd.entrega + ')');
 console.log('  con su cuerpo, la que recorta sale RECORTA y no entrega nada            ' + c3 + '  (' + rc.v + ', entrega ' + rc.entrega + ')');
+console.log('  la que no distingue manda el ajeno a la IA doblada; la que recorta, no     ' + c6 + '  (' + nd.aLaIA + ', ' + rc.aLaIA + ')');
 console.log('  filas del producto ' + medidas.length + ' de ' + declaradas + '  ' + c4);
 console.log('  intentos de salir de la máquina cortados: ' + fugas.length + (fugas.length ? ' → ' + [...new Set(fugas)].join(', ') : '') + ' · envíos a Meta doblados: ' + aMeta.length);
-const ok = c1 && c2 && c3 && c4;
+const ok = c1 && c2 && c3 && c4 && c6;
 console.log('TOTALES (el peor veredicto de cada ruta): ' + [...ORDEN, 'SIN-RECETA'].map((o) => o + ' ' + medidas.filter((f) => f.v === o).length).join(' · ') + ' · suma ' + medidas.length
-  + ' · al técnico le llega una marca del ajeno en ' + medidas.filter((f) => f.entrega).length);
+  + ' · al técnico le llega una marca del ajeno en ' + medidas.filter((f) => f.entrega).length
+  + ' · el ajeno viaja a la IA desde el técnico en ' + medidas.filter((f) => f.aLaIA).length);
 console.log('EXIT=' + (ok ? 0 : 1));
 process.exit(ok ? 0 : 1);

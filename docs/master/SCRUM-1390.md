@@ -361,3 +361,58 @@ Por dónde empezar, **leído, sin ejecutar** (ninguna de estas mira el rol):
 - ⚠️ El cliente de Prisma, que es compartido, va 2 campos por detrás del esquema (`Merchant.activityKind` y
   `Quote.archivedAt`, según `_prisma-client-guard`). No se ha regenerado, y Prisma va doblado.
 - **En yaqu.app, nada:** no hay sesión de técnico en producción (SCRUM-1555). No lo he intentado.
+
+## SCRUM-1390d · las 15 NO-LLEGO, medidas por efecto
+
+[Anexado por J4 (sesión jv-j4o), equipo de Javier, el 23-oct-2026 a las 10:16Z (`Date:` de GitHub), sobre
+`origin/main` `809527fa691056443c545901152443d0d2a072dc`. Encargo del orquestador (`cobroflash-backend-62`).
+No toca nada de lo de arriba. Ni `src/`, ni `public/`, ni `prisma/`, ni tests: arregla el banco
+`docs/master/evidencias/SCRUM-1390c/medir-las-15.mjs`, deja sus salidas en `docs/master/evidencias/SCRUM-1390d/` y
+añade una línea en `docs/equipo/cicatrices/J4.md`. Entrega en Jira, c.20457 (y c.20458, que corrige una cifra).]
+
+A9: aviso → cicatriz J4 «el doble de medir-las-15 devolvía la fila ajena, con sus marcas, en todo modelo y en todo create: un alta de cliente entregaba al técnico el presupuesto del compañero» — no se pudo comprobar: el banco es de un solo ticket y nada obliga a un doble a devolver sólo lo que la consulta pidió
+
+### El instrumento, antes de fiarse de él: cuatro fallos
+
+1. **No arrancaba en una ruta con espacios.** La ruta a `recetas.mjs` salía de `URL.pathname` (con `%20`), y el
+   fichero acababa con código 1 y la salida vacía. → `fileURLToPath`.
+2. 🔴 **El doble fabricaba la fuga.** Devolvía la fila AJENA, con sus marcas, para todo modelo y también en
+   `create`. En la primera pasada salían **5** rutas con marca del ajeno, y **4** las ponía el doble (`POST /admin/customers`,
+   `POST /admin/customers/:id/sites`, `PATCH /admin/quote-requests/:id`, `POST /admin/expenses`). Ahora las marcas solo
+   viven en los cinco modelos de documento, y lo recién creado nace sin `quoteId` ni `jobId`.
+   Salida de aquella pasada: `las-15-primera-pasada-doble-con-marcas-en-todo.txt`.
+3. **Reventaba en la cadena del portal**, porque `export default` compilado a CJS llega como `{ default: router }`. Ahora
+   cualquier reventón del propio instrumento sale **CIEGO con código 2**: visto con ese mismo fallo todavía puesto.
+4. **La IA, cortada, no medía nada:** 502 en las cuatro rutas. Ahora va doblada en el transporte. Apunta el cuerpo que le
+   llega y lo devuelve como texto: mide que el documento **viaja**, no lo que contestaría un modelo real.
+
+**Controles:** el par sembrado de jv-j4n, más uno nuevo para el eje de la IA (la sembrada que no distingue manda el
+ajeno al modelo; la que recorta, no). `--sin-sembrar` → CIEGO, EXIT=2 (`las-15-sin-sembrar.txt`). **Mutante** en `dist/`,
+restaurado y comprobado con `cmp`: `GET /admin/attachments/:id` niega al técnico → la fila dice «le NIEGA el ajeno» y las
+marcas bajan de 2 a 1 (`las-15-mutante-attachments-niega-al-tecnico.txt`). Dos pasadas finales idénticas byte a byte.
+
+### Lo medido (`las-15-salida.txt`)
+
+**Población:** las 15 de la sección NO-LLEGO del censo del rol, corrido hoy sobre `809527fa6`: la salida es idéntica byte
+a byte a `SCRUM-1390c/censo-rol-de-entrada.txt`. Las 15 llevan receta. Dos roles por dos pasadas cada una.
+
+| ruta | qué le pasa al técnico con el documento del compañero |
+|---|---|
+| `GET /admin/attachments/:id` | 🔴 le llega la foto del albarán del compañero; no mira de qué albarán es el adjunto |
+| `GET /admin/customers/:id/portal-url` → `GET /cliente/:token` | 🔴 consigue el enlace de cualquier cliente, y la página lleva el concepto del presupuesto del compañero |
+| `POST /admin/ai/quote-message` con `quoteId` | 🔴 el cliente y el concepto del presupuesto del compañero viajan a la IA (`quote.findFirst {id, merchantId}`) |
+| `POST /admin/expenses` con `quoteId` | 🔴 escritura: imputa un gasto al presupuesto del compañero (201) |
+| `POST /admin/ai/suggest-albaran-lines` | lee el albarán ajeno sin mirar el rol, pero solo usa `estado` y `modoValoracion` (`ai.routes.ts:119-133`): no viaja contenido; queda saber si existe y está en borrador (leído, no medido contra una IA real) |
+| `GET /admin/me` | lee solo los números de factura del comercio, para la serie |
+| `POST /admin/jobs` | solo consulta documentos del Trabajo que acaba de crear; el 500 lo provoca el doble; el 201 real, sin medir |
+| las otras 8 | no leen ningún documento |
+
+Totales del instrumento: NO-DISTINGUE 5 · NO-LLEGO 2 · SIN-DOCUMENTO 8 · RECORTA 0 · suma 15. Leídos a mano, dos de los
+cinco NO-DISTINGUE (`/admin/me` y `POST /admin/jobs`) no dejan pasar nada ajeno. Cuántos tickets salen de las cuatro
+puertas, lo decide el orquestador: aquí no se arregla ninguna.
+
+### Lo que no
+
+- **yaqu.app:** sin sesión de técnico en producción (SCRUM-1555). No lo he intentado.
+- La respuesta de una IA real, y el 201 real de `POST /admin/jobs`.
+- Error mío: escribí en c.20457 «6 rutas» de memoria; eran 5 (c.20458).
