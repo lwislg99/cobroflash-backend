@@ -414,6 +414,34 @@ y su mutación ④ cita la constante nueva; sin la subida caía «LA COBERTURA H
 importan el meta-guard: 304 tests, 1 fail que es `scrum1321` CIEGO por entorno (temporal en `C:`, repo en `D:`),
 `docs/master/evidencias/SCRUM-935d/` (instrumentos y `.tsv`; los logs crudos NO: llevan ANSI, A22), este apartado.
 
+### Las dos puertas que el PR #2676 no pasaba (23-oct-2026, S3)
+
+El obligatorio del run `39767863385` (sobre `ca697e7e8`) cayó con 2 de 12.114, y los dos eran guards de
+DECLARACIÓN que apuntaban a lo que trajo la D. Reproducidos en local con la rama tal cual, ANTES de tocar nada:
+
+| guard | rojo en local, rama tal cual | causa | arreglo |
+|---|---|---|---|
+| `scrum702` · ninguna dependencia del entorno sin declarar | «hay 22 ficheros… el tope es 20» | DOS lecturas nuevas de `GITHUB_ACTIONS`, no una: el meta-guard (`presupuestoDelPaso`) y el `env` escrito a mano del test | declaradas al lado de `TOPE_LEEN_EL_ENTORNO`, que sube 20 → 22, diciendo qué hace cada una |
+| `scrum708` · ningún fichero registra tests fuera de la tanda | `docs/master/evidencias/SCRUM-935d/h-cobaya.mjs` | la cobaya de la sonda vivía como fichero de test en `evidencias/` | la cobaya pasa a ser plantilla de texto dentro de `h-sonda-filtro.mjs`, que la escribe en un temporal y la borra (como SCRUM-1405) |
+
+⚠️ El diagnóstico que me llegó apuntaba a `META_PRESUPUESTO_S` (702) y al test nuevo (708). Medido, no era así:
+`META_PRESUPUESTO_S` no está entre las señales que mira el censo, y el que registraba tests fuera era la cobaya.
+De paso, la sonda abría `cobaya.test.mjs` junto a sí misma, y ese fichero no existía en el repo (sólo `h-cobaya.mjs`):
+tal como estaba, no se podía volver a correr. Corrida otra vez tras el arreglo: los mismos resultados que su salida guardada
+`h-salida-sonda.txt` (cambian los milisegundos, y la línea de `execArgv`, que allí está recortada a mano).
+
+Al fundir `origin/main` (`6c8706dae`) chocó el trinquete de `scrum812`: 1339u y esta rama lo subían los dos a 32. El número
+no se eligió de un lado, se REGENERÓ: con el suelo a 34 el trinquete cae diciendo «33 ficheros se titulan GUARD y declaran»,
+así que queda en **33**, y su mutación ④ pasa a citar 33 → 32.
+
+Después: `scrum702`, `scrum708` y `scrum935d`, 24/24 en verde; `scrum812` 6/6. Ningún guard se tocó salvo en su sitio
+de declaración (el tope y su comentario; el suelo del trinquete y su mutación).
+
+🔵 **El otro rojo del run, el del meta-guard (job informativo), es la D funcionando:** cortó a los 1.650 s («CORTO YO, ANTES
+DEL TECHO»), juzgadas 613 de 641, y nombró las 28 sin juzgar en 7 guards; antes eso salía `cancelled` y sin una línea. El
+último meta-guard de `main` (run `39948261197`, sin la D) tardó 1.397 s y salió verde. Lo que queda abierto, y no lo arregla
+este PR: la D da 150 s de margen, y un run que antes acababa entre los 1.650 y los 1.800 s ahora sale CIEGO en vez de verde.
+
 ## SCRUM-935d · propuesta A construida: el banco de cortados sale de `scrum813`
 
 **Medido contra:** `origin/main` = `9839aa6c2baee741f6a38de4e99c7fc29a3fe807` · hora real 2026-10-22T09:32Z
