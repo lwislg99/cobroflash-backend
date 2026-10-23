@@ -37,7 +37,7 @@
     {"clave":"export · src/core/validation/tiposIvaEmitibles.ts::esErrorTipoIvaNoEmitible","donde":"src/core/validation/tiposIvaEmitibles.ts:101","carril":"S1","ticket":"SCRUM-1185"},
     {"clave":"export · src/integrations/stripe.ts::stripeEnabled","donde":"src/integrations/stripe.ts:11","carril":"J2","ticket":"SCRUM-1185"},
     {"clave":"export · src/integrations/whatsapp.ts::sendWhatsAppDocument","donde":"src/integrations/whatsapp.ts:873","carril":"S1","ticket":"SCRUM-1185"},
-    {"clave":"export · src/integrations/whatsappNotifications.ts::sendPaymentConfirmation","donde":"src/integrations/whatsappNotifications.ts:21","carril":"J2","ticket":"SCRUM-1185"},
+    {"clave":"export · src/integrations/whatsappTemplates.ts::buildPaymentConfirmation","donde":"src/integrations/whatsappTemplates.ts:183","carril":"J2","ticket":"SCRUM-1596"},
     {"clave":"export · src/modules/billing/domain/avisoBizumSinTelefono.ts::hayQueAvisar","donde":"src/modules/billing/domain/avisoBizumSinTelefono.ts:64","carril":"J2","ticket":"SCRUM-1185"},
     {"clave":"export · src/modules/billing/domain/cobros.service.ts::diasDeDeuda","donde":"src/modules/billing/domain/cobros.service.ts:157","carril":"J2","ticket":"SCRUM-1185"},
     {"clave":"export · src/modules/billing/domain/fechaDeCobro.ts::COPY_LOTE_UNA_FECHA","donde":"src/modules/billing/domain/fechaDeCobro.ts:102","carril":"J2","ticket":"SCRUM-1185"},
@@ -161,6 +161,7 @@
     {"clave":"export · src/modules/fiscal/retenciones/casillas.ts::FUENTE_115","donde":"src/modules/fiscal/retenciones/casillas.ts:27","carril":"J1","ticket":"SCRUM-1066","motivo":"J1: solo la consume construirBorradorRetenciones, sin ruta (arriba)"}
   ],
   "retiradas": [
+    {"clave":"export · src/integrations/whatsappNotifications.ts::sendPaymentConfirmation","motivo":"SCRUM-1596b: RETIRADA, no conectada (fundador, c.20602): 0 llamadores por AST. Su builder, buildPaymentConfirmation, queda declarado arriba: lo usan scripts/wa-prueba.mjs y los tests de la plantilla, no src/"},
     {"clave":"front-funcion · public/dashboard/js/textoDelDocumento.js::textoDelDocumentoPintado","motivo":"SCRUM-1206: conectada en quotesDetailView.js (la ficha del presupuesto pinta la cabecera, sin rótulo, y las Observaciones, docFooterText, en el orden del papel)"},
     {"clave":"ruta · POST /admin/quotes/:id/archivar","motivo":"SCRUM-1273: conectada en quotesDetailView.js (botón «Archivar» de la ficha del presupuesto, sólo admin)"},
     {"clave":"ruta · POST /admin/quotes/:id/desarchivar","motivo":"SCRUM-1273: conectada en quotesDetailView.js (botón «Desarchivar» del aviso de archivado de la ficha, sólo admin)"},
