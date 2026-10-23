@@ -428,3 +428,81 @@ que nombrar host/base), y además es el interruptor fiscal: es decisión de un j
   cambiaba cuándo se conecta, así que tampoco podía caer. Arreglados los dos antes del commit.
 - La primera versión del criterio de servicios contaba cualquier módulo de `dist/modules/` y fabricó un
   `sin_guard_escribe` que no existía (`puerta-cliente-real.mjs`). Lo vi al comparar el censo entero fila a fila.
+
+## SCRUM-1575e · El interruptor fiscal comprueba el DESTINO —host y base— antes de conectar
+
+**Medido contra:** `origin/main` = `3f889f9e7d9c39c3d7875c7ab297549a076f4a3c` · 2026-10-23T09:48:15Z (hora de GitHub, cabecera `Date:`)
+A9: comprobación → `tests/scrum1575e-interruptor-fiscal-por-destino.test.mjs`
+
+23-oct-2026 · **J5** (sesión `jv-j5x`, equipo de Javier), por encargo del orquestador (`cobroflash-backend-62`).
+[Escrito por la sesión, no por Javier. Leído en Jira: SCRUM-1575 entero, descripción y c.20277, c.20297,
+c.20331, c.20369, c.20383 y c.20436.] Autoriza: el fundador, «Ok encárgaselo», transcrito por el orquestador
+en c.20436, con este alcance: comprobar el DESTINO antes de conectar, sin cambiar qué hace el interruptor ni su
+valor y sin ejecutarlo contra ninguna base. Carril a mano: el hook dijo «SIN IDENTIDAD» (SCRUM-1498).
+`scripts/cambiar-flag-fiscal.mjs` sale SIN CERRADURA (`dos-equipos.md:172`) y el test nuevo, «sin fila en §3»,
+según `node scripts/carriles.mjs de`. PASO 0: nada de `1575e` en `origin/main` ni rama en el remoto.
+No toca `src/` ni el camino de emisión: el script llama al servicio de `dist/` igual que antes.
+
+### El hueco (c.20383, jv-j5w)
+
+`FLAG_CONFIRM` tenía que ser igual al HOSTNAME de `DATABASE_URL`. Staging (`acela/railway`) y desarrollo
+(`acela/yaqu_dev_javier`) comparten host, así que con `FLAG_CONFIRM=acela.proxy.rlwy.net` pasaban las dos.
+
+### Lo que cambia — y la INTERFAZ cambia
+
+`FLAG_CONFIRM` ya no nombra el host: nombra la CLAVE que promete el destino, una de las de `DESTINOS_ESPERADOS`.
+`exigirDestinoCorrecto(clave, DATABASE_URL, raíz)` compara host y base sobre la MISMA URL que usa el cliente,
+antes de importar nada de `dist/`. Un valor que no es una clave declarada (el hostname de antes, por ejemplo)
+se niega con la lista de los que valen.
+
+| | antes | ahora |
+|---|---|---|
+| staging | `FLAG_CONFIRM=acela.proxy.rlwy.net` | `FLAG_CONFIRM=DATABASE_URL_STAGING` |
+| desarrollo | `FLAG_CONFIRM=acela.proxy.rlwy.net` (el mismo) | `FLAG_CONFIRM=DATABASE_URL_DEV` |
+| base del carril | — | `FLAG_CONFIRM=DATABASE_URL_TESTS` (la base la decide el worktree) |
+| producción | `FLAG_CONFIRM=<host de producción>` | `FLAG_CONFIRM=DATABASE_URL` |
+
+La URL sigue llegando por `DATABASE_URL`, y `--merchant`, `--flag`, `--valor` y `--email` no cambian.
+**Producción sigue siendo un destino válido si se nombra**: el script es la llave del override por merchant
+(máster, línea 504), y cerrarla cambiaría lo que hace el interruptor, que el encargo excluye. Para
+producción el mapa sólo declara el host (`base: null`), así que ahí la comprobación es la de antes.
+`docs/RUNBOOKS.md` no documenta el script (`git grep` de `FLAG_CONFIRM` y `cambiar-flag-fiscal`: sólo el
+propio script, el máster en la línea 504, que no da la invocación, y dos comentarios). No hay runbook que
+actualizar.
+
+El censo (`scripts/_censo-conexiones-a-base.mjs`, 1.983 ficheros, 1.953 por AST, 145 conectan) lo pasa de
+`guard_propio` a `protegido`: 15 → 14 y 90 → 91. `sin_guard_escribe` sigue en 0.
+
+### Rojo, verde y mutaciones (local; ningún caso conecta con nada)
+
+`tests/scrum1575e-interruptor-fiscal-por-destino.test.mjs`, 6 casos, con el script como proceso hijo y URLs
+inventadas al puerto 1. Los que pasan el guard van sin argumentos y paran en «Falta --merchant», antes de
+importar `dist/`. El único con los argumentos completos va a `127.0.0.1:1`, y se niega en el guard.
+
+- Verde: 6 pass + 0 fail = 6.
+- Con el script de `main` (`git show origin/main:`): 0 pass + 6 fail. El que mide el defecto es el caso 2
+  («el hostname sigue valiendo como confirmación»: la URL de dev con `FLAG_CONFIRM=<host>` llegaba a los
+  argumentos). Los otros cinco caen por la interfaz nueva, no por el defecto (rojo débil).
+- Mutación A, quitar la llamada a `exigirDestinoCorrecto`: 1 pass + 5 fail.
+- Mutación B, quitar la comprobación de que `FLAG_CONFIRM` es una clave declarada: 5 pass + 1 fail. Sin
+  ella el guard se sigue negando (`clave_desconocida`), pero sin decir qué valores valen: cae el caso 2.
+
+### Lo que NO se ha medido
+
+- El interruptor no se ha ejecutado contra ninguna base (encargo). Que con un destino que cuadra y los
+  argumentos completos siga cambiando el flag como antes está leído en el código, no corrido.
+- `DATABASE_URL_TESTS` desde un worktree de `.claude/worktrees/` sale `worktree_no_declarado` (el mapa sólo
+  conoce cuatro árboles): leído en `_clave-vs-destino.mjs`, no probado aquí.
+- Visto en yaqu.app: NO HECHO, no hay pantalla (es un script de operador).
+
+### Errores propios
+
+- Mi primera medición de contexto leyó el jsonl de OTRA sesión (`jv-j4n`): cogí el más reciente de todas las
+  carpetas de proyectos. La cifra que di fue la del contador («15M − restantes»), no esa.
+- Escribí el test sin correr antes `scrum237`: dos negaciones del caso 3 iban sobre `r.todo` con el positivo
+  sobre `r.err`, y salieron NINGUNO (con ellas caía también `scrum976`). Lo cazó el guard en la pasada de
+  vecinos, antes del commit; añadí el positivo sobre el mismo sujeto.
+
+Vecinos y guards de registro (1575, 1575b, 1575c, 1575d, 1575e, 1294, 237, 267, 273, 812, 921, 921c, 976, 1284
+y 850): 117 pass + 2 fail = 119 en la primera pasada (los dos, el tropiezo de arriba); tras arreglarlo, 237,
+1575e y 976 otra vez: 25 pass + 0 fail = 25.
