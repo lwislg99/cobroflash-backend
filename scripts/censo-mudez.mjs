@@ -51,6 +51,16 @@ import { fileURLToPath } from 'node:url';
 import {
   marcaDe, marcarEnVuelo, borrarMarca, restaurarDesdeMarca, instalarRedDeSeguridad, apuntarMutacion,
 } from './_marca-de-arbol.mjs';
+// 🔴 SCRUM-1395b · el veredicto se GUARDA en `tests/_veredicto-mudez.json` y lo exige `scrum719`.
+// La huella, la clasificación y la población que exige el test viven en esa pieza, no aquí.
+import {
+  poblacionMudez, clasificar, huella, huellaDe, leerVeredicto, serializarVeredicto, RUTA_VEREDICTO, RUTA_FILTRO,
+} from '../tests/_veredicto-mudez.mjs';
+
+// `--escribir` guarda el veredicto; sin `--todo`, sólo vuelve a medir lo que falta o caducó.
+const ESCRIBIR = process.argv.includes('--escribir');
+const TODO = process.argv.includes('--todo') || !ESCRIBIR;
+const TIEMPO_MAX = Number(process.env.CENSO_MUDEZ_TIMEOUT_MS) || 180000;
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const HELPER = path.join(RAIZ, 'tests', '_guard-texto.mjs');
@@ -81,18 +91,29 @@ if (FICHEROS.length < 20) {
     + 'el censo no está mirando donde cree, y su cero se leería como limpieza.');
   process.exit(2);
 }
+// SCRUM-1395b · la población que exige el test sale de `tests/_veredicto-mudez.mjs`; si su lista
+// de nombres y la de aquí arriba divergen, uno de los dos deja ficheros fuera sin decirlo.
+if (JSON.stringify(poblacionMudez(RAIZ)) !== JSON.stringify(FICHEROS)) {
+  console.error('🔴 CIEGO: la población de este censo y la de `tests/_veredicto-mudez.mjs` no son la '
+    + 'misma. Igualad las dos listas de nombres del filtro antes de medir.');
+  process.exit(2);
+}
 
-/** Corre un fichero y devuelve `{ verde, tests, llamoAlFiltro }`. `tests: 0` es CEGUERA. */
+/** Corre un fichero y devuelve `{ verde, tests, llamoAlFiltro, cortado }`. `tests: 0` es CEGUERA. */
 function correr(fichero) {
   // 🔴 `spawnSync` y NO `execFileSync`: aquel devuelve SÓLO stdout, así que en una tanda VERDE
   // la marca del filtro —que va por stderr— se perdía y tres guards que SÍ llaman salían como
   // «NO APLICA». El instrumento mintió hacia el lado cómodo: menos hallazgos.
+  // SCRUM-1395b · `CENSO_MUDEZ_EN_CURSO` deja a `scrum719` saltar SÓLO los casos que leen el
+  // veredicto que esta misma pasada está escribiendo; sin eso se mediría a sí mismo caducado.
   const r = spawnSync(process.execPath, ['--test', path.join('tests', fichero)],
-    { cwd: RAIZ, encoding: 'utf8', timeout: 180000 });
+    { cwd: RAIZ, encoding: 'utf8', timeout: TIEMPO_MAX, env: { ...process.env, CENSO_MUDEZ_EN_CURSO: '1' } });
   const salida = `${r.stdout || ''}${r.stderr || ''}`;
   const verde = r.status === 0;
   const m = salida.match(/^\D*tests (\d+)/m);
-  return { verde, tests: m ? Number(m[1]) : 0, llamoAlFiltro: salida.includes(MARCA) };
+  // 🔴 SCRUM-1395b · cortado por tiempo o por señal: «no se pudo correr», que NO es rojo.
+  const cortado = r.status === null || !!r.signal || r.error?.code === 'ETIMEDOUT';
+  return { verde, tests: m ? Number(m[1]) : 0, llamoAlFiltro: salida.includes(MARCA), cortado };
 }
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
@@ -133,6 +154,19 @@ if (ORIGINAL.split(FIRMA).length !== 2) {
   process.exit(2);
 }
 const conCuerpo = (linea) => ORIGINAL.replace(FIRMA, FIRMA + linea);
+
+// ── SCRUM-1395b · QUÉ SE MIDE ─────────────────────────────────────────────────────────────
+// Sin `--escribir` (o con `--todo`), todo, como siempre. Con `--escribir` a secas, sólo lo que el
+// veredicto guardado no cubre HOY: ficheros sin ficha, fichas cuya huella ya no es la del fichero,
+// o todos si el filtro cambió desde la medida. Las huellas se toman AHORA, antes de medir: si un
+// fichero cambia durante la pasada, su ficha nace caducada y la siguiente lo vuelve a medir.
+const FILTRO_HOY = huella(ORIGINAL);
+const HUELLAS = new Map(FICHEROS.map((f) => [f, huellaDe(RAIZ, path.join('tests', f))]));
+const GUARDADO = leerVeredicto(RAIZ);
+const vale = (f) => GUARDADO && GUARDADO.filtro === FILTRO_HOY && GUARDADO.ficheros?.[f]?.[1] === HUELLAS.get(f);
+const A_MEDIR = TODO ? FICHEROS : FICHEROS.filter((f) => !vale(f));
+console.log(`A medir: ${A_MEDIR.length} de ${FICHEROS.length}`
+  + `${TODO ? '' : ` (el resto, ${FICHEROS.length - A_MEDIR.length}, tiene ficha al día en \`${RUTA_VEREDICTO}\`)`}`);
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // 🔴 SCRUM-808 · LA RED, Y ES **LA MISMA PIEZA** QUE LA DEL META-GUARD, NO UNA PARECIDA.
@@ -175,21 +209,20 @@ try {
   fs.writeFileSync(HELPER, instrumentado, 'utf8');
   console.log('\n① Pasada limpia e instrumentada — cuántos tests corre cada uno, y si llama al filtro');
   const antes = new Map();
-  for (const f of FICHEROS) antes.set(f, correr(f));
-  const usan = FICHEROS.filter((f) => antes.get(f).llamoAlFiltro);
-  console.log(`   llaman al filtro de verdad: ${usan.length} · sólo lo mencionan: ${FICHEROS.length - usan.length}`);
+  for (const f of A_MEDIR) antes.set(f, correr(f));
+  const usan = A_MEDIR.filter((f) => antes.get(f).llamoAlFiltro);
+  console.log(`   llaman al filtro de verdad: ${usan.length} · sólo lo mencionan: ${A_MEDIR.length - usan.length}`);
 
   // ── ② PASADA MUTADA ──────────────────────────────────────────────────────────────────
   const mutado = conCuerpo("  return ''; // SCRUM-719 mutación de medida\n");
   apuntarMutacion(DIR_MARCA, HELPER, mutado);
   fs.writeFileSync(HELPER, mutado, 'utf8');
   console.log('\n② Pasada mutada — `soloEjecutable` devuelve la cadena vacía');
-  for (const f of FICHEROS) {
+  for (const f of A_MEDIR) {
     const a = antes.get(f);
-    if (a.tests === 0) { resultado.push({ f, clase: 'CIEGO', tests: 0 }); continue; }
-    if (!a.llamoAlFiltro) { resultado.push({ f, clase: 'NO APLICA', tests: a.tests }); continue; }
-    if (!a.verde) { resultado.push({ f, clase: 'YA ROJO', tests: a.tests }); continue; }
-    resultado.push({ f, clase: correr(f).verde ? 'MUDO' : 'VIVO', tests: a.tests });
+    // Sólo se corre mutado lo que la pasada limpia dejó juzgable (SCRUM-1395b: `clasificar`).
+    const juzgable = !a.cortado && a.tests > 0 && a.llamoAlFiltro && a.verde;
+    resultado.push({ f, clase: clasificar(a, juzgable ? correr(f) : null), tests: a.tests });
   }
 } finally {
   fs.writeFileSync(HELPER, ORIGINAL, 'utf8');
@@ -208,7 +241,7 @@ borrarMarca(DIR_MARCA);
 
 // ── ③ EL VEREDICTO, por sus cuatro puertas ──────────────────────────────────────────────
 const de = (c) => resultado.filter((r) => r.clase === c);
-console.log('\n════════ VEREDICTO ════════');
+console.log(`\n════════ VEREDICTO · de los ${resultado.length} medidos ahora, sobre ${FICHEROS.length} ════════`);
 for (const c of ['VIVO', 'MUDO', 'CIEGO', 'NO APLICA', 'YA ROJO']) {
   console.log(`  ${c.padEnd(10)} ${de(c).length}`);
 }
@@ -223,4 +256,19 @@ for (const [clase, titulo] of [
 }
 
 console.log(`\n✓ \`tests/_guard-texto.mjs\` comprobado idéntico al original.`);
-process.exit(de('MUDO').length ? 1 : 0);
+
+// ── SCRUM-1395b · EL VEREDICTO SE GUARDA ─────────────────────────────────────────────────
+// Sólo aquí, después de comprobar el filtro byte a byte: un veredicto medido sobre un árbol que
+// se quedó mutado no se escribe. Se conservan las fichas al día que no se volvieron a medir y
+// se tiran las de ficheros que ya no están en la población. CIEGO y YA ROJO se ESCRIBEN: la
+// tanda no cae por ellos, pero los nombra como «sin juzgar» y no los cuenta como vivos.
+if (ESCRIBIR) {
+  const fichas = {};
+  for (const f of FICHEROS) if (vale(f)) fichas[f] = GUARDADO.ficheros[f];
+  for (const r of resultado) fichas[r.f] = [r.clase, HUELLAS.get(r.f)];
+  fs.writeFileSync(path.join(RAIZ, RUTA_VEREDICTO), serializarVeredicto(FILTRO_HOY, fichas), 'utf8');
+  console.log(`✎ \`${RUTA_VEREDICTO}\`: ${Object.keys(fichas).length} fichas `
+    + `(${resultado.length} medidas ahora · filtro ${FILTRO_HOY} de \`${RUTA_FILTRO}\`).`);
+}
+// 1 si hay algún mudo; 2 si algo NO se pudo correr (CIEGO): «no se pudo» no sale con un 0.
+process.exit(de('MUDO').length ? 1 : (de('CIEGO').length ? 2 : 0));
