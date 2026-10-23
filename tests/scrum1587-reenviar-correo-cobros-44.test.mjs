@@ -19,6 +19,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { datosDelCenso, ARGUMENTOS_DEL_CENSO } from '../scripts/_datos-del-censo.mjs';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
+import { soloEjecutable } from './_guard-texto.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const esperar = async () => { for (let i = 0; i < 6; i++) await new Promise((res) => setImmediate(res)); };
@@ -31,7 +32,8 @@ const CAJA_MEDIDA = 30;
 const BORDE = 1;
 const MINIMO = 44;
 
-const CSS = fs.readFileSync(path.join(RAIZ, 'public/dashboard/css/styles.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+// El quitacomentarios es el de la casa (SCRUM-700); en CSS `#` es un selector, no un comentario.
+const CSS = soloEjecutable(fs.readFileSync(path.join(RAIZ, 'public/dashboard/css/styles.css'), 'utf8'), { almohadillaEsComentario: false });
 const reglas = () => CSS.replace(/@media[^{]*\{/g, '').split('}')
   .map((b) => { const [sel, cuerpo = ''] = b.split('{'); return { sel: sel.split(',').map((s) => s.trim()), cuerpo }; });
 const con = (s) => reglas().filter((r) => r.sel.includes(s));

@@ -93,3 +93,8 @@ envuelto en un `span` en `cobrosView.js`. Base sin mutar: 2 de 2.
 - Escribí `inset: -7px` contando 30 + 2 × 7 = 44 sin mirar que el `::before` se ancla al relleno y el botón lleva 1 px de
   borde. El instrumento dijo 43 en las tres anchuras; una sonda con `elementsFromPoint` en los bordes lo explicó. Lo
   ataja el test: su cuenta descuenta el borde y la mutación `-7px` lo tumba.
+- Copié del test de 1583 su quitacomentarios propio (`.replace(/\/\*…\*\//g, '')`) y el obligatorio del primer empujón
+  (#2740, job `120449347924`) cayó en 1 de 12.298: `scrum700` «más ficheros con filtro propio: 92 > 91». En local corrí
+  20 ficheros elegidos a mano más los 105 que leen `styles.css` o `cobrosView.js`, y `scrum700` no estaba en ninguno.
+  Arreglado con el de la casa, `soloEjecutable(…, { almohadillaEsComentario: false })` (en CSS `#` es selector); el guard
+  no se toca. Lo caza ya `tests/scrum700-filtros-de-comentario.test.mjs`, en el obligatorio.
