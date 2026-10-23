@@ -1,0 +1,196 @@
+// sonda-factura.mjs — SCRUM-1455b (J1, 20-oct-2026). Derivada de docs/evidencias/scrum1456/sonda-borrar.mjs.txt
+// (J3) y de sonda-real.mjs.txt (J2e): MISMO montaje — routers de dist/, Prisma de verdad, Postgres de verdad
+// (PGlite por socket en loopback, base desechable creada con el DDL de `prisma migrate diff --from-empty`), y lo
+// único doblado es la SESIÓN (y el `requireInternalSecret` del webhook interno, que hace de sesión allí).
+// Lo que añade: pasa por la RUTA REAL las 16 lecturas de id de la factura con un id decimal, con uno que no cabe,
+// con el id correcto (control negativo) y con la factura de OTRO comercio (tenencia), y mira QUÉ FILA cambia.
+// Uso: node sonda-factura.mjs <raiz con dist/> <ddl.sql> [etiqueta]
+import fs from 'node:fs';
+import path from 'node:path';
+import net from 'node:net';
+import { createRequire } from 'node:module';
+import { PGlite } from '@electric-sql/pglite';
+import { PGLiteSocketServer } from '@electric-sql/pglite-socket';
+
+const [raiz, ddl, etiqueta = ''] = process.argv.slice(2);
+if (!raiz || !ddl) { console.log('CIEGA: faltan argumentos · EXIT=2'); process.exit(2); }
+
+// LA ETIQUETA LA PONE EL CÓDIGO MEDIDO (A9 de J3 en SCRUM-1456b): se lee el handler de `annul` en el dist.
+const fuenteDist = fs.readFileSync(path.join(raiz, 'dist', 'modules', 'system', 'app', 'routes', 'invoicesAdmin.routes.js'), 'utf8');
+const ini = fuenteDist.indexOf("router.post('/:id/annul'");
+const trozo = ini < 0 ? '' : fuenteDist.slice(ini, ini + 400);
+if (!trozo) { console.log('CIEGA: no encuentro POST /:id/annul en el dist · EXIT=2'); process.exit(2); }
+const arreglado = /cabeEnColumnaInt\)?\(id\)/.test(trozo) && !/Number\.isNaN\(id\)/.test(trozo);
+const estado = arreglado ? 'ARREGLADO' : 'SIN ARREGLO';
+const dice = /DESPU/i.test(etiqueta) ? 'ARREGLADO' : /ANTES/i.test(etiqueta) ? 'SIN ARREGLO' : null;
+console.log(`CODIGO MEDIDO (annul): ${estado} (leído del dist, no de la etiqueta «${etiqueta}»)`);
+if (dice && dice !== estado) { console.log(`CIEGA: la etiqueta dice ${dice} y el dist está ${estado} · EXIT=2`); process.exit(2); }
+
+const puertoLibre = () => new Promise((ok) => {
+  const s = net.createServer(); s.listen(0, '127.0.0.1', () => { const p = s.address().port; s.close(() => ok(p)); });
+});
+const db = new PGlite();
+await db.exec(fs.readFileSync(ddl, 'utf8'));
+const puertoPg = await puertoLibre();
+const servidorPg = new PGLiteSocketServer({ db, port: puertoPg, host: '127.0.0.1' });
+await servidorPg.start();
+process.env.DATABASE_URL = 'postgresql://postgres@127.0.0.1:' + puertoPg + '/sonda_1455b_test?connection_limit=1&pgbouncer=true';
+process.env.DISABLE_CRONS = 'true';
+process.env.WHATSAPP_DRY_RUN = '1';
+process.env.NODE_ENV = 'test';
+
+const requiere = createRequire(path.join(raiz, 'dist', 'x.js'));
+const { prisma } = requiere('./core/db/prisma.js');
+const express = requiere('express');
+
+// El id 1 es el demo (regla 8): se quema con un comercio de relleno.
+await prisma.merchant.create({ data: { name: 'Relleno (id del demo)', country: 'ES' } });
+// INVOICING_ES_ENABLED encendido SÓLO en este comercio desechable (override por fila, `merchants.flags`):
+// con el flag apagado la R1 no llega a emitirse y `rectify` no se puede juzgar (v2 de esta sonda).
+const comercio = await prisma.merchant.create({ data: { name: 'Sonda 1455b', country: 'ES', taxId: 'B12345678', flags: { INVOICING_ES_ENABLED: true } } });
+const otro = await prisma.merchant.create({ data: { name: 'Otro comercio', country: 'ES', taxId: 'B87654321' } });
+const cliente = await prisma.customer.create({ data: { merchantId: comercio.id, name: 'Cliente', phone: '+34600000001', email: 'c@sonda.invalid' } });
+const clienteOtro = await prisma.customer.create({ data: { merchantId: otro.id, name: 'Ajeno', phone: '+34600000002', email: 'a@sonda.invalid' } });
+
+let n = 0;
+// `extra` es lo que cada ruta necesita para que su CONTROL (el id correcto) llegue a actuar: sin eso, que el
+// decimal conteste lo mismo que el control no dice nada (v1 de esta sonda: unpay, rectify y regenerate-pdf).
+async function factura(merchantId, customerId, status, extra = {}) {
+  n += 1;
+  const pre = extra.prefijo ?? '2026-S-';
+  const { prefijo, ...resto } = extra;
+  return prisma.invoice.create({ data: {
+    merchantId, customerId, number: `${pre}${String(n).padStart(4, '0')}`, total: '121.00', currency: 'EUR',
+    pdfUrl: '', qrData: '', status, ...(status === 'paid' ? { paidAt: new Date('2026-10-01T10:00:00Z'), paidVia: 'transferencia' } : {}),
+    ...resto,
+  } });
+}
+// La forma que lee `hayLineasFacturables` (qty/price) y lo que pinta el PDF; qrData no vacío para el generador.
+const LINEAS = [{ description: 'Mano de obra', qty: 1, price: 100, vatRate: 21 }];
+const SELLADA = { lines: LINEAS, vfEstado: 'sellado', vfHash: 'A'.repeat(64), qrData: 'https://sonda.invalid/qr' };
+
+const app = express();
+app.use(express.json());
+const sesion = (req, _res, next) => { req.merchantId = comercio.id; req.userRole = 'admin'; req.teamMemberId = null; next(); };
+app.use('/admin/invoices', sesion, requiere('./modules/system/app/routes/invoicesAdmin.routes.js').default);
+app.use('/invoice', requiere('./modules/invoicing/app/routes/invoice.routes.js').default);
+const http = await new Promise((ok) => { const s = app.listen(0, '127.0.0.1', () => ok(s)); });
+const origen = 'http://127.0.0.1:' + http.address().port;
+
+const FUERA = new Set(['updatedAt', 'createdAt']);
+const foto = async () => {
+  const filas = await prisma.invoice.findMany({ orderBy: { id: 'asc' } });
+  return new Map(filas.map((f) => [f.id, JSON.stringify(Object.fromEntries(Object.entries(f).filter(([k]) => !FUERA.has(k))))]));
+};
+const auditorias = async () => (await prisma.auditLog.findMany({ select: { id: true, action: true, entityId: true } }));
+const espera = (ms) => new Promise((ok) => setTimeout(ok, ms));
+
+// Las 16 lecturas. `estado` es el de las facturas que se siembran para esa ruta.
+const RUTAS = [
+  { v: 'GET', r: '/admin/invoices/:id', estado: 'pending' },
+  { v: 'POST', r: '/admin/invoices/:id/payment-anomaly', estado: 'pending', b: { amount: 10 } },
+  { v: 'GET', r: '/admin/invoices/:id/dispute-package', estado: 'pending' },
+  { v: 'PUT', r: '/admin/invoices/:id/tags', estado: 'pending', b: { tags: ['sonda'] } },
+  { v: 'PUT', r: '/admin/invoices/:id/status', estado: 'pending', b: { status: 'paid', paidVia: 'transferencia' } },
+  { v: 'POST', r: '/admin/invoices/:id/pay', estado: 'pending' },
+  // deshacer un pago SÓLO vale en un justificante (J-…/JUST): una F1 da 409 al control y no se puede juzgar.
+  { v: 'POST', r: '/admin/invoices/:id/unpay', estado: 'paid', extra: { prefijo: 'J-2026-', type: 'JUST' } },
+  { v: 'POST', r: '/admin/invoices/:id/resend-whatsapp', estado: 'pending' },
+  { v: 'POST', r: '/admin/invoices/:id/send-email', estado: 'pending', extra: SELLADA },
+  { v: 'POST', r: '/admin/invoices/:id/send-reminder', estado: 'pending' },
+  { v: 'POST', r: '/admin/invoices/:id/annul', estado: 'pending', b: { motivo: 'duplicada' } },
+  { v: 'POST', r: '/admin/invoices/:id/rectify', estado: 'paid', b: {}, extra: SELLADA },
+  { v: 'POST', r: '/admin/invoices/:id/regenerate-pdf', estado: 'pending', extra: SELLADA },
+  { v: 'GET', r: '/admin/invoices/:id/pdf', estado: 'pending' },
+  { v: 'PATCH', r: '/admin/invoices/:id/asignados', estado: 'pending', b: { assignedUserIds: [] } },
+  // Interna (`requireInternalSecret`, doblado aquí) y SIN comercio: busca por id a secas. No hay tenencia que medir.
+  { v: 'POST', r: '/invoice/:id/paid-webhook', estado: 'pending', sinComercio: true },
+];
+// SONDA_SIN_EXTRA=1 repite la siembra de la v1 (sin `extra`): es el ROJO de la comprobación «sin juzgar».
+if (process.env.SONDA_SIN_EXTRA === '1') for (const r of RUTAS) delete r.extra;
+
+const callar = console.error; const callarLog = console.log; const callarWarn = console.warn;
+const filas = [];
+async function pedir(ruta, caso, idTexto, objetivo) {
+  const antes = await foto(); const audAntes = (await auditorias()).length;
+  let estadoHttp; let texto; const logs = [];
+  const guarda = (...a) => logs.push(a.map((x) => (x instanceof Error ? x.message : typeof x === 'string' ? x : JSON.stringify(x))).join(' '));
+  try {
+    console.error = guarda; console.warn = guarda; console.log = guarda;
+    const res = await fetch(origen + ruta.r.replace(':id', idTexto), {
+      method: ruta.v, headers: ruta.b ? { 'content-type': 'application/json' } : {}, body: ruta.b ? JSON.stringify(ruta.b) : undefined,
+    });
+    estadoHttp = res.status; texto = (await res.text());
+    await espera(150); // recordAudit y recordCustomerEvent no se esperan en la ruta
+  } finally { console.error = callar; console.warn = callarWarn; console.log = callarLog; }
+  const despues = await foto();
+  const cambian = [...despues.keys()].filter((k) => antes.get(k) !== despues.get(k));
+  const nuevas = cambian.filter((k) => !antes.has(k));
+  const tocadas = cambian.filter((k) => antes.has(k));
+  const auds = (await auditorias()).slice(audAntes).map((a) => `${a.action}@${a.entityId}`);
+  const numero = (texto.match(/2026-S-\d{4}/) || [''])[0];
+  const numObjetivo = objetivo ? JSON.parse(antes.get(objetivo)).number : '';
+  // QUÉ campos cambian en cada fila tocada, y las nuevas con su tipo y a quién rectifican.
+  const campos = tocadas.map((k) => {
+    const a = JSON.parse(antes.get(k)); const d = JSON.parse(despues.get(k));
+    return `${k}{${Object.keys(d).filter((c) => JSON.stringify(a[c]) !== JSON.stringify(d[c])).map((c) => `${c}=${String(JSON.stringify(d[c])).slice(0, 18)}`).join(',')}}`;
+  });
+  const descNuevas = nuevas.map((k) => { const d = JSON.parse(despues.get(k)); return `${k}{type=${d.type},number=${d.number},rectifiesId=${d.rectifiesId}}`; });
+  // Aplanado y sin la ruta de la máquina: la salida se sube al repo.
+  const sinRuta = (l) => l.split(path.resolve(raiz)).join('<raiz>').split(raiz).join('<raiz>').replace(/[A-Z]:\\[^\s:]*/g, '<ruta>').replace(/\s+/g, ' ');
+  const log = logs.filter((l) => /error|fall|fail|invoice|factura|rectif|anul/i.test(l)).map((l) => sinRuta(l).slice(0, 140)).slice(0, 2).join(' | ');
+  filas.push({ ruta: ruta.v + ' ' + ruta.r, caso, id: idTexto, estado: estadoHttp, tocadas, nuevas, auds, numero, objetivo, numObjetivo,
+    campos, descNuevas, log, texto: texto.slice(0, 110).replace(/\s+/g, ' ') });
+}
+
+for (const ruta of RUTAS) {
+  const x = await factura(comercio.id, cliente.id, ruta.estado, ruta.extra); // la que resuelve el decimal
+  const y = await factura(comercio.id, cliente.id, ruta.estado, ruta.extra); // la del control negativo
+  const z = await factura(otro.id, clienteOtro.id, ruta.estado, ruta.extra); // la de OTRO comercio
+  await pedir(ruta, 'decimal', `${x.id}.5`, x.id);
+  await pedir(ruta, 'no cabe', '2147483648', null);
+  await pedir(ruta, 'no cabe', '99999999999999999999', null);
+  await pedir(ruta, 'no es número', 'abc', null);
+  await pedir(ruta, 'CONTROL id correcto', `${y.id}`, y.id);
+  await pedir(ruta, 'tenencia (otro comercio)', `${z.id}`, z.id);
+  await pedir(ruta, 'tenencia decimal', `${z.id}.5`, z.id);
+}
+
+console.log(`SONDA FACTURA ${etiqueta} · POBLACION=${filas.length} peticiones sobre ${RUTAS.length} rutas · comercio ${comercio.id} · otro ${otro.id}`);
+console.log('estado · ruta · caso · id pedido · filas de factura cambiadas · facturas nuevas · auditoría · nº de factura en la respuesta');
+for (const f of filas) {
+  const marca = f.caso === 'decimal' && (f.tocadas.includes(f.objetivo) || f.numero === f.numObjetivo || f.nuevas.length) ? '🔴 ' : '';
+  console.log(`${marca}${f.estado}  ${f.ruta}  [${f.caso}] ${f.id}  · cambian:[${f.campos.join(' ')}] · nuevas:[${f.descNuevas.join(' ')}] · audit:[${f.auds}] · nº:${f.numero || '-'}${f.objetivo ? ` (la ${f.objetivo} es ${f.numObjetivo})` : ''}  ->  ${f.texto}${f.log ? `  · log: ${f.log}` : ''}`);
+}
+
+// RESUMEN por ruta: ¿el decimal llegó a la factura de su parte entera?
+// 🔴 A9 de J1 (SCRUM-1455b): en la v1 de esta sonda, `unpay`, `rectify` y `regenerate-pdf` salían «no» con un
+// control que TAMPOCO actuaba (409/500 por la siembra): eso no es «no», es «no lo he podido juzgar». Ahora el
+// veredicto tiene tres valores y un SIN JUZGAR deja la sonda en CIEGA (exit 2).
+console.log('\nRESUMEN · ¿el decimal <x>.5 actúa sobre / devuelve la factura x?');
+let sinJuzgar = 0;
+for (const ruta of RUTAS) {
+  const d = filas.find((f) => f.ruta === ruta.v + ' ' + ruta.r && f.caso === 'decimal');
+  const c = filas.find((f) => f.ruta === ruta.v + ' ' + ruta.r && f.caso.startsWith('CONTROL'));
+  const t = filas.filter((f) => f.ruta === ruta.v + ' ' + ruta.r && f.caso.startsWith('tenencia'));
+  const llega = d.tocadas.includes(d.objetivo) || d.numero === d.numObjetivo || d.nuevas.length > 0;
+  const controlActua = c.estado >= 200 && c.estado < 300;
+  const veredicto = llega ? 'SÍ ' : d.estado === 400 ? 'no ' : controlActua ? 'no ' : 'SIN JUZGAR';
+  if (veredicto === 'SIN JUZGAR') sinJuzgar += 1;
+  const tenenciaTocada = t.some((f) => f.tocadas.length || f.nuevas.length || (f.numero && f.numero === f.numObjetivo));
+  const tenencia = ruta.sinComercio ? 'sin tenencia (ruta interna, sin comercio)' : tenenciaTocada ? '🔴 TOCADA' : 'intacta';
+  const noCabe = filas.filter((f) => f.ruta === ruta.v + ' ' + ruta.r && f.caso === 'no cabe').map((f) => f.estado).join('/');
+  console.log(`${veredicto} ${String(d.estado).padEnd(3)} ${ruta.v} ${ruta.r}  · decimal cambia:[${d.tocadas}] nuevas:[${d.nuevas}] · no cabe → ${noCabe} · control ${c.estado} cambia:[${c.tocadas}] · tenencia ${t.map((f) => f.estado).join('/')} ${tenencia}`);
+}
+const veredictos = RUTAS.length;
+
+await prisma.$disconnect().catch(() => {});
+await new Promise((ok) => http.close(ok));
+await servidorPg.stop().catch(() => {});
+// SUELO: el control de PUT /:id/tags tiene que haber cambiado exactamente su factura; si no, la sonda no midió la ruta.
+const ctl = filas.find((f) => f.ruta.endsWith('/:id/tags') && f.caso.startsWith('CONTROL'));
+const sano = ctl && ctl.estado === 200 && ctl.tocadas.length === 1 && ctl.tocadas[0] === ctl.objetivo;
+if (!sano) { console.log(`CIEGA: el control de tags dio ${ctl?.estado} y cambió [${ctl?.tocadas}] · EXIT=2`); process.exit(2); }
+if (sinJuzgar) { console.log(`CIEGA: ${sinJuzgar} de ${veredictos} rutas SIN JUZGAR (su control no actuó) · EXIT=2`); process.exit(2); }
+console.log(`VEREDICTOS=${veredictos} de ${veredictos} rutas · SIN JUZGAR=0 · EXIT=0`);
+process.exit(0);
