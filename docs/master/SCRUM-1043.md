@@ -59,7 +59,9 @@ filtro, vacío, técnico, aislamiento entre merchants y abono. Capturas a 320/39
 - **No se ha visto en yaqu.app**: sin sesión de comercio en esta máquina. Las capturas son del banco.
 - Las 6 mutaciones que jv-j2ah dio por muertas las corrió con un `mutar.mjs` de su temporal, que NO está
   en git: el relevo no las ha repetido.
-- AB6 «importes grandes (9.999,99 €)»: no medido en captura.
+- AB6 «importes grandes»: `admin-390.png` lleva «9.999,99 € sin cobrar» y dos garantías, y cabe. En las
+  tres tarjetas de esa captura (también la que no debe nada) no se ve el borde derecho: no he medido si
+  es el recorte de la captura o la tarjeta.
 - La segunda línea del vacío de pestaña («Marca cada cliente como empresa o persona al editarlo.»), falsa
   con otros filtros: otro ticket con su firma (c.20536).
 
