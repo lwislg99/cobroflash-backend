@@ -30,8 +30,10 @@
 //   · La protección indirecta se da si el fichero llama a CUALQUIER cosa importada de un módulo
 //     local que llama a un guard, no necesariamente a la que guarda.
 //   · Ficheros que no son JS/TS (`scripts/db-push-prod`, `.ps1`): fuera del AST. Se declaran.
-//   · SCRUM-1575c · Un test que llama a un SERVICIO de `dist/` que escribe por dentro con el
-//     singleton: aquí sólo cuenta quien consulta el singleton con sus propias manos.
+//   · SCRUM-1575d · Un SERVICIO de `dist/modules/` (`SIEMBRA_SERVICIO`) se ve si se llama por su
+//     nombre importado (`await cambiarFlagFiscal(…)`) en un fichero que ya habla con una base. NO se
+//     ve: llamado como miembro de un espacio de nombres (`S.emitInvoice(…)`), ni en un fichero que no
+//     nombra ninguna clave de base y deja la URL al `.env` que cargue el propio servicio.
 //
 // SCRUM-1575c · 1575b sólo contaba como conexión `new PrismaClient`, el SQL crudo y los procesos
 // hijo. Ahora también: el singleton `dist/core/db/prisma.js` consultado (`SIEMBRA_SINGLETON`), una
@@ -58,6 +60,8 @@ const LEE_PRISMA = /^(findFirst|findFirstOrThrow|findUnique|findUniqueOrThrow|fi
 // SCRUM-1575c · el cliente de la aplicación (`src/core/db/prisma.ts`): `new PrismaClient()` con la
 // `DATABASE_URL` del entorno. Quien lo importa y consulta ABRE una conexión, aunque no construya nada.
 const SINGLETON = /(^|\/)core\/db\/prisma(\.js|\.ts)?$/;
+// SCRUM-1575d · un servicio compilado de la aplicación: escribe por dentro con el singleton.
+const SERVICIO_DE_DIST = /(^|\/)dist\/modules\//;
 const EJECUTA_SQL_CRUDO = /^\$(executeRaw|executeRawUnsafe)$/;
 const LEE_SQL_CRUDO = /^\$(queryRaw|queryRawUnsafe)$/;
 const URL_DE_MIGRATE = /^--(from-url|to-url|from-schema-datasource|to-schema-datasource|from-migrations|shadow-database-url|url)(=|$)/;
@@ -69,8 +73,9 @@ const textoDe = (n) => (ts.isStringLiteral(n) || ts.isNoSubstitutionTemplateLite
 /**
  * Por AST, sobre UNA fuente: qué conexiones abre, de qué claves, qué guards llama y si escribe.
  * PURA: ni ficheros ni entorno, para poder sembrarle casos fabricados.
+ * SCRUM-1575d · `opciones.servicioUsaBase(distRel)`: ¿el módulo `dist/modules/…` habla con la base?
  */
-export function analizarConexion(rel, fuente) {
+export function analizarConexion(rel, fuente, opciones = {}) {
   const sf = ts.createSourceFile(rel, fuente, ts.ScriptTarget.Latest, true,
     /\.ts$/.test(rel) ? ts.ScriptKind.TS : ts.ScriptKind.JS);
   const conecta = new Set();
@@ -274,6 +279,24 @@ export function analizarConexion(rel, fuente) {
     if (GUARDAS[base]?.includes(imp.importado)) { guardas.add(`${base}:${imp.importado}`); primeraGuarda = Math.min(primeraGuarda, pos); }
   }
 
+  // ── SCRUM-1575d · el SERVICIO de `dist/modules/` ──
+  // `await cambiarFlagFiscal(…)` escribe por dentro con el singleton y aquí no se veía: sin `.update`
+  // a la vista, `cambiar-flag-fiscal.mjs` salía «escribe: —». Una llamada a algo importado de
+  // `dist/modules/` cuenta como «puede escribir» (como `psql`: no se sabe qué hace dentro) cuando el
+  // módulo HABLA CON LA BASE (`servicioUsaBase`, que el censo contesta leyendo su fuente en `src/`) y
+  // el fichero YA habla con una base —conecta, o nombra una clave de base—; un test unitario que llama
+  // al servicio sin base no entra. Si es lo único que conecta, la conexión es esa llamada.
+  // Sin `servicioUsaBase` (la función suelta, sin árbol) se cuenta todo módulo: no hay fuente que leer.
+  const usaBase = opciones.servicioUsaBase ?? (() => true);
+  const llamadasAServicio = llamadas.filter((l) => {
+    const m = importados.get(l.nombre)?.modulo ?? '';
+    return SERVICIO_DE_DIST.test(m) && usaBase(path.posix.normalize(path.posix.join(path.posix.dirname(rel), m)));
+  });
+  if (llamadasAServicio.length > 0 && (conecta.size > 0 || claves.size > 0)) {
+    for (const l of llamadasAServicio) escribe.add(`${l.nombre}() (servicio de dist, puede escribir)`);
+    if (conecta.size === 0) marcaConexion('servicio dist/modules', Math.min(...llamadasAServicio.map((l) => l.pos)));
+  }
+
   // ¿ABRE la conexión, o usa un cliente que le pasan? `$queryRaw` sobre un parámetro no abre nada:
   // el destino lo decide quien construyó el cliente.
   const abre = [...conecta].some((c) => !/^\$|^\./.test(c));
@@ -319,8 +342,21 @@ export function censarConexiones(raiz = RAIZ) {
   const parseables = todos.filter((f) => /\.(mjs|js|cjs|ts)$/.test(f) && !/\.d\.ts$/.test(f));
   const fueraDelAst = todos.filter((f) => !parseables.includes(f) && !/\.(json|md|sql|txt|xml|xsd|csv|pdf|png)$/i.test(f)).map(rel).sort();
 
+  // SCRUM-1575d · ¿el módulo de `dist/modules/` habla con la base? Se lee su FUENTE en `src/` (un
+  // árbol puede no traer `dist/`): si nombra el cliente de la aplicación o construye uno, sí. Es texto,
+  // no flujo: lo que llame a OTRO módulo que escribe no se sigue. Sin fuente que leer, sí (no se sabe).
+  const servicios = new Map();   // distRel → 'usa_base' | 'no_usa_base' | 'sin_fuente'
+  const servicioUsaBase = (distRel) => {
+    if (!servicios.has(distRel)) {
+      const src = path.join(raiz, distRel.replace(/^dist\//, 'src/').replace(/\.js$/, '.ts'));
+      servicios.set(distRel, !fs.existsSync(src) ? 'sin_fuente'
+        : /core\/db\/prisma|PrismaClient/.test(fs.readFileSync(src, 'utf8')) ? 'usa_base' : 'no_usa_base');
+    }
+    return servicios.get(distRel) !== 'no_usa_base';
+  };
+
   const analisis = new Map();
-  for (const f of parseables) analisis.set(rel(f), analizarConexion(rel(f), fs.readFileSync(f, 'utf8')));
+  for (const f of parseables) analisis.set(rel(f), analizarConexion(rel(f), fs.readFileSync(f, 'utf8'), { servicioUsaBase }));
 
   // Un módulo local que llama a un guard es un GUARDIÁN: quien llame a lo que exporta, pasa por él.
   const guardianes = new Set([...analisis.values()].filter((a) => a.guardas.length > 0).map((a) => a.rel));
@@ -356,7 +392,9 @@ export function censarConexiones(raiz = RAIZ) {
       guardas: a.guardas, guardasIndirectas: indirectas, guardaAntes: a.guardaAntes });
   }
   filas.sort((x, y) => x.rel.localeCompare(y.rel));
-  return { poblacion: { ficheros: todos.length, parseados: parseables.length, fueraDelAst }, filas };
+  const porVeredicto = (v) => [...servicios].filter(([, x]) => x === v).map(([m]) => m).sort();
+  return { poblacion: { ficheros: todos.length, parseados: parseables.length, fueraDelAst,
+    servicios: { usaBase: porVeredicto('usa_base'), noUsaBase: porVeredicto('no_usa_base'), sinFuente: porVeredicto('sin_fuente') } }, filas };
 }
 
 /** Las clases, de la más grave a la menos. */
@@ -380,9 +418,20 @@ export const SIEMBRA_SINGLETON = Object.freeze({
     'await prisma.quote.deleteMany({ where: { merchantId: 1 } });\n',
 });
 
-/** ¿El instrumento ve sus dos siembras como lo que son: abren, escriben y no llaman a ningún guard? */
+/**
+ * SCRUM-1575d · la tercera: un script que sólo llama a un SERVICIO de `dist/modules/` con una URL de
+ * base puesta, sin una consulta a la vista. Si deja de verlo, CIEGO.
+ */
+export const SIEMBRA_SERVICIO = Object.freeze({
+  rel: 'scripts/__siembra-1575d.mjs',
+  fuente: "process.env.DATABASE_URL = process.env.DATABASE_URL_STAGING;\n" +
+    "const { cambiarFlagFiscal } = await import('../dist/modules/system/domain/flagFiscal.service.js');\n" +
+    'await cambiarFlagFiscal({ merchantId: 1, valor: true });\n',
+});
+
+/** ¿El instrumento ve sus tres siembras como lo que son: abren, escriben y no llaman a ningún guard? */
 export function veSusSiembras() {
-  return [SIEMBRA, SIEMBRA_SINGLETON].every(({ rel, fuente }) => {
+  return [SIEMBRA, SIEMBRA_SINGLETON, SIEMBRA_SERVICIO].every(({ rel, fuente }) => {
     const a = analizarConexion(rel, fuente);
     return a.abre && a.escribe.length > 0 && a.guardas.length === 0;
   });
@@ -398,8 +447,10 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   }
   const porClase = {};
   for (const f of filas) (porClase[f.clase] ??= []).push(f);
-  console.log(`censo-conexiones · ${poblacion.ficheros} ficheros en scripts/ y tests/ · ${poblacion.parseados} parseados por AST · ${filas.length} conectan · siembras vistas (2)`);
+  console.log(`censo-conexiones · ${poblacion.ficheros} ficheros en scripts/ y tests/ · ${poblacion.parseados} parseados por AST · ${filas.length} conectan · siembras vistas (3)`);
   console.log(`fuera del AST: ${poblacion.fueraDelAst.join(', ') || '(ninguno)'}`);
+  const sv = poblacion.servicios;
+  console.log(`servicios de dist/modules leídos en src/: ${sv.usaBase.length} hablan con la base · ${sv.noUsaBase.length} no · ${sv.sinFuente.length} sin fuente (cuentan como sí)`);
   for (const clase of CLASES) {
     const xs = porClase[clase] ?? [];
     console.log(`\n## ${clase} · ${xs.length}`);
