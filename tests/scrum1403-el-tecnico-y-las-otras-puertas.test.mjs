@@ -11,10 +11,10 @@
 //     (SCRUM-1346 c.17952, SCRUM-1390 c.17962), por una puerta hermana de la de las facturas;
 //   · FICHA DE CLIENTE, pestaña de documentos: los presupuestos y las facturas que trae pasan por
 //     esas mismas dos puertas;
-//   · 🔴 NO las CIFRAS de la ficha (`stats`: cobrado, facturado, pendiente, gastos, beneficio) ni
-//     sus EVENTOS: qué recibe de ellos un Técnico es decisión del fundador y está PEDIDA, sin
-//     contestar. Por eso el primer caso de abajo dice las dos frases enfrentadas y sujeta la que
-//     todavía no se puede decir.
+//   · SCRUM-1403b · las CIFRAS de la ficha (`stats`: cobrado, facturado, pendiente, gastos,
+//     beneficio) y los EVENTOS con el importe en el texto: decidido por el fundador el 23-oct-2026
+//     (c.20375) — el Técnico no recibe las cinco cifras y le llegan esos eventos sin su detalle.
+//     Hasta entonces el primer caso sujetaba «las cifras siguen dándola»; ahora exige que no.
 //
 // Como en SCRUM-1397, la mitad que manda es «sigue viendo lo suyo» («mejor ser más laxo al
 // principio y evitar errores», SCRUM-1346 c.17932): cada camino por el que un presupuesto es suyo
@@ -119,11 +119,34 @@ async function equipoDe(prisma, merchant, marca) {
 
 const pagadas = (facturas) => (facturas ?? []).filter((f) => f.status === 'paid').reduce((a, f) => a + Number(f.total), 0);
 
+// SCRUM-1403b · el catálogo del meta-guard (SCRUM-1387). Sólo las que caza un caso SIN base y sin
+// `dist/` (lee el `.ts` por AST): el job del meta-guard no tiene Postgres, y una que sólo caza un caso
+// con base saldría MUDA allí. Las que necesitan base las corre `docs/master/evidencias/SCRUM-1403/mutar-1403b.mjs.txt`.
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // Los eventos le vuelven a llegar enteros al Técnico: el importe, en el texto.
+    fichero: 'src/modules/system/app/routes/customersAdmin.routes.ts',
+    de: 'events: sinDinero ? eventosSinImporte(events) : events,',
+    a: 'events: sinDinero ? events : events,',
+    cae: 'la ficha de cliente decide las cifras y el detalle',
+  },
+  {
+    // Nadie se queda sin el dinero: las cinco cifras y los importes le llegan a todo el mundo.
+    fichero: 'src/modules/system/app/routes/customersAdmin.routes.ts',
+    de: 'const sinDinero = seesOnlyOwnJobs(req.userRole);',
+    a: 'const sinDinero = false;',
+    cae: 'la ficha de cliente decide las cifras y el detalle',
+  },
+];
+
+// SCRUM-1403b · las cinco cifras que c.20375 le quita al Técnico, con los nombres de c.18040.
+const CIFRAS_DE_DINERO = ['totalBilled', 'totalPaid', 'totalPending', 'totalExpenses', 'profit'];
+
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 // ④ · LA SONDA DE J2a, COMPLETA: las TRES puertas a la vez, con su mismo negocio y sus cifras
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-1403 · 🔴 las tres puertas A LA VEZ: ni las facturas ni las fichas de presupuesto dan ya la cifra; las CIFRAS de la ficha de cliente siguen dándola', { skip: !CON_BASE && 'sin LIBRO_PG_URL (banco desechable): corre en el check obligatorio del CI' }, async () => {
+test('SCRUM-1403 · 🔴 las tres puertas A LA VEZ: ninguna da ya la cifra — ni las facturas, ni las fichas de presupuesto, ni las cifras ni el historial de la ficha de cliente', { skip: !CON_BASE && 'sin LIBRO_PG_URL (banco desechable): corre en el check obligatorio del CI' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
 
@@ -142,6 +165,11 @@ test('SCRUM-1403 · 🔴 las tres puertas A LA VEZ: ni las facturas ni las ficha
     await e.factura(c[1], 'A-2', 900, { quoteId: pBlas1.id, status: 'paid', paidAt: ahora });
     await e.factura(c[2], 'A-3', 400, { quoteId: pBlas2.id });
     await e.factura(c[3], 'A-4', 50, { status: 'paid', paidAt: ahora });
+    // SCRUM-1403b · y el «Pago recibido» de cada factura cobrada, con el importe en el TEXTO como lo
+    // escriben `psp.routes.ts` y `mpWebhook.routes.ts`: el historial era la séptima cifra (c.18040).
+    for (const [cli, numero, importe] of [[c[0], 'A-1', '100,00'], [c[1], 'A-2', '900,00'], [c[3], 'A-4', '50,00']]) {
+      await prisma.customerEvent.create({ data: { merchantId: merchant.id, customerId: cli.id, type: 'payment_received', title: 'Pago recibido', detail: `${importe} € · Factura ${numero}` } });
+    }
 
     const { port, cerrar } = await montar(app);
     try {
@@ -184,14 +212,26 @@ test('SCRUM-1403 · 🔴 las tres puertas A LA VEZ: ni las facturas ni las ficha
       const cartera = await pedir(port, tokenAna, '/admin/customers');
       assert.equal(cartera.status, 200);
       assert.equal(cartera.cuerpo.length, 4, 'SUELO: la Técnica ya no ve la cartera entera');
-      let porPestana = 0;
-      let porCifras = 0;
-      for (const fila of cartera.cuerpo) {
-        const ficha = await pedir(port, tokenAna, `/admin/customers/${fila.id}/detail`);
-        assert.equal(ficha.status, 200, `🔴 la Técnica no abre la ficha de un cliente (${fila.name})`);
-        porPestana += pagadas(ficha.cuerpo.invoices);
-        porCifras += Number(ficha.cuerpo.stats.totalPaid);
-      }
+      // SCRUM-1403b · lo que cada ficha deja sumar: la pestaña, las cifras (`stats`) y el historial
+      // (el importe escrito en el texto de los «Pago recibido»). Un campo ausente suma 0.
+      const sumarFichas = async (token) => {
+        const s = { pestana: 0, cifras: 0, historial: 0, clavesDeDinero: [] };
+        for (const fila of cartera.cuerpo) {
+          const ficha = await pedir(port, token, `/admin/customers/${fila.id}/detail`);
+          assert.equal(ficha.status, 200, `🔴 no se abre la ficha de un cliente (${fila.name})`);
+          s.pestana += pagadas(ficha.cuerpo.invoices);
+          s.cifras += Number(ficha.cuerpo.stats.totalPaid ?? 0);
+          for (const ev of ficha.cuerpo.events) {
+            const m = /([\d.]+,\d{2}) €/.exec(ev.detail ?? '');
+            if (ev.type === 'payment_received' && m) s.historial += Number(m[1].replace(/\./g, '').replace(',', '.'));
+          }
+          s.clavesDeDinero.push(...CIFRAS_DE_DINERO.filter((k) => k in ficha.cuerpo.stats));
+        }
+        return s;
+      };
+      const ana = await sumarFichas(tokenAna);
+      const porPestana = ana.pestana;
+      const porCifras = ana.cifras;
 
       // ── LAS TRES, JUNTAS. Un verde por puerta no vale: el defecto es que el resultado se
       //    alcanza por varios caminos. ──────────────────────────────────────────────────────────
@@ -203,13 +243,27 @@ test('SCRUM-1403 · 🔴 las tres puertas A LA VEZ: ni las facturas ni las ficha
       assert.equal(porPresupuestos, 0);
       assert.equal(porPestana, 100);
 
-      // 🔴 Y LO QUE SIGUE ABIERTO, dicho donde no se puede leer mal. `stats.totalPaid` es un agregado
-      // sin tope sobre TODAS las facturas del cliente, y este ticket no lo toca: qué recibe de él
-      // un Técnico lo decide el fundador (pedido el 2-oct-2026, sin contestar). Mientras este aserto
-      // esté así, la frase «el Técnico ya no reconstruye el total» es FALSA; la verdadera es «ya no
-      // lo reconstruye por las rutas de factura, ni por las fichas de presupuesto, ni por la pestaña
-      // de documentos de la ficha de cliente». Cuando se decida, este aserto pasa a `notEqual`.
-      assert.equal(porCifras, TOTAL, 'SUELO: las cifras de la ficha de cliente ya no dan el total; alguien ha tocado `stats`: re-mide y cambia la frase de este caso');
+      // SCRUM-1403b · LA DECISIÓN DEL FUNDADOR (c.20375, 23-oct-2026): «salida 1, no recibe los
+      // agregados», y los eventos con importe «sin el texto del detalle». Hasta ella este aserto era
+      // `equal(porCifras, TOTAL)`, un SUELO que decía «sigue abierto»: cambia porque cambió la
+      // decisión, no para que pase. Ahora el control ④ del ticket es exigible: NINGUNA de las tres.
+      assert.notEqual(porCifras, TOTAL, `🔴 las cifras de la ficha de cliente dan el total del negocio (${porCifras} = ${TOTAL})`);
+      assert.notEqual(ana.historial, TOTAL, `🔴 el historial de la ficha de cliente da el total del negocio (${ana.historial} = ${TOTAL})`);
+      assert.equal(porCifras, 0, '🔴 la Técnica sigue sumando algo por `stats.totalPaid`');
+      assert.equal(ana.historial, 0, '🔴 la Técnica sigue leyendo importes en el texto de los «Pago recibido»');
+      assert.deepEqual([...new Set(ana.clavesDeDinero)], [], `🔴 a la Técnica le viajan cifras de dinero en \`stats\`: ${[...new Set(ana.clavesDeDinero)].join(', ')}`);
+
+      // ✅ Y EL POSITIVO, por las MISMAS fichas y el MISMO sumador: la administradora y la dueña
+      // (sesión sin miembro) siguen sacando el negocio entero por las tres vías. Sin él, un sumador
+      // roto daría el 0 de arriba igual.
+      const tokenDuena = await sesionDe(prisma, merchant.id, null);
+      for (const [quien, token] of [['la administradora', tokenJefa], ['la dueña', tokenDuena]]) {
+        const s = await sumarFichas(token);
+        assert.equal(s.pestana, TOTAL, `🔴 ${quien} ya no suma el negocio por la pestaña`);
+        assert.equal(s.cifras, TOTAL, `🔴 ${quien} ya no recibe «Cobrado»`);
+        assert.equal(s.historial, TOTAL, `🔴 ${quien} ya no ve el importe de los «Pago recibido»`);
+        assert.equal(s.clavesDeDinero.length, CIFRAS_DE_DINERO.length * cartera.cuerpo.length, `🔴 a ${quien} le faltan cifras de dinero en alguna ficha`);
+      }
     } finally {
       await cerrar();
     }
@@ -405,6 +459,109 @@ test('SCRUM-1403 · ✅ la ficha del cliente se le sigue abriendo al Técnico, c
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1403b · LOS EVENTOS CON IMPORTE EN EL TEXTO: al Técnico, sin el detalle — y la ficha que
+// pinta el panel con ESA respuesta, sin las cuatro tarjetas de dinero y sin un evento vacío
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+// Un evento por cada SITIO que escribe el importe en el texto (los 7 de `escritoresDeEventos`, abajo),
+// con el título y el detalle con la forma que les da su código. Y dos controles que NO llevan
+// dinero: su detalle le tiene que seguir llegando al Técnico.
+const EVENTOS_CON_IMPORTE = [
+  { sitio: 'psp.routes.ts', type: 'payment_received', title: 'Pago recibido', detail: '100,00 € · Factura A-1' },
+  { sitio: 'mpWebhook.routes.ts', type: 'payment_received', title: 'Pago recibido (Mercado Pago)', detail: '900,00 € · Factura A-2' },
+  { sitio: 'invoiceWhatsApp.service.ts', type: 'invoice_issued', title: 'Factura A-3 enviada por WhatsApp', detail: '400,00 €' },
+  { sitio: 'sendQuote.service.ts', type: 'quote_sent', title: 'Presupuesto #3 enviado por WhatsApp', detail: '400,00 €' },
+  { sitio: 'quotesAdmin.routes.ts', type: 'quote_sent', title: 'Presupuesto #2 enviado por email', detail: '900,00 €' },
+  { sitio: 'disputes.service.ts', type: 'dispute_created', title: '⚠️ Disputa abierta por el banco de C1', detail: '100,00 € · motivo: fraudulent' },
+  { sitio: 'invoicesAdmin.routes.ts', type: 'payment_anomaly', title: '⚠️ Importe distinto en A-3 (parcial)', detail: 'Recibidos 300,00 € de 400,00 € (faltan 100,00 €). La factura SIGUE pendiente.' },
+];
+const EVENTOS_SIN_IMPORTE = [
+  { type: 'quote_accepted', title: 'Presupuesto #1 aceptado por el cliente', detail: 'Firmado digitalmente' },
+  { type: 'quote_requested', title: 'El cliente solicitó un presupuesto', detail: 'Cambiar el grifo de la cocina' },
+];
+
+/** Monta la ficha 360 de verdad en el banco de vistas, con el cuerpo que dio la RUTA real. */
+async function pintarFicha(cuerpo) {
+  const { cargarDashboard, pintarVista, todos } = await import('./_banco-vistas.mjs');
+  const banco = cargarDashboard(RAIZ, {
+    datos: (url) => (/\/admin\/customers\/\d+\/detail$/.test(String(url || '')) ? cuerpo : []),
+  });
+  assert.deepEqual(banco.fallos, [], 'un script del panel no cargó: nada de lo de abajo mediría');
+  const r = await pintarVista(banco, 'renderCustomer360View', cuerpo.customer.id);
+  assert.equal(r.error, null, `la ficha 360 no montó: ${r.error && r.error.message}`);
+  const nodos = todos(banco.ctx.document.body);
+  return {
+    // La tarjeta se monta con `innerHTML`: su rótulo se lee de su `.kpi-label`.
+    tarjetas: nodos.filter((n) => n.className === 'kpi-card').map((n) => (/class="kpi-label">([^<]*)</.exec(String(n.innerHTML ?? '')) || [])[1]?.trim() ?? '¿?'),
+    texto: nodos.map((n) => `${n.innerHTML ?? ''}\n${n.textContent ?? ''}`).join('\n'),
+  };
+}
+
+test('SCRUM-1403b · 🔴 los eventos con el importe en el texto le llegan al Técnico SIN el detalle (los 7 sitios), con su título; el resto, enteros; y su ficha no pinta las tarjetas de dinero', { skip: !CON_BASE && 'sin LIBRO_PG_URL (banco desechable): corre en el check obligatorio del CI' }, async () => {
+  const { prisma } = await import('../dist/core/db/prisma.js');
+  const { app } = await import('../dist/app.js');
+
+  await withMerchant(prisma, { name: 'QA SCRUM-1403b eventos', email: `qa-1403b-eventos-${Date.now()}@test.local` }, async (merchant) => {
+    const e = await equipoDe(prisma, merchant, 'eventos');
+    const cli = await e.cliente('Cliente con historial');
+    await e.factura(cli, 'E-1', 250, { status: 'paid', paidAt: new Date() });
+    for (const ev of [...EVENTOS_CON_IMPORTE, ...EVENTOS_SIN_IMPORTE]) {
+      await prisma.customerEvent.create({ data: { merchantId: merchant.id, customerId: cli.id, type: ev.type, title: ev.title, detail: ev.detail } });
+    }
+    const { port, cerrar } = await montar(app);
+    try {
+      const fichaDe = async (teamMemberId) => {
+        const r = await pedir(port, await sesionDe(prisma, merchant.id, teamMemberId), `/admin/customers/${cli.id}/detail`);
+        assert.equal(r.status, 200);
+        assert.equal(r.cuerpo.events.length, EVENTOS_CON_IMPORTE.length + EVENTOS_SIN_IMPORTE.length, 'CIEGO: la ficha no trae los eventos sembrados');
+        return r.cuerpo;
+      };
+      const porTitulo = (cuerpo) => new Map(cuerpo.events.map((ev) => [ev.title, ev]));
+
+      // La Técnica: los 7 sin detalle y con su título intacto; los dos de control, con el suyo.
+      const ana = await fichaDe(e.ana.id);
+      const deAna = porTitulo(ana);
+      for (const ev of EVENTOS_CON_IMPORTE) {
+        const llega = deAna.get(ev.title);
+        assert.ok(llega, `🔴 a la Técnica no le llega el evento de ${ev.sitio} (${ev.type}) — se le quitó entero, y la decisión es «sin el detalle»`);
+        assert.equal(llega.detail ?? null, null, `🔴 a la Técnica le llega el importe de ${ev.sitio} (${ev.type}): «${llega.detail}»`);
+        assert.ok(llega.title.trim().length > 0, `🔴 el evento de ${ev.sitio} queda VACÍO sin su detalle: eso pide texto nuevo (regla 39)`);
+        assert.doesNotMatch(llega.title, /\d+,\d{2}/, `🔴 el TÍTULO del evento de ${ev.sitio} lleva un importe: quitar el detalle no basta`);
+      }
+      for (const ev of EVENTOS_SIN_IMPORTE) {
+        assert.equal(deAna.get(ev.title)?.detail, ev.detail, `🔴 a la Técnica se le quitó el detalle de «${ev.type}», que no lleva dinero`);
+      }
+
+      // La administradora y la dueña: todo, como estaba.
+      for (const [quien, cuerpo] of [['la administradora', await fichaDe(e.jefa.id)], ['la dueña', await fichaDe(null)]]) {
+        const suyos = porTitulo(cuerpo);
+        for (const ev of [...EVENTOS_CON_IMPORTE, ...EVENTOS_SIN_IMPORTE]) {
+          assert.equal(suyos.get(ev.title)?.detail, ev.detail, `🔴 a ${quien} le falta el detalle de ${ev.sitio ?? ev.type}`);
+        }
+        for (const k of CIFRAS_DE_DINERO) assert.ok(k in cuerpo.stats, `🔴 a ${quien} le falta \`stats.${k}\``);
+        assert.equal(cuerpo.stats.totalPaid, 250);
+      }
+
+      // LA PANTALLA, con la respuesta REAL de cada una: la del Técnico no pinta las cuatro tarjetas
+      // de dinero ni deja un «undefined»/«NaN»; la de la administradora, las pinta.
+      const DE_DINERO = ['Pendiente de cobro', 'Facturado', 'Cobrado', 'Beneficio'];
+      const pAna = await pintarFicha(ana);
+      const pJefa = await pintarFicha(await fichaDe(e.jefa.id));
+      assert.ok(pJefa.tarjetas.length >= 6, `CIEGO: el extractor de tarjetas sólo ve ${pJefa.tarjetas.length} en la ficha de la administradora (${pJefa.tarjetas.join(' | ')})`);
+      for (const r of DE_DINERO) assert.ok(pJefa.tarjetas.includes(r), `🔴 a la administradora no se le pinta «${r}» (${pJefa.tarjetas.join(' | ')})`);
+      for (const r of DE_DINERO) assert.ok(!pAna.tarjetas.includes(r), `🔴 a la Técnica se le pinta la tarjeta «${r}» sin la cifra (${pAna.tarjetas.join(' | ')})`);
+      assert.ok(pAna.tarjetas.length > 0, '🔴 a la Técnica no se le pinta ninguna tarjeta: se quitaron también las que no son de dinero');
+      assert.doesNotMatch(pAna.texto, /undefined|NaN/, '🔴 la ficha de la Técnica pinta «undefined» o «NaN»');
+      for (const ev of EVENTOS_CON_IMPORTE) assert.ok(pAna.texto.includes(ev.title.replace('⚠️ ', '')), `🔴 la ficha de la Técnica no pinta el título del evento de ${ev.sitio}`);
+      for (const ev of EVENTOS_CON_IMPORTE) assert.ok(!pAna.texto.includes(ev.detail), `🔴 la ficha de la Técnica pinta el importe de ${ev.sitio}`);
+      for (const ev of EVENTOS_CON_IMPORTE) assert.ok(pJefa.texto.includes(ev.detail), `CIEGO: la ficha de la administradora no pinta el detalle de ${ev.sitio}: el extractor de texto no ve los eventos`);
+    } finally {
+      await cerrar();
+    }
+  });
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
 // SIN BASE · corre siempre. Lo que avisa aunque los casos de arriba salten.
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
@@ -495,4 +652,93 @@ test('SCRUM-1403 · las dos puertas comparten criterio: los Trabajos de la perso
   // Quién ve todo: las dos preguntan lo mismo a la misma función.
   assert.equal(llamadasA(presupuestos, 'seesAllJobs').length, 1, '🔴 la puerta de presupuestos no pregunta a `seesAllJobs` quién ve todo');
   assert.equal(llamadasA(facturas, 'seesAllJobs').length, 1, '🔴 la puerta de facturas no pregunta a `seesAllJobs` quién ve todo');
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1403b · QUÉ TIPOS SE RECORTAN LO DICEN LOS ESCRITORES, NO UNA LISTA A MANO
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// Los eventos no guardan a qué documento se refieren, así que el recorte es por TIPO (c.18040). Una
+// lista de tipos escrita a mano se queda corta el día que alguien escribe un importe en el detalle
+// de un tipo nuevo. Este censo lee por AST cada sitio que escribe un evento y exige que todo detalle
+// que lleve dinero sea de un tipo de la lista que aplica la ruta.
+
+const DINERO_EN_EL_TEXTO = /importe|amount|formatMoneyEs|formatImporteEs|\btotal\b/i;
+
+/** Los sitios que escriben un evento de cliente en un fuente: `recordCustomerEvent({…})` y `customerEvent.create({ data: {…} })`. */
+function escritoresDeEventos(sf) {
+  const out = [];
+  const objeto = (n) => (n && ts.isObjectLiteralExpression(n) ? n : null);
+  const prop = (obj, nombre) => obj?.properties.find((p) => p.name && p.name.getText(sf) === nombre);
+  const visita = (n) => {
+    if (ts.isCallExpression(n)) {
+      const callee = n.expression.getText(sf);
+      let datos = null;
+      if (/(^|\.)recordCustomerEvent$/.test(callee)) datos = objeto(n.arguments[0]);
+      else if (/customerEvent\.create$/.test(callee)) datos = objeto(prop(objeto(n.arguments[0]), 'data')?.initializer);
+      if (datos) {
+        const tipo = prop(datos, 'type');
+        const detalle = prop(datos, 'detail');
+        let textoDetalle = '';
+        if (detalle && ts.isShorthandPropertyAssignment(detalle)) {
+          // `detail,` a secas: se lee la declaración de esa variable en el mismo fichero.
+          const decl = [];
+          const busca = (m) => { if (ts.isVariableDeclaration(m) && m.name.getText(sf) === detalle.name.text && m.initializer) decl.push(m.initializer.getText(sf)); ts.forEachChild(m, busca); };
+          busca(sf);
+          textoDetalle = decl.join('\n') || `SIN DECLARACIÓN DE ${detalle.name.text}`;
+        } else if (detalle) textoDetalle = detalle.initializer.getText(sf);
+        out.push({
+          linea: sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1,
+          tipo: tipo && ts.isPropertyAssignment(tipo) && ts.isStringLiteral(tipo.initializer) ? tipo.initializer.text : (tipo ? tipo.getText(sf) : null),
+          conDinero: DINERO_EN_EL_TEXTO.test(textoDetalle),
+        });
+      }
+    }
+    ts.forEachChild(n, visita);
+  };
+  visita(sf);
+  return out;
+}
+
+function ficherosTs(dir, out = []) {
+  for (const d of fs.readdirSync(path.join(RAIZ, dir), { withFileTypes: true })) {
+    const rel = `${dir}/${d.name}`;
+    if (d.isDirectory()) ficherosTs(rel, out);
+    else if (d.name.endsWith('.ts')) out.push(rel);
+  }
+  return out;
+}
+
+test('SCRUM-1403b · todo sitio que escribe un importe en el detalle de un evento es de un tipo que la ficha le recorta al Técnico (son 7 sitios, 5 tipos)', async () => {
+  const { TIPOS_CON_IMPORTE_EN_EL_DETALLE } = await import('../dist/modules/system/customerEvents.service.js');
+  assert.ok(Array.isArray(TIPOS_CON_IMPORTE_EN_EL_DETALLE), '🔴 `customerEvents.service` no exporta la lista de tipos que se recortan');
+
+  // ① El POSITIVO SEMBRADO: el detector tiene que cazar un importe en un detalle, también el de
+  //    `detail,` a secas, y no cazar un detalle sin dinero. Si no, su «0 sin cubrir» no dice nada.
+  const sembrado = ts.createSourceFile('sembrado.ts', [
+    "recordCustomerEvent({ merchantId: 1, customerId: 2, type: 'tipo_sembrado', title: 'x', detail: formatMoneyEs(t, 'EUR') });",
+    "const detail = `Recibidos ${formatImporteEs(a)}`;",
+    "recordCustomerEvent({ merchantId: 1, customerId: 2, type: 'otro_sembrado', title: 'y', detail });",
+    "recordCustomerEvent({ merchantId: 1, customerId: 2, type: 'sin_dinero', title: 'z', detail: 'Firmado digitalmente' });",
+    "tx.customerEvent.create({ data: { merchantId: 1, customerId: 2, type: 'directo', title: 'w', detail: importe } });",
+  ].join('\n'), ts.ScriptTarget.Latest, true);
+  assert.deepEqual(escritoresDeEventos(sembrado).map((x) => `${x.tipo}:${x.conDinero}`),
+    ['tipo_sembrado:true', 'otro_sembrado:true', 'sin_dinero:false', 'directo:true'], 'CIEGO: el detector no distingue un detalle con dinero de uno sin él');
+
+  // ② El árbol real.
+  const todos = ficherosTs('src').flatMap((rel) => escritoresDeEventos(ts.createSourceFile(rel, fs.readFileSync(path.join(RAIZ, rel), 'utf8'), ts.ScriptTarget.Latest, true)).map((x) => ({ ...x, rel })));
+  assert.ok(todos.length >= 20, `CIEGO: sólo encuentro ${todos.length} sitios que escriben eventos (el 23-oct-2026 eran 22)`);
+  const sinCubrir = todos.filter((x) => x.conDinero && !TIPOS_CON_IMPORTE_EN_EL_DETALLE.includes(x.tipo));
+  assert.deepEqual(sinCubrir.map((x) => `${x.rel}:${x.linea} (${x.tipo})`), [],
+    '🔴 estos sitios escriben un importe en el detalle de un evento cuyo tipo la ficha NO le recorta al Técnico (SCRUM-1403b, c.20375): añade el tipo a `TIPOS_CON_IMPORTE_EN_EL_DETALLE`');
+  // Y la lista no lleva tipos muertos: cada tipo tiene al menos un escritor con dinero.
+  const conDinero = todos.filter((x) => x.conDinero);
+  for (const t of TIPOS_CON_IMPORTE_EN_EL_DETALLE) assert.ok(conDinero.some((x) => x.tipo === t), `🔴 \`${t}\` está en la lista y ningún sitio le escribe un importe: re-mide`);
+  assert.equal(conDinero.length, EVENTOS_CON_IMPORTE.length, `🔴 los sitios con importe en el detalle ya no son ${EVENTOS_CON_IMPORTE.length}: ${conDinero.map((x) => `${x.rel}:${x.linea}`).join(', ')} — añade su caso a EVENTOS_CON_IMPORTE`);
+});
+
+test('SCRUM-1403b · la ficha de cliente decide las cifras y el detalle de los eventos con `seesOnlyOwnJobs`, el mismo criterio que el saldo (SCRUM-1043) y la garantía (SCRUM-1108)', () => {
+  const ficha = manejadoresGet(RUTAS_CLIENTE).get('/:id/detail');
+  assert.ok(ficha, `🔴 CIEGO: no encuentro router.get('/:id/detail') en ${RUTAS_CLIENTE}`);
+  assert.ok(llamadasA(ficha, 'seesOnlyOwnJobs').length >= 2, '🔴 la ficha no pregunta a `seesOnlyOwnJobs` para las cifras (sólo para la garantía)');
+  assert.equal(llamadasA(ficha, 'eventosSinImporte').length, 1, '🔴 la ficha no pasa los eventos por `eventosSinImporte`');
 });

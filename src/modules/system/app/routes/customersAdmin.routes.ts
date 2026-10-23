@@ -4,7 +4,7 @@ import { config } from '../../../../core/config/env';
 import { customerCreateSchema, customerUpdateSchema } from '../../../../core/validation/schemas';
 import { prisma } from '../../../../core/db/prisma';
 import { cabeEnColumnaInt } from '../../../../core/validation/enteroDeColumna'; // SCRUM-1379
-import { listCustomerEvents } from '../../customerEvents.service';
+import { listCustomerEvents, eventosSinImporte } from '../../customerEvents.service';
 import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 (D2: borrado = admin)
 // SCRUM-578 (CONT-05): el aviso de duplicado. La lista de campos identificadores vive en UN sitio.
 import {
@@ -540,8 +540,7 @@ router.get('/:id/detail', async (req, res) => {
     // de presupuestos y de facturas: un Técnico ve aquí los suyos (autor, asignado o Trabajo) y el
     // admin, todos (`null` = sin recorte, el `where` sale como salía). La ficha del cliente se le
     // sigue abriendo entera: lo que se recorta son los documentos ajenos, no el cliente.
-    // ⚠️ Las CIFRAS (`stats`) y los eventos NO se tocan aquí: qué recibe de ellos un Técnico está
-    // sin decidir (SCRUM-1403, pregunta al fundador).
+    // Las CIFRAS (`stats`) y los eventos con importe, más abajo (SCRUM-1403b).
     const quien = quienPideDe(req);
     const [recortePresupuestos, recorteFacturas] = await Promise.all([
       wherePresupuestosVisibles(quien), whereFacturasVisibles(quien),
@@ -589,22 +588,30 @@ router.get('/:id/detail', async (req, res) => {
       ? `${config.PUBLIC_BASE_URL}/cliente/${customer.portalToken}`
       : null;
 
+    // SCRUM-1403b · las cinco cifras de dinero son el panel del negocio repartido por cliente: mismo
+    // criterio que el saldo (SCRUM-1043) y la garantía (SCRUM-1108), el técnico no las recibe. Y los
+    // eventos que llevan el importe en el texto le llegan sin él. Decisión del fundador, SCRUM-1403
+    // c.20375 (salida 1 y «sin el texto del detalle»). La ficha no pinta la tarjeta de una cifra ausente.
+    const sinDinero = seesOnlyOwnJobs(req.userRole);
+
     return res.json({
       customer: { ...customer, portalUrl },
       quotes,
       invoices,
-      events,
+      events: sinDinero ? eventosSinImporte(events) : events,
       stats: {
         totalQuotes,
         acceptedQuotes,
-        totalBilled,
-        totalPaid,
-        // SCRUM-1035 · lo que el cliente debe (facturas `pending`): la misma cifra que la ficha
-        // sumaba en el navegador sobre 20 filas. SCRUM-1043 (la lista «quién me debe») reutiliza este cálculo.
-        totalPending: pendiente.get(id)?.total ?? 0,
+        // SCRUM-1035 · `totalPending` es lo que el cliente debe (facturas `pending`): la misma cifra que la
+        // ficha sumaba en el navegador sobre 20 filas. SCRUM-1043 (la lista «quién me debe») reutiliza este cálculo.
+        ...(sinDinero ? {} : {
+          totalBilled,
+          totalPaid,
+          totalPending: pendiente.get(id)?.total ?? 0,
+          totalExpenses: Number(expenses._sum.amount ?? 0),
+          profit: totalPaid - Number(expenses._sum.amount ?? 0),
+        }),
         pendingCount: pendiente.get(id)?.count ?? 0,
-        totalExpenses: Number(expenses._sum.amount ?? 0),
-        profit: totalPaid - Number(expenses._sum.amount ?? 0),
         // SCRUM-1108 · ausente = no tiene (ausente no es cero). `aviso` = ya se puede reclamar y sigue sin cobrar.
         ...(garantias?.has(id) ? { garantiaRetenida: garantias.get(id)! } : {}),
       },

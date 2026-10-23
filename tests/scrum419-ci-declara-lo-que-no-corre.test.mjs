@@ -220,7 +220,13 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // documentos de la ficha de cliente contra Prisma de verdad. Necesitan banco por el mismo motivo
   // que los de SCRUM-1397: lo que vigilan es el WHERE (el recorte en AND con la busqueda y con el
   // filtro por autor, los ejes del Trabajo, las revisiones), y eso lo contesta Postgres, no un doble.
-  'scrum1403-el-tecnico-y-las-otras-puertas.test.mjs': 3,
+  // SCRUM-1403b: y el CUARTO, el de los eventos con importe y las cifras de la ficha. Necesita banco
+  // porque entra por la RUTA real con sesiones guardadas en la base (Tecnica, administradora y duena)
+  // y mira lo que `GET /admin/customers/:id/detail` arma con los eventos y facturas que lee de
+  // Postgres; luego pinta la ficha con ESA respuesta. Con un doble se probaria el doble, no la ruta.
+  // Lo que se lee sin base (los 7 sitios que escriben un importe, el criterio `seesOnlyOwnJobs`)
+  // va en los dos casos AST del mismo fichero, que corren siempre.
+  'scrum1403-el-tecnico-y-las-otras-puertas.test.mjs': 4,
   // SCRUM-1489: el buscador de arriba pasa por esas mismas dos puertas (fila 9 del censo de
   // SCRUM-1390). Necesita banco por el mismo motivo: lo que vigila es el WHERE que la busqueda
   // manda con el recorte en AND, y que ese filtro deja fuera lo ajeno lo contesta Postgres. La
