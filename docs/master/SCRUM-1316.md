@@ -565,3 +565,130 @@ en el código, no ejecutada.
    1-oct y ninguna lo era ya: la norma estaba derogada desde el día 2, y la redacción que citan
    nuestros documentos es la que se aplica. No lo sabía nadie del equipo porque en seis días nadie
    volvió a bajar la fuente.
+
+# SCRUM-1316e · ¿Está convalidado el Real Decreto-ley 29/2026? Pendiente, y lo vota la Diputación Permanente
+
+**Medido contra:** `origin/main` = `e306a6a5e5b45a2e98792d30eee02fdec5ea2362` · 2026-10-23T16:00:45Z (cabecera `Date:` de la primera respuesta del BOE)
+
+A9: aviso → A10 «Un dato copiado de un registro lleva la fecha en que se midió, no la de hoy.» — no se pudo comprobar: el estado de una norma vive en el BOE y en la web del Congreso, y la tanda de CI no sale a la red; el «no convalidado» de §Ⓚ era verdad el 7-oct y lo de abajo sólo es verdad el 23-oct.
+
+Sesión J5 (IA), 23-oct-2026, por encargo del orquestador del equipo de Javier (`cobroflash-backend-62`).
+**Aquí sólo se mide el estado de una norma.** No se toca `src/`, ni `public/`, ni el esquema, ni
+ningún documento del asesor; no se propone texto de pantalla (regla 39); no se predice ninguna
+votación. Lo de arriba (①, ② y ③) no se toca.
+
+## Veredicto
+
+1. **El Real Decreto-ley 29/2026 (`BOE-A-2026-20823`) NO está convalidado ni derogado a 23-oct-2026.**
+   El BOE no ha publicado ningún acuerdo sobre él (§Ⓣ), y la ficha del Congreso dice, literal:
+   «Situación actual Diputación Permanente Convalidación» (§Ⓤ).
+2. 🔴 **Lo que el registro de §Ⓚ no vio: las Cortes están disueltas desde el 6-oct.** Real Decreto
+   806/2026, de 5 de octubre (`BOE-A-2026-20742`, BOE del 6-oct): elecciones el **29-nov-2026** y
+   sesiones constitutivas el **23-dic**. El 29/2026 se aprobó el 6-oct, ya disueltas. **Quien lo vota
+   no es el Pleno que derogó el 26/2026: es la Diputación Permanente del Congreso.**
+3. **El plazo del art. 86.2 CE vence, en cualquiera de los tres calendarios calculados, entre el 5 y
+   el 19 de noviembre de 2026** (§Ⓥ). Es un CÁLCULO, no un dato publicado.
+4. **Nada de lo medido mueve el 1-dic.** El art. 7.Tres sigue diciendo «con efectos desde el 1 de
+   diciembre de 2026», y la ficha del BOE no ha cambiado desde el 7-oct (mismos sha256). Lo que sí
+   queda dicho: **la suerte del 1-dic se decide antes del 1-dic**, en el plazo de §Ⓥ.
+
+## Ⓣ El BOE: 23 sumarios diarios, del 1 al 23 de octubre
+
+API de datos abiertos del BOE: los metadatos y el análisis del consolidado de cada real decreto-ley
+(`/datosabiertos/api/legislacion-consolidada/id/<ID>/{metadatos,analisis}`) y el sumario de cada día
+(`/datosabiertos/api/boe/sumario/AAAAMMDD`). Todas las peticiones respondieron 200, salvo los tres
+domingos (4, 11 y 18-oct: 404 de 169 B, que es «no hay BOE ese día»).
+
+| qué | identificador | sha256 hoy | ¿igual que el 7-oct (§Ⓘ)? |
+|---|---|---|---|
+| RDL 29/2026, metadatos | `BOE-A-2026-20823` | `2b7dcb71c32154e27b644acbf25ab22c99343fd37a31d170ff1a25cc7bfa6c9b` | sí |
+| RDL 29/2026, análisis | ídem | `0b97a3c40c587d99da937ce344f7b3dd03e5b0ad760237cf9df191cd6f141bed` | sí |
+| RDL 26/2026, metadatos | `BOE-A-2026-20266` | `1d1c0348dd436b7954bf4960972279623875975a568b00d6338429cf26bb3e33` | sí |
+| RDL 26/2026, análisis | ídem | `23de3cbe23ffd1a2e87c6366e6cc6f5a8ed60a27442ff50e71031c60e04db19d` | sí |
+| RD 806/2026 (disolución), diario | `BOE-A-2026-20742` | `de4d65e239fce85d85cf4bd109481e74ad4f0c9d61deaa5daa07c2929dab1bdf` | no se bajó |
+
+Metadatos del 29/2026, literales: `estatus_derogacion` = `N`, `vigencia_agotada` = `N`,
+`fecha_actualizacion` = `20261007T123908Z`. Su análisis sigue listando como única posterior el Real
+Decreto-ley 28/2026 (`BOE-A-2026-20822`, «SE DICTA EN RELACIÓN»): ninguna convalidación ni derogación.
+
+**Los sumarios, recorridos enteros:** 4.697 disposiciones en 20 días con BOE. Títulos que nombran el
+Real Decreto-ley 29/2026: **uno**, el propio real decreto-ley (sumario del 7-oct). Ninguna resolución
+del Congreso sobre él. Recontado con un `grep` de texto llano sobre los 23 ficheros, sin el patrón de
+los ítems: «Real Decreto-ley 29/2026» sale sólo en el del 7-oct.
+
+**Los dos controles del recuento:**
+- **Positivo:** el mismo instrumento encuentra la derogación del 26/2026 (`BOE-A-2026-20526`, sumario
+  del 2-oct) y **dos convalidaciones de la Diputación Permanente** publicadas el 20-oct: la del Real
+  Decreto-ley 24/2026 (`BOE-A-2026-21787`) y la del 25/2026 (`BOE-A-2026-21788`), «Resolución de 16 de
+  octubre de 2026, del Congreso de los Diputados, por la que se ordena la publicación del Acuerdo de
+  convalidación…». O sea: si hubiera un acuerdo publicado sobre el 29, tiene la forma que se caza.
+- **Cero:** «zzqx» da 0 ficheros de 23.
+
+⚠️ **Límite:** el BOE publica el acuerdo unos días después de la votación (los del 24 y el 25: votados
+el 16-oct, publicados el 20-oct). Por eso el BOE solo no basta para decir «no se ha votado», y se mira
+el Congreso.
+
+## Ⓤ El Congreso: la ficha de la iniciativa
+
+`congreso.es`, iniciativas de la XV Legislatura, tipo 130 (reales decretos-ley), bajadas el 23-oct a
+las 16:02Z (cabecera `Date:`). Texto de la ficha, literal tras quitar el HTML:
+
+> «Real Decreto-ley 29/2026, de 6 de octubre, por el que se adoptan medidas urgentes para la protección
+> de la función social de la vivienda y la ampliación de la oferta de vivienda asequible. (130/000060)
+> Presentado el 08/10/2026 , calificado el 13/10/2026 Autor Gobierno Situación actual Diputación
+> Permanente Convalidación Tramitación seguida por la iniciativa Diputación Permanente Convalidación
+> desde 13/10/2026»
+
+**Control con las fichas vecinas**, que la misma lectura tiene que distinguir:
+
+| iniciativa | norma | lo que dice la ficha |
+|---|---|---|
+| 130/000055 | RDL 26/2026 | «Resultado tramitación Derogado» · Pleno, hasta el 02/10/2026 |
+| 130/000056 | RDL 27/2026 | «Resultado tramitación Derogado» · Pleno, hasta el 02/10/2026 |
+| 130/000057 | RDL 24/2026 | «Resultado tramitación Convalidado» · Diputación Permanente |
+| 130/000058 | RDL 25/2026 | «Resultado tramitación Convalidado» · Diputación Permanente, del 13/10 al 16/10/2026 |
+| 130/000059 | RDL 28/2026 | «Situación actual Diputación Permanente Convalidación» |
+| **130/000060** | **RDL 29/2026** | **«Situación actual Diputación Permanente Convalidación»** |
+| 130/000061 | RDL 30/2026 | «Situación actual Diputación Permanente Convalidación» |
+
+La ficha sabe decir «Derogado» y «Convalidado»; para el 29 no dice ninguna de las dos. **No se ha leído
+el orden del día de la Diputación Permanente ni el Diario de Sesiones:** no sé si hay sesión
+convocada, y no lo infiero.
+
+## Ⓥ El plazo del art. 86.2 CE: cálculo
+
+La Constitución dice «en el plazo de los treinta días siguientes a su promulgación». **Cómo se cuentan
+esos treinta días (hábiles o naturales, desde la firma o desde el BOE) no lo he medido en ninguna
+fuente: lo calculo de las tres maneras.** Festivos nacionales: el 12-oct (el 1-nov cae en domingo); no
+se cuentan los autonómicos ni los locales de Madrid.
+
+| cómputo | desde la promulgación (6-oct) | desde la publicación (7-oct) |
+|---|---|---|
+| hábiles, de lunes a viernes | 18-nov (mié) | 19-nov (jue) |
+| hábiles, de lunes a sábado | 11-nov (mié) | 12-nov (jue) |
+| naturales | 5-nov (jue) | 6-nov (vie) |
+
+**Las seis caen antes del 1-dic** y antes de las elecciones del 29-nov. Un festivo de Madrid más
+movería un día, no un mes.
+
+## Ⓦ Lo que es inferencia y no lectura
+
+- Que la Diputación Permanente sea quien convalida mientras las Cortes están disueltas lo dice la
+  ficha del Congreso (§Ⓤ); **el artículo de la Constitución que lo habilita no lo he leído hoy.**
+- **Si la Diputación Permanente puede tramitarlo además como proyecto de ley (art. 86.3 CE) no lo he
+  medido.** Para el producto no cambia nada: el 1-dic depende de convalidar o derogar.
+- Si no se vota en plazo, la lectura habitual es que el real decreto-ley decae. **No lo afirmo**: es
+  del asesor, como todo lo jurídico.
+- Una búsqueda web previa devolvió un resumen que decía «derogado por el Pleno el 29 de septiembre»;
+  el BOE dice 2-oct (§Ⓙ). **Ese resumen no se usa para nada de este tramo.**
+
+## Ⓧ Lo que me salió mal
+
+1. **El registro de mi puesto del 7-oct (§Ⓚ, punto 3 del veredicto de 1316b) decía «colgada de una
+   votación» sin ver que las Cortes se habían disuelto el día antes.** El Real Decreto 806/2026 se
+   publicó en el BOE del 6-oct, un día antes de esa medición, y no estaba entre las fuentes porque se
+   buscó la norma y no el órgano que la vota. No cambiaba el veredicto («no convalidado»), pero sí a
+   quién se le pregunta y cuándo.
+2. **Casi me fío del resumen de la búsqueda web**, que afirmaba la disolución antes de que yo la
+   hubiera leído. Lo que lo paró fue que el mismo resumen traía una fecha falsa (29-sep por 2-oct):
+   leí el real decreto de disolución en el BOE antes de escribir nada.
