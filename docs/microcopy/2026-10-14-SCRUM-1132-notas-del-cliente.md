@@ -34,6 +34,6 @@ queda en la cabecera de la ficha, donde ya se pintaba, y la tarjeta NO la repite
 ## El respaldo, firmado aparte
 
 El motivo de respaldo para los fallos sin `message` (404, 500, sin red) lo firmó el fundador el
-23-oct-2026 (comentario 20435): `docs/microcopy/2026-10-23-SCRUM-1132-notas-respaldo.md`.
+23-oct-2026 (comentario 20435), y tiene su propia ficha en este directorio, con su fecha.
 Desde SCRUM-1132c (comentario 20627) «Notas» es el rótulo de una pestaña de la ficha, no el título
 de una tarjeta.

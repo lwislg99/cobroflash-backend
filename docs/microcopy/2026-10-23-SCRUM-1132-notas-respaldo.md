@@ -14,8 +14,8 @@ contando que se firmó, no la firma; la firma es el comentario.
 
 - `public/dashboard/js/customerDetailView.js`, `NOTAS_CLIENTE.TEXTOS.respaldo`: lo que dice la
   pestaña «Notas» cuando guardar una nota falla y el servidor no manda motivo en `message` (404, 500,
-  sin red). Con motivo, sigue saliendo «No se pudo guardar:» + el motivo
-  (`docs/microcopy/2026-10-14-SCRUM-1132-notas-del-cliente.md`).
+  sin red). Con motivo, sigue saliendo «No se pudo guardar:» + el motivo (firmado en c.19617, con
+  su propia ficha en este directorio).
 
 ## Qué cambió y por qué
 
