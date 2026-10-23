@@ -1,0 +1,9 @@
+VERDE    · BASE sin mutar · 0/6 caen
+ROJO     · 503 sin cabecera HTML · 1/6 caen · SCRUM-1449b · 🔴 sin token de Mercado Pago: 503 en página, con el literal firmado y sin «merchant»
+ROJO     · 502 sin cabecera HTML · 1/6 caen · SCRUM-1449b · 🔴 Mercado Pago no contesta: 502 en página, con el texto de siempre
+ROJO     · 503 vuelve al texto plano · 1/6 caen · SCRUM-1449b · 🔴 sin token de Mercado Pago: 503 en página, con el literal firmado y sin «merchant»
+ROJO     · 503 con «merchant» de vuelta · 1/6 caen · SCRUM-1449b · 🔴 sin token de Mercado Pago: 503 en página, con el literal firmado y sin «merchant»
+ROJO     · 502 con una tilde menos · 1/6 caen · SCRUM-1449b · 🔴 Mercado Pago no contesta: 502 en página, con el texto de siempre
+ROJO     · pendiente vuelve a prometer · 1/6 caen · SCRUM-1449b · 🔴 cobro pendiente: la página dice el recorte firmado y no promete aviso
+ROJO     · sin token llama igual a Mercado Pago (cambia la decisión) · 1/6 caen · SCRUM-1449b · 🔴 sin token de Mercado Pago: 503 en página, con el literal firmado y sin «merchant»
+POBLACION: 7 mutantes + base · vivos o ciegos = 0 · restaurado = true
