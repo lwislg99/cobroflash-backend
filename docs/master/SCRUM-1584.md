@@ -4,7 +4,7 @@
 
 **Medido contra:** `origin/main` = `a3c13611ed6f078fa7fe5af5882b0b8b2d1b2d3f` · 2026-10-23T14:17:47Z
 
-A9: aviso → cicatriz J6 «Atribuí dos select al fichero que guarda su decisión y no al que los crea» — no se pudo comprobar: el guard nombra el elemento (`SELECT.input`), no el fichero que lo crea, y ningún instrumento cruza una cosa con la otra
+A9: aviso → cicatriz J6 «Atribuí dos select al fichero que guarda su decisión y no al que los crea, y con ello el carril del arreglo» — no se pudo comprobar: el guard nombra el elemento (`SELECT.input`), no el fichero que lo crea, y ningún instrumento cruza una cosa con la otra
 
 **Qué cambia:** `scripts/_medidor-de-toque.mjs`, la constante `INTERACTIVOS`. Antes:
 `a[href], button, [role="button"], summary, input[type="submit"], input[type="button"], input[type="checkbox"]`.
