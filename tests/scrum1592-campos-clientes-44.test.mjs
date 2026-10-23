@@ -16,6 +16,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cargarDashboard, pintarVista, todos } from './_banco-vistas.mjs';
+import { parsearReglas } from './_censo-anillo-foco.mjs';
 import { CLIENTES_DE_MUESTRA, DETALLE_360_DE_MUESTRA, ARGUMENTOS_DE_VISTA } from '../scripts/_pagina-panel.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -26,32 +27,17 @@ const BARRA = '.data-card:has(> .barra-seleccion) .data-card-toolbar > .input';
 const META = '#c360-meta .input';
 const MINIMO = 44;
 
-const CSS = fs.readFileSync(path.join(RAIZ, 'public/dashboard/css/styles.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-
-/** Las reglas que viven dentro de un `@media (max-width: 768px)`, con su selector partido por comas. */
-function reglasDelCorteMovil() {
-  const out = [];
-  const re = /@media\s*\(\s*max-width:\s*768px\s*\)\s*\{/g;
-  let m;
-  while ((m = re.exec(CSS))) {
-    let i = re.lastIndex, nivel = 1;
-    const ini = i;
-    while (i < CSS.length && nivel > 0) { if (CSS[i] === '{') nivel++; else if (CSS[i] === '}') nivel--; i++; }
-    for (const b of CSS.slice(ini, i - 1).split('}')) {
-      const [sel, cuerpo = ''] = b.split('{');
-      out.push({ sel: sel.split(',').map((s) => s.trim()), cuerpo });
-    }
-  }
-  return out;
-}
+// El parser de la casa: entra en los `@media` y dice en cuáles vive cada regla.
+const REGLAS = parsearReglas(fs.readFileSync(path.join(RAIZ, 'public/dashboard/css/styles.css'), 'utf8'));
+const enCorteMovil = (r) => r.medias.some((m) => /max-width:\s*768px/.test(m));
 
 test('SCRUM-1592 · los cuatro campos de Clientes llevan min-height de 44 dentro del corte de móvil', () => {
-  const reglas = reglasDelCorteMovil();
-  assert.ok(reglas.length > 0, '🔴 CIEGO: no encuentro ningún `@media (max-width: 768px)` en styles.css.');
+  const reglas = REGLAS.filter(enCorteMovil);
+  assert.ok(reglas.length > 0, '🔴 CIEGO: no encuentro ninguna regla dentro de `@media (max-width: 768px)` en styles.css.');
   for (const sel of [BARRA, META]) {
-    const r = reglas.filter((x) => x.sel.includes(sel));
+    const r = reglas.filter((x) => x.selectores.includes(sel));
     assert.equal(r.length, 1, `🔴 no está \`${sel}\` dentro del corte de móvil: el campo vuelve a quedarse por debajo de ${MINIMO} px a 390.`);
-    const alto = /min-height:\s*(\d+)px/.exec(r[0].cuerpo);
+    const alto = /^(\d+)px$/.exec(r[0].decls.get('min-height') || '');
     assert.ok(alto && Number(alto[1]) >= MINIMO, `🔴 \`${sel}\` declara ${alto ? alto[1] + 'px' : 'ningún min-height'}: por debajo de ${MINIMO}.`);
   }
 });
