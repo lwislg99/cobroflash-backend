@@ -315,20 +315,21 @@ test('SCRUM-1402 · 📌 una CANCELACIÓN se aplica igual venga el plan que veng
   }
 });
 
-test('SCRUM-1402 · 📌 SIN `metadata.plan` sigue como estaba: ni escribe ni avisa (y la escucha oye). No es de este ticket, y no está decidido', async () => {
-  // ⚠️ Esto NO es un visto bueno: una suscripción pagada que llega sin `metadata.plan` tampoco activa
-  // nada y hoy no lo dice nadie. La decisión del fundador habla del plan que NO EXISTE, no del que NO
-  // VIENE; queda reportado en `docs/master/SCRUM-1402.md` y aquí solo se fija que este ticket no lo mueve.
-  for (const [tipo, objeto] of [
-    ['checkout.session.completed', checkout(undefined)],
-    ['checkout.session.completed', checkout('')],
-    ['customer.subscription.updated', suscripcion(undefined, 'active')],
-    ['customer.subscription.updated', suscripcion('', 'active')],
+test('SCRUM-1402 · 📌 SIN `metadata.plan` no se ACTIVA nada: ni el checkout ni la suscripción activa escriben (y la escucha oye)', async () => {
+  // SCRUM-1402h (comentario 20681, «B · Como plan desconocido»): la suscripción sin plan se trata como un
+  // plan que no existe. Activarla sigue sin escribir, y ahora deja su línea en el log; el impago y la
+  // cancelación sin plan se miden en `scrum1402h-sin-plan-como-plan-desconocido`. El checkout sin plan
+  // no lo mueve 1402h: sigue sin escribir y sin avisar.
+  for (const [tipo, objeto, avisos] of [
+    ['checkout.session.completed', checkout(undefined), 0],
+    ['checkout.session.completed', checkout(''), 0],
+    ['customer.subscription.updated', suscripcion(undefined, 'active'), 1],
+    ['customer.subscription.updated', suscripcion('', 'active'), 1],
   ]) {
     const r = await emitir(tipo, objeto);
     assert.equal(r.res.status, 200);
     assert.deepEqual(r.escrituras, [], `${tipo} sin plan: no escribe`);
-    assert.deepEqual(r.avisos, [], `${tipo} sin plan: no avisa`);
+    assert.equal(r.avisos.length, avisos, `${tipo} sin plan: ${avisos} avisos: ${JSON.stringify(r.avisos)}`);
   }
   const control = await emitir('checkout.session.completed', checkout('empresa'));
   assert.equal(control.avisos.length, 1, 'control positivo: la misma escucha oye el aviso del plan que no existe');
