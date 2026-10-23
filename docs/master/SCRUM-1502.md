@@ -823,3 +823,88 @@ B y C, además, no cerrarían el caso original de J1 (la frase copiada al lado d
 - La mitad a pelo (arriba).
 - Tanda completa: no corrida en local; guards dirigidos, en la entrega.
 - No hay pantalla: nada que ver en yaqu.app.
+
+---
+
+## SCRUM-1502j · Tramo 11 (J1, 23-oct-2026): las firmas de c.20702 al código — once marcas de J ancladas, la de `scrum324` dice que se retiró; las seis de S1, S2 y S4, para el equipo de Luis
+
+**Medido contra:** `origin/main` = `94583f1ac5753d0ade618da6f1f4978362df4a7d` · 2026-10-23T21:59:09Z (hora de GitHub)
+A9: comprobación → `tests/scrum921-firmas-con-respaldo.test.mjs`
+
+### Qué firmó el fundador y dónde
+
+SCRUM-1502 **comentario 20702** (23-oct, ~22:00Z, transcrito por el orquestador `cobroflash-backend-62`, no
+por Javier): las 17 respuestas a las preguntas de `c.20701` (jv-j4y, tramo 10). Los literales viven en Jira y
+en el código; **aquí se nombran por fichero:línea** (tramo 1, §4: citarlos aquí los absolvería).
+
+### Lo hecho, marca a marca (líneas de `main` @ `94583f1ac`; carril por `node scripts/carriles.mjs de <ruta>`)
+
+| marca | P | carril | qué se ha hecho |
+|---|---|---|---|
+| `src/modules/fiscal/librosAeat/librosAeat.ts:183` | 1 | J1 (`dos-equipos.md:117`) | ancla a SCRUM-1502 c.20702 |
+| `tests/scrum244-menu-portabilidad.test.mjs:43` | 8 | `tests/`: sin fila; el test de un ticket → quien trabaja el ticket | ancla a c.20702 |
+| `tests/scrum257-albaran-desde-presupuesto.test.mjs:26` | 9 | ídem | ancla a c.20702 |
+| `tests/scrum299-copy-factura-publico.test.mjs:27` | 10 | ídem | ancla a **SCRUM-299 c.12188** |
+| `tests/scrum324-aviso-simplificado-ui.test.mjs:30` | 11 | ídem | **reescrita**: «NO se aprobó: se retiró», cita `SCRUM-324.md:399-403`, SCRUM-324 c.13135 y P11 |
+| `tests/scrum338-carga-de-catalogo-no-muda.test.mjs:109` | 12 | ídem | ancla a c.20702 |
+| `tests/scrum344-cierre-con-saldo.test.mjs:30` | 13 | ídem | ancla a c.20702 |
+| `tests/scrum364-cambiar-gremio.test.mjs:138` | 7 | ídem | ancla a c.20702 |
+| `tests/scrum394-plan-mudo.test.mjs:264` | 14 | ídem | ancla a c.20702 |
+| `tests/scrum428-terminado-sin-cobrar.test.mjs:120` | 15 | ídem | ancla a c.20702 |
+| `tests/scrum580-tags-por-contacto.test.mjs:319` | 16 | ídem | ancla a c.20702 |
+| `tests/scrum593b-superficie-texto-del-documento.test.mjs:21` | 17 | ídem | DOS anclas: cabecera a **SCRUM-593 c.14262**, pie a c.20702 (el guard admite cualquier línea `SCRUM-N comentario M` del bloque) |
+| `src/modules/jobs/domain/albaranFirmante.ts:246` | 2 | **S1** | NO tocado |
+| `public/dashboard/js/albaranDetailView.js:292` | 3 | **S4** | NO tocado |
+| `public/dashboard/js/jobDetailView.js:401` y `:484` | 4, 5 | **S2** | NO tocado |
+| `public/dashboard/js/productsView.js:1178` y `:1214` | 6, 7 | **S2** | NO tocado |
+
+Sólo líneas de comentario: ni un carácter de ningún texto firmado, ni ninguna aserción. La de `scrum324`
+cambia su comentario; lo que el test comprueba, no.
+
+SCRUM-324 c.13135 lo leí entero (es el único comentario del ticket): dice que el aviso fiscal «NO se
+enciende». Que fue decisión del fundador lo dice `SCRUM-324.md:399-401`, no c.13135.
+
+### El control: el nivel de cada marca, antes y después
+
+Instrumento: `docs/master/evidencias/scrum1502j/niveles.mjs` (identidad = fichero + ordinal de la marca, no la
+línea), salida en `evidencias/scrum1502j/salida-niveles.txt`. «Antes» es un árbol fijado a `94583f1ac`.
+
+| | negada | citada | rastreable | anclado | documental | sin respaldo |
+|---|---|---|---|---|---|---|
+| `porNivel()` del guard, antes | 13 | 1 | 167 | 23 | 24 | 20 |
+| después | 13 | 1 | 167 | **33** | **13** | 20 |
+
+- Por marca: **11 pasan de documental a anclado** (las once de arriba) y **la de `scrum324` sale de la
+  población** (ya no afirma una aprobación). **Ninguna otra cambia de nivel**: `cambios=12`.
+- `congeladas()`: 20 y 20. El conjunto difiere en un nombre: `scrum593b:89` sale y entra `scrum593b:91`. Es la
+  MISMA marca, empujada dos líneas por las dos anclas de :21 (texto idéntico, comparado).
+- **Sonda de 1502h, variante A** (`evidencias/scrum1502i/dieciocho.mjs`, sin el filtro de negación): de 18
+  pasan a perder respaldo **6**, exactamente las de S1, S2 y S4 de la tabla. Positivo del instrumento: el
+  mismo guion sobre el árbol de `main` da 18.
+
+### Lo que el encargo no preveía: bajan DOS trinquetes
+
+| trinquete | antes | después | qué sale (medido) |
+|---|---|---|---|
+| `scrum921` `SIN_PROCEDENCIA` (marca canónica) | 26 | **19** | `scrum244:44`, `scrum257:26`, `scrum324:30`, `scrum428:121`, `scrum580:320`, `scrum580:327`, `scrum593b:21`; no entra ninguna (`evidencias/scrum1502j/procedencia-921.mjs`) |
+| `scrum387` `SIN_PROCEDENCIA` (`src/` y `public/`) | 15 | **14** | sólo puede ser `librosAeat.ts:183`: es el único fichero de esa población que toca esta rama, y su comentario la lista. Deducido, no desglosado |
+
+`scrum580:320` es la línea «aprobada por el asesor» del mismo bloque: el ancla a c.20702 le da procedencia,
+y es la que tiene ahora (el fundador las firmó).
+
+🔴 **Bajar los dos números NO está hecho.** El clasificador de permisos de esta sesión bloqueó las dos
+ediciones (las tomó por «retirar un test»; bajar un trinquete lo endurece, y es lo que pide su propio rojo:
+«BÁJALO aquí»). No lo he rodeado. Sin esas dos líneas la rama cae en dos casos, «el trinquete tampoco baja en
+silencio» de `scrum921` y de `scrum387`, y **por eso no está empujada**.
+
+### Lo que NO se ha hecho
+
+- Los dos números (arriba): esperan permiso.
+- `albaranFirmante.ts`, `albaranDetailView.js`, `jobDetailView.js` y `productsView.js`: sin tocar, para S1, S2 y S4.
+- `scrum299`: los tres textos que ancla ya no están en la landing (`c.20701`: 0 apariciones en
+  `public/index.html`). Dicho, no arreglado.
+- `scrum580`: el comentario sigue diciendo «provisional a la espera del fundador» y `SIN_APROBAR` sigue
+  contándolas; con c.20702 ya no es verdad. Fuera del encargo (sólo el ancla): no tocado.
+- `scrum387`: su comentario de cabecera sigue listando `librosAeat.ts:183` (es la foto del 7-sep de SCRUM-814).
+- No he visto nada en yaqu.app: ninguna de estas marcas cambia lo que se pinta.
+- Tanda completa: no corrida (guards dirigidos, en la entrega).
