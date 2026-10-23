@@ -411,8 +411,15 @@ test('SCRUM-698 · CONTROL POSITIVO: las vistas que ya se montaban dan los MISMO
   // etiquetar la selección, dentro de la barra) + `input.input` («Etiqueta») + dos
   // `button.btn-secondary` («Añadir etiqueta», «Quitar etiqueta») = 4, todo el delta. Se montan con
   // el rol admin del banco; para un técnico no se pintan.
+  // 🔴 SCRUM-1043a · 23-oct-2026 · `renderCustomersView` 82 → 89, y las otras tres intactas. Los
+  // SIETE, POR IDENTIDAD (firmas etiqueta + clase + texto de los dos árboles, `public/` de main
+  // 5da02178a contra la rama; nada resta): `div.customers-tabs` + `button.customers-tab` «Con cobro
+  // pendiente» + `option` «Más pendiente de cobro» + `th` «Pendiente de cobro» + su casilla en el
+  // selector de columnas (`label.columnas-opcion` + `input` + `span`) = 7. Textos firmados en
+  // SCRUM-1043 c.20536; el techo, autorizado por el orquestador en SCRUM-1043 c.20582. Rol admin del
+  // banco; al técnico no se le pintan.
   for (const [vista, nodos] of [['renderQuotesView', 258], ['renderProductsView', 176],
-    ['renderCustomersView', 82], ['renderHomeView', 145]]) {
+    ['renderCustomersView', 89], ['renderHomeView', 145]]) {
     const r = await pintarVista(cargarDashboard(RAIZ), vista);
     assert.equal(r.error, null, `🔴 ${vista} ha dejado de montarse: ${r.error}`);
     assert.equal(todos(r.contenedor).length, nodos,

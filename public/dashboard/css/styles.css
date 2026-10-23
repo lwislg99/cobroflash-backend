@@ -4808,3 +4808,9 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
 /* SCRUM-1056 · «Volver a llamar»: la nota es texto libre del profesional. Una palabra muy larga
    (un enlace, una referencia) se parte en vez de salirse de la tarjeta: medido a 390 px. */
 .volver-a-llamar-nota { overflow-wrap: anywhere; }
+
+/* -- J2 · SCRUM-1043a -- lista de Clientes, columna «Pendiente de cobro»: la celda parte sus líneas.
+   `.table td` lleva `white-space: nowrap` en el móvil, y la línea de garantía retenida (literal
+   firmado de SCRUM-1108, unos 70 caracteres) se salía de la tarjeta: medido 453 px a 320 px de ancho
+   con `docs/master/evidencias/SCRUM-1043a/pagina.mjs`. */
+.table td.cell-pendiente { white-space: normal; }

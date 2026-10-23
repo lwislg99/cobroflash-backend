@@ -125,7 +125,9 @@ export async function listCustomers(
     if (garantias.has(c.id)) fila.garantiaRetenida = garantias.get(c.id)!;
     return fila;
   });
-  if (opciones.soloConDeuda) filas = filas.filter((c) => 'saldoPendiente' in c || 'garantiaRetenida' in c);
+  // SCRUM-1043a · un saldo ≤ 0 (un abono pendiente que compensa) NO es deuda (c.16244): la cifra se
+  // manda igual —es la de la ficha—, pero el cliente no entra en «con deuda».
+  if (opciones.soloConDeuda) filas = filas.filter((c) => (c.saldoPendiente ?? 0) > 0 || 'garantiaRetenida' in c);
   if (opciones.ordenPorSaldo) {
     const de = (c: { id: number; saldoPendiente?: number }) => (c.saldoPendiente ?? 0) + (garantias.get(c.id)?.total ?? 0);
     filas = [...filas].sort((a, b) => de(b) - de(a));
