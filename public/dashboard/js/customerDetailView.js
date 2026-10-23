@@ -270,7 +270,7 @@ function montarNotasDelCliente(card, customerId) {
     pintar(r && r.notas);
   }
 
-  boton.onclick = async () => {
+  boton.addEventListener('click', async () => {
     error.hidden = true;
     error.textContent = '';
     boton.disabled = true;
@@ -284,7 +284,7 @@ function montarNotasDelCliente(card, customerId) {
     } finally {
       boton.disabled = false;
     }
-  };
+  });
 
   // Si la lista no llega, la tarjeta se queda sin filas y el resto de la ficha sale igual.
   cargar().catch(() => {});

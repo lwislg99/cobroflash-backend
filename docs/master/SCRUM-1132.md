@@ -49,12 +49,17 @@ A9: comprobación → `tests/scrum1327-el-veredicto-no-se-decide-a-mano.test.mjs
 - **Rojo primero:** contra la vista de `main`, el guard da 6 hallazgos («la ficha NO tiene tarjeta de
   notas» a los tres anchos, con y sin notas) y el test de la tanda 4 de 5 en rojo (el del técnico es un
   negativo y en `main` pasa igual: allí no hay tarjeta para nadie).
-- **Mutación** (`evidencias/SCRUM-1132/mutar.mjs`, desde la raíz): base verde; **8 de 8** mutantes los
-  tumba el guard nombrando su defecto (consulta sin `merchantId`, Nota fija repetida, campo que no se
-  vacía, `err.message` pintado, sin la puerta de admin, clic sin `POST`, botón `btn-sm` de 30 px) y sin
-  el registro de la firma sale **CIEGO** (2), no verde. `git status` limpio tras cada pasada.
-- **`tests/scrum1132-notas-en-la-ficha.test.mjs`** (en `npm test`, banco de vistas): literales = registro,
-  la tarjeta con fecha y autor sin la Nota fija, «Sin notas», el técnico sin tarjeta, y el error.
+- **Mutación** (`node docs/master/evidencias/SCRUM-1132/mutar.mjs`, desde la raíz): sin lista propia
+  (SCRUM-1387), toma las `MUTACIONES_QUE_ME_TUMBAN` del test con el lector del meta-guard. Base verde en
+  los dos; **6 de 6** caen en el test (en el caso de su `cae`) y en el guard (salida 1): Nota fija
+  repetida, campo que no se vacía, clic sin `POST`, `err.message` pintado, sin la puerta de admin y
+  botón `btn-sm`. Restauración comprobada por sha256.
+  Fuera del catálogo, porque muta `dist/` y no un fichero del repositorio, se midió UNA vez con un banco
+  de la sesión (no comiteado): `listarNotas` sin `merchantId` → el guard sale 1 con «sale la nota de OTRO
+  comercio (regla 2)». En el mismo pase, borrar el registro de la firma dio **CIEGO** (2), no verde.
+- **`tests/scrum1132-notas-en-la-ficha.test.mjs`** (en `npm test`, banco de vistas, 6 casos): literales =
+  registro, la tarjeta con fecha y autor sin la Nota fija, «Sin notas», el clic (manda el texto, vacía el
+  campo, pinta la nota; el botón no es `btn-sm`), el técnico sin tarjeta, y el error.
 - **Guards de navegador:** `censo:guards-navegador` → **39 · 39 verdes · 0 no verdes** (los 38 de
   antes + éste).
 - **Tanda completa** sobre esta rama: **12.184 tests · 11.987 pass · 40 fail · 157 skipped**. Para
@@ -74,4 +79,6 @@ Escribí el guard con dos `process.exit` a mano (uno con `2` al no cargar el rou
 final) y un `new URL` sobre la ruta de la petición; luego, al arreglarlo, pasé a `veredictoDe` cuentas
 escritas en línea (`hallazgos: []`). Las tres cosas las cazó la tanda, no yo: `scrum1327` las salidas y
 las cuentas a mano, `scrum414`/`scrum195` el `new URL`. Ya existe la comprobación; por eso la línea
-`A9:` la nombra.
+`A9:` la nombra. Lo mismo con el primer banco de mutación, que traía su lista propia: lo cazó
+`scrum1387` en `guards:entrada`, y se rehízo sobre el catálogo. Y la vista usaba `onclick =`, que el
+banco de vistas no dispara: el test del clic salió rojo por eso y se pasó a `addEventListener`.

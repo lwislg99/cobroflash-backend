@@ -20,6 +20,26 @@ import { aprobacionesDeMicrocopy } from './_microcopy-aprobada.mjs';
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const esperar = () => new Promise((r) => setTimeout(r, 20));
 
+/**
+ * Los defectos que este test tiene que cazar (contrato del meta-guard, SCRUM-745). Los aplica
+ * `npm run meta:mutaciones` contra este test y `docs/master/evidencias/SCRUM-1132/mutar.mjs`
+ * contra `guard:notas-en-la-ficha`, en navegador.
+ */
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  { fichero: 'public/dashboard/js/customerDetailView.js', de: 'filter((n) => n && !n.esFija)', a: 'filter((n) => n)',
+    cae: 'la tarjeta pinta las notas con fecha y autor, sin repetir la Nota fija' },
+  { fichero: 'public/dashboard/js/customerDetailView.js', de: "      campo.value = '';\n", a: '',
+    cae: 'el clic en «Añadir nota» manda el texto, vacía el campo y pinta la nota nueva' },
+  { fichero: 'public/dashboard/js/customerDetailView.js', de: "{ method: 'POST', body: JSON.stringify({ texto: campo.value }) }", a: '{}',
+    cae: 'el clic en «Añadir nota» manda el texto, vacía el campo y pinta la nota nueva' },
+  { fichero: 'public/dashboard/js/customerDetailView.js', de: "window.mensajeParaPersona(err, '')", a: "(err && err.message) || ''",
+    cae: 'el error: el motivo del servidor sólo si viene en `message`, nunca la tripa' },
+  { fichero: 'public/dashboard/js/customerDetailView.js', de: "if (window.appUserRole === 'admin') {\n    const notasCard", a: "if (true) {\n    const notasCard",
+    cae: 'al técnico ni se le pinta la tarjeta ni se le piden las notas' },
+  { fichero: 'public/dashboard/js/customerDetailView.js', de: "boton.className = 'btn-secondary';", a: "boton.className = 'btn-secondary btn-sm';",
+    cae: 'el clic en «Añadir nota» manda el texto, vacía el campo y pinta la nota nueva' },
+];
+
 const FIJA = 'Texto heredado de la cabecera';
 const DETAIL = {
   customer: { id: 7, name: 'Ana 1132', notes: FIJA, createdAt: '2025-01-01T00:00:00Z' },
@@ -85,6 +105,43 @@ test('SCRUM-1132 · sin notas con fecha, la tarjeta dice «Sin notas» (aunque h
   const t = tarjeta(r.contenedor);
   assert.ok(t, 'SUELO: hay tarjeta');
   assert.ok(texto(t).includes(b.ctx.notasCliente.TEXTOS.vacio), '🔴 sin notas con fecha no dice «Sin notas»');
+});
+
+test('SCRUM-1132 · el clic en «Añadir nota» manda el texto, vacía el campo y pinta la nota nueva', async () => {
+  const lista = NOTAS.notas.slice();
+  const posts = [];
+  const b = cargarDashboard(RAIZ, {
+    datos: (url, opts) => {
+      if (/\/detail$/.test(url)) return DETAIL;
+      if (/\/historial$/.test(url)) return { trabajos: [], partesSueltos: [] };
+      if (/\/notes$/.test(url) && opts && opts.method === 'POST') {
+        const { texto: t } = JSON.parse(opts.body);
+        posts.push(t);
+        const nueva = { id: 9, texto: t, fecha: '2026-10-23T08:00:00Z', autor: 'Marta 1132', esFija: false };
+        lista.unshift(nueva);
+        return nueva;
+      }
+      if (/\/notes$/.test(url)) return { notas: lista.slice() };
+      return [];
+    },
+  });
+  const r = await pintarVista(b, 'renderCustomer360View', 7);
+  await esperar();
+  const t = tarjeta(r.contenedor);
+  assert.ok(t, 'SUELO: hay tarjeta');
+  const campo = todos(t).find((n) => String(n.tagName || n.nodeName).toLowerCase() === 'textarea');
+  const boton = todos(t).find((n) => String(n.tagName || n.nodeName).toLowerCase() === 'button');
+  assert.ok(campo && boton, 'SUELO: la tarjeta tiene campo y botón');
+  assert.equal(boton.textContent, b.ctx.notasCliente.TEXTOS.boton);
+  // La variante pequeña se queda en 30 px también en móvil (DESIGN.md §5): ésta es la acción de la tarjeta.
+  assert.ok(!/\bbtn-sm\b/.test(String(boton.className)), '🔴 el botón es `btn-sm`: 30 px de toque en móvil');
+  campo.value = 'Llamar antes de subir';
+  boton.click();
+  await esperar();
+  assert.deepEqual(posts, ['Llamar antes de subir'], '🔴 el clic no manda el texto escrito');
+  assert.equal(campo.value, '', '🔴 tras guardar, el campo no se vacía');
+  const nueva = todos(t).find((n) => n.dataset && n.dataset.nota === '9');
+  assert.ok(nueva && texto(nueva).includes('Llamar antes de subir'), '🔴 la nota guardada no aparece en la tarjeta');
 });
 
 test('SCRUM-1132 · al técnico ni se le pinta la tarjeta ni se le piden las notas', async () => {
