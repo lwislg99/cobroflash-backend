@@ -1,4 +1,4 @@
-// Réplica local del meta-guard para el catálogo de tests/scrumPENDIENTE-configuracion-44.test.mjs.
+// Réplica local del meta-guard para el catálogo de tests/scrum1577-configuracion-44.test.mjs.
 // Cada mutación se aplica en una COPIA fuera del árbol (el árbol no se toca) y se mira si cae SU prueba.
 // Uso: node mutar.mjs <raiz> <carpeta temporal>
 import fs from 'node:fs';
@@ -6,7 +6,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 const [RAIZ, TMP] = process.argv.slice(2).map((p) => path.resolve(p));
-const TEST = 'tests/scrumPENDIENTE-configuracion-44.test.mjs';
+const TEST = 'tests/scrum1577-configuracion-44.test.mjs';
 const { MUTACIONES_QUE_ME_TUMBAN: M } = await import(pathToFileURL(path.join(RAIZ, TEST)).href);
 const FICHEROS = [TEST, 'public/dashboard/js/settingsView.js', 'public/dashboard/css/styles.css'];
 const entorno = { ...process.env }; delete entorno.NODE_TEST_CONTEXT; delete entorno.NODE_OPTIONS;

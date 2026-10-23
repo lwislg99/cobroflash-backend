@@ -1,4 +1,4 @@
-# SCRUM-PENDIENTE · CONFIGURACIÓN · «Añadir condición» y «Quitar» a 44 px de toque (de SCRUM-962b)
+# SCRUM-1577 · CONFIGURACIÓN · «Añadir condición» y «Quitar» a 44 px de toque (de SCRUM-962b)
 
 > ⚠️ **Número PENDIENTE:** el conector de Jira no cargó en esta sesión (ToolSearch «+Atlassian getJiraIssue»
 > sin resultados, 22-oct ~14:20Z). Este fichero, la rama, el test y la carpeta de evidencias se renombran
@@ -6,7 +6,7 @@
 > su registro; se cita.
 
 **Medido contra:** `origin/main` = `82f3ea4115723db78ca56c4b2e1c426a810a0433` · 2026-10-22T14:47:03Z
-**Skill UI:** `yaqu-premium-ui` cargada **tarde** (después de escribir el arreglo; ver `A9:`). Checklist AB6 repasado después: botones del inventario AB3 (`btn btn-secondary`, `btn btn-ghost`), dos `style=` en línea MENOS, foco visible igual que antes (anillo `rgba(34,197,94,.3) 0 0 0 3px`, medido a 390 y 929), capturas antes/después en `evidencias/scrumPENDIENTE/`.
+**Skill UI:** `yaqu-premium-ui` cargada **tarde** (después de escribir el arreglo; ver `A9:`). Checklist AB6 repasado después: botones del inventario AB3 (`btn btn-secondary`, `btn btn-ghost`), dos `style=` en línea MENOS, foco visible igual que antes (anillo `rgba(34,197,94,.3) 0 0 0 3px`, medido a 390 y 929), capturas antes/después en `evidencias/scrum1577/`.
 **Microcopy:** ninguna. No se ha tocado ningún literal (`TX.clausulaAnadir`, `TX.clausulaQuitar` siguen igual).
 **Carril:** J3 (`settingsView.js`, contenedor de J3). Producción congelada desde el 20-oct: **no se ha visto en yaqu.app**; todo está medido con el árbol servido en local.
 
@@ -28,7 +28,7 @@ Banco de 962b tal cual (`docs/master/evidencias/scrum962b/configuracion-viva.mjs
 
 Por qué `btn-secondary` y `btn-ghost`, y no `btn-sm`: DESIGN.md §5 deja `btn-sm` en 30 px también en móvil. Las dos clases suben a 44 en móvil por `@media (max-width: 768px) { … :not(.btn-sm) { min-height: 44px } }` y se quedan en 36 en escritorio, que es la regla escrita (`minimoPara()`).
 
-## ANTES y DESPUÉS — `evidencias/scrumPENDIENTE/banco-44.mjs`
+## ANTES y DESPUÉS — `evidencias/scrum1577/banco-44.mjs`
 
 Mismo banco que 962b (`_banco-lista.mjs`, vista viva, clic real en la pestaña, árbitro `__areaDeToque`). 5 controles × 320/390/929 = **15 mediciones**. **Control positivo SEMBRADO:** un `<select>` de 20 px pegado al primer objetivo de cada pestaña; tiene que salir corto o la fila es CIEGA (salida 2). Comprobado que sabe decir CIEGO: en mi primera versión la sonda caía en un panel oculto y el banco salió 2 con 21 CIEGOS, no verde.
 
@@ -44,9 +44,9 @@ La tabla «después» de los tres sin tocar es la del árbol entregado, no la de
 
 ## Test
 
-`tests/scrumPENDIENTE-configuracion-44.test.mjs` (sin gate): ① los dos botones llevan su clase de la casa y no `btn-sm`; ② sin `style=` en línea; ③ la regla de móvil que sube `.btn-secondary`/`.btn-ghost` a 44 sigue en `styles.css`.
+`tests/scrum1577-configuracion-44.test.mjs` (sin gate): ① los dos botones llevan su clase de la casa y no `btn-sm`; ② sin `style=` en línea; ③ la regla de móvil que sube `.btn-secondary`/`.btn-ghost` a 44 sigue en `styles.css`.
 - **Base en rojo:** con el `settingsView.js` de `origin/main` caen ① y ② (③ pasa: no depende del arreglo).
-- **Mutaciones** en el catálogo del meta-guard (`MUTACIONES_QUE_ME_TUMBAN`, 4): `meta-guard-mutaciones.mjs --solo-censo` las cuenta (646 → **650** declaraciones, 171 → 172 ficheros, salida 0). Réplica local en copia fuera del árbol, `evidencias/scrumPENDIENTE/mutar.mjs`: **base verde, las 4 tumban SU prueba, MAL 0**.
+- **Mutaciones** en el catálogo del meta-guard (`MUTACIONES_QUE_ME_TUMBAN`, 4): `meta-guard-mutaciones.mjs --solo-censo` las cuenta (646 → **650** declaraciones, 171 → 172 ficheros, salida 0). Réplica local en copia fuera del árbol, `evidencias/scrum1577/mutar.mjs`: **base verde, las 4 tumban SU prueba, MAL 0**.
 
 ## Tandas
 

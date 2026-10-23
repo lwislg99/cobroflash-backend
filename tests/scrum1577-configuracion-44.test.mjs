@@ -1,4 +1,4 @@
-// tests/scrumPENDIENTE-configuracion-44.test.mjs — SCRUM-PENDIENTE (de SCRUM-962b, equipo de Luis)
+// tests/scrum1577-configuracion-44.test.mjs — SCRUM-1577 (de SCRUM-962b, equipo de Luis)
 //
 // Sin gate: lee `settingsView.js` y `styles.css`. Ni BD, ni red, ni navegador.
 //
@@ -7,7 +7,7 @@
 // Su hermano de fila, «Quitar», igual (22 px; no salía en 962b porque los datos de muestra no traen
 // cláusulas). Ahora llevan `btn btn-secondary` y `btn btn-ghost`, que miden lo que manda DESIGN.md §5:
 // 44 en móvil y 36 en escritorio. La GEOMETRÍA la mide en navegador
-// `docs/master/evidencias/scrumPENDIENTE/banco-44.mjs` (3 anchos, con sonda sembrada); este test vigila
+// `docs/master/evidencias/scrum1577/banco-44.mjs` (3 anchos, con sonda sembrada); este test vigila
 // lo que la sostiene:
 //   ① que los dos botones lleven una clase de botón de la casa, y NO la variante pequeña (`btn-sm` se
 //      queda en 30 también en móvil, DESIGN.md §5);
@@ -25,25 +25,25 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     fichero: 'public/dashboard/js/settingsView.js',
     de: `'<button type="button" class="btn btn-secondary" id="clausulas-anadir">'`,
     a: `'<button type="button" id="clausulas-anadir">'`,
-    cae: 'SCRUM-PENDIENTE ① ·',
+    cae: 'SCRUM-1577 ① ·',
   },
   {
     fichero: 'public/dashboard/js/settingsView.js',
     de: `'<button type="button" class="btn btn-secondary" id="clausulas-anadir">'`,
     a: `'<button type="button" class="btn btn-secondary btn-sm" id="clausulas-anadir">'`,
-    cae: 'SCRUM-PENDIENTE ① ·',
+    cae: 'SCRUM-1577 ① ·',
   },
   {
     fichero: 'public/dashboard/js/settingsView.js',
     de: `'<button type="button" class="btn btn-ghost" data-clausula-quitar="' + i + '">'`,
     a: `'<button type="button" class="btn btn-ghost" data-clausula-quitar="' + i + '" style="font-size:13px">'`,
-    cae: 'SCRUM-PENDIENTE ② ·',
+    cae: 'SCRUM-1577 ② ·',
   },
   {
     fichero: 'public/dashboard/css/styles.css',
     de: '  .btn-ghost:not(.btn-sm) { min-height: 44px; }',
     a: '  .btn-ghost:not(.btn-sm) { }',
-    cae: 'SCRUM-PENDIENTE ③ ·',
+    cae: 'SCRUM-1577 ③ ·',
   },
 ];
 
@@ -58,7 +58,7 @@ const BOTONES = [
 ];
 const etiquetas = (re) => JS.match(re) || [];
 
-test('SCRUM-PENDIENTE ① · «Añadir condición» y «Quitar» llevan clase de botón de la casa, y no la pequeña', () => {
+test('SCRUM-1577 ① · «Añadir condición» y «Quitar» llevan clase de botón de la casa, y no la pequeña', () => {
   for (const [nombre, re, clase] of BOTONES) {
     const t = etiquetas(re);
     assert.equal(t.length, 1, `🔴 NO PUDE MIRAR: ${nombre} aparece ${t.length} veces en settingsView.js (esperaba 1).`);
@@ -70,7 +70,7 @@ test('SCRUM-PENDIENTE ① · «Añadir condición» y «Quitar» llevan clase de
   }
 });
 
-test('SCRUM-PENDIENTE ② · los dos botones no llevan estilo en línea', () => {
+test('SCRUM-1577 ② · los dos botones no llevan estilo en línea', () => {
   for (const [nombre, re] of BOTONES) {
     for (const t of etiquetas(re)) {
       assert.doesNotMatch(t, /\bstyle=/, `🔴 ${nombre} lleva \`style=\` en línea otra vez: ${t}`);
@@ -78,7 +78,7 @@ test('SCRUM-PENDIENTE ② · los dos botones no llevan estilo en línea', () => 
   }
 });
 
-test('SCRUM-PENDIENTE ③ · la regla de móvil que sube `.btn-secondary` y `.btn-ghost` a 44 sigue en styles.css', () => {
+test('SCRUM-1577 ③ · la regla de móvil que sube `.btn-secondary` y `.btn-ghost` a 44 sigue en styles.css', () => {
   const movil = [...CSS.matchAll(/@media\s*\(max-width:\s*768px\)\s*\{([\s\S]*?)\n\}/g)].map((m) => m[1]).join('\n');
   assert.ok(movil.length > 0, '🔴 NO PUDE MIRAR: no encuentro ningún `@media (max-width: 768px)` en styles.css.');
   for (const clase of ['btn-secondary', 'btn-ghost']) {
