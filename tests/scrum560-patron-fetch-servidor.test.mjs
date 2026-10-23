@@ -48,7 +48,6 @@ const DIR = path.join(RAIZ, 'tests');
  * SI ARREGLAS UNO, quítalo de aquí en el mismo commit. El test de abajo lo exige.
  */
 const CON_EL_PATRON_YA = [
-  'albaran.test.mjs',
   'pdfs.test.mjs',
   'scrum127-paywall-bloquea.test.mjs',
   'scrum170-facturacion-parcial.test.mjs',
@@ -59,12 +58,9 @@ const CON_EL_PATRON_YA = [
   // «segundo que aborta» que esta lista se dejó anotado como condición para reabrirse: 24 de 24
   // instancias en paralelo caían con `fetch failed`, y su rojo tenía forma de 404, así que acusó
   // a la landing y se abrió un Highest contra un sistema sano. Arreglado con este mismo patrón.
-  'scrum49-firma-remota.test.mjs',
   'scrum51-job-sin-quote.test.mjs',
   'scrum57-operario-propagacion.test.mjs',
   'scrum58-jobs-n1.test.mjs',
-  'scrum68-evidencias-firma.test.mjs',
-  'scrum72-pdfs-privados.test.mjs',
   'scrum73-verifactu-gate.test.mjs',
   'scrum74-recibo-token.test.mjs',
   'scrum82-zip-verifactu.test.mjs',
@@ -81,7 +77,6 @@ const CON_EL_PATRON_YA = [
   //   · el resto, gateados por `QA_DB_TEST` o `BOT_SUITE_TEST`: sus veredictos sólo se miden en staging.
   // Los tres de J2 que sólo corren con `LIBRO_PG_URL` (scrum1346, scrum1397, scrum1403) se migraron en
   // SCRUM-1218c (23-oct-2026), medidos con un Postgres desechable: la lista baja de 40 a 37.
-  'bot-suite.test.mjs',
   'scrum1188d-tiers-tambien-se-vacia.test.mjs',
   'scrum120-patch-job-roles.test.mjs',
   'scrum148-filtro-por-miembro.test.mjs',
@@ -91,13 +86,10 @@ const CON_EL_PATRON_YA = [
   'scrum24-operarios-metrics.test.mjs',
   'scrum25-export-zip.test.mjs',
   'scrum25-exports.test.mjs',
-  'scrum47-enviar-albaran-wa.test.mjs',
-  'scrum50-bot-albaranes.test.mjs',
   'scrum66-tipo-operacion.test.mjs',
   'scrum814-carrera-del-tramo.gated.test.mjs',
   'scrum912-leer-ticket-gasto.test.mjs',
   'scrum94-register-teammember.test.mjs',
-  'scrum992-partes-recortan-por-rol.test.mjs',
 ];
 
 /** La salida, que va en todos los mensajes: un guard que no la dice acaba en una lista de excepciones. */
