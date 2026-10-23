@@ -1248,6 +1248,7 @@ router.post('/:id/regenerate-pdf', requireRole('admin'), async (req, res) => {
       rectifiesNumber: invoice.rectifies?.number ?? null,
       watermark: isDemoMerchant(merchant) ? DEMO_WATERMARK : null,
       stageLabel: invoice.stageLabel, // SCRUM-33
+      zona: merchant.timezone, // SCRUM-1470c: el día de la «Fecha:», el de su registro
     });
 
     await prisma.invoice.update({
