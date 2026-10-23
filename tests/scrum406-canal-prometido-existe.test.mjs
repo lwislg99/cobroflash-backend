@@ -60,6 +60,8 @@ const DIR_LEGAL = path.join(RAIZ, 'docs/legal'); // = `LEGAL_DIR` de legalPages.
 /**
  * Los documentos que pasa `readLegalDoc` en una fuente TypeScript, por AST. Un argumento que no es
  * un literal no se puede resolver sin ejecutar: va a `sinResolver`, y eso es CIEGO, no verde.
+ * Cada llamada sin resolver se identifica por su fichero y el TEXTO de su argumento (lo que es);
+ * la línea viaja aparte, sólo para el mensaje (SCRUM-710b: la posición caduca).
  */
 function llamadasAReadLegalDoc(fuente, rel = 'fuente.ts') {
   const sf = ts.createSourceFile(rel, fuente, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
@@ -72,7 +74,7 @@ function llamadasAReadLegalDoc(fuente, rel = 'fuente.ts') {
         const a = n.arguments[0];
         const linea = sf.getLineAndCharacterOfPosition(n.getStart()).line + 1;
         if (a && (ts.isStringLiteral(a) || ts.isNoSubstitutionTemplateLiteral(a))) docs.push({ doc: a.text, en: `${rel}:${linea}` });
-        else sinResolver.push(`${rel}:${linea}`);
+        else sinResolver.push({ fichero: rel, argumento: a ? a.getText(sf) : '', linea });
       }
     }
     ts.forEachChild(n, visitar);
@@ -173,7 +175,8 @@ test('SCRUM-1551h · SUELO: el guard mira los documentos legales que el servidor
     + `desde ${s.fuentes} fuente(s) de src/ que nombran readLegalDoc`);
   assert.deepEqual(s.sinResolver, [],
     '🔴 hay llamadas a `readLegalDoc` con un argumento que no es un literal: este guard no sabe '
-    + 'qué documento sirven, así que no lo mira. Pásale el nombre literal, o enséñale a resolverlo.');
+    + 'qué documento sirven, así que no lo mira. Pásale el nombre literal, o enséñale a resolverlo: '
+    + s.sinResolver.map((x) => `${x.fichero}:${x.linea} (${x.argumento})`).join(', '));
   assert.ok(s.docs.length >= 1,
     `🔴 el AST no encuentra NINGUNA llamada a \`readLegalDoc\` en ${s.fuentes} fuente(s): o el servidor `
     + 'dejó de servir documentos legales, o este buscador dejó de verlos. Cero es «no he mirado».');
@@ -192,7 +195,7 @@ test('SCRUM-1551h · el lector de AST ve el literal y declara CIEGO lo que no pu
     "const c = readLegalDoc(nombre);",
   ].join('\n'), 'sembrado.ts');
   assert.deepEqual(r.docs.map((d) => d.doc), ['SEMBRADO_1551h.md', 'OTRO_1551h.md']);
-  assert.deepEqual(r.sinResolver, ['sembrado.ts:4']);
+  assert.deepEqual(r.sinResolver.map((x) => [x.fichero, x.argumento]), [['sembrado.ts', 'nombre']]);
   assert.deepEqual(llamadasAReadLegalDoc('const x = 1;').docs, [], 'sin llamadas no inventa ninguna');
 });
 
