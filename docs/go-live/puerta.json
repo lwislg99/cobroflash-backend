@@ -109,7 +109,13 @@
       "de_donde": "SCRUM-1236 c.19745",
       "consta_en": "SCRUM-1554 c.19746, fila 14",
       "condicion": "Superada el 23-oct por la firma S3 (SCRUM-1551 c.20437): el recambio de c.19607 NO se aplica. S3 lo aplica SCRUM-1551e en public/index.html:442; se cierra con el sha de su merge.",
-      "estado": "abierta"
+      "estado": "cerrada",
+      "cerrada": {
+        "por": "jv-j3ar (puesto J3, equipo de Javier), SCRUM-1551f",
+        "motivo": "S3 (SCRUM-1551 c.20437) entró en main con el PR #2711 (SCRUM-1551e) y está servido: yaqu.app/health = 180e19746b2c, que contiene el merge, y la portada lleva 1 vez «Y llevas clientes, gastos y albaranes en el mismo sitio.» y 0 «gastos y facturas» (23-oct-2026 10:14:56Z, cabecera Date de yaqu.app).",
+        "sha": "809527fa691056443c545901152443d0d2a072dc",
+        "fecha": "2026-10-23"
+      }
     },
     {
       "numero": 15,

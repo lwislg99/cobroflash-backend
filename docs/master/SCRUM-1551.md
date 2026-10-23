@@ -864,3 +864,40 @@ El resultado con el tramo comiteado y el del obligatorio van en el comentario de
 | guards de landing / microcopy / claims / 564 / 331 en verde, sin quitar casos | `scripts/_afirmaciones-publicadas.mjs` (`faq/div#4`); §4 |
 | fila 14 de la puerta actualizada a la firma | `docs/go-live/puerta.json`, fila 14, `condicion` |
 | servido en yaqu.app | **NO HECHO** → tras el despliegue |
+
+---
+
+# APÉNDICE · 23-oct-2026 · SCRUM-1551f · la fila 14 de la puerta, cerrada con el sha del merge de #2711
+
+**Medido contra:** `origin/main` = `180e19746b2c3b38bc953d81ec23d1c7c4019249` · 2026-10-23T10:15:17Z
+
+A9: sin fallo que generalice — el tramo sólo cierra una entrada por el camino que el guard prescribe, y el rojo previo (fila cerrada sin declarar) se vio caer antes de declararla
+
+**Quién:** jv-j3ar (puesto J3, equipo de Javier), por encargo del orquestador `cobroflash-backend-62`. Carril a
+mano: el hook de inicio dijo «SIN IDENTIDAD» (SCRUM-1498). `docs/go-live/puerta.json` no tiene dueño en §3
+(`carriles.mjs de`: «sin fila en §3: nadie lo reclama»); lo toca J3 porque la fila 14 es la del subtítulo, carril J3.
+
+## 1 · Qué entra
+
+| sitio | cambio |
+|---|---|
+| `docs/go-live/puerta.json`, entrada 14 | `estado`: `abierta` → `cerrada`, con `cerrada: {por, motivo, sha, fecha}`; `sha` = `809527fa691056443c545901152443d0d2a072dc` (merge del PR #2711, `gh pr view 2711 --json mergeCommit`, mergeado 2026-10-23T10:07:48Z). `condicion` no se toca |
+| `tests/scrum1554c-puerta-de-go-live.test.mjs` | `CERRADAS`: se añade `14`. Es el paso que el propio guard exige al cerrar una entrada («añádela a CERRADAS, así el diff dice cuál salió»); `TOTAL` no cambia (23) y ningún caso se quita |
+
+## 2 · El efecto, medido antes de cerrar
+
+- `https://yaqu.app/health` → `version` = `180e19746b2c3b38bc953d81ec23d1c7c4019249`; `git merge-base --is-ancestor 809527fa6 180e19746` = sí.
+- `https://yaqu.app/` (89.737 B): «Y llevas clientes, gastos y albaranes en el mismo sitio.» aparece **1** vez (positivo);
+  «gastos y facturas» **0** veces. Cabecera `Date:` de yaqu.app: 23-oct-2026 10:14:56 GMT.
+
+## 3 · Tests
+
+- Rojo primero: con la entrada cerrada y `CERRADAS` sin el 14, `scrum1554c` da 13/14 y el caído dice «la entrada 14
+  está cerrada y el guard no lo declara». Con el 14 declarado, verde (cifras de la mini-tanda en el comentario de Jira).
+
+## 4 · Aceptación → dónde se ve
+
+| aceptación | dónde se ve |
+|---|---|
+| fila 14 cerrada con el sha del merge de 1551e | `docs/go-live/puerta.json`, entrada 14; `tests/scrum1554c-puerta-de-go-live.test.mjs` (`CERRADAS`) |
+| S3 servido en yaqu.app | `https://yaqu.app/` (§2) |
