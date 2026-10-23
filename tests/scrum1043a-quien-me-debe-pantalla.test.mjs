@@ -200,14 +200,14 @@ test('SCRUM-1043a · C · `conDeuda=1` deja fuera el saldo ≤ 0 y aísla mercha
   const router = mod.default?.default ?? mod.default ?? mod; // CommonJS de dist: el router va en `default.default`
   assert.ok(Array.isArray(router.stack), 'CIEGO: no tengo el router');
   const clientes = [
-    { id: 1, merchantId: 1, name: 'Debe', createdAt: new Date(2026, 0, 1) },
-    { id: 2, merchantId: 1, name: 'Abono', createdAt: new Date(2026, 0, 2) },
-    { id: 3, merchantId: 2, name: 'Ajeno', createdAt: new Date(2026, 0, 3) },
+    { id: 1, merchantId: 71, name: 'Debe', createdAt: new Date(2026, 0, 1) },
+    { id: 2, merchantId: 71, name: 'Abono', createdAt: new Date(2026, 0, 2) },
+    { id: 3, merchantId: 72, name: 'Ajeno', createdAt: new Date(2026, 0, 3) },
   ];
   const facturas = [
-    { merchantId: 1, customerId: 1, status: 'pending', total: 300 },
-    { merchantId: 1, customerId: 2, status: 'pending', total: 100 }, { merchantId: 1, customerId: 2, status: 'pending', total: -250 },
-    { merchantId: 2, customerId: 3, status: 'pending', total: 999 }, { merchantId: 2, customerId: 1, status: 'pending', total: 888 },
+    { merchantId: 71, customerId: 1, status: 'pending', total: 300 },
+    { merchantId: 71, customerId: 2, status: 'pending', total: 100 }, { merchantId: 71, customerId: 2, status: 'pending', total: -250 },
+    { merchantId: 72, customerId: 3, status: 'pending', total: 999 }, { merchantId: 72, customerId: 1, status: 'pending', total: 888 },
   ];
   const dobles = {
     customer: { findMany: async ({ where }) => clientes.filter((c) => c.merchantId === where.merchantId) },
@@ -231,8 +231,8 @@ test('SCRUM-1043a · C · `conDeuda=1` deja fuera el saldo ≤ 0 y aísla mercha
     } finally { for (const k of Object.keys(orig)) prisma[k] = orig[k]; }
     return cuerpo;
   };
-  const todosM1 = await pedir(1, {});
+  const todosM1 = await pedir(71, {});
   assert.equal(todosM1.find((c) => c.id === 2).saldoPendiente, -150, 'la cifra es la de la ficha, sin tocar');
-  assert.deepEqual((await pedir(1, { conDeuda: '1' })).map((c) => [c.id, c.saldoPendiente]), [[1, 300]], '🔴 un abono entra como deuda');
-  assert.deepEqual((await pedir(2, { conDeuda: '1' })).map((c) => [c.id, c.saldoPendiente]), [[3, 999]], 'otro merchant, sólo lo suyo');
+  assert.deepEqual((await pedir(71, { conDeuda: '1' })).map((c) => [c.id, c.saldoPendiente]), [[1, 300]], '🔴 un abono entra como deuda');
+  assert.deepEqual((await pedir(72, { conDeuda: '1' })).map((c) => [c.id, c.saldoPendiente]), [[3, 999]], 'otro merchant, sólo lo suyo');
 });

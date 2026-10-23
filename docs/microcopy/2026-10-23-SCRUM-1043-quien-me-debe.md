@@ -19,8 +19,8 @@ quien los aplicó contando que se firmaron, no la firma; la firma es el comentar
 
 > Ningún cliente tiene cobros pendientes.
 
-La garantía retenida usa el literal ya firmado de SCRUM-1108 (`garantiaRetenidaFicha`, en
-`2026-09-25-SCRUM-1108-garantia-retenida.md`), igual, una línea por retención.
+La garantía retenida usa el literal ya firmado de SCRUM-1108 (`garantiaRetenidaFicha`, firmado en
+SCRUM-1108 c.17000), igual, una línea por retención.
 
 ## Dónde se pinta cada uno
 

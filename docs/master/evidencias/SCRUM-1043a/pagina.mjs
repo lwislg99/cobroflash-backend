@@ -1,16 +1,18 @@
 // docs/master/evidencias/SCRUM-1043a/pagina.mjs — la lista de Clientes MONTADA (vistas reales, banco de
 // `_pagina-panel.mjs`) con tres clientes —deuda, sin deuda, parcial con garantía— para mirarla en un
 // navegador a 320, 390 y 1280 px. Escribe `admin.html`, `admin-filtro.html` y `tecnico.html` en la
-// carpeta que se le pase (por defecto, un temporal). Uso: node docs/master/evidencias/SCRUM-1043a/pagina.mjs <dir>
+// carpeta que se le pase (obligatoria). Uso: node docs/master/evidencias/SCRUM-1043a/pagina.mjs <dir>
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cargarDashboard, pintarVista, todos } from '../../../../tests/_banco-vistas.mjs';
 import { serializar } from '../../../../scripts/_pagina-panel.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../..');
-const OUT = process.argv[2] || fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1043a-'));
+// La carpeta la pone quien lo llama: el HTML se queda para el navegador, así que no hay temporal que borrar (SCRUM-864c).
+const OUT = process.argv[2];
+if (!OUT) { console.error('Uso: node docs/master/evidencias/SCRUM-1043a/pagina.mjs <dir>'); process.exit(2); }
+fs.mkdirSync(OUT, { recursive: true });
 const base = { phone: '34000000001', email: null, notes: '', tags: null, createdAt: '2026-01-15T10:00:00Z' };
 const LOTE = [
   { ...base, id: 1, name: 'Administración de Fincas Soler y Asociados', saldoPendiente: 1250 },

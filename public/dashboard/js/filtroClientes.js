@@ -106,10 +106,10 @@
    * Filtrar y ordenar los hace el SERVIDOR (`?conDeuda=1`, `?orden=saldo`): aquí sólo se pinta.
    */
   var TEXTOS_DEUDA = {
-    filtro: 'Con cobro pendiente',
-    orden: 'Más pendiente de cobro',
-    columna: 'Pendiente de cobro',
-    vacio: 'Ningún cliente tiene cobros pendientes.',
+    filtro: 'Con cobro pendiente', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1043 comentario 20536, 1)
+    orden: 'Más pendiente de cobro', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1043 comentario 20536, 2)
+    columna: 'Pendiente de cobro', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1043 comentario 20536, 3a)
+    vacio: 'Ningún cliente tiene cobros pendientes.', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1043 comentario 20536, 5)
   };
   // No entra en ORDENES: al técnico no se le ofrece. `ordenar` no lo reordena (lo manda el servidor).
   var ORDEN_SALDO = { id: 'SALDO', palabra: TEXTOS_DEUDA.orden };
