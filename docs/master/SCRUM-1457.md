@@ -56,7 +56,7 @@ de por qué no se construye sin una decisión.
 
 ## J3 · SCRUM-1457a · la línea de supresión, con la guarda de la casa
 
-**Medido contra:** `origin/main` = `99eb366dc953d377353b30909643e5f3850ea1b2` · 2026-10-23T16:17:16Z (mezclado dentro de la rama, A4; sesión J3 `jv-j3at`, por encargo del orquestador `cobroflash-backend-62`; GO del fundador en SCRUM-1456 c.18731, y las tres de Stripe fuera por SCRUM-1457 c.20594)
+**Medido contra:** `origin/main` = `7083e0ddcaea127e01642550adc6b3d8d495f5e1` · 2026-10-23T16:33:26Z (mezclado dentro de la rama, A4; sesión J3 `jv-j3at`, por encargo del orquestador `cobroflash-backend-62`; GO del fundador en SCRUM-1456 c.18731, y las tres de Stripe fuera por SCRUM-1457 c.20594)
 
 A9: comprobación → `tests/scrum1387-banco-nuevo-va-al-catalogo.test.mjs`
 
@@ -96,6 +96,11 @@ nuevo (el 400 `merchant_invalido` ya estaba en la línea), el flag `MERCHANT_DEL
 - Guards de suite y vecinos (113, 237, 419, 700, 702, 719, 824, 824b ×2, 836, 976, 1387, 244, 440,
   tenancy-permisos, 1379, 1456 y el nuevo): **213 = 210 pasan + 0 caen + 3 saltados** (`LIBRO_PG_URL` y
   `QA_DB_TEST`, no corridos aquí).
+
+**Suite entera local: NO CORRIDA (la mató el arnés por memoria).** No cupo en los 10 min del primer plano, pasó
+a segundo plano y el arnés la paró por falta de memoria de la máquina; lo que dejó escrito no se cuenta. Por
+decisión del orquestador (`cobroflash-backend-62`), hace de suite entera el obligatorio de CI de este PR.
+Las mini-tandas de arriba se repitieron tras mezclar `7083e0dd`.
 
 **Sin medir:** Postgres de verdad (el banco dobla Prisma); el flag encendido en producción (no se enciende);
 yaqu.app.
