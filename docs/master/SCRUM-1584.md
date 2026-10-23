@@ -27,6 +27,9 @@ de `styles.css`, como `.gastos-pantalla select.input`).
 rama fusionada con ese main, `node scripts/guard-objetivo-tactil.mjs` da `⟦veredicto⟧ 0 hallazgos · 0 ciegos`, salida 0,
 12 censos (superficie × ancho); la sonda sale cazada en los 8 que la declaran (landing y lista de Clientes no imprimen
 sonda en su línea; no he mirado si en main es igual), y en la población ya salen `TEXTAREA` e `INPUT.input` (B activo). `EXCEPCIONES` sin tocar.
+De paso, error mío que cazó la suite entera y no los guards vecinos: el comentario nuevo de `INTERACTIVOS` decía
+«Medido el 23-oct» sin año, y `scrum737` lo contó como cifra sin ancla (82 contra 81). Ahora dice `23-oct-2026`, y
+`scrum737` pasa 5 de 5.
 
 **Corrección a c.20491:** allí los dos `select` salían en `filtroClientes.js`. Ese fichero guarda la DECISIÓN del filtro
 y no tiene DOM; los crea `customersView.js:198-220`.
