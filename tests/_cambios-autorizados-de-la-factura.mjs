@@ -55,6 +55,20 @@ export const CAMBIOS_AUTORIZADOS = [
       a: '7e8ce68f697dccf494c35fd831adccace46de06909171b01e2072e3699c57de8',
     },
   },
+  {
+    // SCRUM-1470c · la «Fecha:» de la factura imprime el día natural de su registro (zona del negocio).
+    firma: 'SCRUM-1470 c.20530',
+    registro: 'docs/master/SCRUM-1470.md',
+    cita: '«Sí, el mismo día»',
+    cuerpo: {
+      de: '48cc44fa273e62c744d7eeae63b5205f830f4dda77b30925787da38a5af7e05a',
+      a: 'fdaddbd5bb32a099baa5eaa0acddba18685f76b437f4bc4b8e4838e2b7718acc',
+    },
+    ambito: {
+      de: '7e8ce68f697dccf494c35fd831adccace46de06909171b01e2072e3699c57de8',
+      a: '7109a19821c60f7e303d855def8a08e45ed0f02e8ee36fb2dd5cad6e5df4ff83',
+    },
+  },
 ];
 
 /**
