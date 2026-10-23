@@ -465,8 +465,8 @@ a 4. **El disparador vive en Railway, no en GitHub**: ningún workflow del repo 
 
 1. ¿Alguien tocó Railway entre el **22-oct 12:35Z y el 23-oct 02:49Z** (reconectar el repositorio, cambiar la rama,
    reinstalar la app de GitHub)? En Railway: el servicio → *Settings* → *Source*, y su registro de actividad.
-2. Si nadie lo tocó, volvió solo, y **no hay nada que impida que vuelva a pasar**: es la cuarta vez del tipo A
-   (junio, 29-sep, 21-oct).
+2. Si nadie lo tocó, volvió solo, y **no hay nada que impida que vuelva a pasar**: es la **tercera** vez del tipo A
+   (junio, 29-sep, 21-oct), y el **cuarto** congelado contando el de tipo B del 24/25-sep.
 
 ### PROPUESTA — MI LECTURA, carril **S5** (`scripts/vigia-despliegue-aviso.mjs` y `scripts/vigilante-de-despliegue.mjs`, medido con `carriles.mjs`)
 
