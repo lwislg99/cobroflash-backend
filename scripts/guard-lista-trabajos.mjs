@@ -521,7 +521,35 @@ titulo('⑥ las hermanas: TRES idénticas por hash · Albaranes trae LO DECLARAD
         1,
         (todo, caja, campo, anadir, quitar) => (sinHuecos(caja, campo, anadir, quitar) ? '' : todo)],
     ];
-    const PIEZAS_DECLARADAS = [...PIEZAS_979, ...PIEZAS_1032, ...PIEZAS_1135];
+    // ── SCRUM-1043a · Clientes: «quién me debe» (filtro, orden, columna «Pendiente de cobro») ──────────
+    // Declaración autorizada por el orquestador en SCRUM-1043 c.20547, sobre los textos que firmó el
+    // fundador en c.20536. Las cinco piezas, con la forma y el recuento MEDIDOS en el HTML que pinta este
+    // banco (admin, filas sin deuda): el botón de alternar en su propia barra, la opción de orden, la
+    // casilla en «Columnas», el <th> y la celda de cada fila, VACÍA porque ningún cliente del banco debe.
+    // Una cifra en la celda, un atributo de más o un texto distinto dejan la pieza sin casar y el guard cae.
+    const PIEZAS_1043a = [
+      ['la barra del filtro «Con cobro pendiente»',
+        /<div class="customers-tabs"([^>]*)><button type="button" class="customers-tab" data-filtro="conDeuda" aria-pressed="false"([^>]*)>Con cobro pendiente<\/button><\/div>/g,
+        1,
+        (todo, barra, boton) => (sinHuecos(barra, boton) ? '' : todo)],
+      ['la opción de orden «Más pendiente de cobro»',
+        /<option value="SALDO"([^>]*)>Más pendiente de cobro<\/option>/g,
+        1,
+        (todo, op) => (sinHuecos(op) ? '' : todo)],
+      ['su casilla en «Columnas»',
+        /<label class="columnas-opcion"([^>]*)><input type="checkbox" data-columna="pendiente"([^>]*)><span([^>]*)>Pendiente de cobro<\/span><\/label>/g,
+        1,
+        (todo, caja, casilla, rotulo) => (sinHuecos(caja, casilla, rotulo) ? '' : todo)],
+      ['el <th> de «Pendiente de cobro»',
+        /<th data-columna="pendiente" class=""([^>]*)>Pendiente de cobro<\/th>/g,
+        1,
+        (todo, th) => (sinHuecos(th) ? '' : todo)],
+      ['la celda vacía de cada fila',
+        /<td class="cell-pendiente"([^>]*)><\/td>/g,
+        filasDeDatos,
+        (todo, td) => (sinHuecos(td) ? '' : todo)],
+    ];
+    const PIEZAS_DECLARADAS = [...PIEZAS_979, ...PIEZAS_1032, ...PIEZAS_1135, ...PIEZAS_1043a];
     const cuentas = PIEZAS_DECLARADAS.map(([nombre, re, esperadas]) => [nombre, (cB._html.match(re) || []).length, esperadas]);
     // 🔴 SE DESHACEN LAS MISMAS PIEZAS EN LOS DOS LADOS. Antes sólo se quitaban de HOY y se comparaba con
     // la base «tal cual», y eso valía mientras la base NO trajera lo declarado. Desde que SCRUM-979 está
@@ -537,15 +565,15 @@ titulo('⑥ las hermanas: TRES idénticas por hash · Albaranes trae LO DECLARAD
     if (filasCli < 2 || filasDeDatos < 1) {
       nosupe(`   🔴 NO SUPE MIRAR · Clientes: la base pintó ${filasCli} <tr> y hoy ${filasDeDatos} filas de cliente.`);
     } else if (cuentas.some(([, n, esperadas]) => n !== esperadas)) {
-      mal('   🔴 Clientes NO trae lo declarado por SCRUM-979, SCRUM-1032 y SCRUM-1135 · '
+      mal('   🔴 Clientes NO trae lo declarado por SCRUM-979, SCRUM-1032, SCRUM-1135 y SCRUM-1043a · '
         + cuentas.map(([nombre, n, esperadas]) => `${nombre}: ${n} de ${esperadas}`).join(' · '));
     } else if (cA.sha === cB.sha) {
       // La base ya trae 979 y 1032: entonces lo que se exige es lo de siempre, que no haya cambiado nada.
-      di(`   ✅ Clientes · ${cA.sha} · idéntico a la base (que ya trae SCRUM-979, SCRUM-1032 y SCRUM-1135)`);
+      di(`   ✅ Clientes · ${cA.sha} · idéntico a la base (que ya trae SCRUM-979, SCRUM-1032, SCRUM-1135 y SCRUM-1043a)`);
     } else if (shaSin !== shaBaseSin) {
-      mal(`   🔴 Clientes ha cambiado MÁS de lo declarado por SCRUM-979, SCRUM-1032 y SCRUM-1135 · base sin lo declarado ${shaBaseSin} ≠ hoy sin lo declarado ${shaSin}`);
+      mal(`   🔴 Clientes ha cambiado MÁS de lo declarado por SCRUM-979, SCRUM-1032, SCRUM-1135 y SCRUM-1043a · base sin lo declarado ${shaBaseSin} ≠ hoy sin lo declarado ${shaSin}`);
     } else {
-      di(`   ✅ Clientes trae LO DECLARADO (SCRUM-979, SCRUM-1032 y SCRUM-1135) y nada más · sin esas piezas (${filasDeDatos} celdas de cada fila), idéntico a la base sin ellas ${shaBaseSin}`);
+      di(`   ✅ Clientes trae LO DECLARADO (SCRUM-979, SCRUM-1032, SCRUM-1135 y SCRUM-1043a) y nada más · sin esas piezas (${filasDeDatos} celdas de cada fila), idéntico a la base sin ellas ${shaBaseSin}`);
     }
     srvMain.close();
   }

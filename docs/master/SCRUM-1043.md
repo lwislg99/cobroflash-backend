@@ -54,6 +54,29 @@ técnico: ni orden de saldo, ni columna, ni consulta de deuda (`veDinero`, solo 
 filtro, vacío, técnico, aislamiento entre merchants y abono. Capturas a 320/390/1280 en
 `docs/master/evidencias/SCRUM-1043a/`, sobre la vista montada por el banco de la casa (`pagina.mjs`).
 
+## `guard:lista-trabajos` ⑥ — la lista de Clientes, declarada (autorizado en c.20547)
+
+El guard (de navegador, fuera del obligatorio) fija el HTML de Clientes contra la base y sólo admite las
+piezas declaradas. El relevo lo corrió dentro de `censo:guards-navegador` (38 ejecutados, 37 verdes) y
+cayó por esta pantalla. El orquestador autorizó declararla en SCRUM-1043 c.20547, como 1032 y 1135.
+`node scripts/carriles.mjs de scripts/guard-lista-trabajos.mjs` → «SIN CERRADURA», sólo la fila general de
+`scripts/`: no es de un puesto S.
+
+Las piezas, MEDIDAS en el HTML que pinta el banco del guard (base `f1c0ff30` frente a la rama, 1280 px,
+admin, 2 filas sin deuda), con su recuento: la barra con el botón «Con cobro pendiente» (1), la opción «Más
+pendiente de cobro» (1), su casilla en «Columnas» (1), el `<th>` «Pendiente de cobro» (1) y la celda
+`cell-pendiente` vacía de cada fila (2). Textos firmados en c.20536. Van en `PIEZAS_1043a`.
+
+- **Sin la declaración, ROJO:** `🔴 Clientes ha cambiado MÁS de lo declarado por SCRUM-979, SCRUM-1032 y
+  SCRUM-1135 · base sin lo declarado e1699a55aeb0ecbf ≠ hoy sin lo declarado 8de162b9ff40ca9e`
+- **Con ella, VERDE:** `✅ Clientes trae LO DECLARADO (SCRUM-979, SCRUM-1032, SCRUM-1135 y SCRUM-1043a) y
+  nada más · sin esas piezas (2 celdas de cada fila), idéntico a la base sin ellas e1699a55aeb0ecbf`
+- **Mutaciones** (una pieza de más sin declarar, en `customersView.js`, restaurado después con
+  `git diff` vacío): un `<span>` dentro de la barra del filtro → ROJO «NO trae lo declarado · la barra del
+  filtro "Con cobro pendiente": 0 de 1»; un `<span>` en la barra de herramientas, fuera de las piezas →
+  ROJO «ha cambiado MÁS de lo declarado». Corridas antes de dar a la casilla el hueco de atributos del
+  `<span>` (SCRUM-553 lo pidió: lo había escrito con el `>` pegado); después, el guard sigue verde.
+
 ## Lo que NO cubre
 
 - **No se ha visto en yaqu.app**: sin sesión de comercio en esta máquina. Las capturas son del banco.
