@@ -418,6 +418,8 @@ test('SCRUM-1395b · ① el veredicto guardado de `censo:mudez` cubre la poblaci
 
 test('SCRUM-1395b · ② ningún guard de la población sale MUDO en el veredicto guardado', (t) => {
   if (EN_EL_CENSO_1395B) { t.skip(SALTO_EN_EL_CENSO_1395B); return; }
+  // Suelo: «0 mudos» sobre un veredicto sin vivos es «no he mirado».
+  assert.ok(JUICIO_1395B.vivos.length > 0, '🔴 CIEGO: el veredicto guardado no tiene ni un VIVO al día.');
   assert.deepEqual(JUICIO_1395B.mudos, [],
     `🔴 MUDOS — su negación pasaría igual sobre un fichero vacío:\n${enLista1395(JUICIO_1395B.mudos)}\n${COMO_SE_ARREGLA_1395}`);
 });
