@@ -755,3 +755,49 @@ Los tramos siguen en el orden físico en que los dejó la unión (1502f antes qu
 - Ningún ancla «Medido contra:», ninguna marca, ningún guard ni su número.
 - No hay pantalla: nada que ver en yaqu.app.
 - Tanda completa: no corrida (guards de registro dirigidos, en la entrega).
+
+---
+
+## SCRUM-1502i · Tramo 10 (J4, 23-oct-2026): la firma REAL de las 18 que sólo respalda una cita — 0 enteras, 1 a medias, 3 sin firmante, 2 contradichas, 12 sin encontrar
+
+**Medido contra:** `origin/main` = `ac9a7ae4ec4e4efc75fefdb0f3af304e5686d0bd` · 2026-10-23T21:30:53Z (hora de GitHub)
+A9: aviso → A10 «Un registro escrito por la misma mano que aplicó el texto no es su firma: es quien lo aplicó contando que la tuvo.» — no se pudo comprobar: en 7 de las 18 el literal que hoy absuelve la marca ni siquiera es el texto aprobado (un texto viejo, otro texto, un mensaje de aserción o código), y separar eso de una firma exige leer Jira, que el trinquete no lee (tramo 2)
+
+Sólo `docs/`. Responde a SCRUM-1502 c.20696 («cada una de las 18 se ancla a su firma REAL»). La entrega, con la tabla y las 17 preguntas al fundador **con sus literales**, es **SCRUM-1502 c.20701**. Aquí van por fichero:línea y SIN literales: copiarlos aquí los absolvería en `scrum921c` (tramo 4).
+
+**Población.** `docs/master/evidencias/scrum1502i/dieciocho.mjs` es la sonda de 1502h (`docs/master/evidencias/scrum1502h/sonda-var.mjs`, rama `scrum-1502h-sin-citas`, aún no en `main`), variante A, con el mismo código, más el fichero de `docs/master` que respalda cada literal. Salida en `salida-dieciocho.txt`: 248 marcas, 1.339 fuentes, 25 documentales y **18 que pierden respaldo**, las mismas 18 y en las mismas líneas que 1502h. La sonda no aplica el filtro de negación del guard: cuenta 21 sin respaldo, y el guard 20.
+
+**Cómo se buscó.** Por marca: el comentario entero en el código, el registro que la respalda y qué cita como origen (en las 18: **ninguno cita un comentario de Jira**), el ticket del fichero y el del registro leídos enteros, y JQL `text ~` con 2 a 5 trozos de cada literal. Las lecturas las hicieron tres sesiones de sólo lectura, seis marcas cada una. **Las tres que salieron con firma las leí yo, byte a byte**: SCRUM-299, 338 y 593, enteros. Las NO ENCONTRADA no las he repetido.
+
+| # | marca | veredicto | dónde está (o dónde se buscó) | carril |
+| --- | --- | --- | --- | --- |
+| 1 | `src/modules/fiscal/librosAeat/librosAeat.ts:183` | NO ENCONTRADA | SCRUM-426 c.13034 decide el contenido, no el texto; c.13054 es el cierre del asesor | J1 |
+| 2 | `src/modules/jobs/domain/albaranFirmante.ts:246` | CONTRADICHA (las columnas las decide el asesor, SCRUM-300 c.12491) + NO ENCONTRADA (los 2 mensajes) | SCRUM-300 entero; JQL 0 | S1 |
+| 3 | `public/dashboard/js/albaranDetailView.js:292` | NO ENCONTRADA; el respaldo de hoy es otro texto | SCRUM-302 y 278 | S4 |
+| 4 | `public/dashboard/js/jobDetailView.js:401` | NO ENCONTRADA; el respaldo de hoy es otro texto | SCRUM-304 y 607 (0 comentarios) | S2 |
+| 5 | `public/dashboard/js/jobDetailView.js:484` | NO ENCONTRADA | SCRUM-303; JQL 0 ×5 | S2 |
+| 6 | `public/dashboard/js/productsView.js:1178` | NO ENCONTRADA; el respaldo de hoy es el texto viejo | SCRUM-313, 338, 364; JQL 0 | S2 |
+| 7 | `public/dashboard/js/productsView.js:1214` | NO ENCONTRADA; el respaldo de hoy es el texto viejo | SCRUM-364 c.12357 es un cierre | S2 |
+| 8 | `tests/scrum244-menu-portabilidad.test.mjs:43` | NO ENCONTRADA | SCRUM-244 entero; JQL 0-1 | tests/ |
+| 9 | `tests/scrum257-albaran-desde-presupuesto.test.mjs:26` | NO ENCONTRADA | en la descripción de SCRUM-257, como alcance, no como decisión | tests/ |
+| 10 | `tests/scrum299-copy-factura-publico.test.mjs:27` | CON FIRMA, SIN FIRMANTE | SCRUM-299 c.12188; esos textos ya no están en `public/index.html` (0 apariciones) | tests/ |
+| 11 | `tests/scrum324-aviso-simplificado-ui.test.mjs:30` | CONTRADICHA | `docs/master/SCRUM-324.md:399-403` y SCRUM-324 c.13135: retirado el mismo día | tests/ |
+| 12 | `tests/scrum338-carga-de-catalogo-no-muda.test.mjs:109` | CON FIRMA, SIN FIRMANTE | SCRUM-338 c.12950 + c.12948 (cuenta de Luis: «yo aprobé»); el respaldo de hoy es código | tests/ |
+| 13 | `tests/scrum344-cierre-con-saldo.test.mjs:30` | NO ENCONTRADA | SCRUM-344 entero; JQL 0 ×5 | tests/ |
+| 14 | `tests/scrum364-cambiar-gremio.test.mjs:138` | NO ENCONTRADA | SCRUM-364 y 310 | tests/ |
+| 15 | `tests/scrum394-plan-mudo.test.mjs:264` | CON FIRMA, SIN FIRMANTE | SCRUM-394 c.12814 (por su texto, el orquestador o el asesor) | tests/ |
+| 16 | `tests/scrum428-terminado-sin-cobrar.test.mjs:120` | NO ENCONTRADA; el registro lo pone bajo «PENDIENTE» | SCRUM-428, 363, 917, 1355 | tests/ |
+| 17 | `tests/scrum580-tags-por-contacto.test.mjs:319` | NO ENCONTRADA, y consta que falta | SCRUM-1215 c.19421 pide la firma | tests/ |
+| 18 | `tests/scrum593b-superficie-texto-del-documento.test.mjs:21` | MITAD: cabecera ENCONTRADA (SCRUM-593 c.14262); pie del formulario sin firma (el mismo c.14262 lo deja sin decidir) | SCRUM-593 y 1206 | tests/ |
+
+Carril, con `node scripts/carriles.mjs de <ruta>`. `tests/` es «el puesto que trabaja el ticket» (`docs/equipo/dos-equipos.md:171`). S1, S2 y S4 van a Luis (c.20696).
+
+**Lo que sigue.** Hasta que el fundador conteste c.20701, ninguna marca se puede anclar: la 18 tampoco, porque nombra los dos rótulos y sólo uno está firmado. La mitad «a pelo» de `sinCitas` sigue sin poder aplicarse sin que cambien de nivel (condición ① de c.20690).
+
+### Lo que no se hizo
+
+- Ninguna marca, texto, guard ni número tocado. No he abierto yaqu.app.
+- JQL con resultados que no se abrieron, porque la frase entera daba 0: SCRUM-1151 y 1147 (marca 1), 1164 y 929 (marca 4), 1300, 982 y 715 (marca 5), 365 (marca 6), 460, 458, 1369, 1355 y 1274 (marca 9).
+- La lectura de la marca 4 (qué columnas) es de una de las tres sesiones. No la he copiado por programa.
+- Tanda completa: no corrida (guards de registro dirigidos, en la entrega).
+- Error propio: la línea de errores de c.20701 está mal redactada. Quiere decir que son 18 marcas y 17 preguntas, porque la 7 y la 14 comparten una.
