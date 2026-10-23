@@ -20,8 +20,9 @@
 // Y una vez el cambio está en `main`, base y disco coinciden y la declaración ya no interviene:
 // se queda como historia legible de quién autorizó qué.
 //
-// LA FIRMA SE LOCALIZA: cada entrada nombra el comentario de Jira (`SCRUM-N c.M`) y su registro
-// `docs/master/SCRUM-N.md`, que tiene que contener ese número de comentario Y la cita literal.
+// LA FIRMA SE LOCALIZA: cada entrada nombra el comentario de Jira (`SCRUM-N c.M`) y su registro,
+// que es el del mismo ticket en docs/master y tiene que contener ese número de comentario Y la
+// cita literal.
 // Lo comprueba `tests/scrum1446d-via-de-cambio-autorizado.test.mjs`.
 //
 // ⚠️ Lo que este fichero NO puede comprobar: que el comentario de Jira exista y diga lo que la
