@@ -188,9 +188,16 @@ export function sueloDeEjecucion({ vivas, mudas }) {
  * variable no hay presupuesto: en local nadie corta.
  * ═══════════════════════════════════════════════════════════════════════════════════════════
  */
-// Lo que el job gasta FUERA del paso de mutación (checkout, `npm ci`, build, post): medido en los
-// 313 jobs, 24-73 s (p50 37, p99 50). Más una pasada en vuelo, que puede durar ~20 s (`scrum813`).
-export const MARGEN_DEL_JOB_S = 150;
+// SCRUM-935e · el margen es una cifra DERIVADA, y se deriva (antes era 150: 45 s no salían de ninguna medida).
+//   73 s · lo que el job gasta FUERA del paso (checkout, `npm ci`, build, post): máximo en los 313 jobs
+//          del 15 al 21-oct (p50 37, p99 50); en los 14 del 23-oct, 22-38 s.
+//   31 s · la pasada que queda EN VUELO: el corte se mira antes de cada limpia y de cada mutación, así que
+//          sólo queda una. Medido el 23-oct en los logs con hora de tres runs (1.977 veredictos): pasada
+//          suelta, 21,9 s como mucho; la limpia más cara, ≤ 30,4 s (el hueco de `scrum976` al cambiar de guard).
+//    1 s · el propio corte: imprimir lo que deja y salir.
+// La ventana del CIEGO falso no se cierra con ningún margen: un run con arranque rápido sale CIEGO pudiendo
+// acabar. Lo que la cerraría es contar desde el inicio del JOB, no desde el paso (SCRUM-935.md, tramo 935e).
+export const MARGEN_DEL_JOB_S = 105;
 
 /**
  * El `timeout-minutes` (en segundos) del job de `ci.yml` que CORRE este instrumento, o `null` si no

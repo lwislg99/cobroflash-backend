@@ -513,3 +513,45 @@ frente a la base de fusión (SCRUM-1173): S3 lo midió en 6 escenarios (la líne
 recorre sólo los guards de la BASE y el fichero nuevo no está en ella. Una mudanza cuyo destino no llevara
 los `cae` saldría igual de verde. Ésta sí los lleva (lo dice el arnés de arriba: ㉓ y ㉔ VIVAS en
 `scrum1494`), pero eso lo mide esta pasada, no el instrumento. S3 lo cierra después de este PR.
+
+## SCRUM-935e · el margen del corte, DERIVADO: 150 → 105 s (23-oct-2026, S3)
+
+Rama desde `origin/main` = `655f1252e`. Lo decidió el orquestador el 23-oct, sobre la medida de abajo. Un solo
+cambio: `MARGEN_DEL_JOB_S` en `scripts/meta-guard-mutaciones.mjs`, con la derivación escrita al lado.
+
+**Por qué.** Con la D, un run que habría acabado entre el corte y el techo sale CIEGO pudiendo terminar: un
+CIEGO falso. Los 150 s eran 73 + ~20 medidos más 57 que no salían de ninguna medida.
+
+**¿La ventana es alcanzable hoy? Sí.** #2677 entró el 22-oct a las 10:58Z, así que todos los runs de abajo ya lo llevan.
+14 jobs del meta-guard del 23-oct (`gh api …/actions/jobs/<id>`, pasos con su hora):
+
+| | segundos |
+|---|---|
+| antes del paso (checkout, `npm ci`, tsc) | 22-38 |
+| el paso, en los 8 verdes | 1.329-1.608 (tres a 42-64 s del corte de 1.650) |
+| el paso, en los 6 que mató el techo | 1.777-1.779 |
+
+**La pasada en vuelo, medida.** Los logs de CI llevan hora por línea. El hueco entre dos veredictos seguidos es
+una pasada. Al cambiar de guard, ese hueco es la limpia más la primera mutación. Tres runs, 1.977 veredictos (dos enteros de
+`main`, 39948879101 y 39944683225, y el cortado de #2676, 39767863385):
+
+* pasada suelta: **21,9 s** como mucho;
+* limpia + 1.ª mutación: hasta 42,9 s (`scrum710b`, con su media de 21,6 s por pasada: su limpia ronda los 21 s). El
+  siguiente hueco es el de `scrum976`, 30,4 s, que acota su limpia; el resto queda por debajo de 26,1 s.
+* El corte se mira antes de cada limpia y de cada mutación, así que en vuelo sólo queda UNA: ≤ 30,4 s.
+
+⚠️ Corrección a lo que mandé el mismo día: di «≤ 30 s» como cota con un argumento sacado del log de un run CORTADO,
+que sólo lista los guards juzgados antes del corte. Ahí no estaban `vigia-atascados` ni `scrum976`. El número se
+sostiene; la población de la que lo saqué, no. Ésta sí es la de runs enteros.
+
+**Margen = 73 (máximo fuera del paso, 313 jobs) + 31 (pasada en vuelo) + 1 (el propio corte) = 105 s.** El corte en CI
+pasa de 1.650 a **1.695 s** (`presupuestoDelPaso` con el `ci.yml` de hoy: «1800 s − 105 s de margen»).
+
+**Lo que esto NO cierra.** Cualquier margen que cubra el peor caso deja como CIEGO a un run con arranque rápido que habría
+acabado: con 22-38 s fuera del paso hoy, son entre 35 y 50 s de ventana. Lo que la cerraría es contar desde el inicio del
+JOB y no desde el paso. Escrito, NO empezado (decisión del orquestador, 23-oct).
+
+**Verificado:** `tests/scrum935d-el-corte-dice-lo-que-deja.test.mjs` y `scrum702`, 18/18. El caso del presupuesto
+compara contra `techoDelJob − MARGEN_DEL_JOB_S`: sigue la constante y no un número escrito.
+
+A9: sin fallo que generalice — es afinar una cifra con su medida; el error propio (una cota sacada de una población cortada) ya es la trampa de la ficha de S3, «el instrumento le miente primero»

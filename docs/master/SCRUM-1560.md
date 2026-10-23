@@ -435,3 +435,66 @@ Renombrarlos habría sido esquivar el guard por la forma. Decidido por el orques
 * El censo de ① lo hace ahora sobre 17 importadores: al comitear, `b-estados.mjs` (que importa `datosDelCenso` y sólo describe, sin veredicto) se cuenta a sí mismo. Los 16 de la tabla son de antes de comitear.
 
 **Ficheros:** `docs/master/evidencias/SCRUM-1560f/` (`a-poblacion.mjs`, `b-estados.mjs` y las cuatro `*-salida.txt`), este apartado.
+## 23-oct-2026 · S3 · 1560g — el caso del banco exige que cada vista y cada panel PINTE
+
+Rama desde `origin/main` = `7d13cdd85`. Es la (b) de SCRUM-1560f (#2732), decidida por el orquestador el 23-oct.
+1560f midió por mutación que el caso «🔴 en el banco: … ni pinta «undefined»» seguía 12/12 en verde con
+Trabajos, Configuración o Cobros sin pintar nada: una pantalla vacía no pinta «undefined».
+
+### Lo que cambia (sólo `tests/scrum1560-datos-de-muestra-con-forma.test.mjs`)
+
+* Cada una de las 29 vistas tiene que pintar al menos un nodo.
+* Cada panel `data-submenu` de Configuración también, salvo los de `PANELES_SIN_PINTAR_DECLARADOS`,
+  cada uno con su motivo. Si uno empieza a pintar, su línea CADUCA y el caso cae hasta que se quite.
+  Con menos de 5 paneles vistos, CIEGO.
+* ⚠️ Corrección a la instrucción que llegó: `publica` y `cumplimiento` no son vistas, son paneles de
+  `renderSettingsView`, que pinta 186 nodos. «Nodos > 0 por vista» a secas no se habría puesto rojo nunca.
+
+| declarado | por qué no puede pintar con el banco de hoy | lo cerraría |
+|---|---|---|
+| `publica` | `/admin/merchant` de muestra = `{ id, name }`; `settingsView.js` corta con `if (m.slug === undefined) return` | completar ese contrato: la (a) de 1560f, sin decidir |
+| `cumplimiento` | sólo pinta `if (window.appModoEmision)`; ese global lo pone `app.js:52` desde `/auth/me` al ARRANCAR, y el banco no arranca la app | que el banco dé la sesión: la (a′), abajo |
+
+### Rojos (A23), sobre `202779fe4` con el árbol entero comiteado
+
+| inyección | numstat | cae |
+|---|---|---|
+| R1 · `return;` al principio de `renderJobsView` | 1/1 `jobsView.js` | «vistas que no pintan NADA» |
+| R2 · `publica` fuera de la declaración | 0/1 el test | «paneles … que no pintan NADA y no están en PANELES_SIN_PINTAR_DECLARADOS» |
+| R3 · el merchant de muestra con `slug` | 1/1 `_datos-del-censo.mjs` | «declarados sin pintar que YA pintan: quita su línea»: con `slug`, `publica` pinta (la (a) cerraría ese panel y NO el otro) |
+| R4 · el selector de paneles no ve ninguno | 1/1 el test | CIEGO «Configuración da 0 panel(es)» |
+
+Restaurado con `git restore --source=HEAD` tras cada uno, y el árbol limpio al acabar. El guion de estas cuatro
+no se comitea: es un banco con lista propia, y SCRUM-1387 no lo admite. Lo permanente es el catálogo:
+
+**`MUTACIONES_QUE_ME_TUMBAN` (2, del PRODUCTO):** ① `renderJobsView` no pinta; ② el panel `datos` se queda vacío
+(deja de colocarse su única tarjeta) sin estar declarado. Corridas con las funciones del meta-guard
+(`evidencias/SCRUM-935d/e-uno-guard.mjs`): **con este test, 2 VIVAS** (limpia 3,3 s, ~3 s cada una); **con el test de
+`main` y las mismas dos declaraciones, 2 MUDAS**. Coste en el meta-guard: unos 9-10 s por pasada en local. El job
+de hoy acaba a 1.608 s de un corte de 1.650.
+
+### 🔴 La (a′) · «EL BANCO DA LA SESIÓN» — escrita, NO empezada (decisión del orquestador, 23-oct)
+
+El banco monta las vistas sin pasar por el arranque de `app.js`, que es quien pone los globales de la sesión
+desde `/auth/me`. El más gordo es `window.appModoEmision`: en el banco vale `undefined` («no se sabe»), un estado que
+**en producción no existe**, porque ningún usuario real tiene la app sin modo de emisión. Todo lo que se haya medido en estas
+vistas con el banco puede estar midiendo una pantalla que nadie ve. Lo leen 11 ficheros de `public/dashboard/js/`
+(contados a 23-oct sobre `7d13cdd85`, lecturas sin la asignación):
+`albaranAccion.js` (2) · `homeView.js` (2) · `invoicesView.js` (1) · `jobDetailView.js` (2) · `onboardingView.js` (2) ·
+`plansView.js` (2) · `puertaSerie.js` (2) · `reportsView.js` (1) · `rotulosDelDocumento.js` (2) · `settingsView.js` (8) · `tutorial.js` (1).
+Y `app.js` pone más globales en ese mismo arranque (`appBizumSinTelefono`, el modo del documento suelto…), sin censar.
+Es un cambio de arnés con onda sobre todo lo que mide el banco: se decide aparte.
+
+### Por qué `c-mutar.mjs` y `d-censo-tactil.mjs` salen de #2732 (1560f)
+
+Los dos mutan el producto con una lista PROPIA (12 pares consumidor × vista; Cobros vaciada), y la regla de SCRUM-1387
+(comentario 18016, del fundador) dice que un banco nuevo toma las mutaciones del catálogo. No pueden: auditan tests de
+otros, que no declaran nada. El obligatorio de #2732 tumbó el primero; el segundo no lo veía, porque su nombre no lleva
+«mut», y sale igual. Renombrarlos habría sido esquivar el guard por la forma. Sus salidas y el método se quedan en el
+registro de 1560f, como medida fechada. El camino para volver a tenerlos ejecutables sería una excepción del fundador a 1387 para
+los bancos que auditan consumidores; **NO se ha pedido** (es una regla firmada: STOP, y su cola lleva dos días sin moverse).
+Lo que vigila el hallazgo de forma permanente es esta 1560g.
+
+A9: comprobación → `tests/scrum1560-datos-de-muestra-con-forma.test.mjs`
+
+**Ficheros:** `tests/scrum1560-datos-de-muestra-con-forma.test.mjs`, este apartado.
