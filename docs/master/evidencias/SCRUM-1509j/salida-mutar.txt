@@ -1,0 +1,5 @@
+BASE sin mutar: 5 pasan · 0 caen · de 5
+CAZADA · if (!(await reservarCandado(inv.id, campo))) continue; → if (false) continue; · caen 5 de 5: CONTROL · todo sano: salen los 2 avisos  | EL ROJO DE 1509b · candado roto siempre: | CAMINO ① · la reserva falla UNA vez: no  | CAMINO ② · el envío falla: se libera la  | CAMINO ③ · el envío falla y liberar tamb
+CAZADA · await liberarCandado(inv.id, campo); → void 0; · caen 2 de 5: CAMINO ② · el envío falla: se libera la  | CAMINO ③ · el envío falla y liberar tamb
+CAZADA · return false; // sin anotar no se envía → return true; · caen 2 de 5: EL ROJO DE 1509b · candado roto siempre: | CAMINO ① · la reserva falla UNA vez: no 
+FINAL restaurado: 5 pasan · 0 caen · de 5

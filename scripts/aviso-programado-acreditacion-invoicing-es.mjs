@@ -51,6 +51,7 @@ import nodemailer from 'nodemailer';
 import { PrismaClient } from '@prisma/client';
 import {
   medirAcreditacion,
+  lineasDeclarado,
   verificarSoloLecturaEstructural,
   MERCHANT_DEMO_ID,
   FLAG_INVOICING_ES,
@@ -103,7 +104,7 @@ export function construirAviso({ resultado, host, ahora }) {
       limpio: false,
       ciego: false,
       asunto: `🔴 [YaQu · SCRUM-1097] HALLAZGO — ${resultado.filas.length} merchant(es) acreditado(s) sin deber estarlo`,
-      cuerpo: `${cabecera}\nsuelo: ${resultado.floor} merchant(s) ES no-demo\nrecuento: ${resultado.filas.length}\nmerchant id(s): ${ids}`,
+      cuerpo: `${cabecera}\nsuelo: ${resultado.floor} merchant(s) ES no-demo\nrecuento: ${resultado.filas.length}\nmerchant id(s): ${ids}${lineasDeclarado(resultado).map((l) => `\n${l}`).join('')}`,
     };
   }
   return {
@@ -246,7 +247,7 @@ export async function ejecutarPasada({ prisma, transportador, remitente, destina
       avisoEnviado: false,
     };
   }
-  traza('① medido', `filas: ${resultado && resultado.hallazgos ? resultado.hallazgos.length : '?'}`);
+  traza('① medido', `filas: ${resultado && Array.isArray(resultado.filas) ? resultado.filas.length : '?'}`);
   const aviso = construirAviso({ resultado, host, ahora: ahora() });
 
   let avisoEnviado = false;

@@ -88,6 +88,83 @@ const WHATSAPP_CLIENTE = {
 if (typeof window !== 'undefined') window.whatsappCliente = WHATSAPP_CLIENTE;
 
 /**
+ * SCRUM-1145 + SCRUM-1044 · LA PESTAÑA «SITIOS»: las piezas sin DOM de la agenda de sitios.
+ *
+ * El servidor es de SCRUM-1014 (`GET/POST /admin/customers/:id/sites`, `PUT/DELETE …/:siteId`, con
+ * tenencia en las cuatro). La lista se pide AL ABRIR la pestaña, no al pintar la ficha: abrir la
+ * ficha no hace ninguna petición más que antes.
+ *
+ * Los textos llevan su firma en SU línea (registro en
+ * `docs/microcopy/2026-10-23-SCRUM-1145-sitios-del-cliente.md`). «Cómo llegar» es el de SCRUM-1004,
+ * y «Dirección fiscal» el rótulo de la primera fila (SCRUM-1044).
+ *
+ * 🔴 La primera fila es la dirección FISCAL, de sólo lectura: se compone al pintar con los
+ * `billing*` del cliente, que se siguen editando donde siempre. No es un `CustomerSite`.
+ *
+ * Borrar un sitio CONSERVA lo que ya lo usaba (c.20592, decisión de c.16245), y sin preguntar:
+ * ningún modelo apunta a `CustomerSite` y el selector de SCRUM-1144 copia la dirección como texto
+ * en el documento, así que el borrado no alcanza a nada guardado.
+ */
+const SITIOS_CLIENTE = {
+  TEXTOS: {
+    pestana: 'Sitios', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1145 comentario 20592)
+    nuevo: '+ Nuevo sitio', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1145 comentario 20592)
+    vacio: 'Todavía no hay sitios guardados para este cliente.', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1145 comentario 20592)
+    fiscal: 'Dirección fiscal', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1145 comentario 20592)
+    comoLlegar: 'Cómo llegar', // APROBADO por el orquestador por delegación del fundador el 22-sep-2026 (SCRUM-1004 comentario 16402)
+    ejemploNombre: 'Piso 3ºB / Nave del polígono', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1145 comentario 20598)
+    CAMPOS: {
+      name: 'Nombre del sitio', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1145 comentario 20592)
+      address: 'Dirección', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1145 comentario 20592)
+      city: 'Ciudad', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1145 comentario 20592)
+      postalCode: 'Código postal', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1145 comentario 20592)
+      province: 'Provincia', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1145 comentario 20592)
+      country: 'País', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1145 comentario 20592)
+      contactName: 'Contacto en el sitio', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1145 comentario 20592)
+      phone: 'Teléfono del contacto', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1145 comentario 20592)
+    },
+    editar: 'Editar', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1145 comentario 20598)
+    eliminar: '🗑 Eliminar', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1145 comentario 20598)
+    guardar: 'Guardar', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1145 comentario 20598)
+    cancelar: 'Cancelar', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1145 comentario 20598)
+    errorCarga: 'No se pudieron cargar los sitios guardados. Inténtalo de nuevo.', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1145 comentario 20598)
+    generico: 'No se ha podido completar la acción. Vuelve a intentarlo.', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1145 comentario 20598)
+  },
+  /** El orden del formulario. `name` es el único obligatorio (como en `customerSiteCreateSchema`). */
+  ORDEN: ['name', 'address', 'city', 'postalCode', 'province', 'country', 'contactName', 'phone'],
+  /** La dirección en una línea, con la composición del selector de SCRUM-1144: no hay dos. */
+  direccion(s) {
+    return window.sitiosGuardados.componerDireccionSitio(s);
+  },
+  /** La fila fiscal, o `null` si el cliente no tiene ninguno de los cinco `billing*`. */
+  direccionFiscal(customer) {
+    const c = customer || {};
+    return SITIOS_CLIENTE.direccion({
+      address: c.billingAddress, postalCode: c.billingPostalCode, city: c.billingCity,
+      province: c.billingProvince, country: c.billingCountry,
+    });
+  },
+  /** El «Cómo llegar» de un sitio: el mismo `hrefAbrirEnMapa` de la fiscal. Sin dirección, nada. */
+  hrefComoLlegar(direccion) {
+    return direccion ? window.hrefAbrirEnMapa(direccion) : null;
+  },
+  /**
+   * Lo que viaja al servidor desde el formulario. «Ausente ≠ vacío»: un campo en blanco va `null`
+   * (así se BORRA al editar), nunca `""`. El nombre, recortado.
+   */
+  cuerpo(valores) {
+    const v = valores || {};
+    const out = {};
+    SITIOS_CLIENTE.ORDEN.forEach((k) => {
+      const t = String(v[k] === null || v[k] === undefined ? '' : v[k]).trim();
+      out[k] = k === 'name' ? t : (t === '' ? null : t);
+    });
+    return out;
+  },
+};
+if (typeof window !== 'undefined') window.sitiosCliente = SITIOS_CLIENTE;
+
+/**
  * SCRUM-1126 · FUSIONAR DOS CLIENTES DUPLICADOS: las piezas sin DOM del flujo de la ficha.
  *
  * `GET /admin/customers/:id/fusion-preview` y `POST /admin/customers/:id/fusionar` (SCRUM-1057)
@@ -519,17 +596,20 @@ async function renderCustomer360View(container, customerId) {
       .filter((i) => String(i.status).toLowerCase() === 'pending')
       .reduce((a, i) => a + Number(i.total || 0), 0);
 
+  // SCRUM-1403b: al técnico el servidor no le manda las cifras de dinero (SCRUM-1403 c.20375). Una
+  // tarjeta con `cifra` se pinta sólo si esa cifra viene: ausente no es cero, y la deuda calculada aquí
+  // sobre SUS facturas diría otra cosa bajo el mismo rótulo. No se añade texto: se quita la tarjeta.
   const kpis = [
-    { label: 'Pendiente de cobro', value: fmt(debt),
+    { cifra: 'totalPending', label: 'Pendiente de cobro', value: fmt(debt),
       // SCRUM-1108b: con garantía retenida sin cobrar, «al día ✓» es falso. No se añade texto: se quita.
       sub: debt > 0 ? `${stats.pendingCount ?? invoices.filter(i=>String(i.status).toLowerCase()==='pending').length} sin cobrar` : (stats.garantiaRetenida ? '' : 'al día ✓'),
       color: debt > 0 ? 'var(--red-600)' : 'var(--green-600)' },
     { label: `${L.quotePlural || 'Presupuestos'}`, value: stats.totalQuotes, sub: `${stats.acceptedQuotes} aceptados` },
     { label: 'Facturas',  value: invoices.length, sub: `${invoices.filter(i=>i.status==='paid').length} pagadas` },
-    { label: 'Facturado', value: fmt(stats.totalBilled), sub: '' },
-    { label: 'Cobrado',   value: fmt(stats.totalPaid), sub: '', color: 'var(--green-600)' },
-    { label: 'Beneficio', value: fmt(stats.profit), sub: '', color: stats.profit >= 0 ? 'var(--green-600)' : 'var(--red-600)' },
-  ];
+    { cifra: 'totalBilled', label: 'Facturado', value: fmt(stats.totalBilled), sub: '' },
+    { cifra: 'totalPaid', label: 'Cobrado',   value: fmt(stats.totalPaid), sub: '', color: 'var(--green-600)' },
+    { cifra: 'profit', label: 'Beneficio', value: fmt(stats.profit), sub: '', color: stats.profit >= 0 ? 'var(--green-600)' : 'var(--red-600)' },
+  ].filter((k) => !k.cifra || stats[k.cifra] !== undefined);
 
   kpis.forEach(({ label, value, sub, color }) => {
     const k = document.createElement('div');
@@ -600,6 +680,7 @@ async function renderCustomer360View(container, customerId) {
 
   // ── Tabs: Presupuestos / Facturas ─────────────────────────────────────
   const tabsWrap = document.createElement('div');
+  tabsWrap.className = 'c360-pestanas';
   tabsWrap.style.cssText = 'display:flex;gap:4px;border-bottom:2px solid var(--neutral-200);margin-bottom:-2px';
 
   const tabContent = document.createElement('div');
@@ -639,6 +720,9 @@ async function renderCustomer360View(container, customerId) {
     ? makeTab(WHATSAPP_CLIENTE.tituloPestana(mensajesWa.length, !!siguienteWa), 'whatsapp')
     : null;
   if (tabWhatsapp) tabsWrap.appendChild(tabWhatsapp);
+  // SCRUM-1145 · la quinta, sin número: su lista se pide al abrirla, no antes.
+  const tabSitios = makeTab(SITIOS_CLIENTE.TEXTOS.pestana, 'sitios');
+  tabsWrap.appendChild(tabSitios);
   wrap.appendChild(tabsWrap);
   wrap.appendChild(tabContent);
 
@@ -650,6 +734,7 @@ async function renderCustomer360View(container, customerId) {
     const card = document.createElement('div');
     card.className = 'data-card';
     tabContent.appendChild(card);
+    if (key === 'sitios') { pintarSitios(card); return; }
 
     const scroll = document.createElement('div');
     scroll.className = 'table-scroll';
@@ -932,6 +1017,246 @@ async function renderCustomer360View(container, customerId) {
       sueltos.forEach((p) => lista.appendChild(enlace(p.numero, () => abrir('parte-detail', 'parteId', p.id))));
       card.appendChild(lista);
     }
+  }
+
+  // ── SCRUM-1145 + SCRUM-1044 · LA PESTAÑA «SITIOS» ─────────────────────────────────────
+  // Primero la fiscal (sólo lectura), luego los sitios guardados, con su alta, edición y borrado.
+  // Todo con `textContent`: nombres y direcciones los escribe el profesional.
+  // Numera cada apertura: si se vuelve a abrir la pestaña mientras llega la lista, la que llega
+  // tarde no pinta (si se cambia a otra, pinta en una tarjeta que ya no está en pantalla).
+  let peticionSitios = 0;
+  function pintarSitios(card) {
+    const T = SITIOS_CLIENTE.TEXTOS;
+    const esta = ++peticionSitios;
+    const viva = () => esta === peticionSitios;
+    card.classList.add('sitios-cliente');
+
+    const nuevo = document.createElement('button');
+    nuevo.type = 'button';
+    nuevo.id = 'c360-sitio-nuevo';
+    nuevo.className = 'btn btn-secondary sitios-cliente__nuevo';
+    nuevo.textContent = T.nuevo;
+    card.appendChild(nuevo);
+
+    const hueco = document.createElement('div');
+    card.appendChild(hueco);
+
+    const aviso = document.createElement('p');
+    aviso.className = 'sitios-cliente__error';
+    aviso.setAttribute('role', 'alert');
+    aviso.hidden = true;
+    card.appendChild(aviso);
+    function avisar(texto) { aviso.textContent = texto || ''; aviso.hidden = !texto; }
+
+    const lista = document.createElement('ul');
+    lista.className = 'sitios-cliente__lista';
+    card.appendChild(lista);
+
+    function comoLlegar(direccion) {
+      const href = SITIOS_CLIENTE.hrefComoLlegar(direccion);
+      if (!href) return null;
+      const a = document.createElement('a');
+      a.className = 'contacto-link sitios-cliente__llegar';
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.href = href;
+      a.textContent = T.comoLlegar;
+      return a;
+    }
+    function linea(clase, texto) {
+      const d = document.createElement('div');
+      d.className = clase;
+      d.textContent = texto;
+      return d;
+    }
+    function fila(titulo, direccion) {
+      const li = document.createElement('li');
+      li.className = 'sitios-cliente__fila';
+      li.appendChild(linea('sitios-cliente__nombre', titulo));
+      if (direccion) li.appendChild(linea('sitios-cliente__direccion', direccion));
+      return li;
+    }
+
+    // La fiscal no depende de la petición: un cliente sin sitios la ve igual (SCRUM-1044).
+    const fiscal = SITIOS_CLIENTE.direccionFiscal(customer);
+    const filaFiscal = fiscal ? fila(T.fiscal, fiscal) : null;
+    if (filaFiscal) {
+      filaFiscal.classList.add('sitios-cliente__fila--fiscal');
+      filaFiscal.dataset.sitio = 'fiscal';
+      const acciones = document.createElement('div');
+      acciones.className = 'sitios-cliente__acciones';
+      acciones.appendChild(comoLlegar(fiscal));
+      filaFiscal.appendChild(acciones);
+    }
+
+    function pintarLista(sitios) {
+      lista.replaceChildren();
+      if (filaFiscal) lista.appendChild(filaFiscal);
+      if (!sitios.length) {
+        const li = document.createElement('li');
+        li.className = 'sitios-cliente__vacio';
+        li.textContent = T.vacio;
+        lista.appendChild(li);
+        return;
+      }
+      sitios.forEach((s) => {
+        const direccion = SITIOS_CLIENTE.direccion(s);
+        const li = fila(s.name, direccion);
+        li.dataset.sitio = String(s.id);
+        const contacto = [s.contactName, s.phone].filter((x) => x && String(x).trim()).join(' · ');
+        if (contacto) li.appendChild(linea('sitios-cliente__contacto', contacto));
+        const acciones = document.createElement('div');
+        acciones.className = 'sitios-cliente__acciones';
+        const llegar = comoLlegar(direccion);
+        if (llegar) acciones.appendChild(llegar);
+        const editar = document.createElement('button');
+        editar.type = 'button';
+        editar.className = 'btn-ghost btn-sm';
+        editar.dataset.accion = 'editar';
+        editar.textContent = T.editar;
+        editar.addEventListener('click', () => abrirFormulario(s));
+        acciones.appendChild(editar);
+        // Borrar NO es la acción principal (sin confirmación, c.20592): botón fantasma, al final.
+        const eliminar = document.createElement('button');
+        eliminar.type = 'button';
+        eliminar.className = 'btn-ghost btn-sm';
+        eliminar.dataset.accion = 'eliminar';
+        eliminar.textContent = T.eliminar;
+        eliminar.addEventListener('click', () => borrar(s, eliminar));
+        acciones.appendChild(eliminar);
+        li.appendChild(acciones);
+        lista.appendChild(li);
+      });
+    }
+
+    function cargar() {
+      avisar('');
+      return apiRequest(`/admin/customers/${id}/sites`).then((r) => {
+        if (!viva()) return;
+        pintarLista(r && Array.isArray(r.sitios) ? r.sitios : []);
+      }, (err) => {
+        if (!viva()) return;
+        if (filaFiscal) lista.replaceChildren(filaFiscal);
+        // `handled` = la prueba vencida: `_pedir` ya ha llevado al profesional a Planes.
+        if (err && err.handled) return;
+        avisar(window.mensajeParaPersona(err, T.errorCarga));
+      });
+    }
+
+    function borrar(s, boton) {
+      boton.disabled = true;
+      avisar('');
+      apiRequest(`/admin/customers/${id}/sites/${s.id}`, { method: 'DELETE' }).then(() => {
+        if (viva()) cargar();
+      }, (err) => {
+        if (!viva()) return;
+        boton.disabled = false;
+        if (err && err.handled) return;
+        avisar(window.mensajeParaPersona(err, T.generico));
+      });
+    }
+
+    /** Alta (`sitio` nulo) o edición: UN formulario a la vez, encima de la lista. */
+    function abrirFormulario(sitio) {
+      avisar('');
+      const form = document.createElement('form');
+      form.className = 'sitios-cliente__form';
+      const campos = {};
+      SITIOS_CLIENTE.ORDEN.forEach((k) => {
+        const caja = document.createElement('div');
+        caja.className = 'field';
+        const label = document.createElement('label');
+        label.htmlFor = 'c360-sitio-' + k;
+        label.textContent = T.CAMPOS[k];
+        caja.appendChild(label);
+        let input;
+        if (k === 'country') {
+          // El mismo selector de país que la ficha del cliente (`prefijosPais.js`, SCRUM-578): el
+          // servidor guarda el ISO de dos letras y el nombre lo pone el navegador.
+          input = document.createElement('select');
+          const vacia = document.createElement('option');
+          vacia.value = '';
+          vacia.textContent = '—';
+          input.appendChild(vacia);
+          window.prefijosPais.listaDePrefijos().forEach((p) => {
+            const o = document.createElement('option');
+            o.value = p.iso;
+            o.textContent = p.nombre;
+            input.appendChild(o);
+          });
+        } else {
+          input = document.createElement('input');
+          input.type = k === 'phone' ? 'tel' : 'text';
+          // Los topes de `customerSiteCreateSchema`: el servidor contestaría 400 a uno más largo.
+          input.maxLength = { name: 200, address: 200, city: 100, postalCode: 20, province: 100, contactName: 200, phone: 30 }[k];
+        }
+        if (k === 'name') {
+          input.required = true;
+          input.placeholder = T.ejemploNombre;
+        }
+        input.id = 'c360-sitio-' + k;
+        input.name = k;
+        input.className = 'input';
+        input.value = sitio && sitio[k] != null ? String(sitio[k]) : '';
+        caja.appendChild(input);
+        campos[k] = input;
+        form.appendChild(caja);
+      });
+      const errorForm = document.createElement('p');
+      errorForm.className = 'sitios-cliente__error';
+      errorForm.setAttribute('role', 'alert');
+      errorForm.hidden = true;
+      form.appendChild(errorForm);
+
+      const pie = document.createElement('div');
+      pie.className = 'sitios-cliente__pie';
+      const cancelar = document.createElement('button');
+      cancelar.type = 'button';
+      cancelar.className = 'btn btn-secondary';
+      cancelar.textContent = T.cancelar;
+      const guardar = document.createElement('button');
+      guardar.type = 'submit';
+      guardar.className = 'btn btn-primary';
+      guardar.textContent = T.guardar;
+      pie.appendChild(cancelar);
+      pie.appendChild(guardar);
+      form.appendChild(pie);
+
+      function cerrar() { hueco.replaceChildren(); nuevo.hidden = false; }
+      cancelar.addEventListener('click', cerrar);
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const valores = {};
+        SITIOS_CLIENTE.ORDEN.forEach((k) => { valores[k] = campos[k].value; });
+        const cuerpo = SITIOS_CLIENTE.cuerpo(valores);
+        // Sólo espacios: el `required` del navegador lo deja pasar y el servidor lo guardaría.
+        if (!cuerpo.name) { campos.name.value = ''; campos.name.reportValidity && campos.name.reportValidity(); return; }
+        guardar.disabled = true;
+        errorForm.hidden = true;
+        const peticion = sitio
+          ? apiRequest(`/admin/customers/${id}/sites/${sitio.id}`, { method: 'PUT', body: JSON.stringify(cuerpo) })
+          : apiRequest(`/admin/customers/${id}/sites`, { method: 'POST', body: JSON.stringify(cuerpo) });
+        peticion.then(() => {
+          if (!viva()) return;
+          cerrar();
+          cargar();
+        }, (err) => {
+          if (!viva()) return;
+          guardar.disabled = false;
+          if (err && err.handled) return;
+          errorForm.textContent = window.mensajeParaPersona(err, T.generico);
+          errorForm.hidden = false;
+        });
+      });
+
+      hueco.replaceChildren(form);
+      nuevo.hidden = true;
+      campos.name.focus();
+    }
+
+    nuevo.addEventListener('click', () => abrirFormulario(null));
+    if (filaFiscal) lista.appendChild(filaFiscal);
+    cargar();
   }
 
   // Activar primer tab

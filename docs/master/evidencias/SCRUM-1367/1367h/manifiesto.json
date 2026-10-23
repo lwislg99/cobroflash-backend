@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "merchantId": 46,
+  "periodo": {
+    "desde": "2026-10-01T00:00:00.000Z",
+    "hasta": "2026-12-31T23:59:59.999Z",
+    "año": 2026,
+    "trimestre": 4
+  },
+  "resumen": {
+    "asientos": 0,
+    "miradas": 0,
+    "albaranesExaminados": 1,
+    "albaranesQueCuadran": 1,
+    "albaranesConHallazgo": 0,
+    "facturasSinAlbaran": 0,
+    "facturasSueltas": 0
+  },
+  "avisos": [
+    "modelo 303: 2 gastos sin datos de IVA no entran en el IVA deducible"
+  ],
+  "ficheros": [
+    {
+      "nombre": "indice.csv",
+      "bytes": 102,
+      "sha256": "14b6cf2be7404151a43243329f5e97f07ae4d01f6a079270224f783a2415b25c"
+    },
+    {
+      "nombre": "libro-registro.csv",
+      "bytes": 79,
+      "sha256": "2f486f003cfb47350b410bde0503a214417c3e3d1ef0ff41703d67f8408d4046"
+    },
+    {
+      "nombre": "modelo-303.csv",
+      "bytes": 139,
+      "sha256": "ab1ba0dfbd7ee57f3ef977880ccab86d09c6ca2b2b0dda3bbc38e2c9b797b83a"
+    },
+    {
+      "nombre": "albaranes-verificacion.csv",
+      "bytes": 63,
+      "sha256": "7792e660e4a73d14adcbafe0f0f46ae355d1c1360c10a1b2935e3dee7a34fe04"
+    },
+    {
+      "nombre": "entregas-por-linea.csv",
+      "bytes": 63,
+      "sha256": "95a6287b6a85b48703e83d9534c9ce65cae2c50721ad3fc2d9318af0b5c0d91f"
+    },
+    {
+      "nombre": "alcance-de-la-verificacion.txt",
+      "bytes": 824,
+      "sha256": "95421273d3bf099d8e346b1c7f9f35c32a6c3b058781d7cf43bcb9013f7479e1"
+    }
+  ]
+}

@@ -285,8 +285,10 @@ export const ANCLAS_564 = {
     // Era `precios/p#6`: SCRUM-1086 quitó el fee-note que iba delante y el índice bajó a #2.
   },
   'faq/div#4': {
-    texto: 'Sin permanencia. Tus datos son tuyos: clientes, presupuestos, facturas, cobros, trabajos y gastos se exportan en CSV cuando quieras.',
+    texto: 'Sin permanencia. Tus datos son tuyos: clientes, presupuestos, trabajos y gastos se exportan en CSV cuando quieras.',
     anclas: [CSV],
+    // SCRUM-1551e (23-oct-2026): fuera «facturas, cobros» es C1, firmado en SCRUM-1551 c.20437
+    // (propuesta de c.20377). Misma ancla: los CSV de exportación siguen existiendo.
   },
 
   // ── identidad ─────────────────────────────────────────────────────────────────────────

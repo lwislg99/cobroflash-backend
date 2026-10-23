@@ -198,10 +198,10 @@ Confirmación al cliente cuando se recibe el pago. **Sin botones.**
 - **Pie:** `Recibo disponible · Yaqu`
 - **Botones:** ninguno.
 
-**Código que lo envía:**
-- `src/modules/billing/app/routes/psp.routes.ts` (rama `payment.confirmed`)
-- `src/modules/billing/app/routes/mpWebhook.routes.ts` (pago aprobado en Mercado Pago)
-- Helper compartido: `src/integrations/whatsappNotifications.ts` → `sendPaymentConfirmation()`
+**Código que lo envía:** ninguno. Los webhooks de pago (`psp.routes.ts`, `mpWebhook.routes.ts`)
+mandan la §4 (`payment_confirmation_invoice_es`), y el helper que mandaba ésta,
+`sendPaymentConfirmation()`, se quedó sin llamadores y se retiró en SCRUM-1596b (fundador, Jira
+c.20602). El builder `buildPaymentConfirmation` sigue en `src/integrations/whatsappTemplates.ts`.
 
 ---
 

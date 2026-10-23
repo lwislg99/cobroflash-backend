@@ -1,0 +1,32 @@
+Salida de `node mutar-1403b.mjs <raiz> <ddl> <dir>` · jv-j2w · 23-oct-2026, sobre el árbol de la rama
+scrum-1403b-tecnico-sin-agregados antes del commit (src con el arreglo). Copiada tal cual de la consola.
+Las dos pasadas anteriores salieron «SIN RESUMEN (CIEGO)» en las 5: la ruta al banco llevaba el %20 del
+espacio de «Javier Pereira». El instrumento lo dijo CIEGO, no verde.
+C1 y C2 son MUTACIONES_QUE_ME_TUMBAN (catálogo del meta-guard); M1-M5 piden base.
+
+C1-catalogo · VIVA→CAZADA · exit=1 · bytesTap=6575 · casos=9 (ok=6 not_ok=3 skip=0) · declarado: tests=9 pass=6 fail=3 skipped=0
+    · SCRUM-1403 · 🔴 las tres puertas A LA VEZ: ninguna da ya la cifra — ni las facturas, ni las fichas de p
+    · SCRUM-1403b · 🔴 los eventos con el importe en el texto le llegan al Técnico SIN el detalle (los 7 siti
+    · SCRUM-1403b · la ficha de cliente decide las cifras y el detalle de los eventos con `seesOnlyOwnJobs`, 
+C2-catalogo · VIVA→CAZADA · exit=1 · bytesTap=6574 · casos=9 (ok=6 not_ok=3 skip=0) · declarado: tests=9 pass=6 fail=3 skipped=0
+    · SCRUM-1403 · 🔴 las tres puertas A LA VEZ: ninguna da ya la cifra — ni las facturas, ni las fichas de p
+    · SCRUM-1403b · 🔴 los eventos con el importe en el texto le llegan al Técnico SIN el detalle (los 7 siti
+    · SCRUM-1403b · la ficha de cliente decide las cifras y el detalle de los eventos con `seesOnlyOwnJobs`, 
+M1-eventos-enteros · VIVA→CAZADA · exit=1 · bytesTap=6576 · casos=9 (ok=6 not_ok=3 skip=0) · declarado: tests=9 pass=6 fail=3 skipped=0
+    · SCRUM-1403 · 🔴 las tres puertas A LA VEZ: ninguna da ya la cifra — ni las facturas, ni las fichas de p
+    · SCRUM-1403b · 🔴 los eventos con el importe en el texto le llegan al Técnico SIN el detalle (los 7 siti
+    · SCRUM-1403b · la ficha de cliente decide las cifras y el detalle de los eventos con `seesOnlyOwnJobs`, 
+M2-cifras-al-tecnico · VIVA→CAZADA · exit=1 · bytesTap=5508 · casos=9 (ok=7 not_ok=2 skip=0) · declarado: tests=9 pass=7 fail=2 skipped=0
+    · SCRUM-1403 · 🔴 las tres puertas A LA VEZ: ninguna da ya la cifra — ni las facturas, ni las fichas de p
+    · SCRUM-1403b · 🔴 los eventos con el importe en el texto le llegan al Técnico SIN el detalle (los 7 siti
+M3-vista-sin-filtro · VIVA→CAZADA · exit=1 · bytesTap=4426 · casos=9 (ok=8 not_ok=1 skip=0) · declarado: tests=9 pass=8 fail=1 skipped=0
+    · SCRUM-1403b · 🔴 los eventos con el importe en el texto le llegan al Técnico SIN el detalle (los 7 siti
+M4-anomalia-fuera-de-la-lista · VIVA→CAZADA · exit=1 · bytesTap=5769 · casos=9 (ok=7 not_ok=2 skip=0) · declarado: tests=9 pass=7 fail=2 skipped=0
+    · SCRUM-1403b · 🔴 los eventos con el importe en el texto le llegan al Técnico SIN el detalle (los 7 siti
+    · SCRUM-1403b · todo sitio que escribe un importe en el detalle de un evento es de un tipo que la ficha l
+M5-detalle-se-queda · VIVA→CAZADA · exit=1 · bytesTap=5638 · casos=9 (ok=7 not_ok=2 skip=0) · declarado: tests=9 pass=7 fail=2 skipped=0
+    · SCRUM-1403 · 🔴 las tres puertas A LA VEZ: ninguna da ya la cifra — ni las facturas, ni las fichas de p
+    · SCRUM-1403b · 🔴 los eventos con el importe en el texto le llegan al Técnico SIN el detalle (los 7 siti
+restaurar dist: tsc=0
+
+Árbol después: git status y git diff idénticos byte a byte a los de antes de mutar.

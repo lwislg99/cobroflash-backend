@@ -185,3 +185,255 @@ registrado, así que «0/20 después» no habría separado nada de «0/20 antes�
 
 *(Corrección propia: al sacar la lista de los 42 parcheé mi sonda con `sed` y la dejé sin compilar, que es la
 cicatriz de J6 del 14-oct repetida. Fue en un temporal, no en el árbol; la rehice con la herramienta de escritura.)*
+
+## J6 · SCRUM-1218c · los tres de J2 que piden `LIBRO_PG_URL`, migrados y medidos con un Postgres desechable
+
+**Medido contra:** `origin/main` = `1ad1968523fed7c2ffb833d5a3feafe4dd1c79f8` · 2026-10-23T03:19:23Z (hora de GitHub al acabar las pasadas; sesión J6 `jv-j6ag`, por encargo del orquestador `cobroflash-backend-62`; el disparo está en c.20156)
+
+A9: comprobación → `scripts/_prisma-client-guard.mjs`
+
+Carril: J6. **Los tres ficheros son de J2 (`area-j2`): carril J2 cruzado a mano, por el encargo del
+orquestador `cobroflash-backend-62` (el que dejó pendientes el tramo 1218b), y sólo para migrar su `fetch`
+a `node:http`.**
+
+### ① Lo que se ha cambiado
+
+En `scrum1346`, `scrum1397` y `scrum1403`, la función `pedir` pasa de `fetch` a `http.request(…, { agent: false })`.
+Lo demás del fichero no se toca. Un JSON que no se puede leer sigue dando `null`, como el `.catch(() => null)`
+de antes. `fetch` seguía redirecciones y `node:http` no; por eso se mide también del lado del servidor (②).
+`CON_EL_PATRON_YA` de `scrum560` baja de **40 a 37**: lo **recalculó el censo**, que en rojo nombraba
+exactamente esos tres («✅ ESTOS YA NO USAN `fetch` SOBRE SU SERVIDOR»). No se eligió.
+
+### ② El banco: mismos casos, mismos veredictos, mismas respuestas
+
+En esta máquina no hay Postgres (ni servicio en 5432 ni `C:\Program Files\PostgreSQL`), así que se usó PGlite
+0.5.11 con pglite-socket 0.2.14 en loopback. Están instalados en el tmp del puesto, fuera del repo. La base se
+llama `yaqu_libro_test`, y el guard de los tests la acepta sin tocarlo. El esquema sale de
+`prisma migrate diff --from-empty` (33 `CREATE TABLE`, uno por `model`).
+
+Cada pasada usa un PGlite NUEVO y corre `node --test --test-force-exit` con el fichero solo. El TAP va a un
+fichero y los casos se cuentan anclados al inicio de línea. Una sonda precargada con `--import` anota, del lado del
+SERVIDOR, el método, la ruta y el status de cada respuesta. El servidor no cambia, así que la lista tiene que
+salir igual, y una redirección que `fetch` seguía saldría como una petición de más en el ANTES.
+
+| fichero | casos (0 SKIP) | respuestas por pasada | antes: pasadas limpias / abortos | después | casos y respuestas, como conjunto |
+| --- | --- | --- | --- | --- | --- |
+| `scrum1346-el-tecnico-ve-documentos-ajenos` | 5 · 5 ok | 46 | 20 / 0 | 20 / 0 | IGUAL · 1 variante en las 40 pasadas |
+| `scrum1397-el-tecnico-ve-sus-facturas` | 5 · 5 ok | 106 | 20 / 0 | 20 / 0 | IGUAL · 1 variante |
+| `scrum1403-el-tecnico-y-las-otras-puertas` | 6 · 6 ok | 67 | 20 / 0 | 20 / 0 | IGUAL · 1 variante |
+
+Por status, en la pasada 0 del ANTES de los tres: 186 de 200, 6 de 400 y 27 de 404. **Ningún 3xx.**
+
+Los controles de los instrumentos, vistos:
+- **El comparador** lleva un control SEMBRADO: una copia del ANTES con un veredicto cambiado y un `302` de más.
+  Salió DISTINTO en las dos patas de los tres ficheros (VIVO).
+- **Mutación del arreglo:** con `pedir` devolviendo el cuerpo a `null`, caen 3 de 5, 2 de 5 y 3 de 6 casos.
+  Los casos leen el cuerpo que trae `node:http`, y no pasan en vacío. La mutación se deshizo con el editor.
+- **El banco sin argumentos dice CIEGO**, no verde. Lo vi por un error mío (abajo).
+
+`scrum560`: 4 de 4 en verde con la lista en 37. Antes de quitarlos de la lista, 3 de 4.
+
+Banco, comparador, sonda y la salida del comparador: `docs/master/evidencias/SCRUM-1218/`. Van como `.mjs.txt`
+para no dejar en el árbol piezas sin consumidor. Para correrlos, se copian a un directorio con
+`@electric-sql/pglite` y `@electric-sql/pglite-socket` y se les quita el `.txt`.
+
+⚠️ **Sin medir:** Linux/CI con las 20 pasadas (en el check obligatorio estos tres corren con el Postgres del
+runner, una vez). Y lo mismo que en 893/910: **ninguno de los tres tenía un aborto registrado, y antes salió 0/20
+en los tres**, así que el «0/20 después» de esta máquina no separa el arreglo de la suerte. Lo que sí demuestra
+es que el cambio no altera nada de lo que los tests miden.
+
+### ③ Lo que queda de la lista (37)
+
+- Del equipo de Luis: `scrum1188d`, `scrum1489` y `scrum912`. Se avisan y no se tocan.
+- Los 34 gateados por `QA_DB_TEST` / `BOT_SUITE_TEST`: sus veredictos sólo se miden en staging, con su turno.
+  Quedan fuera de esta tanda.
+
+*(Corrección propia, y es la que lleva el `A9:`. Para correr estos tres hizo falta un `node_modules` PROPIO.
+El cliente de Prisma compartido iba dos campos por detrás de `schema.prisma` (`Merchant.activityKind` y
+`Quote.archivedAt`), y las listas de presupuestos que miden 1346 y 1403 filtran por `archivedAt`. Lo dijo
+`_prisma-client-guard.mjs` antes de correr nada. Se arregló con `npm ci` en este worktree y `generate` desde
+él. `npm run topologia` dice «directorio propio», así que no se tocó el compartido. Otra, sin consecuencia: en un
+comando usé una variable que no había definido, y el banco salió CIEGO («faltan argumentos») en vez de dar un
+verde. Repetí la pasada.)*
+
+## J6 · SCRUM-1218d · los ocho gateados que se encienden con `LIBRO_PG_URL`, migrados y medidos con el banco desechable
+
+**Medido contra:** `origin/main` = `e306a6a5e5b45a2e98792d30eee02fdec5ea2362` · 2026-10-23T16:00:17Z (hora de GitHub al acabar las pasadas y los guards sobre el árbol fusionado; sesión J6 `jv-j6ap`, por encargo del orquestador `cobroflash-backend-62`; autorización del instrumento en c.20573)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1218/comparar-1218d.mjs.txt`
+
+Carril: J6. Ninguno de los nueve ficheros de `tests/` tiene fila en `dos-equipos.md` §3 (`node scripts/carriles.mjs de <ruta>`
+dice «sin fila en §3: nadie lo reclama» en los nueve; control: `.github/workflows/ci.yml` sale de S5 y `tests/_banco-libro.mjs`
+de S3, así que la herramienta ve dueños).
+
+### ⓪ Por qué este lote y no otro
+
+El encargo era un lote de los 34 gateados con el antes/después en el TURNO de staging. El worktree no lleva
+`DATABASE_URL_STAGING`, `_DEV` ni `_TESTS` (`node scripts/comprobar-claves-bd.mjs`: 4 problemas), y
+`scripts/staging-gated.mjs` aborta sin `_TESTS`: se paró (c.20572). El orquestador autorizó en c.20573 la otra salida:
+**sólo los 8 que nombran `LIBRO_PG_URL`**, con el banco PGlite de 1218c y `sslmode=disable`, y con una condición previa:
+que cada uno se ENCIENDA con el banco, por nombre. Los otros 26 siguen necesitando staging.
+
+### ① Se encienden con el banco (condición 1 de c.20573)
+
+Sin banco y sin gates, los 8 suman **9 casos en SKIP**; con el banco, **0**. Una pasada cada uno:
+
+| fichero | sin banco (tests · pass · skip) | con banco (casos · ok · skip) | respuestas del servidor |
+| --- | --- | --- | --- |
+| albaran | 17 · 15 · 2 | 17 · 17 · 0 | 29 |
+| bot-suite | 1 · 0 · 1 | 1 · 1 · 0 | 27 |
+| scrum47-enviar-albaran-wa | 1 · 0 · 1 | 1 · 1 · 0 | 8 |
+| scrum49-firma-remota | 1 · 0 · 1 | 1 · 1 · 0 | 10 |
+| scrum50-bot-albaranes | 1 · 0 · 1 | 1 · 1 · 0 | 3 |
+| scrum68-evidencias-firma | 5 · 4 · 1 | 5 · 5 · 0 | 5 |
+| scrum72-pdfs-privados | 2 · 1 · 1 | 2 · 2 · 0 | 10 |
+| scrum992-partes-recortan-por-rol | 6 · 5 · 1 | 6 · 6 · 0 | 34 |
+
+Ninguno sale del lote.
+
+### ② Lo que se ha cambiado
+
+En cada uno de los 8, cada llamada `fetch(` pasa a `pedirSinAgente(` (34 llamadas: 5, 1, 2, 9, 1, 5, 9 y 2). `pedirSinAgente`
+es un `http.request` con `agent: false`, definido en el propio fichero debajo de los imports, que devuelve lo que esos
+ficheros leen de la respuesta de `fetch`: `status`, `headers.get` (un `set-cookie` repetido se une con `, `, como hace
+`fetch`), `text()` y `json()`. Medido antes de escribirlo: ninguno de los 8 usa `.ok`, `arrayBuffer`, `body`, `url` ni
+`redirected` de la respuesta. No sigue redirecciones; medido en el ANTES, las únicas 3xx son las 8 de `/auth/verify`, que
+ya iban con `redirect: 'manual'`.
+
+**Ninguna aserción cambia** (regla 41): las 34 líneas que quita el diff, con `fetch(` sustituido por `pedirSinAgente(`, están
+LITERALES entre las añadidas (34 de 34; control: una línea alterada no encuentra pareja). La lista `CON_EL_PATRON_YA` de
+`scrum560` baja de **37 a 29**: en rojo nombraba exactamente estos 8 («ESTOS YA NO USAN `fetch` SOBRE SU SERVIDOR»), y
+fueron los que se quitaron.
+
+### ③ Antes y después (condición 2)
+
+Banco: `docs/master/evidencias/SCRUM-1218/banco-1218d.mjs.txt` (el de 1218c más `sslmode=disable` en la URL; el `diff`
+es esa línea), DDL de `prisma migrate diff --from-empty`, PGlite 0.5.11 + pglite-socket 0.2.14 en el tmp del puesto.
+20 pasadas por fichero, cada una con un PGlite nuevo y el fichero solo con `--test-force-exit`.
+
+| fichero | casos | respuestas/pasada | antes | después | casos | respuestas |
+| --- | --- | --- | --- | --- | --- | --- |
+| albaran | 17 | 29 | 20/20, 0 abortos | 20/20, 0 | IGUAL | IGUAL |
+| bot-suite | 1 | 27 | 20/20, 0 | 20/20, 0 | IGUAL | IGUAL |
+| scrum47 | 1 | 8 | 20/20, 0 | 20/20, 0 | IGUAL | IGUAL |
+| scrum49 | 1 | 10 | 20/20, 0 | 20/20, 0 | IGUAL | IGUAL |
+| scrum50 | 1 | 3 | 20/20, 0 | 20/20, 0 | IGUAL | IGUAL |
+| scrum68 | 5 | 5 | 20/20, 0 | 20/20, 0 | IGUAL | IGUAL |
+| scrum72 | 2 | 10 | 20/20, 0 | 20/20, 0 | IGUAL | IGUAL |
+| scrum992 | 6 | 34 | 20/20, 0 | 20/20, 0 | IGUAL | IGUAL |
+
+Una variante de casos y una de respuestas en cada lado: las 40 pasadas de cada fichero dan el mismo conjunto. Salida
+entera: `comparar-1218d.salida.txt`.
+
+**🔴 El comparador de 1218c tenía un ciego, y se arregló aquí.** Su `plegar` cambiaba cada `\d+` por `#` para quitar ids
+y fechas, y con ellos **el STATUS**: un 200 y un 404 en la misma ruta salían iguales. Y no plegaba los tokens aleatorios en
+hexadecimal (`qa14-<hex>`), así que en este lote el ANTES variaba entre sus PROPIAS pasadas (20 variantes de 20) y la pata
+de respuestas no decía nada. `comparar-1218d.mjs.txt` pliega los tokens largos y deja el status sin plegar. Lleva un control
+sembrado nuevo, que cambia SÓLO el status de una respuesta sin añadir ninguna: sale DISTINTO en los 8. Con el plegado
+viejo, medido sobre `albaran`: el ANTES con `GET /admin/albaranes/#/fotos 404` cambiado a 200 sale IGUAL al original. **Lo que eso dice de 1218c, SIN MEDIR:** su tabla dio IGUAL con el status plegado. No he
+vuelto a correr sus tres ficheros con este comparador.
+
+### ④ Mutación
+
+En el banco, una pasada por fichero, restaurando y comprobando el sha256 de cada fichero después:
+
+* `text`/`json` devuelven vacío: caen `albaran` (2), `scrum47` (1), `scrum49` (1), `scrum68` (1) y `scrum992` (1).
+* `bot-suite`, `scrum50` y `scrum72` no leen el cuerpo. Con el status a 599 cae `scrum72` (1 de 2). Con la petición a otra
+  ruta (`/nada`) caen `bot-suite` y `scrum50`, que miran el buzón de WhatsApp y no la respuesta.
+
+### ⑤ Árbol fusionado
+
+`git merge origin/main` (27 commits, ninguno toca estos ficheros). Después, cliente de Prisma `✔` y `npm run build`.
+`scrum560`, `237`, `976`, `824`, `836`, `419`, `702`, `700`, `719` y `850`: **115/115** en 10 ficheros (115 líneas `ok`
+ancladas al inicio, 0 `not ok`).
+
+### Sin medir
+
+* Linux/CI. CI ya levanta un banco para estos gateados (`scrum419`, «CI SIGUE levantando el banco»), pero no he leído qué
+  hicieron en un obligatorio con este cambio.
+* Ninguno de los 8 tenía un aborto registrado, y el ANTES dio 0 de 160. «0 después» demuestra que el cambio no altera lo que
+  miden, no que arregle un aborto.
+* `bot-suite` y `scrum50` siguen cargando undici en el proceso: el control positivo de `tests/_sin-salida.mjs` (S3, no se
+  toca) hace su propio `fetch` a un host que no existe. Ese `fetch` no va contra el servidor propio, y el censo de `scrum560`
+  no mira los imports.
+* Los otros 26 gateados: necesitan staging.
+
+*(Correcciones propias: el encargo pedía `node scripts/carriles.mjs de <ruta>` ANTES de tocar un fichero, y lo corrí
+después de migrar, antes del commit. Salió «nadie lo reclama» en los nueve, así que no cambió nada, pero el orden era el
+contrario. Va a mis cicatrices. Además, mi primer recuento de qué partes de la respuesta se usaban lo hice con `uniq -f1`,
+que no sirve para eso; lo rehíce leyendo línea a línea.)*
+
+## J6 · SCRUM-1218e · nueve gateados por `QA_DB_TEST`, migrados y medidos con el turno de la base de pruebas del carril
+
+**Medido contra:** `origin/main` = `c81f07621b6e21204722d42d3021e36965382949` · 2026-10-23T16:40:42Z (hora de GitHub al acabar las pasadas; sesión J6 `jv-j6ar`, por encargo del orquestador `cobroflash-backend-62`; la alta del árbol es la decisión del fundador de c.20596)
+
+A9: comprobación → `tests/scrum383-clave-vs-destino.test.mjs`
+
+*(El fallo que generaliza no es mío sino del plan, y lo cazó un guard: el encargo decía «UNA entrada, nada más en
+ese fichero», y `scrum383` fija la lista EXACTA de árboles declarados, así que la alta lo tumba por
+construcción. Se ajustó su lista con la decisión escrita al lado (c.20596) y un caso que exige la base del árbol
+del equipo de Javier; quitar la alta del módulo lo hace caer: 13/14. Una alta silenciosa no puede pasar. Mío, sin
+consecuencia: el canario salió con `ENOENT` porque creé la carpeta de salida después de lanzarlo; lo repetí.)*
+
+### ① La alta de `jv-j6ar` (decisión del fundador, c.20596)
+
+En `scripts/_clave-vs-destino.mjs`, `DESTINOS_ESPERADOS.DATABASE_URL_TESTS.porWorktree` gana UNA entrada,
+`'jv-j6ar': 'yaqu_dev_javier'`. Ninguna otra línea del fichero cambia.
+
+- **Rojo primero:** `node scripts/comprobar-claves-bd.mjs` desde el árbol, sin tubería: `rc=1`, con
+  «DATABASE_URL_TESTS NO SE PUEDE COMPROBAR EN ESTE ÁRBOL DE TRABAJO». Con la entrada: `rc=0`, las tres claves
+  en destinos de no-producción y `DATABASE_URL` ausente.
+- **Control** (llamando a `comprobarClaveVsDestino` del módulo, sin tocar otro árbol): `jv-j6ap` sale
+  `worktree_no_declarado` antes y después; `cobroflash-backend` sale `cuadra` antes y después.
+
+### ② Los nueve, y el instrumento
+
+Migrados con `migrar-1218d` (el de #2755, que añade `pedirSinAgente` sobre `http.request(…, { agent: false })` y
+cambia cada `fetch(` por él): `scrum51`, `scrum57`, `scrum58`, `scrum92`, `scrum120`, `scrum22`, `scrum24`,
+`scrum66` y `scrum94`. Salida: `evidencias/SCRUM-1218/migrar-1218e.salida.txt` (22 llamadas, 0 `fetch(` restantes).
+Las 22 líneas que el diff quita reaparecen idénticas con `pedirSinAgente(`: ninguna aserción cambia.
+
+Banco: `evidencias/SCRUM-1218/banco-1218e.mjs.txt`, el de 1218d con la base cambiada. Cada fichero corre solo,
+`--test-force-exit`, con el entorno del hijo QA de `scripts/staging-gated.mjs` (`QA_DB_TEST=1`,
+`WHATSAPP_DRY_RUN=1`, sin `A55_DB_TEST` ni `BOT_SUITE_TEST`) y contra `DATABASE_URL_TESTS` con el TURNO tomado
+(`npm run turno:tomar`, 16:21:53Z; soltado al acabar, `turno:estado` = LIBRE). No es `npm run test:staging:gated`
+entero: el runner corre los ~1.400 ficheros en un hijo y no separa casos por fichero; el turno, la base y el
+entorno son los suyos. La sonda de respuestas es la de 1218c y el comparador el de 1218d (no pliega el status).
+
+| fichero | casos (0 SKIP) | respuestas/pasada | antes | después | casos | respuestas |
+| --- | --- | --- | --- | --- | --- | --- |
+| scrum51 | 1 ok | 3 | 3/3, 0 abortos | 3/3, 0 | IGUAL | IGUAL |
+| scrum57 | 1 ok | 3 | 3/3, 0 | 3/3, 0 | IGUAL | IGUAL |
+| scrum58 | 1 ok | 4 | 3/3, 0 | 3/3, 0 | IGUAL | IGUAL |
+| scrum120 | 1 ok | 10 | 3/3, 0 | 3/3, 0 | IGUAL | IGUAL |
+| scrum22 | 1 ok | 6 | 3/3, 0 | 3/3, 0 | IGUAL | IGUAL |
+| scrum24 | 1 ok | 4 | 3/3, 0 | 3/3, 0 | IGUAL | IGUAL |
+| scrum66 | 2 ok | 7 | 3/3, 0 | 3/3, 0 | IGUAL | IGUAL |
+| scrum92 | 1 ok | 4 | 3/3, 0 | 3/3, 0 | IGUAL | IGUAL |
+| scrum94 | 1 ok | 5 | 3/3, 0 | 3/3, 0 | IGUAL | IGUAL |
+
+Salidas: `evidencias/SCRUM-1218/pasadas-1218e.salida.txt` y `comparar-1218e.salida.txt`.
+
+Controles:
+
+- **El banco enciende el test:** los 10 casos salen ejecutados en las 54 pasadas, ninguno `# SKIP`.
+- **Comparador:** su control sembrado (veredicto cambiado + respuesta de más, y sólo un status cambiado) sale
+  DISTINTO en los nueve: VIVO.
+- **Mutación:** con `json()` del ayudante devolviendo `{}` en `scrum51`, el caso cae (`not ok`, exit 1).
+- **La lista:** `CON_EL_PATRON_YA` baja de 37 a 28. Con la lista vieja y los nueve migrados, `scrum560` cae
+  nombrando exactamente esos nueve; con la nueva, 4/4.
+
+### ③ Lo que queda de los 26 (17)
+
+- `pdfs`: lee `res.arrayBuffer()`, que `pedirSinAgente` no da. Sale del lote en vez de ensanchar el ayudante.
+- `scrum148`: ya importa `node:http` y le queda un `fetch`; el migrador de 1218d lo rechaza por diseño.
+- `scrum127`, `scrum170`, `scrum171a`, `scrum178`, `scrum221`, `scrum73`, `scrum74`, `scrum82`, `scrum85`,
+  `scrum90`, `tenancy-permisos`, `scrum17`, `scrum25-export-zip`, `scrum25-exports` y `scrum814…gated`: sin
+  medir; mismo banco y mismo turno, en otro lote.
+
+**Sin medir:** 20 pasadas por fichero (aquí 3; ninguno tenía un aborto registrado, así que «0 después» no separa
+el arreglo de la suerte: demuestra que el cambio no altera lo que miden); Linux/CI; la tanda gateada completa.
+**Suite entera local: NO CORRIDA.** La lancé y el arnés la mató por falta de memoria de la máquina; lo que dejó
+escrito no cuenta. Sí corridos: los guards de suite y de registro (`scrum237`, `976`, `824`, `836`, `419`, `702`,
+`700`, `719`, `560`, `267`, `273`, `1294`, `850`) y los que nombran los árboles declarados (`scrum383`, `395`,
+`480`, `774`): 188/188 en 17 ficheros. La suite la hace el check obligatorio.

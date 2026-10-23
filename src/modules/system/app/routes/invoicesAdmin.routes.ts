@@ -550,7 +550,7 @@ router.put('/:id/tags', requireRole('admin'), async (req, res) => {
 router.put('/:id/status', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) {
+    if (!cabeEnColumnaInt(id)) {
       return res.status(400).json({ error: 'invalid_id' });
     }
 
@@ -594,7 +594,7 @@ router.put('/:id/status', requireRole('admin'), async (req, res) => {
 router.post('/:id/pay', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) {
+    if (!cabeEnColumnaInt(id)) {
       return res.status(400).json({ error: 'invalid_id' });
     }
 
@@ -615,7 +615,7 @@ router.post('/:id/pay', requireRole('admin'), async (req, res) => {
 router.post('/:id/unpay', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) {
+    if (!cabeEnColumnaInt(id)) {
       return res.status(400).json({ error: 'invalid_id' });
     }
 
@@ -700,7 +700,7 @@ router.post('/:id/resend-whatsapp', requireRole('admin'), async (req, res) => {
 router.post('/:id/send-email', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ ok: false, error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ ok: false, error: 'invalid_id' });
 
     const invoice = await prisma.invoice.findFirst({
       where: { id, merchantId: req.merchantId },
@@ -778,6 +778,9 @@ router.post('/:id/send-reminder', requireRole('admin'), async (req, res) => {
           currency: invoice.currency,
           urlToken: payToken as string,
         }),
+        // SCRUM-1509k (fundador, SCRUM-1509 c.20569: «Pasar el cliente»): sin el cliente, el tope
+        // por cliente y día no se le preguntaba a este botón (uno de los cuatro de SCRUM-1509d).
+        log: { customerId: invoice.customerId, relatedType: 'invoice', relatedId: id },
       });
       sent = result.ok;
       if (!result.ok) {
@@ -875,7 +878,7 @@ const NO_SE_ANULA_SI_NO_ESTA_PENDIENTE = {
 router.post('/:id/annul', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     const motivo = String(req.body?.motivo || '');
     if (!(MOTIVOS_ANULACION as readonly string[]).includes(motivo)) {
@@ -1027,7 +1030,7 @@ const MICROCOPY_PENDIENTE_308 = '[PENDIENTE microcopy oficial]';
 router.post('/:id/rectify', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     const original = await prisma.invoice.findFirst({
       where: { id, merchantId: req.merchantId },
@@ -1190,7 +1193,7 @@ router.post('/:id/rectify', requireRole('admin'), async (req, res) => {
 router.post('/:id/regenerate-pdf', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     const invoice = await prisma.invoice.findFirst({
       where: { id, merchantId: req.merchantId },
@@ -1248,6 +1251,7 @@ router.post('/:id/regenerate-pdf', requireRole('admin'), async (req, res) => {
       rectifiesNumber: invoice.rectifies?.number ?? null,
       watermark: isDemoMerchant(merchant) ? DEMO_WATERMARK : null,
       stageLabel: invoice.stageLabel, // SCRUM-33
+      zona: merchant.timezone, // SCRUM-1470c: el día de la «Fecha:», el de su registro
     });
 
     await prisma.invoice.update({

@@ -8,53 +8,16 @@ import { normalizePhone, formatMoneyEs } from '../core/utils/utils';
 import { BASE_URL } from '../core/config/env';
 import { sendWhatsAppTemplate, sendWhatsAppText, sendWhatsAppWindowFirst, sendWhatsAppCtaUrl } from './whatsapp';
 import {
-  buildPaymentConfirmation,
   buildPaymentConfirmationInvoice,
   buildMerchantAlert,
 } from './whatsappTemplates';
 
 /**
- * Confirmación de pago al cliente (plantilla payment_confirmation_es, sin botones).
- * Cuerpo: {{1}} nombre cliente · {{2}} importe con moneda · {{3}} nº factura · {{4}} nombre negocio
- * Fire-and-forget: nunca lanza; devuelve {ok}.
- */
-export async function sendPaymentConfirmation(params: {
-  toPhone: string | null | undefined;
-  customerName?: string | null;
-  // SCRUM-931: el importe entra en BRUTO y la forma se da una sola vez, dentro del builder.
-  amount: number;
-  currency: string;
-  invoiceNumber: string;
-  businessName?: string | null;
-  merchantId?: number; // J3: respeta waOptOut del número para ese merchant
-}): Promise<{ ok: boolean }> {
-  const to = normalizePhone(params.toPhone || '');
-  if (!to) return { ok: false };
-
-  try {
-    const result = await sendWhatsAppTemplate({
-      to,
-      merchantId: params.merchantId,
-      ...buildPaymentConfirmation({
-        customerName: params.customerName || 'Cliente',
-        amount: params.amount,
-        currency: params.currency,
-        invoiceNumber: params.invoiceNumber,
-        businessName: params.businessName || 'tu proveedor',
-      }),
-    });
-    return { ok: !!result.ok };
-  } catch (err: any) {
-    console.error('[payment_confirmation] error:', err?.message || err);
-    return { ok: false };
-  }
-}
-
-/**
  * Confirmación de pago al cliente CON botón "Ver documento" → /recibo/{{receiptToken}}
  * (plantilla payment_confirmation_invoice_es). Copy NEUTRO: vale para factura (post-SIF)
  * y para justificante (pre-SIF) — por eso `documentNumber` (no "invoiceNumber").
- * Sustituye a sendPaymentConfirmation() en los webhooks de pago (J1, plantillas Approved).
+ * Sustituyó a sendPaymentConfirmation() en los webhooks de pago (J1, plantillas Approved); aquélla
+ * se quedó sin llamadores y se retiró en SCRUM-1596b (fundador, c.20602).
  * Cuerpo: {{1}} nombre · {{2}} importe con moneda · {{3}} nº documento · {{4}} negocio · botón = receiptToken
  * Fire-and-forget: nunca lanza; devuelve {ok}.
  *

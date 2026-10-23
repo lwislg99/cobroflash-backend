@@ -54,6 +54,7 @@ const rotos = [];
 function casa(fila, where) {
   for (const [k, v] of Object.entries(where)) {
     if (k === 'OR') { if (!v.some((w) => casa(fila, w))) return false; continue; }
+    if (k === 'AND') { if (!v.every((w) => casa(fila, w))) return false; continue; } // SCRUM-1596b: la reserva aparta los avisos al profesional
     if (k === 'createdAt') { if (!(fila.createdAt.getTime() >= v.gte.getTime())) return false; continue; }
     if (v && typeof v === 'object' && 'not' in v) { if (fila[k] === v.not) return false; continue; }
     if (v && typeof v === 'object') { rotos.push(k); throw new Error(`filtro que el doble no conoce: ${k}`); }

@@ -129,3 +129,57 @@ scrum1199 ×2, scrum1298b ×2, scrum476), 2 suyos ya arreglados en la rama (262,
 - El traspaso llamaba «scrum1340» a un test que no existe con ese nombre: es `scrum811c-skill-ui-declarada` (lo cita por SCRUM-1340). Se buscó por contenido antes de lanzar nada.
 
 **No visto en yaqu.app:** producción no despliega desde el 20-oct 15:35Z (despliegues pausados en Railway). No lo he intentado.
+
+## 23-oct-2026 · SCRUM-1576c · J2 · el albarán y el buscador, reproducidos por la ruta real (lista para S1, sin arreglar nada)
+
+**Medido contra:** `origin/main` = `00179a513a5fb11ca12d61fe25b1b2dec26b51ca` · 2026-10-23T09:26:49Z (cabecera `Date:` de GitHub; `dist/` de `tsc --noCheck` sobre ese commit)
+A9: comprobación → `docs/master/evidencias/SCRUM-1576/reproducir-albaran.mjs`
+
+Puesto J2 (`jv-j2y`) · árbol `jv-j2y` · rama `scrum-1576c-albaran-y-buscador-por-ruta`. Encargo del orquestador
+`cobroflash-backend-62`: los lectores (a) que el §2 dejó «leído, no corrido» y que son de **S1** (equipo de Luis).
+**No se toca ninguno**: aquí sólo se mide, y la lista va a S1.
+
+**Instrumento:** `evidencias/SCRUM-1576/reproducir-albaran.mjs`, hermano de `reproducir.mjs` (mismo banco de
+SCRUM-597, `dist/app.js` entero con el doble de Prisma; ninguna base). El albarán se EMITE con la ficha del día —sus
+cinco columnas congeladas las escribe `congelarDesdeFicha`, la función de la casa— y después la ficha cambia
+(Fusionado / Fusionado SL / B11111111 → Principal / Principal SA / B22222222). Cada ruta se pide dos veces.
+- **Control de cada caso:** con la ficha del día tiene que salir lo del día; si no, `CIEGO` y salida 2.
+- **Control de que el control muerde:** `--ciego` pide un valor imposible → **10 de 10 CIEGO, salida 2** (medido).
+- **Discriminación:** el PDF de un albarán FIRMADO v:3 saca el nombre del sobre (SCRUM-452) y **sale `LEE LO GUARDADO`**:
+  la sonda sabe decir las dos cosas.
+- Salida completa: `evidencias/SCRUM-1576/reproducir-albaran-salida.txt`. **Población: 10 casos · LEE EL VIVO 9 · LEE LO GUARDADO 1 (el control) · CIEGO 0.**
+
+| # | lector (carril S1) | ruta | qué ve quién | día → hoy | veredicto |
+|---|---|---|---|---|---|
+| 1 | `albaranes.routes.ts:154` → `albaranesListado.ts:234` | `GET /admin/albaranes` | panel, columna «cliente» | Fusionado SL → Principal SA | LEE EL VIVO |
+| 2 | `albaranes.routes.ts:865` | `GET /admin/albaranes/:id` | panel, ficha del albarán (`customer.name`) | Fusionado → Principal | LEE EL VIVO |
+| 3 | `albaranPublic.routes.ts:244` | `GET /albaran/:token` (emitido) | cliente: «Hola, X» y el firmante precargado | Fusionado → Principal | LEE EL VIVO |
+| 3b | el mismo `loadContext` | `GET /albaran/:token` (ya firmado v:3) | cliente: «Gracias, X» | Fusionado → Principal | LEE EL VIVO |
+| 4 | `albaran.service.ts:800` (`ensureAlbaranPdf`) | `GET /admin/albaranes/:id/pdf` (emitido sin firmar) | PDF, «Receptor» | Fusionado SL → Principal SA | LEE EL VIVO |
+| 4n | el mismo | el mismo | PDF, NIF del receptor | B11111111 → B22222222 | LEE EL VIVO |
+| 4c | el mismo (control) | el mismo, albarán firmado v:3 | PDF, «Receptor» | Fusionado SL → Fusionado SL | LEE LO GUARDADO |
+| 5 | `precarga.service.ts:335` | `GET /admin/precarga` | móvil del técnico, `clienteNombre` | Fusionado → Principal | LEE EL VIVO |
+| 6 | `albaran.service.ts:642` (`buildFirmaEvidencia`) | `POST /albaran/:token/firmar` | nadie directo: `evidenciaFirma.contenidoCongelado.cliente` que se SELLA | Fusionado SL → Principal SA | LEE EL VIVO · **STOP** (sellado, SCRUM-577) |
+| 7 | `search.routes.ts:86` | `GET /admin/search?q=` | panel, buscador (factura) | Fusionado → Principal | LEE EL VIVO |
+
+**Lo que dice cada fila, con lo que NO dice:**
+- 1, 2, 3, 5: las cinco columnas congeladas del `Albaran` están en la fila del doble (que las devuelve a quien las pide)
+  y ninguna de las cuatro rutas las usa: la lista y la precarga ni las piden en su `select`. Confirma por ruta el hallazgo del §2, que era de `grep`.
+- 3b: en un albarán YA FIRMADO, la página pública saluda con el nombre de hoy mientras el sobre sella el de entonces.
+- 4n: el NIF del receptor en el PDF sale vivo **también en el firmado v:3** (se ve en la salida del 4c); SCRUM-452 lo
+  declaró a propósito porque el sobre no congela el NIF. Para el EMITIDO sin firmar, la columna `customerTaxId` sí lo guarda.
+- 6: si la ficha cambia entre EMITIR y FIRMAR, el sobre sella la ficha del momento de la firma, no la de la emisión.
+  **Si eso es defecto o es lo correcto (quien firma, firma con el nombre de ese día) es criterio de S1/fundador, no mío.**
+  Y tocarlo es el sellado: STOP.
+- 7: repite el caso 3 de `reproducir.mjs` (ya «medido» en la clasificación; la ficha de mi encargo lo daba por no corrido).
+- **No medido:** el PDF del albarán con trazo de firma en `in_situ` (canal distinto, misma función 642, no corrido);
+  versiones v:1/v:2 del PDF (no corridas); yaqu.app (no lo he intentado: necesitaría un albarán de verdad y cambiarle la ficha).
+
+**Ninguna escritura fuera del doble.** El PDF se escribió en `storage/albaranes` del directorio temporal de la sesión
+(la sonda se lanza desde fuera del árbol), no en el repositorio.
+
+**Error propio:** la primera pasada dio 3 CIEGO por mis extractores (el saludo se llevaba el emoji y el PDF parte
+«Receptor:» y el nombre en dos trozos). Al arreglarlos pasé el cambio por `node -e` en bash, y bash se comió la barra de
+`\s`: la expresión excluía la letra «s» y salió «Fu» → 4 CIEGO. Es la cicatriz de J2 del 1-oct y del 8-oct, por
+tercera vez. **Lo cazó el control de cada caso**, no yo: por eso la línea A9 apunta a la sonda. Corregido con la
+herramienta de edición.

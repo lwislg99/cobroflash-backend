@@ -168,8 +168,10 @@ function constaCobrado(estado: string | null): boolean {
  * apartan. Decisión A del orquestador (SCRUM-1063b, 25-sep-2026): solo «herramientas» es ambigua
  * entre corriente e inversión; el resto va a la 28/29. Una categoría que no esté aquí ni sea
  * «herramientas» (una nueva, o ninguna) NO se coloca: se declara.
+ * SCRUM-1066e · «alquiler» (el del local) es corriente: decisión del fundador, SCRUM-1066 c.20497
+ * («Sí, como gasto corriente»), en la lista del asesor para confirmación.
  */
-const CATEGORIAS_CORRIENTES: ReadonlySet<string> = new Set(['materiales', 'desplazamiento', 'subcontrata', 'otros']);
+const CATEGORIAS_CORRIENTES: ReadonlySet<string> = new Set(['materiales', 'desplazamiento', 'subcontrata', 'otros', 'alquiler']);
 const CATEGORIA_AMBIGUA = 'herramientas';
 
 /**

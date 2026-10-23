@@ -4773,6 +4773,45 @@ textarea.parte-linea-desc {
   .data-card:has(> .barra-seleccion) td.cell-actions > div > .btn-sm { min-height: 44px; }
 }
 
+/* ── J2 · SCRUM-1583 (AB6) ── lista de Cobros: el enlace al documento de cada fila («factura F-…»,
+   `cobrosView.js`) medía 17 px de toque a 320 y 390 y 19 a 1280 (caja 16/18, Edge). Sólo toque: el
+   área crece con un `::before` (el mecanismo de `.casilla-tactil-44`), 16 + 2 × 14 = 44, sin mover
+   nada a la vista — un `min-height` en el enlace subía la fila de escritorio de 45 a más de 60.
+   Ancla SIN clase nueva: `href="#invoice-detail"` dentro de `td.cell-id` sólo lo pinta Cobros.
+   Medido con `docs/master/evidencias/SCRUM-1583/medir.mjs`, también con el aviso «Enviar de nuevo»
+   en la misma celda (`--con-aviso`): su toque no baja. */
+td.cell-id > a[href="#invoice-detail"] { position: relative; }
+td.cell-id > a[href="#invoice-detail"]::before { content: ""; position: absolute; inset: -14px 0; }
+
+/* ── J2 · SCRUM-1587 (AB6) ── lista de Cobros: el botón «Enviar de nuevo» del aviso de correo
+   fallido (`avisoCorreoNoSalio`, `cobrosView.js`) medía 30,7 px de toque a 320 y 390 y 30,9 a 1280
+   (caja 30, Edge). Sólo toque, como el enlace de arriba: `::before`. Va 8 y no 7 porque el
+   `::before` se ancla al RELLENO y `.btn-secondary` lleva 1 px de borde: con 7 medía 43. El botón sigue
+   midiendo 30 a la vista — `btn-sm` se queda pequeño a propósito (DESIGN.md, Buttons) — y no se toca
+   `.btn-sm` global. Ancla SIN clase nueva: `[data-correo-no-salio]` sólo lo pinta ese aviso.
+   Medido con `docs/master/evidencias/SCRUM-1587/medir.mjs` (con el enlace de SCRUM-1583 al lado). */
+td.cell-id [data-correo-no-salio] > button { position: relative; }
+td.cell-id [data-correo-no-salio] > button::before { content: ""; position: absolute; inset: -8px 0; }
+
+/* ── J2 · SCRUM-1592 (AB6) ── los campos de Clientes a 390 px: el buscador (37 de toque), los dos
+   `select` de etiqueta y orden (39) de la barra de la lista, y el campo de etiquetas de la ficha 360
+   (`#c360-meta`, 36,9; lo pinta `etiquetasDelDocumento.js`, de S2, y no se toca). Su altura sale de
+   `.input` (padding 8px, sin mínimo), que es de todas las pantallas: aquí sólo se les da tamaño, y sólo
+   hasta el corte de móvil (768), como SCRUM-1149 arriba; en escritorio ya llegan a 36. Mismo ancla sin
+   clase nueva que 1149 (la barra de selección sólo la pinta esta lista). Medido con el medidor de
+   SCRUM-1584 (mide `select` e `input`): `guard:objetivo-tactil` daba 4 hallazgos y da 0.
+   SCRUM-1592b: «en escritorio ya llegan a 36» era cierto sólo con la fuente de Windows. Sin mínimo, el
+   alto de `.input` es padding + borde + el interlineado de la fuente que haya: 36 en el Chromium de
+   Windows y 34 en el de Linux de CI, donde el buscador y el campo de `#c360-meta` daban 35 de toque a
+   929 contra 36. Un mínimo explícito de 38 (el alto que ya tienen los dos `select` de la barra) no
+   depende de la fuente ni del redondeo; en móvil manda el de 44, que va detrás. */
+.data-card:has(> .barra-seleccion) .data-card-toolbar > .input,
+#c360-meta .input { min-height: 38px; }
+@media (max-width: 768px) {
+  .data-card:has(> .barra-seleccion) .data-card-toolbar > .input,
+  #c360-meta .input { min-height: 44px; }
+}
+
 /* SCRUM-1056 · «Volver a llamar»: la nota es texto libre del profesional. Una palabra muy larga
    (un enlace, una referencia) se parte en vez de salirse de la tarjeta: medido a 390 px. */
 .volver-a-llamar-nota { overflow-wrap: anywhere; }
@@ -4790,3 +4829,37 @@ textarea.parte-linea-desc {
 .notas-cliente-form { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; margin: 0; }
 .notas-cliente-form textarea { width: 100%; }
 .notas-cliente-form .alert { width: 100%; }
+
+/* -- J2 · SCRUM-1043a -- lista de Clientes, columna «Pendiente de cobro»: la celda parte sus líneas.
+   `.table td` lleva `white-space: nowrap` en el móvil, y la línea de garantía retenida (literal
+   firmado de SCRUM-1108, unos 70 caracteres) se salía de la tarjeta: medido 453 px a 320 px de ancho
+   con `docs/master/evidencias/SCRUM-1043a/pagina.mjs`. */
+.table td.cell-pendiente { white-space: normal; }
+
+/* -- J2 · SCRUM-1145/1044 -- la pestaña «Sitios» de la ficha 360: la fila fiscal, los sitios
+   guardados y su formulario. Regla 4: nada de esto va como `style.cssText` desde JS. Nombres,
+   direcciones y contactos los escribe el profesional: una palabra larga se parte en vez de salirse
+   de la tarjeta. El formulario va a dos columnas en escritorio y a una en el móvil. */
+/* La fila de pestañas de la ficha PARTE LÍNEA. Con la quinta («Sitios») medía 456 px a 390 y la
+   pestaña quedaba fuera de la pantalla, sin barra con la que llegar a ella; y a 320 px ya se salían
+   las cuatro de antes de un admin (unos 386 px). Medido con `docs/master/evidencias/SCRUM-1145/pagina.mjs`. */
+.c360-pestanas { flex-wrap: wrap; }
+.sitios-cliente { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.sitios-cliente__nuevo { align-self: flex-start; }
+.sitios-cliente__lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.sitios-cliente__fila { border: 1px solid var(--border); border-radius: var(--r-md); padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; overflow-wrap: anywhere; }
+.sitios-cliente__fila--fiscal { background: var(--neutral-50); }
+.sitios-cliente__nombre { font-size: 14px; font-weight: 700; color: var(--neutral-900); }
+.sitios-cliente__direccion { font-size: 13px; color: var(--neutral-700); }
+.sitios-cliente__contacto { font-size: 13px; color: var(--muted); }
+.sitios-cliente__acciones { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; margin-top: 4px; }
+.sitios-cliente__vacio { font-size: 13px; color: var(--muted); padding: 12px 2px; }
+.sitios-cliente__error { margin: 0; font-size: 13px; color: var(--danger-ink); }
+.sitios-cliente__form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; border: 1px solid var(--border); border-radius: var(--r-md); padding: 16px; }
+.sitios-cliente__form > .field:first-child,
+.sitios-cliente__form > .sitios-cliente__error,
+.sitios-cliente__pie { grid-column: 1 / -1; }
+.sitios-cliente__pie { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+@media (max-width: 768px) {
+  .sitios-cliente__form { grid-template-columns: minmax(0, 1fr); }
+}

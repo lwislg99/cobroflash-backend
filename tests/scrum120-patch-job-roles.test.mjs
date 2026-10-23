@@ -13,6 +13,28 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113: fixture + limpieza garantizada
+import http from 'node:http';
+
+// `node:http` sin agente y no `fetch` (SCRUM-1218d): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de `fetch`
+// (status, headers.get, text, json) y, como el `redirect: 'manual'` de antes, no sigue redirecciones.
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    let d = ''; r.setEncoding('utf8');
+    r.on('data', (t) => { d += t; });
+    r.on('end', () => ok({
+      status: r.statusCode,
+      headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+      text: async () => d,
+      json: async () => JSON.parse(d),
+    }));
+  });
+  req.on('error', mal);
+  req.end(body);
+});
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
@@ -45,12 +67,12 @@ test('SCRUM-120: PATCH /admin/jobs/:id — gate por campo (técnico: operativo �
           await prisma.authSession.create({
             data: { merchantId: merchant.id, teamMemberId, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) },
           });
-          const res = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
+          const res = await pedirSinAgente(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
           const cookie = (res.headers.get('set-cookie') || '').split(';')[0];
           assert.ok(cookie.startsWith('pf_session='), 'no se obtuvo cookie de sesión');
           return cookie;
         };
-        const patch = (cookie, body) => fetch(`${base}/admin/jobs/${job.id}`, {
+        const patch = (cookie, body) => pedirSinAgente(`${base}/admin/jobs/${job.id}`, {
           method: 'PATCH', headers: { cookie, 'Content-Type': 'application/json' }, body: JSON.stringify(body),
         });
 

@@ -193,3 +193,81 @@ corte es elegir el número a ojo, y en Linux el hinting mueve los subpíxeles. Q
   Safari 17+ (de memoria, no medido); en uno que no los soporte, la reserva se pinta sin escalar.
 - Que ningún carácter con Inter cargada lo pinte la reserva: lo dicen el `unicode-range` y las 566 cajas, no
   una lectura glifo a glifo.
+
+## SCRUM-1570d · las dos atribuciones que quedaban «NO MEDIDO»: `objetivo-tactil` el 17-oct y el papel de #2447
+
+**Medido contra:** `origin/main` = `00179a513a5fb11ca12d61fe25b1b2dec26b51ca` · 2026-10-23T09:23:56Z (hora de GitHub); al escribir, `origin/main` = `3f889f9e7d9c39c3d7875c7ab297549a076f4a3c` (2026-10-23T09:38:06Z), sin cambios en este registro
+
+A9: comprobación → `.claude/hooks/guard-dangerous.sh`
+
+Puesto J3, sesión jv-j3ao. Orquestador `cobroflash-backend-62`. Cierra los dos «NO MEDIDO» de c.20106 y c.20159.
+Sólo lectura y CI: **ningún fichero de `public/`, `scripts/` ni `tests/` cambia**. Banco y salidas en
+`docs/master/evidencias/SCRUM-1570d/` (los `.mjs` van como `.txt`: no se ejecutan desde el árbol).
+
+### ① `guard:objetivo-tactil`: por qué el 17-oct y no el 16-sep — el instrumento estaba CIEGO al enlace
+
+**Población (runs de `ci.yml`, `push` a `main`, 15-oct 00:00Z → 18-oct 06:00Z):** 81 runs; 23 con el job
+«guards de navegador (fuera de la tanda)», 58 `cancelled` sin jobs (CIEGOS, no verdes). Se lee la ANOTACIÓN del
+job por nombre (`runs-main-salida.txt`). Control positivo: `cls-barra-anuncio` sale en los 23. Control a cero:
+`escalera-por-estado` no sale en ninguno antes de `57b0bc822`, como ya decía el ticket.
+
+| run | sha | anotación del job |
+|---|---|---|
+| `39063406069` | `c646bee25` (17-oct 19:39Z) | 37 verdes · 0 CIEGOS · 1 rojo: `cls-barra-anuncio` |
+| — | `99fa131f2`, `e244ff61b`, `27f17e9b1` | cancelados: sin job |
+| `39065032530` | `4aae2b7d8` (17-oct 20:02Z) | 36 verdes · 0 CIEGOS · 2 rojos: `cls-barra-anuncio`, `objetivo-tactil` |
+
+Entre los dos, `public/` **no cambia**, y de lo que importa el guard sólo cambia `scripts/_pagina-panel.mjs`
+(commit `a5f0ed658`, SCRUM-1559, PR #2528 = `e244ff61b`). Lo que hace: el serializador del banco empieza a sacar
+los atributos puestos **por propiedad**. «⬇ Clientes CSV» recibe el suyo así (`exportBtn.href = …`,
+`customersView.js`), y el censo selecciona `a[href]` (`INTERACTIVOS`, `_medidor-de-toque.mjs`): **hasta ese
+commit el enlace salía como `<a>` sin `href` y no era un objetivo de toque para el guard.**
+
+**Medido, no deducido** (Edge local, Windows; árbol desechable en `4aae2b7d8`, `dist` con `tsc --noCheck`):
+
+| | Clientes 929 / 390: interactivos en el DOM | veredicto |
+|---|---|---|
+| `4aae2b7d8` tal cual (base) | 39 / 39 | **2 hallazgos · 0 ciegos → salida 1**: `A.btn-secondary.btn-sm «⬇ Clientes CSV»` 31 px (< 36 y < 44) — el mismo rojo de CI |
+| ídem con `scripts/_pagina-panel.mjs` de `c646bee25` (mutación de UN fichero) | 29 / 29 | **0 hallazgos · 0 ciegos → salida 0** |
+
+Los 10 de diferencia son los «Clientes 10 de 10» enlaces que SCRUM-1559 dice haber hecho visibles. Con la mutación
+sale también otra superficie de 22 a 20 interactivos, sin hallazgos en ninguna de las dos.
+
+**Lo que dice:** el enlace medía 31 px desde SCRUM-886 (16-sep); el guard no lo veía. El 17-oct **no cambió la
+pantalla: el instrumento dejó de estar ciego**, y el rojo era un defecto real (lo arregló SCRUM-1149). #2535,
+el merge «del momento», no es la causa: es el primer run no cancelado después de #2528.
+
+### ② `guard:cls-barra-anuncio`: #2447 es el disparador, medido en Linux
+
+Los runs de `main` de en medio (`4f487bb17`, `ebe2b932c`, `7f5e1dd22`, `79531cf84`) están cancelados: `main` no
+separa. **Los runs de PR sí corrieron, y en el mismo runner** (`prs-salida.txt`; logs bajados con
+`--allow-escape-sequences`, 76-81 KB cada uno):
+
+| PR | run / job | merge probado | `cls-barra-anuncio` |
+|---|---|---|---|
+| #2447 (SCRUM-1016m) | `38537485984` / `115763804780` | `1dd5c960c` **into `0e8c20aff`** | 🔴 rojo · 360: 0,127 / 0,127 / 0,125 · 390: 0,043 / 0,043 / 0,042 |
+| #2436 | `38538100111` / `115765842923` | `691d70240` **into `0e8c20aff`** | ✔ verde |
+| #2434 | `38532278982` / `115765793748` | `e53cb8012` into `e2be1c9fd` | ✔ verde |
+| #2439 | `38534078867`, `38536165459` | — | job verde (fila no leída) |
+| #2445 | `38536273903` | — | rojo, pero de `firma-con-tramos`, no de éste |
+
+Los dos primeros prueban **la misma base** (`0e8c20aff`, el último verde de `main`) en la misma imagen
+(`ubuntu-24.04` `20261004.327.1`, Edge Linux): sólo cambia el contenido del PR. Las cifras del rojo de #2447 son
+las que `main` repitió después (job `118721406690`). De lo que lee el guard (imports: `_hallazgos-y-ciegos`,
+`_navegador`, `_servidor`, y la página), #2447 sólo cambia `public/index.html`: el `<h1>` de los dos héroes
+(«al cobro» → «a la firma») y tres `<title>`/`meta`.
+
+### NO medido
+
+- **Por qué** el titular nuevo sube el CLS en Linux (≈100 px a 360): sigue sin reproducirse fuera del runner, y
+  ya no hay rojo que medir (SCRUM-1570c lo puso verde). Lo medido es el QUÉ y el CUÁNDO, no el mecanismo.
+- La fila de `cls-barra-anuncio` en #2439: su job salió verde entero, así que la fila también; no la leí.
+- El banco local de ① corrió en Windows; en Linux, lo que ata es el rojo de CI (mismo hallazgo, 31 px).
+
+### Errores míos
+
+1. Fui a sustituir `_pagina-panel.mjs` con `>` y luego a restaurarlo con `git checkout --`, en el árbol
+   desechable: `guard-dangerous` me paró las dos veces. La mutación quedó en un commit local de ese árbol, que no
+   se empuja.
+2. El primer pase del guard no arrancó (faltaba `dist/`): salió con código 1 por un `MODULE_NOT_FOUND`, no por un
+   hallazgo. Lo distinguió leer la salida (1.315 B), no el código.

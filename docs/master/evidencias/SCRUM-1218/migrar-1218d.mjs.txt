@@ -1,0 +1,58 @@
+// migrar.mjs — SCRUM-1218d. Para cada fichero: añade `import http from 'node:http'` al final del bloque
+// de imports, define `pedirSinAgente` justo debajo y cambia cada llamada `fetch(` por `pedirSinAgente(`.
+// No toca nada más. Imprime, por fichero, cuántas llamadas cambió; si alguna cuenta no cuadra, sale ≠ 0.
+import fs from 'node:fs';
+import path from 'node:path';
+
+const [raiz, ...nombres] = process.argv.slice(2);
+const AYUDA = `
+// \`node:http\` sin agente y no \`fetch\` (SCRUM-1218d): \`fetch\` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de \`fetch\`
+// (status, headers.get, text, json) y, como el \`redirect: 'manual'\` de antes, no sigue redirecciones.
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    let d = ''; r.setEncoding('utf8');
+    r.on('data', (t) => { d += t; });
+    r.on('end', () => ok({
+      status: r.statusCode,
+      headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+      text: async () => d,
+      json: async () => JSON.parse(d),
+    }));
+  });
+  req.on('error', mal);
+  req.end(body);
+});
+`;
+
+let malos = 0;
+for (const n of nombres) {
+  const ruta = path.join(raiz, 'tests', `${n}.test.mjs`);
+  const lineas = fs.readFileSync(ruta, 'utf8').split('\n');
+  if (lineas.some((l) => /from 'node:http'/.test(l)) || lineas.some((l) => /pedirSinAgente/.test(l))) { console.log(`${n}: YA TIENE node:http o pedirSinAgente — no se toca`); malos++; continue; }
+  // Fin del bloque de imports: la última línea que cierra un import (de una línea o multilínea).
+  let ultimo = -1;
+  let dentro = false;
+  for (let i = 0; i < lineas.length; i++) {
+    const l = lineas[i];
+    if (dentro) { if (/^\} from '[^']+';/.test(l)) { ultimo = i; dentro = false; } continue; }
+    if (/^import \{\s*$/.test(l)) { dentro = true; continue; }
+    if (/^import .*;/.test(l)) ultimo = i;
+  }
+  if (ultimo < 0) { console.log(`${n}: sin bloque de imports`); malos++; continue; }
+  const antes = lineas.join('\n').match(/\bfetch\(/g)?.length ?? 0;
+  const cuerpo = lineas.slice(ultimo + 1).join('\n').replace(/\bfetch\(/g, 'pedirSinAgente(');
+  const cabeza = lineas.slice(0, ultimo + 1).join('\n');
+  if (/\bfetch\(/.test(cabeza)) { console.log(`${n}: fetch( dentro del bloque de imports`); malos++; continue; }
+  const nuevo = `${cabeza}\nimport http from 'node:http';\n${AYUDA}${cuerpo}`;
+  const despues = nuevo.match(/\bfetch\(/g)?.length ?? 0;
+  const cambiadas = (nuevo.match(/\bpedirSinAgente\(/g)?.length ?? 0) - 1; // menos la definición… que no lleva «(» detrás del nombre
+  fs.writeFileSync(ruta, nuevo);
+  console.log(`${n}: fetch( ${antes} → ${despues} · llamadas a pedirSinAgente( ${cambiadas + 1} · imports hasta la línea ${ultimo + 1}`);
+  if (despues !== 0 || cambiadas + 1 !== antes) malos++;
+}
+console.log(`POBLACION=${nombres.length} ficheros · malos=${malos} · EXIT=${malos ? 1 : 0}`);
+process.exit(malos ? 1 : 0);

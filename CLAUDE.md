@@ -133,6 +133,8 @@ Si no puedes abrir el master, no estás en condiciones de tocar ninguno de los t
 ```bash
 npm run dev              # hot reload; carga .env.local con prioridad (BD local + DISABLE_CRONS=true)
 npm run build            # tsc → dist/
+# La tanda de pruebas (`npm test`) se corre desde Git Bash. Desde cmd o PowerShell, si `bash` no está en el PATH,
+# los tests que lanzan `bash` salen en rojo sin serlo: 51 el 23-oct-2026 (SCRUM-1244).
 npm test                 # compila + node --test (tests/*.test.mjs contra dist/)
 # ⚠️ `npm test` NO LO CORRE TODO, y su «0 fallos» no incluye lo que saltó (SCRUM-419/456).
 # Los saltos DECLARAN su motivo: búscalos con el reporter TAP, porque `spec` NO lo imprime.

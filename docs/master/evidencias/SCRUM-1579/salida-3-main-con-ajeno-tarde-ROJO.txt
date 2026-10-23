@@ -1,0 +1,34 @@
+BANCO: PGlite en 127.0.0.1:54394 · 33 tablas · test: tests/_v1579-r2-main-ajeno-tarde.mjs
+[magic-link] to=alta-a-1515-ks6b9c@test.local link=http://localhost:3000/auth/verify?token=aac5c48c1926dd6fd1662464713f061ef29150b1a15ebe985bbf720332fff84e
+[correo] {"evento":"enviado","via":"smtp","id":null,"origen":"auth","to":"4b7d07c8@test.local","asunto":"Tu enlace de acceso a YaQu"}
+[magic-link] email enviado OK a 4b7d07c8@test.local
+[magic-link] intento de login con email no registrado: d32c78f3@test.local
+✖ SCRUM-1515 · el merchant que crea nuestro guion nace igual que nacía el de POST /auth/register, y esa ruta ya no da de alta (8145.0381ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 8569.0157
+
+✖ failing tests:
+
+test at tests\_v1579-r2-main-ajeno-tarde.mjs:98:1
+✖ SCRUM-1515 · el merchant que crea nuestro guion nace igual que nacía el de POST /auth/register, y esa ruta ya no da de alta (8145.0381ms)
+  AssertionError [ERR_ASSERTION]: 🔴 al acabar hay más merchants que los dos del guion
+  
+  3 !== 2
+  
+      at TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/j3al-1579/tests/_v1579-r2-main-ajeno-tarde.mjs:367:159)
+      at async Test.run (node:internal/test_runner/test:1332:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 3,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+BANCO: merchants que quedan al terminar: 0 · EXIT=1

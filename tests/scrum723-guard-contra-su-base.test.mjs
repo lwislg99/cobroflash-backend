@@ -35,6 +35,7 @@ import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { baseDeLaRama, contenidoEnLaBase } from './_base-de-la-rama.mjs';
 import { ambitoDeLaFactura, ENTRADA_FACTURA } from './_ambito-de-la-factura.mjs';
+import { cambioAutorizado } from './_cambios-autorizados-de-la-factura.mjs';
 import { censarReferenciaMovil, analizarFuente } from './_censo-referencia-movil.mjs';
 import { temporal } from './_temporal.mjs';
 
@@ -253,6 +254,9 @@ test('SCRUM-723 · 🔴 el ÁMBITO ENTERO de la factura no ha cambiado respecto 
   const enBase = ambitoDeLaFactura(contenido);
   const enDisco = ambitoDeLaFactura(fs.readFileSync(path.join(RAIZ, REL_PDF), 'utf8'));
   assert.ok(enBase.texto && enDisco.texto, '🔴 CIEGO: falta uno de los dos ámbitos que comparar');
+  // 🔴 23-oct-2026 · SCRUM-1446d · la vía de cambio autorizado (SCRUM-1446 c.20473): sólo el PAR de
+  // huellas declarado con su firma; lo demás cae aquí abajo como siempre.
+  if (enDisco.texto !== enBase.texto && cambioAutorizado('ambito', enBase.texto, enDisco.texto)) return;
   assert.equal(enDisco.texto, enBase.texto,
     '🔴 ESTA RAMA CAMBIA LO QUE IMPRIME LA FACTURA — la función o algo que ella alcanza.\n'
     + '     base:  ' + base.ref + ' @ ' + base.sha.slice(0, 8) + '\n'

@@ -252,9 +252,44 @@ jobs:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           MARCA: "<!-- vigia-despliegue:produccion-congelada -->"
           VIGIA_SIMULACRO: ${{ inputs.simulacro }}
+          # SCRUM-1123f · a quién llama el aviso. El #2455 juntó 9 comentarios del bot con 0
+          # menciones: un aviso que no nombra a nadie no le llega a nadie. Es el dueño del
+          # repositorio. Si su cuenta RECIBE la notificación no está medido (hace falta el permiso
+          # `notifications`, que el `gh` de las sesiones no tiene): se declara, no se deduce.
+          VIGIA_MENCION: "@${{ github.repository_owner }}"
         run: |
           echo "marca=$MARCA" >> "$GITHUB_OUTPUT"
           RENGLON="$(tail -1 .vigia/constancias.log 2>/dev/null || true)"
+
+          # ═══════════════════════════════════════════════════════════════════════════════════
+          # 🔴 SCRUM-1123f · ¿RAILWAY NO HA VISTO EL COMMIT (TIPO A) O LO VIO Y FALLÓ (TIPO B)?
+          #
+          # Las dos dan el mismo síntoma y se miran en sitios distintos. Del 21 al 22-oct Railway
+          # no vio 55 commits y este aviso mandó 8 veces a mirar «los logs de arranque»: no había
+          # ninguno. Se distinguen desde GitHub, por los estados que Railway deja en el commit.
+          #
+          # Se miran los 5 commits MÁS NUEVOS de primer padre entre producción y `main` (los shas
+          # salen del renglón del vigía; el checkout trae la historia entera). Cada uno lleva
+          # `leido:false` si la API no contestó: «no pude leer» NO es «cero estados», y el módulo
+          # lo distingue. Si algo de aquí falla, VIGIA_ESTADOS_JSON va vacío y el aviso sale igual,
+          # diciendo que no sabe qué avería es (nunca se calla el aviso por no poder diagnosticar).
+          # ═══════════════════════════════════════════════════════════════════════════════════
+          PROD="$(printf '%s' "$RENGLON" | grep -oE 'prod=[0-9a-f]{8}' | head -1 | cut -d= -f2)" || true
+          MAIN="$(printf '%s' "$RENGLON" | grep -oE 'main=[0-9a-f]{8}' | head -1 | cut -d= -f2)" || true
+          VIGIA_ESTADOS_JSON=''
+          if [ -n "$PROD" ] && [ -n "$MAIN" ]; then
+            FILAS=''
+            for SHA in $(git rev-list --first-parent --max-count=5 "$PROD..$MAIN" 2>/dev/null); do
+              FILA=''
+              if J="$(gh api "repos/$REPO/commits/$SHA/status" 2>/dev/null)"; then
+                FILA="$(printf '%s' "$J" | jq -c --arg sha "$SHA" '{sha: $sha, leido: true, estados: [.statuses[] | {context, state, description}]}' 2>/dev/null)" || FILA=''
+              fi
+              [ -n "$FILA" ] || FILA="{\"sha\":\"$SHA\",\"leido\":false}"
+              FILAS="$FILAS$FILA"$'\n'
+            done
+            VIGIA_ESTADOS_JSON="$(printf '%s' "$FILAS" | jq -s -c '.' 2>/dev/null)" || VIGIA_ESTADOS_JSON=''
+          fi
+          echo "estados de Railway leídos: ${VIGIA_ESTADOS_JSON:-(ninguno)}"
 
           # 🔴 NO se usa `gh issue list --search`: la búsqueda de GitHub tokeniza el cuerpo y no
           # garantiza casar un literal con `<!-- … -->`. Se listan los Issues abiertos tal cual
@@ -271,8 +306,11 @@ jobs:
           # (Sin `pipefail`, en las tuberías de abajo sólo cuenta la ÚLTIMA orden: un `jq` de en
           # medio que falla no aborta, le pasa vacío a la siguiente.)
           DECISION="$(VIGIA_ISSUES_JSON="$VIGIA_ISSUES_JSON" VIGIA_MARCA="$MARCA" VIGIA_RENGLON="$RENGLON" VIGIA_RUN_URL="$RUN_URL" \
+                      VIGIA_ESTADOS_JSON="$VIGIA_ESTADOS_JSON" \
                       node scripts/vigia-despliegue-aviso.mjs)" || true
           ACCION="$(printf '%s' "$DECISION" | jq -r '.accion' 2>/dev/null)" || true
+          TIPO="$(printf '%s' "$DECISION" | jq -r '.tipo // "no-se-sabe"' 2>/dev/null)" || true
+          echo "- **Avería:** \`${TIPO:-no-se-sabe}\` (SCRUM-1123f: \`railway-no-lo-vio\` = tipo A, \`fallo-el-despliegue\` = tipo B)" >> "$GITHUB_STEP_SUMMARY"
 
           if [ "$ACCION" = "comentar" ]; then
             NUMERO="$(printf '%s' "$DECISION" | jq -r '.numero')"

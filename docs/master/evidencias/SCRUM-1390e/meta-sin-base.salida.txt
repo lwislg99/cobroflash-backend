@@ -1,0 +1,19 @@
+BASE sin mutar: 6 casos · ok=2 · skip=4 · not ok=0
+MUERE · «if (!(await puedeLlevarseElPortal(req, id))) return res.stat» · caen 1/6 · su caso cae
+MUERE · «if (customer.portalToken && !(await puedeLlevarseElPortal(re» · caen 1/6 · su caso cae
+MUERE · «const recorteFacturas = await whereFacturasVisibles(quien);» · caen 1/6 · su caso cae
+MUERE · «const recortePresupuestos = await wherePresupuestosVisibles(» · caen 1/6 · su caso cae
+﹣ SCRUM-1390e · 🔴 el Técnico NO se lleva el portal de un cliente con un presupuesto o una factura de otro, y no se le escribe token (1.2676ms) # sin LIBRO_PG_URL (banco desechable): corre en el check obligatorio del CI
+﹣ SCRUM-1390e · ✅ el Técnico SIGUE llevándose el portal cuando todo lo que enseña es suyo (autor · asignado al documento · sin documentos), y abre (0.1683ms) # sin LIBRO_PG_URL (banco desechable): corre en el check obligatorio del CI
+﹣ SCRUM-1390e · ✅ la administradora y la dueña, SIN CAMBIOS: se llevan el portal de cualquier cliente, también con documentos de otros (0.1891ms) # sin LIBRO_PG_URL (banco desechable): corre en el check obligatorio del CI
+﹣ SCRUM-1390e · 🔴 de paso: la ficha del cliente no le sirve EN CRUDO al Técnico el enlace que portal-url le niega (0.1357ms) # sin LIBRO_PG_URL (banco desechable): corre en el check obligatorio del CI
+✔ SCRUM-1390e · portal-url pregunta ANTES de escribir el token, y la ficha pregunta lo mismo (6.6314ms)
+✔ SCRUM-1390e · la pregunta no es un criterio nuevo: pide sus recortes a las dos puertas de SCRUM-1403 (2.2735ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 4
+ℹ todo 0
+ℹ duration_ms 2460.3248

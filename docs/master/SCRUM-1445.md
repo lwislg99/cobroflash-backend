@@ -180,3 +180,42 @@ de 703 anclas resueltas se pasó a 935 y las ausentes por revisar bajaron a 12.
 - Las dos salidas, `salida-censo-anclas.txt` y `salida-censo-identidades.txt`.
 
 Uso: `node <guion> <árbol> <ruta de typescript>`. Es todo AST: un comentario no cuenta.
+
+## SCRUM-1445c · 23-oct-2026 · S4 · el papel en producción: ¿se ve «Firmado el 05» junto a «Sello 04»?
+
+**Medido contra:** `origin/main` = `6c8706daef7399513e69e6872068aa7bed25b760` · 2026-10-23T12:34:27Z ·
+`yaqu.app/version` = el mismo SHA (cabecera `Date` 12:28:10Z).
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1445/1445c-visto/sonda-pdf-albaran.mjs`
+
+Encargo del orquestador: con producción sirviendo ya #2675, mirar en un albarán de verdad si el mismo
+papel imprime «Firmado el 05» y «Sello temporal: 04/10/2026, 22:30:00 (hora del servidor)». Solo GET
+con `scripts/qa/sesion-panel.mjs` (cuenta `luisdragonball+qa@gmail.com`, merchant 46). **No se ha
+firmado ni creado nada.**
+
+**Respuesta: en la cuenta QA no se puede ver a ninguna hora.** Lo medido:
+
+| qué | ruta | lo recibido |
+|---|---|---|
+| zona del merchant QA | `GET /admin/merchant` → 200 | `"timezone": null`, `"country": "ES"` → `zonaDelMerchant` cae a `'UTC'` |
+| zona del PROCESO | `GET /admin/albaranes/47/pdf` → 200, 3351 B | `firmadoAt` 2026-10-14T07:50:59.626Z → «Sello temporal 14/10/2026, 07:50:59 (hora del servidor)»: el proceso de Railway va en **UTC** (medido, ya no supuesto) |
+| «Firmado el» del mismo papel | ídem | «Firmado el 14 de octubre de 2026» |
+| control del extractor | ídem, y `#46` | el número (`AB260002`, `AB260001`) sale en el texto extraído; sin él la fila sería CIEGA |
+
+**Por qué no se puede ver la contradicción en QA.** Con `timezone` null, «Firmado el» y el sello salen los
+dos en UTC: no se contradicen nunca. **Pero los dos dan la VÍSPERA** en una firma de 00:00 a 02:00 de
+Madrid: el merchant sin zona tiene un defecto distinto, que tampoco está bien. Y no se puede forzar:
+`firmadoAt` es el `new Date()` del servidor al firmar (`albaranes.routes.ts:1069`), ninguna ruta
+cambia `Merchant.timezone` (sólo la escribe el alta, `auth.service.ts:347`), y firmar en QA exige el
+perfil fiscal relleno (R25), que sigue a null. **No se crea otro merchant:** además del permiso, la puerta
+de SCRUM-390 (`puertaClienteReal.ts`, cron diario) se abre con más de 13 merchants y avisa al fundador por
+WhatsApp (aviso del orquestador, 23-oct).
+
+**Quién la verá (MI LECTURA del código, no vista en papel):** todo merchant ES dado de alta desde
+`409e05317` (SCRUM-1522e, 13-oct), que nace con `Europe/Madrid` o `Atlantic/Canary`, y firme entre las
+00:00 y las 02:00 de Madrid (en Canarias, de 00:00 a 01:00). «Firmado el» usa la zona del negocio
+(`albaranPdf.service.ts:379`) y el sello no lleva `timeZone` (`:438`). La decisión A/B/C del sello es la
+firma pendiente de SCRUM-1470 y no se toca aquí.
+
+Evidencia en `docs/master/evidencias/SCRUM-1445/1445c-visto/`: la sonda, los dos PDF, su texto extraído y la
+salida. Uso: `node sonda-pdf-albaran.mjs <árbol> <id>...` (sale 2, CIEGO, si el número no aparece).

@@ -1,0 +1,21 @@
+﻿POBLACIÓN · 313 jobs del meta-guard con log leído (desde 2026-10-15T15:34:56Z hasta 2026-10-21T15:48:04Z)
+  COMPLETOS 124 · CORTADOS POR TECHO (≥ 1770 s, sin resumen) 135 · cortados ANTES del techo (concurrencia u otro) 54
+  de los cortados por techo: cancelled 135 · otro 0
+
+① LO QUE NO SE LLEGÓ A JUZGAR en los cortes por techo
+  mutaciones juzgadas 79361 de ~82395 · SIN JUZGAR ~3034 (3.7 %)
+  por corte: mutaciones sin juzgar p50 17 · p90 41 · máx 93 · guards sin juzgar p50 4 · p90 8 · máx 21
+  guards DISTINTOS que algún corte dejó sin juzgar: 22 · en TODOS los 135 cortes: 2 · en ≥ 90 %: 3
+
+② LO QUE SÍ SE JUZGÓ Y SE QUEDÓ ENTERRADO bajo el corte (veredictos no verdes en un job sin resumen ni código de salida)
+  cortados por techo: MUDAS 0 (en 0 jobs) · CIEGAS 39 (en 38 jobs) · MUERTOS 1 (en 1 jobs)
+    · job 119227219984 (push main, 2026-10-21T12:41:25Z) · MUDOS: - · muertos 1
+    ciegas por guard: scrum859-identidad-y-motivo-cerrado.test.mjs×36 · scrum757-la-declaracion-que-nadie-lee.test.mjs×3
+  cortados antes del techo: MUDAS 1 (en 1 jobs) · CIEGAS 7 (en 3 jobs) · MUERTOS 0 (en 0 jobs)
+    · job 116553922091 (pull_request scrum-1173-la-retirada-caduca, 2026-10-15T16:56:29Z) · MUDOS: scrum810b-los-suelos-derivados.test.mjs · muertos 0
+    ciegas por guard: scrum810-el-suelo-a-la-primera.test.mjs×2 · scrum710b-anclaje-por-identidad.test.mjs×2 · scrum1349-entorno-prestado-solo-baja.test.mjs×2 · scrum810b-los-suelos-derivados.test.mjs×1
+  (comparación) en los COMPLETOS: MUDAS 0 · CIEGAS 38 · MUERTOS 6 — ésas SÍ salieron con código ≠ 0
+
+③ ¿QUIÉN SE QUEDÓ SIN NINGÚN META-GUARD COMPLETO?
+  ramas de PR con meta-guard: 181 · SIN NINGÚN completo y con ≥ 1 corte por techo: 92
+  commits de main con meta-guard: 51 · SIN completo y con corte por techo: 30

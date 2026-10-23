@@ -791,3 +791,113 @@ tramo: 1.968 casos · 1.961 pasan · 5 se saltan · 2 caen (`scrum811c`/1340, qu
 | la fecha de los términos, al día | `public/terminos.html:43` |
 | el catálogo de 564 dice lo que dice la landing | `tests/scrum564-afirmaciones-publicadas.test.mjs` |
 | servido en yaqu.app | **NO HECHO** → producción sin desplegar desde el 20-oct; lo mira quien despliegue |
+
+---
+
+# APÉNDICE · 23-oct-2026 · SCRUM-1551e · J1, C1 y S3 aplicados en la landing (firma c.20437)
+
+**Medido contra:** `origin/main` = `a34ce744b28c389c480791158b976e2b3caf0b49` · 2026-10-23T09:51:00Z
+
+A9: sin fallo que generalice — el único rojo propio del tramo (`scrum564`, por C1) era la consecuencia esperada de cambiar un texto que su catálogo declara, y se resolvió actualizando el texto declarado con la misma ancla; los otros dos rojos (`scrum1340`, `scrum976` ④) pedían este mismo tramo
+
+**Skill UI:** cargada
+
+**Quién:** jv-j3aq (puesto J3, equipo de Javier), por encargo del orquestador `cobroflash-backend-62`. Carril a
+mano: el hook de inicio dijo «SIN IDENTIDAD» (SCRUM-1498). `public/index.html` → J3
+(`node scripts/carriles.mjs de public/index.html`, `dos-equipos.md:147`). La skill `yaqu-premium-ui` se cargó
+ANTES de tocar la página. Cambio sólo de texto: ni clases, ni tokens, ni estructura.
+
+## 1 · Qué entra
+
+| sitio | firma | hoy → firmado |
+|---|---|---|
+| `public/index.html:35` (JSON-LD, `description`) | J1 | «…gestión de clientes, gastos y facturas.» → «…gestión de clientes, gastos y albaranes.» |
+| `public/index.html:442` (subtítulo visible del héroe) | S3 | «Crea el presupuesto en 30 segundos, tu cliente lo firma desde el móvil y te paga — con tarjeta, Bizum o transferencia. Y llevas clientes, gastos y facturas en el mismo sitio.» → «Crea el presupuesto en 30 segundos y tu cliente lo firma desde el móvil por WhatsApp. Y llevas clientes, gastos y albaranes en el mismo sitio.» |
+| `public/index.html:749` (FAQ «¿Y si un día lo dejo?») | C1 | «…clientes, presupuestos, facturas, cobros, trabajos y gastos…» → «…clientes, presupuestos, trabajos y gastos…» |
+| `scripts/_afirmaciones-publicadas.mjs` (`faq/div#4`) | — | el texto declarado pasa a ser C1; MISMA ancla (`CSV`), ningún caso quitado |
+| `docs/go-live/puerta.json`, fila 14 | — | sólo `condicion`: «Aplicarlo, sin firma nueva.» → superada por S3 (c.20437); el recambio de c.19607 NO se aplica |
+
+## 2 · El literal, extraído por programa
+
+Los tres «Hoy» y J1, C1 y S3 se sacaron por programa del cuerpo de **c.20377** (la propuesta de jv-j4m), devuelto
+por el MCP de Jira; c.20437 dice «se copian de c.20377 byte a byte». J1 es un fragmento con «…» delante: se
+ancló al «Hoy» de J por su comienzo común. Cada «Hoy» casó **exactamente 1 vez** en `public/index.html` antes de
+sustituirse (si no, el programa sale con rojo y no escribe). Los tres nuevos coinciden con los que repite c.20437.
+
+PASO 0: en `origin/main` no había ningún commit con «1551e», ni rama `scrum-1551[a-z]?-` viva; los PR de 1551
+(#2418, #2657, #2678, #2697) están todos MERGED. Los tres textos de hoy seguían en :35, :442 y :749.
+
+## 3 · Guards que miran estos textos
+
+- `scrum564` (`_afirmaciones-publicadas.mjs`): declaraba el texto viejo de la FAQ del CSV. Igual que hizo 1551d con
+  `faq/div#1`, se actualiza el texto declarado al literal FIRMADO, citando c.20437, sin quitar casos ni anclas.
+- `tests/scrum331-heroe.test.mjs`: **verde** con S3. S3 no nombra AEAT, Hacienda ni VeriFactu, así que su lista
+  negra del :121 no aplica. El dato del 14-oct (bloqueaba el recambio de c.19607) era de OTRO texto, que no entra.
+- El subtítulo ESPEJO (`_registro-de-lo-aprobado.mjs:66`, `censo-anclas-bloque-f.mjs:140`) NO se toca: es otra
+  frase («…No hace falta que te fíes…»), firmada en SCRUM-1016 c.19608.
+- `scrum299:115-117` y `scrum400:65-66` citan «gastos y facturas» como cadenas de sus controles fabricados, no
+  leyendo el fichero: verdes.
+- `scrum1554c` (la puerta): verde con la fila 14 cambiada. La fila sigue `abierta`: el guard exige el sha para
+  cerrarla, y el del merge todavía no existe.
+
+## 4 · Tests
+
+Mini-tanda en el worktree, con `dist` compilado con `tsc --noCheck` (árbol anidado sin `node_modules` propio):
+los **414 ficheros** que nombran `index.html`, `public/`, `_afirmaciones-publicadas`, `_registro-de-lo-aprobado`,
+`puerta.json` o `_copy-publico`, más 1294, 273, 237, 976, 850, 811c y 267. Sin este tramo:
+**3.895 casos · 3.888 pasan · 5 saltados · 2 caen** (3.888 + 5 + 2 = 3.895). Los 2: `scrum1340` (PR que toca
+`public/` sin `**Skill UI:**` en su registro) y `scrum976` ④ (que corre esos guards). Los dos piden este tramo.
+El resultado con el tramo comiteado y el del obligatorio van en el comentario de Jira de la entrega.
+
+## 5 · Lo que NO se ha hecho
+
+- **Servido en yaqu.app:** no mirado; se mira tras el despliegue del merge (`/` → el subtítulo, el JSON-LD y la FAQ).
+- **Cerrar la fila 14** de la puerta: con el sha del merge, quien cierre.
+- `index.html:696` («La factura lleva tres semanas…») sigue, dentro de `#comparativa` (`hidden`), fuera de lo
+  firmado: es la factura del profesional, no un documento de YaQu (c.20377 §0).
+
+## 6 · Aceptación → dónde se ve
+
+| aceptación | dónde se ve |
+|---|---|
+| J1, C1, S3 literales (c.20437 sobre c.20377) | `public/index.html:35`, `:442`, `:749` |
+| guards de landing / microcopy / claims / 564 / 331 en verde, sin quitar casos | `scripts/_afirmaciones-publicadas.mjs` (`faq/div#4`); §4 |
+| fila 14 de la puerta actualizada a la firma | `docs/go-live/puerta.json`, fila 14, `condicion` |
+| servido en yaqu.app | **NO HECHO** → tras el despliegue |
+
+---
+
+# APÉNDICE · 23-oct-2026 · SCRUM-1551f · la fila 14 de la puerta, cerrada con el sha del merge de #2711
+
+**Medido contra:** `origin/main` = `180e19746b2c3b38bc953d81ec23d1c7c4019249` · 2026-10-23T10:15:17Z
+
+A9: sin fallo que generalice — el tramo sólo cierra una entrada por el camino que el guard prescribe, y el rojo previo (fila cerrada sin declarar) se vio caer antes de declararla
+
+**Quién:** jv-j3ar (puesto J3, equipo de Javier), por encargo del orquestador `cobroflash-backend-62`. Carril a
+mano: el hook de inicio dijo «SIN IDENTIDAD» (SCRUM-1498). `docs/go-live/puerta.json` no tiene dueño en §3
+(`carriles.mjs de`: «sin fila en §3: nadie lo reclama»); lo toca J3 porque la fila 14 es la del subtítulo, carril J3.
+
+## 1 · Qué entra
+
+| sitio | cambio |
+|---|---|
+| `docs/go-live/puerta.json`, entrada 14 | `estado`: `abierta` → `cerrada`, con `cerrada: {por, motivo, sha, fecha}`; `sha` = `809527fa691056443c545901152443d0d2a072dc` (merge del PR #2711, `gh pr view 2711 --json mergeCommit`, mergeado 2026-10-23T10:07:48Z). `condicion` no se toca |
+| `tests/scrum1554c-puerta-de-go-live.test.mjs` | `CERRADAS`: se añade `14`. Es el paso que el propio guard exige al cerrar una entrada («añádela a CERRADAS, así el diff dice cuál salió»); `TOTAL` no cambia (23) y ningún caso se quita |
+
+## 2 · El efecto, medido antes de cerrar
+
+- `https://yaqu.app/health` → `version` = `180e19746b2c3b38bc953d81ec23d1c7c4019249`; `git merge-base --is-ancestor 809527fa6 180e19746` = sí.
+- `https://yaqu.app/` (89.737 B): «Y llevas clientes, gastos y albaranes en el mismo sitio.» aparece **1** vez (positivo);
+  «gastos y facturas» **0** veces. Cabecera `Date:` de yaqu.app: 23-oct-2026 10:14:56 GMT.
+
+## 3 · Tests
+
+- Rojo primero: con la entrada cerrada y `CERRADAS` sin el 14, `scrum1554c` da 13/14 y el caído dice «la entrada 14
+  está cerrada y el guard no lo declara». Con el 14 declarado, verde (cifras de la mini-tanda en el comentario de Jira).
+
+## 4 · Aceptación → dónde se ve
+
+| aceptación | dónde se ve |
+|---|---|
+| fila 14 cerrada con el sha del merge de 1551e | `docs/go-live/puerta.json`, entrada 14; `tests/scrum1554c-puerta-de-go-live.test.mjs` (`CERRADAS`) |
+| S3 servido en yaqu.app | `https://yaqu.app/` (§2) |
