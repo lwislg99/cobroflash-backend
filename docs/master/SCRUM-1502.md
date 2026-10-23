@@ -755,3 +755,71 @@ Los tramos siguen en el orden físico en que los dejó la unión (1502f antes qu
 - Ningún ancla «Medido contra:», ninguna marca, ningún guard ni su número.
 - No hay pantalla: nada que ver en yaqu.app.
 - Tanda completa: no corrida (guards de registro dirigidos, en la entrega).
+
+---
+
+## SCRUM-1502h · Tramo 9 (J6, 23-oct-2026): lo citado entre `[[cita]]` en una fuente deja de respaldar; la copia a pelo, NO HECHA
+
+**Medido contra:** `origin/main` = `4628bac1c59b014620442bd54d12af863c10ca0d` · 2026-10-23T21:28:21Z (hora de GitHub)
+A9: aviso → A10 «Dos anclas para la misma comprobación no son redundancia: son la próxima contradicción esperando fecha.» — no se pudo comprobar: mi sonda de las variantes no aplica el filtro de negación del guard y cuenta 25 documentales donde el guard cuenta 24; estuve a punto de escribir su cifra en el comentario del helper como si fuera la del guard, y lo quité antes del commit. Ningún test compara una sonda de un uso con el guard que imita
+
+Decisión: c.20690 («Sí, se endurece»). Encargo del orquestador `cobroflash-backend-62`; el alcance «sólo la mitad `[[cita]]`» es suyo, por mensaje, a la vista de la medición de abajo.
+
+### Lo que cambia
+
+- `tests/_respaldo-de-firma.mjs`: `indiceDeFuentes` lee cada fuente con `sinCitas` (`tests/_cita-declarada.mjs`). Lo citado no aporta ni el literal ni la atribución. Es la propuesta del tramo 1 (J4), sin otra línea de lógica.
+- `tests/scrum1502h-cita-no-respalda.test.mjs`, nuevo: positivo sembrado en un árbol de mentira, sus controles y dos mutaciones declaradas.
+- `scrum921c` y su `SIN_RESPALDO`: sin tocar.
+
+### Condición ① — antes y después, sobre el árbol real
+
+Mismo árbol (`origin/main` de arriba, fusionado en la rama), con y sin la línea de `sinCitas`, por el camino del guard (`congeladas()` y `porNivel()`; `evidencias/scrum1502h/foto.mjs`):
+
+| | sin respaldo | documental | anclado | rastreable | negada | citada |
+|---|---|---|---|---|---|---|
+| antes | 20 | 24 | 23 | 167 | 13 | 1 |
+| después | 20 | 24 | 23 | 167 | 13 | 1 |
+
+`congeladas()`: la misma lista de 20, comparada como conjunto, no por cuenta. `sinCitas` sólo puede quitar respaldo documental (anclado y rastreable se deciden en el comentario de la marca, no en las fuentes), así que «documental igual y la lista igual» basta para decir que ninguna marca cambió de nivel.
+
+### Condición ② — el positivo sembrado
+
+| caso (árbol de mentira, un registro en `docs/master/`) | nivel |
+|---|---|
+| frase entre `[[cita]]` y atribución fuera, leída como antes de 1502h | documental (absuelta) |
+| la misma, por `indiceDeFuentes` | **sin respaldo** |
+| atribución entre `[[cita]]`, frase fuera | sin respaldo |
+| control: la misma fuente sin delimitador | documental |
+| marca con «Consta en: SCRUM-N comentario M» y la frase citada | anclado |
+| ⚠️ la frase copiada a pelo, con atribución en el registro | **documental: sigue absolviendo** |
+
+El suelo de cada caso comprueba que el índice ve el registro sembrado y sólo ése; sin él sale CIEGO, no verde.
+
+### Condición ③ — mutaciones declaradas, vistas en rojo
+
+Commit `07340a7e97f5ba0774c7498cef5334092819598f` antes de inyectar; cada una con su `git diff --numstat` (1/1) y revertida con `git restore --source=HEAD`.
+
+| mutación | cae |
+|---|---|
+| `indiceDeFuentes` lee la fuente entera (sin `sinCitas`) | el positivo sembrado y el de la atribución citada (2 de 5) |
+| `atribuye: true` | el de la atribución citada (1 de 5) |
+
+### ⚠️ La mitad «a pelo»: NO HECHA, y por qué no se puede con una regla de forma
+
+c.20690 pide que la frase citada en `docs/master` deje de respaldar «en las dos formas». A pelo choca con la condición ①: el respaldo documental **es** «el literal, a pelo, en un fichero que atribuye». Medido con una sonda de un uso (`evidencias/scrum1502h/sonda-var.mjs`, salida en `salida-sonda-var.txt`; población 248 marcas, 1.339 fuentes, 25 documentales porque no aplica el filtro de negación del guard, que cuenta 24):
+
+| regla probada | marcas que perderían respaldo |
+|---|---|
+| A · un literal en `docs/master/**` deja de contar | **18 de 25** |
+| B · la atribución tiene que estar a ±10 líneas de la frase | 5 de 25 |
+| C · ídem a ±3 líneas | 13 de 25 |
+
+Las 18 de A, por fichero y línea (sin sus literales, que las absolverían): `librosAeat.ts:183`, `albaranFirmante.ts:246`, `albaranDetailView.js:292`, `jobDetailView.js:401` y `:484`, `productsView.js:1178` y `:1214`, y en `tests/` las de scrum244 `:43`, 257 `:26`, 299 `:27`, 324 `:30`, 338 `:109`, 344 `:30`, 364 `:138`, 394 `:264`, 428 `:120`, 580 `:319` y 593b `:21`. Sólo sobreviven las respaldadas en el máster, el registro congelado o `docs/microcopy/`.
+
+B y C, además, no cerrarían el caso original de J1 (la frase copiada al lado de una atribución). La copia de una frase y el registro que documenta su firma son el mismo texto; lo que los separa es quién lo escribió y cuándo, y eso no lo ve un test sin red. **Vuelve al fundador** (lo lleva el orquestador).
+
+### Lo que no se hizo
+
+- La mitad a pelo (arriba).
+- Tanda completa: no corrida en local; guards dirigidos, en la entrega.
+- No hay pantalla: nada que ver en yaqu.app.
