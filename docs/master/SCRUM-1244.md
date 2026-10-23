@@ -361,3 +361,15 @@ Sitio: el bloque de código de `## Comandos`, encima de la línea `npm test     
 
 - No he tocado el máster ni `CLAUDE.md`, ni el estado del ticket (A13).
 - No he medido si algún guard lee `CLAUDE.md` o el punto 3 de AA1 y cambiaría al aplicar el diff: lo tiene que correr quien lo aplique.
+
+## ⑨ 23-oct: la línea de Git Bash, APLICADA al máster y a `CLAUDE.md` (carril un jefe, por encargo)
+
+**Medido contra:** `origin/main` = `a3c13611ed6f078fa7fe5af5882b0b8b2d1b2d3f` · 2026-10-23T14:14:13Z (hora de GitHub)
+A9: sin fallo que generalice — el literal se copió de `c.20515` y no del diff ⑧ ni del encargo, y el diff de los dos ficheros da 0 líneas borradas
+
+J4 (`jv-j4s`, equipo de Javier). Carril «un jefe» (`dos-equipos.md:197`), aplicado por encargo del orquestador `cobroflash-backend-62` (SCRUM-1406 `c.20525`: «Tú, como jefe»).
+
+- **Máster**, AA1, punto 3: la frase de `c.20515` va **en una línea nueva, sangrada tres espacios**, que en markdown sigue dentro del punto 3. El diff ⑧ la pegaba al final de la misma línea; eso reescribe la línea del punto 3, y el encargo pedía sólo líneas añadidas. El texto es el mismo.
+- **`CLAUDE.md`**, «Comandos»: las dos líneas de comentario del diff ⑧, encima de `npm test`.
+- Diff: `docs/YAQU_MASTER.md` +1 / −0 · `CLAUDE.md` +2 / −0.
+- El «51» es parte del literal firmado: no se re-mide (lo dice ⑧).
