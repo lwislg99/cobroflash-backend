@@ -1,0 +1,6 @@
+customerId=10 · miradas=1 · filas=1
+   {"fechaExpedicion":"2026-10-05","serieNumero":"F-2026-0001","tipoFactura":"F1","nifDestinatario":"B11111111","nombreDestinatario":"Fusionado SL","cobro":"Pendiente","anulada":"—","baseImponible":0,"tipoIva":0,"cuotaIva":0,"totalFactura":121}
+   llamadas: merchant.findUnique, invoice.findMany, albaran.findMany, customer.findMany
+customerId=20 · miradas=1 · filas=1
+   {"fechaExpedicion":"2026-10-05","serieNumero":"F-2026-0001","tipoFactura":"F1","nifDestinatario":"B22222222","nombreDestinatario":"Principal SA","cobro":"Pendiente","anulada":"—","baseImponible":0,"tipoIva":0,"cuotaIva":0,"totalFactura":121}
+   llamadas: merchant.findUnique, invoice.findMany, albaran.findMany, customer.findMany

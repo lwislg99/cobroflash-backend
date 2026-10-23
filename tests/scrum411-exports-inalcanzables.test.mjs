@@ -226,7 +226,13 @@ const R = analizar(RAIZ);
 // **Baja el commit del segundo PR de SCRUM-1404 que lo cablee desde la tarea programada de
 // `src/core/cron/cron.ts`** (la línea es de S1 y está pedida en SCRUM-1507), EN EL MISMO COMMIT que
 // cablea. Sus tres piezas están además declaradas en `scripts/_sin-consumir-declarados.json`.
-const MODULOS_DOMINIO_INALCANZABLES_MAX = 6;
+// ═══════════════════════════════════════════════════════════════════════════════════════
+// ✅ 22-oct-2026 · VUELVE A 5 (SCRUM-1507, el PR-2 de SCRUM-1404).
+//
+// La tarea «reintento de sellado (cada minuto)» de `src/core/cron/cron.ts` importa
+// `reintentoSellado.ts` (bloque de S1, SCRUM-1507 c.19344 §3; entrega decidida en c.20220), así
+// que sale de la lista. Baja en el mismo commit que cablea, y sus tres piezas pasan a `retiradas`.
+const MODULOS_DOMINIO_INALCANZABLES_MAX = 5;
 
 // ── SUELO ────────────────────────────────────────────────────────────────────────────────────
 

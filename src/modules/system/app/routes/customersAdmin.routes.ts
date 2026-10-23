@@ -193,7 +193,9 @@ async function actualizarClienteHandler(req: Request, res: Response) {
     const id = Number(req.params.id);
     if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
     const parsed = customerUpdateSchema.parse(req.body);
-    await updateCustomer(req.merchantId, id, parsed);
+    // SCRUM-1571: lo mismo que el DELETE. Sin mirar el `count`, un cliente ajeno daba 200 con `null`.
+    const { count } = await updateCustomer(req.merchantId, id, parsed);
+    if (count === 0) return res.status(404).json({ error: 'not_found' });
     const updated = await getCustomer(req.merchantId, id);
     res.json(updated);
   } catch (err: any) {
@@ -618,7 +620,10 @@ router.delete('/:id', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' }); // SCRUM-1456: `1.5` borraba el 1
-    await deleteCustomer(req.merchantId, id);
+    // SCRUM-1571: un cliente de otro comercio (o que no existe) no casa el `where` y el borrado toca
+    // 0 filas. Contestar 204 ahí afirmaba un borrado que no hubo; se contesta lo mismo que `GET /:id`.
+    const { count } = await deleteCustomer(req.merchantId, id);
+    if (count === 0) return res.status(404).json({ error: 'not_found' });
     res.status(204).send();
   } catch (err) {
     console.error('[DELETE /admin/customers/:id]', err);

@@ -243,6 +243,8 @@ obligatorio sale rojo (`tests/scrum1295-carriles.test.mjs`). «quién» es `todo
 | ruta | quién | motivo | ticket |
 |---|---|---|---|
 | `docs/equipo/00-normas-siempre.md` | todos | A9: el aviso que no se pudo convertir en comprobación va a A10, donde lo leen todas. Cada puesto añade SU línea, en su PR; el resto del fichero es de la S0 | SCRUM-1294 |
+| `.github/workflows/vigia-de-main.yml` | J6 | el vigía del CI de `main` (al acabar cada CI y diario de red), UN workflow nuevo; ningún otro workflow de S5 se toca. Excepción firmada por el fundador en SCRUM-1393 c.20147 | SCRUM-1393 |
+| `src/core/cron/cron.ts` | J1 | el `import` de `reintentoSellado.ts` y el bloque «reintento de sellado (cada minuto)», escritos por S1 (dueño) en SCRUM-1507 c.19344 §3, y sólo ese bloque (conformidad c.19344 §4); lo lleva el PR-2 de SCRUM-1404 del equipo de Javier por decisión del fundador (c.20220, opción 1). El resto del fichero sigue siendo de S1 | SCRUM-1507 |
 
 ## 4 · Jira: las etiquetas y el ciclo del ticket
 
@@ -323,6 +325,20 @@ efecto y se le cuenta al jefe en plano.
      (9 ficheros): la carpeta dice S5 y la fila «`scripts/` → S0» dice S0. Tiene fila y manda la tabla, pero
      quien lee la carpeta y quien lee la tabla llegan a conclusiones opuestas. Es el único caso entre las 47
      rutas del repo que llevan un puesto en el nombre. **¿Se le da la carpeta a S5 con una fila, o se renombra?**
+   - **Dos de `scripts/` que S3 necesita tocar y nadie ha decidido de quién son** (SCRUM-1480g, 22-oct-2026,
+     sobre `9839aa6c`). El criterio de §3.3 («el área del ticket que creó cada uno») no decide nada aquí: los
+     dos tickets que los crearon, SCRUM-813 y SCRUM-754, no llevan etiqueta de área. Los dos los abrió la
+     cuenta de Javier en Jira (5 y 7-sep), y los dos ficheros los escribió Javier (`45294b31d` y
+     `b751f88c0`, autor `javier.pereirafe@gmail.com`), antes de que hubiera dos equipos (18-sep). Lo de abajo
+     es una PROPUESTA (la inferencia es de S3), no una fila: una fila en §3 la aplica la cerradura como
+     decisión, y ésta es de los dos jefes.
+     - `scripts/_trinquete-de-zona-hijo.mjs`: S3 propone **S5**, porque SCRUM-1494c (`area-s5`) es el último
+       que lo cambió. Pero ese ticket lo cambió, no lo creó. Y si se declara, la fila tiene que llevar también
+       a su padre, `scripts/_trinquete-de-zona.mjs`, que es el único que lo lanza y tampoco tiene fila.
+       Declarar el hijo solo deja el mismo hueco un fichero más arriba.
+     - `scripts/censo-guards-gateados.mjs`: S3 propone **S0**, por ser un censo, que es lo que la fila
+       general de `scripts/` le da a la S0. Matiz: no es sólo de consulta (`npm run censo:gateados`), porque
+       dos tests importan su `veredictoDelCenso` (`scrum754`, `scrum846b`).
 5. **`.claude/**` es «de un jefe», y hoy entra sin que un jefe lo firme** (lo destapó SCRUM-1356, 1-oct-2026).
    La fila de §3.3 dice que `.claude/**` lo firma un jefe y que la S0 prepara la propuesta. El encargo de
    SCRUM-1356 le dio a la S0 «hooks y `settings.json`» como carril propio, y su PR (#2097: dos hooks y su

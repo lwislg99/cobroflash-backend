@@ -1,0 +1,13 @@
+VENTANA 2026-10-06T13:43:02Z → 2026-10-21T13:59:17Z · tramos de 6 h: 61
+POBLACIÓN · runs de CI: 1029 · tramos con declarados ≠ traídos: 0
+  pull_request/completed/cancelled	176
+  pull_request/completed/failure	274
+  pull_request/completed/success	175
+  pull_request/in_progress/null	3
+  push/completed/cancelled	259
+  push/completed/failure	85
+  push/completed/success	55
+  push/in_progress/null	1
+  push/pending/null	1
+runs con jobs pedidos (no verde limpio): 806 · ejecuciones de job traídas: 3456 · fallos de llamada: 0 · llamadas: 867
+EXIT=0

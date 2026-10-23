@@ -1,0 +1,181 @@
+# .github/workflows/vigia-de-main.yml — SCRUM-1393c · ¿cada commit de `main` está probado?
+#
+# Decidido por el fundador en SCRUM-1393 c.20144: (C) al acabar cada CI de `main`, como principal,
+# y (B) uno diario como red; (D), que Railway espere al CI, NO. Lo escribe J6 por la excepción de
+# carril de c.20147 (`docs/equipo/dos-equipos.md` §3.4). No toca ningún otro workflow.
+#
+# POR QUÉ: `main` llevó cuatro días con tres guards de navegador en rojo y uno CIEGO sin que nadie se
+# enterara, y el 1-oct un commit sirvió en producción con su CI CANCELADO con 0 jobs (cae4c5cc). El
+# avisador de rojos sólo mira PR y sólo `failure`; nada miraba `main`.
+#
+# LOS DOS DISPARADORES EN UN FICHERO, a propósito: el juez es UNO (`scripts/vigia-silencio-de-main.mjs`,
+# modo por commit) y el destino también (un Issue). Dos ficheros serían dos anclas para la misma
+# comprobación.
+#   (C) `workflow_run`: salta con TODAS las conclusiones del CI, no sólo `failure`.
+#   (B) `schedule`: lo que (C) no puede ver POR CONSTRUCCIÓN — un CI que se queda en cola o que no
+#       arranca nunca emite `completed`, así que (C) no salta. La red repasa los commits de primer
+#       padre de las últimas 24 h + el retraso de cron medido (SCRUM-1324) y los juzga uno a uno.
+#
+# DÓNDE AVISA: UN Issue, «[vigía] main sin verificar», con un comentario sólo por lo NUEVO (una marca
+# por commit y estado: el cron no repite lo que ya dijo (C)). Con `GITHUB_TOKEN`: sin secreto nuevo,
+# y sus comentarios no despiertan a ninguna sesión. Salida 2 (el vigía no supo mirar) también avisa.
+#
+# CUÁNDO SE CIERRA (SCRUM-1393d): cuando una pasada juzga la PUNTA de `main` VERDE, sin CIEGO en la
+# pasada ni CIEGO pendiente en el Issue, con un comentario que dice el sha y la población. Un CIEGO
+# nunca cierra, ni lo absuelve un verde posterior. Si después vuelve un ROJO o CIEGO, se REABRE el mismo.
+# SALVO (SCRUM-1393e, decisión del fundador del 21-oct): el CIEGO «sustituido» (run cancelado con 0
+# jobs) lo absuelve un VERDE que lo contiene en la línea de primer padre, y el cierre lo lista; con
+# un descendiente aún CORRIENDO, espera sin avisar. Para eso cada pasada vuelve a juzgar la punta y
+# los pendientes del Issue con el dato de GitHub, y le da al motor la línea (`git rev-list`).
+#
+# EL CIEGO DEL META-GUARD (SCRUM-1339r, decisión del fundador c.20219 · 2b): su job cortado o cancelado,
+# o salido con 2 en el paso de las mutaciones, es CIEGO con causa propia, no ROJO: no lo absuelve un
+# verde posterior, y manda aunque otro job del run esté en rojo (va nombrado en el motivo).
+#
+# ⚠️ Lo que NO se pudo probar fuera de GitHub, declarado en `docs/master/SCRUM-1393c.md`: que los
+# disparadores salten, que el cron llegue, y que el Issue se escriba. Hasta su primera pasada, CIEGO.
+name: Vigía de main
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+  # SCRUM-1339r (excepción de c.20147, ensanchada por c.20219 · 2b): el 2 del meta-guard sólo se ve en
+  # la anotación del paso que cae («Process completed with exit code 2.»), y leerla pide esto.
+  checks: read
+  issues: write
+
+concurrency:
+  group: vigia-de-main-${{ github.event.workflow_run.head_sha || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  vigilar:
+    # (C) sólo los CI de PUSH a `main` de ESTE repositorio: `branches: [main]` también casaría con un
+    # PR desde una rama llamada `main` de un fork.
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # La red lee `git log --first-parent origin/main`: hace falta la historia y la ref.
+          fetch-depth: 0
+      - name: Traer `main`
+        run: git fetch --no-tags --prune origin +refs/heads/main:refs/remotes/origin/main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Leer el Issue
+        # SCRUM-1393e: ANTES de juzgar, porque sus pendientes se vuelven a juzgar en esta pasada.
+        id: issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          TITULO: '[vigía] main sin verificar'
+        run: |
+          # Si no se puede BUSCAR el Issue, se para: un NUM vacío crearía otro (SCRUM-853c). Se busca en
+          # TODOS los estados (SCRUM-1393d): un ROJO o CIEGO con el Issue cerrado REABRE ese, no crea otro.
+          if ! FILA="$(gh issue list --repo "$REPO" --state all --search "$TITULO in:title" --json number,title,state \
+                      -q "[.[] | select(.title==\"$TITULO\")] | sort_by(.state != \"OPEN\", -.number) | .[0] | \"\(.number) \(.state)\"" 2>/dev/null)"; then
+            echo "::error::No se pudo buscar el Issue del vigía de main: NO se ha avisado."
+            exit 1
+          fi
+          NUM="${FILA%% *}"
+          case "${FILA##* }" in OPEN) ESTADO=abierto ;; CLOSED) ESTADO=cerrado ;; *) ESTADO=ninguno; NUM="" ;; esac
+          : > previos.txt
+          if [ -n "$NUM" ]; then
+            # El cuerpo del Issue también: el aviso que lo creó lleva sus marcas ahí, no en un comentario.
+            if ! { gh issue view "$NUM" --repo "$REPO" --json body -q .body && \
+                   gh api "repos/$REPO/issues/$NUM/comments" --paginate -q '.[].body'; } > previos.txt 2>/dev/null; then
+              echo "::error::No se pudieron leer los avisos previos de #$NUM: NO se ha avisado."
+              exit 1
+            fi
+          fi
+          echo "num=$NUM" >> "$GITHUB_OUTPUT"
+          echo "estado=$ESTADO" >> "$GITHUB_OUTPUT"
+
+      - name: Juzgar los commits
+        id: juez
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set +e
+          # La punta de `main` es la de ESTE job: si (C) juzgó un commit que ya no es la punta, no cierra.
+          PUNTA="$(git rev-parse origin/main)"
+          echo "punta=$PUNTA" >> "$GITHUB_OUTPUT"
+          # SCRUM-1393e: la línea de primer padre de la punta, para saber qué verde CONTIENE a qué CIEGO.
+          git rev-list --first-parent "$PUNTA" > linea.txt
+          if [ -n "$SHA" ]; then
+            echo "$SHA" > commits.txt
+          else
+            # La red: los commits de primer padre (uno por push, que es lo que dispara el CI) desde
+            # `desdeDeLaRed` del motor. La lista la saca este paso; el motor no lee git.
+            DESDE="$(node scripts/vigia-silencio-de-main.mjs --desde-de-la-red)"
+            git log --first-parent --format=%H --since="$DESDE" origin/main > commits.txt
+          fi
+          # SCRUM-1393e: más los pendientes del Issue, juzgados otra vez con el dato de GitHub, y la punta
+          # como CONTEXTO (decide el cierre y la espera; no avisa por ella si no venía en la lista).
+          node scripts/vigia-silencio-de-main.mjs --pendientes previos.txt >> commits.txt
+          node scripts/vigia-silencio-de-main.mjs --commits commits.txt --contexto "$PUNTA" --linea linea.txt --json vigia.json
+          codigo=$?
+          echo "salida=$codigo" >> "$GITHUB_OUTPUT"
+          echo "- salida del juez: **$codigo** (0 nada · 1 rojo o CIEGO · 2 el vigía no supo mirar)" >> "$GITHUB_STEP_SUMMARY"
+          exit 0
+
+      - name: Avisar o cerrar en el Issue
+        # SCRUM-1393d: corre también con salida 0, porque un VERDE en la punta es lo que CIERRA el
+        # Issue. Qué se hace lo decide `accionDelIssue` del motor (pura y probada sin red); aquí sólo
+        # se ejecutan sus pasos.
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          TITULO: '[vigía] main sin verificar'
+          SALIDA: ${{ steps.juez.outputs.salida }}
+          NUM: ${{ steps.issue.outputs.num }}
+          ESTADO: ${{ steps.issue.outputs.estado }}
+          PUNTA: ${{ steps.juez.outputs.punta }}
+          URL_RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          # Sin vigia.json el juez no llegó a juzgar: eso se avisa, no se calla.
+          if [ ! -f vigia.json ]; then
+            printf '**Vigía de main** · salida %s y SIN veredicto escrito: el vigía no supo mirar.\n\nPasada: %s\n' "$SALIDA" "$URL_RUN" > cuerpo.md
+          fi
+          if [ -f vigia.json ]; then
+            if ! URL_RUN="$URL_RUN" node scripts/vigia-silencio-de-main.mjs --accion-del-issue vigia.json --punta "$PUNTA" --linea linea.txt \
+                   --estado-issue "$ESTADO" --previos previos.txt --cuerpo cuerpo.md > accion.txt; then
+              echo "::error::El motor no supo decidir qué hacer con el Issue: NO se ha avisado."
+              exit 1
+            fi
+            sed 's/^/    /' accion.txt >> "$GITHUB_STEP_SUMMARY"
+            PASOS="$(sed -n 's/^PASOS=//p' accion.txt)"
+          else
+            case "$ESTADO" in ninguno) PASOS=crear ;; cerrado) PASOS=reabrir,comentar ;; *) PASOS=comentar ;; esac
+          fi
+          if [ -z "$PASOS" ]; then
+            echo "- **NADA** — ni aviso nuevo ni cierre (Issue: ${NUM:-ninguno}, $ESTADO)." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          for p in ${PASOS//,/ }; do
+            case "$p" in
+              crear) gh issue create --repo "$REPO" --title "$TITULO" --body-file cuerpo.md ;;
+              reabrir) gh issue reopen "$NUM" --repo "$REPO" ;;
+              comentar) gh issue comment "$NUM" --repo "$REPO" --body-file cuerpo.md ;;
+              cerrar) gh issue close "$NUM" --repo "$REPO" --reason completed ;;
+              *) echo "::error::paso desconocido «$p»: NO se ha seguido."; exit 1 ;;
+            esac
+            echo "- **$p** ${NUM:+#$NUM}" >> "$GITHUB_STEP_SUMMARY"
+          done

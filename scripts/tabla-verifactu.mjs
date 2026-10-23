@@ -302,6 +302,34 @@ const TIPOS = {
       : `en «${a.dentroDe}», ${total - fijos} de ${total} «${abre}» ya no llevan «${a.valor}» fijo`;
   },
 
+  // «CADA `<sum1:E>` del ámbito lleva justo detrás `${expresion}` y su cierre» — el gemelo de
+  // `elementoFijo` para un valor CALCULADO. Nace de SCRUM-524g: `IndicadorMultiplesOT` dejó de ser
+  // `S` fijo, y una `referencia` a la expresión no vería que UNA de las dos plantillas (alta y
+  // anulación) la ha perdido, porque la otra la sigue nombrando; `elementoFijo` sí lo veía.
+  elementoCalculado(a, sf, esc) {
+    const abre = `<sum1:${a.elemento}>`;
+    const cierra = `</sum1:${a.elemento}>`;
+    const siguiente = (lit) => {
+      if (ts.isTemplateHead(lit)) return lit.parent.templateSpans[0];
+      if (ts.isTemplateMiddle(lit)) {
+        const spans = lit.parent.parent.templateSpans;
+        return spans[spans.indexOf(lit.parent) + 1];
+      }
+      return null;
+    };
+    let total = 0; let calculados = 0;
+    for (const { nodo, texto } of textosLiterales(esc)) {
+      for (let i = texto.indexOf(abre); i !== -1; i = texto.indexOf(abre, i + 1)) {
+        total++;
+        const span = i + abre.length === texto.length ? siguiente(nodo) : null;
+        if (span && norm(span.expression, sf) === a.expresion && span.literal.text.startsWith(cierra)) calculados++;
+      }
+    }
+    if (!total) return `«${a.dentroDe}» ya no escribe «${abre}»`;
+    return calculados === total ? null
+      : `en «${a.dentroDe}», ${total - calculados} de ${total} «${abre}» ya no llevan «\${${a.expresion}}»`;
+  },
+
   elementoSiempre(a, sf, esc) {
     const abre = `<sum1:${a.elemento}>`;
     const donde = textosLiterales(esc).filter((l) => l.texto.includes(abre));

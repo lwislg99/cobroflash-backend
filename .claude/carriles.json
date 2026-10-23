@@ -1,7 +1,7 @@
 {
-  "_": "GENERADO por scripts/carriles.mjs desde docs/equipo/dos-equipos.md (sha256 9afee7e34901). NO se edita a mano: se cambia la tabla y se regenera.",
+  "_": "GENERADO por scripts/carriles.mjs desde docs/equipo/dos-equipos.md (sha256 4c0b7462be07). NO se edita a mano: se cambia la tabla y se regenera.",
   "fuente": "docs/equipo/dos-equipos.md",
-  "sha": "9afee7e34901",
+  "sha": "4c0b7462be07",
   "areas": {
     "S0": "consultoría y auditoría: «¿esto existe hoy?», filtro de las afirmaciones de SU orquestador, dueña de `00-normas-comunes.md`, `dos-equipos.md` y `trampas-del-entorno.md`",
     "S1": "servidor: importes, presupuestos, gastos, mantenimientos, y el servidor de todo lo que no sea de J1-J3",
@@ -1368,6 +1368,24 @@
       "motivo": "A9: el aviso que no se pudo convertir en comprobación va a A10, donde lo leen todas. Cada puesto añade SU línea, en su PR; el resto del fichero es de la S0",
       "ticket": "SCRUM-1294",
       "linea": 245
+    },
+    {
+      "patron": ".github/workflows/vigia-de-main.yml",
+      "quien": [
+        "J6"
+      ],
+      "motivo": "el vigía del CI de `main` (al acabar cada CI y diario de red), UN workflow nuevo; ningún otro workflow de S5 se toca. Excepción firmada por el fundador en SCRUM-1393 c.20147",
+      "ticket": "SCRUM-1393",
+      "linea": 246
+    },
+    {
+      "patron": "src/core/cron/cron.ts",
+      "quien": [
+        "J1"
+      ],
+      "motivo": "el `import` de `reintentoSellado.ts` y el bloque «reintento de sellado (cada minuto)», escritos por S1 (dueño) en SCRUM-1507 c.19344 §3, y sólo ese bloque (conformidad c.19344 §4); lo lleva el PR-2 de SCRUM-1404 del equipo de Javier por decisión del fundador (c.20220, opción 1). El resto del fichero sigue siendo de S1",
+      "ticket": "SCRUM-1507",
+      "linea": 247
     }
   ]
 }

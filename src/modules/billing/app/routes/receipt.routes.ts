@@ -15,6 +15,7 @@ import { fechaDeCobroDeCharge } from '../../domain/instanteDeCobro'; // SCRUM-39
 import { cardChargeMode } from '../../domain/cardCharge'; // SCRUM-893
 import { transferenciaDisponible } from '../../domain/transferenciaDisponible'; // SCRUM-910
 import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-1471
+import { clienteDelDocumento } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-1576
 
 const router = Router();
 
@@ -104,6 +105,13 @@ router.get('/:token', async (req, res) => {
   // "factura" para un justificante (regla 7 / Parte M). Tipo: invoice.type==='JUST' o nº J-…
   const isJust = !!invoice && (invoice.type === 'JUST' || isReceiptNumber(invoice.number));
   const docLabel = isJust ? 'justificante' : 'factura';
+  // SCRUM-1576 · un cobro YA FACTURADO se nombra con el cliente congelado en su factura, como el
+  // PDF que enlaza esta misma página (SCRUM-729). Sin factura, la ficha viva: el Charge no guarda
+  // cliente. La regla es la de `clienteDelDocumento`, no una copia.
+  const nombreDelCliente: string | null =
+    invoice && (invoice.customerName != null || ch.customer)
+      ? clienteDelDocumento(invoice, ch.customer).name
+      : ch.customer?.name ?? null;
   const docPron = isJust ? 'lo' : 'la'; // pronombre: lo (justificante) / la (factura)
 
   const title = `Recibo #${ch.id} — YaQu`;
@@ -469,7 +477,7 @@ router.get('/:token', async (req, res) => {
   ${invBlock}
   ${mailBanner}
   ${feedbackBlock}
-  <div style="margin-top:1rem;text-align:center"><small>Cobro #${ch.id} · Cliente: ${esc(ch.customer?.name ?? '—')}</small></div>
+  <div style="margin-top:1rem;text-align:center"><small>Cobro #${ch.id} · Cliente: ${esc(nombreDelCliente ?? '—')}</small></div>
   ${simulateBlock}
   ${devInternals}
 </div>
