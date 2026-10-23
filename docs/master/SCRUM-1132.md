@@ -83,3 +83,56 @@ las cuentas a mano, `scrum414`/`scrum195` el `new URL`. Ya existe la comprobaci�
 `A9:` la nombra. Lo mismo con el primer banco de mutación, que traía su lista propia: lo cazó
 `scrum1387` en `guards:entrada`, y se rehízo sobre el catálogo. Y la vista usaba `onclick =`, que el
 banco de vistas no dispara: el test del clic salió rojo por eso y se pasó a `addEventListener`.
+
+## SCRUM-1132c · las notas, de tarjeta a pestaña «Notas» que se piden al abrirla (J2, 23-oct-2026)
+
+> Lo construye J2 (sesión `jv-j2at`, equipo de Javier) por encargo de su orquestador
+> (`cobroflash-backend-62`), sobre la rama de 1132b. Decisión: SCRUM-1132 c.20627.
+
+**Medido contra:** `origin/main` = `6e336715359500c41fb252371934101b46498267` · 2026-10-23T19:45:48Z
+**Skill UI:** cargada (`yaqu-premium-ui`) antes de tocar la vista. AB6: la pestaña es la de la casa
+(`makeTab`, la misma de «Sitios»), el botón sigue siendo `btn-secondary` (44 px a 320 y 390 lo mide el
+guard), el campo se nombra con el rótulo de la pestaña (`aria-label`), cero `style=` nuevos (bloque `J2:`
+de `styles.css`), estados vacío y error medidos; capturas a 320, 390 y 1280 en `evidencias/SCRUM-1132/pestana-*.png`.
+**Microcopy:** los cuatro de c.19617 y el respaldo «No se pudo guardar: inténtalo de nuevo» de c.20435
+(ficha nueva `docs/microcopy/2026-10-23-SCRUM-1132-notas-respaldo.md`). El rótulo de la pestaña es el
+literal firmado «Notas». Ningún texto más.
+**Carril:** J2 (`customerDetailView.js`). `styles.css` (S2) y `_sin-consumir-declarados.json` (S0) son
+contenedores: sólo las líneas de 1132. `scripts/_datos-del-censo.mjs` (S3) **no se toca**.
+
+A9: comprobación → `tests/scrum709-microcopy-por-fichero.test.mjs`
+
+### Lo que se hizo
+
+- La tarjeta que se montaba al pintar la ficha (y pedía `GET /admin/customers/:id/notes` en ese momento)
+  pasa a ser la sexta pestaña, «Notas», detrás de «Sitios» y con su misma técnica: sin número, la lista se
+  pide en `renderTab('notas')` y cada apertura se numera (`peticionNotas`), así que la respuesta que llega
+  tarde no pinta. Sólo admin, como antes: al técnico ni se le pinta ni se le piden (las rutas son
+  `requireRole('admin')`). Lo que veía el técnico antes (ni tarjeta ni `/notes`) es lo que ve ahora.
+- Sin `message` del servidor (404, 500, sin red), el error dice el respaldo firmado; con motivo, sigue
+  «No se pudo guardar:» + el motivo.
+- **`scrum1560` sin contrato de S3:** 12/12 en verde sin tocar `_datos-del-censo.mjs`. Control: con la
+  carga temprana puesta otra vez (montar las notas al pintar la ficha) cae 11/12 y nombra
+  `/admin/customers/:n/notes`. El censo táctil ya no ve las notas: las cubre `guard:notas-en-la-ficha`.
+- El guard de navegador abre la ficha, comprueba que **no** se ha pedido `/notes`, pulsa la pestaña y
+  mide lo de antes, ahora a 320/390/1280 (antes 390/768/1280).
+
+### Cómo se mide
+
+- `tests/scrum1132-notas-en-la-ficha.test.mjs`: 7/7 (nuevo: «las notas se piden al ABRIR la pestaña»).
+- `npm run guard:notas-en-la-ficha`: 0 hallazgos · 0 ciegos en 9 celdas (admin con notas, admin sin
+  notas, técnico × 320/390/1280).
+- `node docs/master/evidencias/SCRUM-1132/mutar.mjs`: base verde, **8 de 8** caen en el test Y en el guard
+  (dos nuevas: el respaldo, y las notas pedidas al pintar la ficha), restaurado por sha256.
+- `scrum698`: 11/11, no salta. Muestra de guards de suite (los 16 del encargo + 1560, 1132, microcopia y
+  registro: 42 ficheros, 401 casos): 400 pasan y 1 cae, mío (abajo), arreglado y vuelto a correr.
+- Suite entera local: NO CORRIDA (ahorro de contexto, orden del orquestador); el obligatorio hace de suite.
+- yaqu.app: NO HECHO todavía → se mira tras el merge.
+
+### El fallo propio (A9)
+
+La ficha de microcopy del 14-oct nombraba la nueva por su fichero, y eso es un índice a mano: lo cazó
+`scrum709` en la muestra local, antes de empujar. Ya existe la comprobación; por eso la línea `A9:` la
+nombra. Dos más que no generalizan aquí: volví a pasar un guion a node con un heredoc de bash y reventó en
+alto (ya está dos veces en las cicatrices de J2), y crucé los 200k de contexto sin medirme entre el arranque
+(140k) y el banco de mutación (229k), y avisé en ese momento, no al cruzar.
