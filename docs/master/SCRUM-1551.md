@@ -747,9 +747,13 @@ Los cinco literales se sacaron del §3 del tramo 1551c (los bloques «Propuesto�
 `public/`: **5 de 5 casan**. Control positivo sembrado (una frase de T2 que no cambia): casa. Control negativo
 («emitir facturas y gestionar cobros», el texto viejo de T1): no casa.
 
-⚠️ **Contra Jira (c.20249 y c.20256) NO está cotejado todavía:** a la hora del ancla el MCP de Atlassian no
-conectaba (`CONNECT_TIMEOUT`, ~13:53Z y otra vez después). Por orden del orquestador, este tramo no se empuja
-hasta leerlos. Si la firma eligió T1b, o no cubre T3, esta tabla se corrige antes del empujón.
+**Contra Jira, cotejado por jv-j3ah el 23-oct** (jv-j3ab no pudo: su MCP de Atlassian no conectaba). Leído
+SCRUM-1551 entero (13 comentarios, el último c.20334). La T1 que firma c.20256 es la **T1a** (lo dice: «sin
+"sin cambio de precio" a propósito»). **T3 firmada en c.20334** («Sí vale», a la fecha «22 de octubre de 2026»).
+Siete frases copiadas de la respuesta de Jira (T1, T2 ×2, T3, L1, las dos de L2) y buscadas con `grep -F` en
+`public/`: **7 de 7 casan, una vez cada una**. Control negativo (T2 con una tilde quitada): 0. Los textos viejos
+de T1, T2, T3 y de `description`, y «sin cambio de precio»: 0. «gastos y facturas» sigue 2 veces, en `:35` y
+`:442`, las dos del §4.
 
 ## 3 · `scrum564`: qué compara y por qué no es relajarlo
 
@@ -777,7 +781,6 @@ tramo: 1.968 casos · 1.961 pasan · 5 se saltan · 2 caen (`scrum811c`/1340, qu
 ## 6 · Lo que NO se ha hecho
 
 - Verificar en yaqu.app: producción no despliega desde el 20-oct 15:35Z. Nada de esto está servido.
-- El cotejo con Jira (§2).
 - Abrir un navegador: el cambio es de palabras dentro de nodos que ya existían.
 
 ## 7 · Aceptación → dónde se ve
