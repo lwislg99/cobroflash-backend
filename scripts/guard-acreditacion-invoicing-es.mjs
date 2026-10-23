@@ -43,11 +43,23 @@
 // limpio). Un cero sin suelo delante no se puede juzgar: si NO hay ni un merchant ES no-demo en
 // la base, el guard se declara CIEGO en vez de dar un «cero» vacío de significado.
 //
+// ── CONFIRMACIÓN DEL HOST Y RASTRO DE CADA EJECUCIÓN (SCRUM-1101) ──────────────────────────
+// Que la URL apunte al host esperado no basta: hay que NOMBRARLO en `ACREDITACION_CONFIRM`, el
+// patrón `FLAG_CONFIRM` de `cambiar-flag-fiscal.mjs`. No se prohíbe apuntar a producción, se
+// obliga a decirlo, y va ANTES de construir el cliente.
+// Cada ejecución —también la que aborta— deja UN fichero JSONL propio en
+// `ACREDITACION_REGISTRO_DIR` (por defecto `~/.yaqu/registro-acreditacion-invoicing-es/`, fuera
+// del árbol): fecha, host SIN credencial (`describirBD`), consulta y recuento (`null` si no se
+// midió, que no es cero). Se escribe con el proceso VIVO, línea a línea, y la de «conectando» va
+// antes de conectar: si muere a mitad, el fichero ya dice contra qué lo intentaba. Si el fichero
+// no se puede escribir, no se mide: una pasada sin rastro es la que este ticket existe para evitar.
+//
 // USO:
-//   node scripts/guard-acreditacion-invoicing-es.mjs --staging     # DATABASE_URL_STAGING (.env)
-//   node scripts/guard-acreditacion-invoicing-es.mjs --prod-ro     # DATABASE_URL_PROD_RO (entorno)
+//   ACREDITACION_CONFIRM=<host> node scripts/guard-acreditacion-invoicing-es.mjs --staging   # DATABASE_URL_STAGING (.env)
+//   ACREDITACION_CONFIRM=<host> node scripts/guard-acreditacion-invoicing-es.mjs --prod-ro   # DATABASE_URL_PROD_RO (entorno)
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
@@ -58,6 +70,12 @@ import { ejecutadoDirectamente } from './_puerta-de-entrada.mjs';
 export const MERCHANT_DEMO_ID = 1; // regla 8 — exclusión explícita y nombrada
 export const FLAG_INVOICING_ES = 'INVOICING_ES_ENABLED';
 export const TIPOS_FISCALES = Object.freeze(['F1', 'F2', 'F3', 'R1', 'R2', 'R3', 'R4', 'R5']);
+export const CONSULTA_TEXTO =
+  `merchants WHERE country='ES' AND id<>${MERCHANT_DEMO_ID} AND ` +
+  `(flags.${FLAG_INVOICING_ES}=true OR EXISTS invoice.type IN (${TIPOS_FISCALES.join(',')}))`;
+export const CLAVE_CONFIRMACION = 'ACREDITACION_CONFIRM';
+export const CLAVE_DIR_REGISTRO = 'ACREDITACION_REGISTRO_DIR';
+const DIR_REGISTRO_POR_DEFECTO = path.join(os.homedir(), '.yaqu', 'registro-acreditacion-invoicing-es');
 
 /**
  * Lista BLANCA de métodos de Prisma que este guard tiene permitido llamar. Ver cabecera §AST.
@@ -144,8 +162,8 @@ export async function medirAcreditacion(prisma) {
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 
-function cargarEnvStagingSiFalta(raiz) {
-  if (process.env.DATABASE_URL_STAGING) return;
+function cargarEnvStagingSiFalta(raiz, env) {
+  if (env.DATABASE_URL_STAGING) return;
   let txt;
   try {
     txt = fs.readFileSync(path.join(raiz, '.env'), 'utf8');
@@ -154,55 +172,101 @@ function cargarEnvStagingSiFalta(raiz) {
   }
   for (const linea of txt.split(/\r?\n/)) {
     const m = linea.match(/^\s*([A-Z_0-9]+)\s*=\s*(.*)$/);
-    if (m) process.env[m[1]] = process.env[m[1]] ?? m[2];
+    if (m) env[m[1]] = env[m[1]] ?? m[2];
   }
 }
 
-async function principal() {
-  const rutaPropia = fileURLToPath(import.meta.url);
-  const auto = verificarSoloLecturaEstructural(rutaPropia);
+/**
+ * Abre el fichero de rastro de ESTA ejecución (uno por ejecución: `wx`, nunca pisa otro) y
+ * devuelve `anotar`, que añade una línea JSON con su fecha. Síncrono a propósito: la línea está
+ * en disco antes de dar el paso siguiente. Lanza si no se puede escribir — quien llama no mide.
+ */
+export function abrirRastro(dir) {
+  fs.mkdirSync(dir, { recursive: true });
+  const sello = new Date().toISOString().replace(/[:.]/g, '-');
+  const ruta = path.join(dir, `${sello}-${process.pid}-${Math.random().toString(36).slice(2, 8)}.jsonl`);
+  fs.writeFileSync(ruta, '', { flag: 'wx' });
+  const anotar = (campos) => fs.appendFileSync(ruta, JSON.stringify({ fecha: new Date().toISOString(), ...campos }) + '\n', 'utf8');
+  return { ruta, anotar };
+}
+
+/**
+ * La ejecución entera, con lo que toca el mundo inyectado (`env`, `crearPrisma`, `hosts`) para
+ * poder probar cada salida sin base real. `principal()` la llama con los valores de verdad.
+ * `hosts` existe SOLO para los tests: la CLI no lo expone.
+ */
+export async function ejecutar({
+  argv,
+  env,
+  raiz = path.join(path.dirname(fileURLToPath(import.meta.url)), '..'),
+  crearPrisma = (url) => new PrismaClient({ datasourceUrl: url.trim().replace(/^['"]|['"]$/g, '') }),
+  hosts = { staging: STAGING_HOST, prod: PROD_HOST },
+}) {
+  const dirRastro = env[CLAVE_DIR_REGISTRO] || DIR_REGISTRO_POR_DEFECTO;
+  let rastro;
+  try {
+    rastro = abrirRastro(dirRastro);
+  } catch {
+    console.log(`\n🔴 no se pudo escribir el rastro en «${dirRastro}» — CIEGO. Sin rastro no se mide.`);
+    return 2;
+  }
+  let clave = null;
+  let host = null;
+  const cerrar = (exit, veredicto, extra = {}) => {
+    rastro.anotar({ fase: 'final', veredicto, exit, destino: clave, host, consulta: CONSULTA_TEXTO, recuento: null, ...extra });
+    console.log(`(rastro de esta ejecución: ${rastro.ruta})`);
+    return exit;
+  };
+  rastro.anotar({ fase: 'inicio', argv: argv.filter((a) => a.startsWith('--')) });
+
+  const auto = verificarSoloLecturaEstructural(fileURLToPath(import.meta.url));
   if (auto.prohibidos.length) {
     console.error('🔴 el propio guard llama a un método de Prisma fuera de la lista blanca — ABORTADO:');
     for (const p of auto.prohibidos) console.error(`   línea ${p.linea}: prisma.….${p.metodo}(…)`);
-    return 2;
+    return cerrar(2, 'ABORTADO', { motivo: 'auto-check AST: método fuera de la lista blanca' });
   }
 
-  const args = process.argv.slice(2);
-  let clave, hostEsperado;
-  if (args.includes('--staging')) { clave = 'DATABASE_URL_STAGING'; hostEsperado = STAGING_HOST; }
-  else if (args.includes('--prod-ro')) { clave = 'DATABASE_URL_PROD_RO'; hostEsperado = PROD_HOST; }
+  let hostEsperado;
+  if (argv.includes('--staging')) { clave = 'DATABASE_URL_STAGING'; hostEsperado = hosts.staging; }
+  else if (argv.includes('--prod-ro')) { clave = 'DATABASE_URL_PROD_RO'; hostEsperado = hosts.prod; }
   else {
-    console.error('Uso: node scripts/guard-acreditacion-invoicing-es.mjs --staging | --prod-ro');
+    console.error('Uso: ACREDITACION_CONFIRM=<host> node scripts/guard-acreditacion-invoicing-es.mjs --staging | --prod-ro');
     console.error('Sin bandera no hay destino por defecto: apuntar a producción es una decisión,');
     console.error('nunca un olvido.');
-    return 2;
+    return cerrar(2, 'ABORTADO', { motivo: 'sin bandera de destino' });
   }
 
-  const raiz = path.join(path.dirname(rutaPropia), '..');
-  if (clave === 'DATABASE_URL_STAGING') cargarEnvStagingSiFalta(raiz);
+  if (clave === 'DATABASE_URL_STAGING') cargarEnvStagingSiFalta(raiz, env);
 
-  const url = process.env[clave];
+  const url = env[clave];
   if (!url) {
     console.log(`\n🔴 [${clave}] ausente — CIEGO. No se mide nada y no se afirma nada.`);
-    return 2;
+    return cerrar(2, 'CIEGO', { motivo: `${clave} ausente` });
   }
   const p = parseBDSegura(url);
   if (!p) {
     console.log(`\n🔴 [${clave}] URL de BD ilegible — CIEGO.`);
-    return 2;
+    return cerrar(2, 'CIEGO', { motivo: 'URL de BD ilegible' });
   }
+  host = describirBD(url);
   if (p.host !== hostEsperado) {
     console.log(`\n⛔ [${clave}] apunta al host «${p.host}», y se esperaba «${hostEsperado}» — ABORTADO.`);
     console.log('   Un host inesperado no se trata como "probablemente el que toca".');
-    return 2;
+    return cerrar(2, 'ABORTADO', { motivo: `host inesperado (se esperaba ${hostEsperado})` });
+  }
+  if (env[CLAVE_CONFIRMACION] !== p.host) {
+    console.log(`\n⛔ Confirma la base de forma EXPLÍCITA. [${clave}] apunta a:\n\n    ${host}\n`);
+    console.log(`   Si es la correcta, re-ejecuta nombrándola: ${CLAVE_CONFIRMACION}=${p.host} node scripts/guard-acreditacion-invoicing-es.mjs …`);
+    console.log(`   Si NO es la que querías, no toques ${CLAVE_CONFIRMACION}: cambia ${clave}.`);
+    return cerrar(2, 'ABORTADO', { motivo: `sin confirmación explícita del host en ${CLAVE_CONFIRMACION}` });
   }
 
   console.log(`\n=== SCRUM-1097 · guard de acreditación INVOICING_ES · ${new Date().toISOString()} ===`);
-  console.log(`=== [${clave}] → ${describirBD(url)} ===`);
-  console.log(`=== consulta: merchants WHERE country='ES' AND id<>${MERCHANT_DEMO_ID}`);
-  console.log(`===           AND (flags.${FLAG_INVOICING_ES}=true OR EXISTS invoice.type IN (${TIPOS_FISCALES.join(',')})) ===\n`);
+  console.log(`=== [${clave}] → ${host} ===`);
+  console.log(`=== consulta: ${CONSULTA_TEXTO} ===\n`);
+  rastro.anotar({ fase: 'conectando', destino: clave, host, consulta: CONSULTA_TEXTO });
 
-  const prisma = new PrismaClient({ datasourceUrl: url.trim().replace(/^['"]|['"]$/g, '') });
+  const prisma = crearPrisma(url);
   let resultado;
   try {
     resultado = await medirAcreditacion(prisma);
@@ -212,18 +276,23 @@ async function principal() {
 
   if (resultado.ciego) {
     console.log(`🔴 CIEGO: ${resultado.motivo}`);
-    return 2;
+    return cerrar(2, 'CIEGO', { motivo: resultado.motivo });
   }
 
   console.log(`suelo: ${resultado.floor} merchant(s) ES no-demo vistos — control positivo de que la búsqueda SÍ ve la base`);
   console.log(`recuento acreditados: ${resultado.filas.length}`);
+  const medido = { suelo: resultado.floor, recuento: resultado.filas.length, acreditados: resultado.filas.map((f) => f.id) };
   if (resultado.filas.length > 0) {
     console.log('\n🔴 HALLAZGO — estos merchants NO deberían poder facturar con efectos fiscales hoy:');
     for (const f of resultado.filas) console.log(`   merchant id=${f.id}`);
-    return 1;
+    return cerrar(1, 'HALLAZGO', medido);
   }
   console.log('\n✔ CERO — ningún merchant ES no-demo acreditado para facturación fiscal hoy.');
-  return 0;
+  return cerrar(0, 'LIMPIO', medido);
+}
+
+function principal() {
+  return ejecutar({ argv: process.argv.slice(2), env: { ...process.env } });
 }
 
 if (ejecutadoDirectamente(import.meta.url)) {
