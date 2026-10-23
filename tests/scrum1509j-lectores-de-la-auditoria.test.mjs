@@ -142,8 +142,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // Un lector conocido sale de la lista: el que había pasa a ser «nuevo».
     fichero: 'tests/scrum1509j-lectores-de-la-auditoria.test.mjs',
-    de: "funcion: 'reintentarSelladosPendientes', lecturas: 1 },",
-    a: "funcion: 'reintentarSelladosPendientes', lecturas: 0 },",
+    de: "(SCRUM-1404 c.18857).\n  { fichero: 'src/modules/invoicing/domain/reintentoSellado.ts', funcion: 'reintentarSelladosPendientes', lecturas: 1 },",
+    a: "(SCRUM-1404 c.18857).\n  { fichero: 'src/modules/invoicing/domain/reintentoSellado.ts', funcion: 'reintentarSelladosPendientes', lecturas: 0 },",
     cae: 'ALARMA',
   },
 ];
