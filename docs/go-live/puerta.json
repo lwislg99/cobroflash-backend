@@ -15,14 +15,26 @@
       "que": "R1–R6 del documento legal servido: fuera «Cobro integrado» y «Justificantes de cobro», soporte sólo por email, el cobro con su estado real, «no emite facturas ni ningún otro documento de cobro», fuera el «mientras tanto».",
       "de_donde": "SCRUM-1551 c.19542",
       "consta_en": "SCRUM-1554, descripción, fila 2",
-      "estado": "abierta"
+      "estado": "cerrada",
+      "cerrada": {
+        "por": "jv-j3au (puesto J3, equipo de Javier), SCRUM-1551g",
+        "motivo": "R1-R6, firmadas en SCRUM-1551 c.20208, entraron en main con el PR #2657 (SCRUM-1551b, commit 6118056b1, el que quita «Cobro integrado» según git log -S) y están servidas: yaqu.app/health = 28098fe4b1a1, que contiene el merge, y /legal/alcance-beta (versión ac7349fd0b84) lleva 1 vez «Albaranes y partes de trabajo», «cobro a tus clientes a través de YaQu», «ningún otro documento de cobro» y «el alta de cobros (Stripe)», y 0 «Cobro integrado», «Justificantes de cobro», «email y WhatsApp» y «mientras tanto» (23-oct-2026 19:07:50Z, cabecera Date de yaqu.app).",
+        "sha": "be18d365d92df11c4a6638e85544417aa750c5c8",
+        "fecha": "2026-10-23"
+      }
     },
     {
       "numero": 3,
       "que": "D1: el aviso de BORRADOR va en una línea «>» y no se sirve; sí se ven tres [REVISAR ASESOR] y los huecos del contrato.",
       "de_donde": "SCRUM-1551",
       "consta_en": "SCRUM-1554, descripción, fila 3",
-      "estado": "abierta"
+      "estado": "cerrada",
+      "cerrada": {
+        "por": "jv-j3au (puesto J3, equipo de Javier), SCRUM-1551g",
+        "motivo": "D1 decidida por el fundador con la opción (a) en SCRUM-1551 c.20217: el aviso se ve. Entró en main con el PR #2657 (SCRUM-1551b, commit 6118056b1, el que añade la línea según git log -S) y está servido: /legal/alcance-beta (versión ac7349fd0b84) lleva 1 vez «Borrador pendiente de revisión legal: estas condiciones pueden cambiar antes de que se te cobre.» (23-oct-2026 19:07:50Z, cabecera Date de yaqu.app). Siguen a la vista los tres [REVISAR ASESOR] y los huecos del contrato: es lo que la opción (a) deja, avisado por esa línea, no un resto sin hacer.",
+        "sha": "be18d365d92df11c4a6638e85544417aa750c5c8",
+        "fecha": "2026-10-23"
+      }
     },
     {
       "numero": 4,
@@ -56,7 +68,13 @@
       "que": "public/terminos.html:48 dice en presente «emitir facturas y gestionar cobros». Fuera de la población medida; no leído entero.",
       "de_donde": "SCRUM-1551",
       "consta_en": "SCRUM-1554, descripción, fila 7",
-      "estado": "abierta"
+      "estado": "cerrada",
+      "cerrada": {
+        "por": "jv-j3au (puesto J3, equipo de Javier), SCRUM-1551g",
+        "motivo": "T1a, firmada en SCRUM-1551 c.20256, entró en main con el PR #2697 (SCRUM-1551d, commit 2ddbb3798, el que quita la frase según git log -S) y está servida: /terminos lleva 0 «emitir facturas y gestionar cobros» y 1 vez «…recoger firmas digitales. En España, el cobro a tus clientes a través de YaQu se activará a la vez que la facturación; hasta entonces YaQu no cobra por ti y no emite facturas ni ningún otro documento de cobro.»; tampoco queda la hermana de la sección 6 (SCRUM-1551 c.20051): 0 «cotización y factura» (23-oct-2026 19:07:50Z, cabecera Date de yaqu.app).",
+        "sha": "d09951f487138503bdce72212886b310ba89259e",
+        "fecha": "2026-10-23"
+      }
     },
     {
       "numero": 8,

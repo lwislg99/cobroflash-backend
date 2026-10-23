@@ -901,3 +901,73 @@ mano: el hook de inicio dijo «SIN IDENTIDAD» (SCRUM-1498). `docs/go-live/puert
 |---|---|
 | fila 14 cerrada con el sha del merge de 1551e | `docs/go-live/puerta.json`, entrada 14; `tests/scrum1554c-puerta-de-go-live.test.mjs` (`CERRADAS`) |
 | S3 servido en yaqu.app | `https://yaqu.app/` (§2) |
+
+---
+
+# APÉNDICE · 23-oct-2026 · SCRUM-1551g · las filas 2, 3 y 7 de la puerta, cerradas con el sha de su merge
+
+**Medido contra:** `origin/main` = `28098fe4b1a160303526f5a4002d52556d2c5b22` · 2026-10-23T19:10:44Z
+
+A9: sin fallo que generalice — el tramo cierra tres entradas por el camino que el guard prescribe, y el rojo previo (las tres cerradas sin declarar) se vio caer antes de declararlas
+
+**Quién:** jv-j3au (puesto J3, equipo de Javier), por encargo del orquestador `cobroflash-backend-62`. Carril a
+mano: el hook de inicio dijo «SIN IDENTIDAD» (SCRUM-1498). `docs/go-live/puerta.json` y
+`tests/scrum1554c-puerta-de-go-live.test.mjs` no tienen dueño en §3 (`carriles.mjs de`: «sin fila en §3: nadie lo
+reclama»); las toca J3 como hizo 1551f. Ningún texto que ve el usuario cambia.
+
+## 1 · Qué entra
+
+| sitio | cambio |
+|---|---|
+| `docs/go-live/puerta.json`, entradas 2 y 3 | `abierta` → `cerrada`, `sha` = `be18d365d92df11c4a6638e85544417aa750c5c8` (merge del PR #2657, SCRUM-1551b) |
+| `docs/go-live/puerta.json`, entrada 7 | `abierta` → `cerrada`, `sha` = `d09951f487138503bdce72212886b310ba89259e` (merge del PR #2697, SCRUM-1551d) |
+| `tests/scrum1554c-puerta-de-go-live.test.mjs` | `CERRADAS` suma `2`, `3` y `7`. `TOTAL` sigue en 23; no se quita ningún caso |
+
+## 2 · Hecho, comprobado por contenido y no por número
+
+- **Quién lo hizo, por `git log origin/main -S`:** la línea de D1 y la retirada de «Cobro integrado» de
+  `docs/legal/ALCANCE_BETA.md` salen de `6118056b1` (segundo padre de `be18d365d`); la retirada de «emitir facturas y
+  gestionar cobros» de `public/terminos.html` sale de `2ddbb3798` (antecesor de `d09951f48`). Los dos merges son
+  antecesores de `origin/main`.
+- **En main** (`ALCANCE_BETA.md`, 3.095 B): R1 `:23`, R3 `:24-25`, R4 `:29-31`, R5 `:33-34`, R6 `:37-38`, D1 `:9`; 0
+  «Cobro integrado», «Justificantes de cobro», «soporte por email y WhatsApp», «mientras tanto». `terminos.html:48` es T1a.
+- **En yaqu.app** (`/health` = `28098fe4b1a160303526f5a4002d52556d2c5b22`, el mismo que main; cabecera `Date:` 23-oct-2026
+  19:07:50 GMT). `/legal/alcance-beta` (4.851 B, pie «Versión del documento: ac7349fd0b84», la de 1551b): 1 vez cada
+  una «Albaranes y partes de trabajo», «cobro a tus clientes a través de YaQu», «ningún otro documento de cobro», «el
+  alta de cobros (Stripe)» y la línea de D1 (positivos, en la misma página que los ceros); 0 «Cobro integrado»,
+  «Justificantes de cobro», «email y WhatsApp», «mientras tanto», «emite justificantes». `/terminos` (6.712 B): 1 vez la
+  frase de T1a desde «recoger firmas digitales.» hasta «documento de cobro.»; 0 «emitir facturas y gestionar cobros» y
+  0 «cotización y factura» (la de la sección 6, c.20051).
+- **Fila 3, lo que queda:** los tres «[REVISAR ASESOR]» (3 en lo servido) y los huecos del contrato siguen a la vista.
+  La cierro porque la fila es D1 y D1 se decidió con (a), «que se vea» (c.20217): el aviso ya avisa de esos huecos.
+  Si el orquestador lee la fila como «que no se vean los huecos», no está hecha y se reabre diciéndolo en `CERRADAS`.
+- **Fila 8 no se toca:** R3 quitó la frase, pero la fila habla del guard de SCRUM-406, que sigue sin mirar `docs/legal/`.
+
+## 3 · La fila 9, descrita y SIN ELEGIR (c.20512)
+
+Hoy: `mdToHtml` (`src/modules/system/app/routes/legalPages.routes.ts:20-44`) pinta cada línea que no empieza por
+`-` como un `<p>` suelto, y cierra la lista. `ALCANCE_BETA.md` tiene **9 líneas de continuación en 5 viñetas**
+(`:22`, `:25`, `:30-31`, `:33-36`, `:38`; la fila dice 7, que eran las del 14-oct), R4 y R5 entre ellas.
+
+| salida | carril | qué cambia | coste |
+|---|---|---|---|
+| A · arreglar `mdToHtml` para que una línea sangrada siga la viñeta | J3 | código en `src/`, con su test; el `.md` no se toca | cambia el HTML servido y, con él, la versión (`:52-53`, sha-256 del HTML), aunque no cambie ninguna palabra; el comentario de `:50-51` sólo lo dice para el texto. No mueve ninguna cita por línea. Arregla también la próxima viñeta larga |
+| B · unir las líneas en `docs/legal/ALCANCE_BETA.md` | J4 propone | sólo el `.md` | cambia la versión igual. Mueve 9 líneas: caducan las citas por línea vivas (`INVENTARIO_AFIRMACIONES_VERIFACTU.md:320` cita `:32-33`; el comentario de `tests/scrum341-condicion-precio-publicada.test.mjs:4` cita `:42`); `puerta.json:35` describe el 14-oct y no se toca. El renderizador sigue partiendo la siguiente |
+
+**Las dos cuestan lo mismo en aceptaciones:** las de `ac7349fd0b84` dejan de valer para el checkout founding. Cuántas
+hay se sabe sólo con la consulta de ③ (c.19542), corrida por el fundador justo antes de aplicar; la última, del 22-oct
+(c.20226), daba 4 filas, todas de `48e3140b2083`. Desde entonces está SIN MEDIR. No elijo: es del orquestador y del fundador.
+
+## 4 · Tests
+
+- Rojo primero: con las tres cerradas y `CERRADAS` sin declararlas, `scrum1554c` da 13/14, y el caído nombra las
+  entradas 2, 3 y 7 («está cerrada y el guard no lo declara»). Con ellas declaradas, cifras en el comentario de Jira.
+
+## 5 · Aceptación → dónde se ve
+
+| aceptación | dónde se ve |
+|---|---|
+| filas 2, 3 y 7 cerradas con el sha que lo hizo, como 1551f | `docs/go-live/puerta.json`, entradas 2, 3 y 7; `tests/scrum1554c-puerta-de-go-live.test.mjs` (`CERRADAS`) |
+| comprobado por contenido, en main y en yaqu.app | §2 |
+| fila 9 descrita con sus dos salidas y su coste, sin elegir | §3 |
+| ningún texto que ve el usuario cambia | el diff: `puerta.json`, el guard y este registro |
