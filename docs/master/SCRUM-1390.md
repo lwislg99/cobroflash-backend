@@ -425,6 +425,7 @@ puertas, lo decide el orquestador: aquí no se arregla ninguna.
 `tests/scrum419-ci-declara-lo-que-no-corre.test.mjs` y `docs/master/evidencias/SCRUM-1390e/`. Las otras tres puertas de 1390d son carril S1: van a SCRUM-1582.]
 
 A9: comprobación → `tests/scrum1390e-el-portal-solo-lo-suyo.test.mjs`
+A9: comprobación → `tests/scrum757-la-declaracion-que-nadie-lee.test.mjs`
 
 ### Qué estaba mal
 
@@ -490,6 +491,11 @@ regenerado: es el compartido.
   del inventario de `scrum419`, y una aparición de `portalToken` que el censo de `scrum767` no sabía leer). Arreglé mi
   código y mi test; ningún guard. La de `scrum767`: escribía `{ ...customer, portalToken, portalUrl }`.
 - Crucé los 200k de contexto sin avisar en el momento; avisé a 274.730.
+- 🔴 Las 4 `MUTACIONES_QUE_ME_TUMBAN` llevaban `fichero` y `cae` en VARIABLES (`RUTAS_CLIENTE`, `CASO_*`). El lector
+  del meta-guard sólo acepta literales: el obligatorio de #2722 (job 120380706936) cayó en `scrum745`, `scrum757` y
+  `scrum765`, y yo no los había corrido en local. Lo arregló el relevo (J2, jv-j2ae): los cuatro campos, literales,
+  sin cambiar qué mutan ni qué caso tumban. Visto en rojo con la versión anterior (27 casos de 745/757/765 = 24 ok +
+  3 not ok, los mismos tres) y en verde con la nueva; `meta-sin-base.mjs` vuelve a dar las 4 MUERE.
 
 Local, antes de empujar (41 ficheros: los guards de suite y de registro y los que tocan estas rutas): 328 casos =
 319 ok + 2 not ok + 7 saltados. Los 2 rojos son `scrum1199`, que no encuentra `express` en el `node_modules` del árbol

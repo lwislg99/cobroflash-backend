@@ -242,25 +242,23 @@ test('SCRUM-1390e · 🔴 de paso: la ficha del cliente no le sirve EN CRUDO al 
 const RUTAS_CLIENTE = 'src/modules/system/app/routes/customersAdmin.routes.ts';
 const PREGUNTA = 'puedeLlevarseElPortal';
 
-const CASO_AST_PREGUNTA = 'SCRUM-1390e · portal-url pregunta ANTES de escribir el token';
-const CASO_AST_PUERTAS = 'SCRUM-1390e · la pregunta no es un criterio nuevo';
-const CASO_BASE_PORTAL = 'SCRUM-1390e · 🔴 el Técnico NO se lleva el portal';
-
 /**
  * Las que el meta-guard ejecuta (SCRUM-1387). Su job corre SIN base, así que sólo van las que tumba
  * la mitad AST. Las cuatro caen también con base: lo mide `docs/master/evidencias/SCRUM-1390e/mutar.mjs`.
  */
+// 🔴 Cada campo, LITERAL: el lector del meta-guard (SCRUM-757) no resuelve variables, y con
+// `RUTAS_CLIENTE` o `CASO_*` aquí la declaración salía ilegible y tumbaba 745/757/765.
 export const MUTACIONES_QUE_ME_TUMBAN = [
-  { fichero: RUTAS_CLIENTE, de: "    if (!(await puedeLlevarseElPortal(req, id))) return res.status(404).json({ error: 'not_found' });\n", a: '\n', cae: CASO_AST_PREGUNTA },
-  { fichero: RUTAS_CLIENTE, de: '    if (customer.portalToken && !(await puedeLlevarseElPortal(req, id))) customer.portalToken = null;\n', a: '\n', cae: CASO_AST_PREGUNTA },
-  { fichero: RUTAS_CLIENTE, de: 'const recorteFacturas = await whereFacturasVisibles(quien);', a: 'const recorteFacturas = null;', cae: CASO_AST_PUERTAS },
-  { fichero: RUTAS_CLIENTE, de: 'const recortePresupuestos = await wherePresupuestosVisibles(quien);', a: 'const recortePresupuestos = null;', cae: CASO_AST_PUERTAS },
+  { fichero: 'src/modules/system/app/routes/customersAdmin.routes.ts', de: "    if (!(await puedeLlevarseElPortal(req, id))) return res.status(404).json({ error: 'not_found' });\n", a: '\n', cae: 'SCRUM-1390e · portal-url pregunta ANTES de escribir el token' },
+  { fichero: 'src/modules/system/app/routes/customersAdmin.routes.ts', de: '    if (customer.portalToken && !(await puedeLlevarseElPortal(req, id))) customer.portalToken = null;\n', a: '\n', cae: 'SCRUM-1390e · portal-url pregunta ANTES de escribir el token' },
+  { fichero: 'src/modules/system/app/routes/customersAdmin.routes.ts', de: 'const recorteFacturas = await whereFacturasVisibles(quien);', a: 'const recorteFacturas = null;', cae: 'SCRUM-1390e · la pregunta no es un criterio nuevo' },
+  { fichero: 'src/modules/system/app/routes/customersAdmin.routes.ts', de: 'const recortePresupuestos = await wherePresupuestosVisibles(quien);', a: 'const recortePresupuestos = null;', cae: 'SCRUM-1390e · la pregunta no es un criterio nuevo' },
 ];
 
 /** Las que sólo ve la base (la cuenta, no la llamada). Las ejecuta el mismo guion, con el banco PGlite. */
 export const MUTACIONES_CON_BASE = [
-  { fichero: RUTAS_CLIENTE, de: 'return presupuestos === suyos && facturas === suyas;', a: 'return presupuestos === suyos;', cae: CASO_BASE_PORTAL },
-  { fichero: RUTAS_CLIENTE, de: 'return presupuestos === suyos && facturas === suyas;', a: 'return facturas === suyas;', cae: CASO_BASE_PORTAL },
+  { fichero: 'src/modules/system/app/routes/customersAdmin.routes.ts', de: 'return presupuestos === suyos && facturas === suyas;', a: 'return presupuestos === suyos;', cae: 'SCRUM-1390e · 🔴 el Técnico NO se lleva el portal' },
+  { fichero: 'src/modules/system/app/routes/customersAdmin.routes.ts', de: 'return presupuestos === suyos && facturas === suyas;', a: 'return facturas === suyas;', cae: 'SCRUM-1390e · 🔴 el Técnico NO se lleva el portal' },
 ];
 
 const sf =ts.createSourceFile(RUTAS_CLIENTE, fs.readFileSync(path.join(RAIZ, RUTAS_CLIENTE), 'utf8'), ts.ScriptTarget.Latest, true);
