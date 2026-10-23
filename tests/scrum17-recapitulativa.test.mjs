@@ -173,7 +173,9 @@ test('SCRUM-17: consolidar → rotura por mes (N facturas), IVA mixto, guards, t
     assert.ok(fMar && fAbr, 'una factura por mes');
     assert.equal(fMar.total, '218.90', 'marzo IVA mixto: 90*1.21 + 100*1.10 = 218.90');
     assert.equal(fAbr.total, '242.00', 'abril: 200*1.21 = 242.00');
-    assert.match(fMar.number, /^\d{4}-/, 'número de serie FISCAL (no J-)');
+    // SCRUM-1599b (SCRUM-1599 c.20650, «Sí, F<AA><NNNN>»): el número fiscal sigue el formato de
+    // SCRUM-780, F + año en dos cifras + correlativo en cuatro. Más estricta que la `/^\d{4}-/` de antes.
+    assert.match(fMar.number, /^F\d{6}$/, 'número de serie FISCAL F<AA><NNNN> (no J-)');
 
     // albaranes marcados facturado + facturas con type F1 + albaranRefs
     const albMarDb = await prisma.albaran.findUnique({ where: { id: albMar.id }, select: { invoiceId: true } });
