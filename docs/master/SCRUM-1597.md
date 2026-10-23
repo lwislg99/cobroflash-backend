@@ -117,3 +117,86 @@ Ver la entrega en Jira (SCRUM-1597) para la tanda y el obligatorio.
   pregunta sobre el builder de la hermana, que tiene que dar 1.
 - El esperado de tests de P1 lo escribí a 6 antes de contar y lo bajé a 5 contando el `git grep`, antes de la primera
   pasada: es un control derivado de otra sonda, no de la salida.
+
+# SCRUM-1597b · El «Hoy» de la tarjeta de WhatsApp deja de contar los avisos al profesional
+
+**Medido contra:** `origin/main` = `ca40d673c5cb3ba9448100a924fc17f4c42ee311` · 2026-10-23T19:41:45Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum1522b-el-panel-cuenta-lo-mismo.test.mjs`
+
+J2 (sesión `jv-j2au`, equipo de Javier), por encargo del orquestador `cobroflash-backend-62`. Construye la decisión del
+orquestador en Jira **c.20635** (opción N de c.20634): el número «Hoy» de Informes → «WhatsApp · este mes» deja de contar
+`merchant_alert_es`, con el mismo filtro del tope de 1596b. **El rótulo no cambia y ningún texto cambia** (regla 39).
+Esta rama lleva dentro la de 1597a (`scrum-1597a-cabos-1596b` @ `f985b463`, PR #2765, sin mergear al escribir), traída
+con `git merge`, para que los dos tramos de este registro no se entrelacen. Carril medido con `scripts/carriles.mjs de`:
+`whatsappLog.service.ts` es J2; `reportsView.js` es S2 y no se toca. `dist/` con `tsc --noCheck`; sin `prisma generate`.
+El hook de arranque dijo «SIN IDENTIDAD» (SCRUM-1498); se siguió por encargo.
+
+## El arreglo
+
+`plantillasDeHoy` **no se cambia**: la usan el tope y el panel, y el tope de los avisos (30) cuenta precisamente las filas
+`merchant_alert_es` a partir de ella; con el filtro dentro, ese tope contaría siempre 0. Lo que se hace es sacar a una
+función, `sinLosAvisosAlProfesional`, el filtro que 1596b escribía en línea dentro de `reservarPlantilla`, y pedírsela
+también en `getWhatsAppMetrics` para `templateToday`. Un solo filtro para los dos: no hay un segundo criterio.
+
+## Quién usa qué (AST, con suelo)
+
+`docs/master/evidencias/SCRUM-1597/medir-hoy.mjs` sobre 2.415 ficheros de `src/`, `tests/`, `scripts/` y `public/`
+(`salida-hoy.txt`; sin el sembrado sale CIEGO, 2, en `salida-hoy-ciego.txt`; con un esperado roto, ROJO, 1, en
+`salida-hoy-rojo.txt`):
+
+| pregunta | resultado |
+|---|---|
+| llamadas a `plantillasDeHoy` en `src/` | 2: `reservarPlantilla` y `getWhatsAppMetrics` (y una cadena en el control de `scrum529`) |
+| llamadas al filtro nuevo en `src/` | 2: las mismas dos funciones |
+| quién LEE `.templateToday` en `public/` | sólo `reportsView.js:821` (el número y su plural) |
+| quién lo lee en `src/` o `scripts/` | nadie (las demás apariciones son el valor por defecto `0` en fixtures) |
+
+`settingsView.js:1256` pide el mismo endpoint, pero lee `channel.windowMonth`, no `templateToday` (leído). **No se mueve
+otra cifra que el «Hoy».** El total del mes de la misma tarjeta sigue contando los avisos: es el coste aceptado en c.20635.
+
+## Rojo, verde, control y mutación
+
+Tres casos nuevos en `tests/scrum1522b-el-panel-cuenta-lo-mismo.test.mjs`, por las dos funciones reales de `dist/`:
+
+| caso | antes del arreglo | después |
+|---|---|---|
+| 99 a clientes + 5 avisos | ROJO: «Hoy: 104», tope 99 | panel 99 = tope 99, sale la siguiente; mes 104 |
+| 70 a clientes + 30 avisos | ROJO: «Hoy: 100», tope 70 | panel 70 = tope 70 |
+| CONTROL: 97 + 2 filas sin nombre, sin avisos | verde, 99 | verde, 99 (igual que antes) |
+
+Antes: 14 de 16 en el fichero, caen los dos esperados. Después: 16 de 16.
+
+**El tope no cambia** (regla 28; condición del orquestador): `scrum1596b-tope-de-avisos-al-profesional.test.mjs` da 9 de
+9 antes y después, y el censo de envíos de 1596b (`evidencias/SCRUM-1596/envios-1596b.mjs`) sale con 55 envíos y **byte
+a byte igual** que `salida-envios-despues-1596b.txt` (`evidencias/SCRUM-1597/salida-envios-1597b.txt`).
+
+Mutaciones, en `MUTACIONES_QUE_ME_TUMBAN` del test (las corre el meta-guard) y medidas a mano sobre `dist/` antes:
+
+| mutación | `scrum1596b` (el tope) | `scrum1522b` (el panel) |
+|---|---|---|
+| ninguna (base) | 9 de 9 | 16 de 16 |
+| el filtro compartido deja de apartar los avisos | **caen 2** (el C5 y su control) | **caen 2** (los dos casos nuevos) |
+| sólo el panel vuelve a `plantillasDeHoy` a secas | 9 de 9 | **caen 2** |
+
+La primera es la misma línea que ya mutaba 1596b para su C5: tras este cambio vive sólo en la función compartida.
+
+## `scripts/wa-prueba.mjs`
+
+Usa la firma vieja de los builders (`amountWithCurrency`), como dijo c.20634. **No es de J2:** `carriles.mjs de` dice
+«SIN CERRADURA», cubierto sólo por la fila general de `scripts/`, sin dueño decidido (`dos-equipos.md:172`). Se
+**declara aquí y no se toca**; tampoco se ejecuta, porque mandaría un WhatsApp real. Quien le dé dueño, que lo arregle.
+
+## No medido
+
+- PostgreSQL real: el doble de 1522b evalúa el filtro, y el `NULL` de `{ not }` lo modela él, no SQL.
+- yaqu.app: no lo he intentado; ver el «Hoy» con avisos exige que salgan plantillas reales.
+- El meta-guard entero en local: no lo he corrido; las dos mutaciones se midieron a mano sobre `dist/`.
+
+## Errores propios
+
+- Escribí el esperado de P3 del censo a 3 lecturas antes de contar, y la sonda salió ROJO; la línea 821 lee
+  `ch.templateToday` exactamente 2 veces (el número y el plural). Lo corregí leyendo la línea, no copiando la salida.
+- Hice primero un guion propio de mutación en `evidencias/` y `scrum1387` lo tumbó: un banco nuevo con su lista propia
+  tiene que usar el catálogo. Lo retiré y las mutaciones van en el test, que es la vía de la casa.
+- Dejé en local un commit «wip» sin el carril en la primera línea; lo rehice antes de empujar (nunca salió de la máquina).

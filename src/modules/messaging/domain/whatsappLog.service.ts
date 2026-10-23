@@ -126,6 +126,18 @@ function plantillasDeHoy(merchantId: number, zona: string, ahora: Date) {
   };
 }
 
+/**
+ * Lo mismo, sin los avisos al profesional: es lo que gasta el cupo de los clientes (SCRUM-1596b). Lo
+ * piden el tope y el «Hoy» del panel, para que los dos sigan contando lo mismo (SCRUM-1597 c.20635).
+ * Las filas sin nombre SÍ cuentan: `{ not }` a secas las dejaría fuera en SQL (NULL <> x no es verdad).
+ */
+function sinLosAvisosAlProfesional<T extends object>(filtro: T) {
+  return {
+    ...filtro,
+    AND: [{ OR: [{ templateName: null }, { templateName: { not: PLANTILLA_AVISO_AL_PROFESIONAL } }] }],
+  };
+}
+
 export async function reservarPlantilla(db: ClienteDeLaBase, input: {
   merchantId: number;
   customerId?: number | null;
@@ -153,11 +165,7 @@ export async function reservarPlantilla(db: ClienteDeLaBase, input: {
           return { ok: false as const, reason: 'daily_cap' as const, cuenta: avisosHoy, tope: TOPE_AVISOS_AL_PROFESIONAL };
         }
       } else {
-        // Las filas sin nombre SÍ cuentan: `{ not }` a secas las dejaría fuera en SQL (NULL <> x no es verdad).
-        const sinLosAvisos = {
-          ...cuentaParaElTope,
-          AND: [{ OR: [{ templateName: null }, { templateName: { not: PLANTILLA_AVISO_AL_PROFESIONAL } }] }],
-        };
+        const sinLosAvisos = sinLosAvisosAlProfesional(cuentaParaElTope);
         const sentToday = await tx.whatsAppMessage.count({ where: sinLosAvisos });
         if (sentToday >= input.topeComercio) {
           return { ok: false as const, reason: 'daily_cap' as const, cuenta: sentToday, tope: input.topeComercio };
@@ -485,8 +493,11 @@ export async function getWhatsAppMetrics(merchantId: number, now = new Date()): 
       select: { createdAt: true },
     });
     const channel = {
-      // Lo mismo que cuenta el tope, pedido con su mismo filtro: sin las rechazadas (c.19157 ③).
-      templateToday: await prisma.whatsAppMessage.count({ where: plantillasDeHoy(merchantId, zona, now) }),
+      // Lo mismo que cuenta el tope, pedido con su mismo filtro: sin las rechazadas (c.19157 ③) y sin
+      // los avisos al profesional, que no gastan el cupo de los clientes (SCRUM-1597 c.20635).
+      templateToday: await prisma.whatsAppMessage.count({
+        where: sinLosAvisosAlProfesional(plantillasDeHoy(merchantId, zona, now)),
+      }),
       windowToday: windowRows.filter((r) => r.createdAt >= dayStart).length,
       windowMonth: windowRows.length,
       savedEurMonth: Math.round(windowRows.length * WA_UTILITY_COST_ES * 1000) / 1000,
