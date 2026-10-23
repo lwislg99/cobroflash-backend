@@ -276,7 +276,11 @@ Un gasto de otro comercio rompe (regla 2), no se descarta en silencio.
   Por memoria, la máquina mató la pasada completa después de mis 10, así que de las demás no hay
   veredicto. Al morir dejó un mutante puesto en `tests/scrum303-albaran-una-pantalla.test.mjs`. Quité
   esa línea a mano y comprobé que el fichero vuelve a ser idéntico a HEAD (`git diff --quiet`).
-- Dirigida (`tests-que-cubren --lanzar`, por tramos): 385 ficheros de 1.456, en 4 tramos. Rojos:
+- Dirigida final (`tests-que-cubren --lanzar`, 4 de 4 tramos sobre el árbol con `main` mergeado y
+  `dist/` recompilado): **393 ficheros · 3.758 tests · 3.749 pass · 4 fail**. Las 5 que faltan para
+  sumar 3.758 no salen ni como pass ni como fail: no las he mirado una a una. Una primera pasada
+  me dio además 2 rojos de `scrum1571c`, que venían de un `dist/` sin recompilar tras el merge
+  (9 de 9 en verde después de compilar). Los 4 rojos, y los de la pasada anterior:
   - `scrum1298b`: cae 2 de 8 también sobre `origin/main` limpio (c4921cd1).
   - `scrum351` y `scrum476`: este worktree no tiene `node_modules` propio. Son del entorno.
   - `scrum854`: faltaba este registro.
