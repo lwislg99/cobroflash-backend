@@ -214,11 +214,45 @@ async function actualizarClienteHandler(req: Request, res: Response) {
 router.put('/:id', actualizarClienteHandler);
 router.patch('/:id', actualizarClienteHandler);
 
+/**
+ * SCRUM-1390e · ¿Se le puede dar a quien pregunta el enlace del portal de ESTE cliente?
+ *
+ * El portal (`GET /cliente/:token`) enseña TODOS los presupuestos y facturas del cliente y no mira
+ * ningún rol. Con el enlace, un Técnico rodeaba la regla «ve sólo lo suyo» (fundador, SCRUM-1390
+ * c.17962; medido por efecto en SCRUM-1390d c.20457). Así que se le da sólo si vería TODO lo que
+ * enseña, por las MISMAS puertas que la pestaña de documentos de la ficha (SCRUM-1403): no es un
+ * criterio nuevo. Quien ve todo el negocio (`null` = sin recorte) no hace ninguna consulta de más.
+ *
+ * Se cuentan los dos lados en vez de buscar «uno que NO sea suyo»: un `NOT` sobre `teamMemberId`
+ * deja fuera las filas con `NULL` (las de la oficina), justo las que son ajenas.
+ * ⚠️ El token es del CLIENTE y no caduca: lo que se añada después a ese cliente lo enseñará el mismo
+ * enlace. Eso no lo cierra esta pregunta (SCRUM-1390.md, tramo 1390e).
+ */
+async function puedeLlevarseElPortal(req: Request, customerId: number): Promise<boolean> {
+  const quien = quienPideDe(req);
+  const recortePresupuestos = await wherePresupuestosVisibles(quien);
+  const recorteFacturas = await whereFacturasVisibles(quien);
+  if (recortePresupuestos === null && recorteFacturas === null) return true;
+  const soloSusPresupuestos = recortePresupuestos ? [recortePresupuestos] : undefined;
+  const soloSusFacturas = recorteFacturas ? [recorteFacturas] : undefined;
+  // `where` LITERALES (los censos de tenencia y de origen leen el filtro del texto).
+  const [presupuestos, suyos, facturas, suyas] = await Promise.all([
+    prisma.quote.count({ where: { customerId, merchantId: req.merchantId } }),
+    prisma.quote.count({ where: { customerId, merchantId: req.merchantId, AND: soloSusPresupuestos } }),
+    prisma.invoice.count({ where: { customerId, merchantId: req.merchantId } }),
+    prisma.invoice.count({ where: { customerId, merchantId: req.merchantId, AND: soloSusFacturas } }),
+  ]);
+  return presupuestos === suyos && facturas === suyas;
+}
+
 // GET /admin/customers/:id/portal-url — genera token si no existe, devuelve URL del portal
 router.get('/:id/portal-url', async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
+    // SCRUM-1390e: ANTES de escribir el token. El rechazo es el de un cliente que no existe: ni
+    // texto nuevo ni la pista de que este cliente tiene algo de un compañero.
+    if (!(await puedeLlevarseElPortal(req, id))) return res.status(404).json({ error: 'not_found' });
     const token = await ensurePortalToken(req.merchantId, id);
     const portalUrl = `${config.PUBLIC_BASE_URL}/cliente/${token}`;
     return res.json({ portalUrl, token });
@@ -584,6 +618,9 @@ router.get('/:id/detail', async (req, res) => {
 
     const totalBilled = Number(facturado._sum.total ?? 0);
     const totalPaid   = Number(cobrado._sum.total ?? 0);
+    // SCRUM-1390e: el enlace que `portal-url` le niega no se le sirve aquí en crudo. Para él sale
+    // como un cliente sin token, que es un estado que la ficha ya pinta (pide el enlace al pulsar).
+    if (customer.portalToken && !(await puedeLlevarseElPortal(req, id))) customer.portalToken = null;
     const portalUrl   = customer.portalToken
       ? `${config.PUBLIC_BASE_URL}/cliente/${customer.portalToken}`
       : null;

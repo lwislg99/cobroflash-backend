@@ -416,3 +416,87 @@ puertas, lo decide el orquestador: aquí no se arregla ninguna.
 - **yaqu.app:** sin sesión de técnico en producción (SCRUM-1555). No lo he intentado.
 - La respuesta de una IA real, y el 201 real de `POST /admin/jobs`.
 - Error mío: escribí en c.20457 «6 rutas» de memoria; eran 5 (c.20458).
+
+## SCRUM-1390e · el Técnico ya no se lleva el portal de un cliente con documentos ajenos
+
+[Anexado por J2 (sesión jv-j2ab), equipo de Javier, el 23-oct-2026, sobre `origin/main`
+`8eff88f54db6a4b776df4defb20958cbf8104f3f`. Encargo del orquestador (`cobroflash-backend-62`). Toca
+`src/modules/system/app/routes/customersAdmin.routes.ts` (carril J2), un test nuevo, su línea en el inventario de
+`tests/scrum419-ci-declara-lo-que-no-corre.test.mjs` y `docs/master/evidencias/SCRUM-1390e/`. Las otras tres puertas de 1390d son carril S1: van a SCRUM-1582.]
+
+A9: comprobación → `tests/scrum1390e-el-portal-solo-lo-suyo.test.mjs`
+A9: comprobación → `tests/scrum757-la-declaracion-que-nadie-lee.test.mjs`
+
+### Qué estaba mal
+
+Medido por J4 en 1390d (c.20457): `GET /admin/customers/:id/portal-url` le daba al Técnico el enlace del portal de
+cualquier cliente, y `GET /cliente/:token` enseña todos los presupuestos y facturas del cliente sin mirar el rol. Con
+eso rodeaba «ve sólo lo suyo» (c.17962, c.17963).
+
+### El arreglo
+
+`puedeLlevarseElPortal` (en el mismo fichero de rutas): el enlace se da sólo a quien vería TODOS los documentos que
+enseña el portal, contados con las mismas dos puertas que la pestaña de documentos de la ficha (SCRUM-1403:
+`wherePresupuestosVisibles`, `whereFacturasVisibles`). No escribe ningún eje propio (lo sujeta el test, por AST).
+Quien ve todo el negocio no hace ninguna consulta de más. Se pregunta ANTES de `ensurePortalToken`, así que pedirlo
+tampoco le escribe el token al cliente. El rechazo es el `404 {"error":"not_found"}` que la ruta ya daba a un cliente
+que no existe: ni texto nuevo ni la pista de que hay algo de un compañero. La pantalla lo pinta con el mismo aviso
+de error que ya tenía para ese 404 (leído en `customersView.js` y `customerDetailView.js`, no visto en navegador).
+
+Se cuentan los dos lados (todos / suyos) en vez de buscar uno que NO sea suyo: un `NOT` sobre `teamMemberId` deja
+fuera las filas con `NULL`, que son justo las de la oficina.
+
+**De paso** (mismo fichero, mismo carril): `GET /admin/customers/:id/detail` servía el mismo enlace en crudo
+(`portalToken` y `portalUrl`) si el cliente ya tenía token. Ahora pasa por la misma pregunta; al Técnico que no puede
+llevárselo le sale como un cliente sin token (los dos a `null`), que es un estado que la ficha ya pinta.
+
+### Lo medido
+
+| qué | dónde |
+| --- | --- |
+| ROJO por la ruta real: el `src` de main transpilado a `dist/`, banco PGlite de SCRUM-1218c → 2 de 6 caen (`portal-url` da 200 y la ficha da el enlace); los 2 AST leen el `src` ya arreglado y por eso no caen ahí | `evidencias/SCRUM-1390e/rojo-contra-main.salida.txt` |
+| VERDE: 6 de 6 en 2 pasadas | `evidencias/SCRUM-1390e/verde.salida.txt` |
+| Las 4 `MUTACIONES_QUE_ME_TUMBAN` del test (catálogo del meta-guard, SCRUM-1387), con su mecánica: `src` mutado en sitio, test SIN base, bytes restaurados → las 4 mueren por su caso AST | `evidencias/SCRUM-1390e/meta-sin-base.salida.txt` |
+| Esas 4 y las 2 `MUTACIONES_CON_BASE`, tomadas del test, transpiladas a `dist/` y corridas CON base → las 6 mueren (las 2 de la cuenta, por su caso) | `evidencias/SCRUM-1390e/mutar.salida.txt` |
+| El banco de 1390d con el arreglo: `portal-url` pasa de SIN-DOCUMENTO a RECORTA | `evidencias/SCRUM-1390e/las-15-despues.salida.txt` |
+
+⚠️ **El banco de 1390d no ve el efecto**, sólo que la consulta ya distingue el rol: su doble no aplica el `where` y su
+`count` da 1 a los dos lados, así que sigue entregando el token y la cadena del portal sigue con la marca. El efecto
+lo mide el banco PGlite (base real, `where` real).
+
+Control del banco: `tests/scrum1403-el-tecnico-y-las-otras-puertas.test.mjs` da 4 de 6 en esta máquina ANTES y DESPUÉS,
+con los mismos dos rojos: el cliente de Prisma compartido va dos campos por detrás del esquema (`Quote.archivedAt`,
+`Merchant.activityKind`) y `GET /admin/quotes` revienta. Ninguna de mis dos rutas usa esos campos. No lo he
+regenerado: es el compartido.
+
+### Lo que no cierra
+
+- ⚠️ **El token es del CLIENTE y no caduca.** Si el Técnico se lleva el enlace cuando todo era suyo y después un
+  compañero le hace un presupuesto a ese cliente, el mismo enlace lo enseñará. Cerrarlo pide un token por documento o
+  rotarlo, y eso es esquema o producto: no es de esta tanda.
+- Los envíos que llevan el enlace al CLIENTE (`portalUrlDelCliente`: correo del presupuesto, firma del parte) no pasan
+  por aquí: van a un destinatario que es el propio cliente, no al Técnico. No los he tocado.
+- **yaqu.app:** sin sesión de técnico en producción (SCRUM-1555). No lo he intentado.
+
+### Mis errores
+
+- Di por base `7fa745dc2` (mi primer `fetch`) y la rama nació sobre `8eff88f54`: otra sesión movió `origin/main` entre
+  el `fetch` y el `checkout`. Lo vi porque el guion del rojo imprime el SHA que lee; todo lo medido es sobre `8eff88f54`.
+- El TAP del primer rojo lo pisaron las pasadas siguientes (el banco escribe `tap-<fichero>-0.tap` cada vez). Lo rehice
+  con un guion que deja la salida en el repo.
+- Mi guion de mutación, en su primera versión, exigía con base el caso AST de las mutaciones del meta-guard, y las dio
+  por VIVAS a las cuatro: muta `dist/` y el caso AST lee el `src`, que no toca. El instrumento estaba mal, no el test;
+  lo destapó `meta-sin-base.mjs`, que muta el `src`.
+- Primera tanda local: 3 guards en rojo por mí (banco de mutación fuera del catálogo, saltos sin motivo literal y fuera
+  del inventario de `scrum419`, y una aparición de `portalToken` que el censo de `scrum767` no sabía leer). Arreglé mi
+  código y mi test; ningún guard. La de `scrum767`: escribía `{ ...customer, portalToken, portalUrl }`.
+- Crucé los 200k de contexto sin avisar en el momento; avisé a 274.730.
+- 🔴 Las 4 `MUTACIONES_QUE_ME_TUMBAN` llevaban `fichero` y `cae` en VARIABLES (`RUTAS_CLIENTE`, `CASO_*`). El lector
+  del meta-guard sólo acepta literales: el obligatorio de #2722 (job 120380706936) cayó en `scrum745`, `scrum757` y
+  `scrum765`, y yo no los había corrido en local. Lo arregló el relevo (J2, jv-j2ae): los cuatro campos, literales,
+  sin cambiar qué mutan ni qué caso tumban. Visto en rojo con la versión anterior (27 casos de 745/757/765 = 24 ok +
+  3 not ok, los mismos tres) y en verde con la nueva; `meta-sin-base.mjs` vuelve a dar las 4 MUERE.
+
+Local, antes de empujar (41 ficheros: los guards de suite y de registro y los que tocan estas rutas): 328 casos =
+319 ok + 2 not ok + 7 saltados. Los 2 rojos son `scrum1199`, que no encuentra `express` en el `node_modules` del árbol
+anidado (`MODULE_NOT_FOUND`): entorno, no lo he medido en otro árbol.
