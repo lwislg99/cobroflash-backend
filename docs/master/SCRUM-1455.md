@@ -212,6 +212,12 @@ ese efecto es el que firmó c.20593. **No lo he ejecutado en un panel real.**
 ### Lo que no hace este tramo, dicho
 
 - `payment-anomaly` (`:310`) y `invoice.routes.ts:63` (`paid-webhook`) siguen con `Number.isInteger`: el
-  decimal ya da 400, pero un id que no cabe sigue dando **500**. c.18731 las autoriza; este encargo no las
-  incluía, y `paid-webhook` es webhook (condición ② sin medir). Quedan para quien las reparta.
+  decimal ya da 400, pero un id que no cabe sigue dando **500**. **Cubiertas por c.18731, pendientes:
+  siguiente tramo** (decisión del orquestador `cobroflash-backend-62`, 23-oct: otra forma, otro PR).
+  `paid-webhook` es webhook: su condición ② está sin medir.
+- **Tanda entera en local** (árbol anidado, `dist/` con `tsc --noCheck`): 12.370 tests, pasan 12.184,
+  caen 24, se saltan 162 (suman). Ninguno de los 24 lee `invoicesAdmin`: 22 son del entorno (cliente de
+  Prisma y CLI del checkout compartido, `node_modules`, hooks del árbol principal); `scrum1199` cae igual
+  con las siete guardas devueltas a `Number.isNaN` (2 de 4), y `scrum1266b` pasa 15 de 15 suelto, dos
+  veces, con el cambio. Lo que decide es el obligatorio de CI.
 - **No visto en yaqu.app**: no lo he intentado; la prueba sería anular o sellar por URL, que no se hace.
