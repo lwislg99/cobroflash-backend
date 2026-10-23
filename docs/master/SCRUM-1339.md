@@ -2828,3 +2828,45 @@ fail era 836 por `scrum608` anclado a `dist/`, y este árbol anidado no traía `
    1339u con «carril J6» en su commit (`0a66ee4f8`); no hay fila que lo diga.
 
 **Ficheros:** `tests/scrum1339u-vigia-ciego-de-la-senal.test.mjs`, este apartado.
+---
+
+# SCRUM-1339w · Respuesta a S5 (c.20506): la señal sale 1 y 2 en main, y su paso tumba «build + tests» por efecto
+
+**Medido contra:** `origin/main` = `28098fe4b1a160303526f5a4002d52556d2c5b22` · 2026-10-23T19:11:16Z
+
+A9: aviso → A10 «Un prefijo no es un nombre, y una subcadena tampoco.» — no se pudo comprobar: busqué el job por el nombre «build + tests» y la consulta salió vacía (el nombre real lleva «(con banco desechable)»); lo cazó listar los nombres, y la siguiente consulta a mano no lo hereda
+
+Lo hizo la sesión jv-j6av (J6). En Jira: c.20631 (medición y respuesta) y c.20637 (el PR desechable).
+
+**① «El guion sale 0 siempre» (S5).** Las dos líneas que cita S5, `:42` y `:112`, son `process.exitCode = 0;` en
+`8ad16719`, un árbol que no contiene 1339t (`c1e874b36`). En main están 1339t (#2670) y 1339v (#2696, merge
+`1ad1968523fed7c2ffb833d5a3feafe4dd1c79f8`). Lo medí por ejecución con el guion de main y TAP fabricados, sobre un
+árbol sembrado fuera del repo y pasado con `--raiz`:
+- TAP sano → **0**;
+- TAP entero con un declarado ausente → **1**;
+- TAP de 1 test contra el árbol real → **1** (`ausentes=12321`);
+- TAP vacío, cortado, inexistente o sin argumentos → **2**;
+- `--tasa` ilegible → **0**.
+
+No lo corrí con el guion viejo: importa `typescript` y fuera del árbol no resuelve.
+
+**② ¿`scrum1339d` comprueba `ci.yml`?** No. No nombra `ci.yml`, `workflows`, `.github` ni `continue-on-error`.
+Su única lectura de fichero es la `:580`, el resumen que fabrica el propio test. Como control positivo, la misma
+búsqueda sí encuentra `scrum1339r:22` y `scrum1339u:24`. `scrum1339u:72` sólo exige que el paso exista. **Hueco:**
+ningún test de los 11 que nombran `continue-on-error` vigila el paso de la señal. Si alguien vuelve a ponerlo, no cae
+nada. Se lo paso al orquestador; no lo arreglo aquí.
+
+**③ Punta.** El job «build + tests (con banco desechable)» de `28098fe4b` da `medible=si ausentes=0 declarados=12321`,
+la misma cifra que da en local el mismo árbol.
+
+**④ Rojo por efecto (propuesta de S5).** PR borrador #2764, rama `desechable-1339w-rojo-por-efecto` @
+`ce0d3660c996af31d3eb3bf41805d17028e37936`. La rama no lleva el prefijo `scrum-`, así que no hubo auto-merge, y no se
+tocó ningún workflow. Lleva un `test()` con nombre literal dentro de un `if` que nunca se cumple. Job 120609811354,
+log completo de 2.056.851 B:
+- el paso «señal de nombres · bloquea» sale **failure**, con `medible=si ausentes=1 declarados=12322`;
+- también caen el suelo (fichero sin tests) y `scrum854` ②, que pide registro y la rama desechable no lo trae.
+
+Cerrado sin mergear; la rama se queda. Limitación: el job habría caído igual por los otros dos pasos. Que la señal
+bloquea por sí sola se lee en que su paso concluye `failure`.
+
+**No medido:** la tanda completa en local (este tramo no toca código).
