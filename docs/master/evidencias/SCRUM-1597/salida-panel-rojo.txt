@@ -1,0 +1,16 @@
+== medido 2026-10-23T19:06:08.604Z · proceso en UTC · comercio sin zona (UTC) ==
+cuadra S0 SUELO: 87 a clientes, las dos funciones las ven
+        {"panel":87,"mesTotal":87,"topeClientesCuenta":87,"saleACliente":true,"topeAvisosCuenta":0,"saleAviso":true}
+cuadra C0 CERO: 99 a clientes y ningún aviso: panel = tope
+        {"panel":99,"mesTotal":99,"topeClientesCuenta":99,"saleACliente":true,"topeAvisosCuenta":0,"saleAviso":true}
+cuadra C1 POSITIVO SEMBRADO: la reserva de avisos ve los 5 avisos
+        {"panel":104,"mesTotal":104,"topeClientesCuenta":99,"saleACliente":true,"topeAvisosCuenta":5,"saleAviso":true}
+ROJO   P1 🔴 99 a clientes + 5 avisos: ¿qué pinta «Hoy»?
+        {"panel":104,"mesTotal":104,"topeClientesCuenta":99,"saleACliente":true,"topeAvisosCuenta":5,"saleAviso":true}
+        <<< panel: esperado 99, salió 104
+cuadra P2 100 a clientes + 5 avisos: el cupo está lleno
+        {"panel":105,"mesTotal":105,"topeClientesCuenta":100,"saleACliente":false,"topeAvisosCuenta":5,"saleAviso":true}
+cuadra P3 70 a clientes + 30 avisos: el aviso 31.º no cabe, el cliente sí
+        {"panel":100,"mesTotal":100,"topeClientesCuenta":70,"saleACliente":true,"topeAvisosCuenta":30,"saleAviso":false}
+
+ROJO: no cuadran 1: P1 🔴 99 a clientes + 5 avisos: ¿qué pinta «Hoy»?
