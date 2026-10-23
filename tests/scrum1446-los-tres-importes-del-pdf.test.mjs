@@ -11,7 +11,8 @@
 //   ① SCRUM-1446 · la columna TOTAL de las líneas no suma el TOTAL impreso.
 //   ② SCRUM-1447 · el tipo se redondea a entero: el 7,5 % —que el servidor ADMITE— sale «8%» en
 //      el papel de la FACTURA. (El pie del presupuesto, que CALCULABA la cuota al 8 %, y el desglose
-//      del registro, que llevaba `TipoImpositivo` 8, se arreglaron en SCRUM-1446b: ver su tramo.)
+//      del registro, que llevaba `TipoImpositivo` 8, se arreglaron en SCRUM-1446b: ver su tramo. Y
+//      el papel de la FACTURA, en SCRUM-1446d.)
 //   ③ SCRUM-1448 · la factura con líneas RECALCULA su total y la que no tiene líneas imprime el
 //      guardado; con dos tipos, con tramos o con descuento de línea, los dos números se separan.
 //
@@ -44,7 +45,6 @@ const { calcTotal } = require('../dist/core/utils/utils.js');
 /** Los defectos que este fichero fija sin arreglar, con el ticket que los lleva. */
 const DECLARADOS = Object.freeze({
   'la columna no suma el total': 'SCRUM-1446 · cada línea se redondea al imprimirse y el TOTAL sale de la suma sin redondear.',
-  'el 7,5 % se imprime «8%»': 'SCRUM-1447 · `(tax*100).toFixed(0)` en la fila y en el pie de la FACTURA. Lo demás se arregló en SCRUM-1446b; esto no, porque `scrum603b` y `scrum723` no dejan cambiar `generateInvoicePdf`.',
   'el total impreso no es el guardado': 'SCRUM-1448 y SCRUM-624 · la factura con líneas recalcula; el guardado es `grossOfLines`.',
 });
 
@@ -88,7 +88,9 @@ async function papelFactura(lines, total) {
   });
   const textos = leer(outPath);
   const pie = textos
-    .map((t) => t.match(new RegExp(`^(?:\\d+%${IMPORTE} EUR)?IVA (\\d+%):(${IMPORTE}) EUR$`)))
+    // SCRUM-1446d · `[\d,]+%` y no `\d+%`: con `\d+` un «IVA 7,5%:» no casaba y el pie salía VACÍO,
+    // que se lee igual que «no hay pie».
+    .map((t) => t.match(new RegExp(`^(?:[\\d,]+%${IMPORTE} EUR)?IVA ([\\d,]+%):(${IMPORTE}) EUR$`)))
     .filter(Boolean).map((m) => ({ rotulo: m[1], cuota: aCent(m[2]) }));
   const conLineas = textos.map((t) => t.match(new RegExp(`^TOTAL:(${IMPORTE}) EUR$`))).filter(Boolean);
   const sinLineas = textos.map((t) => t.match(new RegExp(`^Total: (${IMPORTE}) EUR$`))).filter(Boolean);
@@ -162,8 +164,10 @@ test('SCRUM-1446 · ① DECLARADO: dos líneas de 12,50 al 21 % imprimen 15,13 +
 // ② SCRUM-1447 · el tipo redondeado a entero
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-1447 · ② DECLARADO: de los tipos que el servidor admite, el 7,5 % —y sólo él— sale «8%» en la factura', async () => {
-  assert.ok(DECLARADOS['el 7,5 % se imprime «8%»'].includes('SCRUM-1447'));
+// ── SCRUM-1446d (23-oct-2026) · ARREGLADO: la FACTURA rotula el 7,5 % como «7,5%» ─────────────
+// Por la vía de cambio autorizado de `scrum603b`/`scrum723` (SCRUM-1446 c.20473), con el parche de
+// c.18885. Hasta hoy este caso fijaba «8%» en la fila y «IVA 8%: 7,50» en el pie.
+test('SCRUM-1447 · ② ARREGLADO: cada tipo que el servidor admite sale en la factura con su propio rótulo, también el 7,5 %', async () => {
   // La población sale del validador, no de una lista copiada: si mañana se admite otro tipo con
   // decimales, entra solo en este recorrido.
   assert.deepEqual(ADMITIDOS, [0, 0.02, 0.04, 0.05, 0.075, 0.1, 0.21],
@@ -185,12 +189,12 @@ test('SCRUM-1447 · ② DECLARADO: de los tipos que el servidor admite, el 7,5 %
     '2 %': { fila: '2%', pie: '2% 200' },
     '4 %': { fila: '4%', pie: '4% 400' },
     '5 %': { fila: '5%', pie: '5% 500' },
-    '7.5 %': { fila: '8%', pie: '8% 750' },   // ← el defecto: «IVA 8%: 7,50» sobre una base de 100,00
+    '7.5 %': { fila: '7,5%', pie: '7,5% 750' },   // antes «8%» y «IVA 8%: 7,50» sobre una base de 100,00
     '10 %': { fila: '10%', pie: '10% 1000' },
     '21 %': { fila: '21%', pie: '21% 2100' },
   },
-  'Ha cambiado lo que la factura imprime como tipo. Si el 7,5 % ya sale con su decimal, borra «el ' +
-  '7,5 % se imprime «8%»» de `DECLARADOS` y fija aquí el rótulo nuevo (que es texto: lo firma el fundador).');
+  'Ha cambiado lo que la factura imprime como tipo, o su cuota. El 7,5 % tiene que salir «7,5%» con '
+  + 'su cuota de 7,50, y los demás como siempre.');
 });
 
 // ── SCRUM-1446b (8-oct-2026) · ARREGLADO: el tipo ya no se redondea a entero al CALCULAR ──────
@@ -304,8 +308,9 @@ test('SCRUM-1448 · ③ la factura SIN líneas imprime el guardado, y con línea
     'documento según tenga líneas o no (SCRUM-1448); si pasa a ser una, fija aquí cuál.');
 });
 
-test('SCRUM-1446 · los defectos declarados son EXACTAMENTE tres, y cada uno nombra su ticket', () => {
-  assert.equal(Object.keys(DECLARADOS).length, 3,
+test('SCRUM-1446 · los defectos declarados son EXACTAMENTE dos, y cada uno nombra su ticket', () => {
+  // SCRUM-1446d: 3 → 2, al arreglarse «el 7,5 % se imprime «8%»».
+  assert.equal(Object.keys(DECLARADOS).length, 2,
     'La lista de defectos declarados ha cambiado de tamaño. Sólo puede menguar, y al menguar se ' +
     'cambia este número en el mismo commit.');
   for (const [k, motivo] of Object.entries(DECLARADOS)) {

@@ -1,0 +1,19 @@
+casos comparados: 27321 · bytes: antes 32474626, después 32474820
+clase                                             | casos | distintos
+dominio-1-linea · CON 7,5 %                       |  3000 | 0
+dominio-1-linea · sin 7,5 %                       | 18000 | 0
+dominio-mezcla · CON 7,5 %                        |  2070 | 0
+dominio-mezcla · sin 7,5 %                        |  3930 | 0
+papel-factura-100 · CON 7,5 %                     |     1 | 1
+papel-factura-100 · sin 7,5 %                     |     6 | 0
+papel-factura-azar · CON 7,5 %                    |    32 | 32
+papel-factura-azar · sin 7,5 %                    |   118 | 0
+papel-presupuesto-100 · CON 7,5 %                 |     1 | 0
+papel-presupuesto-100 · sin 7,5 %                 |     6 | 0
+papel-presupuesto-100-global-10 · CON 7,5 %       |     1 | 0
+papel-presupuesto-100-global-10 · sin 7,5 %       |     6 | 0
+papel-presupuesto-azar · CON 7,5 %                |    32 | 0
+papel-presupuesto-azar · sin 7,5 %                |   118 | 0
+SIN 7,5 % (0, 2, 4, 5, 10 y 21 %): 22184 casos · distintos: 0
+CON 7,5 %: 5137 casos · distintos: 33
+VEREDICTO: los tipos enteros salen IDÉNTICOS.
