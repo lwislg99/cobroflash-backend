@@ -379,3 +379,56 @@ ni ninguna base. Lo único que cambia es este tramo.
 - La primera pasada de la sonda no corrió: le pasé rutas con forma de bash a `node` en Windows, y
   `import.meta.url` dejó un `%20` en la ruta temporal. No dio ningún resultado que pudiera leerse como bueno,
   y la repetí.
+
+---
+
+# SCRUM-1066e · «Alquiler de local» en el 115 y en el 303
+
+**Medido contra:** `origin/main` = `8878551f77b10df628fcb71b8727114656ec230f` · 2026-10-23T11:34:22Z
+**Rama:** `scrum-1066e-alquiler-de-local` · **Puesto:** J1 (sesión `jv-j1an`) · **Encargo:** orquestador `cobroflash-backend-62`, 23-oct-2026 · **Decisiones:** Jira c.20479, c.20485 y c.20497
+
+A9: aviso → cicatriz J1 «Escribí en el ticket para el otro equipo la ruta `GET /admin/expenses/categories` antes de leer dónde se monta; la leí después y era cierta, pero la afirmé sin haberla leído (SCRUM-1066e, SCRUM-1588)» — no se pudo comprobar: el texto de un ticket de Jira no pasa por ningún guard del repositorio
+
+## PASO 0
+
+- `git log origin/main --grep=1066`: 1066c (#2703) y 1066d (#2721) en `main`. Ninguno coloca nada en el 115 ni toca `CATEGORIAS_CORRIENTES`.
+- `git ls-remote --heads origin` con `scrum-0*1066`: ninguna rama viva.
+- El defecto, corriendo: el test nuevo sobre el código de `main` da **7 de 8 en rojo** (el octavo es el negativo «un 19 % sin la categoría», que tiene que seguir verde).
+
+## Qué se ha hecho (carril J1: `src/modules/fiscal/**`)
+
+1. **115** (`retencionesPracticadas.ts`): un gasto con `category === 'alquiler'` (`CATEGORIA_ALQUILER`) y retención anotada va a las casillas 1-5, **sea cual sea su tipo**: lo separa la categoría, no el 19 %. Un 19 % sin la categoría sigue sin clasificar (decisión A de 1066c). `TIPOS_115` se ha ido. `vacioPorque = 'sin_dato_de_arrendamiento'` sólo si ningún gasto del trimestre es un alquiler: un alquiler sin retención (≤ 900 €/año, SCRUM-1106) deja el 115 a cero y lo explica `sinRetencion`.
+2. **El lector** (`retencionesPracticadas.repo.ts`) pide también `category`. Sigue filtrando sólo por merchant y trimestre.
+3. **303** (`modelo303.ts`): `alquiler` entra en `CATEGORIAS_CORRIENTES` → 28/29, no `categoria_desconocida` (c.20497: «Sí, como gasto corriente»; en la lista del asesor).
+
+Sin esquema, sin ruta, sin pantalla, sin texto nuevo que vea el usuario, sin tocar la emisión (`invoicing/` no está en el diff).
+
+## Lo que NO es de J1: SCRUM-1588 (equipo de Luis)
+
+La parte 1 del encargo (la categoría en `EXPENSE_CATEGORIES`, su etiqueta y su píldora) cruza de equipo, medido con `scripts/carriles.mjs de`: `expenses.service.ts` → S1 (`dos-equipos.md:136`), `expensesView.js` y `styles.css` → S2 (`dos-equipos.md:152`). Por orden del orquestador va a **SCRUM-1588** (`equipo-luis`, `area-s1`, `area-s2`, enlazado a 1066), con el rótulo firmado.
+
+⚠️ **Consecuencia: hasta que entre SCRUM-1588, la ruta rechaza `alquiler` (`category_invalid`) y el 115 sigue a cero EN LA PRÁCTICA.** Lo de aquí es el borrador que lo sabrá leer el día que exista el dato.
+
+## Aceptación → dónde se ve
+
+| aceptación (del encargo) | dónde se ve |
+|---|---|
+| la categoría en `EXPENSE_CATEGORIES`, su etiqueta y su píldora | NO HECHO → SCRUM-1588 (S1 y S2, equipo de Luis) |
+| el 115: los gastos de esa categoría con retención entran en sus casillas, con su fuente | `tests/scrum1066e-alquiler-de-local.test.mjs` (cifras a mano: 2 arrendadores, 1.300 de base, 247 retenidos) |
+| el 303: «alquiler» en `CATEGORIAS_CORRIENTES` | `tests/scrum1066e-alquiler-de-local.test.mjs` (600 + 126 → 28/29) |
+| ningún esquema, ninguna emisión | el diff no toca `prisma/` ni `invoicing/` |
+| en yaqu.app | NO HECHO: no hay pantalla que lo pinte (1066c lo dejó sin ruta) |
+
+## Lo que se corrió, con su población
+
+- **Rojo primero:** test nuevo sobre el código de `main` → 8 tests, 1 pass, 7 fail.
+- **Verde:** `scrum1066e` + `scrum1066c` + `scrum1063b` → 27 tests, 27 pass, 0 fail, 0 skipped.
+- **Mutación:** las 17 declaraciones de `scrum1066e` (7) y `scrum1066c` (10) → 17 vivas, 0 mudas, 0 ciegas. Con un conductor temporal que lee las declaraciones con `mutacionesDeclaradas` de la casa, exige que caiga el caso de su `cae` y restaura por bytes; su control sembrado (una mutación de un comentario) salió MUDA, como tenía que salir. La pasada entera de `npm run meta:mutaciones` **no la corrí**: en 1066c la mató la máquina por memoria.
+- La mutación de `scrum1066c` que apuntaba a `TIPOS_115` pasa a la línea que decide ahora (`a115`), con la misma idea: clasificar por el 19 %.
+- `tsc` con tipos: 17 errores, **ninguno en `fiscal/`** (`quotes*`, `merchantAdmin`: cliente Prisma compartido; árbol anidado sin `node_modules`, `dist/` con `--noCheck`).
+- **Guards de suite y de registro** (237, 976, 824, 836, 419, 702, 262, 267, 273, 1294, 921c, 854, 622, 745, 1387, 1185, 850 + los dos de retenciones): 19 ficheros, 179 tests, 177 pass, 2 fail en la primera pasada. Los dos eran el mismo: mi línea `A9:` citaba media cicatriz (la frase es la línea entera hasta la flecha) y `scrum976` cae porque `guards:entrada` incluye 1294. Corregida la cita, la repetición (los mismos 19 + `scrum1063b`): **20 ficheros, 188 tests, 188 pass, 0 fail, 0 skipped, 0 cancelled** (TAP a fichero fuera del árbol, 101.986 B; 188 líneas `ok` ancladas al inicio, 0 `not ok`).
+
+## Mis errores
+
+- La ruta `GET /admin/expenses/categories` del ticket SCRUM-1588 la escribí antes de leer dónde se monta; la leí después (`app.ts:583` + `expenses.routes.ts:81`) y es cierta. Va a mi cicatriz.
+- Mi primera línea `A9:` citaba sólo un trozo de la cicatriz y `scrum1294` la tumbó: lo vi en local, antes de empujar.

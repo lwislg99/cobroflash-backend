@@ -4,6 +4,8 @@
 // hechas a mano por perceptor. Decisión A del orquestador (22-oct-2026): 15 % y 7 % → 111
 // (actividades económicas, dinerarios); el 19 % y cualquier otro tipo, SIN CLASIFICAR; el 115 sale
 // a cero con su motivo porque ningún dato dice «alquiler». Procedencia de las casillas: `casillas.ts`.
+// SCRUM-1066e: ese dato ya existe (la categoría `alquiler`); estos gastos no la llevan, así que lo
+// de aquí sigue valiendo para ellos. Lo que la lleva: `tests/scrum1066e-alquiler-de-local.test.mjs`.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -14,8 +16,10 @@ const { leerBorradorRetenciones } = await import('../dist/modules/fiscal/retenci
 
 /** Lo que este test tiene que tumbar (SCRUM-1387: la red de la casa, `npm run meta:mutaciones`). */
 export const MUTACIONES_QUE_ME_TUMBAN = [
-  { fichero: 'src/modules/fiscal/retenciones/retencionesPracticadas.ts', de: 'export const TIPOS_115: ReadonlySet<number> = new Set<number>();',
-    a: 'export const TIPOS_115: ReadonlySet<number> = new Set<number>([19]);',
+  // SCRUM-1066e: `TIPOS_115` se fue (el 115 lo decide la categoría); la mutación es la misma idea
+  // —clasificar por el 19 %— sobre la línea que decide ahora.
+  { fichero: 'src/modules/fiscal/retenciones/retencionesPracticadas.ts', de: 'const a115 = g.category === CATEGORIA_ALQUILER;',
+    a: 'const a115 = tipo === 19 || g.category === CATEGORIA_ALQUILER;',
     cae: 'SCRUM-1066c · el alquiler del local (19 %) NO entra en el 115' },
   { fichero: 'src/modules/fiscal/retenciones/retencionesPracticadas.ts', de: '    if (g.merchantId !== params.merchantId) {', a: '    if (false) {',
     cae: 'SCRUM-1066c · 🔴 regla 2' },
