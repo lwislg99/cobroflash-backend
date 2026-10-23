@@ -92,3 +92,55 @@ Los 14 ficheros de `tests/` que nombran `dos-equipos`, `carriles` o `_sin-fila-d
   `.claude/settings.json`, `src/`, ninguna base ni ningún workflow.
 - La fila del cotejo (J5 por el criterio) la decide el orquestador de Javier.
 - En el navegador no hay nada que ver: es una tabla de carriles.
+
+## SCRUM-1556b · La fila J5 del cotejo
+
+**Medido contra:** `origin/main` = `7fa745dc20865ec9a66f08a04c52ee2b2958fd74` · 2026-10-23T10:45:19Z (hora de GitHub, cabecera `Date:`)
+
+A9: aviso → cicatriz J5 «Puse en la primera celda de una fila de §3 una carpeta entre comillas invertidas como explicación, y el lector la convirtió en regla: `docs/master/evidencias/**` → J5, las evidencias de los dos equipos; `carriles.mjs comprobar` dio IGUAL y sólo lo vio leer el diff de `.claude/carriles.json`» — no se pudo comprobar: que una ruta de la primera celda sea la que se quiere reclamar es intención de quien escribe, y ningún guard sabe qué fila quería
+
+23-oct-2026 · **J5** (sesión `jv-j5aa`, equipo de Javier), por encargo del orquestador (`cobroflash-backend-62`).
+[Escrito por J5. El ticket se leyó entero en Jira: descripción y sus cuatro comentarios, hasta c.20467.]
+
+**Carril a mano** (SCRUM-1506). El hook de arranque dijo «SIN IDENTIDAD». La decisión es la del orquestador:
+el cotejo es **J5** porque lo creó SCRUM-1500, y en Jira SCRUM-1500 lleva `area-j5` (leído hoy). El visto de la
+S0 para escribir nuestras filas es el mismo de la fila J3 (c.19641). No se toca ninguna otra fila de §3.
+
+### PASO 0
+
+- `git log origin/main --grep=1556`: los tres commits de #2705 (la fila J3) y el PR #1556, ajeno. Nada del cotejo.
+- PR con head `scrum-1556*`: sólo #2705, MERGED. `ls-remote` anclado a `refs/heads/scrum-0*1556[a-z]?-`: vacío.
+- Por contenido: `dos-equipos.md` sólo nombra el cotejo en la NOTA de la fila J3 («su fila la decide el
+  orquestador de Javier»), que el lector no lee como ruta.
+
+### Antes y después (`node scripts/carriles.mjs de …`)
+
+| ruta | antes (`7fa745dc`) | después |
+|---|---|---|
+| `docs/master/evidencias/scrum1500/cotejo.cjs` | `sin fila en §3: nadie lo reclama` | `J5 (puesto) · dos-equipos.md:189` |
+| `scripts/guards-entrada.mjs`, `tests/_censo-por-posicion.mjs` | `J3 (puesto) · :188` | igual (control positivo: la fila J3 no se mueve) |
+| `docs/master/evidencias/scrum1500c/cotejo-once.cjs`, `docs/master/evidencias/SCRUM-1542/g-cotejo.mjs` | `sin fila` | `sin fila` (control negativo: la fila reclama un fichero, no la carpeta) |
+
+Población (medida en un árbol limpio de `7fa745dc` y en el mío): las filas de §3 pasan de 72 a **73**, sobre
+7.101 ficheros; las reglas pasan de 191 a **192** y las que tienen
+dueño, de 171 a **172**: entra exactamente una. `comprobar` = `IGUAL a la tabla`. `.claude/rules/carril-j5.md`
+gana una sola línea, la del fichero. `scripts/_sin-fila-declarados.json` no cambia: su censo mira `scripts/`.
+
+### Mi error, cazado antes del commit
+
+La primera versión de la fila llevaba en su primera celda «de los cotejos de `docs/master/evidencias/`», como
+explicación. El lector (`rutasDeCelda` en `scripts/_carriles.mjs`) toma toda ruta entre comillas invertidas
+de esa celda, y una que acaba en `/` es una carpeta: salió una segunda regla, `docs/master/evidencias/**` → J5,
+que le habría dado a J5 las evidencias de los dos equipos (`cotejo-once.cjs` contestaba ya J5).
+**`comprobar` dio IGUAL**, porque comprueba que lo generado casa con la tabla, no que la tabla diga lo que se
+quería. Lo vi leyendo el diff de `.claude/carriles.json`. Arreglado sin comillas; cicatriz J5 en este PR.
+
+### Mutaciones (con el código quieto)
+
+Sobre el commit `420166ab`, y restauradas con `git checkout` (después, `comprobar` = IGUAL y el cotejo, J5):
+
+- **M1:** el dueño pasa a «**J5** (cotejo)» → `de` del cotejo da `SIN CERRADURA` y `comprobar` da `DISTINTO de la
+  tabla: .claude/carriles.json, .claude/rules/carril-j5.md`.
+- **M2:** vuelve la carpeta entre comillas a la primera celda y se regenera → `cotejo-once.cjs` contesta
+  `J5 · patrón docs/master/evidencias/**` y `comprobar` sigue en **IGUAL**: es el error de arriba, reproducido.
+  Lo caza el control negativo (`de` de un hermano), no el guard.
