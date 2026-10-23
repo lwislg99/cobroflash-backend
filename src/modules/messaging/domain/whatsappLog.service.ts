@@ -5,6 +5,7 @@
 import { prisma } from '../../../core/db/prisma';
 import { normalizePhone } from '../../../core/utils/utils';
 import { zonaDelMerchant, diaNaturalEn, mesNaturalEn, inicioDelDiaEn } from '../../../core/zonaDelMerchant';
+import { WA_TEMPLATES } from '../../../integrations/whatsappTemplates';
 
 // Coste estimado por plantilla Utility en España (tarifas Meta 2026, master J1 ~0,023 €).
 // Los service messages (dentro de ventana 24h) son gratis.
@@ -85,9 +86,19 @@ export async function recordWaMessage(input: RecordWaMessageInput): Promise<void
 // El espacio del cerrojo es propio: 1748, 1749 y 1750 son de la emisión y no se comparten.
 const TOPE_WA_LOCK_NS = 1751;
 
+// ── SCRUM-1596b · Los avisos al PROFESIONAL tienen su tope, y no gastan el de los clientes ──────
+// Decisión del fundador (SCRUM-1596 c.20602, «Tope propio, fuera del cupo»): la plantilla
+// `merchant_alert_es` va al profesional, no a un cliente. Medido en c.20601: compartía el cupo de
+// comercio, y con 99 gastadas el aviso se llevaba la última y la siguiente al cliente ya no salía.
+// Ahora cuenta sólo contra los suyos (30 por comercio y día) y el cupo de comercio no la cuenta.
+// El que no cabe se pierde y queda anotado como `daily_cap`. Sin esquema: se cuenta por el nombre.
+// Los avisos por texto (ventana abierta) no pasan por aquí: siguen gastando 0.
+export const TOPE_AVISOS_AL_PROFESIONAL = 30;
+const PLANTILLA_AVISO_AL_PROFESIONAL = WA_TEMPLATES.merchantAlert;
+
 export type ReservaDePlantilla =
   | { ok: true; id: number }
-  | { ok: false; reason: 'daily_cap' | 'customer_daily_cap'; cuenta: number };
+  | { ok: false; reason: 'daily_cap' | 'customer_daily_cap'; cuenta: number; tope: number };
 
 /**
  * Pregunta los dos topes y, si cabe, deja la fila apuntada en `queued`. Todo bajo el cerrojo del
@@ -134,13 +145,29 @@ export async function reservarPlantilla(db: ClienteDeLaBase, input: {
 
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(${TOPE_WA_LOCK_NS}::int, ${input.merchantId}::int)`;
 
-      const sentToday = await tx.whatsAppMessage.count({ where: cuentaParaElTope });
-      if (sentToday >= input.topeComercio) return { ok: false as const, reason: 'daily_cap' as const, cuenta: sentToday };
+      if (input.templateName === PLANTILLA_AVISO_AL_PROFESIONAL) {
+        const avisosHoy = await tx.whatsAppMessage.count({
+          where: { ...cuentaParaElTope, templateName: PLANTILLA_AVISO_AL_PROFESIONAL },
+        });
+        if (avisosHoy >= TOPE_AVISOS_AL_PROFESIONAL) {
+          return { ok: false as const, reason: 'daily_cap' as const, cuenta: avisosHoy, tope: TOPE_AVISOS_AL_PROFESIONAL };
+        }
+      } else {
+        // Las filas sin nombre SÍ cuentan: `{ not }` a secas las dejaría fuera en SQL (NULL <> x no es verdad).
+        const sinLosAvisos = {
+          ...cuentaParaElTope,
+          AND: [{ OR: [{ templateName: null }, { templateName: { not: PLANTILLA_AVISO_AL_PROFESIONAL } }] }],
+        };
+        const sentToday = await tx.whatsAppMessage.count({ where: sinLosAvisos });
+        if (sentToday >= input.topeComercio) {
+          return { ok: false as const, reason: 'daily_cap' as const, cuenta: sentToday, tope: input.topeComercio };
+        }
 
-      if (input.customerId) {
-        const toCustomerToday = await tx.whatsAppMessage.count({ where: { ...cuentaParaElTope, customerId: input.customerId } });
-        if (toCustomerToday >= input.topeCliente) {
-          return { ok: false as const, reason: 'customer_daily_cap' as const, cuenta: toCustomerToday };
+        if (input.customerId) {
+          const toCustomerToday = await tx.whatsAppMessage.count({ where: { ...sinLosAvisos, customerId: input.customerId } });
+          if (toCustomerToday >= input.topeCliente) {
+            return { ok: false as const, reason: 'customer_daily_cap' as const, cuenta: toCustomerToday, tope: input.topeCliente };
+          }
         }
       }
 
