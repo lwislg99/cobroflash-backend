@@ -1,0 +1,23 @@
+[
+ {
+  "sha": "207a66186002050f59266214d2a0162c496a3a26",
+  "leido": true,
+  "estados": [
+   {
+    "context": "comfortable-nourishment - cobroflash-backend",
+    "state": "success",
+    "description": "Success - yaqu.app"
+   },
+   {
+    "context": "comfortable-nourishment - yaqu-staging",
+    "state": "success",
+    "description": "Success - yaqu-staging-production.up.railway.app"
+   },
+   {
+    "context": "comfortable-nourishment - guard-acreditacion",
+    "state": "failure",
+    "description": "Deployment failed"
+   }
+  ]
+ }
+]
