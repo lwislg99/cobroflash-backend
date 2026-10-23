@@ -679,9 +679,17 @@ M va a **SCRUM-1585** (abierto por esta sesión, enlazado). Diseño de J6f en el
 ## ② Qué NO entra
 
 M (SCRUM-1585); el camino E de 1102g §④ (país desde Configuración); B, C y D de 1102g §① (V cubre B y C
-sólo si alguien lo lanza). Ningún texto en pantalla: los literales nuevos sólo los ve el fundador
-(su terminal y el correo de `AVISO_ACREDITACION_EMAIL_DESTINO`); se le mandaron al orquestador antes del
-empujón. Sin esquema, sin ALTER, sin sellado ni XML.
+sólo si alguien lo lanza). Sin esquema, sin ALTER, sin sellado ni XML.
+
+**Ningún texto en pantalla.** Los literales nuevos sólo los ve el fundador: su terminal al lanzar
+`cambiar-flag-fiscal.mjs` o el guard de 1097, y el correo de `AVISO_ACREDITACION_EMAIL_DESTINO`. Ni un
+merchant ni un cliente final. El orquestador (`cobroflash-backend-62`, por mensaje del 23-oct) confirmó
+que eso es texto interno y no cae en la regla 39. Para que el fundador los vea, son éstos:
+
+- `sii_declarado`: «Este merchant ha declarado que lleva los libros de IVA por el SII: no se enciende INVOICING_ES_ENABLED (RRSIF art. 3.3, SCRUM-1102).»
+- `sii_no_consta`: «Este merchant no ha contestado si lleva los libros de IVA por el SII («No consta»): no se enciende INVOICING_ES_ENABLED hasta que conteste «No» (SCRUM-1102).»
+- guion, antes de cambiar: «SII declarado: Sí|No|No consta · domicilio foral declarado: Sí|No|No consta (no bloquea; pendiente del asesor, SCRUM-1264)»
+- guard y correo, en un HALLAZGO: «SII declarado (llevaLibrosPorSii=true): id …» · «SII sin contestar (No consta): id …» · «domicilio foral declarado, pendiente del asesor (SCRUM-1264), no bloquea: id …»
 
 ## ③ Cómo se midió
 
@@ -692,8 +700,16 @@ empujón. Sin esquema, sin ALTER, sin sellado ni XML.
 - `tests/scrum218-flag-fiscal-auditado.test.mjs`: su doble gana `llevaLibrosPorSii: false`. Sin eso,
   la puerta se niega antes de lo que ese test prueba (§⑦.3 de 1102g lo predijo). Es el contrato nuevo,
   no un ajuste del guard: sus aserciones no cambian.
-- Dirigida: el test nuevo + 218, 1097, 1109, 1101 y 1102f → 74 de 74. Guards de suite y de registro,
-  en la entrega de Jira.
+- Guards de suite y de registro (113, 1294, 237, 267, 273, 419, 622, 812, 824, 824b, 836, 921c, 976) +
+  los de 218/1097/1101/1109/711/411 → 218 casos, 2 rojos MÍOS (la frase A9 no era la cicatriz entera;
+  976 en cascada), corregidos: 48 de 48 al re-correr los de registro. Ese rojo hizo de control positivo
+  del 1294.
+- Dirigida de `tests:que-cubren` sobre los 4 ficheros: 358 ficheros, 3.368 casos = 3.358 pasan +
+  5 caen + 5 saltan. Uno era MÍO: `scrum1415` (dos `test()` con nombre construido en un bucle);
+  reescritos con `casosEscritos`, verde. Los otros 4 (`scrum1298b` ×2, `scrum351`, `scrum476`) miden la
+  topología del árbol (hooks del árbol principal, `node_modules` propio), y este worktree anidado no
+  tiene `node_modules`: los atribuyo al entorno. **No los he corrido sobre `main` en este árbol**, así que
+  es atribución por tema, no medición; el obligatorio de CI lo zanja.
 
 ## ④ Mis errores
 
@@ -701,6 +717,7 @@ empujón. Sin esquema, sin ALTER, sin sellado ni XML.
   lo vio (con la ruta literal sí lo bloqueó, después). Lo restauré de una copia y comprobé el diff.
   Y aquel «rojo» era CIEGO: `tsc` no estaba en el árbol (exit 127), no había `dist/`. Lo vi leyendo la
   traza, no por un contador. El rojo bueno es la mutación M1.
+- Escribí dos casos en bucle con nombre construido; lo cazó `scrum1415` en la dirigida, no yo.
 
 ## ⑤ Sin medir
 

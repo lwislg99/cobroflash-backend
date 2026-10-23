@@ -11,6 +11,7 @@
 // con «No» enciende y escribe su fila.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const { cambiarFlagFiscal, ErrorCambioFlag } = await import('../dist/modules/system/domain/flagFiscal.service.js');
 const { medirAcreditacion, declaradoPorAcreditados, lineasDeclarado } = await import('../scripts/guard-acreditacion-invoicing-es.mjs');
@@ -61,28 +62,36 @@ test('SCRUM-1102h · W · el select pide las dos columnas (sin ellas, «No» lle
   assert.equal(registro.selects[0].domicilioFiscalForal, true);
 });
 
-for (const [caso, sii, codigo] of [
-  ['«Sí»', true, 'sii_declarado'],
-  ['«No consta» (NULL)', null, 'sii_no_consta'],
-  ['sin la columna (undefined)', 'ausente', 'sii_no_consta'],
-]) {
-  test(`SCRUM-1102h · W · con el SII en ${caso} NO se enciende: ${codigo}, sin update y sin fila`, async () => {
-    const { cliente, registro } = clienteFalso(MERCHANT(sii));
-    await assert.rejects(
-      () => cambiarFlagFiscal(pedir(), cliente),
-      (e) => e instanceof ErrorCambioFlag && e.codigo === codigo,
-    );
-    assert.equal(registro.updates.length, 0, '🔴 se encendió la facturación a quien no ha dicho «No» al SII');
-    assert.equal(registro.auditorias.length, 0);
-  });
+const NEGATIVAS = [
+  { caso: '«Sí»', sii: true, codigo: 'sii_declarado' },
+  { caso: '«No consta» (NULL)', sii: null, codigo: 'sii_no_consta' },
+  { caso: 'sin la columna (undefined)', sii: 'ausente', codigo: 'sii_no_consta' },
+];
 
-  test(`SCRUM-1102h · W · con el SII en ${caso} APAGAR sí se puede`, async () => {
-    const { cliente, registro } = clienteFalso(MERCHANT(sii, null, { INVOICING_ES_ENABLED: true }));
-    const r = await cambiarFlagFiscal(pedir({ valorNuevo: false }), cliente);
-    assert.deepEqual(r, { anterior: true, nuevo: false });
-    assert.equal(registro.updates.length, 1);
-  });
-}
+const noEnciende = casosEscritos(NEGATIVAS, (f) => `SCRUM-1102h · W · con el SII en ${f.caso} NO se enciende: ${f.codigo}, sin update y sin fila`, async (f) => {
+  const { cliente, registro } = clienteFalso(MERCHANT(f.sii));
+  await assert.rejects(
+    () => cambiarFlagFiscal(pedir(), cliente),
+    (e) => e instanceof ErrorCambioFlag && e.codigo === f.codigo,
+  );
+  assert.equal(registro.updates.length, 0, '🔴 se encendió la facturación a quien no ha dicho «No» al SII');
+  assert.equal(registro.auditorias.length, 0);
+});
+test('SCRUM-1102h · W · con el SII en «Sí» NO se enciende: sii_declarado, sin update y sin fila', noEnciende(0));
+test('SCRUM-1102h · W · con el SII en «No consta» (NULL) NO se enciende: sii_no_consta, sin update y sin fila', noEnciende(1));
+test('SCRUM-1102h · W · con el SII en sin la columna (undefined) NO se enciende: sii_no_consta, sin update y sin fila', noEnciende(2));
+noEnciende.todos();
+
+const apaga = casosEscritos(NEGATIVAS, (f) => `SCRUM-1102h · W · con el SII en ${f.caso} APAGAR sí se puede`, async (f) => {
+  const { cliente, registro } = clienteFalso(MERCHANT(f.sii, null, { INVOICING_ES_ENABLED: true }));
+  const r = await cambiarFlagFiscal(pedir({ valorNuevo: false }), cliente);
+  assert.deepEqual(r, { anterior: true, nuevo: false });
+  assert.equal(registro.updates.length, 1);
+});
+test('SCRUM-1102h · W · con el SII en «Sí» APAGAR sí se puede', apaga(0));
+test('SCRUM-1102h · W · con el SII en «No consta» (NULL) APAGAR sí se puede', apaga(1));
+test('SCRUM-1102h · W · con el SII en sin la columna (undefined) APAGAR sí se puede', apaga(2));
+apaga.todos();
 
 test('SCRUM-1102h · W · SIF_ENABLED no la gobierna esta puerta', async () => {
   const { cliente, registro } = clienteFalso(MERCHANT(true));
