@@ -48,15 +48,11 @@ const DIR = path.join(RAIZ, 'tests');
  * SI ARREGLAS UNO, quítalo de aquí en el mismo commit. El test de abajo lo exige.
  */
 const CON_EL_PATRON_YA = [
-  'pdfs.test.mjs',
   'scrum178-emision-manual.test.mjs',
-  'scrum221-export-fiscal-cero-bytes.test.mjs',
   // 🔴 `scrum329-legal-pagina-publica.test.mjs` SALE DE AQUÍ (SCRUM-822, 8-sep-2026). Era el
   // «segundo que aborta» que esta lista se dejó anotado como condición para reabrirse: 24 de 24
   // instancias en paralelo caían con `fetch failed`, y su rojo tenía forma de 404, así que acusó
   // a la landing y se abrió un Highest contra un sistema sano. Arreglado con este mismo patrón.
-  'scrum74-recibo-token.test.mjs',
-  'scrum82-zip-verifactu.test.mjs',
   'scrum85-pay-routes-token.test.mjs',
   // ── SCRUM-1218b (21-oct-2026): NO son ficheros nuevos con el patrón: son los que el censo NO VEÍA.
   // 22 salieron al arreglar sus dos ciegos (el `listen(0, host, cb)` y el `fetch` a través de una
@@ -71,12 +67,11 @@ const CON_EL_PATRON_YA = [
   // 94), medidos con el turno sobre la base de pruebas del carril: la lista baja nueve más.
   // SCRUM-1218f (23-oct-2026): seis más (scrum127, 170, 171a, 73, 90 y tenancy-permisos), con el mismo
   // banco y el mismo turno: de 20 a 14.
+  // SCRUM-1218g (23-oct-2026): los seis que leen el cuerpo con `arrayBuffer()` (pdfs, scrum221, 74, 82,
+  // 25-export-zip y 25-exports) y scrum148, con el ayudante que también da `arrayBuffer`: de 14 a 7.
   'scrum1188d-tiers-tambien-se-vacia.test.mjs',
-  'scrum148-filtro-por-miembro.test.mjs',
   'scrum1489-la-busqueda-recorta-al-tecnico.test.mjs',
   'scrum17-recapitulativa.test.mjs',
-  'scrum25-export-zip.test.mjs',
-  'scrum25-exports.test.mjs',
   'scrum814-carrera-del-tramo.gated.test.mjs',
   'scrum912-leer-ticket-gasto.test.mjs',
 ];
