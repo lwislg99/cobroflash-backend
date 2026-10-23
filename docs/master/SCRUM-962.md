@@ -375,7 +375,7 @@ El `select` «IVA %» de los ajustes de la línea (21,8 px), con móvil emulado 
 **Skill UI:** cargada (`yaqu-premium-ui`). **Microcopy:** ninguna.
 **Rama:** `scrum-962g-prod-contra-banco`, sobre `origin/main` `d45b319f1`.
 
-A9: «control» no es «control de lo que creo». En Albaranes llamé controles a 700 y 768 porque daban 0 de desborde, y eran CIEGOS: por debajo de 769 la tabla es `display:block` con su propio scroll, y mi medidor mira el de `.table-scroll`. Lo destapó una captura, no el número. La lección va en el medidor: un control negativo también tiene que poder fallar, y uno que mira el contenedor equivocado no puede.
+A9: aviso → cicatriz S2 «Di por controles dos anchos de Albaranes que daban 0 de desborde y eran ciegos: el medidor miraba un contenedor que a ese ancho no es el que desborda; un control negativo que no puede fallar no es un control» — no se pudo comprobar: la sonda de Albaranes (`albaranes-tabla-medida.mjs`) vive fuera del repo; el caso, abajo en ④ y en «Propuesto»
 
 ### ① 962d en producción: VISTO (corrección al encargo: #2685 es 962d y está en `main` desde el 22-oct 11:20Z)
 
