@@ -192,6 +192,16 @@ Usa la firma vieja de los builders (`amountWithCurrency`), como dijo c.20634. **
 - PostgreSQL real: el doble de 1522b evalúa el filtro, y el `NULL` de `{ not }` lo modela él, no SQL.
 - yaqu.app: no lo he intentado; ver el «Hoy» con avisos exige que salgan plantillas reales.
 - El meta-guard entero en local: no lo he corrido; las dos mutaciones se midieron a mano sobre `dist/`.
+- **Suite entera local: SIN VEREDICTO.** La lancé una vez y la cortó mi `timeout` a los 570 s, sin terminar. Lo parcial
+  (8.190 `ok`, 10 `not ok`) lleva los mismos títulos que vio 1597a (1199, 1298b, 245, 351, 385); sus motivos **no los he
+  leído**. El orquestador dijo después que no se repitiera y que haga de suite el obligatorio.
+
+## Lo corrido
+
+39 ficheros de guards y vecinos (los de suite 237, 976, 824, 836, 419, 702, 700, 719, 411, 737 y 1415; los de registro
+267, 273, 1294, 921c y 1572; más 1387, los cuatro de 1339, 1522b, 1596b, 529, 530, 850, 850b, 1177, 747, 124, 180, 931,
+812, 723, 1185, 1480e y `whatsappTemplates`): **374 de 374**, 0 fallos, 0 saltados. Los de registro, otra vez tras el
+commit: 57 de 57.
 
 ## Errores propios
 
