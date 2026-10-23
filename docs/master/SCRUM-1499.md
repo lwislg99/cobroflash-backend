@@ -132,3 +132,61 @@ Firma del fundador: **c.20660** (los dos ✅). Texto: los DESPUÉS de **c.20654 
 - Sigue pendiente, aparte (c.20660): los comentarios de `prisma/schema.prisma` (`:1284`, `:1288`)
   siguen enumerando; pasarlos a punteros es regla 40 y lleva su propia firma. No se tocan.
 - Sin mirar: yaqu.app (es texto del máster, no se sirve). No transiciono (A13).
+## SCRUM-1499c · 23-oct: los comentarios del esquema de `WhatsAppMessage`, redactados como punteros (para firmar)
+
+**Medido contra:** `origin/main` = `6a38e5a238f80f6e8df7197507dc01359e076e06` · 2026-10-23T21:08:11Z (hora de GitHub)
+A9: aviso → cicatriz J5 «Tomé como control positivo de un banco un comentario que scrum475 comparaba en ese momento, y #2781 (SCRUM-1501) dejó de compararlo a mitad de la medición» — no se pudo comprobar: el positivo de un banco que vive en evidencias no lo vigila ningún guard; el banco de este tramo lleva ya un positivo sembrado que no depende del árbol (un cambio de tipo)
+
+Sesión J5 (`jv-j5af`, equipo de Javier), encargo del orquestador (`cobroflash-backend-62`). La
+redacción, para firmar, está en **SCRUM-1499 c.20687**. **`prisma/schema.prisma` no se ha tocado**
+(regla 40): este PR lleva sólo documentación y evidencias. Primera pasada sobre `2c45bf589aea`, antes
+de que entrara #2781 (SCRUM-1501, mergeado a las 21:01:13Z); la segunda, sobre la de arriba, con el
+mismo resultado.
+
+### Ⓖ Lo que se propone (copiado de c.20687)
+
+Sólo cambia la cola `//`. El código de la línea queda igual byte a byte y no se mueve ninguna línea.
+La forma es la ya firmada para el bot (`schema.prisma:1152`, SCRUM-1401 c.18780).
+
+- **③ `schema.prisma:1284`** · ANTES `  type         String // 'template' | 'service'` · DESPUÉS
+  `  type         String // valores CERRADOS (regla 27): los fija el máster, Parte L («WhatsAppMessage»)`
+- **④ `schema.prisma:1288`** · ANTES `  status String  @default("queued") // queued → sent → delivered → read | failed`
+  · DESPUÉS `  status String  @default("queued") // estados CERRADOS (regla 27): los fija el máster, Parte L («WhatsAppMessage»)`
+
+⚠️ **El ③ sólo es verdad cuando #2783 (SCRUM-1499b) esté en `main`**: hasta entonces la Parte L no
+recoge `type`. A las 21:12Z #2783 seguía abierto y con su obligatorio en rojo (run `40021837531`).
+
+### Ⓗ (a) Quién lee esos comentarios: nadie (medido)
+
+Banco: `evidencias/scrum1499/1499c-variantes-del-esquema.mjs` reescribe colas en la copia de trabajo
+de un árbol desechable fijado a `main`. `1499c-correr-lectores.mjs` corre los **214** tests lectores
+del esquema (`1499c-lectores.txt`, de 1.485 `.test.mjs`) y restaura el fichero. Las salidas
+`1499c-salida-*.txt` las compara caso a caso con la base:
+
+| variante | casos | pasan | caen | saltan | contra la base |
+|---|---|---|---|---|---|
+| `ninguna` | 1.726 | 1.608 | 6 | 112 | — |
+| `propuesta` (③ + ④) | 1.726 | 1.608 | 6 | 112 | idéntica |
+| `control475tras1501` (comentario de `EmailMessage.kind`) | 1.726 | 1.608 | 6 | 112 | idéntica |
+| `semillaTipo` (`EmailMessage.kind` `String`→`Int`, sembrado) | 1.726 | 1.605 | 9 | 112 | 3 caen (`1499c-salida-diff-semillaTipo.txt`) |
+
+Los 6 de la base son del entorno: 3 de SCRUM-385 y 3 de SCRUM-475 (SQL) piden el CLI de Prisma en
+el `node_modules` del propio árbol. Lo que miden (que el SQL no cambia) lo cubre Ⓘ con el mismo CLI.
+El hook `guard-dangerous.mjs` sólo nombra el esquema por `db pull`, y `ci.yml` lo pasa por `migrate
+diff`. Sobre `2c45bf589aea`, el comentario de `EmailMessage` sí tumbaba scrum475 «línea a línea», y
+la propuesta tampoco movía nada.
+
+### Ⓘ (b) `preview-migracion --desde`: sin cambios
+
+`1499c-preview-copias.mjs` llama a `previewMigracion({ desde })` del script de la casa, con el CLI
+6.18.0 por ruta y sobre copias fuera del árbol (`1499c-salida-preview.txt`): `main`→`main` y
+`main`→propuesta dan `sin_cambios` (control de la herramienta: 33 tablas). La semilla
+`semilla1499c String?` da `con_cambios` con su `ADD COLUMN`.
+
+### Ⓙ Lo que no se ha medido
+
+- Los 112 saltados (gateados) no se han corrido, ni la tanda completa: sólo los 214 lectores.
+- `CODEOWNERS` asigna `/prisma/schema.prisma` a `@lwislg99`. Si la protección de `main` exige su
+  revisión, sin mirar.
+- De paso, sin tocar: `evidencias/scrum1342/censo-salida.txt:16-17` copia los dos comentarios viejos.
+  Es una evidencia fechada.

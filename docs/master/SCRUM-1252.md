@@ -267,3 +267,109 @@ Cada una sobre el árbol comiteado, recompilando, y restaurada después (`git st
   La lista se leyó después entera: ninguno de mis ficheros está en ella.
 - Medí primero sobre el árbol heredado, que iba 5 ficheros de `src/` por detrás de `main`. Lo vi al
   comparar los dos y repetí la medición del camino de emisión en un árbol nacido de `origin/main`.
+
+## Anexo SCRUM-1252c · punto B: qué es una `F1` con número `J-` en cada sitio
+
+**Medido contra:** `origin/main` = `2c45bf589aeae007eb12ed388b3e0f4d2d8d98ed` · 2026-10-23T20:59:45Z (hora de GitHub, `gh api -i zen`)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1252/c-banco-f1-con-j.cjs.txt`
+
+Lo que caza ese banco, y por qué existe: mi primera pasada clasificó el correo y el PDF como «ni
+factura ni justificante» porque comparaba textos que llevan dentro el número de cada documento; lo vi
+leyendo la salida, no por un testigo. El banco compara ahora con el número sustituido, y lleva su
+propio control negativo (`SABOTEO=1`: el justificante de control pasa a ser una factura más, y las 12
+filas tienen que salir CIEGAS; salen 12 de 12, `c-banco-salida-saboteo.txt`). Otro tropiezo, sin
+salir: la rama me llegó nombrada `scrum-1252b-…`, y `1252b` ya es el PR #2129; lo cazó el control de
+sufijo de A4 antes del primer empujón, y la rama es `scrum-1252c-f1-con-numero-j`.
+
+Sesión J1ay (`jv-j1ay`), 23-oct-2026, por encargo del orquestador de Javier
+(`cobroflash-backend-62`). **Sólo se mide y se propone.** No se toca `src/`, ni `public/`, ni el
+esquema, ni ningún texto. El camino de emisión se LEE y se LLAMA con un cliente falso (regla 38); no
+se modifica. El punto C (55 contra 2 filas) y el censo de los cinco son filas de producción: fuera.
+
+### ① Cómo se midió
+
+`dist/` compilado de este mismo árbol (`tsc --noCheck`, salida 0), cliente Prisma falso en memoria,
+ninguna base, y el directorio de trabajo en una carpeta temporal (lo que escriben el PDF y el correo
+cae allí, no en el árbol). Tres documentos: el del ticket (`type: 'F1'`, número `J-2026-0001`) y dos
+controles, una factura normal (`F1`, `F260001`) y un justificante (`JUST`, `J-2026-0002`). Una fila
+sólo vale si los dos controles dan cosas distintas. Salida entera: `c-banco-salida.txt`.
+
+**Población del banco: 12 filas · 3 la tratan como factura · 9 como justificante · 0 ciegas.**
+
+Los sitios que no se pueden llamar sin una ruta HTTP montada o un envío real se leyeron: van
+marcados «leído» y su predicado es el que dice la línea citada, sin ejecutar.
+
+### ② La tabla: qué ve cada uno
+
+| sitio | quién lo ve | decide por | la `F1` con `J-` sale como | cómo |
+|---|---|---|---|---|
+| PDF (`pdf.service.ts:322`, título en `:410`) | cliente | tipo | **factura**, con su número y **con QR** | ejecutado |
+| libro registro y su ZIP (`libroRegistro.repo.ts:95`) | profesional, gestoría | tipo | **factura** | ejecutado |
+| lista de Facturas, consulta del servidor (`invoiceAdmin.ts:44`) | — | tipo | **dentro** | ejecutado |
+| lista de Facturas, filtro del navegador (`invoicesView.js:79`, vía `tipoDeFactura`) | profesional | número | **no se pinta** | ejecutado (el fichero real, en `vm`) |
+| pila del Trabajo y bloque DINERO (`jobDocsReparto.js:36`, `jobRailBlocks.js:157`) | profesional | número | justificante | ejecutado |
+| detalle del documento en el panel (`invoiceDetailView.js:91`, `:135`, `:540`) | profesional | número | justificante (título y distintivo) | leído |
+| correo al cliente: asunto y cuerpo (`email.service.ts:39`, `:91`) | cliente | número | justificante, **con el PDF de «factura» adjunto** | ejecutado (asunto) |
+| página pública del recibo (`receipt.routes.ts:106`, `:195`) | cliente | tipo **o** número | justificante, y su botón descarga el PDF de «factura» | leído |
+| WhatsApp del envío y concepto del cobro (`invoiceWhatsApp.service.ts:76`, `:102`) | cliente | número | justificante | leído |
+| recordatorios de pago (`invoiceReminder.service.ts:171`, `invoicesAdmin.routes.ts:796`) | cliente | número | justificante | leído |
+| páginas de pago y aviso de cobro (`payInvoice.routes.ts:48`, `psp.routes.ts:320`, `mpWebhook.routes.ts:216`) | cliente, profesional | número | justificante | leído |
+| portal del cliente (`customerPortal.routes.ts:427`, `:413`) | cliente | **nada** | factura (lo dice de todo documento, también de un `JUST`) | leído |
+| cadena de huellas (`portonDocumento.ts:84`, `selladoEstado.ts:75`) | — | número | **fuera** | ejecutado |
+| sellado y anulación VeriFactu (`verifactu.service.ts:252`, `:469`) | — | número | **rechazado**, 0 llamadas a base | ejecutado |
+| anular y rectificar (`invoicesAdmin.routes.ts:911`, `:1076`; `invoiceDetailView.js:694`) | profesional | número | no se anula ni se rectifica | leído |
+| des-pagar (`invoiceAdmin.ts:261`) | profesional | tipo **o** número | **se des-paga** (una `F1` normal, no) | ejecutado |
+| facturar o consolidar albaranes (`albaranes.routes.ts:1388`, `:1670`; `recapitulativa.service.ts:118`) | profesional | número | rechazado | leído |
+
+### ③ Lo que dice la tabla
+
+**a) La premisa del comentario 17451 sobre la lista de Facturas sólo es cierta a medias.** El
+servidor la mete (la consulta filtra por tipo), pero el navegador la vuelve a sacar con
+`tipoDeFactura`, que mira el número. **Hoy la `F1` con `J-` no se ve en la pantalla de Facturas.** Lo
+medido el 1-oct (§① de arriba) era la consulta del servidor, no la pantalla.
+
+**b) Al cliente le llegan las dos cosas en el mismo gesto.** El correo dice justificante y adjunta un
+PDF que dice factura; la página del recibo ofrece descargar el justificante y baja la factura; el
+portal la llama factura. No es un sitio equivocado: son dos criterios que se encuentran en el mismo
+envío.
+
+**c) Para la emisión es un justificante, y el PDF la imprime como factura.** No entra en la cadena,
+VeriFactu no la sella ni la anula, no se rectifica y se puede des-pagar; y su PDF sale con el rótulo
+de factura y con QR (en el camino real el QR lleva el `qrData` de la fila o, si está pendiente, el
+genérico `INV:…` de `lib/invoicing.ts:85`; sin `vfHash` no es un QR de la AEAT: leído, no ejecutado
+sobre ese camino). Un documento que el cliente recibe como factura sin registro de
+facturación es lo que la regla 24 no deja emitir en España antes de SIF-1. **Con el fundador
+diciendo que son facturas (17451), el defecto no es el rótulo del correo: es que una factura no tiene
+registro ni forma de corregirse.**
+
+**d) La población es histórica y no crece.** El generador `J-` no existe (SCRUM-1027, SCRUM-825) y
+`invoicing.service.ts:114` ya no fuerza `JUST`. Que hoy haya alguna en producción es el punto C, y no
+se ha medido.
+
+### ④ Las opciones, para el fundador
+
+No se elige ninguna y no se construye nada. Los literales que alguna necesitaría van en el comentario
+de Jira de esta entrega, para firmar allí; aquí sólo se nombra dónde irían.
+
+| opción | qué cambia | coste | toca emisión | texto nuevo |
+|---|---|---|---|---|
+| **A · el tipo manda** (lo que dijo 17451) | los sitios que deciden por número pasan a `esJustificante` fuera del camino de emisión: correo, recibo, WhatsApp, recordatorios, pago, panel, filtro del navegador | unos diez ficheros, con sus guards de microcopy; la `F1` con `J-` vuelve a la lista y se llama factura en todas partes | **no, y por eso queda a medias**: seguiría sin registro, sin anulación y sin R1. Meterla en la cadena es sellar hoy una factura antigua con un número fuera de serie: STOP (reglas 29 y 40) | ninguno: se usa la rama «factura» que ya existe en cada sitio |
+| **B · el número manda** | libro, lista del servidor y PDF pasan a mirar el número | tres sitios; tumba la decisión de 17451 y el criterio que fija `tests/scrum1232-libro-sin-justificantes.test.mjs` (caso de la `F1` con `J-`), que habría que cambiar por decisión, no por relajar el test (regla 41); el PDF de un documento ya emitido cambiaría de título al regenerarse (regla 29: STOP) | sí, por el PDF | ninguno: rótulos de justificante existentes |
+| **C · se marca como incoherente y no se toca nada más** | sólo el panel: la `F1` con `J-` vuelve a la lista de Facturas con un distintivo que dice qué es, y el detalle lo repite | dos ficheros del panel; el cliente sigue viendo las dos cosas | no | sí: el distintivo y su explicación (propuestos en Jira) |
+
+**Antes de cualquiera de las tres, el punto C:** si producción tiene cero `F1` con número `J-`, la
+opción más barata es no construir nada y dejarlo escrito; las tres cuestan más que el problema.
+
+### ⑤ Visto y no tocado
+
+- `email.service.ts:96`: el titular del correo concuerda en masculino con los dos rótulos; con el de
+  factura queda una concordancia de género mal. Es texto que ve el cliente (firma) y no es este
+  punto.
+- Nada de lo de arriba se ha tocado.
+
+### ⑥ Lo corrido
+
+- `tsc --noCheck` sobre el árbol, salida 0. Banco: 12 filas, 0 ciegas; con `SABOTEO=1`, 12 ciegas.
+- `git status` después de cada pasada: sólo los ficheros de este anexo.
+- Tests: no he corrido la tanda; este PR sólo lleva docs.

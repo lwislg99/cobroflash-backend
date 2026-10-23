@@ -198,3 +198,204 @@ Conclusión: **la propuesta sigue en pie.** Con ese matiz dicho.
 Una cosa más, **inferida y no medida**: si alguien corrige el nombre del plan en la suscripción desde
 Stripe, Stripe manda un `customer.subscription.updated` nuevo, con otro identificador, y ése sí entra y
 escribe el plan. El premio al referido y el correo de primer pago no salen por ese camino.
+
+# SCRUM-1402g · Qué hace hoy el webhook con una suscripción que llega SIN `metadata.plan` · carril J3 (su bloque en `stripe.routes.ts`, contenedor de J2) · SOLO MEDIR, sin código
+
+**Medido contra:** `origin/main` = `2c45bf589aeae007eb12ed388b3e0f4d2d8d98ed` · 2026-10-23T20:55:47Z
+
+A9: aviso → cicatriz J3 «Comparé dos versiones con una sonda cuya salida no podía distinguirlas: lo mismo habría salido si la copia de la rama no se hubiera cargado.» — no se pudo comprobar: es cómo monto una medición puntual fuera de la tanda; lo que queda es el control de versión dentro de `sonda-1402g.mjs`
+
+Sesión jv-j3aw (puesto J3), por encargo del orquestador `cobroflash-backend-62`. Responde a Ⓖ de arriba
+(«una suscripción pagada que llega SIN `metadata.plan` tampoco activa nada, y eso no lo dice nadie») y a
+lo que dejaron abierto los comentarios 20651 y 20663. **No toca `src/` ni ningún test.**
+
+## Cómo se ha medido
+
+`docs/master/evidencias/scrum1402/sonda-1402g.mjs`: el mismo banco que `tests/scrum1402-plan-inexistente-no-se-escribe.test.mjs`.
+El router de producción montado como en `src/app.ts`, el evento **firmado** con un HMAC local (no viaja nada
+a Stripe) y la base doblada con `tests/_envio-doblado.mjs`, que **no tiene estado**: se mide qué se
+ESCRIBE en la fila del merchant, no la fila después.
+
+**Población: 108 eventos por versión** — `checkout.session.completed` (modo suscripción),
+`customer.subscription.created` y `.updated` en 8 estados de Stripe (`active`, `trialing`, `past_due`,
+`unpaid`, `canceled`, `incomplete_expired`, `incomplete`, `paused`) y `customer.subscription.deleted`, cada
+uno con 6 metadatos: `plan=pro` (control), **sin plan**, **plan vacío**, **sin metadata**, `plan` sin
+`merchant_id` (control a cero) y un plan que no existe (control de versión).
+
+**Dos versiones:** `main` en el ancla y la punta de #2782 (1402e, `efce6a0e6e7e82bdf4d2cb58c463d96ab84b9846`,
+**sin mergear** al medir). La de 1402e se compiló sólo su `stripe.routes.ts` con `ts.transpileModule`; el
+método se validó antes contra el `dist/` de `main` (byte a byte idéntico al de `tsc --noCheck`).
+
+**Controles, en las dos versiones:** positivo **9 de 9** (`plan=pro` escribe `pro` en las 9 combinaciones que
+escriben un plan: el checkout y `created`/`updated` en `active`, `trialing`, `past_due` y `unpaid`) · a cero **0** (sin `merchant_id` no se escribe nada) · de versión **0 de 4 en
+`main` y 4 de 4 en 1402e** (plan que no existe + impago). Las dos salidas difieren en esas 4 filas y en
+ninguna más. Salidas: `sonda-1402g-main.txt` y `sonda-1402g-1402e.txt`, en la misma carpeta.
+
+## La tabla — con `merchant_id` y SIN plan (sin la clave, o vacía: dan lo mismo en las 18 puertas)
+
+| evento · estado en Stripe | qué escribe en `Merchant` | qué contesta a Stripe | registro `gateway_events` | aviso o log | estado de la Parte L en YaQu | se pierde en silencio |
+|---|---|---|---|---|---|---|
+| `checkout.session.completed` (control `pro`: `{stripeCustomerId, plan:'pro', subscriptionStatus:'active'}` + premio + correo) | **nada** | 200 `{"received":true}` | no lleva (va por el LRU en memoria) | **ninguno** | se queda en el que tenía (un alta nueva, en `trial`) mientras Stripe cobra: **`trial → active` no ocurre** | **sí**: la activación, el premio al referido y el correo de primer pago |
+| `sub.created` / `.updated` · `active`, `trialing` | **nada** | 200 | abre y marca `processedAt` (sin `lastError`) | **ninguno** | el que tenía; **la renovación no mueve `planExpiresAt`** ni guarda `stripeSubscriptionId` | **sí** |
+| `sub.created` / `.updated` · `past_due`, `unpaid` | **nada**, **también con 1402e** (medido: idéntico) | 200 | `processedAt` | **ninguno** | **`active → past_due` no ocurre**: no sale el banner de pago pendiente | **sí** — es el caso de 20651 sin plan, y 1402e no lo cubre (lo dice su c.20663) |
+| `sub.created` / `.updated` · `canceled`, `incomplete_expired` (control `pro`: `{plan:'trial', subscriptionStatus:'canceled', stripeSubscriptionId:null}`) | **nada** | 200 | `processedAt` | **ninguno** | **`active → canceled` no ocurre**: el merchant conserva el plan de pago y `subscriptionStatus:'active'` | **sí**, y en el sentido contrario: **YaQu sigue dando lo que ya no se paga** |
+| `sub.created` / `.updated` · `incomplete`, `paused` | nada (igual que con plan) | 200 | `processedAt` | **ninguno** — con plan sale el log «estado de suscripción sin mapeo directo»; sin plan, ni eso | el que tenía (igual que con plan) | sólo la línea de log |
+| `customer.subscription.deleted` | **`{plan:'trial', subscriptionStatus:'canceled', stripeSubscriptionId:null}`, igual que con plan** | 200 | `processedAt` | ninguno (tampoco con plan) | **coherente**: `→ canceled` | no |
+
+**Sin `metadata` del todo** (ni `merchant_id`): nada en **ninguna** de las 18 puertas, `deleted` incluida;
+200 y ningún aviso. Es lo mismo que el control a cero: sin `merchant_id` el webhook no sabe de quién es.
+
+**El porqué, leído en el código y no supuesto:** en `customer.subscription.created|updated` toda la
+máquina de estados, **la cancelación incluida**, cuelga de `if (Number.isInteger(merchantId) && planId)`
+(`src/modules/billing/app/routes/stripe.routes.ts:175` en el ancla), aunque la cancelación escribe el
+literal `trial` y no usa `planId`. `customer.subscription.deleted` sólo pide `merchant_id` (`:228`). En
+el checkout, la condición es `merchantId && planId && s.customer && planQueExiste(…)` (`:133`).
+
+## Lo que esto añade a Ⓖ
+
+1. **Ⓖ se queda corta:** no es sólo que «no activa nada». **Sin plan, tampoco se marca el impago ni se
+   aplica la cancelación que llega por `updated`.** De las cuatro transiciones de la Parte L que mueve el
+   webhook, sin plan sólo ocurre una: la cancelación por `deleted`.
+2. **Las 17 puertas que no escriben callan:** ni un `console.warn` ni un `console.log`. Lo contrario que
+   pidió el fundador para el plan que no existe (c.18019: «el rechazo tiene que ser RUIDOSO»).
+3. **Stripe no vuelve a intentarlo:** la respuesta es 200 y, en los cinco tipos con registro, la entrega
+   queda con `processedAt` y sin `lastError`. *Leído en el código, no medido:* una segunda entrega del
+   mismo evento se contesta «duplicate» sin trabajo (`stripe.routes.ts:96-98`), así que arreglar el código
+   después no recupera ese evento: haría falta uno nuevo.
+4. **1402e (#2782) no cambia nada de esto:** las 18 puertas sin plan dan lo mismo en las dos versiones.
+
+## Lo que NO se ha medido
+
+- **Si en la práctica llega alguna suscripción sin plan.** Nuestro checkout la pone siempre, en la sesión
+  y en la suscripción (`subscriptions.routes.ts`, `subMeta`, sección Ⓑ), y además guarda el
+  `stripeCustomerId` ANTES de mandar a Stripe. Sin plan sólo llega lo creado o editado a mano en el panel
+  o la API de Stripe. Qué hay hoy en ese panel no lo puedo medir: esta sesión no toca claves.
+- **Qué eventos manda Stripe de verdad en cada caso** (si una cancelación llega por `updated` con
+  `status: canceled`, por `deleted`, o por los dos). Inferido de la documentación de Stripe, no medido:
+  una baja al final del periodo suele llegar por `deleted`, que funciona; `incomplete_expired` llega por
+  `updated` y es un primer pago que nunca entró. Si eso es así, el hueco de la cancelación es más
+  estrecho de lo que dice la tabla; **no lo afirmo**.
+- **La fila después:** el doble de la base no tiene estado; «se queda con el que tenía» es «no se escribe
+  nada en su fila».
+- Nada en `yaqu.app`: provocarlo exigiría un evento de Stripe de verdad. No se hace.
+
+## La pregunta para el fundador (no elijo)
+
+> «Si llega de Stripe una suscripción de un merchant SIN el nombre del plan (sólo puede pasar si alguien
+> la crea o la edita a mano en Stripe), hoy YaQu no hace nada y no lo dice a nadie: no activa el plan
+> aunque pague, no marca el impago, y si se cancela le deja el plan de pago, salvo cuando Stripe borra la
+> suscripción del todo. ¿Qué hacemos?»
+
+- **A · Avisar y nada más.** Sigue sin escribir nada, pero cada evento sin plan deja una línea en el log
+  con el merchant y el evento, como el plan que no existe.
+- **B · Tratarla como un plan que no existe.** El plan no se toca y se avisa (c.18019), el impago se marca
+  (c.20651) y la cancelación se aplica: pasa a `trial`, igual que cuando Stripe la borra.
+- **C · Sólo la cancelación.** La cancelación se aplica siempre que venga el merchant, con plan o sin él
+  (lo que ya hace `deleted`); lo demás sigue como hoy, con aviso.
+
+Ninguna de las tres pide un estado ni un texto nuevos: `past_due`, `canceled` y `trial` ya están en la
+Parte L (`YAQU_MASTER.md`, línea de **Subscription**). Ninguna devuelve dinero.
+
+## Lo corrido
+
+| qué | resultado |
+|---|---|
+| `tsc --noCheck` del árbol en el ancla | salida vacía, código 0 |
+| control del método de compilación de 1402e: `transpileModule` de `stripe.routes.ts` de `main` contra el de `tsc` | idéntico byte a byte |
+| la sonda sobre `main` | 108 eventos · positivo 9/9 · cero 0 · versión 0/4 · MIDE · código 0 |
+| la sonda sobre la punta de 1402e | 108 eventos · positivo 9/9 · cero 0 · versión 4/4 · MIDE · código 0 |
+| `diff` de las dos salidas (sin la línea de cabecera ni la de controles) | 4 filas distintas, las 4 del control de versión |
+| guards de registro y de suite (`scrum1294`, `scrum267*`, `scrum525d*`, `scrum921*`, `scrum859*`, `scrum1306*`, `scrum273*`, `scrum710b*`) más `scrum1402`, con este tramo y la cicatriz dentro | 106 casos · 106 pasan · 0 caen · 0 saltan |
+| `npm run guards:entrada` | 15 guards · 170 casos · 0 caen |
+| los 5 de árbol entero (`scrum195`, `scrum414`, `scrum694`, `scrum710b`, `scrum737`) | 38 casos · 38 pasan · 0 caen · 0 saltan |
+
+**Sin correr:** la tanda completa y los gateados por base (no se ha cambiado ningún test ni nada de `src/`). La copia de
+`dist/` para 1402e se creó dentro del árbol y se borró en la misma orden; `git status` lo comprobó.
+# SCRUM-1402e · El impago de una suscripción con un plan que no existe se marca igual · carril J3 (su bloque en `stripe.routes.ts`, contenedor de J2)
+
+**Medido contra:** `origin/main` = `cc06e4a72a62accb2ca8c0115d1bf40ded968924` · 2026-10-23T20:36:12Z
+
+A9: comprobación → `tests/scrum1402e-impago-con-plan-desconocido.test.mjs`
+
+## La decisión
+
+SCRUM-1402, comentario **20651** (23-oct-2026), respuesta del fundador a la pregunta de Ⓔ.3: **«Marcar el
+impago»**. El impago se marca y sale el aviso de pago pendiente que ya existe, aunque el plan no se
+toque; el plan desconocido se sigue ignorando como hace la opción A (#2222). No cubre ningún texto nuevo
+ni ninguna transición de la Parte L que no exista.
+
+## El arreglo
+
+Un bloque de `src/modules/billing/app/routes/stripe.routes.ts`, la rama `past_due`/`unpaid` de
+`customer.subscription.updated|created` (marcada `// J3 · SCRUM-1402e`). Antes: si `planQueExiste` decía
+que no, no se escribía nada. Ahora se escribe siempre una vez, y con un plan desconocido la escritura es
+**exactamente** `{ subscriptionStatus: 'past_due' }`: ni `plan` ni `stripeSubscriptionId`.
+
+- **Estado:** `past_due` es el mismo que escribe hoy el impago con un plan conocido (A10.2, FSM de la
+  Parte L en el propio fichero). No nace ningún estado ni ninguna transición.
+- **Aviso:** el que ya existe. `/me` sirve `subscriptionStatus` de la fila del merchant (`src/app.ts`,
+  SCRUM-809b) y el panel pinta el banner cuando vale `past_due` (`public/dashboard/js/app.js`, «A10.2
+  (Parte L): past_due → banner»). Ningún texto nuevo; tampoco el `console.warn` del plan, que sale igual.
+- **Lo que no se toca:** las ramas activa y de cancelación, el checkout, la idempotencia, `entitlements.ts`,
+  `prisma/schema.prisma`, la emisión fiscal. El censo de efectos de SCRUM-815 no cambia: siguen siendo 5
+  `prisma.merchant.update` y 3 `planQueExiste` (la llamada se hace una vez y elige el `data`).
+
+## Rojo primero, por la ruta real
+
+El test nuevo monta el router como `src/app.ts` (`/webhooks/stripe`, `rawBody`, `router`) y le manda
+eventos firmados con un HMAC local; la base va doblada, nada viaja a Stripe. Sobre el código sin tocar
+(`b6dd5d1a8`): **6 casos · 4 pasan · 2 caen**. El que manda: **36 de 36** impagos con plan desconocido sin
+marcar (2 eventos × 2 estados × 9 valores). El otro, el de la regla 2, cae porque no había escritura que
+mirar. Salida en `docs/master/evidencias/scrum1402/rojo-antes-1402e.txt`.
+
+## Controles (en el mismo fichero)
+
+| control | qué mide | resultado |
+|---|---|---|
+| plan conocido + impago | 16 casos: `plan`, `past_due` y la suscripción, byte a byte como hoy, sin aviso | pasa antes y después |
+| plan desconocido sin impago (`active`, `trialing`) | 36 casos: no se escribe nada (el plan no cambia), un aviso; positivo con `pro` activo | pasa antes y después |
+| regla 2 | el impago de un merchant escribe sólo `where: { id }` de ese merchant, ninguna escritura masiva | cae antes (no había escritura), pasa después |
+| respuesta a Stripe | 200 y el mismo cuerpo (`{"received":true}`) que con un plan legítimo; el evento queda procesado, sin error | pasa antes y después |
+
+`tests/scrum1402-plan-inexistente-no-se-escribe.test.mjs` fijaba «el impago con plan desconocido no
+escribe NADA», que es justo lo que la decisión cambia. Se le ha cambiado esa aserción a lo que sigue
+siendo cierto —**no escribe el PLAN**— y su mutación de la puerta 3 pasa a ser la del defecto que guarda:
+que con un plan desconocido se escriba también el plan. Ese test no es un guard (no lo nombra ningún
+trinquete); lo cambio porque su propio enunciado lo pide la decisión de 2-oct, y la de 23-oct lo sustituye.
+
+## Mutaciones
+
+Sonda `docs/master/evidencias/scrum1402/mutar.mjs`, con un segundo argumento opcional para el test (sin él,
+como antes). Base sin mutar primero.
+
+- `scrum1402e`: **base 6 casos y 0 caen · 3 vivas · 0 mudas · 0 ciegas, de 3** (volver a no escribir nada;
+  escribir también la suscripción; dejar de escribir el plan legítimo). `mutaciones-1402e.txt`.
+- `scrum1402`, re-corrido tras el cambio: **8 vivas · 0 mudas · 0 ciegas, de 8**. `mutaciones-1402-tras-1402e.txt`.
+
+`npm run meta:mutaciones` no se ha corrido en local: lo corre el CI.
+
+## Lo corrido
+
+Sobre la rama con `origin/main` = `cc06e4a72` ya mezclado (no tocaba ninguno de estos ficheros), `dist/`
+re-emitido después del merge y sin `FORCE_COLOR`.
+
+| qué | resultado |
+|---|---|
+| el test nuevo + `scrum1402`, `scrum815-idempotencia`, `scrum1565`, antes del merge | 4 ficheros · 30 casos · 30 pasan · 0 caen |
+| 32 ficheros: los dos de este ticket, `scrum1342`, `scrum1565`, los seis `scrum815*`, los de suite (`scrum237`, `976`, `824`, `824b`×2, `836`, `419`, `702`, `700`, `719`, `1415`, `113`, `262`) y los de registro (`scrum267`, `273`, `1294`, `525d`, `859`, `1306`, `921`, `921c`, `710b`) | 299 casos · 299 pasan · 0 caen · 0 saltan (TAP de 129.088 B; 12 líneas nombran `SCRUM-1402e`) |
+| `npm run guards:entrada` | 15 guards · 170 casos · 0 caen |
+| los 5 de árbol entero que nombra esa salida (`scrum195`, `414`, `694`, `710b`, `737`) | 38 casos · 38 pasan · 0 caen |
+
+**No corrido:** la tanda completa (la da el obligatorio), los gateados por base (`scrum809`, `scrum340`,
+`scrum330`, que recorren este webhook contra un Postgres) y `npm run meta:mutaciones`. La fila de 32 ficheros
+se corrió con este tramo ya escrito salvo esta tabla; los de registro se vuelven a correr tras escribirla.
+
+## Límites de lo medido
+
+- El doble de la base no tiene estado: «el plan no se toca» es «la escritura no lleva `plan`».
+- El banner no se ha visto pintarse para este caso: el test mide el campo que el banner lee, y que `/me`
+  lo sirve de la fila lo cubre SCRUM-809b. En `yaqu.app` no se ha visto nada: provocar el caso es mandar
+  un evento de Stripe de verdad. No se hace.
+- `dist/` emitido con `tsc --noCheck` (worktree anidado): los tipos los comprueba el `build` del CI.
+- **No lo resuelve esto:** Ⓑ (cómo se activa Equipo) y Ⓖ (la suscripción sin `metadata.plan`), abiertos
+  según el propio comentario 20651. Una suscripción en impago SIN `metadata.plan` sigue sin marcarse.

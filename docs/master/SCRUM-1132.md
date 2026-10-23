@@ -136,3 +136,44 @@ La ficha de microcopy del 14-oct nombraba la nueva por su fichero, y eso es un �
 nombra. Dos más que no generalizan aquí: volví a pasar un guion a node con un heredoc de bash y reventó en
 alto (ya está dos veces en las cicatrices de J2), y crucé los 200k de contexto sin medirme entre el arranque
 (140k) y el banco de mutación (229k), y avisé en ese momento, no al cruzar.
+
+## SCRUM-1132d · el test de las notas dependía de la zona de la máquina (J2, 23-oct-2026)
+
+> Lo hace J2 (sesión `jv-j2aw`, equipo de Javier) con el GO de su orquestador (`cobroflash-backend-62`),
+> SCRUM-1132 c.20649, que responde a c.20648.
+
+**Medido contra:** `origin/main` = `b6dd5d1a8d64abd0bf835141e8d9bac6d5d2055f` · 2026-10-23T20:21:54Z
+
+A9: comprobación → `scripts/trinquete-de-zona.mjs`
+
+### Lo que se hizo
+
+El job «trinquete · ningún test nuevo mide la zona de la máquina» cayó en #2772 por
+`tests/scrum1132-notas-en-la-ficha.test.mjs`, caso «la pestaña pinta las notas con fecha y autor…»: exige
+`/oct 2026/` en una nota fechada `2026-10-01T09:30:00Z`, y en `Pacific/Midway` (UTC−11) eso es el 30 de
+septiembre. El producto está bien: pinta la hora local del profesional. Se cambia SÓLO el dato del test a
+`2026-10-15T12:00:00Z` (15-oct 01:00 en UTC−11, 16-oct 02:00 en UTC+14). La aserción no cambia: sigue
+exigiendo octubre. Fijar la zona del caso no era posible sin tocar la vista, que formatea en la zona del
+navegador.
+
+### Cómo se mide
+
+Cada zona en un proceso hijo con `TZ` en su entorno (no delante de `node` en Git Bash: no llega). Control
+positivo en cada pasada: el hijo imprime su desfase y cómo ve `2026-10-01T09:30:00Z` (−840 / 23:30 en
+Kiritimati, 660 / 30-sep 22:30 en Midway, 0 en UTC).
+
+| zona | antes (fecha del 1) | después (fecha del 15) |
+|---|---|---|
+| Pacific/Kiritimati | 7 de 7 | 7 de 7 |
+| Pacific/Midway | 6 de 7, cae el caso 3 | 7 de 7 |
+| UTC | 7 de 7 | 7 de 7 |
+
+`scripts/guard-notas-en-la-ficha.mjs` lleva la misma fecha, pero no comprueba el mes y no está en la
+población del trinquete (sólo `tests/`): no se toca, fuera de lo autorizado.
+
+### El fallo propio (A9)
+
+Primero quise medir con `medirEnZona` del propio trinquete, sobre este único fichero: devolvió
+`veredictos: {}` en las tres zonas, también con el rojo puesto, y no averigüé por qué. Era ciego, no verde,
+y no lo usé para nada. El fallo de 1132c no es de esta sesión. Lo cazó el trinquete, que ya existe, y por eso
+la línea `A9:` lo nombra; lo que no hace es pararlo antes del merge, porque el job no es obligatorio.

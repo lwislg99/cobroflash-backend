@@ -1,0 +1,16 @@
+semillaTipo: línea 1577 reescrita
+semillaTipo: 1 cambio(s), 1848 líneas
+diff del esquema: «1	1	prisma/schema.prisma»
+exit node --test: 1 · esquema restaurado: sí
+TAP: 436317 B
+tests 1726 · pass 1605 · fail 9 · skipped 112 · cancelled 0 · ficheros 214
+not ok (todos los niveles): 9
+  ✖ CONTROL · el árbol sano da VERDE contra el cliente real
+  ✖ SCRUM-385 · el CLI de Prisma que se ejecuta es el LOCAL, y existe
+  ✖ SCRUM-385 · CONTROL POSITIVO: la herramienta responde al esquema entero contra vacío
+  ✖ SCRUM-385 · CONTROL NEGATIVO: dos esquemas idénticos dan vacío, y ese vacío es legítimo
+  ✖ SCRUM-461 · ✅ CONTROL NEGATIVO: con el cliente al día el generador NO molesta
+  ✖ SCRUM-475 · 🔴 SUELO: la herramienta responde y hay algo que comparar
+  ✖ SCRUM-475 · 🔴 `schema.prisma` y el SQL aplicado a las bases dicen LO MISMO
+  ✖ SCRUM-475 · 🔴 los cuatro índices coinciden, nombre a nombre
+  ✖ SCRUM-475 · el modelo de `schema.prisma` es el de la entrada de máster, línea a línea
