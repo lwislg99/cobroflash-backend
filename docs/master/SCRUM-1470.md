@@ -222,7 +222,16 @@ y se dice aquí para que no se pierda. Hoy sólo la puede ver un negocio con `ti
 de prueba, según su registro; no lo he contado en ninguna base).
 
 **De paso:** el caso «DECLARADO» de SCRUM-1471 en `tests/scrum1470-…` decía que el portal seguía el
-reloj del proceso «como la del PDF de la factura»; ya no es cierto, y su texto lo dice.
+reloj del proceso «como la del PDF de la factura»; ya no es cierto, y su texto lo dice. Y la línea
+nueva del primer llamador movió la puerta `exigirDocumentoEmitible` de `src/lib/invoicing.ts:261` a
+`:262`: `scrum525d` lo cazó en la dirigida y `docs/legal/AUDITORIA_CAMINO_EMISION.md` apunta ya a `:262`.
+
+**Dirigida** (`npm run tanda:dirigida`, base `01edf621`): 466 ficheros · 4.432 tests · 4.411 pass ·
+5 fail. Uno era mío (525d, arriba, ya verde: 8/8). Los otros cuatro (`scrum1298b` ×2, `scrum351`,
+`scrum476`) miden la topología de `node_modules` y los hooks del árbol principal; este worktree no
+tiene `node_modules` propio, y ninguno de los tres ficheros nombra nada de lo que toca esta rama
+(grep, con control positivo sobre la sonda). NO los he corrido sobre la base: «son del entorno» es
+lectura, no medición. Los 16 que faltan para sumar 4.432 no los imprime la herramienta: no los he contado.
 
 **Error mío, cazado antes de correrlo:** escribí el suelo exigiendo tres desplazamientos distintos
 para verano, invierno y Canarias; Canarias en julio va a +60, igual que Madrid en enero. Ahora el
