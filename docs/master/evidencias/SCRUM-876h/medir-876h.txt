@@ -1,0 +1,40 @@
+===== tanda «piloto» =====
+POBLACION · tanda entera = 1319 ficheros · tramo = posiciones 380 a 440 = 61 ficheros · scrum1515 en la 407 · scrum17 en la 424 · HEAD 44c645bc6d5886958de7b3af9976c5af8e1f7ad6 · FORCE_COLOR ausente: True · libreMB=2845
+piloto-1-con-c3 · scrum17 con (253 lineas, lleva el banco: True) · conc 3 · 27s · salida 0 · marcas 61/61 · 1515 dura 4.6s · scrum17 dura 2.2s · scrum17 arranca 5.8s tras 1515 y 1.2s tras SU final · SOLAPE 0.0s · a la vez que 1515: 6 ficheros · 1515=ok · scrum17=ok · tests 486 pass 474 fail 0 skipped 12
+piloto-2-sin-c3 · scrum17 sin (229 lineas, lleva el banco: False) · conc 3 · 28s · salida 0 · marcas 61/61 · 1515 dura 4.6s · scrum17 dura 0.4s · scrum17 arranca 6.2s tras 1515 y 1.6s tras SU final · SOLAPE 0.0s · a la vez que 1515: 6 ficheros · 1515=ok · scrum17=SALTADO · tests 486 pass 473 fail 0 skipped 13
+git status al acabar: []
+tablas=33 · con filas: gateway_events=140
+libreMB al acabar=2416
+EXIT=0
+
+===== tanda «a» =====
+POBLACION · tanda entera = 1319 ficheros · tramo = posiciones 380 a 440 = 61 ficheros · scrum1515 en la 407 · scrum17 en la 424 · HEAD 44c645bc6d5886958de7b3af9976c5af8e1f7ad6 · FORCE_COLOR ausente: True · libreMB=2727
+a-1-con-c3 · scrum17 con (253 lineas, lleva el banco: True) · conc 3 · 28s · salida 0 · marcas 61/61 · 1515 dura 4.6s · scrum17 dura 2.1s · scrum17 arranca 5.8s tras 1515 y 1.2s tras SU final · SOLAPE 0.0s · a la vez que 1515: 6 ficheros · 1515=ok · scrum17=ok · tests 486 pass 474 fail 0 skipped 12
+a-2-con-c3 · scrum17 con (253 lineas, lleva el banco: True) · conc 3 · 30s · salida 0 · marcas 61/61 · 1515 dura 4.8s · scrum17 dura 2.6s · scrum17 arranca 6.3s tras 1515 y 1.5s tras SU final · SOLAPE 0.0s · a la vez que 1515: 6 ficheros · 1515=ok · scrum17=ok · tests 486 pass 474 fail 0 skipped 12
+a-3-con-c3 · scrum17 con (253 lineas, lleva el banco: True) · conc 3 · 28s · salida 0 · marcas 61/61 · 1515 dura 6.2s · scrum17 dura 1.9s · scrum17 arranca 7.3s tras 1515 y 1.1s tras SU final · SOLAPE 0.0s · a la vez que 1515: 6 ficheros · 1515=ok · scrum17=ok · tests 486 pass 474 fail 0 skipped 12
+a-4-con-c3 · scrum17 con (253 lineas, lleva el banco: True) · conc 3 · 37s · salida 0 · marcas 61/61 · 1515 dura 11.5s · scrum17 dura 7.4s · scrum17 arranca 12.8s tras 1515 y 1.4s tras SU final · SOLAPE 0.0s · a la vez que 1515: 12 ficheros · 1515=ok · scrum17=ok · tests 486 pass 474 fail 0 skipped 12
+a-5-con-c7 · scrum17 con (253 lineas, lleva el banco: True) · conc 7 · 38s · salida 0 · marcas 61/61 · 1515 dura 19.0s · scrum17 dura 10.7s · scrum17 arranca 7.5s tras 1515 y -11.4s tras SU final · SOLAPE 10.7s · a la vez que 1515: 39 ficheros · 1515=ok · scrum17=ok · tests 486 pass 474 fail 0 skipped 12
+a-6-con-c7 · scrum17 con (253 lineas, lleva el banco: True) · conc 7 · 36s · salida 1 · marcas 61/61 · 1515 dura 11.9s · scrum17 dura 9.5s · scrum17 arranca 7.1s tras 1515 y -4.8s tras SU final · SOLAPE 4.8s · a la vez que 1515: 39 ficheros · 1515=CAE · scrum17=ok · tests 486 pass 473 fail 1 skipped 12 · caidos: SCRUM-1515 · el merchant que crea nuestro guion na · 5 !== 2
+a-7-con-c7 · scrum17 con (253 lineas, lleva el banco: True) · conc 7 · 36s · salida 0 · marcas 61/61 · 1515 dura 19.6s · scrum17 dura 10.8s · scrum17 arranca 7.1s tras 1515 y -12.6s tras SU final · SOLAPE 10.8s · a la vez que 1515: 39 ficheros · 1515=ok · scrum17=ok · tests 486 pass 474 fail 0 skipped 12
+a-8-con-c7 · scrum17 con (253 lineas, lleva el banco: True) · conc 7 · 36s · salida 1 · marcas 61/61 · 1515 dura 11.2s · scrum17 dura 7.2s · scrum17 arranca 7.6s tras 1515 y -3.6s tras SU final · SOLAPE 3.6s · a la vez que 1515: 37 ficheros · 1515=CAE · scrum17=ok · tests 486 pass 473 fail 1 skipped 12 · caidos: SCRUM-1515 · el merchant que crea nuestro guion na · 5 !== 2
+a-9-sin-c7 · scrum17 sin (229 lineas, lleva el banco: False) · conc 7 · 31s · salida 0 · marcas 61/61 · 1515 dura 11.0s · scrum17 dura 0.7s · scrum17 arranca 5.2s tras 1515 y -5.8s tras SU final · SOLAPE 0.7s · a la vez que 1515: 38 ficheros · 1515=ok · scrum17=SALTADO · tests 486 pass 473 fail 0 skipped 13
+a-10-sin-c7 · scrum17 sin (229 lineas, lleva el banco: False) · conc 7 · 30s · salida 0 · marcas 61/61 · 1515 dura 12.7s · scrum17 dura 0.9s · scrum17 arranca 5.7s tras 1515 y -7.0s tras SU final · SOLAPE 0.9s · a la vez que 1515: 38 ficheros · 1515=ok · scrum17=SALTADO · tests 486 pass 473 fail 0 skipped 13
+a-11-sin-c7 · scrum17 sin (229 lineas, lleva el banco: False) · conc 7 · 34s · salida 0 · marcas 61/61 · 1515 dura 13.1s · scrum17 dura 0.9s · scrum17 arranca 7.7s tras 1515 y -5.4s tras SU final · SOLAPE 0.9s · a la vez que 1515: 39 ficheros · 1515=ok · scrum17=SALTADO · tests 486 pass 473 fail 0 skipped 13
+git status al acabar: []
+tablas=33 · con filas: gateway_events=140
+libreMB al acabar=2973
+EXIT=0
+
+===== tanda «b» =====
+POBLACION · tanda entera = 1319 ficheros · tramo = posiciones 380 a 440 = 61 ficheros · scrum1515 en la 407 · scrum17 en la 424 · HEAD 44c645bc6d5886958de7b3af9976c5af8e1f7ad6 · FORCE_COLOR ausente: True · libreMB=4259
+b-1-con-c2 · scrum17 con (253 lineas, lleva el banco: True) · conc 2 · 61s · salida 0 · marcas 61/61 · 1515 dura 9.9s · scrum17 dura 8.3s · scrum17 arranca 17.8s tras 1515 y 8.0s tras SU final · SOLAPE 0.0s · a la vez que 1515: 4 ficheros · 1515=ok · scrum17=ok · tests 486 pass 474 fail 0 skipped 12
+b-2-con-c4 · scrum17 con (253 lineas, lleva el banco: True) · conc 4 · 51s · salida 1 · marcas 61/61 · 1515 dura 18.5s · scrum17 dura 11.9s · scrum17 arranca 12.3s tras 1515 y -6.2s tras SU final · SOLAPE 6.2s · a la vez que 1515: 27 ficheros · 1515=CAE · scrum17=ok · tests 486 pass 473 fail 1 skipped 12 · caidos: SCRUM-1515 · el merchant que crea nuestro guion na · 5 !== 2
+b-3-con-c4 · scrum17 con (253 lineas, lleva el banco: True) · conc 4 · 48s · salida 1 · marcas 61/61 · 1515 dura 19.8s · scrum17 dura 9.9s · scrum17 arranca 14.4s tras 1515 y -5.5s tras SU final · SOLAPE 5.5s · a la vez que 1515: 29 ficheros · 1515=CAE · scrum17=ok · tests 486 pass 473 fail 1 skipped 12 · caidos: SCRUM-1515 · el merchant que crea nuestro guion na · 5 !== 2
+b-4-con-c4 · scrum17 con (253 lineas, lleva el banco: True) · conc 4 · 57s · salida 1 · marcas 61/61 · 1515 dura 24.4s · scrum17 dura 11.5s · scrum17 arranca 16.9s tras 1515 y -7.5s tras SU final · SOLAPE 7.5s · a la vez que 1515: 29 ficheros · 1515=CAE · scrum17=ok · tests 486 pass 473 fail 1 skipped 12 · caidos: SCRUM-1515 · el merchant que crea nuestro guion na · 5 !== 2
+b-5-con-c5 · scrum17 con (253 lineas, lleva el banco: True) · conc 5 · 45s · salida 0 · marcas 61/61 · 1515 dura 23.0s · scrum17 dura 11.2s · scrum17 arranca 9.1s tras 1515 y -13.9s tras SU final · SOLAPE 11.2s · a la vez que 1515: 36 ficheros · 1515=ok · scrum17=ok · tests 486 pass 474 fail 0 skipped 12
+b-6-con-c5 · scrum17 con (253 lineas, lleva el banco: True) · conc 5 · 43s · salida 1 · marcas 61/61 · 1515 dura 20.1s · scrum17 dura 12.7s · scrum17 arranca 8.4s tras 1515 y -11.6s tras SU final · SOLAPE 11.6s · a la vez que 1515: 35 ficheros · 1515=CAE · scrum17=ok · tests 486 pass 473 fail 1 skipped 12 · caidos: SCRUM-1515 · el merchant que crea nuestro guion na · 3 !== 2
+b-7-sin-c4 · scrum17 sin (229 lineas, lleva el banco: False) · conc 4 · 48s · salida 0 · marcas 61/61 · 1515 dura 21.0s · scrum17 dura 1.0s · scrum17 arranca 13.8s tras 1515 y -7.2s tras SU final · SOLAPE 1.0s · a la vez que 1515: 30 ficheros · 1515=ok · scrum17=SALTADO · tests 486 pass 473 fail 0 skipped 13
+git status al acabar: []
+tablas=33 · con filas: gateway_events=140
+libreMB al acabar=2077
+EXIT=0
