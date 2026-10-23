@@ -461,7 +461,7 @@ PDF del presupuesto firmado y del justificante: disponibles desde el panel (se a
  */
 router.post('/bulk-paid', requireRole('admin'), async (req, res) => {
   try {
-    const ids: number[] = Array.isArray(req.body?.ids) ? req.body.ids.map(Number).filter(Number.isInteger) : [];
+    const ids: number[] = Array.isArray(req.body?.ids) ? req.body.ids.map(Number).filter(cabeEnColumnaInt) : [];
     if (ids.length === 0) return res.status(400).json({ error: 'no_ids' });
     if (ids.length > 100) return res.status(400).json({ error: 'too_many', max: 100 });
 
