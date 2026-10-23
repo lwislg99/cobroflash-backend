@@ -1,0 +1,46 @@
+POBLACIÓN · 29 vistas del banco, montadas con datosDelCenso · 9 paneles de Configuración
+
+VISTAS (nodos · controles · peticiones):
+  renderAlbaranDetailView               29 ·   5 · 2
+  renderAlbaranesView                   49 ·  10 · 1
+  renderCobrosView                      29 ·   7 · 1
+  renderCustomer360View                 87 ·  15 · 3
+  renderCustomersView                  140 ·  44 · 1
+  renderDocumentoSueltoView            142 ·  30 · 4
+  renderExpenseDetailView               36 ·   6 · 1
+  renderExpensesView                    50 ·   8 · 2
+  renderExportView                      77 ·  13 · 1
+  renderFacturasRecibidasView           20 ·   4 · 1
+  renderHomeView                       167 ·  13 · 6
+  renderInvoiceDetailView               47 ·   8 · 2
+  renderInvoicesView                    69 ·  13 · 2
+  renderJobDetailView                  110 ·  22 · 4
+  renderJobsView                        90 ·  18 · 2
+  renderLibroRegistroView               29 ·   0 · 1
+  renderParteDetailView                 97 ·   9 · 1
+  renderPartesOficinaView               11 ·   1 · 1
+  renderPlansView                       42 ·   4 · 1
+  renderProductsView                    89 ·  20 · 3
+  renderProvidersView                   50 ·  10 · 2
+  renderQuoteDetailView                125 ·  12 · 3
+  renderQuoteRequestsView               23 ·   3 · 1
+  renderQuotesListView                  53 ·  10 · 1
+  renderQuotesView                     281 ·  63 · 4
+  renderReportsView                    282 ·  16 · 10
+  renderSettingsView                   186 ·  42 · 6
+  renderTeamView                        50 ·   5 · 1
+  renderTemplatesView                   34 ·   6 · 1
+
+PANELES DE CONFIGURACIÓN (nodos · controles · caracteres de texto · oculto al montar):
+  empresa                     39 ·   9 ·     0 · no
+  facturacion                 21 ·   4 ·     0 · no
+  cobro                       14 ·   3 ·     0 · no
+  avisos                      39 ·   5 ·     0 · no
+  publica                      0 ·   0 ·     0 · no
+  marca                       16 ·   6 ·     0 · no
+  datos                        2 ·   1 ·     0 · no
+  cumplimiento                 0 ·   0 ·     0 · no
+  equipo                      11 ·   2 ·     0 · no
+
+VISTAS bajo 20 nodos: renderPartesOficinaView (11)
+PANELES sin ningún control: publica (0 nodos), cumplimiento (0 nodos)

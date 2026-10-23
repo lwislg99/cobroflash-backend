@@ -1,0 +1,15 @@
+A · tal cual: código 0 · 153 s · 127 líneas (salida entera en <tmp>)
+  líneas que nombran «publica»/«cumplimiento»: 1
+    vistas que publica el banco: 29 · montadas y serializadas: 28 · NO medidas: 1 (renderPartesOficinaView) · sin argumentos: 0 · rutas SIN contrato: 0
+  líneas que nombran Cobros: 2
+    renderCobrosView              929    7        0       0          0
+    renderCobrosView              390    7        0       0          0
+
+B · Cobros vaciada: código 0 · 148 s
+  líneas que nombran Cobros: 4
+    vistas que publica el banco: 29 · montadas y serializadas: 27 · NO medidas: 2 (renderCobrosView, renderPartesOficinaView) · sin argumentos: 1 · rutas SIN contrato: 0
+    ⚠️ renderCobrosView → no pidió nada al servidor: le faltan sus argumentos (abajo, en «VISTAS QUE NO PIDIERON NADA», qué añadir)
+    🔴 renderCobrosView no le pidió NADA al servidor y pintó 1 nodo(s): se montó sin los argumentos que espera (declara: ninguno además del contenedor).
+    QUÉ AÑADIR · en scripts/_datos-del-censo.mjs, dentro de ARGUMENTOS_DEL_CENSO: `renderCobrosView: [<id>],` con el valor que le pasa `renderView` de app.js (un id de IDS si es una ficha).
+
+public/ al acabar: limpio

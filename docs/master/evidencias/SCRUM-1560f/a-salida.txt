@@ -1,0 +1,53 @@
+POBLACIÓN · 2911 ficheros de código seguidos por git, leídos por AST · control del clasificador 6/6 · ve al censo táctil: sí
+  importan scripts/_datos-del-censo.mjs: 16 · de ellos, con datosDelCenso: 14 · sólo otras cosas: 2
+  lo NOMBRAN sin importarlo (lo que un grep contaría de más): 0
+
+CON datosDelCenso (sirven datos a una vista):
+  docs/master/evidencias/SCRUM-1451/sonda-1451-un-centimo-de-menos.mjs
+      importa: datosDelCenso
+      monta: renderJobsView, renderJobDetailView
+  docs/master/evidencias/SCRUM-1518/sonda-1518-punta-a-punta.mjs
+      importa: datosDelCenso
+      monta: renderCustomer360View
+  docs/master/evidencias/SCRUM-1562/sonda-div-clicables.mjs
+      importa: datosDelCenso, ARGUMENTOS_DEL_CENSO
+      monta: «la recorre» (fn)
+  docs/master/evidencias/scrum1560/sonda-undefined.mjs
+      importa: import()
+      monta: — (no llama a enVista)
+  docs/master/evidencias/scrum1560/sonda-vistas.mjs
+      importa: import()
+      monta: «la recorre» (fn)
+  docs/master/evidencias/scrum962b/censo-ampliado.mjs
+      importa: datosDelCenso, ARGUMENTOS_DEL_CENSO
+      monta: «la recorre» (fn)
+  scripts/censo-objetivo-tactil-panel.mjs
+      importa: datosDelCenso, ARGUMENTOS_DEL_CENSO, parametrosDe, avisoDeVistaSinPedir, avisoDeRutaSinContrato
+      monta: «la recorre» (fn)
+  tests/scrum1559g-dieciseis-controles-44px.test.mjs
+      importa: datosDelCenso, ARGUMENTOS_DEL_CENSO
+      monta: «la recorre» (fn)
+  tests/scrum1559j-productos-44px.test.mjs
+      importa: datosDelCenso, ARGUMENTOS_DEL_CENSO
+      monta: renderProductsView
+  tests/scrum1560-datos-de-muestra-con-forma.test.mjs
+      importa: CONTRATOS, comprobarForma, contratoDe, datosDelCenso, ARGUMENTOS_DEL_CENSO, IDS, parametrosDe, avisoDeVistaSinPedir, avisoDeRutaSinContrato
+      monta: renderPideView, renderMudaView, «la recorre» (fn)
+  tests/scrum1562c-partes-oficina-con-teclado.test.mjs
+      importa: datosDelCenso, ARGUMENTOS_DEL_CENSO
+      monta: renderPartesOficinaView
+  tests/scrum1562d-trabajos-con-teclado.test.mjs
+      importa: datosDelCenso
+      monta: renderJobsView
+  tests/scrum1562f-ver-detalle-fuera-de-acciones.test.mjs
+      importa: datosDelCenso
+      monta: renderJobsView
+  tests/scrum1583-enlace-documento-cobros-44.test.mjs
+      importa: datosDelCenso, ARGUMENTOS_DEL_CENSO
+      monta: renderCobrosView
+
+SÓLO OTRAS COSAS:
+  docs/master/evidencias/SCRUM-1159/medir.mjs  (CONTRATOS)
+  docs/master/evidencias/SCRUM-1583/medir.mjs  (CONTRATOS)
+
+LO NOMBRAN SIN IMPORTARLO:
