@@ -326,3 +326,7 @@ Controles:
 
 **Sin medir:** 20 pasadas por fichero (aquí 3; ninguno tenía un aborto registrado, así que «0 después» no separa
 el arreglo de la suerte: demuestra que el cambio no altera lo que miden); Linux/CI; la tanda gateada completa.
+**Suite entera local: NO CORRIDA.** La lancé y el arnés la mató por falta de memoria de la máquina; lo que dejó
+escrito no cuenta. Sí corridos: los guards de suite y de registro (`scrum237`, `976`, `824`, `836`, `419`, `702`,
+`700`, `719`, `560`, `267`, `273`, `1294`, `850`) y los que nombran los árboles declarados (`scrum383`, `395`,
+`480`, `774`): 188/188 en 17 ficheros. La suite la hace el check obligatorio.
