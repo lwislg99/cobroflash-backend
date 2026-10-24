@@ -15,6 +15,37 @@ import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
 
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // Un rótulo deja de ser el literal del impreso.
+    fichero: 'src/modules/fiscal/modelo303/casillas.ts',
+    de: "rotulo: 'Total a deducir'",
+    a: "rotulo: 'Total deducible'",
+    cae: 'cada rótulo es el del impreso, con su columna y su página',
+  },
+  {
+    // Vuelve la fórmula entre paréntesis (contra c.20780).
+    fichero: 'src/modules/fiscal/modelo303/casillas.ts',
+    de: "{ casilla: 71, rotulo: 'Resultado', pagina",
+    a: "{ casilla: 71, rotulo: 'Resultado (69 - 70 + 109 - 112)', pagina",
+    cae: 'ningún rótulo lleva la fórmula entre paréntesis',
+  },
+  {
+    // La ruta deja de servirlos.
+    fichero: 'src/modules/fiscal/modelo303/modelo303.routes.ts',
+    de: 'return res.json({ ...modelo, rotulos: ROTULOS_303 });',
+    a: 'return res.json({ ...modelo });',
+    cae: 'GET /admin/modelo-303 sirve los rótulos',
+  },
+  {
+    // La salida pierde una casilla que sigue teniendo rótulo.
+    fichero: 'src/modules/fiscal/modelo303/casillas.ts',
+    de: "Object.freeze({ casilla: 70, motivo: 'autoliquidacion_anterior_no_consta' as const }),",
+    a: '',
+    cae: 'hay uno por cada casilla que devuelve',
+  },
+];
+
 // El `prisma` del handler es el singleton de `src/core/db/prisma.ts`, que reusa `global.prisma` si
 // existe: se pone ANTES de cargar la ruta. Base en memoria, sin red y sin escribir nada.
 const MIO = 7;

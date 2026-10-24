@@ -72,3 +72,42 @@ El cálculo ya está en `main` (PR #1763, merge `8fe2de5af2530ad29a6ea1ca80391e6
 - yaqu.app: no he verificado nada.
 
 A9: sin fallo que generalice — el bloqueo del 22-sep caducó con #1763 y se vio cruzando SCRUM-1063, no este ticket; que un ticket hermano no comente en el dependiente no lo ve ningún guard del repositorio, porque no lee Jira.
+
+## SCRUM-1064c · Los rótulos del impreso en la ruta, y las dos rutas del repercutido medidas (J1, 24-oct-2026)
+
+**Medido contra:** `origin/main` = `1b3395ecc6d3524e7b4ec711871d1d485ee67f28` · 2026-10-24T15:05:11Z
+**Rama:** `scrum-1064c-rotulos-y-rutas` · **Puesto:** J1 (sesión jv-j1bu) · **Encargo:** orquestador `cobroflash-backend-95`
+**Decisión que lo autoriza:** SCRUM-1064 c.20780 (T9 y T17: transcripción literal; T10 y T13–T16: sin la fórmula). **Entrega:** comentario en SCRUM-1064.
+
+### 1 · Los rótulos (hecho)
+
+`ROTULOS_303` en `src/modules/fiscal/modelo303/casillas.ts`: casilla → rótulo, columna y página, y `GET /admin/modelo-303` lo sirve como `rotulos` junto al cálculo (`modelo303.routes.ts`; `construirModelo303` no cambia). Leídos como IMAGEN del Anexo III de la Orden HAC/27/2026: página 1 (`…/1761_16563944_7.png`, 01–09, 27, 28–31, 45, 46) y página 3 (`…/1761_16563944_9.png`, 64–71).
+- **Las 01–09 no tienen rótulo propio.** Son tres filas de la llave «Régimen general», bajo «IVA devengado», y las distingue la columna: «Base imponible», «Tipo %», «Cuota». La llave abarca seis filas: 150, 165, 01, 153, 04 y 07.
+- 28/29 y 30/31 llevan las columnas del bloque deducible: «Base» y «Cuota». La 65 y la 66 comparten rótulo («Atribuible a la Administración del Estado»), y la 65 lleva «%».
+- La 70 lleva en el impreso una llamada «(*)» a una nota al pie. Aquí va sin ella.
+- Test: `tests/scrum1064c-rotulos-del-303.test.mjs` (3 casos), con los literales copiados del impreso, no de `casillas.ts`. Declara 4 mutaciones en `MUTACIONES_QUE_ME_TUMBAN`, y las ejecuta el `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`. El resultado va en la entrega.
+- **Error mío, de la tanda:** primero escribí un mutador propio en `docs/master/evidencias/`. Una de sus anclas casaba dos veces en `dist/casillas.js`: la M4 decía «quita el rótulo de la 70» y quitaba la 70 de la lista de vacías. Lo vi leyendo qué caso caía. Después `tests/scrum1387-banco-nuevo-va-al-catalogo.test.mjs` tumbó el banco por llevar lista propia. El de la casa ya comprueba el ancla única (`ambiguedadDelAncla`, SCRUM-1321). Lo borré antes de empujar.
+
+### 2 · ¿Dan `/admin/reports/vat` y `/admin/modelo-303` el mismo repercutido? (medido; NO arreglado)
+
+Banco: `docs/master/evidencias/scrum1064c/repercutido-dos-rutas.mjs`. Pasa facturas fabricadas por los DOS handlers reales de `dist/`, con el `prisma` singleton sustituido por una base en memoria y `TZ=UTC`, como Railway. Población: 4 casos. Control: con 21/10/4 % y una factura ajena y otra del 3T de por medio, las dos rutas dan cuota 63,00 y base 1.119,97 (calculado a mano: 21,00 + 2,00 + 40,00).
+
+| caso | cuota vat | casilla 27 | base vat | base casillas 303 | periodo |
+|---|---|---|---|---|---|
+| control 21/10/4 | 63 | 63 | 1.119,97 | 1.119,97 | igual |
+| + una línea al 0 % | 21 | 21 | 250 | 100 | igual |
+| + una línea al 5 % | **31** | **21** | 300 | 100 | igual |
+| sin trimestre, 30-jun 22:30Z | 21 | 21 | 100 | 100 | **vat 2T · 303 3T** |
+
+Por qué:
+- **Tipos sin tripleta (5 %, 2 %…) y el 0 %:** Informes suma TODOS los tipos en `totals` (`src/modules/reports/app/routes/reports.routes.ts:293-297`). El 303 los aparta a `sinClasificar` (`src/modules/fiscal/modelo303/modelo303.ts:313-322`). Con el 5 %, la cuota discrepa. Con el 0 % sólo discrepa la base. `tests/scrum389-un-solo-iva.test.mjs` cuadra Informes contra «27 + `sinClasificar`», no contra la 27 sola. Además está gateado por `LIBRO_PG_URL` y su juego no lleva ningún tipo sin tripleta.
+- **El periodo por defecto:** Informes saca el trimestre en curso del reloj del PROCESO (`reports.routes.ts:266-268`). El 303 lo saca de la zona del merchant (`modelo303.routes.ts:25-38`, SCRUM-735). En la madrugada española de cada cambio de trimestre, las dos pantallas abiertas sin `quarter` enseñan trimestres distintos. El resumen del trimestre hace lo mismo que Informes (`reports.routes.ts:363-365`). Ninguna de las dos líneas es de J1: `src/modules/reports/` no casa con el patrón de J1.
+- **Sin medir:** si el 5 % es alcanzable hoy desde una pantalla de YaQu, y qué tipo va en las filas 150, 165 y 153 del impreso. Si la 153–155 fuera la del 5 %, la casilla 27 del 303 se quedaría corta, y sería del cálculo, no de Informes. El impreso no lo dice: lo dirían las instrucciones de la orden, que no he leído.
+
+### No hecho / no medido
+
+- No he tocado `public/` ni el cálculo. Los 7 avisos (T20) no se exponen.
+- Suite entera en local: NO CORRIDA (10 sesiones a la vez). Corridos: el test nuevo, el type-check (`tsc --noEmit`, 0 líneas) y los dirigidos que cita la entrega.
+- yaqu.app: sin verificar; la ruta pide sesión de admin.
+
+A9: comprobación → `tests/scrum1387-banco-nuevo-va-al-catalogo.test.mjs`
