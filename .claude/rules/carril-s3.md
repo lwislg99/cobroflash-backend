@@ -14,6 +14,7 @@ paths:
   - "scripts/suelo-de-la-tanda.mjs"
   - "scripts/_censo-distintos.mjs"
   - "scripts/_datos-del-censo.mjs"
+  - "scripts/_hojas-del-panel.mjs"
   - "scripts/tests-que-cubren.mjs"
   - "scripts/_arbol-quieto.mjs"
   - "scripts/frontera-dist.mjs"

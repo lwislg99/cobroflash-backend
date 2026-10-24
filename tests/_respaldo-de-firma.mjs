@@ -54,9 +54,39 @@ import path from 'node:path';
 // versión llevaba su propio /docs/[w./-]+.md/ y ese guard la cazó.
 import { citasPorLinea, resuelve, mismoNombreEnOtroSitio } from '../scripts/_documentos-citados.mjs';
 import { sinCitas } from './_cita-declarada.mjs';
+import { PARES_LEIDOS } from './_pares-leidos-en-jira.mjs';
 
 /** Fuente 1 — Jira. Sólo comprobable por su FORMA: el ticket y el id del comentario. */
 export const RE_ANCLA_JIRA = /SCRUM-\d+\s*[·,—-]?\s*comentario\s+(\d{3,})/i;
+/** La misma forma, con el ticket capturado y global: para sacar TODOS los pares de un bloque. */
+const RE_PAR_JIRA = /SCRUM-(\d+)\s*[·,—-]?\s*comentario\s+(\d{3,})/gi;
+
+/** Los pares (ticket, comentario) que cita un texto, en la forma del ancla. */
+export function paresCitados(texto) {
+  return [...texto.matchAll(RE_PAR_JIRA)].map((m) => ({ ticket: Number(m[1]), comentario: Number(m[2]) }));
+}
+
+/**
+ * 🔴 SCRUM-1511h: LA FORMA NO BASTA — el par tiene que estar LEÍDO.
+ *
+ * Hasta aquí «anclado» era «la cita está bien escrita». Medido en SCRUM-1511 comentario 20743: una
+ * marca sembrada con `SCRUM-6604 comentario 99999`, ticket que no existe, se contaba como anclada.
+ * Decisión del fundador: SCRUM-1511 comentario 20748, una lista congelada de pares leídos en Jira,
+ * sin red. La lista, y lo que NO caza, en `_pares-leidos-en-jira.mjs`.
+ *
+ * @returns {{ticket:number, comentario:number}[]} los pares citados que NO están en la lista
+ */
+export function paresNoLeidos(texto, leidos = PARES_LEIDOS) {
+  const vistos = new Set(leidos.map((p) => `${p.ticket}/${p.comentario}`));
+  return paresCitados(texto).filter((p) => !vistos.has(`${p.ticket}/${p.comentario}`));
+}
+
+/** El motivo de una marca que baja de «anclado»: qué par falta y cómo se añade. */
+export function motivoParNoLeido(pares) {
+  return `par no leído: ${pares.map((p) => `SCRUM-${p.ticket} comentario ${p.comentario}`).join(', ')}`
+    + ' — ábrelo en Jira, comprueba que existe y que es de ese ticket, y añade su fila a'
+    + ' `tests/_pares-leidos-en-jira.mjs` (con la fecha de la lectura) en el mismo PR';
+}
 /** Procedencia rastreable, el criterio ya firmado en SCRUM-387: un ticket o un documento. */
 export const RE_RASTREABLE = /SCRUM-\d+|docs\/[\w./ -]+/i;
 /** Quién atribuye. No vale «aprobado» a secas: hace falta el agente. */
@@ -140,16 +170,26 @@ export function esProsaDistintiva(frase) {
 /**
  * El veredicto de un bloque de comentario.
  *
- *   'anclado'     — cita el ticket Y el id del comentario de Jira. El más fuerte.
+ *   'anclado'     — cita el ticket Y el id del comentario de Jira, y TODOS sus pares están en la
+ *                   lista de leídos (SCRUM-1511h). El más fuerte.
  *   'documental'  — el literal consta en el máster o en el registro de microcopy, con atribución.
- *   'rastreable'  — cita un ticket o un documento: se puede ir a mirar.
+ *   'rastreable'  — cita un ticket o un documento: se puede ir a mirar. Una marca con la forma del
+ *                   ancla y algún par sin leer cae aquí, con su `motivo`.
  *   'sin-respaldo'— no dice dónde consta y el literal no aparece en ninguna fuente.
+ *
+ * `leidos = null` juzga sólo por la forma, como antes de SCRUM-1511h: existe para que el banco
+ * compare con la lista y sin ella, no para el árbol.
  *
  * @param {{texto:string, literales?:string[]}} bloque
  */
-export function respaldoDe(bloque, indice) {
-  if (RE_ANCLA_JIRA.test(bloque.texto)) return { nivel: 'anclado' };
-  if (RE_RASTREABLE.test(bloque.texto)) return { nivel: 'rastreable' };
+export function respaldoDe(bloque, indice, leidos = PARES_LEIDOS) {
+  let motivo;
+  if (RE_ANCLA_JIRA.test(bloque.texto)) {
+    const sinLeer = leidos ? paresNoLeidos(bloque.texto, leidos) : [];
+    if (!sinLeer.length) return { nivel: 'anclado' };
+    motivo = motivoParNoLeido(sinLeer);
+  }
+  if (RE_RASTREABLE.test(bloque.texto)) return motivo ? { nivel: 'rastreable', motivo } : { nivel: 'rastreable' };
   for (const frase of bloque.literales ?? []) {
     const d = respaldoDocumental(indice, frase);
     if (d) return { nivel: 'documental', donde: d.ruta, frase };

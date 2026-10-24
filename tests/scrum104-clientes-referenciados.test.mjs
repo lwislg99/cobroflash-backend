@@ -8,16 +8,18 @@
 //
 // Datos EFÍMEROS propios con limpieza en el finally — nunca el seed demo (SCRUM-63).
 //
-// ⚠️ GATEADO (crea y BORRA merchants efímeros):
-//   QA_DB_TEST=1 npm run test:staging
+// ⚠️ GATEADO (crea y BORRA merchants efímeros). Dos destinos (SCRUM-1599f, la forma de SCRUM-876e/f):
+//   QA_DB_TEST=1 npm run test:staging                     → staging (igual que antes)
+//   LIBRO_PG_URL=<banco loopback, base *_test> npm test   → el banco desechable que CI levanta para la tanda
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging (fail-closed anti-prod)
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599f: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 
-test('SCRUM-104 (fase 2): clientes.csv del paquete = los referenciados, ni más ni menos', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
+test('SCRUM-104 (fase 2): clientes.csv del paquete = los referenciados, ni más ni menos', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { construirCsvsDelPaquete, buildClientes } =
     await import('../dist/modules/exports/domain/exportData.js');

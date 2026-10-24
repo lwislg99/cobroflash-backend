@@ -6,18 +6,20 @@
 // devolviera `quote.id` (el número que ya habías tecleado); este mismo ticket ensancha ese
 // camino para pintar el trabajo, y ahí pasaría a ser lectura cross-tenant.
 //
-// ⚠️ Toca BD real (staging), gateado:
-//   QA_DB_TEST=1 DATABASE_URL_TESTS="..." npm run test:staging
+// ⚠️ Toca BD real, gateado. Dos destinos (SCRUM-1599f, la forma de SCRUM-876e/f):
+//   QA_DB_TEST=1 DATABASE_URL_TESTS="..." npm run test:staging   → staging (igual que antes)
+//   LIBRO_PG_URL=<banco loopback, base *_test> npm test           → el banco desechable que CI levanta para la tanda
 //
 // GUARDA DE PRESENCIA (SCRUM-108/103): cada test de RECHAZO va precedido de su caso POSITIVO
 // —  la referencia PROPIA sí se acepta —  porque un test que solo comprueba que algo falla
 // pasa igual si `createExpense` está roto del todo y lanza siempre.
 import './_staging-db.mjs';
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599f: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { withMerchant } from './_merchant-fixture.mjs';
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 
 // Crea una cotización mínima para `merchant`. Solo necesita ser una fila válida: lo que se
 // prueba es de QUIÉN es, no su contenido. `quoteNumber` se omite (es nullable) para no
@@ -41,7 +43,7 @@ async function crearCustomer(prisma, merchantId) {
   });
 }
 
-test('SCRUM-135: un gasto SÍ acepta una cotización propia (guarda de presencia)', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-135: un gasto SÍ acepta una cotización propia (guarda de presencia)', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { createExpense } = await import('../dist/modules/expenses/domain/expenses.service.js');
 
@@ -59,7 +61,7 @@ test('SCRUM-135: un gasto SÍ acepta una cotización propia (guarda de presencia
   });
 });
 
-test('SCRUM-135: un gasto NO puede apuntar a la cotización de OTRO merchant', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-135: un gasto NO puede apuntar a la cotización de OTRO merchant', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { createExpense, ExpenseRefError } = await import('../dist/modules/expenses/domain/expenses.service.js');
 
@@ -88,7 +90,7 @@ test('SCRUM-135: un gasto NO puede apuntar a la cotización de OTRO merchant', {
   });
 });
 
-test('SCRUM-135: tampoco por la puerta de atrás del PUT', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-135: tampoco por la puerta de atrás del PUT', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { createExpense, updateExpense, ExpenseRefError } = await import('../dist/modules/expenses/domain/expenses.service.js');
 
@@ -119,7 +121,7 @@ test('SCRUM-135: tampoco por la puerta de atrás del PUT', { skip: !ENABLED && '
   });
 });
 
-test('SCRUM-135: mismo criterio para el proveedor', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-135: mismo criterio para el proveedor', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { createExpense, ExpenseRefError } = await import('../dist/modules/expenses/domain/expenses.service.js');
 
