@@ -5,6 +5,10 @@ async function renderHomeView(container) {
   const firstName = String(window.appUserName || '').trim().split(/\s+/)[0] || '';
   const hour = new Date().getHours();
   const greet = hour < 6 ? 'Buenas noches' : hour < 13 ? 'Buenos días' : hour < 20 ? 'Buenas tardes' : 'Buenas noches';
+  // SCRUM-1317 / SCRUM-1390y: se decide ANTES de pintar, porque de esto cuelgan la ruta que se pide
+  // y el rótulo del bloque de actividad. Rótulo y ruta salen de la MISMA pregunta: así el título
+  // nunca promete otra cosa que lo que la ruta trae (c.20438, punto 4).
+  const veNegocio = window.appUserRole === 'admin';
   container.innerHTML = `
     <div>
       <!-- Saludo (foco + calidez) + A6.7 Personalizar -->
@@ -90,7 +94,7 @@ async function renderHomeView(container) {
 
       <div data-home-block="activity">
         <div style="font-size:13px;font-weight:600;color:#6b756f;margin:8px 0 8px;text-transform:uppercase;letter-spacing:.04em">
-          Actividad reciente
+          ${veNegocio ? 'Actividad reciente' : 'Tus presupuestos recientes'}
         </div>
         <div class="activity-feed" id="activity-feed">
           <div class="activity-item"><div style="display:flex;align-items:center;gap:10px;width:100%"><span class="skeleton" style="width:32px;height:32px;border-radius:50%"></span><span class="skeleton" style="height:12px;width:40%"></span></div></div>
@@ -122,7 +126,6 @@ async function renderHomeView(container) {
   // Se queda con lo que es de su trabajo: el saludo, los tres avisos de riesgo, las acciones
   // rápidas, «Te esperan en WhatsApp» y la actividad reciente, que pide a SU ruta.
   // `#home-hero` no se quita: vacío no ocupa nada y es el ancla de la tarjeta de WhatsApp.
-  const veNegocio = window.appUserRole === 'admin';
   if (!veNegocio) {
     container.querySelectorAll('[data-home-block="kpis"],[data-home-block="week"],[data-home-block="tops"]')
       .forEach((bloque) => bloque.remove());
@@ -141,7 +144,7 @@ async function renderHomeView(container) {
       renderKpis(data);
       renderWeekSummary(data);
     }
-    renderActivity(data.recentActivity || []);
+    renderActivity(data.recentActivity, veNegocio);
     if (veNegocio) {
       renderTopCustomers(data.topCustomers || []);
       renderTopServices(data.topServices || []);
@@ -641,10 +644,16 @@ function buildSparkline(values) {
   return `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="display:block">${bars}</svg>`;
 }
 
-function renderActivity(items) {
+// SCRUM-1390y · El vacío depende del rol, como el rótulo (firmas: rótulo del Técnico SCRUM-1390
+// c.17962, «2-Ok firmo»; vacío del Técnico c.17963, «1-Firmo la 1»; el admin conserva los suyos,
+// c.17962 ③). Y una respuesta SIN la lista no es «no tienes presupuestos»: es una respuesta que no
+// supimos leer, así que se lanza y va al estado de error del `catch` (c.20438, punto 2). Antes, el
+// `|| []` la convertía en el cartel de vacío.
+function renderActivity(items, veNegocio) {
+  if (!Array.isArray(items)) throw new Error("Inicio: la respuesta no trae recentActivity");
   const feed = document.getElementById("activity-feed");
   if (!items.length) {
-    feed.innerHTML = `<div style="color:#6b756f;font-size:13px">Sin actividad reciente</div>`;
+    feed.innerHTML = `<div style="color:#6b756f;font-size:13px">${veNegocio ? 'Sin actividad reciente' : 'Todavía no tienes presupuestos. Aquí verás los que hagas tú y los que te asignen.'}</div>`;
     return;
   }
   feed.innerHTML = items.map((item) => {
