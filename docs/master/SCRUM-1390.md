@@ -500,3 +500,58 @@ regenerado: es el compartido.
 Local, antes de empujar (41 ficheros: los guards de suite y de registro y los que tocan estas rutas): 328 casos =
 319 ok + 2 not ok + 7 saltados. Los 2 rojos son `scrum1199`, que no encuentra `express` en el `node_modules` del árbol
 anidado (`MODULE_NOT_FOUND`): entorno, no lo he medido en otro árbol.
+
+## SCRUM-1390x · la Parte S1 marca CONSTRUIDO lo que ya está, y escribe que un recuento sin euros no es un documento
+
+[Anexado por J4 (sesión jv-j4ad), equipo de Javier, el 24-oct-2026 hacia las 10:48Z (`Date:` de GitHub), sobre
+`origin/main` `0a7eef15c907acc7646ed7ab33cab9176f8f1bc0`. Encargo del orquestador (`cobroflash-backend-95`). Sólo
+docs: `docs/YAQU_MASTER.md` (carril «un jefe»: la decisión es del fundador) y este registro.]
+
+A9: sin fallo que generalice — el encargo pedía marcar construidas las tres filas, y medir antes de escribir sacó que el rótulo y el vacío por rol no lo están; eso se dijo en la propia marca y no es un tropiezo mío que pueda repetirse
+
+### La decisión
+
+SCRUM-1346 c.20745 (24-oct-2026, la transcribe el orquestador `cobroflash-backend-95`; responde a las preguntas de
+jv-j2bb en c.20735):
+- **P3 «Sí»**: las filas que dicen «sin construir» se marcan CONSTRUIDAS, con fecha y motivo, sin borrar nada, citando
+  1397, 1403 y 1555.
+- **P2 «No, se quedan del negocio»**: los recuentos sin euros no se recortan, y el máster escribe que un recuento sin
+  euros no es un documento.
+- P1 (las dos bandejas de albaranes) es carril S1 y no entra aquí.
+
+### Qué se ha cambiado: cinco líneas, en sitio
+
+El máster tenía 1.913 líneas antes y las tiene después: ninguna cita `YAQU_MASTER.md:<n>` se desplaza. Cada cambio
+AÑADE una marca fechada al final de lo que había; no se ha quitado ni una palabra.
+
+| línea | qué decía | qué se añade |
+|---|---|---|
+| `:671` (Facturas) | «ver sí — es lo que hace HOY … sin construir» | ✅ CONSTRUIDA (24-oct): sólo las suyas, desde SCRUM-1397 (#2121) |
+| `:680` (globos del menú) | Técnico ✅ | la línea de P2: los globos y los números de la ficha de cliente son recuentos del negocio; un recuento sin euros no es un documento |
+| `:681` (Actividad reciente) | «HOY: los del negocio … sin construir» | ✅ CONSTRUIDA (24-oct): `GET /admin/metrics/inicio` recorta con `wherePresupuestosVisibles` (SCRUM-1555, #2456) · ⚠️ el rótulo y el vacío por rol NO están construidos |
+| `:687` (nota «Autor o asignado») | «HOY NO ESTÁ CONSTRUIDA» | ✅ CONSTRUIDA (24-oct): 1397 (#2121), 1403 (#2130), 1555 (#2456), con el trinquete de 1346 en `FUGAS_CONOCIDAS` vacía |
+| `:687` (misma línea, más adelante) | «Sin medir, y sin texto: qué enseña el bloque si la carga FALLA» | medido después en SCRUM-1390c (c.20438) |
+
+Los merges citados, leídos en `origin/main`: SCRUM-1397 `bbe633acb852b1aaca413df4c5ebef76f1291e6c` (#2121),
+SCRUM-1403 `0f6b3099ddbdbf28fd2bcc2fcdc1c55a17282f6a` (#2130), SCRUM-1555 `becfaf83094b8ddba05043e7850dbf5c6c6635bd` (#2456).
+
+### Lo que la medición corrige del encargo
+
+El encargo decía «se marcan CONSTRUIDAS» las tres filas. Leído el código de `main` antes de escribir:
+- **El recorte sí está construido**: `invoicesAdmin.routes.ts:90` (`whereFacturasVisibles`), `quotesAdmin.routes.ts:123`
+  y `metrics.routes.ts:28` (`wherePresupuestosVisibles`), y `tests/scrum1346-el-tecnico-ve-documentos-ajenos.test.mjs:64`
+  con `FUGAS_CONOCIDAS = new Map([])`.
+- 🔴 **Los textos firmados por rol NO lo están**: `public/dashboard/js/homeView.js:93` pinta «Actividad reciente» y
+  `:647` «Sin actividad reciente» a los dos roles; «Tus presupuestos recientes» y «Todavía no tienes presupuestos…»
+  (c.17962, c.17963) dan 0 resultados en `public/` y `src/`. Marcar la fila de Inicio CONSTRUIDA a secas habría hecho
+  que el máster afirmara un rótulo que la pantalla no pinta, que es lo que c.17795 prohibió. Por eso la marca de `:681`
+  y la de `:687` lo dicen. Construirlos es `public/` (no es carril J4) y no se toca aquí.
+- La actividad de Inicio sigue **con importe** (`total`, `metrics.service.ts`): son los importes de SUS presupuestos.
+  c.20735 la describe «sin importes»; el máster dice «con importe», y eso no cambia.
+
+### Lo corrido
+
+Guards de máster y de registro y los de suite, en local (resultado abajo, en el comentario de Jira). Suite entera
+local: NO CORRIDA (10 sesiones a la vez; hace de tanda el obligatorio de CI). yaqu.app: no aplica a un cambio sólo de
+docs; lo construido tampoco se puede ver allí con un Técnico (SCRUM-1555, sin sesión de técnico en producción). No lo
+he intentado.

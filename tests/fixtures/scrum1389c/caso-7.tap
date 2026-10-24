@@ -1,0 +1,28 @@
+TAP version 13
+# Subtest: caso limpio del banco
+ok 1 - caso limpio del banco
+  ---
+  duration_ms: 0.8492
+  type: 'test'
+  ...
+# Subtest: nativo.test.mjs
+not ok 2 - nativo.test.mjs
+  ---
+  duration_ms: 441.2822
+  type: 'test'
+  location: '<banco>\\nativo.test.mjs:1:1'
+  failureType: 'testCodeFailure'
+  exitCode: 3221225794
+  signal: ~
+  error: 'test failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 1
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 899.7079

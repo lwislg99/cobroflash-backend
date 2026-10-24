@@ -312,6 +312,101 @@ Sin medir en los tres: cuánto alarga el job de CI meter 83 casos más (B), y qu
 - De paso, confieso dos cosas. La primera pasada de `carriles.mjs` la lancé con la ruta mal
   (`scripts/equipo/carriles.mjs`). Y la tirada que escribía la salida se fue a segundo plano: la línea A9.
 
+## J6 · SCRUM-1599f · primer lote del diseño B: cuatro gateados al banco desechable, y el trinquete de los 42
+
+**Medido contra:** `origin/main` = `0e86dada4887f1ac54ce0ed5cad3c53c99c72c1c` · 2026-10-24T10:14:50Z (hora de GitHub; sesión J6 `jv-j6bh` en su árbol `jv-j6bh`, por encargo del orquestador `cobroflash-backend-95`. El código se midió en `07e604d3125a7d4172eaec0f458393cc594a3b93` y después se mezcló `origin/main`)
+
+A9: aviso → cicatriz J6 «Crucé el umbral de aviso de contexto sin medirme en el cruce: medí al arrancar y no volví a medir hasta después de un barrido ancho.» — no se pudo comprobar: me pasó otra vez en esta tanda (114k tras Jira, 234k al acabar los guards), y el contexto lo lee la propia sesión en su jsonl; ningún hook de este árbol la para al cruzar
+
+Lo decidió el fundador en c.20715 ①: los 46 pasan por lotes al banco desechable, primero un lote pequeño para medir el
+coste. 0 líneas de `src/`, de `.github/` o del camino de emisión; 0 aserciones tocadas (regla 41). Salida:
+`evidencias/SCRUM-1599/lote-1599f.salida.txt`.
+
+### ① Cómo se eligió el lote (por programa, no a ojo)
+
+Sobre los 46 de §1599d ①, cinco banderas leídas con `git show origin/main:<fichero>`: merchant fijo (`MERCHANT_ID = 1`,
+el demo), HTTP o app levantada (`fetch`, `listen`, `spawn`), camino de emisión o fiscal (`verifactu`, `invoicing/`,
+`emitir`, `sellar`…), carrera o concurrencia (`Promise.all`, `carrera`) y si ya tiene banco. «Sencillo» = ninguna de
+las cuatro primeras. Salen 7; se toman los 4 más pequeños, y el quinto se aparta con motivo:
+
+| fichero | casos que pasan a correr en CI | qué vigila en la base |
+|---|---|---|
+| `scrum109-expense-teammember` | 2 | el autor del gasto queda escrito (y `null` para el propietario) |
+| `scrum106-trabajos-fecha` | 1 (el otro ya corría sin base) | `trabajos.csv` filtra por fecha de ejecución |
+| `scrum104-clientes-referenciados` | 1 | `clientes.csv` del paquete = los referenciados, ni más ni menos |
+| `scrum135-gasto-tenencia` | 4 | un gasto no apunta a la cotización ni al proveedor de otro merchant |
+| **total** | **8 de los 83** | |
+
+- **`scrum116` NO se migra:** `sendInvoicePaymentReminders()` recorre TODAS las facturas de la base (lo dice su
+  cabecera), y el banco de CI lo comparten los ficheros que corren a la vez: escribiría sobre filas de otros tests.
+  Leído en el código, no intentado. Queda declarado en el trinquete con ese motivo.
+- La forma es la de SCRUM-876e/g: `import { URL_BANCO } from './_banco-libro.mjs'` justo detrás de `_staging-db.mjs`,
+  `ENABLED = QA_DB_TEST === '1' || URL_BANCO !== ''`, y el motivo del salto nombra las dos variables. Staging no se
+  afloja: con `QA_DB_TEST=1` el módulo ni lee `LIBRO_PG_URL` (lo fija `scrum876e`).
+- `scrum419` los declara en su inventario: 75 → 83 tests de banco.
+- Carril: `node scripts/carriles.mjs de tests/<f>` para los cinco ANTES de tocarlos: «sin fila en §3: nadie lo
+  reclama». Control positivo: `scripts/equipo/latido.mjs` → S5.
+
+### ② Antes, después y mutación (banco LOCAL)
+
+No hay Postgres en la máquina: PGlite 0.5 con `pglite-socket` en `127.0.0.1:55611`, base `yaqu_libro_test`, esquema de
+`prisma migrate diff --from-empty` (33 tablas, una por modelo). Canario: `scrum13-cobrado` (ya migrado) 1/1.
+
+| pasada | casos | pasan | caen | saltan |
+|---|---|---|---|---|
+| ANTES (los 4 de main, con `LIBRO_PG_URL` puesta) | 9 | 1 | 0 | **8** |
+| DESPUÉS | 9 | **9** | 0 | 0 |
+| MUTACIÓN en `dist/` (no en `src/`): `assertRefsOwned` sin `merchantId` en la búsqueda de la cotización · scrum135 | 4 | 2 | **2** (los dos de cotización ajena) | 0 |
+
+- Los 8 del ANTES son los mismos 8 que salta CI según la sonda dinámica de §1599d.
+- **Dos fallos del INSTRUMENTO, no de los tests, que el CI no tiene.** `pglite-socket` admite UNA conexión por
+  defecto y el pool de Prisma abre varias («Can't reach database server» a mitad): se sube a 64. Y PGlite es una
+  sola sesión de backend, así que los `prepared statement "s0"` del proceso anterior chocan con el siguiente
+  (42P05): el banco se reinicia antes de cada fichero. En CI es un Postgres 16 de verdad.
+
+### ③ El trinquete: `tests/scrum1599f-los-que-solo-ve-staging.test.mjs`
+
+- **Población:** los ficheros con un `skip` que nombra `QA_DB_TEST` y SIN segundo destino (ni importan
+  `_banco-libro.mjs` ni leen `process.env.LIBRO_PG_URL`), las dos cosas por AST. Sale **42** sobre los 1.492 ficheros
+  `tests/*.test.mjs` del árbol fusionado (contados con `ls`, el nuevo incluido), y casa CONJUNTO a conjunto con la lista dinámica de CI de §1599d menos estos cuatro: dos sondas que no
+  comparten algoritmo. Los 2 meta-tests (`scrum419`, `scrum754`) no entran porque leen la variable.
+- **Se compara el conjunto**, en las dos direcciones: un fichero que entra o uno que sale sin migrar lo tumban,
+  nombrándolo.
+- **Positivo sembrado:** un gateado fabricado en el propio test va con el árbol; si el extractor no lo ve, el
+  censo dice CIEGO y no compara. Un caso permanente lo comprueba: sin el sembrado, CIEGO. Un gemelo con la forma
+  migrada NO entra, y un comentario que nombra el banco no cuenta como migración.
+- **Rojos vistos** (cada uno con su `git diff --numstat` al lado, restaurados con `git restore --source=HEAD`):
+  - devolver `scrum109` a su forma de main → «ENTRAN: scrum109»;
+  - quitar `scrum58` de la lista → «ENTRAN: scrum58»;
+  - declarar `scrum13-cobrado`, ya migrado → «SALEN: scrum13-cobrado».
+
+### ④ Coste: lo medido y lo que queda
+
+- **Local (PGlite, un fichero cada vez):** 0,49 + 1,44 + 1,94 + 0,92 = **4,8 s** para los 4, más ~1 s de arranque del
+  banco por fichero. No predice CI: allí es otro motor y la tanda corre en paralelo.
+- **En CI:** SIN MEDIR al escribir esto. Sale del obligatorio de este PR comparado con un run de main de la misma
+  hora, y va en el comentario de Jira, no aquí.
+- **Los 42 que quedan**, por las mismas banderas:
+
+| grupo | ficheros | lectura (sin medir) |
+|---|---|---|
+| sencillos | 3 · `scrum593d`, `scrum574`, y `scrum116` apartado | 1 lote; 116 probablemente se queda en staging (A) |
+| HTTP o app, sin emisión ni carrera | 17 | hay precedente en el banco (`scrum72`, `albaran`, 876e/g): 3-4 lotes |
+| emisión o fiscal, sin carrera | 10 | piden el flag ES en sus merchants (`FISCAL_ON`, como 1599b); 2 lotes |
+| carrera o concurrencia | 12 | el riesgo alto: `scrum814` ya está medido que se ahoga en la tanda paralela (`ci.yml`, SCRUM-871) y corre en paso aparte |
+
+  Estimación: **unos 8-9 lotes más** de 4-5 ficheros, y un resto de carrera que puede no dejarse meter en la tanda
+  paralela. Es una lectura de banderas, no una medición: un fichero «sencillo» puede no serlo.
+
+### ⑤ Lo que NO se ha hecho, ni medido
+
+- El tiempo en CI (arriba). Una pasada por punto, no tres.
+- Staging: no he corrido los cuatro con `QA_DB_TEST=1` (sin turno pedido). Su destino de staging no cambia de código.
+- La tanda entera en local: NO CORRIDA (diez sesiones a la vez). Guards dirigidos: 22 ficheros (237, 976, 824 ×3,
+  836, 702, 700, 719, 1415, 876e, 876f, 113, 740, 812, 850, 850b, 1185, 411, 723, 419 y 1599f) = 206 casos, 206 pasan,
+  0 caen, 0 saltan.
+- De paso, confieso: para la primera inyección escribí `git show … > tests/scrum109…` y `guard-dangerous` lo paró
+  (truncaba un fichero vigilado); se hizo con `git restore --source=origin/main`.
 ## J6 · SCRUM-1599g · diseño A, nuestra mitad: fecha y veredicto de cada fichero en el recibo de la tanda gateada
 
 **Medido contra:** `origin/main` = `0e86dada4887f1ac54ce0ed5cad3c53c99c72c1c` · 2026-10-24T10:12:36Z (hora de GitHub al mezclar `origin/main` en la rama; sesión J6 `jv-j6bi` en su árbol `jv-j6bi`, por encargo del orquestador `cobroflash-backend-95`. Sin base y sin turno: la tanda gateada de verdad NO se ha corrido)

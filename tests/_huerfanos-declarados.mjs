@@ -547,6 +547,14 @@ export const DECLARADOS = [
     motivo: '🔴 LOS DOS QUE SIGUEN SIN CABLE, y son los que importan: `bloqueRetencion` pinta la retención en el documento y `leerTipoRetencion` es el SUELO FISCAL que impide emitir sin saber si el profesional retiene. Cablear cualquiera de los dos cambia lo que se SELLA (regla 38) y necesita GO explícito del fundador. ③a entrega la pantalla donde se DECLARA el tipo; aplicarlo a una factura es otra cosa y no se ha hecho.',
     exports: ['bloqueRetencion', 'leerTipoRetencion'] },
   // ═══════════════════════════════════════════════════════════════════════════════════════════
+  // SCRUM-1063c · 24-oct-2026 · `suplidos.ts` pasa de módulo muerto a vivo porque `libroRegistro.ts`
+  // importa `partirPorSuplido`. Los otros tres que el clasificador marcó (`MARCA_SUPLIDO`,
+  // `leerMarcaSuplido`, `importeSuplido`) NO se declaran: pierden el `export` en el mismo commit.
+  { modulo: 'src/modules/invoicing/domain/suplidos.ts',
+    cat: 'MOTOR_EN_ESPERA', desde: '2026-10-24',
+    motivo: 'Sacar los suplidos de la base que se SELLA (`desgloseConSuplidos`) y escribir la columna `invoices.suplidos` (`totalSuplidos`) cambia lo que se emite: camino de emisión, regla 38, con su propio GO del fundador. SCRUM-1063 c.20717 lo dejó fuera a propósito: el 303 espera a la emisión y sólo usa `partirPorSuplido` para etiquetar.',
+    exports: ['desgloseConSuplidos', 'totalSuplidos'] },
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
   { modulo: 'src/modules/invoicing/domain/rectificabilidad.ts',
     cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
     motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
