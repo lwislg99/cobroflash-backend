@@ -122,7 +122,7 @@ test('SCRUM-1603 ② · la página de _banco-lista enlaza esas hojas, sirve las 
     const html = pagina.cuerpo.toString('utf8');
     let desde = 0;
     for (const h of hojasDelPanel(PUBLIC)) {
-      const i = html.indexOf(`<link rel="stylesheet" href="${h}">`, desde);
+      const i = html.indexOf(`<link rel="stylesheet" href="${h}"`, desde);
       assert.ok(i >= 0, `🔴 la página del banco no enlaza «${h}» (o no en el orden del índice).`);
       desde = i;
     }

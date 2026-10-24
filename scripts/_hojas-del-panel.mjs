@@ -31,7 +31,8 @@ export function hojasDelPanel(publico) {
   const ceguera = cegueraDeLasHojas(r, 1, 'public/dashboard/index.html');
   if (ceguera) throw new Error(ceguera);
   // `./css/styles.css` es relativa al índice: se resuelve contra `/dashboard/`, como el navegador.
-  return r.locales.map((h) => new URL(h, 'http://banco/dashboard/index.html').pathname);
+  // Sin `new URL` (SCRUM-195/414): se resuelve como ruta, quitando la query y el fragmento.
+  return r.locales.map((h) => path.posix.resolve('/dashboard', h.split(/[?#]/)[0]));
 }
 
 /** Los `<link>` listos para pegar en el `<head>` de una página del banco. */
