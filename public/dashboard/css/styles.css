@@ -348,6 +348,20 @@ img { max-width: 100%; display: block; }
   color: var(--neutral-600);
 }
 .topbar-hamburger svg { width: 18px; height: 18px; }
+/* S2: SCRUM-962g · el «Menú» de la barra de arriba es el ÚNICO camino a la navegación en móvil y
+   S2: medía 36,5 de toque (yaqu.app, 390, 23-oct): DESIGN.md §5 pide 44. Se amplía el ÁREA, no el
+   S2: dibujo: un `::before` de 44×44 centrado sobre la caja de 36 (crece 4 px por lado; el título
+   S2: está a 12 px). El banco del editor no lo veía porque no monta la barra superior. */
+.topbar-hamburger { position: relative; }
+.topbar-hamburger::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+}
 .topbar-title {
   font-size: 17px;
   font-weight: 700;
@@ -1774,6 +1788,10 @@ html, body { overflow-x: clip; }
 .sitios-guardados__vacio { margin: 0; font-size: 13px; color: var(--muted); }
 .sitios-guardados__error { margin: 0; font-size: 13px; color: var(--danger-ink); }
 .quote-dto-global__campo { display: flex; flex-direction: column; gap: 4px; max-width: 200px; }
+/* S2: SCRUM-962g · la etiqueta ENVUELVE el campo y SÍ lo enfoca (clic real), así que es ella la que
+   S2: recibe el dedo: medía 44,6 con la fuente de respaldo del banco y 43,6 con Inter en yaqu.app. Con
+   S2: la fuente real se quedaba corta por 0,4 px; el suelo no depende de la fuente. */
+.quote-dto-global__campo { min-height: 44px; }
 
 /* SCRUM-139 F2 · RENGLÓN EN BLANCO DEL CUADERNILLO.
    El editor abre con varias líneas dibujadas (LINEAS_CUADERNILLO): son una INVITACIÓN, no

@@ -442,3 +442,100 @@ Aquí la etiqueta **también** los activa (toque real: «sin marcar → marcado�
 **Tests relacionados:** los **154 ficheros** que leen `styles.css` o `quotesView.js`, o nombran estas clases o la cabecera de los modales: **1.467 pass · 0 fail · 0 skipped**. Guards de navegador: `guard:objetivo-tactil` (con el trinquete bajado), `guard:pasos-del-editor` y `guard-915i-cabecera`, **los tres a 0**.
 
 **Pendiente:** verlo en yaqu.app al descongelar. A 390, en Condiciones › Ajustes del documento, los dos radios y la casilla tienen que responder en todo el alto de 44 de su fila. En ⋯ › Ajustes de la línea, el «IVA %» tiene que verse como «Coste».
+## Tramo 962g (S2, 23-oct-2026) · Lo medido EN yaqu.app contra lo medido con la rama servida, y dos arreglos que sólo se veían en producción
+
+**Medido contra:** producción, cuenta QA (merchant 46), builds `6c8706dae` → `6dab77645` → `2a90a5b4a` → `7d13cdd85` (prod se movió durante la tanda). **Entre `6c8706dae` y `7d13cdd85` no cambia ni un fichero de `public/`** (`git diff --stat 6c8706dae 7d13cdd85 -- public/` vacío), así que las cuatro pasadas miden el mismo front. El `styles.css` que sirve yaqu.app es **idéntico** al del árbol (237.953 B, `css-de-prod.mjs`). Hora de GitHub: 2026-10-23 12:27–13:06 GMT.
+**Skill UI:** cargada (`yaqu-premium-ui`). **Microcopy:** ninguna.
+**Rama:** `scrum-962g-prod-contra-banco`, sobre `origin/main` `d45b319f1`.
+
+A9: aviso → cicatriz S2 «Di por controles dos anchos de Albaranes que daban 0 de desborde y eran ciegos: el medidor miraba un contenedor que a ese ancho no es el que desborda; un control negativo que no puede fallar no es un control» — no se pudo comprobar: la sonda de Albaranes (`albaranes-tabla-medida.mjs`) vive fuera del repo; el caso, abajo en ④ y en «Propuesto»
+
+### ① 962d en producción: VISTO (corrección al encargo: #2685 es 962d y está en `main` desde el 22-oct 11:20Z)
+
+`cabecera-viva-prod.mjs` (el guion de 962d, cambiando sólo el banco por `banco-prod.mjs`), los 5 modales del editor con clics reales:
+
+| | 390 | 929 |
+|---|---|---|
+| **prod** · área «?» / «×» · cabecera | **43,5×44 / 44×44** · 50 | **43,5×44 / 44×44** · 50 |
+| control: prod con el `styles.css` servido SIN el bloque 962d | 28,5×26 / 30×30 · 50 | 29,5×26 / 29,5–30×30 · 50 |
+| banco de 962d (22-oct), antes → después | 27,5×26 → 43,5×44 / 30×30 → 44×44 | 28,5×26 → 43,5×44 / 30×30 → 44×44 |
+
+10 de 10 modales abiertos en cada pasada. **Coincide con el banco** salvo 1 px de ancho del «?» (29,2 de caja en prod, 28,1 en el banco): es la fuente, abajo.
+
+### ② ¿Predice el banco a producción? NO DEL TODO — y la diferencia tiene dos causas, las dos medidas
+
+Mismo guion (`editor-recorrido.mjs` de 962c), mismo commit, mismos datos inyectados en las mismas rutas, **62 de 62 estados alcanzados en las tres pasadas**:
+
+| pasada | controles | cortos | DEFECTO | DUDOSO | sólo-escritorio | ARTEFACTO |
+|---|---|---|---|---|---|---|
+| banco (local, `_banco-lista.mjs`) | 109 | 29 | 4 | 1 | 21 | 3 |
+| **yaqu.app** | **115** | **31** | **8** | 0 | 21 | **2** |
+| yaqu.app con `/fonts/*` CORTADO | 115 | 31 | 6 | 1 | 21 | 3 |
+
+(El 33 de 962c baja a 29 en el banco porque 962d ya está en `main`: las 4 filas de «?»/«×».)
+
+**Causa 1 · la FUENTE.** El `documento()` del banco enlaza `tokens.css` y `styles.css`; `public/dashboard/index.html` enlaza además `/fonts/inter.css`. El banco mide con la fuente de respaldo. Con Inter, etiquetas y campos pierden ~1 px, y dos controles cruzan el umbral:
+- **«Descuento global»**: etiqueta envolvente 44,6 (banco) → **43,6** (prod). Artefacto en el banco, **defecto en producción**.
+- **«IVA %»**: etiqueta 44,6 → 43,6. En el banco salía «dudoso» (962d ya lo dio por defecto con toque real); en prod sale defecto directamente. Lo arregla #2692 (962f, abierto).
+
+**Prueba de la causa, no deducción:** con las fuentes web cortadas, yaqu.app da EXACTAMENTE los veredictos del banco en el editor (los dos vuelven a 44,6). Lo que sobra son los dos de abajo.
+
+**Causa 2 · el SHELL.** El banco no monta la barra superior; producción sí (+6 controles). Dos salen cortos:
+- **«Menú»** (`.topbar-hamburger`), el único camino a la navegación en móvil: **36×36 a 390. DEFECTO** (DESIGN.md §5: 44 en móvil). En TODAS las pantallas del panel.
+- **«Buscar… (o pulsa /)»**: 32,5 de alto a 929 (34,5 sin Inter). **Discutible**: §5 fija 36 de escritorio para botones; para un campo no dice nada. No lo toco.
+
+**Lo que NO cambia entre banco y prod:** los 21 «sólo escritorio» y los 4 defectos de base (casilla «Baja de WhatsApp» 41,3, de J2; radios «Razón social» / «Nombre comercial» 20,4 y casilla «Incluir descripción» 21,1, que arregla #2692), con las mismas cifras al decimal.
+
+⇒ **Para S0/S3 (dueños del banco y del censo): un veredicto del banco a menos de ~1 px del umbral no predice producción, y nada de la barra superior está medido por ningún banco.** Propuesta, sin construir: que `documento()` de `_banco-lista.mjs` enlace `/fonts/inter.css` como el `index.html`. Antes hay que censar quién mide sobre ese banco (A12): moverá cifras de otros guards.
+
+### ③ Arreglado de paso (A13): los dos que sólo se veían en producción
+
+**Sólo `public/dashboard/css/styles.css`**, bloques marcados `S2:`.
+- **«Menú»**: `position: relative` + un `::before` de 44×44 centrado sobre la caja de 36 (crece 4 px por lado; el título está a 12). `menu-962g.mjs` en prod a 390: **36×36 → 44×44**, control de 12 px cazado. **La captura de la barra sale idéntica byte a byte** (prod contra prod sirviendo la rama: 5.128 B las dos, con el editor montado; y 2.925 B las dos sobre Inicio, con una sonda mía previa).
+- **«Descuento global»**: `.quote-dto-global__campo { min-height: 44px }`. La etiqueta ya envolvía y enfocaba el campo; sólo le faltaban 0,4 px con Inter.
+- **yaqu.app sirviendo el CSS de la rama, con Inter** (62/62): 31 → **30** cortos, 8 → **6** defectos. El «Menú» sale de la lista y «Descuento global» vuelve a artefacto (etiqueta ≥44 que lo activa). Quedan los 4 de base (3 → #2692, 1 → J2), el IVA (#2692) y el buscador (discutible).
+
+**Test:** `tests/scrum962g-menu-y-descuento-44.test.mjs` (sin gate). ① el `::before` 44×44 centrado contra el botón relativo · ② el shell sigue pintando `<button class="topbar-hamburger">` · ③ el suelo de 44 · ④ la etiqueta sigue envolviendo el campo. **Rojo primero:** `mutar-962g.mjs <raiz> 83f49c862239f39d70e2f25b6b985251164bc633` → las 6 mutaciones del catálogo (`MUTACIONES_QUE_ME_TUMBAN`) tumban SU prueba, y el `styles.css` de antes del arreglo tumba ① y ③. `meta-guard-mutaciones.mjs --solo-censo`: 696 declaraciones, salida 0.
+**Tests relacionados:** los 159 ficheros que leen `styles.css` o `index.html`, juntos: **1.515 pass · 0 fail · 0 skipped**. `guard:objetivo-tactil`: 0 hallazgos · 0 ciegos. `censo:arbitro-de-toque`: salida 0. No he corrido la suite completa.
+⚠️ `tsc` da 1 error que no es de esta rama: el cliente de Prisma COMPARTIDO no conoce `activityKind` (`merchantAdmin.ts:172`). Está desfasado; no lo regenero (cuelga del compartido, A1).
+
+### ④ Lo de S2 que entró en `main` estos días, VISTO en yaqu.app
+
+| ticket | qué se mira | resultado en prod |
+|---|---|---|
+| **1559k** · Albaranes 769–899 | desborde dentro de su `.table-scroll` a 769 / 780 / 800 / 850 / 899 | **13 / 2 / 0 / 0 / 0**, página +0: lo que predecía la rama servida, exacto. **Control:** el `styles.css` de prod SIN el bloque de 1559k da 106 / 95 / 75 / 25 / 0 (el «antes» del 19-oct, exacto). 900 / 929 / 1280: 0 |
+| **1559j** · Productos a 44 | `tactil-1559j.mjs` a 1280 y 390 | QA tenía **0 productos** (no los quité yo), así que el **estado vacío, que el 19-oct no se pudo ver a pelo, se ve ahora**: 7 controles, 0 cortos, en los dos anchos. Los dos accesos del vacío a 390: 44 de alto y centrados en lo visible. Con 3 productos `[QA-1559j]` creados por la pantalla (ids 234–236): 11 controles, 0 cortos, en los dos anchos |
+| **1072d** · la pregunta de la actividad | campo, guardado y la retención | El campo está justo detrás de la retención, mismo submenú, ∅ + 3 opciones, a 1280 y 390. **Guardado REAL:** retención a 15 % y, después, SÓLO `activityKind: empresarial` → la base guarda «empresarial» y **la retención sigue en 15 %**; la pantalla relee «Empresarial» y «15 %» a 1280 y 390. **QA restaurada** después (sin actividad, retención «no consta»). ⚠️ Por la pantalla, QA no puede guardar nada: le faltan razón social, NIF, dirección y teléfono (obligatorios del submenú «Empresa»). Medido: «Guardar cambios» desde Facturación salta a Empresa, enfoca «Razón social» y dice qué falta. Bien resuelto, no es defecto |
+| **1233i** · «Enviar por email» | `email-1233i.mjs` | **12 / 12 con control** (factura, trabajo y presupuesto × con / sin email × 1280 / 390). Las fichas van con datos inyectados por la sonda: es el código de prod, no datos reales |
+| **1056e** · trampa §16 | — | son docs: no hay nada que ver en pantalla |
+
+### Lo que NO es de S2, visto de paso (no se arregla aquí)
+
+- **`POST /admin/products` con `vat: 21` da 500** (`internal_error`), no 400: la columna es `Decimal(5,4)` (fracción) y 21 la desborda. La pantalla ya no manda `vat`, así que **no le llega a ningún profesional desde el panel**; sí a quien use la API con el IVA en porcentaje. S1, sin ticket (no tiene víctima hoy).
+- Los dos `select` de Facturación (retención y actividad) miden **36 a 390**, por debajo de 44. Configuración es de J3; ya estaba dicho en 962b.
+
+### Propuesto, sin construir
+
+- **Albaranes 641–768:** la tabla scrollea DENTRO de sí misma (`display:block`, A6.6): contenido de 762 px en 615–742, y «Emitir» / «Enviar para firmar» quedan cortados hasta que se desplaza. Se alcanzan; es «fea, no rota», la clase que tenía 769–899 antes de V5. Ampliar el ① de 1559k (ocultar «Entrega» en la lista) a 641–899 es una decisión de forma, como lo fue V5: **la toma el orquestador**.
+
+### Cómo se reproduce
+
+    # YAQU_QA_SESION = fichero con «nombre=valor» de la cookie de QA · YAQU_CHROME = ejecutable de Chrome
+    node docs/master/evidencias/scrum962g/copiar.mjs <raiz>          # regenera las copias de 962c/962d con el banco de prod
+    node docs/master/evidencias/scrum962g/editor-recorrido-prod.mjs <raiz> <tmp>/prod.json
+    SIN_FUENTES=1 node …/editor-recorrido-prod.mjs <raiz> <tmp>/sinfuentes.json   # la prueba de la causa 1
+    SERVIR_CSS=<styles.css> node …/editor-recorrido-prod.mjs <raiz> <tmp>/rama.json  # una rama, en prod
+    node docs/master/evidencias/scrum962c/editor-analisis.mjs <tmp>/prod.json
+    node docs/master/evidencias/scrum962g/cabecera-viva-prod.mjs <raiz> <tmp>/cab.json
+    [SERVIR_CSS=<styles.css>] node docs/master/evidencias/scrum962g/menu-962g.mjs <raiz> <tmp>/barra.png
+    node docs/master/evidencias/scrum962g/mutar-962g.mjs <raiz> 83f49c862239f39d70e2f25b6b985251164bc633
+
+`banco-prod.mjs` NO ESCRIBE: corta todo lo que no es GET y lo demuestra con un control positivo al abrir. Sin las dos variables sale con 2 («NO SUPE MIRAR»), no con un verde.
+
+### 962g · rojo del obligatorio arreglado (24-oct, Date: Sat, 24 Oct 2026 12:25:41 GMT)
+
+El «build + tests» de #2734 cayó por DOS trinquetes, no por el arreglo: `scrum694` (40 > 39 guards con filtro de
+comentarios propio) y `scrum700` (92 > 91 ficheros con filtro propio). Era mi test: cortaba `//` y `/* */` con regex.
+Ahora usa `soloCodigo` de `tests/_solo-codigo.mjs` para el JS y para el CSS. Sobre `styles.css` entero el helper y la
+regex de bloques dan lo mismo (106.596 caracteres útiles, idénticos). Medido en local tras meter `origin/main`:
+694, 694c, 700 y 962g → 23/23. `mutar-962g.mjs` → 6 de 6 mutaciones tumban su prueba, base 0 caídas.
