@@ -1,4 +1,4 @@
-// SCRUM-1105b · El cuarto sembrador, `prisma/seed.ts` (`npm run seed` / `npm run db:seed`), también
+// SCRUM-1105b · El cuarto sembrador, `prisma/seed.ts` (`npm run db:seed`, que es `prisma db seed`), también
 // elige su base por BANDERA. PR #1762 cubrió `seed-demo`, `seed-video` y `seed-staging`; éste se quedó
 // pidiendo `DATABASE_URL=<la de dev> npm run db:seed`, que es justo copiar una credencial a mano.
 //
@@ -23,7 +23,7 @@ import { DESTINOS_ESPERADOS } from '../scripts/_clave-vs-destino.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SEED = path.join(RAIZ, 'prisma', 'seed.ts');
-// El BINARIO de ts-node, que es lo que lanza `npm run seed`. Con `node -r ts-node/register` el hijo
+// El BINARIO de ts-node, que es lo que acaba lanzando `prisma db seed`. Con `node -r ts-node/register` el hijo
 // salió mudo y con código 0 (medido): un verde que no habría ejecutado nada.
 const TS_NODE = path.join(path.dirname(createRequire(path.join(RAIZ, 'package.json')).resolve('ts-node/package.json')), 'dist', 'bin.js');
 
