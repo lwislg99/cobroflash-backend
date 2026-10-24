@@ -204,7 +204,9 @@ En c.20716 (jv-j1bc, este mismo puesto) se escribió «la 67 (cuotas a compensar
 
 **Medido contra:** `origin/main` = `091e4d765ba13083b93fb6c168ffbd70fb1f1563` · 2026-10-24T11:02:38Z
 
-A9: comprobación → `tests/scrum411-exports-inalcanzables.test.mjs` — fue el que cazó en el obligatorio que el import nuevo de `libroRegistro.ts` resucitaba `suplidos.ts`; la dirigida del tramo de arriba no lo incluía.
+A9: comprobación → `tests/scrum411-exports-inalcanzables.test.mjs`
+
+Fue el que cazó en el obligatorio que el import nuevo de `libroRegistro.ts` resucitaba `suplidos.ts`; la dirigida del tramo de arriba no lo incluía.
 
 ### Qué decía el guard
 
