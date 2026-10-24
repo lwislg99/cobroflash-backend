@@ -1,0 +1,19 @@
+runs 300 (de 300) · 2026-10-16T12:12:53Z → 2026-10-23T12:40:46Z
+sólo docs: 105 · PR 78
+  trinquete: { null: 3, success: 77, cancelled: 17, undefined: 2, failure: 6 }  meta: { null: 3, success: 24, cancelled: 69, undefined: 2, failure: 7 }
+con código: 195
+  trinquete: { success: 155, cancelled: 34, failure: 6 }  meta: { success: 51, cancelled: 134, failure: 10 }
+  ROJO en sólo docs: run 39621490856 PR #2653 scrum-1538d-que-quito-las-colgadas tri=success meta=failure
+  ROJO en sólo docs: run 39448585012 PR #2629 scrum-1527e-cero-tras-2429-y-e-descartada tri=success meta=failure
+  ROJO en sólo docs: run 39249156066 PR #2616 scrum-623b-xml-y-papel-discrepan tri=success meta=failure
+  ROJO en sólo docs: run 39244498878 PR #2428 scrum-1554b-los-57-por-tipo tri=failure meta=cancelled
+  ROJO en sólo docs: run 39243666743 PR #2606 scrum-1529-censo-equipo-javier-27 tri=success meta=failure
+  ROJO en sólo docs: run 39213527137 PR #2598 scrum-49d-visto-en-prod tri=failure meta=success
+  ROJO en sólo docs: run 39213486488 PR #2596 scrum-1428-para-javier-19oct tri=success meta=failure
+  ROJO en sólo docs: run 39212283374 PR #2594 scrum-1357h-sala-carga-mods-yaqu tri=failure meta=cancelled
+  ROJO en sólo docs: run 39152037981 PR #2571 scrum-655d-pagina-del-cliente-sin-apartados tri=failure meta=cancelled
+  ROJO en sólo docs: run 39082183500 PR #2557 scrum-1562-sonda-filas-sin-teclado tri=failure meta=cancelled
+  ROJO en sólo docs: run 38908581818 PR #2532 scrum-1206b-visto-en-prod tri=failure meta=cancelled
+  ROJO en sólo docs: run 38901734608 PR #2525 scrum-951g-rama-empujada-vacia tri=success meta=failure
+  ROJO en sólo docs: run 38899968065 PR #2520 scrum-829c-a15-traer-main-a-medias tri=success meta=failure
+
