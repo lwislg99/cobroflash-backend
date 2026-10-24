@@ -116,9 +116,18 @@ test('SCRUM-935b · POBLACIÓN: ci.yml solo corre en PR y en push a main (los do
     '🔴 ci.yml corre ahora sobre otras ramas: este guard tendría que evaluar también sus refs.');
 });
 
-test('SCRUM-935b/1498c · 🔴 ROJO: cada job en su grupo por ref; en main no cancela, en PR sí; nada de grupo de workflow', () => {
-  assert.deepEqual(defectos(REAL), [],
-    `🔴 la concurrencia de ci.yml está mal (${REAL.jobs.length} jobs mirados):\n  ` + defectos(REAL).join('\n  '));
+const EN_PR = /ya no cancela en PR/;
+
+test('SCRUM-935b/1498c · 🔴 ROJO: cada job en su grupo por ref, en main NO cancela, y nada de grupo de workflow', () => {
+  const d = defectos(REAL).filter((x) => !EN_PR.test(x));
+  assert.deepEqual(d, [],
+    `🔴 la concurrencia de ci.yml está mal (${REAL.jobs.length} jobs mirados):\n  ` + d.join('\n  '));
+});
+
+test('SCRUM-935b/1498c · POSITIVO: en una rama de PR un push nuevo SIGUE cancelando al anterior, en cada job', () => {
+  const d = defectos(REAL).filter((x) => EN_PR.test(x));
+  assert.deepEqual(d, [],
+    `🔴 ya no cancela en PR (${REAL.jobs.length} jobs mirados): cada push apilaría un CI completo.\n  ` + d.join('\n  '));
 });
 
 test('SCRUM-935b/1498c · CONTROL del instrumento: ve cada defecto si vuelve (mecanismo, A23·12)', () => {
