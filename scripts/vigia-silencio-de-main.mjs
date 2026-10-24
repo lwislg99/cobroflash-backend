@@ -492,6 +492,41 @@ export function ciegoDeLaSenal(jobs) {
   return null;
 }
 
+// SCRUM-1498d · EL SUSTITUIDO CON EL OBLIGATORIO EN VERDE (decisión del fundador del 24-oct, SCRUM-1498
+// c.20795, «Sí: basta con el obligatorio en verde»). Con un grupo de concurrencia por job (SCRUM-1498c,
+// #2841), el commit que llega mientras otro corre ya no sale «cancelled con 0 jobs»: corren los jobs
+// cuyo grupo estaba libre, y GitHub cancela SIN ARRANCAR los que esperaban cuando llega el siguiente.
+// Si entre los que corrieron está «build + tests» en success, y todos los demás son success o
+// cancelados sin arrancar, el commit queda absuelto por su propio obligatorio, aunque el meta-guard no
+// corriera en él. En la PUNTA no: allí el meta-guard se sigue exigiendo, y su falta se avisa. Un
+// obligatorio en rojo, o cancelado él también, sigue sin absolverse (ROJO, o el CIEGO de siempre).
+
+//
+// Y la ampliación del mismo día (c.20802, «Los cubre el siguiente verde»): si el sustituido es el
+// propio obligatorio (cancelado sin arrancar, con el resto en success o sin arrancar), el commit queda
+// absuelto cuando el SIGUIENTE commit posterior de la línea cuyo obligatorio dio veredicto lo dio en
+// success: ese commit contiene su código y lo probó. Si ese siguiente salió en rojo, no se absuelve y
+// el aviso dice cuál. Si antes de llegar a él hay uno aún corriendo, espera.
+
+/** La causa de un CIEGO que se absuelve fuera de la punta (SCRUM-1498d). */
+export const CAUSA_SUSTITUIDO_CON_OBLIGATORIO_VERDE = 'sustituido con el obligatorio en verde';
+/** La causa de un CIEGO que absuelve el siguiente obligatorio en verde (SCRUM-1498d, c.20802). */
+export const CAUSA_OBLIGATORIO_SUSTITUIDO = 'obligatorio sustituido sin veredicto';
+
+/** Lo que dio el obligatorio en estos jobs: 'success', 'failure' o `null` (sin veredicto, o no leídos). PURO. */
+export function veredictoDelObligatorio(jobs) {
+  const o = (Array.isArray(jobs) ? jobs : []).find((j) => j.name === JOB_OBLIGATORIO);
+  return o?.status === 'completed' && ['success', 'failure'].includes(o.conclusion) ? o.conclusion : null;
+}
+/** El job obligatorio, por IDENTIDAD: el mismo donde corre la señal de nombres. */
+export const JOB_OBLIGATORIO = JOB_DE_LA_SENAL;
+
+/** Un job cancelado que no llegó a arrancar ningún paso (sus pasos no se leyeron: no se sabe → `false`). PURO. */
+export function canceladoSinArrancar(j) {
+  return j?.status === 'completed' && j.conclusion === 'cancelled' && Array.isArray(j.steps)
+    && j.steps.every((s) => s?.status !== 'completed' && s?.status !== 'in_progress');
+}
+
 /** Los jobs del workflow CI que se exigen en cada commit de `main`: los de `JOBS_DE_MAIN`. */
 export const JOBS_DEL_CI = JOBS_DE_MAIN.filter((j) => j.workflow === 'CI').map((j) => j.job);
 
@@ -514,7 +549,8 @@ export function topeDeCorridaDelCI(textoCiYml) {
  * @returns {{ sha: string, estado: string, motivo: string, url: string|null, jobs: object[] }}
  */
 export function veredictoDeCommit({ sha, run, jobs, ahora, topeMin, declarados = JOBS_DEL_CI }) {
-  const r = (estado, motivo, lista = [], causa = null) => ({ sha, estado, motivo, url: run?.html_url ?? null, jobs: lista, causa });
+  // SCRUM-1498d: `obligatorio` es lo que dio «build + tests» en este commit; lo lee la absolución (b).
+  const r = (estado, motivo, lista = [], causa = null) => ({ sha, estado, motivo, url: run?.html_url ?? null, jobs: lista, causa, obligatorio: veredictoDelObligatorio(jobs) });
   // SCRUM-1393f: `sinRun` es el dato («GitHub no tiene run de este commit»); si fue por sustitución
   // en la cola lo decide la línea (`sinRunPorSustitucion`), no este veredicto, que no ve vecinos.
   if (!run) return { ...r('CIEGO', 'ningún run del CI por push para este commit: no corrió'), sinRun: true };
@@ -536,6 +572,20 @@ export function veredictoDeCommit({ sha, run, jobs, ahora, topeMin, declarados =
   // SCRUM-1339u: el CIEGO de la señal se nombra también junto al del meta-guard; la causa es la del primero.
   const deLaSenal = ciegoDeLaSenal(jobs);
   const yLaSenal = deLaSenal ? ` · CIEGO de la señal de nombres: ${deLaSenal}` : '';
+  // SCRUM-1498d: antes que el CIEGO del meta-guard, que también saldría aquí (cancelado él solo).
+  const sinArrancar = jobs.filter(canceladoSinArrancar);
+  const obligatorio = jobs.find((j) => j.name === JOB_OBLIGATORIO);
+  if (sinArrancar.length && !rojos.length && !deLaSenal
+    && jobs.every((j) => (j.status === 'completed' && j.conclusion === 'success') || canceladoSinArrancar(j))
+    && declarados.every((n) => jobs.some((j) => j.name === n))) {
+    const lista = sinArrancar.map((j) => `«${j.name}»`).join(', ');
+    if (obligatorio?.status === 'completed' && obligatorio.conclusion === 'success') {
+      return r('CIEGO', `sustituido en la cola de su job: «${JOB_OBLIGATORIO}» en success; sin arrancar: ${lista}`, sinArrancar, CAUSA_SUSTITUIDO_CON_OBLIGATORIO_VERDE);
+    }
+    if (canceladoSinArrancar(obligatorio)) {
+      return r('CIEGO', `sustituido en la cola de su job: «${JOB_OBLIGATORIO}» sin veredicto; sin arrancar: ${lista}`, sinArrancar, CAUSA_OBLIGATORIO_SUSTITUIDO);
+    }
+  }
   if (delMetaGuard) {
     const otros = rojos.filter((j) => j.name !== JOB_META_GUARD);
     const ademas = otros.length ? ` · además en rojo: ${otros.map((j) => `«${j.name}»`).join(', ')}` : '';
@@ -670,7 +720,7 @@ export function cuerpoDelAviso({ veredictos, ahora, origen, urlDelRun, callados 
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 
 /** SCRUM-1393f · el veredicto viene de un run del CI que existe: los CIEGO con run son el «sustituido» y (SCRUM-1339r) el del meta-guard. */
-export const conRun = (v) => !!v && (['VERDE', 'ROJO', 'CORRIENDO'].includes(v.estado) || (v.estado === 'CIEGO' && [CAUSA_SUSTITUIDO, CAUSA_META_GUARD, CAUSA_SENAL].includes(v.causa)));
+export const conRun = (v) => !!v && (['VERDE', 'ROJO', 'CORRIENDO'].includes(v.estado) || (v.estado === 'CIEGO' && [CAUSA_SUSTITUIDO, CAUSA_META_GUARD, CAUSA_SENAL, CAUSA_SUSTITUIDO_CON_OBLIGATORIO_VERDE, CAUSA_OBLIGATORIO_SUSTITUIDO].includes(v.causa)));
 
 /** SCRUM-1393f · el CIEGO `sinRun` cuyo sucesor inmediato en `linea` (la punta primero) tiene run. PURO. */
 export function sinRunPorSustitucion(v, veredictos, linea) {
@@ -687,7 +737,8 @@ export function sinRunPorSustitucion(v, veredictos, linea) {
 export function absolucionDeSustituidos(veredictos, linea = null) {
   const absueltos = new Map();
   const enEspera = new Set();
-  if (!Array.isArray(linea) || !linea.length) return { absueltos, enEspera };
+  const tapados = new Map(); // SCRUM-1498d: sustituido sin veredicto → el siguiente obligatorio, que salió en rojo
+  if (!Array.isArray(linea) || !linea.length) return { absueltos, enEspera, tapados };
   const pos = new Map(linea.map((s, i) => [s, i]));
   const enLinea = (e) => veredictos.filter((v) => v.estado === e && pos.has(v.sha));
   const verdes = enLinea('VERDE');
@@ -697,13 +748,27 @@ export function absolucionDeSustituidos(veredictos, linea = null) {
     // SCRUM-1393f (orden del orquestador del 21-oct, sin reloj): un «sin run» sin NINGÚN posterior
     // de la línea con run (la punta incluida) aún no se juzga: el run puede llegar tarde. ESPERA.
     if (v.sinRun && !veredictos.some((w) => pos.has(w.sha) && pos.get(w.sha) < pos.get(v.sha) && conRun(w))) { enEspera.add(v.sha); continue; }
-    if (v.causa !== CAUSA_SUSTITUIDO && !sinRunPorSustitucion(v, veredictos, linea)) continue;
     const p = pos.get(v.sha);
+    // SCRUM-1498d: lo absuelve su propio obligatorio, salvo en la punta (p = 0), donde se avisa.
+    if (v.causa === CAUSA_SUSTITUIDO_CON_OBLIGATORIO_VERDE) { if (p > 0) absueltos.set(v.sha, v.sha); continue; }
+    // SCRUM-1498d (c.20802): lo absuelve el SIGUIENTE obligatorio con veredicto, si es verde. Un hueco
+    // sin juzgar en la línea no absuelve; uno aún corriendo antes de llegar a él, espera.
+    if (v.causa === CAUSA_OBLIGATORIO_SUSTITUIDO) {
+      for (let i = p - 1; i >= 0; i -= 1) {
+        const w = veredictos.find((x) => x.sha === linea[i]);
+        if (!w) break;
+        if (w.obligatorio === 'success') { absueltos.set(v.sha, w.sha); break; }
+        if (w.obligatorio === 'failure') { tapados.set(v.sha, w.sha); break; }
+        if (w.estado === 'CORRIENDO') { enEspera.add(v.sha); break; }
+      }
+      continue;
+    }
+    if (v.causa !== CAUSA_SUSTITUIDO && !sinRunPorSustitucion(v, veredictos, linea)) continue;
     const contenedores = verdes.filter((w) => pos.get(w.sha) < p).sort((a, b) => pos.get(b.sha) - pos.get(a.sha));
     if (contenedores.length) absueltos.set(v.sha, contenedores[0].sha);
     else if (corriendo.some((w) => pos.get(w.sha) < p)) enEspera.add(v.sha);
   }
-  return { absueltos, enEspera };
+  return { absueltos, enEspera, tapados };
 }
 
 /** La marca de un cierre: los pendientes se cuentan desde la última. */
@@ -725,8 +790,11 @@ export function pendientesDelIssue(previos = '') {
  * 'ninguno'. Devuelve `{ pasos, cuerpo, motivo }`; `pasos` es una lista de 'crear', 'reabrir',
  * 'comentar' y 'cerrar', en ese orden de ejecución, y vacía si no hay nada que hacer.
  */
-export function accionDelIssue({ veredictos, ahora, origen, urlDelRun, punta, linea = null }, { previos = '', estado = 'ninguno' } = {}) {
-  const { absueltos, enEspera } = absolucionDeSustituidos(veredictos, linea);
+export function accionDelIssue({ veredictos: leidos, ahora, origen, urlDelRun, punta, linea = null }, { previos = '', estado = 'ninguno' } = {}) {
+  const { absueltos, enEspera, tapados } = absolucionDeSustituidos(leidos, linea);
+  // SCRUM-1498d (c.20802): el que no se absuelve porque el siguiente obligatorio salió en rojo dice cuál.
+  const veredictos = leidos.map((v) => (tapados.has(v.sha)
+    ? { ...v, motivo: `${v.motivo} · el siguiente «${JOB_OBLIGATORIO}» con veredicto, \`${tapados.get(v.sha).slice(0, 12)}\`, salió en ROJO: no se absuelve` } : v));
   // `contexto` (SCRUM-1393e): la punta juzgada sólo para decidir; no se avisa por ella aquí.
   const callados = new Set([...absueltos.keys(), ...enEspera, ...veredictos.filter((v) => v.contexto).map((v) => v.sha)]);
   const aviso = cuerpoDelAviso({ veredictos, ahora, origen, urlDelRun, callados }, previos);
@@ -748,11 +816,13 @@ export function accionDelIssue({ veredictos, ahora, origen, urlDelRun, punta, li
     if (estado !== 'abierto') return { pasos: [], cuerpo: '', motivo: 'main verificado y ningún Issue abierto: nada que decir' };
     const recuento = informeDeCommits(veredictos, { ahora, origen }).split('\n').at(-2);
     const sinRun = new Set(veredictos.filter((v) => v.sinRun).map((v) => v.sha));
-    const lista = [...absueltos].map(([s, por]) => `- \`${s.slice(0, 12)}\` — no verificado, absuelto por el verde de \`${por.slice(0, 12)}\`${sinRun.has(s) ? ' · SIN run: el siguiente commit le quitó el sitio en la cola' : ''}`);
+    const lista = [...absueltos].map(([s, por]) => (s === por
+      ? `- \`${s.slice(0, 12)}\` — sin meta-guard (sustituido en la cola de su job), absuelto por su propio «${JOB_OBLIGATORIO}» en verde`
+      : `- \`${s.slice(0, 12)}\` — no verificado, absuelto por el verde de \`${por.slice(0, 12)}\`${sinRun.has(s) ? ' · SIN run: el siguiente commit le quitó el sitio en la cola' : ''}`));
     const cierre = [
       `**Vigía de main · CERRADO** · ${ahora} · ${origen}`, '',
       `La punta de \`main\`, \`${punta.slice(0, 12)}\`, sale **VERDE** (${deLaPunta.motivo}), sin ningún CIEGO pendiente.`,
-      ...(lista.length ? ['', `${lista.length} CIEGO «sustituido» (run cancelado con 0 jobs, o sin run porque el siguiente le quitó el sitio en la cola) no verificados, absueltos por el verde de un commit posterior que los contiene:`, ...lista, ''] : []),
+      ...(lista.length ? ['', `${lista.length} CIEGO «sustituido» (run cancelado con 0 jobs, sin run porque el siguiente le quitó el sitio en la cola, o con jobs que el siguiente dejó sin arrancar) absueltos por el verde de un commit posterior que los contiene, o por su propio obligatorio en verde:`, ...lista, ''] : []),
       `Población de esta pasada: ${recuento}.`, `Pasada: ${urlDelRun} ${marcaDeCierre(punta)}`,
     ].join('\n');
     const cuerpo = aviso ? `${aviso}\n\n---\n\n${cierre}` : cierre;
@@ -851,15 +921,17 @@ export const desdeDeLaRed = (ahora = new Date()) => new Date(ahora.getTime() - (
  * padres juzgando (`juzgar(sha)` → veredicto, que además lo añade a `veredictos`) mientras salgan
  * CIEGO «sustituido», y para en el primero que no lo sea. Un commit ya juzgado no se vuelve a pedir.
  * SCRUM-1393f: también sigue por un CIEGO `sinRun` si el que acaba de juzgar (su sucesor) tiene run.
+ * SCRUM-1498d: también baja desde un commit cuyo obligatorio dio veredicto (un ROJO de otro job lo
+ * tiene), y sigue por los sustituidos por job (con el obligatorio en verde o sin veredicto).
  */
 export async function bajarPorSustituidos(veredictos, linea, juzgar) {
   const yaJuzgado = (sha) => veredictos.find((v) => v.sha === sha);
-  for (const desde of veredictos.filter((v) => v.estado === 'VERDE' || v.estado === 'CORRIENDO').map((v) => v.sha)) {
+  for (const desde of veredictos.filter((v) => v.estado === 'VERDE' || v.estado === 'CORRIENDO' || v.obligatorio).map((v) => v.sha)) {
     let sucesor = yaJuzgado(desde);
     for (let i = linea.indexOf(desde) + 1; i > 0 && i < linea.length; i += 1) {
       const v = yaJuzgado(linea[i]) ?? await juzgar(linea[i]);
       if (v.estado !== 'CIEGO') break;
-      if (v.causa !== CAUSA_SUSTITUIDO && !(v.sinRun && conRun(sucesor))) break;
+      if (![CAUSA_SUSTITUIDO, CAUSA_SUSTITUIDO_CON_OBLIGATORIO_VERDE, CAUSA_OBLIGATORIO_SUSTITUIDO].includes(v.causa) && !(v.sinRun && conRun(sucesor))) break;
       sucesor = v;
     }
   }
