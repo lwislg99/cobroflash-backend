@@ -3,7 +3,7 @@
   "suelo": {
     "fecha": "2026-10-09",
     "foto": "docs/master/evidencias/SCRUM-1480/sin-fila-9oct.txt",
-    "quedan": 223
+    "quedan": 217
   },
   "declarados": {
     "scripts/respaldo-programado.mjs": {
