@@ -19,6 +19,7 @@
 // campos— NO está gateado a propósito: vive en 593c y corre siempre.
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de pruebas del carril; fail-closed anti-prod
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599h: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -28,7 +29,7 @@ import { lineasDePdf, lineasConPdf } from './_texto-del-pdf.mjs';
 // 🔴 EL MOTIVO DEL SALTO VA EN EL LITERAL DE CADA `skip`, no en una constante. El censo de
 // SCRUM-456 lee el motivo del CÓDIGO, así que un `skip: SIN_DB` se apaga sin decir por qué —
 // y un test que se apaga en silencio es un test que nadie echa de menos.
-const DB = process.env.QA_DB_TEST === '1';
+const DB = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 
 // Marcas irrepetibles: si aparecieran por otra vía, no serían prueba de nada.
 const CABECERA = 'CAB593D_UNO\nCAB593D_DOS';
@@ -86,7 +87,7 @@ async function conPresupuesto(datosExtra, fn) {
   });
 }
 
-test('SCRUM-593d · 🔴 EL VIAJE: se escribe, se guarda, se RELEE y sale en el PDF', { skip: !DB && 'necesita base: sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-593d · 🔴 EL VIAJE: se escribe, se guarda, se RELEE y sale en el PDF', { skip: !DB && 'necesita base: sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   await conPresupuesto({ docHeaderText: CABECERA, docFooterText: PIE }, async ({ prisma, quote }) => {
     const { lineas, fila } = await pdfDeLaFila(prisma, quote.id);
 
@@ -107,7 +108,7 @@ test('SCRUM-593d · 🔴 EL VIAJE: se escribe, se guarda, se RELEE y sale en el 
   });
 });
 
-test('SCRUM-593d · 🔴 CONTROL NEGATIVO: sin escribirlos, la base los devuelve NULL y el papel no los pinta', { skip: !DB && 'necesita base: sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-593d · 🔴 CONTROL NEGATIVO: sin escribirlos, la base los devuelve NULL y el papel no los pinta', { skip: !DB && 'necesita base: sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   await conPresupuesto({}, async ({ prisma, quote }) => {
     const { lineas, fila } = await pdfDeLaFila(prisma, quote.id);
     assert.equal(fila.docHeaderText, null,
@@ -123,7 +124,7 @@ test('SCRUM-593d · 🔴 CONTROL NEGATIVO: sin escribirlos, la base los devuelve
   });
 });
 
-test('SCRUM-593d · 🔴 vaciar un texto ya guardado lo deja en NULL, no en cadena vacía', { skip: !DB && 'necesita base: sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-593d · 🔴 vaciar un texto ya guardado lo deja en NULL, no en cadena vacía', { skip: !DB && 'necesita base: sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   await conPresupuesto({ docHeaderText: CABECERA, docFooterText: PIE }, async ({ prisma, quote }) => {
     await prisma.quote.update({ where: { id: quote.id }, data: { docHeaderText: null, docFooterText: null } });
     const { lineas, fila } = await pdfDeLaFila(prisma, quote.id);
@@ -143,7 +144,7 @@ test('SCRUM-593d · 🔴 vaciar un texto ya guardado lo deja en NULL, no en cade
 // vive en un árbol de trabajo (regla 3) y su comprobación la corre el fundador.
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-593d · 🔴 SUELO ASIMÉTRICO: `albaranes.doc_footer_text` NO existe en la base', { skip: !DB && 'necesita base: sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-593d · 🔴 SUELO ASIMÉTRICO: `albaranes.doc_footer_text` NO existe en la base', { skip: !DB && 'necesita base: sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const filas = await prisma.$queryRawUnsafe(
     `SELECT table_name, column_name FROM information_schema.columns
