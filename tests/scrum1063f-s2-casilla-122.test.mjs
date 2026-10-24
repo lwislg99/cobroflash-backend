@@ -138,11 +138,16 @@ test('SCRUM-1063f · CONTROL: sin S2 fuera ningún aviso habla de la ISP (y con 
 
 // ── 3 · quien lee el 303 no la pierde ────────────────────────────────────────────────────────────
 
-test('SCRUM-1063f · el 390 sigue declarando la S2 (sin casilla decidida en el anual), con su trimestre', () => {
+// SCRUM-1077c · el 390 ya no la declara sin clasificar: la pone en su 125 (SCRUM-1077 c.20833).
+// El detalle de la 125 vive en `tests/scrum1077c-s2-casilla-125.test.mjs`; aquí sólo que la 122 del
+// 303 llega al anual con su trimestre y no se pierde.
+test('SCRUM-1063f · el 390 no pierde la S2 de la 122: llega a su 125, con su trimestre', () => {
   const vacio = (t) => sobre(libro([]), t);
   const t2 = m303([factura('F-1', [MANO, S2], { total: '1968.00' })]);
   const r = construirModelo390({ año: 2026, trimestres: [vacio(1), t2, vacio(3), vacio(4)], ahora: new Date(2027, 2, 1) });
-  assert.deepEqual(r.sinClasificar, [{ numero: 'F-1', tipo: 0, base: 1000, cuota: 0, motivo: 'inversion_sujeto_pasivo', trimestre: 2 }]);
+  assert.deepEqual(r.volumenDeOperaciones.inversionSujetoPasivo,
+    { casilla: '125', base: 1000, operaciones: [{ numero: 'F-1', tipo: 0, base: 1000, trimestre: 2 }] });
+  assert.deepEqual(r.sinClasificar, []);
 });
 
 test('SCRUM-1063f · el CSV del 303 en el paquete de evidencias lleva la 122 con su factura', () => {
