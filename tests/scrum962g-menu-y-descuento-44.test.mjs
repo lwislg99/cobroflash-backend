@@ -20,6 +20,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { soloCodigo } from './_solo-codigo.mjs';
 
 // El catálogo del meta-guard (`scripts/meta-guard-mutaciones.mjs`, SCRUM-1387).
 export const MUTACIONES_QUE_ME_TUMBAN = [
@@ -64,7 +65,6 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const leer = (r) => fs.readFileSync(path.join(RAIZ, r), 'utf8');
 const sinComentariosCss = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '');
-const sinComentariosJs = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:"'`])\/\/.*$/gm, '$1');
 const CSS = sinComentariosCss(leer('public/dashboard/css/styles.css'));
 const reglas = () => CSS.replace(/@media[^{]*\{/g, '').split('}')
   .map((b) => { const [sel, cuerpo = ''] = b.split('{'); return { sel: sel.split(',').map((s) => s.trim().replace(/\s+/g, ' ')), cuerpo }; });
@@ -99,7 +99,7 @@ test('SCRUM-962g ③ · la etiqueta del descuento global tiene suelo de 44, que 
 });
 
 test('SCRUM-962g ④ · la etiqueta del descuento global ENVUELVE el campo (por eso su área es la del campo)', () => {
-  const js = sinComentariosJs(leer('public/dashboard/js/quotesView.js'));
+  const js = soloCodigo(leer('public/dashboard/js/quotesView.js'), 'quotesView.js');
   assert.match(js, /const dtoGlobalCampo = document\.createElement\("label"\);/,
     '🔴 la caja del descuento global ya no es un `<label>`: tocarla no enfocaría el campo.');
   assert.match(js, /dtoGlobalCampo\.className = "quote-line__field quote-dto-global__campo";/,
