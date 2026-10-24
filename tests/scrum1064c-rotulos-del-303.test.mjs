@@ -77,15 +77,16 @@ const ESTADO = 'Atribuible a la Administración del Estado';
 
 /** casilla → [rótulo, columna, página], leído en el impreso. */
 const DEL_IMPRESO = {
-  1: [RG, 'Base imponible', 1],
-  2: [RG, 'Tipo %', 1],
-  3: [RG, 'Cuota', 1],
-  4: [RG, 'Base imponible', 1],
-  5: [RG, 'Tipo %', 1],
-  6: [RG, 'Cuota', 1],
-  7: [RG, 'Base imponible', 1],
-  8: [RG, 'Tipo %', 1],
-  9: [RG, 'Cuota', 1],
+  // SCRUM-1064d · c.20823 (c): las 01–09 llevan el tipo de su fila detrás de la llave del impreso.
+  1: [`${RG} · 4 %`, 'Base imponible', 1],
+  2: [`${RG} · 4 %`, 'Tipo %', 1],
+  3: [`${RG} · 4 %`, 'Cuota', 1],
+  4: [`${RG} · 10 %`, 'Base imponible', 1],
+  5: [`${RG} · 10 %`, 'Tipo %', 1],
+  6: [`${RG} · 10 %`, 'Cuota', 1],
+  7: [`${RG} · 21 %`, 'Base imponible', 1],
+  8: [`${RG} · 21 %`, 'Tipo %', 1],
+  9: [`${RG} · 21 %`, 'Cuota', 1],
   27: ['Total cuota devengada', undefined, 1],
   28: [CORRIENTES, 'Base', 1],
   29: [CORRIENTES, 'Cuota', 1],

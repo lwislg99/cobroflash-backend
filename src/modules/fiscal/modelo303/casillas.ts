@@ -145,16 +145,20 @@ const DEDUCIBLE_CORRIENTES = 'Por cuotas soportadas en operaciones interiores co
 const DEDUCIBLE_BIENES_INVERSION = 'Por cuotas soportadas en operaciones interiores con bienes de inversión';
 const ATRIBUIBLE_AL_ESTADO = 'Atribuible a la Administración del Estado';
 
+// SCRUM-1064d · decisión del fundador (SCRUM-1064 c.20823, punto c): como las tres filas llevan el
+// mismo rótulo, las 01–09 se rotulan «Régimen general · {tipo} %», y el tipo sale del dato de la
+// fila (`TRIPLETAS`), no de un literal: si la fila cambia de tipo, su rótulo cambia con ella.
+const filasRegimenGeneral = TRIPLETAS.flatMap((t) => {
+  const rotulo = `${REGIMEN_GENERAL} · ${t.tipo} %`;
+  return [
+    Object.freeze({ casilla: t.base, rotulo, columna: 'Base imponible', pagina: 1 as const }),
+    Object.freeze({ casilla: t.tipoCasilla, rotulo, columna: 'Tipo %', pagina: 1 as const }),
+    Object.freeze({ casilla: t.cuota, rotulo, columna: 'Cuota', pagina: 1 as const }),
+  ];
+});
+
 export const ROTULOS_303: readonly RotuloCasilla[] = Object.freeze([
-  Object.freeze({ casilla: 1, rotulo: REGIMEN_GENERAL, columna: 'Base imponible', pagina: 1 as const }),
-  Object.freeze({ casilla: 2, rotulo: REGIMEN_GENERAL, columna: 'Tipo %', pagina: 1 as const }),
-  Object.freeze({ casilla: 3, rotulo: REGIMEN_GENERAL, columna: 'Cuota', pagina: 1 as const }),
-  Object.freeze({ casilla: 4, rotulo: REGIMEN_GENERAL, columna: 'Base imponible', pagina: 1 as const }),
-  Object.freeze({ casilla: 5, rotulo: REGIMEN_GENERAL, columna: 'Tipo %', pagina: 1 as const }),
-  Object.freeze({ casilla: 6, rotulo: REGIMEN_GENERAL, columna: 'Cuota', pagina: 1 as const }),
-  Object.freeze({ casilla: 7, rotulo: REGIMEN_GENERAL, columna: 'Base imponible', pagina: 1 as const }),
-  Object.freeze({ casilla: 8, rotulo: REGIMEN_GENERAL, columna: 'Tipo %', pagina: 1 as const }),
-  Object.freeze({ casilla: 9, rotulo: REGIMEN_GENERAL, columna: 'Cuota', pagina: 1 as const }),
+  ...filasRegimenGeneral,
   Object.freeze({ casilla: 27, rotulo: 'Total cuota devengada', pagina: 1 as const }),
   Object.freeze({ casilla: 28, rotulo: DEDUCIBLE_CORRIENTES, columna: 'Base', pagina: 1 as const }),
   Object.freeze({ casilla: 29, rotulo: DEDUCIBLE_CORRIENTES, columna: 'Cuota', pagina: 1 as const }),
