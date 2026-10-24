@@ -84,7 +84,7 @@ modificado ningún fichero del árbol); los guards de lista; la landing (su camp
 **Medido contra:** `origin/main` = `927bda7ab44b604d81bca8c453663e7fc6f6cda9` · 2026-10-24T12:27:02Z (antes y después del cambio de arnés, mismo árbol); y la fusión con `origin/main` = `def9d33d3f973dc75bfd7076478523ea1ac06afe` (entran 962f y 962g) · 2026-10-24T12:58:59Z
 A9: comprobación → `docs/master/evidencias/SCRUM-1603b/sonda-tres-bancos.mjs`
 
-Puesto S3 · rama `scrum-1603-banco-inter`. Encargo del orquestador de Luis: «meter Inter en el banco» y medir ANTES y DESPUÉS qué instrumentos cambian de cifra. Se elige la salida ① del ticket.
+Puesto S3 · rama `scrum-1603b-banco-inter`. Encargo del orquestador de Luis: «meter Inter en el banco» y medir ANTES y DESPUÉS qué instrumentos cambian de cifra. Se elige la salida ① del ticket.
 
 ### Qué cambia
 
