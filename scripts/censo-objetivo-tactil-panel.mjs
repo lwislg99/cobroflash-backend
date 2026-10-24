@@ -46,6 +46,7 @@ import http from 'node:http';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
 import { lanzarNavegador } from './_navegador.mjs';
+import { enlacesDelPanel, TIPOS_DE_FUENTE, esperarFuentes, cegueraDeLaFuente, decirFuente } from './_hojas-del-panel.mjs';
 import { FUENTE_MEDIDOR, INTERACTIVOS, MINIMO_TACTIL } from './_medidor-de-toque.mjs';
 import { serializar, paginaDeClientes } from './_pagina-panel.mjs';
 import { cargarDashboard, pintarVista, todos } from '../tests/_banco-vistas.mjs';
@@ -145,14 +146,16 @@ if (DC.sinContrato.size) {
 }
 
 // ═══ ② MEDIR ═════════════════════════════════════════════════════════════════════════════════
-const HOJAS = '<link rel="stylesheet" href="/tokens.css"><link rel="stylesheet" href="/dashboard/css/styles.css">';
+// SCRUM-1603 · las hojas salen DEL ÍNDICE, con `/fonts/inter.css`: sin ella se medía con la fuente de
+// reserva y no con la de la app (el campo `.input`, 36 px en el banco y 34 en producción).
+const HOJAS = enlacesDelPanel(PUBLIC);
 const pagina = (cuerpo) => '<!doctype html><html lang="es"><head><meta charset="utf-8">' + HOJAS + '</head><body>' + cuerpo + '</body></html>';
 const rutas = new Map();
 for (const s of superficies) {
   rutas.set('/' + s.fn, pagina(s.html));
   rutas.set('/' + s.fn + '__sonda', pagina(s.html + SONDA));
 }
-const TIPOS = { '.css': 'text/css; charset=utf-8' };
+const TIPOS = { '.css': 'text/css; charset=utf-8', ...TIPOS_DE_FUENTE };
 const srv = http.createServer((rq, res) => {
   const u = rq.url.split('?')[0];
   if (rutas.has(u)) { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }); return res.end(rutas.get(u)); }
@@ -189,19 +192,31 @@ const EVAL = `${FUENTE_MEDIDOR};${MEDIR}(${JSON.stringify(INTERACTIVOS)}, ${MINI
 const navegador = await lanzarNavegador(puppeteer, {});
 const resultados = [];
 const sondasFallidas = [];
+// SCRUM-1603 · navegar y ESPERAR la fuente (font-display: swap pinta primero con la de reserva). Una
+// página cuyas caras no cargan no está medida con la fuente de la app: se apunta y el censo lo dice.
+const fuentesVistas = new Map();
+const fuentesRotas = [];
+const ir = async (page, ruta) => {
+  await page.goto(`http://127.0.0.1:${PUERTO}${ruta}`, { waitUntil: 'load' });
+  const f = await esperarFuentes(page);
+  const ceguera = cegueraDeLaFuente(f, ruta);
+  if (ceguera) fuentesRotas.push(ceguera);
+  fuentesVistas.set(decirFuente(f), (fuentesVistas.get(decirFuente(f)) || 0) + 1);
+  return f;
+};
 for (const ancho of ANCHOS) {
   for (const s of superficies) {
     const page = await navegador.newPage();
     await page.setViewport({ width: ancho, height: 900 });
 
-    await page.goto(`http://127.0.0.1:${PUERTO}/${s.fn}__sonda`, { waitUntil: 'load' });
+    await ir(page, `/${s.fn}__sonda`);
     const rs = await page.evaluate(EVAL);
     const sonda = rs.medidos.find((m) => m.sel === 'BUTTON' && m.texto === SONDA_TEXTO);
     if (!sonda || sonda.cumple !== false) {
       sondasFallidas.push(`${s.fn} @${ancho}px (${sonda ? 'medida pero NO marcada corta' : 'ni siquiera medida'})`);
     }
 
-    await page.goto(`http://127.0.0.1:${PUERTO}/${s.fn}`, { waitUntil: 'load' });
+    await ir(page, `/${s.fn}`);
     resultados.push({ fn: s.fn, ancho, ...(await page.evaluate(EVAL)) });
     await page.close();
   }
@@ -214,6 +229,12 @@ decir(`superficies × anchuras: ${superficies.length * ANCHOS.length} · sondas 
 for (const s of sondasFallidas) decir('   🔴 SUPERFICIE NO MEDIDA: ' + s);
 if (sondasFallidas.length) {
   noSupe('🔴 hay superficies que no cazan un objetivo de 12 px: sus ceros no valen y el total está incompleto.');
+}
+// SCRUM-1603 · con qué fuente se ha medido, y en cuántas páginas.
+for (const [linea, n] of fuentesVistas) decir(`${linea} · en ${n} página(s)`);
+for (const s of fuentesRotas) decir('   ' + s);
+if (fuentesRotas.length || !fuentesVistas.size) {
+  noSupe('🔴 hay páginas que no se midieron con la fuente que declaran: sus cifras no son las de la app.');
 }
 
 // ═══ ③ EL NÚMERO ═════════════════════════════════════════════════════════════════════════════

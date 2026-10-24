@@ -108,6 +108,7 @@ const PUBLIC = path.join(RAIZ, 'public');
 import { lanzarNavegador } from './_navegador.mjs';
 import { levantarServidor } from './_servidor.mjs';
 import { veredictoDe, recorrerCasos } from './_hallazgos-y-ciegos.mjs';
+import { enlacesDelPanel, TIPOS_DE_FUENTE, esperarFuentes, cegueraDeLaFuente, decirFuente } from './_hojas-del-panel.mjs';
 // SCRUM-522 · la ruta ya no se escribe aqui. Era una ruta de WINDOWS por defecto, identica en
 // los nueve guards, y por eso ninguno podia correr en el runner de CI —Ubuntu— donde de verdad
 // hacen falta. `rutaDelNavegador` busca en los sitios conocidos y, si no hay ninguno, PARA
@@ -182,14 +183,17 @@ const CONOCIDOS = {
  */
 const EXCEPCIONES = [];
 
-const TIPOS = { '.css': 'text/css', '.js': 'text/javascript', '.html': 'text/html', '.png': 'image/png', '.json': 'application/json', '.svg': 'image/svg+xml' };
+const TIPOS = { '.css': 'text/css', '.js': 'text/javascript', '.html': 'text/html', '.png': 'image/png', '.json': 'application/json', '.svg': 'image/svg+xml', ...TIPOS_DE_FUENTE };
+// SCRUM-1603 · las hojas del panel salen DEL ÍNDICE, con `/fonts/inter.css`: sin ella se medía con
+// la fuente de reserva (Segoe UI en Windows) y el campo `.input` daba 36 px donde la app da 34.
+const HOJAS_DEL_PANEL = enlacesDelPanel(PUBLIC);
 // SCRUM-782 · LA PÁGINA DEL PANEL. Se monta con el banco de vistas y se SERIALIZA: el marcado que
 // llega al navegador lo produce el PRODUCTO (`renderCustomersView`), no una tabla escrita aquí.
 // Si no se puede montar, se dice y se sale CIEGO — no se mide media casa y se llama verde.
 const PANEL = await paginaDeClientes(RAIZ);
 const PANEL_HTML = PANEL.html && `<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="/tokens.css"><link rel="stylesheet" href="/dashboard/css/styles.css">
+${HOJAS_DEL_PANEL}
 </head><body><div class="view-container">${PANEL.html}</div></body></html>`;
 
 // ═══ SCRUM-791 · LAS DOS SUPERFICIES QUE PROPUSO EL CENSO DE SCRUM-787 ═══════════════════════
@@ -237,7 +241,7 @@ const SONDAS_UMBRAL_HTML =
 
 const envolver = (cuerpo) => `<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="/tokens.css"><link rel="stylesheet" href="/dashboard/css/styles.css">
+${HOJAS_DEL_PANEL}
 </head><body><div class="view-container">${cuerpo}</div></body></html>`;
 
 // ═══ SCRUM-795 · LOS DATOS DE LA FICHA 360 ════════════════════════════════════════════════════
@@ -526,6 +530,21 @@ PUERTO = await levantarServidor(srv, PUERTO);
 process.on('exit', () => { try { srv.close(); } catch { /* ya cerrado */ } });
 const navegador = await lanzarNavegador(puppeteer, { headless: 'new' });
 
+// SCRUM-1603 · TRAS CADA `goto`, LA FUENTE. `font-display: swap` pinta con la de reserva hasta que
+// llega Inter: medir en el `load` a pelo mide unas veces una y otras la otra. Toda navegación de este
+// guard va seguida de esto, y una página cuyas caras no cargan es un CIEGO, no un verde.
+// ⚠️ El `goto` se queda escrito en cada sitio, con su URL literal: `_solape-de-guards.mjs` (SCRUM-548)
+// sabe qué página mide cada guard LEYENDO esos `goto`, y un ayudante que navegara por dentro los
+// volvería invisibles (medido: el `5×/index.html` bajaba a 4× y `scrum548` caía).
+const fuentesVistas = new Map();
+const esperarLaFuente = async (page, ruta) => {
+  const f = await esperarFuentes(page);
+  const ceguera = cegueraDeLaFuente(f, ruta);
+  if (ceguera) noSupeMirar('   ' + ceguera);
+  fuentesVistas.set(decirFuente(f), (fuentesVistas.get(decirFuente(f)) || 0) + 1);
+  return f;
+};
+
 /** El código que corre DENTRO de la página. Va como cadena para poder inyectarlo dos veces. */
 const MEDIDOR = `(async (INTERACTIVOS, MIN, DESTAPAR_SELS, CON_SCROLL) => {
   const espera = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
@@ -600,6 +619,7 @@ const recorridoLanding = await recorrerCasos(ANCHOS, async (ancho) => {
   const MIN = minimoPara(ancho);
   await page.setViewport({ width: ancho, height: 900 });
   await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'load' });
+  await esperarLaFuente(page, '/');
 
   decir('\n════════════════════════════════════════════════════════════════════════════');
   decir(`ANCHO ${ancho} px`);
@@ -608,6 +628,7 @@ const recorridoLanding = await recorrerCasos(ANCHOS, async (ancho) => {
   // ── ⓪ CONTROL DEL SCROLL: ¿está el scroll haciendo algo, o me lo estoy creyendo? ─────────
   const sinScroll = await page.evaluate(`${FUENTE_MEDIDOR};${MEDIDOR}(${JSON.stringify(INTERACTIVOS)}, ${MIN}, ${JSON.stringify(DESTAPAR.map((d) => d.sel))}, false)`);
   await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'load' });   // página limpia
+  await esperarLaFuente(page, '/');
   const r = await page.evaluate(`${FUENTE_MEDIDOR};${MEDIDOR}(${JSON.stringify(INTERACTIVOS)}, ${MIN}, ${JSON.stringify(DESTAPAR.map((d) => d.sel))}, true)`);
 
   const pieSin = sinScroll.medidos.filter((m) => m.seccion === 'footer').length;
@@ -721,6 +742,7 @@ if (!PANEL_HTML) {
     const MIN = minimoPara(ancho);
     await page.setViewport({ width: ancho, height: 900 });
     await page.goto(`http://127.0.0.1:${PUERTO}/__panel`, { waitUntil: 'load' });
+    await esperarLaFuente(page, '/__panel');
 
     decir('\n════════════════════════════════════════════════════════════════════════════');
     decir(`PANEL · lista de Clientes · ANCHO ${ancho} px`);
@@ -876,6 +898,7 @@ for (const s of SUPERFICIES_791) {
     // y un cero así parecería cobertura. La sonda vive en una página aparte servida en memoria:
     // no se toca ningún fichero del árbol.
     await page.goto(`http://127.0.0.1:${PUERTO}${s.ruta}__sonda`, { waitUntil: 'load' });
+    await esperarLaFuente(page, `${s.ruta}__sonda`);
     const rs = await page.evaluate(`${FUENTE_MEDIDOR};${MEDIDOR}(${JSON.stringify(INTERACTIVOS)}, ${MIN}, ${JSON.stringify([])}, true)`);
     const sonda = rs.medidos.find((m) => m.sel === 'BUTTON' && m.texto === SONDA_TEXTO);
     if (!sonda) {
@@ -909,6 +932,7 @@ for (const s of SUPERFICIES_791) {
     }
 
     await page.goto(`http://127.0.0.1:${PUERTO}${s.ruta}`, { waitUntil: 'load' });
+    await esperarLaFuente(page, s.ruta);
     const r = await page.evaluate(`${FUENTE_MEDIDOR};${MEDIDOR}(${JSON.stringify(INTERACTIVOS)}, ${MIN}, ${JSON.stringify([])}, true)`);
 
     decir('\n════════════════════════════════════════════════════════════════════════════');
@@ -1039,7 +1063,11 @@ for (const e of (anchosDelPanelMedidos < ANCHOS_PANEL.length ? [] : EXCEPCIONES_
 await navegador.close();
 srv.close();
 
-decir('\n' + '─'.repeat(76));
+// SCRUM-1603 · con qué fuente se ha medido, y en cuántas páginas: la población de la fuente.
+for (const [linea, n] of fuentesVistas) decir(`⟦fuente⟧ ${linea} · en ${n} página(s)`);
+if (!fuentesVistas.size) noSupeMirar('   🔴 NO SUPE MIRAR la fuente: ninguna página pasó por `esperarLaFuente`.');
+
+decir('\n' +'─'.repeat(76));
 const veredictoFinal = veredictoDe({ hallazgos, ciegos });
 if (veredictoFinal.codigo !== 0) {
   if (hallazgos.length) {
