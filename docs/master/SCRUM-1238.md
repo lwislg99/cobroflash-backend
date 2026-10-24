@@ -226,3 +226,30 @@ cuente o no como resto es la decisión ⑤.
 - `scripts/clase-de-sesion.mjs` y su test: en esta rama, `scrum-1238b-sin-pid-no-es-muerta`.
 - Latido y `sesion.mjs`: sin tocar; la llamada, arriba, para S5.
 - Decisión ⑤: sigue abierta.
+
+## J6 · SCRUM-1238b (relevo) · el temporal del test, por `temporal()`
+
+**Medido contra:** `origin/main` = `091e4d765ba13083b93fb6c168ffbd70fb1f1563` · 2026-10-24T10:59:08Z (hora de GitHub; sesión J6 `jv-j6bq` en el árbol `jv-j6bk` de la sesión anterior, ya parada, por encargo del orquestador `cobroflash-backend-95`. La rama no se ha mezclado con ese `main`: el PR #2812 no estaba en conflicto)
+
+A9: comprobación → `tests/scrum864c-el-temporal-no-vuelve.test.mjs`
+
+**El fallo.** El obligatorio de #2812 (punta `0f3d80d99c63dff77fbed2ca498a40fb515066d6`) salió rojo por
+`scrum864c ③`: `sembrar()` creaba su carpeta con `fs.mkdtempSync` y la borraba quien la llamaba, y el censo lo
+da por `[NO_GARANTIZADA] tests/scrum1238b-clase-de-sesion.test.mjs:39 · borra en 50 SIN cobertura`. El
+guard ya existía y lo cazó; lo que faltó fue correrlo en local antes de empujar (en la lista de guards de suite
+del tramo anterior está 824, pero no 864c).
+
+**El arreglo.** `sembrar()` crea con `temporal('scrum1238b-')` de `tests/_temporal.mjs`, y `borrar` pasa a
+ser `borrarTemporal`. El guard no se ha tocado.
+
+**Comprobado**, en este árbol:
+
+- `scrum1238b` + `scrum864c`: 12 casos, 12 en verde (8 + 4).
+- Control en rojo: con la versión empujada del test puesta encima, `scrum864c ③` cae y nombra la línea 39;
+  con la arreglada, pasa.
+- Mutaciones, rehechas sobre `scripts/clase-de-sesion.mjs` (no tenía las del tramo anterior escritas
+  literalmente, así que son reconstrucciones), cada una 1/1 por `git diff --numstat` y restaurada desde `HEAD`:
+  M1 (`|| s.primerFin` en la condición de MUERTA) tumba 4, entre ellos el de la J2 (el tramo anterior dice 3:
+  no es la misma línea); M2 (`proceso > 0 || espera(s)`) tumba 5, entre ellos el del reinicio; M3 (la lista se
+  lee antes del bucle) tumba 1, el del orden.
+- Suite entera local: NO CORRIDA.
