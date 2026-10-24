@@ -199,3 +199,36 @@ En c.20716 (jv-j1bc, este mismo puesto) se escribió «la 67 (cuotas a compensar
 
 - `porTipo` pierde la `causa` (SCRUM-1051). Si una factura tuviera al 0 % una línea S2 y un suplido, las dos entradas al 0 % no se distinguen en el libro, y el suplido se aparta de la primera que salga. Ninguna factura así existe hoy: medido no, deducido de que no hay merchants reales.
 - El código `suplido` se ve en el CSV del paquete de evidencias (`SIN_CLASIFICAR suplido <número>`), igual que hoy `tipo_cero`.
+
+## SCRUM-1063d · el aviso firmado de los suplidos, y el riesgo S2 + suplido medido (J1, jv-j1bj, 24-oct-2026)
+
+**Medido contra:** `origin/main` = `49045295ec2823bd98b4ebf7ab8d2f0125fabcb9` · 2026-10-24T10:25:35Z
+
+A9: comprobación → `tests/scrum1063d-aviso-suplidos.test.mjs`
+
+Firma del fundador: SCRUM-1063 c.20731 (regla 39, transcrita por el orquestador). Rama sobre `scrum-1063c-suplidos-y-64` @ `c185f80c`: **este PR depende del #2811**, que a esta hora sigue sin mergear.
+
+### Qué se ha construido
+
+1. En `motivosParaNoFiarse` del 303, para las entradas de `sinClasificar` con `motivo: 'suplido'`, el literal firmado: «{n} suplido(s) no entran en ninguna casilla: son gastos pagados por cuenta del cliente.» Un solo texto para singular y plural, como está en la firma. `{n}` cuenta entradas de `sinClasificar`, igual que el aviso de «operación(es)» de al lado.
+2. `tests/scrum1063c-suplido-y-casilla-64.test.mjs`: dos aserciones fijaban «sin aviso» porque la firma no existía; ahora fijan el literal exacto. La comprobación es más estricta, no más laxa.
+
+### Cómo se ha medido
+
+- **Rojo primero:** el test nuevo contra el código de 1063c: caen 4 de 5 (el quinto es el negativo de la marca ilegible, verde en los dos).
+- **Mutaciones sobre `dist/`:** sin el punto final caen 3; «suplidos» en vez de «suplido(s)», 4; umbral `> 1`, 3; contar todo `sinClasificar`, 3; aviso quitado, 4. Restaurado y comprobado.
+- **Guards dirigidos:** 1063b/c/d, 1066c/e, 1232, 237, 976, 824, 824b, 836, 419, 702, 700, 719, 1415, 1294, 267, 273, 622 y 854: 22 ficheros, 215 casos, 0 caen, 0 saltados. Los 30 ficheros que nombran `modelo303` o `motivosParaNoFiarse`: 321 casos, 0 caen, 3 saltados (`LIBRO_PG_URL`).
+- **Suite entera local: NO CORRIDA**; hace de tanda el obligatorio de CI.
+
+### El riesgo de c.20728, medido (no arreglado: espera decisión)
+
+Factura fabricada, pasada por `construirLibroRegistro` y `construirModelo303` reales:
+
+- **S2 al 0 % (1000) primero, suplido (50) después:** el libro da `porTipo` = `[{0,1000},{0,50}]` sin `causa`. El 303 aparta el suplido **de la entrada S2**: `sinClasificar` = suplido 50, `tipo_cero` 950, `tipo_cero` 50. La suma cuadra (1050), pero la etiqueta va a la línea que no es y el aviso de «sin calificación» dice 2 donde hay 1. **Riesgo confirmado.**
+- **Suplido primero:** sale bien (suplido 50, `tipo_cero` 1000).
+- **De paso, otro más grave, anterior a 1063c:** una S2 con `tax: 0.21` (el validador de causa no exige `tax` 0) entra en la **casilla 07** del 21 % con base 1000 y cuota 0, sin aviso. La causa es la misma: el libro tira la `causa` al copiar `porTipo`.
+
+### Riesgo residual, dicho
+
+- Los dos casos de arriba siguen como estaban: arreglarlos pide que el libro conserve `causa` en `porTipo`, y eso es una decisión que se ha pedido en Jira.
+- Si la marca de suplido es ilegible no hay aviso de suplido: queda en `tipo_cero`, como en 1063c.

@@ -372,12 +372,19 @@ export function construirModelo303(params: {
     motivosParaNoFiarse.push(`${sinDesglose.length} ${sinDesglose.length === 1 ? 'factura sin desglose no se ha podido declarar' : 'facturas sin desglose no se han podido declarar'}`);
   }
   // SCRUM-1063c · el texto dice «exenta / no sujeta / ISP»: un suplido no es nada de eso, así que
-  // no se cuenta aquí. Su aviso propio necesita un literal firmado (regla 39) y NO está escrito:
-  // mientras, el suplido viaja como dato en `sinClasificar` con `motivo: 'suplido'`.
+  // no se cuenta aquí: tiene su aviso propio, justo debajo.
   const sinCalificacion = sinClasificar.filter((o) => o.motivo !== 'suplido').length;
   if (sinCalificacion > 0) {
     motivosParaNoFiarse.push(
       `${sinCalificacion} operación(es) sin calificación fiscal (exenta / no sujeta / ISP) no entran en ninguna casilla`,
+    );
+  }
+  // SCRUM-1063d · literal firmado por el fundador (SCRUM-1063 c.20731, regla 39). «suplido(s)» es
+  // un solo texto para el singular y el plural: no se parte en dos.
+  const suplidos = sinClasificar.filter((o) => o.motivo === 'suplido').length;
+  if (suplidos > 0) {
+    motivosParaNoFiarse.push(
+      `${suplidos} suplido(s) no entran en ninguna casilla: son gastos pagados por cuenta del cliente.`,
     );
   }
   if (params.libro.importesIlegibles.length > 0) {
