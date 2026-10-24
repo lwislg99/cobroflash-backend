@@ -127,12 +127,18 @@ Sobre la fusión con `main` (962f y 962g ya dentro), el editor da **1 DEFECTO ·
 
 ### Test y rojos
 
-`tests/scrum1603-el-banco-mide-con-la-fuente-del-panel.test.mjs` (sin gate): ① las hojas del banco son las del índice, con la fuente · ② la página de `_banco-lista` las enlaza, sirve las letras con su tipo y espera la fuente ANTES de darse por lista (servidor real, sin navegador) · ③ el «antes» copia las letras que pide `inter.css` · ④ guard y censo montan con las hojas del índice y **toda** llamada `.goto(` está en una función que llama a `esperarFuentes` (por AST) · ⑤ el veredicto del recuento. **Rojo primero:** las 8 mutaciones de su `MUTACIONES_QUE_ME_TUMBAN`, cada una aplicada (numstat al lado), tumban su caso y se restauran (`mutar-1603.txt`); base sin mutar verde.
+`tests/scrum1603-el-banco-mide-con-la-fuente-del-panel.test.mjs` (sin gate): ① las hojas del banco son las del índice, con la fuente · ② la página de `_banco-lista` las enlaza, sirve las letras con su tipo y espera la fuente ANTES de darse por lista (servidor real, sin navegador) · ③ el «antes» copia las letras que pide `inter.css` · ④ guard y censo montan con las hojas del índice y **toda** llamada `.goto(` va seguida, antes del siguiente `goto`, de una llamada a `esperarFuentes` o a un ayudante que la llama (por AST) · ⑤ el veredicto del recuento. **Rojo primero:** las 9 mutaciones de su `MUTACIONES_QUE_ME_TUMBAN`, cada una aplicada (numstat al lado), tumban su caso y se restauran (`mutar-1603.txt`); base sin mutar verde.
 
 ### Errores (míos)
 
 - **Dos veces di por sabido qué deja Chromium en una hoja que no llega.** Primero miré `!link.sheet` (con la hoja cortada, `sheet` sigue puesto); luego traté como «cargada» la hoja cuyas reglas no se dejan leer (abortada, leerlas LANZA, aun siendo del mismo origen; en 404 tiene 0 reglas). Las dos las cazó el negativo B de mi propia sonda, que salió CIEGO (salida 2), antes de empujar. Ahora hay caso con aborto y caso con 404.
 - La primera pasada ANTES cayó entera en guard, censo y tests: el worktree nació sin `dist/`. No eran cifras; se repitió con `dist/`.
+- **Mi ayudante `ir()` del guard táctil navegaba por dentro, y eso escondía sus URL al censo de solapes** (`scripts/_solape-de-guards.mjs`, SCRUM-548, lee el primer argumento de cada `.goto(`): el `5×/index.html` bajó a 4× y cayeron `scrum548` y `scrum976` ④ en la tanda dirigida. Una bajada con forma de «un solape menos». El arreglo fue en mi código, no en el censo: cada `page.goto` vuelve a su línea de `main` (`git diff origin/main` no toca ni una) y la espera va justo detrás.
+- **Y el fichero nuevo nació sin fila** en `dos-equipos.md` §3.3: lo cazó `scrum1480f`. Fila de S3 (área del ticket) y `carriles.mjs generar`.
+
+### La suite
+
+La suite completa la paró Claude Code por falta de memoria en la máquina, con 4.130 casos juzgados: no es un veredicto (un run CORTADO sólo ve lo que juzgó antes del corte) y no la relancé. En lo que juzgó, 3 rojos: `scrum1480f` (el de la fila, arreglado), `scrum1321` (cae siempre en local: temporal en C:, repo en D:) y `scrum1244c` (pasa solo: carga). Tanda dirigida de 35 ficheros (los que leen los tres bancos, los de registro, los de carriles y `1387/622/864/976`): 295/298 con mi ayudante, y sus 3 rojos explicados arriba; `scrum548`, `scrum1480f`, `scrum1603`, `scrum976` y `scrum1244c` en verde después del arreglo (36/36). El veredicto entero es el del CI de este PR.
 
 ### Sin hacer, y a quién
 
