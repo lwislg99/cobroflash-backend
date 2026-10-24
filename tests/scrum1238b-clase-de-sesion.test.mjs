@@ -37,13 +37,15 @@ const SIEMBRA = {
 
 function sembrar(siembra) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1238b-'));
-  for (const [id, f] of Object.entries(siembra)) {
+  // `anadir` escribe en la carpeta de ESTA función: así el censo de SCRUM-824 ve de dónde cuelga.
+  const anadir = (id, texto) => {
     fs.mkdirSync(path.join(dir, id));
-    fs.writeFileSync(path.join(dir, id, 'state.json'), f.texto ?? JSON.stringify(f.raw));
-  }
+    fs.writeFileSync(path.join(dir, id, 'state.json'), texto);
+  };
+  for (const [id, f] of Object.entries(siembra)) anadir(id, f.texto ?? JSON.stringify(f.raw));
   // Una entrada sin pid: la lista también trae así a las que no tienen proceso.
   const agentes = Object.entries(siembra).map(([id, f]) => (f.pid > 0 ? { id, pid: f.pid, kind: 'background' } : { id, kind: 'background' }));
-  return { dir, agentes };
+  return { dir, agentes, anadir };
 }
 const borrar = (dir) => fs.rmSync(dir, { recursive: true, force: true });
 
@@ -122,7 +124,7 @@ test('SCRUM-1238b · sin lista de procesos no hay veredicto: todo NO-PUDE-MIRAR,
 });
 
 test('SCRUM-1238b · la lista de procesos se lee DESPUÉS de los state.json (una sesión lanzada entre medias no sale muerta)', () => {
-  const { dir, agentes } = sembrar(SIEMBRA);
+  const { dir, agentes, anadir } = sembrar(SIEMBRA);
   try {
     let llamadas = 0;
     const filas = clasificarTrabajos({
@@ -130,8 +132,7 @@ test('SCRUM-1238b · la lista de procesos se lee DESPUÉS de los state.json (una
       agentes: () => {
         llamadas++;
         // Se lanza una sesión justo ahora: su state.json aparece cuando los demás ya se leyeron.
-        fs.mkdirSync(path.join(dir, 'a1000099'));
-        fs.writeFileSync(path.join(dir, 'a1000099', 'state.json'), JSON.stringify(job({ name: 'recien-lanzada', state: 'working', tempo: 'active' })));
+        anadir('a1000099', JSON.stringify(job({ name: 'recien-lanzada', state: 'working', tempo: 'active' })));
         return agentes;
       },
     });

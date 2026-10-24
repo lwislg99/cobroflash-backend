@@ -143,7 +143,7 @@ export function clasificarTrabajos({ dir, agentes, ahora = Date.now(), horas = 2
 function leerAgentes(fichero) {
   try {
     if (fichero) return JSON.parse(fs.readFileSync(fichero, 'utf8'));
-    const r = spawnSync('claude', ['agents', '--json'], { encoding: 'utf8', shell: process.platform === 'win32', timeout: 60_000 });
+    const r = spawnSync('claude agents --json', { encoding: 'utf8', shell: true, timeout: 60_000 });
     return r.status === 0 ? JSON.parse(r.stdout) : null;
   } catch { return null; }
 }
