@@ -555,3 +555,55 @@ Guards de máster y de registro y los de suite, en local (resultado abajo, en el
 local: NO CORRIDA (10 sesiones a la vez; hace de tanda el obligatorio de CI). yaqu.app: no aplica a un cambio sólo de
 docs; lo construido tampoco se puede ver allí con un Técnico (SCRUM-1555, sin sesión de técnico en producción). No lo
 he intentado.
+
+## SCRUM-1390y · Inicio pinta el rótulo y el vacío de CADA rol (los textos firmados en c.17962 y c.17963)
+
+[Anexado por S2, equipo de Luis, el 24-oct-2026 hacia las 12:34Z (`Date:` de GitHub), sobre `origin/main`
+`927bda7ab44b604d81bca8c453663e7fc6f6cda9`. Encargo del orquestador de Luis. Sufijo `y` porque `x` es de J4. Carril:
+`public/dashboard/js/homeView.js` → S2 (`dos-equipos.md:152`).]
+
+**Skill UI:** cargada (yaqu-premium-ui). Sin tokens nuevos ni estilos nuevos: cambia el texto de dos nodos que ya existían.
+
+A9: comprobación → `tests/scrum1390y-inicio-por-rol.test.mjs`
+
+El fallo de esa A9: lancé el error de «respuesta sin lista» como `TypeError` y el banco de vistas lo trató, con razón, como error de PROGRAMA tragado (SCRUM-1278: la vista sale «no medida»); una respuesta mal formada no es un fallo del programa, así que es `Error`. Lo cazó el caso ④ de este test antes de comitar.
+
+### Los dos extremos, comprobados ANTES de escribir
+
+1. **Inicio enseñaba lo mismo a los dos roles** en `origin/main` `927bda7ab`: `homeView.js:93` «Actividad reciente» y
+   `:647` «Sin actividad reciente», sin mirar el rol. El recorte de datos sí estaba (SCRUM-1555, #2456).
+2. **Los literales firmados existen y se citan:** SCRUM-1390 **c.17962** (respuesta literal «2-Ok firmo»: `Tus
+   presupuestos recientes`; «3-El admin conserva sí») y **c.17963** (respuesta literal «1-Firmo la 1»: `Todavía no
+   tienes presupuestos. Aquí verás los que hagas tú y los que te asignen.`). Los dos, también en `YAQU_MASTER.md:687`.
+   El cambio de máster que c.17962 pedía antes de construir es #2115 (mergeado el 1-oct).
+
+### Qué cambia (`public/dashboard/js/homeView.js`)
+
+- `veNegocio` se decide ANTES de pintar, y de esa MISMA pregunta salen la ruta (`home`/`inicio`) y el rótulo: el título
+  no puede prometer otra cosa que lo que la ruta trae. Y como se pinta antes de cargar, encima de un error ya está el
+  rótulo del rol (c.20438, punto 4).
+- `renderActivity(items, veNegocio)`: el vacío del admin sigue siendo «Sin actividad reciente»; el del Técnico, el firmado.
+- **c.20438, punto 2, sin texto nuevo:** un 200 SIN `recentActivity` caía en el vacío por el `|| []`. Con el texto
+  firmado, el Técnico habría leído «Todavía no tienes presupuestos» sobre una respuesta rota. Ahora lanza y va al estado
+  de error que ya existía («No pudimos cargar tus métricas…» + Reintentar). Al admin le pasa lo mismo.
+- `tests/scrum601-copy-del-documento-vs-flag.test.mjs`: re-anclaje por posición 885 → 894 (el `grep -n` medido; numstat
+  14 5), con su nota, como los dos anteriores (1124 y 1317). No cambia lo que el control exige.
+- `docs/YAQU_MASTER.md:681` y `:687`: la frase «lo que NO está construido son los textos por rol» lleva al lado su marca
+  ✅ con fecha y este ticket, sin borrar nada y sin mover ninguna línea.
+
+### Medido
+
+- `tests/scrum1390y-inicio-por-rol.test.mjs`, por EFECTO en el banco de vistas (pinta la vista con cada rol y lee el texto
+  del bloque `[data-home-block="activity"]`): ⓪ control (cada rol pide SU ruta y se ve un presupuesto sembrado) ·
+  ① rótulo por rol, con lista vacía y con uno · ② vacío por rol, y ninguno ve el del otro · ③ un 500: el Técnico ve el
+  error bajo SU rótulo, no el vacío · ④ un 200 sin la lista: error, no vacío, en los dos roles. **5 de 5.**
+- **Rojo primero:** con el `homeView.js` de `origin/main` caen ①②③④ y el control ⓪ aguanta.
+- **Mutaciones** (`docs/master/evidencias/scrum1390y/mutar-1390y.mjs <raiz> origin/main`): las 4 del catálogo tumban su
+  caso; restauración comprobada por bytes.
+- yaqu.app: ver la entrega en Jira (el Técnico de producción es la limitación de SCRUM-1555).
+
+### Lo que NO hace
+
+- **La actividad del Técnico sigue con importe** (de SUS presupuestos). J4 lo señaló en c.20755 contra c.20735 («sin
+  importes»); el máster dice «con importe». No se toca aquí: es una decisión, no un texto.
+- El `catch` sigue envolviendo lo que va detrás de pintar la actividad (c.20438, punto 5): no medido, no tocado.
