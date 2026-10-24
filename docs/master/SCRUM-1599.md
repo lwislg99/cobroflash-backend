@@ -503,3 +503,95 @@ reconstruido, con el registro escrito y los de registro (267, 273, 1294, 921c, 1
   es el reporter, en un `node --test` hijo sobre ficheros fabricados.
 - El tamaño del recibo con ~1.500 ficheros en `porFichero`: sin medir.
 - `latido.mjs`, sin tocar (S5).
+
+## J6 · SCRUM-1599h · segundo lote del diseño B: siete gateados más al banco desechable, y el trinquete de 42 a 35
+
+**Medido contra:** `origin/main` = `67f0c66833f8996399e79abff0a9f4e5c90217b4` · 2026-10-24T15:14:50Z (hora de GitHub; sesión J6 `jv-j6bs` en su árbol `jv-j6bs`, por encargo del orquestador `cobroflash-backend-95`. El código se midió sobre `1b3395ecc` y después se mezcló `origin/main`, que no toca ningún fichero de este lote)
+
+A9: aviso → cicatriz J6 «Crucé el umbral de aviso de contexto sin medirme en el cruce: medí al arrancar y no volví a medir hasta después de un barrido ancho.» — no se pudo comprobar: me pasó otra vez, la tercera en J6 (110k tras Jira, ~226k al acabar las mutaciones, sin medir entre medias), y el contexto lo lee la propia sesión en su jsonl; ningún hook de este árbol la para al cruzar
+
+Lo decidió el fundador en c.20715 ①, con la cifra del lote 1 delante (c.20762: por debajo del ruido entre runs, n=1).
+0 líneas de `src/`, de `.github/` o del camino de emisión; 0 aserciones tocadas (regla 41). Salida:
+`evidencias/SCRUM-1599/lote-1599h.salida.txt`; banderas: `evidencias/SCRUM-1599/banderas-1599h.mjs`; banco:
+`evidencias/SCRUM-1599/banco-1599h.mjs.txt`.
+
+### ① El lote, por programa y con el criterio de §1599f ①
+
+El guion de banderas de 1599f no se subió, así que se reescribió con los patrones que nombra §1599f ① y se **calibró**:
+sobre `0e86dada` (el commit de antes del lote 1) da exactamente los mismos 7 «sencillos» (104, 106, 109, 135, 116,
+593d, 574). Sobre los 42 de hoy: 3 sencillos (116 apartado, 593d, 574) y **18** «solo-H» (sólo HTTP o app levantada,
+sin merchant fijo, emisión ni carrera); §1599f ④ decía 17 por su lectura, y la diferencia no la he cuadrado. El lote
+son los dos sencillos que quedan más los seis «solo-H» más pequeños:
+
+| fichero | casos que pasan a correr en CI | qué vigila en la base |
+|---|---|---|
+| `scrum593d-viaje-completo-del-texto` | 4 | los textos del documento se guardan, se releen y salen en el PDF |
+| `scrum131-resend-honesto` | 1 | reenviar la invitación dice `sent:false` si el correo no sale, y no pierde la fila |
+| `webhooks-idempotencia` | 1 (los otros 2 ya corrían sin base) | un `payment.confirmed` duplicado en `/webhooks/psp` no re-paga |
+| `scrum57-operario-propagacion` | 1 | el operario llega al trabajo, al cobro y a los albaranes del detalle |
+| `scrum22-operario-readpath` | 1 | el serializador expone el operario en lista y detalle, con tenencia |
+| `scrum51-job-sin-quote` | 1 | el detalle de un trabajo sin presupuesto incluye sus albaranes |
+| `scrum58-jobs-n1` | 1 | la lista de trabajos no crece en consultas con el número de filas |
+| **total** | **10** | |
+
+- **`scrum574` NO se migra**, y esta vez está MEDIDO, no leído: su caso «CONTRA POSTGRES: tras la migración, cada
+  cliente sigue siendo el mismo» compara los clientes de una base real ya migrada con el PASO 0 de `railway` y
+  `yaqu_dev_javier`. En el banco vacío cae con «⛔ NO SUPE MIRAR: cero clientes», que es su suelo y está bien que
+  caiga. Vuelve a su forma de main y queda declarado en el trinquete con ese motivo.
+- La forma es la de 1599f (y 876e/g): `_banco-libro.mjs` justo detrás de `_staging-db.mjs`, `QA_DB_TEST` **o**
+  `LIBRO_PG_URL`, y el motivo del salto nombra las dos. La sustitución la hizo un guion que exige el recuento EXACTO
+  de cada cambio por fichero (import 1, gate 1, saltos N); `git diff --numstat` lo confirma.
+- `scrum419` los declara: 83 → 93 tests de banco.
+- Carril, ANTES de tocarlos: `node scripts/carriles.mjs de tests/<f>` para los ocho, «sin fila en §3: nadie lo
+  reclama». Control positivo: `scripts/equipo/latido.mjs` → S5.
+
+### ② Antes, después y mutación (banco LOCAL)
+
+PGlite 0.5.8 + pglite-socket 0.2.11 (`maxConnections: 64`) en loopback, base `yaqu_libro_test`, esquema de
+`prisma migrate diff --from-empty` (33 `CREATE TABLE`, 33 `model`), PGlite NUEVO por fichero: los dos arreglos de
+instrumento de §1599f ②. Canario cronometrado antes de nada: `scrum109` 2/2 en 10 s.
+
+| pasada | ficheros | casos | pasan | caen | saltan |
+|---|---|---|---|---|---|
+| ANTES (los 8 candidatos de main, con `LIBRO_PG_URL`) | 8 | 20 | 8 | 0 | **12** |
+| DESPUÉS (los 8 migrados) | 8 | 21 (20 + la línea de fichero del aborto de webhooks) | 19 | **2** | 0 |
+| el lote (7, sin 574), con webhooks de las 3 pasadas siguientes | 7 | 12 | **12** | 0 | 0 |
+
+- Las dos caídas del DESPUÉS: 574 (arriba) y `webhooks-idempotencia`, cuyos 3 casos pasan y el proceso aborta al
+  salir con `UV_HANDLE_CLOSING` en `src\win\async.c`: el abort de libuv de Windows de SCRUM-1204. Tres pasadas más:
+  3/3 limpias. Uno de cuatro en esta máquina; CI corre en Linux.
+- **Mutaciones en `dist/`, no en `src/`**, una por fichero, cada una con su ancla de recuento 1 y su fichero devuelto
+  con el hash comprobado:
+
+| mutación | fichero que cae | caso que cae, y por qué aserción |
+|---|---|---|
+| M1 · `pdf.service.js` deja de pintar el pie | 593d, 1 de 4 | «EL VIAJE…» · «PIE593D_ALFA no sale en su propia línea del PDF» |
+| M2 · `team.routes.js` responde siempre `sent` | 131, 1 de 1 | «SIGUE MINTIENDO… dice sent=true» |
+| M3 · `psp.routes.js` sin la rama del duplicado | webhooks, 1 de 3 | A12.2c · «…y marcado como duplicate» |
+| M4 · `jobs.routes.js` con `operario: null` | 57 y 22, 1 de 1 cada uno | «job.operario resuelto {id,name}» / «operario resuelto {id,name}» |
+| M5 · `jobs.routes.js` con el early-return del quote | 51, 1 de 1 | «Job sin quote: el detalle incluye su albarán» |
+| M6 · `jobs.routes.js` con una consulta de más por trabajo | 58, 1 de 1 | «N+1: 3 Trabajos → 13 consultas, 12 Trabajos → 22» |
+
+### ③ El trinquete baja de 42 a 35
+
+`tests/scrum1599f-los-que-solo-ve-staging.test.mjs`: los siete salen de `SOLO_STAGING` en este PR y 574 se queda con
+su motivo. Rojos vistos, cada uno con su `git diff --numstat` al lado y deshecho con el editor:
+- quitar `scrum574` de la lista → «ENTRAN: scrum574-mismo-cliente-tras-migracion»;
+- volver a declarar `scrum131`, ya migrado → «SALEN: scrum131-resend-honesto».
+
+### ④ Coste
+
+- **Local (PGlite, un fichero cada vez):** 5,3 + 5,0 + 4,5 + 3,8 + 4,2 + 3,1 + 4,6 = **30,5 s** para los 7, banco
+  incluido. No predice CI.
+- **En CI:** sale del obligatorio de este PR comparado con un run de main de la misma hora, y va en el comentario de
+  Jira, no aquí (como en 1599f).
+- **Lo que queda en los 35:** 2 sencillos, los dos apartados con motivo (116 y 574) · 12 «solo-H» · 21 con emisión,
+  fiscal, carrera o merchant fijo, por las banderas de `banderas-1599h.mjs`. Lectura de banderas, no medición.
+
+### ⑤ Lo que NO se ha hecho, ni medido
+
+- Staging: no he corrido los siete con `QA_DB_TEST=1` (sin turno). Su destino de staging no cambia de código.
+- La tanda entera en local: NO CORRIDA (varias sesiones a la vez).
+- Una pasada por punto (salvo webhooks, cuatro).
+- De paso, confieso: para devolver 574 a main intenté `git restore` y `guard-dangerous` lo paró; se deshizo con el
+  editor, cambio a cambio, y `git diff` lo da a 0 líneas.
