@@ -23,7 +23,8 @@ const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = pathToFileURL(path.join(RAIZ, 'dist')).href + '/';
 const moduloPrisma = await import(DIST + 'core/db/prisma.js');
 
-/** El texto oficial del rechazo (regla 30, aprobado por el fundador en el ticket). */
+/** El texto oficial del rechazo (regla 30, aprobado por el fundador en el ticket).
+ *  Consta en: SCRUM-1502 comentario 20702. */
 const COPY_SIN_PRESUPUESTO = 'Este trabajo no tiene presupuesto; no se puede crear un albarán.';
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
