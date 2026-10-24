@@ -34,10 +34,10 @@
 // ═════════════════════════════════════════════════════════════════════════════════════════
 import ts from 'typescript';
 import { testsDeclarados } from '../tests/_poblacion-de-tests.mjs';
-
-/** Versión del formato de la línea de registro. Si cambia el formato, cambia esto. */
-export const VERSION = 1;
-export const TITULO = 'señal de nombres';
+// La línea de registro vive sin paquetes en su propio módulo (SCRUM-1324c): el vigía de main la lee
+// en un workflow sin `npm ci`. Se re-exporta para que quien la importaba de aquí no cambie.
+import { TITULO, lineaDeRegistro } from './_senal-de-nombres-linea.mjs';
+export { VERSION, TITULO, lineaDeRegistro, registroDesdeLinea } from './_senal-de-nombres-linea.mjs';
 
 /** Lo decidido en SCRUM-1339 c.17935: la señal AVISA, y se vuelve a decidir con estos tres datos. */
 export const UMBRAL_DE_BLOQUEO = 0.05;
@@ -313,33 +313,7 @@ export function describirBloque(b) {
     + (b.conEntradaDeFichero ? ' · el fichero sale en el TAP como UNA línea: corrió y no informó de sus casos' : '');
 }
 
-/**
- * LA LÍNEA DE REGISTRO: sale SIEMPRE, también con 0 y también cuando no se pudo medir, con su
- * población al lado. Es lo que lee `registroDesdeLinea` desde fuera, para la tasa.
- */
-export function lineaDeRegistro(r) {
-  const p = r.poblacion;
-  const t = r.tap;
-  const n = (v) => (v === null || v === undefined ? '?' : String(v));
-  return `[${TITULO} v${VERSION}] medible=${r.medible ? 'si' : 'no'}`
-    + ` ausentes=${n(r.ausentes)} ficheros_con_ausentes=${r.medible ? r.bloques.length : '?'} dudosos=${n(r.dudosos)}`
-    + ` declarados=${p.llamadas} literales=${p.literales} no_comparables=${p.noComparables}`
-    + ` ficheros=${p.ficheros} tap_tests=${n(t.tests)} tap_fail=${n(t.fail)}`;
-}
-
-/** La vuelta: de una línea de registro a un registro. `null` si la línea no es una de éstas. */
-export function registroDesdeLinea(texto) {
-  const m = new RegExp(`\\[${TITULO} v(\\d+)\\] (.*)$`, 'm').exec(String(texto ?? ''));
-  if (!m) return null;
-  const campos = Object.fromEntries(m[2].trim().split(/\s+/).map((par) => par.split('=')).filter((par) => par.length === 2));
-  const num = (v) => (v === undefined || v === '?' ? null : Number(v));
-  return {
-    version: Number(m[1]), medible: campos.medible === 'si',
-    ausentes: num(campos.ausentes), ficherosConAusentes: num(campos.ficheros_con_ausentes), dudosos: num(campos.dudosos),
-    declarados: num(campos.declarados), literales: num(campos.literales), noComparables: num(campos.no_comparables),
-    ficheros: num(campos.ficheros), tapTests: num(campos.tap_tests), tapFail: num(campos.tap_fail),
-  };
-}
+// `lineaDeRegistro` y `registroDesdeLinea` viven en `_senal-de-nombres-linea.mjs` (SCRUM-1324c).
 
 /** El informe entero, para el log. La primera línea es la de registro. */
 export function informe(r) {
