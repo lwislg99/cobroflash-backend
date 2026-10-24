@@ -24,7 +24,7 @@ export const PRIMER_EJERCICIO_DEL_IMPRESO = 2026;
 const IMAGEN = (pag: number) => `https://www.boe.es/datos/imagenes/disp/2026/23/1761_16563944_${pag}.png`;
 
 /** De dónde sale cada casilla, para que viaje con el borrador. */
-export const FUENTE_390 = `Orden HAC/27/2026, Anexo IV (sustituye el Anexo I de EHA/3111/2009) · ${IMAGEN(14)} · ${IMAGEN(15)} · ${IMAGEN(16)} · ${IMAGEN(17)}`;
+export const FUENTE_390 = `Orden HAC/27/2026, Anexo IV (sustituye el Anexo I de EHA/3111/2009) · ${IMAGEN(14)} · ${IMAGEN(15)} · ${IMAGEN(16)} · ${IMAGEN(17)} · ${IMAGEN(19)}`;
 
 export interface TripletaDevengado390 {
   tipo: number;
@@ -81,3 +81,20 @@ export const CASILLA_RESULTADO_REGIMEN_GENERAL_390 = '65';
  * NO se rellenan. Son las del 390 que corresponden a las 64-71 del 303, y el 303 las deja vacías.
  */
 export const CASILLAS_SIN_RELLENAR_390: readonly string[] = Object.freeze(['84', '86', '95']);
+
+/**
+ * SCRUM-1077c · Pág. 6 (`_19.png`) · «10. Volumen de operaciones» · 125 «Operaciones sujetas con
+ * inversión del sujeto pasivo». Una sola cifra, sin cuota. Es la base de la S2 del EMISOR, como
+ * suma de las cuatro 122 del 303 (decisión del fundador, SCRUM-1077 c.20833). La 27/28 y la 77 son
+ * las del destinatario, que autorrepercute: no son ésta.
+ *
+ * Instrucciones de la AEAT de 2025, pág. 22 (las de 2026 no existían el 24-oct-2026; cuando salgan,
+ * se cotejan): «125 Operaciones sujetas con inversión del sujeto pasivo: se hará constar, el importe
+ * total de: […] Las entregas de bienes y prestaciones de servicios realizadas a que se refiere el
+ * artículo 84 Uno. 2º a), c), d), e), f) y g) de la Ley.» La factura no guarda la letra, así que
+ * entra toda S2 (riesgo aceptado en c.20833).
+ *
+ * La misma página tiene la 99 y la 108 (la 108 suma la 125; la 99 la excluye). NO se rellenan: la
+ * decisión no las abre.
+ */
+export const CASILLA_INVERSION_SUJETO_PASIVO_390 = '125';

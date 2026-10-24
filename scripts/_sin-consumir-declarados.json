@@ -169,7 +169,8 @@
     {"clave":"export · src/modules/fiscal/modelo390/casillas.ts::CASILLAS_DEDUCIBLE_BIENES_INVERSION_390","donde":"src/modules/fiscal/modelo390/casillas.ts:70","carril":"J1","ticket":"SCRUM-1077","motivo":"J1: solo la consume construirModelo390, sin ruta (arriba)"},
     {"clave":"export · src/modules/fiscal/modelo390/casillas.ts::CASILLA_SUMA_DEDUCCIONES_390","donde":"src/modules/fiscal/modelo390/casillas.ts:73","carril":"J1","ticket":"SCRUM-1077","motivo":"J1: solo la consume construirModelo390, sin ruta (arriba)"},
     {"clave":"export · src/modules/fiscal/modelo390/casillas.ts::CASILLA_RESULTADO_REGIMEN_GENERAL_390","donde":"src/modules/fiscal/modelo390/casillas.ts:76","carril":"J1","ticket":"SCRUM-1077","motivo":"J1: solo la consume construirModelo390, sin ruta (arriba)"},
-    {"clave":"export · src/modules/fiscal/modelo390/casillas.ts::CASILLAS_SIN_RELLENAR_390","donde":"src/modules/fiscal/modelo390/casillas.ts:83","carril":"J1","ticket":"SCRUM-1077","motivo":"J1: solo la consume construirModelo390, sin ruta (arriba)"}
+    {"clave":"export · src/modules/fiscal/modelo390/casillas.ts::CASILLAS_SIN_RELLENAR_390","donde":"src/modules/fiscal/modelo390/casillas.ts:83","carril":"J1","ticket":"SCRUM-1077","motivo":"J1: solo la consume construirModelo390, sin ruta (arriba)"},
+    {"clave":"export · src/modules/fiscal/modelo390/casillas.ts::CASILLA_INVERSION_SUJETO_PASIVO_390","donde":"src/modules/fiscal/modelo390/casillas.ts:100","carril":"J1","ticket":"SCRUM-1077","motivo":"J1: SCRUM-1077c, la 125 (c.20833); solo la consume construirModelo390, sin ruta (arriba)"}
   ],
   "retiradas": [
     {"clave":"ruta · POST /admin/invoices/:id/pay","motivo":"SCRUM-1250b: desmontada (firma del fundador en SCRUM-1250 c.20747; excepción de carril en c.20763), la ruta ya no existe"},
