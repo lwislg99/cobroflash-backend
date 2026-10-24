@@ -325,3 +325,63 @@ El obligatorio de #2825 cayó en `scrum377` («HAY 7 «(s)» EN TEXTO DE PANTALL
 ### Error propio
 
 Al reescribir los tests pasé un `\\b` por `node -e` desde bash, y en el fichero entró un carácter de retroceso (0x08) en lugar de `\b`. El control positivo del test nuevo lo cazó: daba 0 avisos donde había 1. Lo quité con un script escrito con la herramienta de escritura, y el recuento de caracteres de control en los tres ficheros tocados da 0. Es la cicatriz J1 del 2026-10-01 (texto por la línea de órdenes) repetida.
+
+## SCRUM-1063f · la S2 del emisor a la casilla 122, y el aviso firmado para la que queda fuera (J1, jv-j1bs, 24-oct-2026)
+
+**Medido contra:** `origin/main` = `bcfc99b0d9a4f4a3aaf9d1608dce06b3d3691482` · 2026-10-24T15:25:00Z
+
+A9: comprobación → `tests/scrum1063f-s2-casilla-122.test.mjs`
+
+Decisión c.20768 («Sí, a la 122») y firma c.20797, que sustituye al aviso de c.20768. Encima de 1063c, 1063d y 1063e, ya en `main`: #2811, #2825 (merge `052f6e94003a74af6a770dd826aedfaa79e60e0d`) y #2835 (merge `bcfc99b0d9a4f4a3aaf9d1608dce06b3d3691482`).
+
+### Las instrucciones, leídas antes de escribir (condición de c.20768)
+
+Fuente: las instrucciones de la AEAT para 2026, «Instrucciones 02 a 12 y 2T a 4T de 2026» (`sede.agenciatributaria.gob.es/…/modelo-303-iva-autoliquidacion_/instrucciones-2026/instrucciones-02-12-2t-4t-2026.html`), bajadas el 24-oct a las 15:11Z (cabecera `Date`). Texto, literal:
+
+> 122 Operaciones sujetas con inversión del sujeto pasivo: se hará constar el importe total, en el período objeto de declaración, de: Las entregas de oro a las que sea de aplicación la regla contenida en el artículo 84, apartado Uno, número 2º, letra b) de la Ley y las entregas de oro de inversión a que se refiere el artículo 140 de la misma Ley. Las entregas de bienes y prestaciones de servicios realizadas a que se refiere el artículo 84 Uno. 2º a), c), d), e), f) y g) de la Ley.
+
+**No contradicen al impreso.** Es la casilla del que EMITE, va en «Información adicional», es un importe sin cuota y no suma en el resultado. La Orden HAC/27/2026 del BOE no trae instrucciones: sus cinco anexos son impresos. Una búsqueda atribuía a la 122 la condición del art. 74.1 RIVA; en el texto, esa condición es de la **77**.
+
+### Qué se ha construido
+
+1. `casillas.ts`: `CASILLA_INVERSION_SUJETO_PASIVO = 122`, con el impreso y las instrucciones citados.
+2. `modelo303.ts`: hay un campo nuevo, `informacionAdicional.inversionSujetoPasivo` = `{ casilla: 122, base, operaciones[] }` (una operación por entrada S2 del libro). Ese es el camino de la S2 con **cuota 0**. La S2 **con cuota** no cabe en la 122, que no tiene cuota: llevarla allí rompería `libro.cuota = 27 + cuota sin clasificar`. Esa se queda en `sinClasificar` con `inversion_sujeto_pasivo` y es la única que lleva el aviso firmado, en singular o en plural. La S2 deja de contar en el aviso de «sin calificación», porque sí tiene calificación. El aviso de «TODAS las casillas a cero sin nada declarado aparte» ya no salta si lo que hay está en la 122. El invariante de la cabecera suma la 122.
+3. **Para no perderla en silencio:**
+   - El 390 suma `sinClasificar`, y la S2 habría desaparecido del anual. Ahora sigue saliendo declarada con su trimestre, igual que antes de 1063f, porque su casilla en el 390 NO está decidida. Diferencia: va al final de las del trimestre y no en el orden del libro.
+   - El CSV del 303 en el paquete de evidencias lleva una fila `122;;;INVERSION_SUJETO_PASIVO <número>;<base>;`.
+4. Tests:
+   - `scrum1063e`: sus casos de la S2 pasan a fijar la 122 por igualdad exacta, con `sinClasificar` vacío. El cuadre suma la 122, con un positivo de 2000.
+   - Fixtures de `scrum297-paquete-piezas` y `scrum438-atestiguar`: llevan el campo nuevo.
+   - `_veredicto-mudez.json`: regenerado con `npm run censo:mudez -- --escribir` porque `scrum438` cambió. Resultado: VIVO.
+
+### Cómo se ha medido
+
+- **Rojo primero**, con `dist/` del código de 1063e: el test nuevo da 10 de 11 rojos y `scrum1063e` reescrito da 7 de 10.
+- **Literales:** cotejados por programa contra el texto del comentario c.20797. Los dos, idénticos en código y test.
+- **Mutaciones sobre `dist/`**, sobre 21 casos (1063f + 1063e). Caen todas:
+
+  | mutación | caen |
+  |---|---|
+  | la S2 a sin clasificar | 12 |
+  | toda S2 a la 122 | 4 |
+  | contarla en «sin calificación» | 3 |
+  | sin aviso | 4 |
+  | siempre plural | 2 |
+  | base 0 | 7 |
+  | «TODAS a cero» sin mirar la 122 | 1 |
+  | el 390 no la traspasa | 1 |
+  | el CSV sin la fila | 1 |
+
+  Restaurado con `cmp`, y la base vuelve a 21 de 21.
+- **Dirigida**, antes de mezclar main: la lista de 1063d más todo test que nombra `modelo303`, `modelo390`, el paquete, `motivosParaNoFiarse` o `informacionAdicional`, en total 58 ficheros. Cayeron dos, los dos por mí:
+  - `scrum719` (1395b): el veredicto de mudez caducado por `scrum438`. Regenerado.
+  - `scrum976` → `scrum811c`: midió la cadena justo cuando `origin/main` se movió 16 commits (entraron #2825 y #2835) y nombró mi merge local `23f3a5cde`. Repetido tras mezclar main: ver el comentario de Jira.
+- `tsc --noEmit`: limpio. `scrum1077` (390): verde dentro de la dirigida.
+- **Suite entera local: NO CORRIDA**; hace de tanda el obligatorio de CI. **yaqu.app: NO HECHO**, porque no hay pantalla del 303.
+
+### Riesgo residual, dicho
+
+- La S2 con cuota es **inalcanzable hoy**: `calcVatBreakdown` da cuota 0 también a una S2 con `tax: 0.21`. El aviso firmado sólo sale con un libro fabricado. Existe porque la decisión lo pide («si alguna S2 queda fuera») y para que un cambio del cálculo no la meta en la 122 perdiendo su cuota.
+- La 122 recoge TODA S2 del libro. Las instrucciones la limitan al art. 84.Uno.2º (y al oro). Que cada S2 de YaQu sea de ese artículo no lo he medido: la factura no guarda la letra.
+- Las rectificativas suman con su signo en la 122: el libro no las distingue (aviso `rectificativas_sin_casilla_propia` del 390).
+- Para el 390 no hay casilla decidida: la S2 sigue «sin clasificar» en el anual.
