@@ -31,6 +31,7 @@ const MUESTRA_IMPORTE = '1.234,56 €';
 //
 // Aprobada por el fundador el 5-ago-2026. Este bloque es la COPIA CANÓNICA y el módulo tiene que
 // coincidir con ella exactamente.
+// Consta en: SCRUM-1502 comentario 20702.
 //
 // ⚠️ SUSTITUYE al guard anterior, que exigía `[PENDIENTE microcopy oficial]` en cada ranura. No se
 // borra una comprobación: se cambia por otra MÁS FUERTE. El del marcador solo impedía INVENTAR texto
