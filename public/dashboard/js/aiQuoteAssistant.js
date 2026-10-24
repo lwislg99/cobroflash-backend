@@ -70,8 +70,10 @@ function openAiSuggestModal(addLinesFn) {
       lines = data.lines;
       descartadas = data.descartadas || [];
     } catch (err) {
+      // SCRUM-1247d · texto para el profesional, sin proveedor ni Railway (firma del fundador,
+      // SCRUM-1247 c.20779, Q2). El gemelo de `openAiMessageModal` (R3) espera a SCRUM-1182 (Q4).
       const msg = err?.data?.error === 'ai_not_configured'
-        ? 'La IA no está configurada. Añade GEMINI_API_KEY (gratis) en Railway.'
+        ? 'El asistente de IA no está disponible ahora mismo. Rellena las líneas a mano.'
         : 'Error al generar sugerencias. Inténtalo de nuevo.';
       setAlert('error', msg);
       btn.disabled = false;

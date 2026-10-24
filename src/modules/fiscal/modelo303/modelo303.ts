@@ -391,13 +391,13 @@ export function construirModelo303(params: {
       `${sinCalificacion} operación(es) sin calificación fiscal (exenta / no sujeta / ISP) no entran en ninguna casilla`,
     );
   }
-  // SCRUM-1063d · literal firmado por el fundador (SCRUM-1063 c.20731, regla 39). «suplido(s)» es
-  // un solo texto para el singular y el plural: no se parte en dos.
+  // SCRUM-1063d · literales firmados por el fundador (SCRUM-1063 c.20797, regla 39; sustituyen a
+  // c.20731). Singular y plural van por separado: scrum377 no admite el «(s)» en pantalla.
   const suplidos = sinClasificar.filter((o) => o.motivo === 'suplido').length;
   if (suplidos > 0) {
-    motivosParaNoFiarse.push(
-      `${suplidos} suplido(s) no entran en ninguna casilla: son gastos pagados por cuenta del cliente.`,
-    );
+    motivosParaNoFiarse.push(suplidos === 1
+      ? '1 suplido no entra en ninguna casilla: es un gasto pagado por cuenta del cliente.'
+      : `${suplidos} suplidos no entran en ninguna casilla: son gastos pagados por cuenta del cliente.`);
   }
   if (params.libro.importesIlegibles.length > 0) {
     motivosParaNoFiarse.push(`${params.libro.importesIlegibles.length} ${params.libro.importesIlegibles.length === 1 ? 'importe ilegible' : 'importes ilegibles'} en el libro`);

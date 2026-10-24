@@ -262,3 +262,43 @@ El mismo run tenía otros dos jobs en rojo, ninguno obligatorio:
 Ninguno que cambiara el resultado. El que generaliza es el de la entrega de J6c, y lo impide un guard
 que ya existía: su muestra de «guards de suite» (17 ficheros) no llevaba los dos censos que cuentan
 ficheros de `scripts/`, así que un script nuevo salió sin pasar por ellos y lo cazó el CI.
+
+## SCRUM-1324d (24-oct) · S5: El vigía de main sale ROJO cuando no consigue dar un veredicto
+
+**Medido contra:** `origin/main` = `15a0535ee9ff96225001aa7510e6e48f8b83bafc` · 2026-10-24T12:50:15Z
+
+A9: comprobación → `tests/scrum1324d-vigia-rojo-sin-veredicto.test.mjs`
+
+S5 (automatización · CI). Va detrás del tramo de J6 (1324c, #2822), que arregla la CAUSA del ciego. **Decisión del fundador, SCRUM-1324 c.20749** (transcrita por el orquestador del equipo de Javier): «Sí, rojo sin veredicto» — `vigia-de-main.yml` sale en ROJO cuando no consigue dar un veredicto. `vigia-de-main.yml` es carril S5 (`node scripts/carriles.mjs de .github/workflows/vigia-de-main.yml`).
+
+### PASO 0 · el defecto existe hoy
+
+Medido en GitHub a las 12:4xZ del 24-oct, no leído en el código: los 8 últimos runs de «Vigía de main» (11:42Z → 12:36Z) salieron **`success`**, y los 4 últimos comentarios del Issue #2641 (12:23Z, 12:23Z, 12:36Z, 12:37Z) dicen «**salida 1 y SIN veredicto escrito: el vigía no supo mirar**». La causa del ciego (falta `typescript`) la arregla J6 en #2822; esto arregla que el ciego se pinte de verde.
+
+### Lo cambiado
+
+- `vigia-de-main.yml`: un paso nuevo, el ÚLTIMO del job, «Sin veredicto, el job en ROJO», con `if: always()`. Va después de «Avisar o cerrar», así que el aviso al Issue sale igual. **Veredicto** = `vigia.json` legible, con `veredictos` no vacío, y salida del juez 0 o 1. Si no, `::error` con el motivo, línea en el resumen y `exit 1`. La salida 1 CON veredicto es un rojo o CIEGO del código, que ya va al Issue: no tumba el job. La salida 2 («no supo mirar») sí. Con veredicto, el resumen declara cuántos commits juzgó.
+- `tests/scrum1324d-vigia-rojo-sin-veredicto.test.mjs`: ejecuta el `run:` REAL con `bash -e` (como Actions) en un temporal fuera del árbol. **8 formas de «sin veredicto» → 1**: sin `vigia.json` con salida 1 (el ciego del 22-24 oct) y con 0 · salida 2 · salida vacía · sin salida · `vigia.json` ilegible · sin `veredictos` · `veredictos: []`. **2 veredictos de verdad → 0** (salida 0 y 1, con 2 commits). Y la FORMA: último paso, `always()`, lee `steps.juez.outputs.salida`, y el juez sigue escribiendo `--json vigia.json` y publicando `salida=`. SUELO: el paso existe y bash+node se pueden usar.
+
+### En rojo (A23·8), sobre el commit `86adb9e4a504539850e06e0faaafd2c19ac8aae0`
+
+Base sin mutar: verde (12/12). Siete mutaciones del YAML, cada una con su `numstat` al lado:
+
+| mutación | resultado |
+|---|---|
+| sin el paso (el `vigia-de-main.yml` de main) | MUERTA · 12 fallos |
+| sin `if: always()` | MUERTA · 1 |
+| `exit 0` en vez de `exit 1` | MUERTA · 8 |
+| la salida 2 cuenta como veredicto | MUERTA · 1 |
+| acepta 0 commits juzgados | MUERTA · 1 |
+| un paso detrás del suyo | MUERTA · 1 |
+| no mira si hay `vigia.json` | **VIVA — equivalente**: sin el fichero, el `node` que lo lee falla y el paso sale rojo por «no se puede leer». El comportamiento no cambia. |
+
+### Lo que NO se ha medido
+
+- **Que el primer run en GitHub después del merge salga ROJO** mientras #2822 no esté en main (el juez sigue sin `typescript`), y verde después. Es la prueba de efecto: hasta verla, esto es un arreglo probado en laboratorio. Lo mira quien vea el siguiente run de «Vigía de main».
+- Que un vigía en rojo AVISE a alguien: GitHub no notifica un `workflow_run` en rojo a nadie en concreto. Lo que cambia es que el rojo ya no se puede leer como verde (en Actions, y en el latido cuando entre la (2) de c.20782).
+
+### Cómo se repite
+
+`node --test tests/scrum1324d-vigia-rojo-sin-veredicto.test.mjs`.

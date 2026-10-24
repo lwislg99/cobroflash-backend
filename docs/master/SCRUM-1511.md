@@ -442,3 +442,59 @@ la parte de workflow es de S5 y del fundador.
 * Errores propios: el primer espejo lo puse en el scratch, sin `node_modules`, y no arrancó (lo dijo el
   código de salida, 1); lo rehice junto a los worktrees. Y para leer la mayor clave de Jira pedí 50
   resultados en vez de 1: con eso y dos lecturas enteras crucé los 200k (220.488) sin medir entre medias.
+
+## SCRUM-1511h · Tramo 5 (J6, 24-oct-2026): «anclado» exige que el par esté leído. Lista congelada de 22 pares, el sembrado cae y las 33 siguen ancladas
+
+**Medido contra:** `origin/main` = `091e4d765ba13083b93fb6c168ffbd70fb1f1563` · 2026-10-24T10:55:55Z (hora de GitHub, cabecera `Date:`, leída al re-medir después de traer `main` con el tramo 1511g dentro)
+
+A9: comprobación → `tests/scrum921c-firma-con-respaldo-en-codigo.test.mjs`
+
+Encargo: la 3b de c.20743, elegida en SCRUM-1511 comentario 20748 (decisión del fundador del 24-oct,
+transcrita por el orquestador). Carril: J6, por esa misma decisión; la fila de carril de los ficheros va a
+S0 y aquí NO se toca `dos-equipos.md`.
+
+### T5.0 · Qué cambia
+
+| fichero | qué |
+| --- | --- |
+| `tests/_pares-leidos-en-jira.mjs` (nuevo) | la lista: 22 pares, uno por línea, cada uno con la fecha de su lectura y quién lo leyó. Su cabecera dice cómo se añade una fila y **lo que la lista NO caza** |
+| `tests/_respaldo-de-firma.mjs` | `respaldoDe` sólo da «anclado» si TODOS los pares `SCRUM-N comentario M` del bloque están en la lista. Si falta alguno, baja a «rastreable» con `motivo: «par no leído: …»`, que dice qué par y cómo se añade. `leidos = null` juzga sólo por la forma: existe para el banco |
+| `tests/scrum921c-firma-con-respaldo-en-codigo.test.mjs` | tres casos `SCRUM-1511h` (sembrado, árbol entero, forma de la lista) y su `MUTACIONES_QUE_ME_TUMBAN` |
+| `scripts/guard-pasos-del-editor.mjs:6-9` | la marca de la v3 se re-ancla a SCRUM-1511 comentario 18924; la cita a SCRUM-915 comentario 15790 se queda, dicha como lo que es (la opinión sobre la v1). Mismo número de líneas |
+
+De las 22 filas, 20 son los pares que jv-j4ac leyó en c.20743 (tramo 4). Dos las leí yo hoy en Jira:
+SCRUM-1511 comentario 18924 (a la que se re-ancla el guard) y SCRUM-1502 comentario 20690, que es el
+ancla del banco de `scrum1502h` («el ancla sigue contando»): sin su fila, ese caso habría bajado a
+rastreable. Las dos existen y son de su ticket (`created` = `updated`).
+
+### T5.1 · Comprobaciones
+
+| comprobación | resultado |
+| --- | --- |
+| recuento `porNivel()` antes (árbol fijado a `aae98e6b5`, `main` sin esto) | negada 13 · citada 1 · rastreable 167 · **anclado 33** · documental 13 · sin-respaldo 20 |
+| el mismo, después (esta rama, con `main` en `091e4d765`) | idéntico, nivel a nivel: **0 cambios de nivel** |
+| `congeladas()` antes y después | 20 y 20, el mismo conjunto ruta a ruta |
+| 🔴 POSITIVO SEMBRADO de punta a punta: `src/sembrado1511h.ts` con una marca y `SCRUM-6604 comentario 99999` | sin la lista (`main`): anclado **33 → 34**. Con la lista: anclado **33**, rastreable 167 → 168, y `scrum921c` en ROJO nombrando `src/sembrado1511h.ts:1 → par no leído: SCRUM-6604 comentario 99999 — ábrelo en Jira…` |
+| el mismo, quitado | 33 y verde; `git status` limpio en los dos árboles |
+| sembrado en el banco, por el mismo lector | sin lista → anclado (el defecto se reproduce); con lista → rastreable con su motivo; control negativo con la MISMA forma y par leído → anclado; un par leído junto a uno inventado → rastreable |
+| mutación declarada (`sinLeer` → `[]`), aplicada a mano con `ae105706` commiteado y `git diff --numstat` = 1/1 | cae SÓLO `SCRUM-1511h · 🔴 POSITIVO SEMBRADO…` (15 de 16 pasan); restaurada con `git restore --source=HEAD` y `git status` limpio |
+| censo del meta-guard (`--solo-censo`) | 196 → 197 ficheros declarantes, 757 → 758 declaraciones |
+
+### T5.2 · Lo que la lista NO caza (también en la cabecera de la lista)
+
+* **Quien inventa la cita puede inventar la fila.** La lista no lee Jira: obliga a escribir el par
+  inventado dos veces, una en un fichero cuyo único oficio es decir «esto lo abrí», con fecha y nombre.
+* El **contenido**: un comentario que existe y no es una firma pasa igual (el caso de 15790).
+* Un comentario **editado o borrado** después de leerlo.
+* Una **fila huérfana**, que ya no cita nadie: no da rojo.
+
+### T5.3 · Lo que NO he hecho
+
+* **Tanda completa: no corrida** (10 sesiones a la vez). Corridos en local los guards del encargo; su
+  recuento va en la entrega de Jira. **Obligatorio del push: se lee después de empujar.**
+* `dos-equipos.md`: sin tocar; la fila de `_pares-leidos-en-jira.mjs`, `_respaldo-de-firma.mjs` y
+  `scrum921c` es de S0. `scripts/guard-pasos-del-editor.mjs` cae en la fila general de `scripts/`
+  (S0, «su dueño no lo ha decidido nadie»): lo toqué porque c.20748 lo manda en este PR, y lo nombro.
+* El meta-guard entero no se corrió: muta las ~758 declaraciones. La mía se comprobó a mano.
+* Error propio, cazado antes del commit: la cabecera de la lista citaba la salida del tramo 1511g en
+  `docs/master/evidencias/`, que entonces aún no estaba en `main`; la cambié por el número del comentario.

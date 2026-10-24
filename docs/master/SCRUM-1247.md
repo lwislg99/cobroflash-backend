@@ -217,6 +217,55 @@ control positivo: el patrón de marca (`Claude|Anthropic|Gemini|Google`) sí caz
 
 ---
 
+# SCRUM-1247e · Q1 construido: sin clave de Gemini no hay IA, y nada sale a Anthropic (S1)
+
+**Medido contra:** `origin/main` = `063a4ec3538d52842ffa94410ff90b163ef99055` · 2026-10-24T12:49:23Z (`Date:` de GitHub)
+
+A9: comprobación → `tests/scrum1247e-ia-sin-segundo-proveedor.test.mjs`
+
+[S1, equipo de Luis. La decisión: c.20779, Q1 «Sí, quitarlo».]
+
+**La premisa, leída en este árbol.** `ai.service.ts:42-53` era lo que dice la decisión: si faltaba
+`GEMINI_API_KEY` y había `ANTHROPIC_API_KEY`, `aiComplete` mandaba la petición a Anthropic
+(`claude-opus-4-7`). ⚠️ **No era un respaldo ante FALLO**: con Gemini configurado y caído, ya no caía a
+Anthropic (lo midió J4 el 28-sep, §1). Era una elección por configuración. Y había una segunda mitad que
+la decisión no nombra y hay que quitar a la vez: `isAiConfigured()` (`:29`) también contaba
+`ANTHROPIC_API_KEY`. Quitar sólo el bloque habría dejado las rutas diciendo «configurada» y fallando
+dentro.
+
+**El arreglo.** Fuera el bloque y la mitad de `isAiConfigured`; sólo Gemini. `src/integrations/claude.ts`
+se queda sin ningún importador (era el único) y se retira. **No se toca** `package.json`
+(`@anthropic-ai/sdk` sigue como dependencia, ya sin uso en `src/`) ni `config.ANTHROPIC_API_KEY`
+(`core/config/env.ts:103`): quitarlos es limpieza, no la decisión, y lo decide quien reparte.
+
+**El test, por efecto:** tres procesos hijos con su entorno y `fetch` interceptado. Control positivo:
+con `GEMINI_API_KEY` la sonda VE la petición a `googleapis.com`. Con sólo `ANTHROPIC_API_KEY`:
+`isAiConfigured()` = false, `generateQuoteMessage` falla con `ai_not_configured` y CERO peticiones.
+
+| qué | resultado |
+|---|---|
+| el test, con el arreglo | 3/3 |
+| el MISMO test contra el compilado de `927bda7ab` (código de antes) | cae SÓLO el caso central: `isAiConfigured()` = `true` con sólo la clave de Anthropic; los otros dos, verdes |
+| vecinos: los 89 ficheros de `tests/` que nombran el servicio, sus rutas, `integrations/` o los censos de huérfanos | 829 tests · 824 pass · 0 fail · 5 skip (gates) |
+
+**¿Se queda el usuario sin mensaje cuando no hay IA?** Leído en el código, no ejecutado en pantalla:
+
+- «Sugerir con IA» (presupuesto): 503 `ai_not_configured` → la pantalla pinta su propio texto
+  (`aiQuoteAssistant.js:74`, R4). Es el que firmó Q2 y construye S2.
+- Dictado del parte: 200 con la propuesta vacía y sus avisos (`partes.routes.ts:857`); se sigue a mano.
+- 🔴 **Voz del albarán** (`jobDetailView.js:2836`, con `VOICE_ALBARAN_ENABLED`): pinta
+  `mensajeParaPersona(e, …)`, que da prioridad al `data.message` del servidor (`api.js:333`). Ese mensaje
+  es `ai.routes.ts:11`: «El asistente de IA no está configurado. Añade GEMINI_API_KEY (gratis) en
+  Railway.» — una instrucción de operador, al profesional. Es el mismo defecto que Q2 en otra ranura, y
+  la firma de Q2 es para `aiQuoteAssistant.js:74`, no para ésta. **No lo escribo: es texto (regla 39).**
+  Propuesta: el mismo literal ya firmado en Q2. `ai.routes.ts:28` (`ai_bad_key`, «Revísala en Railway»)
+  tiene la misma forma.
+
+**De paso, sin arreglar:** `scripts/voice-eval.mjs:6` pide «ANTHROPIC_API_KEY y BD en .env» para el uso
+local; desde aquí, la clave que hace falta es `GEMINI_API_KEY`.
+
+---
+
 # SCRUM-1247c · Re-medición: qué ve el profesional, qué sale al proveedor y qué dice la política (J4)
 
 **Medido contra:** `origin/main` = `25920fe4b1e0848c5ce33f8cb7a01ccf7157b7e0` · 2026-10-24T10:26Z (J4, jv-j4ab)
@@ -273,3 +322,40 @@ Nada sale hasta que el profesional pulsa.
   positivo. No cambia ningún dato.
 
 A9: aviso → A10 «Un barrido que busca dónde se escribe un campo no ve el objeto que se construye en otro fichero: se cruza con el nombre del campo.» — no se pudo comprobar: la sonda AST casaba por nombre de función y no vio la llamada del ticket hecha por la variable `completar`; es de un solo uso y vive fuera del repo, y lo cazó cruzar con el `grep` de los importadores de `integrations/gemini`
+
+## SCRUM-1247d · el error «IA no configurada» del modal pasa al texto firmado (Q2, c.20779)
+
+[Anexado por S2, equipo de Luis, el 24-oct-2026 (Date: Sat, 24 Oct 2026 12:43:59 GMT), sobre `origin/main`
+`927bda7ab44b604d81bca8c453663e7fc6f6cda9`. Encargo del orquestador de Luis. Carril: `aiQuoteAssistant.js` → S2
+(`dos-equipos.md:152`).]
+
+**Skill UI:** cargada (yaqu-premium-ui). Sólo cambia el literal de un aviso que ya existía.
+
+A9: comprobación → `tests/scrum1247d-ia-no-disponible.test.mjs`
+
+### La firma, citada
+
+SCRUM-1247 **c.20779** (24-oct-2026, la transcribe el orquestador del equipo de Javier): «Q2: FIRMADO (regla 39),
+literal: «El asistente de IA no está disponible ahora mismo. Rellena las líneas a mano.» Sustituye a «La IA no está
+configurada. Añade GEMINI_API_KEY (gratis) en Railway.» (`aiQuoteAssistant.js:74`). Es S2 (Luis).»
+
+### ¿Es `:74` de verdad el sitio? Comprobado antes de escribir
+
+- `POST /admin/ai/suggest-quote` contesta 503 `{error:'ai_not_configured'}` cuando no hay IA (`ai.routes.ts`,
+  `aiUnavailable`); `api.js:299-302` pone el cuerpo en `err.data`; `:73` lo distingue. Es alcanzable.
+- Es el ÚNICO sitio visible de ese fallo en `public/` (`git grep` de `ai_not_configured` y `GEMINI`). Su gemelo
+  `:245` es R3 (`openAiMessageModal`, 0 llamadas): Q4 dice esperar a SCRUM-1182, y no se toca.
+- ⚠️ **No es la única SALIDA de fallo:** los otros seis códigos (`ai_rate_limited`, `ai_cap`, `ai_bad_key`,
+  `ai_provider_error`, `ai_could_not_parse`, `internal_error`) caen en el genérico de `:75` y el `message` del
+  servidor se tira. Fuera de la firma; no se tocan. El orquestador lo sube como ticket aparte con esta medida.
+- Encaja con Q1 (S1): sin la clave de Gemini, la respuesta sigue siendo `ai_not_configured`, que es lo que `:74` recoge.
+
+### Medido
+
+- `tests/scrum1247d-ia-no-disponible.test.mjs`, por EFECTO: abre el modal en el banco de vistas, escribe una descripción,
+  pulsa «Generar sugerencias» y lee el aviso pintado. ① 503 `ai_not_configured` → el texto firmado, sin «GEMINI» ni
+  «Railway» · ② CONTROL: 502 `ai_provider_error` → el genérico, no el firmado. **2 de 2.**
+- **Rojo primero:** con el `aiQuoteAssistant.js` de `origin/main` cae ① y el control ② aguanta.
+- **Mutaciones** (`docs/master/evidencias/scrum1247d/mutar-1247d.mjs <raiz> origin/main`): las 2 del catálogo tumban ①.
+- yaqu.app: con la IA configurada en producción, este aviso no sale. Para verlo habría que quitar la clave; no lo he
+  intentado. Lo que se puede mirar en prod es que el JS servido lleva el literal.

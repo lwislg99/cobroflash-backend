@@ -194,7 +194,7 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   // Los albaranes cuelgan de Trabajos, así que un listado global le enseñaría de qué obras AJENAS
   // hay partes, de qué clientes y con qué fechas: exactamente lo que la puerta principal le niega,
   // servido por la puerta de atrás. Cerrar de más es un incordio; abrir de más no se deshace.
-  { method: 'GET',   path: '/admin/albaranes/pendientes-facturar', why: 'SCRUM-69: bandeja de facturación, mismo criterio S1 que GET /admin/invoices ("facturas: ver sí")' },
+  { method: 'GET',   path: '/admin/albaranes/pendientes-facturar', why: 'SCRUM-69: bandeja de facturación. Desde SCRUM-1346 (P1, c.20745) el técnico ve SOLO la de SUS Trabajos, con el mismo eje que GET /admin/albaranes (SCRUM-467); el "facturas: ver sí" de antes lo sustituyó la decisión B de SCRUM-1346' },
   // SCRUM-606 (ALB-01) · el buscador de presupuesto de «Nuevo albarán». Va aquí y no en admin-only
   // por COHERENCIA con el alta que abre: `POST /admin/jobs/:id/albaranes` está tres líneas más
   // arriba en esta misma lista, y con este motivo —«crear el parte de trabajo EN LA OBRA»—. Un
@@ -208,7 +208,7 @@ export const TECNICO_ALLOWED: ReadonlyArray<RouteDeclaration> = [
   // Trabajos que no son suyos (SCRUM-467), con su motivo y sin darle el `jobId`.
   { method: 'GET',   path: '/admin/albaranes/presupuestos', why: 'SCRUM-606: elegir de qué presupuesto nace el albarán que va a rellenar en la obra; mismo criterio que POST /admin/jobs/:id/albaranes' },
   { method: 'GET',   path: '/admin/albaranes/serie', why: 'SCRUM-1184: ver el siguiente número de la serie antes de crear el albarán; mismo criterio que POST /admin/jobs/:id/albaranes. Solo lectura, por merchant, no reserva número' },
-  { method: 'GET',   path: '/admin/albaranes/consolidables', why: 'SCRUM-70: vista previa de la recapitulativa (cliente+mes). MISMO criterio que la bandeja de SCRUM-69 — es la misma información, agrupada: solo lectura y ningún dato que el técnico no vea ya ahí. NO emite.' },
+  { method: 'GET',   path: '/admin/albaranes/consolidables', why: 'SCRUM-70: vista previa de la recapitulativa (cliente+mes). MISMO criterio que la bandeja de SCRUM-69 — es la misma información, agrupada: solo lectura y ningún dato que el técnico no vea ya ahí; desde SCRUM-1346 (P1, c.20745), solo de SUS Trabajos. NO emite.' },
 
   // ── Productos ──────────────────────────────────────────────────────────────────────────
   //
