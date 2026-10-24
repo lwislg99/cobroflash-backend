@@ -123,6 +123,13 @@ al día, con su coste.
   punta de `main` (`4bab9c1fc`), no el merge: la lista de `--ancestry-path` con `--first-parent` no era la que creía. Lo
   vi porque la fecha (24-oct) no podía ser la de un cambio del 29-sep, y lo rehíce con `merge-base --is-ancestor` sobre
   cada merge del 29-sep al 5-oct. No llegó a escribirse en ninguna parte.
+
+---
+
+> **Segundo tramo de este registro (J6, `jv-j6k`, 14-oct, PR #2435).** Los dos tramos crean este mismo fichero; la
+> unión de git los dejó uno detrás de otro sin separar y se juntan aquí a mano (SCRUM-1572). Cada tramo lleva su
+> propia cabecera, su ancla «Medido contra» y su línea `A9:`; sus secciones numeradas empiezan otra vez en 0.
+
 # SCRUM-1549 · El cerrojo de identidad, sin armar: si mañana se pone `--exigir-identidad`, de 159 sesiones con hook caen 158 — todo el trabajo real del equipo de Javier, su orquestador incluido
 
 **Medido contra:** `origin/main` = `e2be1c9fda3b5ceac853b4d376f5664ac8e4df67` · 2026-10-14T07:58:10Z
