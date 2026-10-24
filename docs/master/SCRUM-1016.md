@@ -874,3 +874,47 @@ Antes de tocar el test, el mismo control daba 8 fallos y ahora da 6. Los dos que
 ## SCRUM-1347 — sin cambios
 
 Ya entró en `main` con el PR #2432 (merge `3c254525`, 08:12:21Z). El obligatorio de #2432 salió verde. El meta-guard salió `fail`, sin colgarse: 1 CIEGO en `scrum757-la-declaracion-que-nadie-lee` (la pasada mutada perdió 5 de sus 9 tests) y 0 mudas. Ese fichero no lo toca el PR, y no lo he investigado.
+
+# APÉNDICE · 24-oct-2026 · SCRUM-1016n · Las 12 líneas, re-medidas: qué está en main, qué sigue vivo y cuatro preguntas
+
+**Medido contra:** `origin/main` = `aae98e6b5f6fb87ee53f01a3f65c7d6c335a9255` · 2026-10-24T10:48:57Z
+**Rama:** `scrum-1016n-medida-24oct` · **Puesto:** J4 (sesión `jv-j4ae`) · **Skill UI:** no cargada · no toca `public/`: sólo la lee y la cita por fichero:línea
+**No toca** `public/`, `src/`, `docs/YAQU_MASTER.md`, el camino de emisión, el esquema ni ninguna base. Solo docs.
+
+A9: sin fallo que generalice — el único tropiezo fue una redirección sin comillas a una ruta con espacios. Bash la paró con «ambiguous redirect», la rehice con comillas y no llegó a leerse ningún recuento falso.
+
+## Encargo
+
+Del orquestador (`cobroflash-backend-95`): SOLO MEDIR Y PREGUNTAR. Separar lo hecho de lo vivo, decir lo que el ticket da por cierto y ya no lo es, y dejar las decisiones como preguntas ✅/❌ para el fundador. El ticket se leyó entero (13 comentarios, hasta c.19608). La entrega está en **SCRUM-1016 c.20752**, y las preguntas viven allí, no aquí.
+
+## Cómo se midió
+
+- El máster (515.341 B) y `public/index.html` (89.737 B) se leyeron enteros con `git show origin/main:`, a fichero. Cada línea del máster se buscó por un fragmento de su literal (c.16200 §1).
+- `https://yaqu.app/` se bajó con `curl`: **idéntica byte a byte** a la landing de main (`cmp`). `/health` da `version` = `aae98e6b5…`. Control positivo: «Del presupuesto a la firma» sale 5 veces (title, og, twitter y los dos H1).
+- Carril (`node scripts/carriles.mjs de`): `public/index.html` es de J3. `docs/YAQU_MASTER.md` está sin cerradura y lo edita un jefe. `docs/go-live/puerta.json` no tiene fila en §3.
+
+## Resultado, en corto (el detalle con sus sha está en c.20752)
+
+| de las 12 | estado hoy |
+| --- | --- |
+| #3 categoría de H2 (`docs/YAQU_MASTER.md:215`) | hecho, SCRUM-1086d (#1704) |
+| #4 guion VeriFactu de H2 | hecho, SCRUM-534i: 0 apariciones del literal viejo |
+| #11 métrica A5 (`:79`) | hecho el 21-sep |
+| #1 `:53` · #2 `:91` · #5 `:226-228` · #6 `:232` · #7 `:235` y `:1869` · #8 `:246` (26b) · #9 `:444` · #10 `:1012` · #12 `:1661` | **vivas**, sin dueño en la puerta |
+
+**Landing:** el title y los dos H1 entraron con #2447, y el guard `scrum331:121` se puso al día con #2444. El subtítulo vivo (`public/index.html:442`) lo cambió SCRUM-1551e con la firma S3. Siguen visibles y con cobro `:653` (tarjeta de `#todo`, puerta fila 11) y `:447` (`aria-label`, puerta fila 12, «falso siempre»). Las secciones con `hidden` no se cuentan.
+
+**Lo que el ticket da por cierto y ya no lo es:** el subtítulo del Candidato 1 ya no es el trabajo pendiente: lo superó la firma S3, y la puerta tiene la fila 14 cerrada. `precios.html` ya no dice cobro. La frase de c.19607 está ahora en `:522` y no en `:507`. Los números de línea de la landing se han movido +15.
+
+## Preguntas para el fundador (texto entero en c.20752 §4)
+
+- **P1** · ¿los guiones #1, #5, #6, #7 y #10 se usan hoy con profesionales reales? ✅ → mínimos de c.16200, para firmar · ❌ → fila de la puerta.
+- **P2** · ¿se añade el matiz post-SIF a #2, #8 y #12? Recomiendo ✅.
+- **P3** · ¿se pone A22 (`:444`) al día con el H1 servido (regla 16)? Recomiendo ✅.
+- **P4** · ¿se firma un `aria-label` nuevo para `:447`? Literal propuesto, sin firma. Recomiendo ✅.
+
+## Qué NO hice
+
+- No toqué el máster, `public/` ni la puerta. Tampoco transicioné el ticket: lo parte o lo cierra el orquestador (A13/A18).
+- No medí si el vídeo de V0-6 está grabado, ni si alguien usa hoy los guiones (eso es la P1). La firma SCRUM-1551 c.20437 la leí en el commit `8b069ba50` y en `puerta.json`, no en Jira.
+- Suite entera local: NO CORRIDA (encargo solo de medir; un cambio de un fichero de docs).
