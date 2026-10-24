@@ -52,6 +52,7 @@ test('SCRUM-151: con plan vacío el motivo explica que no hay TRAMOS, y con su p
     );
     // Y no puede sonar a "aquí no se factura": el fundador decidió que MANUAL sí debe poder
     // facturarse. Esta línea es la que cambió de sentido respecto a la versión anterior.
+    // Consta en: SCRUM-1502 comentario 20834.
     assert.doesNotMatch(message, /no disponible/i, `${terms}: el texto no puede negar la facturación, solo los tramos`);
   }
 });

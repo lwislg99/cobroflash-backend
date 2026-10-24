@@ -92,6 +92,7 @@ test('SCRUM-593b · 🔴 el bloque final dice «Observaciones» y NO lleva marca
 // MARCADOR, porque no estaba firmado. Ese mismo día el fundador lo firmó: «Añadir texto en el
 // documento», y de paso decidió que en el PDF ese bloque no lleva rótulo. La premisa caducó por
 // una decisión legítima, así que el test no se borra: afirma lo contrario y sigue pudiendo fallar.
+// Consta en: SCRUM-593 comentario 14262.
 test('SCRUM-593b · 🔴 el rótulo de la CABECERA es el APROBADO, y no se confunde con el otro', () => {
   const w = cargar();
   const cab = w.TD_CAMPOS.find((c) => c.clave === 'docHeaderText');
