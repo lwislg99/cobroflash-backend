@@ -38,8 +38,9 @@ import { leerSiSigueAhi, exigirCorpusLeido } from './_barrido-estable.mjs'; // S
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 
 /**
- * LA POBLACIÓN DECLARADA — 42 = los 46 de SCRUM-1599 c.20713 menos los 4 que migra 1599f
- * (scrum104, scrum106, scrum109, scrum135). Uno por línea (A23 #15), en orden alfabético.
+ * LA POBLACIÓN DECLARADA — 35 = los 46 de SCRUM-1599 c.20713 menos los 4 que migra 1599f
+ * (scrum104, scrum106, scrum109, scrum135) y los 7 que migra 1599h (scrum131, scrum22, scrum51,
+ * scrum57, scrum58, scrum593d, webhooks-idempotencia). Uno por línea (A23 #15), en orden alfabético.
  * Esta lista sólo BAJA, y sólo en el PR que migra el fichero. Para que SUBA hace falta una decisión
  * escrita en SCRUM-1599 y su motivo al lado de la línea.
  */
@@ -52,7 +53,6 @@ const SOLO_STAGING = Object.freeze([
   'scrum116-recordatorio-candado.test.mjs',
   'scrum120-patch-job-roles.test.mjs',
   'scrum127-paywall-bloquea.test.mjs',
-  'scrum131-resend-honesto.test.mjs',
   'scrum136-hub-equipo.test.mjs',
   'scrum148-filtro-por-miembro.test.mjs',
   'scrum17-recapitulativa.test.mjs',
@@ -61,19 +61,18 @@ const SOLO_STAGING = Object.freeze([
   'scrum173-cadena-verifactu-serializada.test.mjs',
   'scrum178-emision-manual.test.mjs',
   'scrum207-emision-auditada.test.mjs',
-  'scrum22-operario-readpath.test.mjs',
   'scrum221-export-fiscal-cero-bytes.test.mjs',
   'scrum222-deriva-arranque.test.mjs',
   'scrum234-carrera-serie.gated.test.mjs',
   'scrum24-operarios-metrics.test.mjs',
   'scrum25-export-zip.test.mjs',
   'scrum25-exports.test.mjs',
-  'scrum51-job-sin-quote.test.mjs',
-  'scrum57-operario-propagacion.test.mjs',
+  // scrum574 NO se migra en 1599h: su caso «CONTRA POSTGRES: tras la migración, cada cliente sigue
+  // siendo el mismo» compara los clientes de una base REAL ya migrada con el PASO 0 de `railway` y
+  // `yaqu_dev_javier`. En el banco vacío cae con «⛔ NO SUPE MIRAR: cero clientes», por diseño
+  // (medido en el banco local, no sólo leído). Su sitio es staging.
   'scrum574-mismo-cliente-tras-migracion.test.mjs',
-  'scrum58-jobs-n1.test.mjs',
   'scrum592-concurrencia-serie.test.mjs',
-  'scrum593d-viaje-completo-del-texto.test.mjs',
   'scrum66-tipo-operacion.test.mjs',
   'scrum73-verifactu-gate.test.mjs',
   'scrum74-recibo-token.test.mjs',
@@ -88,7 +87,6 @@ const SOLO_STAGING = Object.freeze([
   'scrum92-login-operario.test.mjs',
   'scrum94-register-teammember.test.mjs',
   'tenancy-permisos.test.mjs',
-  'webhooks-idempotencia.test.mjs',
 ]);
 
 // El sembrado: la forma de un gateado sólo de staging, tal como la escribe hoy el árbol.
@@ -169,7 +167,7 @@ function fuentesDelArbol() {
 
 const sembradas = () => [{ nombre: SEMBRADO, src: FUENTE_SEMBRADA }, { nombre: MIGRADO, src: FUENTE_MIGRADA }];
 
-test('SCRUM-1599f · los que SÓLO corren contra staging son exactamente los 42 declarados', () => {
+test('SCRUM-1599f · los que SÓLO corren contra staging son exactamente los 35 declarados', () => {
   const arbol = fuentesDelArbol();
   const { veredicto, poblacion } = censar([...arbol, ...sembradas()]);
   assert.equal(veredicto, 'MIRADO', '🔴 CIEGO: el extractor no ve el gateado sembrado, así que tampoco ve los del árbol');
@@ -185,7 +183,7 @@ test('SCRUM-1599f · los que SÓLO corren contra staging son exactamente los 42 
       + '  Si entra, dale el segundo destino (tests/_banco-libro.mjs); que se quede sólo en staging lo\n'
       + '  decide el fundador en SCRUM-1599, y se escribe aquí con su motivo.',
   );
-  assert.equal(poblacion.length, 42, `🔴 población ${poblacion.length}, declarada 42`);
+  assert.equal(poblacion.length, 35, `🔴 población ${poblacion.length}, declarada 35`);
 });
 
 test('SCRUM-1599f · sin el sembrado el censo dice CIEGO, no verde', () => {

@@ -204,6 +204,14 @@
       "de_donde": "SCRUM-1558",
       "consta_en": "docs/master/SCRUM-1558.md:29 («el orquestador lo apunta en la puerta»). NO consta en SCRUM-1554",
       "estado": "abierta"
+    },
+    {
+      "numero": 24,
+      "que": "Los cinco guiones de venta del máster prometen el cobro que la regla 24 apaga en España: A1 (docs/YAQU_MASTER.md:53, promesa de calle), H5 (:226-228, tres guiones), H6 (:232, objeciones), H7 y AB5 (:235 y :1869, titular) y V0-6 (:1012, guion de vídeo). Hoy no se usan con profesionales reales; se firman aquí en bloque ANTES de usarse. Literales de mínimos en SCRUM-1016 c.16200 §3; la objeción del Kit Digital no tiene respuesta verdadera hasta SIF-1.",
+      "de_donde": "SCRUM-1016 c.20778 (P1 del fundador: «No, aún no»)",
+      "consta_en": "docs/master/SCRUM-1016.md, tramo SCRUM-1016p. NO consta en SCRUM-1554",
+      "condicion": "Falso en España hasta SIF-1. No se usa con profesionales reales sin la firma en bloque.",
+      "estado": "abierta"
     }
   ]
 }
