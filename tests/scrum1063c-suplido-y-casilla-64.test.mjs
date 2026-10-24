@@ -84,7 +84,9 @@ test('SCRUM-1063c · 🔴 un suplido NO sale como `tipo_cero`: sale como `suplid
     tipo: 21, casillaBase: 7, casillaTipo: 8, casillaCuota: 9, base: 800, cuota: 168,
   });
   assert.equal(r.casillaTotalCuota.valor, 168);
-  assert.deepEqual(r.motivosParaNoFiarse, [],
+  // SCRUM-1063d · desde la firma c.20797 (antes c.20731) el suplido tiene SU aviso; el de la exenta sigue sin salir.
+  assert.deepEqual(r.motivosParaNoFiarse,
+    ['1 suplido no entra en ninguna casilla: es un gasto pagado por cuenta del cliente.'],
     '🔴 el aviso de «exenta / no sujeta / ISP» cuenta un suplido, que no es nada de eso');
 });
 
@@ -100,7 +102,8 @@ test('SCRUM-1063c · suplido y exenta en la misma factura: cada una con SU motiv
   assert.deepEqual(motivos(r), [['suplido', 50, 0], ['tipo_cero', 30, 0]]);
   assert.equal(r.totalBase + 50 + 30, 880, 'el libro lleva 880 de base: 800 + 50 + 30');
   assert.deepEqual(r.motivosParaNoFiarse,
-    ['1 operación(es) sin calificación fiscal (exenta / no sujeta / ISP) no entran en ninguna casilla'],
+    ['1 operación(es) sin calificación fiscal (exenta / no sujeta / ISP) no entran en ninguna casilla',
+      '1 suplido no entra en ninguna casilla: es un gasto pagado por cuenta del cliente.'], // SCRUM-1063d
     'la exenta se sigue avisando; el suplido no se cuenta en ese texto');
 });
 

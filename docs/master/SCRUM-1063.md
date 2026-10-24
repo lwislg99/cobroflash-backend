@@ -200,6 +200,77 @@ En c.20716 (jv-j1bc, este mismo puesto) se escribió «la 67 (cuotas a compensar
 - `porTipo` pierde la `causa` (SCRUM-1051). Si una factura tuviera al 0 % una línea S2 y un suplido, las dos entradas al 0 % no se distinguen en el libro, y el suplido se aparta de la primera que salga. Ninguna factura así existe hoy: medido no, deducido de que no hay merchants reales.
 - El código `suplido` se ve en el CSV del paquete de evidencias (`SIN_CLASIFICAR suplido <número>`), igual que hoy `tipo_cero`.
 
+## SCRUM-1063d · el aviso firmado de los suplidos, y el riesgo S2 + suplido medido (J1, jv-j1bj, 24-oct-2026)
+
+**Medido contra:** `origin/main` = `49045295ec2823bd98b4ebf7ab8d2f0125fabcb9` · 2026-10-24T10:25:35Z
+
+A9: comprobación → `tests/scrum1063d-aviso-suplidos.test.mjs`
+
+Firma del fundador: SCRUM-1063 c.20731 (regla 39, transcrita por el orquestador). Rama sobre `scrum-1063c-suplidos-y-64` @ `c185f80c`: **este PR depende del #2811**, que a esta hora sigue sin mergear.
+
+### Qué se ha construido
+
+1. En `motivosParaNoFiarse` del 303, para las entradas de `sinClasificar` con `motivo: 'suplido'`, el literal firmado: «{n} suplido(s) no entran en ninguna casilla: son gastos pagados por cuenta del cliente.» Un solo texto para singular y plural, como está en la firma. `{n}` cuenta entradas de `sinClasificar`, igual que el aviso de «operación(es)» de al lado.
+2. `tests/scrum1063c-suplido-y-casilla-64.test.mjs`: dos aserciones fijaban «sin aviso» porque la firma no existía; ahora fijan el literal exacto. La comprobación es más estricta, no más laxa.
+
+### Cómo se ha medido
+
+- **Rojo primero:** el test nuevo contra el código de 1063c: caen 4 de 5 (el quinto es el negativo de la marca ilegible, verde en los dos).
+- **Mutaciones sobre `dist/`:** sin el punto final caen 3; «suplidos» en vez de «suplido(s)», 4; umbral `> 1`, 3; contar todo `sinClasificar`, 3; aviso quitado, 4. Restaurado y comprobado.
+- **Guards dirigidos:** 1063b/c/d, 1066c/e, 1232, 237, 976, 824, 824b, 836, 419, 702, 700, 719, 1415, 1294, 267, 273, 622 y 854: 22 ficheros, 215 casos, 0 caen, 0 saltados. Los 30 ficheros que nombran `modelo303` o `motivosParaNoFiarse`: 321 casos, 0 caen, 3 saltados (`LIBRO_PG_URL`).
+- **Suite entera local: NO CORRIDA**; hace de tanda el obligatorio de CI.
+
+### El riesgo de c.20728, medido (no arreglado: espera decisión)
+
+Factura fabricada, pasada por `construirLibroRegistro` y `construirModelo303` reales:
+
+- **S2 al 0 % (1000) primero, suplido (50) después:** el libro da `porTipo` = `[{0,1000},{0,50}]` sin `causa`. El 303 aparta el suplido **de la entrada S2**: `sinClasificar` = suplido 50, `tipo_cero` 950, `tipo_cero` 50. La suma cuadra (1050), pero la etiqueta va a la línea que no es y el aviso de «sin calificación» dice 2 donde hay 1. **Riesgo confirmado.**
+- **Suplido primero:** sale bien (suplido 50, `tipo_cero` 1000).
+- **De paso, otro más grave, anterior a 1063c:** una S2 con `tax: 0.21` (el validador de causa no exige `tax` 0) entra en la **casilla 07** del 21 % con base 1000 y cuota 0, sin aviso. La causa es la misma: el libro tira la `causa` al copiar `porTipo`.
+
+### Riesgo residual, dicho
+
+- Los dos casos de arriba siguen como estaban: arreglarlos pide que el libro conserve `causa` en `porTipo`, y eso es una decisión que se ha pedido en Jira.
+- Si la marca de suplido es ilegible no hay aviso de suplido: queda en `tipo_cero`, como en 1063c.
+
+## SCRUM-1063e · el libro guarda la causa S2 y el 303 la saca de la casilla de su tipo (J1, jv-j1bm, 24-oct-2026)
+
+**Medido contra:** `origin/main` = `091e4d765ba13083b93fb6c168ffbd70fb1f1563` · 2026-10-24T10:55:33Z
+
+A9: comprobación → `tests/scrum296-libro-registro.test.mjs`
+
+Error propio: al importar el tipo `Causa` reescribí la línea `import { calcVatBreakdown }`, y ese guard (el libro reutiliza el cálculo del emisor) cayó en la dirigida. Se arregló el código con un `import type` aparte, no el guard.
+
+Decisión del fundador: SCRUM-1063 c.20746 («Sí: guardar la causa y apartar la S2»), sobre la medición de c.20739. Rama sobre `scrum-1063d-aviso-suplidos` @ `ec68e591`, con `origin/main` mergeado dentro: **este PR depende de #2811 (1063c) y del PR de 1063d**, que a esta hora siguen sin mergear.
+
+### Qué se ha construido
+
+1. **El libro** (`libroRegistro.ts`): cada entrada de `porTipo` lleva `causa` **solo si la tiene**, al final y con la misma convención que `calcVatBreakdown` (SCRUM-1051). Sin S2 la entrada es la de antes, sin la clave. Base, cuota y total del asiento no cambian. No se toca `calcVatBreakdown` ni la emisión: el libro solo copia un campo que ya devolvía.
+2. **El 303** (`modelo303.ts`): la entrada con `causa: 'S2'` sale **antes de mirar su tipo** y va a `sinClasificar` con `motivo: 'inversion_sujeto_pasivo'` (código, no texto). Los suplidos se apartan solo de las entradas sin causa.
+3. **Aviso: ningún texto nuevo.** La S2 sigue contada en el aviso que ya existía, «operación(es) sin calificación fiscal (exenta / no sujeta / ISP)», para que un 303 con una base fuera de casilla no salga sin aviso. Es el texto que la S2 al 0 % ya daba antes de este ticket; la S2 con `tax: 0.21`, que antes caía en la 07 sin aviso, ahora también lo da. El literal propio se propone en Jira (regla 39).
+
+### Cómo se ha medido
+
+- **Rojo primero:** `tests/scrum1063e-causa-s2.test.mjs` contra el código de 1063d: caen 6 de 10. Los 4 que pasan en los dos son, a propósito, el `porTipo` byte a byte sin S2, «la causa no cambia base ni cuota», el cuadre libro = casillas + sin clasificar y el aviso existente.
+- **Los dos casos de c.20739 son casos del test:** la S2 antes del suplido (`sinClasificar` = S2 1000 + suplido 50, sin `tipo_cero`) y la S2 con `tax: 0.21` (la 07 se queda con 800, la mano de obra).
+- **Mutaciones sobre `dist/`** (7, restauradas y comprobadas): libro sin `causa`, caen 6 · `causa` siempre presente aunque sea `undefined`, cae 1 (el `Object.keys` del byte a byte; `JSON.stringify` se la come) · sin la rama S2, 5 · la rama S2 solo sin tripleta, 7 · la S2 con motivo `tipo_cero`, 5 · la rama S2 solo sin suplido pendiente, 1 · quitar `!e.causa` de los suplidos: **MUDA, y es esperado**: hoy `Causa` solo vale `'S2'` y la rama de arriba ya la ha apartado. Queda para cuando la lista de causas crezca.
+- **`modelo390/` (#1077a, rama `scrum-1077a-borrador-390` @ `b57eb4bc`, sin mergear):** sus tres ficheros y su test, copiados un momento a este árbol y quitados después: 10 de 10. El 390 pasa `sinClasificar` del 303 tal cual (`...s`), y el código nuevo de motivo le llega como dato.
+- **Guards dirigidos tras mergear main:** 57 ficheros (los que nombran `libroRegistro`, `modelo303` o `modelo390`, más 1063b/c/d/e, 1066c/e, 1065b, 1067b, 1232, 237, 976, 824, 836, 419, 702, 700, 719, 1415, 1294, 267, 273, 854, 622, 295, 296, 325, 389, 387 y 921): 606 casos, 602 pasan, 0 caen, 4 saltados (`LIBRO_PG_URL`). `tsc --noEmit` del proyecto, limpio.
+- **Suite entera local: NO CORRIDA**; hace de tanda el obligatorio de CI. No hay pantalla del 303: en yaqu.app no se ha verificado nada.
+
+### La casilla de la S2 en el impreso (leída, no aplicada)
+
+Orden HAC/27/2026, Anexo III, leída como imagen el 24-oct:
+
+- Página 1 (`https://www.boe.es/datos/imagenes/disp/2026/23/1761_16563944_7.png`, HTTP 200, 888.636 B): 12/13 «Otras operaciones con inversión del sujeto pasivo (excepto adq. intracom.)». Está en el **IVA devengado**: es la del destinatario que autorrepercute, no la de quien emite la S2.
+- Página 3 (`https://www.boe.es/datos/imagenes/disp/2026/23/1761_16563944_9.png`, HTTP 200, 791.276 B), recuadro «Información adicional»: **122 «Operaciones sujetas con inversión del sujeto pasivo»**, una sola cifra, sin cuota.
+
+Propuesta en Jira: la S2 a la 122, por su base. **No se ha puesto**: espera firma. No he leído las instrucciones del modelo, solo el impreso.
+
+### Riesgo residual, dicho
+
+- El aviso de «sin calificación» sigue contando la S2, y una S2 sí tiene calificación: es el texto viejo hasta que se firme uno propio.
+- Si mañana se añade otra causa a `Causa`, irá con `!e.causa` fuera de los suplidos, pero sin rama propia: caerá en la casilla de su tipo. Lo sujeta el comentario de `vat.service.ts`, que obliga a ensanchar el tipo y su validador.
 ## SCRUM-1063c · el rojo de scrum411 en el PR #2811 (J1, relevo jv-j1bq, 24-oct-2026)
 
 **Medido contra:** `origin/main` = `091e4d765ba13083b93fb6c168ffbd70fb1f1563` · 2026-10-24T11:02:38Z
@@ -229,3 +300,28 @@ Al importar `partirPorSuplido`, `suplidos.ts` deja de ser un módulo inalcanzabl
 - Rojo primero: los 3 de scrum411 en local antes de tocar nada, con las mismas cifras que el obligatorio (4/5, 250/245).
 - Mutaciones sobre `dist/` contra los casos reescritos: la clave del dominio renombrada → caen 7; la línea que no es objeto leída como normal → 1; la marca ilegible aceptada → 2. Restaurado con `cmp`.
 - Dirigida en el comentario de Jira, con su población. **Suite entera local: NO CORRIDA.**
+
+## SCRUM-1063d · el aviso de suplidos en dos formas, sin «(s)» (J1, jv-j1bs, 24-oct-2026)
+
+**Medido contra:** `origin/main` = `1b3395ecc6d3524e7b4ec711871d1d485ee67f28` · 2026-10-24T14:36:40Z
+
+A9: comprobación → `tests/scrum377-plural-de-programador.test.mjs`
+
+El obligatorio de #2825 cayó en `scrum377` («HAY 7 «(s)» EN TEXTO DE PANTALLA y el tope es 6 … modelo303.ts → suplido(s)»; job `120864632581`). La dirigida del tramo 1063d de arriba no lo incluía. Medición y preguntas en c.20796. El fundador eligió cambiar el texto y NO subir el tope (c.20797, regla 39). Esa firma sustituye a c.20731.
+
+### Qué se ha hecho
+
+1. `modelo303.ts`: el aviso de suplidos se parte en las dos formas firmadas en c.20797, singular para n = 1 y plural para el resto. Los literales se han cotejado por programa con el texto del comentario. El tope de `scrum377` no se toca.
+2. `tests/scrum1063d-aviso-suplidos.test.mjs`: fija el singular (n = 1) y el plural (n = 2 y n = 3) por igualdad exacta. Añade un caso nuevo: ningún aviso de suplidos lleva «(s)», con su positivo, que exige que el aviso exista. Los controles casan las dos formas con UN token, `HABLA_DE_SUPLIDOS`.
+3. `tests/scrum1063c-suplido-y-casilla-64.test.mjs`: sus dos aserciones de igualdad pasan al singular firmado. Siguen siendo igualdad exacta, así que no son más laxas.
+
+### Cómo se ha medido
+
+- **Rojo primero:** con el literal viejo en `dist/`, caen 7 de 20 (los dos ficheros).
+- **Mutaciones sobre `dist/`**, sobre 20 casos: siempre plural, caen 4; siempre singular, 1; sin el punto final, 4; umbral `> 1`, 6. Se restauró el `dist/` bueno y la base volvió a 20 de 20.
+- **Dirigida** (1063b/c/d, 1066c/e, 1077, 1232, 237, 976, 824, 824b, 836, 419, 702, 700, 719, 1415, 377, 296, 411, 500, 844f, 622, 295 y 389): 31 ficheros, 307 casos, 303 pasan, 0 caen, 4 saltados (`LIBRO_PG_URL`). Control positivo: el caso del trinquete de 377 está en el TAP, y pasa.
+- **Suite entera local: NO CORRIDA**; hace de tanda el obligatorio de CI.
+
+### Error propio
+
+Al reescribir los tests pasé un `\\b` por `node -e` desde bash, y en el fichero entró un carácter de retroceso (0x08) en lugar de `\b`. El control positivo del test nuevo lo cazó: daba 0 avisos donde había 1. Lo quité con un script escrito con la herramienta de escritura, y el recuento de caracteres de control en los tres ficheros tocados da 0. Es la cicatriz J1 del 2026-10-01 (texto por la línea de órdenes) repetida.

@@ -9,8 +9,6 @@
 export const ADMIN_ONLY_ROUTES: ReadonlyArray<{ method: string; path: string; body?: unknown }> = [
   // Facturas: emitir/anular/estado/cobro (S1: Técnico ❌)
   { method: 'PUT', path: '/admin/invoices/:invoiceId/status', body: { status: 'paid' } },
-  { method: 'POST', path: '/admin/invoices/:invoiceId/pay' },
-  { method: 'POST', path: '/admin/invoices/:invoiceId/unpay' },
   { method: 'POST', path: '/admin/invoices/bulk-paid', body: { ids: [1] } },
   { method: 'POST', path: '/admin/invoices/:invoiceId/rectify' },
   { method: 'POST', path: '/admin/invoices/:invoiceId/resend-whatsapp' },

@@ -60,7 +60,12 @@ export interface OperacionSinClasificar {
    * exenta ni una ISP: es dinero ajeno fuera de la base (`suplidos.ts`). Sigue sin casilla, y sigue
    * dentro del libro (c.20717: esperar a la emisión), así que el invariante no cambia.
    */
-  motivo: 'tipo_cero' | 'tipo_sin_casilla' | 'suplido';
+  /**
+   * SCRUM-1063e · `inversion_sujeto_pasivo`: la entrada del libro con `causa: 'S2'`, sea cual sea su
+   * tipo. No va a la casilla de su tipo (una ISP no es una entrega en régimen general) y su casilla
+   * propia está SIN DECIDIR (SCRUM-1063 c.20746): hasta entonces, aquí, como dato.
+   */
+  motivo: 'tipo_cero' | 'tipo_sin_casilla' | 'suplido' | 'inversion_sujeto_pasivo';
 }
 
 /**
@@ -297,8 +302,15 @@ export function construirModelo303(params: {
     let cuotaDelAsiento = 0;
     for (const e of a.porTipo) {
       cuotaDelAsiento += e.cuota;
+      // SCRUM-1063e · la S2 sale ANTES de mirar su tipo: con `tax: 0.21` (el validador de la causa
+      // no exige 0) caía en la casilla 07 con cuota 0. Y antes de los suplidos, que se apartan
+      // SOLO de las entradas sin causa: si no, el suplido se restaba de la S2 (c.20739).
+      if (e.causa === 'S2') {
+        sinClasificar.push({ numero: a.numero, tipo: e.tipo, base: e.base, cuota: e.cuota, motivo: 'inversion_sujeto_pasivo' });
+        continue;
+      }
       const tripleta = tripletaDe(e.tipo);
-      if (!tripleta && e.tipo === 0 && suplidoAlCero !== 0 && Math.sign(suplidoAlCero) === Math.sign(e.base)) {
+      if (!tripleta && e.tipo === 0 && !e.causa && suplidoAlCero !== 0 && Math.sign(suplidoAlCero) === Math.sign(e.base)) {
         // Lo que se aparta como suplido sale de ESTA entrada y el resto se queda en `tipo_cero`:
         // restando, no recalculando, para que la suma siga siendo la del libro al céntimo.
         const suplido = Math.sign(e.base) * Math.min(Math.abs(suplidoAlCero), Math.abs(e.base));
@@ -372,13 +384,20 @@ export function construirModelo303(params: {
     motivosParaNoFiarse.push(`${sinDesglose.length} ${sinDesglose.length === 1 ? 'factura sin desglose no se ha podido declarar' : 'facturas sin desglose no se han podido declarar'}`);
   }
   // SCRUM-1063c · el texto dice «exenta / no sujeta / ISP»: un suplido no es nada de eso, así que
-  // no se cuenta aquí. Su aviso propio necesita un literal firmado (regla 39) y NO está escrito:
-  // mientras, el suplido viaja como dato en `sinClasificar` con `motivo: 'suplido'`.
+  // no se cuenta aquí: tiene su aviso propio, justo debajo.
   const sinCalificacion = sinClasificar.filter((o) => o.motivo !== 'suplido').length;
   if (sinCalificacion > 0) {
     motivosParaNoFiarse.push(
       `${sinCalificacion} operación(es) sin calificación fiscal (exenta / no sujeta / ISP) no entran en ninguna casilla`,
     );
+  }
+  // SCRUM-1063d · literales firmados por el fundador (SCRUM-1063 c.20797, regla 39; sustituyen a
+  // c.20731). Singular y plural van por separado: scrum377 no admite el «(s)» en pantalla.
+  const suplidos = sinClasificar.filter((o) => o.motivo === 'suplido').length;
+  if (suplidos > 0) {
+    motivosParaNoFiarse.push(suplidos === 1
+      ? '1 suplido no entra en ninguna casilla: es un gasto pagado por cuenta del cliente.'
+      : `${suplidos} suplidos no entran en ninguna casilla: son gastos pagados por cuenta del cliente.`);
   }
   if (params.libro.importesIlegibles.length > 0) {
     motivosParaNoFiarse.push(`${params.libro.importesIlegibles.length} ${params.libro.importesIlegibles.length === 1 ? 'importe ilegible' : 'importes ilegibles'} en el libro`);
