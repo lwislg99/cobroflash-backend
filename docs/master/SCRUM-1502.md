@@ -1041,7 +1041,7 @@ pero no dice dónde: es la misma afirmación sin localizador que este ticket per
 ## SCRUM-1502o · Tramo 13 (J1, 24-oct-2026): las firmas de c.20834 en `tests/` — siete marcas ancladas, dos trinquetes que bajan; los literales de las preguntas 13, 14, 15 y 17, al orquestador
 
 **Medido contra:** `origin/main` = `9eb740a4286ee02faedd071dddfab55ddae0d515` · 2026-10-24T16:01:29Z (hora de GitHub)
-A9: aviso → cicatriz J1 «corrieron 9 de 32 ficheros con salida 0» — no se pudo comprobar: lo impediría un hook sobre la orden, y los hooks no son de este puesto
+A9: aviso → cicatriz J1 «Pasé a `node --test` una lista de ficheros leída con `$(cat $T/…)` sin comillas, y la ruta con espacio partió la lista: corrieron 9 de 32 ficheros con salida 0; lo cazó contar la población antes de leer el veredicto» — no se pudo comprobar: lo impediría un hook sobre la orden, y los hooks no son de este puesto
 
 ### Qué firmó el fundador y dónde
 
