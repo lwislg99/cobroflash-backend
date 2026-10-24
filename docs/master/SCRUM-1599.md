@@ -254,11 +254,13 @@ Ninguno se ha construido. Carriles leídos con `node scripts/carriles.mjs de <ru
 **B · Que dejen de estar fuera de CI: migrarlos al banco desechable.** *(recomendado)*
 
 - **Qué hace:** cada uno de los 46 aprende a correr también con `LIBRO_PG_URL`, como los 20 que ya lo hacen (forma
-  `CON_BANCO` de SCRUM-876f, la que siguen los lotes de SCRUM-1218). Entonces CI los corre en cada PR, y un rojo
-  bloquea el merge el mismo día. Ya no hay que contar días.
-- **Qué toca:** `tests/**`, el carril de J6 en los lotes de 1218. Nada de `.github/`, porque `ci.yml` ya levanta el banco.
-- **Coste:** unos 5 o 6 lotes de 8 a 10 ficheros. La cifra sale de los lotes de 1218d/f; para estos 46 no está medida.
-  Que todos se puedan migrar tampoco está medido: alguno puede necesitar staging de verdad, y ése se queda para A.
+  `CON_BANCO` de SCRUM-876f: `a55`, `bot-suite`). Entonces CI los corre en cada PR, y un rojo bloquea el merge el
+  mismo día. Ya no hay que contar días. (Los lotes de SCRUM-1218 son OTRA cosa: cambian `fetch` por un ayudante
+  `http`; `tests/pdfs.test.mjs`, migrado en 1218g, sigue gateado sólo por `QA_DB_TEST`. Corregido en c.20714.)
+- **Qué toca:** `tests/**`, que según `carriles.mjs` está «sin fila en §3: nadie lo reclama». Nada de `.github/`,
+  porque `ci.yml` ya levanta el banco.
+- **Coste:** SIN MEDIR. Que todos se puedan migrar tampoco está medido: alguno puede necesitar staging de verdad, y
+  ése se queda para A.
 - **Que no se quede mudo:** un trinquete en `npm test` con la sonda estática de aquí. Cuenta EXACTA de ficheros
   «sólo `QA_DB_TEST`» (46): si sube o baja, cae y pide una decisión (A10). Su positivo se siembra con un fichero
   fabricado con un `skip` de `QA_DB_TEST` en un temporal. Sin él, el trinquete tiene que decir CIEGO.
