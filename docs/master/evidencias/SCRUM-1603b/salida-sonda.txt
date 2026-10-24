@@ -1,0 +1,24 @@
+﻿POBLACIÓN: 5 casos (2 positivos, 3 negativos) · navegador Edg/156.0.4314.42 · win32
+A · _banco-lista tal cual · «Clientes»
+   USA: Inter (web) ×8
+   fuente: Inter · caras cargadas 5 de 35 declaradas · fallidas 0 · hojas sin cargar: []
+   el banco lo canta en __errores: false
+B · _banco-lista con /fonts/inter.css CORTADA (aborto) · «Clientes»
+   USA: Segoe UI ×8
+   fuente: (ninguna web) · caras cargadas 0 de 0 declaradas · fallidas 0 · hojas sin cargar: ["/fonts/inter.css"]
+   el banco lo canta en __errores: true
+B2 · _banco-lista con /fonts/inter.css CORTADA (404) · «Clientes»
+   USA: Segoe UI ×8
+   fuente: (ninguna web) · caras cargadas 0 de 0 declaradas · fallidas 0 · hojas sin cargar: ["/fonts/inter.css"]
+   el banco lo canta en __errores: true
+C · cabecera de guard y censo (enlacesDelPanel)
+   USA: Inter (web) ×15
+   fuente: Inter · caras cargadas 5 de 35 declaradas · fallidas 0 · veredicto del banco: mide con lo que declara
+   caja .input: 34 px
+D · cabecera de ANTES (a mano, sin inter.css)
+   USA: Segoe UI ×15
+   fuente: (ninguna web) · caras cargadas 0 de 0 declaradas · fallidas 0 · veredicto del banco: mide con lo que declara
+   caja .input: 36 px
+
+controles: A y C pintan Inter · B, B2 y D no · B y B2 los canta el banco → la sonda discrimina
+EXIT=0

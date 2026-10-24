@@ -75,6 +75,12 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: '  if (false) return',
     cae: 'SCRUM-1603 ⑤ ·',
   },
+  {
+    fichero: 'scripts/_hojas-del-panel.mjs',
+    de: '  if (f.hojasSinCargar.length) return',
+    a: '  if (false) return',
+    cae: 'SCRUM-1603 ⑤ ·',
+  },
 ];
 
 /** Una petición GET al servidor del banco: estado, tipo y cuerpo. */
@@ -192,11 +198,16 @@ test('SCRUM-1603 ④ · el guard táctil y el censo montan con las hojas del ín
   }
 });
 
-test('SCRUM-1603 ⑤ · el veredicto de la fuente: rota, sin cargar o sin recuento es un CIEGO', () => {
-  assert.equal(cegueraDeLaFuente({ declaradas: 35, cargadas: 5, fallidas: 0, familias: ['Inter'] }), null);
-  assert.equal(cegueraDeLaFuente({ declaradas: 0, cargadas: 0, fallidas: 0, familias: [] }), null,
-    'una página sin caras declaradas no tiene nada que esperar');
-  assert.match(cegueraDeLaFuente({ declaradas: 35, cargadas: 4, fallidas: 1, familias: ['Inter'] }), /FUENTE ROTA/);
-  assert.match(cegueraDeLaFuente({ declaradas: 35, cargadas: 0, fallidas: 0, familias: [] }), /SIN CARGAR/);
+test('SCRUM-1603 ⑤ · el veredicto de la fuente: hoja sin cargar, rota, sin cargar o sin recuento es un CIEGO', () => {
+  const sano = { hojasSinCargar: [], declaradas: 35, cargadas: 5, fallidas: 0, familias: ['Inter'] };
+  assert.equal(cegueraDeLaFuente(sano), null);
+  assert.equal(cegueraDeLaFuente({ ...sano, declaradas: 0, cargadas: 0, familias: [] }), null,
+    'una página sin caras declaradas, con todas sus hojas, no tiene nada que esperar');
+  // La que caza el 404 de `/fonts/inter.css`: sin la hoja no hay caras, y sin caras «no hay nada que esperar».
+  assert.match(cegueraDeLaFuente({ ...sano, hojasSinCargar: ['/fonts/inter.css'], declaradas: 0, cargadas: 0, familias: [] }), /HOJA SIN CARGAR/);
+  assert.match(cegueraDeLaFuente({ ...sano, cargadas: 4, fallidas: 1 }), /FUENTE ROTA/);
+  assert.match(cegueraDeLaFuente({ ...sano, cargadas: 0, familias: [] }), /SIN CARGAR/);
   assert.match(cegueraDeLaFuente(undefined), /NO SUPE MIRAR/);
+  assert.match(cegueraDeLaFuente({ declaradas: 35, cargadas: 5, fallidas: 0, familias: ['Inter'] }), /NO SUPE MIRAR/,
+    'un recuento sin la lista de hojas es de otra versión del instrumento: no se le da por bueno');
 });

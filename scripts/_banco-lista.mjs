@@ -166,7 +166,7 @@ window.__listo = false;
   try {
     window.__fuentes = await ${ESPERAR_FUENTES};
     const f = window.__fuentes;
-    if (f.fallidas > 0 || (f.declaradas > 0 && f.cargadas === 0)) window.__errores.push('fuente: ' + JSON.stringify(f));
+    if (f.hojasSinCargar.length || f.fallidas > 0 || (f.declaradas > 0 && f.cargadas === 0)) window.__errores.push('fuente: ' + JSON.stringify(f));
   } catch (e) { window.__errores.push('fuente: ' + e.message); }
   requestAnimationFrame(() => requestAnimationFrame(() => { window.__listo = true; }));
 })();

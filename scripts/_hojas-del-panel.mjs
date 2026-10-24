@@ -55,7 +55,20 @@ export const ESPERAR_FUENTES = `(async function () {
   await Promise.all(Object.keys(vistas).map(function (k) { return document.fonts.load(k).catch(function () { return []; }); }));
   await document.fonts.ready;
   var cargadas = caras.filter(function (f) { return f.status === 'loaded'; });
+  // Una hoja que no llegó no declara caras: sin esto, «/fonts/inter.css» en 404 daría 0 declaradas
+  // y el veredicto sería «nada que esperar», que es justo medir con la de reserva sin decirlo.
+  // MEDIDO (sonda de 1603b, caso B): con la hoja cortada en la red, Chromium deja «sheet» puesto, y
+  // mirar «!l.sheet» daba cero hojas sin cargar. Lo que la delata: abortada, leer sus reglas LANZA
+  // (SecurityError, aun siendo del mismo origen); con 404, tiene 0 reglas. Las hojas del banco son
+  // todas LOCALES, así que «lanza» aquí no es «es de otro origen»: es «no llegó».
+  var hojasSinCargar = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
+    .filter(function (l) {
+      if (!l.sheet) return true;
+      try { return l.sheet.cssRules.length === 0; } catch (e) { return true; }
+    })
+    .map(function (l) { return l.getAttribute('href'); });
   return {
+    hojasSinCargar: hojasSinCargar,
     declaradas: caras.length,
     cargadas: cargadas.length,
     fallidas: caras.filter(function (f) { return f.status === 'error'; }).length,
@@ -68,7 +81,8 @@ export const ESPERAR_FUENTES = `(async function () {
  * que NO se sabe con qué mide. Una página sin caras declaradas no tiene nada que esperar (`null`).
  */
 export function cegueraDeLaFuente(f, donde = 'esta página') {
-  if (!f || typeof f.declaradas !== 'number') return `🔴 NO SUPE MIRAR la fuente de ${donde}: el recuento no llegó.`;
+  if (!f || typeof f.declaradas !== 'number' || !Array.isArray(f.hojasSinCargar)) return `🔴 NO SUPE MIRAR la fuente de ${donde}: el recuento no llegó.`;
+  if (f.hojasSinCargar.length) return `🔴 HOJA SIN CARGAR en ${donde}: ${f.hojasSinCargar.join(', ')}; lo que declara no está en la página.`;
   if (f.fallidas > 0) return `🔴 FUENTE ROTA en ${donde}: ${f.fallidas} de ${f.declaradas} caras declaradas no se pudieron bajar.`;
   if (f.declaradas > 0 && f.cargadas === 0) return `🔴 FUENTE SIN CARGAR en ${donde}: ${f.declaradas} caras declaradas y 0 cargadas; mediría con la de reserva.`;
   return null;
