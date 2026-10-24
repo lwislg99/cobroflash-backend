@@ -33,3 +33,42 @@ del fundador para el texto y el nombre del modelo (regla 39).
 
 No se ha tocado el cálculo, la ruta existente, ni ningún fichero de `public/dashboard/`. Solo
 lectura y este documento.
+
+## SCRUM-1064b · Dónde vive la pantalla y qué textos necesita — medido, sin construir (J1, 24-oct-2026)
+
+**Medido contra:** `origin/main` = `d34ee753fdd5b9858b31307d2d34704c80275f67` · 2026-10-24T10:26:03Z
+**Rama:** `scrum-1064b-pantalla-303-medida` · **Puesto:** J1 (sesión jv-j1bk) · **Encargo:** orquestador `cobroflash-backend-95`, «solo medir y proponer»
+**Entrega completa:** Jira SCRUM-1064, comentario 20741. Lleva la tabla de 22 textos y las 13 preguntas ✅/❌. Aquí va sólo lo que hace falta para retomarlo.
+
+### Lo que cambió desde el bloqueo de arriba
+
+El cálculo ya está en `main` (PR #1763, merge `8fe2de5af2530ad29a6ea1ca80391e68957d372d`), con las casillas 28/29, 45 y 46. La 64 = 46 y las 65, 66, 68, 69, 70 y 71 vacías, con su motivo como código, están en el PR #2811 (`scrum-1063c-suplidos-y-64` @ `c185f80c88f7c22c092c781a11da2e8131cf5b77`), ABIERTO a las 10:28Z. El aviso de suplidos está firmado (SCRUM-1063 c.20731), pero todavía sin aplicar.
+
+### Dónde viviría, y de quién es (medido con `node scripts/carriles.mjs de …`)
+
+- La ruta es `GET /admin/modelo-303` (`src/app.ts:605`, `requireRole('admin')`). Es de J1, y la pantalla sólo la consume.
+- Ninguna pantalla la consume hoy. `git grep -E "modelo-?303|modelo303"` en `public/` da 0. El control positivo es el mismo patrón, que sí casa en `src/app.ts:605`.
+- La vista natural es `public/dashboard/js/reportsView.js`, y es **S2**. Ya lleva dos piezas del 303: la tarjeta «IVA repercutido · modelo 303» (sobre `/admin/reports/vat`) y el «Resumen del trimestre» (SCRUM-1049).
+- Un fichero nuevo `public/dashboard/js/modelo303View.js` también sería **S2** (`dos-equipos.md:152`). `app.js` e `index.html` son S2 (contenedor).
+- **La pantalla la construye S2 (equipo de Luis).** J1 aporta el contrato de la ruta y la transcripción de los rótulos que faltan.
+
+### Lo que sale de la medición
+
+- **Textos ya firmados que esta pantalla puede usar:**
+  - el aviso de suplidos (SCRUM-1063 c.20731);
+  - el badge de trimestre en curso y el estado vacío de 1049 (c.17008). Estos dos están firmados para el Resumen, y reusarlos aquí pide un ✅.
+- **El subtítulo firmado de 1049 no sirve aquí:** dice «Hacienda», y el punto 2 de la aceptación de 1064 lo prohíbe.
+- **Rótulos citados en el repo:** 27, 28/29, 30/31, 45, 46, 64, 69 y 71 (`casillas.ts:63-64`, `SCRUM-1039.md:81-84`).
+- **Rótulos sin cita literal:** 01–09, y 65, 66, 68 y 70. Hay que transcribirlos del Anexo III de la Orden HAC/27/2026 antes de construir.
+- **El nombre oficial del modelo**, leído hoy en el título de BOE-A-2008-20953 (curl, 180.543 B): «modelo 303 Impuesto sobre el Valor Añadido, Autoliquidación». Propongo no pintar «Autoliquidación».
+- **Avisos en texto llano:** los 7 de `motivosParaNoFiarse` (`modelo303.ts:316-348`) viajan así en el JSON y en el CSV de evidencias, y ninguno está firmado para pantalla. El `avisoObligatorio` (`modelo303.ts:140`) sigue con `[PENDIENTE microcopy oficial]`.
+
+### No medido
+
+- Si `/admin/reports/vat` y `/admin/modelo-303` dan el mismo repercutido. Con la pantalla nueva habría tres superficies «303» en Informes.
+- Qué rol ve «Informes».
+- Las imágenes del impreso.
+- Tests: no he corrido ninguno.
+- yaqu.app: no he verificado nada.
+
+A9: sin fallo que generalice — el bloqueo del 22-sep caducó con #1763 y se vio cruzando SCRUM-1063, no este ticket; que un ticket hermano no comente en el dependiente no lo ve ningún guard del repositorio, porque no lee Jira.

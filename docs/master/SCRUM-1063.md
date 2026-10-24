@@ -271,3 +271,32 @@ Propuesta en Jira: la S2 a la 122, por su base. **No se ha puesto**: espera firm
 
 - El aviso de «sin calificación» sigue contando la S2, y una S2 sí tiene calificación: es el texto viejo hasta que se firme uno propio.
 - Si mañana se añade otra causa a `Causa`, irá con `!e.causa` fuera de los suplidos, pero sin rama propia: caerá en la casilla de su tipo. Lo sujeta el comentario de `vat.service.ts`, que obliga a ensanchar el tipo y su validador.
+## SCRUM-1063c · el rojo de scrum411 en el PR #2811 (J1, relevo jv-j1bq, 24-oct-2026)
+
+**Medido contra:** `origin/main` = `091e4d765ba13083b93fb6c168ffbd70fb1f1563` · 2026-10-24T11:02:38Z
+
+A9: comprobación → `tests/scrum411-exports-inalcanzables.test.mjs`
+
+Fue el que cazó en el obligatorio que el import nuevo de `libroRegistro.ts` resucitaba `suplidos.ts`; la dirigida del tramo de arriba no lo incluía.
+
+### Qué decía el guard
+
+Al importar `partirPorSuplido`, `suplidos.ts` deja de ser un módulo inalcanzable (4 de 173, tope 5) y sus exports sin consumidor de fuera entran en la segunda población sin declarar (medidos 250, declarados 245). El consejo del clasificador, export por export: **declarar** `desgloseConSuplidos` y `totalSuplidos`; **quitar el `export`** a `MARCA_SUPLIDO`, `leerMarcaSuplido` e `importeSuplido`.
+
+### Por qué se puede tocar
+
+`suplidos.ts` es carril J1 (`node scripts/carriles.mjs de …` → `dos-equipos.md:117`) y **no es camino de emisión**: `scrum389-censo-vat` lo clasifica `DOCUMENTO` (línea 83). Quitar un `export` no cambia ningún número: `dist/` compilado sólo pierde las tres líneas `exports.X = X`.
+
+### Qué se ha hecho
+
+1. Tope de inalcanzables **5 → 4**, con su entrada en `scrum411`.
+2. `desgloseConSuplidos` y `totalSuplidos`, declarados `MOTOR_EN_ESPERA` en `_huerfanos-declarados.mjs`: cablearlos cambia lo que se sella (regla 38, c.20717).
+3. Sin `export`: `MARCA_SUPLIDO`, `leerMarcaSuplido`, `importeSuplido`. El análisis por AST de `scrum411` dice que su consumidor está dentro del módulo y que de fuera sólo entran `scrum500-suplidos` y `scrum844f`; un `grep` de los tres nombres en `src/`, `tests/`, `public/` y `scripts/` da lo mismo (más comentarios y el literal propio de `quoteSuplido.js`). Esos casos se reescriben por la superficie pública (`partirPorSuplido`, `totalSuplidos`), con la clave escrita a mano. El de «front y dominio usan la misma clave» pasa a medir COMPORTAMIENTO: una línea marcada con la clave del front tiene que salir apartada, y con otra clave no.
+
+⚠️ Precedente contrario, dicho: en SCRUM-293 (`_huerfanos-declarados.mjs`, bloque de `retencionIrpf.ts`) se declararon en vez de des-exportar, «para no tocar un módulo fiscal por un contador». Aquí el orquestador ordenó aplicar el consejo del guard, condicionado a que el fichero no fuera de emisión.
+
+### Cómo se ha medido
+
+- Rojo primero: los 3 de scrum411 en local antes de tocar nada, con las mismas cifras que el obligatorio (4/5, 250/245).
+- Mutaciones sobre `dist/` contra los casos reescritos: la clave del dominio renombrada → caen 7; la línea que no es objeto leída como normal → 1; la marca ilegible aceptada → 2. Restaurado con `cmp`.
+- Dirigida en el comentario de Jira, con su población. **Suite entera local: NO CORRIDA.**
