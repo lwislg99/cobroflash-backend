@@ -14,6 +14,7 @@ import {
   CLASES, ESTADOS_DE_FIN, claseDeSesion, desdeStateJson, procesoDe, avisoDe, clasificarTrabajos,
 } from '../scripts/clase-de-sesion.mjs';
 import { ESTADOS_TERMINALES } from '../scripts/equipo/sesion.mjs';
+import { temporal, borrarTemporal } from './_temporal.mjs';
 
 const T0 = '2026-10-24T08:00:00.000Z';
 const AHORA = Date.parse('2026-10-24T10:00:00.000Z');
@@ -36,7 +37,8 @@ const SIEMBRA = {
 };
 
 function sembrar(siembra) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1238b-'));
+  // `temporal()` lo borra al salir el proceso aunque el llamador no llegue a `borrar` (SCRUM-864c).
+  const dir = temporal('scrum1238b-');
   // `anadir` escribe en la carpeta de ESTA función: así el censo de SCRUM-824 ve de dónde cuelga.
   const anadir = (id, texto) => {
     fs.mkdirSync(path.join(dir, id));
@@ -47,7 +49,7 @@ function sembrar(siembra) {
   const agentes = Object.entries(siembra).map(([id, f]) => (f.pid > 0 ? { id, pid: f.pid, kind: 'background' } : { id, kind: 'background' }));
   return { dir, agentes, anadir };
 }
-const borrar = (dir) => fs.rmSync(dir, { recursive: true, force: true });
+const borrar = borrarTemporal;
 
 /** El censo de clases: qué clase de CLASES no tiene ningún positivo en `filas`. */
 const faltan = (filas) => CLASES.filter((k) => !filas.some((f) => f.clase === k));
