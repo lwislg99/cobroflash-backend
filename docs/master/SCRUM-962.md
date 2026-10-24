@@ -458,3 +458,11 @@ Mismo guion (`editor-recorrido.mjs` de 962c), mismo commit, mismos datos inyecta
     node docs/master/evidencias/scrum962g/mutar-962g.mjs <raiz> 83f49c862239f39d70e2f25b6b985251164bc633
 
 `banco-prod.mjs` NO ESCRIBE: corta todo lo que no es GET y lo demuestra con un control positivo al abrir. Sin las dos variables sale con 2 («NO SUPE MIRAR»), no con un verde.
+
+### 962g · rojo del obligatorio arreglado (24-oct, Date: Sat, 24 Oct 2026 12:25:41 GMT)
+
+El «build + tests» de #2734 cayó por DOS trinquetes, no por el arreglo: `scrum694` (40 > 39 guards con filtro de
+comentarios propio) y `scrum700` (92 > 91 ficheros con filtro propio). Era mi test: cortaba `//` y `/* */` con regex.
+Ahora usa `soloCodigo` de `tests/_solo-codigo.mjs` para el JS y para el CSS. Sobre `styles.css` entero el helper y la
+regex de bloques dan lo mismo (106.596 caracteres útiles, idénticos). Medido en local tras meter `origin/main`:
+694, 694c, 700 y 962g → 23/23. `mutar-962g.mjs` → 6 de 6 mutaciones tumban su prueba, base 0 caídas.
