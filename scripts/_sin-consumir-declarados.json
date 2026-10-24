@@ -157,7 +157,9 @@
     {"clave":"export · src/modules/fiscal/retenciones/casillas.ts::CASILLA_111_RESULTADO","donde":"src/modules/fiscal/retenciones/casillas.ts:48","carril":"J1","ticket":"SCRUM-1066","motivo":"J1: solo la consume construirBorradorRetenciones, sin ruta (arriba)"},
     {"clave":"export · src/modules/fiscal/retenciones/casillas.ts::CASILLAS_115","donde":"src/modules/fiscal/retenciones/casillas.ts:56","carril":"J1","ticket":"SCRUM-1066","motivo":"J1: solo la consume construirBorradorRetenciones, sin ruta (arriba)"},
     {"clave":"export · src/modules/fiscal/retenciones/casillas.ts::FUENTE_111","donde":"src/modules/fiscal/retenciones/casillas.ts:21","carril":"J1","ticket":"SCRUM-1066","motivo":"J1: solo la consume construirBorradorRetenciones, sin ruta (arriba)"},
-    {"clave":"export · src/modules/fiscal/retenciones/casillas.ts::FUENTE_115","donde":"src/modules/fiscal/retenciones/casillas.ts:27","carril":"J1","ticket":"SCRUM-1066","motivo":"J1: solo la consume construirBorradorRetenciones, sin ruta (arriba)"}
+    {"clave":"export · src/modules/fiscal/retenciones/casillas.ts::FUENTE_115","donde":"src/modules/fiscal/retenciones/casillas.ts:27","carril":"J1","ticket":"SCRUM-1066","motivo":"J1: solo la consume construirBorradorRetenciones, sin ruta (arriba)"},
+    {"clave":"export · src/modules/fiscal/modelo130/modelo130.repo.ts::leerBorrador130","donde":"src/modules/fiscal/modelo130/modelo130.repo.ts:14","carril":"J1","ticket":"SCRUM-1065","motivo":"J1: SIN RUTA a proposito (SCRUM-1065b y D2 en SCRUM-1066 c.16699): el borrador del 130 se construye pero no se monta; una ruta es una pantalla y su texto pide firma del fundador (regla 39). Se retira el dia que se monte con texto firmado"},
+    {"clave":"export · src/modules/fiscal/modelo130/modelo130.ts::construirBorrador130","donde":"src/modules/fiscal/modelo130/modelo130.ts:152","carril":"J1","ticket":"SCRUM-1065","motivo":"J1: solo la consume leerBorrador130, que esta sin ruta (arriba)"}
   ],
   "retiradas": [
     {"clave":"ruta · GET /admin/customers/:id/notes","motivo":"SCRUM-1132: conectada en customerDetailView.js (la pestaña «Notas» de la ficha del cliente, al abrirla; sólo admin)"},
