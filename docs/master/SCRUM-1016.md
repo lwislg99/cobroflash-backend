@@ -919,6 +919,59 @@ Del orquestador (`cobroflash-backend-95`): SOLO MEDIR Y PREGUNTAR. Separar lo he
 - No medí si el vídeo de V0-6 está grabado, ni si alguien usa hoy los guiones (eso es la P1). La firma SCRUM-1551 c.20437 la leí en el commit `8b069ba50` y en `puerta.json`, no en Jira.
 - Suite entera local: NO CORRIDA (encargo solo de medir; un cambio de un fichero de docs).
 
+# APÉNDICE · 24-oct-2026 · SCRUM-1016o · El `aria-label` de la animación, con la firma de c.20778 (P4)
+
+**Medido contra:** `origin/main` = `1b3395ecc6d3524e7b4ec711871d1d485ee67f28` · 2026-10-24T15:00:50Z
+**Rama:** `scrum-1016o-aria-label` · **Puesto:** J3 (sesión `jv-j3bd`) · **Skill UI:** cargada (`yaqu-premium-ui`, antes de tocar `public/index.html`)
+
+A9: aviso → cicatriz J3 «Pedí el ticket a Jira con una lista de campos sin `description` y di por leído «el ticket entero» con los 15 comentarios; lo cazó que el volcado de la descripción pesaba 16 bytes, y la leí después.» — no se pudo comprobar: qué campos pide una sesión a Jira no deja rastro en el árbol que un test pueda leer
+
+## Encargo
+
+Aplicar en `public/index.html:447` el literal que el fundador firmó en SCRUM-1016 c.20778 (P4), propuesto por J4 en c.20752, y cerrar la fila 12 de la puerta de go-live en el mismo PR. Nada más de la landing.
+
+## La firma, leída en Jira
+
+c.20778, P4: «`aria-label` de `public/index.html:447` = «Demostración: del presupuesto a la firma»». El literal se sacó del cuerpo del comentario por programa (un solo `= «…»` en c.20778) y se cotejó por bytes contra el test y la landing: 1 aparición en cada uno, `ó` en NFC. La descripción del ticket dice «no se toca `public/` desde este ticket»: la supera c.20778, que encarga el cambio a J3.
+
+## Lo aplicado
+
+| fichero | cambio |
+| --- | --- |
+| `public/index.html:447` | `aria-label="Demostración: de presupuesto a cobro"` → `aria-label="Demostración: del presupuesto a la firma"` (1 línea; `git diff --numstat` = 1 1) |
+| `tests/scrum1016o-aria-label-firmado.test.mjs` | nuevo: los `<div class="stage">` fuera de comentarios HTML (población: 1) llevan el literal firmado; sin ninguno dice CIEGO. El juez se prueba también con entradas fabricadas: label viejo, sin label, sin animación y animación comentada |
+| `docs/go-live/puerta.json`, fila 12 | `cerrada`, con el sha del commit que cambia la línea (`36f475434f3ef265b37e18745aa32eabcd85a297`) |
+| `tests/scrum1554c-puerta-de-go-live.test.mjs` | `12` añadido a `CERRADAS`, que es lo que el guard pide cuando una fila se cierra |
+
+**Rojo primero:** con el test commiteado (`05a39170445eb817beedba774f519815b1584949`) y la landing sin tocar, 2 tests · 1 pass · **1 fail**, con el mensaje «la animación se anuncia como "Demostración: de presupuesto a cobro"». Con la línea cambiada, 2 · 2 · 0.
+
+**Por qué la fila 12 se cierra con el sha del commit y no con el del merge** (como hicieron 1551f y 1551g en otro PR): el encargo pide cerrarla en el mismo PR, y el sha del merge no existe hasta que entra. El commit sí es buscable y entra en main con este cierre: si el PR no entra, el cierre tampoco. El `motivo` dice que lo servido en yaqu.app NO estaba medido al escribirlo.
+
+## Guards
+
+Ningún guard fijaba el literal viejo: `git grep "de presupuesto a cobro"` sobre `tests/` y `scripts/` da 0. Control positivo del mismo `grep`: `public/index.html:447` y `docs/go-live/puerta.json:116`, antes del cambio. Quedan con el texto viejo, a propósito, la descripción de la fila 12 (`puerta.json:116`: una entrada no se reescribe, se cierra) y `docs/equipo/para-javier.md:345`, un documento del orquestador que proponía otra redacción («de presupuesto a firma»).
+
+## Batería antes de empujar
+
+Mini-tanda de **58 ficheros**: los 40 tests que leen `public/index.html`, más scrum331, 1554c, 1016o, los de suite (237, 976, 824, 836, 419, 702, 700, 719, 1415) y los de registro (267, 273, 1294, 811c, 921). `dist/` construido antes con `tsc --noCheck` (el árbol anidado no lo trae).
+
+| pasada | resultado |
+| --- | --- |
+| 1ª | 581 tests · 578 pass · **3 fail**: scrum1294 (mi `A9:` citaba media frase de la cicatriz y el guard compara la frase entera), scrum553 (mi test subía el trinquete de 20 a 22: dos fixtures dentro de `assert.match`, que el censo cuenta como buscador por el nombre) y scrum976 (es el mismo rojo de 1294, visto por `guards:entrada`) |
+| 2ª, tras arreglar los dos | 581 tests · **581 pass · 0 fail** · 0 skip; 581 líneas `ok` y 0 `not ok`, que suman el total declarado |
+
+Control del arreglo de scrum553: `censar('.')` da 20 con 0 del fichero nuevo; antes daba 22 con 2 suyos.
+
+## Lo que me salió mal
+
+Al corregir la frase del `A9:` con un script, el patrón casó PRIMERO con otro aviso de J3 en la línea 689 de este mismo fichero (el de 1016k) y lo pisó. Lo vi en el `git diff`, el hook no me dejó restaurar con `git restore` ni con `>`, y lo repuse con un script que toma esa línea de `HEAD` y sólo corrige la mía (`git diff --numstat` = 1 1, en la línea de este tramo). No llegó a ningún commit.
+
+## Qué NO hice
+
+- No toqué nada más de la landing: la tarjeta «Cobros» (`:653`, fila 11) sigue abierta, condicionada al go-live.
+- No transicioné el ticket (A13).
+- Servido en yaqu.app: NO medido (hace falta el merge y el despliegue).
+- Suite entera local: NO CORRIDA (10 sesiones a la vez; hacen de tanda los guards dirigidos y el obligatorio de CI).
 # APÉNDICE · 24-oct-2026 · SCRUM-1016p · El matiz de la regla 24 en B1, 26b y W2, la A22 al día y los guiones a la puerta
 
 **Medido contra:** `origin/main` = `1b3395ecc6d3524e7b4ec711871d1d485ee67f28` · 2026-10-24T15:00:49Z
