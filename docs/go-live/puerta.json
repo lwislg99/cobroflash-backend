@@ -117,7 +117,13 @@
       "de_donde": "SCRUM-1236 c.19745",
       "consta_en": "SCRUM-1554 c.19746, fila 12",
       "condicion": "Falso siempre.",
-      "estado": "abierta"
+      "estado": "cerrada",
+      "cerrada": {
+        "por": "jv-j3bd (puesto J3, equipo de Javier), SCRUM-1016o",
+        "motivo": "El fundador firmó el literal en SCRUM-1016 c.20778 (P4): «Demostración: del presupuesto a la firma». El sha es el commit que cambia public/index.html:447 (copiado de Jira por programa) y entra en main en el mismo PR que este cierre: si el PR no entra, este cierre tampoco. Lo vigila tests/scrum1016o-aria-label-firmado.test.mjs. Servido en yaqu.app: NO medido al escribir esto (se mide tras el despliegue).",
+        "sha": "36f475434f3ef265b37e18745aa32eabcd85a297",
+        "fecha": "2026-10-24"
+      }
     },
     {
       "numero": 13,
