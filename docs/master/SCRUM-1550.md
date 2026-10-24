@@ -138,3 +138,86 @@ pide es un juicio.
 - **Si un ticket con partes las tiene TODAS.** Las sondas miran las partes que se pudieron nombrar, no las demás.
 - **Qué sonda no se escribió.** Una sonda que no casa da SIGUE, y una sonda mal elegida también. Cada sonda está
   en `sondas.json` con lo que pide su ticket, para que se pueda discutir sonda a sonda.
+
+## Tramo 1550b (J6, `jv-j6bx`, equipo de Javier, 24-oct-2026) · el auto-descarte mira el TEXTO de la línea, no la ruta
+
+**Medido contra:** `origin/main` = `c6d3aa11f15a0a582f92b8ec4a8c9838ea426dd8` · 2026-10-24T15:47:41Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum1550b-sonda-por-texto.test.mjs`
+
+Por encargo del orquestador `cobroflash-backend-95`, a partir del hallazgo de jv-j5aj (SCRUM-1310 c.20822).
+
+### El defecto, reproducido antes de tocar nada
+
+`contenido.mjs` descartaba toda línea de `git grep` que casara con `reMencion(n)`, y la línea lleva delante su RUTA.
+Sobre la rama `scrum-1310c-ddl-de-las-13` @ `11bba3bc1d1244b40060e0e31a793427ac6f59ce`, `git grep` encuentra
+`invoices_rectifies_id_fkey` en `docs/sql/scrum-1310c-claves-ajenas-ddl.sql:46`, y aun así la sonda decía
+`SCRUM-1310 · SIGUE SIN HACER · [presente] · 0`: la ruta lleva `scrum-1310c`. Con ese filtro, ningún DDL de 1310
+escrito en un fichero con su número podía contar nunca.
+
+### El arreglo
+
+- `lineaCuenta(linea, n)`, pura y exportada: separa `ruta:nº:texto` y descarta la línea si su **TEXTO** nombra el
+  ticket, o si vive en su **registro** (`docs/master/SCRUM-<n>.md`) o en sus **evidencias**
+  (`docs/master/evidencias/SCRUM-<n>[letra]/`). La ruta, sola, ya no descarta nada.
+- `reMencion` se importa de forma estática (el módulo no hace nada al cargarse), en vez de copiarla.
+- **Un tercer control dentro de cada pasada** (9997, «ruta sembrada»): `semilla-ruta-SCRUM-9997.txt` tiene la
+  semilla en dos líneas y solo una nombra el ticket en su texto. Tiene que contar **exactamente 1**: con 0 se ha
+  vuelto a filtrar por la ruta; con 2, ya no se filtra el texto. Si no da 1, la tabla no vale y sale 2.
+- No se ha renombrado ningún fichero de 1310.
+
+### Antes y después, por programa (comparación fila a fila de la tabla, veredicto + alcance)
+
+| commit | filas antes → después | cambian |
+|---|---|---|
+| `origin/main` `c6d3aa11f` | 40 → 41 | solo entra la fila del control 9997. Las 38 de `sondas.json`, iguales también en sus recuentos |
+| 1310c `11bba3bc1` | 40 → 41 | **SCRUM-1310: SIGUE SIN HACER → ESTÁ, BAJO OTRA COSA** (`docs/sql/scrum-1310c-claves-ajenas-ddl.sql:46`, entró por `cc358f5d1`), y la fila del control 9997 |
+
+- **Positivo:** con el fichero de 1310c, la sonda de 1310 sale «presente · 1».
+- **Negativo:** una línea que solo NOMBRA el ticket sigue descartada (casos ① del test, incluida `scrum-1310` en
+  minúsculas), y también las del registro y las evidencias del ticket.
+- **Las demás:** sobre main no cambia ni una fila; sobre 1310c, solo la de 1310.
+
+### El test, en rojo primero
+
+`tests/scrum1550b-sonda-por-texto.test.mjs`: 4 casos y 4 en verde en 1,9 s, sobre el commit `91f0cfaa8`. Su ②
+corre el instrumento entero sobre `HEAD` con una lista de sondas vacía en el temporal del sistema (solo corren
+los controles). Mutaciones vistas en ROJO a mano, una a una, restaurando con `git restore --source=HEAD` y con el
+árbol limpio después (`git status --porcelain` vacío):
+
+| mutación | `numstat` | cae | sonda sobre 1310c |
+|---|---|---|---|
+| el filtro mira la línea ENTERA, como antes | 1 1 | ① cuenta… · ② | sale 2 · 1310 vuelve a SIGUE |
+| sin filtro de texto | 1 1 | ① descarta… · ② | sale 2 |
+| la semilla sin la línea que nombra el ticket | 1 1 | ② · ③ | — |
+| sin el fichero de la semilla | (borrado) | ② · ③ | sale 2 |
+
+Las tres primeras están declaradas en `MUTACIONES_QUE_ME_TUMBAN` del test. Comprobado a mano: cada `de` sale una
+sola vez en su fichero y cada `cae` está dentro del nombre de un caso. **El meta-guard no lo he corrido en
+local**; lo corre el CI.
+
+### De paso, medido y no tocado: `scripts/_clasificador-sql.mjs`
+
+| sentencia | veredicto |
+|---|---|
+| `ALTER TABLE "t" ADD COLUMN "x" TEXT` | permitida |
+| `ALTER TABLE public.t ADD COLUMN "x" TEXT` | permitida |
+| `ALTER TABLE "public"."t" ADD COLUMN "x" TEXT` | **rechazada** · «acción no reconocida como aditiva: «. T ADD COLUMN X TEXT»» |
+| `ALTER TABLE "public"."t" ADD COLUMN IF NOT EXISTS "x" TEXT` | **rechazada** · igual |
+| `CREATE TABLE "public"."t" ("id" TEXT)` | permitida |
+| la clave ajena de 1310c, con `"public".` | rechazada · «acción no reconocida» |
+| la misma, sin `"public".` | rechazada · «añade una restricción FOREIGN KEY…» (su motivo verdadero, SCRUM-1214) |
+
+Falla del lado seguro: rechaza de más, nunca deja pasar algo. El sitio es `scripts/_clasificador-sql.mjs:177`. Lo
+que queda tras quitar el nombre de la tabla empieza por «. T», así que la clase `[A-Z0-9_."]+` se para antes del
+punto. Qué deja `desnudar` del identificador entre comillas **no lo he leído**. Carril: `carriles.mjs` dice
+«SIN CERRADURA», con la fila general de `scripts/`. Solo se nombra.
+
+### Lo que no he hecho
+
+- **Suite entera local: NO CORRIDA** (hoy hay 10 sesiones a la vez). Los guards dirigidos, en la entrega.
+- **No he medido sobre 1310c después de su merge en main**, porque no ha entrado. El día que entre, la sonda de
+  1310 tiene que salir «presente» sobre main; si no, el filtro ha vuelto.
+- **Mi error de este tramo:** pasé un script de comprobación a node por un heredoc y se comió una barra invertida.
+  Lo cazó node, que no compiló. Es la misma cicatriz que la de J6 del 2026-10-14: no añado otra línea, pero ha
+  vuelto a pasar.
