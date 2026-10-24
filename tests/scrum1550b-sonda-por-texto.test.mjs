@@ -39,22 +39,24 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SONDA = path.join(RAIZ, 'docs/master/evidencias/SCRUM-1550/contenido.mjs');
-const DDL = 'ALTER TABLE "public"."invoices" ADD CONSTRAINT "invoices_rectifies_id_fkey" FOREIGN KEY ("rectifies_id")';
+// Las líneas son FABRICADAS, con un ticket inventado (9996) y rutas que no existen: una ruta real con su
+// número de línea sería un anclaje por posición (scrum710b), y el fichero de 1310c lo será el día que entre.
+const DDL = 'ALTER TABLE "public"."t" ADD CONSTRAINT "t_x_fkey" FOREIGN KEY ("x")';
 
-test('① cuenta la línea limpia aunque su RUTA nombre el ticket (el caso de 1310c)', () => {
-  assert.equal(lineaCuenta(`docs/sql/scrum-1310c-claves-ajenas-ddl.sql:46:${DDL}`, 1310), true);
-  assert.equal(lineaCuenta(`tests/scrum1310b-claves-ajenas-con-ddl.test.mjs:3:${DDL}`, 1310), true);
+test('① cuenta la línea limpia aunque su RUTA nombre el ticket (la forma del caso de 1310c)', () => {
+  assert.equal(lineaCuenta(`docs/sql/scrum-9996c-inventado.sql:46:${DDL}`, 9996), true);
+  assert.equal(lineaCuenta(`tests/scrum9996b-inventado.test.mjs:3:${DDL}`, 9996), true);
   // la frontera del número: las evidencias de OTRO ticket que empieza igual no son las suyas
-  assert.equal(lineaCuenta(`docs/master/evidencias/SCRUM-13100/x.txt:1:${DDL}`, 1310), true);
+  assert.equal(lineaCuenta(`docs/master/evidencias/SCRUM-99960/inventado.txt:1:${DDL}`, 9996), true);
 });
 
 test('① descarta la línea que solo NOMBRA el ticket, y la de su registro o sus evidencias', () => {
-  assert.equal(lineaCuenta(`docs/sql/otra.sql:9:-- pendiente de SCRUM-1310: ${DDL}`, 1310), false);
-  assert.equal(lineaCuenta('docs/sql/otra.sql:9:ver scrum-1310 c.20822', 1310), false);
-  assert.equal(lineaCuenta(`docs/master/SCRUM-1310.md:12:${DDL}`, 1310), false);
-  assert.equal(lineaCuenta(`docs/master/evidencias/SCRUM-1310/salida.txt:4:${DDL}`, 1310), false);
-  assert.equal(lineaCuenta(`docs/master/evidencias/SCRUM-1310b/salida.txt:4:${DDL}`, 1310), false);
-  assert.equal(lineaCuenta('sin formato de git grep', 1310), false);
+  assert.equal(lineaCuenta(`docs/sql/inventado.sql:9:-- pendiente de SCRUM-9996: ${DDL}`, 9996), false);
+  assert.equal(lineaCuenta('docs/sql/inventado.sql:9:ver scrum-9996 c.1', 9996), false);
+  assert.equal(lineaCuenta(`docs/master/SCRUM-9996.md:12:${DDL}`, 9996), false);
+  assert.equal(lineaCuenta(`docs/master/evidencias/SCRUM-9996/inventado.txt:4:${DDL}`, 9996), false);
+  assert.equal(lineaCuenta(`docs/master/evidencias/SCRUM-9996b/inventado.txt:4:${DDL}`, 9996), false);
+  assert.equal(lineaCuenta('sin formato de git grep', 9996), false);
 });
 
 test('② el instrumento: control RUTA sembrada SCRUM-9997 → 1 de 1, y sale 0', () => {
