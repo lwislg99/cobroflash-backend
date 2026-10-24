@@ -125,3 +125,30 @@ que, con la forma final (dos ramas), sólo existe en la rama `anular`, que ese t
 salido MUDA. Lo vi antes de correrla, la devolví a su ancla original y la ejecuté: mata su caso.
 
 A9: comprobación → `scripts/meta-guard-mutaciones.mjs`
+## SCRUM-1314c · P3: recuento de huellas de anulación sin anular en STAGING y DEV (sólo lectura)
+
+**Medido contra:** `origin/main` = `091e4d765ba13083b93fb6c168ffbd70fb1f1563` · 2026-10-24T10:57:59Z
+
+24-oct-2026 · **J1** (equipo de Javier), sesión jv-j1bp. Cumple la P3 de la decisión del fundador
+(comentario 20754): staging y dev los cuenta J1; **producción la mira Javier y aquí NO se ha mirado.**
+Ninguna fila escrita (regla 29). Sonda: `docs/master/evidencias/SCRUM-1314c/contar-huellas-sin-anular.mjs`,
+calcada de la de SCRUM-612; se niega a correr contra el host de producción y no imprime URL.
+
+Claves del árbol `jv-j6ar`: `node scripts/comprobar-claves-bd.mjs` → `rc=0`, las tres a destinos
+no-producción (`DATABASE_URL_DEV` y `DATABASE_URL_TESTS` son la misma base, `yaqu_dev_javier`).
+
+| base | ① READ ONLY | ② positivo sembrado | total | con huella | huella sin anular |
+|---|---|---|---|---|---|
+| staging (`acela…/railway`) | `SHOW`=on · escritura rechazada 25006 | 3/2/1 OK | 9 | 0 | **0** |
+| dev (`acela…/yaqu_dev_javier`) | `SHOW`=on · escritura rechazada 25006 | 3/2/1 OK | 5 | 0 | **0** |
+
+- ① La base CONFIRMA el modo: dice `on` y además rechaza un `UPDATE invoices … WHERE false` dentro de un
+  savepoint (código 25006). Si lo aceptara, la sonda aborta sin medir.
+- ② El positivo es la MISMA expresión de recuento sobre un `VALUES` fabricado, con un huérfano dentro.
+  Quitándolo (`--quitar-sembrado`, contra dev) sale **2/1/0 · CIEGO · EXIT=2**: no da verde.
+- ⚠️ **Lo que el cero NO dice:** en ninguna de las dos bases hay UNA sola factura con huella de
+  anulación (`con_huella` = 0). No hay huérfanos porque no se ha sellado ninguna anulación; el recuento
+  no informa sobre si la carrera ocurre, sólo de que hoy no ha dejado rastro. Población pequeña: 9 y 5.
+- Sin medir: producción (de Javier); cuántas `annulled` hay sin huella (no se pidió).
+
+A9: sin fallo que generalice — recuento de sólo lectura con su positivo sembrado comprobado en CIEGO; el único límite (producción no medida) es del encargo, no un tropiezo
