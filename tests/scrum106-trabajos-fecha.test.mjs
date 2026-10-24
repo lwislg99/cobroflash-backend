@@ -7,14 +7,16 @@
 //
 // Datos EFÍMEROS propios, limpieza en el finally — nunca el seed demo (SCRUM-63).
 //
-// ⚠️ GATEADO (crea y BORRA merchants efímeros):
-//   QA_DB_TEST=1 npm run test:staging
+// ⚠️ GATEADO (crea y BORRA merchants efímeros). Dos destinos (SCRUM-1599f, la forma de SCRUM-876e/f):
+//   QA_DB_TEST=1 npm run test:staging                     → staging (igual que antes)
+//   LIBRO_PG_URL=<banco loopback, base *_test> npm test   → el banco desechable que CI levanta para la tanda
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging (fail-closed anti-prod)
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599f: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 
 // 🔴 FUERA DEL GATE (SCRUM-844 §13). Este assert fija la DECISIÓN del fundador —el criterio es
 // `scheduledAt`, opción C— y para eso no hace falta base: es una constante del módulo. Estaba
@@ -26,7 +28,7 @@ test('SCRUM-106: el criterio de trabajos.csv es la fecha de ejecución (sin base
     'el criterio debe ser la fecha de ejecución prevista (SCRUM-106, opción C)');
 });
 
-test('SCRUM-106: trabajos.csv por fecha de EJECUCIÓN — el de junio ejecutado en julio sale en julio', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
+test('SCRUM-106: trabajos.csv por fecha de EJECUCIÓN — el de junio ejecutado en julio sale en julio', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { buildTrabajos } =
     await import('../dist/modules/exports/domain/exportData.js');
