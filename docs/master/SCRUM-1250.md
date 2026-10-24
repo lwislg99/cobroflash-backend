@@ -48,3 +48,40 @@ De paso, sin tocar (otros carriles): `_sin-consumir-declarados.json` cita `:569`
 - **P2 · Si no, ¿guard que impida enchufarlas?** ✅ J1 escribe un test de solo lectura con positivo
   sembrado; las rarezas siguen vivas para llamadas de fuera. ❌ Como hoy.
 - Recomendación de J1 (no del fundador): P1 ✅. Lo construiría J1.
+
+## J1 · SCRUM-1250b · desmontar `pay` y `unpay` — hecho en J1, PARADO por dos guards de otro carril
+
+**Medido contra:** `origin/main` = `0a7eef15c907acc7646ed7ab33cab9176f8f1bc0` · 2026-10-24T10:51:14Z (hora de GitHub; sesión J1 `jv-j1bn`, por encargo del orquestador `cobroflash-backend-95`)
+
+A9: aviso → cicatriz J1 «Di como control positivo de un barrido de workflows un patrón que daba 0 en la propia población (`admin/` en `.github/`), y lo leí como suelo válido hasta mirarlo; el positivo se deriva antes de contar» — no se pudo comprobar: la elección del control de un barrido hecho en la consola no pasa por ningún guard del repositorio
+
+Firma: SCRUM-1250 c.20747 (P1 «Sí, desmontarlas»). Esta rama contiene la de `jv-j1bl`
+(`scrum-1250-pay-unpay-medido`, PR #2824), mezclada dentro para no entrelazar dos registros que
+crean el mismo fichero.
+
+**Hecho (ficheros J1):** fuera las dos rutas de `invoicesAdmin.routes.ts` y los dos envoltorios
+`markInvoicePaidAdmin`/`markInvoicePendingAdmin` de `invoiceAdmin.ts` (sin más llamantes en `src/`).
+El bloque de `PUT /:id/status` no cambia ni un carácter. `scrum1455b` pasa de 16 a 14 filas;
+`scrum597` muestrea `POST /admin/invoices/bulk-paid` en vez de `/pay` (sigue siendo «marcar
+pagada», sigue 403 para el técnico). Test nuevo: `tests/scrum1250b-pay-unpay-desmontadas.test.mjs`,
+app real por HTTP: las dos contestan lo mismo que una ruta sembrada que no existe, y `PUT /status`
+sigue llegando a su handler. Mutación: re-montar `/:id/pay` en `dist/` → cae con «contesta 200».
+
+**Llamantes fuera de `src/`:** workflows 0 (positivo: `yaqu.app`/`curl` aparece en 2 workflows),
+bot 0, OpenAPI no existe. **Logs de producción e integraciones externas: no lo he intentado.**
+
+**PARADO — dejarlos sin tocar pone ROJOS dos guards** (regla 41: no se ensancha nada):
+
+- `tests/scrum55-admin-fail-closed.test.mjs:186` · «ENTRADA MUERTA» por `src/core/http/adminOnlyRoutes.ts:12-13` (**S1**).
+- `tests/scrum1185-trinquete-sin-consumir.test.mjs:92` · caso ② por `scripts/_sin-consumir-declarados.json:139-140` (**S0**).
+
+Verdes con el cambio: `docs/legal/AUDITLOG_FISCAL_CONTRATO.md:94-95` (J4) sigue citando las filas
+viejas y `scrum525d` no cae; `scripts/_anclas-sin-testigo.congelado.mjs:137-138` tampoco. Se nombran,
+no se tocan.
+
+**Desbloqueo — excepción de carril declarada por el fundador, SCRUM-1250 c.20763** («Excepción de
+carril en este PR»): exactamente cuatro líneas del equipo de Luis, y nada más de ellos. En
+`adminOnlyRoutes.ts` (S1) se quitan las dos filas de `pay`/`unpay`; en `_sin-consumir-declarados.json`
+(S0) las dos entradas salen de `declaradas` y entran al principio de `retiradas` (al principio para no
+tocar la coma de una quinta línea). Con eso, `scrum55` y `scrum1185` en verde: 81 de 81 en los nueve
+ficheros dirigidos (55, 1185, 1250b, 1455b, 597, 158, 168, 1294, 1303), sin saltos.

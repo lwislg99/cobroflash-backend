@@ -26,7 +26,7 @@ const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CLI = path.join(RAIZ, 'scripts', 'go-live', 'puerta.mjs');
 
 // Cuántas entradas tiene la puerta. Sube con cada entrada nueva; NUNCA baja.
-const TOTAL = 23;
+const TOTAL = 24;
 // Las cerradas, una por línea. Sólo crece: una entrada cerrada no se reabre sin decirlo aquí.
 const CERRADAS = [
   2,
