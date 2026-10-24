@@ -69,6 +69,21 @@ export const CAMBIOS_AUTORIZADOS = [
       a: '7109a19821c60f7e303d855def8a08e45ed0f02e8ee36fb2dd5cad6e5df4ff83',
     },
   },
+  {
+    // SCRUM-624e · el bloque de totales de la F1 imprime el desglose del registro y su total
+    // guardado; la R1 y el justificante, como hasta hoy.
+    firma: 'SCRUM-624 c.20817',
+    registro: 'docs/master/SCRUM-624.md',
+    cita: '«A solo en facturas normales»',
+    cuerpo: {
+      de: 'fdaddbd5bb32a099baa5eaa0acddba18685f76b437f4bc4b8e4838e2b7718acc',
+      a: '4505331c59025f2a96599024980d6a2c366d6bdac8f65c52eeaf80fd85588741',
+    },
+    ambito: {
+      de: '7109a19821c60f7e303d855def8a08e45ed0f02e8ee36fb2dd5cad6e5df4ff83',
+      a: '11a1c6198c347365b671acadfd82e00feca86f13b03a92ba59666758034ea631',
+    },
+  },
 ];
 
 /**

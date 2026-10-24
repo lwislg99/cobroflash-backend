@@ -552,3 +552,57 @@ Leído, no ejecutado.
   saldría bien, pero junto a otra línea del mismo tipo daría dos filas con el mismo rótulo; distinguirlas es texto
   nuevo (regla 39). Sin medir con PDF.
 - N = 100 por población (el tiempo: 2.000 PDF tardan unos 5 min). Facturas reales: ninguna mirada.
+
+# SCRUM-624e · el arreglo A, sólo en la F1: el PDF imprime el desglose y el total guardados (24-oct-2026)
+
+**Medido contra:** `origin/main` = `bcfc99b0d9a4f4a3aaf9d1608dce06b3d3691482` · 2026-10-24T15:46:55Z (hora de GitHub al cerrar la medición; al empujar, `main` iba 16 commits por delante sin tocar ningún fichero de este tramo, y se mezcla)
+A9: comprobación → `tests/scrum624e-a-solo-en-f1.test.mjs`
+
+J1 (`jv-j1bw`, equipo de Javier). Decisión del fundador en Jira: SCRUM-624 c.20775 (el arreglo A, autorizado) y
+c.20817, «A solo en facturas normales». Carril J1 (`src/modules/invoicing/**`).
+
+## 1 · Qué cambia
+
+`pdf.service.ts`, bloque de totales de `generateInvoicePdf`, y sólo cuando el tipo es F1 (`params.type ?? 'F1'`, el
+valor por defecto de la columna): base y cuota por tipo salen de `calcVatBreakdown` —el mismo desglose que lleva el
+XML— y el TOTAL es `params.total`, el guardado, que el XML declara como `ImporteTotal`. Una fila por tipo, como hasta
+hoy (si una línea S2 y otra sin causa comparten tipo, se suman en la misma fila: separarlas sería un rótulo nuevo).
+
+**No cambia:** la R1 y el justificante (siguen sumando con el `vatMap` de siempre), la columna de líneas, cómo se
+calcula o se guarda ningún importe, ninguna factura emitida (regla 29) ni el redondeo de los negativos.
+
+## 2 · Rojo primero y mutación
+
+`tests/scrum624e-a-solo-en-f1.test.mjs`, contra el `dist/` de `main` antes del cambio: **2 de 7 caen** (3 × 9,99 con
+36,27 guardado imprimía TOTAL 36,26; dos tipos con 0,03 guardado imprimía 0,04). Después: 7 de 7. Mutación declarada
+en `MUTACIONES_QUE_ME_TUMBAN` (A también en la R1, sobre `dist/`): cae exactamente «② la R1 imprime EXACTAMENTE el
+bloque…», con `IVA 21%:-2,62` donde fija `-2,63`. El caso 15,13 + 15,13 de SCRUM-1446 es CONTROL, no rojo: su TOTAL
+(30,25) ya era el guardado, y A no toca la columna de líneas (lo dijo 624d §5; el encargo lo pedía como rojo).
+
+## 3 · El instrumento de 624d, después
+
+`evidencias/SCRUM-624/salida-papel-contra-xml-real-despues-de-A.txt` (mismo guion, N = 100, 2.000 PDF; controles: cero
+0/2.000, sembrado 7/7). **F1: 0,0 % en las cuatro columnas de las siete poblaciones** (antes, PDF≠XML 1, 0, 1, 0, 26,
+13 y 37,7 %). **R1: las siete filas, idénticas byte a byte a las de antes.** Ninguna casilla empeora. El «antes» es la
+salida de 624d sobre `1b3395ec`: entre esa base y `bcfc99b0d` no cambió ningún fichero que use el guion (pdf, vat,
+invoiceLines, billingPlan, utils), y no lo relancé.
+
+## 4 · Guards que el cambio movió, cada uno por su propia puerta de salida
+
+- `scrum624b`: borradas las dos divergencias declaradas (2 → 0); sus casos exigen ya el guardado.
+- `scrum1446` ③: borrado «el total impreso no es el guardado» (2 → 1); fijados 3/3, 127/127, 190/190 y 999,99.
+- `scrum604` ②: la caracterización pasa a TOTAL 999,99 (el guardado inyectado).
+- `scrum389`: `pdf.service.ts` entra como DOCUMENTO, con el puntero a `scrum627b` pegado a su entrada.
+- `scrum627` / `scrum627b`: sale de los invisibles y vuelve a las dos tablas (la máscara por fichero que describía
+  SCRUM-656: la llamada de la F1 tapa la aritmética a mano de la R1; la sigue nombrando «UNA SOLA reimplementa»).
+- `scrum603b` / `scrum723` (y por ellos el ④ de `scrum976`): par de huellas declarado en
+  `tests/_cambios-autorizados-de-la-factura.mjs` con la firma `SCRUM-624 c.20817` y la cita «A solo en facturas normales»,
+  generado con `evidencias/SCRUM-1446d/huellas.mjs`. Si `main` toca `generateInvoicePdf` antes del merge, cae y hay que
+  regenerarlo.
+
+## 5 · Lo que NO está hecho o no está medido
+
+- Facturas reales: ninguna mirada. La tanda entera local: NO CORRIDA (dirigida de 83 ficheros, en la entrega).
+- Una F1 con importes tan pequeños que una cuota redondea a 0,00 pierde su fila «IVA x%» con un solo tipo (la regla de
+  siempre: sin cuota no hay fila). No medido con facturas reales.
+- La R1: sin cambio, hasta el GO de su creación (regla 40) y la respuesta del asesor sobre el redondeo negativo.
