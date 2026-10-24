@@ -263,6 +263,89 @@ Ninguno que cambiara el resultado. El que generaliza es el de la entrega de J6c,
 que ya existía: su muestra de «guards de suite» (17 ficheros) no llevaba los dos censos que cuentan
 ficheros de `scripts/`, así que un script nuevo salió sin pasar por ellos y lo cazó el CI.
 
+## SCRUM-1324c · Re-medido el 24-oct: el vigía del silencio llevaba 36 h mudo, y nadie lo vio
+
+**Medido contra:** `origin/main` = `d34ee753fdd5b9858b31307d2d34704c80275f67` · 2026-10-24T10:31:09Z
+
+A9: comprobación → `tests/scrum1324c-el-vigia-carga-sin-paquetes.test.mjs`
+
+J6 (sesión jv-j6bn). La opción (b) del fundador (c.17719) ya estaba construida: `vigia-de-main.yml`
+(SCRUM-1393c, con la excepción de carril c.20147) lanza el juez por commit al acabar cada CI de `main`
+y una red diaria, y escribe en el Issue #2641 «[vigía] main sin verificar». Este tramo es la
+re-medición que pidió el orquestador, y lo que salió de ella.
+
+### Lo medido hoy (hora de GitHub)
+
+Dos sondas independientes: `npm run vigia:silencio` (modo rachas; 260 runs, 0 jobs sin leer, sus
+cuatro cebos reconocidos) y una sonda propia de sólo lectura con `gh api` (CI: 100 runs de `main`,
+del 23-oct 09:49Z al 24-oct 10:11Z; los demás workflows, 40 runs cada uno; 260 runs con jobs leídos,
+0 sin leer; cebo sembrado que, quitado, sale CIEGO con código 2). Coinciden en el único job en rojo.
+
+| job (no obligatorio salvo el primero) | racha roja hoy | último verde | racha más larga de la ventana |
+|---|---|---|---|
+| CI / build + tests (OBLIGATORIO) | 0 | 24-oct 10:05Z `137c7fad` | 0 |
+| CI / meta-guard | **4 seguidas, 12,7 h** (por debajo del umbral 5) | 23-oct 21:01Z `a7855fd7` | 4 |
+| CI / guards de navegador | 0 | 24-oct 10:05Z | 2 |
+| CI / trinquete de zona | 0 | 23-oct 22:52Z | 1 |
+| CI / vigía del despliegue · constancia del ALTER | 0 | 24-oct 10:05Z | 1 · 0 |
+| Conflicto de registro / resolver | 0 | 24-oct 10:11Z | 0 |
+| Vigía de PR atascados (cron) | 0 | 24-oct 07:39Z | 0 |
+| Vigía del despliegue (cron) | 0 | 24-oct 08:27Z | **8 seguidas, 30,5 h** (21-oct 19:43Z →) |
+| Vigía de main | 0 | 23-oct 23:40Z | 0 |
+
+Los jobs del CI corren en 23-27 de los 100 runs de la ventana (el resto, sin jobs). «Zona roja» no
+tiene runs en `main`. Si alguien leyó la racha de 30,5 h del cron del despliegue: NO medido.
+
+### El hallazgo: el vigía estaba CIEGO y su workflow salía verde
+
+De los 143 comentarios del Issue #2641, **123** dicen «salida 1 y SIN veredicto escrito: el vigía no
+supo mirar», del 22-oct 11:50:39Z al 23-oct 23:41:04Z. Sus runs salen `success`. El log del run
+`40085443564` (24-oct 10:23Z) da la causa: `Cannot find package 'typescript' imported from
+scripts/_senal-de-nombres.mjs`. SCRUM-1339u (`0a66ee4f8`) hizo que el vigía importara ese módulo,
+que importa `typescript` (y el censo `tests/_poblacion-de-tests.mjs`, que también); el workflow no
+hace `npm ci`. Los tests del vigía seguían verdes porque corren donde SÍ hay `node_modules`.
+Mientras, el meta-guard llevaba 4 rojos seguidos en `main` y el vigía no podía decirlo.
+
+### El arreglo (carril J6: los dos scripts son de 1324/1339/1393; no toca ningún workflow)
+
+- `scripts/_senal-de-nombres-linea.mjs`, nuevo y sin paquetes: `VERSION`, `TITULO`,
+  `lineaDeRegistro` y `registroDesdeLinea`, el escritor y el lector juntos.
+- `scripts/_senal-de-nombres.mjs` los re-exporta: el conjunto de sus exports es el mismo que antes
+  (17 nombres, comprobado importándolo), así que sus importadores no cambian.
+- `scripts/vigia-silencio-de-main.mjs` los importa del módulo nuevo.
+- Declarado en `scripts/_sin-fila-declarados.json` (el equipo J no edita la tabla de §3.3).
+
+### La comprobación
+
+`tests/scrum1324c-el-vigia-carga-sin-paquetes.test.mjs`, 4 casos: saca de `vigia-de-main.yml` los
+scripts que ejecuta y si instala paquetes (la condición sale del destino); recorre por AST el grafo
+de imports de cada uno y exige cero paquetes; y lo CARGA de verdad, copiado a un directorio sin
+`node_modules`. Cebo sembrado: un grafo fabricado de 3 ficheros con 2 paquetes que tiene que ver.
+
+- **Visto en rojo:** con el import viejo reinyectado (`git diff --numstat` 1/1), caen 2 de 4: el
+  grafo nombra los dos imports de `typescript`, y la carga da el MISMO error que el runner.
+  Restaurado con `git restore --source=HEAD`, árbol limpio.
+- Guards dirigidos (suite 237, 976, 824, 836, 419, 702, 700, 719, 1415; registro 1480e/f; los del
+  vigía 1324, 1339d/r/u, 1393c-f; 853, 1185, 411, 850, 723): 333 casos en 31 ficheros, 0 fallos;
+  `scrum836` cayó una vez por falta de `dist/` en este árbol y pasó 17/17 tras `tsc --noCheck`.
+  `guards:entrada` 170/170; los 5 de árbol entero 38/38. Tanda entera en local: NO CORRIDA (la
+  cubre el obligatorio del PR).
+- **Sin verificar:** que la primera pasada del vigía tras el merge escriba un veredicto en #2641.
+
+### Lo que NO arregla, y va como pregunta ✅/❌ (toca un workflow o `latido.mjs`)
+
+1. Un juez que no escribe veredicto deja el run en `success`. ¿Que el paso «Avisar o cerrar» salga
+   en rojo cuando no hay `vigia.json`? Toca `vigia-de-main.yml` (J6 por c.20147, pero el encargo
+   pedía parar).
+2. El Issue #2641 recibió 123 avisos del vigía ciego y no los leyó nadie. ¿Que el latido de arranque
+   (`latido.mjs`, S5) diga el último comentario del Issue y su hora? Es la frase de A10 «Un detector
+   que acierta y publica donde nadie lee produce el mismo resultado que uno ciego», un nivel más arriba.
+
+### Errores propios
+
+Ninguno que cambiara el resultado. Lancé `tsc` con la ruta del `node_modules` del árbol anidado, que
+no lo tiene (lo dice la memoria del equipo), y salió con 1 sin compilar nada; lo vi en el `ls` de
+después, antes de leer el test.
 ## SCRUM-1324d (24-oct) · S5: El vigía de main sale ROJO cuando no consigue dar un veredicto
 
 **Medido contra:** `origin/main` = `15a0535ee9ff96225001aa7510e6e48f8b83bafc` · 2026-10-24T12:50:15Z
