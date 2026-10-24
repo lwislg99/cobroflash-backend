@@ -213,9 +213,14 @@ router.get('/', async (req, res) => {
 // 1619/2012). Solo lectura, mismo nivel de acceso que ver facturas (TECNICO_ALLOWED).
 // Colección (no :id) — registrada antes de las rutas de un albarán suelto a propósito,
 // aunque hoy no colisiona con ninguna (no hay GET '/:id' de un solo segmento en este router).
+// SCRUM-1346 (P1, c.20745 «Sí, solo los suyos»): al Técnico, sólo lo de SUS Trabajos, con el
+// MISMO eje que `GET /admin/albaranes` (`jobIdsVisiblesPara`), en la query. `null` = admin, todo.
 router.get('/pendientes-facturar', async (req, res) => {
   try {
-    const clientes = await getPendientesFacturar(req.merchantId!, prisma);
+    const visibles = seesOnlyOwnJobs(req.userRole)
+      ? await jobIdsVisiblesPara(req.merchantId!, req.teamMemberId ?? null)
+      : null;
+    const clientes = await getPendientesFacturar(req.merchantId!, prisma, visibles);
     res.json({ clientes });
   } catch (err: any) {
     console.error('[GET /admin/albaranes/pendientes-facturar]', err?.message || err);
@@ -362,8 +367,13 @@ router.get('/consolidables', async (req, res) => {
 
     // `Albaran.jobId` es un Int plano (sin relación Prisma declarada), igual que en la bandeja
     // de SCRUM-69: los Trabajos del cliente primero, sus albaranes después.
+    // SCRUM-1346 (P1, c.20745): al Técnico, sólo SUS Trabajos de ese cliente, con el MISMO eje que
+    // `GET /admin/albaranes`. `undefined` = admin: Prisma no filtra y ve todos.
+    const visibles = seesOnlyOwnJobs(req.userRole)
+      ? await jobIdsVisiblesPara(req.merchantId!, req.teamMemberId ?? null)
+      : null;
     const jobs = await prisma.job.findMany({
-      where: { merchantId: req.merchantId!, customerId },
+      where: { merchantId: req.merchantId!, customerId, id: visibles ? { in: visibles } : undefined },
       select: { id: true, tipoOperacion: true },
     });
     if (!jobs.length) return res.json({ customer, grupos: [], descartados: [] });
