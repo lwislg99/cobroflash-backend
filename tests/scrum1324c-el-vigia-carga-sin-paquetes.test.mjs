@@ -16,12 +16,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { builtinModules } from 'node:module';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
+import { temporal } from './_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const WORKFLOW = '.github/workflows/vigia-de-main.yml';
@@ -71,7 +71,7 @@ export function loQueEjecuta(yml) {
   return { scripts, instala };
 }
 
-const enTmp = (nombre) => fs.mkdtempSync(path.join(os.tmpdir(), `scrum1324c-${nombre}-`));
+const enTmp = (nombre) => temporal(`scrum1324c-${nombre}-`);
 
 test('cebo sembrado: el instrumento ve dos paquetes en un grafo fabricado, y nada de node ni de lo propio', () => {
   const d = enTmp('cebo');

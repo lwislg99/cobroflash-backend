@@ -36,7 +36,7 @@ import ts from 'typescript';
 import { testsDeclarados } from '../tests/_poblacion-de-tests.mjs';
 // La línea de registro vive sin paquetes en su propio módulo (SCRUM-1324c): el vigía de main la lee
 // en un workflow sin `npm ci`. Se re-exporta para que quien la importaba de aquí no cambie.
-import { TITULO, lineaDeRegistro } from './_senal-de-nombres-linea.mjs';
+import { VERSION, TITULO, lineaDeRegistro } from './_senal-de-nombres-linea.mjs';
 export { VERSION, TITULO, lineaDeRegistro, registroDesdeLinea } from './_senal-de-nombres-linea.mjs';
 
 /** Lo decidido en SCRUM-1339 c.17935: la señal AVISA, y se vuelve a decidir con estos tres datos. */
