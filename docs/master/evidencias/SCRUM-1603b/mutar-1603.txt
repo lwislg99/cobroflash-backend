@@ -1,0 +1,12 @@
+POBLACIÓN: 8 mutaciones de tests/scrum1603-el-banco-mide-con-la-fuente-del-panel.test.mjs · HEAD 2feb16c5f7af9ea2a4d5330abba04d7ba9129f0d
+BASE sin mutar: exit=0 · not ok=0
+#1 VIVA · scripts/_hojas-del-panel.mjs · numstat «1	1	scripts/_hojas-del-panel.mjs» · exit=1 · caen: SCRUM-1603 ① · las hojas del banco son las del índice, en su orden, y una es la de la fuente · restaurado=true
+#2 VIVA · scripts/_banco-lista.mjs · numstat «1	1	scripts/_banco-lista.mjs» · exit=1 · caen: SCRUM-1603 ② · la página de _banco-lista enlaza esas hojas, sirve las letras y espera la fuente antes de darse por lista · restaurado=true
+#3 VIVA · scripts/_banco-lista.mjs · numstat «1	1	scripts/_banco-lista.mjs» · exit=1 · caen: SCRUM-1603 ② · la página de _banco-lista enlaza esas hojas, sirve las letras y espera la fuente antes de darse por lista · restaurado=true
+#4 VIVA · scripts/_banco-lista.mjs · numstat «1	1	scripts/_banco-lista.mjs» · exit=1 · caen: SCRUM-1603 ③ · el «antes» que copia arbolDePartida lleva las letras que pide la hoja de la fuente · restaurado=true
+#5 VIVA · scripts/guard-objetivo-tactil.mjs · numstat «1	1	scripts/guard-objetivo-tactil.mjs» · exit=1 · caen: SCRUM-1603 ④ · el guard táctil y el censo montan con las hojas del índice y esperan la fuente en cada navegación · restaurado=true
+#6 VIVA · scripts/censo-objetivo-tactil-panel.mjs · numstat «1	1	scripts/censo-objetivo-tactil-panel.mjs» · exit=1 · caen: SCRUM-1603 ④ · el guard táctil y el censo montan con las hojas del índice y esperan la fuente en cada navegación · restaurado=true
+#7 VIVA · scripts/_hojas-del-panel.mjs · numstat «1	1	scripts/_hojas-del-panel.mjs» · exit=1 · caen: SCRUM-1603 ⑤ · el veredicto de la fuente: hoja sin cargar, rota, sin cargar o sin recuento es un CIEGO · restaurado=true
+#8 VIVA · scripts/_hojas-del-panel.mjs · numstat «1	1	scripts/_hojas-del-panel.mjs» · exit=1 · caen: SCRUM-1603 ⑤ · el veredicto de la fuente: hoja sin cargar, rota, sin cargar o sin recuento es un CIEGO · restaurado=true
+RESULTADO: vivas 8 · mudas 0 · no aplicadas 0 · de 8
+EXIT=0
