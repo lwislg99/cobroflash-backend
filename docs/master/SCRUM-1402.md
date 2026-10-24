@@ -558,7 +558,12 @@ los ficheros citados. Nada se ha ejecutado, ni contra Stripe ni en yaqu.app.
 
 ## Lo corrido
 
-Lo dice la entrega (guards de registro y los que leen `docs/RUNBOOKS.md`). **Sin correr:** la tanda completa.
+- Los cinco de registro (`scrum267`, `273`, `1294`, `921c`, `1572`) y los 16 que nombran `docs/RUNBOOKS.md` en
+  `tests/`: **21 ficheros, 178 casos: 177 pasan, 0 caen, 1 salta** (`scrum1515`, sin `LIBRO_PG_URL`). Código de
+  salida 0, con el TAP en fichero fuera del árbol (43.486 B).
+- **Control positivo:** con la frase del `A9:` cambiada a mano («TRES rangos»), `scrum1294` cae (1 de 4) y nombra
+  este tramo; deshecho con `git checkout` y árbol limpio después.
+- **Sin correr:** la tanda completa (10 sesiones a la vez) y los gateados por base.
 
 ## Límites
 
