@@ -65,12 +65,12 @@ function round2(n: number): number {
 }
 
 /**
- * LA CLAVE de la marca dentro de la línea. Una sola constante, y la pantalla la importa en vez de
- * escribir el literal: dos literales `'suplido'` en dos ficheros son dos cosas que pueden
- * separarse en silencio el día que una se renombre, y entonces la casilla marca algo que el
- * cálculo no lee. El guard de `scrum500-suplidos.test.mjs` exige que front y back usen ésta.
+ * LA CLAVE de la marca dentro de la línea. Sin `export` (SCRUM-1063c): sólo la lee este módulo.
+ * La pantalla escribe su propio literal (`quoteSuplido.js`), y dos literales pueden separarse en
+ * silencio el día que uno se renombre: `scrum500-suplidos.test.mjs` lo caza por COMPORTAMIENTO,
+ * marcando una línea con la clave del front y exigiendo que `partirPorSuplido` la aparte.
  */
-export const MARCA_SUPLIDO = 'suplido';
+const MARCA_SUPLIDO = 'suplido';
 
 /** Línea de factura o de presupuesto: `tax` en FRACCIÓN (0.21), igual que en `Invoice.lines`. */
 export type LineaConSuplido = VatLine & { [key: string]: unknown };
@@ -97,7 +97,7 @@ export type LecturaSuplido =
  * casilla. Lo que no puede pasar por «no» es un `'sí'`, un `1` o un `'false'` — alguien escribió
  * algo ahí, y si no se entiende, no se adivina.
  */
-export function leerMarcaSuplido(linea: unknown): LecturaSuplido {
+function leerMarcaSuplido(linea: unknown): LecturaSuplido {
   if (linea === null || linea === undefined || typeof linea !== 'object') {
     return { ok: false, motivo: 'línea ilegible: no se puede saber si es un suplido' };
   }
@@ -120,7 +120,7 @@ export function leerMarcaSuplido(linea: unknown): LecturaSuplido {
  * La cantidad sale de `cantidadDeLinea` (SCRUM-504) y no de un `Number(x) || 1` nuevo: una
  * cantidad ausente vale 0, aquí igual que en el resto de la factura.
  */
-export function importeSuplido(linea: LineaConSuplido): number {
+function importeSuplido(linea: LineaConSuplido): number {
   return round2(cantidadDeLinea(linea?.qty) * (Number(linea?.price) || 0));
 }
 

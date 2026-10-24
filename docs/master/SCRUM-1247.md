@@ -214,3 +214,62 @@ control positivo: el patrón de marca (`Claude|Anthropic|Gemini|Google`) sí caz
   limpia sobre el ancla (`git merge-tree`).
 - No se ha visto en un navegador con sesión: el modal pide iniciar sesión, y este árbol no tiene base.
   Se verifica en yaqu.app cuando entre.
+
+---
+
+# SCRUM-1247c · Re-medición: qué ve el profesional, qué sale al proveedor y qué dice la política (J4)
+
+**Medido contra:** `origin/main` = `25920fe4b1e0848c5ce33f8cb7a01ccf7157b7e0` · 2026-10-24T10:26Z (J4, jv-j4ab)
+
+**Encargo:** del orquestador `cobroflash-backend-95`, 24-oct-2026. Solo medir y preguntar. La medición
+completa y las preguntas Q1–Q5 para el fundador están en **SCRUM-1247, comentario 20740**. Aquí va el
+resumen. Nada de lo de abajo está firmado (regla 39). No se toca `src/`, ni `public/`, ni la política.
+Producción sirve el mismo sha (`/health`, cabecera `Date: Sat, 24 Oct 2026 10:26:43 GMT`).
+
+## Lo que ya no es como dice el ticket
+
+- R1 (`aiQuoteAssistant.js:15`) y R2 (`quotesView.js:1720`, antes `:1595`) **ya no nombran a Claude**.
+  Llevan el texto firmado en c.17425, que entró por #1925/#1929 y lo fija
+  `tests/scrum1247-rotulo-ia-no-nombra-proveedor.test.mjs`.
+- L1′/L2′ (§3) los dejó sin objeto **SCRUM-1154**: firma del fundador en c.17576, commit `bfd23a1ca`.
+  La política solo nombra a Google (Gemini) (`privacidad.html:80`) y Anthropic tiene 0 menciones. Lo
+  fija `tests/scrum1154-google-encargado.test.mjs`.
+- «¿Hay `ANTHROPIC_API_KEY` en Railway?»: el registro de 1154 dice «ni siquiera está puesta». **No lo he
+  medido.** Es un dato copiado, con fecha del 30-sep.
+
+## Lo que sigue vivo
+
+| # | Dónde | Hoy | Carril |
+|---|---|---|---|
+| R3 | `aiQuoteAssistant.js:190` | «Claude redactará…». No tiene llamada (`openAiMessageModal`: 0 en `public/` y `src/`) y depende de SCRUM-1182 | S2 |
+| R4 | `aiQuoteAssistant.js:74` | «La IA no está configurada. Añade GEMINI_API_KEY (gratis) en Railway.». **Se ve** con `ai_not_configured`. Ningún test la fija | S2 |
+| Camino a Anthropic | `src/modules/ai/domain/ai.service.ts:42-53` | Sin `GEMINI_API_KEY`, los datos van a Anthropic, que la política ya no nombra. «Si se enciende, vuelve a firma» (1154) **no tiene mecanismo** | S1 |
+
+## Qué sale: sonda AST sobre el `user` de cada llamada
+
+Sonda de un solo uso, fuera del repo, con el compilador de TypeScript. Control positivo SEMBRADO: un
+fichero fabricado con `aiComplete({ user: \`S: ${p.SEMBRADO_1247}\` })`. Con él, 7 llamadas con carga;
+solo él, 1; sin ficheros, 0.
+
+- `suggestQuoteLines` (`:139`): país, moneda y **catálogo (hasta 40 productos activos con nombre y precio,
+  siempre)**, más la descripción que escribe el profesional.
+- `suggestAlbaranLines` (`:368`, solo con `VOICE_ALBARAN_ENABLED`): lo mismo; el catálogo, solo en
+  modo VALORADO.
+- `suggestLineasDeParte` (`:415`): solo el dictado.
+- `generateQuoteMessage` (`:397`, sin botón): nombre del cliente final, profesional, concepto y total.
+- Ticket de gasto (`lecturaTicket.ts:305-315`): la imagen, solo a Gemini. **Esta fila no la midió la
+  sonda.** La llamada va por la variable `completar` y la sonda casaba por nombre de función. Se leyó en
+  el código, cruzando por `geminiCompleteConModelo`.
+
+Nada sale hasta que el profesional pulsa.
+
+## Suelo
+
+- Railway no se ha medido.
+- No se ha visto el modal con sesión: la visibilidad sale de las llamadas en el código servido.
+- El censo es por palabra.
+- Suite local: NO CORRIDA (solo docs). El obligatorio se lee en CI.
+- El comentario 20740 lleva una errata de formato: un acento grave escapado en la línea del control
+  positivo. No cambia ningún dato.
+
+A9: aviso → A10 «Un barrido que busca dónde se escribe un campo no ve el objeto que se construye en otro fichero: se cruza con el nombre del campo.» — no se pudo comprobar: la sonda AST casaba por nombre de función y no vio la llamada del ticket hecha por la variable `completar`; es de un solo uso y vive fuera del repo, y lo cazó cruzar con el `grep` de los importadores de `integrations/gemini`

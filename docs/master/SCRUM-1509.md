@@ -1067,3 +1067,55 @@ Job 120382897336 (12.252 casos, 3 fail, 0 «TANDA SIN VEREDICTO»): `scrum262` (
 A9: comprobación → `tests/scrum262-telefonos-de-prueba.test.mjs`
 A9: comprobación → `tests/scrum702-suelo-misma-poblacion.test.mjs`
 A9: comprobación → `tests/scrum878-poblacion-del-guard-29.test.mjs`
+
+# SCRUM-1509k · El «Enviar recordatorio» manual de una factura pasa el cliente, y el tope por cliente lo cuenta
+
+**Medido contra:** `origin/main` = `27385379e96e94b04e41a88c41f9ac2140ab7cc6` · 2026-10-23T15:19:47Z (hora de GitHub al escribir: 2026-10-23T15:22:01Z)
+A9: comprobación → `tests/scrum1509k-el-recordatorio-manual-cuenta-al-cliente.test.mjs`
+
+Sesión `jv-j1as` (puesto J1, equipo de Javier), por encargo del orquestador `cobroflash-backend-62`. Carril J1: `invoicesAdmin.routes.ts` → J1 (`node scripts/carriles.mjs de …` → `dos-equipos.md:118`). Decisión del fundador: SCRUM-1509 c.20569, «Pasar el cliente». El GO cubre este botón y su ruta. NO cubre ningún texto, ninguna plantilla de Meta, el camino de emisión ni los otros tres llamadores sin cliente.
+
+## 0 · PASO 0
+
+No hay commits `1509k` en `origin/main`, ni rama ni PR con ese número. El defecto se ve en el código de `5da02178a`: en `POST /admin/invoices/:id/send-reminder`, la rama de PLANTILLA llamaba a `sendWhatsAppTemplate` sin `log`, así que `reservarPlantilla` recibía `customerId = null` y no preguntaba el tope por cliente. Era uno de los cuatro llamadores de 1509d (c.18907). La rama de texto libre de la misma ruta ya pasaba el cliente.
+
+## 1 · El arreglo
+
+Una línea en la llamada de plantilla: `log: { customerId: invoice.customerId, relatedType: 'invoice', relatedId: id }`. Es el mismo parámetro y la misma forma que usan `invoiceReminder.service.ts:210`, `invoiceWhatsApp.service.ts:136` y la rama de texto de esta ruta. No se toca `whatsapp.ts` ni `whatsappLog.service.ts` (J2), y el tope (3) sigue igual.
+
+**Texto:** al bloquear, la ruta ya contestaba con `falloDeEnvioDeFactura(failReason)`. La frase de `customer_daily_cap` existe y está firmada (`envioQueNoSale.ts`, SCRUM-1465/1478). Es la misma que ya pinta el reenvío de la factura (`:678`). No hay ningún literal nuevo, y el test la compara con lo que devuelve esa función.
+
+## 2 · El rojo y el verde, por la app real
+
+El test es `tests/scrum1509k-el-recordatorio-manual-cuenta-al-cliente.test.mjs`. Carga `dist/app.js` entero con `_banco-camino-real.mjs` y pide la ruta por HTTP con la cookie del titular, con `requireAuth` y `requireRole` delante. No saca el handler de su ruta (A10, SCRUM-1344). El registro de WhatsApp del doble lleva estado y cuenta como `reservarPlantilla`: por comercio, y por cliente sólo si la pregunta lo lleva. WhatsApp va por el dry-run de la casa. El tope por cliente se lee de `dist`: 3.
+
+| caso | `main` | con el arreglo |
+|---|---|---|
+| SUELO: todo libre, sale por plantilla | ✔ 1 | ✔ 1 |
+| 🔴 cliente con 3 plantillas hoy | ✘ sale 1, y al tope por cliente se le pregunta 0 veces | ✔ 0, `customer_daily_cap`, con la frase firmada |
+| 🔴 5 pulsaciones seguidas, misma factura | ✘ 5 plantillas | ✔ 3, y la 4.ª y la 5.ª bloqueadas |
+| CONTROL NEGATIVO: otro cliente, con el primero lleno | sale 1; cae sólo porque no se pregunta por su cliente | ✔ sale 1, y se pregunta por SU cliente |
+| factura sin cliente | ✔ 400 `customer_missing_phone`, 0 envíos, 0 preguntas | ✔ igual |
+
+Con el código de `main` pasan 2 de 5; con el arreglo, 5 de 5.
+
+**Qué pieza trabaja.** Muté sólo `dist`: `customerId: null` en esa llamada y en ninguna otra (el guion comprueba que la sustitución cae entre `sendWhatsAppTemplate` y `sendWhatsAppText`). Caen los 3 casos que dependen de ella. El control negativo cae en la pregunta y no en el envío: el otro cliente sigue recibiendo. Después recompilé y comprobé que no quedaba ninguna mutación.
+
+## 3 · Factura sin cliente: hoy y después
+
+`canalDeWhatsApp(invoice.customer)` da `null` y la ruta contesta 400 `customer_missing_phone` antes de llegar a enviar. Pasa así en `main` y sigue igual con el arreglo, porque la línea nueva está detrás de esa puerta. Si la factura tuviera `customerId` nulo y aun así llegara a enviar, `reservarPlantilla` saltaría el tope por cliente igual que antes (`if (input.customerId)`). Lo he leído en el código; no lo he ejecutado, porque por esta ruta no se llega.
+
+## 4 · Los otros tres llamadores sin cliente (1509d), NO tocados
+
+| llamador | carril |
+|---|---|
+| `src/integrations/whatsappNotifications.ts` · `sendPaymentConfirmation` (nadie la llama, 1509d) | J2 (`dos-equipos.md:124`) |
+| `src/integrations/whatsappNotifications.ts` · `notifyMerchantAlert` (va al profesional, no hay cliente que poner) | J2 (`dos-equipos.md:124`) |
+| `src/modules/quotes/domain/reminder.service.ts` · cron de presupuestos | S1 (`dos-equipos.md:136`; pedido en SCRUM-1586) |
+
+## 5 · Lo que NO se midió
+
+* Postgres real: la base es un doble en memoria.
+* yaqu.app: hace falta el merge, un cliente con 3 plantillas hoy y su número real. No lo he intentado.
+* La pantalla: el texto lo pinta la que ya pinta el cuerpo de la ruta. Leí que la frase llega en `message` y no la he visto en un navegador.
+* `scrum116` y los demás tests gateados por base: se saltan en local.

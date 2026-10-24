@@ -21,6 +21,33 @@ import zlib from 'node:zlib';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 import { crearFactura } from './_factura-fixture.mjs';
 import { assertAusenteConMecanismoVivo } from './_ausencia.mjs'; // SCRUM-108
+import http from 'node:http';
+
+// `node:http` sin agente y no `fetch` (SCRUM-1218g): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de `fetch`
+// (status, headers.get, text, json, arrayBuffer) y, como el `redirect: 'manual'` de antes, no sigue
+// redirecciones. El cuerpo se guarda en bytes: `text()` lo decodifica como `fetch` (TextDecoder).
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    const trozos = [];
+    r.on('data', (t) => { trozos.push(t); });
+    r.on('end', () => {
+      const buf = Buffer.concat(trozos);
+      ok({
+        status: r.statusCode,
+        headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+        text: async () => new TextDecoder().decode(buf),
+        json: async () => JSON.parse(new TextDecoder().decode(buf)),
+        arrayBuffer: async () => buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
+      });
+    });
+  });
+  req.on('error', mal);
+  req.end(body);
+});
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
@@ -144,7 +171,7 @@ test('SCRUM-25 (B): datos.zip — técnico 403, entradas, PDFs, tenancy, rango, 
       await prisma.authSession.create({
         data: { merchantId, teamMemberId, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) },
       });
-      const res = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
+      const res = await pedirSinAgente(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
       const cookie = (res.headers.get('set-cookie') || '').split(';')[0];
       assert.ok(cookie.startsWith('pf_session='), 'no se obtuvo cookie de sesión');
       return cookie;
@@ -152,7 +179,7 @@ test('SCRUM-25 (B): datos.zip — técnico 403, entradas, PDFs, tenancy, rango, 
 
     const cookieAdmin = await mkCookie(merchantA.id, null);
     const cookieTecnico = await mkCookie(merchantA.id, tecnicoA.id);
-    const get = (path, cookie) => fetch(`${base}${path}`, { headers: { cookie } });
+    const get = (path, cookie) => pedirSinAgente(`${base}${path}`, { headers: { cookie } });
 
     // ── (S1) el TÉCNICO no se lleva el paquete ──────────────────────────────
     const forbidden = await get('/admin/exports/datos.zip', cookieTecnico);

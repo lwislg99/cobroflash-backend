@@ -15,6 +15,33 @@ import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TE
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { crearFactura } from './_factura-fixture.mjs';
+import http from 'node:http';
+
+// `node:http` sin agente y no `fetch` (SCRUM-1218g): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de `fetch`
+// (status, headers.get, text, json, arrayBuffer) y, como el `redirect: 'manual'` de antes, no sigue
+// redirecciones. El cuerpo se guarda en bytes: `text()` lo decodifica como `fetch` (TextDecoder).
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    const trozos = [];
+    r.on('data', (t) => { trozos.push(t); });
+    r.on('end', () => {
+      const buf = Buffer.concat(trozos);
+      ok({
+        status: r.statusCode,
+        headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+        text: async () => new TextDecoder().decode(buf),
+        json: async () => JSON.parse(new TextDecoder().decode(buf)),
+        arrayBuffer: async () => buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
+      });
+    });
+  });
+  req.on('error', mal);
+  req.end(body);
+});
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
@@ -68,28 +95,28 @@ test('SCRUM-74: /recibo/:token cierra el IDOR — numérico 404 sin fuga, token 
     assert.notEqual(tokenA1, tokenB, 'cobros distintos deben tener tokens distintos');
 
     // ── IDOR cerrado: el id numérico YA NO resuelve — ni la página, ni el PDF, ni el feedback ──
-    const rNumPage = await fetch(`${base}/recibo/${A.charge.id}`);
+    const rNumPage = await pedirSinAgente(`${base}/recibo/${A.charge.id}`);
     assert.equal(rNumPage.status, 404, `GET /recibo/<id numérico> debe ser 404 y fue ${rNumPage.status}`);
     const numPageBody = await rNumPage.text();
     assert.ok(!numPageBody.includes(A.customer.name), 'FUGA: el 404 numérico expone el nombre del cliente');
     assert.ok(!numPageBody.includes(A.customer.email), 'FUGA: el 404 numérico expone el email del cliente');
 
-    const rNumPdf = await fetch(`${base}/recibo/${A.charge.id}/pdf`);
+    const rNumPdf = await pedirSinAgente(`${base}/recibo/${A.charge.id}/pdf`);
     assert.equal(rNumPdf.status, 404, `GET /recibo/<id numérico>/pdf debe ser 404 y fue ${rNumPdf.status}`);
     assert.doesNotMatch((await rNumPdf.text()) || '', /%PDF-/, 'FUGA: el 404 numérico sirvió bytes de PDF');
 
-    const rNumFb = await fetch(`${base}/recibo/${A.charge.id}/feedback`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ stars: 5 }) });
+    const rNumFb = await pedirSinAgente(`${base}/recibo/${A.charge.id}/feedback`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ stars: 5 }) });
     assert.equal(rNumFb.status, 404, `POST /recibo/<id numérico>/feedback debe ser 404 y fue ${rNumFb.status}`);
 
     // ── token ajeno tampoco vale para el cobro de otro (no es solo "cualquier string") ──
-    const rWrongToken = await fetch(`${base}/recibo/${tokenB}/pdf`);
+    const rWrongToken = await pedirSinAgente(`${base}/recibo/${tokenB}/pdf`);
     // token B es VÁLIDO pero es el de OTRO cobro — debe servir el PDF de B, nunca el de A.
     assert.equal(rWrongToken.status, 200);
     const wrongBuf = Buffer.from(await rWrongToken.arrayBuffer());
     assert.ok(!wrongBuf.toString('latin1').includes(A.invoice.number), 'FUGA: el token de B sirvió el PDF/factura de A');
 
     // ── token correcto: página 200, con el contenido esperado ──
-    const rPage = await fetch(`${base}/recibo/${tokenA1}`);
+    const rPage = await pedirSinAgente(`${base}/recibo/${tokenA1}`);
     assert.equal(rPage.status, 200, `GET /recibo/:token debe ser 200 y fue ${rPage.status}`);
     const pageBody = await rPage.text();
     assert.ok(pageBody.includes(A.customer.name), 'con el token correcto SÍ debe verse el propio nombre');
@@ -97,14 +124,14 @@ test('SCRUM-74: /recibo/:token cierra el IDOR — numérico 404 sin fuga, token 
     assert.ok(!pageBody.includes(`/recibo/${A.charge.id}/pdf`), 'el HTML no debe filtrar un enlace por id numérico');
 
     // ── token correcto: PDF 200 con bytes reales de PDF ──
-    const rPdf = await fetch(`${base}/recibo/${tokenA1}/pdf`);
+    const rPdf = await pedirSinAgente(`${base}/recibo/${tokenA1}/pdf`);
     assert.equal(rPdf.status, 200, `GET /recibo/:token/pdf debe ser 200 y fue ${rPdf.status}`);
     assert.match(rPdf.headers.get('content-type') || '', /application\/pdf/);
     const buf = Buffer.from(await rPdf.arrayBuffer());
     assert.equal(buf.subarray(0, 5).toString(), '%PDF-', 'debe devolver un PDF real');
 
     // ── token correcto: feedback 303 + evento registrado ──
-    const rFb = await fetch(`${base}/recibo/${tokenA1}/feedback`, {
+    const rFb = await pedirSinAgente(`${base}/recibo/${tokenA1}/feedback`, {
       method: 'POST', redirect: 'manual',
       headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ stars: 5, comment: 'QA S74' }),
     });

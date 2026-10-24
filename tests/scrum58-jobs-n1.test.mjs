@@ -17,6 +17,28 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
+import http from 'node:http';
+
+// `node:http` sin agente y no `fetch` (SCRUM-1218d): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de `fetch`
+// (status, headers.get, text, json) y, como el `redirect: 'manual'` de antes, no sigue redirecciones.
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    let d = ''; r.setEncoding('utf8');
+    r.on('data', (t) => { d += t; });
+    r.on('end', () => ok({
+      status: r.statusCode,
+      headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+      text: async () => d,
+      json: async () => JSON.parse(d),
+    }));
+  });
+  req.on('error', mal);
+  req.end(body);
+});
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
@@ -43,7 +65,7 @@ test('SCRUM-58: la lista de Trabajos no hace N+1 (las consultas no crecen con el
         await prisma.authSession.create({
           data: { merchantId: merchant.id, teamMemberId: null, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) },
         });
-        const cookie = ((await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' }))
+        const cookie = ((await pedirSinAgente(`${base}/auth/verify?token=${token}`, { redirect: 'manual' }))
           .headers.get('set-cookie') || '').split(';')[0];
         assert.ok(cookie.startsWith('pf_session='), 'no se obtuvo cookie de sesión');
 
@@ -70,7 +92,7 @@ test('SCRUM-58: la lista de Trabajos no hace N+1 (las consultas no crecen con el
           let n = 0;
           const contador = () => { n++; };
           prisma.$on('query', contador);
-          const res = await fetch(`${base}/admin/jobs`, { headers: { cookie } });
+          const res = await pedirSinAgente(`${base}/admin/jobs`, { headers: { cookie } });
           assert.equal(res.status, 200, 'la lista debe responder 200');
           const filas = await res.json();
           // margen para que el listener se vacíe antes de leer el contador
@@ -95,7 +117,7 @@ test('SCRUM-58: la lista de Trabajos no hace N+1 (las consultas no crecen con el
         );
 
         // Y el contenido sigue completo: el lote no puede "ahorrar" perdiendo datos.
-        const res = await fetch(`${base}/admin/jobs`, { headers: { cookie } });
+        const res = await pedirSinAgente(`${base}/admin/jobs`, { headers: { cookie } });
         const filas = await res.json();
         for (const f of filas) {
           assert.ok(f.customer && f.customer.name === 'Cliente S58', 'cada fila conserva su cliente');

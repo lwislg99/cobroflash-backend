@@ -19,6 +19,14 @@ import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 const ENABLED = process.env.QA_DB_TEST === '1';
 const PLAN_MANUAL = [{ index: 0, percentage: 1, label: 'manual_total' }];
 
+// SCRUM-1599b (decisión del fundador, SCRUM-1599 c.20650): desde SCRUM-1027 (regla 24), un merchant
+// ES con el interruptor OFF no emite NINGÚN documento por esta vía: 409 antes de tocar Invoice. El
+// camino bueno y las cuatro puertas se miden con el interruptor encendido POR MERCHANT, como su
+// hermano `scrum814-carrera-de-tramos-postgres`; el OFF se mide aparte, con su propio caso. El OFF
+// va EXPLÍCITO en la columna (no «ausente»): así el caso no depende del env del entorno.
+const FISCAL_ON = { flags: { INVOICING_ES_ENABLED: true } };
+const FISCAL_OFF = { flags: { INVOICING_ES_ENABLED: false } };
+
 test('SCRUM-178 (aritmética, sin BD): el tramo único al 100 % reproduce las líneas y el total EXACTOS', async () => {
   const { stageLinesReconciled, grossOfLines } = await import('../dist/modules/invoicing/domain/invoiceLines.service.js');
   const { distributeStageAmounts } = await import('../dist/modules/quotes/domain/billingPlan.js');
@@ -58,7 +66,7 @@ test('SCRUM-178: emisión manual — emite UNA vez, con líneas, y cierra las cu
   try {
     await withMerchant(
       prisma,
-      { name: 'QA S178', email: `qa-s178-${stamp}@test.local`, country: 'ES', taxId: 'B12345678' },
+      { name: 'QA S178', email: `qa-s178-${stamp}@test.local`, country: 'ES', taxId: 'B12345678', ...FISCAL_ON },
       async (merchant) => {
         const customer = await prisma.customer.create({ data: { merchantId: merchant.id, name: 'Cliente S178' } });
         const LINEAS = [
@@ -101,23 +109,16 @@ test('SCRUM-178: emisión manual — emite UNA vez, con líneas, y cierra las cu
           'declara CERO IVA repercutido sobre un importe que sí lo lleva.');
         assert.equal(grossOfLines(factura.lines), Number(factura.total),
           'el total guardado tiene que ser CONSECUENCIA de las líneas guardadas (SCRUM-141)');
-        // SELLADO — la regla, no la suposición. El primer intento de este test daba por hecho que
-        // un merchant ES con NIF sella siempre, y falló: con `INVOICING_ES_ENABLED` OFF (regla 24)
-        // el documento sale JUSTIFICANTE, y sellar un justificante sería precisamente el fallo
-        // (V0-0). Así que se comprueba la implicación en los dos sentidos, y el test vale igual
-        // el día que se encienda la facturación fiscal — que es cuando más va a hacer falta.
+        // SELLADO. Hasta SCRUM-1599b esto era un `if` con dos ramas: con el interruptor OFF salía un
+        // justificante `J-…` sin sellar. Desde SCRUM-1027 esa rama no puede darse (con OFF no sale
+        // NINGÚN documento: lo mide el caso del 409, abajo), así que aquí, con el interruptor ON,
+        // la rama fiscal pasa a ser OBLIGATORIA: un número de justificante es ahora un fallo.
         const { isReceiptNumber } = await import('../dist/modules/invoicing/domain/invoiceNumber.service.js');
-        if (isReceiptNumber(factura.number)) {
-          assert.equal(factura.type, 'JUST', 'un número de justificante tiene que dar tipo JUST');
-          assert.equal(factura.vfHash, null,
-            `🔴 JUSTIFICANTE SELLADO: ${factura.number} no es una factura fiscal y no puede entrar ` +
-            'en la cadena VeriFactu (V0-0, regla 24). Una huella de más no se retira: se encadena.');
-          assert.equal(cuerpo.veriFactu, false, 'y la respuesta no debe afirmar que se selló');
-        } else {
-          assert.equal(factura.type, 'F1', 'un número de factura tiene que dar tipo F1');
-          assert.ok(factura.vfHash,
-            '🔴 FACTURA FISCAL SIN SELLAR: merchant ES con NIF y número F1 — tiene que entrar en la cadena VeriFactu.');
-        }
+        assert.equal(isReceiptNumber(factura.number), false,
+          `🔴 JUSTIFICANTE CON EL INTERRUPTOR ENCENDIDO: ${factura.number} no es un número de factura.`);
+        assert.equal(factura.type, 'F1', 'un número de factura tiene que dar tipo F1');
+        assert.ok(factura.vfHash,
+          '🔴 FACTURA FISCAL SIN SELLAR: merchant ES con NIF y número F1 — tiene que entrar en la cadena VeriFactu.');
         t.diagnostic(`documento ${factura.number} (${factura.type}) · VeriFactu: ${cuerpo.veriFactu}`);
 
         // ── EL IMPORTE SALE DE LAS LÍNEAS, aunque el `total` guardado diga otra cosa ────────
@@ -202,6 +203,58 @@ test('SCRUM-178: emisión manual — emite UNA vez, con líneas, y cierra las cu
         assert.equal(await prisma.invoice.count({ where: { quoteId: quoteB.id } }), 0, 'y no emitió nada');
       });
     });
+  } finally {
+    await new Promise((r) => server.close(r));
+    await prisma.$disconnect();
+  }
+});
+
+// SCRUM-1599b (SCRUM-1599 c.20650, «Flag ON + caso del 409»): con el interruptor APAGADO, un merchant
+// ES con NIF no emite NADA por la vía manual — ni factura ni justificante (regla 24, SCRUM-1027).
+// Lo que se protege no es el código de respuesta: es que no quede NINGUNA fila en Invoice, porque
+// una fila emitida ya no se borra (regla 29) y gasta número de serie.
+test('SCRUM-178: con INVOICING_ES_ENABLED apagado, la emisión manual da 409 facturacion_no_disponible y no emite nada', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+  const { prisma } = await import('../dist/core/db/prisma.js');
+  const { app } = await import('../dist/app.js');
+
+  const server = app.listen(0);
+  await new Promise((r) => server.once('listening', r));
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const stamp = Date.now();
+
+  try {
+    await withMerchant(
+      prisma,
+      { name: 'QA S178 OFF', email: `qa-s178off-${stamp}@test.local`, country: 'ES', taxId: 'B12345678', ...FISCAL_OFF },
+      async (merchant) => {
+        const customer = await prisma.customer.create({ data: { merchantId: merchant.id, name: 'Cliente S178 OFF' } });
+        const quote = await prisma.quote.create({
+          data: {
+            merchantId: merchant.id, customerId: customer.id, status: 'accepted', currency: 'EUR',
+            total: '121.00', lines: [{ concept: 'Mano de obra S178 OFF', qty: 1, price: 100, tax: 0.21 }],
+            paymentTerms: 'MANUAL',
+          },
+        });
+
+        const token = 'qa178off-' + crypto.randomBytes(12).toString('hex');
+        await prisma.authSession.create({
+          data: { merchantId: merchant.id, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) },
+        });
+        const verify = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
+        const cookie = (verify.headers.get('set-cookie') || '').split(';')[0];
+        assert.ok(cookie.startsWith('pf_session='), 'no se obtuvo cookie de sesión');
+
+        const res = await fetch(`${base}/admin/quotes/${quote.id}/invoice-manual`, {
+          method: 'POST', headers: { cookie, 'Content-Type': 'application/json' },
+        });
+        const cuerpo = await res.json();
+        assert.equal(res.status, 409, `con el interruptor apagado no se emite; devolvió ${res.status} ${JSON.stringify(cuerpo)}`);
+        assert.equal(cuerpo.error, 'facturacion_no_disponible');
+        assert.equal(await prisma.invoice.count({ where: { merchantId: merchant.id } }), 0,
+          '🔴 DOCUMENTO CON EL INTERRUPTOR APAGADO: en España, con INVOICING_ES_ENABLED en OFF, YaQu no ' +
+          'emite ningún documento (regla 24), y lo emitido ya no se borra (regla 29).');
+      },
+    );
   } finally {
     await new Promise((r) => server.close(r));
     await prisma.$disconnect();

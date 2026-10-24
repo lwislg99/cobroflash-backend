@@ -1,0 +1,161 @@
+// SCRUM-1252c · BANCO: ¿qué dice cada sitio de un documento `type: 'F1'` con número `J-…`?
+//
+// Sólo LEE el camino de emisión (regla 38): llama a las funciones compiladas de `dist/` con un
+// cliente Prisma FALSO en memoria. Ninguna base, ningún `src/` tocado, ningún fichero del árbol
+// escrito: `storage/` lo crea `dist/core/storage/dirs.js` bajo el directorio de trabajo, y por eso
+// el banco hace `chdir` a una carpeta temporal ANTES de cargar nada.
+//
+// Uso (desde la raíz del worktree, con `dist/` compilado de ese mismo árbol):
+//     cp docs/master/evidencias/SCRUM-1252/c-banco-f1-con-j.cjs.txt "$TMP/banco.cjs"
+//     node "$TMP/banco.cjs" "$PWD"
+//
+// Tres documentos, y los dos de control son los que hacen que una fila valga:
+//   F1J  = type 'F1', número 'J-2026-0001'  ← el caso del ticket
+//   F1   = type 'F1', número 'F260001'      ← control: una factura normal
+//   JUST = type 'JUST', número 'J-2026-0002' ← control: un justificante de verdad
+// Una fila donde F1 y JUST dan lo MISMO no mide nada (el sitio no distingue): se marca CIEGA.
+'use strict';
+const path = require('path');
+const fs = require('fs');
+const os = require('os');
+const zlib = require('zlib');
+const vm = require('vm');
+
+const RAIZ = path.resolve(process.argv[2] || '.');
+const DIST = path.join(RAIZ, 'dist');
+if (!fs.existsSync(path.join(DIST, 'modules'))) { console.log('CIEGO: no hay dist/ en ' + RAIZ); process.exit(2); }
+
+const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1252c-'));
+process.chdir(TMP);
+process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgresql://banco@127.0.0.1:1/banco_1252c_test';
+delete process.env.RESEND_API_KEY; delete process.env.SMTP_URL;
+
+const d = (p) => require(path.join(DIST, p));
+const DOCS = {
+  F1J:  { id: 11, merchantId: 1, customerId: null, type: 'F1',   number: 'J-2026-0001', status: 'paid', total: '121.00', currency: 'EUR', createdAt: new Date('2026-08-05T10:00:00Z'), pdfUrl: 'PENDING_PDF', qrData: 'https://example.invalid/qr', stageLabel: null },
+  F1:   { id: 12, merchantId: 1, customerId: null, type: 'F1',   number: 'F260001',     status: 'paid', total: '121.00', currency: 'EUR', createdAt: new Date('2026-08-05T10:00:00Z'), pdfUrl: 'PENDING_PDF', qrData: 'https://example.invalid/qr', stageLabel: null },
+  JUST: { id: 13, merchantId: 1, customerId: null, type: 'JUST', number: 'J-2026-0002', status: 'paid', total: '121.00', currency: 'EUR', createdAt: new Date('2026-08-05T10:00:00Z'), pdfUrl: 'PENDING_PDF', qrData: 'https://example.invalid/qr', stageLabel: null },
+};
+// Control negativo del propio banco: con SABOTEO=1 el «justificante» de control es una factura
+// más, y TODAS las filas tienen que salir CIEGAS. Si alguna clasifica, el clasificador miente.
+if (process.env.SABOTEO === '1') DOCS.JUST = { ...DOCS.F1, id: 13, number: 'F260002' };
+const MERCHANT_ES = { id: 1, country: 'ES', taxId: 'B00000000', name: 'Banco 1252c', legalName: 'Banco 1252c SL', email: 'banco@example.invalid', logoUrl: null, timezone: 'Europe/Madrid' };
+
+const filas = [];
+async function fila(sitio, como, fn) {
+  const r = {};
+  for (const k of Object.keys(DOCS)) {
+    try { r[k] = await fn({ ...DOCS[k] }); } catch (e) { r[k] = 'LANZA ' + (e && (e.name !== 'Error' ? e.name + ': ' : '') + (e && e.message)); }
+  }
+  // Se compara con el número de cada documento sustituido por <N>: «Tu factura F260001» y
+  // «Tu factura J-2026-0001» dicen lo mismo de su documento.
+  const sin = (k) => JSON.stringify(r[k]).split(DOCS[k].number).join('<N>');
+  const ciega = sin('F1') === sin('JUST');
+  const lado = ciega ? 'CIEGA (F1 = JUST)' : sin('F1J') === sin('F1') ? 'como FACTURA' : sin('F1J') === sin('JUST') ? 'como JUSTIFICANTE' : 'NI UNA NI OTRA';
+  filas.push({ sitio, como, lado, ...r });
+}
+
+// Texto visible de un PDF de pdfkit con fuentes estándar: se inflan los streams y se decodifican
+// los `<hex> Tj/TJ`. Control: el JUST tiene que dar «JUSTIFICANTE DE COBRO», o el lector es ciego.
+function textoDelPdf(buf) {
+  const s = buf.toString('latin1'); const out = [];
+  const re = /stream\r?\n([\s\S]*?)\r?\nendstream/g; let m;
+  while ((m = re.exec(s))) {
+    let plano; try { plano = zlib.inflateSync(Buffer.from(m[1], 'latin1')).toString('latin1'); } catch { continue; }
+    const hx = /<([0-9a-fA-F]+)>/g; let h;
+    while ((h = hx.exec(plano))) out.push(Buffer.from(h[1], 'hex').toString('latin1'));
+  }
+  return out.join('');
+}
+
+(async () => {
+  const { isReceiptNumber } = d('modules/invoicing/domain/invoiceNumber.service.js');
+  const { esJustificante } = d('modules/invoicing/domain/libroRegistro.repo.js');
+  const { debeEstarEnLaCadena } = d('modules/invoicing/domain/portonDocumento.js');
+  const { entraEnLaCadena } = d('modules/invoicing/domain/selladoEstado.js');
+  const vf = d('modules/invoicing/domain/verifactu.service.js');
+
+  // ── Predicados de la casa ────────────────────────────────────────────────────────────────
+  await fila('isReceiptNumber (correo-recibo-WA-recordatorio-pago-anular-R1-sellado lo usan)', 'ejecutado', (x) => isReceiptNumber(x.number));
+  await fila('esJustificante (libro, SCRUM-1232)', 'ejecutado', (x) => esJustificante(x));
+  await fila('lista de Facturas: where del servidor (invoiceAdmin.ts:44)', 'ejecutado: el where de listInvoicesAdmin con cliente falso', async (x) => {
+    const { prisma } = d('core/db/prisma.js');
+    let where = null;
+    Object.defineProperty(prisma, 'invoice', { configurable: true, value: { findMany: async (a) => { where = a.where; return []; }, count: async () => 0 } });
+    const { listInvoicesAdmin } = d('modules/system/invoiceAdmin.js');
+    try { await listInvoicesAdmin(1, 'all'); } catch {}
+    if (!where) return 'CIEGO: no llegó al findMany';
+    const t = where.type && where.type.not; return t ? (x.type === t ? 'fuera' : 'dentro') : 'sin filtro de tipo';
+  });
+
+  // ── Panel (vanilla, se carga el fichero real) ────────────────────────────────────────────
+  const reparto = require(path.join(RAIZ, 'public/dashboard/js/jobDocsReparto.js'));
+  await fila('panel: tipoDeFactura (pila del Trabajo, rail DINERO)', 'ejecutado', (x) => reparto.tipoDeFactura(x));
+  const ctx = { window: {}, tipoDeFactura: reparto.tipoDeFactura, console, URL, fetch: async () => ({ ok: true, json: async () => [] }) };
+  ctx.window.location = { origin: 'http://banco.invalid' };
+  vm.createContext(ctx);
+  vm.runInContext(fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/invoicesView.js'), 'utf8'), ctx, { filename: 'invoicesView.js' });
+  await fila('panel: lista de Facturas, filtro del navegador (invoicesView.js soloFacturas)', 'ejecutado: el fichero real en vm', (x) => (ctx.window.soloFacturas([x]).length ? 'se pinta' : 'NO se pinta'));
+
+  // ── Camino de emisión: SÓLO se llama; el falso cuenta si alguien escribe ──────────────────
+  await fila('cadena de huellas: debeEstarEnLaCadena (portonDocumento.ts)', 'ejecutado, merchant ES con NIF', (x) => debeEstarEnLaCadena(x.number, MERCHANT_ES));
+  await fila('cadena de huellas: entraEnLaCadena (selladoEstado.ts)', 'ejecutado, merchant ES con NIF', (x) => entraEnLaCadena(x.number, MERCHANT_ES));
+  const falso = () => { const llamadas = []; const p = new Proxy({}, { get: (_t, k) => new Proxy(() => {}, { get: (_u, op) => async () => { llamadas.push(String(k) + '.' + String(op)); return null; }, apply: async () => { llamadas.push(String(k)); return null; } }) }); return { p, llamadas }; };
+  await fila('sellado VeriFactu: applyVeriFactu', 'ejecutado con cliente falso', async (x) => {
+    const { p, llamadas } = falso();
+    try { await vf.applyVeriFactu(x, MERCHANT_ES.taxId, p); return 'sigue (' + llamadas.length + ' llamadas a base)'; }
+    catch (e) { return (e.message === 'receipt_document_not_invoiceable' ? 'RECHAZA receipt_document_not_invoiceable' : 'pasa la puerta y cae después') + ' · ' + llamadas.length + ' llamadas a base'; }
+  });
+  await fila('anulación VeriFactu: applyVeriFactuAnulacion', 'ejecutado con cliente falso', async (x) => {
+    const { p, llamadas } = falso();
+    try { await vf.applyVeriFactuAnulacion(x, MERCHANT_ES.taxId, p); return 'sigue'; }
+    catch (e) { return (e.message === 'receipt_document_not_invoiceable' ? 'RECHAZA receipt_document_not_invoiceable' : 'pasa la puerta y cae después') + ' · ' + llamadas.length + ' llamadas a base'; }
+  });
+
+  // ── Des-pagar (invoiceAdmin.ts:261) ─────────────────────────────────────────────────────
+  await fila('panel: des-pagar (paid → pending), updateInvoiceStatusAdmin', 'ejecutado con cliente falso', async (x) => {
+    const { prisma } = d('core/db/prisma.js');
+    Object.defineProperty(prisma, 'invoice', { configurable: true, value: { findFirst: async () => ({ ...x }), update: async (a) => ({ ...x, ...a.data }), updateMany: async () => ({ count: 1 }), findUnique: async () => ({ ...x }) } });
+    const { updateInvoiceStatusAdmin, UnpayNotAllowedError } = d('modules/system/invoiceAdmin.js');
+    try { await updateInvoiceStatusAdmin(x.id, 'pending', 1); return 'SE DES-PAGA'; }
+    catch (e) { return e instanceof UnpayNotAllowedError ? 'NO: ' + e.message : 'pasa la guarda (cae después: ' + e.message.slice(0, 40) + ')'; }
+  });
+
+  // ── Correo (email.service.ts): asunto real, con el PDF sustituido por un fichero vacío ────
+  await fila('correo al cliente: asunto (sendInvoiceEmail)', 'ejecutado: transporte de flujo, sin Resend ni SMTP', async (x) => {
+    const inv = d('lib/invoicing.js');
+    const pdf = path.join(TMP, 'vacio.pdf'); fs.writeFileSync(pdf, '%PDF-1.4\n');
+    inv.ensureInvoicePdf = async () => ({ diskPath: pdf });
+    const fakeP = { invoice: { findUnique: async () => ({ ...x }) }, merchant: { findUnique: async () => MERCHANT_ES }, customer: { findUnique: async () => null } };
+    const antes = new Set(fs.readdirSync(path.join(TMP, 'storage', 'outbox')));
+    const { sendInvoiceEmail } = d('modules/messaging/domain/email.service.js');
+    await sendInvoiceEmail({ invoiceId: x.id, toEmail: 'cliente@example.invalid', prisma: fakeP });
+    const nuevo = fs.readdirSync(path.join(TMP, 'storage', 'outbox')).filter((f) => !antes.has(f));
+    if (!nuevo.length) return 'CIEGO: no dejó .eml';
+    const eml = fs.readFileSync(path.join(TMP, 'storage', 'outbox', nuevo[0]), 'utf8');
+    const sub = (eml.match(/^Subject: (.*)$/m) || [])[1] || '';
+    return sub.startsWith('=?') ? Buffer.from(sub.split('?')[3], sub.split('?')[2] === 'B' ? 'base64' : 'latin1').toString('utf8') : sub;
+  });
+
+  // ── PDF (pdf.service.ts): título real, extraído del fichero ──────────────────────────────
+  await fila('PDF: título y rótulo del número (generateInvoicePdf)', 'ejecutado: PDF real generado y leído', async (x) => {
+    const pdfs = d('modules/invoicing/infra/pdf/pdf.service.js');
+    const gen = pdfs.generateInvoicePdf || pdfs.generateInvoicePDF;
+    if (typeof gen !== 'function') return 'CIEGO: no encuentro el generador (' + Object.keys(pdfs).join(',') + ')';
+    const r = await gen({ invoiceId: x.id, merchantId: 1, merchant: MERCHANT_ES, customer: { name: 'Cliente banco' }, number: x.number, total: x.total, qrData: x.qrData, vfHash: null, createdAt: x.createdAt, lines: [{ concept: 'Trabajo', qty: 1, price: 100, tax: 21 }], type: x.type, zona: 'Europe/Madrid' });
+    const ruta = (r && (r.diskPath || r.path || r.outPath)) || path.join(TMP, 'storage', 'invoices', `1-${x.number}.pdf`);
+    await new Promise((ok) => setTimeout(ok, 300));
+    const txt = textoDelPdf(fs.readFileSync(ruta));
+    const t = ['JUSTIFICANTE DE COBRO', 'FACTURA RECTIFICATIVA', 'FACTURA'].find((w) => txt.includes(w)) || '¿?';
+    const n = txt.includes('Ref. ' + x.number) ? 'Ref. ' + x.number : txt.includes('Nº ' + x.number) ? 'Nº ' + x.number : '¿nº?';
+    const tot = txt.includes('TOTAL COBRADO:') ? 'TOTAL COBRADO:' : txt.includes('TOTAL:') ? 'TOTAL:' : '¿total?';
+    const qr = (fs.readFileSync(ruta, 'latin1').match(/\/Subtype \/Image/g) || []).length ? 'con QR' : 'sin QR';
+    return `${t} · ${n} · ${tot} · ${qr}`;
+  });
+
+  // ── Salida ───────────────────────────────────────────────────────────────────────────────
+  for (const f of filas) console.log(`${f.lado.padEnd(18)} | ${f.sitio} | ${f.como}\n    F1J=${JSON.stringify(f.F1J)}\n    F1 =${JSON.stringify(f.F1)}\n    JUST=${JSON.stringify(f.JUST)}`);
+  const n = (l) => filas.filter((f) => f.lado.startsWith(l)).length;
+  console.log(`\nPOBLACION filas=${filas.length} · como FACTURA=${n('como FACTURA')} · como JUSTIFICANTE=${n('como JUSTIFICANTE')} · CIEGA=${n('CIEGA')} · NI UNA NI OTRA=${n('NI UNA')}`);
+  process.exit(0);
+})().catch((e) => { console.log('BANCO REVENTADO: ' + (e && e.stack)); process.exit(1); });

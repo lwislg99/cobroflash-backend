@@ -529,3 +529,70 @@ se pinta nada. Distinguir esas dos causas pide su `/admin/me`, que no he consult
 prueba el CÓDIGO del panel con el modo puesto a mano, no la pantalla de nadie. Qué modo le da el servidor
 a cada comercio lo vigila `scrum298`; el valor de `INVOICING_ES_ENABLED` en Railway no lo he consultado, ni
 ninguna base.
+
+# SCRUM-1257f · El censo, re-medido: 10 literales, 0 muertos, 0 falsos, nada que quitar
+
+**Medido contra:** `origin/main` = `25ad5d43b6a8ed41fdcb90c5fdbc0e2e388ec1be` · 2026-10-24T10:04:22Z (J3, sesión jv-j3az; hora de GitHub)
+
+A9: sin fallo que generalice — el único tropiezo fue pasar al censo sus dos argumentos al revés, y lo paró el propio instrumento con un error («Cannot find module 'typescript'»), no con un cero
+
+Encargo del orquestador (`cobroflash-backend-95`): re-medir el censo por programa y, para cada literal, decir
+si está vivo o muerto, qué dice, si es falso hoy y de qué carril es. Los muertos de J3 o sin cerradura, quitarlos
+con su prueba de inalcanzable; los vivos y falsos, a pregunta ✅/❌. **Sólo docs: no se toca ningún fichero de
+`public/` ni de `src/`.**
+
+## 0 · Cómo se midió
+
+- `git archive origin/main public` extraído FUERA del árbol, y el instrumento de §0
+  (`tests/banco-scrum1257/censo-vocabulario-justificante.mjs`, AST de TypeScript, comentarios aparte). Población:
+  todos los `.js` de `public/dashboard/js` más `index.html`.
+- **Positivo SEMBRADO**, no prestado del árbol: una copia del archivo con un fichero fabricado
+  (`zzSembrado.js`, un literal y un comentario con la palabra). Da **11 literales · 80 comentarios** contra
+  **10 · 79** sin él, y el literal sembrado sale 1 vez. El instrumento ve lo que tiene que ver.
+- ⚠️ El instrumento cuenta **literales**, no textos que vea alguien: una clave de comparación
+  (`=== 'justificante'`) entra igual que un rótulo. Por eso la columna «¿lo ve alguien?» de abajo es lectura
+  del código, fichero a fichero, y no sale del censo.
+
+## 1 · Los 10, uno a uno
+
+Toda la rama visible depende de que el documento sea un `J-` antiguo: `tipoDeFactura`
+(`jobDocsReparto.js:34`), `isReceipt` (`invoiceDetailView.js:91`) y `isJust` (`email.service.ts:39`) miran
+`type === 'JUST'` o el número que empieza por `J-`. Según SCRUM-1252 c.20700 (dato del orquestador, **no
+medido por mí: no toco bases**) hay 2 filas `J-` en producción, así que esas ramas **son alcanzables**: la
+ficha de la factura se abre desde Cobros. Ninguna es código muerto.
+
+| # | Literal (fichero:línea en `main`) | ¿Lo ve alguien? | ¿Falso hoy? | Carril |
+|---|---|---|---|---|
+| 1 | `cobrosView.js:73` «No se pudo enviar el justificante al cliente por email.» (D5) | sí, si falla el correo de un `J-` (clase `justificante`, la escribe `email.service.ts:50`) | no: el documento ES un justificante | J2 |
+| 2 | `invoiceDetailView.js:93` «Justificante de cobro» (D1) | sí, ficha de un `J-` | no | J1 |
+| 3 | `invoiceDetailView.js:94` «Detalle y acciones del justificante.» (D2) | sí, ficha de un `J-` | no | J1 |
+| 4 | `invoiceDetailView.js:138` «JUSTIFICANTE» (chip, D3) | sí, ficha de un `J-` | no | J1 |
+| 5 | `invoiceDetailView.js:541` tooltip de la reclamación del banco, rama `J-` de P7 | sí, `J-` con `chargeId` | no: el paquete lleva ESE documento | J1 |
+| 6 | `invoicesView.js:81` `'justificante'` | **no**: clave del filtro `soloFacturas` | — | J1 |
+| 7 | `jobDetailView.js:24` «Justificante» (D4) | sí, documento `J-` en la ficha del trabajo | no | S2 |
+| 8 | `jobDocsReparto.js:36` `'justificante'` | **no**: valor de retorno de `tipoDeFactura` | — | S2 |
+| 9 | `jobRailBlocks.js:157` `'justificante'` | **no**: clave de comparación | — | S2 |
+| 10 | `quotesDetailView.js:410` «🧾 Ver justificante», rama `J-` de P6 | sí, presupuesto cobrado con un `J-` | no | S2 |
+
+Carril leído con `node scripts/carriles.mjs de <ruta>` para cada uno; **ninguno es de J3**. Este registro
+es `sin-cerradura`.
+
+## 2 · Lo que sale
+
+- **Muertos: 0.** Nada que quitar; aunque los hubiera, ninguno está en un fichero de J3.
+- **Vivos y falsos: 0.** Los siete visibles sólo salen con un `J-`, y a un `J-` lo llaman por lo que es. No
+  hay pregunta ✅/❌ de microcopy que llevar al fundador.
+- La única pregunta que queda es la de siempre, y **no es de este ticket**: si los `J-` antiguos se siguen
+  llamando «justificante» (D1-D5 más las dos ramas `J-` de P6 y P7). Es SCRUM-1252, y llamarlos «factura»
+  sería claim fiscal (regla 7) sobre un documento emitido (regla 29).
+- Cuadra con el estado de c.17676: A 0 de 8, B 0 de 3, D 5 de 5 intactos; C3 (P8) entró en #2034. Los
+  10 de hoy son los 5 de D (el correo de Cobros es D5, ahora firmado en SCRUM-1235), las dos ramas `J-` que
+  P6 y P7 conservaron a propósito y tres claves internas.
+
+## 3 · Qué no se ha medido
+
+- Ninguna base: el «2 filas `J-` en producción» es de SCRUM-1252 c.20700, no mío. Si son `type: 'JUST'` o
+  `F1` con número `J-` no lo he mirado; el panel las clasifica igual (por tipo **o** por número).
+- Ni pantalla en yaqu.app (pide sesión iniciada y un `J-`, y las sesiones no tocan credenciales).
+- Ni los textos que manda el servidor, el PDF, los correos ni WhatsApp: el suelo de §0 sigue igual (J1).
+- Suite entera local: NO CORRIDA (diez sesiones a la vez; este cambio es sólo este fichero).

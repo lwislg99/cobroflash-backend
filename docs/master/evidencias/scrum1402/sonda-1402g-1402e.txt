@@ -1,0 +1,114 @@
+SONDA 1402g · rama 1402e efce6a0e6e7e82bdf4d2cb58c463d96ab84b9846 · 108 eventos firmados por la ruta montada
+tipo | estado Stripe | metadata | HTTP | cuerpo | escrituras en Merchant | gateway_events | avisos | logs | premio | correo
+checkout.session.completed | mode=subscription | plan=pro (control) | 200 | {"received":true} | {"stripeCustomerId":"cus_scrum1402g","plan":"pro","subscriptionStatus":"active"} | — | 0 | 0 | 1 | 1
+checkout.session.completed | mode=subscription | sin plan | 200 | {"received":true} | — | — | 0 | 0 | 0 | 0
+checkout.session.completed | mode=subscription | plan vacío | 200 | {"received":true} | — | — | 0 | 0 | 0 | 0
+checkout.session.completed | mode=subscription | sin metadata | 200 | {"received":true} | — | — | 0 | 0 | 0 | 0
+checkout.session.completed | mode=subscription | plan sin merchant (control 0) | 200 | {"received":true} | — | — | 0 | 0 | 0 | 0
+checkout.session.completed | mode=subscription | plan desconocido (control versión) | 200 | {"received":true} | — | — | 1: [stripe] ⚠️ plan desconocido "Equipo" (merchant 14027) en checkout.ses… | 0 | 0 | 0
+sub.created | active | plan=pro (control) | 200 | {"received":true} | {"plan":"pro","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402g","planExpiresAt":"2030-01-01T00:00:00.000Z"} | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | active | sin plan | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | active | plan vacío | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | active | sin metadata | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | active | plan sin merchant (control 0) | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | active | plan desconocido (control versión) | 200 | {"received":true} | — | abre,processedAt | 1: [stripe] ⚠️ plan desconocido "Equipo" (merchant 14027) en customer.sub… | 0 | 0 | 0
+sub.created | trialing | plan=pro (control) | 200 | {"received":true} | {"plan":"pro","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402g","planExpiresAt":"2030-01-01T00:00:00.000Z"} | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | trialing | sin plan | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | trialing | plan vacío | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | trialing | sin metadata | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | trialing | plan sin merchant (control 0) | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | trialing | plan desconocido (control versión) | 200 | {"received":true} | — | abre,processedAt | 1: [stripe] ⚠️ plan desconocido "Equipo" (merchant 14027) en customer.sub… | 0 | 0 | 0
+sub.created | past_due | plan=pro (control) | 200 | {"received":true} | {"plan":"pro","subscriptionStatus":"past_due","stripeSubscriptionId":"sub_scrum1402g"} | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | past_due | sin plan | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | past_due | plan vacío | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | past_due | sin metadata | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | past_due | plan sin merchant (control 0) | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | past_due | plan desconocido (control versión) | 200 | {"received":true} | {"subscriptionStatus":"past_due"} | abre,processedAt | 1: [stripe] ⚠️ plan desconocido "Equipo" (merchant 14027) en customer.sub… | 0 | 0 | 0
+sub.created | unpaid | plan=pro (control) | 200 | {"received":true} | {"plan":"pro","subscriptionStatus":"past_due","stripeSubscriptionId":"sub_scrum1402g"} | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | unpaid | sin plan | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | unpaid | plan vacío | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | unpaid | sin metadata | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | unpaid | plan sin merchant (control 0) | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | unpaid | plan desconocido (control versión) | 200 | {"received":true} | {"subscriptionStatus":"past_due"} | abre,processedAt | 1: [stripe] ⚠️ plan desconocido "Equipo" (merchant 14027) en customer.sub… | 0 | 0 | 0
+sub.created | canceled | plan=pro (control) | 200 | {"received":true} | {"plan":"trial","subscriptionStatus":"canceled","stripeSubscriptionId":null} | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | canceled | sin plan | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | canceled | plan vacío | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | canceled | sin metadata | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | canceled | plan sin merchant (control 0) | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | canceled | plan desconocido (control versión) | 200 | {"received":true} | {"plan":"trial","subscriptionStatus":"canceled","stripeSubscriptionId":null} | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | incomplete_expired | plan=pro (control) | 200 | {"received":true} | {"plan":"trial","subscriptionStatus":"canceled","stripeSubscriptionId":null} | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | incomplete_expired | sin plan | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | incomplete_expired | plan vacío | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | incomplete_expired | sin metadata | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | incomplete_expired | plan sin merchant (control 0) | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | incomplete_expired | plan desconocido (control versión) | 200 | {"received":true} | {"plan":"trial","subscriptionStatus":"canceled","stripeSubscriptionId":null} | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | incomplete | plan=pro (control) | 200 | {"received":true} | — | abre,processedAt | 0 | 1: [stripe] estado de suscripción sin mapeo directo: incomplete (merchant… | 0 | 0
+sub.created | incomplete | sin plan | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | incomplete | plan vacío | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | incomplete | sin metadata | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | incomplete | plan sin merchant (control 0) | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | incomplete | plan desconocido (control versión) | 200 | {"received":true} | — | abre,processedAt | 0 | 1: [stripe] estado de suscripción sin mapeo directo: incomplete (merchant… | 0 | 0
+sub.created | paused | plan=pro (control) | 200 | {"received":true} | — | abre,processedAt | 0 | 1: [stripe] estado de suscripción sin mapeo directo: paused (merchant 140… | 0 | 0
+sub.created | paused | sin plan | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | paused | plan vacío | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | paused | sin metadata | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | paused | plan sin merchant (control 0) | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.created | paused | plan desconocido (control versión) | 200 | {"received":true} | — | abre,processedAt | 0 | 1: [stripe] estado de suscripción sin mapeo directo: paused (merchant 140… | 0 | 0
+sub.updated | active | plan=pro (control) | 200 | {"received":true} | {"plan":"pro","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402g","planExpiresAt":"2030-01-01T00:00:00.000Z"} | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | active | sin plan | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | active | plan vacío | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | active | sin metadata | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | active | plan sin merchant (control 0) | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | active | plan desconocido (control versión) | 200 | {"received":true} | — | abre,processedAt | 1: [stripe] ⚠️ plan desconocido "Equipo" (merchant 14027) en customer.sub… | 0 | 0 | 0
+sub.updated | trialing | plan=pro (control) | 200 | {"received":true} | {"plan":"pro","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402g","planExpiresAt":"2030-01-01T00:00:00.000Z"} | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | trialing | sin plan | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | trialing | plan vacío | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | trialing | sin metadata | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | trialing | plan sin merchant (control 0) | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | trialing | plan desconocido (control versión) | 200 | {"received":true} | — | abre,processedAt | 1: [stripe] ⚠️ plan desconocido "Equipo" (merchant 14027) en customer.sub… | 0 | 0 | 0
+sub.updated | past_due | plan=pro (control) | 200 | {"received":true} | {"plan":"pro","subscriptionStatus":"past_due","stripeSubscriptionId":"sub_scrum1402g"} | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | past_due | sin plan | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | past_due | plan vacío | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | past_due | sin metadata | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | past_due | plan sin merchant (control 0) | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | past_due | plan desconocido (control versión) | 200 | {"received":true} | {"subscriptionStatus":"past_due"} | abre,processedAt | 1: [stripe] ⚠️ plan desconocido "Equipo" (merchant 14027) en customer.sub… | 0 | 0 | 0
+sub.updated | unpaid | plan=pro (control) | 200 | {"received":true} | {"plan":"pro","subscriptionStatus":"past_due","stripeSubscriptionId":"sub_scrum1402g"} | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | unpaid | sin plan | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | unpaid | plan vacío | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | unpaid | sin metadata | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | unpaid | plan sin merchant (control 0) | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | unpaid | plan desconocido (control versión) | 200 | {"received":true} | {"subscriptionStatus":"past_due"} | abre,processedAt | 1: [stripe] ⚠️ plan desconocido "Equipo" (merchant 14027) en customer.sub… | 0 | 0 | 0
+sub.updated | canceled | plan=pro (control) | 200 | {"received":true} | {"plan":"trial","subscriptionStatus":"canceled","stripeSubscriptionId":null} | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | canceled | sin plan | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | canceled | plan vacío | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | canceled | sin metadata | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | canceled | plan sin merchant (control 0) | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | canceled | plan desconocido (control versión) | 200 | {"received":true} | {"plan":"trial","subscriptionStatus":"canceled","stripeSubscriptionId":null} | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | incomplete_expired | plan=pro (control) | 200 | {"received":true} | {"plan":"trial","subscriptionStatus":"canceled","stripeSubscriptionId":null} | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | incomplete_expired | sin plan | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | incomplete_expired | plan vacío | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | incomplete_expired | sin metadata | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | incomplete_expired | plan sin merchant (control 0) | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | incomplete_expired | plan desconocido (control versión) | 200 | {"received":true} | {"plan":"trial","subscriptionStatus":"canceled","stripeSubscriptionId":null} | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | incomplete | plan=pro (control) | 200 | {"received":true} | — | abre,processedAt | 0 | 1: [stripe] estado de suscripción sin mapeo directo: incomplete (merchant… | 0 | 0
+sub.updated | incomplete | sin plan | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | incomplete | plan vacío | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | incomplete | sin metadata | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | incomplete | plan sin merchant (control 0) | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | incomplete | plan desconocido (control versión) | 200 | {"received":true} | — | abre,processedAt | 0 | 1: [stripe] estado de suscripción sin mapeo directo: incomplete (merchant… | 0 | 0
+sub.updated | paused | plan=pro (control) | 200 | {"received":true} | — | abre,processedAt | 0 | 1: [stripe] estado de suscripción sin mapeo directo: paused (merchant 140… | 0 | 0
+sub.updated | paused | sin plan | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | paused | plan vacío | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | paused | sin metadata | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | paused | plan sin merchant (control 0) | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.updated | paused | plan desconocido (control versión) | 200 | {"received":true} | — | abre,processedAt | 0 | 1: [stripe] estado de suscripción sin mapeo directo: paused (merchant 140… | 0 | 0
+sub.deleted | canceled | plan=pro (control) | 200 | {"received":true} | {"plan":"trial","subscriptionStatus":"canceled","stripeSubscriptionId":null} | abre,processedAt | 0 | 0 | 0 | 0
+sub.deleted | canceled | sin plan | 200 | {"received":true} | {"plan":"trial","subscriptionStatus":"canceled","stripeSubscriptionId":null} | abre,processedAt | 0 | 0 | 0 | 0
+sub.deleted | canceled | plan vacío | 200 | {"received":true} | {"plan":"trial","subscriptionStatus":"canceled","stripeSubscriptionId":null} | abre,processedAt | 0 | 0 | 0 | 0
+sub.deleted | canceled | sin metadata | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.deleted | canceled | plan sin merchant (control 0) | 200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+sub.deleted | canceled | plan desconocido (control versión) | 200 | {"received":true} | {"plan":"trial","subscriptionStatus":"canceled","stripeSubscriptionId":null} | abre,processedAt | 0 | 0 | 0 | 0
+CONTROL POSITIVO (plan=pro escribe pro en las puertas que escriben): 9 de 9
+CONTROL A CERO (plan sin merchant no escribe): 0 filas que escriben (tiene que ser 0)
+CONTROL DE VERSIÓN (plan desconocido + impago escribe sólo past_due): 4 de 4 — main da 0; la rama de 1402e da todas
+VEREDICTO: MIDE

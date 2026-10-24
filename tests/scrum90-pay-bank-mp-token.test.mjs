@@ -15,6 +15,28 @@ import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TE
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
+import http from 'node:http';
+
+// `node:http` sin agente y no `fetch` (SCRUM-1218d): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de `fetch`
+// (status, headers.get, text, json) y, como el `redirect: 'manual'` de antes, no sigue redirecciones.
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    let d = ''; r.setEncoding('utf8');
+    r.on('data', (t) => { d += t; });
+    r.on('end', () => ok({
+      status: r.statusCode,
+      headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+      text: async () => d,
+      json: async () => JSON.parse(d),
+    }));
+  });
+  req.on('error', mal);
+  req.end(body);
+});
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
@@ -60,32 +82,32 @@ test('SCRUM-90: /pay/bank y /pay/mp cierran el IDOR — numérico 404 sin fuga d
     const tokenB = await ensureChargeReceiptToken(B.charge.id, prisma);
 
     // ── /pay/bank: numérico 404 sin fuga del IBAN, token 200 con el IBAN correcto ──
-    const rNumBank = await fetch(`${base}/pay/bank/${A.charge.id}`);
+    const rNumBank = await pedirSinAgente(`${base}/pay/bank/${A.charge.id}`);
     assert.equal(rNumBank.status, 404, `GET /pay/bank/<id numérico> debe ser 404 y fue ${rNumBank.status}`);
     const numBankBody = await rNumBank.text();
     assert.ok(!numBankBody.includes(A.merchant.iban), 'FUGA GRAVE: el 404 numérico expone el IBAN del merchant');
 
-    const rBank = await fetch(`${base}/pay/bank/${tokenA}`);
+    const rBank = await pedirSinAgente(`${base}/pay/bank/${tokenA}`);
     assert.equal(rBank.status, 200, `GET /pay/bank/:token debe ser 200 y fue ${rBank.status}`);
     const bankBody = await rBank.text();
     assert.ok(bankBody.includes(A.merchant.iban), 'con el token correcto sí debe verse el propio IBAN');
 
     // token de OTRO cobro (B) no debe mostrar el IBAN de A
-    const rBankB = await fetch(`${base}/pay/bank/${tokenB}`);
+    const rBankB = await pedirSinAgente(`${base}/pay/bank/${tokenB}`);
     assert.equal(rBankB.status, 200);
     const bankBodyB = await rBankB.text();
     assert.ok(bankBodyB.includes(B.merchant.iban), 'token de B debe mostrar el IBAN de B');
     assert.ok(!bankBodyB.includes(A.merchant.iban), 'FUGA GRAVE: el token de B no debe mostrar el IBAN de A');
 
     // ── /pay/mp: numérico 404; token resuelve el cobro (503 sin MP configurado, nunca 404) ──
-    const rNumMp = await fetch(`${base}/pay/mp/${A.charge.id}`, { redirect: 'manual' });
+    const rNumMp = await pedirSinAgente(`${base}/pay/mp/${A.charge.id}`, { redirect: 'manual' });
     assert.equal(rNumMp.status, 404, `GET /pay/mp/<id numérico> debe ser 404 y fue ${rNumMp.status}`);
 
-    const rMp = await fetch(`${base}/pay/mp/${tokenA}`, { redirect: 'manual' });
+    const rMp = await pedirSinAgente(`${base}/pay/mp/${tokenA}`, { redirect: 'manual' });
     assert.notEqual(rMp.status, 404, `GET /pay/mp/:token debe RESOLVER el cobro (no 404) y fue ${rMp.status}`);
 
     // ── /pay/mp/:token/result: numérico ya no aplica (ruta por token); token 200 ──
-    const rResult = await fetch(`${base}/pay/mp/${tokenA}/result?status=approved`);
+    const rResult = await pedirSinAgente(`${base}/pay/mp/${tokenA}/result?status=approved`);
     assert.equal(rResult.status, 200, `GET /pay/mp/:token/result debe ser 200 y fue ${rResult.status}`);
     const resultBody = await rResult.text();
     assert.ok(resultBody.includes('30.00') || resultBody.includes('30,00'), 'la página de resultado debe mostrar el importe del cobro correcto');

@@ -1,0 +1,34 @@
+== CENSO POR AST · población: 2415 ficheros (src, tests, scripts, public) ==
+cuadra S0 SUELO de población  {"porEncimaDelSuelo":true}
+cuadra C0 SEMBRADO: 1 llamada, 1 lectura; el prefijo y el comentario no cuentan  {"llamadas":1,"lecturas":1,"total":2}
+cuadra C1 CERO: un nombre que no existe  {"apariciones":0}
+
+-- plantillasDeHoy --
+   declaracion src/modules/messaging/domain/whatsappLog.service.ts:120        plantillasDeHoy
+   llamada     src/modules/messaging/domain/whatsappLog.service.ts:156        reservarPlantilla
+   llamada     src/modules/messaging/domain/whatsappLog.service.ts:499        getWhatsAppMetrics
+   cadena      tests/scrum529-a-que-numero-se-envio.test.mjs:239              nivel superior
+
+-- sinLosAvisosAlProfesional --
+   declaracion src/modules/messaging/domain/whatsappLog.service.ts:134        sinLosAvisosAlProfesional
+   llamada     src/modules/messaging/domain/whatsappLog.service.ts:168        reservarPlantilla
+   llamada     src/modules/messaging/domain/whatsappLog.service.ts:499        getWhatsAppMetrics
+
+-- templateToday --
+   referencia  src/modules/messaging/domain/whatsappLog.service.ts:421        nivel superior
+   clave       src/modules/messaging/domain/whatsappLog.service.ts:473        getWhatsAppMetrics
+   clave       src/modules/messaging/domain/whatsappLog.service.ts:498        getWhatsAppMetrics
+   lectura     tests/scrum1522b-el-panel-cuenta-lo-mismo.test.mjs:112         medir
+   clave       tests/scrum530-la-alerta-que-no-puede-pronunciarse.test.mjs:55 metricas
+   clave       scripts/_datos-del-censo.mjs:315                               nivel superior
+   clave       public/dashboard/js/reportsView.js:775                         loadWhatsAppMetrics
+   lectura     public/dashboard/js/reportsView.js:821                         loadWhatsAppMetrics
+   lectura     public/dashboard/js/reportsView.js:821                         loadWhatsAppMetrics
+
+== LO QUE SE PREGUNTA ==
+cuadra P1 llamadas a plantillasDeHoy en src/, por función  {"funciones":["getWhatsAppMetrics","reservarPlantilla"]}
+cuadra P2 llamadas al filtro nuevo en src/, por función  {"funciones":["getWhatsAppMetrics","reservarPlantilla"]}
+cuadra P3 quién LEE `.templateToday` en public/ (la cifra que cambia)  {"sitios":["public/dashboard/js/reportsView.js","public/dashboard/js/reportsView.js"]}
+cuadra P4 quién LEE `.templateToday` en src/ y scripts/  {"src":0,"scripts":0}
+
+TODO CUADRA

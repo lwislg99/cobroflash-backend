@@ -238,6 +238,12 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // que arma cada ruta (con su recorte o sin el), y lo contesta Postgres. El caso sin base (la
   // lista del trinquete solo nombra sondas que existen) corre siempre.
   'scrum1346-el-tecnico-ve-documentos-ajenos.test.mjs': 4,
+  // SCRUM-1145: el que crea, edita y borra un sitio por la RUTA real, con sesiones de verdad en dos
+  // merchants. Necesita banco porque lo que vigila es la tenencia (un merchant no ve ni toca el
+  // sitio de otro: la consulta la contesta Postgres) y que borrar un sitio deja intacta la dirección
+  // ya copiada en un presupuesto, que es otra fila. La pantalla (once casos en el banco de vistas)
+  // corre siempre.
+  'scrum1145-pestana-sitios.test.mjs': 1,
   // SCRUM-1150c: los DOS que miran que dos «Crear revision» a la vez no dejan dos filas con la
   // misma revision. Necesitan banco porque lo que vigilan es del MOTOR: que
   // `pg_advisory_xact_lock` hace esperar de verdad a la segunda creacion (se mira en `pg_locks`)
@@ -250,6 +256,16 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // lo que vigilan es la CUENTA de documentos con el recorte de las dos puertas, y eso lo contesta
   // Postgres. Los dos casos AST corren siempre.
   'scrum1390e-el-portal-solo-lo-suyo.test.mjs': 4,
+  // SCRUM-1599f (primer lote del diseño B de SCRUM-1599, c.20715): cuatro que hasta aquí SÓLO
+  // corrían con `QA_DB_TEST=1` (staging) y que CI saltaba sin que nadie lo viera. Conservan
+  // staging y ganan éste como segundo destino, con `_banco-libro.mjs`. Necesitan banco porque lo
+  // que vigilan es lo que queda ESCRITO: el autor del gasto (109), el filtro por fecha de
+  // ejecución de trabajos.csv (106), los clientes referenciados del paquete (104) y la tenencia
+  // de la cotización y el proveedor de un gasto (135). El caso sin base de 106 corre siempre.
+  'scrum109-expense-teammember.test.mjs': 2,
+  'scrum106-trabajos-fecha.test.mjs': 1,
+  'scrum104-clientes-referenciados.test.mjs': 1,
+  'scrum135-gasto-tenencia.test.mjs': 4,
 });
 const TOTAL_DECLARADO = Object.values(GATEADOS_DECLARADOS).reduce((a, b) => a + b, 0);
 

@@ -60,3 +60,34 @@ a «Pagado / ✓ Cobrado / Cobrado del todo», los dos controles siguen igual y 
 **Lo que no está medido:** la población es la de 1439 (cantidad 1, un tipo, 21 %, 2 decimales), no la
 de presupuestos reales. Con tipos mezclados o planes personalizados, el reparto puede salir en otra
 proporción.
+
+## SCRUM-1451b · 23-oct-2026 · S4 · ¿se ve en producción? No: la cuenta QA no puede llegar al estado
+
+**Medido contra:** `origin/main` = `6c8706daef7399513e69e6872068aa7bed25b760` · 2026-10-23T12:38:09Z ·
+`yaqu.app/version` = el mismo SHA (cabecera `Date` 12:28:10Z).
+
+A9: sin fallo que generalice — sólo medir, con GET de `scripts/qa/sesion-panel.mjs`; sin código ni sonda nueva
+
+Encargo del orquestador: con producción viva, ¿se puede reproducir de punta a punta en la cuenta QA el
+«Te falta por cobrar · 0,01 €»? **No, y es una respuesta con motivo, no un «no pude mirar»:**
+
+| qué | ruta (cuenta `luisdragonball+qa@gmail.com`, merchant 46) | lo recibido |
+|---|---|---|
+| modo de emisión del merchant | `GET /admin/me` → 200 | `"modoEmision": "receipt"` → con `INVOICING_ES_ENABLED` en OFF para este merchant (`emission.service.ts:40`). Esto mide lo que ayer quedó «no medido»: el efecto del flag en la cuenta QA |
+| facturas | `GET /admin/invoices` → 200 | `[]` |
+| trabajos | `GET /admin/jobs` → 200, 3 filas | el #77 (presupuesto #206, `FULL_UPFRONT`, 1,21 €) da `"estadoCobro": "Pendiente"`, `totalCobrado` 0, `invoices: []` — **control positivo:** el semáforo se lee; lo que falta es el dinero |
+
+**Por qué no se llega.** `totalCobrado` es la suma de las facturas `paid` de los presupuestos del Trabajo
+(`job.service.ts:313-317`). Sin factura no hay cobro que sumar, y las dos vías de factura de un
+presupuesto contestan `409 facturacion_no_disponible` en modo `receipt`
+(`quotesAdmin.routes.ts:258` y `:582`, regla 24 / SCRUM-1027). **Leído en el código, no intentado, a
+propósito:** intentarlo es pedir una factura, y R25 (condición 5) lo excluye siempre. Tampoco se crea
+otro merchant (puerta de SCRUM-390, aviso del orquestador del 23-oct).
+
+**Quién sí llega hoy (MI LECTURA del código, no visto):** un merchant de fuera de España (modo `fiscal`,
+`emission.service.ts:38`) y el demo (modo `demo`, regla 8: no se toca). En España, nadie hasta que el
+flag se encienda tras SIF-1. Sin clientes reales, hoy no hay a quién le pase.
+
+Los tres sitios del arreglo siguen siendo de otros (servidor `job.service.ts:424` → S1; lista y ficha →
+S2), y la pregunta de si un céntimo corto cuenta como «cobrado del todo» sigue en la lista del fundador.
+No se ha tocado código.

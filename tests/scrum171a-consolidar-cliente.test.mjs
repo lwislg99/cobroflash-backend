@@ -14,6 +14,28 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
+import http from 'node:http';
+
+// `node:http` sin agente y no `fetch` (SCRUM-1218d): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de `fetch`
+// (status, headers.get, text, json) y, como el `redirect: 'manual'` de antes, no sigue redirecciones.
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    let d = ''; r.setEncoding('utf8');
+    r.on('data', (t) => { d += t; });
+    r.on('end', () => ok({
+      status: r.statusCode,
+      headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+      text: async () => d,
+      json: async () => JSON.parse(d),
+    }));
+  });
+  req.on('error', mal);
+  req.end(body);
+});
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 const LINEAS = [{ concepto: 'Mantenimiento mensual', cantidad: 2, unidad: 'h', precioUnitario: 50, tipoIva: 21 }];
@@ -61,11 +83,11 @@ test('SCRUM-171a: consolidar por CLIENTE cruzando Trabajos, con rotura por mes',
         await prisma.authSession.create({
           data: { merchantId: merchant.id, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) },
         });
-        const verify = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
+        const verify = await pedirSinAgente(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
         const cookie = (verify.headers.get('set-cookie') || '').split(';')[0];
         assert.ok(cookie.startsWith('pf_session='), 'no se obtuvo cookie de sesión');
 
-        const consolidar = (body) => fetch(`${base}/admin/albaranes/consolidar`, {
+        const consolidar = (body) => pedirSinAgente(`${base}/admin/albaranes/consolidar`, {
           method: 'POST', headers: { cookie, 'Content-Type': 'application/json' }, body: JSON.stringify(body),
         });
 
@@ -139,10 +161,10 @@ test('SCRUM-171a: consolidar por CLIENTE cruzando Trabajos, con rotura por mes',
         });
         const token = 'qa171b-' + crypto.randomBytes(12).toString('hex');
         await prisma.authSession.create({ data: { merchantId: mA.id, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) } });
-        const verify = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
+        const verify = await pedirSinAgente(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
         const cookieA = (verify.headers.get('set-cookie') || '').split(';')[0];
 
-        const res = await fetch(`${base}/admin/albaranes/consolidar`, {
+        const res = await pedirSinAgente(`${base}/admin/albaranes/consolidar`, {
           method: 'POST', headers: { cookie: cookieA, 'Content-Type': 'application/json' },
           body: JSON.stringify({ customerId: cB.id, albaranIds: [aB.id] }),
         });
