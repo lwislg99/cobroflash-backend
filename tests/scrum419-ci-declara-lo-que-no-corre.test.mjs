@@ -256,6 +256,16 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // lo que vigilan es la CUENTA de documentos con el recorte de las dos puertas, y eso lo contesta
   // Postgres. Los dos casos AST corren siempre.
   'scrum1390e-el-portal-solo-lo-suyo.test.mjs': 4,
+  // SCRUM-1599f (primer lote del diseño B de SCRUM-1599, c.20715): cuatro que hasta aquí SÓLO
+  // corrían con `QA_DB_TEST=1` (staging) y que CI saltaba sin que nadie lo viera. Conservan
+  // staging y ganan éste como segundo destino, con `_banco-libro.mjs`. Necesitan banco porque lo
+  // que vigilan es lo que queda ESCRITO: el autor del gasto (109), el filtro por fecha de
+  // ejecución de trabajos.csv (106), los clientes referenciados del paquete (104) y la tenencia
+  // de la cotización y el proveedor de un gasto (135). El caso sin base de 106 corre siempre.
+  'scrum109-expense-teammember.test.mjs': 2,
+  'scrum106-trabajos-fecha.test.mjs': 1,
+  'scrum104-clientes-referenciados.test.mjs': 1,
+  'scrum135-gasto-tenencia.test.mjs': 4,
 });
 const TOTAL_DECLARADO = Object.values(GATEADOS_DECLARADOS).reduce((a, b) => a + b, 0);
 

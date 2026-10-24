@@ -551,3 +551,51 @@ reglas y 71 filas). Corridos: `scrum1295`, `1408`, `1480e`, `1480f`, `514` en ve
 
 ⚠️ Esta rama y la de SCRUM-1507d (#2660) cambian las dos la línea `sha` de `carriles.json`: la segunda que
 entre lo hace después de traer `main` y regenerar (A4: una cifra derivada se regenera, no se elige).
+
+---
+
+## SCRUM-1480h · Seis filas de carril ya decididas: el utillaje de antes de la división (S5) y lo que dejó el equipo J (J6)
+
+**Medido contra:** `origin/main` = `927bda7ab44b604d81bca8c453663e7fc6f6cda9` · 2026-10-24T12:28:57Z
+A9: comprobación → `tests/scrum1480f-un-script-nuevo-no-entra-sin-fila.test.mjs`
+
+S0, por encargo del orquestador de Luis (24-oct): escribir en §3.3 las filas que Javier y el equipo J han
+dejado decididas, en UN PR, bajar el suelo y regenerar una vez. Cada fila lleva su fuente; ninguna sale de
+leer el nombre del fichero.
+
+| ficheros | dueño | fuente (literal en la fila) |
+|---|---|---|
+| `scripts/_trinquete-de-zona.mjs`, `_trinquete-de-zona-hijo.mjs`, `censo-guards-gateados.mjs` | S5 | decisión de Javier en la nota de su orquestador «Para Luis · lo que el equipo J deja en tus carriles», que el fundador pasó al orquestador de Luis el 24-oct hacia las 12:24Z. Contesta §7.4 (1480g), que se queda como historia con su ✅ |
+| `scripts/_senal-de-nombres.mjs` | J6 | SCRUM-1389 c.20720 (fundador); J6 quitó su propia fila de 1389c porque la tabla es de la S0 (c.20736) |
+| `scripts/staging-gated.mjs`, `_evidencia-tanda.mjs` | J6 | SCRUM-1599 c.20715 (salida A, «Lo hace J6»), con la fila «área J6» escrita en la salida elegida (c.20713) |
+| `tests/_respaldo-de-firma.mjs`, `scrum921c-…`, `_pares-leidos-en-jira.mjs` | J6 | SCRUM-1511 c.20748 (fundador): «Lo construye J6 […] La fila de carril de esos ficheros va a S0» |
+
+**El suelo: 223 → 217, no 222.** La nota del equipo J (y el encargo) decían 223 → 222, que es lo que pide
+SÓLO la fila de 1389c. Seis de los nueve ficheros son de `scripts/` y están en la foto del 9-oct
+(`_senal-de-nombres` y los otros cinco): cada fila baja uno. Medido después, no deducido:
+`node scripts/carriles.mjs sin-fila` → «320 ficheros en scripts/ · 95 con fila propia · 225 sólo con la fila
+general» (antes: 89 y 231), y `scrum1480f` exige `quedan` = los de la foto que siguen sin fila.
+
+**El generado, preguntado fichero a fichero** (`node scripts/carriles.mjs de …`): los nueve contestan el dueño
+y la línea que se acaban de escribir (S5 en la 188; J6 en la 191, 192 y 193), `_pares-leidos-en-jira.mjs`
+incluido aunque todavía no existe en `main` (lo crea #2828; la ruta va completa, que es lo que `_carriles.mjs`
+admite para un fichero anunciado). Control negativo en la misma orden: `trinquete-de-zona.mjs`,
+`verificar-evidencia-tanda.mjs` y `senal-de-nombres.mjs` siguen «SIN CERRADURA». `carriles.mjs comprobar` →
+IGUAL a la tabla (77 filas, 201 reglas).
+
+**De paso, en mi carril (SCRUM-1556):** la nota de la fila J3 decía que la fila del cotejo «la decide el
+orquestador de Javier»; ya la tenía, de J5, en la fila siguiente desde el 23-oct (lo avisaron c.20486 y
+c.20562). Corregida, con lo que decía antes al lado.
+
+**Lo que NO entra, porque ninguna decisión lo nombra** (se queda en la fila general, dicho en cada fila):
+`scripts/trinquete-de-zona.mjs`, la línea de órdenes que importa `_trinquete-de-zona.mjs` (el mismo hueco «un
+fichero más arriba» que 1480g señaló del hijo); `scripts/verificar-evidencia-tanda.mjs`, que importa
+`_evidencia-tanda.mjs`; y el guion `senal-de-nombres.mjs`. Los tres van al orquestador como pregunta.
+
+**Consecuencias que van al orquestador, no decididas aquí:** con fila, la cerradura deja de dejar editar estos
+ficheros a quien no sea su puesto. `scrum921c` lo tocaban por el NÚMERO, con permiso, otros carriles de SCRUM-1502
+(`25dd9ae2e`, `3e0997efd`, `d9e00c360`); y `staging-gated.mjs` lo nombra `.github/CODEOWNERS`. #2822 (J6, abierto) añade un declarado
+dos líneas por debajo de `quedan` en `_sin-fila-declarados.json`: el segundo que entre trae `main` y regenera.
+
+Corridos: los de carriles y del trinquete (`scrum1295`, `1408`, `1480e`, `1480f`, `514`) y los de registro
+(`scrum1294`, `267`), en la entrega con su cifra.

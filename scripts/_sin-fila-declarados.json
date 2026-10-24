@@ -3,7 +3,7 @@
   "suelo": {
     "fecha": "2026-10-09",
     "foto": "docs/master/evidencias/SCRUM-1480/sin-fila-9oct.txt",
-    "quedan": 223
+    "quedan": 217
   },
   "declarados": {
     "scripts/_senal-de-nombres-linea.mjs": {
@@ -45,6 +45,11 @@
       "ticket": "SCRUM-1132",
       "equipo": "javier",
       "motivo": "Lo crea el carril J2 (equipo de Javier), que no edita la tabla de §3.3; la S0 le da fila cuando su orquestador diga el puesto."
+    },
+    "scripts/clase-de-sesion.mjs": {
+      "ticket": "SCRUM-1238",
+      "equipo": "javier",
+      "motivo": "Lo crea J6 (equipo de Javier) en SCRUM-1238b, que lleva area-j6 y no edita la tabla de §3.3; la S0 le da fila cuando su orquestador diga el puesto."
     }
   }
 }
