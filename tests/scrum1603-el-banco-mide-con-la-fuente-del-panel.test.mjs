@@ -64,6 +64,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: 'SCRUM-1603 ④ ·',
   },
   {
+    // La primera navegación de la landing sin su espera: la de la segunda, que viene detrás, no la tapa.
+    fichero: 'scripts/guard-objetivo-tactil.mjs',
+    de: "  await esperarLaFuente(page, '/');\n\n",
+    a: '\n',
+    cae: 'SCRUM-1603 ④ ·',
+  },
+  {
     fichero: 'scripts/censo-objetivo-tactil-panel.mjs',
     de: 'const HOJAS = enlacesDelPanel(PUBLIC);',
     a: 'const HOJAS = \'<link rel="stylesheet" href="/tokens.css"><link rel="stylesheet" href="/dashboard/css/styles.css">\';',
@@ -151,22 +158,45 @@ test('SCRUM-1603 ③ · el «antes» que copia arbolDePartida lleva las letras q
 });
 
 /**
- * Cada `X.goto(...)` del fichero, con la función que lo contiene; por AST, sin comentarios ni cadenas.
- * Devuelve cuántas llamadas hay y cuáles están en una función que NO llama a `esperarFuentes`.
+ * Cada `X.goto(...)` del fichero, por AST (sin comentarios ni cadenas). Una navegación ESPERA la
+ * fuente si, en su misma función y DESPUÉS de ella, hay una llamada a `esperarFuentes` o a un
+ * ayudante del fichero que la llama. Las dos formas existen a propósito: el censo la lleva dentro
+ * de su `ir()`, y el guard la pone detrás de cada `goto` porque `_solape-de-guards.mjs` (SCRUM-548)
+ * lee las URL literales de sus `goto` y un ayudante que navegara por dentro se las escondería.
+ * Devuelve cuántas llamadas hay y cuáles no esperan.
  */
 function navegacionesSinEspera(rel) {
   const fuente = fs.readFileSync(path.join(RAIZ, rel), 'utf8');
   const sf = ts.createSourceFile(rel, fuente, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
   const esFuncion = (n) => ts.isArrowFunction(n) || ts.isFunctionDeclaration(n) || ts.isFunctionExpression(n) || ts.isMethodDeclaration(n);
-  const llamaA = (raiz, nombre) => {
-    let si = false;
+  /** Las llamadas a un identificador dentro de `raiz`, con su posición. */
+  const llamadas = (raiz) => {
+    const out = [];
     const ver = (n) => {
-      if (si) return;
-      if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) && n.expression.text === nombre) { si = true; return; }
+      if (ts.isCallExpression(n) && ts.isIdentifier(n.expression)) out.push({ nombre: n.expression.text, pos: n.getStart() });
       ts.forEachChild(n, ver);
     };
     ver(raiz);
-    return si;
+    return out;
+  };
+  // Los ayudantes del fichero que llaman a `esperarFuentes`: `const x = async (…) => {…}` o `function x`.
+  const esperadores = new Set(['esperarFuentes']);
+  const verDecl = (n) => {
+    if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer && esFuncion(n.initializer)
+      && llamadas(n.initializer).some((c) => c.nombre === 'esperarFuentes')) esperadores.add(n.name.text);
+    if (ts.isFunctionDeclaration(n) && n.name && llamadas(n).some((c) => c.nombre === 'esperarFuentes')) esperadores.add(n.name.text);
+    ts.forEachChild(n, verDecl);
+  };
+  verDecl(sf);
+  /** Dónde empieza cada `.goto(` dentro de `raiz`. */
+  const gotosDe = (raiz) => {
+    const out = [];
+    const v = (n) => {
+      if (ts.isCallExpression(n) && ts.isPropertyAccessExpression(n.expression) && n.expression.name.text === 'goto') out.push(n.getStart());
+      ts.forEachChild(n, v);
+    };
+    v(raiz);
+    return out;
   };
   const gotos = [];
   const sinEspera = [];
@@ -175,7 +205,11 @@ function navegacionesSinEspera(rel) {
       gotos.push(n);
       let f = n.parent;
       while (f && !esFuncion(f)) f = f.parent;
-      if (!f || !llamaA(f, 'esperarFuentes')) {
+      // Antes del SIGUIENTE `goto` de la misma función: si no, la espera de una navegación posterior
+      // taparía a una anterior que no espera (la landing navega dos veces seguidas).
+      const fin = n.getEnd();
+      const siguiente = f ? Math.min(...gotosDe(f).filter((p) => p > fin), Infinity) : Infinity;
+      if (!f || !llamadas(f).some((c) => c.pos > fin && c.pos < siguiente && esperadores.has(c.nombre))) {
         sinEspera.push(`${rel}:${sf.getLineAndCharacterOfPosition(n.getStart()).line + 1}`);
       }
     }

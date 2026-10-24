@@ -530,12 +530,14 @@ PUERTO = await levantarServidor(srv, PUERTO);
 process.on('exit', () => { try { srv.close(); } catch { /* ya cerrado */ } });
 const navegador = await lanzarNavegador(puppeteer, { headless: 'new' });
 
-// SCRUM-1603 · NAVEGAR ES NAVEGAR Y ESPERAR LA FUENTE. `font-display: swap` pinta con la de reserva
-// hasta que llega Inter: medir en el `load` a pelo mide unas veces una y otras la otra. Toda página
-// de este guard entra por aquí, y una cuyas caras no cargan es un CIEGO, no un verde.
+// SCRUM-1603 · TRAS CADA `goto`, LA FUENTE. `font-display: swap` pinta con la de reserva hasta que
+// llega Inter: medir en el `load` a pelo mide unas veces una y otras la otra. Toda navegación de este
+// guard va seguida de esto, y una página cuyas caras no cargan es un CIEGO, no un verde.
+// ⚠️ El `goto` se queda escrito en cada sitio, con su URL literal: `_solape-de-guards.mjs` (SCRUM-548)
+// sabe qué página mide cada guard LEYENDO esos `goto`, y un ayudante que navegara por dentro los
+// volvería invisibles (medido: el `5×/index.html` bajaba a 4× y `scrum548` caía).
 const fuentesVistas = new Map();
-const ir = async (page, ruta) => {
-  await page.goto(`http://127.0.0.1:${PUERTO}${ruta}`, { waitUntil: 'load' });
+const esperarLaFuente = async (page, ruta) => {
   const f = await esperarFuentes(page);
   const ceguera = cegueraDeLaFuente(f, ruta);
   if (ceguera) noSupeMirar('   ' + ceguera);
@@ -616,7 +618,8 @@ const recorridoLanding = await recorrerCasos(ANCHOS, async (ancho) => {
   const page = await navegador.newPage();
   const MIN = minimoPara(ancho);
   await page.setViewport({ width: ancho, height: 900 });
-  await ir(page, '/');
+  await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'load' });
+  await esperarLaFuente(page, '/');
 
   decir('\n════════════════════════════════════════════════════════════════════════════');
   decir(`ANCHO ${ancho} px`);
@@ -624,7 +627,8 @@ const recorridoLanding = await recorrerCasos(ANCHOS, async (ancho) => {
 
   // ── ⓪ CONTROL DEL SCROLL: ¿está el scroll haciendo algo, o me lo estoy creyendo? ─────────
   const sinScroll = await page.evaluate(`${FUENTE_MEDIDOR};${MEDIDOR}(${JSON.stringify(INTERACTIVOS)}, ${MIN}, ${JSON.stringify(DESTAPAR.map((d) => d.sel))}, false)`);
-  await ir(page, '/');   // página limpia
+  await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'load' });   // página limpia
+  await esperarLaFuente(page, '/');
   const r = await page.evaluate(`${FUENTE_MEDIDOR};${MEDIDOR}(${JSON.stringify(INTERACTIVOS)}, ${MIN}, ${JSON.stringify(DESTAPAR.map((d) => d.sel))}, true)`);
 
   const pieSin = sinScroll.medidos.filter((m) => m.seccion === 'footer').length;
@@ -737,7 +741,8 @@ if (!PANEL_HTML) {
     const page = await navegador.newPage();
     const MIN = minimoPara(ancho);
     await page.setViewport({ width: ancho, height: 900 });
-    await ir(page, '/__panel');
+    await page.goto(`http://127.0.0.1:${PUERTO}/__panel`, { waitUntil: 'load' });
+    await esperarLaFuente(page, '/__panel');
 
     decir('\n════════════════════════════════════════════════════════════════════════════');
     decir(`PANEL · lista de Clientes · ANCHO ${ancho} px`);
@@ -892,7 +897,8 @@ for (const s of SUPERFICIES_791) {
     // TIENE que salir corto. La superficie que no lo caza NO está medida, aunque devuelva cero —
     // y un cero así parecería cobertura. La sonda vive en una página aparte servida en memoria:
     // no se toca ningún fichero del árbol.
-    await ir(page, `${s.ruta}__sonda`);
+    await page.goto(`http://127.0.0.1:${PUERTO}${s.ruta}__sonda`, { waitUntil: 'load' });
+    await esperarLaFuente(page, `${s.ruta}__sonda`);
     const rs = await page.evaluate(`${FUENTE_MEDIDOR};${MEDIDOR}(${JSON.stringify(INTERACTIVOS)}, ${MIN}, ${JSON.stringify([])}, true)`);
     const sonda = rs.medidos.find((m) => m.sel === 'BUTTON' && m.texto === SONDA_TEXTO);
     if (!sonda) {
@@ -925,7 +931,8 @@ for (const s of SUPERFICIES_791) {
       }
     }
 
-    await ir(page, s.ruta);
+    await page.goto(`http://127.0.0.1:${PUERTO}${s.ruta}`, { waitUntil: 'load' });
+    await esperarLaFuente(page, s.ruta);
     const r = await page.evaluate(`${FUENTE_MEDIDOR};${MEDIDOR}(${JSON.stringify(INTERACTIVOS)}, ${MIN}, ${JSON.stringify([])}, true)`);
 
     decir('\n════════════════════════════════════════════════════════════════════════════');
@@ -1058,7 +1065,7 @@ srv.close();
 
 // SCRUM-1603 · con qué fuente se ha medido, y en cuántas páginas: la población de la fuente.
 for (const [linea, n] of fuentesVistas) decir(`⟦fuente⟧ ${linea} · en ${n} página(s)`);
-if (!fuentesVistas.size) noSupeMirar('   🔴 NO SUPE MIRAR la fuente: ninguna página pasó por `ir`.');
+if (!fuentesVistas.size) noSupeMirar('   🔴 NO SUPE MIRAR la fuente: ninguna página pasó por `esperarLaFuente`.');
 
 decir('\n' +'─'.repeat(76));
 const veredictoFinal = veredictoDe({ hallazgos, ciegos });
