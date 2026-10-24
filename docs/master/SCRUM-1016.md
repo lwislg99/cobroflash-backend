@@ -926,7 +926,7 @@ Del orquestador (`cobroflash-backend-95`): SOLO MEDIR Y PREGUNTAR. Separar lo he
 **Carril:** `docs/YAQU_MASTER.md` sin cerradura, lo edita **un jefe**: el encargo lo da el orquestador `cobroflash-backend-95` como jefe (mismo precedente que 1390x y 1601b). `docs/go-live/puerta.json`: «sin fila en §3: nadie lo reclama» (`carriles.mjs de`), igual que en 1551f y 1551g.
 **No toca** `public/`, `src/`, el camino de emisión, el esquema ni ninguna base.
 
-A9: aviso → cicatriz J4 «la misma trampa que ya tenía apuntada en la memoria» — no se pudo comprobar: la cuenta de retornos de carro con `od | grep` era de un solo uso y fuera del repo; lo que la cazó fue cruzarla con un recuento por bytes.
+A9: aviso → cicatriz J4 «conté los retornos de carro de puerta.json con `od -c | grep '\\r'` y salieron 353 donde había 0: el patrón casaba con la letra «r», la misma trampa que ya tenía apuntada en la memoria» — no se pudo comprobar: la cuenta de retornos de carro con `od | grep` era de un solo uso y fuera del repo; lo que la cazó fue cruzarla con un recuento por bytes.
 
 ## Encargo
 
