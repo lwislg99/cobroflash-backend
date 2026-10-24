@@ -1,0 +1,42 @@
+// resumen-1218h.mjs — lee los JSON de banco-1218h y escribe una línea por pasada (exit, casos, respuestas)
+// y, para scrum85, el primer carácter del token de /pay/invoice/<token> frente a su veredicto.
+import fs from 'node:fs';
+import path from 'node:path';
+const dir = process.argv[2];
+// El token de A: la lista de respuestas va ORDENADA, así que el primer /pay/invoice/<hex> puede ser el de B.
+// El de A es el que sale en /pay/card/<hex>; si la pasada cayó antes de llegar ahí, sólo hay uno (el de A).
+const tokenA = (resp) => {
+  const deCard = resp.map((r) => r.match(/\/pay\/card\/([0-9a-f]{20,})/)).find(Boolean);
+  if (deCard) return deCard[1];
+  const inv = resp.map((r) => r.match(/\/pay\/invoice\/([0-9a-f]{20,})/)).filter(Boolean);
+  return inv.length === 1 ? inv[0][1] : null;
+};
+const lados = [['antes', 5], ['despues', 5], ['antes85', 20], ['antes85b', 40]];
+const ficheros = ['scrum178-emision-manual', 'scrum85-pay-routes-token', 'scrum17-recapitulativa', 'scrum814-carrera-del-tramo.gated'];
+let n = 0;
+for (const [lado] of lados) {
+  for (const f of ficheros) {
+    const ruta = path.join(dir, lado, `${f}.json`);
+    if (!fs.existsSync(ruta)) continue;
+    const j = JSON.parse(fs.readFileSync(ruta, 'utf8'));
+    for (const p of j.pasadas) {
+      n++;
+      const v = Object.entries(p.casos).filter(([k]) => k.startsWith('0|')).map(([, x]) => x);
+      const tok = (tokenA(p.resp) || '').match(/^([0-9a-f])/);
+      console.log(`${lado}\t${f}\tpasada ${p.i}\texit=${p.codigo}\tfirma=${p.firma}\traíz ok=${v.filter((x) => x === 'ok').length} not_ok=${v.filter((x) => x === 'not ok').length} skip=${v.filter((x) => x === 'skip').length} declarados=${p.declarados}\trespuestas=${p.resp.length}${f.startsWith('scrum85') ? `\ttoken empieza por «${tok ? tok[1] : '?'}»` : ''}`);
+    }
+  }
+}
+// El cruce de scrum85: caídas frente a token que empieza por «1» (el id del cobro A en una base vacía).
+const t = { uno: { ok: 0, ko: 0 }, otro: { ok: 0, ko: 0 } };
+for (const [lado] of lados) {
+  const ruta = path.join(dir, lado, 'scrum85-pay-routes-token.json');
+  if (!fs.existsSync(ruta)) continue;
+  for (const p of JSON.parse(fs.readFileSync(ruta, 'utf8')).pasadas) {
+    const tok = (tokenA(p.resp) || '').match(/^([0-9a-f])/);
+    const g = tok && tok[1] === '1' ? t.uno : t.otro;
+    if (p.codigo === 0) g.ok++; else g.ko++;
+  }
+}
+console.log(`scrum85 · token que empieza por «1»: ${t.uno.ko} caen / ${t.uno.ok} pasan · resto: ${t.otro.ko} caen / ${t.otro.ok} pasan`);
+console.log(`POBLACION=${n} pasadas · EXIT=${n ? 0 : 1}`);

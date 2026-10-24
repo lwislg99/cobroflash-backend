@@ -1035,3 +1035,62 @@ pero no dice dónde: es la misma afirmación sin localizador que este ticket per
 
 - Las 10 que no tienen firma encontrable no se tocan: piden pregunta al jefe, una a una, como en c.20701.
 - No he visto nada en yaqu.app: ningún cambio de lo que se pinta.
+
+---
+
+## SCRUM-1502n · Tramo 13 (J4, 24-oct-2026): lo que queda — 20 sin respaldo clasificadas, 23 preguntas, y la mitad «a pelo» HOY mueve 5
+
+**Medido contra:** `origin/main` = `c6d3aa11f15a0a582f92b8ec4a8c9838ea426dd8` · 2026-10-24T15:36:20Z (hora de GitHub)
+A9: aviso → cicatriz J4 «sembré el positivo de la regla a pelo con un comentario que nombraba el ticket» — no se pudo comprobar: la siembra es de un solo uso y nada obliga a mirar en qué nivel nace una marca sembrada
+**Skill UI:** no cargada · solo docs: este tramo, `docs/master/evidencias/scrum1502n/` y una línea en `cicatrices/J4.md`
+
+Entrega en Jira: SCRUM-1502 **comentario 20824** (la tabla y las 23 preguntas). Aquí va lo que hace falta para
+re-medirlo. Ningún literal se copia en este registro: van por fichero:línea (tramo 1, §4).
+
+### ③ La mitad «a pelo» de `sinCitas` (c.20690): HOY mueve 5 marcas, no 0
+
+Dos sondas independientes, el mismo conjunto:
+
+- `evidencias/scrum1502h/sonda-var.mjs`, variante A, sobre `c6d3aa11f`: 249 marcas, 1.343 fuentes,
+  12 documentales → **pierden 5 de 12**.
+- `evidencias/scrum1502n/cuatro.mjs`: el guard (`scrum921c`, por `foto.mjs`) en un worktree desechable
+  fijado a `bcfc99b0d9a4f4a3aaf9d1608dce06b3d3691482`, con `indiceDeFuentes` filtrando `docs/master/`. Salida
+  en `cuatro.txt`: sin respaldo 20 → 25, documental 12 → 7; entran 5 y no sale ninguna. Entre `bcfc99b0d` y
+  `c6d3aa11f`, `congeladas()` da el mismo conjunto (comparado) y la sonda las mismas 5.
+- Positivo sembrado (`semilla-marca.mjs.txt` + `semilla-fuente.md.txt`): documental con la regla de hoy
+  (12 → 13), sin respaldo con la A (25 → 26). Sin la siembra, 12 y 25.
+
+Las 5 son las de S1 y S2 firmadas en c.20702 y sin anclar: `src/modules/jobs/domain/albaranFirmante.ts:246`
+(P2) · `public/dashboard/js/jobDetailView.js:401` (P4) y `:484` (P5) · `public/dashboard/js/productsView.js:1178`
+(P6) y `:1214` (P7). Ancladas esas 5, la mitad «a pelo» no mueve ninguna y se puede construir. Hoy rompería
+`SIN_RESPALDO = 20` con 25.
+
+### ① Las 20 de `congeladas()`, por grupo
+
+| grupo | marcas | n |
+|---|---|---|
+| firmada en Jira (c.20514), sin ancla, en SCRUM-1591/1590 | `quotesAdmin.routes.ts:408` (S1) · `reportsView.js:1204` (S2) · `jobRailBlocks.js:19` (S2) | 3 |
+| firmada (SCRUM-593 c.14262), anclable ya | `tests/scrum593b-superficie-texto-del-documento.test.mjs:91` | 1 |
+| firma dudosa o parcial | `tests/scrum609b-switch-tipo-articulo.test.mjs:75` (SCRUM-667 c.14271) · `tests/scrum377-plural-de-programador.test.mjs:72` (c.12880, el patrón) | 2 |
+| en Jira, un cierre y no una firma | `homeView.js:779` · `quoteMargen.js:64` · `tests/scrum651-trabajo-sin-presupuesto.test.mjs:381` · `tests/scrum320-que-falta-para-cobrar.test.mjs:253` | 4 |
+| consta en un documento; Jira no buscado | `quoteActionsRegistry.js:68` · `parteDictado.ts:138` · `tests/scrum283-censo-acciones-factura.test.mjs:118` · `tests/scrum294c-criterio-del-merchant.test.mjs:175` · `botFlow.service.ts:1` · `tests/scrum151-motivo-sin-tramo.test.mjs:53` | 6 |
+| sin firma en ningún sitio | `parteDictado.ts:401` | 1 |
+| no afirman firma | `customersView.js:1063` · `tests/scrum715-consta-por-identidad.test.mjs:147` · `scripts/seed-video.mjs:1` | 3 |
+
+Suma 20, comparada como conjunto con `congeladas()`. Los cierres y firmas los releyó hoy un subagente
+(SCRUM-236 c.11668, SCRUM-229 descripción, SCRUM-377 c.12880, SCRUM-667 c.14271, SCRUM-651 c.14229, SCRUM-320
+c.12636, SCRUM-593 c.14262), con su cita y su fecha. Carril: `node scripts/carriles.mjs de`.
+
+### ② Las preguntas
+
+23 en c.20824: las 10 de S4 de c.20785 (las 8 sin firma y las 2 con el literal en una entrega), y 13 de la
+tabla de arriba. Los literales los sacan `literales.mjs` y `tras.cjs` (la primera línea de código bajo la
+marca); `literales.mjs` coge strings de una ventana de 45 líneas y por sí solo no dice cuál gobierna.
+
+### Lo que no se hizo
+
+- Jira de las 6 «consta en un documento» y de las 10 de S4: no buscado por mí (las de S4, leídas en c.20785).
+- Si Luis tiene ya ticket para las 5 de c.20702: no comprobado.
+- yaqu.app: no abierto. Suite entera en local: NO CORRIDA. Ninguna marca, guard ni número tocado.
+- Error propio: la primera siembra nombraba el ticket y nació rastreable (167 → 168), así que el positivo no
+  podía caer con la regla A. Rehecha sin referencia.

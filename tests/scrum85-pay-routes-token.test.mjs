@@ -14,6 +14,33 @@ import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TE
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
+import http from 'node:http';
+
+// `node:http` sin agente y no `fetch` (SCRUM-1218g): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de `fetch`
+// (status, headers.get, text, json, arrayBuffer) y, como el `redirect: 'manual'` de antes, no sigue
+// redirecciones. El cuerpo se guarda en bytes: `text()` lo decodifica como `fetch` (TextDecoder).
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    const trozos = [];
+    r.on('data', (t) => { trozos.push(t); });
+    r.on('end', () => {
+      const buf = Buffer.concat(trozos);
+      ok({
+        status: r.statusCode,
+        headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+        text: async () => new TextDecoder().decode(buf),
+        json: async () => JSON.parse(new TextDecoder().decode(buf)),
+        arrayBuffer: async () => buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
+      });
+    });
+  });
+  req.on('error', mal);
+  req.end(body);
+});
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
@@ -63,12 +90,12 @@ test('SCRUM-85: /pay/card, /pay/bizum, /pay/invoice cierran el IDOR — numéric
     assert.notEqual(tokenA, tokenB, 'cobros distintos → tokens distintos');
 
     // ── /pay/invoice: numérico 404 sin fuga, token 200 con enlaces por token ──
-    const rNumInvoice = await fetch(`${base}/pay/invoice/${A.charge.id}`);
+    const rNumInvoice = await pedirSinAgente(`${base}/pay/invoice/${A.charge.id}`);
     assert.equal(rNumInvoice.status, 404, `GET /pay/invoice/<id numérico> debe ser 404 y fue ${rNumInvoice.status}`);
     const numInvoiceBody = await rNumInvoice.text();
     assert.ok(!numInvoiceBody.includes(A.merchant.name), 'FUGA: el 404 numérico expone el nombre del merchant');
 
-    const rInvoice = await fetch(`${base}/pay/invoice/${tokenA}`);
+    const rInvoice = await pedirSinAgente(`${base}/pay/invoice/${tokenA}`);
     assert.equal(rInvoice.status, 200, `GET /pay/invoice/:token debe ser 200 y fue ${rInvoice.status}`);
     const invoiceBody = await rInvoice.text();
     assert.ok(invoiceBody.includes(A.merchant.name), 'con el token correcto sí debe verse el propio merchant');
@@ -76,10 +103,10 @@ test('SCRUM-85: /pay/card, /pay/bizum, /pay/invoice cierran el IDOR — numéric
     assert.ok(!invoiceBody.includes(`/pay/card/${A.charge.id}`), 'el link a /pay/card NO debe llevar el id numérico');
 
     // ── /pay/card: numérico 404, token resuelve el cobro (303 Stripe / 501 sin Stripe / 409 r23) ──
-    const rNumCard = await fetch(`${base}/pay/card/${A.charge.id}`, { redirect: 'manual' });
+    const rNumCard = await pedirSinAgente(`${base}/pay/card/${A.charge.id}`, { redirect: 'manual' });
     assert.equal(rNumCard.status, 404, `GET /pay/card/<id numérico> debe ser 404 y fue ${rNumCard.status}`);
 
-    const rCard = await fetch(`${base}/pay/card/${tokenA}`, { redirect: 'manual' });
+    const rCard = await pedirSinAgente(`${base}/pay/card/${tokenA}`, { redirect: 'manual' });
     // El token DEBE resolver el cobro (algo != 404). Statuses posibles: 303 (Stripe → Checkout),
     // 501 (Stripe ausente), o 409 (r23: merchant real SIN Connect → tarjeta = «cuenta conectada o
     // nada»; desde SCRUM-1599c el merchant A lleva Connect activo, así que con la clave vacía da 501).
@@ -101,10 +128,10 @@ test('SCRUM-85: /pay/card, /pay/bizum, /pay/invoice cierran el IDOR — numéric
     }
 
     // ── /pay/bizum: numérico 404; token resuelve (200 con el flag activo, o redirect a /pay/invoice/:token si no) ──
-    const rNumBizum = await fetch(`${base}/pay/bizum/${A.charge.id}`, { redirect: 'manual' });
+    const rNumBizum = await pedirSinAgente(`${base}/pay/bizum/${A.charge.id}`, { redirect: 'manual' });
     assert.equal(rNumBizum.status, 404, `GET /pay/bizum/<id numérico> debe ser 404 y fue ${rNumBizum.status}`);
 
-    const rBizum = await fetch(`${base}/pay/bizum/${tokenA}`, { redirect: 'manual' });
+    const rBizum = await pedirSinAgente(`${base}/pay/bizum/${tokenA}`, { redirect: 'manual' });
     assert.ok([200, 303].includes(rBizum.status), `GET /pay/bizum/:token debe resolver el cobro y fue ${rBizum.status}`);
     if (rBizum.status === 303) {
       const loc = rBizum.headers.get('location') || '';
@@ -112,7 +139,7 @@ test('SCRUM-85: /pay/card, /pay/bizum, /pay/invoice cierran el IDOR — numéric
     }
 
     // token de OTRO cobro (B) en /pay/invoice: debe mostrar el negocio de B, NUNCA el de A
-    const rInvoiceB = await fetch(`${base}/pay/invoice/${tokenB}`);
+    const rInvoiceB = await pedirSinAgente(`${base}/pay/invoice/${tokenB}`);
     assert.equal(rInvoiceB.status, 200);
     const invoiceBodyB = await rInvoiceB.text();
     assert.ok(invoiceBodyB.includes(B.merchant.name), 'token de B debe mostrar el merchant de B');

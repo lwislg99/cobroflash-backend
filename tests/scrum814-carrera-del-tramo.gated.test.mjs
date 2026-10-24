@@ -48,6 +48,33 @@ import crypto from 'node:crypto';
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
+import http from 'node:http';
+
+// `node:http` sin agente y no `fetch` (SCRUM-1218g): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de `fetch`
+// (status, headers.get, text, json, arrayBuffer) y, como el `redirect: 'manual'` de antes, no sigue
+// redirecciones. El cuerpo se guarda en bytes: `text()` lo decodifica como `fetch` (TextDecoder).
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    const trozos = [];
+    r.on('data', (t) => { trozos.push(t); });
+    r.on('end', () => {
+      const buf = Buffer.concat(trozos);
+      ok({
+        status: r.statusCode,
+        headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+        text: async () => new TextDecoder().decode(buf),
+        json: async () => JSON.parse(new TextDecoder().decode(buf)),
+        arrayBuffer: async () => buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
+      });
+    });
+  });
+  req.on('error', mal);
+  req.end(body);
+});
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 // 🔴 EL MOTIVO DEL SALTO VA LITERAL EN CADA `skip`, y no en una constante: SCRUM-456 lo lee
@@ -141,13 +168,13 @@ async function sesionAdmin(prisma, base, merchantId) {
   await prisma.authSession.create({
     data: { merchantId, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) },
   });
-  const verify = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
+  const verify = await pedirSinAgente(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
   const cookie = (verify.headers.get('set-cookie') || '').split(';')[0];
   assert.ok(cookie.startsWith('pf_session='), 'no se obtuvo cookie de sesión');
   return cookie;
 }
 
-const emitir = (base, cookie, quoteId) => fetch(`${base}/admin/quotes/${quoteId}/invoice`, {
+const emitir = (base, cookie, quoteId) => pedirSinAgente(`${base}/admin/quotes/${quoteId}/invoice`, {
   method: 'POST', headers: { cookie, 'Content-Type': 'application/json' },
 });
 
