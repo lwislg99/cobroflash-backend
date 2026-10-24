@@ -1,0 +1,5 @@
+﻿llegadas: 278 runs · duraciones de run medidas n=81 · del obligatorio n=81
+VALIDACIÓN · grupo retenido por el RUN entero (hoy): predice 83/278 = 29.9 % (IC90 80-85) · MEDIDO 81/280 (los 2 sin run no llegan)
+DECISIÓN   · grupo retenido sólo por el OBLIGATORIO:  predice 161/278 = 57.9 % (IC90 158-165)
+  idem, +1 min de cola de runner por arranque:          154/278 = 55.4 % (IC90 151-157)
+META-GUARD en su grupo propio (cuántos commits lo corren): 85/278 = 30.6 % (IC90 84-87)

@@ -34,14 +34,27 @@ on:
 # desplegado y cancelar su CI no ahorra trabajo, decide que no se comprueba nunca. GitHub sigue
 # sustituyendo al run PENDIENTE del grupo, pero deja de matar al que corre. Lo fija
 # `tests/scrum935b-main-no-cancela.test.mjs`.
-concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+#
+# 🔴 SCRUM-1498c · LA CONCURRENCIA ES POR JOB, NO POR RUN (decisión de Javier, SCRUM-1498 c.20758).
+# Hasta el 24-oct aquí había un único `concurrency:` de workflow, y el grupo lo retenía el run
+# ENTERO: el commit siguiente esperaba al meta-guard (~29 min), no al obligatorio (~12 min). Medido
+# sobre los 280 commits de primer padre de `main` del 17 al 24-oct (dos sondas, Actions y
+# check-runs, de acuerdo en los 280): `build + tests` dio veredicto en 81 (28,9 %); 197 (70,4 %)
+# murieron pendientes, sustituidos por el push siguiente sin llegar a tener jobs.
+# Ahora cada job lleva su PROPIO grupo (`ci-<job>-<ref>`): el siguiente push espera sólo al job de
+# su mismo nombre. Mismo `cancel-in-progress` en todos: en `main` no se mata al que corre, en PR sí.
+# ⚠️ Dos jobs del MISMO run en el mismo grupo se sustituirían entre ellos: cada grupo, un job. Y
+# volver a poner aquí un `concurrency:` de workflow devolvería la cola al job más largo. Las dos
+# cosas las fija `tests/scrum935b-main-no-cancela.test.mjs`.
 
 jobs:
   test:
     name: build + tests (con banco desechable)
     runs-on: ubuntu-latest
+    # El único obligatorio: su grupo no lo comparte con nadie (SCRUM-1498c, arriba).
+    concurrency:
+      group: ci-test-${{ github.ref }}
+      cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
     # ⚠️ SCRUM-419 · ESTO NO CONTRADICE EL AVISO DE ARRIBA, Y CONVIENE LEER POR QUÉ.
     #
@@ -467,6 +480,9 @@ jobs:
   guards-visuales:
     name: guards de navegador (fuera de la tanda)
     runs-on: ubuntu-latest
+    concurrency:
+      group: ci-guards-visuales-${{ github.ref }}
+      cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
     timeout-minutes: 20
 
     steps:
@@ -701,6 +717,11 @@ jobs:
   meta-mutaciones:
     name: meta-guard · los guards caen cuando deben
     runs-on: ubuntu-latest
+    # Corre en cada commit como antes, pero en SU grupo: ya no retiene la cola del obligatorio
+    # (SCRUM-1498c). Un pendiente suyo lo sigue sustituyendo el meta-guard del push siguiente.
+    concurrency:
+      group: ci-meta-mutaciones-${{ github.ref }}
+      cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
     # ── 🔴 SCRUM-935 · 30, Y NO 10 · POR QUÉ, Y QUÉ NO ARREGLA ─────────────────────────────────
     #
     # Hasta el 20-sep-2026 esto ponía `10`. Ese techo NO cortaba un caso raro: cortaba la mitad de
@@ -734,6 +755,7 @@ jobs:
     # `pull_request` el techo explica el 91 % (legibles hoy 13 % → 92 %); en `push` a `main`, sólo
     # el 43 % (16 % → 52 %). La otra mitad de `main` es el `cancel-in-progress` de arriba, que es
     # una decisión de COSTE del fundador, tomada el 21-sep (SCRUM-935b): el `concurrency` de arriba ya no cancela en `main`.
+    # (Desde SCRUM-1498c ese `concurrency` es por job: el de este job es el bloque de justo encima.)
     timeout-minutes: 30
 
     steps:
@@ -884,6 +906,9 @@ jobs:
   trinquete-zona:
     name: trinquete · ningún test nuevo mide la zona de la máquina
     runs-on: ubuntu-latest
+    concurrency:
+      group: ci-trinquete-zona-${{ github.ref }}
+      cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
     timeout-minutes: 45
 
     services:
@@ -958,6 +983,9 @@ jobs:
   vigia-despliegue:
     name: vigía del despliegue (informativo)
     runs-on: ubuntu-latest
+    concurrency:
+      group: ci-vigia-despliegue-${{ github.ref }}
+      cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
     timeout-minutes: 5
     # ⚠️ NO se toca: en cuanto esto sea bloqueante, deja de poder arreglarse el problema que mide.
     continue-on-error: true
@@ -1065,6 +1093,9 @@ jobs:
   constancia-del-alter:
     name: constancia del ALTER (informativo)
     runs-on: ubuntu-latest
+    concurrency:
+      group: ci-constancia-del-alter-${{ github.ref }}
+      cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
     timeout-minutes: 5
     # ⚠️ NO se toca: en cuanto esto sea bloqueante, deja de poder arreglarse el problema que mide.
     continue-on-error: true

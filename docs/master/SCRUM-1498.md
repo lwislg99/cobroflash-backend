@@ -186,3 +186,56 @@ Ningún workflow tocado. Ni tanda ni build (orden de RAM). No he medido el cupo 
 ### Cómo se repite
 
 `node docs/master/evidencias/SCRUM-1498/obligatorio-24oct.mjs docs/master/evidencias/SCRUM-1498/datos-push-main-2026-10-08..10-24.json docs/master/evidencias/SCRUM-1498/datos-jobs-2026-10-08..10-24.json` (sin red). La sonda del carril: `node docs/master/evidencias/SCRUM-1498/prueba-carril4.mjs <worktree> <carpeta temporal fuera del árbol>`.
+
+## SCRUM-1498c (24-oct) · S5 aplica la decisión: cada job de `ci.yml` en su propio grupo de concurrencia
+
+**Medido contra:** `origin/main` = `063a4ec3538d52842ffa94410ff90b163ef99055` · 2026-10-24T12:39:54Z
+
+A9: sin fallo que generalice — el único tropiezo fue un BOM de PowerShell 5.1 al pasar JSON a node, que ya está en las trampas del entorno y dio error en vez de una cifra
+
+S5 (automatización · CI). La decisión es de Javier (c.20758) y aquí sólo se APLICA: el siguiente push espera sólo a `build + tests`; los jobs largos van en otro grupo; el meta-guard sigue corriendo en cada commit, en el suyo. `ci.yml` es carril S5.
+
+### ① La cifra de Javier, medida otra vez y con otra sonda: 28,9 %. Cuadra con su 26-33 %
+
+**Población:** los **280 commits de primer padre** de `origin/main` con fecha de commit en [2026-10-17T12:00Z, 2026-10-24T12:00Z) (`git log --first-parent`, no los runs: así un commit SIN run cuenta como sin veredicto en vez de desaparecer). **Veredicto** = el job con el nombre exacto `build + tests (con banco desechable)` acabó en `success` o `failure`.
+**Dos sondas independientes:** A · Actions (runs de `ci.yml` push/main por `head_sha` → jobs) · B · check-runs del commit (`commits/{sha}/check-runs?check_name=…`). **Coinciden en los 280** (0 discrepancias).
+**Controles:** `d34ee753` (run `40085895667`, `success`) sale con veredicto en las dos; `4b314192` también, y su run salió `failure` por el meta-guard con el obligatorio en `success` (por eso se cuenta el job y no el run); `70db9754`, creado a las 12:05Z, sale «no está en la población» (borde de la ventana).
+
+| clase | commits | % |
+|---|---|---|
+| veredicto `success` | 74 | 26,4 |
+| veredicto `failure` | 7 | 2,5 |
+| **run cancelado con 0 jobs: sustituido pendiente por el push siguiente** | **197** | **70,4** |
+| sin ningún run de `ci.yml` (`b7e8ebef9`, `cdbaaedd8`, 21-oct; sólo tienen runs `workflow_run`) | 2 | 0,7 |
+
+Por día: 45 · 23 · 31 · 75 · 33 · 23 · 28 · 14 % (17 al 24-oct; el 24 sólo hasta las 12:00Z). El obligatorio que llega a correr: p50 11,8 · p90 13,9 · máx 14,3 min. El último job en acabar: el meta-guard en 79 de 81 runs, el trinquete en 2. **Misma urgencia que la de Javier.** Los 2 sin run NO los he explicado.
+
+### ¿La decisión consigue el efecto? Sí: de ~29 % a ~58 % en el modelo. No llega al 100 %
+
+`1498c-modelo.mjs`: un grupo = uno corriendo + un pendiente que el siguiente sustituye; llegadas = las 278 horas REALES de los runs; duraciones = remuestreo de las 81 reales (2.000 réplicas).
+- **Validación** con la regla de hoy (el grupo lo retiene el run entero): predice **83** (IC90 80-85); **medido 81**.
+- Con el grupo retenido sólo por el obligatorio: **161 de 278 = 57,9 %** (IC90 158-165); con 1 min de cola de runner por arranque, 55,4 %.
+- El meta-guard en su propio grupo seguirá corriendo en ~31 % de los commits (como hoy): «corre en cada commit» quiere decir que **se lanza** en cada uno; el pendiente lo sigue sustituyendo el siguiente.
+
+Lo que deja fuera la decisión: en las horas punta (110 pushes el 23-oct) llegan pushes más deprisa que 12 min, y ahí el obligatorio también se sustituye. Es un MODELO, no una medición: la cifra de verdad se mide después del merge (abajo).
+
+### ② Lo cambiado
+
+- `ci.yml`: fuera el `concurrency:` de workflow; **cada uno de los 6 jobs lleva el suyo**, `ci-<job>-${{ github.ref }}`, con el mismo `cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}`. Un grupo por job y no «el obligatorio y el resto»: dos jobs del MISMO run en un grupo se sustituirían entre ellos.
+- `tests/scrum935b-main-no-cancela.test.mjs`: evaluaba el bloque de workflow; ahora evalúa el de cada job (sin `concurrency:` de workflow · cada job el suyo · grupo por ref y no compartido · en main no cancela · en PR sí). **Probado en rojo:** con el `ci.yml` de `origin/main` cae («hay `concurrency:` de workflow» + 6 jobs «sin concurrency», 6 mirados); con el nuevo, 4/4 verde. Su control sintético ve cada defecto (grupo de workflow, grupo compartido, job sin bloque, cancela en main, grupo por `sha`, `concurrency` dentro de un paso).
+- Los 36 tests que leen `ci.yml`, en el worktree: 325 pass · 1 fail · 5 skip. El fail es `scrum687`, que importa `dist/` y este worktree nace sin compilar (`ERR_MODULE_NOT_FOUND`); lo corre el CI.
+
+### El control de «un PR que debe caer sigue cayendo»
+
+Se anota en Jira (SCRUM-1498) con el número del PR de control: una rama `control-1498c-cae` (sin prefijo `scrum-`, así `pr-automatico` no la toca) con un test que falla a propósito, PR en **borrador** abierto a mano (no se puede armar ni mergear), y se cierra sin mergear y se borra la rama en cuanto el check obligatorio dé `failure`.
+
+### Lo que NO he hecho y lo que queda sin medir
+
+- **La cifra después del merge:** se repite `1498c-mide-veredicto.mjs` sobre los commits posteriores al de este PR. Sin eso, el 58 % es un modelo.
+- El cupo de runners: con grupos por job, un commit sustituido ya no tiene 0 jobs (corren sus informativos y lo que le toque en cada grupo). El repo es público (0 € facturables); lo que puede costar es ESPERA si se toca el techo de jobs a la vez. No lo he medido.
+- Por qué el meta-guard sale `FAILURE` en 13 de sus 20 últimos runs (1498b): **no lo he perseguido** (orden del encargo).
+- Por qué 2 commits del 21-oct no tienen run de `ci.yml`.
+
+### Cómo se repite
+
+`node docs/master/evidencias/SCRUM-1498/1498c-mide-veredicto.mjs <desdeISO> <hastaISO> <salida.json>` (con red, desde un árbol con `origin/main` al día) · `node docs/master/evidencias/SCRUM-1498/1498c-analiza.mjs <salida.json> <sha de control>…` · `node docs/master/evidencias/SCRUM-1498/1498c-modelo.mjs <salida.json>`. Salidas guardadas: `1498c-salida-1-cobertura.txt`, `1498c-salida-2-modelo.txt`.
