@@ -924,7 +924,7 @@ Del orquestador (`cobroflash-backend-95`): SOLO MEDIR Y PREGUNTAR. Separar lo he
 **Medido contra:** `origin/main` = `1b3395ecc6d3524e7b4ec711871d1d485ee67f28` · 2026-10-24T15:00:50Z
 **Rama:** `scrum-1016o-aria-label` · **Puesto:** J3 (sesión `jv-j3bd`) · **Skill UI:** cargada (`yaqu-premium-ui`, antes de tocar `public/index.html`)
 
-A9: aviso → cicatriz J3 «Pedí el ticket a Jira con una lista de campos sin `description` y di por leído «el ticket entero» con los 15 comentarios» — no se pudo comprobar: qué campos pide una sesión a Jira no deja rastro en el árbol que un test pueda leer
+A9: aviso → cicatriz J3 «Pedí el ticket a Jira con una lista de campos sin `description` y di por leído «el ticket entero» con los 15 comentarios; lo cazó que el volcado de la descripción pesaba 16 bytes, y la leí después.» — no se pudo comprobar: qué campos pide una sesión a Jira no deja rastro en el árbol que un test pueda leer
 
 ## Encargo
 

@@ -51,8 +51,10 @@ test('SCRUM-1016o · el juez cae con el literal viejo y dice CIEGO sin animació
   assert.equal(juzgar(viejo).length, 1);
   assert.match(juzgar(viejo)[0], /de presupuesto a cobro/);
   assert.equal(juzgar('<div class="stage">').length, 1, 'una animación sin aria-label también cae');
-  assert.match(juzgar('<p>nada</p>')[0], /CIEGO/);
+  const sinAnimacion = juzgar('<p>nada</p>');
+  assert.match(sinAnimacion[0], /CIEGO/);
   // Una animación comentada no cuenta: lo comentado no se sirve como nombre accesible.
-  assert.match(juzgar(`<!-- <div class="stage" aria-label="${FIRMADO}"> -->`)[0], /CIEGO/);
+  const comentada = juzgar(`<!-- <div class="stage" aria-label="${FIRMADO}"> -->`);
+  assert.match(comentada[0], /CIEGO/);
   assert.deepEqual(juzgar(`<div class="stage" aria-label="${FIRMADO}">`), []);
 });
