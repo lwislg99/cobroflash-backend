@@ -116,3 +116,11 @@ test('SCRUM-51: el detalle incluye albaranes[] en un Job sin quoteId (y sigue ig
     }
   });
 });
+
+// SCRUM-1599h (diseño B de SCRUM-1599) · la mutación que tumba el caso de base, CATALOGADA en SCRUM-1599i.
+// Va aparte de `MUTACIONES_QUE_ME_TUMBAN` a propósito: el job del meta-guard corre SIN base, el caso sale
+// SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco PGlite,
+// `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e). Cada campo, LITERAL.
+export const MUTACIONES_CON_BASE = [
+  { fichero: "src/modules/jobs/app/routes/jobs.routes.ts", de: "const albaranesRaw = await prisma.albaran.findMany({", a: "const albaranesRaw = job.quoteId == null ? [] : await prisma.albaran.findMany({", cae: "SCRUM-51: el detalle incluye albaranes[] en un Job sin quoteId" },
+];

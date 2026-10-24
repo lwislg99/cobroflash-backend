@@ -595,3 +595,126 @@ su motivo. Rojos vistos, cada uno con su `git diff --numstat` al lado y deshecho
 - Una pasada por punto (salvo webhooks, cuatro).
 - De paso, confieso: para devolver 574 a main intenté `git restore` y `guard-dangerous` lo paró; se deshizo con el
   editor, cambio a cambio, y `git diff` lo da a 0 líneas.
+
+## J6 · SCRUM-1599i · tercer lote del diseño B: siete gateados más al banco desechable, el trinquete de 35 a 28 y las mutaciones de los lotes 2 y 3 catalogadas
+
+**Medido contra:** `origin/main` = `9eb740a4286ee02faedd071dddfab55ddae0d515` · 2026-10-24T16:13:47Z (hora de GitHub al juntar la salida; sesión J6 `jv-j6bz` en su árbol `jv-j6bz`, por encargo del orquestador `cobroflash-backend-95`)
+
+A9: aviso → cicatriz J6 «Lancé un `ls` con comodines sobre los trabajos de la máquina sin medir antes cuántos había (625), y el arnés lo mandó a segundo plano en un encargo que lo prohibía» — no se pudo comprobar: buscaba un PGlite ya instalado por otra sesión; lo paré con `TaskStop` y lo instalé en mi temporal. Ningún hook mide un comodín antes de expandirlo.
+
+Decisión que se aplica: SCRUM-1599 c.20715 ① (el fundador, diseño B). Lote, criterio y forma, los de §1599f y §1599h.
+Salida entera: `docs/master/evidencias/SCRUM-1599/lote-1599i.salida.txt`.
+
+### ⓪ Primero: las mutaciones del lote 2, catalogadas, y por qué NO en `MUTACIONES_QUE_ME_TUMBAN`
+
+§1599h dejó sus seis mutaciones sólo en la salida de evidencias, y escritas sobre `dist/`, no con su literal. Ahora
+cada test de los lotes 2 y 3 declara la suya, en `src/`, con el literal (`fichero`, `de`, `a`, `cae`).
+
+**No van al catálogo del meta-guard, y no por gusto.** El job `meta-mutaciones` de `ci.yml` corre sin base. Un caso
+que sólo corre con banco sale SALTADO en su pasada limpia, y eso es CIEGO (PUERTA 1a de
+`scripts/meta-guard-mutaciones.mjs`, la del `saltado`). Un solo CIEGO hace que el job salga con 2. Así que van en
+`MUTACIONES_CON_BASE`, la segunda lista que ya usa `tests/scrum1390e-el-portal-solo-lo-suyo.test.mjs` para lo mismo.
+Medido: el meta-guard verde de las 15:38Z (job 120907481237, 169.686 B) da «vivas 805 · ciegas 0», y de 1390e sólo
+ejecuta las cuatro de su lista del meta-guard. Las dos de `MUTACIONES_CON_BASE` no salen.
+
+**Las ejecuta** `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs`, con la forma de `SCRUM-1390e/mutar.mjs`:
+- lee la lista por AST (importar el test lo ejecutaría);
+- hace una pasada LIMPIA con el banco y exige que el caso `cae` haya pasado;
+- exige que el texto `de` salga UNA vez en el src;
+- transpila el src mutado a su sitio de `dist/`, corre el test con el banco y restaura `dist/` comprobando los bytes;
+- dice QUÉ aserción cae (el `error:` del TAP), no sólo qué caso.
+
+⚠️ **Nadie las corre en CI.** Es lo mismo que pasa con las dos de 1390e. Que lo hiciera pediría base en el job del
+meta-guard, y eso es un workflow: S5 y fundador.
+
+### ① El lote, por programa
+
+Las banderas de `banderas-1599h.mjs`, sin cambiar, sobre los 35 de `SOLO_STAGING` en `9eb740a42`: 2 sencillos
+apartados (116 y 574), **12 «solo-H»** y 21 con emisión, fiscal, carrera o merchant fijo. Es el mismo reparto que
+cerró §1599h ④. El lote son los siete «solo-H» más pequeños, menos uno:
+
+| fichero | bytes | casos que pasan a CI |
+|---|---|---|
+| scrum90-pay-bank-mp-token | 6.874 | 1 |
+| scrum136-hub-equipo | 7.581 | 3 |
+| scrum120-patch-job-roles | 7.890 | 1 |
+| scrum148-filtro-por-miembro | 8.129 | 2 |
+| scrum24-operarios-metrics | 8.204 | 1 |
+| pdfs | 8.269 | 1 (los otros 3 ya corrían) |
+| scrum66-tipo-operacion | 8.861 | 1 (el otro ya corría) |
+| **total** | | **10** |
+
+- **scrum85 se aparta** (8.753 B, le tocaba entrar). Con la base vacía, el cobro A sale con id=1, y su
+  `!body.includes('/pay/card/1')` casa DENTRO del token cuando éste empieza por «1»: en el banco sería intermitente.
+  Lo midió jv-j6bv en SCRUM-1218 c.20840. Me llegó por el orquestador, y aquí NO lo he repetido. Queda en el
+  trinquete con ese motivo, hasta que se arregle la aserción.
+- La forma es la de §1599h: `_banco-libro.mjs` detrás de `_staging-db.mjs`, y `QA_DB_TEST` **o** `LIBRO_PG_URL`.
+  Ninguna aserción tocada; el diff de cada test son 3 líneas más el bloque de la mutación.
+- `scrum419`: 93 → 103 tests de banco.
+- Carril: `carriles.mjs de` los catorce ficheros de test, ANTES de tocarlos → «sin fila en §3». Control positivo:
+  `scripts/equipo/latido.mjs` → S5.
+
+### ② Banco local
+
+Banco de §1599h, sin cambios. Canario cronometrado: scrum109 2/2 en 2 s.
+
+| pasada | casos | pasan | caen | saltan |
+|---|---|---|---|---|
+| ANTES (los 7 de main, con `LIBRO_PG_URL`) | 18 | 4 | 0 | **14** |
+| DESPUÉS (los 7 migrados) | 18 | **18** | 0 | 0 |
+
+**Catorce mutaciones, una por fichero migrado** (las siete del lote 2 y las siete de éste). Antes de la tanda, un
+canario de una sola: 5 s. Resultado: 14 MUEREN, 0 VIVEN y 0 CIEGAS. El hash de todo `dist/` es igual antes y después.
+Cada una cae por la aserción que nombra lo mutado:
+
+| | fichero mutado | qué se muta | cae (aserción) |
+|---|---|---|---|
+| 593d | `pdf.service.ts` | el pie guardado deja de pintarse | «PIE593D_ALFA» no sale en su línea del PDF |
+| 131 | `team.routes.ts` | el reenvío responde siempre `sent` | «SIGUE MINTIENDO … sent=true» |
+| webhooks | `psp.routes.ts` | sin la rama del `payment.confirmed` duplicado | «… y marcado como duplicate» |
+| 57 · 22 | `jobs.routes.ts` | `operario` siempre `null` | «operario resuelto {id,name}» |
+| 51 | `jobs.routes.ts` | vuelve el early-return: sin presupuesto no hay albaranes | «Job sin quote: el detalle incluye su albarán» |
+| 58 | `jobs.routes.ts` | la lista serializa sin el lote | «N+1: 3 Trabajos → 31 consultas, 12 → 94» |
+| 90 | `payBank.routes.ts` | `/pay/bank/<id numérico>` resuelve el cobro | «… debe ser 404 y fue 200» |
+| 136 | `teamOverview.service.ts` | pendiente = aceptado, sin restar lo cobrado | «pendiente = aceptado - cobrado» (2 de 3 caen) |
+| 120 | `jobs.routes.ts` | sin el gate por campo | «técnico cambiando tipoOperacion … debe dar 403» |
+| 148 | `jobs.routes.ts` | el filtro por operario también para el restringido | «SCRUM-23 ROTO …» |
+| 24 | `metrics.service.ts` | pendiente = aceptado | «A1: pendiente = aceptado - cobrado» |
+| pdfs | `quotesAdmin.routes.ts` | responde JSON en vez del PDF | «intento 1: no devolvió PDF» |
+| 66 | `jobs.routes.ts` | sin la auditoría del cambio | «SCRUM-255 … AuditLog … arrancaron 0» |
+
+- Para 136 y 24 muté la cuenta y no la puerta de rol. Esa puerta sale en dos sitios (`requireRole` en el montaje y
+  la lista de `adminOnlyRoutes.ts`), y no he medido cuál manda: quitar una sola podía dar una mutación muda.
+- Control del guion: con un fichero sin `MUTACIONES_CON_BASE` dice CIEGO, rc=2.
+- La mutación de `pdf.service.ts` (593d, del lote 2) sólo se aplica en el `dist/` local y se restaura. Lo que entra en
+  el commit es un literal dentro del test, y el src no se toca.
+
+### ③ El trinquete baja de 35 a 28
+
+`tests/scrum1599f-los-que-solo-ve-staging.test.mjs`. Antes de editar la lista, con los siete ya migrados, cae
+(rc=1): «SALEN: pdfs, scrum120, scrum136, scrum148, scrum24, scrum66, scrum90», exactamente los siete, y «ENTRAN: —».
+Los siete salen de `SOLO_STAGING`, 85 se queda con su motivo y el número pasa a 28.
+
+### ④ Coste
+
+- **Local (PGlite, un fichero cada vez):** 10,8 + 6,6 + 6,8 + 5,1 + 3,6 + 2,7 + 2,4 = **38,0 s** para los 7, banco
+  incluido. No predice CI.
+- **En CI:** sale del obligatorio de este PR comparado con un run de main de la misma hora, y va en el comentario de
+  Jira, no aquí (como en 1599f y 1599h). Los lotes 1 y 2 quedaron por debajo del ruido entre runs, con n=1 por lado.
+- **Lo que queda en los 28:** 2 sencillos apartados (116 y 574) · 5 «solo-H»: uno apartado (85) y cuatro por migrar
+  (74, 94, 17 y 222) · 21 con emisión, fiscal, carrera o merchant fijo. Es lectura de banderas, no medición.
+
+### ⑤ Guards
+
+Los de suite (237, 976, 824, 836, 419, 702, 700, 719, 1415), los del banco (1599f, 876e, 876f), los del catálogo
+(745, 757, 765, 1387) y 113, 740, 812, 850, 850b, 1185, 411 y 723: **24 ficheros, 234/234, 0 fallos, 0 SKIP**, en 39 s.
+Los de registro, sobre el árbol final: en el comentario de Jira.
+
+### ⑥ Lo que NO se ha hecho, ni medido
+
+- Staging: no he corrido los siete con `QA_DB_TEST=1` (sin turno).
+- La tanda entera en local: NO CORRIDA (varias sesiones a la vez).
+- Una pasada por punto.
+- Que las catorce mutaciones mueran también en el Postgres de CI: nadie las corre allí (⓪).
+- De paso, me corrijo: la primera versión del guion de mutaciones leía `error: |-`, que es la cabecera del bloque YAML,
+  y no el mensaje. Lo vi en la salida, lo arreglé y repetí las catorce antes de dar ninguna cifra.

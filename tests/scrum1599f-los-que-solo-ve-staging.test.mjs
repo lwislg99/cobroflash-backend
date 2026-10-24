@@ -38,23 +38,20 @@ import { leerSiSigueAhi, exigirCorpusLeido } from './_barrido-estable.mjs'; // S
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 
 /**
- * LA POBLACIÓN DECLARADA — 35 = los 46 de SCRUM-1599 c.20713 menos los 4 que migra 1599f
- * (scrum104, scrum106, scrum109, scrum135) y los 7 que migra 1599h (scrum131, scrum22, scrum51,
- * scrum57, scrum58, scrum593d, webhooks-idempotencia). Uno por línea (A23 #15), en orden alfabético.
+ * LA POBLACIÓN DECLARADA — 28 = los 46 de SCRUM-1599 c.20713 menos los 4 que migra 1599f
+ * (scrum104, scrum106, scrum109, scrum135), los 7 que migra 1599h (scrum131, scrum22, scrum51,
+ * scrum57, scrum58, scrum593d, webhooks-idempotencia) y los 7 que migra 1599i (pdfs, scrum120,
+ * scrum136, scrum148, scrum24, scrum66, scrum90). Uno por línea (A23 #15), en orden alfabético.
  * Esta lista sólo BAJA, y sólo en el PR que migra el fichero. Para que SUBA hace falta una decisión
  * escrita en SCRUM-1599 y su motivo al lado de la línea.
  */
 const SOLO_STAGING = Object.freeze([
-  'pdfs.test.mjs',
   'scrum115-wa-fallo-registrado.test.mjs',
   // scrum116 NO se migra en 1599f: `sendInvoicePaymentReminders()` recorre TODAS las facturas de
   // la base (lo dice su cabecera) y en el banco de la tanda, que comparten los ficheros que corren a
   // la vez, escribiría sobre filas de otros tests. Leído en el código, no intentado.
   'scrum116-recordatorio-candado.test.mjs',
-  'scrum120-patch-job-roles.test.mjs',
   'scrum127-paywall-bloquea.test.mjs',
-  'scrum136-hub-equipo.test.mjs',
-  'scrum148-filtro-por-miembro.test.mjs',
   'scrum17-recapitulativa.test.mjs',
   'scrum170-facturacion-parcial.test.mjs',
   'scrum171a-consolidar-cliente.test.mjs',
@@ -64,7 +61,6 @@ const SOLO_STAGING = Object.freeze([
   'scrum221-export-fiscal-cero-bytes.test.mjs',
   'scrum222-deriva-arranque.test.mjs',
   'scrum234-carrera-serie.gated.test.mjs',
-  'scrum24-operarios-metrics.test.mjs',
   'scrum25-export-zip.test.mjs',
   'scrum25-exports.test.mjs',
   // scrum574 NO se migra en 1599h: su caso «CONTRA POSTGRES: tras la migración, cada cliente sigue
@@ -73,7 +69,6 @@ const SOLO_STAGING = Object.freeze([
   // (medido en el banco local, no sólo leído). Su sitio es staging.
   'scrum574-mismo-cliente-tras-migracion.test.mjs',
   'scrum592-concurrencia-serie.test.mjs',
-  'scrum66-tipo-operacion.test.mjs',
   'scrum73-verifactu-gate.test.mjs',
   'scrum74-recibo-token.test.mjs',
   'scrum76-email-adjunto.test.mjs',
@@ -82,8 +77,11 @@ const SOLO_STAGING = Object.freeze([
   'scrum793-la-carrera-del-token.test.mjs',
   'scrum814-carrera-del-tramo.gated.test.mjs',
   'scrum82-zip-verifactu.test.mjs',
+  // scrum85 NO se migra en 1599i: con la base vacía el cobro A sale con id=1, y su
+  // `!body.includes('/pay/card/1')` casa DENTRO del token cuando éste empieza por «1»: en el banco
+  // sería intermitente. Medido por jv-j6bv en SCRUM-1218 c.20840 (llegó por el orquestador; 1599i no
+  // lo ha repetido). Vuelve cuando se arregle esa aserción, no antes.
   'scrum85-pay-routes-token.test.mjs',
-  'scrum90-pay-bank-mp-token.test.mjs',
   'scrum92-login-operario.test.mjs',
   'scrum94-register-teammember.test.mjs',
   'tenancy-permisos.test.mjs',
@@ -167,7 +165,7 @@ function fuentesDelArbol() {
 
 const sembradas = () => [{ nombre: SEMBRADO, src: FUENTE_SEMBRADA }, { nombre: MIGRADO, src: FUENTE_MIGRADA }];
 
-test('SCRUM-1599f · los que SÓLO corren contra staging son exactamente los 35 declarados', () => {
+test('SCRUM-1599f · los que SÓLO corren contra staging son exactamente los 28 declarados', () => {
   const arbol = fuentesDelArbol();
   const { veredicto, poblacion } = censar([...arbol, ...sembradas()]);
   assert.equal(veredicto, 'MIRADO', '🔴 CIEGO: el extractor no ve el gateado sembrado, así que tampoco ve los del árbol');
@@ -183,7 +181,7 @@ test('SCRUM-1599f · los que SÓLO corren contra staging son exactamente los 35 
       + '  Si entra, dale el segundo destino (tests/_banco-libro.mjs); que se quede sólo en staging lo\n'
       + '  decide el fundador en SCRUM-1599, y se escribe aquí con su motivo.',
   );
-  assert.equal(poblacion.length, 35, `🔴 población ${poblacion.length}, declarada 35`);
+  assert.equal(poblacion.length, 28, `🔴 población ${poblacion.length}, declarada 28`);
 });
 
 test('SCRUM-1599f · sin el sembrado el censo dice CIEGO, no verde', () => {

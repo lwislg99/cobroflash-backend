@@ -280,6 +280,19 @@ const GATEADOS_DECLARADOS = Object.freeze({
   'scrum22-operario-readpath.test.mjs': 1,
   'scrum51-job-sin-quote.test.mjs': 1,
   'scrum58-jobs-n1.test.mjs': 1,
+  // SCRUM-1599i (tercer lote del diseño B): siete más, con la misma forma. Necesitan banco porque
+  // lo que vigilan lo contesta la RUTA real con filas guardadas: el IDOR de /pay/bank y /pay/mp por
+  // id numérico (90), el hub de Equipo y sus cuentas por miembro (136), el gate por campo del PATCH
+  // de un trabajo (120), el filtro por operario que no le da a un técnico lo ajeno (148), las sumas
+  // de /admin/metrics/operarios (24), el PDF regenerado del presupuesto (pdfs) y el tipoOperacion
+  // con su auditoría (66). Los casos sin base de pdfs y de 66 corren siempre.
+  'scrum90-pay-bank-mp-token.test.mjs': 1,
+  'scrum136-hub-equipo.test.mjs': 3,
+  'scrum120-patch-job-roles.test.mjs': 1,
+  'scrum148-filtro-por-miembro.test.mjs': 2,
+  'scrum24-operarios-metrics.test.mjs': 1,
+  'pdfs.test.mjs': 1,
+  'scrum66-tipo-operacion.test.mjs': 1,
 });
 const TOTAL_DECLARADO = Object.values(GATEADOS_DECLARADOS).reduce((a, b) => a + b, 0);
 
