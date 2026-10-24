@@ -64,8 +64,9 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const leer = (r) => fs.readFileSync(path.join(RAIZ, r), 'utf8');
-const sinComentariosCss = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '');
-const CSS = sinComentariosCss(leer('public/dashboard/css/styles.css'));
+// Sin comentarios con el helper único (SCRUM-694/700): sobre este styles.css da lo mismo que la regex
+// de bloques que usan los hermanos (medido el 24-oct: 106.596 caracteres útiles, idénticos).
+const CSS = soloCodigo(leer('public/dashboard/css/styles.css'), 'styles.css');
 const reglas = () => CSS.replace(/@media[^{]*\{/g, '').split('}')
   .map((b) => { const [sel, cuerpo = ''] = b.split('{'); return { sel: sel.split(',').map((s) => s.trim().replace(/\s+/g, ' ')), cuerpo }; });
 const cuerpoDe = (s) => reglas().filter((r) => r.sel.includes(s)).map((r) => r.cuerpo).join(';');
