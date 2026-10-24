@@ -164,3 +164,11 @@ test('SCRUM-593d · 🔴 SUELO ASIMÉTRICO: `albaranes.doc_footer_text` NO exist
     '🔴 existe `albaranes.doc_footer_text`. El pie de ese documento es `notas`, que ya existía y ya '
     + 'se imprimía: con dos campos para lo mismo, al día siguiente nadie sabe cuál manda.');
 });
+
+// SCRUM-1599h (diseño B de SCRUM-1599) · la mutación que tumba el caso de base, CATALOGADA en SCRUM-1599i.
+// Va aparte de `MUTACIONES_QUE_ME_TUMBAN` a propósito: el job del meta-guard corre SIN base, el caso sale
+// SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco PGlite,
+// `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e). Cada campo, LITERAL.
+export const MUTACIONES_CON_BASE = [
+  { fichero: "src/modules/invoicing/infra/pdf/pdf.service.ts", de: "if (params.docFooterText && String(params.docFooterText).trim() !== '') {", a: "if (false) {", cae: "SCRUM-593d · 🔴 EL VIAJE" },
+];

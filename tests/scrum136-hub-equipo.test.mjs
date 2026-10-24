@@ -13,13 +13,14 @@
 //    agregaba así— pero es exactamente el tipo de detalle que alguien "arregla" homogeneizando
 //    y rompe en silencio, porque los números seguirían saliendo. El test fija el contrato.
 import './_staging-db.mjs';
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599i: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { withMerchant } from './_merchant-fixture.mjs';
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 
-test('SCRUM-136: el hub de Equipo es admin-only — un operario no ve el pendiente de sus compañeros', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-136: el hub de Equipo es admin-only — un operario no ve el pendiente de sus compañeros', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const request = (await import('node:http')).default;
@@ -68,7 +69,7 @@ test('SCRUM-136: el hub de Equipo es admin-only — un operario no ve el pendien
   });
 });
 
-test('SCRUM-136: el resumen NO homogeneiza las ventanas — presupuestos del mes, trabajos del histórico', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-136: el resumen NO homogeneiza las ventanas — presupuestos del mes, trabajos del histórico', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { getTeamOverview } = await import('../dist/modules/team/domain/teamOverview.service.js');
 
@@ -117,7 +118,7 @@ test('SCRUM-136: el resumen NO homogeneiza las ventanas — presupuestos del mes
   });
 });
 
-test('SCRUM-136: el propietario sale en el hub aunque no sea TeamMember, con sus propios números', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-136: el propietario sale en el hub aunque no sea TeamMember, con sus propios números', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { getTeamOverview } = await import('../dist/modules/team/domain/teamOverview.service.js');
 
@@ -140,3 +141,11 @@ test('SCRUM-136: el propietario sale en el hub aunque no sea TeamMember, con sus
     assert.equal(owner.resumen.pendiente, 750);
   });
 });
+
+// SCRUM-1599i (diseño B de SCRUM-1599) · la mutación que tumba el caso de base, CATALOGADA en SCRUM-1599i.
+// Va aparte de `MUTACIONES_QUE_ME_TUMBAN` a propósito: el job del meta-guard corre SIN base, el caso sale
+// SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco PGlite,
+// `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e). Cada campo, LITERAL.
+export const MUTACIONES_CON_BASE = [
+  { fichero: "src/modules/team/domain/teamOverview.service.ts", de: "pendiente: round2(Number(r._sum.totalAceptado ?? 0) - Number(r._sum.totalCobrado ?? 0)),", a: "pendiente: round2(Number(r._sum.totalAceptado ?? 0)),", cae: "SCRUM-136: el resumen NO homogeneiza las ventanas" },
+];

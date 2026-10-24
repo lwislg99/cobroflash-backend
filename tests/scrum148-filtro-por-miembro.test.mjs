@@ -11,6 +11,7 @@
 // ⚠️ Toca BD real (staging), gateado:
 //   QA_DB_TEST=1 DATABASE_URL_TESTS="..." npm run test:staging
 import './_staging-db.mjs';
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599i: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { withMerchant } from './_merchant-fixture.mjs';
@@ -43,7 +44,7 @@ const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new
   req.end(body);
 });
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 
 async function montar(app) {
   const server = http.createServer(app).listen(0);
@@ -62,7 +63,7 @@ async function sesionDe(prisma, merchantId, teamMemberId) {
   return token;
 }
 
-test('SCRUM-148: el filtro por operario NO le da a un técnico la llave de los trabajos ajenos', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-148: el filtro por operario NO le da a un técnico la llave de los trabajos ajenos', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
 
@@ -123,7 +124,7 @@ test('SCRUM-148: el filtro por operario NO le da a un técnico la llave de los t
   });
 });
 
-test('SCRUM-148: el filtro de presupuestos distingue "del propietario" de "sin filtrar"', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-148: el filtro de presupuestos distingue "del propietario" de "sin filtrar"', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { listQuotesAdmin } = await import('../dist/modules/system/quoteAdmin.js');
 
@@ -149,3 +150,11 @@ test('SCRUM-148: el filtro de presupuestos distingue "del propietario" de "sin f
     assert.equal(delDueno.length, 1, 'null debe filtrar por "del propietario", no significar "sin filtro"');
   });
 });
+
+// SCRUM-1599i (diseño B de SCRUM-1599) · la mutación que tumba el caso de base, CATALOGADA en SCRUM-1599i.
+// Va aparte de `MUTACIONES_QUE_ME_TUMBAN` a propósito: el job del meta-guard corre SIN base, el caso sale
+// SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco PGlite,
+// `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e). Cada campo, LITERAL.
+export const MUTACIONES_CON_BASE = [
+  { fichero: "src/modules/jobs/app/routes/jobs.routes.ts", de: "    if (!restringido) {", a: "    if (true) {", cae: "SCRUM-148: el filtro por operario NO le da a un técnico la llave" },
+];
