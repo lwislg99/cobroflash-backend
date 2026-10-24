@@ -188,3 +188,60 @@ orquestador (A13).
    el nombre exacto, que dio `:197` y `:211`.
 2. **En c.20735 cité `pendientesFacturar.service.ts:290`; la línea es `:291`.** Lo vi al releerla para
    este registro. Aquí va la buena, y el comentario de Jira no lo he editado.
+
+## SCRUM-1346c · P1 construido: las dos bandejas de albaranes, sólo lo de SUS Trabajos
+
+**Medido contra:** `origin/main` = `927bda7ab44b604d81bca8c453663e7fc6f6cda9` · 2026-10-24T12:32:07Z (`Date:` de GitHub)
+
+A9: comprobación → `tests/scrum1346-el-tecnico-ve-documentos-ajenos.test.mjs`
+
+[S1, equipo de Luis. La decisión: c.20745, P1 «Sí, solo los suyos», con el MISMO eje que `GET /admin/albaranes`.]
+
+**La premisa, re-leída en este árbol antes de tocar nada.** Las dos rutas están en `TECNICO_ALLOWED`
+(`adminRouteDeclarations.ts:197` y `:211`) y ninguna llamaba a `seesOnlyOwnJobs`:
+`pendientes-facturar` pasaba sólo `req.merchantId` a `getPendientesFacturar`, que lee los Trabajos de todo
+el negocio, y `consolidables` leía los Trabajos del cliente sin mirar de quién son. El eje de
+`GET /admin/albaranes` es `jobIdsVisiblesPara` (mismo fichero): los TRES ejes de SCRUM-467/650
+(`operarioId`, `assignedUserId` y la tabla `assignees`). Se reusa tal cual: no hay eje nuevo.
+
+**El arreglo.** Las dos rutas piden `jobIdsVisiblesPara` cuando `seesOnlyOwnJobs(req.userRole)` y meten
+esos ids en el `where` del `job.findMany`: en la ruta (`consolidables`) y por un tercer parámetro de
+`getPendientesFacturar` (`null` = todos; el resumen semanal y el admin no cambian). El filtro va en la
+query, no se oculta nada después. Las dos declaraciones de `TECNICO_ALLOWED` dicen ahora el criterio
+nuevo; el de «facturas: ver sí» lo había sustituido la decisión B.
+
+**El test, por efecto y con dos actores**, dentro del trinquete que ya existía (mismo arnés: HTTP contra
+`dist/app.js`, sesiones en la base, Postgres desechable). Ana y Blas, técnicos, con un Trabajo cada uno
+del MISMO cliente y un albarán firmado, valorado y sin facturar en cada Trabajo. Dos sondas nuevas:
+`albaranes-pendientes` y `albaranes-consolidables` (la segunda cuenta como VE tanto `grupos` como
+`descartados`, porque los dos llevan el id y el número). ① el de Blas NO le sale a Ana · ② el de Ana SÍ
+le sale (control positivo) · ③ la administradora ve los dos.
+
+**Lo corrido** (banco: Postgres 16 portable propio, puerto 55497, base `yaqu_1346_test`, esquema de
+`migrate diff --from-empty` de este árbol: 33 `CREATE TABLE` = 33 `model`):
+
+| qué | resultado |
+|---|---|
+| el test, con el arreglo | 5/5 pass, 0 skip |
+| mutante: `getPendientesFacturar(…, null)` en el compilado | ① cae con `FUGA GET /admin/albaranes/pendientes-facturar`; ②③④ verdes |
+| mutante: `id: undefined` en el `where` de `consolidables` | ① cae con `FUGA GET /admin/albaranes/consolidables?customerId=…`; ②③④ verdes |
+| vecinos: los 71 ficheros de `tests/` que nombran estas rutas, el servicio o las declaraciones | 587 tests · 586 pass · 0 fail · 1 skip (SCRUM-127, por `QA_DB_TEST`) |
+
+Cada mutante tumba SÓLO su sonda: las dos miden cosas distintas. El rojo de antes del arreglo es la
+suma de los dos mutantes.
+
+**¿Un tercer sitio?** Censo de los `albaran.findMany` y `job.findMany` que alcanza un Técnico: las rutas
+por id de albarán pasan por `findAlbaran` (SCRUM-849, recorta); `GET /admin/partes` recorta con
+`whereSuyoElTrabajo` (tres ejes); el historial del cliente recorta con `ejesDelTecnico` (tres ejes);
+`POST /consolidar` es de admin. **No hay otra fuga.** Sí hay dos sitios que recortan DE MÁS (el Técnico
+deja de ver lo suyo, no ve lo ajeno), y no se tocan aquí:
+
+- `jobs.routes.ts:926` (y el mismo patrón en `:968`, `:993`, `:1158` y `:1205`): `GET /admin/jobs/:id`,
+  `/gastos`, `PATCH`, `/ics` y el alta de albarán miran sólo `operarioId`. Un Técnico asignado por
+  `assignedUserId` o por la tabla ve el Trabajo en la lista (`:820`, tres ejes) y recibe 404 al abrirlo.
+  Leído en el código, no ejecutado.
+- `precarga.service.ts:188` (`condicionDelTecnico`): dos ejes, sin la tabla `assignees`.
+
+**No visto en yaqu.app:** no hay forma de abrir sesión de Técnico en producción (SCRUM-1555 c.19743).
+Lo que se puede mirar allí tras el merge es el control negativo, con la administradora de la cuenta QA:
+las dos bandejas siguen contestando igual.

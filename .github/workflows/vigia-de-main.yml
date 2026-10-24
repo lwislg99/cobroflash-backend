@@ -179,3 +179,34 @@ jobs:
             esac
             echo "- **$p** ${NUM:+#$NUM}" >> "$GITHUB_STEP_SUMMARY"
           done
+
+      - name: Sin veredicto, el job en ROJO
+        # SCRUM-1324d (decisión del fundador, SCRUM-1324 c.20749: «Sí, rojo sin veredicto»). Del 22 al
+        # 24-oct el juez no escribió veredicto en más de 120 pasadas seguidas (le faltaba `typescript`,
+        # SCRUM-1324c) y el job salió `success` en todas: su silencio y su «todo bien» eran el mismo
+        # verde. Va DESPUÉS de avisar, para que el aviso salga igual, y con `always()` para que corra
+        # aunque un paso de antes haya caído.
+        # Veredicto = `vigia.json` legible, con al menos un commit juzgado, y salida 0 o 1. La salida 1
+        # CON veredicto es un rojo o CIEGO del código, que ya va al Issue: eso no tumba este job.
+        if: always()
+        env:
+          SALIDA: ${{ steps.juez.outputs.salida }}
+        run: |
+          motivo=""
+          if [ ! -f vigia.json ]; then
+            motivo="el juez no escribió vigia.json"
+          elif ! N="$(node -e 'const d = JSON.parse(require("fs").readFileSync("vigia.json", "utf8")); if (!Array.isArray(d.veredictos)) process.exit(1); process.stdout.write(String(d.veredictos.length))' 2>/dev/null)"; then
+            motivo="vigia.json no se puede leer o no trae «veredictos»"
+          elif [ "$N" = "0" ]; then
+            motivo="vigia.json no juzga ningún commit"
+          fi
+          case "${SALIDA:-}" in
+            0|1) ;;
+            *) motivo="${motivo:+$motivo · }salida del juez «${SALIDA:-vacía}» (2 = no supo mirar)" ;;
+          esac
+          if [ -n "$motivo" ]; then
+            echo "::error title=Vigía de main SIN veredicto::$motivo"
+            echo "- 🔴 **SIN veredicto**: $motivo" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          echo "- veredicto: **$N** commit(s) juzgado(s), salida $SALIDA" >> "$GITHUB_STEP_SUMMARY"
