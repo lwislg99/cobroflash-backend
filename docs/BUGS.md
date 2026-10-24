@@ -337,7 +337,16 @@
 - **Quedaba abierto, y lo cierra SCRUM-1338 (1-oct-2026):** el botón «Crear producto» del alta no se le vetaba al operario, aunque
   `POST /admin/products` exige admin desde SCRUM-614. Ahora va deshabilitado y con su nota (`docs/master/SCRUM-1338.md`).
 
-### [ ] P1-1303 · una anulación que pierde la carrera contra un cobro deja la factura `paid` CON su eslabón de anulación sellado (1-oct-2026, residual de SCRUM-1303)
+### [x] P1-1303 · una anulación que pierde la carrera contra un cobro deja la factura `paid` CON su eslabón de anulación sellado (1-oct-2026, residual de SCRUM-1303; resuelto en SCRUM-1314b, 24-oct-2026)
+- **Resuelto en SCRUM-1314b (24-oct-2026), con el GO del fundador sobre el camino de emisión
+  (SCRUM-1314 c.20754):** el sellado y el paso a `annulled` son ahora UNA sola `update`, con `pending`
+  en el `where`, dentro de la transacción y el cerrojo del sellado, y la liberación de albaranes va en
+  esa misma transacción. Si el cobro gana, no casa ninguna fila (P2025), se deshace todo y no queda
+  eslabón. Y una factura que ya tiene `vfAnulHash` no se vuelve a sellar (antes un reintento tras un
+  500 pisaba la huella). El caso «RESIDUAL CONOCIDO» del test de abajo pasa a afirmar que el eslabón
+  huérfano NO existe. **Lo que no cierra:** las filas que ya pudieran haber quedado así (el recuento
+  P3 de c.20754 es de sólo lectura y aparte), ni el alta, R1, la remisión o el XML, que el GO no cubre.
+  Registro: `docs/master/SCRUM-1314.md`, tramo 1314b.
 - **Qué pasa:** `POST /admin/invoices/:id/annul` sella la anulación (`applyVeriFactuAnulacion`, que
   escribe `vfAnulHash`/`vfAnulPrevHash`/`vfAnulTimestamp` y extiende la cadena) ANTES de escribir el
   estado, en su propia transacción. Si un cobro entra mientras se sella, desde SCRUM-1303 la escritura
@@ -357,7 +366,8 @@
   que la Parte L no declara): STOP, reglas 5 y 40. Decide el fundador. Tampoco se repara nada ya
   escrito: primero hay que medir si alguna factura quedó así.
 - **Fijado por un test:** `tests/scrum1303-estado-dentro-del-where.test.mjs`, caso «RESIDUAL
-  CONOCIDO». Si alguien cambia este comportamiento, cae y remite aquí.
+  CONOCIDO». Si alguien cambia este comportamiento, cae y remite aquí. *(Desde SCRUM-1314b ese caso
+  afirma lo contrario: «tras B′ NO queda eslabón de anulación».)*
 
 ### [ ] P1-WA-TASA · La tasa de entrega de WhatsApp lee **100 %** con 9 de 10 mensajes FALLIDOS (15-sep-2026, hallazgo colateral de SCRUM-530)
 - **Medido sobre el servicio real**, con la base doblada y filas fabricadas (ni una base, ni una
