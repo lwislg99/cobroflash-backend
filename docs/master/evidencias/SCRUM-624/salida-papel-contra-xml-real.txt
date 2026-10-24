@@ -1,0 +1,18 @@
+población | tipo | facturas | PDF≠XML | TOTAL impreso≠guardado | PDF no cuadra consigo | XML no cuadra consigo | R1 guarda un total que no es Σ(base+cuota) de sus líneas
+factura única · entera · 21 % | F1 | 100 | 1,0 % (1) | 1,0 % (1) | 1,0 % (1) | 0,0 % (0) | —
+factura única · entera · 21 % | R1 | 100 | 6,0 % (6) | 1,0 % (1) | 1,0 % (1) | 5,0 % (5) | 5
+factura única · entera · 10 % | F1 | 100 | 0,0 % (0) | 0,0 % (0) | 0,0 % (0) | 0,0 % (0) | —
+factura única · entera · 10 % | R1 | 100 | 5,0 % (5) | 0,0 % (0) | 0,0 % (0) | 5,0 % (5) | 5
+factura única · decimal · 21 % | F1 | 100 | 1,0 % (1) | 1,0 % (1) | 1,0 % (1) | 0,0 % (0) | —
+factura única · decimal · 21 % | R1 | 100 | 2,0 % (2) | 1,0 % (1) | 1,0 % (1) | 1,0 % (1) | 1
+factura única · decimal · 10 % | F1 | 100 | 0,0 % (0) | 0,0 % (0) | 0,0 % (0) | 0,0 % (0) | —
+factura única · decimal · 10 % | R1 | 100 | 1,0 % (1) | 0,0 % (0) | 0,0 % (0) | 1,0 % (1) | 1
+factura única · decimal · 21/10/4 % | F1 | 100 | 26,0 % (26) | 10,0 % (10) | 25,0 % (25) | 0,0 % (0) | —
+factura única · decimal · 21/10/4 % | R1 | 100 | 28,0 % (28) | 10,0 % (10) | 25,0 % (25) | 3,0 % (3) | 3
+tramos 50/50 · entera · 21 % | F1 | 200 | 13,0 % (26) | 12,5 % (25) | 12,5 % (25) | 0,0 % (0) | —
+tramos 50/50 · entera · 21 % | R1 | 200 | 21,5 % (43) | 12,5 % (25) | 12,5 % (25) | 12,5 % (25) | 25
+tramos 30/40/30 · decimal · 21/10/4 % | F1 | 300 | 37,7 % (113) | 17,7 % (53) | 34,7 % (104) | 0,0 % (0) | —
+tramos 30/40/30 · decimal · 21/10/4 % | R1 | 300 | 38,0 % (114) | 17,7 % (53) | 34,7 % (104) | 0,3 % (1) | 1
+CONTROL · cero: el papel contra sí mismo, 0 diferencias en 2000 PDF
+CONTROL · sembrado: el total desplazado 0,01 se ve en 7 de 7 poblaciones
+PDF generados: 2000
