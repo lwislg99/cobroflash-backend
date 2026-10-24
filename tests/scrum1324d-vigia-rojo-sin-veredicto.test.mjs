@@ -15,6 +15,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { casosEscritos } from './_casos-escritos.mjs';
 import { temporal } from './_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
 
 const RAIZ = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
@@ -84,7 +85,8 @@ test('SCRUM-1324d · FORMA: último paso, con always(), lee la salida del juez, 
   assert.match(guion(juez), /echo "salida=\$codigo" >> "\$GITHUB_OUTPUT"/, '🔴 el juez ya no publica su salida');
 });
 
-for (const [caso, entrada] of [
+// SCRUM-1415: un caso por fila, con el nombre ESCRITO (la señal por nombres no lee nombres construidos).
+const SIN_VEREDICTO = [
   ['sin vigia.json y salida 1 (el ciego del 22-24 oct)', { vigia: null, salida: '1' }],
   ['sin vigia.json y salida 0', { vigia: null, salida: '0' }],
   ['salida 2: el vigía no supo mirar', { vigia: CON_DOS, salida: '2' }],
@@ -93,21 +95,31 @@ for (const [caso, entrada] of [
   ['vigia.json ilegible', { vigia: '{ esto no es json', salida: '0' }],
   ['vigia.json sin «veredictos»', { vigia: '{"salida":0}', salida: '0' }],
   ['vigia.json que no juzga ningún commit', { vigia: '{"salida":0,"veredictos":[]}', salida: '0' }],
-]) {
-  test(`SCRUM-1324d · 🔴 ROJO sin veredicto: ${caso}`, () => {
-    const r = correr(entrada);
-    assert.ifError(r.error);
-    assert.equal(r.status, 1, `🔴 sin veredicto el paso sale ${r.status}, no 1:\n${r.salida}`);
-    assert.match(r.salida, /::error title=Vigía de main SIN veredicto::/, '🔴 sale rojo sin decir por qué');
-    assert.match(r.resumen, /SIN veredicto/);
-  });
-}
+];
+const rojo = casosEscritos(SIN_VEREDICTO, ([caso]) => `SCRUM-1324d · 🔴 ROJO sin veredicto: ${caso}`, ([, entrada]) => {
+  const r = correr(entrada);
+  assert.ifError(r.error);
+  assert.equal(r.status, 1, `🔴 sin veredicto el paso sale ${r.status}, no 1:\n${r.salida}`);
+  assert.match(r.salida, /::error title=Vigía de main SIN veredicto::/, '🔴 sale rojo sin decir por qué');
+  assert.match(r.resumen, /SIN veredicto/);
+});
+test('SCRUM-1324d · 🔴 ROJO sin veredicto: sin vigia.json y salida 1 (el ciego del 22-24 oct)', rojo(0));
+test('SCRUM-1324d · 🔴 ROJO sin veredicto: sin vigia.json y salida 0', rojo(1));
+test('SCRUM-1324d · 🔴 ROJO sin veredicto: salida 2: el vigía no supo mirar', rojo(2));
+test('SCRUM-1324d · 🔴 ROJO sin veredicto: salida vacía: el juez no llegó a correr', rojo(3));
+test('SCRUM-1324d · 🔴 ROJO sin veredicto: sin salida en el entorno', rojo(4));
+test('SCRUM-1324d · 🔴 ROJO sin veredicto: vigia.json ilegible', rojo(5));
+test('SCRUM-1324d · 🔴 ROJO sin veredicto: vigia.json sin «veredictos»', rojo(6));
+test('SCRUM-1324d · 🔴 ROJO sin veredicto: vigia.json que no juzga ningún commit', rojo(7));
+rojo.todos();
 
-for (const salida of ['0', '1']) {
-  test(`SCRUM-1324d · POSITIVO: con veredicto (2 commits) y salida ${salida}, el paso NO cae`, () => {
-    const r = correr({ vigia: CON_DOS, salida });
-    assert.ifError(r.error);
-    assert.equal(r.status, 0, `🔴 con veredicto el paso sale ${r.status}:\n${r.salida}`);
-    assert.match(r.resumen, /veredicto: \*\*2\*\* commit/, '🔴 no declara cuántos commits juzgó');
-  });
-}
+const CON_VEREDICTO = ['0', '1'];
+const positivo = casosEscritos(CON_VEREDICTO, (salida) => `SCRUM-1324d · POSITIVO: con veredicto (2 commits) y salida ${salida}, el paso NO cae`, (salida) => {
+  const r = correr({ vigia: CON_DOS, salida });
+  assert.ifError(r.error);
+  assert.equal(r.status, 0, `🔴 con veredicto el paso sale ${r.status}:\n${r.salida}`);
+  assert.match(r.resumen, /veredicto: \*\*2\*\* commit/, '🔴 no declara cuántos commits juzgó');
+});
+test('SCRUM-1324d · POSITIVO: con veredicto (2 commits) y salida 0, el paso NO cae', positivo(0));
+test('SCRUM-1324d · POSITIVO: con veredicto (2 commits) y salida 1, el paso NO cae', positivo(1));
+positivo.todos();
