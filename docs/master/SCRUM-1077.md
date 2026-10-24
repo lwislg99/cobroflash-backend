@@ -92,3 +92,47 @@ Orden EHA/3111/2009, consolidada (`https://www.boe.es/buscar/act.php?id=BOE-A-20
 ## Mis errores
 
 - Para arreglar mi conductor de mutaciones pasé código por `node -e` desde bash, y el escapado me rompió el fichero. Lo vi al leer la salida y lo rehice con la herramienta de edición. Es la cicatriz J1 del 1-oct, otra vez: fuera del árbol, sin daño en el repo.
+
+---
+
+# SCRUM-1077b · En qué casilla del 390 va la base de la S2 del emisor — MEDIDO Y PROPUESTO, no construido
+
+**Medido contra:** `origin/main` = `c6d3aa11f15a0a582f92b8ec4a8c9838ea426dd8` · 2026-10-24T15:40:32Z
+**Rama:** `scrum-1077b-casilla-s2-390` · **Puesto:** J1 (sesión `jv-j1bx`) · **Encargo:** orquestador `cobroflash-backend-95`, 24-oct-2026 · **Decisión que lo pide:** el fundador, «Leer el impreso del 390 y proponer» (24-oct, en el chat del orquestador; no está en Jira)
+
+A9: aviso → A10 «Lo que se deduce de NO haber visto algo no vale si algo no se pudo mirar: se queda sin juzgar.» — no se pudo comprobar: el tramo 1077a dice que el Anexo IV está en las imágenes `_14` a `_17`, pero llega de la `_13` a la `_21`, y la casilla de esta pregunta está en la `_19`; un rango de páginas copiado de un registro no pasa por ningún guard
+
+## PASO 0
+
+SCRUM-1063 c.20768 manda la S2 del emisor a la 122 del 303, y c.20819 (1063f) dice que en el 390 sigue sin clasificar porque «su casilla en el 390 NO está decidida». En `main` el 390 no tiene el apartado 10: `git grep` de `99`, `108`, `125` o `volumen` en `src/modules/fiscal/modelo390/` da 0, y el control positivo `sinClasificar` da 4 líneas. No hay rama `scrum-1077b*` en el remoto ni ningún PR con ese nombre. Sólo docs: no se toca código, ni esquema, ni emisión.
+
+## El impreso vigente, leído
+
+- **Orden consolidada:** API `legislacion-consolidada/id/BOE-A-2009-18472/texto`, leída a las 15:38Z. El Anexo I: «Se sustituye por el que figura como anexo IV de la Orden HAC/27/2026, de 22 de enero, según establece su art. 3.». Es la única mención de HAC/27/2026 en el texto.
+- **La orden:** `BOE-A-2026-1761`. Art. 3: el Anexo I «se sustituye por el anexo IV de esta orden». Disposición final única: «se aplicará por primera vez: […] 2. A la declaración-resumen anual del Impuesto sobre el Valor Añadido, modelo 390, correspondiente al ejercicio 2026.»
+- **Las imágenes del Anexo IV** son de la `1761_16563944_13.png` a la `_21.png` (la lista sale del HTML de la orden). La casilla está en la **`_19.png`, «Pág. 6»**, apartado **«10. Volumen de operaciones»**, recuadro «Operaciones realizadas en el ejercicio»:
+  - **125 · «Operaciones sujetas con inversión del sujeto pasivo»**. Una sola cifra, sin cuota.
+  - En la misma página, **108**: «Total volumen de operaciones (Art. 121 Ley IVA) (99 + 653 + 103 + 104 + 105 + 110 + 100 + 101 + 102 + 125 + 126+ 127 + 128 + 227 + 228 - 106 - 107)».
+- **No es la 77 ni la 27/28.** «27/28 IVA devengado en otros supuestos de inversión del sujeto pasivo» (pág. 2, `_14`) y la 77 (pág. 5, `_18`) son del destinatario, que autorrepercute, igual que la 12/13 del 303. La 113 y la 523 (pág. 7, `_20`) son triangulares y servicios localizados.
+
+## Las instrucciones de la AEAT
+
+- **Para 2026 no hay.** La página del procedimiento (`sede.agenciatributaria.gob.es/Sede/procedimientoini/G412.shtml`, leída a las 15:38Z) enlaza «Instrucciones 2025» e «Instrucciones 2024», y nada más. Control: esas dos aparecen en el mismo listado. Además, `…/G412/Instrucciones_modelo_390-2026.pdf` da 404. Esa ruta la deduje yo, así que el 404 no prueba nada por sí solo.
+- **Las de 2025** (`…/G412/Instrucciones_modelo_390-2025.pdf`, `last-modified` 24-feb-2026), pág. 22: «125 Operaciones sujetas con inversión del sujeto pasivo: se hará constar, el importe total de: Las entregas de oro a las que sea de aplicación la regla contenida en el artículo 84, apartado Uno, número 2º, letra b) de la Ley y las entregas de oro de inversión a que se refiere el artículo 140 de la misma Ley. Las entregas de bienes y prestaciones de servicios realizadas a que se refiere el artículo 84 Uno. 2º a), c), d), e), f) y g) de la Ley.»
+- Y en la pág. 21, sobre la **99** «Operaciones en régimen general»: «Tampoco se incluirán las operaciones exentas incluidas en las casillas 103, 104 y 105 ni las operaciones incluidas en las casillas 110 y 125.»
+- El rótulo de la 125 es el mismo en el impreso de 2026. Que el texto de 2026 diga lo mismo que el de 2025 **no está medido**: todavía no existe.
+
+## Diferencia con la 122 del 303
+
+La 122 es «Información adicional» y no suma en nada. La 125 del 390 **sí entra en un total**, el 108 (volumen de operaciones, art. 121 LIVA), y **saca la S2 de la 99**. Hoy YaQu no rellena ni la 99 ni la 108, así que llevar la S2 a la 125 no cambia ninguna otra casilla. Si algún día se rellenan, la S2 tiene que quedar fuera de la 99 y dentro de la 108.
+
+## Propuesta para el fundador (NO construida)
+
+- ✅/❌ **La base de la S2 del emisor va a la casilla 125 del 390**, como suma de las cuatro 122 del 303. Es el mismo cálculo (aceptación 2) y depende de que 1063f (#2855) entre antes.
+  - **Con ✅:** la S2 sale de `sinClasificar` del 390 y la 125 lleva su cita. La liquidación (33/34, 47, 64, 65) no cambia, porque la S2 no tiene cuota. El aviso firmado de la S2 (c.20797) sale sólo si alguna S2 queda fuera de la 122. Se construye en 1077c, encima de 1063f.
+  - **Con ❌:** la S2 se queda como hoy en 1063f: en `sinClasificar` del 390, con su trimestre, y la pone el asesor.
+- **Riesgo en los dos casos:** la 125 (y la 122) se limitan al art. 84.Uno.2º y al oro, y la factura no guarda la letra del supuesto, así que la 125 recogería toda S2. Lo deduzco del enunciado. No está medido sobre facturas.
+
+## Lo que no se ha hecho
+
+No hay código ni tests, ni nada en yaqu.app. **Suite local: NO CORRIDA** (sólo docs). Sólo corrí los guards de registro.
