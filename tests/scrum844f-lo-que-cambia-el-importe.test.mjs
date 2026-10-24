@@ -23,7 +23,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 const { clasificarPorCobro } = await import('../dist/modules/invoicing/domain/criterioCaja.js');
-const { leerMarcaSuplido, MARCA_SUPLIDO } = await import('../dist/modules/invoicing/domain/suplidos.js');
+// SCRUM-1063c: `leerMarcaSuplido` y `MARCA_SUPLIDO` ya no se exportan (scrum411). Se mide por
+// `partirPorSuplido`, que pasa por la misma lectura, y la clave se escribe a mano.
+const { partirPorSuplido } = await import('../dist/modules/invoicing/domain/suplidos.js');
+const MARCA_SUPLIDO = 'suplido';
+const leerMarcaSuplido = (linea) => {
+  const p = partirPorSuplido([linea]);
+  return p.ok ? { ok: true, suplido: p.suplidos.length === 1 } : { ok: false };
+};
 const { validarFacturaSuelta, ERROR_LINEAS_INVALIDAS } =
   await import('../dist/modules/invoicing/domain/facturaSuelta.js');
 const { vistaPreviaSerie } = await import('../dist/modules/invoicing/domain/vistaPreviaSerie.js');
