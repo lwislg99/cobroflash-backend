@@ -455,3 +455,50 @@ Y crucé los 200k de contexto sin avisar al cruzarlos: medí al acabar el arranq
 (122.434), y la siguiente medida, tras la tanda de guards, ya daba 246.598. Lo avisé en ese momento,
 tarde. La lectura del ticket por la herramienta de Jira, la salida de los tests y la del censo
 fueron más gruesas de lo que estimé, y entre medias no me medí.
+
+## Anexo SCRUM-1252f · las `F1` con número `J-`, contadas en STAGING y DEV
+
+**Medido contra:** `origin/main` = `25ad5d43b6a8ed41fdcb90c5fdbc0e2e388ec1be` · 2026-10-24T10:04:53Z (hora de GitHub, `gh api -i zen`)
+
+A9: aviso → cicatriz J1 «Fui de Jira a la medición sin correr `node scripts/equipo/norma.mjs --arranque`, que CLAUDE.md pide en cada tanda» — no se pudo comprobar: lo impediría un hook de arranque que exigiera haberla leído, y los hooks no son de este puesto
+
+Sesión J1bg (`jv-j1bg`), 24-oct-2026, por encargo del orquestador de Javier
+(`cobroflash-backend-95`). Resultado y controles también en Jira, c.20718. **Sólo lectura:** cada
+consulta va dentro de `SET TRANSACTION READ ONLY` (la base contestó `transaction_read_only = on`).
+Ninguna fila cambiada (regla 29). Producción no se toca: en un árbol no vive.
+
+### ① Qué bases
+
+`node scripts/comprobar-claves-bd.mjs` → `rc=0`: `DATABASE_URL_STAGING` (base `railway`) y
+`DATABASE_URL_DEV` (base `yaqu_dev_javier`); `DATABASE_URL` ausente. `DATABASE_URL_TESTS` apunta a la
+misma base que DEV: se mide una vez. El script es de un solo uso, vive fuera del repositorio y no
+imprime clave ni URL. El turno de staging no se tomó: la receta (RUNBOOKS, SCRUM-188/232) lo pide
+para tandas y operaciones que escriben, y tomarlo escribe un marcador en la base.
+
+### ② Resultado
+
+| base | c.20697 (`F1` con `J-`) | total | f1 | con_j | por `type` |
+| --- | --- | --- | --- | --- | --- |
+| STAGING | 0 filas | 9 | 0 | 9 | `JUST` 9, las 9 con `J-` |
+| DEV | 0 filas | 5 | 5 | 0 | `F1` 5, ninguna con `J-` |
+| PRODUCCIÓN (c.20700, la corrió el fundador) | 0 filas | 2 | 0 | 2 | — |
+
+Controles: el mismo predicado (`type = 'F1' AND number LIKE 'J-%'`) sobre tres filas sembradas
+(`F1`/`J-…`, `F1`/`F26…`, `JUST`/`J-…`) da 1 en las dos bases. Ninguna tabla está vacía. STAGING
+cumple el criterio de c.20698 (total > 0 y con_j > 0). DEV no tiene ningún `J-`, así que su cero no
+pone a prueba esa mitad del predicado. Como no salió ninguna fila, no hay id, número, merchant ni
+fecha que dar (la consulta de detalle, con `isDemoMerchant` de la casa, volvió vacía).
+
+### ③ Lo que dice
+
+- Los cinco del 10-ago no están hoy en ninguna de las tres bases medibles.
+- Corrección a la premisa del enunciado («son de desarrollo o de staging»): el censo del 10-ago fue
+  **de producción** (`SCRUM-1232.md:197-198`, que cita `PREGUNTAS_ASESOR.md:640-641`). Los cinco
+  estaban en producción, y producción tenía 2 filas el 28-sep. Cuándo y por qué desaparecieron esas
+  filas: NO MEDIDO. Es pregunta para el fundador (regla 29 si eran documentos emitidos).
+- NO MEDIDO: bases de desarrollo que no están en este árbol (las del otro equipo, los Postgres locales).
+
+### Lo que hice mal
+
+No corrí la lectura de arranque (`norma.mjs --arranque`): pasé de Jira a la medición. Va a mi
+cicatriz, porque no hay ningún guard que lo vea.

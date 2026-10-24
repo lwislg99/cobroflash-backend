@@ -331,3 +331,114 @@ dos tramos seguidos han dado cero inexistentes. Lo que sí enseña:
 - Tanda completa: no corrida. El cambio de la rama es este tramo y cuatro ficheros bajo
   `docs/master/evidencias/scrum1511f/`.
 - El hook de arranque dijo «SIN IDENTIDAD» (SCRUM-1498, carril de S5); se siguió, como manda la ficha.
+
+## SCRUM-1511g · Tramo 4 (J4, 24-oct-2026): las ancladas re-medidas tras SCRUM-1502. Son 33, y ninguna cita un ticket ni un comentario que no exista
+
+**Medido contra:** `origin/main` = `25920fe4b1e0848c5ce33f8cb7a01ccf7157b7e0` · 2026-10-24T10:29:05Z (hora de GitHub, leída al acabar de medir); al escribir, `origin/main` ya iba en `d34ee753fdd5b9858b31307d2d34704c80275f67` (4 commits, sólo `docs/master/` y una evidencia ajena: ninguna marca ni el trinquete).
+
+A9: aviso → cicatriz J4 «medí el contexto en los dos puntos fijos y en ninguno más, y crucé los 200k sin verlo (220.488): entre medias pedí a Jira 50 resultados para leer una sola clave y metí dos lecturas enteras en el chat» — no se pudo comprobar: nada mide el contexto de una sesión desde dentro después de cada llamada cara, y el contador sólo avisa si alguien lo mira.
+
+### T4.0 · En corto
+
+| pregunta | medido |
+| --- | --- |
+| marcas que el trinquete da por ancladas | **33** (`porNivel()` de `scrum921c`: 33; lista: 33). El 8-oct eran 15 |
+| citas con la forma que el trinquete reconoce | 38, en 20 pares ticket + comentario distintos, sobre 16 tickets |
+| ancladas que citan un ticket que NO existe | **0 de 33** (16 de 16 tickets existen) |
+| ancladas que citan un comentario que NO existe, o que no está en ese ticket | **0 de 33** (20 de 20 pares, 38 de 38 citas) |
+| ancladas cuyo comentario NO es una firma, leído | **1**: `scripts/guard-pasos-del-editor.mjs:1` → SCRUM-915 comentario 15790 |
+| ancladas cuyo comentario es una firma DELEGADA, no del fundador | 4 enteras (`scrum755:113`, `quotesView.js:429`, `_asignacion-bloques-presupuesto.mjs:30` → 15868; `actividadEquipo.ts:1` → 17825) y `scrum601:87` en 3 de sus 5 citas |
+| ancladas cuya firma del fundador es POSTERIOR a la fecha que la marca afirma | 17 anclan a comentarios del 8 o del 23-oct (18835, 20514, 20629, 20702); de las 6 que leí, 5 fechan la aprobación en agosto o septiembre |
+
+Las 18 nuevas desde el 8-oct son las de SCRUM-1502 (c.20514, c.20629, c.20702, #2805 y anteriores), más
+`scrum1260b` (SCRUM-1260 c.19616), `scrum299` (SCRUM-299 c.12188) y la primera cita de `scrum593b`
+(SCRUM-593 c.14262).
+
+### T4.1 · Cómo, con los instrumentos del tramo 3 sin tocar
+
+1. `node docs/master/evidencias/scrum1511f/ancladas.mjs <raíz> <salida.json>` sobre este árbol: saca las
+   ancladas por el MISMO código del trinquete (copia fuera del árbol con los imports reescritos). Al
+   importarse corren sus 13 casos: 13 pasan, 0 fallan. Salida: `docs/master/evidencias/scrum1511g/salida-ancladas.txt`.
+2. Jira, consultado por mí, sin subagente: una búsqueda por clave de 15 tickets (SCRUM-1511 incluido) y
+   SCRUM-1502 y SCRUM-1404 aparte. 556.248 B, 17 tickets, sin página siguiente, y **cada ticket devolvió
+   todos sus comentarios** (SCRUM-1404: 26 de 26; el 8-oct dio 20 de 23).
+3. `node docs/master/evidencias/scrum1511f/cotejo.mjs <jira.json> <salida.json>`: mira, por cada cita, si
+   el id está en la lista de comentarios de ESE ticket. Salida: `salida-cotejo.txt`.
+4. Contenido: los 6 comentarios nuevos (20702, 20514, 20629, 19616, 12188, 14262) los leí enteros; los
+   14 viejos los leyeron a mano las entregas c.18904 y c.18909, y lo que he comprobado hoy es que **ninguno
+   se ha editado desde entonces** (`updated` = `created` en los 14).
+
+La respuesta de Jira no está en el árbol: lleva nombres de cuentas.
+
+### T4.2 · Controles
+
+| control | resultado |
+| --- | --- |
+| 🔴 POSITIVO SEMBRADO de punta a punta: en un worktree fijado a `25920fe4`, una marca fabricada con `// Consta en: SCRUM-6604 comentario 99999.` | el trinquete la da por **anclado** (33 → 34) **y sigue 13 de 13 en verde**; el cotejo la saca como la única inexistente (`salida-cotejo-espejo-sembrado.txt`) |
+| el mismo, QUITADO | 33 ancladas y 0 inexistentes: la cifra de T4.0 |
+| de cero del ticket, DERIVADO: la mayor clave de Jira hoy es SCRUM-1604; SCRUM-6604 no lo nombra ningún fichero ni commit de `main` (SCRUM-1511: 28 ficheros y 7 commits) | `getJiraIssue` devuelve **404** («La incidencia no existe o no tienes permiso para verla») |
+| de cero del comentario: el mayor id bajado (20723) + 100.000, en SCRUM-1511 | ticket sí, comentario no |
+| cruzado: comentario real en ticket AJENO (18924 en SCRUM-1252; 17726 en SCRUM-915) | ticket sí, comentario no |
+| positivo de lectura: SCRUM-1511 c.18924 y c.18903, leídos por mí hoy | EXISTE, los dos |
+| positivo del campo de edición: c.18922 dice de sí mismo que se editó | sale editado (2 editados de 165 bajados) |
+
+El espejo se retiró limpio: fichero sembrado borrado, `git status` vacío, `git worktree remove` sin
+`--force`. Del 404 no se separa «no existe» de «sin permiso».
+
+### T4.3 · Lo que dice el contenido
+
+* **La única que no es firma:** `guard-pasos-del-editor.mjs:1` dice «la v3, aprobada por el fundador» y
+  cita SCRUM-915 c.15790, que es la OPINIÓN del fundador sobre la **v1** («mola, pero sigue siendo un poco
+  lioso…») y la dirección de la v2 del orquestador. La aprobación de la v3 sí consta, pero en SCRUM-1511
+  c.18924 («V3 sí está aprobada»), que la marca no cita. El trinquete la cuenta como anclada.
+* **Las cuatro delegadas y `scrum601`:** igual que el 8-oct. El fundador decidió (c.18903 y c.18924) que la
+  delegada vale para lo técnico, que lo de texto sólo vale con su firma, y que se aplica sólo hacia
+  adelante: ninguna pasa a estar «mal» por esto.
+* **Las 17 de firma posterior:** los comentarios 20514, 20629 y 20702 son firmas del fundador del 23-oct,
+  transcritas por el orquestador, y nombran cada marca por fichero y línea (20702 dice de la 12 «firma del
+  fundador hoy, no delegación»). Lo que no sostienen es la fecha que escribe la marca («10-ago», «5-ago»,
+  «5-sep»): el ancla prueba que hoy consta, no que constara entonces. Pasa lo mismo con 18835 (tramo 3).
+* **Las seis nuevas, una a una:** 20702 cubre las 9 marcas que lo citan (P1, P7, P8, P9, P12-P15, P17);
+  20514 cubre `settingsSubmenus.js:36` (su punto 4) y `scrum291:99` (su punto 5, el bloqueo de la serie);
+  20629 cubre las 5 que lo citan (`scrum586:393` va con la «:392» del comentario: la línea se movió una);
+  19616 es la decisión del fundador de retirar `JUST` (decisión, no texto); 14262 es su literal de la
+  cabecera; y 12188 se titula «MICROCOPY APROBADA» sin decir dentro quién aprobó: que fue el fundador lo
+  dice él en 20702 P10 («eran míos»).
+
+### T4.4 · Las preguntas para el fundador (✅/❌)
+
+1. ¿El trinquete debe exigir que el **ticket** citado exista? ✅ / ❌
+2. ¿Y que el **comentario** exista DENTRO de ese ticket? ✅ / ❌ — es la que caza el sembrado; la 1 sola no
+   caza un id inventado en un ticket real.
+3. Si alguna es ✅, ¿cómo en CI?
+   * (a) con red contra Jira ✅ / ❌ — necesita credencial en CI (workflow: S5 y fundador) y sale CIEGO
+     cuando Jira no responde;
+   * (b) sin red, contra una **lista congelada** en el árbol de los pares leídos (hoy 20) ✅ / ❌ — cada
+     ancla nueva añade su par y quien lo añade pega en su registro lo que leyó; no impide que quien
+     inventa la cita invente la fila;
+   * (c) ninguna: el nivel deja de llamarse «anclado» y pasa a decir lo que mide, «bien escrito» ✅ / ❌.
+4. ¿Se pide algo sobre el CONTENIDO (la de 15790, las 17 de fecha anterior)? ✅ / ❌ — ningún mecanismo lo
+   ve sin leer; sólo se puede pedir a quien escribe el ancla.
+
+Mi opinión, que no decide: dos mediciones seguidas dan 0 inexistentes y el único fallo real es de
+contenido, así que la red (a) no compra nada. (b) o (c) son gratis; (b) cazaría el sembrado.
+
+**Carril de quien lo construiría:** `tests/scrum921c-firma-con-respaldo-en-codigo.test.mjs` y
+`tests/_respaldo-de-firma.mjs` **no tienen fila en `dos-equipos.md` §3** (`node scripts/carriles.mjs de`
+lo dice de los dos: «nadie lo reclama»). Por la regla «el test de un ticket, quien trabaja el ticket», es
+del equipo de Javier; quien lo tocó último fue J6 (SCRUM-1502h). Lo asigna el orquestador. Si sale (a),
+la parte de workflow es de S5 y del fundador.
+
+### T4.5 · Lo que NO he hecho
+
+* **Contenido de los 14 viejos:** no los he releído por contenido; sólo que siguen existiendo y sin editar.
+* **Las 167 rastreables** (eran 149): sin tocar.
+* `scrum1502h` usa `RE_ANCLA_JIRA` y `respaldoDe` sólo sobre casos fabricados, no sobre el árbol: no
+  aporta población.
+* **Tanda completa: no corrida.** En local sólo corrieron los 13 casos de `scrum921c` al importarse, en
+  este árbol y en el espejo.
+* Nada tocado: ninguna marca, ningún ancla, ningún texto, `scrum921c`, `_respaldo-de-firma.mjs`,
+  `SIN_RESPALDO` (20). Ticket sin transicionar.
+* Errores propios: el primer espejo lo puse en el scratch, sin `node_modules`, y no arrancó (lo dijo el
+  código de salida, 1); lo rehice junto a los worktrees. Y para leer la mayor clave de Jira pedí 50
+  resultados en vez de 1: con eso y dos lecturas enteras crucé los 200k (220.488) sin medir entre medias.

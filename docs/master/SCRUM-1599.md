@@ -407,3 +407,99 @@ No hay Postgres en la máquina: PGlite 0.5 con `pglite-socket` en `127.0.0.1:556
   0 caen, 0 saltan.
 - De paso, confieso: para la primera inyección escribí `git show … > tests/scrum109…` y `guard-dangerous` lo paró
   (truncaba un fichero vigilado); se hizo con `git restore --source=origin/main`.
+## J6 · SCRUM-1599g · diseño A, nuestra mitad: fecha y veredicto de cada fichero en el recibo de la tanda gateada
+
+**Medido contra:** `origin/main` = `0e86dada4887f1ac54ce0ed5cad3c53c99c72c1c` · 2026-10-24T10:12:36Z (hora de GitHub al mezclar `origin/main` en la rama; sesión J6 `jv-j6bi` en su árbol `jv-j6bi`, por encargo del orquestador `cobroflash-backend-95`. Sin base y sin turno: la tanda gateada de verdad NO se ha corrido)
+
+A9: comprobación → `tests/scrum258-nota-por-sesion.test.mjs`
+
+Decisión del fundador: c.20715 ② («A: Sí, y a Luis lo suyo»). El aviso en `scripts/equipo/latido.mjs` es de S5 y aquí
+no se toca.
+
+### ① Qué se ha construido
+
+- **El reporter.** `scripts/_evidencia-tanda.mjs` gana un `export default`: un reporter de `node:test` que cuenta, por
+  fichero, los casos que pasan, caen y se saltan (el `file` de cada evento), y escribe UNA línea JSON al terminar. Un
+  `todo` no cuenta. Veredicto del fichero: `rojo` si cae alguno, `verde` si pasa alguno, `saltado` si no pasa ninguno
+  — **un fichero saltado no es verde**.
+- **El runner.** `scripts/staging-gated.mjs` lanza cada hijo con dos reporters: el `spec` a stdout, como antes (de su
+  resumen sale `parseCuenta`; desde node 24 era el de por defecto, y con un segundo reporter hay que nombrarlo o
+  desaparece), y el nuevo a un fichero dentro de un directorio de `mkdtemp`, fuera del árbol. Un hijo abortado por
+  tiempo, o con la salida vacía o cortada, no aporta veredictos: sus ficheros conservan los de antes, y se dice cuáles.
+- **El recibo** gana `porFichero`: `{ "<fichero>": { veredicto, veredictoEn, ultimoVerdeEn } }`. Se lee el recibo
+  anterior antes de pisarlo y se fusiona: lo que corrió ahora pisa su entrada, lo que no corrió se queda, y **un rojo
+  no borra la fecha del último verde**. En AUTOTEST el historial se copia sin tocar. Todo lo que el recibo ya escribía
+  sigue igual, y `validarEvidencia` decide lo mismo con o sin el campo nuevo (caso propio en el test).
+- **`diasSinVerde({ texto, ahoraMs, ficheros?, umbralDias? })`**, pura. `CIEGO` sin recibo, con un JSON ilegible o con
+  un recibo sin `porFichero` (el del 4-sep es así). Si no, `OK` con su `poblacion` y, por fichero, `verde` ·
+  `sin-verde` (con `dias` desde el último verde) · `nunca-verde` · `saltado` · `CIEGO` (está en `ficheros` y el recibo
+  no lo nombra). `avisa` sólo se calcula si llega `umbralDias`: el número no está decidido (la pregunta ④ de c.20713
+  no tiene respuesta en c.20715), y sin umbral la edad se da igual.
+
+### ② La llamada que haría falta en `latido.mjs` (S5), para el mensaje a Luis
+
+```js
+import { readFileSync } from 'node:fs';
+import { RUTA_RECIBO, diasSinVerde } from '../_evidencia-tanda.mjs';
+
+let texto = null;
+try { texto = readFileSync(RUTA_RECIBO, 'utf8'); } catch { texto = null; } // sin recibo → CIEGO
+const r = diasSinVerde({ texto, ahoraMs: Date.now() /* , ficheros: [...], umbralDias: N */ });
+// r.estado === 'CIEGO' → r.motivo · si no: r.poblacion, r.ficheros[i].{fichero, estado, dias}, r.avisos
+```
+
+`RUTA_RECIBO` es relativa a la raíz del árbol desde el que corre el latido. `ficheros` (los gateados de hoy) y
+`umbralDias` son decisión de S5 y del fundador.
+
+### ③ Comprobaciones
+
+| qué | resultado |
+|---|---|
+| test nuevo, código nuevo | 9/9 · 0 SKIP |
+| ROJO primero: el test nuevo contra `scripts/` de `main` (copia de `git archive HEAD` en un temporal) | cae: `does not provide an export named 'claveDeFichero'` |
+| recibo fabricado de N+1 días con umbral N | avisa; N días no avisa; el borde sale del umbral, no de un literal |
+| sin recibo (`null`, `''`, espacios), JSON roto, recibo con la forma del 4-sep, desglose vacío | CIEGO |
+| positivo sembrado: el fichero está en `ficheros` y se quita del recibo | CIEGO (y avisa), no verde |
+| el reporter de verdad, cargado por `node --test` con el `spec` al lado, sobre 4 ficheros fabricados | verde · rojo · saltado · rojo (el que no carga), y `ℹ tests 4` sigue en stdout |
+| scrum161 y sus vecinos del recibo (199, 239, 265 ×2, 182, 188, 249, 197, 1308, 1480f) y los de suite | ver ④ |
+
+**Mutaciones**, con el código quieto y una base de 9/9 sin mutar (en una copia temporal, no en el árbol): las cinco
+VIVAS, y cada una tumba SU caso (pasan + caen = 9 en las cinco):
+
+| mutación | cae |
+|---|---|
+| M1 · `fusionarPorFichero` olvida el último verde | el de fusionar |
+| M2 · el borde pasa de `>` a `>=` | el de N+1 días |
+| M3 · un fichero que el recibo no nombra cuenta como verde | el del positivo sembrado |
+| M4 · el runner sin `--test-reporter=spec` | el del runner |
+| M5 · el reporter cuenta un salto como pase | el del reporter (×2) |
+
+M1 y M2 van declaradas en `MUTACIONES_QUE_ME_TUMBAN` del test nuevo.
+
+### ④ Guards
+
+Sobre el árbol antes de mezclar (`25ad5d43b`), con `dist/` de `tsc --noCheck`: los del recibo, los de suite (237,
+976, 824, 836, 419, 702, 700, 719, 1415) y 258. Pasada final sobre el árbol fusionado con `0e86dada4`, `dist/`
+reconstruido, con el registro escrito y los de registro (267, 273, 1294, 921c, 1572): **27 ficheros · 278 casos =
+278 pass · 0 fail · 0 SKIP**. Suite entera local: NO CORRIDA (hoy hay 10 sesiones; hace de tanda el obligatorio).
+
+- **De paso, un rojo mío:** la primera versión escribía la salida del reporter en una ruta fija del temporal
+  (`yaqu-por-fichero-<pid>-<clave>.json`). `scrum258` la cazó dentro de `guards:entrada` (scrum976): una ruta fija la
+  comparte toda la máquina. Pasa a `mkdtemp`, y el directorio se borra en el evento `exit`, que también corre con los
+  `process.exit` de antes del turno. De ahí la línea A9.
+- `scrum836` cayó al principio por las tres anclas de `scrum608` en `dist/`: el árbol no traía `dist/`. Con `dist/`
+  construido, verde. No era de este diff.
+
+### ⑤ Lo que NO se ha hecho
+
+- **La fila de carril de los dos scripts NO nace en este PR**, aunque el encargo lo pedía. `carriles.mjs` dice
+  SIN CERRADURA, pero los dos están en la foto de deuda del 9-oct (`docs/master/evidencias/SCRUM-1480/sin-fila-9oct.txt`,
+  líneas 39 y 205 de 225): no son ficheros nuevos, así que «Cómo nace la fila» no aplica. Darles fila es editar la
+  tabla de `docs/equipo/dos-equipos.md`, que es de la S0, y bajar `quedan` en `scripts/_sin-fila-declarados.json`, cuyo
+  `leeme` dice que el equipo de Javier no edita esa tabla. Lo decide el orquestador con la S0.
+- El nombre del encargo, `scripts/test-staging-gated.mjs`, **no existe**: el runner es `scripts/staging-gated.mjs`
+  (el que nombra c.20715). `carriles.mjs` contestó «SIN CERRADURA» también por el que no existe: contesta por patrón.
+- La tanda gateada de verdad no ha corrido: el recibo real con `porFichero` está SIN VER. Lo que sí corrió de verdad
+  es el reporter, en un `node --test` hijo sobre ficheros fabricados.
+- El tamaño del recibo con ~1.500 ficheros en `porFichero`: sin medir.
+- `latido.mjs`, sin tocar (S5).
