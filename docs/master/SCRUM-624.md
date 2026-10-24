@@ -474,3 +474,81 @@ El descuadre es siempre de 1 o 2 céntimos.
   sólo lectura sigue siendo la de la fase C, y la corre el fundador.
 - **El IVA por tipo del papel frente al del XML** (el `vatMap` del PDF frente a `calcVatBreakdown`) no se mide aquí:
   es la medición de SCRUM-623 (547 de 4.006 combinaciones) y no se mezcla con este porcentaje.
+
+# SCRUM-624d · el arreglo A, PARADO antes de tocar: la R1 guarda un total que su desglose no suma (24-oct-2026)
+
+**Medido contra:** `origin/main` = `1b3395ecc6d3524e7b4ec711871d1d485ee67f28` · 2026-10-24T15:09:14Z
+A9: aviso → A10 «Negar las líneas no niega el total: `Math.round` sube el medio céntimo negativo, y la R1 no suma lo que resta.» — no se pudo comprobar: lo que lo impediría es cambiar cómo se CREA la R1, y eso es camino de emisión (regla 38, STOP)
+
+J1 (`jv-j1bt`, equipo de Javier). Encargo: el arreglo A autorizado en Jira (SCRUM-624 c.20775, «Arreglo A,
+autorizado.»): el bloque de totales del PDF de la factura lee `calcVatBreakdown` y el total guardado. Con dos avisos de
+Luis que se miden ANTES de tocar, y la orden «si algún camino guarda un total que no es el bueno, PARAS». **Paro.**
+**Sólo evidencia: ni `src/` ni `tests/`; camino de emisión sólo leído.**
+
+## 1 · Aviso 1 — qué total guarda y qué total imprime cada camino
+
+Los tres generadores del PDF de factura pasan el total GUARDADO (`src/lib/invoicing.ts:135` y `:295`,
+`invoicesAdmin.routes.ts:1245`: `total: inv.total.toString()`), y el XML declara ESE mismo total como `ImporteTotal`
+(`verifactu.service.ts:293` y `:1155`). Base y cuotas del XML salen de `calcVatBreakdown(inv.lines)` (`:903`). Así
+que, con A, **el PDF y el XML coinciden por construcción en cualquier camino**: lo que A no arregla es que un camino
+guarde un total que su propio desglose no suma. Por camino, leído en el código:
+
+| camino | total que guarda | ¿= Σ(base + cuota) de sus líneas? |
+|---|---|---|
+| albarán → factura ×2, recapitulativa, factura manual (`invoicesAdmin.routes.ts:173`) | `(bd.base + bd.cuota).toFixed(2)` | sí, por construcción |
+| tramos y factura única ×4 (`jobs.routes.ts:1497`, `quotes.routes.ts:581`, `quotesAdmin.routes.ts:304` y `:634`) | `grossOfLines(scaledLines)` | sí, por construcción |
+| cobro pagado (`ensureInvoiceForCharge`) | `ch.amount`, con UNA línea al 0 % de ese importe | sí: las líneas del presupuesto sólo entran si `Quote.chargeId` está puesto, y en `src/` hay **0** escritores de ese campo (leído; control: el mismo barrido ve el escritor de `Invoice.chargeId` en `invoiceWhatsApp.service.ts:88`) |
+| **factura final** (`buildFinalInvoice`, el total explícito del aviso) | `Quote.total` congelado − lo deducido | **sin llamador en `src/`**: está declarada sin consumir (`scripts/_sin-consumir-declarados.json`, SCRUM-1185). Hoy ningún PDF sale de ahí |
+| 🔴 **R1** (`invoicesAdmin.routes.ts:1107`) | `−original.total`, con las líneas de la original y el precio negado | **NO siempre** |
+
+**La R1, ejecutado con el `dist/` de main:** 1 × 12,50 € al 21 %. La original guarda 15,13 (base 12,50 + cuota 2,63).
+La R1 guarda −15,13, pero `calcVatBreakdown` de sus líneas da base −12,50 y cuota **−2,62**: suman −15,12. Es
+`Math.round(-262,5) = -262`: el medio céntimo negativo sube hacia cero. Ese desglose es el que va al XML de la R1, así
+que **el registro de la R1 ya no cuadra consigo mismo hoy**, con o sin A.
+
+## 2 · La medición — el PDF de verdad contra el XML, las siete poblaciones de SCRUM-1566
+
+`docs/master/evidencias/SCRUM-624/papel-contra-xml-real.cjs` — `node <guion> <árbol con dist/> [N]`. Llama a
+`generateInvoicePdf` del `dist/` (texto espiado, nada modificado), lee base, filas de IVA y TOTAL del papel y los
+compara con lo que declara el registro. Población: el generador de 624c/1566 (misma semilla y parámetros); por cada F1,
+su R1 armada como en `invoicesAdmin.routes.ts`. **N = 100 presupuestos por población: 1.000 F1 y 1.000 R1, 2.000 PDF.**
+Controles: cero (el papel contra sí mismo: 0 en 2.000), sembrado (un total desplazado 0,01 se ve en 7 de 7
+poblaciones; si no, el guion sale CIEGO con 2) y suelo (sin «Base imponible:» o «TOTAL:» sale CIEGO). Salida entera:
+`evidencias/SCRUM-624/salida-papel-contra-xml-real.txt`, sobre el `dist/` compilado (`tsc --noCheck`) de `1b3395ec`.
+
+| población | F1 hoy: PDF≠XML | R1 hoy: PDF≠XML | R1 hoy: el PDF no cuadra | R1 con A: el PDF no cuadra (derivado) |
+|---|---|---|---|---|
+| única · entera · 21 % | 1,0 % | 6,0 % | 1,0 % | **5,0 %** ↑ |
+| única · entera · 10 % | 0,0 % | 5,0 % | 0,0 % | **5,0 %** ↑ |
+| única · decimal · 21 % | 1,0 % | 2,0 % | 1,0 % | 1,0 % |
+| única · decimal · 10 % | 0,0 % | 1,0 % | 0,0 % | **1,0 %** ↑ |
+| única · decimal · 21/10/4 % | 26,0 % | 28,0 % | 25,0 % | 3,0 % |
+| tramos 50/50 · entera · 21 % | 13,0 % | 21,5 % | 12,5 % | 12,5 % |
+| tramos 30/40/30 · decimal · 21/10/4 % | 37,7 % | 38,0 % | 34,7 % | 0,3 % |
+
+La última columna NO está medida con un PDF: con A el papel imprime exactamente lo que declara el registro, así que se
+deriva de la columna «XML no cuadra consigo» de la salida (5, 5, 1, 1, 3, 25 y 1 R1). Con A, el PDF≠XML de F1 y de R1
+pasaría a 0 % por construcción (no medido después: no se ha aplicado). **Pero en tres casillas de la R1 el papel que
+hoy cuadra dejaría de cuadrar**, y el encargo decía «ninguna casilla empeora».
+
+## 3 · Por qué es PARADA y no un arreglo de paso
+
+- La causa está en cómo se CREA la R1 (`invoicesAdmin.routes.ts:1070-1112`), no en el PDF. Es camino de emisión: STOP
+  (regla 38). Y la R1 tiene además abierta la pregunta P12 (I frente a S, `verifactu.service.ts:962-966`).
+- Aplicar A sólo a F1 y dejar la R1 recalculando es una decisión que c.20775 no toma.
+
+## 4 · Aviso 2 — el gemelo de `pdf.service.ts:1176`
+
+Está en el PDF del PRESUPUESTO (`generateQuotePdf`, sección de la firma), no en el bloque de totales de la factura. Y
+en `main` ya sigue la regla «pie de la caja = arriba + 70, más 4 pt»: `doc.y = arribaFirma + 70 + 4` (SCRUM-1470b).
+Leído, no ejecutado.
+
+## 5 · Lo que NO está hecho
+
+- El arreglo A: nada en `src/`. Ni `tests/`: el rojo primero (36,27 contra 36,26 de `scrum624b`) no se ha escrito.
+- El caso 15,13 + 15,13 de SCRUM-1446 no lo arregla A en ningún escenario: la columna de líneas no se toca, y el TOTAL
+  de ese caso (30,25) ya es hoy el guardado. Queda como control, no como rojo.
+- Una línea con `causa: 'S2'` (activa en `causaLineaEmitible.ts:32`): hoy el PDF le suma cuota y el XML no. Con A
+  saldría bien, pero junto a otra línea del mismo tipo daría dos filas con el mismo rótulo; distinguirlas es texto
+  nuevo (regla 39). Sin medir con PDF.
+- N = 100 por población (el tiempo: 2.000 PDF tardan unos 5 min). Facturas reales: ninguna mirada.
