@@ -232,3 +232,42 @@ Factura fabricada, pasada por `construirLibroRegistro` y `construirModelo303` re
 
 - Los dos casos de arriba siguen como estaban: arreglarlos pide que el libro conserve `causa` en `porTipo`, y eso es una decisión que se ha pedido en Jira.
 - Si la marca de suplido es ilegible no hay aviso de suplido: queda en `tipo_cero`, como en 1063c.
+
+## SCRUM-1063e · el libro guarda la causa S2 y el 303 la saca de la casilla de su tipo (J1, jv-j1bm, 24-oct-2026)
+
+**Medido contra:** `origin/main` = `091e4d765ba13083b93fb6c168ffbd70fb1f1563` · 2026-10-24T10:55:33Z
+
+A9: comprobación → `tests/scrum296-libro-registro.test.mjs`
+
+Error propio: al importar el tipo `Causa` reescribí la línea `import { calcVatBreakdown }`, y ese guard (el libro reutiliza el cálculo del emisor) cayó en la dirigida. Se arregló el código con un `import type` aparte, no el guard.
+
+Decisión del fundador: SCRUM-1063 c.20746 («Sí: guardar la causa y apartar la S2»), sobre la medición de c.20739. Rama sobre `scrum-1063d-aviso-suplidos` @ `ec68e591`, con `origin/main` mergeado dentro: **este PR depende de #2811 (1063c) y del PR de 1063d**, que a esta hora siguen sin mergear.
+
+### Qué se ha construido
+
+1. **El libro** (`libroRegistro.ts`): cada entrada de `porTipo` lleva `causa` **solo si la tiene**, al final y con la misma convención que `calcVatBreakdown` (SCRUM-1051). Sin S2 la entrada es la de antes, sin la clave. Base, cuota y total del asiento no cambian. No se toca `calcVatBreakdown` ni la emisión: el libro solo copia un campo que ya devolvía.
+2. **El 303** (`modelo303.ts`): la entrada con `causa: 'S2'` sale **antes de mirar su tipo** y va a `sinClasificar` con `motivo: 'inversion_sujeto_pasivo'` (código, no texto). Los suplidos se apartan solo de las entradas sin causa.
+3. **Aviso: ningún texto nuevo.** La S2 sigue contada en el aviso que ya existía, «operación(es) sin calificación fiscal (exenta / no sujeta / ISP)», para que un 303 con una base fuera de casilla no salga sin aviso. Es el texto que la S2 al 0 % ya daba antes de este ticket; la S2 con `tax: 0.21`, que antes caía en la 07 sin aviso, ahora también lo da. El literal propio se propone en Jira (regla 39).
+
+### Cómo se ha medido
+
+- **Rojo primero:** `tests/scrum1063e-causa-s2.test.mjs` contra el código de 1063d: caen 6 de 10. Los 4 que pasan en los dos son, a propósito, el `porTipo` byte a byte sin S2, «la causa no cambia base ni cuota», el cuadre libro = casillas + sin clasificar y el aviso existente.
+- **Los dos casos de c.20739 son casos del test:** la S2 antes del suplido (`sinClasificar` = S2 1000 + suplido 50, sin `tipo_cero`) y la S2 con `tax: 0.21` (la 07 se queda con 800, la mano de obra).
+- **Mutaciones sobre `dist/`** (7, restauradas y comprobadas): libro sin `causa`, caen 6 · `causa` siempre presente aunque sea `undefined`, cae 1 (el `Object.keys` del byte a byte; `JSON.stringify` se la come) · sin la rama S2, 5 · la rama S2 solo sin tripleta, 7 · la S2 con motivo `tipo_cero`, 5 · la rama S2 solo sin suplido pendiente, 1 · quitar `!e.causa` de los suplidos: **MUDA, y es esperado**: hoy `Causa` solo vale `'S2'` y la rama de arriba ya la ha apartado. Queda para cuando la lista de causas crezca.
+- **`modelo390/` (#1077a, rama `scrum-1077a-borrador-390` @ `b57eb4bc`, sin mergear):** sus tres ficheros y su test, copiados un momento a este árbol y quitados después: 10 de 10. El 390 pasa `sinClasificar` del 303 tal cual (`...s`), y el código nuevo de motivo le llega como dato.
+- **Guards dirigidos tras mergear main:** 57 ficheros (los que nombran `libroRegistro`, `modelo303` o `modelo390`, más 1063b/c/d/e, 1066c/e, 1065b, 1067b, 1232, 237, 976, 824, 836, 419, 702, 700, 719, 1415, 1294, 267, 273, 854, 622, 295, 296, 325, 389, 387 y 921): 606 casos, 602 pasan, 0 caen, 4 saltados (`LIBRO_PG_URL`). `tsc --noEmit` del proyecto, limpio.
+- **Suite entera local: NO CORRIDA**; hace de tanda el obligatorio de CI. No hay pantalla del 303: en yaqu.app no se ha verificado nada.
+
+### La casilla de la S2 en el impreso (leída, no aplicada)
+
+Orden HAC/27/2026, Anexo III, leída como imagen el 24-oct:
+
+- Página 1 (`https://www.boe.es/datos/imagenes/disp/2026/23/1761_16563944_7.png`, HTTP 200, 888.636 B): 12/13 «Otras operaciones con inversión del sujeto pasivo (excepto adq. intracom.)». Está en el **IVA devengado**: es la del destinatario que autorrepercute, no la de quien emite la S2.
+- Página 3 (`https://www.boe.es/datos/imagenes/disp/2026/23/1761_16563944_9.png`, HTTP 200, 791.276 B), recuadro «Información adicional»: **122 «Operaciones sujetas con inversión del sujeto pasivo»**, una sola cifra, sin cuota.
+
+Propuesta en Jira: la S2 a la 122, por su base. **No se ha puesto**: espera firma. No he leído las instrucciones del modelo, solo el impreso.
+
+### Riesgo residual, dicho
+
+- El aviso de «sin calificación» sigue contando la S2, y una S2 sí tiene calificación: es el texto viejo hasta que se firme uno propio.
+- Si mañana se añade otra causa a `Causa`, irá con `!e.causa` fuera de los suplidos, pero sin rama propia: caerá en la casilla de su tipo. Lo sujeta el comentario de `vat.service.ts`, que obliga a ensanchar el tipo y su validador.
