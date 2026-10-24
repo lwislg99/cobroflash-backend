@@ -147,3 +147,5 @@ La suite completa la paró Claude Code por falta de memoria en la máquina, con 
 - **La barra superior en el banco** (la otra mitad de S2): no se toca hoy, por encargo.
 - **El árbitro y los enlaces partidos en dos renglones** (Cobros, arriba): propuesta para el orquestador; es cambio de arnés.
 - El texto de la excepción de las pestañas del historial en `guard-objetivo-tactil.mjs` dice «a 41,0 px»: con Inter miden 39. La excepción no la toco (las retira el fundador); su prosa queda vieja y se dice aquí.
+
+**Reancla (24-oct, tras el rojo del #2846):** al quitar `new URL` de `_hojas-del-panel.mjs` dejé la mutación ① del test 1603 anclada a esa línea; `tests/scrum836-ancla-de-mutacion-viva.test.mjs` la cazó («el ancla `de` no está en el fichero»). Se reancló a `return r.locales.map((h) =>`, que no depende de cómo se resuelve la ruta. La comprobación que ya lo impide es ese test de 836.

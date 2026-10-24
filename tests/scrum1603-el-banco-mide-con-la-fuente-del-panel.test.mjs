@@ -35,8 +35,8 @@ const { servirListas, EXTENSIONES_DEL_ARBOL } = await import('../scripts/_banco-
 export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     fichero: 'scripts/_hojas-del-panel.mjs',
-    de: '  return r.locales.map((h) => new URL(',
-    a: '  return r.locales.filter((h) => !h.includes(\'/fonts/\')).map((h) => new URL(',
+    de: '  return r.locales.map((h) =>',
+    a: '  return r.locales.filter((h) => !h.includes(\'/fonts/\')).map((h) =>',
     cae: 'SCRUM-1603 ① ·',
   },
   {
