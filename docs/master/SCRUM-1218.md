@@ -589,3 +589,75 @@ Controles:
 el turno, la base y el entorno del runner fichero a fichero); el cuerpo de las respuestas (la sonda anota
 método, ruta y status; lo que se lee del cuerpo lo juzgan las aserciones de cada test, y la mutación de ③
 demuestra que lo leen).
+
+## J6 · SCRUM-1218h · los cuatro de J que quedaban (scrum178, 85, 17 y 814…gated), a `node:http`, medidos con un banco PGlite local
+
+**Medido contra:** `origin/main` = `bcfc99b0d9a4f4a3aaf9d1608dce06b3d3691482` · 2026-10-24T15:50:47Z (hora de GitHub al acabar las pasadas y la mutación; sesión J6 `jv-j6bv`, por encargo del orquestador `cobroflash-backend-95`. Después se mezcló `origin/main` `ae5b721efb184ae5f44816ee4a5cc034ed87f23f`, que trae 1599h y no toca ninguno de estos ficheros)
+
+A9: aviso → cicatriz J6 «Crucé el umbral de aviso de contexto sin medirme en el cruce: medí al arrancar y no volví a medir hasta después de un barrido ancho.» — no se pudo comprobar: me pasó otra vez (90k al arrancar, 140k tras Jira, ~215k al acabar la mutación, sin medir tras las tandas del antes y el después); el contexto lo lee la propia sesión en su jsonl, y ningún hook de este árbol la para al cruzar
+
+### ⓪ PASO 0, por fichero
+
+- Los cuatro siguen con `fetch` + `listen(0)` en `bcfc99b0d` (6, 7, 2 y 2 llamadas; 0 `pedirSinAgente`, 0 `node:http`).
+- `node scripts/carriles.mjs de tests/<f>`, ANTES de tocarlos: «sin fila en §3: nadie lo reclama» en los cuatro.
+- 1599b (#2784) y 1599c (#2789) ya los pusieron al día: los rojos de 1218f no se reproducen. Ninguno de los cuatro
+  está en el lote de 1599h (`scrum-1599h-lote-2-banco`, que entró en main mientras medía): allí salen como
+  candidatos «HEC» (178, 814) y «solo-H» (85, 17) para lotes siguientes.
+- Los tres de Luis (`scrum1188d`, `scrum1489` y `scrum912`) se nombran y no se tocan.
+
+### ① El instrumento: un banco PGlite local, y por qué no es el fichero tal cual
+
+Este árbol no tiene `DATABASE_URL_TESTS` ni está dado de alta, así que no hay turno de staging. Los cuatro sólo se
+encienden con `QA_DB_TEST`, y `QA_DB_TEST` exige el host de staging (`_staging-db.mjs`, allowlist): contra un PGlite
+no arrancan. `banco-1218h.mjs.txt` corre una COPIA temporal de cada fichero en `tests/` con dos sustituciones de
+recuento exacto 1, las MISMAS en el antes y en el después: detrás de `import './_staging-db.mjs';` añade el import
+de `_banco-libro.mjs` (la forma de 1599f/876e), y el gate pasa a `QA_DB_TEST === '1' || URL_BANCO !== ''`. La copia
+se borra al acabar cada pasada (`git status` limpio después de cada tanda). PGlite 0.5.8 + socket, `maxConnections:
+64`, `sslmode=disable`, un PGlite nuevo por pasada, esquema de `prisma migrate diff --from-empty` (33 tablas, 33
+`model`), y la sonda de respuestas de 1218c. Canario cronometrado antes de nada: `scrum85`, 11 s.
+
+### ② Migrados con `migrar-1218g`, sin cambiarlo
+
+17 llamadas (`migrar-1218h.salida.txt`). `diff-idem-1218f`: 17 quitadas, 0 que falten, control sembrado VIVO
+(`diff-idem-1218h.salida.txt`). Ninguna aserción cambia. Los cuatro sólo leen `status`, `headers.get`, `text` y
+`json`; el `r.ok` de `scrum17` es de `validarConsolidacion`, no de una respuesta.
+
+### ③ Antes y después (`pasadas-1218h.salida.txt`, `comparar-1218h.salida.txt`)
+
+| fichero | casos (0 SKIP) | resp/pasada | antes → después | casos | respuestas |
+|---|---|---|---|---|---|
+| scrum178-emision-manual | 3 | 11 | 5/5 → 5/5, 0 abortos | IGUAL | IGUAL |
+| scrum85-pay-routes-token | 1 | 7 | 5/5 → 4/5 (ver ④) | DISTINTO | DISTINTO |
+| scrum17-recapitulativa | 12 | 9 | 5/5 → 5/5 | IGUAL | IGUAL |
+| scrum814-carrera-del-tramo.gated | 3 | 10 | 5/5 → 5/5 | IGUAL | IGUAL |
+
+En todas las pasadas los casos de la raíz suman lo declarado. El control sembrado de `comparar-1218d` sale VIVO en
+tres y CIEGO en `scrum85`: el ANTES alterado coincide con la variante roja que ya tiene el DESPUÉS, y como compara
+conjuntos sale IGUAL. Es el mismo hecho de ④, no un segundo fallo.
+
+### ④ 🔴 `scrum85` cae con `fetch` y sin él: una subcadena con la base vacía
+
+La pasada 4 del después cae en `'el link a /pay/card NO debe llevar el id numérico'` (`scrum85…:76`), con 2
+respuestas en vez de 7. Causa, leída en el TAP y en la sonda: en un PGlite nuevo el cobro A tiene `id = 1`; el
+token de esa pasada empezaba por `1`, y `!invoiceBody.includes('/pay/card/1')` casa DENTRO de `/pay/card/1…<token>`.
+Para separarlo de la migración, 60 pasadas más del ANTES con `fetch`: caen la 12, la 20 y la 26, las tres con token
+que empieza por `1` y con el mismo error. En las 100 pasadas: **token que empieza por «1»: 4 caen / 0 pasan; el
+resto: 0 caen / 66 pasan.** No depende del cliente.
+
+**No lo he arreglado:** el encargo prohíbe tocar aserciones, y el fichero es de J2 (1599c). En staging no se ve,
+porque los id son grandes. **Pero si un lote de 1599 lo pasa al banco desechable de CI, puede caer**: con el
+cobro en `id = 1`, ~1 de cada 16 (sin medir en CI, donde la base la comparten otros tests y el id puede no ser
+1). Va al orquestador.
+
+### ⑤ Mutación y lista
+
+- `CON_EL_PATRON_YA` baja de **7 a 3** (los de Luis). Con la lista vieja, `scrum560` cae nombrando exactamente
+  los cuatro.
+- Al devolver cada fichero a su `fetch` de main, uno a uno, `scrum560` cae nombrando ese fichero en «ningún
+  fichero NUEVO…». Cada fichero se restauró desde copia y `cmp` dio idéntico (`mutacion-1218h.salida.txt`).
+- ⚠️ Un solo `fetch(` devuelto (no la migración entera) NO lo caza: es el umbral del detector (un `fetch` en
+  bucle, o 3 o más sueltos, SCRUM-100), no un ciego.
+
+**Sin medir:** 20 pasadas por fichero, Linux/CI con pasadas y staging (este árbol no tiene turno). Tampoco el
+`fetch` de `tests/fixtures/scrum814-peticion-simultanea.mjs`, que corre en un proceso hijo sin
+`--test-force-exit` y que el censo no ve (lo declara: «procesos hijos»). Suite entera local: NO CORRIDA.

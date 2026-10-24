@@ -13,6 +13,7 @@ process.env.QA_QUERY_LOG = '1'; // SCRUM-58: ANTES de cargar dist — el cliente
 // al construirse si emite eventos de consulta; sin esto el contador engancha en el vacío (y el
 // propio test lo caza con el assert de "no se enganchó", que es como se descubrió).
 import './_staging-db.mjs'; // SCRUM-60
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599h: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
@@ -40,9 +41,9 @@ const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new
   req.end(body);
 });
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 
-test('SCRUM-58: la lista de Trabajos no hace N+1 (las consultas no crecen con el nº de jobs)', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
+test('SCRUM-58: la lista de Trabajos no hace N+1 (las consultas no crecen con el nº de jobs)', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
 

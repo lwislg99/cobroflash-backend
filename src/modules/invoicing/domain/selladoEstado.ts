@@ -188,10 +188,13 @@ export async function sellarTrasEmision(
  * anula CON su registro), así que sigue siendo `sellado`. El registro de anulación es un
  * eslabón MÁS de la cadena, no un cambio de estado del anterior.
  */
-export async function sellarAnulacionTrasEmision(
+export async function sellarAnulacionTrasEmision<R = undefined>(
   invoice: Parameters<typeof applyVeriFactuAnulacion>[0],
   taxId: string,
   prismaClient = defaultPrisma,
-): Promise<void> {
-  await applyVeriFactuAnulacion(invoice, taxId, prismaClient);
+  // SCRUM-1314b: sellado y paso a `annulled` en UNA escritura condicionada (ver `applyVeriFactuAnulacion`).
+  anular?: { enLaMismaTransaccion: (tx: any) => Promise<R> },
+): Promise<R | undefined> {
+  const { liberado } = await applyVeriFactuAnulacion(invoice, taxId, prismaClient, anular);
+  return liberado;
 }
