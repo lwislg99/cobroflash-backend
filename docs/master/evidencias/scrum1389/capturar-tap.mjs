@@ -8,14 +8,14 @@
 // USO:  node docs/master/evidencias/scrum1389/capturar-tap.mjs [carpeta-de-salida]
 import fs from 'node:fs';
 import path from 'node:path';
-import os from 'node:os';
+import { temporal } from '../../../../tests/_temporal.mjs'; // SCRUM-864 · el temporal se borra pase lo que pase
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..');
 const SALIDA = process.argv[2] ?? path.join(RAIZ, 'tests', 'fixtures', 'scrum1389c');
 fs.mkdirSync(SALIDA, { recursive: true });
-const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1389c-cap-'));
+const TMP = temporal('scrum1389c-cap-');
 const ENV = {};
 for (const k of ['PATH', 'Path', 'SystemRoot', 'SYSTEMROOT', 'TEMP', 'TMP', 'TMPDIR', 'HOME', 'USERPROFILE', 'LOCALAPPDATA', 'APPDATA']) {
   if (process.env[k] !== undefined) ENV[k] = process.env[k];
