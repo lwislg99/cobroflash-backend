@@ -140,3 +140,49 @@ hooks no son de J3.
 Todo está en `docs/master/evidencias/SCRUM-1498/`. Sin red, sobre los datos guardados:
 `node docs/master/evidencias/SCRUM-1498/regenera.mjs` (seis salidas). Con `--red` añade las dos que leen GitHub.
 Para recoger datos nuevos: `recoge.mjs push <desde> <hasta> <salida.json>` y `jobs.mjs <runs.json> <salida.json>`.
+
+## SCRUM-1498b (24-oct) · re-medido: el obligatorio da veredicto en el 33 % de los commits de `main` (26 % los últimos tres días), y el meta-guard vive pegado a su techo de 30 min
+
+**Medido contra:** `origin/main` = `091e4d765ba13083b93fb6c168ffbd70fb1f1563` · 2026-10-24T10:51:10Z
+
+A9: aviso → cicatriz J3 «Pasé al hook de carril una entrada JSON escrita con printf en bash, no llegó a parsearse y salió 2 igual que un «te paro»: dos sondas, una de ellas el control positivo, daban la misma salida sin haber mirado nada.» — no se pudo comprobar: es cómo monto una sonda puntual fuera de la tanda, y ningún test del árbol lo ve
+
+Sesión jv-j3bc (puesto J3). Encargo: SOLO medir y preguntar; no se toca ningún workflow (`.github/workflows/**` es de S5, `node scripts/carriles.mjs de .github/workflows/ci.yml` → S5). Datos recogidos con los MISMOS instrumentos del tramo anterior (`recoge.mjs` + `jobs.mjs`), sólo lectura de la API; el análisis nuevo es `obligatorio-24oct.mjs` (mismo criterio que `obligatorio.mjs`: veredicto = el JOB obligatorio acaba en `success` o `failure`).
+
+**Población:** 489 runs de `ci.yml` por `push` a `main`, creados del 2026-10-08 al 2026-10-24 10:47Z; 0 días truncados; 487 acabados (2 sin acabar, fuera). 162 con jobs, las 162 suites recibidas, 0 truncadas. **Controles:** sembrados dentro del instrumento, no tomados del árbol: un run fabricado con el obligatorio en `SUCCESS` cuenta 1, uno con un nombre inventado cuenta 0, y si no, sale CIEGO con código 2. El nombre exacto del obligatorio aparece en 162 de 162 suites. Salida entera: `evidencias/SCRUM-1498/salida-9-24oct.txt`.
+
+### Lo que el tramo anterior daba por cierto y hoy ya no lo es
+
+| afirmación del 7-oct | hoy (24-oct) |
+|---|---|
+| veredicto del obligatorio en el 37-39 % de los commits, en banda «sin pendiente» | **41,5 %** (8-14 oct, 71/171) → **30,4 %** (15-21 oct, 51/168) → **26,4 %** (22-24 oct, 39/148). Total 33,1 % (161/487). **Ahora sí hay pendiente**, tres semanas seguidas. |
+| meta-guard: 20,9 min de mediana, 23,1 de máximo | p50 23,0 → 30,3 → 28,9 min; **39 de 140** runs (8-oct a 23-oct 13:04Z) llegaron a 30,3 min, el `timeout-minutes: 30` de su job (`ci.yml:737`), y acabaron `CANCELLED`. El primero, el 16-oct 11:18Z. |
+| run entero: 27-31 min de mediana | p50 29,0 → 35,7 → 33,2 min; máximo 67,0 min. |
+| el último job en acabar es el meta-guard en 46 de 52 | 142 de 152 (el trinquete de zona, los otros 10). |
+| el mecanismo: el pendiente lo sustituye el push siguiente | sigue igual: `ci.yml:37-39` no ha cambiado (`cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}`). Desde el 7-oct `ci.yml` sólo ha cambiado en `0dbe864cb` (SCRUM-1339, `continue-on-error`). |
+| la cerradura de carril no para a ninguna sesión `jv-jN` | **sigue cierto.** `prueba-carril4.mjs` (la sonda de 7-oct, con `ci.yml` de destino y el nombre de hoy): `j3-prueba` → salida 2 («es de S5»), `jv-j3` → 0, `jv-j3bc` → 0. `puestoDeNombre` (`scripts/_carriles.mjs:195-205`) sólo casa `puesto-jN` y `jN-algo` por la forma; la vía nueva es la «mesa» (carpeta → puesto), y el hook de arranque de esta sesión dijo «SIN IDENTIDAD». |
+
+### ① El mecanismo, otra vez run a run
+
+326 cancelados con 0 jobs; 323 nacieron con otro run de `main` corriendo. Los 3 que el instrumento da por «no encajan» son de BORDE, comprobados uno a uno: `37705907035` (8-oct 00:05Z) tenía corriendo `37703702097`, creado el 7-oct y por eso fuera de la población; `40086784017` y `40087101250` (24-oct) tenían corriendo `40085895667`, que a las 10:47Z seguía sin acabar y el instrumento deja fuera. **Ninguno pide otra causa.** La frase de la página del run («Canceling since a higher priority waiting request…») NO la he releído hoy: me fío del tramo anterior (85 de 85) y de la coincidencia temporal.
+
+### SCRUM-935d/935e no cambian la duración, cambian el desenlace
+
+Entraron en `main` el 23-oct (`7d13cdd85` #2676 a las 13:04Z, `391212830` #2737 a las 13:38Z). Después de 935e: n=20, p50 28,9, máximo 29,1 min, 0 en el techo, **13 `FAILURE` y 7 `SUCCESS`**. Antes, en el mismo tramo de días: 9 `CANCELLED` y 9 `SUCCESS`. **El meta-guard ya no muere por el techo, pero sigue durando lo mismo y sale rojo en 13 de 20.** Si esos 13 son el «sale CIEGO» que 935d añadió o rojos de verdad: **NO LO HE MIRADO** (no he abierto ni un log). Muestra de 20: un instante, no un régimen.
+
+### ③ En los PR: no lo he re-medido hoy. Vale lo del tramo anterior (6-7 oct, 0 de 106).
+
+### Lo que queda vivo y de quién es
+
+- **La decisión del ticket** (¿vale la opción B?): sigue sin tomar. Es del fundador; el workflow es de S5 (`ci.yml`, `dos-equipos.md:167`). Las preguntas ✅/❌ van en el comentario de Jira de esta entrega.
+- **La cerradura que no reconoce `jv-jN`:** S5 (`scripts/_carriles.mjs`, `.claude/hooks/carril.mjs`). El prompt del orquestador la cita como SCRUM-1506; **no he leído ese ticket**.
+
+### Lo que NO he hecho y lo que NO he medido
+
+Ningún workflow tocado. Ni tanda ni build (orden de RAM). No he medido el cupo de runners ni la cola de Actions, ni la latencia push→veredicto de esta ventana, ni la cobertura por atribución (cuántos commits cubre cada veredicto). No he abierto ningún log del meta-guard. No he leído SCRUM-935d/935e más que por el título de sus commits.
+
+**Contexto:** 94.377 al acabar el arranque · 117.786 al acabar Jira · ~158.000 al escribir este tramo (15M − restantes).
+
+### Cómo se repite
+
+`node docs/master/evidencias/SCRUM-1498/obligatorio-24oct.mjs docs/master/evidencias/SCRUM-1498/datos-push-main-2026-10-08..10-24.json docs/master/evidencias/SCRUM-1498/datos-jobs-2026-10-08..10-24.json` (sin red). La sonda del carril: `node docs/master/evidencias/SCRUM-1498/prueba-carril4.mjs <worktree> <carpeta temporal fuera del árbol>`.
