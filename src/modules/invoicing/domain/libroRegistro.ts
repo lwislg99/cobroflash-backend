@@ -28,6 +28,17 @@
 // que no tener la fila. Un importe que no se puede leer sale como `null` y se cuenta aparte, con
 // su número de factura delante.
 import { calcVatBreakdown } from './vat.service';
+import { partirPorSuplido } from './suplidos'; // SCRUM-1063c
+
+/**
+ * SCRUM-1063c · el desglose de las líneas de suplido, con la MISMA función que `porTipo`. No llama a
+ * `desgloseConSuplidos` ni toca `porTipo`: solo dice qué parte de él son suplidos.
+ */
+function suplidosPorTipo(lineas: any[]): AsientoLibro['suplidosPorTipo'] {
+  const particion = partirPorSuplido(lineas);
+  if (!particion.ok) return null;
+  return calcVatBreakdown(particion.suplidos).entries.map((e) => ({ tipo: e.rate, base: e.base, cuota: e.cuota }));
+}
 
 /** Lo que el libro necesita de cada factura. Deliberadamente poco: esto solo LEE. */
 export interface FacturaParaLibro {
@@ -73,6 +84,17 @@ export interface AsientoLibro {
    * sin saber cuál miente.
    */
   porTipo: { tipo: number; base: number; cuota: number }[];
+  /**
+   * SCRUM-1063c · la parte de `porTipo` que son SUPLIDOS (`partirPorSuplido` de `suplidos.ts`,
+   * pasada por el mismo `calcVatBreakdown`). Es un SUBCONJUNTO informativo: `porTipo`, `base` y
+   * `cuota` siguen incluyéndolos, porque la base sellada todavía los incluye (regla 38; la decisión
+   * del fundador, SCRUM-1063 c.20717, es esperar a la emisión). Sirve para que el 303 no le dé a una
+   * línea de suplido el motivo de una exenta.
+   *
+   * `[]` = sin suplidos (o sin líneas). `null` = alguna marca de suplido ILEGIBLE: «no se sabe»,
+   * no «no hay» (el suelo de `leerMarcaSuplido`).
+   */
+  suplidosPorTipo: { tipo: number; base: number; cuota: number }[] | null;
   total: number | null;
   moneda: string | null;
   estado: string | null;
@@ -231,6 +253,7 @@ export function construirLibroRegistro(params: {
       porTipo: tieneLineas
         ? desglose.entries.map((e) => ({ tipo: e.rate, base: e.base, cuota: e.cuota }))
         : [],
+      suplidosPorTipo: suplidosPorTipo(tieneLineas ? (f.lines as any[]) : []),
       total,
       moneda: f.currency ?? null,
       estado: f.status ?? null,

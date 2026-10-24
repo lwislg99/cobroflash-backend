@@ -169,3 +169,33 @@ base, pero el ancla de arriba es la base de verdad y no la del primer mensaje.
 inversión. El dato no lo distingue, y la única forma de cerrarlo es un campo corriente/inversión en
 `Expense` (un ALTER, que decide Javier) o un criterio del asesor. Hasta entonces, el aviso
 «orientativo» y el borrador para el asesor son lo que lo contiene.
+
+## SCRUM-1063c · el motivo propio de los suplidos y la casilla 64 (J1, jv-j1bh, 24-oct-2026)
+
+**Medido contra:** `origin/main` = `0e86dada4887f1ac54ce0ed5cad3c53c99c72c1c` · 2026-10-24T10:13:45Z
+
+A9: sin fallo que generalice — el error propio de abajo (la 67 de c.20716) es de lectura de un impreso; el instrumento que lo impide es leer la imagen, y quedó dentro del test (`tests/scrum1063c-suplido-y-casilla-64.test.mjs`, «SIN la 67»).
+
+Decisión del fundador: SCRUM-1063 c.20717 (transcrita por el orquestador), que contesta las preguntas 1 y 2 de c.20716.
+
+### Qué se ha construido
+
+1. **El suplido tiene su motivo.** `AsientoLibro` lleva un campo nuevo, `suplidosPorTipo`: la parte de `porTipo` que son suplidos, sacada con `partirPorSuplido` (`suplidos.ts`, sin cambiarlo) y el mismo `calcVatBreakdown`. `[]` = no hay; `null` = marca ilegible. **`porTipo`, `base`, `cuota` y `total` del libro no cambian** (caso a mano, verde en `main` y en la rama). El 303 aparta, de la entrada al 0 %, lo que es suplido con `motivo: 'suplido'`; el resto sigue `tipo_cero`. Se aparta restando, así que libro = casillas + sin clasificar sigue al céntimo. No llama a `desgloseConSuplidos` ni toca el camino de emisión.
+2. **La 64 = 46**, en `resultadoFinal.sumaDeResultados`. **Vacías con su motivo como código**: 65, 66, 68, 69, 70 y 71 (`CASILLAS_RESULTADO_VACIAS` en `casillas.ts`). Procedencia: Orden HAC/27/2026, Anexo III, página 3 del impreso (`https://www.boe.es/datos/imagenes/disp/2026/23/1761_16563944_9.png`), recuadro «Resultado», leída como imagen el 24-oct.
+3. **Texto.** El aviso «… sin calificación fiscal (exenta / no sujeta / ISP) …» deja de contar los suplidos. **No se ha escrito ningún aviso para el suplido** (regla 39): viaja como dato. El literal se le propone al fundador en el comentario de Jira.
+
+### Error propio
+
+En c.20716 (jv-j1bc, este mismo puesto) se escribió «la 67 (cuotas a compensar de periodos anteriores)». **En el impreso vigente no hay casilla 67**: las cuotas a compensar son la 110, la 78 y la 87. Por eso la lista de vacías salta de la 66 a la 68. La decisión dice «65 a 71»; se han dejado vacías las que existen.
+
+### Cómo se ha medido
+
+- **Rojo primero:** el test nuevo contra `origin/main` `137c7fad` compilado aparte: caen 9 de 14. Los dos casos que comprueban que el libro no cambia salen verdes en los dos.
+- **Mutaciones sobre `dist/`** (nunca `src/`): sin `suplidosPorTipo` caen 5; el aviso que vuelve a contar el suplido, 2; la 64 = 27, 2; un resto a cero apuntado, 2; el suplido de vuelta a `tipo_cero`, 3; una 67 inventada, 1. Después, 14 de 14.
+- **Guards dirigidos:** los 28 ficheros que nombran `libroRegistro` (`git grep -l libroRegistro tests/`) más `scrum1066c`, `scrum1066e` y `scrum500`: 273 casos, 0 caen, 4 saltados (`LIBRO_PG_URL`, banco local). Ninguno trata el libro como emisión (`scrum389-censo-vat` lo clasifica `DOCUMENTO`). Los de suite y de registro, en el comentario de Jira con su recuento.
+- **Suite entera local: NO CORRIDA** (10 sesiones a la vez); hace de tanda el obligatorio de CI.
+
+### Riesgo residual, dicho
+
+- `porTipo` pierde la `causa` (SCRUM-1051). Si una factura tuviera al 0 % una línea S2 y un suplido, las dos entradas al 0 % no se distinguen en el libro, y el suplido se aparta de la primera que salga. Ninguna factura así existe hoy: medido no, deducido de que no hay merchants reales.
+- El código `suplido` se ve en el CSV del paquete de evidencias (`SIN_CLASIFICAR suplido <número>`), igual que hoy `tipo_cero`.
