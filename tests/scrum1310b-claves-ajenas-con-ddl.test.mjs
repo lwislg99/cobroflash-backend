@@ -42,7 +42,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { desnudar } from '../scripts/_clasificador-sql.mjs';
+import { desnudar, clasificarFichero, RECHAZADA } from '../scripts/_clasificador-sql.mjs';
 import { partirAtributos } from '../scripts/_prisma-procedencia-guard.mjs';
 import { soloCodigo } from './_solo-codigo.mjs';
 
@@ -54,8 +54,17 @@ const CONSULTA = 'docs/sql/scrum-1310b-claves-ajenas-sin-ddl-consulta.sql';
 /**
  * LAS 13 DE c.20753, CONGELADAS. Solo bajan: cuando una reciba su DDL en `docs/sql/`, se borra
  * de aquí en el mismo PR (la mitad ② lo exige). Nunca se añade una.
+ *
+ * SCRUM-1310c: las 13 recibieron su DDL en `docs/sql/scrum-1310c-claves-ajenas-ddl.sql`, con el
+ * nombre y las acciones medidos en PRODUCCIÓN (c.20810). La lista queda vacía y no vuelve a crecer.
  */
-export const SIN_DDL_CONGELADAS = [
+export const SIN_DDL_CONGELADAS = [];
+
+/**
+ * Las 13 que c.20753 encontró sin DDL, por su IDENTIDAD. Ya no excusan nada: la consulta de 1310b
+ * las sigue pidiendo y el fichero de 1310c tiene que darles DDL a todas. No se toca.
+ */
+export const LAS_13_DE_C20753 = [
   'auth_sessions_merchant_id_fkey',
   'auth_sessions_team_member_id_fkey',
   'customers_merchant_id_fkey',
@@ -70,6 +79,58 @@ export const SIN_DDL_CONGELADAS = [
   'customer_events_merchant_id_fkey',
   'customer_events_customer_id_fkey',
 ];
+
+// ── SCRUM-1310c · EL DDL DE LAS 13 ─────────────────────────────────────────────────────────
+const DDL_1310C = 'docs/sql/scrum-1310c-claves-ajenas-ddl.sql';
+
+/**
+ * Lo que devolvió PRODUCCIÓN a la consulta de 1310b (SCRUM-1310 c.20810, Javier, Railway, solo
+ * lectura, 24-oct-2026): nombre real, ON DELETE y ON UPDATE. Es la única parte del DDL que no sale
+ * del esquema. La fila 0 es el control: `quotes_chargeId_fkey`, que sí tiene DDL congelado.
+ */
+export const PRODUCCION_C20810 = [
+  { orden: 0, nombre: 'quotes_chargeId_fkey', onDelete: 'SET NULL', onUpdate: 'CASCADE' },
+  { orden: 1, nombre: 'auth_sessions_merchant_id_fkey', onDelete: 'RESTRICT', onUpdate: 'CASCADE' },
+  { orden: 2, nombre: 'auth_sessions_team_member_id_fkey', onDelete: 'SET NULL', onUpdate: 'CASCADE' },
+  { orden: 3, nombre: 'customers_merchant_id_fkey', onDelete: 'RESTRICT', onUpdate: 'CASCADE' },
+  { orden: 4, nombre: 'invoices_rectifies_id_fkey', onDelete: 'SET NULL', onUpdate: 'CASCADE' },
+  { orden: 5, nombre: 'expenses_merchant_id_fkey', onDelete: 'RESTRICT', onUpdate: 'CASCADE' },
+  { orden: 6, nombre: 'expenses_quote_id_fkey', onDelete: 'SET NULL', onUpdate: 'CASCADE' },
+  { orden: 7, nombre: 'expenses_provider_id_fkey', onDelete: 'SET NULL', onUpdate: 'CASCADE' },
+  { orden: 8, nombre: 'quote_requests_merchant_id_fkey', onDelete: 'RESTRICT', onUpdate: 'CASCADE' },
+  { orden: 9, nombre: 'quote_requests_customer_id_fkey', onDelete: 'RESTRICT', onUpdate: 'CASCADE' },
+  { orden: 10, nombre: 'quote_templates_merchant_id_fkey', onDelete: 'RESTRICT', onUpdate: 'CASCADE' },
+  { orden: 11, nombre: 'team_members_merchant_id_fkey', onDelete: 'RESTRICT', onUpdate: 'CASCADE' },
+  { orden: 12, nombre: 'customer_events_merchant_id_fkey', onDelete: 'RESTRICT', onUpdate: 'CASCADE' },
+  { orden: 13, nombre: 'customer_events_customer_id_fkey', onDelete: 'RESTRICT', onUpdate: 'CASCADE' },
+];
+
+// El control: la línea de la congelada que la consulta de 1310b compara byte a byte.
+const CONTROL_FICHERO = 'docs/historico/prisma-migrations-frozen-2026-03/20251104175333_add_quote_model/migration.sql';
+const CONTROL_LINEA = 26;
+
+/**
+ * El DDL de una clave ajena, con la forma de las congeladas. Tabla, columnas, tabla y columnas
+ * referenciadas salen de `schema.prisma` (`@@map`, `@map`, `@relation(fields:, references:)`);
+ * nombre y acciones, de `medida` (producción). El esquema `"public"` es el de las congeladas.
+ */
+export function ddlDeClave(schemaTexto, medida) {
+  const { claves, modelos } = clavesAjenasDelSchema(schemaTexto);
+  const c = claves.filter((k) => k.nombre === medida.nombre);
+  if (c.length !== 1) throw new Error(`${medida.nombre}: el esquema implica ${c.length} relaciones con ese nombre, no 1`);
+  const [k] = c;
+  const ref = modelos[k.modeloRef];
+  if (!ref) throw new Error(`${medida.nombre}: el modelo referenciado ${k.modeloRef} no está en el esquema`);
+  const q = (cols) => cols.map((x) => `"${x}"`).join(', ');
+  const columnasRef = k.referencias.map((r) => ref.columnaDe[r] ?? r);
+  return `ALTER TABLE "public"."${k.tabla}" ADD CONSTRAINT "${medida.nombre}" FOREIGN KEY (${q(k.columnas)}) `
+    + `REFERENCES "public"."${ref.tabla}"(${q(columnasRef)}) ON DELETE ${medida.onDelete} ON UPDATE ${medida.onUpdate};`;
+}
+
+/** Las sentencias del fichero de 1310c: cada línea que no es comentario ni está en blanco. */
+function sentenciasDe(texto) {
+  return String(texto).split(/\r?\n/).map((l) => l.trim()).filter((l) => l && !l.startsWith('--'));
+}
 
 // La semilla: un modelo fabricado con una relación que ningún fichero escribe.
 const SEMILLA_NOMBRE = 'zz_semilla_1310b_padre_id_fkey';
@@ -91,6 +152,7 @@ export function clavesAjenasDelSchema(texto) {
   const limpio = soloCodigo(String(texto).replace(/\r\n/g, '\n'), 'schema.prisma');
   const recuentoTexto = (limpio.match(/@relation\([^)]*\bfields\s*:/g) || []).length;
   const claves = [];
+  const modelos = {};
   for (const m of limpio.matchAll(/^\s*model\s+(\w+)\s*\{([\s\S]*?)^\s*\}/gm)) {
     const [, modelo, cuerpo] = m;
     const lineas = cuerpo.split('\n').map((l) => l.trim()).filter(Boolean);
@@ -109,16 +171,20 @@ export function clavesAjenasDelSchema(texto) {
       const map = atributos.map((a) => a.match(/^@map\(\s*(?:name\s*:\s*)?"([^"]+)"/)).find(Boolean);
       columnaDe[campo] = map ? map[1] : campo;
       const rel = atributos.find((a) => a.startsWith('@relation(') && /\bfields\s*:/.test(a));
-      if (rel) relaciones.push(rel);
+      if (rel) relaciones.push({ rel, modeloRef: (cabeza.split(/\s+/)[1] || '').replace(/[?[\]]/g, '') });
     }
-    for (const rel of relaciones) {
-      const campos = rel.match(/\bfields\s*:\s*\[([^\]]*)\]/)[1].split(',').map((s) => s.trim()).filter(Boolean);
+    modelos[modelo] = { tabla, columnaDe };
+    for (const { rel, modeloRef } of relaciones) {
+      const lista = (clave) => (rel.match(new RegExp(`\\b${clave}\\s*:\\s*\\[([^\\]]*)\\]`))?.[1] ?? '')
+        .split(',').map((s) => s.trim()).filter(Boolean);
+      const campos = lista('fields');
       const columnas = campos.map((c) => columnaDe[c] ?? c);
       const mapa = rel.match(/\bmap\s*:\s*"([^"]+)"/);
-      claves.push({ modelo, tabla, columnas, nombre: mapa ? mapa[1] : `${tabla}_${columnas.join('_')}_fkey` });
+      claves.push({ modelo, tabla, columnas, modeloRef, referencias: lista('references'),
+        nombre: mapa ? mapa[1] : `${tabla}_${columnas.join('_')}_fkey` });
     }
   }
-  return { claves, recuentoTexto };
+  return { claves, recuentoTexto, modelos };
 }
 
 /** Los nombres de restricción que un SQL declara como clave ajena (`CONSTRAINT x FOREIGN KEY`). */
@@ -278,12 +344,45 @@ test('SCRUM-1310b · toda clave ajena de schema.prisma tiene su DDL en un ficher
 test('SCRUM-1310b · la consulta para Javier pide las 13 por tabla y columna y no escribe el nombre de ninguna', () => {
   const sql = fs.readFileSync(path.join(RAIZ, CONSULTA), 'utf8');
   const { claves } = clavesAjenasDelSchema(fs.readFileSync(SCHEMA, 'utf8'));
-  const nombradas = SIN_DDL_CONGELADAS.filter((n) => sql.includes(n));
+  const nombradas = LAS_13_DE_C20753.filter((n) => sql.includes(n));
   assert.deepEqual(nombradas, [], 'la sonda 1310 de SCRUM-1550 busca por subcadena: un nombre aquí fingiría su DDL');
-  for (const n of SIN_DDL_CONGELADAS) {
+  for (const n of LAS_13_DE_C20753) {
     const c = claves.find((k) => k.nombre === n);
     if (!c) continue; // si el esquema ya no la implica, la mitad ② del trinquete lo dice
     assert.match(sql, new RegExp(`'${c.tabla}',\\s*'${c.columnas[0]}'\\)`), `la consulta no pide ${c.tabla}.${c.columnas[0]}`);
   }
   assert.match(sql, /'quotes',\s*'chargeId'\)/, 'falta el control positivo de la consulta');
+});
+
+// ── SCRUM-1310c ────────────────────────────────────────────────────────────────────────────
+
+test('SCRUM-1310c · CONTROL: el generador escribe quotes_chargeId_fkey idéntico, byte a byte, a su congelada', () => {
+  const schema = fs.readFileSync(SCHEMA, 'utf8');
+  const linea = fs.readFileSync(path.join(RAIZ, CONTROL_FICHERO), 'utf8').split('\n')[CONTROL_LINEA - 1].replace(/\r$/, '');
+  assert.match(linea, /^ALTER TABLE .* FOREIGN KEY /, `la línea ${CONTROL_LINEA} de la congelada ya no es el DDL del control`);
+  const control = PRODUCCION_C20810.find((p) => p.orden === 0);
+  assert.equal(ddlDeClave(schema, control), linea);
+  // Negativo del mismo control: con otra acción ya no casa.
+  assert.notEqual(ddlDeClave(schema, { ...control, onDelete: 'RESTRICT' }), linea);
+});
+
+test('SCRUM-1310c · el fichero de docs/sql es exactamente el DDL de las 13: esquema + lo medido en producción (c.20810)', () => {
+  const schema = fs.readFileSync(SCHEMA, 'utf8');
+  const texto = fs.readFileSync(path.join(RAIZ, DDL_1310C), 'utf8');
+  const esperado = PRODUCCION_C20810.filter((p) => p.orden > 0).map((p) => ddlDeClave(schema, p));
+  assert.equal(esperado.length, LAS_13_DE_C20753.length);
+  assert.deepEqual(PRODUCCION_C20810.filter((p) => p.orden > 0).map((p) => p.nombre), LAS_13_DE_C20753);
+  assert.deepEqual(sentenciasDe(texto), esperado);
+  const { nombres } = nombresConDdl(texto);
+  assert.deepEqual(LAS_13_DE_C20753.filter((n) => !nombres.has(n)), [], 'una de las 13 sin DDL en el fichero');
+});
+
+test('SCRUM-1310c · el fichero NO se puede aplicar: el clasificador rechaza las 13 sentencias', () => {
+  const r = clasificarFichero(fs.readFileSync(path.join(RAIZ, DDL_1310C), 'utf8'));
+  assert.equal(r.ok, false);
+  assert.equal(r.sentencias.length, 13, `población: ${r.sentencias.length} sentencias`);
+  assert.equal(r.rechazadas.length, 13);
+  // Se afirma el RECHAZO, no el motivo: con el prefijo `"public".` el clasificador las rechaza hoy
+  // como «acción no reconocida» antes de llegar a la rama de FOREIGN KEY (SCRUM-1310c, hallazgo).
+  assert.ok(r.rechazadas.every((s) => s.veredicto === RECHAZADA));
 });
