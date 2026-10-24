@@ -1,4 +1,4 @@
-// SCRUM-1247d · SIN CLAVE DE GEMINI NO HAY IA — y no sale nada hacia ningún otro proveedor.
+// SCRUM-1247e · SIN CLAVE DE GEMINI NO HAY IA — y no sale nada hacia ningún otro proveedor.
 //
 // LA DECISIÓN (fundador, 24-oct-2026; SCRUM-1247 c.20779, Q1 «Sí, quitarlo»): se retira de
 // `ai.service.ts` el camino a Anthropic que se usaba cuando faltaba GEMINI_API_KEY. La política de
@@ -50,21 +50,21 @@ function escenario(claves) {
   return JSON.parse(linea.slice(2));
 }
 
-test('SCRUM-1247d · control positivo: con GEMINI_API_KEY, la IA está configurada y la sonda VE la petición a Google', () => {
-  const m = escenario({ GEMINI_API_KEY: 'clave-de-prueba-1247d' });
+test('SCRUM-1247e · control positivo: con GEMINI_API_KEY, la IA está configurada y la sonda VE la petición a Google', () => {
+  const m = escenario({ GEMINI_API_KEY: 'clave-de-prueba-1247e' });
   assert.equal(m.configurada, true);
   assert.ok(m.destinos.length >= 1, `la sonda no vio ninguna petición: el interceptor no mide (${JSON.stringify(m)})`);
   assert.ok(m.destinos.every((u) => /googleapis\.com/.test(u)), `con Gemini, todo va a Google: ${m.destinos.join(', ')}`);
 });
 
-test('SCRUM-1247d · 🔴 sin GEMINI_API_KEY y CON ANTHROPIC_API_KEY: «IA no configurada» y CERO peticiones de red', () => {
-  const m = escenario({ ANTHROPIC_API_KEY: 'clave-de-prueba-1247d' });
+test('SCRUM-1247e · 🔴 sin GEMINI_API_KEY y CON ANTHROPIC_API_KEY: «IA no configurada» y CERO peticiones de red', () => {
+  const m = escenario({ ANTHROPIC_API_KEY: 'clave-de-prueba-1247e' });
   assert.equal(m.configurada, false, 'con sólo la clave de Anthropic, la IA NO cuenta como configurada (c.20779)');
   assert.equal(m.error, 'ai_not_configured', `tiene que fallar como «no configurada», no como otra cosa: ${m.error}`);
   assert.deepEqual(m.destinos, [], `no puede salir ninguna petición: ${m.destinos.join(', ')}`);
 });
 
-test('SCRUM-1247d · sin ninguna clave: «IA no configurada» y cero peticiones (lo de siempre, no cambia)', () => {
+test('SCRUM-1247e · sin ninguna clave: «IA no configurada» y cero peticiones (lo de siempre, no cambia)', () => {
   const m = escenario({});
   assert.equal(m.configurada, false);
   assert.equal(m.error, 'ai_not_configured');
