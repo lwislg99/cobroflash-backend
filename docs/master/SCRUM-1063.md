@@ -261,3 +261,28 @@ Al importar `partirPorSuplido`, `suplidos.ts` deja de ser un módulo inalcanzabl
 - Rojo primero: los 3 de scrum411 en local antes de tocar nada, con las mismas cifras que el obligatorio (4/5, 250/245).
 - Mutaciones sobre `dist/` contra los casos reescritos: la clave del dominio renombrada → caen 7; la línea que no es objeto leída como normal → 1; la marca ilegible aceptada → 2. Restaurado con `cmp`.
 - Dirigida en el comentario de Jira, con su población. **Suite entera local: NO CORRIDA.**
+
+## SCRUM-1063d · el aviso de suplidos en dos formas, sin «(s)» (J1, jv-j1bs, 24-oct-2026)
+
+**Medido contra:** `origin/main` = `1b3395ecc6d3524e7b4ec711871d1d485ee67f28` · 2026-10-24T14:36:40Z
+
+A9: comprobación → `tests/scrum377-plural-de-programador.test.mjs`
+
+El obligatorio de #2825 cayó en `scrum377` («HAY 7 «(s)» EN TEXTO DE PANTALLA y el tope es 6 … modelo303.ts → suplido(s)»; job `120864632581`). La dirigida del tramo 1063d de arriba no lo incluía. Medición y preguntas en c.20796. El fundador eligió cambiar el texto y NO subir el tope (c.20797, regla 39). Esa firma sustituye a c.20731.
+
+### Qué se ha hecho
+
+1. `modelo303.ts`: el aviso de suplidos se parte en las dos formas firmadas en c.20797, singular para n = 1 y plural para el resto. Los literales se han cotejado por programa con el texto del comentario. El tope de `scrum377` no se toca.
+2. `tests/scrum1063d-aviso-suplidos.test.mjs`: fija el singular (n = 1) y el plural (n = 2 y n = 3) por igualdad exacta. Añade un caso nuevo: ningún aviso de suplidos lleva «(s)», con su positivo, que exige que el aviso exista. Los controles casan las dos formas con UN token, `HABLA_DE_SUPLIDOS`.
+3. `tests/scrum1063c-suplido-y-casilla-64.test.mjs`: sus dos aserciones de igualdad pasan al singular firmado. Siguen siendo igualdad exacta, así que no son más laxas.
+
+### Cómo se ha medido
+
+- **Rojo primero:** con el literal viejo en `dist/`, caen 7 de 20 (los dos ficheros).
+- **Mutaciones sobre `dist/`**, sobre 20 casos: siempre plural, caen 4; siempre singular, 1; sin el punto final, 4; umbral `> 1`, 6. Se restauró el `dist/` bueno y la base volvió a 20 de 20.
+- **Dirigida** (1063b/c/d, 1066c/e, 1077, 1232, 237, 976, 824, 824b, 836, 419, 702, 700, 719, 1415, 377, 296, 411, 500, 844f, 622, 295 y 389): 31 ficheros, 307 casos, 303 pasan, 0 caen, 4 saltados (`LIBRO_PG_URL`). Control positivo: el caso del trinquete de 377 está en el TAP, y pasa.
+- **Suite entera local: NO CORRIDA**; hace de tanda el obligatorio de CI.
+
+### Error propio
+
+Al reescribir los tests pasé un `\\b` por `node -e` desde bash, y en el fichero entró un carácter de retroceso (0x08) en lugar de `\b`. El control positivo del test nuevo lo cazó: daba 0 avisos donde había 1. Lo quité con un script escrito con la herramienta de escritura, y el recuento de caracteres de control en los tres ficheros tocados da 0. Es la cicatriz J1 del 2026-10-01 (texto por la línea de órdenes) repetida.
