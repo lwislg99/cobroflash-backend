@@ -28,6 +28,7 @@ const BASELINE = {
   // APROBADOS por el fundador (reglas 26/30) — :380 «Recibe el enlace de pago» · :424 «Ya puedes
   // pagar cuando quieras» · :433 «Reforma de baño». El documento post-pago ya no se promete como
   // «factura». `n` baja a 0 y `limpiadoPor` deja constancia; el guard exige ahora CERO promesas.
+  // Consta en: SCRUM-299 comentario 12188.
   'public/index.html': {
     n: 0,
     limpiadoPor: 'SCRUM-299 (este commit): textos aprobados aplicados en index.html:380/:424/:433 — ver docs/master/SCRUM-299.md',
