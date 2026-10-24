@@ -20,8 +20,6 @@ import {
   getInvoiceDetailAdmin,
   updateInvoiceStatusAdmin,
   NO_SE_MARCAN_PAGADAS_EN_LOTE,
-  markInvoicePaidAdmin,
-  markInvoicePendingAdmin,
   setInvoiceTags,
 } from '../../invoiceAdmin';
 
@@ -517,7 +515,7 @@ router.post('/bulk-paid', requireRole('admin'), async (req, res) => {
  * 🔴 ESTO NO ABRE UNA PUERTA DE EDICION SOBRE UNA FACTURA EMITIDA (regla 29). Escribe UN campo
  * que no es el documento —ni numero, ni total, ni lineas, ni sello, ni PDF— y el porque, con sus
  * medidas, vive junto a `setInvoiceTags` en `invoiceAdmin.ts`. Es la misma familia que
- * `/:id/pay` o `/:id/status`, que ya escriben sobre facturas emitidas sin tocarlas.
+ * `/:id/status`, que ya escribe sobre facturas emitidas sin tocarlas.
  *
  * ⚠️ Y NO ROZA EL GUARD DE SCRUM-289b, que vigila otra cosa: que el ENTRYPOINT DE ALTA
  * (`POST /`) no edite ni borre, y que la COLECCION no acepte patch/put/delete. Esta ruta va por
@@ -584,54 +582,6 @@ router.put('/:id/status', requireRole('admin'), async (req, res) => {
       return res.status(409).json({ error: 'unpay_not_allowed', message: err.message });
     }
     console.error('[PUT /admin/invoices/:id/status]', err);
-    res.status(500).json({ error: 'internal_error' });
-  }
-});
-
-/**
- * (Opcional) Endpoints legacy pay/unpay si quieres mantenerlos
- */
-router.post('/:id/pay', requireRole('admin'), async (req, res) => {
-  try {
-    const id = Number(req.params.id);
-    if (!cabeEnColumnaInt(id)) {
-      return res.status(400).json({ error: 'invalid_id' });
-    }
-
-    const updated = await markInvoicePaidAdmin(id, req.merchantId);
-    if (!updated) return res.status(404).json({ error: 'not_found' });
-    if (!(updated as any).__unchanged) recordAudit({ // A11.1 (S2)
-      merchantId: req.merchantId, teamMemberId: req.teamMemberId ?? null,
-      action: 'marcar_pagado_manual', entityType: 'invoice', entityId: id,
-      meta: { via: 'pay' }, ip: requestIp(req),
-    });
-    res.json(updated);
-  } catch (err) {
-    console.error('[POST /admin/invoices/:id/pay]', err);
-    res.status(500).json({ error: 'internal_error' });
-  }
-});
-
-router.post('/:id/unpay', requireRole('admin'), async (req, res) => {
-  try {
-    const id = Number(req.params.id);
-    if (!cabeEnColumnaInt(id)) {
-      return res.status(400).json({ error: 'invalid_id' });
-    }
-
-    const updated = await markInvoicePendingAdmin(id, req.merchantId);
-    if (!updated) return res.status(404).json({ error: 'not_found' });
-    if (!(updated as any).__unchanged) recordAudit({ // A11.1 (S2)
-      merchantId: req.merchantId, teamMemberId: req.teamMemberId ?? null,
-      action: 'deshacer_pago', entityType: 'invoice', entityId: id,
-      meta: { via: 'unpay' }, ip: requestIp(req),
-    });
-    res.json(updated);
-  } catch (err) {
-    if (err instanceof UnpayNotAllowedError) {
-      return res.status(409).json({ error: 'unpay_not_allowed', message: err.message });
-    }
-    console.error('[POST /admin/invoices/:id/unpay]', err);
     res.status(500).json({ error: 'internal_error' });
   }
 });

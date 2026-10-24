@@ -519,3 +519,73 @@ Controles:
 **Sin medir:** la tabla de 1218c con el comparador arreglado (se dejó montado PGlite 0.5.11 + socket 0.2.14 y
 el DDL de 33 tablas, y no se corrió: el orquestador lo pasó detrás del empujón); 20 pasadas por fichero;
 Linux/CI; la tanda gateada completa; la suite entera local.
+
+## J6 · SCRUM-1218g · los seis que leen `arrayBuffer()` y `scrum148`, a `node:http`, desde un árbol nuevo dado de alta
+
+**Medido contra:** `origin/main` = `2c45bf589aeae007eb12ed388b3e0f4d2d8d98ed` · 2026-10-23T21:13:00Z (hora de GitHub al soltar el turno; sesión J6 `jv-j6ba`, por encargo del orquestador `cobroflash-backend-62`; la alta del árbol es la ampliación de c.20665 sobre la decisión del fundador de c.20596)
+
+A9: comprobación → `tests/scrum383-clave-vs-destino.test.mjs`
+
+*(Mío, cazado por mí: la alta la comprobé en rojo con `comprobar-claves-bd.mjs` antes de escribirla, pero
+`scrum383` lo edité y lo vi en verde sin verlo antes en rojo. Lo hice después: sin la línea de `jv-j6ba` en el
+módulo, 13/14. Ese guard ya exige la lista exacta, así que una alta que se olvide su línea en el test no pasa.)*
+
+### ① La alta de `jv-j6ba` (c.20665)
+
+UNA entrada en `scripts/_clave-vs-destino.mjs`, `'jv-j6ba': 'yaqu_dev_javier'`, y su línea en `scrum383` (la
+lista exacta y un caso que exige la misma base que `cobroflash-backend`). Carril, consultado antes de tocar:
+el módulo, SIN CERRADURA por la fila general de `scripts/` (como en 1218e); `scrum383`, «nadie lo reclama».
+`comprobar-claves-bd.mjs`, sin tubería: `rc=1` («DATABASE_URL_TESTS NO SE PUEDE COMPROBAR») → `rc=0`. Control,
+llamando a `comprobarClaveVsDestino`: `jv-j6ap` y un `jv-j6zz` inventado siguen `worktree_no_declarado`.
+
+### ② El ayudante, y por qué no cambia a los 23 que ya lo usan
+
+`pedirSinAgente` no es un módulo: va COPIADO dentro de cada fichero (lo pega `migrar-1218d`). Darle
+`arrayBuffer()` en estos siete no puede cambiar lo que devuelve a los 23 de 1218d/e/f, que no se tocan.
+`migrar-1218g.mjs.txt` es `migrar-1218d` con dos cambios: el ayudante guarda el cuerpo en BYTES y da también
+`arrayBuffer()`, con `text()`/`json()` decodificando con `TextDecoder` como hace `fetch` (quita un BOM
+inicial, que `setEncoding('utf8')` no quita); y si el fichero ya importa `http` de `node:http` (`scrum148`,
+que monta su servidor con él) no añade otro import. 20 llamadas en 7 ficheros (`migrar-1218g.salida.txt`).
+**Ninguna aserción cambia:** `diff-idem-1218f` sobre este diff, 20 quitadas, 0 que falten, control VIVO.
+
+### ③ Antes y después, con el turno
+
+Banco `banco-1218e` (entorno del hijo QA de `staging-gated.mjs`), contra `DATABASE_URL_TESTS` con el turno
+tomado a las 21:02:42Z y soltado a las 21:13:00Z (estaba en manos de `scrum-1599c`; se esperó a que lo
+soltara). El ANTES corre los siete ficheros restaurados desde `506281b13^`; el DESPUÉS, `506281b13`. Canario
+cronometrado antes del lote: 13 s por pasada, así que cada tanda va en dos órdenes de menos de 170 s.
+
+| fichero | casos (0 SKIP) | respuestas/pasada | antes | después | casos | respuestas |
+| --- | --- | --- | --- | --- | --- | --- |
+| pdfs | 4 ok | 3 | 3/3, 0 abortos | 3/3, 0 | IGUAL | IGUAL |
+| scrum221 | 1 ok | 6 | 3/3, 0 | 3/3, 0 | IGUAL | IGUAL |
+| scrum74 | 1 ok | 7 | 3/3, 0 | 3/3, 0 | IGUAL | IGUAL |
+| scrum82 | 1 ok | 5 | 3/3, 0 | 3/3, 0 | IGUAL | IGUAL |
+| scrum25-export-zip | 1 ok | 5 | 3/3, 0 | 3/3, 0 | IGUAL | IGUAL |
+| scrum25-exports | 1 ok | 19 | 3/3, 0 | 3/3, 0 | IGUAL | IGUAL |
+| scrum148 | 2 ok | 6 | 3/3, 0 | 3/3, 0 | IGUAL | IGUAL |
+
+Salidas: `evidencias/SCRUM-1218/pasadas-1218g.salida.txt` y `comparar-1218g.salida.txt` (comparador
+`comparar-1218d`, que no pliega el status).
+
+Controles:
+
+- **El banco enciende el test:** 0 `# SKIP` en las 42 pasadas.
+- **Comparador:** su control sembrado sale VIVO en los siete.
+- **Redirecciones:** varios `fetch` no llevaban `redirect: 'manual'`. En el ANTES, los únicos 3xx son los
+  302 de `/auth/verify` y el 303 de `scrum74`, que ya pedían `manual`; las respuestas salen IGUALES, así que
+  ninguna redirección se seguía.
+- **Mutación sobre la pieza nueva:** con `arrayBuffer()` devolviendo `new ArrayBuffer(0)` en `pdfs`, cae 1 de
+  4 (exit 1); el fichero se restauró desde git y el diff queda vacío.
+- **La lista:** `CON_EL_PATRON_YA` baja de 14 a 7. Con la lista vieja, `scrum560` cae nombrando exactamente
+  esos siete.
+
+### ④ Lo que queda (7)
+
+- `scrum178`, `scrum814…gated`, `scrum85` y `scrum17`: los rojos de 1218f, de SCRUM-1599. No se tocan aquí.
+- `scrum1188d`, `scrum1489` y `scrum912`: del equipo de Luis, sin tocar.
+
+**Sin medir:** 20 pasadas por fichero; Linux/CI con pasadas; la tanda gateada entera (como en 1218e/f, se usó
+el turno, la base y el entorno del runner fichero a fichero); el cuerpo de las respuestas (la sonda anota
+método, ruta y status; lo que se lee del cuerpo lo juzgan las aserciones de cada test, y la mutación de ③
+demuestra que lo leen).

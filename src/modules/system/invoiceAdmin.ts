@@ -321,12 +321,3 @@ export async function updateInvoiceStatusAdmin(
   );
   return updated;
 }
-
-// Helpers específicos (por si quieres seguir usándolos)
-export async function markInvoicePaidAdmin(id: number, merchantId?: number) {
-  return updateInvoiceStatusAdmin(id, 'paid', merchantId);
-}
-
-export async function markInvoicePendingAdmin(id: number, merchantId?: number) {
-  return updateInvoiceStatusAdmin(id, 'pending', merchantId);
-}

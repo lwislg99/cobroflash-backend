@@ -83,3 +83,36 @@ export const CASILLA_TOTAL_A_DEDUCIR = 45;
 
 /** «Resultado régimen general (27-45)». */
 export const CASILLA_RESULTADO_REGIMEN_GENERAL = 46;
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-1063c · EL «RESULTADO». PROCEDENCIA: el formulario oficial, LEÍDO como imagen.
+//
+// Orden HAC/27/2026, Anexo III, página 3 del impreso, recuadro «Resultado»:
+//   https://www.boe.es/datos/imagenes/disp/2026/23/1761_16563944_9.png
+// Leído el 24-oct-2026 (`docs/master/SCRUM-1063.md`, tramo 1063c):
+//   64 «Suma de resultados (46 + 58 + 76)»
+//   65 el «%» de «Atribuible a la Administración del Estado», y 66 su importe
+//   68 «Exclusivamente para sujetos pasivos que tributan conjuntamente a la Administración del
+//      Estado y a las Haciendas Forales. Resultado de la regularización anual.»
+//   69 «Resultado de la autoliquidación (66 + 77 - 78 + 68 + 108)»
+//   70 «Resultado a ingresar correspondiente a la anterior autoliquidación o liquidación
+//      administrativa del ejercicio y período objeto de la autoliquidación»
+//   71 «Resultado (69 - 70 + 109 - 112)»
+// ⚠️ NO HAY CASILLA 67 en este impreso: las cuotas a compensar son la 110, la 78 y la 87. Por eso
+// la lista de vacías no la lleva: escribirla sería inventar una casilla.
+//
+// Decisión del fundador (SCRUM-1063 c.20717): la 64 = 46 (la 58 es del simplificado y la 76 una
+// regularización que YaQu no calcula) y de la 65 a la 71 VACÍAS, con su motivo como dato.
+
+/** «Suma de resultados (46 + 58 + 76)». */
+export const CASILLA_SUMA_DE_RESULTADOS = 64;
+
+/** Las casillas del «Resultado» entre la 65 y la 71 que existen en el impreso, vacías y por qué. */
+export const CASILLAS_RESULTADO_VACIAS = Object.freeze([
+  Object.freeze({ casilla: 65, motivo: 'porcentaje_atribuible_no_consta' as const }),
+  Object.freeze({ casilla: 66, motivo: 'depende_de_la_65' as const }),
+  Object.freeze({ casilla: 68, motivo: 'regularizacion_anual_foral_no_consta' as const }),
+  Object.freeze({ casilla: 69, motivo: 'depende_de_la_66' as const }),
+  Object.freeze({ casilla: 70, motivo: 'autoliquidacion_anterior_no_consta' as const }),
+  Object.freeze({ casilla: 71, motivo: 'depende_de_la_69' as const }),
+]);

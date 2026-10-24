@@ -1,0 +1,131 @@
+población: antes 108 · después 108 · mismo conjunto: true · MIDE: true/true
+
+sub.created | active | sin plan
+  antes:   200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+  después: 200 | {"received":true} | — | abre,processedAt | 1: [stripe] ⚠️ plan desconocido "" (merchant 14027) en customer.subscript… | 0 | 0 | 0
+
+sub.created | active | plan vacío
+  antes:   200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+  después: 200 | {"received":true} | — | abre,processedAt | 1: [stripe] ⚠️ plan desconocido "" (merchant 14027) en customer.subscript… | 0 | 0 | 0
+
+sub.created | trialing | sin plan
+  antes:   200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+  después: 200 | {"received":true} | — | abre,processedAt | 1: [stripe] ⚠️ plan desconocido "" (merchant 14027) en customer.subscript… | 0 | 0 | 0
+
+sub.created | trialing | plan vacío
+  antes:   200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+  después: 200 | {"received":true} | — | abre,processedAt | 1: [stripe] ⚠️ plan desconocido "" (merchant 14027) en customer.subscript… | 0 | 0 | 0
+
+sub.created | past_due | sin plan
+  antes:   200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+  después: 200 | {"received":true} | {"subscriptionStatus":"past_due"} | abre,processedAt | 1: [stripe] ⚠️ plan desconocido "" (merchant 14027) en customer.subscript… | 0 | 0 | 0
+
+sub.created | past_due | plan vacío
+  antes:   200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+  después: 200 | {"received":true} | {"subscriptionStatus":"past_due"} | abre,processedAt | 1: [stripe] ⚠️ plan desconocido "" (merchant 14027) en customer.subscript… | 0 | 0 | 0
+
+sub.created | unpaid | sin plan
+  antes:   200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+  después: 200 | {"received":true} | {"subscriptionStatus":"past_due"} | abre,processedAt | 1: [stripe] ⚠️ plan desconocido "" (merchant 14027) en customer.subscript… | 0 | 0 | 0
+
+sub.created | unpaid | plan vacío
+  antes:   200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+  después: 200 | {"received":true} | {"subscriptionStatus":"past_due"} | abre,processedAt | 1: [stripe] ⚠️ plan desconocido "" (merchant 14027) en customer.subscript… | 0 | 0 | 0
+
+sub.created | canceled | sin plan
+  antes:   200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+  después: 200 | {"received":true} | {"plan":"trial","subscriptionStatus":"canceled","stripeSubscriptionId":null} | abre,processedAt | 0 | 0 | 0 | 0
+
+sub.created | canceled | plan vacío
+  antes:   200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+  después: 200 | {"received":true} | {"plan":"trial","subscriptionStatus":"canceled","stripeSubscriptionId":null} | abre,processedAt | 0 | 0 | 0 | 0
+
+sub.created | incomplete_expired | sin plan
+  antes:   200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+  después: 200 | {"received":true} | {"plan":"trial","subscriptionStatus":"canceled","stripeSubscriptionId":null} | abre,processedAt | 0 | 0 | 0 | 0
+
+sub.created | incomplete_expired | plan vacío
+  antes:   200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+  después: 200 | {"received":true} | {"plan":"trial","subscriptionStatus":"canceled","stripeSubscriptionId":null} | abre,processedAt | 0 | 0 | 0 | 0
+
+sub.created | incomplete | sin plan
+  antes:   200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+  después: 200 | {"received":true} | — | abre,processedAt | 0 | 1: [stripe] estado de suscripción sin mapeo directo: incomplete (merchant… | 0 | 0
+
+sub.created | incomplete | plan vacío
+  antes:   200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+  después: 200 | {"received":true} | — | abre,processedAt | 0 | 1: [stripe] estado de suscripción sin mapeo directo: incomplete (merchant… | 0 | 0
+
+sub.created | paused | sin plan
+  antes:   200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+  después: 200 | {"received":true} | — | abre,processedAt | 0 | 1: [stripe] estado de suscripción sin mapeo directo: paused (merchant 140… | 0 | 0
+
+sub.created | paused | plan vacío
+  antes:   200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+  después: 200 | {"received":true} | — | abre,processedAt | 0 | 1: [stripe] estado de suscripción sin mapeo directo: paused (merchant 140… | 0 | 0
+
+sub.updated | active | sin plan
+  antes:   200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+  después: 200 | {"received":true} | — | abre,processedAt | 1: [stripe] ⚠️ plan desconocido "" (merchant 14027) en customer.subscript… | 0 | 0 | 0
+
+sub.updated | active | plan vacío
+  antes:   200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+  después: 200 | {"received":true} | — | abre,processedAt | 1: [stripe] ⚠️ plan desconocido "" (merchant 14027) en customer.subscript… | 0 | 0 | 0
+
+sub.updated | trialing | sin plan
+  antes:   200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+  después: 200 | {"received":true} | — | abre,processedAt | 1: [stripe] ⚠️ plan desconocido "" (merchant 14027) en customer.subscript… | 0 | 0 | 0
+
+sub.updated | trialing | plan vacío
+  antes:   200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+  después: 200 | {"received":true} | — | abre,processedAt | 1: [stripe] ⚠️ plan desconocido "" (merchant 14027) en customer.subscript… | 0 | 0 | 0
+
+sub.updated | past_due | sin plan
+  antes:   200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+  después: 200 | {"received":true} | {"subscriptionStatus":"past_due"} | abre,processedAt | 1: [stripe] ⚠️ plan desconocido "" (merchant 14027) en customer.subscript… | 0 | 0 | 0
+
+sub.updated | past_due | plan vacío
+  antes:   200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+  después: 200 | {"received":true} | {"subscriptionStatus":"past_due"} | abre,processedAt | 1: [stripe] ⚠️ plan desconocido "" (merchant 14027) en customer.subscript… | 0 | 0 | 0
+
+sub.updated | unpaid | sin plan
+  antes:   200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+  después: 200 | {"received":true} | {"subscriptionStatus":"past_due"} | abre,processedAt | 1: [stripe] ⚠️ plan desconocido "" (merchant 14027) en customer.subscript… | 0 | 0 | 0
+
+sub.updated | unpaid | plan vacío
+  antes:   200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+  después: 200 | {"received":true} | {"subscriptionStatus":"past_due"} | abre,processedAt | 1: [stripe] ⚠️ plan desconocido "" (merchant 14027) en customer.subscript… | 0 | 0 | 0
+
+sub.updated | canceled | sin plan
+  antes:   200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+  después: 200 | {"received":true} | {"plan":"trial","subscriptionStatus":"canceled","stripeSubscriptionId":null} | abre,processedAt | 0 | 0 | 0 | 0
+
+sub.updated | canceled | plan vacío
+  antes:   200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+  después: 200 | {"received":true} | {"plan":"trial","subscriptionStatus":"canceled","stripeSubscriptionId":null} | abre,processedAt | 0 | 0 | 0 | 0
+
+sub.updated | incomplete_expired | sin plan
+  antes:   200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+  después: 200 | {"received":true} | {"plan":"trial","subscriptionStatus":"canceled","stripeSubscriptionId":null} | abre,processedAt | 0 | 0 | 0 | 0
+
+sub.updated | incomplete_expired | plan vacío
+  antes:   200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+  después: 200 | {"received":true} | {"plan":"trial","subscriptionStatus":"canceled","stripeSubscriptionId":null} | abre,processedAt | 0 | 0 | 0 | 0
+
+sub.updated | incomplete | sin plan
+  antes:   200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+  después: 200 | {"received":true} | — | abre,processedAt | 0 | 1: [stripe] estado de suscripción sin mapeo directo: incomplete (merchant… | 0 | 0
+
+sub.updated | incomplete | plan vacío
+  antes:   200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+  después: 200 | {"received":true} | — | abre,processedAt | 0 | 1: [stripe] estado de suscripción sin mapeo directo: incomplete (merchant… | 0 | 0
+
+sub.updated | paused | sin plan
+  antes:   200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+  después: 200 | {"received":true} | — | abre,processedAt | 0 | 1: [stripe] estado de suscripción sin mapeo directo: paused (merchant 140… | 0 | 0
+
+sub.updated | paused | plan vacío
+  antes:   200 | {"received":true} | — | abre,processedAt | 0 | 0 | 0 | 0
+  después: 200 | {"received":true} | — | abre,processedAt | 0 | 1: [stripe] estado de suscripción sin mapeo directo: paused (merchant 140… | 0 | 0
+
+filas distintas: 32 de 108 · idénticas: 76

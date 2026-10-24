@@ -971,3 +971,68 @@ hay se sabe sólo con la consulta de ③ (c.19542), corrida por el fundador just
 | comprobado por contenido, en main y en yaqu.app | §2 |
 | fila 9 descrita con sus dos salidas y su coste, sin elegir | §3 |
 | ningún texto que ve el usuario cambia | el diff: `puerta.json`, el guard y este registro |
+
+---
+
+# APÉNDICE · 23-oct-2026 · SCRUM-1551h · el guard de canales prometidos mira también lo legal servido (fila 8)
+
+**Medido contra:** `origin/main` = `b6dd5d1a8d64abd0bf835141e8d9bac6d5d2055f` · 2026-10-23T20:26:36Z
+
+A9: comprobación → `tests/scrum406-canal-prometido-existe.test.mjs`
+
+**Quién:** jv-j6az (puesto J6, equipo de Javier), por encargo del orquestador `cobroflash-backend-62`. Carril a
+mano: el hook de inicio dijo «SIN IDENTIDAD» (SCRUM-1498). `tests/scrum406-canal-prometido-existe.test.mjs`,
+`docs/go-live/puerta.json` y `tests/scrum1554c-puerta-de-go-live.test.mjs` no tienen dueño en §3 (`carriles.mjs de`:
+«sin fila en §3: nadie lo reclama»). Ningún texto que ve el usuario cambia.
+
+## 1 · Qué entra
+
+| sitio | cambio |
+|---|---|
+| `tests/scrum406-canal-prometido-existe.test.mjs` | `promesasDeSoporte()` suma los documentos de `docs/legal/` que el servidor sirve. La lista sale por AST (`typescript`) de las llamadas a `readLegalDoc` en `src/`, no de una lista a mano; un argumento que no es literal es CIEGO y cae. El Markdown se lee por unidades (viñeta o párrafo, uniendo sus líneas), sin las líneas `>` que `mdToHtml` no sirve, y la captura para en `.` o `;` |
+| ídem, 3 casos nuevos | SUELO de población legal (≥ 1 documento servido, todos existen, 0 sin resolver); AST con positivo SEMBRADO (literal, por propiedad, plantilla y variable → CIEGO); frase partida SEMBRADA que se ve, con su contraste línea a línea que da 0 |
+| `docs/go-live/puerta.json`, entrada 8 | `abierta` → `cerrada`. `sha` = `c1581273d73cf3ff7a1cee3d4aa2724061923a2d`, el commit del guard de esta rama (no un merge: entra con este PR) |
+| `tests/scrum1554c-puerta-de-go-live.test.mjs` | `CERRADAS` suma `8`. `TOTAL` sigue en 23 |
+
+## 2 · Población
+
+1 documento servido (`ALCANCE_BETA.md`), leído desde 2 fuentes de `src/` que nombran `readLegalDoc`
+(`legalPages.routes.ts`, `subscriptions.routes.ts`; 3 llamadas). Lo dice el propio test con `t.diagnostic`.
+De los otros 19 ficheros de `docs/legal/`, ninguno se sirve por esta vía; si otro lo hiciera por una ruta que no
+pase por `readLegalDoc`, este guard no lo ve (sin medir: no hay hoy otra ruta que lea `docs/legal/`, según 1551 ①).
+
+## 3 · Rojo primero
+
+- **Guard nuevo, violación real inyectada:** `ALCANCE_BETA.md:25` «  por email.» → «  por email y WhatsApp.»
+  (`git diff --numstat` 1/1). Cae «el producto no promete un canal que no existe» con
+  `docs/legal/ALCANCE_BETA.md:24 promete «whatsapp»`; 7 pasan, 1 cae. Restaurado con `git restore --source=HEAD`.
+- **El guard de `main` (`b6dd5d1a8`) con la MISMA inyección:** 5 de 5 verdes. Es el defecto de la fila 8.
+- **Mutante del lector** (cerrar la unidad en cada línea = leer línea a línea): cae sólo el caso sembrado de la
+  frase partida.
+- **Sin inyectar:** 8 de 8 verdes. Lo que hoy pasa sigue pasando; la frase legal de hoy («soporte por email») no
+  promete un canal ausente.
+
+## 4 · Aceptación → dónde se ve
+
+| aceptación | dónde se ve |
+|---|---|
+| el guard mira los documentos legales servidos, lista sacada de `readLegalDoc` y no a mano | `tests/scrum406-canal-prometido-existe.test.mjs`, `documentosLegalesServidos()` |
+| una frase partida se une y un positivo sembrado partido la hace caer | ídem, caso «una promesa PARTIDA en dos líneas»; §3 |
+| suelo de población | ídem, caso «SUELO: el guard mira los documentos legales que el servidor SIRVE» |
+| lo que hoy pasa sigue pasando, ningún texto cambia | §3; el diff no toca `public/` ni `docs/legal/` |
+| fila 8 cerrada como 1551g | `docs/go-live/puerta.json`, entrada 8; `tests/scrum1554c-puerta-de-go-live.test.mjs` (`CERRADAS`) |
+
+## 5 · Relevo (jv-j6bb, 23-oct-2026 ~21:20Z): el obligatorio de #2780 cayó por SCRUM-710b
+
+- **Lo que cayó:** «SCRUM-710b · los anclajes por NÚMERO DE LÍNEA no crecen», con
+  `tests/scrum406-canal-prometido-existe.test.mjs  sembrado.ts  (declarados 0, hay 1)`. El caso sembrado del AST
+  comparaba la llamada sin resolver como el texto «fichero, dos puntos y su línea 4», o sea, por POSICIÓN y como dato.
+  Lo cazó el guard en CI, no la sesión que lo escribió: la mini-tanda de 22 ficheros de §3 no llevaba 710b.
+- **Arreglo, en el código del test:** cada llamada sin resolver es ahora `{ fichero, argumento, linea }`, y se
+  identifica por su fichero y el TEXTO de su argumento (`a.getText(sf)`, lo que la llamada ES). El caso sembrado
+  compara `[['sembrado.ts', 'nombre']]`. La línea sólo viaja al mensaje del SUELO. No se trocea ni se arma ninguna
+  cita, y 710b no se toca.
+- **Los dos positivos sembrados siguen cayendo con la cita nueva:** mutante «el lector no declara CIEGO» → cae sólo
+  «el lector de AST ve el literal y declara CIEGO…» (8 casos · 7 pasan · 1 cae); mutante «cerrar la unidad en cada
+  línea» → cae sólo «una promesa PARTIDA en dos líneas…» (8 · 7 · 1). Restaurado con `git restore --source=HEAD`,
+  árbol limpio después de cada uno.

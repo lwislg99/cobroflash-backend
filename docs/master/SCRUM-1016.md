@@ -874,3 +874,89 @@ Antes de tocar el test, el mismo control daba 8 fallos y ahora da 6. Los dos que
 ## SCRUM-1347 — sin cambios
 
 Ya entró en `main` con el PR #2432 (merge `3c254525`, 08:12:21Z). El obligatorio de #2432 salió verde. El meta-guard salió `fail`, sin colgarse: 1 CIEGO en `scrum757-la-declaracion-que-nadie-lee` (la pasada mutada perdió 5 de sus 9 tests) y 0 mudas. Ese fichero no lo toca el PR, y no lo he investigado.
+
+# APÉNDICE · 24-oct-2026 · SCRUM-1016n · Las 12 líneas, re-medidas: qué está en main, qué sigue vivo y cuatro preguntas
+
+**Medido contra:** `origin/main` = `aae98e6b5f6fb87ee53f01a3f65c7d6c335a9255` · 2026-10-24T10:48:57Z
+**Rama:** `scrum-1016n-medida-24oct` · **Puesto:** J4 (sesión `jv-j4ae`) · **Skill UI:** no cargada · no toca `public/`: sólo la lee y la cita por fichero:línea
+**No toca** `public/`, `src/`, `docs/YAQU_MASTER.md`, el camino de emisión, el esquema ni ninguna base. Solo docs.
+
+A9: sin fallo que generalice — el único tropiezo fue una redirección sin comillas a una ruta con espacios. Bash la paró con «ambiguous redirect», la rehice con comillas y no llegó a leerse ningún recuento falso.
+
+## Encargo
+
+Del orquestador (`cobroflash-backend-95`): SOLO MEDIR Y PREGUNTAR. Separar lo hecho de lo vivo, decir lo que el ticket da por cierto y ya no lo es, y dejar las decisiones como preguntas ✅/❌ para el fundador. El ticket se leyó entero (13 comentarios, hasta c.19608). La entrega está en **SCRUM-1016 c.20752**, y las preguntas viven allí, no aquí.
+
+## Cómo se midió
+
+- El máster (515.341 B) y `public/index.html` (89.737 B) se leyeron enteros con `git show origin/main:`, a fichero. Cada línea del máster se buscó por un fragmento de su literal (c.16200 §1).
+- `https://yaqu.app/` se bajó con `curl`: **idéntica byte a byte** a la landing de main (`cmp`). `/health` da `version` = `aae98e6b5…`. Control positivo: «Del presupuesto a la firma» sale 5 veces (title, og, twitter y los dos H1).
+- Carril (`node scripts/carriles.mjs de`): `public/index.html` es de J3. `docs/YAQU_MASTER.md` está sin cerradura y lo edita un jefe. `docs/go-live/puerta.json` no tiene fila en §3.
+
+## Resultado, en corto (el detalle con sus sha está en c.20752)
+
+| de las 12 | estado hoy |
+| --- | --- |
+| #3 categoría de H2 (`docs/YAQU_MASTER.md:215`) | hecho, SCRUM-1086d (#1704) |
+| #4 guion VeriFactu de H2 | hecho, SCRUM-534i: 0 apariciones del literal viejo |
+| #11 métrica A5 (`:79`) | hecho el 21-sep |
+| #1 `:53` · #2 `:91` · #5 `:226-228` · #6 `:232` · #7 `:235` y `:1869` · #8 `:246` (26b) · #9 `:444` · #10 `:1012` · #12 `:1661` | **vivas**, sin dueño en la puerta |
+
+**Landing:** el title y los dos H1 entraron con #2447, y el guard `scrum331:121` se puso al día con #2444. El subtítulo vivo (`public/index.html:442`) lo cambió SCRUM-1551e con la firma S3. Siguen visibles y con cobro `:653` (tarjeta de `#todo`, puerta fila 11) y `:447` (`aria-label`, puerta fila 12, «falso siempre»). Las secciones con `hidden` no se cuentan.
+
+**Lo que el ticket da por cierto y ya no lo es:** el subtítulo del Candidato 1 ya no es el trabajo pendiente: lo superó la firma S3, y la puerta tiene la fila 14 cerrada. `precios.html` ya no dice cobro. La frase de c.19607 está ahora en `:522` y no en `:507`. Los números de línea de la landing se han movido +15.
+
+## Preguntas para el fundador (texto entero en c.20752 §4)
+
+- **P1** · ¿los guiones #1, #5, #6, #7 y #10 se usan hoy con profesionales reales? ✅ → mínimos de c.16200, para firmar · ❌ → fila de la puerta.
+- **P2** · ¿se añade el matiz post-SIF a #2, #8 y #12? Recomiendo ✅.
+- **P3** · ¿se pone A22 (`:444`) al día con el H1 servido (regla 16)? Recomiendo ✅.
+- **P4** · ¿se firma un `aria-label` nuevo para `:447`? Literal propuesto, sin firma. Recomiendo ✅.
+
+## Qué NO hice
+
+- No toqué el máster, `public/` ni la puerta. Tampoco transicioné el ticket: lo parte o lo cierra el orquestador (A13/A18).
+- No medí si el vídeo de V0-6 está grabado, ni si alguien usa hoy los guiones (eso es la P1). La firma SCRUM-1551 c.20437 la leí en el commit `8b069ba50` y en `puerta.json`, no en Jira.
+- Suite entera local: NO CORRIDA (encargo solo de medir; un cambio de un fichero de docs).
+
+# APÉNDICE · 24-oct-2026 · SCRUM-1016p · El matiz de la regla 24 en B1, 26b y W2, la A22 al día y los guiones a la puerta
+
+**Medido contra:** `origin/main` = `1b3395ecc6d3524e7b4ec711871d1d485ee67f28` · 2026-10-24T15:00:49Z
+**Rama:** `scrum-1016p-master-regla-24` · **Puesto:** J4 (sesión `jv-j4af`) · **Skill UI:** no cargada · no toca `public/`: sólo lee `public/index.html` para copiar el H1 servido.
+**Carril:** `docs/YAQU_MASTER.md` sin cerradura, lo edita **un jefe**: el encargo lo da el orquestador `cobroflash-backend-95` como jefe (mismo precedente que 1390x y 1601b). `docs/go-live/puerta.json`: «sin fila en §3: nadie lo reclama» (`carriles.mjs de`), igual que en 1551f y 1551g.
+**No toca** `public/`, `src/`, el camino de emisión, el esquema ni ninguna base.
+
+A9: aviso → cicatriz J4 «conté los retornos de carro de puerta.json con `od -c | grep '\\r'` y salieron 353 donde había 0: el patrón casaba con la letra «r», la misma trampa que ya tenía apuntada en la memoria» — no se pudo comprobar: la cuenta de retornos de carro con `od | grep` era de un solo uso y fuera del repo; lo que la cazó fue cruzarla con un recuento por bytes.
+
+## Encargo
+
+Aplicar la decisión del fundador de SCRUM-1016 c.20778 (P1, P2 y P3), que responde a c.20752. P4 (`aria-label` de `public/index.html:447`) es de J3 y no entra aquí.
+
+## Lo aplicado en el máster — 4 líneas, editadas en sitio
+
+El máster tiene 1.913 líneas antes y después; `git diff -U0` da cuatro trozos de una línea (`@@ -91 +91`, `-246 +246`, `-444 +444`, `-1661 +1661`). Ninguna línea citada por número se ha movido.
+
+| # | línea | qué se añade | de dónde sale el literal |
+| --- | --- | --- | --- |
+| 2 | `:91` B1 | «(en España, hasta SIF-1, tampoco se vende cobro por YaQu: regla 24; la ventaja del ciclo completo empieza en SIF-1)» | c.16200 §3 #2 |
+| 8 | `:246` regla 26b | «⚠️ Con la regla 24, en España este gancho no se usa hasta SIF-1: el titular ahí es presupuesto + firma + organización; la morosidad/el cobro es el ángulo de la Etapa 2 (post-SIF) y de los países sin este apagado.» | c.16200 §3 #8 |
+| 12 | `:1661` W2 | «(España: post-SIF, regla 24)» detrás de «cobros todos los métodos» | c.16200 §3 #12 |
+| 9 | `:444` N5 A22 | «Del presupuesto al cobro» pasa a «Del presupuesto a la firma», y la nota guarda el texto de antes | H1 servido, `public/index.html:441` y `:521`, firmado en c.19607 |
+
+Cada cambio lleva su nota *(SCRUM-1016: … c.20778, 24-oct-2026)*.
+
+**Re-cotejo con el máster de hoy:** el trozo que cada literal de c.16200 deja intacto sigue igual, letra a letra («Competencia "gratis" Kit Digital → vender cobro, no factura», «…nunca el titular.**», «facturación ES VeriFactu (post-SIF) · cobros todos los métodos ·»). «Etapa 2 (post-SIF)» ya existe en el máster (`:216`), así que el literal de la 26b no se inventa ningún término. El eyebrow «El ERP por WhatsApp para los oficios» sigue sirviéndose (`public/index.html:440`), y por eso la A22 lo conserva.
+
+## P1 — fila 24 de la puerta de go-live
+
+Los cinco guiones no se reescriben. Re-medidos hoy, los cinco siguen prometiendo cobro: `:53` «Cobra la señal antes de empezar», `:226-228` «te paga la señal» / «señal cobrada», `:232` «no cobra la señal», `:235` y `:1869` «¿Cuántas señales has dejado de cobrar este mes?», `:1012` «paga la señal». Pasan a la **fila 24** de `docs/go-live/puerta.json`, abierta, con `de_donde` = SCRUM-1016 c.20778. `tests/scrum1554c-puerta-de-go-live.test.mjs` sube `TOTAL` de 23 a 24, que es lo que su cabecera pide para cada entrada nueva («Sube con cada entrada nueva; NUNCA baja»): no se relaja nada.
+
+## Lo que queda, y no es de este encargo
+
+- **La A22 todavía describe la demo animada como «presupuesto→WhatsApp→firma→cobrado».** La animación servida acaba en «Firmado · 961,95 €» (`public/index.html:480`). La P3 firmada cubre el H1 y no esta frase, así que no la toco. Pregunta para el fundador: ¿se cambia también «→cobrado» por «→firmado», por la misma regla 16?
+- P4: el `aria-label` lo aplica J3, y la fila 12 se cierra con su sha.
+
+## Qué NO hice
+
+- No toqué `public/` ni transicioné el ticket (A13/A18).
+- Suite entera local: NO CORRIDA (hoy hay 10 sesiones a la vez). Corrí los guards dirigidos; el obligatorio de CI hace de tanda.

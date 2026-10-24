@@ -17,7 +17,16 @@ import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 
 const ENABLED = process.env.QA_DB_TEST === '1';
 
+// SCRUM-1599c (decisión del fundador, SCRUM-1599 c.20650 ②: «Connect activo en el test»): desde
+// SCRUM-893 la página de pago sólo enlaza la tarjeta si `cardChargeMode` no da 'refuse', y un
+// merchant real sin Connect da 'refuse' (reglas 18/23). Para que el test siga probando el IDOR
+// de /pay/card, el merchant A lleva Connect ACTIVO, con la misma forma que scrum893/scrum923.
+// La cuenta es ficticia: por eso la clave de Stripe se vacía ANTES de cargar `dist/` (dotenv no
+// pisa una variable que ya existe) y /pay/card no puede llamar a Stripe, haya o no clave en el .env.
+const CONNECT_ACTIVO = { connectStatus: 'active', stripeAccountId: 'acct_QAS85', flags: { PAYMENTS_CONNECT_ENABLED: true } };
+
 test('SCRUM-85: /pay/card, /pay/bizum, /pay/invoice cierran el IDOR — numérico 404 sin fuga, token funciona', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
+  process.env.STRIPE_SECRET_KEY = '';
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const { ensureChargeReceiptToken } = await import('../dist/lib/invoicing.js');
@@ -44,7 +53,7 @@ test('SCRUM-85: /pay/card, /pay/bizum, /pay/invoice cierran el IDOR — numéric
   };
 
   try {
-    await withMerchant(prisma, { name: 'QA S85 A', email: `qa-s85-A-${stamp}@test.local` }, (mA) =>
+    await withMerchant(prisma, { name: 'QA S85 A', email: `qa-s85-A-${stamp}@test.local`, ...CONNECT_ACTIVO }, (mA) =>
       withMerchant(prisma, { name: 'QA S85 B', email: `qa-s85-B-${stamp}@test.local` }, async (mB) => {
     const A = await mkFixture(mA, 'A');
     const B = await mkFixture(mB, 'B');
@@ -73,7 +82,8 @@ test('SCRUM-85: /pay/card, /pay/bizum, /pay/invoice cierran el IDOR — numéric
     const rCard = await fetch(`${base}/pay/card/${tokenA}`, { redirect: 'manual' });
     // El token DEBE resolver el cobro (algo != 404). Statuses posibles: 303 (Stripe → Checkout),
     // 501 (Stripe ausente), o 409 (r23: merchant real SIN Connect → tarjeta = «cuenta conectada o
-    // nada»; este fixture ES un merchant real sin Connect). Junto al 404 del id numérico, ESA es la
+    // nada»; desde SCRUM-1599c el merchant A lleva Connect activo, así que con la clave vacía da 501).
+    // Junto al 404 del id numérico, ESA es la
     // prueba del IDOR: el token resuelve (≠404, testigo de «mecanismo vivo»), el numérico no.
     assert.notEqual(rCard.status, 404, 'el token válido NO debe dar 404 (mecanismo vivo del IDOR)');
     assert.ok([303, 501, 409].includes(rCard.status), `GET /pay/card/:token: 303/501/409 y fue ${rCard.status}`);

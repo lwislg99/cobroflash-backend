@@ -81,7 +81,13 @@
       "que": "El guard de SCRUM-406 sólo mira public/ y no ve lo que se sirve desde docs/legal: por ahí se coló «soporte por email y WhatsApp».",
       "de_donde": "SCRUM-1551",
       "consta_en": "SCRUM-1554, descripción, fila 8",
-      "estado": "abierta"
+      "estado": "cerrada",
+      "cerrada": {
+        "por": "jv-j6az (puesto J6, equipo de Javier), SCRUM-1551h",
+        "motivo": "tests/scrum406-canal-prometido-existe.test.mjs mira también los documentos de docs/legal/ que el servidor sirve: la lista sale por AST de las llamadas a readLegalDoc en src/ (hoy 1 documento, ALCANCE_BETA.md, desde 2 fuentes) y una viñeta partida en varias líneas se lee como una frase. Visto en rojo: con «soporte⏎  por email y WhatsApp.» inyectado en ALCANCE_BETA.md:24-25, el guard nuevo cae y el de main (b6dd5d1a8) sale verde 5/5. El sha es el del commit que lo hace, no un merge: entra en main con el PR de esta misma rama.",
+        "sha": "c1581273d73cf3ff7a1cee3d4aa2724061923a2d",
+        "fecha": "2026-10-23"
+      }
     },
     {
       "numero": 9,
@@ -197,6 +203,14 @@
       "que": "sendInvoiceEmail, sin proveedor, escribe invoice-<número>.eml y devuelve ok: el día que se encienda la facturación le dirá a un profesional que su factura salió por correo cuando sólo se escribió un fichero. STOP del fundador (camino de emisión).",
       "de_donde": "SCRUM-1558",
       "consta_en": "docs/master/SCRUM-1558.md:29 («el orquestador lo apunta en la puerta»). NO consta en SCRUM-1554",
+      "estado": "abierta"
+    },
+    {
+      "numero": 24,
+      "que": "Los cinco guiones de venta del máster prometen el cobro que la regla 24 apaga en España: A1 (docs/YAQU_MASTER.md:53, promesa de calle), H5 (:226-228, tres guiones), H6 (:232, objeciones), H7 y AB5 (:235 y :1869, titular) y V0-6 (:1012, guion de vídeo). Hoy no se usan con profesionales reales; se firman aquí en bloque ANTES de usarse. Literales de mínimos en SCRUM-1016 c.16200 §3; la objeción del Kit Digital no tiene respuesta verdadera hasta SIF-1.",
+      "de_donde": "SCRUM-1016 c.20778 (P1 del fundador: «No, aún no»)",
+      "consta_en": "docs/master/SCRUM-1016.md, tramo SCRUM-1016p. NO consta en SCRUM-1554",
+      "condicion": "Falso en España hasta SIF-1. No se usa con profesionales reales sin la firma en bloque.",
       "estado": "abierta"
     }
   ]
