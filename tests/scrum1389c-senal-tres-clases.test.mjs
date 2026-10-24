@@ -85,8 +85,8 @@ test('SCRUM-1389c · ① EL POSITIVO SEMBRADO: los nueve casos del banco salen c
   }
   // los dos lados del defecto, en una frase: el caso 9 y el caso 6 dan el MISMO recuento en la
   // tanda (un fallo por fichero) y aquí salen en clases distintas
-  assert.match(fixture(9), /^# fail 2$/m);
-  assert.match(fixture(6), /^# fail 1$/m);
+  assert.match(fixture(9), /^# fail 2\r?$/m);
+  assert.match(fixture(6), /^# fail 1\r?$/m);
 });
 
 test('SCRUM-1389c · ② EL VERDE CON CEROS: la línea sale también cuando no hay ninguna entrada de fichero', () => {
@@ -101,7 +101,7 @@ test('SCRUM-1389c · ② EL VERDE CON CEROS: la línea sale también cuando no h
 
 test('SCRUM-1389c · ③ CIEGO, NO VERDE: sin el TAP, o con uno que no está entero, la línea dice que no pudo contar', () => {
   // el positivo quitado: un TAP vacío (el fichero no está) no da ceros
-  for (const [tap, motivo] of [['', /vacío/], [fixture(9).replace(/^# tests \d+$/m, ''), /resumen/]]) {
+  for (const [tap, motivo] of [['', /vacío/], [fixture(9).replace(/^# tests \d+\r?$/m, ''), /resumen/]]) {
     const p = procesosDelTap(tap);
     assert.equal(p.medible, false);
     assert.match(p.motivo, motivo);
@@ -113,7 +113,7 @@ test('SCRUM-1389c · ③ CIEGO, NO VERDE: sin el TAP, o con uno que no está ent
 
 test('SCRUM-1389c · ④ OTRAS: una entrada de fichero sin `exitCode` y sin `spawn` no se cuelga a ninguna clase', () => {
   // fabricado A MANO a partir del caso 9: se le quita el `error: 'spawn …'` a una de sus dos entradas
-  const tap = fixture(9).replace(/  error: 'spawn [^\n]*ENOENT'\n  code: 'ENOENT'\n/, "  error: 'otra cosa'\n");
+  const tap = fixture(9).replace(/  error: 'spawn [^\r\n]*ENOENT'\r?\n  code: 'ENOENT'\r?\n/, "  error: 'otra cosa'\n");
   assert.notEqual(tap, fixture(9), 'la fabricación tiene que haber cambiado algo');
   const p = procesosDelTap(tap);
   assert.deepEqual([p.entradas, p.noCreadas, p.murieron, p.otras], [2, 1, 0, 1]);
