@@ -6,6 +6,11 @@
     "quedan": 223
   },
   "declarados": {
+    "scripts/_senal-de-nombres-linea.mjs": {
+      "ticket": "SCRUM-1324",
+      "equipo": "javier",
+      "motivo": "Lo crea J6 (equipo de Javier) en SCRUM-1324c, que lleva area-j6 y no edita la tabla de §3.3: es la línea de registro de la señal de nombres, sacada sin paquetes para que cargue el vigía de main; la S0 le da fila cuando su orquestador diga el puesto."
+    },
     "scripts/respaldo-programado.mjs": {
       "ticket": "SCRUM-1525",
       "equipo": "javier",
