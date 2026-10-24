@@ -9,8 +9,10 @@
 // array constante de ≥2 literales— que una ruta acepta, y del que las pantallas que llaman a ESA
 // ruta no nombran algunos valores. 1185 mira CLAVES del cuerpo; esto mira VALORES.
 //
-// Uso: node censo-vocabulario.mjs <raíz del repo>
-// Salidas: 0 medido (haya o no hallazgos) · 2 CIEGO (el parche no casa, o el control positivo falla).
+// Uso: node censo-vocabulario.mjs <raíz del repo> [--todo] [--sin-siembra]
+// Salidas: 0 medido (haya o no hallazgos) · 2 CIEGO (el parche no casa, o falla un control SEMBRADO).
+// Desde el 23-oct-2026 los controles se siembran en memoria (§1bis): el positivo del 28-sep era el
+// propio SCRUM-1136 del árbol, y se quedó CIEGO el día que #1939 lo arregló.
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -39,6 +41,34 @@ try {
 }
 const cwd = process.cwd(); process.chdir(RAIZ);
 const arbol = sonda.cargarArbol('.');
+
+// ── 1bis · la SIEMBRA (23-oct-2026) ───────────────────────────────────────────────────────────
+// Hasta aquí el control positivo era el propio SCRUM-1136 del árbol, y el día que #1939 lo
+// arregló la medición se quedó CIEGA. Ahora el positivo lo fabrica el instrumento, en memoria
+// (nada se escribe en el árbol), con la pareja del ejemplo del ticket: el servidor acepta los 12
+// valores de `CAMPOS_CLIENTE` y la pantalla ofrece los 4 de `csvImport.js:162` antes de #1939.
+// Su gemela ofrece los 12: es el control que NO tiene que casar. Entra por el camino real de la
+// sonda de 1185 (montaje en app.ts, `fetch` con cuerpo), no por un atajo.
+// `--sin-siembra` la quita: la medición TIENE que salir CIEGO (exit 2), no verde.
+const SIEMBRA = 'src/__siembra1194__/';
+const DOCE = ['name', 'phone', 'mobile', 'email', 'notes', 'taxId', 'tags', 'billingAddress', 'billingCity', 'billingPostalCode', 'billingProvince', 'billingCountry'];
+const CUATRO = ['name', 'phone', 'email', 'notes'];
+if (!process.argv.includes('--sin-siembra')) {
+  const f = arbol.files;
+  if (!f.has('src/app.ts')) ciego('no hay src/app.ts donde montar la siembra');
+  f.set(SIEMBRA + 'campos.ts', `export const CAMPOS_SIEMBRA_1194 = ${JSON.stringify(DOCE)} as const;\nexport type CampoSiembra1194 = (typeof CAMPOS_SIEMBRA_1194)[number];\n`);
+  const handler = `(req, res) => { const mapeo = req.body.mapeo as Record<string, CampoSiembra1194>; res.json({ mapeo }); }`;
+  f.set(SIEMBRA + 'siembra.routes.ts', `import { Router } from 'express';\nimport type { CampoSiembra1194 } from './campos';\nexport const siembraRouter1194 = Router();\nsiembraRouter1194.post('/parcial', ${handler});\nsiembraRouter1194.post('/completo', ${handler});\n`);
+  f.set('src/app.ts', f.get('src/app.ts') + `\nimport { siembraRouter1194 } from './__siembra1194__/siembra.routes';\napp.use('/__siembra1194', siembraRouter1194);\n`);
+  // Nombre de envoltorio ÚNICO por pantalla: con `enviar` en las dos, el salto por envoltorio
+  // (que casa por NOMBRE) metía la gemela como llamadora de la parcial y el positivo salía
+  // «ofrece todo». Medido el 23-oct; el cubo `soloPorEnvoltorio` mide lo mismo en el árbol real.
+  const pantalla = (ruta, ofrece) => `const CAMPOS = ${JSON.stringify(ofrece.map((v) => [v, v]))};\nfunction enviar_${ruta}_1194(fichero, codificacion, mapeo) { return fetch('/__siembra1194/${ruta}', { method: 'POST', body: JSON.stringify({ fichero, codificacion, mapeo }) }); }\n`;
+  f.set('public/__siembra1194__/parcial.js', pantalla('parcial', CUATRO));
+  f.set('public/__siembra1194__/completo.js', pantalla('completo', DOCE));
+}
+const sembrado = (x) => x.v.file.startsWith(SIEMBRA) || x.r.file.startsWith(SIEMBRA);
+
 const censo = sonda.censar(arbol);
 process.chdir(cwd);
 const rutas = censo.rutasInternas;
@@ -123,7 +153,7 @@ function llamadoresDe(r) {
     const e = (x.envolventes || [])[0]; if (!e) continue;
     for (const [f, ids] of idsFront) if (f !== x.file && ids.has(e) && !files.has(f)) { files.add(f); porEnvoltorio++; }
   }
-  return { files: [...files], porEnvoltorio };
+  return { files: [...files], porEnvoltorio, directos: [...new Set(directos.map((x) => x.file))] };
 }
 
 // ── 5 · el censo ──────────────────────────────────────────────────────────────────────────────
@@ -134,34 +164,58 @@ for (const v of vocab) {
   for (const r of rs) {
     // Un GET no ACEPTA un valor del vocabulario: lo DEVUELVE. No es la forma de 1194.
     if (r.method === 'GET') { salida.push({ v, r }); continue; }
-    const { files: llamadores, porEnvoltorio } = llamadoresDe(r);
+    const { files: llamadores, porEnvoltorio, directos } = llamadoresDe(r);
     if (!llamadores.length) { sinPantalla.push({ v, r }); continue; }
     const ts_ = llamadores.map(tokens);
     if (ts_.some((t) => t === null)) { filas.push({ v, r, llamadores, veredicto: 'NO PUDE MEDIR', faltan: [] }); continue; }
     const faltan = v.valores.filter((x) => !ts_.some((t) => t.has(x)));
     const veredicto = faltan.length === 0 ? 'ofrece todo' : faltan.length === v.valores.length ? 'no nombra NINGUNO' : 'PARCIAL';
-    filas.push({ v, r, llamadores, veredicto, faltan, porEnvoltorio });
+    // Lo que faltaría contando SÓLO los llamadores directos: si «ofrece todo» se apoya en una
+    // pantalla traída por el nombre de un envoltorio, el verde puede ser de otra pantalla.
+    const tsDir = directos.map(tokens);
+    const faltanDirectos = tsDir.some((t) => t === null) ? [] : v.valores.filter((x) => !tsDir.some((t) => t.has(x)));
+    filas.push({ v, r, llamadores, veredicto, faltan, porEnvoltorio, faltanDirectos });
   }
 }
 
-// ── control positivo: 1136 TIENE que salir PARCIAL, con taxId entre los que faltan ───────────
+// ── controles SEMBRADOS: la pareja parcial TIENE que salir PARCIAL con los 8 que faltan; la
+// completa, «ofrece todo». Si la siembra no está (`--sin-siembra`) o no casa, CIEGO. ────────────
+const sp = filas.find((x) => sembrado(x) && x.r.path === '/__siembra1194/parcial');
+const faltanEsperados = DOCE.filter((v) => !CUATRO.includes(v));
+if (!sp || sp.veredicto !== 'PARCIAL' || sp.faltan.join() !== faltanEsperados.join())
+  ciego(`control positivo SEMBRADO: la pareja de 1136 no sale PARCIAL con [${faltanEsperados}] (sale: ${sp ? sp.veredicto + ' faltan=' + sp.faltan : 'ni aparece'})`);
+const sc = filas.find((x) => sembrado(x) && x.r.path === '/__siembra1194/completo');
+if (!sc || sc.veredicto !== 'ofrece todo')
+  ciego(`control negativo SEMBRADO: la gemela que ofrece los 12 no sale «ofrece todo» (sale: ${sc ? sc.veredicto + ' faltan=' + sc.faltan : 'ni aparece'})`);
+const nSembrados = filas.filter(sembrado).length + sinPantalla.filter(sembrado).length + salida.filter(sembrado).length;
+if (nSembrados !== 2) ciego(`la siembra deja ${nSembrados} pares, no 2: se ha mezclado con el árbol`);
+// Fuera de aquí, la siembra no cuenta en nada.
+for (const a of [filas, sinPantalla, salida]) for (let i = a.length - 1; i >= 0; i--) if (sembrado(a[i])) a.splice(i, 1);
+const vocabReal = vocab.filter((v) => !v.file.startsWith(SIEMBRA));
+const rutasReales = rutas.filter((r) => !r.file.startsWith(SIEMBRA));
 const c1136 = filas.find((x) => x.v.nombre === 'CAMPOS_CLIENTE' && x.r.method === 'POST' && x.r.path === '/admin/customers/import');
-if (!c1136 || c1136.veredicto !== 'PARCIAL' || !c1136.faltan.includes('taxId'))
-  ciego(`control positivo: SCRUM-1136 no sale PARCIAL con taxId (sale: ${c1136 ? c1136.veredicto + ' faltan=' + c1136.faltan : 'ni aparece'})`);
 
 const cuenta = (x) => filas.filter((f) => f.veredicto === x).length;
-console.log(`población: ${vocab.length} vocabularios del servidor (${vocab.filter((v) => v.zod).length} z.enum + ${vocab.filter((v) => !v.zod).length} arrays de literales) · ${rutas.length} rutas (sonda 1185)`);
+console.log(`población: ${vocabReal.length} vocabularios del servidor (${vocabReal.filter((v) => v.zod).length} z.enum + ${vocabReal.filter((v) => !v.zod).length} arrays de literales) · ${rutasReales.length} rutas (sonda 1185) · siembra aparte: 1 vocabulario, 2 rutas`);
 console.log(`  · sin ninguna ruta que los use (ni directo ni a un salto): ${sinRuta.length}  ← NO PUDE LIGAR`);
 console.log(`  · pares vocabulario×ruta: ${filas.length + sinPantalla.length + salida.length}`);
 console.log(`      GET (el vocabulario se DEVUELVE, no se acepta: no es esta forma): ${salida.length}`);
 console.log(`      sin pantalla llamadora (ruta sin consumidor: dominio de 1185): ${sinPantalla.length}`);
 console.log(`      ofrece todo: ${cuenta('ofrece todo')} · PARCIAL: ${cuenta('PARCIAL')} · no nombra NINGUNO: ${cuenta('no nombra NINGUNO')} · NO PUDE MEDIR: ${cuenta('NO PUDE MEDIR')}`);
-console.log(`control positivo SCRUM-1136: ${c1136.veredicto} · faltan ${c1136.faltan.join(', ')} ✅`);
+console.log(`control positivo SEMBRADO (pareja de 1136, 4 de 12): ${sp.veredicto} · faltan ${sp.faltan.join(', ')} ✅`);
+console.log(`control negativo SEMBRADO (gemela, 12 de 12): ${sc.veredicto} ✅`);
+console.log(`SCRUM-1136 real (POST /admin/customers/import): ${c1136 ? c1136.veredicto + (c1136.faltan.length ? ' · faltan ' + c1136.faltan.join(', ') : '') : 'NO APARECE'}`);
 for (const x of ['PARCIAL', 'no nombra NINGUNO', 'NO PUDE MEDIR']) {
   const fs_ = filas.filter((f) => f.veredicto === x); if (!fs_.length) continue;
   console.log(`\n── ${x} ──`);
-  for (const f of fs_) console.log(`  ${f.r.method} ${f.r.path}  ·  ${f.v.nombre} (${f.v.file})\n      faltan [${f.faltan.join(', ')}] de [${f.v.valores.join(', ')}]\n      pantallas: ${f.llamadores.join(', ')}${f.porEnvoltorio ? `  (${f.porEnvoltorio} por envoltorio)` : ''}`);
+  // Una ruta que no lee `req.body` (según 1185) no puede aceptar el valor de fuera por el cuerpo:
+  // el vocabulario lo compara con algo guardado. Se marca, no se reclasifica (puede ir por query).
+  const sinCuerpo = (r) => r.cuerpoLeido && !r.cuerpoLeido.ciego && !r.cuerpoLeido.ks.length ? '  ⚠️ la ruta no lee req.body' : '';
+  for (const f of fs_) console.log(`  ${f.r.method} ${f.r.path}  ·  ${f.v.nombre} (${f.v.file} · ruta ${f.r.file}:${f.r.line})${sinCuerpo(f.r)}\n      faltan [${f.faltan.join(', ')}] de [${f.v.valores.join(', ')}]\n      pantallas: ${f.llamadores.join(', ')}${f.porEnvoltorio ? `  (${f.porEnvoltorio} por envoltorio)` : ''}`);
 }
+const soloEnv = filas.filter((f) => f.veredicto === 'ofrece todo' && f.faltanDirectos.length);
+console.log(`\n── «ofrece todo» SÓLO gracias a pantallas traídas por envoltorio: ${soloEnv.length} ──`);
+for (const f of soloEnv) console.log(`  ${f.r.method} ${f.r.path}  ·  ${f.v.nombre} (${f.r.file}:${f.r.line})\n      con los directos faltarían [${f.faltanDirectos.join(', ')}]\n      directos: ${llamadoresDe(f.r).directos.join(', ')} · por envoltorio: ${f.llamadores.filter((x) => !llamadoresDe(f.r).directos.includes(x)).join(', ')}`);
 if (process.argv.includes('--todo')) {
   console.log('\n── ofrece todo ──'); for (const f of filas.filter((x) => x.veredicto === 'ofrece todo')) console.log(`  ${f.r.method} ${f.r.path} · ${f.v.nombre}`);
   console.log('\n── sin ruta ──'); for (const v of sinRuta) console.log(`  ${v.nombre} (${v.file}) [${v.valores.slice(0, 6).join(', ')}${v.valores.length > 6 ? '…' : ''}]`);
