@@ -1,0 +1,35 @@
+== ANTES (exit=0)
+T3 · cabecera X-Yaqu-Filas=(ausente) X-Yaqu-Miradas=(ausente)
+T3 · fichero indice.csv 40a9aaefb8dda0797e29ccc565426c17479bd8be7a2fd010b6f9f4da40c11eb3
+T3 · fichero libro-registro.csv d2b19f565fa087d37cec174c613fa5282b78f126f2914e24c2aec1601754eb1c
+T3 · fichero modelo-303.csv 9e40c27132b3eca0d41b54e60796986cfb99792c2aab43df9bb630c5e5c7d977
+T3 · fichero albaranes-verificacion.csv e691a2f9f6046756d7ac5055493e8a7093f524822c0de0c645e4834277546b57
+T3 · fichero entregas-por-linea.csv 95a6287b6a85b48703e83d9534c9ce65cae2c50721ad3fc2d9318af0b5c0d91f
+T3 · fichero alcance-de-la-verificacion.txt 95421273d3bf099d8e346b1c7f9f35c32a6c3b058781d7cf43bcb9013f7479e1
+T3 · fichero manifiesto.json a47dedd9e7b0863d584352c0ffd70fb9bc77844c6caea6a8eeb17e10fdfe6854
+T4 · cabecera X-Yaqu-Filas=(ausente) X-Yaqu-Miradas=(ausente)
+T4 · fichero indice.csv 14b6cf2be7404151a43243329f5e97f07ae4d01f6a079270224f783a2415b25c
+T4 · fichero libro-registro.csv 2f486f003cfb47350b410bde0503a214417c3e3d1ef0ff41703d67f8408d4046
+T4 · fichero modelo-303.csv ab1ba0dfbd7ee57f3ef977880ccab86d09c6ca2b2b0dda3bbc38e2c9b797b83a
+T4 · fichero albaranes-verificacion.csv e691a2f9f6046756d7ac5055493e8a7093f524822c0de0c645e4834277546b57
+T4 · fichero entregas-por-linea.csv 95a6287b6a85b48703e83d9534c9ce65cae2c50721ad3fc2d9318af0b5c0d91f
+T4 · fichero alcance-de-la-verificacion.txt 95421273d3bf099d8e346b1c7f9f35c32a6c3b058781d7cf43bcb9013f7479e1
+T4 · fichero manifiesto.json c150d910e006c1866a1ed9738bc7b46fb36aea84b0b243642ed074aae4ece1eb
+== DESPUES (exit=0)
+T3 · cabecera X-Yaqu-Filas=2 X-Yaqu-Miradas=2
+T3 · fichero indice.csv 40a9aaefb8dda0797e29ccc565426c17479bd8be7a2fd010b6f9f4da40c11eb3
+T3 · fichero libro-registro.csv d2b19f565fa087d37cec174c613fa5282b78f126f2914e24c2aec1601754eb1c
+T3 · fichero modelo-303.csv 9e40c27132b3eca0d41b54e60796986cfb99792c2aab43df9bb630c5e5c7d977
+T3 · fichero albaranes-verificacion.csv e691a2f9f6046756d7ac5055493e8a7093f524822c0de0c645e4834277546b57
+T3 · fichero entregas-por-linea.csv 95a6287b6a85b48703e83d9534c9ce65cae2c50721ad3fc2d9318af0b5c0d91f
+T3 · fichero alcance-de-la-verificacion.txt 95421273d3bf099d8e346b1c7f9f35c32a6c3b058781d7cf43bcb9013f7479e1
+T3 · fichero manifiesto.json a47dedd9e7b0863d584352c0ffd70fb9bc77844c6caea6a8eeb17e10fdfe6854
+T4 · cabecera X-Yaqu-Filas=0 X-Yaqu-Miradas=0
+T4 · fichero indice.csv 14b6cf2be7404151a43243329f5e97f07ae4d01f6a079270224f783a2415b25c
+T4 · fichero libro-registro.csv 2f486f003cfb47350b410bde0503a214417c3e3d1ef0ff41703d67f8408d4046
+T4 · fichero modelo-303.csv ab1ba0dfbd7ee57f3ef977880ccab86d09c6ca2b2b0dda3bbc38e2c9b797b83a
+T4 · fichero albaranes-verificacion.csv e691a2f9f6046756d7ac5055493e8a7093f524822c0de0c645e4834277546b57
+T4 · fichero entregas-por-linea.csv 95a6287b6a85b48703e83d9534c9ce65cae2c50721ad3fc2d9318af0b5c0d91f
+T4 · fichero alcance-de-la-verificacion.txt 95421273d3bf099d8e346b1c7f9f35c32a6c3b058781d7cf43bcb9013f7479e1
+T4 · fichero manifiesto.json c150d910e006c1866a1ed9738bc7b46fb36aea84b0b243642ed074aae4ece1eb
+dist restaurado: true
