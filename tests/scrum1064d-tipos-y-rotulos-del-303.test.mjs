@@ -124,17 +124,24 @@ async function rotulosDeLaFila(tipo) {
 }
 
 // Literal de c.20823: «Régimen general · {tipo} %». Las columnas, de la cabecera del impreso.
-for (const [tipo, casillas] of [[4, [1, 2, 3]], [10, [4, 5, 6]], [21, [7, 8, 9]]]) {
-  test(`SCRUM-1064d · fila del ${tipo} %: las casillas ${casillas.map((n) => String(n).padStart(2, '0')).join('–')} se rotulan «Régimen general · ${tipo} %»`, async () => {
-    const { fila, base, tipoR, cuota } = await rotulosDeLaFila(tipo);
-    assert.deepEqual([fila.casillaBase, fila.casillaTipo, fila.casillaCuota], casillas,
-      `🔴 la fila del ${tipo} % no va a las casillas de la tabla de la AEAT.`);
-    const esperado = `Régimen general · ${fila.tipo} %`;
-    assert.equal(esperado, `Régimen general · ${tipo} %`);
-    for (const [r, columna] of [[base, 'Base imponible'], [tipoR, 'Tipo %'], [cuota, 'Cuota']]) {
-      assert.ok(r, `🔴 una casilla de la fila del ${tipo} % sale sin rótulo.`);
-      assert.equal(r.rotulo, esperado, `🔴 casilla ${r.casilla}: el rótulo no lleva el tipo de su fila.`);
-      assert.equal(r.columna, columna, `🔴 casilla ${r.casilla}: la columna no es la de la cabecera del impreso.`);
-    }
-  });
+async function comprobarFila(tipo, casillas, literal) {
+  const { fila, base, tipoR, cuota } = await rotulosDeLaFila(tipo);
+  assert.deepEqual([fila.casillaBase, fila.casillaTipo, fila.casillaCuota], casillas,
+    `🔴 la fila del ${tipo} % no va a las casillas de la tabla de la AEAT.`);
+  // El tipo del rótulo es el DATO de la fila que devuelve la ruta; el literal, el de c.20823.
+  assert.equal(`Régimen general · ${fila.tipo} %`, literal);
+  for (const [r, columna] of [[base, 'Base imponible'], [tipoR, 'Tipo %'], [cuota, 'Cuota']]) {
+    assert.ok(r, `🔴 una casilla de la fila del ${tipo} % sale sin rótulo.`);
+    assert.equal(r.rotulo, literal, `🔴 casilla ${r.casilla}: el rótulo no lleva el tipo de su fila.`);
+    assert.equal(r.columna, columna, `🔴 casilla ${r.casilla}: la columna no es la de la cabecera del impreso.`);
+  }
 }
+
+test('SCRUM-1064d · fila del 4 %: las casillas 01–02–03 se rotulan «Régimen general · 4 %»', () =>
+  comprobarFila(4, [1, 2, 3], 'Régimen general · 4 %'));
+
+test('SCRUM-1064d · fila del 10 %: las casillas 04–05–06 se rotulan «Régimen general · 10 %»', () =>
+  comprobarFila(10, [4, 5, 6], 'Régimen general · 10 %'));
+
+test('SCRUM-1064d · fila del 21 %: las casillas 07–08–09 se rotulan «Régimen general · 21 %»', () =>
+  comprobarFila(21, [7, 8, 9], 'Régimen general · 21 %'));
