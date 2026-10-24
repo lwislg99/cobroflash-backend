@@ -564,7 +564,9 @@ he intentado.
 
 **Skill UI:** cargada (yaqu-premium-ui). Sin tokens nuevos ni estilos nuevos: cambia el texto de dos nodos que ya existían.
 
-A9: comprobación → `tests/scrum1390y-inicio-por-rol.test.mjs` — lancé el error de «respuesta sin lista» como `TypeError` y el banco de vistas lo trató, con razón, como error de PROGRAMA tragado (SCRUM-1278: la vista sale «no medida»); una respuesta mal formada no es un fallo del programa, así que es `Error`. Lo cazó el caso ④ de este test antes de comitar.
+A9: comprobación → `tests/scrum1390y-inicio-por-rol.test.mjs`
+
+El fallo de esa A9: lancé el error de «respuesta sin lista» como `TypeError` y el banco de vistas lo trató, con razón, como error de PROGRAMA tragado (SCRUM-1278: la vista sale «no medida»); una respuesta mal formada no es un fallo del programa, así que es `Error`. Lo cazó el caso ④ de este test antes de comitar.
 
 ### Los dos extremos, comprobados ANTES de escribir
 
