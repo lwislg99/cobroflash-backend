@@ -21,6 +21,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { datosDelCenso, ARGUMENTOS_DEL_CENSO } from '../scripts/_datos-del-censo.mjs';
 import { cargarDashboard, pintarVista } from './_banco-vistas.mjs';
+import { soloCodigo } from './_solo-codigo.mjs';
 
 // El catálogo del meta-guard (`scripts/meta-guard-mutaciones.mjs`, SCRUM-1387).
 export const MUTACIONES_QUE_ME_TUMBAN = [
@@ -69,7 +70,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
 ];
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const CSS = fs.readFileSync(path.join(RAIZ, 'public/dashboard/css/styles.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+// Sin comentarios con el helper único (trinquetes SCRUM-694/700); sobre styles.css da lo mismo que la regex de bloques.
+const CSS = soloCodigo(fs.readFileSync(path.join(RAIZ, 'public/dashboard/css/styles.css'), 'utf8'), 'styles.css');
 const reglas = () => CSS.replace(/@media[^{]*\{/g, '').split('}')
   .map((b) => { const [sel, cuerpo = ''] = b.split('{'); return { sel: sel.split(',').map((s) => s.trim().replace(/\s+/g, ' ')), cuerpo }; });
 const con = (s) => reglas().filter((r) => r.sel.includes(s));
