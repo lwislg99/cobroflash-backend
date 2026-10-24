@@ -1,7 +1,6 @@
 ---
 paths:
   - "docs/equipo/afirmaciones-verificadas-javier.md"
-  - "scripts/_senal-de-nombres.mjs"
 ---
 # Carril J6 — GENERADO por `scripts/carriles.mjs` desde `docs/equipo/dos-equipos.md` §3. No se edita a mano.
 
