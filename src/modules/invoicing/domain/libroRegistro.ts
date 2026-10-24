@@ -28,6 +28,7 @@
 // que no tener la fila. Un importe que no se puede leer sale como `null` y se cuenta aparte, con
 // su número de factura delante.
 import { calcVatBreakdown } from './vat.service';
+import type { Causa } from './vat.service'; // SCRUM-1063e
 import { partirPorSuplido } from './suplidos'; // SCRUM-1063c
 
 /**
@@ -82,8 +83,12 @@ export interface AsientoLibro {
    * volver a agregar por su cuenta: si el 303 y el libro contasen por caminos distintos, un día
    * dirían cifras distintas y el profesional tendría dos documentos oficiales contradictorios
    * sin saber cuál miente.
+   *
+   * SCRUM-1063e · `causa` va SOLO en la entrada que la tiene (hoy, S2), con la convención de
+   * `calcVatBreakdown`: sin S2 la entrada es la de siempre, sin la clave (SCRUM-1063 c.20746). Sin
+   * ella el 303 no puede separar una ISP de una exenta ni de un suplido al mismo tipo.
    */
-  porTipo: { tipo: number; base: number; cuota: number }[];
+  porTipo: { tipo: number; base: number; cuota: number; causa?: Causa }[];
   /**
    * SCRUM-1063c · la parte de `porTipo` que son SUPLIDOS (`partirPorSuplido` de `suplidos.ts`,
    * pasada por el mismo `calcVatBreakdown`). Es un SUBCONJUNTO informativo: `porTipo`, `base` y
@@ -251,7 +256,9 @@ export function construirLibroRegistro(params: {
       // divergir. Sin líneas la lista va vacía — no cero, vacía: «no se puede desglosar» y
       // «desglosa a cero» son cosas distintas, y el 303 tiene que poder separarlas.
       porTipo: tieneLineas
-        ? desglose.entries.map((e) => ({ tipo: e.rate, base: e.base, cuota: e.cuota }))
+        ? desglose.entries.map((e) => (e.causa
+          ? { tipo: e.rate, base: e.base, cuota: e.cuota, causa: e.causa }
+          : { tipo: e.rate, base: e.base, cuota: e.cuota }))
         : [],
       suplidosPorTipo: suplidosPorTipo(tieneLineas ? (f.lines as any[]) : []),
       total,
