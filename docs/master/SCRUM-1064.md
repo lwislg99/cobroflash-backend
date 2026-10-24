@@ -113,3 +113,46 @@ Por qué:
 - yaqu.app: sin verificar; la ruta pide sesión de admin.
 
 A9: comprobación → `tests/scrum1387-banco-nuevo-va-al-catalogo.test.mjs`
+
+## SCRUM-1064d · Qué tipo va en cada fila del IVA devengado, y las 01–09 con su tipo (J1, 24-oct-2026)
+
+**Medido contra:** `origin/main` = `82e1bb530d3158777b719ca824c1f573b66715a1` · 2026-10-24T15:50:19Z
+**Rama:** `scrum-1064d-tipos-y-rotulos` (sale de `scrum-1064c-rotulos-y-rutas`, PR #2854 sin mergear) · **Puesto:** J1 (sesión jv-j1by) · **Encargo:** orquestador `cobroflash-backend-95`
+**Decisión que lo autoriza:** SCRUM-1064 c.20823, puntos (c) y (d). **Entrega:** comentario en SCRUM-1064.
+
+### (d) · Medido: el 5 % y el 7,5 % fuera de la 27 es lo que dice la AEAT para 2026. NO es un defecto del 303
+
+- **El impreso** (Orden HAC/27/2026, Anexo III, pág. 1, `…/1761_16563944_7.png`, leído como imagen): la llave «Régimen general» abarca seis filas, 150/151/152, 165/166/167, 01/02/03, 153/154/155, 04/05/06 y 07/08/09, y la 27 las suma todas: «Total cuota devengada (152 + 167 + 03 + 155 + 06 + 09 + 11 + 13 + 15 + 158 + 170 + 18 + 21 + 24 + 26)». **El impreso no dice qué tipo va en cada fila**, y el texto de la Orden tampoco: en `https://www.boe.es/diario_boe/txt.php?id=BOE-A-2026-1761`, «casilla» sale 0 veces (control positivo: «303» sale 8).
+- **Lo dicen las instrucciones de la AEAT.** Las de 2026 (`https://sede.agenciatributaria.gob.es/Sede/todas-gestiones/impuestos-tasas/iva/modelo-303-iva-autoliquidacion_/instrucciones-2026.html` y su página de 02-12/2T-4T, bajadas con curl el 24-oct), en la tabla «Casillas del modelo 303 en las que declarar las operaciones»: «Tipo Casillas IVA devengado Cero 150, 151, 152 4% 01, 02., 03 10% 04, 05, 06 21% 07, 08, 09». Y: «En las casillas 150, 151 y 152 se harán constar las bases imponibles gravadas al tipo del 0% y las cuotas resultantes». **La 153–155 y la 165–167 no tienen tipo en 2026**: «153» sale 0 veces y «7,5» 0 veces en las dos páginas.
+- **El 5 % y el 7,5 % sólo tuvieron fila en 2024**, en la 153–155. Instrucciones de 09-12/3T-4T de 2024 (misma sede): «Para 09/3T, en las casillas 153, 154 y 155 se harán constar las bases imponibles gravadas al tipo del 5% y las cuotas resultantes Para 10 a 12/4T, en las casillas 153, 154 y 155 se harán constar las bases imponibles gravadas al tipo del 7,5%». Y la 165–167 era el 2 %.
+- **El código real, hoy** (`tests/scrum1064d-tipos-y-rotulos-del-303.test.mjs`, primer caso: cuatro facturas de 100 € al 5, al 7,5, al 10 y al 21 %, del 2T de 2026, por el handler de `GET /admin/modelo-303`):
+
+| factura | dónde cae | ¿suma en la 27? |
+|---|---|---|
+| 100 € al 10 % | casillas 04/05/06: base 100, cuota 10 | sí |
+| 100 € al 21 % | casillas 07/08/09: base 100, cuota 21 | sí |
+| 100 € al 5 % | `sinClasificar`, motivo `tipo_sin_casilla`: 100 / 5 | no |
+| 100 € al 7,5 % | `sinClasificar`, motivo `tipo_sin_casilla`: 100 / 7,5 | no |
+| **casilla 27** | **31** (10 + 21) | — |
+
+- **Conclusión:** para un periodo de 2026, que `modelo303.ts:325-334` aparte el 5 % y el 7,5 % es lo que dicen las instrucciones: no tienen fila. No toco el cálculo.
+- ⚠️ **Lo que sí queda (no es un defecto de hoy; es un límite):** el 303 aplica el mapa de 2026 a cualquier `year`. Para un trimestre de 2024 (3T: 5 %; 4T: 7,5 %), la AEAT los metía en la 153–155, y por tanto en la 27, y YaQu los aparta. YaQu no tiene facturas de 2024, así que hoy no hay víctima. Lo dejo nombrado; no abro ticket.
+- ⚠️ **El 0 %** tiene fila en 2026 (150–152, cuota 0), y el 303 lo aparta como `tipo_cero` (SCRUM-212: la factura no distingue tipo cero de exenta o no sujeta). La 27 no cambia, porque la cuota es 0. Sólo cambia la base. Es la decisión de SCRUM-212, no de este tramo.
+- La diferencia de cuota con Informes (c.20821) es entonces de Informes, que suma los tipos sin fila. Es de S1 (c.20823 e).
+
+### (c) · Las 01–09 se rotulan «Régimen general · {tipo} %» (hecho)
+
+- `ROTULOS_303` (`src/modules/fiscal/modelo303/casillas.ts`): las nueve filas salen ahora de `TRIPLETAS`, con el rótulo `` `${REGIMEN_GENERAL} · ${t.tipo} %` ``. El tipo es el dato de la fila: si una fila cambiara de tipo, su rótulo cambiaría con ella. Las columnas y la página no cambian. El cálculo no cambia.
+- Test: `tests/scrum1064d-tipos-y-rotulos-del-303.test.mjs`, un caso por fila (4, 10 y 21 %). El tipo esperado sale de la SALIDA de la ruta, y el literal de c.20823. **Rojo primero:** antes del cambio caían los tres casos de fila con `actual: 'Régimen general'`. El caso de la medición pasaba ya, porque fija lo que hay.
+- `tests/scrum1064c-rotulos-del-303.test.mjs`: sus filas 01–09 dicen ahora `` `${RG} · 4 %` `` etc. El cambio va en la misma rama porque lo pide la decisión c.20823, no porque el test estorbara. Sus 4 mutaciones siguen vivas.
+- **Mutaciones**, con el arnés de la casa (`docs/master/evidencias/SCRUM-1123f/arnes-mutaciones.mjs`, que usa `aplicarUna`): 1064d **3 de 3 vivas** (rótulo sin tipo; tipo fijo a 21; la fila del 4 % pasa a 5 %), y 1064c **4 de 4 vivas**. `git status` limpio después de cada pasada.
+- **Errores míos, de la tanda:** (1) declaré las dos primeras mutaciones con un ancla que no estaba en el código (`rotulo: …` donde escribí `const rotulo = …`). El arnés las dio CIEGAS, «la declaración caducó», y corregí el ancla, no el código. (2) Escribí los tres casos de fila en un bucle con el nombre construido, y `tests/scrum1415-nombres-construidos.test.mjs` lo tumbó. Ahora son tres `test()` con nombre literal.
+
+### Corrido / no corrido
+
+- Tras traer main (`82e1bb53`): `tsc --noEmit` 0 líneas. Dirigidos: 31 ficheros (1063b/c/d/e, 1064c, 1064d, 1077, 237, 976, 824 ×3, 836, 419, 702, 700, 719, 1415, 267, 273, 1294, 1387, 921c, 389 ×2, 295 ×2, 622, 745, 812, 723): 281 tests = 277 pasan + 3 saltos + 1 cae (`scrum1415`, el mío, ya arreglado). Después, 1415 + 1064c + 1064d: 13 de 13.
+- **`scrum1063f` no existe** en el árbol (`ls tests/scrum1063f*` da 0). No lo he corrido.
+- La selección de `tests:que-cubren` son 383 de 1.512: no la he corrido entera, porque hay 10 sesiones a la vez. Suite entera local: NO CORRIDA.
+- yaqu.app: sin verificar; la ruta pide sesión de admin.
+
+A9: comprobación → `tests/scrum1415-nombres-construidos.test.mjs`
