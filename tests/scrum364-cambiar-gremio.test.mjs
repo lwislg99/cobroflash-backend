@@ -138,6 +138,7 @@ test('SCRUM-364 · la microcopy aprobada está literal, y dice lo que el servido
   // Aprobada por el fundador el 5-ago-2026. Va ANTES de cargar: el servidor NUNCA sustituye el
   // catálogo —con ≥2 productos devuelve `already_has_products` y no borra nada—, así que lo que
   // faltaba no era una protección, era DECIRLO.
+  // Consta en: SCRUM-1502 comentario 20702.
   // Se busca por SUBCADENA, no por igualdad: los rótulos viven dentro de trozos de `innerHTML`,
   // así que un literal de este fichero casi nunca es exactamente el texto que ve el usuario.
   const t = literales(PRODUCTOS);

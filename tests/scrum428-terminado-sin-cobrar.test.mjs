@@ -119,6 +119,7 @@ test('SCRUM-428 · 🔴 EL CONTROL: «no se sabe» se cuenta aparte y NO entra e
 
 /**
  * El texto aprobado por el fundador (10-ago-2026), LITERAL y con su `{N}` sustituido.
+ * Consta en: SCRUM-1502 comentario 20702.
  *
  * Vive aquí como constante para que el guard compare contra el texto oficial y no contra una
  * paráfrasis: «no se sabe cuánto falta» y «pendiente de calcular» dicen cosas distintas, y sólo

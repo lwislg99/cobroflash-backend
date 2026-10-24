@@ -46,7 +46,7 @@ const RAIZ = path.resolve(import.meta.dirname, '..');
 // afirmar algo sobre el fundador que esta sesión no sabe, y BORRARLA perdería la decisión si
 // resulta que era real y estaba mal registrada. Se congelan, se cuentan y se listan en
 // `docs/master/SCRUM-921.md`.
-export const SIN_PROCEDENCIA = 26;
+export const SIN_PROCEDENCIA = 19; // SCRUM-1502j: 26 → 19, siete marcas ancladas a su firma real (SCRUM-1502 c.20702).
 
 const MARCA_CANONICA = /(aprobad|autorizad|firmad|validad|refrendad)[oa]s?\s+por\s+(el\s+)?(fundador|asesor|orquestador)/i;
 
