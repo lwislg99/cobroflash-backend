@@ -35,6 +35,7 @@ const m303 = (o = {}) => ({
              { tipo: 21, casillaBase: 7, casillaTipo: 8, casillaCuota: 9, base: 100, cuota: 21 }],
   casillaTotalCuota: { casilla: 27, valor: 21 }, totalBase: 100,
   sinClasificar: [], sinDesglose: [], cruceConCobros: {}, miradas: 1, asientos: 1,
+  informacionAdicional: { inversionSujetoPasivo: { casilla: 122, base: 0, operaciones: [] } }, // SCRUM-1063f
   motivosParaNoFiarse: [], avisoObligatorio: '', ...o,
 });
 const informe = (o = {}) => ({ examinados: 1, cuadran: 1, censoPorVersion: { 1: 1 }, hallazgos: [], versionesNoSoportadas: [], conclusion: 'todo_cuadra', ...o });

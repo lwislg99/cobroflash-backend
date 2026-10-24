@@ -2871,3 +2871,64 @@ fail era 836 por `scrum608` anclado a `dist/`, y este árbol anidado no traía `
    1339u con «carril J6» en su commit (`0a66ee4f8`); no hay fila que lo diga.
 
 **Ficheros:** `tests/scrum1339u-vigia-ciego-de-la-senal.test.mjs`, este apartado.
+
+# SCRUM-1339y · Qué queda vivo: el reproductor de c.17951, que nunca se hizo, y `forceExit` en 2 ficheros de S5
+
+**Medido contra:** `origin/main` = `9eb740a4286ee02faedd071dddfab55ddae0d515` · 2026-10-24T15:56:00Z
+
+A9: aviso → cicatriz J6 «Cité en Jira la línea de un fuente con el número de línea de mi propio volcado de salida, y di por caducada una cita que era correcta» — no se pudo comprobar: ningún instrumento separa el número de línea de un volcado del número de línea del fichero
+
+Escribe jv-j6ca (J6), por encargo del orquestador `cobroflash-backend-95`. **Sólo medir y preguntar: no se ha construido
+nada.** Comentario de entrega: SCRUM-1339 c.20842.
+
+## Hecho en main, por efecto
+
+* ① medido: el obligatorio perdía casos (#2066 y tramos b–q).
+* La causa, medida y arreglada fuera de este ticket: la salida C de SCRUM-1405. `package.json:13` carga
+  `--import=./scripts/tuberia-bloqueante.mjs`, con su test `tests/scrum1405c-tuberia-bloqueante.test.mjs`.
+* ② el recuento es una señal que bloquea. Sale 1 con ausentes (#2670, 1339t) y 2 si no pudo medir (#2696, 1339v). Su paso
+  ya no lleva `continue-on-error` (#2663, S5). Si alguien se lo vuelve a poner, cae 1339x (#2771, `b6dd5d1a8`). El rojo
+  por efecto se vio en el PR desechable #2764.
+* La salida C también está en `scripts/meta-guard-mutaciones.mjs:1067` + `:1072` (S3).
+* PASO 0: 0 ramas `scrum-1339*` en el remoto y 0 PR abiertos con 1339. Control positivo: #2771 sale MERGED.
+
+## Lo que sigue vivo
+
+* **El reproductor de c.17951 no existe.** Ninguno de los 9 workflows de main nombra «reproductor» ni «1339f», y no hay
+  rama ni commit 1339f. Su última mención es c.18021: «NO HECHO → lo hace el relevo de J3».
+* **`forceExit: true` sin tubería bloqueante** en `scripts/_trinquete-de-zona-hijo.mjs:119` y en
+  `scripts/censo-guards-gateados.mjs:71`. Según `carriles.mjs de`, son de **S5** (`docs/equipo/dos-equipos.md:189`, decisión
+  de Javier del 24-oct-2026). La decisión de extender la salida C ya está tomada (c.20219 2c), así que falta el traspaso a
+  Luis, no una pregunta al fundador. Sin medir: si hoy pierden casos. Ninguno de los dos es obligatorio.
+
+## Lo que el ticket da por cierto y ya no lo es
+
+* c.20506 dice que esos dos ficheros «no tienen fila de carril». Desde hoy son de S5.
+* El enunciado dice que «nadie compara el recuento». Hoy lo compara la señal en cada obligatorio.
+
+## La pregunta para el fundador
+
+**P1 · ¿Se construye el reproductor de c.17951?**
+
+* ✅ Lo construye J6, como workflow aparte y no obligatorio: un experimento repetible a cambio de un workflow más.
+* ❌ Se abandona la autorización. La señal y la carga de `tuberia-bloqueante.mjs`, que falla si falta su pieza, ya
+  vigilan que no vuelva.
+* **Recomiendo ❌.** Lo que iba a contestar («¿no se ejecutó, o no informó?») ya lo contestó SCRUM-1405: se ejecuta y
+  no informa.
+
+Si P1 sale ❌ y lo de S5 queda pasado a Luis, el orquestador puede cerrar 1339 (A13).
+
+## Lo que NO he hecho
+
+* El ticket no lo he leído entero: el detalle está en c.20842. Hoy no he barrido runs. Las cifras de `ausentes=0` son
+  de c.20228, c.20239 y c.20296 (21 y 22-oct).
+* No he compilado ni corrido la tanda. Guards de registro: los del obligatorio.
+
+## Mis errores
+
+1. Publiqué en c.20842 que `censo-guards-gateados.mjs:71` «ya no es esa línea» y que estaba en la `:105`. El 105 era
+   la línea de mi volcado de salida, no la del fuente. Lo corregí editando el comentario a los 2 min, después de volver
+   a medirlo con `grep -n` sobre el fuente. Va a la cicatriz de J6.
+2. El lanzador me dejó en la rama `scrum-1339-medida-24oct-tarde`, sin letra. La renombré a
+   `scrum-1339y-reproductor-y-forceexit` antes del primer push.
+3. Crucé los 200k a mitad de la medición. Lo avisé en el cruce (200.260), no al final.
