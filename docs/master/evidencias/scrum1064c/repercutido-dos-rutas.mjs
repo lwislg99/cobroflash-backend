@@ -111,6 +111,16 @@ filas.push(await medir('con 5 %', [
   factura({ id: 1, number: 'C-1' }),
   factura({ id: 2, number: 'C-2', lines: [{ concept: 'tipo raro', qty: 1, price: 200, tax: 0.05 }] }),
 ], Q2));
+// ③b el 7,5 %, que `vat.service.ts` declara entre sus tipos y no tiene tripleta
+filas.push(await medir('con 7,5 %', [
+  factura({ id: 1, number: 'C2-1' }),
+  factura({ id: 2, number: 'C2-2', lines: [{ concept: 'tipo 7,5', qty: 1, price: 200, tax: 0.075 }] }),
+], Q2));
+// ③c una línea con inversión del sujeto pasivo (causa S2, SCRUM-1063e)
+filas.push(await medir('con ISP (S2)', [
+  factura({ id: 1, number: 'E-1' }),
+  factura({ id: 2, number: 'E-2', lines: [{ concept: 'obra ISP', qty: 1, price: 300, tax: 0.21, causa: 'S2' }] }),
+], Q2));
 // ④ sin trimestre en la petición, a las 22:30Z del 30-jun (00:30 del 1-jul en Madrid)
 {
   const RealDate = Date;

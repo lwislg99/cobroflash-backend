@@ -75,7 +75,7 @@ A9: sin fallo que generalice — el bloqueo del 22-sep caducó con #1763 y se vi
 
 ## SCRUM-1064c · Los rótulos del impreso en la ruta, y las dos rutas del repercutido medidas (J1, 24-oct-2026)
 
-**Medido contra:** `origin/main` = `1b3395ecc6d3524e7b4ec711871d1d485ee67f28` · 2026-10-24T15:05:11Z
+**Medido contra:** `origin/main` = `bcfc99b0d9a4f4a3aaf9d1608dce06b3d3691482` · 2026-10-24T15:32:25Z
 **Rama:** `scrum-1064c-rotulos-y-rutas` · **Puesto:** J1 (sesión jv-j1bu) · **Encargo:** orquestador `cobroflash-backend-95`
 **Decisión que lo autoriza:** SCRUM-1064 c.20780 (T9 y T17: transcripción literal; T10 y T13–T16: sin la fórmula). **Entrega:** comentario en SCRUM-1064.
 
@@ -90,24 +90,26 @@ A9: sin fallo que generalice — el bloqueo del 22-sep caducó con #1763 y se vi
 
 ### 2 · ¿Dan `/admin/reports/vat` y `/admin/modelo-303` el mismo repercutido? (medido; NO arreglado)
 
-Banco: `docs/master/evidencias/scrum1064c/repercutido-dos-rutas.mjs`. Pasa facturas fabricadas por los DOS handlers reales de `dist/`, con el `prisma` singleton sustituido por una base en memoria y `TZ=UTC`, como Railway. Población: 4 casos. Control: con 21/10/4 % y una factura ajena y otra del 3T de por medio, las dos rutas dan cuota 63,00 y base 1.119,97 (calculado a mano: 21,00 + 2,00 + 40,00).
+Banco: `docs/master/evidencias/scrum1064c/repercutido-dos-rutas.mjs`. Pasa facturas fabricadas por los DOS handlers reales de `dist/`, con el `prisma` singleton sustituido por una base en memoria y `TZ=UTC`, como Railway. Población: 6 casos, medidos tras traer a la rama el `main` que lleva SCRUM-1063e (la ISP fuera de las casillas). Control: con 21/10/4 % y una factura ajena y otra del 3T de por medio, las dos rutas dan cuota 63,00 y base 1.119,97 (calculado a mano: 21,00 + 2,00 + 40,00).
 
 | caso | cuota vat | casilla 27 | base vat | base casillas 303 | periodo |
 |---|---|---|---|---|---|
 | control 21/10/4 | 63 | 63 | 1.119,97 | 1.119,97 | igual |
 | + una línea al 0 % | 21 | 21 | 250 | 100 | igual |
 | + una línea al 5 % | **31** | **21** | 300 | 100 | igual |
+| + una línea al 7,5 % | **36** | **21** | 300 | 100 | igual |
+| + una línea ISP (causa S2) al 21 % | 21 | 21 | 400 | 100 | igual |
 | sin trimestre, 30-jun 22:30Z | 21 | 21 | 100 | 100 | **vat 2T · 303 3T** |
 
 Por qué:
-- **Tipos sin tripleta (5 %, 2 %…) y el 0 %:** Informes suma TODOS los tipos en `totals` (`src/modules/reports/app/routes/reports.routes.ts:293-297`). El 303 los aparta a `sinClasificar` (`src/modules/fiscal/modelo303/modelo303.ts:313-322`). Con el 5 %, la cuota discrepa. Con el 0 % sólo discrepa la base. `tests/scrum389-un-solo-iva.test.mjs` cuadra Informes contra «27 + `sinClasificar`», no contra la 27 sola. Además está gateado por `LIBRO_PG_URL` y su juego no lleva ningún tipo sin tripleta.
-- **El periodo por defecto:** Informes saca el trimestre en curso del reloj del PROCESO (`reports.routes.ts:266-268`). El 303 lo saca de la zona del merchant (`modelo303.routes.ts:25-38`, SCRUM-735). En la madrugada española de cada cambio de trimestre, las dos pantallas abiertas sin `quarter` enseñan trimestres distintos. El resumen del trimestre hace lo mismo que Informes (`reports.routes.ts:363-365`). Ninguna de las dos líneas es de J1: `src/modules/reports/` no casa con el patrón de J1.
-- **Sin medir:** si el 5 % es alcanzable hoy desde una pantalla de YaQu, y qué tipo va en las filas 150, 165 y 153 del impreso. Si la 153–155 fuera la del 5 %, la casilla 27 del 303 se quedaría corta, y sería del cálculo, no de Informes. El impreso no lo dice: lo dirían las instrucciones de la orden, que no he leído.
+- **Tipos sin tripleta (5 %, 7,5 %…), el 0 % y la ISP:** Informes suma TODOS los tipos en `totals` y agrupa sólo por tipo (`src/modules/reports/app/routes/reports.routes.ts:293-297`). El 303 aparta a `sinClasificar` la ISP (`src/modules/fiscal/modelo303/modelo303.ts:308`) y los tipos sin tripleta (`modelo303.ts:325-334`). Con el 5 % o el 7,5 %, la cuota discrepa; el 7,5 % lo declara `src/modules/invoicing/domain/vat.service.ts:21` entre sus tipos. Con el 0 % y con la ISP sólo discrepa la base. La ISP, además, Informes la funde en su fila del 21 %: esa fila enseña base 400 con cuota 21. `tests/scrum389-un-solo-iva.test.mjs` cuadra Informes contra «27 + `sinClasificar`», no contra la 27 sola. Además está gateado por `LIBRO_PG_URL` y su juego no lleva ningún tipo sin tripleta.
+- **El periodo por defecto:** Informes saca el trimestre en curso del reloj del PROCESO (`reports.routes.ts:266-268`). El 303 lo saca de la zona del merchant (`modelo303.routes.ts:25-38`, SCRUM-735). En la madrugada española de cada cambio de trimestre, las dos pantallas abiertas sin `quarter` enseñan trimestres distintos. El resumen del trimestre hace lo mismo que Informes (`reports.routes.ts:363-365`). `reports.routes.ts` es de S1 (`node scripts/carriles.mjs de …`), así que lo de Informes no lo arregla J1.
+- **Sin medir:** si el 5 % o el 7,5 % son alcanzables hoy desde una pantalla de YaQu, y qué tipo va en las filas 150, 165 y 153 del impreso. Si la 153–155 fuera la del 5 %, la casilla 27 del 303 se quedaría corta, y sería del cálculo, no de Informes. El impreso no lo dice: lo dirían las instrucciones de la orden, que no he leído.
 
 ### No hecho / no medido
 
 - No he tocado `public/` ni el cálculo. Los 7 avisos (T20) no se exponen.
-- Suite entera en local: NO CORRIDA (10 sesiones a la vez). Corridos: el test nuevo, el type-check (`tsc --noEmit`, 0 líneas) y los dirigidos que cita la entrega.
+- Suite entera en local: NO CORRIDA (10 sesiones a la vez). Corridos: el test nuevo, el type-check (`tsc --noEmit`, 0 líneas), 35 dirigidos tras el merge (368 = 365 + 3 saltos por `LIBRO_PG_URL`) y la selección de `tests:que-cubren`, antes del merge. En esa selección cayeron `scrum1298b` (2), `scrum351` (1) y `scrum476` (1). Los tres primeros caen igual sobre `origin/main` en un árbol hermano: son del árbol anidado sin `node_modules`. `scrum476` no lo he corrido sobre `main`.
 - yaqu.app: sin verificar; la ruta pide sesión de admin.
 
 A9: comprobación → `tests/scrum1387-banco-nuevo-va-al-catalogo.test.mjs`
