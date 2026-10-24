@@ -1,0 +1,26 @@
+﻿población: 280 commits de primer padre de origin/main, cI en [2026-10-17T12:00:00Z, 2026-10-24T12:00:00Z) · 280 runs de ci.yml push/main en la ventana
+sonda A (Actions, job por nombre exacto): 81/280 = 28.9 %
+sonda B (check-runs por commit):          81/280 = 28.9 %
+discrepancias A≠B: 0 
+por clase:
+   197 ·  70.4 % · run cancelado con 0 jobs (sustituido por un push posterior)
+    74 ·  26.4 % · veredicto success
+     7 ·   2.5 % · veredicto failure
+     2 ·   0.7 % · sin run
+por día (cI del commit):
+  2026-10-17  9/20 = 45 %
+  2026-10-18  9/39 = 23 %
+  2026-10-19  8/26 = 31 %
+  2026-10-20  6/8 = 75 %
+  2026-10-21  8/24 = 33 %
+  2026-10-22  7/31 = 23 %
+  2026-10-23  31/110 = 28 %
+  2026-10-24  3/22 = 14 %
+CONTROL d34ee753: en población · A=success · B=success
+CONTROL 4b314192: en población · A=success · B=success
+CONTROL 70db9754: NO ESTÁ EN LA POBLACIÓN
+obligatorio (job arrancado y acabado, n=81): p50 11.8 · p90 13.9 · máx 14.3 min
+último job en acabar, por run con jobs: {
+  'meta-guard · los guards caen cuando deben': 79,
+  'trinquete · ningún test nuevo mide la zona de la máquina': 2
+}
