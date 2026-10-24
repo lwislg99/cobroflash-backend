@@ -229,6 +229,6 @@ test('SCRUM-1067b · 🔵 CONTROL: un año sin operaciones dice que miró cero, 
   const r = await leer({});
   assert.deepEqual(r.miradas, { expedidas: 0, recibidas: 0 });
   assert.deepEqual(r.entregas.declarados, []);
-  assert.match(r.avisoObligatorio, /PENDIENTE microcopy oficial/);
+  assert.equal(r.avisoObligatorio, 'Borrador para tu asesor', 'firmado: SCRUM-1065 c.20813');
   assert.deepEqual(r.gastosFueraDelLibro, { cuantos: 0, importe: 0 });
 });

@@ -114,7 +114,7 @@ test('SCRUM-1065b · 🔴 CONTROL NEGATIVO: T1 sin facturas ni gastos → 01 a 0
   assert.deepEqual(r.motivosParaNoFiarse, []);
   assert.deepEqual(r.ingresosSinComputar, []);
   assert.deepEqual(r.hipotesisTodosLosGastosAnotados, { gastosAnotados: 0, rendimientoNeto: 0, veintePorCiento: 0 });
-  assert.match(r.avisoObligatorio, /asesor/);
+  assert.equal(r.avisoObligatorio, 'Borrador para tu asesor', 'firmado: SCRUM-1065 c.20813');
 });
 
 test('SCRUM-1065b · 🔴 lo que no se sabe no sale a cero: 02, 03, 04, 06 y 07 van a null con su motivo', () => {
