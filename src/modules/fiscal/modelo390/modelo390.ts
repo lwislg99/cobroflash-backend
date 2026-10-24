@@ -140,6 +140,11 @@ export function construirModelo390(params: { año: number; trimestres: Modelo303
     miradas += t.miradas;
     asientos += t.asientos;
     for (const s of t.sinClasificar) sinClasificar.push({ ...s, trimestre: t.trimestre });
+    // SCRUM-1063f · la S2 que el 303 pone en su 122 no tiene casilla DECIDIDA en el 390: sigue
+    // saliendo aquí declarada, como antes de 1063f, para que el anual no la pierda en silencio.
+    for (const o of t.informacionAdicional.inversionSujetoPasivo.operaciones) {
+      sinClasificar.push({ ...o, cuota: 0, motivo: 'inversion_sujeto_pasivo', trimestre: t.trimestre });
+    }
     for (const numero of t.sinDesglose) sinDesglose.push({ trimestre: t.trimestre, numero });
     for (const g of t.ivaDeducible.sinClasificar) gastosSinClasificar.push({ ...g, trimestre: t.trimestre });
     for (const m of t.motivosParaNoFiarse) motivosParaNoFiarse.push(`T${t.trimestre}: ${m}`);

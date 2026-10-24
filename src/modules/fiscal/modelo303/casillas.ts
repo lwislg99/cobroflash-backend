@@ -116,3 +116,22 @@ export const CASILLAS_RESULTADO_VACIAS = Object.freeze([
   Object.freeze({ casilla: 70, motivo: 'autoliquidacion_anterior_no_consta' as const }),
   Object.freeze({ casilla: 71, motivo: 'depende_de_la_69' as const }),
 ]);
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-1063f · LA S2 DEL EMISOR. PROCEDENCIA: el impreso y las instrucciones, LEÍDOS.
+//
+// Orden HAC/27/2026, Anexo III, página 3 del impreso, recuadro «Información adicional»:
+//   https://www.boe.es/datos/imagenes/disp/2026/23/1761_16563944_9.png
+//   122 «Operaciones sujetas con inversión del sujeto pasivo» — una sola cifra, SIN cuota.
+// Instrucciones de la AEAT para 2026 (02 a 12 y 2T a 4T), leídas el 24-oct-2026:
+//   https://sede.agenciatributaria.gob.es/Sede/todas-gestiones/impuestos-tasas/iva/modelo-303-iva-autoliquidacion_/instrucciones-2026/instrucciones-02-12-2t-4t-2026.html
+//   «122 Operaciones sujetas con inversión del sujeto pasivo: se hará constar el importe total, en
+//   el período objeto de declaración, de: […] Las entregas de bienes y prestaciones de servicios
+//   realizadas a que se refiere el artículo 84 Uno. 2º a), c), d), e), f) y g) de la Ley.»
+// Es la del que EMITE la operación (la 12/13 es la del que la recibe y autorrepercute). Es
+// información adicional: no suma en la 27 ni en el resultado.
+//
+// Decisión del fundador (SCRUM-1063 c.20768): la base de la S2 del emisor va a la 122.
+
+/** «Operaciones sujetas con inversión del sujeto pasivo» (Información adicional, sin cuota). */
+export const CASILLA_INVERSION_SUJETO_PASIVO = 122;

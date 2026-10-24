@@ -48,12 +48,10 @@ const DIR = path.join(RAIZ, 'tests');
  * SI ARREGLAS UNO, quítalo de aquí en el mismo commit. El test de abajo lo exige.
  */
 const CON_EL_PATRON_YA = [
-  'scrum178-emision-manual.test.mjs',
   // 🔴 `scrum329-legal-pagina-publica.test.mjs` SALE DE AQUÍ (SCRUM-822, 8-sep-2026). Era el
   // «segundo que aborta» que esta lista se dejó anotado como condición para reabrirse: 24 de 24
   // instancias en paralelo caían con `fetch failed`, y su rojo tenía forma de 404, así que acusó
   // a la landing y se abrió un Highest contra un sistema sano. Arreglado con este mismo patrón.
-  'scrum85-pay-routes-token.test.mjs',
   // ── SCRUM-1218b (21-oct-2026): NO son ficheros nuevos con el patrón: son los que el censo NO VEÍA.
   // 22 salieron al arreglar sus dos ciegos (el `listen(0, host, cb)` y el `fetch` a través de una
   // llamada); `scrum893` y `scrum910` se migraron a `node:http` en el mismo commit y no están. La lista
@@ -69,10 +67,10 @@ const CON_EL_PATRON_YA = [
   // banco y el mismo turno: de 20 a 14.
   // SCRUM-1218g (23-oct-2026): los seis que leen el cuerpo con `arrayBuffer()` (pdfs, scrum221, 74, 82,
   // 25-export-zip y 25-exports) y scrum148, con el ayudante que también da `arrayBuffer`: de 14 a 7.
+  // SCRUM-1218h (24-oct-2026): los cuatro de J que SCRUM-1599b/c pusieron al día (scrum178, 85, 17 y
+  // 814…gated), con el mismo ayudante, medidos con un banco PGlite local: de 7 a 3, los de Luis.
   'scrum1188d-tiers-tambien-se-vacia.test.mjs',
   'scrum1489-la-busqueda-recorta-al-tecnico.test.mjs',
-  'scrum17-recapitulativa.test.mjs',
-  'scrum814-carrera-del-tramo.gated.test.mjs',
   'scrum912-leer-ticket-gasto.test.mjs',
 ];
 
