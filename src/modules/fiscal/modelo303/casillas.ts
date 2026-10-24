@@ -116,3 +116,57 @@ export const CASILLAS_RESULTADO_VACIAS = Object.freeze([
   Object.freeze({ casilla: 70, motivo: 'autoliquidacion_anterior_no_consta' as const }),
   Object.freeze({ casilla: 71, motivo: 'depende_de_la_69' as const }),
 ]);
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-1064c · LOS RÓTULOS. PROCEDENCIA: el impreso, LEÍDO como imagen el 24-oct-2026.
+//
+// Decisión del fundador (SCRUM-1064 c.20780): transcripción LITERAL del Anexo III de la Orden
+// HAC/27/2026, SIN la fórmula entre paréntesis («Total cuota devengada», no «Total cuota devengada
+// (152 + …)»). Viajan en `GET /admin/modelo-303` para que la pantalla no los copie a mano.
+//   página 1: https://www.boe.es/datos/imagenes/disp/2026/23/1761_16563944_7.png
+//   página 3: https://www.boe.es/datos/imagenes/disp/2026/23/1761_16563944_9.png
+//
+// ⚠️ Las 01–09 NO tienen rótulo propio en el impreso: son tres filas de la llave «Régimen general»
+// (que abarca también la 150, la 165 y la 153), bajo «IVA devengado», y lo que las distingue es la
+// COLUMNA. Por eso cada rótulo lleva su `columna`, tal y como la escribe la cabecera del impreso.
+// ⚠️ La 70 lleva en el impreso una llamada «(*)» a una nota al pie; aquí va sin ella.
+export interface RotuloCasilla {
+  casilla: number;
+  /** El texto de la fila en el impreso, sin la fórmula entre paréntesis. */
+  rotulo: string;
+  /** La cabecera de la columna, cuando la fila tiene varias casillas. */
+  columna?: string;
+  /** Página del Anexo III donde se lee. */
+  pagina: 1 | 3;
+}
+
+const REGIMEN_GENERAL = 'Régimen general';
+const DEDUCIBLE_CORRIENTES = 'Por cuotas soportadas en operaciones interiores corrientes';
+const DEDUCIBLE_BIENES_INVERSION = 'Por cuotas soportadas en operaciones interiores con bienes de inversión';
+const ATRIBUIBLE_AL_ESTADO = 'Atribuible a la Administración del Estado';
+
+export const ROTULOS_303: readonly RotuloCasilla[] = Object.freeze([
+  Object.freeze({ casilla: 1, rotulo: REGIMEN_GENERAL, columna: 'Base imponible', pagina: 1 as const }),
+  Object.freeze({ casilla: 2, rotulo: REGIMEN_GENERAL, columna: 'Tipo %', pagina: 1 as const }),
+  Object.freeze({ casilla: 3, rotulo: REGIMEN_GENERAL, columna: 'Cuota', pagina: 1 as const }),
+  Object.freeze({ casilla: 4, rotulo: REGIMEN_GENERAL, columna: 'Base imponible', pagina: 1 as const }),
+  Object.freeze({ casilla: 5, rotulo: REGIMEN_GENERAL, columna: 'Tipo %', pagina: 1 as const }),
+  Object.freeze({ casilla: 6, rotulo: REGIMEN_GENERAL, columna: 'Cuota', pagina: 1 as const }),
+  Object.freeze({ casilla: 7, rotulo: REGIMEN_GENERAL, columna: 'Base imponible', pagina: 1 as const }),
+  Object.freeze({ casilla: 8, rotulo: REGIMEN_GENERAL, columna: 'Tipo %', pagina: 1 as const }),
+  Object.freeze({ casilla: 9, rotulo: REGIMEN_GENERAL, columna: 'Cuota', pagina: 1 as const }),
+  Object.freeze({ casilla: 27, rotulo: 'Total cuota devengada', pagina: 1 as const }),
+  Object.freeze({ casilla: 28, rotulo: DEDUCIBLE_CORRIENTES, columna: 'Base', pagina: 1 as const }),
+  Object.freeze({ casilla: 29, rotulo: DEDUCIBLE_CORRIENTES, columna: 'Cuota', pagina: 1 as const }),
+  Object.freeze({ casilla: 30, rotulo: DEDUCIBLE_BIENES_INVERSION, columna: 'Base', pagina: 1 as const }),
+  Object.freeze({ casilla: 31, rotulo: DEDUCIBLE_BIENES_INVERSION, columna: 'Cuota', pagina: 1 as const }),
+  Object.freeze({ casilla: 45, rotulo: 'Total a deducir', pagina: 1 as const }),
+  Object.freeze({ casilla: 46, rotulo: 'Resultado régimen general', pagina: 1 as const }),
+  Object.freeze({ casilla: 64, rotulo: 'Suma de resultados', pagina: 3 as const }),
+  Object.freeze({ casilla: 65, rotulo: ATRIBUIBLE_AL_ESTADO, columna: '%', pagina: 3 as const }),
+  Object.freeze({ casilla: 66, rotulo: ATRIBUIBLE_AL_ESTADO, pagina: 3 as const }),
+  Object.freeze({ casilla: 68, rotulo: 'Exclusivamente para sujetos pasivos que tributan conjuntamente a la Administración del Estado y a las Haciendas Forales. Resultado de la regularización anual.', pagina: 3 as const }),
+  Object.freeze({ casilla: 69, rotulo: 'Resultado de la autoliquidación', pagina: 3 as const }),
+  Object.freeze({ casilla: 70, rotulo: 'Resultado a ingresar correspondiente a la anterior autoliquidación o liquidación administrativa del ejercicio y período objeto de la autoliquidación', pagina: 3 as const }),
+  Object.freeze({ casilla: 71, rotulo: 'Resultado', pagina: 3 as const }),
+]);
