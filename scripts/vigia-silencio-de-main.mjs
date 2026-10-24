@@ -67,7 +67,9 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { RUTAS_GH } from './equipo/ancla.mjs';
 import { checksObligatoriosDeReglas } from './vigia-atascados.mjs';
-import { registroDesdeLinea, TITULO as TITULO_DE_LA_SENAL } from './_senal-de-nombres.mjs';
+// De `-linea`, no de `_senal-de-nombres.mjs`: aquél importa `typescript`, y el workflow del vigía no
+// instala paquetes (SCRUM-1324c; lo ata tests/scrum1324c-el-vigia-carga-sin-paquetes.test.mjs).
+import { registroDesdeLinea, TITULO as TITULO_DE_LA_SENAL } from './_senal-de-nombres-linea.mjs';
 
 export const SALIDA_OK = 0;
 export const SALIDA_AVISO = 1;

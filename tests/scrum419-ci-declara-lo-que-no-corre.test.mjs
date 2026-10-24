@@ -266,6 +266,20 @@ const GATEADOS_DECLARADOS = Object.freeze({
   'scrum106-trabajos-fecha.test.mjs': 1,
   'scrum104-clientes-referenciados.test.mjs': 1,
   'scrum135-gasto-tenencia.test.mjs': 4,
+  // SCRUM-1599h (segundo lote del diseño B): siete más, con la misma forma. Necesitan banco porque
+  // lo que vigilan lo contesta la base: los textos del documento que se guardan, se releen y salen
+  // en el PDF (593d), y por la RUTA real con sesiones guardadas: el reenvío de la invitación que no
+  // pierde la fila (131), el `payment.confirmed` duplicado que no re-paga (webhooks), el operario
+  // del trabajo, el cobro y el albarán (57 y 22), los albaranes de un trabajo sin presupuesto (51) y
+  // que la lista de trabajos no crezca en consultas con el número de filas (58). Los casos sin base
+  // de webhooks corren siempre.
+  'scrum593d-viaje-completo-del-texto.test.mjs': 4,
+  'scrum131-resend-honesto.test.mjs': 1,
+  'webhooks-idempotencia.test.mjs': 1,
+  'scrum57-operario-propagacion.test.mjs': 1,
+  'scrum22-operario-readpath.test.mjs': 1,
+  'scrum51-job-sin-quote.test.mjs': 1,
+  'scrum58-jobs-n1.test.mjs': 1,
 });
 const TOTAL_DECLARADO = Object.values(GATEADOS_DECLARADOS).reduce((a, b) => a + b, 0);
 
