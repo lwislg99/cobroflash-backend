@@ -1022,7 +1022,9 @@ pero no dice dónde: es la misma afirmación sin localizador que este ticket per
 - `albaranDetailView.js:292`: `Consta en: SCRUM-1502 comentario 20702`, con la pregunta a la que contesta.
 - `albaranDetailView.js:199`: `Consta en: SCRUM-895 comentario 15699` (ya citaba el número, pero sin la forma
   que lee `RE_ANCLA_JIRA`).
-- `jobsView.js:79`: `Consta en: SCRUM-769 comentario 14580`.
+- `jobsView.js:79`: `Consta en: SCRUM-769 comentario 14580`, y su par en `tests/_pares-leidos-en-jira.mjs`
+  (SCRUM-1511h: desde hoy un ancla sólo cuenta si alguien ha leído su par en Jira; lo pidió su rojo al traer
+  `main`). Los otros dos pares, 895/15699 y 1502/20702, ya estaban en la lista.
 - **Baja un trinquete:** `scrum387` `SIN_PROCEDENCIA` de 14 a 13. Su caso «el trinquete tampoco baja en
   silencio» se puso rojo con el ancla puesta y el número viejo (visto en rojo, 65 de 66); sale `:292`, la única
   de las tres que no citaba ningún ticket.
