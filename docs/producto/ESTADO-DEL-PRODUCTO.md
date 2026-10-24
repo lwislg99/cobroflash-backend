@@ -2,6 +2,12 @@
 
 **Última medida: 19-oct-2026, 06:43Z, retocada a las 06:5xZ** (`Date:` de GitHub) · `origin/main` = `fc4186483266ae85cc744d020bcfd6db76d8c5d3` · producción (`/version`) = el mismo `fc418648`, leído a las 06:5xZ · la escribió S0 (SCRUM-1563c). Las anteriores (18-oct, 17:13Z y 18:46Z) siguen en el historial de git. **Entre las 19:37Z del 18 y las 06:48Z del 19 no entró nada en `main`; a las 06:48:54Z entró #2568 (6.11) mientras se escribía esto.**
 
+**Nota, 19-oct-2026 ~11:17Z (S0): no es una medida nueva completa** (no se ha vuelto a correr el recuento de §5 ni a releer cada fila de §2); sólo estos tres hechos, comprobados en `origin/main` = `ea8dece1d` y en GitHub:
+
+- **1563d (la medida de las 07:5xZ) SIGUE SIN ENTRAR:** su PR, **#2604**, está ABIERTO desde las 07:43:10Z. El check obligatorio «build + tests» cae, pero **no por el contenido de 1563d** (que sólo toca `docs/`): el log muestra el caso ya conocido `scrum1405c④` («con el módulo la cobaya SIGUE perdiendo casos: la salida C no basta»), el mismo que mide la §26.1 de `docs/equipo/para-javier.md` (7 de 7 pushes a `main` caídos por esto el 16-18 oct). No es nuestro carril (J6/S3): no se ha tocado.
+- **Desde el snapshot de 1563d (07:52Z) entraron 9 merges más en `main`** sin recontar aquí: #2593 (999), #2594 (1357h), #2595 (1265, ya en §8 según c.20006), #2596 (1428, para-javier §26), #2597 (1236f), #2598 (49d), #2599 (231b), #2602 (1233i), #2603 (1390b).
+- **Nuevo, hoy:** `docs/equipo/para-javier.md` §27 (PR **#2606**) censa los 23 tickets de `equipo-javier` con merge sin cerrar que el tramo 1563c de §4 nombraba pero no detallaba uno a uno, y añade SCRUM-1529 (cerrable, carril J3) y SCRUM-1532 (sostiene la fila 4.5: medición pura, sin ticket que la releve si se cierra).
+
 **Qué es:** UN documento que se ACTUALIZA, no un informe nuevo cada vez. Dice qué le falta al producto para estar completo, de quién depende cada cosa, qué la bloquea y cómo va. Lo pidió el fundador el 18-oct-2026: «molaría sacar un informe con todas las tareas que tenemos que cerrar para el producto y ver cómo las vamos cerrando, para tener algo controlado».
 
 **Cómo se lee:**
