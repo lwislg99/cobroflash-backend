@@ -39,3 +39,40 @@ y una línea en `docs/equipo/cicatrices/J5.md`.
 Carril: `docs/sql/`, `prisma/schema.prisma` y esta carpeta de evidencias salen «sin fila en §3» en `carriles.mjs de`. El ticket no lleva etiqueta `area-*`.
 
 **Sin medir, y lo digo:** las reglas reales de borrado de las 13 en las bases (solo consta `rectifies` = SET NULL, del 1-oct). Tanda local: NO CORRIDA (encargo de solo docs).
+
+## Tramo 1310b (J5, `jv-j5ai`, equipo de Javier, 24-oct-2026) · la consulta para Javier y el trinquete por ficheros
+
+**Medido contra:** `origin/main` = `1b3395ecc6d3524e7b4ec711871d1d485ee67f28` · 2026-10-24T15:07:07Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum1310b-claves-ajenas-con-ddl.test.mjs`
+
+Lo que se hace aquí lo decidió el fundador en **c.20776** (P1+P2: «Sí, solo las 13»; P3: «Sí»). No se toca `prisma/schema.prisma` ni se hace ningún `db push`.
+
+### ① La consulta: `docs/sql/scrum-1310b-claves-ajenas-sin-ddl-consulta.sql`
+
+- Es un único `SELECT` de solo lectura sobre `pg_constraint`, `pg_class`, `pg_namespace` y `pg_attribute`. Devuelve 14 filas: el control y las 13. De cada clave ajena da su nombre real, su `ON DELETE`, su `ON UPDATE`, el `ddl` armado en el formato de las congeladas y `pg_get_constraintdef` como segundo testigo.
+- **Control positivo:** `quotes_chargeId_fkey`, una de las 24 que sí tienen DDL. La consulta compara el DDL que arma con la línea de la congelada (`20251104175333_add_quote_model/migration.sql:26`), byte a byte. Si no coinciden, dice `CONTROL DISTINTO`; si no la encuentra, `CONTROL NO ENCONTRADO`.
+- **Busca por tabla y columna, no por nombre.** Así sale el nombre real de cada clave, y si no coincide con el que implica el esquema lo dice: `CON OTRO NOMBRE`. Además, la consulta no escribe el nombre de ninguna de las 13, porque la sonda 1310 de `docs/master/evidencias/SCRUM-1550/sondas.json` busca por subcadena en `docs/sql`: con el nombre escrito, una consulta habría pasado por su DDL. Lo vigila el último caso del test.
+- **Probada en DEV** (transacción `READ ONLY`; salida en `docs/master/evidencias/SCRUM-1310/consulta-1310b-dev.txt`): 14 filas, `CONTROL IDÉNTICO AL FICHERO` y las 13 con `HAY CLAVE AJENA`. Probé también una copia con el literal del control alterado (sale `CONTROL DISTINTO`) y con una columna sin clave ajena (sale `NO HAY CLAVE AJENA EN ESTA BASE`).
+- ⚠️ **El DDL de DEV no se copia.** En DEV las 13 siguen exactamente la regla implícita de Prisma: las opcionales salen con `SET NULL`, las obligatorias con `RESTRICT`, y todas con `ON UPDATE CASCADE`. Es lo que cabe esperar de una base hecha con `db push`, y es justo la hipótesis que c.17665 descartó como fuente. Lo que pasa a `docs/sql/` es lo que devuelva **producción**.
+- En staging y en producción: **NO CORRIDA**. La corre Javier.
+
+### ② El trinquete: `tests/scrum1310b-claves-ajenas-con-ddl.test.mjs`
+
+- Toda `@relation(fields:)` de `schema.prisma` tiene que tener su `CONSTRAINT <nombre> FOREIGN KEY` en `docs/sql/` o en las congeladas. Se lee sobre el texto desnudado con `desnudar`, así que un nombre en un comentario o dentro de una cadena no cuenta. Las 13 de hoy van en `SIN_DDL_CONGELADAS`, que solo puede bajar: una clave nueva sin DDL da ROJO (①), y una de la lista que ya tiene DDL también da ROJO hasta que se quita (②).
+- **Población:** 73 fuentes (255.623 B) y 37 claves ajenas. El parser y el recuento por texto casan. Sale la misma lista de 13 que `medir-fk.mjs`, que es un instrumento distinto.
+- **Positivo sembrado:** se añade al esquema real un modelo fabricado con una relación sin DDL, y tiene que salir como nueva. Sin la semilla, el veredicto es `CIEGO`, y hay un caso que lo comprueba.
+- **Lo vi caer sobre el árbol real.** Quitando `quote_templates_merchant_id_fkey` de la lista, la mitad ① cae y la nombra. Con un `.sql` temporal que da DDL a `expenses_quote_id_fkey`, la mitad ② cae y la nombra. Las dos mutaciones se deshicieron, y `cmp` dio el test idéntico al original.
+- No compara con ninguna base: no es el guard de «clave ajena real = esquema» que se paró en c.17665.
+
+### Guards
+
+- El test nuevo: 8 de 8.
+- Los de suite y los que leen `schema.prisma` y `docs/sql` (237, 976, 824, 836, 419, 702, 700, 719, 1415, 441, 475, 222 y 461): 154 casos, 152 pasan, 0 fallan y 2 saltan. Los dos saltados son de 222 y están gateados por `QA_DB_TEST`, con su motivo declarado; su verde no habla de ellos.
+- 758 y 425: 26 de 26.
+- **Suite entera en local: NO CORRIDA** (hay 10 sesiones a la vez; hace de tanda el obligatorio de CI).
+
+### Lo que queda, y quién
+
+1. **Javier** corre la consulta en dev, staging y producción, y trae las 14 filas de cada base.
+2. **La sesión siguiente** pasa a `docs/sql/` la columna `ddl` de **producción**, y en el mismo PR quita de `SIN_DDL_CONGELADAS` las que reciben DDL (la mitad ② lo exige). Si alguna sale `CON OTRO NOMBRE` o `NO HAY CLAVE AJENA`, se para y se pregunta.

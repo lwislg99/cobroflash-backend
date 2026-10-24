@@ -8,11 +8,12 @@
 //    payment.confirmed duplicado NO re-paga — paidAt no cambia y el evento
 //    queda registrado como duplicate (integración real, gateada).
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599h: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 
-const DB = process.env.QA_DB_TEST === '1';
+const DB = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 
 test('A12.2a: dedupe por event.id de Stripe (pagos y Connect comparten helper)', async () => {
   const { isDuplicateStripeEvent } = await import('../dist/modules/billing/app/routes/stripe.routes.js');
@@ -31,7 +32,7 @@ test('A12.2b: dedupe por wamid de Meta (reintentos del webhook entrante)', async
   assert.equal(isDuplicateWamid(''), false, 'sin id no bloquea');
 });
 
-test('A12.2c: /webhooks/psp — payment.confirmed duplicado NO re-paga (integración)', { skip: !DB && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
+test('A12.2c: /webhooks/psp — payment.confirmed duplicado NO re-paga (integración)', { skip: !DB && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const { internalHeaders } = await import('../dist/core/http/internalAuth.js'); // P0-SEC-1: /webhooks/psp exige el secreto interno

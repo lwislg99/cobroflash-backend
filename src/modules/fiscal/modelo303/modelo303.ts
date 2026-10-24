@@ -186,12 +186,15 @@ export interface Modelo303 {
 /**
  * El aviso que el diseño (A5) declara OBLIGATORIO: «no somos asesores fiscales».
  *
- * ⚠️ Va marcado (regla 30): el texto exacto no está aprobado. Viaja dentro del resultado, no en
- * la pantalla, para que ningún consumidor pueda pintar un 303 sin él — un resumen fiscal sin ese
- * aviso es un claim fiscal, y la regla 24 dice que esto se construye pero no se enciende.
+ * Viaja dentro del resultado, no en la pantalla, para que ningún consumidor pueda pintar un 303
+ * sin él — un resumen fiscal sin ese aviso es un claim fiscal, y la regla 24 dice que esto se
+ * construye pero no se enciende.
+ *
+ * SCRUM-1065c · FIRMADO (regla 39): «Borrador para tu asesor», SCRUM-1064 c.20780 (T2), para el
+ * 303, 130, 347 y 390 en SCRUM-1065 c.20813, y para el 111/115 en c.20820. Lo importan los seis
+ * borradores; registro en `docs/microcopy/2026-10-24-SCRUM-1065-marca-borrador.md`.
  */
-export const AVISO_ORIENTATIVO =
-  '[PENDIENTE microcopy oficial] Resumen orientativo — consúltalo con tu asesor fiscal.';
+export const AVISO_ORIENTATIVO = 'Borrador para tu asesor';
 
 /**
  * El trimestre natural, **con sus bordes dentro**.
