@@ -19,6 +19,8 @@ import { soloCodigo } from './_solo-codigo.mjs';
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const MARCA = '[PENDIENTE microcopy oficial]';
 // Los DOS rótulos del FORMULARIO, firmados por el fundador el 2-sep-2026.
+// Consta en: SCRUM-593 comentario 14262 (la cabecera).
+// Consta en: SCRUM-1502 comentario 20702 (el pie, «Observaciones»).
 const ROTULO_CABECERA = 'Añadir texto en el documento';
 const ROTULO_PIE = 'Observaciones';
 
