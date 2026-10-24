@@ -136,8 +136,6 @@
     {"clave":"ruta · GET /precios","donde":"src/app.ts:292","carril":"J3","ticket":"SCRUM-1185"},
     {"clave":"ruta · POST /admin/charges/:id/garantia","donde":"src/modules/billing/app/routes/chargesAdmin.routes.ts:114","carril":"J2","ticket":"SCRUM-1185"},
     {"clave":"ruta · POST /admin/charges/:id/garantia/liberar","donde":"src/modules/billing/app/routes/chargesAdmin.routes.ts:164","carril":"J2","ticket":"SCRUM-1185"},
-    {"clave":"ruta · POST /admin/invoices/:id/pay","donde":"src/modules/system/app/routes/invoicesAdmin.routes.ts:569","carril":"J1","ticket":"SCRUM-1185"},
-    {"clave":"ruta · POST /admin/invoices/:id/unpay","donde":"src/modules/system/app/routes/invoicesAdmin.routes.ts:590","carril":"J1","ticket":"SCRUM-1185"},
     {"clave":"ruta · POST /admin/supresion/:merchantId","donde":"src/modules/system/app/routes/supresion.routes.ts:29","carril":"operación","ticket":"SCRUM-1185"},
     {"clave":"export · src/modules/auth/domain/auth.service.ts::registerMerchant","donde":"src/modules/auth/domain/auth.service.ts:307","carril":"J3","ticket":"SCRUM-1515"},
     {"clave":"ruta · POST /auth/test-login","donde":"src/modules/auth/app/routes/auth.routes.ts:95","carril":"operación","ticket":"SCRUM-1185"},
@@ -162,6 +160,8 @@
     {"clave":"export · src/modules/fiscal/modelo130/modelo130.ts::construirBorrador130","donde":"src/modules/fiscal/modelo130/modelo130.ts:152","carril":"J1","ticket":"SCRUM-1065","motivo":"J1: solo la consume leerBorrador130, que esta sin ruta (arriba)"}
   ],
   "retiradas": [
+    {"clave":"ruta · POST /admin/invoices/:id/pay","motivo":"SCRUM-1250b: desmontada (firma del fundador en SCRUM-1250 c.20747; excepción de carril en c.20763), la ruta ya no existe"},
+    {"clave":"ruta · POST /admin/invoices/:id/unpay","motivo":"SCRUM-1250b: desmontada (firma del fundador en SCRUM-1250 c.20747; excepción de carril en c.20763), la ruta ya no existe"},
     {"clave":"ruta · GET /admin/customers/:id/notes","motivo":"SCRUM-1132: conectada en customerDetailView.js (la pestaña «Notas» de la ficha del cliente, al abrirla; sólo admin)"},
     {"clave":"ruta · POST /admin/customers/:id/notes","motivo":"SCRUM-1132: conectada en customerDetailView.js (la pestaña «Notas» de la ficha del cliente, al abrirla; sólo admin)"},
     {"clave":"ruta · POST /admin/customers/:id/sites","motivo":"SCRUM-1145: conectada en customerDetailView.js («+ Nuevo sitio» y «Guardar» del formulario de la pestaña «Sitios»)"},

@@ -77,4 +77,11 @@ bot 0, OpenAPI no existe. **Logs de producción e integraciones externas: no lo 
 
 Verdes con el cambio: `docs/legal/AUDITLOG_FISCAL_CONTRATO.md:94-95` (J4) sigue citando las filas
 viejas y `scrum525d` no cae; `scripts/_anclas-sin-testigo.congelado.mjs:137-138` tampoco. Se nombran,
-no se tocan. **Rama local, sin empujar**: un empujón con esos dos rojos lo tumbaría el obligatorio.
+no se tocan.
+
+**Desbloqueo — excepción de carril declarada por el fundador, SCRUM-1250 c.20763** («Excepción de
+carril en este PR»): exactamente cuatro líneas del equipo de Luis, y nada más de ellos. En
+`adminOnlyRoutes.ts` (S1) se quitan las dos filas de `pay`/`unpay`; en `_sin-consumir-declarados.json`
+(S0) las dos entradas salen de `declaradas` y entran al principio de `retiradas` (al principio para no
+tocar la coma de una quinta línea). Con eso, `scrum55` y `scrum1185` en verde: 81 de 81 en los nueve
+ficheros dirigidos (55, 1185, 1250b, 1455b, 597, 158, 168, 1294, 1303), sin saltos.
