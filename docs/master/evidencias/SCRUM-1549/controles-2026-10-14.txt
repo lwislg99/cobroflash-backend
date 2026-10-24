@@ -1,0 +1,41 @@
+— puestoDeNombre (la función sola)
+  puestoDeNombre("jv-j4g", {"puesto":"J4","nombre":"jv-j4g"}) → J4
+  puestoDeNombre("jv-j4g", null) → null
+  puestoDeNombre("jv-j9z", {"puesto":"J4","nombre":"jv-j4g"}) → null
+  puestoDeNombre("JV-J4G", {"puesto":"J4","nombre":"jv-j4g"}) → J4
+  puestoDeNombre("jv-j4g ", {"puesto":"J4","nombre":"jv-j4g"}) → J4
+— forma de nombre de Luis y otras, sin mesa
+  "sesion-0" → S0
+  "sesion-1" → S1
+  "sesion-5" → S5
+  "sesion-6" → null
+  "s1-14oct" → S1
+  "s5-29c" → S5
+  "s3-14oct-a" → S3
+  "S2-x" → S2
+  "orquestador" → ORQ
+  "orquestador-luis" → ORQ
+  "cobroflash-backend-57" → null
+  "cobroflash-backend-2e" → null
+  "j4-1346" → J4
+  "puesto-j4" → J4
+  "jv-j4g" → null
+  "j7-x" → null
+  null → null
+— identidad() de carril.mjs: lo que decide la cerradura (puesto = carpeta ?? porNombre)
+  mesa J4/jv-j4g, nombre jv-j4g → carpeta J4 · porNombre J4 · pasa como J4
+  mesa J4/jv-j4g, nombre jv-j9z → carpeta J4 · porNombre null · pasa como J4
+  mesa J4/jv-j4g, sin nombre → carpeta J4 · porNombre null · pasa como J4
+  mesa J4/jv-j4g, nombre j3-x → carpeta J4 · porNombre J3 · PARA (discrepancia)
+  mesa J4/jv-j4g, nombre sesion-1 → carpeta J4 · porNombre S1 · PARA (discrepancia)
+  mesa J4/jv-j4g, nombre s2-x → carpeta J4 · porNombre S2 · PARA (discrepancia)
+  mesa J4 SIN campo nombre, nombre cualquiera → carpeta J4 · porNombre null · pasa como J4
+  mesa J4/nombre «cualquiera», nombre jv-j9z → carpeta J4 · porNombre null · pasa como J4
+  mesa ORQ, nombre cobroflash-backend-2e → carpeta ORQ · porNombre ORQ · pasa como ORQ
+  mesa J9 (no válido) → carpeta null · porNombre null · CAE con --exigir (puesto «J9» no válido)
+  mesa JSON roto → carpeta null · porNombre null · CAE con --exigir (Expected property name or '}' in JSON at position 1 (line 1 column 2))
+  sin mesa, nombre jv-j4g → carpeta null · porNombre null · CAE con --exigir
+  sin mesa, nombre sesion-3 → carpeta null · porNombre S3 · pasa como S3
+  sin mesa, nombre s5-29c → carpeta null · porNombre S5 · pasa como S5
+  sin mesa, nombre cobroflash-backend-57 → carpeta null · porNombre null · CAE con --exigir
+  sin mesa, nombre orquestador → carpeta null · porNombre ORQ · pasa como ORQ

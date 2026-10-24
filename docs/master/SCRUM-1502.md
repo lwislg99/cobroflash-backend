@@ -951,3 +951,87 @@ silencio» de `scrum921` y de `scrum387`, y **por eso no está empujada**.
 - `scrum387`: su comentario de cabecera sigue listando `librosAeat.ts:183` (es la foto del 7-sep de SCRUM-814).
 - No he visto nada en yaqu.app: ninguna de estas marcas cambia lo que se pinta.
 - Tanda completa: no corrida (guards dirigidos, en la entrega).
+
+---
+
+## SCRUM-1502m · Tramo 12 (S4, 24-oct-2026): la marca de S4 de c.20702, anclada, y las 12 de su carril que no estaban en la lista
+
+**Medido contra:** `origin/main` = `927bda7ab44b604d81bca8c453663e7fc6f6cda9` · 2026-10-24T12:31:21Z (hora de GitHub)
+A9: comprobación → `tests/scrum387-procedencia-aprobacion.test.mjs`
+**Skill UI:** no cargada · sólo se tocan comentarios de dos vistas; no cambia nada de lo que se pinta.
+
+### ① La de la lista: `albaranDetailView.js:292`, comprobada ANTES de anclarla
+
+| pregunta | respuesta medida |
+|---|---|
+| ¿existe la firma? | sí: SCRUM-1502 **c.20702**, fila P3, «firmo los rótulos del rail» |
+| ¿a qué contesta? | a la pregunta 3 de **c.20701**, que nombra el bloque bajo `:292` y sus dos rótulos |
+| ¿qué hay bajo `:292`? | `ROTULOS_RAIL_ALBARAN` (`:307` con esta rama), dos claves (`presupuesto`, `fotos`); se pintan en `:1094` y `:1172` |
+| ¿cambió el fichero entre la pregunta y hoy? | no: `git log ac9a7ae4e..origin/main -- albaranDetailView.js` sale vacío |
+| ¿quién firma? | Javier, jefe (`dos-equipos.md` §1: «donde las normas dicen el fundador, vale un jefe»). Rótulos: ni legal ni fiscal, así que su delegación del 22-sep tampoco los excluye |
+| ¿lo respaldaba algo antes? | sólo un literal en `docs/master/SCRUM-921.md:257`, que es **otro texto** (c.20701, fila 3), y la descripción de SCRUM-302 los da por «sin aprobar» |
+
+Veredicto: **la firma existe y cubre exactamente lo que se pinta.** Ancla puesta.
+
+⚠️ **Lo que la firma NO cubre, y que nadie ha preguntado:** el rail del albarán tiene otros cinco rótulos,
+los de `fila()` (`albaranDetailView.js:1054-1060` con esta rama). Ninguna marca dice que estén aprobados, así que no
+entran en este censo. La pregunta 3 acaba en «…» y la respuesta dice «los rótulos del rail»: **no se
+extiende a esos cinco por parecido** (c.18835). Si están firmados, no lo sé: no lo he buscado.
+
+### ② Las otras 12 marcas del carril S4, que la lista de Javier no traía
+
+La lista de c.20701 era la de las marcas cuyo único respaldo es un literal en `docs/master/` (nivel
+`documental`). Las 12 de abajo no salían en ella porque el guard las da por `rastreable`: citan un ticket o un
+documento. **Que se pueda ir a mirar no dice que lo que hay allí sea la firma.** Fui a mirar.
+
+Población: las marcas que el censo de `scrum921c` encuentra en los tres ficheros del carril S4 con código
+(`albaranDetailView.js`, `jobsView.js`, `parteDetailView.js`). Son **13**: la de ① y estas 12. Sonda: el mismo
+camino que el guard (`marcasDe` + negación + `respaldoDe`) filtrado a esos ficheros
+(`docs/master/evidencias/scrum1502m/sonda-marcas-carril.mjs <raíz> <fichero>…`). Control: sobre el árbol
+entero da los mismos niveles que J1 midió después de 1502j (33 ancladas · 13 documentales · 20 sin respaldo).
+`docs/microcopy/` no tiene marcas en código y no entra.
+
+Líneas: las de esta rama (las de `albaranDetailView.js` desde `:292` van dos más abajo que en `main`).
+
+| marca | cita hoy | lo que hay en la fuente (leído el 24-oct) | veredicto |
+|---|---|---|---|
+| `albaranDetailView.js:199` | SCRUM-895 «(comentario 15699)» | c.15699: «FIRMA DEL FUNDADOR sobre la propuesta del comentario 15689», con el literal de `btnConvertirFactura` | **firma real** → ancla con su forma canónica |
+| `jobsView.js:79` | SCRUM-769 | c.14580: «FIRMADO POR EL FUNDADOR (Javier) — 6-sep-2026», con el literal del botón | **firma real** → ancla puesta |
+| `jobsView.js:63` | SCRUM-651 | c.14229, una ENTREGA: «Las tres decisiones del fundador… 2 · El copy: APROBADO», con los dos literales | **literal presente, en una entrega**; NO anclada (criterio de c.20701: una entrega no es la firma) |
+| `albaranDetailView.js:332` | SCRUM-379 | c.12499, un CIERRE de sesión: «Microcopy firmada:» con el literal, sin decir quién firma | **literal presente, sin firmante**; NO anclada |
+| `albaranDetailView.js:215` | SCRUM-302 | 2 comentarios (12450, 12451), ninguno firma; la descripción dice «microcopy sin aprobar» | **NO ENCONTRADA** |
+| `albaranDetailView.js:221` | SCRUM-302 | ídem. El registro (`SCRUM-302.md:119`, `:551`) dice que el fundador lo cambió el 6-ago, sin localizador | **NO ENCONTRADA** |
+| `albaranDetailView.js:234` | SCRUM-302 | ídem | **NO ENCONTRADA** |
+| `albaranDetailView.js:923` | `docs/microcopy/…SCRUM-707…` | el fichero dice «Aprobado por el fundador… en SCRUM-707»; SCRUM-707 tiene 2 comentarios del orquestador que **citan el fichero**. Circular | **NO ENCONTRADA** |
+| `parteDetailView.js:40` | SCRUM-720c + `docs/microcopy/` | SCRUM-720: **0 comentarios**; la descripción no trae ningún literal aprobado | **NO ENCONTRADA** en Jira |
+| `parteDetailView.js:57` | SCRUM-720 + `docs/microcopy/` | ídem | **NO ENCONTRADA** en Jira |
+| `parteDetailView.js:162` | SCRUM-720c + `docs/microcopy/` | ídem | **NO ENCONTRADA** en Jira |
+| `parteDetailView.js:67` | SCRUM-818 + `docs/microcopy/` | SCRUM-818: **0 comentarios** | **NO ENCONTRADA** en Jira |
+
+**Recuento de las 12:** 2 con firma real (ancladas) · 2 con el literal en un comentario que no es una firma ·
+8 sin firma encontrable en Jira. Esas 8 no cambian de nivel con la mitad «a pelo» de `sinCitas` (c.20690):
+ya son `rastreable`. **Por eso el guard no las verá nunca.**
+
+⚠️ «NO ENCONTRADA» quiere decir que leí entero el ticket que citan (descripción y todos sus comentarios)
+y la firma no está. **No** he buscado en otros tickets con `text ~`, y la firma puede estar en el chat de un
+jefe sin pasar por Jira. Para las de `docs/microcopy/` el fichero existe y dice «aprobado por el fundador»,
+pero no dice dónde: es la misma afirmación sin localizador que este ticket persigue, un fichero más abajo.
+
+### Lo hecho
+
+- `albaranDetailView.js:292`: `Consta en: SCRUM-1502 comentario 20702`, con la pregunta a la que contesta.
+- `albaranDetailView.js:199`: `Consta en: SCRUM-895 comentario 15699` (ya citaba el número, pero sin la forma
+  que lee `RE_ANCLA_JIRA`).
+- `jobsView.js:79`: `Consta en: SCRUM-769 comentario 14580`, y su par en `tests/_pares-leidos-en-jira.mjs`
+  (SCRUM-1511h: desde hoy un ancla sólo cuenta si alguien ha leído su par en Jira; lo pidió su rojo al traer
+  `main`). Los otros dos pares, 895/15699 y 1502/20702, ya estaban en la lista.
+- **Baja un trinquete:** `scrum387` `SIN_PROCEDENCIA` de 14 a 13. Su caso «el trinquete tampoco baja en
+  silencio» se puso rojo con el ancla puesta y el número viejo (visto en rojo, 65 de 66); sale `:292`, la única
+  de las tres que no citaba ningún ticket.
+- Niveles por marca, antes y después: las tres pasan a `anclado` y **ninguna otra cambia**. Árbol entero:
+  anclado 33 → 36 · documental 13 → 12 · rastreable 167 → 165 · sin respaldo 20 → 20.
+
+### Lo que NO se ha hecho
+
+- Las 10 que no tienen firma encontrable no se tocan: piden pregunta al jefe, una a una, como en c.20701.
+- No he visto nada en yaqu.app: ningún cambio de lo que se pinta.
