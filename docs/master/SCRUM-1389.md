@@ -181,3 +181,52 @@ A y B no se excluyen. C es la única que cumple el ticket como está escrito.
 - Una pasada del caso 9 falló por `EBUSY` al renombrar el binario recién copiado y el testigo, que
   miraba sólo la última copia, dijo «sí». Ahora hay reintento y un testigo por pasada.
 - Di por población «las corridas rojas» y la corrida de control conocida era `cancelled`.
+
+## SCRUM-1389b · sigue vivo hoy, y sigue sin decisión — no se construye
+
+**Medido contra:** `origin/main` = `25ad5d43b6a8ed41fdcb90c5fdbc0e2e388ec1be` · 2026-10-24T10:03:43Z
+
+A9: sin fallo que generalice — los dos tropiezos de esta pasada (abajo) los cazó la herramienta en el acto y no dejaron ninguna medición mala detrás
+
+Sesión `jv-j6bj` (puesto J6), por encargo del orquestador del equipo de Javier (`cobroflash-backend-95`).
+**Sólo docs:** este tramo. Ningún script, test, guard, lista ni workflow.
+
+**El defecto existe hoy (A2).** El banco de este registro (`docs/master/evidencias/scrum1389/banco.mjs`),
+corrido sin cambios sobre `25ad5d43`, node v24.18.0, Windows, 11 s, temporales en `os.tmpdir()`: los
+nueve casos dan lo mismo que el 7-oct. Control verde (caso 1): `tests 2 · pass 2 · fail 0 · EXIT=0`.
+Control rojo (caso 2): `tests 2 · pass 1 · fail 1 · EXIT=1`. Los dos nietos que no se crean (caso 9):
+`tests 3 · pass 1 · fail 2 · EXIT=1`, y la puerta los sigue llamando «FICHERO CAÍDO SIN CASO CAÍDO …
+su salida está justo encima de su ✖», que para un proceso que no existió es falso. Testigo: binario
+renombrado en 4 de 4 pasadas. En los eventos y en el TAP la separación sigue ahí (`exitCode` presente
+en 3–8; ausente y `causaCode: ENOENT`, `causaSyscall: spawn` en 9).
+
+**Qué cambió desde el 7-oct en los tres sitios del arreglo:** `scripts/tanda-con-veredicto.mjs` y
+`scripts/_senal-de-nombres.mjs`, nada; `scripts/_huella-de-la-caida.mjs`, 6 líneas añadidas
+(`git diff --stat 7f3bfbde3 origin/main`), y la frase falsa del caso 9 sigue saliendo.
+
+**Por qué no se construye.** El ticket pide ①–⑥ pero no fija el arreglo, y este registro dejó cuatro
+salidas «no se elige aquí»; en Jira (descripción y los 2 comentarios, c.18776 y c.18782) no hay
+decisión posterior. Carriles medidos con `node scripts/carriles.mjs de <ruta>` el 24-oct:
+`tanda-con-veredicto.mjs` y `_huella-de-la-caida.mjs` → **S5**; `_senal-de-nombres.mjs` y
+`_hallazgos-y-ciegos.mjs` → sin cerradura (fila general de `scripts/`, «S0, sólo verificación o censo
+de consulta»). La salida C, la única que cumple ① tal como está escrito, es de S5 y cambia lo que dice
+el obligatorio de los dos equipos. La B cae en un fichero sin dueño decidido.
+
+**Lo que hace falta para seguir, como preguntas ✅/❌** (para el orquestador y, si cruza de equipo, para
+los dos jefes):
+
+1. ¿Se elige la salida **C** (tanda que sólo tiene procesos no creados → CIEGO por `veredictoDe`, «se creó
+   y murió» sigue rojo)? ✅ → es trabajo de S5, se le pasa por Jira. ❌ → se queda ①.
+2. ¿Se construye la **B** (la señal de nombres cuenta siempre, también con cero, entradas de fichero ·
+   no creadas · muertas con su código) en `_senal-de-nombres.mjs`, y ese fichero pasa a ser de J6 con
+   fila propia en `dos-equipos.md` §3? ✅ → la construye J6 con rojo primero, positivo sembrado y mutación.
+3. ¿La **A** (una clase más en el lector de huellas para el proceso que no se creó)? ✅ → S5.
+4. ¿O **D**, dejarlo medido? (0 procesos no creados en las 124 corridas legibles del 7-oct.)
+
+**No hecho / no medido:** no se ha corrido la tanda, ni `guards:entrada`, ni los guards de suite (no se
+ha tocado ni código ni tests); el obligatorio de este PR, el que diga la entrega.
+
+**Mis errores:** probé el `cloudId` de Jira con el host del dueño del repo de GitHub, y era otro; lo dijo
+la herramienta al primer intento. Y el primer comando del arranque encadenaba con `&&` un
+`git rev-parse --short` con dos refs, que sólo admite una: falló y se llevó por delante la lectura de
+la norma, que repetí en un comando aparte.
