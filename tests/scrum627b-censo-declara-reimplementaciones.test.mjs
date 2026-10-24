@@ -122,8 +122,13 @@ const CENSO_ARITMETICA = {
       + 'reconoce lo que dice reconocer.',
   },
   'src/modules/invoicing/infra/pdf/pdf.service.ts': {
-    veredicto: 'REIMPLEMENTACION', ademasDe389: false,
-    nota: '🔴 2-sep-2026 · SCRUM-656 · YA NO ESTÁ EN LAS DOS TABLAS, Y ESO LO EMPEORA, no lo mejora. '
+    veredicto: 'REIMPLEMENTACION', ademasDe389: true,
+    nota: '⚠️ 24-oct-2026 · SCRUM-624e · VUELVE A ESTAR EN LAS DOS TABLAS: el bloque de totales de la '
+      + 'FACTURA F1 llama ya a la primitiva (GO del fundador, SCRUM-624 c.20817) y por eso entra en el '
+      + 'censo de SCRUM-389. Lo que se declara AQUÍ sigue siendo la otra cosa: el bloque de la R1 y del '
+      + 'justificante, que agrupa el IVA con su propio `vatMap` hasta que se arregle cómo se crea la R1 '
+      + '(regla 40). Historia: '
+      + '🔴 2-sep-2026 · SCRUM-656 · YA NO ESTÁ EN LAS DOS TABLAS, Y ESO LO EMPEORA, no lo mejora. '
       + 'Tenía DOS cosas: una LLAMADA a la primitiva para el desglose del PRESUPUESTO y, al lado, '
       + 'veinte líneas que agrupan el IVA de la FACTURA con su propio `vatMap` sin llamar a nadie. '
       + 'La llamada se ha MUDADO a `quotes/domain/presentacionIva.ts`, así que este fichero sale del '
@@ -226,8 +231,12 @@ test('SCRUM-627b · 🔴 los que están en LAS DOS tablas lo dicen, y dicen qué
   // Lo que se pierde al salir es la MÁSCARA: mientras tuvo la llamada, el criterio por fichero de
   // SCRUM-627 lo daba por «visto» y sus veinte líneas no aparecían en la lista de invisibles. Ahora
   // aparece — y ésa es la única diferencia real.
+  // ⚠️ 24-oct-2026 · SCRUM-624e · SUBE DE UNO A DOS: `pdf.service.ts` vuelve a llamar a la primitiva
+  // (la F1) y sigue agrupando a mano (la R1 y el justificante). La máscara de arriba vuelve, y por
+  // eso su entrada lleva el puntero en el censo de SCRUM-389.
   assert.deepEqual(dobles, [
     'src/modules/invoicing/domain/vat.service.ts',
+    'src/modules/invoicing/infra/pdf/pdf.service.ts',
   ], '🔴 cambió quién tiene dos entradas: mírelo, porque es el caso que este censo existe para cubrir');
 });
 
