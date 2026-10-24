@@ -8,7 +8,7 @@
 // `aiQuoteAssistant.js:74`:
 //   «El asistente de IA no está disponible ahora mismo. Rellena las líneas a mano.»
 // Se mide POR EFECTO: se pulsa «Generar sugerencias» y se lee el aviso PINTADO, no el fuente.
-//   ① con `ai_not_configured` sale el texto firmado, y ni «GEMINI», ni «Railway»;
+//   ① con `ai_not_configured` sale EXACTAMENTE el texto firmado;
 //   ② CONTROL: con otro fallo (502 `ai_provider_error`) sale el genérico, no el firmado — si el banco
 //      pintara el firmado para cualquier error, ① no distinguiría nada.
 import test from 'node:test';
@@ -71,8 +71,8 @@ async function avisoCon(status, cuerpo) {
 
 test('SCRUM-1247d ① · sin IA configurada, el profesional lee el texto FIRMADO (c.20779), sin proveedor ni Railway', async () => {
   const aviso = await avisoCon(503, { error: 'ai_not_configured', message: 'El asistente de IA no está configurado. Añade GEMINI_API_KEY (gratis) en Railway.' });
+  // Igualdad EXACTA con el literal firmado: excluye por construcción la clave y Railway del texto de antes.
   assert.equal(aviso, FIRMADO, `🔴 el aviso no es el firmado en SCRUM-1247 c.20779: «${aviso}».`);
-  assert.doesNotMatch(aviso, /GEMINI|Railway/i, `🔴 el aviso le sigue hablando de la clave o de Railway: «${aviso}».`);
 });
 
 test('SCRUM-1247d ② · CONTROL: otro fallo (502) da el genérico, NO el firmado', async () => {
