@@ -60,7 +60,12 @@ export interface OperacionSinClasificar {
    * exenta ni una ISP: es dinero ajeno fuera de la base (`suplidos.ts`). Sigue sin casilla, y sigue
    * dentro del libro (c.20717: esperar a la emisión), así que el invariante no cambia.
    */
-  motivo: 'tipo_cero' | 'tipo_sin_casilla' | 'suplido';
+  /**
+   * SCRUM-1063e · `inversion_sujeto_pasivo`: la entrada del libro con `causa: 'S2'`, sea cual sea su
+   * tipo. No va a la casilla de su tipo (una ISP no es una entrega en régimen general) y su casilla
+   * propia está SIN DECIDIR (SCRUM-1063 c.20746): hasta entonces, aquí, como dato.
+   */
+  motivo: 'tipo_cero' | 'tipo_sin_casilla' | 'suplido' | 'inversion_sujeto_pasivo';
 }
 
 /**
@@ -297,8 +302,15 @@ export function construirModelo303(params: {
     let cuotaDelAsiento = 0;
     for (const e of a.porTipo) {
       cuotaDelAsiento += e.cuota;
+      // SCRUM-1063e · la S2 sale ANTES de mirar su tipo: con `tax: 0.21` (el validador de la causa
+      // no exige 0) caía en la casilla 07 con cuota 0. Y antes de los suplidos, que se apartan
+      // SOLO de las entradas sin causa: si no, el suplido se restaba de la S2 (c.20739).
+      if (e.causa === 'S2') {
+        sinClasificar.push({ numero: a.numero, tipo: e.tipo, base: e.base, cuota: e.cuota, motivo: 'inversion_sujeto_pasivo' });
+        continue;
+      }
       const tripleta = tripletaDe(e.tipo);
-      if (!tripleta && e.tipo === 0 && suplidoAlCero !== 0 && Math.sign(suplidoAlCero) === Math.sign(e.base)) {
+      if (!tripleta && e.tipo === 0 && !e.causa && suplidoAlCero !== 0 && Math.sign(suplidoAlCero) === Math.sign(e.base)) {
         // Lo que se aparta como suplido sale de ESTA entrada y el resto se queda en `tipo_cero`:
         // restando, no recalculando, para que la suma siga siendo la del libro al céntimo.
         const suplido = Math.sign(e.base) * Math.min(Math.abs(suplidoAlCero), Math.abs(e.base));
