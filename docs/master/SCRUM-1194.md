@@ -109,3 +109,81 @@ Que sea un **segundo modo de la sonda de 1185** y no un instrumento aparte: que 
 sus rutas con los identificadores de cada handler, que es exactamente lo que parchea esta medición.
 Hoy la medición depende de dos anclas textuales en su fichero y sale CIEGA si cambian. Integrarla
 es cosa de su dueño.
+
+## J6 · SCRUM-1194b · la medición se había quedado CIEGA: positivo sembrado y la lista de hoy
+
+**Medido contra:** `origin/main` = `25ad5d43b6a8ed41fdcb90c5fdbc0e2e388ec1be` · 2026-10-24T10:07:28Z (hora de GitHub al acabar las pasadas; sesión J6 `jv-j6bl` en su árbol `jv-j6bl`, por encargo del orquestador `cobroflash-backend-95`. Al escribir, `main` ya era `137c7fad02e7f4e01f94955d17cb6406035f7ed5`: 1 fichero, 0 en `src/`, `public/` o la sonda de 1185)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1194/censo-vocabulario.mjs`
+
+Reparación de MI medición del 28-sep, no construcción del método: sin test y sin trinquete (el
+ticket no los pide y prefiere un modo de la sonda de 1185, que es de Luis). OK del orquestador por
+mensaje. No se toca ninguna discrepancia: cada una es de su carril.
+
+### Qué pasó
+
+Corrida hoy tal como estaba: **exit 2, CIEGO** — «SCRUM-1136 no sale PARCIAL con taxId (sale:
+ofrece todo)». Su control positivo era el propio defecto de 1136, y #1939 lo arregló
+(`csvImport.js:168` ofrece ya los doce). El instrumento se jubiló el día que triunfó.
+
+### Lo que cambia
+
+- **Positivo SEMBRADO en memoria** (nada se escribe en el árbol): la pareja del ejemplo del ticket
+  —un vocabulario de los 12 valores de `CAMPOS_CLIENTE`, una ruta que lo acepta montada en
+  `app.ts`, y una pantalla que hace `fetch` y ofrece sólo los 4 de antes de #1939—. Entra por el
+  camino real de la sonda de 1185. Tiene que salir PARCIAL con exactamente los 8 que faltan.
+- **Control que NO casa, sembrado:** la gemela que ofrece los 12 tiene que salir «ofrece todo».
+- **La siembra no cuenta en nada:** si deja otro número de pares que 2, CIEGO; después se quita
+  de todas las cifras.
+- **Comprobado quitándola:** `--sin-siembra` da **exit 2, CIEGO** («ni aparece»), no verde.
+- **CIEGO de verdad en la primera pasada sembrada:** las dos pantallas se llamaban `enviar`, y el
+  salto por envoltorio casa por NOMBRE, así que metía la gemela como llamadora de la parcial y el
+  positivo salía «ofrece todo». Se arregló en la siembra (un nombre por pantalla) y se midió lo
+  mismo en el árbol real: cubo nuevo «ofrece todo SÓLO gracias al envoltorio».
+- **Marca nueva:** una fila cuya ruta no lee `req.body` (según la sonda de 1185) lo dice.
+
+### El resultado de hoy
+
+| cubo | 28-sep | hoy |
+|---|---|---|
+| vocabularios del servidor | 62 | **71** (13 `z.enum` + 58 arrays) · 244 rutas |
+| no pude ligar a ninguna ruta | 25 | 30 |
+| pares vocabulario × ruta | 48 | 55 |
+| · GET | 10 | 11 |
+| · sin pantalla llamadora | 7 | 9 |
+| · ofrece todo | 18 | 21 |
+| · **PARCIAL** | 2 (1136) | **1** |
+| · no nombra NINGUNO | 11 | 13 |
+| · NO PUDE MEDIR | 0 | 0 |
+| «ofrece todo» sólo por envoltorio | — | 8 |
+
+- **SCRUM-1136 real** (`POST /admin/customers/import`): **ofrece todo**. Arreglado por efecto.
+- **El único PARCIAL, `POST /admin/quotes/:id/archivar` · `ESTADOS_ARCHIVABLES`, falta `expired`:
+  falso positivo, revisado a mano.** La ruta no lee cuerpo (`quotesDetailView.js:229` manda
+  `{ method: 'POST' }`); `archivado.ts:9` se compara con el `status` GUARDADO, y el botón se ofrece
+  en cualquier estado (decide el 409). Lo que nombra la pantalla (`draft`, `rejected`) está ahí
+  por otro motivo.
+- **Los 13 «no nombra NINGUNO»:** los 11 del 28-sep siguen con su veredicto (el
+  `customerCreateSchema` de `POST /admin/customers` son ahora dos filas: `EMPRESA/PERSONA` es el
+  `contactKind` del componente, y `NINGUNA/QUINCENAL/MENSUAL` es la variante «sólo al editar»).
+  Los 2 nuevos son `ESTADOS_PARTE` en `POST /admin/partes/:id/firmar-tecnico` (`partes.routes.ts:660`)
+  y `…/firmar` (`:735`): **estado interno del parte, por analogía con el PATCH del 28-sep; no
+  abiertos uno a uno.**
+- **Los 8 «sólo por envoltorio»** son `POST /quote/create` (5 vocabularios), `PUT /admin/merchant`
+  (2) y `POST /admin/customers` (`PARTICULAR/EMPRESARIO`): la llamada vive en `api.js` y los
+  valores en las vistas. Es el caso para el que existe el salto; **no los he abierto uno a uno**.
+
+### La respuesta a «¿cuántas?», hoy
+
+**0** rutas con la forma de 1136, sobre 55 pares de 71 vocabularios, con el positivo sembrado
+saliendo y la gemela sin salir. Las 2 variantes «sólo al editar» del 28-sep siguen:
+`POST /admin/customers` · `billingPeriodicity` y `POST /admin/partes` · `tipo`. Carril medido con
+`carriles.mjs de`: `customersAdmin.routes.ts` y `customersView.js` son **J2**; `partes.routes.ts` es
+**S1** y `jobDetailView.js` **S2** (equipo de Luis). Son decisión de producto, no defecto: no se tocan.
+(Primero lo escribí «J2/J1» sin consultar; lo cacé al correrlo.)
+
+### ⚠️ Lo que sigue sin verse
+
+Todo lo declarado el 28-sep, y además: el salto por envoltorio **casa por nombre de función**, así
+que una pantalla ajena con una función homónima cuenta como llamadora (medido con la siembra). El
+cubo de 8 lo pone a la vista; no lo resuelve.
