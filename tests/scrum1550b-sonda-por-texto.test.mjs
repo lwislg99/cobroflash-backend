@@ -27,6 +27,16 @@ import { fileURLToPath } from 'node:url';
 import { lineaCuenta, SEMILLA_RUTA, FICHERO_RUTA } from '../docs/master/evidencias/SCRUM-1550/contenido.mjs';
 import { reMencion } from '../scripts/abierto-con-trabajo-en-main.mjs';
 
+// Vistas en ROJO a mano el 24-oct sobre 91f0cfaa8 (registro, tramo 1550b): cada una tumba lo que dice `cae`.
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  { fichero: 'docs/master/evidencias/SCRUM-1550/contenido.mjs', de: '  if (reMencion(n).test(texto)) return false;', a: '  if (reMencion(n).test(linea)) return false;',
+    cae: '① cuenta la línea limpia aunque su RUTA nombre el ticket' },
+  { fichero: 'docs/master/evidencias/SCRUM-1550/contenido.mjs', de: '  if (reMencion(n).test(texto)) return false;', a: '',
+    cae: '① descarta la línea que solo NOMBRA el ticket' },
+  { fichero: 'docs/master/evidencias/SCRUM-1550/semilla-ruta-SCRUM-9997.txt', de: 'SCRUM-9997 semilla-del-control-de-ruta-scrum1550b', a: 'semilla-del-control-de-ruta-scrum1550b',
+    cae: '② el instrumento: control RUTA sembrada' },
+];
+
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SONDA = path.join(RAIZ, 'docs/master/evidencias/SCRUM-1550/contenido.mjs');
 const DDL = 'ALTER TABLE "public"."invoices" ADD CONSTRAINT "invoices_rectifies_id_fkey" FOREIGN KEY ("rectifies_id")';
