@@ -24,12 +24,12 @@ import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { lineaCuenta, SEMILLA_RUTA, FICHERO_RUTA } from '../docs/master/evidencias/SCRUM-1550/contenido.mjs';
+import { lineaCuenta, partirLinea, SEMILLA_RUTA, FICHERO_RUTA } from '../docs/master/evidencias/SCRUM-1550/contenido.mjs';
 import { reMencion } from '../scripts/abierto-con-trabajo-en-main.mjs';
 
-// Vistas en ROJO a mano el 24-oct sobre 91f0cfaa8 (registro, tramo 1550b): cada una tumba lo que dice `cae`.
+// Vistas en ROJO a mano el 24-oct (registro, tramo 1550b): cada una tumba lo que dice `cae`.
 export const MUTACIONES_QUE_ME_TUMBAN = [
-  { fichero: 'docs/master/evidencias/SCRUM-1550/contenido.mjs', de: '  if (reMencion(n).test(texto)) return false;', a: '  if (reMencion(n).test(linea)) return false;',
+  { fichero: 'docs/master/evidencias/SCRUM-1550/contenido.mjs', de: '  if (reMencion(n).test(texto)) return false;', a: '  if (reMencion(n).test(ruta + texto)) return false;',
     cae: '① cuenta la línea limpia aunque su RUTA nombre el ticket' },
   { fichero: 'docs/master/evidencias/SCRUM-1550/contenido.mjs', de: '  if (reMencion(n).test(texto)) return false;', a: '',
     cae: '① descarta la línea que solo NOMBRA el ticket' },
@@ -39,24 +39,30 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SONDA = path.join(RAIZ, 'docs/master/evidencias/SCRUM-1550/contenido.mjs');
-// Las líneas son FABRICADAS, con un ticket inventado (9996) y rutas que no existen: una ruta real con su
-// número de línea sería un anclaje por posición (scrum710b), y el fichero de 1310c lo será el día que entre.
+// Los datos son FABRICADOS, con un ticket inventado (9996) y rutas que no existen; van ya partidos en
+// `{ ruta, texto }`, sin número de línea, porque «ruta:nº» es la forma de un anclaje por posición (scrum710b).
 const DDL = 'ALTER TABLE "public"."t" ADD CONSTRAINT "t_x_fkey" FOREIGN KEY ("x")';
+const cuenta = (ruta, texto) => lineaCuenta({ ruta, texto }, 9996);
+
+test('① parte la línea de git grep en ruta y texto, y el texto puede llevar dos puntos', () => {
+  assert.deepEqual(partirLinea(`docs/sql/scrum-9996c-inventado.sql:46:-- a: ${DDL}`), { ruta: 'docs/sql/scrum-9996c-inventado.sql', texto: `-- a: ${DDL}` });
+  assert.equal(partirLinea('sin formato de git grep'), null);
+  assert.equal(lineaCuenta(partirLinea('sin formato de git grep'), 9996), false);
+});
 
 test('① cuenta la línea limpia aunque su RUTA nombre el ticket (la forma del caso de 1310c)', () => {
-  assert.equal(lineaCuenta(`docs/sql/scrum-9996c-inventado.sql:46:${DDL}`, 9996), true);
-  assert.equal(lineaCuenta(`tests/scrum9996b-inventado.test.mjs:3:${DDL}`, 9996), true);
+  assert.equal(cuenta('docs/sql/scrum-9996c-inventado.sql', DDL), true);
+  assert.equal(cuenta('tests/scrum9996b-inventado.test.mjs', DDL), true);
   // la frontera del número: las evidencias de OTRO ticket que empieza igual no son las suyas
-  assert.equal(lineaCuenta(`docs/master/evidencias/SCRUM-99960/inventado.txt:1:${DDL}`, 9996), true);
+  assert.equal(cuenta('docs/master/evidencias/SCRUM-99960/inventado.txt', DDL), true);
 });
 
 test('① descarta la línea que solo NOMBRA el ticket, y la de su registro o sus evidencias', () => {
-  assert.equal(lineaCuenta(`docs/sql/inventado.sql:9:-- pendiente de SCRUM-9996: ${DDL}`, 9996), false);
-  assert.equal(lineaCuenta('docs/sql/inventado.sql:9:ver scrum-9996 c.1', 9996), false);
-  assert.equal(lineaCuenta(`docs/master/SCRUM-9996.md:12:${DDL}`, 9996), false);
-  assert.equal(lineaCuenta(`docs/master/evidencias/SCRUM-9996/inventado.txt:4:${DDL}`, 9996), false);
-  assert.equal(lineaCuenta(`docs/master/evidencias/SCRUM-9996b/inventado.txt:4:${DDL}`, 9996), false);
-  assert.equal(lineaCuenta('sin formato de git grep', 9996), false);
+  assert.equal(cuenta('docs/sql/inventado.sql', `-- pendiente de SCRUM-9996: ${DDL}`), false);
+  assert.equal(cuenta('docs/sql/inventado.sql', 'ver scrum-9996 c.1'), false);
+  assert.equal(cuenta('docs/master/SCRUM-9996.md', DDL), false);
+  assert.equal(cuenta('docs/master/evidencias/SCRUM-9996/inventado.txt', DDL), false);
+  assert.equal(cuenta('docs/master/evidencias/SCRUM-9996b/inventado.txt', DDL), false);
 });
 
 test('② el instrumento: control RUTA sembrada SCRUM-9997 → 1 de 1, y sale 0', () => {

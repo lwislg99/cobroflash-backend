@@ -56,16 +56,21 @@ export const SEMILLA_RUTA = 'semilla-del-control-de-ruta-scrum1550b';
 export const FICHERO_RUTA = 'semilla-ruta-SCRUM-9997.txt';
 const EXCLUIR = [`:(exclude)${AQUI}/**`, ':(exclude)docs/master/evidencias/SCRUM-1496/**', ':(exclude)docs/master/evidencias/SCRUM-1496b/**'];
 
-/**
- * Pura. ¿Esta línea de `git grep` (`ruta:nº:texto`) cuenta como prueba del ticket `n`? No cuenta si su
- * TEXTO nombra el ticket (citarlo no es hacerlo) ni si vive en su registro o sus evidencias, que hablan de
- * él. La RUTA no descarta por sí sola: `docs/sql/scrum-1310c-….sql` ES el trabajo de 1310 (SCRUM-1550b;
- * hasta entonces el filtro miraba la línea entera, ruta incluida, y esa sonda no podía salir nunca).
- */
-export function lineaCuenta(linea, n) {
+/** Pura. Una línea de `git grep -n` (`ruta:nº:texto`) en sus partes; `null` si no tiene esa forma. */
+export function partirLinea(linea) {
   const m = /^(.*?):(\d+):(.*)$/s.exec(linea);
-  if (!m) return false;
-  const [, ruta, , texto] = m;
+  return m ? { ruta: m[1], texto: m[3] } : null;
+}
+
+/**
+ * Pura. ¿Esta línea, ya partida, cuenta como prueba del ticket `n`? No cuenta si su TEXTO nombra el
+ * ticket (citarlo no es hacerlo) ni si vive en su registro o sus evidencias, que hablan de él. La RUTA no
+ * descarta por sí sola: `docs/sql/scrum-1310c-….sql` ES el trabajo de 1310 (SCRUM-1550b; hasta entonces
+ * el filtro miraba la línea entera, ruta incluida, y esa sonda no podía salir nunca).
+ */
+export function lineaCuenta(partes, n) {
+  if (!partes) return false;
+  const { ruta, texto } = partes;
   if (reMencion(n).test(texto)) return false;
   return !new RegExp(`^docs/master/(?:SCRUM-${n}\\.md$|evidencias/SCRUM-${n}(?![0-9])[^/]*/)`, 'i').test(ruta);
 }
@@ -117,7 +122,7 @@ function principal(argv) {
         // La semilla se busca en el ÁRBOL DE TRABAJO (`--untracked`), no en `sha`: el commit medido es anterior a ella.
         const g = git(['grep', '-n', '-I', ...(s.semilla ? ['--untracked'] : []), s.fijo ? '-F' : '-E', ...(s.i ? ['-i'] : []), '-e', s.patron, ...(s.semilla ? [] : [sha]), '--', ...s.rutas, ...excl]);
         if (!g.ok) { s.aciertos = null; s.nota = 'git grep no contestó'; continue; }
-        const lineas = g.out.split('\n').filter(Boolean).map((l) => (s.semilla ? l : l.slice(sha.length + 1))).filter((l) => lineaCuenta(l, t.n));
+        const lineas = g.out.split('\n').filter(Boolean).map((l) => (s.semilla ? l : l.slice(sha.length + 1))).filter((l) => lineaCuenta(partirLinea(l), t.n));
         s.aciertos = lineas.length;
         s.primera = lineas[0] ? lineas[0].replace(/^([^:]+:\d+):.*$/, '$1') : '';
         // El TEXTO del acierto va en la tabla, porque un número de aciertos no dice QUÉ casó. Medido en la
