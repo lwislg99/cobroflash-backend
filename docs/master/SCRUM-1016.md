@@ -960,3 +960,32 @@ Los cinco guiones no se reescriben. Re-medidos hoy, los cinco siguen prometiendo
 
 - No toqué `public/` ni transicioné el ticket (A13/A18).
 - Suite entera local: NO CORRIDA (hoy hay 10 sesiones a la vez). Corrí los guards dirigidos; el obligatorio de CI hace de tanda.
+
+# APÉNDICE · 24-oct-2026 · SCRUM-1016q · La demo animada de la A22 termina en «Firmado»
+
+**Medido contra:** `origin/main` = `67f0c66833f8996399e79abff0a9f4e5c90217b4` · 2026-10-24T15:20:39Z
+**Rama:** `scrum-1016q-a22-firmado`, sale de `origin/scrum-1016p-master-regla-24` = `77b1c3830587f619da9a0de82d2d02f247168efc` (#2847, abierto al ramificar): **este PR depende de #2847**, que toca la misma línea `:444`. **Puesto:** J4 (sesión `jv-j4ag`) · **Skill UI:** no cargada · no toca `public/`: sólo lo lee.
+**Carril:** `docs/YAQU_MASTER.md` sin cerradura, lo edita **un jefe**: el encargo lo da el orquestador `cobroflash-backend-95` como jefe, mismo precedente que 1016p.
+**No toca** `public/`, `src/`, el camino de emisión, el esquema ni ninguna base.
+
+A9: sin fallo que generalice — el cambio es una sola frase copiada de lo servido; la cita se cotejó contra `public/index.html` y contra la landing bajada de yaqu.app antes de escribirla, y no hubo tropiezo que convertir.
+
+## Encargo
+
+Aplicar la decisión del fundador de SCRUM-1016 c.20806 («Sí»), que responde a la pregunta de c.20805 (1016p): en N5 A22 la demo animada termina en «Firmado», que es lo que sirve hoy, y no en «→cobrado».
+
+## Lo servido, citado
+
+- Último paso de la animación, `public/index.html:448`: «Firmado. Presupuesto cerrado.» (pasos: «Presupuesto en 30 segundos» · «Enviado por WhatsApp» · «Tu cliente firma» · «Firmado. Presupuesto cerrado.»).
+- Aviso final, `public/index.html:480`: «Firmado · 961,95 €».
+- yaqu.app bajado a las 15:20:11Z (cabecera `Date`): 89.737 B; «Firmado · …961,95 €» sale 1 vez, «Del presupuesto a la firma» 5 veces (control positivo) y «cobrado» 0 veces.
+
+## Lo aplicado en el máster — 1 línea, editada en sitio
+
+`:444`: «(presupuesto→WhatsApp→firma→cobrado)» pasa a «(presupuesto→WhatsApp→firma→firmado)», con la nota *(SCRUM-1016: … c.20806, 24-oct-2026. Antes decía «→cobrado».)*. El máster tiene 1.913 líneas antes y después; `git diff -U0` da un trozo de una línea (`@@ -444 +444 @@`). El resto de la línea, incluida la nota de 1016p, queda igual.
+
+## Qué NO hice
+
+- No toqué la landing ni ninguna otra línea del máster, ni transicioné el ticket (A13).
+- Jira: leí enteros c.19607, c.19608, c.20752, c.20778, c.20805, c.20806 y c.20809. Los once comentarios de septiembre (c.16200–c.16648) los barrí por «A22», «cobrado» y «animaci», no línea a línea.
+- Suite entera local: NO CORRIDA (hoy hay 10 sesiones a la vez). Corrí los guards dirigidos; el obligatorio de CI hace de tanda.
