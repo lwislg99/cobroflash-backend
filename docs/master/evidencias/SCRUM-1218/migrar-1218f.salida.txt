@@ -1,0 +1,7 @@
+scrum127-paywall-bloquea: fetch( 6 → 0 · llamadas a pedirSinAgente( 6 · imports hasta la línea 28
+scrum170-facturacion-parcial: fetch( 5 → 0 · llamadas a pedirSinAgente( 5 · imports hasta la línea 20
+scrum171a-consolidar-cliente: fetch( 4 → 0 · llamadas a pedirSinAgente( 4 · imports hasta la línea 16
+scrum73-verifactu-gate: fetch( 4 → 0 · llamadas a pedirSinAgente( 4 · imports hasta la línea 10
+scrum90-pay-bank-mp-token: fetch( 6 → 0 · llamadas a pedirSinAgente( 6 · imports hasta la línea 17
+tenancy-permisos: fetch( 7 → 0 · llamadas a pedirSinAgente( 7 · imports hasta la línea 22
+POBLACION=6 ficheros · malos=0 · EXIT=0

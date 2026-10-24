@@ -29,7 +29,12 @@ const CLI = path.join(RAIZ, 'scripts', 'go-live', 'puerta.mjs');
 const TOTAL = 23;
 // Las cerradas, una por línea. Sólo crece: una entrada cerrada no se reabre sin decirlo aquí.
 const CERRADAS = [
+  2,
+  3,
   4,
+  7,
+  8,
+  14,
 ];
 
 // ── la lista de verdad ──────────────────────────────────────────────────────

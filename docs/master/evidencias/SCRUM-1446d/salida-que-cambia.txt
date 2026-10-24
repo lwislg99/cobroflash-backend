@@ -1,0 +1,56 @@
+casos: 27321 · distintos: 33 · con otra ESTRUCTURA (campos o líneas de más o de menos): 0
+hojas distintas: 69
+
+TROZO MÍNIMO QUE CAMBIA (antes -> después) · veces
+  "8" -> "7,5" · 41
+  "8%368,63 EURIVA 8" -> "7,5%368,63 EURIVA 7,5" · 1
+  "8%1.064,07 EURIVA 8" -> "7,5%1.064,07 EURIVA 7,5" · 1
+  "8%855,06 EURIVA 8" -> "7,5%855,06 EURIVA 7,5" · 1
+  "8%213,33 EURIVA 8" -> "7,5%213,33 EURIVA 7,5" · 1
+  "8%403,23 EURIVA 8" -> "7,5%403,23 EURIVA 7,5" · 1
+  "8%453,10 EURIVA 8" -> "7,5%453,10 EURIVA 7,5" · 1
+  "8%657,03 EURIVA 8" -> "7,5%657,03 EURIVA 7,5" · 1
+  "8%219,06 EURIVA 8" -> "7,5%219,06 EURIVA 7,5" · 1
+  "8%446,45 EURIVA 8" -> "7,5%446,45 EURIVA 7,5" · 1
+  "8%109,86 EURIVA 8" -> "7,5%109,86 EURIVA 7,5" · 1
+  "8%408,60 EURIVA 8" -> "7,5%408,60 EURIVA 7,5" · 1
+  "8%249,52 EURIVA 8" -> "7,5%249,52 EURIVA 7,5" · 1
+  "8%11,92 EURIVA 8" -> "7,5%11,92 EURIVA 7,5" · 1
+  "8%336,94 EURIVA 8" -> "7,5%336,94 EURIVA 7,5" · 1
+  "8%316,99 EURIVA 8" -> "7,5%316,99 EURIVA 7,5" · 1
+  "8%1.291,71 EURIVA 8" -> "7,5%1.291,71 EURIVA 7,5" · 1
+  "8%135,06 EURIVA 8" -> "7,5%135,06 EURIVA 7,5" · 1
+  "8%610,71 EURIVA 8" -> "7,5%610,71 EURIVA 7,5" · 1
+  "8%235,83 EURIVA 8" -> "7,5%235,83 EURIVA 7,5" · 1
+  "8%244,08 EURIVA 8" -> "7,5%244,08 EURIVA 7,5" · 1
+  "8%668,32 EURIVA 8" -> "7,5%668,32 EURIVA 7,5" · 1
+  "8%660,18 EURIVA 8" -> "7,5%660,18 EURIVA 7,5" · 1
+  "8%111,52 EURIVA 8" -> "7,5%111,52 EURIVA 7,5" · 1
+  "8%1.804,77 EURIVA 8" -> "7,5%1.804,77 EURIVA 7,5" · 1
+  "8%77,23 EURIVA 8" -> "7,5%77,23 EURIVA 7,5" · 1
+  "8%411,09 EURIVA 8" -> "7,5%411,09 EURIVA 7,5" · 1
+  "8%204,76 EURIVA 8" -> "7,5%204,76 EURIVA 7,5" · 1
+  "8%190,61 EURIVA 8" -> "7,5%190,61 EURIVA 7,5" · 1
+
+EN QUÉ CAMPO
+  /salida/# · 69
+
+EJEMPLOS (campo · antes · después)
+  /salida/8
+    - L1Z1,00100,008%107,50
+    + L1Z1,00100,007,5%107,50
+  /salida/10
+    - IVA 8%:7,50 EUR
+    + IVA 7,5%:7,50 EUR
+  /salida/9
+    - L2Z1,00368,638%396,28
+    + L2Z1,00368,637,5%396,28
+  /salida/14
+    - 8%368,63 EURIVA 8%:27,65 EUR
+    + 7,5%368,63 EURIVA 7,5%:27,65 EUR
+  /salida/8
+    - L1Z3,00175,648%566,44
+    + L1Z3,00175,647,5%566,44
+  /salida/10
+    - IVA 8%:39,52 EUR
+    + IVA 7,5%:39,52 EUR

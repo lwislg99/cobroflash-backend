@@ -192,6 +192,7 @@ export interface DatosProveedor {
  *      «compré diez cosas» teniendo 190 sin clasificar.
  *
  * ✅ MICROCOPY APROBADA por el fundador el 10-ago-2026, los tres textos tal cual se propusieron.
+ * Consta en: SCRUM-1502 comentario 20702.
  * Por eso van SIN `MARCA_PENDIENTE`: el marcador es para lo que espera aprobación, y dejarlo
  * puesto sobre texto ya aprobado haría que dejara de significar nada — que es como muere un
  * marcador. El de las CABECERAS sigue siendo otra cosa y no se toca aquí.

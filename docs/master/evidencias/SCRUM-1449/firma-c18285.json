@@ -1,0 +1,9 @@
+{
+  "fuente": "Jira SCRUM-1449, comentario 18285 (Luis Lara, 2026-10-06T13:10:32.316+0200), leído en ADF por getJiraIssue el 2026-10-23 por jv-j2x",
+  "nota": "Los tres nodos de texto ADF tal como los devolvió la herramienta; el test extrae de aquí los literales, no los teclea.",
+  "nodos": {
+    "503_blockquote": {"type":"blockquote","content":[{"type":"paragraph","content":[{"type":"text","text":"Ahora mismo no se puede pagar con Mercado Pago. Contacta con el profesional."}]}]},
+    "502_texto": {"type":"text","text":", 502): el texto de hoy («Error al conectar con Mercado Pago. Inténtalo de nuevo.») "},
+    "pending_blockquote": {"type":"blockquote","content":[{"type":"paragraph","content":[{"type":"text","text":"Tu pago está siendo procesado."}]}]}
+  }
+}

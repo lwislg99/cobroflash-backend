@@ -1,0 +1,44 @@
+⟦arranque⟧ 0.8 s COMPLETA · proceso+ws 0.8 s · primera-página 0.0 s
+navegador: Edg/155.0.4283.62 · plataforma win32
+A · banco del guard táctil (sin inter.css, tipos del guard)
+   pide: Inter, system-ui, -apple-system, sans-serif
+   USA: Segoe UI ×27
+   inter.css enlazada: false · caras Inter: 0 (cargadas 0, error 0) · fonts.check: true
+   alto de la caja .input: 36 px
+B · banco + inter.css, woff2 servido como octet-stream (tipos del guard)
+   pide: Inter, system-ui, -apple-system, sans-serif
+   USA: Inter (web) ×27
+   inter.css enlazada: true · caras Inter: 35 (cargadas 1, error 0) · fonts.check: true · woff2 pedidos: /fonts/inter-latin.woff2
+   alto de la caja .input: 34 px
+C · banco + inter.css, woff2 como font/woff2  [POSITIVO SEMBRADO]
+   pide: Inter, system-ui, -apple-system, sans-serif
+   USA: Inter (web) ×27
+   inter.css enlazada: true · caras Inter: 35 (cargadas 1, error 0) · fonts.check: true · woff2 pedidos: /fonts/inter-latin.woff2
+   alto de la caja .input: 34 px
+D · landing real public/index.html (sin JS, campo inyectado)
+   pide: Arial
+   USA: Inter (web) ×27
+   inter.css enlazada: true · caras Inter: 35 (cargadas 4, error 0) · fonts.check: true · woff2 pedidos: /fonts/inter-latin.woff2
+   alto de la caja .input: 21 px
+E · login real public/login.html (sin JS, campo inyectado)
+   pide: Inter, system-ui, -apple-system, sans-serif
+   USA: Inter (web) ×27
+   inter.css enlazada: true · caras Inter: 35 (cargadas 4, error 0) · fonts.check: true · woff2 pedidos: /fonts/inter-latin.woff2
+   alto de la caja .input: 45 px
+F · panel real public/dashboard/index.html (sin JS, campo inyectado)
+   pide: Inter, system-ui, -apple-system, sans-serif
+   USA: Inter (web) ×27
+   inter.css enlazada: true · caras Inter: 35 (cargadas 4, error 0) · fonts.check: true · woff2 pedidos: /fonts/inter-latin.woff2
+   alto de la caja .input: 34 px
+G · https://yaqu.app/ (producción, sin JS, campo inyectado)
+   pide: Arial
+   USA: Inter (web) ×27
+   inter.css enlazada: true · caras Inter: 35 (cargadas 4, error 0) · fonts.check: true
+   alto de la caja .input: 21 px
+H · https://yaqu.app/login.html (producción, sin JS, campo inyectado)
+   pide: Inter, system-ui, -apple-system, sans-serif
+   USA: Inter (web) ×27
+   inter.css enlazada: true · caras Inter: 35 (cargadas 4, error 0) · fonts.check: true
+   alto de la caja .input: 45 px
+
+controles: positivo C pinta Inter · negativo A no la pinta → la sonda discrimina

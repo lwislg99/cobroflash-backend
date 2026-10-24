@@ -1,0 +1,29 @@
+﻿scrum813-trinquete-de-zona.test.mjs: 26 mutaciones declaradas
+limpia: 48 pasados · 0 caídos · 0 saltados · 14494 ms
+  #1 VIVA · el trinquete HABLA: un test que depende de la zona sale denunciado · 14141 ms
+  #2 VIVA · el trinquete NO denuncia a los tests que YA fijan su zona · 18716 ms
+  #3 VIVA · SUELO: la zona LLEGA al proceso hijo, y se comprueba antes de medir · 5978 ms
+  #4 VIVA · una CENSADA que deja de cambiar de veredicto pone el trinquete en ROJO · 18393 ms
+  #5 VIVA · SUELO: CERO dependientes teniendo censadas NO es un cero — es CIEGO · 20201 ms
+  #6 VIVA · SUELO: si el detalle por ruta NO ve nada pero la huella global cambió, sigue siendo CIEGO · 17486 ms
+  #7 VIVA · EL QUE DECIDE: un fichero de TEST tocado durante la medición sigue siendo CIEGO · 16336 ms
+  #8 VIVA · la marca REAL trae el detalle, y cuadra con lo que dice git · 14853 ms
+  #9 VIVA · EL QUE DECIDE: un fichero de TEST tocado a mano DURANTE la medición sigue siendo CIEGO · 14511 ms
+  #10 VIVA · con la lista VACÍA nada se ampara: cualquier ruta sigue cegando · 16672 ms
+  #11 VIVA · POSITIVO: la tanda escribiendo LO SUYO no ciega — el trinquete EMITE veredicto · 13606 ms
+  #12 VIVA · «ausente» NO es un veredicto: pasa en una zona y falta en la otra NO acusa · 13858 ms
+  #13 VIVA · ② lo que no se pudo comparar se CUENTA, con su zona: no desaparece · 8075 ms
+  #14 VIVA · ① una caída REAL cuyo resultado SE PIERDE sigue cambiando: lo dice el fichero · 14077 ms
+  #15 VIVA · una prueba que cae en las DOS zonas y pierde un resultado NO acusa a la zona · 14096 ms
+  #16 VIVA · ① una diferencia VISTA en la tanda que a solas no se pudo comparar QUEDA EN PIE · 15350 ms
+  #17 VIVA · la repesca por el FICHERO: confirma a la que cambiaba, y nunca a la que sólo faltaba · 17313 ms
+  #18 VIVA · ③ la repesca COMPARA lo que la tanda no pudo: lo que a solas da igual sale de la cuenta · 13916 ms
+  #19 VIVA · ② el VERDE lleva consigo lo que no pudo comparar, y sigue siendo verde · 13531 ms
+  #20 VIVA · una CENSADA que no se pudo comparar no está viva ni apagada: es CIEGO · 13780 ms
+  #21 VIVA · un CANARIO que no se pudo comparar no aprueba el autocontrol · 15134 ms
+  #22 VIVA · ① lo que la tanda no pudo comparar y a solas CAMBIA es un hallazgo · 16777 ms
+  #23 VIVA · SEMBRADO: un cuelgue en una zona sola se CORTA y no acusa a nadie · 14417 ms
+  #24 VIVA · SEMBRADO: el `describe` de un test cortado sale cortado, no caído · 14594 ms
+  #25 VIVA · `cortada` no es un veredicto: frente a un `pass` NO acusa · 14636 ms
+  #26 VIVA · lo que a solas se vuelve a CORTAR sigue sin comparar · 14813 ms
+RESUMEN scrum813-trinquete-de-zona.test.mjs: vivas 26 · mudas 0 · ciegas 0 · muertos 0

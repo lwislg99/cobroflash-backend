@@ -36,6 +36,7 @@ import {
   TRIPLETAS, CASILLA_TOTAL_CUOTA_DEVENGADA, tripletaDe,
   CASILLAS_DEDUCIBLE_CORRIENTES, CASILLAS_DEDUCIBLE_BIENES_INVERSION,
   CASILLA_TOTAL_A_DEDUCIR, CASILLA_RESULTADO_REGIMEN_GENERAL,
+  CASILLA_SUMA_DE_RESULTADOS, CASILLAS_RESULTADO_VACIAS,
 } from './casillas';
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -54,7 +55,33 @@ export interface OperacionSinClasificar {
   tipo: number;
   base: number;
   cuota: number;
-  motivo: 'tipo_cero' | 'tipo_sin_casilla';
+  /**
+   * SCRUM-1063c · `suplido`: la parte al 0 % que son suplidos (`asiento.suplidosPorTipo`). No es una
+   * exenta ni una ISP: es dinero ajeno fuera de la base (`suplidos.ts`). Sigue sin casilla, y sigue
+   * dentro del libro (c.20717: esperar a la emisión), así que el invariante no cambia.
+   */
+  motivo: 'tipo_cero' | 'tipo_sin_casilla' | 'suplido';
+}
+
+/**
+ * SCRUM-1063c · una casilla del «Resultado» que el borrador deja VACÍA, con su porqué como dato.
+ * Los códigos son datos, no textos para pintar (regla 39).
+ */
+export interface CasillaVacia {
+  casilla: number;
+  motivo:
+    | 'porcentaje_atribuible_no_consta'      // 65
+    | 'depende_de_la_65'                     // 66
+    | 'regularizacion_anual_foral_no_consta' // 68
+    | 'depende_de_la_66'                     // 69
+    | 'autoliquidacion_anterior_no_consta'   // 70
+    | 'depende_de_la_69';                    // 71
+}
+
+export interface ResultadoFinal {
+  /** La 64 = 46 (decisión del fundador, SCRUM-1063 c.20717): la 58 y la 76 no se rellenan. */
+  sumaDeResultados: { casilla: number; valor: number };
+  vacias: CasillaVacia[];
 }
 
 export interface CruceConCobros {
@@ -124,6 +151,8 @@ export interface Modelo303 {
   ivaDeducible: IvaDeducible;
   /** SCRUM-1063b · la 46 = 27 − 45. Si algo quedó sin clasificar, `motivosParaNoFiarse` lo dice. */
   resultadoRegimenGeneral: { casilla: number; valor: number };
+  /** SCRUM-1063c · la 64 y las 65-71 vacías con su motivo. */
+  resultadoFinal: ResultadoFinal;
   miradas: number;
   asientos: number;
   motivosParaNoFiarse: string[];
@@ -168,8 +197,10 @@ function constaCobrado(estado: string | null): boolean {
  * apartan. Decisión A del orquestador (SCRUM-1063b, 25-sep-2026): solo «herramientas» es ambigua
  * entre corriente e inversión; el resto va a la 28/29. Una categoría que no esté aquí ni sea
  * «herramientas» (una nueva, o ninguna) NO se coloca: se declara.
+ * SCRUM-1066e · «alquiler» (el del local) es corriente: decisión del fundador, SCRUM-1066 c.20497
+ * («Sí, como gasto corriente»), en la lista del asesor para confirmación.
  */
-const CATEGORIAS_CORRIENTES: ReadonlySet<string> = new Set(['materiales', 'desplazamiento', 'subcontrata', 'otros']);
+const CATEGORIAS_CORRIENTES: ReadonlySet<string> = new Set(['materiales', 'desplazamiento', 'subcontrata', 'otros', 'alquiler']);
 const CATEGORIA_AMBIGUA = 'herramientas';
 
 /**
@@ -259,10 +290,26 @@ export function construirModelo303(params: {
       continue;
     }
 
+    // SCRUM-1063c · cuánto de lo que va al 0 % son suplidos. `null` (marca ilegible) no aparta
+    // nada: se queda como hasta ahora, `tipo_cero`, que ya dice «sin calificación».
+    let suplidoAlCero = r2((a.suplidosPorTipo ?? []).filter((s) => s.tipo === 0).reduce((s, x) => s + x.base, 0));
+
     let cuotaDelAsiento = 0;
     for (const e of a.porTipo) {
       cuotaDelAsiento += e.cuota;
       const tripleta = tripletaDe(e.tipo);
+      if (!tripleta && e.tipo === 0 && suplidoAlCero !== 0 && Math.sign(suplidoAlCero) === Math.sign(e.base)) {
+        // Lo que se aparta como suplido sale de ESTA entrada y el resto se queda en `tipo_cero`:
+        // restando, no recalculando, para que la suma siga siendo la del libro al céntimo.
+        const suplido = Math.sign(e.base) * Math.min(Math.abs(suplidoAlCero), Math.abs(e.base));
+        suplidoAlCero = r2(suplidoAlCero - suplido);
+        sinClasificar.push({ numero: a.numero, tipo: 0, base: r2(suplido), cuota: 0, motivo: 'suplido' });
+        const resto = r2(e.base - suplido);
+        if (resto !== 0 || e.cuota !== 0) {
+          sinClasificar.push({ numero: a.numero, tipo: 0, base: resto, cuota: e.cuota, motivo: 'tipo_cero' });
+        }
+        continue;
+      }
       if (!tripleta) {
         // Tipo 0 → no se puede saber si es exenta, no sujeta o ISP (SCRUM-212): sin calificación
         // en la factura, cualquier casilla sería inventada.
@@ -324,9 +371,13 @@ export function construirModelo303(params: {
   if (sinDesglose.length > 0) {
     motivosParaNoFiarse.push(`${sinDesglose.length} ${sinDesglose.length === 1 ? 'factura sin desglose no se ha podido declarar' : 'facturas sin desglose no se han podido declarar'}`);
   }
-  if (sinClasificar.length > 0) {
+  // SCRUM-1063c · el texto dice «exenta / no sujeta / ISP»: un suplido no es nada de eso, así que
+  // no se cuenta aquí. Su aviso propio necesita un literal firmado (regla 39) y NO está escrito:
+  // mientras, el suplido viaja como dato en `sinClasificar` con `motivo: 'suplido'`.
+  const sinCalificacion = sinClasificar.filter((o) => o.motivo !== 'suplido').length;
+  if (sinCalificacion > 0) {
     motivosParaNoFiarse.push(
-      `${sinClasificar.length} operación(es) sin calificación fiscal (exenta / no sujeta / ISP) no entran en ninguna casilla`,
+      `${sinCalificacion} operación(es) sin calificación fiscal (exenta / no sujeta / ISP) no entran en ninguna casilla`,
     );
   }
   if (params.libro.importesIlegibles.length > 0) {
@@ -348,6 +399,8 @@ export function construirModelo303(params: {
   }
   // Las 30/31 vacías NO van aquí: estarían SIEMPRE, y un motivo que salta en todos los trimestres
   // deja de leerse. Su porqué viaja en `ivaDeducible.bienesDeInversion.vaciaPorque`.
+  // Lo mismo las 65-71 (SCRUM-1063c): su porqué viaja en `resultadoFinal.vacias`.
+  const resultado46 = r2(totalCuota - ivaDeducible.casillaTotalADeducir.valor);
 
   return {
     año: params.año,
@@ -373,7 +426,11 @@ export function construirModelo303(params: {
     ivaDeducible,
     resultadoRegimenGeneral: {
       casilla: CASILLA_RESULTADO_REGIMEN_GENERAL,
-      valor: r2(totalCuota - ivaDeducible.casillaTotalADeducir.valor),
+      valor: resultado46,
+    },
+    resultadoFinal: {
+      sumaDeResultados: { casilla: CASILLA_SUMA_DE_RESULTADOS, valor: resultado46 },
+      vacias: CASILLAS_RESULTADO_VACIAS.map((v) => ({ ...v })),
     },
     miradas: params.libro.miradas,
     asientos: params.libro.asientos.length,

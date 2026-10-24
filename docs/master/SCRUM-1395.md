@@ -263,3 +263,95 @@ heredados declarados · 0 nuevos) · 24 con suelo · 1 no filtran · población:
 - Conté los cinco casos ①②③④⑥ con una clase de caracteres en `grep` y me devolvió 21, los mismos que
   el prefijo entero: la clase casaba con todo. Repetido con cadena fija, uno por uno: ① 1 · ② 1 · ③ 1 ·
   ④ 1 · ⑥ 1 · ⑤ 16 · y un ⑦ inventado, 0.
+
+# SCRUM-1395b · 23-oct-2026 · El veredicto de `censo:mudez`, guardado en un JSON y exigido por `scrum719` (opción ②)
+
+**Medido contra:** `origin/main` = `00179a513a5fb11ca12d61fe25b1b2dec26b51ca` · 2026-10-23T09:54:08Z (al cerrar, `origin/main` iba en `a34ce744b28c389c480791158b976e2b3caf0b49`: 4 commits de `docs/`, ninguno en la población ni en los ficheros de este tramo)
+A9: comprobación → `tests/scrum719-el-suelo-de-los-doce.test.mjs`
+
+23-oct-2026 · **J6** (sesión `jv-j6ah`), por encargo del orquestador del equipo de Javier
+(`cobroflash-backend-62`). La decisión es del fundador, c.18744 («Ok que pase»). El ticket lo declaró
+J4 en c.18420; esto es un instrumento y lo construye J6. Hook de arranque: «SIN IDENTIDAD» (SCRUM-1498).
+
+## Qué se construye
+
+- `tests/_veredicto-mudez.mjs` — una pieza, dos consumidores: población (la misma lista de nombres del
+  filtro que el censo), huella (sha256 con CRLF normalizado, 16 hex), `clasificar`, `juzgarVeredicto`.
+- `tests/_veredicto-mudez.json` — 121 fichas `[clase, huella]` y la huella del filtro. Lo escribe el
+  censo; una ficha por línea y en orden, para que dos PR que miden ficheros distintos no choquen.
+- `scripts/censo-mudez.mjs --escribir` — guarda el veredicto; sin `--todo`, sólo vuelve a medir lo que
+  falta, lo caducado y lo que salió sin juzgar (todo si cambió el filtro). Sin `--escribir`, igual que antes.
+- `scrum719`, ocho casos `SCRUM-1395b · ①`…`⑧` (37 en total): ① cubre la población y al día, con la
+  línea siempre · ② ningún MUDO · ③ lo no corrido se salta diciendo los nombres · ④ el censo y la pieza
+  buscan los mismos nombres · ⑤ ⑥ ⑦ sembrados · ⑧ huella y JSON.
+
+## La salida «no se pudo correr» (condición ③ de c.18744), diseñada
+
+| qué pasa | censo | tanda |
+|---|---|---|
+| un fichero se pasa del tiempo o no ejecuta ni un test | ficha CIEGO · sale **2** | **no cae**: `# SKIP SIN JUZGAR · … (CIEGO)` en el ③, y la línea no lo cuenta como vivo |
+| un fichero ya estaba rojo antes de mutar | ficha YA ROJO | ídem (y su propio rojo ya cae aparte) |
+| la ficha falta o el fichero cambió | — | **cae** el ①: no es «no se pudo», es «no se corrió» |
+| el filtro cambió | — | cae el ①: todo caducado |
+| el censo entero no arranca (población < 20, sin firma, árbol sucio) | sale 2 o 3 y **no escribe** | la ficha sigue caducada: cae el ① |
+
+**De paso, un defecto del censo:** hasta hoy un fichero que se pasaba del tiempo con el filtro roto
+salía VIVO (`verde` falso = rojo = vivo): «no se pudo correr» se leía como el mejor veredicto. Ahora es
+CIEGO (`clasificar`; lo vigila el caso ⑥). Y CIEGO hace salir el censo con 2, no con 0.
+
+## Lo que cuesta, medido en esta máquina CARGADA (otras sesiones corriendo a la vez)
+
+| quién lo paga | población | coste |
+|---|---|---|
+| **cada tanda** (`scrum719` lee el JSON, no corre el censo) | 1.458 `*.test.mjs` leídos para la población · 121 fichas | **0,7–1,9 s** (5 pasadas, `evidencias/scrum1395/1395b/coste-en-la-tanda.mjs`); `scrum719` entero, 3,2 s |
+| **quien toca un guard de la población** | los ficheros caducados | **2 s** con uno (`ciclo-2-mudo.txt`) |
+| **quien cambia `tests/_guard-texto.mjs`** | los 121 | **516 s y 658 s** (dos pasadas completas). El 6-oct eran 213–281 s; hoy la máquina está cargada y la diferencia no se ha separado entre carga y población (119 → 121) |
+
+`tests/_guard-texto.mjs` ha cambiado 1 vez desde el 23-sep (6 en total). El fundador había aceptado
+213–281 s **por tanda**; lo que queda es ~1–2 s por tanda y los minutos sólo para quien cambia el filtro.
+
+## Verlo caer (con el árbol commiteado antes de cada inyección)
+
+Las dos pasadas completas dictan lo mismo: **121 mirados · 111 VIVO · 0 MUDO · 0 CIEGO · 10 NO APLICA
+· 0 YA ROJO**, sale 0, y el sha256 de `tests/_guard-texto.mjs` es `08264861…` antes y después de las dos
+(condición ② de c.18744, comparando CONTENIDO).
+
+| paso | `scrum719` |
+|---|---|
+| sin JSON (rojo primero) | 36 + 1 cae: ① CIEGO |
+| `scrum888b` (heredado) pierde sus aserciones con `return;` en dos tests | 36 + 1 cae: ① caducado; **el trinquete de 1395 sigue verde: era el hueco** |
+| `--escribir` → MUDO, sale 1 | 36 + 1 cae: ② «1 mudos» |
+| deshecho + `CENSO_MUDEZ_TIMEOUT_MS=1 --escribir` → CIEGO, sale 2 | 36 + 1 salto, 0 caen: ③ `# SKIP SIN JUZGAR · scrum888b (CIEGO)` |
+| `--escribir` → VIVO, sale 0 | 37 de 37; árbol idéntico al commit |
+
+Mutaciones del instrumento: M5 (`cortado` en la pasada mutada vuelve a VIVO) cae ⑥ · M6 (la huella deja
+de normalizar CRLF) cae ⑧ · M7 (la pieza pierde un nombre del filtro) cae ④. Tres de tres.
+
+## Aceptación del ticket que este tramo toca
+
+| lo que pide (literal) | dónde se ve |
+|---|---|
+| ④ hoy `censo:mudez` sale 1 nombrando `scrum589`. Después, ese 1 lo tiene que ver alguien sin correrlo a mano | `tests/scrum719-el-suelo-de-los-doce.test.mjs`, caso `SCRUM-1395b · ②` (y el ① si la ficha caducó) |
+| ⑥ La línea que sale SIEMPRE, también con cero: «N guards mirados · K mudos», con su población | caso `SCRUM-1395b · ①`: «121 guards mirados · 0 mudos · 111 vivos · 10 no aplica · 0 sin juzgar (no se pudo correr) · 0 sin medir o caducados · población: …» |
+
+## Lo que NO ve, dicho
+
+- La huella es del fichero de TEST, no de lo que lee: si cambia el código vigilado y eso vuelve mudo a un
+  guard, su ficha no caduca. Lo ve la siguiente pasada completa.
+- Un JSON escrito a mano pasa (el mismo límite que la M3 del trinquete); se ve en el diff.
+- `CENSO_MUDEZ_EN_CURSO=1` salta los casos ①②③ (los pone el censo a sus hijos). Ningún workflow lo pone hoy; no hay guard que lo impida.
+- Corrido: `scrum719`, `scrum237`, `scrum976`, `scrum1415`, `scrum1185`, `scrum411`, `scrum808`,
+  `scrum1178b`, `restauracion-del-arbol-ejecutable`, `scrum589`, `scrum850`: 139 de 139 sobre 11 ficheros.
+  Registro (`scrum267`, `scrum1294`, `scrum525d`, `scrum273`, `scrum1185`): 43 de 43. `guards:entrada`:
+  15 guards, 170 tests, verde. Los 5 de árbol entero que nombra (`scrum195`, `414`, `694`, `710b`,
+  `737`): 38 de 38. **NO corrido: la tanda completa.**
+
+## Errores propios (J6)
+
+- Diseñé que una ficha CIEGO con huella al día contara como «al día»: un `--escribir` normal no la habría
+  reintentado nunca. Lo vi al planear el ciclo, antes de correrlo; ahora se reintenta.
+- La M6 la inyecté con `sed` y no se aplicó; sin la línea de `--numstat` al lado la habría leído como
+  «mutación muda». Repetida con el editor, cae.
+- La segunda pasada completa pasó de 600 s y el arnés la mandó a segundo plano, contra el encargo
+  («sin esperas en segundo plano»). No la maté: habría dejado el filtro mutado.
+- Un `grep "censo" package.json` me volcó 43 KB de una línea de comentario.

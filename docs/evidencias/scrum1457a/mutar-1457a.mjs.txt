@@ -1,0 +1,54 @@
+// docs/evidencias/scrum1457a/mutar-1457a.mjs.txt — SCRUM-1457a (J3, 23-oct-2026)
+//
+// Banco de mutaciones LOCAL de la línea de supresión. No trae lista propia: toma las mutaciones de
+// `MUTACIONES_QUE_ME_TUMBAN` del test (las mismas que ejecuta el meta-guard en CI), leídas con
+// `mutacionesDeclaradas` de `scripts/meta-guard-mutaciones.mjs`. Añade una BASE sin mutar delante.
+//
+// Uso (desde la raíz del worktree, con dist/ emitido): copiar fuera del árbol como .mjs y
+//   node <copia> <ruta absoluta a tsc>
+// Restaura el fuente y re-emite dist/ en un `finally`, y comprueba `git status` al terminar.
+import { readFileSync, writeFileSync } from 'node:fs';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
+import path from 'node:path';
+
+const RAIZ = process.cwd();
+const TSC = process.argv[2];
+const T = 'tests/scrum1457a-supresion-id-que-cabe.test.mjs';
+const { mutacionesDeclaradas } = await import(pathToFileURL(path.join(RAIZ, 'scripts/meta-guard-mutaciones.mjs')).href);
+const declaradas = mutacionesDeclaradas(readFileSync(T, 'utf8'), T);
+if (!declaradas.length) { console.log('CIEGO: el test no declara ninguna mutación'); process.exit(2); }
+
+const ficheros = [...new Set(declaradas.map((m) => m.fichero))];
+const originales = new Map(ficheros.map((f) => [f, readFileSync(f, 'utf8')]));
+const emitir = () => execFileSync('node', [TSC, '--noCheck']);
+const correr = () => {
+  const r = spawnSync('node', ['--test', '--test-force-exit', T], { encoding: 'utf8' });
+  const n = (k) => (r.stdout.match(new RegExp(`^ℹ ${k} (\\d+)`, 'm')) || [])[1] ?? 'null';
+  const caidos = [...new Set([...r.stdout.matchAll(/^✖ (SCRUM-1457a[^\n]*?) \(\d/gm)].map((m) => m[1]))];
+  return { exit: r.status, tests: n('tests'), pass: n('pass'), fail: n('fail'), caidos };
+};
+
+const filas = [];
+try {
+  emitir();
+  const base = correr();
+  filas.push(`BASE (sin mutar) · exit ${base.exit} · tests ${base.tests} pass ${base.pass} fail ${base.fail}`);
+  for (const [i, m] of declaradas.entries()) {
+    const orig = originales.get(m.fichero);
+    const veces = orig.split(m.de).length - 1;
+    if (veces !== 1) { filas.push(`M${i + 1} · CIEGA: el ancla aparece ${veces} veces`); continue; }
+    writeFileSync(m.fichero, orig.replace(m.de, m.a));
+    emitir();
+    const r = correr();
+    const cayoLaDeclarada = r.caidos.some((c) => c.includes(m.cae));
+    filas.push(`M${i + 1} · «${m.a}» · exit ${r.exit} · tests ${r.tests} pass ${r.pass} fail ${r.fail} · `
+      + `${cayoLaDeclarada ? 'CAE la declarada' : '🔴 MUDA: no cae la declarada'} · caen: ${r.caidos.join(' | ') || '—'}`);
+    writeFileSync(m.fichero, orig);
+  }
+} finally {
+  for (const [f, t] of originales) writeFileSync(f, t);
+  emitir();
+}
+console.log(filas.join('\n'));
+console.log('árbol tras restaurar (git status --porcelain):', JSON.stringify(execFileSync('git', ['status', '--porcelain'], { encoding: 'utf8' })));

@@ -84,17 +84,25 @@ async function sesionDe(prisma, merchantId, teamMemberId) {
   return token;
 }
 
-const pedir = async (port, token, metodo, ruta, cuerpo) => {
-  const r = await fetch(`http://127.0.0.1:${port}${ruta}`, {
-    method: metodo,
-    headers: { cookie: `pf_session=${token}`, ...(cuerpo ? { 'content-type': 'application/json' } : {}) },
-    body: cuerpo ? JSON.stringify(cuerpo) : undefined,
+// `node:http` sin agente y no `fetch` (SCRUM-1218c): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Un JSON que no se lee da `null`, como el `.catch` de antes.
+const pedir = (port, token, metodo, ruta, cuerpo) => new Promise((ok, mal) => {
+  const carga = cuerpo ? JSON.stringify(cuerpo) : null;
+  const cabeceras = { cookie: `pf_session=${token}` };
+  if (carga) Object.assign(cabeceras, { 'content-type': 'application/json', 'content-length': Buffer.byteLength(carga) });
+  const req = http.request({ host: '127.0.0.1', port, path: ruta, method: metodo, headers: cabeceras, agent: false }, (r) => {
+    let d = ''; r.setEncoding('utf8');
+    r.on('data', (t) => { d += t; });
+    r.on('end', () => {
+      const tipo = r.headers['content-type'] || '';
+      let datos = null;
+      if (tipo.includes('json')) { try { datos = JSON.parse(d); } catch { datos = null; } }
+      ok({ status: r.statusCode, tipo, datos });
+    });
   });
-  const tipo = r.headers.get('content-type') || '';
-  const datos = tipo.includes('json') ? await r.json().catch(() => null) : null;
-  if (!datos) await r.arrayBuffer().catch(() => {});
-  return { status: r.status, tipo, datos };
-};
+  req.on('error', mal);
+  req.end(carga ?? undefined);
+});
 
 /**
  * El negocio: dos Técnicos (Ana, la que pregunta; Blas, el compañero) y una administradora. Cada uno

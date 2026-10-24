@@ -14,6 +14,28 @@ import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 import { interceptarWaLog } from './_wa-log-sync.mjs'; // SCRUM-250/255: esperar la escritura, no el reloj
+import http from 'node:http';
+
+// `node:http` sin agente y no `fetch` (SCRUM-1218d): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de `fetch`
+// (status, headers.get, text, json). No sigue redirecciones: medido, las únicas 3xx son las de /auth/verify, que ya iban con `redirect: 'manual'`.
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    let d = ''; r.setEncoding('utf8');
+    r.on('data', (t) => { d += t; });
+    r.on('end', () => ok({
+      status: r.statusCode,
+      headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+      text: async () => d,
+      json: async () => JSON.parse(d),
+    }));
+  });
+  req.on('error', mal);
+  req.end(body);
+});
 
 // SCRUM-114 (reaplicado en SCRUM-126: el fix original no llegó a mergear — solo su
 // documentación en SUITE_REGRESION.md, "trampa 7"; el código se perdió en el camino).
@@ -110,13 +132,13 @@ test('SCRUM-47: enviar-whatsapp — técnico 200 (firmado), 409 no-firmado/sin-t
   const mkCookie = async (merchantId, teamMemberId = null) => {
     const token = 'qa47-' + crypto.randomBytes(12).toString('hex');
     await prisma.authSession.create({ data: { merchantId, teamMemberId, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) } });
-    const res = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
+    const res = await pedirSinAgente(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
     const cookie = (res.headers.get('set-cookie') || '').split(';')[0];
     assert.ok(cookie.startsWith('pf_session='), 'no se obtuvo cookie de sesión');
     return cookie;
   };
   const post = (albId, cookie) =>
-    fetch(`${base}/admin/albaranes/${albId}/enviar-whatsapp`, { method: 'POST', headers: { cookie, 'content-type': 'application/json' } });
+    pedirSinAgente(`${base}/admin/albaranes/${albId}/enviar-whatsapp`, { method: 'POST', headers: { cookie, 'content-type': 'application/json' } });
 
     const cookieTecnico = await mkCookie(merchantA.id, tecnico.id); // rol técnico (S1: enviar WA ✅)
     const cookieB = await mkCookie(merchantB.id, null);

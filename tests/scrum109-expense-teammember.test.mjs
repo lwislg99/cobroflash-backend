@@ -4,16 +4,18 @@
 // autor cuando se indica y con null (propietario) cuando no. El filtrado row-level
 // (GET técnico ve solo los suyos) es SCRUM-107 V2, carril B — fuera de este ticket.
 //
-// ⚠️ Toca BD real (staging), gateado:
-//   QA_DB_TEST=1 DATABASE_URL_TESTS="..." npm run test:staging
+// ⚠️ Toca BD real, gateado. Dos destinos (SCRUM-1599f, la forma de SCRUM-876e/f):
+//   QA_DB_TEST=1 DATABASE_URL_TESTS="..." npm run test:staging   → staging (igual que antes)
+//   LIBRO_PG_URL=<banco loopback, base *_test> npm test           → el banco desechable que CI levanta para la tanda
 import './_staging-db.mjs';
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599f: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { withMerchant, registrarBarridoFinal } from './_merchant-fixture.mjs';
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 
-test('SCRUM-109: createExpense guarda teamMemberId cuando se indica', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-109: createExpense guarda teamMemberId cuando se indica', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   registrarBarridoFinal(prisma);
   const { createExpense } = await import('../dist/modules/expenses/domain/expenses.service.js');
@@ -36,7 +38,7 @@ test('SCRUM-109: createExpense guarda teamMemberId cuando se indica', { skip: !E
   });
 });
 
-test('SCRUM-109: createExpense sin teamMemberId → null (propietario), no rompe el flujo existente', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-109: createExpense sin teamMemberId → null (propietario), no rompe el flujo existente', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   registrarBarridoFinal(prisma);
   const { createExpense } = await import('../dist/modules/expenses/domain/expenses.service.js');

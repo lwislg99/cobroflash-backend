@@ -33,6 +33,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { contenidoEnLaBase } from './_base-de-la-rama.mjs';
+import { cambioAutorizado } from './_cambios-autorizados-de-la-factura.mjs';
 import { extraerTextoPdf } from './_texto-del-pdf.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -233,6 +234,10 @@ test('SCRUM-603b · 🔴 EL PDF DE LA FACTURA NO SE HA TOCADO: byte a byte con l
   assert.ok(enBase.length > 5000,
     `🔴 el cuerpo de la factura en la base mide ${enBase.length} caracteres: el recorte no está `
     + 'cogiendo la función entera y este guard no compararía casi nada.');
+  // 🔴 23-oct-2026 · SCRUM-1446d · LA VÍA DE CAMBIO AUTORIZADO (SCRUM-1446 c.20473). Un cambio pasa
+  // sólo si el PAR de huellas (base → disco) está declarado con su firma; cualquier otro, y el
+  // autorizado con un byte de más, sigue cayendo aquí abajo.
+  if (enDisco !== enBase && cambioAutorizado('cuerpo', enBase, enDisco)) return;
   assert.equal(enDisco, enBase,
     `🔴 EL CÓDIGO QUE GENERA EL PDF DE LA FACTURA HA CAMBIADO respecto al punto de partida de esta `
     + `rama (${base.ref} @ ${base.sha.slice(0, 8)}): ${enDisco.length} car. frente a ${enBase.length}. `
