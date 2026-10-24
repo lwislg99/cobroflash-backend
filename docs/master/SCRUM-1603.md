@@ -140,6 +140,8 @@ Sobre la fusión con `main` (962f y 962g ya dentro), el editor da **1 DEFECTO ·
 
 La suite completa la paró Claude Code por falta de memoria en la máquina, con 4.130 casos juzgados: no es un veredicto (un run CORTADO sólo ve lo que juzgó antes del corte) y no la relancé. En lo que juzgó, 3 rojos: `scrum1480f` (el de la fila, arreglado), `scrum1321` (cae siempre en local: temporal en C:, repo en D:) y `scrum1244c` (pasa solo: carga). Tanda dirigida de 35 ficheros (los que leen los tres bancos, los de registro, los de carriles y `1387/622/864/976`): 295/298 con mi ayudante, y sus 3 rojos explicados arriba; `scrum548`, `scrum1480f`, `scrum1603`, `scrum976` y `scrum1244c` en verde después del arreglo (36/36). El veredicto entero es el del CI de este PR.
 
+**Trinquete que se mueve, y SUBE:** `scrum812` (la cobertura auto-declarada no baja), **34 → 35**: el test nuevo declara sus mutaciones y sus casos dicen CIEGO. Regenerado con la cifra del instrumento («LA COBERTURA HA SUBIDO a 35 (el suelo decía 34)»), con su copia en la mutación ④ del propio fichero, que su ancla exige. Corrige lo que le dije al orquestador antes de correr la suite («ningún trinquete se mueve»): lo dije sin medirlo.
+
 ### Sin hacer, y a quién
 
 - **La barra superior en el banco** (la otra mitad de S2): no se toca hoy, por encargo.
