@@ -201,3 +201,41 @@ la he corrido sólo en verde, y sus aserciones son las mismas.
   comprueba que el negativo caza la frase retirada. Las comprobaciones son esos dos guards.
 - Pasé una sustitución con barra invertida por `sed` y no casó, sin dar error (la cicatriz de J2
   del 1-oct, otra vez). Lo vi al releer el fichero, y lo rehíce con la herramienta de edición.
+
+## SCRUM-1322d · el comercio sin nombre: «Tu profesional ya tiene tu confirmación.»
+
+**Medido contra:** `origin/main` = `c09dd883ebfaf0f5e2213fb31f623ca547871a01` · 2026-10-26T23:36:20Z (hora de GitHub) · jv-j2bh, puesto J2, equipo de Javier
+
+A9: comprobación → `tests/scrum1322-el-bot-entiende-lo-que-pide.test.mjs`
+
+Firma del fundador: SCRUM-1322 comentario 20977, sobre el caso que 1322c dejó abierto en §3.
+Base: #2909 (1322c) no había entrado en `main`; la rama sale de `origin/scrum-1322c-literal-bot`
+(`d0a275b7f`).
+
+### 1 · Lo que cambia
+
+- `whatsappIncoming.routes.ts`, al aceptar por texto: si `merchant.name` llega vacío o solo con
+  espacios (`trim()` vacío), la frase final es «Tu profesional ya tiene tu confirmación.». Con
+  nombre sale el nombre tal cual, como en 1322c.
+- Ningún otro texto. **Cruce de carril declarado:** una fila en `tests/_pares-leidos-en-jira.mjs`
+  (J6) para el par 1322/20977 que cita el código.
+
+### 2 · El rojo primero
+
+Tres casos nuevos en el test, por el webhook real con dobles (`escribe()` acepta ahora el nombre
+del comercio): vacío, solo espacios y normal. Con la ruta de 1322c compilada (sin el arreglo):
+17 casos, 15 pasan y 2 caen — los de vacío y espacios, que reciben
+`… #P-0011.  ya tiene tu confirmación.`. Con el arreglo: 17 de 17. Build con tipos
+(`tsc -p .`, sin `--noCheck`): salida 0.
+
+### 3 · Lo que no he medido
+
+- Un nombre con espacios alrededor (« Fontanería Ruiz ») sale sin recortar, con el doble espacio;
+  la firma habla de vacío y de solo espacios, y no lo he cambiado.
+- Si el alta deja hoy un `name` vacío, ni cuántos hay en una base: sin mirar.
+- Meta, producción y yaqu.app: sin mirar. La tanda entera en local: NO CORRIDA.
+
+### 4 · Errores míos
+
+- El rojo lo medí sobre la ruta de 1322c, no sobre la de `main`: en `main` la frase aún es
+  «Te avisaremos…», y el caso «con nombre» también caería allí. Es la base de esta rama.

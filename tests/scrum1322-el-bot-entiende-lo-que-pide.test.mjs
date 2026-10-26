@@ -218,7 +218,7 @@ const SECRETO = 'secreto-de-prueba-scrum1322';
 let serie = 0;
 
 /** Un cliente con UN presupuesto en `sent` escribe `texto`. Devuelve lo que pasó de verdad. */
-async function escribe(texto, { botEncendido = false, deBaja = false } = {}) {
+async function escribe(texto, { botEncendido = false, deBaja = false, negocio = 'Fontanería Ruiz' } = {}) {
   const cambios = [];      // lo que se escribe en el presupuesto
   const envios = [];       // lo que sale por WhatsApp
   const alBot = [];        // lo que se le pasa al menú del bot
@@ -232,7 +232,7 @@ async function escribe(texto, { botEncendido = false, deBaja = false } = {}) {
       findMany: async () => [{ id: 11, merchantId: 42, customerId: 3, status: 'sent', quoteNumber: 'P-0011', total: 250, currency: 'EUR' }],
       update: async (a) => { cambios.push(a.data.status); return {}; },
     },
-    merchant: { findUnique: async () => ({ id: 42, name: 'Fontanería Ruiz', email: null, whatsappPhone: PRO,
+    merchant: { findUnique: async () => ({ id: 42, name: negocio, email: null, whatsappPhone: PRO,
       notifyEmailOnQuoteAccepted: false, country: 'ES', flags: null }) },
     whatsAppMessage: { findFirst: async () => null },
   } });
@@ -363,4 +363,30 @@ test('🔴 SCRUM-1322c · el cliente normal que acepta recibe el literal firmado
 
 test('🔴 SCRUM-1322c · el cliente DADO DE BAJA que acepta recibe el literal firmado, exacto', async () => {
   await aceptaYRecibe(true);
+});
+
+// ── 7 · SCRUM-1322d: el comercio sin nombre ────────────────────────────────────────────────────
+// Literal de reserva firmado por el fundador en SCRUM-1322 comentario 20977: si `merchant.name`
+// llega vacío o solo con espacios, «Tu profesional ya tiene tu confirmación.». Con nombre, sigue
+// el de c.20957. Antes de 1322d, un nombre vacío daba « ya tiene tu confirmación.».
+const RESPUESTA_SIN_NOMBRE =
+  '✅ ¡Perfecto! Hemos registrado tu aceptación del presupuesto #P-0011. Tu profesional ya tiene tu confirmación.';
+
+async function aceptaConNegocio(negocio) {
+  const { acepta } = loQuePideElBot()[0];
+  const r = await escribe(acepta, { negocio });
+  assert.deepEqual(r.cambios, ['accepted'], `CIEGO: «${acepta}» no aceptó; la respuesta de abajo no sería la de aceptar`);
+  return r.alCliente;
+}
+
+test('🔴 SCRUM-1322d · comercio con el nombre VACÍO: el cliente recibe el literal de reserva, exacto', async () => {
+  assert.deepEqual(await aceptaConNegocio(''), [RESPUESTA_SIN_NOMBRE], '🔴 nombre vacío: no sale «Tu profesional…»');
+});
+
+test('🔴 SCRUM-1322d · comercio con el nombre SOLO CON ESPACIOS: el cliente recibe el literal de reserva, exacto', async () => {
+  assert.deepEqual(await aceptaConNegocio('   '), [RESPUESTA_SIN_NOMBRE], '🔴 nombre de espacios: no sale «Tu profesional…»');
+});
+
+test('SCRUM-1322d · comercio CON nombre: sigue saliendo el nombre, no la reserva', async () => {
+  assert.deepEqual(await aceptaConNegocio(NEGOCIO), [RESPUESTA_FIRMADA], '🔴 con nombre ya no sale «{Negocio} ya tiene…»');
 });

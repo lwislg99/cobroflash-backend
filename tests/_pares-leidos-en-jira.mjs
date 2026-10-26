@@ -59,6 +59,7 @@ const POR_1402K = 'jv-j3bo · SCRUM-1402k';
 const POR_1446E = 'jv-j1ck · SCRUM-1446e';
 const POR_1446F = 'jv-j1co · SCRUM-1446f';
 const POR_1322C = 'jv-j2bg · SCRUM-1322c';
+const POR_1322D = 'jv-j2bh · SCRUM-1322d';
 
 export const PARES_LEIDOS = Object.freeze([
   { ticket: 299, comentario: 12188, leido: '2026-10-24', por: POR_1511G },
@@ -90,4 +91,5 @@ export const PARES_LEIDOS = Object.freeze([
   { ticket: 1446, comentario: 20917, leido: '2026-10-26', por: POR_1446E },
   { ticket: 1446, comentario: 20939, leido: '2026-10-26', por: POR_1446F },
   { ticket: 1322, comentario: 20957, leido: '2026-10-26', por: POR_1322C },
+  { ticket: 1322, comentario: 20977, leido: '2026-10-26', por: POR_1322D },
 ].map(Object.freeze));

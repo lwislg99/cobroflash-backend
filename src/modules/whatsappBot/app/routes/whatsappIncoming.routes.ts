@@ -519,11 +519,14 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
     // SCRUM-1322c · literal firmado por el fundador en SCRUM-1322 comentario 20957 (opción A):
     // «{Negocio} ya tiene tu confirmación.» sustituye a «Te avisaremos con los siguientes pasos.»,
     // que prometía un aviso que nadie manda. El mismo literal para el cliente dado de baja.
+    // SCRUM-1322d · reserva firmada por el fundador en SCRUM-1322 comentario 20977: si el nombre
+    // llega vacío o solo con espacios, «Tu profesional ya tiene tu confirmación.».
+    const quienConfirma = merchant?.name?.trim() ? merchant.name : 'Tu profesional';
     await sendWhatsAppText({
       merchantId: quote.merchantId,
       exentoDelDemo: 'respuesta-a-entrante', exentoDeLaBaja: 'respuesta-a-entrante', // SCRUM-245: responde a quien acaba de escribir
       to: from,
-      text: `✅ ¡Perfecto! Hemos registrado tu aceptación del presupuesto #${(quote as any).quoteNumber ?? quote.id}. ${merchant?.name ?? ''} ya tiene tu confirmación.`,
+      text: `✅ ¡Perfecto! Hemos registrado tu aceptación del presupuesto #${(quote as any).quoteNumber ?? quote.id}. ${quienConfirma} ya tiene tu confirmación.`,
     });
 
     // Email al merchant si tiene la notificación activa
