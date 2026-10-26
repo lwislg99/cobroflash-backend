@@ -33,11 +33,17 @@
 // CIEGO nombrando variables que NO venían del entorno de este test, se le relanza UNA vez con esas mismas
 // claves VACÍAS (dotenv no pisa una clave ya puesta). Vaciar sólo puede quitarle credenciales, nunca dárselas,
 // y se dice en la salida. Si sigue CIEGO, cae.
+//
+// LA SALIDA CORTADA (SCRUM-1610b). El 26-oct-2026 este test dio dos rojos falsos: el censo acabó con su código
+// y la cola de su salida no llegó. Antes de juzgar nada se exige su centinela final, la línea `EXIT=N` con el
+// mismo N que el código; si falta, se le relanza UNA vez (`tests/_salida-entera.mjs`) y el corte se imprime.
+// Si falta dos veces, cae con «CIEGO · salida cortada», no con la aserción que la media salida hubiera tumbado.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { sinCortar, rastroDeCortes, avisoDeCorte } from './_salida-entera.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CENSO = path.join(RAIZ, 'tests', '_censo-frontera.mjs');
@@ -87,13 +93,28 @@ function lanzar(args, vaciar) {
   });
 }
 
+/** El centinela del censo: su última línea es `EXIT=N`, y N es el código con el que salió. */
+const CENTINELA = '«EXIT=N» como última línea, con el código de salida';
+function censoEntero(salida, r) {
+  const m = String(salida).match(/(?:^|\n)EXIT=(\d+)\r?\n?$/);
+  return !!m && Number(m[1]) === r.codigo;
+}
+const enteroCon = (args, vaciar) => sinCortar(() => lanzar(args, vaciar), censoEntero);
+
 /** Lanza el censo; si sale CIEGO por variables cargadas de un fichero, lo relanza UNA vez con ellas vacías. */
 async function censo(...args) {
-  const r = await lanzar(args, []);
-  const m = r.codigo === 2 && r.salida.match(/^CIEGO: el entorno lleva \d+ variable\(s\) de integración o de base \(([^)]*)\)/m);
+  const r = await enteroCon(args, []);
+  const m = !r.cortada && r.codigo === 2 && r.salida.match(/^CIEGO: el entorno lleva \d+ variable\(s\) de integración o de base \(([^)]*)\)/m);
   if (!m) return { ...r, vaciadas: [] };
   const vaciadas = m[1].split(',').map((x) => x.trim()).filter(Boolean);
-  return { ...(await lanzar(args, vaciadas)), vaciadas };
+  const r2 = await enteroCon(args, vaciadas);
+  return { ...r2, cortes: [...r.cortes, ...r2.cortes], vaciadas };
+}
+
+/** Antes de leer nada de una corrida: que llegara entera. Un corte doble es CIEGO, no un rojo del censo. */
+function entera(nombre, r) {
+  if (r.cortes.length) console.log(`[${nombre}]` + rastroDeCortes(r.cortes));
+  assert.ok(!r.cortada, `[${nombre}] ` + avisoDeCorte('el censo de frontera', CENTINELA, r));
 }
 
 // Las cinco corridas arrancan a la vez (unos 4 s cada una): cada caso espera la suya.
@@ -145,6 +166,7 @@ function conjunto(eje, hoy, veredicto, declaradas, porQue) {
 /** El juicio de un eje: salida 0, controles sembrados en verdadero, población entera y sobre el suelo. */
 async function juzgar(eje) {
   const r = await CORRIDAS[eje];
+  entera(eje, r);
   const t = totales(r.salida);
   const secciones = CLASES[eje].map((v) => [v, rutasDe(r.salida, v).size]);
   console.log(`[${eje}] código ${r.codigo} · población ${t ? t.suma : '¿?'} (suelo ${SUELO[eje]}) · `
@@ -181,11 +203,13 @@ test('SCRUM-1516c · 🔴 eje del ROL: lo que un Técnico recibe igual que el ad
 test('SCRUM-1516c · el censo NO está mudo: sin su siembra dice CIEGO en los dos ejes, y con el doble sordo cae', async () => {
   for (const [nombre, eje] of [['rolSinSembrar', 'rol'], ['comercioSinSembrar', 'comercio']]) {
     const r = await CORRIDAS[nombre];
+    entera(nombre, r);
     assert.equal(r.codigo, 2, `[${eje}] --sin-sembrar tenía que salir 2 (CIEGO) y salió ${r.codigo}`);
     assert.match(r.salida, /^CIEGO: \d+ de \d+ rutas sembradas no están montadas/m, `[${eje}] --sin-sembrar salió 2 sin decir que le falta la siembra`);
     assert.equal(totales(r.salida), null, `[${eje}] --sin-sembrar imprimió TOTALES: un censo ciego no cuenta`);
   }
   const sordo = await CORRIDAS.comercioSordo;
+  entera('comercioSordo', sordo);
   assert.equal(sordo.codigo, 1, `--doble-sordo tenía que salir 1 (el par sembrado no se distingue) y salió ${sordo.codigo}`);
   assert.match(sordo.salida, /^¿el instrumento distingue las dos rutas del par\?\s+false\s/m, '--doble-sordo salió 1 sin decir que no distingue el par');
 });
