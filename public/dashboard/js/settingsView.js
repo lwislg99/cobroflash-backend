@@ -799,7 +799,7 @@ function renderSettingsView(container) {
       <label>Color de marca</label>
       <p style="font-size:12px;color:var(--muted);margin:2px 0 6px">Se usa en el botón de aceptar y los acentos de la página que ve tu cliente.</p>
       <div style="display:flex;align-items:center;gap:10px">
-        <input type="color" id="brand-color-input" value="#22c55e" style="width:48px;height:38px;padding:2px;border:1px solid var(--border);border-radius:8px;cursor:pointer"/>
+        <input type="color" id="brand-color-input" value="#22c55e"/>
         <span id="brand-color-hex" style="font-size:13px;color:var(--muted)">#22c55e</span>
         <button type="button" id="brand-color-reset" class="btn-secondary btn-sm">Sin color (por defecto)</button>
       </div>`;
