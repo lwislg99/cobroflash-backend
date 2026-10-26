@@ -1228,6 +1228,73 @@ Salida entera: `evidencias/SCRUM-1599/scrum115-ci-1599p.salida.txt`.
 **De paso, confieso:** arranqué el Postgres en el 55491 cuando mi propio `netstat` acababa de decir que ese puerto estaba ocupado. Era el de otra sesión, y la comprobación iba encadenada con el arranque. `pg_ctl` falló sin tocar el ajeno, y lo levanté en el 55617, que medí libre antes. Además, la evidencia la escribí antes de pasarla por `carriles.mjs de`: es la cicatriz de 1218d.
 
 **Sin medir:** CI con este arreglo · staging con turno.
+
+## J6 · SCRUM-1599q · por qué scrum234 y scrum781 caen siempre, también en serie: bisect y sonda del reloj. Sólo medir
+
+**Medido contra:** `origin/main` = `268eb55dd` al medir y `6d5bf76c5bf02142e762ca2ddd3d2ae2b92f9a3e` al escribir (los 13 commits de en medio no tocan `src/modules/invoicing/domain/`, los dos tests ni sus ayudantes) · 2026-10-26T22:31:12Z (hora de GitHub; sesión J6 `jv-j6cq` en su árbol `cobroflash-jv-j6cq`, por encargo del orquestador `cobroflash-backend-8b`, c.20940)
+
+A9: aviso → cicatriz J6 «Lancé un `ls` con comodines sobre los trabajos de la máquina sin medir antes cuántos había (625), y el arnés lo mandó a segundo plano en un encargo que lo prohibía» — no se pudo comprobar: lo repetí (652 trabajos y un `find` en el temporal) buscando un Postgres ya instalado; lo paré con `TaskStop` y lo instalé en mi temporal. Ningún hook mide un comodín antes de expandirlo.
+
+**Lo que se pedía (c.20940, de c.20928 ④):** bisect de cuándo pasó la numeración a la serie `F`; separar por EJECUCIÓN «test desfasado con una decisión firmada» de «la siembra no pone la serie QA»; staging hoy; y una propuesta sin construirla (regla 41). 0 líneas de `src/` ni de `tests/`.
+
+### ① El instrumento
+
+- **Postgres 16.14 de verdad** (`embedded-postgres@16.14.0-beta.17`, en mi temporal, loopback), base `yaqu_libro_test` con el DDL de `migrate diff --from-empty`: 33 `CREATE TABLE` = 33 `model`. `node_modules` propio (`npm ci`), cliente de Prisma ✔ con `_prisma-client-guard.mjs`, `dist/` con `tsc --noCheck`.
+- **Los tests versionados no se tocan.** `adaptar-1599q.mjs.txt` escribe dos COPIAS (`tests/zz1599q-*.mjs`, fuera del patrón `*.test.mjs`) con la forma de 1599o; se borraron al acabar.
+- **`correr-1599q.mjs.txt`:** un `node --test` por fichero, casos de primer nivel anclados que suman el `# tests` declarado. Sin casos → CIEGO. Dijo CIEGO dos veces por fallos míos (ruta con `%20` sin decodificar; etiqueta con `:` en un nombre de fichero de Windows), y ninguna se contó.
+- **`reloj-1599q.mjs.txt`, la sonda de UNA variable:** mueve la fecha del proceso por `--import`, sin tocar `src/` ni `dist/`, y deja una marca por proceso. Sin marca, la pasada es CIEGA.
+
+### ② Qué cae, literal (n=2, idéntico)
+
+| test | caso | aserción | qué da |
+| --- | --- | --- | --- |
+| `scrum781-concurrencia-de-la-factura` | «SUELO: UNA emisión avanza el contador fiscal exactamente 1» (1 de 8) | `:130` `assert.match(inv.number, /^\d{4}-QA-\d{3}$/)` | `'F260001'` |
+| `scrum234-carrera-serie.gated` | su único caso | `:144` `seq = Number(String(n).split('-').pop())`, luego `seq(b) − seq(a) === 1` | `NaN` (`F260001` no lleva `-`) |
+
+Los otros 7 casos de 781 pasan: sus carreras usan `n.slice(-3)`, que con `F260001` da `001` por casualidad.
+
+### ③ Bisect: `ba1cd2d55` (SCRUM-780), PR #1154, en main el 2026-09-07T21:00:42Z (merge `b521d0a72`)
+
+Dos árboles desechables con el `dist/` de cada commit y los `tests/` de main. Segundo marcador (cicatriz de 1599a): `CORTE_FORMATO_F` sale **0** veces en el `dist/` del padre y **4** en el del commit.
+
+| commit | 781 | 234 |
+| --- | --- | --- |
+| padre `9c989bf0ef2faa3db33d00cd06601c1664aa54fe` | VERDE 8/8 | VERDE 1/1 |
+| `ba1cd2d5546765a79f816955a3ee088d372cb01d` | ROJO 7/1, `'F260001'` | ROJO 0/1, `NaN` |
+
+**La decisión, leída en el ticket SCRUM-780 (Finalizada):** c.14707 «se adopta el F26001 desde ya» y c.14709, segunda tanda: «CORTE POR FECHA DESDE HOY… F26xxxx es una serie nueva que empieza en 0001» e «invoiceSeriesPrefix: OPCIÓN A — SE RETIRA… Un solo formato para todos». En código: `CORTE_FORMATO_F` = 2026-09-07T00:00Z y `usaFormatoF(now, …)` (`invoiceNumber.service.ts:140` y `:457`). Después del corte el prefijo no decide.
+
+Los dos tests nacieron ANTES de esa firma: 234 el 2-ago (`e963046ea`) y 781 el 6-sep (`477886dbd`), un día antes del corte.
+
+### ④ Test desfasado o siembra: separado por ejecución
+
+| pasada (n=2 cada una) | 781 | 234 |
+| --- | --- | --- |
+| reloj real (hoy) | ROJO | ROJO |
+| **reloj al 2026-09-01T12:00Z** (sólo cambia la fecha) | **VERDE 8/8** | **VERDE 1/1** |
+| reloj al 2026-10-27 (control: el preload solo no lo arregla) | ROJO | ROJO |
+| borde: 2026-09-06T23:59Z | VERDE | VERDE |
+| borde: 2026-09-07T00:01Z | ROJO | ROJO |
+
+- **No es la siembra.** 781 YA siembra `invoiceSeriesPrefix: 'QA'` y `nextInvoiceNumber: 1`, y cae igual. Lo único que lo pone en verde es mover la fecha antes del corte, y el borde cae exactamente en `CORTE_FORMATO_F`.
+- **Es (a): los tests están desfasados con una decisión firmada** (SCRUM-780 c.14709), igual que scrum17 en 1599a/b. Una siembra que «pusiera la serie QA» tendría que falsear el reloj del proceso, y entonces el test vigilaría la rama de antes del corte, que hoy no emite nadie.
+
+### ⑤ Staging: NO CORRIDO
+
+Este árbol no tiene clave: `node scripts/comprobar-claves-bd.mjs` sale rc=1 con «no se leyó ni una sola cadena de conexión», 0 `.env*` y 0 `DATABASE_URL*` en el entorno. Tampoco tiene alta en `scripts/_clave-vs-destino.mjs` (0 líneas `jv-j6cq`; control positivo: `jv-j2ay` sale 1). No pedí turno. Que en staging caiga igual es lo esperable, porque el corte es por fecha y para todos los comercios, pero **está sin medir**.
+
+### ⑥ Propuesta (NO construida; carril J1, la emisión se lee y no se toca)
+
+Probada SÓLO como sonda en las copias (n=1): **VERDE hoy (8/8 y 1/1)**, y con el reloj al 1-sep **cae nombrando `2026-QA-001` y `2026-CF-001`**. Es más estricta que la de hoy y vigila en las dos direcciones.
+
+1. **781 `:130`:** `/^\d{4}-QA-\d{3}$/` → `/^F\d{6}$/`. Es la misma firma que scrum17 (c.20650 ③, «Sí, F<AA><NNNN>»). La siembra `invoiceSeriesPrefix: 'QA'` ya no decide nada; quitarla o dejarla con un comentario lo decide J1.
+2. **234 `:144`:** antes de restar, `assert.match(n, /^F\d{6}$/)` en los dos números, y la secuencia sale de los 4 últimos dígitos (`slice(-4)`). El resto del caso (la barrera, el `P2002`, el contador) no cambia.
+3. **Arreglar la siembra: NO** (④).
+
+### ⑦ Sin medir
+
+- Staging (⑤) · la propuesta: n=1, y sin mutar el cerrojo para ver que 234 sigue cazando el `P2002` · `git bisect` paso a paso: sólo la pareja padre/commit, sacada de `git log -S CORTE_FORMATO_F` · si `slice(-3)` en las carreras de 781 debe pasar a 4 dígitos (hoy pasa con 1..10).
+- Evidencias: `docs/master/evidencias/SCRUM-1599/bisect-1599q.salida.txt` y los cuatro instrumentos `*-1599q.mjs.txt`.
 ## J1 · SCRUM-1599r · scrum781 y scrum234 alineados con la serie F firmada (SCRUM-780 c.14709)
 
 **Medido contra:** `origin/main` = `6d5bf76c5bf02142e762ca2ddd3d2ae2b92f9a3e` · 2026-10-26T22:46:10Z (hora de GitHub; sesión J1 `jv-j1cr` en su árbol `cobroflash-jv-j1cr`, por encargo del orquestador `cobroflash-backend-8b`. La decisión es la del fundador en SCRUM-1599 c.20947, sobre la medición de §1599q, c.20946)
