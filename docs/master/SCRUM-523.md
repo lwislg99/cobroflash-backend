@@ -518,4 +518,4 @@ pregunta también si la firma de los dos puede ser electrónica?
 - No se ha medido qué cuenta de los 22 cambios toca el registro, ni cuál es la fecha de la Orden.
 - No se cambió el estado de ningún ticket (A13).
 
-A9: aviso → cicatriz J4 «escribí de memoria la fecha de la Orden HAC/1177/2024» — no se pudo comprobar: ningún guard compara las citas de normas de `docs/legal` con el BOE; lo cazó repasar de dónde salía cada dato nuevo, y la quité antes del commit.
+A9: aviso → cicatriz J4 «en el borrador de la declaración responsable escribí de memoria la fecha de la Orden HAC/1177/2024, el 17 de octubre, sin haberla leído en ninguna fuente, dentro de un texto que se firma» — no se pudo comprobar: ningún guard compara las citas de normas de `docs/legal` con el BOE; lo cazó repasar de dónde salía cada dato nuevo, y la quité antes del commit.
