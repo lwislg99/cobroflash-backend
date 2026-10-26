@@ -23,18 +23,42 @@ const PLANS = [
   },
 ] as const;
 
+// SCRUM-1402k (P2, c.20832; Q1 «Solo nuestra base», c.20845): ¿este merchant ya tiene una suscripción
+// viva? UN solo predicado para la pantalla (/plans) y para el checkout, para que no haya una segunda
+// lista de planes de pago (el defecto de SCRUM-1342 y 1401). Mira solo la base, que mantiene el webhook.
+//   · `stripeSubscriptionId` puesto → viva (lo escribe `subscription.created|updated` activo).
+//   · o plan de pago en `active`/`past_due`: cubre el hueco entre `checkout.session.completed`, que
+//     escribe el plan sin `stripeSubscriptionId`, y `subscription.created`.
+// Quien canceló da `false` (las dos puertas de cancelación ponen `trial`, `canceled` y `null`), así que
+// puede volver a suscribirse. El impago da `true`: se arregla en el portal, no con otra suscripción.
+export interface FilaDeSuscripcion {
+  plan: string;
+  subscriptionStatus: string | null;
+  stripeSubscriptionId: string | null;
+}
+export function tieneSuscripcionViva(m: FilaDeSuscripcion | null | undefined): boolean {
+  if (!m) return false;
+  if (m.stripeSubscriptionId != null) return true;
+  return m.plan !== 'trial' && (m.subscriptionStatus === 'active' || m.subscriptionStatus === 'past_due');
+}
+
+// T3 de SCRUM-1402, FIRMADO por el fundador en c.20866 (regla 39). La pantalla le antepone
+// «No se pudo iniciar el pago: » (`plansView.js`, `selectPlan`). Sin «activa»: también le sale al impago.
+const TEXTO_SUSCRIPCION_EXISTE = 'Ya tienes una suscripción. Para cambiarla, usa «Gestionar suscripción / facturación».';
+
 // GET /admin/billing/plans
 router.get('/plans', async (req, res) => {
   const [merchant, founding] = await Promise.all([
     prisma.merchant.findUnique({
       where: { id: req.merchantId },
-      select: { plan: true, planExpiresAt: true, stripeSubscriptionId: true },
+      select: { plan: true, planExpiresAt: true, stripeSubscriptionId: true, subscriptionStatus: true },
     }),
     getFoundingStatus(),
   ]);
   return res.json({
     currentPlan: merchant?.plan ?? 'trial',
     planExpiresAt: merchant?.planExpiresAt ?? null,
+    suscripcionViva: tieneSuscripcionViva(merchant),
     plans: PLANS.map(({ priceKey, priceAnnualKey, ...rest }) => rest),
     founding, // { price, seatsTotal, seatsLeft }
   });
@@ -68,6 +92,16 @@ router.post('/accept-alcance', async (req, res) => {
 // POST /admin/billing/checkout  { plan: 'pro' | 'founding', annual?: boolean }
 router.post('/checkout', async (req, res) => {
   if (!stripe) return res.status(501).json({ error: 'stripe_not_configured' });
+
+  // SCRUM-1402k: con una suscripción viva no se abre otra. Antes del contador del fundador y de crear
+  // el cliente: no se escribe nada y no se llama a Stripe.
+  const actual = await prisma.merchant.findUnique({
+    where: { id: req.merchantId },
+    select: { plan: true, subscriptionStatus: true, stripeSubscriptionId: true },
+  });
+  if (tieneSuscripcionViva(actual)) {
+    return res.status(409).json({ error: 'subscription_exists', message: TEXTO_SUSCRIPCION_EXISTE });
+  }
 
   const planId = String(req.body?.plan || '');
   const annual  = req.body?.annual === true;

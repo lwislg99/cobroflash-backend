@@ -38,11 +38,12 @@ import { leerSiSigueAhi, exigirCorpusLeido } from './_barrido-estable.mjs'; // S
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 
 /**
- * LA POBLACIÓN DECLARADA — 22 = los 46 de SCRUM-1599 c.20713 menos los 4 que migra 1599f
+ * LA POBLACIÓN DECLARADA — 21 = los 46 de SCRUM-1599 c.20713 menos los 4 que migra 1599f
  * (scrum104, scrum106, scrum109, scrum135), los 7 que migra 1599h (scrum131, scrum22, scrum51,
  * scrum57, scrum58, scrum593d, webhooks-idempotencia), los 7 que migra 1599i (pdfs, scrum120,
- * scrum136, scrum148, scrum24, scrum66, scrum90) y los 6 que migra 1599k (scrum17, scrum207,
- * scrum222, scrum74, scrum76, scrum94). Uno por línea (A23 #15), en orden alfabético.
+ * scrum136, scrum148, scrum24, scrum66, scrum90), los 6 que migra 1599k (scrum17, scrum207,
+ * scrum222, scrum74, scrum76, scrum94) y el que migra 1599j (scrum85). Uno por línea (A23 #15),
+ * en orden alfabético.
  * Esta lista sólo BAJA, y sólo en el PR que migra el fichero. Para que SUBA hace falta una decisión
  * escrita en SCRUM-1599 y su motivo al lado de la línea.
  */
@@ -73,11 +74,6 @@ const SOLO_STAGING = Object.freeze([
   'scrum793-la-carrera-del-token.test.mjs',
   'scrum814-carrera-del-tramo.gated.test.mjs',
   'scrum82-zip-verifactu.test.mjs',
-  // scrum85 NO se migra en 1599i: con la base vacía el cobro A sale con id=1, y su
-  // `!body.includes('/pay/card/1')` casa DENTRO del token cuando éste empieza por «1»: en el banco
-  // sería intermitente. Medido por jv-j6bv en SCRUM-1218 c.20840 (llegó por el orquestador; 1599i no
-  // lo ha repetido). Vuelve cuando se arregle esa aserción, no antes.
-  'scrum85-pay-routes-token.test.mjs',
   'scrum92-login-operario.test.mjs',
   'tenancy-permisos.test.mjs',
 ]);
@@ -160,7 +156,7 @@ function fuentesDelArbol() {
 
 const sembradas = () => [{ nombre: SEMBRADO, src: FUENTE_SEMBRADA }, { nombre: MIGRADO, src: FUENTE_MIGRADA }];
 
-test('SCRUM-1599f · los que SÓLO corren contra staging son exactamente los 22 declarados', () => {
+test('SCRUM-1599f · los que SÓLO corren contra staging son exactamente los 21 declarados', () => {
   const arbol = fuentesDelArbol();
   const { veredicto, poblacion } = censar([...arbol, ...sembradas()]);
   assert.equal(veredicto, 'MIRADO', '🔴 CIEGO: el extractor no ve el gateado sembrado, así que tampoco ve los del árbol');
@@ -176,7 +172,7 @@ test('SCRUM-1599f · los que SÓLO corren contra staging son exactamente los 22 
       + '  Si entra, dale el segundo destino (tests/_banco-libro.mjs); que se quede sólo en staging lo\n'
       + '  decide el fundador en SCRUM-1599, y se escribe aquí con su motivo.',
   );
-  assert.equal(poblacion.length, 22, `🔴 población ${poblacion.length}, declarada 22`);
+  assert.equal(poblacion.length, 21, `🔴 población ${poblacion.length}, declarada 21`);
 });
 
 test('SCRUM-1599f · sin el sembrado el censo dice CIEGO, no verde', () => {
