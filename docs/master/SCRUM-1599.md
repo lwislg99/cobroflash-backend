@@ -823,3 +823,58 @@ líneas `ok` de primer nivel suman el `# tests` declarado). Los de registro, en 
 - La tanda entera en local: NO CORRIDA (varias sesiones a la vez).
 - Una pasada por punto.
 - Que las seis mutaciones mueran también en el Postgres de CI: nadie las corre allí (§1599i ⓪).
+
+## J6 · SCRUM-1599n · el banco de 1599h salía en rojo con un test que lanza un hijo con Prisma (42P05)
+
+**Medido contra:** `origin/main` = `c1331293b01ac32a4357cf1b239dab86853f25ee` · 2026-10-26T16:22:05Z (hora de GitHub al juntar la salida; sesión J6 `jv-j6cl` en su árbol `jv-j6cl`, por encargo del orquestador `cobroflash-backend-8b`. Antes de empujar, `origin/main` era `d2e468960`, que sólo trae un registro de J5 y no toca nada de lo de aquí)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1599/banco-1599h.mjs.txt`
+
+Aviso de jv-j3bl (J3) en SCRUM-94b (`docs/master/SCRUM-94.md`, «Lo que NO he medido»): con el banco de §1599h, la
+pasada limpia de `scrum1515` salía CIEGA con `42P05 prepared statement "s0" already exists`, y tuvo que correrla con la
+URL del banco propio de SCRUM-1515 (`&connection_limit=1&pgbouncer=true`).
+Salida entera: `evidencias/SCRUM-1599/banco-1599n.salida.txt`.
+
+### ① Reproducido, con su control
+
+PGlite 0.5.8 + pglite-socket 0.2.11, `dist/` con `tsc --noCheck`, esquema de `migrate diff --from-empty` (33 `CREATE
+TABLE`, 33 `model`). El banco de `origin/main`, sin tocar:
+
+| fichero | ¿lanza un hijo con Prisma? | resultado |
+|---|---|---|
+| `scrum1515-nuestra-puerta-de-alta` | sí (`dist/…/cli/altaDeMerchant.js`) | 1 caso · **not ok**, dos pasadas iguales: el hijo cae en `altaDeMerchant.js:95:51` con `42P05 prepared statement "s0" already exists` |
+| `scrum109-expense-teammember` (control) | no | 2/2 ok |
+
+El defecto es del INSTRUMENTO, no del test. §1599h rehace la base antes de cada FICHERO, porque los prepared
+statements de un proceso chocan con los del siguiente; pero `scrum1515` mete DOS procesos en el mismo fichero (el
+test hace `prisma.$disconnect()` y lanza el guion con `DATABASE_URL = URL_BANCO`), y PGlite es una sola sesión: el
+`s0` del padre sigue allí cuando el hijo prepara el suyo. Y el banco lo contaba como un `not ok` del test, no como
+CIEGO: un fallo del instrumento leído como un rojo del producto.
+
+### ② El arreglo, en el banco y no en el test
+
+`banco-1599h.mjs.txt` gana una constante, `SIN_PREPARADAS = '&pgbouncer=true'`, que va en la `LIBRO_PG_URL` de cada
+fichero. Con `pgbouncer=true` Prisma no usa sentencias preparadas con nombre. El test no cambia: `_banco-libro.mjs`
+la copia en `URL_BANCO` y el test se la pasa al hijo tal cual, así que **cualquier** hijo con Prisma la hereda.
+`connection_limit=1` no hace falta (el banco admite 64 conexiones desde §1599f) y no se pone. Además, si la salida de
+un fichero lleva `42P05`, el banco dice `CIEGO (instrumento: 42P05, sentencias preparadas)` y el JSON marca
+`ciego: true`. 0 líneas de `tests/`, `src/` o `schema.prisma`.
+
+| pasada | scrum1515 | control scrum109 |
+|---|---|---|
+| ANTES (banco de main) | not ok (42P05) | 2/2 |
+| DESPUÉS | **1/1 ok**; el test declara «2 merchants por el guion · 117 campos comparados por valor» | 2/2 |
+| MUTACIÓN: `SIN_PREPARADAS = ''` (una línea) | **CIEGO (instrumento: 42P05)** | 2/2 |
+| REGRESIÓN: lotes §1599i y §1599k, ya en main, con el banco arreglado | — | 13 ficheros, 57/57, 0 saltos, todos SUMA |
+
+### ③ Lo que NO se ha hecho, ni medido
+
+- Que `pgbouncer=true` no cambie nada en los lotes §1599f, §1599h y §1599m (este último aún no está en main): sólo
+  he repasado §1599i y §1599k.
+- En CI el banco es un Postgres de verdad, con una sesión por conexión: allí este choque no se da, y este cambio no
+  le llega (el banco es local).
+- Staging con turno; una pasada por punto; la tanda entera en local: NO CORRIDA.
+
+**De paso, confieso:** el DESPUÉS y la MUTACIÓN escriben el TAP en la misma carpeta con el mismo nombre, y fui a
+leer el del DESPUÉS cuando ya era el de la mutación (0 subtests). Lo cacé porque no cuadraba con el «1/1 ok», y
+repetí el DESPUÉS solo, y el ANTES en una carpeta aparte, antes de citar nada.
