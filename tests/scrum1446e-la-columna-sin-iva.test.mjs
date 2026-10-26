@@ -9,8 +9,8 @@
 //   · P1 ✅ en la F1 la columna de cada línea va SIN IVA y suma la «Base imponible» del pie. Su
 //     cabecera dice «IMPORTE» (literal firmado en ese mismo comentario).
 //   · P2 ❌ el TOTAL sigue siendo el guardado (SCRUM-624e): este fichero lo comprueba también.
-//   · P4 ✅ el presupuesto en PDF, igual: su columna va sin IVA. Su cabecera NO cambia («Total»):
-//     el literal firmado es el de la factura, y otra palabra en el presupuesto sería texto nuevo.
+//   · P4 ✅ el presupuesto en PDF, igual: su columna va sin IVA. Su cabecera dice también «IMPORTE»
+//     desde SCRUM-1446f: el fundador extendió el literal al presupuesto en SCRUM-1446 comentario 20939.
 //   · La R1 y el justificante, COMO HOY: con IVA y «TOTAL». Lo fija el caso ③.
 //
 // Se genera el PDF DE VERDAD (`generateInvoicePdf`, `generateQuotePdf`) en memoria y se lee con
@@ -39,6 +39,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   { fichero: 'src/modules/invoicing/infra/pdf/pdf.service.ts', de: "const columnaSinIva = (params.type ?? 'F1') === 'F1';", a: 'const columnaSinIva = true;',
     cae: 'SCRUM-1446e · ③ la R1 y el justificante' },
   { fichero: 'src/modules/invoicing/infra/pdf/pdf.service.ts', de: 'const lineTotal = l.qty * l.price;', a: 'const lineTotal = l.qty * l.price * (1 + l.tax);',
+    cae: 'SCRUM-1446e · ④ el presupuesto' },
+  { fichero: 'src/modules/invoicing/infra/pdf/pdf.service.ts', de: ".text('IMPORTE', X_TOTAL, doc.y - 12,", a: ".text('Total', X_TOTAL, doc.y - 12,",
     cae: 'SCRUM-1446e · ④ el presupuesto' },
 ];
 
@@ -178,16 +180,16 @@ test('SCRUM-1446e · ③ la R1 y el justificante NO cambian: la columna con IVA 
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
-// ④ EL PRESUPUESTO (P4): su columna va sin IVA, su cabecera sigue siendo «Total»
+// ④ EL PRESUPUESTO (P4): su columna va sin IVA, y su cabecera dice «IMPORTE» (SCRUM-1446f, c.20939)
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
 test('SCRUM-1446e · ④ el presupuesto de dos líneas de 12,50 al 21 %: 12,50 + 12,50 = Base 25,00, Total 30,25', async () => {
   const q = await papelPresupuesto(DOCE_CINCUENTA, calcTotal(DOCE_CINCUENTA).toFixed(2));
   assert.deepEqual(
     { cabecera: q.cabecera, lineas: q.lineas, sumaALaVista: suma(q.lineas), base: q.base, total: q.total },
-    { cabecera: 'Total', lineas: [1250, 1250], sumaALaVista: 2500, base: 2500, total: 3025 },
+    { cabecera: 'IMPORTE', lineas: [1250, 1250], sumaALaVista: 2500, base: 2500, total: 3025 },
     '🔴 la columna del presupuesto ya no va sin IVA, o ha cambiado su cabecera o su Total ' +
-    '(SCRUM-1446 c.20917, P4). La cabecera «Total» no se cambia sin un literal firmado.');
+    '(SCRUM-1446 c.20917, P4; cabecera «IMPORTE», c.20939). La cabecera no cambia sin un literal firmado.');
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════

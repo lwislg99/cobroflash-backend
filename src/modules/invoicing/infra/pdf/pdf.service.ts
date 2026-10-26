@@ -1017,7 +1017,9 @@ function drawTableHeader() {
     .text('Cant.', X_QTY, doc.y - 12, { width: W_QTY, align: 'right' })
     .text('Precio', X_PRICE, doc.y - 12, { width: W_PRICE, align: 'right' })
     .text(`${impuesto}%`, X_VAT, doc.y - 12, { width: W_VAT, align: 'right' })
-    .text('Total', X_TOTAL, doc.y - 12, { width: W_TOTAL, align: 'right' });
+    // SCRUM-1446f · la cabecera de la columna de cada línea, «IMPORTE», como en la factura: literal
+    // firmado por el fundador en SCRUM-1446 comentario 20939. Las cajas de opciones no se tocan.
+    .text('IMPORTE', X_TOTAL, doc.y - 12, { width: W_TOTAL, align: 'right' });
 
   doc.moveDown(0.3);
   doc.moveTo(X0, doc.y).lineTo(560, doc.y).stroke();
