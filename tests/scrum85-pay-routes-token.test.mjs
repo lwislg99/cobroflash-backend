@@ -11,6 +11,7 @@
 // ⚠️ GATEADO (crea/BORRA merchants efímeros; /pay/card golpea Stripe test-mode real):
 //   QA_DB_TEST=1 npm run test:staging
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599j: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
@@ -42,7 +43,25 @@ const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new
   req.end(body);
 });
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
+
+// SCRUM-1599j: ¿enlaza el cuerpo `<ruta>/<id>` con ESE id como segmento entero? Con la base vacía el
+// cobro A sale con id=1, y su token (hex) empieza por «1» una vez de cada 16: el `includes` de antes
+// casaba DENTRO del token y el test caía sin IDOR (SCRUM-1218 c.20840: 4 de 4 con token «1…», 0 de 66
+// con otro). El ancla exige que detrás del id no siga nada que pueda continuar el segmento, así que
+// sigue cazando `<ruta>/1"`, `<ruta>/1?…`, `<ruta>/1#…`, `<ruta>/1/…` y el final del cuerpo.
+const enlazaPorId = (cuerpo, ruta, id) => new RegExp(`${ruta}/${id}(?![0-9A-Za-z_-])`).test(cuerpo);
+
+// El positivo SEMBRADO del ancla, sin base: corre siempre. Si el ancla se quita (vuelta al `includes`),
+// cae el segundo bucle.
+test('SCRUM-1599j: el ancla de /pay/card/<id> caza un enlace por id y no un token que empieza por el id', () => {
+  for (const cuerpo of ['<a href="/pay/card/1">', "location='/pay/card/1?x=1'", '/pay/card/1#tarjeta', 'ir a /pay/card/1', '/pay/card/1/']) {
+    assert.ok(enlazaPorId(cuerpo, '/pay/card', 1), `debe cazar el id 1 en ${cuerpo}`);
+  }
+  for (const cuerpo of ['<a href="/pay/card/1f3a9c0e5b7d2a4c6e8f0a1b3c5d7e9f">', '<a href="/pay/card/12">', '/pay/card/10']) {
+    assert.ok(!enlazaPorId(cuerpo, '/pay/card', 1), `no debe cazar el id 1 en ${cuerpo}`);
+  }
+});
 
 // SCRUM-1599c (decisión del fundador, SCRUM-1599 c.20650 ②: «Connect activo en el test»): desde
 // SCRUM-893 la página de pago sólo enlaza la tarjeta si `cardChargeMode` no da 'refuse', y un
@@ -52,7 +71,7 @@ const ENABLED = process.env.QA_DB_TEST === '1';
 // pisa una variable que ya existe) y /pay/card no puede llamar a Stripe, haya o no clave en el .env.
 const CONNECT_ACTIVO = { connectStatus: 'active', stripeAccountId: 'acct_QAS85', flags: { PAYMENTS_CONNECT_ENABLED: true } };
 
-test('SCRUM-85: /pay/card, /pay/bizum, /pay/invoice cierran el IDOR — numérico 404 sin fuga, token funciona', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
+test('SCRUM-85: /pay/card, /pay/bizum, /pay/invoice cierran el IDOR — numérico 404 sin fuga, token funciona', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
   process.env.STRIPE_SECRET_KEY = '';
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
@@ -100,7 +119,8 @@ test('SCRUM-85: /pay/card, /pay/bizum, /pay/invoice cierran el IDOR — numéric
     const invoiceBody = await rInvoice.text();
     assert.ok(invoiceBody.includes(A.merchant.name), 'con el token correcto sí debe verse el propio merchant');
     assert.ok(invoiceBody.includes(`/pay/card/${tokenA}`), 'el link a /pay/card debe llevar el TOKEN');
-    assert.ok(!invoiceBody.includes(`/pay/card/${A.charge.id}`), 'el link a /pay/card NO debe llevar el id numérico');
+    assert.ok(!enlazaPorId(invoiceBody, '/pay/card', A.charge.id), 'el link a /pay/card NO debe llevar el id numérico');
+    t.diagnostic(`SCRUM-1599j: el token de A ${tokenA.startsWith(String(A.charge.id)) ? 'EMPIEZA' : 'no empieza'} por su id (${A.charge.id})`);
 
     // ── /pay/card: numérico 404, token resuelve el cobro (303 Stripe / 501 sin Stripe / 409 r23) ──
     const rNumCard = await pedirSinAgente(`${base}/pay/card/${A.charge.id}`, { redirect: 'manual' });
@@ -154,3 +174,11 @@ test('SCRUM-85: /pay/card, /pay/bizum, /pay/invoice cierran el IDOR — numéric
     await prisma.$disconnect();
   }
 });
+
+// SCRUM-1599j (diseño B de SCRUM-1599) · la mutación que tumba el caso de base, con la forma de SCRUM-1599i.
+// Va aparte de `MUTACIONES_QUE_ME_TUMBAN` a propósito: el job del meta-guard corre SIN base, el caso sale
+// SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco PGlite,
+// `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e). Cada campo, LITERAL.
+export const MUTACIONES_CON_BASE = [
+  { fichero: "src/modules/billing/app/routes/payCard.routes.ts", de: "      where: { receiptToken: token },", a: "      where: /^\\d+$/.test(token) ? { id: Number(token) } : { receiptToken: token },", cae: "SCRUM-85: /pay/card, /pay/bizum, /pay/invoice cierran el IDOR" },
+];

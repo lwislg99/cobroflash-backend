@@ -305,6 +305,10 @@ const GATEADOS_DECLARADOS = Object.freeze({
   'scrum222-deriva-arranque.test.mjs': 2,
   'scrum76-email-adjunto.test.mjs': 1,
   'scrum207-emision-auditada.test.mjs': 2,
+  // SCRUM-1599j: el que 1599i apartó, con la misma forma. Necesita banco porque el IDOR de /pay/card,
+  // /pay/bizum y /pay/invoice por id numérico lo contesta la RUTA real con cobros guardados. Su caso
+  // sin base (el ancla del id, sembrada) corre siempre.
+  'scrum85-pay-routes-token.test.mjs': 1,
 });
 const TOTAL_DECLARADO = Object.values(GATEADOS_DECLARADOS).reduce((a, b) => a + b, 0);
 
