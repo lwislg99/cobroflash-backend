@@ -199,3 +199,36 @@ Las cifras casan con las hechas a mano. Acumular desde el 1 de enero da lo mismo
   * 0 mudas · 0 ciegas.
 * Control del conductor: una mutación sembrada en un comentario sale MUDA. `git status` limpio después.
 * Guards dirigidos: en la entrega, con su población. `npm test` completo: NO CORRIDO en local; lo juzga el obligatorio. yaqu.app: sin pantalla (el 130 no tiene ruta).
+
+---
+
+# SCRUM-1065e · El motivo interno cuando el alta es posterior al 1 de enero
+
+**Medido contra:** `origin/main` = `5860dcd261d46dbf06ccd00fdcf577e0884e1b6c` · 2026-10-26T15:37:34Z
+**Rama:** `scrum-1065e-motivo-alta` (sale de `scrum-1065d-inicio-actividad` @ `315a7f76d17ce93dac3fe442e4dcea2c4592fda5`, que aún no está en `main`) · **Puesto:** J1 (sesión `jv-j1cf`; el hook de inicio dijo «SIN IDENTIDAD», SCRUM-1498) · **Encargo:** orquestador `cobroflash-backend-8b`
+
+A9: comprobación → `tests/scrum1065e-alta-a-mitad-de-ejercicio.test.mjs`
+
+## PASO 0
+
+* `git log origin/main -i --grep=1065`: 1065b (#2815) y 1065c (#2858); nada de 1065d ni de 1065e · `ls-remote 'refs/heads/scrum-1065*'`: sólo `scrum-1065d-inicio-actividad` · `gh pr list --state all --search 1065`: ningún PR de 1065d ni de 1065e.
+* Decisión: SCRUM-1065 c.20869 (respuesta 1 a la pregunta 1 de c.20868): «Sí, motivo interno», como CÓDIGO y sin texto en pantalla. La respuesta 2 («No» a pedir la fecha de inicio) deja la 05 como está.
+* `motivosParaNoFiarse` ya devolvía códigos (`facturas_miradas_sin_asiento`, `ingresos_sin_computar`, `facturas_sin_numero`, `gastos_sin_base`), no textos: no hay literal que firmar (regla 39).
+
+## Qué cambia
+
+* `modelo130.ts`: `construirBorrador130` acepta `altaDelMerchant` (opcional). Si es posterior al 1 de enero del ejercicio del borrador, `motivosParaNoFiarse` lleva `alta_a_mitad_de_ejercicio`. El 1 de enero, a cualquier hora, no avisa; el 2 de enero a las 00:00 sí. Fecha local, como `rangoAcumulado`. Sin alta leída, no se avisa.
+* `modelo130.repo.ts`: `leerBorrador130` LEE `Merchant.createdAt` con `merchant.findUnique({ where: { id }, select: { createdAt: true } })`, el mismo patrón que `criterioDelMerchantParaElLibro`. Sin esquema nuevo.
+* `tests/scrum1065b-borrador-130.test.mjs`, caso «regla 2 y solo lectura»: admitía sólo `findMany` filtrados por `merchantId`, y la lectura del alta es un `findUnique` sobre la fila del merchant, cuyo filtro de tenant es su `id`. Ahora admite EXACTAMENTE esa operación, con `where` igual a `{ id: M }`; cualquier otra que no sea `findMany`, o cualquier `findMany` sin `merchantId`, sigue tumbándolo. No se quita ninguna comprobación.
+* Test nuevo `tests/scrum1065e-alta-a-mitad-de-ejercicio.test.mjs`: alta en julio (T1-T4) da el motivo · el borde del 2 de enero · CONTROL NEGATIVO: alta el 1 de enero (00:00 y 23:59:59.999), en 2025 y en 2020, sin motivo · sin alta, sin motivo · el lector lee esa fila, por su `id` y sólo `createdAt`, con su positivo (alta anterior → `[]`).
+* `src/` de la emisión, `prisma/` y textos: no se tocan.
+
+## Lo que se corrió, con su población
+
+* 1065b/c/d/e: 4 ficheros · 21 tests · 21 pass · 0 fail · 0 skipped (`dist/` con `tsc --noCheck`).
+* Mutación con `correr` y `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`, sobre `MUTACIONES_QUE_ME_TUMBAN`:
+  * base 5/5;
+  * **5 vivas**, cada una tumba el caso que declara: el borde movido al 1 de enero, `>=` por `>`, el motivo quitado, el alta sin pasar al borrador y la fila de otro merchant;
+  * la del motivo quitado es el código de antes de este tramo: es el rojo primero;
+  * 0 mudas · 0 ciegas. Control del conductor: una sembrada en un comentario sale MUDA. `git status` limpio después.
+* Guards dirigidos: en la entrega, con su población. `npm test` completo: NO CORRIDO en local; lo juzga el obligatorio. yaqu.app: sin pantalla (el 130 no tiene ruta).
