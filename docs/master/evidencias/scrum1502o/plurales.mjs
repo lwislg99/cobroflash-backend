@@ -2,6 +2,9 @@
 import { execFileSync } from 'node:child_process';
 const git = (...a) => execFileSync('git', a, { encoding: 'utf8', maxBuffer: 1 << 26 });
 const MAIN = process.argv[2];
+// SCRUM-1502p · sin el sha, cada `git show undefined:…` fallaba y salía «igual_en_main=0»: un cero
+// que no había mirado. Sin argumento, CIEGO y salida 2.
+if (!MAIN) { console.error('CIEGO · uso: node plurales.mjs <sha de main>'); process.exit(2); }
 const diff = git('show', '79479b9af', '--format=', '-U0', '--', 'public', 'src');
 let fichero = null; const pares = [];
 for (const l of diff.split('\n')) {
