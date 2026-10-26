@@ -4,6 +4,7 @@
 //   Parte GATEADA (QA_DB_TEST=1): se añade con el endpoint (2 meses → 2 facturas, IVA mixto,
 //   doble consolidación concurrente, TRABAJO_UNICO/SIN_VALORAR/receipt, tenancy).
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599k: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 // SCRUM-643: la zona se fija A MANO; sin esto el fichero mediría la máquina donde corre.
 const MADRID = 'Europe/Madrid';
 import test from 'node:test';
@@ -136,9 +137,9 @@ test('calcAlbaranTotales: líneas con IVA mixto suman en céntimos enteros', () 
 });
 
 // ── Flujo HTTP real (gateado) ────────────────────────────────────────────────
-const ENABLED = process.env.QA_DB_TEST === '1';
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 
-test('SCRUM-17: consolidar → rotura por mes (N facturas), IVA mixto, guards, tenancy', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-17: consolidar → rotura por mes (N facturas), IVA mixto, guards, tenancy', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const server = app.listen(0);
@@ -256,3 +257,11 @@ test('SCRUM-17: consolidar → rotura por mes (N facturas), IVA mixto, guards, t
     await prisma.$disconnect();
   }
 });
+
+// SCRUM-1599k (diseño B de SCRUM-1599) · la mutación que tumba el caso de base, CATALOGADA en SCRUM-1599k.
+// Va aparte de `MUTACIONES_QUE_ME_TUMBAN` a propósito: el job del meta-guard corre SIN base, el caso sale
+// SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco PGlite,
+// `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e). Cada campo, LITERAL.
+export const MUTACIONES_CON_BASE = [
+  { fichero: "src/modules/jobs/app/routes/jobs.routes.ts", de: "    const grupos = groupByRotura(consolidables);", a: "    const grupos = groupByRotura(consolidables).slice(0, 1);", cae: "SCRUM-17: consolidar → rotura por mes" },
+];
