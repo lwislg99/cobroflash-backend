@@ -1221,52 +1221,6 @@ En el comentario de Jira de este tramo (la dirigida corre después de escribir e
 - ⚠️ §1599q (#2899) no está en `main` al escribir esto, y su tramo también se añade al final de este fichero. Dos
   ramas que añaden al final del mismo registro pueden mezclarse sin marcadores y entrelazadas: quien entre segundo
   compara los tramos byte a byte.
-## J6 · SCRUM-1599p · lote 6a del diseño B: ocho con carrera al banco desechable, scrum173 con la opción (A), y el trinquete de 13 a 4
-
-**Medido contra:** `origin/main` = `268eb55ddf33547063a620009e505e4ed833ba35` · 2026-10-26T22:41:07Z (hora de GitHub; sesión J6 `jv-j6cp` en su árbol `jv-j6cp`, por encargo del orquestador `cobroflash-backend-8b`)
-
-A9: aviso → cicatriz J6 «Crucé el umbral de aviso de contexto sin medirme en el cruce: medí al arrancar y no volví a medir hasta después de un barrido ancho.» — no se pudo comprobar: medí 92k al arrancar y 119k tras Jira, y no volví a medirme hasta acabar el DESPUÉS del banco, con 239k; ningún hook de este árbol mide el contexto al cruzar
-
-Encargo: SCRUM-1599 c.20940 (decisión de reparto sobre la medición c.20928 de §1599o). Sólo `tests/` y docs: 0 líneas de `src/`, `.github/` o `prisma/`, y ninguna aserción tocada. Salida entera: `evidencias/SCRUM-1599/lote-1599p.salida.txt`; instrumentos: `pgbanco-1599p.mjs.txt` (el Postgres), `banco-1599p.mjs.txt` (banco-1599h contra ese Postgres), `mutar-1599i.mjs` sin cambiar y `pasada-1599o.mjs.txt` (de la rama de 1599o).
-
-### ① El lote
-
-- **Forma de 1599m** (`_banco-libro.mjs` justo detrás de `_staging-db.mjs`, `QA_DB_TEST` **o** `LIBRO_PG_URL`): scrum115, 127, 178, 92 y 814-carrera-del-tramo.gated.
-- **Con `URL_BANCO`**: scrum592, 767 y 793. Con el banco, la URL es `URL_BANCO`, que ya ha pasado el guard de `_banco-libro.mjs` (loopback y base «*_test»). Con `QA_DB_TEST` siguen leyendo `DATABASE_URL_DEV` y exigiendo `yaqu_dev_javier`, con la misma aserción. Control negativo: 592 con `LIBRO_PG_URL` a una base `…_plantilla` se niega al cargar («LIBRO_PG_URL no es un banco desechable»), rc=1.
-  - ⚠️ Consecuencia que digo, no mido: para importar `_banco-libro.mjs`, `scrum876e` exige `_staging-db.mjs` justo delante. Así que con `QA_DB_TEST=1` estos tres pasan ahora además por el guard de staging (`DATABASE_URL_TESTS`, marca y turno). Escriben donde escribían; con `QA_DB_TEST` no los he corrido.
-- **scrum173, opción (A)**: sus 7 casos ganan el banco, y el de «las cadenas YA PERSISTIDAS» salta en él con su motivo (`SOLO_EN_STAGING`): recorre las facturas selladas de TODA la base, que en la tanda comparten otros ficheros. No se acota a sus comercios.
-- 234 y 781 no entran (c.20940). Carril: `carriles.mjs de` los nueve ANTES de tocarlos → «sin fila en §3»; positivo: `latido.mjs` → S5.
-
-### ② Banco: Postgres 16.14 de verdad (no PGlite: el lote prueba concurrencia, §1599o ①)
-
-| pasada | casos | pasan | caen | saltan |
-|---|---|---|---|---|
-| ANTES (los 9 de main) | 31 | 1 | 0 | 30 |
-| DESPUÉS | 31 | 30 | 0 | 1 (el de 173, con su motivo) |
-| 9 mutaciones en `MUTACIONES_CON_BASE` | — | — | 9 MUEREN | 0 viven · 0 ciegas |
-
-- Cada mutación cae por su caso: 115 `status: 'failed'` → `'sent'`; 127 sin el paywall de la prueba vencida; 173 ① sin el «fuera de una transacción»; 178 sin el gate de la regla 24 («devolvió 500»); 92 sesión sin `teamMemberId`; 814 recuento de tramos a 0 (caen los 3); 592 sin el cerrojo («diez reservas … [1,1,2,3,3,3,3,3,4,4]»); 767 la cura devuelve un token sin guardar; 793 sin `portalToken: null` en el `WHERE` («10 tokens DISTINTOS»). `dist/` vuelve byte a byte.
-- **De paso, dos mutaciones VIVIERON en la primera ronda**, y las cambié:
-  - 814 sin `tomarCerrojoDeSerie`: 0 de 3 caen (n=1). Ese cerrojo no lo vigila ninguno de sus tres casos en este banco, o la carrera no se entrelazó: SIN MEDIR cuál.
-  - 592 sin su cerrojo: cae el caso de DIEZ, no el de DOS. El `cae` apunta al de diez.
-- Trinquete `scrum1599f`: con los nueve migrados y la lista sin tocar cae con «SALEN: los nueve» y «ENTRAN: —». Población recalculada con el número declarado a 0: **4** (116, 234, 574 y 781). `scrum419`: de 121 a **151**, la suma que da el propio test; con 173 declarado 6 en vez de 7, cae.
-
-### ③ Régimen T (c.20940: al menos 3)
-
-84 ficheros (los de `LIBRO_PG_URL` según `scrum419`) contra la MISMA base, N=11, base nueva por pasada. Memoria libre antes de cada una: 3.702, 4.539 y 4.549 MB.
-
-| pasada | VERDE | ROJO | SALTA | pared |
-|---|---|---|---|---|
-| T1 | 82 | 1 (`scrum728d`) | 1 (173) | 34,1 s |
-| T2 | 83 | 0 | 1 (173) | 30,1 s |
-| T3 | 83 | 0 | 1 (173) | 30,7 s |
-
-- Los nueve, verdes 3/3; 173 sale 6/0/1 las tres veces.
-- `scrum728d` cae en T1 por su SUELO «el RTT en loopback es ~0»: mide latencia con once procesos a la vez. No es de este lote (ya iba al banco) y no lo he tocado; es un candidato a ruido de carga, SIN MEDIR.
-
-**Sin medir:** CI (otro runner y la tanda entera) · staging con turno · los tres de `URL_BANCO` con `QA_DB_TEST` · por qué vivió el cerrojo de 814 · suite entera local: NO CORRIDA.
-
-**De paso, confieso:** lancé un `ls` con comodines sobre los 648 trabajos de la máquina, sin medirlos, buscando el Postgres de 1599o. El arnés lo mandó a segundo plano y lo paré: es la cicatriz de 1599i, otra vez. Y el primer arranque del Postgres se quedó colgado porque `pg_ctl` heredaba las tuberías; al parar la tarea murió el servidor, y lo rehíce con `stdio: 'ignore'`.
 
 ## J6 · SCRUM-1599s · lote 6b del diseño B: scrum234.gated y scrum781 al banco desechable, y el trinquete de 4 a 2
 
