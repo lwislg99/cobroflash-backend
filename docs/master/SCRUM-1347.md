@@ -64,3 +64,26 @@ Según `SCRUM-1016.md:749`, la nota no se escribió porque el ticket no daba su 
 ## De paso: mi fallo
 
 En la primera pasada, cinco rutas salieron NO-MONTADA para el admin (`confirm-bizum`, `garantia`, `team/:id`…). Pero stderr enseñaba sus manejadores corriendo (`member_not_found`): su 404 tiene el mismo cuerpo que el 404 global. La sonda ahora apunta las consultas del doble, y sólo llama NO-MONTADA a lo que no consulta nada. En la segunda pasada, el positivo flojo es 0.
+
+# APÉNDICE · 26-oct-2026 · SCRUM-1347c · Las filas 1 y 4 de S1 llevan los literales firmados
+
+**Medido contra:** `origin/main` = `7a86ed067d597d9c3bcb5d8ca6756796efbec453` · 2026-10-26T23:13:53Z
+**Rama:** `scrum-1347c-master-filas` (lleva dentro, por merge, la rama `scrum-1347b-filas-3-4` de PR #2906, por orden del orquestador: los dos tramos van en este fichero) · **Puesto:** J4 (sesión `jv-j4am`; el hook de arranque dijo «SIN IDENTIDAD», SCRUM-1498) · **Carril:** `node scripts/carriles.mjs de docs/YAQU_MASTER.md` → «SIN CERRADURA · un jefe» (`docs/equipo/dos-equipos.md:202`); lo encarga el orquestador `cobroflash-backend-8b`.
+
+A9: sin fallo que generalice — el cambio son dos celdas copiadas de la firma; se cotejaron con `git diff -U0` contra el comentario de Jira y con `git diff --numstat` (2 y 2 en el máster, nada más), y no hubo tropiezo que convertir en comprobación.
+
+## La firma
+
+SCRUM-1347 c.20965 (orquestador J, por cuestionario al fundador): **P1-A** y **P2-A** de los propuestos en c.20962 (tramo 1347b, arriba).
+
+## Lo aplicado
+
+- `docs/YAQU_MASTER.md:670`, fila 1: la nota va en la propia celda del Técnico, con el literal de P1-A.
+- `docs/YAQU_MASTER.md:673`, fila 4: «flags» dice cómo se cambian, con el literal de P2-A.
+
+Ninguna línea se mueve: el máster tiene las mismas líneas que en `7a86ed067`, y `git diff --numstat` da `2 2` sólo para ese fichero. Las citas `YAQU_MASTER.md:670` del repo (`SCRUM-1016.md:743`, `SCRUM-1554.md:168` y `:246`) siguen apuntando a la misma fila; son historia y dicen lo que había cuando se escribieron.
+
+## Lo que NO se hizo
+
+- No se ha tocado ninguna otra fila ni ningún gate del código.
+- Suite entera en local: NO CORRIDA (lo pidió el encargo). Los guards dirigidos y el obligatorio de CI van en la entrega.
