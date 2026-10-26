@@ -12,6 +12,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
+import { reqDeSesion } from './_arnes-de-router.mjs';
 
 const require = createRequire(import.meta.url);
 
@@ -108,7 +109,7 @@ function llamar(query) {
   assert.ok(capa, '🔴 no encuentro el GET / del router del 303: este test no estaría midiendo la ruta.');
   return new Promise((resolve, reject) => {
     capa.route.stack[0].handle(
-      { merchantId: MIO, userRole: 'admin', query },
+      reqDeSesion({ rol: 'admin', merchantId: MIO, query }),
       { json: resolve, status: (c) => ({ json: (b) => reject(new Error(`HTTP ${c}: ${JSON.stringify(b)}`)) }) },
       reject,
     );
