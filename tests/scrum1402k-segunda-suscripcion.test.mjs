@@ -25,6 +25,8 @@ import path from 'node:path';
 import vm from 'node:vm';
 import { createRequire } from 'node:module';
 import { dobleDeLaBase } from './_envio-doblado.mjs';
+import { reqDeSesion } from './_arnes-de-router.mjs';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const requiere = createRequire(import.meta.url);
@@ -70,7 +72,8 @@ let puerto;
 test.before(async () => {
   const app = express();
   app.use(express.json());
-  app.use((req, _res, next) => { req.merchantId = Number(req.headers['x-merchant']); next(); });
+  // el propietario: `/admin/billing` exige admin al montarse (SCRUM-1344)
+  app.use((req, _res, next) => { Object.assign(req, reqDeSesion({ rol: 'admin', merchantId: Number(req.headers['x-merchant']) })); next(); });
   app.use('/admin/billing', mod.default); // el mismo prefijo que `src/app.ts`
   servidor = app.listen(0);
   await new Promise((r) => servidor.once('listening', r));
@@ -123,32 +126,61 @@ const CANCELO = { plan: 'trial', subscriptionStatus: 'canceled', stripeSubscript
 const nombre = (f) => `${f.plan}/${f.subscriptionStatus}/${f.stripeSubscriptionId ? 'con id' : 'sin id'}`;
 
 // ── 1 · EL RECHAZO ───────────────────────────────────────────────────────────────────────────
-for (const fila of VIVAS) {
-  for (const pedido of ['pro', 'founding']) {
-    test(`suscripción viva ${nombre(fila)} · checkout de ${pedido} → 409 subscription_exists, sin Stripe y sin escribir`, async () => {
-      filas.set(M, fila);
-      plazasOcupadas = 0;
-      const { res, escrituras, stripe } = await checkout(M, pedido);
-      assert.equal(res.status, 409, JSON.stringify(res.cuerpo));
-      assert.equal(res.cuerpo.error, 'subscription_exists');
-      assert.equal(typeof res.cuerpo.message, 'string');
-      assert.ok(res.cuerpo.message.trim().length > 0, 'el 409 lleva un texto para la persona');
-      assert.deepEqual(stripe, [], 'ninguna llamada a Stripe');
-      assert.deepEqual(escrituras, [], 'ninguna escritura');
-    });
-  }
-}
+// Nombres ESCRITOS (SCRUM-1415): cada caso comprueba que su literal es el que sale de su fila.
+const RECHAZOS = VIVAS.flatMap((fila) => ['pro', 'founding'].map((pedido) => ({ fila, pedido })));
+const rechaza = casosEscritos(RECHAZOS,
+  ({ fila, pedido }) => `suscripción viva ${nombre(fila)} · checkout de ${pedido} → 409 subscription_exists, sin Stripe y sin escribir`,
+  async ({ fila, pedido }) => {
+    filas.set(M, fila);
+    plazasOcupadas = 0;
+    const { res, escrituras, stripe } = await checkout(M, pedido);
+    assert.equal(res.status, 409, JSON.stringify(res.cuerpo));
+    assert.equal(res.cuerpo.error, 'subscription_exists');
+    assert.equal(typeof res.cuerpo.message, 'string');
+    assert.ok(res.cuerpo.message.trim().length > 0, 'el 409 lleva un texto para la persona');
+    assert.deepEqual(stripe, [], 'ninguna llamada a Stripe');
+    assert.deepEqual(escrituras, [], 'ninguna escritura');
+  });
+test('suscripción viva pro/active/con id · checkout de pro → 409 subscription_exists, sin Stripe y sin escribir', rechaza(0));
+test('suscripción viva pro/active/con id · checkout de founding → 409 subscription_exists, sin Stripe y sin escribir', rechaza(1));
+test('suscripción viva pro/active/sin id · checkout de pro → 409 subscription_exists, sin Stripe y sin escribir', rechaza(2));
+test('suscripción viva pro/active/sin id · checkout de founding → 409 subscription_exists, sin Stripe y sin escribir', rechaza(3));
+test('suscripción viva pro/past_due/con id · checkout de pro → 409 subscription_exists, sin Stripe y sin escribir', rechaza(4));
+test('suscripción viva pro/past_due/con id · checkout de founding → 409 subscription_exists, sin Stripe y sin escribir', rechaza(5));
+test('suscripción viva pro/past_due/sin id · checkout de pro → 409 subscription_exists, sin Stripe y sin escribir', rechaza(6));
+test('suscripción viva pro/past_due/sin id · checkout de founding → 409 subscription_exists, sin Stripe y sin escribir', rechaza(7));
+test('suscripción viva founding/active/con id · checkout de pro → 409 subscription_exists, sin Stripe y sin escribir', rechaza(8));
+test('suscripción viva founding/active/con id · checkout de founding → 409 subscription_exists, sin Stripe y sin escribir', rechaza(9));
+test('suscripción viva founding/active/sin id · checkout de pro → 409 subscription_exists, sin Stripe y sin escribir', rechaza(10));
+test('suscripción viva founding/active/sin id · checkout de founding → 409 subscription_exists, sin Stripe y sin escribir', rechaza(11));
+test('suscripción viva founding/past_due/con id · checkout de pro → 409 subscription_exists, sin Stripe y sin escribir', rechaza(12));
+test('suscripción viva founding/past_due/con id · checkout de founding → 409 subscription_exists, sin Stripe y sin escribir', rechaza(13));
+test('suscripción viva founding/past_due/sin id · checkout de pro → 409 subscription_exists, sin Stripe y sin escribir', rechaza(14));
+test('suscripción viva founding/past_due/sin id · checkout de founding → 409 subscription_exists, sin Stripe y sin escribir', rechaza(15));
+test('suscripción viva equipo/active/con id · checkout de pro → 409 subscription_exists, sin Stripe y sin escribir', rechaza(16));
+test('suscripción viva equipo/active/con id · checkout de founding → 409 subscription_exists, sin Stripe y sin escribir', rechaza(17));
+test('suscripción viva equipo/active/sin id · checkout de pro → 409 subscription_exists, sin Stripe y sin escribir', rechaza(18));
+test('suscripción viva equipo/active/sin id · checkout de founding → 409 subscription_exists, sin Stripe y sin escribir', rechaza(19));
+test('suscripción viva equipo/past_due/con id · checkout de pro → 409 subscription_exists, sin Stripe y sin escribir', rechaza(20));
+test('suscripción viva equipo/past_due/con id · checkout de founding → 409 subscription_exists, sin Stripe y sin escribir', rechaza(21));
+test('suscripción viva equipo/past_due/sin id · checkout de pro → 409 subscription_exists, sin Stripe y sin escribir', rechaza(22));
+test('suscripción viva equipo/past_due/sin id · checkout de founding → 409 subscription_exists, sin Stripe y sin escribir', rechaza(23));
+rechaza.todos();
 
 // ── 2 · 🔴 EL POSITIVO QUE MANDA: quien no tiene suscripción llega al checkout igual que antes ────
-for (const [etiqueta, fila] of [['trial que nunca se suscribió', NUNCA], ['trial que canceló', CANCELO]]) {
-  test(`${etiqueta} · checkout de pro → 200 y una sesión de Stripe, como hoy`, async () => {
+const SIN_SUSCRIPCION = [['trial que nunca se suscribió', NUNCA], ['trial que canceló', CANCELO]];
+const llega = casosEscritos(SIN_SUSCRIPCION,
+  ([etiqueta]) => `${etiqueta} · checkout de pro → 200 y una sesión de Stripe, como hoy`,
+  async ([, fila]) => {
     filas.set(M, fila);
     const { res, stripe } = await checkout(M, 'pro');
     assert.equal(res.status, 200, JSON.stringify(res.cuerpo));
     assert.equal(res.cuerpo.ok, true);
     assert.equal(stripe.filter((n) => n === 'checkout.sessions.create').length, 1);
   });
-}
+test('trial que nunca se suscribió · checkout de pro → 200 y una sesión de Stripe, como hoy', llega(0));
+test('trial que canceló · checkout de pro → 200 y una sesión de Stripe, como hoy', llega(1));
+llega.todos();
 
 test('el fundador agotado sigue diciendo founding_sold_out a un trial', async () => {
   filas.set(M, NUNCA);
@@ -235,7 +267,7 @@ const pintar = (currentPlan, suscripcionViva) =>
 
 test('quien tiene Equipo ve «Plan activo: Equipo», sin el fundador y sin «Suscribirme»', () => {
   const html = pintar('equipo', true);
-  assert.match(html, /Plan activo: <strong>Equipo<\/strong>/);
+  assert.match(html, /Plan activo: <strong[^>]*>Equipo<\/strong>/);
   assert.doesNotMatch(html, /data-plan="founding"/, 'sin banner del fundador');
   assert.doesNotMatch(html, /Suscribirme/, 'sin botón de Pro');
   assert.equal((html.match(/id="portal-btn"/g) || []).length, 1, 'un solo botón de gestionar');
@@ -257,8 +289,8 @@ test('el 409 lleva el T3 firmado (SCRUM-1402, c.20866), y la pantalla le antepon
 });
 
 test('controles de la pantalla: Pro y fundador siguen como hoy, y el trial sigue viendo la oferta', () => {
-  assert.match(pintar('pro', true), /Plan activo: <strong>Pro<\/strong>/);
-  assert.match(pintar('founding', true), /Plan activo: <strong>Founding/);
+  assert.match(pintar('pro', true), /Plan activo: <strong[^>]*>Pro<\/strong>/);
+  assert.match(pintar('founding', true), /Plan activo: <strong[^>]*>Founding/);
   const trial = pintar('trial', false);
   assert.match(trial, /data-plan="founding"/, 'el trial ve el fundador');
   assert.match(trial, /Suscribirme/, 'el trial ve Suscribirme');
