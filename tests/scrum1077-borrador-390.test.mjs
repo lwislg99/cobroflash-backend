@@ -158,7 +158,8 @@ test('SCRUM-1077 · lo que el 303 deja vacío sale vacío, con su motivo', () =>
 
 test('SCRUM-1077 · lo que el 303 no colocó sale declarado, con el trimestre del que viene', () => {
   const ts = delTicket();
-  ts[2] = m303(3, [factura(3, 80, 0)], [gasto(3, 20, { category: 'herramientas' })]);
+  // SCRUM-1063h: 3.000 + 630 llega al umbral del art. 108 LIVA, así que la herramienta sigue apartada.
+  ts[2] = m303(3, [factura(3, 80, 0)], [gasto(3, 3000, { category: 'herramientas' })]);
   const r = m390(ts);
   assert.deepEqual(r.sinClasificar.map((s) => [s.trimestre, s.tipo, s.base, s.motivo]), [[3, 0, 80, 'tipo_cero']]);
   assert.deepEqual(r.gastosSinClasificar.map((g) => [g.trimestre, g.motivo]), [[3, 'posible_bien_de_inversion']]);
