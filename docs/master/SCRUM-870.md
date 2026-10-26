@@ -82,3 +82,56 @@ El productor es quien firma la declaración responsable del art. 13 RRSIF y quie
   personalidad (comunidad de bienes con NIF E), sí**. La vía decidida sigue siendo **la SL**, y este
   cambio es para **pruebas**.
 - ⛔ **Nada más de `productor.ts`.**
+
+---
+
+# TRAMO · 26-oct-2026 · La SL en camino: qué datos pedir, en qué orden y quién hace cada paso
+
+**Medido contra:** `origin/main` = `289ca894656c7c3686a0469d34785512b960e0b3` · 2026-10-26T15:16:08Z
+**Puesto:** J5 (sesión `jv-j5al`) · **Solo medición:** ni `src/`, ni esquema, ni texto de usuario.
+**Entrega:** comentario **c.20860** de SCRUM-870 (la tabla de datos, el orden, lo preparable y las
+cinco preguntas ✅/❌). Aquí va el resumen. Lo que manda es el comentario.
+
+**Disparador:** dato de Javier del 26-oct: «la empresa ya está en camino, ya tiene la documentación
+el notario». ⛔ No se escribe ningún dato de la SL, ni real ni inventado.
+
+## Lo que se midió
+
+- **Jira:** leídos enteros SCRUM-870, 143, 523 y 657, y además 1561, 41, 1531 y 1554 (de estos dos,
+  solo la descripción). Hay dos búsquedas de texto (21 y 19 abiertos). Su control positivo es que la
+  primera devuelve 143, 523 y 870. Los que esperan a la empresa son **143, 870, 523, 41, 1561 y
+  1283**. **657 no espera a la SL**: el DIR3 es del cliente del comerciante.
+- **Repo:** la identidad del productor vive en `src/modules/fiscal/verifactu/productor.ts:39` y `:42`
+  (carril J1), y la leen `verifactu.service.ts:757` y `:1278`. Hay cinco huecos `[NIF]` /
+  `[RAZÓN SOCIAL]` en `docs/legal/` (`DECLARACION_RESPONSABLE.md:23-25,63,92`,
+  `RGPD_TRATAMIENTO_DATOS.md:112`, `PACK_GESTORIA.md:75` y `ALCANCE_BETA.md:15`; **J4 propone**). El
+  control positivo de ese `grep` es que también casa con dos líneas de `src/` que no vienen al caso.
+- 🔴 **Hallazgo:** la página que se sirve, `public/privacidad.html:48`, **no tiene** la frase
+  «Titular de YaQu: […], NIF […]» que sí lleva su borrador (`RGPD_TRATAMIENTO_DATOS.md:112`), así que
+  no identifica a ningún titular. Va a la puerta de go-live (SCRUM-1554). Su arreglo es texto de
+  usuario: carril J3 y firma del fundador (regla 39).
+- 🔴 **De paso, en el carril de J4 y sin tocar:** `DECLARACION_RESPONSABLE.md:34` dice
+  `[ID INSTALACIÓN — SaaS: 1]`, y eso contradice SCRUM-524g (`productor.ts:50-53`).
+
+## Lo que se puede preparar sin el NIF
+
+Hay cuatro cosas. Un guard que solo LEA `productor.ts` y rechace los caracteres de la validación 1287
+(J1 o J6). Rellenar lo que no es identidad en la plantilla de la declaración (J4). Decidir qué es
+«una versión» (SCRUM-523). Y que el fundador tenga preparada la documentación del 017 (SCRUM-143,
+punto 3).
+
+## Corrección propia
+
+En c.20860 escribí que el ruido de la segunda búsqueda venía de que `CIF` «también casa con
+«cifrado», «específico»». **No lo medí**: no abrí ninguno de esos 19 tickets para ver por qué
+casaban. La lista de los que esperan a la SL no depende de esa causa, pero la causa queda **sin
+medir**.
+
+## NO medido
+
+Ninguna base de datos, Railway, la AEAT, Meta ni Stripe. Tampoco si el objeto social ya incluye el
+desarrollo de software (es la pregunta ①, urgente antes de la firma), ni si el NIF puede cambiar
+entre el 036 y la inscripción, ni los comentarios de SCRUM-1531 y 1554. La suite entera en local:
+**NO CORRIDA** (solo docs).
+
+A9: aviso → A10 «Una causa que encaja con lo último que viste no está cerrada hasta que explica también lo primero.» — no se pudo comprobar: atribuí el ruido de una búsqueda de Jira a una coincidencia por subcadena sin abrir los resultados, y ningún guard del repositorio lee lo que una sesión publica en Jira
