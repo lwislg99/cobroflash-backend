@@ -19,7 +19,7 @@ import { fileURLToPath } from 'node:url';
 const raiz = process.argv[2]; const N = Number(process.argv[3] || 10);
 if (!raiz || !fs.existsSync(path.join(raiz, 'dist', 'app.js')) || !(N >= 2)) { console.log('CIEGO: falta la raiz del arbol con dist/, o N < 2'); console.log('EXIT=2'); process.exit(2); }
 const aqui = path.dirname(fileURLToPath(import.meta.url));
-const fuente = fs.readFileSync(path.join(aqui, '..', '..', '..', 'evidencias', 'scrum1390', 'censo-que-ve-el-tecnico.mjs.txt'), 'utf8');
+const fuente = fs.readFileSync(path.join(aqui, '..', '..', '..', '..', 'tests', '_censo-frontera.mjs'), 'utf8');
 
 const veces = (s, t) => s.split(t).length - 1;
 const cambia = (s, de, a, cuantas) => { if (veces(s, de) !== cuantas) { console.log('CIEGO: «' + de + '» casa ' + veces(s, de) + ' veces y esperaba ' + cuantas); console.log('EXIT=2'); process.exit(2); } return s.split(de).join(a); };

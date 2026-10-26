@@ -17,7 +17,7 @@
 // que es lo que hace una base. Por eso el caso de la factura ajena cae sin el arreglo.
 //
 // ⚠️ Lo que NO mide: Postgres real, la app desplegada, ni las demás rutas de /admin (eso es el
-// censo, `docs/evidencias/scrum1390/censo-que-ve-el-tecnico.mjs.txt --eje=comercio`).
+// censo, `tests/_censo-frontera.mjs --eje=comercio`, que juzga `scrum1516c`).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { inyectarBase, moduloDeDist, MERCHANT, CLIENTE } from './_envio-doblado.mjs';

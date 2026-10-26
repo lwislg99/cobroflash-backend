@@ -10,6 +10,7 @@
 //   3. que un albarán a medias (SCRUM-170) NO entre — cobraría dos veces lo ya facturado;
 //   4. tenancy: los partes de otro cliente o de otro merchant no existen para esta llamada.
 import './_staging-db.mjs'; // SCRUM-60
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599m: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
@@ -37,10 +38,10 @@ const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new
   req.end(body);
 });
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 const LINEAS = [{ concepto: 'Mantenimiento mensual', cantidad: 2, unidad: 'h', precioUnitario: 50, tipoIva: 21 }];
 
-test('SCRUM-171a: consolidar por CLIENTE cruzando Trabajos, con rotura por mes', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
+test('SCRUM-171a: consolidar por CLIENTE cruzando Trabajos, con rotura por mes', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
 
@@ -177,3 +178,11 @@ test('SCRUM-171a: consolidar por CLIENTE cruzando Trabajos, con rotura por mes',
     await prisma.$disconnect();
   }
 });
+
+// SCRUM-1599m (diseño B de SCRUM-1599) · la mutación que tumba el caso de base, CATALOGADA en SCRUM-1599m.
+// Va aparte de `MUTACIONES_QUE_ME_TUMBAN` a propósito: el job del meta-guard corre SIN base, el caso sale
+// SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco PGlite,
+// `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e). Cada campo, LITERAL.
+export const MUTACIONES_CON_BASE = [
+  { fichero: "src/modules/jobs/domain/consolidacionCliente.service.ts", de: "    if (a.invoiceId != null) { fuera(a, 'ya_facturado'); continue; }", a: "    if (false) { fuera(a, 'ya_facturado'); continue; }", cae: "SCRUM-171a: consolidar por CLIENTE" },
+];

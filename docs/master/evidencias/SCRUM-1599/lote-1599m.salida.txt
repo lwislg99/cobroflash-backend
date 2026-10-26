@@ -1,0 +1,118 @@
+SCRUM-1599m · salida del quinto lote · banco desechable LOCAL: PGlite 0.5.8 + pglite-socket 0.2.11 (maxConnections 64) en loopback, base yaqu_libro_test, esquema de prisma migrate diff --from-empty (el ddl.sql de 1599k: schema.prisma sin cambios entre 289ca8946 y HEAD), PGlite nuevo por fichero (banco-1599h.mjs.txt, sin cambios)
+codigo: rama scrum-1599m-lote-5-banco (sale de scrum-1599k-lote-4-banco @160522620, PR #2876 abierto) · origin/main 11324d271372ee6e689aeeea1c90d096b6043696 · dist/ con tsc --noCheck · sin QA_DB_TEST · Date: Mon, 26 Oct 2026 15:53:27 GMT
+
+## banderas (banderas-1599h.mjs sobre los 22 de SOLO_STAGING antes del lote, commit 160522620)
+C	8099	···C·	scrum767-cura-concurrencia.test.mjs
+C	10113	···C·	scrum793-la-carrera-del-token.test.mjs
+EC	8727	··EC·	scrum592-concurrencia-serie.test.mjs
+EC	9377	··EC·	scrum234-carrera-serie.gated.test.mjs
+EC	15345	··EC·	scrum173-cadena-verifactu-serializada.test.mjs
+EC	20699	··EC·	scrum781-concurrencia-de-la-factura.test.mjs
+HC	11602	·H·C·	scrum127-paywall-bloquea.test.mjs
+HE	6591	·HE··	scrum73-verifactu-gate.test.mjs
+HE	10192	·HE··	scrum221-export-fiscal-cero-bytes.test.mjs
+HE	11008	·HE··	scrum171a-consolidar-cliente.test.mjs
+HE	12061	·HE··	scrum25-exports.test.mjs
+HE	13699	·HE··	scrum82-zip-verifactu.test.mjs
+HE	14643	·HE··	scrum170-facturacion-parcial.test.mjs
+HE	14951	·HE··	scrum25-export-zip.test.mjs
+HE	18943	·HE··	tenancy-permisos.test.mjs
+HEC	9867	·HEC·	scrum92-login-operario.test.mjs
+HEC	17977	·HEC·	scrum178-emision-manual.test.mjs
+HEC	21335	·HEC·	scrum814-carrera-del-tramo.gated.test.mjs
+MC	6281	M··C·	scrum115-wa-fallo-registrado.test.mjs
+sencillo	9842	·····	scrum116-recordatorio-candado.test.mjs
+sencillo	18624	·····	scrum574-mismo-cliente-tras-migracion.test.mjs
+solo-H	10238	·H···	scrum85-pay-routes-token.test.mjs
+# poblacion 22 de 22 pedidos · commit 160522620 · grupos {"C":2,"EC":4,"HC":1,"HE":8,"HEC":3,"MC":1,"sencillo":2,"solo-H":1}
+
+## canario cronometrado (1 fichero, sin migrar): 3,5 s
+
+## ANTES (los 8 de main, con LIBRO_PG_URL)
+scrum73-verifactu-gate.test.mjs · exit=0 · 3062 ms · casos=1 (ok=0 not_ok=0 skip=1) · declarados=1 · SUMA
+   skip · SCRUM-73: verifactu.xml — técnico 403, flag OFF sin registros, flag ON genera
+scrum221-export-fiscal-cero-bytes.test.mjs · exit=0 · 2530 ms · casos=1 (ok=0 not_ok=0 skip=1) · declarados=1 · SUMA
+   skip · SCRUM-221 · el registro BLOQUEA: sin fila no salen bytes (XML y ZIP por separado)
+scrum171a-consolidar-cliente.test.mjs · exit=0 · 2583 ms · casos=1 (ok=0 not_ok=0 skip=1) · declarados=1 · SUMA
+   skip · SCRUM-171a: consolidar por CLIENTE cruzando Trabajos, con rotura por mes
+scrum25-exports.test.mjs · exit=0 · 2329 ms · casos=1 (ok=0 not_ok=0 skip=1) · declarados=1 · SUMA
+   skip · SCRUM-25: exports admin-only, CSVs nuevos, base+IVA, rango y audit
+scrum82-zip-verifactu.test.mjs · exit=0 · 1623 ms · casos=1 (ok=0 not_ok=0 skip=1) · declarados=1 · SUMA
+   skip · SCRUM-82: datos.zip incluye el XML VeriFactu por año, byte-idéntico al endpoint suelto
+scrum170-facturacion-parcial.test.mjs · exit=0 · 1719 ms · casos=7 (ok=6 not_ok=0 skip=1) · declarados=7 · SUMA
+   skip · SCRUM-170: emitir parte, ver el pendiente, y que la consolidación NO se lo trague
+scrum25-export-zip.test.mjs · exit=0 · 1483 ms · casos=1 (ok=0 not_ok=0 skip=1) · declarados=1 · SUMA
+   skip · SCRUM-25 (B): datos.zip — técnico 403, entradas, PDFs, tenancy, rango, flag OFF y audit
+tenancy-permisos.test.mjs · exit=0 · 1513 ms · casos=2 (ok=0 not_ok=0 skip=2) · declarados=2 · SUMA
+   skip · A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only
+   skip · SCRUM-23: el técnico solo ve/accede SUS Trabajos (row-level, mismo merchant)
+POBLACION=8 ficheros · EXIT=0
+
+## DESPUES (los 8 migrados)
+scrum73-verifactu-gate.test.mjs · exit=0 · 3726 ms · casos=1 (ok=1 not_ok=0 skip=0) · declarados=1 · SUMA
+scrum221-export-fiscal-cero-bytes.test.mjs · exit=0 · 3714 ms · casos=1 (ok=1 not_ok=0 skip=0) · declarados=1 · SUMA
+scrum171a-consolidar-cliente.test.mjs · exit=0 · 4313 ms · casos=1 (ok=1 not_ok=0 skip=0) · declarados=1 · SUMA
+scrum25-exports.test.mjs · exit=0 · 3375 ms · casos=1 (ok=1 not_ok=0 skip=0) · declarados=1 · SUMA
+scrum82-zip-verifactu.test.mjs · exit=0 · 2839 ms · casos=1 (ok=1 not_ok=0 skip=0) · declarados=1 · SUMA
+scrum170-facturacion-parcial.test.mjs · exit=0 · 3470 ms · casos=7 (ok=7 not_ok=0 skip=0) · declarados=7 · SUMA
+scrum25-export-zip.test.mjs · exit=0 · 3735 ms · casos=1 (ok=1 not_ok=0 skip=0) · declarados=1 · SUMA
+tenancy-permisos.test.mjs · exit=0 · 3029 ms · casos=2 (ok=2 not_ok=0 skip=0) · declarados=2 · SUMA
+POBLACION=8 ficheros · EXIT=0
+
+## mutaciones (mutar-1599i.mjs; canario de una: 6,9 s; las 8: 100 s)
+== tests/scrum73-verifactu-gate.test.mjs · limpia: 1 ok de 1
+MUERE · M1 · src/modules/exports/app/routes/exports.routes.ts · «if (!isFlagEnabled('INVOICING_ES_ENABLED', { merchant })) {» → «if (false) {» · 1 de 1 caen · su caso («SCRUM-73: verifactu.xml») cae
+    · SCRUM-73: verifactu.xml — técnico 403, flag OFF sin registros, flag ON genera
+      error: admin con flag OFF debería ser 404 y fue 200
+== tests/scrum221-export-fiscal-cero-bytes.test.mjs · limpia: 1 ok de 1
+MUERE · M2 · src/modules/exports/app/routes/exports.routes.ts · «no saltó.
+    await recordAuditOrThrow({» → «no saltó.
+    await (async (x: any) => { try { awa» · 1 de 1 caen · su caso («SCRUM-221 · el registro BLOQUEA») cae
+    · SCRUM-221 · el registro BLOQUEA: sin fila no salen bytes (XML y ZIP por separado)
+      error: 🔴 el XML respondió 200 con la auditoría caída: el registro NO está bloqueando
+== tests/scrum171a-consolidar-cliente.test.mjs · limpia: 1 ok de 1
+MUERE · M3 · src/modules/jobs/domain/consolidacionCliente.service.ts · «if (a.invoiceId != null) { fuera(a, 'ya_facturado'); continu» → «if (false) { fuera(a, 'ya_facturado'); continue; }» · 1 de 1 caen · su caso («SCRUM-171a: consolidar por CLIENTE») cae
+    · SCRUM-171a: consolidar por CLIENTE cruzando Trabajos, con rotura por mes
+      error: Expected values to be strictly equal:
+== tests/scrum25-exports.test.mjs · limpia: 1 ok de 1
+MUERE · M4 · src/modules/exports/domain/exportData.ts · «const customers = await prisma.customer.findMany({
+    where» → «const customers = await prisma.customer.findMany({» · 1 de 1 caen · su caso («SCRUM-25: exports admin-only») cae
+    · SCRUM-25: exports admin-only, CSVs nuevos, base+IVA, rango y audit
+      error: 'TENANCY ROTA: clientes.csv incluye datos de otro merchant'
+== tests/scrum82-zip-verifactu.test.mjs · limpia: 1 ok de 1
+MUERE · M5 · src/modules/exports/app/routes/exports.routes.ts · «const xmlPermitido = isFlagEnabled('INVOICING_ES_ENABLED', {» → «const xmlPermitido = false && isFlagEnabled('INVOI» · 1 de 1 caen · su caso («SCRUM-82: datos.zip incluye el XML») cae
+    · SCRUM-82: datos.zip incluye el XML VeriFactu por año, byte-idéntico al endpoint suelto
+      error: 'falta el XML de 2026. Entradas: csv/clientes.csv, csv/facturas.csv, csv/cobros.csv, csv/trabajos.csv, csv/presupuestos.csv, csv/gastos.csv, facturas/202
+== tests/scrum170-facturacion-parcial.test.mjs · limpia: 7 ok de 7
+MUERE · M6 · src/modules/jobs/domain/albaran.service.ts · «if (a.facturadoParcial) {» → «if (false) {» · 1 de 7 caen · su caso («SCRUM-170: emitir parte, ver el pendiente») cae
+    · SCRUM-170: emitir parte, ver el pendiente, y que la consolidación NO se lo trague
+      error: 🔴 DOBLE FACTURACIÓN: la recapitulativa ha aceptado un albarán con líneas ya facturadas. Un albarán a medias NO lleva `invoiceId`, así que sin el guard e
+== tests/scrum25-export-zip.test.mjs · limpia: 1 ok de 1
+MUERE · M7 · src/modules/exports/app/routes/exports.routes.ts · «...(from || to ? { createdAt: { ...(from ? { gte: from } : {» → «},
+      select: { id: true, number: true, created» · 1 de 1 caen · su caso («SCRUM-25 (B): datos.zip») cae
+    · SCRUM-25 (B): datos.zip — técnico 403, entradas, PDFs, tenancy, rango, flag OFF y audit
+      error: 'una factura fuera del rango NO debe entrar en el paquete'
+== tests/tenancy-permisos.test.mjs · limpia: 2 ok de 2
+MUERE · M8 · src/modules/jobs/app/routes/jobs.routes.ts · «// URL el Trabajo de otro → 404 (mismo patrón que la tenancy» → «// URL el Trabajo de otro → 404 (mismo patrón que » · 1 de 2 caen · su caso («SCRUM-23: el técnico solo ve») cae
+    · SCRUM-23: el técnico solo ve/accede SUS Trabajos (row-level, mismo merchant)
+      error: el técnico no debe acceder al Trabajo de otro (esperado 404)
+POBLACION=8 mutaciones en 8 ficheros · vivas=0 · ciegas=0 · dist restaurado byte a byte · EXIT=0
+
+## trinquete ANTES de editar SOLO_STAGING (rc=1)
+    ENTRAN (gateados sólo de staging sin declarar): —
+    SALEN (declarados que ya no lo son): scrum170-facturacion-parcial.test.mjs, scrum171a-consolidar-cliente.test.mjs, scrum221-export-fiscal-cero-bytes.test.mjs, scrum25-export-zip.test.mjs, scrum25-exports.test.mjs, scrum73-verifactu-gate.test.mjs, scrum82-zip-verifactu.test.mjs, tenancy-permisos.test.mjs
+
+## trinquete DESPUES (14 declarados)
+ℹ tests 3
+ℹ pass 3
+ℹ fail 0
+ℹ skipped 0
+
+## scrum419 interrogado: tenancy-permisos declarado 1 en vez de 2 -> rc=1 (VIVO); restaurado byte a byte (cmp)
+
+## guards (24 ficheros)
+# tests 234
+# pass 234
+# fail 0
+# cancelled 0
+# skipped 0

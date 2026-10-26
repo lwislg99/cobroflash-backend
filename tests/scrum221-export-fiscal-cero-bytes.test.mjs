@@ -19,6 +19,7 @@
 // ⚠️ GATEADO (crea/BORRA un merchant efímero y levanta la app in-process):
 //   QA_DB_TEST=1 npm run test:staging
 import './_staging-db.mjs'; // SCRUM-60: fuerza staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599m: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
@@ -53,7 +54,7 @@ const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new
 });
 
 const require = createRequire(import.meta.url);
-const ENABLED = process.env.QA_DB_TEST === '1';
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 
 /** ¿Es esto un ZIP de verdad? Los ZIP empiezan por la firma local `PK\x03\x04`. */
 const pareceZip = (buf) => buf.length >= 4 && buf[0] === 0x50 && buf[1] === 0x4b;
@@ -61,7 +62,7 @@ const pareceZip = (buf) => buf.length >= 4 && buf[0] === 0x50 && buf[1] === 0x4b
 const pareceRegistroFiscal = (txt) => /RegistroAlta|RegFactuSistemaFacturacion/.test(txt);
 
 test('SCRUM-221 · el registro BLOQUEA: sin fila no salen bytes (XML y ZIP por separado)',
-  { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+  { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
     const { prisma } = await import('../dist/core/db/prisma.js');
     const { app } = await import('../dist/app.js');
     const auditMod = require('../dist/modules/system/audit.service.js');
@@ -169,3 +170,11 @@ test('SCRUM-221 · el registro BLOQUEA: sin fila no salen bytes (XML y ZIP por s
       await new Promise((r) => server.close(r));
     }
   });
+
+// SCRUM-1599m (diseño B de SCRUM-1599) · la mutación que tumba el caso de base, CATALOGADA en SCRUM-1599m.
+// Va aparte de `MUTACIONES_QUE_ME_TUMBAN` a propósito: el job del meta-guard corre SIN base, el caso sale
+// SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco PGlite,
+// `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e). Cada campo, LITERAL.
+export const MUTACIONES_CON_BASE = [
+  { fichero: "src/modules/exports/app/routes/exports.routes.ts", de: "no saltó.\n    await recordAuditOrThrow({", a: "no saltó.\n    await (async (x: any) => { try { await recordAuditOrThrow(x); } catch {} })({", cae: "SCRUM-221 · el registro BLOQUEA" },
+];

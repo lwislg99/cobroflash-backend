@@ -4912,3 +4912,20 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
 @media (max-width: 768px) {
   .sitios-cliente__form { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* ── J3 · SCRUM-1577b (AB6) ── Configuración (settingsView.js, de J3): los dos `select` de
+   Facturación y el selector de color de marca, a 44 px de toque en TODAS las anchuras, como el
+   «Criterio de caja» de la misma pestaña. Medido con `docs/master/evidencias/scrum1577/banco-44.mjs`
+   el 26-oct: los `select` daban 36,5–37 (su alto sale de `.input`, sin mínimo, que es de todas las
+   pantallas: aquí sólo se les da mínimo, por su id) y el color 38,7 de alto con un `style=` en línea
+   de 38 px, y a 320 se ENCOGÍA a 18,2 de ancho dentro de su fila. El estilo en línea pasa aquí tal
+   cual era, con el alto a 44 y `flex: none` para que no se encoja. Sin encogerse, a 320 la fila no
+   cabe y «Sin color (por defecto)» salía CORTADO por la tarjeta (borde derecho 316,8 contra 287; medido
+   con `evidencias/scrum1577/captura-1577b.mjs`): la fila salta de línea en vez de apretar el color. */
+#retencion-irpf-tipo,
+#actividad-tipo { min-height: 44px; }
+#brand-color-input {
+  flex: none; width: 48px; height: 44px; padding: 2px;
+  border: 1px solid var(--border); border-radius: 8px; cursor: pointer;
+}
+:has(> #brand-color-input) { flex-wrap: wrap; }
