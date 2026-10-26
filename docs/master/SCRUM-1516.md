@@ -133,3 +133,119 @@ con una fecha que avanza un milisegundo en cada petición. Con el `canon` de ant
   se lee exactamente igual que un éxito». Lo repetí sobre el `main` real, que ya traía el arreglo.
 - Di por buena durante unos minutos la lectura «la ficha se equivoca: el positivo sigue vivo en `main`». Era
   cierto a las 08:04Z y dejó de serlo a las 08:13Z. Va con su hora en ①.
+
+## SCRUM-1516c · El censo de frontera entra en el obligatorio, rehecho desde main
+
+**Medido contra:** `origin/main` = `81f9c0dc7d100cf05765b2c7708ac2f31f70beb7` · 2026-10-26T15:43:29Z
+
+A9: comprobación → `tests/scrum1516c-frontera-en-el-obligatorio.test.mjs`
+
+26-oct-2026 · **J6** (sesión `jv-j6cf`, equipo de Javier), por encargo del orquestador (`cobroflash-backend-8b`)
+con la decisión del fundador de SCRUM-1516 c.20861 («Sí, que J6 lo rehaga»). El hook de inicio dijo «SIN
+IDENTIDAD» (SCRUM-1498): el puesto lo dice el encargo, no la carpeta. La base fue `289ca8946`; antes de
+escribir esto se mezcló `origin/main` (21 commits, uno en `modelo303.routes.ts`) y se volvió a medir: los
+veredictos de las 192 y las 78 rutas salen idénticos, ruta a ruta, antes y después del merge.
+
+**Carril: SIN FILA, y va a S0.** `node scripts/carriles.mjs de` dice «sin fila en §3: nadie lo reclama» para
+`tests/_censo-frontera.mjs` y para `tests/scrum1516c-frontera-en-el-obligatorio.test.mjs`. Este PR no toca
+`dos-equipos.md` (es de S0): la fila la pide el orquestador.
+
+**Lo de #2600 (1516b, cerrado sin entrar) se leyó como referencia y NO se mezcló.** Se rehízo a mano, y cada
+número se midió otra vez sobre main.
+
+### Qué cambia
+
+| fichero | qué |
+|---|---|
+| `tests/_censo-frontera.mjs` | el censo, movido con `git mv` desde `docs/evidencias/scrum1390/censo-que-ve-el-tecnico.mjs.txt`. Con el `_` delante la tanda no lo coge como test |
+| `tests/scrum1516c-frontera-en-el-obligatorio.test.mjs` | lo corre en los dos ejes y exige CONJUNTO contra CONJUNTO lo que CRUZA, lo que LEE-Y-NO-ACABA y lo que NO-DISTINGUE, cada ruta con su motivo; un suelo de población; que sin siembra diga CIEGO; y cinco mutaciones en `MUTACIONES_QUE_ME_TUMBAN` |
+| `docs/master/SCRUM-1514.md:5` | su línea `A9: comprobación →` apuntaba a la ruta vieja; corregida en sitio (scrum1294 exige que la ruta exista) |
+| `docs/master/evidencias/SCRUM-1516/verlo-caer.mjs`, `la-moneda.mjs` | leen el censo de su sitio nuevo. `verlo-caer` corrido contra él: 15 de 15 como se esperaba, 0 sin aplicar |
+| `tests/scrum1514-el-reenvio-es-del-comercio.test.mjs:20` | un comentario que nombraba la ruta vieja |
+
+**Cambios del instrumento** (los cuatro primeros ya los midió 1516b; aquí se re-aplicaron y se comprobó que no
+mueven ningún veredicto: 192 de 192 y 78 de 78 rutas iguales que con el censo de main, comparadas con `diff`):
+- el `req` sale de `reqDeSesion` (scrum1344); el comercio de los datos es el 71, no el 1 del DEMO (scrum409);
+  los teléfonos, del rango imposible `340…` (scrum262); el envío sembrado va a `meta-simulado.invalid`, no
+  al host de Meta (scrum124-r28);
+- **`cwd` = la raíz medida y el `dotenv` de `loadEnv` sin ficheros.** El `chdir` trabaja: quitándolo,
+  `POST /admin/billing/accept-alcance` pasa de FILTRA a NO-LLEGO (lo que midió 1516b);
+- **se QUITA la línea que fijaba el modo de la app a desarrollo.** 1516b la conservaba y subió por ella el
+  tope de scrum702 de 20 a 21. Medido aquí: sin fijar, en desarrollo y en producción las rutas salen con el
+  mismo veredicto (1 corrida de cada). Sin la línea, scrum702 no se mueve; el test le quita esa variable
+  al hijo (la fija en «sin poner», no la hereda).
+
+### Lo medido sobre main
+
+| eje | población (suelo) | lo que se juzga | conjunto |
+|---|---|---|---|
+| comercio | 192 | CRUZA 2 | `GET /admin/referral`, `GET /admin/billing/plans` (las dos de SCRUM-1514: cruzan sin ser fuga) |
+| comercio | | LEE-Y-NO-ACABA 0 | vacío, declarado vacío |
+| rol | 78 | NO-DISTINGUE 3 | `metrics/inicio`, `metrics/actividad-equipo`, `products/frequent-concepts` |
+
+1516b declaraba 6 en NO-DISTINGUE el 19-oct; tres (`jobs/:id/ics` y las dos de albaranes) RECORTAN ya en main,
+y por eso no están. La población del comercio era 194 entonces y es 192 hoy: no se copió, se midió.
+
+**`frequent-concepts`: ya NO tira la moneda, y no se aparta.** 12 corridas idénticas del eje del rol: 12 de 12
+con el mismo código, el mismo veredicto (NO-DISTINGUE), las mismas líneas de ruta y los mismos totales. Lo
+arregló el `canon` de SCRUM-1516 (#2321, 8-oct), y la sembrada «con fecha» falla si vuelve. Se declara con
+su motivo («sin decidir»), como las otras dos.
+
+### El positivo sembrado, y verlo caer
+
+Los dos ejes exigen, para salir 0, que sus rutas de mentira salgan como se sabe que son; el test además lee la
+línea de controles sembrados del texto (segunda sonda, aparte del código de salida). Sin siembra, los dos ejes
+salen 2 y dicen CIEGO, sin TOTALES; con el doble sordo, 1.
+
+`docs/master/evidencias/SCRUM-1516/1516c/rojo-primero.mjs`, salida en `salida-rojo-primero.txt` (commit del árbol
+entero antes de inyectar; árbol limpio al acabar). Base: 4 de 4. Cada mutación del catálogo, aplicada sola
+(numstat 1/1), y lo que cae, con el motivo leído de la aserción:
+
+| mutación | cae |
+|---|---|
+| el censo no monta la siembra del comercio | eje del COMERCIO («salió 2») y el de CIEGO («--doble-sordo … salió 2») |
+| el doble da todo por atado | eje del COMERCIO («salió 1») |
+| la sembrada que no distingue pasa a distinguir el rol | eje del ROL («salió 1») |
+| `--sin-sembrar` deja de quitar la siembra | el de CIEGO («--sin-sembrar tenía que salir 2 … y salió 0») |
+| **una ruta real** (`GET /admin/customers/:id`) deja de atar el comercio (`src/`, recompilado y restaurado) | eje del COMERCIO: **el censo sale 0** y cae el trinquete: «CRUZA con rutas que NO están declaradas: GET /admin/customers/:id» |
+
+La última es la que prueba el trinquete y no sólo el código de salida.
+
+### El entorno, y lo que el test hace con él
+
+El censo sale CIEGO si ve variables de base o de integración. En un worktree anidado las ve aunque el entorno
+venga limpio: `salida-quien-carga.txt` mide que no hay ninguna tras `loadEnv` y que aparecen tres
+`DATABASE_URL_*` tras importar `prisma.js` (el cliente de Prisma carga el `.env` de junto a SU `node_modules`,
+que es el del checkout compartido). En CI no hay `.env`. El test, si el censo sale CIEGO nombrando variables
+que no venían de su entorno, lo relanza UNA vez con esas claves VACÍAS y lo dice en su salida. Vaciar sólo
+puede quitar credenciales. Si sigue CIEGO, cae.
+
+### Guards
+
+Corridos aquí (22 ficheros, 202 casos): 1390b/e, 1397, 1514, 702, 237, 976, 824/824b, 836, 419, 700, 719, 1415,
+124-r28, 262, 409, 480, 1344, 1387 y el nuevo. Primera pasada: 195 pasan, 6 saltados (gateados por banco
+desechable: 1390e y 1397, corren en el CI), y 1 cae, scrum976 ④, porque `guards:entrada` incluye scrum1294 y
+mi línea A9 de SCRUM-1514 llevaba una coletilla (error mío, abajo). Corregida y vuelta a pasar: abajo, en
+«Lo que NO está hecho», lo que no se ha corrido.
+
+### Lo que NO está hecho ni medido
+
+- **La tanda entera en local: NO CORRIDA** (encargo: diez sesiones y la cola de CI saturada). Hace de tanda el
+  obligatorio del PR.
+- El relanzamiento con claves vacías NO se ha visto en CI, porque allí no hay `.env`: se ha visto en local.
+- El modo de la app se comparó con 1 corrida por valor, no con una tanda.
+- Las 25 NO-LLEGO y las 4 SIN-CONSULTA del comercio siguen sin medir (SCRUM-1514). Lo que cruce y no llegue no
+  lo caza este test, y lo dice en cada pasada.
+- Los PDF que generan algunas rutas caen en `/storage` de la raíz (ignorado por git), como los de otros tests.
+
+### Mis errores
+
+- Escribí la línea `A9: comprobación →` de SCRUM-1514 con una coletilla detrás de la ruta. Lo cazó scrum1294
+  dentro de `guards:entrada` (scrum976 ④) antes de empujar.
+- En el banco del rojo conté las cruces del reporter sin cortar su resumen final, que las repite: «7 de 4». Es
+  la cicatriz ③ de la ficha. Lo cazó la suma; corregido, «4 de 4». Y al cortar el resumen perdí el motivo de
+  la aserción, que sólo se imprime ahí: lo vi vacío dos veces antes de leerlo de la salida entera.
+- Guardé la salida de la sonda del `.env` con las claves ya vaciadas en mi propio shell (las había vaciado
+  para medir): decía «ninguna» en los cuatro puntos, que es no medir. Repetida sin vaciar antes de comitear.
+- Escribí una salida del banco DENTRO del árbol, y el banco la contó como suciedad (`EXIT=1`). Repetido con la
+  salida fuera.
