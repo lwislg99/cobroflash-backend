@@ -1162,6 +1162,7 @@ Salida entera: `evidencias/SCRUM-1599/scrum115-ci-1599p.salida.txt`.
 **De paso, confieso:** arranqué el Postgres en el 55491 cuando mi propio `netstat` acababa de decir que ese puerto estaba ocupado. Era el de otra sesión, y la comprobación iba encadenada con el arranque. `pg_ctl` falló sin tocar el ajeno, y lo levanté en el 55617, que medí libre antes. Además, la evidencia la escribí antes de pasarla por `carriles.mjs de`: es la cicatriz de 1218d.
 
 **Sin medir:** CI con este arreglo · staging con turno.
+
 ## J6 · SCRUM-1599q · por qué scrum234 y scrum781 caen siempre, también en serie: bisect y sonda del reloj. Sólo medir
 
 **Medido contra:** `origin/main` = `268eb55dd` al medir y `6d5bf76c5bf02142e762ca2ddd3d2ae2b92f9a3e` al escribir (los 13 commits de en medio no tocan `src/modules/invoicing/domain/`, los dos tests ni sus ayudantes) · 2026-10-26T22:31:12Z (hora de GitHub; sesión J6 `jv-j6cq` en su árbol `cobroflash-jv-j6cq`, por encargo del orquestador `cobroflash-backend-8b`, c.20940)
