@@ -42,6 +42,7 @@
 // `dist/modules/**` para reimplementar la decisión. Un banco que se escribe su propia copia de
 // la lógica mide su copia, no el camino.
 import './_staging-db.mjs'; // PRIMERO: fija la BD de pruebas del carril. Código de seguridad (SCRUM-118).
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599p: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
@@ -76,7 +77,7 @@ const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new
   req.end(body);
 });
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 // 🔴 EL MOTIVO DEL SALTO VA LITERAL EN CADA `skip`, y no en una constante: SCRUM-456 lo lee
 // por AST, y de un identificador no puede sacar el texto — el salto sale MUDO y su tanda roja.
 // Cazado por el guard al primer intento, que es exactamente para lo que está.
@@ -181,7 +182,7 @@ const emitir = (base, cookie, quoteId) => pedirSinAgente(`${base}/admin/quotes/$
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 // ① LA CARRERA — el rojo que este ticket existe para apagar
 // ═════════════════════════════════════════════════════════════════════════════════════════════
-test('SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
+test('SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
 
@@ -243,7 +244,7 @@ test('SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo',
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 // ② EL DINERO — 30/70, que es donde el defecto se cobra
 // ═════════════════════════════════════════════════════════════════════════════════════════════
-test('SCRUM-814 · plan 30/70: lo facturable NO puede quedar por debajo del presupuesto', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
+test('SCRUM-814 · plan 30/70: lo facturable NO puede quedar por debajo del presupuesto', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const { motivoSinTramo } = await import('../dist/modules/quotes/domain/billingPlan.js');
@@ -306,7 +307,7 @@ test('SCRUM-814 · plan 30/70: lo facturable NO puede quedar por debajo del pres
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 // ③ POSITIVO ENUMERADO — que cerrar la carrera no haya roto el camino normal
 // ═════════════════════════════════════════════════════════════════════════════════════════════
-test('SCRUM-814 · dos peticiones SECUENCIALES siguen emitiendo «Anticipo» y luego «Final»', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
+test('SCRUM-814 · dos peticiones SECUENCIALES siguen emitiendo «Anticipo» y luego «Final»', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
 
@@ -358,3 +359,11 @@ test('SCRUM-814 · dos peticiones SECUENCIALES siguen emitiendo «Anticipo» y l
     await prisma.$disconnect();
   }
 });
+
+// SCRUM-1599p (diseño B de SCRUM-1599) · la mutación que tumba el caso de base, CATALOGADA en SCRUM-1599p.
+// Va aparte de `MUTACIONES_QUE_ME_TUMBAN` a propósito: el job del meta-guard corre SIN base, el caso sale
+// SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco,
+// `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e). Cada campo, LITERAL.
+export const MUTACIONES_CON_BASE = [
+  { fichero: "src/modules/system/app/routes/quotesAdmin.routes.ts", de: "      const tramo = tramoTrasEmitidas(emitidas);", a: "      const tramo = tramoTrasEmitidas(0);", cae: "SCRUM-814 · dos peticiones SECUENCIALES" },
+];
