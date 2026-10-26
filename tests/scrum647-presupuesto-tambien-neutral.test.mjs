@@ -61,10 +61,19 @@ async function textoDePresupuesto(id, extra = {}) {
 // 🔴 EL RECORTE NO PUEDE DEPENDER DE LO QUE MIDA EL NOMBRE DEL IMPUESTO, que es justo el tema
 // de este ticket: `IGIC` ocupa un carácter más que `IVA`. Un `slice` de longitud fija cortaba la
 // cabecera canaria por la mitad y hacía fallar el test por un motivo que no era el del producto.
-// Se corta hasta el último rótulo, «Total», y ni un carácter más.
+// Se corta hasta el último rótulo, y ni un carácter más.
+//
+// SCRUM-1446f · el último rótulo era «Total», y el recorte se anclaba EN ÉL: al pasar a «IMPORTE»
+// (literal firmado por el fundador en SCRUM-1446 comentario 20939), `indexOf('Total')` se iba al
+// «Total presupuesto» del pie y la cabecera se tragaba las líneas y la base. Anclar al rótulo nuevo
+// repetiría el defecto con la siguiente palabra que se añadiera detrás de él. Por eso el corte va
+// donde EMPIEZA la primera línea de la tabla, que no es un rótulo: cualquier palabra que cambie o se
+// añada en la cabecera, sea cual sea, queda dentro de lo que se compara.
 const cabecera = (t) => {
   const i = t.indexOf('Concepto');
-  return t.slice(i, t.indexOf('Total', i) + 'Total'.length);
+  const j = t.indexOf(LINEAS[0].concept, i);
+  assert.ok(i >= 0 && j > i, '🔴 EXTRACTOR CIEGO: no encuentro dónde acaba la cabecera de la tabla.');
+  return t.slice(i, j);
 };
 // Mismo criterio: se corta al final del importe del total, no a tantos caracteres.
 const totales = (t) => {
@@ -86,8 +95,10 @@ test('SCRUM-647 · ① CONTROL NEGATIVO: sin pasar el impuesto, el papel no ha c
   const t = await textoDePresupuesto(9471);
 
   // Las dos cadenas ENTERAS, con `===`, fijadas a lo que imprimía antes de este ticket. Una por
-  // cada criterio que convivía: la cabecera de la tabla y el bloque de totales.
-  assert.equal(cabecera(t), 'ConceptoCant.PrecioIVA%Total',
+  // cada criterio que convivía: la cabecera de la tabla y el bloque de totales. El último rótulo de la
+  // cabecera dice «IMPORTE» desde SCRUM-1446f: literal firmado por el fundador en SCRUM-1446
+  // comentario 20939 (antes, «Total»). Lo único que cambia es esa palabra; lo vigilado, no.
+  assert.equal(cabecera(t),'ConceptoCant.PrecioIVA%IMPORTE',
     '🔴 la cabecera de la tabla de líneas ya no se imprime como antes.');
   assert.equal(totales(t), 'Base imponible: 105,00 EURIVA 7%: 4,20 EURTotal presupuesto: 109,20 EUR',
     '🔴 el bloque de totales del presupuesto ya no se imprime como antes.');
@@ -102,7 +113,7 @@ test('SCRUM-647 · ② con el impuesto puesto desde fuera, «IVA» DESAPARECE de
   assert.equal(vecesEnPdf(t, 'IGIC'), 2,
     '🔴 el nombre puesto desde fuera no llega a los DOS sitios del documento (la cabecera de la '
     + 'tabla y la fila del desglose). Si sólo llega a uno, siguen conviviendo dos criterios.');
-  assert.equal(cabecera(t), 'ConceptoCant.PrecioIGIC%Total');
+  assert.equal(cabecera(t), 'ConceptoCant.PrecioIGIC%IMPORTE');
 });
 
 test('SCRUM-647 · ③ la forma tampoco depende del juego de tipos español', async () => {
@@ -122,7 +133,7 @@ test('SCRUM-647 · 🔴 EL CONTROL NEGATIVO NO PUEDE CAZAR ESTA REGRESIÓN — y
   const conNombreGrabado = await textoDePresupuesto(9474);  // == lo que imprimiría la regresión
 
   // ① lo aprueba: sus dos cadenas son exactamente las de hoy.
-  assert.equal(cabecera(conNombreGrabado), 'ConceptoCant.PrecioIVA%Total');
+  assert.equal(cabecera(conNombreGrabado), 'ConceptoCant.PrecioIVA%IMPORTE');
   assert.equal(totales(conNombreGrabado),
     'Base imponible: 105,00 EURIVA 7%: 4,20 EURTotal presupuesto: 109,20 EUR');
 
