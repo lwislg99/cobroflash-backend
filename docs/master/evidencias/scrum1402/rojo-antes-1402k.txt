@@ -1,0 +1,37 @@
+# SCRUM-1402k · rojo ANTES del arreglo · base 289ca894656c7c3686a0469d34785512b960e0b3 · node --test tests/scrum1402k-segunda-suscripcion.test.mjs
+✖ suscripción viva pro/active/con id · checkout de pro → 409 subscription_exists, sin Stripe y sin escribir
+✖ suscripción viva pro/active/con id · checkout de founding → 409 subscription_exists, sin Stripe y sin escribir
+✖ suscripción viva pro/active/sin id · checkout de pro → 409 subscription_exists, sin Stripe y sin escribir
+✖ suscripción viva pro/active/sin id · checkout de founding → 409 subscription_exists, sin Stripe y sin escribir
+✖ suscripción viva pro/past_due/con id · checkout de pro → 409 subscription_exists, sin Stripe y sin escribir
+✖ suscripción viva pro/past_due/con id · checkout de founding → 409 subscription_exists, sin Stripe y sin escribir
+✖ suscripción viva pro/past_due/sin id · checkout de pro → 409 subscription_exists, sin Stripe y sin escribir
+✖ suscripción viva pro/past_due/sin id · checkout de founding → 409 subscription_exists, sin Stripe y sin escribir
+✖ suscripción viva founding/active/con id · checkout de pro → 409 subscription_exists, sin Stripe y sin escribir
+✖ suscripción viva founding/active/con id · checkout de founding → 409 subscription_exists, sin Stripe y sin escribir
+✖ suscripción viva founding/active/sin id · checkout de pro → 409 subscription_exists, sin Stripe y sin escribir
+✖ suscripción viva founding/active/sin id · checkout de founding → 409 subscription_exists, sin Stripe y sin escribir
+✖ suscripción viva founding/past_due/con id · checkout de pro → 409 subscription_exists, sin Stripe y sin escribir
+✖ suscripción viva founding/past_due/con id · checkout de founding → 409 subscription_exists, sin Stripe y sin escribir
+✖ suscripción viva founding/past_due/sin id · checkout de pro → 409 subscription_exists, sin Stripe y sin escribir
+✖ suscripción viva founding/past_due/sin id · checkout de founding → 409 subscription_exists, sin Stripe y sin escribir
+✖ suscripción viva equipo/active/con id · checkout de pro → 409 subscription_exists, sin Stripe y sin escribir
+✖ suscripción viva equipo/active/con id · checkout de founding → 409 subscription_exists, sin Stripe y sin escribir
+✖ suscripción viva equipo/active/sin id · checkout de pro → 409 subscription_exists, sin Stripe y sin escribir
+✖ suscripción viva equipo/active/sin id · checkout de founding → 409 subscription_exists, sin Stripe y sin escribir
+✖ suscripción viva equipo/past_due/con id · checkout de pro → 409 subscription_exists, sin Stripe y sin escribir
+✖ suscripción viva equipo/past_due/con id · checkout de founding → 409 subscription_exists, sin Stripe y sin escribir
+✖ suscripción viva equipo/past_due/sin id · checkout de pro → 409 subscription_exists, sin Stripe y sin escribir
+✖ suscripción viva equipo/past_due/sin id · checkout de founding → 409 subscription_exists, sin Stripe y sin escribir
+✔ trial que nunca se suscribió · checkout de pro → 200 y una sesión de Stripe, como hoy
+✔ trial que canceló · checkout de pro → 200 y una sesión de Stripe, como hoy
+✔ el fundador agotado sigue diciendo founding_sold_out a un trial
+✖ regla 2: la suscripción de un merchant no bloquea el checkout de otro
+✖ tieneSuscripcionViva: viva = con id, o plan de pago en active/past_due
+✖ GET /plans trae suscripcionViva con el mismo predicado
+✖ por AST: el handler de /plans y el de /checkout llaman los dos a tieneSuscripcionViva
+✖ quien tiene Equipo ve «Plan activo: Equipo», sin el fundador y sin «Suscribirme»
+✔ controles de la pantalla: Pro y fundador siguen como hoy, y el trial sigue viendo la oferta
+ℹ tests 33
+ℹ pass 4
+ℹ fail 29

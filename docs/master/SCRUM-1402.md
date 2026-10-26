@@ -524,6 +524,53 @@ de 34 ficheros se corrió con este tramo escrito salvo esta sección; los de reg
 - **De paso:** al mezclar `main`, el tramo 1402g terminaba pegado al encabezado de 1402e, sin línea en blanco
   (lo dejó así la mezcla de #2788). Se la he puesto; no cambia ninguna línea más.
 
+# SCRUM-1402j · Ⓑ: el procedimiento para activar Equipo a mano (P1) y la propuesta de P2 · carril J3 (sólo docs)
+
+**Medido contra:** `origin/main` = `82e1bb530d3158777b719ca824c1f573b66715a1` · 2026-10-24T15:48:26Z
+
+A9: aviso → cicatriz J3 «Cité en un runbook dos rangos de línea contados a ojo sobre una lectura sin numerar: salieron desplazados en uno, y los cacé al releer cada línea citada antes del commit.» — no se pudo comprobar: es un juicio sobre lo que contiene la línea citada, y no conozco un test que lo mire
+
+## La decisión
+
+SCRUM-1402, c.20832 (24-oct-2026, transcrita por el orquestador): P1 «Sí, a mano y por escrito» · P2 «Sí, antes del
+primero» · P3 «No hace falta». Responde a c.20825 (1402i, jv-j5ak).
+
+## Lo que hay
+
+- **P1, escrito:** `docs/RUNBOOKS.md` **R27**. Cinco condiciones previas (la 0 es que P2 esté en producción), tres
+  pasos, cuatro comprobaciones y cómo se deshace; cada paso con fichero:línea, y lo que sólo dice la cuenta de
+  Stripe como «comprobar en el panel». Marcado **NO PROBADO**.
+- **P2, medido y propuesto, sin código:** SCRUM-1402 **c.20838**: la tabla de lo que ve hoy quien tiene Equipo
+  (fichero:línea y carril), los literales T1–T3 para firmar, el diseño del rechazo de la segunda suscripción
+  (`tieneSuscripcionViva`, un solo predicado para `/plans` y `/checkout`) y su test previsto
+  (`scrum1402k-segunda-suscripcion`), y la pregunta Q1.
+- **Corrección a c.20825:** el correo «Bienvenido al plan Pro» no lo recibe quien tenga Equipo por P1: sólo sale
+  en `checkout.session.completed` (`stripe.routes.ts:153`, único llamante) y una vez por merchant
+  (`lifecycle.service.ts:160`).
+- **Riesgo nuevo, sin medir:** si el portal de cliente de Stripe deja cambiar de plan, quien tiene Equipo puede
+  bajarse a Pro y quedarse con `plan = equipo`. Va en R27 y en c.20838 como «comprobar en el panel».
+
+## Cómo se ha medido
+
+Lectura de `origin/main` con `git show`/`sed`; cada número citado en R27 se volvió a leer con `sed -n <n>p`
+sobre `82e1bb53`. Contra `ae5b721efb184ae5f44816ee4a5cc034ed87f23f`, `git diff --name-only` no toca ninguno de
+los ficheros citados. Nada se ha ejecutado, ni contra Stripe ni en yaqu.app.
+
+## Lo corrido
+
+- Los cinco de registro (`scrum267`, `273`, `1294`, `921c`, `1572`) y los 16 que nombran `docs/RUNBOOKS.md` en
+  `tests/`: **21 ficheros, 178 casos: 177 pasan, 0 caen, 1 salta** (`scrum1515`, sin `LIBRO_PG_URL`). Código de
+  salida 0, con el TAP en fichero fuera del árbol (43.486 B).
+- **Control positivo:** con la frase del `A9:` cambiada a mano («TRES rangos»), `scrum1294` cae (1 de 4) y nombra
+  este tramo; deshecho con `git checkout` y árbol limpio después.
+- **Sin correr:** la tanda completa (10 sesiones a la vez) y los gateados por base.
+
+## Límites
+
+- `docs/RUNBOOKS.md` está «sin fila en §3: nadie lo reclama» (`node scripts/carriles.mjs de docs/RUNBOOKS.md`):
+  no es de J3 ni de nadie; se escribe declarado.
+- Aviso de merge: #2859 (1402i, J5) añade su tramo al final de este mismo fichero. Entre el que entre primero, el
+  otro puede quedar en conflicto.
 # SCRUM-1402i · Ⓑ medido: cómo se activa hoy el plan Equipo, de punta a punta · sólo docs, carril J5
 
 **Medido contra:** `origin/main` = `c6d3aa11f15a0a582f92b8ec4a8c9838ea426dd8` · 2026-10-24T15:35:19Z
@@ -587,3 +634,98 @@ fila · `scripts/setup-stripe-prices.mjs` sin cerradura.
 - Que cambiar el precio en Stripe no cambia `metadata.plan` es comportamiento de Stripe sin medir aquí.
 - La hora del ancla es la del commit de `main`, no la cabecera `Date:` de GitHub.
 - Sin tanda, sin build, sin tests: sólo docs. El obligatorio lo dice el CI.
+
+# SCRUM-1402k · P2: quien ya tiene una suscripción viva no abre otra, y quien tiene Equipo lo ve · carril J3
+
+**Medido contra:** `origin/main` = `289ca894656c7c3686a0469d34785512b960e0b3` · 2026-10-26T15:22:27Z
+
+A9: comprobación → `docs/master/evidencias/scrum1402/mutar-1402h.mjs`
+
+**Skill UI:** cargada
+
+Sesión jv-j3bj (puesto J3), por encargo del orquestador `cobroflash-backend-8b`. Entrega en Jira: SCRUM-1402,
+en el comentario que sigue a c.20866.
+
+## Las decisiones que aplica
+- **P2** (c.20832, «Sí, antes del primero»): a quien tiene Equipo se le quita la oferta de Pro y la del fundador,
+  y el checkout rechaza una segunda suscripción. Es también el GO de dinero.
+- **Q1** (c.20845, «Solo nuestra base»): el predicado mira solo la base. El checkout no pregunta a Stripe.
+- **T1** (c.20845): «Plan activo: Equipo». **T3** (c.20866): «Ya tienes una suscripción. Para cambiarla, usa
+  «Gestionar suscripción / facturación».» El literal se copió del comentario por programa, no a mano.
+- **La tarjeta «Plan Pro»** (c.20866): se oculta a quien tiene una suscripción viva de Equipo. Sin texto nuevo.
+- T2 («Plan Equipo» en la barra lateral, `app.js`) es de S2: aquí no se toca.
+
+## El arreglo (dos ficheros de J3)
+- `subscriptions.routes.ts`: `tieneSuscripcionViva(m)` es `true` con `stripeSubscriptionId` puesto, o con un
+  plan que no es `trial` en `active`/`past_due`. Es el diseño de c.20838. `POST /checkout` lo pregunta justo
+  después de `if (!stripe)`: devuelve 409 `subscription_exists` con T3, sin escribir nada y sin llamar a Stripe.
+  `GET /plans` devuelve `suscripcionViva`, calculado con la MISMA función.
+- `plansView.js`: T1; sin el banner del fundador y sin «Suscribirme» para quien tiene una suscripción viva (le queda
+  un solo «Gestionar suscripción / facturación», que ya existía); y sin la tarjeta de Pro para Equipo.
+- La función vive en el fichero de la ruta, y no en `billing/domain/`, porque un fichero nuevo allí sería del carril J2.
+
+## Rojo primero, por la ruta real
+`tests/scrum1402k-segunda-suscripcion.test.mjs`: el router de producción, montado con el prefijo de `src/app.ts`,
+con la base y `stripe` doblados. Sobre el código sin tocar, **29 de 33 caen**
+(`docs/master/evidencias/scrum1402/rojo-antes-1402k.txt`):
+- con suscripción viva, 13 checkouts dan 200 y abren otra sesión de Stripe;
+- los 12 de `founding` dan 412, pero sólo porque el doble no tiene aceptado el alcance;
+- Equipo se pinta como «Plan activo: Pro», con el fundador y con «Suscribirme».
+
+Después del arreglo, **35 de 35** (con los dos casos añadidos por c.20866).
+
+## Controles
+- 🔴 El positivo que manda: un `trial` que nunca se suscribió y uno que canceló siguen llegando al checkout igual (200 y una sesión).
+- El fundador agotado sigue dando `founding_sold_out`. Regla 2: la suscripción de un merchant no bloquea a otro.
+- Por AST, `/plans` y `/checkout` llaman a `tieneSuscripcionViva`. El instrumento ve las cuatro rutas y `/portal` da cero.
+- En la pantalla, Pro, fundador y trial se pintan como antes. Sin el campo (un servidor viejo), la pantalla de Pro también sale igual que hoy.
+
+## Mutaciones
+7 vivas de 7 (`docs/master/evidencias/scrum1402/mutaciones-1402k.txt`), con el catálogo `MUTACIONES_QUE_ME_TUMBAN`
+del propio test y el driver `mutar-1402h.mjs` de este ticket. Caen al quitar:
+- la pregunta del checkout;
+- la mitad del `past_due`;
+- la mitad del id;
+- el predicado de `/plans`;
+- el `&& !suscripcionViva` del fundador;
+- T1;
+- el ocultado de la tarjeta.
+
+## Lo corrido
+- La mini-tanda de los que miran `plansView.js` y el checkout (`public-js-parsea`, 1233, 341, 345, 406, 628, 644, 666b, 512, 55)
+  más la familia 1402, 745, 237 y 976, y los de registro (1294, 267, 273, 723, 921c): **222 de 222**, con
+  `guards:entrada` dentro de 976 ④ (15 guards). La primera pasada, sin el registro escrito, dio 171 de 172:
+  cayó 976 ④ porque 811c exige el `**Skill UI:**` del registro.
+- Los de microcopy (1157, 283, 300, 339, 405, 709, 726, 861): **62 de 62**.
+- `tsc --noEmit`: limpio. `dist/` emitido con `tsc --noCheck` (worktree anidado).
+- **Sin correr:** la tanda entera y los gateados por base.
+
+## Límites de lo medido
+- Dos clics seguidos antes de que llegue el webhook pasan los dos: es lo decidido en Q1.
+- Un `equipo` puesto a mano sin `subscriptionStatus` ni id da `false` y sigue viendo «Suscribirme».
+  El procedimiento R27 pasa por el webhook, que sí lo escribe.
+- Nada se ha visto en yaqu.app ni se ha llamado a Stripe.
+- La pantalla se ha medido pintando el HTML en una caja de arena, no en un navegador.
+- **Errores míos:**
+  - Corrí las mutaciones con un `dist/` anterior al cambio del literal. El driver se negó («CIEGO: la base no está verde»), y por eso la línea A9 apunta a él.
+  - Volví a pasar código por un heredoc (el catálogo de mutaciones), contra mi propia cicatriz del 21-oct. Esta vez comprobé después los bytes (ni U+FFFD ni barras perdidas), pero eso no es haberlo evitado.
+- **Aviso de merge:** #2871 (1402j) también añade su tramo al final de este fichero. El que entre segundo va a quedar DIRTY.
+
+## Los cinco rojos propios de #2878, arreglados en la misma rama (jv-j3bo, 26-oct-2026)
+
+A9: sin fallo que generalice — los cinco rojos los cazaron guards que ya existen (1344, 1415, 553 y 601) en el obligatorio, que es donde tenían que cazarse; mis dos tropiezos (un commit intermedio rehecho antes de empujar y una columna de `ls -l` mal leída por el espacio de la ruta) se vieron por control antes de contar nada
+
+Lo midió el vigía jv-j6ci en el job 121668614068 (12.711 = 12.644 pasan + 5 caen + 62 saltan). Se arregla el test de la rama y se ancla el literal; ningún guard ni ningún tope cambia de regla, y `src/` no se toca.
+
+| rojo | arreglo |
+| --- | --- |
+| scrum1344 ④ (`req` sin rol contra `/admin/billing`) | el middleware del arnés arma la sesión con `reqDeSesion({ rol: 'admin', merchantId })` |
+| scrum1415 (dos `test()` con nombre construido) | los 24 rechazos y los 2 positivos van con `casosEscritos` y nombre literal; las 7 mutaciones siguen casando con su `cae` |
+| scrum553 (tres extractores con `<strong>` pegado) | `<strong[^>]*>` |
+| scrum601 ×2 (el T3 en «a pelo» y en «no legibles») | se ancla como SCRUM-887: entrada «cuál entró y por qué» con la firma (SCRUM-1402 comentario 20866), y las dos cifras **regeneradas con el censo** sobre `origin/main` `f6a311967` + la rama: `aPelo` 161 → 162, no legibles 36 → 37. El único literal del censo en `subscriptions.routes.ts` es el de la línea 47 |
+
+- **El T3 de la rama es el de c.20866, byte a byte:** comparado por programa (90 B, `includes` = true; control negativo con «activa» = false).
+- **Lo que arrastra el ancla, y lo pide su propio guard:** `scrum921c` exige el par leído → una fila en `tests/_pares-leidos-en-jira.mjs` (carril J6; la regla 3 de esa lista pide que vaya en el mismo PR que la marca, como 1502o y 1502p). Y `scrum1395b` exige la ficha nueva de `scrum601` → `npm run censo:mudez -- --escribir` (1 ficha medida).
+- **Lo corrido**, sobre el árbol con `origin/main` `f6a311967` mezclado: los 5 que caían, la familia 1402, 745, 237, 976, 824, 836, 419, 702, 700, 719, 1415 y los de registro (267, 273, 1294, 921c), más 710b, 1395b y 1511h → **289 de 289 en 24 ficheros**, 0 saltan. La primera pasada dio 264 de 266: los dos que piden la fila de pares y la ficha de mudez.
+- **Sin correr:** la tanda entera (orden del orquestador: la hace el obligatorio) y los gateados por base.
+- **Error mío:** no corrí la lectura de arranque (`norma.mjs --arranque`) que pide `CLAUDE.md`; trabajé con las normas del prompt del orquestador.

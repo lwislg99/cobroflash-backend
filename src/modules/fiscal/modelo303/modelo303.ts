@@ -120,8 +120,9 @@ export interface CruceConCobros {
  * SCRUM-1063b · un gasto que NO entra en el IVA deducible porque su casilla habría que adivinarla.
  *
  * · `deducibilidad_sin_decidir` — `vatDeducible` a null: nadie dijo si se puede deducir.
- * · `posible_bien_de_inversion` — categoría «herramientas»: puede ser corriente (29) o bien de
- *   inversión (31), y `Expense` no guarda cuál. Repartirlo sería adivinarlo.
+ * · `posible_bien_de_inversion` — categoría «herramientas» que llega a `UMBRAL_BIEN_DE_INVERSION`
+ *   (o sin base o cuota para medirlo): puede ser corriente (29) o bien de inversión (31), y `Expense`
+ *   no guarda cuál. Repartirlo sería adivinarlo. Por debajo, va a la 28/29 (SCRUM-1063h).
  * · `categoria_desconocida` — sin categoría: por lo mismo, no se sabe si es corriente.
  * · `sin_cuota` — deducible, pero sin cuota guardada: el libro no la deriva, y aquí tampoco.
  * · `tipo_cero` — tipo 0 o ilegible: no hay cuota soportada que deducir.
@@ -226,9 +227,31 @@ function constaCobrado(estado: string | null): boolean {
  * «herramientas» (una nueva, o ninguna) NO se coloca: se declara.
  * SCRUM-1066e · «alquiler» (el del local) es corriente: decisión del fundador, SCRUM-1066 c.20497
  * («Sí, como gasto corriente»), en la lista del asesor para confirmación.
+ * SCRUM-1063h · «herramientas» por debajo de `UMBRAL_BIEN_DE_INVERSION` deja de ser ambigua: va
+ * a la 28/29 por las mismas puertas que el resto (deducibilidad, tipo, cuota).
  */
 const CATEGORIAS_CORRIENTES: ReadonlySet<string> = new Set(['materiales', 'desplazamiento', 'subcontrata', 'otros', 'alquiler']);
 const CATEGORIA_AMBIGUA = 'herramientas';
+
+/**
+ * SCRUM-1063h · por debajo de esto, una herramienta NO es bien de inversión y va a la 28/29.
+ *
+ * Art. 108.Dos.5.º LIVA (consolidado, vigente desde el 1-1-1993; leído en SCRUM-1063 c.20863): no
+ * tienen la consideración de bienes de inversión los bienes «cuyo valor de adquisición sea inferior
+ * a quinientas mil pesetas». 500.000 / 166,386 = 3.005,0605… → 3.005,06 €; el texto sigue en
+ * pesetas, la conversión es nuestra. Decisión del fundador, SCRUM-1063 c.20867 («A ahora, columna
+ * después»): se compara base + cuota, y solo lo que NO LLEGA va a la 28/29. Si el gasto entero no
+ * llega, ningún bien que lleve dentro llega: solo puede equivocarse hacia el lado de apartar.
+ */
+export const UMBRAL_BIEN_DE_INVERSION = 3005.06;
+
+const centimos = (n: number) => Math.round(n * 100);
+
+/** Sin base o sin cuota no se sabe a qué lado cae: se queda apartada. */
+function pordebajoDelUmbral(a: { base: number | null; cuota: number | null }): boolean {
+  if (a.base === null || a.cuota === null) return false;
+  return centimos(a.base + a.cuota) < centimos(UMBRAL_BIEN_DE_INVERSION);
+}
 
 /**
  * SCRUM-1063b · el IVA deducible SOBRE el libro de recibidas (SCRUM-426). Mismo principio que el
@@ -248,8 +271,8 @@ export function construirIvaDeducible(recibidas: LibroRecibidas): IvaDeducible {
 
     if (a.deducible === false) { noDeducibles += 1; return; }
     if (a.deducible !== true) return aparte('deducibilidad_sin_decidir');
-    if (categoria === CATEGORIA_AMBIGUA) return aparte('posible_bien_de_inversion');
-    if (categoria === null || !CATEGORIAS_CORRIENTES.has(categoria)) return aparte('categoria_desconocida');
+    if (categoria === CATEGORIA_AMBIGUA && !pordebajoDelUmbral(a)) return aparte('posible_bien_de_inversion');
+    if (categoria !== CATEGORIA_AMBIGUA && (categoria === null || !CATEGORIAS_CORRIENTES.has(categoria))) return aparte('categoria_desconocida');
     if (a.tipoIva === null || a.tipoIva === 0) return aparte('tipo_cero');
     if (a.cuota === null || a.base === null) return aparte('sin_cuota');
     base += a.base;

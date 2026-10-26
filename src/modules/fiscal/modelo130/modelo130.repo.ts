@@ -12,12 +12,20 @@ import { exigirLibroRecibidasLegible } from '../../invoicing/domain/libroRecibid
 import { construirBorrador130, rangoAcumulado, type Borrador130 } from './modelo130';
 
 export async function leerBorrador130(
-  db: ClienteDelLibro & ClienteDeGastos,
+  db: ClienteDelLibro & ClienteDeGastos & ClienteDelAlta,
   params: { merchantId: number; año: number; trimestre: number },
 ): Promise<Borrador130> {
   const { desde, hasta } = rangoAcumulado(params.año, params.trimestre);
   const libro = await leerLibroRegistro(db, { merchantId: params.merchantId, desde, hasta });
   const libroRecibidas = await leerLibroRecibidas(db, { merchantId: params.merchantId, desde, hasta });
   exigirLibroRecibidasLegible(libroRecibidas);
-  return construirBorrador130({ libro, libroRecibidas, año: params.año, trimestre: params.trimestre });
+  // SCRUM-1065e: el alta se LEE de la fila del merchant (su `id` es el filtro de tenant). Sin esquema nuevo.
+  const fila = await db.merchant.findUnique({ where: { id: params.merchantId }, select: { createdAt: true } });
+  const altaDelMerchant = fila?.createdAt instanceof Date ? fila.createdAt : null;
+  return construirBorrador130({ libro, libroRecibidas, año: params.año, trimestre: params.trimestre, altaDelMerchant });
+}
+
+/** SCRUM-1065e · lo único que hace falta de la fila del merchant: su alta. */
+export interface ClienteDelAlta {
+  merchant: { findUnique(args: any): Promise<{ createdAt?: unknown } | null> };
 }
