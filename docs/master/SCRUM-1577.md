@@ -71,3 +71,59 @@ La tabla «después» de los tres sin tocar es la del árbol entregado, no la de
 - **Los campos de cada cláusula** («Título», «Texto»: `input` y `textarea` nativos con `style="width:100%"`) se ven bajos en la captura y **no los he medido**. Mismo bloque, mismo carril; piden clase de campo de la casa + CSS → mismo bloqueo que los `select`.
 - Los `select` y el color: **esperan a 962f** (arriba).
 - yaqu.app: producción congelada; ver a 390 y 1280 cuando se descongele.
+
+## SCRUM-1577b · partes 2 y 3: los dos `select` de Facturación y el selector de color, a 44 px de toque
+
+**Medido contra:** `origin/main` = `f6a3119675c2584480d846fa0a20572d48cadaa5` · 2026-10-26T16:06:05Z
+**Skill UI:** cargada (`yaqu-premium-ui`), antes de tocar el código. DESIGN.md §5 «Inputs / Fields» y §6 «targets ≥44px» leídos. Checklist AB6: targets ≥44 (abajo) · un `style=` en línea MENOS (el del color, que pasa a la hoja tal cual era salvo el alto) · ningún token nuevo (`var(--border)`, los mismos valores) · capturas antes/después en `evidencias/scrum1577/b-*.png` · ancho de página sin desbordar a 320/390/929.
+**Microcopy:** ninguna. Ningún literal tocado.
+**Carril:** J3 en `settingsView.js` (contenedor de J3). En `public/dashboard/css/styles.css` (contenedor de **S2**) sólo un bloque nuevo marcado «J3 · SCRUM-1577b», al final, como permite `docs/equipo/dos-equipos.md:95-97` (y como hace J2 en ese mismo fichero). No se reescribe nada de S2. Encargo del orquestador `cobroflash-backend-8b` a `jv-j3bn`.
+
+A9: comprobación → `tests/scrum1577-configuracion-44.test.mjs`
+
+El fallo que generaliza: mi primer «después» dio **15/15 verdes** en el banco de 44 con el botón «Sin color (por defecto)» **cortado** a 320 (lo creaba mi arreglo: el color ya no se encoge y la fila no cabe). El banco mide el control, no a su vecino, y `scrollWidth` tampoco lo ve porque la tarjeta recorta. Lo cacé mirando la captura. Ahora lo comprueban el caso ④ del test (exige `flex-wrap: wrap` en la fila; la mutación que lo quita lo tumba) y `captura-1577b.mjs`, que imprime el borde derecho del botón contra el de la tarjeta y dice CORTADO.
+De paso, un error mío sin comprobación posible: añadí código al test con un heredoc, con mi cicatriz del 21-oct en contra. Va a `docs/equipo/cicatrices/J3.md`.
+
+### PASO 0 — el defecto existe hoy
+
+- #2692 (962f), el bloqueo del ticket, está en `main`: mergeado `def9d33d3f973dc75bfd7076478523ea1ac06afe` el 2026-10-24T12:53:29Z. Ni rama ni PR de 1577b en el remoto (`ls-remote 'refs/heads/scrum-1577*'` vacío; `gh pr list --search 1577`: #2699 MERGED y un #1577 de otro asunto).
+- Banco ANTES (abajo): 6 rojos. Los `select` dan hoy **36,5–37** de toque, no 38,9 como el 22-oct: su alto sale de `.input` (padding sin mínimo), así que depende de la fuente. El color, **38,6–38,9** de alto y, a 320, **18,2 de ancho** (el 22-oct, 32,3).
+
+### Lo que se cambia
+
+- `settingsView.js:802`: el `<input type="color">` pierde su `style=` en línea (un `style=` le gana a la hoja: no había otra forma de subirle el alto).
+- `styles.css`, bloque «J3 · SCRUM-1577b» (nivel superior, fuera de toda `@media`: el ticket pide 44 también a 929, como el «Criterio de caja» de la misma pestaña):
+  - `#retencion-irpf-tipo, #actividad-tipo { min-height: 44px; }` — por id: `.input` es de todas las pantallas y no se toca.
+  - `#brand-color-input { flex: none; width: 48px; height: 44px; … }` — lo que había en línea, con el alto a 44 y `flex: none` para que no se encoja.
+  - `:has(> #brand-color-input) { flex-wrap: wrap; }` — su fila salta de línea a 320 (ver `A9:`).
+- No se copia el mecanismo de «Criterio de caja» (`fCriterioCaja.style.minHeight` desde JS): `scrum713c` cuenta esas escrituras y es un trinquete.
+
+### ANTES y DESPUÉS — `evidencias/scrum1577/banco-44.mjs` (el de la parte 1, sin cambios)
+
+Corrido con `NODE_PATH` al `node_modules` del checkout compartido (este árbol no tiene, y no he creado ningún junction en él; el banco sólo saca `puppeteer-core` por `createRequire`). 5 controles × 320/390/929 = **15 mediciones**; sonda sembrada de 20 px en cada pestaña, que sale corta (20,2–21) en las 6 filas de pestaña de las dos pasadas: 0 CIEGOS.
+
+| control | toque ANTES 320 · 390 · 929 | toque DESPUÉS 320 · 390 · 929 | caja DESPUÉS (alto×ancho) |
+|---|---|---|---|
+| `select` Retención de IRPF | 36,7 · 37 · 36,9 | **44,7 · 44,9 · 44,9** | 44×170 |
+| `select` ¿Qué tipo de actividad tienes? | 36,5 · 36,7 · 36,9 | **44,5 · 44,7 · 44,9** | 44×121 |
+| color de marca | 38,9 · 38,7 · 38,6 (caja 38×**18,2** a 320) | **44,9 · 44,7 · 44,6** | 44×48 en las tres |
+| «Añadir condición» (parte 1, sin tocar) | 44,5 · 44,6 · 36,7 | igual | |
+| «Quitar» (parte 1, sin tocar) | 44,8 · 44,6 · 37 | igual | |
+
+Banco: ANTES salida 1 (ROJO 6 · CIEGO 0 · VERDE 9); DESPUÉS salida 0 (ROJO 0 · CIEGO 0 · VERDE 15).
+
+`evidencias/scrum1577/captura-1577b.mjs` (nuevo): capturas `b-antes-*`/`b-despues-*` de las dos filas a 320/390/929, ancho de página y el borde del botón de al lado del color. ANTES sirve una copia de `public/` de `origin/main` (`git archive`; `diff --no-index` = sólo mis dos ficheros). Control: la fila «antes» tiene que dar el color a 38×18,2 a 320, y lo da. Página = ventana en las 6 filas de cada versión. Botón contra tarjeta a 320: antes 287/287, primer «después» **316,8/287 CORTADO**, final 194,3/287 (baja de línea entero).
+
+### Test
+
+`tests/scrum1577-configuracion-44.test.mjs`, dos casos nuevos: **④** el color sin `style=`, con `height: 44px` y `flex: none`, y su fila con `flex-wrap: wrap`; **⑤** los dos `select` con `min-height: 44px` fuera de toda `@media`, y sus ids todavía en la vista. La hoja se lee sin comentarios, sin los bloques `@media` (recortados por llaves equilibradas, con suelo: el recorte tiene que quitar algo) y con los selectores anclados a principio de línea.
+- **Base en rojo:** el test contra `settingsView.js` y `styles.css` de `origin/main` → ①②③ pasan, **④ y ⑤ caen** (salida 1).
+- **Mutaciones:** 4 nuevas en `MUTACIONES_QUE_ME_TUMBAN` (8 en total). `evidencias/scrum1577/mutar.mjs` sobre el commit local `fea74addd06e91030ee436208e5f18ee93818f80`: **base verde, 8/8 tumban SU caso, MAL 0**.
+
+### Sin mirar / pendiente (no es cero)
+
+- **Parte 4** (el enlace de la página pública, DESIGN.md §6): espera decisión. No tocada.
+- **Parte 5 · yaqu.app: NO HECHO.** Esta sesión no lo ha intentado.
+- **Los campos de cada cláusula** («Título», «Texto»): siguen sin medir, como dijo la parte 1. Fuera del encargo.
+- **Foco del color:** no tenía estilo de foco propio antes y no se le ha dado. No medido.
+- **Suite entera local: NO CORRIDA** (orden del orquestador: 10 sesiones a la vez). Las tandas dirigidas, abajo.
