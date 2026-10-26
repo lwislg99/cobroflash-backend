@@ -1,0 +1,62 @@
+// SCRUM-1599o · una PASADA de los ficheros dados contra el MISMO Postgres 16 desechable (una base para todos, como
+// la tanda de CI). Cada fichero en su propio `node --test` (aislamiento por proceso, como la tanda), con N a la vez.
+// Uso: node pasada.mjs <raiz> <puerto> <N> <etiqueta> <salida.json> <tests/f1…>
+// Por fichero: código, ms, casos de primer nivel (anclados al inicio de línea), «# tests» declarado y si suman.
+// Sin casos → CIEGO. Un fichero que no termina en TOPE_MS se mata y sale COLGADO (ni verde ni rojo).
+import fs from 'node:fs';
+import path from 'node:path';
+import { spawn } from 'node:child_process';
+
+const [raiz, puerto, nTxt, etiqueta, salida, ...ficheros] = process.argv.slice(2);
+const N = Number(nTxt);
+if (!raiz || !puerto || !N || !salida || ficheros.length === 0) { console.log('CIEGO: faltan argumentos'); process.exit(2); }
+const TOPE_MS = Number(process.env.TOPE_MS || 150_000);
+const CASO = /^(\s*)(ok|not ok) \d+ - (.*?)(?: # (SKIP|TODO)\b.*)?$/;
+const entorno = { ...process.env };
+for (const k of ['NODE_TEST_CONTEXT', 'NODE_OPTIONS', 'FORCE_COLOR', 'QA_DB_TEST', 'A55_DB_TEST', 'BOT_SUITE_TEST', 'DATABASE_URL']) delete entorno[k];
+const dirTap = path.join(path.dirname(path.resolve(salida)), `tap-${etiqueta}`);
+fs.rmSync(dirTap, { recursive: true, force: true });
+fs.mkdirSync(dirTap, { recursive: true });
+
+const correr = (fichero) => new Promise((ok) => {
+  const t0 = Date.now();
+  const tap = path.join(dirTap, path.basename(fichero) + '.tap');
+  const hijo = spawn(process.execPath, ['--test', '--test-force-exit', '--test-reporter=tap', `--test-reporter-destination=${tap}`, fichero], {
+    cwd: raiz,
+    env: { ...entorno, LIBRO_PG_URL: `postgresql://postgres@127.0.0.1:${puerto}/yaqu_libro_test`, DISABLE_CRONS: 'true', WHATSAPP_DRY_RUN: '1', NODE_ENV: 'test' },
+  });
+  let texto = '';
+  hijo.stdout.on('data', (d) => { texto += d; });
+  hijo.stderr.on('data', (d) => { texto += d; });
+  let colgado = false;
+  const reloj = setTimeout(() => { colgado = true; hijo.kill(); }, TOPE_MS);
+  hijo.on('close', (c, s) => {
+    clearTimeout(reloj);
+    const ms = Date.now() - t0;
+    const lineas = fs.existsSync(tap) ? fs.readFileSync(tap, 'utf8').split(/\r?\n/) : [];
+    let pasan = 0, caen = 0, saltan = 0, declarados = null;
+    const caidos = [];
+    for (const l of lineas) {
+      const d = /^# tests (\d+)$/.exec(l); if (d) declarados = Number(d[1]);
+      const m = CASO.exec(l);
+      if (!m || m[1].length > 0) continue;
+      if (m[4] === 'SKIP') saltan++; else if (m[2] === 'ok') pasan++; else { caen++; caidos.push(m[3]); }
+    }
+    const casos = pasan + caen + saltan;
+    const veredicto = colgado ? 'COLGADO' : casos === 0 ? 'CIEGO' : caen > 0 || (c ?? s) !== 0 ? 'ROJO' : saltan > 0 ? 'SALTA' : 'VERDE';
+    ok({ fichero: path.basename(fichero), codigo: c ?? s, ms, pasan, caen, saltan, declarados, suman: declarados === casos, veredicto, caidos, cola: veredicto === 'VERDE' ? '' : texto.slice(-1500) });
+  });
+});
+
+const t0 = Date.now();
+const cola = [...ficheros];
+const res = [];
+await Promise.all(Array.from({ length: Math.min(N, cola.length) }, async () => {
+  while (cola.length) res.push(await correr(cola.shift()));
+}));
+const total = Date.now() - t0;
+res.sort((a, b) => a.fichero.localeCompare(b.fichero));
+fs.writeFileSync(salida, JSON.stringify({ etiqueta, N, total_ms: total, res }, null, 1));
+for (const r of res) console.log(`${etiqueta} · ${r.veredicto.padEnd(7)} · ${String(r.ms).padStart(7)} ms · ${r.pasan}/${r.caen}/${r.saltan} (decl ${r.declarados}, suman ${r.suman}) · ${r.fichero}${r.caidos.length ? ' · CAEN: ' + r.caidos.join(' | ') : ''}`);
+const cuenta = (v) => res.filter((r) => r.veredicto === v).length;
+console.log(`${etiqueta} · N=${N} · ficheros=${res.length} · VERDE=${cuenta('VERDE')} ROJO=${cuenta('ROJO')} SALTA=${cuenta('SALTA')} CIEGO=${cuenta('CIEGO')} COLGADO=${cuenta('COLGADO')} · pared ${total} ms`);

@@ -929,6 +929,70 @@ PGlite 0.5.8 + socket, uno nuevo por pasada (`banco-1599h.mjs` sin cambiar), DDL
 **Sin medir:** el banco de CI, que es otro motor y lo comparten los ficheros que corren a la vez (allí el cobro A no
 tiene por qué ser id=1); staging con turno; el obligatorio, que se lee después del empujón.
 
+## J6 · SCRUM-1599o · antes del lote 6: ¿se pisan en el banco los 11 que llevan carrera? Medido, no construido
+
+**Medido contra:** `origin/main` = `c1331293b01ac32a4357cf1b239dab86853f25ee` · 2026-10-26T16:17:25Z (hora de GitHub; sesión J6 `jv-j6cm` en su árbol `jv-j6cm`, por encargo del orquestador `cobroflash-backend-8b`. Al empujar, `main` iba 8 ficheros por delante, ninguno de `src/`, `prisma/` ni de los 11)
+
+A9: aviso → cicatriz J6 «Escribí en Jira la letra de mi tramo con una lectura de ramas de doce minutos antes, y otra sesión la había empujado entretanto» — no se pudo comprobar: el control del sufijo de A4 va antes del primer push, y el comentario de Jira se escribe antes; lo corregí en c.20929
+
+Encargo: medir lo que §1599m ④ dejó «por hacer». Llegó como «SCRUM-871», pero 871 es del equipo de Luis y está
+Finalizada (16-sep, PR #1328): sólo es la cita del riesgo (`scrum814-carrera-de-tramos-postgres`, 393 s en la tanda
+frente a 64 s solo) y no se toca. Jira: c.20928 (medición y propuesta) y c.20929 (la letra). Solo docs: 0 líneas de
+`src/`, `tests/` ni `.github/`. Salida entera: `evidencias/SCRUM-1599/carrera-1599o.salida.txt`; instrumentos:
+`pasada-1599o.mjs.txt` y `adaptar-1599o.mjs.txt`.
+
+### ① Población e instrumento
+
+- **Los 11:** scrum115, 127, 173, 178, 234.gated, 592, 767, 781, 793, 814-carrera-del-tramo.gated y 92 (los 14 de
+  `SOLO_STAGING` en `scrum-1599m-lote-5-banco` menos 116, 574 y 85, apartados con su motivo).
+- **Postgres 16.14 de verdad**, en loopback y en el temporal de la sesión (`@embedded-postgres/windows-x64`, fuera del
+  árbol). No sirve PGlite: es una sola sesión de backend y no puede medir concurrencia (§1599f ②). Base
+  `yaqu_libro_test` con el DDL de `migrate diff --from-empty`: 33 `CREATE TABLE` para 33 `model`, rehecha antes de
+  cada pasada.
+- **Los 11 se adaptaron EN LOCAL para medir y se deshicieron después:**
+  - 7, con la forma de 1599m;
+  - 592, 767, 781 y 793 apuntan a `yaqu_dev_javier` por `DATABASE_URL_DEV`: se les dio la clave de `LIBRO_PG_URL`;
+  - se deshizo con `git apply -R` de su propio diff, y el árbol quedó con 0 ficheros cambiados. `guard-dangerous`
+    paró antes un `git restore`, nombrando exactamente los 11.
+- **Un `node --test` por fichero y N a la vez, todos contra la MISMA base.** Casos anclados al inicio de línea; en las
+  330 filas los casos suman el `# tests` declarado.
+- **Control:** sin adaptar, 592 sale SALTA 0/0/4. Canario cronometrado antes de las pasadas: 592 adaptado, 4/4 en
+  0,8 s.
+
+### ② Lo medido
+
+| régimen | pasadas | los 11 |
+|---|---|---|
+| S · serie, N=1 | 3 | 9 VERDE · 2 ROJO (234, 781), igual 3/3 · ~19,8 s |
+| P · los 11 a la vez, N=11 | 3 | 9 VERDE · 2 ROJO (234, 781), igual 3/3 · ~8,5 s |
+| T · los 11 + los 69 ficheros de banco ya migrados (80, N=11) | 6 | 234 y 781 ROJO 6/6 · **173 ROJO 1/6** · los otros 8 VERDE 6/6 |
+
+En T caen también `scrum1599f` y `scrum419` en las 6 pasadas. Es lo esperado, no un hallazgo: ven los 11 adaptados.
+
+- **Los 11 no se pisan entre ellos:** P = S, 3/3.
+- **No hay ahogo en este régimen:** el más lento, 814.gated, tarda 7,5 s en S, 8,4 s en P y 9,2–10,2 s en T.
+- **173 sí se pisa con la tanda.** Su caso «las cadenas YA PERSISTIDAS siguen siendo válidas» lee
+  `invoice.findMany({ where: { vfHash: { not: null } } })` sin merchant: la base entera. En T1 recalculó la huella de
+  una F260001 de otro test y no casó. Es la familia de 116. Por qué no casa esa huella: SIN MEDIR.
+- **234 y 781 no son concurrencia:** caen también en serie. Esperan `AAAA-QA-NNN` y la base da `F260001`, de la serie
+  F de `src/modules/invoicing/domain/invoiceNumber.service.ts:243`. Sin bisect. Si caen hoy en staging: SIN MEDIR.
+
+### ③ Propuesta del lote 6 (NO construida)
+
+- **6a, a la tanda (8 ficheros):** 115, 127, 178, 92 y 814.gated con la forma de 1599m, y 592, 767 y 793 con una forma
+  nueva: la clave sale de `URL_BANCO`, y con `QA_DB_TEST` siguen yendo a `yaqu_dev_javier`. El trinquete baja de 14 a 6.
+- **Test previsto:** el trinquete `scrum1599f` con el conjunto exacto de los 8; una mutación por fichero en
+  `MUTACIONES_CON_BASE`; y como evidencia, el régimen T repetido al menos 3 veces con `pasada-1599o.mjs.txt`.
+- **173, con decisión de quien reparte:** (A) el caso de cadenas persistidas se queda en staging y los otros 6 casos
+  pasan; o (B) se acota a sus merchants, que cambia lo que vigila.
+- **234 y 781, fuera del lote:** primero el bisect de la serie F y la decisión sobre su aserción (regla 41).
+
+### ④ Lo que NO se ha hecho, ni medido
+
+- CI: otro runner y la tanda entera (~1.500 ficheros); su N no lo he leído. Esta máquina: 12 hilos, N=11, 80 ficheros.
+- Mutaciones: ninguna; los 9 que pasan no los he visto caer por lo que vigilan.
+- Positivo sembrado del régimen T: ninguno; el único que muestra que T puede ver un pisotón es 173.
+- 173 es n=6 con 1 caída: régimen intermitente, no una tasa. Staging: sin turno. Suite entera local: NO CORRIDA.
 ## J6 · SCRUM-1599m · quinto lote del diseño B: los ocho «HE» al banco desechable, y el trinquete de 22 a 14
 
 **Medido contra:** `origin/main` = `11324d271372ee6e689aeeea1c90d096b6043696` · 2026-10-26T15:53:27Z (hora de GitHub; sesión J6 `jv-j6ch` en su árbol `jv-j6ch`, por encargo del orquestador `cobroflash-backend-8b`)
