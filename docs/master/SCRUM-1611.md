@@ -4,7 +4,7 @@
 
 **Medido contra:** `origin/main` = `c09dd883ebfaf0f5e2213fb31f623ca547871a01` · 2026-10-26T23:34:28Z (hora de GitHub; sesión J6 `jv-j6cy`, por encargo del orquestador `cobroflash-backend-8b`. Los tests al banco no están en main: medido sobre la punta de 1599s `7439e740a2933ce28ed3c7a9487cba98a745ef42`, PR #2907. Detalle y propuesta en Jira, SCRUM-1611 c.20978)
 
-A9: aviso → cicatriz J6 «Me medí al acabar la lectura de arranque y no al acabar de leer Jira, aunque el encargo pedía los dos puntos; la siguiente cifra fue 178k, ya midiendo (SCRUM-1611)» — no se pudo comprobar: el contexto lo lee la propia sesión en su jsonl, y ningún hook de este árbol lo mide en los puntos fijos
+A9: aviso → cicatriz J6 «Me medí al acabar la lectura de arranque y no al acabar de leer Jira, aunque el encargo pedía los dos puntos; la siguiente cifra fue 178k, ya midiendo» — no se pudo comprobar: el contexto lo lee la propia sesión en su jsonl, y ningún hook de este árbol lo mide en los puntos fijos
 
 Solo docs: 0 líneas de `src/`, `tests/`, `prisma/` o `.github/`. Banco: el Postgres 16.14 de `pgbanco-1599p` sin cambiar, en loopback, con la base rehecha en cada pasada. Las mutaciones van solo en `dist/` y se restauran por sha256 (`mutdist.mjs.txt`): `invoiceNumber.service.js` `66f09cfc…` y `quotesAdmin.routes.js` `3c1ae220…`, las dos de vuelta a su sha. Dos sondas en cada pasada (`medir1611.mjs.txt`): (A) `pg_stat_activity` + `pg_locks` cada ~15 ms, y (B) `log_statement=all` del propio Postgres, con pid y xid. Clasificadores: `orden234.mjs.txt` y `orden814.mjs.txt`. Salida entera: `evidencias/SCRUM-1611/salida-1611.txt`.
 
