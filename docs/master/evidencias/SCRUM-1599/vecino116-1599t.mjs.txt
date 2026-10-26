@@ -1,0 +1,47 @@
+// SCRUM-1599t · el VECINO de 116: una factura de OTRO comercio dentro de la ventana del cron, viva mientras 116 corre.
+// Es la forma de las 29 que la sonda vio pasar en la pasada T1 (pending, >7 días, cliente con teléfono, sin baja).
+// Uso: node vecino-116.mjs <raiz> <puerto> <etiqueta> <dry|ci> <tests/f…>
+//   dry → el hijo corre con WHATSAPP_DRY_RUN=1 (como el corredor de 1599q y la tanda de staging)
+//   ci  → sin WHATSAPP_DRY_RUN y sin credenciales (como ci.yml: no declara ninguna WHATSAPP_*, §1599p ④)
+// Después lee lo que quedó escrito sobre el VECINO (su candado, sus filas de WhatsApp y de eventos) y lo borra todo.
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import pg from 'pg';
+import { fileURLToPath } from 'node:url';
+
+const [raiz, puerto, etiqueta, modo, fichero] = process.argv.slice(2);
+const c = new pg.Client({ host: '127.0.0.1', port: Number(puerto), user: 'postgres', database: 'yaqu_libro_test' });
+await c.connect();
+const m = (await c.query(`insert into merchants (name, country, updated_at) values ('QA vecino-116 1599t', 'ES', now()) returning id`)).rows[0];
+const cu = (await c.query(`insert into customers (merchant_id, name, phone, updated_at) values ($1, 'Vecino', '34600000001', now()) returning id`, [m.id])).rows[0];
+const inv = (await c.query(`insert into invoices ("merchantId", "customerId", number, total, currency, type, status, "pdfUrl", "qrData", lines, "createdAt")
+  values ($1, $2, 'VECINO-1599t', 1, 'EUR', 'F1', 'pending', 'P', 'Q', '[]', now() - interval '30 days') returning id`, [m.id, cu.id])).rows[0];
+console.log(`VECINO merchant=${m.id} customer=${cu.id} invoice=${inv.id} (30 días, pending, con teléfono)`);
+
+const entorno = { ...process.env };
+for (const k of Object.keys(entorno)) if (k.startsWith('WHATSAPP_')) delete entorno[k];
+for (const k of ['NODE_TEST_CONTEXT', 'NODE_OPTIONS', 'FORCE_COLOR', 'QA_DB_TEST', 'DATABASE_URL']) delete entorno[k];
+const env = { ...entorno, LIBRO_PG_URL: `postgresql://postgres@127.0.0.1:${puerto}/yaqu_libro_test`, DISABLE_CRONS: 'true', NODE_ENV: 'test' };
+if (modo === 'dry') env.WHATSAPP_DRY_RUN = '1';
+const tap = path.join(path.dirname(fileURLToPath(import.meta.url)), `tap-${etiqueta}.tap`);
+const r = spawnSync(process.execPath, ['--test', '--test-force-exit', '--test-reporter=tap', `--test-reporter-destination=${tap}`, fichero], { cwd: raiz, env, encoding: 'utf8', timeout: 150_000 });
+const fs = await import('node:fs');
+const lineas = fs.existsSync(tap) ? fs.readFileSync(tap, 'utf8').split(/\r?\n/) : [];
+const caso = lineas.filter((l) => /^(ok|not ok) \d+ - /.test(l));
+const cron = lineas.filter((l) => /invoiceReminder\]/.test(l)).map((l) => l.replace(/^# /, ''));
+const decl = lineas.find((l) => /^# tests \d+$/.test(l));
+
+const candado = (await c.query('select reminder_7_sent_at, reminder_14_sent_at from invoices where id = $1', [inv.id])).rows[0];
+const wa = (await c.query('select status, error, related_type, related_id from whatsapp_messages where merchant_id = $1', [m.id])).rows;
+const ev = (await c.query('select count(*)::int n from customer_events where merchant_id = $1', [m.id])).rows[0].n;
+console.log(`${etiqueta} · modo=${modo} · rc=${r.status} · ${decl} · ${caso.join(' | ') || 'SIN CASOS → CIEGO'}`);
+for (const l of cron) console.log(`  cron: ${l}`);
+console.log(`  VECINO tras 116 · reminder7=${candado.reminder_7_sent_at?.toISOString() ?? 'null'} · reminder14=${candado.reminder_14_sent_at?.toISOString() ?? 'null'} · whatsapp_messages=${wa.length} ${JSON.stringify(wa)} · customer_events=${ev}`);
+
+await c.query('delete from customer_events where merchant_id = $1', [m.id]);
+await c.query('delete from whatsapp_messages where merchant_id = $1', [m.id]);
+await c.query('delete from invoices where id = $1', [inv.id]);
+await c.query('delete from customers where id = $1', [cu.id]);
+await c.query('delete from merchants where id = $1', [m.id]);
+console.log(`  limpio · merchants con ese nombre=${(await c.query(`select count(*)::int n from merchants where name = 'QA vecino-116 1599t'`)).rows[0].n}`);
+await c.end();
