@@ -736,3 +736,75 @@ Población: `scrum603b` + `scrum723` + `scrum1446d` (20 casos), y para M4 `scrum
   plantilla y `scrum921c` la contó como procedencia fantasma. Cazado en local.
 - Crucé los 200k de contexto sin avisar en el momento: lo medí después de la dirigida (239k) y
   avisé entonces.
+
+## SCRUM-1446e · ① LA MEDICIÓN de jv-j1ch (SCRUM-1446 c.20915): qué quedaba de ① en `main`, y las preguntas al fundador
+
+**Medido contra:** `origin/main` = `d2e468960494f9f35b22f9ff3c2dca4e3f48548a` · 2026-10-26T16:22:24Z (hora de GitHub)
+
+A9: sin fallo que generalice — es una medición transcrita al registro desde su comentario de Jira; quien la hizo no lo dejó escrito aquí por contexto (197k), y eso ya lo recoge A19
+
+Escrito por `jv-j1ck` (J1) a partir de **SCRUM-1446 c.20915**, que es de `jv-j1ch` (J1): ella midió y no dejó tramo. Lo que va aquí es lo que ese comentario dice; no lo he vuelto a medir salvo donde lo digo.
+
+- **Cómo:** `dist/` de `main` con `tsc --noCheck`, `generateInvoicePdf` real, facturas en memoria (ninguna base), total guardado con `grossOfLines`, papel leído con `lineasDePdf`. 8 PDF. Control: 1 × 100 al 21 % cuadra.
+- **Lo que quedaba de ①: sólo la columna.** Desde SCRUM-624e (#2863) el pie y el TOTAL de la F1 salen del registro: Base + IVA = TOTAL = guardado. La columna «TOTAL» de cada línea imprimía `cant × precio × (1 + tipo)` redondeado por línea: 2 × 12,50 al 21 % → 15,13 + 15,13 = 30,26 con TOTAL 30,25; 2 × 7,25 → 17,54 con 17,55.
+- **El motivo del test estaba desfasado:** `tests/scrum1446-los-tres-importes-del-pdf.test.mjs:47` decía «el TOTAL sale de la suma sin redondear». Desde 624e el TOTAL de la F1 es el guardado; lo que no sumaba era la columna con IVA. En SCRUM-1446e② la entrada sale de `DECLARADOS` y su comentario lo dice.
+- **Las preguntas:** P1 columna sin IVA (recomendada) · P2 TOTAL = suma de líneas (no recomendada: deshace 624e) · P3 dejarlo y declararlo convención · P4 el presupuesto igual · P5 aceptar que el papel regenerado de lo emitido cambie · P6-P8 de SCRUM-1448.
+- **Decisión del fundador: SCRUM-1446 c.20917.** P1 ✅ con GO de la regla 40 para `pdf.service.ts` y la cabecera «IMPORTE» · P2 ❌ · P4 ✅ · P5 ✅ mientras no haya facturas reales · P6/P7: la R1 como está, del justificante primero se mide quién lo crea · P8 ❌.
+
+## SCRUM-1446e · ② EL ARREGLO: en la F1 la columna va SIN IVA y se llama «IMPORTE»; el presupuesto, sin IVA; la R1 y el justificante, como hoy
+
+**Medido contra:** `origin/main` = `d2e468960494f9f35b22f9ff3c2dca4e3f48548a` · 2026-10-26T16:35:31Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum1446e-la-columna-sin-iva.test.mjs`
+
+Carril J1 (`src/modules/invoicing/**`, `docs/equipo/dos-equipos.md:117`). GO de la regla 40: SCRUM-1446 c.20917 (P1, P4). Lo que el fundador firmó en ese comentario, con sus palabras: la columna de cada línea sin IVA, las líneas suman la base del pie, y el literal de la cabecera «IMPORTE».
+
+### 1 · Lo que cambia (`src/modules/invoicing/infra/pdf/pdf.service.ts`, nada más en `src/`)
+
+- `generateInvoicePdf`: `columnaSinIva = (type ?? 'F1') === 'F1'`. En la F1 la línea imprime `cant × precio` y la cabecera «IMPORTE». En la R1 y el justificante, `cant × precio × (1 + tipo)` y «TOTAL», como hasta hoy (lo fija el caso ③ del test nuevo).
+- `generateQuotePdf`, la tabla de líneas: `cant × precio` en los dos modos de IVA (antes sólo en `no_incluido`). **Su cabecera sigue diciendo «Total»**: el literal firmado es el de la factura, y otra palabra aquí sería texto nuevo (regla 39).
+- ⛔ Ni un importe guardado, ni el XML, ni el sellado, ni el pie, ni el TOTAL (sigue siendo el guardado en la F1: P2 ❌). Las facturas emitidas no se tocan (regla 29); su papel, al regenerarse, sale con la columna nueva: es P5, aceptado mientras no haya facturas reales.
+- **No tocado, y queda para quien decida:** las opciones del presupuesto (`tiers`, `pdf.service.ts`, la caja de cada opción) siguen enseñando cada línea CON IVA: no son la columna de la tabla y su caja no tiene base al lado. Y `src/modules/quotes/domain/presupuestoParaPdf.ts` (S1) no hacía falta: el pie no cambia.
+
+### 2 · El rojo, primero, con el PDF real en memoria
+
+Test nuevo `tests/scrum1446e-la-columna-sin-iva.test.mjs`, 7 casos. Con el `dist/` de la base (sin el cambio): **6 caen** (la columna imprime 15,13 + 15,13 y 121,00; la cabecera dice «TOTAL»; el tramo sin fijar) **y 1 pasa: ③, la R1 y el justificante**, que fija lo de hoy. Con el cambio: **7 de 7**.
+
+| caso | qué fija |
+|---|---|
+| ① 2 × 12,50 al 21 % | 12,50 + 12,50 = Base 25,00, TOTAL 30,25 = guardado |
+| ① control 1 × 100 | 100,00 · base 100,00 · TOTAL 121,00 |
+| ① la cabecera | «IMPORTE», byte a byte (`49 4d 50 4f 52 54 45`) |
+| ② 60 F1 de dos líneas, 21 % y 10 % | la columna suma la base en las 60; control: con IVA, no sumaría en alguna (si no, CIEGO) |
+| ③ R1 y JUST | «TOTAL», 15,13 + 15,13, como hoy |
+| ④ presupuesto 2 × 12,50 | 12,50 + 12,50 = Base 25,00, Total 30,25; cabecera «Total» |
+| ⑤ DECLARADO: un tramo | ver §3 |
+
+### 3 · Lo que la decisión NO cierra: los tramos
+
+c.20915 lo dejó sin medir: en una factura por tramos las líneas guardadas llevan fracciones de céntimo. **Medido:** un tramo al 50 % de 2,11 + 3,33 al 21 % guarda 1,055 y 1,665; la columna imprime **1,06 + 1,67 = 2,73** y la base es **2,72**. Lo fija el caso ⑤ como DECLARADO.
+
+Frecuencia, con una copia de la aritmética (`formatImporteEs(cant × precio)` por línea contra `calcVatBreakdown(...).base`) **calibrada contra ese PDF** (da 1,06 · 1,67 · 2,72): sobre pares de líneas al 21 % (precios de 1,01 a 11,00 y de 0,99 a 6,00 en pasos fijos), la columna no suma la base en **4.056 de 11.154 tramos (36,4 %) al 50/50**, **3.236 de 11.154 (29,0 %) al 30/70** y **4.814 de 16.731 (28,8 %) al 30/40/30**. El desvío máximo no lo he medido. **Control a cero:** las mismas 5.577 facturas sin tramos (143 × 39 pares), 0 en cada plan. Población inventada; no hay facturas reales con las que medir. Arreglarlo pide elegir cómo se reparte el redondeo entre líneas, que es otra convención: pregunta para el fundador, no construida.
+
+### 4 · La vía de cambio autorizado y el ancla del literal
+
+- `tests/_cambios-autorizados-de-la-factura.mjs`: un par más, firmado `SCRUM-1446 c.20917`, cita «IMPORTE», generado EJECUTANDO `docs/master/evidencias/SCRUM-1446d/huellas.mjs` (base `d2e46896`). Las dos huellas de partida son las de llegada de 624e: la cadena casa. Sin el par, caen `603b · byte a byte` y `723 · ÁMBITO ENTERO`, y sólo ellos (18 de 20); con él, 20 de 20.
+- El literal lleva su marca en el comentario de `pdf.service.ts` («literal firmado por el fundador en SCRUM-1446 comentario 20917») y el par (1446, 20917) entra en `tests/_pares-leidos-en-jira.mjs`: lo leí yo hoy, con el ticket entero.
+- `tests/scrum1446-los-tres-importes-del-pdf.test.mjs`: ① pasa de DECLARADO a ARREGLADO con los importes nuevos, en los dos papeles. `DECLARADOS` **1 → 0**.
+
+### 5 · Mutaciones, con la casa
+
+Declaradas en `MUTACIONES_QUE_ME_TUMBAN` del test nuevo y corridas con `docs/master/evidencias/SCRUM-1123f/arnes-mutaciones.mjs` (`aplicarUna`): **4 de 4 vivas** — la cabecera vuelve a «TOTAL» · la columna de la F1 vuelve a llevar IVA · la R1 también sin IVA · el presupuesto con IVA. Cada una tumba el caso que nombra. `pdf.service.ts` idéntico por `cmp` después. La primera pasada leyó **0 mutaciones** porque yo había puesto el fichero en una constante y el lector exige literales: un cero que habría parecido limpio.
+
+### 6 · Los tests, y dos que movió mi cambio
+
+- Dirigida: mi lista (familia 1446/624, 603/603b/723, 247, 844c, 921c, 387, 601, 1502h, 377, `pdfs`, y los de suite y registro 237, 976, 824, 836, 419, 702, 700, 719, 1415, 267, 273, 1294, 622, 710b) unida a los 54 que NOMBRAN `pdf.service.ts` según `tests:que-cubren`: **80 ficheros · 794 casos · 787 pasan · 0 caen · 7 saltan** (los 7, gateados por base: `A12.5d`, `SCRUM-593d` y similares). Los 390 que selecciona `tests:que-cubren` entero y la tanda completa: **NO CORRIDOS** (hoy hay diez sesiones; el juez es el obligatorio).
+- En la primera pasada cayeron dos, los dos por mí:
+  - `SCRUM-1446 · SUELO`: fijaba 121,00 + 121,00 en la columna de la F1. Ahora fija 100,00 + 100,00 = base 200,00, con TOTAL 242,00 = guardado. Mismo caso, mismo lector.
+  - **De paso:** `SCRUM-836` cazó que la mutación M2 de `tests/scrum1302m-el-total-y-la-leyenda.test.mjs` anclaba a `(1 + (ivaFueraDelPapel ? 0 : l.tax))`, que mi cambio quita. Reanclada a la línea de hoy (`const lineTotal = l.qty * l.price;` → con IVA), que apaga lo mismo: con el arnés, **5 de 5 vivas** en 1302m.
+- `tsc --noCheck` para `dist/` (este árbol no trae `node_modules`: lo enlacé al del checkout compartido con un junction, sin ningún `prisma generate`; `_prisma-client-guard` en ✔).
+
+### 7 · Errores míos
+
+- Crucé los 200k de contexto sin avisar en el momento: medí al acabar el arranque (≈92k) y al acabar Jira (≈156k), y no volví a mirar hasta acabar el rojo (229k). Es la cicatriz de J1 del 24-oct, otra vez.
+- Declaré las mutaciones con una constante y el arnés leyó 0; lo cacé porque el arnés dice cuántas leyó.

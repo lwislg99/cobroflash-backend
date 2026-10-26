@@ -560,7 +560,25 @@ router.put('/:id/status', requireRole('admin'), async (req, res) => {
     // SCRUM-441 · CÓMO dice el profesional que entró el dinero. OPCIONAL: si el cuerpo no lo trae,
     // esta ruta hace exactamente lo de siempre. Lo que llegue lo valida el DOMINIO contra `PAID_VIA`
     // (regla 22) — aquí no se reimplementa el conjunto cerrado, que es como se acaba teniendo dos.
-    const updated = await updateInvoiceStatusAdmin(id, status, req.merchantId, req.body?.paidVia);
+    //
+    // SCRUM-1609 (BUGS.md P3-PAIDAT-BO) · CUÁNDO entró el dinero, con el MISMO mecanismo que
+    // `bulk-paid` (SCRUM-397, criterio firmado: no futura, sin límite hacia atrás) y la misma zona
+    // del merchant (SCRUM-1093). Hasta aquí esta puerta escribía `new Date()` aunque el lote sí
+    // aceptara la fecha: conciliar UNA transferencia vieja la fechaba hoy. Solo se mira al marcar
+    // `paid` y solo si el cuerpo la trae: sin ella, esta ruta hace exactamente lo de antes —ni
+    // siquiera lee el merchant—.
+    const declarada = req.body?.paidAt;
+    let fecha: { fecha: Date; origen: 'declarada' | 'ahora' } | null = null;
+    if (status === 'paid' && declarada !== undefined && declarada !== null && declarada !== '') {
+      const m = await prisma.merchant.findUnique({ where: { id: req.merchantId }, select: { timezone: true } });
+      const r = resolverFechaDeCobro(declarada, new Date(), zonaDelMerchant(m));
+      if (!r.ok) return res.status(400).json({ error: r.error, message: r.message });
+      fecha = r;
+    }
+    // Sin fecha declarada, la llamada es LITERALMENTE la de antes (la ancla `scrum441` por su texto).
+    const updated = fecha
+      ? await updateInvoiceStatusAdmin(id, status, req.merchantId, req.body?.paidVia, fecha.fecha)
+      : await updateInvoiceStatusAdmin(id, status, req.merchantId, req.body?.paidVia);
     if (!updated) {
       return res.status(404).json({ error: 'not_found' });
     }
@@ -572,7 +590,13 @@ router.put('/:id/status', requireRole('admin'), async (req, res) => {
         merchantId: req.merchantId, teamMemberId: req.teamMemberId ?? null,
         action: status === 'paid' ? 'marcar_pagado_manual' : 'deshacer_pago',
         entityType: 'invoice', entityId: id,
-        meta: { via: 'status', number: (updated as any).number ?? null }, ip: requestIp(req),
+        // SCRUM-1609: como el lote, queda escrito qué fecha se guardó y si la AFIRMÓ una persona.
+        meta: {
+          via: 'status', number: (updated as any).number ?? null,
+          ...(status === 'paid'
+            ? { paidAt: (updated as any).paidAt ? new Date((updated as any).paidAt).toISOString() : null, fechaOrigen: fecha?.origen ?? 'ahora' }
+            : {}),
+        }, ip: requestIp(req),
       });
     }
 
