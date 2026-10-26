@@ -23,7 +23,7 @@ const corre = () => {
   const pasan = sale.split(/\r?\n/).filter((l) => /^✔ SCRUM-/.test(l)).length;
   const total = Number((todo.match(/^ℹ tests (\d+)/m) || [])[1]);
   // Qué aserción: el primer mensaje que empieza por el eje entre corchetes y NO es la línea de diagnóstico.
-  const porque = [...new Set(sale.split(/\r?\n/).map((l) => l.trim()).filter((l) => /^AssertionError \[ERR_ASSERTION\]: /.test(l)).map((l) => l.replace(/^AssertionError \[ERR_ASSERTION\]: /, '')))].slice(0, 4);
+  const porque = [...new Set(todo.split(/\r?\n/).map((l) => l.trim()).filter((l) => /^AssertionError \[ERR_ASSERTION\]: /.test(l)).map((l) => l.replace(/^AssertionError \[ERR_ASSERTION\]: /, '')))].slice(0, 4);
   return { codigo: r.status, caen, pasan, total, porque };
 };
 const base = corre();
