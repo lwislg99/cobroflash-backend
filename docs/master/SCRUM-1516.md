@@ -225,8 +225,10 @@ puede quitar credenciales. Si sigue CIEGO, cae.
 Corridos aquí (22 ficheros, 202 casos): 1390b/e, 1397, 1514, 702, 237, 976, 824/824b, 836, 419, 700, 719, 1415,
 124-r28, 262, 409, 480, 1344, 1387 y el nuevo. Primera pasada: 195 pasan, 6 saltados (gateados por banco
 desechable: 1390e y 1397, corren en el CI), y 1 cae, scrum976 ④, porque `guards:entrada` incluye scrum1294 y
-mi línea A9 de SCRUM-1514 llevaba una coletilla (error mío, abajo). Corregida y vuelta a pasar: abajo, en
-«Lo que NO está hecho», lo que no se ha corrido.
+mi línea A9 de SCRUM-1514 llevaba una coletilla (error mío, abajo). Corregida, y segunda pasada con el
+registro ya escrito y además 1294, 273 y 267 (25 ficheros, 226 casos): 220 pasan, **0 caen**, los mismos 6
+saltados. `node scripts/meta-guard-mutaciones.mjs --solo-censo` sale 0 y lista la declaración nueva sobre
+`customersAdmin.routes.ts` (modo censo: no ejecuta mutaciones; ésas las ejecutó el banco de arriba).
 
 ### Lo que NO está hecho ni medido
 
