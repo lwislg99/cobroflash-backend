@@ -9,8 +9,8 @@
 //      recibe `schedule`;
 //   ③ qué dice el log en cada conclusión, y a qué hora: el callback real, con la pasada doblada y
 //      el reloj fijado;
-//   ④ el estado decidido por el fundador (c.20227): el PR-2 va SIN fecha de corte, así que la
-//      tarea corre, no consulta la base y dice «inactivo». Encenderlo es un paso aparte suyo.
+//   ④ el encendido (SCRUM-1404 c.20923 P1/P2): la fecha de corte está escrita, es legible y no
+//      anterior al mecanismo, y la tarea real consulta la base y ya no dice «inactivo».
 //
 // ⚠️ LO QUE NO SUJETA: aquí no se sella nada ni se toca ninguna base. La pasada en sí la sujeta
 // `tests/scrum1404b-el-reintento-del-sellado.test.mjs`; que no re-sella, `scrum1330`. Cuántas
@@ -205,15 +205,17 @@ test('SCRUM-1507 · ③ una pasada que no pudo leer las candidatas lo dice: no s
   assert.match(e[0][1], /la pasada no miró nada.*la base no contesta/);
 });
 
-// ── ④ la fecha de corte: el PR-2 va SIN fecha (c.20227) ────────────────────────────────────────
+// ── ④ la fecha de corte: ENCENDIDO (SCRUM-1404 c.20923) ────────────────────────────────────────
 //
-// Decisión del fundador (SCRUM-1507 c.20227, «Sí» a la opción (a)): el PR-2 entra SIN fecha, y
-// encender el reintento —escribir `REINTENTO_ACTIVO_DESDE`— es un paso aparte suyo. Este caso
-// sujeta ese estado con la constante REAL y el callback REAL; sólo la base va doblada.
-// ⚠️ LO QUE NO PUEDE: distinguir una fecha firmada de una sin firmar. La firma vive en Jira y este
-// test no la ve, y un registro escrito por quien pone la fecha no es su firma (A10). Por eso afirma
-// `null` a secas: el día que el fundador encienda, este caso cae y se cambia EN EL MISMO PR que la
-// fecha, citando su comentario. Que la fecha sea legible y no anterior al mecanismo lo sujeta
+// Hasta el encendido este caso afirmaba `null` (SCRUM-1507 c.20227: el PR-2 iba SIN fecha y
+// escribirla era un paso aparte del fundador). Lo enciende el fundador en el PR-2 de SCRUM-1404,
+// junto con el 409 (c.20923 P2: mismo PR; P1: encender, con la premisa medida antes). La premisa,
+// medida en producción por el fundador: 2 facturas, 0 pendientes de sellado, 0 con huella
+// (c.20924), y todas de cuentas de prueba suyas (c.20925).
+// Este caso sujeta el estado ENCENDIDO con la constante REAL y el callback REAL; sólo la base va
+// doblada. Volver a poner `null` es APAGAR: cae aquí, y se cambia con la decisión que lo pida.
+// ⚠️ LO QUE NO PUEDE: distinguir una fecha firmada de una sin firmar (la firma vive en Jira, A10).
+// Que la lectura de la fecha rechace lo ilegible y lo anterior al suelo lo sujeta
 // `tests/scrum1404b-el-reintento-del-sellado.test.mjs` ②.
 
 const PASADA_REAL = REINTENTO.reintentarSelladosPendientes;
@@ -223,23 +225,32 @@ function baseQueCuenta() {
   return { llamadas, invoice: { findMany: async (a) => { llamadas.push(a.where); return []; } } };
 }
 
-test('SCRUM-1507 · ④ sin fecha (c.20227): la tarea corre, no consulta la base y dice INACTIVO en punto', async (t) => {
-  assert.equal(REINTENTO.REINTENTO_ACTIVO_DESDE, null,
-    'c.20227: el PR-2 va SIN fecha; escribirla es el encendido del fundador, y cambia este caso en su mismo PR');
+test('SCRUM-1507 · ④ encendido (SCRUM-1404 c.20923): la fecha es legible, la tarea consulta la base y no dice INACTIVO', async (t) => {
+  const valor = REINTENTO.REINTENTO_ACTIVO_DESDE;
+  assert.notEqual(valor, null,
+    'SCRUM-1404 c.20923: el reintento está ENCENDIDO; volver a null es apagarlo, y cambia este caso con su decisión');
+  const corte = REINTENTO.fechaDeCorte();
+  assert.equal(corte.motivo, null, `la constante no es una fecha de corte válida: ${corte.motivo}`);
+  assert.ok(corte.desde.getTime() >= new Date(REINTENTO.SUELO_DE_LA_FECHA_DE_CORTE).getTime(),
+    `${valor} es anterior al suelo ${REINTENTO.SUELO_DE_LA_FECHA_DE_CORTE}`);
+
   const base = baseQueCuenta();
   const real = (o = {}) => PASADA_REAL({ ...o, prisma: base });
-  assert.deepEqual(await pasada(t, 7, real), [], 'inactivo, minuto 7: calla');
-  const aviso = await pasada(t, 0, real);
-  assert.deepEqual(aviso.map(([c]) => c), ['warn'], 'inactivo, en punto: un aviso');
-  assert.match(aviso[0][1], /⚠️.*INACTIVO: sin fecha de corte/);
-  assert.equal(base.llamadas.length, 0, 'con la constante de hoy, ni una consulta a la base');
-
-  // Control SEMBRADO: la misma pasada real, con una fecha válida pasada por parámetro, SÍ consulta
-  // y ya no dice «inactivo». Sin esto, el cero de arriba no distingue una base muda.
-  const activa = baseQueCuenta();
-  const conFecha = (o = {}) => PASADA_REAL({ ...o, prisma: activa, corte: REINTENTO.fechaDeCorte(REINTENTO.SUELO_DE_LA_FECHA_DE_CORTE) });
-  const enPunto = await pasada(t, 0, conFecha);
-  assert.ok(activa.llamadas.length >= 1, `con fecha la pasada consulta: ${activa.llamadas.length} consultas`);
-  assert.deepEqual(enPunto.map(([c]) => c), ['log'], 'con fecha y nada pendiente: «nada que mirar», no el aviso de inactivo');
+  assert.deepEqual(await pasada(t, 7, real), [], 'nada que mirar, minuto 7: calla');
+  const enPunto = await pasada(t, 0, real);
+  assert.deepEqual(enPunto.map(([c]) => c), ['log'], 'encendido y nada pendiente, en punto: «nada que mirar», no el aviso de inactivo');
   assert.match(enPunto[0][1], /candidatas 0/);
+  assert.doesNotMatch(enPunto[0][1], /INACTIVO/);
+  assert.ok(base.llamadas.length >= 2, `con la constante de hoy la pasada consulta en cada minuto: ${base.llamadas.length} consultas`);
+  assert.ok(base.llamadas.every((w) => w.createdAt?.gte?.getTime() === corte.desde.getTime()),
+    'cada consulta corta en la fecha de la constante, no en otra');
+
+  // Control SEMBRADO: la misma pasada real, SIN fecha por parámetro, no consulta y dice «inactivo».
+  // Sin esto, «consulta y no dice inactivo» no distingue una pasada que ignore la fecha.
+  const apagada = baseQueCuenta();
+  const sinFecha = (o = {}) => PASADA_REAL({ ...o, prisma: apagada, corte: REINTENTO.fechaDeCorte(null) });
+  const aviso = await pasada(t, 0, sinFecha);
+  assert.deepEqual(aviso.map(([c]) => c), ['warn'], 'sin fecha, en punto: un aviso');
+  assert.match(aviso[0][1], /⚠️.*INACTIVO: sin fecha de corte/);
+  assert.equal(apagada.llamadas.length, 0, 'sin fecha, ni una consulta a la base');
 });

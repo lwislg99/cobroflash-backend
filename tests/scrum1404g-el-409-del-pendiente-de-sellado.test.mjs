@@ -18,11 +18,10 @@
 // `include`: el comercio sólo llega a la ruta si la ruta lo pide.
 //
 // 🔴 EL GUARD DE J5 («la respuesta nunca antes que el reintento», c.18783): mientras
-// `REINTENTO_ACTIVO_DESDE` sea `null`, P no puede contestar 409. Con esta rama, cae — y por eso va
-// `todo`, con su motivo: el fundador escribe la fecha ENCIMA, en el mismo PR (c.20923 P2). Su hermano
-// NO es `todo`: cae si la fecha deja de ser `null` y el `todo` sigue puesto, así que quien escriba la
-// fecha tiene que poner `TODO_DEL_GUARD_J5 = null` en ese mismo commit, y el guard no se queda
-// decorativo.
+// `REINTENTO_ACTIVO_DESDE` sea `null`, P no puede contestar 409. Fue `todo` hasta que el fundador
+// escribió la fecha ENCIMA, en el mismo PR (c.20923 P2); desde el encendido está vivo, y volver a
+// poner la fecha a `null` con el 409 puesto lo tumba. Su hermano NO es `todo`: cae si la fecha deja
+// de ser `null` y el `todo` vuelve a ponerse.
 //
 // La excepción declarada (c.20923 P5): el caso C —huella escrita, estado sin marcar— contesta 409
 // «se reintenta solo», y el reintento no lo recoge nunca. Se fija aquí para que deje de ser
@@ -54,10 +53,11 @@ const { documentoEnRegistroHtml } = require('../dist/core/http/publicNotFound.js
 const { REINTENTO_ACTIVO_DESDE } = require('../dist/modules/invoicing/domain/reintentoSellado.js');
 
 /**
- * 🔴 EL `todo` DEL GUARD DE J5. Lo pone a `null` quien escriba `REINTENTO_ACTIVO_DESDE`, en el MISMO
- * commit (SCRUM-1404 c.20923 P2 y c.20932). Si no, cae el hermano de abajo.
+ * 🔴 EL `todo` DEL GUARD DE J5. A `null` desde que se escribió `REINTENTO_ACTIVO_DESDE`, en el MISMO
+ * commit (SCRUM-1404 c.20923 P2 y c.20932). Si vuelve a tener motivo con la fecha puesta, cae el
+ * hermano de abajo.
  */
-const TODO_DEL_GUARD_J5 = 'se enciende con la fecha de REINTENTO_ACTIVO_DESDE, mismo PR (SCRUM-1404 c.20923 P2 y c.20932)';
+const TODO_DEL_GUARD_J5 = null;
 
 // Microcopy OFICIAL del panel (SCRUM-1502 c.18835), byte a byte. No es texto nuevo: es el que ya da G.
 const FRASE_DEL_PANEL = 'Esta factura todavía no está registrada. Se reintenta solo; si sigue así, avísanos.';
@@ -257,8 +257,9 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     de: "return res.status(500).json({ error: 'pdf_generation_failed' });\n  }\n});\n\n/**\n * PATCH /admin/invoices/:id/asignados",
     a: "return res.status(409).json({ error: 'pdf_generation_failed' });\n  }\n});\n\n/**\n * PATCH /admin/invoices/:id/asignados",
     cae: 'SCRUM-1404g · X · la avería de verdad (emisor sin nombre) sigue en 500' },
+  // Encendido (c.20923): la fecha escrita vuelve a `null` con el 409 puesto → cae el guard de J5.
   { fichero: 'src/modules/invoicing/domain/reintentoSellado.ts',
-    de: 'export const REINTENTO_ACTIVO_DESDE: string | null = null;',
-    a: "export const REINTENTO_ACTIVO_DESDE: string | null = '2026-10-27T00:00:00Z';",
-    cae: 'SCRUM-1404g · hermano del guard de J5: con la fecha escrita, su todo ya no puede seguir puesto' },
+    de: "export const REINTENTO_ACTIVO_DESDE: string | null = '2026-10-26T23:58:57Z';",
+    a: 'export const REINTENTO_ACTIVO_DESDE: string | null = null;',
+    cae: 'SCRUM-1404g · guard de J5: mientras REINTENTO_ACTIVO_DESDE sea null, el pendiente NO contesta 409' },
 ];

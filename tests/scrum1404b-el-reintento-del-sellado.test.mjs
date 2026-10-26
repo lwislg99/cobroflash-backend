@@ -98,9 +98,9 @@ async function whereDeLaPasada(desde) {
 // ───────────────────────────────── ① INERTE ─────────────────────────────────────────────────
 
 test('SCRUM-1404 · ① sin fecha de corte la pasada no lee ni escribe NADA, y lo dice', async () => {
-  // SCRUM-1507 (PR-2): el PR-2 va SIN fecha (c.20227) y el día que el fundador la escriba esto no
-  // debe cambiar: SIN fecha, la pasada no toca nada. Por eso se le pasa el `null` explícito. Que la
-  // constante siga a `null` lo sujeta `tests/scrum1507-el-cron-del-reintento.test.mjs` ④.
+  // SCRUM-1507 (PR-2): con la fecha ya escrita (SCRUM-1404 c.20923) esto no cambia: SIN fecha, la
+  // pasada no toca nada. Por eso se le pasa el `null` explícito. Que la constante esté ENCENDIDA lo
+  // sujeta `tests/scrum1507-el-cron-del-reintento.test.mjs` ④.
   const base = baseDe(POBLACION);
   const sellados = [];
   const parte = await R.reintentarSelladosPendientes({ ahora: AHORA, corte: R.fechaDeCorte(null), prisma: base, sellar: async (f) => { sellados.push(f.id); return { estado: 'sellado' }; } });
@@ -203,7 +203,9 @@ test('SCRUM-1404 · ② la fecha de corte: sólo un instante completo y no anter
   const tSuelo = new Date(suelo).getTime();
   assert.ok(Number.isFinite(tSuelo));
   assert.equal(R.fechaDeCorte(null).desde, null);
-  assert.equal(R.fechaDeCorte().desde, null, 'la constante de hoy');
+  // Encendido (SCRUM-1404 c.20923): la constante de hoy es una fecha de corte válida.
+  assert.equal(R.fechaDeCorte().motivo, null, 'la constante de hoy');
+  assert.equal(R.fechaDeCorte().desde.getTime(), new Date(R.REINTENTO_ACTIVO_DESDE).getTime());
   // Exactamente el suelo vale; un milisegundo antes, no.
   assert.equal(R.fechaDeCorte(suelo).desde.getTime(), tSuelo);
   const antes = new Date(tSuelo - 1).toISOString();
