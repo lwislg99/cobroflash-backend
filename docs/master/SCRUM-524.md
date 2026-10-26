@@ -1186,3 +1186,112 @@ de ③.
 A9: aviso → cicatriz J1 «Di por contados los guards que mueve un diff leyéndolos por nombre, sin correr la tanda con el diff aplicado: el tercero (`scrum844c`, EL ENLACE) sólo salió en la dirigida de quien lo aplicó, y el diseño era de 524f» — no se pudo comprobar: antes del GO aplicar el diff es STOP (regla 38), así que el diseño no puede pasar por la tanda; sólo la cazó la dirigida de quien lo aplicó
 
 ---
+
+# SCRUM-524h — P22-P25 contra SCRUM-1264, y lo que queda de ⑤ por decidir (solo docs, sin código)
+
+*26-oct-2026 · rama `scrum-524h-preguntas-p22-p25` · puesto J5 (jv-j5ap) · encargo del orquestador `cobroflash-backend-8b`*
+
+**Medido contra:** `origin/main` = `793a790dcef24f6139ed2e87fba80031efae0011` · 2026-10-26T23:25:13Z
+
+> **Carril.** `docs/master/SCRUM-*.md` no tiene cerradura (`node scripts/carriles.mjs de` → «quien trabaja
+> el ticket»). Cero líneas de `src/`, `prisma/` y `docs/legal/`. **Jira sí se ha leído**: SCRUM-524 entero
+> (9 comentarios, hasta c.20374) y SCRUM-1264 entero (descripción de 27.274 caracteres y 13 comentarios,
+> hasta c.20959). El comentario en SCRUM-1264 lo pone el orquestador; aquí no se escribe ninguno.
+
+## ① P22-P25 contra SCRUM-1264: no está ninguna
+
+Comparado por contenido, no por número. 1264 numera por letras (A1-G3) en la descripción y añade más en
+los comentarios (R-1 a R-4, Q-nueva, Q-nueva-A/B, 347, E6, (e)-(g), «Pregunta 29»).
+
+| término buscado | descripción | comentarios |
+| --- | --- | --- |
+| `1242` · `4141` · `1287` · `NumeroInstalacion` · `MultiplesOT` · `SistemaInformatico` · `suspen` · `escap` · `comill` · `rechaz` · `subsan` · `SCRUM-524` | 0 | 0 |
+| control positivo `asesor` | 12 | 43 |
+| control positivo `colaborador` · `Pregunta 29` | 3 · 0 | 0 · 1 |
+
+Lo que más se acerca: **A2/A3** (colaborador social, Convenio 017) es el trámite al que apunta la respuesta
+del fundador a P22; **A4 (4)** pregunta qué es la «descripción de la instalación» de la declaración
+responsable, que no es `NumeroInstalacion`. **Ninguna de las dos pregunta lo que preguntan P22-P25.**
+Población de P22-P25: `docs/legal/PREGUNTAS_ASESOR.md` en `origin/main`, líneas 1162-1295 (122.565 B).
+
+| | qué pregunta | ¿en 1264? | qué hacer |
+| --- | --- | --- | --- |
+| **P22** | `1242` «No existe el sistema informático»: ¿hay alta previa? | no | va, **recortada**: el fundador ya contestó la parte del alta (c.20209); queda si `1242` salta mientras no se es colaborador social, y qué se hace ante él |
+| **P23** | `4141` suspensión de acceso: ¿cómo se degrada? | no | va **entera**; el art. 16.4 de la Orden ya está leído (②) |
+| **P24** | `1287` y el escape XML | no | va, más la prueba en el entorno de pruebas de la AEAT cuando haya certificado (c.20209) |
+| **P25** | `NumeroInstalacion` / `IndicadorMultiplesOT` en un SaaS | no | **NO va**: la contestó la Orden + la FAQ de la AEAT (524e), el fundador eligió B y dio el GO (c.20291, c.20295), está en `main` (524g, PR #2695). Lo que quedaba para el asesor («usuario = cuenta o NIF») lo cerró el fundador: los 2 NIF repetidos son cuentas de prueba (c.20295) |
+
+⚠️ **De paso, de otro carril (J4), no tocado:** el título de P25 en `PREGUNTAS_ASESOR.md:1268` sigue diciendo
+«CANDIDATA, sin cotejar con la Orden HAC/1177/2024», y está cotejada y aplicada. El texto para cambiarlo
+está en 524e ⑤.
+
+## ② Las fuentes, comprobadas hoy
+
+- **Literales AEAT de 1241, 1242, 4141 y 1287:** `docs/legal/fuentes/aeat-errores.properties` en
+  `origin/main`, líneas 186, 187, 45 y 230. SHA-256 que empieza por `152fec330b97a1cc`, el mismo que cita
+  P22. Es la copia de **pre-producción** del 29-jul-2026. **NO VERIFICADO:** que la copia de producción
+  (SHA `06519ceb…`, SCRUM-1211) diga lo mismo para estos cuatro códigos; no la he comparado.
+- **Art. 16.4 de la Orden HAC/1177/2024**, API de legislación consolidada del BOE
+  (`BOE-A-2024-22138/texto/bloque/a1-8`, una sola versión, `fecha_vigencia="20241029"`), leída el
+  26-oct-2026 a las 23:25:30Z (cabecera `Date:` del BOE). Literal:
+  > «4. En caso de que alguna incidencia técnica impida la remisión voluntaria en las condiciones indicadas
+  > se deberá proceder a la remisión de los registros de facturación en cuanto sea posible, respetando el
+  > orden temporal de generación de los registros de facturación. Además, deberá avisar de esta
+  > circunstancia indicándolo en los mensajes donde se envíen los correspondientes registros de
+  > facturación afectados, dentro del campo habilitado a tal efecto, de acuerdo con las especificaciones
+  > dadas en el apartado 4 del anexo.
+  > El sistema informático deberá reintentar periódicamente, al menos una vez cada hora, el envío de los
+  > registros de facturación pendientes de remitir. Asimismo, el sistema informático deberá avisar de que
+  > se ha producido una incidencia que ha impedido la remisión de todos los registros de facturación
+  > generados, indicando cuántos faltan por remitir. […]»
+
+  P23 citaba el «≥ 1/hora» de SCRUM-524 «no releído en el BOE»: **ya está releído y es literal.** Y añade
+  algo que P23 no decía: la norma habla de «incidencia técnica». **Si una suspensión lo es, es justo lo que
+  se pregunta.**
+- **NO VERIFICADO:** que la declaración responsable no se presente ante la AEAT (skill `verifactu` §6,
+  citada en P22). No he releído el art. 13 del RD 1007/2023 ni el art. 15 de la Orden en esta tanda.
+
+## ③ ⑤ «aceptado con errores»: lo que ya está decidido y construido, y lo que no
+
+**La medición cambia la premisa de ⑤:** la opción (b) que recomendaba ⑤ (una entidad de envío que guarda
+respuesta y códigos) **ya existe**, y su forma la decidió el fundador en otro ticket:
+
+- `model VfSubmission` y `enum VfSubmissionStatus` (`pending`, `sent`, `accepted`, `rejected`,
+  `manual_review`) en `prisma/schema.prisma:1801-1836`, desde SCRUM-1296 (`7bb4b1c02`, 30-sep-2026). Las
+  tres decisiones del fundador están en `docs/master/SCRUM-1127.md` §④ («las tres como recomiendas»,
+  SCRUM-1127b). Campos que contestan a ⑤: `estadoRegistro` (texto, el literal de la AEAT), `lastError`
+  (el código) y `subsanar` (booleano).
+- La regla, en `src/modules/fiscal/verifactu/sif.cola.ts:128-129`: `AceptadoConErrores` → `accepted` +
+  `lastError` = código + `subsanar: true` + `requierePersona: true`. Duplicado `AceptadaConErrores`, igual
+  (`:120`). **Ningún estado nuevo**: los cinco de la FSM de `docs/SIF_SPEC_NOTES.md` §6.
+- Sin `UNIQUE (invoice_id, tipo_operacion)`, a propósito: una subsanación es otra alta de la misma factura
+  (`SCRUM-1127.md:350`). Es el «ciclo» que pedía ⑤.
+
+**Lo que NO está construido** (medido en `src/`, sin contar los `.xsd`):
+- **La subsanación.** `Subsanacion` y `RechazoPrevio` salen **0** veces fuera de los XSD (control positivo:
+  el mismo patrón los encuentra en `SuministroInformacion.xsd:109-110`). Nadie genera hoy el registro que
+  subsana. Es la «fase 2» de `sif.cola.ts:14-16`, y es **camino de emisión**.
+- **Que algo corra.** `sif.procesador.ts` lo nombra un único fichero más, `encolarRemision.ts:8`, y en un
+  comentario. Ningún `import` (lo mismo que midió SCRUM-1500d el 13-oct).
+- **Quién ve el `subsanar: true`.** `subsanar` sólo aparece en `sif.cola.ts` y `sif.procesador.ts:175`:
+  ninguna pantalla, ruta ni aviso lo lee.
+
+**Lo que queda por decidir (para el fundador):**
+
+| # | decisión | ✅ | ❌ | ¿camino de emisión? |
+| --- | --- | --- | --- | --- |
+| D1 | ¿Se da ⑤ por **resuelta** con lo de 1127b/1296 (entidad de envío; «aceptado con errores» = `accepted` + `subsanar`, sin estado nuevo)? | **Sí (recomendado)**: coste cero, ya está en `main` con tests; deja a 524 sin la decisión que lo retiene | No: un estado propio (`accepted_with_errors` o similar) cuesta ALTER del enum en las tres bases (A5), cambiar la FSM de `SIF_SPEC_NOTES` §6 y un nombre de estado nuevo (regla 27) | no (cola y esquema; el esquema se LEE, regla 40) |
+| D2 | La **subsanación** (generar el registro con `Subsanacion`/`RechazoPrevio`): ¿ticket propio, fuera de 524? | **Sí (recomendado)**: va con la remisión real (certificado, colaborador social A2), que tampoco existe; cerrar 524 no la entierra | No: dentro de 524 lo deja abierto hasta que haya certificado | **sí → STOP para construir (regla 40)**; diseño sí, código no |
+| D3 | El **aviso** de lo pendiente: el `subsanar` de la cola y el aviso del art. 16.4 («indicando cuántos faltan por remitir»), ¿al mismo ticket que D2 o a otro? | **Al de D2**, ligado a la remisión real: hoy no se remite nada, así que no hay nada que avisar | Ahora: es texto que ve el usuario sin firma (regla 39) sobre algo que no corre | no es emisión; **sí es texto firmado (regla 39)** |
+
+**Mi lectura de SCRUM-524 si D1 y D2 son ✅:** le quedaría solo que el orquestador lleve P22-P24 a 1264.
+
+## Lo NO tocado
+
+`src/` · `prisma/schema.prisma` · `docs/legal/` (J4; el título caducado de P25 se queda como estaba) ·
+ninguna base de datos · Jira (solo el comentario de entrega en 524) · el auto-merge · ningún guard.
+Tanda local: NO CORRIDA (encargo: hacen de tanda los guards dirigidos y el obligatorio de CI).
+
+A9: aviso → A10 «Cero resultados con tu vocabulario no es silencio del documento.» — no se pudo comprobar: mi primer barrido de 1264 buscaba `P22`…`P29` y dio 0 en las dos mitades, también en `P29`, que existe como «Pregunta 29»; lo vio el control positivo añadido después, y ningún guard sabe qué vocabulario usa una sesión para buscar en Jira
+
+---
