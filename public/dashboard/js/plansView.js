@@ -33,17 +33,24 @@ async function renderPlansView(container) {
   render();
 }
 
-function buildPlansHtml({ currentPlan, planExpiresAt, plans, founding }, annual) {
+function buildPlansHtml({ currentPlan, planExpiresAt, plans, founding, suscripcionViva }, annual) {
   const plan = plans[0]; // plan único Pro
   if (!plan) return `<div class="empty-state"><div class="empty-state-title">Sin planes disponibles</div></div>`;
-  // V0-4: founding visible solo si quedan plazas y aún no tiene plan de pago
-  const showFounding = founding && founding.seatsLeft > 0 && currentPlan !== 'pro' && currentPlan !== 'founding';
+  // V0-4: founding visible solo si quedan plazas y aún no tiene plan de pago.
+  // SCRUM-1402k (P2, c.20832): ni a quien ya tiene una suscripción viva. La decide el servidor
+  // (`tieneSuscripcionViva`), así que esta pantalla no lleva su propia lista de planes de pago.
+  const showFounding = founding && founding.seatsLeft > 0 && currentPlan !== 'pro' && currentPlan !== 'founding' && !suscripcionViva;
 
   const isTrialExpired = currentPlan === 'trial' && planExpiresAt && new Date(planExpiresAt) < new Date();
   const trialDaysLeft  = planExpiresAt
     ? Math.max(0, Math.ceil((new Date(planExpiresAt) - new Date()) / (1000 * 60 * 60 * 24)))
     : null;
   const isCurrent = currentPlan === plan.id;
+  // SCRUM-1402k: con una suscripción viva (Pro o no) la tarjeta ofrece gestionarla, no otra.
+  const conSuscripcion = isCurrent || suscripcionViva === true;
+  // SCRUM-1402k (c.20866): a quien tiene una suscripción viva de Equipo no se le enseña la tarjeta de
+  // Pro; le queda el botón de gestionar de debajo. Sin texto nuevo.
+  const ocultaPro = currentPlan === 'equipo' && suscripcionViva === true;
 
   // SCRUM-345 · El rotulo «cobros» de la tarjeta de prueba caducada apuntaba a `invoices.csv`, que
   // el propio auditor llama `facturas.csv`. Se pulsaba «cobros», bajaba algo, se abria, y eran
@@ -83,7 +90,7 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans, founding }, annual)
     <div class="customers-card" style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
       <div style="font-size:28px">✅</div>
       <div>
-        <div style="font-weight:700;font-size:15px;color:var(--neutral-900)">Plan activo: <strong>${currentPlan === 'founding' ? 'Founding (9,90 €/mes de por vida, mientras mantengas la suscripción activa)' : 'Pro'}</strong></div>
+        <div style="font-weight:700;font-size:15px;color:var(--neutral-900)">Plan activo: <strong>${currentPlan === 'founding' ? 'Founding (9,90 €/mes de por vida, mientras mantengas la suscripción activa)' : currentPlan === 'equipo' ? 'Equipo' : 'Pro'}</strong></div>
         ${planExpiresAt ? `<div style="font-size:13px;color:var(--neutral-400);margin-top:2px">Próxima renovación: ${new Date(planExpiresAt).toLocaleDateString('es', { day: '2-digit', month: 'long', year: 'numeric' })}</div>` : ''}
       </div>
     </div>
@@ -145,7 +152,7 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans, founding }, annual)
       ${statusHtml}
       ${foundingHtml}
 
-      <div class="customers-card">
+      ${ocultaPro ? '' : `<div class="customers-card">
         <div style="display:flex;justify-content:center;margin-bottom:20px">
           <div style="display:flex;background:var(--neutral-100);border-radius:8px;padding:3px;gap:3px">
             <button id="toggle-monthly" style="padding:6px 16px;border-radius:6px;border:none;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;${!annual ? 'background:#fff;color:var(--neutral-900);box-shadow:0 1px 3px rgba(0,0,0,.08)' : 'background:transparent;color:var(--neutral-400)'}">
@@ -176,7 +183,7 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans, founding }, annual)
           `).join('')}
         </ul>
 
-        ${!isCurrent ? `
+        ${!conSuscripcion ? `
           <button class="btn-primary plan-btn" data-plan="${plan.id}" style="width:100%;font-size:15px;padding:12px">
             Suscribirme — ${ctaPrice}
           </button>
@@ -188,9 +195,9 @@ function buildPlansHtml({ currentPlan, planExpiresAt, plans, founding }, annual)
             Gestionar suscripción / facturación
           </button>
         `}
-      </div>
+      </div>`}
 
-      ${currentPlan !== 'trial' && !isCurrent ? `
+      ${currentPlan !== 'trial' && (!conSuscripcion || ocultaPro) ? `
         <div style="margin-top:12px;text-align:center">
           <button id="portal-btn" class="btn-ghost btn-sm">Gestionar suscripción / facturación</button>
         </div>

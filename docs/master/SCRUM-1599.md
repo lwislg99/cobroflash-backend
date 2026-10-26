@@ -824,6 +824,57 @@ líneas `ok` de primer nivel suman el `# tests` declarado). Los de registro, en 
 - Una pasada por punto.
 - Que las seis mutaciones mueran también en el Postgres de CI: nadie las corre allí (§1599i ⓪).
 
+## J2 · SCRUM-1599j · scrum85 al banco desechable: la aserción del id mira el segmento entero
+
+**Medido contra:** `origin/main` = `f892c146d4e86dec147e5891be262b44642150c9` · 2026-10-26T15:52:55Z (hora de GitHub al juntar la salida; sesión J2 `jv-j2bd` en su árbol `jv-j2bd`, por encargo del orquestador `cobroflash-backend-8b`. El código se midió sobre `289ca8946` y después se mezcló `origin/main`, que trae 1599k y no toca las rutas de pago)
+
+A9: aviso → cicatriz J2 «otra vez un heredoc de bash se comió una barra invertida: la mutación de scrum85 se escribió con `\d` en vez de `\\d`, la regex no casaba nunca y el mutador la dio VIVA» — no se pudo comprobar: el heredoc se teclea en la consola, que ningún guard ve.
+
+Decisión que se aplica: SCRUM-1599 c.20715 ① (diseño B) y c.20650 ② (Connect activo en el test). El defecto lo midió
+jv-j6bv en SCRUM-1218 c.20840 y por él §1599i ① apartó scrum85. 0 líneas de `src/`, `.github/` o del camino de
+emisión. Salida entera: `docs/master/evidencias/SCRUM-1599/pasadas-1599j.salida.txt`.
+
+### ① La aserción: se endurece, no se relaja (regla 41)
+
+`!invoiceBody.includes('/pay/card/' + id)` casaba DENTRO del token (hex de 32) cuando éste empezaba por el id: con
+la base vacía el cobro A es id=1, así que una vez de cada 16. Ahora `enlazaPorId(cuerpo, ruta, id)` exige que detrás
+del id no siga ningún carácter que pueda continuar el segmento (`(?![0-9A-Za-z_-])`). Eso caza lo mismo que pedía el
+encargo (comilla, `?`, `#`, fin) y además `/pay/card/1/` y `/pay/card/1<`: es más estricto que la lista, no menos.
+El positivo va SEMBRADO en un caso sin base que corre siempre: cinco cuerpos con el id real (`"`, `?`, `#`, fin, `/`)
+tienen que cazarse, y un token `1f3a…`, `/pay/card/12` y `/pay/card/10` no. El test imprime además si el token de
+A empezaba por su id, para que una pasada diga si ejerció el caso peligroso.
+
+### ② Forma de 876f y listas
+
+- `import { URL_BANCO } from './_banco-libro.mjs'` y `ENABLED = QA_DB_TEST === '1' || URL_BANCO !== ''`; el motivo del
+  salto nombra las dos variables. `MUTACIONES_CON_BASE` con una, la forma de §1599i ⓪ sobre `payCard.routes.ts`.
+- `tests/scrum1599f-los-que-solo-ve-staging.test.mjs`: antes de quitarlo de la lista cayó con «SALEN: scrum85» y
+  «ENTRAN: —»; quitado, con su motivo. Tras mezclar 1599k (28 → 22) el trinquete queda en **21**.
+- `tests/scrum419-ci-declara-lo-que-no-corre.test.mjs`: scrum85 declarado con 1 caso de banco.
+- Carril: `node scripts/carriles.mjs de tests/scrum85-pay-routes-token.test.mjs` → «sin fila en §3: nadie lo reclama».
+
+### ③ Banco local: antes, después y mutaciones
+
+PGlite 0.5.8 + socket, uno nuevo por pasada (`banco-1599h.mjs` sin cambiar), DDL de 33 tablas. Pasadas con
+`docs/master/evidencias/SCRUM-1599/pasadas-1599j.mjs`:
+
+| pasada | N | token «1…» | caen |
+|---|---|---|---|
+| DESPUÉS (arreglado; 100 antes de mezclar + 20 después) | 120 | 10 | **0** |
+| sin el ancla (copia temporal, recuento exacto 1) | 160 | — | 16, por «el link a /pay/card NO debe llevar el id numérico» |
+| mutación de `src` (`MUTACIONES_CON_BASE`, `mutar-1599i.mjs`) | 1 | — | MUERE: «GET /pay/card/<id numérico> debe ser 404 y fue 501» |
+
+- En el mutante sin ancla el caso sembrado cae también, con «no debe cazar el id 1 en <a href="/pay/card/1f3a…">».
+- 16 de 160 es más que el 1/16 esperado (10). Con dos muestras pequeñas no lo atribuyo a nada: SIN MEDIR por qué.
+- El ANTES de c.20840 (4 de 4 con token «1…» caen) no lo he repetido: el mutante sin ancla es ese ANTES.
+
+**Guards** (en local, sobre el árbol mezclado): scrum85 + 30 ficheros (237, 976, 824, 836, 702, 700, 719, 1415, 113,
+262, 383, 560, 411, 737, 747, 1177, 893, 850, 1387, 1185, 1599f, 1294, 267, 273, 921c, 1572, 1339d, 859, 1153 y
+419): 314 casos = 313 pass + 1 skip, que es el caso de base de scrum85 sin `LIBRO_PG_URL`. Suite entera local: NO CORRIDA.
+
+**Sin medir:** el banco de CI, que es otro motor y lo comparten los ficheros que corren a la vez (allí el cobro A no
+tiene por qué ser id=1); staging con turno; el obligatorio, que se lee después del empujón.
+
 ## J6 · SCRUM-1599m · quinto lote del diseño B: los ocho «HE» al banco desechable, y el trinquete de 22 a 14
 
 **Medido contra:** `origin/main` = `11324d271372ee6e689aeeea1c90d096b6043696` · 2026-10-26T15:53:27Z (hora de GitHub; sesión J6 `jv-j6ch` en su árbol `jv-j6ch`, por encargo del orquestador `cobroflash-backend-8b`)

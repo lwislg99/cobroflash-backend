@@ -1,0 +1,8 @@
+12 corridas identicas del eje del rol (tests/_censo-frontera.mjs, entonces docs/evidencias/scrum1390/censo-que-ve-el-tecnico.mjs.txt de main 289ca8946), 26-oct-2026.
+Columnas: codigo de salida · veredicto de GET /admin/products/frequent-concepts por modelo · huella de todas las lineas de ruta · huella de TOTALES. Agrupadas con uniq -c:
+     12 rc=0 fc==NO-DISTINGUE sets=c4020613 tot=1b498291
+
+Modo de la app (eje del comercio, 1 corrida de cada, rutas por seccion comparadas con diff):
+  sin fijar vs 'development': identicas salvo el sufijo al azar de GET /admin/referral (texto, no veredicto)
+  'production' vs 'development': 0 lineas de ruta distintas
+  quitando process.chdir(raiz): POST /admin/billing/accept-alcance pasa de FILTRA a NO-LLEGO (lo que midio 1516b)
