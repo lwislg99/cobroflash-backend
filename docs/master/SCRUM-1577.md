@@ -126,4 +126,11 @@ Banco: ANTES salida 1 (ROJO 6 · CIEGO 0 · VERDE 9); DESPUÉS salida 0 (ROJO 0 
 - **Parte 5 · yaqu.app: NO HECHO.** Esta sesión no lo ha intentado.
 - **Los campos de cada cláusula** («Título», «Texto»): siguen sin medir, como dijo la parte 1. Fuera del encargo.
 - **Foco del color:** no tenía estilo de foco propio antes y no se le ha dado. No medido.
-- **Suite entera local: NO CORRIDA** (orden del orquestador: 10 sesiones a la vez). Las tandas dirigidas, abajo.
+- **Suite entera local: NO CORRIDA** (orden del orquestador: 10 sesiones a la vez y la máquina justa de memoria). Las tandas dirigidas, abajo.
+
+### Tandas (sobre el commit local `97bea8f1da55b60e59340ecd04d44fd9e97b3d65`)
+
+- **Primera pasada, CIEGA:** en este árbol, que no tiene `node_modules`, 100 de 590 cayeron por 96 «Cannot find package 'typescript'», 2 «axios» y 1 «fake-indexeddb». No es un rojo: se repitió en un árbol anidado de usar y tirar (`.claude/worktrees/j3bn-mini` del checkout compartido, con `dist/` de `tsc --noCheck` y sin `prisma generate`), ya quitado.
+- **Mini-tanda** = los 15 guards del encargo (237, 976, 824, 836, 419, 702, 700, 719, 1415, 267, 273, 1294, 811c, 713c, 1387) + el mío + todo `tests/` que nombra `settingsView` o `styles.css`: **149 ficheros · 1.391 tests = 1.390 pass + 0 fail + 1 skipped** (cuadra). El salto es `scrum1145` «por la ruta real», gateado por `LIBRO_PG_URL`. Control positivo: mis 5 casos `SCRUM-1577 ①…⑤` están en el TAP; control a cero: `SCRUM-1577 ⑥`, 0.
+- **Guards de navegador que montan Configuración** (no hay filtro en `guards-visuales.mjs`: uno a uno): `guard-modo-en-ajustes`, `guard-aviso-bizum`, `guard-completar-lleva-al-campo`, `guard-falta-en-otra-pestana` y `guard-vias-de-cobro`, **salida 0 los cinco**. `guard-objetivo-tactil` sale **2 (0 hallazgos · 4 CIEGOS)**, y **no es mío**: corrido en otro árbol anidado en `origin/main` = `c1331293b01ac32a4357cf1b239dab86853f25ee`, da los mismos 4 ciegos con las líneas idénticas (`diff` vacío). Además ese guard **no mide Configuración** (0 líneas nombran la pantalla o estos tres controles), así que no prueba nada de este cambio: lo prueba el banco de arriba.
+- `main` avanzó de `f6a31196` a `c1331293` mientras medía: `git diff --stat` entre los dos sobre mis siete rutas, vacío.
