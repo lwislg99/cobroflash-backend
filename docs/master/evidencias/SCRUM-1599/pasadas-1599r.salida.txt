@@ -1,0 +1,52 @@
+# SCRUM-1599r · scrum781 y scrum234 contra Postgres desechable (embedded-postgres 17.5, loopback :54399, base yaqu_libro_test, DDL de migrate diff --from-empty: 33 CREATE TABLE = 33 model)
+# dist/ con tsc --noCheck sobre 6d5bf76c5 (CORTE_FORMATO_F x4 en invoiceNumber.service.js). Corredor y sonda del reloj: los de §1599q (rama scrum-1599q-bisect-serie-f @ 98907d8d5). Copias adaptadas con adaptar-1599r.mjs.txt, borradas al acabar.
+# Columnas: pasan/caen/saltan (decl = '# tests' del TAP; suman = casos anclados == decl).
+
+## ANTES · los dos ficheros de main (HEAD 6d5bf76c5), reloj real
+ANTES · ROJO  · 1582 ms · 7/1/0 (decl 8, suman true) · sin-reloj · zz1599r-antes-781.mjs · CAEN: SCRUM-781 · SUELO: UNA emisión avanza el contador fiscal exactamente 1
+    error: '🔴 el número no tiene la forma de la serie fiscal: F260001. Si sale un J-, el merchant se ha ido por el camino del justificante y no hay carrera que medir.'
+    expected:
+    actual: 'F260001'
+ANTES · ROJO  · 5378 ms · 0/1/0 (decl 1, suman true) · sin-reloj · zz1599r-antes-234.mjs · CAEN: SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+    error: |-
+    expected: 1
+    actual: NaN
+
+## DESPUÉS · los ficheros de esta rama, reloj real
+DESPUES · VERDE · 3427 ms · 8/0/0 (decl 8, suman true) · sin-reloj · zz1599r-despues-781.mjs
+DESPUES · VERDE · 5788 ms · 1/0/0 (decl 1, suman true) · sin-reloj · zz1599r-despues-234.mjs
+
+## SONDA DEL RELOJ · los de esta rama con el reloj al 2026-09-01 (antes de CORTE_FORMATO_F)
+RELOJ0901 · ROJO  · 1098 ms · 7/1/0 (decl 8, suman true) · reloj-cargado×1 (2026-09-01T12:00:00.006Z) · zz1599r-despues-781.mjs · CAEN: SCRUM-781 · SUELO: UNA emisión avanza el contador fiscal exactamente 1
+    error: '🔴 el número no tiene la forma de la serie fiscal: 2026-QA-001. Si sale un J-, el merchant se ha ido por el camino del justificante y no hay carrera que medir.'
+    expected:
+    actual: '2026-QA-001'
+RELOJ0901 · ROJO  · 5329 ms · 0/1/0 (decl 1, suman true) · reloj-cargado×1 (2026-09-01T12:00:00.005Z) · zz1599r-despues-234.mjs · CAEN: SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+    error: '🔴 el número no tiene la forma de la serie fiscal F: 2026-CF-001'
+    expected:
+    actual: '2026-CF-001'
+
+## MUTACIÓN en dist/ (mutar-1599r.mjs.txt): formatInvoiceNumber no toma nunca la rama F
+ancla="if (usaFormatoF(emitidaEn, rectifying, corte)) {" veces=1 sha0=66f09cfce7bc
+mutado sha=4db5e0644b7a
+MUTACION · ROJO  · 2141 ms · 5/3/0 (decl 8, suman true) · sin-reloj · zz1599r-despues-781.mjs · CAEN: SCRUM-781 · SUELO: UNA emisión avanza el contador fiscal exactamente 1 | SCRUM-781 · 🔴 DOS emisiones SIMULTÁNEAS no cogen el mismo número | SCRUM-781 · 🔴 y con DIEZ a la vez tampoco: ni un duplicado ni un salto
+    error: '🔴 el número no tiene la forma de la serie fiscal: 2026-QA-001. Si sale un J-, el merchant se ha ido por el camino del justificante y no hay carrera que medir.'
+    expected:
+    actual: '2026-QA-001'
+    error: |-
+    error: |-
+MUTACION · ROJO  · 6042 ms · 0/1/0 (decl 1, suman true) · sin-reloj · zz1599r-despues-234.mjs · CAEN: SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+    error: |-
+    expected:
+    actual:
+restaurado sha=66f09cfce7bc igual=true
+correr rc=1 (1 = algún fichero cae: la mutación MUERE)
+
+## 234 · mensaje que cae con la mutación (TAP, literal)
+  error: |-
+    🔴 UNA DE LAS DOS EMISIONES CONCURRENTES FALLÓ. Si el código es `P2002`, es exactamente la carrera de SCRUM-234: las dos reservas leyeron el mismo `nextInvoiceNumber` y el índice `@@unique([merchantId, number])` mató la segunda. El índice no previene la carrera, la convierte en una factura que el profesional no pudo emitir.
+    + actual - expected
+    
+    + [
+    +   'P2002'
+    + ]

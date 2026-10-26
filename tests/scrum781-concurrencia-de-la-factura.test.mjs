@@ -127,7 +127,8 @@ test('SCRUM-781 · SUELO: UNA emisión avanza el contador fiscal exactamente 1',
       `🔴 el contador no avanzó de 1 a 2 (quedó en ${despues.nextInvoiceNumber}). Si el contador `
       + 'no se mueve, cualquier «no hay duplicados» de este fichero mide una base quieta.');
     assert.equal(despues.invoiceSeriesYear, new Date().getFullYear());
-    assert.match(inv.number, /^\d{4}-QA-\d{3}$/,
+    // SCRUM-1599r: la serie fiscal es F<AA><NNNN> desde `CORTE_FORMATO_F` (SCRUM-780 c.14709).
+    assert.match(inv.number, /^F\d{6}$/,
       `🔴 el número no tiene la forma de la serie fiscal: ${inv.number}. Si sale un J-, el `
       + 'merchant se ha ido por el camino del justificante y no hay carrera que medir.');
   });
