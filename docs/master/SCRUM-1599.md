@@ -718,3 +718,108 @@ Los de registro, sobre el árbol final: en el comentario de Jira.
 - Que las catorce mutaciones mueran también en el Postgres de CI: nadie las corre allí (⓪).
 - De paso, me corrijo: la primera versión del guion de mutaciones leía `error: |-`, que es la cabecera del bloque YAML,
   y no el mensaje. Lo vi en la salida, lo arreglé y repetí las catorce antes de dar ninguna cifra.
+
+## J6 · SCRUM-1599k · cuarto lote del diseño B: seis gateados más al banco desechable, y el trinquete de 28 a 22
+
+**Medido contra:** `origin/main` = `289ca894656c7c3686a0469d34785512b960e0b3` · 2026-10-26T15:26:45Z (hora de GitHub; sesión J6 `jv-j6cd` en su árbol `jv-j6cd`, por encargo del orquestador `cobroflash-backend-8b`)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs`
+
+Decisión que se aplica: SCRUM-1599 c.20715 ① (el fundador, diseño B). Criterio y forma, los de §1599f, §1599h y §1599i.
+0 líneas de `src/`, `.github/` o del camino de emisión; 0 aserciones tocadas (regla 41). Salida entera:
+`docs/master/evidencias/SCRUM-1599/lote-1599k.salida.txt`.
+
+### ① El lote, por programa
+
+`banderas-1599h.mjs`, sin cambiar, sobre los 28 de `SOLO_STAGING` en `289ca8946`: 2 sencillos apartados (116 y 574),
+5 «solo-H» y 21 con alguna bandera de riesgo. Es el reparto que dejó §1599i ④. El lote son:
+
+- **los cuatro «solo-H» que quedaban** (scrum85 sigue apartado con su motivo de §1599i ①; hoy lo arregla otra sesión
+  en otra rama y aquí no se toca);
+- **el grupo «E» entero, los dos de una sola bandera** que no es H ni carrera: 76 y 207. Los «C» (767 y 793) se dejan
+  a propósito: la carrera dentro de la tanda paralela es el riesgo ya medido (`scrum814` corrió 393 s dentro frente a
+  64 s solo, SCRUM-871). Los de dos o tres banderas, también fuera.
+
+| fichero | grupo | casos que pasan a CI |
+|---|---|---|
+| scrum74-recibo-token | solo-H | 1 |
+| scrum94-register-teammember | solo-H | 1 |
+| scrum17-recapitulativa | solo-H | 1 (los otros 11 ya corrían) |
+| scrum222-deriva-arranque | solo-H | 2 (los otros 21 ya corrían) |
+| scrum76-email-adjunto | E | 1 |
+| scrum207-emision-auditada | E | 2 (los otros 3 ya corrían) |
+| **total** | | **8** |
+
+- **Ninguno se negó a migrar.** 17 y 207 ya fijan `INVOICING_ES_ENABLED` en su merchant, y 222 sólo LEE
+  `information_schema`: contra un banco nacido de `schema.prisma` el «en-sync» sale por construcción, y la mitad que
+  importa es su gemela, la deriva inyectada que TIENE que verse (y se ve).
+- 76 se salta solo si hay `RESEND_API_KEY`; en el banco local no la hay y corrió. Que CI tampoco la tenga lo dirá su log.
+- La forma es la de §1599h: `_banco-libro.mjs` detrás de `_staging-db.mjs`, y `QA_DB_TEST` **o** `LIBRO_PG_URL`.
+  El diff de cada test son 3 líneas (5 en 222 y 207, con dos saltos) más el bloque de la mutación.
+- `scrum419`: 103 → 111 tests de banco.
+- Carril: `carriles.mjs de` los ocho ficheros de test, ANTES de tocarlos → «sin fila en §3». Control positivo:
+  `scripts/equipo/latido.mjs` → S5.
+
+### ② Banco local
+
+Banco de §1599h, sin cambios; `dist/` con `tsc --noCheck`. Canario cronometrado: scrum94 en 2,7 s.
+
+| pasada | casos | pasan | caen | saltan |
+|---|---|---|---|---|
+| ANTES (los 6 de main, con `LIBRO_PG_URL`) | 43 | 35 | 0 | **8** |
+| DESPUÉS (los 6 migrados) | 43 | **43** | 0 | 0 |
+
+En los doce renglones, los casos de primer nivel suman el `# tests` declarado. Local: 34,5 s para los seis, banco
+incluido. No predice CI.
+
+**Seis mutaciones, una por fichero, en `MUTACIONES_CON_BASE`** (no en `MUTACIONES_QUE_ME_TUMBAN`, por lo de §1599i ⓪).
+Antes de la tanda, un canario de una sola: 22,8 s. Resultado: **6 MUEREN, 0 VIVEN y 0 CIEGAS**; `dist/` restaurado byte
+a byte. Cada `de` sale UNA vez en su fuente y cada `cae` casa con un solo caso (comprobado antes de correr).
+
+| | fichero mutado | qué se muta | cae (aserción) |
+|---|---|---|---|
+| 74 | `receipt.routes.ts` | `/recibo/<id numérico>` resuelve el cobro | «GET /recibo/<id numérico> debe ser 404 y fue 200» |
+| 94 | `auth.routes.ts` | la ruta cerrada contesta 201 en vez de 409 | «… debe dar 409 y fue 201» |
+| 17 | `jobs.routes.ts` | la rotura por mes se queda con el primer grupo | «rotura → 2 facturas (marzo + abril)» |
+| 222 | `schemaDrift.ts` | el catálogo mira otro esquema | «staging debería estar en sync; salió no-pude-comprobar» |
+| 76 | `email.service.ts` | la factura sale sin adjunto | «el .eml de FACTURA CONTIENE el PDF adjunto» |
+| 207 | `invoiceNumber.service.ts` | el registro apunta a otro número | el caso gateado del camino feliz (y su gemelo sin base) |
+
+- **De paso, mi fallo, y lo que lo cazó.** La primera mutación de 94 quitaba la guarda de SCRUM-94 en
+  `auth.service.ts` (el `if (teamMember && …)`), y **VIVIÓ**: 0 de 1 caen. No es el test: desde SCRUM-1515
+  `/auth/register` contesta 409 `registration_closed` sin leer el cuerpo ni llamar al servicio, así que esa guarda no
+  se alcanza desde la ruta. La cambié por la que el test SÍ vigila (el cierre de la ruta), y muere. Lo cazó el guion de
+  mutaciones, que dice VIVE y sale con 2; sin él habría catalogado una mutación muda.
+- **Lo que eso deja a la vista, sin medir:** la guarda de SCRUM-94 sigue viva en `registerMerchant`, que llama la CLI
+  `altaDeMerchant.ts`. En `tests/` sólo dos ficheros nombran `email_belongs_to_team`: éste y `scrum1515`, que lo cita en
+  un comentario. Si algún test la ejerce por la CLI, no lo he medido. Es del carril de auth, no de J6: se nombra aquí y
+  en la entrega.
+- 207 muta `invoiceNumber.service.ts`, que es camino de emisión. Lo que entra en el commit es un literal dentro del
+  test; el src no se toca (regla 38). La mutación sólo se aplicó en el `dist/` local y se restauró.
+
+### ③ El trinquete baja de 28 a 22
+
+`tests/scrum1599f-los-que-solo-ve-staging.test.mjs`. Antes de editar la lista, con los seis ya migrados, cae (rc=1):
+«SALEN: scrum17, scrum207, scrum222, scrum74, scrum76, scrum94», exactamente los seis, y «ENTRAN: —». Salen de
+`SOLO_STAGING` y el número pasa a 22.
+
+### ④ Coste y lo que queda
+
+- **En CI:** sale del obligatorio de este PR comparado con un run de main de la misma hora, y va en el comentario de
+  Jira (como en 1599f, h e i). Los lotes 1 y 2 quedaron por debajo del ruido entre runs, con n=1 por lado.
+- **Los 22 que quedan** (lectura de banderas, no medición): 2 sencillos apartados (116 y 574) · 1 «solo-H» apartado
+  (85) · 2 «C» (767, 793) · 4 «EC» · 8 «HE» · 3 «HEC» · 1 «HC» · 1 «MC». De una sola bandera ya sólo quedan los dos «C»
+  y 85, que está apartado.
+
+### ⑤ Guards
+
+Los de suite (237, 976, 824, 836, 702, 700, 719, 1415, 419), los del banco (1599f, 876e, 876f), los del catálogo
+(745, 757, 765, 1387) y 113, 740, 812, 850, 850b, 1185, 411 y 723: **24 ficheros, 234/234, 0 fallos, 0 SKIP** (las
+líneas `ok` de primer nivel suman el `# tests` declarado). Los de registro, en el comentario de Jira.
+
+### ⑥ Lo que NO se ha hecho, ni medido
+
+- Staging: no he corrido los seis con `QA_DB_TEST=1` (sin turno).
+- La tanda entera en local: NO CORRIDA (varias sesiones a la vez).
+- Una pasada por punto.
+- Que las seis mutaciones mueran también en el Postgres de CI: nadie las corre allí (§1599i ⓪).
