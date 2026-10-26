@@ -871,3 +871,39 @@ puesto.
 * Escribí `{ todo: TODO_DEL_GUARD_J5 }` dando por hecho que `null` lo apagaba, y le iba a decir al
   fundador «pon `null`». Lo cazó ver el guard de J5 sin su `todo`, que es lo que pedía el encargo.
 * Crucé los 200k de contexto al acabar las mutaciones (~213k) y lo avisé en ese momento.
+
+## El rojo propio del obligatorio: el trinquete de `scrum812` (sesión `jv-j1cn`)
+
+A9: comprobación → `tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs`
+
+*(Escribe J1, sesión `jv-j1cn`, por encargo del orquestador tras c.20938. Medido contra
+`origin/main` = `268eb55ddf33547063a620009e505e4ed833ba35`, leído el 26-oct-2026 tras `git fetch`.
+Carril: `tests/` y este registro; no toca `src/`.)*
+
+* **El rojo** (obligatorio de #2896, vigía `jv-j6cn`): `scrum812` :288, «LA COBERTURA HA SUBIDO a 36
+  (el suelo decía 35)». Lo causa el test nuevo de este tramo, que declara mutaciones y se titula
+  GUARD por su caso «guard de J5…».
+* **Comprobado que es SÓLO ese fichero**, con el lector del propio `scrum812`
+  (`censoConPoblacion` + `seTitulaGuard`) sobre los dos árboles: `origin/main` da **35** y la rama
+  (`1afa6fb8d`) da **36**, población 1.528 ficheros de test en los dos. La única línea distinta entre
+  las dos listas es `scrum1404g-el-409-del-pendiente-de-sellado.test.mjs`. Control positivo: el 35 de
+  `main` es justo el suelo vigente.
+* **Arreglo:** `SUELO_GUARD_QUE_DECLARAN` pasa a 36, con su entrada fechada y sus dos sha en el
+  comentario del trinquete; la mutación ④ pasa a «36 → 35» para seguir tumbándolo. El suelo sube: el
+  trinquete queda más duro, no más blando.
+* **Visto en rojo, y visto caer:** con el suelo en 35 el test sale 5 de 6 con el literal del CI
+  («HA SUBIDO a 36 (el suelo decía 35)»); con 36, 6 de 6. Que la mutación ④ sigue teniendo ancla lo
+  dice el caso del propio trinquete (el ancla aparece 2 veces y la primera en línea propia).
+* **Dirigida:** 129 ficheros (los que nombran un fichero de la rama según `tests-que-cubren --porque`,
+  los que recorren `docs/master`, y 812, 1404b, 1404g, 1507, 206, 206b, 237, 976, 824, 836, 419, 702,
+  700, 719, 1415, 622, 273, 267, 1294 y 1572), `dist/` compilado con `tsc --noCheck`: **1.294 casos =
+  1.284 pasan + 2 caen + 7 saltos + 1 `todo`**. El `todo` es el guard de J5 (a propósito). Los 2
+  rojos son `scrum1298b` :105 y :180, que no toca esta rama: comparan la ruta corta del TEMP
+  (`JAVIER~1`) con la larga (`Javier Pereira`); es de esta máquina, no del cambio.
+* **NO medido:** la suite entera en local (NO CORRIDA, manda el obligatorio); el test de 1517 no
+  existe con ese número en `tests/` (lo busqué por nombre: 0 ficheros).
+
+### Mis errores
+
+* No he leído enteros los 26 comentarios anteriores a c.20921 de SCRUM-1404: leí de c.20921 a
+  c.20938, que son los que deciden este cambio.
