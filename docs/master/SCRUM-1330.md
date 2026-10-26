@@ -163,3 +163,76 @@ Tampoco se tocan los dos eventos `invoiced` de la misma factura en ④b (dichos 
   cierto, pero lo afirmé por razonamiento. Apuntado en las cicatrices, sin comprobación.
 - El primer barrido dirigido elegía ficheros por el nombre de las funciones del sellado. Un doble que
   modela el sellado sin nombrarlo no entraba; lo ensanché a 243 después de que `scrum1258` cayera.
+
+## SCRUM-1330d · `tests/scrum173` real, con la guarda B puesta (jv-j1cg, puesto J1, 26-oct-2026)
+
+**Medido contra:** `origin/main` = `f6a3119675c2584480d846fa0a20572d48cadaa5` · 2026-10-26T16:04:33Z
+
+A9: aviso → cicatriz J1 «Medí el contexto al acabar el arranque y al acabar Jira, y no mandé las cifras en ese momento: fueron juntas en el mensaje del bloqueo, aunque el encargo las pedía al medirlas» — no se pudo comprobar: lo que se dice en un mensaje entre sesiones no pasa por ningún guard del repositorio
+
+Es el punto ③ que dejó abierto c.19519: `tests/scrum173` no había corrido nunca con la B, porque está
+gateado por `QA_DB_TEST` y CI lo salta. Sólo medir: no se ha tocado `src/`, ni la emisión, ni
+`schema.prisma`, ni `tests/scrum173`.
+
+### Lo corrido
+
+```
+node scripts/staging-gated.mjs tests/scrum173-cadena-verifactu-serializada.test.mjs
+```
+
+Es el runner de `npm run test:staging:gated`: toma el turno, corre y lo suelta. Las claves las cargó él
+mismo (`cargarEnvDelEquipo`, desde el `.env` del checkout principal); no se exportó ninguna a mano.
+`dist/` salió de `npm run build` (tsc completo, exit 0) sobre esta misma base, y
+`dist/modules/invoicing/domain/verifactu.service.js` lleva el aviso de la B (1 aparición de «ya estaba
+sellada»). `_prisma-client-guard` salió 0 con el `node_modules` propio del árbol.
+
+| hijo | `QA_DB_TEST` | tests | pasan | caen | saltan |
+|---|---|---|---|---|---|
+| a55 | no | 7 | 0 | 0 | 7 |
+| bot | no | 7 | 0 | 0 | 7 |
+| scrum180 | no | 7 | 0 | 0 | 7 |
+| **qa** | **sí** | **7** | **7** | **0** | **0** |
+| agregado | | 28 | 7 | 0 | 21 (suma 28, cuadra) |
+
+Exit 0 del runner. El recibo (`.claude/evidencia-tanda.json`, fuera de git) lleva `autotest: true`,
+el commit `f6a311967` y el mismo desglose. **La población que cuenta son los 7 del hijo `qa`**: los 21
+saltos son los tres hijos aislados, que corren el fichero sin `QA_DB_TEST` porque el modo con argumento
+apunta los cuatro al mismo fichero.
+
+### La guarda B se ejercitó: su línea está en la salida
+
+El caso «SCRUM-177: excluirId — resellar un alta no la encadena a sí misma» (test, líneas 246-264)
+sella `QA177C-…` y la vuelve a pasar por `applyVeriFactu` (línea 259). En la salida del hijo `qa`:
+
+```
+[verifactu] invoice=QA177C-1793030643821 hash=373515B73A2AAB9E…
+[verifactu] invoice=QA177C-1793030643821 ya estaba sellada: se conserva su huella 373515B73A2AAB9E… y no se vuelve a sellar
+✔ SCRUM-177: excluirId — resellar un alta no la encadena a sí misma (2048.8801ms)
+```
+
+La segunda línea sólo la escribe la rama de la B (`src/modules/invoicing/domain/verifactu.service.ts:441`).
+Las aserciones que pasan son las de las líneas 260 y 262 (`segundo.vfPrevHash` distinto de la huella
+propia, e igual a `''`). **El choque que el ticket temía «por lectura» no existe al correrlo**: la B
+devuelve el sello guardado, cuyo `prev` es `''`, y el caso sigue verde. Lo que dijo J1e sigue siendo
+cierto: el caso ya no ejercita `excluirId`, porque con la B el segundo paso no llega a buscar el anterior.
+
+### Lo que esto NO mide
+
+- **La base no es la de staging que da nombre al comando: es `yaqu_dev_javier`.** Lo dice el turno
+  («turno de staging TOMADO en "yaqu_dev_javier"»), y es la `DATABASE_URL_TESTS` del `.env` del checkout
+  principal. El host lo filtra la lista de `_db-guard.mjs` (`STAGING_HOST`); no lo he impreso.
+- **El preflight de esquema lo salta el modo con argumento.** Lo corrí aparte con el mismo cargador
+  (sólo introspección): exit 3, **la base va POR DELANTE del schema** con 20 objetos (`equipments`,
+  `equipment_id` en cuatro tablas, `invoices.retencion_irpf_importe`, entre otros). Es el orden de A5
+  (ALTER antes que el PR). No se aplicó nada. Los 7 casos crean facturas y pasaron con esa base.
+- **El caso «cadenas YA PERSISTIDAS» es vacío en esta base:** «0 verificadas, 0 no recomputables».
+  Pasa sin haber recomputado ninguna huella.
+- **No se mutó la B** para ver caer el caso: la línea «ya estaba sellada» es la evidencia de que la
+  rama corrió, no de que el test la distinga. Que el test cae sin la B lo midió c.19518 con `scrum1330`,
+  no con `scrum173`.
+- La carrera ④b contra Postgres real y el doble encolado (②) siguen fuera.
+
+### De paso, sin arreglar
+
+`node scripts/comprobar-claves-bd.mjs` dice «AUSENTE» para las tres claves en este árbol, y el runner
+las encuentra en el `.env` del checkout principal. Los dos instrumentos miran sitios distintos.

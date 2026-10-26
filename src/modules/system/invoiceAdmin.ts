@@ -224,6 +224,13 @@ export async function updateInvoiceStatusAdmin(
    * copia de `Charge.method`, y las filas históricas no se tocan.
    */
   paidVia?: unknown,
+  /**
+   * SCRUM-1609 · CUÁNDO dice el profesional que entró el dinero, ya RESUELTA por la ruta con
+   * `resolverFechaDeCobro` (la misma del lote, SCRUM-397). **Opcional a propósito**: sin ella,
+   * `paidAt` es el instante del marcado, como siempre. Solo cuenta al pasar a `paid` y si la factura
+   * no tenía ya fecha de cobro: el primer cobro escrito no se sobrescribe por esta puerta.
+   */
+  fechaDeCobro?: Date,
   /** SCRUM-1303 · INTERNO: `true` en la única relectura tras perder la carrera. No lo pases. */
   yaSeReleyo = false,
 ) {
@@ -272,7 +279,7 @@ export async function updateInvoiceStatusAdmin(
   let paidAt = existing.paidAt;
 
   if (status === 'paid' && !existing.paidAt) {
-    paidAt = new Date();
+    paidAt = fechaDeCobro ?? new Date();
   } else if (status === 'pending') {
     paidAt = null;
   }
@@ -310,7 +317,7 @@ export async function updateInvoiceStatusAdmin(
     });
   } catch (e) {
     if (!esFilaQueNoCasa(e) || yaSeReleyo) throw e;
-    return updateInvoiceStatusAdmin(id, status, merchantId, paidVia, true);
+    return updateInvoiceStatusAdmin(id, status, merchantId, paidVia, fechaDeCobro, true);
   }
   // SCRUM-28 (COBROS-2): el cobro MANUAL (Bizum/transferencia) también materializa
   // Job.totalCobrado. Reutiliza el núcleo de SCRUM-13 (suma Invoices paid, idempotente).

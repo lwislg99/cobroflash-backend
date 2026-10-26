@@ -457,3 +457,57 @@ Recomendación de J5: **A ahora; C después, preguntando sólo a partir del umbr
 - Cuántos gastos reales caen a cada lado del umbral: no se ha tocado ninguna base.
 - El detalle de las instrucciones de la 43 y la 99, visto sólo de pasada.
 - **Suite: NO CORRIDA** (sólo docs); los guards de registro, en la entrega. En yaqu.app no hay nada que ver.
+
+## SCRUM-1063i · la regularización de bienes de inversión y el ALTER por niveles: medición y propuesta (J5, jv-j5ao, 26-oct-2026)
+
+**Medido contra:** `origin/main` = `d2e468960494f9f35b22f9ff3c2dca4e3f48548a` · 2026-10-26T16:25:03Z
+
+A9: aviso → cicatriz J5 «Controlé si un sufijo de rama estaba libre con `gh pr list --search`, que no busca en el nombre de la rama: dio 1 PR y no traía #2882, y sólo lo vio el control positivo» — no se pudo comprobar: ningún guard sabe con qué consulta mide una sesión si un sufijo está libre
+
+**Encargo:** orquestador `cobroflash-backend-8b`, «SOLO MEDIR Y PROPONER». Ni ALTER, ni `db push`, ni `src/`, ni `prisma/schema.prisma`. Lo entregado está en Jira, c.20922 (preguntas ✅/❌ incluidas). Aquí va lo que hay que poder volver a medir.
+
+### PASO 0
+
+- El booleano `bien_de_inversion` y su DDL ya estaban en 1063g (c.20863), y la decisión c.20867 dice «C se decide después, con las preguntas del asesor respondidas. Nada de ALTER ahora». Este tramo no lo repite: mide lo que 1063g dejó fuera.
+- `git log origin/main --grep=SCRUM-1063`: 1063b a 1063h, y nada de 1063i. `git ls-remote --heads origin` no tiene ninguna `scrum-1063*`. La API de PR (los 100 últimos) enseña #2811, #2825, #2835, #2855, #2875 y #2882, que es el control positivo, y ninguna 1063i.
+- `carriles.mjs de docs/master/SCRUM-1063.md` → sin cerradura, «quien trabaja el ticket». `cicatrices/J5.md` → sin cerradura, «cada puesto, la suya».
+
+### La norma, con su fuente
+
+Todo de `datosabiertos/api/legislacion-consolidada` (LIVA `BOE-A-1992-28740`, RIVA `BOE-A-1992-28925`), `Date: Mon, 26 Oct 2026 16:21:38 GMT`. Se cita la última versión de cada bloque.
+
+- `a107`: 2 versiones, la última vigente desde el 28-5-1993. Hay que regularizar «durante los cuatro años naturales siguientes», y son nueve para terrenos y edificaciones. Sólo hay regularización con una diferencia de prorrata «superior a diez puntos». Si el bien se pierde sin culpa (Seis), no se regulariza en los años siguientes. Se declara en el último periodo del año (Siete).
+- `a109`: 1 versión. La diferencia se divide «por cinco o, tratándose de terrenos o edificaciones, por diez».
+- `a110`: 1 versión. Si el bien se vende dentro del periodo hay una «regularización única», y Dos dice que se practica «incluso en el supuesto de que en los años anteriores no hubiere sido de aplicación la regla de prorrata».
+- `a95`: 2 versiones, la última vigente desde el 1-1-1998. Tres.2.ª: los turismos se presumen afectos «en la proporción del 50 por 100», y al 100 % los «vehículos mixtos utilizados en el transporte de mercancías». Tres.3.ª: si cambia el grado de uso se regulariza con el procedimiento de los bienes de inversión.
+- RIVA `a65`: 2 versiones, la última vigente desde el 1-7-2017. El libro lo lleva quien «tenga que practicar la regularización», con cada bien «debidamente individualizado», la fecha en que se empieza a usar, la prorrata y la regularización anual. Si el bien se vende, la baja lleva la referencia al asiento de la factura emitida (5).
+- Instrucciones del 303 de 2026: la URL de `casillas.ts:184`, `date: Mon, 26 Oct 2026 16:22:03 GMT`, HTTP 200, 113.580 B. Control positivo: el literal de la 122 está en la misma página.
+  - La 28 a la 39 van «después de aplicar, en su caso, la regla de prorrata».
+  - La 43 es el resultado de la regularización de bienes de inversión.
+  - La 44 es la prorrata definitiva, «únicamente en el 4T o mes 12».
+  - La 99 son las entregas de bienes de inversión, que se restan en la 88.
+
+### El esquema (leído, `prisma/schema.prisma` sin tocar)
+
+- `model Expense` no tiene ningún campo de bien de inversión, de afectación ni de fecha de inicio de uso. Tampoco hay ninguna tabla de bienes.
+- `grep -ci prorrata prisma/schema.prisma` = 0. Control positivo: `grep -c vatDeducible` = 2.
+- El 303 no rellena la 43, la 44 ni la 99 (`src/modules/fiscal/modelo303/casillas.ts:65-66`). 30/31 van a 0 con `vaciaPorque: 'sin_dato_de_bien_de_inversion'`.
+
+### El DDL por niveles (propuesto, NO aplicado)
+
+`previewMigracion` de `scripts/preview-migracion.mjs`, modo `--desde`, datamodel → datamodel, sin conectar a ninguna base. Ejecutor: `ejecutorLocal` con la raíz del checkout compartido, sólo por su `node_modules/prisma` (6.18; este árbol no tiene `node_modules`). Las copias del esquema se escribieron en el temporal de la sesión, así que **el banco no está en git**: lo regenera la descripción de cada nivel de abajo.
+
+- Controles: igual → igual da `-- This is an empty migration.` (`sin_cambios`). El control de la casa ve 33 tablas, que son los 33 `model`. Con N3 ve 34 (positivo sembrado). Destructivas: 0 en los tres niveles. `git status` limpio después de cada pasada.
+- **N1** (30/31, igual que la C de 1063g): `bienDeInversion Boolean? @map("bien_de_inversion")` → `ALTER TABLE "expenses" ADD COLUMN "bien_de_inversion" BOOLEAN;`
+- **N2** (art. 95.Tres): `porcentajeAfectacion Int? @map("porcentaje_afectacion")`, en entero de porcentaje (la convención de `vatRate`) y sin `@default` → `ADD COLUMN "porcentaje_afectacion" INTEGER`.
+- **N3** (art. 65 RIVA): `model BienInversion` → `CREATE TABLE "bienes_inversion"`. Lleva `merchant_id`, `expense_id`, `descripcion`, `base_imponible`, `cuota_soportada`, `cuota_deducida`, `porcentaje_deduccion_inicial`, `es_inmueble`, `fecha_inicio_utilizacion` DATE?, `fecha_baja` DATE?, `causa_baja`?, `invoice_id_baja`?, `created_at` y `updated_at`, con índices por `merchant_id` y por `expense_id`. No lleva relaciones Prisma, que es el patrón de `teamMemberId`.
+- **Corregido en la sesión:** la primera versión de N3 apuntaba la baja a `quote_id_baja`. El art. 65.5 pide el asiento de la factura emitida, y en el esquema eso es `model Invoice`.
+- **Fuera, a propósito:** la tabla de prorrata anual (sin operaciones exentas no hay prorrata) y la marca de la 99 en las facturas emitidas, que es camino de emisión (regla 38) y por tanto STOP.
+
+Recomendación de J5: N1 cuando conteste el asesor. N2 sólo si el asesor confirma que entre los usuarios hay turismos. N3 no, mientras el asesor no diga que un oficio al 100 % tiene que llevar el libro. Las cuatro ✅/❌ y las preguntas (e), (f) y (g) para el asesor (SCRUM-1264) están en c.20922.
+
+### Sin medir
+
+- Cuántos gastos reales serían bienes de inversión o vehículos: no se ha tocado ninguna base.
+- La 44, en detalle.
+- **Suite: NO CORRIDA** (sólo docs). Los guards de registro van en la entrega. En yaqu.app no hay nada que ver.

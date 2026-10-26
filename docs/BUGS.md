@@ -730,7 +730,7 @@
 
 ## P3 — Técnico / raíz (registrar, abordar después de P1)
 
-### [ ] P3-PAIDAT-BO · El botón individual "marcar pagada" del BO (`PUT /admin/invoices/:id/status`) no acepta fecha de cobro declarada, a diferencia de `bulk-paid` (23-sep-2026, hallazgo colateral de SCRUM-1055)
+### [x] P3-PAIDAT-BO · El botón individual "marcar pagada" del BO (`PUT /admin/invoices/:id/status`) no acepta fecha de cobro declarada, a diferencia de `bulk-paid` (23-sep-2026, hallazgo colateral de SCRUM-1055)
 - **No es de SCRUM-1055** — se registra aparte porque SCRUM-1055 (el criterio de caja/RECC) está
   parado esperando al asesor (Q-C6/QC6, `docs/legal/PREGUNTAS_ASESOR.md`, sin cita todavía —
   confirmado hoy contra el mapa fresco de `docs/master/SCRUM-1023.md`, que la deja fuera de las 17
@@ -768,6 +768,12 @@
 - **Done cuando:** `PUT /admin/invoices/:id/status` acepte un `paidAt` opcional en el cuerpo con el
   mismo contrato que `bulk-paid` (rechaza fecha futura, sin límite hacia atrás), y sin cuerpo se
   comporte exactamente igual que hoy.
+- **CERRADO (26-oct-2026, SCRUM-1609, rama `scrum-1609-fecha-de-cobro-de-una-en-una`; el número del PR
+  lo abre el bot al empujar y va en el ticket):** la ruta resuelve `paidAt` con `resolverFechaDeCobro` y la
+  zona del merchant, igual que el lote, y se la pasa a `updateInvoiceStatusAdmin`; sin `paidAt`, la llamada
+  es la de siempre. Lo sujeta `tests/scrum1609-fecha-de-cobro-de-una-en-una.test.mjs`, por la ruta montada.
+  ⚠️ Ninguna pantalla manda `paidAt` todavía (ni este botón ni el del lote): elegir la fecha en el panel
+  es UI con texto, otro ticket.
 
 ### [ ] P3-NODEOPTS-850B · `scrum850b` filtra `NODE_OPTIONS` a su `node --test` anidado: bajo CI real escribe en el MISMO `tanda.tap` del proceso padre (16-sep-2026, hallazgo colateral de SCRUM-839e)
 - **Medido:** en el run `35137040565` (job «build + tests (con banco desechable)»), el TAP combinado
