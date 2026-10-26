@@ -23,19 +23,20 @@
 // ⚠️ Toca BD real (staging), gateado:
 //   QA_DB_TEST=1 WHATSAPP_DRY_RUN=1 DATABASE_URL_TESTS="..." npm run test:staging
 import './_staging-db.mjs';
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599p: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { withMerchant, registrarBarridoFinal } from './_merchant-fixture.mjs';
 import { interceptarWaLog } from './_wa-log-sync.mjs';
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 
 /** El objeto `exports` REAL del módulo de log — el mismo que lee `whatsapp.js` en cada llamada. */
 async function moduloDeLog() {
   return (await import('../dist/modules/messaging/domain/whatsappLog.service.js')).default;
 }
 
-test('SCRUM-115: sendWhatsAppTemplate bloqueado por wa_opt_out registra status:failed en WA-0b (waMessageId null)', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-115: sendWhatsAppTemplate bloqueado por wa_opt_out registra status:failed en WA-0b (waMessageId null)', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   registrarBarridoFinal(prisma);
   const { sendWhatsAppTemplate } = await import('../dist/integrations/whatsapp.js');
@@ -85,7 +86,7 @@ test('SCRUM-115: sendWhatsAppTemplate bloqueado por wa_opt_out registra status:f
   });
 });
 
-test('SCRUM-115: sendWhatsAppText bloqueado (demo fuera de DEMO_SAFE_NUMBERS) registra status:failed en WA-0b', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-115: sendWhatsAppText bloqueado (demo fuera de DEMO_SAFE_NUMBERS) registra status:failed en WA-0b', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   registrarBarridoFinal(prisma);
   const { sendWhatsAppText } = await import('../dist/integrations/whatsapp.js');
@@ -125,3 +126,11 @@ test('SCRUM-115: sendWhatsAppText bloqueado (demo fuera de DEMO_SAFE_NUMBERS) re
     if (row) await prisma.whatsAppMessage.delete({ where: { id: row.id } }).catch(() => {});
   }
 });
+
+// SCRUM-1599p (diseño B de SCRUM-1599) · la mutación que tumba el caso de base, CATALOGADA en SCRUM-1599p.
+// Va aparte de `MUTACIONES_QUE_ME_TUMBAN` a propósito: el job del meta-guard corre SIN base, el caso sale
+// SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco,
+// `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e). Cada campo, LITERAL.
+export const MUTACIONES_CON_BASE = [
+  { fichero: "src/integrations/whatsapp.ts", de: "      type: 'template',\n      templateName: params.templateName,\n      status: 'failed',", a: "      type: 'template',\n      templateName: params.templateName,\n      status: 'sent',", cae: "SCRUM-115: sendWhatsAppTemplate bloqueado" },
+];
