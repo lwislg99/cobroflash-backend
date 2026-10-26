@@ -1,0 +1,20 @@
+diff --git a/tests/scrum234-carrera-serie.gated.test.mjs b/tests/zz1611-234-barrera-tomada.gated.test.mjs
+index 645ce928a..07c5cf63d 100644
+--- a/tests/scrum234-carrera-serie.gated.test.mjs
++++ b/tests/zz1611-234-barrera-tomada.gated.test.mjs
+@@ -114,10 +114,15 @@ test('SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivo
+       // NO toca el camino de emisión (regla 38): es orquestación desde fuera, sobre una fila.
+       let liberarBarrera;
+       const barreraSoltada = new Promise((r) => { liberarBarrera = r; });
++      let avisarTomada;
++      const barreraTomada = new Promise((r) => { avisarTomada = r; });
+       const barrera = prisma.$transaction(async (t) => {
+         await t.$queryRaw`SELECT id FROM merchants WHERE id = ${merchant.id} FOR UPDATE`;
++        avisarTomada();
+         await barreraSoltada;
+       }, { timeout: 30_000, maxWait: 30_000 });
++      // SCRUM-1611 (candidato): las emisiones no salen hasta que la barrera TIENE la fila.
++      await Promise.race([barreraTomada, barrera]);
+ 
+       // `allSettled` y no `all`: si una revienta con P2002 queremos VER el error, no perderlo
+       // detrás del fallo de la otra promesa.
