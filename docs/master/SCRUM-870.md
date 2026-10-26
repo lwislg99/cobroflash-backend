@@ -135,3 +135,72 @@ entre el 036 y la inscripción, ni los comentarios de SCRUM-1531 y 1554. La suit
 **NO CORRIDA** (solo docs).
 
 A9: aviso → A10 «Una causa que encaja con lo último que viste no está cerrada hasta que explica también lo primero.» — no se pudo comprobar: atribuí el ruido de una búsqueda de Jira a una coincidencia por subcadena sin abrir los resultados, y ningún guard del repositorio lee lo que una sesión publica en Jira
+
+---
+
+# TRAMO · 26-oct-2026 · El bloque `SistemaInformatico` sin los caracteres de la 1287 (rama `scrum-870b-guard-1287-productor`)
+
+**Medido contra:** `origin/main` = `980bd61850307dfb8fa08248297e13a0d22e2d73` · 2026-10-26T15:35:18Z
+**Puesto:** J6 (sesión `jv-j6cg`) · **Solo lectura:** ni `src/`, ni esquema, ni texto de usuario. El
+encargo sale de c.20860 («lo que se puede preparar ya, sin el NIF») y c.20864.
+⚠️ **No es el «SCRUM-870b» de arriba.** El apéndice del 23-sep ya usaba esa letra. Esto es la rama
+`scrum-870b-…`, y se nombra por la rama para que nadie confunda los dos.
+
+## Lo que entra
+
+`tests/scrum870b-sistema-informatico-sin-caracteres-1287.test.mjs`, 9 casos. Lee por AST y no ejecuta
+ni modifica nada del camino de emisión. Comprueba que ningún valor del bloque `SistemaInformatico`
+lleva `<`, `>`, `"`, `'` ni `=`. La lista de caracteres se LEE de `PROHIBIDOS_SERIE`
+(`src/core/validation/fiscalInput.ts:48`, que no está exportada y no se exporta), y el primer caso la
+cruza con los cinco del catálogo.
+
+## La población, medida y no supuesta
+
+El bloque no lo escribe `productor.ts`. Lo escriben dos plantillas de
+`src/modules/invoicing/domain/verifactu.service.ts`: la de alta (`:1058`) y la de anulación (`:1168`).
+Las líneas `:757` y `:1278` que citaba el encargo son los dos objetos `productor` que alimentan esas
+plantillas (hoy en `:756` y `:1277`). Cada plantilla tiene nueve elementos:
+
+| elemento | de dónde sale | ¿entra? |
+|---|---|---|
+| `NombreRazon`, `NIF`, `IdSistemaInformatico`, `Version` | las cuatro constantes de `productor.ts` | **sí**: se lee el literal de cada una en los dos objetos `productor` |
+| `NombreSistemaInformatico` | 🔴 **literal `YaQu` escrito en la plantilla**, no en `productor.ts` | **sí**: es la respuesta a «¿hay otro campo que salga de otro sitio?» |
+| `TipoUsoPosibleSoloVerifactu`, `TipoUsoPosibleMultiOT` | literal `S` en la plantilla | sí |
+| `NumeroInstalacion` | `numeroInstalacion(merchant.id)` → `String(id)`, sólo dígitos | fuera, con motivo; el test comprueba que sigue saliendo de esa función |
+| `IndicadorMultiplesOT` | `indicadorMultiplesOT(…)`, tipado `'S' \| 'N'` | fuera, con motivo; igual |
+
+El test declara su población: **2 bloques · 22 valores · 5 caracteres**. Un elemento nuevo cuyo origen no
+sea ninguno de esos tumba el test con «origen desconocido»: la población se amplía a mano, no en
+silencio. `registro.builder.ts:391` también escribe el bloque, pero con lo que recibe, y en `src/` no
+llama nadie a `buildRegistroAlta`/`buildRegistroAnulacion` (sólo `scripts/`). Un caso del test barre
+`src/` por AST y cae si alguien lo llama.
+
+## Controles
+
+- **Positivos sembrados** sobre copias en memoria, pasadas por la misma función que mide el árbol real.
+  Todos caen y nombran la constante y el carácter:
+  - un apóstrofo en el nombre (`"YaQu D'Oficios, S.L."`);
+  - cada uno de los cinco caracteres en cada una de las cuatro constantes (20 siembras);
+  - comillas en el literal `YaQu`;
+  - un elemento nuevo que sale de `merchant.name`.
+- **CIEGO, no verde:** una constante que deja de ser un literal da CIEGO, y una plantilla sin bloque
+  `SistemaInformatico` también.
+- ⚠️ **No inyectado en el fichero real.** `productor.ts` no se ha tocado, ni en local (lo pedía el
+  encargo). La siembra sobre la copia pasa por el mismo `medir()`, y lo único que no ejercita es el
+  `readFileSync` de la ruta.
+- **Guards corridos en local, desde un TAP a fichero:**
+  - 870b, 247, 844c, 524b, 267, 273 y 1294: **92 de 92**, 0 saltados;
+  - 237, 976, 824, 836, 419, 702, 700, 719 y 1415: **111 de 111**, 0 saltados.
+  - Positivo del recuento: los 6 casos «sembrado» aparecen como `ok` en el TAP.
+  - `dist/` se compiló con `tsc --noCheck`, porque el árbol está anidado.
+- **Suite entera en local: NO CORRIDA** (10 sesiones a la vez). Hace de tanda el check obligatorio de CI.
+
+## Lo que no se ha hecho
+
+- El catálogo `scripts/_tabla-verifactu-catalogo.mjs:287` sigue dando la 1287 como `sin-mecanismo`.
+  Es verdad para `concept` y los demás textos que escribe el profesional, que es lo que dice su motivo.
+  Este test sólo cubre `SistemaInformatico`, así que no se ha movido la fila.
+- No he identificado ningún test que se llame «censo del camino de emisión». Corrí `scrum524b`, el
+  trinquete de esa tabla, como el más cercano.
+
+A9: comprobación → `tests/scrum870b-sistema-informatico-sin-caracteres-1287.test.mjs`
