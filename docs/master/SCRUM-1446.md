@@ -847,3 +847,61 @@ El lector de declaraciones del meta-guard (`mutacionesDeclaradas`) lee 5 en el f
 - yaqu.app: **NO VISTO**, no ha entrado en `main`.
 - `prisma generate`: no. `node_modules` es un junction al del checkout compartido, sólo para leer; el guard del cliente dio ✔.
 - La parte 2 del encargo (convenciones de reparto del redondeo en los tramos) va sólo en Jira, como propuesta ✅/❌, por orden del orquestador.
+
+## SCRUM-1446g · en una F1 por TRAMOS, el céntimo que falta va a la línea de MAYOR RESTO
+
+**Medido contra:** `origin/main` = `6d5bf76c5bf02142e762ca2ddd3d2ae2b92f9a3e` · 2026-10-26T22:44:37Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum1446e-la-columna-sin-iva.test.mjs`
+
+Carril J1 (`src/modules/invoicing/**`, `docs/equipo/dos-equipos.md:117`). Decisión del fundador en SCRUM-1446 c.20945, sobre las opciones medidas por jv-j1co en c.20944: «B, mayor resto», con GO de la regla 40 para `pdf.service.ts` («Solo cambia lo impreso: ni importes guardados, ni XML, ni lo emitido»). Aceptado en ese comentario: la línea que recibe el céntimo deja de coincidir exacta con cantidad × precio impreso. La rama sale de la de 1446f (`scrum-1446f-importe-en-presupuesto`, punta `8462de58ed7684d5ec9c9f036517348f29faf061`, PR #2898), que no había entrado en `main` al empezar; va 3 commits por detrás de `origin/main` y no lo mezclo: lo hace el orquestador con la punta de 1446f que arregla `scrum647`.
+
+### 1 · Lo que cambia
+
+- `src/modules/invoicing/infra/pdf/pdf.service.ts`: una función nueva del módulo, `importesDeLaColumnaSinIva`, y su llamada en `generateInvoicePdf` sólo para la F1. Dentro de cada grupo del desglose (tipo y causa, los mismos de `calcVatBreakdown`), todas las líneas bajan al céntimo y los céntimos que faltan para la base del grupo van a las de mayor fracción.
+  - **Desempate** (c.20944 no lo fija): el primero en orden de línea.
+  - **Un grupo que ya suma como se imprimía no se toca:** es el desempate «que respete el redondeo de hoy» de c.20944. Sin esa regla se moverían tramos que hoy cuadran (caso ⑥, encontrado barriendo: 30 % de 1,65 + 3,45 al 21 %, que guarda 0,495 y 1,035).
+  - **«De tramo» = algún precio con fracción de céntimo**, que es lo único que el papel sabe de un tramo (`stageLabel` es `null` en los planes predefinidos). Sin tramos, la función devuelve `null` y la columna sale como hasta hoy. ⚠️ Una F1 SIN tramos con un precio de tres decimales también entraría por aquí: no lo he medido y no sé si el editor lo permite.
+- ⛔ **Ningún texto nuevo. Ningún importe guardado, ni la base, la cuota o el TOTAL impresos, ni el XML, ni lo emitido** (regla 29): sólo el número de la columna de las líneas de un tramo. La R1, el justificante y el presupuesto (sus cajas de opciones incluidas) no pasan por aquí.
+- `tests/scrum1446e-la-columna-sin-iva.test.mjs`: ⑤ pasa de DECLARADO a ARREGLADO (1,06 + 1,66 = Base 2,72; antes 1,06 + 1,67 = 2,73), y entran ⑥ (un tramo que ya suma no cambia) y ⑦ (70 tramos con su PDF real: la columna suma la base, ninguna línea se aleja un céntimo de su importe exacto, y el céntimo va a la de mayor resto).
+- `tests/_cambios-autorizados-de-la-factura.mjs`: el par de huellas firmado `SCRUM-1446 c.20945`, generado ejecutando `docs/master/evidencias/SCRUM-1446d/huellas.mjs` (salida en `evidencias/SCRUM-1446g/salida-huellas.txt`).
+- `tests/scrum723-guard-contra-su-base.test.mjs`: `importesDeLaColumnaSinIva` entra en `AMBITO_DECLARADO`, con su motivo, como pide el propio guard («Se declara aquí, con motivo»). Decide qué imprime la F1: tiene que quedar DENTRO de lo que vigilan 603b y 723. No se relaja nada: el contenido lo sigue sujetando el par de huellas.
+- **`scrum624` me cayó dos veces, y lo arreglé en el código** (regla 41): mi primera versión metía en `pdf.service.ts` una tercera forma de redondear (`Math.round(x * 100)`), y la segunda llevaba el texto `* 100` dentro del `Math.round` que cuantiza los restos. Ahora los céntimos se leen de la cifra IMPRESA (`fmtImporte` sin separadores) y los restos se cuantizan sobre los exactos ya pasados a céntimos. El tope del guard (13) no se ha tocado.
+
+### 2 · La medición: misma forma de población que jv-j1co, antes y después
+
+Sonda en el repo: `docs/master/evidencias/SCRUM-1446g/medir-tramos.mjs`. Calibra contra **80 PDF reales** (`generateInvoicePdf` + `_texto-del-pdf.mjs`) y sale CIEGA si alguno difiere. Población: 56.000 tramos de 24.000 facturas (precios de 1,00 a 500,00, cantidad 1, un tipo, 2 y 3 líneas, 21 % y 10 %, planes 50/50, 30/70 y 30/40/30). Es la forma de la de c.20944, no la misma población: su sonda no está en el repo.
+
+| plan | tramos | hoy no suma la base | con 1446g no suma |
+|---|---|---|---|
+| 50/50 | 16.000 | 7.657 (47,9 %) | **0** |
+| 30/70 | 16.000 | 5.209 (32,6 %) | **0** |
+| 30/40/30 | 24.000 | 7.752 (32,3 %) | **0** |
+
+- Tramos que hoy suman y 1446g mueve: **0**. Desvío máximo de una línea frente a su importe exacto: **0,8 céntimos** (el mismo que dio c.20944 para B).
+- Control a cero: las 24.000 facturas SIN tramos — no suman 0, cambia alguna línea en **0**.
+- Control positivo: el tramo de ⑤ hoy suma 273 sobre base 272.
+- Calibración: 80 de 80 iguales, antes y después. Salidas en `evidencias/SCRUM-1446g/salida-antes.txt` y `salida-despues.txt`.
+
+### 3 · El rojo, primero
+
+Con el `pdf.service.ts` de la base compilado sólo en `dist/` (`src/` sin tocar; `dist/` restaurado después): caen ⑤ y ⑦, y sólo ellos; ①-④ y ⑥ pasan, que es el control (⑥ fija el comportamiento de hoy). Con el cambio, 9 de 9.
+
+### 4 · Mutaciones, con la casa
+
+`docs/master/evidencias/SCRUM-1123f/arnes-mutaciones.mjs` (`aplicarUna`): **9 de 9 vivas**, las 5 de antes y 4 nuevas — el céntimo a la ÚLTIMA línea (la opción A, rechazada) cae en ⑦ · el desempate al revés cae en ⑤ · sin detectar el tramo cae en ⑤ · sin respetar el tramo que ya suma cae en ⑥. `pdf.service.ts` idéntico por `cmp` después. Salida en `evidencias/SCRUM-1446g/salida-mutaciones.txt`.
+
+### 5 · Dirigida
+
+Ver el comentario de entrega en Jira: 120 ficheros (la familia 1446/624, los que leen `pdf.service.ts` o la vía de cambio autorizado, 247, 844c, 921c, 387, 601, 603b, 723, 622, 636, 647, 745, 836, 1387 y los de suite y de registro). **La tanda completa en local: NO CORRIDA** (orden del orquestador).
+
+### 6 · Lo que no he hecho
+
+- Tramos con cantidad distinta de 1, o con dos tipos en la misma factura: el código reparte dentro de cada grupo, pero la población medida es de un tipo y cantidad 1.
+- El PDF a ojo: lo medido es el texto que saca el lector. yaqu.app: **NO VISTO**, no ha entrado en `main`.
+- `prisma generate`: no. `node_modules` es un junction al del checkout compartido, sólo para leer; el guard del cliente dio ✔.
+
+### 7 · Errores míos
+
+- Escribí que ⑦ medía 90 tramos y eran 70 (10 × 2 + 10 × 2 + 10 × 3): lo cazó la cuenta del propio test (`medidos`), que se declara antes de afirmar nada.
+- Lancé el arnés de mutaciones con la ruta `tests/…` y espera el nombre relativo a `tests/`: salió con ENOENT, sin mutar nada, y lo leí antes de dar ningún número.

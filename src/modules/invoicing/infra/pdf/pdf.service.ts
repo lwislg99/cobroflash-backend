@@ -105,6 +105,62 @@ export function fmtImporte(v: number): string {
   return formatImporteEs(v);
 }
 
+/**
+ * 🔴 SCRUM-1446g · EN UNA F1 POR TRAMOS, LA COLUMNA SIN IVA SUMA LA BASE: MÉTODO DEL MAYOR RESTO.
+ * Decisión del fundador: SCRUM-1446 comentario 20945 (opción B de c.20944), con GO de la regla 40.
+ *
+ * Las líneas de un tramo guardan fracciones de céntimo (2,11 al 50 % es 1,055), cada una se
+ * redondeaba al imprimirse y la base se redondea una vez: 1,06 + 1,67 = 2,73 sobre una base de
+ * 2,72. Aquí, dentro de cada grupo del desglose (tipo y causa, los de `calcVatBreakdown`), todas
+ * bajan al céntimo y los céntimos que faltan para su base van a las de mayor fracción. Desempate,
+ * escrito aquí porque c.20944 no lo fija: el primero en orden de línea. Y un grupo que ya suma
+ * como se imprimía no se toca: es el desempate «que respete el redondeo de hoy» de c.20944.
+ *
+ * Aceptado por el fundador en ese comentario: la línea que recibe el céntimo deja de coincidir
+ * exacta con cantidad × precio impreso. ⛔ Sólo cambia lo IMPRESO: ni las líneas guardadas, ni la
+ * base, la cuota o el total, ni el XML (regla 29).
+ *
+ * Devuelve el importe a imprimir por línea, o `null` si nada se mueve. Es «de tramo» una factura
+ * con algún precio que lleva fracción de céntimo: lo único que el papel sabe de un tramo (la
+ * etiqueta, `stageLabel`, es `null` en los planes predefinidos). Sin tramos, `null`: la columna
+ * sale como hasta hoy. Lo fija `tests/scrum1446e-la-columna-sin-iva.test.mjs` (⑤ y ⑥).
+ */
+export function importesDeLaColumnaSinIva(
+  lines: Array<{ qty: number; price: number; tax: number; causa?: string | null }>,
+): number[] | null {
+  const deTramo = lines.some((l) => {
+    const c = (Number(l.price) || 0) * 100;
+    return Math.abs(c - Math.round(c)) > 1e-6;
+  });
+  if (!deTramo) return null;
+  const bases = lines.map((l) => cantidadDeLinea(l.qty) * (Number(l.price) || 0));
+  // Los céntimos de lo que se IMPRIME («1.234,56» → 123456): se compara papel con papel, sin
+  // una tercera forma de redondear en este fichero (`tests/scrum624-cuantos-sitios-calculan-dinero`).
+  const impreso = (v: number) => Number(fmtImporte(v).replace(/[.,]/g, ''));
+  const grupos = new Map<string, number[]>();
+  lines.forEach((l, i) => {
+    const clave = `${tipoEnPorcentaje(Number(l.tax) || 0)}|${l.causa ?? ''}`;
+    grupos.set(clave, [...(grupos.get(clave) ?? []), i]);
+  });
+  const cents = bases.map(impreso);
+  let movida = false;
+  for (const idx of grupos.values()) {
+    const objetivo = impreso(calcVatBreakdown(idx.map((i) => lines[i])).base);
+    if (idx.reduce((a, i) => a + cents[i], 0) === objetivo) continue;
+    const exactos = idx.map((i) => bases[i] * 100); // en céntimos, con su fracción
+    const suelo = exactos.map((e) => Math.floor(e + 1e-6));
+    // La fracción, a la millonésima de céntimo: dos 0,5 iguales empatan aunque el binario difiera.
+    const restos = exactos.map((e, j) => Math.round((e - suelo[j]) * 1e6));
+    const faltan = objetivo - suelo.reduce((a, s) => a + s, 0);
+    if (faltan < 0 || faltan > idx.length) continue;
+    const orden = idx.map((_, j) => j).sort((a, b) => restos[b] - restos[a] || a - b);
+    const reciben = new Set(orden.slice(0, faltan));
+    idx.forEach((i, j) => { cents[i] = suelo[j] + (reciben.has(j) ? 1 : 0); });
+    movida = true;
+  }
+  return movida ? cents.map((c) => c / 100) : null;
+}
+
 /** Descarga el logo del merchant como Buffer para PDFKit.
  *  Acepta URL http/https o data URIs base64.
  *  Devuelve null si falla (no aborta la generación del PDF).
@@ -489,6 +545,8 @@ export async function generateInvoicePdf(params: {
     // comentario 20917. ⛔ La R1 y el justificante, como hasta hoy: con IVA y «TOTAL» (su pie
     // sigue sumando las líneas, SCRUM-624e). Lo fija `tests/scrum1446e-la-columna-sin-iva.test.mjs`.
     const columnaSinIva = (params.type ?? 'F1') === 'F1';
+    // SCRUM-1446g · en una F1 por tramos, el céntimo que falta va a la línea de mayor resto.
+    const repartida = columnaSinIva ? importesDeLaColumnaSinIva(lines) : null;
 
     // Cabecera tabla
     doc.rect(M, doc.y, W, 16).fill(BG);
@@ -508,7 +566,7 @@ export async function generateInvoicePdf(params: {
       const qty    = cantidadDeLinea(l.qty); // SCRUM-504
       const price  = Number(l.price) || 0;
       const taxR   = Number(l.tax)   || 0;
-      const lineTotal = qty * price * (1 + (columnaSinIva ? 0 : taxR));
+      const lineTotal = repartida?.[i] ?? qty * price * (1 + (columnaSinIva ? 0 : taxR));
       const bg = i % 2 === 0 ? '#fff' : BG;
 
       // ── SCRUM-603 (DOC-13): el concepto y su DESCRIPCIÓN, separados ──────────────────

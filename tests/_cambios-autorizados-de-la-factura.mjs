@@ -99,6 +99,21 @@ export const CAMBIOS_AUTORIZADOS = [
       a: '9e1d7085237bb4c4b814d685eeca3672d611b2d016dba4ee549015b8d0c847bc',
     },
   },
+  {
+    // SCRUM-1446g · en una F1 por tramos, el céntimo que falta para que la columna sin IVA sume la
+    // base va a la línea de mayor resto; sin tramos, la columna como hasta hoy.
+    firma: 'SCRUM-1446 c.20945',
+    registro: 'docs/master/SCRUM-1446.md',
+    cita: '«B, mayor resto»',
+    cuerpo: {
+      de: 'ad5b56695af75a66367ee34e747fe7b090496403a1277dad71a1b8c1e0a680c4',
+      a: '4666fceba0c0fea949ae93c963dc1dc4bf639d4059f8cbed48cca7d60d3cf8b7',
+    },
+    ambito: {
+      de: '9e1d7085237bb4c4b814d685eeca3672d611b2d016dba4ee549015b8d0c847bc',
+      a: '712180158d982025f1c530e100ec4a52f9733dc020a3158025c49f305e54ed76',
+    },
+  },
 ];
 
 /**

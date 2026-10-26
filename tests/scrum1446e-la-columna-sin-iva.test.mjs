@@ -42,6 +42,16 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: 'SCRUM-1446e · ④ el presupuesto' },
   { fichero: 'src/modules/invoicing/infra/pdf/pdf.service.ts', de: ".text('IMPORTE', X_TOTAL, doc.y - 12,", a: ".text('Total', X_TOTAL, doc.y - 12,",
     cae: 'SCRUM-1446e · ④ el presupuesto' },
+  // SCRUM-1446g · el reparto de los tramos: a la ÚLTIMA línea (la opción A, rechazada en c.20945),
+  // el desempate al revés, sin detectar el tramo, y sin respetar el tramo que ya suma.
+  { fichero: 'src/modules/invoicing/infra/pdf/pdf.service.ts', de: '.sort((a, b) => restos[b] - restos[a] || a - b)', a: '.sort((a, b) => b - a)',
+    cae: 'SCRUM-1446e · ⑦ en 70 tramos' },
+  { fichero: 'src/modules/invoicing/infra/pdf/pdf.service.ts', de: 'restos[b] - restos[a] || a - b)', a: 'restos[b] - restos[a] || b - a)',
+    cae: 'SCRUM-1446e · ⑤ ARREGLADO' },
+  { fichero: 'src/modules/invoicing/infra/pdf/pdf.service.ts', de: 'if (!deTramo) return null;', a: 'if (deTramo) return null;',
+    cae: 'SCRUM-1446e · ⑤ ARREGLADO' },
+  { fichero: 'src/modules/invoicing/infra/pdf/pdf.service.ts', de: 'if (idx.reduce((a, i) => a + cents[i], 0) === objetivo) continue;', a: '',
+    cae: 'SCRUM-1446e · ⑥ un tramo que YA suma' },
 ];
 
 const IMPORTE = '-?[\\d.]+,\\d{2}';
@@ -193,19 +203,62 @@ test('SCRUM-1446e · ④ el presupuesto de dos líneas de 12,50 al 21 %: 12,50 +
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
-// ⑤ LO QUE LA DECISIÓN NO CIERRA, MEDIDO: en una factura por tramos las líneas guardadas llevan
-// fracciones de céntimo (SCRUM-624 c.20049). Se fija lo que sale, para que nadie lo dé por cuadrado.
+// ⑤ ⑥ ⑦ LOS TRAMOS (SCRUM-1446g): las líneas guardadas llevan fracciones de céntimo (SCRUM-624
+// c.20049), y hasta 1446g la columna no sumaba la base en un 32-48 % de los tramos. Decisión del
+// fundador: SCRUM-1446 c.20945, opción B — el céntimo que falta va a la línea de MAYOR RESTO.
+// Desempate (c.20944 no lo fija): el primero en orden de línea. Un tramo que ya suma, no se toca.
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-1446e · ⑤ DECLARADO: un tramo al 50 % de 2,11 + 3,33 al 21 % — lo que imprime la columna y la base', async () => {
-  const plan = [{ index: 0, percentage: 0.5, label: '' }, { index: 1, percentage: 0.5, label: '' }];
-  const deTramo = [L(2.11, 0.21), L(3.33, 0.21)];
-  const lines = stageLinesReconciled(deTramo, plan, 1, distributeStageAmounts(calcTotal(deTramo), plan)[1]);
+const tramo = (deTramo, pcts, i) => {
+  const plan = pcts.map((percentage, index) => ({ index, percentage, label: '' }));
+  return stageLinesReconciled(deTramo, plan, i, distributeStageAmounts(calcTotal(deTramo), plan)[i]);
+};
+
+test('SCRUM-1446e · ⑤ ARREGLADO (1446g): un tramo al 50 % de 2,11 + 3,33 al 21 % — 1,06 + 1,66 = Base 2,72', async () => {
+  const lines = tramo([L(2.11, 0.21), L(3.33, 0.21)], [0.5, 0.5], 1);
   const p = await papelFactura('F1', lines, grossOfLines(lines).toFixed(2));
-  assert.deepEqual({ lineas: p.lineas, sumaALaVista: suma(p.lineas), base: p.base }, TRAMO_MEDIDO,
-    'Ha cambiado lo que imprime la factura de un tramo. Si ahora la columna suma la base, es mejor: ' +
-    'fija aquí los importes nuevos.');
+  assert.deepEqual({ lineas: p.lineas, sumaALaVista: suma(p.lineas), base: p.base }, TRAMO_REPARTIDO,
+    '🔴 la columna del tramo ya no suma la base, o el céntimo ha ido a otra línea. Guarda 1,055 y 1,665: ' +
+    'las dos fracciones empatan y el céntimo va a la PRIMERA (SCRUM-1446 c.20945, desempate de 1446g).');
 });
-// Medido el 26-oct-2026 con este mismo papel: la columna suma 2,73 y la base es 2,72. El tramo
-// guarda 1,055 y 1,665, cada línea se redondea al imprimirse y la base se redondea una vez.
-const TRAMO_MEDIDO = Object.freeze({ lineas: [106, 167], sumaALaVista: 273, base: 272 });
+// Medido el 26-oct-2026 con este mismo papel, ANTES de 1446g: 1,06 + 1,67 = 2,73 sobre una base de 2,72.
+const TRAMO_REPARTIDO = Object.freeze({ lineas: [106, 166], sumaALaVista: 272, base: 272 });
+
+test('SCRUM-1446e · ⑥ un tramo que YA suma no cambia: 30 % de 1,65 + 3,45 al 21 % sigue 0,49 + 1,04 = 1,53', async () => {
+  const lines = tramo([L(1.65, 0.21), L(3.45, 0.21)], [0.3, 0.7], 0);
+  const p = await papelFactura('F1', lines, grossOfLines(lines).toFixed(2));
+  // Guarda 0,495 y 1,035: empatan, y el mayor resto a secas daría 0,50 + 1,03 — también suma 1,53,
+  // pero movería dos líneas que hoy ya cuadran. Encontrado barriendo, no razonado.
+  assert.deepEqual({ lineas: p.lineas, base: p.base }, { lineas: [49, 104], base: 153 },
+    '🔴 el reparto ha movido un tramo cuya columna ya sumaba la base (SCRUM-1446 c.20944: el desempate ' +
+    '«que respete el redondeo de hoy»).');
+});
+
+test('SCRUM-1446e · ⑦ en 70 tramos (50/50, 30/70, 30/40/30) la columna suma la base en los 70; antes, no', async () => {
+  let medidos = 0;
+  let antesNoSumaba = 0;
+  for (const pcts of [[0.5, 0.5], [0.3, 0.7], [0.3, 0.4, 0.3]]) {
+    for (let c = 1; c <= 10; c += 1) {
+      const deTramo = [L((c * 4321 + 107) / 100, 0.21), L((c * 997 + 233) / 100, 0.21), L((c * 59 + 11) / 100, 0.21)];
+      for (let i = 0; i < pcts.length; i += 1) {
+        const lines = tramo(deTramo, pcts, i);
+        const p = await papelFactura('F1', lines, grossOfLines(lines).toFixed(2));
+        assert.equal(suma(p.lineas), p.base, `🔴 tramo ${i} de ${pcts.join('/')} (c=${c}): la columna suma ${suma(p.lineas)} y la base es ${p.base}.`);
+        lines.forEach((l, j) => assert.ok(Math.abs(p.lineas[j] - l.qty * l.price * 100) < 1,
+          `🔴 la línea ${j + 1} se aleja un céntimo o más de su importe exacto: el reparto carga de más.`));
+        // Mayor resto: ninguna línea que BAJÓ al céntimo tiene más fracción que una que SUBIÓ.
+        const exacto = lines.map((l) => l.qty * l.price * 100);
+        const fr = exacto.map((e) => e - Math.floor(e + 1e-6));
+        const subio = exacto.map((e, j) => p.lineas[j] > e + 1e-6);
+        const minSube = Math.min(...fr.filter((_, j) => subio[j]));
+        const maxBaja = Math.max(...fr.filter((_, j) => !subio[j] && fr[j] > 1e-6));
+        assert.ok(!(maxBaja > minSube + 1e-6),
+          `🔴 tramo ${i} de ${pcts.join('/')} (c=${c}): el céntimo no fue a la de mayor resto (${p.lineas.join(' + ')}).`);
+        if (suma(lines.map((l) => Math.round(l.qty * l.price * 100))) !== p.base) antesNoSumaba += 1;
+        medidos += 1;
+      }
+    }
+  }
+  assert.equal(medidos, 70, 'esperaba medir 70 tramos (10 × 2 + 10 × 2 + 10 × 3)');
+  assert.ok(antesNoSumaba > 0, '🔴 CIEGO: en esta población cada línea redondeada por su cuenta ya sumaría la base.');
+});
