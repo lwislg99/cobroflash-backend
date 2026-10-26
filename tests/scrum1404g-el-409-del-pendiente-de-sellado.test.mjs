@@ -224,7 +224,9 @@ test('SCRUM-1404g · C · EXCEPCIÓN DECLARADA (c.20923 P5): huella escrita y es
   es409Firmado(R.C, 'C');
 });
 
-test('SCRUM-1404g · guard de J5: mientras REINTENTO_ACTIVO_DESDE sea null, el pendiente NO contesta 409', { todo: TODO_DEL_GUARD_J5 }, () => {
+// ⚠️ La opción se pasa SÓLO si hay motivo: medido el 26-oct-2026 (node del árbol), `{ todo: null }`
+// deja el test en `todo` igual que con un texto, así que poner la constante a `null` no lo encendía.
+test('SCRUM-1404g · guard de J5: mientras REINTENTO_ACTIVO_DESDE sea null, el pendiente NO contesta 409', TODO_DEL_GUARD_J5 ? { todo: TODO_DEL_GUARD_J5 } : {}, () => {
   if (REINTENTO_ACTIVO_DESDE !== null) return;
   assert.notEqual(R.P.recibo.status, 409, 'recibo: promete «vuelve a intentarlo» sin reintento encendido');
   assert.notEqual(R.P.panel.status, 409, 'panel: promete «se reintenta solo» sin reintento encendido');
