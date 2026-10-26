@@ -6,6 +6,7 @@
 import { Router } from 'express';
 import { prisma } from '../../../core/db/prisma';
 import { leerModelo303 } from './modelo303.repo';
+import { ROTULOS_303 } from './casillas'; // SCRUM-1064c
 import { zonaDelMerchant, diaNaturalEn } from '../../../core/zonaDelMerchant'; // SCRUM-735
 
 const router = Router();
@@ -36,7 +37,10 @@ router.get('/', async (req, res) => {
     // pregunta. El periodo devuelto viaja siempre en `desde`/`hasta`.
     const trimestre = Number(req.query.quarter) || trimestreDe(Number(diaEnCurso.slice(5, 7)));
 
-    return res.json(await leerModelo303(prisma, { merchantId: req.merchantId, año, trimestre }));
+    // SCRUM-1064c · los rótulos del impreso viajan con el cálculo, que no los lleva: la pantalla
+    // los pinta de aquí y no los copia a mano.
+    const modelo = await leerModelo303(prisma, { merchantId: req.merchantId, año, trimestre });
+    return res.json({ ...modelo, rotulos: ROTULOS_303 });
   } catch (err) {
     console.error('[GET /admin/modelo-303]', err);
     return res.status(500).json({ error: 'internal_error' });
