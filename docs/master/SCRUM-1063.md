@@ -386,6 +386,34 @@ Fuente: las instrucciones de la AEAT para 2026, «Instrucciones 02 a 12 y 2T a 4
 - Las rectificativas suman con su signo en la 122: el libro no las distingue (aviso `rectificativas_sin_casilla_propia` del 390).
 - Para el 390 no hay casilla decidida: la S2 sigue «sin clasificar» en el anual.
 
+## SCRUM-1063h · las herramientas por debajo de 3.005,06 € van a la 28/29 (J1, jv-j1ce, 26-oct-2026)
+
+**Medido contra:** `origin/main` = `980bd61850307dfb8fa08248297e13a0d22e2d73` · 2026-10-26T15:35:07Z
+
+A9: comprobación → `tests/scrum1063h-umbral-herramientas.test.mjs`
+
+Decisión del fundador c.20867 («A ahora, columna después»), sobre la medición de J5 en c.20863 (tramo 1063g, rama `scrum-1063g-bienes-inversion`, sólo docs).
+
+### Qué se ha construido
+
+- `modelo303.ts`: `UMBRAL_BIEN_DE_INVERSION = 3005.06`, con la cita del art. 108.Dos.5.º LIVA («cuyo valor de adquisición sea inferior a quinientas mil pesetas»; 500.000 / 166,386 = 3.005,0605…). Una herramienta deducible cuya base + cuota, en céntimos, es MENOR que el umbral pasa por las mismas puertas que un gasto corriente (tipo, cuota) y entra en la 28/29. Si llega al umbral, o le falta la base o la cuota para medirlo, sigue apartada con `posible_bien_de_inversion` (código, sin texto nuevo).
+- 30/31 siguen vacías con su `vaciaPorque`: la columna (C) no está decidida. Sin ALTER.
+- El 390 (`modelo390/`) no se ha tocado: suma la 29 de los cuatro 303. Un caso del test nuevo lo construye encima y comprueba que la 49 anual = Σ 29 trimestrales, y que la herramienta grande sigue en `gastosSinClasificar` con su trimestre.
+- **Fixtures cambiadas, no aserciones:** tres casos (`scrum1063b` «herramientas NO se reparte» y el INVARIANTE, y `scrum1077` «lo que el 303 no colocó») usaban una herramienta de 48,40 € y de 24,20 € para medir «apartada». Con la decisión, esas ya se deducen: pasan a una herramienta de 3.000 + 630. Las aserciones son las mismas. Medido: con las fixtures viejas y el código nuevo caen esos 3 de 19.
+
+### Medido
+
+- Rojo primero contra `main` `289ca894`: caen 6 de 9. Los 3 que pasan en los dos lados son los de «sigue apartada» (en el umbral, por encima, sin cuota), a propósito.
+- Bordes con cifras a mano: 2.483,52 + 521,53 / 521,54 / 521,55. Y un caso aparte con el borde DERIVADO de la constante (un céntimo a cada lado), para que mover la constante no arrastre al test.
+- Cuatro mutaciones declaradas en `MUTACIONES_QUE_ME_TUMBAN` (`<` → `<=`, la constante a 3.005,07, comparar sólo la base, quitar el umbral) ejecutadas con `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`: caen las 4 (3, 3, 4 y 3 casos). Las 11 de `scrum1077` siguen vivas con la fixture nueva.
+- Dirigida antes de escribir este tramo, 36 ficheros (1063b-h, 1066e, 1077, 1077c, 237, 976, 824, 824b ×2, 836, 419, 702, 700, 719, 1415, 1294, 267, 273, 921, 921c, 387 ×2, 377, 389 ×2, 411, 622, 745, 1321, 1387, 854): 355 casos, 352 pasan, 1 cae, 2 saltados. El que cae es `scrum854` (la rama no tenía todavía este tramo). En `tests/` no hay ningún fichero `scrum1064c`/`scrum1064d`: no se han podido correr.
+- `tsc --noEmit`: limpio. **Suite entera local: NO CORRIDA.** En yaqu.app no hay pantalla del 303.
+
+### Riesgos
+
+- El umbral compara el GASTO entero, no cada bien: cinco taladros de 800 € en una factura (4.000 €) siguen apartados aunque ninguno sea bien de inversión (pregunta (b) del asesor, c.20863). Sólo yerra hacia apartar.
+- Un gasto de exactamente 3.005,06 € se aparta, y en pesetas son 499.999,90: «inferior a quinientas mil». La decisión dice «no llegue a 3.005,06 €» y se ha seguido; el céntimo va hacia el lado seguro.
+- Un bien de inversión apuntado en «otros» sigue yendo a la 28/29 sin aviso (riesgo de c.20867): lo cubre C, no esto.
 ## SCRUM-1063g · casillas 30/31 (bienes de inversión): medición y propuesta, sin ALTER (J5, jv-j5am, 26-oct-2026)
 
 **Medido contra:** `origin/main` = `289ca894656c7c3686a0469d34785512b960e0b3` · 2026-10-26T15:18:32Z
