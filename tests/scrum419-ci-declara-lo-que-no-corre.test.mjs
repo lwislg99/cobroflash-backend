@@ -305,6 +305,20 @@ const GATEADOS_DECLARADOS = Object.freeze({
   'scrum222-deriva-arranque.test.mjs': 2,
   'scrum76-email-adjunto.test.mjs': 1,
   'scrum207-emision-auditada.test.mjs': 2,
+  // SCRUM-1599m (quinto lote del diseño B): los ocho «HE», con la misma forma. Necesitan banco porque lo
+  // que vigilan lo contesta el código real con filas guardadas: el gate del flag en verifactu.xml (73), el
+  // registro que bloquea los bytes del export fiscal (221), la consolidación por cliente que no refactura
+  // (171a), la tenencia de los CSV (25-exports), el XML dentro de datos.zip (82), el albarán a medias que
+  // no se consolida (170), el rango de fechas del paquete (25-export-zip) y el técnico que solo ve sus
+  // Trabajos (tenancy-permisos). Los seis casos sin base de 170 corren siempre.
+  'scrum73-verifactu-gate.test.mjs': 1,
+  'scrum221-export-fiscal-cero-bytes.test.mjs': 1,
+  'scrum171a-consolidar-cliente.test.mjs': 1,
+  'scrum25-exports.test.mjs': 1,
+  'scrum82-zip-verifactu.test.mjs': 1,
+  'scrum170-facturacion-parcial.test.mjs': 1,
+  'scrum25-export-zip.test.mjs': 1,
+  'tenancy-permisos.test.mjs': 2,
 });
 const TOTAL_DECLARADO = Object.values(GATEADOS_DECLARADOS).reduce((a, b) => a + b, 0);
 

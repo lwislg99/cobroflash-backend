@@ -823,3 +823,105 @@ líneas `ok` de primer nivel suman el `# tests` declarado). Los de registro, en 
 - La tanda entera en local: NO CORRIDA (varias sesiones a la vez).
 - Una pasada por punto.
 - Que las seis mutaciones mueran también en el Postgres de CI: nadie las corre allí (§1599i ⓪).
+
+## J6 · SCRUM-1599m · quinto lote del diseño B: los ocho «HE» al banco desechable, y el trinquete de 22 a 14
+
+**Medido contra:** `origin/main` = `11324d271372ee6e689aeeea1c90d096b6043696` · 2026-10-26T15:53:27Z (hora de GitHub; sesión J6 `jv-j6ch` en su árbol `jv-j6ch`, por encargo del orquestador `cobroflash-backend-8b`)
+
+A9: aviso → A10 «Una operación que no se ejecutó se lee exactamente igual que un éxito.» — no se pudo comprobar: el fichero de evidencias salió a medias por una ruta sin comillas y el comando acabó en 0; lo cazó mirar su tamaño, y ningún guard mide el tamaño de una salida que yo monto a mano
+
+Decisión que se aplica: SCRUM-1599 c.20715 ① (el fundador, diseño B). Criterio y forma, los de §1599f, §1599h, §1599i y §1599k.
+0 líneas de `src/`, `.github/` o del camino de emisión; 0 aserciones tocadas (regla 41). Salida entera:
+`docs/master/evidencias/SCRUM-1599/lote-1599m.salida.txt`.
+
+**Depende de #2876 (1599k).** Esta rama sale de `scrum-1599k-lote-4-banco` @ `160522620`, porque 1599k no había entrado
+en `main` al empezar: su trinquete en 22 es la base de éste.
+
+### ① El lote, por programa
+
+`banderas-1599h.mjs`, sin cambiar, sobre los 22 de `SOLO_STAGING` en `160522620`: sale el reparto de §1599k ④
+(2 sencillos apartados, 85 apartado, 2 «C», 4 «EC», **8 «HE»**, 3 «HEC», 1 «HC», 1 «MC»). De una sola bandera ya no
+queda nada migrable sin carrera; el lote es **el grupo «HE» entero**, el único de dos banderas sin carrera ni merchant
+fijo. Los que llevan «C» se dejan fuera a propósito, por el riesgo ya medido en SCRUM-871.
+
+| fichero | casos que pasan a CI |
+|---|---|
+| scrum73-verifactu-gate | 1 |
+| scrum221-export-fiscal-cero-bytes | 1 |
+| scrum171a-consolidar-cliente | 1 |
+| scrum25-exports | 1 |
+| scrum82-zip-verifactu | 1 |
+| scrum170-facturacion-parcial | 1 (los otros 6 ya corrían) |
+| scrum25-export-zip | 1 |
+| tenancy-permisos | 2 |
+| **total** | **9** |
+
+- **Ninguno se negó a migrar.** Los que emiten ya fijan `INVOICING_ES_ENABLED` en su propio merchant (73, 82, 221,
+  171a y 170), y 25-export-zip lee el flag en vez de suponerlo.
+- La forma es la de §1599h: `_banco-libro.mjs` detrás de `_staging-db.mjs`, y `QA_DB_TEST` **o** `LIBRO_PG_URL`.
+  El diff de cada test son 3 líneas (4 en tenancy-permisos, con dos saltos) más el bloque de la mutación.
+- `scrum419`: 111 → 120 tests de banco. Interrogado: con tenancy-permisos declarado 1 en vez de 2, cae (rc=1).
+- Carril: `carriles.mjs de` los ocho ficheros de test, ANTES de tocarlos → «sin fila en §3». Control positivo:
+  `scripts/equipo/latido.mjs` → S5.
+
+### ② Banco local
+
+Banco de §1599h y `ddl.sql` de §1599k, sin cambios (`schema.prisma` no se ha movido desde `289ca8946`); `dist/` con
+`tsc --noCheck`. Canario cronometrado antes del lote: scrum73 en 3,5 s.
+
+| pasada | casos | pasan | caen | saltan |
+|---|---|---|---|---|
+| ANTES (los 8 de main, con `LIBRO_PG_URL`) | 15 | 6 | 0 | **9** |
+| DESPUÉS (los 8 migrados) | 15 | **15** | 0 | 0 |
+
+En los dieciséis renglones, los casos de primer nivel suman el `# tests` declarado. Local: 28,5 s para los ocho, banco
+incluido. No predice CI.
+
+**Ocho mutaciones, una por fichero, en `MUTACIONES_CON_BASE`** (no en `MUTACIONES_QUE_ME_TUMBAN`, por lo de §1599i ⓪).
+Canario de una sola antes del lote: 6,9 s; las ocho, 100 s. Resultado: **8 MUEREN, 0 VIVEN y 0 CIEGAS**; `dist/`
+restaurado byte a byte. Cada `de` sale UNA vez en su fuente y cada `cae` casa con un solo caso.
+
+| | fichero mutado | qué se muta | cae (aserción) |
+|---|---|---|---|
+| 73 | `exports.routes.ts` | verifactu.xml deja de mirar el flag | «admin con flag OFF debería ser 404 y fue 200» |
+| 221 | `exports.routes.ts` | el registro de `exportacion_fiscal` se traga su error | «el XML respondió 200 con la auditoría caída» |
+| 171a | `consolidacionCliente.service.ts` | un parte ya facturado vuelve a entrar | «DOBLE FACTURACIÓN: la recapitulativa ha aceptado…» |
+| 25-exports | `exportData.ts` | clientes.csv sin filtro de merchant | «TENANCY ROTA: clientes.csv incluye datos de otro merchant» |
+| 82 | `exports.routes.ts` | el paquete no admite el XML con el flag ON | «falta el XML de 2026» |
+| 170 | `albaran.service.ts` | el albarán a medias se deja consolidar | el caso gateado; 1 de 7 caen, los 6 sin base siguen verdes |
+| 25-export-zip | `exports.routes.ts` | las facturas del paquete sin rango de fechas | «una factura fuera del rango NO debe entrar en el paquete» |
+| tenancy | `jobs.routes.ts` | el técnico abre el Trabajo de otro | «el técnico no debe acceder al Trabajo de otro (esperado 404)»; 1 de 2 |
+
+- **Cada mutación cae por la guarda que nombra, no por una ruta cerrada** (lo de 94 en §1599k ②): ninguna de las
+  ocho rutas está cerrada, y en las ocho la aserción que cae es la de lo mutado.
+- 171a y 170 mutan servicios que llevan a emitir, y 73, 82, 221 y 25-export-zip la ruta de export fiscal. Lo que entra
+  en el commit son literales dentro de los tests; el src no se toca (regla 38). Las mutaciones sólo se aplicaron en el
+  `dist/` local y se restauraron.
+
+### ③ El trinquete baja de 22 a 14
+
+`tests/scrum1599f-los-que-solo-ve-staging.test.mjs`. Antes de editar la lista, con los ocho ya migrados, cae (rc=1):
+«SALEN: scrum170, scrum171a, scrum221, scrum25-export-zip, scrum25-exports, scrum73, scrum82, tenancy-permisos»,
+exactamente los ocho, y «ENTRAN: —». Salen de `SOLO_STAGING` y el número pasa a 14 (3/3 en verde).
+
+### ④ Coste y lo que queda
+
+- **En CI:** sale del obligatorio de este PR comparado con un run de main de la misma hora, y va en el comentario de
+  Jira (como en 1599f, h e i). Los lotes 1 y 2 quedaron por debajo del ruido entre runs, con n=1 por lado.
+- **Los 14 que quedan** (lectura de banderas, no medición): 3 apartados (116, 574 y 85) · 2 «C» (767, 793) ·
+  4 «EC» · 3 «HEC» · 1 «HC» · 1 «MC». **Todos los no apartados llevan carrera**: el siguiente lote ya no es «sencillo»,
+  y el riesgo es el de SCRUM-871 (`scrum814` 393 s dentro de la tanda frente a 64 s solo). Antes de migrar uno de
+  ésos hace falta medir si la tanda paralela lo ahoga, y esa medición está por hacer.
+
+### ⑤ Guards
+
+Los de suite (237, 976, 824, 836, 702, 700, 719, 1415, 419), los del banco (1599f, 876e, 876f), los del catálogo
+(745, 757, 765, 1387) y 113, 740, 812, 850, 850b, 1185, 411 y 723: **24 ficheros, 234/234, 0 fallos, 0 SKIP** (las
+líneas `ok` de primer nivel suman el `# tests` declarado). Los de registro, en el comentario de Jira.
+
+### ⑥ Lo que NO se ha hecho, ni medido
+
+- Staging: no he corrido los ocho con `QA_DB_TEST=1` (sin turno).
+- La tanda entera en local: NO CORRIDA (varias sesiones a la vez).
+- Una pasada por punto.
+- Que las ocho mutaciones mueran también en el Postgres de CI: nadie las corre allí (§1599i ⓪).

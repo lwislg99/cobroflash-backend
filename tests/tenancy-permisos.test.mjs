@@ -14,6 +14,7 @@
 // levanta la app in-process en un puerto efímero. Gateado:
 //   QA_DB_TEST=1 WHATSAPP_DRY_RUN=1 npm run test:staging
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599m: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
@@ -43,9 +44,9 @@ const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new
   req.end(body);
 });
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 
-test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
+test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const { ADMIN_ONLY_ROUTES } = await import('../dist/core/http/adminOnlyRoutes.js');
@@ -235,7 +236,7 @@ test('A12.1+A12.4: tenancy (B vs datos de A) y 403 del técnico en admin-only', 
 // ve/accede los Trabajos que originó (operarioId), el admin/owner ve todos. Dimensión que
 // A12.1 (cross-merchant) y A12.4 (rutas admin-only) NO cubren.
 // Datos EFÍMEROS propios (nada del seed demo — lección de SCRUM-63) y limpieza en el finally.
-test('SCRUM-23: el técnico solo ve/accede SUS Trabajos (row-level, mismo merchant)', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
+test('SCRUM-23: el técnico solo ve/accede SUS Trabajos (row-level, mismo merchant)', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
 
@@ -340,3 +341,11 @@ test('SCRUM-23: el técnico solo ve/accede SUS Trabajos (row-level, mismo mercha
     await prisma.$disconnect();
   }
 });
+
+// SCRUM-1599m (diseño B de SCRUM-1599) · la mutación que tumba el caso de base, CATALOGADA en SCRUM-1599m.
+// Va aparte de `MUTACIONES_QUE_ME_TUMBAN` a propósito: el job del meta-guard corre SIN base, el caso sale
+// SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco PGlite,
+// `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e). Cada campo, LITERAL.
+export const MUTACIONES_CON_BASE = [
+  { fichero: "src/modules/jobs/app/routes/jobs.routes.ts", de: "    // URL el Trabajo de otro → 404 (mismo patrón que la tenancy: no filtra existencia).\n    // SCRUM-147: por capacidad (ver el comentario de GET /admin/jobs y roleCapabilities.ts).\n    if (seesOnlyOwnJobs(req.userRole) && job.operarioId !== req.teamMemberId) {", a: "    // URL el Trabajo de otro → 404 (mismo patrón que la tenancy: no filtra existencia).\n    // SCRUM-147: por capacidad (ver el comentario de GET /admin/jobs y roleCapabilities.ts).\n    if (false) {", cae: "SCRUM-23: el técnico solo ve" },
+];
