@@ -84,6 +84,21 @@ export const CAMBIOS_AUTORIZADOS = [
       a: '11a1c6198c347365b671acadfd82e00feca86f13b03a92ba59666758034ea631',
     },
   },
+  {
+    // SCRUM-1446e · en la F1 la columna de cada línea va sin IVA y su cabecera dice «IMPORTE»;
+    // la R1 y el justificante, como hasta hoy.
+    firma: 'SCRUM-1446 c.20917',
+    registro: 'docs/master/SCRUM-1446.md',
+    cita: '«IMPORTE»',
+    cuerpo: {
+      de: '4505331c59025f2a96599024980d6a2c366d6bdac8f65c52eeaf80fd85588741',
+      a: 'ad5b56695af75a66367ee34e747fe7b090496403a1277dad71a1b8c1e0a680c4',
+    },
+    ambito: {
+      de: '11a1c6198c347365b671acadfd82e00feca86f13b03a92ba59666758034ea631',
+      a: '9e1d7085237bb4c4b814d685eeca3672d611b2d016dba4ee549015b8d0c847bc',
+    },
+  },
 ];
 
 /**

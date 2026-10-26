@@ -481,6 +481,15 @@ export async function generateInvoicePdf(params: {
     const XIV = XP+WP+4; const WIV= 44;  // IVA%
     const XT  = XIV+WIV+4; const WT = W - (XT - M); // total línea
 
+    // 🔴 SCRUM-1446e · EN UNA FACTURA F1 LA COLUMNA DE CADA LÍNEA VA SIN IVA. Decisión del fundador:
+    // SCRUM-1446 comentario 20917 (P1). Con IVA, cada línea se redondeaba por su cuenta y la columna
+    // no sumaba lo que dice el pie (15,13 + 15,13 = 30,26 con TOTAL 30,25); sin IVA suma la «Base
+    // imponible», y el IVA queda sólo en el desglose por tipo. Ningún importe guardado cambia.
+    // La cabecera de esa columna, «IMPORTE», es literal firmado por el fundador en SCRUM-1446
+    // comentario 20917. ⛔ La R1 y el justificante, como hasta hoy: con IVA y «TOTAL» (su pie
+    // sigue sumando las líneas, SCRUM-624e). Lo fija `tests/scrum1446e-la-columna-sin-iva.test.mjs`.
+    const columnaSinIva = (params.type ?? 'F1') === 'F1';
+
     // Cabecera tabla
     doc.rect(M, doc.y, W, 16).fill(BG);
     const thY = doc.y + 4;
@@ -489,7 +498,7 @@ export async function generateInvoicePdf(params: {
     doc.text('CANT.',       XQ,  thY, { width: WQ,  align: 'right' });
     doc.text('PRECIO UNIT', XP,  thY, { width: WP,  align: 'right' });
     doc.text(`${impuesto} %`, XIV, thY, { width: WIV, align: 'right' });
-    doc.text('TOTAL',       XT,  thY, { width: WT,  align: 'right' });
+    doc.text(columnaSinIva ? 'IMPORTE' : 'TOTAL', XT, thY, { width: WT,  align: 'right' });
     doc.y += 16;
     hLine(doc.y, BORDER);
     doc.fillColor(INK);
@@ -499,7 +508,7 @@ export async function generateInvoicePdf(params: {
       const qty    = cantidadDeLinea(l.qty); // SCRUM-504
       const price  = Number(l.price) || 0;
       const taxR   = Number(l.tax)   || 0;
-      const lineTotal = qty * price * (1 + taxR);
+      const lineTotal = qty * price * (1 + (columnaSinIva ? 0 : taxR));
       const bg = i % 2 === 0 ? '#fff' : BG;
 
       // ── SCRUM-603 (DOC-13): el concepto y su DESCRIPCIÓN, separados ──────────────────
@@ -1019,7 +1028,10 @@ drawTableHeader();
 
 
 params.lines.forEach((l) => {
-  const lineTotal = l.qty * l.price * (1 + (ivaFueraDelPapel ? 0 : l.tax));
+  // SCRUM-1446e · la columna de cada línea va SIN IVA, como en la factura (decisión del fundador:
+  // SCRUM-1446 comentario 20917, P4). Antes sólo en `no_incluido`; ahora en los dos modos, y así
+  // las líneas suman lo que el pie llama base. El Total sigue siendo el guardado.
+  const lineTotal = l.qty * l.price;
 
   const concept = softBreakLongTokens(String(l.concept || '').trim());
 
