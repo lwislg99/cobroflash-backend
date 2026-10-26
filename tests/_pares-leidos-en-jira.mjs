@@ -40,7 +40,9 @@
 // `jobsView.js:79` (tramo 1502m del registro de SCRUM-1502). La 24.ª (SCRUM-1502 comentario 20834)
 // la leyó jv-j1ca el 24-oct, con el ticket entero: es la firma de seis marcas de `tests/` (tramo
 // 1502o). La 25.ª (SCRUM-1502 comentario 20853) la leyó jv-j1cc el 26-oct, con el ticket entero:
-// es la firma de las 17 parejas singular/plural que gobierna `scrum377:72` (tramo 1502p).
+// es la firma de las 17 parejas singular/plural que gobierna `scrum377:72` (tramo 1502p). La 26.ª
+// (SCRUM-1446 comentario 20917) la leyó jv-j1ck el 26-oct, con el ticket entero: es la firma de la
+// cabecera «IMPORTE» del PDF de la factura (tramo 1446e).
 //
 // Una fila por línea (lo pide `tests/scrum710b`): dos tickets que añaden pares no se pisan.
 
@@ -49,6 +51,7 @@ const POR_1511H = 'jv-j6bo · SCRUM-1511h';
 const POR_1502M = 'S4 · SCRUM-1502m';
 const POR_1502O = 'jv-j1ca · SCRUM-1502o';
 const POR_1502P = 'jv-j1cc · SCRUM-1502p';
+const POR_1446E = 'jv-j1ck · SCRUM-1446e';
 
 export const PARES_LEIDOS = Object.freeze([
   { ticket: 299, comentario: 12188, leido: '2026-10-24', por: POR_1511G },
@@ -76,4 +79,5 @@ export const PARES_LEIDOS = Object.freeze([
   { ticket: 769, comentario: 14580, leido: '2026-10-24', por: POR_1502M },
   { ticket: 1502, comentario: 20834, leido: '2026-10-24', por: POR_1502O },
   { ticket: 1502, comentario: 20853, leido: '2026-10-26', por: POR_1502P },
+  { ticket: 1446, comentario: 20917, leido: '2026-10-26', por: POR_1446E },
 ].map(Object.freeze));
