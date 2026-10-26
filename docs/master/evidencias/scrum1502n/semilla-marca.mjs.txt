@@ -1,0 +1,3 @@
+// Siembra de un solo uso: texto aprobado por el fundador, sin ancla ni referencia.
+const T = 'Frase sembrada por la sonda de mil quinientos dos ene para ver su nivel';
+export default T;

@@ -869,42 +869,23 @@ router.post('/:id/annul', requireRole('admin'), async (req, res) => {
       where: { id: req.merchantId }, select: { taxId: true, country: true },
     });
 
-    // ── 1) EL SELLADO, PRIMERO Y FUERA DE TODA TRANSACCIÓN (SCRUM-173/177) ──────────────────
-    // `applyVeriFactuAnulacion` extiende LA MISMA cadena que el alta y trae su propio cerrojo
-    // por merchant; llamarla dentro de una `$transaction` lanza a propósito. Va ANTES del cambio
-    // de estado porque el orden inverso dejaría una factura marcada como anulada sin registro
-    // que lo respalde: una huella sin estado se reintenta, un estado sin huella no se deshace.
-    let sellada = false;
-    if (merchant?.country === 'ES' && merchant?.taxId) {
-      try {
-        await sellarAnulacionTrasEmision(invoice, merchant.taxId, prisma); // SCRUM-205: punto unico
-        sellada = true;
-      } catch (e: any) {
-        console.error(`[annul] sellado de anulación falló en ${invoice.number}:`, e?.message || e);
-        return res.status(409).json({
-          error: 'anulacion_no_sellada',
-          message: 'No se pudo registrar la anulación en la cadena VeriFactu, así que no se ha anulado nada. Inténtalo de nuevo.',
-        });
-      }
-    }
-
-    // ── 2) ESTADO + LIBERACIÓN, en UNA transacción ──────────────────────────────────────────
+    // ── SELLADO + ESTADO + LIBERACIÓN, en UNA transacción (SCRUM-1314b) ─────────────────────
     //
-    // 🔴 SCRUM-1303 · `pending` VA DENTRO DEL `where`. La guarda de arriba miró el estado ANTES del
-    // sellado, y el sellado tarda: si en ese hueco entra un cobro, la factura ya está `paid` al
-    // escribir. Antes se escribía `annulled` encima de una factura cobrada. Ahora Prisma no
-    // encuentra la fila (P2025), la transacción entera se deshace —no se liberan albaranes ni se
+    // 🔴 SCRUM-1303 · `pending` VA DENTRO DEL `where`. La guarda de arriba miró el estado antes, y
+    // el sellado tarda: si en ese hueco entra un cobro, la factura ya está `paid` al escribir. Prisma
+    // no encuentra la fila (P2025), la transacción entera se deshace —no se liberan albaranes ni se
     // toca el libro— y se contesta el mismo 409 de la guarda de entrada.
     //
-    // ⚠️ LO QUE ESTO NO ARREGLA, declarado en `docs/BUGS.md` (P1-1303): el eslabón de anulación ya
-    // quedó sellado en el paso 1, así que la factura queda `paid` CON `vfAnulHash`. Ese eslabón ya
-    // existía antes de este arreglo cada vez que saltaba la carrera; lo que cambia es que el estado
-    // deja de taparlo. Qué hacer con él es del fundador (tocar el sellado es STOP, regla 40). Y no
-    // queda constancia en la auditoría: el `console.error` de abajo NO lo es.
-    let liberados;
-    try {
-    liberados = await prisma.$transaction(async (tx) => {
-      await tx.invoice.update({ where: { id: invoice.id, status: 'pending' }, data: { status: 'annulled' } });
+    // 🔴 SCRUM-1314b (GO del fundador, SCRUM-1314 c.20754) · Y EL SELLADO VA EN ESA MISMA ESCRITURA.
+    // Antes `applyVeriFactuAnulacion` sellaba primero y en su propia transacción, así que al perder
+    // la carrera la factura quedaba `paid` CON `vfAnulHash` (P1-1303): un eslabón de anulación sobre
+    // una factura cobrada, que la siguiente alta encadenaba. Ahora la huella y `annulled` son la misma
+    // `update` condicionada, dentro del cerrojo del sellado: van juntas o no va ninguna. Y una factura
+    // que ya tiene `vfAnulHash` no se vuelve a sellar (P2): se conserva su huella.
+    //
+    // Sigue FUERA de toda `$transaction` de la ruta (SCRUM-173/177): trae su propio cerrojo por
+    // merchant y llamarla dentro de otra lanza a propósito; la liberación entra en la suya.
+    const liberar = async (tx: any) => {
       // P10 (criterio nuevo): los albaranes que consolidó vuelven a estar pendientes.
       const albs = await tx.albaran.updateMany({
         where: { merchantId: req.merchantId, invoiceId: invoice.id },
@@ -915,15 +896,32 @@ router.post('/:id/annul', requireRole('admin'), async (req, res) => {
       const libro = await tx.albaranLineaFacturada.deleteMany({
         where: { merchantId: req.merchantId, invoiceId: invoice.id },
       });
-      return { albaranes: albs.count, lineasLibro: libro.count };
-    });
-    } catch (e) {
-      if (!esFilaQueNoCasa(e)) throw e;
-      console.error(
-        `[annul] SCRUM-1303 ${invoice.number} dejó de estar pendiente durante la anulación: no se anula` +
-          (sellada ? ' (el eslabón de anulación YA quedó sellado: P1-1303)' : ''),
-      );
-      return res.status(409).json(NO_SE_ANULA_SI_NO_ESTA_PENDIENTE);
+      return { albaranes: albs.count as number, lineasLibro: libro.count as number };
+    };
+
+    const sellada = merchant?.country === 'ES' && !!merchant?.taxId;
+    let liberados;
+    try {
+      if (sellada) {
+        // SCRUM-205: punto único de sellado.
+        liberados = await sellarAnulacionTrasEmision(invoice, merchant!.taxId!, prisma, { enLaMismaTransaccion: liberar });
+      } else {
+        liberados = await prisma.$transaction(async (tx) => {
+          await tx.invoice.update({ where: { id: invoice.id, status: 'pending' }, data: { status: 'annulled' } });
+          return liberar(tx);
+        });
+      }
+    } catch (e: any) {
+      if (esFilaQueNoCasa(e)) {
+        console.error(`[annul] SCRUM-1303 ${invoice.number} dejó de estar pendiente durante la anulación: no se anula ni se sella`);
+        return res.status(409).json(NO_SE_ANULA_SI_NO_ESTA_PENDIENTE);
+      }
+      if (!sellada) throw e;
+      console.error(`[annul] sellado de anulación falló en ${invoice.number}:`, e?.message || e);
+      return res.status(409).json({
+        error: 'anulacion_no_sellada',
+        message: 'No se pudo registrar la anulación en la cadena VeriFactu, así que no se ha anulado nada. Inténtalo de nuevo.',
+      });
     }
 
     // SCRUM-207 (D-3): antes esto y la rectificativa R1 compartían `anular_factura`, así que

@@ -186,3 +186,89 @@ Ningún workflow tocado. Ni tanda ni build (orden de RAM). No he medido el cupo 
 ### Cómo se repite
 
 `node docs/master/evidencias/SCRUM-1498/obligatorio-24oct.mjs docs/master/evidencias/SCRUM-1498/datos-push-main-2026-10-08..10-24.json docs/master/evidencias/SCRUM-1498/datos-jobs-2026-10-08..10-24.json` (sin red). La sonda del carril: `node docs/master/evidencias/SCRUM-1498/prueba-carril4.mjs <worktree> <carpeta temporal fuera del árbol>`.
+
+## SCRUM-1498d (24-oct) · J6 · el vigía de `main` absuelve los sustituidos por job (decisiones del fundador c.20795 y c.20802)
+
+**Medido contra:** `origin/main` = `9156927564adf54633aca0eac3ae3c867236e3b9` · 2026-10-24T15:11:56Z
+
+A9: comprobación → `tests/scrum1498d-vigia-absuelve-obligatorio-verde.test.mjs`
+
+Carril: `scripts/vigia-silencio-de-main.mjs` sólo tiene la fila general de `scripts/` (`node scripts/carriles.mjs de` → «SIN CERRADURA · sólo lo cubre la fila general»); lo construye J6 porque la decisión c.20795 lo nombra. Ningún workflow tocado. El sufijo «1498c» del encargo ya era de S5 (#2841 y su tramo «SCRUM-1498c»): esto va como 1498d (c.20802 lo confirma).
+
+### Lo que decidió el fundador
+
+- **c.20795** («Sí: basta con el obligatorio en verde»): un commit SUSTITUIDO cuyo «build + tests» dio success queda absuelto aunque el meta-guard u otro job largo no corriera en él. En la PUNTA, el meta-guard se sigue exigiendo.
+- **c.20802** («Los cubre el siguiente verde»), que amplía la anterior después de la primera medición de este tramo: un sustituido cuyo «build + tests» no dio veredicto queda absuelto si el SIGUIENTE commit posterior con veredicto del obligatorio lo dio en verde. Si salió en rojo, no se absuelve y se dice cuál. Un sustituido con su propio obligatorio en rojo nunca se absuelve.
+
+### Lo cambiado
+
+- `canceladoSinArrancar(job)`: `cancelled` y ningún paso `completed` ni `in_progress`. Si los pasos no se leyeron, `false`: no se sabe.
+- `veredictoDeCommit` reconoce dos formas nuevas. Las dos piden ningún job en rojo, la señal de nombres sin CIEGO, los seis jobs declarados presentes, y el resto en success o cancelado sin arrancar. Se miran ANTES que el CIEGO del meta-guard, que de otro modo saldría por «cancelado él solo».
+  - (a) obligatorio en success → CIEGO con causa `CAUSA_SUSTITUIDO_CON_OBLIGATORIO_VERDE`.
+  - (b) el obligatorio también cancelado sin arrancar → CIEGO con causa `CAUSA_OBLIGATORIO_SUSTITUIDO`.
+  - Cada veredicto lleva además `obligatorio`: `'success'`, `'failure'` o `null`.
+- `absolucionDeSustituidos`:
+  - (a) lo absuelve su propio obligatorio, salvo en la punta (posición 0 de la línea), donde se avisa.
+  - (b) sube por la línea hasta el primer commit cuyo `obligatorio` no es `null`. Si es `success`, queda absuelto por él. Si es `failure`, no se absuelve, y va a `tapados`, que `accionDelIssue` añade al motivo del aviso («el siguiente «build + tests» con veredicto, `<sha>`, salió en ROJO: no se absuelve»). Si antes encuentra uno CORRIENDO, espera. Si encuentra un commit sin juzgar, no se absuelve.
+- `bajarPorSustituidos` baja también desde un commit cuyo obligatorio dio veredicto (un ROJO de otro job lo tiene), y sigue por las dos formas nuevas. `conRun` las cuenta como «con run».
+- Sin cambios: el meta-guard cortado a mitad sigue siendo su CIEGO (1339r), y el «cancelled con 0 jobs» se sigue absolviendo por el verde que lo contiene (1393e).
+
+### Rojo primero y mutaciones
+
+Test nuevo, 12 casos, con un positivo SEMBRADO por clase:
+
+| clase sembrada | lo que dice el vigía |
+|---|---|
+| sustituido-verde | absuelto por su obligatorio |
+| sustituido-rojo | no se absuelve |
+| sin veredicto + siguiente verde (también si el siguiente es un sustituido-verde o un ROJO de otro job) | absuelto |
+| sin veredicto + siguiente rojo | no se absuelve, y el aviso nombra cuál |
+| sin veredicto + siguiente corriendo | espera |
+| sin veredicto en la punta, o con un hueco sin juzgar | no se absuelve |
+| punta sin meta-guard | aviso, y no cierra |
+| cancelado-0-jobs | absuelto como hoy |
+| cortado a mitad, pasos sin leer, señal CIEGA, declarado ausente | no se absuelve |
+
+Procedimiento: con el motor ya comiteado (`e1ad7290655e8ce42f076ed4ca42cd1de52606e4`), cada mutación se aplica (`git diff --numstat` 1/1 o 1/2), se corre el test y se restaura desde HEAD. **14 de 14 mueren, y en todas caen + pasan = 12.** M0 es el rojo primero: quita las dos formas nuevas, que es lo que hace `main`, y tumba 7 casos. La salida, con el ancla y el reemplazo de cada una, está en `1498d-salida-mutaciones.txt`. **El guion NO se sube:** `guards:entrada` (scrum976) tumba un banco de mutaciones nuevo con lista propia que no está registrado en el catálogo del meta-guard, y registrarlo no cabía en esta tanda. Queda como deuda declarada.
+
+### La cifra: ¿cuántos commits absolvería el vigía con #2841?
+
+**Qué se simula** (`evidencias/SCRUM-1498/1498d-simula-por-job.mjs`; salida en `1498d-salida-simulacion.txt`):
+- **Datos:** los de S5, `1498c-datos-2026-10-17..10-24.json`, del commit `19eb5b933a5979a5e39c2479e3c703662f1dced7` de la rama de #2841. Son los 280 commits de primer padre del 17-oct 12:00Z al 24-oct 12:00Z, con la hora real de su run.
+- **Grupos:** seis, uno por job, como en el `ci.yml` de #2841. En cada uno, uno corre y uno espera; el que llega sustituye al que espera, y éste queda cancelado sin arrancar.
+- **Duración y conclusión de cada job:** las reales si corrió en ese commit; si no, remuestreadas de las reales de ese job.
+- **Juez:** cada forma pasa por `veredictoDeCommit` y `absolucionDeSustituidos` del motor de esta rama.
+- 500 réplicas; se da la mediana y el IC90.
+
+| clase | (A) conclusiones reales | (B) todo en success |
+|---|---|---|
+| absuelto por el siguiente obligatorio en verde (c.20802) | 75 [65-82] · 26,8 % | 119 [116-121] · 42,5 % |
+| absuelto por su obligatorio (c.20795) | 46 [38-53] · 16,4 % | 105 [100-108] · 37,5 % |
+| VERDE | 9 [8-12] · 3,2 % | 55 [51-58] · 19,6 % |
+| absuelto por un verde posterior (1393e/f) | 2 | 2 |
+| CIEGO · meta-guard cortado a sus 30 min, con el obligatorio en verde o sin él (1339r) | 67 [59-75] + 31 [24-39] · 35,0 % | — |
+| ROJO de otro job, obligatorio en verde | 29 [25-33] · 10,4 % | — |
+| CIEGO · meta-guard, obligatorio en rojo | 12 [7-16] · 4,3 % | — |
+| CIEGO · obligatorio sustituido, el siguiente salió ROJO | 7 [2-13] · 2,5 % | — |
+| ROJO del obligatorio | 3 [2-4] · 1,1 % | — |
+
+**Lo que dice:**
+- **Con la cola sola (B), el vigía absuelve o da verde a los 280 commits:** 226 absueltos más 55 verdes. Las medianas suman 281 porque cada clase se calcula por separado.
+- Antes de c.20802, los 119 «sin veredicto» eran CIEGO para siempre, y el Issue no se habría cerrado nunca.
+- **Con las conclusiones reales (A), lo que queda sin absolver ya no es cosa de la cola.** Es el meta-guard cortado a sus 30 min (~35 %), los rojos de «guards de navegador» y del trinquete (~10 %) y los rojos del obligatorio. Eso es SCRUM-1538/935c, no este ticket.
+- El obligatorio corre en ~57 % de los commits (B: 105 + 55 = 160 de 280). S5 daba ~58 % con otro modelo.
+
+### Lo que NO he medido
+
+- La forma que da GitHub a un job sustituido mientras espera en un grupo de job (`cancelled`, `steps: []`) es SUPUESTA: sólo se verá en `main` tras #2841. Si sale con algún paso `completed`, el motor NO lo absuelve: falla hacia el aviso, no hacia el silencio.
+- Es un modelo. Supone runner libre al instante, y S5 vio 20 jobs corriendo y 12 en cola a las 13:08Z (c.20793). No lo he validado contra lo medido con un solo grupo, como sí hizo S5 (83 contra 81).
+- (b) no absuelve si entre el sustituido y el siguiente con veredicto hay un commit que la pasada no juzgó. La bajada desde cada commit con veredicto los juzga; un pendiente del Issue con un hueco por encima se avisa en vez de callarse. No lo he medido contra el workflow real.
+- **Suite entera local: NO CORRIDA** (10 sesiones a la vez). Guards dirigidos: 30 ficheros, 308 casos, 307 pasan. Cae `scrum836`, que es del ENTORNO: este árbol anidado no trae `dist/`, y el guard pide tres ficheros compilados de `scrum608` que no existen aquí. No viene de este cambio.
+
+**Contexto:** ~90k al acabar el arranque · ~113k al acabar Jira · ~214k al avisar (cruzado 200k) · ~275k al escribir este tramo (15M − restantes).
+
+### Cómo se repite
+
+- El test: `node --test tests/scrum1498d-vigia-absuelve-obligatorio-verde.test.mjs`.
+- Las mutaciones: a mano, con las anclas y los reemplazos de `1498d-salida-mutaciones.txt`; el guion no está en el árbol (motivo arriba).
+- La simulación: `node docs/master/evidencias/SCRUM-1498/1498d-simula-por-job.mjs <1498c-datos-2026-10-17..10-24.json> 500` desde la raíz (sin red).

@@ -275,3 +275,56 @@ los dos jefes.
   código decía fallo; la volví a correr con la ruta por argumento antes de usar un solo número. Y al arreglarla con
   `sed` el parche cayó a medias (quitó un espacio y dejó la línea sin la condición): lo vi al ir a editarla, no
   antes. Es la cicatriz de J6 del 14-oct otra vez: **los parches de texto, con el editor**.
+
+---
+
+> **Tercer tramo de este registro (J3, `jv-j3bf`, 24-oct, 1549c).** Ejecuta el punto 2 de la decisión del fundador
+> (c.20777): reinstalar a mano, una vez y sin lanzar nada, la copia de la puerta. Comentario en Jira: c.20816.
+
+# SCRUM-1549c · La copia de la puerta, reinstalada a mano: `estado` vuelve a contestar, sin lanzar nada y sin tocar las tareas programadas
+
+**Medido contra:** `origin/main` = `bcfc99b0d9a4f4a3aaf9d1608dce06b3d3691482` · 2026-10-24T15:30:04Z (`Date:` de GitHub)
+
+A9: aviso → A10 «Un rojo sin población no es un hallazgo: es un instrumento que no llegó a arrancar.» — no se pudo comprobar: la sonda que falló fue una orden a mano sobre la instalación, fuera del árbol, y ningún test del repositorio la ve
+
+J3 (sesión `jv-j3bf`, equipo de Javier), por encargo de su orquestador (`cobroflash-backend-95`). Instalación:
+`C:/Users/Javier Pereira/AppData/Local/yaqu-equipo/`. Ninguna línea de `scripts/equipo/` cambia.
+
+## 0 · Antes y después
+
+| | ANTES (~15:27Z) | DESPUÉS (15:29Z) |
+| --- | --- | --- |
+| `node <instalación>/sesion.mjs estado` | `{"ok":false,"veredicto":"ALTERADO",…}`, código **2** | `{"veredicto":"ESTADO",…}`, código **0** · 2.367 B: 0 `sesiones`, 0 `restos`, 0 `bloqueadas`, 10 `otras` |
+| blob de la copia (`git hash-object`) | `84b432a9…` (el de `62a58b01f`, 26-sep) · 55.416 B | `fe7dc0e4…` = `origin/main:scripts/equipo/sesion.mjs` · 77.695 B |
+| `parar jv-sonda-1549c` | ALTERADO | `NOMBRE-NO-PERMITIDO`, código 1 (no llega a `claude stop`/`rm`) |
+| `olvidar jv-sonda-1549c` | ALTERADO | `NOMBRE-NO-PERMITIDO`, código 1 (no llega a `claude rm`) |
+| `--ayuda` (la puerta no tiene ayuda propia) | ALTERADO | `ACCION-DESCONOCIDA` con el uso, código 1 |
+| `schtasks /query /fo csv` | 208 nombres, 4 `yaqu*` | 208 nombres, 4 `yaqu*` · **0 nuevas, 0 quitadas** (control positivo: las 4 `yaqu*` aparecen en las dos) |
+
+## 1 · Qué se hizo y qué no
+
+- **Hecho, sólo esto:** `git show origin/main:scripts/equipo/sesion.mjs > <instalación>/sesion.mjs` (la primera copia
+  de `arranque.cmd`, en bytes). Antes, comprobado que ese fichero sólo importa módulos `node:`. Copia de seguridad de
+  las cuatro copias viejas en `<instalación>/copia-puerta-20261024-1549c/`.
+- **No** se ejecutó `instalar.mjs` (reescribe `config.json` y `arranque.cmd`), ni `arranque.cmd` (su última línea lanza
+  el orquestador). **No** se tocó ninguna tarea programada (punto 1 de c.20777), ni `config.json`, `uso.mjs` (el
+  statusLine de todas las sesiones), `orquestador-arranque.mjs` o `prompt-tanda.md`.
+- `parar` y `olvidar` se probaron con un nombre FUERA de la lista blanca, a propósito: con `jv-j3` podrían parar o
+  borrar una sesión de verdad. Prueban que la puerta pasa la integridad y contesta; **no** prueban que paren bien.
+
+## 2 · Lo que sigue igual
+
+- **La puerta no ve a las sesiones de hoy:** las 10 vivas salen en `otras`, porque `jv-j1bs`, `jv-j3bf`… no están en
+  la lista blanca (`jv-j1`…`jv-j6`). Es la (B), punto 5 de c.20777, de S5.
+- **Vuelve a `ALTERADO` con el siguiente merge que toque `sesion.mjs`**: deducido de `puertaDeIntegridad` (compara
+  por bytes contra `origin/main`), no esperado a que pase.
+- `config.json` sigue sin `mesas` ni `identidades`: la puerta viva no da identidad. El hook de identidad corre sólo
+  al arrancar, así que no se ha re-medido después.
+- `yaqu-equipo-jv-1835` toca hoy a las 18:35. Si falla como las anteriores (ruta partida por el espacio), no pisa
+  nada; no se ha esperado a verlo.
+
+## 3 · Errores propios
+
+- Como «antes» de `parar` corrí la copia de seguridad desde su subcarpeta y salió `NO-PUDE-MIRAR` (no hay
+  `config.json` al lado): una sonda que no llegó a mirar. No se cuenta; el «antes» válido es el `ALTERADO` de
+  `estado`, medido sobre la copia instalada.

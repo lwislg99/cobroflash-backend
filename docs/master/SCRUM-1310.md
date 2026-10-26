@@ -76,3 +76,41 @@ Lo que se hace aquí lo decidió el fundador en **c.20776** (P1+P2: «Sí, solo 
 
 1. **Javier** corre la consulta en dev, staging y producción, y trae las 14 filas de cada base.
 2. **La sesión siguiente** pasa a `docs/sql/` la columna `ddl` de **producción**, y en el mismo PR quita de `SIN_DDL_CONGELADAS` las que reciben DDL (la mitad ② lo exige). Si alguna sale `CON OTRO NOMBRE` o `NO HAY CLAVE AJENA`, se para y se pregunta.
+
+## Tramo 1310c (J5, `jv-j5aj`, equipo de Javier, 24-oct-2026) · el DDL de las 13 y el trinquete de 13 a 0
+
+**Medido contra:** `origin/main` = `bcfc99b0d9a4f4a3aaf9d1608dce06b3d3691482` · 2026-10-24T15:32:43Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum1310b-claves-ajenas-con-ddl.test.mjs`
+
+Mi fallo de este tramo: escribí en la cabecera del `.sql` que el clasificador lo rechaza «por su rama de `ADD CONSTRAINT … FOREIGN KEY`» antes de medirlo, y mi propio test lo desmintió: lo rechaza como «acción no reconocida» por el prefijo `"public".`. El test afirma ahora el rechazo medido (13 de 13), no el motivo.
+
+Depende de #2849 (rama `scrum-1310b-consulta-y-trinquete`, sin mergear al empezar): esta rama la lleva dentro por merge.
+
+### ① `docs/sql/scrum-1310c-claves-ajenas-ddl.sql`
+
+- 13 sentencias `ALTER TABLE "public".… ADD CONSTRAINT … FOREIGN KEY … REFERENCES … ON DELETE … ON UPDATE …;`, en el orden de la consulta de 1310b. Es documentación: no se ejecuta contra ninguna base, y el clasificador rechaza las 13.
+- **Nombre, ON DELETE y ON UPDATE:** de producción (c.20810), copiados en `PRODUCCION_C20810` del test.
+- **Tabla, columna, tabla y columna referenciadas:** de `schema.prisma` por programa (`ddlDeClave`: `@@map`, `@map`, `@relation(fields:, references:)`).
+- **Control de la fila 0:** el mismo generador escribe `quotes_chargeId_fkey` y sale idéntico byte a byte (166 B = 166 B) a la congelada `20251104175333_add_quote_model/migration.sql:26`. Negativo: con otra acción ya no casa.
+- **Segundo testigo:** las 13 casan byte a byte con la columna `ddl` que sacó del catálogo de DEV la consulta de 1310b (`evidencias/SCRUM-1310/consulta-1310b-dev.txt`): 13 de 13. En producción `ddl` y `pg_def` no se vieron (capturas cortadas, c.20810): las referencias de producción **NO están vistas**.
+
+### ② El trinquete
+
+- `SIN_DDL_CONGELADAS = []`. `LAS_13_DE_C20753` guarda las 13 por identidad: la consulta las sigue pidiendo y el fichero tiene que darles DDL a todas.
+- Tres casos nuevos: el control byte a byte, el fichero = esquema + producción, y el rechazo del clasificador.
+- **Visto en ROJO** (commit `cc358f5d1` antes de inyectar, `git diff --numstat` de cada una): una acción cambiada en el `.sql` → cae «el fichero … es exactamente el DDL»; la línea de `rectifies` borrada → caen el trinquete, el del fichero y el del clasificador; una clave devuelta a la lista → cae el trinquete. Las tres se deshicieron con `git restore --source=HEAD`, y `git status` quedó limpio: 11 de 11.
+
+### La sonda de SCRUM-1550 NO pasa a «presente»
+
+`node docs/master/evidencias/SCRUM-1550/contenido.mjs` sobre esta rama: `SCRUM-1310 · SIGUE SIN HACER · … [presente] · 0`. `git grep` sí encuentra el nombre (1 línea en `docs/sql/scrum-1310c-claves-ajenas-ddl.sql`), pero `contenido.mjs:98` descarta toda línea que case `reMencion(1310)` (`/SCRUM-1310(?![0-9])/i`), y la salida de `git grep` lleva delante la RUTA, que lo casa. No se toca aquí: es el instrumento de SCRUM-1550.
+
+### Hallazgo de paso (no es de este carril)
+
+`clasificarSentencia` rechaza también `ALTER TABLE "public"."t" ADD COLUMN "x" TEXT;` («acción no reconocida»), y permite la misma sin el prefijo. Falla del lado seguro (rechaza de más). En `docs/sql/` hay 1 `ALTER TABLE` más con el prefijo.
+
+### Guards
+
+- El trinquete: 11 de 11.
+- 237, 976, 824, 836, 419, 702, 700, 719, 1415, 222, 441, 475, 461, 425, 758, 1214, 395, 815, 685b: 201 casos, 196 pasan, 5 caen. Los 5 (222 entero, tres de 475, uno de 836) **caen igual sobre `origin/main` `bcfc99b0d`** en este árbol, que no tiene `dist/` ni CLI de prisma propios: no los decide esta medición, los decide el obligatorio de CI.
+- **Suite entera en local: NO CORRIDA.**

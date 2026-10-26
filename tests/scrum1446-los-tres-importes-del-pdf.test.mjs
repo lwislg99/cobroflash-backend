@@ -45,7 +45,8 @@ const { calcTotal } = require('../dist/core/utils/utils.js');
 /** Los defectos que este fichero fija sin arreglar, con el ticket que los lleva. */
 const DECLARADOS = Object.freeze({
   'la columna no suma el total': 'SCRUM-1446 · cada línea se redondea al imprimirse y el TOTAL sale de la suma sin redondear.',
-  'el total impreso no es el guardado': 'SCRUM-1448 y SCRUM-624 · la factura con líneas recalcula; el guardado es `grossOfLines`.',
+  // ✅ SCRUM-624e (24-oct-2026) · sale «el total impreso no es el guardado»: con el GO de SCRUM-624
+  // c.20817, el papel de la F1 imprime su total guardado. Ver ③ abajo.
 });
 
 const IMPORTE = '-?[\\d.]+,\\d{2}';
@@ -270,8 +271,10 @@ test('SCRUM-1447 · ② el descuento global de un presupuesto al 7,5 % se firma 
 // ③ SCRUM-1448 · el total recalculado y el guardado
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-1448 · ③ DECLARADO: el TOTAL impreso no es el guardado con dos tipos, con tramos y con descuento de línea', async () => {
-  assert.ok(DECLARADOS['el total impreso no es el guardado'].includes('SCRUM-1448'));
+// ── SCRUM-624e (24-oct-2026) · ARREGLADO EN LA F1: el TOTAL impreso es el guardado ─────────────
+// GO del fundador: SCRUM-624 c.20817, «A solo en facturas normales». Hasta hoy este caso fijaba
+// guardado 3 / impreso 4, 127 / 128 y 190 / 189. La R1 sigue recalculando (`scrum624e`).
+test('SCRUM-1448 · ③ ARREGLADO en la F1: el TOTAL impreso es el guardado con dos tipos, con tramos y con descuento de línea', async () => {
   const plan = [{ index: 0, percentage: 0.5, label: '' }, { index: 1, percentage: 0.5, label: '' }];
   const deTramo = [L(2.11, 0.21)];
   const casos = {
@@ -289,28 +292,28 @@ test('SCRUM-1448 · ③ DECLARADO: el TOTAL impreso no es el guardado con dos ti
   }
   assert.deepEqual(visto, {
     'control · una línea de 100 al 21 %': { guardado: 12100, impreso: 12100 },
-    'dos tipos · 0,02 al 21 % y 0,01 al 10 %': { guardado: 3, impreso: 4 },
-    'tramo 2 de 2 al 50 % · 2,11 al 21 %': { guardado: 127, impreso: 128 },
-    'descuento de línea del 10 % · 1,74 al 21 %': { guardado: 190, impreso: 189 },
+    'dos tipos · 0,02 al 21 % y 0,01 al 10 %': { guardado: 3, impreso: 3 },
+    'tramo 2 de 2 al 50 % · 2,11 al 21 %': { guardado: 127, impreso: 127 },
+    'descuento de línea del 10 % · 1,74 al 21 %': { guardado: 190, impreso: 190 },
   },
-  'Ha cambiado el total que imprime la factura o el que se guarda. Si ya coinciden, es lo que ' +
-  'SCRUM-1448 y SCRUM-624 pedían: borra «el total impreso no es el guardado» de `DECLARADOS` y ' +
-  'fija aquí los importes nuevos.');
+  '🔴 la F1 vuelve a imprimir un TOTAL distinto del guardado: el papel ha vuelto a recalcular ' +
+  '(SCRUM-1448, SCRUM-624e).');
 });
 
-test('SCRUM-1448 · ③ la factura SIN líneas imprime el guardado, y con líneas lo ignora', async () => {
+test('SCRUM-1448 · ③ la factura imprime el guardado, tenga líneas o no (SCRUM-624e)', async () => {
   const sin = await papelFactura([], '123.45');
   const con = await papelFactura([L(100, 0.21)], '999.99');
   assert.deepEqual(
     { sin: { total: sin.total, rama: sin.ramaSinLineas, filas: sin.filas.length }, con: { total: con.total, rama: con.ramaSinLineas } },
-    { sin: { total: 12345, rama: true, filas: 0 }, con: { total: 12100, rama: false } },
-    'Ha cambiado de dónde sale el total del PDF de la factura. Hoy son dos fuentes en el mismo ' +
-    'documento según tenga líneas o no (SCRUM-1448); si pasa a ser una, fija aquí cuál.');
+    { sin: { total: 12345, rama: true, filas: 0 }, con: { total: 99999, rama: false } },
+    'Ha cambiado de dónde sale el total del PDF de la factura. Desde SCRUM-624e es UNA fuente, el ' +
+    'guardado, tenga líneas o no; hasta entonces, con líneas imprimía el recalculado (121,00).');
 });
 
-test('SCRUM-1446 · los defectos declarados son EXACTAMENTE dos, y cada uno nombra su ticket', () => {
-  // SCRUM-1446d: 3 → 2, al arreglarse «el 7,5 % se imprime «8%»».
-  assert.equal(Object.keys(DECLARADOS).length, 2,
+test('SCRUM-1446 · los defectos declarados son EXACTAMENTE uno, y cada uno nombra su ticket', () => {
+  // SCRUM-1446d: 3 → 2, al arreglarse «el 7,5 % se imprime «8%»». SCRUM-624e: 2 → 1, al imprimir
+  // la F1 su total guardado.
+  assert.equal(Object.keys(DECLARADOS).length, 1,
     'La lista de defectos declarados ha cambiado de tamaño. Sólo puede menguar, y al menguar se ' +
     'cambia este número en el mismo commit.');
   for (const [k, motivo] of Object.entries(DECLARADOS)) {

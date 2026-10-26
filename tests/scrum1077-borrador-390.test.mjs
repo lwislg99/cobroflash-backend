@@ -153,7 +153,7 @@ test('SCRUM-1077 · lo que el 303 deja vacío sale vacío, con su motivo', () =>
   assert.deepEqual([...r.sinRellenar.casillas], ['84', '86', '95']);
   assert.equal(r.sinRellenar.porque, 'el_303_deja_vacias_de_la_64_a_la_71');
   assert.deepEqual(r.avisos, ['rectificativas_sin_casilla_propia', 'bienes_de_inversion_no_incluidos']);
-  assert.match(r.avisoObligatorio, /PENDIENTE microcopy oficial/, 'el aviso del 303 viaja también aquí');
+  assert.equal(r.avisoObligatorio, 'Borrador para tu asesor', 'el aviso del 303 viaja también aquí (firmado: SCRUM-1065 c.20813)');
 });
 
 test('SCRUM-1077 · lo que el 303 no colocó sale declarado, con el trimestre del que viene', () => {

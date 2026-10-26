@@ -571,3 +571,66 @@ los ficheros citados. Nada se ha ejecutado, ni contra Stripe ni en yaqu.app.
   no es de J3 ni de nadie; se escribe declarado.
 - Aviso de merge: #2859 (1402i, J5) añade su tramo al final de este mismo fichero. Entre el que entre primero, el
   otro puede quedar en conflicto.
+# SCRUM-1402i · Ⓑ medido: cómo se activa hoy el plan Equipo, de punta a punta · sólo docs, carril J5
+
+**Medido contra:** `origin/main` = `c6d3aa11f15a0a582f92b8ec4a8c9838ea426dd8` · 2026-10-24T15:35:19Z
+
+A9: sin fallo que generalice — el único error propio (correr `carriles.mjs` en un árbol 11 commits por detrás) ya lo cubre el aviso de `CLAUDE.md` de medir sobre `origin/main`; repetido tras `merge --ff-only` dio los mismos dueños
+
+Sesión jv-j5ak (puesto J5), por encargo del orquestador `cobroflash-backend-95`. **Sólo se mide y se pregunta:
+no hay código.** Lectura de `origin/main` con `git show`/`git grep`. No se ha llamado a Stripe ni mirado su panel,
+y nada se ha visto en yaqu.app. Entrega en Jira: **SCRUM-1402, comentario 20825** (allí van las preguntas enteras).
+
+## Lo hecho en main, y lo único abierto
+
+③④ #2222 (`c6606bd5c`) · Ⓔ.3 #2782 (`a0673b33a`) · Ⓖ medido #2788 (`25c673a30`) · Ⓖ construido #2795
+(`34e90eb10`). **Abierto: sólo Ⓑ.** No consta en `docs/` ningún procedimiento de activación (búsqueda de
+`yaqu_equipo_monthly`, `plan='equipo'`, `metadata.plan…equipo`; control positivo: la misma búsqueda encuentra
+el censo de SCRUM-1496f).
+
+## La cadena, medida
+
+| tramo | hoy | dónde |
+|---|---|---|
+| precio | `yaqu_equipo_monthly`, 59 €/mes, sin anual; existencia en Stripe SIN MEDIR | `scripts/setup-stripe-prices.mjs:26`, `src/modules/billing/domain/stripePrices.ts:15` |
+| quién lo usa | nadie: `resolvePriceId` tiene 2 llamadas, ninguna con `equipo_monthly` | `subscriptions.routes.ts:97`, `:101` |
+| checkout | `equipo` → 400 `invalid_plan` | `subscriptions.routes.ts:14-24`, `:99-100` |
+| escritura de `Merchant.plan='equipo'` | sólo el webhook, con `metadata.merchant_id` y `metadata.plan` exacto `equipo` | `stripe.routes.ts:133`, `:188` |
+| nombre mal escrito o ausente | no activa; `console.warn` | `stripe.routes.ts:46` |
+| qué desbloquea | sólo `maxUsers: 5`; `waFairUseMonthly` sin ningún lector en `src/` (control: `maxUsers`, 1 lector) | `src/core/entitlements.ts:21`, `team.routes.ts:75-79` |
+| cómo se pide | «escríbenos y te lo activamos» en el 409 | `team.routes.ts:84` |
+
+Lo que ve quien tiene `equipo` (leído, no ejecutado): «Plan activo: Pro» (`plansView.js:86`); banner founding
+(`:40`); botón «Suscribirme» activo (`:46`, `:181`) y un checkout que no mira si ya hay suscripción
+(`subscriptions.routes.ts:70-130`); «equipo» en crudo en la barra lateral (`app.js:184`); correo «Bienvenido al
+plan Pro» (`lifecycle.service.ts:167`, `:176`).
+
+**Lo que el ticket daba por cierto y no lo es:** «`equipo` tiene que seguir funcionando» vale por el webhook,
+pero ningún camino de YaQu lo pone. Y las dos cancelaciones (`stripe.routes.ts:229`, `:244`) escriben `trial`
+sin comparar `sub.id` con `stripeSubscriptionId`: con dos suscripciones vivas, cancelar la vieja baja a `trial`
+a quien paga la nueva (leído, sin sonda).
+
+## Las preguntas (texto entero en c.20825)
+
+- **P1** ¿Equipo se activa en Stripe sobre la MISMA suscripción (precio + `metadata.plan = equipo`) con
+  procedimiento en `docs/RUNBOOKS.md`? Recomiendo ✅. Sólo docs, sesión J.
+- **P2** ¿Antes del primer Equipo se quita la oferta de Pro/founding a quien ya paga y se rechaza la segunda
+  suscripción? Recomiendo ✅ (J3, GO de dinero). Los nombres «Plan activo: Equipo» y «Plan Equipo» piden firma
+  (regla 39); la barra lateral es S2.
+- **P3** ¿La cancelación sólo baja el plan si es la suscripción apuntada? Recomiendo ❌ si P1 y P2 son ✅;
+  ✅ si no (J3).
+
+## Carriles (`node scripts/carriles.mjs de`, tras traer main)
+
+`stripe.routes.ts` J2 (contenedor; bloques de J3) · `subscriptions.routes.ts` J3 · `plansView.js` J3 ·
+`lifecycle.service.ts` J3 · `entitlements.ts` S1 · `team.routes.ts` S1 · `app.js` S2 · `docs/RUNBOOKS.md` sin
+fila · `scripts/setup-stripe-prices.mjs` sin cerradura.
+
+## Límites de lo medido
+
+- Sin medir: el contenido de la cuenta de Stripe (precio de Equipo, configuración del portal).
+- Ninguna consecuencia se ha ejecutado: cancelación y doble suscripción, leídas en el código. La sonda de 1402g
+  podría medirlas sin Stripe.
+- Que cambiar el precio en Stripe no cambia `metadata.plan` es comportamiento de Stripe sin medir aquí.
+- La hora del ancla es la del commit de `main`, no la cabecera `Date:` de GitHub.
+- Sin tanda, sin build, sin tests: sólo docs. El obligatorio lo dice el CI.
