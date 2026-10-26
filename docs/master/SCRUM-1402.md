@@ -646,7 +646,10 @@ del propio test y el driver `mutar-1402h.mjs` de este ticket. Caen al quitar:
 
 ## Lo corrido
 - La mini-tanda de los que miran `plansView.js` y el checkout (`public-js-parsea`, 1233, 341, 345, 406, 628, 644, 666b, 512, 55)
-  junto con la familia 1402, 745, 237 y 976: lo que dio y lo que se repitió va en el comentario de entrega.
+  más la familia 1402, 745, 237 y 976, y los de registro (1294, 267, 273, 723, 921c): **222 de 222**, con
+  `guards:entrada` dentro de 976 ④ (15 guards). La primera pasada, sin el registro escrito, dio 171 de 172:
+  cayó 976 ④ porque 811c exige el `**Skill UI:**` del registro.
+- Los de microcopy (1157, 283, 300, 339, 405, 709, 726, 861): **62 de 62**.
 - `tsc --noEmit`: limpio. `dist/` emitido con `tsc --noCheck` (worktree anidado).
 - **Sin correr:** la tanda entera y los gateados por base.
 
