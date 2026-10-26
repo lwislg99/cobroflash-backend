@@ -385,3 +385,47 @@ Fuente: las instrucciones de la AEAT para 2026, «Instrucciones 02 a 12 y 2T a 4
 - La 122 recoge TODA S2 del libro. Las instrucciones la limitan al art. 84.Uno.2º (y al oro). Que cada S2 de YaQu sea de ese artículo no lo he medido: la factura no guarda la letra.
 - Las rectificativas suman con su signo en la 122: el libro no las distingue (aviso `rectificativas_sin_casilla_propia` del 390).
 - Para el 390 no hay casilla decidida: la S2 sigue «sin clasificar» en el anual.
+
+## SCRUM-1063g · casillas 30/31 (bienes de inversión): medición y propuesta, sin ALTER (J5, jv-j5am, 26-oct-2026)
+
+**Medido contra:** `origin/main` = `289ca894656c7c3686a0469d34785512b960e0b3` · 2026-10-26T15:18:32Z
+
+A9: sin fallo que generalice — es una medición sin código; el riesgo que no estaba escrito («otros» manda a la 28/29 un bien de inversión) queda en este tramo y en la pregunta 4 de Jira c.20863
+
+**Encargo:** orquestador `cobroflash-backend-8b`, «SOLO MEDIR Y PROPONER». Ni ALTER, ni `db push`, ni código, ni texto de pantalla. Lo entregado está en Jira, c.20863 (preguntas ✅/❌ incluidas). Aquí va lo que hay que poder volver a medir.
+
+### PASO 0
+
+- `git log origin/main --grep=SCRUM-1063`: 1063b a 1063f, y nada de 1063g. `git ls-remote origin 'refs/heads/scrum-1063*'` sale vacío. `gh pr list --search 1063` sólo enseña #1656 (mergeado).
+- El ticket lleva `area-j1` y `equipo-javier`. Este tramo es sólo docs: `carriles.mjs de docs/master/SCRUM-1063.md` → sin cerradura, «quien trabaja el ticket».
+
+### La norma, con su fuente
+
+- **Art. 108 LIVA** (`BOE-A-1992-28740`, bloque `a108` de `datosabiertos/api/legislacion-consolidada`): una sola versión, vigente desde el 1-1-1993. Control: el bloque `a91` de la misma API trae 44 versiones (la última, del 8-10-2026), así que la API sí devuelve historial.
+  - Uno: «se considerarán de inversión los bienes corporales, muebles, semovientes o inmuebles que, por su naturaleza y función, estén normalmente destinados a ser utilizados por un período de tiempo superior a un año como instrumentos de trabajo o medios de explotación.»
+  - Dos.5.º: no lo son los bienes «cuyo valor de adquisición sea inferior a quinientas mil pesetas». 3.005,06 € es una conversión MÍA (500.000 / 166,386): el texto consolidado sigue en pesetas.
+- **Instrucciones del 303 de 2026** (la misma URL de sede que cita `casillas.ts:127`), bajadas a las 15:15Z, HTTP 200, 113.580 B. Control: en esa página está el literal de la 122 que citó 1063f. Para la 28 a la 39 dicen: «distinguiendo si se trata de operaciones corrientes u operaciones con bienes de inversión (Artículo 108 LIVA)». El impreso no añade ningún criterio propio.
+- Lo que cuelga del mismo dato y queda FUERA de este tramo: la 43 (regularización, arts. 107-110 LIVA), la 99 (entregas de bienes de inversión, que se restan en la 88) y el **art. 65 RIVA** (`BOE-A-1992-28925`, bloque `a65`, vigente desde el 1-7-2017). El art. 65 pide un libro de bienes de inversión, con cada bien «debidamente individualizado», a quien «tenga que practicar la regularización».
+
+### El código (leído, no ejecutado sobre datos)
+
+- `model Expense` no tiene ningún campo que separe lo corriente de la inversión. `EXPENSE_CATEGORIES` (`src/modules/expenses/domain/expenses.service.ts:6`) = materiales, desplazamiento, herramientas, subcontrata, otros. `alquiler` no se puede escribir hasta SCRUM-1588 (S1 y S2, por hacer).
+- `construirIvaDeducible` (`src/modules/fiscal/modelo303/modelo303.ts`): «herramientas» se aparta entera (`posible_bien_de_inversion`), y el resto de `CATEGORIAS_CORRIENTES` va a la 28/29. 30/31 a 0, con `vaciaPorque`. En el 390 pasa lo mismo con la 50/51 (`modelo390/casillas.ts:69`).
+- La 45 es 29 + 31 + … (`casillas.ts:61`). **Si un gasto va a la 29 o a la 31, el resultado (46) no cambia.** Lo que sí cambia hoy el resultado es apartar las herramientas: ese IVA no se deduce en el borrador.
+- **Riesgo no escrito hasta hoy:** un bien de inversión apuntado en «otros» (una furgoneta, un ordenador) va a la 28/29 sin aviso.
+
+### Las tres alternativas
+
+- **A · Umbral, sin ALTER (J1).** «herramientas» con base + cuota < 3.005,06 € → 28/29; las que llegan o pasan siguen apartadas. Sólo es seguro en ese sentido: si el gasto ENTERO no llega, ningún bien que lleve dentro llega (108.Dos.5.º), y como base + cuota ≥ base, la conclusión vale con IVA o sin él.
+- **B · Categoría nueva, sin ALTER (S1 + S2 + J1, con rótulo firmado).** Mezcla QUÉ es el gasto con CUÁNTO dura, y «herramientas» sigue ambigua. No se recomienda.
+- **C · ALTER mínimo (J5 + J1 + S1 + S2).** `bienDeInversion Boolean? @map("bien_de_inversion")`, sin `@default` (convención de `vatDeducible`: null = nadie lo clasificó).
+  - DDL, salido de `previewMigracion` (`scripts/preview-migracion.mjs`, modo `--desde`, sin conectar a ninguna base) sobre dos copias del esquema en el temporal de la sesión. **No se ha aplicado, y `prisma/schema.prisma` no se ha tocado:** `ALTER TABLE "expenses" ADD COLUMN "bien_de_inversion" BOOLEAN;`
+  - Controles: igual → igual da `-- This is an empty migration.` (`sin_cambios`). El control positivo de la casa ve 33 tablas = 33 `model` (`grep -c "^model "`).
+
+Recomendación de J5: **A ahora; C después, preguntando sólo a partir del umbral.** Las cuatro preguntas para el fundador y las cuatro del asesor (valor con o sin IVA, umbral por unidad, art. 65 RIVA con el 100 % deducible, vehículos y art. 95.Tres sin leer) están en c.20863.
+
+### Sin medir
+
+- Cuántos gastos reales caen a cada lado del umbral: no se ha tocado ninguna base.
+- El detalle de las instrucciones de la 43 y la 99, visto sólo de pasada.
+- **Suite: NO CORRIDA** (sólo docs); los guards de registro, en la entrega. En yaqu.app no hay nada que ver.
