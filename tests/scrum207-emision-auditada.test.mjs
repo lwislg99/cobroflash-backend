@@ -18,6 +18,7 @@
 //     envenena el escritor de auditoría dentro de una `$transaction` real. Demuestra lo que
 //     el doble NO puede demostrar: que la BD **deshace** la emisión.
 import './_staging-db.mjs'; // fail-closed anti-prod, SIEMPRE el primer import
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599k: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { allocateInvoiceNumber } from '../dist/modules/invoicing/domain/invoiceNumber.service.js';
@@ -103,9 +104,9 @@ test('SCRUM-207 · el justificante YA NO se emite ni se audita: invoicing_es_dis
 });
 
 // ── GATEADO · la garantía de verdad, contra PostgreSQL ────────────────────────────────
-const ENABLED = process.env.QA_DB_TEST === '1';
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 
-test('SCRUM-207 · GATEADO: si el registro falla, la EMISIÓN NO OCURRE (rollback real)', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-207 · GATEADO: si el registro falla, la EMISIÓN NO OCURRE (rollback real)', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { withMerchant } = await import('./_merchant-fixture.mjs');
 
@@ -168,7 +169,7 @@ test('SCRUM-207 · GATEADO: si el registro falla, la EMISIÓN NO OCURRE (rollbac
   });
 });
 
-test('SCRUM-207 · GATEADO: camino feliz — la factura y su registro se confirman JUNTOS', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-207 · GATEADO: camino feliz — la factura y su registro se confirman JUNTOS', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { withMerchant } = await import('./_merchant-fixture.mjs');
 
@@ -200,3 +201,11 @@ test('SCRUM-207 · GATEADO: camino feliz — la factura y su registro se confirm
     assert.equal(fila.meta.camino, 'C3');
   });
 });
+
+// SCRUM-1599k (diseño B de SCRUM-1599) · la mutación que tumba el caso de base, CATALOGADA en SCRUM-1599k.
+// Va aparte de `MUTACIONES_QUE_ME_TUMBAN` a propósito: el job del meta-guard corre SIN base, el caso sale
+// SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco PGlite,
+// `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e). Cada campo, LITERAL.
+export const MUTACIONES_CON_BASE = [
+  { fichero: "src/modules/invoicing/domain/invoiceNumber.service.ts", de: "            numero,\n            esJustificante,", a: "            numero: 'NO-' + numero,\n            esJustificante,", cae: "SCRUM-207 · GATEADO: camino feliz" },
+];
