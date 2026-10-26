@@ -338,6 +338,11 @@ const GATEADOS_DECLARADOS = Object.freeze({
   'scrum592-concurrencia-serie.test.mjs': 4,
   'scrum767-cura-concurrencia.test.mjs': 4,
   'scrum793-la-carrera-del-token.test.mjs': 6,
+  // SCRUM-1599s (lote 6b del diseño B): los dos que 1599p dejó fuera, ya alineados con la serie F en 1599r
+  // (SCRUM-1599 c.20947). 234.gated con la forma de 1599m; 781 con `URL_BANCO`, como 592. Los cuatro casos
+  // sin base de 781 corren siempre.
+  'scrum234-carrera-serie.gated.test.mjs': 1,
+  'scrum781-concurrencia-de-la-factura.test.mjs': 4,
 });
 const TOTAL_DECLARADO = Object.values(GATEADOS_DECLARADOS).reduce((a, b) => a + b, 0);
 

@@ -38,7 +38,7 @@ import { leerSiSigueAhi, exigirCorpusLeido } from './_barrido-estable.mjs'; // S
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 
 /**
- * LA POBLACIÓN DECLARADA — 4 = los 46 de SCRUM-1599 c.20713 menos los 4 que migra 1599f
+ * LA POBLACIÓN DECLARADA — 2 = los 46 de SCRUM-1599 c.20713 menos los 4 que migra 1599f
  * (scrum104, scrum106, scrum109, scrum135), los 7 que migra 1599h (scrum131, scrum22, scrum51,
  * scrum57, scrum58, scrum593d, webhooks-idempotencia), los 7 que migra 1599i (pdfs, scrum120,
  * scrum136, scrum148, scrum24, scrum66, scrum90), los 6 que migra 1599k (scrum17, scrum207,
@@ -46,7 +46,8 @@ const AQUI = path.dirname(fileURLToPath(import.meta.url));
  * (scrum170, scrum171a, scrum221, scrum25-export-zip, scrum25-exports, scrum73, scrum82,
  * tenancy-permisos) y los 9 que migra 1599p (scrum115, scrum127, scrum173, scrum178, scrum592,
  * scrum767, scrum793, scrum814-carrera-del-tramo.gated, scrum92; de scrum173 se queda en staging el
- * caso de las cadenas YA PERSISTIDAS, que salta en el banco con su motivo: SCRUM-1599 c.20940).
+ * caso de las cadenas YA PERSISTIDAS, que salta en el banco con su motivo: SCRUM-1599 c.20940) y los 2
+ * que migra 1599s (scrum234-carrera-serie.gated y scrum781, ya alineados con la serie F en 1599r: SCRUM-1599 c.20947).
  * Uno por línea (A23 #15), en orden alfabético.
  * Esta lista sólo BAJA, y sólo en el PR que migra el fichero. Para que SUBA hace falta una decisión
  * escrita en SCRUM-1599 y su motivo al lado de la línea.
@@ -56,13 +57,11 @@ const SOLO_STAGING = Object.freeze([
   // la base (lo dice su cabecera) y en el banco de la tanda, que comparten los ficheros que corren a
   // la vez, escribiría sobre filas de otros tests. Leído en el código, no intentado.
   'scrum116-recordatorio-candado.test.mjs',
-  'scrum234-carrera-serie.gated.test.mjs',
   // scrum574 NO se migra en 1599h: su caso «CONTRA POSTGRES: tras la migración, cada cliente sigue
   // siendo el mismo» compara los clientes de una base REAL ya migrada con el PASO 0 de `railway` y
   // `yaqu_dev_javier`. En el banco vacío cae con «⛔ NO SUPE MIRAR: cero clientes», por diseño
   // (medido en el banco local, no sólo leído). Su sitio es staging.
   'scrum574-mismo-cliente-tras-migracion.test.mjs',
-  'scrum781-concurrencia-de-la-factura.test.mjs',
 ]);
 
 // El sembrado: la forma de un gateado sólo de staging, tal como la escribe hoy el árbol.
@@ -143,7 +142,7 @@ function fuentesDelArbol() {
 
 const sembradas = () => [{ nombre: SEMBRADO, src: FUENTE_SEMBRADA }, { nombre: MIGRADO, src: FUENTE_MIGRADA }];
 
-test('SCRUM-1599f · los que SÓLO corren contra staging son exactamente los 4 declarados', () => {
+test('SCRUM-1599f · los que SÓLO corren contra staging son exactamente los 2 declarados', () => {
   const arbol = fuentesDelArbol();
   const { veredicto, poblacion } = censar([...arbol, ...sembradas()]);
   assert.equal(veredicto, 'MIRADO', '🔴 CIEGO: el extractor no ve el gateado sembrado, así que tampoco ve los del árbol');
@@ -159,7 +158,7 @@ test('SCRUM-1599f · los que SÓLO corren contra staging son exactamente los 4 d
       + '  Si entra, dale el segundo destino (tests/_banco-libro.mjs); que se quede sólo en staging lo\n'
       + '  decide el fundador en SCRUM-1599, y se escribe aquí con su motivo.',
   );
-  assert.equal(poblacion.length, 4, `🔴 población ${poblacion.length}, declarada 4`);
+  assert.equal(poblacion.length, 2, `🔴 población ${poblacion.length}, declarada 2`);
 });
 
 test('SCRUM-1599f · sin el sembrado el censo dice CIEGO, no verde', () => {
