@@ -293,6 +293,18 @@ const GATEADOS_DECLARADOS = Object.freeze({
   'scrum24-operarios-metrics.test.mjs': 1,
   'pdfs.test.mjs': 1,
   'scrum66-tipo-operacion.test.mjs': 1,
+  // SCRUM-1599k (cuarto lote del diseño B): seis más, con la misma forma. Necesitan banco porque lo
+  // que vigilan lo contesta el código real con filas guardadas: el IDOR de /recibo/:token por id
+  // numérico (74), el 409 de /auth/register sin merchant fantasma (94), la recapitulativa partida
+  // por mes (17), el catálogo de information_schema que lee el arranque (222), el .eml de la
+  // factura con su PDF adjunto (76) y la factura que se confirma o cae junto con su auditoría (207).
+  // Los casos sin base de 17, 222 y 207 corren siempre.
+  'scrum74-recibo-token.test.mjs': 1,
+  'scrum94-register-teammember.test.mjs': 1,
+  'scrum17-recapitulativa.test.mjs': 1,
+  'scrum222-deriva-arranque.test.mjs': 2,
+  'scrum76-email-adjunto.test.mjs': 1,
+  'scrum207-emision-auditada.test.mjs': 2,
 });
 const TOTAL_DECLARADO = Object.values(GATEADOS_DECLARADOS).reduce((a, b) => a + b, 0);
 
