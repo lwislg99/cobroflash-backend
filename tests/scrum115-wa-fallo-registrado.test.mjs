@@ -28,15 +28,38 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { withMerchant, registrarBarridoFinal } from './_merchant-fixture.mjs';
 import { interceptarWaLog } from './_wa-log-sync.mjs';
+import { cortarSalida } from './_sin-salida.mjs'; // SCRUM-1599p: el hecho, no la bandera (forma de SCRUM-876g)
 
-const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
+const CON_BANCO = URL_BANCO !== '';
+const ENABLED = process.env.QA_DB_TEST === '1' || CON_BANCO;
+
+// SCRUM-1599p · con el banco como destino este fichero corre en la tanda de CI, y CI no trae
+// credenciales de WhatsApp: sin la bandera, los dos envíos cortan en `not_configured` ANTES de
+// llegar a la regla que se vigila (medido en el job 121893679905 de #2900). La bandera es el modo
+// de pruebas del propio sender (pasa TODAS las reglas y no llama a Meta), no una credencial falsa;
+// el sender la lee en cada envío (`scrum876f-el-seco-se-decide-al-enviar`). Y lo que decide no es
+// la bandera: se corta toda conexión que no sea de esta máquina, con su control positivo delante.
+if (CON_BANCO) process.env.WHATSAPP_DRY_RUN = '1';
+async function sinSalidaConBanco(t) {
+  if (!CON_BANCO) return;
+  assert.equal(process.env.WHATSAPP_DRY_RUN, '1', 'con el banco, este test exige WHATSAPP_DRY_RUN=1');
+  const corte = cortarSalida();
+  await corte.controlPositivo();
+  t.after(() => {
+    const ajenos = corte.ajenos();
+    corte.restaurar();
+    assert.equal(corte.controlado, true, '🔴 CIEGO: el corte de salida no pasó su control');
+    assert.deepEqual(ajenos, [], '🔴 el test INTENTÓ salir de esta máquina con WHATSAPP_DRY_RUN=1 y el banco como destino');
+  });
+}
 
 /** El objeto `exports` REAL del módulo de log — el mismo que lee `whatsapp.js` en cada llamada. */
 async function moduloDeLog() {
   return (await import('../dist/modules/messaging/domain/whatsappLog.service.js')).default;
 }
 
-test('SCRUM-115: sendWhatsAppTemplate bloqueado por wa_opt_out registra status:failed en WA-0b (waMessageId null)', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
+test('SCRUM-115: sendWhatsAppTemplate bloqueado por wa_opt_out registra status:failed en WA-0b (waMessageId null)', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
+  await sinSalidaConBanco(t);
   const { prisma } = await import('../dist/core/db/prisma.js');
   registrarBarridoFinal(prisma);
   const { sendWhatsAppTemplate } = await import('../dist/integrations/whatsapp.js');
@@ -86,7 +109,8 @@ test('SCRUM-115: sendWhatsAppTemplate bloqueado por wa_opt_out registra status:f
   });
 });
 
-test('SCRUM-115: sendWhatsAppText bloqueado (demo fuera de DEMO_SAFE_NUMBERS) registra status:failed en WA-0b', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
+test('SCRUM-115: sendWhatsAppText bloqueado (demo fuera de DEMO_SAFE_NUMBERS) registra status:failed en WA-0b', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
+  await sinSalidaConBanco(t);
   const { prisma } = await import('../dist/core/db/prisma.js');
   registrarBarridoFinal(prisma);
   const { sendWhatsAppText } = await import('../dist/integrations/whatsapp.js');

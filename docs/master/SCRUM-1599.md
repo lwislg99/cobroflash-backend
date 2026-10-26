@@ -1141,6 +1141,27 @@ Encargo: SCRUM-1599 c.20940 (decisión de reparto sobre la medición c.20928 de 
 **Sin medir:** CI (otro runner y la tanda entera) · staging con turno · los tres de `URL_BANCO` con `QA_DB_TEST` · por qué vivió el cerrojo de 814 · suite entera local: NO CORRIDA.
 
 **De paso, confieso:** lancé un `ls` con comodines sobre los 648 trabajos de la máquina, sin medirlos, buscando el Postgres de 1599o. El arnés lo mandó a segundo plano y lo paré: es la cicatriz de 1599i, otra vez. Y el primer arranque del Postgres se quedó colgado porque `pg_ctl` heredaba las tuberías; al parar la tarea murió el servidor, y lo rehíce con `stdio: 'ignore'`.
+
+### ④ El rojo de CI en scrum115, y su arreglo (sesión J6 `jv-j6cx`, 26-oct-2026 ~23:10Z de GitHub, sobre la punta `f695bdab91d47a75441590a0fc1cca6b41826f91` de la rama)
+
+A9: aviso → A10 «Un laboratorio que le presta su entorno al sujeto mide la suma de los dos.» — no se pudo comprobar: el banco local de §② (`banco-1599p.mjs.txt`) le ponía `WHATSAPP_DRY_RUN=1` al hijo y CI no se la pone; ningún guard compara el entorno de un banco local con el del job de CI
+
+- **El rojo** (lo leyó el vigía `jv-j6cs` en el job 121893679905: 12747 pass + 2 fail + 15 skip): caen los dos casos de scrum115 con `'not_configured'` donde se esperaba `'wa_opt_out'` y `'demo_safe_numbers'`. Los otros ocho del lote pasan.
+- **Causa, por ejecución.** `ci.yml` no declara ninguna variable `WHATSAPP_*`, y sin credenciales ni `WHATSAPP_DRY_RUN` el sender corta en `not_configured` ANTES de la regla vigilada (`whatsapp.ts`, `sendWhatsAppTemplate` y `sendWhatsAppText`). Mi banco «como CI» es `banco-1599p` con esa bandera quitada del entorno del hijo, y da el mismo rojo: 0/2, `actual: 'not_configured'`. El verde de §② era del banco, no del test.
+- **Arreglo, opción (a), sin `src/` ni credencial falsa:** con el banco, el propio fichero se pone `WHATSAPP_DRY_RUN=1`. Es el modo de pruebas del sender, que pasa todas las reglas y no llama a Meta. Y corta toda salida que no sea loopback con `cortarSalida()` de `_sin-salida.mjs`, con su control positivo delante y «nada apuntado» al acabar. Es la forma de a55 (SCRUM-876f) y scrum47 (876g). Con `QA_DB_TEST` no cambia nada. Ninguna aserción existente cambia (regla 41): se añaden la de la bandera y las dos del corte.
+
+| pasada (banco como CI) | casos | pasan | caen |
+|---|---|---|---|
+| ANTES (34df32198) | 2 | 0 | 2 (`not_configured`) |
+| DESPUÉS | 2 | 2 | 0 |
+| CONTROL: sin la línea de la bandera | 2 | 0 | 2 (la aserción de la bandera) |
+| mutación de `MUTACIONES_CON_BASE` (`mutar-1599i.mjs`) | — | — | MUERE: cae su caso, `dist/` byte a byte |
+
+Salida entera: `evidencias/SCRUM-1599/scrum115-ci-1599p.salida.txt`.
+
+**De paso, confieso:** arranqué el Postgres en el 55491 cuando mi propio `netstat` acababa de decir que ese puerto estaba ocupado. Era el de otra sesión, y la comprobación iba encadenada con el arranque. `pg_ctl` falló sin tocar el ajeno, y lo levanté en el 55617, que medí libre antes. Además, la evidencia la escribí antes de pasarla por `carriles.mjs de`: es la cicatriz de 1218d.
+
+**Sin medir:** CI con este arreglo · staging con turno.
 ## J1 · SCRUM-1599r · scrum781 y scrum234 alineados con la serie F firmada (SCRUM-780 c.14709)
 
 **Medido contra:** `origin/main` = `6d5bf76c5bf02142e762ca2ddd3d2ae2b92f9a3e` · 2026-10-26T22:46:10Z (hora de GitHub; sesión J1 `jv-j1cr` en su árbol `cobroflash-jv-j1cr`, por encargo del orquestador `cobroflash-backend-8b`. La decisión es la del fundador en SCRUM-1599 c.20947, sobre la medición de §1599q, c.20946)
