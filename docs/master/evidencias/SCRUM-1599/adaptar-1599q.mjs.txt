@@ -1,0 +1,20 @@
+// SCRUM-1599q · SOLO PARA MEDIR. Copia scrum234.gated y scrum781 de la RAÍZ dada a tests/zz1599q-*.mjs (fuera del
+// patrón *.test.mjs), adaptados al banco desechable con la forma de adaptar-1599o. Los originales NO se tocan.
+// Uso: node adaptar.mjs <raiz>   → imprime las dos rutas y sale 1 si algún reemplazo no casa.
+import fs from 'node:fs';
+const raiz = process.argv[2];
+let mal = 0;
+const cambia = (t, de, a, nombre) => { if (!de.test(t)) { console.log(`NO CASA ${nombre}`); mal++; return t; } return t.replace(de, a); };
+
+let t = fs.readFileSync(`${raiz}/tests/scrum234-carrera-serie.gated.test.mjs`, 'utf8');
+t = cambia(t, /^(import '\.\/_staging-db\.mjs';[^\n]*\n)/m, `$1import { URL_BANCO } from './_banco-libro.mjs';\n`, '234 import');
+t = cambia(t, /^const ENABLED = process\.env\.QA_DB_TEST === '1';/m, `const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';`, '234 gate');
+fs.writeFileSync(`${raiz}/tests/zz1599q-234.mjs`, t);
+
+t = fs.readFileSync(`${raiz}/tests/scrum781-concurrencia-de-la-factura.test.mjs`, 'utf8');
+t = cambia(t, /^const ENABLED = process\.env\.QA_DB_TEST === '1';/m, `const ENABLED = process.env.QA_DB_TEST === '1' || !!process.env.LIBRO_PG_URL;`, '781 gate');
+t = cambia(t, /^(\s*)const linea = [^\n]*DATABASE_URL_DEV=[^\n]*$/m, `$1const linea = 'DATABASE_URL_DEV=' + process.env.LIBRO_PG_URL;`, '781 linea');
+t = cambia(t, /info\.base === 'yaqu_dev_javier'/, `info.base === 'yaqu_libro_test'`, '781 base');
+fs.writeFileSync(`${raiz}/tests/zz1599q-781.mjs`, t);
+console.log(`adaptados=2 sin_casar=${mal}`);
+process.exit(mal ? 1 : 0);
