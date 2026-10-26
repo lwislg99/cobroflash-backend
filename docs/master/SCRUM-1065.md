@@ -138,3 +138,64 @@ A9: sin fallo que generalice — mi patrón de asignaciones casó también con l
 * Mutación con `aplicarUna` de `scripts/meta-guard-mutaciones.mjs` sobre `MUTACIONES_QUE_ME_TUMBAN`: base 4/4 · **2 vivas**, cada una tumba el caso que declara · 0 mudas · 0 ciegas. Árbol limpio después (`git status`).
 * Guards de suite y de registro: en la entrega, con su población.
 * `npm test` completo: NO CORRIDO en local (10 sesiones a la vez); lo juzga el obligatorio. yaqu.app: sin pantalla que mirar; el texto sale en el JSON de `GET /admin/modelo-303`.
+
+---
+
+# SCRUM-1065d · El caso «autónomo en inicio de actividad», medido en la norma y fijado con un test
+
+**Medido contra:** `origin/main` = `289ca894656c7c3686a0469d34785512b960e0b3` · 2026-10-26T15:18:23Z
+**Rama:** `scrum-1065d-inicio-actividad` · **Puesto:** J1 (sesión `jv-j1cd`; el hook de inicio dijo «SIN IDENTIDAD», SCRUM-1498) · **Encargo:** orquestador `cobroflash-backend-8b`
+
+A9: comprobación → `tests/scrum1065d-inicio-de-actividad.test.mjs`
+
+## PASO 0
+
+* `git log origin/main -i --grep=SCRUM-1065`: 1065b (#2815) y 1065c (#2858), nada de 1065d · `ls-remote 'refs/heads/scrum-1065*'`: vacío · `gh pr list --state all --search 1065`: ningún PR de 1065d.
+* El tramo 1065b dejaba el caso así: «Inicio de actividad: sin tratamiento propio; el acumulado empieza el 1 de enero igual. No probado aparte».
+
+## Lo que dice la norma (RIRPF consolidado, API de legislación consolidada del BOE)
+
+* Art. 110, versión vigente desde el 23-dic-2018 (BOE-A-2007-6820, bloque `a110`), y art. 109 (bloque `a109`, versión única de 2007).
+* **En estimación directa no hay regla de inicio.** El 110.1.a acumula «desde el primer día del año hasta el último día del trimestre» y resta los pagos que «habría correspondido ingresar en los trimestres anteriores del mismo año».
+* «Inicio de actividades» aparece sólo en tres sitios, y ninguno es de esta población:
+  * el 110.1.b y el 110.3.a.2.º, que son de estimación OBJETIVA;
+  * el 109.5, que es la exención del 70 % retenido (109.2 a 109.4) y vale sólo para actividades profesionales, agrícolas y forestales. Un oficio es empresarial (Q-C8).
+* Control positivo de la lectura: la cita `CITA_ACUMULADO` de `modelo130.ts` aparece literal en el texto bajado.
+
+## Lo que hace hoy el borrador (corrido, no leído)
+
+Una sonda fuera del árbol sobre `dist/` (`tsc --noCheck`). El merchant del caso empieza el 10-jul-2026: facturas de 1.000 (10-jul), 500 (20-ago) y 2.000 (5-nov), y un gasto de 200 (15-jul).
+
+| trimestre | 01 | hipótesis (gastos · rendimiento · 20 %) | 05 | 07 |
+|---|---|---|---|---|
+| T2 | 0 | 0 · 0 · 0 | null `pagos_anteriores_sin_dato` | null |
+| T3 | 1.500 | 200 · 1.300 · 260 | null `pagos_anteriores_sin_dato` | null |
+| T4 | 3.500 | 200 · 3.300 · 660 | null `pagos_anteriores_sin_dato` | null |
+
+Las cifras casan con las hechas a mano. Acumular desde el 1 de enero da lo mismo que acumular desde el alta, porque antes no hay nada. **Así que no hay nada que construir que se deduzca de la norma.**
+
+## Lo que NO se deduce de la norma, y queda como pregunta
+
+* La 05 de un merchant que empezó en julio sería, por norma, 0 en el T3: antes no había actividad, así que no había pago que ingresar. Pero el borrador no lo sabe.
+  * Saberlo exige la fecha de inicio de actividad que el merchant declaró a Hacienda, y `schema.prisma` no tiene ningún campo para ella. Barrido de `inicioActividad|fechaAlta|altaActividad|activityStart|epigrafe|iae`: 0. Control: `merchantId`, 80.
+  * Unos libros vacíos antes de julio dicen «no se facturó por YaQu», no «no había actividad».
+  * Aunque tuviéramos el dato, la 07 seguiría en null por la 02 (c.20721).
+* Riesgo medido: un merchant que llega a YaQu a mitad de año pero facturaba antes por otra vía tiene una 01 que sólo ve lo de YaQu, y `motivosParaNoFiarse` sale vacío (T2, T3 y T4 de la sonda: `[]`).
+* Las preguntas ✅/❌ para el fundador están en el comentario de Jira de este tramo. Las dos piden decisión: la 1 añade un motivo nuevo al borrador y la 2 toca esquema y texto. No se construye ninguna sin respuesta.
+
+## Qué se ha hecho
+
+* Sólo un test, `tests/scrum1065d-inicio-de-actividad.test.mjs`. `src/` no se toca. Fija tres cosas:
+  * con el alta en julio, el acumulado empieza el 1 de enero y las cifras son las de la tabla;
+  * 🔴 la 05 no sale a cero por unos libros vacíos (T2-T4), y en el T2 la 01 es un cero de verdad (0 facturas miradas);
+  * el control positivo: en el T1 la 05 sí es 0.
+
+## Lo que se corrió, con su población
+
+* El test nuevo: 3 tests · 3 pass · 0 fail · 0 skipped.
+* Mutación con `correr` y `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`, sobre `MUTACIONES_QUE_ME_TUMBAN`:
+  * base 3/3;
+  * **3 vivas**, cada una tumba el caso que declara: la 05 siempre a 0, el acumulado desde julio y el 21 %;
+  * 0 mudas · 0 ciegas.
+* Control del conductor: una mutación sembrada en un comentario sale MUDA. `git status` limpio después.
+* Guards dirigidos: en la entrega, con su población. `npm test` completo: NO CORRIDO en local; lo juzga el obligatorio. yaqu.app: sin pantalla (el 130 no tiene ruta).
