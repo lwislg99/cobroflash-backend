@@ -524,6 +524,53 @@ de 34 ficheros se corrió con este tramo escrito salvo esta sección; los de reg
 - **De paso:** al mezclar `main`, el tramo 1402g terminaba pegado al encabezado de 1402e, sin línea en blanco
   (lo dejó así la mezcla de #2788). Se la he puesto; no cambia ninguna línea más.
 
+# SCRUM-1402j · Ⓑ: el procedimiento para activar Equipo a mano (P1) y la propuesta de P2 · carril J3 (sólo docs)
+
+**Medido contra:** `origin/main` = `82e1bb530d3158777b719ca824c1f573b66715a1` · 2026-10-24T15:48:26Z
+
+A9: aviso → cicatriz J3 «Cité en un runbook dos rangos de línea contados a ojo sobre una lectura sin numerar: salieron desplazados en uno, y los cacé al releer cada línea citada antes del commit.» — no se pudo comprobar: es un juicio sobre lo que contiene la línea citada, y no conozco un test que lo mire
+
+## La decisión
+
+SCRUM-1402, c.20832 (24-oct-2026, transcrita por el orquestador): P1 «Sí, a mano y por escrito» · P2 «Sí, antes del
+primero» · P3 «No hace falta». Responde a c.20825 (1402i, jv-j5ak).
+
+## Lo que hay
+
+- **P1, escrito:** `docs/RUNBOOKS.md` **R27**. Cinco condiciones previas (la 0 es que P2 esté en producción), tres
+  pasos, cuatro comprobaciones y cómo se deshace; cada paso con fichero:línea, y lo que sólo dice la cuenta de
+  Stripe como «comprobar en el panel». Marcado **NO PROBADO**.
+- **P2, medido y propuesto, sin código:** SCRUM-1402 **c.20838**: la tabla de lo que ve hoy quien tiene Equipo
+  (fichero:línea y carril), los literales T1–T3 para firmar, el diseño del rechazo de la segunda suscripción
+  (`tieneSuscripcionViva`, un solo predicado para `/plans` y `/checkout`) y su test previsto
+  (`scrum1402k-segunda-suscripcion`), y la pregunta Q1.
+- **Corrección a c.20825:** el correo «Bienvenido al plan Pro» no lo recibe quien tenga Equipo por P1: sólo sale
+  en `checkout.session.completed` (`stripe.routes.ts:153`, único llamante) y una vez por merchant
+  (`lifecycle.service.ts:160`).
+- **Riesgo nuevo, sin medir:** si el portal de cliente de Stripe deja cambiar de plan, quien tiene Equipo puede
+  bajarse a Pro y quedarse con `plan = equipo`. Va en R27 y en c.20838 como «comprobar en el panel».
+
+## Cómo se ha medido
+
+Lectura de `origin/main` con `git show`/`sed`; cada número citado en R27 se volvió a leer con `sed -n <n>p`
+sobre `82e1bb53`. Contra `ae5b721efb184ae5f44816ee4a5cc034ed87f23f`, `git diff --name-only` no toca ninguno de
+los ficheros citados. Nada se ha ejecutado, ni contra Stripe ni en yaqu.app.
+
+## Lo corrido
+
+- Los cinco de registro (`scrum267`, `273`, `1294`, `921c`, `1572`) y los 16 que nombran `docs/RUNBOOKS.md` en
+  `tests/`: **21 ficheros, 178 casos: 177 pasan, 0 caen, 1 salta** (`scrum1515`, sin `LIBRO_PG_URL`). Código de
+  salida 0, con el TAP en fichero fuera del árbol (43.486 B).
+- **Control positivo:** con la frase del `A9:` cambiada a mano («TRES rangos»), `scrum1294` cae (1 de 4) y nombra
+  este tramo; deshecho con `git checkout` y árbol limpio después.
+- **Sin correr:** la tanda completa (10 sesiones a la vez) y los gateados por base.
+
+## Límites
+
+- `docs/RUNBOOKS.md` está «sin fila en §3: nadie lo reclama» (`node scripts/carriles.mjs de docs/RUNBOOKS.md`):
+  no es de J3 ni de nadie; se escribe declarado.
+- Aviso de merge: #2859 (1402i, J5) añade su tramo al final de este mismo fichero. Entre el que entre primero, el
+  otro puede quedar en conflicto.
 # SCRUM-1402i · Ⓑ medido: cómo se activa hoy el plan Equipo, de punta a punta · sólo docs, carril J5
 
 **Medido contra:** `origin/main` = `c6d3aa11f15a0a582f92b8ec4a8c9838ea426dd8` · 2026-10-24T15:35:19Z
