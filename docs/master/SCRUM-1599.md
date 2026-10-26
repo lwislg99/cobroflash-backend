@@ -718,3 +718,213 @@ Los de registro, sobre el árbol final: en el comentario de Jira.
 - Que las catorce mutaciones mueran también en el Postgres de CI: nadie las corre allí (⓪).
 - De paso, me corrijo: la primera versión del guion de mutaciones leía `error: |-`, que es la cabecera del bloque YAML,
   y no el mensaje. Lo vi en la salida, lo arreglé y repetí las catorce antes de dar ninguna cifra.
+
+## J6 · SCRUM-1599k · cuarto lote del diseño B: seis gateados más al banco desechable, y el trinquete de 28 a 22
+
+**Medido contra:** `origin/main` = `289ca894656c7c3686a0469d34785512b960e0b3` · 2026-10-26T15:26:45Z (hora de GitHub; sesión J6 `jv-j6cd` en su árbol `jv-j6cd`, por encargo del orquestador `cobroflash-backend-8b`)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs`
+
+Decisión que se aplica: SCRUM-1599 c.20715 ① (el fundador, diseño B). Criterio y forma, los de §1599f, §1599h y §1599i.
+0 líneas de `src/`, `.github/` o del camino de emisión; 0 aserciones tocadas (regla 41). Salida entera:
+`docs/master/evidencias/SCRUM-1599/lote-1599k.salida.txt`.
+
+### ① El lote, por programa
+
+`banderas-1599h.mjs`, sin cambiar, sobre los 28 de `SOLO_STAGING` en `289ca8946`: 2 sencillos apartados (116 y 574),
+5 «solo-H» y 21 con alguna bandera de riesgo. Es el reparto que dejó §1599i ④. El lote son:
+
+- **los cuatro «solo-H» que quedaban** (scrum85 sigue apartado con su motivo de §1599i ①; hoy lo arregla otra sesión
+  en otra rama y aquí no se toca);
+- **el grupo «E» entero, los dos de una sola bandera** que no es H ni carrera: 76 y 207. Los «C» (767 y 793) se dejan
+  a propósito: la carrera dentro de la tanda paralela es el riesgo ya medido (`scrum814` corrió 393 s dentro frente a
+  64 s solo, SCRUM-871). Los de dos o tres banderas, también fuera.
+
+| fichero | grupo | casos que pasan a CI |
+|---|---|---|
+| scrum74-recibo-token | solo-H | 1 |
+| scrum94-register-teammember | solo-H | 1 |
+| scrum17-recapitulativa | solo-H | 1 (los otros 11 ya corrían) |
+| scrum222-deriva-arranque | solo-H | 2 (los otros 21 ya corrían) |
+| scrum76-email-adjunto | E | 1 |
+| scrum207-emision-auditada | E | 2 (los otros 3 ya corrían) |
+| **total** | | **8** |
+
+- **Ninguno se negó a migrar.** 17 y 207 ya fijan `INVOICING_ES_ENABLED` en su merchant, y 222 sólo LEE
+  `information_schema`: contra un banco nacido de `schema.prisma` el «en-sync» sale por construcción, y la mitad que
+  importa es su gemela, la deriva inyectada que TIENE que verse (y se ve).
+- 76 se salta solo si hay `RESEND_API_KEY`; en el banco local no la hay y corrió. Que CI tampoco la tenga lo dirá su log.
+- La forma es la de §1599h: `_banco-libro.mjs` detrás de `_staging-db.mjs`, y `QA_DB_TEST` **o** `LIBRO_PG_URL`.
+  El diff de cada test son 3 líneas (5 en 222 y 207, con dos saltos) más el bloque de la mutación.
+- `scrum419`: 103 → 111 tests de banco.
+- Carril: `carriles.mjs de` los ocho ficheros de test, ANTES de tocarlos → «sin fila en §3». Control positivo:
+  `scripts/equipo/latido.mjs` → S5.
+
+### ② Banco local
+
+Banco de §1599h, sin cambios; `dist/` con `tsc --noCheck`. Canario cronometrado: scrum94 en 2,7 s.
+
+| pasada | casos | pasan | caen | saltan |
+|---|---|---|---|---|
+| ANTES (los 6 de main, con `LIBRO_PG_URL`) | 43 | 35 | 0 | **8** |
+| DESPUÉS (los 6 migrados) | 43 | **43** | 0 | 0 |
+
+En los doce renglones, los casos de primer nivel suman el `# tests` declarado. Local: 34,5 s para los seis, banco
+incluido. No predice CI.
+
+**Seis mutaciones, una por fichero, en `MUTACIONES_CON_BASE`** (no en `MUTACIONES_QUE_ME_TUMBAN`, por lo de §1599i ⓪).
+Antes de la tanda, un canario de una sola: 22,8 s. Resultado: **6 MUEREN, 0 VIVEN y 0 CIEGAS**; `dist/` restaurado byte
+a byte. Cada `de` sale UNA vez en su fuente y cada `cae` casa con un solo caso (comprobado antes de correr).
+
+| | fichero mutado | qué se muta | cae (aserción) |
+|---|---|---|---|
+| 74 | `receipt.routes.ts` | `/recibo/<id numérico>` resuelve el cobro | «GET /recibo/<id numérico> debe ser 404 y fue 200» |
+| 94 | `auth.routes.ts` | la ruta cerrada contesta 201 en vez de 409 | «… debe dar 409 y fue 201» |
+| 17 | `jobs.routes.ts` | la rotura por mes se queda con el primer grupo | «rotura → 2 facturas (marzo + abril)» |
+| 222 | `schemaDrift.ts` | el catálogo mira otro esquema | «staging debería estar en sync; salió no-pude-comprobar» |
+| 76 | `email.service.ts` | la factura sale sin adjunto | «el .eml de FACTURA CONTIENE el PDF adjunto» |
+| 207 | `invoiceNumber.service.ts` | el registro apunta a otro número | el caso gateado del camino feliz (y su gemelo sin base) |
+
+- **De paso, mi fallo, y lo que lo cazó.** La primera mutación de 94 quitaba la guarda de SCRUM-94 en
+  `auth.service.ts` (el `if (teamMember && …)`), y **VIVIÓ**: 0 de 1 caen. No es el test: desde SCRUM-1515
+  `/auth/register` contesta 409 `registration_closed` sin leer el cuerpo ni llamar al servicio, así que esa guarda no
+  se alcanza desde la ruta. La cambié por la que el test SÍ vigila (el cierre de la ruta), y muere. Lo cazó el guion de
+  mutaciones, que dice VIVE y sale con 2; sin él habría catalogado una mutación muda.
+- **Lo que eso deja a la vista, sin medir:** la guarda de SCRUM-94 sigue viva en `registerMerchant`, que llama la CLI
+  `altaDeMerchant.ts`. En `tests/` sólo dos ficheros nombran `email_belongs_to_team`: éste y `scrum1515`, que lo cita en
+  un comentario. Si algún test la ejerce por la CLI, no lo he medido. Es del carril de auth, no de J6: se nombra aquí y
+  en la entrega.
+- 207 muta `invoiceNumber.service.ts`, que es camino de emisión. Lo que entra en el commit es un literal dentro del
+  test; el src no se toca (regla 38). La mutación sólo se aplicó en el `dist/` local y se restauró.
+
+### ③ El trinquete baja de 28 a 22
+
+`tests/scrum1599f-los-que-solo-ve-staging.test.mjs`. Antes de editar la lista, con los seis ya migrados, cae (rc=1):
+«SALEN: scrum17, scrum207, scrum222, scrum74, scrum76, scrum94», exactamente los seis, y «ENTRAN: —». Salen de
+`SOLO_STAGING` y el número pasa a 22.
+
+### ④ Coste y lo que queda
+
+- **En CI:** sale del obligatorio de este PR comparado con un run de main de la misma hora, y va en el comentario de
+  Jira (como en 1599f, h e i). Los lotes 1 y 2 quedaron por debajo del ruido entre runs, con n=1 por lado.
+- **Los 22 que quedan** (lectura de banderas, no medición): 2 sencillos apartados (116 y 574) · 1 «solo-H» apartado
+  (85) · 2 «C» (767, 793) · 4 «EC» · 8 «HE» · 3 «HEC» · 1 «HC» · 1 «MC». De una sola bandera ya sólo quedan los dos «C»
+  y 85, que está apartado.
+
+### ⑤ Guards
+
+Los de suite (237, 976, 824, 836, 702, 700, 719, 1415, 419), los del banco (1599f, 876e, 876f), los del catálogo
+(745, 757, 765, 1387) y 113, 740, 812, 850, 850b, 1185, 411 y 723: **24 ficheros, 234/234, 0 fallos, 0 SKIP** (las
+líneas `ok` de primer nivel suman el `# tests` declarado). Los de registro, en el comentario de Jira.
+
+### ⑥ Lo que NO se ha hecho, ni medido
+
+- Staging: no he corrido los seis con `QA_DB_TEST=1` (sin turno).
+- La tanda entera en local: NO CORRIDA (varias sesiones a la vez).
+- Una pasada por punto.
+- Que las seis mutaciones mueran también en el Postgres de CI: nadie las corre allí (§1599i ⓪).
+
+## J6 · SCRUM-1599n · el banco de 1599h salía en rojo con un test que lanza un hijo con Prisma (42P05)
+
+**Medido contra:** `origin/main` = `c1331293b01ac32a4357cf1b239dab86853f25ee` · 2026-10-26T16:22:05Z (hora de GitHub al juntar la salida; sesión J6 `jv-j6cl` en su árbol `jv-j6cl`, por encargo del orquestador `cobroflash-backend-8b`. Antes de empujar, `origin/main` era `d2e468960`, que sólo trae un registro de J5 y no toca nada de lo de aquí)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1599/banco-1599h.mjs.txt`
+
+Aviso de jv-j3bl (J3) en SCRUM-94b (`docs/master/SCRUM-94.md`, «Lo que NO he medido»): con el banco de §1599h, la
+pasada limpia de `scrum1515` salía CIEGA con `42P05 prepared statement "s0" already exists`, y tuvo que correrla con la
+URL del banco propio de SCRUM-1515 (`&connection_limit=1&pgbouncer=true`).
+Salida entera: `evidencias/SCRUM-1599/banco-1599n.salida.txt`.
+
+### ① Reproducido, con su control
+
+PGlite 0.5.8 + pglite-socket 0.2.11, `dist/` con `tsc --noCheck`, esquema de `migrate diff --from-empty` (33 `CREATE
+TABLE`, 33 `model`). El banco de `origin/main`, sin tocar:
+
+| fichero | ¿lanza un hijo con Prisma? | resultado |
+|---|---|---|
+| `scrum1515-nuestra-puerta-de-alta` | sí (`dist/…/cli/altaDeMerchant.js`) | 1 caso · **not ok**, dos pasadas iguales: el hijo cae en `altaDeMerchant.js:95:51` con `42P05 prepared statement "s0" already exists` |
+| `scrum109-expense-teammember` (control) | no | 2/2 ok |
+
+El defecto es del INSTRUMENTO, no del test. §1599h rehace la base antes de cada FICHERO, porque los prepared
+statements de un proceso chocan con los del siguiente; pero `scrum1515` mete DOS procesos en el mismo fichero (el
+test hace `prisma.$disconnect()` y lanza el guion con `DATABASE_URL = URL_BANCO`), y PGlite es una sola sesión: el
+`s0` del padre sigue allí cuando el hijo prepara el suyo. Y el banco lo contaba como un `not ok` del test, no como
+CIEGO: un fallo del instrumento leído como un rojo del producto.
+
+### ② El arreglo, en el banco y no en el test
+
+`banco-1599h.mjs.txt` gana una constante, `SIN_PREPARADAS = '&pgbouncer=true'`, que va en la `LIBRO_PG_URL` de cada
+fichero. Con `pgbouncer=true` Prisma no usa sentencias preparadas con nombre. El test no cambia: `_banco-libro.mjs`
+la copia en `URL_BANCO` y el test se la pasa al hijo tal cual, así que **cualquier** hijo con Prisma la hereda.
+`connection_limit=1` no hace falta (el banco admite 64 conexiones desde §1599f) y no se pone. Además, si la salida de
+un fichero lleva `42P05`, el banco dice `CIEGO (instrumento: 42P05, sentencias preparadas)` y el JSON marca
+`ciego: true`. 0 líneas de `tests/`, `src/` o `schema.prisma`.
+
+| pasada | scrum1515 | control scrum109 |
+|---|---|---|
+| ANTES (banco de main) | not ok (42P05) | 2/2 |
+| DESPUÉS | **1/1 ok**; el test declara «2 merchants por el guion · 117 campos comparados por valor» | 2/2 |
+| MUTACIÓN: `SIN_PREPARADAS = ''` (una línea) | **CIEGO (instrumento: 42P05)** | 2/2 |
+| REGRESIÓN: lotes §1599i y §1599k, ya en main, con el banco arreglado | — | 13 ficheros, 57/57, 0 saltos, todos SUMA |
+
+### ③ Lo que NO se ha hecho, ni medido
+
+- Que `pgbouncer=true` no cambie nada en los lotes §1599f, §1599h y §1599m (este último aún no está en main): sólo
+  he repasado §1599i y §1599k.
+- En CI el banco es un Postgres de verdad, con una sesión por conexión: allí este choque no se da, y este cambio no
+  le llega (el banco es local).
+- Staging con turno; una pasada por punto; la tanda entera en local: NO CORRIDA.
+
+**De paso, confieso:** el DESPUÉS y la MUTACIÓN escriben el TAP en la misma carpeta con el mismo nombre, y fui a
+leer el del DESPUÉS cuando ya era el de la mutación (0 subtests). Lo cacé porque no cuadraba con el «1/1 ok», y
+repetí el DESPUÉS solo, y el ANTES en una carpeta aparte, antes de citar nada.
+## J2 · SCRUM-1599j · scrum85 al banco desechable: la aserción del id mira el segmento entero
+
+**Medido contra:** `origin/main` = `f892c146d4e86dec147e5891be262b44642150c9` · 2026-10-26T15:52:55Z (hora de GitHub al juntar la salida; sesión J2 `jv-j2bd` en su árbol `jv-j2bd`, por encargo del orquestador `cobroflash-backend-8b`. El código se midió sobre `289ca8946` y después se mezcló `origin/main`, que trae 1599k y no toca las rutas de pago)
+
+A9: aviso → cicatriz J2 «otra vez un heredoc de bash se comió una barra invertida: la mutación de scrum85 se escribió con `\d` en vez de `\\d`, la regex no casaba nunca y el mutador la dio VIVA» — no se pudo comprobar: el heredoc se teclea en la consola, que ningún guard ve.
+
+Decisión que se aplica: SCRUM-1599 c.20715 ① (diseño B) y c.20650 ② (Connect activo en el test). El defecto lo midió
+jv-j6bv en SCRUM-1218 c.20840 y por él §1599i ① apartó scrum85. 0 líneas de `src/`, `.github/` o del camino de
+emisión. Salida entera: `docs/master/evidencias/SCRUM-1599/pasadas-1599j.salida.txt`.
+
+### ① La aserción: se endurece, no se relaja (regla 41)
+
+`!invoiceBody.includes('/pay/card/' + id)` casaba DENTRO del token (hex de 32) cuando éste empezaba por el id: con
+la base vacía el cobro A es id=1, así que una vez de cada 16. Ahora `enlazaPorId(cuerpo, ruta, id)` exige que detrás
+del id no siga ningún carácter que pueda continuar el segmento (`(?![0-9A-Za-z_-])`). Eso caza lo mismo que pedía el
+encargo (comilla, `?`, `#`, fin) y además `/pay/card/1/` y `/pay/card/1<`: es más estricto que la lista, no menos.
+El positivo va SEMBRADO en un caso sin base que corre siempre: cinco cuerpos con el id real (`"`, `?`, `#`, fin, `/`)
+tienen que cazarse, y un token `1f3a…`, `/pay/card/12` y `/pay/card/10` no. El test imprime además si el token de
+A empezaba por su id, para que una pasada diga si ejerció el caso peligroso.
+
+### ② Forma de 876f y listas
+
+- `import { URL_BANCO } from './_banco-libro.mjs'` y `ENABLED = QA_DB_TEST === '1' || URL_BANCO !== ''`; el motivo del
+  salto nombra las dos variables. `MUTACIONES_CON_BASE` con una, la forma de §1599i ⓪ sobre `payCard.routes.ts`.
+- `tests/scrum1599f-los-que-solo-ve-staging.test.mjs`: antes de quitarlo de la lista cayó con «SALEN: scrum85» y
+  «ENTRAN: —»; quitado, con su motivo. Tras mezclar 1599k (28 → 22) el trinquete queda en **21**.
+- `tests/scrum419-ci-declara-lo-que-no-corre.test.mjs`: scrum85 declarado con 1 caso de banco.
+- Carril: `node scripts/carriles.mjs de tests/scrum85-pay-routes-token.test.mjs` → «sin fila en §3: nadie lo reclama».
+
+### ③ Banco local: antes, después y mutaciones
+
+PGlite 0.5.8 + socket, uno nuevo por pasada (`banco-1599h.mjs` sin cambiar), DDL de 33 tablas. Pasadas con
+`docs/master/evidencias/SCRUM-1599/pasadas-1599j.mjs`:
+
+| pasada | N | token «1…» | caen |
+|---|---|---|---|
+| DESPUÉS (arreglado; 100 antes de mezclar + 20 después) | 120 | 10 | **0** |
+| sin el ancla (copia temporal, recuento exacto 1) | 160 | — | 16, por «el link a /pay/card NO debe llevar el id numérico» |
+| mutación de `src` (`MUTACIONES_CON_BASE`, `mutar-1599i.mjs`) | 1 | — | MUERE: «GET /pay/card/<id numérico> debe ser 404 y fue 501» |
+
+- En el mutante sin ancla el caso sembrado cae también, con «no debe cazar el id 1 en <a href="/pay/card/1f3a…">».
+- 16 de 160 es más que el 1/16 esperado (10). Con dos muestras pequeñas no lo atribuyo a nada: SIN MEDIR por qué.
+- El ANTES de c.20840 (4 de 4 con token «1…» caen) no lo he repetido: el mutante sin ancla es ese ANTES.
+
+**Guards** (en local, sobre el árbol mezclado): scrum85 + 30 ficheros (237, 976, 824, 836, 702, 700, 719, 1415, 113,
+262, 383, 560, 411, 737, 747, 1177, 893, 850, 1387, 1185, 1599f, 1294, 267, 273, 921c, 1572, 1339d, 859, 1153 y
+419): 314 casos = 313 pass + 1 skip, que es el caso de base de scrum85 sin `LIBRO_PG_URL`. Suite entera local: NO CORRIDA.
+
+**Sin medir:** el banco de CI, que es otro motor y lo comparten los ficheros que corren a la vez (allí el cobro A no
+tiene por qué ser id=1); staging con turno; el obligatorio, que se lee después del empujón.

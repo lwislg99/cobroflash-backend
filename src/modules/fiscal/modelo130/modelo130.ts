@@ -154,6 +154,10 @@ export function construirBorrador130(params: {
   libroRecibidas: LibroRecibidas;
   año: number;
   trimestre: number;
+  /**
+   * `Merchant.createdAt` (SCRUM-1065e). Sin él no se avisa de nada: no se deduce un alta que no se ha leído.
+   */
+  altaDelMerchant?: Date | null;
 }): Borrador130 {
   const trimestre = Math.min(4, Math.max(1, Math.trunc(params.trimestre) || 1));
   const { desde, hasta } = rangoAcumulado(params.año, trimestre);
@@ -189,6 +193,13 @@ export function construirBorrador130(params: {
   if (ingresosSinComputar.length > 0) motivosParaNoFiarse.push('ingresos_sin_computar');
   if (params.libro.sinNumero > 0) motivosParaNoFiarse.push('facturas_sin_numero');
   if (params.libroRecibidas.sinClasificar > 0) motivosParaNoFiarse.push('gastos_sin_base');
+  // SCRUM-1065e (decisión del fundador, SCRUM-1065 c.20869): un alta posterior al 1 de enero deja una
+  // 01 que sólo ve lo facturado por YaQu desde el alta; lo de antes, por otra vía, no está. Es un CÓDIGO:
+  // si algún día se pinta, su texto se firma aparte (regla 39). El 1 de enero, a cualquier hora, no avisa.
+  // Fecha LOCAL, como `rangoAcumulado`.
+  if (params.altaDelMerchant && params.altaDelMerchant >= new Date(params.año, 0, 2, 0, 0, 0, 0)) {
+    motivosParaNoFiarse.push('alta_a_mitad_de_ejercicio');
+  }
 
   return {
     año: params.año,

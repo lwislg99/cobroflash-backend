@@ -13,6 +13,14 @@
 //      queda en 30 también en móvil, DESIGN.md §5);
 //   ② que no vuelvan a llevar un `style=` en línea (era lo que les quitaba el aspecto de botón);
 //   ③ que la regla de móvil que sube esas clases a 44 siga existiendo en `styles.css`.
+//
+// SCRUM-1577b (partes 2 y 3): el selector de color de marca llevaba `height:38px` en un `style=` en línea
+// (38,7 px de toque) y a 320 se encogía a 18,2 de ancho; los `select` «Retención de IRPF» y «¿Qué tipo
+// de actividad tienes?» daban 36,5–37 (su alto sale de `.input`, sin mínimo). Ahora los tres van a 44 en
+// todas las anchuras desde el bloque «J3 · SCRUM-1577b» de `styles.css`. Este test vigila:
+//   ④ el color: sin `style=` en línea (ganaría a la hoja), con `height: 44px` y `flex: none`, y su fila
+//      con `flex-wrap: wrap` (sin ella, a 320 «Sin color (por defecto)» sale cortado por la tarjeta);
+//   ⑤ los dos `select`: el mínimo de 44 por su id, fuera de toda `@media`, y los ids siguen en la vista.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -44,6 +52,30 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     de: '  .btn-ghost:not(.btn-sm) { min-height: 44px; }',
     a: '  .btn-ghost:not(.btn-sm) { }',
     cae: 'SCRUM-1577 ③ ·',
+  },
+  {
+    fichero: 'public/dashboard/js/settingsView.js',
+    de: '<input type="color" id="brand-color-input" value="#22c55e"/>',
+    a: '<input type="color" id="brand-color-input" value="#22c55e" style="height:38px"/>',
+    cae: 'SCRUM-1577 ④ ·',
+  },
+  {
+    fichero: 'public/dashboard/css/styles.css',
+    de: '  flex: none; width: 48px; height: 44px; padding: 2px;',
+    a: '  width: 48px; height: 38px; padding: 2px;',
+    cae: 'SCRUM-1577 ④ ·',
+  },
+  {
+    fichero: 'public/dashboard/css/styles.css',
+    de: ':has(> #brand-color-input) { flex-wrap: wrap; }',
+    a: ':has(> #brand-color-input) { }',
+    cae: 'SCRUM-1577 ④ ·',
+  },
+  {
+    fichero: 'public/dashboard/css/styles.css',
+    de: '#actividad-tipo { min-height: 44px; }',
+    a: '#actividad-tipo { }',
+    cae: 'SCRUM-1577 ⑤ ·',
   },
 ];
 
@@ -85,4 +117,49 @@ test('SCRUM-1577 ③ · la regla de móvil que sube `.btn-secondary` y `.btn-gho
     assert.match(movil, new RegExp(`\\.${clase}:not\\(\\.btn-sm\\)[^{]*\\{\\s*min-height:\\s*44px;`),
       `🔴 en móvil ya no hay \`.${clase}:not(.btn-sm) { min-height: 44px }\`: los dos botones volverían a 36.`);
   }
+});
+
+// La hoja (ya sin comentarios) SIN los bloques `@media`, recortados por llaves equilibradas: lo que queda
+// vale en TODAS las anchuras. Los selectores se anclan a principio de línea (A23 nº 4).
+const SUPERIOR = (() => {
+  let out = '', i = 0;
+  while (i < CSS.length) {
+    const m = CSS.indexOf('@media', i);
+    if (m < 0) { out += CSS.slice(i); break; }
+    out += CSS.slice(i, m);
+    let j = CSS.indexOf('{', m), prof = 0;
+    for (; j < CSS.length; j++) { if (CSS[j] === '{') prof++; else if (CSS[j] === '}' && --prof === 0) break; }
+    i = j + 1;
+  }
+  return out;
+})();
+// La etiqueta del selector de color, por su id.
+const COLOR = JS.match(/<input\b[^>]*\bid="brand-color-input"[^>]*>/g) || [];
+const reglaDe = (selector) => {
+  const esc = selector.replace(/[.*+?^${}()|[\]\\#>:]/g, '\\$&');
+  const m = SUPERIOR.match(new RegExp(`\\n${esc}\\s*\\{([^}]*)\\}`));
+  return m ? m[1] : null;
+};
+
+test('SCRUM-1577 ④ · el selector de color mide 44 sin estilo en línea, no se encoge y su fila salta de línea', () => {
+  assert.ok(SUPERIOR.length > 0 && SUPERIOR.length < CSS.length,
+    `🔴 NO PUDE MIRAR: el recorte de @media no quitó nada (${SUPERIOR.length} de ${CSS.length}).`);
+  assert.equal(COLOR.length, 1, `🔴 NO PUDE MIRAR: el color de marca aparece ${COLOR.length} veces en settingsView.js (esperaba 1).`);
+  assert.doesNotMatch(COLOR[0], /\bstyle=/, `🔴 el color lleva \`style=\` en línea otra vez (le gana a la hoja): ${COLOR[0]}`);
+  const regla = reglaDe('#brand-color-input');
+  assert.ok(regla !== null, '🔴 en styles.css, fuera de @media, no hay regla `#brand-color-input { … }` al principio de línea.');
+  assert.match(regla, /(^|;)\s*height:\s*44px;/, `🔴 \`#brand-color-input\` sin \`height: 44px\` (era 38): ${regla.trim()}`);
+  assert.match(regla, /(^|;)\s*flex:\s*none;/, `🔴 \`#brand-color-input\` sin \`flex: none\`: a 320 se encoge a 18 px de ancho.`);
+  const fila = reglaDe(':has(> #brand-color-input)');
+  assert.ok(fila !== null && /flex-wrap:\s*wrap;/.test(fila),
+    '🔴 la fila del color no tiene `flex-wrap: wrap`: a 320 «Sin color (por defecto)» sale cortado por la tarjeta.');
+});
+
+test('SCRUM-1577 ⑤ · los dos select de Facturación tienen mínimo de 44 en todas las anchuras', () => {
+  for (const id of ['retencion-irpf-tipo', 'actividad-tipo']) {
+    assert.match(JS, new RegExp(`\\.id = "${id}";`), `🔴 NO PUDE MIRAR: settingsView.js ya no da el id \`${id}\`; la regla apuntaría a nada.`);
+  }
+  const m = SUPERIOR.match(/\n#retencion-irpf-tipo,\s*\n#actividad-tipo\s*\{([^}]*)\}/);
+  assert.ok(m, '🔴 en styles.css, fuera de @media, no está la regla `#retencion-irpf-tipo,\\n#actividad-tipo { … }`.');
+  assert.match(m[1], /(^|;)\s*min-height:\s*44px;/, `🔴 los dos select sin \`min-height: 44px\`: vuelven a 36 (\`.input\` no tiene mínimo). ${m[1].trim()}`);
 });
