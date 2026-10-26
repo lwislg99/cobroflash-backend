@@ -848,6 +848,27 @@ El lector de declaraciones del meta-guard (`mutacionesDeclaradas`) lee 5 en el f
 - `prisma generate`: no. `node_modules` es un junction al del checkout compartido, sólo para leer; el guard del cliente dio ✔.
 - La parte 2 del encargo (convenciones de reparto del redondeo en los tramos) va sólo en Jira, como propuesta ✅/❌, por orden del orquestador.
 
+### 5 · El rojo del obligatorio: `scrum647` llevaba escrita la cabecera vieja (relevo `jv-j1cs`, 26-oct-2026 ~22:50Z)
+
+A9: comprobación → `tests/scrum647-presupuesto-tambien-neutral.test.mjs`
+A9: aviso → cicatriz J1 «Repetí una ruta con espacio sin comillas: `sed` vació un fichero de `dist/` y tres mutaciones salieron en rojo CIEGO; lo cazó el SUELO del test, que también cayó» — no se pudo comprobar: lo impediría un hook sobre la orden, y los hooks no son de este puesto
+
+El obligatorio de #2898 sobre `8462de58ed7684d5ec9c9f036517348f29faf061` (job 121887104372, leído por el vigía `jv-j6cs`: 12717 pass + 3 fail + 44 skip) cayó en los tres casos de `scrum647` que leen la cabecera de la tabla del presupuesto: ①, ② y «🔴 EL CONTROL NEGATIVO NO PUEDE CAZAR ESTA REGRESIÓN». La dirigida del §3 no lo llevaba: `scrum647` lee el PDF del presupuesto por `dist/lib/pdf.js` y no nombra `pdf.service.ts`.
+
+- **Causa.** El test recortaba la cabecera desde «Concepto» hasta el primer «Total». Con «IMPORTE», ese primer «Total» pasó a ser el de «Total presupuesto», y la «cabecera» se tragaba las líneas y la base. Reproducido en local antes de tocar nada: 7 casos, 4 pasan, 3 caen, los mismos tres.
+- **Arreglo (sólo el test).** El literal esperado pasa de `…IVA%Total` / `…IGIC%Total` a `…IVA%IMPORTE` / `…IGIC%IMPORTE` (tres sitios), citando SCRUM-1446 c.20939. Y el recorte deja de anclarse en un rótulo: corta donde empieza la primera línea de la tabla (`LINEAS[0].concept`, «Mano de obra»), con un SUELO que dice CIEGO si no encuentra ninguno de los dos extremos. Anclarlo en «IMPORTE» habría dejado fuera cualquier palabra que se añadiera detrás (eso es razonado, no medido; lo medido es la M1 de abajo con el ancla nueva).
+- **Huellas y recuentos.** `scrum603b` y `scrum723` no miran `generateQuotePdf` (§3) ni ningún fichero de `tests/`: no hay huella que re-anclar. Ningún otro fichero de `tests/` ni `scripts/` lleva el literal de `scrum647`.
+- **Verde, y rojo con la mutación** (cada una en `dist/modules/invoicing/infra/pdf/pdf.service.js`, `diff` al lado, restaurado y comprobado con `cmp`; en las tres, el SUELO pasa, así que no son ciegas):
+
+| `dist/` | ① | ② | 🔴 | resultado |
+|---|---|---|---|---|
+| sin mutar | ✔ | ✔ | ✔ | 7 de 7 |
+| M1 · `'IMPORTE'` → `'IMPORTE EUR'` (palabra DETRÁS del último rótulo) | ✖ | ✖ | ✖ | 4 de 7 |
+| M2 · `'Cant.'` → `'Cant. Uds'` (palabra en medio) | ✖ | ✖ | ✖ | 4 de 7 |
+| M3 · `'IMPORTE'` → `'Total'` (vuelta atrás) | ✖ | ✖ | ✖ | 4 de 7 |
+
+- **Error mío, confesado.** En la primera pasada de las mutaciones pasé la ruta de la copia (con un espacio) sin comillas: `sed` no la leyó, vació `dist/…/pdf.service.js` y los «rojos» eran CIEGOS (caía también el SUELO). Lo cacé porque el SUELO cayó; repetí con comillas, que es la tabla de arriba. El mismo fallo que la cicatriz de J1 del 24-oct (SCRUM-1502o).
+
 ## SCRUM-1446g · en una F1 por TRAMOS, el céntimo que falta va a la línea de MAYOR RESTO
 
 **Medido contra:** `origin/main` = `6d5bf76c5bf02142e762ca2ddd3d2ae2b92f9a3e` · 2026-10-26T22:44:37Z (hora de GitHub)
@@ -905,23 +926,4 @@ Ver el comentario de entrega en Jira: 120 ficheros (la familia 1446/624, los que
 
 - Escribí que ⑦ medía 90 tramos y eran 70 (10 × 2 + 10 × 2 + 10 × 3): lo cazó la cuenta del propio test (`medidos`), que se declara antes de afirmar nada.
 - Lancé el arnés de mutaciones con la ruta `tests/…` y espera el nombre relativo a `tests/`: salió con ENOENT, sin mutar nada, y lo leí antes de dar ningún número.
-### 5 · El rojo del obligatorio: `scrum647` llevaba escrita la cabecera vieja (relevo `jv-j1cs`, 26-oct-2026 ~22:50Z)
-
-A9: comprobación → `tests/scrum647-presupuesto-tambien-neutral.test.mjs`
-A9: aviso → cicatriz J1 «Repetí una ruta con espacio sin comillas: `sed` vació un fichero de `dist/` y tres mutaciones salieron en rojo CIEGO; lo cazó el SUELO del test, que también cayó» — no se pudo comprobar: lo impediría un hook sobre la orden, y los hooks no son de este puesto
-
-El obligatorio de #2898 sobre `8462de58ed7684d5ec9c9f036517348f29faf061` (job 121887104372, leído por el vigía `jv-j6cs`: 12717 pass + 3 fail + 44 skip) cayó en los tres casos de `scrum647` que leen la cabecera de la tabla del presupuesto: ①, ② y «🔴 EL CONTROL NEGATIVO NO PUEDE CAZAR ESTA REGRESIÓN». La dirigida del §3 no lo llevaba: `scrum647` lee el PDF del presupuesto por `dist/lib/pdf.js` y no nombra `pdf.service.ts`.
-
-- **Causa.** El test recortaba la cabecera desde «Concepto» hasta el primer «Total». Con «IMPORTE», ese primer «Total» pasó a ser el de «Total presupuesto», y la «cabecera» se tragaba las líneas y la base. Reproducido en local antes de tocar nada: 7 casos, 4 pasan, 3 caen, los mismos tres.
-- **Arreglo (sólo el test).** El literal esperado pasa de `…IVA%Total` / `…IGIC%Total` a `…IVA%IMPORTE` / `…IGIC%IMPORTE` (tres sitios), citando SCRUM-1446 c.20939. Y el recorte deja de anclarse en un rótulo: corta donde empieza la primera línea de la tabla (`LINEAS[0].concept`, «Mano de obra»), con un SUELO que dice CIEGO si no encuentra ninguno de los dos extremos. Anclarlo en «IMPORTE» habría dejado fuera cualquier palabra que se añadiera detrás (eso es razonado, no medido; lo medido es la M1 de abajo con el ancla nueva).
-- **Huellas y recuentos.** `scrum603b` y `scrum723` no miran `generateQuotePdf` (§3) ni ningún fichero de `tests/`: no hay huella que re-anclar. Ningún otro fichero de `tests/` ni `scripts/` lleva el literal de `scrum647`.
-- **Verde, y rojo con la mutación** (cada una en `dist/modules/invoicing/infra/pdf/pdf.service.js`, `diff` al lado, restaurado y comprobado con `cmp`; en las tres, el SUELO pasa, así que no son ciegas):
-
-| `dist/` | ① | ② | 🔴 | resultado |
-|---|---|---|---|---|
-| sin mutar | ✔ | ✔ | ✔ | 7 de 7 |
-| M1 · `'IMPORTE'` → `'IMPORTE EUR'` (palabra DETRÁS del último rótulo) | ✖ | ✖ | ✖ | 4 de 7 |
-| M2 · `'Cant.'` → `'Cant. Uds'` (palabra en medio) | ✖ | ✖ | ✖ | 4 de 7 |
-| M3 · `'IMPORTE'` → `'Total'` (vuelta atrás) | ✖ | ✖ | ✖ | 4 de 7 |
-
-- **Error mío, confesado.** En la primera pasada de las mutaciones pasé la ruta de la copia (con un espacio) sin comillas: `sed` no la leyó, vació `dist/…/pdf.service.js` y los «rojos» eran CIEGOS (caía también el SUELO). Lo cacé porque el SUELO cayó; repetí con comillas, que es la tabla de arriba. El mismo fallo que la cicatriz de J1 del 24-oct (SCRUM-1502o).
+- De paso: al mezclar la punta de 1446f (`c8f3529611a031d57dfe5f3f64080f0bc23841ce`), git colocó su «§ 5 · El rojo del obligatorio» al FINAL del fichero, dentro de este tramo, sin conflicto. Lo devolví al tramo 1446f y comprobé que las líneas no vacías son las mismas (diff de las dos listas ordenadas: vacío).
