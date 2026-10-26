@@ -440,3 +440,82 @@ pregunta bien planteada antes de que alguien la resuelva de memoria.
 - **No se comentó en Jira SCRUM-870**: la lectura fue de solo consulta (`getJiraIssue`); la
   actualización del ticket, si procede, la decide quien lo cierra (A13).
 - Cero dependencias nuevas (36) · cero estado o flag de producto (27) · cero `schema.prisma`.
+
+---
+
+# SCRUM-523c · El borrador, con lo que no es identidad rellenado y dos firmantes — y qué decide «una versión»
+
+**Medido contra:** `origin/main` = `fe058e53c87d6636d99b6edd7a9cb7b068a9ff60` · 2026-10-26T15:32:47Z
+
+J4 (sesión `jv-j4ai`), por encargo del orquestador `cobroflash-backend-8b`. Parte de las respuestas
+del fundador en SCRUM-870 c.20864 (② la SL es el productor en cuanto haya NIF; ③ Javier y Luis son
+administradores mancomunados y firman los dos; ⑤ se cambia con el NIF definitivo, tras la
+inscripción) y de la medición de c.20860. **Solo docs. `src/` no se ha tocado: `productor.ts`,
+`instalacion.ts`, `registro.builder.ts` y `verifactu.service.ts` solo se leyeron.**
+
+## 1 · Qué cambia en `docs/legal/DECLARACION_RESPONSABLE.md`
+
+- **Marcado como BORRADOR SIN FIRMA** en la primera línea de la cabecera. Siguen la palabra
+  PLANTILLA, el «NO publicar» y los huecos: el guard de la landing
+  (`scripts/_guard-conformidad-landing.mjs:95-128`) lo sigue dando por **NO EMITIDO** con los
+  mismos cuatro motivos que antes (26 huecos, antes 25).
+- **Ordenado por las doce letras del art. 15.1 de la Orden**, en su orden y con el texto que
+  describe cada dato delante. Antes iba primero el productor (h, i, j) y después el sistema (a, b, c).
+- **Rellenado lo que no es identidad**, con el valor que hoy escribe el código y una tabla al final
+  que dice de qué fichero:línea sale cada uno: a) YaQu, b) 01, d) Railway · Node.js · PostgreSQL,
+  e) S, f) S, g) no aplica. La c) se queda en hueco a propósito (§3).
+- **Corregido `:34`** («`[ID INSTALACIÓN — SaaS: 1]`»): contradecía SCRUM-524g. El número de
+  instalación es el `id` de cada comercio (`instalacion.ts:26-28`; `productor.ts:50-53` cuenta por qué
+  se quitó el «1»).
+- **`IndicadorMultiplesOT` sale de los datos de la declaración**: no es una letra del art. 15.1 y
+  se calcula por usuario (`instalacion.ts:37`, `:40-42`), así que un `[Sí/No]` del sistema no tenía
+  valor posible. Se deja como nota.
+- **Dos firmantes**: tabla de administrador mancomunado 1 y 2 con huecos para nombre, NIF y cargo, y
+  la cláusula de la letra k) dice que la SL está «representada por sus dos administradores
+  mancomunados, que firman conjuntamente al pie».
+- **Fuera la marca «[VALIDAR ASESOR: autónomo vs SL]»**: lo decidió el fundador (c.20864 ②).
+- Las cuatro frases firmadas en SCRUM-534m siguen literales (cotejadas con el texto normalizado, con
+  un control que tenía que faltar y faltó). Una cambió de corte de línea, no de texto.
+- ⛔ Ningún dato real de la SL ni de las personas: cero apariciones de los nombres de los socios ni de
+  un NIF (búsqueda por palabra entera; control positivo: «YaQu», 8).
+
+## 2 · Lo que no se ha tocado
+
+La redacción de la cláusula de conformidad (C6), la letra e) (P14, del asesor), la descripción de
+instalación SaaS y la nueva marca de firma manuscrita o electrónica siguen como **[VALIDAR ASESOR]**.
+La pantalla (puntos 4 y 5 del alcance) y el archivo histórico (punto 6) siguen sin construir.
+
+## 3 · Qué decide «una versión» (punto 3 del alcance) — medido
+
+| hecho | medida |
+|---|---|
+| la versión que viajaría en cada registro | `productor.ts:48` = `"1.0.0"`, escrita el 2-ago-2026 (`b0cb9f0b8`) y **sin cambios** desde entonces |
+| despliegues a producción en 7 días (17 al 24-oct, hasta la punta del 24-oct 17:18Z) | **323** merges a `main` en primer padre (cada uno despliega en Railway) |
+| de esos, los que tocan `src/` | **71** |
+| los que tocan `src/modules/fiscal` o `src/modules/invoicing` | **22** — ⚠️ esa ruta es más ancha que el SIF: no he medido cuántos cambian lo que lleva el registro |
+| un identificador de despliegue que ya existe | `env.ts:37-38`: `BUILD_ID` = `RAILWAY_GIT_COMMIT_SHA`, 40 caracteres (el campo `Version` admite 50) |
+
+Control positivo del recuento: sobre `productor.ts`, el mismo comando da 1 en esos 7 días.
+
+**Lo que decide, entonces, es una sola cosa: qué cambio cuenta como «variación» del SIF.** Con
+«cada despliegue», serían del orden de 323 declaraciones por semana, y **con dos administradores
+mancomunados cada una lleva dos firmas**. Con «cada cambio del camino de emisión», el techo medido es
+22 por semana, sin saber cuántas serían de verdad. La FAQ de la AEAT dice «por pequeña variación que
+introduzca», y no dice si un despliegue que no toca el SIF lo es. **No lo decido**: va como pregunta.
+
+## 4 · Preguntas para el fundador (✅/❌), en el comentario de Jira
+
+V1 · ¿«Una versión» es un cambio de lo que el sistema hace con los registros de facturación, y no
+cada despliegue? · V2 · ¿La versión se sube a mano en `productor.ts:48`, con declaración nueva
+firmada por los dos, y se pide un guard que impida cambiar el camino de emisión sin subirla? · V3 · ¿Se
+lleva al asesor la pregunta «un despliegue que no toca el SIF, ¿es una variación?»? · V4 · ¿Se le
+pregunta también si la firma de los dos puede ser electrónica?
+
+## Lo que NO se hizo
+
+- No se corrió la tanda entera (suite entera local: NO CORRIDA). Corridos: scrum400, scrum537,
+  scrum1106 y scrum333 — 47 de 47, cero saltos.
+- No se ha medido qué cuenta de los 22 cambios toca el registro, ni cuál es la fecha de la Orden.
+- No se cambió el estado de ningún ticket (A13).
+
+A9: aviso → cicatriz J4 «escribí de memoria la fecha de la Orden HAC/1177/2024» — no se pudo comprobar: ningún guard compara las citas de normas de `docs/legal` con el BOE; lo cazó repasar de dónde salía cada dato nuevo, y la quité antes del commit.
