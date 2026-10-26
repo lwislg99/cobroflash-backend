@@ -1184,3 +1184,67 @@ marca); `literales.mjs` coge strings de una ventana de 45 líneas y por sí solo
 - yaqu.app: no abierto. Suite entera en local: NO CORRIDA. Ninguna marca, guard ni número tocado.
 - Error propio: la primera siembra nombraba el ticket y nació rastreable (167 → 168), así que el positivo no
   podía caer con la regla A. Rehecha sin referencia.
+
+## SCRUM-1502p · Tramo 15 (J1, 26-oct-2026): `scrum377:72` anclada a la firma de las 17 parejas (c.20853)
+
+**Medido contra:** `origin/main` = `289ca894656c7c3686a0469d34785512b960e0b3` · 2026-10-26T15:18:41Z (hora de GitHub)
+A9: comprobación → `docs/master/evidencias/scrum1502o/plurales.mjs`
+
+### Qué firmó el fundador y dónde
+
+SCRUM-1502 **comentario 20853** (24-oct, transcrito por el orquestador del equipo de Javier, no por Javier),
+P17: las 17 parejas singular/plural que aplicó `79479b9af` (10-ago), «FIRMADAS las 17 con su frase alrededor»,
+tal como están en `main`. Leído hoy con el ticket entero (30 comentarios). Los literales viven en Jira y en el
+código; aquí no se copian (tramo 1, §4).
+
+### Lo hecho
+
+| fichero | cambio |
+|---|---|
+| `tests/scrum377-plural-de-programador.test.mjs:73` | `// Consta en: SCRUM-1502 comentario 20853.` debajo de la marca del `TOPE` (`:72`). Ni el tope ni ninguna aserción cambian |
+| `tests/_pares-leidos-en-jira.mjs` | par `1502/20853`, leído el 26-oct por jv-j1cc (fichero de J6; la fila va aquí por su regla 3, como en 1502m y 1502o) |
+| `tests/scrum921c-firma-con-respaldo-en-codigo.test.mjs` | `SIN_RESPALDO` 13 → **12**, con su nota en la línea |
+| `docs/master/evidencias/scrum1502o/plurales.mjs` | sin argumento sale CIEGO con código 2 (el error de abajo) |
+
+Las 17 parejas, re-medidas hoy con `plurales.mjs 289ca8946`: **17 de 17 siguen literales en `main`**.
+
+### El control: el nivel de cada marca, antes y después
+
+`docs/master/evidencias/scrum1502j/niveles.mjs`, salida en `evidencias/scrum1502p/salida-niveles.txt`.
+
+| `porNivel()` | negada | citada | rastreable | anclado | documental | sin respaldo |
+|---|---|---|---|---|---|---|
+| antes | 13 | 1 | 171 | 43 | 12 | 13 |
+| después | 13 | 1 | 171 | **44** | 12 | **12** |
+
+- **Sólo cambia `scrum377:72`, de `sin-respaldo` a `anclado`** (`cambios=1`, 252 marcas antes y después).
+- **Rojo primero:** con el número en 13, cae sólo «SCRUM-921c · el trinquete tampoco baja en silencio» (55 de 56
+  en 921c + 921 + 387×2 + 377). `scrum921` y `scrum387` no se mueven.
+- **Control negativo de la lista de pares:** quitada la fila `1502/20853`, `scrum921c` cae nombrando exactamente
+  `scrum377-plural-de-programador.test.mjs:72 → par no leído: SCRUM-1502 comentario 20853`. Restaurada (byte a
+  byte, `cmp`), verde.
+
+### Otras marcas que apuntan a lo que firma c.20853
+
+Barrido sobre las 252 marcas: las de los ficheros donde viven las 17 parejas, y las que nombran plural,
+`377`, `79479b9af` o los objetos de P13–P15 en sus tres líneas de alrededor. Positivo: sale `scrum377:72`.
+En carril J no hay otra: `modelo303.ts:421` y `:429` (J1) gobiernan otros literales y ya citan SCRUM-1063
+c.20797. `parteDictado.ts:126/:138/:401` (S1), `quoteActionsRegistry.js:68` y `reportsView.js:629` (S2) son de
+Luis. P13 y P14 no se tocan.
+
+### Verificación
+
+26 ficheros dirigidos (921c, 921, 387×2, 377, 237, 976, 824×3, 836, 419, 702, 700, 719, 1415, 710b, 1294, 267,
+273, 1572, 525d, 812, 723, 622, 1502h): **255 de 255**, 0 saltos, 0 caen (TAP leído aparte). `dist/` con
+`tsc --noCheck`. Tanda completa: NO CORRIDA (la corre el obligatorio).
+
+### Error propio
+
+Lancé `plurales.mjs` sin el sha y dio `igual_en_main=0 main=undefined`: diecisiete `git show undefined:…`
+fallidos que se resumían como un cero. Lo vi por los `fatal:` de la salida, no por el guion. Ahora el guion se
+niega a contar sin argumento (visto: sin él, CIEGO y salida 2; con él, 17 de 17).
+
+### Lo que NO se ha hecho
+
+- Las anclas de S1/S2 de c.20853 (`quoteActionsRegistry.js:68`, `parteDictado.ts:138` y `:401`): son de Luis.
+- yaqu.app: no mirado; nada cambia en pantalla.
