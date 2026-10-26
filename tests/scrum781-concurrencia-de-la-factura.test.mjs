@@ -22,6 +22,9 @@
 // STAGING. Este encargo prohíbe ejecutar nada contra staging, así que **no se ha corrido**. Éste
 // va contra `yaqu_dev_javier` y **se niega a arrancar** si la clave apunta a otro sitio — el
 // mismo guard por DESTINO que usa `scrum592-concurrencia-serie.test.mjs`.
+// SCRUM-1599s: desde el banco (`LIBRO_PG_URL`) importa también `./_staging-db.mjs`, porque scrum876e lo exige
+// delante de `_banco-libro.mjs`, como en 592 (§1599p). Con `QA_DB_TEST=1` pasa además ese guard, y sigue
+// escribiendo en `yaqu_dev_javier`: el cliente de este fichero lleva su propia URL.
 //
 // ── QUÉ SE EMITE, Y POR QUÉ POR EL EMISOR DE VERDAD ─────────────────────────────────────
 //
@@ -35,7 +38,10 @@
 //
 // ── EL GATE ─────────────────────────────────────────────────────────────────────────────
 // Sin `QA_DB_TEST=1` esto SE SALTA, y el salto declara su motivo (SCRUM-419/456).
+// SCRUM-1599s: o con `LIBRO_PG_URL`, el banco desechable que CI levanta (diseño B de SCRUM-1599).
 // ═════════════════════════════════════════════════════════════════════════════════════════
+import './_staging-db.mjs'; // SCRUM-1599s: el guard de staging va delante del segundo destino (scrum876e)
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599s: segundo destino (LIBRO_PG_URL); su guard exige loopback y «*_test»
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -43,7 +49,7 @@ import { pathToFileURL, fileURLToPath } from 'node:url'; // SCRUM-730: `pathname
 import { withMerchant } from './_merchant-fixture.mjs';
 import { anclaEnElRepositorio } from './_ancla-en-el-repositorio.mjs'; // SCRUM-796
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 // ⚠️ El motivo del salto va LITERAL en cada test y no en una constante: el guard de SCRUM-456
 // lo lee por AST sobre el FUENTE, y un identificador no lo puede resolver — lo daría por
 // «salto sin motivo». Se repite el texto a propósito; la alternativa es un salto mudo.
@@ -58,11 +64,15 @@ if (ENABLED) {
   ({ emitInvoice } = await import('../dist/modules/invoicing/domain/invoicing.service.js'));
   // 🔴 SÓLO DESARROLLO. Este test EMITE facturas, así que se niega a arrancar contra cualquier
   // otra base en vez de fiarse de quién lo lance. Mismo criterio que SCRUM-592.
-  const linea = fs.readFileSync('.env', 'utf8').split('\n').find((l) => l.startsWith('DATABASE_URL_DEV='));
-  const url = linea?.slice('DATABASE_URL_DEV='.length).trim().replace(/^["']|["']$/g, '');
-  const info = url ? parseBDSegura(url) : null;
-  assert.ok(info && info.base === 'yaqu_dev_javier',
-    '🔴 PARO: este test EMITE FACTURAS y la clave de desarrollo no apunta a `yaqu_dev_javier`.');
+  // SCRUM-1599s: o el banco desechable, cuya URL ya ha pasado el guard de `_banco-libro.mjs`.
+  let url = URL_BANCO;
+  if (!url) {
+    const linea = fs.readFileSync('.env', 'utf8').split('\n').find((l) => l.startsWith('DATABASE_URL_DEV='));
+    url = linea?.slice('DATABASE_URL_DEV='.length).trim().replace(/^["']|["']$/g, '');
+    const info = url ? parseBDSegura(url) : null;
+    assert.ok(info && info.base === 'yaqu_dev_javier',
+      '🔴 PARO: este test EMITE FACTURAS y la clave de desarrollo no apunta a `yaqu_dev_javier`.');
+  }
   prisma = new PrismaClient({ datasources: { db: { url } } });
 }
 
@@ -112,7 +122,7 @@ const emitir = (m, cliente, timeout) => prisma.$transaction((tx) => emitInvoice(
 // emitido nada». Es exactamente el control que hizo creíble el resultado del presupuesto.
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-781 · SUELO: UNA emisión avanza el contador fiscal exactamente 1', { skip: !ENABLED && 'sin QA_DB_TEST=1 · necesita Postgres real: el cerrojo que se prueba es pg_advisory_xact_lock' }, async () => {
+test('SCRUM-781 · SUELO: UNA emisión avanza el contador fiscal exactamente 1', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · necesita Postgres real: el cerrojo que se prueba es pg_advisory_xact_lock' }, async () => {
   await conMerchantYCliente(async (m, cliente) => {
     const antes = await prisma.merchant.findUnique({
       where: { id: m.id }, select: { nextInvoiceNumber: true, invoiceSeriesYear: true },
@@ -138,7 +148,7 @@ test('SCRUM-781 · SUELO: UNA emisión avanza el contador fiscal exactamente 1',
 // 2 · LA CARRERA
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-781 · 🔴 DOS emisiones SIMULTÁNEAS no cogen el mismo número', { skip: !ENABLED && 'sin QA_DB_TEST=1 · necesita Postgres real: el cerrojo que se prueba es pg_advisory_xact_lock' }, async () => {
+test('SCRUM-781 · 🔴 DOS emisiones SIMULTÁNEAS no cogen el mismo número', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · necesita Postgres real: el cerrojo que se prueba es pg_advisory_xact_lock' }, async () => {
   await conMerchantYCliente(async (m, cliente) => {
     const [a, b] = await Promise.all([emitir(m, cliente, 30_000), emitir(m, cliente, 30_000)]);
     assert.notEqual(a.number, b.number,
@@ -149,7 +159,7 @@ test('SCRUM-781 · 🔴 DOS emisiones SIMULTÁNEAS no cogen el mismo número', {
   });
 });
 
-test('SCRUM-781 · 🔴 y con DIEZ a la vez tampoco: ni un duplicado ni un salto', { skip: !ENABLED && 'sin QA_DB_TEST=1 · necesita Postgres real: el cerrojo que se prueba es pg_advisory_xact_lock' }, async () => {
+test('SCRUM-781 · 🔴 y con DIEZ a la vez tampoco: ni un duplicado ni un salto', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · necesita Postgres real: el cerrojo que se prueba es pg_advisory_xact_lock' }, async () => {
   // Dos podrían pasar por suerte. Diez, no. Y diez es donde se ve la COLA del cerrojo.
   //
   // 🔴 EL `timeout` DE 60 s NO ES PARA QUE PASE: ES PARA QUE MIDA LO QUE DICE. El cerrojo
@@ -184,7 +194,7 @@ test('SCRUM-781 · 🔴 y con DIEZ a la vez tampoco: ni un duplicado ni un salto
 // 3 · CONTROL NEGATIVO — lo que NO debe mover el contador, no lo mueve
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-781 · 🔴 CONTROL NEGATIVO: crear un CLIENTE no mueve ningún contador', { skip: !ENABLED && 'sin QA_DB_TEST=1 · necesita Postgres real: el cerrojo que se prueba es pg_advisory_xact_lock' }, async () => {
+test('SCRUM-781 · 🔴 CONTROL NEGATIVO: crear un CLIENTE no mueve ningún contador', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · necesita Postgres real: el cerrojo que se prueba es pg_advisory_xact_lock' }, async () => {
   await conMerchantYCliente(async (m) => {
     const campos = { nextInvoiceNumber: true, invoiceSeriesYear: true, nextRectInvoiceNumber: true };
     const antes = await prisma.merchant.findUnique({ where: { id: m.id }, select: campos });
@@ -314,3 +324,13 @@ test('SCRUM-781 · EL LECTOR OFICIAL me ve: las tres declaraciones, con sus cuat
 });
 
 test.after(async () => { if (prisma) await prisma.$disconnect(); });
+
+// SCRUM-1599s (diseño B de SCRUM-1599) · la mutación que tumba un caso de base, CATALOGADA en SCRUM-1599s.
+// Va aparte de `MUTACIONES_QUE_ME_TUMBAN` a propósito: el job del meta-guard corre SIN base, el caso sale
+// SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco,
+// `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e), que muta `dist/` y no el fuente
+// (regla 38: el fuente de la emisión sólo se lee). Es otra pieza que la de 234 (el cerrojo): aquí el contador
+// avanza DOS por emisión, y lo caza el SUELO. Cada campo, LITERAL.
+export const MUTACIONES_CON_BASE = [
+  { fichero: "src/modules/invoicing/domain/invoiceNumber.service.ts", de: "nextInvoiceNumber: Math.max(m.nextInvoiceNumber, seq + 1)", a: "nextInvoiceNumber: Math.max(m.nextInvoiceNumber, seq + 2)", cae: "SCRUM-781 · SUELO: UNA emisión avanza el contador fiscal exactamente 1" },
+];

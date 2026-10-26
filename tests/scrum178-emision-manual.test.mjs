@@ -11,6 +11,7 @@
 //     acaba sellado en la huella VeriFactu (SCRUM-141), así que se prueba aparte y siempre.
 //   · las PUERTAS, gateadas: los cuatro rechazos que impiden emitir de más.
 import './_staging-db.mjs'; // SCRUM-60: fuerza staging (fail-closed anti-prod)
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599p: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
@@ -43,7 +44,7 @@ const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new
   req.end(body);
 });
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 const PLAN_MANUAL = [{ index: 0, percentage: 1, label: 'manual_total' }];
 
 // SCRUM-1599b (decisión del fundador, SCRUM-1599 c.20650): desde SCRUM-1027 (regla 24), un merchant
@@ -80,7 +81,7 @@ test('SCRUM-178 (aritmética, sin BD): el tramo único al 100 % reproduce las l�
   }
 });
 
-test('SCRUM-178: emisión manual — emite UNA vez, con líneas, y cierra las cuatro puertas', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
+test('SCRUM-178: emisión manual — emite UNA vez, con líneas, y cierra las cuatro puertas', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const { grossOfLines } = await import('../dist/modules/invoicing/domain/invoiceLines.service.js');
@@ -240,7 +241,7 @@ test('SCRUM-178: emisión manual — emite UNA vez, con líneas, y cierra las cu
 // ES con NIF no emite NADA por la vía manual — ni factura ni justificante (regla 24, SCRUM-1027).
 // Lo que se protege no es el código de respuesta: es que no quede NINGUNA fila en Invoice, porque
 // una fila emitida ya no se borra (regla 29) y gasta número de serie.
-test('SCRUM-178: con INVOICING_ES_ENABLED apagado, la emisión manual da 409 facturacion_no_disponible y no emite nada', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-178: con INVOICING_ES_ENABLED apagado, la emisión manual da 409 facturacion_no_disponible y no emite nada', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
 
@@ -287,3 +288,11 @@ test('SCRUM-178: con INVOICING_ES_ENABLED apagado, la emisión manual da 409 fac
     await prisma.$disconnect();
   }
 });
+
+// SCRUM-1599p (diseño B de SCRUM-1599) · la mutación que tumba el caso de base, CATALOGADA en SCRUM-1599p.
+// Va aparte de `MUTACIONES_QUE_ME_TUMBAN` a propósito: el job del meta-guard corre SIN base, el caso sale
+// SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco,
+// `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e). Cada campo, LITERAL.
+export const MUTACIONES_CON_BASE = [
+  { fichero: "src/modules/system/app/routes/quotesAdmin.routes.ts", de: "tampoco a mano.\n    if (getEmissionMode(quote.merchant) === 'receipt') {", a: "tampoco a mano.\n    if (false) {", cae: "SCRUM-178: con INVOICING_ES_ENABLED apagado" },
+];
