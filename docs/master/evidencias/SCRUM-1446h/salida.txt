@@ -1,0 +1,22 @@
+main: importesDeLaColumnaSinIva undefined · 1446g: function
+
+① LA PUERTA (ejecutada)
+  CreateQuoteSchema price=12.5 (control +: 2 decimales): ACEPTA
+  CreateQuoteSchema price=1.005 (3 decimales): ACEPTA
+  CreateQuoteSchema price=0.0125 (4 decimales): ACEPTA
+  CreateQuoteSchema price=1.00005 (control −: 5 decimales): RECHAZA · el precio 1.00005 tiene 5 decimales y el máximo son 4.
+  3,33 € con control: sin dto: schema ACEPTA → Invoice.lines.price = 3.33 · fracción de céntimo: no
+  3,33 € con dto 10 % (entero, el paso del editor): schema ACEPTA → Invoice.lines.price = 2.9970000000000003 · fracción de céntimo: SÍ
+  3,33 € con dto 12,5 % (2 decimales, lo que admite la API): schema ACEPTA → Invoice.lines.price = 2.9137500000000003 · fracción de céntimo: SÍ
+
+② POBLACIÓN (inventada, semilla 14468): 4000 facturas × 1, 2 y 3 líneas por familia; cant. 1-5; 21 % y 10 %
+familia | facturas | con fracción | hoy (main) no suma la base | 1446g cambia la columna | líneas movidas | movidas que hoy ya sumaban | con 1446g no suma | desvío máx. (cént.) | líneas | fila importe ≠ cant×precio: main · 1446g
+control: 2 decimales, sin dto | 12000 | 0 | 0 | 0 | 0 | 0 | 0 | 0.00 | 24000 | 0 · 0
+dto entero (5-33 %) | 12000 | 10723 | 1239 | 1242 | 1249 | 3 | 0 | 0.80 | 24000 | 7762 · 8248
+precio de 3 decimales (API) | 12000 | 11583 | 1701 | 1703 | 1710 | 2 | 0 | 0.80 | 24000 | 9428 · 9993
+
+② CASO SEMBRADO (2 × [3,33 con dto 10 %] al 21 %; Invoice.lines.price = 2.9970000000000003) · base 599 cént.
+  main  : L1Z1,003,0021%3,00 ‖ L2Z1,003,0021%3,00 ‖ pie: Base imponible:5,99 EUR · IVA 21%:1,26 EUR · TOTAL:7,25 EUR
+  1446g : L1Z1,003,0021%3,00 ‖ L2Z1,003,0021%2,99 ‖ pie: Base imponible:5,99 EUR · IVA 21%:1,26 EUR · TOTAL:7,25 EUR
+
+calibración: 40 facturas que 1446g cambia × 2 dist = 80 PDF reales · columna distinta de la copia: 0 · pie (base, IVA, TOTAL) distinto entre main y 1446g: 0

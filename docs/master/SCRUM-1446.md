@@ -808,3 +808,27 @@ Declaradas en `MUTACIONES_QUE_ME_TUMBAN` del test nuevo y corridas con `docs/mas
 
 - Crucé los 200k de contexto sin avisar en el momento: medí al acabar el arranque (≈92k) y al acabar Jira (≈156k), y no volví a mirar hasta acabar el rojo (229k). Es la cicatriz de J1 del 24-oct, otra vez.
 - Declaré las mutaciones con una constante y el arnés leyó 0; lo cacé porque el arnés dice cuántas leyó.
+
+## SCRUM-1446h · EL REPARTO DE 1446g ENTRA TAMBIÉN EN UNA F1 SIN TRAMOS: alcanzable y cambia el papel (sólo medición)
+
+**Medido contra:** `origin/main` = `31d0bbae3ff7da9fafb76ffac0ec32a7fb856786` · 2026-10-26T23:04:49Z (hora de GitHub)
+
+A9: comprobación → `src/modules/invoicing/domain/invoiceLines.service.ts`
+
+Sesión `jv-j1ct` (J1). Rama medida: `scrum-1446g-tramos-mayor-resto` @ `87b8b481ba0aa4751ce0cadb630592259d88bdb4` (#2903, sin mergear). Nada de `src/` tocado. La medición entera, con sus tablas y las preguntas Q1-Q3, está en SCRUM-1446 comentario 20961; aquí va lo que la sostiene.
+
+- **Qué se preguntaba.** 1446g (`importesDeLaColumnaSinIva`) llama «de tramo» a toda F1 con un precio con fracción de céntimo. Su sonda midió el control «sin tramos» sólo con precios de 2 decimales, así que su 0 no hablaba de este caso.
+- **La puerta, ejecutada.** `CreateQuoteSchema` acepta precio de 3 y 4 decimales (`DECIMALES_PRECIO_UNITARIO = 4`, SCRUM-712) y rechaza 5. Y `lineasParaFacturar` guarda 3,33 € con dto 10 % como `price` 2,997 (`precioConDto` no redondea). El editor (paso 1 del `dto`) está leído, no ejecutado.
+- **El papel, ejecutado.** El PDF real con el `dist/` de main y con el de 1446g (los dos de `tsc --noCheck`). Caso sembrado: 2 × (3,33 con dto 10 %) al 21 %. Main imprime 3,00 + 3,00 sobre una base de 5,99; 1446g imprime 3,00 + 2,99. El pie es idéntico.
+- **Población inventada** (36.000 F1 sin tramos):
+
+  | familia | 1446g cambia la columna |
+  | --- | --- |
+  | 2 decimales sin dto (control) | 0 de 12.000 |
+  | dto entero | 1.242 de 12.000 |
+  | precio de 3 decimales | 1.703 de 12.000 |
+
+  Con 1446g no queda ninguna que no sume la base. La fila «importe ≠ cant × precio impreso» ya existía en main en 7.762 de 24.000 líneas, y pasa a 8.248. Calibración: 80 PDF reales, 0 distintos de la copia, y pie igual en main y en 1446g.
+- **Sonda y salida:** `docs/master/evidencias/SCRUM-1446h/medir-sin-tramos.mjs` · `salida.txt`. Uso: `node medir-sin-tramos.mjs <raíz con dist de main> <raíz con dist de 1446g>`. Sale CIEGA (2) si el `dist/` de 1446g no trae la función, si un PDF no se lee o si el caso sembrado no se mueve.
+- **No medido:** el editor en un navegador, el albarán, `dtoPorDefecto`, cantidades no enteras, ninguna base ni factura real, el obligatorio de #2903 y la tanda.
+- **Errores míos:** lancé la sonda sin leer la firma de `lineasParaFacturar`, y cayó porque exige `discountGlobalAmount` explícito. Lo impide la propia función, que lanza en vez de suponer: esa es la línea `A9:`. Avisé de los 200k a 191k, antes de cruzarlos.
