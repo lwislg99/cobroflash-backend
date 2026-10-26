@@ -808,3 +808,42 @@ Declaradas en `MUTACIONES_QUE_ME_TUMBAN` del test nuevo y corridas con `docs/mas
 
 - Crucé los 200k de contexto sin avisar en el momento: medí al acabar el arranque (≈92k) y al acabar Jira (≈156k), y no volví a mirar hasta acabar el rojo (229k). Es la cicatriz de J1 del 24-oct, otra vez.
 - Declaré las mutaciones con una constante y el arnés leyó 0; lo cacé porque el arnés dice cuántas leyó.
+
+## SCRUM-1446f · «IMPORTE» también en la cabecera del PDF del PRESUPUESTO
+
+**Medido contra:** `origin/main` = `268eb55ddf33547063a620009e505e4ed833ba35` · 2026-10-26T22:25:01Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum1446e-la-columna-sin-iva.test.mjs`
+
+Carril J1 (`src/modules/invoicing/**`, `docs/equipo/dos-equipos.md:117`). Decisión del fundador en SCRUM-1446 c.20939 (punto 1): «IMPORTE» también en la cabecera del PDF del presupuesto, el mismo literal firmado para la factura en c.20917. La rama sale de la de 1446e (`scrum-1446e-columna-sin-iva`, punta `f72be6ca15b9d2c39d318d86477f2c06c90ebbd6`), porque #2895 no había entrado en `main` al empezar; esa punta ya contenía `origin/main` `268eb55d` (`git rev-list --count HEAD..origin/main` = 0).
+
+### 1 · Lo que cambia
+
+- `src/modules/invoicing/infra/pdf/pdf.service.ts`, `generateQuotePdf` → `drawTableHeader`: la cabecera de la columna de cada línea pasa de «Total» a «IMPORTE». La marca va en el comentario de esa línea («literal firmado por el fundador en SCRUM-1446 comentario 20939»). Nada más en `src/`.
+- ⛔ **Ningún otro texto.** **Las cajas de opciones del presupuesto (`tiers`) NO se tocan:** siguen enseñando cada línea con IVA (lo dejó dicho 1446e en su §1). Tampoco cambian el «Total presupuesto», la base, ningún importe, ni nada de la factura, la R1 o el justificante.
+- `tests/scrum1446e-la-columna-sin-iva.test.mjs`: el caso ④ espera «IMPORTE» en vez de «Total», y su cabecera de comentario cita c.20939. Una mutación declarada más (`.text('IMPORTE', X_TOTAL, …` → `'Total'`), que cae en ④.
+- `tests/_pares-leidos-en-jira.mjs`: el par (1446, 20939), la 28.ª fila. **Cruce de carril, declarado:** ese fichero es de J6 (`dos-equipos.md:194`), y su propio procedimiento pide la fila «en el mismo PR que la marca que lo cita». Lo leí yo hoy, con el ticket entero (20 comentarios).
+
+### 2 · El rojo primero, con el PDF real en memoria
+
+`generateQuotePdf` real, leído con el lector de la casa (`_texto-del-pdf.mjs`), sobre `dist/` sacado con `tsc --noCheck`:
+
+| árbol | ④ | el resto del fichero |
+|---|---|---|
+| base (con el test nuevo y sin el cambio) | ✖ `cabecera: 'Total'` frente a `'IMPORTE'`; líneas, base y total, iguales | 6 ✔ |
+| con el cambio | ✔ | 6 ✔ (7 de 7) |
+| mutación en `dist/` (`'IMPORTE'` → `'Total'`), restaurado y comprobado con `cmp` | ✖ y sólo ④ | 6 ✔ |
+
+El lector de declaraciones del meta-guard (`mutacionesDeclaradas`) lee 5 en el fichero (eran 4).
+
+### 3 · Dirigida
+
+36 ficheros: la familia 1446 (1446, 1446d, 1446e), 624 (624, 624b, 624c, 624e), los del PDF (pdfs, 452, 603, 603b, 604, 625, 659, 72, 762, 786d, 806, 987, 1302m), 247, 844c, 723, 921c, 387 (los dos), 601, 710b, 836, 178, 207, 237, 976, 267, 273 y 1294. **281 casos · 275 pasan · 0 caen · 6 saltan** (gateados por `QA_DB_TEST`/`LIBRO_PG_URL`: 72, 178 ×2, 207 ×2 y un caso de `pdfs`). En el TAP, 281 líneas `ok` y 0 `not ok`. 603b y 723 no se mueven: `generateQuotePdf` no está en el ámbito de la factura.
+**La tanda completa en local: NO CORRIDA** (orden del orquestador: hoy hay diez sesiones a la vez). No hay tests de 1447 ni de 1448 con su número en el nombre del fichero; sus casos viven en `scrum1446-…`.
+
+### 4 · Lo que no he hecho
+
+- Mirar el PDF a ojo: lo medido es el texto que saca el lector.
+- yaqu.app: **NO VISTO**, no ha entrado en `main`.
+- `prisma generate`: no. `node_modules` es un junction al del checkout compartido, sólo para leer; el guard del cliente dio ✔.
+- La parte 2 del encargo (convenciones de reparto del redondeo en los tramos) va sólo en Jira, como propuesta ✅/❌, por orden del orquestador.

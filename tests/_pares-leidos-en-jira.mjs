@@ -45,6 +45,8 @@
 // del T3 del 409 `subscription_exists`, anclada en `scrum601` (tramo 1402k).
 // La 27.ª (SCRUM-1446 comentario 20917) la leyó jv-j1ck el 26-oct, con el ticket entero: es la firma de la
 // cabecera «IMPORTE» del PDF de la factura (tramo 1446e).
+// La 28.ª (SCRUM-1446 comentario 20939) la leyó jv-j1co el 26-oct, con el ticket entero: extiende esa
+// cabecera «IMPORTE» al PDF del presupuesto (tramo 1446f).
 //
 // Una fila por línea (lo pide `tests/scrum710b`): dos tickets que añaden pares no se pisan.
 
@@ -55,6 +57,7 @@ const POR_1502O = 'jv-j1ca · SCRUM-1502o';
 const POR_1502P = 'jv-j1cc · SCRUM-1502p';
 const POR_1402K = 'jv-j3bo · SCRUM-1402k';
 const POR_1446E = 'jv-j1ck · SCRUM-1446e';
+const POR_1446F = 'jv-j1co · SCRUM-1446f';
 
 export const PARES_LEIDOS = Object.freeze([
   { ticket: 299, comentario: 12188, leido: '2026-10-24', por: POR_1511G },
@@ -84,4 +87,5 @@ export const PARES_LEIDOS = Object.freeze([
   { ticket: 1502, comentario: 20853, leido: '2026-10-26', por: POR_1502P },
   { ticket: 1402, comentario: 20866, leido: '2026-10-26', por: POR_1402K },
   { ticket: 1446, comentario: 20917, leido: '2026-10-26', por: POR_1446E },
+  { ticket: 1446, comentario: 20939, leido: '2026-10-26', por: POR_1446F },
 ].map(Object.freeze));
