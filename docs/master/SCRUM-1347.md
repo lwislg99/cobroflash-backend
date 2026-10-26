@@ -1,13 +1,11 @@
-# SCRUM-1347 · Parte S1 del máster: la fila 1 y su nota, y las filas 3 y 4 medidas
-
-> El registro de la fila 1 aplicada (14-oct-2026, PR #2432) vive en `docs/master/SCRUM-1016.md`, apartado «3 · SCRUM-1347». Este fichero empieza con la medición que faltaba.
-
 # SCRUM-1347b · 26-oct-2026 · Las filas 3 y 4 de S1, medidas por la ruta montada, y la nota de la fila 1 propuesta para firma
 
 **Medido contra:** `origin/main` = `6d5bf76c5bf02142e762ca2ddd3d2ae2b92f9a3e` · 2026-10-26T22:57:23Z (al empujar, `main` = `31d0bbae3`: 3 commits más, ninguno toca `src/` ni `docs/YAQU_MASTER.md`)
 **Rama:** `scrum-1347b-filas-3-4` · **Puesto:** J4 (sesión `jv-j4al`; el hook de arranque dijo «SIN IDENTIDAD», SCRUM-1498) · **Solo docs:** no toca `src/`, `public/`, `docs/YAQU_MASTER.md`, el camino de emisión, el esquema ni ninguna base.
 
-A9: aviso → cicatriz J4 «salieron NO-MONTADA para el admin cinco rutas cuyo manejador sí corría» — no se pudo comprobar: la sonda es de un solo ticket y nada obliga a la siguiente a no fiarse de un 404 con el mismo cuerpo que el global
+A9: aviso → cicatriz J4 «en la sonda de las filas 3 y 4 de S1 salieron NO-MONTADA para el admin cinco rutas cuyo manejador sí corría: su 404 propio tenía el mismo cuerpo que el 404 global, y casi lo llevo como un positivo flojo» — no se pudo comprobar: la sonda es de un solo ticket y nada obliga a la siguiente a no fiarse de un 404 con el mismo cuerpo que el global
+
+El registro de la fila 1 ya aplicada (14-oct-2026, PR #2432) vive en `docs/master/SCRUM-1016.md`, apartado «3 · SCRUM-1347». Este fichero empieza con la medición que faltaba.
 
 ## Encargo
 
