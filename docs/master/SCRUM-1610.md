@@ -64,4 +64,8 @@ Sin sembrar: 1516c da 4 de 4 con la población de c.20951 (rol 78 · RECORTA 44 
 
 **Lo que NO está medido:** que `fin` evite el corte. En Windows no se reproduce (0 de 300, tramo de arriba), y medirlo en el runner pide un workflow (punto 3, S5 o el fundador). Si la hipótesis es mala, ② hace que el próximo corte se lea como CIEGO y no como un defecto del árbol. Banco local: `node_modules` enlazado al del checkout compartido (solo lectura, sin `generate`) y `dist/` con `tsc --noCheck`.
 
-Suite entera local: NO CORRIDA (orden del encargo); guards dirigidos y el obligatorio de CI.
+**Guards dirigidos:** 220 de 220 pasan, 0 saltados, en 23 ficheros: 1294, 237, 976, 824, 836, 419, 702, 700, 719, 1415, 267, 273, 1387, 1185, 411, 812, 850, 1610b, 1516c y 765. Antes me pararon dos, y los dos tenían razón:
+- 700: el test nuevo traía un filtro de comentarios propio. Pasa a usar el de la casa.
+- 719: ese filtro iba sin suelo y sin ficha de mudez. Pasa a usar `leerFuente` con su ancla, y la ficha se regenera con `npm run censo:mudez -- --escribir`.
+
+Suite entera local: NO CORRIDA (orden del encargo). Hacen de tanda los guards dirigidos y el obligatorio de CI.

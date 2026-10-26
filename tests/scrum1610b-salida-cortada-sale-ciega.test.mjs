@@ -22,6 +22,7 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { sinCortar, sinCortarSync, rastroDeCortes, avisoDeCorte } from './_salida-entera.mjs';
+import { leerFuente } from './_guard-texto.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SONDA = path.join(RAIZ, 'docs', 'master', 'evidencias', 'SCRUM-1610', 'sonda-salida-cortada.mjs');
@@ -94,11 +95,9 @@ test('SCRUM-1610b · completa → como hoy: sin relanzar y sin rastro; y un hijo
   assert.equal(veces, 1); assert.equal(muerto.cortada, false); assert.equal(muerto.error.message, 'no acabó');
 });
 
-// El código sin comentarios: el comentario de `fin` nombra `process.exit` a propósito.
-const sinComentarios = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').split('\n').map((l) => l.replace(/(^|\s)\/\/.*$/, '$1')).join('\n');
-
 test('SCRUM-1610b · el censo de frontera sale SIEMPRE por `fin`, que sale cuando el centinela ya se ha escrito', () => {
-  const codigo = sinComentarios(fs.readFileSync(path.join(RAIZ, 'tests', '_censo-frontera.mjs'), 'utf8'));
+  // Sin comentarios (el filtro de la casa): el comentario de `fin` nombra `process.exit` a propósito.
+  const codigo = leerFuente(path.join(RAIZ, 'tests', '_censo-frontera.mjs'), { ancla: 'const fin = (c) =>' });
   const def = codigo.match(/const fin = \(c\) => new Promise\(\(\) => \{([^\n]*)\}\);/);
   assert.ok(def, 'no encuentro la definición de `fin` en _censo-frontera.mjs');
   assert.match(def[1], /process\.stdout\.write\('EXIT=' \+ c \+ '\\n', \(\) => process\.exit\(c\)\)/,
