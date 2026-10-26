@@ -1095,6 +1095,73 @@ líneas `ok` de primer nivel suman el `# tests` declarado). Los de registro, en 
 - Una pasada por punto.
 - Que las ocho mutaciones mueran también en el Postgres de CI: nadie las corre allí (§1599i ⓪).
 
+## J6 · SCRUM-1599p · lote 6a del diseño B: ocho con carrera al banco desechable, scrum173 con la opción (A), y el trinquete de 13 a 4
+
+**Medido contra:** `origin/main` = `268eb55ddf33547063a620009e505e4ed833ba35` · 2026-10-26T22:41:07Z (hora de GitHub; sesión J6 `jv-j6cp` en su árbol `jv-j6cp`, por encargo del orquestador `cobroflash-backend-8b`)
+
+A9: aviso → cicatriz J6 «Crucé el umbral de aviso de contexto sin medirme en el cruce: medí al arrancar y no volví a medir hasta después de un barrido ancho.» — no se pudo comprobar: medí 92k al arrancar y 119k tras Jira, y no volví a medirme hasta acabar el DESPUÉS del banco, con 239k; ningún hook de este árbol mide el contexto al cruzar
+
+Encargo: SCRUM-1599 c.20940 (decisión de reparto sobre la medición c.20928 de §1599o). Sólo `tests/` y docs: 0 líneas de `src/`, `.github/` o `prisma/`, y ninguna aserción tocada. Salida entera: `evidencias/SCRUM-1599/lote-1599p.salida.txt`; instrumentos: `pgbanco-1599p.mjs.txt` (el Postgres), `banco-1599p.mjs.txt` (banco-1599h contra ese Postgres), `mutar-1599i.mjs` sin cambiar y `pasada-1599o.mjs.txt` (de la rama de 1599o).
+
+### ① El lote
+
+- **Forma de 1599m** (`_banco-libro.mjs` justo detrás de `_staging-db.mjs`, `QA_DB_TEST` **o** `LIBRO_PG_URL`): scrum115, 127, 178, 92 y 814-carrera-del-tramo.gated.
+- **Con `URL_BANCO`**: scrum592, 767 y 793. Con el banco, la URL es `URL_BANCO`, que ya ha pasado el guard de `_banco-libro.mjs` (loopback y base «*_test»). Con `QA_DB_TEST` siguen leyendo `DATABASE_URL_DEV` y exigiendo `yaqu_dev_javier`, con la misma aserción. Control negativo: 592 con `LIBRO_PG_URL` a una base `…_plantilla` se niega al cargar («LIBRO_PG_URL no es un banco desechable»), rc=1.
+  - ⚠️ Consecuencia que digo, no mido: para importar `_banco-libro.mjs`, `scrum876e` exige `_staging-db.mjs` justo delante. Así que con `QA_DB_TEST=1` estos tres pasan ahora además por el guard de staging (`DATABASE_URL_TESTS`, marca y turno). Escriben donde escribían; con `QA_DB_TEST` no los he corrido.
+- **scrum173, opción (A)**: sus 7 casos ganan el banco, y el de «las cadenas YA PERSISTIDAS» salta en él con su motivo (`SOLO_EN_STAGING`): recorre las facturas selladas de TODA la base, que en la tanda comparten otros ficheros. No se acota a sus comercios.
+- 234 y 781 no entran (c.20940). Carril: `carriles.mjs de` los nueve ANTES de tocarlos → «sin fila en §3»; positivo: `latido.mjs` → S5.
+
+### ② Banco: Postgres 16.14 de verdad (no PGlite: el lote prueba concurrencia, §1599o ①)
+
+| pasada | casos | pasan | caen | saltan |
+|---|---|---|---|---|
+| ANTES (los 9 de main) | 31 | 1 | 0 | 30 |
+| DESPUÉS | 31 | 30 | 0 | 1 (el de 173, con su motivo) |
+| 9 mutaciones en `MUTACIONES_CON_BASE` | — | — | 9 MUEREN | 0 viven · 0 ciegas |
+
+- Cada mutación cae por su caso: 115 `status: 'failed'` → `'sent'`; 127 sin el paywall de la prueba vencida; 173 ① sin el «fuera de una transacción»; 178 sin el gate de la regla 24 («devolvió 500»); 92 sesión sin `teamMemberId`; 814 recuento de tramos a 0 (caen los 3); 592 sin el cerrojo («diez reservas … [1,1,2,3,3,3,3,3,4,4]»); 767 la cura devuelve un token sin guardar; 793 sin `portalToken: null` en el `WHERE` («10 tokens DISTINTOS»). `dist/` vuelve byte a byte.
+- **De paso, dos mutaciones VIVIERON en la primera ronda**, y las cambié:
+  - 814 sin `tomarCerrojoDeSerie`: 0 de 3 caen (n=1). Ese cerrojo no lo vigila ninguno de sus tres casos en este banco, o la carrera no se entrelazó: SIN MEDIR cuál.
+  - 592 sin su cerrojo: cae el caso de DIEZ, no el de DOS. El `cae` apunta al de diez.
+- Trinquete `scrum1599f`: con los nueve migrados y la lista sin tocar cae con «SALEN: los nueve» y «ENTRAN: —». Población recalculada con el número declarado a 0: **4** (116, 234, 574 y 781). `scrum419`: de 121 a **151**, la suma que da el propio test; con 173 declarado 6 en vez de 7, cae.
+
+### ③ Régimen T (c.20940: al menos 3)
+
+84 ficheros (los de `LIBRO_PG_URL` según `scrum419`) contra la MISMA base, N=11, base nueva por pasada. Memoria libre antes de cada una: 3.702, 4.539 y 4.549 MB.
+
+| pasada | VERDE | ROJO | SALTA | pared |
+|---|---|---|---|---|
+| T1 | 82 | 1 (`scrum728d`) | 1 (173) | 34,1 s |
+| T2 | 83 | 0 | 1 (173) | 30,1 s |
+| T3 | 83 | 0 | 1 (173) | 30,7 s |
+
+- Los nueve, verdes 3/3; 173 sale 6/0/1 las tres veces.
+- `scrum728d` cae en T1 por su SUELO «el RTT en loopback es ~0»: mide latencia con once procesos a la vez. No es de este lote (ya iba al banco) y no lo he tocado; es un candidato a ruido de carga, SIN MEDIR.
+
+**Sin medir:** CI (otro runner y la tanda entera) · staging con turno · los tres de `URL_BANCO` con `QA_DB_TEST` · por qué vivió el cerrojo de 814 · suite entera local: NO CORRIDA.
+
+**De paso, confieso:** lancé un `ls` con comodines sobre los 648 trabajos de la máquina, sin medirlos, buscando el Postgres de 1599o. El arnés lo mandó a segundo plano y lo paré: es la cicatriz de 1599i, otra vez. Y el primer arranque del Postgres se quedó colgado porque `pg_ctl` heredaba las tuberías; al parar la tarea murió el servidor, y lo rehíce con `stdio: 'ignore'`.
+
+### ④ El rojo de CI en scrum115, y su arreglo (sesión J6 `jv-j6cx`, 26-oct-2026 ~23:10Z de GitHub, sobre la punta `f695bdab91d47a75441590a0fc1cca6b41826f91` de la rama)
+
+A9: aviso → A10 «Un laboratorio que le presta su entorno al sujeto mide la suma de los dos.» — no se pudo comprobar: el banco local de §② (`banco-1599p.mjs.txt`) le ponía `WHATSAPP_DRY_RUN=1` al hijo y CI no se la pone; ningún guard compara el entorno de un banco local con el del job de CI
+
+- **El rojo** (lo leyó el vigía `jv-j6cs` en el job 121893679905: 12747 pass + 2 fail + 15 skip): caen los dos casos de scrum115 con `'not_configured'` donde se esperaba `'wa_opt_out'` y `'demo_safe_numbers'`. Los otros ocho del lote pasan.
+- **Causa, por ejecución.** `ci.yml` no declara ninguna variable `WHATSAPP_*`, y sin credenciales ni `WHATSAPP_DRY_RUN` el sender corta en `not_configured` ANTES de la regla vigilada (`whatsapp.ts`, `sendWhatsAppTemplate` y `sendWhatsAppText`). Mi banco «como CI» es `banco-1599p` con esa bandera quitada del entorno del hijo, y da el mismo rojo: 0/2, `actual: 'not_configured'`. El verde de §② era del banco, no del test.
+- **Arreglo, opción (a), sin `src/` ni credencial falsa:** con el banco, el propio fichero se pone `WHATSAPP_DRY_RUN=1`. Es el modo de pruebas del sender, que pasa todas las reglas y no llama a Meta. Y corta toda salida que no sea loopback con `cortarSalida()` de `_sin-salida.mjs`, con su control positivo delante y «nada apuntado» al acabar. Es la forma de a55 (SCRUM-876f) y scrum47 (876g). Con `QA_DB_TEST` no cambia nada. Ninguna aserción existente cambia (regla 41): se añaden la de la bandera y las dos del corte.
+
+| pasada (banco como CI) | casos | pasan | caen |
+|---|---|---|---|
+| ANTES (34df32198) | 2 | 0 | 2 (`not_configured`) |
+| DESPUÉS | 2 | 2 | 0 |
+| CONTROL: sin la línea de la bandera | 2 | 0 | 2 (la aserción de la bandera) |
+| mutación de `MUTACIONES_CON_BASE` (`mutar-1599i.mjs`) | — | — | MUERE: cae su caso, `dist/` byte a byte |
+
+Salida entera: `evidencias/SCRUM-1599/scrum115-ci-1599p.salida.txt`.
+
+**De paso, confieso:** arranqué el Postgres en el 55491 cuando mi propio `netstat` acababa de decir que ese puerto estaba ocupado. Era el de otra sesión, y la comprobación iba encadenada con el arranque. `pg_ctl` falló sin tocar el ajeno, y lo levanté en el 55617, que medí libre antes. Además, la evidencia la escribí antes de pasarla por `carriles.mjs de`: es la cicatriz de 1218d.
+
+**Sin medir:** CI con este arreglo · staging con turno.
 ## J1 · SCRUM-1599r · scrum781 y scrum234 alineados con la serie F firmada (SCRUM-780 c.14709)
 
 **Medido contra:** `origin/main` = `6d5bf76c5bf02142e762ca2ddd3d2ae2b92f9a3e` · 2026-10-26T22:46:10Z (hora de GitHub; sesión J1 `jv-j1cr` en su árbol `cobroflash-jv-j1cr`, por encargo del orquestador `cobroflash-backend-8b`. La decisión es la del fundador en SCRUM-1599 c.20947, sobre la medición de §1599q, c.20946)
