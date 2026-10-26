@@ -35,3 +35,33 @@ En los cinco, el código de salida es el correcto: sólo falta la cola. Todos co
 3. Medirlo en el runner, con un workflow (S5 o el fundador).
 
 Suite entera local: NO CORRIDA.
+
+## J6 · SCRUM-1610b · el hijo sale con stdout vaciado, y una salida cortada sale CIEGA (opciones 1 + 2, c.20952)
+
+**Medido contra:** `origin/main` = `31d0bbae3ff7da9fafb76ffac0ec32a7fb856786` · 2026-10-26T23:00:35Z (hora de GitHub, cabecera `Date:`; sesión J6 `jv-j6cv`, por encargo del orquestador `cobroflash-backend-8b`. La rama lleva dentro el tramo de arriba, `22c8d232f`, que va en #2901 y aún no ha entrado)
+
+A9: comprobación → `scripts/meta-guard-mutaciones.mjs`
+
+Mi error: probé mis tres mutaciones con un mutador propio, sin pasada base y con `NODE_TEST_CONTEXT` definido aunque vacío. Dijo MUDA a las tres con rc 0, cuando lo que pasaba es que el hijo no corría los tests. Lo cazó añadirle la pasada base, que tiene que dar 5 ✔: con ella salen las tres VIVAS. La comprobación de verdad es el meta-guard de la casa, que corre este catálogo en CI con su PUERTA 1. Segundo error, en la cicatriz de J6: mi primer corte sembrado no cortaba nada. Sobre la salida de 3 líneas del CIEGO por entorno, solo añadía una línea vacía detrás del centinela.
+
+**① El hijo: `tests/_censo-frontera.mjs`** (sin fila en §3 de `dos-equipos.md`; lo hizo J6). Sus 8 salidas pasan por `fin(c)`, que fija `process.exitCode`, escribe `EXIT=c` y llama a `process.exit(c)` en el callback de ESA escritura. Es decir, sale cuando el centinela ya ha llegado al descriptor. Se espera a una promesa que nunca se resuelve, para que no siga corriendo el código de detrás: la salida por entorno corta antes de ejecutar manejadores que envían. No elegí `process.exitCode` sin `exit()` porque la app importada puede dejar asas vivas: el censo quedaría COLGADO, y además el flujo no se cortaría. `scripts/meta-guard-mutaciones.mjs` NO se toca: es S3 y va a Luis.
+
+**② Los lectores exigen el centinela**, con `tests/_salida-entera.mjs`. Si el hijo acabó con código y le falta el centinela, se relanza UNA vez. Si vuelve a faltar, cae con «CIEGO · salida cortada: …». Cada corte deja en la salida del test cuántos hubo, en qué intento y cuántos B y líneas llegaron. Un hijo que no arrancó o que se mató por tiempo NO es un corte y no se relanza.
+- `scrum1516c` (J6): el centinela es la última línea `EXIT=N`, con N igual al código. Se exige antes de leer nada, en las cinco corridas, también en las de `--sin-sembrar` y `--doble-sordo`.
+- `scrum765` (sin fila en §3; cruce declarado en el commit): el centinela es su última línea, «MODO CENSO: NO se ha ejecutado ninguna mutación.». Si falta dos veces pero el bloque «frontera src/ ↔ dist/» llegó entero, no es un corte: es que la línea ya no se imprime, y cae la aserción de siempre. Ninguna aserción de lo que miden los censos se ha tocado (regla 41).
+
+**③ Probado.** `tests/scrum1610b-salida-cortada-sale-ciega.test.mjs`, 5 de 5, con la sonda de jv-j6cu como hijo real:
+- cortada ×2 → CIEGO;
+- cortada solo en el primer intento → pasa y lo dice;
+- completa → sin relanzar.
+
+Tiene 3 mutaciones en su catálogo, las tres VIVAS. Además, contra el lector real de 1516c se sembró un corte quitando las 20 últimas líneas (`docs/master/evidencias/SCRUM-1610/1610b/`):
+- cortado ×2 → las tres aserciones que leen caen con «CIEGO · salida cortada»;
+- cortado solo en el primer intento → 4 de 4, con «cortes 1: intento 1 (13161 B / 204 líneas) → el relanzamiento llegó entero»;
+- sin la exigencia → vuelve el rojo engañoso del 26-oct: «código 0 · población ¿?», «su línea de controles SEMBRADOS no dice true», «--doble-sordo salió 1 sin decir…».
+
+Sin sembrar: 1516c da 4 de 4 con la población de c.20951 (rol 78 · RECORTA 44 · SIN-DOCUMENTO 17 · NO-LLEGO 14; comercio 192), y 765 da 7 de 7.
+
+**Lo que NO está medido:** que `fin` evite el corte. En Windows no se reproduce (0 de 300, tramo de arriba), y medirlo en el runner pide un workflow (punto 3, S5 o el fundador). Si la hipótesis es mala, ② hace que el próximo corte se lea como CIEGO y no como un defecto del árbol. Banco local: `node_modules` enlazado al del checkout compartido (solo lectura, sin `generate`) y `dist/` con `tsc --noCheck`.
+
+Suite entera local: NO CORRIDA (orden del encargo); guards dirigidos y el obligatorio de CI.
