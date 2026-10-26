@@ -440,3 +440,107 @@ pregunta bien planteada antes de que alguien la resuelva de memoria.
 - **No se comentó en Jira SCRUM-870**: la lectura fue de solo consulta (`getJiraIssue`); la
   actualización del ticket, si procede, la decide quien lo cierra (A13).
 - Cero dependencias nuevas (36) · cero estado o flag de producto (27) · cero `schema.prisma`.
+
+---
+
+# SCRUM-523d · El guard: no se cambia el camino de emisión sin subir la versión del SIF
+
+**Medido contra:** `origin/main` = `11324d271372ee6e689aeeea1c90d096b6043696` · 2026-10-26T15:51:09Z
+
+Puesto J6 (sesión `jv-j6cj`). Construye la mitad «guard» de la **V2** de la decisión del fundador
+(SCRUM-523 c.20878), con la V1 como definición: una versión es un cambio de lo que el sistema HACE
+con los registros de facturación, no cada despliegue. Es de **solo lectura** (regla 38): `src/` no se
+ha tocado y el test no importa `dist/`.
+
+## 1 · Qué hace
+
+`tests/scrum523d-version-del-sif.test.mjs` congela `VERIFACTU_VERSION` (`"1.0.0"`) y una huella por
+fichero del camino. Si el camino cambia y la versión es la congelada → ROJO, nombrando el fichero y
+diciendo que la versión la sube un PR con el OK del fundador y una declaración nueva firmada por los dos
+administradores. Si la versión cambia → ROJO hasta que ese mismo PR recongele (si no, tras la primera
+subida el guard quedaría mudo). Las huellas nuevas no se eligen: el mensaje de error las trae
+recalculadas para pegarlas.
+
+**La base no es un commit.** CI prueba el merge y no siempre trae `origin/main`; la base es lo congelado
+dentro del propio test.
+
+**La huella es del código, no del texto:** sin comentarios, reimpreso por el impresor de TypeScript y con
+CRLF normalizado. Un comentario, un salto de línea o un checkout de Windows no cuentan; renombrar una
+variable sí.
+
+## 2 · La población, derivada y no escrita a mano
+
+No es un censo nuevo. La frontera es la que ya existe del camino de emisión, `MODULOS_FISCALES` de
+`scripts/puerta-avisador-rojo.mjs` (regla 38). Dentro de ella, por los `import` de cada fichero
+(`ts.preProcessFile`, no texto): raíces = lo que vive en `src/modules/fiscal/verifactu/`, lo que lo
+importa y lo que importa `verifactu.service.ts`; miembros = las raíces y lo que importan,
+transitivamente, sin salir de la frontera.
+
+Medido sobre 339 ficheros `.ts` de `src/`: **9 raíces, 15 ficheros en el camino, 7 en la frontera.**
+El camino son los seis de `fiscal/verifactu/` (`instalacion`, `productor`, `registro.builder`,
+`sif.client`, `sif.cola`, `sif.procesador`) y nueve de `invoicing/domain/` (`clienteCongelado`,
+`emisorCongelado`, `emission.service`, `encolarRemision`, `invoiceNumber.service`, `selladoEstado`,
+`tipoDocumento`, `vat.service`, `verifactu.service`). El test imprime la lista entera en cada pasada.
+
+**Lo que NO mira, a sabiendas:**
+- La frontera (`src/core/config/env.ts`, `core/db/prisma.ts`, `core/documentos/formatoNumero.ts`,
+  `core/flags.ts`, `core/utils/utils.ts`, `core/zonaDelMerchant.ts`, `system/audit.service.ts`): el camino
+  las importa, pero no entran en la huella. Un cambio de redondeo en `core/utils` no cae aquí.
+- Quién llama al sellado desde fuera de la frontera (rutas de `jobs/`, `quotes/`, `system/`,
+  `exports/`).
+- Que la versión nueva sea mayor, o que la declaración esté firmada: eso es el OK del fundador.
+- Una subida de versión de TypeScript que cambie cómo reimprime el código daría ROJO en los 15 a la vez.
+  No lo he medido.
+
+## 3 · Controles, corridos
+
+Sembrados por el propio test sobre una copia en memoria del árbol (comparan contra la base recalculada
+de hoy, así que un camino ya cambiado tumba sólo el test principal):
+- 🔴 tocar `registro.builder.ts`, `verifactu.service.ts` o `vat.service.ts` sin subir la versión → ROJO
+  nombrando exactamente ese fichero.
+- 🔴 un fichero nuevo que el camino empieza a importar → ROJO «entra en el camino».
+- 🔴 subir la versión sin recongelar → ROJO; subirla y recongelar → VERDE.
+- 🟢 un fichero de `src/modules/quotes/`, un comentario y CRLF con líneas en blanco → VERDE, con el
+  positivo de la misma siembra sobre el camino al lado.
+- ⚫ sin `productor.ts`, sin la versión, con un mapa vacío o con una raíz que no existe → CIEGO.
+
+**En rojo de verdad, sobre `src/` del árbol** (commit LOCAL `8ed7bfc844242de25aff31b39c779098a1dc7a24`, no empujado, antes de
+inyectar; cada inyección con su `git diff --numstat`, restaurada con `git restore --source=HEAD` y
+`git status --porcelain` vacío al final):
+
+| inyección | numstat | resultado |
+|---|---|---|
+| `MAX_REGISTROS_POR_ENVIO` 1000 → 999 en `registro.builder.ts` | 1 1 | ROJO, cae sólo el principal (6/7), nombra `registro.builder.ts — cambia` |
+| un comentario en la línea 1 de `verifactu.service.ts` | 1 0 | VERDE 7/7 |
+| una línea nueva en `src/modules/quotes/domain/apartados.ts` | 1 0 | VERDE 7/7 |
+| `VERIFACTU_VERSION` "1.0.0" → "1.0.1" sin recongelar | 1 1 | ROJO, cae sólo el principal (6/7), «ha pasado de "1.0.0" a "1.0.1"» |
+| quitar la línea de `VERIFACTU_VERSION` | 0 1 | ROJO con «CIEGO: no encuentro VERIFACTU_VERSION…» (1/1: la base no se puede calcular) |
+
+Base sin mutar: 7/7, ~2 s.
+
+## 4 · 🔴 Hallazgo (A23 #1): la prohibición ya está rota hoy, y el guard congela ese estado
+
+`VERIFACTU_VERSION` vale `"1.0.0"` desde el merge de #356 (2-ago-2026). Desde el 2-ago han entrado en
+`main` **30 merges** (en primer padre, de 2.438) que tocan alguno de los 15 ficheros: el propio #356 y
+**29 después, sin subirla**. En los
+últimos 7 días, **2 de 245**. Control positivo de la consulta: con `productor.ts` solo, salen #2695,
+#1729 y #356.
+
+Así que `"1.0.0"` no describe el camino de hoy, sino el del 2-ago. El guard congela **el de hoy** bajo
+`"1.0.0"`. No ha salido ningún registro real (regla 24, `INVOICING_ES_ENABLED` OFF para merchants ES
+reales), ni hay declaración firmada. Si eso basta para que el estado de hoy sea la «1.0.0» que se
+declare, lo decide el fundador (pregunta en Jira).
+
+**PR abiertos que caerían al entrar esto:** 0 de 13. Los 13 traen su lista de ficheros, así que el
+cero no es un control vacío.
+
+## 5 · Lo que NO se hizo
+
+- `src/` intacto: `productor.ts` y el camino de emisión sólo se leyeron. Nada exportado para medir.
+- No se sube la versión ni se escribe ningún texto de la declaración (regla 39).
+- Ningún workflow. El test entra en la tanda por su nombre (`tests/*.test.mjs`).
+- **Suite entera en local: NO CORRIDA** (lo pide el encargo, hay 10 sesiones a la vez). Los guards
+  dirigidos, en la entrega de Jira.
+
+A9: comprobación → `tests/scrum523d-version-del-sif.test.mjs`
+A9: aviso → cicatriz J6 «Sembré como reformateo inocuo duplicar los saltos de línea, y dentro de una plantilla multilínea eso es código distinto: lo cazó el propio instrumento» — no se pudo comprobar: el negativo se corrigió en este test, pero ningún meta-guard comprueba que el «cambio inocuo» de un negativo nuevo no cambie el AST
