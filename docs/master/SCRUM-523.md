@@ -544,3 +544,59 @@ cero no es un control vacío.
 
 A9: comprobación → `tests/scrum523d-version-del-sif.test.mjs`
 A9: aviso → cicatriz J6 «Sembré como reformateo inocuo duplicar los saltos de línea, y dentro de una plantilla multilínea eso es código distinto: lo cazó el propio instrumento» — no se pudo comprobar: el negativo se corrigió en este test, pero ningún meta-guard comprueba que el «cambio inocuo» de un negativo nuevo no cambie el AST
+
+# SCRUM-523e · La «1.0.0» es el camino de HOY, por decisión del fundador
+
+**Medido contra:** `origin/main` = `f94908a532b9768abbf9ea7bd395a401c10d3a3b` · 2026-10-26T22:24:18Z
+
+Puesto J6 (sesión `jv-j6ct`). Solo docs: deja escrito lo que el tramo 523d no decía (lo avisó `jv-j6co`
+en SCRUM-523 c.20934). `src/`, el guard (`tests/scrum523d-version-del-sif.test.mjs`) y
+`VERIFACTU_VERSION` (`src/modules/fiscal/verifactu/productor.ts`) no se han tocado.
+
+## 1 · La decisión
+
+**SCRUM-523 c.20898** (el orquestador J transcribe la decisión de Javier, por cuestionario, sobre la P1
+de c.20897): ✅ **la «1.0.0» es la de HOY.** Todavía no se ha entregado a nadie ninguna declaración
+responsable con la 1.0.0, así que no hay nada que corregir hacia atrás. El guard de 523d congela el
+camino de emisión de hoy como 1.0.0, y desde que entró en `main` (#2888) cualquier cambio de ese camino
+obliga a subir la versión (V2 de c.20878).
+
+Por tanto: **los merges que cambiaron el camino desde el 2-ago entran en la 1.0.0 por esta decisión, no
+por un olvido.** La P1 que la pidió es la de `jv-j6cj` en **c.20897**, que los contó como 29.
+
+## 2 · El recuento, recalculado: son 28, no 29
+
+Población: los **15 ficheros del camino** que imprime hoy el propio guard (corrido sobre el árbol de este
+tramo: 339 `.ts` leídos, 9 raíces, 15 en el camino, 7/7 verde; la misma lista que en §SCRUM-523d.2).
+Rango: `be48da784^..origin/main` en primer padre (`be48da784` = merge de #356, 2-ago-2026 17:10+02:00).
+
+| medida | resultado |
+|---|---|
+| commits en primer padre desde #356, incluido | 2.440 |
+| de ellos, tocan alguno de los 15 (`git log --first-parent -- <15>`) | **29 = #356 + 28 después** |
+| sonda independiente: `git diff --quiet <c>^1 <c> -- <15>` por cada uno de los 2.440 | 29, los mismos (corrida sobre `9dc1b9e7`, tres commits antes; esos tres no tocan el camino, fila de abajo) |
+| control positivo: sólo `productor.ts` | #2695, #1729, #356 (los mismos tres que en 523d) |
+| los 3 merges entre `9dc1b9e7` y `f94908a5` que tocan el camino | 0 (el único `src/` es `invoicing/infra/pdf/pdf.service.ts`, fuera) |
+
+Los 28, del más nuevo al más viejo: #2836, #2695, #2296, #2056, #2053, #2048, #2018, #2014, #1940,
+#1920, #1895, #1784, #1715, #1729, #1710, #1680, #1608, #1425, #1348, #1225, #1154, #799, #770, #627,
+#572, #550, #372, #362. (#1680 y #1608 son squash, no merge: cuentan igual, cambian el camino.)
+
+**Por qué difiere de 523d (30 con #356, 29 después, «de 2.438»):** no lo he reproducido. Con el mismo
+rango sobre la base que declara 523d (`11324d27…`) también salen **29 con #356 → 28 después**, y el
+total en primer padre desde #356 sale **2.426**, no 2.438. Como `main` sólo puede añadir commits, el 30
+de entonces no baja a 29 por moverse `main`: la diferencia es de método, y cuál no lo sé. Una trampa
+medida que da un número DISTINTO (y no explica el 30): `git log --since=2026-08-02` lo toma como el 2-ago
+a la hora actual y deja fuera el propio #356. Lo que manda es el recalculado: **28 merges después de
+#356 quedan dentro de la 1.0.0 por la decisión de c.20898.** El «29» de c.20897 y c.20898 es el mismo
+conjunto contado con un merge de más; la decisión no depende del número.
+
+## 3 · Lo que NO se hizo
+
+- No se toca el guard, ni la constante de versión, ni ninguna declaración (regla 39: la firman los dos
+  fundadores; el borrador vive en la rama `scrum-523c-declaracion-dos-firmantes`).
+- No he medido QUÉ cambió cada uno de los 28 en el registro de facturación: sólo que tocan un fichero
+  del camino (la huella del guard es del código, sin comentarios).
+- **Suite entera en local: NO CORRIDA** (lo pide el encargo). Guards dirigidos, en la entrega de Jira.
+
+A9: aviso → cicatriz J6 «Lancé un bucle de 2.440 `git diff` sin cronometrar uno antes, y el arnés lo mandó a segundo plano: la cuarta vez de la misma familia» — no se pudo comprobar: ningún hook multiplica iteraciones por duración antes de lanzar, y las tres cicatrices anteriores de esta familia no lo impidieron

@@ -1141,3 +1141,62 @@ Encargo: SCRUM-1599 c.20940 (decisión de reparto sobre la medición c.20928 de 
 **Sin medir:** CI (otro runner y la tanda entera) · staging con turno · los tres de `URL_BANCO` con `QA_DB_TEST` · por qué vivió el cerrojo de 814 · suite entera local: NO CORRIDA.
 
 **De paso, confieso:** lancé un `ls` con comodines sobre los 648 trabajos de la máquina, sin medirlos, buscando el Postgres de 1599o. El arnés lo mandó a segundo plano y lo paré: es la cicatriz de 1599i, otra vez. Y el primer arranque del Postgres se quedó colgado porque `pg_ctl` heredaba las tuberías; al parar la tarea murió el servidor, y lo rehíce con `stdio: 'ignore'`.
+## J1 · SCRUM-1599r · scrum781 y scrum234 alineados con la serie F firmada (SCRUM-780 c.14709)
+
+**Medido contra:** `origin/main` = `6d5bf76c5bf02142e762ca2ddd3d2ae2b92f9a3e` · 2026-10-26T22:46:10Z (hora de GitHub; sesión J1 `jv-j1cr` en su árbol `cobroflash-jv-j1cr`, por encargo del orquestador `cobroflash-backend-8b`. La decisión es la del fundador en SCRUM-1599 c.20947, sobre la medición de §1599q, c.20946)
+
+A9: aviso → A10 «Un rojo sin población no es un hallazgo: es un instrumento que no llegó a arrancar.» — no se pudo comprobar: encadené tres pasadas del corredor en un solo comando y la segunda y la tercera salieron CIEGAS con la etiqueta perdida; lo cazó el CIEGO del propio corredor de §1599q y las repetí una por comando, pero por qué se perdió el argumento está SIN MEDIR, y ningún guard del repositorio ve una orden de consola
+
+### ① Lo que cambia (sólo `tests/`; 0 líneas de `src/` y del camino de emisión)
+
+| fichero | antes | después |
+|---|---|---|
+| `tests/scrum781-concurrencia-de-la-factura.test.mjs` (caso «SUELO») | `assert.match(inv.number, /^\d{4}-QA-\d{3}$/, …)` | `assert.match(inv.number, /^F\d{6}$/, …)`, con el mismo mensaje |
+| `tests/scrum234-carrera-serie.gated.test.mjs` | `seq = Number(String(n).split('-').pop())` | los dos números casan `/^F\d{6}$/` (aserción nueva) y `seq = Number(String(n).slice(-4))` |
+
+- Ninguna otra aserción cambia (regla 41). La barrera, el `P2002`, el «no son el mismo número» y el contador de 234 siguen
+  igual; el `slice(-3)` de las carreras de 781 no se toca (§1599q lo deja «sin medir»; no entra en c.20947).
+- **Otro test con el mismo patrón:** busqué por contenido las aserciones con `\d{4}-` sobre un número en
+  `tests/*.test.mjs`. Salen dos: `scrum781:130` (éste) y `scrum1183:59`, que es un rango de fechas, no un número de
+  factura. Los `2026-QA-…` de 73, 74 y 82 son números SEMBRADOS por el propio test, no lo que se espera del emisor. No hay
+  ninguno más que pedir.
+- Los dos siguen gateados (`QA_DB_TEST`): no entran en el banco en este PR. 781 apunta a `yaqu_dev_javier` y 234 a
+  staging, así que meterlos pide la forma nueva de `URL_BANCO` de §1599o; lo decide el lote siguiente.
+
+### ② Por ejecución (copias adaptadas con la forma de §1599q, borradas al acabar; n=1 por fila)
+
+Postgres desechable en loopback (`embedded-postgres` **17.5**, no el 16.14 de §1599q: es el binario que había en la
+máquina), base `yaqu_libro_test` con el DDL de `migrate diff --from-empty` (33 `CREATE TABLE` = 33 `model`). `dist/` con
+`tsc --noCheck` (`CORTE_FORMATO_F` ×4 en `invoiceNumber.service.js`). Cliente de Prisma ✔. Corredor y sonda del reloj:
+los de §1599q (rama `scrum-1599q-bisect-serie-f` @ `98907d8d5`), sin cambiar. Adaptación:
+`docs/master/evidencias/SCRUM-1599/adaptar-1599r.mjs.txt`. Salida: `docs/master/evidencias/SCRUM-1599/pasadas-1599r.salida.txt`.
+
+| pasada | 781 (pasan/caen de 8) | 234 (de 1) |
+|---|---|---|
+| ANTES, ficheros de main, reloj real | ROJO 7/1: «SUELO» recibe `'F260001'` | ROJO 0/1: `NaN` ≠ 1 |
+| DESPUÉS, esta rama, reloj real | **VERDE 8/8** | **VERDE 1/1** |
+| sonda del reloj al 2026-09-01 (marca cargada en cada proceso) | ROJO 7/1, nombra **`2026-QA-001`** | ROJO 0/1, nombra **`2026-CF-001`** |
+| MUTACIÓN en `dist/`: `formatInvoiceNumber` no toma nunca la rama F | ROJO 5/3: «SUELO» nombra `2026-QA-001`; las dos carreras caen en `invoice.create` | ROJO 0/1, por el `P2002` |
+
+- En los cuatro, los casos anclados suman el `# tests` declarado.
+- **La sonda del reloj prueba que siguen vigilando la numeración** en las dos direcciones: hoy pasan con F y, con la
+  fecha de antes del corte, caen nombrando el formato viejo.
+- **La mutación, sin `aplicarUna`, y lo digo:** `aplicarUna` (`scripts/meta-guard-mutaciones.mjs`) escribe el `src/`
+  y lo restaura, y `invoiceNumber.service.ts` es camino de emisión (regla 38). La hice en `dist/`
+  (`docs/master/evidencias/SCRUM-1599/mutar-1599r.mjs.txt`): ancla con recuento 1, restauración comprobada por sha256
+  (`66f09cfce7bc` antes y después). No va a `MUTACIONES_CON_BASE`: los dos ficheros no corren en el banco todavía.
+- 234 muere con la mutación, pero **no por la aserción F nueva**: con el formato viejo y el contador de la serie F las
+  dos emisiones chocan y cae antes, en el `P2002`. Que la aserción F caza por sí sola lo prueba la fila del reloj.
+
+### ③ Guards
+
+En el comentario de Jira de este tramo (la dirigida corre después de escribir este registro).
+
+### ④ Sin medir
+
+- Staging con turno: no lo he pedido. Este árbol no tiene clave (como el de §1599q).
+- Una pasada por punto, no tres.
+- La tanda entera en local: NO CORRIDA.
+- ⚠️ §1599q (#2899) no está en `main` al escribir esto, y su tramo también se añade al final de este fichero. Dos
+  ramas que añaden al final del mismo registro pueden mezclarse sin marcadores y entrelazadas: quien entre segundo
+  compara los tramos byte a byte.

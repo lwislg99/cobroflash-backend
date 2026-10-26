@@ -140,8 +140,12 @@ test('SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivo
       const numeros = [a.value, b.value].sort();
       assert.notEqual(numeros[0], numeros[1], '🔴 las dos facturas salieron con el MISMO número');
 
-      // Consecutivos: el sufijo de la serie es `-NNN` al final del número.
-      const seq = (n) => Number(String(n).split('-').pop());
+      // Consecutivos. SCRUM-1599r: la serie fiscal es F<AA><NNNN> desde `CORTE_FORMATO_F`
+      // (SCRUM-780 c.14709), y el correlativo son sus 4 últimos dígitos.
+      for (const n of numeros) {
+        assert.match(String(n), /^F\d{6}$/, `🔴 el número no tiene la forma de la serie fiscal F: ${n}`);
+      }
+      const seq = (n) => Number(String(n).slice(-4));
       assert.equal(
         seq(numeros[1]) - seq(numeros[0]), 1,
         `🔴 los números no son consecutivos (${numeros.join(' y ')}). Un salto aquí significa que ` +
