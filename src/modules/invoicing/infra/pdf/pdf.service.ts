@@ -106,8 +106,9 @@ export function fmtImporte(v: number): string {
 }
 
 /**
- * 🔴 SCRUM-1446g · EN UNA F1 POR TRAMOS, LA COLUMNA SIN IVA SUMA LA BASE: MÉTODO DEL MAYOR RESTO.
- * Decisión del fundador: SCRUM-1446 comentario 20945 (opción B de c.20944), con GO de la regla 40.
+ * 🔴 SCRUM-1446g · EN UNA F1, LA COLUMNA SIN IVA SUMA LA BASE: MÉTODO DEL MAYOR RESTO.
+ * Decisión del fundador: SCRUM-1446 comentario 20945 (opción B de c.20944), con GO de la regla 40,
+ * y comentario 20964 (1446h, Q1): vale para TODA F1 cuya columna no sume la base, haya tramos o no.
  *
  * Las líneas de un tramo guardan fracciones de céntimo (2,11 al 50 % es 1,055), cada una se
  * redondeaba al imprimirse y la base se redondea una vez: 1,06 + 1,67 = 2,73 sobre una base de
@@ -120,10 +121,11 @@ export function fmtImporte(v: number): string {
  * exacta con cantidad × precio impreso. ⛔ Sólo cambia lo IMPRESO: ni las líneas guardadas, ni la
  * base, la cuota o el total, ni el XML (regla 29).
  *
- * Devuelve el importe a imprimir por línea, o `null` si nada se mueve. Es «de tramo» una factura
- * con algún precio que lleva fracción de céntimo: lo único que el papel sabe de un tramo (la
- * etiqueta, `stageLabel`, es `null` en los planes predefinidos). Sin tramos, `null`: la columna
- * sale como hasta hoy. Lo fija `tests/scrum1446e-la-columna-sin-iva.test.mjs` (⑤ y ⑥).
+ * Devuelve el importe a imprimir por línea, o `null` si nada se mueve. Entra toda factura con algún
+ * importe con fracción de céntimo: un tramo (2,11 al 50 %), un descuento por línea (3,33 con un
+ * 10 % guarda 2,997) o un precio de tres decimales (la API admite cuatro, SCRUM-712). Sin ninguna
+ * fracción, `null`: la columna sale como hasta hoy. Lo fija `tests/scrum1446e-la-columna-sin-iva.test.mjs`
+ * (⑤ a ⑨).
  */
 export function importesDeLaColumnaSinIva(
   lines: Array<{ qty: number; price: number; tax: number; causa?: string | null }>,
@@ -145,7 +147,11 @@ export function importesDeLaColumnaSinIva(
   const cents = bases.map(impreso);
   let movida = false;
   for (const idx of grupos.values()) {
-    const objetivo = impreso(calcVatBreakdown(idx.map((i) => lines[i])).base);
+    // `causa` al tipo de `VatLine` (sólo 'S2'; `null` → ausente). La base del grupo no depende de
+    // ella: todas las líneas del grupo comparten la misma.
+    const objetivo = impreso(calcVatBreakdown(idx.map((i) => ({
+      ...lines[i], causa: lines[i].causa === 'S2' ? ('S2' as const) : undefined,
+    }))).base);
     if (idx.reduce((a, i) => a + cents[i], 0) === objetivo) continue;
     const exactos = idx.map((i) => bases[i] * 100); // en céntimos, con su fracción
     const suelo = exactos.map((e) => Math.floor(e + 1e-6));

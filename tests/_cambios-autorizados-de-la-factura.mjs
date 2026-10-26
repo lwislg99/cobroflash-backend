@@ -111,7 +111,9 @@ export const CAMBIOS_AUTORIZADOS = [
     },
     ambito: {
       de: '9e1d7085237bb4c4b814d685eeca3672d611b2d016dba4ee549015b8d0c847bc',
-      a: '712180158d982025f1c530e100ec4a52f9733dc020a3158025c49f305e54ed76',
+      // SCRUM-1446g (2.º) · la `causa` del grupo, al tipo de `VatLine` (el build no compilaba), y
+      // el comentario «de tramo» corregido por SCRUM-1446 c.20964 (1446h): mismo código, mismo papel.
+      a: '1737745f493343caf708b01d64fe95d74bbfb5fdeae62918bd4f144ac405c25e',
     },
   },
 ];

@@ -26,7 +26,7 @@ const require = createRequire(import.meta.url);
 const { generateInvoicePdf, generateQuotePdf } = require('../dist/lib/pdf.js');
 const { grossOfLines, stageLinesReconciled } = require('../dist/modules/invoicing/domain/invoiceLines.service.js');
 const { distributeStageAmounts } = require('../dist/modules/quotes/domain/billingPlan.js');
-const { calcTotal } = require('../dist/core/utils/utils.js');
+const { calcTotal, precioConDto } = require('../dist/core/utils/utils.js');
 
 // Lo que tiene que tumbar a este fichero. Las corre el meta-guard (`aplicarUna`), y cada una cae en
 // el caso que nombra: la cabecera, la columna de la F1, la R1 que no se toca y el presupuesto.
@@ -261,4 +261,30 @@ test('SCRUM-1446e · ⑦ en 70 tramos (50/50, 30/70, 30/40/30) la columna suma l
   }
   assert.equal(medidos, 70, 'esperaba medir 70 tramos (10 × 2 + 10 × 2 + 10 × 3)');
   assert.ok(antesNoSumaba > 0, '🔴 CIEGO: en esta población cada línea redondeada por su cuenta ya sumaría la base.');
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1446h · SIN TRAMOS TAMBIÉN. Decisión del fundador: SCRUM-1446 comentario 20964 (Q1 de
+// c.20961): el reparto de mayor resto vale para TODA F1 cuya columna sin IVA no sume la base. Lo
+// que lo dispara es un importe con fracción de céntimo, venga de un tramo, de un descuento por
+// línea o de un precio de tres decimales (la API admite cuatro, SCRUM-712).
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+test('SCRUM-1446e · ⑧ (1446h) sin tramos, dos líneas de 3,33 con un 10 % de descuento al 21 % — 3,00 + 2,99 = Base 5,99', async () => {
+  const precio = precioConDto(3.33, 10);
+  assert.ok(Math.abs(precio - 2.997) < 1e-9, `CIEGO: 3,33 con un 10 % debería guardar 2,997 y guarda ${precio}`);
+  const lines = [L(precio, 0.21), L(precio, 0.21)];
+  const p = await papelFactura('F1', lines, grossOfLines(lines).toFixed(2));
+  // Medido el 27-oct-2026 con este mismo papel y el reparto quitado (la columna de 1446e): 3,00 + 3,00 = 6,00 sobre 5,99.
+  assert.deepEqual({ lineas: p.lineas, base: p.base }, { lineas: [300, 299], base: 599 },
+    '🔴 una F1 sin tramos con descuento por línea ya no suma la base en su columna (SCRUM-1446 c.20964).');
+});
+
+test('SCRUM-1446e · ⑨ (1446h) sin tramos, dos líneas de 4,125 € al 21 % — 4,13 + 4,12 = Base 8,25', async () => {
+  // 4,125 es exacto en binario (33/8): el medio céntimo no depende de cómo se guarde el número.
+  const lines = [L(4.125, 0.21), L(4.125, 0.21)];
+  const p = await papelFactura('F1', lines, grossOfLines(lines).toFixed(2));
+  // Medido el 27-oct-2026 con este mismo papel y el reparto quitado (la columna de 1446e): 4,13 + 4,13 = 8,26 sobre 8,25.
+  assert.deepEqual({ lineas: p.lineas, base: p.base }, { lineas: [413, 412], base: 825 },
+    '🔴 una F1 sin tramos con un precio de tres decimales ya no suma la base en su columna (SCRUM-1446 c.20964).');
 });

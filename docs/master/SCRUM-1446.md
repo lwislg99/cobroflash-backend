@@ -927,3 +927,22 @@ Ver el comentario de entrega en Jira: 120 ficheros (la familia 1446/624, los que
 - Escribí que ⑦ medía 90 tramos y eran 70 (10 × 2 + 10 × 2 + 10 × 3): lo cazó la cuenta del propio test (`medidos`), que se declara antes de afirmar nada.
 - Lancé el arnés de mutaciones con la ruta `tests/…` y espera el nombre relativo a `tests/`: salió con ENOENT, sin mutar nada, y lo leí antes de dar ningún número.
 - De paso: al mezclar la punta de 1446f (`c8f3529611a031d57dfe5f3f64080f0bc23841ce`), git colocó su «§ 5 · El rojo del obligatorio» al FINAL del fichero, dentro de este tramo, sin conflicto. Lo devolví al tramo 1446f y comprobé que las líneas no vacías son las mismas (diff de las dos listas ordenadas: vacío).
+
+### 8 · No compilaba, y 1446h (relevo `jv-j1cu`, 26-oct-2026 23:12:48Z de GitHub, `origin/main` = `7a86ed067d597d9c3bcb5d8ca6756796efbec453`)
+
+A9: comprobación → `.github/workflows/ci.yml`
+
+**El fallo.** La punta `87b8b481ba0aa4751ce0cadb630592259d88bdb4` no compilaba (vigía, job 121899227131): `pdf.service.ts(148,47): error TS2345`, la `causa` de las líneas admite `null` y `VatLine` sólo `'S2' | undefined`. Este tramo lo había compilado con `tsc --noCheck`, que no comprueba tipos. El paso «Compilar (tsc)» del obligatorio (`ci.yml`, `npm run build`) es lo que lo cazó y lo que impide que entre: la comprobación ya existe; lo que faltó fue correrla aquí antes de empujar.
+
+**El arreglo.** Al pedir la base del grupo, `causa` se pasa al tipo de `VatLine` (`'S2'` o ausente). No cambia el papel: dentro de un grupo todas las líneas comparten causa, y la base no depende de ella. Rojo primero con tipos: sin el arreglo, `tsc -p . --noEmit` sale 2 con ese único error; con él, `tsc -p .` sale 0 con 0 errores.
+
+**1446h.** Decisión del fundador en SCRUM-1446 c.20964 (Q1 de c.20961): el reparto vale para toda F1 cuya columna sin IVA no sume la base, haya tramos o no, con GO de la regla 40 en el mismo alcance que c.20945. Se hace lo que pide, y nada más:
+- el comentario de `importesDeLaColumnaSinIva` deja de decir «de tramo»: entra toda factura con algún importe con fracción de céntimo (tramo, descuento por línea, precio de tres decimales). El código que decide no cambia;
+- `tests/scrum1446e-la-columna-sin-iva.test.mjs` ⑧ (dos líneas de 3,33 con un 10 % al 21 %: `precioConDto` guarda 2,997 → 3,00 + 2,99 = Base 5,99) y ⑨ (dos de 4,125 € → 4,13 + 4,12 = Base 8,25; 4,125 es exacto en binario).
+- **Rojo primero** con `dist/` mutado para que la función devuelva `null` (la columna de 1446e, la de `main`): caen ⑤ ⑦ ⑧ ⑨ y sólo ellos; ⑧ imprime 3,00 + 3,00 y ⑨ 4,13 + 4,13. Con el build de verdad, 11 de 11.
+
+**Vía de cambio autorizado.** Sólo se mueve `ambito.a` de la entrada `SCRUM-1446 c.20945` en `tests/_cambios-autorizados-de-la-factura.mjs`, copiada de `docs/master/evidencias/SCRUM-1446d/huellas.mjs`; las otras tres huellas son las mismas. El guard no se toca.
+
+**Dirigida, sobre el build con tipos:** 64 ficheros (la familia 1446 y 624, todo lo que nombra `pdf.service` o la vía de cambio autorizado, 247, 844c, 921c, 387, 601, 603b, 622, 647, 723, 237, 976, 267, 273 y 1294) · 585 casos · 579 pasan · 0 caen · 6 saltan (piden base). En la 14XX no hay ficheros de 1447 ni 1448. **Tanda completa en local: NO CORRIDA** (orden del orquestador). `node_modules`: junction al del checkout compartido, sólo para compilar; sin `prisma generate`, y el guard del cliente dio ✔.
+
+**Errores míos.** Antes de reproducir el rojo moví el arreglo fuera y dentro de `src/` con `git apply -R`/`git apply` sobre mi propio parche: es mi diff, pero es reescribir `src/` para medir; la cicatriz de J1 del 23-oct pide sacar el rojo mutando `dist/`, y para ⑧ y ⑨ lo hice así.
