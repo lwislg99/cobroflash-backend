@@ -29,6 +29,9 @@ const gasto = (o = {}) => ({
   providerInvoiceNumber: 'P-1', providerInvoiceDate: new Date(2026, 4, 1), category: 'materiales', ...o,
 });
 
+/** SCRUM-1063h · una herramienta que LLEGA al umbral del art. 108 LIVA (3.000 + 630 ≥ 3.005,06): sigue apartada. */
+const HERRAMIENTA_GRANDE = { category: 'herramientas', baseAmount: '3000.00', vatAmount: '630.00', amount: '3630.00' };
+
 function m303(gastos, facturas = [factura()]) {
   const libro = construirLibroRegistro({ facturas, merchantId: M });
   const libroRecibidas = construirLibroRecibidas({ gastos, merchantId: M });
@@ -63,7 +66,8 @@ test('SCRUM-1063b · un gasto deducible y corriente va a la 28/29, y la 46 es 27
 });
 
 test('SCRUM-1063b · 🔴 «herramientas» NO se reparte: sin clasificar y declarado', () => {
-  const r = m303([gasto(), gasto({ category: 'herramientas', providerInvoiceNumber: 'P-2' })]);
+  // SCRUM-1063h: por debajo de 3.005,06 € (base + cuota) una herramienta ya va a la 28/29; esta llega.
+  const r = m303([gasto(), gasto({ ...HERRAMIENTA_GRANDE, providerInvoiceNumber: 'P-2' })]);
   assert.equal(r.ivaDeducible.corrientes.cuota, 8.4, '🔴 una herramienta ha entrado en la 29: eso es adivinar');
   assert.deepEqual(r.ivaDeducible.sinClasificar.map((g) => [g.numeroProveedor, g.motivo]),
     [['P-2', 'posible_bien_de_inversion']]);
@@ -103,7 +107,7 @@ test('SCRUM-1063b · cada gasto que no puede colocarse sale con SU motivo', () =
 test('SCRUM-1063b · 🔴 INVARIANTE: todo asiento está en la 29, sin clasificar o en no deducibles', () => {
   const gastos = [
     gasto(), gasto({ category: 'otros', baseAmount: '10.00', vatRate: 10, vatAmount: '1.00' }),
-    gasto({ category: 'herramientas' }), gasto({ vatDeducible: null }), gasto({ vatDeducible: false }),
+    gasto(HERRAMIENTA_GRANDE), gasto({ vatDeducible: null }), gasto({ vatDeducible: false }),
   ];
   const recibidas = construirLibroRecibidas({ gastos, merchantId: M });
   const d = construirIvaDeducible(recibidas);
