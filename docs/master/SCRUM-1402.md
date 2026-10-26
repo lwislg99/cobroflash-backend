@@ -710,3 +710,22 @@ del propio test y el driver `mutar-1402h.mjs` de este ticket. Caen al quitar:
   - Corrí las mutaciones con un `dist/` anterior al cambio del literal. El driver se negó («CIEGO: la base no está verde»), y por eso la línea A9 apunta a él.
   - Volví a pasar código por un heredoc (el catálogo de mutaciones), contra mi propia cicatriz del 21-oct. Esta vez comprobé después los bytes (ni U+FFFD ni barras perdidas), pero eso no es haberlo evitado.
 - **Aviso de merge:** #2871 (1402j) también añade su tramo al final de este fichero. El que entre segundo va a quedar DIRTY.
+
+## Los cinco rojos propios de #2878, arreglados en la misma rama (jv-j3bo, 26-oct-2026)
+
+A9: sin fallo que generalice — los cinco rojos los cazaron guards que ya existen (1344, 1415, 553 y 601) en el obligatorio, que es donde tenían que cazarse; mis dos tropiezos (un commit intermedio rehecho antes de empujar y una columna de `ls -l` mal leída por el espacio de la ruta) se vieron por control antes de contar nada
+
+Lo midió el vigía jv-j6ci en el job 121668614068 (12.711 = 12.644 pasan + 5 caen + 62 saltan). Se arregla el test de la rama y se ancla el literal; ningún guard ni ningún tope cambia de regla, y `src/` no se toca.
+
+| rojo | arreglo |
+| --- | --- |
+| scrum1344 ④ (`req` sin rol contra `/admin/billing`) | el middleware del arnés arma la sesión con `reqDeSesion({ rol: 'admin', merchantId })` |
+| scrum1415 (dos `test()` con nombre construido) | los 24 rechazos y los 2 positivos van con `casosEscritos` y nombre literal; las 7 mutaciones siguen casando con su `cae` |
+| scrum553 (tres extractores con `<strong>` pegado) | `<strong[^>]*>` |
+| scrum601 ×2 (el T3 en «a pelo» y en «no legibles») | se ancla como SCRUM-887: entrada «cuál entró y por qué» con la firma (SCRUM-1402 comentario 20866), y las dos cifras **regeneradas con el censo** sobre `origin/main` `f6a311967` + la rama: `aPelo` 161 → 162, no legibles 36 → 37. El único literal del censo en `subscriptions.routes.ts` es el de la línea 47 |
+
+- **El T3 de la rama es el de c.20866, byte a byte:** comparado por programa (90 B, `includes` = true; control negativo con «activa» = false).
+- **Lo que arrastra el ancla, y lo pide su propio guard:** `scrum921c` exige el par leído → una fila en `tests/_pares-leidos-en-jira.mjs` (carril J6; la regla 3 de esa lista pide que vaya en el mismo PR que la marca, como 1502o y 1502p). Y `scrum1395b` exige la ficha nueva de `scrum601` → `npm run censo:mudez -- --escribir` (1 ficha medida).
+- **Lo corrido**, sobre el árbol con `origin/main` `f6a311967` mezclado: los 5 que caían, la familia 1402, 745, 237, 976, 824, 836, 419, 702, 700, 719, 1415 y los de registro (267, 273, 1294, 921c), más 710b, 1395b y 1511h → **289 de 289 en 24 ficheros**, 0 saltan. La primera pasada dio 264 de 266: los dos que piden la fila de pares y la ficha de mudez.
+- **Sin correr:** la tanda entera (orden del orquestador: la hace el obligatorio) y los gateados por base.
+- **Error mío:** no corrí la lectura de arranque (`norma.mjs --arranque`) que pide `CLAUDE.md`; trabajé con las normas del prompt del orquestador.
