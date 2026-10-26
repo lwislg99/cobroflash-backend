@@ -692,3 +692,197 @@ movería un día, no un mes.
 2. **Casi me fío del resumen de la búsqueda web**, que afirmaba la disolución antes de que yo la
    hubiera leído. Lo que lo paró fue que el mismo resumen traía una fecha falsa (29-sep por 2-oct):
    leí el real decreto de disolución en el BOE antes de escribir nada.
+
+# SCRUM-1316f · A 26-oct: el RDL 29/2026 sigue sin convalidar, el producto no cruza el tipo con el medio de cobro, y no hay asesor que conteste antes del 1-dic
+
+**Medido contra:** `origin/main` = `81f9c0dc7d100cf05765b2c7708ac2f31f70beb7` · 2026-10-26T15:40:26Z (cabecera `Date:` de GitHub)
+
+A9: aviso → A10 «Cero resultados con tu vocabulario no es silencio del documento.» — no se pudo comprobar: mi primer control positivo para «medio de pago» en `src/` fue «medio de cobro», y también dio cero; lo que separa «el código no lo nombra» de «mi patrón no casa» es una palabra que SÉ que está (aquí, «efectivo» en `metodoDeCobro.ts`), y ningún guard sabe qué palabra elige una sesión como control.
+
+Sesión J5 (IA, `jv-j5an`), 26-oct-2026, por encargo del orquestador del equipo de Javier (`cobroflash-backend-8b`).
+**Sólo se mide y se pregunta.** No se toca `src/`, ni `public/`, ni el esquema, ni el camino de emisión
+(regla 40); no se propone texto de pantalla (regla 39); no se predice ninguna votación; nada de esto es
+una respuesta de asesor. Lo de arriba (①, ②/③ y 1316e) no se toca.
+
+## Veredicto
+
+1. **El RDL 29/2026 sigue SIN convalidar ni derogar a 26-oct-2026, 15:38Z.** BOE y Congreso, iguales
+   que el 23-oct (§Ⓨ). El plazo calculado en §Ⓥ (5 a 19-nov) sigue en pie y cae antes del 1-dic.
+2. **El texto consolidado vigente no ha cambiado desde el 7-oct.** El art. 91 de la LIVA consolidada
+   trae la versión del 29/2026 con la nota «Se modifican, con efectos de 1 de diciembre de 2026, los
+   apartados Uno.2.2º, Uno.2.10º y Dos.1.6º» y el párrafo del medio de pago (§Ⓩ).
+3. **Qué hace HOY el producto con una obra al 10 % cobrada en efectivo** (§ⓐ): la deja hacer sin decir
+   nada. El 10 % lo elige el profesional, el medio de cobro es opcional al marcarla cobrada, y **ningún
+   sitio de `src/` cruza el tipo de IVA con el medio de cobro**. Para un comercio español real, con
+   `INVOICING_ES_ENABLED` en su valor por defecto, el documento es un **justificante, no una factura**.
+4. 🔴 **Lo que el encargo da por cierto y ya no lo es: «E6 al asesor».** **No hay asesor fiscal**
+   (fundador, 14-oct, SCRUM-1264 c.19623), y se contratará «cuando tengamos la SL» (20-oct, c.20088),
+   que según ese comentario no es la notaría sino el paso 5 de 8, el Registro Mercantil. **Y la E6 no
+   está en el sitio único de las preguntas:** la descripción de SCRUM-1264 sigue diciendo «28
+   preguntas» y llega a E5 (§ⓑ).
+5. **El ticket NO está resuelto por efecto.** La fecha sigue viva y falta quien conteste.
+
+## Ⓨ La norma, re-medida hoy
+
+Fuentes bajadas el 26-oct entre las 15:35Z y las 15:38Z (cabeceras `Date:`). Todas respondieron 200.
+
+| qué | identificador | sha256 hoy | ¿igual que el 23-oct (§Ⓣ)? |
+|---|---|---|---|
+| RDL 29/2026, metadatos del consolidado | `BOE-A-2026-20823` | `2b7dcb71c32154e27b644acbf25ab22c99343fd37a31d170ff1a25cc7bfa6c9b` | sí |
+| RDL 29/2026, análisis | ídem | `0b97a3c40c587d99da937ce344f7b3dd03e5b0ad760237cf9df191cd6f141bed` | sí |
+| RDL 26/2026, metadatos | `BOE-A-2026-20266` | `d92367a02359ffb153308592a0d2f3027959c73167d189abd1b61685b292ab97` | **no** (ver abajo) |
+| LIVA, metadatos | `BOE-A-1992-28740` | `0b953b4214e62c190c605cbf0120e1b88b0578453e5dfed24dc7119edd4861e8` | no se bajó el 23 |
+| LIVA, bloque `a91` | ídem | `03898893f793534bcd873aa844bcd5dcc0070d5ab355de7314640f8c317e8c6e` | no se bajó el 23 |
+
+- **RDL 29/2026**, literales: `estatus_derogacion` = `N`, `vigencia_agotada` = `N`,
+  `fecha_actualizacion` = `20261007T123908Z`. El BOE no ha tocado su ficha desde el 7-oct.
+- **RDL 26/2026**: su ficha cambió de sha256 porque su `fecha_actualizacion` es hoy,
+  `20261026T064248Z`. Lo que dice no cambia: `estatus_derogacion` = `S`, `fecha_derogacion` =
+  `20261002`, `vigencia_agotada` = `S`. **No he comparado campo a campo con la del 23-oct** (aquella
+  no está guardada en el repositorio); sólo leo que la de hoy sigue diciendo derogado.
+- **LIVA**: `fecha_actualizacion` = `20261007T092353Z`. Nada nuevo desde el 7-oct.
+
+**Sumarios del BOE del 23, 24 y 26-oct** (el 25 es domingo): 284, 326 y 324 ítems. «29/2026»,
+«decreto-ley» y «convalidaci»: **0** en los tres. **Control positivo**, el mismo recuento sobre el
+sumario del 20-oct: «decreto-ley» 2 y «convalidaci» 2, que son las convalidaciones del 24 y el 25/2026
+de §Ⓣ. **Control cero:** «zzqx» 0 en los tres. Los sumarios del 1 al 22-oct ya se recorrieron en §Ⓣ.
+
+**Congreso, fichas de la XV Legislatura, tipo 130**, bajadas a las 15:37Z-15:38Z, texto literal tras
+quitar el HTML:
+
+> «Real Decreto-ley 29/2026, de 6 de octubre, […] (130/000060) Presentado el 08/10/2026 , calificado
+> el 13/10/2026 Autor Gobierno Situación actual Diputación Permanente Convalidación Tramitación seguida
+> por la iniciativa Diputación Permanente Convalidación desde 13/10/2026»
+
+**Control, misma lectura:** la 130/000058 (RDL 25/2026) dice «Resultado tramitación Convalidado» y
+ya trae «Diarios de Sesiones DS. Congreso de los Diputados Núm.211 de 16/10/2026». La del 29 no trae
+ni resultado ni diario de sesiones.
+
+**No medido:** el orden del día de la Diputación Permanente (si hay sesión convocada para el 29/2026
+no lo sé, y no lo infiero), y cómo se computan los 30 días del art. 86.2 CE (§Ⓥ sigue siendo cálculo).
+
+## Ⓩ El texto consolidado vigente del art. 91.Uno.2.10.º
+
+`node docs/master/evidencias/scrum1316/versiones-art91.cjs <bloque a91 de hoy>`: la última versión
+sigue siendo la del RDL 29/2026 (`publicada 20261007 · fecha_vigencia 20261008`), con la condición del
+medio de pago, y su nota dice «con efectos de 1 de diciembre de 2026». La anterior es la de la
+resolución de derogación del 26/2026, sin la condición. **Igual que el 7-oct.**
+
+🔴 **Sigue en pie la trampa de §Ⓝ.** `docs/master/evidencias/SCRUM-1232b/extraer-articulo.cjs` sigue
+cortando a la fecha fija `20260928` (su línea con `filter(v=>v[1]<='20260928')`); el último commit
+que lo tocó es `3dde87bd1`, el del aviso del 7-oct. Hoy acierta por casualidad, igual que entonces.
+
+## ⓐ Qué hace HOY el producto con una obra al 10 % cobrada en efectivo
+
+Leído en `origin/main` del ancla. Nada se ha ejecutado.
+
+| paso | qué pasa | dónde | carril |
+|---|---|---|---|
+| 1. el profesional elige el tipo | el desplegable ofrece 21, 10, 4 y 0 | `public/dashboard/js/tiposDeIva.js:40` | S2 |
+| 2. el servidor lo acepta | sólo comprueba que el tipo exista (§Ⓑ.2 de arriba) | `src/core/validation/fiscalInput.ts` | S1 |
+| 3. qué documento sale (España) | `getEmissionMode`: demo → `demo`; si no, `INVOICING_ES_ENABLED` ? `fiscal` : `receipt` | `src/modules/invoicing/domain/emission.service.ts:36` | J1 |
+| 4. el valor por defecto del flag | `INVOICING_ES_ENABLED: false` | `src/core/flags.ts:16` | S1 |
+| 5. marcar cobrada | `cash` existe; declararlo es opcional: sin método, «no se toca la columna» | `src/modules/billing/domain/metodoDeCobro.ts:157` y `:329` | J2 |
+| 6. ¿alguien cruza tipo y medio? | **no** | ver abajo | — |
+
+**El cruce, medido.** En `src/` y `public/`, «medio de pago», «29/2026», «26/2026», «91.Uno» y
+«cheque nominativo»: **0**. Control positivo: «efectivo» sí casa en `metodoDeCobro.ts:157`. De los
+ficheros de `src/` que nombran `paidVia`/`paid_via`, **uno** nombra además un tipo de IVA,
+`src/modules/reports/app/routes/reports.routes.ts`, y allí el tipo es el de los **gastos**
+(`vatRate` de `Expense`, línea 392), no el de la factura.
+
+**Por tanto, hoy:** una obra al 10 % se presupuesta, se cobra en efectivo y se marca cobrada (con o
+sin decir «efectivo») sin que nada avise. Para un comercio español real con el flag en su valor por
+defecto, lo que sale es un justificante de cobro y no una factura (regla 24); el demo saca factura
+con marca de agua. **El 1-dic no cambia nada del producto por sí solo:** nada en el código mira la fecha.
+
+**No medido:** el valor de `INVOICING_ES_ENABLED` en Railway y en `merchants.flags` de cada comercio,
+y cuántos comercios españoles reales hay. Sin eso, «hoy no sale ninguna factura española real al
+10 %» es una lectura del código, no un hecho de producción.
+
+## ⓑ La E6 y el asesor
+
+- **SCRUM-1264** es «EL SITIO ÚNICO de las preguntas para el asesor». Su descripción dice «Contador:
+  28 preguntas (A1-A4, B1-B6, C1-C2, D1-D3, E1-E5, F1-F5, G1-G3)». En la descripción, «29/2026»,
+  «26/2026» y «cheque nominativo» dan **0**; «91.Uno.2.10» sale sólo en las normas localizadas de B3.
+  El c.17682 (1-oct) dice que se añadió «E6 — el cambio de IVA (SCRUM-1316)», pero la pregunta no está
+  escrita en la descripción. El c.20774 (24-oct) añadió otra («Q-nueva», el redondeo) como comentario.
+- El c.19609 (14-oct) cita una decisión del fundador «en SCRUM-1316, literal: «en los 2 sitios, lo
+  quiero tanto en el repo como en mi documento»». **En SCRUM-1316 hay dos comentarios (c.18758 y
+  c.20597) y esa frase no está en ninguno de los dos, ni en la descripción.** No sé dónde se dijo.
+- **No hay asesor fiscal** (c.19623, literal del fundador: «No, no tenemos asesor fiscal, las
+  respuestas dadas son mías o de la IA a nivel fiscal»), y su contratación espera a la SL (c.20088:
+  «Ok no te preocupes lo arreglo cuando tengamos la SL»). El mismo c.20088 pide **no volver a
+  plantear** esa decisión: aquí no se plantea. Lo que sí se dice es la consecuencia para esta fecha:
+  **si la SL llega al paso 5 a mediados de noviembre, el asesor llegaría, como pronto, a la vez que la
+  votación del 29/2026 y a dos semanas del 1-dic.** Es un cálculo con las fechas de ese comentario, no
+  una medición.
+
+## ⓒ Preguntas para el fundador (✅/❌, una decisión cada una)
+
+**P1 · Fecha límite: 20-nov-2026** (día siguiente al último plazo calculado en §Ⓥ, y sólo si el
+29/2026 se ha convalidado). **¿Quieres que antes del 1-dic el producto avise al profesional, al
+elegir el 10 %, de que desde el 1-dic ese tipo depende de cómo se cobre?**
+- ✅ Hace falta un texto nuevo de pantalla, que firmas tú (regla 39), y un cambio en
+  `public/dashboard/js/tiposDeIva.js`, que es carril **S2** (equipo de Luis). No toca el camino de emisión.
+- ❌ El 10 % se sigue ofreciendo sin aviso; la condición la conoce o no el profesional.
+- **Recomiendo ✅ sólo si se convalida**, y sólo como aviso: el producto sigue sin elegir el tipo.
+
+**P2 · Fecha límite: antes de poner `INVOICING_ES_ENABLED` en ON para un comercio español real**
+(no el 1-dic: hasta entonces no sale factura española real). **¿Hacer obligatorio declarar el medio
+de cobro al marcar cobrada una factura que tenga alguna línea al 10 %?**
+- ✅ El dato que la norma usa queda guardado en cada caso. Es `campoPaidViaAlMarcar`
+  (`metodoDeCobro.ts`, carril **J2**) y su llamada en `src/modules/system/invoiceAdmin.ts` (carril
+  **J1**); hay que comprobar antes si eso es camino de emisión (regla 38) y, si lo es, es STOP.
+- ❌ `NULL` sigue significando «no consta», y el profesional no podría sacar del programa cómo cobró.
+- **Recomiendo decidirlo con el asesor, no antes:** qué hay que acreditar es justo la pregunta A4 de abajo.
+
+**P3 · Fecha límite: ninguna; es para dejarlo escrito antes del 1-dic. ¿Confirmas que el programa NO
+elegirá nunca el tipo de IVA según el medio de cobro** (por ejemplo, pasar solo al 21 % si se cobra en
+efectivo)?
+- ✅ Nada que construir. Evita el problema de orden de §Ⓕ.2: el tipo se fija al emitir, el cobro llega
+  después y una factura emitida no se edita (regla 29).
+- ❌ Hay que construir lógica en el camino de emisión: regla 40, STOP, y no tiene salida limpia para
+  la factura emitida antes del cobro (haría falta una rectificativa).
+- **Recomiendo ✅.**
+
+**P4 · Fecha límite: 15-nov-2026** (plazo que pusiste a SCRUM-1264, c.19609). **¿La pregunta del
+RDL de tu documento entra en SCRUM-1264 como E6, escrita, para que esté en los dos sitios?**
+- ✅ La copia el orquestador desde tu documento, literal; el contador pasa de 28.
+- ❌ Sigue viviendo sólo en tu documento, y el sitio «único» no la tiene.
+- **Recomiendo ✅**: es lo que dice tu decisión de «los 2 sitios» del c.19609.
+
+## ⓓ Preguntas para el asesor (cuando lo haya), cada una con su fecha
+
+Todas valen **sólo si el 29/2026 se convalida**, y todas son interpretación: ninguna la contesta una
+sesión ni el código. La fecha límite útil de las cuatro primeras es el **1-dic-2026**; sin asesor
+antes de esa fecha, el profesional decide solo.
+
+- **A1 ·** Una obra en vivienda cobrada en **efectivo** desde el 1-dic, ¿pierde el 10 % por quedar
+  fuera de la lista del art. 91.Uno.2.10.º, o hay otra lectura?
+- **A2 ·** **Bizum**, ¿cuenta como «transferencia bancaria» a estos efectos? (El texto no lo nombra:
+  §Ⓛ.)
+- **A3 ·** Obra **empezada antes** del 1-dic, o con **señal cobrada antes y resto después**: ¿qué tipo
+  lleva cada parte? (No hay régimen transitorio: §Ⓛ.3.)
+- **A4 ·** ¿Qué tiene que **poder acreditar** el profesional sobre el medio de pago, y qué tendría que
+  guardar el programa? (El texto no lo dice: §Ⓛ.4. Decide P2.)
+- **A5 ·** Fecha: ninguna antes del 1-dic. Un programa que **ofrece** el 10 % en un desplegable sin
+  avisar de la condición, ¿tiene alguna responsabilidad como productor? (Decide P1.)
+- **A6 ·** Fecha: el día siguiente a que venza el plazo del art. 86.2 CE. Si el 29/2026 **no se vota en
+  plazo**, ¿decae y el 1-dic deja de existir? (§Ⓦ no lo afirma.)
+
+## ⓔ Lo que es inferencia y no lectura
+
+- «El 1-dic no cambia nada del producto por sí solo» es lectura del código (nada mira la fecha), no
+  ejecución.
+- La fecha en que llegaría el asesor sale de las estimaciones del c.20088, no de un calendario medido.
+- **Quién construiría P1 y P2** lo dice `node scripts/carriles.mjs de <ruta>`, ejecutado hoy; si P2 es o
+  no camino de emisión **no lo he determinado**.
+
+## ⓕ Lo que me salió mal
+
+1. **Mi primer control positivo no era positivo.** Para validar el cero de «medio de pago» en `src/`
+   busqué «medio de cobro», que también dio cero. Un control que da cero no distingue nada; lo cambié
+   por «efectivo», que sé que está en `metodoDeCobro.ts:157`, y ése sí casa.
+2. **El encargo traía «E6 al asesor» y casi lo copio como tarea.** Lo paró leer SCRUM-1264 entero,
+   comentarios incluidos: no hay asesor desde el 14-oct, y la E6 no está escrita en el sitio único.
