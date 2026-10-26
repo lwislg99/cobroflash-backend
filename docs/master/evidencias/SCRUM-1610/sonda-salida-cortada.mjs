@@ -53,8 +53,11 @@ function una(i) {
 }
 
 const res = []; let sig = 0;
-await Promise.all(Array.from({ length: P }, async () => { while (sig < N) res.push(await una(sig++)); }));
-fs.rmSync(TMP, { recursive: true, force: true });
+try {
+  await Promise.all(Array.from({ length: P }, async () => { while (sig < N) res.push(await una(sig++)); }));
+} finally {
+  fs.rmSync(TMP, { recursive: true, force: true }); // SCRUM-864c ③: el temporal se borra también si una pasada lanza
+}
 
 const cortadas = res.filter((r) => !/^FIN$/m.test(r.salida));
 const sembradas = res.filter((r) => r.saltar === '1');
