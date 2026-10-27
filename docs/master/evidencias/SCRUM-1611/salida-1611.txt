@@ -1,0 +1,119 @@
+# SCRUM-1611 · salidas de orden234.mjs / orden814.mjs / medir1611.mjs · banco Postgres 16.14 loopback · rama 1599s 7439e740a2933ce28ed3c7a9487cba98a745ef42 · dist sha256 invoiceNumber.service.js 66f09cfc, quotesAdmin.routes.js 3c1ae220
+## 234 original, SIN pg_advisory_xact_lock (b234-sin-1..13)
+{"e":"b234-sin-1","res":"CAE","orden":"barrera DESPUÉS","segundaLeeAntesDelCommit":true,"p2002":true}
+{"e":"b234-sin-2","res":"CAE","orden":"barrera ANTES","segundaLeeAntesDelCommit":true,"p2002":true}
+{"e":"b234-sin-3","res":"VIVE","orden":"barrera DESPUÉS","segundaLeeAntesDelCommit":false,"p2002":false}
+{"e":"b234-sin-4","res":"CAE","orden":"barrera ANTES","segundaLeeAntesDelCommit":true,"p2002":true}
+{"e":"b234-sin-5","res":"CAE","orden":"barrera ANTES","segundaLeeAntesDelCommit":true,"p2002":true}
+{"e":"b234-sin-6","res":"CAE","orden":"barrera ANTES","segundaLeeAntesDelCommit":true,"p2002":true}
+{"e":"b234-sin-7","res":"CAE","orden":"barrera ANTES","segundaLeeAntesDelCommit":true,"p2002":true}
+{"e":"b234-sin-8","res":"CAE","orden":"barrera DESPUÉS","segundaLeeAntesDelCommit":true,"p2002":true}
+{"e":"b234-sin-9","res":"VIVE","orden":"barrera DESPUÉS","segundaLeeAntesDelCommit":false,"p2002":false}
+{"e":"b234-sin-10","res":"VIVE","orden":"barrera DESPUÉS","segundaLeeAntesDelCommit":false,"p2002":false}
+{"e":"b234-sin-11","res":"CAE","orden":"barrera ANTES","segundaLeeAntesDelCommit":true,"p2002":true}
+{"e":"b234-sin-12","res":"VIVE","orden":"barrera DESPUÉS","segundaLeeAntesDelCommit":false,"p2002":false}
+{"e":"b234-sin-13","res":"CAE","orden":"barrera DESPUÉS","segundaLeeAntesDelCommit":true,"p2002":true}
+POBLACIÓN=13 · CAE=9 · VIVE=4 · CIEGO=0
+barrera ANTES=6 (de ellas CAE 6) · barrera DESPUÉS=7 (de ellas CAE 3, con la 2ª leyendo antes del commit 3)
+## 234 original, CON cerrojo (b234-limpia)
+{"e":"b234-limpia","res":"VIVE","orden":"barrera DESPUÉS","segundaLeeAntesDelCommit":false,"p2002":false}
+POBLACIÓN=1 · CAE=0 · VIVE=1 · CIEGO=0
+barrera ANTES=0 (de ellas CAE 0) · barrera DESPUÉS=1 (de ellas CAE 0, con la 2ª leyendo antes del commit 0)
+## 234 copia con barrera esperada, CON cerrojo
+{"e":"c234-con-1","res":"VIVE","orden":"barrera ANTES","segundaLeeAntesDelCommit":false,"p2002":false}
+{"e":"c234-con-2","res":"VIVE","orden":"barrera ANTES","segundaLeeAntesDelCommit":false,"p2002":false}
+{"e":"c234-con-3","res":"VIVE","orden":"barrera ANTES","segundaLeeAntesDelCommit":false,"p2002":false}
+{"e":"c234-con-4","res":"VIVE","orden":"barrera ANTES","segundaLeeAntesDelCommit":false,"p2002":false}
+{"e":"c234-con-5","res":"VIVE","orden":"barrera ANTES","segundaLeeAntesDelCommit":false,"p2002":false}
+POBLACIÓN=5 · CAE=0 · VIVE=5 · CIEGO=0
+barrera ANTES=5 (de ellas CAE 0) · barrera DESPUÉS=0 (de ellas CAE 0, con la 2ª leyendo antes del commit 0)
+## 234 copia con barrera esperada, SIN cerrojo
+{"e":"c234-sin-1","res":"CAE","orden":"barrera ANTES","segundaLeeAntesDelCommit":true,"p2002":true}
+{"e":"c234-sin-2","res":"CAE","orden":"barrera ANTES","segundaLeeAntesDelCommit":true,"p2002":true}
+{"e":"c234-sin-3","res":"CAE","orden":"barrera ANTES","segundaLeeAntesDelCommit":true,"p2002":true}
+{"e":"c234-sin-4","res":"CAE","orden":"barrera ANTES","segundaLeeAntesDelCommit":true,"p2002":true}
+{"e":"c234-sin-5","res":"CAE","orden":"barrera ANTES","segundaLeeAntesDelCommit":true,"p2002":true}
+{"e":"c234-sin-6","res":"CAE","orden":"barrera ANTES","segundaLeeAntesDelCommit":true,"p2002":true}
+{"e":"c234-sin-7","res":"CAE","orden":"barrera ANTES","segundaLeeAntesDelCommit":true,"p2002":true}
+{"e":"c234-sin-8","res":"CAE","orden":"barrera ANTES","segundaLeeAntesDelCommit":true,"p2002":true}
+POBLACIÓN=8 · CAE=8 · VIVE=0 · CIEGO=0
+barrera ANTES=8 (de ellas CAE 8) · barrera DESPUÉS=0 (de ellas CAE 0, con la 2ª leyendo antes del commit 0)
+## 814 primer caso, limpio y SIN tomarCerrojoDeSerie (quotesAdmin)
+{"e":"b814-limpia","res":"VIVE","desfase":"0","etiquetas":"Anticipo + Final","txSolapadas":false,"segundaCuentaAntesDelCommit":false,"t":"23:31:44.367/23:31:44.408/23:31:44.412"}
+{"e":"b814-sin-1","res":"VIVE","desfase":"0","etiquetas":"Anticipo + Final","txSolapadas":false,"segundaCuentaAntesDelCommit":false,"t":"23:32:36.889/23:32:36.919/23:32:36.927"}
+{"e":"b814-sin-2","res":"VIVE","desfase":"0","etiquetas":"Anticipo + Final","txSolapadas":false,"segundaCuentaAntesDelCommit":false,"t":"23:32:42.188/23:32:42.215/23:32:42.223"}
+{"e":"b814-sin-3","res":"VIVE","desfase":"0","etiquetas":"Anticipo + Final","txSolapadas":false,"segundaCuentaAntesDelCommit":false,"t":"23:32:47.293/23:32:47.319/23:32:47.326"}
+{"e":"b814-sin-4","res":"VIVE","desfase":"0","etiquetas":"Anticipo + Final","txSolapadas":false,"segundaCuentaAntesDelCommit":false,"t":"23:32:52.373/23:32:52.404/23:32:52.406"}
+{"e":"b814-sin-5","res":"VIVE","desfase":"0","etiquetas":"Anticipo + Final","txSolapadas":false,"segundaCuentaAntesDelCommit":false,"t":"23:32:57.621/23:32:57.649/23:32:57.662"}
+{"e":"b814-sin-6","res":"VIVE","desfase":"0","etiquetas":"Anticipo + Final","txSolapadas":false,"segundaCuentaAntesDelCommit":false,"t":"23:33:02.945/23:33:02.977/23:33:02.985"}
+POBLACIÓN=7 · CAE=0 · VIVE=7 · CIEGO=0 · tx solapadas=0 · 2ª cuenta antes del commit=0
+## sonda A por pasada
+b234-sin-4 · exit=1 · 5371 ms · casos: not ok 1 - SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+  A · muestras=176 (errores 0) · pids vistos=3 · máx conexiones=3 · máx en transacción a la vez=3 · máx activas a la vez=2
+  A · esperas de cerrojo (muestras): 161× transactionid · UPDATE "public"."merchants" SET "invoice_series_year" = $1,  ;; 161× tuple · UPDATE "public"."merchants" SET "invoice_series_year" = $1, 
+b234-sin-5 · exit=1 · 6230 ms · casos: not ok 1 - SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+  A · muestras=202 (errores 0) · pids vistos=3 · máx conexiones=3 · máx en transacción a la vez=3 · máx activas a la vez=2
+  A · esperas de cerrojo (muestras): 163× transactionid · UPDATE "public"."merchants" SET "invoice_series_year" = $1,  ;; 160× tuple · UPDATE "public"."merchants" SET "invoice_series_year" = $1, 
+b234-sin-6 · exit=1 · 6144 ms · casos: not ok 1 - SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+  A · muestras=198 (errores 0) · pids vistos=3 · máx conexiones=3 · máx en transacción a la vez=3 · máx activas a la vez=2
+  A · esperas de cerrojo (muestras): 156× transactionid · UPDATE "public"."merchants" SET "invoice_series_year" = $1,  ;; 156× tuple · UPDATE "public"."merchants" SET "invoice_series_year" = $1, 
+b234-sin-7 · exit=1 · 5687 ms · casos: not ok 1 - SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+  A · muestras=183 (errores 0) · pids vistos=3 · máx conexiones=3 · máx en transacción a la vez=3 · máx activas a la vez=2
+  A · esperas de cerrojo (muestras): 158× transactionid · UPDATE "public"."merchants" SET "invoice_series_year" = $1,  ;; 158× tuple · UPDATE "public"."merchants" SET "invoice_series_year" = $1, 
+b234-sin-8 · exit=1 · 5531 ms · casos: not ok 1 - SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+  A · muestras=179 (errores 0) · pids vistos=3 · máx conexiones=3 · máx en transacción a la vez=2 · máx activas a la vez=2
+  A · esperas de cerrojo (muestras): 161× transactionid · UPDATE "public"."merchants" SET "invoice_series_year" = $1, 
+b234-sin-9 · exit=0 · 5440 ms · casos: ok 1 - SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+  A · muestras=178 (errores 0) · pids vistos=3 · máx conexiones=3 · máx en transacción a la vez=2 · máx activas a la vez=2
+  A · esperas de cerrojo (muestras): 163× transactionid · UPDATE "public"."merchants" SET "invoice_series_year" = $1, 
+b234-sin-10 · exit=0 · 5352 ms · casos: ok 1 - SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+  A · muestras=177 (errores 0) · pids vistos=3 · máx conexiones=3 · máx en transacción a la vez=2 · máx activas a la vez=1
+  A · esperas de cerrojo (muestras): 164× transactionid · UPDATE "public"."merchants" SET "invoice_series_year" = $1, 
+b234-sin-11 · exit=1 · 5413 ms · casos: not ok 1 - SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+  A · muestras=184 (errores 0) · pids vistos=3 · máx conexiones=3 · máx en transacción a la vez=3 · máx activas a la vez=2
+  A · esperas de cerrojo (muestras): 168× transactionid · UPDATE "public"."merchants" SET "invoice_series_year" = $1,  ;; 167× tuple · UPDATE "public"."merchants" SET "invoice_series_year" = $1, 
+b234-sin-12 · exit=0 · 5330 ms · casos: ok 1 - SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+  A · muestras=181 (errores 0) · pids vistos=3 · máx conexiones=3 · máx en transacción a la vez=3 · máx activas a la vez=3
+  A · esperas de cerrojo (muestras): 1× transactionid · SELECT id FROM merchants WHERE id = $1 FOR UPDATE ;; 168× transactionid · UPDATE "public"."merchants" SET "invoice_series_year" = $1, 
+b234-sin-13 · exit=1 · 5411 ms · casos: not ok 1 - SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+  A · muestras=181 (errores 0) · pids vistos=3 · máx conexiones=3 · máx en transacción a la vez=2 · máx activas a la vez=2
+  A · esperas de cerrojo (muestras): 165× transactionid · UPDATE "public"."merchants" SET "invoice_series_year" = $1, 
+c234-con-1 · exit=0 · 5509 ms · casos: ok 1 - SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+  A · muestras=178 (errores 0) · pids vistos=3 · máx conexiones=3 · máx en transacción a la vez=3 · máx activas a la vez=2
+  A · esperas de cerrojo (muestras): 158× transactionid · UPDATE "public"."merchants" SET "invoice_series_year" = $1,  ;; 158× advisory · SELECT pg_advisory_xact_lock($1::int, $2::int)
+c234-con-2 · exit=0 · 6141 ms · casos: ok 1 - SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+  A · muestras=198 (errores 0) · pids vistos=3 · máx conexiones=3 · máx en transacción a la vez=3 · máx activas a la vez=2
+  A · esperas de cerrojo (muestras): 159× advisory · SELECT pg_advisory_xact_lock($1::int, $2::int) ;; 157× transactionid · UPDATE "public"."merchants" SET "invoice_series_year" = $1, 
+c234-con-3 · exit=0 · 5953 ms · casos: ok 1 - SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+  A · muestras=192 (errores 0) · pids vistos=3 · máx conexiones=3 · máx en transacción a la vez=3 · máx activas a la vez=2
+  A · esperas de cerrojo (muestras): 159× advisory · SELECT pg_advisory_xact_lock($1::int, $2::int) ;; 156× transactionid · UPDATE "public"."merchants" SET "invoice_series_year" = $1, 
+c234-con-4 · exit=0 · 5836 ms · casos: ok 1 - SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+  A · muestras=188 (errores 0) · pids vistos=3 · máx conexiones=3 · máx en transacción a la vez=3 · máx activas a la vez=2
+  A · esperas de cerrojo (muestras): 157× transactionid · UPDATE "public"."merchants" SET "invoice_series_year" = $1,  ;; 157× advisory · SELECT pg_advisory_xact_lock($1::int, $2::int)
+c234-con-5 · exit=0 · 5728 ms · casos: ok 1 - SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+  A · muestras=184 (errores 0) · pids vistos=3 · máx conexiones=3 · máx en transacción a la vez=3 · máx activas a la vez=2
+  A · esperas de cerrojo (muestras): 160× advisory · SELECT pg_advisory_xact_lock($1::int, $2::int) ;; 158× transactionid · UPDATE "public"."merchants" SET "invoice_series_year" = $1, 
+c234-sin-1 · exit=1 · 5456 ms · casos: not ok 1 - SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+  A · muestras=180 (errores 0) · pids vistos=3 · máx conexiones=3 · máx en transacción a la vez=3 · máx activas a la vez=2
+  A · esperas de cerrojo (muestras): 163× transactionid · UPDATE "public"."merchants" SET "invoice_series_year" = $1,  ;; 162× tuple · UPDATE "public"."merchants" SET "invoice_series_year" = $1, 
+c234-sin-2 · exit=1 · 5341 ms · casos: not ok 1 - SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+  A · muestras=178 (errores 0) · pids vistos=3 · máx conexiones=3 · máx en transacción a la vez=3 · máx activas a la vez=2
+  A · esperas de cerrojo (muestras): 163× transactionid · UPDATE "public"."merchants" SET "invoice_series_year" = $1,  ;; 163× tuple · UPDATE "public"."merchants" SET "invoice_series_year" = $1, 
+c234-sin-3 · exit=1 · 5355 ms · casos: not ok 1 - SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+  A · muestras=178 (errores 0) · pids vistos=3 · máx conexiones=3 · máx en transacción a la vez=3 · máx activas a la vez=2
+  A · esperas de cerrojo (muestras): 164× transactionid · UPDATE "public"."merchants" SET "invoice_series_year" = $1,  ;; 163× tuple · UPDATE "public"."merchants" SET "invoice_series_year" = $1, 
+c234-sin-4 · exit=1 · 5372 ms · casos: not ok 1 - SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+  A · muestras=176 (errores 0) · pids vistos=3 · máx conexiones=3 · máx en transacción a la vez=3 · máx activas a la vez=2
+  A · esperas de cerrojo (muestras): 162× transactionid · UPDATE "public"."merchants" SET "invoice_series_year" = $1,  ;; 162× tuple · UPDATE "public"."merchants" SET "invoice_series_year" = $1, 
+c234-sin-5 · exit=1 · 5373 ms · casos: not ok 1 - SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+  A · muestras=180 (errores 0) · pids vistos=3 · máx conexiones=3 · máx en transacción a la vez=3 · máx activas a la vez=2
+  A · esperas de cerrojo (muestras): 167× transactionid · UPDATE "public"."merchants" SET "invoice_series_year" = $1,  ;; 166× tuple · UPDATE "public"."merchants" SET "invoice_series_year" = $1, 
+c234-sin-6 · exit=1 · 5350 ms · casos: not ok 1 - SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+  A · muestras=177 (errores 0) · pids vistos=3 · máx conexiones=3 · máx en transacción a la vez=3 · máx activas a la vez=2
+  A · esperas de cerrojo (muestras): 164× transactionid · UPDATE "public"."merchants" SET "invoice_series_year" = $1,  ;; 163× tuple · UPDATE "public"."merchants" SET "invoice_series_year" = $1, 
+c234-sin-7 · exit=1 · 5339 ms · casos: not ok 1 - SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+  A · muestras=178 (errores 0) · pids vistos=3 · máx conexiones=3 · máx en transacción a la vez=3 · máx activas a la vez=2
+  A · esperas de cerrojo (muestras): 165× transactionid · UPDATE "public"."merchants" SET "invoice_series_year" = $1,  ;; 164× tuple · UPDATE "public"."merchants" SET "invoice_series_year" = $1, 
+c234-sin-8 · exit=1 · 5383 ms · casos: not ok 1 - SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+  A · muestras=177 (errores 0) · pids vistos=3 · máx conexiones=3 · máx en transacción a la vez=3 · máx activas a la vez=2
+  A · esperas de cerrojo (muestras): 162× transactionid · UPDATE "public"."merchants" SET "invoice_series_year" = $1,  ;; 161× tuple · UPDATE "public"."merchants" SET "invoice_series_year" = $1, 

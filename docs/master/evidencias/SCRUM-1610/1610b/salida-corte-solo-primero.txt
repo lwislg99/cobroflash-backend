@@ -1,0 +1,11 @@
+rc 0 · pasan 4 · caen 0
+  [comercio] · cortes 1: intento 1 (13161 B / 204 líneas) → el relanzamiento llegó entero
+  [comercio] código 0 · población 192 (suelo 192) · CRUZA 2 · LEE-Y-NO-ACABA 0 · LEE-Y-NIEGA 1 · FILTRA 160 · SIN-CONSULTA 4 · NO-LLEGO 25 · relanzado con 3 variable(s) vacías que NO venían del entorno del test: DATABASE_URL_DEV, DATABASE_URL_STAGING, DATABASE_U
+  ✔ SCRUM-1516c · 🔴 eje del COMERCIO: lo que cruza la frontera es exactamente lo declarado, y sólo puede bajar (4943.8192ms)
+  [rol] · cortes 1: intento 1 (23327 B / 266 líneas) → el relanzamiento llegó entero
+  [rol] código 0 · población 78 (suelo 78) · NO-DISTINGUE 3 · RECORTA 44 · SIN-DOCUMENTO 17 · NO-LLEGO 14 · CIEGO 0 · relanzado con 3 variable(s) vacías que NO venían del entorno del test: DATABASE_URL_DEV, DATABASE_URL_STAGING, DATABASE_URL_TESTS
+  [comercioSordo] · cortes 1: intento 1 (12900 B / 201 líneas) → el relanzamiento llegó entero
+  ✔ SCRUM-1516c · 🔴 eje del ROL: lo que un Técnico recibe igual que el administrador es exactamente lo declarado (111.0351ms)
+  ✔ SCRUM-1516c · el censo NO está mudo: sin su siembra dice CIEGO en los dos ejes, y con el doble sordo cae (0.6003ms)
+  ✔ SCRUM-1516c · cada ruta declarada lleva su MOTIVO, no sólo su nombre (0.3275ms)
+restaurado

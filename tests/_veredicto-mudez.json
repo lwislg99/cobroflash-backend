@@ -20,6 +20,7 @@
     "scrum1587-reenviar-correo-cobros-44.test.mjs": ["VIVO","5eb08e5b49a7f51d"],
     "scrum1599g-recibo-por-fichero.test.mjs": ["VIVO","d28e9837f09c72bc"],
     "scrum161-evidencia-tanda.test.mjs": ["VIVO","4413c07cc5dc3bd3"],
+    "scrum1610b-salida-cortada-sale-ciega.test.mjs": ["VIVO","de41522b299e575a"],
     "scrum188-turno-staging.test.mjs": ["VIVO","eeca922cabd4cb21"],
     "scrum191-paid-via.test.mjs": ["VIVO","50d2542b26d22087"],
     "scrum195-url-bd-sin-fuga.test.mjs": ["VIVO","35b29e0a3560132e"],

@@ -490,17 +490,21 @@ router.get('/:token', async (req, res) => {
 // puede descargarlo desde el recibo aunque no se hubiera generado antes. Público por token
 // OPACO (SCRUM-74), igual que GET /recibo/:token (el cliente lo abre desde WhatsApp, sin login).
 router.get('/:token/pdf', async (req, res) => {
+  // SCRUM-1404g · CRUCE DE CARRIL DECLARADO (J2; SCRUM-1404 c.20932, sólo para este cambio). La
+  // factura, fuera del `try` y con su comercio: el `catch` necesita los dos para saber si un
+  // pendiente de sellado es de los que entran en la cadena (`esErrorSinSellar`).
+  let invoice: any = null;
+  const conComercio = { merchant: { select: { country: true, taxId: true } } };
   try {
     const ch = await prisma.charge.findUnique({ where: { receiptToken: req.params.token }, include: { events: true } });
     if (!ch || ch.status !== 'paid') return res.status(404).send(documentNotFoundHtml());
     // Localizar la factura ligada (por quote o evento 'invoiced'), igual que en GET /:token.
     const quote = await prisma.quote.findFirst({ where: { chargeId: ch.id } });
-    let invoice: any = null;
-    if (quote) invoice = await prisma.invoice.findFirst({ where: { quoteId: quote.id } });
+    if (quote) invoice = await prisma.invoice.findFirst({ where: { quoteId: quote.id }, include: conComercio });
     if (!invoice) {
       const invEv = [...(ch.events || [])].reverse().find((e) => e.type === 'invoiced' && (e as any).payload?.invoice_id);
       const invId = (invEv as any)?.payload?.invoice_id as number | undefined;
-      if (invId) invoice = await prisma.invoice.findUnique({ where: { id: invId } });
+      if (invId) invoice = await prisma.invoice.findUnique({ where: { id: invId }, include: conComercio });
     }
     if (!invoice) return res.status(404).send(documentNotFoundHtml());
     const { diskPath, number } = await ensureInvoicePdf(invoice.id, prisma);
@@ -514,7 +518,7 @@ router.get('/:token/pdf', async (req, res) => {
     // el clic del CLIENTE FINAL el que disparaba el fail-open y se llevaba un documento sin
     // huella. Ahora no sale nada — y no sale como 404, porque la factura existe: 409 con el copy
     // oficial, que no nombra sellado, huella ni VeriFactu (reglas 26 y 30).
-    if (esErrorSinSellar(err)) {
+    if (esErrorSinSellar(err, invoice?.number, invoice?.merchant)) {
       return res.status(409).send(documentoEnRegistroHtml(COPY_PUBLICO_SIN_SELLAR));
     }
     return res.status(500).send(documentNotFoundHtml());

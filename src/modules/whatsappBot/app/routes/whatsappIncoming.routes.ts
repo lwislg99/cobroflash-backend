@@ -501,14 +501,8 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
     // A13.1 (JOB-1): auto-creación del Trabajo al aceptar (idempotente)
     ensureJobForQuote(quote.id).catch(() => {});
 
-    await sendWhatsAppText({
-      merchantId: quote.merchantId,
-      exentoDelDemo: 'respuesta-a-entrante', exentoDeLaBaja: 'respuesta-a-entrante', // SCRUM-245: responde a quien acaba de escribir
-      to: from,
-      text: `✅ ¡Perfecto! Hemos registrado tu aceptación del presupuesto #${(quote as any).quoteNumber ?? quote.id}. Te avisaremos con los siguientes pasos.`,
-    });
-
-    // Email al merchant si tiene la notificación activa
+    // SCRUM-1322c: el nombre del negocio va en la respuesta al cliente, así que el comercio se
+    // consulta ANTES de enviarla (antes se consultaba después, sólo para los avisos al profesional).
     const merchant = await prisma.merchant.findUnique({
       where: { id: quote.merchantId },
       // SCRUM-1212: `id`, `country` y `flags` son lo que `getEmissionMode` necesita para el modo.
@@ -522,6 +516,20 @@ async function handleIncomingText(from: string, text: string): Promise<void> {
       select: { name: true },
     });
 
+    // SCRUM-1322c · literal firmado por el fundador en SCRUM-1322 comentario 20957 (opción A):
+    // «{Negocio} ya tiene tu confirmación.» sustituye a «Te avisaremos con los siguientes pasos.»,
+    // que prometía un aviso que nadie manda. El mismo literal para el cliente dado de baja.
+    // SCRUM-1322d · reserva firmada por el fundador en SCRUM-1322 comentario 20977: si el nombre
+    // llega vacío o solo con espacios, «Tu profesional ya tiene tu confirmación.».
+    const quienConfirma = merchant?.name?.trim() ? merchant.name : 'Tu profesional';
+    await sendWhatsAppText({
+      merchantId: quote.merchantId,
+      exentoDelDemo: 'respuesta-a-entrante', exentoDeLaBaja: 'respuesta-a-entrante', // SCRUM-245: responde a quien acaba de escribir
+      to: from,
+      text: `✅ ¡Perfecto! Hemos registrado tu aceptación del presupuesto #${(quote as any).quoteNumber ?? quote.id}. ${quienConfirma} ya tiene tu confirmación.`,
+    });
+
+    // Email al merchant si tiene la notificación activa
     if (merchant?.notifyEmailOnQuoteAccepted && merchant.email) {
       // SCRUM-477 · ⚠️ SIGUE SIN `await`: el presupuesto ya se aceptó por WhatsApp y un aviso que
       // no sale NO puede tumbar esa aceptación. Lo que cambia es que ahora deja constancia.

@@ -667,10 +667,10 @@ Alcance: (a) foto de la avería adjunta a QuoteRequest (desde bot y portal); (b)
 ## S1. Roles `F1-doc (implementado; esta tabla es la verdad)`
 | Capacidad | Admin | Técnico |
 |---|---|---|
-| Quotes/clientes crear-ver · productos: ver · enviar WA · ver landing | ✅ | ✅ |
+| Quotes/clientes crear-ver · productos: ver · enviar WA · ver landing | ✅ | ✅ — productos: sólo ver desde el 24-ago-2026 (decisión del fundador, SCRUM-614); el máster lo dice desde el 14-oct-2026 (SCRUM-1347) |
 | Facturas: emitir/anular/R1 | ✅ | ❌ (ver sí — ⚠️ es lo que hace HOY; **decidido el 1-oct-2026: verá sólo las suyas**, sin construir → nota «Autor o asignado», más abajo) · ✅ **CONSTRUIDA — marcado el 24-oct-2026** (decisión del fundador, SCRUM-1346 c.20745, P3 «Sí»): ya NO las ve todas, sólo las suyas — lista, ficha y PDF de la factura recortan desde SCRUM-1397 (#2121); el «es lo que hace HOY» y el «sin construir» de antes eran del 1-oct y se quedan como historia (SCRUM-1390) |
 | Marcar pagado / deshacer | ✅ | ❌ |
-| Configuración, datos fiscales, Connect, flags · billing/plan · equipo · exports | ✅ | ❌ |
+| Configuración, datos fiscales, Connect, flags (no se cambian desde la app: sólo con scripts/cambiar-flag-fiscal.mjs) · billing/plan · equipo · exports | ✅ | ❌ |
 Ruta nueva = declara rol mínimo; default Admin-only. **Lo hace cumplir un test, no la disciplina** (SCRUM-55).
 
 **Qué VE el Técnico en Inicio** _(decidido por el fundador el 1-oct-2026; la tabla de arriba dice qué puede HACER, no qué puede VER — SCRUM-55 c.10699, regla 27)_

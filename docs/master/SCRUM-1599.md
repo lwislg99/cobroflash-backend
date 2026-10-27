@@ -1095,6 +1095,74 @@ líneas `ok` de primer nivel suman el `# tests` declarado). Los de registro, en 
 - Una pasada por punto.
 - Que las ocho mutaciones mueran también en el Postgres de CI: nadie las corre allí (§1599i ⓪).
 
+## J6 · SCRUM-1599p · lote 6a del diseño B: ocho con carrera al banco desechable, scrum173 con la opción (A), y el trinquete de 13 a 4
+
+**Medido contra:** `origin/main` = `268eb55ddf33547063a620009e505e4ed833ba35` · 2026-10-26T22:41:07Z (hora de GitHub; sesión J6 `jv-j6cp` en su árbol `jv-j6cp`, por encargo del orquestador `cobroflash-backend-8b`)
+
+A9: aviso → cicatriz J6 «Crucé el umbral de aviso de contexto sin medirme en el cruce: medí al arrancar y no volví a medir hasta después de un barrido ancho.» — no se pudo comprobar: medí 92k al arrancar y 119k tras Jira, y no volví a medirme hasta acabar el DESPUÉS del banco, con 239k; ningún hook de este árbol mide el contexto al cruzar
+
+Encargo: SCRUM-1599 c.20940 (decisión de reparto sobre la medición c.20928 de §1599o). Sólo `tests/` y docs: 0 líneas de `src/`, `.github/` o `prisma/`, y ninguna aserción tocada. Salida entera: `evidencias/SCRUM-1599/lote-1599p.salida.txt`; instrumentos: `pgbanco-1599p.mjs.txt` (el Postgres), `banco-1599p.mjs.txt` (banco-1599h contra ese Postgres), `mutar-1599i.mjs` sin cambiar y `pasada-1599o.mjs.txt` (de la rama de 1599o).
+
+### ① El lote
+
+- **Forma de 1599m** (`_banco-libro.mjs` justo detrás de `_staging-db.mjs`, `QA_DB_TEST` **o** `LIBRO_PG_URL`): scrum115, 127, 178, 92 y 814-carrera-del-tramo.gated.
+- **Con `URL_BANCO`**: scrum592, 767 y 793. Con el banco, la URL es `URL_BANCO`, que ya ha pasado el guard de `_banco-libro.mjs` (loopback y base «*_test»). Con `QA_DB_TEST` siguen leyendo `DATABASE_URL_DEV` y exigiendo `yaqu_dev_javier`, con la misma aserción. Control negativo: 592 con `LIBRO_PG_URL` a una base `…_plantilla` se niega al cargar («LIBRO_PG_URL no es un banco desechable»), rc=1.
+  - ⚠️ Consecuencia que digo, no mido: para importar `_banco-libro.mjs`, `scrum876e` exige `_staging-db.mjs` justo delante. Así que con `QA_DB_TEST=1` estos tres pasan ahora además por el guard de staging (`DATABASE_URL_TESTS`, marca y turno). Escriben donde escribían; con `QA_DB_TEST` no los he corrido.
+- **scrum173, opción (A)**: sus 7 casos ganan el banco, y el de «las cadenas YA PERSISTIDAS» salta en él con su motivo (`SOLO_EN_STAGING`): recorre las facturas selladas de TODA la base, que en la tanda comparten otros ficheros. No se acota a sus comercios.
+- 234 y 781 no entran (c.20940). Carril: `carriles.mjs de` los nueve ANTES de tocarlos → «sin fila en §3»; positivo: `latido.mjs` → S5.
+
+### ② Banco: Postgres 16.14 de verdad (no PGlite: el lote prueba concurrencia, §1599o ①)
+
+| pasada | casos | pasan | caen | saltan |
+|---|---|---|---|---|
+| ANTES (los 9 de main) | 31 | 1 | 0 | 30 |
+| DESPUÉS | 31 | 30 | 0 | 1 (el de 173, con su motivo) |
+| 9 mutaciones en `MUTACIONES_CON_BASE` | — | — | 9 MUEREN | 0 viven · 0 ciegas |
+
+- Cada mutación cae por su caso: 115 `status: 'failed'` → `'sent'`; 127 sin el paywall de la prueba vencida; 173 ① sin el «fuera de una transacción»; 178 sin el gate de la regla 24 («devolvió 500»); 92 sesión sin `teamMemberId`; 814 recuento de tramos a 0 (caen los 3); 592 sin el cerrojo («diez reservas … [1,1,2,3,3,3,3,3,4,4]»); 767 la cura devuelve un token sin guardar; 793 sin `portalToken: null` en el `WHERE` («10 tokens DISTINTOS»). `dist/` vuelve byte a byte.
+- **De paso, dos mutaciones VIVIERON en la primera ronda**, y las cambié:
+  - 814 sin `tomarCerrojoDeSerie`: 0 de 3 caen (n=1). Ese cerrojo no lo vigila ninguno de sus tres casos en este banco, o la carrera no se entrelazó: SIN MEDIR cuál.
+  - 592 sin su cerrojo: cae el caso de DIEZ, no el de DOS. El `cae` apunta al de diez.
+- Trinquete `scrum1599f`: con los nueve migrados y la lista sin tocar cae con «SALEN: los nueve» y «ENTRAN: —». Población recalculada con el número declarado a 0: **4** (116, 234, 574 y 781). `scrum419`: de 121 a **151**, la suma que da el propio test; con 173 declarado 6 en vez de 7, cae.
+
+### ③ Régimen T (c.20940: al menos 3)
+
+84 ficheros (los de `LIBRO_PG_URL` según `scrum419`) contra la MISMA base, N=11, base nueva por pasada. Memoria libre antes de cada una: 3.702, 4.539 y 4.549 MB.
+
+| pasada | VERDE | ROJO | SALTA | pared |
+|---|---|---|---|---|
+| T1 | 82 | 1 (`scrum728d`) | 1 (173) | 34,1 s |
+| T2 | 83 | 0 | 1 (173) | 30,1 s |
+| T3 | 83 | 0 | 1 (173) | 30,7 s |
+
+- Los nueve, verdes 3/3; 173 sale 6/0/1 las tres veces.
+- `scrum728d` cae en T1 por su SUELO «el RTT en loopback es ~0»: mide latencia con once procesos a la vez. No es de este lote (ya iba al banco) y no lo he tocado; es un candidato a ruido de carga, SIN MEDIR.
+
+**Sin medir:** CI (otro runner y la tanda entera) · staging con turno · los tres de `URL_BANCO` con `QA_DB_TEST` · por qué vivió el cerrojo de 814 · suite entera local: NO CORRIDA.
+
+**De paso, confieso:** lancé un `ls` con comodines sobre los 648 trabajos de la máquina, sin medirlos, buscando el Postgres de 1599o. El arnés lo mandó a segundo plano y lo paré: es la cicatriz de 1599i, otra vez. Y el primer arranque del Postgres se quedó colgado porque `pg_ctl` heredaba las tuberías; al parar la tarea murió el servidor, y lo rehíce con `stdio: 'ignore'`.
+
+### ④ El rojo de CI en scrum115, y su arreglo (sesión J6 `jv-j6cx`, 26-oct-2026 ~23:10Z de GitHub, sobre la punta `f695bdab91d47a75441590a0fc1cca6b41826f91` de la rama)
+
+A9: aviso → A10 «Un laboratorio que le presta su entorno al sujeto mide la suma de los dos.» — no se pudo comprobar: el banco local de §② (`banco-1599p.mjs.txt`) le ponía `WHATSAPP_DRY_RUN=1` al hijo y CI no se la pone; ningún guard compara el entorno de un banco local con el del job de CI
+
+- **El rojo** (lo leyó el vigía `jv-j6cs` en el job 121893679905: 12747 pass + 2 fail + 15 skip): caen los dos casos de scrum115 con `'not_configured'` donde se esperaba `'wa_opt_out'` y `'demo_safe_numbers'`. Los otros ocho del lote pasan.
+- **Causa, por ejecución.** `ci.yml` no declara ninguna variable `WHATSAPP_*`, y sin credenciales ni `WHATSAPP_DRY_RUN` el sender corta en `not_configured` ANTES de la regla vigilada (`whatsapp.ts`, `sendWhatsAppTemplate` y `sendWhatsAppText`). Mi banco «como CI» es `banco-1599p` con esa bandera quitada del entorno del hijo, y da el mismo rojo: 0/2, `actual: 'not_configured'`. El verde de §② era del banco, no del test.
+- **Arreglo, opción (a), sin `src/` ni credencial falsa:** con el banco, el propio fichero se pone `WHATSAPP_DRY_RUN=1`. Es el modo de pruebas del sender, que pasa todas las reglas y no llama a Meta. Y corta toda salida que no sea loopback con `cortarSalida()` de `_sin-salida.mjs`, con su control positivo delante y «nada apuntado» al acabar. Es la forma de a55 (SCRUM-876f) y scrum47 (876g). Con `QA_DB_TEST` no cambia nada. Ninguna aserción existente cambia (regla 41): se añaden la de la bandera y las dos del corte.
+
+| pasada (banco como CI) | casos | pasan | caen |
+|---|---|---|---|
+| ANTES (34df32198) | 2 | 0 | 2 (`not_configured`) |
+| DESPUÉS | 2 | 2 | 0 |
+| CONTROL: sin la línea de la bandera | 2 | 0 | 2 (la aserción de la bandera) |
+| mutación de `MUTACIONES_CON_BASE` (`mutar-1599i.mjs`) | — | — | MUERE: cae su caso, `dist/` byte a byte |
+
+Salida entera: `evidencias/SCRUM-1599/scrum115-ci-1599p.salida.txt`.
+
+**De paso, confieso:** arranqué el Postgres en el 55491 cuando mi propio `netstat` acababa de decir que ese puerto estaba ocupado. Era el de otra sesión, y la comprobación iba encadenada con el arranque. `pg_ctl` falló sin tocar el ajeno, y lo levanté en el 55617, que medí libre antes. Además, la evidencia la escribí antes de pasarla por `carriles.mjs de`: es la cicatriz de 1218d.
+
+**Sin medir:** CI con este arreglo · staging con turno.
+
 ## J6 · SCRUM-1599q · por qué scrum234 y scrum781 caen siempre, también en serie: bisect y sonda del reloj. Sólo medir
 
 **Medido contra:** `origin/main` = `268eb55dd` al medir y `6d5bf76c5bf02142e762ca2ddd3d2ae2b92f9a3e` al escribir (los 13 commits de en medio no tocan `src/modules/invoicing/domain/`, los dos tests ni sus ayudantes) · 2026-10-26T22:31:12Z (hora de GitHub; sesión J6 `jv-j6cq` en su árbol `cobroflash-jv-j6cq`, por encargo del orquestador `cobroflash-backend-8b`, c.20940)
@@ -1220,3 +1288,126 @@ En el comentario de Jira de este tramo (la dirigida corre después de escribir e
 - ⚠️ §1599q (#2899) no está en `main` al escribir esto, y su tramo también se añade al final de este fichero. Dos
   ramas que añaden al final del mismo registro pueden mezclarse sin marcadores y entrelazadas: quien entre segundo
   compara los tramos byte a byte.
+
+## J6 · SCRUM-1599s · lote 6b del diseño B: scrum234.gated y scrum781 al banco desechable, y el trinquete de 4 a 2
+
+**Medido contra:** `origin/main` = `7a86ed067d597d9c3bcb5d8ca6756796efbec453` · 2026-10-26T23:09:52Z (hora de GitHub al mezclar `origin/main` en la rama; sesión J6 `jv-j6cw` en su árbol `cobroflash-jv-j6cw`, por encargo del orquestador `cobroflash-backend-8b`. El código se midió sobre `0c1f28761` (1599r) con `34df32198` (1599p) mezclado; después entraron `origin/main`, que ya trae 1599r, y la punta `f695bdab9` de 1599p)
+
+A9: aviso → cicatriz J6 «Crucé el umbral de aviso de contexto sin medirme en el cruce: medí al arrancar y no volví a medir hasta después de un barrido ancho.» — no se pudo comprobar: medí 118k al arrancar y 132k tras Jira, y no volví a medirme tras el ANTES, el DESPUÉS ni la primera mutación, como pedía el encargo; avisé a 210k. Ningún hook de este árbol mide el contexto al cruzar
+
+Encargo: SCRUM-1599 c.20940 y c.20947, con 1599r (c.20953) y la forma de §1599p. Sólo `tests/` y docs: 0 líneas de `src/`, `.github/` o `prisma/`, y ninguna aserción tocada. Salida entera: `evidencias/SCRUM-1599/lote-1599s.salida.txt`. Instrumentos sin cambiar: `pgbanco-1599p.mjs.txt`, `banco-1599p.mjs.txt`, `mutar-1599i.mjs` y `pasada-1599o.mjs.txt`.
+
+### ① El lote
+
+- **scrum234-carrera-serie.gated**, con la forma de 1599m (`_banco-libro.mjs` detrás de `_staging-db.mjs`; `QA_DB_TEST` **o** `LIBRO_PG_URL`).
+- **scrum781**, con `URL_BANCO`, como 592 en §1599p. Con `QA_DB_TEST` sigue leyendo `DATABASE_URL_DEV` y exigiendo `yaqu_dev_javier`. Ahora importa también `_staging-db.mjs` (scrum876e lo exige delante del banco): con `QA_DB_TEST` pasa además ese guard. No lo he corrido con `QA_DB_TEST`.
+- **scrum234-censo-reserva-serie NO se migra, y corrijo el encargo:** no lleva gate ni toca base. Es un censo por AST que ya corre en cada tanda: 4/4 en el ANTES, sin banco.
+- Carril: `carriles.mjs de` los cuatro ficheros ANTES de tocarlos → «sin fila en §3»; positivo: `latido.mjs` → S5.
+
+### ② Banco: Postgres 16.14 de verdad, en loopback (`@embedded-postgres/windows-x64` 16.14.0-beta.17)
+
+| pasada | 234.gated | censo 234 | 781 |
+|---|---|---|---|
+| ANTES | 0/0/1 (salta) | 4/0/0 | 4/0/4 (saltan los 4 de base) |
+| DESPUÉS | 1/0/0 | 4/0/0 | 8/0/0 |
+
+En las seis filas, los casos anclados suman el `# tests` declarado.
+
+- **Mutaciones en `MUTACIONES_CON_BASE`** (mutan `dist/`, no el fuente: regla 38). Las dos MUEREN, 0 viven, 0 ciegas, `dist/` vuelve byte a byte (sha256 `66f09cfce7bc0ac5`):
+  - 234: el contador queda en `seq` en vez de `seq + 1`. Cae «el contador no cuadra con los números emitidos».
+  - 781: el contador avanza 2 en vez de 1. Cae el SUELO: «quedó en 3».
+- 🔴 **HALLAZGO: scrum234 en el banco no caza la falta de `pg_advisory_xact_lock`.** Esa mutación era la natural del fichero, y VIVE 4 de 4: una con `mutar-1599i.mjs` y tres a mano con el mismo transpilador (n=4). Las dos emisiones salen con números distintos y consecutivos, sin `P2002`. Es el mismo síntoma que §1599p midió en 814 sin `tomarCerrojoDeSerie` (0 de 3). Por qué: SIN MEDIR. Leído en el código, no medido: `allocateInvoiceNumber` deriva la serie F con un `findMany` antes del `merchant.update`, así que sin cerrojo las dos deberían leer lo mismo. Algo las serializa en este banco, o la barrera de 234 no las para donde dice su cabecera. La cabecera del test dice que el rojo sin cerrojo se midió contra staging el 02-ago. Por eso cataloga la del contador, y lo dice en el propio fichero.
+- Trinquete `scrum1599f`: con las dos líneas quitadas, el propio test da «población 2, declarada 4» y el conjunto cuadra. **4 → 2** (116 y 574). `scrum419`: antes de declarar cae con «se declaran 151 … y hay 156» y nombra 234 (1) y 781 (4). **151 → 156**.
+
+### ③ Régimen T (c.20940: al menos 3)
+
+86 ficheros (los de `LIBRO_PG_URL` según `scrum419`), N=11, base nueva por pasada. Memoria libre antes de cada una: 2.284, 4.741 y 5.046 MB (las tres ≥ 2 GB).
+
+| pasada | VERDE | ROJO | SALTA | pared |
+|---|---|---|---|---|
+| T1 | 83 | 2 (`scrum728d`, `scrum92`) | 1 (173) | 51,8 s |
+| T2 | 85 | 0 | 1 (173) | 30,4 s |
+| T3 | 85 | 0 | 1 (173) | 29,0 s |
+
+- 234 y 781, verdes 3/3.
+- `scrum728d` cae en T1 por su SUELO del RTT, igual que en §1599p.
+- **`scrum92` (de §1599p) cae en T1:** «un email que no existe en NINGUNA tabla no debe crear ningún AuthSession», `11 !== 9`. Parece un recuento de `AuthSession` de toda la base, que en la tanda comparten otros ficheros: leído en el TAP, no medido. En §1599p salió verde 3/3; aquí 2/3. No es de este lote y no lo he tocado.
+
+**Sin medir:** CI · staging con turno · 781 con `QA_DB_TEST` · por qué vive el cerrojo de 234 · la base de 234 con el `dist/` de `main` después de la mezcla (el de las pasadas es el de antes) · suite entera local: NO CORRIDA.
+
+## J6 · SCRUM-1599t · los dos últimos que sólo ve staging (116 y 574): medidos en el banco; 574 al banco por la opción A, 116 propuesto
+
+**Medido contra:** `origin/main` = `793a790dc` · 2026-10-26T23:38:24Z (hora de GitHub; sesión J6 `jv-j6cz` en su árbol `cobroflash-jv-j6cz`, por encargo del orquestador `cobroflash-backend-8b`. La rama lleva mezclada la punta `7439e740a2933ce28ed3c7a9487cba98a745ef42` de §1599s, que trae la `6455056939ea2bc2ae8df8a50795b76e4671a823` de §1599p: ninguna de las dos había entrado en `main`, y las dos tocan las mismas líneas de los trinquetes)
+
+A9: aviso → A10 «Un laboratorio que le presta su entorno al sujeto mide la suma de los dos.» — no se pudo comprobar: reutilicé el `arrancar-pg-1599q.mjs.txt` de §1599q sin mirar con qué codificación nacía el clúster, y nace en WIN1252, no en el UTF8 del `postgres:16-alpine` de CI; lo cazó un `22P05` en el TAP de la primera pasada (un `⚠` que no cabe) y medí todo lo demás en un clúster rehecho en UTF8 (`arrancar-pg-1599t.mjs.txt`, que imprime `ENCODING=`), pero la evidencia de §1599q es un fichero de texto que ningún test arranca, y el siguiente que la copie hereda el WIN1252
+
+Encargo: SCRUM-1599 c.20969 (el trinquete baja a 116 y 574) y la opción (A) de 173 (c.20940). Sólo `tests/` y docs: 0 líneas de `src/`, `.github/` o `prisma/`, y ninguna aserción tocada. Salida entera: `evidencias/SCRUM-1599/medicion-1599t.salida.txt`.
+
+### ① El instrumento
+
+- Postgres 16.14 desechable en loopback, base `yaqu_libro_test` con el DDL de `migrate diff --from-empty` (33 `CREATE TABLE` = 33 `model`), clúster **UTF8**. `node_modules` propio (`npm ci`), cliente de Prisma ✔, `dist/` con `tsc --noCheck`.
+- Copias adaptadas con la forma de 1599m (`tests/zz1599t-*.mjs`, fuera del patrón `*.test.mjs`), borradas al acabar. Corredores sin cambiar: `correr-1599q.mjs.txt` (uno por proceso) y `pasada-1599o.mjs.txt` (régimen T). Casos anclados que suman el `# tests` declarado en todas las filas.
+- **Dos sondas nuevas**, porque en una pasada T el pisotón depende del orden y se ve o no se ve por azar:
+  - `vigia-1599t.mjs.txt` lee cada 200 ms las facturas AJENAS a 116 que casan con el `where` literal de `sendInvoicePaymentReminders()` (`invoiceReminder.service.ts:40-75`). Positivo sembrado: con `--sembrar` crea una factura que casa y tiene que verla. Con la siembra fuera de la ventana dice `CIEGO (no vio lo sembrado)` (comprobado).
+  - `vecino116-1599t.mjs.txt` y `vecino574-1599t.mjs.txt` siembran UN vecino (lo que otro test deja vivo a mitad de su ejecución), corren el fichero y leen qué quedó escrito sobre él. Lo borran al acabar (0 filas después, impreso).
+
+### ② 574 (`scrum574-mismo-cliente-tras-migracion`): el caso de la base entera da el veredicto del vecino
+
+Sus 8 casos: 6 sin base, que corren siempre, y 2 con base. El caso «CONTRA POSTGRES: tras la migración, cada cliente sigue siendo el mismo» lee `customer.findMany()` **sin filtrar por comercio** y exige `contactKind === null` en todos:
+
+| pasada (n=1) | «CONTRA POSTGRES» |
+|---|---|
+| base vacía (régimen S, después de 116) | ROJO · «⛔ NO SUPE MIRAR: cero clientes» |
+| con un vecino sin declarar | VERDE |
+| con un vecino dado de alta como `EMPRESA` | ROJO · `actual: 'EMPRESA'` |
+
+El vecino `EMPRESA` es justo lo que hace el control positivo del MISMO fichero (alta por EMPRESA y por PERSONA). En el banco, ese caso no mide una migración: mide quién corre al lado. **Opción (A), construida:** salta en el banco con `SOLO_EN_STAGING`, con la forma y el motivo de 173, y se queda en staging. El control positivo, que trabaja dentro de su `withMerchant`, pasa al banco.
+
+| 574 versionado | casos | pasan | caen | saltan |
+|---|---|---|---|---|
+| sin banco (como antes) | 8 | 6 | 0 | 2 |
+| con banco, esta rama | 8 | 7 | 0 | 1 (el de la base entera, con su motivo) |
+| mutación `MUTACIONES_CON_BASE` (el alta pierde `contactKind`) | — | — | MUERE: cae el control positivo, «el alta por el lado EMPRESA no guardó la forma jurídica» | — |
+
+`mutar-1599i.mjs` sobre `banco-1599p` + `pgbanco-1599p`, sin cambiar: población 1, vivas 0, ciegas 0, `dist/` restaurado byte a byte.
+
+### ③ 116 (`scrum116-recordatorio-candado`): no lee la base entera, la ESCRIBE
+
+Sus aserciones filtran por su comercio. El que recorre la base es el servicio: `sendInvoicePaymentReminders()` coge las pendientes de TODOS los comercios (`take: 50`) y les reserva el candado antes de enviar.
+
+- **Solo (régimen S), 7 de 7 verde.** El cron coge 1 factura de 7 días: la suya.
+- **T1** (89 ficheros del banco + 116, N=11, 41 s): 88 verdes, 1 salto (173, el suyo) y 1 rojo ajeno (`scrum115`, «demo fuera de DEMO_SAFE_NUMBERS»; sin medir si es de 116). 116, verde. **La sonda vio 29 facturas ajenas distintas en la ventana del cron, hasta 10 a la vez**, de 8 comercios de 4 ficheros (scrum104, 295, 297 y 389). En T1, 116 no coincidió con ninguna: su cron cogió 1.
+- **Con un vecino sembrado** (una factura ajena de 30 días):
+
+| modo | 116 | qué queda escrito sobre el VECINO |
+|---|---|---|
+| `dry` (`WHATSAPP_DRY_RUN=1`, como staging) | ROJO 2 de 6: «PREMISA ROTA: no consta ningún intento fallido para la factura A» | sus DOS candados (`reminder7SentAt` y `reminder14SentAt`) con fecha: su cron le «envió» los dos recordatorios |
+| `ci` (sin `WHATSAPP_*`, como `ci.yml`) | VERDE 3 de 3 | 2 `whatsapp_messages` fallidos (`not_configured`) y 2 `customer_events` en el comercio ajeno; candados liberados |
+
+- Sin vecino y en `dry`, 116 sale verde 6 de 6. **Por qué cae 2 de 6 con vecino en `dry`: SIN MEDIR.**
+- Ninguno de los 4 ficheros que la sonda vio nombra `reminder`, `whatsAppMessage` ni `customerEvent`: hoy no hay víctima visible.
+- Leído en el código, no medido: `customer_events` tiene `ON DELETE RESTRICT` sobre el cliente. Si 116 escribe un evento en un cliente ajeno entre el `deleteMany` de eventos y el borrado del cliente de ese test, la limpieza de ESE test cae.
+
+**La (A) de 173 aquí no sirve:** 116 tiene UN caso, y ése es el que toca la base entera. Saltarlo en el banco deja el fichero igual que hoy. Sigue en el trinquete, con el motivo ya medido.
+
+### ④ Trinquetes, con el número que da el propio test
+
+- `scrum1599f`: **2 → 1** (116). Con el número declarado a 2 dijo «población 1, declarada 2» y `SALEN: scrum574-mismo-cliente-tras-migracion.test.mjs`, con `ENTRAN` vacío.
+- `scrum419`: **156 → 158**. Antes de declararlo caía con «se declaran 156 tests sin ejecutar y hay 158».
+
+### ⑤ Propuesta para 116, NO construida (cambia lo que vigila o el carril, así que no la elijo yo)
+
+| | qué | qué cambia | ✅/❌ |
+|---|---|---|---|
+| **(A)** | el caso salta en el banco con su motivo | nada: el fichero sigue sólo en staging | ❌ recomendado: no mueve nada |
+| **(B)** | el test acota el cron a su comercio | el test no puede: el `where` está en `src/` (J2). Habría que añadir un filtro al servicio, y eso es código de producción | ❌ sin firma |
+| **(C1)** | al banco tal cual, sin `WHATSAPP_DRY_RUN` (como CI) | en CI 116 sale verde 3/3 con vecino, pero ensucia la base compartida: 2 filas de WhatsApp y 2 eventos por cada factura ajena de la ventana (hasta 10 a la vez en T1) | a decidir |
+| **(C2)** | al banco en su propio proceso de Postgres o en una base propia (`yaqu_libro_116_test`) | no cambia ninguna aserción ni lo que vigila; pide que CI o `_banco-libro.mjs` sepa dar una segunda base, y eso no es mío (CI es de S5) | a decidir |
+
+### ⑥ De paso
+
+- 1599s ya vio `scrum92` contar `AuthSession` de toda la base (`11 !== 9`). Es la misma familia que 173, 574 y 116, y no lo he medido.
+- `arrancar-pg-1599q.mjs.txt` crea el clúster en WIN1252 (la línea `A9:`). No reescribo la evidencia de otro tramo: la mía, `arrancar-pg-1599t.mjs.txt`, pasa `--encoding=UTF8 --locale=C` e imprime la codificación.
+- Confieso: al mezclar `origin/main` (`840ca85b8`) y la punta nueva de 1599s (`64c2c7bad`), git dejó el tramo 1599q DOS veces en este fichero, sin marcadores ni conflicto. Lo cacé contando cabeceras por letra. El fichero es el de `64c2c7bad` más este tramo, con `git checkout` y `>>`: +190 −0 contra `main`, cada tramo de o a t una sola vez.
+
+**Guards en local** (15 ficheros: 1599f, 419, 876e, 876f, 237, 976, 1294, 267, 273, 921c, 1572, 723, los dos de 574 y 116): **116 casos = 113 pass + 3 skip, 0 fallos**. Los 3 saltos son los de base de 116 y 574 sin banco, que corrieron arriba con él. Cambiando una letra de mi cita `A9:`, `scrum1294` cae nombrando `SCRUM-1599.md:1340` (VIVO; medido sobre el árbol ya mezclado); restaurado byte a byte. **Sin medir:** CI · staging con turno · la causa del 2/6 de 116 en `dry` · si `scrum115` cayó en T1 por 116 · T repetido (n=1) · suite entera local: NO CORRIDA.

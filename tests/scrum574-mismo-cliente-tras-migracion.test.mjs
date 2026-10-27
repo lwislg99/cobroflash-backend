@@ -32,6 +32,7 @@
 // ⚠️ EL COMPARADOR NOMBRA EL CAMPO. Un control que dice «el cliente cambió» sin decir cuál obliga
 // a repetir a mano el trabajo que venía a ahorrar. El rojo de abajo comprueba justo eso.
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD del carril (fail-closed anti-prod). VA EL PRIMERO.
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599t: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -229,7 +230,14 @@ test('SCRUM-574 · el control NO usa includes() para comparar textos', () => {
 // puede probar que tras la migración NADIE quedó declarado, que no desapareció ninguna fila y que
 // ningún cliente perdió su nombre. NO puede reconstruir por sí solo el estado previo — para eso
 // están los números del PASO 0, que vienen escritos abajo y se comparan contra lo que haya.
-const ENABLED = process.env.QA_DB_TEST === '1';
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
+// SCRUM-1599t (opción A de SCRUM-1599, la misma que 173 en c.20940): el caso de abajo lee los clientes de TODA la
+// base, sin filtrar por comercio, y su sentido es el de una base REAL ya migrada. En el banco desechable esa base es
+// la de los ficheros que corren a la vez, y el veredicto pasa a ser el del vecino: medido en el banco (§1599t), sale
+// rojo con la base vacía («cero clientes»), verde con un vecino sin declarar y rojo con uno dado de alta como
+// EMPRESA, que es justo lo que hace el control positivo de este mismo fichero. Se queda en staging.
+const SOLO_EN_STAGING = URL_BANCO !== ''
+  && 'en el banco desechable no: lee los clientes de TODA la base, que en la tanda comparten otros ficheros (SCRUM-1599t) · npm run test:staging:gated';
 
 // PASO 0 · medido el 24-ago-2026 (`node scripts/censo-tipo-cliente.mjs`, `docs/CENSO_TIPO_CLIENTE.md`).
 // Es el «antes» con el que se compara el «después», que es lo que pedía el encargo: la migración
@@ -238,7 +246,7 @@ const PASO_0 = Object.freeze({ railway: 4, yaqu_dev_javier: 11 });
 
 test(
   'SCRUM-574 · CONTRA POSTGRES: tras la migración, cada cliente sigue siendo el mismo',
-  { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated (y exige contact_kind aplicada — SCRUM-574 opción B)' },
+  { skip: (!ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated (y exige contact_kind aplicada — SCRUM-574 opción B)') || SOLO_EN_STAGING },
   async () => {
     const { prisma } = await import('../dist/core/db/prisma.js');
 
@@ -295,7 +303,7 @@ test(
 
 test(
   'SCRUM-574 · ✅ CONTROL POSITIVO: se da de alta por CADA lado, y el campo fiscal no se contagia',
-  { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated (crea y BORRA un merchant efímero)' },
+  { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated (crea y BORRA un merchant efímero)' },
   async () => {
     // Un control que solo comprueba que «nada cambió» pasaría igual de verde con el switch
     // desconectado. Esto es la otra mitad: que el camino de escritura FUNCIONA por los dos lados.
@@ -333,3 +341,10 @@ test(
     });
   },
 );
+
+// SCRUM-1599t · la mutación CON BASE (la lee `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` por AST): el alta deja de
+// guardar la forma jurídica, y el control positivo tiene que caer. No va a `MUTACIONES_QUE_ME_TUMBAN`: su caso se salta
+// sin base, y el meta-guard corre sin ella.
+export const MUTACIONES_CON_BASE = [
+  { fichero: 'src/modules/system/customerAdmin.ts', de: 'data: { ...normalizarEtiquetas(normalizarIdentificadores(data)), merchantId, portalToken: generatePortalToken() },', a: 'data: { ...normalizarEtiquetas(normalizarIdentificadores(data)), contactKind: null, merchantId, portalToken: generatePortalToken() },', cae: 'SCRUM-574 · ✅ CONTROL POSITIVO' },
+];

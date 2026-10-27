@@ -20,6 +20,7 @@
 // ⚠️ GATEADO (crea/BORRA merchants efímeros, genera PDFs reales, levanta la app):
 //   QA_DB_TEST=1 WHATSAPP_DRY_RUN=1 npm run test:staging
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599p: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
@@ -49,12 +50,12 @@ const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new
   req.end(body);
 });
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 const SIG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
 const FUTURA = () => new Date(Date.now() + 30 * 24 * 3600 * 1000);
 const PASADA = () => new Date(Date.now() - 24 * 3600 * 1000);
 
-test('SCRUM-127: requireActivePlan bloquea de verdad las 4 rutas gateadas (y solo con trial vencido)', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-127: requireActivePlan bloquea de verdad las 4 rutas gateadas (y solo con trial vencido)', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const server = app.listen(0);
@@ -195,3 +196,11 @@ test('SCRUM-127: requireActivePlan bloquea de verdad las 4 rutas gateadas (y sol
     await prisma.$disconnect();
   }
 });
+
+// SCRUM-1599p (diseño B de SCRUM-1599) · la mutación que tumba el caso de base, CATALOGADA en SCRUM-1599p.
+// Va aparte de `MUTACIONES_QUE_ME_TUMBAN` a propósito: el job del meta-guard corre SIN base, el caso sale
+// SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco,
+// `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e). Cada campo, LITERAL.
+export const MUTACIONES_CON_BASE = [
+  { fichero: "src/core/http/authMiddleware.ts", de: "  if (plan === 'trial' && planExpiresAt && planExpiresAt < new Date()) {", a: "  if (false) {", cae: "SCRUM-127: requireActivePlan bloquea" },
+];

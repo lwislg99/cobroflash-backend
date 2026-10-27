@@ -323,6 +323,29 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // /pay/bizum y /pay/invoice por id numérico lo contesta la RUTA real con cobros guardados. Su caso
   // sin base (el ancla del id, sembrada) corre siempre.
   'scrum85-pay-routes-token.test.mjs': 1,
+  // SCRUM-1599p (lote 6a del diseño B, medido antes en §1599o): los que llevan carrera y no se pisan en la
+  // tanda. Cinco con la forma de 1599m (115, 127, 178, 92, 814-carrera-del-tramo.gated) y tres que antes
+  // sólo iban a `yaqu_dev_javier` (592, 767, 793), que con el banco toman `URL_BANCO`. Más scrum173, opción
+  // (A) de SCRUM-1599 c.20940: de sus 7, el de las cadenas YA PERSISTIDAS SALTA también con el banco (recorre
+  // las facturas de toda la base) y se queda en staging; aquí cuenta, porque su salto nombra la variable.
+  // El caso sin base de 178 corre siempre.
+  'scrum115-wa-fallo-registrado.test.mjs': 2,
+  'scrum127-paywall-bloquea.test.mjs': 1,
+  'scrum173-cadena-verifactu-serializada.test.mjs': 7,
+  'scrum178-emision-manual.test.mjs': 2,
+  'scrum92-login-operario.test.mjs': 1,
+  'scrum814-carrera-del-tramo.gated.test.mjs': 3,
+  'scrum592-concurrencia-serie.test.mjs': 4,
+  'scrum767-cura-concurrencia.test.mjs': 4,
+  'scrum793-la-carrera-del-token.test.mjs': 6,
+  // SCRUM-1599s (lote 6b del diseño B): los dos que 1599p dejó fuera, ya alineados con la serie F en 1599r
+  // (SCRUM-1599 c.20947). 234.gated con la forma de 1599m; 781 con `URL_BANCO`, como 592. Los cuatro casos
+  // sin base de 781 corren siempre.
+  'scrum234-carrera-serie.gated.test.mjs': 1,
+  'scrum781-concurrencia-de-la-factura.test.mjs': 4,
+  // SCRUM-1599t: scrum574-mismo-cliente-tras-migracion con la forma de 1599m. Su caso «CONTRA POSTGRES», que lee
+  // los clientes de TODA la base, salta en el banco con su motivo y se queda en staging (opción A, como 173).
+  'scrum574-mismo-cliente-tras-migracion.test.mjs': 2,
 });
 const TOTAL_DECLARADO = Object.values(GATEADOS_DECLARADOS).reduce((a, b) => a + b, 0);
 

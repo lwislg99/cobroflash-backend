@@ -37,8 +37,18 @@ import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { PassThrough } from 'node:stream';
 
+// SCRUM-1610b · LA ÚLTIMA LÍNEA, Y LA SALIDA, SÓLO CUANDO STDOUT SE HA VACIADO. Toda salida del censo pasa por
+// aquí: imprime el centinela `EXIT=N` y sale en el callback de ESA escritura, cuando ya ha llegado al
+// descriptor. Con `console.log` + `process.exit()` seguidos, en una tubería de Linux lo que node aún no ha
+// escrito se pierde al salir (los cortes del 26-oct, SCRUM-1610 c.20951; en Windows la tubería es bloqueante
+// y no se reproduce: 0 de 300). No basta con fijar `process.exitCode` y dejar que acabe solo: la app
+// importada puede dejar asas vivas (el censo quedaría COLGADO) y el código de detrás seguiría corriendo,
+// cuando cada salida de aquí corta el flujo a propósito (la del entorno, antes de ejecutar manejadores que
+// envían). Por eso se espera a una promesa que no se resuelve: el `process.exit` del callback llega antes.
+const fin = (c) => new Promise(() => { process.exitCode = c; process.stdout.write('EXIT=' + c + '\n', () => process.exit(c)); });
+
 const raiz = process.argv[2] ? path.resolve(process.argv[2]) : '';
-if (!raiz) { console.log('CIEGO: falta la raiz del arbol'); console.log('EXIT=2'); process.exit(2); }
+if (!raiz) { console.log('CIEGO: falta la raiz del arbol'); await fin(2); }
 const de = (rel) => import(pathToFileURL(path.join(raiz, 'dist', rel)).href);
 // El constructor del `req` se trae del ÁRBOL que se mide, no de al lado de este fichero: los bancos de
 // SCRUM-1516 (`verlo-caer.mjs`, `la-moneda.mjs`) corren una COPIA de este censo fuera del árbol.
@@ -114,7 +124,7 @@ const PELIGRO = Object.keys(process.env).filter((k) => process.env[k]
 if (PELIGRO.length) {
   console.log('CIEGO: el entorno lleva ' + PELIGRO.length + ' variable(s) de integración o de base (' + PELIGRO.join(', ')
     + '). No ejecuto manejadores que envían: lánzalo en un entorno sin ellas.');
-  console.log('EXIT=2'); process.exit(2);
+  await fin(2);
 }
 
 // ── Los modelos. «De documento» son los que la decisión nombra (presupuesto, factura) más los
@@ -126,7 +136,7 @@ const ESCRITURAS = ['create', 'update', 'updateMany', 'delete', 'deleteMany', 'u
 const modelos = Object.keys(prisma).filter((k) => !k.startsWith('$') && !k.startsWith('_')
   && prisma[k] && typeof prisma[k].findMany === 'function');
 const faltan = DOCUMENTO.filter((m) => !modelos.includes(m));
-if (faltan.length) { console.log('CIEGO: el cliente no tiene los modelos ' + faltan.join(', ')); console.log('EXIT=2'); process.exit(2); }
+if (faltan.length) { console.log('CIEGO: el cliente no tiene los modelos ' + faltan.join(', ')); await fin(2); }
 
 const ahora = new Date();
 // SCRUM-1516c (guard scrum409, lo midió 1516b): el comercio de estos datos NO es el 1, que es el DEMO y
@@ -231,7 +241,7 @@ const sinMontar = Object.values(SEMBRADAS).filter((s) => !app.router.stack.some(
 if (sinMontar.length) {
   console.log('CIEGO: ' + sinMontar.length + ' de ' + Object.keys(SEMBRADAS).length + ' rutas sembradas no están montadas (' + sinMontar.map((s) => s.method + ' ' + s.path).join(', ')
     + '). Sin ellas no puedo demostrar que distingo: no mido' + (SIN_SEMBRAR ? ' (--sin-sembrar)' : '') + '.');
-  console.log('EXIT=2'); process.exit(2);
+  await fin(2);
 }
 
 // ── Dónde vive cada ruta declarada. Una ruta puede estar registrada DOS veces
@@ -323,10 +333,10 @@ if (EJE === 'comercio') {
   let Prisma = null; // el MISMO cliente que carga dist: se resuelve desde dist, no desde este fichero
   try { ({ Prisma } = createRequire(path.join(raiz, 'dist', 'core', 'db', 'prisma.js'))('@prisma/client')); } catch { /* se declara ciego abajo */ }
   const dm =Prisma && Prisma.dmmf && Prisma.dmmf.datamodel ? Prisma.dmmf.datamodel.models : null;
-  if (!dm) { console.log('CIEGO: no puedo leer el modelo de datos del cliente (dmmf)'); console.log('EXIT=2'); process.exit(2); }
+  if (!dm) { console.log('CIEGO: no puedo leer el modelo de datos del cliente (dmmf)'); await fin(2); }
   const minus = (s) => s.charAt(0).toLowerCase() + s.slice(1);
   const CON_COMERCIO = new Set(dm.filter((x) => x.fields.some((f) => f.name === 'merchantId')).map((x) => minus(x.name)));
-  if (!CON_COMERCIO.has('invoice') || !CON_COMERCIO.has('quote') || CON_COMERCIO.has('merchant')) { console.log('CIEGO: la lista de modelos con comercio no es la que debería'); console.log('EXIT=2'); process.exit(2); }
+  if (!CON_COMERCIO.has('invoice') || !CON_COMERCIO.has('quote') || CON_COMERCIO.has('merchant')) { console.log('CIEGO: la lista de modelos con comercio no es la que debería'); await fin(2); }
 
   const recoge = (w, clave, out) => { if (w && typeof w === 'object') for (const [k, v] of Object.entries(w)) { if (k === clave) out.push(v && typeof v === 'object' && 'equals' in v ? v.equals : v); recoge(v, clave, out); } return out; };
   const lleva = (w, valor) => { if (w === valor || w === String(valor)) return true; if (w && typeof w === 'object') return Object.values(w).some((v) => lleva(v, valor)); return false; };
@@ -452,8 +462,7 @@ if (EJE === 'comercio') {
   const enviosS = fs.reduce((n, f) => n + f.envios, 0);
   console.log('envíos a Meta doblados en toda la corrida: ' + (aMeta.length - enviosS) + ' · intentos de salir de la máquina cortados: ' + fugas.length + (fugas.length ? ' → ' + [...new Set(fugas)].join(', ') : '')
     + ' · aparte, de las sembradas: ' + enviosS);
-  console.log('EXIT=' + (ok ? 0 : 1));
-  process.exit(ok ? 0 : 1);
+  await fin(ok ? 0 : 1);
 }
 
 // SCRUM-1516: las sembradas pasan por el MISMO bucle que las 78, y se apartan al acabar.
@@ -546,5 +555,4 @@ const ok = distingue && sigueCorrecta;
 console.log('¿los controles salen como se sabe que son?  ' + distingue + '  (los sembrados)');
 console.log('¿la conducta correcta del árbol sigue siéndolo?   ' + sigueCorrecta + (sigueCorrecta ? '' : '  ← esto NO es un censo ciego: es una ruta del producto que ha cambiado'));
 console.log('TOTALES: ' + CLASES.map((v) => v + ' ' + por(v).length).join(' · ') + ' · suma ' + filas.length);
-console.log('EXIT=' + (ok ? 0 : 1));
-process.exit(ok ? 0 : 1);
+await fin(ok ? 0 : 1);
