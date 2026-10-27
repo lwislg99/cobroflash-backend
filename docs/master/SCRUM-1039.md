@@ -328,3 +328,45 @@ El fallo que cubre: mi primera versión del control negativo mutaba con un patr�
 - `docs/verificacion/comprobar-citas-contabilidad.mjs` no se ha corrido (sus HTML no están en git). RIRPF 95 (Q-C5) **no recotejado**. Suite entera local: **NO CORRIDA**.
 - Guards, en local sobre esta rama: 1294, 267, 273, 1572, 1106, 1117, 1541, 1041, 292, 296-pantalla, 302-rótulos, 324-aviso, 402, 413, 710b, 905, 921c y 324-cadena: 0 fallos. Saltados, 2 (los de `LIBRO_PG_URL` de 324-cadena: **no corridos**). Con un enlace temporal a `node_modules` (ya quitado) y `dist/` de `tsc --noCheck`. La primera pasada dio un rojo mío en 1294 (la línea `A9:` llevaba texto detrás de la ruta); arreglado en el registro, no en el guard.
 - Solo docs. Ni `src/`, ni esquema, ni texto de usuario.
+
+## SCRUM-1039f · J4 vuelve a pasar el comprobador de citas sobre main: aceptación 2 (jv-j4ap, 27-oct-2026)
+
+**Medido contra:** `origin/main` = `e19665301fc1a3949b6556eee383060a8f793ab3` · 2026-10-27T11:52:40Z
+
+A9: aviso → A10 «Escrito no es corriendo, ni propagado, ni entregado: un mecanismo cuenta desde que deja rastro de haber corrido.» — no se pudo comprobar: el comprobador necesita seis HTML del BOE que no están en git y CI no baja de la red, así que nada lo corre solo; pasó un mes desde la última pasada sin que nadie lo notara.
+
+La pasada se corrió sobre `5078f80c3`; de ahí a `e19665301` no cambia `docs/producto/CONTABILIDAD.md`, ni `docs/verificacion/`, ni este registro (`git diff --stat`, vacío). Salida entera, controles y fuentes: `docs/master/evidencias/scrum1039/scrum1039f-pasada.txt`.
+
+**Corrección al encargo:** la última pasada no era la de 26/26 del 22-sep. El 25-sep-2026 a las 15:09Z, SCRUM-1117 fijó las anclas con `--fijar`, que solo escribe si aparecen todas: **31 de 31** (`docs/verificacion/anclas-citas-contabilidad.json`, campo `fijado`). Desde entonces no se había vuelto a correr.
+
+**Fuentes:** las seis de §8, con GET público, 200 OK, hacia las 11:47Z (`Date:` del BOE). Bytes y SHA-256 en la evidencia.
+
+### Resultado: salida 2 (NORMA CAMBIADA). Las 31 citas siguen literales
+
+| | |
+|---|---|
+| población | **31 citas**: todas las « » de 25 caracteres o más de `CONTABILIDAD.md`, 30 en §3 y 1 en §4. Por fuente: LIVA 14 · RIRPF 9 · RFACT 6 · ORDEN303 1 · RIVA 1 · LIRPF 0 |
+| fuera de la población | las 15 « » de menos de 25 caracteres del documento, leídas una a una. Las 5 de §3-§4 (`:78` «(por confirmar)», `:89` «Tres», `:107` «15 por ciento», `:110` y `:145` «m)») son prosa del documento, no citas |
+| encontradas | **31 / 31** · no encontradas 0 |
+| control negativo propio | OK (21 → 1021 por ciento no aparece; la original sí) |
+| control negativo sembrado | `:82`, art. 90.Uno, «21» → «22» (1 byte, `cmp -l` = 1): **salida 1**, `NO ENCONTRADA` justo esa cita, 30/31 |
+| CIEGO | carpeta sin `ORDEN303.html`: **salida 3**, «FUENTE ILEGIBLE — no se ha comprobado nada» |
+| control del ancla | OK · anclas 31 · sin ancla 0 · huérfanas 0 |
+| **norma cambiada** | **5**: 4 en LIVA art. 91 (`a91@20241221` → `a91@20261007`) y 1 en art. 20 (`a20@20180704` → `a20@20261007`) |
+
+### Las 5 de NORMA CAMBIADA, releídas contra la norma nueva
+
+Con `scrum1039f-diferencia-versiones.mjs`, sobre la API de consolidada (bloques `a91` y `a20` de `BOE-A-1992-28740`): párrafos que salen y entran entre la versión anclada y la del 7-oct-2026. **Las 5 citas aparecen literales en las dos versiones.**
+
+- **Art. 20:** solo cambia el 23.º e'), arrendamientos de viviendas amuebladas (RDL 29/2026, con efectos de 1 de diciembre de 2026). La cita es el encabezado y el 1.º-5.º. Sigue valiendo.
+- **Art. 91:** cambian el Uno.2.2.º, el Uno.2.10.º y el Dos.1.6.º (RDL 29/2026, art. 7.2 a 4, **con efectos de 1 de diciembre de 2026**). Lo que toca a los oficios es el 10.º, el de las citas de `:86` y `:87`. Hay dos párrafos nuevos. Uno amplía el 10 % a las obras en «viviendas destinadas a su arrendamiento como vivienda habitual». El otro dice: «La aplicación del tipo reducido queda condicionada a que el importe de la contraprestación de las ejecuciones de obras haya sido satisfecho mediante tarjeta de crédito o débito, transferencia bancaria, cheque nominativo o ingreso en cuentas en entidades de crédito a favor de los sujetos pasivos que las realicen.» Las citas de las letras b) y c) siguen valiendo, pero desde el 1-dic-2026 **dejan de ser todas las condiciones**.
+- Eso ya lo lleva SCRUM-1316 (1316b, 1316e, 1316f: el RDL 29/2026 sin convalidar a 26-oct). `CONTABILIDAD.md:86` lo avisa, `:87` («ídem») no. Si está convalidado hoy, 27-oct: **NO lo he medido**.
+
+### Lo que NO hice
+
+- **No he corrido `--fijar`.** Reescribe las 31 anclas de golpe y apagaría también la alarma del art. 91, que hasta el 1-dic-2026 o la convalidación dice algo cierto. `docs/verificacion/` y `docs/producto/` no tienen dueño en `carriles.mjs` («nadie lo reclama») y no son documentación de J4. Se lo llevo al orquestador.
+- **Fuera de este comprobador:** las citas de `docs/legal/PREGUNTAS_ASESOR.md` (Q-C2 22.º.B, Q-C9 art. 3) son del cotejo de §1039e, que hoy no he vuelto a correr. Q-C5 en SCRUM-1264 (c.20959) y B3 (1) ampliada (c.20971) son comentarios de Jira que no he leído. Lo que sí entra: la cita de Q-C5 en `CONTABILIDAD.md` §3, RIRPF art. 95, **9 de 9 literales hoy y sin cambio de redacción** (`a95@20230125`).
+- Error mío, sin efecto en el resultado: mi primer contador de la siembra dio 28.660 diferencias por un byte cambiado. Comparaba puntos de código con unidades UTF-16. `diff` y `cmp -l` dieron 1.
+- Suite entera local: **NO CORRIDA**. Solo docs. Ni `src/`, ni esquema, ni texto de usuario.
+
+**Veredicto de la aceptación 2** («El comprobador cubre el 100 % de las citas de §3 y §4 y mantiene su control negativo (falla si se altera una cita)»): **cumplida el 27-oct-2026 sobre `e19665301`**. Cubre 31 de 31, y con una cita alterada a propósito cae (salida 1). La salida 2 de la pasada no es un fallo de la aceptación. Es la alarma de SCRUM-1117 (la norma cambió) y queda abierta, para decidir.
