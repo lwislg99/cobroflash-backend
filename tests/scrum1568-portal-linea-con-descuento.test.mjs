@@ -114,9 +114,10 @@ async function portalCon(lineasPresupuesto, lineasFactura = []) {
     });
     assert.equal(status, 200, `el portal no contestó 200: ${status} · ${cuerpo.slice(0, 200)}`);
     // Cada tarjeta, con su total y sus líneas, en el orden en que salen: presupuestos y luego facturas.
-    const tarjetas = cuerpo.split('<div class="pf-card">').slice(1).map((t) => ({
-      total: (t.match(/<div class="pf-card-amount">([^<]*)<\/div>/) || [])[1],
-      lineas: [...t.matchAll(/<span class="pf-line-concept">([^<]*)<\/span>\s*<span class="pf-line-amount">([^<]*)<\/span>/g)]
+    // Con hueco para los atributos detrás de la clase (SCRUM-553): el `>` pegado se rompe con uno nuevo.
+    const tarjetas = cuerpo.split(/<div class="pf-card"[^>]*>/).slice(1).map((t) => ({
+      total: (t.match(/<div class="pf-card-amount"[^>]*>([^<]*)<\/div>/) || [])[1],
+      lineas: [...t.matchAll(/<span class="pf-line-concept"[^>]*>([^<]*)<\/span>\s*<span class="pf-line-amount"[^>]*>([^<]*)<\/span>/g)]
         .map((m) => ({ concepto: m[1], importe: m[2].trim() })),
     }));
     return tarjetas;
