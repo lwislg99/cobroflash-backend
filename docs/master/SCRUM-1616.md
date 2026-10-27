@@ -116,3 +116,31 @@ Cotejo con node, fila a fila por código INE. El INE pospone el artículo para o
 ### Lo que NO he medido
 
 Ninguna base (cuántos comercios ES siguen a `NULL`: sin medir). yaqu.app. El BOE. La tanda de tests (no hay código que probar). Si el desplegable debe ordenarse como el INE o alfabéticamente por la forma con artículo delante.
+
+## J3 · SCRUM-1616b · la tabla acepta las 4 formas dobles y el código INE
+
+**Medido contra:** `origin/main` = `540c62bc257c0c9ad0a42c4649e3dea0da7e442f` · 2026-10-27T15:46:23Z (cabecera `Date:` de GitHub; sesión J3 `jv-j3bx`, por encargo del orquestador `cobroflash-backend-8b`. Rama `scrum-1616b-provincias-bilingues`, con `origin/main` mergeado dentro después de que entrara #2933)
+
+A9: aviso → cicatriz J3 «Medí el contexto una sola vez donde la orden pedía dos cifras, al acabar el arranque y al acabar Jira: los leí seguidos y di una (104.005) para los dos puntos.» — no se pudo comprobar: cuándo se mide una sesión es cómo trabaja ella y ningún test del árbol lo ve
+
+**Firma:** Jira SCRUM-1616 c.21066 (②, y «Lo que se construye ahora (J3)»), sobre la medición de c.21062.
+
+### Qué se ha construido
+
+- `src/modules/auth/domain/zonaDeLaProvincia.ts`: cada una de las 52 filas lleva delante su código INE. Hay una tabla `FORMAS_DOBLES` con las cuatro firmadas (Araba/Álava 01 · Alicante/Alacant 03 · Castellón/Castelló 12 · Valencia/València 46). `zonaDeAlta` busca ahora en `ZONA_POR_LO_DICHO`, que reúne nombre, código y forma doble. La grafía de los 52 nombres no se ha tocado.
+- **El rechazo dice lo mismo que antes:** `provincias` sigue siendo la lista de los 52 nombres, en el mismo orden. El mensaje de error de la consola no cambia, y no hay texto nuevo. `scrum1522e` sigue exigiendo 52 nombres distintos y sale verde.
+- `src/modules/auth/app/cli/altaDeMerchant.ts`: sólo el comentario de cabecera. `--provincia` ya llegaba sin cambios hasta `zonaDeAlta` (dentro de `registerMerchant`), así que admite las dos cosas sin tocar ninguna línea de código.
+- No se aceptan los códigos sin el cero delante («1») ni la otra mitad sola («Araba», «Alacant»): eso no está firmado. Un código canario (35, 38) cae por la vía del trabajo en Canarias, igual que su nombre (`territorioDeAlta` decide por la zona).
+- No hay pantallas, ALTER ni `schemas.ts`.
+
+### Cómo se ha medido
+
+- **Rojo primero:** `tests/scrum1616b-provincias-bilingues.test.mjs` sobre el código de main dio 4 casos = 1 ✔ + 3 ✖. Cayeron los 52 códigos, «Araba/Álava» con `provincia_desconocida` y la consola con «Valencia/València». Pasó el control: los nombres de hoy dan la misma zona.
+- **Verde:** 4 de 4 con el arreglo. **Build con tipos (`tsc -p .`, sin `--noCheck`): salida 0.**
+- **Mutaciones** (declaradas en `MUTACIONES_QUE_ME_TUMBAN` y corridas con `correr` y `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`, sólo las de este guard): **2 de 2 caen**. Una quita los códigos y otra las formas dobles. Después, `git status` sólo mostraba mis tres ficheros.
+- **Cotejo de los códigos** de `src` con la columna «Código hoy» del tramo J4 (de arriba): 52 de 52 casan. El control sembrado (pasar Burgos de 09 a 10) da 1 distinta.
+- **Mini-tanda**, 16 ficheros (1616b, 1522e, 237, 976, 1387, 1294, 1515, 1528, 1536b/d/g, 275, 334, 514, 558 y 94): **114 casos = 112 ✔ + 0 ✖ + 2 saltados**. Salida 0, TAP de 83.689 B. Los dos saltados necesitan base y **no los he corrido**: 1515 (sin `LIBRO_PG_URL`) y 94 (sin `QA_DB_TEST`).
+
+### Lo que NO he medido
+
+La tanda entera en local (no corrida, por la cola de CI de hoy). El INE no lo he descargado: los códigos salen del cotejo de J4. Ninguna base. yaqu.app: aquí no hay nada visible, y el alta por consola no se lanza contra producción.
