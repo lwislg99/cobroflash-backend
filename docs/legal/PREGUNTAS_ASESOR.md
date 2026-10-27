@@ -838,7 +838,7 @@ la factura, o cuando pida su borrado?
 
 # Q-C1…Q-C9 · Contabilidad para un autónomo de oficio (bloquea CON-08/09, `docs/producto/CONTABILIDAD.md` §4)
 
-> **Propuesta de S0, 22-sep-2026 (SCRUM-1039/CON-03) — dueño J4: pendiente de tu visto bueno.**
+> **Propuesta de S0, 22-sep-2026 (SCRUM-1039/CON-03) — dueño J4: visto bueno de J4 (sesión jv-j4an, 26-oct-2026, SCRUM-1039e) a la formulación y a las marcas de Q-C1…Q-C9, tras aplicar los arreglos 1, 3 y 4 de `docs/master/SCRUM-1039.md` §1039d; comprobado: las citas LIVA de Q-C2 y Q-C9 contra el consolidado del BOE de hoy, por script con control negativo (`docs/master/evidencias/scrum1039/scrum1039e-cotejo-liva.mjs`). No es la respuesta del asesor ni la firma del fundador: ninguna respuesta de este bloque está confirmada.**
 > Nacen de `docs/producto/CONTABILIDAD.md` §1 y §3: el diseño del bloque de Contabilidad leyó el
 > código y dedujo qué hace falta, y cada regla fiscal que usa lleva su cita oficial comprobada por
 > script (`docs/verificacion/comprobar-citas-contabilidad.mjs`, 26/26 citas literales, control
@@ -886,8 +886,8 @@ se baja con `curl`, nunca con WebFetch.
 🔴 **El alcance se estrecha mucho.** Tres condiciones ACUMULATIVAS, y en un oficio fallan a menudo:
 1. destinatario **empresario o profesional** actuando como tal — un particular nunca es promotor;
 2. la obra global tiene que ser **construcción o rehabilitación** en el sentido del art.
-   20.Uno.22º.B LIVA (**NO VERIFICADO** ⚠: >50 % del coste en estructura/fachadas/cubiertas, y coste
-   >25 % del valor). **Una reforma de baño, por grande que sea, NO es rehabilitación → NO hay ISP
+   20.Uno.22.º.B LIVA, **cita comprobada por script** contra el consolidado del 26-oct-2026 (SCRUM-1039e, `docs/master/evidencias/scrum1039/scrum1039e-cotejo-liva.mjs`, con control negativo): 1.º *«Que su objeto principal sea la reconstrucción de las mismas, entendiéndose cumplido este requisito cuando más del 50 por ciento del coste total del proyecto de rehabilitación se corresponda con obras de consolidación o tratamiento de elementos estructurales, fachadas o cubiertas o con obras análogas o conexas a las de rehabilitación.»* — la coletilla «o con obras análogas o conexas a las de rehabilitación» es la que decide el ejemplo del baño de abajo, y el mismo apartado B dice después qué obras son análogas y cuáles conexas (no transcrito aquí);
+   2.º *«Que el coste total de las obras a que se refiera el proyecto exceda del 25 por ciento del precio de adquisición de la edificación si se hubiese efectuado aquélla durante los dos años inmediatamente anteriores al inicio de las obras de rehabilitación o, en otro caso, del valor de mercado que tuviera la edificación o parte de la misma en el momento de dicho inicio.»* (y descuenta la parte del suelo). **Una reforma de baño, por grande que sea, NO es rehabilitación → NO hay ISP
    aunque el cliente sea una empresa**;
 3. el destinatario debe **comunicarlo expresa y fehacientemente** (art. 24 *quater* RIVA, **NO
    VERIFICADO** ⚠). Con esa comunicación el emisor queda protegido; sin ella responde quien se
@@ -975,8 +975,8 @@ ningún 303 (sin llamadores).
 porque hay facturas históricas que los usan. Textual: _«a un oficio no le aplican nunca; en el
 código pueden quedar como valores admitidos pero NO OFRECIDOS»_.
 
-**Q-C8.** Plazos trimestrales · ⚠️ **RESPUESTA DE IA (23-sep-2026), SIN REVISIÓN PROFESIONAL (SCRUM-1261, c.17638), pendiente de tu
-confirmación.** Perfil consultado: autónomo de oficio, estimación directa, régimen general de IVA,
+**Q-C8.** Plazos trimestrales · ⚠️ **RESPUESTA DE IA (23-sep-2026), SIN REVISIÓN PROFESIONAL (SCRUM-1261, c.17638); visto bueno de J4 (26-oct-2026, SCRUM-1039e) a esta marca, no a la respuesta:
+la respuesta sigue sin confirmar y va al asesor.** Perfil consultado: autónomo de oficio, estimación directa, régimen general de IVA,
 clientes particulares y empresas. **El asesor marcó él mismo con ⚠ lo que citó de memoria** — por la
 regla de oro de `docs/producto/CONTABILIDAD.md` §0, ninguna cita ⚠ entra aquí como cita comprobada:
 va marcada **NO VERIFICADO** hasta que alguien la coteje contra el BOE consolidado (pendiente,
@@ -1027,15 +1027,15 @@ de las facturas.»* Es una propuesta de producto, no un texto de pantalla: sin f
 citan de su propia orden ministerial (las seis ya localizadas en SCRUM-1039b), no de memoria del
 asesor.
 
-**Q-C9.** ✅ **RESPONDIDA por cita, pendiente de tu confirmación.** Se revisó LIVA art. 7 completo
-(los 12 supuestos de no sujeción: transmisión de negocio, muestras gratuitas, relación laboral,
-Administraciones Públicas, cesiones de dinero…) y art. 20.Uno, encabezado + los 5 primeros apartados
-de una lista más larga (postal universal, sanidad, profesiones médicas/sanitarias). **Ninguno de los
-revisados aplica** a la venta ordinaria de un servicio de reforma/instalación de un oficio. No se
-transcribió el resto de 20.Uno (~30 apartados más: educación, financiero, seguros, alquiler de
-vivienda…) por no ser candidatos plausibles. **Pregunta:** ¿conoces algún supuesto real de un oficio
+**Q-C9.** ✅ **RESPONDIDA por cita sólo en lo que mira (LIVA arts. 7 y 20.Uno); no cubre el art. 3 ni los arts. 21 a 25 y 68 a 70.** Conclusión escrita por una sesión de IA (S0, 22-sep-2026), no por un asesor; la cita, comprobada por script y recotejada por J4 el 26-oct-2026 contra la última versión consolidada (art. 7, vigente desde el 21-dic-2022; art. 20, versión publicada el 7-oct-2026). Visto bueno de J4 (SCRUM-1039e) a esta marca; la respuesta sigue sin confirmar.
+Se revisó LIVA art. 7 completo (los 12 supuestos de no sujeción: transmisión de negocio, muestras
+gratuitas, relación laboral, Administraciones Públicas, cesiones de dinero…) y el art. 20.Uno, que
+tiene los números 1.º a 28.º, con el 21.º y el 27.º suprimidos: se cita el encabezado y el 1.º (postal
+universal) y se leyó el comienzo de los 28 (sanidad, educación, financiero, seguros, entregas de edificaciones, alquiler de vivienda…). **Ninguno de los
+leídos aplica** a la venta ordinaria de un servicio de reforma/instalación de un oficio. **Fuera de los arts. 7 y 20 sí hay casos, y la pregunta no los miraba.** Art. 3 (cita comprobada por script, SCRUM-1039e): *«El ámbito espacial de aplicación del impuesto es el territorio español, determinado según las previsiones del apartado siguiente»*, y ese apartado (Dos.1.º) excluye del «interior del país» *«en el Reino de España, Ceuta y Melilla»* (letra a) y *«En el Reino de España, Canarias»* (letra b): una obra allí queda fuera del ámbito de este impuesto. **NO VERIFICADO** (de memoria, no bajados): las exenciones de los arts. 21 a 25 (exportaciones, entregas intracomunitarias) y las reglas de lugar de realización de los arts. 68 a 70 (un servicio sobre un inmueble situado fuera de España).
+**Pregunta:** ¿conoces algún supuesto real de un oficio
 de YaQu (electricista, fontanero, reformista, pintor, cerrajero, climatización) que caiga en una
-exención o no sujeción del resto de la lista? Si la respuesta es «ninguno», Exento/No sujeto puede
+exención o no sujeción del resto de la lista? ¿Y fuera de los arts. 7 y 20: Canarias, Ceuta y Melilla, o una obra en un inmueble fuera de España? Si la respuesta es «ninguno» a las dos, Exento/No sujeto puede
 quedar fuera del selector de tipos de IVA en vez de construirse sin caso de uso.
 
 **Fuentes citadas arriba, con SHA-256 de la descarga y método de comprobación:**
