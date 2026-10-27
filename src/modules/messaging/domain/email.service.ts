@@ -91,9 +91,13 @@ export async function sendInvoiceEmail(args: {
   const docLabel = isJust ? 'justificante de cobro' : 'factura';
   const from = config.EMAIL_FROM;
   const subject = `Tu ${docLabel} ${inv.number}`;
+  // SCRUM-1252 · el titular concuerda con el documento: «Tu factura está lista». Firmado por el
+  // fundador y transcrito por el orquestador del equipo J en SCRUM-1252 c.20683, punto ②
+  // (también SCRUM-1604, el mismo defecto). El justificante, masculino, no cambia.
+  const heading = isJust ? `Tu ${docLabel} está listo` : `Tu ${docLabel} está lista`;
   // A6.4: layout de marca compartido (emailLayout.ts)
   const html = renderEmailLayout({
-    heading: `Tu ${docLabel} está listo`,
+    heading,
     bodyHtml: `<p style="margin:0 0 8px">Hola${toName ? ` <strong>${escEmail(toName)}</strong>` : ''},</p>
 <p style="margin:0">Te adjuntamos tu ${docLabel} <strong>${escEmail(inv.number)}</strong> en PDF.</p>`,
     // SCRUM-72 (D3): se quita el botón "Ver documento". Enlazaba al estático público
