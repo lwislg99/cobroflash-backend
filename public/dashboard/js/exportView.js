@@ -27,7 +27,32 @@ const EXPORT_DATASETS = [
   { id: 'clientes',     label: 'Clientes',      nota: 'Los que aparecen en lo que descargues' },
 ];
 
+// ── SCRUM-1602 · PAQUETE DEL TRIMESTRE (GET /admin/evidencias.zip, SCRUM-297) ─────────────────
+//
+// Decisiones y TEXTOS FIRMADOS por el fundador: SCRUM-1251 comentario 20675 (T1–T7 y el aviso de
+// trimestre vacío). Se copian TAL CUAL; cualquier otro texto queda fuera de esa firma.
+//
+// · SÓLO en modo `fiscal`, como el XML de SCRUM-1165 (`reportsView.js`): fuera de `fiscal` la
+//   tarjeta NO SE PINTA (ni oculta: no existe), y con el modo desconocido tampoco — falla cerrado.
+//   Dentro del ZIP los ficheros llevan nombres fiscales que pone el generador (J1): enseñarlos antes
+//   de SIF-1 sería un claim (reglas 7/17/24).
+// · SIN selector propio: usa el AÑO y el TRIMESTRE de la tarjeta «Facturas emitidas», que va justo
+//   encima (propuesta de J4, SCRUM-1251 c.20672). Un segundo par de «Año»/«Trimestre» serían
+//   rótulos que la firma no cubre.
+// · Ni «VeriFactu», ni «Hacienda», ni «AEAT», ni «libro registro», ni «modelo 303» (c.20672 §3).
+const TARJETA_PAQUETE_TRIMESTRE = `
+      <div class="customers-card paquete-trimestre" id="paquete-trimestre-card">
+        <h3 class="paquete-trimestre__titulo">Paquete del trimestre</h3>
+        <p class="paquete-trimestre__texto">Un ZIP con las facturas del trimestre, el resumen de IVA y la comprobación de los albaranes firmados, para tu asesor.</p>
+        <p class="paquete-trimestre__ayuda">Dentro va un índice que marca, factura por factura, lo que falta o no cuadra.</p>
+        <button class="btn-secondary" id="btn-paquete-trimestre">Descargar ZIP</button>
+        <p class="paquete-trimestre__info" id="paquete-trimestre-info" aria-live="polite"></p>
+      </div>`;
+
 async function renderExportView(container) {
+  // SCRUM-1602 · UN solo criterio para pintar la tarjeta del paquete y para engancharla: dos
+  // lecturas del modo son dos criterios que pueden divergir.
+  const conPaquete = window.appModoEmision === 'fiscal';
   container.innerHTML = `
     <div style="max-width:860px">
       <div class="customers-card" style="margin-bottom:16px">
@@ -101,6 +126,7 @@ async function renderExportView(container) {
         </div>
         <p id="libro-emitidas-info" style="margin:12px 0 0;font-size:12px;color:var(--muted)" aria-live="polite"></p>
       </div>
+      ${conPaquete ? TARJETA_PAQUETE_TRIMESTRE : ''}
 
       <!-- ── SCRUM-244 · PORTABILIDAD (art. 15 y 20 RGPD) ───────────────────────────────
            Segunda descarga, y contesta OTRA pregunta: la de arriba es «dame mi actividad»
@@ -324,7 +350,9 @@ async function renderExportView(container) {
       // quien no facturó ese trimestre: dos situaciones, una sola pantalla. El servidor manda el
       // recuento en `X-Yaqu-Filas` para que aquí se pueda distinguir. El fichero se descarga igual
       // —un libro vacío es una respuesta legítima—, pero deja de ser silencioso.
-      const filas = Number(res.headers.get('X-Yaqu-Filas'));
+      // SCRUM-1602 (de paso): sin la cabecera, `Number(null)` es 0 y se afirmaba el vacío sin mirarlo.
+      const crudoLibro = res.headers.get('X-Yaqu-Filas');
+      const filas = crudoLibro === null ? NaN : Number(crudoLibro);
       // ✅ MICROCOPY APROBADA POR EL FUNDADOR el 17-ago-2026 (regla 30), y APLICADA. Consta en
       // `docs/MICROCOPY_APROBADA_SIN_APLICAR.md` §Addendum, entrada «exportView.js:330 — estado
       // vacío del libro · APLICADO». El texto aprobado es UNA sola frase: la segunda línea quedó
@@ -351,6 +379,47 @@ async function renderExportView(container) {
     } finally {
       btnLibro.textContent = txtLibro;
       btnLibro.disabled = false;
+    }
+  });
+
+  // ── SCRUM-1602 · Paquete del trimestre ─────────────────────────────────────────────────────
+  //
+  // Sólo existe en modo `fiscal` (ver TARJETA_PAQUETE_TRIMESTRE): sin tarjeta, no hay nada que atar.
+  // Se decide por `conPaquete` y no buscando el botón: pedir un id que el marcado no declara es lo
+  // que el banco de SCRUM-417 caza como defecto.
+  if (!conPaquete) return;
+  const btnPaquete = document.getElementById('btn-paquete-trimestre');
+  const infoPaquete = document.getElementById('paquete-trimestre-info');
+
+  btnPaquete.addEventListener('click', async () => {
+    btnPaquete.disabled = true;
+    const txtPaquete = btnPaquete.textContent;
+    btnPaquete.textContent = 'Preparando la descarga…';
+    infoPaquete.textContent = '';
+    try {
+      // ⚠️ Esta ruta lee `year` y `quarter`, no `año` y `trimestre` como la de emitidas.
+      const qs = new URLSearchParams({ year: inpAnio.value, quarter: selTri.value });
+      const { res } = await descargarBinario('/admin/evidencias.zip?' + qs, {
+        tipoEsperado: 'zip',
+        nombrePorDefecto: 'evidencias.zip',
+      });
+      // 🔴 EL VACÍO SÓLO SE DICE SI EL SERVIDOR LO DICE. El recuento viaja en `X-Yaqu-Filas`
+      // (SCRUM-1251b, el mismo contrato que emitidas). Sin cabecera —un despliegue viejo, un proxy
+      // que la quite— `Number(null)` daría 0 y la pantalla afirmaría «no hay facturas» sin haberlo
+      // mirado: «no pude mirar» y «no hay nada» no pueden salir iguales. Sin dato, «Descarga lista.»
+      const crudo = res.headers.get('X-Yaqu-Filas');
+      const filas = crudo === null ? NaN : Number(crudo);
+      infoPaquete.textContent = filas === 0
+        ? 'No hay facturas en este periodo.'
+        : 'Descarga lista.';
+    } catch (e) {
+      // Un solo texto de error, también cuando la respuesta no es un fichero: la firma de
+      // SCRUM-1251 comentario 20675 cubre ÉSTE y no los de `mensajeDescargaFallida`. Que el fichero
+      // no se guarde ya lo garantiza `descargarBinario`, que lanza antes de crear el enlace.
+      showToast('No hemos podido preparar la descarga. Inténtalo otra vez.', 'error');
+    } finally {
+      btnPaquete.textContent = txtPaquete;
+      btnPaquete.disabled = false;
     }
   });
 }

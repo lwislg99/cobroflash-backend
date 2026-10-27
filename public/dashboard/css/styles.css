@@ -4938,3 +4938,17 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
    aviso crece a 44. Sin margen negativo A PROPÓSITO: el blanco de toque montaría sobre el texto del
    renglón de encima, y un toque en «activa» abriría la página. */
 .pp-enlace { display: inline-flex; align-items: center; min-height: 44px; }
+
+/* ── S2 · SCRUM-1602 ── Descargar datos → «Paquete del trimestre» (exportView.js). Hermana de
+   «Facturas emitidas», que va justo encima: mismas medidas que su `style=` en línea, pero en clases,
+   porque el trinquete de SCRUM-713c no deja escribir estilos nuevos desde JS. El título es el estilo
+   Label de DESIGN.md §3 (12 px, 600, MAYÚSCULAS, Apagado). La ayuda va en `--muted` y no en
+   `--neutral-400` como la nota de «Qué incluir»: a 12 px, #949b92 sobre blanco no llega a AA. */
+.paquete-trimestre { margin-top: 16px; }
+.paquete-trimestre__titulo {
+  margin: 0 0 10px; font-size: 12px; font-weight: 600; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--muted);
+}
+.paquete-trimestre__texto { margin: 0 0 4px; font-size: 13px; color: var(--muted); }
+.paquete-trimestre__ayuda { margin: 0 0 12px; font-size: 12px; color: var(--muted); }
+.paquete-trimestre__info { margin: 12px 0 0; font-size: 12px; color: var(--muted); }
