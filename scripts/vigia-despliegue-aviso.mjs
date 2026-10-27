@@ -227,6 +227,77 @@ export function decidirAviso({ issues, marca, renglon, runUrl, simulacro = false
     : { accion: 'crear', cuerpo, titulo, tipo };
 }
 
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-1605 · EL AVISO SE CIERRA SOLO CUANDO PRODUCCIÓN VUELVE A ESTAR AL DÍA
+//
+// Hasta aquí el vigía abría y comentaba, pero no cerraba NUNCA: el #2455 se abrió el 14-oct, la
+// congelación de verdad del 21-23 oct comentó en él, y desde el 23-oct 22:42Z el vigía salió verde
+// 17 pasadas seguidas con el Issue abierto (medido el 27-oct). Un rojo que no se apaga deja de
+// avisar, y la siguiente congelación habría comentado en un Issue que ya nadie miraba.
+//
+// Se cierra SÓLO con una lectura `al-dia` del propio vigía (no con «retrasado pero desplegando»,
+// cuyo renglón dice `atrasado` aunque la salida sea 0), y nunca en un simulacro (su producción es
+// fabricada). Cerrado el Issue, la siguiente congelación abre uno NUEVO con su fecha en el cuerpo.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+/** Lo que el vigía escribe como veredicto cuando producción está al día (`AL_DIA` de `_vigilante-de-despliegue.mjs`). */
+export const VEREDICTO_AL_DIA = 'al-dia';
+
+/** `vigía · <cuando> · <veredicto> · prod=… · main=… · …` → `{ cuando, veredicto }`, o `null` si no es un renglón. */
+export function leerRenglon(renglon) {
+  const p = String(renglon || '').trim().split(' · ');
+  if (p[0] !== 'vigía' || p.length < 3) return null;
+  return { cuando: p[1], veredicto: p[2] };
+}
+
+/**
+ * Desde cuándo lleva el vigía leyendo `al-dia` sin interrupción, contando desde el final del historial.
+ * `completo` dice si se vio la lectura anterior que NO era `al-dia`: sin ella, «desde» es sólo «al menos desde».
+ */
+export function desdeCuandoSana(historial) {
+  const lecturas = String(historial || '').split('\n').map(leerRenglon).filter(Boolean);
+  let desde = null;
+  let n = 0;
+  for (let i = lecturas.length - 1; i >= 0; i--) {
+    if (lecturas[i].veredicto !== VEREDICTO_AL_DIA) return { desde, lecturas: n, completo: true, antes: lecturas[i] };
+    desde = lecturas[i].cuando;
+    n++;
+  }
+  return { desde, lecturas: n, completo: false, antes: null };
+}
+
+/**
+ * ¿Se cierra el aviso abierto? FALLA CERRADO: sin marca, sin lista de Issues o sin renglón legible no se decide nada.
+ *
+ * @param {{issues:object[], marca:string, renglon:string, historial?:string, runUrl?:string, simulacro?:boolean}} e
+ * @returns {{accion:'cerrar', numero:number, comentario:string}|{accion:'nada', motivo:string}|{accion:'no-se-sabe', motivo:string}}
+ */
+export function decidirCierre({ issues, marca, renglon, historial, runUrl, simulacro = false } = {}) {
+  if (simulacro) return { accion: 'nada', motivo: 'un simulacro lee una producción fabricada: no cierra avisos de verdad' };
+  if (!marca) return { accion: 'no-se-sabe', motivo: 'sin marca no se sabe qué Issue es el aviso: no se cierra nada' };
+  if (!Array.isArray(issues)) return { accion: 'no-se-sabe', motivo: 'no llegó la lista de Issues abiertos' };
+  const r = leerRenglon(renglon);
+  if (!r) return { accion: 'no-se-sabe', motivo: 'sin renglón legible del vigía (.vigia/constancias.log): no se sabe si está al día' };
+  if (r.veredicto !== VEREDICTO_AL_DIA) return { accion: 'nada', motivo: `la lectura es \`${r.veredicto}\`, no \`${VEREDICTO_AL_DIA}\`: no se cierra nada` };
+  const numero = elegirIssueExistente(issues, marca);
+  if (numero === null) return { accion: 'nada', motivo: 'producción al día y ningún aviso abierto' };
+  const s = desdeCuandoSana(historial || renglon);
+  const plural = s.lecturas === 1 ? 'lectura seguida' : 'lecturas seguidas';
+  const desde = s.desde
+    ? `${s.completo ? 'desde' : 'al menos desde'} **${s.desde}** (${s.lecturas} ${plural} al día`
+      + (s.completo ? `; la anterior, ${s.antes.cuando}, decía \`${s.antes.veredicto}\`)` : '; el historial del vigía no llega más atrás)')
+    : 'desde esta lectura';
+  return {
+    accion: 'cerrar',
+    numero,
+    comentario: `✅ **Producción vuelve a estar al día** ${desde}. Este aviso se cierra solo (SCRUM-1605).\n\n`
+      + 'Si producción se vuelve a congelar, el vigía abrirá un Issue NUEVO con la fecha de esa congelación: '
+      + 'no comentará en éste.\n\n'
+      + `\`\`\`\n${String(renglon).trim()}\n\`\`\`\n\n`
+      + (runUrl ? `Ejecución: ${runUrl}\n` : ''),
+  };
+}
+
 /**
  * `VIGIA_ESTADOS_JSON` → diagnóstico. Vacío o ilegible NO tumba el aviso: el aviso tiene que salir
  * igual, diciendo que no sabe qué avería es. Callar el aviso porque no se pudo diagnosticar sería
@@ -253,6 +324,20 @@ import { pathToFileURL } from 'node:url';
 const esCli = process.argv[1]
   && pathToFileURL(path.resolve(process.argv[1])).href === import.meta.url;
 if (esCli) {
+  // SCRUM-1605 · `… vigia-despliegue-aviso.mjs cerrar`: la decisión de cierre, con las mismas variables más
+  // `VIGIA_HISTORIAL` (las últimas líneas de `.vigia/constancias.log`). Aquí una lista de Issues que no llegó
+  // NO es «[]»: con «[]» saldría «ningún aviso abierto», que es «no pude mirar» con cara de «no hay».
+  if (process.argv[2] === 'cerrar') {
+    let lista = null;
+    try { lista = process.env.VIGIA_ISSUES_JSON ? JSON.parse(process.env.VIGIA_ISSUES_JSON) : null; } catch { lista = null; }
+    const c = decidirCierre({
+      issues: lista, marca: process.env.VIGIA_MARCA, renglon: process.env.VIGIA_RENGLON,
+      historial: process.env.VIGIA_HISTORIAL, runUrl: process.env.VIGIA_RUN_URL,
+      simulacro: process.env.VIGIA_SIMULACRO === 'true',
+    });
+    console.log(JSON.stringify(c));
+    process.exit(c.accion === 'no-se-sabe' ? 1 : 0);
+  }
   let issues;
   try {
     issues = JSON.parse(process.env.VIGIA_ISSUES_JSON || '[]');

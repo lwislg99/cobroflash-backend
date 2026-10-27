@@ -1,0 +1,267 @@
+POBLACIÓN · 742 filas · ok 742 · {"ok":742}
+  TODO                         jobs  742 · pasadas  2968 · pierden  178 ( 6.0 %) · máx 15 · casos 1465
+
+== por censo
+  j3bw-1405f                   jobs  440 · pasadas  1760 · pierden  137 ( 7.8 %) · máx 15 · casos 1119
+  j3n-1405d                    jobs  302 · pasadas  1208 · pierden   41 ( 3.4 %) · máx 15 · casos 346
+
+== por día
+  2026-10-14                   jobs   71 · pasadas   284 · pierden   12 ( 4.2 %) · máx 14 · casos 94
+  2026-10-15                   jobs   50 · pasadas   200 · pierden    4 ( 2.0 %) · máx 15 · casos 40
+  2026-10-16                   jobs   42 · pasadas   168 · pierden    7 ( 4.2 %) · máx 15 · casos 70
+  2026-10-17                   jobs   33 · pasadas   132 · pierden    5 ( 3.8 %) · máx 13 · casos 44
+  2026-10-18                   jobs   48 · pasadas   192 · pierden    4 ( 2.1 %) · máx 8 · casos 24
+  2026-10-19                   jobs   40 · pasadas   160 · pierden    8 ( 5.0 %) · máx 15 · casos 71
+  2026-10-20                   jobs   18 · pasadas    72 · pierden    1 ( 1.4 %) · máx 3 · casos 3
+  2026-10-21                   jobs   23 · pasadas    92 · pierden    5 ( 5.4 %) · máx 14 · casos 48
+  2026-10-22                   jobs   51 · pasadas   204 · pierden   17 ( 8.3 %) · máx 15 · casos 155
+  2026-10-23                   jobs  171 · pasadas   684 · pierden   64 ( 9.4 %) · máx 14 · casos 485
+  2026-10-24                   jobs  102 · pasadas   408 · pierden   21 ( 5.1 %) · máx 15 · casos 194
+  2026-10-26                   jobs   67 · pasadas   268 · pierden   20 ( 7.5 %) · máx 15 · casos 182
+  2026-10-27                   jobs   26 · pasadas   104 · pierden   10 ( 9.6 %) · máx 15 · casos 55
+
+== por versión de node
+  24.21.0                      jobs  690 · pasadas  2760 · pierden  169 ( 6.1 %) · máx 15 · casos 1395
+  24.22.0                      jobs   41 · pasadas   164 · pierden    6 ( 3.7 %) · máx 15 · casos 50
+  24.22.1                      jobs   11 · pasadas    44 · pierden    3 ( 6.8 %) · máx 11 · casos 20
+
+== por imagen del runner
+  20261004.327.1               jobs   74 · pasadas   296 · pierden   13 ( 4.4 %) · máx 14 · casos 111
+  20261012.334.1               jobs  616 · pasadas  2464 · pierden  156 ( 6.3 %) · máx 15 · casos 1284
+  20261018.339.1               jobs   41 · pasadas   164 · pierden    6 ( 3.7 %) · máx 15 · casos 50
+  20261021.345.10              jobs    6 · pasadas    24 · pierden    2 ( 8.3 %) · máx 11 · casos 17
+  20261025.353.1               jobs    5 · pasadas    20 · pierden    1 ( 5.0 %) · máx 3 · casos 3
+
+== por versión del runner
+  2.337.0                      jobs  302 · pasadas  1208 · pierden   41 ( 3.4 %) · máx 15 · casos 346
+  2.338.0                      jobs  440 · pasadas  1760 · pierden  137 ( 7.8 %) · máx 15 · casos 1119
+
+== por región
+  canadacentral                jobs    1 · pasadas     4 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  canadaeast                   jobs    3 · pasadas    12 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  centralus                    jobs  175 · pasadas   700 · pierden   48 ( 6.9 %) · máx 15 · casos 426
+  eastus                       jobs  143 · pasadas   572 · pierden   29 ( 5.1 %) · máx 15 · casos 253
+  eastus2                      jobs   46 · pasadas   184 · pierden    7 ( 3.8 %) · máx 13 · casos 39
+  eastus3                      jobs    2 · pasadas     8 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  mexicocentral                jobs    2 · pasadas     8 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  northcentralus               jobs   52 · pasadas   208 · pierden   12 ( 5.8 %) · máx 15 · casos 93
+  southcentralus               jobs   41 · pasadas   164 · pierden   11 ( 6.7 %) · máx 14 · casos 81
+  westcentralus                jobs   32 · pasadas   128 · pierden    8 ( 6.3 %) · máx 11 · casos 48
+  westus                       jobs   77 · pasadas   308 · pierden   17 ( 5.5 %) · máx 14 · casos 138
+  westus2                      jobs   36 · pasadas   144 · pierden   12 ( 8.3 %) · máx 15 · casos 109
+  westus3                      jobs  132 · pasadas   528 · pierden   34 ( 6.4 %) · máx 15 · casos 278
+
+== por evento
+  pull_request                 jobs  621 · pasadas  2484 · pierden  142 ( 5.7 %) · máx 15 · casos 1163
+  push                         jobs  121 · pasadas   484 · pierden   36 ( 7.4 %) · máx 15 · casos 302
+
+== por sonda (vacía = antes de 1574)
+  (sin)                        jobs  302 · pasadas  1208 · pierden   41 ( 3.4 %) · máx 15 · casos 346
+  0                            jobs   27 · pasadas   108 · pierden    3 ( 2.8 %) · máx 14 · casos 27
+  1048576                      jobs  413 · pasadas  1652 · pierden  134 ( 8.1 %) · máx 15 · casos 1092
+
+== por nº de tests de la tanda
+  < 11500                      jobs   41 · pasadas   164 · pierden    9 ( 5.5 %) · máx 14 · casos 73
+  < 11900                      jobs  211 · pasadas   844 · pierden   24 ( 2.8 %) · máx 15 · casos 200
+  < 12200                      jobs  138 · pasadas   552 · pierden   33 ( 6.0 %) · máx 15 · casos 297
+  < 12500                      jobs  180 · pasadas   720 · pierden   66 ( 9.2 %) · máx 14 · casos 515
+  < 12800                      jobs  170 · pasadas   680 · pierden   45 ( 6.6 %) · máx 15 · casos 376
+  ≥ 12800                      jobs    2 · pasadas     8 · pierden    1 (12.5 %) · máx 4 · casos 4
+
+== por duración de la tanda (s)
+  < 560                        jobs  269 · pasadas  1076 · pierden   73 ( 6.8 %) · máx 15 · casos 642
+  < 600                        jobs  105 · pasadas   420 · pierden   21 ( 5.0 %) · máx 15 · casos 171
+  < 640                        jobs  131 · pasadas   524 · pierden   24 ( 4.6 %) · máx 15 · casos 189
+  < 680                        jobs  111 · pasadas   444 · pierden   34 ( 7.7 %) · máx 14 · casos 279
+  < 720                        jobs  103 · pasadas   412 · pierden   23 ( 5.6 %) · máx 14 · casos 152
+  < 760                        jobs   23 · pasadas    92 · pierden    3 ( 3.3 %) · máx 15 · casos 32
+
+== por duración de ④ (ms)
+  < 3000                       jobs  270 · pasadas  1080 · pierden   73 ( 6.8 %) · máx 15 · casos 648
+  < 3500                       jobs   97 · pasadas   388 · pierden   35 ( 9.0 %) · máx 15 · casos 247
+  < 4000                       jobs  354 · pasadas  1416 · pierden   65 ( 4.6 %) · máx 15 · casos 531
+  < 4500                       jobs   21 · pasadas    84 · pierden    5 ( 6.0 %) · máx 13 · casos 39
+
+== por segundo de la tanda en que acaba ④
+  < 100                        jobs   56 · pasadas   224 · pierden   17 ( 7.6 %) · máx 14 · casos 159
+  < 140                        jobs  410 · pasadas  1640 · pierden   91 ( 5.5 %) · máx 15 · casos 763
+  < 180                        jobs  274 · pasadas  1096 · pierden   69 ( 6.3 %) · máx 15 · casos 542
+  < 220                        jobs    2 · pasadas     8 · pierden    1 (12.5 %) · máx 1 · casos 1
+
+== SÓLO 1405f · por tercil de nº de tests
+  T1 < 12296                   jobs  136 · pasadas   544 · pierden   46 ( 8.5 %) · máx 15 · casos 388
+  T2 < 12554                   jobs  155 · pasadas   620 · pierden   50 ( 8.1 %) · máx 15 · casos 418
+  T3 ≥ 12554                   jobs  149 · pasadas   596 · pierden   41 ( 6.9 %) · máx 15 · casos 313
+
+== SÓLO 1405f · por tercil de duración de la tanda (ms)
+  T1 < 555075                  jobs  146 · pasadas   584 · pierden   54 ( 9.2 %) · máx 15 · casos 472
+  T2 < 674925                  jobs  147 · pasadas   588 · pierden   49 ( 8.3 %) · máx 15 · casos 400
+  T3 ≥ 674925                  jobs  147 · pasadas   588 · pierden   34 ( 5.8 %) · máx 15 · casos 247
+
+== SÓLO 1405f · por tercil de duración de ④ (ms)
+  T1 < 2792                    jobs  146 · pasadas   584 · pierden   57 ( 9.8 %) · máx 15 · casos 502
+  T2 < 3730                    jobs  147 · pasadas   588 · pierden   46 ( 7.8 %) · máx 14 · casos 338
+  T3 ≥ 3730                    jobs  147 · pasadas   588 · pierden   34 ( 5.8 %) · máx 15 · casos 279
+
+== SÓLO 1405f · por sonda
+  0                            jobs   27 · pasadas   108 · pierden    3 ( 2.8 %) · máx 14 · casos 27
+  1048576                      jobs  413 · pasadas  1652 · pierden  134 ( 8.1 %) · máx 15 · casos 1092
+
+== MISMO DÍA, distinto node (sólo días con dos o más valores)
+  2026-10-20 24.21.0           jobs    7 · pasadas    28 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-20 24.22.0           jobs   11 · pasadas    44 · pierden    1 ( 2.3 %) · máx 3 · casos 3
+  2026-10-21 24.21.0           jobs   12 · pasadas    48 · pierden    4 ( 8.3 %) · máx 14 · casos 40
+  2026-10-21 24.22.0           jobs   11 · pasadas    44 · pierden    1 ( 2.3 %) · máx 8 · casos 8
+  2026-10-22 24.21.0           jobs   26 · pasadas   104 · pierden   11 (10.6 %) · máx 14 · casos 99
+  2026-10-22 24.22.0           jobs   19 · pasadas    76 · pierden    4 ( 5.3 %) · máx 15 · casos 39
+  2026-10-22 24.22.1           jobs    6 · pasadas    24 · pierden    2 ( 8.3 %) · máx 11 · casos 17
+  2026-10-27 24.21.0           jobs   21 · pasadas    84 · pierden    9 (10.7 %) · máx 15 · casos 52
+  2026-10-27 24.22.1           jobs    5 · pasadas    20 · pierden    1 ( 5.0 %) · máx 3 · casos 3
+
+== MISMO DÍA, distinto imagen (sólo días con dos o más valores)
+  2026-10-14 20261004.327.1    jobs   65 · pasadas   260 · pierden   11 ( 4.2 %) · máx 14 · casos 92
+  2026-10-14 20261012.334.1    jobs    6 · pasadas    24 · pierden    1 ( 4.2 %) · máx 2 · casos 2
+  2026-10-15 20261004.327.1    jobs    9 · pasadas    36 · pierden    2 ( 5.6 %) · máx 13 · casos 19
+  2026-10-15 20261012.334.1    jobs   41 · pasadas   164 · pierden    2 ( 1.2 %) · máx 15 · casos 21
+  2026-10-20 20261012.334.1    jobs    7 · pasadas    28 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-20 20261018.339.1    jobs   11 · pasadas    44 · pierden    1 ( 2.3 %) · máx 3 · casos 3
+  2026-10-21 20261012.334.1    jobs   12 · pasadas    48 · pierden    4 ( 8.3 %) · máx 14 · casos 40
+  2026-10-21 20261018.339.1    jobs   11 · pasadas    44 · pierden    1 ( 2.3 %) · máx 8 · casos 8
+  2026-10-22 20261012.334.1    jobs   26 · pasadas   104 · pierden   11 (10.6 %) · máx 14 · casos 99
+  2026-10-22 20261018.339.1    jobs   19 · pasadas    76 · pierden    4 ( 5.3 %) · máx 15 · casos 39
+  2026-10-22 20261021.345.10   jobs    6 · pasadas    24 · pierden    2 ( 8.3 %) · máx 11 · casos 17
+  2026-10-27 20261012.334.1    jobs   21 · pasadas    84 · pierden    9 (10.7 %) · máx 15 · casos 52
+  2026-10-27 20261025.353.1    jobs    5 · pasadas    20 · pierden    1 ( 5.0 %) · máx 3 · casos 3
+
+== MISMO DÍA, distinto región (sólo días con dos o más valores)
+  2026-10-14 canadaeast        jobs    2 · pasadas     8 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-14 centralus         jobs   20 · pasadas    80 · pierden    6 ( 7.5 %) · máx 14 · casos 62
+  2026-10-14 eastus            jobs   10 · pasadas    40 · pierden    1 ( 2.5 %) · máx 6 · casos 6
+  2026-10-14 eastus2           jobs    6 · pasadas    24 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-14 northcentralus    jobs    6 · pasadas    24 · pierden    1 ( 4.2 %) · máx 10 · casos 10
+  2026-10-14 southcentralus    jobs    6 · pasadas    24 · pierden    2 ( 8.3 %) · máx 8 · casos 13
+  2026-10-14 westcentralus     jobs    3 · pasadas    12 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-14 westus            jobs    5 · pasadas    20 · pierden    1 ( 5.0 %) · máx 2 · casos 2
+  2026-10-14 westus2           jobs    5 · pasadas    20 · pierden    1 ( 5.0 %) · máx 1 · casos 1
+  2026-10-14 westus3           jobs    8 · pasadas    32 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-15 canadacentral     jobs    1 · pasadas     4 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-15 centralus         jobs    8 · pasadas    32 · pierden    1 ( 3.1 %) · máx 6 · casos 6
+  2026-10-15 eastus            jobs    9 · pasadas    36 · pierden    1 ( 2.8 %) · máx 13 · casos 13
+  2026-10-15 eastus2           jobs    1 · pasadas     4 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-15 mexicocentral     jobs    1 · pasadas     4 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-15 northcentralus    jobs    3 · pasadas    12 · pierden    1 ( 8.3 %) · máx 15 · casos 15
+  2026-10-15 southcentralus    jobs    3 · pasadas    12 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-15 westcentralus     jobs    4 · pasadas    16 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-15 westus            jobs    7 · pasadas    28 · pierden    1 ( 3.6 %) · máx 6 · casos 6
+  2026-10-15 westus2           jobs    3 · pasadas    12 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-15 westus3           jobs   10 · pasadas    40 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-16 centralus         jobs    6 · pasadas    24 · pierden    4 (16.7 %) · máx 15 · casos 41
+  2026-10-16 eastus            jobs   11 · pasadas    44 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-16 eastus2           jobs    4 · pasadas    16 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-16 northcentralus    jobs    3 · pasadas    12 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-16 westcentralus     jobs    2 · pasadas     8 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-16 westus            jobs    4 · pasadas    16 · pierden    2 (12.5 %) · máx 14 · casos 21
+  2026-10-16 westus2           jobs    1 · pasadas     4 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-16 westus3           jobs   11 · pasadas    44 · pierden    1 ( 2.3 %) · máx 8 · casos 8
+  2026-10-17 centralus         jobs    5 · pasadas    20 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-17 eastus            jobs    8 · pasadas    32 · pierden    1 ( 3.1 %) · máx 6 · casos 6
+  2026-10-17 eastus2           jobs    3 · pasadas    12 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-17 northcentralus    jobs    2 · pasadas     8 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-17 westcentralus     jobs    1 · pasadas     4 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-17 westus            jobs    2 · pasadas     8 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-17 westus2           jobs    2 · pasadas     8 · pierden    1 (12.5 %) · máx 11 · casos 11
+  2026-10-17 westus3           jobs   10 · pasadas    40 · pierden    3 ( 7.5 %) · máx 13 · casos 27
+  2026-10-18 centralus         jobs   10 · pasadas    40 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-18 eastus            jobs   15 · pasadas    60 · pierden    1 ( 1.7 %) · máx 8 · casos 8
+  2026-10-18 eastus2           jobs    3 · pasadas    12 · pierden    1 ( 8.3 %) · máx 8 · casos 8
+  2026-10-18 mexicocentral     jobs    1 · pasadas     4 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-18 northcentralus    jobs    3 · pasadas    12 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-18 southcentralus    jobs    2 · pasadas     8 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-18 westcentralus     jobs    2 · pasadas     8 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-18 westus            jobs    3 · pasadas    12 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-18 westus3           jobs    9 · pasadas    36 · pierden    2 ( 5.6 %) · máx 6 · casos 8
+  2026-10-19 canadaeast        jobs    1 · pasadas     4 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-19 centralus         jobs   13 · pasadas    52 · pierden    1 ( 1.9 %) · máx 15 · casos 15
+  2026-10-19 eastus            jobs    8 · pasadas    32 · pierden    1 ( 3.1 %) · máx 7 · casos 7
+  2026-10-19 eastus2           jobs    1 · pasadas     4 · pierden    1 (25.0 %) · máx 4 · casos 4
+  2026-10-19 northcentralus    jobs    3 · pasadas    12 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-19 southcentralus    jobs    3 · pasadas    12 · pierden    1 ( 8.3 %) · máx 13 · casos 13
+  2026-10-19 westcentralus     jobs    1 · pasadas     4 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-19 westus            jobs    3 · pasadas    12 · pierden    2 (16.7 %) · máx 9 · casos 14
+  2026-10-19 westus2           jobs    1 · pasadas     4 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-19 westus3           jobs    6 · pasadas    24 · pierden    2 ( 8.3 %) · máx 14 · casos 18
+  2026-10-20 centralus         jobs    8 · pasadas    32 · pierden    1 ( 3.1 %) · máx 3 · casos 3
+  2026-10-20 eastus            jobs    1 · pasadas     4 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-20 eastus2           jobs    1 · pasadas     4 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-20 northcentralus    jobs    2 · pasadas     8 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-20 southcentralus    jobs    1 · pasadas     4 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-20 westus            jobs    1 · pasadas     4 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-20 westus2           jobs    1 · pasadas     4 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-20 westus3           jobs    3 · pasadas    12 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-21 centralus         jobs    3 · pasadas    12 · pierden    1 ( 8.3 %) · máx 7 · casos 7
+  2026-10-21 eastus            jobs    6 · pasadas    24 · pierden    2 ( 8.3 %) · máx 8 · casos 16
+  2026-10-21 northcentralus    jobs    3 · pasadas    12 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-21 westcentralus     jobs    1 · pasadas     4 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-21 westus            jobs    2 · pasadas     8 · pierden    1 (12.5 %) · máx 11 · casos 11
+  2026-10-21 westus2           jobs    1 · pasadas     4 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-21 westus3           jobs    7 · pasadas    28 · pierden    1 ( 3.6 %) · máx 14 · casos 14
+  2026-10-22 centralus         jobs   15 · pasadas    60 · pierden    4 ( 6.7 %) · máx 15 · casos 43
+  2026-10-22 eastus            jobs    9 · pasadas    36 · pierden    3 ( 8.3 %) · máx 13 · casos 33
+  2026-10-22 eastus2           jobs    2 · pasadas     8 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-22 northcentralus    jobs    4 · pasadas    16 · pierden    2 (12.5 %) · máx 9 · casos 12
+  2026-10-22 southcentralus    jobs    2 · pasadas     8 · pierden    1 (12.5 %) · máx 1 · casos 1
+  2026-10-22 westcentralus     jobs    2 · pasadas     8 · pierden    1 (12.5 %) · máx 5 · casos 5
+  2026-10-22 westus            jobs    6 · pasadas    24 · pierden    1 ( 4.2 %) · máx 11 · casos 11
+  2026-10-22 westus2           jobs    4 · pasadas    16 · pierden    3 (18.8 %) · máx 13 · casos 27
+  2026-10-22 westus3           jobs    7 · pasadas    28 · pierden    2 ( 7.1 %) · máx 15 · casos 23
+  2026-10-23 centralus         jobs   46 · pasadas   184 · pierden   20 (10.9 %) · máx 14 · casos 173
+  2026-10-23 eastus            jobs   32 · pasadas   128 · pierden   13 (10.2 %) · máx 12 · casos 106
+  2026-10-23 eastus2           jobs   11 · pasadas    44 · pierden    4 ( 9.1 %) · máx 13 · casos 17
+  2026-10-23 northcentralus    jobs   10 · pasadas    40 · pierden    3 ( 7.5 %) · máx 14 · casos 23
+  2026-10-23 southcentralus    jobs   15 · pasadas    60 · pierden    5 ( 8.3 %) · máx 14 · casos 46
+  2026-10-23 westcentralus     jobs    5 · pasadas    20 · pierden    3 (15.0 %) · máx 6 · casos 12
+  2026-10-23 westus            jobs   23 · pasadas    92 · pierden    4 ( 4.3 %) · máx 13 · casos 35
+  2026-10-23 westus2           jobs    8 · pasadas    32 · pierden    3 ( 9.4 %) · máx 14 · casos 25
+  2026-10-23 westus3           jobs   21 · pasadas    84 · pierden    9 (10.7 %) · máx 11 · casos 48
+  2026-10-24 centralus         jobs   16 · pasadas    64 · pierden    2 ( 3.1 %) · máx 10 · casos 12
+  2026-10-24 eastus            jobs   22 · pasadas    88 · pierden    4 ( 4.5 %) · máx 15 · casos 42
+  2026-10-24 eastus2           jobs    6 · pasadas    24 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-24 northcentralus    jobs    4 · pasadas    16 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-24 southcentralus    jobs    5 · pasadas    20 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-24 westcentralus     jobs    6 · pasadas    24 · pierden    3 (12.5 %) · máx 11 · casos 27
+  2026-10-24 westus            jobs   14 · pasadas    56 · pierden    4 ( 7.1 %) · máx 14 · casos 27
+  2026-10-24 westus2           jobs    6 · pasadas    24 · pierden    2 ( 8.3 %) · máx 13 · casos 18
+  2026-10-24 westus3           jobs   23 · pasadas    92 · pierden    6 ( 6.5 %) · máx 15 · casos 68
+  2026-10-26 centralus         jobs   16 · pasadas    64 · pierden    5 ( 7.8 %) · máx 14 · casos 42
+  2026-10-26 eastus            jobs   10 · pasadas    40 · pierden    1 ( 2.5 %) · máx 13 · casos 13
+  2026-10-26 eastus2           jobs    6 · pasadas    24 · pierden    1 ( 4.2 %) · máx 10 · casos 10
+  2026-10-26 eastus3           jobs    2 · pasadas     8 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-26 northcentralus    jobs    7 · pasadas    28 · pierden    4 (14.3 %) · máx 10 · casos 22
+  2026-10-26 southcentralus    jobs    3 · pasadas    12 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-26 westcentralus     jobs    2 · pasadas     8 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-26 westus            jobs    5 · pasadas    20 · pierden    1 ( 5.0 %) · máx 11 · casos 11
+  2026-10-26 westus2           jobs    2 · pasadas     8 · pierden    2 (25.0 %) · máx 15 · casos 27
+  2026-10-26 westus3           jobs   14 · pasadas    56 · pierden    6 (10.7 %) · máx 14 · casos 57
+  2026-10-27 centralus         jobs    9 · pasadas    36 · pierden    3 ( 8.3 %) · máx 15 · casos 22
+  2026-10-27 eastus            jobs    2 · pasadas     8 · pierden    1 (12.5 %) · máx 3 · casos 3
+  2026-10-27 eastus2           jobs    2 · pasadas     8 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-27 northcentralus    jobs    2 · pasadas     8 · pierden    1 (12.5 %) · máx 11 · casos 11
+  2026-10-27 southcentralus    jobs    1 · pasadas     4 · pierden    2 (50.0 %) · máx 7 · casos 8
+  2026-10-27 westcentralus     jobs    3 · pasadas    12 · pierden    1 ( 8.3 %) · máx 4 · casos 4
+  2026-10-27 westus            jobs    2 · pasadas     8 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-27 westus2           jobs    2 · pasadas     8 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  2026-10-27 westus3           jobs    3 · pasadas    12 · pierden    2 (16.7 %) · máx 4 · casos 7
+
+== MEJOR CORTE ÚNICO EN EL TIEMPO (cada lado con ≥ 200 pasadas)
+  entre 2026-10-21T14:03:34Z (job 119268334041, e43d28cfb) y 2026-10-21T14:05:03Z (job 119268912386, 86296fe9f)
+  antes: 41/1232 (3.3 %) · después: 137/1736 (7.9 %) · ganancia de log-verosimilitud 14.3 (2·g = 28.5; χ²₁ al 0,1 % = 10,8)
+
+== EL HUECO entre los dos censos (15 jobs, 14 con ④ legible; la lista «con» sale del log)
+  todo el hueco                jobs   14 · pasadas    56 · pierden    2 ( 3.6 %) · máx 5 · casos 7
+  runner 2.338.0 · ④ de 1405c  jobs    6 · pasadas    24 · pierden    1 ( 4.2 %) · máx 5 · casos 5
+  runner 2.338.0 · ④ de 1405d  jobs    7 · pasadas    28 · pierden    1 ( 3.6 %) · máx 2 · casos 2
+  runner 2.338.0 · ④ de 1574   jobs    1 · pasadas     4 · pierden    0 ( 0.0 %) · máx 0 · casos 0
+  antes del corte · 1.ª mitad  jobs  154 · pasadas   616 · pierden   21 ( 3.4 %) · máx 15 · casos 186
+  antes del corte · 2.ª mitad  jobs  154 · pasadas   616 · pierden   20 ( 3.2 %) · máx 15 · casos 160
+  después del corte · 1.ª mitad jobs  217 · pasadas   868 · pierden   82 ( 9.4 %) · máx 15 · casos 645
+  después del corte · 2.ª mitad jobs  217 · pasadas   868 · pierden   55 ( 6.3 %) · máx 15 · casos 474
