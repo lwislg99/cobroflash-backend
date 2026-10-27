@@ -409,7 +409,7 @@ Sesión `jv-j6du` (puesto J6), encargo del orquestador `cobroflash-backend-8b`, 
 `scrum-1396d-lote-1-temporales`, creada desde la de 1396c (PR #2949, todavía fuera de `main`): el PR de este
 tramo lleva también los commits de 1396b/c. El hook de arranque dijo «SIN IDENTIDAD» (SCRUM-1498); se siguió.
 
-A9: aviso → cicatriz J6 «Volví a meter la ruta del trabajo, con espacios, en un `grep` sin comillas el mismo día que lo apunté en SCRUM-1614» — no se pudo comprobar: ningún hook de este árbol lee las comillas de un comando antes de lanzarlo
+A9: aviso → cicatriz J6 «Volví a meter la ruta del trabajo, con espacios, en un `grep` sin comillas el mismo día que lo apunté en SCRUM-1614, y el resumen de un test salió en dos errores en vez de su recuento» — no se pudo comprobar: ningún hook de este árbol lee las comillas de un comando antes de lanzarlo
 
 ### El lote, y por qué éste
 
