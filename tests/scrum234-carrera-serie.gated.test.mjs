@@ -41,13 +41,14 @@
 // simularlo: un mock no tiene niveles de aislamiento, y lo que se está midiendo es justamente
 // el comportamiento del motor.
 import './_staging-db.mjs'; // PRIMERO: fija la BD de staging. Es código de seguridad (SCRUM-118).
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599s: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { withMerchant } from './_merchant-fixture.mjs';
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 
-test('SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { allocateInvoiceNumber } = await import('../dist/modules/invoicing/domain/invoiceNumber.service.js');
 
@@ -166,3 +167,14 @@ test('SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivo
     },
   );
 });
+
+// SCRUM-1599s (diseño B de SCRUM-1599) · la mutación que tumba el caso de base, CATALOGADA en SCRUM-1599s.
+// Va aparte de `MUTACIONES_QUE_ME_TUMBAN` a propósito: el job del meta-guard corre SIN base, el caso sale
+// SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco,
+// `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e), que muta `dist/` y no el fuente
+// (regla 38: el fuente de la emisión sólo se lee). Cada campo, LITERAL.
+// ⚠️ La mutación natural de este fichero, quitar el `pg_advisory_xact_lock`, VIVE en el banco (3 de 3, §1599s):
+// por qué, SIN MEDIR. Ésta caza el contador, que es la última aserción del caso.
+export const MUTACIONES_CON_BASE = [
+  { fichero: "src/modules/invoicing/domain/invoiceNumber.service.ts", de: "nextInvoiceNumber: Math.max(m.nextInvoiceNumber, seq + 1)", a: "nextInvoiceNumber: Math.max(m.nextInvoiceNumber, seq)", cae: "SCRUM-234 · dos reservas concurrentes NO colisionan" },
+];

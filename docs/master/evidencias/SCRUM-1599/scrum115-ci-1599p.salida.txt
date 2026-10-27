@@ -1,0 +1,31 @@
+# SCRUM-1599p · arreglo del rojo de CI en scrum115 (job 121893679905 de #2900) · jv-j6cx · 26-oct-2026 ~23:05Z (GitHub)
+# Postgres 16.14 desechable (pgbanco-1599p, loopback, yaqu_libro_test, 33 tablas = 33 model) · dist con tsc --noCheck sobre 34df32198
+# banco «como CI» = banco-1599p.mjs.txt con WHATSAPP_DRY_RUN quitado del entorno del hijo: sed "s/ WHATSAPP_DRY_RUN: '1',//" (recuento de la cadena: 1 → 0). CI (ci.yml) no declara ninguna variable WHATSAPP_*.
+
+## ANTES (scrum115 de 34df32198, banco como CI)
+scrum115-wa-fallo-registrado.test.mjs · exit=1 · 2649 ms · casos=2 (ok=0 not_ok=2 skip=0) · declarados=2 · SUMA
+   not ok · SCRUM-115: sendWhatsAppTemplate bloqueado por wa_opt_out registra status:failed en WA-0b (waMessageId null)
+   not ok · SCRUM-115: sendWhatsAppText bloqueado (demo fuera de DEMO_SAFE_NUMBERS) registra status:failed en WA-0b
+
+POBLACION=1 ficheros · EXIT=0
+   (TAP) los dos: expected 'wa_opt_out' / 'demo_safe_numbers' · actual: 'not_configured'
+
+## DESPUÉS (esta rama, banco como CI)
+scrum115-wa-fallo-registrado.test.mjs · exit=0 · 6396 ms · casos=2 (ok=2 not_ok=0 skip=0) · declarados=2 · SUMA
+POBLACION=1 ficheros · EXIT=0
+
+## CONTROL: esta rama SIN la línea «if (CON_BANCO) process.env.WHATSAPP_DRY_RUN = '1';» (recuento 1 → 0), banco como CI
+zz-control-1599p-sin-bandera.test.mjs · exit=1 · 2483 ms · casos=2 (ok=0 not_ok=2 skip=0) · declarados=2 · SUMA
+   not ok · SCRUM-115: sendWhatsAppTemplate bloqueado por wa_opt_out registra status:failed en WA-0b (waMessageId null)
+   not ok · SCRUM-115: sendWhatsAppText bloqueado (demo fuera de DEMO_SAFE_NUMBERS) registra status:failed en WA-0b
+   (TAP) los dos caen en la aserción nueva: expected '1' (la bandera ausente)
+
+## MUTACIÓN catalogada (MUTACIONES_CON_BASE, mutar-1599i.mjs sin cambiar, banco como CI)
+== tests/scrum115-wa-fallo-registrado.test.mjs · limpia: 2 ok de 2
+MUERE · M1 · src/integrations/whatsapp.ts · «type: 'template',
+      templateName: params.templateName,
+ » → «type: 'template',
+      templateName: params.templ» · 1 de 2 caen · su caso («SCRUM-115: sendWhatsAppTemplate bloqueado») cae
+    · SCRUM-115: sendWhatsAppTemplate bloqueado por wa_opt_out registra status:failed en WA-0b (waMessageId null)
+      error: Expected values to be strictly equal:
+POBLACION=1 mutaciones en 1 ficheros · vivas=0 · ciegas=0 · dist restaurado byte a byte · EXIT=0
