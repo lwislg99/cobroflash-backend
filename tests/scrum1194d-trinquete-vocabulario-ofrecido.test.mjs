@@ -17,13 +17,48 @@
 // que pone OTRO fichero de la pantalla (un componente), un solo salto de import en el servidor y
 // uno de envoltorio en el front, y el envoltorio casa por NOMBRE de función. «Ofrece todo» es una
 // cota optimista: un valor que aparece en el llamador por otro motivo cuenta como ofrecido.
-import test from 'node:test';
+import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import path from 'node:path';
+import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
+import { temporal } from './_temporal.mjs';
 import { censarVocabulario, clavePar, FALTAN_SEMBRADOS } from './_censo-vocabulario-ofrecido.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+// Un árbol de mentira (SCRUM-846c ③: el censo necesita un caso conocido delante que no sea el árbol
+// de verdad). Lleva la sonda de 1185 tal cual, y `typescript` como un fichero que reexporta el de
+// verdad: un fichero, no un enlace, para que borrar el temporal no pueda seguir hasta lo enlazado.
+const creados = [];
+function arbolDeMentira(ficheros) {
+  const raiz = temporal('scrum1194d-');
+  creados.push(raiz);
+  const todos = {
+    'package.json': '{ "name": "caso-1194d", "private": true }\n',
+    'node_modules/typescript/package.json': '{ "name": "typescript", "main": "index.js" }\n',
+    'node_modules/typescript/index.js': `module.exports = require(${JSON.stringify(createRequire(path.join(RAIZ, 'package.json')).resolve('typescript'))});\n`,
+    'scripts/_censo-sin-consumir.mjs': fs.readFileSync(path.join(RAIZ, 'scripts/_censo-sin-consumir.mjs'), 'utf8'),
+    ...ficheros,
+  };
+  for (const [rel, texto] of Object.entries(todos)) {
+    const abs = path.join(raiz, rel);
+    fs.mkdirSync(path.dirname(abs), { recursive: true });
+    fs.writeFileSync(abs, texto);
+  }
+  return raiz;
+}
+after(() => { for (const r of creados) fs.rmSync(r, { recursive: true, force: true }); });
+
+// La forma, fabricada: una ruta que acepta un vocabulario de tres valores y una pantalla que la llama.
+const VOCAB_CASO = ['alta', 'baja', 'pausa'];
+const arbolDelCaso = (ofrece) => arbolDeMentira({
+  'src/app.ts': "import express from 'express';\nimport { casoRouter1194d } from './caso.routes';\nexport const app = express();\napp.use('/caso1194d', casoRouter1194d);\n",
+  'src/caso.routes.ts': `import { Router } from 'express';\nconst ESTADOS_CASO_1194D = ${JSON.stringify(VOCAB_CASO)} as const;\nexport const casoRouter1194d = Router();\n`
+    + "casoRouter1194d.post('/estado', (req, res) => { res.json({ ok: ESTADOS_CASO_1194D.includes(req.body.estado) }); });\n",
+  'public/caso.js': `const OPCIONES = ${JSON.stringify(ofrece)};\nfunction enviarCaso1194d(estado) { return fetch('/caso1194d/estado', { method: 'POST', body: JSON.stringify({ estado }) }); }\n`,
+});
 
 // Los 14 pares, declarados al nacer. Clave = `clavePar` (ruta · vocabulario [valores] · fichero).
 // `faltan` es lo que ninguna pantalla llamadora nombra. Uno por línea.
@@ -82,6 +117,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     cae: 'SUELO: población declarada y ningún «no pude medir»',
   },
   {
+    // Nada falta nunca: todo par sale «ofrece todo». El árbol fabricado (846c ③) tiene que caer.
+    fichero: 'tests/_censo-vocabulario-ofrecido.mjs',
+    de: '      const faltan = v.valores.filter((x) => !ts_.some((t) => t.has(x)));',
+    a: '      const faltan = [];',
+    cae: 'CASO FABRICADO: la pantalla que no ofrece',
+  },
+  {
     // Un par del árbol sin declarar: la forma de 1136 entrando sin que nadie la mire.
     fichero: 'tests/scrum1194d-trinquete-vocabulario-ofrecido.test.mjs',
     de: "  { par: 'POST /admin/quotes/:id/archivar",
@@ -105,6 +147,18 @@ test('SCRUM-1194d · SIEMBRA: la pareja de 1136 sale PARCIAL con los 8 que falta
 test('SCRUM-1194d · SIN SIEMBRA: el censo sale CIEGO, no verde', () => {
   assert.match(SIN_SIEMBRA.ciego || '', /control positivo SEMBRADO.*ni aparece/,
     'sin el positivo fabricado el censo tiene que decir CIEGO; si da números, un árbol sin la forma y un censo roto se leen igual');
+});
+
+test('SCRUM-1194d · CASO FABRICADO: la pantalla que no ofrece «pausa» sale PARCIAL; la que ofrece los tres, no', async () => {
+  const si = await censarVocabulario(arbolDelCaso(['alta', 'baja']));
+  assert.equal(si.ciego, undefined, `🔴 CIEGO sobre el árbol fabricado — ${si.ciego}`);
+  assert.deepEqual(si.discrepancias.map((f) => `${clavePar(f)} → ${firma(f)}`),
+    [`POST /caso1194d/estado · ESTADOS_CASO_1194D [${VOCAB_CASO.join('|')}] · src/caso.routes.ts → PARCIAL · faltan [pausa]`],
+    'SÍ: la ruta acepta «pausa» y la pantalla no la ofrece; el censo tiene que verlo');
+  const no = await censarVocabulario(arbolDelCaso(VOCAB_CASO));
+  assert.equal(no.ciego, undefined, `🔴 CIEGO sobre el árbol fabricado — ${no.ciego}`);
+  assert.deepEqual(no.discrepancias.map(clavePar), [], 'NO: la pantalla ofrece los tres; el censo no tiene que acusar');
+  assert.equal(no.filas.filter((f) => f.veredicto === 'ofrece todo').length, 1, 'NO: el par existe y sale «ofrece todo», no se ha perdido');
 });
 
 test('SCRUM-1194d · SUELO: población declarada y ningún «no pude medir»', (t) => {

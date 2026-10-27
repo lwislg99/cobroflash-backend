@@ -304,3 +304,7 @@ además el riesgo que la tabla de 1194c atribuye a A: si S0 cambia una de las do
 sonda, el trinquete sale CIEGO, y será un rojo de J6 causado por un cambio de S0. Los 8 «sólo por
 envoltorio» se imprimen y no se vigilan. Ninguno de los 13 «no nombra» se ha vuelto a abrir uno a
 uno: llevan el veredicto de su tramo.
+
+**Arreglo del rojo de #2924 (2026-10-27T13:31Z, sesión J6 `jv-j6di`, sobre la punta `15483e52c02913e7c61b2aab1a22d6fb4eed36ae`):** el obligatorio cayó en SCRUM-846c ③ porque `censarVocabulario` sólo recibía el árbol de verdad; el trinquete lleva ahora el caso CASO FABRICADO (árbol temporal con la sonda de 1185 copiada: la pantalla sin «pausa» sale PARCIAL, la que ofrece los tres no acusa) y una 7.ª mutación (`faltan = []`), y las 7 salen VIVAS con el `aplicarUna` de la casa sobre una base de 6 ✔. La mitad NO no se ha visto caer con una mutación propia.
+
+A9: comprobación → `tests/scrum846c-trinquete-instrumentos-con-caso.test.mjs`
