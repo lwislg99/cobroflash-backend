@@ -343,6 +343,9 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // sin base de 781 corren siempre.
   'scrum234-carrera-serie.gated.test.mjs': 1,
   'scrum781-concurrencia-de-la-factura.test.mjs': 4,
+  // SCRUM-1599t: scrum574-mismo-cliente-tras-migracion con la forma de 1599m. Su caso «CONTRA POSTGRES», que lee
+  // los clientes de TODA la base, salta en el banco con su motivo y se queda en staging (opción A, como 173).
+  'scrum574-mismo-cliente-tras-migracion.test.mjs': 2,
 });
 const TOTAL_DECLARADO = Object.values(GATEADOS_DECLARADOS).reduce((a, b) => a + b, 0);
 

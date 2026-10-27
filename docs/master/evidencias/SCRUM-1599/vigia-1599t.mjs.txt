@@ -1,0 +1,69 @@
+// SCRUM-1599t · la sonda de 116: ¿qué facturas de OTROS tests casan con el `where` del cron mientras corre la tanda?
+// Copia LITERAL del filtro de `sendInvoicePaymentReminders()` (invoiceReminder.service.ts:40-58 y :63-75), en SQL:
+// pending · createdAt <= ahora-7d (o 14d) · candado null · cliente con phone o mobile · wa_opt_out false.
+// Excluye los comercios de 116 («QA S116 …»): lo que mide es la población AJENA que el cron de 116 tocaría.
+// Uso: node vigia-116.mjs <puerto> <salida.json> <ms entre lecturas>   (se para con SIGTERM/SIGINT o al crear <salida>.stop)
+// POSITIVO SEMBRADO: con `--sembrar` crea antes un comercio «QA vigia-1599t» con UNA factura que casa, y la sonda
+// tiene que verla (y la borra al final). Si no la ve, la salida dice CIEGO: una sonda que no ve lo sembrado no ve nada.
+import fs from 'node:fs';
+import pg from 'pg';
+
+const [puerto, salida, cadaTxt, flag] = process.argv.slice(2);
+const sembrar = flag === '--sembrar';
+const c = new pg.Client({ host: '127.0.0.1', port: Number(puerto), user: 'postgres', database: 'yaqu_libro_test' });
+await c.connect();
+
+const SQL = (dias, candado) => `
+  select i.id, m.name as comercio from invoices i
+  join customers cu on cu.id = i."customerId" join merchants m on m.id = i."merchantId"
+  where i.status = 'pending' and i."createdAt" <= now() - interval '${dias} days' and i.${candado} is null
+    and (cu.phone is not null or cu.mobile is not null) and cu.wa_opt_out = false
+    and m.name not like 'QA S116 %'`;
+
+let sembrado = null;
+if (sembrar) {
+  // Columnas obligatorias sin DEFAULT, leídas del DDL; lo mínimo para que la fila exista.
+  const m = (await c.query(`insert into merchants (name, country, updated_at) values ('QA vigia-1599t', 'ES', now()) returning id`)).rows[0];
+  const cu = (await c.query(`insert into customers (merchant_id, name, phone, updated_at) values ($1, 'Vigia', '34600000000', now()) returning id`, [m.id])).rows[0];
+  const inv = (await c.query(`insert into invoices ("merchantId", "customerId", number, total, currency, type, status, "pdfUrl", "qrData", lines, "createdAt")
+    values ($1, $2, 'VIGIA-1599t', 1, 'EUR', 'F1', 'pending', 'P', 'Q', '[]', now() - interval '30 days') returning id`, [m.id, cu.id])).rows[0];
+  sembrado = { merchant: m.id, customer: cu.id, invoice: inv.id };
+}
+
+const visto = new Map(); // id → comercio
+let lecturas = 0, max7 = 0, max14 = 0, vioSembrado = false;
+const leer = async () => {
+  const r7 = (await c.query(SQL(7, 'reminder_7_sent_at'))).rows;
+  const r14 = (await c.query(SQL(14, 'reminder_14_sent_at'))).rows;
+  lecturas++;
+  for (const r of [...r7, ...r14]) {
+    if (sembrado && r.id === sembrado.invoice) { vioSembrado = true; continue; }
+    visto.set(r.id, r.comercio);
+  }
+  const s = sembrado ? 1 : 0;
+  max7 = Math.max(max7, r7.length - (r7.some((r) => sembrado && r.id === sembrado.invoice) ? s : 0));
+  max14 = Math.max(max14, r14.length - (r14.some((r) => sembrado && r.id === sembrado.invoice) ? s : 0));
+};
+
+const terminar = async () => {
+  if (sembrado) {
+    await c.query('delete from invoices where id = $1', [sembrado.invoice]);
+    await c.query('delete from customers where id = $1', [sembrado.customer]);
+    await c.query('delete from merchants where id = $1', [sembrado.merchant]);
+  }
+  await c.end();
+  const veredicto = lecturas === 0 ? 'CIEGO (0 lecturas)' : sembrado && !vioSembrado ? 'CIEGO (no vio lo sembrado)' : 'MIRADO';
+  const comercios = [...new Set(visto.values())].map((n) => n.replace(/\d{6,}/g, '<n>'));
+  const out = { veredicto, lecturas, sembrado: !!sembrado, vioSembrado, ajenas_distintas: visto.size, max7_a_la_vez: max7, max14_a_la_vez: max14, comercios: [...new Set(comercios)] };
+  fs.writeFileSync(salida, JSON.stringify(out, null, 1));
+  console.log('VIGIA ' + JSON.stringify(out));
+  process.exit(0);
+};
+process.on('SIGTERM', terminar);
+process.on('SIGINT', terminar);
+const cada = Number(cadaTxt) || 250;
+for (;;) {
+  try { await leer(); } catch (e) { console.log('VIGIA error de lectura: ' + e.message); }
+  if (fs.existsSync(salida + '.stop')) await terminar();
+  await new Promise((r) => setTimeout(r, cada));
+}
