@@ -98,4 +98,7 @@ En el comentario de Jira de este tramo (la dirigida corre después de escribir e
 - CI · staging · el régimen T (86 ficheros en paralelo) con estos arreglos.
 - La tanda entera en local: NO CORRIDA (diez sesiones a la vez).
 - El orden de las sentencias en la base (la sonda B de j6cy) en las pasadas de este tramo.
-- Si #2907 y #2911 entran antes o después que ésta: ésta los lleva dentro a los dos.
+- Si #2911 entra antes o después que ésta: ésta la lleva dentro. #2907 entró en main a las 00:04:18Z mientras
+  medía; la rama se puso al día con `git merge origin/main` (`a5608c96c0727cf11dd029e604251a79da2891a4`, que sólo
+  movía `cicatrices/J6.md` de lo mío: resuelto conservando las cinco líneas) y, con `dist/` recompilado, la limpia
+  de los tres ficheros en el banco dio 5 de 5 casos verdes. Las mutaciones NO se repitieron sobre la mezcla.
