@@ -216,7 +216,13 @@ jobs:
       # ⚠️ Ninguna variable de entorno NUEVA: `SERIE_PG_URL` y `TRAMOS_PG_URL` ya existen —las leen
       # esos tests desde SCRUM-728 y SCRUM-814— y lo único que pasaba es que NADIE las ponía, así
       # que los dos no corrían en ningún sitio. Aquí se les da lo que ya pedían.
-      - name: Banco desechable para los tests de banco (libro · serie · tramos)
+      #
+      # SCRUM-1621 · 5 · LA CUARTA, `yaqu_libro_116_test`, tampoco trae variable: `scrum116` la saca
+      # de `LIBRO_PG_URL` cambiando sólo el nombre de la base. Va aparte porque su cron
+      # (`sendInvoicePaymentReminders`) recorre las facturas de TODA la base y, en la compartida,
+      # escribía sobre las de los ficheros que corren a la vez (medido en SCRUM-1599 §1599t). Si
+      # alguien la quita del bucle, 116 cae con «la base no existe»: no se salta en silencio.
+      - name: Banco desechable para los tests de banco (libro · serie · tramos · 116)
         env:
           PGPORT_HOST: ${{ job.services.postgres.ports['5432'] }}
         run: |
@@ -225,7 +231,7 @@ jobs:
           npx prisma migrate diff --from-empty \
             --to-schema-datamodel prisma/schema.prisma --script > "$RUNNER_TEMP/esquema.sql"
           test -s "$RUNNER_TEMP/esquema.sql" || { echo "🔴 el esquema salió VACÍO: no se aplica nada a ciegas"; exit 1; }
-          for BASE in yaqu_libro_test yaqu_serie_test yaqu_tramos_test; do
+          for BASE in yaqu_libro_test yaqu_serie_test yaqu_tramos_test yaqu_libro_116_test; do
             psql "postgresql://postgres@127.0.0.1:$PGPORT_HOST/postgres" -c "CREATE DATABASE $BASE"
             psql "postgresql://postgres@127.0.0.1:$PGPORT_HOST/$BASE" -q -f "$RUNNER_TEMP/esquema.sql"
             echo "  $BASE · tablas: $(psql "postgresql://postgres@127.0.0.1:$PGPORT_HOST/$BASE" -tAc "select count(*) from information_schema.tables where table_schema='public'")"
@@ -923,16 +929,20 @@ jobs:
 
       # ⚠️ EL PUERTO SE LEE, NO SE ESCRIBE (misma lección que el job de la tanda: escribirlo a
       # mano fue lo que rompió CI en su día).
-      - name: Banco desechable para los tests de libro
+      # SCRUM-1621 · 5 · y la base de `scrum116` (`yaqu_libro_116_test`), que la saca de
+      # `LIBRO_PG_URL`: sin ella caería en las dos zonas por igual y el trinquete no lo vería.
+      - name: Banco desechable para los tests de libro (y la base de 116)
         env:
           PGPORT_HOST: ${{ job.services.postgres.ports['5432'] }}
         run: |
           test -n "$PGPORT_HOST" || { echo "🔴 no se pudo leer el puerto del servicio: no se toca ninguna base"; exit 1; }
-          psql "postgresql://postgres@127.0.0.1:$PGPORT_HOST/postgres" -c 'CREATE DATABASE yaqu_libro_test'
           npx prisma migrate diff --from-empty \
             --to-schema-datamodel prisma/schema.prisma --script > "$RUNNER_TEMP/esquema.sql"
           test -s "$RUNNER_TEMP/esquema.sql" || { echo "🔴 el esquema salió VACÍO: no se aplica nada a ciegas"; exit 1; }
-          psql "postgresql://postgres@127.0.0.1:$PGPORT_HOST/yaqu_libro_test" -q -f "$RUNNER_TEMP/esquema.sql"
+          for BASE in yaqu_libro_test yaqu_libro_116_test; do
+            psql "postgresql://postgres@127.0.0.1:$PGPORT_HOST/postgres" -c "CREATE DATABASE $BASE"
+            psql "postgresql://postgres@127.0.0.1:$PGPORT_HOST/$BASE" -q -f "$RUNNER_TEMP/esquema.sql"
+          done
 
       - name: La tanda entera en dos zonas extremas (+14 y −11)
         env:

@@ -36,16 +36,51 @@
 //
 // Datos EFÍMEROS propios, limpieza con withMerchant (SCRUM-113).
 //
-// ⚠️ GATEADO:  QA_DB_TEST=1 npm run test:staging
+// ── SCRUM-1621 · 5 (C2 de SCRUM-1599 §1599t ⑤): EN EL BANCO, PERO EN UNA BASE SUYA ─────────
+// Por lo de arriba, 116 no puede compartir la base del banco (`yaqu_libro_test`): en la tanda
+// corren a la vez los ficheros que la usan, y 1599t MIDIÓ que con una factura de otro comercio en la
+// ventana del cron, 116 le escribe encima (dos candados con dry-run; dos filas de WhatsApp fallidas
+// y dos eventos de cliente sin él). Así que con `LIBRO_PG_URL` va al MISMO servidor desechable, a
+// otra base: `yaqu_libro_116_test`, que `ci.yml` crea con el mismo esquema que las demás. En esa
+// base el cron sólo ve lo que siembra este fichero. Ninguna aserción cambia.
+//   · Mismas tres propiedades que `_banco-libro.mjs` (SCRUM-876e): con un gate de staging manda
+//     `_staging-db.mjs` y esto ni se lee; una URL que no sea loopback + `*_test` hace FALLAR el
+//     fichero; la URL no se imprime nunca.
+//   · No importa `_banco-libro.mjs` a propósito: ese módulo pone `DATABASE_URL` en la base
+//     COMPARTIDA al cargarse, y aquí la base es otra.
+//   · En local, con la receta de `LIBRO_PG_URL` de RUNBOOKS, hay que crear también esta base con el
+//     mismo DDL (lo que hace el bucle del paso «Banco desechable» de `ci.yml`). Si no existe, el
+//     test cae con el error de Prisma: no se salta en silencio.
+//
+// ⚠️ GATEADO:  QA_DB_TEST=1 npm run test:staging   ·   o   LIBRO_PG_URL=<banco desechable> npm test
 import './_staging-db.mjs'; // SCRUM-60: fuerza staging (fail-closed anti-prod)
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { withMerchant } from './_merchant-fixture.mjs';
+import { parseBDSegura } from '../scripts/_db-guard.mjs';
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+const BASE_PROPIA = 'yaqu_libro_116_test';
+const mandaStaging = ['QA_DB_TEST', 'A55_DB_TEST', 'BOT_SUITE_TEST'].some((g) => process.env[g] === '1');
+
+/** La URL de la base propia en el servidor del banco, o '' si no hay banco (o manda staging). */
+function urlBancoPropio(urlBanco) {
+  if (mandaStaging || !urlBanco) return '';
+  const p = parseBDSegura(urlBanco);
+  if (!p || !['127.0.0.1', 'localhost', '::1'].includes(p.host) || !p.base.endsWith('_test')) {
+    throw new Error('🔴 LIBRO_PG_URL no es un banco desechable (loopback y base «*_test»). Este test crea y borra merchants: no se toca nada.');
+  }
+  const u = new URL(urlBanco.trim().replace(/^['"]|['"]$/g, ''));
+  u.pathname = `/${BASE_PROPIA}`;
+  return u.toString();
+}
+
+const URL_PROPIA = urlBancoPropio(process.env.LIBRO_PG_URL || '');
+if (URL_PROPIA) process.env.DATABASE_URL = URL_PROPIA;
+
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_PROPIA !== '';
 const DIA = 24 * 60 * 60 * 1000;
 
-test('SCRUM-116: un recordatorio que falla NO cierra el candado; uno enviado SÍ', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
+test('SCRUM-116: un recordatorio que falla NO cierra el candado; uno enviado SÍ', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { sendInvoicePaymentReminders } = await import('../dist/modules/billing/domain/invoiceReminder.service.js');
   const { config } = await import('../dist/core/config/env.js');
