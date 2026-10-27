@@ -45,6 +45,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
+// SCRUM-1396c · el trinquete de «declarados uno a uno» de la casa (SCRUM-1349): no hay un segundo.
+import { contraDeclarados } from './_censo-entorno-prestado.mjs';
 
 /** Extensiones que se parsean. */
 const EXT = new Set(['.ts', '.mjs', '.js', '.cjs']);
@@ -112,8 +114,8 @@ function destinoDe(nodo) {
       else if (!/^(realpathSync|realpath|normalize|toString|String)$/.test(nombre)) return null;
       continue;
     }
-    if (ts.isVariableDeclaration(p) && ts.isIdentifier(p.name)) return { nombre: p.name.text, dentro, fabrica: false };
-    if (ts.isBinaryExpression(p) && ts.isIdentifier(p.left)) return { nombre: p.left.text, dentro, fabrica: false };
+    if (ts.isVariableDeclaration(p) && ts.isIdentifier(p.name)) return { nombre: p.name.text, id: p.name, dentro, fabrica: false };
+    if (ts.isBinaryExpression(p) && ts.isIdentifier(p.left)) return { nombre: p.left.text, id: p.left, dentro, fabrica: false };
     if (ts.isPropertyAssignment(p) && ts.isIdentifier(p.name)) return { nombre: p.name.text, dentro, fabrica: false };
     // FÁBRICA: `const tmp = () => mkdtempSync(…)`. El directorio no se nombra aquí, sino en cada
     // llamador, así que con este fichero delante no se puede afirmar nada sobre su limpieza.
@@ -165,6 +167,48 @@ function escapaDeSuFuncion(nodo, nombre, sf) {
   return sale;
 }
 
+/** El nombre con el que el compilador ve la fuente que se le pasa. No se lee ni se escribe en disco. */
+const FUENTE_SUELTA = '/censo-mkdtemp/fuente.ts';
+
+/**
+ * De un identificador, la VARIABLE a la que se refiere — no su nombre (SCRUM-1396).
+ *
+ * 🔴 Hasta el 6-oct-2026 este censo emparejaba cada creación con su borrado por el NOMBRE de la
+ * variable, en todo el fichero. Dos funciones con un `dir` cada una eran, para él, el mismo `dir`:
+ * el `finally` de una cubría a la otra. Medido con cuatro fugas que se llamaban igual: arreglar UNA
+ * las ponía a las cuatro en GARANTIZADA, y el guard salía verde con tres dentro.
+ *
+ * Lo resuelve el compilador, que ya sabe de ámbitos, sombreados y `var` izados; aquí no se
+ * reimplementa nada de eso. Sin librerías y sin seguir imports: sólo se le pregunta por las
+ * variables de ESTA fuente, así que cuesta lo que un parseo más.
+ *
+ * Devuelve `null` si el identificador no es de ninguna variable declarada en la fuente (un nombre
+ * que nadie declara, o el `dir` de `b.dir`, que es una propiedad y no una variable).
+ */
+function enlazador(sf) {
+  const anfitrion = {
+    getSourceFile: (f) => (f === FUENTE_SUELTA ? sf : undefined),
+    getDefaultLibFileName: () => 'lib.d.ts',
+    writeFile: () => {},
+    getCurrentDirectory: () => '/',
+    getCanonicalFileName: (f) => f,
+    useCaseSensitiveFileNames: () => true,
+    getNewLine: () => '\n',
+    fileExists: (f) => f === FUENTE_SUELTA,
+    readFile: () => undefined,
+  };
+  const programa = ts.createProgram([FUENTE_SUELTA], {
+    noLib: true, noResolve: true, types: [], target: ts.ScriptTarget.ES2022,
+  }, anfitrion);
+  const comprobador = programa.getTypeChecker();
+  return (id) => {
+    // `b.dir`: el `dir` de la derecha es una propiedad de `b`, no la variable `dir` de nadie.
+    if (ts.isPropertyAccessExpression(id.parent) && id.parent.name === id) return null;
+    const s = comprobador.getSymbolAtLocation(id);
+    return s && s.declarations && s.declarations.length ? s : null;
+  };
+}
+
 /**
  * Clasifica las llamadas a `mkdtemp*` de UNA fuente.
  *
@@ -176,7 +220,9 @@ function escapaDeSuFuncion(nodo, nombre, sf) {
  * @param {string} fuente        el código, como texto.
  */
 export function clasificaFuente(rutaRelativa, fuente) {
-  const sf = ts.createSourceFile(rutaRelativa, fuente, ts.ScriptTarget.ES2022, true, ts.ScriptKind.TS);
+  const sf = ts.createSourceFile(FUENTE_SUELTA, fuente, ts.ScriptTarget.ES2022, true, ts.ScriptKind.TS);
+  if (!/mkdtemp/.test(fuente)) return []; // sin la palabra no hay llamada, y enlazar cuesta
+  const variableDe = enlazador(sf);
 
   // ① todas las creaciones del fichero
   const creaciones = [];
@@ -184,7 +230,8 @@ export function clasificaFuente(rutaRelativa, fuente) {
     const fn = esMkdtemp(n);
     if (fn) {
       const { line } = sf.getLineAndCharacterOfPosition(n.getStart(sf));
-      creaciones.push({ nodo: n, fn, linea: line + 1, destino: destinoDe(n) });
+      const destino = destinoDe(n);
+      creaciones.push({ nodo: n, fn, linea: line + 1, destino, variable: destino && destino.id ? variableDe(destino.id) : null });
     }
     ts.forEachChild(n, visitar);
   };
@@ -203,11 +250,22 @@ export function clasificaFuente(rutaRelativa, fuente) {
         // (`rmSync(path.dirname(tmp))`, que es la limpieza CORRECTA cuando el nombre guarda una
         // ruta de dentro). Se guardan los identificadores que aparecen y quien compara decide.
         const ids = new Set();
-        const rec = (x) => { if (ts.isIdentifier(x)) ids.add(x.text); ts.forEachChild(x, rec); };
+        // …y, de cada identificador, a QUÉ variable se refiere (SCRUM-1396): dos `dir` de dos
+        // funciones se llaman igual y no son la misma.
+        const variables = new Set();
+        const rec = (x) => {
+          if (ts.isIdentifier(x)) {
+            ids.add(x.text);
+            const v = variableDe(x);
+            if (v) variables.add(v);
+          }
+          ts.forEachChild(x, rec);
+        };
         rec(arg);
         const { line } = sf.getLineAndCharacterOfPosition(n.getStart(sf));
         borrados.push({
           ids,
+          variables,
           porDirname: /\bdirname\s*\(/.test(arg.getText(sf)),
           linea: line + 1,
           cobertura: coberturaDe(n),
@@ -226,8 +284,11 @@ export function clasificaFuente(rutaRelativa, fuente) {
     // limpieza sería el falso negativo simétrico del falso positivo de arriba.
     const suyos = !d || !d.nombre ? [] : borrados.filter((b) => {
       if (!b.ids.has(d.nombre)) return false;
+      if (c.variable && !b.variables.has(c.variable)) return false;
       return d.dentro ? b.porDirname : true;
     });
+    // Los que llevan el NOMBRE y no la variable: el borrado de otro, que hasta SCRUM-1396 contaba.
+    const ajenos = !c.variable ? [] : borrados.filter((b) => b.ids.has(d.nombre) && !b.variables.has(c.variable));
     const escapa = !!(d && d.nombre && escapaDeSuFuncion(c.nodo, d.nombre, sf));
     const garantizado = suyos.find((b) => b.cobertura);
     salida.push({
@@ -241,6 +302,10 @@ export function clasificaFuente(rutaRelativa, fuente) {
           : (suyos.length ? 'NO_GARANTIZADA' : (escapa ? 'ESCAPA' : 'SIN_LIMPIEZA')),
       cobertura: garantizado ? garantizado.cobertura : null,
       borradoEn: suyos.map((b) => b.linea),
+      // 'variable': emparejado por la variable de verdad · 'nombre': no se pudo saber cuál es
+      // (el directorio va a una propiedad, o a un nombre que nadie declara) y se sigue por nombre.
+      enlace: !d || !d.nombre ? null : c.variable ? 'variable' : 'nombre',
+      borradoAjenoEn: ajenos.map((b) => b.linea),
     });
   }
   return salida;
@@ -279,7 +344,17 @@ export function censar(raiz) {
   }
   const nuestras = llamadas.filter((l) => !l.ajeno && !DECLARADAS.has(l.fichero));
   const cuenta = (c) => nuestras.filter((l) => l.categoria === c);
+  // SCRUM-1396 · dónde podía esconderse el emparejamiento por nombre: los ficheros en los que dos
+  // creaciones van a un nombre igual, y los pares «creación · borrado» que llevan el nombre y NO
+  // la variable. Los segundos ya no cuentan como limpieza; se cuentan aquí para que se vean.
+  const porFichero = new Map();
+  for (const l of nuestras) porFichero.set(l.fichero, [...(porFichero.get(l.fichero) || []), l]);
+  const repite = (ls) => ls.some((l) => l.destino && ls.filter((o) => o.destino === l.destino).length > 1);
   return {
+    conTemporales: [...porFichero.keys()],
+    conNombresRepetidos: [...porFichero.entries()].filter(([, ls]) => repite(ls)).map(([f]) => f),
+    fueraDeAmbito: nuestras.flatMap((l) => l.borradoAjenoEn.map((b) => ({ fichero: l.fichero, linea: l.linea, destino: l.destino, borrado: b }))),
+    porNombre: nuestras.filter((l) => l.enlace === 'nombre'),
     ficheros: todos.length,
     llamadas,
     nuestras,
@@ -311,6 +386,42 @@ export const sinCierre = (censo) => [...censo.SIN_LIMPIEZA, ...censo.NO_GARANTIZ
  */
 export const sinDueno = (censo) => [...censo.ESCAPA, ...censo.FABRICA];
 
+/** Las cuatro categorías de fuga juntas: lo que ③ de SCRUM-864c no deja entrar. */
+export const fugasDe = (censo) => [...sinCierre(censo), ...sinDueno(censo)];
+
+/**
+ * SCRUM-1396c · LOS SITIOS DECLARADOS, que sólo pueden BAJAR (decisión del fundador, SCRUM-1396
+ * c.21095). Al emparejar por ámbito y no por nombre, el censo destapó 28 sitios que ya estaban en
+ * `main` (2 con fuga medida, 22 por su forma, 4 sin medir). No se tocan aquí (regla 41): entran
+ * declarados uno a uno en `scripts/_mkdtemp-declarados.json`, con su motivo y quién los retira.
+ *
+ * No es `DECLARADAS` de arriba: aquélla saca un fichero ENTERO del censo porque el censo no puede
+ * juzgarlo; ésta deja el sitio DENTRO, juzgado y acusado, y sólo exige que el árbol tenga
+ * EXACTAMENTE los declarados. Por fichero y con cuántas llamadas, no por línea: las líneas se mueven.
+ */
+export const RUTA_SITIOS_DECLARADOS = 'scripts/_mkdtemp-declarados.json';
+export const MOTIVOS_DE_SITIO = ['MEDIDA', 'FORMA', 'SIN_MEDIR'];
+export const QUIEN_RETIRA = ['J6', 'SCRUM-1621'];
+export const leerSitiosDeclarados = (raiz) =>
+  JSON.parse(fs.readFileSync(path.join(raiz, RUTA_SITIOS_DECLARADOS), 'utf8')).ficheros;
+/** `{ nuevos, sobran }`: lo que acusa sin estar declarado, y lo declarado que ya no se acusa. */
+export const contraSitiosDeclarados = (censo, declarados) => contraDeclarados(fugasDe(censo), declarados);
+
+/**
+ * La mitad del trinquete que `contraDeclarados` no tiene: la LISTA no puede crecer. Se compara con
+ * la lista tal como la creó su primer commit (quien llama la lee de la historia): un fichero que no
+ * estaba, o más llamadas de las que tenía, es subir. Borrar o bajar es lo esperado y no se dice.
+ */
+export function subeRespectoA(nacimiento, hoy) {
+  const sube = [];
+  for (const [fichero, d] of Object.entries(hoy)) {
+    const antes = nacimiento[fichero];
+    if (!antes) sube.push(`${fichero}: no estaba en la lista que creó la decisión`);
+    else if (d.llamadas > antes.llamadas) sube.push(`${fichero}: ${antes.llamadas} → ${d.llamadas} llamadas`);
+  }
+  return sube;
+}
+
 /**
  * 🔴 EL SUELO. Un censo que no ve nada contesta «cero infracciones», y eso se lee igual que «está
  * limpio». Las condiciones son estructurales, no una foto del árbol:
@@ -333,6 +444,19 @@ export function motivosParaNoFiarse(censo) {
   }
   return m;
 }
+
+/**
+ * La línea que sale SIEMPRE, también con cero (SCRUM-1396): sobre qué se ha emparejado.
+ *
+ * «Fuera de ámbito» son los borrados que llevan el nombre de un temporal sin ser su variable: los
+ * que antes lo daban por limpio. Que haya muchos es normal —cada test con su `dir` y su `finally`
+ * los produce entre sí— y no es una acusación: es la medida de cuánto dependía el verde del nombre.
+ */
+export const lineaDePoblacion = (censo) => `${censo.conTemporales.length} ficheros con temporales`
+  + ` (${censo.nuestras.length} llamadas, de ${censo.ficheros} ficheros mirados)`
+  + ` · ${censo.conNombresRepetidos.length} con nombres repetidos`
+  + ` · ${censo.fueraDeAmbito.length} emparejamientos fuera de ámbito, que ya no cuentan`
+  + ` · ${censo.porNombre.length} emparejadas sólo por nombre`;
 
 /** Una llamada, en una línea que se pueda leer en el mensaje de un rojo. */
 export const comoLinea = (l) => `${l.fichero}:${l.linea} · ${l.fn}(…)`
