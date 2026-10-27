@@ -618,3 +618,65 @@ el «sustituto CORRIENDO». En cuanto alguno lo tenga, se aplica la regla de arr
 * Que GitHub no cree NUNCA el run de `cdbaaedd8`: a los 73 min no estaba; si aparece, sale «sustituido» y 1393e lo
   absuelve igual.
 * Que `juzgarSucesoresDeSinRun` pida a la API un sucesor fuera de la red: sólo sembrado.
+
+## Octavo tramo · SCRUM-1393g · El vigía cierra con la punta VERDE y 0 pendientes; los CIEGO se declaran, no bloquean
+
+**Medido contra:** `origin/main` = `ce1111a68d00d2063bc6bb369ce71d2124c3547f` · 2026-10-27T15:34:57Z
+
+A9: aviso → cicatriz J6 «Corrí `carriles.mjs de` sobre los cuatro tests del vigía después de editarlos y no antes: la tercera de la familia de SCRUM-1218d (SCRUM-1393g)» — no se pudo comprobar: la cerradura de carril no para (SCRUM-1506) y ningún hook exige la consulta antes de la primera escritura
+
+J6 (`jv-j6dm`), por encargo del orquestador (`cobroflash-backend-8b`). Carril: el motor es de J6 (sin cerradura:
+fila general de `scripts/`); `.github/workflows/` NO se toca. Decisión del fundador, **SCRUM-1393 c.21059** (27-oct):
+«El vigía cierra #2641 con punta VERDE y 0 pendientes. Los CIEGO ya no bloquean el cierre, pero se DICEN: el
+comentario de cierre declara cuántos había en esa pasada y sobre qué población.» La medición que la motiva, c.21036.
+
+### Lo medido ANTES de escribir (la cicatriz de 1393d)
+
+Sobre #2641 (sólo lectura, 27-oct ~15:20Z): 213 comentarios, **0 cierres**, 113 marcas (98 CIEGO, 11 ROJO, 4
+SIN-LEER) y **98 pendientes**, los 98 CIEGO. Cruzados con la última pasada (run `40523930545`, 14:43Z, 138
+veredictos: 131 CIEGO, 7 VERDE): **98 de 98 pendientes vuelven a juzgarse en la pasada, todos CIEGO; 0 sin
+juzgar.** Control: un sha inventado no aparece; el primer pendiente sí.
+
+🔴 Eso decide el diseño. El workflow vuelve a juzgar TODOS los pendientes en cada pasada (`--pendientes previos.txt`).
+Si sólo se quitaba la condición «0 CIEGO en la pasada» (la de `:813`), los 98 seguían contando como pendientes por la
+de `:814`, y **la decisión no habría cambiado nada**. Así que «pendiente» pasa a ser lo que la pasada NO ha podido
+volver a mirar: un commit del Issue con última marca CIEGO o SIN-LEER que esta pasada no ha juzgado, o que vuelve
+SIN-LEER. Un CIEGO re-juzgado CIEGO deja de ser pendiente y se declara. Es mi lectura del literal, y la digo aquí.
+
+### Lo que cambia (sólo `accionDelIssue`, en el motor)
+
+* Los CIEGO de la pasada ya no bloquean; un **SIN-LEER** sí, como antes (es el vigía que no supo mirar, no un CIEGO
+  del CI).
+* Un CIEGO juzgado en esta pasada no es pendiente (`juzgados` incluye CIEGO).
+* El cierre declara «N CIEGO sin absolver de M commits mirados en esta pasada: no bloquean el cierre (…c.21059), y
+  NO son verdes», con sus shas, además de la línea de población de siempre. El motivo dice «· N CIEGO declarados».
+* Con el Issue cerrado (o sin Issue), un CIEGO NUEVO sigue reabriendo (o creando), como en 1393d. Sin esta línea se
+  habría perdido en silencio: el camino «todo cierra y el Issue ya está cerrado» no dice nada.
+
+Sin cambiar: punta no VERDE (ROJO, CIEGO, CORRIENDO o ausente) no cierra; «sustituido» en espera no cierra; las
+absoluciones de 1393e/f y 1498d; el workflow.
+
+### Rojo primero, siembras y mutaciones
+
+* `tests/scrum1393g-vigia-cierra-con-ciegos-dichos.test.mjs`, 7 casos. Contra el motor de antes: **4 caen, 3 pasan**
+  (los 3 que pasan son las condiciones que no cambian: cebos, punta ROJA/CIEGA, reapertura con el Issue cerrado).
+  Después: 7 de 7.
+* Catálogo de la casa (`MUTACIONES_QUE_ME_TUMBAN`, driver `docs/master/evidencias/SCRUM-1339/v-mutar.mjs` sobre
+  `aplicarUna`): base 7 pasan · **5 de 5 VIVAS** (volver a bloquear por CIEGO, CIEGO re-juzgado sigue pendiente,
+  cierre sin declarar, pendiente sin juzgar deja de bloquear, CIEGO nuevo con el Issue cerrado no reabre). Árbol
+  restaurado después (`git status`: sólo mis cinco ficheros).
+* Cinco casos de 1393d/e/f fijaban la regla vieja («CIEGO en la pasada no cierra»): cambian a «cierra y lo declara»,
+  y siguen comprobando lo suyo (que ese CIEGO NO se absuelve: `doesNotMatch(/absuelto por el verde/)`). Lo cambia la
+  decisión del fundador, no un ajuste del guard.
+
+### Lo que dice la regla nueva sobre el #2641 de hoy
+
+La pasada de las 14:43Z **tampoco habría cerrado**: la punta `77ce98573` salió CIEGO («CIEGO del meta-guard: salió con
+2»). Cerrará en la primera pasada con la punta VERDE (7 en esa ventana) y sin SIN-LEER, declarando los CIEGO.
+
+### CIEGO declarado, no verde
+
+* El cierre real con el `GITHUB_TOKEN`: sólo se verá en GitHub, en la primera punta VERDE tras el merge.
+* La pasada en seco con la regla nueva sobre datos reales: no corrida (unas 270 peticiones); el cruce de arriba usa
+  los veredictos que imprimió el log, no un `vigia.json`.
+* Suite entera local: NO CORRIDA (encargo: 10 sesiones a la vez).
