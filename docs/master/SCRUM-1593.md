@@ -1,6 +1,8 @@
 # SCRUM-1593 · El censo táctil abre las pestañas y deja de llamar «sin pintar» a lo no medido
 
-**27-oct-2026 ~17:55Z (Date: de GitHub 17:25:57Z al coger) · medido sobre origin/main `f8ae969172dd142dc3390fae33cd91fc80fb0cee` · worktree `wt-s3-1593` · S3.**
+**Medido contra:** `origin/main` = `f8ae969172dd142dc3390fae33cd91fc80fb0cee` · 2026-10-27T17:25:57Z
+
+Worktree `wt-s3-1593` · S3 · registro escrito ~17:55Z.
 Rama `scrum-1593-censo-tactil-ocultos`. Viene de SCRUM-1584 (J6) y de la decisión ② de SCRUM-962b (`docs/master/SCRUM-962.md:165`).
 
 ## El defecto (PASO 0, corrido)
@@ -68,4 +70,4 @@ Instrumento comiteado antes de mutar: `e8f448610cfb07d545947020059402c72711bff3`
 - ⚠️ Coste: el censo pasa de ~29 s (CI, 29-sep) a 80 s en local por las 13 páginas más × 2 anchuras × 2 (con sonda).
   Es el job informativo, no el obligatorio.
 
-A9: sin fallo propio que generalice en este ticket.
+A9: sin fallo que generalice — los dos rojos de la tanda (ancla y A9 de este registro) eran formato de este mismo fichero y se arreglaron antes de empujar
