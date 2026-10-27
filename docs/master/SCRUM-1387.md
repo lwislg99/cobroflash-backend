@@ -251,7 +251,11 @@ Una pasada de verdad con `META_PRESUPUESTO_S=90` y `dist/` compilado: 6 juzgadas
 - Los 47 ficheros de `tests/` que nombran el meta-guard: **366 tests · 361 pasan · 1 cae · 4 saltados**. El que cae
   es `scrum1321` PUERTA 1b, **igual sin el cambio** (4/1 en los dos): cae siempre en local (temporal en C:, repo en
   D:), y en CI pasa.
-- `tanda:dirigida` y `guards:entrada`: ver el comentario de entrega en Jira (corrían al escribir esto).
+- `guards:entrada`: 15 de 15 (170 tests). Los 5 de árbol entero de SCRUM-1560, más `scrum1387` y `scrum812`: 52 de 52.
+- `tanda:dirigida` (base `77ce9857`): **299 ficheros · 2.830 tests · 2.819 pasan · 2 caen**. Los dos caen **igual sin
+  el cambio** y son de esta máquina: `scrum1321` (el de arriba) y `scrum476` CONTROL POSITIVO, que hace `realpath`
+  de cada worktree de `git worktree list` y revienta en uno `prunable` de otro job
+  (`C:\Users\Admin\.claude\jobs\ca4c7323\tmp\wt`, ya no existe en disco). No lo he podado: no es mío.
 
 ### Mis errores
 
