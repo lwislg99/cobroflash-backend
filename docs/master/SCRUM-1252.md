@@ -502,3 +502,55 @@ fecha que dar (la consulta de detalle, con `isDemoMerchant` de la casa, volvió 
 
 No corrí la lectura de arranque (`norma.mjs --arranque`): pasé de Jira a la medición. Va a mi
 cicatriz, porque no hay ningún guard que lo vea.
+
+## Anexo SCRUM-1252g · el titular del correo de una factura concuerda: «Tu factura está lista»
+
+**Medido contra:** `origin/main` = `77ce98573b1b5e090dfcf7754c4e7960bc63b85a` · 2026-10-27T15:33:32Z (hora de GitHub, `gh api -i zen`)
+
+A9: sin fallo que generalice — escribí primero la cita en la forma del ancla contando con añadir su par a la lista de J6; la regla del carril lo paró antes de editar, y la cita quedó en forma rastreable (§②).
+
+Lo hace la S1 del equipo de Luis (carril: `node scripts/carriles.mjs de src/modules/messaging/domain/email.service.ts`
+→ S1, `dos-equipos.md:136`), por encargo de su orquestador. Es lo único que c.20899 dejaba abierto en
+este ticket. **SCRUM-1604** («PARA S1 · El correo de una factura dice "Tu factura está listo"», 23-oct)
+es el MISMO defecto con la misma firma; el trabajo va aquí y 1604 apunta a este tramo.
+
+### ① La firma
+
+c.20683, punto ②, decisión del fundador transcrita por el orquestador del equipo J: «Sí: «Tu factura
+está lista»». Con la factura, ese titular; con los documentos en masculino (el justificante), nada
+cambia; ningún otro texto. No se ha redactado nada: el literal es el firmado.
+
+### ② El arreglo
+
+`src/modules/messaging/domain/email.service.ts` (`sendInvoiceEmail`): el titular se elige por
+`isJust`, la misma variable que ya elige `docLabel`. Factura → «Tu factura está lista»; justificante →
+«Tu justificante de cobro está listo», como antes. Asunto y cuerpo, sin tocar. El comentario de la
+línea cita la firma como `SCRUM-1252 c.20683, punto ②`.
+
+⚠️ La cita queda **rastreable, no anclada**: la forma del ancla (`SCRUM-N comentario M`) exige su par
+en `tests/_pares-leidos-en-jira.mjs`, que es de J6 (`carriles.mjs` → `dos-equipos.md:194`), y no se
+edita desde S1. Si J6 añade el par (1252, 20683), el comentario puede pasar a la forma del ancla.
+
+No toca el camino de emisión: `ensureInvoicePdf` y lo que viene antes del titular siguen igual. La
+línea tocada es la plantilla del correo, después de tener el PDF.
+
+### ③ El test, y lo que lo hace caer
+
+`tests/scrum1252g-titular-del-correo-de-factura.test.mjs`, sin base ni red: el banco de scrum1235
+(base, emisión y `axios.post` doblados; `sendInvoiceEmail` y `renderEmailLayout` reales). Lee el HTML
+que llegaría a Resend.
+
+| `dist/` | factura | justificante (control) |
+|---|---|---|
+| arreglado | ✔ | ✔ |
+| mutante 1: titular de factura vuelve a «está listo» (el defecto) | ✖ | ✔ |
+| mutante 2: el justificante pasa a «está lista» | ✔ | ✖ |
+
+Cada mutante tumba sólo su caso: los dos casos miden cosas distintas. `dist/` restaurado y comprobado
+por hash tras cada mutante.
+
+### ④ Fuera
+
+- La verificación en yaqu.app: producción no tiene `INVOICING_ES_ENABLED` en ON, y una factura nueva
+  no se emite sólo para ver un correo (regla 24). Lo que se ve es el test sobre el HTML real.
+- Ningún otro texto del correo.

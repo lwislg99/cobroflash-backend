@@ -1,0 +1,11 @@
+clave DATABASE_URL_DEV → acela.proxy.rlwy.net/yaqu_dev_javier  (host de producción declarado: distinto: sí)
+① READ ONLY · SHOW=on · escritura con WHERE false → RECHAZADA · OK
+② sembrado (3 filas, mismo SELECT sobre VALUES) → SIEMBRA-JUST-DISCREPA=discrepa · SIEMBRA-F1-MISMAS=coincide · SIEMBRA-JUST-LIMPIA=coincide
+     SIEMBRA-JUST-DISCREPA: guardado 100,00 · impreso 121,00 («TOTAL COBRADO»)
+   esperado SIEMBRA-JUST-DISCREPA=discrepa · SIEMBRA-F1-MISMAS=coincide · SIEMBRA-JUST-LIMPIA=coincide · positivo OK
+③ invoices: 12 filas en la tabla · 12 leídas · 12 PDF leídos · 0 ciegas
+   coincide 12 · DISCREPA 0
+   F1                  12 filas · discrepa 0
+PDF generados y leídos en total: 15
+VEREDICTO: VERDE — 0 de 12 facturas imprimen un total distinto del guardado
+EXIT=0
