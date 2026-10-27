@@ -295,3 +295,36 @@ visto bueno. Hoy no.
 - No he vuelto a correr `docs/verificacion/comprobar-citas-contabilidad.mjs`: sus HTML no están en
   git. El cotejo de hoy cubre sólo las dos citas de Q-C9.
 - Solo docs. Ni `src/`, ni esquema, ni texto de usuario, ni `PREGUNTAS_ASESOR.md`.
+
+## SCRUM-1039e · J4 aplica los arreglos 1, 3 y 4 de §1039d y da su visto bueno (jv-j4an, 26-oct-2026)
+
+**Medido contra:** `origin/main` = `a765791d77c7882aef7a829cc00b4cc53609f3c2` · 2026-10-26T23:20:04Z
+
+A9: comprobación → `docs/master/evidencias/scrum1039/scrum1039e-cotejo-liva.mjs`
+
+El fallo que cubre: mi primera versión del control negativo mutaba con un patrón que no casaba en la cita del art. 3.Uno («español», no «España»): la mutada salía igual a la cita y el negativo no podía fallar; el script exige `mutada !== cita` y lo dio por no válido en la primera pasada, antes de que lo mirase yo.
+
+**Base:** el PR #2904 (`scrum-1039d-visto-bueno-j4`) **no ha entrado en main** (abierto, `BLOCKED`). Esta rama sale de su punta, `7b2c9a03f808cfa529f3091d87cafc1c42eae7a5`, y la lleva dentro. GO del orquestador a los arreglos 1, 3 y 4; el 2 (Q-C5 a SCRUM-1264) ya lo hizo su dueño (pregunta 29, c.20959, según el encargo; **c.20959 no lo he leído**).
+
+**Fuente:** API de legislación consolidada del BOE, `BOE-A-1992-28740`, bloques `a3`, `a7` y `a20`, con `curl`, 200 OK a las 23:16:06-23:16:09Z del 26-oct-2026 (cabecera `Date:`). Última versión: art. 3, vigente desde el 6-feb-2020; art. 7, desde el 21-dic-2022; art. 20, publicada el 7-oct-2026. Las mismas que leyó §1039d.
+
+### Lo aplicado, uno a uno (ediciones en sitio: ningún número de línea se mueve)
+
+| arreglo | dónde | qué |
+|---|---|---|
+| 1 | `PREGUNTAS_ASESOR.md:1030-1039` | Q-C9: la marca dice que es respuesta por cita **sólo de los arts. 7 y 20.Uno**, escrita por una sesión de IA (S0, 22-sep), y que no cubre el art. 3 ni los 21-25 y 68-70. Art. 3.Uno y Dos.1.º a) y b), citados literal. Arts. 21-25 y 68-70, **NO VERIFICADO**. La pregunta añade Canarias, Ceuta y Melilla y la obra fuera de España. «~30 apartados más» → «1.º a 28.º, con el 21.º y el 27.º suprimidos» |
+| 1 | `CONTABILIDAD.md:108` y `:132` | el mismo recuento; en `:132`, además, que no cubre el art. 3 ni los 21-25 y 68-70 |
+| 3 | `PREGUNTAS_ASESOR.md:889-890` | Q-C2: el 20.Uno.22.º.B 1.º y 2.º, de NO VERIFICADO a cita literal comprobada por script; la coletilla «o con obras análogas o conexas a las de rehabilitación», señalada como la que decide el ejemplo del baño |
+| 4 | `PREGUNTAS_ASESOR.md:978-979` | Q-C8: «pendiente de tu confirmación» → visto bueno de J4 a la marca, no a la respuesta |
+| visto bueno | `PREGUNTAS_ASESOR.md:841` y `:1030` | visto bueno de J4 con fecha y lo comprobado. No confirma ninguna respuesta |
+
+**Comprobado:** `scrum1039e-cotejo-liva.mjs` sobre `PREGUNTAS_ASESOR.md`: **5 de 5** citas literales en el BOE y en el documento, cada una con negativo sembrado que no casa; art. 20.Uno: **28 números, suprimidos el 21 y el 27**; salida 0. Rojo antes de editar (0/5, salida 1) y **CIEGO** sin fuentes (salida 2). El de §1039d sobre `CONTABILIDAD.md`, otra vez hoy: 2/2, salida 0. Art. 7: 12 números, contados.
+
+### Lo que NO hice, y una corrección a §1039d
+
+- **El arreglo 3 dice también «llevar a la pregunta B3 (1)»**: B3 vive en la descripción de SCRUM-1264, que edita su dueño (el orquestador), no esta sesión. Le mando el literal.
+- **Corrección a §1039d:** el art. 3.Dos.1.º no dice «fuera del territorio de aplicación»: excluye a Ceuta y Melilla y a Canarias del **«interior del país»**, y el 3.Uno define el ámbito espacial «según las previsiones del apartado siguiente». La consecuencia es la misma; la cita ahora dice lo que dice el texto.
+- **Hallazgo, sin aplicar:** el mismo 22.º.B llama «obras conexas» a las de albañilería, fontanería y carpintería y a las de instalaciones eléctricas, agua y climatización, cuando cuestan menos que las estructurales y están vinculadas a ellas. Son los oficios de YaQu: lo que decide el ISP de un subcontratista es la obra global, no su parte. No lo transcribo: es para la pregunta al asesor.
+- `docs/verificacion/comprobar-citas-contabilidad.mjs` no se ha corrido (sus HTML no están en git). RIRPF 95 (Q-C5) **no recotejado**. Suite entera local: **NO CORRIDA**.
+- Guards, en local sobre esta rama: 1294, 267, 273, 1572, 1106, 1117, 1541, 1041, 292, 296-pantalla, 302-rótulos, 324-aviso, 402, 413, 710b, 905, 921c y 324-cadena: 0 fallos. Saltados, 2 (los de `LIBRO_PG_URL` de 324-cadena: **no corridos**). Con un enlace temporal a `node_modules` (ya quitado) y `dist/` de `tsc --noCheck`. La primera pasada dio un rojo mío en 1294 (la línea `A9:` llevaba texto detrás de la ruta); arreglado en el registro, no en el guard.
+- Solo docs. Ni `src/`, ni esquema, ni texto de usuario.
