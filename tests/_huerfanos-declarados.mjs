@@ -750,7 +750,7 @@ export const DECLARADOS = [
   { modulo: 'src/modules/maintenance/domain/maintenance.service.ts',
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
     motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
-    exports: ['avisarPlanSinCanal', 'isQuietHoursMadrid', 'seleccionarLotes'] },
+    exports: ['avisarPlanSinCanal', 'isQuietHours', 'seleccionarLotes'] },
   { modulo: 'src/modules/maintenance/domain/maintenance.service.ts',
     cat: 'SIN_LECTOR_NI_TEST', desde: '2026-08-12',
     motivo: '🔴 Ni código vivo, ni test, ni documento lo mencionan en todo el repo. Es el único del censo del que no consta ni para qué se escribió.',
