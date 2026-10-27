@@ -50,7 +50,7 @@ function resultadoMarcadoEnBloque({ escrituraOk, recargaOk, marcadas }) {
 // límite hacia atrás). Aquí no se repite la regla. Su 400 cae en el aviso firmado de siempre
 // (SCRUM-373 prohíbe a esta vista pintar el mensaje de la excepción); la ficha sí lo enseña.
 const COPY_FECHA_DE_COBRO = {
-  // SIN FIRMAR (regla 39): propuesta de SCRUM-1618, en ✅/❌ al fundador.
+  // FIRMADO por el fundador (regla 39): SCRUM-1618, comentario 21183 (27-oct-2026), los tres literales.
   rotuloUna: '¿Cuándo lo has cobrado?',
   rotuloLote: '¿Cuándo las has cobrado?',
   ayuda: 'Si lo dejas vacío, se guarda la fecha de hoy.',

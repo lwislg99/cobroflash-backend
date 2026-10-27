@@ -34,10 +34,12 @@ panel). `jobDetailView.js` y `quotesDetailView.js` (S2) quedan fuera, como dice 
   no repite la regla. La ficha enseña su mensaje («Error actualizando estado: Esa fecha no puede ser posterior
   a hoy.», composición que ya existía). El lote dice su aviso firmado de SCRUM-373.
 
-### Texto nuevo, SIN FIRMAR (regla 39) — por eso la rama NO se ha empujado
+### Texto nuevo, FIRMADO (regla 39): SCRUM-1618, comentario 21183 (fundador, 27-oct-2026)
 
 No había literal firmado de «fecha de cobro» en el panel (`grep` en `public/`, `docs/microcopy/` y `src/`:
-solo comentarios de código). Propuestas, para ✅/❌ en Jira:
+solo comentarios de código). Se propusieron en c.21176 y el fundador firmó los cuatro con ✅ en c.21183
+(1–3 literales, tal cual abajo; 4: el aviso firmado de siempre). La firma se cita en `COPY_FECHA_DE_COBRO`
+(`public/dashboard/js/invoicesView.js`). Lo propuesto:
 
 1. Rótulo en la ficha: «¿Cuándo lo has cobrado?»
 2. Rótulo en el lote: «¿Cuándo las has cobrado?»
@@ -57,4 +59,4 @@ solo comentarios de código). Propuestas, para ✅/❌ en Jira:
   scrum811c y la colisión de declaraciones: 58 ficheros, 479 casos, 479 pasan, salida 0 (control positivo:
   4 casos de SCRUM-1618 y 5 de SCRUM-373 en `ok`). Mutaciones repetidas: 3 de 3 VIVAS.
 - Tanda entera local: NO CORRIDA (10 sesiones a la vez). Guards de navegador: los que nombran las vistas
-  entran en la dirigida; no he abierto la pantalla en un navegador. yaqu.app: no verificado (no empujado).
+  entran en la dirigida; no he abierto la pantalla en un navegador. yaqu.app: no verificado al escribir esto (se mira tras el despliegue).
