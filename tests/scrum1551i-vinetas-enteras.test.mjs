@@ -85,7 +85,7 @@ test('SCRUM-1551i · cada viñeta de /legal/alcance-beta se sirve en UN <li>, co
     `🔴 CIEGO: ALCANCE_BETA.md tiene ${vinetas.length} viñetas y ${largas} de más de una línea`);
   const doc = servirDesde(RAIZ);
   assert.ok(doc && doc.html.length > 500, `🔴 no se pudo servir ALCANCE_BETA.md: ${JSON.stringify(doc)?.slice(0, 80)}`);
-  const servidos = [...doc.html.matchAll(/<li>([\s\S]*?)<\/li>/g)].map((m) => palabras(m[1]));
+  const servidos = [...doc.html.matchAll(/<li[^>]*>([\s\S]*?)<\/li>/g)].map((m) => palabras(m[1]));
   assert.deepEqual(servidos, vinetas.map((v) => v.texto),
     '🔴 las viñetas servidas no son las del documento: alguna sale partida (una línea de continuación '
     + 'fuera de su <li>)');
