@@ -376,3 +376,61 @@ filas) · `guard:lista-trabajos-917` salida 0 (50 comprobaciones, 1280 y 390) ·
    que fallaran los dos lados. Ahora pulsa `.jobs-fila-cliente`.
 2. Con M2, la sonda decía «NO SUPE MIRAR» (salida 2): en el DESPUÉS, una fila sin «Ver detalle» no es
    ceguera, es el defecto. Corregida (`2d75bccf1468e6add9aae8df53bb403d7f7d9f7a`) y re-medida con M2 → salida 1.
+
+## 27-oct-2026 · J1 · 1562g — Facturas, sin teclado: MEDIDO y PARADO (el rótulo no está firmado)
+
+**Medido contra:** `origin/main` = `32f9ded17429e020a0cabd7ef84e46fcf2040a79` · 2026-10-27T16:19:07Z
+
+Sesión `jv-j1dc` (puesto J1, equipo de Javier) · rama `scrum-1562g-facturas-con-teclado`. Carril:
+`node scripts/carriles.mjs de public/dashboard/js/invoicesView.js` → J1 (`dos-equipos.md:143`).
+**Sólo docs: no se ha tocado `public/`.** Ni un texto, ni una línea de código.
+
+A9: aviso → A10 «Un rojo sin población no es un hallazgo: es un instrumento que no llegó a arrancar.» — no se pudo comprobar: la sonda es de S3 (evidencias) y no lleva suelo de arranque; ver «Error mío»
+
+### El defecto existe HOY (A2), corriendo la sonda de 1562
+
+`node docs/master/evidencias/SCRUM-1562/sonda-div-clicables.mjs`, con `dist/` emitido por `tsc --noCheck`:
+salida 0, **29 vistas · 29 montadas · 12 elementos no nativos con clic**. Control positivo: Inicio,
+`DIV.activity-item`, sale con `tabindex=0`, `role=button` y `keydown`.
+
+| vista | elemento | tabindex | role | teclas (propias o arriba) | nativos dentro |
+|---|---|---|---|---|---|
+| Facturas | `TR` (F-2026-0022, pendiente) | — | — | — | `INPUT` (la casilla del lote) |
+| Facturas | `TR` (F-2026-0021) | — | — | — | ninguno |
+
+El clic es `invoicesView.js:702` (`tr.addEventListener('click', …)`, con la guarda `e.target === cb`
+para la casilla). Con teclado, la lista de Facturas no abre ninguna factura.
+
+### Por qué paro: el patrón de Trabajos pide un rótulo que nadie ha firmado
+
+- **Trabajos (1562d/1562f)** resolvió con un `<button class="btn-ghost btn-sm">` «Ver detalle» en cada
+  fila, con `stopPropagation`, el clic de la fila intacto, y desde 1562f fuera de `.jobs-acciones`.
+  **Partes (1562c)** convirtió la fila en un `<button>`: no aplica a un `<tr>`. **No hay helper ni
+  componente compartido**: son dos soluciones escritas en línea en cada vista.
+- **«Ver detalle» no está firmado.** `grep -i "ver detalle"` en `docs/microcopy/` y `docs/YAQU_MASTER.md`:
+  **0**. Control positivo de la misma búsqueda: `docs/microcopy/` sí tiene registros con «Aprobado por».
+  El rótulo existe en Presupuestos (`quotesListView.js`) desde el 26-nov-2025, antes de la regla 39;
+  1562d lo reutilizó por estar «en la lista hermana». SCRUM-1570 c.20161 decide DÓNDE va en Trabajos
+  (opción (a)), no el texto. A7: «Que un texto exista en otra pantalla NO acredita que nadie lo firmara».
+- La descripción de 1562 dice: «⛔ Sin texto nuevo: donde haga falta un rótulo, se reutiliza el que ya
+  existe en esa fila». En la fila de Facturas no hay ninguno.
+
+### Lo que se lleva al fundador (✅/❌), en SCRUM-1562 c.21124
+
+1. **(A) «Ver detalle» en Facturas**, el mismo `<button class="btn-ghost btn-sm">` de Trabajos y
+   Presupuestos, en una celda propia al final de la fila; el clic de la fila y la casilla no cambian.
+   Literal: `Ver detalle`. ✅/❌ — **recomendación: ✅**, por coherencia con las dos listas hermanas.
+2. **(B) si ❌: sin texto nuevo.** El número de factura (`F-2026-0022`) pasa a ser un `<button>` nativo
+   que abre el detalle. El rótulo es el dato que ya se ve. Es una forma distinta de la de Trabajos.
+
+### Error mío
+
+La primera pasada de la sonda salió con **1** y 1.188 B: `MODULE_NOT_FOUND` de `dist/` (el árbol anidado
+no lo trae). Era un instrumento que no arrancó, no un hallazgo; lo cacé leyendo la salida antes de
+contarla, no por un suelo de la sonda. Con `dist/` emitido: salida 0 y 8.930 B.
+
+### NO medido
+
+- Ningún test ni mutación: no hay arreglo que fijar hasta la decisión.
+- yaqu.app: no mirado (no hay nada nuevo que ver).
+- La tanda entera: no corrida (sólo cambia este registro).
