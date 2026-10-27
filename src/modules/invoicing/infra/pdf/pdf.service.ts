@@ -5,7 +5,7 @@ import axios from 'axios';
 import PDFDocument from 'pdfkit';
 import QRCode from 'qrcode';
 import { invoicesDir } from '../../../../core/storage/dirs';
-import { cantidadDeLinea } from '../../domain/vat.service'; // SCRUM-504: una sola cantidad
+import { cantidadDeLinea, calcVatBreakdown } from '../../domain/vat.service'; // SCRUM-504: una sola cantidad · SCRUM-624e
 import { getLocale } from '../../../../core/i18n/locales';
 import { formatImporteEs, tipoEnPorcentaje, rotuloDeTipo, calcTotal } from '../../../../core/utils/utils'; // SCRUM-636: el sitio unico
 import { nombreParaDocumento } from '../../../../core/documentos/nombreParaDocumento'; // SCRUM-577
@@ -103,6 +103,68 @@ export function fmtImporte(v: number): string {
   // este documento escribía `1000,00` y `12.345,67` — incoherente CONSIGO MISMO, y fallando justo
   // en la banda 1.000–9.999 €, que es el importe corriente de un trabajo. Medido en SCRUM-636.
   return formatImporteEs(v);
+}
+
+/**
+ * 🔴 SCRUM-1446g · EN UNA F1, LA COLUMNA SIN IVA SUMA LA BASE: MÉTODO DEL MAYOR RESTO.
+ * Decisión del fundador: SCRUM-1446 comentario 20945 (opción B de c.20944), con GO de la regla 40,
+ * y comentario 20964 (1446h, Q1): vale para TODA F1 cuya columna no sume la base, haya tramos o no.
+ *
+ * Las líneas de un tramo guardan fracciones de céntimo (2,11 al 50 % es 1,055), cada una se
+ * redondeaba al imprimirse y la base se redondea una vez: 1,06 + 1,67 = 2,73 sobre una base de
+ * 2,72. Aquí, dentro de cada grupo del desglose (tipo y causa, los de `calcVatBreakdown`), todas
+ * bajan al céntimo y los céntimos que faltan para su base van a las de mayor fracción. Desempate,
+ * escrito aquí porque c.20944 no lo fija: el primero en orden de línea. Y un grupo que ya suma
+ * como se imprimía no se toca: es el desempate «que respete el redondeo de hoy» de c.20944.
+ *
+ * Aceptado por el fundador en ese comentario: la línea que recibe el céntimo deja de coincidir
+ * exacta con cantidad × precio impreso. ⛔ Sólo cambia lo IMPRESO: ni las líneas guardadas, ni la
+ * base, la cuota o el total, ni el XML (regla 29).
+ *
+ * Devuelve el importe a imprimir por línea, o `null` si nada se mueve. Entra toda factura con algún
+ * importe con fracción de céntimo: un tramo (2,11 al 50 %), un descuento por línea (3,33 con un
+ * 10 % guarda 2,997) o un precio de tres decimales (la API admite cuatro, SCRUM-712). Sin ninguna
+ * fracción, `null`: la columna sale como hasta hoy. Lo fija `tests/scrum1446e-la-columna-sin-iva.test.mjs`
+ * (⑤ a ⑨).
+ */
+export function importesDeLaColumnaSinIva(
+  lines: Array<{ qty: number; price: number; tax: number; causa?: string | null }>,
+): number[] | null {
+  const deTramo = lines.some((l) => {
+    const c = (Number(l.price) || 0) * 100;
+    return Math.abs(c - Math.round(c)) > 1e-6;
+  });
+  if (!deTramo) return null;
+  const bases = lines.map((l) => cantidadDeLinea(l.qty) * (Number(l.price) || 0));
+  // Los céntimos de lo que se IMPRIME («1.234,56» → 123456): se compara papel con papel, sin
+  // una tercera forma de redondear en este fichero (`tests/scrum624-cuantos-sitios-calculan-dinero`).
+  const impreso = (v: number) => Number(fmtImporte(v).replace(/[.,]/g, ''));
+  const grupos = new Map<string, number[]>();
+  lines.forEach((l, i) => {
+    const clave = `${tipoEnPorcentaje(Number(l.tax) || 0)}|${l.causa ?? ''}`;
+    grupos.set(clave, [...(grupos.get(clave) ?? []), i]);
+  });
+  const cents = bases.map(impreso);
+  let movida = false;
+  for (const idx of grupos.values()) {
+    // `causa` al tipo de `VatLine` (sólo 'S2'; `null` → ausente). La base del grupo no depende de
+    // ella: todas las líneas del grupo comparten la misma.
+    const objetivo = impreso(calcVatBreakdown(idx.map((i) => ({
+      ...lines[i], causa: lines[i].causa === 'S2' ? ('S2' as const) : undefined,
+    }))).base);
+    if (idx.reduce((a, i) => a + cents[i], 0) === objetivo) continue;
+    const exactos = idx.map((i) => bases[i] * 100); // en céntimos, con su fracción
+    const suelo = exactos.map((e) => Math.floor(e + 1e-6));
+    // La fracción, a la millonésima de céntimo: dos 0,5 iguales empatan aunque el binario difiera.
+    const restos = exactos.map((e, j) => Math.round((e - suelo[j]) * 1e6));
+    const faltan = objetivo - suelo.reduce((a, s) => a + s, 0);
+    if (faltan < 0 || faltan > idx.length) continue;
+    const orden = idx.map((_, j) => j).sort((a, b) => restos[b] - restos[a] || a - b);
+    const reciben = new Set(orden.slice(0, faltan));
+    idx.forEach((i, j) => { cents[i] = suelo[j] + (reciben.has(j) ? 1 : 0); });
+    movida = true;
+  }
+  return movida ? cents.map((c) => c / 100) : null;
 }
 
 /** Descarga el logo del merchant como Buffer para PDFKit.
@@ -481,6 +543,17 @@ export async function generateInvoicePdf(params: {
     const XIV = XP+WP+4; const WIV= 44;  // IVA%
     const XT  = XIV+WIV+4; const WT = W - (XT - M); // total línea
 
+    // 🔴 SCRUM-1446e · EN UNA FACTURA F1 LA COLUMNA DE CADA LÍNEA VA SIN IVA. Decisión del fundador:
+    // SCRUM-1446 comentario 20917 (P1). Con IVA, cada línea se redondeaba por su cuenta y la columna
+    // no sumaba lo que dice el pie (15,13 + 15,13 = 30,26 con TOTAL 30,25); sin IVA suma la «Base
+    // imponible», y el IVA queda sólo en el desglose por tipo. Ningún importe guardado cambia.
+    // La cabecera de esa columna, «IMPORTE», es literal firmado por el fundador en SCRUM-1446
+    // comentario 20917. ⛔ La R1 y el justificante, como hasta hoy: con IVA y «TOTAL» (su pie
+    // sigue sumando las líneas, SCRUM-624e). Lo fija `tests/scrum1446e-la-columna-sin-iva.test.mjs`.
+    const columnaSinIva = (params.type ?? 'F1') === 'F1';
+    // SCRUM-1446g · en una F1 por tramos, el céntimo que falta va a la línea de mayor resto.
+    const repartida = columnaSinIva ? importesDeLaColumnaSinIva(lines) : null;
+
     // Cabecera tabla
     doc.rect(M, doc.y, W, 16).fill(BG);
     const thY = doc.y + 4;
@@ -489,7 +562,7 @@ export async function generateInvoicePdf(params: {
     doc.text('CANT.',       XQ,  thY, { width: WQ,  align: 'right' });
     doc.text('PRECIO UNIT', XP,  thY, { width: WP,  align: 'right' });
     doc.text(`${impuesto} %`, XIV, thY, { width: WIV, align: 'right' });
-    doc.text('TOTAL',       XT,  thY, { width: WT,  align: 'right' });
+    doc.text(columnaSinIva ? 'IMPORTE' : 'TOTAL', XT, thY, { width: WT,  align: 'right' });
     doc.y += 16;
     hLine(doc.y, BORDER);
     doc.fillColor(INK);
@@ -499,7 +572,7 @@ export async function generateInvoicePdf(params: {
       const qty    = cantidadDeLinea(l.qty); // SCRUM-504
       const price  = Number(l.price) || 0;
       const taxR   = Number(l.tax)   || 0;
-      const lineTotal = qty * price * (1 + taxR);
+      const lineTotal = repartida?.[i] ?? qty * price * (1 + (columnaSinIva ? 0 : taxR));
       const bg = i % 2 === 0 ? '#fff' : BG;
 
       // ── SCRUM-603 (DOC-13): el concepto y su DESCRIPCIÓN, separados ──────────────────
@@ -552,23 +625,49 @@ export async function generateInvoicePdf(params: {
     doc.moveDown(0.4);
 
     // ── 4. TOTALES ────────────────────────────────────────────────────────
+    // 🔴 SCRUM-624e · EN UNA FACTURA F1 EL BLOQUE LEE EL REGISTRO, NO LO RECALCULA.
+    // Decisión del fundador: SCRUM-624 c.20775 (el arreglo A) y c.20817 («A solo en facturas
+    // normales»). Base y cuota por tipo salen de `calcVatBreakdown`, el mismo cálculo que lleva el
+    // XML de VeriFactu, y el TOTAL es el GUARDADO, el que ese XML declara como `ImporteTotal`. Así
+    // el papel y el registro coinciden por construcción. A no elige convención de redondeo: imprime
+    // la que ya tiene el registro (cuál gobierna es pregunta del asesor, SCRUM-1264 c.20774).
+    // ⛔ La R1 y el justificante siguen sumando aquí abajo, como hasta hoy. La R1 guarda
+    // −original.total y su desglose no siempre lo suma (`Math.round(-262.5)` es −262, SCRUM-624d):
+    // con A su papel dejaría de cuadrar consigo mismo. Cambiar cómo se crea es otro GO (regla 40).
+    // Lo fija `tests/scrum624e-a-solo-en-f1.test.mjs`.
+    const leeElRegistro = (params.type ?? 'F1') === 'F1';
     // Agrupar IVA por tipo
     type VatGroup = { base: number; vat: number };
     const vatMap: Record<string, VatGroup> = {};
     let subtotal = 0;
-    lines.forEach((l) => {
-      const qty  = cantidadDeLinea(l.qty); // SCRUM-504
-      const p    = Number(l.price) || 0;
-      const t    = Number(l.tax)   || 0;
-      const base = qty * p;
-      subtotal += base;
-      const key = `${rotuloDeTipo(tipoEnPorcentaje(t))}%`;
-      if (!vatMap[key]) vatMap[key] = { base: 0, vat: 0 };
-      vatMap[key].base += base;
-      vatMap[key].vat  += base * t;
-    });
-    const totalVat = Object.values(vatMap).reduce((a, b) => a + b.vat, 0);
-    const grandTotal = subtotal + totalVat;
+    let grandTotal = 0;
+    if (leeElRegistro) {
+      const desglose = calcVatBreakdown(lines);
+      // Una fila por TIPO, como hasta hoy: una línea con causa (S2) y otra sin ella al mismo tipo
+      // son dos entradas del desglose, y separarlas en el papel pediría un rótulo nuevo (regla 39).
+      desglose.entries.forEach((e) => {
+        const key = `${rotuloDeTipo(e.rate)}%`;
+        if (!vatMap[key]) vatMap[key] = { base: 0, vat: 0 };
+        vatMap[key].base += e.base;
+        vatMap[key].vat  += e.cuota;
+      });
+      subtotal = desglose.base;
+      grandTotal = Number(params.total);
+    } else {
+      lines.forEach((l) => {
+        const qty  = cantidadDeLinea(l.qty); // SCRUM-504
+        const p    = Number(l.price) || 0;
+        const t    = Number(l.tax)   || 0;
+        const base = qty * p;
+        subtotal += base;
+        const key = `${rotuloDeTipo(tipoEnPorcentaje(t))}%`;
+        if (!vatMap[key]) vatMap[key] = { base: 0, vat: 0 };
+        vatMap[key].base += base;
+        vatMap[key].vat  += base * t;
+      });
+      const totalVat = Object.values(vatMap).reduce((a, b) => a + b.vat, 0);
+      grandTotal = subtotal + totalVat;
+    }
 
     const totalsX = M + W / 2;
     const totalsW = W / 2;
@@ -609,6 +708,8 @@ export async function generateInvoicePdf(params: {
     // **cambiaría alguna cifra impresa en 547 de ellas** (un céntimo en la cuota y en el total),
     // porque aquella redondea base y cuota POR SEPARADO y ésta no redondea hasta `fmt`.
     // Cambiar una cifra de una factura no es este ticket. Queda escrito en docs/master/SCRUM-623.md.
+    // (SCRUM-624e: desde el GO de SCRUM-624 c.20817, en la F1 SÍ se consume —ver arriba—; esto
+    // sigue valiendo para la R1 y el justificante.)
     //
     // Así que las cifras salen del MISMO `vatMap` de arriba, que ya venía acumulando `base` por
     // tipo sin imprimirla nunca. **Ni una operación aritmética nueva.**
@@ -980,7 +1081,9 @@ function drawTableHeader() {
     .text('Cant.', X_QTY, doc.y - 12, { width: W_QTY, align: 'right' })
     .text('Precio', X_PRICE, doc.y - 12, { width: W_PRICE, align: 'right' })
     .text(`${impuesto}%`, X_VAT, doc.y - 12, { width: W_VAT, align: 'right' })
-    .text('Total', X_TOTAL, doc.y - 12, { width: W_TOTAL, align: 'right' });
+    // SCRUM-1446f · la cabecera de la columna de cada línea, «IMPORTE», como en la factura: literal
+    // firmado por el fundador en SCRUM-1446 comentario 20939. Las cajas de opciones no se tocan.
+    .text('IMPORTE', X_TOTAL, doc.y - 12, { width: W_TOTAL, align: 'right' });
 
   doc.moveDown(0.3);
   doc.moveTo(X0, doc.y).lineTo(560, doc.y).stroke();
@@ -991,7 +1094,10 @@ drawTableHeader();
 
 
 params.lines.forEach((l) => {
-  const lineTotal = l.qty * l.price * (1 + (ivaFueraDelPapel ? 0 : l.tax));
+  // SCRUM-1446e · la columna de cada línea va SIN IVA, como en la factura (decisión del fundador:
+  // SCRUM-1446 comentario 20917, P4). Antes sólo en `no_incluido`; ahora en los dos modos, y así
+  // las líneas suman lo que el pie llama base. El Total sigue siendo el guardado.
+  const lineTotal = l.qty * l.price;
 
   const concept = softBreakLongTokens(String(l.concept || '').trim());
 

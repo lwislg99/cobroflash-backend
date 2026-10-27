@@ -242,7 +242,17 @@ const censo = censoCopy(RAIZ, cierre.portadores, cierreTipo.portadores);
 // abajo, 154 → 155) entró en main mientras esta rama llevaba 160. REGENERADO con el propio censo
 // sobre el árbol YA FUSIONADO (origin/main 837a9e53 + la rama), no sumado a mano:
 // { flag: 7, tipo: 11, aPelo: 161 }. Cuadra con la suma (7, 11, 160+1), que se usa como COMPROBACIÓN.
-const VEREDICTO_AL_MEDIR = { flag: 7, tipo: 11, aPelo: 161 };
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// 161 → 162 · 26-oct-2026 (SCRUM-1402k) · CUÁL ENTRÓ Y POR QUÉ NO ES REGRESIÓN: el `message` del 409
+// `subscription_exists` de `POST /admin/billing/checkout` (`subscriptions.routes.ts:47`), texto FIRMADO
+// por el fundador (T3, SCRUM-1402 comentario 20866): «Ya tienes una suscripción. Para cambiarla, usa
+// «Gestionar suscripción / facturación».». Entra por la diana («facturación») y cae en ③ porque no lo
+// elige ningún flag, y ahí es donde tiene que estar: nombra el botón que ya existe en la pantalla de
+// planes, no el documento que se emite. Tampoco va a `PENDIENTES_DE_FIRMA`: está firmado.
+// REGENERADO con el propio censo sobre el árbol YA FUSIONADO (origin/main f6a311967 + la rama), no
+// deducido: { flag: 7, tipo: 11, aPelo: 162 }, y el único literal del censo en `subscriptions.routes.ts`
+// es ése.
+const VEREDICTO_AL_MEDIR = { flag: 7, tipo: 11, aPelo: 162 };
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 1 · EL INSTRUMENTO VE — controles de respuesta conocida, y también de la VÍA
@@ -396,7 +406,12 @@ test('SCRUM-601 · EL VEREDICTO: las tres categorías, ancladas, y SUMAN', () =>
 // tocan este anclaje por literales distintos. REGENERADO con el propio censo sobre el árbol YA FUSIONADO,
 // no sumado a mano (precedente 1155×1160 y 1164×1216b).
 // 36 — medido sobre el árbol fusionado (37 de SCRUM-1257 − 1 de SCRUM-825 D1, como comprobación).
-const NO_LEGIBLES_AL_MEDIR = 36;
+// 26-oct-2026 · 36 → 37, MEDIDO (SCRUM-1402k). Es el mismo caso que 31→32: el T3 firmado del 409
+// `subscription_exists` (SCRUM-1402 comentario 20866) vive en SU ÚNICA constante
+// (`TEXTO_SUSCRIPCION_EXISTE`, `subscriptions.routes.ts:47`) y llega al `json` por referencia. No se
+// pega en línea para bajar el número: el motivo de 31→32. Medido con el censo sobre origin/main
+// f6a311967 + la rama: es la única construcción no legible de ese fichero.
+const NO_LEGIBLES_AL_MEDIR = 37;
 
 test('SCRUM-601 · el censo DECLARA lo que no sabe leer, y esa lista no crece sola', () => {
   const n = censo.noLegibles.length;

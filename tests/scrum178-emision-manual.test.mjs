@@ -11,12 +11,40 @@
 //     acaba sellado en la huella VeriFactu (SCRUM-141), así que se prueba aparte y siempre.
 //   · las PUERTAS, gateadas: los cuatro rechazos que impiden emitir de más.
 import './_staging-db.mjs'; // SCRUM-60: fuerza staging (fail-closed anti-prod)
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599p: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
+import http from 'node:http';
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+// `node:http` sin agente y no `fetch` (SCRUM-1218g): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de `fetch`
+// (status, headers.get, text, json, arrayBuffer) y, como el `redirect: 'manual'` de antes, no sigue
+// redirecciones. El cuerpo se guarda en bytes: `text()` lo decodifica como `fetch` (TextDecoder).
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    const trozos = [];
+    r.on('data', (t) => { trozos.push(t); });
+    r.on('end', () => {
+      const buf = Buffer.concat(trozos);
+      ok({
+        status: r.statusCode,
+        headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+        text: async () => new TextDecoder().decode(buf),
+        json: async () => JSON.parse(new TextDecoder().decode(buf)),
+        arrayBuffer: async () => buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
+      });
+    });
+  });
+  req.on('error', mal);
+  req.end(body);
+});
+
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 const PLAN_MANUAL = [{ index: 0, percentage: 1, label: 'manual_total' }];
 
 // SCRUM-1599b (decisión del fundador, SCRUM-1599 c.20650): desde SCRUM-1027 (regla 24), un merchant
@@ -53,7 +81,7 @@ test('SCRUM-178 (aritmética, sin BD): el tramo único al 100 % reproduce las l�
   }
 });
 
-test('SCRUM-178: emisión manual — emite UNA vez, con líneas, y cierra las cuatro puertas', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
+test('SCRUM-178: emisión manual — emite UNA vez, con líneas, y cierra las cuatro puertas', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const { grossOfLines } = await import('../dist/modules/invoicing/domain/invoiceLines.service.js');
@@ -86,11 +114,11 @@ test('SCRUM-178: emisión manual — emite UNA vez, con líneas, y cierra las cu
         await prisma.authSession.create({
           data: { merchantId: merchant.id, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) },
         });
-        const verify = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
+        const verify = await pedirSinAgente(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
         const cookie = (verify.headers.get('set-cookie') || '').split(';')[0];
         assert.ok(cookie.startsWith('pf_session='), 'no se obtuvo cookie de sesión');
 
-        const emitirManual = (quoteId) => fetch(`${base}/admin/quotes/${quoteId}/invoice-manual`, {
+        const emitirManual = (quoteId) => pedirSinAgente(`${base}/admin/quotes/${quoteId}/invoice-manual`, {
           method: 'POST', headers: { cookie, 'Content-Type': 'application/json' },
         });
 
@@ -192,10 +220,10 @@ test('SCRUM-178: emisión manual — emite UNA vez, con líneas, y cierra las cu
         await prisma.authSession.create({
           data: { merchantId: mA.id, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) },
         });
-        const verify = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
+        const verify = await pedirSinAgente(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
         const cookieA = (verify.headers.get('set-cookie') || '').split(';')[0];
 
-        const res = await fetch(`${base}/admin/quotes/${quoteB.id}/invoice-manual`, {
+        const res = await pedirSinAgente(`${base}/admin/quotes/${quoteB.id}/invoice-manual`, {
           method: 'POST', headers: { cookie: cookieA, 'Content-Type': 'application/json' },
         });
         assert.equal(res.status, 404,
@@ -213,7 +241,7 @@ test('SCRUM-178: emisión manual — emite UNA vez, con líneas, y cierra las cu
 // ES con NIF no emite NADA por la vía manual — ni factura ni justificante (regla 24, SCRUM-1027).
 // Lo que se protege no es el código de respuesta: es que no quede NINGUNA fila en Invoice, porque
 // una fila emitida ya no se borra (regla 29) y gasta número de serie.
-test('SCRUM-178: con INVOICING_ES_ENABLED apagado, la emisión manual da 409 facturacion_no_disponible y no emite nada', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-178: con INVOICING_ES_ENABLED apagado, la emisión manual da 409 facturacion_no_disponible y no emite nada', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
 
@@ -240,11 +268,11 @@ test('SCRUM-178: con INVOICING_ES_ENABLED apagado, la emisión manual da 409 fac
         await prisma.authSession.create({
           data: { merchantId: merchant.id, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) },
         });
-        const verify = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
+        const verify = await pedirSinAgente(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
         const cookie = (verify.headers.get('set-cookie') || '').split(';')[0];
         assert.ok(cookie.startsWith('pf_session='), 'no se obtuvo cookie de sesión');
 
-        const res = await fetch(`${base}/admin/quotes/${quote.id}/invoice-manual`, {
+        const res = await pedirSinAgente(`${base}/admin/quotes/${quote.id}/invoice-manual`, {
           method: 'POST', headers: { cookie, 'Content-Type': 'application/json' },
         });
         const cuerpo = await res.json();
@@ -260,3 +288,11 @@ test('SCRUM-178: con INVOICING_ES_ENABLED apagado, la emisión manual da 409 fac
     await prisma.$disconnect();
   }
 });
+
+// SCRUM-1599p (diseño B de SCRUM-1599) · la mutación que tumba el caso de base, CATALOGADA en SCRUM-1599p.
+// Va aparte de `MUTACIONES_QUE_ME_TUMBAN` a propósito: el job del meta-guard corre SIN base, el caso sale
+// SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco,
+// `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e). Cada campo, LITERAL.
+export const MUTACIONES_CON_BASE = [
+  { fichero: "src/modules/system/app/routes/quotesAdmin.routes.ts", de: "tampoco a mano.\n    if (getEmissionMode(quote.merchant) === 'receipt') {", a: "tampoco a mano.\n    if (false) {", cae: "SCRUM-178: con INVOICING_ES_ENABLED apagado" },
+];

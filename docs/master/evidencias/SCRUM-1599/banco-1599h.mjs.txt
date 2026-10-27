@@ -1,0 +1,81 @@
+// banco-1599h.mjs — SCRUM-1599h (J6, 24-oct-2026). Corre UNO O VARIOS ficheros de test, cada uno SOLO y con un
+// PGlite NUEVO por socket en loopback (base «yaqu_libro_test»), con LIBRO_PG_URL puesta y SIN QA_DB_TEST.
+// Es el banco de 1218c/d con los dos arreglos de instrumento de 1599f ②: el socket admite 64 conexiones (el
+// pool de Prisma abre varias) y la base se rehace antes de cada fichero (PGlite es una sola sesión, y los
+// prepared statements de un proceso chocan con los del siguiente: 42P05).
+// SCRUM-1599n (J6, 26-oct-2026): rehacer la base por fichero no basta cuando el TEST lanza un hijo con Prisma
+// (scrum1515 → `altaDeMerchant.js`): padre e hijo comparten el PGlite DENTRO del mismo fichero, y el hijo cae con
+// «42P05 prepared statement "s0" already exists». La URL lleva `pgbouncer=true`, que hace que Prisma no use
+// sentencias preparadas con nombre; el test se la pasa al hijo tal cual (URL_BANCO de `tests/_banco-libro.mjs`).
+// Y un 42P05 en la salida ya no se cuenta como un rojo del test: es el instrumento, y el banco dice CIEGO.
+// Uso: node banco-1599h.mjs <raiz del worktree> <ddl.sql> <salida.json> <tests/f1.test.mjs> [<tests/f2…>]
+// Va como .mjs.txt (pieza sin consumidor en el árbol); para correrlo se copia junto a un node_modules con
+// @electric-sql/pglite y @electric-sql/pglite-socket y se le quita el .txt.
+// Por fichero imprime: código de salida, el CONJUNTO de casos (anclado al inicio de línea: un «not ok» dentro del
+// NOMBRE no cuenta), el «# tests» declarado y si casos = declarados. Sin casos dice CIEGO, no verde.
+import fs from 'node:fs';
+import path from 'node:path';
+import net from 'node:net';
+import { spawn } from 'node:child_process';
+import { PGlite } from '@electric-sql/pglite';
+import { PGLiteSocketServer } from '@electric-sql/pglite-socket';
+
+const [raiz, ddl, salidaRel, ...ficheros] = process.argv.slice(2);
+const salida = salidaRel && path.resolve(salidaRel);
+if (!raiz || !ddl || !salida || ficheros.length === 0) { console.log('CIEGO: faltan argumentos'); process.exit(2); }
+const sql = fs.readFileSync(ddl, 'utf8');
+
+const puertoLibre = () => new Promise((ok) => {
+  const s = net.createServer(); s.listen(0, '127.0.0.1', () => { const p = s.address().port; s.close(() => ok(p)); });
+});
+const SIN_PREPARADAS = '&pgbouncer=true'; // SCRUM-1599n: quitarlo devuelve scrum1515 a CIEGO (42P05)
+const CASO = /^(\s*)(ok|not ok) \d+ - (.*?)(?: # (SKIP|TODO)\b.*)?$/;
+
+const entorno = { ...process.env };
+for (const k of ['NODE_TEST_CONTEXT', 'NODE_OPTIONS', 'FORCE_COLOR', 'QA_DB_TEST', 'A55_DB_TEST', 'BOT_SUITE_TEST']) delete entorno[k];
+
+const resultado = [];
+for (const fichero of ficheros) {
+  const t0 = Date.now();
+  const db = new PGlite();
+  await db.exec(sql);
+  const puerto = await puertoLibre();
+  const servidor = new PGLiteSocketServer({ db, port: puerto, host: '127.0.0.1', maxConnections: 64 });
+  await servidor.start();
+  const tap = path.join(path.dirname(salida), `tap-${path.basename(fichero)}.tap`);
+  fs.rmSync(tap, { force: true });
+  const hijo = spawn(process.execPath, ['--test', '--test-force-exit', '--test-reporter=tap', `--test-reporter-destination=${tap}`, fichero], {
+    cwd: raiz,
+    env: {
+      ...entorno,
+      LIBRO_PG_URL: `postgresql://postgres@127.0.0.1:${puerto}/yaqu_libro_test?sslmode=disable${SIN_PREPARADAS}`,
+      DISABLE_CRONS: 'true', WHATSAPP_DRY_RUN: '1', NODE_ENV: 'test',
+    },
+  });
+  let texto = '';
+  hijo.stdout.on('data', (d) => { texto += d; });
+  hijo.stderr.on('data', (d) => { texto += d; });
+  const codigo = await new Promise((ok) => hijo.on('close', (c, s) => ok(c ?? s)));
+  const ms = Date.now() - t0;
+  await servidor.stop();
+  await db.close();
+  const lineas = fs.existsSync(tap) ? fs.readFileSync(tap, 'utf8').split(/\r?\n/) : [];
+  const casos = {};
+  for (const l of lineas) {
+    const m = CASO.exec(l);
+    if (!m || m[1].length > 0) continue; // sólo los casos de primer nivel
+    casos[m[3]] = m[4] ? m[4].toLowerCase() : m[2];
+  }
+  const declarados = Number((lineas.find((l) => /^# tests \d+/.test(l)) || '').replace(/\D/g, '') || NaN);
+  const v = Object.values(casos);
+  const r = { fichero, codigo, ms, declarados, casos };
+  resultado.push(r);
+  const ok = v.filter((x) => x === 'ok').length; const ko = v.filter((x) => x === 'not ok').length; const sk = v.filter((x) => x === 'skip').length;
+  const choque = lineas.some((l) => l.includes('42P05')) || texto.includes('42P05');
+  r.ciego = v.length === 0 || choque;
+  console.log(`${v.length === 0 ? 'CIEGO · ' : choque ? 'CIEGO (instrumento: 42P05, sentencias preparadas) · ' : ''}${path.basename(fichero)} · exit=${codigo} · ${ms} ms · casos=${v.length} (ok=${ok} not_ok=${ko} skip=${sk}) · declarados=${declarados} · ${ok + ko + sk === declarados ? 'SUMA' : 'NO SUMA'}`);
+  for (const [n, e] of Object.entries(casos)) if (e !== 'ok') console.log(`   ${e} · ${n}`);
+  if (codigo !== 0) console.log(texto.slice(-2500));
+}
+fs.writeFileSync(salida, JSON.stringify(resultado, null, 1));
+console.log(`POBLACION=${resultado.length} ficheros · EXIT=0`);

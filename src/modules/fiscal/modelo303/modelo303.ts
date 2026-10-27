@@ -10,7 +10,7 @@
 //
 // El invariante que lo sostiene, y que un test comprueba AL CÉNTIMO:
 //
-//     libro.base  = Σ bases de las casillas + base sin clasificar
+//     libro.base  = Σ bases de las casillas + base sin clasificar + casilla 122 (SCRUM-1063f)
 //     libro.cuota = casilla 27              + cuota sin clasificar
 //
 // No es una igualdad ciega: dice que **cada euro del libro está o en una casilla o declarado
@@ -36,7 +36,7 @@ import {
   TRIPLETAS, CASILLA_TOTAL_CUOTA_DEVENGADA, tripletaDe,
   CASILLAS_DEDUCIBLE_CORRIENTES, CASILLAS_DEDUCIBLE_BIENES_INVERSION,
   CASILLA_TOTAL_A_DEDUCIR, CASILLA_RESULTADO_REGIMEN_GENERAL,
-  CASILLA_SUMA_DE_RESULTADOS, CASILLAS_RESULTADO_VACIAS,
+  CASILLA_SUMA_DE_RESULTADOS, CASILLAS_RESULTADO_VACIAS, CASILLA_INVERSION_SUJETO_PASIVO,
 } from './casillas';
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -60,7 +60,14 @@ export interface OperacionSinClasificar {
    * exenta ni una ISP: es dinero ajeno fuera de la base (`suplidos.ts`). Sigue sin casilla, y sigue
    * dentro del libro (c.20717: esperar a la emisión), así que el invariante no cambia.
    */
-  motivo: 'tipo_cero' | 'tipo_sin_casilla' | 'suplido';
+  /**
+   * SCRUM-1063e · `inversion_sujeto_pasivo`: la entrada del libro con `causa: 'S2'`, sea cual sea su
+   * tipo. No va a la casilla de su tipo (una ISP no es una entrega en régimen general).
+   * SCRUM-1063f · desde c.20768 la S2 va a la 122 (`informacionAdicional`). Aquí sólo queda la que
+   * la 122 no puede recoger: la que trae CUOTA, porque la 122 no tiene cuota y meterla allí rompería
+   * `libro.cuota = 27 + cuota sin clasificar`.
+   */
+  motivo: 'tipo_cero' | 'tipo_sin_casilla' | 'suplido' | 'inversion_sujeto_pasivo';
 }
 
 /**
@@ -76,6 +83,21 @@ export interface CasillaVacia {
     | 'depende_de_la_66'                     // 69
     | 'autoliquidacion_anterior_no_consta'   // 70
     | 'depende_de_la_69';                    // 71
+}
+
+/** SCRUM-1063f · una entrada S2 del libro sumada en la 122: de dónde sale cada euro de la casilla. */
+export interface OperacionInversionSujetoPasivo {
+  numero: string;
+  tipo: number;
+  base: number;
+}
+
+/**
+ * SCRUM-1063f · «Información adicional» del impreso. Hoy sólo la 122: la base de las S2 del EMISOR
+ * (decisión del fundador, SCRUM-1063 c.20768). No tiene cuota y no suma en la 27 ni en la 46.
+ */
+export interface InformacionAdicional {
+  inversionSujetoPasivo: { casilla: number; base: number; operaciones: OperacionInversionSujetoPasivo[] };
 }
 
 export interface ResultadoFinal {
@@ -98,8 +120,9 @@ export interface CruceConCobros {
  * SCRUM-1063b · un gasto que NO entra en el IVA deducible porque su casilla habría que adivinarla.
  *
  * · `deducibilidad_sin_decidir` — `vatDeducible` a null: nadie dijo si se puede deducir.
- * · `posible_bien_de_inversion` — categoría «herramientas»: puede ser corriente (29) o bien de
- *   inversión (31), y `Expense` no guarda cuál. Repartirlo sería adivinarlo.
+ * · `posible_bien_de_inversion` — categoría «herramientas» que llega a `UMBRAL_BIEN_DE_INVERSION`
+ *   (o sin base o cuota para medirlo): puede ser corriente (29) o bien de inversión (31), y `Expense`
+ *   no guarda cuál. Repartirlo sería adivinarlo. Por debajo, va a la 28/29 (SCRUM-1063h).
  * · `categoria_desconocida` — sin categoría: por lo mismo, no se sabe si es corriente.
  * · `sin_cuota` — deducible, pero sin cuota guardada: el libro no la deriva, y aquí tampoco.
  * · `tipo_cero` — tipo 0 o ilegible: no hay cuota soportada que deducir.
@@ -145,6 +168,8 @@ export interface Modelo303 {
   casillaTotalCuota: { casilla: number; valor: number };
   totalBase: number;
   sinClasificar: OperacionSinClasificar[];
+  /** SCRUM-1063f · la 122. */
+  informacionAdicional: InformacionAdicional;
   sinDesglose: string[];
   cruceConCobros: CruceConCobros;
   /** SCRUM-1063b · el IVA soportado (28-31 y 45). */
@@ -162,12 +187,15 @@ export interface Modelo303 {
 /**
  * El aviso que el diseño (A5) declara OBLIGATORIO: «no somos asesores fiscales».
  *
- * ⚠️ Va marcado (regla 30): el texto exacto no está aprobado. Viaja dentro del resultado, no en
- * la pantalla, para que ningún consumidor pueda pintar un 303 sin él — un resumen fiscal sin ese
- * aviso es un claim fiscal, y la regla 24 dice que esto se construye pero no se enciende.
+ * Viaja dentro del resultado, no en la pantalla, para que ningún consumidor pueda pintar un 303
+ * sin él — un resumen fiscal sin ese aviso es un claim fiscal, y la regla 24 dice que esto se
+ * construye pero no se enciende.
+ *
+ * SCRUM-1065c · FIRMADO (regla 39): «Borrador para tu asesor», SCRUM-1064 c.20780 (T2), para el
+ * 303, 130, 347 y 390 en SCRUM-1065 c.20813, y para el 111/115 en c.20820. Lo importan los seis
+ * borradores; registro en `docs/microcopy/2026-10-24-SCRUM-1065-marca-borrador.md`.
  */
-export const AVISO_ORIENTATIVO =
-  '[PENDIENTE microcopy oficial] Resumen orientativo — consúltalo con tu asesor fiscal.';
+export const AVISO_ORIENTATIVO = 'Borrador para tu asesor';
 
 /**
  * El trimestre natural, **con sus bordes dentro**.
@@ -199,9 +227,31 @@ function constaCobrado(estado: string | null): boolean {
  * «herramientas» (una nueva, o ninguna) NO se coloca: se declara.
  * SCRUM-1066e · «alquiler» (el del local) es corriente: decisión del fundador, SCRUM-1066 c.20497
  * («Sí, como gasto corriente»), en la lista del asesor para confirmación.
+ * SCRUM-1063h · «herramientas» por debajo de `UMBRAL_BIEN_DE_INVERSION` deja de ser ambigua: va
+ * a la 28/29 por las mismas puertas que el resto (deducibilidad, tipo, cuota).
  */
 const CATEGORIAS_CORRIENTES: ReadonlySet<string> = new Set(['materiales', 'desplazamiento', 'subcontrata', 'otros', 'alquiler']);
 const CATEGORIA_AMBIGUA = 'herramientas';
+
+/**
+ * SCRUM-1063h · por debajo de esto, una herramienta NO es bien de inversión y va a la 28/29.
+ *
+ * Art. 108.Dos.5.º LIVA (consolidado, vigente desde el 1-1-1993; leído en SCRUM-1063 c.20863): no
+ * tienen la consideración de bienes de inversión los bienes «cuyo valor de adquisición sea inferior
+ * a quinientas mil pesetas». 500.000 / 166,386 = 3.005,0605… → 3.005,06 €; el texto sigue en
+ * pesetas, la conversión es nuestra. Decisión del fundador, SCRUM-1063 c.20867 («A ahora, columna
+ * después»): se compara base + cuota, y solo lo que NO LLEGA va a la 28/29. Si el gasto entero no
+ * llega, ningún bien que lleve dentro llega: solo puede equivocarse hacia el lado de apartar.
+ */
+export const UMBRAL_BIEN_DE_INVERSION = 3005.06;
+
+const centimos = (n: number) => Math.round(n * 100);
+
+/** Sin base o sin cuota no se sabe a qué lado cae: se queda apartada. */
+function pordebajoDelUmbral(a: { base: number | null; cuota: number | null }): boolean {
+  if (a.base === null || a.cuota === null) return false;
+  return centimos(a.base + a.cuota) < centimos(UMBRAL_BIEN_DE_INVERSION);
+}
 
 /**
  * SCRUM-1063b · el IVA deducible SOBRE el libro de recibidas (SCRUM-426). Mismo principio que el
@@ -221,8 +271,8 @@ export function construirIvaDeducible(recibidas: LibroRecibidas): IvaDeducible {
 
     if (a.deducible === false) { noDeducibles += 1; return; }
     if (a.deducible !== true) return aparte('deducibilidad_sin_decidir');
-    if (categoria === CATEGORIA_AMBIGUA) return aparte('posible_bien_de_inversion');
-    if (categoria === null || !CATEGORIAS_CORRIENTES.has(categoria)) return aparte('categoria_desconocida');
+    if (categoria === CATEGORIA_AMBIGUA && !pordebajoDelUmbral(a)) return aparte('posible_bien_de_inversion');
+    if (categoria !== CATEGORIA_AMBIGUA && (categoria === null || !CATEGORIAS_CORRIENTES.has(categoria))) return aparte('categoria_desconocida');
     if (a.tipoIva === null || a.tipoIva === 0) return aparte('tipo_cero');
     if (a.cuota === null || a.base === null) return aparte('sin_cuota');
     base += a.base;
@@ -271,6 +321,7 @@ export function construirModelo303(params: {
 
   const acumulado = new Map<number, { base: number; cuota: number }>();
   const sinClasificar: OperacionSinClasificar[] = [];
+  const operacionesS2: OperacionInversionSujetoPasivo[] = [];
   const sinDesglose: string[] = [];
   let moneda = 'EUR';
 
@@ -297,8 +348,18 @@ export function construirModelo303(params: {
     let cuotaDelAsiento = 0;
     for (const e of a.porTipo) {
       cuotaDelAsiento += e.cuota;
+      // SCRUM-1063e · la S2 sale ANTES de mirar su tipo: con `tax: 0.21` (el validador de la causa
+      // no exige 0) caía en la casilla 07 con cuota 0. Y antes de los suplidos, que se apartan
+      // SOLO de las entradas sin causa: si no, el suplido se restaba de la S2 (c.20739).
+      if (e.causa === 'S2') {
+        // SCRUM-1063f · a la 122 (c.20768), que es base sin cuota. Una S2 con cuota no cabe sin
+        // perder esa cuota del invariante: se queda fuera, declarada, y con su aviso.
+        if (e.cuota === 0) operacionesS2.push({ numero: a.numero, tipo: e.tipo, base: e.base });
+        else sinClasificar.push({ numero: a.numero, tipo: e.tipo, base: e.base, cuota: e.cuota, motivo: 'inversion_sujeto_pasivo' });
+        continue;
+      }
       const tripleta = tripletaDe(e.tipo);
-      if (!tripleta && e.tipo === 0 && suplidoAlCero !== 0 && Math.sign(suplidoAlCero) === Math.sign(e.base)) {
+      if (!tripleta && e.tipo === 0 && !e.causa && suplidoAlCero !== 0 && Math.sign(suplidoAlCero) === Math.sign(e.base)) {
         // Lo que se aparta como suplido sale de ESTA entrada y el resto se queda en `tipo_cero`:
         // restando, no recalculando, para que la suma siga siendo la del libro al céntimo.
         const suplido = Math.sign(e.base) * Math.min(Math.abs(suplidoAlCero), Math.abs(e.base));
@@ -363,7 +424,7 @@ export function construirModelo303(params: {
     );
   }
   if (params.libro.asientos.length > 0 && casillas.every((c) => c.base === 0 && c.cuota === 0)
-      && sinClasificar.length === 0 && sinDesglose.length === 0) {
+      && sinClasificar.length === 0 && sinDesglose.length === 0 && operacionesS2.length === 0) {
     motivosParaNoFiarse.push(
       `hay ${params.libro.asientos.length} asientos y TODAS las casillas salen a cero sin nada declarado aparte`,
     );
@@ -372,13 +433,29 @@ export function construirModelo303(params: {
     motivosParaNoFiarse.push(`${sinDesglose.length} ${sinDesglose.length === 1 ? 'factura sin desglose no se ha podido declarar' : 'facturas sin desglose no se han podido declarar'}`);
   }
   // SCRUM-1063c · el texto dice «exenta / no sujeta / ISP»: un suplido no es nada de eso, así que
-  // no se cuenta aquí. Su aviso propio necesita un literal firmado (regla 39) y NO está escrito:
-  // mientras, el suplido viaja como dato en `sinClasificar` con `motivo: 'suplido'`.
-  const sinCalificacion = sinClasificar.filter((o) => o.motivo !== 'suplido').length;
+  // no se cuenta aquí: tiene su aviso propio, justo debajo.
+  // SCRUM-1063f · la S2 tampoco: SÍ tiene calificación, y su aviso es el de abajo.
+  const sinCalificacion = sinClasificar.filter((o) => o.motivo !== 'suplido' && o.motivo !== 'inversion_sujeto_pasivo').length;
   if (sinCalificacion > 0) {
     motivosParaNoFiarse.push(
       `${sinCalificacion} operación(es) sin calificación fiscal (exenta / no sujeta / ISP) no entran en ninguna casilla`,
     );
+  }
+  // SCRUM-1063f · literales firmados por el fundador (SCRUM-1063 c.20797, regla 39; sustituyen al
+  // de c.20768). Sólo para la S2 que se queda FUERA de la 122.
+  const s2Fuera = sinClasificar.filter((o) => o.motivo === 'inversion_sujeto_pasivo').length;
+  if (s2Fuera > 0) {
+    motivosParaNoFiarse.push(s2Fuera === 1
+      ? '1 operación con inversión del sujeto pasivo no entra en ninguna casilla.'
+      : `${s2Fuera} operaciones con inversión del sujeto pasivo no entran en ninguna casilla.`);
+  }
+  // SCRUM-1063d · literales firmados por el fundador (SCRUM-1063 c.20797, regla 39; sustituyen a
+  // c.20731). Singular y plural van por separado: scrum377 no admite el «(s)» en pantalla.
+  const suplidos = sinClasificar.filter((o) => o.motivo === 'suplido').length;
+  if (suplidos > 0) {
+    motivosParaNoFiarse.push(suplidos === 1
+      ? '1 suplido no entra en ninguna casilla: es un gasto pagado por cuenta del cliente.'
+      : `${suplidos} suplidos no entran en ninguna casilla: son gastos pagados por cuenta del cliente.`);
   }
   if (params.libro.importesIlegibles.length > 0) {
     motivosParaNoFiarse.push(`${params.libro.importesIlegibles.length} ${params.libro.importesIlegibles.length === 1 ? 'importe ilegible' : 'importes ilegibles'} en el libro`);
@@ -412,6 +489,13 @@ export function construirModelo303(params: {
     casillaTotalCuota: { casilla: CASILLA_TOTAL_CUOTA_DEVENGADA, valor: totalCuota },
     totalBase: r2(casillas.reduce((a, c) => a + c.base, 0)),
     sinClasificar,
+    informacionAdicional: {
+      inversionSujetoPasivo: {
+        casilla: CASILLA_INVERSION_SUJETO_PASIVO,
+        base: r2(operacionesS2.reduce((s, o) => s + o.base, 0)),
+        operaciones: operacionesS2,
+      },
+    },
     sinDesglose,
     // ⚠️ ESTO AVISA, NO AFIRMA. Tres de las cinco formas de cobro se marcan A MANO y `paidAt` se
     // pone con `new Date()` en todas partes, así que el estado dice «alguien lo dio por cobrado»,

@@ -1,0 +1,159 @@
+# SCRUM-1599o · 12 pasadas contra Postgres 16.14 desechable (loopback, yaqu_libro_test), base nueva por pasada.
+# medido sobre c1331293b01ac32a4357cf1b239dab86853f25ee · 26-oct-2026 · formato: veredicto · ms · pasan/caen/saltan (declarados, suman) · fichero
+
+S1 · N=1 · ficheros=11 · VERDE=9 ROJO=2 SALTA=0 CIEGO=0 COLGADO=0 · pared 19968 ms · suman todos: true
+  VERDE   ·    444 · 2/0/0 (2, true) · scrum115-wa-fallo-registrado.test.mjs
+  VERDE   ·   1348 · 1/0/0 (1, true) · scrum127-paywall-bloquea.test.mjs
+  VERDE   ·    604 · 7/0/0 (7, true) · scrum173-cadena-verifactu-serializada.test.mjs
+  VERDE   ·   1146 · 3/0/0 (3, true) · scrum178-emision-manual.test.mjs
+  ROJO    ·   5311 · 0/1/0 (1, true) · scrum234-carrera-serie.gated.test.mjs · CAEN: SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+  VERDE   ·    526 · 4/0/0 (4, true) · scrum592-concurrencia-serie.test.mjs
+  VERDE   ·    399 · 4/0/0 (4, true) · scrum767-cura-concurrencia.test.mjs
+  ROJO    ·   1149 · 7/1/0 (8, true) · scrum781-concurrencia-de-la-factura.test.mjs · CAEN: SCRUM-781 · SUELO: UNA emisión avanza el contador fiscal exactamente 1
+  VERDE   ·    491 · 6/0/0 (6, true) · scrum793-la-carrera-del-token.test.mjs
+  VERDE   ·   7501 · 3/0/0 (3, true) · scrum814-carrera-del-tramo.gated.test.mjs
+  VERDE   ·   1039 · 1/0/0 (1, true) · scrum92-login-operario.test.mjs
+S2 · N=1 · ficheros=11 · VERDE=9 ROJO=2 SALTA=0 CIEGO=0 COLGADO=0 · pared 19926 ms · suman todos: true
+  VERDE   ·    347 · 2/0/0 (2, true) · scrum115-wa-fallo-registrado.test.mjs
+  VERDE   ·   1236 · 1/0/0 (1, true) · scrum127-paywall-bloquea.test.mjs
+  VERDE   ·    645 · 7/0/0 (7, true) · scrum173-cadena-verifactu-serializada.test.mjs
+  VERDE   ·   1137 · 3/0/0 (3, true) · scrum178-emision-manual.test.mjs
+  ROJO    ·   5304 · 0/1/0 (1, true) · scrum234-carrera-serie.gated.test.mjs · CAEN: SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+  VERDE   ·    526 · 4/0/0 (4, true) · scrum592-concurrencia-serie.test.mjs
+  VERDE   ·    442 · 4/0/0 (4, true) · scrum767-cura-concurrencia.test.mjs
+  ROJO    ·   1045 · 7/1/0 (8, true) · scrum781-concurrencia-de-la-factura.test.mjs · CAEN: SCRUM-781 · SUELO: UNA emisión avanza el contador fiscal exactamente 1
+  VERDE   ·    549 · 6/0/0 (6, true) · scrum793-la-carrera-del-token.test.mjs
+  VERDE   ·   7582 · 3/0/0 (3, true) · scrum814-carrera-del-tramo.gated.test.mjs
+  VERDE   ·   1103 · 1/0/0 (1, true) · scrum92-login-operario.test.mjs
+S3 · N=1 · ficheros=11 · VERDE=9 ROJO=2 SALTA=0 CIEGO=0 COLGADO=0 · pared 19503 ms · suman todos: true
+  VERDE   ·    339 · 2/0/0 (2, true) · scrum115-wa-fallo-registrado.test.mjs
+  VERDE   ·   1187 · 1/0/0 (1, true) · scrum127-paywall-bloquea.test.mjs
+  VERDE   ·    541 · 7/0/0 (7, true) · scrum173-cadena-verifactu-serializada.test.mjs
+  VERDE   ·   1365 · 3/0/0 (3, true) · scrum178-emision-manual.test.mjs
+  ROJO    ·   5284 · 0/1/0 (1, true) · scrum234-carrera-serie.gated.test.mjs · CAEN: SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+  VERDE   ·    501 · 4/0/0 (4, true) · scrum592-concurrencia-serie.test.mjs
+  VERDE   ·    385 · 4/0/0 (4, true) · scrum767-cura-concurrencia.test.mjs
+  ROJO    ·    942 · 7/1/0 (8, true) · scrum781-concurrencia-de-la-factura.test.mjs · CAEN: SCRUM-781 · SUELO: UNA emisión avanza el contador fiscal exactamente 1
+  VERDE   ·    460 · 6/0/0 (6, true) · scrum793-la-carrera-del-token.test.mjs
+  VERDE   ·   7467 · 3/0/0 (3, true) · scrum814-carrera-del-tramo.gated.test.mjs
+  VERDE   ·   1021 · 1/0/0 (1, true) · scrum92-login-operario.test.mjs
+P1 · N=11 · ficheros=11 · VERDE=9 ROJO=2 SALTA=0 CIEGO=0 COLGADO=0 · pared 8436 ms · suman todos: true
+  VERDE   ·   1169 · 2/0/0 (2, true) · scrum115-wa-fallo-registrado.test.mjs
+  VERDE   ·   2294 · 1/0/0 (1, true) · scrum127-paywall-bloquea.test.mjs
+  VERDE   ·   1587 · 7/0/0 (7, true) · scrum173-cadena-verifactu-serializada.test.mjs
+  VERDE   ·   2189 · 3/0/0 (3, true) · scrum178-emision-manual.test.mjs
+  ROJO    ·   5540 · 0/1/0 (1, true) · scrum234-carrera-serie.gated.test.mjs · CAEN: SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+  VERDE   ·   1440 · 4/0/0 (4, true) · scrum592-concurrencia-serie.test.mjs
+  VERDE   ·    986 · 4/0/0 (4, true) · scrum767-cura-concurrencia.test.mjs
+  ROJO    ·   2198 · 7/1/0 (8, true) · scrum781-concurrencia-de-la-factura.test.mjs · CAEN: SCRUM-781 · SUELO: UNA emisión avanza el contador fiscal exactamente 1
+  VERDE   ·   1084 · 6/0/0 (6, true) · scrum793-la-carrera-del-token.test.mjs
+  VERDE   ·   8372 · 3/0/0 (3, true) · scrum814-carrera-del-tramo.gated.test.mjs
+  VERDE   ·   1965 · 1/0/0 (1, true) · scrum92-login-operario.test.mjs
+P2 · N=11 · ficheros=11 · VERDE=9 ROJO=2 SALTA=0 CIEGO=0 COLGADO=0 · pared 8493 ms · suman todos: true
+  VERDE   ·   1320 · 2/0/0 (2, true) · scrum115-wa-fallo-registrado.test.mjs
+  VERDE   ·   2413 · 1/0/0 (1, true) · scrum127-paywall-bloquea.test.mjs
+  VERDE   ·   1886 · 7/0/0 (7, true) · scrum173-cadena-verifactu-serializada.test.mjs
+  VERDE   ·   2279 · 3/0/0 (3, true) · scrum178-emision-manual.test.mjs
+  ROJO    ·   5625 · 0/1/0 (1, true) · scrum234-carrera-serie.gated.test.mjs · CAEN: SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+  VERDE   ·   1732 · 4/0/0 (4, true) · scrum592-concurrencia-serie.test.mjs
+  VERDE   ·   1007 · 4/0/0 (4, true) · scrum767-cura-concurrencia.test.mjs
+  ROJO    ·   2407 · 7/1/0 (8, true) · scrum781-concurrencia-de-la-factura.test.mjs · CAEN: SCRUM-781 · SUELO: UNA emisión avanza el contador fiscal exactamente 1
+  VERDE   ·   1283 · 6/0/0 (6, true) · scrum793-la-carrera-del-token.test.mjs
+  VERDE   ·   8433 · 3/0/0 (3, true) · scrum814-carrera-del-tramo.gated.test.mjs
+  VERDE   ·   2091 · 1/0/0 (1, true) · scrum92-login-operario.test.mjs
+P3 · N=11 · ficheros=11 · VERDE=9 ROJO=2 SALTA=0 CIEGO=0 COLGADO=0 · pared 8530 ms · suman todos: true
+  VERDE   ·   1237 · 2/0/0 (2, true) · scrum115-wa-fallo-registrado.test.mjs
+  VERDE   ·   2398 · 1/0/0 (1, true) · scrum127-paywall-bloquea.test.mjs
+  VERDE   ·   1915 · 7/0/0 (7, true) · scrum173-cadena-verifactu-serializada.test.mjs
+  VERDE   ·   2303 · 3/0/0 (3, true) · scrum178-emision-manual.test.mjs
+  ROJO    ·   5702 · 0/1/0 (1, true) · scrum234-carrera-serie.gated.test.mjs · CAEN: SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+  VERDE   ·   1467 · 4/0/0 (4, true) · scrum592-concurrencia-serie.test.mjs
+  VERDE   ·   1198 · 4/0/0 (4, true) · scrum767-cura-concurrencia.test.mjs
+  ROJO    ·   2440 · 7/1/0 (8, true) · scrum781-concurrencia-de-la-factura.test.mjs · CAEN: SCRUM-781 · SUELO: UNA emisión avanza el contador fiscal exactamente 1
+  VERDE   ·   1363 · 6/0/0 (6, true) · scrum793-la-carrera-del-token.test.mjs
+  VERDE   ·   8460 · 3/0/0 (3, true) · scrum814-carrera-del-tramo.gated.test.mjs
+  VERDE   ·   2155 · 1/0/0 (1, true) · scrum92-login-operario.test.mjs
+T1 · N=11 · ficheros=80 · VERDE=75 ROJO=5 SALTA=0 CIEGO=0 COLGADO=0 · pared 34308 ms · suman todos: true
+  VERDE   ·   2144 · 2/0/0 (2, true) · scrum115-wa-fallo-registrado.test.mjs
+  VERDE   ·   4826 · 1/0/0 (1, true) · scrum127-paywall-bloquea.test.mjs
+  ROJO    ·   1980 · 2/1/0 (3, true) · scrum1599f-los-que-solo-ve-staging.test.mjs · CAEN: SCRUM-1599f · los que SÓLO corren contra staging son exactamente los 22 declarados
+  ROJO    ·   3552 · 6/1/0 (7, true) · scrum173-cadena-verifactu-serializada.test.mjs · CAEN: SCRUM-173: las cadenas YA PERSISTIDAS siguen siendo válidas tras el cambio
+  VERDE   ·   4065 · 3/0/0 (3, true) · scrum178-emision-manual.test.mjs
+  ROJO    ·   6334 · 0/1/0 (1, true) · scrum234-carrera-serie.gated.test.mjs · CAEN: SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+  ROJO    ·  15594 · 5/3/0 (8, true) · scrum419-ci-declara-lo-que-no-corre.test.mjs · CAEN: SCRUM-419 · el inventario de lo que NO corre está declarado, fichero por fichero | SCRUM-419 · cada gateado dice POR QUÉ no corre, y nombra la variable | SCRUM-419 · 🔴 CI DECLARA lo que no ha ejecutado, en vez de callarlo
+  VERDE   ·   1942 · 4/0/0 (4, true) · scrum592-concurrencia-serie.test.mjs
+  VERDE   ·   1320 · 4/0/0 (4, true) · scrum767-cura-concurrencia.test.mjs
+  ROJO    ·   4238 · 7/1/0 (8, true) · scrum781-concurrencia-de-la-factura.test.mjs · CAEN: SCRUM-781 · SUELO: UNA emisión avanza el contador fiscal exactamente 1
+  VERDE   ·   2371 · 6/0/0 (6, true) · scrum793-la-carrera-del-token.test.mjs
+  VERDE   ·  10160 · 3/0/0 (3, true) · scrum814-carrera-del-tramo.gated.test.mjs
+  VERDE   ·   3582 · 1/0/0 (1, true) · scrum92-login-operario.test.mjs
+T2 · N=11 · ficheros=80 · VERDE=76 ROJO=4 SALTA=0 CIEGO=0 COLGADO=0 · pared 29681 ms · suman todos: true
+  VERDE   ·   1240 · 2/0/0 (2, true) · scrum115-wa-fallo-registrado.test.mjs
+  VERDE   ·   2789 · 1/0/0 (1, true) · scrum127-paywall-bloquea.test.mjs
+  ROJO    ·   1932 · 2/1/0 (3, true) · scrum1599f-los-que-solo-ve-staging.test.mjs · CAEN: SCRUM-1599f · los que SÓLO corren contra staging son exactamente los 22 declarados
+  VERDE   ·   2082 · 7/0/0 (7, true) · scrum173-cadena-verifactu-serializada.test.mjs
+  VERDE   ·   2728 · 3/0/0 (3, true) · scrum178-emision-manual.test.mjs
+  ROJO    ·   6338 · 0/1/0 (1, true) · scrum234-carrera-serie.gated.test.mjs · CAEN: SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+  ROJO    ·  14717 · 5/3/0 (8, true) · scrum419-ci-declara-lo-que-no-corre.test.mjs · CAEN: SCRUM-419 · el inventario de lo que NO corre está declarado, fichero por fichero | SCRUM-419 · cada gateado dice POR QUÉ no corre, y nombra la variable | SCRUM-419 · 🔴 CI DECLARA lo que no ha ejecutado, en vez de callarlo
+  VERDE   ·   1550 · 4/0/0 (4, true) · scrum592-concurrencia-serie.test.mjs
+  VERDE   ·    847 · 4/0/0 (4, true) · scrum767-cura-concurrencia.test.mjs
+  ROJO    ·   2454 · 7/1/0 (8, true) · scrum781-concurrencia-de-la-factura.test.mjs · CAEN: SCRUM-781 · SUELO: UNA emisión avanza el contador fiscal exactamente 1
+  VERDE   ·   1249 · 6/0/0 (6, true) · scrum793-la-carrera-del-token.test.mjs
+  VERDE   ·   9211 · 3/0/0 (3, true) · scrum814-carrera-del-tramo.gated.test.mjs
+  VERDE   ·   2372 · 1/0/0 (1, true) · scrum92-login-operario.test.mjs
+T3 · N=11 · ficheros=80 · VERDE=76 ROJO=4 SALTA=0 CIEGO=0 COLGADO=0 · pared 32330 ms · suman todos: true
+  VERDE   ·    770 · 2/0/0 (2, true) · scrum115-wa-fallo-registrado.test.mjs
+  VERDE   ·   3268 · 1/0/0 (1, true) · scrum127-paywall-bloquea.test.mjs
+  ROJO    ·   1948 · 2/1/0 (3, true) · scrum1599f-los-que-solo-ve-staging.test.mjs · CAEN: SCRUM-1599f · los que SÓLO corren contra staging son exactamente los 22 declarados
+  VERDE   ·   1604 · 7/0/0 (7, true) · scrum173-cadena-verifactu-serializada.test.mjs
+  VERDE   ·   2847 · 3/0/0 (3, true) · scrum178-emision-manual.test.mjs
+  ROJO    ·   6024 · 0/1/0 (1, true) · scrum234-carrera-serie.gated.test.mjs · CAEN: SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+  ROJO    ·  15840 · 5/3/0 (8, true) · scrum419-ci-declara-lo-que-no-corre.test.mjs · CAEN: SCRUM-419 · el inventario de lo que NO corre está declarado, fichero por fichero | SCRUM-419 · cada gateado dice POR QUÉ no corre, y nombra la variable | SCRUM-419 · 🔴 CI DECLARA lo que no ha ejecutado, en vez de callarlo
+  VERDE   ·   1387 · 4/0/0 (4, true) · scrum592-concurrencia-serie.test.mjs
+  VERDE   ·    706 · 4/0/0 (4, true) · scrum767-cura-concurrencia.test.mjs
+  ROJO    ·   2428 · 7/1/0 (8, true) · scrum781-concurrencia-de-la-factura.test.mjs · CAEN: SCRUM-781 · SUELO: UNA emisión avanza el contador fiscal exactamente 1
+  VERDE   ·   1119 · 6/0/0 (6, true) · scrum793-la-carrera-del-token.test.mjs
+  VERDE   ·   9851 · 3/0/0 (3, true) · scrum814-carrera-del-tramo.gated.test.mjs
+  VERDE   ·   2423 · 1/0/0 (1, true) · scrum92-login-operario.test.mjs
+T4 · N=11 · ficheros=80 · VERDE=76 ROJO=4 SALTA=0 CIEGO=0 COLGADO=0 · pared 30122 ms · suman todos: true
+  VERDE   ·   1371 · 2/0/0 (2, true) · scrum115-wa-fallo-registrado.test.mjs
+  VERDE   ·   3478 · 1/0/0 (1, true) · scrum127-paywall-bloquea.test.mjs
+  ROJO    ·   1825 · 2/1/0 (3, true) · scrum1599f-los-que-solo-ve-staging.test.mjs · CAEN: SCRUM-1599f · los que SÓLO corren contra staging son exactamente los 22 declarados
+  VERDE   ·   1959 · 7/0/0 (7, true) · scrum173-cadena-verifactu-serializada.test.mjs
+  VERDE   ·   3392 · 3/0/0 (3, true) · scrum178-emision-manual.test.mjs
+  ROJO    ·   5795 · 0/1/0 (1, true) · scrum234-carrera-serie.gated.test.mjs · CAEN: SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+  ROJO    ·  15301 · 5/3/0 (8, true) · scrum419-ci-declara-lo-que-no-corre.test.mjs · CAEN: SCRUM-419 · el inventario de lo que NO corre está declarado, fichero por fichero | SCRUM-419 · cada gateado dice POR QUÉ no corre, y nombra la variable | SCRUM-419 · 🔴 CI DECLARA lo que no ha ejecutado, en vez de callarlo
+  VERDE   ·   1915 · 4/0/0 (4, true) · scrum592-concurrencia-serie.test.mjs
+  VERDE   ·   1022 · 4/0/0 (4, true) · scrum767-cura-concurrencia.test.mjs
+  ROJO    ·   3045 · 7/1/0 (8, true) · scrum781-concurrencia-de-la-factura.test.mjs · CAEN: SCRUM-781 · SUELO: UNA emisión avanza el contador fiscal exactamente 1
+  VERDE   ·   1467 · 6/0/0 (6, true) · scrum793-la-carrera-del-token.test.mjs
+  VERDE   ·   9644 · 3/0/0 (3, true) · scrum814-carrera-del-tramo.gated.test.mjs
+  VERDE   ·   2555 · 1/0/0 (1, true) · scrum92-login-operario.test.mjs
+T5 · N=11 · ficheros=80 · VERDE=76 ROJO=4 SALTA=0 CIEGO=0 COLGADO=0 · pared 26013 ms · suman todos: true
+  VERDE   ·    835 · 2/0/0 (2, true) · scrum115-wa-fallo-registrado.test.mjs
+  VERDE   ·   2475 · 1/0/0 (1, true) · scrum127-paywall-bloquea.test.mjs
+  ROJO    ·   1781 · 2/1/0 (3, true) · scrum1599f-los-que-solo-ve-staging.test.mjs · CAEN: SCRUM-1599f · los que SÓLO corren contra staging son exactamente los 22 declarados
+  VERDE   ·   1327 · 7/0/0 (7, true) · scrum173-cadena-verifactu-serializada.test.mjs
+  VERDE   ·   2227 · 3/0/0 (3, true) · scrum178-emision-manual.test.mjs
+  ROJO    ·   5560 · 0/1/0 (1, true) · scrum234-carrera-serie.gated.test.mjs · CAEN: SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+  ROJO    ·  12926 · 5/3/0 (8, true) · scrum419-ci-declara-lo-que-no-corre.test.mjs · CAEN: SCRUM-419 · el inventario de lo que NO corre está declarado, fichero por fichero | SCRUM-419 · cada gateado dice POR QUÉ no corre, y nombra la variable | SCRUM-419 · 🔴 CI DECLARA lo que no ha ejecutado, en vez de callarlo
+  VERDE   ·   1248 · 4/0/0 (4, true) · scrum592-concurrencia-serie.test.mjs
+  VERDE   ·    715 · 4/0/0 (4, true) · scrum767-cura-concurrencia.test.mjs
+  ROJO    ·   2193 · 7/1/0 (8, true) · scrum781-concurrencia-de-la-factura.test.mjs · CAEN: SCRUM-781 · SUELO: UNA emisión avanza el contador fiscal exactamente 1
+  VERDE   ·   1039 · 6/0/0 (6, true) · scrum793-la-carrera-del-token.test.mjs
+  VERDE   ·   9016 · 3/0/0 (3, true) · scrum814-carrera-del-tramo.gated.test.mjs
+  VERDE   ·   1931 · 1/0/0 (1, true) · scrum92-login-operario.test.mjs
+T6 · N=11 · ficheros=80 · VERDE=76 ROJO=4 SALTA=0 CIEGO=0 COLGADO=0 · pared 27572 ms · suman todos: true
+  VERDE   ·   1105 · 2/0/0 (2, true) · scrum115-wa-fallo-registrado.test.mjs
+  VERDE   ·   3173 · 1/0/0 (1, true) · scrum127-paywall-bloquea.test.mjs
+  ROJO    ·   1732 · 2/1/0 (3, true) · scrum1599f-los-que-solo-ve-staging.test.mjs · CAEN: SCRUM-1599f · los que SÓLO corren contra staging son exactamente los 22 declarados
+  VERDE   ·   1988 · 7/0/0 (7, true) · scrum173-cadena-verifactu-serializada.test.mjs
+  VERDE   ·   2919 · 3/0/0 (3, true) · scrum178-emision-manual.test.mjs
+  ROJO    ·   5656 · 0/1/0 (1, true) · scrum234-carrera-serie.gated.test.mjs · CAEN: SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos
+  ROJO    ·  13826 · 5/3/0 (8, true) · scrum419-ci-declara-lo-que-no-corre.test.mjs · CAEN: SCRUM-419 · el inventario de lo que NO corre está declarado, fichero por fichero | SCRUM-419 · cada gateado dice POR QUÉ no corre, y nombra la variable | SCRUM-419 · 🔴 CI DECLARA lo que no ha ejecutado, en vez de callarlo
+  VERDE   ·   1331 · 4/0/0 (4, true) · scrum592-concurrencia-serie.test.mjs
+  VERDE   ·    907 · 4/0/0 (4, true) · scrum767-cura-concurrencia.test.mjs
+  ROJO    ·   2746 · 7/1/0 (8, true) · scrum781-concurrencia-de-la-factura.test.mjs · CAEN: SCRUM-781 · SUELO: UNA emisión avanza el contador fiscal exactamente 1
+  VERDE   ·   1495 · 6/0/0 (6, true) · scrum793-la-carrera-del-token.test.mjs
+  VERDE   ·   9078 · 3/0/0 (3, true) · scrum814-carrera-del-tramo.gated.test.mjs
+  VERDE   ·   2463 · 1/0/0 (1, true) · scrum92-login-operario.test.mjs

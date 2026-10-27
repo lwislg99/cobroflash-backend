@@ -75,6 +75,7 @@ test('SCRUM-609b · el rótulo es el APROBADO, y ya no lleva marcador (SCRUM-667
   // El fundador aprobó los tres textos TAL CUAL el 2-sep-2026 y se retiró el prefijo. El texto no
   // se toca (regla 30), así que aquí se fija LITERAL: si alguien lo abrevia o le añade puntuación,
   // esto cae. Antes este test exigía el marcador; ahora exige su ausencia y el texto exacto.
+  // Consta en: SCRUM-1502 comentario 20834.
   const src = fs.readFileSync(path.join(RAIZ, 'public/dashboard/js/switchTipoArticulo.js'), 'utf8');
   assert.match(src, /leyenda\.textContent = 'Esto es';/);
   assert.match(src, /ETIQUETA = \{ PRODUCTO: 'Producto', SERVICIO: 'Servicio' \}/);

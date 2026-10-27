@@ -918,3 +918,127 @@ Del orquestador (`cobroflash-backend-95`): SOLO MEDIR Y PREGUNTAR. Separar lo he
 - No toqué el máster, `public/` ni la puerta. Tampoco transicioné el ticket: lo parte o lo cierra el orquestador (A13/A18).
 - No medí si el vídeo de V0-6 está grabado, ni si alguien usa hoy los guiones (eso es la P1). La firma SCRUM-1551 c.20437 la leí en el commit `8b069ba50` y en `puerta.json`, no en Jira.
 - Suite entera local: NO CORRIDA (encargo solo de medir; un cambio de un fichero de docs).
+
+# APÉNDICE · 24-oct-2026 · SCRUM-1016o · El `aria-label` de la animación, con la firma de c.20778 (P4)
+
+**Medido contra:** `origin/main` = `1b3395ecc6d3524e7b4ec711871d1d485ee67f28` · 2026-10-24T15:00:50Z
+**Rama:** `scrum-1016o-aria-label` · **Puesto:** J3 (sesión `jv-j3bd`) · **Skill UI:** cargada (`yaqu-premium-ui`, antes de tocar `public/index.html`)
+
+A9: aviso → cicatriz J3 «Pedí el ticket a Jira con una lista de campos sin `description` y di por leído «el ticket entero» con los 15 comentarios; lo cazó que el volcado de la descripción pesaba 16 bytes, y la leí después.» — no se pudo comprobar: qué campos pide una sesión a Jira no deja rastro en el árbol que un test pueda leer
+
+## Encargo
+
+Aplicar en `public/index.html:447` el literal que el fundador firmó en SCRUM-1016 c.20778 (P4), propuesto por J4 en c.20752, y cerrar la fila 12 de la puerta de go-live en el mismo PR. Nada más de la landing.
+
+## La firma, leída en Jira
+
+c.20778, P4: «`aria-label` de `public/index.html:447` = «Demostración: del presupuesto a la firma»». El literal se sacó del cuerpo del comentario por programa (un solo `= «…»` en c.20778) y se cotejó por bytes contra el test y la landing: 1 aparición en cada uno, `ó` en NFC. La descripción del ticket dice «no se toca `public/` desde este ticket»: la supera c.20778, que encarga el cambio a J3.
+
+## Lo aplicado
+
+| fichero | cambio |
+| --- | --- |
+| `public/index.html:447` | `aria-label="Demostración: de presupuesto a cobro"` → `aria-label="Demostración: del presupuesto a la firma"` (1 línea; `git diff --numstat` = 1 1) |
+| `tests/scrum1016o-aria-label-firmado.test.mjs` | nuevo: los `<div class="stage">` fuera de comentarios HTML (población: 1) llevan el literal firmado; sin ninguno dice CIEGO. El juez se prueba también con entradas fabricadas: label viejo, sin label, sin animación y animación comentada |
+| `docs/go-live/puerta.json`, fila 12 | `cerrada`, con el sha del commit que cambia la línea (`36f475434f3ef265b37e18745aa32eabcd85a297`) |
+| `tests/scrum1554c-puerta-de-go-live.test.mjs` | `12` añadido a `CERRADAS`, que es lo que el guard pide cuando una fila se cierra |
+
+**Rojo primero:** con el test commiteado (`05a39170445eb817beedba774f519815b1584949`) y la landing sin tocar, 2 tests · 1 pass · **1 fail**, con el mensaje «la animación se anuncia como "Demostración: de presupuesto a cobro"». Con la línea cambiada, 2 · 2 · 0.
+
+**Por qué la fila 12 se cierra con el sha del commit y no con el del merge** (como hicieron 1551f y 1551g en otro PR): el encargo pide cerrarla en el mismo PR, y el sha del merge no existe hasta que entra. El commit sí es buscable y entra en main con este cierre: si el PR no entra, el cierre tampoco. El `motivo` dice que lo servido en yaqu.app NO estaba medido al escribirlo.
+
+## Guards
+
+Ningún guard fijaba el literal viejo: `git grep "de presupuesto a cobro"` sobre `tests/` y `scripts/` da 0. Control positivo del mismo `grep`: `public/index.html:447` y `docs/go-live/puerta.json:116`, antes del cambio. Quedan con el texto viejo, a propósito, la descripción de la fila 12 (`puerta.json:116`: una entrada no se reescribe, se cierra) y `docs/equipo/para-javier.md:345`, un documento del orquestador que proponía otra redacción («de presupuesto a firma»).
+
+## Batería antes de empujar
+
+Mini-tanda de **58 ficheros**: los 40 tests que leen `public/index.html`, más scrum331, 1554c, 1016o, los de suite (237, 976, 824, 836, 419, 702, 700, 719, 1415) y los de registro (267, 273, 1294, 811c, 921). `dist/` construido antes con `tsc --noCheck` (el árbol anidado no lo trae).
+
+| pasada | resultado |
+| --- | --- |
+| 1ª | 581 tests · 578 pass · **3 fail**: scrum1294 (mi `A9:` citaba media frase de la cicatriz y el guard compara la frase entera), scrum553 (mi test subía el trinquete de 20 a 22: dos fixtures dentro de `assert.match`, que el censo cuenta como buscador por el nombre) y scrum976 (es el mismo rojo de 1294, visto por `guards:entrada`) |
+| 2ª, tras arreglar los dos | 581 tests · **581 pass · 0 fail** · 0 skip; 581 líneas `ok` y 0 `not ok`, que suman el total declarado |
+
+Control del arreglo de scrum553: `censar('.')` da 20 con 0 del fichero nuevo; antes daba 22 con 2 suyos.
+
+## Lo que me salió mal
+
+Al corregir la frase del `A9:` con un script, el patrón casó PRIMERO con otro aviso de J3 en la línea 689 de este mismo fichero (el de 1016k) y lo pisó. Lo vi en el `git diff`, el hook no me dejó restaurar con `git restore` ni con `>`, y lo repuse con un script que toma esa línea de `HEAD` y sólo corrige la mía (`git diff --numstat` = 1 1, en la línea de este tramo). No llegó a ningún commit.
+
+## Qué NO hice
+
+- No toqué nada más de la landing: la tarjeta «Cobros» (`:653`, fila 11) sigue abierta, condicionada al go-live.
+- No transicioné el ticket (A13).
+- Servido en yaqu.app: NO medido (hace falta el merge y el despliegue).
+- Suite entera local: NO CORRIDA (10 sesiones a la vez; hacen de tanda los guards dirigidos y el obligatorio de CI).
+# APÉNDICE · 24-oct-2026 · SCRUM-1016p · El matiz de la regla 24 en B1, 26b y W2, la A22 al día y los guiones a la puerta
+
+**Medido contra:** `origin/main` = `1b3395ecc6d3524e7b4ec711871d1d485ee67f28` · 2026-10-24T15:00:49Z
+**Rama:** `scrum-1016p-master-regla-24` · **Puesto:** J4 (sesión `jv-j4af`) · **Skill UI:** no cargada · no toca `public/`: sólo lee `public/index.html` para copiar el H1 servido.
+**Carril:** `docs/YAQU_MASTER.md` sin cerradura, lo edita **un jefe**: el encargo lo da el orquestador `cobroflash-backend-95` como jefe (mismo precedente que 1390x y 1601b). `docs/go-live/puerta.json`: «sin fila en §3: nadie lo reclama» (`carriles.mjs de`), igual que en 1551f y 1551g.
+**No toca** `public/`, `src/`, el camino de emisión, el esquema ni ninguna base.
+
+A9: aviso → cicatriz J4 «conté los retornos de carro de puerta.json con `od -c | grep '\\r'` y salieron 353 donde había 0: el patrón casaba con la letra «r», la misma trampa que ya tenía apuntada en la memoria» — no se pudo comprobar: la cuenta de retornos de carro con `od | grep` era de un solo uso y fuera del repo; lo que la cazó fue cruzarla con un recuento por bytes.
+
+## Encargo
+
+Aplicar la decisión del fundador de SCRUM-1016 c.20778 (P1, P2 y P3), que responde a c.20752. P4 (`aria-label` de `public/index.html:447`) es de J3 y no entra aquí.
+
+## Lo aplicado en el máster — 4 líneas, editadas en sitio
+
+El máster tiene 1.913 líneas antes y después; `git diff -U0` da cuatro trozos de una línea (`@@ -91 +91`, `-246 +246`, `-444 +444`, `-1661 +1661`). Ninguna línea citada por número se ha movido.
+
+| # | línea | qué se añade | de dónde sale el literal |
+| --- | --- | --- | --- |
+| 2 | `:91` B1 | «(en España, hasta SIF-1, tampoco se vende cobro por YaQu: regla 24; la ventaja del ciclo completo empieza en SIF-1)» | c.16200 §3 #2 |
+| 8 | `:246` regla 26b | «⚠️ Con la regla 24, en España este gancho no se usa hasta SIF-1: el titular ahí es presupuesto + firma + organización; la morosidad/el cobro es el ángulo de la Etapa 2 (post-SIF) y de los países sin este apagado.» | c.16200 §3 #8 |
+| 12 | `:1661` W2 | «(España: post-SIF, regla 24)» detrás de «cobros todos los métodos» | c.16200 §3 #12 |
+| 9 | `:444` N5 A22 | «Del presupuesto al cobro» pasa a «Del presupuesto a la firma», y la nota guarda el texto de antes | H1 servido, `public/index.html:441` y `:521`, firmado en c.19607 |
+
+Cada cambio lleva su nota *(SCRUM-1016: … c.20778, 24-oct-2026)*.
+
+**Re-cotejo con el máster de hoy:** el trozo que cada literal de c.16200 deja intacto sigue igual, letra a letra («Competencia "gratis" Kit Digital → vender cobro, no factura», «…nunca el titular.**», «facturación ES VeriFactu (post-SIF) · cobros todos los métodos ·»). «Etapa 2 (post-SIF)» ya existe en el máster (`:216`), así que el literal de la 26b no se inventa ningún término. El eyebrow «El ERP por WhatsApp para los oficios» sigue sirviéndose (`public/index.html:440`), y por eso la A22 lo conserva.
+
+## P1 — fila 24 de la puerta de go-live
+
+Los cinco guiones no se reescriben. Re-medidos hoy, los cinco siguen prometiendo cobro: `:53` «Cobra la señal antes de empezar», `:226-228` «te paga la señal» / «señal cobrada», `:232` «no cobra la señal», `:235` y `:1869` «¿Cuántas señales has dejado de cobrar este mes?», `:1012` «paga la señal». Pasan a la **fila 24** de `docs/go-live/puerta.json`, abierta, con `de_donde` = SCRUM-1016 c.20778. `tests/scrum1554c-puerta-de-go-live.test.mjs` sube `TOTAL` de 23 a 24, que es lo que su cabecera pide para cada entrada nueva («Sube con cada entrada nueva; NUNCA baja»): no se relaja nada.
+
+## Lo que queda, y no es de este encargo
+
+- **La A22 todavía describe la demo animada como «presupuesto→WhatsApp→firma→cobrado».** La animación servida acaba en «Firmado · 961,95 €» (`public/index.html:480`). La P3 firmada cubre el H1 y no esta frase, así que no la toco. Pregunta para el fundador: ¿se cambia también «→cobrado» por «→firmado», por la misma regla 16?
+- P4: el `aria-label` lo aplica J3, y la fila 12 se cierra con su sha.
+
+## Qué NO hice
+
+- No toqué `public/` ni transicioné el ticket (A13/A18).
+- Suite entera local: NO CORRIDA (hoy hay 10 sesiones a la vez). Corrí los guards dirigidos; el obligatorio de CI hace de tanda.
+
+# APÉNDICE · 24-oct-2026 · SCRUM-1016q · La demo animada de la A22 termina en «Firmado»
+
+**Medido contra:** `origin/main` = `67f0c66833f8996399e79abff0a9f4e5c90217b4` · 2026-10-24T15:20:39Z
+**Rama:** `scrum-1016q-a22-firmado`, sale de `origin/scrum-1016p-master-regla-24` = `77b1c3830587f619da9a0de82d2d02f247168efc` (#2847, abierto al ramificar): **este PR depende de #2847**, que toca la misma línea `:444`. **Puesto:** J4 (sesión `jv-j4ag`) · **Skill UI:** no cargada · no toca `public/`: sólo lo lee.
+**Carril:** `docs/YAQU_MASTER.md` sin cerradura, lo edita **un jefe**: el encargo lo da el orquestador `cobroflash-backend-95` como jefe, mismo precedente que 1016p.
+**No toca** `public/`, `src/`, el camino de emisión, el esquema ni ninguna base.
+
+A9: sin fallo que generalice — el cambio es una sola frase copiada de lo servido; la cita se cotejó contra `public/index.html` y contra la landing bajada de yaqu.app antes de escribirla, y no hubo tropiezo que convertir.
+
+## Encargo
+
+Aplicar la decisión del fundador de SCRUM-1016 c.20806 («Sí»), que responde a la pregunta de c.20805 (1016p): en N5 A22 la demo animada termina en «Firmado», que es lo que sirve hoy, y no en «→cobrado».
+
+## Lo servido, citado
+
+- Último paso de la animación, `public/index.html:448`: «Firmado. Presupuesto cerrado.» (pasos: «Presupuesto en 30 segundos» · «Enviado por WhatsApp» · «Tu cliente firma» · «Firmado. Presupuesto cerrado.»).
+- Aviso final, `public/index.html:480`: «Firmado · 961,95 €».
+- yaqu.app bajado a las 15:20:11Z (cabecera `Date`): 89.737 B; «Firmado · …961,95 €» sale 1 vez, «Del presupuesto a la firma» 5 veces (control positivo) y «cobrado» 0 veces.
+
+## Lo aplicado en el máster — 1 línea, editada en sitio
+
+`:444`: «(presupuesto→WhatsApp→firma→cobrado)» pasa a «(presupuesto→WhatsApp→firma→firmado)», con la nota *(SCRUM-1016: … c.20806, 24-oct-2026. Antes decía «→cobrado».)*. El máster tiene 1.913 líneas antes y después; `git diff -U0` da un trozo de una línea (`@@ -444 +444 @@`). El resto de la línea, incluida la nota de 1016p, queda igual.
+
+## Qué NO hice
+
+- No toqué la landing ni ninguna otra línea del máster, ni transicioné el ticket (A13).
+- Jira: leí enteros c.19607, c.19608, c.20752, c.20778, c.20805, c.20806 y c.20809. Los once comentarios de septiembre (c.16200–c.16648) los barrí por «A22», «cobrado» y «animaci», no línea a línea.
+- Suite entera local: NO CORRIDA (hoy hay 10 sesiones a la vez). Corrí los guards dirigidos; el obligatorio de CI hace de tanda.

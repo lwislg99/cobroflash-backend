@@ -33,6 +33,13 @@ router.get('/', async (req, res) => {
     const nombre = `evidencias-${req.merchantId}-${año}-T${trimestre}.zip`;
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Disposition', `attachment; filename="${nombre}"`);
+    // SCRUM-1251b (decisión del fundador, SCRUM-1251 c.20675 P3 «Avisar»): un trimestre vacío se
+    // descargaba igual —siete ficheros, CSV sólo con cabecera, 303 a 0,00— sin ninguna señal. Mismo
+    // contrato que `/admin/libros/expedidas.csv`: el recuento viaja en `X-Yaqu-Filas` (facturas del
+    // libro del paquete) y `X-Yaqu-Miradas`, y el ZIP se sigue entregando entero. Van ANTES del
+    // `pipe`: con el primer byte del ZIP las cabeceras ya han salido.
+    res.setHeader('X-Yaqu-Filas', String(paquete.resumen.asientos));
+    res.setHeader('X-Yaqu-Miradas', String(paquete.resumen.miradas));
 
     const zip = new ZipArchive({ zlib: { level: 9 } });
     // Si el ZIP se rompe a mitad, se registra: una descarga truncada que nadie ve es un paquete

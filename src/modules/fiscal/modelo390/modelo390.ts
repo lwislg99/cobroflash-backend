@@ -9,19 +9,23 @@
 // distinta de la suma de sus trimestres, y el profesional tendría dos borradores que no cuadran.
 //
 // El invariante, que un test comprueba AL CÉNTIMO: cada casilla del 390 = Σ de su casilla en los
-// cuatro 303, y la 65 = Σ de las 46.
+// cuatro 303, la 65 = Σ de las 46 y la 125 = Σ de las 122 (SCRUM-1077c).
 //
 // Lo que el 303 deja vacío (30/31, 64-71) sale vacío aquí, con su motivo. Lo que el 303 no supo
 // colocar sale aquí declarado, con el trimestre del que viene.
 //
 // ⚠️ REGLA 24 · se construye, no se enciende. Y REGLA 38 · esto es LECTURA: no toca el camino de
 // emisión ni escribe nada. Sin ruta y sin pantalla: su texto pide firma (regla 39).
-import { AVISO_ORIENTATIVO, type Modelo303, type OperacionSinClasificar, type GastoSinClasificar } from '../modelo303/modelo303';
+import {
+  AVISO_ORIENTATIVO, type Modelo303, type OperacionSinClasificar, type GastoSinClasificar,
+  type OperacionInversionSujetoPasivo,
+} from '../modelo303/modelo303';
 import {
   PRIMER_EJERCICIO_DEL_IMPRESO, FUENTE_390, TRIPLETAS_DEVENGADO_390,
   CASILLAS_TOTAL_DEVENGADO_390, CASILLA_TOTAL_CUOTAS_Y_RECARGO_390,
   CASILLAS_DEDUCIBLE_CORRIENTES_390, CASILLAS_DEDUCIBLE_BIENES_INVERSION_390,
   CASILLA_SUMA_DEDUCCIONES_390, CASILLA_RESULTADO_REGIMEN_GENERAL_390, CASILLAS_SIN_RELLENAR_390,
+  CASILLA_INVERSION_SUJETO_PASIVO_390,
 } from './casillas';
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -82,6 +86,13 @@ export interface Modelo390 {
   /** 65 = 47 − 64. */
   resultadoRegimenGeneral: Casilla390;
   sinRellenar: { casillas: readonly string[]; porque: 'el_303_deja_vacias_de_la_64_a_la_71' };
+  /**
+   * SCRUM-1077c · «10. Volumen de operaciones»: sólo la 125 = Σ de las cuatro 122 del 303
+   * (c.20833). Sin cuota: no suma en la liquidación. La 99 y la 108 no se rellenan.
+   */
+  volumenDeOperaciones: {
+    inversionSujetoPasivo: { casilla: string; base: number; operaciones: (OperacionInversionSujetoPasivo & { trimestre: number })[] };
+  };
   trimestres: TrimestreDel390[];
   sinClasificar: (OperacionSinClasificar & { trimestre: number })[];
   sinDesglose: { trimestre: number; numero: string }[];
@@ -120,6 +131,8 @@ export function construirModelo390(params: { año: number; trimestres: Modelo303
   let base28 = 0;
   let cuota29 = 0;
   let suma45 = 0;
+  let base125 = 0;
+  const operaciones125: Modelo390['volumenDeOperaciones']['inversionSujetoPasivo']['operaciones'] = [];
   let miradas = 0;
   let asientos = 0;
   const sinClasificar: Modelo390['sinClasificar'] = [];
@@ -140,6 +153,11 @@ export function construirModelo390(params: { año: number; trimestres: Modelo303
     miradas += t.miradas;
     asientos += t.asientos;
     for (const s of t.sinClasificar) sinClasificar.push({ ...s, trimestre: t.trimestre });
+    // SCRUM-1077c · la S2 que el 303 pone en su 122 va a la 125 del 390 (c.20833), y deja de ir sin
+    // clasificar. La S2 que el 303 deja FUERA de la 122 (la que trae cuota) sigue en su «sin
+    // clasificar», y llega aquí por la línea de arriba.
+    base125 += t.informacionAdicional.inversionSujetoPasivo.base;
+    for (const o of t.informacionAdicional.inversionSujetoPasivo.operaciones) operaciones125.push({ ...o, trimestre: t.trimestre });
     for (const numero of t.sinDesglose) sinDesglose.push({ trimestre: t.trimestre, numero });
     for (const g of t.ivaDeducible.sinClasificar) gastosSinClasificar.push({ ...g, trimestre: t.trimestre });
     for (const m of t.motivosParaNoFiarse) motivosParaNoFiarse.push(`T${t.trimestre}: ${m}`);
@@ -183,6 +201,9 @@ export function construirModelo390(params: { año: number; trimestres: Modelo303
     },
     resultadoRegimenGeneral: { casilla: CASILLA_RESULTADO_REGIMEN_GENERAL_390, valor: r2(total47 - total64) },
     sinRellenar: { casillas: CASILLAS_SIN_RELLENAR_390, porque: 'el_303_deja_vacias_de_la_64_a_la_71' },
+    volumenDeOperaciones: {
+      inversionSujetoPasivo: { casilla: CASILLA_INVERSION_SUJETO_PASIVO_390, base: r2(base125), operaciones: operaciones125 },
+    },
     trimestres: ordenados.map((t) => ({
       trimestre: t.trimestre,
       cuotaDevengada: t.casillaTotalCuota.valor,

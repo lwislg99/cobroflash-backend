@@ -40,10 +40,21 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { bloquesDeComentario, marcasDe } from './_procedencia-aprobacion.mjs';
-import { indiceDeFuentes, respaldoDe, referenciasRotas, esProsaDistintiva } from './_respaldo-de-firma.mjs';
+import { indiceDeFuentes, respaldoDe, referenciasRotas, esProsaDistintiva, paresCitados } from './_respaldo-de-firma.mjs';
+import { PARES_LEIDOS } from './_pares-leidos-en-jira.mjs';
 import { ABRE, loQueSeLee } from './_cita-declarada.mjs';
 
 const RAIZ = path.resolve(import.meta.dirname, '..');
+
+// SCRUM-1511h · la mutación que imita el defecto del ticket: «anclado» vuelve a mirar sólo la forma.
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    fichero: 'tests/_respaldo-de-firma.mjs',
+    de: '    const sinLeer = leidos ? paresNoLeidos(bloque.texto, leidos) : [];',
+    a: '    const sinLeer = [];',
+    cae: 'SCRUM-1511h · 🔴 POSITIVO SEMBRADO: un par que nadie ha leído no ancla',
+  },
+];
 
 // ── LOS DOS EJES AMPLIADOS ───────────────────────────────────────────────────────────────────
 const DIRS = ['src', 'public', 'tests', 'scripts'];
@@ -132,7 +143,7 @@ const VENTANA = 45;
 //
 // ⚠️ Y NO es el 27 de `_censo-firmas-autorizacion.mjs`: aquél cuenta sobre `docs/` incluido y con
 // otra marca. Que los dos rondaran 27 es casualidad, y por eso se dice aquí.
-export const SIN_RESPALDO = 20;
+export const SIN_RESPALDO = 12; // SCRUM-1502o: 20 → 13, siete marcas de tests/ ancladas a su firma real (SCRUM-1502 c.20834, SCRUM-593 c.14262). SCRUM-1502p: 13 → 12, sale scrum377:72 (SCRUM-1502 c.20853).
 
 // Procedencias que apuntan a un documento que NO EXISTE. Peor que no tener procedencia: parece
 // rastreable, así que nadie va a mirar. Se congela con nombre y apellidos, y NO se arregla aquí
@@ -146,18 +157,19 @@ const censo = () => (CACHE ??= {
 });
 
 /** El respaldo de una marca que afirma, sobre lo que se LEE (SCRUM-921d). */
-function respaldoLeido(b, indice, { citas = true } = {}) {
+function respaldoLeido(b, indice, { citas = true, leidos } = {}) {
   // Lo citado tampoco RESPALDA: un `SCRUM-<n>` dentro de una cita no dice dónde consta ESTA firma.
   const leido = citas ? { ...b, texto: loQueSeLee(b.texto, b.fichero) } : b;
-  return respaldoDe(leido, indice);
+  // `leidos` sin dar = la lista congelada (SCRUM-1511h); `null` = sólo la forma, para el banco.
+  return respaldoDe(leido, indice, leidos);
 }
 
 /** El veredicto de cada marca, por el MISMO camino que usa el trinquete. */
-function veredictos({ citas = true } = {}) {
+function veredictos({ citas = true, leidos } = {}) {
   const { marcas, indice } = censo();
   return marcas
     .filter((b) => !noAfirma(b, { citas }))
-    .map((b) => ({ ...b, donde: `${b.fichero}:${b.linea}`, respaldo: respaldoLeido(b, indice, { citas }) }));
+    .map((b) => ({ ...b, donde: `${b.fichero}:${b.linea}`, respaldo: respaldoLeido(b, indice, { citas, leidos }) }));
 }
 const sinRespaldo = (opciones) => veredictos(opciones).filter((v) => v.respaldo.nivel === 'sin-respaldo');
 
@@ -367,4 +379,54 @@ test('SCRUM-921c · 🔴 una procedencia que apunta a un fichero fantasma no es 
     + '  Parece rastreable y no lleva a ninguna parte, así que nadie va a mirar.');
   // El congelado, nombrado: `scripts/voice-eval.mjs` cita `docs/evidencias/voice-eval/RESULTS.md`.
   assert.match(rotas[0], /voice-eval/, '🔴 la rota congelada ya no es la que se congeló: re-mídela y nómbrala.');
+});
+
+// ── SCRUM-1511h · «ANCLADO» EXIGE UN PAR LEÍDO, NO SÓLO BIEN ESCRITO ─────────────────────────────
+// Decisión del fundador: SCRUM-1511 comentario 20748 (lista congelada, sin red). El positivo es el
+// que sembró jv-j4ac en c.20743: ticket SCRUM-6604, que Jira contestó con 404.
+const SEMBRADA = '// La v9 del editor, aprobada por el fundador. Consta en: SCRUM-6604 comentario 99999.';
+const CON_PAR_LEIDO = '// La v3 del editor, aprobada por el fundador. Consta en: SCRUM-1511 comentario 18924.';
+
+test('SCRUM-1511h · 🔴 POSITIVO SEMBRADO: un par que nadie ha leído no ancla', () => {
+  const b = caso(SEMBRADA);
+  assert.equal(b.length, 1, '🔴 CIEGO: el lector no ve la marca sembrada, y el veredicto no habla de ella.');
+  const { indice } = censo();
+  // Sin la lista, el defecto del ticket se reproduce: la forma basta. Si esto cae, el caso no prueba nada.
+  assert.equal(respaldoDe(b[0], indice, null).nivel, 'anclado');
+  const r = respaldoDe(b[0], indice);
+  assert.equal(r.nivel, 'rastreable', `🔴 una cita a un ticket que no existe sigue ANCLADA (${r.nivel}).`);
+  assert.match(r.motivo ?? '', /par no leído: SCRUM-6604 comentario 99999/, '🔴 baja sin decir qué par falta.');
+  assert.match(r.motivo, /tests\/_pares-leidos-en-jira\.mjs/, '🔴 el motivo no dice dónde se añade la fila.');
+  // Control negativo con la MISMA forma: un par leído sí ancla.
+  assert.equal(respaldoDe(caso(CON_PAR_LEIDO)[0], indice).nivel, 'anclado');
+  // Y uno leído no tapa a otro sin leer en el mismo bloque.
+  const mixta = caso(`${CON_PAR_LEIDO}\n// Y también SCRUM-6604 comentario 99999.`)[0];
+  assert.equal(respaldoDe(mixta, indice).nivel, 'rastreable', '🔴 un par leído absuelve a su vecino inventado.');
+});
+
+test('SCRUM-1511h · toda marca con la forma del ancla tiene sus pares en la lista', () => {
+  const conForma = veredictos({ leidos: null }).filter((v) => v.respaldo.nivel === 'anclado');
+  // SUELO: si nadie tiene la forma del ancla, el cero de abajo no ha mirado nada.
+  assert.ok(conForma.length > 0, '🔴 CIEGO: ninguna marca del árbol tiene la forma `SCRUM-N comentario M`.');
+  const bajan = veredictos().filter((v) => v.respaldo.motivo);
+  assert.deepEqual(bajan.map((v) => `${v.donde} → ${v.respaldo.motivo}`), [],
+    '🔴 marcas con la forma del ancla y algún par sin leer: no cuentan como ancladas.');
+  const ancladas = new Set(veredictos().filter((v) => v.respaldo.nivel === 'anclado').map((v) => v.donde));
+  assert.deepEqual([...ancladas].sort(), conForma.map((v) => v.donde).sort());
+});
+
+test('SCRUM-1511h · la lista de pares leídos está bien formada', () => {
+  assert.ok(PARES_LEIDOS.length > 0, '🔴 CIEGO: la lista está vacía.');
+  const vistos = new Set();
+  for (const p of PARES_LEIDOS) {
+    const k = `SCRUM-${p.ticket} comentario ${p.comentario}`;
+    assert.ok(Number.isInteger(p.ticket) && p.ticket > 0, `🔴 ${k}: ticket mal escrito.`);
+    // La misma forma que reconoce el ancla: si el lector no la ve, la fila no sirve para nada.
+    assert.deepEqual(paresCitados(k), [{ ticket: p.ticket, comentario: p.comentario }], `🔴 ${k}: no tiene la forma del ancla.`);
+    assert.match(p.leido, /^\d{4}-\d{2}-\d{2}$/, `🔴 ${k}: la fecha de la lectura no es AAAA-MM-DD.`);
+    assert.ok(!Number.isNaN(Date.parse(p.leido)), `🔴 ${k}: ${p.leido} no es una fecha.`);
+    assert.ok(typeof p.por === 'string' && p.por.trim().length > 0, `🔴 ${k}: no dice quién lo leyó.`);
+    assert.ok(!vistos.has(k), `🔴 ${k}: fila repetida.`);
+    vistos.add(k);
+  }
 });

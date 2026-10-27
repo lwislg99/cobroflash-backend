@@ -24,12 +24,30 @@ async function main() {
   //
   // `import()` dinámico porque `_db-guard.mjs` es ESM y esto lo ejecuta ts-node en CommonJS.
   // `tsconfig.json` sólo incluye `src`, así que este fichero no pasa por `npm run build`.
+  //
+  // SCRUM-1105b: y por eso nadie vio que ts-node NO lo compilaba: el `.mjs` no trae tipos y el
+  // `import()` daba TS7016, así que `npm run db:seed` moría antes de la primera línea. El
+  // `@ts-expect-error` dice cuál es el error que se acepta; si un día trae tipos, cae él solo.
+  //
+  // SCRUM-1105b: la base se NOMBRA, no se exporta: `npm run seed -- --dev` (o `--staging`), y la
+  // URL la resuelve `fijarDestinoPorBandera`, el mismo que usan los otros tres sembradores. Sin
+  // bandera, el camino de antes (la condición de arriba: sin fricción nueva en desarrollo).
+  // @ts-expect-error TS7016: `_destino-de-semilla.mjs` no trae declaración de tipos.
+  const { fijarDestinoPorBandera, RECHAZADO, FIJADO } = await import('../scripts/_destino-de-semilla.mjs');
+  const porBandera = fijarDestinoPorBandera();
+  if (porBandera.estado === RECHAZADO) {
+    console.error(`\n🔴 NO SE SIEMBRA.\n   ${porBandera.mensaje}\n`);
+    process.exit(1);
+  }
+  if (porBandera.estado === FIJADO) for (const aviso of porBandera.avisos) console.warn(`⚠️  ${aviso}`);
+
+  // @ts-expect-error TS7016: `_db-guard.mjs` no trae declaración de tipos.
   const { destinoSembrable } = await import('../scripts/_db-guard.mjs');
   const destino = destinoSembrable(process.env.DATABASE_URL);
   if (!destino.ok) {
     console.error(`\n🔴 NO SE SIEMBRA. Destino: ${destino.etiqueta}\n   ${destino.motivo}\n`);
-    console.error('   Para sembrar en desarrollo, di contra qué base:');
-    console.error('     DATABASE_URL=<la de dev> npm run db:seed\n');
+    console.error('   Nombra la base y la clave se resuelve por dentro:');
+    console.error('     npm run seed -- --dev        (o --staging)\n');
     process.exit(1);
   }
   console.log(`→ sembrando en ${destino.etiqueta}`);

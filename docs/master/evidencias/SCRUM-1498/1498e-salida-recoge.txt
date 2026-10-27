@@ -1,0 +1,10 @@
+POBLACION runs=200 con-job-meta=140 sin-job-meta=60 · control nombre inventado=0 (tiene que ser 0)
+control positivo: runs con exactamente 1 job meta = 140 (tiene que ser > 0)
+  pull_request/completed/cancelled: 18
+  pull_request/completed/failure: 81
+  pull_request/completed/success: 19
+  pull_request/in_progress/null: 2
+  push/completed/cancelled: 1
+  push/completed/failure: 14
+  push/completed/success: 4
+  push/in_progress/null: 1

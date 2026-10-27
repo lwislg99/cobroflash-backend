@@ -951,3 +951,300 @@ silencio» de `scrum921` y de `scrum387`, y **por eso no está empujada**.
 - `scrum387`: su comentario de cabecera sigue listando `librosAeat.ts:183` (es la foto del 7-sep de SCRUM-814).
 - No he visto nada en yaqu.app: ninguna de estas marcas cambia lo que se pinta.
 - Tanda completa: no corrida (guards dirigidos, en la entrega).
+
+---
+
+## SCRUM-1502m · Tramo 12 (S4, 24-oct-2026): la marca de S4 de c.20702, anclada, y las 12 de su carril que no estaban en la lista
+
+**Medido contra:** `origin/main` = `927bda7ab44b604d81bca8c453663e7fc6f6cda9` · 2026-10-24T12:31:21Z (hora de GitHub)
+A9: comprobación → `tests/scrum387-procedencia-aprobacion.test.mjs`
+**Skill UI:** no cargada · sólo se tocan comentarios de dos vistas; no cambia nada de lo que se pinta.
+
+### ① La de la lista: `albaranDetailView.js:292`, comprobada ANTES de anclarla
+
+| pregunta | respuesta medida |
+|---|---|
+| ¿existe la firma? | sí: SCRUM-1502 **c.20702**, fila P3, «firmo los rótulos del rail» |
+| ¿a qué contesta? | a la pregunta 3 de **c.20701**, que nombra el bloque bajo `:292` y sus dos rótulos |
+| ¿qué hay bajo `:292`? | `ROTULOS_RAIL_ALBARAN` (`:307` con esta rama), dos claves (`presupuesto`, `fotos`); se pintan en `:1094` y `:1172` |
+| ¿cambió el fichero entre la pregunta y hoy? | no: `git log ac9a7ae4e..origin/main -- albaranDetailView.js` sale vacío |
+| ¿quién firma? | Javier, jefe (`dos-equipos.md` §1: «donde las normas dicen el fundador, vale un jefe»). Rótulos: ni legal ni fiscal, así que su delegación del 22-sep tampoco los excluye |
+| ¿lo respaldaba algo antes? | sólo un literal en `docs/master/SCRUM-921.md:257`, que es **otro texto** (c.20701, fila 3), y la descripción de SCRUM-302 los da por «sin aprobar» |
+
+Veredicto: **la firma existe y cubre exactamente lo que se pinta.** Ancla puesta.
+
+⚠️ **Lo que la firma NO cubre, y que nadie ha preguntado:** el rail del albarán tiene otros cinco rótulos,
+los de `fila()` (`albaranDetailView.js:1054-1060` con esta rama). Ninguna marca dice que estén aprobados, así que no
+entran en este censo. La pregunta 3 acaba en «…» y la respuesta dice «los rótulos del rail»: **no se
+extiende a esos cinco por parecido** (c.18835). Si están firmados, no lo sé: no lo he buscado.
+
+### ② Las otras 12 marcas del carril S4, que la lista de Javier no traía
+
+La lista de c.20701 era la de las marcas cuyo único respaldo es un literal en `docs/master/` (nivel
+`documental`). Las 12 de abajo no salían en ella porque el guard las da por `rastreable`: citan un ticket o un
+documento. **Que se pueda ir a mirar no dice que lo que hay allí sea la firma.** Fui a mirar.
+
+Población: las marcas que el censo de `scrum921c` encuentra en los tres ficheros del carril S4 con código
+(`albaranDetailView.js`, `jobsView.js`, `parteDetailView.js`). Son **13**: la de ① y estas 12. Sonda: el mismo
+camino que el guard (`marcasDe` + negación + `respaldoDe`) filtrado a esos ficheros
+(`docs/master/evidencias/scrum1502m/sonda-marcas-carril.mjs <raíz> <fichero>…`). Control: sobre el árbol
+entero da los mismos niveles que J1 midió después de 1502j (33 ancladas · 13 documentales · 20 sin respaldo).
+`docs/microcopy/` no tiene marcas en código y no entra.
+
+Líneas: las de esta rama (las de `albaranDetailView.js` desde `:292` van dos más abajo que en `main`).
+
+| marca | cita hoy | lo que hay en la fuente (leído el 24-oct) | veredicto |
+|---|---|---|---|
+| `albaranDetailView.js:199` | SCRUM-895 «(comentario 15699)» | c.15699: «FIRMA DEL FUNDADOR sobre la propuesta del comentario 15689», con el literal de `btnConvertirFactura` | **firma real** → ancla con su forma canónica |
+| `jobsView.js:79` | SCRUM-769 | c.14580: «FIRMADO POR EL FUNDADOR (Javier) — 6-sep-2026», con el literal del botón | **firma real** → ancla puesta |
+| `jobsView.js:63` | SCRUM-651 | c.14229, una ENTREGA: «Las tres decisiones del fundador… 2 · El copy: APROBADO», con los dos literales | **literal presente, en una entrega**; NO anclada (criterio de c.20701: una entrega no es la firma) |
+| `albaranDetailView.js:332` | SCRUM-379 | c.12499, un CIERRE de sesión: «Microcopy firmada:» con el literal, sin decir quién firma | **literal presente, sin firmante**; NO anclada |
+| `albaranDetailView.js:215` | SCRUM-302 | 2 comentarios (12450, 12451), ninguno firma; la descripción dice «microcopy sin aprobar» | **NO ENCONTRADA** |
+| `albaranDetailView.js:221` | SCRUM-302 | ídem. El registro (`SCRUM-302.md:119`, `:551`) dice que el fundador lo cambió el 6-ago, sin localizador | **NO ENCONTRADA** |
+| `albaranDetailView.js:234` | SCRUM-302 | ídem | **NO ENCONTRADA** |
+| `albaranDetailView.js:923` | `docs/microcopy/…SCRUM-707…` | el fichero dice «Aprobado por el fundador… en SCRUM-707»; SCRUM-707 tiene 2 comentarios del orquestador que **citan el fichero**. Circular | **NO ENCONTRADA** |
+| `parteDetailView.js:40` | SCRUM-720c + `docs/microcopy/` | SCRUM-720: **0 comentarios**; la descripción no trae ningún literal aprobado | **NO ENCONTRADA** en Jira |
+| `parteDetailView.js:57` | SCRUM-720 + `docs/microcopy/` | ídem | **NO ENCONTRADA** en Jira |
+| `parteDetailView.js:162` | SCRUM-720c + `docs/microcopy/` | ídem | **NO ENCONTRADA** en Jira |
+| `parteDetailView.js:67` | SCRUM-818 + `docs/microcopy/` | SCRUM-818: **0 comentarios** | **NO ENCONTRADA** en Jira |
+
+**Recuento de las 12:** 2 con firma real (ancladas) · 2 con el literal en un comentario que no es una firma ·
+8 sin firma encontrable en Jira. Esas 8 no cambian de nivel con la mitad «a pelo» de `sinCitas` (c.20690):
+ya son `rastreable`. **Por eso el guard no las verá nunca.**
+
+⚠️ «NO ENCONTRADA» quiere decir que leí entero el ticket que citan (descripción y todos sus comentarios)
+y la firma no está. **No** he buscado en otros tickets con `text ~`, y la firma puede estar en el chat de un
+jefe sin pasar por Jira. Para las de `docs/microcopy/` el fichero existe y dice «aprobado por el fundador»,
+pero no dice dónde: es la misma afirmación sin localizador que este ticket persigue, un fichero más abajo.
+
+### Lo hecho
+
+- `albaranDetailView.js:292`: `Consta en: SCRUM-1502 comentario 20702`, con la pregunta a la que contesta.
+- `albaranDetailView.js:199`: `Consta en: SCRUM-895 comentario 15699` (ya citaba el número, pero sin la forma
+  que lee `RE_ANCLA_JIRA`).
+- `jobsView.js:79`: `Consta en: SCRUM-769 comentario 14580`, y su par en `tests/_pares-leidos-en-jira.mjs`
+  (SCRUM-1511h: desde hoy un ancla sólo cuenta si alguien ha leído su par en Jira; lo pidió su rojo al traer
+  `main`). Los otros dos pares, 895/15699 y 1502/20702, ya estaban en la lista.
+- **Baja un trinquete:** `scrum387` `SIN_PROCEDENCIA` de 14 a 13. Su caso «el trinquete tampoco baja en
+  silencio» se puso rojo con el ancla puesta y el número viejo (visto en rojo, 65 de 66); sale `:292`, la única
+  de las tres que no citaba ningún ticket.
+- Niveles por marca, antes y después: las tres pasan a `anclado` y **ninguna otra cambia**. Árbol entero:
+  anclado 33 → 36 · documental 13 → 12 · rastreable 167 → 165 · sin respaldo 20 → 20.
+
+### Lo que NO se ha hecho
+
+- Las 10 que no tienen firma encontrable no se tocan: piden pregunta al jefe, una a una, como en c.20701.
+- No he visto nada en yaqu.app: ningún cambio de lo que se pinta.
+
+---
+
+## SCRUM-1502o · Tramo 14 (J1, 24-oct-2026): las firmas de c.20834 en `tests/` — siete marcas ancladas, dos trinquetes que bajan; los literales de las preguntas 13, 14, 15 y 17, al orquestador
+
+**Medido contra:** `origin/main` = `9eb740a4286ee02faedd071dddfab55ddae0d515` · 2026-10-24T16:01:29Z (hora de GitHub)
+A9: aviso → cicatriz J1 «Pasé a `node --test` una lista de ficheros leída con `$(cat $T/…)` sin comillas, y la ruta con espacio partió la lista: corrieron 9 de 32 ficheros con salida 0; lo cazó contar la población antes de leer el veredicto» — no se pudo comprobar: lo impediría un hook sobre la orden, y los hooks no son de este puesto
+
+### Qué firmó el fundador y dónde
+
+SCRUM-1502 **comentario 20834** (24-oct, transcrito por el orquestador del equipo de Javier, no por Javier):
+las respuestas a las preguntas de `c.20824` (jv-j4ah, 1502n). De `tests/`, las 16, 18, 19, 20, 21 y 23, y
+`scrum593b:91` a SCRUM-593 **c.14262**, que leí entero hoy: es la decisión del fundador del 2-sep sobre el
+rótulo de la cabecera. Los literales viven en Jira y en el código; aquí van por fichero:línea (tramo 1, §4).
+
+### Lo hecho (líneas de `main` @ `82e1bb530`, iguales en `9eb740a42`)
+
+| marca | P | ancla |
+|---|---|---|
+| `tests/scrum609b-switch-tipo-articulo.test.mjs:75` | 16 | SCRUM-1502 c.20834 |
+| `tests/scrum651-trabajo-sin-presupuesto.test.mjs:381` | 18 | ídem |
+| `tests/scrum320-que-falta-para-cobrar.test.mjs:253` | 19 | ídem |
+| `tests/scrum283-censo-acciones-factura.test.mjs:118` | 20 | ídem |
+| `tests/scrum294c-criterio-del-merchant.test.mjs:175` | 21 | ídem |
+| `tests/scrum151-motivo-sin-tramo.test.mjs:53` | 23 | ídem |
+| `tests/scrum593b-superficie-texto-del-documento.test.mjs:91` | (c.20824, A') | SCRUM-593 c.14262 |
+
+Una línea de comentario al final de cada bloque: ni un carácter de texto firmado ni de ninguna aserción.
+Carril: `tests/` sin fila en §3 (el test de un ticket → quien trabaja el ticket, como en 1502j).
+
+**Par nuevo en `tests/_pares-leidos-en-jira.mjs`** (SCRUM-1511h): `1502/20834`, leído hoy por jv-j1ca con el
+ticket entero. El fichero es de J6; la fila va en este PR porque su propia regla 3 lo pide («en el mismo PR
+que la marca que lo cita»), como hizo 1502m. `593/14262` ya estaba.
+
+### El control: el nivel de cada marca, antes y después
+
+Instrumento: `docs/master/evidencias/scrum1502j/niveles.mjs` (identidad = fichero + ordinal). Salida en
+`evidencias/scrum1502o/salida-niveles.txt`.
+
+| `porNivel()` | negada | citada | rastreable | anclado | documental | sin respaldo |
+|---|---|---|---|---|---|---|
+| antes | 13 | 1 | 167 | 36 | 12 | 20 |
+| después | 13 | 1 | 167 | **43** | 12 | **13** |
+
+- **Siete pasan de `sin-respaldo` a `anclado`, y ninguna otra cambia** (`cambios=7`, 248 marcas antes y después).
+- `congeladas()`: de 20 a 13; salen exactamente las siete. Ninguna línea se desplaza: cada ancla va debajo de su marca.
+- **Control negativo de la lista de pares:** quitada la fila `1502/20834`, `scrum921c` cae en «SCRUM-1511h · toda
+  marca con la forma del ancla tiene sus pares en la lista», nombrando las seis marcas de c.20834 con «par no
+  leído». Restaurada, verde.
+
+### Bajan dos trinquetes (cada uno, visto en rojo antes con el número viejo)
+
+| trinquete | antes | después | qué sale |
+|---|---|---|---|
+| `scrum921c` `SIN_RESPALDO` | 20 | **13** | las siete de arriba |
+| `scrum921` `SIN_PROCEDENCIA` | 19 | **18** | sólo `scrum294c:177` (`evidencias/scrum1502j/procedencia-921.mjs`, antes = árbol fijado a `82e1bb530`) |
+| `scrum387` `SIN_PROCEDENCIA` | 13 | 13 | no se mueve: mira `src/` y `public/` |
+
+Cada número lleva su nota en la misma línea. `tests/_veredicto-mudez.json` se regeneró con
+`npm run censo:mudez -- --escribir` (lo pidió `scrum719`: `scrum320` y `scrum651` cambiaron; los dos VIVO).
+
+### Los literales de las preguntas 13, 14, 15 y 17
+
+Copiados por programa de `main` @ `9eb740a42` y mandados al orquestador por mensaje y en el comentario de
+Jira de esta entrega. **Aquí no se copian**: en `docs/master` absolverían las marcas que gobiernan (tramo 1, §4).
+Lo que sí va aquí, porque cambia las preguntas:
+
+- **13** (`quoteActionsRegistry.js:68`): el Bloque 3 de `MICROCOPY_APROBADA_SIN_APLICAR.md` y el código **no
+  dicen lo mismo**: el documento lista doce rótulos con dos que el código no tiene, y el código tiene tres que el
+  documento no lista (uno de ellos ya anclado a SCRUM-1273 c.19605). Hay que preguntar por los de `main`.
+- **14** (`parteDictado.ts:138`): la tabla del documento (`:503`) da la versión en plural como «APROBADA, NO
+  APLICADA»; el addendum de `:598` y el código dan la singular. La marca cuenta el cambio de una a otra.
+- **15** (`parteDictado.ts:401`, `PROMPT_PARTE_APROBADO`, 19 líneas, 1.175 bytes): **ya está firmada**, en
+  SCRUM-1502 c.20629, fila 1 («✅ La firmo»). No hace falta preguntarla otra vez: lo que falta es el ancla, que es
+  de S1 (tramo 7, «Para el equipo de Luis»).
+- **17** (`scrum377:72`): la marca es el `TOPE` y no lleva cadenas debajo. Las cadenas son las 17 parejas
+  singular/plural que aplicó `79479b9af` (10-ago, el commit que bajó el tope de 26 a 6). Medidas con
+  `evidencias/scrum1502o/plurales.mjs`: **17 de 17 siguen literales en `main`**; control de cero, el mismo guion
+  sobre `79479b9af^` da 0 de 17.
+
+### Verificación
+
+32 ficheros dirigidos (los 7 tocados, 921c, 921, 387×2, 1502h, 237, 976, 824×3, 836, 419, 702, 700, 710b, 719,
+1415, 267, 273, 1294, 1572, 723, 812, 525d, 622): 323 de 324; el rojo era `scrum719`, regenerado arriba, y
+después 921c + 921 + 387 + 719 en verde sobre el merge con `9eb740a42` (72 de 72). `dist/` con `tsc --noCheck`.
+Tanda completa: no corrida (la corre el obligatorio).
+
+### Lo que NO se ha hecho
+
+- «Tramo 14» porque 1502n (J4, PR #2861, abierto al empujar esto) ya se titula «Tramo 13» y añade al final de
+  este mismo fichero. Si 1502n no entrase, queda un hueco en la numeración; la identidad es la letra.
+- Las marcas de S1, S2 y S4 de c.20834 (1–12 y 22): son de Luis.
+- No he visto nada en yaqu.app: ninguna de estas marcas cambia lo que se pinta.
+## SCRUM-1502n · Tramo 13 (J4, 24-oct-2026): lo que queda — 20 sin respaldo clasificadas, 23 preguntas, y la mitad «a pelo» HOY mueve 5
+
+**Medido contra:** `origin/main` = `c6d3aa11f15a0a582f92b8ec4a8c9838ea426dd8` · 2026-10-24T15:36:20Z (hora de GitHub)
+A9: aviso → cicatriz J4 «sembré el positivo de la regla a pelo con un comentario que nombraba el ticket» — no se pudo comprobar: la siembra es de un solo uso y nada obliga a mirar en qué nivel nace una marca sembrada
+**Skill UI:** no cargada · solo docs: este tramo, `docs/master/evidencias/scrum1502n/` y una línea en `cicatrices/J4.md`
+
+Entrega en Jira: SCRUM-1502 **comentario 20824** (la tabla y las 23 preguntas). Aquí va lo que hace falta para
+re-medirlo. Ningún literal se copia en este registro: van por fichero:línea (tramo 1, §4).
+
+### ③ La mitad «a pelo» de `sinCitas` (c.20690): HOY mueve 5 marcas, no 0
+
+Dos sondas independientes, el mismo conjunto:
+
+- `evidencias/scrum1502h/sonda-var.mjs`, variante A, sobre `c6d3aa11f`: 249 marcas, 1.343 fuentes,
+  12 documentales → **pierden 5 de 12**.
+- `evidencias/scrum1502n/cuatro.mjs`: el guard (`scrum921c`, por `foto.mjs`) en un worktree desechable
+  fijado a `bcfc99b0d9a4f4a3aaf9d1608dce06b3d3691482`, con `indiceDeFuentes` filtrando `docs/master/`. Salida
+  en `cuatro.txt`: sin respaldo 20 → 25, documental 12 → 7; entran 5 y no sale ninguna. Entre `bcfc99b0d` y
+  `c6d3aa11f`, `congeladas()` da el mismo conjunto (comparado) y la sonda las mismas 5.
+- Positivo sembrado (`semilla-marca.mjs.txt` + `semilla-fuente.md.txt`): documental con la regla de hoy
+  (12 → 13), sin respaldo con la A (25 → 26). Sin la siembra, 12 y 25.
+
+Las 5 son las de S1 y S2 firmadas en c.20702 y sin anclar: `src/modules/jobs/domain/albaranFirmante.ts:246`
+(P2) · `public/dashboard/js/jobDetailView.js:401` (P4) y `:484` (P5) · `public/dashboard/js/productsView.js:1178`
+(P6) y `:1214` (P7). Ancladas esas 5, la mitad «a pelo» no mueve ninguna y se puede construir. Hoy rompería
+`SIN_RESPALDO = 20` con 25.
+
+### ① Las 20 de `congeladas()`, por grupo
+
+| grupo | marcas | n |
+|---|---|---|
+| firmada en Jira (c.20514), sin ancla, en SCRUM-1591/1590 | `quotesAdmin.routes.ts:408` (S1) · `reportsView.js:1204` (S2) · `jobRailBlocks.js:19` (S2) | 3 |
+| firmada (SCRUM-593 c.14262), anclable ya | `tests/scrum593b-superficie-texto-del-documento.test.mjs:91` | 1 |
+| firma dudosa o parcial | `tests/scrum609b-switch-tipo-articulo.test.mjs:75` (SCRUM-667 c.14271) · `tests/scrum377-plural-de-programador.test.mjs:72` (c.12880, el patrón) | 2 |
+| en Jira, un cierre y no una firma | `homeView.js:779` · `quoteMargen.js:64` · `tests/scrum651-trabajo-sin-presupuesto.test.mjs:381` · `tests/scrum320-que-falta-para-cobrar.test.mjs:253` | 4 |
+| consta en un documento; Jira no buscado | `quoteActionsRegistry.js:68` · `parteDictado.ts:138` · `tests/scrum283-censo-acciones-factura.test.mjs:118` · `tests/scrum294c-criterio-del-merchant.test.mjs:175` · `botFlow.service.ts:1` · `tests/scrum151-motivo-sin-tramo.test.mjs:53` | 6 |
+| sin firma en ningún sitio | `parteDictado.ts:401` | 1 |
+| no afirman firma | `customersView.js:1063` · `tests/scrum715-consta-por-identidad.test.mjs:147` · `scripts/seed-video.mjs:1` | 3 |
+
+Suma 20, comparada como conjunto con `congeladas()`. Los cierres y firmas los releyó hoy un subagente
+(SCRUM-236 c.11668, SCRUM-229 descripción, SCRUM-377 c.12880, SCRUM-667 c.14271, SCRUM-651 c.14229, SCRUM-320
+c.12636, SCRUM-593 c.14262), con su cita y su fecha. Carril: `node scripts/carriles.mjs de`.
+
+### ② Las preguntas
+
+23 en c.20824: las 10 de S4 de c.20785 (las 8 sin firma y las 2 con el literal en una entrega), y 13 de la
+tabla de arriba. Los literales los sacan `literales.mjs` y `tras.cjs` (la primera línea de código bajo la
+marca); `literales.mjs` coge strings de una ventana de 45 líneas y por sí solo no dice cuál gobierna.
+
+### Lo que no se hizo
+
+- Jira de las 6 «consta en un documento» y de las 10 de S4: no buscado por mí (las de S4, leídas en c.20785).
+- Si Luis tiene ya ticket para las 5 de c.20702: no comprobado.
+- yaqu.app: no abierto. Suite entera en local: NO CORRIDA. Ninguna marca, guard ni número tocado.
+- Error propio: la primera siembra nombraba el ticket y nació rastreable (167 → 168), así que el positivo no
+  podía caer con la regla A. Rehecha sin referencia.
+
+## SCRUM-1502p · Tramo 15 (J1, 26-oct-2026): `scrum377:72` anclada a la firma de las 17 parejas (c.20853)
+
+**Medido contra:** `origin/main` = `289ca894656c7c3686a0469d34785512b960e0b3` · 2026-10-26T15:18:41Z (hora de GitHub)
+A9: comprobación → `docs/master/evidencias/scrum1502o/plurales.mjs`
+
+### Qué firmó el fundador y dónde
+
+SCRUM-1502 **comentario 20853** (24-oct, transcrito por el orquestador del equipo de Javier, no por Javier),
+P17: las 17 parejas singular/plural que aplicó `79479b9af` (10-ago), «FIRMADAS las 17 con su frase alrededor»,
+tal como están en `main`. Leído hoy con el ticket entero (30 comentarios). Los literales viven en Jira y en el
+código; aquí no se copian (tramo 1, §4).
+
+### Lo hecho
+
+| fichero | cambio |
+|---|---|
+| `tests/scrum377-plural-de-programador.test.mjs:73` | `// Consta en: SCRUM-1502 comentario 20853.` debajo de la marca del `TOPE` (`:72`). Ni el tope ni ninguna aserción cambian |
+| `tests/_pares-leidos-en-jira.mjs` | par `1502/20853`, leído el 26-oct por jv-j1cc (fichero de J6; la fila va aquí por su regla 3, como en 1502m y 1502o) |
+| `tests/scrum921c-firma-con-respaldo-en-codigo.test.mjs` | `SIN_RESPALDO` 13 → **12**, con su nota en la línea |
+| `docs/master/evidencias/scrum1502o/plurales.mjs` | sin argumento sale CIEGO con código 2 (el error de abajo) |
+
+Las 17 parejas, re-medidas hoy con `plurales.mjs 289ca8946`: **17 de 17 siguen literales en `main`**.
+
+### El control: el nivel de cada marca, antes y después
+
+`docs/master/evidencias/scrum1502j/niveles.mjs`, salida en `evidencias/scrum1502p/salida-niveles.txt`.
+
+| `porNivel()` | negada | citada | rastreable | anclado | documental | sin respaldo |
+|---|---|---|---|---|---|---|
+| antes | 13 | 1 | 171 | 43 | 12 | 13 |
+| después | 13 | 1 | 171 | **44** | 12 | **12** |
+
+- **Sólo cambia `scrum377:72`, de `sin-respaldo` a `anclado`** (`cambios=1`, 252 marcas antes y después).
+- **Rojo primero:** con el número en 13, cae sólo «SCRUM-921c · el trinquete tampoco baja en silencio» (55 de 56
+  en 921c + 921 + 387×2 + 377). `scrum921` y `scrum387` no se mueven.
+- **Control negativo de la lista de pares:** quitada la fila `1502/20853`, `scrum921c` cae nombrando exactamente
+  `scrum377-plural-de-programador.test.mjs:72 → par no leído: SCRUM-1502 comentario 20853`. Restaurada (byte a
+  byte, `cmp`), verde.
+
+### Otras marcas que apuntan a lo que firma c.20853
+
+Barrido sobre las 252 marcas: las de los ficheros donde viven las 17 parejas, y las que nombran plural,
+`377`, `79479b9af` o los objetos de P13–P15 en sus tres líneas de alrededor. Positivo: sale `scrum377:72`.
+En carril J no hay otra: `modelo303.ts:421` y `:429` (J1) gobiernan otros literales y ya citan SCRUM-1063
+c.20797. `parteDictado.ts:126/:138/:401` (S1), `quoteActionsRegistry.js:68` y `reportsView.js:629` (S2) son de
+Luis. P13 y P14 no se tocan.
+
+### Verificación
+
+26 ficheros dirigidos (921c, 921, 387×2, 377, 237, 976, 824×3, 836, 419, 702, 700, 719, 1415, 710b, 1294, 267,
+273, 1572, 525d, 812, 723, 622, 1502h): **255 de 255**, 0 saltos, 0 caen (TAP leído aparte). `dist/` con
+`tsc --noCheck`. Tanda completa: NO CORRIDA (la corre el obligatorio).
+
+### Error propio
+
+Lancé `plurales.mjs` sin el sha y dio `igual_en_main=0 main=undefined`: diecisiete `git show undefined:…`
+fallidos que se resumían como un cero. Lo vi por los `fatal:` de la salida, no por el guion. Ahora el guion se
+niega a contar sin argumento (visto: sin él, CIEGO y salida 2; con él, 17 de 17).
+
+### Lo que NO se ha hecho
+
+- Las anclas de S1/S2 de c.20853 (`quoteActionsRegistry.js:68`, `parteDictado.ts:138` y `:401`): son de Luis.
+- yaqu.app: no mirado; nada cambia en pantalla.

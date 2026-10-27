@@ -1,0 +1,28 @@
+#!/bin/bash
+# SCRUM-1614 · N pasadas. Forma de regimen-1611c.sh (SCRUM-1611c), en este árbol y en el puerto 55614.
+# Uso: bash regimen.sh <etiqueta> <n> <par|solo>
+#   par  → los ficheros de banco + la sonda, en paralelo, contra la misma base (el régimen en que cayó)
+#   solo → webhooks-idempotencia + la sonda, nada más
+set -u
+ET="$1"; N="$2"; MODO="$3"
+T="$CLAUDE_JOB_DIR/tmp"
+cd "/c/Users/Javier Pereira/cobroflash-jv-j6df"
+if [ "$MODO" = par ]; then
+  F=$(grep -l "_banco-libro.mjs" tests/*.test.mjs | grep -v zz1614 | tr '\n' ' ')
+else
+  F="tests/webhooks-idempotencia.test.mjs"
+fi
+echo "ficheros=$(echo $F | wc -w) + sonda"
+for i in $(seq 1 "$N"); do
+  (cd "$T/banco" && node pgbanco.mjs rehacer 55614 >/dev/null)
+  S=$(date +%s)
+  env -u NODE_TEST_CONTEXT -u NODE_OPTIONS -u QA_DB_TEST LIBRO_PG_URL="postgresql://postgres@127.0.0.1:55614/yaqu_libro_test" \
+    timeout 150 node --test --test-force-exit --test-reporter=tap tests/zz1614-sonda.test.mjs $F > "$T/$ET-$i.tap" 2>&1
+  rc=$?
+  casos=$(grep -cE "^(ok|not ok) [0-9]+ - " "$T/$ET-$i.tap")
+  decl=$(grep -E "^# tests " "$T/$ET-$i.tap" | awk '{print $3}')
+  a122c=$(grep -E "^(ok|not ok) [0-9]+ - A12.2c" "$T/$ET-$i.tap" | cut -c1-6)
+  fk=$(grep -c "customer_events_customer_id_fkey" "$T/$ET-$i.tap")
+  sonda=$(grep -E "SONDA1614 " "$T/$ET-$i.tap" | sed 's/^# //' | tr '\n' ' ')
+  echo "$ET-$i rc=$rc s=$(( $(date +%s)-S )) casos=$casos decl=$decl A12.2c=[$a122c] fk=$fk $sonda"
+done

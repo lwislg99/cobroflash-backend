@@ -1,0 +1,22 @@
+// SCRUM-1599r · SOLO PARA MEDIR. Las reglas de adaptar-1599q, pero la fuente puede ser el árbol (WORK) o un
+// commit (git show <ref>:<ruta>), y la salida lleva etiqueta: tests/zz1599r-<etiqueta>-{234,781}.mjs (fuera de
+// *.test.mjs). Los originales NO se tocan. Uso: node adaptar-1599r.mjs <raiz> <WORK|ref> <etiqueta>
+import fs from 'node:fs';
+import { execFileSync } from 'node:child_process';
+const [raiz, ref, etiqueta] = process.argv.slice(2);
+const leer = (r) => ref === 'WORK' ? fs.readFileSync(`${raiz}/${r}`, 'utf8') : execFileSync('git', ['show', `${ref}:${r}`], { cwd: raiz, encoding: 'utf8' });
+let mal = 0;
+const cambia = (t, de, a, nombre) => { if (!de.test(t)) { console.log(`NO CASA ${nombre}`); mal++; return t; } return t.replace(de, a); };
+
+let t = leer('tests/scrum234-carrera-serie.gated.test.mjs');
+t = cambia(t, /^(import '\.\/_staging-db\.mjs';[^\n]*\n)/m, `$1import { URL_BANCO } from './_banco-libro.mjs';\n`, '234 import');
+t = cambia(t, /^const ENABLED = process\.env\.QA_DB_TEST === '1';/m, `const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';`, '234 gate');
+fs.writeFileSync(`${raiz}/tests/zz1599r-${etiqueta}-234.mjs`, t);
+
+t = leer('tests/scrum781-concurrencia-de-la-factura.test.mjs');
+t = cambia(t, /^const ENABLED = process\.env\.QA_DB_TEST === '1';/m, `const ENABLED = process.env.QA_DB_TEST === '1' || !!process.env.LIBRO_PG_URL;`, '781 gate');
+t = cambia(t, /^(\s*)const linea = [^\n]*DATABASE_URL_DEV=[^\n]*$/m, `$1const linea = 'DATABASE_URL_DEV=' + process.env.LIBRO_PG_URL;`, '781 linea');
+t = cambia(t, /info\.base === 'yaqu_dev_javier'/, `info.base === 'yaqu_libro_test'`, '781 base');
+fs.writeFileSync(`${raiz}/tests/zz1599r-${etiqueta}-781.mjs`, t);
+console.log(`adaptados=2 ref=${ref} etiqueta=${etiqueta} sin_casar=${mal}`);
+process.exit(mal ? 1 : 0);

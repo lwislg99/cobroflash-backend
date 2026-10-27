@@ -847,3 +847,73 @@ cambio (no recontado: es el techo que había).
 - Mi primer instrumento de mutación salió CIEGO: importaba el test en el proceso padre y el hijo
   heredaba `NODE_TEST_CONTEXT` (0 verdes en la base). Lo cazó la fila BASE, antes de creer nada.
 - Mi test cargaba `merchantAdmin.js` antes que el doble de base y se quedaba con el Prisma real.
+
+# SCRUM-1536h · Qué queda del ticket el 24-oct: la pieza C y el «visto en yaqu.app» (MEDIDO; nada construido)
+
+**Medido contra:** `origin/main` = `9eb740a4286ee02faedd071dddfab55ddae0d515` · 2026-10-24T15:59:44Z (hora de GitHub)
+
+A9: aviso → A10 «Cero resultados con tu vocabulario no es silencio del documento.» — no se pudo comprobar: `gh pr list --search 1536` me devolvió 4 PR del ticket y no #2658, #2661 ni #2674, que están mergeados (lo vio `git log origin/main --grep`); si me hubiera fiado de `gh`, habría dado la exclusión por no mergeada. Qué indexa la búsqueda de GitHub no lo ve ningún test del árbol.
+
+Sesión `jv-j3bh` (J3), equipo de Javier. Encargo del orquestador (`cobroflash-backend-95`): **SOLO
+MEDIR Y PREGUNTAR.** Nada en `src/`, `public/`, `tests/` ni esquema; ningún texto aplicado.
+
+### ① Hecho y en `main` (cruce de `git log origin/main --grep=SCRUM-1536`, `ls-remote` y `gh`)
+
+| pieza | PR · merge | qué |
+|---|---|---|
+| medición + guiones | #2377 `1a6cf221f` · #2410 `f9f5810ef` | ya estaba decidido; Canarias dentro del RD 1007/2023 |
+| 1536c diseño | #2658 `595884b20` | dónde, con qué dato, textos propuestos |
+| 1536e máster | #2661 `63ad68347` | línea firmada c.20229 al final de la regla 33 |
+| 1536d A + B | #2674 `334a10c74` | `territorioDeAlta.ts`, llamada en `auth.service.ts:350`; «Sí» foral en Ajustes → 409 T2a |
+| 1536f/g B′ (a) | #2686 `6d8399f54` | el país no se cambia después del alta |
+
+`git ls-remote origin 'refs/heads/scrum-1536*'`: vacío (ninguna rama viva). Producción:
+`https://yaqu.app/health` → `version` = `9eb740a4286ee02faedd071dddfab55ddae0d515` (cabecera `Date:`
+15:58:28Z), el mismo sha que `main`: lo de arriba está desplegado.
+
+### ② Lo que sigue vivo
+
+**C · `public/register.html` (carril J3, `carriles.mjs de`).** No aplica mientras el alta esté
+cerrada: `auth.routes.ts:31-50` contesta siempre 409 `registration_closed` (SCRUM-1515, Finalizada) y
+no lee el cuerpo. La pregunta «¿Tienes el domicilio fiscal en Canarias?» está aparcada con su motivo
+en `tests/scrum514-aprobado-y-aplicado.test.mjs:342-349`. **Ticket propio: no tiene.** Ni hay ticket
+abierto que reabra el alta: la búsqueda JQL (`register.html`, «reabrir el alta», «alta pública»)
+dio 13 abiertos, ninguno lo es; control positivo: SCRUM-1536 sale en la misma búsqueda.
+
+**Qué ata hoy la pieza C a quien reabra el alta, leído en el código (no ejecutado):**
+`territorioDeAlta('ES', zona, {})` lanza `domicilio_fiscal_required` (`territorioDeAlta.ts:68`) y
+`registerMerchant` la llama siempre antes del `create` (`auth.service.ts:350`). Reabrir la ruta sin
+la pregunta deja a todo comercio de España sin alta, en ruidoso, no en silencio. Lo que NO ata: que
+quien la reabra mande las dos respuestas fijas en `false` desde la ruta; eso no lo para nada.
+
+**Visto en yaqu.app.** Las dos pantallas tocadas se sirven idénticas a `main`, byte a byte:
+`/dashboard/js/settingsView.js` (107.223 B) y `/dashboard/js/onboardingView.js` (28.118 B), `cmp`
+igual; dentro, `territorio_excluido` / `pais_no_cambiable` / `<output` aparecen 2 y 1 veces;
+control a cero con una cadena inventada: 0. **El comportamiento en pantalla no lo he intentado**:
+pide una sesión de administrador y esta sesión no tiene credenciales ni las busca.
+
+### ③ Lo que el ticket da por cierto y ya no lo es
+
+- El título y el enunciado («seis de las 52 provincias que ofrece el alta… y uno de los literales les
+  da la bienvenida»; la opción (c) «lo que hace el código de `main` ahora mismo»): **ya no.** La
+  provincia canaria rechaza con `territorio_excluido`, motivo `trabajo`, y lo foral va por domicilio.
+- El literal 4 de SCRUM-1522 («Usaremos la hora de Canarias, una menos que en la Península.») vive
+  sólo en `docs/master/SCRUM-1522.md:533` y en Jira; en `src/`, `public/` y `docs/microcopy/`: 0. Con
+  la exclusión ya **no tiene a quién decírselo**: al elegir Las Palmas o Santa Cruz de Tenerife lo
+  que toca es «De momento YaQu no está disponible para trabajos en Canarias.» (c.20225).
+- SCRUM-998 (`area-j3`, En curso) guarda «NO se hace nada hoy» (c.16609, 23-sep): lo supera c.20218.
+
+### ④ Preguntas para el fundador (✅/❌), en el comentario de Jira de esta tanda
+
+P1 cerrar 1536 sin C · P2 ticket propio para C · P3 retirar el literal 4 de 1522 · P4 dar 998 por
+superado. Recomendación y quién lo haría, en el comentario.
+
+### No medido
+
+Ninguna base · ninguna pantalla con sesión · la ruta reabierta (es lectura de código) · la tanda
+(no hay código tocado) · el obligatorio de este empujón al escribir esto.
+
+### Errores propios
+
+- El de la línea A9: la búsqueda de `gh` por número no devolvió tres PR mergeados del ticket.
+- Hook de arranque: «SIN IDENTIDAD» (SCRUM-1498); seguí con el puesto del encargo.

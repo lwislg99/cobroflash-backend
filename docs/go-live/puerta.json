@@ -117,7 +117,13 @@
       "de_donde": "SCRUM-1236 c.19745",
       "consta_en": "SCRUM-1554 c.19746, fila 12",
       "condicion": "Falso siempre.",
-      "estado": "abierta"
+      "estado": "cerrada",
+      "cerrada": {
+        "por": "jv-j3bd (puesto J3, equipo de Javier), SCRUM-1016o",
+        "motivo": "El fundador firmó el literal en SCRUM-1016 c.20778 (P4): «Demostración: del presupuesto a la firma». El sha es el commit que cambia public/index.html:447 (copiado de Jira por programa) y entra en main en el mismo PR que este cierre: si el PR no entra, este cierre tampoco. Lo vigila tests/scrum1016o-aria-label-firmado.test.mjs. Servido en yaqu.app: NO medido al escribir esto (se mide tras el despliegue).",
+        "sha": "36f475434f3ef265b37e18745aa32eabcd85a297",
+        "fecha": "2026-10-24"
+      }
     },
     {
       "numero": 13,
@@ -203,6 +209,14 @@
       "que": "sendInvoiceEmail, sin proveedor, escribe invoice-<número>.eml y devuelve ok: el día que se encienda la facturación le dirá a un profesional que su factura salió por correo cuando sólo se escribió un fichero. STOP del fundador (camino de emisión).",
       "de_donde": "SCRUM-1558",
       "consta_en": "docs/master/SCRUM-1558.md:29 («el orquestador lo apunta en la puerta»). NO consta en SCRUM-1554",
+      "estado": "abierta"
+    },
+    {
+      "numero": 24,
+      "que": "Los cinco guiones de venta del máster prometen el cobro que la regla 24 apaga en España: A1 (docs/YAQU_MASTER.md:53, promesa de calle), H5 (:226-228, tres guiones), H6 (:232, objeciones), H7 y AB5 (:235 y :1869, titular) y V0-6 (:1012, guion de vídeo). Hoy no se usan con profesionales reales; se firman aquí en bloque ANTES de usarse. Literales de mínimos en SCRUM-1016 c.16200 §3; la objeción del Kit Digital no tiene respuesta verdadera hasta SIF-1.",
+      "de_donde": "SCRUM-1016 c.20778 (P1 del fundador: «No, aún no»)",
+      "consta_en": "docs/master/SCRUM-1016.md, tramo SCRUM-1016p. NO consta en SCRUM-1554",
+      "condicion": "Falso en España hasta SIF-1. No se usa con profesionales reales sin la firma en bloque.",
       "estado": "abierta"
     }
   ]

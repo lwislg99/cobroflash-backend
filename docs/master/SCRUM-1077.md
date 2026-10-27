@@ -92,3 +92,96 @@ Orden EHA/3111/2009, consolidada (`https://www.boe.es/buscar/act.php?id=BOE-A-20
 ## Mis errores
 
 - Para arreglar mi conductor de mutaciones pasé código por `node -e` desde bash, y el escapado me rompió el fichero. Lo vi al leer la salida y lo rehice con la herramienta de edición. Es la cicatriz J1 del 1-oct, otra vez: fuera del árbol, sin daño en el repo.
+
+---
+
+# SCRUM-1077b · En qué casilla del 390 va la base de la S2 del emisor — MEDIDO Y PROPUESTO, no construido
+
+**Medido contra:** `origin/main` = `c6d3aa11f15a0a582f92b8ec4a8c9838ea426dd8` · 2026-10-24T15:40:32Z
+**Rama:** `scrum-1077b-casilla-s2-390` · **Puesto:** J1 (sesión `jv-j1bx`) · **Encargo:** orquestador `cobroflash-backend-95`, 24-oct-2026 · **Decisión que lo pide:** el fundador, «Leer el impreso del 390 y proponer» (24-oct, en el chat del orquestador; no está en Jira)
+
+A9: aviso → A10 «Lo que se deduce de NO haber visto algo no vale si algo no se pudo mirar: se queda sin juzgar.» — no se pudo comprobar: el tramo 1077a dice que el Anexo IV está en las imágenes `_14` a `_17`, pero llega de la `_13` a la `_21`, y la casilla de esta pregunta está en la `_19`; un rango de páginas copiado de un registro no pasa por ningún guard
+
+## PASO 0
+
+SCRUM-1063 c.20768 manda la S2 del emisor a la 122 del 303, y c.20819 (1063f) dice que en el 390 sigue sin clasificar porque «su casilla en el 390 NO está decidida». En `main` el 390 no tiene el apartado 10: `git grep` de `99`, `108`, `125` o `volumen` en `src/modules/fiscal/modelo390/` da 0, y el control positivo `sinClasificar` da 4 líneas. No hay rama `scrum-1077b*` en el remoto ni ningún PR con ese nombre. Sólo docs: no se toca código, ni esquema, ni emisión.
+
+## El impreso vigente, leído
+
+- **Orden consolidada:** API `legislacion-consolidada/id/BOE-A-2009-18472/texto`, leída a las 15:38Z. El Anexo I: «Se sustituye por el que figura como anexo IV de la Orden HAC/27/2026, de 22 de enero, según establece su art. 3.». Es la única mención de HAC/27/2026 en el texto.
+- **La orden:** `BOE-A-2026-1761`. Art. 3: el Anexo I «se sustituye por el anexo IV de esta orden». Disposición final única: «se aplicará por primera vez: […] 2. A la declaración-resumen anual del Impuesto sobre el Valor Añadido, modelo 390, correspondiente al ejercicio 2026.»
+- **Las imágenes del Anexo IV** son de la `1761_16563944_13.png` a la `_21.png` (la lista sale del HTML de la orden). La casilla está en la **`_19.png`, «Pág. 6»**, apartado **«10. Volumen de operaciones»**, recuadro «Operaciones realizadas en el ejercicio»:
+  - **125 · «Operaciones sujetas con inversión del sujeto pasivo»**. Una sola cifra, sin cuota.
+  - En la misma página, **108**: «Total volumen de operaciones (Art. 121 Ley IVA) (99 + 653 + 103 + 104 + 105 + 110 + 100 + 101 + 102 + 125 + 126+ 127 + 128 + 227 + 228 - 106 - 107)».
+- **No es la 77 ni la 27/28.** «27/28 IVA devengado en otros supuestos de inversión del sujeto pasivo» (pág. 2, `_14`) y la 77 (pág. 5, `_18`) son del destinatario, que autorrepercute, igual que la 12/13 del 303. La 113 y la 523 (pág. 7, `_20`) son triangulares y servicios localizados.
+
+## Las instrucciones de la AEAT
+
+- **Para 2026 no hay.** La página del procedimiento (`sede.agenciatributaria.gob.es/Sede/procedimientoini/G412.shtml`, leída a las 15:38Z) enlaza «Instrucciones 2025» e «Instrucciones 2024», y nada más. Control: esas dos aparecen en el mismo listado. Además, `…/G412/Instrucciones_modelo_390-2026.pdf` da 404. Esa ruta la deduje yo, así que el 404 no prueba nada por sí solo.
+- **Las de 2025** (`…/G412/Instrucciones_modelo_390-2025.pdf`, `last-modified` 24-feb-2026), pág. 22: «125 Operaciones sujetas con inversión del sujeto pasivo: se hará constar, el importe total de: Las entregas de oro a las que sea de aplicación la regla contenida en el artículo 84, apartado Uno, número 2º, letra b) de la Ley y las entregas de oro de inversión a que se refiere el artículo 140 de la misma Ley. Las entregas de bienes y prestaciones de servicios realizadas a que se refiere el artículo 84 Uno. 2º a), c), d), e), f) y g) de la Ley.»
+- Y en la pág. 21, sobre la **99** «Operaciones en régimen general»: «Tampoco se incluirán las operaciones exentas incluidas en las casillas 103, 104 y 105 ni las operaciones incluidas en las casillas 110 y 125.»
+- El rótulo de la 125 es el mismo en el impreso de 2026. Que el texto de 2026 diga lo mismo que el de 2025 **no está medido**: todavía no existe.
+
+## Diferencia con la 122 del 303
+
+La 122 es «Información adicional» y no suma en nada. La 125 del 390 **sí entra en un total**, el 108 (volumen de operaciones, art. 121 LIVA), y **saca la S2 de la 99**. Hoy YaQu no rellena ni la 99 ni la 108, así que llevar la S2 a la 125 no cambia ninguna otra casilla. Si algún día se rellenan, la S2 tiene que quedar fuera de la 99 y dentro de la 108.
+
+## Propuesta para el fundador (NO construida)
+
+- ✅/❌ **La base de la S2 del emisor va a la casilla 125 del 390**, como suma de las cuatro 122 del 303. Es el mismo cálculo (aceptación 2) y depende de que 1063f (#2855) entre antes.
+  - **Con ✅:** la S2 sale de `sinClasificar` del 390 y la 125 lleva su cita. La liquidación (33/34, 47, 64, 65) no cambia, porque la S2 no tiene cuota. El aviso firmado de la S2 (c.20797) sale sólo si alguna S2 queda fuera de la 122. Se construye en 1077c, encima de 1063f.
+  - **Con ❌:** la S2 se queda como hoy en 1063f: en `sinClasificar` del 390, con su trimestre, y la pone el asesor.
+- **Riesgo en los dos casos:** la 125 (y la 122) se limitan al art. 84.Uno.2º y al oro, y la factura no guarda la letra del supuesto, así que la 125 recogería toda S2. Lo deduzco del enunciado. No está medido sobre facturas.
+
+## Lo que no se ha hecho
+
+No hay código ni tests, ni nada en yaqu.app. **Suite local: NO CORRIDA** (sólo docs). Sólo corrí los guards de registro.
+
+---
+
+# SCRUM-1077c · La base de la S2 del emisor, a la casilla 125 del 390
+
+**Medido contra:** `origin/main` = `9eb740a4286ee02faedd071dddfab55ddae0d515` · 2026-10-24T15:56:00Z
+**Rama:** `scrum-1077c-s2-casilla-125` · **Puesto:** J1 (sesión `jv-j1bz`) · **Encargo:** orquestador `cobroflash-backend-95`, 24-oct-2026 · **Decisión:** Jira c.20833 («Sí, a la 125»), a la pregunta de c.20828 (1077b)
+
+A9: sin fallo que generalice — el rojo salió por el motivo esperado, las 15 mutaciones vivas y el control sembrado MUDA; lo único que no cuadró fue el encargo, que pedía un guard de 1064c que no existe (abajo), y eso se dice, no se corrige aquí
+
+## PASO 0
+
+En `main`: 0 commits `SCRUM-1077c` y ninguna rama `scrum-1077c*`. Esta rama sale de `origin/scrum-1063f-s2-casilla-122` (#2855, OPEN, sin mergear) y lleva mezclada `origin/scrum-1077b-casilla-s2-390` (#2860, OPEN, sólo docs) para que este tramo vaya detrás del suyo. **Depende de los dos.** #2858 (1065c, OPEN) cambia `tests/scrum1077-borrador-390.test.mjs:156`; este tramo no toca ese fichero, y si #2858 entra antes, se mezcla `main`.
+
+## Qué cambia (carril J1, `src/modules/fiscal/modelo390/`)
+
+- `casillas.ts`: `CASILLA_INVERSION_SUJETO_PASIVO_390 = '125'`, con la cita del impreso (Orden HAC/27/2026, Anexo IV, pág. 6, `1761_16563944_19.png`, «10. Volumen de operaciones») y de las instrucciones de 2025, pág. 22, leídas en 1077b. `FUENTE_390` cita ahora también la `_19`.
+- `modelo390.ts`: el 390 lleva `volumenDeOperaciones.inversionSujetoPasivo` = `{ casilla: '125', base: Σ de las cuatro 122, operaciones }`, cada operación con su factura y su trimestre. Se quita el bucle de 1063f que las metía en `sinClasificar`.
+- La S2 que el 303 deja FUERA de su 122 (la que trae cuota) sigue en el `sinClasificar` del 303, y llega al 390 con su trimestre y sin entrar en la 125.
+- **No cambia:** la liquidación (33/34, 47, 64 y 65), `modelo303/`, ningún texto que vea el usuario, ni el esquema ni la emisión. **La 99 y la 108 no se abren** (c.20833).
+- `scripts/_sin-consumir-declarados.json`: una entrada más, la del export nuevo, detrás de las de 1077.
+- `tests/scrum1063f-s2-casilla-122.test.mjs`: su caso del 390 decía «sigue declarando la S2 (sin casilla decidida en el anual)». c.20833 lo deja sin objeto, y ahora comprueba que la S2 de la 122 llega a la 125 con su trimestre. Los otros 10 casos del 303 no se tocan.
+
+## Aceptación (c.20833) → dónde se ve
+
+| aceptación | dónde se ve |
+| --- | --- |
+| la base de la S2 del emisor va a la 125, como suma de las cuatro 122 | `tests/scrum1077c-s2-casilla-125.test.mjs`, «cifras a mano: la 125 es la suma de las cuatro 122» |
+| la 125 lleva la cita del impreso | `casillas.ts` + «la 125 es la del impreso LEÍDO, y la fuente cita su página» |
+| deja de ir sin clasificar | «la S2 de la 125 deja de ir sin clasificar» |
+| la liquidación no cambia (33/34, 47, 64 y 65) | «la liquidación (33/34, 47, 64 y 65) no cambia con la S2»: cifras a mano y el mismo año sin S2 |
+| la 99 y la 108 no se abren | «la 99 y la 108 no se abren…», con control positivo (el barrido ve la 125) |
+| el test del 303 (1063f) sigue verde | `tests/scrum1063f-s2-casilla-122.test.mjs`: 11/11 |
+| yaqu.app | NO HAY NADA QUE VER: el 390 no tiene ruta ni pantalla |
+
+## Cifras a mano
+
+T1: mano de obra 800 al 21 % + S2 1.000 + gasto 100 al 21 % · T2: nada · T3: S2 500 · T4: mano de obra 200 al 21 % + S2 250.
+**125 = 1.000 + 500 + 250 = 1.750** · 05/06 = 1.000/210 · 33/34 = 1.000/210 · 47 = 210 · 64 = 21 · 65 = 189, igual con S2 que sin ella.
+
+## Lo que se corrió, con su población
+
+- **Rojo primero:** el test nuevo contra el `dist/` sin el cambio dio 7 tests, 1 pass y 6 fail. Pasa la de la liquidación, que ya cuadraba antes. Las 6 caen por el motivo esperado: la 125 no existe y la S2 sale en `sinClasificar`. Su control (el 303 real pone 1.000, 0, 500 y 250 en la 122) pasa.
+- **Dirigida:** 23 ficheros (1077c, 1077, 1063b-f, 237, 976, 824, 836, 419, 702, 700, 719, 1415, 1185, 411, 1480e, 622, 1387, 1066c, 1066e), 254 tests: 254 pass, 0 fail, 0 skipped. Por ticket: 1077c 7/7, 1063f 11/11 y 1077 10/10.
+- **No existe ningún guard de 1064c:** `git grep` de «1064c» en `tests/`, `scripts/` y `docs/master/` de `origin/main` da 0. El control, el mismo `git grep` de «SCRUM-1077» en `tests/`, encuentra `scrum1077-borrador-390.test.mjs`.
+- **Mutaciones:** 15 declaradas (4 de 1077c y 11 de 1077), 15 vivas, 0 mudas y 0 ciegas. Las corrió un conductor temporal, fuera del árbol, con `mutacionesDeclaradas`, `correr` y `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`. Su control sembrado (cambiar sólo un comentario de `modelo390.ts`) salió MUDA. `meta:mutaciones --solo-censo`: 809 declaraciones y salida 0. **No corrí** la pasada entera.
+- `tsc --noEmit`: 0 errores.
+- **Suite entera local: NO CORRIDA** (10 sesiones a la vez). Juzga el obligatorio.
+

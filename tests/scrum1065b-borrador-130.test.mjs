@@ -114,7 +114,7 @@ test('SCRUM-1065b · 🔴 CONTROL NEGATIVO: T1 sin facturas ni gastos → 01 a 0
   assert.deepEqual(r.motivosParaNoFiarse, []);
   assert.deepEqual(r.ingresosSinComputar, []);
   assert.deepEqual(r.hipotesisTodosLosGastosAnotados, { gastosAnotados: 0, rendimientoNeto: 0, veintePorCiento: 0 });
-  assert.match(r.avisoObligatorio, /asesor/);
+  assert.equal(r.avisoObligatorio, 'Borrador para tu asesor', 'firmado: SCRUM-1065 c.20813');
 });
 
 test('SCRUM-1065b · 🔴 lo que no se sabe no sale a cero: 02, 03, 04, 06 y 07 van a null con su motivo', () => {
@@ -196,8 +196,14 @@ test('SCRUM-1065b · 🔴 regla 2 y solo lectura: el lector filtra por merchant,
   const r = await leerBorrador130(db, { merchantId: M, año: 2026, trimestre: 1 });
   assert.equal(r.seccionI.ingresos.valor, 1000, '🔴 una factura de otro merchant ha entrado en la 01');
   assert.ok(llamadas.length > 0);
-  assert.deepEqual(llamadas.filter((l) => !l.op.endsWith('.findMany')), [], '🔴 el borrador escribe');
-  for (const l of llamadas) assert.equal(l.where?.merchantId, M, `🔴 ${l.op} sin filtro de merchant`);
+  // SCRUM-1065e: el lector lee también el alta de la fila del merchant, y esa fila se filtra por su `id`.
+  // Es la ÚNICA lectura que no es un `findMany`; cualquier otra operación sigue tumbando el caso.
+  const delAlta = (l) => l.op === 'merchant.findUnique';
+  assert.deepEqual(llamadas.filter((l) => !l.op.endsWith('.findMany') && !delAlta(l)), [], '🔴 el borrador escribe');
+  for (const l of llamadas) {
+    if (delAlta(l)) assert.deepEqual(l.where, { id: M }, `🔴 ${l.op} lee la fila de otro merchant`);
+    else assert.equal(l.where?.merchantId, M, `🔴 ${l.op} sin filtro de merchant`);
+  }
 });
 
 test('SCRUM-1065b · fuera de la población se declara (secciones II y III, art. 110.2 y 110.4)', () => {

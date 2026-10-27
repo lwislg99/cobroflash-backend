@@ -69,6 +69,53 @@ export const CAMBIOS_AUTORIZADOS = [
       a: '7109a19821c60f7e303d855def8a08e45ed0f02e8ee36fb2dd5cad6e5df4ff83',
     },
   },
+  {
+    // SCRUM-624e · el bloque de totales de la F1 imprime el desglose del registro y su total
+    // guardado; la R1 y el justificante, como hasta hoy.
+    firma: 'SCRUM-624 c.20817',
+    registro: 'docs/master/SCRUM-624.md',
+    cita: '«A solo en facturas normales»',
+    cuerpo: {
+      de: 'fdaddbd5bb32a099baa5eaa0acddba18685f76b437f4bc4b8e4838e2b7718acc',
+      a: '4505331c59025f2a96599024980d6a2c366d6bdac8f65c52eeaf80fd85588741',
+    },
+    ambito: {
+      de: '7109a19821c60f7e303d855def8a08e45ed0f02e8ee36fb2dd5cad6e5df4ff83',
+      a: '11a1c6198c347365b671acadfd82e00feca86f13b03a92ba59666758034ea631',
+    },
+  },
+  {
+    // SCRUM-1446e · en la F1 la columna de cada línea va sin IVA y su cabecera dice «IMPORTE»;
+    // la R1 y el justificante, como hasta hoy.
+    firma: 'SCRUM-1446 c.20917',
+    registro: 'docs/master/SCRUM-1446.md',
+    cita: '«IMPORTE»',
+    cuerpo: {
+      de: '4505331c59025f2a96599024980d6a2c366d6bdac8f65c52eeaf80fd85588741',
+      a: 'ad5b56695af75a66367ee34e747fe7b090496403a1277dad71a1b8c1e0a680c4',
+    },
+    ambito: {
+      de: '11a1c6198c347365b671acadfd82e00feca86f13b03a92ba59666758034ea631',
+      a: '9e1d7085237bb4c4b814d685eeca3672d611b2d016dba4ee549015b8d0c847bc',
+    },
+  },
+  {
+    // SCRUM-1446g · en una F1 por tramos, el céntimo que falta para que la columna sin IVA sume la
+    // base va a la línea de mayor resto; sin tramos, la columna como hasta hoy.
+    firma: 'SCRUM-1446 c.20945',
+    registro: 'docs/master/SCRUM-1446.md',
+    cita: '«B, mayor resto»',
+    cuerpo: {
+      de: 'ad5b56695af75a66367ee34e747fe7b090496403a1277dad71a1b8c1e0a680c4',
+      a: '4666fceba0c0fea949ae93c963dc1dc4bf639d4059f8cbed48cca7d60d3cf8b7',
+    },
+    ambito: {
+      de: '9e1d7085237bb4c4b814d685eeca3672d611b2d016dba4ee549015b8d0c847bc',
+      // SCRUM-1446g (2.º) · la `causa` del grupo, al tipo de `VatLine` (el build no compilaba), y
+      // el comentario «de tramo» corregido por SCRUM-1446 c.20964 (1446h): mismo código, mismo papel.
+      a: '1737745f493343caf708b01d64fe95d74bbfb5fdeae62918bd4f144ac405c25e',
+    },
+  },
 ];
 
 /**

@@ -13,6 +13,7 @@ process.env.QA_QUERY_LOG = '1'; // SCRUM-58: ANTES de cargar dist — el cliente
 // al construirse si emite eventos de consulta; sin esto el contador engancha en el vacío (y el
 // propio test lo caza con el assert de "no se enganchó", que es como se descubrió).
 import './_staging-db.mjs'; // SCRUM-60
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599h: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
@@ -40,9 +41,9 @@ const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new
   req.end(body);
 });
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 
-test('SCRUM-58: la lista de Trabajos no hace N+1 (las consultas no crecen con el nº de jobs)', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
+test('SCRUM-58: la lista de Trabajos no hace N+1 (las consultas no crecen con el nº de jobs)', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
 
@@ -88,16 +89,28 @@ test('SCRUM-58: la lista de Trabajos no hace N+1 (las consultas no crecen con el
           }
         };
 
+        // SCRUM-1611c · Se cuentan SOLO las consultas de la petición: las que emite el proceso entre
+        // el envío y la respuesta. Antes había un oyente nuevo por medición, que nunca se quitaba, y
+        // una cola fija de 300 ms DESPUÉS de la respuesta: esa cola no es de la petición (el handler
+        // espera a todas sus consultas antes de responder, y Prisma emite el evento antes de resolver:
+        // 0 tardíos en 200 escrituras con las 12 CPU llenas), así que sólo podía sumar consultas ajenas.
+        // Prisma no deja quitar un oyente: uno solo, con interruptor. Sin espera fija (A10).
+        let midiendo = null;
+        prisma.$on('query', (e) => { if (midiendo) midiendo.push(String(e.query)); });
         const contarConsultasDeLaLista = async () => {
-          let n = 0;
-          const contador = () => { n++; };
-          prisma.$on('query', contador);
+          midiendo = [];
           const res = await pedirSinAgente(`${base}/admin/jobs`, { headers: { cookie } });
+          const vistas = midiendo;
+          midiendo = null;
           assert.equal(res.status, 200, 'la lista debe responder 200');
           const filas = await res.json();
-          // margen para que el listener se vacíe antes de leer el contador
-          await new Promise((r) => setTimeout(r, 300));
-          return { consultas: n, filas: filas.length };
+          return { consultas: vistas.length, vistas, filas: filas.length };
+        };
+        // Lo que una medición tiene y la otra no, por texto: el rojo NOMBRA la consulta de más.
+        const sobrantes = (a, b) => {
+          const quedan = [...b];
+          return a.filter((q) => { const i = quedan.indexOf(q); if (i === -1) return true; quedan.splice(i, 1); return false; })
+            .map((q) => q.slice(0, 160));
         };
 
         await crearJobs(3);
@@ -113,7 +126,8 @@ test('SCRUM-58: la lista de Trabajos no hace N+1 (las consultas no crecen con el
         assert.equal(
           muchos.consultas, pocos.consultas,
           `🔴 N+1: 3 Trabajos → ${pocos.consultas} consultas, 12 Trabajos → ${muchos.consultas}. ` +
-          `El coste debe ser CONSTANTE: si crece con las filas, alguien volvió a consultar dentro del bucle.`,
+          `El coste debe ser CONSTANTE: si crece con las filas, alguien volvió a consultar dentro del bucle. ` +
+          `De más con 12: ${JSON.stringify(sobrantes(muchos.vistas, pocos.vistas))} · de más con 3: ${JSON.stringify(sobrantes(pocos.vistas, muchos.vistas))}`,
         );
 
         // Y el contenido sigue completo: el lote no puede "ahorrar" perdiendo datos.
@@ -133,3 +147,11 @@ test('SCRUM-58: la lista de Trabajos no hace N+1 (las consultas no crecen con el
     await prisma.$disconnect();
   }
 });
+
+// SCRUM-1599h (diseño B de SCRUM-1599) · la mutación que tumba el caso de base, CATALOGADA en SCRUM-1599i.
+// Va aparte de `MUTACIONES_QUE_ME_TUMBAN` a propósito: el job del meta-guard corre SIN base, el caso sale
+// SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco PGlite,
+// `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e). Cada campo, LITERAL.
+export const MUTACIONES_CON_BASE = [
+  { fichero: "src/modules/jobs/app/routes/jobs.routes.ts", de: "for (const j of jobs) out.push(await serializeJob(j, refs));", a: "for (const j of jobs) out.push(await serializeJob(j));", cae: "SCRUM-58: la lista de Trabajos no hace N+1" },
+];

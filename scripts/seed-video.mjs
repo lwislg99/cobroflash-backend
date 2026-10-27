@@ -461,13 +461,16 @@ async function seed() {
       const decidedAt = q.decidedAgo != null ? daysAgo(q.decidedAgo) : null;
 
       // Numeración VIGENTE del código (no hardcodeada).
-      const quoteNumber = await allocateQuoteNumber(tx, mid);
+      // SCRUM-1105c: desde SCRUM-592 devuelve `{ numero, seq, year }`; se desestructura como en
+      // `quotes.routes.ts`. El objeto entero en `quoteNumber` (Int) revertía la siembra entera.
+      const { seq: quoteNumber, year: seriesYear } = await allocateQuoteNumber(tx, mid);
 
       const quote = await tx.quote.create({
         data: {
           merchantId: mid,
           customerId,
           quoteNumber,
+          seriesYear,
           status: q.status,
           total: total.toFixed(2),
           currency: 'EUR',

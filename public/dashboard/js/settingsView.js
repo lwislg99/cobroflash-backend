@@ -799,7 +799,7 @@ function renderSettingsView(container) {
       <label>Color de marca</label>
       <p style="font-size:12px;color:var(--muted);margin:2px 0 6px">Se usa en el botón de aceptar y los acentos de la página que ve tu cliente.</p>
       <div style="display:flex;align-items:center;gap:10px">
-        <input type="color" id="brand-color-input" value="#22c55e" style="width:48px;height:38px;padding:2px;border:1px solid var(--border);border-radius:8px;cursor:pointer"/>
+        <input type="color" id="brand-color-input" value="#22c55e"/>
         <span id="brand-color-hex" style="font-size:13px;color:var(--muted)">#22c55e</span>
         <button type="button" id="brand-color-reset" class="btn-secondary btn-sm">Sin color (por defecto)</button>
       </div>`;
@@ -1528,7 +1528,7 @@ async function renderPublicProfileCard(container) {
       </p>
       ${enabled
         ? (m.slug
-          ? `<div class="alert success" style="display:block;margin:0 0 14px;font-size:13px">Tu página está <strong>activa</strong>: <a href="/p/${escSettings(m.slug)}" target="_blank" rel="noopener">yaqu.app/p/${escSettings(m.slug)} ↗</a></div>`
+          ? `<div class="alert success" style="display:block;margin:0 0 14px;font-size:13px">Tu página está <strong>activa</strong>: <a class="pp-enlace" href="/p/${escSettings(m.slug)}" target="_blank" rel="noopener">yaqu.app/p/${escSettings(m.slug)} ↗</a></div>`
           : `<div class="alert warning" style="display:block;margin:0 0 14px;font-size:13px">Elige una dirección para estrenar tu página.</div>`)
         : `<div class="alert" style="display:block;margin:0 0 14px;font-size:13px;background:var(--neutral-50);border:1px solid var(--border);color:var(--neutral-600)">Aún no está activada — déjala lista y la encendemos contigo.</div>`}
       <div class="field" style="margin-bottom:12px">

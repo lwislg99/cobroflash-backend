@@ -1,0 +1,33 @@
+// SCRUM-1611 · clasifica cada pasada del primer caso de scrum814 por el ORDEN del log de Postgres: ¿contó la
+// segunda petición sus tramos ANTES de que la primera commiteara? Es la única forma de que la falta del cerrojo
+// se vea. Uso: node orden814.mjs <etiqueta1> [<etiqueta2> …]   (lee <etiqueta>.log y <etiqueta>.tap)
+import fs from 'node:fs';
+const filas = [];
+for (const e of process.argv.slice(2)) {
+  const log = fs.existsSync(`${e}.log`) ? fs.readFileSync(`${e}.log`, 'utf8').split(/\r?\n/) : [];
+  const ev = [];
+  for (const l of log) {
+    const m = /^\S+ (\d\d:\d\d:\d\d\.\d+) \S+ \[(\d+)\] x=\d+ (?:LOG|ERROR):\s+(.*)$/.exec(l);
+    if (!m) continue;
+    const [, t, pid, s] = m;
+    let k = null;
+    if (/SELECT COUNT\(\*\) AS "_count\$_all" FROM \(SELECT "public"\."invoices"\."id" FROM "public"\."invoices"/.test(s)) k = 'cuenta';
+    else if (/^statement: BEGIN/.test(s)) k = 'begin';
+    else if (/^statement: COMMIT/.test(s)) k = 'commit';
+    if (k) ev.push({ t, pid, k });
+  }
+  const tap = fs.existsSync(`${e}.tap`) ? fs.readFileSync(`${e}.tap`, 'utf8') : '';
+  const res = /^not ok 1 /m.test(tap) ? 'CAE' : /^ok 1 /m.test(tap) ? 'VIVE' : 'CIEGO';
+  const desfase = (/desfase de salida: (\d+) ms/.exec(tap) || [])[1];
+  const etiquetas = (/tramos emitidos: ([^·]+)/.exec(tap) || [])[1] || (/Etiquetas: (\[[^\]]*\])/.exec(tap) || [])[1];
+  const cuentas = ev.filter((x) => x.k === 'cuenta');
+  if (cuentas.length < 2) { filas.push({ e, res, orden: `CIEGO (${cuentas.length} recuentos)` }); continue; }
+  const i1 = ev.indexOf(cuentas[0]); const i2 = ev.indexOf(cuentas[1]);
+  const iCommit1 = ev.findIndex((x, i) => i > i1 && x.k === 'commit' && x.pid === cuentas[0].pid);
+  // ¿Estaban las dos transacciones abiertas a la vez? La 2ª abrió (su último BEGIN antes de contar) antes del commit de la 1ª.
+  let iBegin2 = -1; for (let i = i2; i >= 0; i--) if (ev[i].k === 'begin' && ev[i].pid === cuentas[1].pid) { iBegin2 = i; break; }
+  filas.push({ e, res, desfase, etiquetas: etiquetas && etiquetas.trim(), txSolapadas: iBegin2 < iCommit1, segundaCuentaAntesDelCommit: i2 < iCommit1, t: `${cuentas[0].t}/${ev[iCommit1]?.t}/${cuentas[1].t}` });
+}
+for (const f of filas) console.log(JSON.stringify(f));
+const c = (p) => filas.filter(p).length;
+console.log(`POBLACIÓN=${filas.length} · CAE=${c((f) => f.res === 'CAE')} · VIVE=${c((f) => f.res === 'VIVE')} · CIEGO=${c((f) => f.res === 'CIEGO' || /CIEGO/.test(f.orden || ''))} · tx solapadas=${c((f) => f.txSolapadas)} · 2ª cuenta antes del commit=${c((f) => f.segundaCuentaAntesDelCommit)}`);

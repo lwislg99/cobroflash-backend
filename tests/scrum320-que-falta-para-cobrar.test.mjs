@@ -259,6 +259,7 @@ test('SCRUM-320 · si la cabecera propone una acción de COBRO, G5 lista algún 
 // test, porque el siguiente que lo lea creerá que está decidido.**
 //
 // Lo que aquel test protegía lo protege ahora el invariante de arriba, sin exclusiones.
+// Consta en: SCRUM-1502 comentario 20834.
 
 test('SCRUM-320 · C4 · el Trabajo SIN NADA FACTURADO ya no se queda mudo', () => {
   // El caso que destapó el invariante: 100 % del dinero fuera y la sección callada. Callarse ahí

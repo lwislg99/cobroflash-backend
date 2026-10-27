@@ -1,0 +1,51 @@
+SCRUM-1498e · por qué el job «meta-guard · los guards caen cuando deben» sale FAILURE
+Medido sobre origin/main efe736f3f01b5ecbc6dce221e80a3dfc3bfcd42a · 2026-10-27T13:09:13Z (GitHub) · J3 (jv-j3bt)
+
+POBLACIÓN: los 200 últimos runs de ci.yml (push y pull_request), creados del 2026-10-24T13:25:39Z al 2026-10-27T13:04:59Z.
+  140 llevan el job del meta-guard (por su nombre exacto; control de un nombre inventado: 0).
+  De esos 140: 95 failure · 23 success · 19 cancelled · 3 todavía corriendo.
+    push a main:   14 failure · 4 success · 1 cancelled · 1 corriendo
+    pull_request:  81 failure · 19 success · 18 cancelled · 2 corriendo
+  Salida: 1498e-salida-recoge.txt · datos: 1498e-datos-meta-200runs.json · una fila por job: 1498e-filas.json
+
+LOS 95 FAILURE, POR SU CAUSA LITERAL (la clase sale de lo que imprime scripts/meta-guard-mutaciones.mjs)
+
+  clase                                                          n / 95   push   PR
+  ------------------------------------------------------------   ------   ----   --
+  H · un guard que no cae cuando debe (MUDO, salida 1)                0      0    0
+  P · presupuesto agotado («🔴 CORTO YO, ANTES DEL TECHO»,            85     14   71
+      salida 2), sin ningún otro CIEGO
+  S · salida cortada («CIEGO · salida cortada», familia 1610)         0      0    0
+  C · un guard SIN línea base (su test cae en la pasada limpia)       9      0    9
+      · de ellos, 6 llegaron ADEMÁS al corte por presupuesto
+  otra · falló el paso «Compilar (tsc)», no el de mutaciones          1      0    1
+  ------------------------------------------------------------   ------
+  suma                                                               95
+
+  Los 95 salen con el paso «Cada guard cae con la mutación que declara» en failure, salvo el de tsc.
+  Coherencia con el propio resumen del instrumento («vivas · mudas · ciegas»): cuadra en 117 de 117 jobs con resumen.
+  Control sembrado (logs fabricados por el clasificador, uno por clase H, P, C, S): 4 de 4 en su clase,
+  y los 4 sin sus marcas salen «SIN LEER», no en una clase. Salida: 1498e-salida-clasifica.txt
+
+LA CLASE C, CASO A CASO (1498e-salida-obligatorio.txt): ¿cae también en el obligatorio del MISMO run?
+
+  guard sin base       test que cayó en la limpia                 obligatorio del mismo run      lectura
+  -------------------  -----------------------------------------  -----------------------------  ---------------------------
+  scrum1516c  (×5)     «eje del COMERCIO»                         success · el test ✔            sólo en el job del meta-guard
+  scrum1516c  (×1)     «eje del ROL»                              success · el test ✔            sólo en el job del meta-guard
+  scrum812             «… la cobertura auto-declarada NO BAJA»     failure · el test ✖            rojo de la rama (1404g)
+  scrum1339d (+1389c)  siete tests de 1339d/t/v y 1389c    failure · los tests ✖          rojo de la rama (1324c)
+  scrum1603            «el ancla no está: la declaración caducó»  failure · no comprobado cuál   rama 1603b; sin leer qué cayó
+
+  Los 6 de scrum1516c son anteriores al merge de SCRUM-1610b (2026-10-26T23:50:22Z). En los demás jobs del
+  meta-guard de antes de ese merge, scrum1516c salió vivo (✔) en 30; después del merge, vivo en 14 de 14 y
+  CIEGO en 0 (1498e-salida-cortes.txt). Que esos 6 sean el corte de cola de SCRUM-1610: COMPATIBLE, NO
+  DEMOSTRADO — el log del meta-guard no trae la salida del hijo, sólo el recuento «3 pasados · 1 caídos».
+
+LO QUE DEJA SIN JUZGAR EL CORTE (91 jobs con «CORTO YO»: los 85 de P y 6 de C)
+  sin juzgar: mín 11 · p50 136 · máx 189 mutaciones, de 796-875 · fracción p50 16,7 % · máx 21,6 %
+  y los 23 success: p50 1597 s · máx 1727 s de job, con un presupuesto del paso de 1695 s.
+
+LOS 19 CANCELLED (no son FAILURE; fuera de la clasificación): 18 de PR (13 cortados con el paso de
+mutaciones a medias y 5 antes de arrancarlo, en menos de 29 min) y 1 de push a main a 29 min o más.
+Por qué los cancela GitHub: NO LEÍDO.

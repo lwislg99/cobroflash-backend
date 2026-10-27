@@ -20,8 +20,6 @@ import {
   getInvoiceDetailAdmin,
   updateInvoiceStatusAdmin,
   NO_SE_MARCAN_PAGADAS_EN_LOTE,
-  markInvoicePaidAdmin,
-  markInvoicePendingAdmin,
   setInvoiceTags,
 } from '../../invoiceAdmin';
 
@@ -49,7 +47,7 @@ import { ensureInvoicePdf, ensureChargeReceiptToken } from '../../../../lib/invo
 // de un `internal_error`. NO sube el timeout ni toca el cerrojo.
 import { esCerrojoSaturado, cuerpoCerrojoSaturado, ESTADO_CERROJO_SATURADO } from '../../../invoicing/domain/cerrojoSaturado';
 import { sendSuccessBody, SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../../lib/sendOutcome'; // SCRUM-126
-import { esErrorSinSellar, ERROR_SIN_SELLAR } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206
+import { esErrorSinSellar, ERROR_SIN_SELLAR, type MerchantPorton } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206
 import { sellarTrasEmision, sellarAnulacionTrasEmision, SELLADO_HECHO, puedeProducirDocumento, ERROR_PDF_SIN_SELLAR } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 import { resolverFechaDeCobro } from '../../../billing/domain/fechaDeCobro'; // SCRUM-397
 import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-1093 (bulk-paid)
@@ -517,7 +515,7 @@ router.post('/bulk-paid', requireRole('admin'), async (req, res) => {
  * 🔴 ESTO NO ABRE UNA PUERTA DE EDICION SOBRE UNA FACTURA EMITIDA (regla 29). Escribe UN campo
  * que no es el documento —ni numero, ni total, ni lineas, ni sello, ni PDF— y el porque, con sus
  * medidas, vive junto a `setInvoiceTags` en `invoiceAdmin.ts`. Es la misma familia que
- * `/:id/pay` o `/:id/status`, que ya escriben sobre facturas emitidas sin tocarlas.
+ * `/:id/status`, que ya escribe sobre facturas emitidas sin tocarlas.
  *
  * ⚠️ Y NO ROZA EL GUARD DE SCRUM-289b, que vigila otra cosa: que el ENTRYPOINT DE ALTA
  * (`POST /`) no edite ni borre, y que la COLECCION no acepte patch/put/delete. Esta ruta va por
@@ -562,7 +560,25 @@ router.put('/:id/status', requireRole('admin'), async (req, res) => {
     // SCRUM-441 · CÓMO dice el profesional que entró el dinero. OPCIONAL: si el cuerpo no lo trae,
     // esta ruta hace exactamente lo de siempre. Lo que llegue lo valida el DOMINIO contra `PAID_VIA`
     // (regla 22) — aquí no se reimplementa el conjunto cerrado, que es como se acaba teniendo dos.
-    const updated = await updateInvoiceStatusAdmin(id, status, req.merchantId, req.body?.paidVia);
+    //
+    // SCRUM-1609 (BUGS.md P3-PAIDAT-BO) · CUÁNDO entró el dinero, con el MISMO mecanismo que
+    // `bulk-paid` (SCRUM-397, criterio firmado: no futura, sin límite hacia atrás) y la misma zona
+    // del merchant (SCRUM-1093). Hasta aquí esta puerta escribía `new Date()` aunque el lote sí
+    // aceptara la fecha: conciliar UNA transferencia vieja la fechaba hoy. Solo se mira al marcar
+    // `paid` y solo si el cuerpo la trae: sin ella, esta ruta hace exactamente lo de antes —ni
+    // siquiera lee el merchant—.
+    const declarada = req.body?.paidAt;
+    let fecha: { fecha: Date; origen: 'declarada' | 'ahora' } | null = null;
+    if (status === 'paid' && declarada !== undefined && declarada !== null && declarada !== '') {
+      const m = await prisma.merchant.findUnique({ where: { id: req.merchantId }, select: { timezone: true } });
+      const r = resolverFechaDeCobro(declarada, new Date(), zonaDelMerchant(m));
+      if (!r.ok) return res.status(400).json({ error: r.error, message: r.message });
+      fecha = r;
+    }
+    // Sin fecha declarada, la llamada es LITERALMENTE la de antes (la ancla `scrum441` por su texto).
+    const updated = fecha
+      ? await updateInvoiceStatusAdmin(id, status, req.merchantId, req.body?.paidVia, fecha.fecha)
+      : await updateInvoiceStatusAdmin(id, status, req.merchantId, req.body?.paidVia);
     if (!updated) {
       return res.status(404).json({ error: 'not_found' });
     }
@@ -574,7 +590,13 @@ router.put('/:id/status', requireRole('admin'), async (req, res) => {
         merchantId: req.merchantId, teamMemberId: req.teamMemberId ?? null,
         action: status === 'paid' ? 'marcar_pagado_manual' : 'deshacer_pago',
         entityType: 'invoice', entityId: id,
-        meta: { via: 'status', number: (updated as any).number ?? null }, ip: requestIp(req),
+        // SCRUM-1609: como el lote, queda escrito qué fecha se guardó y si la AFIRMÓ una persona.
+        meta: {
+          via: 'status', number: (updated as any).number ?? null,
+          ...(status === 'paid'
+            ? { paidAt: (updated as any).paidAt ? new Date((updated as any).paidAt).toISOString() : null, fechaOrigen: fecha?.origen ?? 'ahora' }
+            : {}),
+        }, ip: requestIp(req),
       });
     }
 
@@ -584,54 +606,6 @@ router.put('/:id/status', requireRole('admin'), async (req, res) => {
       return res.status(409).json({ error: 'unpay_not_allowed', message: err.message });
     }
     console.error('[PUT /admin/invoices/:id/status]', err);
-    res.status(500).json({ error: 'internal_error' });
-  }
-});
-
-/**
- * (Opcional) Endpoints legacy pay/unpay si quieres mantenerlos
- */
-router.post('/:id/pay', requireRole('admin'), async (req, res) => {
-  try {
-    const id = Number(req.params.id);
-    if (!cabeEnColumnaInt(id)) {
-      return res.status(400).json({ error: 'invalid_id' });
-    }
-
-    const updated = await markInvoicePaidAdmin(id, req.merchantId);
-    if (!updated) return res.status(404).json({ error: 'not_found' });
-    if (!(updated as any).__unchanged) recordAudit({ // A11.1 (S2)
-      merchantId: req.merchantId, teamMemberId: req.teamMemberId ?? null,
-      action: 'marcar_pagado_manual', entityType: 'invoice', entityId: id,
-      meta: { via: 'pay' }, ip: requestIp(req),
-    });
-    res.json(updated);
-  } catch (err) {
-    console.error('[POST /admin/invoices/:id/pay]', err);
-    res.status(500).json({ error: 'internal_error' });
-  }
-});
-
-router.post('/:id/unpay', requireRole('admin'), async (req, res) => {
-  try {
-    const id = Number(req.params.id);
-    if (!cabeEnColumnaInt(id)) {
-      return res.status(400).json({ error: 'invalid_id' });
-    }
-
-    const updated = await markInvoicePendingAdmin(id, req.merchantId);
-    if (!updated) return res.status(404).json({ error: 'not_found' });
-    if (!(updated as any).__unchanged) recordAudit({ // A11.1 (S2)
-      merchantId: req.merchantId, teamMemberId: req.teamMemberId ?? null,
-      action: 'deshacer_pago', entityType: 'invoice', entityId: id,
-      meta: { via: 'unpay' }, ip: requestIp(req),
-    });
-    res.json(updated);
-  } catch (err) {
-    if (err instanceof UnpayNotAllowedError) {
-      return res.status(409).json({ error: 'unpay_not_allowed', message: err.message });
-    }
-    console.error('[POST /admin/invoices/:id/unpay]', err);
     res.status(500).json({ error: 'internal_error' });
   }
 });
@@ -919,42 +893,23 @@ router.post('/:id/annul', requireRole('admin'), async (req, res) => {
       where: { id: req.merchantId }, select: { taxId: true, country: true },
     });
 
-    // ── 1) EL SELLADO, PRIMERO Y FUERA DE TODA TRANSACCIÓN (SCRUM-173/177) ──────────────────
-    // `applyVeriFactuAnulacion` extiende LA MISMA cadena que el alta y trae su propio cerrojo
-    // por merchant; llamarla dentro de una `$transaction` lanza a propósito. Va ANTES del cambio
-    // de estado porque el orden inverso dejaría una factura marcada como anulada sin registro
-    // que lo respalde: una huella sin estado se reintenta, un estado sin huella no se deshace.
-    let sellada = false;
-    if (merchant?.country === 'ES' && merchant?.taxId) {
-      try {
-        await sellarAnulacionTrasEmision(invoice, merchant.taxId, prisma); // SCRUM-205: punto unico
-        sellada = true;
-      } catch (e: any) {
-        console.error(`[annul] sellado de anulación falló en ${invoice.number}:`, e?.message || e);
-        return res.status(409).json({
-          error: 'anulacion_no_sellada',
-          message: 'No se pudo registrar la anulación en la cadena VeriFactu, así que no se ha anulado nada. Inténtalo de nuevo.',
-        });
-      }
-    }
-
-    // ── 2) ESTADO + LIBERACIÓN, en UNA transacción ──────────────────────────────────────────
+    // ── SELLADO + ESTADO + LIBERACIÓN, en UNA transacción (SCRUM-1314b) ─────────────────────
     //
-    // 🔴 SCRUM-1303 · `pending` VA DENTRO DEL `where`. La guarda de arriba miró el estado ANTES del
-    // sellado, y el sellado tarda: si en ese hueco entra un cobro, la factura ya está `paid` al
-    // escribir. Antes se escribía `annulled` encima de una factura cobrada. Ahora Prisma no
-    // encuentra la fila (P2025), la transacción entera se deshace —no se liberan albaranes ni se
+    // 🔴 SCRUM-1303 · `pending` VA DENTRO DEL `where`. La guarda de arriba miró el estado antes, y
+    // el sellado tarda: si en ese hueco entra un cobro, la factura ya está `paid` al escribir. Prisma
+    // no encuentra la fila (P2025), la transacción entera se deshace —no se liberan albaranes ni se
     // toca el libro— y se contesta el mismo 409 de la guarda de entrada.
     //
-    // ⚠️ LO QUE ESTO NO ARREGLA, declarado en `docs/BUGS.md` (P1-1303): el eslabón de anulación ya
-    // quedó sellado en el paso 1, así que la factura queda `paid` CON `vfAnulHash`. Ese eslabón ya
-    // existía antes de este arreglo cada vez que saltaba la carrera; lo que cambia es que el estado
-    // deja de taparlo. Qué hacer con él es del fundador (tocar el sellado es STOP, regla 40). Y no
-    // queda constancia en la auditoría: el `console.error` de abajo NO lo es.
-    let liberados;
-    try {
-    liberados = await prisma.$transaction(async (tx) => {
-      await tx.invoice.update({ where: { id: invoice.id, status: 'pending' }, data: { status: 'annulled' } });
+    // 🔴 SCRUM-1314b (GO del fundador, SCRUM-1314 c.20754) · Y EL SELLADO VA EN ESA MISMA ESCRITURA.
+    // Antes `applyVeriFactuAnulacion` sellaba primero y en su propia transacción, así que al perder
+    // la carrera la factura quedaba `paid` CON `vfAnulHash` (P1-1303): un eslabón de anulación sobre
+    // una factura cobrada, que la siguiente alta encadenaba. Ahora la huella y `annulled` son la misma
+    // `update` condicionada, dentro del cerrojo del sellado: van juntas o no va ninguna. Y una factura
+    // que ya tiene `vfAnulHash` no se vuelve a sellar (P2): se conserva su huella.
+    //
+    // Sigue FUERA de toda `$transaction` de la ruta (SCRUM-173/177): trae su propio cerrojo por
+    // merchant y llamarla dentro de otra lanza a propósito; la liberación entra en la suya.
+    const liberar = async (tx: any) => {
       // P10 (criterio nuevo): los albaranes que consolidó vuelven a estar pendientes.
       const albs = await tx.albaran.updateMany({
         where: { merchantId: req.merchantId, invoiceId: invoice.id },
@@ -965,15 +920,32 @@ router.post('/:id/annul', requireRole('admin'), async (req, res) => {
       const libro = await tx.albaranLineaFacturada.deleteMany({
         where: { merchantId: req.merchantId, invoiceId: invoice.id },
       });
-      return { albaranes: albs.count, lineasLibro: libro.count };
-    });
-    } catch (e) {
-      if (!esFilaQueNoCasa(e)) throw e;
-      console.error(
-        `[annul] SCRUM-1303 ${invoice.number} dejó de estar pendiente durante la anulación: no se anula` +
-          (sellada ? ' (el eslabón de anulación YA quedó sellado: P1-1303)' : ''),
-      );
-      return res.status(409).json(NO_SE_ANULA_SI_NO_ESTA_PENDIENTE);
+      return { albaranes: albs.count as number, lineasLibro: libro.count as number };
+    };
+
+    const sellada = merchant?.country === 'ES' && !!merchant?.taxId;
+    let liberados;
+    try {
+      if (sellada) {
+        // SCRUM-205: punto único de sellado.
+        liberados = await sellarAnulacionTrasEmision(invoice, merchant!.taxId!, prisma, { enLaMismaTransaccion: liberar });
+      } else {
+        liberados = await prisma.$transaction(async (tx) => {
+          await tx.invoice.update({ where: { id: invoice.id, status: 'pending' }, data: { status: 'annulled' } });
+          return liberar(tx);
+        });
+      }
+    } catch (e: any) {
+      if (esFilaQueNoCasa(e)) {
+        console.error(`[annul] SCRUM-1303 ${invoice.number} dejó de estar pendiente durante la anulación: no se anula ni se sella`);
+        return res.status(409).json(NO_SE_ANULA_SI_NO_ESTA_PENDIENTE);
+      }
+      if (!sellada) throw e;
+      console.error(`[annul] sellado de anulación falló en ${invoice.number}:`, e?.message || e);
+      return res.status(409).json({
+        error: 'anulacion_no_sellada',
+        message: 'No se pudo registrar la anulación en la cadena VeriFactu, así que no se ha anulado nada. Inténtalo de nuevo.',
+      });
     }
 
     // SCRUM-207 (D-3): antes esto y la rectificativa R1 compartían `anular_factura`, así que
@@ -1273,13 +1245,20 @@ router.post('/:id/regenerate-pdf', requireRole('admin'), async (req, res) => {
  * Así "Abrir PDF" siempre sirve un PDF real, sin enlazar nunca a 'PENDING_PDF'.
  */
 router.get('/:id/pdf', async (req, res) => {
+  // SCRUM-1404g · fuera del `try`: el `catch` necesita el número y el comercio de la factura para
+  // saber si un pendiente de sellado es de los que entran en la cadena (`esErrorSinSellar`).
+  let factura: { number: string; merchant: MerchantPorton | null } | null = null;
   try {
     const id = Number(req.params.id);
     if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     // Scope multi-tenant: 404 si no es del merchant.
-    const owned = await prisma.invoice.findFirst({ where: { id, merchantId: req.merchantId }, select: { id: true } });
+    const owned = await prisma.invoice.findFirst({
+      where: { id, merchantId: req.merchantId },
+      select: { id: true, number: true, merchant: { select: { country: true, taxId: true } } },
+    });
     if (!owned) return res.status(404).json({ error: 'not_found' });
+    factura = owned;
     // SCRUM-1397 · y que sea de quien la pide, ANTES de generar nada: el PDF de una ajena no se
     // llega a producir.
     if (!(await puedeVerLaFactura(quienPide(req), id))) return res.status(404).json({ error: 'not_found' });
@@ -1295,7 +1274,7 @@ router.get('/:id/pdf', async (req, res) => {
     console.error('[GET /admin/invoices/:id/pdf]', err);
     // SCRUM-206: no es un fallo de generación, y llamarlo así manda a quien depure al sitio
     // equivocado. La factura existe y NO está registrada: 409 con su código.
-    if (esErrorSinSellar(err)) {
+    if (esErrorSinSellar(err, factura?.number, factura?.merchant)) {
       return res.status(409).json({
         error: ERROR_SIN_SELLAR,
         // Microcopy OFICIAL: aprobado por el fundador el 30-jul-2026 (regla 30). Lo ve el

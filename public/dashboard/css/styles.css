@@ -348,6 +348,20 @@ img { max-width: 100%; display: block; }
   color: var(--neutral-600);
 }
 .topbar-hamburger svg { width: 18px; height: 18px; }
+/* S2: SCRUM-962g · el «Menú» de la barra de arriba es el ÚNICO camino a la navegación en móvil y
+   S2: medía 36,5 de toque (yaqu.app, 390, 23-oct): DESIGN.md §5 pide 44. Se amplía el ÁREA, no el
+   S2: dibujo: un `::before` de 44×44 centrado sobre la caja de 36 (crece 4 px por lado; el título
+   S2: está a 12 px). El banco del editor no lo veía porque no monta la barra superior. */
+.topbar-hamburger { position: relative; }
+.topbar-hamburger::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+}
 .topbar-title {
   font-size: 17px;
   font-weight: 700;
@@ -1774,6 +1788,10 @@ html, body { overflow-x: clip; }
 .sitios-guardados__vacio { margin: 0; font-size: 13px; color: var(--muted); }
 .sitios-guardados__error { margin: 0; font-size: 13px; color: var(--danger-ink); }
 .quote-dto-global__campo { display: flex; flex-direction: column; gap: 4px; max-width: 200px; }
+/* S2: SCRUM-962g · la etiqueta ENVUELVE el campo y SÍ lo enfoca (clic real), así que es ella la que
+   S2: recibe el dedo: medía 44,6 con la fuente de respaldo del banco y 43,6 con Inter en yaqu.app. Con
+   S2: la fuente real se quedaba corta por 0,4 px; el suelo no depende de la fuente. */
+.quote-dto-global__campo { min-height: 44px; }
 
 /* SCRUM-139 F2 · RENGLÓN EN BLANCO DEL CUADERNILLO.
    El editor abre con varias líneas dibujadas (LINEAS_CUADERNILLO): son una INVITACIÓN, no
@@ -1922,11 +1940,14 @@ html, body { overflow-x: clip; }
 }
 .quote-ajustes-campos { display: flex; flex-direction: column; gap: 14px; }
 .quote-ajustes-campos .quote-line__field { display: flex; flex-direction: column; gap: 4px; }
-.quote-ajustes-campos input {
+.quote-ajustes-campos input,
+.quote-ajustes-campos select /* S2: SCRUM-962f · el «IVA %» se quedaba NATIVO a 21 px (y su etiqueta lo enfoca pero NO lo abre: medido con toque real); ahora es un campo como «Coste» y «Dto. %» */ {
   width: 100%; min-height: 44px; padding: 10px 12px;
   border: 1px solid var(--border, #e7e9e5); border-radius: var(--radius-md, 12px);
   font-size: 16px; color: var(--ink, #0f1c17); background: var(--surface, #fff);
 }
+.quote-ajustes-campos select { height: 44px; } /* S2: SCRUM-962f · medido: con sólo min-height el select daba 45 y sus hermanos 44 */
+.quote-ajustes-campos select:focus, /* S2: SCRUM-962f */
 .quote-ajustes-campos input:focus {
   outline: none; border-color: var(--green-600, #16a34a);
   box-shadow: 0 0 0 3px rgba(34,197,94,.30);
@@ -1947,6 +1968,7 @@ html, body { overflow-x: clip; }
   margin: 2px 0 0; font-size: 12px; line-height: 1.45; color: var(--muted, #6b756f);
 }
 /* El IVA bloqueado tiene que PARECER bloqueado: un 0 editable y un 0 impuesto se leen igual. */
+.quote-ajustes-campos select:disabled, /* S2: SCRUM-962f · el IVA bloqueado ES este select: con fondo propio, sin esto dejaría de parecer bloqueado */
 .quote-ajustes-campos input:disabled {
   background: var(--neutral-100, #f4f6f4); color: var(--muted, #6b756f); cursor: not-allowed;
 }
@@ -2175,6 +2197,32 @@ html, body { overflow-x: clip; }
 .quote-clausulas .pay-methods-row label:has(input:not(:checked)) { color: var(--muted); text-decoration: line-through; }
 .inline-options { display: flex; gap: 8px; flex-wrap: wrap; }
 .radio-label { display: inline-flex; align-items: center; gap: 4px; font-size: 13.5px; }
+/* S2: ── SCRUM-962f · «Ajustes del documento» del editor, a 44 px de toque (AB6) ───────────────
+   S2: Medido (962c/962f, editor vivo, toque real): los radios «Razón social / Nombre comercial» y la
+   S2: casilla «Incluir descripción en el PDF» miden 16×16, y su etiqueta, que SÍ los activa, 19,4 y 20,1
+   S2: de alto. ⚠️ NO es el caso de una etiqueta envolvente grande (que haría del corto un artefacto
+   S2: del medidor): aquí la etiqueta mide LO MISMO que el control, así que se sube la ETIQUETA a 44
+   S2: —es lo que recibe el toque— y el control gana área con un `::before` de 44 anclado a su
+   S2: IZQUIERDA. Crece sólo hacia su propio texto, nunca hacia la etiqueta vecina: los dos radios van
+   S2: pegados, y un área centrada se comería el final de «Razón social». Es el patrón de
+   S2: `.pay-methods-row` (SCRUM-1265), la fila de casillas que tienen justo encima.
+   S2: ACOTADO a `.quote-ajustes`: `.inline-checkbox` la comparten la ficha 360 (J2) y Avisos (J3). */
+.quote-ajustes .inline-options { row-gap: 0; }
+.quote-ajustes .radio-label,
+.quote-ajustes .inline-checkbox label { min-height: 44px; cursor: pointer; }
+.quote-ajustes .radio-label input[type="radio"],
+.quote-ajustes .inline-checkbox input[type="checkbox"] { position: relative; }
+.quote-ajustes .radio-label input[type="radio"]::before,
+.quote-ajustes .inline-checkbox input[type="checkbox"]::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 44px;
+  height: 44px;
+  transform: translateY(-50%);
+}
+/* S2: ── fin SCRUM-962f (radios y casilla) ──────────────────────────────────────────────────── */
 
 /* ── Customers ───────────────────────────────────────────────── */
 .customers-header {
@@ -4864,3 +4912,29 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
 @media (max-width: 768px) {
   .sitios-cliente__form { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* ── J3 · SCRUM-1577b (AB6) ── Configuración (settingsView.js, de J3): los dos `select` de
+   Facturación y el selector de color de marca, a 44 px de toque en TODAS las anchuras, como el
+   «Criterio de caja» de la misma pestaña. Medido con `docs/master/evidencias/scrum1577/banco-44.mjs`
+   el 26-oct: los `select` daban 36,5–37 (su alto sale de `.input`, sin mínimo, que es de todas las
+   pantallas: aquí sólo se les da mínimo, por su id) y el color 38,7 de alto con un `style=` en línea
+   de 38 px, y a 320 se ENCOGÍA a 18,2 de ancho dentro de su fila. El estilo en línea pasa aquí tal
+   cual era, con el alto a 44 y `flex: none` para que no se encoja. Sin encogerse, a 320 la fila no
+   cabe y «Sin color (por defecto)» salía CORTADO por la tarjeta (borde derecho 316,8 contra 287; medido
+   con `evidencias/scrum1577/captura-1577b.mjs`): la fila salta de línea en vez de apretar el color. */
+#retencion-irpf-tipo,
+#actividad-tipo { min-height: 44px; }
+#brand-color-input {
+  flex: none; width: 48px; height: 44px; padding: 2px;
+  border: 1px solid var(--border); border-radius: 8px; cursor: pointer;
+}
+:has(> #brand-color-input) { flex-wrap: wrap; }
+
+/* ── J3 · SCRUM-1577c (AB6) ── Configuración → Tu página pública (settingsView.js, de J3): el enlace
+   `yaqu.app/p/…` del aviso «Tu página está activa», a 44 px de toque en TODAS las anchuras. El fundador
+   no lo exime por ser un enlace en línea (SCRUM-1577 c.20987, DESIGN.md §6). Medido con
+   `docs/master/evidencias/scrum1577/banco-44.mjs` el 27-oct: 17 px a 390 y 929, y a 320 el enlace se
+   partía en dos renglones. Como `.detail-rail-enlace--suelto`: el texto no cambia, el renglón del
+   aviso crece a 44. Sin margen negativo A PROPÓSITO: el blanco de toque montaría sobre el texto del
+   renglón de encima, y un toque en «activa» abriría la página. */
+.pp-enlace { display: inline-flex; align-items: center; min-height: 44px; }

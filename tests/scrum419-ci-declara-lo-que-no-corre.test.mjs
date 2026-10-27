@@ -266,6 +266,86 @@ const GATEADOS_DECLARADOS = Object.freeze({
   'scrum106-trabajos-fecha.test.mjs': 1,
   'scrum104-clientes-referenciados.test.mjs': 1,
   'scrum135-gasto-tenencia.test.mjs': 4,
+  // SCRUM-1599h (segundo lote del diseño B): siete más, con la misma forma. Necesitan banco porque
+  // lo que vigilan lo contesta la base: los textos del documento que se guardan, se releen y salen
+  // en el PDF (593d), y por la RUTA real con sesiones guardadas: el reenvío de la invitación que no
+  // pierde la fila (131), el `payment.confirmed` duplicado que no re-paga (webhooks), el operario
+  // del trabajo, el cobro y el albarán (57 y 22), los albaranes de un trabajo sin presupuesto (51) y
+  // que la lista de trabajos no crezca en consultas con el número de filas (58). Los casos sin base
+  // de webhooks corren siempre.
+  'scrum593d-viaje-completo-del-texto.test.mjs': 4,
+  'scrum131-resend-honesto.test.mjs': 1,
+  'webhooks-idempotencia.test.mjs': 1,
+  'scrum57-operario-propagacion.test.mjs': 1,
+  'scrum22-operario-readpath.test.mjs': 1,
+  'scrum51-job-sin-quote.test.mjs': 1,
+  'scrum58-jobs-n1.test.mjs': 1,
+  // SCRUM-1599i (tercer lote del diseño B): siete más, con la misma forma. Necesitan banco porque
+  // lo que vigilan lo contesta la RUTA real con filas guardadas: el IDOR de /pay/bank y /pay/mp por
+  // id numérico (90), el hub de Equipo y sus cuentas por miembro (136), el gate por campo del PATCH
+  // de un trabajo (120), el filtro por operario que no le da a un técnico lo ajeno (148), las sumas
+  // de /admin/metrics/operarios (24), el PDF regenerado del presupuesto (pdfs) y el tipoOperacion
+  // con su auditoría (66). Los casos sin base de pdfs y de 66 corren siempre.
+  'scrum90-pay-bank-mp-token.test.mjs': 1,
+  'scrum136-hub-equipo.test.mjs': 3,
+  'scrum120-patch-job-roles.test.mjs': 1,
+  'scrum148-filtro-por-miembro.test.mjs': 2,
+  'scrum24-operarios-metrics.test.mjs': 1,
+  'pdfs.test.mjs': 1,
+  'scrum66-tipo-operacion.test.mjs': 1,
+  // SCRUM-1599k (cuarto lote del diseño B): seis más, con la misma forma. Necesitan banco porque lo
+  // que vigilan lo contesta el código real con filas guardadas: el IDOR de /recibo/:token por id
+  // numérico (74), el 409 de /auth/register sin merchant fantasma (94), la recapitulativa partida
+  // por mes (17), el catálogo de information_schema que lee el arranque (222), el .eml de la
+  // factura con su PDF adjunto (76) y la factura que se confirma o cae junto con su auditoría (207).
+  // Los casos sin base de 17, 222 y 207 corren siempre.
+  'scrum74-recibo-token.test.mjs': 1,
+  'scrum94-register-teammember.test.mjs': 1,
+  'scrum17-recapitulativa.test.mjs': 1,
+  'scrum222-deriva-arranque.test.mjs': 2,
+  'scrum76-email-adjunto.test.mjs': 1,
+  'scrum207-emision-auditada.test.mjs': 2,
+  // SCRUM-1599m (quinto lote del diseño B): los ocho «HE», con la misma forma. Necesitan banco porque lo
+  // que vigilan lo contesta el código real con filas guardadas: el gate del flag en verifactu.xml (73), el
+  // registro que bloquea los bytes del export fiscal (221), la consolidación por cliente que no refactura
+  // (171a), la tenencia de los CSV (25-exports), el XML dentro de datos.zip (82), el albarán a medias que
+  // no se consolida (170), el rango de fechas del paquete (25-export-zip) y el técnico que solo ve sus
+  // Trabajos (tenancy-permisos). Los seis casos sin base de 170 corren siempre.
+  'scrum73-verifactu-gate.test.mjs': 1,
+  'scrum221-export-fiscal-cero-bytes.test.mjs': 1,
+  'scrum171a-consolidar-cliente.test.mjs': 1,
+  'scrum25-exports.test.mjs': 1,
+  'scrum82-zip-verifactu.test.mjs': 1,
+  'scrum170-facturacion-parcial.test.mjs': 1,
+  'scrum25-export-zip.test.mjs': 1,
+  'tenancy-permisos.test.mjs': 2,
+  // SCRUM-1599j: el que 1599i apartó, con la misma forma. Necesita banco porque el IDOR de /pay/card,
+  // /pay/bizum y /pay/invoice por id numérico lo contesta la RUTA real con cobros guardados. Su caso
+  // sin base (el ancla del id, sembrada) corre siempre.
+  'scrum85-pay-routes-token.test.mjs': 1,
+  // SCRUM-1599p (lote 6a del diseño B, medido antes en §1599o): los que llevan carrera y no se pisan en la
+  // tanda. Cinco con la forma de 1599m (115, 127, 178, 92, 814-carrera-del-tramo.gated) y tres que antes
+  // sólo iban a `yaqu_dev_javier` (592, 767, 793), que con el banco toman `URL_BANCO`. Más scrum173, opción
+  // (A) de SCRUM-1599 c.20940: de sus 7, el de las cadenas YA PERSISTIDAS SALTA también con el banco (recorre
+  // las facturas de toda la base) y se queda en staging; aquí cuenta, porque su salto nombra la variable.
+  // El caso sin base de 178 corre siempre.
+  'scrum115-wa-fallo-registrado.test.mjs': 2,
+  'scrum127-paywall-bloquea.test.mjs': 1,
+  'scrum173-cadena-verifactu-serializada.test.mjs': 7,
+  'scrum178-emision-manual.test.mjs': 2,
+  'scrum92-login-operario.test.mjs': 1,
+  'scrum814-carrera-del-tramo.gated.test.mjs': 3,
+  'scrum592-concurrencia-serie.test.mjs': 4,
+  'scrum767-cura-concurrencia.test.mjs': 4,
+  'scrum793-la-carrera-del-token.test.mjs': 6,
+  // SCRUM-1599s (lote 6b del diseño B): los dos que 1599p dejó fuera, ya alineados con la serie F en 1599r
+  // (SCRUM-1599 c.20947). 234.gated con la forma de 1599m; 781 con `URL_BANCO`, como 592. Los cuatro casos
+  // sin base de 781 corren siempre.
+  'scrum234-carrera-serie.gated.test.mjs': 1,
+  'scrum781-concurrencia-de-la-factura.test.mjs': 4,
+  // SCRUM-1599t: scrum574-mismo-cliente-tras-migracion con la forma de 1599m. Su caso «CONTRA POSTGRES», que lee
+  // los clientes de TODA la base, salta en el banco con su motivo y se queda en staging (opción A, como 173).
+  'scrum574-mismo-cliente-tras-migracion.test.mjs': 2,
 });
 const TOTAL_DECLARADO = Object.values(GATEADOS_DECLARADOS).reduce((a, b) => a + b, 0);
 
