@@ -80,3 +80,56 @@ las dos puntas no cambia nada en `src/`, `scripts/` ni `tests/_embudo-factura.mj
   cero sin dar error; lo vi en el cuerpo que devolvió la herramienta y lo edité.
 - El encargo decía `src/`, y los escritores de JUST estaban en `scripts/`: los encontré porque pasé el embudo también
   por `scripts/` y `prisma/`, no porque el encargo lo pidiera.
+
+## SCRUM-1448b · Filas JUST / `J-` en staging y dev: CIEGO, este árbol no tiene clave de ninguna de las dos
+
+**Medido contra:** `origin/main` = `efe736f3f01b5ecbc6dce221e80a3dfc3bfcd42a` · 2026-10-27T12:58:40Z (hora de GitHub)
+
+A9: sin fallo que generalice — el CIEGO es una ausencia del entorno, medida con la herramienta de la casa (`scripts/comprobar-claves-bd.mjs`), y no un error de este puesto
+
+Encargo: la P7b del fundador (c.21008, ✅): contar con sólo lectura las filas de `invoices` con `type='JUST'` o
+`number LIKE 'J-%'`. Producción la midió el fundador en Railway (c.21012 y c.21013). Staging y dev, este tramo.
+Sesión `jv-j1cy`. Nada escrito en ninguna base; ninguna consulta lanzada.
+
+### En corto
+
+| base | total | JUST | `J-` | las dos | F1 | quién |
+| --- | --- | --- | --- | --- | --- | --- |
+| producción | 2 | 2 | 2 | 2 | 0 | el fundador en Railway (c.21012); las filas 216 y 217, comercio 18, `pending`, sin huella (c.21013) |
+| staging | CIEGO | CIEGO | CIEGO | CIEGO | CIEGO | sin `DATABASE_URL_STAGING` |
+| dev | CIEGO | CIEGO | CIEGO | CIEGO | CIEGO | sin `DATABASE_URL_DEV` |
+
+CIEGO no es cero: no se ha preguntado a ninguna de las dos bases.
+
+### Por qué CIEGO
+
+- `node scripts/comprobar-claves-bd.mjs` en este árbol: `DATABASE_URL_STAGING`, `_DEV` y `_TESTS` AUSENTES, y su
+  SUELO dice que no leyó ninguna cadena de conexión. Sale con 1 («No se sigue»).
+- El árbol no tiene ningún fichero `.env*`.
+- Ninguna variable `DATABASE_URL*` en el entorno de proceso, de usuario ni de máquina (Windows). Control de que el
+  listado ve algo: `PATH` sí aparece en el proceso.
+- Es lo mismo que registró la S0 el 14-oct-2026 en CLAUDE.md (regla 3): ningún árbol de la máquina llevaba esas
+  claves. No se ha recorrido hoy el resto de árboles: el encargo era éste.
+
+### De dónde salen las filas `J-` (leído en `git log origin/main`, no en ninguna base)
+
+| commit | fecha | qué |
+| --- | --- | --- |
+| `2aef59b62` | 2026-06-11 | nace el justificante `J-` con `INVOICING_ES_ENABLED` en OFF (`git log -S RECEIPT_NUMBER_PREFIX -- src`) |
+| `b8e3f81a61344f5cfa94184be9e31c45c1270cdd` | 2026-09-22T09:42:53+01:00 | SCRUM-1027 (#1608): con el flag en OFF deja de generarse cualquier documento |
+| `8931af810c514c0a7e4086db4f09b028bab92ab6` | 2026-09-28T23:14:18+01:00 | SCRUM-825: se retira el generador `J-`, ya sin llamador |
+
+Las dos de producción (20 y 21-sep) caen dentro de esa ventana. Una fila `J-` de staging o dev, si existe, sólo
+puede haber nacido entre el 11-jun y el 22-sep, o de los seeds que 1448a dejó con la rama muerta.
+
+### Lo que no he medido
+
+- Las filas de staging y de dev: nada. Quien tenga la clave corre el mismo SELECT del orquestador (total, JUST,
+  `J-`, las dos, F1) y, si sale alguna, `id`, `merchantId`, `number`, `status`, `createdAt` y si tiene `vf_hash`.
+  Control de lectura: `total > 0`, no F1 (producción da F1 = 0 con la tabla bien leída, c.21012).
+- El turno de staging no se ha tomado: sin clave no había nada que reservar.
+
+### Errores míos
+
+- Mi primera orden usó `$CLAUDE_JOB_DIR` en Git Bash, donde no está definida: el `git rev-parse` salió 128 y el
+  volcado de las normas no se escribió. Lo vi por la salida y lo repetí con la ruta escrita.
