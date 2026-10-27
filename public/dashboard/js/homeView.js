@@ -144,7 +144,7 @@ async function renderHomeView(container) {
       renderKpis(data);
       renderWeekSummary(data);
     }
-    renderActivity(data.recentActivity, veNegocio);
+    renderActivity(data.recentActivity, veNegocio, () => renderHomeView(container));
     if (veNegocio) {
       renderTopCustomers(data.topCustomers || []);
       renderTopServices(data.topServices || []);
@@ -647,11 +647,15 @@ function buildSparkline(values) {
 // SCRUM-1390y · El vacío depende del rol, como el rótulo (firmas: rótulo del Técnico SCRUM-1390
 // c.17962, «2-Ok firmo»; vacío del Técnico c.17963, «1-Firmo la 1»; el admin conserva los suyos,
 // c.17962 ③). Y una respuesta SIN la lista no es «no tienes presupuestos»: es una respuesta que no
-// supimos leer, así que se lanza y va al estado de error del `catch` (c.20438, punto 2). Antes, el
-// `|| []` la convertía en el cartel de vacío.
-function renderActivity(items, veNegocio) {
-  if (!Array.isArray(items)) throw new Error("Inicio: la respuesta no trae recentActivity");
+// supimos leer, así que su bloque pinta el estado de error (c.20438, punto 2). Antes, el `|| []` la
+// convertía en el cartel de vacío. El error se queda en SU bloque y no se lanza al `catch`: lanzarlo
+// se llevaba por delante el resto de la Inicio, «Completa tu configuración» incluida (scrum901/1158c).
+function renderActivity(items, veNegocio, reintentar) {
   const feed = document.getElementById("activity-feed");
+  if (!Array.isArray(items)) {
+    uiErrorState(feed, "No pudimos cargar tus métricas. Revisa tu conexión.", reintentar);
+    return;
+  }
   if (!items.length) {
     feed.innerHTML = `<div style="color:#6b756f;font-size:13px">${veNegocio ? 'Sin actividad reciente' : 'Todavía no tienes presupuestos. Aquí verás los que hagas tú y los que te asignen.'}</div>`;
     return;

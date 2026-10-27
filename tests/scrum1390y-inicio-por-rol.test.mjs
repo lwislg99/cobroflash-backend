@@ -38,8 +38,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     fichero: 'public/dashboard/js/homeView.js',
-    de: 'if (!Array.isArray(items)) throw new Error("Inicio: la respuesta no trae recentActivity");',
-    a: 'if (!Array.isArray(items)) items = [];',
+    de: '  if (!Array.isArray(items)) {\n    uiErrorState(feed,',
+    a: '  if (!Array.isArray(items)) items = [];\n  if (false) {\n    uiErrorState(feed,',
     cae: 'SCRUM-1390y ④ ·',
   },
   {
