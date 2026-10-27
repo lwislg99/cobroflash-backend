@@ -189,3 +189,46 @@ El merge que se apunta es el **último** con su número. **Un merge no es un arr
 ### Error propio
 
 - **Busqué la rama de 1565 con un filtro de `git ls-remote` sin control positivo.** Dio vacío, y el mismo filtro con 1563 también daba vacío, porque la rama de 1563b se borró al mergear. Ese vacío no probaba nada. Lo rehice con la lista entera del remoto, filtrada después. Es la familia de «no pude mirar» igual a «no hay nada».
+
+
+## Tramo 1563e · la foto del 27-oct (S0)
+
+**Medido contra:** `origin/main` = `42c458e192608d71f5e06611976c89f9da3ff297` · producción (`/version`) = el mismo · `Date:` de GitHub 2026-10-27T18:41:25Z
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1563/contar-dependencias.mjs`
+
+Encargo del orquestador (27-oct, SCRUM-1563 c.21195): el fundador volvió a preguntar cómo va la hoja de ruta, si crece el Jira y si estamos cerca de que una empresa lo use. Contestarlo desde la medida, con la columna «de quién depende» como razón de ser, re-midiendo las cifras del propio encargo.
+
+### Qué cambia en el documento
+
+- **§1 contesta las cuatro preguntas del fundador**, en su orden, con una tabla por pregunta.
+- **§1b nueva: SIF-1 tramo a tramo** (3 de 8), con quién bloquea cada tramo que falta, medido en el árbol y no en el máster.
+- **9 filas pasan a §8:** 3.11, 3.12, 3.13, 5.2, 6.10, 6.11, 7.2, 7.4, 7.5. **17 nuevas:** 1.13-1.15, 2.12-2.14, 3.18-3.20, 5.3, 6.12-6.17, 7.9. Quedan **74**.
+- **§1 ③ separa el saldo del equipo de Luis del total**: el total baja (−17 en 24 h) y lo nuestro sube (+5).
+- **§4 re-medida** contra Jira; **§5** con su fila nueva y la de la medida 1563d (#2604), que no entró.
+- **La medida 1563d (19-oct, 07:50Z) no se mergeó**: #2604 lleva 8 días con `build + tests (con banco desechable)` en rojo. Lo que medía (6.10 y 6.11 hechas, 6.12 nueva) se ha vuelto a comprobar en GitHub (#2595, #2599, #2603: los tres MERGEADOS el 19-oct) y entra aquí. **Con esta, #2604 queda superada**; cerrarla es del orquestador.
+
+### Cómo se midió
+
+- **Jira:** las 74 claves de §2 (más 1390, 1585 y 1594) en una consulta, con su estado y su última actualización. Las 32 que cambiaron desde el 19-oct se leyeron con **dos lectores de sólo lectura en paralelo**, que devolvieron su último comentario, lo que falta y de quién depende. **S0 releyó entero SCRUM-1264**, porque contradecía al encargo (la cita del asesor).
+- **`npm run ya-esta`** sobre los 56 tickets abiertos de §2: 36 YA ESTÁ (con trabajo en `main`), 20 NO ESTÁ, 0 NO HE PODIDO MIRAR.
+- **Filas sin ticket (2.9, 2.10, 7.8):** búsqueda de texto en Jira desde el 19-oct (`albaran_para_firmar_es`, `trial_expired`, `quote_decision_es`, `planExpiresAt`, `EMAIL_FROM`) y en los commits de `main`. **0 sobre esas filas; control: la misma consulta devuelve 26 tickets de otras cosas.**
+- **S1-D en el árbol:** `enviarSobre` se define en `sif.client.ts:355` y ningún otro fichero de `src/` lo importa; `sif.procesador.ts` no tiene llamador; `encolarAltaTrasSellado` sí (`selladoEstado.ts:173`).
+- **Saldos de Jira:** las seis consultas de §5 y cuatro más por ventana. **Los dos controles cuadran exactos:** 264 − 151 + 66 = 179 y 99 − 9 + 31 = 121.
+- **Dependencias:** el contador sobre §2, con control sobre la versión de `main` (`42c458e1`, la del 19-oct a las 06:43Z), que da lo publicado entonces (66 · 44/29 · 28/12 · 11/4 · 6/2). Y una comparación fila a fila de las dos versiones con el mismo criterio de columnas: **las 29 filas sólo-del-fundador del 19-oct siguen las 29.**
+
+### Lo que el encargo traía y no aguantó la medida
+
+| lo que se afirmó | lo que se midió |
+|---|---|
+| «este documento no existe» | existe desde el 18-oct (#2564) |
+| la cita con el asesor, «fijada el 1-oct para dos semanas» | no hay asesor (c.19623, 14-oct); el fundador lo aplazó hasta la S.L. (c.20088, 20-oct) |
+| «S1-D · El envío → El equipo» | carril J1, sin ticket abierto, y el certificado es del fundador |
+| «tres de los cuatro que faltan son suyos» | faltan cinco tramos y los cinco necesitan al fundador |
+| la auditoría del 19-ago (cola y envío «sin construir») | la cola encola desde el 30-sep; procesador y cliente existen sin enchufar |
+
+**Aguantaron:** SIF-1 3 de 8, «hay 3 aceptados» y el saldo de 24 h (39 · 22 · −17) para el proyecto entero.
+
+### Error propio
+
+- **Escribí a mano las cifras de §1 y §3 (67 filas, 46/24, 10 nuevas) antes de correr el contador**, y estaban mal: eran 74 filas, 50/30 y 17 nuevas. Peor: a partir de esas cifras escribí que lo sólo-del-fundador «bajaba de 29 a 24», que era lo contrario de lo que pasa (las 29 siguen y suma una). Lo cazó el contador antes del commit. Es la tercera vez en este mismo registro que una cuenta a mano sale mal (tramos 1563 y 1563b): el contador se corre ANTES de escribir la frase, no después.
