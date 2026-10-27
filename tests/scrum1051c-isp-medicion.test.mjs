@@ -117,6 +117,20 @@ test('1051c ② · control: la F1 original del mismo paquete también sale S2 si
   const f1 = registroDe(xml, '2026-CF-001');
   assert.match(f1, /<sum1:TipoFactura>F1<\/sum1:TipoFactura>/);
   assert.match(f1, /<sum1:CalificacionOperacion>S2<\/sum1:CalificacionOperacion>/);
-  assert.match(f1, /<sum1:BaseImponibleOimporteNoSujeto>1000\.00<\/sum1:BaseImponibleOimporteNoSujeto>/);
-  assert.doesNotMatch(f1.slice(0, f1.indexOf('</sum1:Desglose>')), /TipoImpositivo|CuotaRepercutida/);
+  const desgloseF1 = f1.slice(f1.indexOf('<sum1:Desglose>'), f1.indexOf('</sum1:Desglose>'));
+  assert.match(desgloseF1, /<sum1:CalificacionOperacion>S2<\/sum1:CalificacionOperacion>/);
+  assert.match(desgloseF1, /<sum1:BaseImponibleOimporteNoSujeto>1000\.00<\/sum1:BaseImponibleOimporteNoSujeto>/);
+  assert.doesNotMatch(desgloseF1, /TipoImpositivo/);
+  assert.doesNotMatch(desgloseF1, /CuotaRepercutida/);
+});
+
+test('1051c ② · control positivo: una línea S1 al 21 % SÍ escribe TipoImpositivo y CuotaRepercutida', async () => {
+  const s1 = original([{ concept: 'Material', qty: 1, price: 1000, tax: 0.21 }]);
+  const { xml, excluidos } = await buildVerifactuRegistrosXml({ merchantId: 7, year: 2026 }, fakePrisma([{ ...s1, total: '1210.00' }]));
+  assert.deepEqual(excluidos, []);
+  const reg = registroDe(xml, '2026-CF-001');
+  const desgloseS1 = reg.slice(reg.indexOf('<sum1:Desglose>'), reg.indexOf('</sum1:Desglose>'));
+  assert.match(desgloseS1, /<sum1:CalificacionOperacion>S1<\/sum1:CalificacionOperacion>/);
+  assert.match(desgloseS1, /TipoImpositivo/);
+  assert.match(desgloseS1, /CuotaRepercutida/);
 });
