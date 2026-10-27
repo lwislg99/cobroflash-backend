@@ -340,3 +340,63 @@ fichero: 11 Luis, 17 Javier. ⚠️ La cuenta tampoco dice qué sesión ni qué 
 - La decisión que queda —si el guard nuevo entra acusando por FORMA o sólo por fuga MEDIDA— es del fundador,
   y la lleva el orquestador.
 - Suite entera local: NO CORRIDA (encargo: el obligatorio de CI hace de tanda).
+
+## Tramo 4 · 1396c · Los 28 entran DECLARADOS y la lista sólo baja (decisión del fundador, c.21095)
+
+**Medido contra:** `origin/main` = `c992358dc42fa7407e2960f826bd36d68bc3d47e` · 2026-10-27T16:01:54Z
+
+Sesión `jv-j6dp` (puesto J6), encargo del orquestador `cobroflash-backend-8b`. Carril: J6 sobre un ticket
+`area-j6`. Toca `scripts/_censo-mkdtemp.mjs` y crea `scripts/_mkdtemp-declarados.json` (los cubre sólo la fila
+general de `scripts/`; el JSON va declarado en `scripts/_sin-fila-declarados.json`, contenedor de S0 donde
+sólo se añade el bloque propio), `tests/scrum864c-el-temporal-no-vuelve.test.mjs` (③) y un test nuevo.
+No toca ninguno de los 28 sitios.
+
+A9: aviso → cicatriz J6 «Crucé el aviso de 200k entre dos mediciones (141k al leer Jira, 215k tras las mutaciones) y avisé después del cruce, no en él» — no se pudo comprobar: ningún hook de este árbol lee el usage de la sesión entre dos tandas
+
+### Qué se ha hecho
+
+- **Se reúsa el trinquete de la casa**, no se escribe otro: `contraDeclarados` de
+  `scripts/_censo-entorno-prestado.mjs` (SCRUM-1349), importado. El árbol tiene que tener EXACTAMENTE los
+  declarados: uno nuevo → `nuevos`; uno arreglado que sigue en la lista → `sobran`. Por fichero y con
+  cuántas llamadas, no por línea (las líneas se mueven: `scrum754:703→705` y `scrum811c:611→609` lo midieron).
+- `scripts/_mkdtemp-declarados.json`: 26 ficheros, **28 llamadas**, cada una con `motivo`
+  (`MEDIDA` 2 · `FORMA` 22 · `SIN_MEDIR` 4), `retira` (`J6` 17 · `SCRUM-1621` 11) y su `detalle`.
+- **La mitad que `contraDeclarados` no tiene: que la lista no crezca.** `subeRespectoA(nacimiento, hoy)` en el
+  censo; el test lee de la historia la lista tal como la creó su primer commit (`git log --diff-filter=A`) y
+  exige que cuadre con c.21095 (28 = 17 + 11). Clon superficial → CIEGO.
+- `scrum864c` ③ compara con la lista: cae lo NO declarado (con el detalle de siempre) y lo declarado que ya
+  no se acusa. Su título no cambia (lo citan registros de otros tickets).
+- `tests/scrum1396c-los-declarados-solo-bajan.test.mjs`: ① forma de la lista · ② sólo baja contra el
+  nacimiento, con sus controles · ③ positivo SEMBRADO (una función fabricada que devuelve su `mkdtemp`, fuera
+  y dentro de un fichero declarado; si deja de salir ESCAPA dice CIEGO) · ④ negativo: los 28 no acusan, y
+  sacar uno de la lista sin arreglarlo, o arreglarlo sin borrar su entrada, sí.
+
+### Medido hoy (local, Windows, una pasada)
+
+| qué | resultado |
+|---|---|
+| `scrum864c` + `scrum1396` + `scrum1396c` | **13 de 13 pasan** (864c ③ en VERDE) |
+| sitio REAL sembrado en el árbol (`tests/_sembrado-real-1396c.mjs`, ESCAPA, borrado después; `git status` limpio) | 864c ③ **cae** nombrando `tests/_sembrado-real-1396c.mjs:5`; 1396c ③ y ④ caen |
+| mutaciones con `aplicarUna` (`docs/master/evidencias/SCRUM-1396/mutar-1396c.mjs`, copia del banco de SCRUM-1386) | **6 de 6 VIVAS**, 0 sin restaurar: las 3 nuevas de 1396c y, re-corridas, las 2 de 864c y la de 1396 |
+| `scrum237`, `scrum1349` (×2), `scrum1480f`, `scrum1185`, `scrum850` | pasan (1480f tras declarar el JSON) |
+| `scrum1387` y `scrum976` ④ | **CIEGO en local**, el mismo de 1396b: la rama trae main por merge y el guard dice que lo mide CI. `_catalogo-obligatorio.clasificar` da el banco nuevo `fuera: false` |
+
+Salidas en `docs/master/evidencias/SCRUM-1396/salida-mutar-1396c.txt`.
+
+### Aceptación → dónde se ve
+
+| aceptación (c.21095 / encargo) | dónde se ve |
+|---|---|
+| el guard empareja por ámbito | `tests/scrum1396-el-borrado-de-otra-funcion.test.mjs` (desde 1396) |
+| los 28 en una lista declarada, con motivo y quién los retira | `scripts/_mkdtemp-declarados.json` · `tests/scrum1396c-los-declarados-solo-bajan.test.mjs` ① |
+| un trinquete que prueba que la lista solo puede BAJAR | `tests/scrum1396c-los-declarados-solo-bajan.test.mjs` ② |
+| todo sitio NUEVO acusa en rojo | `tests/scrum864c-el-temporal-no-vuelve.test.mjs` ③ · 1396c ③ |
+| un sitio que sale de la lista sin arreglarse acusa | 1396c ④ |
+| `scrum864c` en VERDE sin tocar ninguno de los 28 | `tests/scrum864c-el-temporal-no-vuelve.test.mjs` |
+| vaciar la lista por lotes (17 J6, 11 SCRUM-1621) | NO HECHO → J6 (sus 17) y SCRUM-1621 (los 11 de Luis) |
+
+### Lo que no se ha hecho
+
+- Ninguno de los 28 se ha tocado (regla 41). Las 4 `SIN_MEDIR` siguen sin fallo inyectado.
+- Suite entera local: NO CORRIDA (encargo: 10 sesiones a la vez; el obligatorio de CI hace de tanda).
+- `scrum1387` no se ha podido medir en local (CIEGO por la topología de la rama), y con él `scrum976` ④.
