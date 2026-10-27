@@ -102,3 +102,45 @@ En el comentario de Jira de este tramo (la dirigida corre después de escribir e
   medía; la rama se puso al día con `git merge origin/main` (`a5608c96c0727cf11dd029e604251a79da2891a4`, que sólo
   movía `cicatrices/J6.md` de lo mío: resuelto conservando las cinco líneas) y, con `dist/` recompilado, la limpia
   de los tres ficheros en el banco dio 5 de 5 casos verdes. Las mutaciones NO se repitieron sobre la mezcla.
+
+## J6 · SCRUM-1611c · scrum58 (N+1) cuenta sólo las consultas de su petición
+
+**Medido contra:** `origin/main` = `5078f80c3726c93b3751baf9c10134b4a486eaa4` · 2026-10-27T12:04:07Z (hora de GitHub; sesión J6 `jv-j6dd`, por encargo del orquestador `cobroflash-backend-8b`, SCRUM-1611 c.20992. Rama `scrum-1611c-scrum58-sin-carrera`. Al cerrar, `origin/main` iba en `e19665301fc1a3949b6556eee383060a8f793ab3`, que no toca ningún fichero de este tramo)
+
+A9: aviso → cicatriz J6 «Lancé un `ls` con un comodín de dos niveles sobre los 680 trabajos de la máquina sin medir antes cuántos casaba, y el arnés lo mandó a segundo plano: la quinta de la familia de 1599i» — no se pudo comprobar: ningún hook mide el tamaño de un comodín antes de expandirlo
+
+Carril: `carriles.mjs de tests/scrum58-jobs-n1.test.mjs` → «sin fila en §3: nadie lo reclama», lo mismo que da para 234, 814 y 92, que J6 tocó en 1611b. Consultado antes de editar. 0 líneas de `src/`. Ninguna aserción relajada: la igualdad 3 = 12 y el «se enganchó» siguen igual. Banco: el Postgres 16.14 de `pgbanco-1599p` (copiado, sin enlazar), base rehecha antes de cada pasada, `dist/` con `tsc --noCheck` sobre esta base y DDL de `prisma migrate diff --from-empty`. Salidas: `evidencias/SCRUM-1611/salida-1611c.txt`.
+
+### ① La causa: lo que está medido y lo que no
+
+- **El rojo de CI** (#2900 @ `74caec6d8f6b1cd95cd2056aaf2a4355e82768bf`, job 121912385132): «3 Trabajos → 10 consultas, 12 Trabajos → 11», en una tanda de 550 s con todos los ficheros en paralelo; el test tardó 1.543 ms.
+- **No lo he reproducido**: 8 pasadas del régimen de CI en local (los 57 ficheros de banco más una copia sonda del test, en paralelo y contra la misma base), 16 mediciones (el test real y la sonda), las 16 con 10 y 10. 0 de 16.
+- **`$on('query')` es del cliente de UN proceso**, y cada fichero de test corre en el suyo: las consultas de otros ficheros no pueden entrar en el contador. Lo que se cuela tiene que salir del propio proceso.
+- **Las 10 consultas salen DENTRO de la petición** (sonda: las 10 con la fase «durante», y 0 en la cola de 300 ms ni en 1.500 ms más). Y **Prisma emite el evento antes de resolver la consulta**: 0 eventos tardíos en 20 escrituras, y 0 en 200 con las 12 CPU llenas (población: 23 y 203 eventos, uno por consulta). Así que la cola de 300 ms no podía recoger nada de la petición: sólo consultas ajenas del mismo proceso.
+- **Qué consulta fue la undécima en CI: SIN MEDIR.** El log no la nombra. Hipótesis de c.20992 (oyente global que no se quita + espera fija): la mitad del oyente no suma (el viejo seguía contando en una variable que ya nadie lee); la de la espera fija es la que se ha quitado.
+
+### ② El arreglo, en el test
+
+Un solo oyente con interruptor (Prisma no deja quitar uno), encendido justo antes de la petición y apagado al llegar la respuesta: se cuentan sólo las consultas que el proceso emite mientras dura. Sin espera fija (A10, «Una ventana fija es una tolerancia disfrazada»). Y el rojo, desde ahora, NOMBRA la consulta de más por su texto, en los dos sentidos: el próximo rojo dice cuál fue la undécima.
+
+### ③ El positivo sembrado y la mutación
+
+| pasada | n | resultado |
+|---|---|---|
+| test viejo · UNA consulta ajena del proceso 100 ms tras la 2ª respuesta (`ruido58-1611c`, por `--import`, sin tocar el test) | 1 | ROJO, «3 Trabajos → 10 consultas, 12 Trabajos → 11»: el literal de CI |
+| test viejo · sin siembra | 1 | verde, 10 y 10 |
+| test nuevo · la misma siembra (disparada: 1) | 1 | verde, 10 y 10 |
+| test nuevo · sin siembra | 1 | verde, 10 y 10 |
+| test nuevo · `MUTACIONES_CON_BASE` (serializeJob sin `refs`), con `mutar-1599i.mjs` | 1 | MUERE, 31 → 94; `dist/` restaurado byte a byte |
+| los 57 ficheros de banco con el test nuevo, en paralelo | 1 | 192 de 192 casos, 0 fail |
+
+La siembra prueba que la cola de 300 ms reproduce el rojo de CI, no que fuera ESA la consulta de CI. Lo que el nuevo deja de ver: una consulta ajena del proceso que caiga DENTRO de la petición (decenas de ms, antes ~350). Atribuirlas una a una pide un identificador que el evento de Prisma no trae.
+
+### ④ De paso
+
+- En 3 de las 8 pasadas del régimen cayó `A12.2c: /webhooks/psp — payment.confirmed duplicado NO re-paga (integración)`: intermitente, ajeno a scrum58 y no investigado. Lo nombro, no lo abro.
+- Mi aviso de 200k al orquestador salió antes de leer la cifra (195.397): la mandé sin mirarla.
+
+### ⑤ Sin medir
+
+CI (no he esperado al obligatorio) · staging · qué consulta fue la undécima de #2900 · el régimen con menos CPU (CI corre en 4) · suite entera local: NO CORRIDA.
