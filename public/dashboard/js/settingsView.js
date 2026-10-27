@@ -1528,7 +1528,7 @@ async function renderPublicProfileCard(container) {
       </p>
       ${enabled
         ? (m.slug
-          ? `<div class="alert success" style="display:block;margin:0 0 14px;font-size:13px">Tu página está <strong>activa</strong>: <a href="/p/${escSettings(m.slug)}" target="_blank" rel="noopener">yaqu.app/p/${escSettings(m.slug)} ↗</a></div>`
+          ? `<div class="alert success" style="display:block;margin:0 0 14px;font-size:13px">Tu página está <strong>activa</strong>: <a class="pp-enlace" href="/p/${escSettings(m.slug)}" target="_blank" rel="noopener">yaqu.app/p/${escSettings(m.slug)} ↗</a></div>`
           : `<div class="alert warning" style="display:block;margin:0 0 14px;font-size:13px">Elige una dirección para estrenar tu página.</div>`)
         : `<div class="alert" style="display:block;margin:0 0 14px;font-size:13px;background:var(--neutral-50);border:1px solid var(--border);color:var(--neutral-600)">Aún no está activada — déjala lista y la encendemos contigo.</div>`}
       <div class="field" style="margin-bottom:12px">
