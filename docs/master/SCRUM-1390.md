@@ -607,3 +607,31 @@ El fallo de esa A9: lancé el error de «respuesta sin lista» como `TypeError` 
 - **La actividad del Técnico sigue con importe** (de SUS presupuestos). J4 lo señaló en c.20755 contra c.20735 («sin
   importes»); el máster dice «con importe». No se toca aquí: es una decisión, no un texto.
 - El `catch` sigue envolviendo lo que va detrás de pintar la actividad (c.20438, punto 5): no medido, no tocado.
+
+## SCRUM-1390yb · #2839 en rojo tres días: el error de «respuesta sin lista» se llevaba la Inicio entera (27-oct-2026)
+
+**Skill UI:** cargada (yaqu-premium-ui), DESPUÉS de editar `homeView.js` en este tramo, no antes. Sin tokens ni estilos nuevos: reutiliza `uiErrorState` (AB3) con su texto, que ya existía en la Inicio.
+
+A9: comprobación → `tests/scrum901-banco-fiel-a-la-inicio.test.mjs`
+
+El fallo de esa A9: el 24-oct empujé el `throw` de `renderActivity` corriendo sólo mi test. El `throw` iba al `catch` de toda la Inicio y se saltaba lo que va detrás, «Completa tu configuración» incluida. scrum901 y scrum1158c lo cazaron en el obligatorio de #2839 y el PR se quedó tres días en rojo. Antes de empujar un cambio en una vista hay que correr TODOS los tests que la montan (`Select-String homeView|renderHomeView` sobre `tests/`: 42 ficheros), no sólo el mío.
+
+Medido el 27-oct-2026 sobre `origin/main` 77ce98573b1b5e090dfcf7754c4e7960bc63b85a, con main mergeado en la rama (sin conflictos).
+
+### El rojo, reproducido en local antes de tocar nada
+
+`build + tests (con banco desechable)` de #2839 (run 40095167327): 4 caídos. En local, con main mergeado: scrum1158c («Completa tu configuración» sin `.home-checklist`, 0 ≠ 1) · scrum901 (0 «Ir →» ≠ 9) · scrum698 (87 nodos ≠ 145) · scrum719/1395b (veredicto de mudez caducado para scrum601). Causa: el banco sirve `{}` a `/admin/metrics/home`, el `throw` mandaba la Inicio al `catch` y no se pintaba nada de lo que va detrás de la actividad.
+
+### Qué cambia
+
+- `public/dashboard/js/homeView.js`: una respuesta sin `recentActivity` pinta el estado de error **en su bloque** (`uiErrorState(feed, …, reintentar)`, el mismo texto y el mismo «Reintentar» del `catch`) y vuelve. El resto de la Inicio se pinta. Punto 2 de c.20438 intacto: sigue sin ser el vacío.
+- `tests/scrum698-vistas-que-no-se-miden.test.mjs`: `renderHomeView` 145 → 148, POR IDENTIDAD (firmas de los dos árboles, `homeView.js` de main contra la rama): +4 (`div.state-error`, `-ico`, `-msg`, `button.state-error-retry`) − 1 (el `div` de «Sin actividad reciente»). Control: el árbol de main da 145, la cifra fijada.
+- `tests/scrum601-…`: re-anclaje 894 → 898 (`grep -n`: rama 898, main 885; numstat 18 5).
+- `tests/_veredicto-mudez.json`: regenerado con `npm run censo:mudez -- --escribir` (1 medido: scrum601, VIVO).
+- `tests/scrum1390y-…`: la mutación ④ apunta al nuevo `if` (deshace el error y vuelve al vacío).
+
+### Medido
+
+- Los 42 ficheros de `tests/` que nombran `homeView`/`renderHomeView`/`scrum1390y` + scrum719: **489 de 489**, 0 saltados.
+- Mutador `docs/master/evidencias/scrum1390y/mutar-1390y.mjs . origin/main`: sano 5/5 · base de main tumba ①②③④ · las 4 mutaciones caen en su caso.
+- Contraprueba del arreglo: con el `throw` (la punta del 24-oct) scrum901/1158c caen; sin él, pasan.
