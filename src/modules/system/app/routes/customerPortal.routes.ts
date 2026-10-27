@@ -1,7 +1,8 @@
 // src/modules/system/app/routes/customerPortal.routes.ts
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
-import { formatMoneyEs, formatImporteEs } from '../../../../core/utils/utils'; // A22.1: dinero es-ES con símbolo
+import { formatMoneyEs, formatImporteEs, calcTotal, type QuoteLine } from '../../../../core/utils/utils'; // A22.1: dinero es-ES con símbolo
+import { lineasQueSuman } from '../../../quotes/domain/apartados'; // SCRUM-1568
 import { getLocale } from '../../../../core/i18n/locales';
 import { esc } from '../../../../core/utils/utils';
 import { BASE_URL } from '../../../../core/config/env';
@@ -232,6 +233,24 @@ ${body}
 </html>`;
 }
 
+/**
+ * SCRUM-1568 · el importe de UNA línea del presupuesto, con su descuento de línea y su IVA.
+ *
+ * Aquí ponía `qty||1 × price||0 × (1+tax)`: sin el `dto`, mientras el total de la tarjeta sí lo
+ * lleva. Con 2 × 100 € al 21 % y un 10 % de descuento, la línea decía 242,00 € y el total 217,80 €,
+ * y el portal no tiene pie que explique la resta. Decisión del fundador (c.21043): la línea va CON
+ * el descuento, sin fila nueva. Por eso no hay cuenta propia: es `calcTotal` sobre la línea sola,
+ * el MISMO término (`precioConDto` × IVA) con el que se guardó el total.
+ *
+ * Una cabecera de apartado es un título y sale VACÍA, como en la página de firma y en el PDF
+ * (c.21043, punto 2); antes salía «0,00 €». Se reconoce por su marca, con `lineasQueSuman`.
+ */
+function importeDeLineaDelPresupuesto(l: QuoteLine, currency: string): string {
+  if (lineasQueSuman([l]).length === 0) return '';
+  const importe = calcTotal([l]);
+  return Number.isFinite(importe) ? formatMoneyEs(importe, currency) : '';
+}
+
 // ── GET /cliente/:token ──────────────────────────────────────────────────
 router.get('/:token', async (req, res) => {
   const { token } = req.params;
@@ -348,10 +367,9 @@ router.get('/:token', async (req, res) => {
               </button>
               <div class="pf-lines-body">
                 ${(q.lines as any[]).map((l: any) => {
-                  const total = Number(l.qty||1) * Number(l.price||0) * (1 + Number(l.tax||0));
                   return `<div class="pf-line-row">
                     <span class="pf-line-concept">${esc(l.concept||'')}</span>
-                    <span class="pf-line-amount">${formatMoneyEs(total, q.currency)}</span>
+                    <span class="pf-line-amount">${importeDeLineaDelPresupuesto(l, q.currency)}</span>
                   </div>`;
                 }).join('')}
               </div>
