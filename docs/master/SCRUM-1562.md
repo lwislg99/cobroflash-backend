@@ -457,4 +457,14 @@ con Tab, Intro y Espacio; ratón 8/8; la casilla marca y no navega).
   código viejo tenía que pasar. Y probé `guards-visuales.mjs --help` para leer su uso: calentó
   Edge y salió con 0 sin correr ningún guard. Al principio lo di por la tanda de navegador; lo
   vi al leer la salida (838 B, ni un veredicto).
-- **NO medido:** yaqu.app (no está desplegado); la tanda entera (dirigida de 81 ficheros, abajo).
+- **Dirigida** (81 ficheros: los que nombran `invoicesView`, los de microcopy, 1562/1275 y scrum237,
+  976, 1387, 622, 267, 273, 1294): 639 casos · 638 pass · 0 fail · 1 saltado (`LIBRO_PG_URL`).
+- **Guards de navegador** (`guards-visuales.mjs`, Edge): 39 · 37 verdes · 1 CIEGO · 1 rojo.
+  - `objetivo-tactil` CIEGO: 3 de 41 caras de fuente no se bajaron (red); no mide la lista de Facturas.
+  - 🔴 **`lista-trabajos` ⑥ ROJO por este arreglo**: «Facturas HA CAMBIADO · db722b0b41705aa5 (3300)
+    ≠ fa5717d165487c49 (3318)». El ⑥ exige que las hermanas de Trabajos salgan idénticas a la base;
+    Facturas cambia a propósito. Lo que se ha hecho con Albaranes (SCRUM-831) y Clientes (SCRUM-979,
+    1043a c.20547) es declarar el cambio en el guard. Eso es tocar un guard (regla 41): **PARADO sin
+    empujar**, a la espera de la decisión.
+- **NO medido:** yaqu.app (no está desplegado); la tanda entera; el tamaño táctil de «Ver detalle» en
+  Facturas (ningún guard lo mide).
