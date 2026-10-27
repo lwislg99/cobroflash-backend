@@ -756,7 +756,7 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
       `<td class="quote-line-cel"></td>` +
       `<td>${qty}</td>` +
       `<td>${fmtQuoteMoney(price, cur)}</td>` +
-      `<td>${(tax * 100).toFixed(0)} %</td>` +
+      `<td>${fmtTipoIvaEs(tax)} %</td>` +
       `<td style="text-align:right" class="amount">${fmtQuoteMoney(total, cur)}</td>`;
 
     // 🔴 EL CONCEPTO SE CONSTRUYE COMO NODOS, no como cadena de HTML. La descripción larga viaja

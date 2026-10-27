@@ -708,6 +708,17 @@ function fmtNumeroEs(n) {
 window.fmtNumeroEs = fmtNumeroEs;
 
 /**
+ * SCRUM-1608 · EL TIPO DE IVA PARA UN RÓTULO: 0.075 → «7,5», 0.21 → «21». Sin el signo, que lo pone
+ * quien rotula. Gemela de `rotuloDeTipo(tipoEnPorcentaje(x))` del backend, la que usa el PDF desde
+ * SCRUM-1447: el tipo se redondea a la CENTÉSIMA de punto, nunca a entero (`toFixed(0)` pintaba «8»).
+ */
+function fmtTipoIvaEs(taxFrac) {
+  const v = Number(taxFrac);
+  return fmtNumeroEs(Number.isFinite(v) ? Math.round(v * 10000) / 100 : 0);
+}
+window.fmtTipoIvaEs = fmtTipoIvaEs;
+
+/**
  * ─────────────────────────────────────────────────────────────────────────────────────────
  * SCRUM-436 · EL MISMO IMPORTE, PERO DISTINGUIENDO EL AUSENTE DEL CERO
  *

@@ -166,7 +166,10 @@
       sumaLineas += neto;
       conImpuesto += neto * (1 + tax);
 
-      const rate = Math.round(tax * 100);
+      // SCRUM-1608 · el tipo a la CENTÉSIMA de punto, como `tipoEnPorcentaje` (la clave de
+      // `descuentoGlobalEnCentimos` en el backend). Con `Math.round(tax * 100)` un 7,5 % agrupaba
+      // como 8 y el global se quitaba con `1 + 8/100`: 967,00 en pantalla y 967,50 guardado.
+      const rate = Math.round(tax * 10000) / 100;
       if (!indicePorTipo.has(rate)) {
         indicePorTipo.set(rate, porTipo.length);
         porTipo.push({ rate: rate, baseCents: 0 });
