@@ -328,3 +328,78 @@ J3 (sesión `jv-j3bf`, equipo de Javier), por encargo de su orquestador (`cobrof
 - Como «antes» de `parar` corrí la copia de seguridad desde su subcarpeta y salió `NO-PUDE-MIRAR` (no hay
   `config.json` al lado): una sonda que no llegó a mirar. No se cuenta; el «antes» válido es el `ALTERADO` de
   `estado`, medido sobre la copia instalada.
+
+---
+
+# SCRUM-1549d · El `/tr` de las tareas, entre comillas DENTRO: la tarea ejecuta `arranque.cmd` aunque la ruta lleve un espacio, y `comprobar-instalacion` ya no da OK a una tarea partida
+
+**S5 (equipo de Luis)** · 27-oct-2026
+
+**Medido contra:** `origin/main` = `77ce98573b1b5e090dfcf7754c4e7960bc63b85a` · 2026-10-27T15:37:34Z
+
+A9: comprobación → `tests/scrum1549d-tr-con-espacio.test.mjs`
+
+Decisión: c.20777, punto 3 (*«ticket a S5 para entrecomillar `/tr` en `instalar.mjs:79`, con un test de ruta con
+espacio»*). Encargado por el orquestador de Luis como «SCRUM-1000», a petición de Javier; la decisión y la medida de
+la causa viven aquí, así que el tramo va aquí.
+
+## 0 · La causa, verificada antes de arreglarla
+
+- **Leída en el código:** `ordenesSchtasks` (`scripts/equipo/instalar.mjs:79`) imprimía `/tr "<ruta>"` para pegar en
+  Git Bash. Bash se come esas comillas, y schtasks recibe la ruta desnuda.
+- **Medida en bash de verdad** (test ①, sin crear tareas): con `C:/Users/Javier Pereira/…`, schtasks recibe
+  `C:\Users\Javier Pereira\AppData\Local\yaqu-equipo\arranque.cmd` sin comillas.
+- **Lo que schtasks hace con eso lo midió `jv-j3bb` en la máquina de Javier** (§2 de este registro): Command
+  `C:\Users\Javier`, Arguments `Pereira\…\arranque.cmd`, resultado `0x80070002`. Coincide.
+- **La máquina de Luis** (`schtasks /query /tn yaqu-equipo-0800 /xml`, sólo lectura, hoy): Command
+  `C:\Users\Admin\AppData\Local\yaqu-equipo\arranque.cmd`, sin Arguments. Por eso el defecto vivió en main: la
+  ruta de la guía no lleva espacio.
+
+## 1 · Los sitios con el mismo defecto (no sólo la línea 79)
+
+| Sitio | Qué tenía | Qué hace ahora |
+|---|---|---|
+| `instalar.mjs` `ordenesSchtasks` | `/tr "<ruta>"` | `/tr '"<ruta>"'`: comillas simples de bash con las dobles dentro; una `'` de la ruta se escapa `'\''` |
+| `comprobar-instalacion.mjs` §10 | `schtasks /query /tn` → OK si la tarea **existe** | `/query /xml` y `juzgarAccionTarea`: OK sólo si Command es `arranque.cmd` entero (con o sin comillas) y sin Arguments; si no, **FALLA** nombrando lo que ejecuta |
+| `docs/equipo/instalacion-orquestador-autonomo.md` §5 | las tres órdenes viejas para copiar | las nuevas, con el aviso y «se COPIAN de la salida del instalador» |
+
+El de `comprobar-instalacion` es el que más importa: el 18-sep dio **«OK · 17 comprobaciones»** en la máquina de
+Javier (SCRUM-1000 c.16194) con las tres tareas partidas. Un instrumento que pregunta si algo existe no puede ver
+que no funciona. Revisados y sin defecto: `arranqueCmd` (todas sus rutas van entre comillas) y `lineaStatusLine`
+(SCRUM-953).
+
+## 2 · Cómo se mide (`tests/scrum1549d-tr-con-espacio.test.mjs`, 8 tests)
+
+1. La orden del instalador se pasa por un **bash de verdad**, con `schtasks` cambiado por una función que escribe
+   sus argumentos: se ve el `/tr` que recibiría schtasks.
+2. Ese `/tr` se parte como lo partió schtasks en la máquina de Javier → XML de la acción.
+3. Ese XML lo juzga `juzgarAccionTarea`, la misma función de `comprobar-instalacion`.
+
+Rutas: **con espacio** (`Javier Pereira`), **con espacio y apóstrofo** (`Ana O'Neil`) y sin espacio. Más los dos XML
+medidos (el de Javier → FALLA; el de Luis → OK) y los suelos (otro `.cmd`, argumentos de más → FALLA; sin acción →
+NO-PUDE-MIRAR).
+
+- **Control:** la orden VIEJA con espacio → FALLA, y sin espacio → OK (por eso no se notaba).
+- **Mutación:** devuelto el `/tr` a la forma vieja en `instalar.mjs`, **caen 4 de 8** (los cuatro de la orden de
+  hoy); restaurado, hash idéntico al de antes.
+- Local: `scrum1549d` + `scrum899b` + `scrum951a` → **40 tests, 40 pass, 0 fail, 0 skipped**. `scrum951d` → 8/8.
+  `scrum723` **no cargó** en mi worktree (sin `node_modules`: falta `typescript`); no toca nada de esto, lo mide el CI.
+- **Dos tests cambian su cadena esperada** (`scrum899b:287-289`, `scrum951a:471,474`): fijaban la orden con el
+  defecto dentro. Lo que vigilan (nombres de tarea, horas, prefijo) sigue igual.
+
+## 3 · Lo que NO se ha medido
+
+- **El Programador de tareas real con el `/tr` nuevo.** La mitad «con comillas» del paso 2 es un MODELO: crear una
+  tarea no lo hace una sesión. La primera que se cree con la orden nueva la comprueba
+  `comprobar-instalacion.mjs --destino <instalación>`, que ahora lee su XML de verdad.
+- Por qué la tarea de las 08:25 de Javier dio `0x800710E0` (§2): no es este defecto, o no sólo.
+
+## 4 · ⚠️ Antes de recrear las tareas de Javier
+
+- **Punto 1 de c.20777 (24-oct): «No se rehacen las 3 tareas programadas. No se quiere un orquestador automático en
+  cada tanda.»** El encargo de hoy dice que Javier las recreará cuando entre esto. Puede ser una decisión nueva;
+  **no la he visto escrita**. Con la tarea arreglada, `arranque.cmd` lanza `orquestador-arranque.mjs` en cada tanda
+  sin equipo vivo (coste).
+- Recrear = `schtasks /delete /tn yaqu-equipo-jv-HHMM /f` de cada una, y después las órdenes que imprima
+  `instalar.mjs` de main. **Reinstalar con `instalar.mjs` reescribe `config.json` y `arranque.cmd`** (c.20816 §1). Lo
+  hace quien manda en esa máquina.
