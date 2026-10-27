@@ -50,3 +50,36 @@ La cabecera de `src/modules/invoicing/domain/emission.service.ts:3-6` y la defin
 
    ✅ esos tres literales / ❌ otros.
 4. **¿Se propaga el interruptor o se arregla una a una?** **Recomiendo una a una, con `getEmissionMode` y no con `docLabel`.** `docLabel` pregunta por el número de un documento, y lo que falla hoy son pantallas SIN documento. Propagarlo no arreglaría ni la página de aceptar ni el portal. Hoy sólo queda una superficie viva por arreglar, el portal. Para la «cuarta superficie que se escriba», un guard que exija que toda ruta pública que pinte «factura» llame a `getEmissionMode` cubriría el caso; habría que diseñarlo, y nadie lo ha hecho. ✅ una a una (el portal, J2) / ❌ guard además (es de J6).
+
+## SCRUM-1567b · El portal del cliente no habla de facturas a un comercio que no puede emitir (J2, jv-j2bp, 27-oct-2026)
+
+**Medido contra:** `origin/main` = `922fddaab477767cbf9b9e0f789d39a48e85cd2e` · 2026-10-27T16:21:47Z (cabecera `Date` de GitHub)
+
+A9: comprobación → `tests/scrum1567b-portal-sin-facturas-en-receipt.test.mjs`
+
+Lo construye J2 con la firma del fundador sobre la propuesta de arriba (SCRUM-1567 c.21121, puntos 3 y 4). Los literales se copiaron de Jira.
+
+### Qué se ha cambiado
+
+Sólo `src/modules/system/app/routes/customerPortal.routes.ts`. El portal pregunta una vez por página `getEmissionMode(merchant)` y, si es `receipt`:
+
+- el saludo es «Aquí tienes tus presupuestos.»;
+- no se pinta el apartado «Facturas» ni «No hay facturas aún.»;
+- un documento con número `J-` (`isReceiptNumber`) se titula «Justificante J-…» y su botón es «📄 Descargar justificante».
+
+Con el flag en ON (`fiscal`) el portal sale como estaba (medido); en el comercio demo (`demo`), también, pero eso se lee del código y no tiene caso propio. La consulta del comercio lee además `email`, que `getEmissionMode` usa para reconocer al demo; no es esquema ni camino de emisión. Del camino de emisión sólo se importan dos funciones de lectura; no se ha tocado.
+
+### El rojo, antes del cambio
+
+Con el `src/` de main y el test nuevo: 4 casos, **2 caen** (los dos de `receipt`: el saludo decía «Aquí tienes tus presupuestos, facturas y pagos.») y **2 pasan** (los dos controles: el modo del banco y el portal con el flag en ON). Después del cambio, 4 de 4. El control del flag en ON pasó ANTES y DESPUÉS: el portal de un comercio `fiscal` no ha cambiado ni en el saludo, ni en el apartado, ni en «Factura J-…».
+
+Mutaciones: las dos de `MUTACIONES_QUE_ME_TUMBAN`, corridas con `correr` y `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`: **2 de 2 tumban su caso**, árbol restaurado.
+
+### Lo que no está firmado y se ha decidido aquí
+
+Un comercio en `receipt` con un `J-` antiguo: la firma quita el apartado «Facturas» y a la vez pide «Justificante J-…», así que la tarjeta tiene que salir en algún sitio. Sale en su propio bloque **sin título**, debajo de los presupuestos. No hay texto nuevo; si el fundador quiere un título para ese bloque, es otra firma. Hoy hay 2 `J-` en producción, del comercio 18, de prueba (SCRUM-1448 c.21012).
+
+### No medido, y se dice
+
+- La suite entera en local: NO CORRIDA (encargo: hoy la cola se satura). La hace el obligatorio de CI.
+- Ninguna pantalla en navegador ni en yaqu.app: el test pide la ruta real con un Prisma de mentira.

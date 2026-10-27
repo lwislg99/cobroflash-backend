@@ -13,6 +13,8 @@ import { ensureChargeReceiptToken } from '../../../../lib/invoicing';
 import { ensureQuoteDecisionToken } from '../../../quotes/domain/quoteToken.service'; // SCRUM-95
 import { cardChargeMode } from '../../../billing/domain/cardCharge'; // SCRUM-893
 import { zonaDelMerchant, diaNaturalEn } from '../../../../core/zonaDelMerchant'; // SCRUM-1018 · 1471b
+import { getEmissionMode } from '../../../invoicing/domain/emission.service'; // SCRUM-1567b
+import { isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service'; // SCRUM-1567b
 
 const router = Router();
 
@@ -263,7 +265,7 @@ router.get('/:token', async (req, res) => {
         // este negocio puede cobrar con tarjeta HOY. Sin ellos la pregunta no se podía hacer, y
         // por eso el botón «Pagar ahora» se pintaba sin mirar nada. Es lectura de tres columnas
         // más: ni esquema, ni camino de cobro.
-        select: { id: true, name: true, legalName: true, logoUrl: true, whatsappPhone: true, country: true,
+        select: { id: true, email: true, name: true, legalName: true, logoUrl: true, whatsappPhone: true, country: true,
           connectStatus: true, stripeAccountId: true, flags: true, timezone: true },
       },
     },
@@ -345,6 +347,9 @@ router.get('/:token', async (req, res) => {
   // dos filas del mismo merchant podrían acabar contestando distinto el día que alguien toque el
   // criterio — y el portal enseñaría el botón en una factura y no en la de al lado.
   const puedeTarjeta = cardChargeMode(m) !== 'refuse';
+  // SCRUM-1567b · un comercio en `receipt` no emite ningún documento (SCRUM-1027): su portal no
+  // habla de facturas. Firmado en SCRUM-1567 c.21121; con el flag en ON el portal sigue como estaba.
+  const sinFacturas = getEmissionMode(m) === 'receipt';
   const mName      = esc(m.legalName || m.name || 'Tu proveedor');
   const initial    = esc((m.name || m.legalName || 'Y').trim().charAt(0).toUpperCase());
   const logoHtml   = m.logoUrl
@@ -428,7 +433,9 @@ router.get('/:token', async (req, res) => {
         const pdfUrl = inv.pdfUrl && inv.pdfUrl !== 'PENDING_PDF'
           ? (inv.pdfUrl.startsWith('http') ? inv.pdfUrl : BASE_URL + inv.pdfUrl)
           : null;
-        const btnPdf  = pdfUrl ? `<a class="pf-btn pf-btn-pdf" href="${esc(pdfUrl)}" target="_blank">📄 Descargar factura</a>` : '';
+        // SCRUM-1567b · un J- antiguo en un comercio sin facturas es un justificante, y así se llama.
+        const esJustificante = sinFacturas && isReceiptNumber(inv.number);
+        const btnPdf  = pdfUrl ? `<a class="pf-btn pf-btn-pdf" href="${esc(pdfUrl)}" target="_blank">${esJustificante ? '📄 Descargar justificante' : '📄 Descargar factura'}</a>` : '';
         const payToken = inv.charge?.id ? payTokens.get(inv.charge.id) : undefined;
         // SCRUM-893 · LA TERCERA PUERTA. «Pagar ahora» lleva a /pay/card y tampoco miraba si el
         // negocio puede cobrar con tarjeta: un merchant sin Stripe Connect mandaba a su cliente a
@@ -442,7 +449,7 @@ router.get('/:token', async (req, res) => {
             <div class="pf-card-body">
               <div class="pf-card-row">
                 <div>
-                  <div class="pf-card-title">Factura ${esc(inv.number)}</div>
+                  <div class="pf-card-title">${esJustificante ? 'Justificante' : 'Factura'} ${esc(inv.number)}</div>
                   <div class="pf-card-meta">${fechaDeLaFactura(inv.createdAt, zonaDelNegocio)}${inv.paidAt ? ' · Pagada ' + dateShort(inv.paidAt, zonaDelNegocio) : ''}</div>
                 </div>
                 <div>
@@ -500,7 +507,7 @@ router.get('/:token', async (req, res) => {
     </div>
     <div class="pf-main">
       <div class="pf-greeting">Hola, ${esc(customer.name)} 👋</div>
-      <div class="pf-greeting-sub">Aquí tienes tus ${locale.quotePlural.toLowerCase()}, facturas y pagos.</div>
+      <div class="pf-greeting-sub">${sinFacturas ? 'Aquí tienes tus presupuestos.' : `Aquí tienes tus ${locale.quotePlural.toLowerCase()}, facturas y pagos.`}</div>
 
       ${visitaHtml}
 
@@ -526,10 +533,12 @@ router.get('/:token', async (req, res) => {
         ${quotesHtml}
       </div>
 
-      <div class="pf-section">
+      ${!sinFacturas ? `<div class="pf-section">
         <div class="pf-section-title">Facturas</div>
         ${invoicesHtml}
-      </div>
+      </div>` : invoices.length ? `<div class="pf-section">
+        ${invoicesHtml}
+      </div>` : ''}
     </div>
     <script>window.PF_REQUEST_URL = "${esc(requestUrl)}";</script>
   `);
