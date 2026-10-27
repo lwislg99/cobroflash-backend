@@ -434,3 +434,27 @@ contarla, no por un suelo de la sonda. Con `dist/` emitido: salida 0 y 8.930 B.
 - Ningún test ni mutación: no hay arreglo que fijar hasta la decisión.
 - yaqu.app: no mirado (no hay nada nuevo que ver).
 - La tanda entera: no corrida (sólo cambia este registro).
+
+## 27-oct-2026 · J1 · 1562g — Facturas con teclado: «Ver detalle» en cada fila (firma c.21125)
+
+**Medido contra:** `origin/main` = `8f115f4ab0d876c8a182fb82f9a604d213ce4cca` · 2026-10-27T16:42:21Z
+
+A9: comprobación → `tests/scrum1562g-facturas-con-teclado.test.mjs`
+
+Arreglo: en `public/dashboard/js/invoicesView.js` cada fila lleva una celda `td.cell-actions` con un
+`<button class="btn-ghost btn-sm">` «Ver detalle» (rótulo firmado en SCRUM-1562 c.21125) que abre
+`invoice-detail` con `stopPropagation`; la cabecera gana un `<th></th>` vacío. El clic en la fila y
+la casilla del lote no cambian, y la fila no lleva `role`. Sonda de navegador real:
+`docs/master/evidencias/SCRUM-1562/sonda-1562g-teclado.mjs` (antes 4/4 sin teclado; después 4/4
+con Tab, Intro y Espacio; ratón 8/8; la casilla marca y no navega).
+
+- **Test de banco** (6 casos): rojo primero sobre `2f7adc4d5^` en una copia fuera del árbol: 3 caen
+  (los de «Ver detalle») y 3 pasan (suelo, casilla, cabeceras); con el arreglo, 6/6.
+- **Mutaciones** (`MUTACIONES_QUE_ME_TUMBAN`, 5) por `correr` + `aplicarUna` de
+  `scripts/meta-guard-mutaciones.mjs`: 5 vivas de 5, árbol restaurado (`git status` limpio).
+- **Error mío:** el rojo primero salió dos veces CIEGO (a la copia le faltaban `typescript` y
+  `dist/`): 6 de 6 caídos en ~1 ms, el SUELO incluido. Lo cazó que cayera el suelo, que con el
+  código viejo tenía que pasar. Y probé `guards-visuales.mjs --help` para leer su uso: calentó
+  Edge y salió con 0 sin correr ningún guard. Al principio lo di por la tanda de navegador; lo
+  vi al leer la salida (838 B, ni un veredicto).
+- **NO medido:** yaqu.app (no está desplegado); la tanda entera (dirigida de 81 ficheros, abajo).
