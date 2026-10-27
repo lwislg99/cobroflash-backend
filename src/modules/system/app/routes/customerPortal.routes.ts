@@ -251,6 +251,24 @@ function importeDeLineaDelPresupuesto(l: QuoteLine, currency: string): string {
   return Number.isFinite(importe) ? formatMoneyEs(importe, currency) : '';
 }
 
+/**
+ * SCRUM-1624b · la fila «Descuento global» de la tarjeta del presupuesto, o `null` si no hay.
+ *
+ * Con SCRUM-1568 cada línea lleva su descuento de LÍNEA, pero el global sólo lo restaba el total:
+ * con 20 € de global, las filas sumaban 278,30 € y el total decía 254,10 €. Firma del fundador
+ * (SCRUM-1624 c.21094): una fila más, la PRIMERA, con el rótulo de la tarjeta de factura, en
+ * negativo y CON IVA, y su importe es la diferencia entre dos `calcTotal` —la función que guardó
+ * el total—, sin cuenta propia. El rótulo es el de `invoiceLines.service.ts`, que no se exporta
+ * porque es camino de emisión (regla 38); scrum1624b comprueba que los dos dicen lo mismo.
+ */
+function filaDescuentoGlobalDelPresupuesto(lineas: QuoteLine[], global: unknown): { concepto: string; importe: number } | null {
+  if (global == null || global === '') return null;
+  const sinGlobal = calcTotal(lineas);
+  const conGlobal = calcTotal(lineas, String(global));
+  if (!(conGlobal < sinGlobal)) return null;
+  return { concepto: 'Descuento global', importe: Math.round((conGlobal - sinGlobal) * 100) / 100 };
+}
+
 // ── GET /cliente/:token ──────────────────────────────────────────────────
 router.get('/:token', async (req, res) => {
   const { token } = req.params;
@@ -359,14 +377,22 @@ router.get('/:token', async (req, res) => {
   // ── Cotizaciones ────────────────────────────────────────────────────────
   const quotesHtml = quotes.length
     ? quotes.map((q) => {
-        const hasLines = Array.isArray(q.lines) && (q.lines as any[]).length > 0;
+        const lineasDelPresupuesto = Array.isArray(q.lines) ? q.lines as any[] : [];
+        const hasLines = lineasDelPresupuesto.length > 0;
+        // SCRUM-1624b · P3 la fila va la primera; P4 no se cuenta en «Ver detalles (N líneas)».
+        const filaDescuentoGlobal = hasLines ? filaDescuentoGlobalDelPresupuesto(lineasDelPresupuesto, q.discountGlobalAmount) : null;
+        const nLineas = lineasDelPresupuesto.length;
         const linesHtml = hasLines
           ? `<div class="pf-lines">
               <button class="pf-lines-toggle">
-                <span class="pf-chevron">▼</span> Ver detalles (${(q.lines as any[]).length} línea${(q.lines as any[]).length !== 1 ? 's' : ''})
+                <span class="pf-chevron">▼</span> Ver detalles (${nLineas} línea${nLineas !== 1 ? 's' : ''})
               </button>
               <div class="pf-lines-body">
-                ${(q.lines as any[]).map((l: any) => {
+                ${filaDescuentoGlobal ? `<div class="pf-line-row">
+                    <span class="pf-line-concept">${esc(filaDescuentoGlobal.concepto)}</span>
+                    <span class="pf-line-amount">${formatMoneyEs(filaDescuentoGlobal.importe, q.currency)}</span>
+                  </div>` : ''}
+                ${lineasDelPresupuesto.map((l: any) => {
                   return `<div class="pf-line-row">
                     <span class="pf-line-concept">${esc(l.concept||'')}</span>
                     <span class="pf-line-amount">${importeDeLineaDelPresupuesto(l, q.currency)}</span>
