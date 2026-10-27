@@ -1,0 +1,26 @@
+#!/bin/bash
+# SCRUM-1218i · N pasadas de webhooks-idempotencia A SOLAS, con o sin --no-wasm-dynamic-tiering.
+# Forma de regimen-1614.sh (SCRUM-1614), sin sonda, en este árbol y en el puerto 55618.
+# Uso: bash pasadas.sh <etiqueta> <n> <con|sin> [fichero]
+set -u
+ET="$1"; N="$2"; BANDERA="$3"; F="${4:-tests/webhooks-idempotencia.test.mjs}"
+T="/c/Users/Javier Pereira/.claude/jobs/506ea225/tmp"
+mkdir -p "$T/out"
+cd "/c/Users/Javier Pereira/cobroflash-jv-j6dl"
+V8=""; [ "$BANDERA" = con ] && V8="--no-wasm-dynamic-tiering"
+for i in $(seq 1 "$N"); do
+  (cd "$T/banco" && node pgbanco.mjs rehacer 55618 >/dev/null) || { echo "$ET-$i CIEGO: rehacer falló"; continue; }
+  S=$(date +%s)
+  env -u NODE_TEST_CONTEXT -u NODE_OPTIONS -u QA_DB_TEST LIBRO_PG_URL="postgresql://postgres@127.0.0.1:55618/yaqu_libro_test?sslmode=disable" \
+    timeout 150 node $V8 --test --test-force-exit --test-reporter=tap "$F" > "$T/out/$ET-$i.tap" 2>&1
+  rc=$?
+  ok=$(grep -cE "^ *ok [0-9]+ - " "$T/out/$ET-$i.tap")
+  nok=$(grep -cE "^ *not ok [0-9]+ - " "$T/out/$ET-$i.tap")
+  sub_nok=$(grep -cE "^    not ok [0-9]+ - " "$T/out/$ET-$i.tap")
+  decl=$(grep -E "^# tests " "$T/out/$ET-$i.tap" | awk '{print $3}')
+  skip=$(grep -E "^# skipped " "$T/out/$ET-$i.tap" | awk '{print $3}')
+  uv=$(grep -c "UV_HANDLE_CLOSING" "$T/out/$ET-$i.tap")
+  asy=$(grep -c "async.c" "$T/out/$ET-$i.tap")
+  fk=$(grep -c "_fkey" "$T/out/$ET-$i.tap")
+  echo "$ET-$i rc=$rc s=$(( $(date +%s)-S )) ok=$ok notok=$nok decl=$decl skip=$skip uv=$uv asyncc=$asy fk=$fk"
+done
