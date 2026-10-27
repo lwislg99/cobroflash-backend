@@ -56,6 +56,13 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     a: "export const CLAVE_REGIMEN_GENERAL = '07';",
     cae: 'SCRUM-1240b · la clave de régimen sigue siendo el defecto declarado',
   },
+  {
+    // Se retira la declaración y la clave sigue fija: retirarla no es arreglarlo.
+    fichero: 'tests/scrum1240b-clave-regimen-defecto-declarado.test.mjs',
+    de: '  declarado: true,\n  tickets:',
+    a: '  declarado: false,\n  tickets:',
+    cae: 'SCRUM-1240b · la clave de régimen sigue siendo el defecto declarado',
+  },
 ];
 
 const rel = (f) => path.relative(RAIZ, f).replace(/\\/g, '/');
