@@ -1111,3 +1111,54 @@ Contexto de la sesión: 117.026 al acabar el arranque · 148.279 tras Jira · 20
   («Presupuestos ilimitados :», «VERI FACTU»). Lo vi al leer el diff del rojo, antes de arreglar nada.
 - Dos instrumentos salieron CIEGOS por la ruta y no por el código: la sonda, con el módulo fuera de `dist` (no
   resolvía `express`), y el meta-guard, con `tests/` delante del nombre del guard. Los dos lo dijeron en voz alta.
+
+---
+
+# APÉNDICE · 27-oct-2026 · SCRUM-1551j · la fila 9 de la puerta, cerrada en yaqu.app
+
+**Medido contra:** `origin/main` = `77ce98573b1b5e090dfcf7754c4e7960bc63b85a` · 2026-10-27T15:15:14Z
+
+A9: aviso → cicatriz J4 «al cerrar la fila 9 de la puerta puse como medidas mías dos cifras del antes que eran de la sonda de J3 sobre la rama, no de mi GET a yaqu.app» — no se pudo comprobar: el motivo de una fila es prosa y ningún guard sabe de qué medición sale cada número
+
+**Quién:** jv-j4as (puesto J4, equipo de Javier), por encargo del orquestador `cobroflash-backend-8b`. El hook de
+inicio dijo «SIN IDENTIDAD» (SCRUM-1498): carril a mano. `docs/go-live/puerta.json` y su guard no tienen dueño en
+§3 (`carriles.mjs de`); este registro es «quien trabaja el ticket». Ningún texto legal nuevo: sólo docs y la
+lista `CERRADAS` del guard, que el propio guard pide subir al cerrar una fila.
+
+## 1 · Lo servido (GET a yaqu.app, 27-oct-2026 15:13:20-21Z, cabecera `Date`)
+
+| ruta | HTTP | bytes | lo que dice |
+|---|---|---|---|
+| `/version` | 200 | 54 | `77ce98573b1b5e090dfcf7754c4e7960bc63b85a` = el merge de #2927 (14:10:21Z) |
+| `/health` | 200 | 110 | la misma versión, `db: up` |
+| `/legal/alcance-beta` | 200 | 4.737 | «Versión del documento: cc719298c151» · 0 «Cobro integrado» · 0 «Justificantes de cobro» · 0 `</ul>` seguidos de `<p>` · 2 `<ul>` · 7 `<li>` · 13 `<p>` |
+| `/terminos` | 200 | 6.712 | no imprime «Versión del documento» (es `public/terminos.html` por `sendFile`, no pasa por `mdToHtml`) · 0 «Cobro integrado» · 0 «Justificantes de cobro» |
+
+- **Las viñetas ya no salen partidas.** Las 7 viñetas de `/legal/alcance-beta` llevan su texto entero dentro del
+  `<li>`; R4 («…YaQu no emite facturas ni ningún otro documento de cobro…») va en la 6.ª. La versión,
+  `cc719298c151`, es la que anunció 1551i.
+- **Control positivo del recuento `</ul>` + `<p>`:** en `/terminos` sale 1, y es un párrafo propio detrás de una
+  lista («El incumplimiento de las políticas de WhatsApp/Meta…»), no una viñeta partida. El instrumento ve el
+  patrón cuando está.
+- **Controles de que la página es la de R1-R6 y D1:** 1 «Albaranes y partes de trabajo», 1 «cobro a tus clientes
+  a través de YaQu», 1 «ningún otro documento de cobro», 1 «el alta de cobros (Stripe)», 1 «Borrador pendiente de
+  revisión legal: estas condiciones pueden cambiar antes de que se te cobre.», 3 «[REVISAR ASESOR»; 0 «email y
+  WhatsApp», 0 «mientras tanto».
+
+## 2 · La puerta
+
+- **Fila 9 → `cerrada`**, con el sha del merge `77ce98573b1b5e090dfcf7754c4e7960bc63b85a` y su motivo, en la
+  forma de la fila 4. `tests/scrum1554c-puerta-de-go-live.test.mjs` lleva el 9 en `CERRADAS`.
+- **Filas 2 y 3: ya estaban cerradas** desde 1551g (jv-j3au, 23-oct), con el sha `be18d365d92df11c4a6638e85544417aa750c5c8`
+  (#2657). Su motivo cita la versión `ac7349fd0b84`, que ya no es la servida; lo que afirman sigue siendo cierto en
+  `cc719298c151` (recuentos del §1). No las he tocado.
+
+## 3 · Tests
+
+- `tests/scrum1554c-puerta-de-go-live.test.mjs` y los de registro (abajo, en la entrega de Jira). **Suite entera
+  local: NO CORRIDA** (orden del encargo).
+
+## 4 · Lo que NO se ha hecho
+
+- No he mirado la página en un navegador: el recuento es del HTML servido.
+- La aceptación de la versión nueva `cc719298c151` no la he medido (vive en la base de producción).
