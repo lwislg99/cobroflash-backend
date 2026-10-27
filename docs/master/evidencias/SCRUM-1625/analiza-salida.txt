@@ -69,24 +69,43 @@ POBLACIÓN · 742 filas · ok 742 · {"ok":742}
   ≥ 12800                      jobs    2 · pasadas     8 · pierden    1 (12.5 %) · máx 4 · casos 4
 
 == por duración de la tanda (s)
-  < 600                        jobs  105 · pasadas   420 · pierden   21 ( 5.0 %) · máx 15 · casos 171
   < 560                        jobs  269 · pasadas  1076 · pierden   73 ( 6.8 %) · máx 15 · casos 642
+  < 600                        jobs  105 · pasadas   420 · pierden   21 ( 5.0 %) · máx 15 · casos 171
   < 640                        jobs  131 · pasadas   524 · pierden   24 ( 4.6 %) · máx 15 · casos 189
   < 680                        jobs  111 · pasadas   444 · pierden   34 ( 7.7 %) · máx 14 · casos 279
   < 720                        jobs  103 · pasadas   412 · pierden   23 ( 5.6 %) · máx 14 · casos 152
   < 760                        jobs   23 · pasadas    92 · pierden    3 ( 3.3 %) · máx 15 · casos 32
 
 == por duración de ④ (ms)
-  < 4000                       jobs  354 · pasadas  1416 · pierden   65 ( 4.6 %) · máx 15 · casos 531
-  < 3500                       jobs   97 · pasadas   388 · pierden   35 ( 9.0 %) · máx 15 · casos 247
   < 3000                       jobs  270 · pasadas  1080 · pierden   73 ( 6.8 %) · máx 15 · casos 648
+  < 3500                       jobs   97 · pasadas   388 · pierden   35 ( 9.0 %) · máx 15 · casos 247
+  < 4000                       jobs  354 · pasadas  1416 · pierden   65 ( 4.6 %) · máx 15 · casos 531
   < 4500                       jobs   21 · pasadas    84 · pierden    5 ( 6.0 %) · máx 13 · casos 39
 
 == por segundo de la tanda en que acaba ④
-  < 140                        jobs  410 · pasadas  1640 · pierden   91 ( 5.5 %) · máx 15 · casos 763
   < 100                        jobs   56 · pasadas   224 · pierden   17 ( 7.6 %) · máx 14 · casos 159
-  < 220                        jobs    2 · pasadas     8 · pierden    1 (12.5 %) · máx 1 · casos 1
+  < 140                        jobs  410 · pasadas  1640 · pierden   91 ( 5.5 %) · máx 15 · casos 763
   < 180                        jobs  274 · pasadas  1096 · pierden   69 ( 6.3 %) · máx 15 · casos 542
+  < 220                        jobs    2 · pasadas     8 · pierden    1 (12.5 %) · máx 1 · casos 1
+
+== SÓLO 1405f · por tercil de nº de tests
+  T1 < 12296                   jobs  136 · pasadas   544 · pierden   46 ( 8.5 %) · máx 15 · casos 388
+  T2 < 12554                   jobs  155 · pasadas   620 · pierden   50 ( 8.1 %) · máx 15 · casos 418
+  T3 ≥ 12554                   jobs  149 · pasadas   596 · pierden   41 ( 6.9 %) · máx 15 · casos 313
+
+== SÓLO 1405f · por tercil de duración de la tanda (ms)
+  T1 < 555075                  jobs  146 · pasadas   584 · pierden   54 ( 9.2 %) · máx 15 · casos 472
+  T2 < 674925                  jobs  147 · pasadas   588 · pierden   49 ( 8.3 %) · máx 15 · casos 400
+  T3 ≥ 674925                  jobs  147 · pasadas   588 · pierden   34 ( 5.8 %) · máx 15 · casos 247
+
+== SÓLO 1405f · por tercil de duración de ④ (ms)
+  T1 < 2792                    jobs  146 · pasadas   584 · pierden   57 ( 9.8 %) · máx 15 · casos 502
+  T2 < 3730                    jobs  147 · pasadas   588 · pierden   46 ( 7.8 %) · máx 14 · casos 338
+  T3 ≥ 3730                    jobs  147 · pasadas   588 · pierden   34 ( 5.8 %) · máx 15 · casos 279
+
+== SÓLO 1405f · por sonda
+  0                            jobs   27 · pasadas   108 · pierden    3 ( 2.8 %) · máx 14 · casos 27
+  1048576                      jobs  413 · pasadas  1652 · pierden  134 ( 8.1 %) · máx 15 · casos 1092
 
 == MISMO DÍA, distinto node (sólo días con dos o más valores)
   2026-10-20 24.21.0           jobs    7 · pasadas    28 · pierden    0 ( 0.0 %) · máx 0 · casos 0
@@ -236,6 +255,12 @@ POBLACIÓN · 742 filas · ok 742 · {"ok":742}
 == MEJOR CORTE ÚNICO EN EL TIEMPO (cada lado con ≥ 200 pasadas)
   entre 2026-10-21T14:03:34Z (job 119268334041, e43d28cfb) y 2026-10-21T14:05:03Z (job 119268912386, 86296fe9f)
   antes: 41/1232 (3.3 %) · después: 137/1736 (7.9 %) · ganancia de log-verosimilitud 14.3 (2·g = 28.5; χ²₁ al 0,1 % = 10,8)
+
+== EL HUECO entre los dos censos (15 jobs, 14 con ④ legible; la lista «con» sale del log)
+  todo el hueco                jobs   14 · pasadas    56 · pierden    2 ( 3.6 %) · máx 5 · casos 7
+  runner 2.338.0 · ④ de 1405c  jobs    6 · pasadas    24 · pierden    1 ( 4.2 %) · máx 5 · casos 5
+  runner 2.338.0 · ④ de 1405d  jobs    7 · pasadas    28 · pierden    1 ( 3.6 %) · máx 2 · casos 2
+  runner 2.338.0 · ④ de 1574   jobs    1 · pasadas     4 · pierden    0 ( 0.0 %) · máx 0 · casos 0
   antes del corte · 1.ª mitad  jobs  154 · pasadas   616 · pierden   21 ( 3.4 %) · máx 15 · casos 186
   antes del corte · 2.ª mitad  jobs  154 · pasadas   616 · pierden   20 ( 3.2 %) · máx 15 · casos 160
   después del corte · 1.ª mitad jobs  217 · pasadas   868 · pierden   82 ( 9.4 %) · máx 15 · casos 645

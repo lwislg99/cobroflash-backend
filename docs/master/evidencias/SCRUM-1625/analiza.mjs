@@ -26,7 +26,9 @@ const grupo = (titulo, clave, xs = filas, orden) => {
   return g;
 };
 const dia = (f) => f.cuando.slice(0, 10);
-const num = (a, b) => Number(a.split(/[^\d.]/)[0]) - Number(b.split(/[^\d.]/)[0]);
+// Ordena «< 560», «< 600», …, «≥ 760». (La primera versión partía por no-dígitos y cogía el trozo vacío
+// de delante: todos valían 0 y los tramos salían desordenados. Cazado al leer la salida.)
+const num = (a, b) => (a.startsWith('≥') - b.startsWith('≥')) || Number(a.match(/[\d.]+/)) - Number(b.match(/[\d.]+/));
 
 console.log(`POBLACIÓN · ${todas.length} filas · ok ${filas.length} · ${JSON.stringify(todas.reduce((a, f) => ((a[f.estado] = (a[f.estado] || 0) + 1), a), {}))}`);
 for (const f of todas.filter((x) => x.estado !== 'ok')) console.log(`  ${f.estado} ${f.cuando} job ${f.job} · ${f.motivo}`);
@@ -44,6 +46,19 @@ grupo('por nº de tests de la tanda', (f) => tramo(Number(f.tests), [11500, 1190
 grupo('por duración de la tanda (s)', (f) => tramo(Number(f.tandaMs) / 1000, [560, 600, 640, 680, 720, 760]), filas, num);
 grupo('por duración de ④ (ms)', (f) => tramo(Number(f.cuartoMs), [3000, 3500, 4000, 4500, 5000, 6000]), filas, num);
 grupo('por segundo de la tanda en que acaba ④', (f) => tramo(Number(f.cuartoA), [100, 140, 180, 220, 260]), filas, num);
+
+// Dentro del periodo NUEVO (1405f) sólo: si una covariable que crece con el tiempo (tests, duración) fuera la
+// causa, tendría que separar también aquí, donde el escalón ya no está.
+const nuevo = filas.filter((f) => f.censo === 'j3bw-1405f');
+const terciles = (clave) => {
+  const v = nuevo.map((f) => Number(clave(f))).sort((x, y) => x - y);
+  const c = [v[Math.floor(v.length / 3)], v[Math.floor(2 * v.length / 3)]];
+  return (f) => (Number(clave(f)) < c[0] ? `T1 < ${c[0]}` : Number(clave(f)) < c[1] ? `T2 < ${c[1]}` : `T3 ≥ ${c[1]}`);
+};
+grupo('SÓLO 1405f · por tercil de nº de tests', terciles((f) => f.tests), nuevo);
+grupo('SÓLO 1405f · por tercil de duración de la tanda (ms)', terciles((f) => Math.round(f.tandaMs)), nuevo);
+grupo('SÓLO 1405f · por tercil de duración de ④ (ms)', terciles((f) => f.cuartoMs), nuevo);
+grupo('SÓLO 1405f · por sonda', (f) => f.sonda, nuevo);
 
 // La pata que separa una covariable del tiempo: días con DOS valores a la vez.
 for (const [nombre, clave] of [['node', (f) => f.node], ['imagen', (f) => f.imagen], ['región', (f) => f.region]]) {
@@ -77,6 +92,15 @@ console.log(`\n== MEJOR CORTE ÚNICO EN EL TIEMPO (cada lado con ≥ 200 pasadas
 const a = orden[mejor.i], b = orden[mejor.i + 1];
 console.log(`  entre ${a.cuando} (job ${a.job}, ${a.sha.slice(0, 9)}) y ${b.cuando} (job ${b.job}, ${b.sha.slice(0, 9)})`);
 console.log(`  antes: ${mejor.k1}/${mejor.n1} (${(100 * mejor.k1 / mejor.n1).toFixed(1)} %) · después: ${K - mejor.k1}/${N - mejor.n1} (${(100 * (K - mejor.k1) / (N - mejor.n1)).toFixed(1)} %) · ganancia de log-verosimilitud ${mejor.g.toFixed(1)} (2·g = ${(2 * mejor.g).toFixed(1)}; χ²₁ al 0,1 % = 10,8)`);
+// El HUECO (si se le pasa hueco.tsv de `covariables.mjs --hueco`): jobs que ningún censo leyó, entre los dos.
+if (process.argv[3]) {
+  const [hc, ...hl] = fs.readFileSync(process.argv[3], 'utf8').trimEnd().split('\n');
+  const hcol = hc.split('\t');
+  const h = hl.map((l) => Object.fromEntries(l.split('\t').map((v, i) => [hcol[i], v]))).filter((f) => f.estado === 'ok');
+  console.log(`\n== EL HUECO entre los dos censos (${hl.length} jobs, ${h.length} con ④ legible; la lista «con» sale del log)`);
+  console.log(linea('todo el hueco', h));
+  for (const k of [...new Set(h.map((f) => `runner ${f.runner} · ④ de ${f.version}`))].sort()) console.log(linea(k, h.filter((f) => `runner ${f.runner} · ④ de ${f.version}` === k)));
+}
 // Control de la rampa: dentro de cada lado del corte, ¿sigue subiendo? (primera mitad contra segunda)
 for (const [et, xs] of [['antes del corte', orden.slice(0, mejor.i + 1)], ['después del corte', orden.slice(mejor.i + 1)]]) {
   const m = xs.length >> 1;
