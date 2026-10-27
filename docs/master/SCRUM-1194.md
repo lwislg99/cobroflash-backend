@@ -244,3 +244,63 @@ se encuentre (como 1136), pero no encuentra casos.
 - El tiempo del trinquete de 1185 en CI (el «ahorro» de B es una deducción de que hoy se parsea dos veces, no una medición).
 - El coste por test de C: «~horas» sale de la longitud del de 1136 (9.870 B), no de cronometrar a nadie.
 - Ninguno de los 13 «no nombra ninguno» ni de los 8 «sólo por envoltorio» abierto de nuevo: siguen con el veredicto del 24-oct.
+
+## J6 · SCRUM-1194d · el método A, construido: censo como pieza, trinquete y los 14 pares declarados
+
+**Medido contra:** `origin/main` = `efe736f3f01b5ecbc6dce221e80a3dfc3bfcd42a` · 2026-10-27T13:02:48Z (hora de GitHub; sesión J6 `jv-j6de`, por encargo del orquestador `cobroflash-backend-8b`)
+
+A9: comprobación → `tests/scrum1194d-trinquete-vocabulario-ofrecido.test.mjs`
+
+Decisión del fundador en c.21005: «A en J6 ya», con su trinquete y los 14 pares declarados desde el
+principio. B no se lleva a Luis y C se descarta como método. No se toca `src/`, `public/` ni la sonda
+de 1185 (`scripts/_censo-sin-consumir.mjs`, carril S0): se leen, y la sonda se parchea en una copia
+en memoria, igual que en 1194b.
+
+### Lo que hay
+
+- **El censo, como pieza:** `tests/_censo-vocabulario-ofrecido.mjs` (`censarVocabulario`). Es el
+  algoritmo de 1194b sin cambios. Devuelve `{ ciego }` en vez de salir del proceso. Ahora
+  `docs/master/evidencias/SCRUM-1194/censo-vocabulario.mjs` sólo lo llama e imprime: así hay un
+  algoritmo, no dos. **Su salida es idéntica byte a byte a la de antes (8.180 B, `diff` vacío)**, y
+  `--sin-siembra` sigue dando exit 2 CIEGO.
+- **El trinquete:** `tests/scrum1194d-trinquete-vocabulario-ofrecido.test.mjs`, 5 casos en ~5 s.
+  SIEMBRA (pareja PARCIAL con los 8 que faltan y gemela «ofrece todo»), SIN SIEMBRA (CIEGO, no
+  verde), SUELO (población en el diagnóstico y 0 «no pude medir»), «no sube» y «no baja en
+  silencio».
+- **Los 14 pares declarados al nacer** (`DECLARADOS`, uno por línea, cada uno con su motivo): el
+  PARCIAL falso de `archivar` y los 13 «no nombra ninguno». El par se identifica por ruta,
+  vocabulario, valores y fichero, no por posición. Los dos `z.enum` de `customerCreateSchema` se
+  llaman igual y sólo los separan sus valores. Los motivos se copian de los tramos 1194 y 1194b.
+  `firmar-tecnico` y `firmar`, que el 24-oct salían «por analogía», ligan por el salto de import a
+  `parteTrabajo.ts` y no por el cuerpo. Eso se mira con `grep` en `partes.routes.ts`: la ruta no
+  nombra `ESTADOS_PARTE`.
+
+### La población de hoy (del diagnóstico del test)
+
+71 vocabularios (13 `z.enum` + 58 arrays) · 242 rutas (sonda 1185) · 30 sin ruta · 55 pares: 11 GET,
+9 sin pantalla, 21 ofrece todo, 1 PARCIAL, 13 no nombra ninguno, 0 no pude medir · 8 «ofrece todo»
+sólo por envoltorio · 14 declarados. Coincide con 1194c.
+
+### Visto caer (`MUTACIONES_QUE_ME_TUMBAN`, con el `aplicarUna` de la casa)
+
+Pasada base: 5 ✔, 0 caídos, 0 saltados. Las 6 mutaciones salen **VIVAS**:
+
+| mutación | cae |
+|---|---|
+| el veredicto PARCIAL desaparece | SIEMBRA (+3 colaterales) |
+| la siembra no se monta (`if (sembrar)` → `if (false)`) | SIEMBRA (+3). El positivo quitado no da verde |
+| sin siembra no se sale CIEGO | SIN SIEMBRA |
+| PUT y PATCH tratados como GET (se van 2 declarados) | «no baja en silencio» |
+| las pantallas `.html` no se leen | SUELO (+1) |
+| un par del árbol sin declarar | «no sube» (+1) |
+
+Después, `git status --porcelain` sale vacío: el árbol quedó como estaba.
+
+### ⚠️ Lo que sigue sin verse
+
+Todo lo que declaran 1194 y 1194b: vocabularios no literales, valores que pone otro fichero de la
+pantalla, un solo salto de import y uno de envoltorio, y que el envoltorio casa por nombre. Queda
+además el riesgo que la tabla de 1194c atribuye a A: si S0 cambia una de las dos anclas de su
+sonda, el trinquete sale CIEGO, y será un rojo de J6 causado por un cambio de S0. Los 8 «sólo por
+envoltorio» se imprimen y no se vigilan. Ninguno de los 13 «no nombra» se ha vuelto a abrir uno a
+uno: llevan el veredicto de su tramo.
