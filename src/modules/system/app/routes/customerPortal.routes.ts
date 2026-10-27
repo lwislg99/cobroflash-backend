@@ -11,6 +11,7 @@ import { recordCustomerEvent } from '../../customerEvents.service';
 import { ensureChargeReceiptToken } from '../../../../lib/invoicing';
 import { ensureQuoteDecisionToken } from '../../../quotes/domain/quoteToken.service'; // SCRUM-95
 import { cardChargeMode } from '../../../billing/domain/cardCharge'; // SCRUM-893
+import { comercioSuprimido } from '../../../billing/domain/comercioSuprimido'; // SCRUM-1573b
 import { zonaDelMerchant, diaNaturalEn } from '../../../../core/zonaDelMerchant'; // SCRUM-1018 · 1471b
 
 const router = Router();
@@ -325,7 +326,8 @@ router.get('/:token', async (req, res) => {
   // SCRUM-893: una sola vez para toda la página. Si se preguntara dentro del bucle de facturas,
   // dos filas del mismo merchant podrían acabar contestando distinto el día que alguien toque el
   // criterio — y el portal enseñaría el botón en una factura y no en la de al lado.
-  const puedeTarjeta = cardChargeMode(m) !== 'refuse';
+  // SCRUM-1573b · un comercio suprimido no ofrece ninguna vía de cobro (c.21057): el portal sigue abierto.
+  const puedeTarjeta = !comercioSuprimido(m) && cardChargeMode(m) !== 'refuse';
   const mName      = esc(m.legalName || m.name || 'Tu proveedor');
   const initial    = esc((m.name || m.legalName || 'Y').trim().charAt(0).toUpperCase());
   const logoHtml   = m.logoUrl

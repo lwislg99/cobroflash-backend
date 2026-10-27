@@ -121,3 +121,37 @@ const puedeTransferencia = !comercioSuprimido(ch.merchant) && transferenciaDispo
   - Postgres o PGlite: no hay en la máquina;
   - Stripe y MP reales;
   - el diff propuesto: no se ha aplicado.
+
+# SCRUM-1573b · un comercio SUPRIMIDO no ofrece ninguna vía de cobro (construido)
+
+**Medido contra:** `origin/main` = `77ce98573b1b5e090dfcf7754c4e7960bc63b85a` · 2026-10-27T15:31:49Z
+
+A9: comprobación → `tests/scrum1573b-suprimido-sin-cobro.test.mjs`
+
+Lo escribe J2 (`jv-j2bk`). GO del fundador a los 5 puntos de c.21029: SCRUM-1573 c.21057. Construye exactamente el diff de §④ de 1573a, carril J2 (medido con `node scripts/carriles.mjs de` fichero a fichero).
+
+## Lo que entra
+
+- `src/modules/billing/domain/comercioSuprimido.ts` (nuevo): señal A, `m?.name === REDACTADO`, con `REDACTADO` IMPORTADO de `system/domain/anonimizarMerchant` (carril J3, solo se importa).
+- Las 6 puertas (`payInvoice`, `payBank`, `payCard`, `payBizum` GET y POST `claimed`, `payMp`): justo después de `if (!charge)`, el mismo `res.status(404).send(documentNotFoundHtml())`. Ni un texto nuevo (regla 39, punto 3 del GO).
+- `receipt.routes.ts` y `customerPortal.routes.ts`: la página se sigue sirviendo; `puedeTarjeta` (y en el recibo `puedeTransferencia`) llevan `!comercioSuprimido(…)` delante (punto 4).
+- De paso: `REDACTADO` deja de ser un export huérfano (lo importa `comercioSuprimido.ts`), y `scrum411` pidió borrar su declaración de `tests/_huerfanos-declarados.mjs` en este mismo commit (su causa ①). `INTOCABLES` sigue declarado.
+- No se toca: `supresionMerchant.service.ts` (J3), `MERCHANT_DELETE_ENABLED`, el token de plataforma de `/pay/mp` (SCRUM-1615), el esquema, el camino de emisión.
+
+## El banco de 1573a, convertido en test
+
+`tests/scrum1573b-suprimido-sin-cobro.test.mjs`: el comercio se suprime con el `suprimirMerchant` REAL y las 8 rutas se levantan reales sobre dobles (patrón `scrum893`). Cada caso pide la ruta ANTES de suprimir y, si no ofrece cobro, cae como CIEGO: el control positivo va dentro de cada caso, no prestado del árbol.
+
+- **Rojo primero** (con el parche de `src/` quitado y `dist/` recompilado): `# tests 9 · # pass 1 · # fail 8`. Los 8 caen por el «después» (p. ej. `/pay/card` tras suprimir: 303 y Checkout de Stripe en `acct_TEST1573`), ninguno por el control.
+- **Verde** con el parche: `# tests 9 · # pass 9 · # fail 0 · # skipped 0`.
+- **Mutaciones** (`MUTACIONES_QUE_ME_TUMBAN`, 6), corridas con `correr` + `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`: limpia 9 pasados y 0 caídos; las 6 tumban su caso nombrado. Tras la pasada, `git diff -- src` idéntico byte a byte al parche.
+
+## Lo que ve el cliente, y lo que queda para el fundador
+
+- En las 6 puertas, el 404 de siempre: el GO (punto 3) lo firma con su texto actual.
+- En `/recibo`, sin botones el mensaje de pendiente cae en la rama «ninguno» que ya existía y estaba firmada (SCRUM-910): «El profesional te indicará cómo pagar.» Igual que la segunda frase del 404, nombra a un profesional que ya no está. No es texto nuevo; se avisa, no se cambia.
+
+## Lo que se ha corrido y lo que no
+
+- **Corrido:** `tsc -p .` con tipos, salida 0; el test nuevo en rojo y en verde; las 6 mutaciones; los guards dirigidos de la entrega.
+- **No corrido:** la suite entera en local (orden del orquestador: cola saturada); Stripe y MP reales; nada contra producción ni staging; yaqu.app no se puede verificar antes del merge, y tras él la supresión sigue apagada, así que el efecto no es visible allí.
