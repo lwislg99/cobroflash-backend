@@ -1,0 +1,20 @@
+POBLACIÓN: 3 mutaciones declaradas en tests/scrum1396c-los-declarados-solo-bajan.test.mjs
+BASE: 4 pasan · 0 caen · 0 saltan
+  ✔ VIVA           (2 caen) · «export const fugasDe = (censo) => [...sinCierre(censo)];» → 🔴 ③ CONTROL POSITIVO SEMBRADO
+  ✔ VIVA           (1 caen) · «    if (!antes) continue;» → 🔴 ② LA LISTA SÓLO BAJA
+  ✔ VIVA           (2 caen) · «"tests/scrum899-sesion-lista-blanca.test.mjs": { "llamadas": 2,» → 🔴 ② LA LISTA SÓLO BAJA
+
+RESULTADO: 3 de 3 caen · sin restaurar: 0
+POBLACIÓN: 2 mutaciones declaradas en tests/scrum864c-el-temporal-no-vuelve.test.mjs
+BASE: 4 pasan · 0 caen · 0 saltan
+  ✔ VIVA           (3 caen) · «    if (false) return null;» → 🔴 ① CASO CONOCIDO: el censo distingue las cinco formas que le pongo delante, y no acusa a quien limpia
+  ✔ VIVA           (2 caen) · «      if (!b.ids.has(d.nombre)) return true;» → 🔴 ①b EL BORRADO DE OTRO NO ES EL MÍO: un finally que borra otra variable no cubre mi temporal
+
+RESULTADO: 2 de 2 caen · sin restaurar: 0
+rc=0
+POBLACIÓN: 1 mutaciones declaradas en tests/scrum1396-el-borrado-de-otra-funcion.test.mjs
+BASE: 5 pasan · 0 caen · 0 saltan
+  ✔ VIVA           (2 caen) · «      if (false) return false;» → 🔴 ① UNO DE N: arreglar una fuga no pone en verde a las que se llaman igual
+
+RESULTADO: 1 de 1 caen · sin restaurar: 0
+rc=0
