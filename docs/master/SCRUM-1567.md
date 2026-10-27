@@ -75,9 +75,9 @@ Con el `src/` de main y el test nuevo: 4 casos, **2 caen** (los dos de `receipt`
 
 Mutaciones: las dos de `MUTACIONES_QUE_ME_TUMBAN`, corridas con `correr` y `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`: **2 de 2 tumban su caso**, árbol restaurado.
 
-### Lo que no está firmado y se ha decidido aquí
+### No cubierto por la firma, sin texto nuevo
 
-Un comercio en `receipt` con un `J-` antiguo: la firma quita el apartado «Facturas» y a la vez pide «Justificante J-…», así que la tarjeta tiene que salir en algún sitio. Sale en su propio bloque **sin título**, debajo de los presupuestos. No hay texto nuevo; si el fundador quiere un título para ese bloque, es otra firma. Hoy hay 2 `J-` en producción, del comercio 18, de prueba (SCRUM-1448 c.21012).
+Un comercio en `receipt` con un `J-` antiguo: la firma quita el apartado «Facturas» y a la vez pide «Justificante J-…», así que la tarjeta tiene que salir en algún sitio. Sale en su propio bloque **sin título**, debajo de los presupuestos. El orquestador J (`cobroflash-backend-8b`) lo dio por bueno como consecuencia mecánica de quitar «Facturas». No hay texto nuevo; si el fundador quiere un título para ese bloque, es otra firma. Hoy hay 2 `J-` en producción, del comercio 18, de prueba (SCRUM-1448 c.21012).
 
 ### No medido, y se dice
 
