@@ -272,3 +272,58 @@ Procedimiento: con el motor ya comiteado (`e1ad7290655e8ce42f076ed4ca42cd1de5260
 - El test: `node --test tests/scrum1498d-vigia-absuelve-obligatorio-verde.test.mjs`.
 - Las mutaciones: a mano, con las anclas y los reemplazos de `1498d-salida-mutaciones.txt`; el guion no está en el árbol (motivo arriba).
 - La simulación: `node docs/master/evidencias/SCRUM-1498/1498d-simula-por-job.mjs <1498c-datos-2026-10-17..10-24.json> 500` desde la raíz (sin red).
+
+## SCRUM-1498e (27-oct) · J3 · el meta-guard sale FAILURE por presupuesto, no por un guard que no cae: 85 de 95, y 0 MUDOS
+
+**Medido contra:** `origin/main` = `efe736f3f01b5ecbc6dce221e80a3dfc3bfcd42a` · 2026-10-27T13:09:13Z
+
+A9: aviso → cicatriz J3 «Volví a leer una lista de stderr como si sus líneas fueran pegadas: el resumen del meta-guard se intercala con su stdout y mi primer lector perdía guards CIEGO; lo cazó que 7 de 117 no cuadraban con el propio «ciegas N» del instrumento.» — no se pudo comprobar: es un guion de evidencias que corre a mano fuera de la tanda, y ningún test del árbol lo ve
+
+Carril: sólo `docs/` (registro sin cerradura; `docs/master/evidencias/` sin fila en §3). Encargo: medir por qué el meta-guard salía FAILURE en 13 de 20 (c.20757, c.20758). El meta-guard es de S3: lo que salga de aquí va a la lista de Luis. Ningún workflow ni script del árbol tocado.
+
+### Población
+
+Los **200 últimos runs de `ci.yml`** (push y PR, del 24-oct 13:25Z al 27-oct 13:04Z). **140** llevan el job «meta-guard · los guards caen cuando deben», contado por su nombre exacto (un nombre inventado da 0). De esos: **95 failure**, 23 success, 19 cancelled y 3 corriendo. En push a `main`: 14 failure, 4 success, 1 cancelled. Se bajaron los 118 logs acabados (95 + 23), ninguno vacío.
+
+### Los 95 FAILURE, por su causa literal
+
+| clase | n / 95 |
+|---|---|
+| un guard que no cae cuando debe (MUDO) | **0** |
+| presupuesto agotado («🔴 CORTO YO, ANTES DEL TECHO», salida 2) y nada más | **85** (los 14 de `main` y 71 de PR) |
+| salida cortada («CIEGO · salida cortada», 1610b) | **0** |
+| un guard sin línea base (su test ya cae en la pasada limpia) | **9** (6 de ellos llegaron además al corte) |
+| otra: falló «Compilar (tsc)» (rama `scrum-1446g` que no compilaba) | 1 |
+
+- **Con el corte, 91 de 95.** El corte deja sin juzgar 136 mutaciones de mediana (16,7 % de ~827) y 189 como máximo. Y los 23 success no van holgados: su job tarda 1.597 s de mediana y 1.727 s de máximo, con un presupuesto del paso de 1.695 s. Es la serie de 1498b (el meta-guard pegado a su techo); 935d hizo que el corte saliera FAILURE/CIEGO en vez de `cancelled`.
+- **Los 9 sin base, contra el obligatorio del mismo run:** 6 son `scrum1516c` («eje del COMERCIO» ×5, «eje del ROL» ×1). En el obligatorio de su propio run ese test pasa (6 de 6), así que falla sólo en el job del meta-guard. Los 6 son anteriores al merge de 1610b (26-oct 23:50:22Z). Antes de ese merge, `scrum1516c` salió vivo en otros 30 jobs del meta-guard; después, en 14 de 14, con 0 CIEGO. **Que sean el corte de cola de SCRUM-1610: compatible, no demostrado**, porque el log del meta-guard no trae la salida del hijo. Los otros 3 son rojos de su rama: el mismo test cae también en el obligatorio (`scrum812` en 1404g, `scrum1339d` y `1389c` en 1324c). En `scrum1603` (1603b) el ancla de su declaración había caducado; su obligatorio salió failure, pero no he comprobado qué test cayó.
+- **Coherencia:** el veredicto por guard sale de las líneas de stdout «  ? guard · CIEGO» y «  ✖ guard · MUDO», y cuadra con el «vivas · mudas · ciegas» del instrumento en 117 de 117 jobs con resumen. **Control sembrado:** cuatro logs fabricados, uno por clase. Los 4 caen en su clase, y sin sus marcas los 4 salen «SIN LEER». **Calibración:** los 23 success salen con resumen, salida 0 y 0 mudas.
+
+**La tabla:** `docs/master/evidencias/SCRUM-1498/1498e-tabla.txt`. Una fila por job en `1498e-filas.json`.
+
+### Para Luis (S3, dueño del meta-guard), sin recomendar arreglo
+
+El FAILURE del meta-guard no es un hallazgo: en esta ventana es casi siempre su propio presupuesto. `ci.yml` ya dice que no se arregla subiendo el techo, sino midiendo qué mutación se ha vuelto cara o repartiendo el job (SCRUM-935). **Qué mutaciones son las caras: NO MEDIDO** (el log trae «coste por guard», que no he leído).
+
+### Lo que NO he medido
+
+- Los «13 de 20» de 1498b, en su propia ventana (23-oct): no lo he re-medido. Esta ventana empieza el 24-oct 13:25Z.
+- Por qué cancela GitHub los 19 `cancelled`: no leído. Están fuera de la clasificación.
+- Después de 1610b solo hay 14 jobs: una muestra corta para decir que el CIEGO de 1516c no vuelve.
+- **Suite entera local: NO CORRIDA** (orden del encargo). Corridos solo los guards de registro (abajo).
+
+### Errores propios
+
+Mi primer lector cortaba la lista «🔴 CIEGO:» en la primera línea vacía. Eso dejó un job como «sin marca», y ahí lo vi. Al arreglarlo apareció el fallo de fondo: esa lista va por stderr y se intercala con el stdout («coste por guard» y el corte caen dentro). Lo cazó el control de coherencia, que no cuadraba en 7 de 117. Ahora lee las líneas de stdout por guard, y las cifras no cambiaron: 85 · 9 · 1. Además, el guion del obligatorio contaba «líneas con "salida cortada"» en cada log, y salía 1 en todos: era el nombre de un test de 1610b. Quité esa columna antes de usarla.
+
+**Contexto:** 113.959 al acabar el arranque · 138.408 al acabar Jira · 200.584 al acabar los instrumentos (avisado en ese momento) · medido en el jsonl.
+
+### Cómo se repite
+
+Desde `docs/master/evidencias/SCRUM-1498/`, con `gh` autenticado:
+- `node 1498e-recoge.mjs 200 <meta.json>`
+- `node 1498e-clasifica.mjs <meta.json> <carpeta de logs> <clas.json> --bajar`, y con `--control` el control sembrado
+- `node 1498e-obligatorio-del-mismo-run.mjs <clas.json> <carpeta de logs>`
+- `node 1498e-cortes.mjs <clas.json> <carpeta de logs>`
+
+Los logs (19 MB) no se suben; se vuelven a bajar mientras GitHub los conserve.
