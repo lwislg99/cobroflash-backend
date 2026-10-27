@@ -7,6 +7,7 @@
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
+import { comercioSuprimido } from '../../domain/comercioSuprimido'; // SCRUM-1573b
 // SCRUM-150: `formatMoneyEs` es el formateador de dinero de la casa. Esta página pintaba
 // `toFixed(2)` + código de divisa (`300.00 EUR`) mientras el selector de /pay/invoice —la
 // pantalla ANTERIOR del mismo pago— mostraba `300,00 €`: el cliente veía el mismo importe con
@@ -29,6 +30,7 @@ router.get('/bank/:token', async (req, res) => {
     include: { merchant: true },
   });
   if (!charge) return res.status(404).send(documentNotFoundHtml());
+  if (comercioSuprimido(charge.merchant)) return res.status(404).send(documentNotFoundHtml()); // SCRUM-1573b
   const id = charge.id;
 
   const merchant = charge.merchant as any;
