@@ -154,6 +154,65 @@ async function dosALaVez(t, base, cookie, quoteId) {
   return { a, b, desfase };
 }
 
+/** Cuánto espera la barrera a ver a las dos peticiones paradas: el margen de arranque de los hijos y 5 s más. */
+const ESPERA_BARRERA_MS = MARGEN_ARRANQUE_MS + 5000;
+
+/**
+ * SCRUM-1611b · LA BARRERA EN LA BASE. El suelo de `dosALaVez` mide la salida de los CLIENTES, no
+ * el solape en la base: medido en el banco (SCRUM-1611 c.20978), con 0 ms de desfase en 7 de 7
+ * pasadas las dos transacciones no se solaparon NI UNA vez — el servidor las escalona ~30 ms y A
+ * commitea antes de que B abra la suya —, y sin `tomarCerrojoDeSerie` el caso seguía VERDE 6 de 6.
+ *
+ * Esta transacción toma el MISMO cerrojo de serie (`pg_advisory_xact_lock(SERIE_LOCK_NS, merchant)`)
+ * desde una tercera conexión antes de que salgan las peticiones, y no lo suelta hasta que
+ * `pg_locks` muestra a las DOS esperándolo. Con `tomarCerrojoDeSerie`, las dos esperan ANTES del
+ * recuento y salen en serie: «Anticipo» y «Final». Sin él, las dos cuentan 0 y esperan en el de
+ * `allocateInvoiceNumber`: dos «Anticipo». Si las dos no llegan a esperar, no hubo carrera y el
+ * caso FALLA diciendo que no se concluye (ERRORES_ASESOR #12).
+ *
+ * De `dist/modules/**` sólo se importa la CONSTANTE del cerrojo, para no copiar el número: la
+ * decisión del tramo se sigue midiendo por la ruta HTTP.
+ */
+async function conBarreraDeSerie(t, prisma, merchantId, lanzar) {
+  const { SERIE_LOCK_NS } = await import('../dist/modules/invoicing/domain/invoiceNumber.service.js');
+  let soltar;
+  let avisarTomada;
+  const soltada = new Promise((r) => { soltar = r; });
+  const tomada = new Promise((r) => { avisarTomada = r; });
+  const barrera = prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SERIE_LOCK_NS}::int, ${merchantId}::int)`;
+    avisarTomada();
+    await soltada;
+  }, { timeout: 30_000, maxWait: 30_000 });
+  await Promise.race([tomada, barrera]);
+
+  const enCurso = lanzar();
+  enCurso.catch(() => {}); // se espera más abajo; aquí sólo se evita el «unhandled» mientras se sondea
+  let esperando = 0;
+  const limite = Date.now() + ESPERA_BARRERA_MS;
+  try {
+    while (Date.now() < limite) {
+      const [{ n }] = await prisma.$queryRaw`
+        SELECT count(*)::int AS n FROM pg_locks
+         WHERE locktype = 'advisory' AND NOT granted AND objsubid = 2
+           AND database = (SELECT oid FROM pg_database WHERE datname = current_database())
+           AND classid = ${SERIE_LOCK_NS}::int::oid AND objid = ${merchantId}::int::oid`;
+      esperando = n;
+      if (esperando >= 2) break;
+      await new Promise((r) => setTimeout(r, 20));
+    }
+  } finally {
+    soltar();
+    await barrera;
+  }
+  assert.equal(esperando, 2,
+    `🔴 NO SE CONCLUYE NADA: en ${ESPERA_BARRERA_MS} ms sólo ${esperando} de las 2 peticiones llegaron ` +
+    'a esperar el cerrojo de serie. Sin las dos paradas en la base no hubo carrera, y un verde aquí no ' +
+    'diría que está cerrada.');
+  t.diagnostic(`barrera de serie: ${esperando} peticiones esperando el cerrojo antes de soltarlo`);
+  return enCurso;
+}
+
 /** Las facturas del presupuesto, en el orden en que nacieron. */
 async function facturasDe(prisma, quoteId) {
   return prisma.invoice.findMany({
@@ -204,7 +263,7 @@ test('SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo',
         });
         const cookie = await sesionAdmin(prisma, base, merchant.id);
 
-        const { a, b } = await dosALaVez(t, base, cookie, quote.id);
+        const { a, b } = await conBarreraDeSerie(t, prisma, merchant.id, () => dosALaVez(t, base, cookie, quote.id));
         const facturas = await facturasDe(prisma, quote.id);
         const etiquetas = facturas.map((f) => f.stageLabel);
 
@@ -267,7 +326,7 @@ test('SCRUM-814 · plan 30/70: lo facturable NO puede quedar por debajo del pres
         });
         const cookie = await sesionAdmin(prisma, base, merchant.id);
 
-        await dosALaVez(t, base, cookie, quote.id);
+        await conBarreraDeSerie(t, prisma, merchant.id, () => dosALaVez(t, base, cookie, quote.id));
         const facturas = await facturasDe(prisma, quote.id);
 
         assert.equal(facturas.length, 2, `se esperaban 2 facturas y hay ${facturas.length}`);
@@ -366,4 +425,5 @@ test('SCRUM-814 · dos peticiones SECUENCIALES siguen emitiendo «Anticipo» y l
 // `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e). Cada campo, LITERAL.
 export const MUTACIONES_CON_BASE = [
   { fichero: "src/modules/system/app/routes/quotesAdmin.routes.ts", de: "      const tramo = tramoTrasEmitidas(emitidas);", a: "      const tramo = tramoTrasEmitidas(0);", cae: "SCRUM-814 · dos peticiones SECUENCIALES" },
+  { fichero: "src/modules/system/app/routes/quotesAdmin.routes.ts", de: "      await tomarCerrojoDeSerie(tx, quote.merchantId);", a: "      /* SCRUM-1611b: sin el cerrojo del recuento */", cae: "SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo" },
 ];
