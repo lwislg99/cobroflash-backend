@@ -1,5 +1,7 @@
 # SCRUM-1608 · el tipo de IVA se redondeaba a ENTERO en cuatro sitios del panel
 
+**Medido contra:** `origin/main` = `540c62bc257c0c9ad0a42c4649e3dea0da7e442f` · 2026-10-27T15:48:38Z
+
 ## SCRUM-1608 · un 7,5 % se pinta «7,5 %», y con descuento global la pantalla da lo que se guarda (27-oct-2026)
 
 **Skill UI:** cargada (yaqu-premium-ui) antes de tocar ningún fichero de `public/` en este ticket. Sin tokens, estilos ni textos nuevos: cambia cómo se escribe un número dentro de unos rótulos que ya existían («IVA: …%», la columna «IVA»).
@@ -8,7 +10,7 @@ A9: aviso → cicatriz S2 «un SHA inventado tiene la misma forma que uno copiad
 
 El fallo de esa A9: escribí este registro con un SHA de 40 caracteres completado de memoria a partir de los 9 de un `git log`, y lo cambié por el de `git rev-parse` antes de comitar. Lo demás salió medido: el defecto se reprodujo por ejecución antes de tocar nada, y la única pasada mía que no midió (línea de órdenes demasiado larga, 289 ficheros con ruta absoluta) salió con error y se repitió; no se leyó como verde.
 
-Medido el 27-oct-2026 sobre `origin/main` ce1111a68d00d2063bc6bb369ce71d2124c3547f (rama `scrum-1608-tipo-de-iva-con-decimal`, worktree `s2-27oct-1608`). Puesto S2. Los cuatro ficheros son S2 (`node scripts/carriles.mjs de …`: `dos-equipos.md:152`).
+Medido el 27-oct-2026 sobre `origin/main` ce1111a68d00d2063bc6bb369ce71d2124c3547f (rama `scrum-1608-tipo-de-iva-con-decimal`, worktree `s2-27oct-1608`); de ahí al ancla de arriba, main sólo trae `docs/` (#2933), y la rama lo lleva mergeado. Puesto S2. Los cuatro ficheros son S2 (`node scripts/carriles.mjs de …`: `dos-equipos.md:152`).
 
 ### El defecto, por ejecución
 
