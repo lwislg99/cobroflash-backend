@@ -599,3 +599,37 @@ dos líneas por debajo de `quedan` en `_sin-fila-declarados.json`: el segundo qu
 
 Corridos: los de carriles y del trinquete (`scrum1295`, `1408`, `1480e`, `1480f`, `514`) y los de registro
 (`scrum1294`, `267`), en la entrega con su cifra.
+
+## SCRUM-1480i · La fila del censo de frontera (`tests/_censo-frontera.mjs` y `scrum1516c`) → J6
+
+**Medido contra:** `origin/main` = `77ce98573b1b5e090dfcf7754c4e7960bc63b85a` · 2026-10-27T15:34:26Z
+A9: comprobación → `tests/scrum1295-carriles.test.mjs`
+
+S0, por encargo del orquestador de Luis (27-oct), con el pedido de Javier que trae: los dos ficheros contestaban
+«sin fila en §3: nadie lo reclama». Una fila en §3.3, debajo de la de `tests/` de J6 que puso 1480h, y el
+generado regenerado una vez.
+
+**De dónde sale el dueño, y no del nombre del fichero:** SCRUM-1516 c.20861 (decisión del fundador, 26-oct)
+dice que lo rehace J6 «que se queda como dueño del ticket» y que la fila «nace en su PR o va a S0». J6 lo
+rehizo en 1516c (#2884) y en c.20891 nombra los dos ficheros: «No toco `dos-equipos.md`: la fila va a S0». Los
+volvió a tocar en 1610b (`00c83fb88`, «carril J6»). En c.21000 el orquestador J lo deja en la lista para Luis.
+Es el mismo patrón que `_senal-de-nombres.mjs` (1480h): el puesto que lo construye es el dueño, y la S0 escribe
+la fila porque la tabla es suya.
+
+**`quedan` no se mueve (217):** `sin-fila` cuenta sólo `scripts/` («322 ficheros en scripts/ · 96 con fila
+propia · 226 sólo con la fila general», igual antes y después), y estos dos están en `tests/`.
+
+**El generado, preguntado fichero a fichero:** `node scripts/carriles.mjs de` → los dos contestan J6 en
+`dos-equipos.md:195`. Control negativo en la misma orden: `tests/_censo-frontera-NOEXISTE.mjs` y
+`tests/_salida-entera.mjs` siguen sin fila. `carriles.mjs comprobar` → IGUAL a la tabla (79 filas, 204
+reglas), con exit 0.
+
+**Lo que NO entra, porque ninguna decisión lo nombra:** `tests/_salida-entera.mjs` y
+`tests/scrum1610b-salida-cortada-sale-ciega.test.mjs`, de 1610b (J6, el mismo commit que se declara «carril
+J6»), y `tests/scrum765-la-puerta-y-el-suelo.test.mjs`, que el propio 1610b declara «sin fila en §3». Los tres
+siguen sin fila, y van al orquestador como pregunta.
+
+**Consecuencia:** con fila, la cerradura (`.claude/hooks/carril.mjs`) deja de permitir que edite estos dos
+ficheros quien no sea J6.
+
+A9: sin fallo que generalice — una fila nueva con su decisión citada; las cifras salen de los comandos que van escritos al lado
