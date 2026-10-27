@@ -58,6 +58,23 @@ test('A12.2c: /webhooks/psp — payment.confirmed duplicado NO re-paga (integrac
     },
   });
 
+  // SCRUM-1614 · la ruta escribe el «Pago recibido» del historial (ENT-3) SIN await: la fila llega DESPUÉS
+  // de las dos respuestas (medido: 8 de 20 pasadas a solas). Si cae entre los borrados de la limpieza, el
+  // customer.deleteMany tropieza con customer_events_customer_id_fkey; si cae después, la ruta se traga el
+  // FK y el proceso aborta al salir. Se espera a ESA fila, por su condición, antes de limpiar. El tope no
+  // sincroniza nada: sólo convierte «no llegó nunca» en un rojo con nombre en vez de un test colgado.
+  let pagado = false;
+  let historial = null;
+  const esperarHistorial = () => (historial ??= (async () => {
+    const tope = Date.now() + 15_000;
+    for (;;) {
+      const n = await prisma.customerEvent.count({ where: { customerId: customer.id, type: 'payment_received' } });
+      if (n > 0) return n;
+      if (Date.now() > tope) throw new Error('el «Pago recibido» del historial no llegó en 15 s');
+      await new Promise((r) => setTimeout(r, 20));
+    }
+  })());
+
   try {
     const payload = {
       event: 'payment.confirmed', charge_id: charge.id, method: 'card',
@@ -71,6 +88,7 @@ test('A12.2c: /webhooks/psp — payment.confirmed duplicado NO re-paga (integrac
     assert.ok(r1.ok, `primer confirm falló: ${r1.status}`);
     const paid1 = await prisma.charge.findUnique({ where: { id: charge.id }, select: { status: true } });
     assert.equal(paid1.status, 'paid', 'el primer evento debe pagar');
+    pagado = true;
     const events1 = await prisma.event.count({ where: { chargeId: charge.id, type: 'paid' } });
 
     const r2 = await post();
@@ -84,8 +102,10 @@ test('A12.2c: /webhooks/psp — payment.confirmed duplicado NO re-paga (integrac
     const events2 = await prisma.event.count({ where: { chargeId: charge.id, type: 'paid' } });
     assert.equal(events2, events1 + 1, 'el duplicado queda REGISTRADO (no silencioso)');
     assert.equal((dupMarked.payload ?? {}).duplicate, true, 'y marcado como duplicate');
+    assert.equal(await esperarHistorial(), 1, 'el historial lleva UN «Pago recibido»: el duplicado no añade otro');
     t.diagnostic('duplicado ACK + marcado duplicate, un solo efecto de pago ✓');
   } finally {
+    if (pagado) await esperarHistorial().catch(() => {}); // si el try cayó antes, su error es el que se lee
     await prisma.event.deleteMany({ where: { chargeId: charge.id } });
     await prisma.reconciliation.deleteMany({ where: { chargeId: charge.id } }).catch(() => {});
     // por merchantId (no solo chargeId): ensureInvoiceForCharge puede dejar la factura
