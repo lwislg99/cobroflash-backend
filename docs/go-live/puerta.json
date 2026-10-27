@@ -94,7 +94,13 @@
       "que": "readLegalDoc sirve cada línea de continuación de una viñeta como un <p> suelto: 7 líneas de ALCANCE_BETA.md, el P1 entre ellas, se leen partidas en dos bloques. No cambia ninguna palabra.",
       "de_donde": "SCRUM-534 §5",
       "consta_en": "SCRUM-1554 c.19593",
-      "estado": "abierta"
+      "estado": "cerrada",
+      "cerrada": {
+        "por": "jv-j4as (puesto J4, equipo de Javier), SCRUM-1551j",
+        "motivo": "Salida A, decidida por el fundador en SCRUM-1551 c.21020: mdToHtml mete la línea sangrada de una viñeta dentro de su <li> y ALCANCE_BETA.md no se toca. Entró en main con el PR #2927 (SCRUM-1551i) y está servido: yaqu.app/version = 77ce98573b1b, el merge, y /legal/alcance-beta imprime «Versión del documento: cc719298c151» con 0 </ul> seguidos de <p> y 13 <p> (antes 5 y 22, según la sonda de 1551i); R4, «…YaQu no emite facturas ni ningún otro documento de cobro…», va entera en su <li> (27-oct-2026 15:13:21Z, cabecera Date de yaqu.app, 4.737 B). Las 0 aceptaciones de la versión anterior, ac7349fd0b84: consulta del fundador en producción antes del merge (SCRUM-1551 c.21034).",
+        "sha": "77ce98573b1b5e090dfcf7754c4e7960bc63b85a",
+        "fecha": "2026-10-27"
+      }
     },
     {
       "numero": 10,
