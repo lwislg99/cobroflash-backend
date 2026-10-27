@@ -468,3 +468,16 @@ con Tab, Intro y Espacio; ratón 8/8; la casilla marca y no navega).
     empujar**, a la espera de la decisión.
 - **NO medido:** yaqu.app (no está desplegado); la tanda entera; el tamaño táctil de «Ver detalle» en
   Facturas (ningún guard lo mide).
+- **⑥ declarado** (relevo `jv-j1dd`, 27-oct 17:20Z, rama al día con `origin/main` = `efe2cc598`; decisión
+  del fundador c.21143): Facturas sale del hash y, como Clientes, quitadas `PIEZAS_1562g` (el `<th>` vacío
+  y el `colspan` del vacío, que se deshace sólo si iguala el número de `<th>`) sale idéntica a la base:
+  verde. 4 mutaciones a mano, 4 vivas, árbol limpio (`evidencias/SCRUM-1562/mutaciones-1562g-lista-trabajos.txt`):
+  Presupuestos sin declarar → «HA CAMBIADO»; atributo en el `<th>` y `colspan` desajustado → «MÁS de lo
+  declarado»; sin el `<th>` → «NO trae lo declarado». El catálogo (`aplicarUna`) no sirve aquí: su `cae`
+  es un test de `node --test`, no un guard de navegador. Guards de navegador: 39 · 38 verdes · 1 CIEGO
+  (`objetivo-tactil`, 3 de 41 caras de fuente sin bajar; no mide Facturas); `lista-trabajos` re-corrido
+  verde tras el arreglo de abajo. Dirigida (1562g, 237, 976, 1387, 1387d, 553, 843, 1480e, 622, 267, 273,
+  1294, 812, 921c, 723): 126 · 126 pass. **Error mío:** escribí `<div class="empty-state">` con el `>`
+  pegado y lo cazó scrum553 (21 sobre tope 20); se le dio hueco y sin huecos. Las filas con botón no salen
+  en este banco (sin facturas): las mide el test de 1562g.
+A9: comprobación → `tests/scrum553-etiquetas-pegadas.test.mjs`
