@@ -1036,3 +1036,78 @@ pase por `readLegalDoc`, este guard no lo ve (sin medir: no hay hoy otra ruta qu
   «el lector de AST ve el literal y declara CIEGO…» (8 casos · 7 pasan · 1 cae); mutante «cerrar la unidad en cada
   línea» → cae sólo «una promesa PARTIDA en dos líneas…» (8 · 7 · 1). Restaurado con `git restore --source=HEAD`,
   árbol limpio después de cada uno.
+
+---
+
+# APÉNDICE · 27-oct-2026 · SCRUM-1551i · `mdToHtml` deja de partir las viñetas (fila 9, salida A)
+
+**Medido contra:** `origin/main` = `2a8d703da3711da3940c833948056fe48fdca0d3` · 2026-10-27T13:17:18Z
+
+A9: comprobación → `tests/scrum1551i-vinetas-enteras.test.mjs`
+
+**Quién:** jv-j3bu (puesto J3, equipo de Javier), por encargo del orquestador `cobroflash-backend-8b`. El hook de
+inicio dijo «SIN IDENTIDAD» (SCRUM-1498): carril a mano. `src/modules/system/app/routes/legalPages.routes.ts` es
+de J3 (`carriles.mjs de` → `dos-equipos.md:129`). **Decisión:** SCRUM-1551 c.21020, salida **A** de la fila 9 de
+c.20632: se arregla el renderizador y `docs/legal/ALCANCE_BETA.md` no se toca. Ninguna palabra servida cambia.
+
+## 1 · Qué entra
+
+| sitio | cambio |
+|---|---|
+| `legalPages.routes.ts`, `mdToHtml` | una línea sangrada justo debajo de una viñeta (con la lista abierta) se añade a ese `<li>`, separada por un espacio, en vez de cerrar la lista y salir como `<p>`. Cada línea sigue pasando por `inline()` por separado, como antes |
+| `tests/scrum1551i-vinetas-enteras.test.mjs` | nuevo: el documento REAL por el `readLegalDoc` de `dist` (cada viñeta del `.md`, leída por el test y no por el renderizador, sale en UN `<li>` con todas sus palabras; SUELO ≥ 1 viñeta larga) + un positivo SEMBRADO con la salida exacta. Declara 2 mutaciones |
+| `docs/master/evidencias/SCRUM-1551i/sonda-vinetas.mjs` | la sonda antes/después de §2 |
+
+Lo que **no** cambia, a propósito: una línea SIN sangría pegada a una lista sigue siendo un `<p>` (el sembrado lo
+fija). Hacerlo sería otra regla, y cambiaría documentos de `docs/legal/` sin viñetas partidas.
+
+## 2 · Antes y después, con el código real
+
+Sonda `sonda-vinetas.mjs`: los dos `legalPages.routes.js` compilados (antes, sha `2859256fa4f3`; después,
+`e07e4ffd371a`) sobre **los 19 `.md` de `docs/legal/`**. Control de versión: con el mismo módulo dos veces sale
+`CIEGO` (salida 2).
+
+- **`ALCANCE_BETA.md` (el único que se sirve, población de 1551h):** versión `ac7349fd0b84` → `cc719298c151`.
+  Texto sin etiquetas (espacios normalizados) **idéntico, 2.429 → 2.429 caracteres**. `<li>` 7 → 7; `<p>` justo
+  detrás de una lista 5 → 0; `<p>` 22 → 13: son las 9 líneas de continuación de c.20632, en 5 viñetas (Firma y
+  aceptación · Clientes… soporte por email · **R4** «El cobro a tus clientes…» · La facturación VERI*FACTU (R5) ·
+  Cuando el cobro se active (R6)).
+- **Producción hoy** (`GET yaqu.app/legal/alcance-beta`, 200, `Date: 2026-10-27T13:17:33Z`, `/health` =
+  `efe736f3f`): imprime `ac7349fd0b84`, la misma del «antes», con 5 `</ul>`.
+- **Los otros 18:** 3 salen iguales byte a byte (`EMAIL_ASESOR`, `INVESTIGACION_ALBARANES`, `REGISTRO_JORNADA_ES`)
+  y **15 cambian, todos con el texto idéntico**: tienen viñetas con líneas sangradas, y ahora salen enteras. **Ninguno
+  se sirve** (`readLegalDoc` sólo se llama con `ALCANCE_BETA.md`: 3 llamadas, en `legalPages.routes.ts` y
+  `subscriptions.routes.ts`), así que no los ve nadie. Los `<p>` tras lista que les quedan son líneas sin sangría.
+- **La versión que se registra al aceptar CAMBIA:** `POST /admin/billing/accept-alcance` guarda `doc.version`
+  (`subscriptions.routes.ts:72-80`) y el checkout founding exige una aceptación de la versión servida (`:116-120`).
+  Una aceptación de `ac7349fd0b84` deja de valer. La última consulta es c.20226 (22-oct): 4 filas, todas de
+  `48e3140b2083`. **Desde entonces, sin medir**: por c.21020 el fundador la repite antes del merge.
+
+## 3 · Rojo primero y mutación
+
+- Con el `dist` sin arreglo: **2 casos · 0 pasan · 2 caen**; el primero enseña las 5 viñetas cortadas.
+- Mutaciones declaradas, corridas con `correr` + `aplicarUna` de `scripts/meta-guard-mutaciones.mjs` sólo sobre
+  este guard: **2 juzgadas · 2 vivas** (quitar la regla tumba los dos casos). Fuente y `dist` restaurados (sha del
+  `.js` igual al de antes de mutar; `git diff --stat` igual).
+- `tsc -p .` **con tipos: salida 0**, sin salida.
+
+## 4 · Tests
+
+Mini-tanda con `dist` compilado: **22 ficheros** (1551i, 534r, 406 ×2, 341, 377, 564, 564b, 237, 976, 267, 273,
+1294, 921c, 850, 850b, 811c, 1572, 1554c, 745, 1387, 710b) · **206 casos · 206 pasan · 0 caen · 0 saltados**; los
+`ok` anclados al inicio del caso suman 206. **Suite entera local: NO CORRIDA** (orden del encargo: 10 sesiones a
+la vez). No hay guard de navegador para lo legal (`package.json`, 0 nombres con `legal` o `alcance`).
+Contexto de la sesión: 117.026 al acabar el arranque · 148.279 tras Jira · 208.723 tras esta mini-tanda.
+
+## 5 · Lo que NO se ha hecho
+
+- **La fila 9 de `docs/go-live/puerta.json` sigue `abierta`:** se cierra con el sha del merge, que todavía no
+  existe (como 1551e/f/g). Dice «7 líneas»; hoy eran 9.
+- No he mirado la página en un navegador: el recuento es del HTML servido y del HTML de la rama.
+
+## Errores míos, contados
+
+- Mi primer normalizador del test quitaba las etiquetas dejando un espacio, y el rojo enseñaba diferencias falsas
+  («Presupuestos ilimitados :», «VERI FACTU»). Lo vi al leer el diff del rojo, antes de arreglar nada.
+- Dos instrumentos salieron CIEGOS por la ruta y no por el código: la sonda, con el módulo fuera de `dist` (no
+  resolvía `express`), y el meta-guard, con `tests/` delante del nombre del guard. Los dos lo dijeron en voz alta.
