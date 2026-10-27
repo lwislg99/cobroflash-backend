@@ -183,3 +183,87 @@ lo acusaba).
   cicatrices, repetida.
 - Mi primera prueba de la fuga dejó una carpeta mía en el temporal del sistema (`scrum1387b-kgq3qJ`, vacía);
   la borré a mano antes de seguir midiendo.
+
+## SCRUM-1387d · la mitad ①: el recuento del meta-guard dice sobre cuántas
+
+**Medido contra:** `origin/main` = `77ce98573b1b5e090dfcf7754c4e7960bc63b85a` · 2026-10-27T15:42:52Z (hora de GitHub)
+(S3, equipo de Luis. Carril propio: `scripts/meta-guard-mutaciones.mjs` es de S3, `dos-equipos.md:176`. Javier
+confirma en c.20478 que ① es nuestra.)
+
+A9: comprobación → `tests/scrum1387d-el-recuento-dice-sobre-cuantos.test.mjs`
+
+### Lo que se veía, medido hoy
+
+El meta-guard de `main` (`77ce98573`, run 40518576319, job 122241583529) acabó en:
+
+    vivas 707 · mudas 0 · ciegas 1 · ficheros muertos 0
+
+Esa `ciegas 1` **no era un guard ciego**: era el corte por tiempo de SCRUM-935d, con **177 de 884 mutaciones SIN
+JUZGAR en 44 ficheros**. El orquestador lo leyó como «hay un guard ciego» y lo repartió así; el log lo desmiente.
+La línea que todo el mundo copia no decía sobre cuántas, y el rótulo con la población (`rotuloDelCenso`, SCRUM-812)
+sólo salía con `--solo-censo`, que el CI no pasa. Es el defecto que el ticket describía el 1-oct, en vivo.
+
+### Lo construido
+
+- `rotuloDelResultado` (función pura, exportada): la línea del recuento con la población **en la misma línea**.
+  El principio no cambia; se le añade detrás:
+
+      vivas 6 · mudas 0 · ciegas 1 · ficheros muertos 0 · sobre 6 juzgadas de 888 declaraciones, en 223 ficheros DECLARANTES de 1536 ficheros de test (15 %)
+
+- `rotuloDelCenso` sale ahora **fuera** del `if (soloCenso)` y **antes del bucle**: lo imprimen los dos caminos, y
+  también un job que muera en la pared sin llegar al final. En `--solo-censo` la salida es la misma, byte a byte.
+- Defecto de paso, en la misma salida (encargo del orquestador: arreglarlo aquí, sin ticket): el corte salía **dos
+  veces** en el log (un `console.log` suelto y otra vez en la lista de ciegas). Ahora sale una, con las ciegas. Y la
+  lista de ciegas se imprime **antes** del suelo de ejecución: con un corte anterior a la primera mutación, ese
+  suelo salía con 2 y la lista de lo pendiente **no se imprimía nunca** (visto en `salida-corte-cero-antes.txt`:
+  stderr de 10 líneas sin la lista; después, 238 con ella).
+
+### Los tres controles del ticket
+
+| control | dónde se ve |
+|---|---|
+| ① el rojo primero | el test contra el script de `main` sin el cambio: **cae** (no puede importar `rotuloDelResultado`; 1 fichero, 0 de 1). Con el cambio: 5 de 5 |
+| ② no cambia cómo decide | códigos de salida iguales antes y después: `--solo-censo` 0 y 0, stdout idéntico (`solo-censo-igual.txt`); corte a 0 s, 2 y 2 (`salida-corte-cero-*.txt`). No se ha tocado ningún `process.exit` ni ninguna condición |
+| ③ sale siempre, también con el 100 % | caso «③» del test: 10 de 10 declaraciones en 4 de 4 ficheros sale igual, con «(100 %)» |
+
+**Mutaciones declaradas en el catálogo (4), vistas caer por `correr()` + `aplicarUna()` del propio meta-guard:
+4 VIVAS, 0 mudas, árbol igual después** (`salida-cuatro-declaradas.txt`). Cada ancla aparece una vez en el script.
+Una pasada de verdad con `META_PRESUPUESTO_S=90` y `dist/` compilado: 6 juzgadas, la línea nueva al final
+(`salida-noventa-segundos.txt`).
+
+### Lo que NO cambia, y lo que NO cubre
+
+- ⚠️ **El recuento del corte sigue diciendo `ciegas 1`** aunque deje 177 sin juzgar: el corte cuenta como UNA ciega
+  (SCRUM-935d, por diseño, para salir con 2). Lo que cambia es que ahora la misma línea dice «707 juzgadas de 884».
+  Contarlo de otra forma movería el recuento, y eso no es ①.
+- **El catálogo dice «todos menos los heredados»** (c.18016): los 34+ bancos fuera del catálogo no entran en esta
+  población. La línea dice «de 888 declaraciones», que es verdad; no dice cuántas mutaciones viven fuera. No lo
+  he medido ni construido.
+- **Este tramo añade 4 declaraciones a un meta-guard que ya no cabe en su techo** (SCRUM-1620, el siguiente de S3).
+  Son 5 pasadas más (la limpia + 4); en CI no lo he medido, y en local el fichero entero corre en menos de 1 s.
+  Empujan el corte un poco más pronto. Lo digo para que no se
+  lea como causa.
+- La pasada entera no se corre en la tanda (movería el árbol bajo los demás, como `scrum935d`): el cableado del
+  bloque principal se comprueba por AST sin comentarios.
+
+### Tanda local
+
+- Los 47 ficheros de `tests/` que nombran el meta-guard: **366 tests · 361 pasan · 1 cae · 4 saltados**. El que cae
+  es `scrum1321` PUERTA 1b, **igual sin el cambio** (4/1 en los dos): cae siempre en local (temporal en C:, repo en
+  D:), y en CI pasa.
+- `guards:entrada`: 15 de 15 (170 tests). Los 5 de árbol entero de SCRUM-1560, más `scrum1387` y `scrum812`: 52 de 52.
+- `tanda:dirigida` (base `77ce9857`): **299 ficheros · 2.830 tests · 2.819 pasan · 2 caen**. Los dos caen **igual sin
+  el cambio** y son de esta máquina: `scrum1321` (el de arriba) y `scrum476` CONTROL POSITIVO, que hace `realpath`
+  de cada worktree de `git worktree list` y revienta en uno `prunable` de otro job
+  (`C:\Users\Admin\.claude\jobs\ca4c7323\tmp\wt`, ya no existe en disco). No lo he podado: no es mío.
+
+### Mis errores
+
+- El primer rojo del test es por no poder importar, no caso a caso: dice «falta la pieza», no «esta frase falta».
+  Las cuatro mutaciones sí son caso a caso.
+
+### Reproducir
+
+    node --test tests/scrum1387d-el-recuento-dice-sobre-cuantos.test.mjs
+    node scripts/meta-guard-mutaciones.mjs --solo-censo
+    META_PRESUPUESTO_S=0 node scripts/meta-guard-mutaciones.mjs     # sale 2 y dice su población
