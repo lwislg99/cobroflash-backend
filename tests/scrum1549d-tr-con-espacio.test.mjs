@@ -23,6 +23,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { casosEscritos } from './_casos-escritos.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const instalar = await import(pathToFileURL(path.join(RAIZ, 'scripts', 'equipo', 'instalar.mjs')).href);
@@ -83,15 +84,20 @@ test('🔴 CONTROL: la orden vieja, con una ruta con ESPACIO, deja una tarea que
   assert.equal(juicio(ordenVieja(SIN_ESPACIO), SIN_ESPACIO)[0], 'OK');
 });
 
-for (const [nombre, destino] of [['con espacio', CON_ESPACIO], ['con espacio y apóstrofo', CON_APOSTROFO], ['sin espacio', SIN_ESPACIO]]) {
-  test(`🔴 la orden de hoy, ruta ${nombre}: schtasks recibe la ruta ENTERA entre comillas y la tarea ejecuta arranque.cmd`, () => {
+const RUTAS = [['con espacio', CON_ESPACIO], ['con espacio y apóstrofo', CON_APOSTROFO], ['sin espacio', SIN_ESPACIO]];
+const ordenDeHoy = casosEscritos(RUTAS,
+  ([nombre]) => `🔴 la orden de hoy, ruta ${nombre}: schtasks recibe la ruta ENTERA entre comillas y la tarea ejecuta arranque.cmd`,
+  ([, destino]) => {
     const [orden] = instalar.ordenesSchtasks({ destino, tandas: ['08:25'], prefijo: 'jv-' });
     const tr = trDe(orden);
     assert.equal(tr, `"${instalar.rutaArranqueCmd(destino)}"`);
     const [veredicto, detalle] = juicio(orden, destino);
     assert.equal(veredicto, 'OK', detalle);
   });
-}
+test('🔴 la orden de hoy, ruta con espacio: schtasks recibe la ruta ENTERA entre comillas y la tarea ejecuta arranque.cmd', ordenDeHoy(0));
+test('🔴 la orden de hoy, ruta con espacio y apóstrofo: schtasks recibe la ruta ENTERA entre comillas y la tarea ejecuta arranque.cmd', ordenDeHoy(1));
+test('🔴 la orden de hoy, ruta sin espacio: schtasks recibe la ruta ENTERA entre comillas y la tarea ejecuta arranque.cmd', ordenDeHoy(2));
+ordenDeHoy.todos();
 
 test('🔴 una orden por tanda, y todas con el /tr entrecomillado', () => {
   const ordenes = instalar.ordenesSchtasks({ destino: CON_ESPACIO, tandas: ['08:25', '13:30', '18:35'], prefijo: 'jv-' });
