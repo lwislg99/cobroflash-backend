@@ -55,6 +55,7 @@ import {
 import { aplicarUna } from '../scripts/meta-guard-mutaciones.mjs';
 import { veredictoDelCenso } from '../scripts/censo-guards-gateados.mjs'; // SCRUM-754c
 import { procesoVivo, restaurarDesdeMarca, marcarEnVuelo, apuntarMutacion } from '../scripts/_marca-de-arbol.mjs';
+import { temporal, borrarTemporal } from './_temporal.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const JUEZ = 'scripts/meta-guard-mutaciones.mjs';
@@ -342,7 +343,7 @@ test('SCRUM-754 · PUERTA 3 se consulta ANTES que `cayo()`, y `cayo()` vive en s
 
 /** Un banco con su marca puesta y el fichero mutado, para poder preguntarle al restaurador. */
 function bancoConMarca(pid) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum754-marca-'));
+  const dir = temporal('scrum754-marca-');
   const abs = path.join(dir, 'pieza.mjs');
   const ORIGINAL = Buffer.from('export const x = 1;\n');
   fs.writeFileSync(abs, ORIGINAL);
@@ -374,7 +375,7 @@ test('SCRUM-754 · una marca de OTRA pasada VIVA no se repara: sería quitarle l
       + 'caso existe para impedir.');
     assert.ok(r.piezas.includes('pieza.mjs'),
       '🔴 se niega a reparar y no dice QUÉ hay puesto: sin la lista nadie puede decidir si esperar.');
-  } finally { fs.rmSync(b.dir, { recursive: true, force: true }); }
+  } finally { borrarTemporal(b.dir); }
 });
 
 test('SCRUM-754 · CONTROL POSITIVO: una marca HUÉRFANA se sigue reparando (SCRUM-808 intacto)', () => {
@@ -386,7 +387,7 @@ test('SCRUM-754 · CONTROL POSITIVO: una marca HUÉRFANA se sigue reparando (SCR
       '🔴 una marca de una pasada MUERTA ya no se repara: eso devuelve el árbol sucio de SCRUM-808, '
       + 'que es el defecto contrario y no menos grave.');
     assert.equal(b.sigueMutado(), false, '🔴 dice que reparó y el fichero sigue mutado.');
-  } finally { fs.rmSync(b.dir, { recursive: true, force: true }); }
+  } finally { borrarTemporal(b.dir); }
 
   // ② y la marca PROPIA se repara aunque el proceso esté vivo: es la del banco de SCRUM-808,
   //    que la fabrica y la repara dentro del mismo proceso. La regla es «OTRA pasada viva».
@@ -395,7 +396,7 @@ test('SCRUM-754 · CONTROL POSITIVO: una marca HUÉRFANA se sigue reparando (SCR
     const r = restaurarDesdeMarca(mia.marca, () => true);
     assert.deepEqual(r.reparadas, ['pieza.mjs'],
       '🔴 mi propia marca se trata como ajena: eso rompe el banco de SCRUM-808 y no arregla nada.');
-  } finally { fs.rmSync(mia.dir, { recursive: true, force: true }); }
+  } finally { borrarTemporal(mia.dir); }
 });
 
 test('SCRUM-754 · `procesoVivo` distingue, y no dice que sí a todo', () => {
@@ -702,10 +703,10 @@ function anclaImposible() {
 
 /** Escribe un fichero de test FUERA del árbol: crearlo dentro movería el árbol (SCRUM-754). */
 function fixture(cuerpo) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum754c-'));
+  const dir = temporal('scrum754c-');
   const abs = path.join(dir, 'fixture.test.mjs');
   fs.writeFileSync(abs, cuerpo);
-  return { dir, abs, borrar: () => fs.rmSync(dir, { recursive: true, force: true }) };
+  return { dir, abs, borrar: () => borrarTemporal(dir) };
 }
 
 const TODOS_SALTADOS = `import test from 'node:test';

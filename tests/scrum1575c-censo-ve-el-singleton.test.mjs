@@ -11,15 +11,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { analizarConexion, censarConexiones, SIEMBRA_SINGLETON, veSusSiembras } from '../scripts/_censo-conexiones-a-base.mjs';
+import { temporal, borrarTemporal } from './_temporal.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 function arbolFabricado(ficheros) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1575c-'));
+  const dir = temporal('scrum1575c-');
   for (const [rel, texto] of Object.entries(ficheros)) {
     fs.mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true });
     fs.writeFileSync(path.join(dir, rel), texto);
@@ -86,7 +86,7 @@ test('SCRUM-1575c · siembra · un árbol fabricado con cada forma del hueco sal
       '🔴 el censo no sigue `await imp(\'dist/core/db/prisma.js\')` hasta el singleton.');
     assert.deepEqual(filas.find((f) => f.rel === 'tests/singleton-con-gate.test.mjs').guardasIndirectas, ['_staging-db.mjs:(import)']);
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
+    borrarTemporal(dir);
   }
 });
 

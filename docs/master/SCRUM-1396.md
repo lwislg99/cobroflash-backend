@@ -466,3 +466,87 @@ Salida en `docs/master/evidencias/SCRUM-1396/salida-1396d-lote-1.txt`.
 - Ninguno de los seis se ha corrido con fallo inyectado después del cambio (con `temporal()` el borrado cuelga
   del `exit` del proceso; el mecanismo lo prueba `tests/scrum864-el-temporal-que-se-borra.test.mjs`, no este tramo).
 - Suite entera local: NO CORRIDA (encargo). `scrum976` y los guards de registro, ver la entrega.
+
+## Tramo 6 · 1396e · Segundo lote: los 11 que quedaban de J6 pasan a `temporal()` y salen de la lista (22 → 11)
+
+**Medido contra:** `origin/main` = `2cab05598f03dfdc648e20d851748b83d748d516` · 2026-10-27T17:53:51Z
+
+Sesión `jv-j6dw` (puesto J6), encargo del orquestador `cobroflash-backend-8b`, tras c.21095, c.21106 y c.21167.
+Rama `scrum-1396e-lote-2-temporales`, creada desde la de 1396d (4d991f773, que lleva 1396c): mientras #2949 y
+1396d no entren, el PR de este tramo lleva también sus commits. El hook de arranque dijo «SIN IDENTIDAD»
+(SCRUM-1498); se siguió.
+
+A9: aviso → cicatriz J6 «Me medí en los dos puntos fijos y no al acabar cada tanda de tests, que el encargo también pedía: la siguiente cifra fue 221k, y el mismo cruce de 200k que dejó 1396c dos tramos antes en esta rama» — no se pudo comprobar: ningún hook de este árbol lee el usage de la sesión al acabar una tanda
+
+### El lote: los 11 de J6, enteros
+
+| sitio (antes) | motivo | censo antes | qué se cambia |
+|---|---|---|---|
+| `tests/scrum521-resolvedor-de-importadores.test.mjs:52` | FORMA | ESCAPA | `arbolSintetico()` crea con `temporal()`; `conArbol()` borra con `borrarTemporal()`; la de la línea 161 ya era GARANTIZADA |
+| `tests/scrum716c-la-memoria-del-vigia.test.mjs:224` | FORMA | ESCAPA | `repoDePrueba()` crea con `temporal()`; sus 5 llamadores borran con `borrarTemporal()` |
+| `tests/scrum754-el-juez-que-oscila.test.mjs:345` | FORMA | ESCAPA | `bancoConMarca()` crea con `temporal()`; los 3 `finally` borran con `borrarTemporal()` |
+| `tests/scrum754-el-juez-que-oscila.test.mjs:705` | FORMA | NO_GARANTIZADA | `fixture()` crea con `temporal()`; `borrar` llama a `borrarTemporal()`; las otras 6 `mkdtemp` del fichero ya eran GARANTIZADA |
+| `tests/scrum836-ancla-de-mutacion-viva.test.mjs:83` | FORMA | NO_GARANTIZADA | `banco()` crea con `temporal(prefijo)`; `limpia` llama a `borrarTemporal()` |
+| `tests/scrum836-ancla-de-mutacion-viva.test.mjs:491` | FORMA | NO_GARANTIZADA | ídem en `bancoQueSeCita()`; las de 365 y 386 ya eran GARANTIZADA |
+| `tests/scrum850b-las-formas-que-mienten.test.mjs:73` | FORMA | ESCAPA | `bancoDeTanda()` crea con `temporal()`; sus 2 llamadores borran con `borrarTemporal()` |
+| `tests/scrum1328-skips-con-motivo-en-el-tap.test.mjs:102` | SIN_MEDIR | ESCAPA | `banco()` crea con `temporal()`; sus 2 llamadores borran con `borrarTemporal()` |
+| `tests/scrum1575b-censo-conexiones.test.mjs:37` | SIN_MEDIR | ESCAPA | `arbolFabricado()` crea con `temporal()`; sus 2 llamadores borran con `borrarTemporal()`; la de 158 ya era GARANTIZADA |
+| `tests/scrum1575c-censo-ve-el-singleton.test.mjs:22` | SIN_MEDIR | ESCAPA | ídem, 1 llamador |
+| `tests/scrum1575d-staging-por-destino.test.mjs:71` | SIN_MEDIR | ESCAPA | ídem, 1 llamador |
+
+En cinco ficheros (716c, 850b, 1328, 1575c, 1575d) sobra el `import os` y se quita, como en 1396d. **«Después» no
+es GARANTIZADA: es fuera de la población** (el censo sólo cuenta `mkdtemp*`). Ninguno de los 11 enlaza nada: el
+caso del enlace a `node_modules` de c.21093 no aparece, y no queda ninguno declarado por esa causa.
+
+Carril: `carriles.mjs de` consultado ANTES de escribir, sobre los 9 ficheros, comprobado que existen (`ls`): «sin
+fila en §3» en los 9, que no mide (c.18861). Lo que los asigna a J6 es c.21095 y la lista de 1396c (`retira: J6`).
+
+### Las 4 SIN_MEDIR, medidas antes de tocarlas (el método de J4, c.18875)
+
+Con el espía de J4 (`espia-mkdtemp.cjs`) y su control, sin cambiarlos; guion nuevo `medir-restos-1396e.sh`, que
+toma las líneas por argumento. Cada test solo, `TEMP`/`TMP`/`TMPDIR` en una carpeta vacía y sin espacios.
+Controles del instrumento, en las dos pasadas: **0 · 1 · 0 · 1** creados que siguen vivos, como deben.
+
+| línea | camino feliz | fallos inyectados | directorios suyos que quedan |
+|---|---|---|---|
+| `scrum1328:102` | 0 restos | 2 | **0** |
+| `scrum1575b:37` | 0 restos | 2 | **0** |
+| `scrum1575c:22` | 0 restos | 1 | **0** |
+| `scrum1575d:71` | 0 restos | 1 | **0** |
+
+O sea: las cuatro eran de FORMA, no de fuga. Repetido DESPUÉS del cambio, armando el `mkdtempSync` de
+`tests/_temporal.mjs:93`: los mismos fallos inyectados (2 · 2 · 1 · 1) y **0** restos. ⚠️ Límite de J4 que
+sigue valiendo: el fallo cae en el primer método de `assert` tras crear; no mide un `throw` de `writeFileSync`
+entre crear y devolver (la forma de `scrum1263`), que con `temporal()` queda cubierto por construcción.
+
+### Medido hoy (local, Windows, una pasada; `dist/` con `tsc --noCheck`, sin tocar `src/`)
+
+| qué | resultado |
+|---|---|
+| censo antes → después | 227 → **216** llamadas, 165 → 160 ficheros (3460 mirados); acusados **22 → 11**, los 11 que salen son éstos y ninguno más (`diff`); `contraDeclarados` vacío antes y después |
+| `scrum864c` + `scrum1396c` + `scrum1396` | **13 de 13** pasan, con la lista en 11 (todas `retira: SCRUM-1621`) |
+| negativo ①: `scrum1575c` devuelto a la lista sin desarreglarlo | 1396c ④ y 864c ③ **caen** |
+| negativo ②: `scrum1575c` devuelto a su `mkdtempSync`, lista en 11 | 1396c ③, 1396c ④ y 864c ③ **caen**, nombrando el fichero |
+| los 9 tests tocados, cada uno solo | base **83/83** → después **83/83**, el MISMO conjunto de nombres en los 9 |
+| `scrum237`, `scrum1349` (×2), `scrum1480f` | pasan |
+| `scrum1387` | **CIEGO en local**, el mismo de 1396b/c/d; mi guion nuevo no entra en su población (sólo cuenta nombres con «mut») |
+| `scrum976` | 10 de 11; cae ④, y su traza es ese mismo CIEGO de 1387 |
+
+Salida en `docs/master/evidencias/SCRUM-1396/salida-1396e-lote-2.txt`.
+
+### Aceptación → dónde se ve
+
+| aceptación (encargo de 1396e) | dónde se ve |
+|---|---|
+| los 11 de J6 con el ayudante de la casa, o declarados con su porqué | la tabla de arriba · `tests/_temporal.mjs` en los 9 ficheros; ninguno se queda declarado |
+| las 4 SIN_MEDIR, medidas con fallo inyectado antes de tocarlas | `docs/master/evidencias/SCRUM-1396/medir-restos-1396e.sh` · la salida, sección «ANTES» |
+| cada uno sale de la lista; la lista sólo baja | `scripts/_mkdtemp-declarados.json` (11, todas SCRUM-1621) · `tests/scrum1396c-los-declarados-solo-bajan.test.mjs` · `tests/scrum864c-el-temporal-no-vuelve.test.mjs` ③ |
+| rojo primero y negativos | la salida, sección «negativos» |
+| los tests tocados pasan igual, con los mismos nombres | la salida (83/83 → 83/83) |
+| los 11 de SCRUM-1621 | NO TOCADOS (encargo) → SCRUM-1621 |
+
+### Lo que no se ha hecho
+
+- Los 7 de FORMA no se han vuelto a correr con fallo inyectado (J4 lo hizo el 8-oct); con `temporal()` el borrado
+  cuelga del `exit` del proceso, que prueba `tests/scrum864-el-temporal-que-se-borra.test.mjs`.
+- Suite entera local: NO CORRIDA (encargo). `scrum1387` y `scrum976` ④: CIEGO en local, los mide CI.

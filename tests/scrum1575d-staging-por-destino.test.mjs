@@ -14,13 +14,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { exigirStaging } from './banco-scrum911/_entorno.mjs';
 import { parseBDSegura, STAGING_HOST } from '../scripts/_db-guard.mjs';
 import { DESTINOS_ESPERADOS } from '../scripts/_clave-vs-destino.mjs';
 import { analizarConexion, censarConexiones, SIEMBRA_SERVICIO, veSusSiembras } from '../scripts/_censo-conexiones-a-base.mjs';
+import { temporal, borrarTemporal } from './_temporal.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const fabricar = (host, base) => `postgresql://inventado:inventado@${host}:1/${base}`;
@@ -68,7 +68,7 @@ test('SCRUM-1575d · árbol real · los recorridos del banco 911 comprueban stag
 });
 
 function arbolFabricado(ficheros) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1575d-'));
+  const dir = temporal('scrum1575d-');
   for (const [rel, texto] of Object.entries(ficheros)) {
     fs.mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true });
     fs.writeFileSync(path.join(dir, rel), texto);
@@ -101,7 +101,7 @@ test('SCRUM-1575d · el censo ve la escritura a través de un servicio de dist/m
       usaBase: ['dist/modules/x/escribe.service.js'], noUsaBase: ['dist/modules/x/puro.js'], sinFuente: ['dist/modules/x/no-existe.js'],
     });
   } finally {
-    fs.rmSync(dir, { recursive: true, force: true });
+    borrarTemporal(dir);
   }
 });
 

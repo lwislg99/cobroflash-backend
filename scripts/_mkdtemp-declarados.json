@@ -3,23 +3,14 @@
   "ficheros": {
     "tests/scrum1263-gancho-pre-push.test.mjs": { "llamadas": 1, "motivo": "MEDIDA", "retira": "SCRUM-1621", "detalle": "montar(): ESCAPA; 4 de 4 fallos inyectados dejan resto (asserts entre crear y devolver)" },
     "tests/scrum454-destructivo-sin-comprobacion.test.mjs": { "llamadas": 1, "motivo": "MEDIDA", "retira": "SCRUM-1621", "detalle": "repo(): ESCAPA; a nivel de módulo, el fichero muere al cargar y test.after no corre: 2 directorios" },
-    "tests/scrum1328-skips-con-motivo-en-el-tap.test.mjs": { "llamadas": 1, "motivo": "SIN_MEDIR", "retira": "J6", "detalle": "ESCAPA; entró después del 8-oct" },
-    "tests/scrum1575b-censo-conexiones.test.mjs": { "llamadas": 1, "motivo": "SIN_MEDIR", "retira": "J6", "detalle": "ESCAPA; entró después del 8-oct" },
-    "tests/scrum1575c-censo-ve-el-singleton.test.mjs": { "llamadas": 1, "motivo": "SIN_MEDIR", "retira": "J6", "detalle": "ESCAPA; entró después del 8-oct" },
-    "tests/scrum1575d-staging-por-destino.test.mjs": { "llamadas": 1, "motivo": "SIN_MEDIR", "retira": "J6", "detalle": "ESCAPA; entró después del 8-oct" },
     "tests/scrum1289b-reporters-como-argumentos.test.mjs": { "llamadas": 1, "motivo": "FORMA", "retira": "SCRUM-1621", "detalle": "ESCAPA; 2 fallos inyectados, 0 restos (la línea peor medida: c.18877)" },
     "tests/scrum1424-ya-esta.test.mjs": { "llamadas": 1, "motivo": "FORMA", "retira": "SCRUM-1621", "detalle": "ESCAPA; 6 fallos inyectados, 0 restos" },
     "tests/scrum252-procedencia-cliente.test.mjs": { "llamadas": 1, "motivo": "FORMA", "retira": "SCRUM-1621", "detalle": "NO_GARANTIZADA; 4 fallos inyectados, 0 restos" },
-    "tests/scrum521-resolvedor-de-importadores.test.mjs": { "llamadas": 1, "motivo": "FORMA", "retira": "J6", "detalle": "ESCAPA; 5 fallos inyectados, 0 restos" },
     "tests/scrum709-microcopy-por-fichero.test.mjs": { "llamadas": 1, "motivo": "FORMA", "retira": "SCRUM-1621", "detalle": "ESCAPA; 1 fallo inyectado, 0 restos" },
-    "tests/scrum716c-la-memoria-del-vigia.test.mjs": { "llamadas": 1, "motivo": "FORMA", "retira": "J6", "detalle": "ESCAPA; 5 fallos inyectados, 0 restos" },
     "tests/scrum726-quien-firma-la-microcopy.test.mjs": { "llamadas": 1, "motivo": "FORMA", "retira": "SCRUM-1621", "detalle": "ESCAPA; 3 fallos inyectados, 0 restos" },
-    "tests/scrum754-el-juez-que-oscila.test.mjs": { "llamadas": 2, "motivo": "FORMA", "retira": "J6", "detalle": "una ESCAPA (2 fallos, 0 restos) y una NO_GARANTIZADA (2 fallos, 0 restos)" },
     "tests/scrum811c-skill-ui-declarada.test.mjs": { "llamadas": 1, "motivo": "FORMA", "retira": "SCRUM-1621", "detalle": "ESCAPA; 1 fallo inyectado, 0 restos" },
-    "tests/scrum836-ancla-de-mutacion-viva.test.mjs": { "llamadas": 2, "motivo": "FORMA", "retira": "J6", "detalle": "dos NO_GARANTIZADA; 8 y 3 fallos inyectados, 0 restos" },
     "tests/scrum839d-union-solo-en-el-registro.test.mjs": { "llamadas": 1, "motivo": "FORMA", "retira": "SCRUM-1621", "detalle": "ESCAPA; 11 fallos inyectados, 0 restos" },
     "tests/scrum839e-solo-pr-armados.test.mjs": { "llamadas": 1, "motivo": "FORMA", "retira": "SCRUM-1621", "detalle": "ESCAPA; 6 fallos inyectados, 0 restos" },
-    "tests/scrum850b-las-formas-que-mienten.test.mjs": { "llamadas": 1, "motivo": "FORMA", "retira": "J6", "detalle": "ESCAPA; 2 fallos inyectados, 0 restos" },
     "tests/scrum899-sesion-lista-blanca.test.mjs": { "llamadas": 1, "motivo": "FORMA", "retira": "SCRUM-1621", "detalle": "ESCAPA; 4 fallos inyectados, 0 restos" }
   }
 }

@@ -29,6 +29,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { quienLoImporta, importacionesDe } from './_alcance-desde-entradas.mjs';
+import { temporal, borrarTemporal } from './_temporal.mjs';
 
 // ── FUENTE SINTÉTICA PROPIA, y por qué no se reutiliza la de SCRUM-411 ──────────────────────
 // La de 411 no tiene ningún `scripts/*.mjs` que importe vía `../dist/`, que es justo la arista que
@@ -49,7 +50,7 @@ const FUENTE = {
 };
 
 function arbolSintetico() {
-  const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum521-'));
+  const raiz = temporal('scrum521-');
   for (const [r, c] of Object.entries(FUENTE)) {
     const destino = path.join(raiz, r);
     fs.mkdirSync(path.dirname(destino), { recursive: true });
@@ -60,7 +61,7 @@ function arbolSintetico() {
 
 function conArbol(fn) {
   const raiz = arbolSintetico();
-  try { return fn(raiz); } finally { fs.rmSync(raiz, { recursive: true, force: true }); }
+  try { return fn(raiz); } finally { borrarTemporal(raiz); }
 }
 
 const LIB = 'src/modules/lib.ts';
