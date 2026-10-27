@@ -1,0 +1,24 @@
+// SCRUM-1611c · positivo sembrado: UNA consulta ajena del propio proceso, 100 ms después de que acabe la
+// SEGUNDA respuesta de GET /admin/jobs. No toca el test: envuelve http.request. El cliente de Prisma se
+// importa tarde (ya cargado por el test, con su DATABASE_URL y QA_QUERY_LOG), así que es el MISMO.
+// Escribe RUIDO58 disparado=<n> en stderr para que el banco vea que la siembra ocurrió.
+import http from 'node:http';
+const original = http.request;
+let vistas = 0;
+http.request = function (...args) {
+  const req = original.apply(this, args);
+  const opciones = args[0] || {};
+  if (opciones.path === '/admin/jobs') {
+    req.on('response', (r) => r.on('end', () => {
+      vistas++;
+      if (vistas !== 2 || process.env.RUIDO58 !== '1') return;
+      setTimeout(async () => {
+        const raiz = process.cwd().replace(/\\/g, '/');
+        const { prisma } = await import(`file:///${raiz}/dist/core/db/prisma.js`);
+        await prisma.$queryRawUnsafe('SELECT 1 AS ruido58');
+        process.stderr.write('RUIDO58 disparado=1\n');
+      }, 100);
+    }));
+  }
+  return req;
+};

@@ -1,0 +1,29 @@
+# SCRUM-1611c · salidas (jv-j6dd, 27-oct-2026). Banco: Postgres 16.14 de pgbanco-1599p, base rehecha antes de cada pasada.
+## retraso-1611c (¿llega el evento 'query' después de resolverse la consulta?)
+RETRASO n=20 eventos=23 iteraciones_con_evento_tardío=0
+por fase: {} · muestra: 
+(con las 12 CPU ocupadas por 12 bucles de node:)
+RETRASO n=200 eventos=203 iteraciones_con_evento_tardío=0
+por fase: {} · muestra: 
+## régimen de CI: los 57 ficheros de banco + la sonda (copia zz del test con registro por consulta), en paralelo, misma base
+r-1 casos=193 decl=193 fail=2 rojos=[SCRUM-419 · el inventario de lo que NO ;SCRUM-419 · 🔴 CI DECLARA lo que no h;] scrum58=[ok 132,ok 193,] sonda=[10 tras+1500=10 10 tras+1500=10 ]
+r-2 casos=193 decl=193 fail=2 rojos=[SCRUM-419 · el inventario de lo que NO ;SCRUM-419 · 🔴 CI DECLARA lo que no h;] scrum58=[ok 132,ok 193,] sonda=[10 tras+1500=10 10 tras+1500=10 ]
+r-3 casos=194 decl=194 fail=3 rojos=[SCRUM-419 · el inventario de lo que NO ;SCRUM-419 · 🔴 CI DECLARA lo que no h;tests\\webhooks-idempotencia.test.mjs;] scrum58=[ok 132,ok 194,] sonda=[10 tras+1500=10 10 tras+1500=10 ]
+r-4 casos=193 decl=193 fail=2 rojos=[SCRUM-419 · el inventario de lo que NO ;SCRUM-419 · 🔴 CI DECLARA lo que no h;] scrum58=[ok 132,ok 193,] sonda=[10 tras+1500=10 10 tras+1500=10 ]
+r-5 casos=193 decl=193 fail=2 rojos=[SCRUM-419 · el inventario de lo que NO ;SCRUM-419 · 🔴 CI DECLARA lo que no h;] scrum58=[ok 132,ok 193,] sonda=[10 tras+1500=10 10 tras+1500=10 ]
+r-6 casos=193 decl=193 fail=2 rojos=[SCRUM-419 · el inventario de lo que NO ;SCRUM-419 · 🔴 CI DECLARA lo que no h;] scrum58=[ok 132,ok 193,] sonda=[10 tras+1500=10 10 tras+1500=10 ]
+r-7 casos=193 decl=193 fail=3 rojos=[SCRUM-419 · el inventario de lo que NO ;SCRUM-419 · 🔴 CI DECLARA lo que no h;A12.2c: /webhooks/psp — payment.confir;] scrum58=[ok 132,ok 193,] sonda=[10 tras+1500=10 10 tras+1500=10 ]
+r-8 casos=193 decl=193 fail=3 rojos=[SCRUM-419 · el inventario de lo que NO ;SCRUM-419 · 🔴 CI DECLARA lo que no h;A12.2c: /webhooks/psp — payment.confir;] scrum58=[ok 132,ok 193,] sonda=[10 tras+1500=10 10 tras+1500=10 ]
+(scrum58=[…] son el test real y la copia sonda; en las 8 hay 2 rojos de scrum419, por la lista a mano con un fichero zz (con el test nuevo y sin zz, abajo, salen verdes); en r-3, r-7 y r-8 hay un TERCERO, de webhooks/psp (A12.2c), ajeno a scrum58 y no investigado)
+## siembra: UNA consulta ajena del propio proceso 100 ms después de la 2ª respuesta (ruido58-1611c, --import)
+viejo-1 casos=1/1 not ok disparos=1 3 Trabajos → 10 consultas, 12 Trabajos → 11
+viejo-0 casos=1/1 ok 1 - disparos=0 3 jobs → 10 consultas · 12 jobs → 10
+nuevo-1 casos=1/1 ok 1 - disparos=1 3 jobs → 10 consultas · 12 jobs → 10
+nuevo-0 casos=1/1 ok 1 - disparos=0 3 jobs → 10 consultas · 12 jobs → 10
+## mutación de la casa (MUTACIONES_CON_BASE, mutar-1599i.mjs) sobre el test nuevo
+== tests/scrum58-jobs-n1.test.mjs · limpia: 1 ok de 1
+MUERE · M1 · src/modules/jobs/app/routes/jobs.routes.ts · «for (const j of jobs) out.push(await serializeJob(j, refs));» → «for (const j of jobs) out.push(await serializeJob(» · 1 de 1 caen 
+POBLACION=1 mutaciones en 1 ficheros · vivas=0 · ciegas=0 · dist restaurado byte a byte · EXIT=0
+## los 57 ficheros de banco con el test nuevo, en paralelo
+casos=192 # tests 192 # pass 190 # fail 0 # skipped 2 
+# SCRUM-58: 3 jobs → 10 consultas · 12 jobs → 10 (constante) ✓
