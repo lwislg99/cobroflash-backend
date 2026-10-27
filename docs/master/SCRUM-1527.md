@@ -735,3 +735,102 @@ de 1527e).
 ## Cómo se repite
 
     node docs/master/evidencias/SCRUM-1527/1527f/censo1405c.mjs 2026-10-19T00:00:00Z <carpeta>
+
+# SCRUM-1527g · Desde el 22-oct, 1 colgada en 437 jobs; 0 en los 15 de después de #2905, que no prueba nada
+
+**Medido contra:** `origin/main` = `efe736f3f01b5ecbc6dce221e80a3dfc3bfcd42a` · 2026-10-27T13:15:01Z (cabecera `Date:` de GitHub)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1527/1527g/recuento.mjs`
+
+Escribe J6 (sesión `jv-j6dg`, equipo de Javier). Sólo lectura de CI y este tramo: no toca `src/`,
+`tests/`, `scripts/` ni workflows. La causa sigue sin encontrar, y el vigía de
+`scripts/tanda-con-veredicto.mjs` es de S5: no lo toco. Su último cambio es del 1-oct, así que
+sigue sin escribir qué procesos quedan vivos antes de matar.
+
+## En corto
+
+- **Población:** las 636 ejecuciones de `ci.yml` creadas desde el 22-oct a las 00:00Z, hasta la
+  lectura de las 13:09Z del 27-oct. Tienen job obligatorio 443 de ellas, con 452 jobs contando los
+  reintentos. Llegan al paso «Tests» 437: 340 `success`, 73 `failure` y 24 `cancelled`. Otros 15 no
+  corrieron y son CIEGO: 12 cancelados en cola, sin ningún paso, 2 en curso al leer y 1 con el paso
+  `skipped`. Hay 374 jobs de `pull_request` y 63 de `push`.
+- **Colgadas: 1 de 437.** Es el job 119769715166 (`scrum-962c-editor-presupuestos-44`, 22-oct a las
+  10:21Z), ya contado en 1527f. Desde entonces no ha habido ninguna más.
+- **Desde #2905 (1610b, mergeado el 26-oct a las 23:50:23Z): 15 jobs con paso «Tests», los 15 en
+  `success`, y 0 colgadas.** No separa nada. Con la tasa de esta misma ventana (1 de 422), sacar 0 en
+  15 pasa el 96 % de las veces por azar. Con la de 1527d (5 de 160), el 62 %.
+- **Dónde se quedó:** el aviso dice que lo último que llegó fue «SCRUM-615 · 🔴 el módulo no escribe
+  NI UN texto de producto propio», de `scrum615-pedir-tipo-destinatario`. Es el mismo sitio que las
+  dos colgadas del 14-oct de 1527d. Ese día pasaban 8.390 casos, y no los ~5.930 del enunciado: la
+  cifra crece con el árbol, como ya dijo c.19212. En un verde de hoy pasan 12.786.
+- **La colgada se disfraza de rojo:** su job sale `failure`. Lo que la separa es el paso «Tests»,
+  de 1.210 s, frente a los rojos de verdad, que van de 393 a 738 s, y su log de 1.409.303 B, frente
+  a los 2,07 a 2,21 MB de los verdes de 744 a 761 s.
+
+## Por qué no se han bajado los 437 logs, y qué lo sustituye
+
+Los pasos «Tests» que terminaron van de 393 a 1.210 s, con la mediana en 666 s. Hay 263 de 600 s o
+más, y el filtro de 600 s de `s3-reproduce-hoy.mjs` ya no separa: se eligió cuando una tanda sana
+tardaba menos (1527b ①), y desde #2429 una sana pasa de 600 s (c.19651). Habría que bajar unos
+500 MB de logs. Lo sustituye la construcción del propio vigía. Sólo escribe «TANDA SIN VEREDICTO»
+tras 15 min de silencio, y `ci.yml` no define `TANDA_SILENCIO_MAX_MIN`. Una colgada con aviso deja
+por fuerza el paso en 900 s o más. Hay **una** sola de 800 s o más, y es la conocida.
+
+**La colgada sin aviso**, la que el techo de 25 min cortaría antes de los 15 min de silencio (el
+hueco ② de 1527e): de los 24 cancelados con el paso «Tests» empezado, el paso más largo es de 563 s
+y el job más largo de 634 s. Ninguno se acerca al techo de 1.500 s, así que **ninguno es una
+colgada cortada.** Los cuatro jobs cancelados de 1.332 a 3.572 s no tienen ningún paso: esperaron
+en cola y no corrieron.
+
+## Controles
+
+- **El instrumento de la casa, interrogado** (`instrumento-casa.txt`): `s3-reproduce-hoy.mjs
+  --de-cache` sobre la colgada conocida, los 6 `success` más largos y un job SEMBRADO inexistente
+  (id 1). La colgada sale con «aviso SÍ», 8.390 casos y su caso. Los 6 salen «aviso no», de
+  2.075.939 a 2.207.812 B. El sembrado da un log de 0 B y el instrumento dice **CIEGO, salida 2**.
+  Sin el sembrado, salida 0.
+- **`recuento.mjs`, interrogado:** con la lista entera sale 0 y el positivo sale. Con la lista
+  vacía, CIEGO y salida 2. **Quitando el colgado conocido de la lista, CIEGO y salida 2**: el
+  positivo está dentro por FECHA, no por figurar en la lista. Así una lista que lo pierde no pasa
+  por limpia.
+- **Tamaño antes de contar:** los 7 logs bajados van de 1.409.303 a 2.207.812 B, y ninguno es un
+  404 de 215 B.
+- **Población declarada:** `jobs.mjs` lee las 636 ejecuciones que declara GitHub (`total_count`) y
+  sale 2 si no cuadran o si falla alguna consulta. Salió 0, con 0 fallos.
+
+## Correcciones a tramos anteriores
+
+- **1527f dijo que la colgada pesaba «1.357.234 B».** Son **caracteres**, no bytes: su censo
+  escribe `t.length` sobre el texto ya decodificado. El log pesa **1.409.303 B**. Lo escribió este
+  mismo puesto.
+- **`s3-reproduce-hoy.mjs` lee el corte por POSICIÓN.** Con `--de-cache` en el tercer argumento lo
+  toma como corte («corte --de-cache»), y parte la cuenta por una fecha que no existe. Lo correcto
+  es `<desde> <carpeta> <corte> --de-cache`, como en el «Cómo se repite» de 1527e. Además, su
+  control positivo (115134364145, del 13-oct) queda fuera de cualquier ventana posterior, y
+  entonces sale 0 sin ningún positivo. Es de S3, y lo nombro sin tocarlo.
+
+## Lo que no he medido
+
+- **Los 437 logs uno por uno.** El veredicto descansa en la duración del paso y en el tope del
+  vigía, leído en su fuente, no en buscar el aviso en cada log. Bajé 7.
+- **Los 2 jobs en curso al leer** (122203084569 y 122205443269): CIEGO.
+- **La causa**, y si #2905 cambia algo: con 15 jobs, no lo puede decir. A la tasa de esta ventana
+  (1 de 422), harían falta unos 1.260 jobs después de #2905 para que el 0 bajara del 5 % por azar.
+  Al ritmo de esta semana (~90 jobs al día), son dos semanas.
+- Antes del 22-oct: es 1527f y lo anterior.
+
+## Errores míos en este tramo
+
+- Lancé el recuento con `--de-cache` en el sitio del corte y leí «corte --de-cache» en la salida
+  antes de entender por qué. No cambió ningún número, porque el corte no se usaba, pero partió la
+  cuenta por una fecha que no existe.
+- Mi primer `recuento.mjs` daba el positivo por bueno cuando faltaba de la lista («fuera de la
+  lista», salida 0). Lo cazó quitarlo a propósito. Ahora decide por fecha.
+
+## Cómo se repite
+
+    node docs/master/evidencias/SCRUM-1527/1527g/jobs.mjs 2026-10-22T00:00:00Z <carpeta>
+    node docs/master/evidencias/SCRUM-1527/1527g/recuento.mjs <carpeta>/jobs.json 2026-10-26T23:50:23Z
+    # los logs, con el instrumento de la casa (corte ANTES de --de-cache). OJO: sobre la lista entera baja
+    # los 263 de 600 s o más (~500 MB); para los sospechosos, una lista con sólo los de 900 s o más:
+    node docs/master/evidencias/SCRUM-1527/s3-reproduce-hoy.mjs 2026-10-22T00:00:00Z <carpeta> 2026-10-26T23:50:23Z --de-cache

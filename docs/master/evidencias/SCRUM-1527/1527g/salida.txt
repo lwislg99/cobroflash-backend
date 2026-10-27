@@ -1,0 +1,11 @@
+SCRUM-1527g · población: 452 jobs «build + tests» con reintentos · in_progress 2 · success 340 · failure 74 · cancelled 36
+creados de 2026-10-22T09:03:11Z a 2026-10-27T13:04:59Z · 443 ejecuciones
+con paso «Tests»: 437 (success 340 · failure 73 · cancelled 24) · push 63 · pull_request 374
+sin paso «Tests» (no corrieron: CIEGO): 15 (in_progress 2 · cancelled 12 · failure 1)
+paso «Tests» terminado: 413 · de 393 a 1210 s · mediana 666 s · de 800 s o más: 1
+paso «Tests» de 900 s o más (las únicas que pueden llevar el aviso): 1
+   job 119769715166 · 2026-10-22T10:21:15Z · pull_request · scrum-962c-editor-presupuestos-44 · paso failure en 1210 s
+cancelados con el paso «Tests» empezado: 24 · paso más largo 563 s · job más largo 634 s (techo 1.500 s)
+antes del corte 2026-10-26T23:50:23Z: 422 con paso «Tests» (success 325 · failure 73 · cancelled 24) · de 900 s o más: 1
+desde el corte 2026-10-26T23:50:23Z: 15 con paso «Tests» (success 15) · de 900 s o más: 0
+control positivo (119769715166): sale, de 900 s o más
