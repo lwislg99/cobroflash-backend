@@ -594,9 +594,9 @@ titulo('⑥ las hermanas: TRES idénticas por hash · Albaranes trae LO DECLARAD
     const columnas = (html) => (html.match(/<th[\s>]/g) || []).length;
     const PIEZAS_1562g = [
       ['el colspan del vacío, igual al número de columnas',
-        /<td colspan="(\d+)"([^>]*)><div class="empty-state">/g,
+        /<td colspan="(\d+)"([^>]*)><div class="empty-state"([^>]*)>/g,
         1,
-        (todo, n, td, _pos, html) => (sinHuecos(td) && Number(n) === columnas(html) ? '<td colspan="=columnas"><div class="empty-state">' : todo)],
+        (todo, n, td, caja, _pos, html) => (sinHuecos(td, caja) && Number(n) === columnas(html) ? '<td colspan="=columnas"><div class="empty-state">' : todo)],
       ['el <th> sin texto de la columna «Ver detalle»',
         /\n[ \t]*<th([^>]*)><\/th>/g,
         1,
