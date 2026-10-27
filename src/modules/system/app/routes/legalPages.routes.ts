@@ -30,6 +30,9 @@ function mdToHtml(md: string): string {
     if (h) { closeList(); const l = h[1].length; out.push(`<h${l}>${inline(h[2])}</h${l}>`); continue; }
     const li = line.match(/^\s*[-*]\s+(.*)$/);
     if (li) { if (!inList) { out.push('<ul>'); inList = true; } out.push(`<li>${inline(li[1])}</li>`); continue; }
+    // Línea sangrada justo debajo de una viñeta: es su continuación, va dentro del mismo <li>
+    // (SCRUM-1551i). Cada línea pasa por inline() por separado, como antes: sólo cambia dónde va.
+    if (inList && /^\s+\S/.test(line)) { out[out.length - 1] = out[out.length - 1].replace(/<\/li>$/, ` ${inline(line.trim())}</li>`); continue; }
     if (!line.trim()) { closeList(); continue; }
     closeList();
     out.push(`<p>${inline(line)}</p>`);
