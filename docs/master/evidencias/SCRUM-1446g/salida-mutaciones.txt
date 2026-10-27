@@ -1,0 +1,11 @@
+scrum1446e-la-columna-sin-iva.test.mjs · limpia: 9 pasan · 0 caen · 9 mutaciones
+  ✔ VIVA · SCRUM-1446e · ① la cabecera de la columna de la F1
+  ✔ VIVA · SCRUM-1446e · ① la F1 de dos líneas
+  ✔ VIVA · SCRUM-1446e · ③ la R1 y el justificante
+  ✔ VIVA · SCRUM-1446e · ④ el presupuesto
+  ✔ VIVA · SCRUM-1446e · ④ el presupuesto
+  ✔ VIVA · SCRUM-1446e · ⑦ en 70 tramos
+  ✔ VIVA · SCRUM-1446e · ⑤ ARREGLADO
+  ✔ VIVA · SCRUM-1446e · ⑤ ARREGLADO
+  ✔ VIVA · SCRUM-1446e · ⑥ un tramo que YA suma
+vivas 9 de 9

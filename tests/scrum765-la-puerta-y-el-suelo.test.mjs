@@ -33,6 +33,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { censoDePuertasFragiles, ejecutadoDirectamente, puertasFragilesEn } from '../scripts/_puerta-de-entrada.mjs';
+import { sinCortarSync, rastroDeCortes, avisoDeCorte } from './_salida-entera.mjs';
 import {
   SUELO_DECLARACIONES, SUELO_GUARDS, censoDeDeclaraciones, sueloDeEjecucion, sueloDelCenso,
 } from '../scripts/meta-guard-mutaciones.mjs';
@@ -242,10 +243,32 @@ test('SCRUM-765 · SUELO DE EJECUCIÓN: cero mutaciones ejecutadas es CIEGO, no 
 // Los de arriba miden la puerta con la sonda. Éste mide el sujeto real: si su puerta se rompiera,
 // saldría con 0 sin decir nada. `--solo-censo` existe para poder comprobarlo en segundos.
 // ─────────────────────────────────────────────────────────────────────────────────────────────
+//
+// SCRUM-1610b · LA SALIDA CORTADA. El 26-oct-2026 este caso dio un rojo falso en #2889: el meta-guard salió 0
+// y su cola no llegó, así que «NO se ha ejecutado ninguna mutación» —su última línea— faltaba sin que nadie la
+// hubiera quitado. Esa línea es el centinela: si falta, se relanza UNA vez (`tests/_salida-entera.mjs`) y el
+// corte se imprime. Si falta dos veces y el bloque de la frontera src/ ↔ dist/ llegó a medias, cae como
+// «CIEGO · salida cortada». Si ese bloque llegó ENTERO las dos veces, no es un corte: es que la línea ya no
+// se imprime, y cae la aserción de siempre, con su mensaje de siempre. (El hijo, que sale sin vaciar stdout,
+// es carril S3 y no se toca aquí: va a Luis.)
+const CENTINELA_765 = '«MODO CENSO: NO se ha ejecutado ninguna mutación.» como última línea';
+const conCentinela765 = (s) => /NO se ha ejecutado ninguna mutación\.\s*$/.test(String(s));
+/** ¿Llegó entero el bloque «sobre la frontera src/ ↔ dist/ (SCRUM-763): X de Y» con sus X líneas «· »? */
+function bloqueFronteraEntero(salida) {
+  const lineas = String(salida).split(/\r?\n/);
+  const i = lineas.findIndex((l) => /sobre la frontera src\/ ↔ dist\/ \(SCRUM-763\): \d+ de \d+/.test(l));
+  if (i < 0) return false;
+  const x = Number(lineas[i].match(/: (\d+) de \d+/)[1]);
+  return lineas.slice(i + 1).filter((l) => /^ {4}· /.test(l)).length === x;
+}
+
 test('SCRUM-765 · el meta-guard ARRANCA de verdad al invocarlo por su ruta', () => {
-  const salida = execFileSync(process.execPath,
+  const r = sinCortarSync(() => ({ codigo: 0, salida: execFileSync(process.execPath,
     [path.join(RAIZ, 'scripts/meta-guard-mutaciones.mjs'), '--solo-censo'],
-    { cwd: RAIZ, encoding: 'utf8', timeout: 120000 });
+    { cwd: RAIZ, encoding: 'utf8', timeout: 120000 }) }), conCentinela765);
+  const salida = r.salida;
+  if (r.cortes.length) console.log('[meta-guard --solo-censo]' + rastroDeCortes(r.cortes));
+  assert.ok(!r.cortada || bloqueFronteraEntero(salida), avisoDeCorte('meta-guard --solo-censo', CENTINELA_765, r));
 
   // El ancla sigue siendo la línea del censo, y su propósito sigue siendo el mismo: que el script
   // ARRANQUE y diga algo. SCRUM-812 le cambió el rótulo —«guards» contaba a los que DECLARAN y se
