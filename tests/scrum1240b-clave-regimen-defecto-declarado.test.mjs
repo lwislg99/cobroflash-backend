@@ -44,14 +44,14 @@ export const DEFECTO_CONOCIDO = {
 export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // La clave del detalle sujeto pasa a depender de `criterioCaja`, sin retirar la declaración.
-    fichero: BUILDER,
+    fichero: 'src/modules/fiscal/verifactu/registro.builder.ts',
     de: '  return {\n    claveRegimen: CLAVE_REGIMEN_GENERAL,',
     a: "  return {\n    claveRegimen: (entrada as { criterioCaja?: boolean }).criterioCaja ? '07' : CLAVE_REGIMEN_GENERAL,",
     cae: 'SCRUM-1240b · la clave de régimen sigue siendo el defecto declarado',
   },
   {
     // Alguien cambia el valor fijo sin cerrar los tickets.
-    fichero: BUILDER,
+    fichero: 'src/modules/fiscal/verifactu/registro.builder.ts',
     de: "export const CLAVE_REGIMEN_GENERAL = '01';",
     a: "export const CLAVE_REGIMEN_GENERAL = '07';",
     cae: 'SCRUM-1240b · la clave de régimen sigue siendo el defecto declarado',
