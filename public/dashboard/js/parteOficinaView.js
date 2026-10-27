@@ -72,15 +72,21 @@ async function renderPartesOficinaView(container, opts) {
 
   lista.innerHTML = '';
   pendientes.forEach(function (p) {
-    const fila = document.createElement('div');
+    // SCRUM-1562c · la fila es un BOTÓN nativo, no un `div` con clic: era la única puerta para valorar
+    // un parte y con teclado no se abría. El foco, Enter y Espacio los da el navegador; el ratón pulsa
+    // la tarjeta entera, como antes. Dentro de un botón sólo cabe contenido en línea: `span` en bloque.
+    const fila = document.createElement('button');
+    fila.type = 'button';
+    // La clase se queda EXACTAMENTE en `customers-card`: el banco de SCRUM-1285 localiza la fila así.
+    // Su CSS de botón cuelga de `#po-lista > button.customers-card`.
     fila.className = 'customers-card';
     fila.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:12px;'
       + 'padding:12px 14px;margin-bottom:8px;cursor:pointer';
     fila.innerHTML =
-      '<div><div style="font-weight:700;color:var(--ink)">' + escHtml(p.numero || ('#' + p.id)) + '</div>'
-      + '<div style="font-size:12.5px;color:var(--muted)">'
-      + escHtml([p.clienteNombre, p.obra].filter(Boolean).join(' · ') || '—') + '</div></div>'
-      + '<div style="font-size:12.5px;color:var(--muted)">' + escHtml(String(p.lineas.length)) + ' ⚬</div>';
+      '<span><span style="display:block;font-weight:700;color:var(--ink)">' + escHtml(p.numero || ('#' + p.id)) + '</span>'
+      + '<span style="display:block;font-size:12.5px;color:var(--muted)">'
+      + escHtml([p.clienteNombre, p.obra].filter(Boolean).join(' · ') || '—') + '</span></span>'
+      + '<span style="font-size:12.5px;color:var(--muted)">' + escHtml(String(p.lineas.length)) + ' ⚬</span>';
     fila.addEventListener('click', function () { pintarParte(p.id, detalle, container, opts); });
     lista.appendChild(fila);
   });

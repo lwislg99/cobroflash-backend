@@ -339,6 +339,15 @@ const APARCADOS = [
       + 'adelantado»; registro en `docs/microcopy/2026-09-07-SCRUM-814-tramo-tomado.md`.',
   },
   {
+    texto: '¿Tienes el domicilio fiscal en Canarias?',
+    motivo: 'APROBADO Y SIN PANTALLA DONDE PINTARSE TODAVÍA (SCRUM-1536d, 22-oct-2026). Es la segunda '
+      + 'pregunta Q1 del alta, firmada por el fundador en SCRUM-1536 c.20225. Su sitio es la pantalla '
+      + 'pública de alta, y está cerrada: `POST /auth/register` contesta siempre 409 (SCRUM-1515). '
+      + 'Hoy la pregunta la hace quien lanza la consola de alta (`--domicilio-canarias si|no`). Lo '
+      + 'desbloquea J3 el día que se reabra el alta (pieza C del tramo 1536c): se pinta entonces, '
+      + 'literal, en `public/register.html`. Registro: `docs/master/SCRUM-1536.md`, tramo 1536d.',
+  },
+  {
     texto: '2. Líneas',
     motivo: 'SUSTITUIDO POR UNA FIRMA POSTERIOR (SCRUM-915d, 18-sep-2026). Era el título del bloque '
       + 'de líneas del editor. La v3 del editor, APROBADA por el fundador, convierte los bloques en '
@@ -363,6 +372,17 @@ const APARCADOS = [
       + 'texto sin «ni justificantes». NO se desaprueba en el registro —la firma ocurrió—; ya no '
       + 'tiene dónde pintarse. Registro: `docs/master/SCRUM-1257.md`, sección SCRUM-1257d.',
   },
+  ...[
+    'No se ha podido guardar la llamada. Inténtalo otra vez.',
+    'No se ha podido marcar como hecha. Inténtalo otra vez.',
+  ].map((texto) => ({
+    texto,
+    motivo: 'SUSTITUIDO POR UNA FIRMA POSTERIOR (SCRUM-1056 comentario 19649, 14-oct-2026). Eran B12 y '
+      + 'B15 de «Volver a llamar» (`clienteVolverALlamar.js`, `TEXTOS.noGuardado` y `TEXTOS.noMarcado`). '
+      + 'La firma nueva pinta en esas MISMAS ranuras el mismo texto acabado en «Inténtalo de nuevo.», '
+      + 'la forma de la casa (SCRUM-1215 comentario 19460). NO se desaprueba en el registro —la firma '
+      + 'ocurrió—; ya no tiene dónde pintarse. Registro: `docs/master/SCRUM-1056.md`, sección SCRUM-1056d.',
+  })),
   {
     texto: 'Modo no reconocido',
     motivo: 'RESPALDO del modo de emisión (`settingsView.js:213`). Aparcado por la REGLA 26: el '

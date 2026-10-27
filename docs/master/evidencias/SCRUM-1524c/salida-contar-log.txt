@@ -1,0 +1,17 @@
+POBLACION · 1812571 B · 15121 lineas
+DECLARADO · {"tests":11201,"suites":0,"pass":11107,"fail":1,"cancelled":0,"skipped":93,"todo":0} · resumen en la linea 14814
+SIMBOLOS al inicio de linea con duracion · [["✔",11107],["﹣",93],["✖",1]]
+la cruz A SECAS (no vale) · 2 lineas en el tramo, 4 en todo el log
+CONTROL · positivo 1 (hace falta >=1) · cero derivado 0 (hace falta 0)
+CONTADO · pasan 11107 · caen 1 · saltan 93 · todo 0 · suma 11201
+CUADRA con lo declarado, partida a partida
+LOS QUE CAEN:
+  13497: ✖ SCRUM-864c · 🔴 ③ NINGÚN temporal nuevo nace sin borrarse: las cuatro categorías de fuga = 0 (1.355192ms)
+EXIT=0
+POBLACION · 1812571 B · 15121 lineas
+DECLARADO · {"tests":11201,"suites":0,"pass":11107,"fail":1,"cancelled":0,"skipped":93,"todo":0} · resumen en la linea 14814
+SIMBOLOS al inicio de linea con duracion · [["✔",11107],["﹣",93],["✖",1]]
+la cruz A SECAS (no vale) · 2 lineas en el tramo, 4 en todo el log
+CONTROL · positivo 0 (hace falta >=1) · cero derivado 0 (hace falta 0)
+CIEGO · los controles no salen: no se da ninguna cifra
+EXIT=2

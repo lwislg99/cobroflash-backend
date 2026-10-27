@@ -1,0 +1,62 @@
+Tres estados de los controles de barrido.mjs y boe.mjs (SCRUM-1536b). Las copias mutadas viven fuera del arbol, junto a una copia de veredicto.mjs; <E> es docs/master/evidencias/SCRUM-1536 y <raiz> la raiz del arbol.
+
+## barrido · OK (el guion tal cual, sobre el master)
+$ node <E>/barrido.mjs <raiz> hits.tsv docs/YAQU_MASTER.md
+CONTROL positivo sembrado: 14 de 14 OK · cero en la siembra: OK · quitada la siembra: 0 (tiene que ser 0)
+codigo de salida: 0
+
+## barrido · NO SE PUDO SABER (catalogo solo con el centinela: nada que esperar)
+(vuelto a correr el 14-oct-2026: desde que el mutador lee la declaracion del test del ticket, cuenta caracteres y no lineas; la linea de CONTROL y el codigo son los mismos)
+$ node <E>/mutar-vaciar.mjs <E>/barrido.mjs b-vacio.mjs ; node b-vacio.mjs <raiz> h1.tsv docs/YAQU_MASTER.md
+MUTADO b-vacio.mjs · caracteres antes 4285 · despues 4351
+CONTROL positivo sembrado: 0 de 0 NO SE PUDO SABER · cero en la siembra: NO SE PUDO SABER · quitada la siembra: 0 (tiene que ser 0)
+CIEGO
+codigo de salida: 2
+
+## barrido · ROTO en el control de cero (centinela sembrado)
+$ node <E>/mutar-sembrar.mjs <E>/barrido.mjs b-cent.mjs centinela ; node b-cent.mjs <raiz> h2.tsv docs/YAQU_MASTER.md
+MUTADO centinela · caracteres antes 4285 · despues 4306
+CONTROL positivo sembrado: 15 de 14 OK · cero en la siembra: ROTO · quitada la siembra: 0 (tiene que ser 0)
+CIEGO
+codigo de salida: 2
+
+## barrido · ROTO en el positivo (siembra sin IGIC)
+$ node <E>/mutar-sembrar.mjs <E>/barrido.mjs b-sin.mjs sin-igic ; node b-sin.mjs <raiz> h3.tsv docs/YAQU_MASTER.md
+MUTADO sin-igic · caracteres antes 4285 · despues 4278
+CONTROL positivo sembrado: 13 de 14 FALTAN igic · cero en la siembra: OK · quitada la siembra: 0 (tiene que ser 0)
+CIEGO
+codigo de salida: 2
+
+## boe · OK (el Reglamento consolidado; solo las tres ultimas lineas)
+$ node <E>/boe.mjs rrsif.xml
+POBLACION fichero=rrsif.xml bytes=88577 sha256=20d704afa2d24e91cf97e8ec83c41038f1eef964a1ba724ff6f0958425a8ca38 bloques=36
+CONTROL positivo («sistemas informaticos de facturacion» esta): true · control de cero: OK
+canari en TODO el fichero: 2 · igic: 0 · foral: 3
+EXIT=0
+codigo de salida: 0
+
+## boe · NO SE PUDO SABER (fichero vacio)
+$ node <E>/boe.mjs vacio.xml
+POBLACION fichero=vacio.xml bytes=0 sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 bloques=0
+PARRAFOS leidos=0 · con territorio en el ARTICULADO=0 · en el preambulo=0
+CONTROL positivo («sistemas informaticos de facturacion» esta): false · control de cero: NO SE PUDO SABER
+canari en TODO el fichero: 0 · igic: 0 · foral: 0
+EXIT=2
+codigo de salida: 2
+
+## boe · NO SE PUDO SABER (un XML que no es el Reglamento)
+$ node <E>/boe.mjs otro.xml
+POBLACION fichero=otro.xml bytes=34 sha256=a15581bdb9e0a8bf67e892113c0687202b5d33b26faa4b290ab40fd7dbeacd09 bloques=0
+PARRAFOS leidos=0 · con territorio en el ARTICULADO=0 · en el preambulo=0
+CONTROL positivo («sistemas informaticos de facturacion» esta): false · control de cero: NO SE PUDO SABER
+canari en TODO el fichero: 1 · igic: 0 · foral: 0
+EXIT=2
+codigo de salida: 2
+
+## boe · ROTO (el Reglamento con el centinela anadido al final)
+$ node <E>/boe.mjs roto.xml
+POBLACION fichero=roto.xml bytes=88604 sha256=fba0f80b26cef51c3b1906d445f0850dddbc64238be4efa435f97429589e5dde bloques=36
+CONTROL positivo («sistemas informaticos de facturacion» esta): true · control de cero: ROTO
+canari en TODO el fichero: 2 · igic: 0 · foral: 4
+EXIT=2
+codigo de salida: 2

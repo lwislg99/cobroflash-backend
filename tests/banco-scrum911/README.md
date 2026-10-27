@@ -35,6 +35,17 @@ node limpiar.mjs                 # quita lo fabricado a mano; deja la evidencia
 node turno.mjs soltar
 ```
 
+**SCRUM-911b (15-oct-2026), el control positivo de SCRUM-929.** Un solo tramo, que enciende, recorre
+y DEVUELVE el fixture en su `finally`, más la remedición de pantalla en sólo lectura. Desde
+`.claude/worktrees/` el secreto ya no está «al lado»: se pasa con `YAQU_ENV_FILE`.
+
+```
+node turno.mjs tomar --ref <rama> --minutos 60
+node paso6-iva-929.mjs           # flag solo QA · presupuesto · plan · ciclo · total en base, API y pantalla
+node paso6b-pantalla.mjs         # sólo lectura: «Total:» del borrador nuevo contra el del 17-sep
+node turno.mjs soltar
+```
+
 `censo-kpi-mantenimientos.mjs` es aparte y no toca staging: recorre el árbol por AST buscando quién
 importa o llama a un símbolo. Lleva **control positivo** — pásale `runMaintenanceProposals` y tiene
 que encontrarle los llamadores; si no, el censo está ciego y su «no hay llamador» no vale nada.

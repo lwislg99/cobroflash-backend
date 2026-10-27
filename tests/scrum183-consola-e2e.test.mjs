@@ -6,8 +6,6 @@ import { fileURLToPath } from 'node:url';
 import { esErrorRelevante, resumirErroresConsola, CONSOLA_ALLOWLIST } from '../scripts/_console-guard.mjs';
 
 const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const e2e = fs.readFileSync(path.join(raiz, 'scripts', 'e2e-critico.mjs'), 'utf8')
-  .replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\s)\/\/.*$/gm, '$1');
 
 /**
  * SCRUM-183 — que un error de JS en la PÁGINA rompa el E2E.
@@ -91,10 +89,36 @@ test('SCRUM-183: entradas basura no rompen el guard', () => {
   assert.equal(resumirErroresConsola(null).ok, true);
 });
 
-test('SCRUM-183: el E2E ESCUCHA la consola y comprueba al final', () => {
-  // Sin esto, el guard existe y no está enchufado — que es exactamente el fallo que arregla.
-  assert.match(e2e, /page\.on\('pageerror'/, 'el E2E deja de escuchar los errores no capturados de la página');
-  assert.match(e2e, /page\.on\('console'/, 'el E2E deja de escuchar console.error');
-  assert.match(e2e, /resumirErroresConsola\(erroresConsola\)/, 'el E2E recoge los errores pero ya no los comprueba');
-  assert.match(e2e, /if \(!consola\.ok\) fail\(/, 'el E2E ve los errores y NO falla: peor que no mirarlos');
+// 🔴 DESDE EL 13-oct-2026 ESTA DECISIÓN NO LA APLICA NADIE (SCRUM-1521).
+//
+// Aquí había un caso, «el E2E ESCUCHA la consola y comprueba al final», que leía el guion
+// `e2e-critico` y exigía que tuviera el guard enchufado. Ese guion se retiró por decisión del
+// fundador (Jira, SCRUM-1521 c.19145): llevaba once semanas sin correr y, cerrada el alta
+// pública, ya no podía. El caso se va CON el comportamiento que comprobaba; no se relaja.
+//
+// Lo que queda arriba prueba QUÉ cuenta como fallo, y sigue valiendo. Lo que ya no existe es
+// un recorrido que escuche una página y se lo pregunte: `_console-guard.mjs` se conserva
+// (Jira, SCRUM-1521 c.19152) y está SIN CONSUMIDOR. El caso de abajo lo mide, para que el
+// día que alguien lo enchufe esta nota no se quede diciendo lo contrario.
+test('SCRUM-1521: `_console-guard.mjs` está sin consumidor, y se sabe', () => {
+  const NOMBRE = '_console-guard.mjs';
+  const miro = [];
+  const lo_importan = [];
+  for (const d of ['scripts', 'tests']) {
+    for (const f of fs.readdirSync(path.join(raiz, d))) {
+      if (!f.endsWith('.mjs') || f === NOMBRE) continue;
+      miro.push(f);
+      const txt = fs.readFileSync(path.join(raiz, d, f), 'utf8');
+      if (new RegExp(`from\\s+['"][^'"]*${NOMBRE.replace('.', '\\.')}['"]`).test(txt)) lo_importan.push(`${d}/${f}`);
+    }
+  }
+  assert.ok(miro.length > 0, '🔴 CIEGO: no he leído ningún .mjs de scripts/ ni de tests/.');
+  // POSITIVO: este mismo fichero lo importa. Si no sale, el patrón no ve imports y el «sin
+  // consumidor» de abajo sería «no he mirado».
+  assert.ok(lo_importan.includes('tests/scrum183-consola-e2e.test.mjs'),
+    '🔴 CIEGO: no veo ni mi propio import de `_console-guard.mjs`.');
+  assert.deepEqual(lo_importan, ['tests/scrum183-consola-e2e.test.mjs'],
+    '`_console-guard.mjs` vuelve a tener consumidor. Buena noticia: quita la nota de arriba y la\n' +
+    'de su cabecera («SIN CONSUMIDOR desde el 13-oct-2026»), que ya no son verdad, y deja aquí un\n' +
+    'caso que compruebe que el recorrido nuevo lo tiene enchufado.');
 });

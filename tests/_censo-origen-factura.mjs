@@ -242,6 +242,7 @@ export const CENSO = {
   'src/modules/billing/app/routes/receipt.routes.ts::invoice.findFirst#1': { veredicto: 'CLAVE', nota: 'guardado por `if (quote)`, con camino alternativo por evento' },
   'src/modules/billing/app/routes/receipt.routes.ts::invoice.findFirst#2': { veredicto: 'CLAVE', nota: 'idéntico al anterior, en la otra ruta de recibo' },
   'src/modules/expenses/domain/expenses.service.ts::expense.findMany#1': { veredicto: 'PROYECCION', nota: 'lista de gastos; include quote solo para el id' },
+  'src/modules/expenses/domain/expenses.service.ts::expense.findFirst#1': { veredicto: 'PROYECCION', nota: 'getExpense (SCRUM-1156b): la ficha, la MISMA fila que la lista; select de quote solo para el id' },
   'src/modules/expenses/domain/expenses.service.ts::expense.aggregate#1': { veredicto: 'POBLACION', nota: 'gastos GENERALES = los que a propósito no tienen presupuesto (quoteId null)' },
   'src/modules/expenses/domain/expenses.service.ts::expense.findMany#2': { veredicto: 'HUECO', nota: 'getQuoteMargin: el margen SOLO existe por presupuesto. Una suelta no da margen malo — no aparece. Hueco PREEXISTENTE: ya afecta al flujo de albaranes/recapitulativa, que fija quoteId null' },
   'src/modules/exports/app/routes/exports.routes.ts::invoice.count#1': { veredicto: 'OPACO', nota: 'spread condicional de fechas; no ata al origen' },

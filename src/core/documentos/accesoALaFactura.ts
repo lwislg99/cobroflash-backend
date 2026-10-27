@@ -32,6 +32,7 @@
 //
 // ⚠️ Los ids viajan en listas `in`. Con miles de Trabajos por persona habría que cambiarlo por
 // una subconsulta; hoy no hay ninguna cuenta así.
+import type { Request } from 'express';
 import type { Prisma } from '@prisma/client';
 import { prisma } from '../db/prisma';
 import { seesAllJobs } from '../http/roleCapabilities';
@@ -42,6 +43,24 @@ export interface QuienPide {
   merchantId: number;
   userRole: string | null | undefined;
   teamMemberId: number | null | undefined;
+}
+
+/** SCRUM-1403 · quién pregunta, tal como lo deja `requireAuth` en la petición. */
+export const quienPideDe = (req: Request): QuienPide => ({
+  merchantId: req.merchantId!, userRole: req.userRole, teamMemberId: req.teamMemberId,
+});
+
+/**
+ * Los Trabajos de una persona, por los tres ejes del Trabajo (operario, asignado y tabla de
+ * asignados). SCRUM-1403: la lectura sale de `whereFacturasVisibles` para que la puerta de los
+ * presupuestos (`accesoAlPresupuesto.ts`) pida la MISMA y no escriba la suya: dos lecturas de
+ * «sus Trabajos» son dos sitios donde añadir un eje, y la que se queda atrás no da error.
+ */
+export async function trabajosDeLaPersona(quien: QuienPide, persona: number) {
+  return prisma.job.findMany({
+    where: { merchantId: quien.merchantId, ...whereSuyoElTrabajo(persona) }, // regla 2
+    select: { id: true, quoteId: true },
+  });
 }
 
 /**
@@ -59,11 +78,7 @@ export async function whereFacturasVisibles(quien: QuienPide): Promise<Prisma.In
   const persona = quien.teamMemberId;
   if (persona == null) return { id: { in: [] } };
 
-  // Sus Trabajos, por los tres ejes del Trabajo (operario, asignado y tabla de asignados).
-  const trabajos = await prisma.job.findMany({
-    where: { merchantId: quien.merchantId, ...whereSuyoElTrabajo(persona) }, // regla 2
-    select: { id: true, quoteId: true },
-  });
+  const trabajos = await trabajosDeLaPersona(quien, persona);
   const trabajoIds = trabajos.map((t) => t.id);
   const presupuestoIds = trabajos.flatMap((t) => (t.quoteId == null ? [] : [t.quoteId]));
 

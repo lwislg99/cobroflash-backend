@@ -1,0 +1,57 @@
+﻿POBLACION · árbol bc7913ff238f537c0b45e67b8cc9b8ea850ad570 · ficheros de tests/ que nombran el oráculo 41 · de ellos tests/*.test.mjs 35
+
+=== BASE · git diff --numstat: (sin diferencias)
+BASE · sujetos 35 · exit 0: 35 · exit ≠ 0: 0 · ciegos (sin recuento): 0 · tests 319 · pass 319 · fail 0 · skipped 0
+
+=== ADITIVO · git diff --numstat: 2	0	tests/_microcopy-aprobada.mjs
+ADITIVO · sujetos 35 · exit 0: 35 · exit ≠ 0: 0 · ciegos (sin recuento): 0 · tests 319 · pass 319 · fail 0 · skipped 0
+
+=== TECHO · git diff --numstat: 1	1	tests/_microcopy-aprobada.mjs
+TECHO · sujetos 35 · exit 0: 15 · exit ≠ 0: 20 · ciegos (sin recuento): 0 · tests 319 · pass 295 · fail 24 · skipped 0
+   ✗ tests/scrum1022c-selector-ofrece-xlsx.test.mjs · exit 1 · tests 3 · fail 1
+   ✗ tests/scrum1108b-pantalla-garantia.test.mjs · exit 1 · tests 11 · fail 1
+   ✗ tests/scrum1116-digest-garantia-retenida.test.mjs · exit 1 · tests 8 · fail 1
+   ✗ tests/scrum1126-fusion-de-clientes.test.mjs · exit 1 · tests 11 · fail 3
+   ✗ tests/scrum1133-whatsapp-del-cliente.test.mjs · exit 1 · tests 8 · fail 1
+   ✗ tests/scrum1135-etiquetar-seleccion.test.mjs · exit 1 · tests 6 · fail 1
+   ✗ tests/scrum1136-columnas-reconocidas-llegan.test.mjs · exit 1 · tests 5 · fail 1
+   ✗ tests/scrum1199-avisos-alta-cliente.test.mjs · exit 1 · tests 4 · fail 1
+   ✗ tests/scrum1215e-las-cuatro-de-s4-citan-su-firma.test.mjs · exit 1 · tests 7 · fail 1
+   ✗ tests/scrum1215i-las-marcas-de-s2.test.mjs · exit 1 · tests 6 · fail 1
+   ✗ tests/scrum1239-alta-cliente-sin-conexion.test.mjs · exit 1 · tests 6 · fail 1
+   ✗ tests/scrum1247-rotulo-ia-no-nombra-proveedor.test.mjs · exit 1 · tests 4 · fail 1
+   ✗ tests/scrum1257-p8-detalle-receipt-sin-justificantes.test.mjs · exit 1 · tests 5 · fail 1
+   ✗ tests/scrum1257-vacio-facturas-segun-modo.test.mjs · exit 1 · tests 8 · fail 1
+   ✗ tests/scrum514-aprobado-y-aplicado.test.mjs · exit 1 · tests 37 · fail 3
+   ✗ tests/scrum600g-plantillas-en-el-documento-suelto.test.mjs · exit 1 · tests 9 · fail 1
+   ✗ tests/scrum726-quien-firma-la-microcopy.test.mjs · exit 1 · tests 6 · fail 1
+   ✗ tests/scrum832-atras-vuelve-a-la-lista.test.mjs · exit 1 · tests 7 · fail 1
+   ✗ tests/scrum861-firma-por-delegacion.test.mjs · exit 1 · tests 8 · fail 1
+   ✗ tests/scrum917g-el-trabajo-plegable.test.mjs · exit 1 · tests 13 · fail 1
+
+RESTAURADO · git status --porcelain: (limpio)
+
+MOVIDOS con ADITIVO respecto de BASE · pasan a rojo 0 de 35 · pasan a verde 0
+
+MOVIDOS con TECHO respecto de BASE · pasan a rojo 20 de 35 · pasan a verde 0
+   tests/scrum1022c-selector-ofrece-xlsx.test.mjs · fail 1 de 3
+   tests/scrum1108b-pantalla-garantia.test.mjs · fail 1 de 11
+   tests/scrum1116-digest-garantia-retenida.test.mjs · fail 1 de 8
+   tests/scrum1126-fusion-de-clientes.test.mjs · fail 3 de 11
+   tests/scrum1133-whatsapp-del-cliente.test.mjs · fail 1 de 8
+   tests/scrum1135-etiquetar-seleccion.test.mjs · fail 1 de 6
+   tests/scrum1136-columnas-reconocidas-llegan.test.mjs · fail 1 de 5
+   tests/scrum1199-avisos-alta-cliente.test.mjs · fail 1 de 4
+   tests/scrum1215e-las-cuatro-de-s4-citan-su-firma.test.mjs · fail 1 de 7
+   tests/scrum1215i-las-marcas-de-s2.test.mjs · fail 1 de 6
+   tests/scrum1239-alta-cliente-sin-conexion.test.mjs · fail 1 de 6
+   tests/scrum1247-rotulo-ia-no-nombra-proveedor.test.mjs · fail 1 de 4
+   tests/scrum1257-p8-detalle-receipt-sin-justificantes.test.mjs · fail 1 de 5
+   tests/scrum1257-vacio-facturas-segun-modo.test.mjs · fail 1 de 8
+   tests/scrum514-aprobado-y-aplicado.test.mjs · fail 3 de 37
+   tests/scrum600g-plantillas-en-el-documento-suelto.test.mjs · fail 1 de 9
+   tests/scrum726-quien-firma-la-microcopy.test.mjs · fail 1 de 6
+   tests/scrum832-atras-vuelve-a-la-lista.test.mjs · fail 1 de 7
+   tests/scrum861-firma-por-delegacion.test.mjs · fail 1 de 8
+   tests/scrum917g-el-trabajo-plegable.test.mjs · fail 1 de 13
+EXIT=0

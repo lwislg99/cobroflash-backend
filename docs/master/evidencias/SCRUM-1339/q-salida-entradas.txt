@@ -1,0 +1,10 @@
+POBLACION: 50 TAP (uno por run medido) · enteros segun la casa 50 · con NUL 0 · descuadres 0
+ENTRADAS DE FICHERO en los 50 TAP: 0 · caidas (not ok) 0 · ok 0 · con spawn/code 0 · con senal 0
+SIN DEPENDER DE LA FORMA: TAP con «# fail 0»: 47 de 50 · en los otros 3, lo caído de nivel 0 (3):
+  cb30885d · not ok 2495 - SCRUM-1387 · 🔴 en el árbol: ningún banco de mutación nuevo queda fuera del catálogo
+  055648dc · not ok 46 - A8.4: suite completa del bot (webhook + dry-run)
+  9358f02b · not ok 46 - A8.4: suite completa del bot (webhook + dry-run)
+CRUCE bloque del aviso -> entrada de su fichero: 55 bloques · 644 casos
+  55 bloques · 644 casos · 30 runs · 19 ficheros · SIN entrada de fichero (cola)
+CONTROL DE CERO: entradas de «scrum9999-no-existe.test.mjs»: 0
+CONTROL POSITIVO (TAP fabricado con un fichero caido): entradas 1 · caida true · exitCode 1 · la casa ve 1 con caida=true

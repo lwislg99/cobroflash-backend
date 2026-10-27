@@ -1,0 +1,90 @@
+CONTROL POSITIVO SEMBRADO · bytes=204 · apariciones=5 · comentario=2 identificador=2 cadena=1 · VISTO
+POBLACION · carpeta=scripts · ficheros de codigo seguidos por git=290
+POBLACION · caracteres leidos=4335056
+CONTROL DE CERO DERIVADO · «etnacifitsuj» · apariciones=0 · CERO
+TERMINO justificante · ficheros=14 · apariciones=72 · {"cadena":31,"comentario":37,"identificador":2,"otro":2}
+TERMINO isReceiptNumber · ficheros=4 · apariciones=13 · {"comentario":5,"identificador":8}
+TERMINO RECEIPT_NUMBER_PREFIX · ficheros=0 · apariciones=0 · {}
+TERMINO 'JUST' · ficheros=3 · apariciones=4 · {"cadena":4}
+TERMINO 'receipt' · ficheros=3 · apariciones=4 · {"cadena":3,"comentario":1}
+TERMINO 'J-' · ficheros=3 · apariciones=3 · {"comentario":2,"cadena":1}
+TERMINO J- · ficheros=6 · apariciones=10 · {"comentario":7,"cadena":3}
+
+POR FICHERO · «justificante» · 14 ficheros
+  scripts/_censo-bytes-control.mjs · comentario=0 cadena=2 identificador=0 otro=0
+  scripts/_conciliacion-fiscal.mjs · comentario=3 cadena=1 identificador=1 otro=0
+  scripts/_hallazgos-y-ciegos.mjs · comentario=1 cadena=0 identificador=0 otro=0
+  scripts/conciliar-auditoria-fiscal.mjs · comentario=1 cadena=1 identificador=1 otro=0
+  scripts/e2e-critico.mjs · comentario=2 cadena=5 identificador=0 otro=0
+  scripts/guard-915g-ajustes-del-justificante.mjs · comentario=4 cadena=3 identificador=0 otro=0
+  scripts/guard-965-un-solo-presupuesto.mjs · comentario=6 cadena=0 identificador=0 otro=0
+  scripts/guard-caja-documento-suelto.mjs · comentario=7 cadena=1 identificador=0 otro=2
+  scripts/guard-detalle-trabajo-917.mjs · comentario=1 cadena=0 identificador=0 otro=0
+  scripts/guard-lista-trabajos-917.mjs · comentario=3 cadena=8 identificador=0 otro=0
+  scripts/guard-pasos-del-editor.mjs · comentario=5 cadena=3 identificador=0 otro=0
+  scripts/seed-demo.mjs · comentario=1 cadena=1 identificador=0 otro=0
+  scripts/seed-video.mjs · comentario=1 cadena=0 identificador=0 otro=0
+  scripts/sonda-915-inventario-v3.mjs · comentario=2 cadena=6 identificador=0 otro=0
+
+FICHEROS DONDE «justificante» SOLO APARECE EN COMENTARIOS: 4 de 14
+
+CADENAS que contienen «justificante» (candidatas a texto, se derivan LEYENDO):
+  scripts/_censo-bytes-control.mjs:56 · 'docs/evidencias/scrum883/C1-pdf-justificante.txt':
+  scripts/_censo-bytes-control.mjs:60 · 'docs/evidencias/scrum883/C3-pdf-justificante.txt': '22-sep-2026 (SCRUM-942): igual que el anterior.',
+  scripts/_conciliacion-fiscal.mjs:25 · 'justificante',     // J-… → fuera de la cadena por diseño (verifactu.service.ts:156)
+  scripts/conciliar-auditoria-fiscal.mjs:212 · console.log(`│   · justificantes J-… (fuera de la cadena por diseño)         ${n(cubos.justificante)}`);
+  scripts/e2e-critico.mjs:188 · if (!invoice.number.startsWith('J-')) fail(`esperaba justificante serie J, llegó ${invoice.number}`);
+  scripts/e2e-critico.mjs:193 · ok(`estados BD: accepted + justificante ${invoice.number} + job ${job.status}`);
+  scripts/e2e-critico.mjs:215 · if (paidInvoice.status !== 'paid' || !paidInvoice.paidAt) fail(`justificante quedó ${paidInvoice.status}`);
+  scripts/e2e-critico.mjs:216 · ok('pago test confirmado → charge paid + justificante paid (misma cadena que Stripe)');
+  scripts/e2e-critico.mjs:224 · ['justificante', `/admin/invoices/${invoice.id}/pdf`],
+  scripts/guard-915g-ajustes-del-justificante.mjs:302 · if (m.textoDeLaFila.toLowerCase().includes(p.toLowerCase())) hallazgos.push(`${etiqueta} -> la fila de un justificante enseña «${p}», que es del presupuesto`);
+  scripts/guard-915g-ajustes-del-justificante.mjs:349 · console.log(`\n  SCRUM-915g · «AJUSTES DEL DOCUMENTO» DEL JUSTIFICANTE, EN «REVISAR Y EMITIR»`);
+  scripts/guard-915g-ajustes-del-justificante.mjs:368 · console.log(`\n  ✔ en los ${CASOS.length} casos: el IVA por defecto del justificante vive en «${TITULO_FILA}», cerrado, dentro de`);
+  scripts/guard-caja-documento-suelto.mjs:81 · + 'No hemos podido emitir el justificante. Inténtalo otra vez.</div>';
+  scripts/guard-lista-trabajos-917.mjs:78 · { ruta: '/t-justificante', fnVista: 'renderJobsView', datos: reglasDeDatos(TRABAJOS), modoEmision: 'receipt' },
+  scripts/guard-lista-trabajos-917.mjs:347 · titulo('C · una sola primaria y es la del dinero (C.1) · el «⋯» entero (C.2) · la fila navega (C.3) · grupos (C.4-C.5) · sin cobro en modo justificante (C.6)');
+  scripts/guard-lista-trabajos-917.mjs:494 · const { page, errores } = await abrirVista(browser, puerto, '/t-justificante', 1280);
+  scripts/guard-lista-trabajos-917.mjs:501 · if (errores.length) nosupe('en modo justificante la vista dejó errores en consola: ' + errores.join(' | '));
+  scripts/guard-lista-trabajos-917.mjs:502 · else if (r.modo !== 'receipt') nosupe(`la página de modo justificante lleva appModoEmision=${JSON.stringify(r.modo)}: no mediría el modo que dice`);
+  scripts/guard-lista-trabajos-917.mjs:504 · else if (r.filas !== TRABAJOS.length - 1 || !(await filaDe(page, 8))) nosupe(`en modo justificante ${r.filas} filas (esperaba ${TRABAJOS.length - 1}) o falta la de ${POR_
+  scripts/guard-lista-trabajos-917.mjs:505 · else if (r.cobros.length) mal(`C.6 en modo justificante la lista ofrece cobrar, y ese cobro acaba en 409: ${JSON.stringify(r.cobros)}`);
+  scripts/guard-lista-trabajos-917.mjs:506 · else bien(`C.6 en modo justificante ningún «Cobrar» en ${r.filas} filas (primarias: ${JSON.stringify(r.primarias)})`);
+  scripts/guard-pasos-del-editor.mjs:518 · if (JSON.stringify(m.titulos) !== JSON.stringify(esperados)) mal.push(`los pasos del justificante son ${JSON.stringify(m.titulos)}; se esperaban ${JSON.stringify(esperado
+  scripts/guard-pasos-del-editor.mjs:527 · if (!m.visibles.concepto) mal.push('el justificante no abre Conceptos con «Continuar»');
+  scripts/guard-pasos-del-editor.mjs:530 · if (m.visibles.ivaDefecto) mal.push('en el justificante el IVA por defecto SE VE en Conceptos; desde 915g vive en «Ajustes del documento», en Revisar y emitir');
+  scripts/seed-demo.mjs:81 · const docLabel = (number) => (isReceiptNumber(number) ? 'Justificante' : 'Factura');
+  scripts/sonda-915-inventario-v3.mjs:404 · const etiqueta = `${suelto ? 'justificante' : 'presupuesto'} ${ancho}px`;
+  scripts/sonda-915-inventario-v3.mjs:411 · modoSuelto = suelto ? 'justificante' : 'no';
+  scripts/sonda-915-inventario-v3.mjs:635 · '«Generar presupuesto» / «Emitir justificante»':
+  scripts/sonda-915-inventario-v3.mjs:713 · console.log(`  RECORRIDOS: presupuesto 1280 ${f1280 ? 'OK' : 'NO'} · presupuesto 390 ${f390 ? 'OK' : 'NO'} · justificante 1280 ${fSuelto ? 'OK' : 'NO'}`);
+  scripts/sonda-915-inventario-v3.mjs:742 · `los pasos del justificante son ${JSON.stringify(fSuelto.entrada.titulos.filter((x) => x.visible).map((x) => x.texto))} · fila «Ajustes del documento» en Revisar=${!!(t &
+  scripts/sonda-915-inventario-v3.mjs:745 · tabla['mismo editor sin condiciones/envío/descuentos'] = P('no-medible', 'el recorrido del justificante no arrancó');
+
+IDENTIFICADORES que contienen «justificante»:
+  justificante @ scripts/_conciliacion-fiscal.mjs ×1
+  justificante @ scripts/conciliar-auditoria-fiscal.mjs ×1
+
+FICHEROS que usan el vocabulario hermano EN CODIGO y NO contienen «justificante»: 1
+  scripts/_banco-lista.mjs · 'receipt'
+
+USOS EN CODIGO de isReceiptNumber: 8
+  scripts/_conciliacion-fiscal.mjs:19 · import { isReceiptNumber } from '../dist/modules/invoicing/domain/invoiceNumber.service.js';
+  scripts/_conciliacion-fiscal.mjs:50 · if (isReceiptNumber(d.number)) { cubos.justificante.push(d); continue; }
+  scripts/seed-demo.mjs:43 · isReceiptNumber,
+  scripts/seed-demo.mjs:81 · const docLabel = (number) => (isReceiptNumber(number) ? 'Justificante' : 'Factura');
+  scripts/seed-demo.mjs:384 · type: isReceiptNumber(number) ? 'JUST' : 'F1', // V0-0 (regla 26)
+  scripts/seed-demo.mjs:441 · type: isReceiptNumber(number) ? 'JUST' : 'F1', // V0-0 (regla 26)
+  scripts/seed-video.mjs:26 · import { allocateInvoiceNumber, isReceiptNumber } from '../dist/modules/invoicing/domain/invoiceNumber.service.js';
+  scripts/seed-video.mjs:555 · type: isReceiptNumber(invoiceNumber) ? 'JUST' : 'F1',
+
+USOS EN CODIGO de 'JUST': 4
+  scripts/e2e-critico.mjs:189 · if (invoice.type !== 'JUST') fail(`tipo ${invoice.type}, esperaba JUST (V0-0)`);
+  scripts/seed-demo.mjs:384 · type: isReceiptNumber(number) ? 'JUST' : 'F1', // V0-0 (regla 26)
+  scripts/seed-demo.mjs:441 · type: isReceiptNumber(number) ? 'JUST' : 'F1', // V0-0 (regla 26)
+  scripts/seed-video.mjs:555 · type: isReceiptNumber(invoiceNumber) ? 'JUST' : 'F1',
+
+USOS EN CODIGO de 'J-': 1
+  scripts/e2e-critico.mjs:188 · if (!invoice.number.startsWith('J-')) fail(`esperaba justificante serie J, llegó ${invoice.number}`);
+
+EXIT=0

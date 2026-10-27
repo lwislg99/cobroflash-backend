@@ -13,7 +13,7 @@ Lees antes de nada, desde `origin/main`: `CLAUDE.md`, `00-normas-comunes.md`, `d
 ## Tu área
 
 Facturas (emisión, PDF, envío por WhatsApp y por correo), VeriFactu (huella, QR, registros locales;
-la remisión a la AEAT es **S1-D, aún sin construir** — sin tabla, sin envío, cero llamadas de red,
+la remisión a la AEAT es **S1-D, aún sin construir** — sin envío [Corregido el 13-oct-2026, SCRUM-1500h, decisión del fundador en SCRUM-1500 c.18993: aquí decía «sin tabla, sin envío, cero llamadas de red». Desde el 30-sep-2026 (SCRUM-1296) hay tabla: la emisión la llena y ningún proceso la vacía (SCRUM-1500d, Jira c.18919). Y hay un cliente SOAP, `src/modules/fiscal/verifactu/sif.client.ts`, que nadie llama (SCRUM-1500g, Jira c.18986). NO medido: ninguna base de datos (ni si la tabla existe en producción, staging o dev, ni cuántas filas tiene) ni el valor de `SIF_ENABLED` en Railway.],
 máster Parte L; **corregido 23-sep-2026, SCRUM-1094**, antes decía que ya existía como cola
 `VfSubmission`), rectificativas (R1) y anulación, el libro de registro, y la entrega a la
 gestoría (SCRUM-280, 322 y 323: J1 con revisión de J4, **pendiente de un jefe**, `dos-equipos.md` §7).

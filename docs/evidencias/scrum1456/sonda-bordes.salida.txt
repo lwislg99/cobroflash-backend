@@ -1,0 +1,11 @@
+CODIGO MEDIDO: ARREGLADO (leído del dist)
+SONDA BORDES · POBLACION=8 peticiones · comercio 2 · clientes 1,2
+ok  204 (espera 204)  DELETE /-1  · desaparecen: []
+ok  204 (espera 204)  DELETE /0  · desaparecen: []
+ok  204 (espera 204)  DELETE /2147483647  · desaparecen: []
+ok  204 (espera 204)  DELETE /-2147483648  · desaparecen: []
+ok  400 (espera 400)  DELETE /-2147483649  · desaparecen: []
+ok  204 (espera 204)  DELETE /1e3  · desaparecen: []
+ok  400 (espera 400)  DELETE /Infinity  · desaparecen: []
+ok  204 (espera 204)  DELETE /2  · desaparecen: [2]
+VIVOS AL FINAL: [1] · 0 fuera de lo esperado · EXIT=0

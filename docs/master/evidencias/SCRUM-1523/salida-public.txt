@@ -1,0 +1,71 @@
+CONTROL POSITIVO SEMBRADO · bytes=204 · apariciones=5 · comentario=2 identificador=2 cadena=1 · VISTO
+POBLACION · carpeta=public · ficheros de codigo seguidos por git=98
+POBLACION · caracteres leidos=2562104
+CONTROL DE CERO DERIVADO · «etnacifitsuj» · apariciones=0 · CERO
+TERMINO justificante · ficheros=19 · apariciones=102 · {"comentario":83,"identificador":9,"cadena":10}
+TERMINO isReceiptNumber · ficheros=0 · apariciones=0 · {}
+TERMINO RECEIPT_NUMBER_PREFIX · ficheros=0 · apariciones=0 · {}
+TERMINO 'JUST' · ficheros=3 · apariciones=4 · {"cadena":2,"comentario":2}
+TERMINO 'receipt' · ficheros=11 · apariciones=17 · {"comentario":4,"cadena":13}
+TERMINO 'J-' · ficheros=4 · apariciones=4 · {"cadena":2,"comentario":2}
+TERMINO J- · ficheros=6 · apariciones=12 · {"cadena":2,"comentario":9,"otro":1}
+
+POR FICHERO · «justificante» · 19 ficheros
+  public/dashboard/js/albaranAccion.js · comentario=3 cadena=0 identificador=0 otro=0
+  public/dashboard/js/app.js · comentario=5 cadena=0 identificador=0 otro=0
+  public/dashboard/js/cobrosView.js · comentario=4 cadena=1 identificador=1 otro=0
+  public/dashboard/js/cuerpoDelDocumentoSuelto.js · comentario=1 cadena=0 identificador=0 otro=0
+  public/dashboard/js/expensesView.js · comentario=4 cadena=0 identificador=0 otro=0
+  public/dashboard/js/invoiceDetailView.js · comentario=2 cadena=4 identificador=0 otro=0
+  public/dashboard/js/invoicesView.js · comentario=9 cadena=1 identificador=0 otro=0
+  public/dashboard/js/jobCobroHuecos.js · comentario=2 cadena=0 identificador=0 otro=0
+  public/dashboard/js/jobDetailView.js · comentario=4 cadena=1 identificador=7 otro=0
+  public/dashboard/js/jobDocsReparto.js · comentario=4 cadena=1 identificador=1 otro=0
+  public/dashboard/js/jobNextAction.js · comentario=1 cadena=0 identificador=0 otro=0
+  public/dashboard/js/jobRailBlocks.js · comentario=4 cadena=1 identificador=0 otro=0
+  public/dashboard/js/jobsCierreTrabajo.js · comentario=2 cadena=0 identificador=0 otro=0
+  public/dashboard/js/jobsView.js · comentario=1 cadena=0 identificador=0 otro=0
+  public/dashboard/js/libroRegistroView.js · comentario=1 cadena=0 identificador=0 otro=0
+  public/dashboard/js/quotesDetailView.js · comentario=6 cadena=1 identificador=0 otro=0
+  public/dashboard/js/quotesView.js · comentario=10 cadena=0 identificador=0 otro=0
+  public/dashboard/js/rotulosDelDocumento.js · comentario=12 cadena=0 identificador=0 otro=0
+  public/dashboard/js/settingsView.js · comentario=8 cadena=0 identificador=0 otro=0
+
+FICHEROS DONDE «justificante» SOLO APARECE EN COMENTARIOS: 12 de 19
+
+CADENAS que contienen «justificante» (candidatas a texto, se derivan LEYENDO):
+  public/dashboard/js/cobrosView.js:73 · justificante: 'No se pudo enviar el justificante al cliente por email.',
+  public/dashboard/js/invoiceDetailView.js:93 · if (headTitle) headTitle.textContent = 'Justificante de cobro';
+  public/dashboard/js/invoiceDetailView.js:94 · if (headSub) headSub.textContent = 'Detalle y acciones del justificante.';
+  public/dashboard/js/invoiceDetailView.js:138 · badge.textContent = 'JUSTIFICANTE';
+  public/dashboard/js/invoiceDetailView.js:537 · ? 'Presupuesto firmado + evidencia de aceptación + justificante + registro de mensajes, listo para responder al banco'
+  public/dashboard/js/invoicesView.js:81 · .filter((doc) => tipoDeFactura(doc) !== 'justificante');
+  public/dashboard/js/jobDetailView.js:24 · const JOBDET_DOC_ROTULO = { rectificativa: 'Rectificativa', justificante: 'Justificante', factura: 'Factura' };
+  public/dashboard/js/jobDocsReparto.js:36 · if (inv && (inv.type === 'JUST' || String(inv.number || '').startsWith('J-'))) return 'justificante';
+  public/dashboard/js/jobRailBlocks.js:157 · if (clasifica(inv) !== 'justificante') continue;
+  public/dashboard/js/quotesDetailView.js:326 · btnReceipt.textContent = tipoDeFactura(paidInvCta) === 'factura' ? '🧾 Ver factura' : '🧾 Ver justificante';
+
+IDENTIFICADORES que contienen «justificante»:
+  enModoJustificante @ public/dashboard/js/jobDetailView.js ×6
+  justificante @ public/dashboard/js/cobrosView.js ×1
+  justificante @ public/dashboard/js/jobDetailView.js ×1
+  justificante @ public/dashboard/js/jobDocsReparto.js ×1
+
+FICHEROS que usan el vocabulario hermano EN CODIGO y NO contienen «justificante»: 5
+  public/dashboard/js/homeView.js · 'receipt'
+  public/dashboard/js/onboardingView.js · 'receipt'
+  public/dashboard/js/plansView.js · 'receipt'
+  public/dashboard/js/puertaSerie.js · 'receipt'
+  public/dashboard/js/tutorial.js · 'receipt'
+
+USOS EN CODIGO de isReceiptNumber: 0
+
+USOS EN CODIGO de 'JUST': 2
+  public/dashboard/js/invoiceDetailView.js:91 · const isReceipt = invoice.type === 'JUST' || String(invoice.number || '').startsWith('J-');
+  public/dashboard/js/jobDocsReparto.js:36 · if (inv && (inv.type === 'JUST' || String(inv.number || '').startsWith('J-'))) return 'justificante';
+
+USOS EN CODIGO de 'J-': 2
+  public/dashboard/js/invoiceDetailView.js:91 · const isReceipt = invoice.type === 'JUST' || String(invoice.number || '').startsWith('J-');
+  public/dashboard/js/jobDocsReparto.js:36 · if (inv && (inv.type === 'JUST' || String(inv.number || '').startsWith('J-'))) return 'justificante';
+
+EXIT=0

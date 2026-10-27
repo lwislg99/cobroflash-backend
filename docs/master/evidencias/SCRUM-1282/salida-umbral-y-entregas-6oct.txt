@@ -1,0 +1,55 @@
+POBLACIÓN · 43 sesiones de fondo con jsonl tocado desde 2026-10-06T00:00Z · 42 con algún turno ese día · vienen de un día anterior 0
+ESTADO al medir: working 6 · done 20 · blocked 16 · otro 0
+ENTREGAS (git push): 26 de 42 sesiones dieron alguno · total 50 · ocupación en el PRIMER push: mín 89k · mediana 232k · máx 395k · en el ÚLTIMO: mín 89k · mediana 307k · máx 527k
+UMBRAL 200k · lo cruzan 35 de 42 · al cruzarlo YA habían empujado 6 de 35 · empujan DESPUÉS de cruzarlo (la norma «al entregar» puede saltar) 22 de 35 · cruzan y NO vuelven a empujar 13 · primer push por debajo del umbral 8 de 26
+UMBRAL 300k · lo cruzan 20 de 42 · al cruzarlo YA habían empujado 13 de 20 · empujan DESPUÉS de cruzarlo (la norma «al entregar» puede saltar) 14 de 20 · cruzan y NO vuelven a empujar 6 · primer push por debajo del umbral 21 de 26
+UMBRAL 400k · lo cruzan 11 de 42 · al cruzarlo YA habían empujado 10 de 11 · empujan DESPUÉS de cruzarlo (la norma «al entregar» puede saltar) 5 de 11 · cruzan y NO vuelven a empujar 6 · primer push por debajo del umbral 26 de 26
+UMBRAL 500k · lo cruzan 4 de 42 · al cruzarlo YA habían empujado 3 de 4 · empujan DESPUÉS de cruzarlo (la norma «al entregar» puede saltar) 1 de 4 · cruzan y NO vuelven a empujar 3 · primer push por debajo del umbral 26 de 26
+DÓNDE ACABAN las «done» (último turno): n=20 · mín 63k · mediana 355k · máx 823k
+DÓNDE ACABAN las «blocked» (último turno): n=16 · mín 186k · mediana 273k · máx 423k
+REPARTO del ÚLTIMO turno de las acabadas: 0k-200k 4 · 200k-300k 12 · 300k-400k 9 · 400k-500k 7 · 500k-800k 3 · 800k-∞ 1
+REPARTO del MÁXIMO de todas:             0k-200k 7 · 200k-300k 15 · 300k-400k 9 · 400k-500k 7 · 500k-800k 3 · 800k-∞ 1
+   s0-6octc     done     máx  823k · último  823k ·   96 turnos ·  0 push · 1.er push a     — · último push a     — · 200k:0/0 300k:0/0 400k:0/0 500k:0/0
+   s5-6octd     done     máx  531k · último  531k ·  112 turnos ·  2 push · 1.er push a  339k · último push a  527k · 200k:0/2 300k:0/2 400k:1/1 500k:1/1
+   s1-6octc     done     máx  512k · último  512k ·  155 turnos ·  3 push · 1.er push a  247k · último push a  495k · 200k:0/3 300k:1/2 400k:1/2 500k:3/0
+   s3-6octc     done     máx  502k · último  502k ·  132 turnos ·  2 push · 1.er push a  395k · último push a  482k · 200k:0/2 300k:0/2 400k:1/1 500k:2/0
+   s2-6octb     done     máx  495k · último  495k ·  122 turnos ·  6 push · 1.er push a  182k · último push a  477k · 200k:1/5 300k:1/5 400k:4/2 500k:—
+   s0-6octd     done     máx  465k · último  465k ·  127 turnos ·  4 push · 1.er push a  232k · último push a  438k · 200k:0/4 300k:2/2 400k:2/2 500k:—
+   s4-6octc     done     máx  427k · último  427k ·  106 turnos ·  3 push · 1.er push a  243k · último push a  371k · 200k:0/3 300k:1/2 400k:3/0 500k:—
+   s1-6octd     blocked  máx  423k · último  423k ·  104 turnos ·  2 push · 1.er push a  288k · último push a  394k · 200k:0/2 300k:1/1 400k:2/0 500k:—
+   s5-6octf     blocked  máx  415k · último  415k ·  107 turnos ·  2 push · 1.er push a  165k · último push a  381k · 200k:1/1 300k:1/1 400k:2/0 500k:—
+   s4-6octg     blocked  máx  412k · último  412k ·   82 turnos ·  1 push · 1.er push a  318k · último push a  318k · 200k:0/1 300k:0/1 400k:1/0 500k:—
+   s0-6octf     done     máx  404k · último  404k ·  120 turnos ·  3 push · 1.er push a  194k · último push a  310k · 200k:1/2 300k:2/1 400k:3/0 500k:—
+   s4-6octb     done     máx  393k · último  393k ·   80 turnos ·  1 push · 1.er push a  192k · último push a  192k · 200k:1/0 300k:1/0 400k:— 500k:—
+   s5-6octb     done     máx  372k · último  372k ·   75 turnos ·  5 push · 1.er push a  199k · último push a  365k · 200k:1/4 300k:2/3 400k:— 500k:—
+   s3-6oct      done     máx  355k · último  355k ·   69 turnos ·  2 push · 1.er push a  273k · último push a  344k · 200k:0/2 300k:1/1 400k:— 500k:—
+   s1-6octg     blocked  máx  344k · último  344k ·   66 turnos ·  1 push · 1.er push a  290k · último push a  290k · 200k:0/1 300k:1/0 400k:— 500k:—
+   s1-6octf     blocked  máx  344k · último  344k ·   66 turnos ·  0 push · 1.er push a     — · último push a     — · 200k:0/0 300k:0/0 400k:— 500k:—
+   s2-6octd     done     máx  333k · último  333k ·  107 turnos ·  1 push · 1.er push a  313k · último push a  313k · 200k:0/1 300k:0/1 400k:— 500k:—
+   s5-6octg     done     máx  333k · último  333k ·   75 turnos ·  1 push · 1.er push a  307k · último push a  307k · 200k:0/1 300k:0/1 400k:— 500k:—
+   s3-6octd     done     máx  330k · último  330k ·   53 turnos ·  1 push · 1.er push a  287k · último push a  287k · 200k:0/1 300k:1/0 400k:— 500k:—
+   s3-6octg     done     máx  318k · último  318k ·   93 turnos ·  1 push · 1.er push a  298k · último push a  298k · 200k:0/1 300k:1/0 400k:— 500k:—
+   s0-6octg     blocked  máx  298k · último  298k ·   94 turnos ·  2 push · 1.er push a  210k · último push a  260k · 200k:0/2 300k:— 400k:— 500k:—
+   s4-6octf     blocked  máx  291k · último  291k ·   43 turnos ·  0 push · 1.er push a     — · último push a     — · 200k:0/0 300k:— 400k:— 500k:—
+   s2-6oct      blocked  máx  277k · último  277k ·   43 turnos ·  1 push · 1.er push a  230k · último push a  230k · 200k:0/1 300k:— 400k:— 500k:—
+   s1-6oct      blocked  máx  273k · último  273k ·   56 turnos ·  1 push · 1.er push a  210k · último push a  210k · 200k:0/1 300k:— 400k:— 500k:—
+   s4-6oct      blocked  máx  271k · último  271k ·   28 turnos ·  0 push · 1.er push a     — · último push a     — · 200k:0/0 300k:— 400k:— 500k:—
+   s2-6octf     blocked  máx  264k · último  264k ·   36 turnos ·  0 push · 1.er push a     — · último push a     — · 200k:0/0 300k:— 400k:— 500k:—
+   s3-6octf     blocked  máx  258k · último  258k ·   68 turnos ·  1 push · 1.er push a  135k · último push a  135k · 200k:1/0 300k:— 400k:— 500k:—
+   s1-6octe     done     máx  255k · último  255k ·   40 turnos ·  1 push · 1.er push a  252k · último push a  252k · 200k:0/1 300k:— 400k:— 500k:—
+   s1-6octb     blocked  máx  247k · último  247k ·   24 turnos ·  0 push · 1.er push a     — · último push a     — · 200k:0/0 300k:— 400k:— 500k:—
+   s2-6octh     working  máx  232k · último  232k ·   22 turnos ·  0 push · 1.er push a     — · último push a     — · 200k:0/0 300k:— 400k:— 500k:—
+   s4-6octd     done     máx  227k · último  227k ·   33 turnos ·  1 push · 1.er push a  223k · último push a  223k · 200k:0/1 300k:— 400k:— 500k:—
+   s1-6octh     working  máx  225k · último  225k ·   34 turnos ·  0 push · 1.er push a     — · último push a     — · 200k:0/0 300k:— 400k:— 500k:—
+   s4-6octh     working  máx  215k · último  215k ·   22 turnos ·  0 push · 1.er push a     — · último push a     — · 200k:0/0 300k:— 400k:— 500k:—
+   s2-6octg     blocked  máx  207k · último  207k ·   24 turnos ·  0 push · 1.er push a     — · último push a     — · 200k:0/0 300k:— 400k:— 500k:—
+   s0-6octb     blocked  máx  203k · último  203k ·   18 turnos ·  0 push · 1.er push a     — · último push a     — · 200k:0/0 300k:— 400k:— 500k:—
+   s0-6oct      done     máx  191k · último  191k ·   25 turnos ·  1 push · 1.er push a   89k · último push a   89k · 200k:— 300k:— 400k:— 500k:—
+   s0-6octh     working  máx  187k · último  187k ·   26 turnos ·  0 push · 1.er push a     — · último push a     — · 200k:— 300k:— 400k:— 500k:—
+   s5-6oct      blocked  máx  186k · último  186k ·   35 turnos ·  1 push · 1.er push a  177k · último push a  177k · 200k:— 300k:— 400k:— 500k:—
+   s2-6octe     done     máx  184k · último  184k ·   21 turnos ·  0 push · 1.er push a     — · último push a     — · 200k:— 300k:— 400k:— 500k:—
+   s3-6octh     working  máx  144k · último  144k ·   13 turnos ·  0 push · 1.er push a     — · último push a     — · 200k:— 300k:— 400k:— 500k:—
+   s5-6octh     working  máx  140k · último  140k ·   24 turnos ·  0 push · 1.er push a     — · último push a     — · 200k:— 300k:— 400k:— 500k:—
+   s3-prueba    done     máx   63k · último   63k ·    1 turnos ·  0 push · 1.er push a     — · último push a     — · 200k:— 300k:— 400k:— 500k:—
+   (por umbral: pushes antes de cruzarlo / pushes después)
+EXIT=0

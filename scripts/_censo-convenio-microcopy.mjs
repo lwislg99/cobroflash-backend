@@ -40,6 +40,21 @@
 //   ningún objeto (texto suelto, `textContent = '…' // APROBADO`) quedan FUERA DE ALCANCE y se
 //   CUENTAN en la población: este censo no afirma nada de ellos (SCRUM-1157, «lo que no resuelve»).
 //
+// ── UNA FIRMA DE GRUPO NO CUBRE A QUIEN LLEGA DESPUÉS (SCRUM-1215g, 13-oct-2026) ────────────────
+//   La firma en plural, la que cuenta y la de cabecera reparten por POSICIÓN: aprueban lo que CAE
+//   debajo, no lo que la firma vio. Medido sobre `QUOTE_ACTION_ROTULOS` («los doce rótulos» del
+//   17-ago sobre 13 claves): una hoja nueva en el sitio de una firmada salía APROBADO y en verde.
+//   Por eso cada hoja APROBADO dice además DE DÓNDE le viene la firma:
+//     · propia    → un comentario en su misma línea, o uno en singular encima: es de esa clave;
+//     · por grupo → plural, con cuenta, cabecera, o la del objeto que la contiene.
+//   Y las «por grupo» se comparan por IDENTIDAD con «porGrupo» del JSON de declarados, en las dos
+//   direcciones: la que entra sin estar nombrada sale NUEVA; la nombrada que ya no está, SOBRA.
+//   ⚠ «porGrupo» nació como una FOTO (173 hojas el 13-oct-2026): dice qué cubría cada firma de
+//   grupo ESE día, no que alguien comprobara que la firma las vio. Las que se SABE que no, van
+//   además en «porGrupoSinVer» con su motivo. La cura de cada fichero es la marca en SU línea.
+//   Lo que esto NO ve: cambiar el TEXTO de una clave firmada sin cambiarle el nombre. El censo lee
+//   qué comentario gobierna a qué clave, no qué decía el literal el día de la firma.
+//
 // ── FAIL-CLOSED (la familia de «no pude mirar» = «no hay nada», 26-sep) ─────────────────────────
 //   Lo que la sonda no sabe clasificar sale como CIEGO, y un censo con un solo CIEGO NO devuelve
 //   hojas: devuelve `estado: 'CIEGO'` y sus motivos. Nunca un resultado parcial. CIEGO es:
@@ -85,8 +100,10 @@ const RE_PENDIENTE = /PENDIENTE microcopy oficial/;
 // que es la forma de `QR_COPY`). En mitad de una frase casi siempre CUENTA algo («caía al marcador
 // `[PENDIENTE…]`», «ya no lleva…»), y eso la sonda no sabe leerlo: AMBIGUO.
 const RE_PENDIENTE_DECLARA = /(^|\n)\s*(\/\/+|\/\*+|\*)\s*\[PENDIENTE microcopy oficial\]/;
-// «NO APROBADO», «SIN APROBAR»… en mayúsculas: la palabra está, la firma no.
-const RE_APROBADO_NEGADO = /\b(NO|SIN|NI)\s+(EST[AÁ]N?\s+)?(APROBAD|APROBAR|FIRMAD|FIRMAR)/;
+// «NO APROBADO», «SIN APROBAR», «NINGUNO ESTÁ APROBADO»… en mayúsculas: la palabra está, la firma no.
+// (SCRUM-1215g: «NINGUNO» faltaba, y el título «REGLA 30: NINGUNO ESTÁ APROBADO» de
+// `quoteActionsRegistry.js` se leía como la firma de sus rótulos.)
+const RE_APROBADO_NEGADO = /\b(NO|SIN|NI|NING[UÚ]N[OA]?)\s+(EST[AÁ]N?\s+)?(APROBAD|APROBAR|FIRMAD|FIRMAR)/;
 
 /**
  * Clase de un bloque de comentarios: null (no es de convención), APROBADO, PENDIENTE o AMBIGUO.
@@ -325,7 +342,11 @@ export function censarFuente(rel, texto, ambiguos = {}) {
         if (restantes <= 0) actual = null;
         else restantes--;
       }
-      const propia = claseDeBloque(trailing[i], ruta) || soloEsta || actual || 'SIN_COMENTARIO';
+      const enSuLinea = claseDeBloque(trailing[i], ruta);
+      const propia = enSuLinea || soloEsta || actual || 'SIN_COMENTARIO';
+      // SCRUM-1215g · ¿la firma es de ESTA clave (en su línea, o en singular encima) o le llega de
+      // un GRUPO? Lo que cuelga de un objeto anidado entra por `actual`: siempre es de grupo.
+      const porGrupo = propia === 'APROBADO' && !enSuLinea && !soloEsta;
       if (ts.isSpreadAssignment(p)) {
         ciegos.push({ id: `${rel} · ${ruta}`, motivo: '`...spread` dentro de un objeto del censo: trae hojas que este AST no ve' });
         return;
@@ -339,12 +360,12 @@ export function censarFuente(rel, texto, ambiguos = {}) {
           if (ts.isObjectLiteralExpression(e)) censarObjeto(e, propia, ruta + '[]');
         }
         if (!v.elements.every((e) => ts.isObjectLiteralExpression(e) || !contieneTexto(e))) {
-          hojas.push({ id: `${rel} · ${ruta}`, clase: propia });
+          hojas.push({ id: `${rel} · ${ruta}`, clase: propia, porGrupo });
         }
         return;
       }
       if (!ts.isShorthandPropertyAssignment(p) && contieneTexto(valor)) {
-        hojas.push({ id: `${rel} · ${ruta}`, clase: propia });
+        hojas.push({ id: `${rel} · ${ruta}`, clase: propia, porGrupo });
       }
     });
   }
@@ -429,8 +450,8 @@ export function censar({ raiz = RAIZ, textos = null, ambiguos = null } = {}) {
     for (const h of r.hojas) {
       poblacion.hojas++;
       const prev = porId.get(h.id);
-      if (!prev) porId.set(h.id, { id: h.id, clase: h.clase, n: 1 });
-      else if (prev.clase === h.clase) prev.n++;
+      if (!prev) porId.set(h.id, { id: h.id, clase: h.clase, n: 1, nPorGrupo: h.porGrupo ? 1 : 0 });
+      else if (prev.clase === h.clase) { prev.n++; if (h.porGrupo) prev.nPorGrupo++; }
       else ciegos.push({ id: h.id, motivo: `dos hojas con la misma identidad y distinta clase (${prev.clase} / ${h.clase})` });
     }
   }
@@ -441,29 +462,57 @@ export function censar({ raiz = RAIZ, textos = null, ambiguos = null } = {}) {
   if (ciegos.length) return { estado: 'CIEGO', ciegos, poblacion };
   const hojas = [...porId.values()].sort((a, b) => a.id.localeCompare(b.id));
   const acusadas = hojas.filter((h) => h.clase !== 'APROBADO');
-  return { estado: 'OK', ciegos: [], poblacion, hojas, acusadas };
+  // SCRUM-1215g · las APROBADAS a las que la firma les llega de un grupo, con cuántas de ese id.
+  const porGrupo = hojas.filter((h) => h.clase === 'APROBADO' && h.nPorGrupo > 0).map((h) => ({ id: h.id, n: h.nPorGrupo }));
+  return { estado: 'OK', ciegos: [], poblacion, hojas, acusadas, porGrupo };
 }
 
 /**
  * El trinquete, con sus DOS mitades: lo acusado que no está declarado (texto nuevo sin firma
  * legible) y lo declarado que ya no sale acusado (se firmó o se borró, y hay que retirarlo con su
  * motivo). Compara CONJUNTOS de identidad+clase+n, nunca cuentas.
+ *
+ * SCRUM-1215g · y lo mismo, en las dos direcciones, con las APROBADAS POR GRUPO contra «porGrupo»
+ * del JSON: una hoja que sale aprobada sólo porque cae bajo una firma de grupo, y que esa lista no
+ * nombra, es NUEVA (`porGrupo: true`). Van en las MISMAS dos listas a propósito: quien ya mira
+ * `nuevas` y `sobran` se pone rojo sin tener que enterarse de que hay una tercera comparación. Un
+ * JSON SIN «porGrupo» no es «no hay ninguna»: las da todas por nuevas.
  */
 export function compararConDeclarados(r, declarados) {
   const decl = declarados.acusadas || {};
+  const declGrupo = declarados.porGrupo || {};
   const nuevas = [];
   const sobran = [];
   const vistas = new Set();
   for (const h of r.acusadas) {
     vistas.add(h.id);
     const d = decl[h.id];
-    if (!d || d.clase !== h.clase || (d.n || 1) !== h.n) nuevas.push(h);
+    if (!d || d.clase !== h.clase || (d.n || 1) !== h.n) {
+      // Estaba cubierta por una firma de grupo y ha dejado de estarlo: casi nunca es ella la intrusa.
+      nuevas.push(Object.hasOwn(declGrupo, h.id) ? { ...h, desplazada: true } : h);
+    }
   }
   for (const [id, d] of Object.entries(decl)) {
     if (!vistas.has(id)) sobran.push({ id, ...d });
     if (!d.motivo) nuevas.push({ id, clase: d.clase, n: d.n || 1, sinMotivo: true });
   }
+  const vistasGrupo = new Set();
+  for (const h of r.porGrupo || []) {
+    vistasGrupo.add(h.id);
+    if (declGrupo[h.id] !== h.n) nuevas.push({ id: h.id, clase: 'APROBADO', n: h.n, porGrupo: true });
+  }
+  for (const [id, n] of Object.entries(declGrupo)) {
+    if (!vistasGrupo.has(id)) sobran.push({ id, clase: 'APROBADO', n, porGrupo: true });
+  }
   return { nuevas, sobran };
+}
+
+/** Qué hacer con cada fila del trinquete: UNA función para la CLI y para el test. */
+export function queHacer(h, lista) {
+  if (lista === 'sobran') return h.porGrupo ? QUE_HACER_SOBRA_GRUPO : QUE_HACER_SOBRA;
+  if (h.sinMotivo) return 'declarada SIN motivo';
+  if (h.porGrupo) return QUE_HACER_NUEVA_GRUPO;
+  return h.desplazada ? QUE_HACER_DESPLAZADA : QUE_HACER_NUEVA;
 }
 
 export const QUE_HACER_NUEVA =
@@ -473,6 +522,17 @@ export const QUE_HACER_NUEVA =
 export const QUE_HACER_SOBRA =
   `ya no sale acusado (se firmó o se borró): muévelo de «acusadas» a «retiradas» en ${DECLARADOS_JSON}, ` +
   'con el motivo y la referencia de la firma. No se borra sin más: la bajada se declara.';
+export const QUE_HACER_NUEVA_GRUPO =
+  'sale APROBADO sólo porque cae bajo una firma de GRUPO (cabecera, plural, con cuenta, o la del objeto ' +
+  'que la contiene) y nadie ha dicho que esa firma la viera: una firma de grupo no cubre a quien llega ' +
+  'después. Si tiene firma, ponla en SU línea (`k: \'x\', // APROBADO por <quién> el <fecha> (<referencia>)`). ' +
+  `Sólo si la firma del grupo la vio de verdad, añade su identidad a «porGrupo» de ${DECLARADOS_JSON} y di en el PR dónde consta.`;
+export const QUE_HACER_SOBRA_GRUPO =
+  `ya no sale aprobada por grupo (lleva su marca, se borró o ha quedado acusada): quita su línea de «porGrupo» de ${DECLARADOS_JSON}.`;
+export const QUE_HACER_DESPLAZADA =
+  'estaba cubierta por una firma de grupo y ha dejado de estarlo. Una firma CON CUENTA reparte por orden: ' +
+  'mira primero qué hoja ha entrado o ha subido por encima de ésta — la que falta por firmar suele ser ÉSA, ' +
+  'y sale más abajo como «por grupo». No declares ésta como acusada sin haberlo mirado.';
 
 // ── CLI ──────────────────────────────────────────────────────────────────────────────────────────
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
@@ -494,8 +554,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   console.log(`APROBADO ${cuenta('APROBADO')} · PENDIENTE ${cuenta('PENDIENTE')} · SIN_COMENTARIO ${cuenta('SIN_COMENTARIO')}`);
   for (const h of r.acusadas) console.log(`  ${h.clase.padEnd(15)} ${h.id}${h.n > 1 ? `  (×${h.n})` : ''}`);
   const { nuevas, sobran } = compararConDeclarados(r, leerDeclarados(raiz));
-  for (const h of nuevas) console.log(`NUEVA  ${h.id}\n       ${h.sinMotivo ? 'declarada SIN motivo' : QUE_HACER_NUEVA}`);
-  for (const h of sobran) console.log(`SOBRA  ${h.id}\n       ${QUE_HACER_SOBRA}`);
-  console.log(`trinquete: ${nuevas.length} nuevas · ${sobran.length} que sobran · ${r.acusadas.length} acusadas declaradas`);
+  console.log(`de las APROBADO, por firma de GRUPO (no en su línea): ${r.porGrupo.reduce((s, h) => s + h.n, 0)}`);
+  for (const h of nuevas) console.log(`NUEVA  ${h.id}${h.porGrupo ? '  [APROBADA POR GRUPO sin nombrar]' : ''}\n       ${queHacer(h, 'nuevas')}`);
+  for (const h of sobran) console.log(`SOBRA  ${h.id}${h.porGrupo ? '  [de «porGrupo»]' : ''}\n       ${queHacer(h, 'sobran')}`);
+  console.log(`trinquete: ${nuevas.length} nuevas · ${sobran.length} que sobran · ${r.acusadas.length} acusadas · ${r.porGrupo.length} aprobadas por grupo`);
   if (nuevas.length || sobran.length) process.exit(1);
 }

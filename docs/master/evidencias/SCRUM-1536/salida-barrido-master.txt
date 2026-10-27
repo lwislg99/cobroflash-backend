@@ -1,0 +1,18 @@
+CONTROL positivo sembrado: 14 de 14 OK · cero en la siembra: OK · quitada la siembra: 0 (tiene que ser 0)
+POBLACION ambitos ["docs/YAQU_MASTER.md"] · listados 1 · leidos 1 · ilegibles 0 · caracteres 499475
+foral                6 lineas en 1 ficheros
+ticketbai            5 lineas en 1 ficheros
+batuz                0
+igic                 0
+canarias             1 lineas en 1 ficheros
+navarra              3 lineas en 1 ficheros
+bizkaia              0
+alava                0
+gipuzkoa             0
+paisvasco            1 lineas en 1 ficheros
+ipsi                 0
+ceutamelilla         0
+tenerife_laspalmas   0
+regimen_comun        0
+ZZ_CERO              0
+EXIT=0

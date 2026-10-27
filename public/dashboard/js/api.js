@@ -979,49 +979,69 @@ window.waCollectRestSent = waCollectRestSent;
 // A20.5 (J5): acciones de FALLBACK cuando un envío de WhatsApp falla — SIEMPRE
 // se ofrecen las tres salidas: Copiar enlace · Enviar por email · Reintentar.
 // Devuelve el elemento para insertarlo junto al mensaje de error de la vista.
+//
+// SCRUM-1233h · «Copiar enlace» SÓLO si hay enlace. Sin `link` no se pinta: antes dos pantallas
+// pasaban `location.origin` cuando la factura aún no tenía cobro, y el botón copiaba la PORTADA de
+// yaqu.app con el aviso «✓ Enlace copiado». El profesional se la mandaba al cliente creyendo que
+// era su factura (medido el 18-oct en la ficha del Trabajo: sin teléfono, cobro no creado y error
+// de red, los tres). Un enlace falso con forma de bueno es peor que no ofrecer copiar nada; el
+// email y el reintento se quedan. Quien llama pasa `null` cuando no tiene token, nunca la portada.
+// ⚠️ DIVERGE A PROPÓSITO de la LETRA de A20.5 («SIEMPRE … Copiar enlace»), no de su intención: la
+// regla daba por hecho que había enlace. Declarado en docs/master/SCRUM-1233.md §1233h; la enmienda
+// está PENDIENTE del fundador, no aprobada.
+//
+// SCRUM-1233i · «Enviar por email» SÓLO si hay algo que hacer con él: `onEmail` (se envía) o
+// `emailDisabledReason` (se ve desactivado y dice por qué). Sin ninguno de los dos salía un botón
+// ACTIVO SIN OYENTE: se pulsaba y no pasaba nada. Ningún llamador de hoy cae ahí (los cuatro pasan
+// uno de los dos); lo pide el del albarán, que no tiene envío por email y para el que el único
+// motivo que existe («sin email guardado») sería falso. Misma divergencia de A20.5, misma declaración.
 function waFallbackBar({ link, onEmail, onRetry, emailDisabledReason }) {
   const bar = document.createElement('div');
   bar.className = 'wa-fallback-bar';
   bar.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-top:8px';
 
-  const copyBtn = document.createElement('button');
-  copyBtn.className = 'btn-secondary btn-sm';
-  copyBtn.textContent = '📋 Copiar enlace';
-  copyBtn.addEventListener('click', async () => {
-    try {
-      await navigator.clipboard.writeText(link);
-      showToast('✓ Enlace copiado — mándaselo por SMS o desde tu WhatsApp');
-    } catch {
-      window.prompt('Copia el enlace:', link);
-    }
-  });
-  bar.appendChild(copyBtn);
-
-  const emailBtn = document.createElement('button');
-  emailBtn.className = 'btn-secondary btn-sm';
-  emailBtn.textContent = '✉️ Enviar por email';
-  if (emailDisabledReason) {
-    emailBtn.disabled = true;
-    emailBtn.title = emailDisabledReason;
-    emailBtn.style.opacity = '.55';
-  } else if (onEmail) {
-    emailBtn.addEventListener('click', async () => {
-      emailBtn.disabled = true;
-      emailBtn.textContent = 'Enviando…';
+  if (link) {
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'btn-secondary btn-sm';
+    copyBtn.textContent = '📋 Copiar enlace';
+    copyBtn.addEventListener('click', async () => {
       try {
-        const result = await onEmail();
-        // SCRUM-115: apiRequest() solo rechaza en HTTP≠2xx. Los 2 endpoints /send-email
-        // responden 200+sent:false cuando el envío falla — sin este chequeo, esta barra
-        // (compartida por facturas, presupuestos y trabajos) siempre decía "✓ Enviado".
-        if (waSendFailed(result)) throw { data: result, message: result.message };
-        showToast('✓ Enviado por email'); emailBtn.textContent = '✉️ Enviado';
-      } catch (e) {
-        showToast('Email falló: ' + (e?.data?.message || e.message), 'error');
-        emailBtn.disabled = false; emailBtn.textContent = '✉️ Enviar por email';
+        await navigator.clipboard.writeText(link);
+        showToast('✓ Enlace copiado — mándaselo por SMS o desde tu WhatsApp');
+      } catch {
+        window.prompt('Copia el enlace:', link);
       }
     });
+    bar.appendChild(copyBtn);
   }
-  bar.appendChild(emailBtn);
+
+  if (onEmail || emailDisabledReason) {
+    const emailBtn = document.createElement('button');
+    emailBtn.className = 'btn-secondary btn-sm';
+    emailBtn.textContent = '✉️ Enviar por email';
+    if (emailDisabledReason) {
+      emailBtn.disabled = true;
+      emailBtn.title = emailDisabledReason;
+      emailBtn.style.opacity = '.55';
+    } else {
+      emailBtn.addEventListener('click', async () => {
+        emailBtn.disabled = true;
+        emailBtn.textContent = 'Enviando…';
+        try {
+          const result = await onEmail();
+          // SCRUM-115: apiRequest() solo rechaza en HTTP≠2xx. Los 2 endpoints /send-email
+          // responden 200+sent:false cuando el envío falla — sin este chequeo, esta barra
+          // (compartida por facturas, presupuestos y trabajos) siempre decía "✓ Enviado".
+          if (waSendFailed(result)) throw { data: result, message: result.message };
+          showToast('✓ Enviado por email'); emailBtn.textContent = '✉️ Enviado';
+        } catch (e) {
+          showToast('Email falló: ' + (e?.data?.message || e.message), 'error');
+          emailBtn.disabled = false; emailBtn.textContent = '✉️ Enviar por email';
+        }
+      });
+    }
+    bar.appendChild(emailBtn);
+  }
 
   if (onRetry) {
     const retryBtn = document.createElement('button');

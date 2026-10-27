@@ -1,0 +1,17 @@
+POBLACION · 3 mutaciones · HEAD 380d6595c7e9a4513960799aa7de8f229cf31af4
+BASE (antes) · trinquete: 31 tests · 0 caídos · salida 0
+M1 · «Pago recibido»: el asunto vuelve a pegar el importe a la moneda
+  numstat: 1	1	src/modules/messaging/domain/merchantNotifications.ts
+  ROJO · 31 tests · 2 caídos · SCRUM-1288b · los tres correos al profesional que motivaron la forma están VISTOS: vivos y declarados DEUDA, o || SCRUM-1452 · ninguna identidad RETIRADA ha vuelto a aparecer
+  restaurado · git status: []
+M2 · «Pago recibido»: el cuerpo vuelve a pegar el importe a la moneda
+  numstat: 1	1	src/modules/messaging/domain/merchantNotifications.ts
+  ROJO · 31 tests · 2 caídos · SCRUM-1288b · los tres correos al profesional que motivaron la forma están VISTOS: vivos y declarados DEUDA, o || SCRUM-1452 · ninguna identidad RETIRADA ha vuelto a aparecer
+  restaurado · git status: []
+M3 · «Presupuesto aceptado»: la fila «Total» vuelve a pegar el total a la moneda
+  numstat: 1	1	src/modules/messaging/domain/merchantNotifications.ts
+  ROJO · 31 tests · 2 caídos · SCRUM-1288b · los tres correos al profesional que motivaron la forma están VISTOS: vivos y declarados DEUDA, o || SCRUM-1452 · ninguna identidad RETIRADA ha vuelto a aparecer
+  restaurado · git status: []
+BASE (después) · trinquete: 31 tests · 0 caídos · salida 0
+RECUENTO · 3 mutaciones · 3 ROJO · 0 VERDE · 0 CIEGO
+EXIT=0

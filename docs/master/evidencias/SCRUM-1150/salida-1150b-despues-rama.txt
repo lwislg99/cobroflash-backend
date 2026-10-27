@@ -1,0 +1,26 @@
+SERVIDO=LOCAL D:\MILLONARIO\cobroFlash\cobroflash-backend\.claude\worktrees\s2-1302c\public\dashboard\js\quoteRevisiones.js · build del panel 44cbb050536158705c423950a76254ad8f1848b4 · presupuesto 206
+--- FILAS (ventana | lo que contesta la sonda | POST vistos | avisos | role | líneas · caja | ¿entero en la ventana? | lo que se LEE)
+390×844 | 409 quote_sin_numero | POST=1 | avisos=1 | role=alert | 2 líneas · 320×40 | sí | «No se puede crear una revisión: este presupuesto no tiene número.»
+390×844 | 404 quote_not_found | POST=1 | avisos=1 | role=alert | 2 líneas · 320×40 | sí | «No se puede crear una revisión: este presupuesto ya no existe.»
+390×844 | 400 descuento_global_con_varios_iva | POST=1 | avisos=1 | role=alert | 4 líneas · 320×81 | sí | «No se puede crear una revisión: este presupuesto tiene un descuento global y varios tipos de IVA. Duplícalo, p… (181 car.)»
+390×844 | 409 revisiones_dos_vigentes | POST=1 | avisos=1 | role=alert | 2 líneas · 320×40 | sí | «No se ha podido crear la revisión. Vuelve a intentarlo.»
+390×844 | 409 revisiones_sin_leer | POST=1 | avisos=1 | role=alert | 2 líneas · 320×40 | sí | «No se ha podido crear la revisión. Vuelve a intentarlo.»
+390×844 | 409 revision_no_posterior | POST=1 | avisos=1 | role=alert | 2 líneas · 320×40 | sí | «No se ha podido crear la revisión. Vuelve a intentarlo.»
+390×844 | 409 revisiones_sin_la_propia | POST=1 | avisos=1 | role=alert | 2 líneas · 320×40 | sí | «No se ha podido crear la revisión. Vuelve a intentarlo.»
+390×844 | 400 invalid_quote_id | POST=1 | avisos=1 | role=alert | 2 líneas · 320×40 | sí | «No se ha podido crear la revisión. Vuelve a intentarlo.»
+390×844 | 500 internal_error | POST=1 | avisos=1 | role=alert | 2 líneas · 320×40 | sí | «No se ha podido crear la revisión. Vuelve a intentarlo.»
+390×844 | 409 un_codigo_que_nace_manana | POST=1 | avisos=1 | role=alert | 2 líneas · 320×40 | sí | «No se ha podido crear la revisión. Vuelve a intentarlo.»
+390×844 | DOS FALLOS SEGUIDOS (sin número, luego no existe) | POST=2 | avisos=1 | role=alert | 2 líneas · 320×40 | sí | «No se puede crear una revisión: este presupuesto ya no existe.»
+1280×800 | 409 quote_sin_numero | POST=1 | avisos=1 | role=alert | 1 líneas · 938×20 | sí | «No se puede crear una revisión: este presupuesto no tiene número.»
+1280×800 | 404 quote_not_found | POST=1 | avisos=1 | role=alert | 1 líneas · 938×20 | sí | «No se puede crear una revisión: este presupuesto ya no existe.»
+1280×800 | 400 descuento_global_con_varios_iva | POST=1 | avisos=1 | role=alert | 2 líneas · 938×40 | sí | «No se puede crear una revisión: este presupuesto tiene un descuento global y varios tipos de IVA. Duplícalo, p… (181 car.)»
+1280×800 | 409 revisiones_dos_vigentes | POST=1 | avisos=1 | role=alert | 1 líneas · 938×20 | sí | «No se ha podido crear la revisión. Vuelve a intentarlo.»
+1280×800 | 409 revisiones_sin_leer | POST=1 | avisos=1 | role=alert | 1 líneas · 938×20 | sí | «No se ha podido crear la revisión. Vuelve a intentarlo.»
+1280×800 | 409 revision_no_posterior | POST=1 | avisos=1 | role=alert | 1 líneas · 938×20 | sí | «No se ha podido crear la revisión. Vuelve a intentarlo.»
+1280×800 | 409 revisiones_sin_la_propia | POST=1 | avisos=1 | role=alert | 1 líneas · 938×20 | sí | «No se ha podido crear la revisión. Vuelve a intentarlo.»
+1280×800 | 400 invalid_quote_id | POST=1 | avisos=1 | role=alert | 1 líneas · 938×20 | sí | «No se ha podido crear la revisión. Vuelve a intentarlo.»
+1280×800 | 500 internal_error | POST=1 | avisos=1 | role=alert | 1 líneas · 938×20 | sí | «No se ha podido crear la revisión. Vuelve a intentarlo.»
+1280×800 | 409 un_codigo_que_nace_manana | POST=1 | avisos=1 | role=alert | 1 líneas · 938×20 | sí | «No se ha podido crear la revisión. Vuelve a intentarlo.»
+1280×800 | DOS FALLOS SEGUIDOS (sin número, luego no existe) | POST=2 | avisos=1 | role=alert | 1 líneas · 938×20 | sí | «No se puede crear una revisión: este presupuesto ya no existe.»
+POBLACION=22 filas · rotas=0
+EXIT=0

@@ -1,0 +1,28 @@
+SCRUM-1519 · censo de la forma (estático, AST)
+POBLACION: 322 ficheros .ts de src/ · 768 llamadas a Prisma con operación de OPS (13 operaciones) · modelos del esquema 33, con columna de comercio 25 · ficheros con alguna llamada 125
+  por clase de modelo: CON-COLUMNA 614 · MERCHANT 137 · SIN-COLUMNA 17
+  receptores: prisma 632 · tx 48 · prismaClient 36 · db 34 · cliente 9 · client 7 · (prisma as any) 2
+
+── EL PAR SEMBRADO (QUITADO)
+
+── MODELOS CON COLUMNA DE COMERCIO · 614 llamadas
+  ATADA 385 · SOLO-POR-ID 143 · POR-OTRA-CLAVE 67 · ILEGIBLE 17 · SIN-WHERE 2
+
+── LA FORMA · SOLO-POR-ID sobre modelo con columna de comercio · 143 llamadas en 49 ficheros
+  por tipo:    escribe 88 · lee-una 51 · lee-varias 4
+  por sitio:   no-ruta 83 · ruta 60
+  tipo×sitio:  escribe/no-ruta 50 · escribe/ruta 38 · lee-una/no-ruta 31 · lee-una/ruta 20 · lee-varias/ruta 2 · lee-varias/no-ruta 2
+  por modelo:  invoice 33 · quote 31 · charge 13 · customer 13 · albaran 9 · job 9 · maintenancePlan 7 · teamMember 5 · authSession 3 · parteTrabajo 3 · expense 2 · vfSubmission 2 · attachment 2 · whatsAppMessage 2 · provider 2 · quoteTemplate 2 · emailMessage 1 · product 1 · quoteRequest 1 · customerSite 1 · botSession 1
+  por fichero: lib/invoicing.ts 11 · maintenance/domain/maintenance.service.ts 10 · billing/app/routes/psp.routes.ts 8 · jobs/domain/job.service.ts 8 · jobs/app/routes/jobs.routes.ts 7 · jobs/domain/albaran.service.ts 6 · billing/app/routes/mpWebhook.routes.ts 5 · invoicing/domain/verifactu.service.ts 5 · quotes/app/routes/quotes.routes.ts 5 · system/app/routes/quotesAdmin.routes.ts 5 · jobs/app/routes/albaranes.routes.ts 4 · jobs/app/routes/albaranPublic.routes.ts 4 · whatsappBot/app/routes/whatsappIncoming.routes.ts 4 · jobs/app/routes/partes.routes.ts 3 · jobs/domain/albaranWhatsApp.service.ts 3 · system/app/routes/invoicesAdmin.routes.ts 3 · team/domain/team.service.ts 3 · auth/domain/auth.service.ts 2 · auth/domain/entornoApp.service.ts 2 · billing/app/routes/chargesAdmin.routes.ts 2 · billing/app/routes/receipt.routes.ts 2 · billing/domain/invoiceReminder.service.ts 2 · billing/domain/invoiceWhatsApp.service.ts 2 · expenses/domain/expenses.service.ts 2 · fiscal/verifactu/sif.procesador.ts 2 · invoicing/app/routes/invoice.routes.ts 2 · invoicing/domain/selladoEstado.ts 2 · messaging/domain/email.service.ts 2 · messaging/domain/whatsappLog.service.ts 2 · providers/domain/providers.service.ts 2 · quotes/domain/quoteToken.service.ts 2 · quotes/domain/sendQuote.service.ts 2 · system/quoteAdmin.ts 2 · templates/app/routes/templates.routes.ts 2 · billing/app/routes/payMp.routes.ts 1 · jobs/domain/pendientesFacturar.service.ts 1 · jobs/domain/recapitulativa.service.ts 1 · maintenance/app/routes/maintenance.routes.ts 1 · messaging/domain/registroDeEnvios.ts 1 · metrics/domain/metrics.service.ts 1 · products/domain/products.service.ts 1 · quoteRequests/app/routes/quoteRequests.routes.ts 1 · quoteRequests/domain/attachment.service.ts 1 · quotes/domain/expire.service.ts 1 · quotes/domain/reminder.service.ts 1 · system/app/routes/dev.routes.ts 1 · system/domain/sitiosDelCliente.ts 1 · system/invoiceAdmin.ts 1 · whatsappBot/domain/botFlow.service.ts 1
+
+── POR-OTRA-CLAVE (sin id y sin comercio) · 67 · por tipo×sitio: lee-una/ruta 26 · lee-varias/no-ruta 17 · lee-una/no-ruta 15 · lee-varias/ruta 5 · escribe/no-ruta 4
+── ILEGIBLE · 17 · NO juzgadas: ni atadas ni sueltas · por sitio: no-ruta 12 · ruta 5
+── SIN-WHERE · 2 · por operación: groupBy 2
+
+── MODELOS SIN COLUMNA (sólo se atan por el padre) · 17 llamadas · POR-OTRA-CLAVE 8 · ATADA 5 · ILEGIBLE 4 · modelos: event 6 · jobAssignee 5 · gatewayEvent 4 · vfFlujoObligado 2
+── MERCHANT (su id ES el comercio) · 137 llamadas · SOLO-POR-ID 117 · POR-OTRA-CLAVE 16 · SIN-WHERE 3 · ILEGIBLE 1
+
+── EL DEL TICKET (customer.findUnique por job.customerId en jobs.routes.ts): 2 → src/modules/jobs/app/routes/jobs.routes.ts:379, src/modules/jobs/app/routes/jobs.routes.ts:583
+
+CIEGO: sin el par sembrado este recuento no distingue «no hay» de «no veo».
+EXIT=2

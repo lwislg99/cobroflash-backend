@@ -11,7 +11,7 @@ import { recordCustomerEvent } from '../../customerEvents.service';
 import { ensureChargeReceiptToken } from '../../../../lib/invoicing';
 import { ensureQuoteDecisionToken } from '../../../quotes/domain/quoteToken.service'; // SCRUM-95
 import { cardChargeMode } from '../../../billing/domain/cardCharge'; // SCRUM-893
-import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-1018
+import { zonaDelMerchant, diaNaturalEn } from '../../../../core/zonaDelMerchant'; // SCRUM-1018 · 1471b
 
 const router = Router();
 
@@ -41,8 +41,22 @@ function fmt(n: number) {
   return formatImporteEs(n);
 }
 
-function dateShort(d: Date | string) {
-  return new Date(d).toLocaleDateString('es', { day: '2-digit', month: 'short', year: 'numeric' });
+// SCRUM-1471 · la fecha corta, en la zona del NEGOCIO: la misma forma que la página pública
+// (SCRUM-633). Sin `timeZone` salía del reloj del proceso (UTC en Railway) y un pago de las 00:30
+// se leía con la víspera. La zona llega ya resuelta por `zonaDelMerchant`.
+function dateShort(d: Date | string, zona: string) {
+  return new Date(d).toLocaleDateString('es', { timeZone: zona, day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+// SCRUM-1471b · LA FECHA DE LA FACTURA ES EL DÍA NATURAL DE SU REGISTRO. Decisión del fundador
+// (SCRUM-1470 c.20530, «Sí, el mismo día»): su gemelo, la «Fecha:» del PDF de la factura (`dateStr`,
+// SCRUM-1470c), y la `FechaExpedicionFactura` del registro salen de `diaNaturalEn(createdAt, zona)`.
+// El día se pide a ESA función, no a `toLocaleDateString` con zona: así el portal no puede decir otro
+// día que el registro aunque las dos formas de calcularlo divergieran. Sólo se le pone la forma corta.
+// Sin zona declarada, `zonaDelMerchant` da UTC y la tarjeta dice lo que decía.
+function fechaDeLaFactura(d: Date | string, zona: string) {
+  const dia = new Date(`${diaNaturalEn(new Date(d), zona)}T00:00:00Z`);
+  return dia.toLocaleDateString('es', { timeZone: 'UTC', day: '2-digit', month: 'short', year: 'numeric' });
 }
 
 function css() {
@@ -320,6 +334,8 @@ router.get('/:token', async (req, res) => {
 
   // A22.1: el portal habla el idioma del documento del país (ES → "Presupuesto")
   const locale = getLocale((customer.merchant as any)?.country);
+  // SCRUM-1471: una sola vez para toda la página, como `puedeTarjeta`.
+  const zonaDelNegocio = zonaDelMerchant(m);
 
   // ── Cotizaciones ────────────────────────────────────────────────────────
   const quotesHtml = quotes.length
@@ -358,7 +374,7 @@ router.get('/:token', async (req, res) => {
               <div class="pf-card-row">
                 <div>
                   <div class="pf-card-title">${locale.quote} #${q.quoteNumber ?? q.id}</div>
-                  <div class="pf-card-meta">${dateShort(q.createdAt)}</div>
+                  <div class="pf-card-meta">${dateShort(q.createdAt, zonaDelNegocio)}</div>
                 </div>
                 <div>
                   <div class="pf-card-amount">${formatMoneyEs(Number(q.total), q.currency)}</div>
@@ -409,7 +425,7 @@ router.get('/:token', async (req, res) => {
               <div class="pf-card-row">
                 <div>
                   <div class="pf-card-title">Factura ${esc(inv.number)}</div>
-                  <div class="pf-card-meta">${dateShort(inv.createdAt)}${inv.paidAt ? ' · Pagada ' + dateShort(inv.paidAt) : ''}</div>
+                  <div class="pf-card-meta">${fechaDeLaFactura(inv.createdAt, zonaDelNegocio)}${inv.paidAt ? ' · Pagada ' + dateShort(inv.paidAt, zonaDelNegocio) : ''}</div>
                 </div>
                 <div>
                   <div class="pf-card-amount">${formatMoneyEs(Number(inv.total), inv.currency)}</div>

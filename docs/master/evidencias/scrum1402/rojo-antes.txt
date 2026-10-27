@@ -1,0 +1,83 @@
+ok 1 - SCRUM-1402 · ✅ SUELO: los planes legítimos de este fichero son los de entitlements, ni uno más ni uno menos
+ok 2 - SCRUM-1402 · ✅ EL QUE MANDA · checkout.session.completed con un plan legítimo: se activa IGUAL, con su premio y su correo, y sin un aviso
+ok 3 - SCRUM-1402 · ✅ EL QUE MANDA · customer.subscription.updated y .created (active, trialing) con un plan legítimo: se escribe IGUAL
+ok 4 - SCRUM-1402 · ✅ EL QUE MANDA · un impago (past_due, unpaid) con un plan legítimo CONSERVA el plan, como antes
+not ok 5 - SCRUM-1402 · 🔴 checkout.session.completed con un plan que NO existe: no se escribe NADA en el merchant, y deja UN aviso con el valor, el merchant y los planes que existen
+    🔴 EL WEBHOOK HA ESCRITO EN `Merchant.plan` UN PLAN QUE NO EXISTE. 9 de 9:
+       · "empresa" → {"stripeCustomerId":"cus_scrum1402","plan":"empresa","subscriptionStatus":"active"}
+       · "basic" → {"stripeCustomerId":"cus_scrum1402","plan":"basic","subscriptionStatus":"active"}
+       · "Equipo" → {"stripeCustomerId":"cus_scrum1402","plan":"Equipo","subscriptionStatus":"active"}
+       · "equipo " → {"stripeCustomerId":"cus_scrum1402","plan":"equipo ","subscriptionStatus":"active"}
+       · "PRO" → {"stripeCustomerId":"cus_scrum1402","plan":"PRO","subscriptionStatus":"active"}
+       · " pro" → {"stripeCustomerId":"cus_scrum1402","plan":" pro","subscriptionStatus":"active"}
+       · "constructor" → {"stripeCustomerId":"cus_scrum1402","plan":"constructor","subscriptionStatus":"active"}
+       · "toString" → {"stripeCustomerId":"cus_scrum1402","plan":"toString","subscriptionStatus":"active"}
+       · "__proto__" → {"stripeCustomerId":"cus_scrum1402","plan":"__proto__","subscriptionStatus":"active"}
+not ok 6 - SCRUM-1402 · 🔴 customer.subscription.updated y .created (active, trialing) con un plan que NO existe: no se escribe NADA, y avisa
+    🔴 LA SUSCRIPCIÓN HA ESCRITO UN PLAN QUE NO EXISTE. 36 de 36:
+       · customer.subscription.updated (active) "empresa" → {"plan":"empresa","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402","planExpiresAt":"2030-03-17T17:46:40.000Z"}
+       · customer.subscription.updated (active) "basic" → {"plan":"basic","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402","planExpiresAt":"2030-03-17T17:46:40.000Z"}
+       · customer.subscription.updated (active) "Equipo" → {"plan":"Equipo","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402","planExpiresAt":"2030-03-17T17:46:40.000Z"}
+       · customer.subscription.updated (active) "equipo " → {"plan":"equipo ","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402","planExpiresAt":"2030-03-17T17:46:40.000Z"}
+       · customer.subscription.updated (active) "PRO" → {"plan":"PRO","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402","planExpiresAt":"2030-03-17T17:46:40.000Z"}
+       · customer.subscription.updated (active) " pro" → {"plan":" pro","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402","planExpiresAt":"2030-03-17T17:46:40.000Z"}
+       · customer.subscription.updated (active) "constructor" → {"plan":"constructor","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402","planExpiresAt":"2030-03-17T17:46:40.000Z"}
+       · customer.subscription.updated (active) "toString" → {"plan":"toString","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402","planExpiresAt":"2030-03-17T17:46:40.000Z"}
+       · customer.subscription.updated (active) "__proto__" → {"plan":"__proto__","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402","planExpiresAt":"2030-03-17T17:46:40.000Z"}
+       · customer.subscription.updated (trialing) "empresa" → {"plan":"empresa","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402","planExpiresAt":"2030-03-17T17:46:40.000Z"}
+       · customer.subscription.updated (trialing) "basic" → {"plan":"basic","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402","planExpiresAt":"2030-03-17T17:46:40.000Z"}
+       · customer.subscription.updated (trialing) "Equipo" → {"plan":"Equipo","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402","planExpiresAt":"2030-03-17T17:46:40.000Z"}
+       · customer.subscription.updated (trialing) "equipo " → {"plan":"equipo ","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402","planExpiresAt":"2030-03-17T17:46:40.000Z"}
+       · customer.subscription.updated (trialing) "PRO" → {"plan":"PRO","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402","planExpiresAt":"2030-03-17T17:46:40.000Z"}
+       · customer.subscription.updated (trialing) " pro" → {"plan":" pro","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402","planExpiresAt":"2030-03-17T17:46:40.000Z"}
+       · customer.subscription.updated (trialing) "constructor" → {"plan":"constructor","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402","planExpiresAt":"2030-03-17T17:46:40.000Z"}
+       · customer.subscription.updated (trialing) "toString" → {"plan":"toString","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402","planExpiresAt":"2030-03-17T17:46:40.000Z"}
+       · customer.subscription.updated (trialing) "__proto__" → {"plan":"__proto__","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402","planExpiresAt":"2030-03-17T17:46:40.000Z"}
+       · customer.subscription.created (active) "empresa" → {"plan":"empresa","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402","planExpiresAt":"2030-03-17T17:46:40.000Z"}
+       · customer.subscription.created (active) "basic" → {"plan":"basic","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402","planExpiresAt":"2030-03-17T17:46:40.000Z"}
+       · customer.subscription.created (active) "Equipo" → {"plan":"Equipo","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402","planExpiresAt":"2030-03-17T17:46:40.000Z"}
+       · customer.subscription.created (active) "equipo " → {"plan":"equipo ","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402","planExpiresAt":"2030-03-17T17:46:40.000Z"}
+       · customer.subscription.created (active) "PRO" → {"plan":"PRO","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402","planExpiresAt":"2030-03-17T17:46:40.000Z"}
+       · customer.subscription.created (active) " pro" → {"plan":" pro","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402","planExpiresAt":"2030-03-17T17:46:40.000Z"}
+       · customer.subscription.created (active) "constructor" → {"plan":"constructor","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402","planExpiresAt":"2030-03-17T17:46:40.000Z"}
+       · customer.subscription.created (active) "toString" → {"plan":"toString","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402","planExpiresAt":"2030-03-17T17:46:40.000Z"}
+       · customer.subscription.created (active) "__proto__" → {"plan":"__proto__","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402","planExpiresAt":"2030-03-17T17:46:40.000Z"}
+       · customer.subscription.created (trialing) "empresa" → {"plan":"empresa","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402","planExpiresAt":"2030-03-17T17:46:40.000Z"}
+       · customer.subscription.created (trialing) "basic" → {"plan":"basic","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402","planExpiresAt":"2030-03-17T17:46:40.000Z"}
+       · customer.subscription.created (trialing) "Equipo" → {"plan":"Equipo","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402","planExpiresAt":"2030-03-17T17:46:40.000Z"}
+       · customer.subscription.created (trialing) "equipo " → {"plan":"equipo ","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402","planExpiresAt":"2030-03-17T17:46:40.000Z"}
+       · customer.subscription.created (trialing) "PRO" → {"plan":"PRO","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402","planExpiresAt":"2030-03-17T17:46:40.000Z"}
+       · customer.subscription.created (trialing) " pro" → {"plan":" pro","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402","planExpiresAt":"2030-03-17T17:46:40.000Z"}
+       · customer.subscription.created (trialing) "constructor" → {"plan":"constructor","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402","planExpiresAt":"2030-03-17T17:46:40.000Z"}
+       · customer.subscription.created (trialing) "toString" → {"plan":"toString","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402","planExpiresAt":"2030-03-17T17:46:40.000Z"}
+       · customer.subscription.created (trialing) "__proto__" → {"plan":"__proto__","subscriptionStatus":"active","stripeSubscriptionId":"sub_scrum1402","planExpiresAt":"2030-03-17T17:46:40.000Z"}
+not ok 7 - SCRUM-1402 · 🔴 un impago (past_due, unpaid) con un plan que NO existe tampoco lo escribe, y avisa
+    🔴 EL IMPAGO HA ESCRITO UN PLAN QUE NO EXISTE. 18 de 18:
+       · past_due "empresa" → {"plan":"empresa","subscriptionStatus":"past_due","stripeSubscriptionId":"sub_scrum1402"}
+       · past_due "basic" → {"plan":"basic","subscriptionStatus":"past_due","stripeSubscriptionId":"sub_scrum1402"}
+       · past_due "Equipo" → {"plan":"Equipo","subscriptionStatus":"past_due","stripeSubscriptionId":"sub_scrum1402"}
+       · past_due "equipo " → {"plan":"equipo ","subscriptionStatus":"past_due","stripeSubscriptionId":"sub_scrum1402"}
+       · past_due "PRO" → {"plan":"PRO","subscriptionStatus":"past_due","stripeSubscriptionId":"sub_scrum1402"}
+       · past_due " pro" → {"plan":" pro","subscriptionStatus":"past_due","stripeSubscriptionId":"sub_scrum1402"}
+       · past_due "constructor" → {"plan":"constructor","subscriptionStatus":"past_due","stripeSubscriptionId":"sub_scrum1402"}
+       · past_due "toString" → {"plan":"toString","subscriptionStatus":"past_due","stripeSubscriptionId":"sub_scrum1402"}
+       · past_due "__proto__" → {"plan":"__proto__","subscriptionStatus":"past_due","stripeSubscriptionId":"sub_scrum1402"}
+       · unpaid "empresa" → {"plan":"empresa","subscriptionStatus":"past_due","stripeSubscriptionId":"sub_scrum1402"}
+       · unpaid "basic" → {"plan":"basic","subscriptionStatus":"past_due","stripeSubscriptionId":"sub_scrum1402"}
+       · unpaid "Equipo" → {"plan":"Equipo","subscriptionStatus":"past_due","stripeSubscriptionId":"sub_scrum1402"}
+       · unpaid "equipo " → {"plan":"equipo ","subscriptionStatus":"past_due","stripeSubscriptionId":"sub_scrum1402"}
+       · unpaid "PRO" → {"plan":"PRO","subscriptionStatus":"past_due","stripeSubscriptionId":"sub_scrum1402"}
+       · unpaid " pro" → {"plan":" pro","subscriptionStatus":"past_due","stripeSubscriptionId":"sub_scrum1402"}
+       · unpaid "constructor" → {"plan":"constructor","subscriptionStatus":"past_due","stripeSubscriptionId":"sub_scrum1402"}
+       · unpaid "toString" → {"plan":"toString","subscriptionStatus":"past_due","stripeSubscriptionId":"sub_scrum1402"}
+       · unpaid "__proto__" → {"plan":"__proto__","subscriptionStatus":"past_due","stripeSubscriptionId":"sub_scrum1402"}
+ok 8 - SCRUM-1402 · ✅ el rechazo NO es un fallo de entrega: el evento queda PROCESADO en el registro, sin error anotado (Stripe no reintenta)
+ok 9 - SCRUM-1402 · 📌 una CANCELACIÓN se aplica igual venga el plan que venga: escribe el literal `trial`, nunca el valor recibido
+not ok 10 - SCRUM-1402 · 📌 SIN `metadata.plan` sigue como estaba: ni escribe ni avisa (y la escucha oye). No es de este ticket, y no está decidido
+ok 11 - SCRUM-1402 · 📌 la idempotencia por `event.id` no se ha tocado: la segunda entrega del mismo evento no vuelve a escribir
+not ok 12 - SCRUM-1402 · 🔒 el webhook no lleva su PROPIA lista de planes: toma la de entitlements, y el único plan que escribe por su nombre es `trial`
+  error: '🔴 EL WEBHOOK NO TOMA LA LISTA DE `src/core/entitlements.ts` (importa de allí: []). Una segunda lista divergiría: es el defecto de SCRUM-1342 y de SCRUM-1401.'
+# tests 12
+# pass 7
+# fail 5
+# skipped 0

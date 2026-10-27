@@ -14,6 +14,8 @@ import { ensureInvoicePdf } from '../../../../lib/invoicing';
 import { fechaDeCobroDeCharge } from '../../domain/instanteDeCobro'; // SCRUM-397
 import { cardChargeMode } from '../../domain/cardCharge'; // SCRUM-893
 import { transferenciaDisponible } from '../../domain/transferenciaDisponible'; // SCRUM-910
+import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-1471
+import { clienteDelDocumento } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-1576
 
 const router = Router();
 
@@ -103,6 +105,13 @@ router.get('/:token', async (req, res) => {
   // "factura" para un justificante (regla 7 / Parte M). Tipo: invoice.type==='JUST' o nº J-…
   const isJust = !!invoice && (invoice.type === 'JUST' || isReceiptNumber(invoice.number));
   const docLabel = isJust ? 'justificante' : 'factura';
+  // SCRUM-1576 · un cobro YA FACTURADO se nombra con el cliente congelado en su factura, como el
+  // PDF que enlaza esta misma página (SCRUM-729). Sin factura, la ficha viva: el Charge no guarda
+  // cliente. La regla es la de `clienteDelDocumento`, no una copia.
+  const nombreDelCliente: string | null =
+    invoice && (invoice.customerName != null || ch.customer)
+      ? clienteDelDocumento(invoice, ch.customer).name
+      : ch.customer?.name ?? null;
   const docPron = isJust ? 'lo' : 'la'; // pronombre: lo (justificante) / la (factura)
 
   const title = `Recibo #${ch.id} — YaQu`;
@@ -244,11 +253,15 @@ router.get('/:token', async (req, res) => {
        </details>`
       : '';
 
+  // SCRUM-1471 · las fechas de este recibo se pintan en la zona del NEGOCIO, con la misma forma
+  // que la página pública (SCRUM-633). Sin `timeZone` salían del reloj del proceso (UTC en
+  // Railway) y un pago de las 00:30 se imprimía con la víspera.
+  const zonaDelNegocio = zonaDelMerchant((ch as any).merchant);
   const eventsList = (ch.events || [])
     .sort((a, b) => +new Date(a.ts) - +new Date(b.ts))
     .map(
       (e) =>
-        `<li>${esc(e.type)} · ${esc(new Date(e.ts).toLocaleString())}</li>`,
+        `<li>${esc(e.type)} · ${esc(new Date(e.ts).toLocaleString(undefined, { timeZone: zonaDelNegocio }))}</li>`,
     )
     .join('');
 
@@ -290,7 +303,7 @@ router.get('/:token', async (req, res) => {
     ch.status === 'paid'
       ? [
           fechaPago
-            ? `Pagado el ${fechaPago.toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })}`
+            ? `Pagado el ${fechaPago.toLocaleDateString('es-ES', { timeZone: zonaDelNegocio, day: '2-digit', month: 'long', year: 'numeric' })}`
             : 'Pagado',
           methodLabel(ch.method),
         ]
@@ -464,7 +477,7 @@ router.get('/:token', async (req, res) => {
   ${invBlock}
   ${mailBanner}
   ${feedbackBlock}
-  <div style="margin-top:1rem;text-align:center"><small>Cobro #${ch.id} · Cliente: ${esc(ch.customer?.name ?? '—')}</small></div>
+  <div style="margin-top:1rem;text-align:center"><small>Cobro #${ch.id} · Cliente: ${esc(nombreDelCliente ?? '—')}</small></div>
   ${simulateBlock}
   ${devInternals}
 </div>
@@ -477,17 +490,21 @@ router.get('/:token', async (req, res) => {
 // puede descargarlo desde el recibo aunque no se hubiera generado antes. Público por token
 // OPACO (SCRUM-74), igual que GET /recibo/:token (el cliente lo abre desde WhatsApp, sin login).
 router.get('/:token/pdf', async (req, res) => {
+  // SCRUM-1404g · CRUCE DE CARRIL DECLARADO (J2; SCRUM-1404 c.20932, sólo para este cambio). La
+  // factura, fuera del `try` y con su comercio: el `catch` necesita los dos para saber si un
+  // pendiente de sellado es de los que entran en la cadena (`esErrorSinSellar`).
+  let invoice: any = null;
+  const conComercio = { merchant: { select: { country: true, taxId: true } } };
   try {
     const ch = await prisma.charge.findUnique({ where: { receiptToken: req.params.token }, include: { events: true } });
     if (!ch || ch.status !== 'paid') return res.status(404).send(documentNotFoundHtml());
     // Localizar la factura ligada (por quote o evento 'invoiced'), igual que en GET /:token.
     const quote = await prisma.quote.findFirst({ where: { chargeId: ch.id } });
-    let invoice: any = null;
-    if (quote) invoice = await prisma.invoice.findFirst({ where: { quoteId: quote.id } });
+    if (quote) invoice = await prisma.invoice.findFirst({ where: { quoteId: quote.id }, include: conComercio });
     if (!invoice) {
       const invEv = [...(ch.events || [])].reverse().find((e) => e.type === 'invoiced' && (e as any).payload?.invoice_id);
       const invId = (invEv as any)?.payload?.invoice_id as number | undefined;
-      if (invId) invoice = await prisma.invoice.findUnique({ where: { id: invId } });
+      if (invId) invoice = await prisma.invoice.findUnique({ where: { id: invId }, include: conComercio });
     }
     if (!invoice) return res.status(404).send(documentNotFoundHtml());
     const { diskPath, number } = await ensureInvoicePdf(invoice.id, prisma);
@@ -501,7 +518,7 @@ router.get('/:token/pdf', async (req, res) => {
     // el clic del CLIENTE FINAL el que disparaba el fail-open y se llevaba un documento sin
     // huella. Ahora no sale nada — y no sale como 404, porque la factura existe: 409 con el copy
     // oficial, que no nombra sellado, huella ni VeriFactu (reglas 26 y 30).
-    if (esErrorSinSellar(err)) {
+    if (esErrorSinSellar(err, invoice?.number, invoice?.merchant)) {
       return res.status(409).send(documentoEnRegistroHtml(COPY_PUBLICO_SIN_SELLAR));
     }
     return res.status(500).send(documentNotFoundHtml());

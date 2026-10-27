@@ -1,0 +1,108 @@
+✔ SCRUM-1522e · la tabla tiene las 52 provincias: dos con la hora de Canarias y cincuenta con la peninsular (19.6462ms)
+✖ SCRUM-1522e · un alta de España guarda la zona de su provincia, y la consola dice cuál (139.5249ms)
+✖ SCRUM-1522e · un comercio de España sin provincia no se crea: ni a NULL ni de ninguna manera (677.0852ms)
+[lifecycle] (sin RESEND) email a bde4433f@test.local: ¡Bienvenido a YaQu! 🎉
+[magic-link] to=origen-3-1522e@test.local link=http://localhost:3000/auth/verify?token=d7617097423f24ef7ff879b6561baf2d132d1a87d61595fa4823163e003a9510
+[aviso] {"evento":"aviso_no_entregado","aviso":"bienvenida","destinatario":"bde4433f@test.local","estado":"fallo_envio","idProveedor":null,"motivo":"no se pudo enviar el email (sin_transporte)"}
+[lifecycle] (sin RESEND) email a cd7627b1@test.local: ¡Bienvenido a YaQu! 🎉
+[magic-link] to=origen-4-1522e@test.local link=http://localhost:3000/auth/verify?token=8876581d99332202dfbad9e3153161f989b1b6e83d1dedd02555ccbb717d2a63
+[magic-link] ERROR enviando email a bde4433f@test.local: no se pudo enviar el email (sin_transporte)
+[aviso] {"evento":"aviso_no_entregado","aviso":"enlace_de_acceso","destinatario":"bde4433f@test.local","estado":"fallo_envio","idProveedor":null,"motivo":"no se pudo enviar el email (sin_transporte)"}
+[aviso] {"evento":"aviso_no_entregado","aviso":"bienvenida","destinatario":"cd7627b1@test.local","estado":"fallo_envio","idProveedor":null,"motivo":"no se pudo enviar el email (sin_transporte)"}
+[magic-link] ERROR enviando email a cd7627b1@test.local: no se pudo enviar el email (sin_transporte)
+[aviso] {"evento":"aviso_no_entregado","aviso":"enlace_de_acceso","destinatario":"cd7627b1@test.local","estado":"fallo_envio","idProveedor":null,"motivo":"no se pudo enviar el email (sin_transporte)"}
+✔ SCRUM-1522e · fuera de España el comercio nace sin zona, como hasta hoy: no hay tabla de otros países (293.4514ms)
+✖ SCRUM-1522e · el origen mismo: `registerMerchant` no deja crear un comercio de España sin zona, lo llame quien lo llame (91.8701ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 2
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1288.66
+
+✖ failing tests:
+
+test at tests\scrum1522e-la-zona-en-el-origen.test.mjs:117:1
+✖ SCRUM-1522e · un alta de España guarda la zona de su provincia, y la consola dice cuál (139.5249ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+  +   dicha: null,
+  +   guardada: null,
+  -   dicha: 'Atlantic/Canary',
+  -   guardada: 'Atlantic/Canary',
+      pais: 'ES'
+    }
+  
+      at TestContext.<anonymous> (<arbol>/tests/scrum1522e-la-zona-en-el-origen.test.mjs:119:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1332:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { guardada: null, dicha: null, pais: 'ES' },
+    expected: { guardada: 'Atlantic/Canary', dicha: 'Atlantic/Canary', pais: 'ES' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests\scrum1522e-la-zona-en-el-origen.test.mjs:127:1
+✖ SCRUM-1522e · un comercio de España sin provincia no se crea: ni a NULL ni de ninguna manera (677.0852ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+  +   dicha: null,
+  +   guardada: null,
+  -   dicha: 'Europe/Madrid',
+  -   guardada: 'Europe/Madrid',
+      pais: 'es'
+    }
+  
+      at TestContext.<anonymous> (<arbol>/tests/scrum1522e-la-zona-en-el-origen.test.mjs:133:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1332:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { guardada: null, dicha: null, pais: 'es' },
+    expected: { guardada: 'Europe/Madrid', dicha: 'Europe/Madrid', pais: 'es' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests\scrum1522e-la-zona-en-el-origen.test.mjs:142:1
+✖ SCRUM-1522e · el origen mismo: `registerMerchant` no deja crear un comercio de España sin zona, lo llame quien lo llame (91.8701ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+      [
+        'origen-3-1522e@test.local',
+        'ES',
+  +     undefined
+  -     'Atlantic/Canary'
+      ],
+      [
+        'origen-4-1522e@test.local',
+        'MX',
+  +     undefined
+  -     null
+      ]
+    ]
+  
+      at TestContext.<anonymous> (<arbol>/tests/scrum1522e-la-zona-en-el-origen.test.mjs:155:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1332:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ [ 'origen-3-1522e@test.local', 'ES', undefined ], [ 'origen-4-1522e@test.local', 'MX', undefined ] ],
+    expected: [ [ 'origen-3-1522e@test.local', 'ES', 'Atlantic/Canary' ], [ 'origen-4-1522e@test.local', 'MX', null ] ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+EXIT=1

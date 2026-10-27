@@ -1,0 +1,20 @@
+⟦arranque⟧ 0.5 s COMPLETA · proceso+ws 0.5 s · primera-página 0.0 s
+
+  SCRUM-1257e · EL MODO DE EMISIÓN EN «Configuración › Cumplimiento», MEDIDO EN EL DOM RENDERIZADO
+  población: 4 casos (fiscal, demo, receipt, null) · medidos: 4
+  ────────────────────────────────────────────────────────────────────────────────────────────
+  ✔ fiscal           filas=1  submenú=cumplimiento  alto=20px
+      rótulo: "Se emiten facturas"
+      frase:  "Cada cobro genera una factura con su numeración. Una vez emitida no se puede editar ni borrar."
+  ✔ demo             filas=1  submenú=cumplimiento  alto=39px
+      rótulo: "Cuenta de demostración"
+      frase:  "Se generan facturas completas con una marca de agua DEMO. No tienen validez: esta cuenta es para probar."
+  ✔ receipt          filas=1  submenú=cumplimiento  alto=20px
+      rótulo: "Aún no se emiten documentos"
+      frase:  "Por ahora, YaQu no genera facturas desde tu cuenta."
+  ✔ null (sin modo)  filas=0
+  ────────────────────────────────────────────────────────────────────────────────────────────
+  ⟦veredicto⟧ 0 hallazgos · 0 ciegos
+
+  ✔ cada modo pinta SU rótulo y SU frase, literales, y ninguno pinta la de otro.
+

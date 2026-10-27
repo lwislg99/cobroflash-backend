@@ -1,0 +1,117 @@
+CONTROL SEMBRADO de los lectores · 18 casos fabricados por este guion: 18 salen en su estado
+
+POBLACIÓN · ventana 2026-10-06T13:43:02Z → 2026-10-13T12:10:00Z · origin/main eebc104d9e955cdd67b31ad2d24a50cc9b849a7b
+  commits de main (primer padre): 158 · runs con rama main: 824 · ejecuciones de job (todos los intentos): 1045
+  runs por workflow y evento: Avisador de PR en rojo[workflow_run] 391 · CI[push] 158 · Conflicto de registro[push] 158 · Claude Code[issue_comment] 63 · Vigía del despliegue[schedule] 28 · Vigía de PR atascados[schedule] 26
+  JOBS distintos en la población: 11 · de ellos en la lista del vigía (JOBS_DE_MAIN, 9): 9 · declarados que NO aparecen: 0
+  fuera de la lista (workflows REACTIVOS, que el vigía excluye a propósito: no hablan del estado de main): Claude Code / claude ×63 ¦ Avisador de PR en rojo / avisar ×390
+  CONTROL DE CERO (derivado): «Avisador de PR en rojo / avisar» → 390 ejecuciones; el mismo nombre al revés → 0
+
+① y ② · CADA JOB DE MAIN, por EJECUCIONES (una fila por job; «github» es lo que GitHub le pone, no un estado de aquí)
+  CI / build + tests (con banco desechable)
+     ejecuciones 64 · VERDE 62 · ROJO 2 · suma 64 · github: completed/success 62 · completed/failure 2
+  CI / guards de navegador (fuera de la tanda)
+     ejecuciones 64 · VERDE 64 · suma 64 · github: completed/success 64
+  CI / meta-guard · los guards caen cuando deben
+     ejecuciones 64 · VERDE 43 · CIEGO 20 · CORRIENDO 1 · suma 64 · github: completed/success 43 · completed/failure 20 · in_progress/ 1
+  CI / trinquete · ningún test nuevo mide la zona de la máquina
+     ejecuciones 64 · VERDE 59 · COLGADA 5 · suma 64 · github: completed/success 59 · completed/cancelled 5
+  CI / vigía del despliegue (informativo)
+     ejecuciones 64 · VERDE 63 · ROJO 1 · suma 64 · github: completed/success 63 · completed/failure 1
+  CI / constancia del ALTER (informativo)
+     ejecuciones 64 · VERDE 63 · CIEGO 1 · suma 64 · github: completed/success 63 · completed/failure 1
+  Conflicto de registro / resolver
+     ejecuciones 154 · VERDE* 154 · suma 154 · github: completed/success 154
+  Vigía de PR atascados / vigilar
+     ejecuciones 26 · VERDE* 26 · suma 26 · github: completed/success 26
+  Vigía del despliegue / vigia
+     ejecuciones 28 · VERDE* 28 · suma 28 · github: completed/success 28
+
+① · EN CUÁNTOS COMMITS DE MAIN CORRIÓ CADA JOB DE PUSH, y hace cuánto fue su último veredicto
+  CI / build + tests (con banco desechable)
+     de 158 commits: con veredicto 64 (40.5 %) · VERDE 62 · ROJO 2 · CIEGO 93 · SIN CLASIFICAR 1 · suma 158
+     último verde: 2 commits por detrás de la punta (2026-10-13T11:50:46.000Z) · último veredicto: VERDE, 2 commits por detrás
+  CI / guards de navegador (fuera de la tanda)
+     de 158 commits: con veredicto 64 (40.5 %) · VERDE 64 · CIEGO 93 · SIN CLASIFICAR 1 · suma 158
+     último verde: 2 commits por detrás de la punta (2026-10-13T11:50:46.000Z) · último veredicto: VERDE, 2 commits por detrás
+  CI / meta-guard · los guards caen cuando deben
+     de 158 commits: con veredicto 43 (27.2 %) · VERDE 43 · CIEGO 113 · CORRIENDO 1 · SIN CLASIFICAR 1 · suma 158
+     último verde: 8 commits por detrás de la punta (2026-10-13T11:20:11.000Z) · último veredicto: VERDE, 8 commits por detrás
+  CI / trinquete · ningún test nuevo mide la zona de la máquina
+     de 158 commits: con veredicto 59 (37.3 %) · VERDE 59 · CIEGO 93 · COLGADA 5 · SIN CLASIFICAR 1 · suma 158
+     último verde: 2 commits por detrás de la punta (2026-10-13T11:50:46.000Z) · último veredicto: VERDE, 2 commits por detrás
+  CI / vigía del despliegue (informativo)
+     de 158 commits: con veredicto 64 (40.5 %) · VERDE 63 · ROJO 1 · CIEGO 93 · SIN CLASIFICAR 1 · suma 158
+     último verde: 2 commits por detrás de la punta (2026-10-13T11:50:46.000Z) · último veredicto: VERDE, 2 commits por detrás
+  CI / constancia del ALTER (informativo)
+     de 158 commits: con veredicto 63 (39.9 %) · VERDE 63 · CIEGO 94 · SIN CLASIFICAR 1 · suma 158
+     último verde: 2 commits por detrás de la punta (2026-10-13T11:50:46.000Z) · último veredicto: VERDE, 2 commits por detrás
+  Conflicto de registro / resolver
+     de 158 commits: con veredicto 154 (97.5 %) · VERDE* 154 · CIEGO 4 · suma 158
+     último verde: 0 commits por detrás de la punta (2026-10-13T12:07:34.000Z) · último veredicto: VERDE*, 0 commits por detrás
+
+② · POR QUÉ NO SE PUDO MIRAR (commit × job de push que no es ni VERDE ni ROJO), agrupado por motivo:
+  ×552  CIEGO · run cancelado sin arrancar ningún job, de 0 a 60 s después de crearse el run del commit siguiente (GitHub sustituye al run que espera en la cola del grupo)
+  ×20  CIEGO · el propio meta-guard no pudo juzgar N (0 mudas)
+  ×6  CIEGO · el run está en cola (pending): todavía no ha arrancado ningún job
+  ×6  SIN CLASIFICAR · run en failure sin ningún job: no hay log que leer 
+  ×5  COLGADA · cortado por su techo con N de 2 zonas medidas; N s callado antes del corte (la zona más lenta de los 59 verdes tardó 547 s)
+  ×4  CIEGO · run cancelado sin arrancar ningún job; motivo no medido
+  ×1  CORRIENDO · status in_progress, sin conclusión
+  ×1  CIEGO · NO PUDE PREGUNTAR: producción responde 503.
+
+① · LOS JOBS DE CRON (se miden en horas, no en commits)
+  Vigía de PR atascados / vigilar: 26 ejecuciones · VERDE* 26 · hueco mayor entre dos seguidas 10.6 h · la última, 2026-10-13T09:47:24Z
+  Vigía del despliegue / vigia: 28 ejecuciones · VERDE* 28 · hueco mayor entre dos seguidas 11.3 h · la última, 2026-10-13T08:37:21Z
+
+③ · LO QUE GITHUB LLAMA «failure» EN JOBS DE MAIN: 24 ejecuciones · por estado de aquí: CIEGO 21 · ROJO 3
+     por job: meta-guard · los guard 20 · build + tests (con ban 2 · vigía del despliegue ( 1 · constancia del ALTER ( 1
+
+③a · META-GUARD · 63 ejecuciones con resumen · VERDE 43 · CIEGO 20 · las ✔ contadas dan las «vivas» del resumen en 63 de 63
+  scrum859-identidad-y-motivo-cerrado.test.mjs: no juzgado en 15 ejecuciones · formas de sus marcas: ✔? 15
+     PATA (mismo blob del guard + mismo blob del instrumento, juzgado ENTERO en otra ejecución): se cumple en 15 de 15 · «enteros con los mismos blobs», de mín a máx: 48–48
+  vigia-atascados.test.mjs: no juzgado en 4 ejecuciones · formas de sus marcas: ✔✔??? 4
+     PATA (mismo blob del guard + mismo blob del instrumento, juzgado ENTERO en otra ejecución): se cumple en 4 de 4 · «enteros con los mismos blobs», de mín a máx: 59–59
+  scrum813-trinquete-de-zona.test.mjs: no juzgado en 1 ejecuciones · formas de sus marcas: ✔✔✔✔✔✔✔✔✔✔✔✔✔✔✔✔☠✔✔✔✔✔ 1
+     PATA (mismo blob del guard + mismo blob del instrumento, juzgado ENTERO en otra ejecución): se cumple en 1 de 1 · «enteros con los mismos blobs», de mín a máx: 58–58
+  mudas (un guard que NO cae cuando debe, el único rojo de verdad de este job): 0
+
+③b · BUILD + TESTS · 64 ejecuciones con resumen · VERDE 62 · ROJO 2 · las marcas ancladas dan el resumen en 64 de 64 · con «TANDA SIN VEREDICTO»: 0
+     tamaño del log, de mín a máx: 1690640–1808809 B · verdes con casos AUSENTES según la señal de nombres (cola perdida, no rojo): 39 de 62
+  ROJO · job 112472123541 · 2026-10-06T19:39:34Z · commit 282225174 (137 por detrás de la punta) · 10725 + 1 + 98 = 10824
+     cae: «SCRUM-1378 · `leerTrabajos` no saca PR de `children`, y el lector de ramas es el del hook de cierre» · tests/scrum1350-latido.test.mjs
+     dice: AssertionError [ERR_ASSERTION]: The input was expected to not match the regular expression /1681/. Input: ¦ '{"id":"aaa","nombre":"s0-1oct","estado":"done","actualizado":1791316817877.9614}'
+     PATA · mismo blob del test Y mismo árbol src/: 3 otras ejecuciones → pasa en 3, cae en 0
+     sólo mismo blob del test: 9 otras → pasa en 9, cae en 0 · en las 63 otras de la ventana: pasa en 63, cae en 0, no aparece en 0
+     ④ ¿de otro main? commits de main que tocan tests/scrum1350-latido.test.mjs después del rojo: 3 (04ac86326 83f32124a a0cb34331) · su blob hoy en la punta es OTRO
+  ROJO · job 115185474035 · 2026-10-13T07:37:22Z · commit 9358f02b1 (16 por detrás de la punta) · 11110 + 1 + 93 = 11204
+     cae: «A8.4: suite completa del bot (webhook + dry-run)» · tests/bot-suite.test.mjs
+     dice: AssertionError [ERR_ASSERTION]: sesión en handoff (registro BO A8.3) ¦ 'menu' !== 'handoff'
+     PATA · mismo blob del test Y mismo árbol src/: 9 otras ejecuciones → pasa en 9, cae en 0
+     sólo mismo blob del test: 44 otras → pasa en 44, cae en 0 · en las 63 otras de la ventana: pasa en 44, cae en 0, no aparece en 19
+     ④ ¿de otro main? commits de main que tocan tests/bot-suite.test.mjs después del rojo: 0 · su blob hoy en la punta es EL MISMO
+
+③c · LOS DEMÁS JOBS DE MAIN que no salen VERDE (uno por línea)
+  COLGADA · trinquete · ningún test nuevo  · job 112314349590 · 2026-10-06T14:02:04Z · ee4331a46 (152 por detrás) · github completed/cancelled · 2720 s · cortado por su techo con 1 de 2 zonas medidas; 2359 s callado antes del corte (la zona más lenta de los 59 verdes tardó 547 s)
+  COLGADA · trinquete · ningún test nuevo  · job 112432961307 · 2026-10-06T18:21:22Z · 317c0bab5 (141 por detrás) · github completed/cancelled · 2717 s · cortado por su techo con 1 de 2 zonas medidas; 2171 s callado antes del corte (la zona más lenta de los 59 verdes tardó 547 s)
+  COLGADA · trinquete · ningún test nuevo  · job 112472123426 · 2026-10-06T19:39:34Z · 282225174 (137 por detrás) · github completed/cancelled · 2718 s · cortado por su techo con 1 de 2 zonas medidas; 2363 s callado antes del corte (la zona más lenta de los 59 verdes tardó 547 s)
+  ROJO · vigía del despliegue (informat · job 112661659895 · 2026-10-07T06:25:16Z · 720c1a122 (131 por detrás) · github completed/failure · 12 s · atrasado · prod 33f07c33 · main 720c1a12 · hueco 10.1 h · 4 commits
+  COLGADA · trinquete · ningún test nuevo  · job 112931567843 · 2026-10-07T17:40:57Z · 58fb1028b (92 por detrás) · github completed/cancelled · 2718 s · cortado por su techo con 0 de 2 zonas medidas; 2663 s callado antes del corte (la zona más lenta de los 59 verdes tardó 547 s)
+  COLGADA · trinquete · ningún test nuevo  · job 113072953269 · 2026-10-07T23:41:42Z · edfbd86e7 (85 por detrás) · github completed/cancelled · 2716 s · cortado por su techo con 1 de 2 zonas medidas; 2368 s callado antes del corte (la zona más lenta de los 59 verdes tardó 547 s)
+  CIEGO · constancia del ALTER (informat · job 115152523396 · 2026-10-13T05:45:59Z · 780c81270 (22 por detrás) · github completed/failure · 34 s · NO PUDE PREGUNTAR: producción responde 503.
+
+     el vigía del despliegue (informativo) dice, en sus 64 ejecuciones: al-dia[VERDE] 62 · atrasado[ROJO] 1 · atrasado[VERDE] 1
+       2026-10-07T06:25:16Z · job 112661659895 · ROJO · atrasado · prod 33f07c33 · main 720c1a12 · hueco 10.1 h · 4 commits
+       2026-10-13T11:20:14Z · job 115272657889 · VERDE · 🟡 verde POR DISEÑO con producción por detrás: atrasado · prod 38de705e · main f7a4c816 · hueco 95.8 h · 20 commits
+     el trinquete: una zona, en los 59 verdes, tarda de 312 a 547 s; los cortados callaron 2359, 2171, 2363, 2663, 2368 s
+
+⑤ · FUERA DE LA LISTA DEL VIGÍA (reactivos): no se reparten entre los estados de main
+  Claude Code / claude: 63 ejecuciones · github: completed/skipped 32 · completed/success 25 · completed/failure 6
+  Avisador de PR en rojo / avisar: 390 ejecuciones · github: completed/skipped 296 · completed/success 94
+  runs sin ningún job que NO son «cancelled»: 3
+     CI · run 37654882700 · completed/failure · 2026-10-07T16:48:07Z → 2026-10-07T17:01:00Z · 965e3d053
+     Avisador de PR en rojo · run 37655547430 · completed/startup_failure · 2026-10-07T16:59:09Z → 2026-10-07T17:02:48Z · 965e3d053
+     CI · run 38395019776 · pending/ · 2026-10-13T12:07:38Z → 2026-10-13T12:07:39Z · eebc104d9
+
+RESUMEN · ejecuciones de los 9 jobs de main: 592 · VERDE 354 · VERDE* 208 · ROJO 3 · CIEGO 21 · COLGADA 5 · CORRIENDO 1 · suma 592
+EXIT=0

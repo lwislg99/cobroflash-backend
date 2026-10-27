@@ -1,0 +1,33 @@
+shell: /usr/bin/bash -e {0}
+env:
+  E: docs/master/evidencias/SCRUM-1405
+v24.21.0
+hilos: 4
+tubería, tamaño máximo: 1048576
+node v24.21.0 · linux · x64
+
+① lib/internal/test_runner/test.js — la rama de forceExit
+ 1468      } else if (this.config.forceExit) {
+ 1469        // This is the root test, and all known tests and hooks have finished
+ 1470        // executing. If the user wants to force exit the process regardless of
+ 1471        // any remaining ref'ed handles, then do that now. It is theoretically
+ 1472        // possible that a ref'ed handle could asynchronously create more tests,
+ 1473        // but the user opted into this behavior.
+ 1474        const promises = [];
+ 1475  
+ 1476        for (let i = 0; i < reporterScope.reporters.length; i++) {
+ 1477          const { destination } = reporterScope.reporters[i];
+ 1478  
+ 1479          ArrayPrototypePush(promises, new Promise((resolve) => {
+ 1480            destination.on('unpipe', () => {
+ 1481              if (!destination.closed && typeof destination.close === 'function') {
+ 1482                destination.close(resolve);
+ 1483              } else {
+ 1484                resolve();
+ 1485              }
+ 1486            });
+ 1487          }));
+ 1488        }
+ 1489  
+ 1490        this.harness.teardown();
+ 1491        await SafePromiseAllReturnVoid(promises);

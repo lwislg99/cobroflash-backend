@@ -87,7 +87,7 @@ try {
     vfHash: invoice.vfHash, qrData: invoice.qrData, status: invoice.status,
   };
 
-  // ── Sesión, con la MISMA cadena que usa `e2e-critico.mjs` ────────────────────────────────
+  // ── Sesión, con la cadena que usaba `e2e-critico` (retirado, SCRUM-1521) ─────────────────
   const t = 'pasada-' + crypto.randomBytes(12).toString('hex');
   await prisma.authSession.create({
     data: { merchantId, token: t, type: 'magic_link', expiresAt: new Date(Date.now() + 900000) },

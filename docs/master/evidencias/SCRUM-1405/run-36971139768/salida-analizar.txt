@@ -1,0 +1,164 @@
+POBLACIÓN · runs 36971139768 · 52 tandas con artefacto
+
+── POR BRAZO (tanda entera, con rojos sembrados) ──
+con · POR RECUENTO: 13 de 16 tandas por debajo del máximo de las 52 (10302) · casos que faltan por recuento 363
+con · 16 tandas · medibles 16 · CON AUSENTES 9 de 16 · casos ausentes 131 · # tests 10223×1 10227×1 10257×1 10260×1 10278×1 10280×1 10282×1 10286×1 10287×1 10293×2 10296×1 10301×1 10302×3 · salidas 1×16 · sin resumen 0 · segundos 317–416–489 (mín–mediana–máx)
+   pierden: scrum1262-la-baja-corta-todas-las-vias×2 scrum1323-resumen-vs-detalle-sif1×1 scrum1344-arnes-de-prueba-con-rol×2 scrum237-negacion-respaldada×1 scrum286-bloques-orden×1 scrum454-destructivo-sin-comprobacion×1 scrum853-avisador-solo-obligatorio×1 vigia-atascados×2 zz1405-copia-de-vigia-atascados×2
+con-bloqueante · POR RECUENTO: 0 de 12 tandas por debajo del máximo de las 52 (10302) · casos que faltan por recuento 0
+con-bloqueante · 12 tandas · medibles 12 · CON AUSENTES 0 de 12 · casos ausentes 0 · # tests 10302×12 · salidas 1×12 · sin resumen 0 · segundos 281–360–483 (mín–mediana–máx)
+con-sonda · POR RECUENTO: 4 de 6 tandas por debajo del máximo de las 52 (10302) · casos que faltan por recuento 94
+con-sonda · 6 tandas · medibles 6 · CON AUSENTES 3 de 6 · casos ausentes 21 · # tests 10220×1 10295×1 10299×1 10300×1 10302×2 · salidas 1×6 · sin resumen 0 · segundos 289–462–476 (mín–mediana–máx)
+   pierden: scrum1262-la-baja-corta-todas-las-vias×1 scrum454-destructivo-sin-comprobacion×2 scrum931-un-solo-importe-de-plantilla×1
+sin · POR RECUENTO: 0 de 16 tandas por debajo del máximo de las 52 (10302) · casos que faltan por recuento 0
+sin · 16 tandas · medibles 16 · CON AUSENTES 0 de 16 · casos ausentes 0 · # tests 10302×16 · salidas 1×16 · sin resumen 0 · segundos 302–486–516 (mín–mediana–máx)
+sin-sonda · POR RECUENTO: 0 de 2 tandas por debajo del máximo de las 52 (10302) · casos que faltan por recuento 0
+sin-sonda · 2 tandas · medibles 2 · CON AUSENTES 0 de 2 · casos ausentes 0 · # tests 10302×2 · salidas 1×2 · sin resumen 0 · segundos 487–487–492 (mín–mediana–máx)
+
+── SI EL FLAG NO INFLUYERA, ¿CUÁNTAS VECES SALDRÍA ESTE REPARTO? ──
+este experimento, con vs sin (por la señal de nombres): con 9 de 16 · sin 0 de 16 · Fisher exacto a una cola p = 4.08e-4 (1 de cada 2452)
+este experimento, con vs sin (por recuento): con 13 de 16 · sin 0 de 16 · Fisher exacto a una cola p = 1.61e-6 (1 de cada 620.310)
+con el flag: tubería normal vs bloqueante (por recuento): con 13 de 16 · sin 0 de 12 · Fisher exacto a una cola p = 1.50e-5 (1 de cada 66.861)
+control del instrumento: el del 1-oct (4 de 6 vs 0 de 6) tiene que dar 3,0e-2: con 4 de 6 · sin 0 de 6 · Fisher exacto a una cola p = 3.03e-2 (1 de cada 33)
+los dos juntos (árboles distintos: es una suma, no una réplica): con 13 de 22 · sin 0 de 22 · Fisher exacto a una cola p = 9.58e-6 (1 de cada 104.370)
+con el flag: tubería normal vs tubería bloqueante: con 9 de 16 · sin 0 de 12 · Fisher exacto a una cola p = 1.66e-3 (1 de cada 604)
+
+── EL VEREDICTO: ¿SALEN LOS MISMOS ROJOS EN TODAS? ──
+conjuntos distintos de rojos: 6 · el más repetido tiene 8 rojos y sale en 44 de 52 tandas
+con · 16 tandas · con salida 0: 0 · los 5 sembrados en el TAP: 2×1 4×5 5×10 · tandas a las que les FALTA algún rojo de referencia: 6 · con rojos de más: 6
+   con-03 (salida 1) NO trae: zz1405 · copia de vigia-atascados · ROJO SEMBRADO AL FINAL · y trae de más: tests/zz1405-copia-de-vigia-atascados.test.mjs
+   con-05 (salida 1) NO trae: zz1405 · cola · caso 080 | zz1405 · copia de scrum834-puerta-avisador-rojo · ROJO SEMBRADO AL FINAL | zz1405 · copia de vigia-atascados · ROJO SEMBRADO AL FINAL · y trae de más: tests/zz1405-copia-de-scrum834-puerta-avisador-rojo.test.mjs | tests/zz1405-copia-de-vigia-atascados.test.mjs | tests/zz1405-rojo-en-la-cola.test.mjs
+   con-07 (salida 1) NO trae: zz1405 · copia de scrum834-puerta-avisador-rojo · ROJO SEMBRADO AL FINAL · y trae de más: tests/zz1405-copia-de-scrum834-puerta-avisador-rojo.test.mjs
+   con-08 (salida 1) NO trae: zz1405 · cola · caso 080 · y trae de más: tests/zz1405-rojo-en-la-cola.test.mjs
+   con-14 (salida 1) NO trae: zz1405 · cola · caso 080 · y trae de más: tests/zz1405-rojo-en-la-cola.test.mjs
+   con-16 (salida 1) NO trae: zz1405 · copia de scrum834-puerta-avisador-rojo · ROJO SEMBRADO AL FINAL · y trae de más: tests/zz1405-copia-de-scrum834-puerta-avisador-rojo.test.mjs
+con-bloqueante · 12 tandas · con salida 0: 0 · los 5 sembrados en el TAP: 5×12 · tandas a las que les FALTA algún rojo de referencia: 0 · con rojos de más: 0
+con-sonda · 6 tandas · con salida 0: 0 · los 5 sembrados en el TAP: 1×1 4×1 5×4 · tandas a las que les FALTA algún rojo de referencia: 2 · con rojos de más: 2
+   con-sonda-04 (salida 1) NO trae: zz1405 · copia de vigia-atascados · ROJO SEMBRADO AL FINAL · y trae de más: tests/zz1405-copia-de-vigia-atascados.test.mjs
+   con-sonda-06 (salida 1) NO trae: zz1405 · cola · caso 080 | zz1405 · copia de scrum524b-trinquete-de-la-tabla · ROJO SEMBRADO AL FINAL | zz1405 · copia de scrum834-puerta-avisador-rojo · ROJO SEMBRADO AL FINAL | zz1405 · copia de vigia-atascados · ROJO SEMBRADO AL FINAL · y trae de más: tests/zz1405-copia-de-scrum524b-trinquete-de-la-tabla.test.mjs | tests/zz1405-copia-de-scrum834-puerta-avisador-rojo.test.mjs | tests/zz1405-copia-de-vigia-atascados.test.mjs | tests/zz1405-rojo-en-la-cola.test.mjs
+sin · 16 tandas · con salida 0: 0 · los 5 sembrados en el TAP: 5×16 · tandas a las que les FALTA algún rojo de referencia: 0 · con rojos de más: 0
+sin-sonda · 2 tandas · con salida 0: 0 · los 5 sembrados en el TAP: 5×2 · tandas a las que les FALTA algún rojo de referencia: 0 · con rojos de más: 0
+rojos de referencia (8):
+   SCRUM-812 · 🔴 EL TRINQUETE del GUARD: la cobertura auto-declarada NO BAJA
+   SCRUM-824 · 🔴 el conjunto de ficheros SIN PROBAR no crece
+   SCRUM-838 · 🔴 el censo del árbol: ninguna tautología NUEVA sin declarar
+   zz1405 · cola · caso 080
+   zz1405 · copia de scrum524b-trinquete-de-la-tabla · ROJO SEMBRADO AL FINAL
+   zz1405 · copia de scrum834-puerta-avisador-rojo · ROJO SEMBRADO AL FINAL
+   zz1405 · copia de vigia-atascados · ROJO SEMBRADO AL FINAL
+   zz1405 · suelto · ROJO SEMBRADO
+
+── EL TESTIGO, DENTRO DE LA TANDA (zz1405-rojo-en-la-cola: 80 casos) ──
+con · 16 tandas · ejecutados 80×16 · informados en el TAP 66×1 69×1 77×1 80×13 · informados en el spec 66×1 69×1 77×1 80×13 · TAP y spec discrepan en 0 · tandas con casos ejecutados y NO informados: 3
+con-bloqueante · 12 tandas · ejecutados 80×12 · informados en el TAP 80×12 · informados en el spec 80×12 · TAP y spec discrepan en 0 · tandas con casos ejecutados y NO informados: 0
+con-sonda · 6 tandas · ejecutados 80×6 · informados en el TAP 71×1 80×5 · informados en el spec 71×1 80×5 · TAP y spec discrepan en 0 · tandas con casos ejecutados y NO informados: 1
+sin · 16 tandas · ejecutados 80×16 · informados en el TAP 80×16 · informados en el spec 80×16 · TAP y spec discrepan en 0 · tandas con casos ejecutados y NO informados: 0
+sin-sonda · 2 tandas · ejecutados 80×2 · informados en el TAP 80×2 · informados en el spec 80×2 · TAP y spec discrepan en 0 · tandas con casos ejecutados y NO informados: 0
+
+── LA SONDA: BYTES SIN ESCRIBIR AL SALIR, POR FICHERO ──
+filas de sonda 31500 · de ficheros .test.mjs 24120
+con-bloqueante · 1206 ficheros distintos · con bytes SIN ESCRIBIR al salir alguna vez: 0 · con algo vivo al salir (aparte de las tuberías): 276
+   vivos al salir, por tipo (ficheros): CloseReq×4 ConnectWrap×1 FSReqCallback×32 FSReqPromise×181 Immediate×19 ProcessWrap×4 SimpleShutdownWrap×14 TCPServerWrap×24 TCPSocketWrap×18 Timeout×24
+con-sonda · 1206 ficheros distintos · con bytes SIN ESCRIBIR al salir alguna vez: 8 · con algo vivo al salir (aparte de las tuberías): 283
+   pendientes · zz1405-copia-de-vigia-atascados.test.mjs · 2 de 6 · máx 40375 B · escribe 120065 B en 68 ms
+   pendientes · scrum454-destructivo-sin-comprobacion.test.mjs · 2 de 6 · máx 29528 B · escribe 73775 B en 164 ms
+   pendientes · zz1405-rojo-en-la-cola.test.mjs · 1 de 6 · máx 36222 B · escribe 352492 B en 104 ms
+   pendientes · zz1405-copia-de-scrum834-puerta-avisador-rojo.test.mjs · 1 de 6 · máx 18279 B · escribe 107093 B en 78 ms
+   pendientes · zz1405-copia-de-scrum524b-trinquete-de-la-tabla.test.mjs · 1 de 6 · máx 42169 B · escribe 98116 B en 3791 ms
+   pendientes · scrum1262-la-baja-corta-todas-las-vias.test.mjs · 1 de 6 · máx 5851 B · escribe 75116 B en 1237 ms
+   pendientes · scrum888g-senal-en-la-firma.test.mjs · 1 de 6 · máx 1127 B · escribe 58938 B en 748 ms
+   pendientes · scrum931-un-solo-importe-de-plantilla.test.mjs · 1 de 6 · máx 11214 B · escribe 49956 B en 536 ms
+   vivos al salir, por tipo (ficheros): CloseReq×4 ConnectWrap×1 FSReqCallback×31 FSReqPromise×180 Immediate×19 ProcessWrap×4 SimpleShutdownWrap×14 SimpleWriteWrap×8 TCPServerWrap×24 TCPSocketWrap×18 Timeout×24
+sin-sonda · 1206 ficheros distintos · con bytes SIN ESCRIBIR al salir alguna vez: 0 · con algo vivo al salir (aparte de las tuberías): 1
+   vivos al salir, por tipo (ficheros): TCPSocketWrap×1
+
+── ③ LOS 18 QUE PIERDEN, EN LA LISTA DE LOS QUE MÁS ESCRIBEN (brazo con-sonda · 1201 ficheros de tests/) ──
+bytes que escribe un fichero hacia su padre: mediana 15530 · p90 30716 · p99 54943 · máximo 109622 · por encima de 65.536 (lo que cabe en una tubería de Linux): 9
+de los 18, presentes en este árbol 18 · todos entre los 46 primeros de 1201 · entre los 10 primeros 7 · entre los 25 primeros 14
+si fueran 18 ficheros cualesquiera, caerían todos entre los 46 primeros 1 vez de cada 10^27
+   puesto 1 · vigia-atascados.test.mjs · 109622 B en 76 ms · con bytes pendientes 0 de 6
+   puesto 2 · scrum834-puerta-avisador-rojo.test.mjs · 97367 B en 84 ms · con bytes pendientes 0 de 6
+   puesto 3 · scrum524b-trinquete-de-la-tabla.test.mjs · 89326 B en 5065 ms · con bytes pendientes 0 de 6
+   puesto 4 · scrum1262-la-baja-corta-todas-las-vias.test.mjs · 75116 B en 1237 ms · con bytes pendientes 1 de 6
+   puesto 5 · scrum454-destructivo-sin-comprobacion.test.mjs · 73775 B en 164 ms · con bytes pendientes 2 de 6
+   puesto 6 · scrum1350-latido.test.mjs · 71655 B en 77 ms · con bytes pendientes 0 de 6
+   puesto 8 · scrum1323-resumen-vs-detalle-sif1.test.mjs · 66159 B en 140 ms · con bytes pendientes 0 de 6
+   puesto 11 · scrum888g-senal-en-la-firma.test.mjs · 58938 B en 748 ms · con bytes pendientes 1 de 6
+   puesto 13 · scrum813-trinquete-de-zona.test.mjs · 54943 B en 664 ms · con bytes pendientes 0 de 6
+   puesto 15 · scrum312-importador-clientes.test.mjs · 53408 B en 139 ms · con bytes pendientes 0 de 6
+   puesto 17 · scrum411-exports-inalcanzables.test.mjs · 50311 B en 13600 ms · con bytes pendientes 0 de 6
+   puesto 18 · scrum931-un-solo-importe-de-plantilla.test.mjs · 49956 B en 536 ms · con bytes pendientes 1 de 6
+   puesto 22 · scrum522-guards-fuera-de-la-tanda.test.mjs · 47280 B en 285 ms · con bytes pendientes 0 de 6
+   puesto 24 · scrum237-negacion-respaldada.test.mjs · 46479 B en 3709 ms · con bytes pendientes 0 de 6
+   puesto 31 · scrum176-guard-mensaje.test.mjs · 42790 B en 147 ms · con bytes pendientes 0 de 6
+   puesto 36 · scrum996-suelo-de-arranque.test.mjs · 41590 B en 2332 ms · con bytes pendientes 0 de 6
+   puesto 41 · scrum286-bloques-orden.test.mjs · 40605 B en 1589 ms · con bytes pendientes 0 de 6
+   puesto 46 · scrum161-evidencia-tanda.test.mjs · 39998 B en 74 ms · con bytes pendientes 0 de 6
+los 25 primeros (★ = es de los 18):
+   1 ★ vigia-atascados.test.mjs · 109622 B en 76 ms · pendientes 0 de 6
+   2 ★ scrum834-puerta-avisador-rojo.test.mjs · 97367 B en 84 ms · pendientes 0 de 6
+   3 ★ scrum524b-trinquete-de-la-tabla.test.mjs · 89326 B en 5065 ms · pendientes 0 de 6
+   4 ★ scrum1262-la-baja-corta-todas-las-vias.test.mjs · 75116 B en 1237 ms · pendientes 1 de 6
+   5 ★ scrum454-destructivo-sin-comprobacion.test.mjs · 73775 B en 164 ms · pendientes 2 de 6
+   6 ★ scrum1350-latido.test.mjs · 71655 B en 77 ms · pendientes 0 de 6
+   7 · scrum853-avisador-solo-obligatorio.test.mjs · 66951 B en 84 ms · pendientes 0 de 6
+   8 ★ scrum1323-resumen-vs-detalle-sif1.test.mjs · 66159 B en 140 ms · pendientes 0 de 6
+   9 · scrum667-marcador-visible.test.mjs · 66076 B en 3574 ms · pendientes 0 de 6
+   10 · scrum1344-arnes-de-prueba-con-rol.test.mjs · 62589 B en 4948 ms · pendientes 0 de 6
+   11 ★ scrum888g-senal-en-la-firma.test.mjs · 58938 B en 748 ms · pendientes 1 de 6
+   12 · scrum984-del-presupuesto-al-albaran.test.mjs · 55315 B en 2127 ms · pendientes 0 de 6
+   13 ★ scrum813-trinquete-de-zona.test.mjs · 54943 B en 664 ms · pendientes 0 de 6
+   14 · scrum811c-skill-ui-declarada.test.mjs · 53968 B en 2324 ms · pendientes 0 de 6
+   15 ★ scrum312-importador-clientes.test.mjs · 53408 B en 139 ms · pendientes 0 de 6
+   16 · scrum595-etiquetas-del-documento.test.mjs · 51107 B en 210 ms · pendientes 0 de 6
+   17 ★ scrum411-exports-inalcanzables.test.mjs · 50311 B en 13600 ms · pendientes 0 de 6
+   18 ★ scrum931-un-solo-importe-de-plantilla.test.mjs · 49956 B en 536 ms · pendientes 1 de 6
+   19 · scrum812-el-rotulo-declara-su-poblacion.test.mjs · 48336 B en 2007 ms · pendientes 0 de 6
+   20 · scrum1038-leer-el-ticket-gasto.test.mjs · 48197 B en 933 ms · pendientes 0 de 6
+   21 · scrum586-forma-de-pago-por-cliente.test.mjs · 47530 B en 1381 ms · pendientes 0 de 6
+   22 ★ scrum522-guards-fuera-de-la-tanda.test.mjs · 47280 B en 285 ms · pendientes 0 de 6
+   23 · scrum713-buscar-al-cliente-donde-ya-se-busca.test.mjs · 47001 B en 2000 ms · pendientes 0 de 6
+   24 ★ scrum237-negacion-respaldada.test.mjs · 46479 B en 3709 ms · pendientes 0 de 6
+   25 · scrum1127-sif-client.test.mjs · 46114 B en 1495 ms · pendientes 0 de 6
+
+── LO QUE VIVE CADA FICHERO HASTA SALIR (ms, mediana por fichero; 1206 ficheros en los dos brazos) ──
+suma con el flag 1300880 ms · suma sin el flag 1367526 ms · diferencia 66646 ms (repartida entre los hilos del runner)
+ficheros que viven más de 1 s MÁS sin el flag: 22 · más de 5 s: 5
+   +10027 ms · scrum362-banco-sin-cobertura.test.mjs · con 856 · sin 10883
+   +9833 ms · scrum1285-guardado-en-vuelo.test.mjs · con 933 · sin 10766
+   +9278 ms · scrum448-cobros-estado-de-carga.test.mjs · con 1035 · sin 10313
+   +8026 ms · scrum1249-descarga-recibidas-alcanzable.test.mjs · con 539 · sin 8565
+   +5191 ms · scrum444-avisos-no-se-pisan.test.mjs · con 615 · sin 5806
+   +3014 ms · scrum993-boton-un-toque.test.mjs · con 1333 · sin 4347
+   +2888 ms · scrum1267-alta-albaran-idempotente.test.mjs · con 881 · sin 3769
+   +2674 ms · scrum600d-el-envio-tras-emitir.test.mjs · con 1871 · sin 4545
+   +2432 ms · scrum600b-la-factura-usa-el-front.test.mjs · con 1539 · sin 3971
+   +2323 ms · scrum1033-1034-cabecera-etiquetas-cliente.test.mjs · con 3281 · sin 5604
+   +2189 ms · scrum1180-editor-clausulas-excluidas.test.mjs · con 836 · sin 3025
+   +2163 ms · scrum915d-pasos-del-editor.test.mjs · con 810 · sin 2973
+   +2127 ms · scrum915j-cliente-por-botones.test.mjs · con 1216 · sin 3343
+   +2100 ms · scrum660-iva-defecto-del-documento.test.mjs · con 1225 · sin 3325
+   +2055 ms · scrum760-iva-de-voz-rechazado.test.mjs · con 1767 · sin 3822
+
+── EL CRUCE: PERDER CASOS (señal de nombres) × TENER BYTES PENDIENTES (sonda), por tanda ──
+con-bloqueante-01 · filas de sonda 1575 · pierden 0 · con pendientes 0 · las dos cosas 0 · pierden SIN pendientes 0 · pendientes y la señal no ve pérdida 0
+con-bloqueante-02 · filas de sonda 1575 · pierden 0 · con pendientes 0 · las dos cosas 0 · pierden SIN pendientes 0 · pendientes y la señal no ve pérdida 0
+con-bloqueante-03 · filas de sonda 1575 · pierden 0 · con pendientes 0 · las dos cosas 0 · pierden SIN pendientes 0 · pendientes y la señal no ve pérdida 0
+con-bloqueante-04 · filas de sonda 1575 · pierden 0 · con pendientes 0 · las dos cosas 0 · pierden SIN pendientes 0 · pendientes y la señal no ve pérdida 0
+con-bloqueante-05 · filas de sonda 1575 · pierden 0 · con pendientes 0 · las dos cosas 0 · pierden SIN pendientes 0 · pendientes y la señal no ve pérdida 0
+con-bloqueante-06 · filas de sonda 1575 · pierden 0 · con pendientes 0 · las dos cosas 0 · pierden SIN pendientes 0 · pendientes y la señal no ve pérdida 0
+con-bloqueante-07 · filas de sonda 1575 · pierden 0 · con pendientes 0 · las dos cosas 0 · pierden SIN pendientes 0 · pendientes y la señal no ve pérdida 0
+con-bloqueante-08 · filas de sonda 1575 · pierden 0 · con pendientes 0 · las dos cosas 0 · pierden SIN pendientes 0 · pendientes y la señal no ve pérdida 0
+con-bloqueante-09 · filas de sonda 1575 · pierden 0 · con pendientes 0 · las dos cosas 0 · pierden SIN pendientes 0 · pendientes y la señal no ve pérdida 0
+con-bloqueante-10 · filas de sonda 1575 · pierden 0 · con pendientes 0 · las dos cosas 0 · pierden SIN pendientes 0 · pendientes y la señal no ve pérdida 0
+con-bloqueante-11 · filas de sonda 1575 · pierden 0 · con pendientes 0 · las dos cosas 0 · pierden SIN pendientes 0 · pendientes y la señal no ve pérdida 0
+con-bloqueante-12 · filas de sonda 1575 · pierden 0 · con pendientes 0 · las dos cosas 0 · pierden SIN pendientes 0 · pendientes y la señal no ve pérdida 0
+con-sonda-01 · filas de sonda 1575 · pierden 1 · con pendientes 1 · las dos cosas 1 · pierden SIN pendientes 0 · pendientes y la señal no ve pérdida 0
+con-sonda-02 · filas de sonda 1575 · pierden 1 · con pendientes 1 · las dos cosas 1 · pierden SIN pendientes 0 · pendientes y la señal no ve pérdida 0
+con-sonda-03 · filas de sonda 1575 · pierden 0 · con pendientes 0 · las dos cosas 0 · pierden SIN pendientes 0 · pendientes y la señal no ve pérdida 0
+con-sonda-04 · filas de sonda 1575 · pierden 0 · con pendientes 1 · las dos cosas 0 · pierden SIN pendientes 0 · pendientes y la señal no ve pérdida zz1405-copia-de-vigia-atascados.test.mjs
+con-sonda-05 · filas de sonda 1575 · pierden 0 · con pendientes 0 · las dos cosas 0 · pierden SIN pendientes 0 · pendientes y la señal no ve pérdida 0
+con-sonda-06 · filas de sonda 1575 · pierden 2 · con pendientes 7 · las dos cosas 2 · pierden SIN pendientes 0 · pendientes y la señal no ve pérdida zz1405-copia-de-scrum834-puerta-avisador-rojo.test.mjs, zz1405-rojo-en-la-cola.test.mjs, zz1405-copia-de-scrum524b-trinquete-de-la-tabla.test.mjs, zz1405-copia-de-vigia-atascados.test.mjs, scrum888g-senal-en-la-firma.test.mjs
+sin-sonda-01 · filas de sonda 1575 · pierden 0 · con pendientes 0 · las dos cosas 0 · pierden SIN pendientes 0 · pendientes y la señal no ve pérdida 0
+sin-sonda-02 · filas de sonda 1575 · pierden 0 · con pendientes 0 · las dos cosas 0 · pierden SIN pendientes 0 · pendientes y la señal no ve pérdida 0
+
+EXIT=0 · 52 tandas · tablas en C:\Users\JAVIER~1\AppData\Local\Temp\exp1405-banco

@@ -153,6 +153,12 @@ vite.config.ts.timestamp-*
 # ramas, y una prueba que se copia deja de probar nada. Lo escribe scripts/staging-gated.mjs.
 .claude/evidencia-tanda.json
 
+# SCRUM-1295: la identidad de una MESA (la carpeta fija de un puesto). La escribe
+# `node scripts/carriles.mjs mesa`, y dice «eres el puesto X». NUNCA commiteada: si viajara con la
+# rama, todas las carpetas dirian ser el mismo puesto.
+CLAUDE.local.md
+.yaqu-puesto.json
+
 # muestras generadas para validacion XSD (S1-C)
 tmp/
 

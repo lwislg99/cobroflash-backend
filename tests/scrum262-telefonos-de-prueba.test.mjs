@@ -48,7 +48,8 @@ function ficherosDeDatos() {
     for (const f of fs.readdirSync(path.join(RAIZ, d))) {
       // TODOS los .mjs de scripts/, no solo `seed*`: al medir apareció `e2e-critico.mjs`
       // creando un cliente con un móvil de rango real, y el recorte anterior no lo veía. Los
-      // datos de prueba no siempre se llaman «seed».
+      // datos de prueba no siempre se llaman «seed». (Ese guion se retiró el 13-oct-2026,
+      // SCRUM-1521; el barrido se queda como está: el motivo era el recorte, no el fichero.)
       if (f.endsWith('.mjs') || /\.test\.mjs$/.test(f)) out.push(path.join(RAIZ, d, f));
     }
   }
@@ -57,8 +58,29 @@ function ficherosDeDatos() {
 
 const rel = (p) => path.relative(RAIZ, p).split(path.sep).join('/');
 
-/** Un teléfono ESCRITO en un campo de teléfono. Es lo que acaba en la BD. */
-const ESCRITURA = /(?:phone|whatsappPhone|merchantPhone|toPhone)\s*:\s*'(\+?[0-9][0-9\s\-()]{7,})'/g;
+/** Un teléfono ESCRITO en un campo de teléfono. Es lo que acaba en la BD.
+ *  `mobile` entra el 14-oct-2026 (SCRUM-262c): `Customer.mobile` existe en el esquema y el guard
+ *  no lo miraba — cinco literales fuera de rango pasaban sin que nadie los viera. */
+const ESCRITURA = /(?:phone|whatsappPhone|merchantPhone|toPhone|mobile)\s*:\s*'(\+?[0-9][0-9\s\-()]{7,})'/g;
+
+/**
+ * Rangos de FICCIÓN reservados por su regulador: existen para que se puedan escribir en un
+ * guion o en un test sin que suene el teléfono de nadie. Un guard que los señalara cantaría
+ * sobre números seguros por diseño, y a la tercera vez nadie lo miraría.
+ * La lista es EXPLÍCITA y estrecha: un número vecino, fuera del bloque reservado, se sigue cazando.
+ */
+export const RANGOS_DE_FICCION = [
+  // Ofcom (Reino Unido), bloque de drama de Londres: 020 7946 0000–0999.
+  { regulador: 'Ofcom · Londres', re: /^(?:44|0)2079460\d{3}$/ },
+  // Ofcom, bloque de drama de móvil: 07700 900000–900999.
+  { regulador: 'Ofcom · móvil', re: /^(?:44|0)7700900\d{3}$/ },
+  // NANP (EE. UU. y Canadá): 555-0100 a 555-0199, con cualquier prefijo de área.
+  { regulador: 'NANP · 555-01XX', re: /^1?\d{3}55501\d{2}$/ },
+];
+export function esRangoDeFiccion(valor) {
+  const limpio = String(valor ?? '').replace(/[\s\-()+]/g, '');
+  return RANGOS_DE_FICCION.some((r) => r.re.test(limpio));
+}
 
 /** @returns {{total: number, fuera: Array<{ruta,linea,valor}>}} */
 export function censarTelefonosEscritos(ficheros) {
@@ -69,7 +91,7 @@ export function censarTelefonosEscritos(ficheros) {
     lineas.forEach((linea, i) => {
       for (const m of linea.matchAll(ESCRITURA)) {
         total += 1;
-        if (!esTelefonoDePrueba(m[1])) fuera.push({ ruta: rel(p), linea: i + 1, valor: m[1] });
+        if (!esTelefonoDePrueba(m[1]) && !esRangoDeFiccion(m[1])) fuera.push({ ruta: rel(p), linea: i + 1, valor: m[1] });
       }
     });
   }
@@ -149,6 +171,41 @@ test('SCRUM-262 · CONTROL NEGATIVO: los tests de FORMATO no se tocan', () => {
   try {
     assert.deepEqual(censarTelefonosEscritos([ruta]).fuera, [],
       '🔴 el guard se mete con un test de formato: eso no se escribe en ninguna BD');
+  } finally {
+    fs.unlinkSync(ruta);
+  }
+});
+
+test('SCRUM-262c · CONTROL POSITIVO: un móvil de rango real escrito en `mobile` se caza', () => {
+  const ruta = path.join(os.tmpdir(), `scrum262c-mobile-${process.pid}.mjs`);
+  const movilReal = '34' + '600000009'; // compuesto: por la misma trampa de autorreferencia de arriba
+  fs.writeFileSync(ruta, `const c = { name: 'X', mobile: '${movilReal}' };\n`);
+  try {
+    const { total, fuera } = censarTelefonosEscritos([ruta]);
+    assert.equal(total, 1, '🔴 el censo no ve `mobile` como escritura de teléfono');
+    assert.deepEqual(fuera.map((f) => f.valor), [movilReal]);
+  } finally {
+    fs.unlinkSync(ruta);
+  }
+});
+
+test('SCRUM-262c · los rangos de FICCIÓN reservados no se señalan, y la lista es estrecha', () => {
+  // Dentro de cada bloque reservado: no se señala.
+  for (const v of ['+44 20 7946 0958', '02079460000', '+44 7700 900123', '+1 202 555 0199', '2025550100']) {
+    assert.ok(esRangoDeFiccion(v), `🔴 ${v} es de ficción reservada y se está señalando`);
+  }
+  // El vecino de fuera del bloque, sí. Compuestos para que este fichero no se cace a sí mismo.
+  for (const v of ['+44 20 7946 ' + '1000', '+44 7700 ' + '901000', '202555' + '0200', '555' + '0100999', '34' + '600000009']) {
+    assert.equal(esRangoDeFiccion(v), false, `🔴 ${v} está FUERA del bloque reservado y la lista lo deja pasar`);
+  }
+  // Y el censo lo aplica: el mismo fichero con uno de ficción y uno vecino da UNO fuera.
+  const ruta = path.join(os.tmpdir(), `scrum262c-ficcion-${process.pid}.mjs`);
+  const vecino = '+44 20 7946 ' + '1000';
+  fs.writeFileSync(ruta, `const a = { mobile: '+44 20 7946 0958' };\nconst b = { mobile: '${vecino}' };\n`);
+  try {
+    const { total, fuera } = censarTelefonosEscritos([ruta]);
+    assert.equal(total, 2);
+    assert.deepEqual(fuera.map((f) => f.valor), [vecino]);
   } finally {
     fs.unlinkSync(ruta);
   }

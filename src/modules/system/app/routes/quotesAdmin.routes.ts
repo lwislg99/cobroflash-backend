@@ -2,6 +2,9 @@
 import { cabeEnColumnaInt } from '../../../../core/validation/enteroDeColumna'; // SCRUM-1379
 import { Router } from 'express';
 import path from 'path'; // SCRUM-822 · `root` de `res.sendFile`
+// SCRUM-1403 · qué presupuestos ve quien pregunta: la MISMA regla que las facturas (SCRUM-1397).
+import { quienPideDe } from '../../../../core/documentos/accesoALaFactura';
+import { wherePresupuestosVisibles, puedeVerElPresupuesto } from '../../../../core/documentos/accesoAlPresupuesto';
 // SCRUM-597 (DOC-07 · P-DOC-3): el coste congelado en la línea es economía del negocio.
 // Quién lo ve se PREGUNTA a la política, no se decide aquí.
 import { veEconomiaDelNegocio, sinCosteEnDocumento, sinCosteEnDocumentos } from '../../../../core/visibilidadEconomica';
@@ -20,10 +23,11 @@ import {
 } from '../../quoteAdmin';
 
 import { prisma } from '../../../../core/db/prisma';
-import { leerVersion, esVersionSuperada, ERROR_VERSION_SUPERADA, ERROR_VERSION_INVALIDA } from '../../../../core/db/escrituraConVersion'; // SCRUM-1285
+import { leerVersion, esVersionSuperada, ERROR_VERSION_SUPERADA } from '../../../../core/db/escrituraConVersion'; // SCRUM-1285
 import { formatMoneyEs } from '../../../../core/utils/utils'; // SCRUM-1288
 import { getLocale } from '../../../../core/i18n/locales'; // SCRUM-647
 import { actorDeRequest } from '../../audit.service'; // SCRUM-207: quién emite (C3/C4)
+import { puedeArchivarse, ERROR_NO_ARCHIVABLE, COPY_NO_ARCHIVABLE } from '../../../quotes/domain/archivado'; // SCRUM-1273
 import { resolveBillingPlan, distributeStageAmounts, motivoSinTramo, validarEdicionPlan } from '../../../quotes/domain/billingPlan'; // SCRUM-37
 import { sendQuoteWhatsAppToCustomer } from '../../../quotes/domain/sendQuote.service';
 import { suggestMaintenance } from '../../../maintenance/domain/maintenance.service';
@@ -37,7 +41,7 @@ import { ensureJobForQuote } from '../../../jobs/domain/job.service';
 import { albaranOrigenDelPresupuesto, type AlbaranOrigen } from '../../../jobs/domain/albaranOrigenDelPresupuesto'; // SCRUM-984
 import { applyVeriFactu } from '../../../invoicing/domain/verifactu.service';
 import { getEmissionMode } from '../../../invoicing/domain/emission.service'; // SCRUM-1027
-import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
+import { allocateInvoiceNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { crearFacturaEmitida } from '../../../invoicing/domain/crearFacturaEmitida'; // SCRUM-729
 import { congelarCliente } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-729
 import { congelarEmisorDesdeFicha } from '../../../invoicing/domain/emisorCongelado'; // SCRUM-665
@@ -107,15 +111,19 @@ router.get('/', async (req, res) => {
     // miembro del hub de Equipo). 'owner' es EXPLÍCITO a propósito: el propietario se guarda
     // con teamMemberId null, y un parámetro vacío o un 0 accidental no pueden significar "el
     // propietario" por descuido. Lo que no se entiende NO filtra (undefined) — devolver la
-    // lista completa es el fallo seguro aquí: esta ruta ya la ve entera cualquier rol que
-    // llegue a ella (S1: `TECNICO_ALLOWED` para GET /admin/quotes), así que no filtrar no
-    // enseña nada que el llamante no pudiera pedir sin el parámetro.
+    // lista completa es el fallo seguro aquí: no filtrar no enseña nada que el llamante no
+    // pudiera pedir sin el parámetro. ⚠️ «La lista completa» es la de QUIEN PREGUNTA: desde
+    // SCRUM-1403 un Técnico ya no ve entera esta ruta, sólo lo suyo (el recorte de abajo).
     const raw = req.query.teamMemberId;
     let teamMemberId: number | null | undefined;
     if (raw === 'owner') teamMemberId = null;
     else if (raw !== undefined && cabeEnColumnaInt(Number(raw))) teamMemberId = Number(raw);
 
-    const quotes = await listQuotesAdmin(req.merchantId, search, status, dateFrom, dateTo, teamMemberId);
+    // SCRUM-1403 · un Técnico lista SUS presupuestos (autor, asignado o Trabajo); el admin, todos.
+    const recorte = await wherePresupuestosVisibles(quienPideDe(req));
+    // SCRUM-1273 · por defecto fuera los archivados; `?archivados=1` devuelve sólo ésos.
+    const archivados = req.query.archivados === '1';
+    const quotes = await listQuotesAdmin(req.merchantId, search, status, dateFrom, dateTo, teamMemberId, recorte, archivados);
     return res.json(quotes);
   } catch (err) {
     console.error('[GET /admin/quotes]', err);
@@ -134,6 +142,11 @@ router.post('/:id/accept', async (req, res) => {
     }
 
     const { channel, comment, paymentTerms, evidence } = req.body ?? {};
+    // SCRUM-1555 · la misma puerta que la ficha: el ajeno contesta igual que el que no existe.
+    if (!(await puedeVerElPresupuesto(quienPideDe(req), id))) {
+      return res.status(404).json({ error: 'not_found' });
+    }
+
 
     const updated = await acceptQuoteAdmin(id, {
       channel,
@@ -173,6 +186,11 @@ router.post('/:id/reject', async (req, res) => {
     }
 
     const { channel, reason, comment, evidence } = req.body ?? {};
+    // SCRUM-1555 · la misma puerta que la ficha: el ajeno contesta igual que el que no existe.
+    if (!(await puedeVerElPresupuesto(quienPideDe(req), id))) {
+      return res.status(404).json({ error: 'not_found' });
+    }
+
 
     const updated = await rejectQuoteAdmin(id, {
       channel,
@@ -347,7 +365,7 @@ router.post('/:id/invoice', requireRole('admin'), async (req, res) => {
         customerId: quote.customerId,
         quoteId: quote.id,
         number: invoiceNumber,
-        type: isReceiptNumber(invoiceNumber) ? 'JUST' : 'F1', // V0-0
+        type: 'F1',
         total: tramo.invoiceAmount.toFixed(2),
         stageLabel: isCustomPlan ? tramo.stage.label : null, // SCRUM-27: etiqueta congelada (solo custom)
         currency: quote.currency,
@@ -486,8 +504,16 @@ router.post('/:id/revisiones', requireRole('admin'), async (req, res) => {
     }
     // `RevisionesAmbiguas` / `CensoDeRevisionesCiego`: el grupo no puede contestar cuál está
     // vigente. No se elige una por el profesional — se dice que no se sabe.
-    if (err?.name === 'RevisionesAmbiguas' || err?.name === 'CensoDeRevisionesCiego') {
-      return res.status(409).json({ error: 'revisiones_ambiguas', message: err.message });
+    //
+    // SCRUM-1150 · UN CÓDIGO POR CAUSA, Y SIN `message`. Antes salía todo como un solo código con el
+    // texto de la excepción dentro, y ese texto es el diagnóstico de un programador: la pantalla lo
+    // pintaba tal cual. Ahora viaja el `motivo` que puso el sitio que lanzó (`quotes/domain/revision.ts`)
+    // y el diagnóstico se queda en el log. Sin `motivo` no se contesta un 409 a ciegas: cae al 500.
+    if ((err?.name === 'RevisionesAmbiguas' || err?.name === 'CensoDeRevisionesCiego')
+      && typeof err.motivo === 'string') {
+      console.error('[POST /admin/quotes/:id/revisiones]', err.motivo,
+        `merchant=${req.merchantId} quote=${req.params.id}`, err.message);
+      return res.status(409).json({ error: err.motivo });
     }
     console.error('[POST /admin/quotes/:id/revisiones]', err?.message || err);
     return res.status(500).json({ error: 'internal_error' });
@@ -500,8 +526,9 @@ router.patch('/:id/billing-plan', requireRole('admin'), async (req, res) => {
     if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_quote_id' });
 
     // SCRUM-1285 · la versión que leyó la pantalla (ver `core/db/escrituraConVersion.ts`).
+    // Se EXIGE: sin ella no se escribe (`version_requerida`), y no es lo mismo que mandarla ilegible.
     const leida = leerVersion(req.body?.version);
-    if (!leida.ok) return res.status(400).json({ error: ERROR_VERSION_INVALIDA });
+    if (!leida.ok) return res.status(400).json({ error: leida.error });
 
     const quote = await prisma.quote.findFirst({
       where: { id, merchantId: req.merchantId },
@@ -520,7 +547,7 @@ router.patch('/:id/billing-plan', requireRole('admin'), async (req, res) => {
     // 🔴 SCRUM-1285 · la versión va DENTRO del `where`, no en una comprobación previa: aquí
     // reemplazaba a ciegas, y un PATCH hecho sobre una versión vieja devolvía la base al plan viejo.
     const actualizado = await prisma.quote.update({
-      where: { id: quote.id, updatedAt: leida.version ?? undefined }, // undefined = no la mandó (transición): Prisma lo ignora
+      where: { id: quote.id, updatedAt: leida.version },
       data: { customBillingPlan: req.body.customBillingPlan },
     });
     return res.json({ ok: true, customBillingPlan: actualizado.customBillingPlan, emitidas, version: actualizado.updatedAt });
@@ -631,7 +658,7 @@ router.post('/:id/invoice-manual', requireRole('admin'), async (req, res) => {
         customerId: quote.customerId,
         quoteId: quote.id,
         number: invoiceNumber,
-        type: isReceiptNumber(invoiceNumber) ? 'JUST' : 'F1', // V0-0
+        type: 'F1',
         total: invoiceAmount.toFixed(2),
         stageLabel: null, // no es un tramo: es el documento entero
         currency: quote.currency,
@@ -676,6 +703,13 @@ router.post('/:id/send-whatsapp', async (req, res) => {
     const id = Number(req.params.id);
     if (!cabeEnColumnaInt(id)) {
       return res.status(400).json({ ok: false, error: 'invalid_id' });
+    }
+
+    // SCRUM-1555 · la misma puerta que la ficha: el ajeno contesta igual que el que no existe.
+    // Antes llegaba a `sendQuoteWhatsAppToCustomer` y contestaba 400 «falta teléfono»: eso
+    // confirmaba que el documento existe aunque no se pudiera ver.
+    if (!(await puedeVerElPresupuesto(quienPideDe(req), id))) {
+      return res.status(404).json({ ok: false, error: 'not_found' });
     }
 
     // A15.2: la lógica vive en sendQuoteWhatsAppToCustomer (texto K1 + guards
@@ -740,6 +774,8 @@ router.get('/:id/pdf', async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
+    // SCRUM-1555 · la misma puerta que la ficha: el PDF de un presupuesto ajeno no se sirve.
+    if (!(await puedeVerElPresupuesto(quienPideDe(req), id))) return res.status(404).json({ error: 'not_found' });
 
     const quote = await prisma.quote.findFirst({
       where: { id, merchantId: req.merchantId }, // multi-tenant
@@ -777,6 +813,9 @@ router.post('/:id/send-email', async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
+    // SCRUM-1555 · la misma puerta que la ficha. Antes un ajeno recibía 400 «falta correo», que
+    // confirmaba que el documento existe.
+    if (!(await puedeVerElPresupuesto(quienPideDe(req), id))) return res.status(404).json({ ok: false, error: 'not_found' });
 
     const quote = await prisma.quote.findFirst({
       where: { id, merchantId: req.merchantId },
@@ -862,7 +901,7 @@ router.post('/:id/approve', requireRole('admin'), async (req, res) => {
           techName: tech.name || '',
           quoteId: quote.quoteNumber ?? quote.id, // A1.2: solo display en el email
           customerName: quote.customer?.name || 'el cliente',
-          total: Number(quote.total).toFixed(2),
+          total: Number(quote.total), // SCRUM-1288c: el número; el correo lo formatea con formatMoneyEs
           currency: quote.currency,
         }));
       }
@@ -883,11 +922,16 @@ router.put('/:id/notes', async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
+    // SCRUM-1555 · la misma puerta que la ficha: un Técnico reescribía la nota de un compañero.
+    if (!(await puedeVerElPresupuesto(quienPideDe(req), id))) return res.status(404).json({ error: 'not_found' });
     const notes = req.body?.notes !== undefined ? String(req.body.notes ?? '') : null;
-    await prisma.quote.updateMany({
+    const r = await prisma.quote.updateMany({
       where: { id, merchantId: req.merchantId },
       data: { internalNotes: notes || null },
     });
+    // 0 filas = no existe. Antes contestaba `ok: true` igual: decía que había guardado algo que no
+    // (mismo criterio que `/tags`).
+    if (r.count === 0) return res.status(404).json({ error: 'not_found' });
     return res.json({ ok: true });
   } catch (err) {
     console.error('[PUT /admin/quotes/:id/notes]', err);
@@ -931,6 +975,75 @@ router.put('/:id/tags', requireRole('admin'), async (req, res) => {
 });
 
 /**
+ * POST /admin/quotes/:id/archivar y /desarchivar — SCRUM-1273.
+ *
+ * Archivar es quitarlo de la lista, no un estado (`archivado.ts`): sólo se escribe `archivedAt`.
+ * ⛔ Ni `status`, ni el sello, ni el documento (c.19605).
+ *
+ * `requireRole('admin')`, por el mismo motivo que `/tags`: es el gate más cerrado, y abrírselo al
+ * técnico es quitarlo —reversible y visible—, no añadirlo después.
+ *
+ * El estado leído va en el `where` (patrón de SCRUM-1276): si alguien decide entre la lectura y la
+ * escritura, no se archiva sobre lo que ya no es. Archivar dos veces no mueve la fecha; desarchivar
+ * uno que no lo está no escribe nada.
+ *
+ * ⚠️ SIN auditoría, DECLARADO (SCRUM-1273 c.19655): `AuditAction` es una unión cerrada y ampliarla
+ * es cambio de máster. Hoy NO queda registro de quién archivó. ⛔ No se usa una acción parecida de
+ * las que ya existen: una acción que dice otra cosa es peor que ninguna.
+ */
+router.post('/:id/archivar', requireRole('admin'), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
+    const leer = () => prisma.quote.findFirst({
+      where: { id, merchantId: req.merchantId },
+      select: { id: true, status: true, archivedAt: true, charge: { select: { status: true } } },
+    });
+    const quote = await leer();
+    if (!quote) return res.status(404).json({ error: 'quote_not_found' });
+    if (quote.archivedAt) return res.json({ id: quote.id, archivedAt: quote.archivedAt });
+    if (!puedeArchivarse(quote.status, quote.charge?.status)) {
+      return res.status(409).json({ error: ERROR_NO_ARCHIVABLE, message: COPY_NO_ARCHIVABLE });
+    }
+    const archivedAt = new Date();
+    const r = await prisma.quote.updateMany({
+      where: { id, merchantId: req.merchantId, status: quote.status, archivedAt: null },
+      data: { archivedAt },
+    });
+    if (r.count === 0) {
+      // Algo cambió en medio: se contesta lo que contestaría una petición nueva.
+      const ahora = await leer();
+      if (!ahora) return res.status(404).json({ error: 'quote_not_found' });
+      if (ahora.archivedAt) return res.json({ id: ahora.id, archivedAt: ahora.archivedAt });
+      return res.status(409).json({ error: ERROR_NO_ARCHIVABLE, message: COPY_NO_ARCHIVABLE });
+    }
+    return res.json({ id, archivedAt });
+  } catch (err) {
+    console.error('[POST /admin/quotes/:id/archivar]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+router.post('/:id/desarchivar', requireRole('admin'), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
+    const r = await prisma.quote.updateMany({
+      where: { id, merchantId: req.merchantId, archivedAt: { not: null } },
+      data: { archivedAt: null },
+    });
+    if (r.count === 0) {
+      const existe = await prisma.quote.findFirst({ where: { id, merchantId: req.merchantId }, select: { id: true } });
+      if (!existe) return res.status(404).json({ error: 'quote_not_found' });
+    }
+    return res.json({ id, archivedAt: null });
+  } catch (err) {
+    console.error('[POST /admin/quotes/:id/desarchivar]', err);
+    return res.status(500).json({ error: 'internal_error' });
+  }
+});
+
+/**
  * GET /admin/quotes/:id
  * IMPORTANTE: siempre al final para no interceptar las rutas anteriores
  */
@@ -939,6 +1052,12 @@ router.get('/:id', async (req, res) => {
     const id = Number(req.params.id);
     if (!cabeEnColumnaInt(id)) {
       return res.status(400).json({ error: 'invalid_id' });
+    }
+
+    // SCRUM-1403 · la misma puerta que la lista. El ajeno contesta igual que el que no existe.
+    // Las facturas que trae la ficha de uno SUYO se le enseñan todas: es su presupuesto (c.17932).
+    if (!(await puedeVerElPresupuesto(quienPideDe(req), id))) {
+      return res.status(404).json({ error: 'not_found' });
     }
 
     const detail = await getQuoteDetailAdmin(id, req.merchantId); // A12.1: scoped

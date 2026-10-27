@@ -1,0 +1,15 @@
+POBLACION: 5 mutaciones declaradas en tests/scrum710b-anclaje-por-identidad.test.mjs
+BASE sin mutar · exit 0 · 12 casos · caen 0
+MUERE donde se dijo · «#1 "&& n.expression.name.text === 'join' && n.argument" → "&& n.expression.name.text === 'join' && n.argument"» · tests/_censo-por-posicion.mjs · exit 1 · caen 1 de 12 · se esperaba «una cita TROCEADA con todas sus piezas escritas»
+      cae: SCRUM-1544 · 🔴 una cita TROCEADA con todas sus piezas escritas se ve igual que entera
+MUERE donde se dijo · «#2 "if (ts.isNumericLiteral(n)) return n.text;" → "if (ts.isNumericLiteral(n)) return HUECO;"» · tests/_censo-por-posicion.mjs · exit 1 · caen 1 de 12 · se esperaba «una cita TROCEADA con todas sus piezas escritas»
+      cae: SCRUM-1544 · 🔴 una cita TROCEADA con todas sus piezas escritas se ve igual que entera
+MUERE donde se dijo · «#3 "  resto.push(n);\n  return HUECO;\n}" → "  resto.push(n);\n  return ts.isIdentifier(n) ? '12"» · tests/_censo-por-posicion.mjs · exit 1 · caen 2 de 12 · se esperaba «EL LÍMITE: con una pieza en un nombre»
+      cae: SCRUM-710b · 🔴 los anclajes por NÚMERO DE LÍNEA no crecen
+      cae: SCRUM-1544 · EL LÍMITE: con una pieza en un nombre o en una expresión regular, NO la ve
+MUERE donde se dijo · «#4 "    resto.push(n);\n    return HUECO;\n  }\n  if (ts." → "    resto.push(n);\n    return n.text;\n  }\n  if (ts"» · tests/_censo-por-posicion.mjs · exit 1 · caen 1 de 12 · se esperaba «los anclajes por NÚMERO DE LÍNEA no crecen»
+      cae: SCRUM-710b · 🔴 los anclajes por NÚMERO DE LÍNEA no crecen
+MUERE donde se dijo · «#5 "  ['tests/scrum398-vocabulario-de-cobro.test.mjs  " → ""» · tests/scrum710b-anclaje-por-identidad.test.mjs · exit 1 · caen 1 de 12 · se esperaba «los anclajes por NÚMERO DE LÍNEA no crecen»
+      cae: SCRUM-710b · 🔴 los anclajes por NÚMERO DE LÍNEA no crecen
+árbol tras las mutaciones: IGUAL por sha256 en los dos ficheros
+mutaciones: 5 · como se dijo: 5 · EXIT=0

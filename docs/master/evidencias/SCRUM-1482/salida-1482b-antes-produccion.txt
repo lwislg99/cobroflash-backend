@@ -1,0 +1,19 @@
+SERVIDO=lo de producción · build 9358f02b14e9648f1ab65fbdacf6464d50728242
+TESTIGO={"conRegex":true,"conConectada":false,"conMontada":true,"conIgualdad":false,"conPalabraExacta":false,"h2ConId":false} · palabra del locale: «Presupuesto»
+POBLACION=5 presupuestos · 5 con número distinto de su id
+A = id 206 / número 5 · B = id 205 / número 4
+E1 · peticiones retrasadas: 1
+E2 · peticiones cortadas: 1
+E3 · peticiones retrasadas: 1
+E4 · retrasadas de A: 1 · cortadas de B: 1
+E5 · retrasadas de A: 1
+--- FILAS (escenario | momento | título de la vista | pestaña del navegador | cabecera de la ficha | aviso | lo que se espera)
+E1 carga lenta de A | mientras carga | «Presupuesto #206» | «Presupuesto #206 · YaQu» | «Presupuesto» | «Cargando presupuesto…» | sin el id de la tabla
+E1 carga lenta de A | cargada | «Presupuesto #5» | «Presupuesto #206 · YaQu» | «Presupuesto #5» | - | título y cabecera con el número 5
+E2 la carga de A falla | después | «Presupuesto #206» | «Presupuesto #206 · YaQu» | «Presupuesto» | «Error cargando presupuesto.» | sin el id de la tabla
+E3 se va a Inicio mientras A carga | cuando A ya llegó | «Inicio» | «Inicio · YaQu» | «null» | - | el título de Inicio («Inicio»), intacto
+E4 abre A (lenta) y luego B, que falla | cuando A ya llegó | «Presupuesto #205» | «Presupuesto #205 · YaQu» | «Presupuesto» | «Error cargando presupuesto.» | nada de A (ni 5 ni 206) sobre la ficha de B
+E5 abre A (lenta) y luego B, que carga | cuando A ya llegó | «Presupuesto #4» | «Presupuesto #205 · YaQu» | «Presupuesto #4» | - | título y cabecera con el número 4
+no-GET: ninguna
+errores de página: ninguno
+EXIT=0

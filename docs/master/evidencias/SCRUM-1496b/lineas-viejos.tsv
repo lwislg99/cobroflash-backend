@@ -1,0 +1,454 @@
+ticket	fichero	linea	palabra	texto
+SCRUM-523	docs/master/SCRUM-523.md	1	falta	# SCRUM-523 · La declaración responsable del productor: qué exige, qué hay y qué falta
+SCRUM-523	docs/master/SCRUM-523.md	15	decisión	> su asesoría. Lo que hace esto es que la decisión deje de tomarse de memoria.
+SCRUM-523	docs/master/SCRUM-523.md	148	falta	### 🔴 Tres hallazgos que no son «falta por construir», sino algo que ya está y no cuadra
+SCRUM-523	docs/master/SCRUM-523.md	175	falta	## ③ Qué haría falta, en bloques — y cuál depende de la decisión A/B
+SCRUM-523	docs/master/SCRUM-523.md	180	decisión	### 🟢 Bloques que NO dependen de A/B — se pueden hacer con la decisión parada
+SCRUM-523	docs/master/SCRUM-523.md	202	decisión	Van aparte porque es **otra** decisión, y mezclarlas es lo que hace que una espere a la otra sin
+SCRUM-523	docs/master/SCRUM-523.md	235	decisión	**2. 🔴 No he podido determinar si la decisión A/B está abierta o cerrada, y las dos fuentes del
+SCRUM-523	docs/master/SCRUM-523.md	241	decisión	sólo VERI\*FACTU o en modo dual… la decisión tiene que existir antes que el documento».
+SCRUM-523	docs/master/SCRUM-523.md	244	decisión	**No lo resuelvo**: o el máster afirma cerrada una decisión que el fundador tiene parada, o el ticket
+SCRUM-523	docs/master/SCRUM-523.md	376	falta	`DECLARACION_RESPONSABLE.md` ya apunta a esos artículos; lo que le falta son los datos del
+SCRUM-523	docs/master/SCRUM-523.md	395	decision	`area-j1`, `decision-jefe`, `equipo-javier`): **es el mismo agujero que el hallazgo ① de §② de
+SCRUM-523	docs/master/SCRUM-523.md	411	decisión	## 5 · Lo que esto cambia — pregunta para el fundador, no decisión mía
+SCRUM-523	docs/master/SCRUM-523.md	428	decisión	guard nuevo, código `verifactu_productor_con_marcador`) a la espera de esta decisión.
+SCRUM-524	docs/master/SCRUM-524.md	47	pendiente	SELLADO_PENDIENTE = 'pendiente_de_sellado'
+SCRUM-524	docs/master/SCRUM-524.md	50	pendiente	type EstadoSellado = pendiente | sellado | no_aplica
+SCRUM-524	docs/master/SCRUM-524.md	55	decisión	«rechazado». La única decisión que se deriva de él **sí es binaria**, pero sobre otra cosa:
+SCRUM-524	docs/master/SCRUM-524.md	58	pendiente	selladoEstado.ts:94-96   puedeProducirDocumento(estado) → estado !== SELLADO_PENDIENTE
+SCRUM-524	docs/master/SCRUM-524.md	112	pendiente	Inflar la lista de pendientes con lo que no nos toca la haría inútil.
+SCRUM-524	docs/master/SCRUM-524.md	223	decisión	## ⑤ LA DECISIÓN DE DISEÑO · «aceptado con errores», propuesta con costes
+SCRUM-524	docs/master/SCRUM-524.md	234	pendiente	| **(a)** un campo **nuevo y aparte** para el resultado de la remisión, junto a los códigos devueltos | separa sellado de remisión; permite listar lo pendiente de subsanar | **cambio de esquema** → ALTER aditivo en las tres bases (regla 3 / A5), y estados nuevos → **decisión del fundador** |
+SCRUM-524	docs/master/SCRUM-524.md	241	pendiente	más barata y sirve si sólo se quiere **ver** lo pendiente; deja de servir en cuanto haya que
+SCRUM-524	docs/master/SCRUM-524.md	439	falta	y camino de emisión) · ninguna de las 25 no comprobadas se ha arreglado: **medir que faltan es el
+SCRUM-534	docs/master/SCRUM-534.md	131	pendiente	clase A. La C sigue pendiente y cada una es una lectura falsa esperando.
+SCRUM-534	docs/master/SCRUM-534.md	153	falta	revisa con menos desconfianza que uno en blanco — que es justo lo contrario de lo que hace falta en
+SCRUM-534	docs/master/SCRUM-534.md	164	falta	> 🔒 **Un documento citado que no existe es peor que uno que falta: el que falta se busca, y el
+SCRUM-534	docs/master/SCRUM-534.md	340	pendiente	**Opciones:** (a) escribirlos; (b) marcar la cita como pendiente declarado; (c) quitar la cita.
+SCRUM-534	docs/master/SCRUM-534.md	487	decisión	## Decisión del fundador registrada en esta tanda
+SCRUM-534	docs/master/SCRUM-534.md	574	sin medir	| `G1 · el destino existe en **10 de los 12**` | **0 de 12** | lo afirmé sin medirlo |
+SCRUM-534	docs/master/SCRUM-534.md	587	decisión	**No se ha inventado criterio para ninguno de los dos casos.** Queda como decisión del fundador.
+SCRUM-534	docs/master/SCRUM-534.md	649	falta	oficial) y **faltan los 2 últimos, la cola de remisión y el envío telemático a la AEAT**
+SCRUM-534	docs/master/SCRUM-534.md	690	decisión	| "Los founding estrenaréis... sin cambio de precio" | decisión comercial ya tomada (H1), no es un claim fiscal — se conserva igual que en el guion viejo |
+SCRUM-534	docs/master/SCRUM-534.md	709	decisión	código (`yaqu-verifactu-sif`, decisión del fundador SCRUM-538 punto 2), no una interpretación legal.
+SCRUM-534	docs/master/SCRUM-534.md	720	pendiente	| **A18** | `DECLARACION_RESPONSABLE.md:46-49` | *"...y **remisión telemática al servicio web de la AEAT**"* | mismo hecho medible | quitar la cláusula o marcarla "(pendiente de construir)" | **Máster** |
+SCRUM-534	docs/master/SCRUM-534.md	721	decisión	| **A19** | `DECLARACION_RESPONSABLE.md:53` | *"**Remisión inmediata a la AEAT** (modalidad VERI\*FACTU), **con control de flujo**"* | mismo hecho medible, y además **"con control de flujo" nombra un mecanismo que no está decidido en ningún sitio** (ni en U1.3, ni en la skill `yaqu-verifactu-sif`, ni en el stack de S1-0b) | quitar "con control de flujo" en vez de inventar un mecanismo; dejar *"Remisión a la AEAT (modalidad VERI\*FACTU), una vez construido el envío."* | **Máster** para "remisión inmediata"; **"control de flujo" no es fixable con una frase — es diseño técnico sin decidir, y la decisión es de los fundadores, no del asesor fiscal** |
+SCRUM-534	docs/master/SCRUM-534.md	830	pendiente	| **C1** | `YAQU_MASTER.md:215` (Parte H2, guion citado en regla 26) | *"...la facturación VeriFactu está construida y en certificación..."* | es el propio guion que Javier ya firmó (fase f/g de esta ficha) | el literal completo ya está escrito arriba, en "El literal nuevo — listo para pegar" (fase f). **No se repite aquí para no crear una tercera copia que diverja** — pendiente de aplicarse con la firma por el canal comprobable |
+SCRUM-534	docs/master/SCRUM-534.md	901	pendiente	| A17 | `DECLARACION_RESPONSABLE.md:39-41` | "Tipología: sistema informático de facturación en modalidad VERI\*FACTU (**remisión de los registros de facturación a la AEAT**)." | "...en modalidad VERI\*FACTU (remisión de los registros a la AEAT, una vez completado el envío telemático)." | corrige el tiempo verbal; el fondo de si el régimen ya aplica hoy es P14, pendiente del asesor — no se decide aquí |
+SCRUM-534	docs/master/SCRUM-534.md	902	pendiente	| A18 | `DECLARACION_RESPONSABLE.md:46-49` | "...y **remisión telemática al servicio web de la AEAT**." | se quita la cláusula, o se marca "(pendiente de construir)" | mismo hecho medible |
+SCRUM-534	docs/master/SCRUM-534.md	958	pendiente	SELLADO_PENDIENTE = 'pendiente_de_sellado'   (nace así; default del schema)
+SCRUM-534	docs/master/SCRUM-534.md	966	pendiente	- **Nacimiento** → `pendiente_de_sellado` si el documento entra en la cadena VeriFactu
+SCRUM-534	docs/master/SCRUM-534.md	968	pendiente	- `pendiente_de_sellado → sellado`: al terminar `applyVeriFactu` (huella SHA-256 + QR) con éxito,
+SCRUM-534	docs/master/SCRUM-534.md	970	pendiente	- `pendiente_de_sellado → pendiente_de_sellado` (se queda igual): si `applyVeriFactu` lanza. Queda
+SCRUM-534	docs/master/SCRUM-534.md	1030	pendiente	> vive en `Invoice.vfEstado` (`pendiente_de_sellado → sellado`, o `no_aplica` si el documento nunca
+SCRUM-534	docs/master/SCRUM-534.md	1053	pendiente	> `pendiente_de_sellado → sellado` (huella SHA-256 + QR calculados y persistidos tras el commit de
+SCRUM-534	docs/master/SCRUM-534.md	1054	pendiente	> la emisión) · `pendiente_de_sellado → no_aplica` (documento que nunca entra en la cadena:
+SCRUM-534	docs/master/SCRUM-534.md	1064	pendiente	> **R7 · Falla el sellado local de una factura:** `vfEstado` se queda en `pendiente_de_sellado`; la
+SCRUM-534	docs/master/SCRUM-534.md	1066	falta	> `sellado_fallido`); la factura no produce PDF ni QR hasta resellarse. **[FALTA decidir el
+SCRUM-534	docs/master/SCRUM-534.md	1073	decisión	hay runbook para un fallo de sellado local— que esta entrada señala pero no resuelve (es decisión
+SCRUM-534	docs/master/SCRUM-534.md	1125	decisión	sido usar los permisos de otra sesión para esquivar una decisión de permisos. Se subió al fundador,
+SCRUM-534	docs/master/SCRUM-534.md	1131	pendiente	ofrecía dos formas («quitar la cláusula» o «marcarla pendiente de construir») y no elegía; firma
+SCRUM-534	docs/master/SCRUM-534.md	1210	pendiente	| **después** | describe `Invoice.vfEstado`, la entidad **real**: `pendiente_de_sellado → sellado` · `pendiente_de_sellado → no_aplica`, con su fuente en `selladoEstado.ts`, diciendo expresamente que es el **sellado LOCAL y no la remisión**, y que la cola **no está construida** |
+SCRUM-534	docs/master/SCRUM-534.md	1229	falta	R7 queda con un **`[FALTA decidir el mecanismo de reintento — hoy no hay ninguno automático,
+SCRUM-612	docs/master/SCRUM-612.md	18	decisión	## 0 · La decisión, tal como está escrita
+SCRUM-612	docs/master/SCRUM-612.md	24	decisión	Y cómo quedó escrita la decisión en ese mismo comentario: *«mientras `INVOICING_ES_ENABLED` esté en
+SCRUM-612	docs/master/SCRUM-612.md	62	decision	| qué **entradas** del servidor llegan a crear un cobro, por el grafo de llamadas | 227 entradas: 221 rutas + 6 crons | el grafo cruza ficheros: `POST /webhooks/psp` → `sendPaymentConfirmationInvoice` → `sendWhatsAppWindowFirst` | **3**, y las tres pasan por un documento ya emitido: `POST /quote/:token/decision` (el cliente acepta), `POST /admin/jobs/:id/collect-rest` (cobrar el resto), `POST /admin/invoices/:id/resend-whatsapp` |
+SCRUM-612	docs/master/SCRUM-612.md	80	pendiente	| **los recordatorios de pago** | el cron diario y el botón «Recordar» recorren FACTURAS pendientes | `core/cron/cron.ts:73-76` (`sendInvoicePaymentReminders`) y `invoicesAdmin.routes.ts:700` |
+SCRUM-612	docs/master/SCRUM-612.md	112	falta	Cobros, enlaces de pago y el canal de WhatsApp son de **J2** (`dos-equipos.md` §3.1). Si hace falta
+SCRUM-612	docs/master/SCRUM-612.md	140	falta	## 3 · Qué haría falta para que «no se emite nada» sea verdad — en orden
+SCRUM-612	docs/master/SCRUM-612.md	157	decisión	1. **El punto único de decisión.** `allocateInvoiceNumber` (`invoiceNumber.service.ts:487`) hoy
+SCRUM-612	docs/master/SCRUM-612.md	251	decision	## 0 · Las dos decisiones que este borrador pasa a texto
+SCRUM-612	docs/master/SCRUM-612.md	259	sin medir	ya emitidos: staging tiene 9 y producción está sin medir, §4 de arriba), E-5 (guion H2 y pack de gestoría) y
+SCRUM-612	docs/master/SCRUM-612.md	394	pendiente	→ recordatorios automáticos persiguen lo pendiente (24h / 7d / 14d)
+SCRUM-612	docs/master/SCRUM-612.md	404	pendiente	→ recordatorios automáticos persiguen lo pendiente (24h el presupuesto; 7d / 14d la factura)
+SCRUM-612	docs/master/SCRUM-612.md	410	decision	`quote_decision_es`, L292), no es un cobro y se queda.
+SCRUM-612	docs/master/SCRUM-612.md	475	pendiente	> `terminado` → CTA "Cobrar el resto" si hay tramo pendiente; `cerrado` = todo cobrado o decisión del pro.
+SCRUM-612	docs/master/SCRUM-612.md	479	pendiente	> `terminado` → CTA "Cobrar el resto" si hay tramo pendiente **y el merchant factura (regla 24)**; `cerrado` = todo cobrado o decisión del pro.
+SCRUM-612	docs/master/SCRUM-612.md	481	decision	Por qué: son dos de las tres entradas que hoy crean un cobro (§1.1 de arriba: `POST /quote/:token/decision`
+SCRUM-612	docs/master/SCRUM-612.md	500	falta	copy NUNCA dice "factura"» solo hace falta si se acepta la microcopy M-1 y M-5 (§6)**, que nombran la
+SCRUM-612	docs/master/SCRUM-612.md	513	sin medir	Por qué: E-1. ⚠️ **E-4 sigue abierta:** si quedan justificantes emitidos (staging 9, producción sin medir),
+SCRUM-612	docs/master/SCRUM-612.md	542	decisión	diciendo ✅ sobre un comportamiento que la regla 24 retira. **Volver a 🟡 es una decisión del registro (Parte
+SCRUM-612	docs/master/SCRUM-612.md	665	decisión	| L78 (A5, métrica norte F1) | **% de cobros del merchant vía plataforma** (instrumentar desde el día 1) | con B, en España, ese porcentaje es 0 hasta SIF-1: la métrica de F1 (30-sep-2026) no se puede mover. Decisión de un jefe |
+SCRUM-612	docs/master/SCRUM-612.md	687	pendiente	- **K1 (BOT-1, F2):** «Pagar pendiente» saldrá vacío en un merchant español en OFF (no hay cobros). Es
+SCRUM-612	docs/master/SCRUM-612.md	707	falta	(`invoicesView.js:208`). En Facturas no hace falta texto nuevo.
+SCRUM-612	docs/master/SCRUM-612.md	716	falta	| M-3 | Ajustes, datos fiscales, cuando faltan (`settingsView.js:1287`) | «Sin ellos, el documento tras el pago es un justificante de cobro» | «Sin ellos no se pueden emitir facturas» |
+SCRUM-612	docs/master/SCRUM-612.md	743	decisión	| P-4 | **La métrica norte de F1** (L78, «% de cobros del merchant vía plataforma»): con B es 0 en España hasta SIF-1 | Nada: decisión de un jefe |
+SCRUM-612	docs/master/SCRUM-612.md	744	falta	| P-5 | **La página del cliente** (N1, L423) enseña las condiciones de pago («Señal del 50 % al aceptar · resto al terminar») y, con el interruptor en OFF, después de aceptar **no hay botón de pagar**. ¿Necesita una línea? | Nada: la página es de S1 y el paso de pago de J2; si hace falta, la proponen ellos y la firma un jefe |
+SCRUM-612	docs/master/SCRUM-612.md	746	decisión	| P-7 | **La regla 25** («Cobro a founding pre-SIF…», L245) es la suscripción de YaQu al profesional, no el cobro del profesional a su cliente | No se toca: el 15949 preguntó y el 15950 decidió sobre lo segundo. Si Javier quiso incluir también la suscripción, es otra decisión y no está escrita |
+SCRUM-612	docs/master/SCRUM-612.md	754	decisión	## 8 · Otros documentos que la decisión deja desfasados (ni máster ni `CLAUDE.md`; no se redactan aquí)
+SCRUM-612	docs/master/SCRUM-612.md	811	falta	El texto es el del **borrador SCRUM-612b** (§2.1-2.17 y §3.1-3.3 de este mismo expediente), que se escribió el 18-sep y quedó esperando firma. Lo que faltaba eran las **siete preguntas P-1…P-7**, y Javier las contestó **todas el 21-sep-2026**, de una en una, cada una con su literal en un comentario de SCRUM-612:
+SCRUM-612	docs/master/SCRUM-612.md	817	decisión	| P-3 | «Sí, de momento no vendemos para estas regiones, déjalo por escrito» | **NO va al máster**: es decisión comercial → `limites-del-fundador.md` (SCRUM-997) y PASO 0 del alta (SCRUM-998) |
+SCRUM-612	docs/master/SCRUM-612.md	882	decisión	- **No toca las 12 líneas COMERCIALES** que el borrador marcó en su §4 (la promesa de calle de A1, el guion H2, los guiones H5-H7, el héroe de la landing, la regla 26b, W1…). Chocan con la decisión B **en la venta**, son de **J4**, y su texto lo firma un jefe con el argumentario (E-5 y E-6) delante. **Señaladas, no redactadas** — y ahora es más visible que antes, porque el máster ya dice una cosa y el argumentario otra.
+SCRUM-612	docs/master/SCRUM-612.md	892	sin medir	- **E-4:** cuántos justificantes hay ya emitidos. Staging tenía 9 el 18-sep; **producción sigue sin medir**. La consulta de SOLO LECTURA está lista en `docs/master/evidencias/SCRUM-612/contar-justificantes-612.sql`, para que la pegue un jefe en la consola de Railway.
+SCRUM-657	docs/master/SCRUM-657.md	23	pendiente	corriendo código: es una respuesta humana pendiente, fuera de este repo. La dejo **PENDIENTE**,
+SCRUM-657	docs/master/SCRUM-657.md	28	pendiente	medido en sesiones anteriores) y esta sesión no tiene turno de staging abierto. **PENDIENTE,
+SCRUM-657	docs/master/SCRUM-657.md	36	pendiente	es información real y utilizable, pero **no sustituye** esa respuesta pendiente: dimensiona
+SCRUM-657	docs/master/SCRUM-657.md	37	falta	«cuánto costaría construirlo SI se aprueba», no «si hace falta ya para Tecnosel en concreto». Esa
+SCRUM-657	docs/master/SCRUM-657.md	64	falta	- **Dónde se corta el circuito, en orden — faltan CUATRO piezas, no una:**
+SCRUM-657	docs/master/SCRUM-657.md	87	falta	- **Conclusión medida: no existe ningún sitio para guardarlos hoy.** Hace falta un ALTER — tres
+SCRUM-657	docs/master/SCRUM-657.md	90	decisión	DIR3 pasan a ser campos del CLIENTE, no del merchant». Decisión y aplicación en las tres bases:
+SCRUM-657	docs/master/SCRUM-657.md	91	decisión	**de Javier**, ciclo de la regla 3 (decisión → ALTER aditivo → PR con esquema+código+tests). No
+SCRUM-657	docs/master/SCRUM-657.md	96	falta	Esto mide «cuánto cuesta construirlo», que es una pregunta distinta de «hace falta ya» (que
+SCRUM-657	docs/master/SCRUM-657.md	108	decisión	decisión, sin respuesta hoy, es la misma que necesitaría la firma del Facturae — «es la misma
+SCRUM-657	docs/master/SCRUM-657.md	109	decisión	decisión, no dos», tal cual lo dice el ticket.
+SCRUM-657	docs/master/SCRUM-657.md	125	decisión	excepciones) antes de que aparezca en cualquier copy o decisión de producto.
+SCRUM-657	docs/master/SCRUM-657.md	142	falta	y dónde falta cada pieza (§1, §2), para que la decisión se tome sabiendo qué hay, tal como pide el
+SCRUM-665	docs/master/SCRUM-665.md	86	falta	exactamente la mitad de este ticket que ya no hace falta arreglar.
+SCRUM-665	docs/master/SCRUM-665.md	154	decisión	2. **La marca de agua merece decisión propia.** `watermark` se deriva de `isDemoMerchant(...)` en
+SCRUM-665	docs/master/SCRUM-665.md	196	falta	> El QUÉ ya está arriba (15-sep-2026). Esto es el **CÓMO**, con los números que faltaban.
+SCRUM-665	docs/master/SCRUM-665.md	240	decisión	arrastra una decisión de diseño extra que las siete columnas no resuelven solas.
+SCRUM-665	docs/master/SCRUM-665.md	359	pendiente	tocar las bases. Prohibido aquí, y sigue pendiente desde la tanda del 15-sep.
+SCRUM-665	docs/master/SCRUM-665.md	361	sin medir	3. **El eje del código** (§2 de arriba): sigue declarado y sin medir.
+SCRUM-665	docs/master/SCRUM-665.md	398	pendiente	cableado pendiente están en
+SCRUM-665	docs/master/SCRUM-665.md	462	decisión	> *«ESTE ROJO NO ES UN FALLO: ES EL AVISO DE QUE UNA DECISIÓN HA CADUCADO.»* — y enuncia las dos
+SCRUM-665	docs/master/SCRUM-665.md	471	decisión	mismo motivo: no es sagrada, es un tope para que la decisión no se convierta en olvido. **Quien la
+SCRUM-665	docs/master/SCRUM-665.md	484	falta	punta sobre PDFs reales. Lo que falta es el ALTER, no la prueba. El tope sube a **8** con el motivo
+SCRUM-665	docs/master/SCRUM-665.md	493	sin medir	seguirá cambiando papeles emitidos. Declarado en SCRUM-665 §2, sigue sin medir.
+SCRUM-665	docs/master/SCRUM-665.md	498	decisión	congelado *se puede* derivar del dato congelado, pero **eso es una decisión aparte** y aquí no
+SCRUM-665	docs/master/SCRUM-665.md	510	pendiente	| `docs/master/evidencias/scrum665a/ALTER-propuesto.md` | el diff propuesto + el cableado pendiente |
+SCRUM-665	docs/master/SCRUM-665.md	515	falta	# APÉNDICE · EL ALTER LLEGA A DESARROLLO, QUE ERA LA BASE QUE FALTABA
+SCRUM-665	docs/master/SCRUM-665.md	521	falta	El fundador ya había aplicado este ALTER en **staging** y en **producción**. Faltaba
+SCRUM-665	docs/master/SCRUM-665.md	550	falta	cero con el suelo caído no sería «faltan las siete»: sería «no estoy mirando la tabla».
+SCRUM-665	docs/master/SCRUM-665.md	578	decisión	Prisma son los que usa el resto del modelo, pero la decisión es del fundador.
+SCRUM-665	docs/master/SCRUM-665.md	662	falta	`customer: clienteDelDocumento(inv, inv.customer)`. El enchufe que falta es su gemelo exacto:
+SCRUM-665	docs/master/SCRUM-665.md	739	falta	**ⓐ · tablas que faltan en desarrollo:** `quote_assignees`, `invoice_assignees`, `gateway_events`.
+SCRUM-665	docs/master/SCRUM-665.md	741	falta	**ⓐ · columnas que faltan en desarrollo (14):**
+SCRUM-665	docs/master/SCRUM-665.md	766	decisión	> ⛔ **Ninguna se arregla** (regla 9). Una divergencia que alguien arregla de paso es una decisión
+SCRUM-665	docs/master/SCRUM-665.md	775	falta	«faltan 0». Dos resultados que no pueden ser ciertos a la vez. Causa: `columnas` es un array de
+SCRUM-665	docs/master/SCRUM-665.md	777	falta	siempre. Y `compararEsquema` devuelve `columnasQueFaltan`/`tablasQueFaltan`, no `faltan` — por eso
+SCRUM-665	docs/master/SCRUM-665.md	943	falta	4. **El lector en `src/lib/invoicing.ts:108` y `:249`**, que es lo único que parecía faltar.
+SCRUM-665	docs/master/SCRUM-665.md	1059	falta	| **suelo (b)** | el censo ve llamadas al congelador de **CLIENTE** (SCRUM-729), que SABEMOS que existen → **11 fuera de su propio fichero**. Un censo que no ve el patrón ya construido no puede opinar del que falta |
+SCRUM-665	docs/master/SCRUM-665.md	1072	decision	| **4** | `src/modules/quotes/app/routes/quotes.routes.ts:742` | `POST /:token/decision` — 🔴 **PÚBLICA, la dispara el CLIENTE FINAL desde WhatsApp, sin login** | ✅ **SÍ, completa** — `quote.merchant`, del `findUnique({ include: { merchant: true, customer: true, Invoice: true } })` de `:499` | ✅ **FUERA** (tx en `:714`) | ninguna propia |
+SCRUM-665	docs/master/SCRUM-665.md	1073	decisión	| **5** | `src/modules/system/app/routes/invoicesAdmin.routes.ts:1022` | `POST /:id/rectify` (rectificativa R1) | ✅ **SÍ, completa** — del `invoice.findFirst` con merchant de `:964` | ✅ **FUERA** (tx en `:1018`) | ninguna propia, **pero abre una decisión** (abajo) |
+SCRUM-665	docs/master/SCRUM-665.md	1077	decisión	### 🔴 LA BOCA 5 NO ES UNA MÁS: HEREDA O CONGELA, Y ESO ES UNA DECISIÓN
+SCRUM-665	docs/master/SCRUM-665.md	1086	decisión	emisor de hoy, o el de la factura que corrige? **No es una línea de código: es una decisión del
+SCRUM-665	docs/master/SCRUM-665.md	1101	falta	| llamador de `emitInvoice` (fichero : línea) | quién | ¿ficha del merchant a mano? | ¿dónde se lee? | qué haría falta |
+SCRUM-665	docs/master/SCRUM-665.md	1138	falta	| 🟠 **hay lectura, pero con `select` recortado** | **3** — `albaranes:1216`, `albaranes:1409`, `invoicesAdmin:103` | **ensanchar el `select`**: de los siete campos sólo traen `email` (y `taxId` en dos). Faltan `name`, `legalName`, `address`, `logoUrl`, `whatsappPhone` |
+SCRUM-665	docs/master/SCRUM-665.md	1310	falta	hace falta inventar nada.
+SCRUM-665	docs/master/SCRUM-665.md	1371	falta	justo cuando no hace falta.
+SCRUM-665	docs/master/SCRUM-665.md	1400	decisión	4. **La decisión de la R1** (boca 5): si una rectificativa hereda el emisor de la factura que
+SCRUM-665	docs/master/SCRUM-665.md	1403	sin medir	plantilla. Declarado, sin medir, cuatro apéndices después.
+SCRUM-665	docs/master/SCRUM-665.md	1404	pendiente	6. **Cuántas facturas emitidas hay en las tres bases** — sigue pendiente desde el 15-sep, sigue
+SCRUM-665	docs/master/SCRUM-665.md	1532	decisión	emisión fiscal, más su decisión pendiente de la R1 (§④ del apéndice anterior).
+SCRUM-665	docs/master/SCRUM-665.md	1556	falta	2. **Los 8 sitios que faltaban del embudo**, con las tres formas que midió el dosier (D):
+SCRUM-665	docs/master/SCRUM-665.md	1559	decision	lectura utilizable" como medía el dosier D, `main` se movió), `quotes.routes.ts` decision
+SCRUM-665	docs/master/SCRUM-665.md	1569	pendiente	3. **Los 2 errores de tipo declarados pendientes por la sesión anterior** (`lib/invoicing.ts:112,255`,
+SCRUM-665	docs/master/SCRUM-665.md	1605	pendiente	marcándolo PENDIENTE y remitiendo al comentario 16468. **Sin construir de nuevo aquí**: sigue
+SCRUM-665	docs/master/SCRUM-665.md	1686	pendiente	## 3 · La medición 2, pendiente — no tengo la clave en este árbol, medido con la herramienta propia
+SCRUM-665	docs/master/SCRUM-665.md	1715	falta	Los totales por entorno ya los midió el orquestador hoy (producción 2, staging 9, dev 5); falta el
+SCRUM-665	docs/master/SCRUM-665.md	1732	decisión	una decisión de producto (¿molesta al profesional que su PDF cambie de aspecto?). Si es «el
+SCRUM-665	docs/master/SCRUM-665.md	1742	pendiente	> Encargo: cerrar la medición 2 pendiente — correr
+SCRUM-665	docs/master/SCRUM-665.md	1744	falta	> por entorno (producción 2, staging 9, dev 5) ya los midió el orquestador; faltaba el desglose por
+SCRUM-665	docs/master/SCRUM-665.md	1766	pendiente	vfEstado  String  @default("pendiente_de_sellado")  @map("vf_estado")   ← SÍ tiene @map: columna real "vf_estado"
+SCRUM-665	docs/master/SCRUM-665.md	1789	pendiente	`pendiente_de_sellado`** (`SELECT vf_estado, count(*) FROM invoices GROUP BY vf_estado` → una sola
+SCRUM-665	docs/master/SCRUM-665.md	1790	pendiente	fila, `pendiente_de_sellado: 5`). Ninguna ha llegado nunca a `sellado`. El desglose por `pdfUrl` es
+SCRUM-825	docs/master/SCRUM-825.md	59	decisión	qué lista la pantalla de Facturas, que es una decisión de producto y fiscal, no de copy— o el
+SCRUM-825	docs/master/SCRUM-825.md	223	pendiente	afirmación fiscal (§3). Está pendiente la respuesta del agente VeriFactu sobre si un documento
+SCRUM-825	docs/master/SCRUM-825.md	308	decisión	## 2 · LOS CONTADORES — es un CONTADOR GUARDADO, no un derivado. Decisión del fundador.
+SCRUM-825	docs/master/SCRUM-825.md	328	decisión	final del `.sql`. No lo descomenta esta sesión: es una decisión sobre numeración fiscal.
+SCRUM-825	docs/master/SCRUM-825.md	445	pendiente	| ⑤ SCRUM-597 | «hay que rederivar» | derivado de su rama, **pendiente de confirmar en `main`** |
+SCRUM-825	docs/master/SCRUM-825.md	776	decisión	| Y8 | `invoiceAdmin.ts:40` | `{ merchantId, type: { not: 'JUST' } }` | **decisión pendiente** → pregunta ② | ver 🔴-B |
+SCRUM-825	docs/master/SCRUM-825.md	795	decisión	| Y13 | `public/dashboard/js/invoicesView.js:79-84` | `soloFacturas()` filtra `!== 'justificante'` | **el filtro deja de filtrar** → misma decisión que Y8, pregunta ② |
+SCRUM-825	docs/master/SCRUM-825.md	802	decisión	#### 🔴-A · El modo `receipt` entero — **la decisión ⓪, y bloquea todo lo demás**
+SCRUM-825	docs/master/SCRUM-825.md	806	decisión	Retirar `JUST` **es** encender `INVOICING_ES_ENABLED` para todos. La decisión que falta no es
+SCRUM-825	docs/master/SCRUM-825.md	812	decisión	Y su gemelo del front, `invoicesView.js:81`. La decisión que falta es la pregunta ②. **Y hay un
+SCRUM-825	docs/master/SCRUM-825.md	864	decisión	**La decisión que falta:** ¿la clase de correo `justificante` y el `tipoFactura: 'JUST'` del
+SCRUM-825	docs/master/SCRUM-825.md	877	decisión	sobre las filas históricas. **La decisión: `JUST` sale de la unión, o se queda como tipo conocido y
+SCRUM-825	docs/master/SCRUM-825.md	906	decisión	**Rojo que es una DECISIÓN, no una regresión (hay que cambiar el test con su firma):**
+SCRUM-825	docs/master/SCRUM-825.md	965	decisión	guard son la misma decisión y hay que tomarla junta**, o queda un guard rojo que alguien acabará
+SCRUM-825	docs/master/SCRUM-825.md	1000	decisión	Recomendación derivada, no decisión: **no tocarlo**. Sería un cambio no aditivo (STOP AA1.4), y la
+SCRUM-825	docs/master/SCRUM-825.md	1083	decisión	> con la decisión que la justifica, y **no** en `docs/RUNBOOKS.md`.
+SCRUM-825	docs/master/SCRUM-825.md	1099	decisión	| **0** | **Firmar §4** (cambio de máster) y contestar las **seis** preguntas de §3 | sin esto, cualquier paso siguiente inventa una decisión de flag y de estado — reglas 5 y 27 |
+SCRUM-825	docs/master/SCRUM-825.md	1105	decisión	| **6** | **La decisión ②**: el filtro del listado (`invoiceAdmin.ts:40`, `invoicesView.js:81`) **y su guard `scrum442` a la vez** | separarlos deja `scrum442` en rojo, y un guard rojo que nadie puede arreglar cambiando el código acaba relajado (regla 41). **Van en el mismo PR o no van** |
+SCRUM-825	docs/master/SCRUM-825.md	1106	decisión	| **7** | **La decisión ⑤**: `tipoDocumento.ts:52` y `AEAT_POR_TIPO.JUST`, más `CLASES_DE_CORREO.justificante` | **antes del 5**, `declarabilidadDe('JUST')` cambia de motivo mientras aún hay documentos `JUST` en el camino: el XML pasaría de excluirlos por `documento_no_declarable` a excluirlos por `tipo_desconocido`. Se excluyen igual, pero **el motivo escrito ante una inspección cambia** |
+SCRUM-825	docs/master/SCRUM-825.md	1211	decisión	8-sep contra dos hechos nuevos y deja la decisión, otra vez, para el fundador.
+SCRUM-825	docs/master/SCRUM-825.md	1235	decision	**Hoy existe.** Dos decisiones, tomadas fuera de este expediente y sin citarlo:
+SCRUM-825	docs/master/SCRUM-825.md	1242	decisión	código **ya ejecuta** la decisión 1. `allocateInvoiceNumber` (`invoiceNumber.service.ts:487`)
+SCRUM-825	docs/master/SCRUM-825.md	1256	pendiente	| ¿se retira el TIPO `JUST` del código, que ya no tiene ningún llamador vivo? | **sin contestar** — es ESTE expediente | pendiente |
+SCRUM-825	docs/master/SCRUM-825.md	1260	decisión	mucho más pequeña: ya no es «¿generalizamos la facturación fiscal?» (regla 5/27, decisión de
+SCRUM-825	docs/master/SCRUM-825.md	1271	decisión	para todos». **Eso ya no es cierto.** Con la decisión de hoy, esas tres puertas (`albaranes.routes.ts`
+SCRUM-825	docs/master/SCRUM-825.md	1371	decisión	con el tercero muerto es más barato y no rompe nada — es una decisión de estilo, no de producto,
+SCRUM-825	docs/master/SCRUM-825.md	1381	pendiente	uno con su firma pendiente, y **ninguno se propone aquí**.
+SCRUM-825	docs/master/SCRUM-825.md	1389	pendiente	(pendiente de mergear SCRUM-1027)?** Si sí, se ejecuta el orden de §5 del apéndice de 8-sep
+SCRUM-825	docs/master/SCRUM-825.md	1395	decisión	(misma decisión, mismo PR — regla 41), y qué pasa con las filas `JUST` que ya existen mientras
+SCRUM-825	docs/master/SCRUM-825.md	1450	decision	| 21-sep · FASE 2 reconciliada | la pregunta ⓪ ya contestada por SCRUM-612c + SCRUM-1027; seis decisiones para firmar (su §6) | **sí**, y su condición previa se ha cumplido: **SCRUM-1027 está en `main`** (`tests/scrum1027-atajo-flag-off-sin-documento.test.mjs` vive en `main` y exige el atajo) |
+SCRUM-825	docs/master/SCRUM-825.md	1598	decision	## 3 · ⑥ LAS DECISIONES QUE NECESITAN TU FIRMA
+SCRUM-825	docs/master/SCRUM-825.md	1616	decisión	decisión, no para que pase). Si no firmas D1, se queda.
+SCRUM-825	docs/master/SCRUM-825.md	1638	decisión	5. **¿Se construye la F2?** Si sí: tipo nuevo (regla 27), serie nueva (art. 7.1 ROF), decisión al
+SCRUM-825	docs/master/SCRUM-825.md	1692	decisión	la lista. Va con su propia decisión (anotado por el orquestador).
+SCRUM-825	docs/master/SCRUM-825.md	1701	decisión	cambia con la decisión firmada y en el mismo PR, no para que pase.
+SCRUM-825	docs/master/SCRUM-825.md	1760	decisión	«Decisión fundador 12-jun-26 (tensión con Parte M/justificantes)»). La cuenta de Meta la tiene Luis
+SCRUM-870	docs/master/SCRUM-870.md	11	decisión	(*«y lo que me dices del productor hazlo tú»*), sobre su decisión del mismo día
+SCRUM-870	docs/master/SCRUM-870.md	71	decisión	**No es una decisión impuesta:** Javier asume la responsabilidad del productor, no se la traslada.
+SCRUM-906	docs/master/SCRUM-906.md	106	decisión	Criterio: qué pesa en la decisión de compra de un oficio pequeño o una pyme con técnicos, qué usa cada semana y qué ya dan por hecho todos los de su precio. Carriles según §11bis.
+SCRUM-906	docs/master/SCRUM-906.md	133	falta	están los **huecos** («esto nos falta, y lo tienen estos»), allí están las **funciones** («esta función,
+SCRUM-906	docs/master/SCRUM-906.md	173	falta	lo que nos falta (F1-F10), lo mejor suyo (M1-M8), nuestro foso (Z1-Z4) y lo que no hay que copiar
+SCRUM-906	docs/master/SCRUM-906.md	279	sin medir	Sigue sin medirse —y por tanto sin afirmarse— cómo se elige al firmante, qué ve el cliente en el portal,
+SCRUM-906	docs/master/SCRUM-906.md	282	decisión	**Cómo queda la cuenta:** el interruptor de **Presupuestos se deja ENCENDIDO a propósito**, por decisión
+SCRUM-906	docs/master/SCRUM-906.md	315	falta	| 10.3 | **Caducidad en un toque** (7 / 15 / 30 días) en vez de un calendario | pequeño | Holded la ofrece como lista cerrada; nosotros tenemos toda la maquinaria y falta la pantalla |
+SCRUM-906	docs/master/SCRUM-906.md	329	decision	misma búsqueda sí encuentra `${BASE_URL}/albaran/${token}` y `${BASE_URL}/pay/quote/${decisionToken}`,
+SCRUM-906	docs/master/SCRUM-906.md	424	falta	**Por qué Jobber.** De la cola quedaban dos familias: los españoles que faltan son **más
+SCRUM-906	docs/master/SCRUM-906.md	456	sin medir	*(De Holded, lo que sigue sin medirse de su firma —cómo se elige al firmante, qué correo llega, cómo
+SCRUM-906	docs/master/SCRUM-906.md	544	falta	ya estaban propuestas antes y una no se propone por falta de fuente normativa.
+SCRUM-906	docs/master/SCRUM-906.md	575	decisión	cada propuesta dice si se vio **por dentro** o solo en su web; y, por decisión que llegó por mensaje,
+SCRUM-906	docs/master/SCRUM-906.md	626	pendiente	cliente; el catálogo de productos con precio, SCRUM-609, Finalizado; el saldo pendiente, ya en
+SCRUM-998	docs/master/SCRUM-998.md	100	decisión	**Lo que dice el máster sobre esto es una DECISIÓN, no una construcción:**
+SCRUM-998	docs/master/SCRUM-998.md	122	falta	- Si le faltan datos: **"Sin ellos, el documento tras el pago es un justificante de cobro"**
+SCRUM-998	docs/master/SCRUM-998.md	160	falta	tiene ya una dirección en País Vasco o Navarra: no hace falta para responder "qué hace el
+SCRUM-998	docs/master/SCRUM-998.md	188	decisión	decisión de no vender ahí vive hoy solo en el máster, nunca llega al profesional.
+SCRUM-998	docs/master/SCRUM-998.md	262	falta	base — no hace falta para "qué dice el código", que es lo que pide la pregunta.
+SCRUM-1000	docs/master/SCRUM-1000.md	1	falta	# SCRUM-1000 · El arranque automático de sesiones — qué existe, qué faltaba, qué se monta
+SCRUM-1000	docs/master/SCRUM-1000.md	21	falta	| **C · relanzar los PUESTOS (j1…j6)** | el bucle del propio orquestador (`docs/equipo/orquestador.md` §0, `prompt-tanda-orquestador.md` punto 3) | con `ListAgents`, manda encargo a las libres y lanza las que faltan | depende de que el ORQUESTADOR esté vivo y despierto; usa `ListAgents` (libre/ocupada), no `sesion.mjs estado` — una BLOQUEADA sale «ocupada» y el bucle no la distingue de una que trabaja |
+SCRUM-1000	docs/master/SCRUM-1000.md	54	falta	hace falta: la pieza C es nueva por definición (no existía nada que modificar), y lo único que toca
+SCRUM-1016	docs/master/SCRUM-1016.md	36	falta	"certificación"), solo falta la firma del lote.
+SCRUM-1016	docs/master/SCRUM-1016.md	66	pendiente	| 6 | `:609` paso **"3 · Cobra"** | título *"3 · Cobra"* + *"Tarjeta, Bizum o transferencia — él elige, tú cobras. Los pendientes se reclaman solos."* | el tercer paso del "cómo funciona" es un cobro que hoy no existe por YaQu | título *"3 · Organiza"* + *"Clientes, gastos y trabajos en un mismo sitio — sin post-its ni Excel."* — **es el cambio más grande de la tabla**: no hay un tercer paso "verdad hoy" que sea cobro, así que se sustituye por lo que sí es cierto hoy (gestión), como ya defendía J5 con el Eje B para este tramo |
+SCRUM-1016	docs/master/SCRUM-1016.md	103	decisión	prototipo; Javier decidió el A de todas formas y esta entrada no reabre esa decisión.
+SCRUM-1016	docs/master/SCRUM-1016.md	192	decisión	* No repite ni reabre la elección del Eje A frente al B — es la decisión ya tomada por Javier.
+SCRUM-1016	docs/master/SCRUM-1016.md	233	pendiente	> declaración responsable pendiente) se leen JUNTOS, sin que el lector tenga que bajar a otro bloque,
+SCRUM-1016	docs/master/SCRUM-1016.md	318	pendiente	pendiente|se activa(r[aá])? con|sin certificaci[oó]n/i`. Si el matiz NO está en el mismo bloque:
+SCRUM-1016	docs/master/SCRUM-1016.md	335	falta	(medido en el punto 4: hace falta que TODO el mensaje, hook+matiz, quepa en ~60 caracteres). La
+SCRUM-1016	docs/master/SCRUM-1016.md	460	falta	caracteres, no hace falta un bloque externo. **Mi lectura, al releer el literal ya firmado de la
+SCRUM-1016	docs/master/SCRUM-1016.md	465	falta	si Javier quiere esa vía, hace falta que aclare si su firma de 16432 quería decir "nunca, salvo que
+SCRUM-1016	docs/master/SCRUM-1016.md	473	decisión	- No reabro el Eje A frente al B (decisión ya tomada, SCRUM-1016d) — el candidato 2 es una variante
+SCRUM-1016	docs/master/SCRUM-1016.md	478	pendiente	- No cubro `#heroe-f4` (propuesta oculta, `PENDIENTE_FUNDADOR`) — sigue el mismo hallazgo que ya
+SCRUM-1016	docs/master/SCRUM-1016.md	527	falta	motivo: 'afirma que la facturacion fiscal esta construida (o que solo falta activarla) y el
+SCRUM-1016	docs/master/SCRUM-1016.md	537	falta	la IMPLICACIÓN ("ya está, solo falta encenderlo"), no la letra exacta, así que no es evidente que sea
+SCRUM-1016	docs/master/SCRUM-1016.md	579	pendiente	estar `hidden`/`PENDIENTE_FUNDADOR`, y RE-VERIFICAR (no releer) si el guard sigue cayendo. No se
+SCRUM-1016	docs/master/SCRUM-1016.md	607	falta	- `:508` hoy: *"No hace falta que te fíes: haz tú el recorrido completo antes de dar tu correo."*
+SCRUM-1016	docs/master/SCRUM-1016.md	616	decisión	no una decisión: no elijo (a) ni (b), lo dejo señalado para su firma.
+SCRUM-1016	docs/master/SCRUM-1016.md	622	pendiente	## 4 · `hidden` / `PENDIENTE_FUNDADOR` — no protege del guard, medido no supuesto
+SCRUM-1016	docs/master/SCRUM-1016.md	644	falta	(o que solo falta activarla) y el envio a la AEAT NO existe en el codigo
+SCRUM-1016	docs/master/SCRUM-1016.md	670	falta	3. **`:508`** — **STOP**: falta la firma de Javier sobre §3 (qué pasa con su segunda frase) antes
+SCRUM-1018	docs/master/SCRUM-1018.md	14	decisión	decisión no la toma esta sesión — la franja horaria y el nombre, sin foto, son la parte que se
+SCRUM-1018	docs/master/SCRUM-1018.md	15	decisión	puede construir sin esperar a esa decisión"*. El encargo de esta sesión añade: medir qué haría
+SCRUM-1018	docs/master/SCRUM-1018.md	16	falta	falta para la franja y el nombre, proponerlo, y **separar** los tres asuntos en vez de tratarlos
+SCRUM-1018	docs/master/SCRUM-1018.md	62	decisión	`status`). Construirlo exigiría, como mínimo, decisión de un jefe sobre TRES preguntas encadenadas,
+SCRUM-1018	docs/master/SCRUM-1018.md	77	decisión	**la anchura de la ventana es una decisión de producto**, no un detalle de implementación: una
+SCRUM-1018	docs/master/SCRUM-1018.md	83	decisión	similar) a `Job`. Correcto a largo plazo, pero es un ALTER (① decisión → ② ALTER en las tres
+SCRUM-1018	docs/master/SCRUM-1018.md	135	falta	tamaño pequeño sobre `customerPortal.routes.ts` — el único fichero de mi área que hace falta tocar.
+SCRUM-1018	docs/master/SCRUM-1018.md	179	falta	Con el arreglo, el censo se queda en 3 — no hizo falta declarar ninguna excepción nueva.
+SCRUM-1022	docs/master/SCRUM-1022.md	44	falta	adelante, un mensaje que le dice "falta la columna del nombre" — un mensaje **verdadero pero
+SCRUM-1022	docs/master/SCRUM-1022.md	73	falta	| `exceljs` | MIT | 21,8 MB | 9 (incluye `archiver@^5` y `jszip` — **coexistiría con el `archiver@8` que ya tenemos**, dos copias de una lógica parecida) | 4.4.1-prerelease.0, dic-2024 | lee Y escribe, mucho más de lo que hace falta para leer un import |
+SCRUM-1022	docs/master/SCRUM-1022.md	98	falta	Aunque no se instale nada, el hallazgo del §1 (mensaje engañoso «falta la columna del nombre» ante
+SCRUM-1022	docs/master/SCRUM-1022.md	159	falta	`.xlsx` entrando, ese literal deja de hacer falta — lo dice el encargo de esta tanda, y no se
+SCRUM-1022	docs/master/SCRUM-1022.md	181	falta	contiene los dos merges). Lo que sí faltaba, medido: el servidor lee `.xlsx`, pero
+SCRUM-1023	docs/master/SCRUM-1023.md	11	falta	expediente técnico (fichero, línea y medición detrás de cada pregunta). Faltaba convertirlo en algo
+SCRUM-1023	docs/master/SCRUM-1023.md	32	falta	decidió el 16-sep-2026 (colaborador social); lo que falta del asesor es solo confirmar el trámite, no
+SCRUM-1023	docs/master/SCRUM-1023.md	46	pendiente	pregunta entra en la lista (F3) como pendiente y se sigue.
+SCRUM-1023	docs/master/SCRUM-1023.md	102	falta	| **F1** | P14 — ¿"fabrica/comercializa" ya un SIF? | riesgo legal (201 bis LGT), no un ticket técnico | ✅ RESPONDIDA (RESPUESTAS·P14): "hoy, no", con 3 riesgos señalados | NO — cita AEAT en mano, falta que un humano la firme |
+SCRUM-1023	docs/master/SCRUM-1023.md	104	decisión	| **F3** | SCRUM-143 — ¿Convenio 017 exige sociedad? | F2, constituir SL | ✅ Contestada desde julio (`RESPUESTAS·SCRUM-143`, `PREGUNTAS_ASESOR.md:1055-1064`), **pero Javier pidió el 22-sep "volver a preguntar" sin dar la de julio por buena** | Repetirla es decisión de Javier, no falta de fuente |
+SCRUM-1023	docs/master/SCRUM-1023.md	116	decisión	| **F15** | coste/plazo revisión + alta AEAT | presupuesto S1-F | 🟡 alta AEAT (D12) ✅ RESPONDIDA ("no hay alta previa"); coste (D11) explícitamente **"SIN FUENTE, decisión del fundador"** | El coste NO es legal — es logística/precio |
+SCRUM-1023	docs/master/SCRUM-1023.md	119	decisión	| **F18** | 🔴 P20 — ¿PDF también inmutable? | decisión de diseño, **SCRUM-665** | 🔴 ABIERTA (`PREGUNTAS_ASESOR.md:982-1022`, cita `src/lib/invoicing.ts` y `pdf.service.ts`) — sin entrada en RESPUESTAS; marcada urgente dos veces ya (yo y el orquestador) | SÍ |
+SCRUM-1023	docs/master/SCRUM-1023.md	123	falta	| **M4/M5** | G — presupuesto adicional | SCRUM-290 | ✅ RESPONDIDA (ADDENDA·G, normativa Comunidad de Madrid, tabla completa) — **es normativa autonómica**, fuera de Madrid falta cotejar | Para Madrid, NO; para el resto de CCAA, SÍ |
+SCRUM-1023	docs/master/SCRUM-1023.md	131	pendiente	| **QC5** | Retención 1 %/2 % (módulos) | ídem | ✅ Autocontestada por cita (RIRPF 95.4-6), pendiente confirmación | NO — es decisión de PRODUCTO (ofrecerlo o no), no legal |
+SCRUM-1023	docs/master/SCRUM-1023.md	134	falta	| **QC8** | Plazos 130/131/111/115/347/390 | bajo, no declarado bloqueante | 🟡 PARCIAL (`PREGUNTAS_ASESOR.md:887-892`) — el 303 ya citado; el resto no localizado | NO es de asesor — falta **buscar más**, no juicio legal |
+SCRUM-1023	docs/master/SCRUM-1023.md	135	pendiente	| **QC9** | Exenciones/no-sujeción resto LIVA art. 20 | bajo | ✅ Autocontestada por cita (art. 7 completo + parte de 20.Uno), pendiente confirmación | NO — sólo confirmación |
+SCRUM-1023	docs/master/SCRUM-1023.md	143	pendiente	externa pendiente de un texto ya completo. Baja de #1 a aquí: no bloquea nada hoy.
+SCRUM-1023	docs/master/SCRUM-1023.md	146	decisión	6. **F13, F14** — microcopy/UI (5+1 ranuras), menor: no bloquean dinero ni una decisión de diseño.
+SCRUM-1023	docs/master/SCRUM-1023.md	153	pendiente	**17 respondidas con cita verificable, pendientes sólo de que alguien (Javier) las dé por buenas y se
+SCRUM-1023	docs/master/SCRUM-1023.md	157	falta	pero por otra razón — falta buscar más órdenes ministeriales, no un juicio legal.
+SCRUM-1023	docs/master/SCRUM-1023.md	250	decisión	**Propuesta, no decisión (A13: no abro ticket yo):** las 16 filas en prosa de este mapa son
+SCRUM-1023	docs/master/SCRUM-1023.md	261	decisión	* No resuelve F3 (si hay que volver a preguntar el Convenio 017): es decisión de Javier, no mía.
+SCRUM-1023	docs/master/SCRUM-1023.md	277	falta	hora, IP, navegador, hash). Los tres elementos que P3 decía que faltan, están.
+SCRUM-1023	docs/master/SCRUM-1023.md	281	decisión	completa ahora (decisión del fundador)"*. `docs/legal/RGPD_TRATAMIENTO_DATOS.md` lo documenta
+SCRUM-1023	docs/master/SCRUM-1023.md	282	decisión	correctamente EN PASADO, con el sello "✅ Decisión del fundador (23-jul-2026): publicar ya".
+SCRUM-1023	docs/master/SCRUM-1023.md	291	falta	`PREGUNTAS_ASESOR.md` (el expediente que sí se manda al asesor) — eso, si hace falta, lo decide
+SCRUM-1023	docs/master/SCRUM-1023.md	305	falta	| **F18** | Sí — cita exacta `ensureInvoicePdf` en `src/lib/invoicing.ts` | Función existe, regenera con el código/plantilla vigente cada vez que falta en disco (línea 70-77) | 🟢 Confirmado: así es hoy |
+SCRUM-1023	docs/master/SCRUM-1023.md	371	falta	le falta ahí, es otra entrega con su propio PR, no ésta).
+SCRUM-1039	docs/master/SCRUM-1039.md	1	falta	# SCRUM-1039 · CONTABILIDAD — Completar las citas oficiales que faltan y llevar las Q-C al asesor
+SCRUM-1039	docs/master/SCRUM-1039.md	23	pendiente	3. `docs/producto/CONTABILIDAD.md` §4: **Q-C5 y Q-C9 quedan RESPONDIDAS por cita** (pendientes solo
+SCRUM-1039	docs/master/SCRUM-1039.md	26	pendiente	oficio», con las 9 preguntas, marcada explícitamente como **propuesta de S0 pendiente del visto
+SCRUM-1039	docs/master/SCRUM-1039.md	43	pendiente	## Pendiente (no cerrado por esta tanda)
+SCRUM-1039	docs/master/SCRUM-1039.md	47	falta	hay más candidatos para un oficio, no hace falta completar el resto.
+SCRUM-1039	docs/master/SCRUM-1039.md	92	pendiente	(esa orden NO se descargó por separado esta pasada; pendiente si J4 necesita citar su articulado
+SCRUM-1039	docs/master/SCRUM-1039.md	110	falta	abrió, se leyó y se cita abajo; lo que falta es la lectura visual de su anexo-imagen, que esta
+SCRUM-1043	docs/master/SCRUM-1043.md	1	pendiente	# SCRUM-1043 · «Quién me debe»: clientes con saldo pendiente (parte de SERVIDOR)
+SCRUM-1043	docs/master/SCRUM-1043.md	11	decisión	- **Decisión mía, a confirmar:** el saldo es dinero; el rol que solo ve lo suyo (`seesOnlyOwnJobs`, el técnico) NO recibe `saldoPendiente` y `conDeuda`/`orden` se ignoran para él (como SCRUM-1078 con los precios).
+SCRUM-1050	docs/master/SCRUM-1050.md	18	pendiente	apartados), pendiente sólo de que Javier la confirme, no de una consulta externa.
+SCRUM-1050	docs/master/SCRUM-1050.md	20	falta	Los códigos AEAT que hacen falta para construir —S2 (ISP), N1 (no sujeta), E1 (exenta art. 20)—
+SCRUM-1050	docs/master/SCRUM-1050.md	50	sin medir	puede sellar**, exactamente como dice el enunciado del ticket — no es una afirmación sin medir.
+SCRUM-1050	docs/master/SCRUM-1050.md	82	falta	* No decide el alcance (E1/N1 completos, o descontarlos por falta de caso de uso citado).
+SCRUM-1051	docs/master/SCRUM-1051.md	117	pendiente	`tests/scrum910d-microcopy-recibo-pendiente.test.mjs` (los 5 asserts de contenido pasan; revienta
+SCRUM-1051	docs/master/SCRUM-1051.md	257	decisión	y verificados; sacarla de borrador es una decisión del fundador/orquestador, no de esta sesión.
+SCRUM-1055	docs/master/SCRUM-1055.md	13	falta	aproximación aceptable para un RECC, o hace falta la fecha real del apunte bancario?"*.
+SCRUM-1055	docs/master/SCRUM-1055.md	29	falta	**Conclusión del PASO 0: la pregunta que falta es Q-C6/QC6/F5-punto-4 (criterio de caja / RECC).
+SCRUM-1058	docs/master/SCRUM-1058.md	20	falta	diseñar el caso que falta.
+SCRUM-1058	docs/master/SCRUM-1058.md	224	decisión	de la regla 3: decisión → ALTER aditivo en las tres bases → PR), y **todo** lector de `Customer`
+SCRUM-1058	docs/master/SCRUM-1058.md	290	falta	`fusionarClientes` hoy — no haría falta construir nada nuevo, solo no tocar `fusionClientes.ts`.
+SCRUM-1063	docs/master/SCRUM-1063.md	17	falta	1. **SCRUM-1039** ("Completar las citas oficiales que faltan y llevar al asesor las nueve
+SCRUM-1063	docs/master/SCRUM-1063.md	22	pendiente	pendiente de hallar dónde están") sigue así **literalmente** en
+SCRUM-1063	docs/master/SCRUM-1063.md	53	decisión	## SCRUM-1063b · IVA deducible (28/29, 45) y resultado (46), construido — decisión A (J1, 25-sep-2026)
+SCRUM-1063	docs/master/SCRUM-1063.md	56	decisión	**Rama:** `scrum-1063b-303-soportado-resultado` · **Puesto:** J1 · **Encargo y decisión:** orquestador (jv-orquestador), 25-sep-2026
+SCRUM-1063	docs/master/SCRUM-1063.md	81	decisión	Eso es lo que hace defendible la decisión A: se clasifica lo que el dato permite y **se declara lo
+SCRUM-1063	docs/master/SCRUM-1063.md	84	decisión	### Decisión A (orquestador, 25-sep-2026), tal como se ha construido
+SCRUM-1063	docs/master/SCRUM-1063.md	94	decisión	| `vatDeducible === false` | fuera, contado en `noDeducibles` | decisión tomada, no es un fallo |
+SCRUM-1063	docs/master/SCRUM-1063.md	127	decisión	decisión.
+SCRUM-1063	docs/master/SCRUM-1063.md	151	falta	- `scrum854`: faltaba esta entrada de registro.
+SCRUM-1063	docs/master/SCRUM-1063.md	168	decisión	«otros» va a la 29 por la decisión A, y una furgoneta registrada como «otros» es un bien de
+SCRUM-1064	docs/master/SCRUM-1064.md	17	falta	## Qué existe ya, y qué falta
+SCRUM-1064	docs/master/SCRUM-1064.md	29	falta	llegue, además hace falta la skill `yaqu-premium-ui` (ya declarada en el propio ticket) y la firma
+SCRUM-1065	docs/master/SCRUM-1065.md	19	pendiente	Q-C8 nombra expresamente «130/131» entre los modelos pendientes de plazo.
+SCRUM-1065	docs/master/SCRUM-1065.md	25	pendiente	cita pendiente del mismo Q-C8/asesor: no hay lista de gastos deducibles verificada en el
+SCRUM-1066	docs/master/SCRUM-1066.md	74	falta	## PASO 0 — el eje que faltaba ya está en `main`
+SCRUM-1066	docs/master/SCRUM-1066.md	80	decisión	decisión explícita dejada para este ticket, ver PASO 4). La conclusión de la sección de arriba
+SCRUM-1066	docs/master/SCRUM-1066.md	138	no hecho	articulado. Extraer los números de casilla del PDF es trabajo aparte, no hecho aquí.
+SCRUM-1066	docs/master/SCRUM-1066.md	160	decisión	El propio `docs/producto/CONTABILIDAD.md` §7 (decisión **D2**, aún SIN decidir por el fundador):
+SCRUM-1066	docs/master/SCRUM-1066.md	164	decisión	Construir la pantalla ahora adelantaría una decisión del fundador y un ticket que no es mío
+SCRUM-1066	docs/master/SCRUM-1066.md	174	falta	no hace falta tocar schema de nuevo.
+SCRUM-1066	docs/master/SCRUM-1066.md	175	falta	- Falta, antes de construir pantalla/rutas: (a) decisión D2 del fundador, (b) casillas exactas del
+SCRUM-1076	docs/master/SCRUM-1076.md	10	pendiente	«pendiente/llevado al asesor» por modelo y trimestre.
+SCRUM-1092	docs/master/SCRUM-1092.md	25	falta	faltaba en dos censos complementarios, los dos de sólo lectura, ninguno registrado en
+SCRUM-1092	docs/master/SCRUM-1092.md	71	decisión	a propósito** — decisión explícita del fundador, citada en `docs/master/SCRUM-774.md` §2 — esté
+SCRUM-1092	docs/master/SCRUM-1092.md	145	decisión	censos son evidencia de una sola tanda, no vigilancia continua — esa decisión es de quien la pida,
+SCRUM-1092	docs/master/SCRUM-1092.md	229	falta	**De los tres, ninguno es (c).** Nada de lo que introducían estos tres commits huérfanos falta hoy
+SCRUM-1092	docs/master/SCRUM-1092.md	233	falta	tiene, por ahora, ninguna víctima con nombre**: no hace falta recuperar nada de `main` de hoy.
+SCRUM-1092	docs/master/SCRUM-1092.md	265	falta	tiene las dos piezas que hacen falta. `gitReal(cwd, args)` (`sesion.mjs:606`) ya envuelve `git -C
+SCRUM-1092	docs/master/SCRUM-1092.md	269	decision	quién la borra al cerrar el puesto) pero no hay ningún obstáculo estructural: ⚠️ decisiones de
+SCRUM-1092	docs/master/SCRUM-1092.md	288	falta	porque son directorios distintos — no hace falta ni el guard de SCRUM-774 ni ninguna extensión suya.
+SCRUM-1092	docs/master/SCRUM-1092.md	321	decisión	avisa con árbol sucio, decisión explícita del fundador citada en `docs/master/SCRUM-774.md` §2) es
+SCRUM-1092	docs/master/SCRUM-1092.md	392	falta	falta un terminal), así que el job se queda `blocked` para siempre: se registra (tiene `id`,
+SCRUM-1092	docs/master/SCRUM-1092.md	470	pendiente	| 1. ¿Por qué no arranca? | Aprobación de servidor MCP de PROYECTO (`playwright`, de `.mcp.json`) pendiente para una ruta que `~/.claude.json` no ha visto nunca; en `--bg` nadie puede contestarla y el job se queda `blocked` sin `pid` para siempre. | §19-20, job `24072c88` |
+SCRUM-1092	docs/master/SCRUM-1092.md	473	sin medir	| 4. Si no se puede ver, declararlo | No aplica: SÍ se pudo ver — `state.json` lo dice literalmente. Lo que sí queda sin medir es la vía de pre-aprobación por fichero (§23), declarada y no ejecutada por tocar estado compartido en caliente. | §23 |
+SCRUM-1092	docs/master/SCRUM-1092.md	479	sin medir	Jira) o una pre-aprobación por el camino oficial (§23, sin medir) — esa decisión de diseño le toca a
+SCRUM-1092	docs/master/SCRUM-1092.md	532	pendiente	ningún permiso pendiente: reporta `blocked` a secas. La sospecha de "un permiso que nadie puede
+SCRUM-1092	docs/master/SCRUM-1092.md	571	decision	`detail: "SCRUM-537: subtitle guard blocking; awaiting next decision"` y `needs: "decide: fix
+SCRUM-1092	docs/master/SCRUM-1092.md	572	decisión	subtitle guard or escalate to orquestador"` — un bloqueo de DECISIÓN (un guard cayó, la sesión paró
+SCRUM-1092	docs/master/SCRUM-1092.md	603	sin medir	| 4. ¿Se puede prevenir sin apagar nada? | Sin medir un arreglo (no era el encargo): esperar el reset no basta solo — hace falta parar+relanzar tras él (§25.6). Repartir la cuota entre menos sesiones de fondo simultáneas reduciría la probabilidad de tocar el techo a la vez, pero esa es una decisión de cuántos puestos corren en paralelo, no de `sesion.mjs`. | §25.6 |
+SCRUM-1102	docs/master/SCRUM-1102.md	7	decision	medido no es el del enunciado. Las decisiones (a) y (b) de §⑤ están en manos del fundador, y la (c)
+SCRUM-1102	docs/master/SCRUM-1102.md	153	pendiente	SCRUM-1067. **No se ha verificado en esta medición**: queda como dicho por el asesor, pendiente de
+SCRUM-1102	docs/master/SCRUM-1102.md	276	falta	**El mecanismo que se reusa** (no hace falta un segundo): Configuración ya tiene selectores de
+SCRUM-1102	docs/master/SCRUM-1102.md	287	falta	1. **Esquema** (regla 40): faltan las dos columnas en `prisma/schema.prisma`, y confirmar dev.
+SCRUM-1102	docs/master/SCRUM-1102.md	426	sin medir	2. **Añadí una regla de 44 px sin medir si hacía falta.** La base de `.field select` ya da 44,5.
+SCRUM-1102	docs/master/SCRUM-1102.md	431	sin medir	## ⑥ Lo que queda sin medir
+SCRUM-1102	docs/master/SCRUM-1102.md	581	pendiente	| en V | lista al merchant como hallazgo | lo lista aparte, como «pendiente del asesor» |
+SCRUM-1102	docs/master/SCRUM-1102.md	615	decisión	VeriFactu por su cuenta. La decisión de bloquear ya está tomada; dejo dicho en qué se apoya.
+SCRUM-1102	docs/master/SCRUM-1102.md	624	sin medir	## ⑨ Sin medir
+SCRUM-1103	docs/master/SCRUM-1103.md	55	falta	mismo argumento que usó SCRUM-1107 para descartar `Charge.payMethods`). **Conclusión: hace falta
+SCRUM-1103	docs/master/SCRUM-1103.md	62	falta	`Merchant` para el IRPF sufrido, porque aquí SÍ hace falta distinguir «nunca clasificado» de «se
+SCRUM-1103	docs/master/SCRUM-1103.md	76	decisión	modelo es una decisión de J1/asesor, no una restricción de columna.
+SCRUM-1103	docs/master/SCRUM-1103.md	180	decisión	ningún `create()` ni en ninguna ruta): es una DECISIÓN de clasificación, no un dato que se
+SCRUM-1103	docs/master/SCRUM-1103.md	197	decisión	`tipo`/`cuota`; y su espejo, la DECISIÓN de que `declarada` NO se escribe (con el mismo
+SCRUM-1104	docs/master/SCRUM-1104.md	24	pendiente	de "fuentes sin descargar" corregida: se retira el 131 de la lista de modelos pendientes de
+SCRUM-1104	docs/master/SCRUM-1104.md	33	falta	- Se añaden el **100** (Renta, siempre) y el **349** (solo intracomunitario), que faltaban del
+SCRUM-1104	docs/master/SCRUM-1104.md	45	pendiente	bloquea esta entrega, pero sí sigue siendo trabajo pendiente (CON-03) antes de que cualquiera de
+SCRUM-1106	docs/master/SCRUM-1106.md	35	falta	- **SCRUM-1052** (IVA 10 % reformas): el 40 % se mide sobre la operación entera; hace falta una
+SCRUM-1106	docs/master/SCRUM-1106.md	46	decisión	es CERO en todos los casos. **No decido esto yo**: queda marcado como decisión del fundador,
+SCRUM-1106	docs/master/SCRUM-1106.md	61	falta	orquestador ya lo está midiendo y abrirá ticket aparte si hace falta.
+SCRUM-1106	docs/master/SCRUM-1106.md	101	decisión	tanda 2 del censo de J4. **Origen de la decisión:** SCRUM-1261, comentario 17638, decisión ① del
+SCRUM-1106	docs/master/SCRUM-1106.md	107	decisión	es QC6. Por eso la decisión ① no afecta a dos respuestas, sino a todo el lote del 23-sep. Pero dos
+SCRUM-1106	docs/master/SCRUM-1106.md	126	decisión	(decisión ②).
+SCRUM-1108	docs/master/SCRUM-1108.md	47	pendiente	retenciones[] }`. Consume `retencionPendiente` de 1107 sin redefinir qué es «pendiente».
+SCRUM-1108	docs/master/SCRUM-1108.md	81	pendiente	- El correo semanal y su «✅ ¡No tienes facturas pendientes de cobro!» → **SCRUM-1116**.
+SCRUM-1108	docs/master/SCRUM-1108.md	101	pendiente	- la cifra «Pendiente de cobro» deja de decir «al día ✓» cuando hay garantía sin cobrar (en ese caso es
+SCRUM-1108	docs/master/SCRUM-1108.md	113	pendiente	// y en la KPI «Pendiente de cobro»: … : (stats.garantiaRetenida ? '' : 'al día ✓')
+SCRUM-1108	docs/master/SCRUM-1108.md	157	pendiente	- El color de la cifra «Pendiente de cobro» sigue en verde con deuda 0 y garantía retenida: §7 decía
+SCRUM-1108	docs/master/SCRUM-1108.md	163	pendiente	fallo es `tests/scrum910d-microcopy-recibo-pendiente.test.mjs` **como fichero**: sus 6 subtests pasan y el
+SCRUM-1109	docs/master/SCRUM-1109.md	134	pendiente	`scrum910d-microcopy-recibo-pendiente.test.mjs`, sin detalle de aserción) son del árbol
+SCRUM-1109	docs/master/SCRUM-1109.md	148	pendiente	(`SCRUM-939b` ×3, `scrum910d-microcopy-recibo-pendiente.test.mjs` ×1) — ninguno nuevo, ninguno de
+SCRUM-1110	docs/master/SCRUM-1110.md	14	falta	**Y se descubrió que no hacía falta ningún alta:** ese portal **no tiene formulario de
+SCRUM-1110	docs/master/SCRUM-1110.md	83	falta	del servidor es el dato que falta**, y es lo único que puede contestar la pregunta que este
+SCRUM-1110	docs/master/SCRUM-1110.md	171	falta	anulación y R1**. Esto es **uno, y sólo de alta**. Falta además el cliente automatizado con su
+SCRUM-1110	docs/master/SCRUM-1110.md	192	falta	que además hacía falta igualmente porque el documento describía el estado **anterior** a la
+SCRUM-1113	docs/master/SCRUM-1113.md	7	decisión	**Decisión, ya tomada en el ticket (opción ii, del orquestador):** `RUTA_ABS` lee la plataforma. En un
+SCRUM-1113	docs/master/SCRUM-1113.md	11	decisión	sesiones. Esta sesión no tenía Jira; la decisión le llegó por el orquestador.
+SCRUM-1116	docs/master/SCRUM-1116.md	1	pendiente	# SCRUM-1116 · El resumen del lunes certificaba «nada pendiente» con garantía retenida
+SCRUM-1116	docs/master/SCRUM-1116.md	16	pendiente	- 🔴 Hay 500 € retenidos en un cobro **pagado** y ninguna factura pendiente. El correo pinta
+SCRUM-1116	docs/master/SCRUM-1116.md	17	pendiente	**«✅ ¡No tienes facturas pendientes de cobro!»**: falla la aserción «el resumen certifica con un ✅
+SCRUM-1116	docs/master/SCRUM-1116.md	20	pendiente	facturas pendientes. El test separa el defecto del montaje.
+SCRUM-1116	docs/master/SCRUM-1116.md	30	pendiente	- Si no hay facturas pendientes y sí garantía retenida, el correo pinta el literal firmado **sin el
+SCRUM-1116	docs/master/SCRUM-1116.md	32	pendiente	pendientes de cobro.». Con un solo día, el resultado es exactamente el literal que firmó Javier.
+SCRUM-1116	docs/master/SCRUM-1116.md	33	pendiente	- Si no hay facturas pendientes ni retención, el literal con ✅ no cambia: en ese caso es cierto.
+SCRUM-1116	docs/master/SCRUM-1116.md	34	pendiente	- La consulta de la garantía solo se hace cuando no hay facturas pendientes, que es cuando decide
+SCRUM-1116	docs/master/SCRUM-1116.md	64	pendiente	Cuando **sí** hay facturas pendientes **y además** garantía retenida, el bloque «⏳ Pendiente de cobro»
+SCRUM-1116	docs/master/SCRUM-1116.md	75	pendiente	| 500 € retenidos y nada pendiente: no sale «✅ ¡No tienes…!» | ✖ | ✔ |
+SCRUM-1116	docs/master/SCRUM-1116.md	78	pendiente	| Con facturas pendientes: el bloque «Pendiente de cobro» no cambia | ✔ | ✔ |
+SCRUM-1116	docs/master/SCRUM-1116.md	88	pendiente	- `SCRUM-804b · SUELO y CONTROLES` y `scrum910d-microcopy-recibo-pendiente`: ya fallaban en esta máquina
+SCRUM-1119	docs/master/SCRUM-1119.md	58	pendiente	| cómo se corre `tests/scrum910d-microcopy-recibo-pendiente.test.mjs` | resultado |
+SCRUM-1119	docs/master/SCRUM-1119.md	99	falta	- **La primera tanda no valía:** `node_modules` del árbol era viejo (le faltaba `read-excel-file`) y el `tsc` salió con 2;
+SCRUM-1126	docs/master/SCRUM-1126.md	37	decision	decisiones puras — `candidatos` (todos menos el de la ficha, por nombre o NIF, con la comparación
+SCRUM-1126	docs/master/SCRUM-1126.md	64	falta	2. La primera firma de esa línea nombraba 7 de 9: faltaban solicitudes de presupuesto y correos. Los
+SCRUM-1126	docs/master/SCRUM-1126.md	124	falta	Por qué hacía falta `todoPasa`: SCRUM-1291 (PR #2008, merge `8084f273`) hizo que la fusión moviera
+SCRUM-1128	docs/master/SCRUM-1128.md	131	falta	**NO SE COMPLETÓ en local.** Claude Code la paró por falta de memoria de la máquina, y no se relanzó por decisión propia. En su lugar se corrieron en primer plano los guards que tocan lo cambiado: `scrum537`, `scrum1128`, `scrum237`, `scrum694` ×3, `scrum267`, `scrum835`, `scrum838`, `scrum836` y `scrum400`. Son 13 ficheros: **117 tests · 117 pass · 0 fail · 0 skipped**. La tanda entera la da el CI del PR.
+SCRUM-1129	docs/master/SCRUM-1129.md	53	pendiente	| `14` | Factura con IVA pendiente de devengo en certificaciones de obra cuyo destinatario sea una Administración Pública. | ✔ | ✔ |
+SCRUM-1129	docs/master/SCRUM-1129.md	54	pendiente	| `15` | Factura con IVA pendiente de devengo en operaciones de tracto sucesivo. | ✔ | ✔ |
+SCRUM-1129	docs/master/SCRUM-1129.md	119	decisión	1. **Decisión (a)** con fuente: a quién corresponde la clave `18`.
+SCRUM-1129	docs/master/SCRUM-1129.md	294	decisión	de 1129, y no está cableado al total por decisión (camino de emisión).
+SCRUM-1129	docs/master/SCRUM-1129.md	300	falta	**No se redacta aquí ningún texto de pantalla (regla 39).** Lo que sigue es **qué dato** hace falta y
+SCRUM-1129	docs/master/SCRUM-1129.md	306	falta	| dato | ¿hace falta preguntarlo? | por qué |
+SCRUM-1129	docs/master/SCRUM-1129.md	308	falta	| ¿Criterio de caja? | **Ya se pregunta** (`Merchant.criterioCaja`). Falta que el builder lo lea (STOP, regla 40) | es voluntario: sólo lo sabe él (o su gestoría) |
+SCRUM-1129	docs/master/SCRUM-1129.md	376	falta	oficio. **No hace falta preguntarle al fontanero por su régimen de IVA.**
+SCRUM-1129	docs/master/SCRUM-1129.md	382	falta	- Si YaQu admite actividades fuera de la división 5 (electrodomésticos, tiendas), hace falta saber la
+SCRUM-1129	docs/master/SCRUM-1129.md	383	decisión	actividad **como epígrafe del IAE**, no como etiqueta de marketing. Eso es una decisión de producto.
+SCRUM-1130	docs/master/SCRUM-1130.md	39	pendiente	- «Volver a empezar» cancela el temporizador pendiente y lo deja todo como al principio.
+SCRUM-1130	docs/master/SCRUM-1130.md	74	falta	que faltan pondrían una factura y un cobro en la landing pública, contra la regla 24 enmendada
+SCRUM-1194	docs/master/SCRUM-1194.md	11	falta	Lo que falta son **valores**. El servidor acepta como claves de `mapeo` el vocabulario cerrado
+SCRUM-1194	docs/master/SCRUM-1194.md	82	falta	que falta, o se sale CIEGO. Sale PARCIAL, con `mobile, taxId, tags` y los cinco `billing*`.
+SCRUM-1195	docs/master/SCRUM-1195.md	6	decisión	no toca `src/` ni `public/`.** Retirar o enchufar cada ruta es otra decisión y otro ticket.
+SCRUM-1195	docs/master/SCRUM-1195.md	39	pendiente	| `GET /admin/modelo-303` | **(b) pantalla pendiente** | El propio fuente lo declara: «no hay pantalla todavía» (`modelo303.routes.ts:4-5`). | **J1, SCRUM-1064** (ya existe; depende del ticket del cálculo). Y **detrás de SCRUM-1232**: hoy el 303 suma los justificantes `JUST` a la casilla 27. |
+SCRUM-1195	docs/master/SCRUM-1195.md	40	pendiente	| `GET /admin/evidencias.zip` | **(b) pantalla pendiente, SIN ticket** | Construido en SCRUM-297 como paquete para el asesor; nadie le dio entrada. Ya lo midieron SCRUM-323 §3 y SCRUM-328 B, y no se abrió ticket. | **J1.** Propuesta: colgarlo de SCRUM-322 (el envío al asesor) o abrir uno. Hereda SCRUM-1232: el ZIP lleva `libro-registro.csv` y `modelo-303.csv`. |
+SCRUM-1214	docs/master/SCRUM-1214.md	1	decision	# SCRUM-1214 · El consejero de producción deja de dar un informe FALSO y se aprieta en 8 formas; las 4 diferencias que quedan con la lista de dev son decisiones, no accidentes
+SCRUM-1214	docs/master/SCRUM-1214.md	39	decisión	Quedan **cuatro diferencias vivas**, y las cuatro tienen detrás una decisión y su ticket. Eso es
+SCRUM-1214	docs/master/SCRUM-1214.md	50	decision	ver que eran decisiones de 395. Revertirlas habría obligado a tocar el test de otro guard.
+SCRUM-1214	docs/master/SCRUM-1214.md	60	decision	decisiones de 395 y las 2 de dev. Si alguna cambiara, el test cae con «se apretó de más».
+SCRUM-1218	docs/master/SCRUM-1218.md	12	pendiente	El commit del arreglo (`305d5c4f`) cambia **dos ficheros**: `tests/scrum910d-microcopy-recibo-pendiente.test.mjs`
+SCRUM-1218	docs/master/SCRUM-1218.md	35	decisión	letra no se cumpliría. **Se declara cumplido por la intención**, por decisión del orquestador: acogerse a la
+SCRUM-1218	docs/master/SCRUM-1218.md	105	sin medir	- **Linux/CI:** sin medir si allí cae. Si no cae, el verde de CI nunca lo cazaría.
+SCRUM-1238	docs/master/SCRUM-1238.md	6	decisión	la medición; el arreglo espera una decisión.** No se toca `scripts/equipo/sesion.mjs` ni el vigía
+SCRUM-1238	docs/master/SCRUM-1238.md	14	decisión	state.json dice que terminó». En realidad **esperan una decisión**: su `state.json` dice `state: "blocked"`
+SCRUM-1238	docs/master/SCRUM-1238.md	20	decisión	| `094dbfef` | `jv-j5` | 16:51:08Z | 1. GO de SCRUM-1240 · 2. decisión sobre la clave 18 |
+SCRUM-1238	docs/master/SCRUM-1238.md	91	decisión	**Es una decisión de Javier y Luis sabiendo lo que cuesta, no un arreglo.**
+SCRUM-1238	docs/master/SCRUM-1238.md	100	falta	## ⑦ Qué NO hace falta para arreglarlo (corrección de J6)
+SCRUM-1238	docs/master/SCRUM-1238.md	115	decisión	- Decisión de ⑤: abierta, de Javier y Luis.
+SCRUM-1240	docs/master/SCRUM-1240.md	167	falta	1. **Como emisor** (el merchant factura): hacen falta **dos** cosas y hoy no se cumple **ninguna**.
+SCRUM-1244	docs/master/SCRUM-1244.md	160	sin medir	## ⑥ 1-oct: la premisa del ticket, vuelta a comprobar — «ya no se puede correr» no se sostiene, y el número de HOY sigue sin medir
+SCRUM-1244	docs/master/SCRUM-1244.md	242	falta	| **trocear la tanda** | no medido hoy. Los 12 pesados en serie tardan 125 s (1-oct) | exige un agregador que dé UN veredicto y declare CIEGO el trozo sin recuento (requisito 3 del ticket), y tocar `package.json` | **no hace falta para caber**: la tanda entera ya cabe. Solo tendría sentido aislar los 12 pesados, +2 min |
+SCRUM-1244	docs/master/SCRUM-1244.md	243	falta	| **adelgazar los pesados, uno a uno** | 28-sep: `scrum1093h` 1.190 → 690 MB con salida idéntica byte a byte | un cambio de código por censo, con su prueba de salida idéntica y sus mutaciones | **es lo único que ha bajado el pico de verdad** (−700 MB en la suma). Siguientes: `scrum534b` 592, `scrum846c` 543, `scrum775` 538. No hace falta para caber |
+SCRUM-1244	docs/master/SCRUM-1244.md	272	falta	A9: aviso → A10 «Un rojo sin población no es un hallazgo: es un instrumento que no llegó a arrancar.» — no se pudo comprobar: lo que falta es que la receta de la tanda diga en qué shell se corre, y ese texto vive en `CLAUDE.md`, derivado del máster; lo decide el fundador y aquí sólo se deja medido.
+SCRUM-1244	docs/master/SCRUM-1244.md	288	sin medir	memoria libre de hoy. **El coste sigue siendo el del 28-sep (1,7-2,2 GB)**; el de hoy queda sin medir.
+SCRUM-1245	docs/master/SCRUM-1245.md	72	decisión	Decisión del orquestador (28-sep, ~18:48Z): sí al guard, y del carril J6. Antes se buscó un dueño
+SCRUM-1246	docs/master/SCRUM-1246.md	21	decisión	> decisión del fundador: «la dejamos en firma y corregimos master»). Antes decía
+SCRUM-1246	docs/master/SCRUM-1246.md	33	pendiente	pendiente en SCRUM-1130 comentario 17403. No se aprovecha este cambio para tocarla.
+SCRUM-1247	docs/master/SCRUM-1247.md	91	decisión	⚠️ **Decisión que no es mía:** si Railway no tiene `ANTHROPIC_API_KEY`, Anthropic no recibe nada y
+SCRUM-1247	docs/master/SCRUM-1247.md	115	decisión	justamente el defecto de hoy. Por eso recomiendo la **opción A**. La decisión del tono es del
+SCRUM-1247	docs/master/SCRUM-1247.md	122	falta	| R1 | «Describe el trabajo con tus propias palabras y la IA te sugerirá las líneas del presupuesto usando tu catálogo. Lo que escribas aquí y tu catálogo se envían a nuestro proveedor de IA (lo tienes en la política de privacidad); no incluyas datos de tu cliente que no hagan falta.» |
+SCRUM-1247	docs/master/SCRUM-1247.md	137	decisión	**Para quien lo construya (J3), no es decisión mía:**
+SCRUM-1247	docs/master/SCRUM-1247.md	174	falta	| R1 | `public/dashboard/js/aiQuoteAssistant.js`, `openAiSuggestModal` | «…y Claude sugerirá las líneas del presupuesto usando tu catálogo de productos.» | «Describe el trabajo con tus propias palabras y la IA te sugerirá las líneas del presupuesto usando tu catálogo. Lo que escribas aquí y tu catálogo se envían a nuestro proveedor de IA (lo tienes en la política de privacidad); no incluyas datos de tu cliente que no hagan falta.» |
+SCRUM-1252	docs/master/SCRUM-1252.md	34	decisión	(sin filtro, por ley), Informes ×2 (sin filtro, decisión A del fundador) y evidencias (sin filtro, sin
+SCRUM-1252	docs/master/SCRUM-1252.md	84	pendiente	| Dinero cobrado o pendiente (Home, Informes de caja, resumen semanal, saldo por cliente, recordatorios, Cobros) | 22 | No: un cobro es un cobro, se documente como se documente |
+SCRUM-1252	docs/master/SCRUM-1252.md	104	falta	**El censo de los cinco no se puede hacer desde aquí.** Son filas; hace falta una consulta contra cada
+SCRUM-1252	docs/master/SCRUM-1252.md	127	falta	La consulta que haría falta, por base (sólo lectura): cuántas filas de `invoices` hay por `type`, y de las
+SCRUM-1253	docs/master/SCRUM-1253.md	36	decisión	parte de esta decisión.
+SCRUM-1253	docs/master/SCRUM-1253.md	95	pendiente	(`tipoDocumento.ts:52`). La `F2` sólo aparece como **una de las dos salidas pendientes del dictamen
+SCRUM-1253	docs/master/SCRUM-1253.md	194	decisión	DETERMINAR**. No lo he leído en la norma, y no toca a esta decisión.
+SCRUM-1253	docs/master/SCRUM-1253.md	227	decisión	**simplificada**, y eso es una **decisión de producto** para cuando la factura esté encendida, con su
+SCRUM-1253	docs/master/SCRUM-1253.md	349	falta	es justo lo que hace falta, porque la versión nueva del art. 91 no rige hasta diciembre. Quien lo
+SCRUM-1257	docs/master/SCRUM-1257.md	5	decisión	Encargo del orquestador (`cobroflash-backend-3c`), a raíz de la decisión de Javier: «1-Sí quitalo, pero ojo
+SCRUM-1257	docs/master/SCRUM-1257.md	47	falta	### A · Rama muerta. No hace falta texto: se borra la rama y queda el lado «factura», ya firmado
+SCRUM-1257	docs/master/SCRUM-1257.md	69	falta	| B3 | `settingsView.js:1339` (fila «Datos fiscales», cuando faltan) | «Sin ellos, el documento tras el pago es un justificante de cobro» | sí | **NO, por partida doble**: la tarjeta solo se ve en fiscal/demo (en `receipt` se oculta, `:1266`), donde desde SCRUM-1027 no sale ningún justificante. Y los datos fiscales no deciden el tipo de documento: `getEmissionMode` mira país, demo y el flag, nada más |
+SCRUM-1257	docs/master/SCRUM-1257.md	106	falta	| P5 | «Datos fiscales», cuando faltan (B3) | fiscal/demo | «Complétalos antes de emitir tu primera factura» |
+SCRUM-1257	docs/master/SCRUM-1257.md	115	falta	nada que pare la emisión por falta de `taxId`, salvo VeriFactu, `verifactu.service.ts:643`). Por eso
+SCRUM-1257	docs/master/SCRUM-1257.md	405	falta	**Hueco declarado:** la caída por «falta uno de los cinco» no se ha visto: no se mutó el árbol para
+SCRUM-1257	docs/master/SCRUM-1257.md	416	decisión	- **La tanda completa NO se corrió en local**: se deja al CI, por decisión del orquestador (memoria de
+SCRUM-1258	docs/master/SCRUM-1258.md	64	sin medir	**Documentos latentes: sin medir.** Sólo se cuentan en una base. No se ha consultado ninguna.
+SCRUM-1258	docs/master/SCRUM-1258.md	143	decisión	No se ha quitado, porque quitarla es decidir que la simplificada no será la salida, y esa decisión
+SCRUM-1259	docs/master/SCRUM-1259.md	31	falta	Es el tropiezo que confiesa la cabecera de SCRUM-738. Mi motor se retiró. Esta capa añade sólo lo que faltaba:
+SCRUM-1259	docs/master/SCRUM-1259.md	89	falta	1101 es el caso real. Para eso sigue haciendo falta el PASO 0 por CONTENIDO.
+SCRUM-1259	docs/master/SCRUM-1259.md	93	pendiente	- **Palabras de «pendiente» en el CUERPO del expediente: DESCARTADO.** 95 de 112 candidatos las tienen, porque
+SCRUM-1259	docs/master/SCRUM-1259.md	138	pendiente	**HECHO 32 · PENDIENTE 58 · NO SÉ 9.** De los 45 CANDIDATO, 25 están hechos: 20 de los que el censo marca como candidatos NO lo están. De los 29 SIN RASTRO, 1 está hecho (1101, bajo otro número). De los 25 CON MOTIVO o PARCIAL, 6.
+SCRUM-1259	docs/master/SCRUM-1259.md	145	pendiente	- **Tres cubos.** HECHO: todas las partes, verificadas por contenido. PENDIENTE: con la prueba de lo que falta. NO SÉ: con su motivo.
+SCRUM-1259	docs/master/SCRUM-1259.md	149	decisión	1. **`listo-para-construir` miente en las dos direcciones.** De los 15, **uno** está hecho (1246) y **otro** lo está en lo esencial (1063). Los otros 13 NO están hechos, pero casi ninguno se puede construir hoy: esperan al asesor, la decisión D2, una firma de texto o un GO fiscal. **Construible sin STOP, solo la pantalla de 1043** (con firma de texto).
+SCRUM-1259	docs/master/SCRUM-1259.md	150	pendiente	2. **Construible sin STOP fuera de esa etiqueta:** 1142 (una clase CSS, AB6) y poco más. Casi todo lo PENDIENTE está bloqueado, y el bloqueo está escrito en el ticket o en su expediente.
+SCRUM-1259	docs/master/SCRUM-1259.md	163	pendiente	| 1101 | `scripts/guard-acreditacion-invoicing-es.mjs` (:58, :66, :122-128, :171-197), test `scrum1097` | **Bajo SCRUM-1097.** El registro sale solo por stdout. La pasada `--prod-ro` sigue pendiente |
+SCRUM-1259	docs/master/SCRUM-1259.md	168	pendiente	| 1116 | `weeklyDigest.service.ts:146-149,247-252`, test `scrum1116` | Con pendientes y retención a la vez, el bloque no nombra la retención |
+SCRUM-1259	docs/master/SCRUM-1259.md	187	decisión	| 1259 | El instrumento, aprobado el 28-sep | **Sigue abierto como sede de este barrido**, por decisión del orquestador |
+SCRUM-1259	docs/master/SCRUM-1259.md	193	pendiente	## PENDIENTE DE VERDAD
+SCRUM-1259	docs/master/SCRUM-1259.md	195	falta	| Ticket | Lo que falta, y la prueba | Bloqueo |
+SCRUM-1259	docs/master/SCRUM-1259.md	202	decisión	| 658 | B2 («abonado» = 0) y B3. B1 ya existía (SCRUM-290) | decisión del fundador |
+SCRUM-1259	docs/master/SCRUM-1259.md	203	falta	| 665 | `ensureInvoicePdf` regenera el PDF si falta el fichero (`src/lib/invoicing.ts:71-78`). El eje de datos sí está | asesor + elección entre A y D |
+SCRUM-1259	docs/master/SCRUM-1259.md	212	falta	| 1051 | Solo está el motor de S2 (`causaLineaEmitible.ts`, test `scrum1051`). Faltan el NIF, la UI, la leyenda y el 303, y el asesor añadió 3 condiciones (:272) | P11 + firma + GO fiscal |
+SCRUM-1259	docs/master/SCRUM-1259.md	227	decisión	| 1149 | Las 2 excepciones siguen en `guard-objetivo-tactil.mjs:655-657`; sin regla de 44 | decisión sobre `.btn-sm` |
+SCRUM-1259	docs/master/SCRUM-1259.md	237	decisión	| 1251 | `evidencias.zip` (`app.ts:602`) no tiene consumidor | decisión de pantalla + 1252 |
+SCRUM-1259	docs/master/SCRUM-1259.md	238	decisión	| 1252 | `paquete.repo.ts:42`, `reports.routes.ts:278,372` e `invoiceAdmin.ts:40` siguen sin filtrar | decisión sobre los 5 documentos |
+SCRUM-1259	docs/master/SCRUM-1259.md	251	falta	| 1106 | Volcado y revisión de alcance hechos. Falta la decisión del fundador sobre 1053 (`CONTABILIDAD.md:128`) | fundador (puede estar en Jira) |
+SCRUM-1259	docs/master/SCRUM-1259.md	260	sin medir	| 1159 | El ticket no dice qué pantalla. Si son los filtros de Cobros, ya tienen 44 px (`cobrosView.js:514`), y el banco (`_pagina-panel.mjs:34`, que solo lee `cssText` y `display`) podría no verlo: posible defecto del banco, sin medir. Si son los botones de Bizum de la factura, falta, y es STOP de cobro |
+SCRUM-1259	docs/master/SCRUM-1259.md	265	falta	| 1109 | El script y el test existen, y la tarea corre en Railway (1112/1114). Pero la aceptación es que **avise**: falta `RESEND_API_KEY` en el cron y que llegue un correo (`SCRUM-1114.md:108-115`), y eso no se ve desde el repo |

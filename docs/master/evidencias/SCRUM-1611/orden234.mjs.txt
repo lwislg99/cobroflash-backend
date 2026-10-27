@@ -1,0 +1,37 @@
+// SCRUM-1611 · clasifica cada pasada de scrum234 por el ORDEN que dejó el log de Postgres: ¿tomó la barrera su
+// FOR UPDATE antes de que la primera emisión leyera las facturas? ¿leyó la segunda antes del COMMIT de la primera?
+// Uso: node orden234.mjs <etiqueta1> [<etiqueta2> …]   (lee <etiqueta>.log y <etiqueta>.tap)
+import fs from 'node:fs';
+const filas = [];
+for (const e of process.argv.slice(2)) {
+  const log = fs.existsSync(`${e}.log`) ? fs.readFileSync(`${e}.log`, 'utf8').split(/\r?\n/) : [];
+  const ev = [];
+  for (const l of log) {
+    const m = /^\S+ (\d\d:\d\d:\d\d\.\d+) \S+ \[(\d+)\] x=\d+ (?:LOG|ERROR):\s+(.*)$/.exec(l);
+    if (!m) continue;
+    const [, t, pid, s] = m;
+    let k = null;
+    if (/SELECT id FROM merchants WHERE id = \$1 FOR UPDATE/.test(s)) k = 'barrera';
+    else if (/SELECT "public"\."invoices"\."id", "public"\."invoices"\."number" FROM/.test(s)) k = 'lee';
+    else if (/^statement: COMMIT/.test(s)) k = 'commit';
+    else if (/duplicate key value violates unique constraint "invoices_merchantId_number_key"/.test(s)) k = 'p2002';
+    if (k) ev.push({ t, pid, k });
+  }
+  const tap = fs.existsSync(`${e}.tap`) ? fs.readFileSync(`${e}.tap`, 'utf8') : '';
+  const res = /^not ok 1 /m.test(tap) ? 'CAE' : /^ok 1 /m.test(tap) ? 'VIVE' : 'CIEGO';
+  const iB = ev.findIndex((x) => x.k === 'barrera');
+  const lecturas = ev.filter((x) => x.k === 'lee');
+  if (iB < 0 || lecturas.length < 2) { filas.push({ e, res, orden: 'CIEGO (faltan eventos)' }); continue; }
+  const iL1 = ev.indexOf(lecturas[0]);
+  const pidA = lecturas[0].pid; const pidB = lecturas[1].pid;
+  const iCommitA = ev.findIndex((x) => x.k === 'commit' && x.pid === pidA);
+  const iL2 = ev.indexOf(lecturas[1]);
+  const barreraPrimero = iB < iL1;
+  const solape = iL2 < iCommitA; // la segunda leyó antes de que la primera commiteara
+  filas.push({ e, res, orden: barreraPrimero ? 'barrera ANTES' : 'barrera DESPUÉS', segundaLeeAntesDelCommit: solape, p2002: ev.some((x) => x.k === 'p2002') });
+}
+for (const f of filas) console.log(JSON.stringify(f));
+const n = filas.length;
+const c = (p) => filas.filter(p).length;
+console.log(`POBLACIÓN=${n} · CAE=${c((f) => f.res === 'CAE')} · VIVE=${c((f) => f.res === 'VIVE')} · CIEGO=${c((f) => f.res === 'CIEGO' || /CIEGO/.test(f.orden))}`);
+console.log(`barrera ANTES=${c((f) => f.orden === 'barrera ANTES')} (de ellas CAE ${c((f) => f.orden === 'barrera ANTES' && f.res === 'CAE')}) · barrera DESPUÉS=${c((f) => f.orden === 'barrera DESPUÉS')} (de ellas CAE ${c((f) => f.orden === 'barrera DESPUÉS' && f.res === 'CAE')}, con la 2ª leyendo antes del commit ${c((f) => f.orden === 'barrera DESPUÉS' && f.segundaLeeAntesDelCommit)})`);

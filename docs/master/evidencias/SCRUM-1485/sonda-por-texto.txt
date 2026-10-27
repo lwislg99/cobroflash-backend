@@ -1,0 +1,43 @@
+POBLACION · 1439 ficheros · 1088 con algún nombre ligado a una ruta de máquina sin normalizar en su renglón
+ACUSA · 20 renglones · 0 los tiene también el censo · 20 sólo esta sonda
+SOLO  tests/_partes-sin-validar.mjs:77 · ${nombre}/ pegado
+      const validada = partes.some((p) => new RegExp(`\\b${p}\\b`).test(despues) && VALIDA.test(despues));
+SOLO  tests/scrum1127-sif-client.test.mjs:357 · ${nombre}/ pegado
+      const { r } = await enviar(`http://127.0.0.1:${p}/ws`);
+SOLO  tests/scrum1127-sif-client.test.mjs:368 · ${nombre}/ pegado
+      const { r } = await enviar(`https://127.0.0.1:${p}/ws`, { timeouts: { tlsMs: 300 } });
+SOLO  tests/scrum1127-sif-client.test.mjs:390 · ${nombre}/ pegado
+      const { r, eventos } = await enviar(`https://127.0.0.1:${p}/ws`, {
+SOLO  tests/scrum1485-censo-rutas-de-maquina.test.mjs:123 · metodo(literal)
+      assert.deepEqual(veredictos(leer(["const rel = path.relative('a', 'b');", "if (rel.startsWith('tests/x')) process.exit(1);"])), ['LITERAL']);
+SOLO  tests/scrum1485-censo-rutas-de-maquina.test.mjs:134 · metodo(literal)
+      assert.deepEqual(leer(["const rel = path.relative('a', 'b').split(path.sep).join('/');", "if (rel.startsWith('tests/x')) process.exit(1);"]).hallazgos, []);
+SOLO  tests/scrum1485-censo-rutas-de-maquina.test.mjs:135 · nombre===literal
+      assert.deepEqual(leer(["const rel = path.relative('a', 'b').replace(/\\\\/g, '/');", "if (rel === 'tests/x') process.exit(1);"]).hallazgos, []);
+SOLO  tests/scrum1485-censo-rutas-de-maquina.test.mjs:136 · nombre===literal
+      assert.deepEqual(leer(["const rel = path.relative('a', 'b').replaceAll(path.sep, '/');", "if (rel === 'tests/x') process.exit(1);"]).hallazgos, []);
+SOLO  tests/scrum1485-censo-rutas-de-maquina.test.mjs:137 · nombre===literal
+      assert.deepEqual(leer(["const rel = path.posix.join('a', 'b');", "if (rel === 'a/b') process.exit(1);"]).hallazgos, []);
+SOLO  tests/scrum1485-censo-rutas-de-maquina.test.mjs:139 · nombre===literal
+      assert.deepEqual(veredictos(leer(["const rel = 'a/b'.split('/').join(path.sep);", "if (rel === 'a/b') process.exit(1);"])), ['LITERAL']);
+SOLO  tests/scrum1485-censo-rutas-de-maquina.test.mjs:149 · metodo(literal)
+      assert.deepEqual(leer(["const rel = path.relative('a', 'b');", "const f = (rel) => rel.startsWith('tests/x');"]).hallazgos, []);
+SOLO  tests/scrum245-sin-listas-blancas.test.mjs:94 · ${nombre}/ pegado
+      return params.some((p) => new RegExp(`\\b${p}\\b`).test(ini));
+SOLO  tests/scrum378-carga-por-pagina.test.mjs:48 · nombre===literal
+      const dashboard = INFORME.find((p) => p.pagina === 'public/dashboard/index.html');
+SOLO  tests/scrum524b-trinquete-de-la-tabla.test.mjs:283 · metodo(literal)
+      assert.ok(fallos.length && fallos.every((f) => f.startsWith('src/')), `${c} cae sin decir en qué fichero: ${fallos}`);
+SOLO  tests/scrum813-trinquete-de-zona.test.mjs:781 · ${nombre}/ pegado
+      assert.equal(q.amparadas.length, 0, `🔴 \`${ruta}\` se está amparando sin estar declarada`);
+SOLO  tests/scrum813-trinquete-de-zona.test.mjs:782 · ${nombre}/ pegado
+      assert.equal(q.cambios.length, 1, `🔴 \`${ruta}\` ha dejado de cegar: la lista se ha vuelto una zona franca`);
+SOLO  tests/scrum813-trinquete-de-zona.test.mjs:801 · ${nombre}/ pegado
+      `🔴 con la lista VACÍA se está amparando \`${ruta}\`: el amparo no puede salir de la nada.`);
+SOLO  tests/scrum813-trinquete-de-zona.test.mjs:803 · ${nombre}/ pegado
+      `🔴 con la lista VACÍA, \`${ruta}\` ha dejado de cegar. Vaciar la lista tiene que hacer el `
+SOLO  tests/scrum827-el-trinquete-mira-el-valor.test.mjs:112 · ${nombre}/ pegado
+      `🔴 el control negativo apunta a \`${f}\`, que ya no existe. Sin sujeto no controla nada: `
+SOLO  tests/scrum992-partes-recortan-por-rol.test.mjs:84 · nombre===literal
+      assert.ok(rutas.some((r) => r.verbo === 'get' && r.ruta === '/'), 'no ve `GET /`');
+EXIT=0

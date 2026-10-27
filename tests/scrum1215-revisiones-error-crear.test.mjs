@@ -66,6 +66,11 @@ async function avisoTrasCrear(alPost) {
   assert.equal(btn.length, 1, 'CIEGO: el admin no ve «Crear revisión»; no hay viaje que medir');
   btn[0].click();
   await new Promise((ok) => setTimeout(ok, 60));
+  // SCRUM-1302p · con la vigente ENVIADA, el primer clic sólo avisa; crea el «Crear revisión» del aviso.
+  const confirmar = todos(r.contenedor).filter((n) => attr(n, 'data-revision-confirmar') != null);
+  assert.equal(confirmar.length, 1, 'CIEGO: el aviso del enlace no trae «Crear revisión»');
+  confirmar[0].click();
+  await new Promise((ok) => setTimeout(ok, 60));
   assert.equal(posts.length, 1, 'CIEGO: el clic no llegó a hacer el POST');
   const avisos = todos(r.contenedor).filter((n) => attr(n, 'data-revision-error') === '1');
   assert.equal(avisos.length, 1, `CIEGO: se esperaba UN aviso de error tras el fallo; hay ${avisos.length}`);
@@ -83,8 +88,17 @@ test('SCRUM-1215 · 🔴 sin red pinta el texto firmado, no el del navegador', a
 });
 
 test('SCRUM-1215 · un rechazo con `message` humano del servidor se enseña TAL CUAL', async () => {
-  // Es el caso de `RevisionNoCreable` (quotesAdmin.routes.ts): el motivo lo escribe el dominio.
-  const motivo = 'Un presupuesto sin número no tiene una serie de la que ser revisión.';
-  const t = await avisoTrasCrear(() => respuesta(409, { error: 'quote_sin_numero', message: motivo }));
+  // 🔴 ESTE CASO CAMBIÓ EL 9-oct-2026 (SCRUM-1150), Y NO PARA QUE PASARA: cambió lo firmado.
+  // Hasta entonces ponía `quote_sin_numero` con el texto del dominio («Un presupuesto sin número no
+  // tiene una serie de la que ser revisión.») y exigía verlo tal cual. El orquestador, por
+  // delegación del fundador, firmó en SCRUM-1150 c.18740 que la pantalla decide por el CÓDIGO: el
+  // único `message` que pasa tal cual es el de `descuento_global_con_varios_iva` (firmado en
+  // SCRUM-887), y `quote_sin_numero` lee su propio literal firmado. Lo que este caso protegía —que
+  // un mensaje escrito para una persona no se cambie por el general— sigue aquí, con el único
+  // código para el que sigue siendo verdad. `quote_sin_numero` está en `scrum1150b-…`.
+  // Control: con el `quoteRevisiones.js` de antes de SCRUM-1150 este caso pasa igual (también
+  // pintaba el `message`); el que cae con el código viejo es el de `scrum1150b`.
+  const motivo = 'No se puede crear una revisión: este presupuesto tiene un descuento global y varios tipos de IVA. Duplícalo, pon el descuento en cada línea y envíaselo al cliente para que lo firme.';
+  const t = await avisoTrasCrear(() => respuesta(400, { error: 'descuento_global_con_varios_iva', message: motivo }));
   assert.equal(t, motivo);
 });

@@ -72,7 +72,8 @@
       key live. Requiere la cuenta Stripe verificada (datos del negocio + banco).
 - [ ] **Webhook Connect** (Dashboard → Developers → Webhooks → tipo Connect →
       `https://yaqu.app/webhooks/stripe-connect`, eventos `account.updated`,
-      `checkout.session.completed`, `payment_intent.payment_failed`) → copiar el signing
+      `checkout.session.completed`, `charge.dispute.created`, `payment_intent.payment_failed`:
+      los cuatro que atiende el código, SCRUM-678b) → copiar el signing
       secret a Railway como `STRIPE_CONNECT_WEBHOOK_SECRET`.
 - [ ] Railway: `PAYMENTS_CONNECT_ENABLED=true` (tarjeta solo para merchants con Connect
       activo, regla 18) y `BIZUM_MANUAL_ENABLED=true` (pruébalo con un Bizum real tuyo).

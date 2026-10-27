@@ -7,6 +7,8 @@
 > `f30b1a4052957e245ebe1cfef53bbef410c5816b`, y después recorrido en yaqu.app con la cuenta de QA, con permiso
 > escrito del fundador. **§12 dice qué cifras están ya vistas y cuáles siguen siendo de código**, y corrige una:
 > el editor completo son **7 clics, no 6**. Donde este documento dice «código, no pantalla», manda §12.
+> **7-oct-2026 07:47 GMT (hora de GitHub):** el alta de cliente de YaQu, que era el único tramo con camino
+> que seguía siendo de código, **VISTA EN PANTALLA** en dos ventanas (§12, «Añadido el 7-oct»). La cifra no cambia.
 > Todo texto de pantalla ajeno citado aquí es dato de mercado, no propuesta (regla 39). Lo fiscal es dato, no
 > propuesta. Este documento no recomienda qué copiar.
 
@@ -31,7 +33,7 @@
 
 | Tramo | Verifacturamos (visto) | YaQu (código, no pantalla) | Quién gana en pasos |
 |---|---|---|---|
-| Alta de cliente | 3 clics · 1 campo · 2 pantallas | 3 clics · 1 campo · 2 pantallas | Empate |
+| Alta de cliente | 3 clics · 1 campo · 2 pantallas | 3 clics · 1 campo · 2 pantallas (**visto** el 7-oct, §12) | Empate |
 | Presupuesto, cliente que ya existe (sin enviar) | 3 clics · 3 campos · 2 pantallas | Editor: **7 clics** · 2 campos · 3 pantallas (asistente de 4 pasos) | **Ellos, por 4 clics** |
 | Presupuesto SIN cliente | 2 clics · 2 campos · 2 pantallas | No hay camino: el cliente es obligatorio | **Ellos** |
 | Presupuesto + envío al cliente | ≥ 5 clics (3 + «Enviar» + elegir canal; lo que venga detrás no se pulsó) | Rápido: **3 clics** · 3 campos · 2 pantallas, y sale ya enviado. Editor: 8 clics | **Nosotros, por ≥ 2 clics** (rápido); ellos, por hasta 3, si se usa el editor |
@@ -343,3 +345,30 @@ encendida; queda apuntado en SCRUM-1367, sin sembrar datos.
 
 Lo que sigue sin verse en pantalla: lo que pasa al pulsar «Generar presupuesto» y «Enviar por WhatsApp», la
 página que abre el cliente para firmar, el albarán y el parte dentro del tramo, y todo lo de factura y cobro.
+
+### Añadido el 7-oct-2026: el alta de cliente, vista
+
+Era el único tramo con camino en la cuenta de QA que seguía siendo de código. Recorrido en yaqu.app (build
+`21c27b1127d937c99fae56c1b2de67eff1d03ccb`), cuenta de QA, en dos ventanas: 390×844 y 1280×800. El conductor
+corta toda petición que no sea de lectura y lo comprueba antes de pulsar nada: un envío de control a una ruta
+que no existe salió cortado en las dos. **«Guardar» no se pulsó. Nada creado.**
+
+| Tramo | Visto en pantalla | Cifra | ¿Coincide con lo leído? |
+|---|---|---|---|
+| Alta de cliente | «Añadir cliente» en el inicio → lista de Clientes → «Nuevo cliente» → formulario → nombre → «Guardar» (hasta el botón) | **3 clics · 1 campo · 2 pantallas** | Sí, en las dos ventanas |
+| El formulario | 23 controles en una sola hoja. Solo el nombre está marcado obligatorio. El país y los dos prefijos de teléfono llegan puestos | 1 obligatorio de 23 | Sí |
+| «Guardar» | Activo con el formulario vacío y activo con el nombre puesto: si reclama algo, lo reclama al pulsar | — | No se podía saber leyendo |
+
+Qué mide la cifra: dos pulsaciones hechas y una contada (la de «Guardar», a la vista y sin pulsar), un campo
+tecleado, dos vistas pisadas. No mide qué contesta el servidor al guardar.
+
+Lo que este recorrido NO contesta, y sigue en la lista de arriba: si los avisos de NIF y de cliente duplicado
+frenan el guardado (hay que pulsar «Guardar»).
+
+**Y un dato de la cuenta, leído por la API y no en pantalla** (7-oct, `GET /admin/quotes` y `GET /admin/merchant`
+con la sesión de solo lectura): la cuenta de QA tiene 5 presupuestos y los 5 son borradores. No hay ninguno
+aceptado, así que la ficha de un presupuesto aceptado tampoco se puede abrir hoy. El negocio es español, sin
+banderas propias y con las cuatro vías de cobro apagadas: el corte del tramo en la aceptación sigue igual que
+el 2-oct.
+
+Instrumento y sus dos salidas: `docs/master/evidencias/SCRUM-1437/`.

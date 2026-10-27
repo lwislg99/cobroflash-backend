@@ -46,6 +46,10 @@
 //                15-sep-2026: todos sus checks en verde desde el 8-sep, `abrir-pr-y-armar-automerge`
 //                en rojo, y el vigía decía «esperando a que pase el check obligatorio». Nadie lo
 //                va a mergear. Sale ahora porque hasta hoy el vigía no reconocía al bot (abajo).
+//   · BLOQUEADO-SIN-CAUSA  GitHub dice BLOCKED, el obligatorio terminó y no está en rojo. SCRUM-839i,
+//                16-oct-2026: hasta entonces salía ESPERANDO, «esperando a que pase el check
+//                obligatorio», con el obligatorio ya en verde. No se sabe por qué está bloqueado, y
+//                eso es lo que dice. ESPERANDO queda para el obligatorio que no ha terminado.
 //
 // 🔴 `strict_required_status_checks_policy` SE QUEDA EN `false`, Y NO ES UNA PALANCA.
 // Gobierna BEHIND, no DIRTY: subirlo no arregla un solo conflicto. Lo que sí haría es obligar
@@ -89,12 +93,38 @@
 //   · una causa que SE ARREGLA ESPERANDO (ESPERANDO, BEHIND, SIN-ESTADO) no avisa al entrar ni al
 //     cambiar a ella. Avisa al cruzar un umbral de edad, que es lo que la vuelve atasco;
 //   · las que NO se arreglan esperando (SIN-CHECKS, DIRTY, CONFLICTO-DISCREPA, ROJO-OBLIGATORIO,
-//     ROJO-SIN-LISTA, SIN-AUTO-MERGE) avisan al entrar, UNA vez por causa: hace falta un push o
-//     una persona, y esperar a las 24 h solo retrasaría lo que ya se sabe.
+//     ROJO-SIN-LISTA, SIN-AUTO-MERGE, BLOQUEADO-SIN-CAUSA) avisan al entrar, UNA vez por causa: hace
+//     falta un push o una persona, y esperar a las 24 h solo retrasaría lo que ya se sabe. (Con el
+//     obligatorio verde y el auto-merge armado ya tendría que haber entrado: si el vigía, que pasa
+//     cada 3 h, lo encuentra así, no hay nada que esperar.)
 // Un ROJO-OBLIGATORIO recién salido puede coincidir con el avisador despertando a Claude. Son
 // destinatarios distintos —aquél habla con Claude, éste con una persona—, el avisador tiene tope
 // y puerta fiscal y el vigía no puede saber si lo atendió; y como el aviso sale una vez por causa,
 // el solape está acotado a un comentario.
+//
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// `main` PARADO (SCRUM-1458)
+//
+// Medido el 6-oct-2026 por la S0: `main` estuvo 88,5 h sin un merge (2-oct 18:22Z → 6-oct 10:50Z),
+// y antes 136 h (9-sep → 15-sep). El vigía corrió durante el segundo parón y comentó tres veces
+// por cuatro PR; ninguno de esos avisos decía «main está parado», porque el vigía miraba PR y no
+// miraba `main`.
+//
+// POR QUÉ 48 h. Huecos entre commits de `main` (first-parent) desde el 1-sep-2026. Los midió la S0
+// sobre 1.287 commits y los recontó la S5 ese mismo día sobre 1.318, con el mismo resultado:
+//   ≥ 24 h   5   los dos parones y tres huecos de un día y pico
+//   ≥ 36 h   3   los dos parones y un fin de semana (45,2 h)
+//   ≥ 48 h   2   sólo los dos parones
+// La fila viaja en la misma memoria que los PR, con el «número» 0, y su causa no se arregla
+// esperando: avisa al entrar y al cruzar 72 h, 168 h y cada semana, como cualquier otro atasco.
+//
+// A QUIÉN SE MENCIONA, Y DESDE CUÁNDO (dos decisiones, las dos con su fecha):
+//   · 15-sep-2026 (SCRUM-839b): la mención al dueño va en TODO aviso. El issue llevaba seis días
+//     con cero comentarios y «escribir en un issue» no era «avisar a alguien».
+//   · 6-oct-2026 (SCRUM-1458, decisión del orquestador de Luis): la mención va SÓLO si en esa
+//     pasada `main` entra parado o cruza un umbral, o si un PR cruza 72 h o más. El issue llevaba
+//     43 comentarios y los 43 mencionaban: una mención que suena siempre no distingue lo grave.
+//     Los demás avisos se siguen publicando, sin mención.
 
 /** Etiqueta con la que un autor declara que su PR no debe mergearse todavía. */
 export const ETIQUETA_NO_MERGEAR = 'no-mergear';
@@ -126,6 +156,24 @@ export const UMBRALES_HORAS = [24, 72, 168];
  */
 export const CAUSAS_QUE_SE_ARREGLAN_ESPERANDO = ['ESPERANDO', 'BEHIND', 'SIN-ESTADO'];
 const seArreglaEsperando = (causa) => CAUSAS_QUE_SE_ARREGLAN_ESPERANDO.includes(causa);
+
+/** Horas sin un merge en `main` desde las que el vigía lo dice. Por qué 48: cabecera, «`main` PARADO». */
+export const UMBRAL_MAIN_PARADO_HORAS = 48;
+/** El «número» con el que la fila de `main` viaja en la memoria del issue. Ningún PR es el #0. */
+export const NUMERO_DE_MAIN = 0;
+/** La causa de esa fila. NO está entre las que se arreglan esperando: avisa al entrar. */
+export const CAUSA_MAIN_PARADO = 'MAIN-PARADO';
+/** Edad desde la que un PR que la cruza lleva la mención (decisión del 6-oct-2026: cabecera). */
+export const UMBRAL_MENCION_HORAS = 72;
+/** Así empieza el renglón de `main` en el aviso. Lo busca el latido para saber que el aviso habla de `main`. */
+export const MARCA_DE_MAIN_PARADO = '`main` está PARADO';
+/**
+ * (SCRUM-839i) Minutos con el obligatorio ya terminado y GitHub aún en BLOCKED desde los que se afirma
+ * BLOQUEADO-SIN-CAUSA. Medido el 16-oct-2026 sobre los 78 últimos PR fusionados (del `completed_at` del
+ * obligatorio en verde al `mergedAt`): mediana 1,4 min · p90 6,3 · p95 14,5 · máximo 55,9 (#2493), y todos
+ * entraron solos. 60 queda por encima de todos: un BLOCKED más corto es tránsito, no atasco.
+ */
+export const MINUTOS_PARA_AFIRMAR_SIN_CAUSA = 60;
 
 /**
  * Conclusiones de un check COMPLETADO que impiden el merge. `cancelled` va dentro: la cancelación
@@ -318,7 +366,50 @@ export function causaDelAtasco(obs = {}) {
   if (estado === 'UNKNOWN' || estado === '') {
     return { causa: 'SIN-ESTADO', detalle: 'GitHub no ha resuelto la mergeabilidad tras reintentar: NO se cuenta como limpio' };
   }
-  return { causa: 'ESPERANDO', detalle: `estado ${estado}: esperando a que pase el check obligatorio` };
+  // ── LO QUE QUEDA NO ES SIEMPRE «ESPERANDO» (SCRUM-839i) ─────────────────────────────────
+  // Hasta el 16-oct-2026 todo lo que llegaba aquí salía «esperando a que pase el check obligatorio»,
+  // también con el obligatorio ya en VERDE: una causa inventada con forma de dato. Con los checks a
+  // la vista son tres casos, y el tercero no tiene causa que se pueda leer:
+  //   ① el obligatorio no ha terminado (conclusión vacía) o no tiene ejecución → ESPERANDO, de verdad;
+  //   ② en rojo → ya salió arriba como ROJO-OBLIGATORIO;
+  //   ③ terminado sin rojo y GitHub dice BLOCKED, y así desde hace MINUTOS_PARA_AFIRMAR_SIN_CAUSA o más
+  //     → BLOQUEADO-SIN-CAUSA: «no sé por qué», dicho. Antes de ese plazo es la espera normal.
+  // Sin datos de checks no se sabe cuál de los tres es: se mantiene ESPERANDO (como antes), pero el
+  // detalle dice que no se pudo mirar en vez de afirmar a qué se espera.
+  if (!Array.isArray(obs.checkRuns) || !Array.isArray(obs.obligatorios) || obs.obligatorios.length === 0) {
+    return { causa: 'ESPERANDO', detalle: `estado ${estado}: sin datos de los checks obligatorios, no se ha podido ver a qué espera` };
+  }
+  const ultimas = ultimaEjecucionPorCheck(obs.checkRuns);
+  const deCadaUno = obs.obligatorios.map((nombre) => ({ nombre, run: ultimas.find((c) => c.name === nombre) }));
+  const sinTerminar = deCadaUno.filter(({ run }) => !run || run.status !== 'completed');
+  if (sinTerminar.length) {
+    return {
+      causa: 'ESPERANDO',
+      detalle: `estado ${estado}: el check obligatorio no ha terminado (`
+        + sinTerminar.map(({ nombre, run }) => `«${nombre}»: ${run ? run.status : 'sin ejecución sobre el head'}`).join(', ') + ')',
+    };
+  }
+  const como = deCadaUno.map(({ nombre, run }) => `${nombre}: ${String(run.conclusion || '(vacía)').toLowerCase()}`).join(', ');
+  if (estado === 'BLOCKED') {
+    // Sólo se afirma si PERSISTE: el último obligatorio tiene que haber terminado hace al menos
+    // MINUTOS_PARA_AFIRMAR_SIN_CAUSA. Antes es la espera normal hasta que el auto-merge dispara, y sin la
+    // hora no se sabe cuánto lleva: tampoco se afirma (si de verdad se queda, lo levanta la edad).
+    const ahora = Number.isFinite(obs.ahora) ? obs.ahora : Date.now();
+    const verdeHace = (ahora - Math.max(...deCadaUno.map(({ run }) => Date.parse(run.completed_at)))) / 60000;
+    if (!(verdeHace >= MINUTOS_PARA_AFIRMAR_SIN_CAUSA)) {
+      return {
+        causa: 'ESPERANDO',
+        detalle: Number.isFinite(verdeHace)
+          ? `GitHub dice BLOCKED con el obligatorio terminado hace ${Math.round(verdeHace)} min (${como}): dentro de la espera normal hasta el auto-merge (se afirma desde ${MINUTOS_PARA_AFIRMAR_SIN_CAUSA} min)`
+          : `GitHub dice BLOCKED con el obligatorio terminado (${como}) y no sé desde cuándo: no se afirma un atasco`,
+      };
+    }
+    return {
+      causa: 'BLOQUEADO-SIN-CAUSA',
+      detalle: `GitHub dice BLOCKED con el obligatorio terminado hace ${Math.round(verdeHace)} min y sin rojo (${como}): no sé por qué está bloqueado`,
+    };
+  }
+  return { causa: 'ESPERANDO', detalle: `estado ${estado} con el obligatorio terminado (${como}): esperando a que el auto-merge lo fusione` };
 }
 
 /**
@@ -362,12 +453,57 @@ export function haEmpeorado(antes = [], ahora = []) {
 }
 
 /**
+ * (SCRUM-1458) ¿Está `main` parado? `fecha` es la del último commit de `origin/main` (ISO).
+ * Tres respuestas, y la primera no es ninguna de las otras dos: una fecha que no se deja leer NO
+ * es «`main` al día».
+ * @param {{fecha?:string|null, ahora?:number}} e
+ * @returns {{leido:false} | {leido:true, parado:boolean, horas:number, fecha:string, fila?:object}}
+ */
+export function filaDeMain({ fecha, ahora = Date.now() } = {}) {
+  const t = typeof fecha === 'string' && fecha.trim() ? new Date(fecha.trim()).getTime() : NaN;
+  if (!Number.isFinite(t) || !Number.isFinite(ahora)) return { leido: false };
+  const horas = horasDesde(fecha.trim(), ahora);
+  const dia = new Date(t).toISOString().slice(0, 16).replace('T', ' ') + 'Z';
+  // Se compara sin redondear: `horas` lleva un decimal y 47,96 h se leería como 48.
+  if (ahora - t < UMBRAL_MAIN_PARADO_HORAS * 3600000) return { leido: true, parado: false, horas, fecha: dia };
+  return {
+    leido: true, parado: true, horas, fecha: dia,
+    fila: {
+      numero: NUMERO_DE_MAIN, causa: CAUSA_MAIN_PARADO, horas, sinPush: horas, umbral: umbralDeEdad(horas),
+      detalle: `\`main\` lleva ${horas} h sin un merge (el último, el ${dia}): se avisa desde las ${UMBRAL_MAIN_PARADO_HORAS} h`,
+    },
+  };
+}
+
+/**
+ * (SCRUM-1458) ¿Lleva este aviso la mención al dueño? Sólo si `main` entra parado o cruza un
+ * umbral, o si un PR cruza 72 h o más. `r` es lo que devuelve `haEmpeorado`; `filas`, la lista de
+ * ahora (de ahí sale el umbral de los que entran).
+ *
+ * Un PR que ENTRA ya con 72 h o más cuenta como que las cruza: es la primera vez que el vigía lo
+ * dice, y sin mención no volvería a sonar hasta las 168 h. Es lectura de la S5, no texto de la
+ * decisión, que sólo dice «cruza».
+ * @returns {{mencion:boolean, porMain:boolean, prs:number[]}}
+ */
+export function llevaMencion(r = {}, filas = []) {
+  const umbralDe = new Map(filas.map((f) => [f.numero, Number(f.umbral || 0)]));
+  const nuevos = r.nuevos || [];
+  const envejecidos = r.envejecidos || [];
+  const porMain = nuevos.includes(NUMERO_DE_MAIN) || envejecidos.some((e) => e.numero === NUMERO_DE_MAIN);
+  const prs = [
+    ...nuevos.filter((n) => n !== NUMERO_DE_MAIN && umbralDe.get(n) >= UMBRAL_MENCION_HORAS),
+    ...envejecidos.filter((e) => e.numero !== NUMERO_DE_MAIN && Number(e.umbral) >= UMBRAL_MENCION_HORAS).map((e) => e.numero),
+  ];
+  return { mencion: porMain || prs.length > 0, porMain, prs };
+}
+
+/**
  * EL SUELO, POR PASADA. Si la lista real sale vacía hay que poder distinguir «no hay
  * atascados» de «no sé mirar». Se pasan casos de laboratorio por los mismos clasificadores y
  * se exige que salgan marcados. Un instrumento que solo sabe decir «todo bien» no es un
- * instrumento. Son tres cebos porque son tres ausencias distintas: un cero de conflictos, un
- * cero de rojos y un cero de avisos por edad tienen que poder distinguirse cada uno de no
- * saber mirar.
+ * instrumento. Son cuatro cebos porque son cuatro ausencias distintas: un cero de conflictos, un
+ * cero de rojos, un cero de avisos por edad y un «`main` no está parado» tienen que poder
+ * distinguirse cada uno de no saber mirar.
  * @returns {{ok:boolean, detalle:string}}
  */
 export function sueloDeLaPasada() {
@@ -382,14 +518,20 @@ export function sueloDeLaPasada() {
     [{ numero: 1, causa: 'DIRTY', umbral: 0 }],
     [{ numero: 1, causa: 'DIRTY', umbral: umbralDeEdad(80) }],
   );
+  // El cebo de `main`, en los dos sentidos y con un reloj fijo: 50 h es parado, 47 h no.
+  const reloj = Date.UTC(2026, 9, 4, 20, 22);
+  const hace = (h) => new Date(reloj - h * 3600000).toISOString();
+  const parado = filaDeMain({ fecha: hace(50), ahora: reloj });
+  const sano = filaDeMain({ fecha: hace(47), ahora: reloj });
+  const main = parado.parado === true && parado.fila.causa === CAUSA_MAIN_PARADO && sano.leido === true && sano.parado === false;
   const ok = visto.vigilar === true && causa.causa === 'DIRTY'
-    && rojo.causa === 'ROJO-OBLIGATORIO' && edad.empeora === true;
+    && rojo.causa === 'ROJO-OBLIGATORIO' && edad.empeora === true && main;
   return {
     ok,
     detalle: ok
-      ? 'suelo OK: los tres cebos sintéticos salen marcados (bot + auto-merge + DIRTY · obligatorio en rojo · atasco que cruza 72 h)'
+      ? 'suelo OK: los cuatro cebos sintéticos salen marcados (bot + auto-merge + DIRTY · obligatorio en rojo · atasco que cruza 72 h · `main` de 50 h parado y de 47 h no)'
       : `🔴 SUELO ROTO: algún cebo no se reconoce (vigilar=${visto.vigilar}, conflicto=${causa.causa}, `
-        + `rojo=${rojo.causa}, edad=${edad.empeora}). `
+        + `rojo=${rojo.causa}, edad=${edad.empeora}, main=${main}). `
         + 'Un cero de esta pasada NO significa que no haya atascados.',
   };
 }

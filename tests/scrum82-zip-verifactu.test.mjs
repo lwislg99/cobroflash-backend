@@ -28,13 +28,41 @@
 // ⚠️ GATEADO (crea/BORRA un merchant efímero; levanta la app in-process):
 //   QA_DB_TEST=1 npm run test:staging
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599m: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import zlib from 'node:zlib';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
+import http from 'node:http';
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+// `node:http` sin agente y no `fetch` (SCRUM-1218g): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de `fetch`
+// (status, headers.get, text, json, arrayBuffer) y, como el `redirect: 'manual'` de antes, no sigue
+// redirecciones. El cuerpo se guarda en bytes: `text()` lo decodifica como `fetch` (TextDecoder).
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    const trozos = [];
+    r.on('data', (t) => { trozos.push(t); });
+    r.on('end', () => {
+      const buf = Buffer.concat(trozos);
+      ok({
+        status: r.statusCode,
+        headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+        text: async () => new TextDecoder().decode(buf),
+        json: async () => JSON.parse(new TextDecoder().decode(buf)),
+        arrayBuffer: async () => buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
+      });
+    });
+  });
+  req.on('error', mal);
+  req.end(body);
+});
+
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 
 // Mismos parsers de ZIP que scrum25-export-zip.test.mjs (central directory; el contenido
 // va deflatado con archiver, así que hay que descomprimir para comparar texto).
@@ -78,7 +106,7 @@ function contenidoEntradasZip(buf) {
   return out;
 }
 
-test('SCRUM-82: datos.zip incluye el XML VeriFactu por año, byte-idéntico al endpoint suelto', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
+test('SCRUM-82: datos.zip incluye el XML VeriFactu por año, byte-idéntico al endpoint suelto', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const server = app.listen(0);
@@ -137,12 +165,12 @@ test('SCRUM-82: datos.zip incluye el XML VeriFactu por año, byte-idéntico al e
       await prisma.authSession.create({
         data: { merchantId: merchant.id, teamMemberId: null, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) },
       });
-      const rVerify = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
+      const rVerify = await pedirSinAgente(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
       const cookie = (rVerify.headers.get('set-cookie') || '').split(';')[0];
       assert.ok(cookie.startsWith('pf_session='), 'no se obtuvo cookie de sesión');
 
-      const getZip = () => fetch(`${base}/admin/exports/datos.zip`, { headers: { cookie } });
-      const getXml = (year) => fetch(`${base}/admin/exports/verifactu.xml?year=${year}`, { headers: { cookie } });
+      const getZip = () => pedirSinAgente(`${base}/admin/exports/datos.zip`, { headers: { cookie } });
+      const getXml = (year) => pedirSinAgente(`${base}/admin/exports/verifactu.xml?year=${year}`, { headers: { cookie } });
 
       // ── FLAG OFF (default): sin XML, LEEME avisa de la ausencia ────────────
       const rOff = await getZip();
@@ -211,3 +239,11 @@ test('SCRUM-82: datos.zip incluye el XML VeriFactu por año, byte-idéntico al e
     await prisma.$disconnect();
   }
 });
+
+// SCRUM-1599m (diseño B de SCRUM-1599) · la mutación que tumba el caso de base, CATALOGADA en SCRUM-1599m.
+// Va aparte de `MUTACIONES_QUE_ME_TUMBAN` a propósito: el job del meta-guard corre SIN base, el caso sale
+// SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco PGlite,
+// `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e). Cada campo, LITERAL.
+export const MUTACIONES_CON_BASE = [
+  { fichero: "src/modules/exports/app/routes/exports.routes.ts", de: "    const xmlPermitido = isFlagEnabled('INVOICING_ES_ENABLED', { merchant })", a: "    const xmlPermitido = false && isFlagEnabled('INVOICING_ES_ENABLED', { merchant })", cae: "SCRUM-82: datos.zip incluye el XML" },
+];

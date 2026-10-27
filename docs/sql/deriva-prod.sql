@@ -24,7 +24,7 @@
 -- ajenas ni valores de enum. Y no reporta columnas de MÁS en la base: que la base vaya por
 -- delante del código es el orden seguro de un cambio aditivo, no un problema.
 --
--- Columnas esperadas: 511. Tablas: 33.
+-- Columnas esperadas: 515. Tablas: 33.
 
 WITH esperado (tabla, columna) AS (
   VALUES
@@ -308,6 +308,7 @@ WITH esperado (tabla, columna) AS (
     ('maintenance_plans','title'),
     ('maintenance_plans','updated_at'),
     ('merchants','acquisition_source'),
+    ('merchants','activity_kind'),
     ('merchants','address'),
     ('merchants','albaran_series_year'),
     ('merchants','approval_threshold'),
@@ -448,6 +449,7 @@ WITH esperado (tabla, columna) AS (
     ('quote_templates','tiers'),
     ('quote_templates','updated_at'),
     ('quotes','acceptedAt'),
+    ('quotes','archived_at'),
     ('quotes','chargeId'),
     ('quotes','clausulas_excluidas'),
     ('quotes','created_via'),
@@ -481,6 +483,7 @@ WITH esperado (tabla, columna) AS (
     ('quotes','reminderSentAt'),
     ('quotes','revision'),
     ('quotes','selectedTierId'),
+    ('quotes','series_year'),
     ('quotes','shipping_address'),
     ('quotes','shipping_address_mode'),
     ('quotes','signatureUrl'),
@@ -536,6 +539,7 @@ WITH esperado (tabla, columna) AS (
     ('whatsapp_messages','related_type'),
     ('whatsapp_messages','status'),
     ('whatsapp_messages','template_name'),
+    ('whatsapp_messages','to_phone'),
     ('whatsapp_messages','type'),
     ('whatsapp_messages','updated_at'),
     ('whatsapp_messages','wa_message_id')

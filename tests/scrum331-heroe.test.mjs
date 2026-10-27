@@ -118,11 +118,111 @@ test('SCRUM-331 · 🔴 ni un testimonio, ni un logo, ni un «más de X profesio
   }
 });
 
-test('SCRUM-331 · regla 26: el héroe no habla de VeriFactu ni de Hacienda, ni con sinónimos', () => {
-  const t = publicado(bloqueHeroe(html)) + ' ' + publicado(bloquePropuesta());
-  assert.doesNotMatch(t, /veri\s*\*?\s*factu|aeat|hacienda|rrsif|declaraci[oó]n responsable/i,
-    '🔴 el héroe menciona la fiscalidad. Esa pregunta se contesta SOLO con el guion H2 (regla 26), ' +
-    'y no en el héroe.');
+// ⚠️ SCRUM-1016 (14-oct-2026): esto era una lista negra ABSOLUTA, más estricta que la regla que
+// decía implementar. La regla 26 del máster (`docs/YAQU_MASTER.md`, Parte I) se enmendó el 22-sep
+// (firma en SCRUM-1016 c.16432) y permite nombrar VeriFactu, la AEAT, Hacienda, el RRSIF o la
+// declaración responsable si se cumplen a la vez (a) cita literal firmada en el máster, (b) el
+// matiz en la MISMA unidad visible y (c) ticket con la firma. Aquí se comprueban (a) y (b); la (c)
+// vive en Jira y no la lee un test. Lo que se deriva del texto de la regla, no de este fichero:
+//   · (b) «sin que el lector tenga que bajar a otro BLOQUE» → la unidad es el texto que hay entre
+//     dos fronteras de bloque HTML. Un <span>/<b>/<a> no corta; un <p>, un <h1> o un <div> sí. Un
+//     matiz en el <p> de al lado está en OTRO bloque, aunque lo envuelva el mismo <div>.
+//   · (b) «el estado real (remisión no construida, sin certificación, declaración responsable
+//     pendiente)» → esos tres, y sólo esos, son el matiz. «En camino» o «pronto» no lo son.
+//   · (a) «cita literal de una frase ya firmada en este máster» → cada cláusula que nombra un
+//     término regulado tiene que estar, letra a letra, en el máster. Se mide por cláusula porque
+//     es lo que se firmó (1016i, «cláusula por cláusula»; firma c.16564).
+//   · «sigue prohibido decir "VeriFactu listo" o "cumple con Hacienda"» → siempre rojo, aunque el
+//     máster los contenga (los contiene, como prohibidos: por eso (a) sola no basta).
+const FISCAL_RE = /veri\s*\*?\s*factu|aeat|hacienda|rrsif|declaraci[oó]n\s+responsable/i;
+const MATIZ_RE = [
+  /remisi[oó]n\b[^.;]{0,40}?\bno\s+est[aá]\s+construida/i,
+  /sin\s+certificaci[oó]n|no\s+existe\s+(?:ninguna\s+|una\s+)?[«"]?certificaci[oó]n/i,
+  /declaraci[oó]n\s+responsable\b[^.;]{0,40}?\bpendiente|\bpendiente\b[^.;]{0,40}?declaraci[oó]n\s+responsable/i,
+];
+const PROHIBIDO_SIEMPRE = /veri\s*\*?\s*factu\s+list[oa]|cumple\s+con\s+hacienda/i;
+const INLINE = new Set(['span', 'a', 'b', 'strong', 'em', 'i', 'small', 'mark', 'abbr', 'code',
+  'sub', 'sup', 'br', 'wbr', 'time', 'q', 's', 'u']);
+const plano = (s) => s.replace(/[*_`]/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
+const MASTER = plano(fs.readFileSync(path.join(RAIZ, 'docs', 'YAQU_MASTER.md'), 'utf8'));
+
+/** Texto de cada unidad visible: lo que queda entre dos fronteras de bloque. */
+function unidades(bloque) {
+  const out = [];
+  let actual = '';
+  const sinComent = String(bloque ?? '').replace(/<!--[\s\S]*?-->/g, ' ');
+  for (const trozo of sinComent.split(/(<\/?[a-zA-Z][^>]*>)/)) {
+    const m = trozo.match(/^<\/?([a-zA-Z][a-zA-Z0-9]*)/);
+    if (!m) { actual += trozo; continue; }
+    if (INLINE.has(m[1].toLowerCase())) { actual += ' '; continue; }
+    if (actual.trim()) out.push(actual.replace(/\s+/g, ' ').trim());
+    actual = '';
+  }
+  if (actual.trim()) out.push(actual.replace(/\s+/g, ' ').trim());
+  return out;
+}
+
+/** Las menciones de fiscalidad de un bloque que NO cumplen la regla 26, con el motivo. */
+function infraccionesRegla26(bloque) {
+  const malas = [];
+  for (const u of unidades(bloque)) {
+    if (!FISCAL_RE.test(u)) continue;
+    if (PROHIBIDO_SIEMPRE.test(u)) { malas.push('«' + u + '» → dice lo que la regla 26 sigue prohibiendo'); continue; }
+    if (!MATIZ_RE.some((re) => re.test(u))) malas.push('«' + u + '» → (b) sin el matiz en la MISMA unidad');
+    for (const c of u.split(/[.;:,—]/)) {
+      if (!FISCAL_RE.test(c)) continue;
+      // Una palabra suelta («AEAT») está en el máster por fuerza: eso no es citar una frase. El
+      // mínimo de 5 palabras NO sale de la regla 26, es de este guard: dicho en SCRUM-1016.md.
+      if (plano(c).split(' ').length < 5) malas.push('«' + c.trim() + '» → (a) demasiado corto para ser una cita');
+      else if (!MASTER.includes(plano(c))) malas.push('«' + c.trim() + '» → (a) no es cita literal del máster');
+    }
+  }
+  return malas;
+}
+
+test('SCRUM-331 · regla 26: el héroe sólo nombra la fiscalidad con cita literal del máster y su matiz en la MISMA unidad', () => {
+  const malas = [];
+  for (const [nombre, bloque] of [['héroe vivo', bloqueHeroe(html)], ['propuesta F4', bloquePropuesta()]]) {
+    for (const x of infraccionesRegla26(bloque)) malas.push(nombre + ': ' + x);
+  }
+  assert.deepEqual(malas, [],
+    '🔴 el héroe nombra la fiscalidad sin cumplir la regla 26 del máster:\n   ' + malas.join('\n   ') +
+    '\n   Sólo vale (a) una cláusula copiada letra a letra del máster, (b) con «remisión no ' +
+    'construida», «sin certificación» o «declaración responsable pendiente» en el MISMO bloque, ' +
+    'y (c) la firma del fundador sobre ese literal en Jira. Si no, no se pinta.');
+});
+
+test('SCRUM-331 · AUTOPRUEBA regla 26: cae sin matiz o sin cita, y deja pasar el subtítulo firmado', () => {
+  const heroe = (dentro) => '<section class="hero"><div class="wrap"><div>' + dentro + '</div></div></section>';
+  // Firmado por el fundador: SCRUM-1016 c.16564, ratificado en c.19607 («Ok firmamos»).
+  const FIRMADO = '<h1 id="reg-hero">Del presupuesto a la firma, <span class="hl">sin salir de WhatsApp.</span></h1>' +
+    '<p class="sub">Crea el presupuesto en 30 segundos y tu cliente lo firma desde el móvil por WhatsApp. ' +
+    'Hoy generamos cada registro de facturación con el formato oficial de la AEAT; la remisión a ' +
+    'Hacienda todavía no está construida, y los founding la estrenaréis sin cambio de precio.</p>';
+  assert.deepEqual(infraccionesRegla26(heroe(FIRMADO)), [],
+    '🔴 el guard tumba el subtítulo que el fundador firmó y que cumple (a) y (b): vuelve a ser la lista negra');
+
+  const casos = [
+    ['AEAT sin ningún matiz',
+      '<p class="sub">Hoy generamos cada registro de facturación con el formato oficial de la AEAT.</p>', '(b)'],
+    ['el matiz en el <p> de al lado, no en el mismo bloque',
+      '<h1>Hoy generamos cada registro de facturación con el formato oficial de la AEAT</h1>' +
+      '<p class="sub">La remisión a Hacienda todavía no está construida.</p>', '(b)'],
+    ['un «matiz» que la regla no nombra',
+      '<p>Hoy generamos cada registro de facturación con el formato oficial de la AEAT; Hacienda, muy pronto.</p>', '(b)'],
+    ['con matiz, pero redacción nueva (no está en el máster)',
+      '<p>Mandamos tus facturas a la AEAT; la remisión a Hacienda todavía no está construida.</p>', '(a)'],
+    ['la palabra suelta, que está en el máster sólo por ser una palabra',
+      '<p>Lo de la AEAT, AEAT. La remisión a Hacienda todavía no está construida.</p>', '(a) demasiado corto'],
+    ['lo que la regla sigue prohibiendo, aunque el máster lo cite',
+      '<p>Cumple con Hacienda; la remisión a Hacienda todavía no está construida.</p>', 'prohibiendo'],
+  ];
+  for (const [que, dentro, motivo] of casos) {
+    const r = infraccionesRegla26(heroe(dentro));
+    assert.ok(r.some((x) => x.includes(motivo)),
+      '🔴 «' + que + '» no cae por ' + motivo + ' (dijo: ' + JSON.stringify(r) + '). Si esto pasa, ' +
+      'el verde de arriba es una lista vaciada, no la regla 26.');
+  }
 });
 
 // ── ③ REGLA 30, EN LAS DOS DIRECCIONES ───────────────────────────────────────────────────────

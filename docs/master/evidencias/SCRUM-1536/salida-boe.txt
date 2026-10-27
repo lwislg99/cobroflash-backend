@@ -1,0 +1,44 @@
+POBLACION fichero=rrsif.xml bytes=88577 sha256=20d704afa2d24e91cf97e8ec83c41038f1eef964a1ba724ff6f0958425a8ca38 bloques=36
+BLOQUE pr · preambulo · [preambulo] · versiones=1 · vigente pub=20231206 vig=20231207
+BLOQUE au · precepto · Artículo único · versiones=1 · vigente pub=20231206 vig=20231207
+BLOQUE da · precepto · Disposición adicional primera · versiones=1 · vigente pub=20231206 vig=20231207
+BLOQUE da-2 · precepto · Disposición adicional segunda · versiones=1 · vigente pub=20231206 vig=20231207
+BLOQUE da-3 · precepto · Disposición adicional tercera · versiones=1 · vigente pub=20231206 vig=20231207
+BLOQUE df · precepto · Disposición final primera · versiones=1 · vigente pub=20231206 vig=20231207
+BLOQUE df-2 · precepto · Disposición final segunda · versiones=1 · vigente pub=20231206 vig=20231207
+BLOQUE df-3 · precepto · Disposición final tercera · versiones=1 · vigente pub=20231206 vig=20231207
+BLOQUE df-4 · precepto · Disposición final cuarta · versiones=3 · vigente pub=20251203 vig=20251204
+BLOQUE fi · firma · [firma] · versiones=1 · vigente pub=20231206 vig=20231207
+BLOQUE re · encabezado · REGLAMENTO · versiones=1 · vigente pub=20231206 vig=20231207
+BLOQUE ci · encabezado · CAPÍTULO I · versiones=1 · vigente pub=20231206 vig=20231207
+BLOQUE a1 · precepto · Artículo 1 · versiones=1 · vigente pub=20231206 vig=20231207
+   >> [a1 p8 · 362c] 3. El Reglamento es aplicable en todo el territorio español, sin perjuicio de los regímenes tributarios forales de concierto y convenio económico en vigor, respectivamente, en los territorios históricos del País Vasco y en la Comunidad Foral de Navarra, y teniendo en cuenta las especialidades previstas en su normativa específica para Canarias, Ceuta y Melilla.
+   >> [a1 p9 · 268c] En relación con los territorios históricos del País Vasco y en la Comunidad Foral de Navarra, el presente Reglamento será de aplicación a los obligados tributarios a que se refiere el artículo 3 de este Reglamento cuando tengan su domicilio fiscal en territorio común.
+   >> [a1 p10 · 270c] Las referencias que realiza el Reglamento a la normativa del Impuesto sobre el Valor Añadido se considerarán también efectuadas a la normativa del Impuesto General Indirecto Canario y a la del Impuesto sobre la Producción, los Servicios e Importación en Ceuta y Melilla.
+BLOQUE a2 · precepto · Artículo 2 · versiones=1 · vigente pub=20231206 vig=20231207
+BLOQUE a3 · precepto · Artículo 3 · versiones=1 · vigente pub=20231206 vig=20231207
+BLOQUE a4 · precepto · Artículo 4 · versiones=2 · vigente pub=20250402 vig=20250403
+BLOQUE a5 · precepto · Artículo 5 · versiones=1 · vigente pub=20231206 vig=20231207
+BLOQUE a6 · precepto · Artículo 6 · versiones=2 · vigente pub=20250402 vig=20250403
+BLOQUE ci-2 · encabezado · CAPÍTULO II · versiones=1 · vigente pub=20231206 vig=20231207
+BLOQUE s1 · encabezado · Sección 1 · versiones=1 · vigente pub=20231206 vig=20231207
+BLOQUE a7 · precepto · Artículo 7 · versiones=1 · vigente pub=20231206 vig=20231207
+BLOQUE a8 · precepto · Artículo 8 · versiones=1 · vigente pub=20231206 vig=20231207
+BLOQUE s2 · encabezado · Sección 2 · versiones=1 · vigente pub=20231206 vig=20231207
+BLOQUE a9 · precepto · Artículo 9 · versiones=1 · vigente pub=20231206 vig=20231207
+BLOQUE a1-2 · precepto · Artículo 10 · versiones=1 · vigente pub=20231206 vig=20231207
+BLOQUE a1-3 · precepto · Artículo 11 · versiones=1 · vigente pub=20231206 vig=20231207
+BLOQUE a1-4 · precepto · Artículo 12 · versiones=1 · vigente pub=20231206 vig=20231207
+BLOQUE s3 · encabezado · Sección 3 · versiones=1 · vigente pub=20231206 vig=20231207
+BLOQUE a1-5 · precepto · Artículo 13 · versiones=1 · vigente pub=20231206 vig=20231207
+BLOQUE s4 · encabezado · Sección 4 · versiones=1 · vigente pub=20231206 vig=20231207
+BLOQUE a1-6 · precepto · Artículo 14 · versiones=1 · vigente pub=20231206 vig=20231207
+BLOQUE ci-3 · encabezado · CAPÍTULO III · versiones=1 · vigente pub=20231206 vig=20231207
+BLOQUE a1-7 · precepto · Artículo 15 · versiones=1 · vigente pub=20231206 vig=20231207
+BLOQUE a1-8 · precepto · Artículo 16 · versiones=1 · vigente pub=20231206 vig=20231207
+BLOQUE ci-4 · encabezado · CAPÍTULO IV · versiones=1 · vigente pub=20231206 vig=20231207
+BLOQUE a1-9 · precepto · Artículo 17 · versiones=1 · vigente pub=20231206 vig=20231207
+PARRAFOS leidos=233 · con territorio en el ARTICULADO=3 · en el preambulo=0
+CONTROL positivo («sistemas informaticos de facturacion» esta): true · control de cero: OK
+canari en TODO el fichero: 2 · igic: 0 · foral: 3
+EXIT=0

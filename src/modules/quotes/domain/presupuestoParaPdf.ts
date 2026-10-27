@@ -38,6 +38,7 @@
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 import type { ParamsPdfPresupuesto } from '../../invoicing/infra/pdf/pdf.service';
 import { leerClausulasDelMerchant } from './clausulas';
+import { zonaDelMerchant } from '../../../core/zonaDelMerchant'; // SCRUM-643 · SCRUM-1470
 import { getLocale } from '../../../core/i18n/locales';
 import { textoDeValidez } from './validez';
 
@@ -171,5 +172,13 @@ export function paramsDePresupuestoParaPdf(f: FuentesDelPresupuesto): ParamsComp
       createdAt: quote.createdAt,
       merchant,
     }),
+    // SCRUM-1470 · la zona del negocio, EN CRUDO: quien la resuelve (y cae a UTC si falta o no
+    // vale) es `zonaDelMerchant`, dentro del documento. Con ella la fecha de la firma del papel es
+    // la misma que dice la página pública.
+    // 6-oct-2026 · lo de «EN CRUDO» YA NO ES VERDAD: aquí había `merchant.timezone ?? null`, y
+    // el guard de SCRUM-643 lo cazó con razón (un `timezone ?? X` es una segunda decisión sobre
+    // qué hacer cuando falta). Ahora viaja ya resuelta; el documento la vuelve a pasar por
+    // `zonaDelMerchant`, que sobre una zona resuelta devuelve la misma: el día impreso no cambia.
+    zona: zonaDelMerchant(merchant),
   };
 }

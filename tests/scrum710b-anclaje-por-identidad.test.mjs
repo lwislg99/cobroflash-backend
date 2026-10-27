@@ -30,9 +30,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { anclajesPorLinea, lineasBaseCompartidas } from './_censo-por-posicion.mjs';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { anclajesPorLinea, lineasBaseCompartidas, LIMITE_DE_LA_CITA_ARMADA } from './_censo-por-posicion.mjs';
 
 /**
  * 🔴 EL CENSO SE CAZABA A SI MISMO, y no es un caso raro: es la naturaleza de un censo
@@ -46,6 +47,48 @@ const YO = 'tests/scrum710b-anclaje-por-identidad.test.mjs';
 const sinMi = (h) => h.fichero !== YO;
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+// SCRUM-1302n · las cinco mutaciones del banco de SCRUM-1544 pasan AL CATÁLOGO del meta-guard
+// (SCRUM-1387), tal como estaban escritas en `docs/master/evidencias/SCRUM-1544/mutaciones.mjs`:
+// mismo fichero, mismo `de`, mismo `a`, mismo `cae`. `npm run meta:mutaciones` las ejecuta en el
+// CI y aquel guion las lee de aquí en vez de llevar su lista.
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // el censo deja de leer el join
+    fichero: 'tests/_censo-por-posicion.mjs',
+    de: "&& n.expression.name.text === 'join' && n.arguments.length === 1",
+    a: "&& n.expression.name.text === 'join' && n.arguments.length === 99",
+    cae: 'una cita TROCEADA con todas sus piezas escritas',
+  },
+  {
+    // un número escrito pasa a ser un hueco
+    fichero: 'tests/_censo-por-posicion.mjs',
+    de: 'if (ts.isNumericLiteral(n)) return n.text;',
+    a: 'if (ts.isNumericLiteral(n)) return HUECO;',
+    cae: 'una cita TROCEADA con todas sus piezas escritas',
+  },
+  {
+    // un nombre se lee como si fuera el número (el censo «aprende» constantes)
+    fichero: 'tests/_censo-por-posicion.mjs',
+    de: '  resto.push(n);\n  return HUECO;\n}',
+    a: "  resto.push(n);\n  return ts.isIdentifier(n) ? '12' : HUECO;\n}",
+    cae: 'EL LÍMITE: con una pieza en un nombre',
+  },
+  {
+    // el literal con la cita entera se cuenta dos veces
+    fichero: 'tests/_censo-por-posicion.mjs',
+    de: '    resto.push(n);\n    return HUECO;\n  }\n  if (ts.isNumericLiteral(n))',
+    a: '    resto.push(n);\n    return n.text;\n  }\n  if (ts.isNumericLiteral(n))',
+    cae: 'los anclajes por NÚMERO DE LÍNEA no crecen',
+  },
+  {
+    // se retira de la lista uno de los tres que el censo no veía
+    fichero: 'tests/scrum710b-anclaje-por-identidad.test.mjs',
+    de: "  ['tests/scrum398-vocabulario-de-cobro.test.mjs  reports.routes.ts', 1],\n",
+    a: '',
+    cae: 'los anclajes por NÚMERO DE LÍNEA no crecen',
+  },
+];
 
 // ═══ ① SUELO ═════════════════════════════════════════════════════════════════════════════
 
@@ -148,7 +191,12 @@ test('SCRUM-710b · 🔴 los anclajes por NÚMERO DE LÍNEA no crecen', () => {
     + 'esto caduca y quien lo pague no sabrá por qué. Ánclalo a lo que la cosa ES —el '
     + 'identificador, el literal, el nodo— y deja la línea sólo para el mensaje.'
     + '\n\n  ✅ CORREGIR uno que ya está declarado NO cae aquí: la identidad no lleva la línea '
-    + 'dentro. Si te sale este rojo es porque hay uno MÁS, no porque uno se haya movido.');
+    + 'dentro. Si te sale este rojo es porque hay uno MÁS, no porque uno se haya movido.'
+    + '\n\n  ⛔ TROCEAR LA CITA NO LA ARREGLA: LA ESCONDE. Armarla con un `join`, una suma, una '
+    + 'constante o cualquier otra cosa para que este censo no la vea deja el anclaje por posición '
+    + 'donde estaba y este guard en verde: es relajar el guard sin tocarlo (regla 41). Qué ve y '
+    + 'qué no ve el censo está declarado en `LIMITE_DE_LA_CITA_ARMADA` '
+    + '(tests/_censo-por-posicion.mjs, SCRUM-1544).');
 });
 
 test('SCRUM-710b · 🔴 y la lista no se pudre: lo ARREGLADO se borra en el mismo commit', () => {
@@ -237,6 +285,95 @@ test('SCRUM-710b · CONTROL NEGATIVO: un array con un elemento por línea NO ent
   }
 });
 
+// ═══ ⑤ EL LÍMITE, DECLARADO Y SEMBRADO (SCRUM-1544) ══════════════════════════════════════
+//
+// 🔴 El 13-oct-2026 este trinquete cazó tres citas `fichero:línea` en un test nuevo, y el arreglo
+// que se le empujó fue TROCEARLAS (`['src/sembrado.ts', 1].join(':')`) para que el censo no las
+// viera. La cita seguía ahí. Una red que no caza tiene el mismo aspecto que una que no tuvo nada
+// que cazar, así que aquí se fija, con casos FABRICADOS, qué ve el censo y qué no.
+//
+// ⚠️ LAS SIEMBRAS SE FABRICAN, NO SE TOMAN DEL ÁRBOL: un caso prestado de un defecto real se
+// queda mudo el día que alguien lo arregla, y el guard sigue verde. Y viven en ESTE fichero, que
+// es el único que el censo no se cuenta (`YO`, arriba): por eso pueden llevar la cita escrita.
+const CITA_SEMBRADA = 'src/sembrado.ts:12';
+const SIEMBRAS = new Map([
+  ['entera-en-comillas', "export const cita = 'src/sembrado.ts:12 calcula()';"],
+  ['entera-en-plantilla-sin-huecos', 'export const cita = `src/sembrado.ts:12 calcula()`;'],
+  ['entera-en-plantilla-con-un-hueco-al-lado',
+    "const expr = 'calcula()';\nexport const cita = `src/sembrado.ts:12 ${expr}`;"],
+  ['troceada-con-join', "export const cita = ['src/sembrado.ts', 12].join(':') + ' calcula()';"],
+  ['troceada-con-suma', "export const cita = 'src/sembrado.ts' + ':' + 12 + ' calcula()';"],
+  ['troceada-con-el-numero-en-un-hueco', 'export const cita = `src/sembrado.ts:${12} calcula()`;'],
+  ['linea-en-una-constante', "const L = 12;\nexport const cita = 'src/sembrado.ts:' + L + ' calcula()';"],
+  ['fichero-en-una-constante', "const F = 'src/sembrado.ts';\nexport const cita = F + ':12 calcula()';"],
+  ['dos-puntos-por-codigo',
+    "export const cita = 'src/sembrado.ts' + String.fromCharCode(58) + '12 calcula()';"],
+  ['en-expresion-regular',
+    String.raw`export const cita = /src\/sembrado\.ts:12 calcula/.source.split('\\').join('');`],
+]);
+
+/** Fabrica la raíz sembrada, comprueba que el veneno ENTRÓ y devuelve qué formas ve el censo. */
+async function sembrar() {
+  const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum1544-'));
+  try {
+    fs.mkdirSync(path.join(raiz, 'tests'));
+    for (const [forma, fuente] of SIEMBRAS) {
+      fs.writeFileSync(path.join(raiz, 'tests', `${forma}.mjs`), `${fuente}\n`);
+    }
+    const enEjecucion = new Map();
+    for (const forma of SIEMBRAS.keys()) {
+      const mod = await import(pathToFileURL(path.join(raiz, 'tests', `${forma}.mjs`)).href);
+      enEjecucion.set(forma, mod.cita);
+    }
+    const censo = anclajesPorLinea(raiz, ['tests']);
+    return { censo, enEjecucion, vistas: new Set(censo.hallados.map((h) => h.fichero)) };
+  } finally {
+    fs.rmSync(raiz, { recursive: true, force: true });
+  }
+}
+const sembrada = (forma) => `tests/${forma}.mjs`;
+
+test('SCRUM-1544 · SUELO: cada siembra ES la cita en ejecución, y lo declarado es lo sembrado', async () => {
+  const { censo, enEjecucion } = await sembrar();
+  // Una siembra que no llega a ser la cita da el MISMO «no la ve» que el límite que se quiere
+  // fijar: primero se mira que el veneno entró, y sólo después qué dice el censo.
+  assert.equal(censo.leidos, SIEMBRAS.size,
+    `🔴 CIEGO: el censo ha leído ${censo.leidos} ficheros de la raíz sembrada y hay ${SIEMBRAS.size}.`);
+  for (const [forma, valor] of enEjecucion) {
+    assert.ok(String(valor).startsWith(`${CITA_SEMBRADA} calcula`),
+      `🔴 la siembra «${forma}» NO es la cita en ejecución (vale «${valor}»): lo que diga el censo `
+      + 'de ella no prueba nada.');
+  }
+  assert.deepEqual([...SIEMBRAS.keys()].sort(),
+    [...LIMITE_DE_LA_CITA_ARMADA.ve, ...LIMITE_DE_LA_CITA_ARMADA.noVe].sort(),
+    '🔴 lo DECLARADO en `LIMITE_DE_LA_CITA_ARMADA` y lo SEMBRADO aquí no son la misma lista. Una '
+    + 'forma declarada sin siembra es una frase; una siembra sin declarar, un caso que nadie lee.');
+});
+
+test('SCRUM-1544 · 🔴 una cita TROCEADA con todas sus piezas escritas se ve igual que entera', async () => {
+  const { vistas } = await sembrar();
+  const ciegas = LIMITE_DE_LA_CITA_ARMADA.ve.filter((forma) => !vistas.has(sembrada(forma)));
+  assert.deepEqual(ciegas, [],
+    '🔴 el censo ha dejado de VER estas formas de escribir `src/sembrado.ts:12`:\n    '
+    + ciegas.join('\n    ')
+    + '\n\n  Con eso, trocear una cita por posición vuelve a poner el trinquete en verde sin que la '
+    + 'cita desaparezca. Es lo que se hizo el 13-oct-2026 para esquivarlo.');
+});
+
+test('SCRUM-1544 · EL LÍMITE: con una pieza en un nombre o en una expresión regular, NO la ve', async () => {
+  const { vistas } = await sembrar();
+  // El positivo con el mismo dato va al lado: la misma cita, entera, SÍ sale. Sin él, este «no la
+  // ve» lo daría también un censo que no ve nada.
+  assert.equal(vistas.has(sembrada('entera-en-comillas')), true,
+    '🔴 CIEGO: el censo no ve ni la cita escrita entera; su «no la ve» de abajo no vale.');
+  const ahoraLasVe = LIMITE_DE_LA_CITA_ARMADA.noVe.filter((forma) => vistas.has(sembrada(forma)));
+  assert.deepEqual(ahoraLasVe, [],
+    '✅ BUENA NOTICIA QUE HAY QUE ESCRIBIR: el censo ya VE estas formas, que estaban declaradas '
+    + 'como límite:\n    ' + ahoraLasVe.join('\n    ')
+    + '\n\n  Pásalas de `noVe` a `ve` en `LIMITE_DE_LA_CITA_ARMADA` (tests/_censo-por-posicion.mjs) '
+    + 'en este mismo commit. Mientras sigan en `noVe`, el límite declarado ya no es el que hay.');
+});
+
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // EL CENSO DECLARADO · medido el 4-sep-2026 sobre 817 ficheros de `tests/` y `scripts/`.
 //
@@ -289,7 +426,6 @@ const CONOCIDOS_A = new Map([
   ['tests/scrum519-un-solo-criterio-de-cobro.test.mjs  homeView.js', 1],
   ['tests/scrum519-un-solo-criterio-de-cobro.test.mjs  payInvoice.routes.ts', 1],
   ['tests/scrum519-un-solo-criterio-de-cobro.test.mjs  settingsView.js', 1],
-  ['tests/scrum624b-guardado-vs-impreso.test.mjs  schemas.ts', 1],
   ['tests/scrum624c-total-canonico.test.mjs  albaranAFactura.ts', 1],
   ['tests/scrum642-tramos-del-arranque.test.mjs  BrowserLauncher.ts', 1],
   ['tests/scrum656b-clausulas-configuracion.test.mjs  quotes.routes.ts', 2],
@@ -305,6 +441,14 @@ const CONOCIDOS_A = new Map([
   ['tests/scrum1286-intermitente-1281.test.mjs  tests/scrum500-cae-por-otra-cosa.test.mjs', 1],
   ['tests/scrum1286-intermitente-1281.test.mjs  tests/scrum775-suelo-que-no-dispara.test.mjs', 1],
   ['tests/scrum1286-intermitente-1281.test.mjs  tests/scrum804b-el-barrido-de-la-42.test.mjs', 1],
+  // SCRUM-1544 · NO SON NUEVOS: ESTABAN, Y EL CENSO NO LOS VEÍA. Los tres van enteros dentro de
+  // un trozo de PLANTILLA con huecos, y para el censo un trozo de plantilla no era un literal.
+  // Nadie los troceó a propósito. Salen al enseñarle a leer el texto armado. Lo dice el cruce del
+  // 13-oct-2026: el censo de antes y el de después sobre los mismos 1.795 ficheros, 3 de diferencia,
+  // estos tres. Se declaran como deuda que ya había, igual que el resto de la lista; no se han tocado.
+  ['scripts/_banco-lista.mjs  invoicesView.js', 1],
+  ['tests/scrum398-vocabulario-de-cobro.test.mjs  reports.routes.ts', 1],
+  ['tests/scrum403-beneficio-sin-iva.test.mjs  reports.routes.ts', 1],
 ]);
 
 // (b) TRES arrays de pares `[texto, número]` con dos o más pares en la misma línea física.

@@ -15,13 +15,36 @@
 // ⚠️ GATEADO (crea/BORRA merchants+teamMembers efímeros; levanta la app):
 //   QA_DB_TEST=1 npm run test:staging
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599p: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
+import http from 'node:http';
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+// `node:http` sin agente y no `fetch` (SCRUM-1218d): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de `fetch`
+// (status, headers.get, text, json) y, como el `redirect: 'manual'` de antes, no sigue redirecciones.
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    let d = ''; r.setEncoding('utf8');
+    r.on('data', (t) => { d += t; });
+    r.on('end', () => ok({
+      status: r.statusCode,
+      headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+      text: async () => d,
+      json: async () => JSON.parse(d),
+    }));
+  });
+  req.on('error', mal);
+  req.end(body);
+});
 
-test('SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy correctos; merchant y email inexistente sin cambios', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
+
+test('SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy correctos; merchant y email inexistente sin cambios', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const { requestMagicLink, getSession } = await import('../dist/modules/auth/domain/auth.service.js');
@@ -61,7 +84,7 @@ test('SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy
     assert.equal(magicSession.merchantId, merchant.id, 'el AuthSession debe llevar el merchantId CORRECTO del operario (tenancy)');
 
     // Verificación end-to-end REAL: canjear el token → cookie de sesión → getSession → rol/tenancy.
-    const rVerify = await fetch(`${base}/auth/verify?token=${magicSession.token}`, { redirect: 'manual' });
+    const rVerify = await pedirSinAgente(`${base}/auth/verify?token=${magicSession.token}`, { redirect: 'manual' });
     assert.equal(rVerify.status, 302, `GET /auth/verify con el token del operario debe redirigir (302) y fue ${rVerify.status}`);
     const cookie = (rVerify.headers.get('set-cookie') || '').split(';')[0];
     assert.ok(cookie.startsWith('pf_session='), 'debe fijar la cookie pf_session');
@@ -75,7 +98,7 @@ test('SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy
 
     // Prueba HTTP real: con esa cookie, una ruta admin-only debe dar 403 — el operario
     // NO puede colarse como admin por este camino nuevo.
-    const rAdminOnly = await fetch(`${base}/admin/exports/verifactu.xml`, { headers: { cookie } });
+    const rAdminOnly = await pedirSinAgente(`${base}/admin/exports/verifactu.xml`, { headers: { cookie } });
     assert.equal(rAdminOnly.status, 403, `un operario con sesión vía SCRUM-92 debe seguir dando 403 en rutas admin-only y fue ${rAdminOnly.status}`);
 
     // ── Caso 1b: TeamMember 'invited' también puede pedir login (se activa al canjear, igual que la invitación) ──
@@ -97,16 +120,39 @@ test('SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy
     assert.equal(afterMerchant, beforeMerchant + 1, 'el login del Merchant owner no debe cambiar de comportamiento');
 
     // ── Caso 3: email inexistente (ni Merchant ni TeamMember) → nada se crea, sin fuga ──
+    // SCRUM-1611b · el CONJUNTO de sesiones que nacen en la ventana de la llamada, no `count()` de toda
+    // la base: en el banco, con ficheros en paralelo, otro test crea sesiones a la vez y el recuento cayó
+    // con «11 !== 9» (§1599s). No se acota a los comercios de este test: `AuthSession.merchantId` es
+    // obligatorio, así que la fuga de un email fantasma es una sesión de un comercio CUALQUIERA, y
+    // acotarlo dejaría de verla (SCRUM-1611 c.20978). `id > max(id) de antes` recoge la de esta llamada
+    // aunque otra transacción tenga un id menor sin commitear. Una sesión ajena en la ventana no se
+    // distingue de una fuga, así que la ventana se repite hasta verla VACÍA: una fuga del código sale en
+    // TODAS (no hay azar entre el lookup y el `create`), y una de otro test, no. Ni una vacía = rojo.
     const ghostEmail = `qa-s92-fantasma-${stamp}@test.local`;
-    const beforeGhost = await prisma.authSession.count();
-    await requestMagicLink(ghostEmail); // no debe lanzar, ni crear nada
-    const afterGhost = await prisma.authSession.count();
-    assert.equal(afterGhost, beforeGhost, 'un email que no existe en NINGUNA tabla no debe crear ningún AuthSession');
+    const VENTANAS = 5;
+    const llenas = [];
+    let vacia = 0;
+    for (let i = 1; i <= VENTANAS && !vacia; i++) {
+      const [{ antes }] = await prisma.$queryRaw`SELECT coalesce(max(id), 0)::int AS antes FROM auth_sessions`;
+      await requestMagicLink(ghostEmail); // no debe lanzar, ni crear nada
+      const nuevas = await prisma.authSession.findMany({
+        where: { id: { gt: antes } },
+        select: { id: true, merchantId: true, teamMemberId: true },
+      });
+      assert.deepEqual(nuevas.filter((s) => s.merchantId === merchant.id), [],
+        'un email que no existe en NINGUNA tabla creó un AuthSession en el comercio de este test');
+      if (nuevas.length === 0) vacia = i;
+      else llenas.push(nuevas.map((s) => `${s.id}→m${s.merchantId}`).join(' '));
+    }
+    assert.ok(vacia,
+      `un email que no existe en NINGUNA tabla no debe crear ningún AuthSession: en las ${VENTANAS} ventanas ` +
+      `nacieron sesiones (${llenas.join(' | ')}) — o es la fuga, o la base no calló en ninguna; en los dos casos no hay verde`);
+    t.diagnostic(`SCRUM-92 · email fantasma: ventana vacía en el intento ${vacia} de ${VENTANAS}` + (llenas.length ? ` · antes, con sesiones ajenas: ${llenas.join(' | ')}` : ''));
 
     // La respuesta HTTP de /auth/login es SIEMPRE la misma genérica, exista o no el email
     // (regla anti-enumeración, no tocada por este fix) — probado a nivel de ruta:
-    const rLoginGhost = await fetch(`${base}/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: ghostEmail }) });
-    const rLoginReal = await fetch(`${base}/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: tecnico.email }) });
+    const rLoginGhost = await pedirSinAgente(`${base}/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: ghostEmail }) });
+    const rLoginReal = await pedirSinAgente(`${base}/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: tecnico.email }) });
     assert.equal(rLoginGhost.status, rLoginReal.status, 'el status HTTP de /auth/login debe ser igual exista o no el email');
     const [bodyGhost, bodyReal] = await Promise.all([rLoginGhost.json(), rLoginReal.json()]);
     assert.deepEqual(bodyGhost, bodyReal, 'el body de /auth/login debe ser IDÉNTICO exista o no el email (sin enumeración)');
@@ -120,3 +166,13 @@ test('SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy
     await prisma.$disconnect();
   }
 });
+
+// SCRUM-1599p (diseño B de SCRUM-1599) · la mutación que tumba el caso de base, CATALOGADA en SCRUM-1599p.
+// Va aparte de `MUTACIONES_QUE_ME_TUMBAN` a propósito: el job del meta-guard corre SIN base, el caso sale
+// SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco,
+// `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e). Cada campo, LITERAL.
+export const MUTACIONES_CON_BASE = [
+  { fichero: "src/modules/auth/domain/auth.service.ts", de: "    teamMemberId: teamMember.id,", a: "    teamMemberId: null,", cae: "SCRUM-92: operario puede volver a entrar" },
+  // SCRUM-1611b · la fuga del caso 3: el email fantasma abre sesión en el comercio más antiguo de la base.
+  { fichero: "src/modules/auth/domain/auth.service.ts", de: "    console.log(`[magic-link] intento de login con email no registrado: ${maskEmail(email)}`);", a: "    { const cualquiera = await prisma.merchant.findFirst({ orderBy: { id: 'asc' } }); if (cualquiera) return issueLoginLink({ merchantId: cualquiera.id, teamMemberId: null, email, recipientName: cualquiera.name }); }", cae: "SCRUM-92: operario puede volver a entrar" },
+];

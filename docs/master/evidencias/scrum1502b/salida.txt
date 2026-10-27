@@ -1,0 +1,73 @@
+── 1 · controles del espía
+OK  CERO: el sujeto quieto da 0 salidas (tiene que dar 0)
+OK  y el espía SÍ le ve leer su fichero
+OK  POSITIVO: el sujeto que sale da 9 salidas por child_process, dns, fetch, https, net
+OK  y le ve consultar una variable de entorno por su nombre
+OK  BLOQUEO: con el bloqueo puesto las sigue viendo (5) y el sujeto no muere (salida 0)
+
+── 2 · el trinquete espiado, espejo sin mutar
+POBLACION  ficheros leídos=3376 · directorios listados=499 · casos del trinquete=13
+leídos, por sitio:
+        1  (fuera del espejo)
+        1  docs/MICROCOPY_APROBADA_SIN_APLICAR.md
+        1  docs/YAQU_MASTER.md
+     1065  docs/master/
+      128  docs/microcopy/
+       98  public/
+      290  scripts/
+      321  src/
+     1471  tests/
+fuera del espejo: C:/Users/Javier Pereira/cobroflash-backend/node_modules/typescript/lib/typescript.js
+salidas al exterior (red, nombres, procesos): 0
+variables de entorno consultadas por nombre: FORCE_COLOR, NODE_ENV, NODE_INSPECTOR_IPC, NODE_TEST_CONTEXT, NODE_V8_COVERAGE, TSC_NONPOLLING_WATCHER, TSC_WATCHDIRECTORY, TSC_WATCHFILE, TSC_WATCH_POLLINGCHUNKSIZE_HIGH, TSC_WATCH_POLLINGCHUNKSIZE_LOW, TSC_WATCH_POLLINGCHUNKSIZE_MEDIUM, TSC_WATCH_POLLINGINTERVAL_HIGH, TSC_WATCH_POLLINGINTERVAL_LOW, TSC_WATCH_POLLINGINTERVAL_MEDIUM, TSC_WATCH_UNCHANGEDPOLLTHRESHOLDS_HIGH, TSC_WATCH_UNCHANGEDPOLLTHRESHOLDS_LOW, TSC_WATCH_UNCHANGEDPOLLTHRESHOLDS_MEDIUM, VSCODE_INSPECTOR_OPTIONS, WATCH_REPORT_DEPENDENCIES
+OK  sin bloqueo: 13 de 13 pasan, 0 fallan (salida 0)
+OK  con TODA salida bloqueada: 13 de 13 pasan, 0 fallan (salida 0) · salidas intentadas 0
+→ salidas=0 · credenciales consultadas=0 · leídos fuera del espejo=1
+
+── 3 · marcas fabricadas en el espejo
+OK  CERO: la frase fabricada está en 0 ficheros del espejo antes de fabricarla
+OK  CERO: el ticket inexistente lo nombran 0 ficheros del espejo
+OK  POSITIVO: la misma búsqueda ve SCRUM-1502 en 4 ficheros
+0 · base, espejo sin mutar
+    sin-respaldo=28 · anclado=14 · rastreable=149 · documental=24
+    salen: — · entran: —
+    casos del trinquete en rojo (0): — · salidas al exterior: 0
+A · marca nueva, sin respaldo en NINGÚN sitio
+    sin-respaldo=29 (+1) · anclado=14 · rastreable=149 · documental=24
+    salen: — · entran: src/_espejo1502b/aviso.ts:1
+    casos del trinquete en rojo (1): SCRUM-921c · el trinquete no sube: una firma nueva nace diciendo dónde consta · salidas al exterior: 0
+B · marca nueva, respaldo en el ÁRBOL (un docs/master que atribuye y lleva la frase)
+    sin-respaldo=28 · anclado=14 · rastreable=149 · documental=25 (+1)
+    salen: — · entran: —
+    casos del trinquete en rojo (0): — · salidas al exterior: 0
+B′ · lo mismo, pero el documento no atribuye a nadie
+    sin-respaldo=29 (+1) · anclado=14 · rastreable=149 · documental=24
+    salen: — · entran: src/_espejo1502b/aviso.ts:1
+    casos del trinquete en rojo (1): SCRUM-921c · el trinquete no sube: una firma nueva nace diciendo dónde consta · salidas al exterior: 0
+C · marca nueva cuyo comentario cita «ticket + comentario» de un ticket que NO EXISTE en Jira
+    sin-respaldo=28 · anclado=15 (+1) · rastreable=149 · documental=24
+    salen: — · entran: —
+    casos del trinquete en rojo (0): — · salidas al exterior: 0
+C′ · marca nueva cuyo comentario sólo nombra ese ticket inexistente
+    sin-respaldo=28 · anclado=14 · rastreable=150 (+1) · documental=24
+    salen: — · entran: —
+    casos del trinquete en rojo (0): — · salidas al exterior: 0
+E1 · la REAL (respaldo sólo en Jira) + «SCRUM-1502 comentario 18835» en SU comentario
+    sin-respaldo=27 (-1) · anclado=15 (+1) · rastreable=149 · documental=24
+    salen: src/modules/system/app/routes/invoicesAdmin.routes.ts:1293 · entran: —
+    casos del trinquete en rojo (1): SCRUM-921c · el trinquete tampoco baja en silencio · salidas al exterior: 0
+E2 · la REAL + sólo «SCRUM-1502» en su comentario
+    sin-respaldo=27 (-1) · anclado=14 · rastreable=150 (+1) · documental=24
+    salen: src/modules/system/app/routes/invoicesAdmin.routes.ts:1293 · entran: —
+    casos del trinquete en rojo (1): SCRUM-921c · el trinquete tampoco baja en silencio · salidas al exterior: 0
+E3 · la REAL + «c.18835» sin el ticket (la forma en que lo escribimos en Jira)
+    sin-respaldo=28 · anclado=14 · rastreable=149 · documental=24
+    salen: — · entran: —
+    casos del trinquete en rojo (0): — · salidas al exterior: 0
+E4 · la REAL + «comentario 18835» sin el ticket
+    sin-respaldo=28 · anclado=14 · rastreable=149 · documental=24
+    salen: — · entran: —
+    casos del trinquete en rojo (0): — · salidas al exterior: 0
+
+D · la REAL, sin tocar: acusada en la base = src/modules/system/app/routes/invoicesAdmin.routes.ts:1293 · ficheros del espejo que YA escriben «SCRUM-1502 comentario 18835» = 1
+POBLACION casos=10 ciegos=0 · salidas al exterior sumadas=0

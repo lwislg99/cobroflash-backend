@@ -41,6 +41,7 @@ const SHELL = [
   '/dashboard/js/modalHeader.js', // SCRUM-446
   '/dashboard/js/switchFormaJuridica.js', // SCRUM-574
   '/dashboard/js/filtroClientes.js', // SCRUM-581
+  '/dashboard/js/clienteVolverALlamar.js', // SCRUM-1056 (CRM-15)
   '/dashboard/js/etiquetasDelDocumento.js', // SCRUM-595 (DOC-05)
   '/dashboard/js/jobNextAction.js',
   '/dashboard/js/jobAgendar.js', // SCRUM-823: agendar, compartido por la lista y el detalle
@@ -62,6 +63,7 @@ const SHELL = [
   '/dashboard/js/descuentoPorDefecto.js', // SCRUM-587 (CONT-14)
   '/dashboard/js/formaDePagoPorDefecto.js', // SCRUM-586 (CONT-13)
   '/dashboard/js/quoteDireccionObra.js', // SCRUM-602 (DOC-12)
+  '/dashboard/js/sitiosGuardados.js', // SCRUM-1144
   '/dashboard/js/quoteRevisiones.js',
   '/dashboard/js/quoteAtajosVencimiento.js',
   '/dashboard/js/tiposDeIva.js', // SCRUM-611 (DOC-16)

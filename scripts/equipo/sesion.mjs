@@ -95,8 +95,47 @@ export const UNA_HORA_MS = 60 * 60 * 1000;
 export const MODELO_POR_DEFECTO = 'opus';
 /** Un alias o un id de modelo. Nunca empieza por guion: viaja como argumento y no puede leerse como flag. */
 const MODELO = /^[a-z0-9][a-z0-9.-]{0,63}$/;
-/** A19/A25: por encima de esto, AL TERMINAR UNA ENTREGA, se releva (era 300k; bajó el 21-sep-2026, SCRUM-1070b). */
-export const UMBRAL_CONTEXTO = 200_000;
+/**
+ * A19/A25: por encima de esto, AL TERMINAR UNA ENTREGA, se releva. Es el ÚNICO sitio donde vive el número:
+ * `gasto-arranque.mjs` y el latido lo toman de aquí.
+ *   · 300k desde el 6-oct-2026 (SCRUM-1479, gemelo del texto de la A19). Lo autorizó el FUNDADOR, coste
+ *     incluido: «El límite de relevo lo pongo en 300.000. Autorizado el coste.» (6-oct-2026 ~18:50Z, turno
+ *     suyo en el chat del orquestador; transcrito en SCRUM-1479 c.18513; cómo se comprobó que el turno es
+ *     suyo, en `docs/master/SCRUM-1479.md`).
+ *     Medido ese día a las 19:33Z sobre 43 sesiones con algún turno (`docs/master/SCRUM-1479.md`): 200k lo
+ *     cruzan 38 y 30 de ellas sin haber empujado nada todavía; 300k lo cruzan 21, 14 con algún push ya dado;
+ *     500k, 4. Un aviso que sale en casi todas no distingue a ninguna, y uno que no sale casi nunca tampoco.
+ *   · 200k del 21-sep-2026 al 6-oct-2026 (SCRUM-1070b; decisión del orquestador, y tocar esta constante llevó
+ *     la autorización escrita del fundador: `docs/master/SCRUM-1070.md`). Antes, 300k.
+ * La A19 tiene un segundo número, el de «a MITAD de una entrega»: es la constante de abajo.
+ */
+export const UMBRAL_CONTEXTO = 300_000;
+/**
+ * A19, el SEGUNDO número (SCRUM-1484): por encima de esto NO se espera a terminar la entrega. Primer punto
+ * seguro (un commit local), traspaso y relevo. El latido lo toma de aquí para decir una frase distinta.
+ * 500k es el que la A19 lleva escrito («en mitad de una entrega, si pasa de 500k»), leído el 6-oct-2026 en
+ * `docs/equipo/00-normas-comunes.md`. Ese día el fundador volvió a decidir el de arriba y NO éste: aquí se
+ * copia el de la norma, no se propone otro. Quien lo decida cambia esta línea y la norma JUNTAS.
+ * El 7-oct-2026 el orquestador de Luis lo dejó como estaba (SCRUM-1479 c.18622), con la medición de
+ * `docs/master/evidencias/SCRUM-1479/` delante. No lo firmó el fundador: no cambia el número ni sube el gasto.
+ * BAJARLO o SUBIRLO sí es coste, y es suyo.
+ */
+export const UMBRAL_CONTEXTO_A_MITAD = 500_000;
+
+/**
+ * La frase de la A19 para una ventana que ya pasó `umbral`. Es UNA para todo el que la diga (la sección
+ * CONTEXTO del latido y `contexto N`), para que dos instrumentos no le digan dos cosas a la misma sesión
+ * (SCRUM-1484b). Entre los dos números, AL TERMINAR la entrega; por encima del segundo, YA.
+ * `null` = no hay frase: o no pasa del primero, o los dos números no dejan tramo «al terminar».
+ */
+export function fraseDeRelevo({ tokens, umbral = UMBRAL_CONTEXTO, umbralAMitad = UMBRAL_CONTEXTO_A_MITAD }) {
+  const enK = (n) => `${Math.round(n / 1000)}k`;
+  if (!(umbralAMitad > umbral) || !(tokens > umbral)) return null;
+  const yaSinEsperar = tokens > umbralAMitad;
+  return yaSinEsperar
+    ? `por encima de ${enK(umbralAMitad)} (A19, a mitad de entrega): se releva YA, sin esperar a terminar — primer punto seguro (un commit local), traspaso y relevo`
+    : `por encima de ${enK(umbral)} (A19): se releva AL TERMINAR su entrega`;
+}
 /** Lo que se espera a que una sesión escriba su traspaso antes de rendirse. */
 export const ESPERA_TRASPASO_MS = 10 * 60 * 1000;
 /** SCRUM-1011 · lo que se espera, sondeando el `pid`, antes de declarar que una sesión NO arrancó. */
@@ -312,8 +351,11 @@ export function equipoVivo({ agentes, repo, job, mesas }) {
  * ocasional: disparaba SIEMPRE, así que «espera algo interactivo» no era un dato, era relleno con
  * forma de dato. Si algún día el CLI empieza a traer `waitingFor` de verdad, se usa; si no, se dice
  * que no se sabe, en vez de inventar qué tipo de algo espera.
+ *
+ * Exportada por SCRUM-1467: `scripts/vigia-sesiones-jv.mjs` compone su aviso con ESTA función, para
+ * que la frase viva en un solo sitio (su copia propia se quedó atrás diez días tras 1095).
  */
-function motivoDeBloqueo(v) {
+export function motivoDeBloqueo(v) {
   return v.waitingFor ? `espera ${v.waitingFor}` : 'está bloqueada, motivo desconocido — `agents --json` no informa de por qué';
 }
 
@@ -444,16 +486,29 @@ export function buscarJsonl({ sessionId, carpetas, existe }) {
 /**
  * ¿Toca relevar? Los tres casos son los de la A19 («El PUESTO es fijo; la SESIÓN se releva»), y no
  * se amplían: el cuarto caso que a uno se le ocurra es una sesión parada a mitad de una entrega.
+ *
+ * SCRUM-1484b · por encima de `umbral` el veredicto sigue siendo `RELEVAR`, y `momento` dice CUÁNDO, que
+ * es lo que la A19 distingue con sus dos números: `AL-TERMINAR` la entrega, o `YA` por encima del segundo.
+ * Hasta el 7-oct-2026 `contexto N` decía sólo «por encima de 300k» también a una sesión de 800k.
  */
-export function decidirRelevo({ contexto, ultimaActividad, ahora, tandaNueva = false, umbral = UMBRAL_CONTEXTO }) {
+export function decidirRelevo({ contexto, ultimaActividad, ahora, tandaNueva = false, umbral = UMBRAL_CONTEXTO, umbralAMitad = UMBRAL_CONTEXTO_A_MITAD }) {
   if (tandaNueva) return { veredicto: 'RELEVAR', motivo: 'empieza la tanda del día siguiente' };
   // SUELO: sin lectura no se dice «sigue». Un instrumento que no pudo mirar no da verde.
   if (!contexto) return { veredicto: 'NO-PUDE-MIRAR', motivo: 'no se pudo leer el contexto de la sesión' };
   if (typeof ultimaActividad === 'number' && ahora - ultimaActividad > UNA_HORA_MS) {
     return { veredicto: 'RELEVAR', motivo: 'lleva más de 1 h parada: la caché de prompt ya está fría', tokens: contexto.tokens };
   }
+  // Con los dos números al revés o iguales no hay tramo «al terminar»: la misma puerta que el latido.
+  if (!(umbralAMitad > umbral)) {
+    return { veredicto: 'NO-PUDE-MIRAR', motivo: `el umbral de «a mitad de entrega» (${umbralAMitad}) no es mayor que el de «al entregar» (${umbral}): no sé qué frase le toca`, tokens: contexto.tokens };
+  }
   if (contexto.tokens > umbral) {
-    return { veredicto: 'RELEVAR', motivo: `el contexto va por ${Math.round(contexto.tokens / 1000)}k, por encima de ${Math.round(umbral / 1000)}k`, tokens: contexto.tokens };
+    return {
+      veredicto: 'RELEVAR',
+      momento: contexto.tokens > umbralAMitad ? 'YA' : 'AL-TERMINAR',
+      motivo: `el contexto va por ${Math.round(contexto.tokens / 1000)}k, ${fraseDeRelevo({ tokens: contexto.tokens, umbral, umbralAMitad })}`,
+      tokens: contexto.tokens,
+    };
   }
   return { veredicto: 'SEGUIR', motivo: `${Math.round(contexto.tokens / 1000)}k, por debajo de ${Math.round(umbral / 1000)}k`, tokens: contexto.tokens };
 }
@@ -789,11 +844,20 @@ function nodeReal(cwd, args) {
 
 /**
  * Qué mesa usa un lanzamiento. Sin `config.mesas`, ninguna, y se DICE (el interruptor no se ha dado).
- * @returns {{ok:true, cwd:string|undefined, mesa:object} | {ok:false, veredicto:string, motivo:string}}
+ *
+ * SCRUM-1298c · sin mesa se lanza desde `config.repo`, NO desde el cwd de quien lanza. Heredarlo hacía que
+ * arrancar dependiera de dónde estuviera el orquestador al teclear: el 18-oct-2026 `sesion-0` no arrancó
+ * dos veces porque `sesion.mjs` se corrió desde la carpeta de la instalación (`AppData/Local/yaqu-equipo`),
+ * que no cuelga de ninguna carpeta de confianza, y `claude --bg` se niega ahí («Workspace not trusted»).
+ * Sin `config.repo` no se lanza: no hay de dónde.
+ * @returns {{ok:true, cwd:string, mesa:object} | {ok:false, veredicto:string, motivo:string}}
  */
 export function mesaDelLanzamiento({ config, nombre, equipo, ...io }) {
   if (config.mesas === undefined) {
-    return { ok: true, cwd: undefined, mesa: { veredicto: 'SIN-MESA', motivo: 'la instalación no declara `mesas`: la sesión hereda el cwd de quien la lanza (SCRUM-1298)' } };
+    if (typeof config.repo !== 'string' || !config.repo) {
+      return { ok: false, veredicto: 'NO-PUDE-MIRAR', motivo: 'la instalación no declara `mesas` ni `repo`: no hay desde dónde lanzar (SCRUM-1298c)' };
+    }
+    return { ok: true, cwd: config.repo, mesa: { veredicto: 'SIN-MESA', motivo: 'la instalación no declara `mesas`: la sesión arranca en el repositorio (`repo`), no en el cwd de quien la lanza (SCRUM-1298c)' } };
   }
   const p = prepararMesa({ config, nombre, equipo, ...io });
   if (!p.ok) return p;
@@ -862,6 +926,24 @@ function gitReal(cwd, args, { binario = false } = {}) {
 function claude(config, args, { cwd } = {}) {
   const [orden, ...previos] = Array.isArray(config.claude) ? config.claude : [config.claude || 'claude'];
   return spawnSync(orden, [...previos, ...args], { encoding: 'utf8', maxBuffer: 16 * 1024 * 1024, ...(cwd ? { cwd } : {}) });
+}
+
+/**
+ * SCRUM-1011b · Lo que dejó `claude` cuando no confirmó la sesión de fondo: su código, su señal, el error
+ * del propio lanzamiento y el FINAL de stdout y de stderr. Hasta aquí viajaba sólo stdout, y un `claude`
+ * que falla escribe el motivo en stderr, o no llega a arrancar (`error`, `status` null). El 18-oct-2026 el
+ * orquestador recibió dos veces `salida: ""` lanzando `sesion-0`, y no supo por qué. El veredicto sigue
+ * siendo el mismo (sale 2, no se lanza): esto sólo hace que la causa viaje.
+ */
+export function rastroDeClaude(r) {
+  const final = (t, n) => String(t || '').slice(-n);
+  return {
+    status: r && typeof r.status === 'number' ? r.status : null,
+    senal: (r && r.signal) || null,
+    error: r && r.error ? String(r.error.code || r.error.message || r.error) : null,
+    salida: final(r && r.stdout, 400),
+    errores: final(r && r.stderr, 800),
+  };
 }
 
 function leerAgentes(config) {
@@ -967,12 +1049,30 @@ export function rutaDelTraspaso(config, nombre) {
   return path.join(base, fichero);
 }
 
+/**
+ * Qué sesión mide `contexto <nombre>` (SCRUM-1557). Pasa por `repartirPorNombre`, como `lanzar`,
+ * `relevar`, `parar` y `olvidar`: un resto MUERTO con el mismo nombre no se cuenta como «viva»
+ * —antes se contaba, y con una muerta al lado no había forma de medir a la viva—. Lo que no se
+ * puede jurar muerto sigue contando, y con dos que cuentan no se elige una a ciegas.
+ *
+ * @returns {{veredicto:'ELEGIDA', agente:object}|{veredicto:'NO-VIVA'|'NO-PUDE-MIRAR', motivo:string}}
+ */
+export function elegirParaContexto({ nombre, agentes, job }) {
+  if (!Array.isArray(agentes)) return { veredicto: 'NO-PUDE-MIRAR', motivo: 'no se pudo leer `claude agents --json`' };
+  const { cuentan, restos } = repartirPorNombre({ nombre, agentes, job });
+  if (cuentan.length === 0) return { veredicto: 'NO-VIVA', motivo: `no hay ninguna sesión «${nombre}» viva`, ...comoRestos(restos) };
+  if (cuentan.length > 1) {
+    return { veredicto: 'NO-PUDE-MIRAR', motivo: `${cuentan.length} sesiones que no se pueden dar por muertas se llaman «${nombre}»`,
+      cuentan: cuentan.map((c) => ({ id: c.agente.id ?? null, motivo: c.motivo })), ...comoRestos(restos) };
+  }
+  return { veredicto: 'ELEGIDA', agente: cuentan[0].agente };
+}
+
 /** El contexto de una sesión viva, con todo lo que hizo falta para leerlo. */
 function leerContexto(config, nombre, agentes) {
-  if (!Array.isArray(agentes)) return { veredicto: 'NO-PUDE-MIRAR', motivo: 'no se pudo leer `claude agents --json`' };
-  const vivas = agentes.filter((a) => a && a.name === nombre);
-  if (vivas.length === 0) return { veredicto: 'NO-VIVA', motivo: `no hay ninguna sesión «${nombre}» viva` };
-  if (vivas.length > 1) return { veredicto: 'NO-PUDE-MIRAR', motivo: `${vivas.length} sesiones vivas se llaman «${nombre}»` };
+  const e = elegirParaContexto({ nombre, agentes, job: (id) => estadoDeJob(config, id) });
+  if (e.veredicto !== 'ELEGIDA') return e;
+  const vivas = [e.agente];
 
   const carpetas = carpetasDeProyecto(config);
   if (!carpetas) return { veredicto: 'NO-PUDE-MIRAR', motivo: 'no se pudo listar ~/.claude/projects' };
@@ -1071,7 +1171,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     const args = argsLanzar({ modo: 'nueva', nombre, prompt: encargo, equipo, modelo });
     const r = claude(config, args, { cwd: ml.cwd });
     const m = BACKGROUNDED.exec(r.stdout || '');
-    if (r.status !== 0 || !m) salir(2, { veredicto: 'NO-PUDE-MIRAR', motivo: 'claude no confirmó la sesión de fondo', salida: (r.stdout || '').slice(-400), mesa: ml.mesa });
+    if (r.status !== 0 || !m) salir(2, { veredicto: 'NO-PUDE-MIRAR', motivo: 'claude no confirmó la sesión de fondo', ...rastroDeClaude(r), mesa: ml.mesa });
     // SCRUM-1011: el mismo defecto que `lanzar` — «backgrounded» solo dice que `claude` aceptó el
     // encargo, no que el proceso exista. Se sondea el `pid` antes de dar RELEVADA/LANZADA por buena.
     const confirmacion = confirmarArranque(config, m[1]);
@@ -1121,7 +1221,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     const args = argsLanzar({ modo: 'nueva', nombre, prompt, equipo, modelo });
     const r = claude(config, args, { cwd: ml.cwd });
     const m = BACKGROUNDED.exec(r.stdout || '');
-    if (r.status !== 0 || !m) salir(2, { veredicto: 'NO-PUDE-MIRAR', motivo: 'claude no confirmó la sesión de fondo', salida: (r.stdout || '').slice(-400) });
+    if (r.status !== 0 || !m) salir(2, { veredicto: 'NO-PUDE-MIRAR', motivo: 'claude no confirmó la sesión de fondo', ...rastroDeClaude(r) });
     // 🔴 SCRUM-1011 · medido 4 de 4: «backgrounded» solo dice que `claude` aceptó el encargo, no
     // que el proceso exista. Sondea el `pid` (el tell de SCRUM-954) antes de dar LANZADA por buena;
     // sin esto, el orquestador se cree que tiene un puesto trabajando y reparte trabajo a nadie.

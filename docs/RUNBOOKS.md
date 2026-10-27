@@ -73,7 +73,7 @@
 ## R7 · Falla el sellado local de una factura
 
 > **CORREGIDO 23-sep-2026 (SCRUM-1094, jv-j4):** esta entrada describía un rechazo de la
-> AEAT vía una cola `VfSubmission` que nunca se construyó (cero tabla, cero envío, cero
+> AEAT vía una cola `VfSubmission` que nunca se construyó [13-oct-2026, SCRUM-1500h, decisión del fundador en SCRUM-1500 c.18993: eso era cierto el 23-sep-2026; desde el 30-sep-2026 (SCRUM-1296) la tabla existe, la emisión la llena y ningún proceso la vacía (SCRUM-1500d, Jira c.18919); sigue sin haber envío. NO medido: ninguna base de datos (ni si la tabla existe en producción, staging o dev, ni cuántas filas tiene) ni el valor de `SIF_ENABLED` en Railway.] (cero tabla, cero envío, cero
 > llamada de red). El máster ya no la publica (Parte L, `docs/YAQU_MASTER.md`) tras
 > SCRUM-534n. El guion que había aquí para el merchant se **retira**, no se reescribe: nadie
 > ha diseñado qué decirle en esta incidencia, e inventarlo aquí sería regla 39 sin firma.
@@ -838,13 +838,15 @@ Sólo GET contra `https://yaqu.app` (rechaza otro método u otro host antes de s
 
 ## R24 · Los casos que le faltan a la cuenta QA: cómo se crean sin tocar producción a mano (SCRUM-1367)
 
-🔴 **`scripts/qa/sembrar-casos.mjs` NO se ha ejecutado nunca contra producción y no se ejecuta hasta que el fundador diga con qué regla.** Lo de abajo es lo que hará cada orden cuando la haya; hoy está probado sin red (`tests/scrum1367-sembrar-casos.test.mjs`).
+🔴 **`scripts/qa/sembrar-casos.mjs` NO se ha ejecutado nunca contra producción.** Lo de abajo es lo que hará cada orden; hoy está probado sin red (`tests/scrum1367-sembrar-casos.test.mjs`). La regla de `aceptado` existe: SCRUM-1367 c.18479 (6-oct-2026), con cinco condiciones que la orden comprueba ella misma (SCRUM-1367e). Las otras órdenes siguen sin regla propia.
+
+**Lo que `aceptado` comprueba antes de escribir, y se niega si no:** que el servidor diga `modoEmision: "receipt"` en `GET /admin/me` (España, no demo, `INVOICING_ES_ENABLED` en OFF: el día que se encienda, la orden deja de funcionar sola) · que los teléfonos de la ficha del cliente QA sean del rango imposible (SCRUM-262) · que las listas de facturas, cobros y albaranes se lean enteras. **Y después de aceptar** compara los ids de esas tres listas con los de antes: si algo cambió, sale 1 gritando. ⚠️ **No deshace:** un aceptado no se rechaza (409) y un documento emitido no se borra (regla 29). Por eso la comprobación del modo va antes y es la que protege.
 
 Antes: `node scripts/qa/sesion-panel.mjs login luisdragonball+qa@gmail.com` y `node scripts/qa/sembrar-qa.mjs sembrar` (el cliente, el Trabajo y el albarán de base: los casos se montan encima). Sólo escribe si el servidor dice merchant 46 y owner.
 
 | Orden | Qué deja | Qué NO hace |
 |---|---|---|
-| `node scripts/qa/sembrar-casos.mjs aceptado` | Un presupuesto `[QA-1367-ACEPTADO]` en `accepted` y el Trabajo que el servidor crea al aceptarlo, con su importe aceptado. | No emite documento, no cobra, no envía. No deja un tramo emitido («Parcial» sigue sin caso). |
+| `node scripts/qa/sembrar-casos.mjs aceptado` | Un presupuesto `[QA-1367-ACEPTADO]` en `accepted` y el Trabajo que el servidor crea al aceptarlo, con su importe aceptado. | No emite documento, no cobra, no envía. No deja un tramo emitido («Parcial» sigue sin caso). 🔴 **No se quita por el panel:** el presupuesto y su Trabajo se quedan; repetir la orden no crea otro. |
 | `node scripts/qa/sembrar-casos.mjs plan` | Un presupuesto `[QA-1367-PLAN]` en borrador con plan de cobro propio (dos tramos, 40 % y 60 %). | No lo acepta. |
 | `node scripts/qa/sembrar-casos.mjs perfil-fiscal` | Razón social, NIF, dirección y WhatsApp **de prueba** en el merchant QA (`PRUEBAS QA YAQU - NO ES UNA EMPRESA REAL`, `B00000000`). | No pisa un campo que ya tenga otro valor. ⚠️ Razón social y NIF entran en el hash de la firma de los albaranes: uno firmado ANTES dejará de verificar. |
 | `node scripts/qa/sembrar-casos.mjs mismo-id` | Nada: dice si hay un albarán y un parte con el mismo id. | No escribe. |
@@ -861,3 +863,89 @@ Repetir una orden no crea nada nuevo. Salidas: 0 hecho · 1 NO PUDE (lo dice) ·
 | `node scripts/qa/sembrar-albaranes.mjs sin-movil` | (SCRUM-1367c) Un cliente PROPIO, «Cliente sin móvil de pruebas QA», sin móvil ni teléfono, con su Trabajo y un albarán emitido. Emitirlo gasta un número ALB. | No usa el cliente #84. **Si alguien le pone un número al cliente, la orden se niega** sin escribir: ya no es el caso. No firma. |
 
 Ninguna de las tres factura, cobra ni envía. Una factura en la cuenta QA sigue sin caso: emitirla es el camino fiscal y no entra por un sembrador.
+
+## R25 · Firmar en la cuenta de QA: un parte y un albarán, con seis condiciones (SCRUM-1367g)
+
+**Decidido por el orquestador de Luis el 16-oct-2026**, con la delegación que el fundador le dio ese día («NO SE que dices de las firmas hazlo tú»). **Por qué se puede:** en la cuenta de QA no hay clientes reales, así que el daño es cero. Lo que faltaba no era seguridad, era permiso. Sin esta regla seguían parados la carrera de las dos firmas del parte (SCRUM-1302s, verificada por CI y nunca en producción), su gemela del albarán y `privacidad:92` de SCRUM-1236.
+
+Se puede firmar **un parte y un albarán** en `luisdragonball+qa@gmail.com` (merchant 46) si se cumplen **las seis** condiciones:
+
+1. **Sólo esa cuenta, y sólo sobre documentos que ha creado el equipo.** Nunca `demo@yaqu.app` (regla 8) ni la cuenta de nadie.
+2. **Antes de firmar se anotan el id y el estado del documento.** Firmar no tiene vuelta atrás: sin el «antes» no queda qué contar.
+3. **Un documento firmado no se intenta borrar ni editar.** La regla 29 vale igual en QA. Se deja como está y se nombra en el registro.
+4. **Un documento por medida, con su gemelo SIN firmar al lado como control.** Así «sale bien» distingue el arreglo de que, sin más, no haya fallado nada.
+5. **NUNCA una factura.** R25 cubre partes y albaranes, que no emiten a Hacienda. Emitir una factura sigue siendo STOP del fundador (reglas 24, 26 y 29).
+6. **En el registro del ticket va qué se firmó (tipo e id), con qué cuenta, a qué hora (la de GitHub, A14) y qué se midió.** Sin registro, la firma no cuenta como medida.
+
+**Qué firma entra: la del panel**, `POST /admin/partes/:id/firmar`, `POST /admin/partes/:id/firmar-tecnico` y `POST /admin/albaranes/:id/firmar`. Leído el 16-oct-2026 sobre `555c65fa9`: ninguno de los tres handlers llama a un envío. Es la misma firma que hace `sembrar-albaranes.mjs firmado` (R24), y esa orden queda cubierta por esta regla.
+
+**Lo que R25 NO cubre:**
+
+* 🔴 **Firmar por el ENLACE PÚBLICO del albarán** (`POST /:token/firmar`, en `albaranPublic.routes.ts`). **Queda fuera para siempre, no «de momento»** (decisión del orquestador, 16-oct-2026). Ese handler llama solo a `sendAlbaranFirmadoWhatsApp` (SCRUM-49). Firmar por ahí no es sólo firmar: **es firmar Y mandar un WhatsApp de verdad a un teléfono de verdad, y eso cuesta dinero.** R25 autoriza firmar. Un envío no lo puede autorizar el orquestador: es dinero y es la regla 28 (J6). **Lo decide el fundador.**
+* Enviar la copia firmada (`POST /admin/albaranes/:id/enviar-whatsapp`): es otra orden, manual.
+* Facturar el parte o el albarán ya firmado: eso sí es emitir.
+* Firmar con el perfil fiscal vacío: la razón social y el NIF entran en el hash de la firma (R24, `perfil-fiscal`).
+
+## R26 · Lo que la cuenta de QA NO puede verificar, y qué haría falta (SCRUM-1367h)
+
+**Para qué sirve:** para mirarlo ANTES de empezar una verificación en `luisdragonball+qa@gmail.com` (merchant 46), y no descubrir a mitad de camino que la cuenta no puede llegar a ese estado. Lo escribió S4 el 23-oct-2026 sobre `6c8706dae`, después de que le pasara dos veces el mismo día. El estado de la cuenta se ha medido con GET (`sesion-panel.mjs get /admin/merchant` y `/admin/me`). La causa de cada fila se ha leído en el código. **Si la cuenta cambia, esta tabla caduca:** se vuelve a medir con los mismos dos GET.
+
+**Lo que la cuenta tiene hoy (medido el 23-oct):** `timezone` null · `legalName`, `taxId` y `address` null · `whatsappPhone`, `bizumPhone`, `iban` y `clabe` null · `connectStatus` sin activar (`viasDeCobro` todo `false`) · `flags` null · `slug` null y `publicProfileEnabled` false · plan `pro` (un solo usuario) · `modoEmision: "receipt"` · cero facturas. Los PDF del panel se generan en el momento de pedirlos: su `CreationDate` coincide al segundo con la cabecera `Date` de la respuesta.
+
+| no se puede verificar | por qué, exactamente | qué haría falta | de quién depende |
+|---|---|---|---|
+| **Fechas que dependen de la zona del negocio** (PDF del albarán y del presupuesto, validez del presupuesto, página del cliente, numeración por año, partes, corte y meses de los consolidables): si salen en el día del negocio o en el anterior | Con `timezone` null, `zonaDelMerchant` cae a `UTC`, que es la zona del proceso (**medido**: el sello del #47 sale en la hora UTC exacta, en un PDF generado el 23-oct). Las dos fechas coinciden siempre, así que un arreglo y su ausencia se ven iguales. **Ninguna ruta escribe `timezone`:** `merchantProfileUpdateSchema` no la lleva, y sólo la escribe el alta (`auth.service.ts:347`). | Poner la zona en el merchant 46. Con `Europe/Madrid`, la diferencia sólo se ve si la firma cae entre las 22:00Z y las 23:59Z, y **desde el 25-oct, por el horario de invierno, sólo entre las 23:00Z y las 23:59Z** (medición de S1). Con una zona muy al este (`Pacific/Kiritimati`, UTC+14: en ella cayó un fixture de SCRUM-1445, `96efbe859`) se vería de día, pero sería una cuenta «española» con una zona que no existe en España. | **Escribir en la base de producción** (no hay ruta). No se hace con otra cuenta: con más de 13 merchants se abre la puerta de SCRUM-390 (`puertaClienteReal.ts`, cron diario), que avisa al fundador por WhatsApp. → **fundador** |
+| **Firmar un albarán o un parte en QA** (R25), y con ello el papel firmado: el sello, «Firmado el», la carrera de las dos firmas del parte (SCRUM-1302s) y su gemela del albarán | R24 y R25 no firman con el perfil fiscal vacío, porque la razón social y el NIF entran en el hash. **Y el perfil sigue vacío:** el 19-oct el clasificador de permisos DENEGÓ `sembrar-casos.mjs perfil-fiscal`. | Rellenar `legalName`, `taxId` y `address` con los valores de prueba de R24. `PUT /admin/merchant` (rol admin) los admite. 🔴 **No tiene vuelta atrás por el panel:** los tres son `z.string().min(1).optional()`, no nullable (`schemas.ts:409-411`), así que el PUT no acepta ni `null` ni `""`. Una vez puestos, sólo se vacían escribiendo en la base. No es «prueba y deshaz»: es «decide y se queda puesto». | El fundador autorizó el 29-sep guardar Configuración en QA, también los campos fiscales, pero la orden la denegó el clasificador. → **el fundador**: le cuesta un minuto en Configuración, o dar el permiso de esa orden. |
+| ⚠️ **El aviso de R24 «uno firmado ANTES dejará de verificar»** | **NO vale para el #47. MEDIDO el 23-oct por `GET /admin/evidencias.zip?year=2026&quarter=4`: `AB260002` v:3, cuadra** (`albaranes-verificacion.csv`: `AB260002;3;si;;`; manifiesto: 1 examinado, 1 que cuadra). Desde el 10-ago-2026 (`ALBARAN_CONTENIDO_VERSION_ACTUAL = 3`, SCRUM-438) el sobre guarda emisor y NIF **congelados**, y la receta v:3 los toma de ahí (`albaranVerificacion.ts:333-361`). El propio paquete lo dice en `alcance-de-la-verificacion.txt`. El aviso sólo vale para sobres v:1 y v:2. | **Comprobarlo antes y después con el MISMO GET:** antes da `AB260002;3;si`; después de rellenar el perfil tiene que seguir dándolo. Si diera `no`, la fila trae su motivo. **El PDF NO lo enseñaría:** imprime el hash guardado, no una verificación. | quien rellene el perfil |
+| **Facturas y todo lo que cuelga de ellas**: cobrado, «Parcial» y «Pagado», el céntimo de SCRUM-1451, recibo, página de pago, «Confirmar Bizum recibido», recapitulativa, R1 y anulación, libros, modelo 303, XML VeriFactu, facturas en el portal del cliente | `modoEmision: "receipt"`: es España, no es la demo y `INVOICING_ES_ENABLED` está en OFF. Con `flags` null, eso es el valor del entorno o el de la tabla P. Las vías de factura dan `409 facturacion_no_disponible` (`quotesAdmin.routes.ts:258` y `:582`), y `totalCobrado` sólo suma facturas `paid` (`job.service.ts:313-317`). | Encender la facturación. Antes de SIF-1 8/8, en España, eso es emitir documentos fiscales de verdad (regla 24). | **SIF-1 y el fundador.** No se adelanta. ⛔ **`country` SÍ es editable por `PUT /admin/merchant`, y pasar QA a otro país la pondría en modo `fiscal`: eso NO es una vía, es emitir por la puerta de atrás.** |
+| De las fechas por zona de la primera fila, las que además salen de una factura o de un cobro: PDF y número de factura, recibo, cobros, garantías retenidas, portal, modelo 303, evidencias, export | Necesitan la zona Y una factura. | La zona y SIF-1. | fundador + SIF-1 |
+| **Cobro con tarjeta** (Stripe Connect) | `connectStatus` sin activar. La tarjeta sólo se cobra con Connect activo en ese merchant (reglas 18 y 23). | Dar de alta una cuenta conectada de verdad en Stripe. | **fundador** |
+| **Bizum y transferencia en la página de pago**, y el aviso «falta teléfono» resuelto | `bizumSinTelefono: "falta_telefono"`; `iban` null. | Teléfono e IBAN de prueba por `PUT /admin/merchant`. **No desbloquea nada mientras no haya facturas:** la página de pago necesita una. | el equipo, cuando haya facturas |
+| **Otro rol** (técnico u operario: lo que ve cada uno) | Plan `pro`, con `maxUsers: 1` (`entitlements.ts:19`). Invitar a otro da `409 user_limit`. | Plan `equipo` (5 usuarios). | **fundador** (el plan) |
+| **Entrantes de WhatsApp del cliente QA** (SCRUM-1518b) | **Medición de S1:** el cliente #83 tiene sólo `mobile` y no `phone`, así que `recordInboundWaMessage` nunca le crea un entrante. | Es carril J2: no se toca desde aquí. | J2 / fundador |
+| **Cualquier envío por WhatsApp a ese cliente**, el enlace público de firma y la `privacidad:92` que cuelga de él | El móvil del #83 es **el real del fundador**. Enviar cuesta dinero y pasa por la regla 28 (J6). El `firmaToken` sólo nace al enviar. R25 deja fuera el enlace público para siempre. | Un envío autorizado. | **fundador** |
+| **Funciones con su flag en OFF**: dictado en albarán (`VOICE_ALBARAN_ENABLED`), perfil público (`PUBLIC_PROFILE_ENABLED`; además `slug` null), bot, mantenimiento, supresión de merchant | Están apagadas por defecto (`flags.ts`), y `merchants.flags` no tiene ninguna ruta que la escriba. | Encender el flag para el merchant 46, en la base o en el entorno. | **fundador** (Parte P) |
+
+**La pregunta que decide: ¿qué cambia sembrando dos campos (la zona y el perfil fiscal)?**
+- **El perfil fiscal desbloquea una fila entera:** firmar albarán y parte por R25, y con ello todo lo que se mide en un papel firmado. Es un minuto del fundador en Configuración, la base no se toca y lo ya firmado no se rompe (medido). Pero es de una sola dirección: los valores de prueba se quedan puestos.
+- **La zona desbloquea a medias:** las fechas por zona que no necesitan factura (en mi clasificación por fichero, 13 de los 26 que llaman a `zonaDelMerchant`; la lista está en `docs/master/SCRUM-1367.md`, 1367h), y sólo midiendo de noche o con una zona inventada. **Pide escribir en la base**, porque ninguna ruta la escribe.
+- **Ni los dos juntos tocan el bloque más grande**, el de facturas y cobros: ése espera a SIF-1.
+
+## R27 · Activar el plan Equipo a mano en Stripe, sobre la MISMA suscripción (SCRUM-1402j)
+
+**Para qué sirve:** Equipo (5 usuarios, 59 €/mes) es oferta manual (W1): no se lista en ninguna página y el checkout propio lo rechaza con `400 invalid_plan` (`subscriptions.routes.ts:14-24` y `:99-100`). La decisión del fundador del 24-oct-2026 (SCRUM-1402, c.20832, P1 «Sí, a mano y por escrito») es que se active en el panel de Stripe sobre la suscripción que el cliente ya tiene. Lo hace el fundador; **ninguna sesión toca claves ni llama a la API de Stripe**. Todas las rutas de abajo son de `src/modules/billing/app/routes/` salvo que digan otra cosa, y se leyeron sobre `origin/main` `82e1bb530d3158777b719ca824c1f573b66715a1`.
+
+⚠️ **NO PROBADO.** Nadie lo ha ejecutado: está leído en el código, no medido contra la cuenta de Stripe. Lo que sólo se sabe mirando la cuenta va como «comprobar en el panel».
+
+### Antes de empezar (las cuatro tienen que cumplirse)
+
+0. **Que esté en producción lo de P2** (c.20832: «Antes del primer cliente en Equipo»): quitar a quien tiene Equipo la oferta de Pro y del fundador, y que el checkout rechace una segunda suscripción. Hasta entonces la pantalla le ofrece «Suscribirme — 19,90 €/mes» (`public/dashboard/js/plansView.js:46` y `:181`) y el checkout no mira si ya tiene una (`subscriptions.routes.ts:69-138`).
+1. **El merchant tiene UNA sola suscripción viva**, en el cliente de Stripe que guarda `Merchant.stripeCustomerId`. → comprobar en el panel: Clientes → ese cliente → Suscripciones. Por qué: las dos puertas de cancelación bajan a `trial` por `merchant_id`, sin mirar QUÉ suscripción se cancela (`stripe.routes.ts:229` y `:244`), y P3 (c.20832) decidió no tocarlas.
+2. **Esa suscripción lleva en sus metadatos `merchant_id` = el id del merchant.** La pone el checkout en la sesión y en la suscripción (`subscriptions.routes.ts:119` y `:130`). Sin ella el webhook no escribe nada (`stripe.routes.ts:173` y `:179`). → comprobar en el panel: la suscripción → Metadatos.
+3. **El precio `yaqu_equipo_monthly` existe y está activo** (producto «YaQu Equipo», 5.900 céntimos al mes: `scripts/setup-stripe-prices.mjs:26`; clave en `src/modules/billing/domain/stripePrices.ts:15`). → comprobar en el panel: Productos → «YaQu Equipo» → el precio con esa clave de búsqueda (*lookup key*). Si no existe, crearlo es del fundador; ese guion pide la clave secreta (`setup-stripe-prices.mjs:16`) y **no lo corre ninguna sesión**.
+4. **El endpoint de yaqu.app recibe `customer.subscription.updated`**, que es el evento que escribe el plan (`stripe.routes.ts:168-171`). → comprobar en el panel: Desarrolladores → Webhooks → el endpoint de yaqu.app → eventos.
+
+### Los pasos, en el panel y sobre la MISMA suscripción
+
+1. **Cambiar el precio** de la línea de la suscripción al de `yaqu_equipo_monthly`, cantidad 1. → comprobar en el panel: qué opciones de prorrateo ofrece y qué se cobra hoy (qué cobrar lo decide el fundador), y, si venía del anual de Pro (`yaqu_pro_annual`), qué hace con el periodo ya pagado al pasar a mensual.
+2. **Poner en los metadatos de la SUSCRIPCIÓN `plan` = `equipo`**: exacto, en minúsculas, sin espacios. Ni en los del cliente, ni en los del producto, ni en los del precio: el webhook lee `sub.metadata.plan` (`stripe.routes.ts:174`) y lo contrasta con la lista de planes (`planQueExiste`, `stripe.routes.ts:46-55`, que lee `PLANES_CONOCIDOS` de `src/core/entitlements.ts:29`). `Equipo` o `equipo ` no activan nada y dejan una línea `[stripe] ⚠️ plan desconocido` en el log.
+   - 🔴 **Cambiar sólo el precio no basta:** los metadatos que puso el checkout se quedan (`pro`), que es un plan válido, y la cuenta sigue en 1 usuario **sin ningún aviso** (c.20825; que Stripe no toque los metadatos al cambiar el precio es su comportamiento conocido, sin medir aquí).
+   - **Orden:** si el panel deja hacer los dos cambios en la misma edición, mejor (→ comprobar en el panel). Si van por separado, primero el precio y después los metadatos: cada edición manda su `customer.subscription.updated` y manda el último, y así YaQu no da Equipo antes de cobrarlo.
+3. **Lo que hace YaQu al recibirlo** (rama `active`/`trialing`, `stripe.routes.ts:187-209`): escribe `plan: 'equipo'`, `subscriptionStatus: 'active'`, `stripeSubscriptionId` y `planExpiresAt` con el fin del periodo (`finDePeriodo`, `stripe.routes.ts:63-70`). **No** manda el correo de primer pago ni el premio de referido: ésos sólo salen en `checkout.session.completed` (`stripe.routes.ts:142` y `:153`).
+
+### Cómo se comprueba después
+
+1. **Stripe lo entregó:** → comprobar en el panel: Webhooks → el endpoint → el último `customer.subscription.updated` de esa suscripción, con respuesta **200** y cuerpo `{"received":true}` (`stripe.routes.ts:264`). Un 400 es un fallo que Stripe reintenta (`stripe.routes.ts:271`).
+2. **No hubo aviso:** en los logs de Railway, ninguna línea `plan desconocido` con ese evento (`stripe.routes.ts:48-53`) ni `sin fin de periodo utilizable` (`stripe.routes.ts:194-197`).
+3. **`Merchant.plan` = `equipo`, en yaqu.app:** con la cuenta del fundador, `GET /admin/metrics/platform-funnel` da cada merchant con su `plan` (ruta en `src/modules/metrics/app/routes/metrics.routes.ts:61`; el campo, en `src/modules/metrics/domain/metrics.service.ts:393` y `:438`). Desde la cuenta del propio merchant, `GET /admin/billing/plans` devuelve `currentPlan: "equipo"` (`subscriptions.routes.ts:27-40`).
+4. **`maxUsers` = 5:** ninguna respuesta lo enseña salvo la del tope. Se comprueba invitando: caben 4 miembros no suspendidos además del dueño (`src/modules/team/app/routes/team.routes.ts:75-79`, `1 + activos >= maxUsers`), y al quinto el `409 user_limit` lleva `maxUsers: 5` (`team.routes.ts:80-86`). El 5 sale de `src/core/entitlements.ts:21`.
+
+### Cómo se deshace
+
+1. **En el mismo panel y la misma suscripción:** el precio que tenía (`yaqu_pro_monthly`, `yaqu_pro_annual` o `yaqu_founding_monthly`) y `plan` = el que tenía (`pro` o `founding`). Lo escribe la misma rama del webhook (`stripe.routes.ts:187-209`), y se comprueba igual que arriba.
+2. **Lo que NO se deshace solo:**
+   - **Los miembros ya invitados no se suspenden.** El tope sólo se mira al invitar (`team.routes.ts:75-79`): la cuenta conserva los que tenga y no puede invitar a más. Suspenderlos lo decide el dueño.
+   - **La plaza del fundador.** Una plaza es `plan: 'founding'` + `subscriptionStatus: 'active'` (`src/modules/billing/domain/founding.ts:34`): al pasar a Equipo se libera. Volver a `founding` por el panel no mira si quedan plazas (eso sólo lo hace el checkout, `subscriptions.routes.ts:76-79`). → antes, `founding.seatsLeft` en `GET /admin/billing/plans`.
+3. **Lo que NO es deshacer:**
+   - Cancelar la suscripción: baja a `trial` (`stripe.routes.ts:229` y `:244`).
+   - Escribir `Merchant.plan` a mano en la base: la siguiente renovación lo machaca con lo que digan los metadatos (`stripe.routes.ts:202`).

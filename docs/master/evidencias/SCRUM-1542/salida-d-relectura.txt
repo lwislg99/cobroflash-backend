@@ -1,0 +1,15 @@
+POBLACION primer-padre=189 despliegues=188 fuera-de-la-cadena=0 por-final={"IN_PROGRESS":2,"SUCCESS":185,"FAILURE":1}
+commits con vivo medido=186 sin despliegue OK posterior (los de la punta)=3
+retraso REAL en minutos: mediana=2.1 p90=3.7 max=16.6 | mas de 6 h: 0 | mas de 30 min: 0
+los 6 peores:
+   fca2f2e9 2026-10-07T23:50:49.000Z 16.6 min desplegado el mismo
+   ff18f2a4 2026-10-13T12:22:25.000Z 6.4 min desplegado el mismo
+   577f1fb4 2026-10-06T14:23:34.000Z 6.4 min desplegado el mismo
+   938c73a6 2026-10-07T17:05:27.000Z 5.6 min desplegado el mismo
+   7802d7cb 2026-10-13T12:32:07.000Z 5.4 min desplegado el mismo
+   60f19338 2026-10-07T17:05:05.000Z 5.2 min desplegado el mismo
+despliegues que NO llegaron a SUCCESS:
+   9308125e 2026-10-13T12:48:02Z IN_PROGRESS IN_PROGRESS@12:48:02
+   a11f6d2c 2026-10-13T12:47:59Z IN_PROGRESS IN_PROGRESS@12:47:59
+   944cc64f 2026-10-13T04:56:12Z FAILURE FAILURE@04:59:19 FAILURE@04:58:50 IN_PROGRESS@04:57:40 IN_PROGRESS@04:57:28 IN_PROGRESS@04:56:12
+CONTROL SEMBRADO: prod fabricada=5508e95b main=6f61841b -> primer padre: 188 merges, hueco 170.3 h (tiene que ser MUCHO mas de 6)

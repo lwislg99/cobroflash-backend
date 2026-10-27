@@ -84,7 +84,14 @@ const leer = (...p) => fs.readFileSync(path.join(RAIZ, ...p), 'utf8');
  * respuestas sin `message`. No se ha arreglado ningun texto: han desaparecido las rutas. El
  * `job_not_found` de `/quote/create` sigue pendiente del fundador (cuando llegue, 20).
  */
-export const SIN_MESSAGE = 21;
+/**
+ * ✅ BAJA A 18 POR SCRUM-1515 (8-oct-2026): `POST /auth/register` se cerro por orden del fundador
+ * y ya no da de alta. Con su manejador se van sus 3 respuestas sin `message` (`name_required`,
+ * `invalid_email`, `internal_error`); la unica que le queda lleva la frase firmada en SCRUM-1515
+ * c.18971. No se ha arreglado ningun texto: han desaparecido las respuestas. El `job_not_found`
+ * de `/quote/create` sigue pendiente del fundador (cuando llegue, 17).
+ */
+export const SIN_MESSAGE = 18;
 
 /** Suelo del escáner: si ve menos respuestas que esto, dejó de mirar y su cuenta no vale. */
 const SUELO_RESPUESTAS = 30;

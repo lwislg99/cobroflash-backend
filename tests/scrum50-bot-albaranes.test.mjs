@@ -6,10 +6,34 @@
 // ⚠️ GATEADO (crea/BORRA un merchant efímero; levanta la app; dry-run):
 //   QA_DB_TEST=1 WHATSAPP_DRY_RUN=1 npm run test:staging
 import './_staging-db.mjs'; // SCRUM-60/64: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-876g: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
+import { cortarSalida } from './_sin-salida.mjs'; // SCRUM-876g: el hecho, no la bandera
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
+import http from 'node:http';
+
+// `node:http` sin agente y no `fetch` (SCRUM-1218d): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de `fetch`
+// (status, headers.get, text, json). No sigue redirecciones: medido, las únicas 3xx son las de /auth/verify, que ya iban con `redirect: 'manual'`.
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    let d = ''; r.setEncoding('utf8');
+    r.on('data', (t) => { d += t; });
+    r.on('end', () => ok({
+      status: r.statusCode,
+      headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+      text: async () => d,
+      json: async () => JSON.parse(d),
+    }));
+  });
+  req.on('error', mal);
+  req.end(body);
+});
 
 // ANTES de importar dist (config se congela al cargar). El fallback handleIncomingText
 // (donde vive la PIEZA 3) corre directo con el bot OFF.
@@ -21,9 +45,25 @@ process.env.BOT_INBOUND_ENABLED = 'false';
 // HMAC-SHA256 que isValidSignature, ver whatsappIncoming.routes.ts).
 process.env.WHATSAPP_APP_SECRET = 'wa-test-secret-scrum122';
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+const CON_BANCO = URL_BANCO !== '';
+const ENABLED = process.env.QA_DB_TEST === '1' || CON_BANCO;
 
-test('SCRUM-50: webhook — Recibido→acuse sin menú · texto sobre albarán→aviso+acuse · sin-albarán→clásico', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-50: webhook — Recibido→acuse sin menú · texto sobre albarán→aviso+acuse · sin-albarán→clásico', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
+  // SCRUM-876g · con el banco como destino este fichero corre en la tanda de CI. La bandera se
+  // asierta (el sender la lee en cada envío: `scrum876f-el-seco-se-decide-al-enviar`), pero lo que
+  // decide no es la bandera: se corta toda conexión que no sea de esta máquina, con su control
+  // positivo ANTES de la primera petición, y al acabar lo apuntado tiene que ser nada.
+  assert.equal(process.env.WHATSAPP_DRY_RUN, '1', 'este test exige WHATSAPP_DRY_RUN=1');
+  const corte = CON_BANCO ? cortarSalida() : null;
+  if (corte) {
+    await corte.controlPositivo();
+    t.after(() => {
+      const ajenos = corte.ajenos();
+      corte.restaurar();
+      assert.equal(corte.controlado, true, '🔴 CIEGO: el corte de salida no pasó su control');
+      assert.deepEqual(ajenos, [], '🔴 el test INTENTÓ salir de esta máquina con WHATSAPP_DRY_RUN=1 y el banco como destino');
+    });
+  }
   const { app } = await import('../dist/app.js');
   const { prisma } = await import('../dist/core/db/prisma.js');
 
@@ -43,7 +83,7 @@ test('SCRUM-50: webhook — Recibido→acuse sin menú · texto sobre albarán�
   const sign = (bodyStr) => 'sha256=' + crypto.createHmac('sha256', process.env.WHATSAPP_APP_SECRET).update(bodyStr).digest('hex');
   const post = (msg) => {
     const body = JSON.stringify(envelope(msg));
-    return fetch(`${base}/webhooks/whatsapp`, {
+    return pedirSinAgente(`${base}/webhooks/whatsapp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Hub-Signature-256': sign(body) },
       body,

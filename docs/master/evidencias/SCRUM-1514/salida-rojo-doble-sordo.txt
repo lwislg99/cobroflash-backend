@@ -1,0 +1,215 @@
+EJE: comercio (SCRUM-1514) · sesión: administrador del comercio 21 · el recurso 102 es del comercio 22
+POBLACION: 191 rutas montadas bajo /admin · de ellas 78 de las 78 de TECNICO_ALLOWED (el censo del rol) · con :parámetro 90 · routers anidados sin abrir 0 · rutas que no son texto 1 · modelos con columna de comercio 25 de 33
+
+== CRUZA · 0 (con :parámetro 0)
+
+== LEE-Y-NO-ACABA · 0 (con :parámetro 0)
+
+== LEE-Y-NIEGA · 0 (con :parámetro 0)
+
+== FILTRA · 162 (con :parámetro 84)
+POST   /admin/quotes/:id/send-whatsapp  → 404  · consultas atadas 1
+GET    /admin/digest/preview  → 200  · consultas atadas 7
+GET    /admin/referral  → 200  · consultas atadas 10
+POST   /admin/referral/redeem  → 409  · consultas atadas 2
+GET    /admin/merchant  → 200  · consultas atadas 1
+PUT    /admin/merchant  → 200  · consultas atadas 1
+POST   /admin/datos-ejemplo/eliminar  → 409  · consultas atadas 1
+GET    /admin/merchant/public-profile-qr  → 400  · consultas atadas 1
+POST   /admin/onboarding/complete  → 200  · consultas atadas 1
+POST   /admin/onboarding/serie/previa  → 200  · consultas atadas 3
+POST   /admin/onboarding/serie  → 200  · consultas atadas 5
+GET    /admin/customers  → 200  · consultas atadas 5
+GET    /admin/customers/:id  → 404  · consultas atadas 1
+POST   /admin/customers  → 201  (2ª pasada, cuerpo de relleno)  · consultas atadas 1
+PUT    /admin/customers/:id  → 200  · consultas atadas 2
+PATCH  /admin/customers/:id  → 200  · consultas atadas 2
+GET    /admin/customers/:id/portal-url  → 404  · consultas atadas 1
+GET    /admin/customers/:id/historial  → 404  · consultas atadas 1
+GET    /admin/customers/:id/whatsapp  → 404  · consultas atadas 1
+GET    /admin/customers/:id/notes  → 404  · consultas atadas 1
+POST   /admin/customers/:id/notes  → 400  · consultas atadas 1
+GET    /admin/customers/:id/sites  → 404  · consultas atadas 1
+POST   /admin/customers/:id/sites  → 404  (2ª pasada, cuerpo de relleno)  · consultas atadas 1
+PUT    /admin/customers/:id/sites/:siteId  → 404  · consultas atadas 1
+DELETE /admin/customers/:id/sites/:siteId  → 404  · consultas atadas 1
+GET    /admin/customers/:id/detail  → 404  · consultas atadas 1
+DELETE /admin/customers/:id  → 204  · consultas atadas 2
+GET    /admin/quotes  → 200  · consultas atadas 1
+POST   /admin/quotes/:id/accept  → 404  · consultas atadas 1
+POST   /admin/quotes/:id/reject  → 404  · consultas atadas 1
+POST   /admin/quotes/:id/invoice  → 404  · consultas atadas 1
+POST   /admin/quotes/:id/revisiones  → 404  · consultas atadas 1
+POST   /admin/quotes/:id/invoice-manual  → 404  · consultas atadas 1
+GET    /admin/quotes/:id/pdf  → 404  · consultas atadas 1
+POST   /admin/quotes/:id/send-email  → 404  · consultas atadas 1
+POST   /admin/quotes/:id/approve  → 404  · consultas atadas 1
+PUT    /admin/quotes/:id/notes  → 200  · consultas atadas 1
+PUT    /admin/quotes/:id/tags  → 404  (2ª pasada, cuerpo de relleno)  · consultas atadas 1
+GET    /admin/quotes/:id  → 404  · consultas atadas 1
+PATCH  /admin/quotes/:id/asignados  → 404  · consultas atadas 1
+GET    /admin/invoices  → 200  · consultas atadas 1
+POST   /admin/invoices  → 409  · consultas atadas 1
+GET    /admin/invoices/:id  → 404  · consultas atadas 1
+POST   /admin/invoices/:id/payment-anomaly  → 404  (2ª pasada, cuerpo de relleno)  · consultas atadas 1
+GET    /admin/invoices/:id/dispute-package  → 404  · consultas atadas 1
+POST   /admin/invoices/bulk-paid  → 200  (2ª pasada, cuerpo de relleno)  · consultas atadas 3
+PUT    /admin/invoices/:id/tags  → 404  (2ª pasada, cuerpo de relleno)  · consultas atadas 1
+PUT    /admin/invoices/:id/status  → 404  (2ª pasada, cuerpo de relleno)  · consultas atadas 1
+POST   /admin/invoices/:id/pay  → 404  · consultas atadas 1
+POST   /admin/invoices/:id/unpay  → 404  · consultas atadas 1
+POST   /admin/invoices/:id/resend-whatsapp  → 404  · consultas atadas 1
+POST   /admin/invoices/:id/send-email  → 404  · consultas atadas 1
+POST   /admin/invoices/:id/send-reminder  → 404  · consultas atadas 1
+POST   /admin/invoices/:id/rectify  → 404  · consultas atadas 1
+POST   /admin/invoices/:id/regenerate-pdf  → 404  · consultas atadas 1
+GET    /admin/invoices/:id/pdf  → 404  · consultas atadas 1
+PATCH  /admin/invoices/:id/asignados  → 404  · consultas atadas 1
+GET    /admin/cobros  → 200  · consultas atadas 2
+POST   /admin/products/load-catalog  → 400  · consultas atadas 1
+GET    /admin/products/autocomplete  → 200  · consultas atadas 1
+GET    /admin/products/frequent-concepts  → 200  · consultas atadas 1
+GET    /admin/products/export  → 200  · consultas atadas 1
+GET    /admin/products  → 200  · consultas atadas 1
+GET    /admin/products/:id  → 404  · consultas atadas 1
+POST   /admin/products  → 201  (2ª pasada, cuerpo de relleno)  · consultas atadas 1
+PUT    /admin/products/:id  → 404  (2ª pasada, cuerpo de relleno)  · consultas atadas 1
+GET    /admin/providers  → 200  · consultas atadas 1
+POST   /admin/providers  → 409  (2ª pasada, cuerpo de relleno)  · consultas atadas 1
+PUT    /admin/providers/:id  → 409  (2ª pasada, cuerpo de relleno)  · consultas atadas 1
+DELETE /admin/providers/:id  → 404  · consultas atadas 1
+GET    /admin/metrics/home  → 200  · consultas atadas 17
+GET    /admin/metrics/inicio  → 200  · consultas atadas 4
+GET    /admin/metrics/funnel  → 200  · consultas atadas 15
+GET    /admin/metrics/services  → 200  · consultas atadas 1
+GET    /admin/metrics/platform-funnel  → 403  · consultas atadas 1
+GET    /admin/metrics/whatsapp  → 200  · consultas atadas 2
+GET    /admin/metrics/team  → 200  · consultas atadas 4
+GET    /admin/metrics/actividad-equipo  → 200  · consultas atadas 3
+GET    /admin/metrics/operarios  → 200  · consultas atadas 4
+GET    /admin/expenses  → 200  · consultas atadas 1
+GET    /admin/expenses/summary  → 200  · consultas atadas 3
+GET    /admin/expenses/margin/:quoteId  → 404  · consultas atadas 2
+GET    /admin/expenses/:id/foto  → 404  · consultas atadas 1
+POST   /admin/expenses  → 201  (2ª pasada, cuerpo de relleno)  · consultas atadas 1
+PUT    /admin/expenses/:id  → 404  (2ª pasada, cuerpo de relleno)  · consultas atadas 1
+DELETE /admin/expenses/:id  → 404  · consultas atadas 1
+GET    /admin/bot/handoffs  → 200  · consultas atadas 1
+GET    /admin/jobs  → 200  · consultas atadas 1
+GET    /admin/jobs/:id  → 404  · consultas atadas 1
+GET    /admin/jobs/:id/gastos  → 404  · consultas atadas 1
+PATCH  /admin/jobs/:id  → 404  · consultas atadas 1
+GET    /admin/jobs/:id/ics  → 404  · consultas atadas 1
+POST   /admin/jobs/:id/albaranes  → 404  · consultas atadas 1
+POST   /admin/jobs/:id/collect-rest  → 404  · consultas atadas 1
+POST   /admin/jobs/:id/consolidar-albaranes  → 404  · consultas atadas 1
+GET    /admin/albaranes  → 200  · consultas atadas 4
+GET    /admin/albaranes/pendientes-facturar  → 200  · consultas atadas 2
+GET    /admin/albaranes/serie  → 200  · consultas atadas 1
+GET    /admin/albaranes/presupuestos  → 200  · consultas atadas 1
+GET    /admin/albaranes/consolidables  → 200  · consultas atadas 2
+PATCH  /admin/albaranes/:id  → 404  · consultas atadas 1
+GET    /admin/albaranes/:id  → 404  · consultas atadas 1
+POST   /admin/albaranes/:id/emitir  → 404  · consultas atadas 1
+POST   /admin/albaranes/:id/duplicar  → 404  · consultas atadas 1
+POST   /admin/albaranes/:id/firmar  → 404  · consultas atadas 1
+GET    /admin/albaranes/:id/pdf  → 404  · consultas atadas 1
+POST   /admin/albaranes/:id/fotos  → 404  · consultas atadas 1
+GET    /admin/albaranes/:id/fotos  → 404  · consultas atadas 1
+POST   /admin/albaranes/:id/enviar-whatsapp  → 404  · consultas atadas 1
+POST   /admin/albaranes/:id/enviar-para-firmar  → 404  · consultas atadas 1
+POST   /admin/albaranes/:id/facturar-parcial  → 404  · consultas atadas 1
+POST   /admin/albaranes/:id/convertir-en-factura  → 404  · consultas atadas 1
+GET    /admin/partes  → 200  · consultas atadas 1
+GET    /admin/partes/oficina/pendientes  → 200  · consultas atadas 1
+GET    /admin/partes/:id/oficina  → 404  · consultas atadas 1
+POST   /admin/partes  → 201  · consultas atadas 3
+GET    /admin/partes/:id  → 404  · consultas atadas 1
+PATCH  /admin/partes/:id  → 404  · consultas atadas 1
+POST   /admin/partes/:id/firmar-tecnico  → 404  · consultas atadas 1
+POST   /admin/partes/:id/firmar  → 404  · consultas atadas 1
+POST   /admin/partes/:id/dictado  → 404  · consultas atadas 1
+GET    /admin/precarga  → 200  · consultas atadas 1
+GET    /admin/libro-registro  → 200  · consultas atadas 1
+GET    /admin/modelo-303  → 200  · consultas atadas 4
+GET    /admin/evidencias.zip  → 200  · consultas atadas 8
+POST   /admin/maintenance  → 404  · consultas atadas 1
+DELETE /admin/maintenance/:id  → 404  · consultas atadas 1
+GET    /admin/billing/plans  → 200  · consultas atadas 2
+POST   /admin/billing/accept-alcance  → 200  · consultas atadas 1
+GET    /admin/team  → 200  · consultas atadas 5
+PUT    /admin/team/:id  → 404  · consultas atadas 1
+POST   /admin/team/:id/resend  → 404  · consultas atadas 1
+DELETE /admin/team/:id  → 404  · consultas atadas 1
+GET    /admin/connect/status  → 200  · consultas atadas 1
+GET    /admin/connect/return  → 303  · consultas atadas 1
+GET    /admin/connect/refresh  → 303  · consultas atadas 1
+POST   /admin/charges/:id/confirm-bizum  → 404  · consultas atadas 1
+POST   /admin/charges/:id/garantia  → 404  · consultas atadas 1
+POST   /admin/charges/:id/garantia/liberar  → 404  · consultas atadas 1
+POST   /admin/ai/suggest-albaran-lines  → 404  · consultas atadas 1
+GET    /admin/exports/datos.zip/info  → 200  · consultas atadas 1
+GET    /admin/exports/datos.zip  → 200  · consultas atadas 11
+GET    /admin/exports/customers.csv  → 200  · consultas atadas 2
+GET    /admin/exports/invoices.csv  → 200  · consultas atadas 2
+GET    /admin/exports/fees.csv  → 403  · consultas atadas 1
+GET    /admin/exports/verifactu.xml  → 404  · consultas atadas 1
+GET    /admin/exports/charges.csv  → 200  · consultas atadas 2
+GET    /admin/exports/jobs.csv  → 200  · consultas atadas 4
+GET    /admin/exports/expenses.csv  → 200  · consultas atadas 3
+GET    /admin/exports/quotes.csv  → 200  · consultas atadas 2
+GET    /admin/exports/portabilidad.zip  → 200  · consultas atadas 25
+GET    /admin/reports/pl  → 200  · consultas atadas 6
+GET    /admin/reports/x2  → 200  · consultas atadas 2
+GET    /admin/reports/vat  → 200  · consultas atadas 1
+GET    /admin/reports/resumen-trimestre  → 200  · consultas atadas 3
+GET    /admin/templates  → 200  · consultas atadas 1
+POST   /admin/templates  → 201  (2ª pasada, cuerpo de relleno)  · consultas atadas 1
+PUT    /admin/templates/:id  → 404  · consultas atadas 1
+DELETE /admin/templates/:id  → 404  · consultas atadas 1
+GET    /admin/quote-requests  → 200  · consultas atadas 1
+GET    /admin/attachments/:id  → 404  · consultas atadas 1
+GET    /admin/search  → 200  · consultas atadas 3
+
+== SIN-CONSULTA · 4 (con :parámetro 0)
+GET    /admin/customers/duplicados  → 200
+GET    /admin/products/ping  → 200
+GET    /admin/providers/ping  → 200
+GET    /admin/expenses/categories  → 200
+
+== NO-LLEGO · 25 (con :parámetro 6)
+GET    /admin/me  → 401
+POST   /admin/customers/bulk-tags  → 400  (2ª pasada, cuerpo de relleno)
+POST   /admin/customers/import/preparar  → 400  (2ª pasada, cuerpo de relleno)
+POST   /admin/customers/import  → 400  (2ª pasada, cuerpo de relleno)
+GET    /admin/customers/:id/fusion-preview  → 400  (2ª pasada, cuerpo de relleno)
+POST   /admin/customers/:id/fusionar  → 400  (2ª pasada, cuerpo de relleno)
+PATCH  /admin/quotes/:id/billing-plan  → 400  (2ª pasada, cuerpo de relleno)
+POST   /admin/invoices/:id/annul  → 400  (2ª pasada, cuerpo de relleno)
+POST   /admin/products/import  → 400  (2ª pasada, cuerpo de relleno)
+POST   /admin/expenses/leer-ticket  → 503
+POST   /admin/jobs  → 400  (2ª pasada, cuerpo de relleno)
+POST   /admin/albaranes/consolidar  → 400  (2ª pasada, cuerpo de relleno)
+POST   /admin/entorno  → 400  (2ª pasada, cuerpo de relleno)
+POST   /admin/soporte  → 400  (2ª pasada, cuerpo de relleno)
+GET    /admin/libros/expedidas.csv  → 400  (2ª pasada, cuerpo de relleno)
+GET    /admin/libros/recibidas.csv  → 400  (2ª pasada, cuerpo de relleno)
+GET    /admin/libros/recibidas.json  → 400  (2ª pasada, cuerpo de relleno)
+POST   /admin/supresion/:merchantId  → 404
+POST   /admin/billing/checkout  → 501
+POST   /admin/billing/portal  → 501
+POST   /admin/team  → 400  (2ª pasada, cuerpo de relleno)
+POST   /admin/connect/onboard  → 501
+POST   /admin/ai/suggest-quote  → 503
+POST   /admin/ai/quote-message  → 503
+PATCH  /admin/quote-requests/:id  → 400  (2ª pasada, cuerpo de relleno)
+
+-- CONTROLES
+  POSITIVO (X1 de SCRUM-1512: 200 y 1 plantilla al cliente del otro)  POST …/resend-whatsapp → FILTRA 404 envíos 0
+  NEGATIVO (X1 de SCRUM-1512: 404)                                    POST …/send-reminder   → FILTRA 404 envíos 0
+  CERO     (una ruta que no está montada)                             → no figura
+  POBLACIÓN contiene las 78 del censo del rol: true
+¿el instrumento distingue las dos rutas del par?  false
+TOTALES: CRUZA 0 · LEE-Y-NO-ACABA 0 · LEE-Y-NIEGA 0 · FILTRA 162 · SIN-CONSULTA 4 · NO-LLEGO 25 · suma 191
+envíos a Meta doblados en toda la corrida: 0 · intentos de salir de la máquina cortados: 0
+EXIT=1

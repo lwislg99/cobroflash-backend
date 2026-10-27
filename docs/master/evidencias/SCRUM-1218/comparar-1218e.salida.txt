@@ -1,0 +1,19 @@
+scrum51-job-sin-quote {"pasadas":"3/3","casos":"IGUAL","variantesCasos":"1/1","respuestas":"IGUAL","variantesResp":"1/1","abortos":"0/0","nCasos":1,"nResp":3}
+  control sembrado: casos=DISTINTO respuestas=DISTINTO · sólo status=DISTINTO → VIVO
+scrum57-operario-propagacion {"pasadas":"3/3","casos":"IGUAL","variantesCasos":"1/1","respuestas":"IGUAL","variantesResp":"1/1","abortos":"0/0","nCasos":1,"nResp":3}
+  control sembrado: casos=DISTINTO respuestas=DISTINTO · sólo status=DISTINTO → VIVO
+scrum58-jobs-n1 {"pasadas":"3/3","casos":"IGUAL","variantesCasos":"1/1","respuestas":"IGUAL","variantesResp":"1/1","abortos":"0/0","nCasos":1,"nResp":4}
+  control sembrado: casos=DISTINTO respuestas=DISTINTO · sólo status=DISTINTO → VIVO
+scrum120-patch-job-roles {"pasadas":"3/3","casos":"IGUAL","variantesCasos":"1/1","respuestas":"IGUAL","variantesResp":"1/1","abortos":"0/0","nCasos":1,"nResp":10}
+  control sembrado: casos=DISTINTO respuestas=DISTINTO · sólo status=DISTINTO → VIVO
+scrum22-operario-readpath {"pasadas":"3/3","casos":"IGUAL","variantesCasos":"1/1","respuestas":"IGUAL","variantesResp":"1/1","abortos":"0/0","nCasos":1,"nResp":6}
+  control sembrado: casos=DISTINTO respuestas=DISTINTO · sólo status=DISTINTO → VIVO
+scrum24-operarios-metrics {"pasadas":"3/3","casos":"IGUAL","variantesCasos":"1/1","respuestas":"IGUAL","variantesResp":"1/1","abortos":"0/0","nCasos":1,"nResp":4}
+  control sembrado: casos=DISTINTO respuestas=DISTINTO · sólo status=DISTINTO → VIVO
+scrum66-tipo-operacion {"pasadas":"3/3","casos":"IGUAL","variantesCasos":"1/1","respuestas":"IGUAL","variantesResp":"1/1","abortos":"0/0","nCasos":2,"nResp":7}
+  control sembrado: casos=DISTINTO respuestas=DISTINTO · sólo status=DISTINTO → VIVO
+scrum92-login-operario {"pasadas":"3/3","casos":"IGUAL","variantesCasos":"1/1","respuestas":"IGUAL","variantesResp":"1/1","abortos":"0/0","nCasos":1,"nResp":4}
+  control sembrado: casos=DISTINTO respuestas=DISTINTO · sólo status=DISTINTO → VIVO
+scrum94-register-teammember {"pasadas":"3/3","casos":"IGUAL","variantesCasos":"1/1","respuestas":"IGUAL","variantesResp":"1/1","abortos":"0/0","nCasos":1,"nResp":5}
+  control sembrado: casos=DISTINTO respuestas=DISTINTO · sólo status=DISTINTO → VIVO
+POBLACION=9 ficheros · malos=0 · EXIT=0

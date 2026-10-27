@@ -1,0 +1,41 @@
+POBLACION mutaciones=5 declaradas en tests/scrum1302m-el-total-y-la-leyenda.test.mjs + la base
+
+== BASE (sin mutar)
+   diff --numstat: (vacío)
+   tests 8 · fail 0 · exit 0 → VERDE
+
+== M1 · «? Number(params.total) - ivaDentroDelImporte(params.lines, params.discountGlobalAmount ?? null)» → «? Number(params.total)»
+   tiene que caer: el guardado sigue mandando: se le resta su IVA, no se recalcula
+   diff --numstat: 1 1 src/modules/invoicing/infra/pdf/pdf.service.ts
+   tests 8 · fail 4 · exit 1 → CAZADA
+     cae: SCRUM-1302m · 🔴 en `no_incluido` el total que se lee NO lleva el IVA dentro
+     cae: SCRUM-1302m · 🔴 con céntimos, dos tipos y descuentos: sale la base, calculada A MANO
+     cae: SCRUM-1302m · el guardado sigue mandando: se le resta su IVA, no se recalcula
+     cae: SCRUM-1302m · 🔴 con tres opciones, cada caja y el total van sin IVA en `no_incluido` — y con él en `sumar`
+
+== M2 · «(1 + (ivaFueraDelPapel ? 0 : l.tax))» → «(1 + l.tax)»
+   tiene que caer: el total que se lee NO lleva el IVA dentro
+   diff --numstat: 1 1 src/modules/invoicing/infra/pdf/pdf.service.ts
+   tests 8 · fail 1 · exit 1 → CAZADA
+     cae: SCRUM-1302m · 🔴 en `no_incluido` el total que se lee NO lleva el IVA dentro
+
+== M3 · «Number(tier.total) - ivaDentroDelImporte(tier.lines)» → «Number(tier.total)»
+   tiene que caer: con tres opciones, cada caja y el total van sin IVA
+   diff --numstat: 1 1 src/modules/invoicing/infra/pdf/pdf.service.ts
+   tests 8 · fail 1 · exit 1 → CAZADA
+     cae: SCRUM-1302m · 🔴 con tres opciones, cada caja y el total van sin IVA en `no_incluido` — y con él en `sumar`
+
+== M4 · «(ivaFueraDelPapel ? 0 : (l.tax ?? 0))» → «(l.tax ?? 0)»
+   tiene que caer: con tres opciones, cada caja y el total van sin IVA
+   diff --numstat: 1 1 src/modules/invoicing/infra/pdf/pdf.service.ts
+   tests 8 · fail 1 · exit 1 → CAZADA
+     cae: SCRUM-1302m · 🔴 con tres opciones, cada caja y el total van sin IVA en `no_incluido` — y con él en `sumar`
+
+== M5 · «ivaDentroDelImporte(params.lines, params.discountGlobalAmount ?? null)» → «ivaDentroDelImporte(params.lines)»
+   tiene que caer: con céntimos, dos tipos y descuentos: sale la base, calculada A MANO
+   diff --numstat: 1 1 src/modules/invoicing/infra/pdf/pdf.service.ts
+   tests 8 · fail 1 · exit 1 → CAZADA
+     cae: SCRUM-1302m · 🔴 con céntimos, dos tipos y descuentos: sale la base, calculada A MANO
+
+ARBOL tras restaurar: limpio
+MUDAS_O_BASE_ROTA=0

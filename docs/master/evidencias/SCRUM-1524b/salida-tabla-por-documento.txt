@@ -1,0 +1,11 @@
+POBLACION · 205 filas · 202 vivas · columnas 15
+AUDITLOG_FISCAL_CONTRATO.md                     50 F2_DESPLAZADA=28 F2_CAMBIADA=14 INTACTA=8 SIN_REFERENCIA=0 · F2 con testigo=0 · F2 unicas=36 · lineas del doc con F2=39
+AUDITORIA_CAMINO_EMISION.md                     51 F2_DESPLAZADA=16 F2_CAMBIADA=1 INTACTA=34 SIN_REFERENCIA=0 · F2 con testigo=0 · F2 unicas=16 · lineas del doc con F2=16
+ENVIO_ASESOR_2026-09-28.md                       2 F2_DESPLAZADA=0 F2_CAMBIADA=2 INTACTA=0 SIN_REFERENCIA=0 · F2 con testigo=2 · F2 unicas=2 · lineas del doc con F2=1
+EXPEDIENTE_FISCAL_ANTICIPOS_RECAPITULATIVA.md    4 F2_DESPLAZADA=2 F2_CAMBIADA=0 INTACTA=0 SIN_REFERENCIA=2 · F2 con testigo=0 · F2 unicas=1 · lineas del doc con F2=2
+INVENTARIO_AFIRMACIONES_SKILLS.md               11 F2_DESPLAZADA=2 F2_CAMBIADA=8 INTACTA=1 SIN_REFERENCIA=0 · F2 con testigo=0 · F2 unicas=7 · lineas del doc con F2=10
+INVENTARIO_AFIRMACIONES_VERIFACTU.md            59 F2_DESPLAZADA=25 F2_CAMBIADA=27 INTACTA=7 SIN_REFERENCIA=0 · F2 con testigo=0 · F2 unicas=51 · lineas del doc con F2=50
+MEDICION_GUION_H2_EN_PUBLIC.md                   5 F2_DESPLAZADA=2 F2_CAMBIADA=2 INTACTA=1 SIN_REFERENCIA=0 · F2 con testigo=0 · F2 unicas=4 · lineas del doc con F2=4
+PREGUNTAS_ASESOR.md                             20 F2_DESPLAZADA=7 F2_CAMBIADA=1 INTACTA=12 SIN_REFERENCIA=0 · F2 con testigo=0 · F2 unicas=8 · lineas del doc con F2=7
+SUMA por documento = 202 (tiene que ser 202)
+CERO derivado · filas fuera de docs/legal/ = 0

@@ -300,8 +300,8 @@ test('④ un NIF que YA EXISTE en la base con otra CAPITALIZACIÓN se omite', as
 });
 
 test('④ un móvil que ya existe como móvil de otro cliente se omite (dedup propio, no comparte con teléfono)', async () => {
-  const cl = clienteFalso({ existentes: [{ merchantId: 7, mobile: '34600000009' }] });
-  const r = await importarClientes(7, `${CABECERA_COMPLETA}\r\nAna;;34600000009;;;;;;;;`, MAPEO_COMPLETO, cl);
+  const cl = clienteFalso({ existentes: [{ merchantId: 7, mobile: '34010000009' }] });
+  const r = await importarClientes(7, `${CABECERA_COMPLETA}\r\nAna;;34010000009;;;;;;;;`, MAPEO_COMPLETO, cl);
   assert.equal(r.omitidos, 1);
 });
 

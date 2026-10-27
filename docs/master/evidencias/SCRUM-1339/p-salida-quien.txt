@@ -1,0 +1,49 @@
+HORA (cabecera Date de GitHub): 2026-10-13T07:22:09.000Z · población: 248 ejecuciones del job del meta-guard (la de p-leer.mjs)
+
+① LAS REGLAS VIVAS DE main
+  tipos de regla: deletion, non_fast_forward, pull_request, required_status_checks
+  checks requeridos (1): «build + tests (con banco desechable)»
+✅ POSITIVO: la lista trae «build + tests (con banco desechable)» (si no, no he leído reglas: he leído otra cosa)
+  ¿hay algún requerido que empiece por «meta-guard»? NO
+
+② LAS EJECUCIONES DE pull_request FRENTE AL MERGE DE SU PR
+  192 ejecuciones de pull_request en 138 PR · PR mergeados: 132 · quién mergea: yaqu-bot[bot]: 121 · Javierpf28: 8 · lwislg99: 2 · null: 1
+  clase · salió con 2 (CIEGO) · salió con 0 (VERDE) · sin veredicto
+    PR no mergeado (open) · 1 · 5 · 1
+    el PR entró con OTRA punta · 7 · 11 · 34
+    entró con esta punta · meta-guard TODAVÍA CORRIENDO al mergear · 31 · 92 · 0
+    entró con esta punta · meta-guard YA ACABADO al mergear · 0 · 10 · 0
+✅ SUMA: las clases dan 192 = 192
+
+  LAS DOS COSAS, SEPARADAS, sobre las 133 ejecuciones con veredicto cuya punta es la que entró:
+   · «NO ESPERA»: el PR se mergeó con el meta-guard todavía corriendo en 123 de 133 → de ellas acabaron con 2: 31 · con 0: 92
+   · «SALE CON 2 Y ENTRA IGUAL»: el meta-guard ya había acabado en 10 de 133 → de ellas con el 2 YA DICHO antes del merge: 0 · con 0: 10
+   · COHERENCIA: de las 133, el obligatorio de ese mismo run acabó en success en 132 (a la primera en 128) · las que NO: #2344 run 38326044645 obligatorio «failure» · mergeó null
+   · cuánto le faltaba al meta-guard al mergear, en las 123: de 133 a 1063 s (mediana 619 s)
+   · #2354 (jv-j6b): job 115146037750 CIEGO → entró con esta punta · meta-guard TODAVÍA CORRIENDO al mergear (-578 s)
+   · #2323 (jv-j4b): job 113223120811 CIEGO → el PR entró con OTRA punta (420793 s) | job 115147017537 VERDE → entró con esta punta · meta-guard TODAVÍA CORRIENDO al mergear (-855 s)
+
+②bis EN main (push): 19 de 56 salen con 2 · racha más larga de rojos seguidos entre las que ejecutaron: 3 · secuencia (R rojo, V verde): VVVVVVVRRRVVRVVVVVVVVVVRVVVVRVVVRRRVRVVRRVVRVRVVRRVRVRRV
+
+③ «Avisador de PR en rojo» (workflow_run del CI): QUÉ HIZO CON CADA 2
+  runs del avisador creados desde 2026-10-06T13:46:31Z: GitHub declara 344 · traídos 344 · por conclusión: skipped: 264 · success: 79 · startup_failure: 1
+✅ TAMAÑO antes de contar: 79 logs del avisador (los que ejecutaron), de 25684 a 28786 B
+✅ IDENTIDAD: cada log del avisador nombra el run de CI que lo disparó (RUN_ID) en 79 de 79
+  veredicto del avisador en los 79 que ejecutaron: PR-YA-CERRADO: 52 · AVISAR: 22 · ESCALADO-FISCAL: 5
+  de las 58 ejecuciones con 2: con run del avisador que ejecutó 56 · sin él 2
+  qué dijo el avisador de las 58: pull_request → PR-YA-CERRADO: 29 · push → PR-YA-CERRADO: 19 · pull_request → AVISAR: 5 · pull_request → ESCALADO-FISCAL: 3 · pull_request → (no ejecutó o no se encontró): 2
+  LO QUE DECIDE — el 2 del meta-guard A SOLAS (obligatorio de ese run en success) frente a acompañado de un obligatorio rojo:
+    2 · obligatorio failure · pull_request → avisador (no ejecutó o no se encontró)
+    5 · obligatorio failure · pull_request → avisador AVISAR
+    1 · obligatorio failure · pull_request → avisador ESCALADO-FISCAL
+    1 · obligatorio failure · push → avisador PR-YA-CERRADO
+    2 · obligatorio success · pull_request → avisador ESCALADO-FISCAL
+    29 · obligatorio success · pull_request → avisador PR-YA-CERRADO
+    18 · obligatorio success · push → avisador PR-YA-CERRADO
+  A SOLAS: 49 de 58 · de ellas el avisador PUBLICÓ aviso en 0 · con el obligatorio también rojo: 9, y de ellas avisó en 5
+  POSITIVO del lector: avisos publicados en toda la ventana (por cualquier rojo): 22 → CI 38348506939, 38348190926, 38327792266, 38326044645, 37926820757, 37926919510, 37924386431, 37750763506
+  el motivo literal de uno de los avisos publicados sobre una ejecución con 2: «AVISAR — rojo nuevo (a561e3c110f1:meta-guard · los guards caen cuando deben) en el check obligatorio «build + tests (con banco desechable)»»
+
+390 llamadas a la API
+controles: todos se cumplen
+EXIT=0

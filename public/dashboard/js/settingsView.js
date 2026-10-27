@@ -192,7 +192,7 @@ function renderSettingsView(container) {
     // ticket: un texto que explica mal una obligación fiscal no es feo, es peligroso.
     //
     // ⚠️ Y NO ES UN INTERRUPTOR. Esto solo LEE. El modal de dos caminos quedó bloqueado porque
-    // «se envía» no existe (sin cliente SOAP/mTLS, sin cola de remisión): una salida inerte le
+    // «se envía» no existe (nada envía a la AEAT) [Corregido el 13-oct-2026, SCRUM-1500h, decisión del fundador en SCRUM-1500 c.18993: aquí decía «sin cliente SOAP/mTLS, sin cola de remisión», y las dos mitades eran falsas como «no existe»: hay un cliente (`sif.client.ts`) que nadie llama y una cola que la emisión llena y ningún proceso vacía. Sigue siendo cierto que nada envía. El detalle y lo NO medido, en `src/modules/invoicing/domain/modoVisible.ts`.]: una salida inerte le
     // diría al profesional que puede elegir remitir a la AEAT, y no puede.
     //
     // ⚠️ VIVE EN `Configuración › Cumplimiento`, y el panel se pide POR EL MAPA
@@ -364,31 +364,24 @@ function renderSettingsView(container) {
     );
     const fLogoUrl = createField("Logo (URL opcional)", "logoUrl", "text", false);
 
-    // País / locale
+    // País — SCRUM-1536g: se fija en el alta y aquí sólo se LEE (decisión (a), Jira SCRUM-1536
+    // c.20245). Era un selector: cambiarlo encendía la factura sin VeriFactu para un negocio
+    // español o se saltaba la exclusión territorial. Un `<output>` y no un selector bloqueado: lo
+    // que no se puede escribir no se pinta como campo. Su `.name` sigue declarando la columna para
+    // el censo de Configuración (SCRUM-284), y el guardado ya no la manda. Sin texto nuevo: la
+    // etiqueta y el nombre del país, que ya estaban; la nota «Cambia el idioma…» se quita porque
+    // describía un cambio que ya no existe.
+    const NOMBRE_DE_PAIS = { ES: "España", MX: "México", CO: "Colombia", AR: "Argentina", PE: "Perú", CL: "Chile" };
     const fCountryWrapper = document.createElement("div");
     fCountryWrapper.className = "field";
     const fCountryLabel = document.createElement("label");
     fCountryLabel.textContent = "País";
-    const fCountrySelect = document.createElement("select");
-    fCountrySelect.name = "country";
-    [
-      { value: "ES", label: "España" },
-      { value: "MX", label: "México" },
-      { value: "CO", label: "Colombia" },
-      { value: "AR", label: "Argentina" },
-      { value: "PE", label: "Perú" },
-      { value: "CL", label: "Chile" },
-    ].forEach(({ value, label }) => {
-      const opt = document.createElement("option");
-      opt.value = value; opt.textContent = label;
-      fCountrySelect.appendChild(opt);
-    });
-    const fCountryNote = document.createElement("p");
-    fCountryNote.style.cssText = "font-size:12px;color:var(--muted);margin:2px 0 0";
-    fCountryNote.textContent = 'Cambia el idioma de los documentos ("Presupuesto" vs "Cotización") y la moneda por defecto.';
+    const fCountryTexto = document.createElement("output");
+    fCountryTexto.name = "country";
+    fCountryTexto.id = "settings-country";
+    fCountryLabel.htmlFor = "settings-country";
     fCountryWrapper.appendChild(fCountryLabel);
-    fCountryWrapper.appendChild(fCountrySelect);
-    fCountryWrapper.appendChild(fCountryNote);
+    fCountryWrapper.appendChild(fCountryTexto);
     const fGoogleReviewUrl = createField("URL de reseñas en Google (opcional)", "googleReviewUrl", "text", false);
     const fIban  = createField("IBAN (para pagos por transferencia — España/Europa)", "iban", "text", false);
     const fClabe = createField("CLABE interbancaria (para pagos por transferencia — México)", "clabe", "text", false);
@@ -421,7 +414,7 @@ function renderSettingsView(container) {
     selRetencion.id = "retencion-irpf-tipo";
     // SCRUM-293 (③a-bis) · EL `.name` NO ES DECORACIÓN: es cómo un `<select>` construido a mano
     // DECLARA qué columna de `Merchant` persiste. Sus dos hermanos —`fCriterioCaja` y
-    // `fCountrySelect`— lo declaran, y el censo de Configuración (SCRUM-284) lee justo eso.
+    // `fCountrySelect`, hoy `fCountryTexto` (SCRUM-1536g)— lo declaran, y el censo de Configuración (SCRUM-284) lee justo eso.
     // Sin esta línea el campo era invisible para el censo y su clave en el mapa de submenús salía
     // como fantasma: el guard acusaba de «este ajuste ya no existe en la pantalla» a un ajuste que
     // sí está. Medido: 19 de las 20 claves de `colocar(…)` se veían; ésta era la única que no.
@@ -454,6 +447,36 @@ function renderSettingsView(container) {
     wrapRetencion.appendChild(labRetencion);
     wrapRetencion.appendChild(selRetencion);
     colocar("retencionIrpfTipo", wrapRetencion);
+
+    // S2: ── SCRUM-1072d · EL TIPO DE ACTIVIDAD, junto a la retención ─────────────────────────
+    // S2: Bloque de S2 en el contenedor de J3 (regla de contenedores, `dos-equipos.md:95`). Los
+    // S2: cuatro textos están firmados (`docs/microcopy/2026-10-16-SCRUM-1072-tipo-de-actividad.md`).
+    // S2: «no consta» (`null`) es la opción VACÍA y sin texto: un rótulo para ella no está firmado.
+    // S2: Sólo se GUARDA: nada decide una retención con este campo (`scrum1072` ⑥).
+    const ACT_NO_CONSTA = "";
+    const selActividad = document.createElement("select");
+    selActividad.id = "actividad-tipo";
+    selActividad.name = "activityKind";   // S2: lo lee el censo de Configuración, como en la retención
+    selActividad.className = "input";
+    [
+      { value: ACT_NO_CONSTA, texto: "" },
+      { value: "profesional", texto: "Profesional" },
+      { value: "empresarial", texto: "Empresarial" },
+      { value: "no_lo_se", texto: "No lo sé" },
+    ].forEach(function (o) {
+      const op = document.createElement("option");
+      op.value = o.value; op.textContent = o.texto;
+      selActividad.appendChild(op);
+    });
+    const wrapActividad = document.createElement("div");
+    wrapActividad.className = "form-group";
+    const labActividad = document.createElement("label");
+    labActividad.textContent = "¿Qué tipo de actividad tienes?";
+    labActividad.htmlFor = selActividad.id;
+    wrapActividad.appendChild(labActividad);
+    wrapActividad.appendChild(selActividad);
+    colocar("activityKind", wrapActividad);
+    // S2: ── fin SCRUM-1072d ──────────────────────────────────────────────────────────────────
     colocar("logoUrl", fLogoUrl.wrapper);
 
     // ── SCRUM-D1 · LA PUERTA DE ÚLTIMA OPORTUNIDAD ───────────────────────────
@@ -776,7 +799,7 @@ function renderSettingsView(container) {
       <label>Color de marca</label>
       <p style="font-size:12px;color:var(--muted);margin:2px 0 6px">Se usa en el botón de aceptar y los acentos de la página que ve tu cliente.</p>
       <div style="display:flex;align-items:center;gap:10px">
-        <input type="color" id="brand-color-input" value="#22c55e" style="width:48px;height:38px;padding:2px;border:1px solid var(--border);border-radius:8px;cursor:pointer"/>
+        <input type="color" id="brand-color-input" value="#22c55e"/>
         <span id="brand-color-hex" style="font-size:13px;color:var(--muted)">#22c55e</span>
         <button type="button" id="brand-color-reset" class="btn-secondary btn-sm">Sin color (por defecto)</button>
       </div>`;
@@ -922,6 +945,9 @@ function renderSettingsView(container) {
         selRetencion.value = merchant.retencionIrpfDeclarada
           ? (merchant.retencionIrpfTipo == null ? RET_NO_RETIENE : String(merchant.retencionIrpfTipo))
           : RET_NO_CONSTA;
+        // S2: SCRUM-1072d · un valor que no es de la lista cerrada se queda en «no consta», no se inventa.
+        selActividad.value = ["profesional", "empresarial", "no_lo_se"].includes(merchant.activityKind)
+          ? merchant.activityKind : ACT_NO_CONSTA;
         fLogoUrl.input.value = merchant.logoUrl || "";
         refreshLogoUI(); // preview del logo actual (URL antigua o data-URI)
         montarDatosDeEjemplo(merchant); // SCRUM-314 (D3)
@@ -936,7 +962,7 @@ function renderSettingsView(container) {
         // clave, `!!undefined` da `false`, que es justo ese defecto.
         homePrefsCargados = merchant.homePrefs || {};
         tFotoTecnico.chk.checked = !!homePrefsCargados.showTechPhotoToClient;
-        if (merchant.country) fCountrySelect.value = merchant.country;
+        if (merchant.country) fCountryTexto.textContent = NOMBRE_DE_PAIS[merchant.country] || merchant.country;
         if (merchant.brandColor) {
           brandColorEnabled = true;
           brandColorInput.value = merchant.brandColor;
@@ -1020,7 +1046,7 @@ function renderSettingsView(container) {
         'value="' + escapaAtributo(c.titulo || '') + '" style="width:100%;margin-bottom:4px">' +
         '<textarea data-clausula-texto="1" rows="2" placeholder="' + TX.clausulaTexto + '" ' +
         'style="width:100%">' + escapaTexto(c.texto || '') + '</textarea>' +
-        '<button type="button" data-clausula-quitar="' + i + '" style="font-size:13px">' +
+        '<button type="button" class="btn btn-ghost" data-clausula-quitar="' + i + '">' +
         TX.clausulaQuitar + '</button></div>';
     }
 
@@ -1079,7 +1105,9 @@ function renderSettingsView(container) {
       '<label style="display:block;font-weight:600;margin-bottom:2px">' + TX.clausulasTitulo + '</label>' +
       '<p style="font-size:12px;color:var(--muted);margin:2px 0 6px">' + TX.clausulasPista + '</p>' +
       '<div id="clausulas-lista"></div>' +
-      '<button type="button" id="clausulas-anadir" style="font-size:13px">' + TX.clausulaAnadir + '</button>';
+      // AB6 (SCRUM-962b): era un `<button>` nativo de 22 px de toque y sin estilo de la casa. Con
+      // `btn btn-secondary` mide lo que manda DESIGN.md §5: 44 en móvil, 36 en escritorio.
+      '<button type="button" class="btn btn-secondary" id="clausulas-anadir">' + TX.clausulaAnadir + '</button>';
     colocar('clausulasPresupuesto', cajaClausulas);
 
     cajaClausulas.addEventListener('click', function (ev) {
@@ -1125,6 +1153,8 @@ function renderSettingsView(container) {
           selRetencion.value === RET_NO_CONSTA || selRetencion.value === RET_NO_RETIENE
             ? null
             : Number(selRetencion.value),
+        // S2: SCRUM-1072d · «no consta» viaja como NULL, igual que los otros estados fiscales.
+        activityKind: selActividad.value === ACT_NO_CONSTA ? null : selActividad.value,
         logoUrl: fLogoUrl.input.value.trim() || null,
         // A2.5: normalizar — si pegan "g.page/r/…" sin protocolo, anteponer https://
         googleReviewUrl: (function () {
@@ -1133,7 +1163,6 @@ function renderSettingsView(container) {
           if (!/^https?:\/\//i.test(v)) v = 'https://' + v;
           return v;
         })(),
-        country: fCountrySelect.value || undefined,
         iban:  fIban.input.value.trim().replace(/\s/g, '') || null,
         clabe: fClabe.input.value.trim() || null,
         bizumPhone: fBizumPhone.input.value.trim() || null, // C1-4
@@ -1165,7 +1194,10 @@ function renderSettingsView(container) {
         await updateMerchantProfile(payload);
         setAlert("success", "Datos de empresa guardados correctamente.");
       } catch (err) {
-        setAlert("error", "Error al guardar: " + err.message);
+        // SCRUM-1536d · «Sí» en el domicilio foral: el servidor no guarda NADA y manda el texto
+        // firmado en SCRUM-1536 c.20225 (T2a). Se pinta ése, entero y sin el «Error al guardar:».
+        if (err && err.code === "territorio_excluido") setAlert("error", mensajeParaPersona(err, ""));
+        else setAlert("error", "Error al guardar: " + err.message);
       } finally {
         saveBtn.disabled = false;
         saveBtn.textContent = "Guardar cambios";
@@ -1496,7 +1528,7 @@ async function renderPublicProfileCard(container) {
       </p>
       ${enabled
         ? (m.slug
-          ? `<div class="alert success" style="display:block;margin:0 0 14px;font-size:13px">Tu página está <strong>activa</strong>: <a href="/p/${escSettings(m.slug)}" target="_blank" rel="noopener">yaqu.app/p/${escSettings(m.slug)} ↗</a></div>`
+          ? `<div class="alert success" style="display:block;margin:0 0 14px;font-size:13px">Tu página está <strong>activa</strong>: <a class="pp-enlace" href="/p/${escSettings(m.slug)}" target="_blank" rel="noopener">yaqu.app/p/${escSettings(m.slug)} ↗</a></div>`
           : `<div class="alert warning" style="display:block;margin:0 0 14px;font-size:13px">Elige una dirección para estrenar tu página.</div>`)
         : `<div class="alert" style="display:block;margin:0 0 14px;font-size:13px;background:var(--neutral-50);border:1px solid var(--border);color:var(--neutral-600)">Aún no está activada — déjala lista y la encendemos contigo.</div>`}
       <div class="field" style="margin-bottom:12px">

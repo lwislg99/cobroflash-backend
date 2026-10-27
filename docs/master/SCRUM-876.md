@@ -482,3 +482,332 @@ Es orden de tests y ahora va antes el producto. El ticket vuelve a «Por hacer»
 en el TRASPASO de 876c caduca con el aparcado**: los avisos de T3 (`scrum234` y `scrum781` son de
 carrera; `scrum781` lee `.env` a mano) y la regla de T4 (no se desgatea nada sin causa) siguen siendo
 el punto de partida para quien lo retome.
+
+---
+
+# APÉNDICE · SCRUM-876e · T3 (los dos que no son de carrera ni fiscales): `scrum72-pdfs-privados` y `albaran`
+
+**Medido contra:** `origin/main` = `33f07c332c3c95fe1656f640184c5d340e519f5d` · 2026-10-07T06:28:00Z (cabecera `Date:` de GitHub)
+**Rama:** `scrum-876e-obsoletos-al-banco` · **Carril:** `tests/` (Sesión 3) · **Resultado:** dos ficheros (tres tests gateados) con segundo destino y alineados; el resto de T3, T4 y el grupo C de SCRUM-868, sin tocar
+
+A9: sin fallo que generalice — lo que salió al medir (el censo del 16-sep contó una causa por fichero y `albaran` tenía dos) es de aquel censo y queda dicho abajo
+
+## Qué entra
+
+| fichero | tests gateados | por qué caía contra un banco limpio | qué cambia |
+|---|---|---|---|
+| `tests/scrum72-pdfs-privados.test.mjs` | 1 | `invoicesDir is not defined`: SCRUM-844 se llevó el `import` al test que sacó del gate | el test gateado vuelve a importar `invoicesDir` |
+| `tests/albaran.test.mjs` | 2 | ① esperaba `ALB-2026-001` y el código emite `AB260001` (SCRUM-592) · ② sus `PATCH` no mandaban `version`, y desde SCRUM-361 eso es un 409 antes de validar nada | el formato de hoy, y cada `PATCH` manda la versión que recibió |
+
+Los dos ganan un **segundo destino sin aflojar el primero**, el mismo de T2: con `QA_DB_TEST=1` siguen yendo a staging por `_staging-db.mjs`; si no, usan `LIBRO_PG_URL`, el banco que CI ya levanta para la tanda. **Ninguna variable nueva y `ci.yml` no se toca.**
+
+## El módulo nuevo: `tests/_banco-libro.mjs`
+
+T2 escribió el bloque del segundo destino DENTRO de cada fichero. Aquí no se puede: `albaran.test.mjs` importa `dist/…/albaran.service.js` de forma estática, ese módulo construye el cliente de Prisma al cargarse, y en ESM los imports se evalúan antes que el cuerpo. Una asignación de `DATABASE_URL` en el cuerpo llegaría tarde. Por eso el bloque vive en un módulo que se importa el segundo, detrás de `_staging-db.mjs`.
+
+Es el mismo criterio, con una barrera más: con **cualquiera** de los tres gates de staging puesto (`QA_DB_TEST`, `A55_DB_TEST`, `BOT_SUITE_TEST`) es inerte; el de T2 sólo miraba el primero. Los tres ficheros de T2 no se han movido a este módulo: siguen con su bloque propio.
+
+Sus barreras las fija `tests/scrum876e-el-segundo-destino.test.mjs`, que corre siempre y sin base (ocho casos). Réplica local de sus mutaciones declaradas, con el lector del propio test (`evidencias/SCRUM-876e/replica.txt`): base sin mutar, ocho casos y cero caídos; las cuatro mutaciones tumban cada una su caso. El octavo caso (quien lo importa, lo importa antes de `dist/`) se vio caer moviendo el import de `albaran.test.mjs` detrás de los de `dist/` (`git diff --numstat`: 1 1), y se restauró.
+
+## El rojo de cada test gateado, en el banco local
+
+Mutando `dist/` y nunca `src/`. Cada mutación exige casar una vez y `dist/` se restaura por hash (`evidencias/SCRUM-876e/mutar-dist-876e.mjs`). Banco: Postgres 16.4 portable, loopback, base `yaqu_libro_test` creada con el DDL de `migrate diff --from-empty` (33 tablas, las del esquema).
+
+| test | verde | defecto inyectado en `dist/` | rojo | poso |
+|---|---|---|---|---|
+| `scrum72` · PDFs no públicos | pasa | la ruta del PDF de factura deja de filtrar por merchant | «otro merchant no debe acceder al PDF»: 200 en vez de 404 | `merchants = 0` |
+| `albaran` · SCRUM-14 tenencia | pasa | `findAlbaran` deja de filtrar por merchant | «PATCH … con sesión B debería ser 404 y fue 409» | `merchants = 0` |
+| `albaran` · SCRUM-65 valorado | pasa | el candado del modo de valoración deja de mirar el estado | el `PATCH` tras emitir ya no da 409 | `merchants = 0` |
+
+Y el defecto de partida, corrido hoy antes de tocar las aserciones: `scrum72` caía con `invoicesDir is not defined`; `albaran` con `AB260001` contra `/^ALB-\d{4}-001$/` en un test y con `409 !== 400` en el otro.
+
+Los cuatro juntos contra el banco (`scrum876e`, `scrum419`, `scrum72`, `albaran`, en paralelo): 35 tests, 35 pasan, 0 saltados, `merchants = 0` al terminar. Sin `LIBRO_PG_URL`: los tres gateados salen `# SKIP` con su motivo. Con un host que no es loopback: los dos ficheros CAEN, no se saltan.
+
+## Lo que el censo del 16-sep no vio
+
+El §2 B de este registro da UNA causa por fichero. `albaran` tenía dos: la del formato, y los `PATCH` sin `version`. La segunda no salía porque el primer test caía antes y el segundo test del fichero no se miró por separado. Los otros obsoletos pueden tener lo mismo detrás de su primera causa: no se ha mirado.
+
+## Lo que NO entra, y por qué
+
+| qué | estado |
+|---|---|
+| `scrum17-recapitulativa` (T3) | sin tocar. Crea facturas de serie fiscal y sus merchants a mano (está en `MIGRACION_PENDIENTE` de `scrum113`, «con su dueño»). Antes de darle destino hay que medirlo solo contra el banco |
+| `scrum234-carrera-serie.gated`, `scrum781-concurrencia-de-la-factura` (T3) | sin tocar. Son de carrera: lo dicho en el TRASPASO de 876c sigue valiendo |
+| T4 (los cinco sin atribuir) | sin tocar: su causa sigue sin medir |
+| Grupo C de SCRUM-868 (`a55-window-quote`, `bot-suite`) | sin tocar. `a55` exige `WHATSAPP_DRY_RUN=1` y la tanda de CI no lo pone (medido: `ci.yml` no lo nombra); darle el banco pide decidir si el propio test lo fija en ese destino |
+| El verde y el rojo EN CI | el verde se lee en el log del `build + tests` de este PR: los tres con ✔ y sin `# sin QA_DB_TEST=1 ni LIBRO_PG_URL`. El rojo en CI con un paso temporal (como hizo T2) no se ha hecho: ese paso vive en `ci.yml`, que es de S5 |
+
+## Reproducir
+
+    node --test tests/scrum876e-el-segundo-destino.test.mjs
+    LIBRO_PG_URL=<banco loopback, base *_test> node --test tests/scrum72-pdfs-privados.test.mjs tests/albaran.test.mjs
+
+---
+
+# APÉNDICE · SCRUM-876f · El grupo C de SCRUM-868: `a55-window-quote` y `bot-suite` al banco, en seco y con la salida cortada
+
+**Medido contra:** `origin/main` = `725c0e3a1fff3409fdc2db2bdd493918cba5cec0` · 2026-10-07T07:42:50Z (cabecera `Date:` de GitHub)
+**Rama:** `scrum-876f-a55-al-banco` · **Carril:** `tests/` (Sesión 3) · **Resultado:** los dos gateados del grupo C corren con `LIBRO_PG_URL`; `ci.yml` no se toca y no hay variable nueva
+
+A9: sin fallo que generalice — la primera sonda de «bot-suite dentro de una tanda» no medía la tanda (55 vecinos que acabaron en 3 s y el bot corrió 17 s solo); se vio en sus propios tiempos antes de concluir nada, se repitió con 300 ficheros y queda dicho abajo
+
+## El verde de 876e, leído en el log (lo que quedó pendiente)
+
+Run `37583212357` (el `build + tests` de #2245, punta `f700f3bf`): `SCRUM-72: PDFs de factura y presupuesto no son públicos` ✔ 1.128 ms · `SCRUM-14: tenancy del albarán + lock de firmado` ✔ 1.365 ms · `SCRUM-65: albarán VALORADO` ✔ 425 ms. Ninguno con `# sin QA_DB_TEST=1 ni LIBRO_PG_URL`. En ese mismo log `A5.5` y `A8.4` salen saltados (`﹣`, 0,7 ms): es el antes de este apéndice.
+
+## La decisión, y lo que se comprobó antes de aplicarla
+
+SCRUM-868, comentario 18621 (orquestador): el propio test fija `WHATSAPP_DRY_RUN=1` cuando su destino es el banco, con tres condiciones.
+
+| condición | qué se hizo | dónde se ve |
+|---|---|---|
+| La aserción se queda | `assert.equal(process.env.WHATSAPP_DRY_RUN, '1')` sigue siendo la primera línea del test; el fichero se pone la bandera en su cuerpo, sólo con destino banco | `tests/a55-window-quote.test.mjs` |
+| Demostrar que ponerla surte efecto | El sender la lee EN CADA ENVÍO (`isDryRun` es una función). Corrido: sender cargado con la bandera ausente → `null`; puesta después → contesta en seco; quitada → `null` otra vez. Y el orden real del fichero se asierta con el estado del proceso (el sender no estaba cargado al fijarla; con su suelo: después de cargarlo la misma pregunta dice que sí) | `tests/scrum876f-el-seco-se-decide-al-enviar.test.mjs` (3 casos, sin base) |
+| Lo que decide es que no salga la llamada | `tests/_sin-salida.mjs` corta `net.Socket.prototype.connect` para todo lo que no sea loopback y apunta host y puerto. Control positivo delante de cada uso: un POST de axios y un fetch a un host `.invalid` tienen que verse y cortarse, o lanza. Tras cada envío, y al acabar, lo apuntado que no sea del control tiene que ser `[]` | los dos tests gateados, y el caso 1 de `scrum876f` |
+
+El corte sólo se instala con el banco como destino. Contra staging no: la base es remota y ese camino no se ha tocado. Límite dicho en el módulo: el motor de Prisma no pasa por ahí.
+
+## Los rojos, en el banco local
+
+Base sin mutar verde antes y después de cada serie; cada mutación exige casar una vez y se restaura por hash (`evidencias/SCRUM-876f/mutar-dist-876f.mjs`); `git status` vacío al terminar.
+
+| test | defecto inyectado | resultado |
+|---|---|---|
+| `a55` | el fichero deja de ponerse la bandera (`tests/`, `numstat` 1 1) | ROJO en la aserción que se quedó: «este test exige WHATSAPP_DRY_RUN=1» |
+| `a55` | con la bandera a `1`, el sender suelta un POST sin esperarlo, por fuera del punto único (`dist/`) | ROJO: «caso 1 … el envío INTENTÓ salir», dos intentos al host de Meta, puerto 443, los dos cortados. El envío seguía contestando `ok` y en seco |
+| `scrum876f` (sin base) | la bandera se congela al cargar el sender (`dist/`) | ROJO: «la bandera, puesta después de cargar el sender, NO surte efecto» |
+| `a55` | esa misma mutación | VERDE, y es lo esperado: el fichero la pone antes de cargar el sender. Por eso la lectura al enviar la fija el test sin base y no éste |
+| `bot-suite` | el POST suelto de arriba | ROJO: «el bot INTENTÓ salir», 67 intentos al host de Meta, cortados |
+| `bot-suite` | la confirmación de la baja al cliente lleva otro texto | ROJO: «confirmación de baja» |
+| `bot-suite` | el profesional no recibe el aviso de la baja | ROJO sin veredicto: el techo de 6.000 ms vence esperando el aviso |
+
+Las dos primeras filas de `scrum876f` van además declaradas en su `MUTACIONES_QUE_ME_TUMBAN` (la de `src/` y la del propio corte).
+
+## `bot-suite`: medido solo y dentro de un tramo de la tanda
+
+Contra el banco, con el gate cambiado en local, ANTES de decidir dónde corre.
+
+| cómo | pasadas | resultado |
+|---|---|---|
+| solo, tal cual estaba | 4 | 4 caídas, las cuatro en el paso 11 (BAJA), a los 19 s |
+| solo, con el paso 11 corregido | 3 | 3 verdes · 18,9 a 19,3 s · poso 0 |
+| con sus 55 vecinos de la tanda | 1 | verde, pero NO VALE: los vecinos acabaron en 3 s |
+| dentro de los 300 primeros ficheros de la tanda, concurrencia 3 | 1 | CAÍDA en el paso 8f a los 10,5 s; y una fila de `whatsAppMessage` que llegó después de la limpieza |
+| lo mismo, con el paso 8f corregido | 2 | 2 verdes · 19,3 y 19,7 s |
+| lo mismo, con los cuatro arreglos y concurrencia 7 | 3 | 3 verdes · 23,2 · 26,4 · 25,3 s · poso 0 |
+
+En las seis pasadas por tramos `a55` salió verde. El único caído ajeno fue `scrum1321 · PUERTA 1b`, que en esta máquina cae siempre (temporal en `C:`, repo en `D:`).
+
+**Lo que caía no era carga: eran cuatro sitios donde el test decidía por el reloj.** El bot hacía lo correcto en todos (sonda del buzón en el paso 11: primero la confirmación al cliente, después el aviso al profesional).
+
+| paso | qué hacía el test | qué hace ahora |
+|---|---|---|
+| 11 · BAJA | leía `last()`; la baja manda dos mensajes y «el último» era ya el aviso al profesional | busca lo que le llegó AL CLIENTE desde su BAJA: una respuesta, y con el texto de la confirmación |
+| 8f · enviar la solicitud | asertaba el aviso al profesional en cuanto llegaba el primer mensaje | espera a esa condición (`esperarCondicion`, techo 6 s; vencido, no hay veredicto) |
+| 8g · cancelar | esperaba un mensaje y asertaba dos | espera los dos |
+| 11 · final | acababa sin esperar el aviso de la baja al profesional, cuya fila podía llegar tras la limpieza | espera el aviso y a que el buzón quede quieto |
+
+**Dónde corre: dentro de la tanda, con `LIBRO_PG_URL`, sin paso propio.** Con qué se decide y qué no cubre: cinco pasadas verdes de cinco dentro de un tramo de 300 ficheros, en esta máquina (8 hilos), contra un Postgres de loopback. No es la tanda entera (1.270 ficheros) ni el runner de CI. El precedente de `scrum814` (un paso propio en `ci.yml`) era otro mecanismo: una transacción que vencía a los 5 s bajo carga; aquí el bot tardó entre 19 y 26 s con techos de 6 s por paso, y ningún techo venció. Si en CI cae o parpadea, la salida es sacarlo de la tanda (volver a su gate) y pedir el paso propio en `ci.yml`, que es de S5.
+
+## Lo que NO entra
+
+| qué | estado |
+|---|---|
+| El camino de staging (`A55_DB_TEST`, `BOT_SUITE_TEST`) | sin correr: no cambia de destino ni de gate, pero los cuatro arreglos de `bot-suite` también corren ahí y esa tanda no se ha lanzado |
+| El rojo EN CI con un paso temporal | no hecho: ese paso vive en `ci.yml` (S5). El verde en CI se lee en el log del `build + tests` de este PR: `A5.5` y `A8.4` con ✔ y con duración |
+| `scrum17`, `scrum234`, `scrum781` y T4 | sin tocar, igual que en 876e. Ojo para T4: `bot-suite` estaba en esa lista como «causa sin medir» y su causa era ésta |
+
+## Reproducir
+
+    node --test tests/scrum876f-el-seco-se-decide-al-enviar.test.mjs
+    LIBRO_PG_URL=<banco loopback, base *_test> node --test tests/a55-window-quote.test.mjs tests/bot-suite.test.mjs
+
+# APÉNDICE · SCRUM-876f (segunda parte) · El obligatorio de #2255 cayó: al merchant efímero le tocó el id del demo
+
+**Medido contra:** `origin/main` = `5f1bb361ae5b6b0d720b28b54c624f5d8483ff3b` · 2026-10-07T15:06:27Z
+**Rama:** `scrum-876f-a55-al-banco` · **Carril:** `tests/` (Sesión 3) · **Resultado:** `withMerchant` no entrega nunca el id 1; `ci.yml`, `src/` y los dos tests gateados no cambian
+
+A9: comprobación → `tests/merchant-fixture.test.mjs`
+
+## Qué dijo el juez
+
+Run `37590893205` (el `build + tests` de #2255, punta `491ed48b`): 10.827 tests, 1 caído.
+
+| test | resultado en el log |
+|---|---|
+| `A8.4: suite completa del bot` | ✔ 18.680 ms, merchant efímero 4 |
+| `A5.5: ventana abierta → envío por SESIÓN` | ✖ 393 ms, `false !== true` en `closed.ok` (línea 138), merchant efímero **1** |
+
+Justo delante del ✖, el sender dice: `V0-2: envío desde el merchant demo … BLOQUEADO (no está en DEMO_SAFE_NUMBERS)`. El corte de salida no apuntó ningún intento: el envío no llegó a intentarse.
+
+## La causa
+
+El banco de CI se crea vacío en cada run. El primer merchant que nace en él recibe el id 1, que es el demo (regla 8), y el producto le aplica sus frenos a propósito. Le toca al fichero que llegue antes: en ese run fue `a55`. `bot-suite` pasó porque recibió el 4, no porque fuera inmune.
+
+**Mi fallo:** di por bueno el verde local sin mirar en qué se diferenciaba mi banco del de CI. La secuencia de `merchants` del mío iba por 225; en CI empieza en 1. Las «5 de 5 dentro de un tramo de 300» del apéndice de arriba medían la carga, y este defecto no depende de la carga.
+
+## El arreglo, y por qué en el fixture
+
+`tests/_merchant-fixture.mjs`: si el merchant recién creado es el demo, `withMerchant` lo borra y crea otro. La secuencia ya ha pasado del 1, así que ocurre como mucho una vez por banco. Va ahí y no en `a55` porque el defecto no es de `a55`: es de cualquier fichero que use el fixture y llegue el primero.
+
+Lo que NO cubre: los ficheros que crean su merchant a mano, sin `withMerchant`, contra el banco. Si a uno de ésos le toca el id 1, sigue siendo el demo. No los he censado.
+
+## Los rojos
+
+Banco local (Postgres 16.4, loopback), secuencia de `merchants` reiniciada a 1 antes de cada pasada.
+
+| qué se corre | fixture | resultado |
+|---|---|---|
+| `a55` | el de #2255 (`491ed48b`) | ROJO, el de CI: línea 138, mismo aviso V0-2, merchant efímero 1 |
+| `a55` | con el arreglo | VERDE, merchant efímero 2 |
+| `merchant-fixture.test.mjs` (sin base) | arreglo anulado (`numstat` 1 1) | ROJO en 2 de 13: «NO entrega el id del demo» y «si el segundo también nace demo» |
+| `bot-suite` | arreglo anulado | ROJO, merchant efímero 1, `V0-2: lista desde el merchant demo … BLOQUEADA` |
+| `bot-suite` + `a55` + `merchant-fixture` | con el arreglo | VERDE, 15 de 15, merchants efímeros 2 y 3, poso 0 |
+
+Restaurado con `git restore --source=HEAD`; `git status` vacío después.
+
+## Reproducir
+
+    psql -d <banco> -c "alter sequence merchants_id_seq restart with 1"
+    LIBRO_PG_URL=<banco loopback, base *_test> node --test tests/a55-window-quote.test.mjs
+
+## De paso: los seis arreglos de producto del día, ¿su test sale rojo con el código de antes?
+
+Encargo del orquestador (punto 4 del lote de tarde), sin ticket. Para cada uno: base verde, se quita el arreglo, se corre SU test, se restaura con git. El guion es `evidencias/SCRUM-876f/rojo-con-codigo-viejo.mjs`; dice en cada fila cómo quitó el arreglo.
+
+| PR | arreglo | cómo se quitó | caen |
+|---|---|---|---|
+| #2240 (1227) | el GET del perfil devuelve lo que Configuración guarda (`8ddea271`) | fichero entero de antes (`src/app.ts`, `merchantAdmin.ts`) + build | 2 de 3: «IDA Y VUELTA» y «vuelven CON SU VALOR» |
+| #2241 (1285) | la versión del plan de cobro se exige (`78f9a35d`) | parche al revés + build | 1 de 5: «sin `version` NO se escribe: 400» |
+| #2243 (1371) | reintentar no vuelve a crear (`34a3dc81`) | sólo la línea que reutiliza el presupuesto creado | 3 de 6: los dos «dos clics, UN presupuesto» y «a la segunda sale» |
+| #2243 (1371) | ídem | sólo la línea que recuerda al cliente | 1 de 6: «cliente NUEVO … UN cliente y UN presupuesto» |
+| #2247 (930) | la plantilla guarda descripción y «Dto. %» (`029222d9`) | parche al revés | 5 de 7 |
+| #2249 (1488) | el rango del parte se decide una vez (`eca676a3`) | parche al revés, sólo la ruta, + build | 5 de 8 |
+| #2250 (1487) | la ficha lee la palabra del locale (`73ce872c`) | sólo la línea que la lee | 2 de 3 |
+
+**Los seis traen test que caza su defecto. No ha hecho falta escribir ninguno.** Tras cada caso, `git status` vacío; al final, los 32 casos de los seis ficheros en verde (3 · 5 · 6 · 7 · 8 · 3).
+
+Límites: #2240 se quitó con el fichero entero de antes, que pierde también lo que entró después (65 líneas de `src/app.ts`); los nombres de los dos casos que caen son los del defecto. En #2243 y #2250 el parche ya no salía limpio (el código cambió encima) y con el fichero entero caían los mismos casos que con la línea sola. #2240 y #2243 son PR de evidencia: el arreglo y su test son de sus commits del 28-sep y del 1-oct.
+
+# APÉNDICE · SCRUM-876g · T4: `scrum47`, `scrum49`, `scrum50` y `scrum68` al banco, en seco y con la salida cortada
+
+**Medido contra:** `origin/main` = `ebd9bd8e9c4329edbdc35fffced5ff5b173f885c` · 2026-10-09T11:05:14Z
+**Rama:** `scrum-876g-t4-albaran-y-firma-al-banco` · **Carril:** `tests/` (Sesión 3) · **Resultado:** los cuatro ganan `LIBRO_PG_URL` como segundo destino y corren en la tanda de CI; `src/`, `ci.yml`, `_staging-db.mjs` y `assertSafeStagingUrl` no cambian
+
+A9: aviso → cicatriz S3 «Di por pasado un test leyendo la lista de caídos de una pasada que no lo contenía: un ausente tampoco sale en esa lista.» — no se pudo comprobar: la frase la escribí yo en un comentario de Jira leyendo una salida, y ningún guard lee lo que un comentario afirma de una pasada
+A9: aviso → cicatriz S3 «Mi guion de quitar un arreglo y recompilar dio verde con 115 líneas quitadas: tsc no borra de dist el gemelo de un fuente que ya no existe.» — no se pudo comprobar: es un guion de banco que no corre en la tanda; quedó corregido en el propio guion, que borra el gemelo antes de compilar
+
+## Qué entra
+
+Cuatro ficheros de T4 (cuatro tests gateados) vuelven a correr. Conservan `QA_DB_TEST=1` contra staging y ganan el banco desechable que CI ya levanta. Ninguna variable nueva. `scrum419` los declara (cuatro entradas más en `GATEADOS_DECLARADOS`).
+
+Con el banco como destino cada uno corta la salida (`tests/_sin-salida.mjs`, el de 876f): control positivo antes de la primera petición, y al acabar lo apuntado que no sea del control tiene que ser `[]`. `scrum68` no fijaba `WHATSAPP_DRY_RUN`; ahora se lo pone sólo con el banco como destino, porque la firma remota lanza el auto-envío de la copia firmada.
+
+## Por qué caían: no era el reloj
+
+`bot-suite` estaba en esta misma lista como «causa sin medir» y su causa fue el reloj (apéndice 876f). Estos cuatro, corridos solos contra el banco antes de tocarlos:
+
+| fichero | por qué caía | qué cambia en el test |
+|---|---|---|
+| `scrum47-enviar-albaran-wa` | la ruta recorta por el dueño del Trabajo (`findAlbaran`) y el trabajo del test no tenía técnico: el técnico recibía 404 | el trabajo nace con su `operarioId`. Y un caso nuevo: otro técnico del MISMO negocio que no lleva ese trabajo → 404 |
+| `scrum49-firma-remota` | la firma pública exige la versión que vio el cliente (SCRUM-361) y el test no la mandaba: 409 | la versión se lee del HTML que la página sirve, no de la base. Y un caso nuevo: firmar sin versión → 409, y el albarán sigue emitido y sin firma guardada |
+| `scrum68-evidencias-firma` | lo mismo: firmaba sin versión | manda la versión |
+| `scrum50-bot-albaranes` | ya pasaba | sólo el destino y el corte |
+
+Los dos casos nuevos fijan lo que el código hace hoy y que tuvo a estos tests caídos mientras nadie los corría.
+
+## Los rojos, en el banco local
+
+Postgres 16.4, loopback. Base sin mutar verde antes y después; cada mutación de `dist/` exige casar una vez y se restaura por hash (`evidencias/SCRUM-876g/mutar-dist-876g.mjs`); `git status` vacío y poso 0 al terminar. Salida entera: `evidencias/SCRUM-876g/rojos-876g.txt`.
+
+| mutación de `dist/` | test | resultado |
+|---|---|---|
+| `findAlbaran` deja de recortar por el dueño del Trabajo | `scrum47` | ROJO: «un técnico que no lleva el trabajo no envía su albarán (fue 200)» |
+| la firma pública deja de mirar la versión | `scrum49` | ROJO: «firmar sin decir qué versión se vio → 409 (fue 200)» |
+| al «Recibido» se le contesta otro texto | `scrum50` | ROJO |
+| la evidencia de una firma remota se sella como presencial | `scrum68` | ROJO en 1 de 5 |
+| con la bandera a `1`, el sender suelta un POST por fuera del punto único | los cuatro | ROJO en los cuatro: «el test INTENTÓ salir de esta máquina» |
+
+8 de 8. Repetido sobre el árbol ya fusionado con `main` (`bc61d591`, build exit 0): 8 de 8 otra vez, base verde antes y después (`evidencias/SCRUM-876g/rojos-876g-fusionado.txt`). En las dos salidas se repuso el separador «·», que el guion de PowerShell escribía mal codificado; nada más.
+
+## Dentro de una tanda, no solos
+
+`evidencias/SCRUM-876g/tandas-876g.txt`. Los cuatro salen `ok` en las cuatro pasadas: dos de 80 ficheros (los que tocan el banco) a concurrencia 7, y dos de 304 (los 300 primeros de la tanda más los cuatro) a concurrencia 3 y a 7. Tardan entre 2,3 y 8,3 s. Poso 0.
+
+Lo que NO cubre: la tanda entera (1.302 ficheros) ni el runner de CI. El juez es el log del obligatorio de este PR: los cuatro con ✔ y con duración, y sin `# sin QA_DB_TEST=1 ni LIBRO_PG_URL`.
+
+## 🔴 `scrum1515` (J3): un vecino que cae por concurrencia, y por qué T4 entra igual
+
+En las dos pasadas de 80 cayó un test ajeno: `tests/scrum1515-nuestra-puerta-de-alta.test.mjs` cuenta los merchants de TODA la tabla (`prisma.merchant.count()`, desde #2324) en un banco que comparte con otros ficheros que los crean. Medido antes de empujar (Jira, c.19082):
+
+| qué | cifra |
+|---|---|
+| En CI, desde que cuenta la tabla: obligatorios ejecutados con ese test dentro | 10 (4 en `main`, 6 en ramas de PR) |
+| con ✔ | 10 de 10 |
+| En local, los 76 ficheros de banco SIN los cuatro de T4, concurrencia 7 | cae 3 de 4 («4 !== 3») |
+| Los 80 CON los cuatro, concurrencia 7 | cae 4 de 4 («7 !== 3», «8 !== 3») |
+| Sin y con, concurrencia 3 | pasa 2 de 2 y 2 de 2 |
+| Posición en la tanda entera (1.302 ficheros; `evidencias/SCRUM-876g/vecinos-1515.mjs`) | `scrum1515` es el 396; los cuatro, el 747, 766, 775 y 960: a entre 351 y 564 ficheros |
+
+Las pasadas locales están en `evidencias/SCRUM-876g/base-1515.txt`.
+
+**Lo que lo tumba es la concurrencia, no esta rama**, y en la tanda de verdad los cuatro no corren a su lado. **Lo que esto no descarta: con 10 runs no se descarta una tasa de fallo de hasta ~1 de cada 4.** Si el obligatorio de este PR sale rojo por ahí, no se rodea: se dice y para el orquestador.
+
+Decisión del orquestador de Luis (9-oct-2026, encargo de la cuarta tanda): T4 se empuja. `scrum1515` es de J3 y no se toca aquí; su defecto va a la lista del equipo de Javier con esta medición.
+
+Queda apuntado para el siguiente de la cola: `scrum17-recapitulativa` está a 11 ficheros de `scrum1515`. Ése sí puede coincidir con él; se mide antes de empujarlo.
+
+## Corrección de lo que afirmé antes de medirlo
+
+En Jira (c.19071) dije que `scrum1515` «pasó a concurrencia 3». Aquella pasada era la de 304 ficheros y no lo contenía: 0 líneas suyas en el TAP. Lo leí de la lista de caídos, donde un ausente tampoco sale. Las cuatro pasadas a concurrencia 3 de la tabla de arriba sí lo llevan dentro, y el guion dice `AUSENTE` cuando no está.
+
+## De paso: los merges con código desde el 7-oct, ¿su test sale rojo con el código de antes?
+
+Encargo del orquestador (segunda tanda del 9-oct), sin ticket. Es la prueba del «De paso» de 876f, generalizada: el caso no se escribe a mano, sale del merge (`evidencias/SCRUM-876g/rojo-por-merge.mjs`).
+
+Población: los 68 merges de `main` desde `5f1bb361` hasta `be483452`. 20 tocan `src/`, `public/` o `prisma/`.
+
+| resultado | cuántos | cuáles |
+|---|---|---|
+| ROJO con el código de antes | 17 de 17 con comportamiento | #2258, #2260, #2262, #2267, #2268, #2269, #2270, #2271, #2275, #2279, #2281, #2292, #2296, #2315, #2319, #2324, #2325 |
+| No aplica: el cambio es sólo un comentario | 3 | #2278, #2300, #2314 |
+
+No hizo falta escribir ningún test. Límites: #2268 y #2279 no se podían quitar solos (otro PR cambió el mismo fichero encima; se quitaron primero los de encima). #2319, #2324 y parte de #2325 necesitan el banco. En #2292 lo que cae es que el módulo deja de existir, no un caso de comportamiento.
+
+El guion mintió una vez: #2319 salió VERDE con 115 líneas quitadas, porque `tsc` no borra de `dist/` el `.js` de un fuente que ya no existe y el test seguía encontrando el compilado. Lo delató un resultado que no podía ser. Corregido en el guion (borra el gemelo antes de compilar) y repetidos los tres PR que crean ficheros: los tres en rojo.
+
+## Lo que NO entra
+
+| qué | estado |
+|---|---|
+| `scrum17-recapitulativa`, `scrum234-carrera-serie.gated`, `scrum781-concurrencia-de-la-factura`, `tenancy-permisos` | siguen gateados, sin tocar |
+| `scrum173-cadena-verifactu-serializada` | bloqueado: el arreglo es del camino de emisión fiscal |
+| El camino de staging (`npm run test:staging:gated`) | sin correr: estos cuatro no cambian de gate ahí, pero los casos nuevos de `scrum47` y `scrum49` también corren contra staging y esa tanda no se ha lanzado |
+| El rojo EN CI con un paso temporal | no hecho: ese paso vive en `ci.yml` (S5). Los rojos son locales, en el mismo motor y con el mismo DDL |
+
+## Reproducir
+
+    LIBRO_PG_URL=<banco loopback, base *_test> node --test tests/scrum47-enviar-albaran-wa.test.mjs tests/scrum49-firma-remota.test.mjs tests/scrum50-bot-albaranes.test.mjs tests/scrum68-evidencias-firma.test.mjs
+    node docs/master/evidencias/SCRUM-876g/vecinos-1515.mjs <raíz del árbol>
+
+## 13-oct · El obligatorio de #2337 estuvo cuatro días en rojo, y el rojo era mío
+
+**Medido contra:** `origin/main` = `9358f02b14e9648f1ab65fbdacf6464d50728242` · 2026-10-13T10:42:08Z
+
+A9: comprobación → `tests/scrum622-desconocido-no-es-verde.test.mjs`
+
+No cayó por `scrum1515` ni por ninguno de los cuatro de T4. Run 37926820757, un caído de 7.614: `SCRUM-622 · EL CENSO`, que barre el árbol entero buscando expresiones cuyo lado por defecto es el estado bueno. Encontró una, en un guion de este mismo PR:
+
+    docs/master/evidencias/SCRUM-876g/rojo-por-merge.mjs:104   soloDelObjetivo.length ? 'ROJO' : 'VERDE'
+
+Y tenía razón. En la rama «en pila» del guion, «no cae ninguno» sobre cero casos salía `VERDE`; la rama de un solo merge ya lo separaba (`CIEGO: … no dieron casos`). Ahora la de pila también: sin casos, o con todos saltados, en la base intermedia o con el objetivo quitado, dice `CIEGO`. El guard no se ha tocado.
+
+| qué | antes del arreglo | después |
+|---|---|---|
+| `tests/scrum622-desconocido-no-es-verde.test.mjs`, sobre este árbol ya fusionado con `main` | 12 tests, 1 caído (el mismo de CI) | 12 tests, 0 caídos |
+
+Lo que NO se ha hecho: volver a correr los dos casos en pila (#2268 y #2279) con el guion corregido. Sus resultados de la tabla de arriba son del 9-oct, tenían casos, y el cambio no les toca la respuesta.
+
+El fallo mío: escribí el expediente y sus guiones DESPUÉS de la última pasada de los guards de árbol entero, y empujé. Un guion de `docs/master/evidencias/` es código para esos censos. La sesión se cortó por límite de uso antes de leer el veredicto, y el PR se quedó en rojo cuatro días.
+
+El «CIEGO» del meta-guard de ese mismo run (`scrum757`, «no aparece en la pasada mutada») es informativo: a la pasada mutada le faltaron 5 de los 9 tests de ese fichero. No he medido por qué; en #2340, a la misma hora y desde la misma base, ese job salió verde.

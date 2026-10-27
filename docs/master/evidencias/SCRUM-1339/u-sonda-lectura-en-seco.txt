@@ -1,0 +1,9 @@
+SONDA-SENAL 119742547491 {"estado":"midio","ausentes":0}
+SONDA-SENAL 119327978951 {"estado":"midio","ausentes":0}
+SONDA-SENAL 119298555839 {"estado":"midio","ausentes":0}
+SONDA-SENAL 119311902438 {"estado":"midio","ausentes":0}
+SONDA-SENAL 119285448079 {"estado":"midio","ausentes":0}
+SONDA-SENAL 119270206391 {"estado":"midio","ausentes":0}
+SONDA-SENAL 119254552086 {"estado":"midio","ausentes":0}
+SONDA-SENAL 119241889859 {"estado":"midio","ausentes":0}
+SONDA-SENAL 119227219877 {"estado":"midio","ausentes":0}

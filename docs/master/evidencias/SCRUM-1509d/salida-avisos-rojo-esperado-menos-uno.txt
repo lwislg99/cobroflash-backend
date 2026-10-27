@@ -1,0 +1,35 @@
+topes leidos en dist: por cliente y dia = 3 · por comercio y dia = 100  [ESPERADO -1: este guion debe salir rojo]
+
+== K · CONTROLES ==
+cuadra K0 CERO: entrante con la firma mala                                    avisos=  0 plantProf=  0 otrosProf=  0 plantCli=  0 otrosCli=  0 bloqCom=  0 pregCom=  0 pregCli=  0 http=401x1
+cuadra K1 CERO: entrante valido de un numero que no es cliente de nadie       avisos=  0 plantProf=  0 otrosProf=  0 plantCli=  0 otrosCli=  0 bloqCom=  0 pregCom=  0 pregCli=  0 http=200x1
+cuadra K2 CERO: cliente SIN albaran reciente escribe                          avisos=  0 plantProf=  0 otrosProf=  0 plantCli=  0 otrosCli=  1 bloqCom=  0 pregCom=  0 pregCli=  0 http=200x1
+cuadra K3 POSITIVO: cliente CON albaran reciente escribe 1 vez                avisos=  1 plantProf=  1 otrosProf=  1 plantCli=  0 otrosCli=  1 bloqCom=  0 pregCom=  1 pregCli=  0 http=200x1
+cuadra K4 lo mismo con la ventana del profesional ABIERTA: 0 plantillas       avisos=  1 plantProf=  0 otrosProf=  1 plantCli=  0 otrosCli=  1 bloqCom=  0 pregCom=  0 pregCli=  0 http=200x1
+
+== R · REPETIR EL DISPARO desde fuera (10 veces, mismo cliente, ventana del profesional cerrada) ==
+ROJO   R1 :409 · 10 textos DISTINTOS de un cliente con albaran (flag del bot OFF) avisos= 10 plantProf= 10 otrosProf= 10 plantCli=  0 otrosCli= 10 bloqCom=  0 pregCom= 10 pregCli=  0 http=200x10  <<< avisos: esperado 9, salio 10 | plantillasAlProfesional: esperado 9, salio 10
+cuadra R2 :409 · la MISMA entrega 10 veces (reintento de Meta)                avisos=  1 plantProf=  1 otrosProf=  1 plantCli=  0 otrosCli=  1 bloqCom=  0 pregCom=  1 pregCli=  0 http=200x10
+ROJO   R3 :297 · el cliente escribe BAJA 10 veces                             avisos= 10 plantProf= 10 otrosProf= 10 plantCli=  0 otrosCli= 10 bloqCom=  0 pregCom= 10 pregCli=  0 http=200x10  <<< avisos: esperado 9, salio 10 | plantillasAlProfesional: esperado 9, salio 10
+ROJO   R4 :297 · BAJA 10 veces con el flag del bot ON                         avisos= 10 plantProf= 10 otrosProf= 10 plantCli=  0 otrosCli= 10 bloqCom=  0 pregCom= 10 pregCli=  0 http=200x10  <<< avisos: esperado 9, salio 10 | plantillasAlProfesional: esperado 9, salio 10
+cuadra R5 :688 · 10 textos fuera de menu con el flag del bot ON               avisos=  1 plantProf=  1 otrosProf=  1 plantCli=  0 otrosCli=  3 bloqCom=  0 pregCom=  1 pregCli=  0 http=200x10
+cuadra R6 :631 · «hablar con una persona» 10 veces con el flag del bot ON     avisos=  1 plantProf=  1 otrosProf=  1 plantCli=  0 otrosCli=  1 bloqCom=  0 pregCom=  1 pregCli=  0 http=200x10
+cuadra R7 :631 · lo mismo con el flag OFF (por defecto): no llega al bot      avisos=  0 plantProf=  0 otrosProf=  0 plantCli=  0 otrosCli=  0 bloqCom=  0 pregCom=  0 pregCli=  0 http=200x10
+cuadra R8 payBizum:198 · «ya he pagado» 10 veces sobre el mismo cobro         avisos=  1 plantProf=  1 otrosProf=  1 plantCli=  0 otrosCli=  0 bloqCom=  0 pregCom=  1 pregCli=  0 http=303x10
+cuadra R9 CERO Bizum: un token que no existe                                  avisos=  0 plantProf=  0 otrosProf=  0 plantCli=  0 otrosCli=  0 bloqCom=  0 pregCom=  0 pregCli=  0 http=404x1
+
+== C · EL CONTADOR: los avisos al profesional y las plantillas al cliente, cuentan en el mismo sitio? ==
+cuadra C1 un cliente con albaran escribe 120 textos en el dia                 avisos=120 plantProf=100 otrosProf=120 plantCli=  0 otrosCli=120 bloqCom= 20 pregCom=120 pregCli=  0 http=200x120
+cuadra C2 ...y despues, 1 plantilla a un CLIENTE del mismo comercio           ok=false motivo=daily_cap peticiones nuevas=0 · pregunta de comercio: contesta 100 · pregunta de cliente: no llega a hacerse
+       where de la pregunta de comercio: {"merchantId":7,"type":"template","createdAt":{"gte":"2026-10-07T23:00:00.000Z"},"waMessageId":{"not":null}}
+cuadra C3 tras 10 avisos, 1 plantilla al cliente                              ok=true · comercio contesta 10 · cliente contesta 0
+       where de la pregunta de cliente:  {"merchantId":7,"customerId":50,"type":"template","createdAt":{"gte":"2026-10-07T23:00:00.000Z"},"waMessageId":{"not":null}}
+cuadra C4 CERO: los mismos 120 textos con la ventana del profesional ABIERTA  avisos=120 plantProf=  0 otrosProf=120 plantCli=  0 otrosCli=120 bloqCom=  0 pregCom=  0 pregCli=  0 http=200x120
+cuadra C5 ...y despues, 1 plantilla a un cliente                              ok=true · comercio contesta 0
+cuadra C6 AL REVES: 100 plantillas a clientes hoy, y un cliente escribe       avisos=  1 plantProf=  0 otrosProf=  1 plantCli=  0 otrosCli=  1 bloqCom=  1 pregCom=  1 pregCli=  0 http=200x1
+
+== lo que la base en memoria contesto SIN modelarlo (valor neutro), toda la corrida ==
+  customerEvent.create x2
+
+CASOS: 20 · cuadran: 17 · NO cuadran: 3 · avisos contados en total: 277
+POSITIVO OBLIGATORIO: K3 conto 1 aviso y 1 plantilla al profesional; C1 vio 20 bloqueos de comercio (los tres tienen que ser > 0).

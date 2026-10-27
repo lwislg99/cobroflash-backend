@@ -1,0 +1,21 @@
+SCRUM-1302 · qué le dice el panel al profesional al pulsar «Crear revisión»
+pieza medida: public/dashboard/js/quoteRevisiones.js + quotesDetailView.js (la ficha real, montada entera)
+caso: P7, versión única, ENVIADA y sin decidir (el cliente tiene su enlace vivo)
+
+0 · control · el POST falla: la sonda tiene que ver el aviso que aparece
+   sección antes : «Revisiones Esta es la única versión. Crear revisión»
+   sección después: «Revisiones Esta es la única versión. Crear revisión No se ha podido crear la revisión. Vuelve a intentarlo.»
+
+1 · un clic en «Crear revisión», el servidor contesta 201
+   la ficha entera, antes del clic, ¿nombra el enlace del cliente junto a la revisión? sección: «Revisiones Esta es la única versión. Crear revisión»
+   preguntas antes del POST (confirm / alert / prompt): 0
+   POST hechos con UN clic, sin contestar nada: 1
+   sección con el POST en vuelo : «Revisiones Esta es la única versión. Crear revisión»
+   sección al terminar          : «Revisiones Esta es la única versión. Crear revisión»
+   preguntas en total: 0
+   a dónde lleva: quotes-detail {"quoteId":2}
+   textos de la sección de revisiones que nombran el enlace o que deja de valer: 0 de 3
+   (la ficha entera mide 776 caracteres; fuera de la sección sí habla de enlaces: no)
+
+VEREDICTO: HOY NO AVISA. Un clic crea la revisión sin preguntar y sin nombrar el enlace anterior, ni antes ni después.
+EXIT=0 · controles que no se cumplen: 0

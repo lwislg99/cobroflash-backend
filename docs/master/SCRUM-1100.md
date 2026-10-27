@@ -313,3 +313,152 @@ ahí sería ruido).
   cambia la tasa de fallo — sigue siendo del orden del 36 % de los runs donde el job llega a
   arrancar (13 de 36 de 58 corridas medidas por S5 el 26-sep; las otras 22 son «pendiente
   sustituido», reemplazadas por GitHub antes de empezar). Condición de reapertura dejada en Jira.
+
+---
+
+# SCRUM-1100d · El rojo del meta-guard mide su propio informe — la serie, y dos mensajes que dejan de inventar la causa
+
+**Medido contra:** `origin/main` = `a2533fd9bb3a94c762fda17fef91185b8bc68f42` · 2026-10-06T12:58:11Z
+
+A9: aviso → A10 «Un prefijo no es un nombre, y una subcadena tampoco.» — no se pudo comprobar: mi primer clasificador de logs contó como SALTADO seis veredictos porque esa palabra iba dentro del título de un test; era un guion de evidencias de una sola pasada, y lo delató leer una muestra de cada clase
+
+S3, por encargo del orquestador. La serie es de sólo lectura (logs de CI y pasadas locales). El cambio
+de código son dos mensajes de `scripts/meta-guard-mutaciones.mjs`: **ningún veredicto se mueve**.
+
+## 1 · La serie
+
+Población: los 300 runs de `ci.yml` del 1-oct 13:25:26Z al 6-oct 11:47:17Z.
+
+| job del meta-guard | runs |
+|---|---|
+| verde | 102 |
+| rojo | 78 |
+| cancelado | 49 |
+| el run no tiene ese job | 66 |
+| en curso al medir | 4 |
+| no pude listar sus jobs | 1 |
+
+Con veredicto, 180. Rojos: 78 (58 de 138 en PR, 20 de 42 en `main`). Los 78 caen en el paso de
+mutación y los 78 logs están leídos enteros.
+
+| qué trae el rojo | runs |
+|---|---|
+| sólo ciegas | 37 |
+| sólo «fichero muerto» | 30 |
+| las dos | 11 |
+| alguna MUDA | 0 |
+
+110 veredictos sin juzgar, por fichero:
+
+| fichero | runs | NO APARECE (mutada) | FICHERO MUERTO | no en verde en la LIMPIA |
+|---|---|---|---|---|
+| `scrum859-identidad-y-motivo-cerrado` | 27 | 27 | 0 | 0 |
+| `scrum834-puerta-avisador-rojo` | 21 | 0 | 15 | 11 |
+| `vigia-atascados` | 21 | 6 | 15 | 10 |
+| `scrum853-avisador-solo-obligatorio` | 12 | 0 | 12 | 0 |
+| `scrum813-trinquete-de-zona` | 7 | 4 | 2 | 3 |
+| `scrum757-la-declaracion-que-nadie-lee` | 2 | 2 | 0 | 0 |
+| `scrum1349-entorno-prestado-solo-baja` | 1 | 0 | 0 | 2 |
+| `scrum1412-tanda-por-tramos` | 1 | 0 | 0 | 1 |
+| total | | 39 | 44 | 27 |
+
+No es otro fichero cada vez: son ocho, y cuatro lo explican casi todo.
+
+## 2 · Los tests que faltan se ejecutaron y no se registraron
+
+No hay un testigo dentro del job de Linux. Lo sostienen cuatro mediciones que no comparten método:
+
+1. **Aquí la pasada mutada llega entera.** Las 33 declaraciones de los seis ficheros, corridas en
+   esta máquina (Windows, node v24.8.0; la tubería del hijo es bloqueante): en las 33 no falta
+   ningún test respecto a la limpia y el declarado sale caído.
+2. **Lo que llegó en CI es un prefijo exacto de lo que sale aquí.** 39 de 39 «NO APARECE»: el
+   recuento de CI son los primeros N eventos de la misma mutación en local, y el declarado viene
+   después. `scrum859`: aquí `ppcppcccpppcpcpccppp`; los 16 primeros son 9 pasados y 7 caídos,
+   que es lo que imprime CI; el declarado es el 17.º.
+3. **En los 44 «fichero muerto» el declarado es el primer caído de su pasada.** Si la cola se corta
+   antes no llega ningún rojo con nombre y el fichero sale rojo por su ruta: lo de SCRUM-1405,
+   «se pierde qué caso cayó, no que el fichero cayó».
+4. **Depende de la posición.** 15 de las 33 declaraciones salieron alguna vez sin juzgar, y las 15
+   tienen el test en la segunda mitad de su fichero. Las 13 que lo tienen en la primera mitad,
+   ninguna vez.
+
+Y dos comprobaciones de que es el mecanismo de SCRUM-1405: `run({ forceExit: true })` le pasa
+`--test-force-exit` al hijo (testigo con los argumentos del hijo, y su control sin el flag); y
+ninguno de los siete ficheros, ni el script, tiene un commit en `main` desde el 1-oct 13:00Z.
+
+Bytes que el hijo escribe hacia el padre:
+
+| fichero | limpia, aquí | limpia, Linux (SCRUM-1405, 2-oct) | mutada que se pierde, aquí |
+|---|---|---|---|
+| `vigia-atascados` | 92.455 | 109.622 | 96.088 a 118.342 |
+| `scrum834` | 83.121 | 97.367 | 87.142 y 88.667 |
+| `scrum853` | 57.740 | 66.951 | 61.394 a 75.274 |
+| `scrum813` | 47.321 | 54.943 | 59.182 a 68.294 |
+| `scrum859` | 34.826 | 40.326 | 1.095.001 |
+| `scrum757` | 16.659 | 19.246 | 2.075.413 |
+
+**Consecuencia.** La pérdida sólo quita eventos: no puede fabricar una VIVA ni una MUDA. Las vivas
+de cada run valen. Lo que no vale es el rojo: 76 de los 78 son sólo informe perdido. Los otros 2
+(`scrum1349` en el PR de `scrum-1454`, `scrum1412` en el suyo) coinciden con el obligatorio en rojo
+en el mismo run, y el meta-guard les ponía el mismo texto que a los 76.
+
+## 3 · Lo que cambia en el código
+
+Dos funciones puras nuevas, y sus dos llamadas. **`aplicarUna` devuelve `ciego` o `muerto` en los
+mismos casos que antes, y el job sale con el mismo código.**
+
+| mensaje | antes | ahora |
+|---|---|---|
+| el fichero rojo por su ruta (`muerto`) | «no ha reportado ni un nombre de test … nunca llegó a ejecutarse … Acota la mutación», siempre | cuenta los tests que SÍ llegaron y los que faltan respecto a la limpia. Si no llegó ninguno, sigue diciendo lo del radio. Si llegaron, dice que el fichero no murió al cargar y que eso no acusa a la mutación |
+| el test no está en verde en la limpia (`ciego`) | «o no llegó a ejecutarse, o ya fallaba, o el nombre caducó», siempre | separa CAYÓ de NO LLEGÓ, trae el recuento de la limpia, dice si el fichero está entre los caídos y cuántas veces está escrito el nombre en el fuente del guard |
+| «NO APARECE» en la mutada (`ciego`) | sin cambio de fondo | añade «NO SÉ si cayó o si no llegó a correr» |
+
+`tests/scrum1100d-el-rojo-dice-lo-que-sabe.test.mjs`: 9 casos. El último llama a `aplicarUna` por
+PUERTA 1 con una pasada limpia fabricada (sale antes de escribir nada) y comprueba que el
+veredicto sigue siendo `ciego`.
+
+Visto en rojo: con `if (llegaron === 0)` cambiado por `if (true)` caen 2 casos; con
+`if (cayo(limpia, cae))` cambiado por `if (false)`, otros 2. Las dos van declaradas en
+`MUTACIONES_QUE_ME_TUMBAN` y aplicadas con las piezas de la casa: VIVA las dos.
+
+## 4 · Lo que NO sé, y lo que NO he hecho
+
+- No hay testigo directo en Linux dentro del meta-guard.
+- Por qué `scrum859` pierde 27 veces de 180 y no casi siempre, escribiendo un megabyte.
+- Los 49 cancelados no cuentan en ninguna cifra.
+- Mis pasadas locales son sobre el árbol del 6-oct, no sobre el de cada run.
+- El segundo rojo «de verdad» (`scrum1412`, 2-oct) no lo he abierto: sé que el obligatorio cayó en
+  ese run, no que cayera ese test.
+- **El mensaje nuevo de `muerto` no se ha visto en un caso real.** Aquí no se puede provocar: en
+  Windows no se pierde nada. Se verá en el primer run de CI que lo dispare.
+- **No arreglo la pérdida.** `correr()` sigue con `forceExit: true`. Eso es SCRUM-1405. Hay otras
+  dos copias del flag: `scripts/_trinquete-de-zona-hijo.mjs` y `scripts/censo-guards-gateados.mjs`.
+- El gemelo: el trinquete de zona cayó 34 veces de 177 en la misma ventana, y sus 289 acusaciones
+  son todas «pasa en una zona, ausente en la otra». Es SCRUM-1335; su arreglo sí cambia cuándo
+  sale rojo y va aparte.
+
+## 5 · Mis errores
+
+- El clasificador de arriba (la A9).
+- Mi segundo recuento dio 92 veredictos donde el log tenía 110: cortaba el bloque en `##[error]`,
+  que en 13 logs cae antes de las viñetas porque las dos salidas se entrelazan. Lo delató que no
+  cuadraba con el recuento de las líneas `?` y `☠`.
+- Dije al orquestador que estos mensajes eran «de mi carril» sin mirar las tablas. No lo nombran
+  limpio: `orquestador.md` §11bis pone el meta-guard en S5 y `dos-equipos.md` §3.3 da `scripts/` a
+  S0. Lo que sostiene que lo lleve S3 es el uso (1100b, 1100c, 1349c y el registro de SCRUM-1321).
+  Se lo dije antes de empujar y lo asignó por escrito en SCRUM-1335, c.18387.
+- sonda-flag.mjs borraba su temporal sólo si todo iba bien. Lo cazó el trinquete de SCRUM-864c en
+  la tanda dirigida, antes de empujar; ahora lo borra en un finally y está vuelta a correr.
+
+## 6 · Reproducir
+
+En `docs/master/evidencias/SCRUM-1100d/`. Los 78 logs no están en git (14 MB); se vuelven a bajar.
+
+    node historia.mjs <dir> 300          # la serie: jobs y logs de los caídos
+    node analiza2.mjs <dir>              # clases, ficheros y el obligatorio del mismo run
+    node medir-local.mjs <raiz> <salida.json> <guard.test.mjs> …   # la pasada mutada entera, aquí
+    node prefijo.mjs <dir>               # CI contra local
+    node zona.mjs <dir> && node zona-resumen.mjs <dir>/zona.json   # el gemelo
+    node sonda-flag.mjs                  # el flag llega al hijo
+
+Las salidas de esta medición: `salida-serie.txt`, `salida-prefijo.txt`, `salida-zona.txt`.

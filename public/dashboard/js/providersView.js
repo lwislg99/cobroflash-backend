@@ -43,11 +43,11 @@ function mensajeDeErrorProveedor(codigoOMensaje, respaldo) {
     // Texto que YA EXISTÍA en esta pantalla y ya se enseñaba: se mueve, no se inventa. Por eso
     // NO lleva marcador — marcarlo diría que está sin aprobar, y lleva aprobado desde que se
     // escribió.
-    provider_in_use: 'No se puede borrar el proveedor porque está asignado a uno o más productos.',
+    provider_in_use: 'No se puede borrar el proveedor porque está asignado a uno o más productos.', // APROBADO por el orquestador por delegación del fundador, 9-oct-2026 (SCRUM-1215 comentario 19084, F1)
     // SCRUM-1141 · el servidor valida el NIF desde SCRUM-960 y contesta este código. La frase es
     // la que ya enseña la ficha del cliente (`customersView.js`, SCRUM-575): se reutiliza, no se
     // inventa una segunda para el mismo fallo.
-    taxId_invalido: 'Ese NIF/CIF no es válido. Compruébalo.',
+    taxId_invalido: 'Ese NIF/CIF no es válido. Compruébalo.', // APROBADO por el orquestador por delegación del fundador, 9-oct-2026 (SCRUM-1215 comentario 19084, F2)
   };
   if (M[bruto]) return M[bruto];
 

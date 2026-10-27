@@ -65,7 +65,7 @@ const SEPARADORES = [
 
 /** ② Las secciones PUBLICADAS y el encabezado con el que cada una debe anunciarse. */
 const REGIONES = {
-  'reg-hero': 'Del presupuesto al cobro',
+  'reg-hero': 'Del presupuesto a la firma',
   'reg-probar': 'Haz el recorrido completo',
   'reg-como': 'Tres pasos',
   'reg-todo': 'Seis herramientas',

@@ -352,20 +352,25 @@ export const USO = new Map([
   ['src/modules/auth/domain/referral.service.ts::buildCandidate', { uso: REFERIDO, motivo: 'año en el código de referido — bajo impacto', ref: 'SCRUM-1093' }],
 
   // ── IMPRIME — fecha en un documento o comunicación que el cliente/profesional lee ─────────────
-  ['src/modules/invoicing/infra/pdf/pdf.service.ts::dateStr', { uso: IMPRIME, motivo: 'fecha impresa en el PDF de factura/presupuesto' }],
-  ['src/modules/invoicing/infra/pdf/pdf.service.ts::generateQuotePdf', { uso: IMPRIME, motivo: 'fecha impresa en el PDF de presupuesto' }],
+  // SCRUM-1470 · las tres que QUEDAN de aquel ticket, cada una con su motivo. No son un olvido:
+  //   · `dateStr` vive dentro de `generateInvoicePdf` y sólo pinta la «Fecha:» de la FACTURA (el PDF
+  //     del presupuesto no imprime fecha de creación). Es fiscal: qué día imprime lo decide el
+  //     fundador (aceptación 2 de SCRUM-1470). No se toca hasta entonces.
+  //   · `generateQuotePdf`: la fecha de la firma YA va en la zona del negocio. Lo que queda es el
+  //     sello, que dice de sí mismo «(hora del servidor)» —literal firmado, copiado del albarán y
+  //     atado por scrum805—. Pintarlo en la zona del negocio haría falso el literal; cambiar el
+  //     literal es firma del fundador (regla 39).
+  //   · `fD` (más abajo): el paquete de disputa. Su gemelo es ese sello —el banco recibe los dos
+  //     papeles— y cambian juntos o no cambian.
+  ['src/modules/invoicing/infra/pdf/pdf.service.ts::generateQuotePdf', { uso: IMPRIME, motivo: 'el sello de la evidencia, que se declara «(hora del servidor)»: literal firmado, no se mueve sin cambiar el literal (regla 39). La fecha de la firma ya va en la zona del negocio', ref: 'SCRUM-1470' }],
   ['src/modules/jobs/infra/albaranPdf.service.ts::fmtDate', { uso: IMPRIME, motivo: 'fecha impresa en el PDF de albarán' }],
   ['src/modules/jobs/infra/albaranPdf.service.ts::generateAlbaranPdf', { uso: IMPRIME, motivo: 'fecha impresa en el PDF de albarán' }],
   ['src/modules/jobs/domain/recapitulativa.service.ts::emitirRecapitulativas', { uso: IMPRIME, motivo: 'fecha impresa en la recapitulativa' }],
   ['src/modules/jobs/app/routes/albaranes.routes.ts::POST /:id/facturar-parcial', { uso: IMPRIME, motivo: 'fecha impresa al facturar parcialmente' }],
   ['src/modules/jobs/app/routes/albaranes.routes.ts::POST /:id/convertir-en-factura', { uso: IMPRIME, motivo: 'fecha impresa al convertir en factura' }],
-  ['src/modules/billing/app/routes/receipt.routes.ts::GET /:token', { uso: IMPRIME, motivo: 'fecha impresa en el recibo público' }],
-  ['src/modules/system/app/routes/customerPortal.routes.ts::dateShort', { uso: IMPRIME, motivo: 'fecha impresa en el portal del cliente' }],
-  ['src/modules/system/app/routes/invoicesAdmin.routes.ts::fD', { uso: IMPRIME, motivo: 'fecha impresa en el admin de facturas' }],
-  ['src/modules/messaging/domain/weeklyDigest.service.ts::sendDigestForMerchant', { uso: IMPRIME, motivo: 'fecha impresa en el asunto del digest semanal — corrección propia, ver cabecera del bloque' }],
+  ['src/modules/system/app/routes/invoicesAdmin.routes.ts::fD', { uso: IMPRIME, motivo: 'las fechas del paquete de disputa: su gemelo es el sello «(hora del servidor)» del PDF firmado, que no se mueve sin cambiar su literal (regla 39)', ref: 'SCRUM-1470' }],
 
   // ── AGREGADO — bordes de ventana de informe/filtro/métrica: NO se acusan ──────────────────────
-  ['src/modules/messaging/domain/whatsappLog.service.ts::getWhatsAppMetrics', { uso: AGREGADO }],
   ['src/integrations/whatsapp.ts::sendWhatsAppTemplate', { uso: AGREGADO }],
   ['src/modules/expenses/domain/expenses.service.ts::getExpenseSummary', { uso: AGREGADO }],
   ['src/modules/jobs/domain/precarga.service.ts::ventanaDePrecarga', { uso: AGREGADO }],
@@ -384,6 +389,7 @@ export const USO = new Map([
   ['src/modules/reports/app/routes/reports.routes.ts::GET /resumen-trimestre', { uso: AGREGADO }],
   ['src/modules/messaging/domain/weeklyDigest.service.ts::sendWeeklyDigests', { uso: AGREGADO }],
   ['src/modules/messaging/domain/weeklyDigest.service.ts::getDigestPreview', { uso: AGREGADO }],
+  ['src/core/cron/cron.ts::startCronJobs', { uso: AGREGADO, motivo: 'getMinutes() del reintento de sellado: sólo elige el minuto de la hora en que el log dice «inactivo»/«nada que mirar» (borde de la ventana horaria de una línea de log del servidor, de ningún comercio); no numera, no persiste, no lo lee el cliente. Medido: mismo minuto que UTC en Europe/Madrid y Atlantic/Canary en un año entero — sólo cambiaría en zonas de media hora (SCRUM-1507f)', ref: 'SCRUM-1507' }],
 ]);
 
 /**
@@ -401,8 +407,41 @@ export const USO = new Map([
  *     serie de facturas: el año sale de `anioDeLaSerie(merchant)` (`core/validation/fiscalInput.ts`),
  *     la misma expresión que `allocateInvoiceNumber`, comparada contra el emisor real en
  *     `tests/scrum1168-anio-serie-zona-merchant.test.mjs`.
+ *   · `src/modules/billing/app/routes/receipt.routes.ts::GET /:token` — SCRUM-1471. «Pagado el …» y
+ *     los eventos del recibo, con `timeZone: zonaDelMerchant(merchant)`.
+ *   · `src/modules/system/app/routes/customerPortal.routes.ts::dateShort` — SCRUM-1471. Lleva la
+ *     zona del negocio. (La fecha de la FACTURA se quedó aparte, en `fechaDeLaFactura`, que sigue
+ *     en `USO` con su motivo: no ha desaparecido, ha cambiado de nombre y se dice.)
+ *   · `src/modules/system/app/routes/customerPortal.routes.ts::fechaDeLaFactura` — SCRUM-1471b (GO
+ *     del fundador, SCRUM-1470 c.20530). El día sale de `diaNaturalEn(createdAt, zonaDelMerchant(...))`,
+ *     el mismo que el registro y que la «Fecha:» del PDF de la factura (SCRUM-1470c); la forma corta
+ *     se pinta con `timeZone: 'UTC'` sobre ese día. Por su ruta, con el proceso en UTC, en
+ *     `tests/scrum1470-la-fecha-impresa-es-la-del-negocio.test.mjs`.
+ *   · `src/modules/messaging/domain/weeklyDigest.service.ts::sendDigestForMerchant` — SCRUM-1472.
+ *     La semana del asunto, con `timeZone: zonaDelMerchant(merchant)`.
+ *   Los tres, comparados contra el papel real con el proceso en UTC en
+ *   `tests/scrum1470-la-fecha-impresa-es-la-del-negocio.test.mjs`.
+ *   · `src/modules/messaging/domain/whatsappLog.service.ts::getWhatsAppMetrics` — SCRUM-1522 (decisión
+ *     del fundador, Jira c.19157). Estaba en `USO` como AGREGADO, o sea dada por buena con el reloj
+ *     del proceso; el «Hoy» y el mes del panel van ahora en la zona del comercio, con el mismo
+ *     filtro que el tope. Sale de `USO` y entra aquí: si vuelve a leer el reloj del proceso, cae.
+ *     Comparada contra el tope en `tests/scrum1522b-el-panel-cuenta-lo-mismo.test.mjs`.
+ *   · `src/modules/jobs/infra/albaranPdf.service.ts::fmtDate` — SCRUM-1445. Se partió en dos: los
+ *     instantes (emisión, entrega/ejecución) en la zona del negocio y el DÍA de entrega en UTC, los
+ *     dos con `timeZone` en la llamada. «Firmado el …» (en `generateAlbaranPdf`) también lleva la zona;
+ *     esa identidad sigue en `USO` por el «Sello temporal … (hora del servidor)», que no se toca sin
+ *     firma porque su rótulo declara la hora del servidor. En el papel real:
+ *     `tests/scrum1445-fechas-del-albaran.test.mjs`.
+ *   · `src/modules/invoicing/infra/pdf/pdf.service.ts::dateStr` — SCRUM-1470c (GO del fundador,
+ *     SCRUM-1470 c.20530). La «Fecha:» del PDF de la FACTURA es el día natural de su registro:
+ *     `diaNaturalEn(createdAt, zonaDelMerchant(...))`. Comparada contra `formatDateES` del registro,
+ *     con el proceso en UTC, en `tests/scrum1470c-la-factura-imprime-el-dia-de-su-registro.test.mjs`.
  */
 export const RETIRADAS = new Set([
+  'src/modules/messaging/domain/whatsappLog.service.ts::getWhatsAppMetrics',
+  'src/modules/billing/app/routes/receipt.routes.ts::GET /:token',
+  'src/modules/system/app/routes/customerPortal.routes.ts::dateShort',
+  'src/modules/messaging/domain/weeklyDigest.service.ts::sendDigestForMerchant',
   'src/modules/quotes/domain/quoteNumber.service.ts::allocateQuoteNumber',
   'src/modules/jobs/domain/albaranNumber.service.ts::allocateAlbaranNumber',
   'src/modules/jobs/app/routes/partes.routes.ts::POST /admin/partes',
@@ -410,6 +449,9 @@ export const RETIRADAS = new Set([
   'src/app.ts::POST /admin/onboarding/serie/previa',
   'src/app.ts::POST /admin/onboarding/serie',
   'src/modules/system/merchantAdmin.ts::updateMerchantProfile',
+  'src/modules/jobs/infra/albaranPdf.service.ts::fmtDate',
+  'src/modules/invoicing/infra/pdf/pdf.service.ts::dateStr',
+  'src/modules/system/app/routes/customerPortal.routes.ts::fechaDeLaFactura',
 ]);
 
 /** ¿Esta fila se acusa? Todo lo que no esté declarado AGREGADO — incluida una identidad NUEVA que

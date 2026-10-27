@@ -1,0 +1,9 @@
+node sonda-revision.mjs <raíz del árbol> <url del banco propio, loopback, base yaqu_tiers_test>
+`dist/` transpilado (transpilar.mjs) del árbol con `crearRevisionDeQuote` TAL COMO ESTÁ en origin/main
+ebd9bd8e9c4329edbdc35fffced5ff5b173f885c (antes de `revisionParaLaBase`). Corrida el 9-oct-2026 hacia las 11:12Z.
+La sonda relee cinco columnas; la sexta (`tags`) la encontró después el censo del test, y la mide el test.
+
+POBLACIÓN · 1 presupuesto sin ninguna columna Json? escrita, y su revisión creada por crearRevisionDeQuote
+ORIGINAL  {"revision":0,"doc_fields_vacia":true,"doc_fields_tipo":null,"pay_methods_vacia":true,"pay_methods_tipo":null,"plan_vacia":true,"plan_tipo":null,"tiers_vacia":true,"tiers_tipo":null,"clausulas_vacia":true,"clausulas_tipo":null}
+REVISIÓN  {"revision":1,"doc_fields_vacia":false,"doc_fields_tipo":"null","pay_methods_vacia":false,"pay_methods_tipo":"null","plan_vacia":false,"plan_tipo":"null","tiers_vacia":false,"tiers_tipo":"null","clausulas_vacia":false,"clausulas_tipo":"null"} · numero 1.1
+EXIT=0

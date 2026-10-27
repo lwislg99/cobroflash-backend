@@ -1,0 +1,24 @@
+POBLACIÓN · 7 sesiones «s4*» · 66 ediciones dentro del repo en 20 ficheros · 55 fuera · REPETIDO COMO S5
+RESUMEN · BLOQUEA 32 · PASA 34
+   ×10 BLOQUEA (de S4, public/dashboard/js/albaranDetailView.js) · public/dashboard/js/albaranDetailView.js
+   ×22 BLOQUEA (de S4, public/dashboard/js/parteDetailView.js) · public/dashboard/js/parteDetailView.js
+   × 2 PASA (dueño sin puesto: «**S0**, sólo lo que sea verificación o censo de consulta») · scripts/_censo-convenio-microcopy-declarados.json
+   × 1 PASA (dueño sin puesto: «**S4** el README; cada registro, el puesto que usa el texto») · docs/microcopy/2026-09-28-SCRUM-1215-anadir-al-parte.md
+   × 1 PASA (dueño sin puesto: «**S4** el README; cada registro, el puesto que usa el texto») · docs/microcopy/2026-10-02-SCRUM-1375-facturacion-del-albaran.md
+   × 1 PASA (dueño sin puesto: «**S4** el README; cada registro, el puesto que usa el texto») · docs/microcopy/2026-10-06-SCRUM-1302-campo-que-no-se-guarda.md
+   × 1 PASA (dueño sin puesto: «**S4** el README; cada registro, el puesto que usa el texto») · docs/microcopy/2026-10-06-SCRUM-1302-ordenar-que-falla.md
+   × 1 PASA (dueño sin puesto: «**S4** el README; cada registro, el puesto que usa el texto») · docs/microcopy/2026-10-06-SCRUM-1460-recordatorio-de-la-copia.md
+   × 1 PASA (dueño sin puesto: «**S4** el README; cada registro, el puesto que usa el texto») · docs/microcopy/2026-10-06-SCRUM-1491-desplazamiento-numero-entero.md
+   × 1 PASA (dueño sin puesto: «quien trabaja el ticket») · docs/master/SCRUM-1215.md
+   × 2 PASA (dueño sin puesto: «quien trabaja el ticket») · docs/master/SCRUM-1302.md
+   × 2 PASA (dueño sin puesto: «quien trabaja el ticket») · docs/master/SCRUM-1460.md
+   × 2 PASA (dueño sin puesto: «quien trabaja el ticket») · docs/master/SCRUM-1475.md
+   × 2 PASA (dueño sin puesto: «quien trabaja el ticket») · docs/master/SCRUM-1491.md
+   × 3 PASA (sin regla) · tests/scrum1230-colocar-lineas-dictadas.test.mjs
+   × 1 PASA (sin regla) · tests/scrum1302b-campo-que-no-se-guarda.test.mjs
+   × 2 PASA (sin regla) · tests/scrum1302c-ordenar-que-falla-no-borra-la-propuesta.test.mjs
+   × 8 PASA (sin regla) · tests/scrum1351-viaje-firma-sin-red-albaran.test.mjs
+   × 2 PASA (sin regla) · tests/scrum1475-el-parte-trae-su-aviso-a-la-vista.test.mjs
+   × 1 PASA (sin regla) · tests/scrum1491-desplazamiento-es-un-numero-entero.test.mjs
+FUERA (carpeta, recortada a 60) · 18× C:\Users\Admin\.claude\projects\d--MILLONARIO-cobroFlash-cob | 11× D:\MILLONARIO\cobroFlash\tmp-s4-1302c | 8× C:\Users\Admin\.claude\projects\D--MILLONARIO-cobroFlash-cob | 3× D:\MILLONARIO\cobroFlash\tmp-s4-1475 | 3× D:\MILLONARIO\cobroFlash\tmp-s4-eee64fdc | 2× C:\Users\Admin\.claude\jobs\2193e33a\tmp\qa1302b
+EXIT=0

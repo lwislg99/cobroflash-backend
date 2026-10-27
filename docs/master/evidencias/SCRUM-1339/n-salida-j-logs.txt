@@ -1,0 +1,442 @@
+CONTROL de la función sobre 5 logs fabricados (verde, ciego, rojo, vacío, cortado sin resumen): los 5 salen en su estado
+POBLACIÓN: 248 PR en datos-pr.json (recogido 2026-10-13T06:21:08.000Z) · 248 jobs «meta-guard» en el último intento de la punta, en 139 PR · guard mirado: scrum859-identidad-y-motivo-cerrado.test.mjs
+gh: HTTP 404
+gh: HTTP 404
+CONTROL DE CERO (derivado): el guard de número más alto que nombran los logs es «scrum1486-insertbefore-del-banco.test.mjs» → en 213 logs; con el número más uno, «scrum1487-insertbefore-del-banco.test.mjs» → en 0 logs
+POSITIVO: guards distintos nombrados en los 248 logs: 142 · logs con scrum859-identidad-y-motivo-cerrado.test.mjs nombrado: 220 · logs de 0 bytes: 2 · el menor: 0 B · el mayor: 127648 B
+POSITIVO: logs en los que las ✔ contadas aquí coinciden con las «vivas» que dice el resumen: 213 de 213 con resumen
+
+ESTADO DEL JOB (por su propio resumen, no por GitHub): VERDE: 155 · CIEGO: 58 · SIN VEREDICTO: 35
+ESTADO SEGÚN GITHUB: success: 155 · failure: 58 · cancelled: 35
+node del runner: v24.21.0: 246 · null: 2
+imagen del runner: 20261002.596: 128 · 20260901.588: 118 · null: 2
+
+LAS MARCAS DE scrum859-identidad-y-motivo-cerrado.test.mjs en cada log, en el orden en que salen (✔ viva · ? ciega · ☠ muerto · ✖ muda): ✔✔: 171 · ✔?: 42 · SIN VEREDICTO: 35
+
+LOGS CON ALGÚN VEREDICTO SIN JUZGAR DE ESE GUARD: 42
+  #2001 · job 112462861725 · CIEGO · vivas 505 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 1099 ms · 1.46 s entre sus dos marcas · node v24.21.0 · imagen 20261002.596
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2222 · job 112303510218 · CIEGO · vivas 462 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 1079 ms · 1.44 s entre sus dos marcas · node v24.21.0 · imagen 20260901.588
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2227 · job 112409588026 · CIEGO · vivas 486 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 1182 ms · 1.57 s entre sus dos marcas · node v24.21.0 · imagen 20260901.588
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2229 · job 112424515978 · CIEGO · vivas 491 · mudas 0 · ciegas 2 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 1113 ms · 1.48 s entre sus dos marcas · node v24.21.0 · imagen 20260901.588
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2232 · job 112435237469 · CIEGO · vivas 496 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 975 ms · 1.32 s entre sus dos marcas · node v24.21.0 · imagen 20261002.596
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2232 · job 112459872246 · CIEGO · vivas 509 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 1105 ms · 1.47 s entre sus dos marcas · node v24.21.0 · imagen 20261002.596
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2232 · job 112472123522 · CIEGO · vivas 509 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 1100 ms · 1.46 s entre sus dos marcas · node v24.21.0 · imagen 20260901.588
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2233 · job 112452844586 · CIEGO · vivas 505 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 1237 ms · 1.61 s entre sus dos marcas · node v24.21.0 · imagen 20260901.588
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2240 · job 112658748910 · CIEGO · vivas 509 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 842 ms · 1.17 s entre sus dos marcas · node v24.21.0 · imagen 20260901.588
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2247 · job 112667939990 · CIEGO · vivas 509 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 1284 ms · 1.61 s entre sus dos marcas · node v24.21.0 · imagen 20261002.596
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2251 · job 112682147837 · CIEGO · vivas 515 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 735 ms · 1.06 s entre sus dos marcas · node v24.21.0 · imagen 20260901.588
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2259 · job 112873222861 · CIEGO · vivas 515 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 1099 ms · 1.46 s entre sus dos marcas · node v24.21.0 · imagen 20260901.588
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2261 · job 112877413270 · CIEGO · vivas 517 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 1203 ms · 1.58 s entre sus dos marcas · node v24.21.0 · imagen 20261002.596
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2267 · job 112886967272 · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 1122 ms · 1.50 s entre sus dos marcas · node v24.21.0 · imagen 20260901.588
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2277 · job 112914859767 · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 934 ms · 1.24 s entre sus dos marcas · node v24.21.0 · imagen 20261002.596
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2281 · job 112922067780 · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 881 ms · 1.17 s entre sus dos marcas · node v24.21.0 · imagen 20261002.596
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2281 · job 112931568279 · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 1092 ms · 1.46 s entre sus dos marcas · node v24.21.0 · imagen 20261002.596
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2290 · job 113076553309 · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 989 ms · 1.34 s entre sus dos marcas · node v24.21.0 · imagen 20260901.588
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2295 · job 113099755387 · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 984 ms · 1.33 s entre sus dos marcas · node v24.21.0 · imagen 20260901.588
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2296 · job 113100678975 · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 1268 ms · 1.66 s entre sus dos marcas · node v24.21.0 · imagen 20260901.588
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2299 · job 113106131810 · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 1241 ms · 1.63 s entre sus dos marcas · node v24.21.0 · imagen 20260901.588
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2307 · job 113120830385 · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 1131 ms · 1.50 s entre sus dos marcas · node v24.21.0 · imagen 20261002.596
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2308 · job 113126804331 · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 975 ms · 1.33 s entre sus dos marcas · node v24.21.0 · imagen 20260901.588
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2311 · job 113203413876 · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 1151 ms · 1.52 s entre sus dos marcas · node v24.21.0 · imagen 20261002.596
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2317 · job 113213747578 · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 1010 ms · 1.36 s entre sus dos marcas · node v24.21.0 · imagen 20261002.596
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2318 · job 113235294834 · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 1257 ms · 1.65 s entre sus dos marcas · node v24.21.0 · imagen 20260901.588
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2321 · job 113219398183 · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 1255 ms · 1.57 s entre sus dos marcas · node v24.21.0 · imagen 20261002.596
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2322 · job 113220809020 · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 1253 ms · 1.65 s entre sus dos marcas · node v24.21.0 · imagen 20260901.588
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2323 · job 113223120811 · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 860 ms · 1.20 s entre sus dos marcas · node v24.21.0 · imagen 20261002.596
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2325 · job 113246394667 · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 1187 ms · 1.57 s entre sus dos marcas · node v24.21.0 · imagen 20260901.588
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2325 · job 113267982032 · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 819 ms · 1.19 s entre sus dos marcas · node v24.21.0 · imagen 20261002.596
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2329 · job 113774046894 · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 764 ms · 1.09 s entre sus dos marcas · node v24.21.0 · imagen 20261002.596
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2330 · job 113785389400 · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 757 ms · 1.08 s entre sus dos marcas · node v24.21.0 · imagen 20261002.596
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2332 · job 113777305997 · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 996 ms · 1.35 s entre sus dos marcas · node v24.21.0 · imagen 20261002.596
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2335 · job 113805611966 · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 1138 ms · 1.52 s entre sus dos marcas · node v24.21.0 · imagen 20261002.596
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2339 · job 113813538821 · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 1030 ms · 1.39 s entre sus dos marcas · node v24.21.0 · imagen 20261002.596
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2341 · job 115063642443 · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 1176 ms · 1.56 s entre sus dos marcas · node v24.21.0 · imagen 20261002.596
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2345 · job 115134350289 · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 1152 ms · 1.53 s entre sus dos marcas · node v24.21.0 · imagen 20261002.596
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2348 · job 115070389216 · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 1170 ms · 1.56 s entre sus dos marcas · node v24.21.0 · imagen 20261002.596
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2349 · job 115140980191 · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 998 ms · 1.35 s entre sus dos marcas · node v24.21.0 · imagen 20261002.596
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2350 · job 115146133761 · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 1170 ms · 1.55 s entre sus dos marcas · node v24.21.0 · imagen 20261002.596
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+  #2354 · job 115146037750 · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0
+     declarado: «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     causa que escribe el instrumento: NO APARECE en la mutada · mutada 9p+7c+0s · limpia 20p+0c · faltan 4 de 20 · resumen en 1004 ms · 1.31 s entre sus dos marcas · node v24.21.0 · imagen 20261002.596
+     ausentes: «SCRUM-859 · 🔴 insertar una entrada en medi…» «SCRUM-859 · 🔴 CONTROL del control: por POS…» «SCRUM-859 · 🔴 `INVISIBLE_HASTA_859` está c…» «SCRUM-859 · 🔴 CONTROL: una SEXTA que alegu…»
+
+FIRMAS DISTINTAS (declarado ¦ causa ¦ recuento mutada ¦ limpia ¦ faltan ¦ nombres ausentes): 1
+  ×42 (PR #2001 #2222 #2227 #2229 #2232 #2232 #2232 #2233 #2240 #2247 #2251 #2259 #2261 #2267 #2277 #2281 #2281 #2290 #2295 #2296 #2299 #2307 #2308 #2311 #2317 #2318 #2321 #2322 #2323 #2325 #2325 #2329 #2330 #2332 #2335 #2339 #2341 #2345 #2348 #2349 #2350 #2354): SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave ¦ NO APARECE en la mutada ¦ 9p+7c+0s ¦ 20p+0c ¦ 4 de 20
+
+CONTRASTE · segundos entre la marca de la mutación 1 y la de la mutación 2 (mín–mediana–máx): las que NO ciegan (171): 1.06–1.47–1.74 · las que ciegan (42): 1.06–1.46–1.66
+CONTRASTE · por node: v24.21.0: 42 ciegan de 213
+CONTRASTE · por imagen: 20260901.588: 17 ciegan de 102 · 20261002.596: 25 ciegan de 111
+
+LISTA (PR · job · GitHub · resumen propio · marcas del guard):
+  #2001 · 112399408620 · success · VERDE · vivas 468 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2001 · 112434586989 · success · VERDE · vivas 493 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2001 · 112462861725 · failure · CIEGO · vivas 505 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2217 · 112395697518 · success · VERDE · vivas 468 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2218 · 113099496173 · success · VERDE · vivas 521 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2220 · 112302706561 · cancelled · SIN VEREDICTO · sin resumen (0 B, 0 líneas, Command failed: gh api --allow-escape-sequences repos/lwislg99/cobroflash-backend/actions/jobs/112302706561/logs) · SIN VEREDICTO
+  #2220 · 112306133418 · cancelled · SIN VEREDICTO · sin resumen (108307 B, 867 líneas) · SIN VEREDICTO
+  #2220 · 112322384929 · success · VERDE · vivas 468 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2221 · 112303246091 · success · VERDE · vivas 463 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2221 · 112398747941 · success · VERDE · vivas 476 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2221 · 112405190988 · success · VERDE · vivas 476 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2222 · 112303510218 · failure · CIEGO · vivas 462 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2222 · 112314350154 · success · VERDE · vivas 468 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2223 · 112304273414 · success · VERDE · vivas 455 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2224 · 112305101917 · cancelled · SIN VEREDICTO · sin resumen (110910 B, 886 líneas) · SIN VEREDICTO
+  #2224 · 112321868025 · success · VERDE · vivas 468 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2224 · 112336614421 · success · VERDE · vivas 468 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2225 · 112311194269 · success · VERDE · vivas 468 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2226 · 112403767291 · success · VERDE · vivas 479 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2226 · 112414753797 · success · VERDE · vivas 487 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2227 · 112409588026 · failure · CIEGO · vivas 486 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2228 · 112410450548 · success · VERDE · vivas 493 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2228 · 112424388006 · success · VERDE · vivas 493 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2229 · 112424515978 · failure · CIEGO · vivas 491 · mudas 0 · ciegas 2 · ficheros muertos 0 · ✔?
+  #2230 · 112425815595 · success · VERDE · vivas 493 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2230 · 112432961125 · success · VERDE · vivas 493 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2231 · 112435052780 · success · VERDE · vivas 493 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2232 · 112435237469 · failure · CIEGO · vivas 496 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2232 · 112459872246 · failure · CIEGO · vivas 509 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2232 · 112472123522 · failure · CIEGO · vivas 509 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2233 · 112443517464 · failure · CIEGO · vivas 505 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔✔
+  #2233 · 112452844586 · failure · CIEGO · vivas 505 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2234 · 112468430064 · success · VERDE · vivas 510 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2234 · 112667383017 · failure · CIEGO · vivas 507 · mudas 0 · ciegas 3 · ficheros muertos 0 · ✔✔
+  #2235 · 112470958233 · cancelled · SIN VEREDICTO · sin resumen (41082 B, 442 líneas) · SIN VEREDICTO
+  #2235 · 112471868756 · cancelled · SIN VEREDICTO · sin resumen (85661 B, 720 líneas) · SIN VEREDICTO
+  #2235 · 112475451777 · success · VERDE · vivas 510 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2236 · 112471141152 · success · VERDE · vivas 510 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2237 · 112472122473 · success · VERDE · vivas 510 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2238 · 112475250438 · cancelled · SIN VEREDICTO · sin resumen (50803 B, 504 líneas) · SIN VEREDICTO
+  #2238 · 112476751037 · success · VERDE · vivas 510 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2239 · 112478271019 · success · VERDE · vivas 510 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2239 · 112491681872 · success · VERDE · vivas 510 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2240 · 112658748910 · failure · CIEGO · vivas 509 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2240 · 112661659909 · success · VERDE · vivas 510 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2241 · 112661955382 · success · VERDE · vivas 510 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2242 · 112662622495 · success · VERDE · vivas 510 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2243 · 112665275691 · success · VERDE · vivas 510 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2244 · 112667033081 · success · VERDE · vivas 510 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2245 · 112667388809 · success · VERDE · vivas 514 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2246 · 112667861861 · success · VERDE · vivas 510 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2247 · 112667939990 · failure · CIEGO · vivas 509 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2247 · 112672771760 · success · VERDE · vivas 514 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2248 · 112669989444 · success · VERDE · vivas 510 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2249 · 112670687549 · success · VERDE · vivas 514 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2250 · 112671648038 · success · VERDE · vivas 514 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2250 · 112680559265 · success · VERDE · vivas 514 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2251 · 112682147837 · failure · CIEGO · vivas 515 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2251 · 112686461561 · success · VERDE · vivas 516 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2252 · 112685018081 · success · VERDE · vivas 514 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2253 · 112685711574 · success · VERDE · vivas 514 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2253 · 112692440081 · success · VERDE · vivas 516 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2254 · 112691042722 · success · VERDE · vivas 516 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2255 · 112691846913 · failure · CIEGO · vivas 515 · mudas 0 · ciegas 3 · ficheros muertos 0 · ✔✔
+  #2255 · 112867583149 · cancelled · SIN VEREDICTO · sin resumen (108926 B, 865 líneas) · SIN VEREDICTO
+  #2255 · 112874799076 · success · VERDE · vivas 518 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2256 · 112693141041 · success · VERDE · vivas 516 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2256 · 112700793909 · success · VERDE · vivas 516 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2257 · 112870964794 · success · VERDE · vivas 516 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2257 · 112877533718 · success · VERDE · vivas 516 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2258 · 112871920583 · success · VERDE · vivas 516 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2259 · 112873222861 · failure · CIEGO · vivas 515 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2260 · 112875678547 · success · VERDE · vivas 516 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2261 · 112877413270 · failure · CIEGO · vivas 517 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2262 · 112881748384 · success · VERDE · vivas 518 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2263 · 112883431642 · success · VERDE · vivas 518 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2263 · 112889212506 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2264 · 112884703440 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2264 · 112899778895 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2265 · 112884807124 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2266 · 112886845589 · cancelled · SIN VEREDICTO · sin resumen (100411 B, 811 líneas) · SIN VEREDICTO
+  #2266 · 112892943366 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2267 · 112886967272 · failure · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2267 · 112901811492 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2268 · 112887013067 · cancelled · SIN VEREDICTO · sin resumen (0 B, 0 líneas, Command failed: gh api --allow-escape-sequences repos/lwislg99/cobroflash-backend/actions/jobs/112887013067/logs) · SIN VEREDICTO
+  #2268 · 112889328895 · cancelled · SIN VEREDICTO · sin resumen (117419 B, 920 líneas) · SIN VEREDICTO
+  #2268 · 112901545054 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2269 · 112889028671 · failure · CIEGO · vivas 516 · mudas 0 · ciegas 4 · ficheros muertos 0 · ✔✔
+  #2269 · 112902775748 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2269 · 112911978775 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2270 · 112897662543 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2270 · 112902590037 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2271 · 112904794724 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2271 · 112910185921 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2272 · 112906404324 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2272 · 112926058277 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2273 · 112906586811 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2274 · 112907626708 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2275 · 112910668785 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2276 · 112913023724 · cancelled · SIN VEREDICTO · sin resumen (90580 B, 748 líneas) · SIN VEREDICTO
+  #2276 · 112919476209 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2277 · 112914859767 · failure · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2277 · 112922460245 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2278 · 112915941024 · cancelled · SIN VEREDICTO · sin resumen (95367 B, 779 líneas) · SIN VEREDICTO
+  #2278 · 112922882134 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2279 · 112918431335 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2280 · 112921755713 · cancelled · SIN VEREDICTO · sin resumen (49161 B, 490 líneas) · SIN VEREDICTO
+  #2280 · 112923097865 · cancelled · SIN VEREDICTO · sin resumen (118447 B, 927 líneas) · SIN VEREDICTO
+  #2280 · 112931216196 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2281 · 112922067780 · failure · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2281 · 112931568279 · failure · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2282 · 112925625227 · failure · CIEGO · vivas 519 · mudas 0 · ciegas 0 · ficheros muertos 1 · ✔✔
+  #2283 · 112938999028 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2284 · 112939912316 · failure · CIEGO · vivas 517 · mudas 0 · ciegas 3 · ficheros muertos 0 · ✔✔
+  #2285 · 112940435650 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2285 · 112951615463 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2286 · 113067684021 · success · VERDE · vivas 523 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2287 · 113069337419 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2287 · 113072953220 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2288 · 113071374244 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2289 · 113072029834 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2289 · 113079496237 · cancelled · SIN VEREDICTO · sin resumen (80850 B, 689 líneas) · SIN VEREDICTO
+  #2289 · 113082427645 · cancelled · SIN VEREDICTO · sin resumen (42005 B, 445 líneas) · SIN VEREDICTO
+  #2289 · 113083076941 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2289 · 113086393041 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2290 · 113072722108 · cancelled · SIN VEREDICTO · sin resumen (100447 B, 811 líneas) · SIN VEREDICTO
+  #2290 · 113076553309 · failure · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2291 · 113072807047 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2292 · 113075521728 · cancelled · SIN VEREDICTO · sin resumen (112729 B, 890 líneas) · SIN VEREDICTO
+  #2292 · 113081151581 · cancelled · SIN VEREDICTO · sin resumen (90424 B, 747 líneas) · SIN VEREDICTO
+  #2292 · 113084931156 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2292 · 113092412007 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2293 · 113091301791 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2293 · 113098721671 · failure · CIEGO · vivas 519 · mudas 0 · ciegas 0 · ficheros muertos 1 · ✔✔
+  #2294 · 113099516232 · cancelled · SIN VEREDICTO · sin resumen (90814 B, 750 líneas) · SIN VEREDICTO
+  #2294 · 113102985230 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2295 · 113099755387 · failure · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2296 · 113100678975 · failure · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2296 · 113104964860 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2297 · 113101716695 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2298 · 113103418124 · cancelled · SIN VEREDICTO · sin resumen (87809 B, 733 líneas) · SIN VEREDICTO
+  #2298 · 113106794420 · failure · CIEGO · vivas 519 · mudas 0 · ciegas 0 · ficheros muertos 1 · ✔✔
+  #2299 · 113106131810 · failure · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2299 · 113109884499 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2300 · 113108378735 · cancelled · SIN VEREDICTO · sin resumen (83667 B, 707 líneas) · SIN VEREDICTO
+  #2300 · 113111055400 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2300 · 113114693834 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2301 · 113109752877 · cancelled · SIN VEREDICTO · sin resumen (101244 B, 816 líneas) · SIN VEREDICTO
+  #2301 · 113113747240 · failure · CIEGO · vivas 519 · mudas 0 · ciegas 0 · ficheros muertos 1 · ✔✔
+  #2302 · 113110667561 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2303 · 113113441842 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2304 · 113113729282 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2305 · 113114212568 · cancelled · SIN VEREDICTO · sin resumen (101361 B, 818 líneas) · SIN VEREDICTO
+  #2305 · 113116941686 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2305 · 113129323410 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2305 · 113131724906 · failure · CIEGO · vivas 517 · mudas 0 · ciegas 3 · ficheros muertos 0 · ✔✔
+  #2306 · 113115707943 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2307 · 113115947928 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2307 · 113120830385 · failure · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2308 · 113117249517 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2308 · 113126804331 · failure · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2309 · 113118304643 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2309 · 113125060904 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2310 · 113202016537 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2310 · 113205991122 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2311 · 113203413876 · failure · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2312 · 113204003657 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2313 · 113205156949 · cancelled · SIN VEREDICTO · sin resumen (80780 B, 690 líneas) · SIN VEREDICTO
+  #2313 · 113208232384 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2313 · 113213355139 · failure · CIEGO · vivas 517 · mudas 0 · ciegas 3 · ficheros muertos 0 · ✔✔
+  #2314 · 113205295218 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2315 · 113211022537 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2316 · 113211094873 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2316 · 113219436684 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2317 · 113213747578 · failure · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2317 · 113219731642 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2318 · 113215439278 · cancelled · SIN VEREDICTO · sin resumen (43722 B, 455 líneas) · SIN VEREDICTO
+  #2318 · 113216098058 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2318 · 113225737685 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2318 · 113235294834 · failure · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2319 · 113215919869 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2320 · 113216422243 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2321 · 113217824635 · cancelled · SIN VEREDICTO · sin resumen (52145 B, 511 líneas) · SIN VEREDICTO
+  #2321 · 113219398183 · failure · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2322 · 113220809020 · failure · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2322 · 113227371303 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2323 · 113223120811 · failure · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2323 · 115147017537 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2323 · 115152523363 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2324 · 113224025275 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2325 · 113243149460 · cancelled · SIN VEREDICTO · sin resumen (78478 B, 674 líneas) · SIN VEREDICTO
+  #2325 · 113246394667 · failure · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2325 · 113262962012 · failure · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔✔
+  #2325 · 113267982032 · failure · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2326 · 113735173448 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2326 · 113739106560 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2327 · 113738703329 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2327 · 113746959868 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2328 · 113768492339 · cancelled · SIN VEREDICTO · sin resumen (123069 B, 959 líneas) · SIN VEREDICTO
+  #2328 · 113776378336 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2329 · 113770614086 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2329 · 113774046894 · failure · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2330 · 113773877246 · cancelled · SIN VEREDICTO · sin resumen (75147 B, 651 líneas) · SIN VEREDICTO
+  #2330 · 113776317036 · cancelled · SIN VEREDICTO · sin resumen (55925 B, 536 líneas) · SIN VEREDICTO
+  #2330 · 113777896861 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2330 · 113785389400 · failure · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2331 · 113776211838 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2331 · 113779763339 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2332 · 113777305997 · failure · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2333 · 113782878115 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2333 · 113790845419 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2334 · 113791782111 · failure · CIEGO · vivas 519 · mudas 0 · ciegas 0 · ficheros muertos 1 · ✔✔
+  #2334 · 113798681206 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2335 · 113799538864 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2335 · 113805611966 · failure · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2336 · 113799716505 · success · VERDE · vivas 524 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2337 · 113801933049 · cancelled · SIN VEREDICTO · sin resumen (107718 B, 858 líneas) · SIN VEREDICTO
+  #2337 · 113807919144 · failure · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔✔
+  #2338 · 113802526272 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2339 · 113806473957 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2339 · 113813538821 · failure · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2340 · 113807957829 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2341 · 115063642443 · failure · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2342 · 115063808805 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2343 · 115063884330 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2343 · 115066475018 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2344 · 115064831172 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2345 · 115065203933 · cancelled · SIN VEREDICTO · sin resumen (87523 B, 732 líneas) · SIN VEREDICTO
+  #2345 · 115068271696 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2345 · 115134350289 · failure · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2345 · 115136447917 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2346 · 115066386272 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2347 · 115068111410 · failure · CIEGO · vivas 517 · mudas 0 · ciegas 3 · ficheros muertos 0 · ✔✔
+  #2347 · 115072897218 · failure · CIEGO · vivas 517 · mudas 0 · ciegas 3 · ficheros muertos 0 · ✔✔
+  #2348 · 115070389216 · failure · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2348 · 115134065551 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2349 · 115130920545 · cancelled · SIN VEREDICTO · sin resumen (105460 B, 842 líneas) · SIN VEREDICTO
+  #2349 · 115134739980 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2349 · 115140980191 · failure · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2350 · 115134364048 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2350 · 115141163948 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2350 · 115146133761 · failure · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2351 · 115134494581 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2352 · 115135335848 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2352 · 115141188937 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2353 · 115144373520 · success · VERDE · vivas 520 · mudas 0 · ciegas 0 · ficheros muertos 0 · ✔✔
+  #2354 · 115146037750 · failure · CIEGO · vivas 519 · mudas 0 · ciegas 1 · ficheros muertos 0 · ✔?
+  #2355 · 115159314161 · cancelled · SIN VEREDICTO · sin resumen (41966 B, 446 líneas) · SIN VEREDICTO
+EXIT=0

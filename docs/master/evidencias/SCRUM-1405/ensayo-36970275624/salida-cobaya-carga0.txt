@@ -1,0 +1,16 @@
+POBLACIÓN · node v24.21.0 · linux · 4 hilos · 15 pasadas por celda · 11 celdas de cobaya · 0 ficheros reales · carga 0 procesos
+
+── LA COBAYA ──
+A-con-grande · carga 0 · 15 pasadas · 15 con casos ausentes · casos ausentes 345 (ejecutados 345, NO ejecutados 0) · forma cola×15 · salidas 0×15
+B-sin-grande · carga 0 · 15 pasadas · 0 con casos ausentes · casos ausentes 0 (ejecutados 0, NO ejecutados 0) · forma (nada) · salidas 0×15
+C-con-grande-bloqueante · carga 0 · 15 pasadas · 0 con casos ausentes · casos ausentes 0 (ejecutados 0, NO ejecutados 0) · forma (nada) · salidas 0×15 · pasadas con bytes pendientes al salir 0 · de ellas con ausentes 0 · con ausentes y SIN pendientes 0 · bloqueante puesto×15
+D-con-grande-sonda · carga 0 · 15 pasadas · 15 con casos ausentes · casos ausentes 308 (ejecutados 308, NO ejecutados 0) · forma cola×15 · salidas 0×15 · pasadas con bytes pendientes al salir 15 · de ellas con ausentes 15 · con ausentes y SIN pendientes 0 · bloqueante no pedido×15
+E-con-asincrona · carga 0 · 15 pasadas · 6 con casos ausentes · casos ausentes 56 (ejecutados 56, NO ejecutados 0) · forma cola×6 · salidas 0×15
+F-con-pequena · carga 0 · 15 pasadas · 0 con casos ausentes · casos ausentes 0 (ejecutados 0, NO ejecutados 0) · forma (nada) · salidas 0×15
+G-con-rojo-en-la-cola · carga 0 · 15 pasadas · 15 con casos ausentes · casos ausentes 265 (ejecutados 265, NO ejecutados 0) · forma cola×15 · salidas 1×15 · rojos en el TAP 21 de 60 · pasadas con salida 0: 0
+H-sin-rojo-en-la-cola · carga 0 · 15 pasadas · 0 con casos ausentes · casos ausentes 0 (ejecutados 0, NO ejecutados 0) · forma (nada) · salidas 1×15 · rojos en el TAP 60 de 60 · pasadas con salida 0: 0
+I-cortado-en-el-40 · carga 0 · 15 pasadas · 15 con casos ausentes · casos ausentes 1200 (ejecutados 600, NO ejecutados 600) · forma cola×15 · salidas 0×15
+J-con-grande-una-copia · carga 0 · 15 pasadas · 7 con casos ausentes · casos ausentes 75 (ejecutados 75, NO ejecutados 0) · forma cola×7 · salidas 0×15
+K-sin-grande-sonda · carga 0 · 15 pasadas · 0 con casos ausentes · casos ausentes 0 (ejecutados 0, NO ejecutados 0) · forma (nada) · salidas 0×15 · pasadas con bytes pendientes al salir 0 · de ellas con ausentes 0 · con ausentes y SIN pendientes 0 · bloqueante no pedido×15
+
+EXIT=0 · filas 165 + 0 · /home/runner/work/_temp/cobaya/cobaya-pasadas-carga0.tsv

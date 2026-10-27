@@ -1,0 +1,46 @@
+SERVIDO=la pieza de PRODUCCIÓN · build del panel fc10ff9cb3b29eb18a5da552ec18f8c551eba7b7
+TESTIGO={"pieza":"object","montar":"function","ancho":390,"tieneNoMarcado":false,"elFuenteLoLleva":false,"textos":11}
+--- FILAS (ancho de ventana 390)
+
+· CONTROL · en reposo, antes de pulsar nada
+    se lee  : «Volver a llamar hoy» ; «Llamar por la tarde»
+    botones : «Hecho» alto 44 ; «Cambiar» alto 44
+    avisos  : 0 · ninguno
+    caja    : 366 de ancho · algo se sale: false
+
+· «Hecho» que FALLA
+    se lee  : «Volver a llamar hoy» ; «Llamar por la tarde»
+    botones : «Hecho» alto 44 ; «Cambiar» alto 44
+    avisos  : 1 · «No se ha podido guardar la llamada. Inténtalo otra vez.» [alert error] 364×63
+    caja    : 366 de ancho · algo se sale: false
+
+· «Hecho» que FALLA por segunda vez
+    se lee  : «Volver a llamar hoy» ; «Llamar por la tarde»
+    botones : «Hecho» alto 44 ; «Cambiar» alto 44
+    avisos  : 1 · «No se ha podido guardar la llamada. Inténtalo otra vez.» [alert error] 364×63
+    caja    : 366 de ancho · algo se sale: false
+
+· «Cambiar» → «Guardar» que FALLA
+    se lee  : —
+    botones : «Guardar» alto 44 ; «Cancelar» alto 44
+    avisos  : 1 · «No se ha podido guardar la llamada. Inténtalo otra vez.» [alert error] 364×63
+    caja    : 366 de ancho · algo se sale: false
+
+· «Cancelar»: vuelta al reposo
+    se lee  : «Volver a llamar hoy» ; «Llamar por la tarde»
+    botones : «Hecho» alto 44 ; «Cambiar» alto 44
+    avisos  : 0 · ninguno
+    caja    : 366 de ancho · algo se sale: false
+
+· CONTROL · «Hecho» que ENTRA
+    se lee  : —
+    botones : «Poner fecha» alto 44
+    avisos  : 0 · ninguno
+    caja    : 366 de ancho · algo se sale: false
+
+lo que recibió la sonda: guardar=1 · hecho=3
+peticiones que no son GET durante la sonda: 0
+errores de página: ninguno
+RESUMEN · al fallar «Hecho» dice: ["No se ha podido guardar la llamada. Inténtalo otra vez."] · al fallar «Guardar» dice: ["No se ha podido guardar la llamada. Inténtalo otra vez."]
+POBLACION=6 estados · botones de menos de 44 px de alto=0 · estados con algo fuera de la caja=0
+EXIT=0

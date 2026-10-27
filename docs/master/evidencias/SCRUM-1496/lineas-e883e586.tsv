@@ -1,0 +1,193 @@
+ticket	fichero	linea	palabra	texto
+SCRUM-1304	docs/master/SCRUM-1304.md	11	falta	`main` (§ «Por qué se paró»). Está construido y medido; lo que falta lo decide el fundador en
+SCRUM-1304	docs/master/SCRUM-1304.md	102	pendiente	pierde lee la fila aún `pendiente_de_sellado` y sella también. Cerrarlo del todo pide la guarda
+SCRUM-1304	docs/master/SCRUM-1304.md	162	sin medir	De lo que arriba quedó «sin medir»: **el doble encolado a la AEAT está medido** y tiene ticket,
+SCRUM-1304	docs/master/SCRUM-1304.md	164	sin medir	dos eventos `invoiced` siguen sin tocar. La carrera contra un Postgres real sigue sin medir.
+SCRUM-1311	docs/master/SCRUM-1311.md	44	falta	dos vecinos que usan el mismo doble. Lo que faltaba es que el caso tuviera su suelo PROPIO y no
+SCRUM-1311	docs/master/SCRUM-1311.md	70	decisión	da la cuenta de Javier para todos los commits, de los dos equipos. Se han tocado igual por decisión del
+SCRUM-1313	docs/master/SCRUM-1313.md	71	falta	De paso, un agujero de la misma puerta: un guard declarado cuyo fichero falta sumaba un fallo pero
+SCRUM-1313	docs/master/SCRUM-1313.md	131	sin medir	Un job de navegador en verde en 14 s (PR #2032) no es un verde sin medir: ese PR toca un solo
+SCRUM-1315	docs/master/SCRUM-1315.md	31	decisión	## La decisión sobre el `.catch` de MercadoPago
+SCRUM-1315	docs/master/SCRUM-1315.md	56	sin medir	casa con las dos llamadas de envío de WhatsApp, que no son la que nombra. Sigue verde sin medir lo que
+SCRUM-1316	docs/master/SCRUM-1316.md	38	decisión	cumplirá la condición del medio de pago. Eso es una decisión de producto y de texto, y es de Javier.
+SCRUM-1316	docs/master/SCRUM-1316.md	175	decisión	Ve el 10 donde está. Y donde está, no es una decisión del programa.
+SCRUM-1316	docs/master/SCRUM-1316.md	208	no hecho	## Ⓖ Lo que sigue abierto en el ticket (no hecho aquí)
+SCRUM-1319	docs/master/SCRUM-1319.md	21	falta	| **S1-0** | «falta alta en el entorno de pruebas AEAT + cita asesor» | eso mismo **tachado**, y a continuación: alta en el entorno de pruebas ✅ 24-sep-2026 (SCRUM-1110); falta la cita con el asesor, que el fundador fijó el 1-oct-2026 para las dos semanas siguientes (SCRUM-1264) |
+SCRUM-1319	docs/master/SCRUM-1319.md	22	no hecho	| **S1-D** | «S1-D ✅ DECIDIDO 2026-09-16 (fundador): la representación…» | «S1-D ~~✅~~ 🟡 NO HECHO — la VÍA está DECIDIDA 2026-09-16 (fundador): la representación…», con la decisión **entera y sin tocar**, y una nota fechada que dice qué marcaba el ✅ y qué falta |
+SCRUM-1319	docs/master/SCRUM-1319.md	35	no hecho	S1-0 🟡 · S1-0b ✅ · S1-A ✅ · S1-B ✅ · S1-C ✅ · S1-D ~~✅~~ 🟡 NO HECHO · S1-E 🟡 · S1-F ⏳ · S1-G ⏳ · S1-H 🟡
+SCRUM-1319	docs/master/SCRUM-1319.md	88	decisión	su línea de detalle no lleva «DONE». **Es un test nuevo y una decisión sobre el máster:** no entra en
+SCRUM-1320	docs/master/SCRUM-1320.md	40	falta	`detalle-trabajo-917`, `escalera-por-estado`, `falta-en-otra-pestana`, `foto-del-gasto`,
+SCRUM-1320	docs/master/SCRUM-1320.md	78	sin medir	y el recuento `… · 1 rojo (1 con casos sin medir)`. El aviso «lo que este recuento no sabe» que
+SCRUM-1320	docs/master/SCRUM-1320.md	107	falta	declarados, con sus dos mitades (uno nuevo sin declarar cae; una entrada que ya no hace falta, también).
+SCRUM-1320	docs/master/SCRUM-1320.md	125	sin medir	`rojo(1) · 5 hallazgos · 1 ciego`, recuento `… · 1 rojo (1 con casos sin medir)`, salida 1; sólo ciego →
+SCRUM-1321	docs/master/SCRUM-1321.md	73	falta	pasados, 7 caídos). Faltan cuatro, entre ellos el que la declaración nombra. Es la pérdida de
+SCRUM-1321	docs/master/SCRUM-1321.md	111	falta	normalidad»: compara con la pasada limpia, cuenta y NOMBRA los tests que faltan. Sin la limpia,
+SCRUM-1321	docs/master/SCRUM-1321.md	130	falta	que el mensaje deja de culpar a un renombrado y nombra lo que falta: la próxima vez habrá con qué
+SCRUM-1321	docs/master/SCRUM-1321.md	132	decisión	- **Que el job del meta-guard no bloquee.** Decisión de un jefe, no de una sesión.
+SCRUM-1321	docs/master/SCRUM-1321.md	146	decisión	3. Corrí la suite entera sólo en CI (decisión del orquestador: sin turno). En local, los ficheros
+SCRUM-1321	docs/master/SCRUM-1321.md	157	falta	de los tests que faltan sigue SIN verse en un caso real.
+SCRUM-1322	docs/master/SCRUM-1322.md	1	decisión	# SCRUM-1322 · el bot entiende la palabra que pide, y sólo decide el mensaje que ENTERO es una decisión
+SCRUM-1322	docs/master/SCRUM-1322.md	7	decisión	**Decisión:** del orquestador del equipo de Javier (`cobroflash-backend-5b`), por mensaje entre
+SCRUM-1322	docs/master/SCRUM-1322.md	17	decision	- `quote_decision_es` lleva UN botón y es de URL («Ver presupuesto» → `/pay/quote/<token>`):
+SCRUM-1322	docs/master/SCRUM-1322.md	36	decisión	parte del mensaje. **18 frases de 18 que no son una decisión movían el presupuesto:**
+SCRUM-1322	docs/master/SCRUM-1322.md	54	decision	- `parseDecision` sale de `whatsappIncoming.routes.ts` a `src/modules/whatsappBot/domain/decisionPorTexto.ts`,
+SCRUM-1322	docs/master/SCRUM-1322.md	66	decisión	**Coste declarado:** frases que antes se daban por decisión dejan de serlo. «ok pero me lo tengo que
+SCRUM-1322	docs/master/SCRUM-1322.md	79	decisión	`hola`, `por favor`. Sola no decide. Es lo ÚNICO que puede acompañar a una decisión; ni «muchas»,
+SCRUM-1322	docs/master/SCRUM-1322.md	101	falta	va al final («sí»). Faltaba el caso que las separa: una tilde en medio («vále»). Añadido.
+SCRUM-1322	docs/master/SCRUM-1322.md	130	decision	- Llamé al módulo `decisionDelCliente.ts` antes de mirar si el nombre existía: existe, en
+SCRUM-1322	docs/master/SCRUM-1322.md	132	decision	antes de comitear. Se llama `decisionPorTexto.ts`.
+SCRUM-1323	docs/master/SCRUM-1323.md	60	decision	## Ⓓ Los límites, que son decisiones mías y las puede tumbar el orquestador
+SCRUM-1323	docs/master/SCRUM-1323.md	134	decisión	**Decisión del orquestador (1-oct), añadida por J5c:** no se abre ticket —no tiene víctima y sería
+SCRUM-1323	docs/master/SCRUM-1323.md	240	decisión	**Decisión del orquestador (1-oct):** no al proceso hijo, por ese mismo motivo. El límite queda
+SCRUM-1324	docs/master/SCRUM-1324.md	12	falta	- **NO se entrega, y es la mitad que falta:** que el aviso llegue solo a alguien. Hoy el vigía sólo
+SCRUM-1324	docs/master/SCRUM-1324.md	14	decisión	decisión del fundador (§⑥). Hasta entonces es un instrumento, no un mecanismo.
+SCRUM-1324	docs/master/SCRUM-1324.md	150	decisión	## ⑥ Dónde enchufarlo — DECISIÓN DEL FUNDADOR, sin aplicar
+SCRUM-1327	docs/master/SCRUM-1327.md	89	falta	control no dibuja no se juzga «3 opciones» (antes no hacía falta decirlo: cualquier ciego salía antes
+SCRUM-1328	docs/master/SCRUM-1328.md	103	decisión	lanzar un hijo a través de un helper. No se barrieron por decisión del orquestador: el arreglo es
+SCRUM-1328	docs/master/SCRUM-1328.md	104	decisión	de clase y no depende de quién lance el hijo, así que enumerarlos no cambia ninguna decisión.
+SCRUM-1329	docs/master/SCRUM-1329.md	7	decisión	**Decisión:** encargo del orquestador del equipo de Javier (`cobroflash-backend-5b`), por su ficha
+SCRUM-1329	docs/master/SCRUM-1329.md	8	falta	de relevo del 1-oct-2026. No hay firma del fundador ni hace falta: no cambia ningún texto que vea
+SCRUM-1329	docs/master/SCRUM-1329.md	87	falta	Si falta alguna, el guard cae y dice cuál: «NO SÉ si es una cita firmada o prosa». El umbral sigue
+SCRUM-1330	docs/master/SCRUM-1330.md	26	falta	Hacen falta las dos. La A mira una fila que puede ser vieja: la entrega que la leyó antes de que la
+SCRUM-1330	docs/master/SCRUM-1330.md	46	pendiente	| Fila con huella y estado `pendiente_de_sellado` | 🔴 se le cambia la huella | se termina sin tocarla |
+SCRUM-1330	docs/master/SCRUM-1330.md	85	decisión	ya no lo dirá. Recuperar esa cobertura es una decisión aparte.
+SCRUM-1331	docs/master/SCRUM-1331.md	60	decisión	## 3 · La decisión del CIEGO sin red — firmada, y con su condición
+SCRUM-1331	docs/master/SCRUM-1331.md	78	sin medir	Sin medir: cuántos runs han caído por esto. Consta uno (#2046).
+SCRUM-1331	docs/master/SCRUM-1331.md	134	falta	- **1 llama a la red al cargar: `scrum804b`.** Es un caso, no una clase: no hace falta guard general.
+SCRUM-1331	docs/master/SCRUM-1331.md	138	sin medir	- **La red DENTRO de los tests** de los otros ficheros sigue sin medir (pide una tanda completa con
+SCRUM-1332	docs/master/SCRUM-1332.md	84	falta	orden por falta de memoria** con la sesión ociosa, y no la relancé. Las 19 que hay salieron 0 y
+SCRUM-1332	docs/master/SCRUM-1332.md	90	falta	## 4 · El control ④ del ticket — fabricado, que es lo que faltaba
+SCRUM-1332	docs/master/SCRUM-1332.md	124	falta	las dos pasadas por falta de memoria; quedaron sin procesar 70 de los 94 runs fallidos de la
+SCRUM-1332	docs/master/SCRUM-1332.md	146	decisión	Tres salidas para la clase, **sin elegir** (la decisión no es mía):
+SCRUM-1335	docs/master/SCRUM-1335.md	18	falta	en las dos direcciones: 4 veces falta en Midway y 3 en Kiritimati.
+SCRUM-1335	docs/master/SCRUM-1335.md	19	falta	4. **«19 en la tanda, 30 a solas» no son la misma magnitud.** 19 son los casos que faltaron en la
+SCRUM-1335	docs/master/SCRUM-1335.md	119	no hecho	- **El experimento que la separa** (no hecho; toca un workflow, así que pide GO y afecta a los dos
+SCRUM-1335	docs/master/SCRUM-1335.md	122	sin medir	- **Sin medir, y es lo que más importa:** si la tanda **obligatoria** (`build + tests`, que también
+SCRUM-1335	docs/master/SCRUM-1335.md	167	decisión	de Jira, que es también donde está la decisión y sus tres condiciones. Cogido en el 18415.
+SCRUM-1335	docs/master/SCRUM-1335.md	183	falta	- **Sí:** un `fail` frente a un resultado que falta, **cuando en la zona donde falta ese fichero no
+SCRUM-1335	docs/master/SCRUM-1335.md	186	falta	- **No:** un `pass` (o un `skip`) frente a un resultado que falta. Es la forma de las 289. Pasa a
+SCRUM-1335	docs/master/SCRUM-1335.md	188	falta	- **No:** un `fail` frente a un resultado que falta cuando el fichero cae también en la otra zona. No
+SCRUM-1335	docs/master/SCRUM-1335.md	205	falta	| B · todo pasa, en una zona faltan resultados | **salida 1 · acusa 5** | **salida 0 · acusa 0 · sin comparar 5** |
+SCRUM-1335	docs/master/SCRUM-1335.md	222	sin medir	| medido en CI, 177 corridas del 1 al 6-oct | 34 rojos · 289 acusaciones · las 289 pasa/ausente | **sin medir todavía**: hace falta que el job corra con este código |
+SCRUM-1335	docs/master/SCRUM-1335.md	232	falta	- **Una censada que no se pudo comparar es CIEGO**, no «sigue viva». Antes, que le faltara el
+SCRUM-1335	docs/master/SCRUM-1335.md	234	falta	- **Un canario que no se pudo comparar es CIEGO.** Antes, a un canario dependiente le bastaba faltar
+SCRUM-1336	docs/master/SCRUM-1336.md	50	falta	instrumento (el scroll no discrimina, una sonda de tamaño conocido sale mal, falta un conocido)
+SCRUM-1336	docs/master/SCRUM-1336.md	61	sin medir	Tres de los seis sacan conclusiones de **no haber visto** algo. Con algo sin medir, eso da un
+SCRUM-1336	docs/master/SCRUM-1336.md	87	decisión	razón de fondo, no de forma: su lista de excepciones no se ha tocado y la decisión no se ha
+SCRUM-1336	docs/master/SCRUM-1336.md	200	falta	reventaba al importar porque al árbol desechable le faltaba `dist/`. Lo cazó su pasada «limpio».
+SCRUM-1339	docs/master/SCRUM-1339.md	13	falta	les faltan casos que otro job de ese mismo árbol sí trae. **38 de esos 47 salieron VERDES.** 14 son
+SCRUM-1339	docs/master/SCRUM-1339.md	15	falta	2. **En la línea de `main`, 45 de 123 commits (37 %)** tienen un «build + tests» al que le falta algún
+SCRUM-1339	docs/master/SCRUM-1339.md	83	falta	| **jobs a los que les faltan casos que su hermano trae** | **47 de 141 (33 %)** |
+SCRUM-1339	docs/master/SCRUM-1339.md	102	falta	⚠️ **Es una cota por debajo.** Sólo veo lo que le falta a un job respecto a su hermano: si los dos
+SCRUM-1339	docs/master/SCRUM-1339.md	104	falta	que aquí salían «sin pérdida» y a los que les faltaban entre 1 y 18 tests declarados.
+SCRUM-1339	docs/master/SCRUM-1339.md	120	falta	`declarados-que-faltan-en-main.tsv`. Los tres últimos: `258fc29b` (verde, 9.483 tests, le faltan 23 de
+SCRUM-1339	docs/master/SCRUM-1339.md	178	falta	| **avisos falsos** — en los 85 jobs a los que no les falta nada respecto a su hermano, ¿cuántos declarados no aparecen? | mediana **0**; 82 de 85 con **0**. Los otros 3 (1, 3 y 18 nombres) son colas de `scrum524b` y `vigia-atascados`: **pérdidas reales** que perdieron los dos hermanos, no avisos falsos |
+SCRUM-1339	docs/master/SCRUM-1339.md	211	sin medir	- **Sin medir:** si un caso perdido que hubiera FALLADO habría dado rojo por otro camino (el código de
+SCRUM-1339	docs/master/SCRUM-1339.md	277	falta	`declarados-que-faltan-en-main.tsv`) sí están, con el id de cada job.
+SCRUM-1339	docs/master/SCRUM-1339.md	328	falta	**75 de 77**, sin ninguno distinto. Según el traspaso de J3g, los 2 que faltan son los dos jobs
+SCRUM-1339	docs/master/SCRUM-1339.md	360	falta	node docs/master/evidencias/SCRUM-1339/b-analizar.mjs  $D .    # analisis.tsv, faltan-por-fichero.tsv
+SCRUM-1339	docs/master/SCRUM-1339.md	382	falta	| #2072 | `vigia-atascados` (64) | faltan 31 en Midway: posiciones **34 a 64** | cambian 22: posiciones **43 a 64** |
+SCRUM-1339	docs/master/SCRUM-1339.md	383	falta	| #2071 | `vigia-atascados` (64) | faltan 3 en Midway: **62 a 64** | cambian 34; el log sólo nombra 3 (62 a 64) |
+SCRUM-1339	docs/master/SCRUM-1339.md	384	falta	| #2071 | `scrum524b` (41) | faltan 8 en Kiritimati: **34 a 41** | cambian 2: 38 y 39 |
+SCRUM-1339	docs/master/SCRUM-1339.md	423	falta	faltaron también en la pasada entera (posiciones 34 a 42). La entera perdió 31, no 22.
+SCRUM-1339	docs/master/SCRUM-1339.md	437	falta	- En qué zona faltaron a solas: el trinquete no lo imprime.
+SCRUM-1339	docs/master/SCRUM-1339.md	470	decisión	**El encargo** (orquestador del equipo de Javier; decisión en c.17935, autorizaciones del fundador
+SCRUM-1339	docs/master/SCRUM-1339.md	473	decisión	sólo anota su propio run. **Cruces declarados:** el ticket es `area-j6` y lo trabaja J3 por decisión
+SCRUM-1339	docs/master/SCRUM-1339.md	485	falta	señal nombra es un SUELO. En un job a `scrum524b` le faltaban 26 casos y nombró 3.
+SCRUM-1339	docs/master/SCRUM-1339.md	487	sin medir	- **`scrum859` (lo que J3h dejó sin medir):** el contenido del registro NO hace desaparecer sus
+SCRUM-1339	docs/master/SCRUM-1339.md	524	falta	llega ninguna, faltan las dos y cada fichero lleva la suya. Si llega una, falta una y no se sabe
+SCRUM-1339	docs/master/SCRUM-1339.md	537	falta	| sin árbol probado (falta el log) | 1 | 1 | 2 |
+SCRUM-1339	docs/master/SCRUM-1339.md	544	falta	comparables de 80, **mismo veredicto en 79 y misma cifra en 79**. El que falta es un push que
+SCRUM-1339	docs/master/SCRUM-1339.md	578	falta	- job `11174308618` (push a `main`, `204d117b`, verde): le faltan **32** casos frente a su
+SCRUM-1339	docs/master/SCRUM-1339.md	581	falta	- job `11164124022`: faltan 15, nombró 12.
+SCRUM-1339	docs/master/SCRUM-1339.md	585	falta	- el aviso dice **«faltan AL MENOS N»** cuando en el mismo hueco hay llamadas de nombre
+SCRUM-1339	docs/master/SCRUM-1339.md	608	sin medir	## ⑥ `scrum859`, lo que J3h declaró sin medir
+SCRUM-1339	docs/master/SCRUM-1339.md	611	falta	(faltan 4 de 20 en la pasada mutada). Ese test trocea `docs/master`. ¿Contribuye el contenido?
+SCRUM-1339	docs/master/SCRUM-1339.md	617	falta	son exactamente los cuatro últimos que faltan.
+SCRUM-1339	docs/master/SCRUM-1339.md	620	falta	las 10:32Z. Siempre «faltan 4 de 20», siempre los mismos cuatro, que son la COLA del fichero.
+SCRUM-1339	docs/master/SCRUM-1339.md	632	falta	- Cuántos casos faltan de verdad en los 34 jobs con ausentes que no tienen hermano.
+SCRUM-1339	docs/master/SCRUM-1339.md	669	falta	| el bueno | 0 | `::notice` «FALTAN al menos 5 en 2 fichero(s)» y 2 `::warning` con fichero y líneas |
+SCRUM-1339	docs/master/SCRUM-1339.md	713	decisión	- **La cifra que nombra la decisión (c.17935), leída de las anotaciones del paso: 1 de 4 runs del
+SCRUM-1339	docs/master/SCRUM-1339.md	736	falta	que falta es el del run de `d2ed6c8a`, que seguía en marcha (es un push: su árbol sale del sha).
+SCRUM-1339	docs/master/SCRUM-1339.md	751	sin medir	· sin medir 0 · NO SE PUEDE DECIR si está por debajo del 5 %: hacen falta 50 runs medidos y hay 4
+SCRUM-1339	docs/master/SCRUM-1339.md	803	falta	| fichero | veces | declara | faltan |
+SCRUM-1339	docs/master/SCRUM-1339.md	840	falta	Con el flag faltan 18, 1, 26 y 10 casos por recuento (55); la señal nombra 39. Es un suelo.
+SCRUM-1339	docs/master/SCRUM-1339.md	849	decisión	diseñó. Tampoco dice qué costaría quitar el flag: no lo he medido, y no es una decisión de aquí.
+SCRUM-1339	docs/master/SCRUM-1339.md	854	falta	casos que faltan se ejecutaron.
+SCRUM-1339	docs/master/SCRUM-1339.md	858	decisión	Dirigida local NO corrida — decisión del orquestador; `guards:entrada` sí: 12 guards, 132
+SCRUM-1339	docs/master/SCRUM-1339.md	867	falta	- Cuántos casos faltan de verdad: lo que se nombra es un suelo (1339d, ④).
+SCRUM-1341	docs/master/SCRUM-1341.md	19	pendiente	| Forma: ruta nueva, en `TECNICO_ALLOWED` con motivo; `PENDIENTE_MAX` en 0; la del admin no se toca | orquestador | SCRUM-1341 c.17825 ① |
+SCRUM-1341	docs/master/SCRUM-1341.md	72	pendiente	`metricasEquipo.ts`, `getTeamMetrics`, el esquema, el camino de emisión. `PENDIENTE_MAX` sigue en 0.
+SCRUM-1344	docs/master/SCRUM-1344.md	17	decisión	> SCRUM-1344 es de `area-j4` y lo trabaja J5 por decisión del orquestador del equipo de Javier
+SCRUM-1345	docs/master/SCRUM-1345.md	129	falta	argumentos y no 100: el `sort -u` que quitaba los repetidos murió por falta de memoria de la máquina
+SCRUM-1345	docs/master/SCRUM-1345.md	136	decisión	## ④ El trinquete que saltó, y la decisión
+SCRUM-1345	docs/master/SCRUM-1345.md	150	sin medir	## ⑤ Lo que el ticket dejaba sin medir: ¿tienen otras puertas con techo la misma forma?
+SCRUM-1345	docs/master/SCRUM-1345.md	201	decisión	entorno). El primero se arregló en mi código; el segundo era una decisión y subió. Los encontró la
+SCRUM-1345	docs/master/SCRUM-1345.md	235	sin medir	| `puerta-claude-empuje.mjs` | 10 min por fichero | el test nombrado no llega a salir → `SIN-CORRER` → `NO-EMPUJA-CIEGO` | **no** | sin medir |
+SCRUM-1345	docs/master/SCRUM-1345.md	452	falta	primer mensaje. No hacía falta.
+SCRUM-1390	docs/master/SCRUM-1390.md	29	decisión	**Lo que NO consta, y el máster lo dice así:** el motivo de la decisión para los presupuestos. Para las
+SCRUM-1390	docs/master/SCRUM-1390.md	52	decisión	firmó y cuándo. La nota dice que la decisión de la tarde es posterior, que la sustituye en cuanto se
+SCRUM-1390	docs/master/SCRUM-1390.md	63	decisión	### Las tres filas que la decisión contradice, no una
+SCRUM-1390	docs/master/SCRUM-1390.md	66	decisión	es la `:675` y su razón la `:681`. Y la decisión choca con otras dos filas, las del «ver» de la tabla de
+SCRUM-1390	docs/master/SCRUM-1390.md	131	pendiente	/admin/albaranes/pendientes-facturar` y `GET /admin/albaranes/consolidables` leen los Trabajos del negocio
+SCRUM-1390	docs/master/SCRUM-1390.md	133	decisión	ver sí")», que es justo la fila que la decisión cambia. El resto de albaranes y partes recorta: 0 de 14 y
+SCRUM-1390	docs/master/SCRUM-1390.md	140	decisión	por persona sin importes: es la decisión firmada «1-B» (SCRUM-1341). `GET /admin/products/frequent-concepts`
+SCRUM-1390	docs/master/SCRUM-1390.md	172	decisión	Un aviso para quien construya: «los tres ejes» son dos listas distintas. Los de la decisión son autor del
+SCRUM-1390	docs/master/SCRUM-1390.md	174	decisión	(`operarioId`, `assignedUserId`, la tabla de asignados): cubren sólo el segundo de la decisión.
+SCRUM-1390	docs/master/SCRUM-1390.md	176	decisión	Lo que sigue es lo que se le mandó, tal como se escribió antes de la decisión:
+SCRUM-1395	docs/master/SCRUM-1395.md	70	decisión	Decisión del orquestador (6-oct, por mensaje; recogida en Jira c.18420).
+SCRUM-1395	docs/master/SCRUM-1395.md	112	decisión	rojo dice que subirlo es una decisión del orquestador, no un arreglo.
+SCRUM-1395	docs/master/SCRUM-1395.md	130	decisión	decisión a mano. Lo que hace el trinquete es que se vea en el diff.
+SCRUM-1395	docs/master/SCRUM-1395.md	141	no hecho	| ⑥ La línea que sale SIEMPRE: «N guards mirados · K mudos» | **NO HECHO en esa unidad** → la línea del caso ① dice «N llaman al filtro · K sin suelo», que es lo que se puede medir en la tanda. «K mudos» sólo lo dicta `censo:mudez`, a mano. Decide el orquestador |
+SCRUM-1395	docs/master/SCRUM-1395.md	162	pendiente	- **Dos comentarios que quedan diciendo lo de antes, PENDIENTES y sin tocar:**
+SCRUM-1395	docs/master/SCRUM-1395.md	214	sin medir	**SCRUM-1395 existe porque un guard puede PASAR sin medir nada.** Y lo que ha cazado `scrum1415` es
+SCRUM-1395	docs/master/SCRUM-1395.md	217	falta	(SCRUM-1339d) no habría podido decir que faltaban si la tanda los perdía. **Es el mismo defecto, en
+SCRUM-1402	docs/master/SCRUM-1402.md	12	decisión	## Ⓐ La decisión, y dónde se puede leer
+SCRUM-1402	docs/master/SCRUM-1402.md	99	pendiente	entera del impago: no le sale el aviso de pago pendiente y conserva el plan que tuviera. Lo único
+SCRUM-1402	docs/master/SCRUM-1402.md	102	decisión	## Ⓕ Lo que la decisión NO resuelve
+SCRUM-1402	docs/master/SCRUM-1402.md	114	decisión	no lo dice nadie: ni antes ni ahora. La decisión habla del plan que no existe, no del que no viene.
+SCRUM-1402	docs/master/SCRUM-1402.md	173	sin medir	Habría dejado el guard verde sin medir nada.
+SCRUM-1403	docs/master/SCRUM-1403.md	22	decisión	cifras de esa ficha es decisión del fundador; está pedida (2-oct-2026) y sin contestar. El control ④
+SCRUM-1403	docs/master/SCRUM-1403.md	25	decisión	`notEqual` cuando haya decisión.
+SCRUM-1403	docs/master/SCRUM-1403.md	47	pendiente	| `stats.totalPending` | 400 de 400 | «Pendiente de cobro» |
+SCRUM-1403	docs/master/SCRUM-1403.md	62	falta	| 2 · los recibe sólo sobre lo suyo | 100 de 1.050 | 6 de 6 | En 2 de 6 fichas «Cobrado» diría una cifra que no es lo que el cliente ha pagado, bajo el mismo rótulo: o el rótulo miente o hace falta texto firmado. «Beneficio sobre lo suyo» no tiene criterio: nadie ha decidido qué gasto es suyo. |
+SCRUM-1403	docs/master/SCRUM-1403.md	154	decisión	- **La dirigida** (`node scripts/tests-que-cubren.mjs`: 304 ficheros de 1.202). Decisión del
+SCRUM-1403	docs/master/SCRUM-1403.md	160	sin medir	vivas está sin medir.
+SCRUM-1405	docs/master/SCRUM-1405.md	16	falta	- **Los casos que faltan SE EJECUTARON, todos.** En la cobaya con testigo: 53.433 casos ausentes en
+SCRUM-1405	docs/master/SCRUM-1405.md	46	pendiente	| 3 | En la salida del hijo quedan bytes sin escribir justo en las pasadas que pierden | **Sí.** 195 de 195 pasadas con ausentes tenían bytes pendientes; ninguna perdió sin tenerlos (§②) |
+SCRUM-1405	docs/master/SCRUM-1405.md	94	falta	- Faltan 363 casos por recuento en las 13 tandas del brazo con el flag.
+SCRUM-1405	docs/master/SCRUM-1405.md	104	falta	- **En esas 8, lo que falta es el caso rojo sembrado en una cola, y lo que aparece en su sitio es el
+SCRUM-1405	docs/master/SCRUM-1405.md	145	pendiente	- **Los bytes pendientes** (sonda, celdas D, L, M, N y O con las dos cargas): 195 pasadas de D con
+SCRUM-1405	docs/master/SCRUM-1405.md	147	pendiente	pendientes. Lo pendiente nunca pasó de 65.506 B, que es lo que cabe en una tubería de Linux.
+SCRUM-1405	docs/master/SCRUM-1405.md	258	falta	se lo pasa a cada hijo él mismo. Haría falta un corredor propio sobre `run()`. No lo he construido ni
+SCRUM-1455	docs/master/SCRUM-1455.md	27	no hecho	| `:549` | `PUT /:id/status` | NO HECHO → al fundador (SCRUM-1456 c.18414) |
+SCRUM-1455	docs/master/SCRUM-1455.md	28	no hecho	| `:593` | `POST /:id/pay` | NO HECHO → al fundador (c.18414) |
+SCRUM-1455	docs/master/SCRUM-1455.md	29	no hecho	| `:614` | `POST /:id/unpay` | NO HECHO → al fundador (c.18414) |
+SCRUM-1455	docs/master/SCRUM-1455.md	30	no hecho	| `:873` | `POST /:id/annul` | NO HECHO → al fundador (c.18414: camino de sellado) |
+SCRUM-1455	docs/master/SCRUM-1455.md	31	no hecho	| `:1025` | `POST /:id/rectify` | NO HECHO → al fundador (c.18414: camino de sellado) |
+SCRUM-1455	docs/master/SCRUM-1455.md	32	no hecho	| `:309` | `POST /:id/payment-anomaly` | NO HECHO: c.18414 no la nombra en ninguna de sus dos listas, así que no está autorizada |
+SCRUM-1455	docs/master/SCRUM-1455.md	33	no hecho	| `:1188` | `POST /:id/regenerate-pdf` | NO HECHO → al fundador (c.18414: camino de sellado) |
+SCRUM-1455	docs/master/SCRUM-1455.md	35	no hecho	| `:698` | `POST /:id/send-email` | **NO HECHO, aunque c.18414 lo autoriza**: hoy contesta 200 con `sent: false`, no 500, y pasarlo a 400 cambia lo que hace la pantalla. La condición del GO era parar si algo reaccionaba |
+SCRUM-1455	docs/master/SCRUM-1455.md	37	no hecho	| `invoicing/app/routes/invoice.routes.ts:63` | `POST /:id/paid-webhook` | NO HECHO → al fundador (c.18414: webhook) |
+SCRUM-1456	docs/master/SCRUM-1456.md	48	no hecho	| `customersAdmin.routes.ts` `:600` (`DELETE /:id`) y `:638` (`POST /:id/fusionar`) — datos de clientes | 2 | 3 | **NO HECHO → al fundador** (c.18414: datos de clientes) |
+SCRUM-1456	docs/master/SCRUM-1456.md	49	no hecho	| `chargesAdmin.routes.ts` `:34` `:117` `:167` (confirmar Bizum, garantía, liberar garantía) — flujo de cobro | 3 | 3 | **NO HECHO, y es decisión mía** (Ⓗ): el orquestador las autoriza en c.18414, pero son flujo de cobro y la parada de `CLAUDE.md` pide al fundador |
+SCRUM-1456	docs/master/SCRUM-1456.md	50	no hecho	| `psp.routes.ts:36` — el webhook interno del cobro; es la ÚNICA de las seis de webhook que lleva el id a la base | 1 | 1 | **NO HECHO → al fundador** (c.18414: dinero real) |
+SCRUM-1456	docs/master/SCRUM-1456.md	131	decisión	marca procesado y se contesta **200**: Stripe deja de reintentar. Eso es una decisión, no un arreglo.
+SCRUM-1456	docs/master/SCRUM-1456.md	162	no hecho	- **`chargesAdmin`, NO hecho, y es decisión mía.** Confirmar un Bizum y la garantía son flujo de cobro.
+SCRUM-1457	docs/master/SCRUM-1457.md	1	decisión	# SCRUM-1457 · CRUCE DE CARRIL DECLARADO (`area-j3`, lo trabaja J2e) — un `merchantId` que no cabe en la columna: NADA construido; una línea espera el GO y tres son una decisión, no un arreglo
+SCRUM-1457	docs/master/SCRUM-1457.md	18	no hecho	| `system/app/routes/supresion.routes.ts:34` | `prisma.merchant.findUnique`, detrás del flag `MERCHANT_DELETE_ENABLED` y de la comparación con `req.merchantId` | NO HECHO → al fundador (SCRUM-1456 c.18414: borrado de datos) |
+SCRUM-1457	docs/master/SCRUM-1457.md	19	no hecho	| `billing/app/routes/stripe.routes.ts:97` | `prisma.merchant.update` (suscripción nueva) | NO HECHO → **decisión**, abajo |
+SCRUM-1457	docs/master/SCRUM-1457.md	20	no hecho	| `stripe.routes.ts:139` | `prisma.merchant.update` (`customer.subscription.*`) | NO HECHO → **decisión**, abajo |
+SCRUM-1457	docs/master/SCRUM-1457.md	21	no hecho	| `stripe.routes.ts:177` | `prisma.merchant.update` (`customer.subscription.deleted`) | NO HECHO → **decisión**, abajo |
+SCRUM-1457	docs/master/SCRUM-1457.md	29	decisión	## Ⓑ La decisión: la aceptación 3 no se puede cumplir con el arreglo que el ticket propone
+SCRUM-1457	docs/master/SCRUM-1457.md	42	decisión	es una decisión de un jefe sobre la fuente única de la FSM de la Parte L, no de la sesión.
+SCRUM-1457	docs/master/SCRUM-1457.md	53	decisión	de por qué no se construye sin una decisión.
+SCRUM-1470	docs/master/SCRUM-1470.md	49	decisión	sella datos, no los bytes del PDF) ni ningún valor guardado. **Roza la regla conservadora de SCRUM-987** («el papel de un firmado no cambia de aspecto por debajo»): aquí cambia una fecha, de la equivocada a la correcta, sólo si alguien regenera el papel y sólo en negocios con zona declarada. Se queda dentro por decisión del orquestador de Javier, que lo sube al fundador.
+SCRUM-1470	docs/master/SCRUM-1470.md	51	decisión	## Lo que NO se ha cambiado, con su motivo y con QUÉ decisión lo desbloquea
+SCRUM-1470	docs/master/SCRUM-1470.md	66	no hecho	| 2. Decidido por J1 con su jefe qué día imprime el PDF de la FACTURA, y escrito en este ticket. | NO HECHO → el fundador, por el orquestador de Javier. Este ticket no se cierra: se parte. |
+SCRUM-1470	docs/master/SCRUM-1470.md	84	decisión	### ① `SCRUM-643 · la DECISIÓN de qué zona usar vive en UN sitio`
+SCRUM-1470	docs/master/SCRUM-1470.md	86	decisión	**La rama introdujo una lectura directa de `merchant.timezone` con su propia decisión para cuando
+SCRUM-1470	docs/master/SCRUM-1470.md	87	falta	falta:** `src/modules/quotes/domain/presupuestoParaPdf.ts`, `zona: merchant.timezone ?? null`. No es
+SCRUM-1470	docs/master/SCRUM-1470.md	92	decisión	guard lee como una segunda decisión era la decisión deliberada de no decidir ahí. **El guard tiene
+SCRUM-1471	docs/master/SCRUM-1471.md	34	decisión	## Lo que NO se ha cambiado, con su motivo y con QUÉ decisión lo desbloquea
+SCRUM-1471	docs/master/SCRUM-1471.md	53	no hecho	| 2. La fecha del presupuesto y de la factura en el portal es la misma que imprime su PDF. | Presupuesto: el mismo test, «SCRUM-1471 · la fecha del presupuesto en el portal…» (el PDF del presupuesto no imprime fecha de creación; se compara con la de su firma y su página). Factura: NO HECHO → espera la aceptación 2 de SCRUM-1470; no cambia, y coincide con su PDF porque ninguno de los dos se ha tocado. |

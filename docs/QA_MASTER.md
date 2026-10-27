@@ -27,13 +27,18 @@ QA_DB_TEST=1 WHATSAPP_DRY_RUN=1 npm test   # + tenancy, permisos Operario,
                                            #   idempotencia de webhooks y PDFs
                                            #   (filas efímeras propias en la BD
                                            #   del .env; limpieza total)
-npm run e2e:critico                        # LA cadena de dinero entera con un
-                                           # merchant efímero: registro →
-                                           # onboarding → catálogo → presupuesto
-                                           # → firma → justificante J → pago test
-                                           # → estados BD → PDFs. "¿Despliego
-                                           # tranquilo?" = esto en 🟢.
 ```
+
+> **RETIRADO el 13-oct-2026 (SCRUM-1521).** Este estándar tenía una tercera orden, la del
+> recorrido de la cadena de dinero entera con un merchant efímero (registro → onboarding →
+> catálogo → presupuesto → firma → justificante → pago de prueba → estados → PDFs), y decía que
+> «¿Despliego tranquilo?» era verla en 🟢. **Ya no existe: ni el guion ni su orden de `npm`.**
+> Decisión del fundador, en Jira, SCRUM-1521 c.19145: llevaba once semanas sin correr —última
+> ejecución que consta, 28-jul-2026—, nada lo lanzaba, y desde que se cerró el alta pública
+> (SCRUM-1515) no podía correr, porque creaba su merchant por esa ruta. Un recorrido de
+> «¿despliego tranquilo?» que no corre no da tranquilidad: la simula.
+> **Hoy NADA de este estándar recorre la cadena de dinero de punta a punta en un navegador.**
+> No hay sustituto; si hace falta uno, se propone.
 
 - `tests/tenancy-permisos.test.mjs` (A12.1+A12.4): sesión de un merchant B contra
   IDs del A → 403/404 SIEMPRE; sesión técnico recorre `ADMIN_ONLY_ROUTES`

@@ -60,10 +60,10 @@
    * eso lo dice `SIN_APROBAR`, abajo.
    */
   var TEXTOS = {
-    rotulo: 'Dirección de la obra',
-    noMostrar: 'No mostrar',
-    facturacion: 'Utilizar dirección de facturación',
-    personalizada: 'Personalizada',
+    rotulo: 'Dirección de la obra', // APROBADO por el orquestador por delegación del fundador, 9-oct-2026 (SCRUM-1215 comentario 19084, F3)
+    noMostrar: 'No mostrar', // APROBADO por el orquestador por delegación del fundador, 9-oct-2026 (SCRUM-1215 comentario 19084, F3)
+    facturacion: 'Utilizar dirección de facturación', // APROBADO por el orquestador por delegación del fundador, 9-oct-2026 (SCRUM-1215 comentario 19084, F3)
+    personalizada: 'Personalizada', // APROBADO por el orquestador por delegación del fundador, 9-oct-2026 (SCRUM-1215 comentario 19084, F3)
   };
 
   /**

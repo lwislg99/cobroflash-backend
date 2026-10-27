@@ -1,0 +1,7 @@
+celda	pasada	flag	modo	casos	copias	carga	salida	declarados	ejecutados	informados	ausentes	ausentes_ejecutados	ausentes_no_ejecutados	forma	tap_tests	tap_fail	rojos_esperados	rojos_en_tap	rojos_de_fichero	sondas	sondas_con_pendientes	pendientes_max	escritos_max	total_max	bloqueante	ms
+R-sin-rojo-que-deja-un-servidor	1	sin	servidor	1	1	4	señal SIGKILL	1	1	1	0	0	0	-			0	1	0	-	-	-	-	-	-	20025
+S-con-rojo-que-deja-un-servidor	1	con	servidor	1	1	4	1	1	1	1	0	0	0	-	1	1	0	1	0	-	-	-	-	-	-	321
+R-sin-rojo-que-deja-un-servidor	2	sin	servidor	1	1	4	señal SIGKILL	1	1	1	0	0	0	-			0	1	0	-	-	-	-	-	-	20026
+S-con-rojo-que-deja-un-servidor	2	con	servidor	1	1	4	1	1	1	1	0	0	0	-	1	1	0	1	0	-	-	-	-	-	-	306
+R-sin-rojo-que-deja-un-servidor	3	sin	servidor	1	1	4	señal SIGKILL	1	1	1	0	0	0	-			0	1	0	-	-	-	-	-	-	20029
+S-con-rojo-que-deja-un-servidor	3	con	servidor	1	1	4	1	1	1	1	0	0	0	-	1	1	0	1	0	-	-	-	-	-	-	337

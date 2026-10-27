@@ -1,0 +1,65 @@
+// sonda-decimal.mjs — SCRUM-1455 / SCRUM-1456
+//
+// LA PREGUNTA: un id DECIMAL que llega a la base, ¿resuelve en silencio a OTRO registro? ¿Solo en
+// clientes, o en cualquier tabla? Se pregunta al Prisma de verdad sobre un Postgres de verdad (PGlite en
+// memoria, loopback, base desechable), SIN pasar por ninguna ruta: asi se mide el mecanismo y no un handler.
+//
+// Uso:  node sonda-decimal.mjs <raiz del arbol con dist/> <ddl.sql>
+import fs from 'node:fs';
+import path from 'node:path';
+import net from 'node:net';
+import { createRequire } from 'node:module';
+import { PGlite } from '@electric-sql/pglite';
+import { PGLiteSocketServer } from '@electric-sql/pglite-socket';
+
+const [raiz, ddl] = process.argv.slice(2);
+const puertoLibre = () => new Promise((ok) => {
+  const s = net.createServer(); s.listen(0, '127.0.0.1', () => { const p = s.address().port; s.close(() => ok(p)); });
+});
+const db = new PGlite();
+await db.exec(fs.readFileSync(ddl, 'utf8'));
+const puertoPg = await puertoLibre();
+const servidorPg = new PGLiteSocketServer({ db, port: puertoPg, host: '127.0.0.1' });
+await servidorPg.start();
+process.env.DATABASE_URL = 'postgresql://postgres@127.0.0.1:' + puertoPg + '/sonda_1456_test?connection_limit=1&pgbouncer=true';
+const requiere = createRequire(path.join(raiz, 'dist', 'x.js'));
+const { prisma } = requiere('./core/db/prisma.js');
+
+// Tres filas por tabla, ids 1, 2 y 3, para que «a cual resuelve» se pueda leer.
+const comercios = [];
+for (const n of ['uno', 'dos', 'tres']) comercios.push(await prisma.merchant.create({ data: { name: 'Comercio ' + n, country: 'ES' } }));
+const M = comercios[0].id;
+for (const n of ['uno', 'dos', 'tres']) await prisma.customer.create({ data: { merchantId: M, name: 'Cliente ' + n } });
+for (const n of ['uno', 'dos', 'tres']) {
+  await prisma.charge.create({ data: { merchantId: M, concept: 'Cobro ' + n, amount: 10, currency: 'EUR', method: 'bizum', status: 'pending' } });
+}
+
+const filas = [];
+async function mirar(tabla, que, fn) {
+  try {
+    const r = await fn();
+    filas.push([tabla, que, r ? 'DEVUELVE id ' + r.id : 'null (no existe)']);
+  } catch (e) {
+    filas.push([tabla, que, 'LANZA ' + (e && e.name) + ': ' + String(e && e.message || '').split('\n').filter((l) => l.trim()).pop().slice(0, 90)]);
+  }
+}
+const VALORES = [1, 1.5, 1.9, 2.5, 3.5, 0.5, -0.5];
+for (const v of VALORES) await mirar('customer', 'findFirst id=' + v, () => prisma.customer.findFirst({ where: { id: v, merchantId: M }, select: { id: true } }));
+for (const v of VALORES) await mirar('charge', 'findUnique id=' + v, () => prisma.charge.findUnique({ where: { id: v }, select: { id: true } }));
+for (const v of VALORES) await mirar('merchant', 'findUnique id=' + v, () => prisma.merchant.findUnique({ where: { id: v }, select: { id: true } }));
+// Y una ESCRITURA, que es lo que importa de verdad: ¿un updateMany con id 1.5 toca la fila 1?
+let tocadas = 'no medido';
+try {
+  const r = await prisma.customer.updateMany({ where: { id: 1.5, merchantId: M }, data: { notes: 'escrito con id 1.5' } });
+  const quien = await prisma.customer.findMany({ where: { notes: 'escrito con id 1.5' }, select: { id: true } });
+  tocadas = 'updateMany id=1.5 -> count ' + r.count + ' · filas escritas: ' + JSON.stringify(quien.map((x) => x.id));
+} catch (e) { tocadas = 'updateMany id=1.5 -> LANZA ' + (e && e.name); }
+
+console.log('SONDA DECIMAL · POBLACION=' + filas.length + ' lecturas + 1 escritura · 3 tablas con ids 1, 2 y 3 · base sonda_1456_test en 127.0.0.1');
+for (const f of filas) console.log(f[0].padEnd(9) + f[1].padEnd(22) + ' -> ' + f[2]);
+console.log('customer ' + tocadas);
+const control = filas[0][2] === 'DEVUELVE id 1';
+await prisma.$disconnect().catch(() => {});
+await servidorPg.stop().catch(() => {});
+console.log(control ? 'EXIT=0' : 'CIEGA: el id 1 no devolvio la fila 1 · EXIT=2');
+process.exit(control ? 0 : 2);

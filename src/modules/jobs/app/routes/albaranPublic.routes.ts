@@ -256,7 +256,10 @@ router.get('/:token', async (req: Request, res: Response) => {
   const obra = esc((job?.direccion || job?.titulo || '').trim());
 
   if (albaran.estado === 'firmado') {
-    return html('Parte de trabajo firmado', `${hero}<div class="status-ok"><strong>Este parte de trabajo ya está firmado.</strong><br/>Gracias, ${customerName}. Recibirás tu copia por WhatsApp.</div>`);
+    // SCRUM-1302d (D) · ni aquí ni en «¡Parte firmado!» se promete la copia por WhatsApp: el
+    // auto-envío del POST es de mejor esfuerzo y lo corta el tope diario (J6), y la página no sabe
+    // si va a salir. Lo vigila `tests/scrum1302d-textos-de-la-pagina-de-firma.test.mjs`.
+    return html('Parte de trabajo firmado', `${hero}<div class="status-ok"><strong>Este parte de trabajo ya está firmado.</strong><br/>Gracias, ${customerName}.</div>`);
   }
   if (albaran.estado !== 'emitido') {
     // borrador u otro: el token solo se emite en 'emitido', pero degradamos con dignidad.
@@ -339,7 +342,7 @@ router.get('/:token', async (req: Request, res: Response) => {
             const d=await r.json().catch(()=>({}));
             document.querySelector('.card').innerHTML=
               '<div style="text-align:center;padding:12px 0"><div class="success-check">✓</div>'+
-              '<h1>¡Parte firmado!</h1><p class="meta">Gracias, ${customerName}. Recibirás tu copia por WhatsApp.</p></div>';
+              '<h1>¡Parte firmado!</h1><p class="meta">Gracias, ${customerName}.</p></div>';
             if(d && typeof d.portalUrl==='string' && /^https?:\\/\\//.test(d.portalUrl)){
               const p=document.createElement('p'); p.className='meta';
               p.textContent=${literalJs(`Ahí tienes tus ${presupuestosDe(merchant)} y pagos con ${negocioDe(merchant)}.`)};
@@ -362,10 +365,11 @@ router.get('/:token', async (req: Request, res: Response) => {
             }
             btn.disabled=false; btn.textContent='Firmar el parte de trabajo';
             const e=document.getElementById('sig-error');
-            e.textContent=d.message||'No se pudo firmar. Inténtalo de nuevo.'; e.style.display='block';
+            e.textContent=d.message||'No se ha podido firmar. Inténtalo de nuevo.'; e.style.display='block';
           }
         }catch(_){ btn.disabled=false; btn.textContent='Firmar el parte de trabajo';
-          const e=document.getElementById('sig-error'); e.textContent='Error de conexión.'; e.style.display='block'; }
+          // SCRUM-1302d: aquí no se sabe si la firma llegó. Sobre un parte ya firmado el POST contesta que ya está, sin escribir.
+          const e=document.getElementById('sig-error'); e.textContent='No hemos podido confirmar que tu firma haya llegado. Comprueba tu conexión y vuelve a intentarlo.'; e.style.display='block'; }
       });
     </script>
   `);
@@ -437,13 +441,38 @@ router.post('/:token/firmar', firmaLimiter, async (req: Request, res: Response) 
       firmadoPorNombre,
       firmadoPorCalidad: calidad.valor,
     });
-    await prisma.albaran.update({
-      where: { id: albaran.id },
-      data: {
-        estado: 'firmado', signatureUrl: signatureData, firmadoAt, evidenciaFirma: evidencia as any,
-        firmadoPorNombre, firmadoPorCalidad: calidad.valor,
-      },
-    });
+    // ── 🔴 SCRUM-1302j · LA FIRMA SE ESCRIBE SÓLO SI EL PARTE SIGUE COMO SE LEYÓ ───────────────
+    //
+    // Leer `emitido` arriba y escribir aquí no es una sola operación. Con `where: { id }`, dos
+    // peticiones a la vez leían las dos `emitido` y escribían las dos: quedaba el SEGUNDO trazo y
+    // el segundo nombre, con dos PDF y dos copias pedidas (medido por S4 en SCRUM-1302d). Es el
+    // patrón de SCRUM-1276 en el presupuesto: el estado leído va en el `where`.
+    //
+    // Y la versión leída también: si el profesional corrige el parte entre la lectura y esta
+    // escritura, lo que se sellaría es un contenido que el cliente no vio (la ventana que
+    // SCRUM-361 comprueba arriba, pero sobre lo leído).
+    //
+    // Quien llega tarde NO repite nada: ni PDF, ni copia, ni enlace del portal. Se vuelve a leer y
+    // se contesta lo mismo que contestaría una petición nueva sobre ese parte.
+    try {
+      await prisma.albaran.update({
+        where: { id: albaran.id, estado: albaran.estado, version: albaran.version },
+        data: {
+          estado: 'firmado', signatureUrl: signatureData, firmadoAt, evidenciaFirma: evidencia as any,
+          firmadoPorNombre, firmadoPorCalidad: calidad.valor,
+        },
+      });
+    } catch (e: any) {
+      if (e?.code !== 'P2025') throw e;
+      const ahora = await prisma.albaran.findUnique({ where: { id: albaran.id }, select: { estado: true, version: true } });
+      if (ahora?.estado === 'firmado') return res.json({ ok: true, already: true });
+      const sigueIgual = ahora ? puedeFirmarEstaVersion(req.body?.version, ahora.version) : null;
+      if (sigueIgual && !sigueIgual.ok) {
+        return res.status(409).json({ error: sigueIgual.error, message: sigueIgual.message });
+      }
+      // El mismo texto, ya aprobado, que la puerta de arriba: literal y con su `message` (SCRUM-275).
+      return res.status(409).json({ error: 'invalid_transition', message: 'Este parte de trabajo no se puede firmar ahora.' });
+    }
     await ensureAlbaranPdf(albaran.id, true).catch((e) => console.error('[albaranPublic] PDF tras firmar:', e?.message || e));
 
     // AUTO-ENVÍO de la copia firmada (SCRUM-49): best-effort, fire-and-forget. La firma NUNCA

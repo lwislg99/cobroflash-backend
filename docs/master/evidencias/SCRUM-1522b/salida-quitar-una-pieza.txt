@@ -1,0 +1,30 @@
+POBLACION: 5 pasadas (1 base + 4 mutaciones) · tests/scrum1522b-el-panel-cuenta-lo-mismo.test.mjs + tests/scrum1093h-censo-fecha-sin-zona.test.mjs
+BASE (sin mutar) · mutacion aplicada: n/a → 34 casos · pasan 34 · caen 0
+M1 · las metricas vuelven a ignorar la zona del comercio · mutacion aplicada: true → 34 casos · pasan 26 · caen 8
+    cae: SCRUM-1522b · 🔴 13 de madrugada + 87 de día, comercio en Madrid, proceso en UTC: el panel y el tope dicen 100
+    cae: SCRUM-1522b · 🔴 13 de madrugada + 87 de día, comercio en Madrid, proceso en Europe/Madrid: el panel y el tope dicen 100
+    cae: SCRUM-1522b · 🔴 13 de madrugada + 87 de día, comercio en Madrid, proceso en America/New_York: el panel y el tope dicen 100
+    cae: SCRUM-1522b · 🔴 el mes es el del comercio, con el proceso en UTC
+    cae: SCRUM-1522b · 🔴 el mes es el del comercio, con el proceso en Europe/Madrid
+    cae: SCRUM-1522b · 🔴 el mes es el del comercio, con el proceso en America/New_York
+    cae: SCRUM-1522b · 🔴 «por ventana» de hoy también es del día del comercio
+    cae: SCRUM-1522b · 🔴 BARRIDO: en ningún instante el panel y el tope cuentan distinto
+M2 · Hoy vuelve a contar todas las filas del dia · mutacion aplicada: true → 34 casos · pasan 29 · caen 5
+    cae: SCRUM-1522b · 🔴 90 enviadas + 15 rechazadas, proceso en UTC: el panel y el tope dicen 90
+    cae: SCRUM-1522b · 🔴 90 enviadas + 15 rechazadas, proceso en Europe/Madrid: el panel y el tope dicen 90
+    cae: SCRUM-1522b · 🔴 90 enviadas + 15 rechazadas, proceso en America/New_York: el panel y el tope dicen 90
+    cae: SCRUM-1522b · 🔴 lo que está en cola cuenta en los dos, y lo que el proveedor aceptó y luego falló también
+    cae: SCRUM-1522b · 🔴 BARRIDO: en ningún instante el panel y el tope cuentan distinto
+M3 · el mes vuelve al reloj del proceso · mutacion aplicada: true → 34 casos · pasan 29 · caen 5
+    cae: SCRUM-1093h · 🔴 RATCHET: toda fila del censo real tiene una entrada en `USO`
+    cae: SCRUM-1093h · ninguna entrada de `RETIRADAS` ha vuelto a aparecer en el censo
+    cae: SCRUM-1522b · 🔴 el mes es el del comercio, con el proceso en UTC
+    cae: SCRUM-1522b · 🔴 el mes es el del comercio, con el proceso en Europe/Madrid
+    cae: SCRUM-1522b · 🔴 el mes es el del comercio, con el proceso en America/New_York
+M4 · el filtro comun deja de excluir las rechazadas · mutacion aplicada: true → 34 casos · pasan 30 · caen 4
+    cae: SCRUM-1522b · 🔴 90 enviadas + 15 rechazadas, proceso en UTC: el panel y el tope dicen 90
+    cae: SCRUM-1522b · 🔴 90 enviadas + 15 rechazadas, proceso en Europe/Madrid: el panel y el tope dicen 90
+    cae: SCRUM-1522b · 🔴 90 enviadas + 15 rechazadas, proceso en America/New_York: el panel y el tope dicen 90
+    cae: SCRUM-1522b · 🔴 lo que está en cola cuenta en los dos, y lo que el proveedor aceptó y luego falló también
+RESTAURADO: fuente igual al original=true · dist recompilado, salida 0
+EXIT=0

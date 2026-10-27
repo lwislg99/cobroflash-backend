@@ -1,0 +1,11 @@
+
+[señal de nombres v1] medible=si ausentes=6 ficheros_con_ausentes=1 dudosos=0 declarados=9762 literales=9643 no_comparables=119 ficheros=1206 tap_tests=10296 tap_fail=8
+  POBLACIÓN: 1206 ficheros de tests/ · 9762 llamadas test()/it() (censo de SCRUM-708: 9762, coincide) · 9643 con nombre literal (9514 distintos)
+  PUNTO CIEGO: 119 llamadas NO se comparan (119 con el nombre construido, 0 sin nombre) en 68 ficheros. Si se pierden, esta señal no lo ve.
+  REPETIDOS: 129 nombres declarados más de una vez (129 en más de un fichero): se comparan por multiplicidad.
+  TAP: 2620532 caracteres · 10296 líneas de test · 0 de suite · resumen: tests 10296 · fail 8 · entero
+  🔴 FALTAN AL MENOS 6 casos declarados, en 1 fichero(s). La tanda no informó de ellos:
+     tests/scrum1344-arnes-de-prueba-con-rol.test.mjs · faltan AL MENOS 6 de 18 (cola) · posiciones 13–18 · líneas 309–371 · en el mismo hueco hay 1 llamada(s) de nombre construido: pueden faltar más casos y esta señal no los ve
+
+::notice title=señal de nombres · FALTAN al menos 6 en 1 fichero(s)::[señal de nombres v1] medible=si ausentes=6 ficheros_con_ausentes=1 dudosos=0 declarados=9762 literales=9643 no_comparables=119 ficheros=1206 tap_tests=10296 tap_fail=8
+::warning title=señal de nombres · faltan casos::tests/scrum1344-arnes-de-prueba-con-rol.test.mjs · faltan AL MENOS 6 de 18 (cola) · posiciones 13–18 · líneas 309–371 · en el mismo hueco hay 1 llamada(s) de nombre construido: pueden faltar más casos y esta señal no los ve. La tanda no informó de ellos y salió igual.

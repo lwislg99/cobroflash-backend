@@ -1,0 +1,5 @@
+runs claude.yml: 916 (skipped 454) · vivos 462 {"vivos":462,"sinJobs":0,"accionCorrio":400,"puertaNo":62,"avisador":168,"empujeWorkflow":29}
+commits bot 161: dentro de un run 161 · fuera 0 
+runs con >=1 commit del bot dentro: 131
+runs con paso «Disparó CI el push» ejecutado: 29 · de esos con commit del bot dentro: 29
+commits bot tras-1263 con PR: 29 · dentro de run que pasó por «Disparó CI»: 29

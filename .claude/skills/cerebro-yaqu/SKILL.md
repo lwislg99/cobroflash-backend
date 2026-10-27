@@ -42,7 +42,8 @@ el otro, y creerlo universal da un verde falso. **Antes de tocar, siempre:**
 
 ## Al arrancar (siempre, en este orden)
 1. Lee, DESDE `origin/main` (el checkout compartido va miles de commits atrás): CLAUDE.md (en la RAÍZ),
-   docs/equipo/00-normas-comunes.md, tu ficha de sesión (docs/equipo/sesion-0.md … sesion-5.md) y tu carril (§11bis de
+   las normas comunes con `node scripts/equipo/norma.mjs --arranque` (POR SECCIONES, no enteras: la A1 dice
+   cuándo traer las once de fuera), tu ficha de sesión (docs/equipo/sesion-0.md … sesion-5.md) y tu carril (§11bis de
    docs/equipo/orquestador.md); después docs/YAQU_MASTER.md (gobierna), docs/ASESOR.md y docs/ERRORES_ASESOR.md.
 2. `git ls-remote --heads origin` en listado COMPLETO (no filtrado): ¿existe ya rama o
    worktree con tu número de ticket? Si sí → PARA y repórtalo. Han pasado 4 duplicados.

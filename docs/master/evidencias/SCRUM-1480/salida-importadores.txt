@@ -1,0 +1,48 @@
+POBLACIÓN · 1723 ficheros leídos por AST (scripts/, tests/, .claude/hooks/) · 45 pedidos
+CONTROL · scripts/_suelo-de-la-tanda.mjs lo importa scripts/suelo-de-la-tanda.mjs: SÍ
+  2 importadores (scripts 1, tests 1) · scripts/_arbol-quieto.mjs  ← meta-guard-mutaciones.mjs
+  9 importadores (scripts 9, tests 0) · scripts/_banco-lista.mjs
+ 42 importadores (scripts 37, tests 5) · scripts/_hallazgos-y-ciegos.mjs
+  2 importadores (scripts 1, tests 1) · scripts/_huella-de-la-caida.mjs  ← tanda-con-veredicto.mjs
+  5 importadores (scripts 3, tests 2) · scripts/_marca-de-arbol.mjs  ← censo-mudez.mjs, guards-entrada.mjs, meta-guard-mutaciones.mjs
+  5 importadores (scripts 3, tests 2) · scripts/_medidor-de-toque.mjs  ← censo-objetivo-tactil-panel.mjs, guard-a11y-landing.mjs, guard-objetivo-tactil.mjs
+ 51 importadores (scripts 38, tests 13) · scripts/_navegador.mjs
+  3 importadores (scripts 2, tests 1) · scripts/_pagina-panel.mjs  ← censo-objetivo-tactil-panel.mjs, guard-objetivo-tactil.mjs
+  6 importadores (scripts 3, tests 3) · scripts/_prisma-client-guard.mjs  ← _prisma-sync.mjs, guards-visuales.mjs, preview-migracion.mjs
+ 18 importadores (scripts 16, tests 2) · scripts/_puerta-de-entrada.mjs
+  2 importadores (scripts 1, tests 1) · scripts/_reporters-de-node-options.mjs  ← tanda-con-veredicto.mjs
+  5 importadores (scripts 1, tests 4) · scripts/_ritmo-de-despliegue.mjs  ← vigilante-de-despliegue.mjs
+  4 importadores (scripts 2, tests 2) · scripts/_senal-de-nombres.mjs  ← senal-de-nombres.mjs, senal-de-nombres.mjs
+ 34 importadores (scripts 30, tests 4) · scripts/_servidor.mjs
+  5 importadores (scripts 2, tests 3) · scripts/_solape-de-guards.mjs  ← censo-guards-navegador.mjs, guards-visuales.mjs
+  7 importadores (scripts 2, tests 5) · scripts/_suelo-de-la-tanda.mjs  ← _evidencia-tanda.mjs, suelo-de-la-tanda.mjs
+  9 importadores (scripts 9, tests 0) · scripts/_trabajos-de-muestra.mjs
+  3 importadores (scripts 1, tests 2) · scripts/_trinquete-de-zona.mjs  ← trinquete-de-zona.mjs
+  7 importadores (scripts 1, tests 6) · scripts/_vigilante-de-despliegue.mjs  ← vigilante-de-despliegue.mjs
+  0 importadores (scripts 0, tests 0) · scripts/censo-accion-del-80.mjs
+  0 importadores (scripts 0, tests 0) · scripts/censo-clics-del-80.mjs
+  0 importadores (scripts 0, tests 0) · scripts/censo-objetivo-tactil-panel.mjs
+  3 importadores (scripts 1, tests 2) · scripts/censo-regla-42.mjs  ← _huella-de-la-caida.mjs
+  2 importadores (scripts 0, tests 2) · scripts/clasificar-fallo-automerge.mjs
+  2 importadores (scripts 0, tests 2) · scripts/conflicto-de-registro.mjs
+  0 importadores (scripts 0, tests 0) · scripts/constancia-del-alter.mjs
+  1 importadores (scripts 0, tests 1) · scripts/equipo/intermitente-1281.mjs
+  1 importadores (scripts 0, tests 1) · scripts/equipo/por-que-cayo.mjs
+  1 importadores (scripts 0, tests 1) · scripts/equipo/solo-docs.mjs
+  3 importadores (scripts 1, tests 2) · scripts/frontera-dist.mjs  ← meta-guard-mutaciones.mjs
+ 16 importadores (scripts 1, tests 15) · scripts/guards-visuales.mjs  ← _salida-de-guard.mjs
+ 30 importadores (scripts 2, tests 28) · scripts/meta-guard-mutaciones.mjs  ← _suelo-contra-main.mjs, censo-guards-gateados.mjs
+  7 importadores (scripts 3, tests 4) · scripts/puerta-avisador-rojo.mjs  ← puerta-claude-empuje.mjs, puerta-claude.mjs, vigia-pasada.mjs
+  1 importadores (scripts 0, tests 1) · scripts/puerta-claude.mjs
+  2 importadores (scripts 0, tests 2) · scripts/puerta-claude-empuje.mjs
+  0 importadores (scripts 0, tests 0) · scripts/senal-de-nombres.mjs
+  0 importadores (scripts 0, tests 0) · scripts/suelo-de-la-tanda.mjs
+  0 importadores (scripts 0, tests 0) · scripts/tanda-con-veredicto.mjs
+  0 importadores (scripts 0, tests 0) · scripts/trinquete-de-zona.mjs
+  8 importadores (scripts 4, tests 4) · scripts/vigia-atascados.mjs  ← equipo/latido.mjs, puerta-avisador-rojo.mjs, vigia-pasada.mjs, vigia-silencio-de-main.mjs
+  1 importadores (scripts 0, tests 1) · scripts/vigia-despliegue-aviso.mjs
+  0 importadores (scripts 0, tests 0) · scripts/vigia-pasada.mjs
+  0 importadores (scripts 0, tests 0) · scripts/vigilante-de-despliegue.mjs
+  2 importadores (scripts 0, tests 2) · scripts/zona-roja.mjs
+  1 importadores (scripts 0, tests 1) · scripts/vigia-silencio-de-main.mjs
+EXIT=0

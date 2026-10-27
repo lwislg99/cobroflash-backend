@@ -1,0 +1,192 @@
+// Sonda de SCRUM-1403 · ¿QUÉ DINERO RECONSTRUYE un Técnico por la FICHA DE CLIENTE, y qué le quedaría
+// con cada una de las tres salidas que tiene que decidir el fundador?
+//
+// MIDE, no arregla. Dos partes:
+//   ① lo que la app CONTESTA hoy (dist/app.js por HTTP, sesión de Técnica, Prisma de verdad);
+//   ② lo que contestaría cada salida. Ninguna de las tres está construida: se CALCULAN aquí con la
+//      puerta que ya existe (`whereFacturasVisibles`, la de SCRUM-1397, importada de dist/), contra
+//      la misma base. Lo que diga ② es una cuenta hecha con el criterio real, no un comportamiento
+//      visto de la app.
+//
+// El negocio es el de J2i (4 clientes, 4 presupuestos, 4 facturas; panel 1.050 y 900 de Blas), el
+// mismo de `docs/evidencias/scrum1397/sonda-otras-puertas.mjs.txt`, para que las cifras se puedan
+// comparar. Encima se siembra lo que aquel no tenía, sin mover el panel:
+//   · un gasto de 30 en el presupuesto de Blas (para que «Beneficio» no coincida con «Cobrado»);
+//   · los eventos «Pago recibido» de las tres facturas cobradas, A MANO y con la forma que escribe
+//     `psp.routes.ts` (`<importe> <moneda> · Factura <número>`): ese camino se LEE, no se ejecuta;
+//   · C5: un cliente que da de alta la propia Técnica por HTTP, sin ningún documento;
+//   · C6: un cliente con un Trabajo asignado a la Técnica y ningún documento (la visita de mañana).
+// El banco nace de `prisma/schema.prisma`: esto dice qué contestan las rutas con ESTE negocio
+// fabricado, no cómo son los datos de ninguna cuenta real.
+//
+// Uso: copiar a un .mjs y `LIBRO_PG_URL=<banco> node <fichero> <raiz del arbol, con dist/>`
+import path from 'node:path';
+import http from 'node:http';
+import crypto from 'node:crypto';
+import { pathToFileURL } from 'node:url';
+
+const fin = (codigo, linea) => { if (linea) console.log(linea); console.log('EXIT=' + codigo); process.exit(codigo); };
+const raiz = process.argv[2];
+if (!raiz) fin(2, 'CIEGO: falta la raiz del arbol');
+const url = process.env.LIBRO_PG_URL || '';
+const u = url ? new URL(url) : null;
+if (!u || !['127.0.0.1', 'localhost'].includes(u.hostname) || !u.pathname.endsWith('_test')) fin(2, 'CIEGO: LIBRO_PG_URL no es un banco desechable (loopback y base «*_test»)');
+// Hay un POST (el alta de C5) y la app entera importada: con credenciales de envío no arranca.
+const sospechosas = Object.keys(process.env).filter((k) => /WHATSAPP|RESEND|STRIPE|GEMINI|ANTHROPIC|SMTP/i.test(k));
+if (sospechosas.length) fin(2, 'CIEGO: hay variables de integración en el entorno (' + sospechosas.length + '); la sonda no arranca con ellas');
+process.env.DATABASE_URL = url;
+
+const de = (rel) => import(pathToFileURL(path.join(raiz, 'dist', rel)).href);
+const { prisma } = await de('core/db/prisma.js');
+const { app } = await de('app.js');
+const { whereFacturasVisibles } = await de('core/documentos/accesoALaFactura.js');
+const { whereSuyoElTrabajo } = await de('modules/jobs/domain/accesoAlTrabajo.js');
+
+const marca = Date.now();
+const merchant = await prisma.merchant.create({ data: { country: 'ES', onboardingCompleted: true, name: 'Sonda 1403', email: `sonda-1403-${marca}@test.local` } });
+const M = merchant.id;
+const miembro = (name, role) => prisma.teamMember.create({ data: { merchantId: M, name, email: `sonda1403-${name}-${marca}@test.local`, role, status: 'active' } });
+const ana = await miembro('Ana', 'tecnico');
+const blas = await miembro('Blas', 'tecnico');
+const jefa = await miembro('Jefa', 'admin');
+const clientes = [];
+for (const n of ['C1', 'C2', 'C3', 'C4']) clientes.push(await prisma.customer.create({ data: { merchantId: M, name: n } }));
+let nq = 0;
+const presupuesto = (cliente, autorId, total, status = 'accepted') => prisma.quote.create({
+  data: { merchantId: M, customerId: cliente.id, total: String(total), currency: 'EUR', lines: [], quoteNumber: ++nq, status, teamMemberId: autorId },
+});
+const ahora = new Date();
+const factura = (cliente, numero, total, extra) => prisma.invoice.create({
+  data: { merchantId: M, customerId: cliente.id, number: numero, total: String(total), currency: 'EUR', pdfUrl: 'PENDING_PDF', qrData: 'PENDING', type: 'F1', vfEstado: 'no_aplica', status: 'pending', quoteId: null, ...extra },
+});
+const q1 = await presupuesto(clientes[0], ana.id, 100);
+const q2 = await presupuesto(clientes[1], blas.id, 900);
+const q3 = await presupuesto(clientes[2], blas.id, 400, 'sent');
+await presupuesto(clientes[3], null, 300);
+await factura(clientes[0], 'A-1', 100, { quoteId: q1.id, status: 'paid', paidAt: ahora });
+await factura(clientes[1], 'A-2', 900, { quoteId: q2.id, status: 'paid', paidAt: ahora });
+await factura(clientes[2], 'A-3', 400, { quoteId: q3.id });
+await factura(clientes[3], 'A-4', 50, { status: 'paid', paidAt: ahora });
+// Lo que el negocio de J2i no tenía:
+await prisma.expense.create({ data: { merchantId: M, quoteId: q2.id, concept: 'material', amount: '30' } });
+for (const [c, importe, numero] of [[clientes[0], 100, 'A-1'], [clientes[1], 900, 'A-2'], [clientes[3], 50, 'A-4']]) {
+  await prisma.customerEvent.create({ data: { merchantId: M, customerId: c.id, type: 'payment_received', title: 'Pago recibido', detail: `${importe.toFixed(2)} EUR · Factura ${numero}` } });
+}
+const c6 = await prisma.customer.create({ data: { merchantId: M, name: 'C6' } });
+await prisma.job.create({ data: { merchantId: M, customerId: c6.id, operarioId: ana.id } });
+
+const sesion = async (teamMemberId) => {
+  const token = crypto.randomBytes(32).toString('hex');
+  await prisma.authSession.create({ data: { merchantId: M, teamMemberId, token, type: 'session', expiresAt: new Date(Date.now() + 3600e3) } });
+  return token;
+};
+const server = http.createServer(app).listen(0);
+await new Promise((r) => server.once('listening', r));
+const port = server.address().port;
+const pedir = async (token, ruta, opciones = {}) => {
+  const r = await fetch(`http://127.0.0.1:${port}${ruta}`, {
+    method: opciones.method || 'GET',
+    headers: { cookie: `pf_session=${token}`, ...(opciones.body ? { 'content-type': 'application/json' } : {}) },
+    body: opciones.body ? JSON.stringify(opciones.body) : undefined,
+  });
+  return { status: r.status, cuerpo: await r.json().catch(() => null) };
+};
+const tAna = await sesion(ana.id);
+const tJefa = await sesion(jefa.id);
+
+// C5: lo da de alta la propia Técnica, por la ruta que tiene abierta.
+const alta = await pedir(tAna, '/admin/customers', { method: 'POST', body: { name: 'C5', phone: '600000005' } });
+const c5id = alta.cuerpo?.id ?? alta.cuerpo?.customer?.id ?? null;
+
+const panel = await pedir(tJefa, '/admin/metrics/team');
+const totalPanel = panel.cuerpo?.totalCollected;
+const blasPanel = panel.cuerpo?.members?.find((m) => m.id === blas.id)?.collected;
+// La VERDAD con la que se compara cada suma: leída de la base, sin pasar por ninguna ruta.
+const n = (x) => Number(x ?? 0);
+const verdad = {
+  facturado: n((await prisma.invoice.aggregate({ where: { merchantId: M }, _sum: { total: true } }))._sum.total),
+  cobrado: n((await prisma.invoice.aggregate({ where: { merchantId: M, status: 'paid' }, _sum: { total: true } }))._sum.total),
+  pendiente: n((await prisma.invoice.aggregate({ where: { merchantId: M, status: 'pending' }, _sum: { total: true } }))._sum.total),
+  gastos: n((await prisma.expense.aggregate({ where: { merchantId: M }, _sum: { amount: true } }))._sum.amount),
+  clientes: await prisma.customer.count({ where: { merchantId: M } }),
+};
+console.log(`POBLACION: ${verdad.clientes} clientes (4 con factura, C5 dado de alta por la Técnica → estado ${alta.status}, C6 con un Trabajo suyo), 4 presupuestos, 4 facturas, 1 gasto, 3 eventos de pago · pregunta la Técnica id ${ana.id}`);
+console.log(`PATRON: panel de admin → total cobrado ${totalPanel}, Blas ${blasPanel} · base → facturado ${verdad.facturado}, cobrado ${verdad.cobrado}, pendiente ${verdad.pendiente}, gastos ${verdad.gastos}, beneficio ${verdad.cobrado - verdad.gastos}`);
+if (totalPanel !== 1050 || blasPanel !== 900) fin(2, 'CIEGO: el patrón no dice 1.050 y 900; el negocio sembrado no es el de J2i');
+if (verdad.cobrado !== totalPanel) fin(2, 'CIEGO: la base y el panel no dicen el mismo cobrado');
+if (alta.status !== 200 && alta.status !== 201) fin(2, 'CIEGO: la Técnica no pudo dar de alta a C5 (estado ' + alta.status + '): el caso de la opción 3 no existe');
+
+// ═══ ① LO QUE LA APP CONTESTA HOY ═══════════════════════════════════════════════════════════════
+const cartera = await pedir(tAna, '/admin/customers');
+const filas = Array.isArray(cartera.cuerpo) ? cartera.cuerpo : [];
+const clavesDineroLista = [...new Set(filas.flatMap((f) => Object.keys(f)))].filter((k) => /saldo|total|paid|pend|importe|amount/i.test(k));
+const suma = { totalBilled: 0, totalPaid: 0, totalPending: 0, totalExpenses: 0, profit: 0 };
+let fichas = 0, facturasCobradas = 0, presupuestosAjenos = 0, facturasAjenas = 0, eventosPago = 0;
+const fichaDe = new Map();
+for (const c of filas) {
+  const d = await pedir(tAna, `/admin/customers/${c.id}/detail`);
+  if (d.status !== 200) continue;
+  fichas += 1;
+  fichaDe.set(c.id, d.cuerpo);
+  for (const k of Object.keys(suma)) suma[k] += n(d.cuerpo.stats?.[k]);
+  facturasCobradas += (d.cuerpo.invoices ?? []).filter((f) => f.status === 'paid').reduce((a, f) => a + n(f.total), 0);
+  facturasAjenas += (d.cuerpo.invoices ?? []).filter((f) => f.number !== 'A-1').length;
+  presupuestosAjenos += (d.cuerpo.quotes ?? []).filter((q) => q.id !== q1.id).length;
+  for (const e of d.cuerpo.events ?? []) {
+    const m = e.type === 'payment_received' && /^(\d+(?:\.\d+)?) /.exec(e.detail ?? '');
+    if (m) eventosPago += Number(m[1]);
+  }
+}
+const si = (a, b) => (a === b ? 'EXACTO' : 'no');
+console.log(`\n① HOY · GET /admin/customers → estado ${cartera.status} · clientes ${filas.length} · fichas que abre ${fichas} de ${verdad.clientes}`);
+console.log(`   dinero en la LISTA de clientes (claves con pinta de dinero): ${clavesDineroLista.length ? clavesDineroLista.join(', ') : 'ninguna'}`);
+console.log('   sumando las fichas, la Técnica obtiene del NEGOCIO ENTERO:');
+console.log(`     stats.totalPaid     (rótulo «Cobrado»)            ${suma.totalPaid} de ${verdad.cobrado} · ${si(suma.totalPaid, verdad.cobrado)}`);
+console.log(`     stats.totalBilled   (rótulo «Facturado»)          ${suma.totalBilled} de ${verdad.facturado} · ${si(suma.totalBilled, verdad.facturado)}`);
+console.log(`     stats.totalPending  (rótulo «Pendiente de cobro») ${suma.totalPending} de ${verdad.pendiente} · ${si(suma.totalPending, verdad.pendiente)}`);
+console.log(`     stats.totalExpenses (viaja, no se pinta)          ${suma.totalExpenses} de ${verdad.gastos} · ${si(suma.totalExpenses, verdad.gastos)}`);
+console.log(`     stats.profit        (rótulo «Beneficio»)          ${suma.profit} de ${verdad.cobrado - verdad.gastos} · ${si(suma.profit, verdad.cobrado - verdad.gastos)}`);
+console.log(`     las facturas cobradas de la pestaña (20 por ficha) ${facturasCobradas} de ${verdad.cobrado} · ${si(facturasCobradas, verdad.cobrado)}`);
+console.log(`     los eventos «Pago recibido» (50 por ficha)         ${eventosPago} de ${verdad.cobrado} · ${si(eventosPago, verdad.cobrado)}`);
+console.log(`   documentos AJENOS que traen las fichas: ${facturasAjenas} facturas de 3 y ${presupuestosAjenos} presupuestos de 3 (cada uno con su total)`);
+// (La primera pasada imprimía aquí «garantiaRetenida viaja en 0 fichas de 6» como control. No se
+// había sembrado ninguna garantía: ese cero no podía fallar, así que no era un control. Quitado.)
+
+// ═══ ② LAS TRES SALIDAS, CALCULADAS con la puerta de SCRUM-1397 ════════════════════════════════
+const quien = { merchantId: M, userRole: 'tecnico', teamMemberId: ana.id };
+const recorte = await whereFacturasVisibles(quien);
+const recorteAdmin = await whereFacturasVisibles({ merchantId: M, userRole: 'admin', teamMemberId: jefa.id });
+if (recorte === null || recorteAdmin !== null) fin(2, 'CIEGO: la puerta no recorta a la Técnica o recorta a la admin');
+const todos = await prisma.customer.findMany({ where: { merchantId: M }, select: { id: true, name: true }, orderBy: { id: 'asc' } });
+
+// Opción 2: los mismos agregados, con el recorte de la puerta en AND.
+let o2 = 0; let o2distintas = 0;
+for (const c of todos) {
+  const suyo = n((await prisma.invoice.aggregate({ where: { customerId: c.id, merchantId: M, status: 'paid', AND: [recorte] }, _sum: { total: true } }))._sum.total);
+  const real = n(fichaDe.get(c.id)?.stats?.totalPaid);
+  o2 += suyo;
+  if (suyo !== real) o2distintas += 1;
+}
+// Opción 3: la ficha es suya si el cliente tiene una factura que la puerta le deja ver, un
+// presupuesto suyo (autor, asignada al documento o de un Trabajo suyo) o un Trabajo suyo.
+const suyos = []; const pierde = [];
+for (const c of todos) {
+  const [f, q, j] = await Promise.all([
+    prisma.invoice.count({ where: { customerId: c.id, merchantId: M, AND: [recorte] } }),
+    prisma.quote.count({ where: { customerId: c.id, merchantId: M, OR: [{ teamMemberId: ana.id }, { asignados: { some: { teamMemberId: ana.id } } }] } }),
+    prisma.job.count({ where: { customerId: c.id, merchantId: M, ...whereSuyoElTrabajo(ana.id) } }),
+  ]);
+  (f + q + j > 0 ? suyos : pierde).push(c.name);
+}
+const o3 = todos.filter((c) => suyos.includes(c.name)).reduce((a, c) => a + n(fichaDe.get(c.id)?.stats?.totalPaid), 0);
+
+console.log('\n② LAS TRES SALIDAS (calculadas con la puerta real; NINGUNA está construida)');
+console.log(`   1 · no recibe los agregados          → por «totalPaid» suma 0 de ${verdad.cobrado} · abre ${fichas} fichas de ${verdad.clientes}`);
+console.log(`   2 · los recibe sólo sobre lo suyo    → por «totalPaid» suma ${o2} de ${verdad.cobrado} · abre ${fichas} fichas de ${verdad.clientes} · en ${o2distintas} de ${todos.length} fichas «Cobrado» diría una cifra distinta de lo que el cliente ha pagado`);
+console.log(`   3 · la ficha ajena no se abre        → por «totalPaid» suma ${o3} de ${verdad.cobrado} · abre ${suyos.length} fichas de ${verdad.clientes} (${suyos.join(', ')}) · deja de abrir ${pierde.join(', ')}`);
+console.log(`       de las que deja de abrir, C5 es el cliente que ELLA acaba de dar de alta${c5id ? '' : ' (id sin leer)'}: ${pierde.includes('C5') ? 'SÍ lo pierde' : 'no lo pierde'}`);
+console.log('   en las tres, la pestaña de documentos y los eventos de la ficha siguen trayendo lo ajeno si no se recortan aparte.');
+
+await new Promise((r) => server.close(r));
+await prisma.$disconnect();
+fin(0);

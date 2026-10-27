@@ -1,4 +1,5 @@
 // src/modules/system/quoteAdmin.ts
+import type { Prisma } from '@prisma/client';
 import { prisma } from '../../core/db/prisma';
 import { tagsParaPrisma } from './tagsDelCliente'; // SCRUM-595 (DOC-05): el MISMO mecanismo que CONT-07
 import { allocateInvoiceNumber, isReceiptNumber } from '../invoicing/domain/invoiceNumber.service';
@@ -6,13 +7,17 @@ import { buildBillingPlanView } from '../quotes/domain/billingPlanView'; // SCRU
 import { ensureQuoteDecisionToken } from '../quotes/domain/quoteToken.service'; // SCRUM-95
 import { getDeliveryStatusMany } from '../messaging/domain/whatsappLog.service'; // SCRUM-986
 import { tieneNumeroDeContacto } from '../../core/contacto/canalDeWhatsApp'; // SCRUM-1166
+import { anioDeLaSerie, whereDelGrupo } from '../../core/documentos/grupoDelPresupuesto'; // SCRUM-1490
 import { tieneDescuentoGlobalConVariosIva } from '../invoicing/domain/invoiceLines.service'; // SCRUM-887
 import { ERROR_DESCUENTO_GLOBAL_VARIOS_IVA, COPY_REVISAR_CON_DESCUENTO_GLOBAL_VARIOS_IVA } from '../quotes/domain/descuentoGlobalConVariosIva'; // SCRUM-887
 import {
   numeroConRevision, vistaDeRevisiones,
+  numeroVisibleDelPresupuesto, // SCRUM-1444c
+
   // SCRUM-688 · el llamador que faltaba: crear una revision de verdad.
   nuevaRevisionDe, vigenteUnicaDe, REVISION_HEREDA,
 } from '../quotes/domain/revision'; // SCRUM-655 (T6, fase B)
+import { jsonAnulable } from '../../core/db/jsonAnulable'; // SCRUM-1188d
 
 /**
  * SCRUM-606 (ALB-01) · EL TOPE DE ESTA LISTA, CON NOMBRE.
@@ -41,8 +46,16 @@ export async function listQuotesAdmin(
   // `null` ese if es falso y el filtro "del propietario" se caería en silencio, devolviendo
   // TODOS los presupuestos del negocio bajo el nombre de una persona.
   teamMemberId?: number | null,
+  // SCRUM-1403 · el recorte de quien pregunta (`wherePresupuestosVisibles`). `null` = ve todo el
+  // negocio, y entonces este `where` sale exactamente como salía.
+  recorte: Prisma.QuoteWhereInput | null = null,
+  // SCRUM-1273 · `false` = sin los archivados · `true` = SÓLO ésos · sin pasar = no filtra. Lo pasa
+  // únicamente la lista de Presupuestos: archivar no saca de ningún otro sitio (c.19605, decisión 2),
+  // y el otro llamador (`GET /admin/albaranes/presupuestos`) no lo pasa a propósito.
+  archivados?: boolean,
 ) {
   const where: any = { merchantId };
+  if (archivados !== undefined) where.archivedAt = archivados ? { not: null } : null;
 
   if (teamMemberId !== undefined) where.teamMemberId = teamMemberId;
 
@@ -68,6 +81,11 @@ export async function listQuotesAdmin(
     if (dateFrom) where.createdAt.gte = dateFrom;
     if (dateTo)   where.createdAt.lte = dateTo;
   }
+
+  // SCRUM-1403 · en `AND`, no en `OR`: el `OR` de arriba es el de la búsqueda, y mezclarlos
+  // convertiría «los suyos» en «los suyos o los que casen con lo que busca». Y se suma al filtro
+  // por autor: pedir los de un compañero devuelve, de esos, los que además son suyos.
+  if (recorte) where.AND = [recorte];
 
   const quotes = await prisma.quote.findMany({
     where,
@@ -109,6 +127,7 @@ export async function listQuotesAdmin(
     return {
       id: q.id,
       number: q.quoteNumber ?? q.id, // A1.2: número visible por merchant (fallback pre-backfill)
+      numeroVisible: numeroVisibleDelPresupuesto(q), // SCRUM-1444c: el número HECHO; `number` sigue mientras S2 migra
       customerName: q.customer?.name ?? '—',
       customerPhone: q.customer?.phone ?? null,
       createdAt: q.createdAt,
@@ -132,6 +151,8 @@ export async function listQuotesAdmin(
       // SCRUM-986 · MISMO PROBLEMA DEL QUINTO ESLABÓN: proyección a mano. Sin esta línea el chip
       // se calcula y no sale. `null` = nunca se le envió por WhatsApp = sin chip.
       waDelivery: entregas.get(q.id) ?? null,
+      // SCRUM-1273 · proyección a mano (el quinto eslabón de arriba): sin esta línea no sale.
+      archivedAt: q.archivedAt ?? null,
     };
   });
 }
@@ -196,13 +217,17 @@ export async function getQuoteDetailAdmin(id: number, merchantId?: number) {
 
   // ── SCRUM-655 (T6, fase B) · QUÉ REVISIONES HAY Y CUÁL ESTÁ VIGENTE ───────────────────────
   // El «.1» de «P2004226.1» es una REVISIÓN, y vive en su columna: el número base no cambia.
-  // El grupo es {merchantId, quoteNumber}. 🔴 Y `quoteNumber` NULO NO ES UNA CLAVE: agrupar por
+  // El grupo es {merchantId, AÑO de la serie, quoteNumber} (SCRUM-1490: la serie es anual, y el 12
+  // de 2026 no es hermano del 12 de 2027). 🔴 Y `quoteNumber` NULO NO ES UNA CLAVE: agrupar por
   // null metería en el mismo saco a todos los presupuestos sin numerar del merchant, que no tienen
   // nada que ver entre sí. Sin número, un presupuesto es su propio grupo — y eso es la verdad, no
   // un apaño: sin número no hay «P2004226» del que ser la revisión.
   const hermanas = quote.quoteNumber != null
     ? await prisma.quote.findMany({
-        where: { merchantId: quote.merchantId, quoteNumber: quote.quoteNumber },
+        where: whereDelGrupo({
+          merchantId: quote.merchantId, quoteNumber: quote.quoteNumber,
+          anio: anioDeLaSerie(quote, quote.merchant),
+        }, quote.merchant),
         select: { id: true, quoteNumber: true, revision: true, status: true,
                   signatureUrl: true, total: true, createdAt: true },
         orderBy: { revision: 'asc' },
@@ -229,6 +254,7 @@ export async function getQuoteDetailAdmin(id: number, merchantId?: number) {
     id: r.id,
     revision: r.revision,
     numero: numeroConRevision(r),
+    numeroVisible: numeroVisibleDelPresupuesto(porId.get(r.id)!), // SCRUM-1444c
     status: porId.get(r.id)!.status,
     firmado: r.firmado,
     total: porId.get(r.id)!.total,
@@ -239,6 +265,7 @@ export async function getQuoteDetailAdmin(id: number, merchantId?: number) {
   return {
     id: quote.id,
     number: quote.quoteNumber ?? quote.id, // A1.2: número visible por merchant
+    numeroVisible: numeroVisibleDelPresupuesto(quote), // SCRUM-1444c: el número HECHO; `number` sigue mientras S2 migra
     // SCRUM-655 (T6, fase B). `number` NO se toca: un presupuesto sin revisiones sale exactamente
     // como salía —enumerado y sin «.0»—, y todo lo que ya lo consume sigue leyendo lo mismo.
     revision: quote.revision,
@@ -251,6 +278,8 @@ export async function getQuoteDetailAdmin(id: number, merchantId?: number) {
     status: quote.status,
     createdAt: quote.createdAt,
     updatedAt: quote.updatedAt,
+    // SCRUM-1273 · `null` = no archivado. La ficha lo enseña y ofrece «Desarchivar».
+    archivedAt: quote.archivedAt ?? null,
 
     currency: quote.currency,
     total: quote.total,
@@ -384,6 +413,8 @@ export async function acceptQuoteAdmin(
       decisionComment: params.comment ?? null,
       paymentTerms: params.paymentTerms ?? quote.paymentTerms,
       evidence: params.evidence ?? quote.evidence,
+      // SCRUM-1273 · una decisión sobre un presupuesto archivado lo devuelve a la lista (c.19605).
+      archivedAt: null,
     },
   });
 
@@ -431,6 +462,8 @@ export async function rejectQuoteAdmin(
       rejectionReason: params.reason ?? null,
       decisionComment: params.comment ?? null,
       evidence: params.evidence ?? quote.evidence,
+      // SCRUM-1273 · una decisión sobre un presupuesto archivado lo devuelve a la lista (c.19605).
+      archivedAt: null,
     },
   });
 
@@ -480,7 +513,8 @@ export async function rejectQuoteAdmin(
 
 /** Lo que hay que leer de la versión anterior: lo que se hereda + lo que la función necesita. */
 const SELECT_PARA_REVISION = Object.freeze(Object.fromEntries(
-  [...REVISION_HEREDA, 'id', 'merchantId', 'quoteNumber', 'revision', 'signatureUrl']
+  // SCRUM-1490: `seriesYear` y `createdAt` dicen de qué AÑO de la serie es el grupo.
+  [...REVISION_HEREDA, 'id', 'merchantId', 'quoteNumber', 'seriesYear', 'createdAt', 'revision', 'signatureUrl']
     .map((campo) => [campo, true]),
 )) as Record<string, true>;
 
@@ -491,22 +525,104 @@ export class RevisionNoCreable extends Error {
   }
 }
 
+// ── SCRUM-1188d (de paso) · UNA COLUMNA `Json?` VACÍA SE HEREDA VACÍA ──────────────────────
+//
+// `nuevaRevisionDe` copia cada campo tal cual se leyó, y una columna `Json?` a NULL de SQL se lee
+// `null`. Ese `null` de JS, escrito de vuelta, NO es un NULL: Prisma guarda el valor JSON `null`
+// (medido con la función de verdad contra Postgres: la revisión de un presupuesto sin niveles ni
+// plan salía con las columnas de abajo OCUPADAS). Por Prisma se leen igual, así que no lo nota
+// nadie hasta que una consulta pregunte `IS NULL`. `tags` es la que más pierde: su `null` quiere
+// decir «no se declararon etiquetas» (SCRUM-595), y una columna ocupada dice lo contrario.
+//
+// Son las columnas `Json?` de `Quote` que están en `REVISION_HEREDA`. Que esta lista sea ESA
+// intersección lo censa `tests/scrum1188d-la-revision-hereda-el-vacio.test.mjs` contra
+// `prisma/schema.prisma`: una columna `Json?` nueva que se clasifique como heredada y no entre
+// aquí sale roja.
+export const JSON_ANULABLES_DE_LA_REVISION = Object.freeze([
+  'docFields',
+  'payMethods',
+  'customBillingPlan',
+  'tiers',
+  'clausulasExcluidas',
+  'tags',
+] as const);
+
+/** Los datos de `nuevaRevisionDe`, con «vacío» dicho en el lenguaje de Prisma. No muta la entrada. */
+export function revisionParaLaBase(datos: Record<string, unknown>): Record<string, unknown> {
+  const salida: Record<string, unknown> = { ...datos };
+  for (const campo of JSON_ANULABLES_DE_LA_REVISION) {
+    if (salida[campo] === null) salida[campo] = jsonAnulable(null);
+  }
+  return salida;
+}
+
+// ── SCRUM-1150c · DOS «CREAR REVISIÓN» A LA VEZ NO PUEDEN LEER EL MISMO MÁXIMO ─────────────
+//
+// Leer el máximo del grupo y crear la fila es un read-then-write, y en READ COMMITTED no se
+// serializa solo. Medido contra Postgres (SCRUM-1150, comentario 19105, y otra vez el 13-oct-2026
+// con 9 de 10): dos `POST /admin/quotes/:id/revisiones` a la vez leían las dos «la última es la
+// .0» y las dos escribían la `.1`. Las dos contestaban 201, y desde ese momento la ficha de ese
+// presupuesto daba 500 (`revisiones_dos_vigentes` al leer) sin que el profesional pudiera
+// arreglarlo.
+//
+// El espacio del cerrojo es propio: 1748, 1749 y 1750 son de la emisión y 1751 del tope de
+// WhatsApp, y no se comparten. Crear una revisión no espera a una factura, ni al revés. La
+// segunda clave es el negocio: el grupo es (negocio, número) y sólo caben dos enteros.
+// (Desde SCRUM-1490 el grupo es (negocio, año de la serie, número); el cerrojo sigue siendo por
+// negocio, que los contiene a todos.)
+//
+// 🔴 NO HAY SEGUNDA RED, y se dice: `Quote` no tiene unicidad para (negocio, número, revisión).
+// El cerrojo es la garantía; el índice único sería esquema (ALTER) y no depende de este código.
+const REVISION_LOCK_NS = 1752;
+
 /**
- * Crea una revisión NUEVA de un presupuesto. No toca la anterior: la revisión es otra fila.
- *
- * 🔴 EL NÚMERO SALE DEL GRUPO ENTERO, no de sumar uno a la que se está mirando. Con dos versiones
- * y el profesional revisando la `.0`, sumar uno daría `.1` — que ya existe — y el grupo tendría
- * dos filas con la misma revisión: «cuál está vigente» dejaría de tener respuesta. Lo rechaza
- * `nuevaRevisionDe` con `RevisionesAmbiguas`, y por eso aquí se calcula sobre el máximo del grupo.
- *
- * ⚠️ Y SE CREA SOBRE LA VIGENTE, no sobre la que el profesional tenga abierta. Revisar una versión
- * vieja y heredar SU contenido perdería lo que se cambió después sin decir nada.
+ * Lo mínimo que usa `decidirRevisionDe`. NO es `Prisma.TransactionClient`, y es a propósito (lo
+ * cazó el guard de SCRUM-219, como a `LectorDeFichas`): la primera vez se le pasa el cliente
+ * GLOBAL, y una firma que dijera «transacción» afirmaría lo contrario de lo que se hace.
  */
-export async function crearRevisionDeQuote(merchantId: number, id: number) {
-  const anterior = await prisma.quote.findFirst({
-    where: { id, merchantId },
+interface LectorDeRevisiones {
+  quote: {
+    findFirst(args: {
+      // SCRUM-1519d: el cliente, del MISMO negocio (ver `decidirRevisionDe`).
+      where: { id: number; merchantId: number; customer: { merchantId: number } };
+      select: Record<string, true>;
+    }): Promise<unknown>;
+    findMany(args: {
+      where: Prisma.QuoteWhereInput; // SCRUM-1490: {negocio, año de la serie, número} (`whereDelGrupo`)
+      select: { id: true; revision: true; signatureUrl: true };
+      orderBy: { revision: 'asc' };
+    }): Promise<Array<{ id: number; revision: number; signatureUrl: string | null }>>;
+  };
+  // SCRUM-1490: la zona del negocio, que sólo decide el año de una fila anterior a la columna.
+  merchant: {
+    findUnique(args: {
+      where: { id: number };
+      select: { timezone: true };
+    }): Promise<{ timezone: string | null } | null>;
+  };
+}
+
+/**
+ * Lee el grupo y decide SOBRE QUÉ versión se crea la revisión y con qué número. No escribe nada,
+ * y lanza los rechazos (`RevisionNoCreable`, `RevisionesAmbiguas`, `CensoDeRevisionesCiego`).
+ *
+ * Se llama DOS veces (ver `crearRevisionDeQuote`), y por eso recibe el lector: la primera con el
+ * cliente global, la segunda con el de la transacción, ya detrás del cerrojo.
+ */
+async function decidirRevisionDe(db: LectorDeRevisiones, merchantId: number, id: number) {
+  // 🔴 SCRUM-1519d · EL CLIENTE TAMBIÉN TIENE QUE SER DE ESTE NEGOCIO, no sólo el presupuesto. La
+  // revisión COPIA `customerId` de la versión de origen sin preguntar de quién es: con un
+  // presupuesto propio que ya apuntara al cliente de otro comercio, nacía otra fila cruzada (J1,
+  // SCRUM-1519 c.19192: CRUZA 2 de 2). Se exige en las DOS lecturas —la abierta y la vigente,
+  // que es la que se copia— y contesta lo mismo que un id ajeno: `quote_not_found` (c.19205 ①,
+  // decisión del fundador: un 404 no confirma que el cliente exista).
+  const anterior = await db.quote.findFirst({
+    where: { id, merchantId, customer: { merchantId } },
     select: SELECT_PARA_REVISION,
-  }) as (Record<string, unknown> & { id: number; quoteNumber: number | null; revision: number }) | null;
+  }) as (Record<string, unknown> & {
+    id: number; quoteNumber: number | null; revision: number;
+    seriesYear?: number | null; createdAt?: Date | null;
+  }) | null;
 
   if (!anterior) throw new RevisionNoCreable('quote_not_found', 'El presupuesto no existe.');
 
@@ -519,8 +635,12 @@ export async function crearRevisionDeQuote(merchantId: number, id: number) {
     );
   }
 
-  const hermanas = await prisma.quote.findMany({
-    where: { merchantId, quoteNumber: anterior.quoteNumber },
+  // SCRUM-1490 · EL GRUPO ES {negocio, AÑO de la serie, número}, y la revisión nueva GUARDA ese año:
+  // no el del día en que se crea. La zona sólo decide el año de una fila anterior a la columna.
+  const negocio = await db.merchant.findUnique({ where: { id: merchantId }, select: { timezone: true } });
+  const anio = anioDeLaSerie(anterior, negocio);
+  const hermanas = await db.quote.findMany({
+    where: whereDelGrupo({ merchantId, quoteNumber: anterior.quoteNumber, anio }, negocio),
     select: { id: true, revision: true, signatureUrl: true },
     orderBy: { revision: 'asc' },
   });
@@ -535,10 +655,12 @@ export async function crearRevisionDeQuote(merchantId: number, id: number) {
   // Si la abierta no es la vigente, se revisa la VIGENTE: hay que releerla con todo su contenido.
   const origen = vigente.id === anterior.id
     ? anterior
-    : (await prisma.quote.findFirst({
-        where: { id: vigente.id, merchantId },
+    : (await db.quote.findFirst({
+        where: { id: vigente.id, merchantId, customer: { merchantId } }, // SCRUM-1519d
         select: SELECT_PARA_REVISION,
-      })) as Record<string, unknown> & { revision: number };
+      })) as (Record<string, unknown> & { revision: number }) | null;
+  // SCRUM-1519d · la vigente con el cliente de otro negocio no se copia: mismo 404 que arriba.
+  if (!origen) throw new RevisionNoCreable('quote_not_found', 'El presupuesto no existe.');
 
   // SCRUM-887 · UNA REVISIÓN DE UN C NO SE CREA (comentarios 15697 y 15698): HEREDARÍA el global
   // con varios tipos de IVA, que es justo lo que no se puede guardar ni facturar. Antes de escribir.
@@ -547,19 +669,49 @@ export async function crearRevisionDeQuote(merchantId: number, id: number) {
   }
 
   const siguiente = Math.max(...hermanas.map((q) => q.revision)) + 1;
-  const datos = nuevaRevisionDe(origen as any, siguiente);
+  return { base, vigente, origen, siguiente, anio };
+}
 
-  const creada = await prisma.quote.create({
-    data: datos as any,
-    select: { id: true, quoteNumber: true, revision: true, status: true },
+/**
+ * Crea una revisión NUEVA de un presupuesto. No toca la anterior: la revisión es otra fila.
+ *
+ * 🔴 EL NÚMERO SALE DEL GRUPO ENTERO, no de sumar uno a la que se está mirando. Con dos versiones
+ * y el profesional revisando la `.0`, sumar uno daría `.1` — que ya existe — y el grupo tendría
+ * dos filas con la misma revisión: «cuál está vigente» dejaría de tener respuesta. Lo rechaza
+ * `nuevaRevisionDe` con `RevisionesAmbiguas`, y por eso aquí se calcula sobre el máximo del grupo.
+ *
+ * ⚠️ Y SE CREA SOBRE LA VIGENTE, no sobre la que el profesional tenga abierta. Revisar una versión
+ * vieja y heredar SU contenido perdería lo que se cambió después sin decir nada.
+ */
+export async function crearRevisionDeQuote(merchantId: number, id: number) {
+  // Las puertas, ANTES de abrir la transacción: un rechazo no escribe ni reserva nada (lo exige
+  // `tests/scrum887c-caso-c-bloqueado.test.mjs`, que cuenta abrir una transacción como escritura).
+  await decidirRevisionDe(prisma, merchantId, id);
+
+  return prisma.$transaction(async (tx) => {
+    // SCRUM-1150c · PRIMERA SENTENCIA, y se suelta sola al terminar la transacción.
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(${REVISION_LOCK_NS}::int, ${merchantId}::int)`;
+
+    // 🔴 Y SE DECIDE OTRA VEZ, YA DENTRO. Lo de arriba se leyó sin cerrojo y pudo quedarse viejo
+    // mientras esperábamos: sólo esta lectura ve la revisión que acaba de confirmar el otro. Son
+    // las mismas puertas sobre el grupo que de verdad se va a ampliar (como SCRUM-814 al facturar).
+    const { base, vigente, origen, siguiente, anio } = await decidirRevisionDe(tx, merchantId, id);
+    // SCRUM-1490: el año es el del GRUPO, ya resuelto (la vigente puede ser una fila vieja sin él).
+    const datos = nuevaRevisionDe({ ...origen, seriesYear: anio } as any, siguiente);
+
+    const creada = await tx.quote.create({
+      data: revisionParaLaBase(datos) as any, // SCRUM-1188d: un `Json?` vacío se hereda vacío
+      select: { id: true, quoteNumber: true, revision: true, status: true },
+    });
+
+    return {
+      id: creada.id,
+      revision: creada.revision,
+      numero: numeroConRevision({ numero: base, revision: creada.revision }),
+      numeroVisible: numeroVisibleDelPresupuesto(creada), // SCRUM-1444c
+      status: creada.status,
+      // De qué versión salió, para que la pantalla pueda decirlo sin adivinarlo.
+      origenId: vigente.id,
+    };
   });
-
-  return {
-    id: creada.id,
-    revision: creada.revision,
-    numero: numeroConRevision({ numero: base, revision: creada.revision }),
-    status: creada.status,
-    // De qué versión salió, para que la pantalla pueda decirlo sin adivinarlo.
-    origenId: vigente.id,
-  };
 }

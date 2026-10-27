@@ -1,0 +1,7 @@
+# Date: Wed, 14 Oct 2026 16:36:49 GMT · dist del árbol s1-1302r (df43e244b, rama 1302r: su partes.routes.ts es el blob faa03b45ec, el MISMO que el de origin/main 099cfd383)
+/firmar (cliente) · CONTROL una firma: 200, escrituras=1
+/firmar (cliente) · secuencial, la segunda: 409 parte_locked
+/firmar (cliente) · DOS A LA VEZ: 200 y 200, escrituras=2, en la fila queda firmadoPorNombre=Berta
+/firmar-tecnico · CONTROL una firma: 200, escrituras=1
+/firmar-tecnico · secuencial, la segunda: 409 parte_locked
+/firmar-tecnico · DOS A LA VEZ: 200 y 200, escrituras=2, en la fila queda firmadoTecnicoNombre=Berta

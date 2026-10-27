@@ -1,0 +1,12 @@
+BASE sin mutar · POBLACION=7 · caen=[] · exit=0
+M1 · el quotesView.js de origin/main (sin la parte C) · numstat=«6	56	public/dashboard/js/quotesView.js» · POBLACION=7 · caen=[1,2,3,4,6,7] · MUERE
+M2 · sin repintar las fichas rápidas tras sustituir · numstat=«0	5	public/dashboard/js/quotesView.js» · POBLACION=7 · caen=[7] · MUERE
+M3 · el PUT no manda paymentTerms cuando es null · numstat=«1	1	public/dashboard/js/quotesView.js» · POBLACION=7 · caen=[3] · MUERE
+M4 · sustituye SIN preguntar · numstat=«1	1	public/dashboard/js/quotesView.js» · POBLACION=7 · caen=[1,2,4] · MUERE
+M5 · si la lista no se lee, crea a ciegas · numstat=«2	2	public/dashboard/js/quotesView.js» · POBLACION=7 · caen=[6] · MUERE
+M6 · «mismo nombre» exacto (cuenta mayúsculas) · numstat=«1	1	public/dashboard/js/quotesView.js» · POBLACION=7 · caen=[4] · MUERE
+M7 · el PUT manda también name · numstat=«1	1	public/dashboard/js/quotesView.js» · POBLACION=7 · caen=[1] · MUERE
+M8 · la pregunta sin «no se puede deshacer» (el literal de antes de la firma) · numstat=«1	1	public/dashboard/js/quotesView.js» · POBLACION=7 · caen=[1,2,4] · MUERE
+restaurado: git status --porcelain = «»
+MUTANTES=8 · no mueren=0
+EXIT=0

@@ -1,0 +1,25 @@
+ANTES del arreglo · origin/main 6834c4b8ded04eaedb5cea07f2c5cb94bafbe6d9 · node --test tests/scrum1522b-el-panel-cuenta-lo-mismo.test.mjs · salida de node: 1
+ok 1 - SCRUM-1522b · SUELO: la zona del proceso entra, y el doble da filas a las dos funciones
+not ok 2 - SCRUM-1522b · 🔴 13 de madrugada + 87 de día, comercio en Madrid, proceso en UTC: el panel y el tope dicen 100
+    🔴 el panel dice «Hoy: 87» y el tope cuenta 100: el profesional ve que le quedan plantillas y el envío no sale.
+not ok 3 - SCRUM-1522b · 🔴 90 enviadas + 15 rechazadas, proceso en UTC: el panel y el tope dicen 90
+    🔴 zona null: el panel dice «Hoy: 105» contando las rechazadas, y el tope 90
+ok 4 - SCRUM-1522b · 🔴 13 de madrugada + 87 de día, comercio en Madrid, proceso en Europe/Madrid: el panel y el tope dicen 100
+not ok 5 - SCRUM-1522b · 🔴 90 enviadas + 15 rechazadas, proceso en Europe/Madrid: el panel y el tope dicen 90
+    🔴 zona null: el panel dice «Hoy: 105» contando las rechazadas, y el tope 90
+not ok 6 - SCRUM-1522b · 🔴 13 de madrugada + 87 de día, comercio en Madrid, proceso en America/New_York: el panel y el tope dicen 100
+    🔴 el panel dice «Hoy: 87» y el tope cuenta 100: el profesional ve que le quedan plantillas y el envío no sale.
+not ok 7 - SCRUM-1522b · 🔴 90 enviadas + 15 rechazadas, proceso en America/New_York: el panel y el tope dicen 90
+    🔴 zona null: el panel dice «Hoy: 105» contando las rechazadas, y el tope 90
+not ok 8 - SCRUM-1522b · 🔴 lo que está en cola cuenta en los dos, y lo que el proveedor aceptó y luego falló también
+not ok 9 - SCRUM-1522b · 🔴 el mes es el del comercio, con el proceso en UTC
+    🔴 a las 00:40 del día 1 el mes del panel sigue siendo el anterior
+not ok 10 - SCRUM-1522b · 🔴 el mes es el del comercio, con el proceso en Europe/Madrid
+not ok 11 - SCRUM-1522b · 🔴 el mes es el del comercio, con el proceso en America/New_York
+    🔴 a las 00:40 del día 1 el mes del panel sigue siendo el anterior
+not ok 12 - SCRUM-1522b · 🔴 «por ventana» de hoy también es del día del comercio
+not ok 13 - SCRUM-1522b · 🔴 BARRIDO: en ningún instante el panel y el tope cuentan distinto
+    🔴 3456 de 3456 instantes con el panel y el tope contando distinto
+# tests 13
+# pass 2
+# fail 11

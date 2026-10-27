@@ -63,3 +63,24 @@ contenido YA VERIFICADO (FAQ AEAT, ROF) se toca.
 - No decido si la firma de YaQu satisface el art. 26 eIDAS — sigo sin poder resolver esa pregunta con
   un cotejo de texto; queda para el asesor legal (D11).
 - No toco `src/` ni `public/`.
+
+## Nota del 7-oct-2026 · el art. 91.Uno.2.10.º LIVA, recotejado contra el BOE
+
+**Medido contra:** `origin/main` = `e883e586d11298ca09d58cd3fa89937b7b0549bd` · 2026-10-07T15:52:45Z
+
+A9: aviso → A10 «Un dato copiado de un registro lleva la fecha en que se midió, no la de hoy.» — no se pudo comprobar: un «✅ CONFIRMADA» sin fecha sólo se desmiente volviendo a bajar la norma, y la tanda de CI no sale a la red.
+
+Sesión J5 (IA), por SCRUM-1316. **No se toca la tabla de arriba:** es lo que se cotejó el 23-sep-2026.
+
+- **La fila del art. 91.Uno.2.10.º se cotejó entonces contra una base de datos jurídica.** El
+  7-oct-2026 se ha cotejado contra el BOE consolidado (`BOE-A-1992-28740`, API de legislación
+  consolidada): las citas coinciden con la redacción que se aplica ese día.
+- **Esa redacción tiene un cambio publicado**, con efectos de 1 de diciembre de 2026: el Real
+  Decreto-ley 29/2026 (`BOE-A-2026-20823`), sin convalidar, que añade la vivienda en alquiler habitual
+  y condiciona el tipo reducido al medio de pago. Un «✅ CONFIRMADA» sin fecha no puede decirlo.
+- **La del art. 84.Uno.2.º.f), de paso:** en el BOE la letra empieza «f) Cuando se trate de ejecuciones
+  de obra…», no «Ejecuciones de obra…» como se citó. El resto coincide.
+- **Sin recotejar contra el BOE:** las otras filas que llevan la misma base de datos como fuente
+  (arts. 78 LIVA, 66 LGT, 32 LOPDGDD).
+
+Detalle: `docs/master/SCRUM-1316.md`, sección «SCRUM-1316b».

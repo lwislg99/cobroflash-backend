@@ -1,0 +1,10 @@
+typescript 5.9.2 desde <checkout compartido>/node_modules\typescript\lib\typescript.js
+fichero: src/modules/invoicing/domain/modoVisible.ts · base 16e80dea496dad3819bf444983f9974d3c13ebb9
+lineas: antes 68 · despues 68 · distintas: [22]
+bytes: antes 4610 · despues 5231
+CR: antes 0 · despues 0
+tokens de codigo (sin comentarios): antes 99 · despues 99 · identicos: true
+JS emitido sin comentarios: antes 487 B · despues 487 B · identico: true
+las lineas distintas empiezan por //: true
+control positivo (un token de codigo mutado): la mutacion se aplico true · tokens lo ven true · emitido lo ve true
+VEREDICTO: SOLO COMENTARIO

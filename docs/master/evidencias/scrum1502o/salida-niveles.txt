@@ -1,0 +1,12 @@
+guard antes   congeladas=20 porNivel={"negada":13,"citada":1,"rastreable":167,"anclado":36,"documental":12,"sin-respaldo":20}
+guard después congeladas=13 porNivel={"negada":13,"citada":1,"rastreable":167,"anclado":43,"documental":12,"sin-respaldo":13}
+congeladas idénticas como conjunto: false
+marcas antes=248 después=248
+CAMBIA tests/scrum151-motivo-sin-tramo.test.mjs:53 → tests/scrum151-motivo-sin-tramo.test.mjs:53: sin-respaldo → anclado
+CAMBIA tests/scrum283-censo-acciones-factura.test.mjs:118 → tests/scrum283-censo-acciones-factura.test.mjs:118: sin-respaldo → anclado
+CAMBIA tests/scrum294c-criterio-del-merchant.test.mjs:175 → tests/scrum294c-criterio-del-merchant.test.mjs:175: sin-respaldo → anclado
+CAMBIA tests/scrum320-que-falta-para-cobrar.test.mjs:253 → tests/scrum320-que-falta-para-cobrar.test.mjs:253: sin-respaldo → anclado
+CAMBIA tests/scrum593b-superficie-texto-del-documento.test.mjs:91 → tests/scrum593b-superficie-texto-del-documento.test.mjs:91: sin-respaldo → anclado
+CAMBIA tests/scrum609b-switch-tipo-articulo.test.mjs:75 → tests/scrum609b-switch-tipo-articulo.test.mjs:75: sin-respaldo → anclado
+CAMBIA tests/scrum651-trabajo-sin-presupuesto.test.mjs:381 → tests/scrum651-trabajo-sin-presupuesto.test.mjs:381: sin-respaldo → anclado
+cambios=7

@@ -442,15 +442,9 @@
                 </div>
               </div>
 
-              <div class="form-row">
-                <label for="merchant-logoUrl">Logo (URL opcional)</label>
-                <input
-                  id="merchant-logoUrl"
-                  name="logoUrl"
-                  placeholder="https://tudominio.com/logo.png"
-                />
-              </div>
-
+              <!-- SCRUM-1231b: aquí había un campo «Logo (URL opcional)». El logo sólo se sube desde
+                   Configuración (el servidor no admite una URL desde SCRUM-1231), y el campo mandaba
+                   `logoUrl` siempre: vacío daba 400 y tumbaba el guardado de todo el formulario. -->
               <div class="btn-row">
                 <button type="submit" id="btn-save-merchant">
                   Guardar cambios
@@ -662,8 +656,6 @@
             data.invoiceSeriesPrefix || '';
           document.getElementById('merchant-whatsappPhone').value =
             data.whatsappPhone || '';
-          document.getElementById('merchant-logoUrl').value =
-            data.logoUrl || '';
 
           document.getElementById('merchant-json').textContent = JSON.stringify(
             data,
@@ -707,7 +699,6 @@
           whatsappPhone: document
             .getElementById('merchant-whatsappPhone')
             .value.trim(),
-          logoUrl: document.getElementById('merchant-logoUrl').value.trim(),
         };
 
         try {

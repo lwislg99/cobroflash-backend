@@ -1,0 +1,52 @@
+app cargada de dist\app.js · NODE_ENV=development · base desechable: 33 tablas (el SQL traia 33) · cuenta demo sembrada con id=1
+topes leidos en dist: por comercio y dia = 100 · por cliente y dia = 3
+
+== 0 · CONTROLES DE CERO: lo que NO debe abrir nada ==
+cuadra K0a alta con un correo que no lo es                                http=400 cuentasNuevas=0 aMeta=0
+cuadra K0b canjear un enlace inventado                                    http=302 sesion=no
+cuadra K0c crear cliente y pedir recordatorio SIN sesion                  cliente=401 recordatorio=401 aMeta=0
+
+== A · UN CORREO CUALQUIERA, sin decir pais (la app pone ES) ==
+    paso  1 [A] POST /auth/register (sin sesion, sin nada)                 -> http200  cookie-en-la-respuesta=no
+             el buzon de a-1512@example.invalid: 1 enlace(s) de acceso
+    paso  2 [A] GET  /auth/verify?token=<el del correo>                    -> http302  va-a=/dashboard/ sesion=SI
+             (lectura, no es paso) GET /admin/me -> http200 cuenta=2 rol=undefined alta-guiada-hecha=false · en la base: pais=ES plan=trial estado=active
+    paso  3 [A] POST /admin/customers (nombre + movil que el escribe)      -> http201  id=1
+             (rama que NO llega) POST /admin/invoices -> http409:factura_suelta_no_disponible
+ROJO   A1 cuenta ES recien creada: emitir la factura suelta               http=409 error=factura_suelta_no_disponible facturas=0   <<< http: esperado 201, salio 409 | facturas: esperado 1, salio 0
+    paso  4 [A] POST /quote/create (una linea)                             -> http201  id=1 claves=id,number,status,total,currency
+    paso  5 [A] POST /admin/quotes/:id/send-whatsapp                       -> http200+enviado  plantillas=1 otroTipo=0
+cuadra A2 cuenta ES recien creada: presupuesto por WhatsApp               plantillas=1 otroTipo=0 pasos=5 plantilla=quote_decision_es alTelefonoQueEscribio=SI
+
+== B · EL MISMO CORREO CUALQUIERA, diciendo en el cuerpo del alta que el pais es PT ==
+    paso  1 [B] POST /auth/register (sin sesion, sin nada)                 -> http200  cookie-en-la-respuesta=no
+             el buzon de b-1512@example.invalid: 1 enlace(s) de acceso
+    paso  2 [B] GET  /auth/verify?token=<el del correo>                    -> http302  va-a=/dashboard/ sesion=SI
+             (lectura, no es paso) GET /admin/me -> http200 cuenta=3 rol=undefined alta-guiada-hecha=false · en la base: pais=PT plan=trial estado=active
+    paso  3 [B] POST /admin/customers (nombre + movil que el escribe)      -> http201  id=2
+    paso  4 [B] POST /admin/invoices (factura suelta, una linea)           -> http201  id=1 numero=F260001
+cuadra B1 cuenta que DICE ser de fuera: emitir la factura suelta          http=201 facturas=1
+             (rama) send-reminder con la factura SIN cobro -> http200+enviado plantillas=0 otroTipo=1 tipo=text
+cuadra B2 send-reminder sobre factura SIN cobro: sale texto libre, no plantilla http=200 plantillas=0 otroTipo=1
+    paso  5 [B] POST /admin/invoices/:id/resend-whatsapp (crea el cobro y envia) -> http200+enviado  plantillas=1 otroTipo=0
+    paso  6 [B] POST /admin/invoices/:id/send-reminder (la de :766)        -> http200+enviado  plantillas=1 otroTipo=0
+cuadra B3 cuenta que dice ser de fuera: llega a la plantilla de :766      cobroEnLaFactura=SI plantillasDeReenviar=1 plantillasDe766=1 pasos=6 plantilla=payment_request_es alTelefonoQueEscribio=SI
+
+== 3 · DE QUE NUMERO SALE: la ruta que la app le pide a Meta, por cuenta ==
+    graph.facebook.com/v21.0/ID-DE-LABORATORIO-1512/messages   x4
+cuadra N1 las dos cuentas piden por la MISMA ruta de numero               peticiones=4 rutasDistintas=1 conElIdDelEntorno=4 hostAjeno=0
+
+== X · HALLADO DE PASO: una cuenta sobre la factura de OTRA ==
+    lo que le contesta la app a la cuenta A: claves=ok,sent,invoice_id,charge_id,pay_token,to · trae el telefono del cliente de B: SI · trae la ficha de pago: SI
+cuadra X1 la cuenta A pide reenviar la factura de la cuenta B             reenviar=200 recordatorio=404 plantillas=1 alClienteDeB=SI devuelveSuTelefono=SI
+    en el registro de mensajes, esa plantilla queda a nombre de la cuenta 3 (A es 2, B es 3)
+
+== R · CUANTAS CUENTAS desde la misma direccion ==
+cuadra R1 12 altas seguidas, 12 correos, misma IP                         de200=12 de429=0 cuentasNuevas=12
+cuadra R+ POSITIVO del contador de 429: 7 altas, el MISMO correo          de200=5 de429=2 cuentasNuevas=1
+
+== RESUMEN ==
+casos: 12 · cuadran: 11 · en rojo: 1  [ESPERADO FORZADO: este guion debe salir rojo]
+peticiones a Meta en toda la corrida: 5 (plantillas 4, otro tipo 1) · enlaces en el buzon: 19 · cuentas en la base: 16
+filas en el registro de mensajes de WhatsApp: 4 · intentos de salir de la maquina cortados: 0
+lineas del log de la app con la palabra error: 0

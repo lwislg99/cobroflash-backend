@@ -1,0 +1,9 @@
+
+[señal de nombres v1] medible=si ausentes=0 ficheros_con_ausentes=0 dudosos=0 declarados=9762 literales=9643 no_comparables=119 ficheros=1206 tap_tests=10302 tap_fail=8
+  POBLACIÓN: 1206 ficheros de tests/ · 9762 llamadas test()/it() (censo de SCRUM-708: 9762, coincide) · 9643 con nombre literal (9514 distintos)
+  PUNTO CIEGO: 119 llamadas NO se comparan (119 con el nombre construido, 0 sin nombre) en 68 ficheros. Si se pierden, esta señal no lo ve.
+  REPETIDOS: 129 nombres declarados más de una vez (129 en más de un fichero): se comparan por multiplicidad.
+  TAP: 2622024 caracteres · 10302 líneas de test · 0 de suite · resumen: tests 10302 · fail 8 · entero
+  ✅ Los 9643 nombres literales que el árbol declara están en el TAP.
+
+::notice title=señal de nombres · completo · 0 ausentes::[señal de nombres v1] medible=si ausentes=0 ficheros_con_ausentes=0 dudosos=0 declarados=9762 literales=9643 no_comparables=119 ficheros=1206 tap_tests=10302 tap_fail=8

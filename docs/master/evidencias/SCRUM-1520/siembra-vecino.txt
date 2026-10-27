@@ -1,0 +1,7 @@
+// docs/master/evidencias/SCRUM-1520/siembra-vecino.txt — SCRUM-1520 · el fichero de al lado.
+// Cinco casos que pasan y a los que nadie les corta nada: es el testigo de que la tanda tiene más
+// de un fichero y de que el recuento total se mueve sólo por lo que pierde la siembra.
+import { test } from 'node:test';
+
+const ID = process.env.SIEMBRA_ID || 'sin-sello';
+for (let i = 1; i <= 5; i++) test(`vecino ${i} de 5 · siembra ${ID}`, () => {});

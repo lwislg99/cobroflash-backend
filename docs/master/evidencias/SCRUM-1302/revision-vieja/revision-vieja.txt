@@ -1,0 +1,3 @@
+GET  enlace de la .0 habiendo .1 → formulario de firma pintado: true · total que enseña: 121,00 (el de la vieja) · preguntas por el grupo: 0
+POST aceptar la .0 habiendo .1 → 200 {"ok":true,"quote":{"id":100,"status":"accepted","acceptedAt":"2026-10-13T15:30:42.560Z"," · estado de la .0: accepted · escrituras: 2 · preguntas por el grupo: 0
+control · una pregunta por el grupo hecha a mano → el contador pasa a 1

@@ -305,3 +305,116 @@ una de esas cadenas y vació el compartido — dos veces.
 **No hay ninguna prisa y hoy no se limpia.** Queda medido para cuando se ataque, con el aviso de que
 el primer paso de esa limpieza tiene que ser volver a mirar a qué apunta cada uno: los números de
 arriba son de hoy.
+
+## SCRUM-429b · el build NOMBRA el cliente viejo (14-oct-2026, Sesión 5)
+
+Encargo del orquestador. Sin ticket nuevo: va aquí porque es el mismo defecto, y este ticket ya está cerrado.
+
+**Medido, sobre `origin/main` = `bcd333823`:** el cliente compartido
+(`cobroflash-backend/node_modules/.prisma/client`, generado el 1-oct) no tiene `Quote.seriesYear`,
+`Quote.archivedAt` ni `WhatsAppMessage.toPhone`, y no le sobra nada. El encargo hablaba de dos campos;
+son **tres**. El guard ya lo sabía (`node scripts/_prisma-client-guard.mjs` → exit 1, `Quote.seriesYear`),
+pero no habló, por dos motivos:
+- `npm run build` es `tsc` a secas. El guard sólo corría en `pretest`.
+- El guard cantaba sólo la PRIMERA diferencia.
+
+**Hecho:**
+- `_prisma-client-guard.mjs`: `todasLasDiscrepancias()` saca la lista entera, que va en el mensaje. Con
+  `--avisar` imprime un aviso que nombra cada campo y sale con 0.
+- `package.json`: `prebuild` = el guard con `--avisar`. **No para el build**, a propósito: `tsc` emite `dist`
+  aunque haya errores, un cliente compartido viejo pararía a todas las sesiones a la vez, y `prebuild` corre
+  también en el deploy. El juez que bloquea sigue siendo `pretest` y el CI.
+- De paso: el mensaje de «no se puede comparar» recomendaba `npx prisma generate`, en contra de SCRUM-385.
+  Ahora dice `npm run prisma:generate` y remite al procedimiento.
+- El procedimiento para regenerar está escrito en `docs/equipo/trampas-del-entorno.md` §10, **SIN EJECUTAR**.
+  Medido para escribirlo: **no hace falta matar todos los `node`**, sólo los que tienen
+  `query_engine-windows.dll.node` cargada. La sonda (`$_.Modules.FileName`) se vio cazar un `node` que la
+  cargaba a propósito. De los 14 `node` vivos, ninguno la tenía.
+
+**Control positivo:**
+- Contra el cliente compartido de hoy, `--avisar` nombra los tres campos y sale con 0. Sin `--avisar`, la
+  misma lista y sale con 1.
+- Test `scrum429b`: (1) un cliente igual al schema no da ninguna diferencia, y quitando las tres columnas y
+  añadiendo una salen las cuatro con su nombre; (2) contra el cliente REAL, dos columnas inventadas en `Quote`
+  salen las dos, sea cual sea el estado del cliente local; (3) `--avisar` sale con 0 y sin él con 1;
+  (4) `prebuild` avisa y `pretest` sigue bloqueando.
+- **«Se calla con un cliente al día»** está probado con un cliente fabricado (la copia del schema), **no con
+  un cliente regenerado**: hoy no se regenera. La primera regeneración tiene que ver el `✔`.
+
+**Tanda local (13 ficheros): 87 de 93.** Los 6 rojos NO son de este diff:
+- 4 (SCRUM-235/252, «el árbol sano da verde contra el cliente real») caen porque el cliente compartido es
+  viejo. El guard ya salía con 1 sobre el árbol sin tocar.
+- 2 (`scrum394`, `scrum729`) caen por `ERR_MODULE_NOT_FOUND` de `dist/…`: este árbol no tiene `dist`.
+
+El juez es el CI, que genera su propio cliente.
+
+## SCRUM-429c · la primera regeneración, apuntada (15-oct-2026, Sesión 5)
+
+**Medido contra:** `origin/main` = `73e41ab00f727fae5c6c8f1715d6eb6749133502` · 2026-10-15T15:34:16Z
+
+A9: sin fallo que generalice — tramo de sólo medición. La línea A9 que le faltaba (el CI de #2476 cayó por eso) la añade el relevo de S5; el fallo, con su comprobación, va en el registro de SCRUM-1494.
+
+El orquestador ejecutó el procedimiento de §10 por primera vez esta tanda, con el equipo parado. §10 decía
+«la primera vez que se ejecute, se apunta aquí qué pasó», y eso es lo que se ha apuntado allí:
+- Su primer control positivo falló por estar el script en `%TEMP%` (desde ahí no resuelve `@prisma/client` y
+  el motor no se carga). Dentro del proyecto, la sonda vio el proceso. Ningún proceso con la DLL al regenerar.
+  *(Medido por el orquestador; esta sesión no lo repitió.)*
+- Repetido por esta sesión desde `s5-14octb` (junction al compartido, en `origin/main`): el guard da `✔`, EXIT 0.
+  **Así queda probado lo que el 14-oct sólo estaba probado con un cliente fabricado: el guard se calla con un
+  cliente regenerado de verdad.**
+- Y los cuatro tests de SCRUM-235/252 que el 14-oct caían en local por el cliente viejo: con los de 429 y 429b,
+  **47 de 47**, EXIT 0 (`scrum235`, `scrum252`, `scrum429`, `scrum429b`).
+- Desde el árbol compartido (`scrum-1082…`, schema del 17-sep) el guard sigue en rojo con
+  `Merchant.invoiceStartSeq` (cliente por delante del schema), EXIT 1. Es la causa (A): correcto. Se escribe en
+  §10 para que nadie lo lea como «la regeneración falló», y que el arreglo que propone el guard, desde ese árbol,
+  deshace la regeneración para todos.
+
+**No se tocó** el texto del guard (que en el árbol compartido recomienda regenerar): queda dicho en §10.
+
+## SCRUM-429d · con el `node_modules` compartido, el guard manda al orquestador y no a regenerar (Sesión 5)
+
+**Medido contra:** `origin/main` = `f4910603f44de8d16eab3abc938d853d255d8295` · 2026-10-15T17:32:54Z
+
+A9: comprobación → `tests/scrum429d-causa-b-no-regeneres.test.mjs`
+
+Encargo del orquestador (15-oct, por mensaje), que lo trae de la S0: `_prisma-client-guard.mjs:332` decía «Arreglo, en
+los dos casos: `npm run prisma:generate` (desde ESTE worktree)». En la causa (B) es justo lo que §10 prohíbe: un
+consejo que, obedecido, rompe a los demás. Y el gemelo, encontrado de paso: `_prisma-sync.mjs:81`, ante un junction,
+mandaba «avisar a las otras sesiones y regenerar a mano».
+
+- **Carril:** el guard no tiene fila en `dos-equipos.md` (está entre los ayudantes compartidos sin clasificar), lo
+  tocó la S5 el 14-oct (429b) y lo encarga el orquestador. Mismo caso el sync.
+- **El guard:** el arreglo se parte por la topología. TUYO → `npm run prisma:generate`. COMPARTIDO (la B, o la A en
+  un árbol que cuelga del compartido) → «NO regeneres», avisa al orquestador, §10. Sigue diciendo «ROMPE EL DE LOS
+  DEMÁS» y nombra `LinkType` y `npm run topologia`, que es lo que exige `tests/scrum235-cliente-por-columnas`.
+- **El sync:** la segunda salida pasa a ser «avisar al orquestador, que coordina la regeneración (§10)».
+- **Rojo:** el test nuevo, 3 de 3 en rojo contra el texto de `main`; con el arreglo, 3 de 3 (`51e105707`).
+  Los 9 ficheros de `tests/` que importan el guard o el sync: 81 de 81.
+- **Mutación:** devolver «Arreglo, en los dos casos» (`git diff --numstat` 1/1) → cae SÓLO el caso 1. Restaurado
+  con `git restore --source=HEAD`, porcelana vacía.
+- Comprobado que nadie regeneró nada: `node_modules/.prisma/client/index.js` del compartido sigue con la hora de
+  la regeneración del orquestador (15:33Z).
+- Lleva dentro el merge de `scrum-429c-regenerado-apuntado` (#2476): las dos ramas anexaban a este mismo fichero y
+  habrían chocado al final.
+
+**Queda viejo, y no es mío:** `docs/equipo/trampas-del-entorno.md` §10 (líneas 180-181 con 429c) dice que el guard
+propone regenerar «desde ESTE worktree» también desde el compartido. Al entrar esto deja de ser cierto. El fichero es
+de S0.
+
+## SCRUM-429e · trampas §10 al día con 429d: qué propone el guard depende de QUÉ COPIA corre (16-oct-2026, Sesión 0)
+
+**Medido contra:** `origin/main` = `48fc00f6a90089b0f172b58c49413d889288bec0` · 2026-10-16T11:05:37Z (`gh api -i zen`)
+
+A9: sin fallo que generalice — tramo de documentación; la premisa del encargo era cierta para `main` y no para el compartido, y se dice abajo.
+
+Encargo del orquestador (16-oct): #2501 entró, actualizar §10 (~180-181), que decía que el guard propone regenerar.
+
+- **#2501 MERGED** 2026-10-15T17:54:44Z, merge `6a79dc1510f750806e2bf8cb6b87a39960f23397`.
+- **Lo que dice cada copia, medido (texto del script, con el control en los dos sentidos):**
+  `origin/main:scripts/_prisma-client-guard.mjs` → «NO regeneres» sí · «Arreglo, en los dos casos» no.
+  `cobroflash-backend` `HEAD` (rama `scrum-1082-flujo-crear-factura-competencia`, 3185 commits por detrás) → «NO
+  regeneres» no · «Arreglo, en los dos casos» sí. Ejecutado desde el compartido, su guard sale EXIT 1 y lo imprime.
+- **La copia de `main` con el mismo directorio de trabajo da `✔` EXIT 0:** lee el `schema.prisma` de su propio árbol,
+  no el del directorio desde el que se llama.
+- **Así que la premisa «ya no lo propone» vale para todo árbol al día y NO para el compartido**, que es justo el sitio
+  del ⛔. §10 lo dice ahora así, y conserva el ⛔. La §11 (S3) no se toca.

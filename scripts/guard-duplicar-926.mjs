@@ -133,10 +133,9 @@ const PONER_COBRO_A_MANO = new Function('v', `
   return { leido: sel.value };
 `);
 
-const abrirEditorDuplicando = async (nav, c) => {
+const abrirEditorDuplicando = async (nav, c, errores) => {
   caso = c;
   const pag = await nav.newPage();
-  const errores = [];
   pag.on('pageerror', (e) => errores.push(String(e.message || e)));
   await pag.setViewport({ width: 1280, height: 900 });
   await pag.goto(`http://127.0.0.1:${PUERTO}/dashboard/index.html#quotes-detail/1`, { waitUntil: 'networkidle0' });
@@ -158,12 +157,17 @@ const CASOS = [
   // P · las condiciones de pago. CONTROL POSITIVO: se pone a mano el valor y se vuelve a leer con el MISMO lector.
   { clave: 'P', plantilla: { global: null, pago: PAGO }, control: (pag) => pag.evaluate(PONER_COBRO_A_MANO, PAGO) },
 ];
+// SCRUM-1392 · los errores de página de cada caso se apuntan en una lista del MÓDULO, no en una que
+// nace dentro del caso: un error VISTO tiene que contar aunque el caso lance después (una lectura
+// que revienta, la página que se destruye). Con la lista dentro, ese caso salía sólo como ciego y
+// el error visto no llegaba a ninguna casilla (visto correr: docs/master/SCRUM-1392.md).
+const erroresDePagina = Object.fromEntries(CASOS.map((c) => [c.clave, []]));
 let recorrido;
 try {
   // `recorrerCasos`: un caso que LANZA (el navegador se cae, la página se destruye) es un ciego de
   // ESE caso y el otro se lee igual. Antes subía sin capturar y el proceso salía con 1.
   recorrido = await recorrerCasos(CASOS, async (c) => {
-    const { pag, listo, errores, ciego } = await abrirEditorDuplicando(nav, c.plantilla);
+    const { pag, listo, errores, ciego } = await abrirEditorDuplicando(nav, c.plantilla, erroresDePagina[c.clave]);
     if (ciego) { informe.casos[c.clave] = { ciego, errores }; return SOLO_LEIDO; }
     informe.casos[c.clave] = { editorConLineas: listo, ...await pag.evaluate(LEER), errores };
     informe.controles[c.clave] = await c.control(pag);
@@ -220,7 +224,7 @@ producto(leidoP, P.pago === PAGO, `P · duplicar CONSERVA las condiciones de pag
 // Que NO haya ninguno es un juicio por AUSENCIA: sólo vale si los dos casos se leyeron. Con uno sin
 // leer la lista sale vacía igual, y la casilla queda SIN JUZGAR en vez de verde (c.17970; lo cazó
 // el censo de `tests/scrum622`, que no deja que un «no lo sé» acabe en 'ok').
-const errores = [...(G.errores || []).map((e) => 'G: ' + e), ...(P.errores || []).map((e) => 'P: ' + e)];
+const errores = [...erroresDePagina.G.map((e) => 'G: ' + e), ...erroresDePagina.P.map((e) => 'P: ' + e)];
 apuntar(errores.length ? 'hallazgo' : (leidoG && leidoP ? 'ok' : 'sin juzgar'), 'sin errores de pagina en ninguno de los dos casos' + (errores.length ? ' — ' + errores.join(' · ') : ''));
 
 const MARCAS = { ok: '✔ ', hallazgo: '🔴 ', ciego: '⬜ NO SUPE MIRAR · ', 'sin juzgar': '·  SIN JUZGAR (su caso no se pudo leer) · ' };

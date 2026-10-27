@@ -21,7 +21,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {
   veredictoDeDespliegue, MARGEN_HORAS_PROPUESTO, SALIDA_NO_SUPE_MIRAR,
-  constanciaDeEjecucion,
+  constanciaDeEjecucion, epochsDeGitLog,
 } from './_vigilante-de-despliegue.mjs';
 // SCRUM-716 · el ritmo: congelado y retrasado no son lo mismo. La aritmética y la decisión son
 // puras y viven allí; aquí sólo se lee el fichero y se escribe.
@@ -34,7 +34,10 @@ function arg(nombre, pordefecto) {
   return i !== -1 && process.argv[i + 1] ? process.argv[i + 1] : pordefecto;
 }
 
-const url = arg('url', URL_POR_DEFECTO);
+// SCRUM-1542 · la URL también puede venir por el ENTORNO (`VIGIA_URL`). Es por donde la pasa el
+// simulacro del aviso: una URL en el `argv` de un hijo es la forma que el guard de SCRUM-226
+// prohíbe, y con razón. Vacía o ausente, manda la de siempre.
+const url = arg('url', process.env.VIGIA_URL || URL_POR_DEFECTO);
 const margenHoras = Number(arg('margen', MARGEN_HORAS_PROPUESTO));
 
 /** git, siempre acotado y sin lanzar: lo que no se pueda leer se devuelve como `null`. */
@@ -55,6 +58,7 @@ try {
 const shaDeMain = git('rev-parse', 'origin/main');
 let conoceElCommit = null; let estaEnMain = null;
 let commitsPorDelante = null; let epochDelPrimeroSinDesplegar = null;
+let entradasPorDelante = null;
 
 if (typeof versionDeProduccion === 'string' && /^[0-9a-f]{40}$/.test(versionDeProduccion)) {
   conoceElCommit = git('cat-file', '-e', versionDeProduccion) !== null;
@@ -87,8 +91,15 @@ if (typeof versionDeProduccion === 'string' && /^[0-9a-f]{40}$/.test(versionDePr
         // `Math.min` no depende de la topología ni del orden de recorrido: pregunta lo que de
         // verdad se quiere saber. Y `--reverse` sobra, porque ya no se mira ninguna posición.
         // ═══════════════════════════════════════════════════════════════════════════════════
-        const lista = git('log', '--format=%ct', versionDeProduccion + '..' + shaDeMain);
-        const epochs = (lista || '').split('\n').map(Number).filter(Number.isFinite);
+        //
+        // 🔴 SCRUM-1542 · Y SÓLO SOBRE LA CADENA DE PRIMER PADRE. El mínimo de TODO el rango era la
+        // fecha en que se ESCRIBIÓ el commit más viejo de la rama recién mergeada, no la hora en
+        // que ese trabajo ENTRÓ en `main`: el 13-oct-2026 dio 95,8 h con producción 59 s por
+        // detrás. El porqué entero y su supuesto, en `_vigilante-de-despliegue.mjs`.
+        // `Math.min` se queda: en la cadena de primer padre también puede haber fechas cruzadas.
+        const lista = git('log', '--first-parent', '--format=%ct', versionDeProduccion + '..' + shaDeMain);
+        const epochs = epochsDeGitLog(lista);
+        entradasPorDelante = epochs.length || null;
         epochDelPrimeroSinDesplegar = epochs.length ? Math.min(...epochs) : null;
       }
     }
@@ -97,7 +108,7 @@ if (typeof versionDeProduccion === 'string' && /^[0-9a-f]{40}$/.test(versionDePr
 
 const datos = {
   versionDeProduccion, shaDeMain, conoceElCommit, estaEnMain,
-  commitsPorDelante, epochDelPrimeroSinDesplegar,
+  commitsPorDelante, epochDelPrimeroSinDesplegar, entradasPorDelante,
   ahoraEpoch: Math.floor(Date.now() / 1000), margenHoras,
 };
 const v = veredictoDeDespliegue(datos);
@@ -131,10 +142,20 @@ if (rutaEstado) {
     }
   }
 }
-const ritmo = ritmoDeDespliegue(anterior, { versionDeProduccion });
+// SCRUM-1542 · el ritmo recibe también CUÁNDO se abrió el hueco: con eso y con la hora y el `main`
+// de la lectura anterior sabe si aquella lectura habla de ESTE hueco o de otro.
+const ritmo = ritmoDeDespliegue(anterior, { versionDeProduccion, epochDelPrimeroSinDesplegar });
 const final = salidaConRitmo(v, ritmo);
 
 console.log('\n[vigilante de despliegue] ' + url);
+// SCRUM-1542 · si lo que se ha leído NO es producción, se dice lo primero. Con `--url` o con
+// `VIGIA_URL` el vigía compara `main` con lo que le den, y todo lo que imprime debajo tiene la
+// misma forma que una lectura de verdad: sin esta línea, un renglón de simulacro o de test
+// pegado en otro sitio se lee como «producción está congelada».
+if (url !== URL_POR_DEFECTO) {
+  console.log('⚠️ ESTA LECTURA NO ES DE PRODUCCIÓN: «producción» es aquí lo que contesta la URL de '
+    + 'arriba, no ' + URL_POR_DEFECTO + '.');
+}
 console.log(v.titulo);
 if (v.detalle) console.log(v.detalle);
 // El ritmo sólo habla cuando tiene algo que decir sobre este veredicto; si no, callarse es lo

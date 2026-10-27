@@ -41,9 +41,13 @@ const TRAMOS = [
   { id: 'best', label: 'Premium', recommended: false, description: 'C', lines: [{ concept: 'Cuadro', qty: 1, price: 890, tax: 0 }], total: 890 },
 ];
 
+// SCRUM-1490c · `seriesYear` y `createdAt` van en el doble porque una fila REAL los trae, y desde
+// SCRUM-1490 (`anioDeLaSerie`, `grupoDelPresupuesto.ts`) la página LANZA sin ninguno de los dos:
+// «no pude mirar» no es un año. Sin ellos este guard moría en 0,2 s antes de abrir un navegador.
 function presupuesto(tiers) {
   return {
     id: 7, quoteNumber: 7, merchantId: 7, status: 'sent', currency: 'EUR', total: 590,
+    seriesYear: 2026, createdAt: new Date('2026-10-01T10:00:00Z'), revision: 0,
     lines: [{ concept: 'Cuadro', qty: 1, price: 590, tax: 0 }], tiers, paymentTerms: 'FULL_UPFRONT',
     validUntil: new Date(Date.now() + 30 * 864e5), decisionToken: TOKEN,
     discountGlobalAmount: null, billingPlan: null, customBillingPlan: null,
@@ -53,7 +57,9 @@ function presupuesto(tiers) {
 
 /** El HTML que sirve HOY `GET /pay/quote/:token`, sacado del handler compilado. */
 async function paginaDeAceptacion(tiers) {
-  prisma.quote = { findUnique: async () => presupuesto(tiers), findFirst: async () => presupuesto(tiers) };
+  // `count` lo pide `tieneVersionMasReciente` (SCRUM-1302p): 0 = ninguna revisión más nueva, que es
+  // el caso que este guard mide (la página con su formulario de firma).
+  prisma.quote = { findUnique: async () => presupuesto(tiers), findFirst: async () => presupuesto(tiers), count: async () => 0 };
   const capa = quoteDecisionLandingRouter.stack.find((l) => [].concat(l.route?.path).includes('/quote/:token'));
   if (!capa) throw new Error('no encuentro GET /quote/:token en quoteDecisionLanding.routes');
   let html = null;

@@ -45,10 +45,10 @@
 // --restore-test descifra, valida el GCM tag (integridad criptográfica) y
 // compara los conteos de filas contra la BD viva.
 //
-// Destino externo (FUNDADOR, checklist §5b): cuando existan credenciales
-// (BACKUP_S3_ENDPOINT/BUCKET/KEY/SECRET u otro), añadir la subida al final de
-// main(); hasta entonces el fichero queda en BACKUP_DIR y hay que moverlo a
-// mano fuera de la máquina.
+// Destino externo (FUNDADOR, 13-oct-2026, SCRUM-1525): el fichero sale por CORREO. No lo manda
+// este script: lo lanza y lo envía `scripts/respaldo-programado.mjs`, desde fuera, porque una
+// muerte por memoria de este proceso no pasa por su `catch` y un envío puesto aquí moriría con
+// él. Lanzado a mano, el fichero se queda en BACKUP_DIR y hay que moverlo fuera de la máquina.
 import { execFileSync } from 'node:child_process';
 import crypto from 'node:crypto';
 import fs from 'node:fs';

@@ -1,5 +1,5 @@
 # CONTRATO DEL AUDITLOG FISCAL — SCRUM-207 (AUDIT-FISCAL-1)
-
+**⚠️ NOTA FECHADA · 13-oct-2026 · SCRUM-1524c (decisión del fundador, SCRUM-1524 c.19292). Este documento se deja COMO SE ESCRIBIÓ el 29-jul-2026 y NO describe el código de hoy.** La cabecera de abajo dice «Cero código» y «Nada de esto está implementado»: dejó de ser cierto **el mismo 29-jul-2026**, cuando el commit `df8890e63` (fechado ese día a las 16:33, tres horas después del que trajo este contrato) cambió `src/` en nombre de SCRUM-207. Las coordenadas de fichero y línea que cita son las de aquel día y **NO se han puesto al día, a propósito**: medido el 13-oct-2026 (SCRUM-1524b, Jira c.19280), 42 están desfasadas —28 desplazadas y 14 que ya apuntan a otra cosa— y en al menos 6 el código que describían se reescribió; corregirles el número dejaría un texto de julio con aspecto de recién verificado. **NO MEDIDO: cuánto de lo que aquí se propone está construido hoy.** Esta nota no lo dice en ningún sentido; qué hace el sistema se lee en el código, no aquí.
 > **PROPUESTA PARA APROBAR. Cero código, cero schema, cero staging.** Este documento define
 > **qué se registra, quién lo escribe, con qué campos, y cómo se consulta** cuando alguien
 > pregunta. Nada de esto está implementado; el ticket que lo implemente se apoyará en este
@@ -127,7 +127,7 @@ Barrido completo sobre `src/`, `public/`, `tests/`, `scripts/` y `prisma/`:
 | **Export de datos (ZIP/CSV)** | — | 🔴 **No incluido.** El paquete son 6 CSVs ([`exportData.ts:650-658`](../../src/modules/exports/domain/exportData.ts#L650-L658)): clientes, facturas, cobros, trabajos, presupuestos, gastos. `grep -ni "audit"` en ese fichero = 0 |
 | **Borrado de merchant** | [`borradoMerchant.ts:47`](../../src/modules/system/domain/borradoMerchant.ts#L47) | 🟠 **Lo BORRA** — y es el primero de la lista |
 | **Backup** | [`scripts/backup-dump.mjs:69`](../../scripts/backup-dump.mjs#L69) | 🟢 `audit_log` sí entra en el volcado |
-| **Limpieza de staging** | [`clean-staging-tests.mjs:78`](../../scripts/clean-staging-tests.mjs#L78), [`e2e-critico.mjs:305`](../../scripts/e2e-critico.mjs#L305) | Lo borra (mantenimiento) |
+| **Limpieza de staging** | [`clean-staging-tests.mjs:78`](../../scripts/clean-staging-tests.mjs#L78), ~~[`e2e-critico.mjs:305`](../../scripts/e2e-critico.mjs#L305)~~ *(fue cierto hasta el 13-oct-2026: ese guion se retiró entero ese día, SCRUM-1521; desde entonces ya no borra nada)* | Lo borra (mantenimiento) |
 | **Tests** | `scrum25-exports.test.mjs:171`, `scrum25-export-zip.test.mjs:213`, `scrum52-operario.test.mjs:23,47,87`, `scrum66-tipo-operacion.test.mjs:48,73`, `merchant-fixture.test.mjs:78-85` | Lo leen para comprobar que se escribió |
 
 > **En una frase:** el único software que ha leído alguna vez el AuditLog de YaQu son sus
@@ -297,8 +297,8 @@ unir las tres (`anular_factura` ∪ `factura_anulada` ∪ `factura_rectificada`)
 registro de auditoría: exactamente lo que este documento existe para impedir.
 
 **Lo que NO se propone, a propósito:** una acción por cada código AEAT. Los 2xxx son
-**respuestas de la AEAT**, y la remisión no existe (`SIF_ENABLED=false`, sin `VfSubmission` en el
-schema — SCRUM-200 §7). Registrar el resultado del envío es otro contrato, el día que haya
+**respuestas de la AEAT**, y la remisión no existe (`SIF_ENABLED=false`, nada envía; [Corregido el 13-oct-2026, SCRUM-1500h, decisión del fundador en SCRUM-1500 c.18993: aquí decía «sin `VfSubmission` en el schema», falso desde el 30-sep-2026 (SCRUM-1296). Medido en SCRUM-1500d (Jira c.18919): hay una tabla que la emisión llena y que ningún proceso vacía — el esquema tiene el modelo, sellar una factura deja su alta en `pending`, y el único código que la sacaría de ahí existe, tiene tests y no lo llama ni lo carga nadie: ni un cron, ni una ruta, ni el arranque. NO medido: ninguna base de datos (ni si la tabla existe en producción, staging o dev, ni cuántas filas tiene) ni el valor de `SIF_ENABLED` en Railway.] —
+SCRUM-200 §7). Registrar el resultado del envío es otro contrato, el día que haya
 envío. Aquí solo se registra **lo que YaQu decide y lo que YaQu muestra**.
 
 ### 3.3 Resumen: 10 acciones, 3 niveles de durabilidad
@@ -774,7 +774,7 @@ Para que nadie lo dé por cubierto:
 - **No se ha auditado el front.** Dónde cabe cada aviso en el dashboard, y con qué componente
   de la Parte AB, es trabajo de los tickets de ámbar que este contrato desbloquea.
 - **No se han medido los caminos de SCRUM-16, 18 y 20** — no existen en `main`.
-- **La remisión a la AEAT no existe** (`SIF_ENABLED=false`, sin `VfSubmission` en el schema), así
+- **La remisión a la AEAT no existe** (`SIF_ENABLED=false`, nada envía; [Corregido el 13-oct-2026, SCRUM-1500h, decisión del fundador en SCRUM-1500 c.18993: aquí decía «sin `VfSubmission` en el schema», falso desde el 30-sep-2026 (SCRUM-1296). Medido en SCRUM-1500d (Jira c.18919): hay una tabla que la emisión llena y que ningún proceso vacía — el esquema tiene el modelo, sellar una factura deja su alta en `pending`, y el único código que la sacaría de ahí existe, tiene tests y no lo llama ni lo carga nadie: ni un cron, ni una ruta, ni el arranque. NO medido: ninguna base de datos (ni si la tabla existe en producción, staging o dev, ni cuántas filas tiene) ni el valor de `SIF_ENABLED` en Railway.]), así
   que **no se registra ninguna respuesta de la AEAT**. Ese es otro contrato, el día que haya
   envío.
 

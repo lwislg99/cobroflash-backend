@@ -1,0 +1,81 @@
+ESPEJO: 6 ficheros cotejados por sha256 con el árbol · distintos 0
+BASE · tests/scrum205-fallo-de-sellado-no-entrega.test.mjs · tests 3 · fail 0
+BASE · tests/scrum205-un-solo-punto-de-sellado.test.mjs · tests 6 · fail 0
+BASE · tests/scrum1404b-el-reintento-del-sellado.test.mjs · tests 17 · fail 0
+
+CONTROL A CERO del censo (un fichero que no existe): 0
+LLAMADAS A LA PUERTA, mi lectura: 11 en 8 ficheros
+  · lib/invoicing.ts:241
+  · modules/invoicing/domain/reintentoSellado.ts:289
+  · modules/jobs/app/routes/albaranes.routes.ts:1340
+  · modules/jobs/app/routes/albaranes.routes.ts:1618
+  · modules/jobs/app/routes/jobs.routes.ts:1596 · DESCARTA el resultado
+  · modules/jobs/domain/recapitulativa.service.ts:145
+  · modules/quotes/app/routes/quotes.routes.ts:681 · DESCARTA el resultado
+  · modules/system/app/routes/invoicesAdmin.routes.ts:208
+  · modules/system/app/routes/invoicesAdmin.routes.ts:1121
+  · modules/system/app/routes/quotesAdmin.routes.ts:388
+  · modules/system/app/routes/quotesAdmin.routes.ts:653
+  del reintento: 1
+COTEJO 1 · quitadas 4 ajenas, el reintento DENTRO · el guard dice que ve: 7 (espero 7)
+COTEJO 2 · las mismas y además la del reintento · el guard dice que ve: 6 (espero 6)
+COTEJO: CUADRA — el guard cuenta las mismas que yo, y la del reintento es una de ellas
+SIN la llamada del reintento, nada más: fail 0 (el suelo de 8 no depende de ella)
+espejo restaurado tras el cotejo: sí
+
+POBLACION=17 mutaciones declaradas
+ACIERTA  · A1 · el fallo de sellado devuelve «sellado» en vez del estado que bloquea
+           esperaba: que caiga «① un `sellado_fallido` registrado» nombrando «selladoEstado.ts:»
+           visto en scrum205-fallo-de-sellado-no-entrega.test.mjs (3 casos): caen 1: SCRUM-205 · ① un `sellado_fallido` registrado va atado a un estado que bloquea
+ACIERTA  · A2 · el sellado cambia el nombre de la acción que registra
+           esperaba: que caiga «① un `sellado_fallido` registrado» nombrando «ESCÁNER CIEGO»
+           visto en scrum205-fallo-de-sellado-no-entrega.test.mjs (3 casos): caen 1: SCRUM-205 · ① un `sellado_fallido` registrado va atado a un estado que bloquea
+ACIERTA  · A3 · LÍMITE: devuelve «sellado» y el estado bloqueante sólo queda en un comentario
+           esperaba: MUDA
+           visto en scrum205-fallo-de-sellado-no-entrega.test.mjs (3 casos): MUDA: no cae nada
+ACIERTA  · A4 · el reintento vuelve a LEER la acción con el literal (el falso positivo de PR-1)
+           esperaba: que caiga «① un `sellado_fallido` registrado» nombrando «reintentoSellado.ts:»
+           visto en scrum205-fallo-de-sellado-no-entrega.test.mjs (3 casos): caen 1: SCRUM-205 · ① un `sellado_fallido` registrado va atado a un estado que bloquea
+ACIERTA  · B1 · el portón deja pasar todo
+           esperaba: que caiga «② el portón bloquea de verdad» nombrando «NO BLOQUEA»
+           visto en scrum205-fallo-de-sellado-no-entrega.test.mjs (3 casos): caen 1: SCRUM-205 · ② el portón bloquea de verdad `SELLADO_PENDIENTE` (ejecutado, no supuesto)
+ACIERTA  · B2 · el portón bloquea también «no aplica»
+           esperaba: que caiga «② el portón bloquea de verdad» nombrando «no_aplica»
+           visto en scrum205-fallo-de-sellado-no-entrega.test.mjs (3 casos): caen 1: SCRUM-205 · ② el portón bloquea de verdad `SELLADO_PENDIENTE` (ejecutado, no supuesto)
+ACIERTA  · B3 · LÍMITE: el predicado sigue bien pero quien genera el PDF deja de preguntarle
+           esperaba: MUDA
+           visto en scrum205-fallo-de-sellado-no-entrega.test.mjs (3 casos): MUDA: no cae nada
+ACIERTA  · C1 · el reintento sella, tira el resultado y entrega el PDF
+           esperaba: que caiga «③ ningún llamador descarta» nombrando «reintentoSellado.ts:»
+           visto en scrum205-fallo-de-sellado-no-entrega.test.mjs (3 casos): caen 1: SCRUM-205 · ③ ningún llamador descarta el resultado del sellado y entrega bytes
+ACIERTA  · C2 · el reintento sella y tira el resultado, sin entregar nada
+           esperaba: que caiga «③ ningún llamador descarta» nombrando «RATCHET»
+           visto en scrum205-fallo-de-sellado-no-entrega.test.mjs (3 casos): caen 1: SCRUM-205 · ③ ningún llamador descarta el resultado del sellado y entrega bytes
+ACIERTA  · C3 · LÍMITE: lo mismo que C1, pero llamando a la puerta por un alias
+           esperaba: MUDA
+           visto en scrum205-fallo-de-sellado-no-entrega.test.mjs (3 casos): MUDA: no cae nada
+ACIERTA  · C4 · LÍMITE: el reintento LEE el resultado, y con «sigue pendiente» entrega el PDF igual
+           esperaba: MUDA
+           visto en scrum205-fallo-de-sellado-no-entrega.test.mjs (3 casos): MUDA: no cae nada
+ACIERTA  · P1 · el reintento sella por su cuenta, sin pasar por la puerta
+           esperaba: que caiga «solo `sellarTrasEmision` mete una factura en la cadena» nombrando «reintentoSellado.ts»
+           visto en scrum205-un-solo-punto-de-sellado.test.mjs (6 casos): caen 1: SCRUM-205 · solo `sellarTrasEmision` mete una factura en la cadena
+ACIERTA  · D1 · el literal de la acción cambia en selladoEstado.ts (sólo la fuente)
+           esperaba: que caiga «④ la acción que el reintento CUENTA», y sólo ése
+           visto en scrum1404b-el-reintento-del-sellado.test.mjs (17 casos): caen 1: SCRUM-1404 · ④ la acción que el reintento CUENTA es la que el sellado ESCRIBE: leída por AST de selladoEstado.ts
+ACIERTA  · D2 · el mismo cambio, en la fuente Y en su compilado
+           esperaba: que caiga «④ la acción que el reintento CUENTA», y sólo ése
+           visto en scrum1404b-el-reintento-del-sellado.test.mjs (17 casos): caen 1: SCRUM-1404 · ④ la acción que el reintento CUENTA es la que el sellado ESCRIBE: leída por AST de selladoEstado.ts
+ACIERTA  · D3 · CONTROL: cambia OTRO literal del mismo registro, no la acción
+           esperaba: MUDA
+           visto en scrum1404b-el-reintento-del-sellado.test.mjs (17 casos): MUDA: no cae nada
+ACIERTA  · D4 · selladoEstado.ts pasa a escribir una SEGUNDA acción de auditoría
+           esperaba: que caiga «④ la acción que el reintento CUENTA», y sólo ése
+           visto en scrum1404b-el-reintento-del-sellado.test.mjs (17 casos): caen 1: SCRUM-1404 · ④ la acción que el reintento CUENTA es la que el sellado ESCRIBE: leída por AST de selladoEstado.ts
+ACIERTA  · D5 · la acción deja de ser un literal: pasa a una constante con otro valor
+           esperaba: que caiga «④ la acción que el reintento CUENTA», y sólo ése
+           visto en scrum1404b-el-reintento-del-sellado.test.mjs (17 casos): caen 1: SCRUM-1404 · ④ la acción que el reintento CUENTA es la que el sellado ESCRIBE: leída por AST de selladoEstado.ts
+
+ÁRBOL DE VERDAD: 6 ficheros con sha256 antes y después · movidos 0 · espejo borrado: sí
+sorpresas 0 · ciegas 0
+EXIT=0

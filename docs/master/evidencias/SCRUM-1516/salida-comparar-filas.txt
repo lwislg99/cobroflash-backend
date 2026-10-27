@@ -1,0 +1,19 @@
+== eje del rol · censo de main (aa0b22acc) contra censo sembrado, los dos sobre el arbol de main d47dad333
+antes   : 19870 B · 267 líneas por encima de los controles · fechas normalizadas 10
+después : 20739 B · 267 líneas por encima de los controles · fechas normalizadas 0
+líneas distintas: 0
+TOTALES iguales: true · TOTALES: NO-DISTINGUE 13 · RECORTA 33 · SIN-DOCUMENTO 17 · NO-LLEGO 15 · CIEGO 0 · suma 78
+EXIT=0
+sale 0
+
+== eje del comercio · lo mismo
+antes   : 13396 B · 209 líneas por encima de los controles · fechas normalizadas 0
+después : 14011 B · 209 líneas por encima de los controles · fechas normalizadas 0
+líneas distintas: 0
+TOTALES iguales: true · TOTALES: CRUZA 2 · LEE-Y-NO-ACABA 0 · LEE-Y-NIEGA 1 · FILTRA 159 · SIN-CONSULTA 4 · NO-LLEGO 25 · suma 191
+EXIT=0
+sale 0
+
+== rojo visto del comparador: eje del rol contra eje del comercio
+TOTALES iguales: false · TOTALES: CRUZA 2 · LEE-Y-NO-ACABA 0 · LEE-Y-NIEGA 1 · FILTRA 159 · SIN-CONSULTA 4 · NO-LLEGO 25 · suma 191
+EXIT=1

@@ -1,0 +1,29 @@
+CONTROLES sembrados (abierta · variable · derrame): 1 · 1 · 1 (tiene que ser 1 · 1 · 1)
+POBLACION: 323 ficheros .ts bajo src/ (0 sin parsear) · 199 llamadas de escritura de Prisma · 48 opacas
+
+POR CAMPO DE LA TABLA del instrumento (sin cierre = D sale sólo de las escrituras):
+  Merchant.trade                             con cierre · escrituras de «merchant»:  23 · opacas:  3
+  Merchant.connectStatus                     SIN CIERRE · escrituras de «merchant»:  23 · opacas:  3
+        src/app.ts:1034 · «data» lleva un derrame
+        src/modules/invoicing/domain/invoiceNumber.service.ts:475 · «data» lleva un derrame
+        src/modules/system/merchantAdmin.ts:251 · «data» lleva un derrame
+  AuthSession.type                           SIN CIERRE · escrituras de «authSession»:   6 · opacas:  0
+  Expense.category                           con cierre · escrituras de «expense»:   2 · opacas:  1
+  QuoteRequest.status                        con cierre · escrituras de «quoteRequest»:   4 · opacas:  0
+  TeamMember.role                            con cierre · escrituras de «teamMember»:   5 · opacas:  1
+  TeamMember.status                          SIN CIERRE · escrituras de «teamMember»:   5 · opacas:  1
+        src/modules/team/domain/team.service.ts:71 · «data» no es un objeto literal
+  Albaran.estado                             con cierre · escrituras de «albaran»:  10 · opacas:  3
+  Albaran.estado (comentario de cabecera)    con cierre · escrituras de «albaran»:  10 · opacas:  3
+  Customer.contactKind                       con cierre · escrituras de «customer»:   9 · opacas:  2
+  Customer.tipoDestinatario                  con cierre · escrituras de «customer»:   9 · opacas:  2
+  Customer.billingPeriodicity                con cierre · escrituras de «customer»:   9 · opacas:  2
+  Quote.shippingAddressMode                  con cierre · escrituras de «quote»:  25 · opacas:  2
+  Quote.ivaModo                              con cierre · escrituras de «quote»:  25 · opacas:  2
+  Product.itemKind                           con cierre · escrituras de «product»:   3 · opacas:  1
+  Job.tipoOperacion                          con cierre · escrituras de «job»:   7 · opacas:  3
+  Albaran.modoValoracion                     con cierre · escrituras de «albaran»:  10 · opacas:  3
+  ParteTrabajo.tipo                          con cierre · escrituras de «parteTrabajo»:   5 · opacas:  1
+  ParteTrabajo.estado                        con cierre · escrituras de «parteTrabajo»:   5 · opacas:  1
+
+EXIT=0

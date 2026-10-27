@@ -104,7 +104,7 @@ cosas que la auditoría desmiente: que **está construida** (faltan los dos últ
 que basta **activarla** (no hay nada que activar: no está escrito). Es la frase que se dice en
 voz alta delante de un cliente.
 
-**A2 · `docs/YAQU_MASTER.md:389` — la FSM de una entidad que no existe**
+**A2 · `docs/YAQU_MASTER.md:389` — la FSM de una entidad que no existe** *(Nota del 13-oct-2026, SCRUM-1500h, decisión del fundador en SCRUM-1500 c.18993: este inventario es del 19-ago-2026 y NO se reclasifica. Que la entidad o la cola «no existe» o «no está en el esquema» —aquí y en las líneas 25, 70, 112 y 120— era cierto entonces y es falso desde el 30-sep-2026 (SCRUM-1296). Medido en SCRUM-1500d (Jira c.18919): hay una tabla que la emisión llena y que ningún proceso vacía — el esquema tiene el modelo, sellar una factura deja su alta en `pending`, y el único código que la sacaría de ahí existe, tiene tests y no lo llama ni lo carga nadie: ni un cron, ni una ruta, ni el arranque. NO medido: ninguna base de datos (ni si la tabla existe en producción, staging o dev, ni cuántas filas tiene) ni el valor de `SIF_ENABLED` en Railway.)*
 > `**VfSubmission:** pending → sent → accepted · sent → rejected(error) → pending(retry,
 > attempts++) · attempts≥5 → manual_review. accepted terminal.`
 
@@ -317,7 +317,7 @@ para «facturación VeriFactu» entendida como el sistema completo. Dos coordena
 La primera mitad describe trabajo que la modalidad elegida excluye. **La misma línea lo desmiente**
 a continuación con su `✅ DONE 12-jun-26` (ver **D4**), así que solo engaña a quien lea media línea.
 
-**C9 · `docs/legal/ALCANCE_BETA.md:28-29` — contrato del cliente founding**
+**C9 · `docs/legal/ALCANCE_BETA.md:32-33` — contrato del cliente founding**
 > `La **facturación con sistema VERI*FACTU se activará al cerrar la certificación** del sistema,
 > **sin cambio de precio** para ti.`
 
@@ -408,12 +408,12 @@ que hoy la AEAT no puede rechazar porque no lo recibe. El mismo fichero declara 
   remisión al SIF (S1-D) **no está construida** y VfSubmission es un modelo del máster que aún no
   existe en el schema.`
 * **D14 · `AUDITLOG_FISCAL_CONTRATO.md:300`** y **D15 · `:777`** — `**La remisión a la AEAT no
-  existe** (SIF_ENABLED=false, sin VfSubmission en el schema)`. Correcto en el hecho; el paréntesis
+  existe** (SIF_ENABLED=false, sin VfSubmission en el schema)`. *(Nota del 13-oct-2026, SCRUM-1500h, decisión del fundador en SCRUM-1500 c.18993: «sin VfSubmission en el schema» —aquí y en las citas de las líneas 406 y 408— era cierto el 19-ago-2026 y es falso desde el 30-sep-2026 (SCRUM-1296); la entrada NO se reclasifica. Medido en SCRUM-1500d (Jira c.18919): hay una tabla que la emisión llena y que ningún proceso vacía — el esquema tiene el modelo, sellar una factura deja su alta en `pending`, y el único código que la sacaría de ahí existe, tiene tests y no lo llama ni lo carga nadie: ni un cron, ni una ruta, ni el arranque. NO medido: ninguna base de datos (ni si la tabla existe en producción, staging o dev, ni cuántas filas tiene) ni el valor de `SIF_ENABLED` en Railway.)* Correcto en el hecho; el paréntesis
   atribuye a la bandera un papel que no tiene, igual que A9, pero la afirmación principal es
   verdadera.
 * **D16 · `PREGUNTAS_ASESOR.md:463-464`** — cita literal del código: `«**"se envía" NO EXISTE.**
   Cero clientes SOAP/mTLS contra la AEAT, VfSubmission no está en el schema, no hay cola de
-  remisión»`.
+  remisión»`. *(Nota del 8-oct-2026, SCRUM-1500f, decisión del fundador en SCRUM-1500 c.18970: esta cita se clasificó D el 19-ago-2026, cuando era cierta. «VfSubmission no está en el schema, no hay cola de remisión» es falso desde el 30-sep-2026 (SCRUM-1296). Medido en SCRUM-1500d (Jira c.18919): hay una tabla que la emisión llena y que ningún proceso vacía — el esquema tiene el modelo, sellar una factura deja su alta en `pending`, y el único código que la sacaría de ahí existe, tiene tests y no lo llama ni lo carga nadie: ni un cron, ni una ruta, ni el arranque. NO medido: ninguna base de datos (ni si la tabla existe en producción, staging o dev, ni cuántas filas tiene) ni el valor de `SIF_ENABLED` en Railway. El comentario de origen y la cita de `PREGUNTAS_ASESOR.md` se corrigieron el 8-oct-2026 (SCRUM-1500e y SCRUM-1500f), así que esas líneas ya no dicen lo que aquí se cita. La clase D y su recuento de 25 NO se tocan: son la medición del 19-ago-2026.)* *(Nota del 13-oct-2026, SCRUM-1500h, decisión del fundador en SCRUM-1500 c.18993: y «Cero clientes SOAP/mTLS contra la AEAT», de esta misma cita, es falso como «no existe ningún cliente» desde SCRUM-1127 y sigue siendo cierto como «nada envía». Medido en SCRUM-1500g (Jira c.18986) y vuelto a leer el 13-oct-2026: hay UN cliente, `src/modules/fiscal/verifactu/sif.client.ts` —538 líneas, sobre SOAP, con opciones de mTLS que le llegan de fuera y una sola llamada de red, dentro de `enviarSobre`—, y NADIE lo llama: 0 importaciones de valor, y `enviarSobre` tiene 1 definición y 0 llamadas en `src/`. NO medido: el cliente no se ha ejecutado, y tampoco ninguna base de datos ni el valor de `SIF_ENABLED` en Railway.)*
 
 ## En el código y en la pantalla (9)
 

@@ -3,20 +3,43 @@
 //   Parte GATEADA (QA_DB_TEST=1): default TRABAJO_UNICO en el serializer, PATCH valida el enum,
 //   audita SOLO el cambio real (tipo_operacion_elegido), es idempotente y respeta tenancy.
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599i: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 import { JOB_TIPOS_OPERACION } from '../dist/modules/jobs/domain/job.service.js';
 import { interceptarAuditLog } from './_audit-log-sync.mjs'; // SCRUM-255: esperar la escritura, no el reloj
+import http from 'node:http';
+
+// `node:http` sin agente y no `fetch` (SCRUM-1218d): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de `fetch`
+// (status, headers.get, text, json) y, como el `redirect: 'manual'` de antes, no sigue redirecciones.
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    let d = ''; r.setEncoding('utf8');
+    r.on('data', (t) => { d += t; });
+    r.on('end', () => ok({
+      status: r.statusCode,
+      headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+      text: async () => d,
+      json: async () => JSON.parse(d),
+    }));
+  });
+  req.on('error', mal);
+  req.end(body);
+});
 
 test('JOB_TIPOS_OPERACION: enum cerrado de 2 valores', () => {
   assert.deepEqual([...JOB_TIPOS_OPERACION].sort(), ['OPERACIONES_SUELTAS', 'TRABAJO_UNICO']);
 });
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 
-test('SCRUM-66: tipoOperacion — default, edición, validación, audit del cambio y tenancy', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-66: tipoOperacion — default, edición, validación, audit del cambio y tenancy', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const server = app.listen(0);
@@ -41,7 +64,7 @@ test('SCRUM-66: tipoOperacion — default, edición, validación, audit del camb
   const mkCookie = async (merchantId) => {
     const token = 'qa66-' + crypto.randomBytes(12).toString('hex');
     await prisma.authSession.create({ data: { merchantId, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) } });
-    const res = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
+    const res = await pedirSinAgente(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
     return (res.headers.get('set-cookie') || '').split(';')[0];
   };
 
@@ -51,7 +74,7 @@ test('SCRUM-66: tipoOperacion — default, edición, validación, audit del camb
     const cookieA = await mkCookie(merchantA.id);
     const cookieB = await mkCookie(merchantB.id);
     const jsonReq = (url, cookie, method = 'GET', body) =>
-      fetch(`${base}${url}`, { method, headers: { cookie, 'content-type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+      pedirSinAgente(`${base}${url}`, { method, headers: { cookie, 'content-type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
 
     // (a) default TRABAJO_UNICO en el serializer (Job creado sin el campo)
     const rGet = await jsonReq(`/admin/jobs/${job.id}`, cookieA);
@@ -137,3 +160,11 @@ test('SCRUM-66: tipoOperacion — default, edición, validación, audit del camb
     await prisma.$disconnect();
   }
 });
+
+// SCRUM-1599i (diseño B de SCRUM-1599) · la mutación que tumba el caso de base, CATALOGADA en SCRUM-1599i.
+// Va aparte de `MUTACIONES_QUE_ME_TUMBAN` a propósito: el job del meta-guard corre SIN base, el caso sale
+// SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco PGlite,
+// `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e). Cada campo, LITERAL.
+export const MUTACIONES_CON_BASE = [
+  { fichero: "src/modules/jobs/app/routes/jobs.routes.ts", de: "    if (tipoOperacionElegido) {", a: "    if (false) {", cae: "SCRUM-66: tipoOperacion — default, edición, validación, audit" },
+];

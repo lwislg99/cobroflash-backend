@@ -1,0 +1,25 @@
+origin/main = dfda86d65 · HEAD = dfda86d65
+Ficheros citados desde docs/legal/ que resuelven a UNO: 58 (coordenadas que no: 0)
+   de ellos, fuera de docs/legal/ y sin contar el máster: 48
+
+① Últimos 7 días · 152 PR mergeados en origin/main
+   tocan algún fichero citado:                              16  (11 %)
+   ídem sin contar el máster ni los propios docs/legal:     14  (9 %)
+
+① Últimos 30 días · 1071 PR mergeados en origin/main
+   tocan algún fichero citado:                              149  (14 %)
+   ídem sin contar el máster ni los propios docs/legal:     120  (11 %)
+
+② Desde el primer commit de docs/legal/ (54bef6705, 2026-06-13) hasta origin/main:
+   102 versiones de documento leídas · 85 rutas citadas alguna vez
+   ficheros borrados o renombrados en todo el repositorio: 216
+   de ellos, citados alguna vez desde docs/legal/:           1
+      · BORRADO scripts/e2e-critico.mjs
+
+③ Patrón ancho: 225 apariciones de «fichero.ext:NN» en 19 documentos · la casa ve 202 vivas
+   apariciones que NO están entre las coordenadas de la casa: 29
+      .ts        15   p. ej. AUDITLOG_FISCAL_CONTRATO.md → subscriptions.routes.ts:48
+      .html      11   p. ej. AUDITORIA_CAMINO_EMISION.md → public/dashboard/index.html:230
+      .mjs        2   p. ej. AUDITLOG_FISCAL_CONTRATO.md → scrum52-operario.test.mjs:23
+      .js         1   p. ej. ENVIO_ASESOR_2026-09-28.md → semaforoFiscal.js:37
+   ficheros en subcarpetas de docs/legal/ que el censo no recorre: 1 (0 son .md)

@@ -431,3 +431,168 @@ que `scrum514`, que lee todas las fichas, no tiene de dónde saber que una firma
 su lista. Si hay más fichas firmadas-pero-no-pintadas, es un patrón y pide ticket: en esa lista he
 leído tres entradas cuyo motivo acaba en «la firma ocurrió; ya no tiene dónde pintarse» («2. Líneas»,
 la de la sección SCRUM-1257c y ésta). El resto de la lista no lo he clasificado.
+
+---
+
+# SCRUM-1257e · El modo de Ajustes, medido en navegador en los tres modos
+
+**Medido contra:** `origin/main` = `e2be1c9fda3b5ceac853b4d376f5664ac8e4df67` · 2026-10-14T08:03:51Z (J2)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1257e/mutar.mjs`
+
+Encargo del orquestador (`cobroflash-backend-2e`), autorizado por el fundador («Si me vale»): comprobar con
+un guard de NAVEGADOR que la tercera descripción de modo de `Configuración › Cumplimiento` sale, literal,
+cuando el comercio está en `receipt`. Sin cambiar ningún texto, sin `src/`, sin esquema y sin bases.
+
+## 0 · Lo que ya había (PASO 0, buscado por concepto)
+
+- `tests/scrum298-modo-visible.test.mjs` y `tests/scrum1257-p8-detalle-receipt-sin-justificantes.test.mjs`
+  leen el FUENTE: el literal y su firma. No pintan nada.
+- `tests/banco-scrum1220/medir-ajustes-modo-justificante.mjs` pinta, pero en el banco de vistas (DOM de
+  mentira), sólo con `receipt` y `fiscal`, busca por subcadena y no lo corre nadie.
+- Cinco guards de navegador pintan `renderSettingsView`: `aviso-bizum`, `completar-lleva-al-campo`,
+  `falta-en-otra-pestana`, `vias-de-cobro` y `objetivo-tactil`. Los cuatro primeros fijan
+  `window.appModoEmision = null`, con lo que la fila del modo NO se pinta nunca en ellos; el quinto no lo
+  fija. Ningún fichero de `scripts/` ni de `tests/` nombraba `.settings-modo-emision` antes de éste.
+
+## 1 · Qué cambia
+
+- `scripts/guard-modo-en-ajustes.mjs` · `npm run guard:modo-en-ajustes`. Cuatro casos: `fiscal`, `demo`,
+  `receipt` y sin modo. Saca los literales de `TITULO_MODO_EMISION` y `DETALLE_MODO_EMISION` por AST de
+  `settingsView.js`, pinta Ajustes con `window.appModoEmision` puesto, abre el submenú de la fila y compara
+  rótulo y frase con `===`. Cada texto pintado tiene que casar con SU modo y con ninguno de los otros dos,
+  y la frase de otro modo no puede estar en ningún sitio del documento, oculto incluido.
+- Suelos: los tres literales distintos (si no, el contraste no distingue y se declara ciego), el render
+  sin lanzar, el JS y el CSS del árbol servidos, y una calibración que rechaza un prefijo y una
+  superstring del literal.
+- Entra en CI solo: `guards:visuales` recoge todo `guard:*` cuya nota de `package.json` dice
+  «navegador». Declarado en `tests/_guards-de-navegador-declarados.mjs` y en
+  `scripts/_sin-fila-declarados.json` (sin fila en §3.3 hasta que el orquestador diga el puesto).
+- `tests/scrum1257e-modo-en-ajustes-tres-modos.test.mjs` · la misma comparación en el banco de vistas de
+  la casa, DENTRO de la tanda. Hace falta porque el job de navegador no es el check obligatorio y el
+  meta-guard de mutaciones sólo ejecuta tests: sin él, nada que bloquee un merge vería la fila. Declara
+  las cuatro mutaciones (`MUTACIONES_QUE_ME_TUMBAN`), y el banco de navegador las toma de ahí (SCRUM-1387).
+
+## 2 · Lo que sale, y dónde no
+
+Salida entera en `docs/master/evidencias/SCRUM-1257e/salida-guard.txt`. La frase de `receipt`,
+«Por ahora, YaQu no genera facturas desde tu cuenta.», sale en `receipt` (con el rótulo «Aún no se
+emiten documentos», 20 px de alto, submenú `cumplimiento`) y **no** sale en `fiscal`, `demo` ni sin modo.
+Cada uno de los otros dos pinta la suya y sólo la suya.
+
+## 3 · Rojo primero
+
+Las cuatro mutaciones del test, aplicadas a `settingsView.js` una a una y restauradas por bytes (sha256
+`b4c183a02103…` antes y después). En NAVEGADOR, con `mutar.mjs` (salida en `salida-mutar.txt`):
+
+| Mutación | Caen | No caen |
+|---|---|---|
+| M1 · todos los modos pintan la frase de `receipt` | `fiscal`, `demo` | `receipt`, sin modo |
+| M2 · en `receipt` no se pinta la fila | `receipt` | `fiscal`, `demo`, sin modo |
+| M3 · en `receipt` la frase pierde el punto final (un prefijo) | `receipt` | `fiscal`, `demo`, sin modo |
+| M4 · la fila se pinta y se borra a los 100 ms | `fiscal`, `demo`, `receipt` | sin modo |
+
+En la TANDA, con `mutar-tanda.mjs` (salida en `salida-mutar-tanda.txt`): las cuatro tumban el caso que
+nombran en `cae`, de 7 casos; M1 tumba `fiscal` y `demo` y no `receipt`, y M2 y M3 sólo `receipt`.
+
+**Error mío, cazado por M3:** la primera calibración construía el prefijo y la superstring desde el texto
+PINTADO. Con la frase ya truncada, «pintado + un carácter» volvía a ser el literal, y el guard salió CIEGO
+(2) en vez de ROJO (1). Ahora parte del literal del fuente. Lo impide la propia M3 (línea `A9:` de arriba).
+
+**Otros dos, de la misma tanda:** escribí la `a` de M3 como dos literales concatenados y el lector del
+meta-guard la descartó en silencio (3 de 4); lo vi porque el pasador imprime cuántas lee, y ahora sale
+CIEGO si no son 4. Y mi primer pasador lanzaba al hijo con `NODE_TEST_CONTEXT` vacío en vez de quitado,
+así que no ejecutó nada y las cuatro salieron «MAL» sin un solo test: es la memoria «hijo de node --test:
+entorno a mano», que ya existía y no apliqué.
+
+**Y el rojo del primer empujón (52595646), también mío:** el obligatorio del PR #2439 cayó en 1 de 11.447
+tests: `scrum812` («LA COBERTURA HA SUBIDO a 34»), porque mi test nuevo declara mutaciones y un caso suyo
+nombra al guard. Antes de empujar corrí `guards:entrada`, los 38 guards de navegador y 18 ficheros
+elegidos a mano, no la tanda entera, y `scrum812` no estaba entre ellos: es la cicatriz de J2 del
+13-oct («los vecinos los elegí a mano»), repetida. Se sube el suelo a 34 con su ancla, como piden el
+test y las subidas anteriores. Lo cazó el propio trinquete, que es la comprobación que ya existe.
+
+## 3bis · Qué se corrió
+
+- Local, sobre la rama: `guards:entrada` (14 guards, 166 tests, 0 fallos); `guards:visuales` (38 guards:
+  38 verdes, 0 ciegos, 0 rojos); 18 ficheros de `tests/` a mano (160 tests, 0 fallos, 0 saltados) y, tras
+  el arreglo, `scrum812` con 8 vecinos (87 de 87). **La tanda completa NO se corrió en local.**
+- CI del primer empujón: guards de navegador en VERDE, mi guard incluido; obligatorio en ROJO por `scrum812`.
+
+## 4 · 🔴 Lo que esto NO prueba
+
+**No se ha visto en producción, y no se puede ver hoy:** ningún comercio está en modo `receipt` (dato del
+orquestador en el encargo y de la memoria de la máquina del 28-sep-2026, «sin clientes reales»; no lo he
+medido yo). El fundador miró su Ajustes y no vio ningún modo. Por qué, NO lo sé: en cualquiera de los tres
+modos la fila se pinta (medido aquí), pero sólo en el submenú `Cumplimiento`, y con `modoEmision` nulo no
+se pinta nada. Distinguir esas dos causas pide su `/admin/me`, que no he consultado. El guard
+prueba el CÓDIGO del panel con el modo puesto a mano, no la pantalla de nadie. Qué modo le da el servidor
+a cada comercio lo vigila `scrum298`; el valor de `INVOICING_ES_ENABLED` en Railway no lo he consultado, ni
+ninguna base.
+
+# SCRUM-1257f · El censo, re-medido: 10 literales, 0 muertos, 0 falsos, nada que quitar
+
+**Medido contra:** `origin/main` = `25ad5d43b6a8ed41fdcb90c5fdbc0e2e388ec1be` · 2026-10-24T10:04:22Z (J3, sesión jv-j3az; hora de GitHub)
+
+A9: sin fallo que generalice — el único tropiezo fue pasar al censo sus dos argumentos al revés, y lo paró el propio instrumento con un error («Cannot find module 'typescript'»), no con un cero
+
+Encargo del orquestador (`cobroflash-backend-95`): re-medir el censo por programa y, para cada literal, decir
+si está vivo o muerto, qué dice, si es falso hoy y de qué carril es. Los muertos de J3 o sin cerradura, quitarlos
+con su prueba de inalcanzable; los vivos y falsos, a pregunta ✅/❌. **Sólo docs: no se toca ningún fichero de
+`public/` ni de `src/`.**
+
+## 0 · Cómo se midió
+
+- `git archive origin/main public` extraído FUERA del árbol, y el instrumento de §0
+  (`tests/banco-scrum1257/censo-vocabulario-justificante.mjs`, AST de TypeScript, comentarios aparte). Población:
+  todos los `.js` de `public/dashboard/js` más `index.html`.
+- **Positivo SEMBRADO**, no prestado del árbol: una copia del archivo con un fichero fabricado
+  (`zzSembrado.js`, un literal y un comentario con la palabra). Da **11 literales · 80 comentarios** contra
+  **10 · 79** sin él, y el literal sembrado sale 1 vez. El instrumento ve lo que tiene que ver.
+- ⚠️ El instrumento cuenta **literales**, no textos que vea alguien: una clave de comparación
+  (`=== 'justificante'`) entra igual que un rótulo. Por eso la columna «¿lo ve alguien?» de abajo es lectura
+  del código, fichero a fichero, y no sale del censo.
+
+## 1 · Los 10, uno a uno
+
+Toda la rama visible depende de que el documento sea un `J-` antiguo: `tipoDeFactura`
+(`jobDocsReparto.js:34`), `isReceipt` (`invoiceDetailView.js:91`) y `isJust` (`email.service.ts:39`) miran
+`type === 'JUST'` o el número que empieza por `J-`. Según SCRUM-1252 c.20700 (dato del orquestador, **no
+medido por mí: no toco bases**) hay 2 filas `J-` en producción, así que esas ramas **son alcanzables**: la
+ficha de la factura se abre desde Cobros. Ninguna es código muerto.
+
+| # | Literal (fichero:línea en `main`) | ¿Lo ve alguien? | ¿Falso hoy? | Carril |
+|---|---|---|---|---|
+| 1 | `cobrosView.js:73` «No se pudo enviar el justificante al cliente por email.» (D5) | sí, si falla el correo de un `J-` (clase `justificante`, la escribe `email.service.ts:50`) | no: el documento ES un justificante | J2 |
+| 2 | `invoiceDetailView.js:93` «Justificante de cobro» (D1) | sí, ficha de un `J-` | no | J1 |
+| 3 | `invoiceDetailView.js:94` «Detalle y acciones del justificante.» (D2) | sí, ficha de un `J-` | no | J1 |
+| 4 | `invoiceDetailView.js:138` «JUSTIFICANTE» (chip, D3) | sí, ficha de un `J-` | no | J1 |
+| 5 | `invoiceDetailView.js:541` tooltip de la reclamación del banco, rama `J-` de P7 | sí, `J-` con `chargeId` | no: el paquete lleva ESE documento | J1 |
+| 6 | `invoicesView.js:81` `'justificante'` | **no**: clave del filtro `soloFacturas` | — | J1 |
+| 7 | `jobDetailView.js:24` «Justificante» (D4) | sí, documento `J-` en la ficha del trabajo | no | S2 |
+| 8 | `jobDocsReparto.js:36` `'justificante'` | **no**: valor de retorno de `tipoDeFactura` | — | S2 |
+| 9 | `jobRailBlocks.js:157` `'justificante'` | **no**: clave de comparación | — | S2 |
+| 10 | `quotesDetailView.js:410` «🧾 Ver justificante», rama `J-` de P6 | sí, presupuesto cobrado con un `J-` | no | S2 |
+
+Carril leído con `node scripts/carriles.mjs de <ruta>` para cada uno; **ninguno es de J3**. Este registro
+es `sin-cerradura`.
+
+## 2 · Lo que sale
+
+- **Muertos: 0.** Nada que quitar; aunque los hubiera, ninguno está en un fichero de J3.
+- **Vivos y falsos: 0.** Los siete visibles sólo salen con un `J-`, y a un `J-` lo llaman por lo que es. No
+  hay pregunta ✅/❌ de microcopy que llevar al fundador.
+- La única pregunta que queda es la de siempre, y **no es de este ticket**: si los `J-` antiguos se siguen
+  llamando «justificante» (D1-D5 más las dos ramas `J-` de P6 y P7). Es SCRUM-1252, y llamarlos «factura»
+  sería claim fiscal (regla 7) sobre un documento emitido (regla 29).
+- Cuadra con el estado de c.17676: A 0 de 8, B 0 de 3, D 5 de 5 intactos; C3 (P8) entró en #2034. Los
+  10 de hoy son los 5 de D (el correo de Cobros es D5, ahora firmado en SCRUM-1235), las dos ramas `J-` que
+  P6 y P7 conservaron a propósito y tres claves internas.
+
+## 3 · Qué no se ha medido
+
+- Ninguna base: el «2 filas `J-` en producción» es de SCRUM-1252 c.20700, no mío. Si son `type: 'JUST'` o
+  `F1` con número `J-` no lo he mirado; el panel las clasifica igual (por tipo **o** por número).
+- Ni pantalla en yaqu.app (pide sesión iniciada y un `J-`, y las sesiones no tocan credenciales).
+- Ni los textos que manda el servidor, el PDF, los correos ni WhatsApp: el suelo de §0 sigue igual (J1).
+- Suite entera local: NO CORRIDA (diez sesiones a la vez; este cambio es sólo este fichero).

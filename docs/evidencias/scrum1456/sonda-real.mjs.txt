@@ -1,0 +1,97 @@
+// sonda-real.mjs — SCRUM-1455 / SCRUM-1456 / SCRUM-1457
+//
+// EL ROJO (y luego el verde) CON LO DE VERDAD: los routers de `dist/`, el Prisma de verdad y un
+// Postgres de verdad (PGlite, en memoria, en loopback, base desechable creada con el DDL que sale de
+// `prisma/schema.prisma`). Lo único doblado es la SESION: un middleware pone `merchantId` y `userRole`,
+// que es lo que hace `requireAuth`. No toca staging ni produccion: la direccion la fabrica este fichero.
+//
+// Uso:  node sonda-real.mjs <raiz del arbol con dist/> <ddl.sql> [etiqueta]
+// Sale con 0 si pudo medir (los codigos de respuesta son el dato, no el veredicto) y con 2 si quedo CIEGA.
+import fs from 'node:fs';
+import path from 'node:path';
+import net from 'node:net';
+import { createRequire } from 'node:module';
+import { PGlite } from '@electric-sql/pglite';
+import { PGLiteSocketServer } from '@electric-sql/pglite-socket';
+
+const [raiz, ddl, etiqueta = ''] = process.argv.slice(2);
+if (!raiz || !ddl) { console.log('CIEGA: faltan argumentos'); process.exit(2); }
+
+const puertoLibre = () => new Promise((ok) => {
+  const s = net.createServer(); s.listen(0, '127.0.0.1', () => { const p = s.address().port; s.close(() => ok(p)); });
+});
+
+const db = new PGlite();
+await db.exec(fs.readFileSync(ddl, 'utf8'));
+const puertoPg = await puertoLibre();
+const servidorPg = new PGLiteSocketServer({ db, port: puertoPg, host: '127.0.0.1' });
+await servidorPg.start();
+
+const base = 'sonda_1456_test';
+process.env.DATABASE_URL = 'postgresql://postgres@127.0.0.1:' + puertoPg + '/' + base + '?connection_limit=1&pgbouncer=true';
+process.env.DISABLE_CRONS = 'true';
+process.env.WHATSAPP_DRY_RUN = '1';
+process.env.NODE_ENV = 'test';
+
+const requiere = createRequire(path.join(raiz, 'dist', 'x.js'));
+const { prisma } = requiere('./core/db/prisma.js');
+const express = requiere('express');
+
+// ── Lo que la base TIENE: un comercio, un cliente suyo y un cobro suyo. ──
+const comercio = await prisma.merchant.create({ data: { name: 'Sonda 1456', country: 'ES' } });
+const cliente = await prisma.customer.create({ data: { merchantId: comercio.id, name: 'Cliente que existe' } });
+const cobro = await prisma.charge.create({
+  data: { merchantId: comercio.id, concept: 'sonda', amount: 10, currency: 'EUR', method: 'bizum', status: 'pending' },
+});
+
+const app = express();
+app.use(express.json());
+const sesion = (req, _res, next) => { req.merchantId = comercio.id; req.userRole = 'admin'; req.teamMemberId = null; next(); };
+app.use('/admin/customers', sesion, requiere('./modules/system/app/routes/customersAdmin.routes.js').default);
+app.use('/admin/invoices', sesion, requiere('./modules/system/app/routes/invoicesAdmin.routes.js').default);
+app.use('/webhooks/psp', requiere('./modules/billing/app/routes/psp.routes.js').default);
+const http = await new Promise((ok) => { const s = app.listen(0, '127.0.0.1', () => ok(s)); });
+const origen = 'http://127.0.0.1:' + http.address().port;
+
+const callar = console.error; console.error = () => {};
+const filas = [];
+async function pedir(verbo, ruta, cuerpo) {
+  const r = await fetch(origen + ruta, {
+    method: verbo,
+    headers: cuerpo ? { 'content-type': 'application/json' } : {},
+    body: cuerpo ? JSON.stringify(cuerpo) : undefined,
+  });
+  const texto = await r.text();
+  filas.push([verbo + ' ' + ruta + (cuerpo ? ' ' + JSON.stringify(cuerpo) : ''), r.status, texto.slice(0, 70).replace(/\s+/g, ' ')]);
+  return r.status;
+}
+
+const C = cliente.id;
+// Los valores: el control que EXISTE, los que caben y no existen, y los que no caben.
+const VALORES = [String(C), '2147483647', '-1', '0', '2147483648', '10000000000', '99999999999999999999', '1.5', 'abc'];
+for (const v of VALORES) await pedir('GET', '/admin/customers/' + v);
+for (const v of VALORES) await pedir('GET', '/admin/customers/' + v + '/detail');
+for (const v of VALORES) await pedir('GET', '/admin/customers/' + v + '/sites');
+// El cursor: con un cliente que EXISTE, que es cuando el cursor llega a la base.
+for (const v of ['1', '2147483647', '2147483648', '99999999999999999999']) await pedir('GET', '/admin/customers/' + C + '/historial?despuesDe=' + v);
+for (const v of ['2147483647', '-1', '0', '2147483648', '10000000000', '99999999999999999999', '1.5', 'abc']) await pedir('GET', '/admin/invoices/' + v);
+for (const v of ['2147483647', '2147483648', '99999999999999999999', '1.5']) await pedir('GET', '/admin/invoices/' + v + '/pdf');
+for (const v of ['2147483647', '2147483648', '99999999999999999999', '1.5']) await pedir('GET', '/admin/invoices/' + v + '/dispute-package');
+// El webhook interno del cobro: que contesta HOY a un charge_id que no cabe, que no existe y que existe.
+// Con un evento que la ruta no maneja, para que el control que existe NO cobre nada.
+for (const v of [2147483647, 2147483648, 10000000000, 1e20]) await pedir('POST', '/webhooks/psp', { event: 'payment.confirmed', charge_id: v, ts: '2026-10-06T00:00:00Z' });
+console.error = callar;
+
+console.log('SONDA REAL ' + etiqueta + ' · POBLACION=' + filas.length + ' peticiones · base ' + base + ' en 127.0.0.1 · comercio ' + comercio.id + ' · cliente ' + C + ' · cobro ' + cobro.id);
+for (const [que, estado, cuerpo] of filas) console.log(String(estado) + '  ' + que + '  ->  ' + cuerpo);
+const recuento = {};
+for (const f of filas) recuento[f[1]] = (recuento[f[1]] || 0) + 1;
+console.log('POR CODIGO: ' + JSON.stringify(recuento));
+
+await prisma.$disconnect().catch(() => {});
+await new Promise((ok) => http.close(ok));
+await servidorPg.stop().catch(() => {});
+// SUELO: el control que existe tiene que haber dado 200; si no, la sonda no ha medido la ruta.
+const control = filas[0][1];
+console.log(control === 200 ? 'EXIT=0' : 'CIEGA: el cliente que existe no dio 200 (dio ' + control + ') · EXIT=2');
+process.exit(control === 200 ? 0 : 2);

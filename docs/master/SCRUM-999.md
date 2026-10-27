@@ -83,3 +83,83 @@ acusa nada nuevo bajo `tests/` y `scripts/` tras el arreglo).
   sección `999c`.
 - No toca `SCRUM-996`/`SCRUM-1070` (bajar el suelo de arranque): confirmado por el orquestador
   que esa palanca vive en la cuenta del fundador, no en el repositorio.
+
+## SCRUM-999c · ¿se puede saber hoy que queda poco uso? Medido el 15-oct (Sesión 5)
+
+**Medido contra:** `origin/main` = `73e41ab00f727fae5c6c8f1715d6eb6749133502` · 2026-10-15T15:43:49Z
+
+El arranque automático está APARCADO por el fundador: aquí no se construye nada. Sólo se mide si el dato existe
+y por qué vía (encargo del orquestador, después de que el 9-oct cinco sesiones murieran por el límite de uso).
+
+**Sí se puede saber, y el dato está vivo.** La vía es la de SCRUM-899d: el statusLine del usuario
+(`node C:/Users/Admin/AppData/Local/yaqu-equipo/uso.mjs escribir`) deja en
+`%LOCALAPPDATA%\yaqu-equipo\uso.json` lo que Claude Code le pasa en `rate_limits`, y lo renueva con cada
+llamada a la API. Leído a las 15:4xZ: 20 sesiones lo han escrito, cinco de ellas en el último minuto, y
+`uso.mjs leer` da `VERDE` con edad 0 min.
+
+**Pero `leer` sólo juzga UNA de las dos ventanas.** El fichero trae las dos:
+
+| ventana | usado | se reinicia |
+|---|---|---|
+| `five_hour` | 17-19 % | 2026-10-15 20:10Z |
+| `seven_day` | **89 %** | 2026-10-15 22:00Z |
+
+`juzgar()` (`uso.mjs`, líneas 115-125) mira sólo `five_hour`. **Control positivo, con dato y no leyendo el
+código:** la copia del `uso.json` real con `seven_day.used_percentage` puesto a 100 → `leer --fichero` da
+`VERDE`, `uso 19% < 85%`, salida 0. Con la cuenta semanal agotada, el corte de este ticket dejaría lanzar.
+
+**Qué ventana mató las sesiones del 9-oct: NO lo sé.** `uso.json` sólo guarda la última lectura, no el histórico,
+y la memoria de aquel día no lo dice.
+
+**Lo que no cubre la vía:**
+- Sólo hay dato mientras alguna sesión está viva y hablando con la API. Con el equipo parado, el dato envejece y
+  `leer` responde `NO_PUDE_MIRAR` (falla cerrado: bien para lanzar, pero no avisa a nadie).
+- Lo lee quien lo pregunta. Hoy nadie lo enseña en el latido ni lo empuja al orquestador.
+
+**Si un día se construye** (lo decide el orquestador; no lo hago): que `juzgar()` dé `AVISO` también con
+`seven_day ≥ umbral` y nombre qué ventana es. Es un cambio de pocas líneas, pero `uso.mjs` tiene copia instalada
+en `%LOCALAPPDATA%\yaqu-equipo` y la puerta de integridad exige reinstalar.
+
+🔴 **Para hoy, sin construir nada:** la semanal está al 89 % y no se reinicia hasta las 22:00Z.
+
+A9: sin fallo que generalice — medición encargada por el orquestador, sin código tocado; el hueco hallado (`juzgar()` sólo mira `five_hour`) no es un error de esta sesión y queda descrito arriba para que lo decida el orquestador
+
+## 16-oct-2026 · SCRUM-999b · `uso.mjs leer` juzga TAMBIÉN la semanal, y dice cuál muerde
+
+**Medido contra:** `origin/main` = `555c65fa91cd12d54d735a40b90e479805b276fa` · 2026-10-16T11:53:35Z (`Date:` de GitHub)
+
+Encargo del orquestador, que lo volvió a medir hoy: `uso.mjs:75` guardaba `seven_day` y `:115` sólo
+juzgaba `five_hour`; `seven_day` no volvía a aparecer en el fichero. Es el hueco descrito arriba el 15-oct.
+
+**Lo que entra:**
+- `juzgar()`: el veredicto es el de la ventana que MÁS lleva. Campos nuevos: `muerde` (`'5 h'` o `'semanal'`),
+  `cinco_horas` y `semanal` (`{usado, reinicia}` de cada una). `usado` y `reinicia` pasan a ser los de la
+  ventana que muerde. El motivo nombra las dos: `muerde la ventana semanal: 5 h 10% · semanal 95% (umbral 85%)`.
+- Sin dato de la semanal, o con la semanal ya reiniciada → `NO_PUDE_MIRAR` (salida 2). Con la de 5 h sola no
+  se sabe si la cuenta está agotada, y eso no es verde.
+- La barra de estado añade `· semana N%` al final (la de 5 h y su hora no cambian de sitio).
+- `tests/_uso-banco.mjs` escribía `seven_day: null`; ahora una semanal al 5 % (opción `semanal`). Sin ese
+  cambio caían 5 bancos de `scrum899b` — medido: es el rojo que da el arreglo con la fixture vieja.
+
+**Comprobado:**
+- Rojo primero: con el `uso.mjs` de `main`, 6 de los tests nuevos caen; con el arreglo, 24/24.
+- Los cinco ficheros que tocan `uso.mjs` o su banco (`scrum899d`, `scrum899b`, `scrum951a`, `scrum951d`,
+  `scrum824`): 73/73.
+- Mutaciones declaradas en `scrum899d`: 8 de 8 cazadas (4 viejas, 4 nuevas). Las dos de `muerde` van una en
+  cada sentido: el lector que mira sólo la de 5 h y el que mira sólo la semanal.
+- Por efecto, la tanda: `scrum899b` con la semanal al 95 % y la de 5 h al 10 % → `SIN-CUOTA`, `muerde:
+  semanal`, cero llamadas a `claude`. Con el lector viejo (`muerde = '5 h'`), ese test cae.
+- Control positivo sobre el `uso.json` REAL de la máquina, copiado con una ventana cambiada:
+  | copia | `uso.mjs` nuevo | copia instalada (vieja) |
+  |---|---|---|
+  | semanal 95 % · 5 h 10 % | `AVISO`, `muerde: semanal`, salida 1 | **`VERDE` «uso 10% < 85%», salida 0** |
+  | 5 h 95 % · semanal 5 % | `AVISO`, `muerde: 5 h`, salida 1 | `AVISO`, salida 1 |
+  | el real, sin tocar (5 h 48 % · semanal 6 %) | `VERDE`, salida 0 | `VERDE`, salida 0 |
+
+**Lo que NO hace:**
+- La copia instalada en `%LOCALAPPDATA%\yaqu-equipo\uso.mjs` sigue siendo la vieja hasta que `arranque.cmd`
+  la reescriba desde `origin/main` (lo hace en cada tanda) o se copie a mano. Hasta entonces,
+  `node C:/Users/Admin/AppData/Local/yaqu-equipo/uso.mjs leer` sigue mirando sólo la de 5 h.
+- No guarda histórico: sigue sin saberse qué ventana mató las sesiones del 9-oct.
+
+A9: comprobación → `tests/scrum899d-aviso-de-uso.test.mjs`

@@ -1,0 +1,14 @@
+import fs from 'node:fs';
+const F=JSON.parse(fs.readFileSync('pasos.json','utf8')).filter(f=>f.job);
+const con=JSON.parse(fs.readFileSync(process.argv[2],'utf8')).map(x=>x.job);
+const fail=F.filter(f=>f.paso==='failure'&&f.pasoS!=null);
+const d=fail.map(f=>f.pasoS).sort((a,b)=>a-b);
+console.log('paso Tests en failure: n',fail.length,'min',d[0],'mediana',d[d.length>>1],'max',d[d.length-1]);
+const h=[0,300,600,900,1000,1100,1200,1500,99999]; for(let i=0;i<h.length-1;i++) console.log('  ['+h[i]+','+h[i+1]+') s:',fail.filter(f=>f.pasoS>=h[i]&&f.pasoS<h[i+1]).length);
+const cand=fail.filter(f=>f.pasoS>=900).sort((a,b)=>a.creado.localeCompare(b.creado));
+console.log('CANDIDATOS (failure y >=900 s):',cand.length);
+for(const c of cand) console.log('  ',c.job,c.creado,c.pasoS+'s','intento',c.intento,con.includes(c.job)?'CONOCIDO':'NUEVO',c.rama.slice(0,50));
+console.log('CONTROL POSITIVO: de los 7 conocidos, en candidatos:',con.filter(j=>cand.some(c=>c.job===j)).length,'de',con.length, '| conocidos que NO estan en pasos.json:', con.filter(j=>!F.some(f=>f.job===j)).length);
+const canc=F.filter(f=>f.paso==='cancelled'&&f.pasoS!=null); const dc=canc.map(f=>f.pasoS).sort((a,b)=>a-b);
+console.log('paso Tests CANCELADO: n',canc.length,'max',dc[dc.length-1],'>=600 s:',canc.filter(f=>f.pasoS>=600).map(f=>f.job+' '+f.pasoS+'s '+f.creado).join(' | ')||'ninguno');
+fs.writeFileSync('cand.json',JSON.stringify(cand));

@@ -37,6 +37,10 @@
   var TEXTOS = {
     // APROBADO · SCRUM-1215 comentario 17367
     tituloFirma: 'Firma del cliente',
+    // APROBADO por el fundador el 4-sep-2026 (SCRUM-720c,
+    // `docs/microcopy/2026-09-04-SCRUM-720-los-diez-que-faltaban.md`). Sólo cuando firma el CLIENTE:
+    // el técnico lee `pistaFirmaTecnico` (hasta SCRUM-1229 se le decía también a él, y por eso el
+    // censo 1157 la tuvo sin marcar hasta el 7-oct-2026).
     pistaFirma: 'Pide al cliente que firme con el dedo dentro del recuadro.',
     // APROBADO · SCRUM-1215 comentario 18205. La pista cuando quien firma es el TÉCNICO: la de
     // arriba habla del cliente, y desde SCRUM-1229 el técnico firmaba sin ninguna.
@@ -50,6 +54,9 @@
     manoObra: 'Mano de obra',
     // APROBADO · SCRUM-1215 comentario 17367
     materiales: 'Materiales',
+    // APROBADO por el fundador el 4-sep-2026 (SCRUM-720,
+    // `docs/microcopy/2026-09-04-SCRUM-720-rotulos-del-parte.md`). Sólo en un bloque vacío de un parte
+    // EDITABLE (borrador), que es donde «todavía» es cierto; cerrado, se lee `sinLineasCerrado`.
     sinLineas: 'Todavía no has apuntado nada.',
     // APROBADO · SCRUM-1215 comentario 17367. Sólo en un bloque vacío que ya NO es editable (el
     // parte está firmado): ahí «todavía» prometía algo que ya no se puede hacer, y «has» lo lee
@@ -90,6 +97,34 @@
     // mismas palabras. «las líneas» ahí sería falso: lo que no se guardó es una casilla.
     // APROBADO · SCRUM-1302 comentario 18288
     noSeGuardoElCambio: 'No se ha podido guardar el cambio — vuelve a intentarlo',
+    // SCRUM-1491 · Desplazamiento rechazado por la ruta con `desplazamientos_invalido`. «Vuelve a
+    // intentarlo» ahí manda a repetir algo que no va a entrar nunca. Dice lo que VALE y no lo que
+    // falló. Desde SCRUM-1488 el código tiene UNA causa («no es un número entero»): el número
+    // enorme y el negativo llevan código y texto propios, más abajo.
+    // SCRUM-1492 · también se dice cuando es la CASILLA la que no entiende lo tecleado («1e»): es
+    // el mismo error visto por el profesional, cazado en otro sitio. Estirón firmado en c.18633.
+    // APROBADO · SCRUM-1491 comentario 18517
+    desplazamientoEsEntero: 'No se ha guardado. Desplazamiento es un número entero, como 1 o 2 — no el tiempo de viaje',
+    // SCRUM-1492 · lo tecleado en Kilómetros que la casilla no entiende como número («1e», «-»,
+    // «,»). No se manda nada y se dice lo que VALE. «No se ha podido guardar el cambio» sería
+    // falso: nada ha fallado, no se ha intentado.
+    // También es lo que se dice si la RUTA rechaza con `kilometros_invalido`: misma causa, cazada
+    // en otro sitio. Hoy desde la casilla no se llega a ese código (`badInput` lo para antes): es
+    // la red para el día que se llegue. Estirón firmado en c.18706.
+    // APROBADO · SCRUM-1492 comentario 18633
+    kilometrosEsUnNumero: 'No se ha guardado. Kilómetros es un número, como 12 o 12,5',
+    // SCRUM-1492 · los cuatro códigos de rango de la ruta (SCRUM-1488: un código por causa). Caían
+    // en el general, y «vuelve a intentarlo» ahí es falso: `-3` no va a entrar nunca. Los dos de
+    // «negativo» dicen lo que VALE. Los de «no cabe» no: lo que vale es el tope de la columna, que
+    // a un profesional no le dice nada.
+    // APROBADO · SCRUM-1492 comentario 18706
+    desplazamientoEsCeroOMas: 'No se ha guardado. Desplazamiento es 0 o más',
+    // APROBADO · SCRUM-1492 comentario 18706
+    kilometrosEsCeroOMas: 'No se ha guardado. Kilómetros es 0 o más',
+    // APROBADO · SCRUM-1492 comentario 18706
+    desplazamientoDemasiadoGrande: 'No se ha guardado. Ese número es demasiado grande para Desplazamiento',
+    // APROBADO · SCRUM-1492 comentario 18706
+    kilometrosDemasiadoGrande: 'No se ha guardado. Ese número es demasiado grande para Kilómetros',
     // APROBADO · SCRUM-1215 comentario 17367
     noSePudoCargar: 'No se ha podido cargar el parte. Vuelve a intentarlo.',
     // El rótulo del GRUPO de los tres tipos (SCRUM-818). No es texto nuevo: es el literal que el
@@ -109,6 +144,11 @@
     pistaDictado: 'Usa el micrófono de tu teclado. Luego lo ordenamos.',
     // APROBADO · SCRUM-1215 comentario 17367
     ordenarDictado: 'Ordenar en líneas',
+    // «Ordenar en líneas» cuando la ruta NO contesta (sin red, 5xx, 502). Vive aquí y no en los
+    // `avisos` del servidor: es justo el caso en que el servidor no ha dicho nada. No es el de
+    // «ninguna línea», que dice que el servicio contestó y por eso no invita a repetir.
+    // APROBADO · SCRUM-1302 comentario 18491
+    noSePudoOrdenar: 'No se ha podido ordenar el dictado — vuelve a intentarlo o escribe las líneas tú',
     // SCRUM-1266 · el dato que la máquina escribió y el dictado no decía, dicho en SU línea de la tabla.
     // Van seguidos de los datos, separados por coma y espacio. Sólo con el parte editable; nunca en
     // el sello (la marca no entra en `lineasCanonicasParte`).
@@ -116,31 +156,44 @@
     noSalioEnLoDictado: 'No salía en lo dictado: ',
     // APROBADO · SCRUM-1266 comentario 17498. Limpia la marca de esa línea y NO toca la descripción.
     esCorrecto: 'Es correcto',
-    confirmarPropuesta: 'Añadir estas líneas',
+    // APROBADO · SCRUM-1215 comentario 17375. Sustituye a «Añadir estas líneas», que no se aprobó
+    // (c.17367): una línea sin cantidad no entra, y «estas» prometía que entraban las que se ven.
+    confirmarPropuesta: 'Añadir al parte',
+    // APROBADO por el fundador el 4-sep-2026 (SCRUM-720c,
+    // `docs/microcopy/2026-09-04-SCRUM-720-los-diez-que-faltaban.md`). Se pinta sólo si la propuesta
+    // trae alguna línea sin colocar, y cada una lleva las dos fichas que el rótulo nombra (hasta
+    // SCRUM-1230 no había con qué elegir, y por eso el censo 1157 la tuvo sin marcar).
     sinBloque: 'Sin colocar — elige mano de obra o materiales',
 
     // ── SCRUM-653 · LAS DOS FIRMAS ──────────────────────────────────────────────────────
-    // Los cinco textos de las dos firmas, FIRMADOS por el fundador el 4-sep-2026. Constan en
+    // Seis textos y dos fechas de firma, y CADA CLAVE LLEVA LA SUYA EN SU LÍNEA. Constan en
     // `docs/microcopy/2026-09-04-SCRUM-653-las-dos-firmas.md`.
     //
+    // SCRUM-1215f · hasta el 9-oct-2026 la firma de este bloque se decía UNA vez, en plural y
+    // contando («los cinco textos…»). El censo 1157 reparte una firma contada por POSICIÓN, no por
+    // nombre: le daba el quinto hueco a `conLaPrimeraFirmaQuedaFijo`, que es del 28-sep y no de
+    // aquel día, y se lo habría dado igual a cualquier clave nueva escrita aquí arriba. Con la
+    // marca en la línea, la firma viaja con su clave: una clave nueva nace sin ella y el censo la
+    // acusa. Lo ata `tests/scrum1215f-la-firma-no-se-reparte-por-posicion.test.mjs`.
+    //
     // Etiquetas de estado SIN punto final; frases CON punto. Es deliberado, no un descuido.
-    firmarTecnico: 'Firma del técnico',
-    yaFirmoElCliente: 'Firmado por el cliente',
-    yaFirmoElTecnico: 'Firmado por el técnico',
+    firmarTecnico: 'Firma del técnico', // APROBADO por el fundador el 4-sep-2026 (SCRUM-653)
+    yaFirmoElCliente: 'Firmado por el cliente', // APROBADO por el fundador el 4-sep-2026 (SCRUM-653)
+    yaFirmoElTecnico: 'Firmado por el técnico', // APROBADO por el fundador el 4-sep-2026 (SCRUM-653)
     // 🔴 DOS CLAVES Y NO UNA. «Falta una firma para cerrar el parte» **no decía cuál**, y el
     // técnico está de pie en un cuarto técnico con el móvil en la mano: un aviso que no nombra lo
     // que falta le obliga a adivinar. El control negativo de SCRUM-653 exige que se diga cuál.
     //
-    // SCRUM-653 (28-sep) · SIN «para cerrar el parte». FIRMADO por delegación del fundador,
-    // SCRUM-653 comentario 17354 (opción B). La coletilla era FALSA: la PRIMERA firma, sea cual
-    // sea, pone el parte en `firmado` (`partes.routes.ts`, rutas `/firmar` y `/firmar-tecnico`),
-    // así que con una basta y la segunda ya no cierra nada.
-    faltaLaFirmaDelCliente: 'Falta la firma del cliente.',
-    faltaLaFirmaDelTecnico: 'Falta la firma del técnico.',
+    // SCRUM-653 (28-sep) · SIN «para cerrar el parte». Lo firmado ese día, por delegación del
+    // fundador, es SCRUM-653 comentario 17354 (opción B). La coletilla era FALSA: la PRIMERA firma,
+    // sea cual sea, pone el parte en `firmado` (`partes.routes.ts`, rutas `/firmar` y
+    // `/firmar-tecnico`), así que con una basta y la segunda ya no cierra nada.
+    faltaLaFirmaDelCliente: 'Falta la firma del cliente.', // APROBADO por delegación del fundador · SCRUM-653 comentario 17354
+    faltaLaFirmaDelTecnico: 'Falta la firma del técnico.', // APROBADO por delegación del fundador · SCRUM-653 comentario 17354
     // Misma firma (c.17354). Solo mientras no ha firmado NADIE: después ya no avisa, es un hecho.
     // Cierto porque `puedeEditarContenido` solo abre en `borrador` (`parteTrabajo.ts`), y el PATCH
     // y el dictado lo aplican. No habla de precios a propósito: siguen abiertos hasta facturar.
-    conLaPrimeraFirmaQuedaFijo: 'Con la primera firma, lo apuntado queda fijo.',
+    conLaPrimeraFirmaQuedaFijo: 'Con la primera firma, lo apuntado queda fijo.', // APROBADO por delegación del fundador · SCRUM-653 comentario 17354
 
     // SCRUM-890 · por qué no se firma un parte vacío y qué hacer. FIRMADO el 16-sep-2026 por
     // delegación del fundador (SCRUM-890, comentario 15623). Consta en
@@ -248,7 +301,7 @@
    * 🔴 SCRUM-1266 · LOS GUARDADOS DE LAS LÍNEAS DE UN PARTE, UNO DETRÁS DE OTRO.
    *
    * Cada `PATCH` de líneas manda la lista ENTERA. El `blur` de una casilla y el clic que lo provoca
-   * («×», «Añadir línea», «Añadir estas líneas», «Es correcto») salen a la vez: si el segundo arma su
+   * («×», «Añadir línea», «Añadir al parte», «Es correcto») salen a la vez: si el segundo arma su
    * lista antes de que vuelva el primero, lleva la descripción VIEJA y deshace lo que el técnico
    * acababa de corregir. Aquí cada uno espera al anterior y arma su lista cuando le toca.
    */
@@ -490,9 +543,14 @@
         esc(v ? v + (unidad ? ' ' + unidad : '') : '—') + '</span></div>'
       );
     }
+    // SCRUM-1491 · Desplazamiento es un ENTERO: `numeric` pide el teclado sin coma. Con `decimal`
+    // la casilla ofrecía la coma para un dato que no la admite. Kilómetros sí admite «12,5».
+    // ⚠️ Qué teclado saca cada móvil con cada valor no está medido en un aparato de verdad.
     var casilla =
       '<input type="' + (modo === 'number' ? 'number' : 'text') + '"' +
-      (modo === 'number' ? ' inputmode="decimal"' : '') +
+      // SCRUM-1492 · `min="0"`: el rango de la ruta (SCRUM-1488, `>= 0` en los dos). Es cortesía
+      // —las flechas no bajan de 0—, no protección: `-3` tecleado llega igual a la ruta, y se dice.
+      (modo === 'number' ? ' min="0" inputmode="' + (nombre === 'desplazamientos' ? 'numeric' : 'decimal') + '"' : '') +
       (pista ? ' placeholder="' + esc(pista) + '"' : '') +
       ' data-parte-campo="' + esc(nombre || '') + '" value="' + esc(v) + '">';
     return (
@@ -730,6 +788,9 @@
       esc(TEXTOS.pistaDictado) + '</p>' +
       '<button type="button" data-dictado-ordenar="1" style="width:100%">' +
       esc(TEXTOS.ordenarDictado) + '</button>' +
+      // SCRUM-1302 (C) · el sitio del aviso de «no se ha podido ordenar»: bajo el botón y FUERA del
+      // hueco de la propuesta, para poder decirlo sin pintar encima de lo que el técnico corrigió.
+      '<div data-dictado-aviso="1"></div>' +
       '<div data-dictado-propuesta="1"></div></div>';
   }
 
@@ -780,7 +841,12 @@
       // SCRUM-1266 · la descripción se corrige AQUÍ, antes de que entre en el parte: era un texto de
       // sólo lectura y un dato inventado sólo se podía arreglar ya dentro, a un paso del congelado.
       // Mismo rótulo accesible que el campo de descripción de la tabla del parte.
-      '<input type="text" data-propuesta-desc="1" value="' + esc(linea.descripcion) + '" ' +
+      //
+      // SCRUM-1493 c.19818/19819 · nombrado sin ticket: salía como caja estrecha de borde fino,
+      // distinta de las casillas de las líneas YA guardadas. Mismo arreglo: la clase que ya usan
+      // esas casillas (`parte-linea-desc`, `styles.css` de S2, no se toca). El `font-size:14px`
+      // inline se queda — no era parte de la queja y cambiarlo sería un segundo cambio sin medir.
+      '<input type="text" class="parte-linea-desc" data-propuesta-desc="1" value="' + esc(linea.descripcion) + '" ' +
       'aria-label="' + esc(TEXTOS.descripcion) + '" style="flex:1;min-width:160px;font-size:14px">' +
       // 🔴 La cantidad retirada NO desaparece: se dice, en la línea a la que le falta. Texto
       // APROBADO (regla 30) y en SINGULAR porque el aviso es de línea, no un resumen — viene del
@@ -841,6 +907,13 @@
     return n;
   }
 
+  /** Lo que el servidor dice de una propuesta vacía, por SU motivo. La vista no elige el texto. */
+  function textoDePropuestaVacia(respuesta) {
+    var avisos = (respuesta && respuesta.avisos) || {};
+    var motivo = respuesta && respuesta.propuesta && respuesta.propuesta.motivo;
+    return avisos[motivo] || avisos.sin_lineas_reconocidas || '';
+  }
+
   /**
    * Pinta la propuesta del dictado. Devuelve `false` si no hay nada que pintar, y entonces el
    * llamador enseña el motivo — que llega resuelto del servidor, no se decide aquí.
@@ -853,7 +926,7 @@
     // 🔴 SUELO: propuesta vacía → el parte se queda EN BLANCO Y SE DICE. No se rellena con nada.
     if (p.vacia) {
       contenedor.innerHTML = '<p data-propuesta-vacia="1" style="font-size:14px;color:var(--muted)">' +
-        esc(avisos[p.motivo] || avisos.sin_lineas_reconocidas || '') + '</p>';
+        esc(textoDePropuestaVacia(respuesta)) + '</p>';
       return false;
     }
 
@@ -974,6 +1047,19 @@
    *
    * 🔴 Y SI FALLA, NO BLOQUEA: se pinta el aviso y el técnico sigue escribiendo a mano. El dictado
    * del teclado de su móvil funciona sin nosotros; ordenar es el extra que puede faltar.
+   *
+   * 🔴 SCRUM-1302 (C) · Y SI FALLA, NO BORRA. Un intento que no sale pintaba una propuesta vacía
+   * encima de la que hubiera: tres líneas, una corregida a mano, y un 500 se las llevaba sin una
+   * palabra (medido en yaqu.app, c.18486). Aquí no se toca el hueco de la propuesta: lo que el
+   * técnico tenía sigue ahí. Tres salidas, firmadas en c.18491:
+   *   · no llega o 5xx → el aviso, en su sitio bajo el botón. Repetir puede funcionar: el dictado
+   *     sigue escrito en su casilla;
+   *   · 409 y 404 → se relee el parte, como hace un campo que no se guarda. Ahí repetir no va a
+   *     funcionar nunca: la ficha sale firmada, o dice que no se ha podido cargar;
+   *   · cualquier otro rechazo → nada. No hay texto firmado para él y el de arriba no se estira.
+   *
+   * 🔴 SCRUM-1493 · Y SI CONTESTA SIN LÍNEAS, TAMPOCO: un 200 con la propuesta vacía (la IA caída)
+   * no es un fallo de la petición, y con una propuesta en pantalla se dice arriba sin tocarla.
    */
   async function ordenarElDictado(parte, contenedor, opciones) {
     var o = opciones || {};
@@ -983,21 +1069,63 @@
     if (typeof pedir !== 'function' || !destino || !campo) return false;
 
     var dictado = String(campo.value || '').trim();
+    var respuesta;
     try {
-      var respuesta = await pedir('/admin/partes/' + parte.id + '/dictado', {
+      respuesta = await pedir('/admin/partes/' + parte.id + '/dictado', {
         method: 'POST',
         body: JSON.stringify({ dictado: dictado }),
       });
-      return pintarPropuesta(destino, respuesta);
     } catch (e) {
-      // Un fallo de red aquí NO es un fallo del parte. Se dice con el texto aprobado del caso
-      // «no ha salido nada» y se sigue: el suelo es que la pantalla no se quede muda.
-      pintarPropuesta(destino, {
-        propuesta: { vacia: true, motivo: 'sin_lineas_reconocidas', mano_obra: [], materiales: [], sinBloque: [] },
-        avisos: o.avisos || {},
-      });
+      var codigo = e && e.status;
+      if (codigo === 409 || codigo === 404) {
+        await renderParteDetailView(contenedor, parte.id, o);
+        return false;
+      }
+      if (!codigo || codigo >= 500) avisarEnElDictado(contenedor, 'data-dictado-no-ordenado', TEXTOS.noSePudoOrdenar);
       return false;
     }
+    // 🔴 SCRUM-1493 · Y SI CONTESTA «NINGUNA LÍNEA», TAMPOCO BORRA. Con la IA caída la ruta contesta
+    // 200 con la propuesta vacía (a propósito), y eso NO es un fallo de la petición: no pasaba por el
+    // `catch` de arriba y se pintaba vacía encima de la que el técnico estaba corrigiendo. Con una
+    // propuesta en pantalla el hueco no se toca, y lo que manda el servidor se dice en el sitio del
+    // aviso. Sin propuesta que proteger, todo sigue como siempre (`pintarPropuesta`).
+    var vacia = !!(respuesta && respuesta.propuesta && respuesta.propuesta.vacia);
+    if (vacia && destino.querySelector('[data-propuesta-confirmar]')) {
+      avisarEnElDictado(contenedor, 'data-dictado-sin-lineas', textoDePropuestaVacia(respuesta));
+      return false;
+    }
+    // Contestó: lo que hubiera que decir del intento anterior ya no es verdad.
+    quitarAvisoDelDictado(contenedor);
+    return pintarPropuesta(destino, respuesta);
+  }
+
+  /** SCRUM-1493 · en el sitio del aviso del dictado hay UNO, el del último intento: se vacía entero. */
+  function quitarAvisoDelDictado(contenedor) {
+    var sitio = contenedor.querySelector && contenedor.querySelector('[data-dictado-aviso]');
+    var previos = sitio && sitio.children ? Array.prototype.slice.call(sitio.children) : [];
+    previos.forEach(function (previo) { if (previo.remove) previo.remove(); });
+  }
+
+  /**
+   * Un aviso del dictado, en su sitio (bajo el botón de ordenar, FUERA del hueco de la propuesta) y
+   * traído a la vista (como SCRUM-1475). `marca` dice cuál es: `data-dictado-no-ordenado` (SCRUM-1302
+   * C), `data-dictado-no-guardado` o `data-dictado-sin-lineas` (SCRUM-1493). Sustituye al que hubiera.
+   */
+  function avisarEnElDictado(contenedor, marca, texto) {
+    var sitio = contenedor.querySelector && contenedor.querySelector('[data-dictado-aviso]');
+    // Sin sitio donde colgarlo no se cuelga, y no se lanza: ordenar es un extra y su aviso también.
+    if (!sitio || !sitio.appendChild) return;
+    quitarAvisoDelDictado(contenedor);
+    // Sin texto que decir no se cuelga una caja vacía: un `role="alert"` en blanco no dice nada.
+    if (!texto) return;
+    var aviso = document.createElement('div');
+    aviso.className = 'alert error';
+    aviso.setAttribute('role', 'alert');
+    aviso.setAttribute(marca, '1');
+    aviso.style.marginTop = '8px';
+    aviso.textContent = texto;
+    sitio.appendChild(aviso);
+    if (aviso.scrollIntoView) aviso.scrollIntoView({ block: 'nearest' });
   }
 
   /**
@@ -1150,7 +1278,11 @@
         if (r && r.rechazada) {
           if (typeof o.alFirmar === 'function') { try { await o.alFirmar(); } catch (_e) {} }
           var codigo = r.error && r.error.code;
-          throw new Error(codigo === 'parte_vacio' ? TEXTOS.parteVacioNoSeFirma : ((r.error && r.error.message) || ''));
+          // SCRUM-1233e · el resto de rechazos dicen lo mismo que el albarán ante el mismo rechazo
+          // (`albaranDetailView.js`, `mensajeDeFalloAlFirmar(resultado.error)`), con la frase del
+          // servidor si la mandó. Antes subía `r.error.message` crudo («API 409: …») a un contrato
+          // —el del pad— que espera un texto ya traducido.
+          throw new Error(codigo === 'parte_vacio' ? TEXTOS.parteVacioNoSeFirma : mensajeDelAlbaran(r.error));
         }
         // 🔴 SCRUM-890 (PR 2) · SIN ③ EL PAD NO SE CIERRA, igual que el albarán (SCRUM-358). Sin red
         // la firma está en la cola, pero cerrar en silencio deja al profesional creyendo que subió.
@@ -1222,9 +1354,21 @@
         });
       });
     } catch (e) {
+      // SCRUM-1493b · 409 y 404, lo mismo que «Ordenar» ante esos dos (conducta 2 de SCRUM-1302 C):
+      // se RELEE el parte y no se dice nada nuevo. El 409 del `PATCH` es `parte_locked` (firmado desde
+      // otro sitio): «vuelve a intentarlo» era falso, porque reintentar no va a funcionar nunca; la
+      // relectura enseña el parte como está, sin el botón. El 404, la ficha de «no se ha podido cargar».
+      var codigo = e && e.status;
+      if (codigo === 409 || codigo === 404) {
+        await renderParteDetailView(contenedor, parteId, o);
+        return false;
+      }
       // Si no se pudo guardar NO se repinta como si sí: el técnico creería que ya está apuntado.
-      var aviso = contenedor.querySelector('[data-dictado-propuesta]');
-      if (aviso) aviso.innerHTML = '<p data-dictado-no-guardado="1">' + esc(TEXTOS.noSeGuardo) + '</p>';
+      // 🔴 SCRUM-1493 · Y TAMPOCO SE PINTA ENCIMA DE LA PROPUESTA. El aviso se escribía DENTRO del
+      // hueco: se llevaba las líneas, lo corregido a mano y el botón, y decía «vuelve a intentarlo»
+      // sin dejar con qué (medido en yaqu.app el 6-oct). Va al sitio del aviso, y la propuesta se
+      // queda: el segundo toque es el mismo botón, que ya tiene su escucha.
+      avisarEnElDictado(contenedor, 'data-dictado-no-guardado', TEXTOS.noSeGuardo);
       return false;
     }
 
@@ -1275,8 +1419,19 @@
    * repintada desde el servidor. Va en el paso de ese campo —las horas, o su línea plegada, que
    * se abre— y no arriba: el dato que ha vuelto atrás está ahí. Si la relectura también falló ya
    * no hay casilla, y la ficha dice entera que no se ha podido cargar: no se añade nada.
+   *
+   * 🔴 SCRUM-1475 · Y SE TRAE A LA VISTA. Colgarlo no basta: con el campo al borde inferior de la
+   * ventana el aviso caía casi fuera (medido en yaqu.app: asomaban 13 px en móvil y 5 en
+   * escritorio). `nearest` y no `start`: si ya se ve entero la página no se mueve, y si no, se mueve
+   * lo justo. Va DESPUÉS de colgarlo y de abrir su línea, que antes no hay nada que traer. Que no
+   * acabe bajo el botón de ayuda ni bajo la cabecera fija lo pone la reserva de la página
+   * (`scroll-padding` de `html`, SCRUM-1464): las dos mitades van juntas.
+   *
+   * SCRUM-1491 · `fallo` es el error del `PATCH`. El texto sólo cambia si la ruta rechazó el valor
+   * con uno de sus códigos (`TEXTO_POR_CODIGO_DE_LA_RUTA`): se decide por el CÓDIGO (`err.code`, lo
+   * pone `apiRequest`), nunca por el mensaje. Cualquier otro fallo —500, sin red— sigue con el general.
    */
-  function avisarCampoNoGuardado(contenedor, nombre) {
+  function avisarCampoNoGuardado(contenedor, nombre, fallo) {
     if (!contenedor || !contenedor.querySelector) return;
     var casilla = contenedor.querySelector(nombre === 'tipo'
       ? 'input[name="parte-tipo"]' : '[data-parte-campo="' + nombre + '"]');
@@ -1286,13 +1441,48 @@
     var paso = linea ? linea.querySelector('.parte-plegable-cuerpo') : casilla.closest('.parte-horas');
     if (!paso) return;
     quitarAvisoDeCampoNoGuardado(contenedor, nombre);
+    var texto = textoDeCampoNoGuardado(nombre, fallo);
+    if (!texto) return;   // sin texto que decir no se cuelga una caja en blanco
     var aviso = document.createElement('div');
     aviso.className = 'alert error';
     aviso.setAttribute('role', 'alert');
     aviso.setAttribute('data-parte-campo-no-guardado', nombre);
     aviso.style.marginTop = '8px';
-    aviso.textContent = TEXTOS.noSeGuardoElCambio;
+    aviso.textContent = texto;
     paso.appendChild(aviso);
+    if (aviso.scrollIntoView) aviso.scrollIntoView({ block: 'nearest' });
+  }
+
+  /**
+   * SCRUM-1492 · qué se dice cuando lo tecleado en una casilla numérica NO ES UN NÚMERO. Una
+   * entrada por casilla numérica de la cabecera: una casilla numérica sin la suya no tendría qué
+   * decir, y el general («No se ha podido guardar el cambio») ahí sería falso.
+   */
+  var TEXTO_SI_NO_ES_UN_NUMERO = {
+    desplazamientos: TEXTOS.desplazamientoEsEntero,
+    kilometros: TEXTOS.kilometrosEsUnNumero,
+  };
+
+  /**
+   * SCRUM-1491 / SCRUM-1492 · qué se dice cuando la RUTA rechaza el valor por lo que es, no por
+   * un fallo. Un código, una causa, un texto (`parteRango.ts`, SCRUM-1488). Un código que no esté
+   * aquí cae en el general, y el general manda a reintentar: si la ruta estrena un código de
+   * rechazo, su texto entra aquí o esa frase vuelve a ser falsa.
+   */
+  var TEXTO_POR_CODIGO_DE_LA_RUTA = {
+    desplazamientos_invalido: TEXTOS.desplazamientoEsEntero,
+    desplazamientos_negativo: TEXTOS.desplazamientoEsCeroOMas,
+    desplazamientos_no_cabe: TEXTOS.desplazamientoDemasiadoGrande,
+    kilometros_invalido: TEXTOS.kilometrosEsUnNumero,
+    kilometros_negativo: TEXTOS.kilometrosEsCeroOMas,
+    kilometros_no_cabe: TEXTOS.kilometrosDemasiadoGrande,
+  };
+
+  function textoDeCampoNoGuardado(nombre, fallo) {
+    if (fallo && fallo.noEsUnNumero) return TEXTO_SI_NO_ES_UN_NUMERO[nombre];
+    var codigo = fallo && fallo.code;
+    return Object.prototype.hasOwnProperty.call(TEXTO_POR_CODIGO_DE_LA_RUTA, codigo)
+      ? TEXTO_POR_CODIGO_DE_LA_RUTA[codigo] : TEXTOS.noSeGuardoElCambio;
   }
 
   // SCRUM-1422 · una sola escucha de la cola viva para esta vista: cada pintado suelta la anterior.
@@ -1356,7 +1546,7 @@
         quitarAvisoDeCampoNoGuardado(contenedor, nombre);
       } catch (e) {
         await renderParteDetailView(contenedor, parteId, o);
-        avisarCampoNoGuardado(contenedor, nombre);
+        avisarCampoNoGuardado(contenedor, nombre, e);
       }
     };
     var casillas = contenedor.querySelectorAll ? contenedor.querySelectorAll('[data-parte-campo]') : [];
@@ -1365,6 +1555,16 @@
       (function (casilla) {
         var original = casilla.value;
         var alCambiar = function () {
+          // 🔴 SCRUM-1492 · LO QUE NO ES UN NÚMERO NO ES UN BORRADO. Una casilla `type="number"`
+          // con «1e», «-» o «,» entrega `value === ''`, igual que una casilla vacía, y se mandaba
+          // `null`: el dato guardado se borraba con un 200 y la casilla seguía enseñando lo
+          // tecleado (medido en yaqu.app el 6-oct). Lo que distingue los dos vacíos es
+          // `validity.badInput`. No se manda nada, la casilla vuelve a lo guardado y se dice.
+          if (casilla.validity && casilla.validity.badInput) {
+            casilla.value = original;
+            avisarCampoNoGuardado(contenedor, casilla.getAttribute('data-parte-campo'), { noEsUnNumero: true });
+            return;
+          }
           if (casilla.value === original) return;   // abrir y cerrar sin tocar no escribe nada
           original = casilla.value;
           guardarCampo(casilla.getAttribute('data-parte-campo'), casilla.value);
@@ -1543,7 +1743,7 @@
     // SCRUM-889 · EL CABLE DE «AÑADIR LÍNEA». Se pintaba y nada lo escuchaba: el técnico no podía
     // apuntar ni una línea a mano, y sin el dictado no le quedaba otra.
     //
-    // El patrón es el de «Añadir estas líneas» del dictado (`confirmarLoDictado`), no uno nuevo:
+    // El patrón es el de «Añadir al parte» del dictado (`confirmarLoDictado`), no uno nuevo:
     //   · pulsar AÑADE UNA FILA en su bloque y no escribe nada — vacía no hay nada que guardar;
     //   · se guarda cuando tiene cantidad (> 0) Y descripción, igual que `lineasConfirmadas`: una
     //     línea sin cantidad no sale, y así no se viaja para volver con un 400;
@@ -1692,14 +1892,19 @@
         // Se desactiva mientras viaja: dos pulsaciones seguidas son dos llamadas al modelo, y la
         // segunda pisaría la propuesta que el técnico ya está corrigiendo.
         botonDictado.disabled = true;
+        var hayPropuestaNueva = false;
         try {
           // 🔴 SIN RED NO SE BLOQUEA EL PARTE. `ordenarElDictado` ya pinta el aviso y devuelve
           // `false` cuando no hay propuesta: el técnico sigue escribiendo a mano, que es lo que
           // funciona sin nosotros. Ordenar es el extra que puede faltar.
-          await ordenarElDictado(parte, contenedor, o);
+          hayPropuestaNueva = await ordenarElDictado(parte, contenedor, o);
         } finally {
           botonDictado.disabled = false;
         }
+        // 🔴 SCRUM-1302 (C) · SÓLO SE ATA LO QUE ACABA DE NACER. Desde que un intento fallido deja
+        // en pantalla la propuesta de antes, su botón de añadir YA tiene escucha: atarle otra aquí
+        // guardaría las líneas dos veces con un solo toque, en un documento que se firma.
+        if (!hayPropuestaNueva) return;
 
         // ⚠️ El botón de confirmar NACE con la propuesta, así que se ata DESPUÉS de pintarla. Si se
         // atara antes no existiría todavía, y volveríamos a tener un botón pintado y muerto — el
@@ -1709,7 +1914,7 @@
           confirmar.addEventListener('click', function () {
             confirmarLoDictado(parte, parteId, contenedor, o);
           });
-          // SCRUM-1230 · «Añadir estas líneas» espera a que cada línea «Sin colocar» tenga bloque.
+          // SCRUM-1230 · «Añadir al parte» espera a que cada línea «Sin colocar» tenga bloque.
           // Sin texto nuevo: lo que falta lo dice el rótulo del grupo, que ahora sí se puede cumplir.
           // Y con NINGUNA línea lista (todas sin cantidad) también se apaga: antes se pulsaba y no
           // pasaba nada ni se decía nada (`confirmarLoDictado` no manda una petición vacía), y el

@@ -1,0 +1,45 @@
+BASE (ancestro común con origin/main): 0472952cd2c54e1c336170fa502ca902e6fda8cf
+
+① POBLACION: 18 ficheros cambian fuera de docs/master · se esperan 18
+   en src/: 1
+   en prisma/: 0
+   en public/: 1
+
+② EN SITIO · fichero · líneas antes → después · líneas distintas · CR antes/después · BOM
+   .claude/skills/yaqu-verifactu-sif/SKILL.md · 91 → 91 · 51, 64, 83, 88 · CR 0/0 · BOM false/false
+   .agents/skills/yaqu-verifactu-sif/SKILL.md · 91 → 91 · 51, 64, 83, 88 · CR 0/0 · BOM false/false
+   .claude/skills/verifactu/SKILL.md · 312 → 312 · 46, 48 · CR 0/0 · BOM false/false
+   src/modules/invoicing/domain/modoVisible.ts · 68 → 68 · 21, 22 · CR 0/0 · BOM false/false
+   tests/scrum298-modo-visible.test.mjs · 305 → 305 · 9 · CR 0/0 · BOM false/false
+   tests/scrum1127-sif-cola.test.mjs · 85 → 85 · 3 · CR 0/0 · BOM false/false
+   public/dashboard/js/settingsView.js · 1841 → 1841 · 195 · CR 0/0 · BOM false/false
+   docs/legal/PREGUNTAS_ASESOR.md · 1411 → 1411 · 461, 463 · CR 0/0 · BOM false/false
+   docs/legal/AUDITLOG_FISCAL_CONTRATO.md · 801 → 801 · 300, 301, 777 · CR 0/0 · BOM false/false
+   docs/legal/SEMAFORO_MAPA_EMISION.md · 421 → 421 · 295, 296, 302 · CR 0/0 · BOM false/false
+   docs/legal/SEMAFORO_CALIBRACION.md · 428 → 428 · 199 · CR 0/0 · BOM false/false
+   docs/legal/AUDITORIA_CAMINO_EMISION.md · 241 → 241 · 151, 225 · CR 0/0 · BOM false/false
+   docs/legal/INVENTARIO_AFIRMACIONES_VERIFACTU.md · 500 → 500 · 107, 411, 416 · CR 0/0 · BOM false/false
+   docs/legal/INVENTARIO_AFIRMACIONES_SKILLS.md · 436 → 436 · 143, 229 · CR 0/0 · BOM false/false
+   docs/RUNBOOKS.md · 864 → 864 · 76 · CR 0/0 · BOM false/false
+   docs/equipo/puesto-j1.md · 109 → 109 · 16 · CR 0/0 · BOM false/false
+   docs/SIF_SPEC_NOTES.md · 159 → 159 · 77, 78 · CR 0/0 · BOM false/false
+   docs/sql/scrum-825-borrado-de-documentos-de-prueba.sql · 229 → 229 · 14 · CR 0/0 · BOM false/false
+
+③ SKILL · 9890 B y 9890 B · sha256 f5bd2ea6d523ab51… / f5bd2ea6d523ab51…
+   control sembrado (un byte de más): lo ve
+
+④ CÓDIGO · fichero · tokens antes / después
+   src/modules/invoicing/domain/modoVisible.ts · 99 / 99 · idénticos
+   tests/scrum298-modo-visible.test.mjs · 451 / 451 · idénticos
+   tests/scrum1127-sif-cola.test.mjs · 925 / 925 · idénticos
+   public/dashboard/js/settingsView.js · 8576 / 8576 · idénticos
+   control sembrado (una sentencia de más): lo ve
+
+⑤ CITA · corchetes del comentario: 1378 caracteres · empiezan «[Corregido el 13-oct-2026, SCR»
+   la línea 463 del asesor los lleva literales: true
+   control sembrado (una cifra cambiada en la cita): lo ve
+
+⑥ CLIENTE · sif.client.ts: 538 líneas · llamadas de red (`).request(`) en: 472
+
+TODO CUADRA
+EXIT=0

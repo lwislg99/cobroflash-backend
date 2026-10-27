@@ -1,0 +1,54 @@
+POBLACIÓN · 316 jobs obligatorios con veredicto · bytes min 1856720 max 1989518
+estados {"pasa":264,"cae":38,"saltado":14}
+
+== TODO · jobs 302 · pasadas por brazo 1208
+  CON: pasadas que pierden 41/1208 (3.4 %) · casos perdidos 346 de 386560 · máx por pasada 15
+       pasadas que pierden por job: {"0":264,"1":35,"2":3}
+       histograma de lo que pierde una pasada que pierde: {"1":1,"2":2,"3":2,"4":3,"5":2,"6":5,"7":2,"8":5,"9":3,"10":2,"11":4,"12":1,"13":3,"14":3,"15":3}
+  SIN: pasadas que pierden 1196/1208 (99.0 %) · casos perdidos 27707 · mín por pasada 0 · máx 52
+       pasadas que pierden por job: {"3":12,"4":290}
+  jobs con total CON < total SIN: 302/302
+
+== 1.ª mitad 2026-10-14T07:59:03Z → 2026-10-16T12:36:41Z · jobs 151 · pasadas por brazo 604
+  CON: pasadas que pierden 20/604 (3.3 %) · casos perdidos 178 de 193280 · máx por pasada 15
+       pasadas que pierden por job: {"0":132,"1":18,"2":1}
+       histograma de lo que pierde una pasada que pierde: {"1":1,"2":1,"4":1,"5":1,"6":3,"7":1,"8":2,"10":2,"11":2,"12":1,"13":1,"14":2,"15":2}
+  SIN: pasadas que pierden 600/604 (99.3 %) · casos perdidos 13865 · mín por pasada 0 · máx 49
+       pasadas que pierden por job: {"3":4,"4":147}
+  jobs con total CON < total SIN: 151/151
+
+== 2.ª mitad 2026-10-16T12:41:51Z → 2026-10-20T15:35:34Z · jobs 151 · pasadas por brazo 604
+  CON: pasadas que pierden 21/604 (3.5 %) · casos perdidos 168 de 193280 · máx por pasada 15
+       pasadas que pierden por job: {"0":132,"1":17,"2":2}
+       histograma de lo que pierde una pasada que pierde: {"2":1,"3":2,"4":2,"5":1,"6":2,"7":1,"8":3,"9":3,"11":2,"13":2,"14":1,"15":1}
+  SIN: pasadas que pierden 596/604 (98.7 %) · casos perdidos 13842 · mín por pasada 0 · máx 52
+       pasadas que pierden por job: {"3":8,"4":143}
+  jobs con total CON < total SIN: 151/151
+
+== por día: jobs · jobs con alguna pasada CON pérdida · pasadas CON que pierden
+  2026-10-14 · 71 · 12 · 12/284
+  2026-10-15 · 50 · 4 · 4/200
+  2026-10-16 · 42 · 6 · 7/168
+  2026-10-17 · 33 · 5 · 5/132
+  2026-10-18 · 48 · 4 · 4/192
+  2026-10-19 · 40 · 6 · 8/160
+  2026-10-20 · 18 · 1 · 1/72
+  evento push: jobs 49 · con alguna pérdida 12 · pasadas 12/196
+  evento pull_request: jobs 253 · con alguna pérdida 26 · pasadas 29/1012
+
+== saltados
+  2026-10-14T16:00:33Z 38594349002 pull_request scrum-1302q-expired-en-el-enlace-vivo success 1869207
+  2026-10-16T12:36:42Z 38901734608 pull_request scrum-951g-rama-empujada-vacia success 1899856
+  2026-10-16T12:44:38Z 38902679498 pull_request scrum-1559c-dos-botones-vuestros-a-31px success 1899894
+  2026-10-16T12:44:45Z 38902693487 pull_request scrum-839i-atasco-sin-causa success 1901665
+  2026-10-16T12:46:01Z 38902849765 pull_request scrum-1206b-la-ficha-del-albaran-pinta-sus-textos failure 1914012
+  2026-10-16T13:09:44Z 38905735004 pull_request scrum-1559b-censo-cuenta-cada-elemento failure 1920307
+  2026-10-17T19:44:42Z 39063769525 pull_request scrum-1559b-censo-cuenta-cada-elemento success 1906010
+  2026-10-17T22:55:12Z 39076983970 pull_request scrum-1560d-fixtures-compartidos-con-forma success 1912260
+  2026-10-17T23:50:09Z 39080520369 pull_request scrum-1434-zona-roja-gh-api-sin-tumbar failure 1923979
+  2026-10-18T17:05:01Z 39147932967 push main success 1916331
+  2026-10-18T17:29:13Z 39149797664 push main success 1916151
+  2026-10-18T17:53:16Z 39151628243 push main success 1916115
+  2026-10-19T06:56:01Z 39212795851 pull_request scrum-1563c-estado-19oct success 1927376
+  2026-10-19T12:22:31Z 39251559428 push main success 1937568
+EXIT=0

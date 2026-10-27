@@ -1,0 +1,12 @@
+POBLACIÓN: 191 filas en antes.txt · 191 filas en despues.txt · 14144 B y 14013 B
+IDÉNTICAS: 190 · MOVIDAS: 1
+
+· POST /admin/invoices/:id/resend-whatsapp
+    antes:   [CRUZA] → 200  · ENVÍOS A META (doblado): 1
+                      sin comercio (6): invoice.findUnique {"id":102} | charge.findUnique {"id":900} | charge.update(ESCRIBE) {"id":900}
+    después: [FILTRA] → 404  · consultas atadas 1
+
+ESPERADAS: POST /admin/invoices/:id/resend-whatsapp
+se mueve alguna que no se esperaba: no
+alguna esperada NO se mueve: no
+EXIT=0

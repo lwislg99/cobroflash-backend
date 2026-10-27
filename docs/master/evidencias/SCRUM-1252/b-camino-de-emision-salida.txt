@@ -1,0 +1,71 @@
+POBLACION: 315 ficheros .ts en src/ · imports relativos sin resolver: 0
+evidencias/: 4 ficheros → src/modules/fiscal/evidencias/atestiguamiento.ts, src/modules/fiscal/evidencias/evidencias.routes.ts, src/modules/fiscal/evidencias/paquete.repo.ts, src/modules/fiscal/evidencias/paquete.ts
+
+① QUIÉN LLEGA a evidencias/ (cierre inverso, imports de valor y de tipo):
+   src/app.ts
+   src/index.ts
+
+② A QUÉ LLEGA evidencias.routes.ts EN RUNTIME (cierre directo, sin `import type`), y cuáles ESCRIBEN:
+   src/core/db/prisma.ts
+   src/core/zonaDelMerchant.ts
+   src/modules/fiscal/evidencias/evidencias.routes.ts
+   src/modules/fiscal/evidencias/paquete.repo.ts
+   src/modules/fiscal/evidencias/paquete.ts   ← 1 llamada(s) de escritura: crypto.createHash('sha256').update
+   src/modules/fiscal/modelo303/casillas.ts
+   src/modules/fiscal/modelo303/modelo303.repo.ts
+   src/modules/fiscal/modelo303/modelo303.ts
+   src/modules/invoicing/domain/criterioCaja.ts
+   src/modules/invoicing/domain/criterioDelMerchant.ts
+   src/modules/invoicing/domain/devengoPorCaja.ts
+   src/modules/invoicing/domain/libroRecibidas.repo.ts
+   src/modules/invoicing/domain/libroRecibidas.ts
+   src/modules/invoicing/domain/libroRegistro.repo.ts
+   src/modules/invoicing/domain/libroRegistro.ts
+   src/modules/invoicing/domain/vat.service.ts
+   src/modules/jobs/domain/albaranBarrido.ts
+   src/modules/jobs/domain/albaranVerificacion.ts   ← 1 llamada(s) de escritura: crypto.createHash('sha256').update
+
+②bis Lo mismo SIN pasar por core/ (el singleton de prisma y la config no son camino de emisión):
+   src/modules/fiscal/evidencias/paquete.repo.ts
+   src/modules/fiscal/evidencias/paquete.ts   ← ESCRIBE: crypto.createHash('sha256').update
+   src/modules/fiscal/modelo303/casillas.ts
+   src/modules/fiscal/modelo303/modelo303.repo.ts
+   src/modules/fiscal/modelo303/modelo303.ts
+   src/modules/invoicing/domain/criterioCaja.ts
+   src/modules/invoicing/domain/criterioDelMerchant.ts
+   src/modules/invoicing/domain/devengoPorCaja.ts
+   src/modules/invoicing/domain/libroRecibidas.repo.ts
+   src/modules/invoicing/domain/libroRecibidas.ts
+   src/modules/invoicing/domain/libroRegistro.repo.ts
+   src/modules/invoicing/domain/libroRegistro.ts
+   src/modules/invoicing/domain/vat.service.ts
+   src/modules/jobs/domain/albaranBarrido.ts
+   src/modules/jobs/domain/albaranVerificacion.ts   ← ESCRIBE: crypto.createHash('sha256').update
+   → 15 módulos alcanzados desde paquete.repo.ts · 2 con llamadas de escritura
+
+③ EL CAMINO DE EMISIÓN (anclas de docs/legal/AUDITORIA_CAMINO_EMISION.md): ¿su cierre directo toca evidencias/ o el lector del libro?
+   src/lib/invoicing.ts: cierre de 38 · escrituras propias 6 · toca vigilados: ninguno
+   src/modules/fiscal/verifactu/registro.builder.ts: cierre de 1 · escrituras propias 0 · toca vigilados: ninguno
+   src/modules/invoicing/domain/invoiceNumber.service.ts: cierre de 7 · escrituras propias 1 · toca vigilados: ninguno
+   src/modules/invoicing/domain/selladoEstado.ts: cierre de 17 · escrituras propias 2 · toca vigilados: ninguno
+   src/modules/invoicing/domain/verifactu.service.ts: cierre de 15 · escrituras propias 6 · toca vigilados: ninguno
+   src/modules/invoicing/infra/pdf/pdf.service.ts: cierre de 12 · escrituras propias 0 · toca vigilados: ninguno
+   src/modules/invoicing/app/routes/invoice.routes.ts: cierre de 42 · escrituras propias 1 · toca vigilados: ninguno
+   src/modules/invoicing/domain/facturaSuelta.ts: cierre de 3 · escrituras propias 0 · toca vigilados: ninguno
+
+CONTROL POSITIVO del detector de escrituras (debe ser > 0):
+   src/modules/invoicing/domain/verifactu.service.ts: 6
+   src/modules/invoicing/domain/invoiceNumber.service.ts: 1
+CONTROL POSITIVO del cierre inverso (libroRegistro.repo.ts debe tener importadores; esperados 5 directos):
+   src/modules/fiscal/evidencias/paquete.repo.ts
+   src/modules/fiscal/librosAeat/librosAeat.repo.ts
+   src/modules/fiscal/modelo303/modelo303.repo.ts
+   src/modules/invoicing/app/routes/libroRegistro.routes.ts
+   src/modules/reports/app/routes/reports.routes.ts
+
+Escrituras dentro de evidencias/ (por AST):
+   src/modules/fiscal/evidencias/atestiguamiento.ts: 0
+   src/modules/fiscal/evidencias/evidencias.routes.ts: 0
+   src/modules/fiscal/evidencias/paquete.repo.ts: 0
+   src/modules/fiscal/evidencias/paquete.ts: crypto.createHash('sha256').update
+EXIT=0

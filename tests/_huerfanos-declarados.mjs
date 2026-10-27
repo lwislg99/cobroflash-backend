@@ -88,6 +88,19 @@ export const CATEGORIAS = {
  * `módulo::export`, no la longitud: por eso da igual cómo se agrupen las líneas.
  */
 export const DECLARADOS = [
+  // ── SCRUM-1515 · el alta de merchants, cuando la ruta pública se cerró ─────────────────
+  {
+    modulo: 'src/modules/auth/domain/auth.service.ts',
+    cat: 'FALSO_POSITIVO_MEDIDO', desde: '2026-10-08',
+    motivo: '🔴 NO es huérfano: es la ÚNICA puerta de alta que queda. `POST /auth/register` se cerró '
+      + 'por orden del fundador (SCRUM-1515) y ya no lo llama; lo llama el guion '
+      + '`src/modules/auth/app/cli/altaDeMerchant.ts`, que se lanza a mano con `node dist/…` y por '
+      + 'eso no cuelga de ninguna entrada viva (`src/index.ts`, `src/app.ts`, los scripts de '
+      + '`package.json`): el censo no lo ve. Que el guion lo llama y que el merchant nace bien lo '
+      + 'EJECUTA `tests/scrum1515-nuestra-puerta-de-alta.test.mjs`. Sale de aquí el día que el '
+      + 'guion sea una entrada del censo o el alta vuelva a tener llamador en el servidor.',
+    exports: ['registerMerchant'],
+  },
   // ── SCRUM-805 · el sello del PRESUPUESTO, y por qué sus cuatro exports son distintos ───
   //
   // Nacen en el mismo módulo y NO son el mismo caso, así que van en tres categorías. El guard
@@ -534,6 +547,14 @@ export const DECLARADOS = [
     motivo: '🔴 LOS DOS QUE SIGUEN SIN CABLE, y son los que importan: `bloqueRetencion` pinta la retención en el documento y `leerTipoRetencion` es el SUELO FISCAL que impide emitir sin saber si el profesional retiene. Cablear cualquiera de los dos cambia lo que se SELLA (regla 38) y necesita GO explícito del fundador. ③a entrega la pantalla donde se DECLARA el tipo; aplicarlo a una factura es otra cosa y no se ha hecho.',
     exports: ['bloqueRetencion', 'leerTipoRetencion'] },
   // ═══════════════════════════════════════════════════════════════════════════════════════════
+  // SCRUM-1063c · 24-oct-2026 · `suplidos.ts` pasa de módulo muerto a vivo porque `libroRegistro.ts`
+  // importa `partirPorSuplido`. Los otros tres que el clasificador marcó (`MARCA_SUPLIDO`,
+  // `leerMarcaSuplido`, `importeSuplido`) NO se declaran: pierden el `export` en el mismo commit.
+  { modulo: 'src/modules/invoicing/domain/suplidos.ts',
+    cat: 'MOTOR_EN_ESPERA', desde: '2026-10-24',
+    motivo: 'Sacar los suplidos de la base que se SELLA (`desgloseConSuplidos`) y escribir la columna `invoices.suplidos` (`totalSuplidos`) cambia lo que se emite: camino de emisión, regla 38, con su propio GO del fundador. SCRUM-1063 c.20717 lo dejó fuera a propósito: el 303 espera a la emisión y sólo usa `partirPorSuplido` para etiquetar.',
+    exports: ['desgloseConSuplidos', 'totalSuplidos'] },
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
   { modulo: 'src/modules/invoicing/domain/rectificabilidad.ts',
     cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
     motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
@@ -546,10 +567,14 @@ export const DECLARADOS = [
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
     motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
     exports: ['entraEnLaCadena'] },
-  { modulo: 'src/modules/invoicing/domain/selladoEstado.ts',
-    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
-    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
-    exports: ['SELLADO_NO_APLICA'] },
+  // SCRUM-1507 · `reintentoSellado.ts` pasa a estar vivo (lo importa la tarea de `cron.ts`, PR-2 de
+  // SCRUM-1404). `SELLADO_NO_APLICA` de `selladoEstado.ts` sale de aquí: ahora la consume él.
+  { modulo: 'src/modules/invoicing/domain/reintentoSellado.ts',
+    cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-10-22',
+    motivo: 'SCRUM-1507 · las usa `reintentarSelladosPendientes`, dentro del módulo; el `export` lo lee `tests/scrum1404b-el-reintento-del-sellado.test.mjs`, que las prueba sueltas (la fecha, el tope, la espera, el plazo y la población).',
+    exports: ['ACCION_DEL_SELLADO_FALLIDO', 'entraEnElReintento', 'ESPERA_INICIAL_S', 'esperaTrasFalloS', 'fechaDeCorte',
+      'LOTE_DEL_REINTENTO', 'plazoDeAgotamientoS', 'REINTENTO_ACTIVO_DESDE', 'SUELO_DE_LA_FECHA_DE_CORTE', 'TOPE_DE_FALLOS',
+      'turnoDe'] },
   { modulo: 'src/modules/invoicing/domain/tipoDocumento.ts',
     cat: 'PIEZA_INTERNA_EXPORTADA', desde: '2026-08-12',
     motivo: 'Código vivo de su propio módulo lo ejecuta; el `export` es superficie que hoy no consume nadie de fuera salvo su test.',
@@ -608,10 +633,6 @@ export const DECLARADOS = [
     cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
     motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
     exports: ['CAMPOS_QUE_VIAJAN'] },
-  { modulo: 'src/modules/jobs/domain/albaranEdicion.ts',
-    cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
-    motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
-    exports: ['ERROR_ALBARAN_CAMBIADO_AL_EDITAR'] },
   { modulo: 'src/modules/jobs/domain/albaranesListado.ts',
     cat: 'MOTOR_EN_ESPERA', desde: '2026-08-12',
     motivo: 'C1 (SCRUM-301): el filtro por los dos ejes del listado global de albaranes. Su hermano `listarAlbaranesDelMerchant` sí está cableado; el filtro no lo aplica nadie todavía.',
@@ -635,7 +656,7 @@ export const DECLARADOS = [
   { modulo: 'src/modules/jobs/domain/albaranFirmante.ts',
     cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
     motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
-    exports: ['COPY_CALIDAD_INVALIDA', 'ERROR_ALBARAN_CAMBIADO', 'FIRMANTE_CALIDAD_IDS', 'FIRMANTE_CALIDAD_SET', 'LUGAR_ENTREGA_MAX', 'PENDIENTE'] },
+    exports: ['COPY_CALIDAD_INVALIDA', 'FIRMANTE_CALIDAD_IDS', 'FIRMANTE_CALIDAD_SET', 'LUGAR_ENTREGA_MAX', 'PENDIENTE'] },
   { modulo: 'src/modules/jobs/domain/albaranIdempotencia.ts',
     cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
     motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',

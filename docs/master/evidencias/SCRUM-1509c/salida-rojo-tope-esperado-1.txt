@@ -1,0 +1,57 @@
+topes leidos en dist: por cliente y dia = 3 · por comercio y dia = 100  [ESPERADO FORZADO A 1: este guion debe salir rojo]
+destino de las pruebas: 34000000077 (rango imposible: true)
+
+== A · CONTROLES (antes de cualquier numero) ==
+cuadra A0 cero: ningun envio                                          aMeta=  0 ok=  0 bloqCli=  0 bloqCom=  0 pregTope=  0 filas=0/0 otros=-
+ROJO   A1 positivo: 10 al mismo cliente, todo sano (ve el bloqueo)    aMeta=  3 ok=  3 bloqCli=  7 bloqCom=  0 pregTope= 20 filas=10/10 otros=-  <<< aMeta: esperado 1, salio 3 | ok: esperado 1, salio 3 | bloqueoCliente: esperado 9, salio 7
+cuadra A2 positivo comercio: 100 filas de OTRO cliente hoy, 1 envio   aMeta=  0 ok=  0 bloqCli=  0 bloqCom=  1 pregTope=  1 filas=1/1 otros=-
+cuadra A3 borde comercio: 99 filas de otro cliente, 1 envio           aMeta=  1 ok=  1 bloqCli=  0 bloqCom=  0 pregTope=  2 filas=1/1 otros=-
+
+== B · QUE CAMPOS LEE (3 filas prellenadas, 1 envio; se cambia UN campo en las 3) ==
+cuadra B0 sin cambiar nada (positivo: bloquea)                        aMeta=  0 ok=  0 bloqCli=  1 bloqCom=  0 pregTope=  2 filas=1/1 otros=-
+cuadra B1 waMessageId = null                                          aMeta=  1 ok=  1 bloqCli=  0 bloqCom=  0 pregTope=  2 filas=1/1 otros=-
+cuadra B2 type = service                                              aMeta=  1 ok=  1 bloqCli=  0 bloqCom=  0 pregTope=  2 filas=1/1 otros=-
+cuadra B3 customerId = otro                                           aMeta=  1 ok=  1 bloqCli=  0 bloqCom=  0 pregTope=  2 filas=1/1 otros=-
+cuadra B4 customerId = null                                           aMeta=  1 ok=  1 bloqCli=  0 bloqCom=  0 pregTope=  2 filas=1/1 otros=-
+cuadra B5 merchantId = otro                                           aMeta=  1 ok=  1 bloqCli=  0 bloqCom=  0 pregTope=  2 filas=1/1 otros=-
+cuadra B6 createdAt = ayer 23:59                                      aMeta=  1 ok=  1 bloqCli=  0 bloqCom=  0 pregTope=  2 filas=1/1 otros=-
+cuadra B7 createdAt = hoy 00:00:00.000                                aMeta=  0 ok=  0 bloqCli=  1 bloqCom=  0 pregTope=  2 filas=1/1 otros=-
+cuadra B8 status = failed (con waMessageId)                           aMeta=  0 ok=  0 bloqCli=  1 bloqCom=  0 pregTope=  2 filas=1/1 otros=-
+cuadra B9 status = delivered                                          aMeta=  0 ok=  0 bloqCli=  1 bloqCom=  0 pregTope=  2 filas=1/1 otros=-
+cuadra B10 templateName = otra                                        aMeta=  0 ok=  0 bloqCli=  1 bloqCom=  0 pregTope=  2 filas=1/1 otros=-
+cuadra B11 relatedType/relatedId = otros                              aMeta=  0 ok=  0 bloqCli=  1 bloqCom=  0 pregTope=  2 filas=1/1 otros=-
+cuadra B12 error = texto                                              aMeta=  0 ok=  0 bloqCli=  1 bloqCom=  0 pregTope=  2 filas=1/1 otros=-
+
+== C · POR QUE: la escritura, la lectura, y la baja (misma funcion) ==
+cuadra C1 falla la ESCRITURA del registro (lectura sana)              aMeta= 10 ok= 10 bloqCli=  0 bloqCom=  0 pregTope= 20 filas=0/10 otros=-
+cuadra C2 falla la LECTURA del tope (escritura sana)                  aMeta= 10 ok= 10 bloqCli=  0 bloqCom=  0 pregTope= 10 filas=10/10 otros=-
+cuadra C3 fallan las dos                                              aMeta= 10 ok= 10 bloqCli=  0 bloqCom=  0 pregTope= 10 filas=0/10 otros=-
+cuadra C4 CONTRASTE: falla la lectura de la BAJA (misma funcion)      aMeta=  0 ok=  0 bloqCli=  0 bloqCom=  0 pregTope=  0 filas=10/10 otros=baja_no_comprobable=10
+cuadra C5 los dos topes a la vez: 120 envios a clientes distintos, sano aMeta=100 ok=100 bloqCli=  0 bloqCom= 20 pregTope=220 filas=120/120 otros=-
+cuadra C6 lo mismo con la escritura fallando                          aMeta=120 ok=120 bloqCli=  0 bloqCom=  0 pregTope=240 filas=0/120 otros=-
+
+== D · LA BASE VA BIEN y el tope tampoco protege ==
+cuadra D1 10 A LA VEZ (Promise.all), base sana e instantanea          aMeta= 10 ok= 10 bloqCli=  0 bloqCom=  0 pregTope= 20 filas=10/10 otros=-
+cuadra D2 seguidos, escritura 50 ms, Meta instantanea                 aMeta= 10 ok= 10 bloqCli=  0 bloqCom=  0 pregTope= 20 filas=10/10 otros=-
+ROJO   D3 seguidos, escritura instantanea, Meta 30 ms (como A1)       aMeta=  3 ok=  3 bloqCli=  7 bloqCom=  0 pregTope= 20 filas=10/10 otros=-  <<< aMeta: esperado 1, salio 3 | ok: esperado 1, salio 3 | bloqueoCliente: esperado 9, salio 7
+sin-esp D4 [modelo] seguidos, escritura 100 ms, Meta 30 ms             aMeta=  6 ok=  6 bloqCli=  4 bloqCom=  0 pregTope= 20 filas=10/10 otros=-
+sin-esp D5 [modelo] seguidos, escritura 300 ms, Meta 30 ms             aMeta= 10 ok= 10 bloqCli=  0 bloqCom=  0 pregTope= 20 filas=10/10 otros=-
+cuadra D6 Meta contesta 200 SIN id de mensaje                         aMeta= 10 ok= 10 bloqCli=  0 bloqCom=  0 pregTope= 20 filas=10/10 otros=-
+cuadra D7 Meta NO contesta (plazo): pudo salir                        aMeta= 10 ok=  0 bloqCli=  0 bloqCom=  0 pregTope= 20 filas=10/10 otros=sin_respuesta=10
+cuadra D8 Meta contesta 500: pudo salir                               aMeta= 10 ok=  0 bloqCli=  0 bloqCom=  0 pregTope= 20 filas=10/10 otros=sin_respuesta=10
+cuadra D9 Meta contesta 400: NO salio (no contar es lo correcto)      aMeta= 10 ok=  0 bloqCli=  0 bloqCom=  0 pregTope= 20 filas=10/10 otros=rechazado=10
+ROJO   D10 medianoche: 5 a las 23:58 y 5 a las 00:01                  aMeta=  6 ok=  6 bloqCli=  4 bloqCom=  0 pregTope= 20 filas=10/10 otros=-  <<< aMeta: esperado 2, salio 6 | bloqueoCliente: esperado 8, salio 4
+
+== E · CONTRAFACTICOS (a quien no se le pregunta) ==
+cuadra E1 sin cliente en la llamada                                   aMeta= 10 ok= 10 bloqCli=  0 bloqCom=  0 pregTope= 10 filas=10/10 otros=-
+cuadra E2 sin comercio en la llamada                                  aMeta= 10 ok= 10 bloqCli=  0 bloqCom=  0 pregTope=  0 filas=0/0 otros=-
+
+== LO QUE PREGUNTA EL DESTINO (where literal, del caso A1) ==
+comercio: {"merchantId":7,"type":"template","createdAt":{"gte":"2026-10-07T23:00:00.000Z"},"waMessageId":{"not":null}}
+cliente:  {"merchantId":7,"customerId":50,"type":"template","createdAt":{"gte":"2026-10-07T23:00:00.000Z"},"waMessageId":{"not":null}}
+respuestas a la pregunta por cliente, A1 (sano):            0,1,2,3,3,3,3,3,3,3
+respuestas a la pregunta por cliente, C1 (escritura falla): 0,0,0,0,0,0,0,0,0,0
+respuestas a la pregunta por cliente, C2 (lectura falla):   (no llega a preguntarse: la de comercio LANZA antes)
+respuestas a la pregunta por comercio, C2:                  LANZA,LANZA,LANZA,LANZA,LANZA,LANZA,LANZA,LANZA,LANZA,LANZA
+
+CASOS: 35 · con esperado: 33 · cuadran: 30 · NO cuadran: 3 · sin esperado (modelo): 2

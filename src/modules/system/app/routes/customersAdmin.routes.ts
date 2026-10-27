@@ -3,7 +3,8 @@ import { listCustomers, getCustomer, createCustomer, updateCustomer, deleteCusto
 import { config } from '../../../../core/config/env';
 import { customerCreateSchema, customerUpdateSchema } from '../../../../core/validation/schemas';
 import { prisma } from '../../../../core/db/prisma';
-import { listCustomerEvents } from '../../customerEvents.service';
+import { cabeEnColumnaInt } from '../../../../core/validation/enteroDeColumna'; // SCRUM-1379
+import { listCustomerEvents, eventosSinImporte } from '../../customerEvents.service';
 import { requireRole } from '../../../../core/http/authMiddleware'; // SCRUM-55 (D2: borrado = admin)
 // SCRUM-578 (CONT-05): el aviso de duplicado. La lista de campos identificadores vive en UN sitio.
 import {
@@ -21,6 +22,9 @@ import {
 } from '../../domain/importarClientes.service';
 
 import { seesOnlyOwnJobs } from '../../../../core/http/roleCapabilities'; // SCRUM-979
+// SCRUM-1403 · las dos puertas de «autor o asignado», para la pestaña de documentos de la ficha.
+import { whereFacturasVisibles, quienPideDe } from '../../../../core/documentos/accesoALaFactura';
+import { wherePresupuestosVisibles } from '../../../../core/documentos/accesoAlPresupuesto';
 import { historialDelCliente } from '../../domain/historialDelCliente'; // SCRUM-980
 import { saldosPendientesPorCliente } from '../../domain/saldoPendiente'; // SCRUM-1043
 import { garantiasRetenidasPorCliente } from '../../../billing/domain/garantiasRetenidas'; // SCRUM-1108
@@ -144,7 +148,7 @@ router.post('/bulk-tags', requireRole('admin'), async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
     const customer = await getCustomer(req.merchantId, id);
     if (!customer) return res.status(404).json({ error: 'not_found' });
     res.json(customer);
@@ -187,10 +191,14 @@ router.post('/', async (req, res) => {
 async function actualizarClienteHandler(req: Request, res: Response) {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
     const parsed = customerUpdateSchema.parse(req.body);
-    await updateCustomer(req.merchantId, id, parsed);
+    // SCRUM-1571: lo mismo que el DELETE. Sin mirar el `count`, un cliente ajeno daba 200 con `null`.
+    const { count } = await updateCustomer(req.merchantId, id, parsed);
+    if (count === 0) return res.status(404).json({ error: 'not_found' });
     const updated = await getCustomer(req.merchantId, id);
+    // SCRUM-1571c: borrado por otra petición entre el update y esta relectura → daba 200 con `null`.
+    if (!updated) return res.status(404).json({ error: 'not_found' });
     res.json(updated);
   } catch (err: any) {
     if (err?.name === 'ZodError') return res.status(400).json({ error: 'validation_error', details: err.issues }); // SCRUM-1199, ver el POST
@@ -206,11 +214,45 @@ async function actualizarClienteHandler(req: Request, res: Response) {
 router.put('/:id', actualizarClienteHandler);
 router.patch('/:id', actualizarClienteHandler);
 
+/**
+ * SCRUM-1390e · ¿Se le puede dar a quien pregunta el enlace del portal de ESTE cliente?
+ *
+ * El portal (`GET /cliente/:token`) enseña TODOS los presupuestos y facturas del cliente y no mira
+ * ningún rol. Con el enlace, un Técnico rodeaba la regla «ve sólo lo suyo» (fundador, SCRUM-1390
+ * c.17962; medido por efecto en SCRUM-1390d c.20457). Así que se le da sólo si vería TODO lo que
+ * enseña, por las MISMAS puertas que la pestaña de documentos de la ficha (SCRUM-1403): no es un
+ * criterio nuevo. Quien ve todo el negocio (`null` = sin recorte) no hace ninguna consulta de más.
+ *
+ * Se cuentan los dos lados en vez de buscar «uno que NO sea suyo»: un `NOT` sobre `teamMemberId`
+ * deja fuera las filas con `NULL` (las de la oficina), justo las que son ajenas.
+ * ⚠️ El token es del CLIENTE y no caduca: lo que se añada después a ese cliente lo enseñará el mismo
+ * enlace. Eso no lo cierra esta pregunta (SCRUM-1390.md, tramo 1390e).
+ */
+async function puedeLlevarseElPortal(req: Request, customerId: number): Promise<boolean> {
+  const quien = quienPideDe(req);
+  const recortePresupuestos = await wherePresupuestosVisibles(quien);
+  const recorteFacturas = await whereFacturasVisibles(quien);
+  if (recortePresupuestos === null && recorteFacturas === null) return true;
+  const soloSusPresupuestos = recortePresupuestos ? [recortePresupuestos] : undefined;
+  const soloSusFacturas = recorteFacturas ? [recorteFacturas] : undefined;
+  // `where` LITERALES (los censos de tenencia y de origen leen el filtro del texto).
+  const [presupuestos, suyos, facturas, suyas] = await Promise.all([
+    prisma.quote.count({ where: { customerId, merchantId: req.merchantId } }),
+    prisma.quote.count({ where: { customerId, merchantId: req.merchantId, AND: soloSusPresupuestos } }),
+    prisma.invoice.count({ where: { customerId, merchantId: req.merchantId } }),
+    prisma.invoice.count({ where: { customerId, merchantId: req.merchantId, AND: soloSusFacturas } }),
+  ]);
+  return presupuestos === suyos && facturas === suyas;
+}
+
 // GET /admin/customers/:id/portal-url — genera token si no existe, devuelve URL del portal
 router.get('/:id/portal-url', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
+    // SCRUM-1390e: ANTES de escribir el token. El rechazo es el de un cliente que no existe: ni
+    // texto nuevo ni la pista de que este cliente tiene algo de un compañero.
+    if (!(await puedeLlevarseElPortal(req, id))) return res.status(404).json({ error: 'not_found' });
     const token = await ensurePortalToken(req.merchantId, id);
     const portalUrl = `${config.PUBLIC_BASE_URL}/cliente/${token}`;
     return res.json({ portalUrl, token });
@@ -332,9 +374,9 @@ router.post('/import', requireRole('admin'), async (req, res) => {
 router.get('/:id/historial', async (req: any, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
     const despuesDe = req.query.despuesDe === undefined ? null : Number(req.query.despuesDe);
-    if (despuesDe !== null && (!Number.isInteger(despuesDe) || despuesDe <= 0)) {
+    if (despuesDe !== null && (!cabeEnColumnaInt(despuesDe) || despuesDe <= 0)) {
       return res.status(400).json({ error: 'invalid_cursor' });
     }
     const opciones: { despuesDe: number | null; soloTrabajosDe?: number | null } = { despuesDe };
@@ -362,9 +404,9 @@ router.get('/:id/historial', async (req: any, res) => {
 router.get('/:id/whatsapp', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
     const despuesDe = req.query.despuesDe === undefined ? null : Number(req.query.despuesDe);
-    if (despuesDe !== null && (!Number.isInteger(despuesDe) || despuesDe <= 0)) {
+    if (despuesDe !== null && (!cabeEnColumnaInt(despuesDe) || despuesDe <= 0)) {
       return res.status(400).json({ error: 'invalid_cursor' });
     }
     const historial = await historialWhatsAppDelCliente(req.merchantId, id, { despuesDe });
@@ -386,7 +428,7 @@ router.get('/:id/whatsapp', requireRole('admin'), async (req, res) => {
 router.get('/:id/notes', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
     const notas = await listarNotas(req.merchantId, id);
     if (!notas) return res.status(404).json({ error: 'not_found' });
     return res.json({ notas });
@@ -403,7 +445,7 @@ router.get('/:id/notes', requireRole('admin'), async (req, res) => {
 router.post('/:id/notes', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
     const texto = typeof req.body?.texto === 'string' ? req.body.texto : '';
     const autor = await resolverAutor(req.merchantId, req.teamMemberId ?? null);
     const nota = await crearNota(req.merchantId, id, texto, autor);
@@ -428,7 +470,7 @@ router.post('/:id/notes', requireRole('admin'), async (req, res) => {
 router.get('/:id/sites', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
     const sitios = await listarSitios(req.merchantId, id);
     if (!sitios) return res.status(404).json({ error: 'not_found' });
     return res.json({ sitios });
@@ -442,7 +484,7 @@ router.get('/:id/sites', async (req, res) => {
 router.post('/:id/sites', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id) || id <= 0) return res.status(400).json({ error: 'invalid_id' });
     const parsed = customerSiteCreateSchema.parse(req.body);
     const sitio = await crearSitio(req.merchantId, id, parsed);
     if (!sitio) return res.status(404).json({ error: 'not_found' });
@@ -459,7 +501,7 @@ router.put('/:id/sites/:siteId', async (req, res) => {
   try {
     const id = Number(req.params.id);
     const siteId = Number(req.params.siteId);
-    if (!Number.isInteger(id) || id <= 0 || !Number.isInteger(siteId) || siteId <= 0) {
+    if (!cabeEnColumnaInt(id) || id <= 0 || !cabeEnColumnaInt(siteId) || siteId <= 0) {
       return res.status(400).json({ error: 'invalid_id' });
     }
     const parsed = customerSiteUpdateSchema.parse(req.body);
@@ -482,7 +524,7 @@ router.delete('/:id/sites/:siteId', async (req, res) => {
   try {
     const id = Number(req.params.id);
     const siteId = Number(req.params.siteId);
-    if (!Number.isInteger(id) || id <= 0 || !Number.isInteger(siteId) || siteId <= 0) {
+    if (!cabeEnColumnaInt(id) || id <= 0 || !cabeEnColumnaInt(siteId) || siteId <= 0) {
       return res.status(400).json({ error: 'invalid_id' });
     }
     const borrado = await borrarSitio(req.merchantId, id, siteId);
@@ -498,7 +540,7 @@ router.delete('/:id/sites/:siteId', async (req, res) => {
 router.get('/:id/detail', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     const customer = await prisma.customer.findFirst({
       where: { id, merchantId: req.merchantId },
@@ -528,17 +570,32 @@ router.get('/:id/detail', async (req, res) => {
     });
     if (!customer) return res.status(404).json({ error: 'not_found' });
 
+    // SCRUM-1403 · la pestaña de documentos de la ficha pasa por las MISMAS puertas que las listas
+    // de presupuestos y de facturas: un Técnico ve aquí los suyos (autor, asignado o Trabajo) y el
+    // admin, todos (`null` = sin recorte, el `where` sale como salía). La ficha del cliente se le
+    // sigue abriendo entera: lo que se recorta son los documentos ajenos, no el cliente.
+    // Las CIFRAS (`stats`) y los eventos con importe, más abajo (SCRUM-1403b).
+    const quien = quienPideDe(req);
+    const [recortePresupuestos, recorteFacturas] = await Promise.all([
+      wherePresupuestosVisibles(quien), whereFacturasVisibles(quien),
+    ]);
+    // Van como `AND: [...]` dentro de un `where` LITERAL (los censos de tenencia y de origen leen el
+    // filtro del texto: un `...spread` los deja ciegos). `undefined` = Prisma no recibe el `AND`:
+    // la consulta de quien ve todo el negocio es la de siempre.
+    const soloSusPresupuestos = recortePresupuestos ? [recortePresupuestos] : undefined;
+    const soloSusFacturas = recorteFacturas ? [recorteFacturas] : undefined;
+
     // SCRUM-1035 · las CIFRAS (`stats`) se agregan en la base sobre TODOS los documentos del cliente;
     // las listas de abajo siguen en 20 (son la pestaña de documentos, no las cifras). Solo lectura.
     const [quotes, invoices, expenses, events, totalQuotes, acceptedQuotes, facturado, cobrado, pendiente, garantias] = await Promise.all([
       prisma.quote.findMany({
-        where: { customerId: id, merchantId: req.merchantId },
+        where: { customerId: id, merchantId: req.merchantId, AND: soloSusPresupuestos },
         orderBy: { createdAt: 'desc' },
         take: 20,
         select: { id: true, quoteNumber: true, status: true, total: true, currency: true, createdAt: true, acceptedAt: true },
       }),
       prisma.invoice.findMany({
-        where: { customerId: id, merchantId: req.merchantId },
+        where: { customerId: id, merchantId: req.merchantId, AND: soloSusFacturas },
         orderBy: { createdAt: 'desc' },
         take: 20,
         select: { id: true, number: true, status: true, total: true, currency: true, createdAt: true, paidAt: true, pdfUrl: true },
@@ -561,26 +618,37 @@ router.get('/:id/detail', async (req, res) => {
 
     const totalBilled = Number(facturado._sum.total ?? 0);
     const totalPaid   = Number(cobrado._sum.total ?? 0);
+    // SCRUM-1390e: el enlace que `portal-url` le niega no se le sirve aquí en crudo. Para él sale
+    // como un cliente sin token, que es un estado que la ficha ya pinta (pide el enlace al pulsar).
+    if (customer.portalToken && !(await puedeLlevarseElPortal(req, id))) customer.portalToken = null;
     const portalUrl   = customer.portalToken
       ? `${config.PUBLIC_BASE_URL}/cliente/${customer.portalToken}`
       : null;
+
+    // SCRUM-1403b · las cinco cifras de dinero son el panel del negocio repartido por cliente: mismo
+    // criterio que el saldo (SCRUM-1043) y la garantía (SCRUM-1108), el técnico no las recibe. Y los
+    // eventos que llevan el importe en el texto le llegan sin él. Decisión del fundador, SCRUM-1403
+    // c.20375 (salida 1 y «sin el texto del detalle»). La ficha no pinta la tarjeta de una cifra ausente.
+    const sinDinero = seesOnlyOwnJobs(req.userRole);
 
     return res.json({
       customer: { ...customer, portalUrl },
       quotes,
       invoices,
-      events,
+      events: sinDinero ? eventosSinImporte(events) : events,
       stats: {
         totalQuotes,
         acceptedQuotes,
-        totalBilled,
-        totalPaid,
-        // SCRUM-1035 · lo que el cliente debe (facturas `pending`): la misma cifra que la ficha
-        // sumaba en el navegador sobre 20 filas. SCRUM-1043 (la lista «quién me debe») reutiliza este cálculo.
-        totalPending: pendiente.get(id)?.total ?? 0,
+        // SCRUM-1035 · `totalPending` es lo que el cliente debe (facturas `pending`): la misma cifra que la
+        // ficha sumaba en el navegador sobre 20 filas. SCRUM-1043 (la lista «quién me debe») reutiliza este cálculo.
+        ...(sinDinero ? {} : {
+          totalBilled,
+          totalPaid,
+          totalPending: pendiente.get(id)?.total ?? 0,
+          totalExpenses: Number(expenses._sum.amount ?? 0),
+          profit: totalPaid - Number(expenses._sum.amount ?? 0),
+        }),
         pendingCount: pendiente.get(id)?.count ?? 0,
-        totalExpenses: Number(expenses._sum.amount ?? 0),
-        profit: totalPaid - Number(expenses._sum.amount ?? 0),
         // SCRUM-1108 · ausente = no tiene (ausente no es cero). `aviso` = ya se puede reclamar y sigue sin cobrar.
         ...(garantias?.has(id) ? { garantiaRetenida: garantias.get(id)! } : {}),
       },
@@ -597,8 +665,11 @@ router.get('/:id/detail', async (req, res) => {
 router.delete('/:id', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
-    await deleteCustomer(req.merchantId, id);
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' }); // SCRUM-1456: `1.5` borraba el 1
+    // SCRUM-1571: un cliente de otro comercio (o que no existe) no casa el `where` y el borrado toca
+    // 0 filas. Contestar 204 ahí afirmaba un borrado que no hubo; se contesta lo mismo que `GET /:id`.
+    const { count } = await deleteCustomer(req.merchantId, id);
+    if (count === 0) return res.status(404).json({ error: 'not_found' });
     res.status(204).send();
   } catch (err) {
     console.error('[DELETE /admin/customers/:id]', err);
@@ -615,7 +686,7 @@ router.get('/:id/fusion-preview', requireRole('admin'), async (req, res) => {
   try {
     const principalId = Number(req.params.id);
     const fusionadoId = Number(req.query.con);
-    if (!Number.isInteger(principalId) || principalId <= 0 || !Number.isInteger(fusionadoId) || fusionadoId <= 0) {
+    if (!cabeEnColumnaInt(principalId) || principalId <= 0 || !cabeEnColumnaInt(fusionadoId) || fusionadoId <= 0) {
       return res.status(400).json({ error: 'invalid_id' });
     }
     const preview = await previsualizarFusion(req.merchantId, principalId, fusionadoId);
@@ -635,7 +706,7 @@ router.post('/:id/fusionar', requireRole('admin'), async (req, res) => {
   try {
     const principalId = Number(req.params.id);
     const fusionadoId = Number(req.body?.con);
-    if (!Number.isInteger(principalId) || principalId <= 0 || !Number.isInteger(fusionadoId) || fusionadoId <= 0) {
+    if (!cabeEnColumnaInt(principalId) || principalId <= 0 || !cabeEnColumnaInt(fusionadoId) || fusionadoId <= 0) {
       return res.status(400).json({ error: 'invalid_id' });
     }
     const resultado = await fusionarClientes(req.merchantId, principalId, fusionadoId);

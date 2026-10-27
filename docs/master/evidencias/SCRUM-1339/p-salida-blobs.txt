@@ -1,0 +1,33 @@
+POBLACIÓN: 213 ejecuciones con veredicto · 56 de push y 157 de pull_request
+✅ IDENTIDAD: el log de las 157 de pull_request nombra «Merge <punta> into <base>» y la punta es la de la lista en 157
+✅ POSITIVO del método: «docs/master/SCRUM-1339.md», que se ha movido en la ventana, da 7 blobs distintos entre las 213 ejecuciones
+  instrumento (scripts/meta-guard-mutaciones.mjs): 1 blob(s) entre las 213 → b0bfd890a187
+
+scrum859-identidad-y-motivo-cerrado.test.mjs
+  blob 97a2be408e00 + instr b0bfd890a187 · mutaciones declaradas 2 → ENTERO en 171 · sin juzgar en 42
+✅ SUMA: 213 = 213 ejecuciones
+  LA PATA: de las 42 ejecuciones en que quedó sin juzgar, 42 llevan una pareja de blobs que en OTRAS ejecuciones sale entera
+
+vigia-atascados.test.mjs
+  blob 741e399b8f6f + instr b0bfd890a187 · mutaciones declaradas 5 → ENTERO en 203 · sin juzgar en 10
+✅ SUMA: 213 = 213 ejecuciones
+  LA PATA: de las 10 ejecuciones en que quedó sin juzgar, 10 llevan una pareja de blobs que en OTRAS ejecuciones sale entera
+
+scrum757-la-declaracion-que-nadie-lee.test.mjs
+  blob 18ffcdd356dc + instr b0bfd890a187 · mutaciones declaradas 4 → ENTERO en 210 · sin juzgar en 3
+✅ SUMA: 213 = 213 ejecuciones
+  LA PATA: de las 3 ejecuciones en que quedó sin juzgar, 3 llevan una pareja de blobs que en OTRAS ejecuciones sale entera
+
+scrum813-trinquete-de-zona.test.mjs
+  blob 037b7cb5eb2b + instr b0bfd890a187 · mutaciones declaradas 22 → ENTERO en 198 · sin juzgar en 3
+  blob 756409a56cd3 + instr b0bfd890a187 · mutaciones declaradas 11 → ENTERO en 12 · sin juzgar en 0
+✅ SUMA: 213 = 213 ejecuciones
+  LA PATA: de las 3 ejecuciones en que quedó sin juzgar, 3 llevan una pareja de blobs que en OTRAS ejecuciones sale entera
+
+scrum834-puerta-avisador-rojo.test.mjs
+  blob a7284eed47bb + instr b0bfd890a187 · mutaciones declaradas 2 → ENTERO en 212 · sin juzgar en 1
+✅ SUMA: 213 = 213 ejecuciones
+  LA PATA: de las 1 ejecuciones en que quedó sin juzgar, 1 llevan una pareja de blobs que en OTRAS ejecuciones sale entera
+
+controles: todos se cumplen
+EXIT=0

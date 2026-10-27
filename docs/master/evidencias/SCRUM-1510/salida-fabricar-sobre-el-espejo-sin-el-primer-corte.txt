@@ -1,0 +1,56 @@
+POBLACION: 6 filas fabricadas por el camino real compilado · dist = dist\__espejo-1510b\dist
+sha256 dist/lib/invoicing.js = 1cd9b2b4851d5f65a2b7022225d0655a5d3d4b990b7a4aea5969d21fa4dc7f63
+sha256 src/lib/invoicing.ts  = fae4fbb034dec597185bbe48b8cfa6aafe11c616556774ea31ffb61ff8792306
+
+── con qué estado NACE una factura ──
+  @default de vfEstado en prisma/schema.prisma : pendiente_de_sellado  (constante SELLADO_PENDIENTE: pendiente_de_sellado)
+  apariciones de `estadoAlNacer` en código de src/ (321 ficheros .ts, sin comentarios): 1  ← 1 = sólo su declaración
+  control positivo, misma búsqueda, `entraEnLaCadena`: 3
+
+[verifactu] invoice=2026-CF-0001 hash=08484F213AEB982B…
+── A · CONTROL · factura ES, sin fallo: se sella entera
+   la puerta devuelve sellado
+   fila que queda:  vfEstado=sellado  huella=sí (64 car.)
+   1er corte (estado) la dejaría pasar: SÍ   ·   2º portón (huella) la dejaría pasar: SÍ
+   ensureInvoicePdf: ENTREGA /admin/invoices/4101/pdf   · escrituras después: invoice.update   · PDF en disco: 6537 B (empieza por "%PDF-")
+
+── B · CONTROL · factura ES, el sellado revienta ANTES de la huella (caso normal del fallo)
+   la puerta devuelve pendiente_de_sellado (la base no responde (huella))
+   fila que queda:  vfEstado=pendiente_de_sellado  huella=no
+   1er corte (estado) la dejaría pasar: no   ·   2º portón (huella) la dejaría pasar: no
+   ensureInvoicePdf: SE NIEGA con «invoice_sin_sellar:2026-CF-0002»   · escrituras después: ninguna   · PDF en disco: 0 B 
+   ¿la ruta pública lo reconoce como «sin sellar» (esErrorSinSellar)? sí
+
+[verifactu] invoice=2026-CF-0003 hash=3E35227C538BFA8A…
+── C · factura ES: la HUELLA se escribe y la escritura siguiente, la del estado, falla
+   la puerta devuelve pendiente_de_sellado (la base no responde (estado))
+   fila que queda:  vfEstado=pendiente_de_sellado  huella=sí (64 car.)
+   1er corte (estado) la dejaría pasar: no   ·   2º portón (huella) la dejaría pasar: SÍ
+   ensureInvoicePdf: ENTREGA /admin/invoices/4101/pdf   · escrituras después: invoice.update   · PDF en disco: 6490 B (empieza por "%PDF-")
+
+── D · justificante J- de un comercio ES: la escritura de «no aplica» falla
+   la puerta LANZA la base no responde (no aplica)
+   fila que queda:  vfEstado=pendiente_de_sellado  huella=no
+   1er corte (estado) la dejaría pasar: no   ·   2º portón (huella) la dejaría pasar: SÍ
+   ensureInvoicePdf: ENTREGA /admin/invoices/4101/pdf   · escrituras después: invoice.update   · PDF en disco: 5154 B (empieza por "%PDF-")
+
+── E · factura de un comercio NO español: la escritura de «no aplica» falla
+   la puerta LANZA la base no responde (no aplica)
+   fila que queda:  vfEstado=pendiente_de_sellado  huella=no
+   1er corte (estado) la dejaría pasar: no   ·   2º portón (huella) la dejaría pasar: SÍ
+   ensureInvoicePdf: ENTREGA /admin/invoices/4101/pdf   · escrituras después: invoice.update   · PDF en disco: 5078 B (empieza por "%PDF-")
+
+── F · justificante J-: el proceso muere entre el commit y el sellado (no se llama a la puerta)
+   la puerta (no se llama)
+   fila que queda:  vfEstado=pendiente_de_sellado  huella=no
+   1er corte (estado) la dejaría pasar: no   ·   2º portón (huella) la dejaría pasar: SÍ
+   ensureInvoicePdf: ENTREGA /admin/invoices/4101/pdf   · escrituras después: invoice.update   · PDF en disco: 5069 B (empieza por "%PDF-")
+
+── RESUMEN ──
+  pendientes que el 2º portón dejaría pasar (sólo las para el 1er corte): 4 de 6 → C, D, E, F
+  pendientes que niegan los dos cortes: 1 → B
+  no pendientes, pasan los dos: 1 → A
+  PDF que han salido: A (6537 B), C (6490 B), D (5154 B), E (5078 B), F (5069 B)
+
+CONTROLES: los 5 pasan (estado de nacimiento, búsqueda con positivo, PDF del caso sano, fallo normal, población)
+EXIT=0

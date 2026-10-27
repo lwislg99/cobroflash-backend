@@ -47,7 +47,9 @@ flags OFF (nada cambia hasta que actives). Para encenderlo, EN ESTE ORDEN:
 - [ ] **Stripe · webhook Connect:** en el Dashboard de Stripe (modo test primero) →
   Developers → Webhooks → "Add endpoint" de tipo **Connect** apuntando a
   `https://yaqu.app/webhooks/stripe-connect` con eventos `account.updated`,
-  `checkout.session.completed` y `payment_intent.payment_failed`. Copia el signing
+  `checkout.session.completed`, `charge.dispute.created` y `payment_intent.payment_failed`
+  (los cuatro que atiende `connectWebhook.routes.ts`; sin el de disputa, una disputa en una
+  cuenta conectada no llega nunca — SCRUM-678b). Copia el signing
   secret a Railway como `STRIPE_CONNECT_WEBHOOK_SECRET`.
 - [ ] **Railway · `PAYMENTS_CONNECT_ENABLED=true`** — enciende la card "Cobros con
   tarjeta" en Configuración (onboarding Express "2 min, DNI e IBAN") y los direct

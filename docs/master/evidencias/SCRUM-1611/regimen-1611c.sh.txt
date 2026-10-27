@@ -1,0 +1,22 @@
+#!/bin/bash
+# SCRUM-1611c · N pasadas del régimen de CI (los ficheros de banco + la sonda, en paralelo, misma base).
+# Uso: bash regimen.sh <etiqueta> <n> [args extra de node --test]
+set -u
+ET="$1"; N="$2"; shift 2
+T="$CLAUDE_JOB_DIR/tmp"
+cd "/c/Users/Javier Pereira/cobroflash-jv-j6dd"
+F=$(grep -l "_banco-libro.mjs" tests/*.test.mjs | grep -v zz1611c | tr '\n' ' ')
+for i in $(seq 1 "$N"); do
+  (cd "$T/banco" && node pgbanco.mjs rehacer 55611 >/dev/null)
+  S=$(date +%s)
+  env -u NODE_TEST_CONTEXT -u NODE_OPTIONS -u QA_DB_TEST LIBRO_PG_URL="postgresql://postgres@127.0.0.1:55611/yaqu_libro_test" \
+    timeout 120 node --test --test-force-exit --test-reporter=tap "$@" tests/zz1611c-58-sonda.test.mjs $F > "$T/$ET-$i.tap" 2>&1
+  rc=$?
+  casos=$(grep -cE "^(ok|not ok) " "$T/$ET-$i.tap")
+  decl=$(grep -E "^# tests " "$T/$ET-$i.tap" | awk '{print $3}')
+  s58=$(grep -E "^(ok|not ok) .*SCRUM-58: la lista" "$T/$ET-$i.tap" | cut -c1-6 | tr '\n' ',')
+  diag=$(grep -E "^# SCRUM-58: 3 jobs" "$T/$ET-$i.tap" | sed 's/^# //' | tr '\n' ' ')
+  n1=$(grep -E "N\+1: 3 Trabajos" "$T/$ET-$i.tap" | head -1 | sed 's/^ *//' | cut -c1-90)
+  sonda=$(grep -E "SONDA58 BLOQUE" "$T/$ET-$i.tap" | sed 's/.*consultas=//' | tr '\n' ' ')
+  echo "$ET-$i rc=$rc s=$(( $(date +%s)-S )) casos=$casos decl=$decl s58=[$s58] sonda=[$sonda] $diag $n1"
+done

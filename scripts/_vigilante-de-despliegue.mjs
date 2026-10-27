@@ -58,6 +58,41 @@ export const MARGEN_HORAS_PROPUESTO = 6;
 /** Un sha de git de verdad: 40 hex. Ni más ni menos. */
 const ES_SHA40 = /^[0-9a-f]{40}$/;
 
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-1542 · EL HUECO SE FECHA POR CUÁNDO **ENTRÓ** EN `main`, NO POR CUÁNDO SE ESCRIBIÓ
+//
+// El vigía fechaba el hueco con el `%ct` más antiguo de TODOS los commits de `prod..main`. Ese
+// conjunto incluye los commits de DENTRO de las ramas mergeadas, que llevan la fecha en que se
+// escribieron. Medido por el equipo de Javier sobre 105 ejecuciones (6 → 13-oct-2026): 27 con
+// hueco, y en 8 de las 27 la cifra iba inflada más de una hora. El 13-oct a las 11:38Z dijo
+// «95,8 h» con producción 59 SEGUNDOS por detrás; y en la única parada real (24/25-sep) dijo
+// 177 → 193 h donde había 6,5 → 22,6 h.
+//
+// Lo que se pide a git ahora es `git log --first-parent --format=%ct prod..main`: sólo la cadena
+// de primer padre, o sea lo que ENTRÓ en `main`, con la hora en que entró.
+//
+// ⚠️ EL SUPUESTO, DECLARADO: vale porque todo entra en `main` por un PR que mergea GitHub, y es
+// GitHub quien firma ese commit con la hora del merge. Medido el 13-oct-2026 sobre los 2.000
+// últimos commits de primer padre de `main`: 2.000 de 2.000 con `%cn` = «GitHub». Un push directo
+// de commits viejos (hoy bloqueado por la protección de rama) volvería a meter una fecha de
+// escritura en la cadena: la cifra sólo puede INFLAR por ese lado, nunca quedarse corta.
+// ═════════════════════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Los epochs de una salida de `git log --format=%ct`, uno por línea.
+ *
+ * 🔴 UNA LÍNEA VACÍA NO ES EL AÑO 1970. `Number('')` es `0`, y `0` es finito: con un `git log` que
+ * no devolviera nada, el mínimo salía `0` y el hueco eran cincuenta y seis años. «No pude leer la
+ * fecha» tiene que llegar al veredicto como «no pude fechar» (ciego), no como un número.
+ *
+ * @param {string|null|undefined} lista  la salida de git, o `null` si git falló
+ * @returns {number[]} sólo los que son un epoch escrito con dígitos; `[]` si no hay ninguno
+ */
+export function epochsDeGitLog(lista) {
+  return String(lista == null ? '' : lista).split('\n')
+    .map((l) => l.trim()).filter((l) => /^\d+$/.test(l)).map(Number);
+}
+
 /**
  * El veredicto.
  *
@@ -66,16 +101,22 @@ const ES_SHA40 = /^[0-9a-f]{40}$/;
  * @param datos.conoceElCommit       ¿este repo tiene ese objeto? (`git cat-file -e`)
  * @param datos.estaEnMain           ¿está en la historia de `main`? (`git merge-base --is-ancestor`)
  * @param datos.commitsPorDelante    cuántos commits tiene `main` que producción no
- * @param datos.epochDelPrimeroSinDesplegar  el `%ct` del commit MÁS ANTIGUO que main tiene y prod no
+ * @param datos.epochDelPrimeroSinDesplegar  cuándo ENTRÓ en `main` lo más antiguo que prod no tiene:
+ *                                           el `%ct` mínimo de la cadena de PRIMER PADRE (SCRUM-1542)
+ * @param datos.entradasPorDelante   cuántas de esas entradas (merges) hay; opcional, sólo se dice
  * @param datos.ahoraEpoch           el ahora, INYECTADO (nada de reloj de pared)
  * @param datos.margenHoras          el margen a aplicar
  */
 export function veredictoDeDespliegue(datos) {
   const {
     versionDeProduccion, shaDeMain, conoceElCommit, estaEnMain,
-    commitsPorDelante, epochDelPrimeroSinDesplegar, ahoraEpoch,
+    commitsPorDelante, epochDelPrimeroSinDesplegar, ahoraEpoch, entradasPorDelante,
     margenHoras = MARGEN_HORAS_PROPUESTO,
   } = datos || {};
+  // Los commits cuentan también los de DENTRO de cada rama; las entradas, sólo lo que se mergeó.
+  // «20 commits» eran 2 merges el 13-oct (SCRUM-1542): se dicen las dos cifras, con su nombre.
+  const enCuantasEntradas = Number.isFinite(entradasPorDelante)
+    ? ' (en ' + entradasPorDelante + ' entrada(s) a `main`)' : '';
 
   const ciego = (motivo, detalle) => ({
     veredicto: NO_SUPE_MIRAR, salida: SALIDA_NO_SUPE_MIRAR, horas: null,
@@ -192,13 +233,20 @@ export function veredictoDeDespliegue(datos) {
     titulo: '🔴 producción dice ' + version.slice(0, 8) + ' · `main` está en '
       + String(shaDeMain || '?').slice(0, 8) + ' · ' + horas.toFixed(1) + ' h de hueco (margen '
       + margenHoras + ' h)',
-    detalle: '   commits de `main` que producción no dice tener: ' + commitsPorDelante + '\n'
-      + '   el más antiguo lleva ' + horas.toFixed(1) + ' h sin llegar.\n\n'
+    detalle: '   commits de `main` que producción no dice tener: ' + commitsPorDelante
+      + enCuantasEntradas + '\n'
+      + '   lo primero que entró en `main` y no ha llegado lleva ' + horas.toFixed(1) + ' h esperando\n'
+      + '   (hora de ENTRADA en `main`, no de cuándo se escribió el commit).\n\n'
       + '   ⚠️ LA WEB PUEDE ESTAR FUNCIONANDO PERFECTAMENTE Y AUN ASÍ SER ESTO. Cuando un\n'
       + '   despliegue falla el healthcheck, Railway mantiene vivo el anterior: no hay caída,\n'
       + '   no hay alerta, y el síntoma es «no cambia nada». Así se perdieron nueve días.\n'
-      + '   Primer sitio donde mirar: los logs de arranque. Si es `schemaDrift`, dirá qué\n'
-      + '   tabla y qué columna faltan, y entonces falta un `ALTER` en producción.',
+      // SCRUM-1123f · aquí sólo estaba la avería de septiembre, y el 21-22 oct fue la otra.
+      + '   Son DOS averías con este mismo síntoma (SCRUM-1123f), y el aviso por Issue dice cuál\n'
+      + '   es leyendo los estados de Railway del commit:\n'
+      + '     A · Railway NO HA VISTO el commit (ni un estado suyo en GitHub): no hay logs que\n'
+      + '         mirar; mirar la conexión del servicio con GitHub en Railway.\n'
+      + '     B · lo vio y FALLÓ: los logs de arranque. Si es `schemaDrift`, dirá qué tabla y\n'
+      + '         qué columna faltan, y entonces falta un `ALTER` en producción.',
   };
 }
 

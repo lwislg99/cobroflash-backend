@@ -1,0 +1,83 @@
+  LAB bien · un literal firmado se encuentra
+  LAB bien · una plantilla con hueco casa con su literal firmado
+  LAB bien · un literal inventado NO se encuentra
+  LAB bien · un retirado NO sale como firmado
+  LAB bien · un retirado sale como retirado
+  LAB bien · una hoja sin literal NO casa con nada
+LABORATORIO: 6 casos · 0 mal
+
+ORÁCULO: 129 aprobaciones leídas · 129 con firma que cuenta · 1 del registro congelado
+  fichas de docs/microcopy/ a las que el oráculo NO les lee ningún literal: 7 de 128
+  control: un literal de docs/microcopy/2026-09-03-SCRUM-402-abrir-parte-fallo.md devuelve su ficha · «Añadir condición» consta en 1 sitio(s) · un literal inventado consta en 0
+
+POBLACION: 173 hojas de grupo · foto de main f7a4c816ab2bf5c334a953dee60dc7b73718a0f8
+
+LOS DOS OBJETOS ABIERTOS, hoja a hoja (el número es su fila del reparto):
+  1 · NO_ESTA_EN_EL_COMENTARIO         · — · SERIE_TEXTOS.errorSinRespuesta · «No hemos podido confirmar si se ha guardado. Comprueba tu conexión y pulsa otra vez: si ya estaba guardado, se queda igual.»
+  3 · FIRMADA_CON_CONDICION            · SCRUM-916 c.17251 · TEXTOS.horasGuia · «La hora se elige, no se escribe.»
+  3 · FIRMADA_EN_JIRA                  · SCRUM-1216 c.17347 · SERIE_TEXTOS.ayudaCampo · «YaQu empezará en el siguiente, para que no repitas un número que ya has usado.»
+  3 · FIRMADA_EN_JIRA                  · SCRUM-1216 c.17347 · SERIE_TEXTOS.ayudaTitulo · «Si vienes de otro programa, de una plantilla o del papel, cuenta igual.»
+  3 · FIRMADA_EN_JIRA                  · SCRUM-1216 c.17349 · SERIE_TEXTOS.errorNumeroFalta · «Escribe el número de tu última factura. Por ejemplo: 41.»
+  3 · FIRMADA_EN_JIRA                  · SCRUM-1216 c.17349 · SERIE_TEXTOS.errorNumeroGrande · «Ese número es demasiado alto. Revisa el número de tu última factura.»
+  3 · FIRMADA_EN_JIRA                  · SCRUM-1216 c.17349 · SERIE_TEXTOS.errorNumeroNoValido · «Tiene que ser un número entero, del 1 en adelante. Por ejemplo: 41.»
+  3 · FIRMADA_EN_JIRA                  · SCRUM-916 c.17251 · TEXTOS.ahora · «Ahora»
+  3 · FIRMADA_EN_JIRA                  · SCRUM-916 c.17251 · TEXTOS.datosTitulo · «Datos del parte»
+  3 · FIRMADA_EN_JIRA                  · SCRUM-916 c.17251 · TEXTOS.horasTitulo · «Horas y desplazamiento»
+  3 · FIRMADA_EN_JIRA                  · SCRUM-916 c.17251 · TEXTOS.km · «km»
+  3 · FIRMADA_EN_JIRA                  · SCRUM-916 c.17251 · TEXTOS.obraYReferencia · «Obra y referencia»
+  3 · FIRMADA_EN_JIRA                  · SCRUM-916 c.17251 · TEXTOS.pistaNotas · «Lo que haya que dejar dicho.»
+  3 · FIRMADA_EN_JIRA                  · SCRUM-916 c.17251 · TEXTOS.pistaReferencia · «Tu referencia interna, si usas alguna»
+  3 · FIRMADA_EN_JIRA                  · SCRUM-916 c.17251 · TEXTOS.revisaLasHoras · «Revisa las horas»
+  3 · FIRMADA_EN_JIRA                  · SCRUM-916 c.17251 · TEXTOS.salidaAntesQueEntrada · «La salida es antes que la entrada»
+  3 · FIRMADA_EN_JIRA                  · SCRUM-916 c.17251 · TEXTOS.sinElegir · «Sin elegir»
+  3 · FIRMADA_EN_JIRA                  · SCRUM-916 c.17251 · TEXTOS.sinNotas · «Sin notas»
+  3 · FIRMADA_EN_JIRA                  · SCRUM-916 c.17251 · TEXTOS.tiempoEnLaObra · «Tiempo en la obra»
+  3 · FIRMADA_EN_JIRA                  · SCRUM-916 c.17273 · TEXTOS.pistaObra · «Dónde se ha hecho el trabajo»
+  3 · FIRMADA_EN_JIRA                  · SCRUM-916 c.17273 · TEXTOS.pistaTecnicos · «Quién ha estado en la obra»
+  3 · FIRMADA_EN_JIRA                  · SCRUM-916 c.17273 · TEXTOS.sinObraNiReferencia · «Sin dirección ni referencia»
+  3 · FIRMADA_EN_JIRA                  · SCRUM-916 c.17273 · TEXTOS.sinTecnicos · «Sin técnicos»
+  3 · FIRMADA_EN_JIRA_CON_HUECO(2026)  · SCRUM-1216 c.17347 · SERIE_TEXTOS.etiquetaCampo · «¿Cuál fue el número de tu última factura de {…}?»
+  3 · FIRMADA_EN_JIRA_CON_HUECO(2026)  · SCRUM-1216 c.17347 · SERIE_TEXTOS.titulo · «¿Ya has emitido facturas en {…}?»
+
+RETIRADOS que siguen pintados en esos objetos: 0
+
+REPARTO de las 173:
+   47  CONSTA firmada en una ficha de docs/microcopy/ (oráculo, por identidad)
+   26  CONSTA firmada en el registro congelado, anterior al 3-sep (oráculo, por identidad)
+   24  el oráculo no la da; firma HALLADA en el comentario de Jira que cita
+    7  su letra dice «asesor, a la espera del fundador»
+   30  el oráculo no la da, pero su literal aparece en algún acta de docs/microcopy/ (subcadena: cota)
+    6  no se puede buscar: plantilla con huecos, o sin literal
+   28  NO APARECE en ningún papel ni se ha abierto su Jira · letra anterior al 3-sep
+    5  NO APARECE en ningún papel ni se ha abierto su Jira · letra posterior al 3-sep
+  173  suma (tiene que ser la población)
+
+CUÁNTO FALLABA LA SONDA VIEJA DEL PAPEL (sólo docs/microcopy/, por subcadena):
+   56  sonda vieja «con acta» × oráculo CONSTA
+   20  sonda vieja «con acta» × oráculo no consta
+   12  sonda vieja «con acta» × oráculo no puede buscar
+   17  sonda vieja «sin acta» × oráculo CONSTA
+   60  sonda vieja «sin acta» × oráculo no consta
+    8  sonda vieja «sin acta» × oráculo no puede buscar
+
+LAS QUE NO CONSTAN O NO SE PUEDEN BUSCAR, por objeto (fila · objeto · claves):
+  6 · customerDetailView.js · FUSION_CLIENTE · 1 · candidatos
+  6 · customerDetailView.js · HISTORIAL_CLIENTE · 2 · fechaProxima, tituloPestana
+  6 · jobDetailView.js · ALB_CREAR_COPY · 1 · descartadas
+  6 · jobsCierreTrabajo.js · CIERRE_TEXTOS · 2 · avisoSaldo, confirmar
+  7 · cobrosView.js · COBROS_COPY · 4 · errorCarga, filtroSinMetodo, vacioPorFiltro, vacioSinCobros
+  7 · cobrosView.js · COBROS_DESCONOCIDO · 2 · rotulo, valor
+  7 · estadoFirma.js · TEXTO_DESALOJO · 2 · cuerpo, titulo
+  7 · estadoFirma.js · TEXTO_FIRMA · 1 · [FIRMA_SUBIENDO]
+  7 · estadoFirma.js · TEXTO_PRECARGA · 2 · nada, noSePudo
+  7 · jobDetailView.js · ALB_CREAR_COPY · 5 · guardar, presupuesto_ilegible, presupuesto_sin_lineas, sin_presupuesto, valorado
+  7 · jobDetailView.js · ALB_TABLA_COPY · 1 · colNumero
+  7 · jobRailBlocks.js · JOB_RAIL_TITULOS · 2 · dinero, responsable
+  7 · jobsCierreTrabajo.js · CIERRE_TEXTOS · 3 · boton, explicacion, titulo
+  7 · libroRegistroView.js · ESTADO_VISIBLE · 1 · paid
+  7 · settingsSubmenus.js · ROTULOS · 3 · avisos, datos, publica
+  7 · settingsView.js · QR_COPY · 2 · ayudaSvg, errorGenerico
+  8 · buscadorDeClientes.js · TEXTOS · 1 · placeholder
+  8 · homeView.js · TONO_DE_ACEPTACION · 3 · alta, baja, media
+  8 · jobDetailView.js · TEXTO_HUECO · 1 · sin-presupuesto
+EXIT=0

@@ -1,0 +1,53 @@
+SCRUM-1519 · los llamadores de serializeJob, por efecto · sesión: administrador del comercio 21 · lo ajeno es del comercio 22
+POBLACION: 5 sitios de llamada en 5 rutas (4 llaman a serializeJob, 1 a través de serializeJobDetail) · casos por ruta con :id 5 · almacén: merchant 2, customer 2, teamMember 2, quote 2, job 5 · marcas de B: 5 · modelos doblados 33
+
+── EL PAR SEMBRADO (QUITADO)
+
+── LOS LLAMADORES CON :id
+  GET /admin/jobs/:id  ·  jobs.routes.ts:923 (vía serializeJobDetail :569)
+    C · propio y sano (501)                  → 200  NADA-AJENO             
+    P · el Trabajo de B (102)                → 404  NADA-AJENO             
+    D · de A con el CLIENTE de B (502)       → 200  ENTREGA-AJENO           marcas: AJENO-B,699000022,ajeno-b@example.invalid,B22AJENO · leyó de B: customer.findUnique {"id":702} ; customer.findUnique {"id":702}
+    D · de A con el PRESUPUESTO de B (503)   → 200  ENTREGA-AJENO           marcas: 712022 · leyó de B: quote.findUnique {"id":712} ; quote.findUnique {"id":712}
+    D · de A con el OPERARIO de B (504)      → 200  NADA-AJENO             
+  PATCH /admin/jobs/:id  ·  jobs.routes.ts:1136
+    C · propio y sano (501)                  → 200  NADA-AJENO             
+    P · el Trabajo de B (102)                → 404  NADA-AJENO             
+    D · de A con el CLIENTE de B (502)       → 200  ENTREGA-AJENO           marcas: AJENO-B,699000022 · leyó de B: customer.findUnique {"id":702}
+    D · de A con el PRESUPUESTO de B (503)   → 200  ENTREGA-AJENO           marcas: 712022 · leyó de B: quote.findUnique {"id":712}
+    D · de A con el OPERARIO de B (504)      → 200  NADA-AJENO             
+  GET /admin/jobs/:id/ics  ·  jobs.routes.ts:1152
+    C · propio y sano (501)                  → 200  NADA-AJENO             
+    P · el Trabajo de B (102)                → 404  NADA-AJENO             
+    D · de A con el CLIENTE de B (502)       → 200  ENTREGA-AJENO           marcas: AJENO-B · leyó de B: customer.findUnique {"id":702}
+    D · de A con el PRESUPUESTO de B (503)   → 200  ENTREGA-AJENO           marcas: 712022 · leyó de B: quote.findUnique {"id":712}
+    D · de A con el OPERARIO de B (504)      → 200  NADA-AJENO             
+
+── ¿SE PUEDE FABRICAR EL ESTADO SEMBRADO POR LA RUTA QUE EDITA? PATCH /admin/jobs/501 con el cliente y el presupuesto de B en el cuerpo
+    P · reapuntar el 501 a lo de B           → 200  NADA-AJENO             
+    la fila 501 después: customerId 601 · quoteId 611 · operarioId null · notes "nota" → NO se reapunta (y la nota SÍ se escribió: la petición llegó)
+
+── GET /admin/jobs (la lista)  ·  jobs.routes.ts:854, con lote (loadJobRefs)
+    estado 200 · filas devueltas: 501, 502, 503, 504 · consultas 7 · leyó de B: quote.findMany {"id":{"in":[611,712]}} ; customer.findMany {"id":{"in":[601,702]}}
+    C · propio y sano (501)                  → NADA-AJENO
+    P · el Trabajo de B (102)                → NO-ESTÁ-EN-LA-LISTA
+    D · de A con el CLIENTE de B (502)       → ENTREGA-AJENO marcas: AJENO-B,699000022
+    D · de A con el PRESUPUESTO de B (503)   → ENTREGA-AJENO marcas: 712022
+    D · de A con el OPERARIO de B (504)      → NADA-AJENO
+
+── POST /admin/jobs  ·  jobs.routes.ts:904 (crea la fila: no hay estado sembrado que leer, sólo puerta)
+    C · con su propio cliente (601)          → 201  NADA-AJENO             
+    P · con el cliente de B (702)            → 404  NADA-AJENO             
+
+── RESUMEN · una fila por llamador
+  ruta | sitio | C propio | P pide lo de B | D cliente de B | D presupuesto de B | D operario de B
+  GET /admin/jobs/:id | jobs.routes.ts:923 (vía serializeJobDetail :569) | NADA-AJENO 200 | NADA-AJENO 404 | ENTREGA-AJENO 200 [AJENO-B,699000022,ajeno-b@example.invalid,B22AJENO] | ENTREGA-AJENO 200 [712022] | NADA-AJENO 200
+  PATCH /admin/jobs/:id | jobs.routes.ts:1136 | NADA-AJENO 200 | NADA-AJENO 404 | ENTREGA-AJENO 200 [AJENO-B,699000022] | ENTREGA-AJENO 200 [712022] | NADA-AJENO 200
+  GET /admin/jobs/:id/ics | jobs.routes.ts:1152 | NADA-AJENO 200 | NADA-AJENO 404 | ENTREGA-AJENO 200 [AJENO-B] | ENTREGA-AJENO 200 [712022] | NADA-AJENO 200
+  GET /admin/jobs | jobs.routes.ts:854 | NADA-AJENO | NO-ESTÁ-EN-LA-LISTA | ENTREGA-AJENO [AJENO-B,699000022] | ENTREGA-AJENO [712022] | NADA-AJENO
+  POST /admin/jobs | jobs.routes.ts:904 | NADA-AJENO 201 | NADA-AJENO 404 | no aplica | no aplica | no aplica
+
+  llamadores 5 · cruzan por la PUERTA 0 · entregan lo de B si la fila ya apunta fuera (CONFÍAN) 4 · envíos a Meta 0 · intentos de red 0
+
+CIEGO: sin el par sembrado esta pasada no distingue «no cruza» de «no veo».
+EXIT=2

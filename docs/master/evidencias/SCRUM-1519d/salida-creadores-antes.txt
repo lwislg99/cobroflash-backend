@@ -1,0 +1,62 @@
+SCRUM-1519c · los creadores de presupuesto, por efecto · sesión: administrador del comercio 21 · lo ajeno es del comercio 22
+POBLACION: almacén: merchant 2, customer 3, teamMember 2, quote 10, job 8, albaran 3, albaranLineaFacturada 0, maintenancePlan 3 · filas cruzadas SEMBRADAS de partida: 7 · modelos doblados 33
+    sembrada: job 502 (comercio 21) → cliente 702 (comercio 22)
+    sembrada: job 507 (comercio 21) → cliente 702 (comercio 22)
+    sembrada: job 503 (comercio 21) → presupuesto 712 (comercio 22)
+    sembrada: quote 615 (comercio 21) → cliente 702 (comercio 22)
+    sembrada: quote 616 (comercio 21) → cliente 702 (comercio 22)
+    sembrada: quote 618 (comercio 21) → cliente 702 (comercio 22)
+    sembrada: maintenancePlan 832 (comercio 21) → cliente 702 (comercio 22)
+
+── 1 · EL PAR SEMBRADO (5 creadores de mentira, 10 casos)
+    ✓ revisa/cruza {"id":713} espera CRUZA                                     → 201  CRUZA           CRUZADA NUEVA: quote 9000 (comercio 21) → cliente 702 (comercio 22) · cambió: quote 9000: no estaba → 21|702||draft
+    ✓ revisa/cruza {"id":613} espera ESCRIBE-LIMPIO                            → 201  ESCRIBE-LIMPIO  · cambió: quote 9001: no estaba → 21|601||draft
+    ✓ revisa/filtra {"id":713} espera NO-ESCRIBE                               → 404  NO-ESCRIBE      · dijo: {"error":"not_found"}
+    ✓ revisa/filtra {"id":613} espera ESCRIBE-LIMPIO                           → 201  ESCRIBE-LIMPIO  · cambió: quote 9002: no estaba → 21|601||draft
+    ✓ plan/cruza {"customerId":702} espera CRUZA                               → 201  CRUZA           CRUZADA NUEVA: quote 9003 (comercio 21) → cliente 702 (comercio 22) · cambió: quote 9003: no estaba → 21|702||draft
+    ✓ plan/cruza {"customerId":601} espera ESCRIBE-LIMPIO                      → 201  ESCRIBE-LIMPIO  · cambió: quote 9004: no estaba → 21|601||draft
+    ✓ hereda/copia {"jobId":507} espera CRUZA                                  → 201  CRUZA           CRUZADA NUEVA: quote 9005 (comercio 21) → cliente 702 (comercio 22) · cambió: quote 9005: no estaba → 21|702||draft
+    ✓ hereda/copia {"jobId":506} espera ESCRIBE-LIMPIO                         → 201  ESCRIBE-LIMPIO  · cambió: quote 9006: no estaba → 21|601||draft
+    ✓ hereda/comprueba {"jobId":507} espera NO-ESCRIBE                         → 409  NO-ESCRIBE      · dijo: {"error":"cliente_ajeno"}
+    ✓ hereda/comprueba {"jobId":506} espera ESCRIBE-LIMPIO                     → 201  ESCRIBE-LIMPIO  · cambió: quote 9007: no estaba → 21|601||draft
+
+── CREADOR A · la revisión de un presupuesto (crearRevisionDeQuote → quote.create)  ·  quoteAdmin.ts:593, llamado desde quotesAdmin.routes.ts:481
+    C · POST revisiones del 613 (propio, cliente propio)                       → 201  ESCRIBE-LIMPIO  · cambió: quote 9008: no estaba → 21|601||draft
+    P · POST revisiones del 713 (presupuesto de B)                             → 404  NO-ESCRIBE      · dijo: {"error":"quote_not_found","message":"El presupuesto no existe."}
+    P · crearRevisionDeQuote(21, 713) a pelo, sin la ruta                      → EXC  NO-ESCRIBE      · error: El presupuesto no existe.
+    H · POST revisiones del 616 (de A, SEMBRADO con cliente de B)              → 201  CRUZA           CRUZADA NUEVA: quote 9009 (comercio 21) → cliente 702 (comercio 22) · cambió: quote 9009: no estaba → 21|702||draft
+    H · crearRevisionDeQuote(21, 615) a pelo (de A, SEMBRADO con cliente de B) → fn   CRUZA           CRUZADA NUEVA: quote 9010 (comercio 21) → cliente 702 (comercio 22) · cambió: quote 9010: no estaba → 21|702||draft · dijo: {"id":9010,"revision":1,"numero":"615021.1","status":"draft","origenId":615}
+
+── CREADOR B · el adicional del albarán (convertir-en-factura → quote.create)  ·  albaranes.routes.ts:1641
+[verifactu] invoice=F260001 hash=7A2BFA18A6185696…
+    C · POST convertir el parte 801 (propio, Trabajo 506 sano, 1 línea fuera de presupuesto) → 201  ESCRIBE-LIMPIO  · cambió: quote 9015: no estaba → 21|601|506|draft
+    P · POST convertir el parte 902 (de B)                                     → 404  NO-ESCRIBE      · dijo: {"error":"not_found"}
+    H · POST convertir el parte 802 (propio; su Trabajo 507 SEMBRADO con cliente de B) → 500  NO-ESCRIBE      · dijo: {"error":"internal_error"}
+
+── CREADOR C · el ciclo de mantenimiento (runMaintenanceProposals → quote.create)  ·  maintenance.service.ts:413 (cron; no hay sesión: recorre todos los comercios)
+[maintenance] plan 831 → draft #50 (sin teléfono del pro)
+    C · ciclo con sólo el plan 831 (de A, cliente propio)                      → fn   ESCRIBE-LIMPIO  · cambió: quote 9016: no estaba → 21|601||draft · dijo: {"due":1,"proposed":1,"skipped":[]}
+    H · ciclo con sólo el plan 832 (de A, SEMBRADO con cliente de B)           → fn   NO-ESCRIBE      · dijo: {"due":1,"proposed":0,"skipped":["plan 832: customer_gone"]}
+
+──   AGUAS ARRIBA del C · crear el plan (¿se puede FABRICAR el 832?)  ·  maintenance.routes.ts:60, POST /admin/maintenance
+    C · POST plan con cliente propio (601)                                     → 201  ESCRIBE-LIMPIO  · cambió: maintenancePlan 9018: no estaba → 21|601||
+    P · POST plan con el cliente de B (702)                                    → 404  NO-ESCRIBE      · dijo: {"error":"customer_not_found"}
+    P · POST plan con cliente propio y el presupuesto de B (712)               → 404  NO-ESCRIBE      · dijo: {"error":"quote_not_found"}
+
+── MUEVE · fusionar clientes (quote.updateMany; no crea, cambia Quote.customerId)  ·  fusionClientes.ts:177
+    C · POST fusionar 601 ← 602 (los dos propios; el presupuesto 619 es del 602) → 200  ESCRIBE-LIMPIO  · cambió: job 505: 21|602||agendado → 21|601||agendado ; quote 619: 21|602||sent → 21|601||sent
+    P · POST fusionar 702 ← 602 (el que QUEDA es de B)                         → 409  NO-ESCRIBE      · dijo: {"error":"cliente_no_encontrado"}
+    P · POST fusionar 601 ← 702 (el que DESAPARECE es de B)                    → 409  NO-ESCRIBE      · dijo: {"error":"cliente_no_encontrado"}
+
+── RESUMEN · una fila por creador
+  creador | sitio | control propio | P por la puerta | D con el dato ya cruzado
+  CREADOR A · la revisión de un presupuesto (crearRevisionDeQuote → quote.create) | quoteAdmin.ts:593, llamado desde quotesAdmin.routes.ts:481 | ESCRIBE-LIMPIO 201 | NO-ESCRIBE, NO-ESCRIBE | CRUZA, CRUZA
+  CREADOR B · el adicional del albarán (convertir-en-factura → quote.create) | albaranes.routes.ts:1641 | ESCRIBE-LIMPIO 201 | NO-ESCRIBE | NO-ESCRIBE
+  CREADOR C · el ciclo de mantenimiento (runMaintenanceProposals → quote.create) | maintenance.service.ts:413 (cron; no hay sesión: recorre todos los comercios) | ESCRIBE-LIMPIO fn | no aplica | NO-ESCRIBE
+  AGUAS ARRIBA del C · crear el plan (¿se puede FABRICAR el 832?) | maintenance.routes.ts:60, POST /admin/maintenance | ESCRIBE-LIMPIO 201 | NO-ESCRIBE, NO-ESCRIBE | no aplica
+  MUEVE · fusionar clientes (quote.updateMany; no crea, cambia Quote.customerId) | fusionClientes.ts:177 | ESCRIBE-LIMPIO 200 | NO-ESCRIBE, NO-ESCRIBE | no aplica
+
+  filas 5 (3 creadores, 1 aguas arriba y 1 que mueve) · dejan una fila cruzada pidiéndoselo por la PUERTA 0 · COPIAN un dato que ya venía cruzado 1 · envíos a Meta 0 · intentos de red 0
+
+El par sembrado se separa (10 de 10) y los controles propios crean.
+EXIT=0

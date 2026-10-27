@@ -1,0 +1,44 @@
+CABECERA · HEAD 4f6f7b36452a20dcbfeada0636dab3200c7e67e3 · banco de antes: origin/main = 317c0bab5ed17aa7700f97cfca308d05d4238a8d · node v24.8.0
+POBLACION · 13 mutaciones declaradas y legibles · 0 incompletas
+① BASE sin mutar · exit 0 · 9 pruebas · caídas 0
+② EL BANCO DE ANTES, ENTERO · numstat «1 42 tests/_banco-vistas.mjs» · exit 1 · 9 pruebas · caen 9 de 9
+     CAE · SCRUM-1486 · 🔴 antes de un nodo INTERMEDIO: justo delante de la referencia
+     CAE · SCRUM-1486 · 🔴 la referencia es el PRIMER hijo: queda el primero, y por la referencia
+     CAE · SCRUM-1486 · 🔴 referencia NULA: al final, no al principio
+     CAE · SCRUM-1486 · 🔴 MOVER un nodo que ya era hijo: cambia de sitio y sigue siendo uno
+     CAE · SCRUM-1486 · 🔴 `firstChild` y `nextSibling` existen, y cuando no hay dan `null`
+     CAE · SCRUM-1486 · 🔴 una referencia que NO es hija del padre LANZA, y no mueve nada
+     CAE · SCRUM-1486 · 🔴 nodo real · Ajustes: título, subtítulo y navegación, en ese orden
+     CAE · SCRUM-1486 · 🔴 `X.firstChild` · la puerta de serie se pone la PRIMERA de su panel
+     CAE · SCRUM-1486 · 🔴 `Y.nextSibling` · el aviso en rojo va JUSTO DETRÁS de su botón
+③ CADA MUTACIÓN DECLARADA
+   1 · «n.hijos.unshift(h);» → antes de un nodo INTERMEDIO
+        numstat «1 1 tests/_banco-vistas.mjs» · exit 1 · 9 pruebas · cae lo suyo: SÍ · caídas 5
+   2 · «n.hijos.unshift(h);» → referencia NULA: al final
+        numstat «1 1 tests/_banco-vistas.mjs» · exit 1 · 9 pruebas · cae lo suyo: SÍ · caídas 5
+   3 · «n.hijos.unshift(h);» → MOVER un nodo que ya era hijo
+        numstat «1 1 tests/_banco-vistas.mjs» · exit 1 · 9 pruebas · cae lo suyo: SÍ · caídas 5
+   4 · «n.hijos.unshift(h);» → nodo real · Ajustes
+        numstat «1 1 tests/_banco-vistas.mjs» · exit 1 · 9 pruebas · cae lo suyo: SÍ · caídas 5
+   5 · «n.hijos.unshift(h);» → el aviso en rojo va JUSTO
+        numstat «1 1 tests/_banco-vistas.mjs» · exit 1 · 9 pruebas · cae lo suyo: SÍ · caídas 5
+   6 · «get primerHijoQuitado() { return null; },» → la referencia es el PRIMER hijo
+        numstat «1 1 tests/_banco-vistas.mjs» · exit 1 · 9 pruebas · cae lo suyo: SÍ · caídas 3
+   7 · «get primerHijoQuitado() { return null; },» → la puerta de serie se pone la PRIMERA
+        numstat «1 1 tests/_banco-vistas.mjs» · exit 1 · 9 pruebas · cae lo suyo: SÍ · caídas 3
+   8 · «get primerHijoQuitado() { return null; },» → existen, y cuando no hay dan
+        numstat «1 1 tests/_banco-vistas.mjs» · exit 1 · 9 pruebas · cae lo suyo: SÍ · caídas 3
+   9 · «get siguienteQuitado() {» → el aviso en rojo va JUSTO
+        numstat «1 1 tests/_banco-vistas.mjs» · exit 1 · 9 pruebas · cae lo suyo: SÍ · caídas 3
+  10 · «get siguienteQuitado() {» → existen, y cuando no hay dan
+        numstat «1 1 tests/_banco-vistas.mjs» · exit 1 · 9 pruebas · cae lo suyo: SÍ · caídas 3
+  11 · «get firstChild() { return n.hijos[0]; },» → existen, y cuando no hay dan
+        numstat «1 1 tests/_banco-vistas.mjs» · exit 1 · 9 pruebas · cae lo suyo: SÍ · caídas 1
+  12 · «if (false) {» → una referencia que NO es hija
+        numstat «1 1 tests/_banco-vistas.mjs» · exit 1 · 9 pruebas · cae lo suyo: SÍ · caídas 1
+  13 · «if (false) r = h.nextSibling;» → MOVER un nodo que ya era hijo
+        numstat «1 1 tests/_banco-vistas.mjs» · exit 1 · 9 pruebas · cae lo suyo: SÍ · caídas 1
+CASOS DISTINTOS con alguna mutación que los tumba: 9 de 9
+FINAL restaurado · exit 0 · 9 pruebas · caídas 0 · árbol limpio
+RESUMEN · 13 mutaciones · fallos de la réplica: 0
+EXIT=0

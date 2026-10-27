@@ -28,7 +28,7 @@ const OTRO_MERCHANT = MERCHANT + 1;
 
 const MERCHANT_FILA = { id: MERCHANT, name: 'Fontanería 1370', legalName: null, taxId: null, country: 'ES',
   whatsappPhone: null, defaultCurrency: 'EUR', flags: null, timezone: 'Europe/Madrid' };
-const CLIENTE_FILA = { id: CLIENTE, name: 'Cliente 1370', phone: null };
+const CLIENTE_FILA = { id: CLIENTE, merchantId: MERCHANT, name: 'Cliente 1370', phone: null }; // SCRUM-1519e: el negocio del cliente
 
 /** El estado de la base en el caso en curso. */
 let bd = { quotes: [], jobs: [], members: [] };
@@ -38,7 +38,8 @@ const P = (id, extra = {}) => ({
   lines: [{ concept: 'Trabajo', qty: 1, price: 100, tax: 0 }], quoteNumber: id, revision: 0,
   decisionToken: null, validUntil: new Date(Date.now() + 10 * 86400000).toISOString(), paymentTerms: 'FULL_UPFRONT',
   tiers: null, discountGlobalAmount: null, acceptedAt: null, rejectedAt: null, rejectionReason: null,
-  jobId: null, teamMemberId: null, ...extra,
+  // SCRUM-1302r · una fila real siempre trae su fecha: la ruta pregunta ahora por el grupo, y el grupo es por año.
+  jobId: null, teamMemberId: null, createdAt: '2026-10-01T10:00:00.000Z', ...extra,
 });
 const T = (id, extra = {}) => ({
   id, merchantId: MERCHANT, customerId: CLIENTE, quoteId: null, status: 'pendiente_agendar',

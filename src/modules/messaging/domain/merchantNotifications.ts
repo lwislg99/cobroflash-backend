@@ -7,6 +7,7 @@ import { enviarCorreo, ResultadoCorreo, resultadoSinDestino } from '../../../int
 import { CLASES_DE_CORREO } from './registroDeEnvios';
 // SCRUM-1212: el modo de emisión se LEE de la fuente única; este módulo no decide nada fiscal.
 import type { ModoVisible } from '../../invoicing/domain/modoVisible';
+import { formatMoneyEs } from '../../../core/utils/utils'; // SCRUM-1288c: el dinero del correo, en es-ES como el resto
 
 // 🔴 SIGUE LANZANDO CUANDO NO SALE, Y ES DELIBERADO (SCRUM-475).
 //
@@ -41,13 +42,16 @@ export async function sendMerchantPaymentEmail(params: {
   merchantEmail: string;
   merchantName: string;
   customerName: string;
+  // SCRUM-1288d: llega como TEXTO («1234.5», el `.toString()` de quien llama) y el correo lo pegaba
+  // a la moneda: «1234.5 EUR». `formatMoneyEs` acepta texto, así que el formato se pone aquí.
   amount: string;
   currency: string;
   invoiceNumber?: string | null;
 }): Promise<ResultadoCorreo> {
   const { merchantEmail, merchantName, customerName, amount, currency, invoiceNumber } = params;
+  const importe = formatMoneyEs(amount, currency);
 
-  const subject = `💰 Pago recibido: ${amount} ${currency} de ${customerName}`;
+  const subject = `💰 Pago recibido: ${importe} de ${customerName}`;
   const html = `
 <div style="font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;color:#0f172a">
   <div style="background:#0f172a;padding:20px 24px;border-radius:12px 12px 0 0">
@@ -61,7 +65,7 @@ export async function sendMerchantPaymentEmail(params: {
     <div style="background:#fff;border-radius:10px;padding:16px 18px;border:1px solid #e2e8f0;margin-bottom:20px">
       <div style="display:flex;justify-content:space-between;margin-bottom:8px">
         <span style="color:#64748b;font-size:13px">Importe</span>
-        <span style="font-weight:800;font-size:18px;color:#16a34a">${amount} ${currency}</span>
+        <span style="font-weight:800;font-size:18px;color:#16a34a">${importe}</span>
       </div>
       <div style="display:flex;justify-content:space-between;margin-bottom:8px">
         <span style="color:#64748b;font-size:13px">Cliente</span>
@@ -92,6 +96,7 @@ export async function sendMerchantQuoteAcceptedEmail(params: {
   merchantName: string;
   customerName: string;
   quoteId: number;
+  // SCRUM-1288d: llega como TEXTO («1234.50», el `toFixed(2)` de quien llama); se formatea aquí.
   total: string;
   currency: string;
   /**
@@ -128,7 +133,7 @@ export async function sendMerchantQuoteAcceptedEmail(params: {
       </div>
       <div style="display:flex;justify-content:space-between">
         <span style="color:#64748b;font-size:13px">Total</span>
-        <span style="font-weight:800;font-size:18px;color:#16a34a">${total} ${currency}</span>
+        <span style="font-weight:800;font-size:18px;color:#16a34a">${formatMoneyEs(total, currency)}</span>
       </div>
     </div>
     <p style="color:#64748b;font-size:13px;margin:0 0 4px">
@@ -151,7 +156,9 @@ export async function sendTechQuoteApprovedEmail(params: {
   techName: string;
   quoteId: number;
   customerName: string;
-  total: string;
+  // SCRUM-1288c: llega el NÚMERO, no un texto ya hecho. Quien llamaba pasaba `toFixed(2)` y el correo
+  // decía «1234.50 EUR»; ahora el formato lo pone aquí el formateador de la casa: «1.234,50 €».
+  total: number;
   currency: string;
 }): Promise<ResultadoCorreo> {
   const { techEmail, techName, quoteId, customerName, total, currency } = params;
@@ -181,7 +188,7 @@ export async function sendTechQuoteApprovedEmail(params: {
       </div>
       <div style="display:flex;justify-content:space-between">
         <span style="color:#64748b;font-size:13px">Total</span>
-        <span style="font-weight:800;font-size:18px;color:#16a34a">${total} ${currency}</span>
+        <span style="font-weight:800;font-size:18px;color:#16a34a">${formatMoneyEs(total, currency)}</span>
       </div>
     </div>
     <p style="color:#64748b;font-size:13px;margin:0">

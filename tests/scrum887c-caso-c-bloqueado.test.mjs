@@ -132,6 +132,7 @@ function prismaDeDoble(quote, escrituras) {
   const p = moduloPrisma.prisma;
   p.quote = {
     findFirst: async () => quote, findUnique: async () => quote, findMany: async () => [quote],
+    count: async () => 0, // SCRUM-1302r · la ruta pregunta si hay una versión más reciente del grupo; aquí, ninguna.
     update: anota('quote.update'), create: anota('quote.create'),
   };
   p.invoice = { findMany: async () => [], findFirst: async () => null, create: anota('invoice.create') };
@@ -142,6 +143,7 @@ function prismaDeDoble(quote, escrituras) {
 
 const quoteC = (extra = {}) => ({
   id: 7, merchantId: 7, customerId: 2, quoteNumber: 12, revision: 0, status: 'accepted', currency: 'EUR',
+  createdAt: new Date('2026-09-01T10:00:00Z'), // SCRUM-1490: una fila de `quotes` SIEMPRE trae su fecha; de ella sale el año de su serie
   lines: C3, discountGlobalAmount: 25, total: '539.05', Invoice: [], billingPlan: null, customBillingPlan: null,
   paymentTerms: 'FULL_UPFRONT', merchant: MERCHANT, customer: CUSTOMER, ...extra,
 });

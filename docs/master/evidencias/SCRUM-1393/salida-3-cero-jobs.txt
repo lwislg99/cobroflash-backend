@@ -1,0 +1,19 @@
+POBLACION datos-pr.json · evento pull_request · 2026-09-24..2026-10-07 · corridas=907
+    466  completed/failure · jobs >0
+    228  completed/success · jobs >0
+    202  completed/cancelled · jobs >0
+      7  in_progress/null · jobs >0
+      3  completed/cancelled · jobs 0
+      1  queued/null · jobs >0
+  failure con 0 jobs: 0
+  control a cero (conclusion «zzz-no-existe»): 0
+POBLACION datos-push-main.json · evento push · 2026-09-07..2026-10-07 · corridas=1135
+    407  completed/cancelled · jobs 0
+    332  completed/cancelled · jobs >0
+    242  completed/failure · jobs >0
+    151  completed/success · jobs >0
+      1  pending/null · jobs 0
+      1  in_progress/null · jobs >0
+      1  completed/failure · jobs 0
+  failure con 0 jobs: 1 · 2026-10-07T16:48:07Z run 37654882700 965e3d05 main
+  control a cero (conclusion «zzz-no-existe»): 0

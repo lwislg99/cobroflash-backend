@@ -1,0 +1,142 @@
+✖ SCRUM-1522e · la tabla tiene las 52 provincias: dos con la hora de Canarias y cincuenta con la peninsular (1.0715ms)
+✖ SCRUM-1522e · un alta de España guarda la zona de su provincia, y la consola dice cuál (132.9009ms)
+✖ SCRUM-1522e · un comercio de España sin provincia no se crea: ni a NULL ni de ninguna manera (131.5342ms)
+[lifecycle] (sin RESEND) email a 7ceb3d2e@test.local: ¡Bienvenido a YaQu! 🎉
+[magic-link] to=origen-1-1522e@test.local link=http://localhost:3000/auth/verify?token=51811371fc2ed66d03e3d9be04db45af7d82cc90c52cae50302e5da8483935d1
+[aviso] {"evento":"aviso_no_entregado","aviso":"bienvenida","destinatario":"7ceb3d2e@test.local","estado":"fallo_envio","idProveedor":null,"motivo":"no se pudo enviar el email (sin_transporte)"}
+✖ SCRUM-1522e · fuera de España el comercio nace sin zona, como hasta hoy: no hay tabla de otros países (261.1995ms)
+✖ SCRUM-1522e · el origen mismo: `registerMerchant` no deja crear un comercio de España sin zona, lo llame quien lo llame (85.3456ms)
+[magic-link] ERROR enviando email a 7ceb3d2e@test.local: no se pudo enviar el email (sin_transporte)
+[aviso] {"evento":"aviso_no_entregado","aviso":"enlace_de_acceso","destinatario":"7ceb3d2e@test.local","estado":"fallo_envio","idProveedor":null,"motivo":"no se pudo enviar el email (sin_transporte)"}
+ℹ tests 5
+ℹ suites 0
+ℹ pass 0
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 674.576
+
+✖ failing tests:
+
+test at tests\scrum1522e-la-zona-en-el-origen.test.mjs:82:1
+✖ SCRUM-1522e · la tabla tiene las 52 provincias: dos con la hora de Canarias y cincuenta con la peninsular (1.0715ms)
+  AssertionError [ERR_ASSERTION]: 🔴 CIEGO: no existe dist\modules\auth\domain\zonaDeLaProvincia.js (¿falta el build?)
+      at TestContext.<anonymous> (<arbol>/tests/scrum1522e-la-zona-en-el-origen.test.mjs:83:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1325:25)
+      at Test.start (node:internal/test_runner/test:1191:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:385:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at tests\scrum1522e-la-zona-en-el-origen.test.mjs:111:1
+✖ SCRUM-1522e · un alta de España guarda la zona de su provincia, y la consola dice cuál (132.9009ms)
+  AssertionError [ERR_ASSERTION]: 🔴 la consola tenía que crear y salió 2: {"provincia":"  las PALMAS "}
+  [dotenv@17.2.2] injecting env (0) from .env.local -- tip: ⚙️  suppress all logs with { quiet: true }
+  [dotenv@17.2.2] injecting env (0) from .env -- tip: ⚙️  override existing env vars with { override: true }
+  {"resultado":"rechazado","error":"argumentos","admite":["--name","--email","--country","--ref","--source"]}
+  
+  
+  
+  2 !== 0
+  
+      at naceEn (<arbol>/tests/scrum1522e-la-zona-en-el-origen.test.mjs:69:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (<arbol>/tests/scrum1522e-la-zona-en-el-origen.test.mjs:113:20)
+      at async Test.run (node:internal/test_runner/test:1332:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests\scrum1522e-la-zona-en-el-origen.test.mjs:121:1
+✖ SCRUM-1522e · un comercio de España sin provincia no se crea: ni a NULL ni de ninguna manera (131.5342ms)
+  AssertionError [ERR_ASSERTION]: 🔴 {} tenía que rechazarse con «provincia_required» y sin crear nada
+  [dotenv@17.2.2] injecting env (0) from .env.local -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+  [dotenv@17.2.2] injecting env (0) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+  [lifecycle] (sin RESEND) email a 5df87934@test.local: ¡Bienvenido a YaQu! 🎉
+  [magic-link] to=alta-2-1522e@test.local link=http://localhost:3000/auth/verify?token=6465f6f6966f13d1cd96d709aa5d01d01cf5353e5339b85f7590ee1e0fab7c41
+  {"resultado":"creado","merchant":{"id":1,"lifecycleEmailsSent":null,"createdAt":"2026-10-13T11:13:25.748Z","name":"Reformas 1522e","email":"alta-2-1522e@test.local","country":"ES","status":"active","plan":"trial","planExpiresAt":"2026-10-27T11:13:25.748Z","referralCode":"REFORMAS26","referredBy":null,"acquisitionSource":null}}
+  
+  [aviso] {"evento":"aviso_no_entregado","aviso":"bienvenida","destinatario":"5df87934@test.local","estado":"fallo_envio","idProveedor":null,"motivo":"no se pudo enviar el email (sin_transporte)"}
+  [magic-link] ERROR enviando email a 5df87934@test.local: no se pudo enviar el email (sin_transporte)
+  [aviso] {"evento":"aviso_no_entregado","aviso":"enlace_de_acceso","destinatario":"5df87934@test.local","estado":"fallo_envio","idProveedor":null,"motivo":"no se pudo enviar el email (sin_transporte)"}
+  
+  + actual - expected
+  
+    [
+  -   2,
+  -   'provincia_required',
+      0,
+  +   undefined,
+  +   1
+    ]
+  
+      at noNace (<arbol>/tests/scrum1522e-la-zona-en-el-origen.test.mjs:78:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (<arbol>/tests/scrum1522e-la-zona-en-el-origen.test.mjs:122:3)
+      at async Test.run (node:internal/test_runner/test:1332:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 0, undefined, 1 ],
+    expected: [ 2, 'provincia_required', 0 ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests\scrum1522e-la-zona-en-el-origen.test.mjs:130:1
+✖ SCRUM-1522e · fuera de España el comercio nace sin zona, como hasta hoy: no hay tabla de otros países (261.1995ms)
+  AssertionError [ERR_ASSERTION]: 🔴 {"country":"PT","provincia":"Madrid"} tenía que rechazarse con «provincia_desconocida» y sin crear nada
+  [dotenv@17.2.2] injecting env (0) from .env.local -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+  [dotenv@17.2.2] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+  {"resultado":"rechazado","error":"argumentos","admite":["--name","--email","--country","--ref","--source"]}
+  
+  
+  + actual - expected
+  
+    [
+      2,
+  +   'argumentos',
+  -   'provincia_desconocida',
+      0
+    ]
+  
+      at noNace (<arbol>/tests/scrum1522e-la-zona-en-el-origen.test.mjs:78:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (<arbol>/tests/scrum1522e-la-zona-en-el-origen.test.mjs:133:3)
+      at async Test.run (node:internal/test_runner/test:1332:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 2, 'argumentos', 0 ],
+    expected: [ 2, 'provincia_desconocida', 0 ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at tests\scrum1522e-la-zona-en-el-origen.test.mjs:136:1
+✖ SCRUM-1522e · el origen mismo: `registerMerchant` no deja crear un comercio de España sin zona, lo llame quien lo llame (85.3456ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection: 🔴 EL ORIGEN SIGUE ABIERTO: `registerMerchant` crea un comercio de España sin provincia
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (<arbol>/tests/scrum1522e-la-zona-en-el-origen.test.mjs:142:3)
+      at async Test.run (node:internal/test_runner/test:1332:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: { code: 'provincia_required' },
+    operator: 'rejects',
+    diff: 'simple'
+  }
+EXIT=1

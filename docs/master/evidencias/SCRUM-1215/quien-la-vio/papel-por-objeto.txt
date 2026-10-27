@@ -1,0 +1,137 @@
+POBLACION: 173 hojas de grupo · máster 477733 caracteres · 1087 registros en docs/master/ · main f7a4c816ab2bf5c334a953dee60dc7b73718a0f8
+SIN ACTA en docs/microcopy/: 85 de 173
+  3 no son texto (clases CSS) · 4 sin ningún literal (función o referencia) · 1 sólo les faltan argumentos de formato
+  7 constan en el máster · 53 sólo en el registro de un ticket (docs/master/) · 17 en ningún documento
+
+POR OBJETO (sin acta / total) · desde cuándo gobierna la letra de hoy · qué cita:
+
+  1 / 2  buscadorDeClientes.js · TEXTOS   [REGISTRO_DE_TICKET 1]
+      letra desde: 2026-09-08 cc2b76975
+      la letra dice: «APROBADO por el asesor el 2-sep-2026»
+      cita: —
+
+  4 / 11  cobrosView.js · COBROS_COPY   [REGISTRO_DE_TICKET 4]
+      letra desde: 2026-08-10 24047c3a4 | 2026-08-12 87cb4f9fb | 2026-09-28 fdc01e4fc
+      la letra dice: «APROBADOS por el orquestador por delegación del fundador el 28-sep-2026 (SCRUM-1235 comentario 17384; registro: docs/microcopy/2026-09-28-SCRUM-1235-correo-que-no-salio»
+      cita: SCRUM-1235, comentario 17384, docs/microcopy/2026-09-28-SCRUM-1235-correo-que-no-salio.md
+      la letra dice: «APROBADA por el asesor el 10-ago-2026 (regla 30)»
+      cita: SCRUM-285
+
+  2 / 2  cobrosView.js · COBROS_DESCONOCIDO   [REGISTRO_DE_TICKET 1 · MASTER 1]
+      letra desde: 2026-08-12 e18b0005d
+      la letra dice: «APROBADA por el asesor (regla 30)»
+      cita: SCRUM-506, SCRUM-486, SCRUM-491, SCRUM-503, SCRUM-488, SCRUM-285, SCRUM-499
+
+  1 / 22  customerDetailView.js · FUSION_CLIENTE   [SIN_TROZOS 1]
+      letra desde: 2026-09-29 51d81311b
+      la letra dice: «FIRMADOS por el orquestador por delegación del fundador (29-sep-2026, SCRUM-1126 comentarios 17574 y 17575, que corrige al anterior; registro en `docs/microcopy/2026-09-29-SCRUM-1126-fusion-de-clientes»
+      cita: SCRUM-1126, SCRUM-1057, comentario 17572, docs/microcopy/2026-09-29-SCRUM-1126-fusion-de-clientes.md, SCRUM-1124, SCRUM-1135
+
+  2 / 9  customerDetailView.js · HISTORIAL_CLIENTE   [SOLO_FALTA_FORMATO 1 · SIN_TROZOS 1]
+      letra desde: 2026-09-21 11ef53a0f
+      la letra dice: «FIRMADOS por el orquestador por delegación del fundador (21-sep-2026, SCRUM-980; registro en `docs/microcopy/2026-09-21-SCRUM-980-historial-del-cliente»
+      cita: SCRUM-980, docs/microcopy/2026-09-21-SCRUM-980-historial-del-cliente.md
+
+  2 / 2  estadoFirma.js · TEXTO_DESALOJO   [EN_NINGUN_DOCUMENTO 1 · REGISTRO_DE_TICKET 1]
+      letra desde: 2026-08-11 c039e7bd4
+      la letra dice: «APROBADA** por el asesor (regla 30)»
+      cita: SCRUM-469, SCRUM-360, SCRUM-460
+
+  1 / 3  estadoFirma.js · TEXTO_FIRMA   [REGISTRO_DE_TICKET 1]
+      letra desde: 2026-08-10 9f6733ae6
+      la letra dice: «APROBADA por el asesor (SCRUM-356)»
+      cita: SCRUM-356
+
+  2 / 2  estadoFirma.js · TEXTO_PRECARGA   [REGISTRO_DE_TICKET 2]
+      letra desde: 2026-08-11 6464d0e8a
+      la letra dice: «APROBADA** (regla 30)»
+      cita: SCRUM-357, SCRUM-460, SCRUM-469
+
+  2 / 4  filtroClientes.js · TEXTOS_ETIQUETAS   [REGISTRO_DE_TICKET 2]
+      letra desde: 2026-09-02 a464d9780
+      la letra dice: «APROBADOS por el ASESOR el 2-sep-2026, **provisionales a la espera del fundador**»
+      cita: SCRUM-580, SCRUM-387
+
+  3 / 3  filtroClientes.js · TEXTOS_SELECCION   [REGISTRO_DE_TICKET 3]
+      letra desde: 2026-09-04 d502c3f47
+      la letra dice: «APROBADOS por el ASESOR el 4-sep-2026, **a la espera de la firma del fundador** (regla 30)»
+      cita: SCRUM-582, SCRUM-580
+
+  3 / 3  homeView.js · TONO_DE_ACEPTACION   [NO_ES_TEXTO 3]
+      letra desde: 2026-10-01 8c0bf7285
+      la letra dice: «FIRMADO por el fundador el 1-oct-2026 (c»
+      cita: SCRUM-1341, SCRUM-1337, c.17827, c.17825
+
+  6 / 7  jobDetailView.js · ALB_CREAR_COPY   [EN_NINGUN_DOCUMENTO 1 · REGISTRO_DE_TICKET 5]
+      letra desde: 2026-08-05 56874623b
+      la letra dice: «APROBADA por el fundador el 5-ago-2026 (regla 30)»
+      cita: —
+
+  1 / 5  jobDetailView.js · ALB_TABLA_COPY   [SIN_TROZOS 1]
+      letra desde: 2026-08-05 e2f397aa6
+      la letra dice: «APROBADA por el fundador el 5-ago-2026 (regla 30), los cinco tal cual»
+      cita: —
+
+  1 / 2  jobDetailView.js · TEXTO_HUECO   [EN_NINGUN_DOCUMENTO 1]
+      letra desde: 2026-09-21 6b0d92e42
+      la letra dice: «FIRMADOS (com»
+      cita: SCRUM-917f
+
+  2 / 5  jobRailBlocks.js · JOB_RAIL_TITULOS   [MASTER 2]
+      letra desde: 2026-08-05 249c74c7a
+      la letra dice: «APROBADOS por el fundador (regla 30): CLIENTE · DÓNDE · DINERO · PRESUPUESTO · RESPONSABLE»
+      cita: SCRUM-318
+
+  5 / 5  jobsCierreTrabajo.js · CIERRE_TEXTOS   [EN_NINGUN_DOCUMENTO 1 · REGISTRO_DE_TICKET 4]
+      letra desde: 2026-08-05 077fa8ac2
+      la letra dice: «APROBADA POR EL FUNDADOR (regla 30, 5-ago-2026)  **Es la ÚNICA fuente de texto visible de la sección**: la vista no escribe ni una palabra suelta, y de eso hay guard»
+      cita: SCRUM-344, SCRUM-283, SCRUM-299
+
+  2 / 3  libroRegistroView.js · ESTADO_VISIBLE   [REGISTRO_DE_TICKET 2]
+      letra desde: 2026-08-19 592767d08
+      la letra dice: «APROBADOS, Y SOLO ESOS (fundador, 19-ago-2026)»
+      cita: —
+
+  15 / 17  parteDetailView.js · TEXTOS   [REGISTRO_DE_TICKET 14 · SIN_TROZOS 1]
+      letra desde: 2026-09-27 8c77d6db8 | 2026-09-27 f0eac753c
+      la letra dice: «FIRMADOS por delegación del fundador el 27-sep-2026, SCRUM-916 comentario 17251»
+      cita: SCRUM-1175, SCRUM-916, comentario 17251
+      la letra dice: «FIRMADOS por delegación del fundador el 27-sep-2026, SCRUM-916 comentario 17251, y cada uno COMPROBADO contra el código antes de pintarlo»
+      cita: SCRUM-1175, SCRUM-916, comentario 17251, comentario 17273, SCRUM-818
+
+  7 / 8  puertaSerie.js · SERIE_TEXTOS   [EN_NINGUN_DOCUMENTO 7]
+      letra desde: 2026-09-28 76da0f491 | 2026-09-28 7ddab7d83
+      la letra dice: «FIRMADOS, literales»
+      cita: SCRUM-1216b, SCRUM-1216, comentario 17347, comentario 17349, SCRUM-313
+
+  7 / 12  quoteActionsRegistry.js · QUOTE_ACTION_ROTULOS   [MASTER 2 · REGISTRO_DE_TICKET 2 · EN_NINGUN_DOCUMENTO 3]
+      letra desde: 2026-08-19 eb8f5c921 | 2026-09-21 1dd09882f
+      la letra dice: «APROBADO  Van con marcador visible, como hicieron `albaranesView` y la pantalla del Libro registro antes de que el asesor los firmara»
+      cita: —
+
+  2 / 3  quoteDireccionObra.js · TEXTOS   [REGISTRO_DE_TICKET 2]
+      letra desde: 2026-09-04 130464349
+      la letra dice: «APROBADOS por el ASESOR el 4-sep-2026, **provisionales a la espera del fundador**»
+      cita: SCRUM-602, SCRUM-387, SCRUM-599
+
+  2 / 8  quoteRevisiones.js · TEXTOS   [REGISTRO_DE_TICKET 2]
+      letra desde: 2026-09-29 510ba6d9f
+      la letra dice: «APROBADOS por el fundador (regla 30), en dos actos: · las SEIS primeras, el 3-sep-2026, SIN UN CAMBIO; · `crearRevision` y `errorCrear`, el 16-sep-2026 (SCRUM-688)» … «APROBADA_SIN_APLICAR»
+      cita: SCRUM-688, SCRUM-1215, SCRUM-1157, docs/microcopy/2026-09-16-SCRUM-688-crear-revision.md, SCRUM-402
+
+  3 / 9  settingsSubmenus.js · ROTULOS   [REGISTRO_DE_TICKET 1 · MASTER 2]
+      letra desde: 2026-08-05 1ef584cb6
+      la letra dice: «APROBADOS por el fundador (5-ago-2026, regla 30)»
+      cita: —
+
+  2 / 2  settingsView.js · QR_COPY   [EN_NINGUN_DOCUMENTO 2]
+      letra desde: 2026-07-29 01d82b255
+      la letra dice: «APROBADOS (fundador, 29-jul-2026) — literales, no se tocan:»
+      cita: —
+
+  7 / 8  settingsView.js · TX   [REGISTRO_DE_TICKET 6 · EN_NINGUN_DOCUMENTO 1]
+      letra desde: 2026-09-03 3e10d94c8
+      la letra dice: «APROBADA por el fundador el 3-sep-2026 (regla 30)»
+      cita: SCRUM-656, SCRUM-402
+
+EXIT=0

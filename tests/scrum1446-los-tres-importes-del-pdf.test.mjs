@@ -1,0 +1,329 @@
+// tests/scrum1446-los-tres-importes-del-pdf.test.mjs — SCRUM-1446, SCRUM-1447 y SCRUM-1448
+//
+// LA VÍCTIMA: quien tiene en la mano una factura o un presupuesto y hace la cuenta con el papel.
+//
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// QUÉ ES ESTO: LA MEDICIÓN DE TRES DEFECTOS, FIJADA. NO ES SU ARREGLO.
+//
+// Se genera el PDF DE VERDAD (`generateInvoicePdf`, `generateQuotePdf`) y se lee lo que imprime.
+// Cada caso de abajo fija los importes EXACTOS que salen hoy, incluidos los que salen mal:
+//
+//   ① SCRUM-1446 · la columna TOTAL de las líneas no suma el TOTAL impreso.
+//   ② SCRUM-1447 · el tipo se redondea a entero: el 7,5 % —que el servidor ADMITE— sale «8%» en
+//      el papel de la FACTURA. (El pie del presupuesto, que CALCULABA la cuota al 8 %, y el desglose
+//      del registro, que llevaba `TipoImpositivo` 8, se arreglaron en SCRUM-1446b: ver su tramo. Y
+//      el papel de la FACTURA, en SCRUM-1446d.)
+//   ③ SCRUM-1448 · la factura con líneas RECALCULA su total y la que no tiene líneas imprime el
+//      guardado; con dos tipos, con tramos o con descuento de línea, los dos números se separan.
+//
+// ⛔ ESTE FICHERO NO MODIFICA EL CAMINO DE EMISIÓN (regla 38): lo ejecuta y lee su salida. Corregir
+// cualquiera de los tres cambia una cifra impresa en un documento fiscal, y eso es regla 40: lo
+// decide el fundador. Hasta entonces quedan DECLARADOS aquí, con su importe.
+//
+// Si un caso deja de dar el importe declarado, este fichero cae y lo nombra. Si es porque el
+// defecto se ha arreglado, se borra su entrada de `DECLARADOS` y se fija el importe nuevo, en el
+// mismo commit. La lista sólo puede menguar.
+//
+// La medición entera, con sus recuentos: `docs/master/SCRUM-1446.md` y
+// `docs/master/evidencias/SCRUM-1446/medir-los-tres-importes.mjs`.
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import { createRequire } from 'node:module';
+import { lineasDePdf } from './_texto-del-pdf.mjs';
+
+const require = createRequire(import.meta.url);
+const { generateInvoicePdf, generateQuotePdf } = require('../dist/lib/pdf.js');
+const { TIPOS_IVA_ES_BP, invalidTipoIva } = require('../dist/core/validation/fiscalInput.js');
+const { tipoIvaNoEmitible } = require('../dist/core/validation/tiposIvaEmitibles.js');
+const { calcVatBreakdown } = require('../dist/modules/invoicing/domain/vat.service.js');
+const { grossOfLines, stageLinesReconciled, lineasParaFacturar } = require('../dist/modules/invoicing/domain/invoiceLines.service.js');
+const { clasificarDetalleDesglose } = require('../dist/modules/fiscal/verifactu/registro.builder.js');
+const { distributeStageAmounts } = require('../dist/modules/quotes/domain/billingPlan.js');
+const { calcTotal } = require('../dist/core/utils/utils.js');
+
+/** Los defectos que este fichero fija sin arreglar, con el ticket que los lleva. */
+const DECLARADOS = Object.freeze({
+  // ✅ SCRUM-1446e (26-oct-2026) · sale «la columna no suma el total»: con el GO de SCRUM-1446
+  // c.20917 la columna de la F1 va sin IVA y suma la base. Su motivo decía «el TOTAL sale de la
+  // suma sin redondear», y desde SCRUM-624e ya no era cierto: el TOTAL era el guardado y lo que no
+  // sumaba era la columna CON IVA, redondeada línea a línea (medido en SCRUM-1446 c.20915). Ver ① abajo.
+  // ✅ SCRUM-624e (24-oct-2026) · sale «el total impreso no es el guardado»: con el GO de SCRUM-624
+  // c.20817, el papel de la F1 imprime su total guardado. Ver ③ abajo.
+});
+
+const IMPORTE = '-?[\\d.]+,\\d{2}';
+const aCent = (s) => Math.round(Number(String(s).replace(/\./g, '').replace(',', '.')) * 100);
+const L = (price, tax, qty = 1) => ({ qty, price, tax });
+const conNombre = (lines) => lines.map((l, i) => ({ concept: `L${i + 1}Z`, ...l }));
+let serie = 0;
+
+function leer(outPath) {
+  try {
+    const r = lineasDePdf(fs.readFileSync(outPath));
+    assert.equal(r.ok, true, `🔴 NO SUPE LEER EL PDF: ${r.motivo}. Un papel sin leer no dice ningún importe.`);
+    return r.lineas.map((l) => l.texto);
+  } finally {
+    fs.rmSync(outPath, { force: true });
+  }
+}
+function filasDe(textos) {
+  const filas = [];
+  for (const t of textos) {
+    const m = t.match(new RegExp(`^(L\\d+Z).*,\\d{2}([\\d,]+%|—)(${IMPORTE})$`));
+    if (m) filas.push({ rotulo: m[2], total: aCent(m[3]) });
+  }
+  return filas;
+}
+function unico(textos, patron, que) {
+  const hallados = textos.map((t) => t.match(patron)).filter(Boolean);
+  assert.equal(hallados.length, 1, `🔴 esperaba UNA línea con ${que} y hay ${hallados.length}: no sé qué estoy leyendo.`);
+  return hallados[0];
+}
+
+/** El papel de una factura: filas, pie por tipo y total, en céntimos. */
+async function papelFactura(lines, total) {
+  serie += 1;
+  const { outPath } = await generateInvoicePdf({
+    number: `F-2026-QA1446-${serie}`, invoiceId: 1, merchantId: 7,
+    merchant: { name: 'QA 1446', legalName: 'QA 1446 SL', taxId: 'B00000000' },
+    customer: { name: 'Cliente QA' }, currency: 'EUR', total, qrData: 'x', type: 'F1',
+    lines: conNombre(lines),
+  });
+  const textos = leer(outPath);
+  const pie = textos
+    // SCRUM-1446d · `[\d,]+%` y no `\d+%`: con `\d+` un «IVA 7,5%:» no casaba y el pie salía VACÍO,
+    // que se lee igual que «no hay pie».
+    .map((t) => t.match(new RegExp(`^(?:[\\d,]+%${IMPORTE} EUR)?IVA ([\\d,]+%):(${IMPORTE}) EUR$`)))
+    .filter(Boolean).map((m) => ({ rotulo: m[1], cuota: aCent(m[2]) }));
+  const conLineas = textos.map((t) => t.match(new RegExp(`^TOTAL:(${IMPORTE}) EUR$`))).filter(Boolean);
+  const sinLineas = textos.map((t) => t.match(new RegExp(`^Total: (${IMPORTE}) EUR$`))).filter(Boolean);
+  assert.equal(conLineas.length + sinLineas.length, 1, '🔴 esperaba UN total en el papel de la factura.');
+  return { filas: filasDe(textos), pie, total: aCent((conLineas[0] || sinLineas[0])[1]), ramaSinLineas: sinLineas.length === 1 };
+}
+
+/** El papel de un presupuesto. */
+async function papelPresupuesto(lines, total) {
+  serie += 1;
+  const { outPath } = await generateQuotePdf({
+    quoteId: 914460000 + serie, quoteNumber: 1, merchant: { name: 'QA 1446' }, customer: { name: 'Cliente QA' },
+    currency: 'EUR', total, lines: conNombre(lines), country: 'ES',
+  });
+  const textos = leer(outPath);
+  const pie = textos.map((t) => t.match(new RegExp(`^IVA ([\\d.,]+%): (${IMPORTE}) EUR$`)))
+    .filter(Boolean).map((m) => ({ rotulo: m[1], cuota: aCent(m[2]) }));
+  return {
+    filas: filasDe(textos), pie,
+    base: aCent(unico(textos, new RegExp(`^Base imponible: (${IMPORTE}) EUR$`), 'la base')[1]),
+    total: aCent(unico(textos, new RegExp(`^Total presupuesto: (${IMPORTE}) EUR$`), 'el total')[1]),
+  };
+}
+
+const suma = (filas) => filas.reduce((a, f) => a + f.total, 0);
+const ADMITIDOS = [...TIPOS_IVA_ES_BP].map((b) => b / 10000).sort((a, b) => a - b);
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SUELO: el lector ve lo que está, y un papel que cuadra, cuadra
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+// SCRUM-1446e: desde SCRUM-1446 c.20917 la columna de la F1 va SIN IVA, así que lo que suma es la base
+// (100,00 + 100,00 = 200,00) y el TOTAL es el guardado (242,00). Hasta hoy fijaba 121,00 + 121,00.
+test('SCRUM-1446 · SUELO: en un papel que cuadra, la columna suma la base y el total es el guardado', async () => {
+  const lines = [L(100, 0.21), L(100, 0.21)];
+  const guardado = grossOfLines(lines);
+  const p = await papelFactura(lines, guardado.toFixed(2));
+  assert.deepEqual(
+    { filas: p.filas, pie: p.pie, total: p.total, sumaDeLaColumna: suma(p.filas), guardado: Math.round(guardado * 100) },
+    {
+      filas: [{ rotulo: '21%', total: 10000 }, { rotulo: '21%', total: 10000 }],
+      pie: [{ rotulo: '21%', cuota: 4200 }],
+      total: 24200, sumaDeLaColumna: 20000, guardado: 24200,
+    },
+    '🔴 CIEGO: en la factura más simple —dos líneas de 100 al 21 %— el lector no saca 100,00 + 100,00 = ' +
+    '200,00 de base y 242,00 de TOTAL. Si no sabe leer un papel que cuadra, lo que diga de los que no cuadran no vale.');
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// ① SCRUM-1446 · la columna de las líneas no suma el TOTAL
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+// ── SCRUM-1446e (26-oct-2026) · ARREGLADO: la columna va SIN IVA y suma la base ────────────────
+// Decisión del fundador: SCRUM-1446 c.20917 (P1 en la factura, P4 en el presupuesto). Hasta hoy este
+// caso fijaba 15,13 + 15,13 = 30,26 con TOTAL 30,25, en los dos papeles. El detalle, la R1 y el
+// justificante (que no cambian) y el resto de los tramos: `tests/scrum1446e-la-columna-sin-iva.test.mjs`.
+test('SCRUM-1446 · ① ARREGLADO: dos líneas de 12,50 al 21 % imprimen 12,50 + 12,50, que es la base, y TOTAL 30,25', async () => {
+  const lines = [L(12.5, 0.21), L(12.5, 0.21)];
+  const f = await papelFactura(lines, grossOfLines(lines).toFixed(2));
+  const q = await papelPresupuesto(lines, calcTotal(lines).toFixed(2));
+  assert.deepEqual(
+    {
+      factura: { lineas: f.filas.map((x) => x.total), sumaALaVista: suma(f.filas), total: f.total },
+      presupuesto: { lineas: q.filas.map((x) => x.total), sumaALaVista: suma(q.filas), total: q.total },
+    },
+    {
+      factura: { lineas: [1250, 1250], sumaALaVista: 2500, total: 3025 },
+      presupuesto: { lineas: [1250, 1250], sumaALaVista: 2500, total: 3025 },
+    },
+    '🔴 la columna de las líneas ya no imprime 12,50 + 12,50 (sin IVA) o el TOTAL ya no es 30,25. ' +
+    'Decisión del fundador: SCRUM-1446 c.20917. Si ha cambiado, alguien ha movido una cifra impresa.');
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// ② SCRUM-1447 · el tipo redondeado a entero
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+// ── SCRUM-1446d (23-oct-2026) · ARREGLADO: la FACTURA rotula el 7,5 % como «7,5%» ─────────────
+// Por la vía de cambio autorizado de `scrum603b`/`scrum723` (SCRUM-1446 c.20473), con el parche de
+// c.18885. Hasta hoy este caso fijaba «8%» en la fila y «IVA 8%: 7,50» en el pie.
+test('SCRUM-1447 · ② ARREGLADO: cada tipo que el servidor admite sale en la factura con su propio rótulo, también el 7,5 %', async () => {
+  // La población sale del validador, no de una lista copiada: si mañana se admite otro tipo con
+  // decimales, entra solo en este recorrido.
+  assert.deepEqual(ADMITIDOS, [0, 0.02, 0.04, 0.05, 0.075, 0.1, 0.21],
+    'Ha cambiado la lista de tipos que admite `invalidTipoIva`: este caso mide sobre ella.');
+
+  const visto = {};
+  for (const t of ADMITIDOS) {
+    assert.equal(invalidTipoIva(t), null);
+    assert.equal(tipoIvaNoEmitible([{ tax: t }]), null);
+    const lines = [L(100, t)];
+    const p = await papelFactura(lines, grossOfLines(lines).toFixed(2));
+    visto[`${Math.round(t * 10000) / 100} %`] = {
+      fila: p.filas[0].rotulo,
+      pie: p.pie.map((x) => `${x.rotulo} ${x.cuota}`).join(),
+    };
+  }
+  assert.deepEqual(visto, {
+    '0 %': { fila: '—', pie: '' },
+    '2 %': { fila: '2%', pie: '2% 200' },
+    '4 %': { fila: '4%', pie: '4% 400' },
+    '5 %': { fila: '5%', pie: '5% 500' },
+    '7.5 %': { fila: '7,5%', pie: '7,5% 750' },   // antes «8%» y «IVA 8%: 7,50» sobre una base de 100,00
+    '10 %': { fila: '10%', pie: '10% 1000' },
+    '21 %': { fila: '21%', pie: '21% 2100' },
+  },
+  'Ha cambiado lo que la factura imprime como tipo, o su cuota. El 7,5 % tiene que salir «7,5%» con '
+  + 'su cuota de 7,50, y los demás como siempre.');
+});
+
+// ── SCRUM-1446b (8-oct-2026) · ARREGLADO: el tipo ya no se redondea a entero al CALCULAR ──────
+// GO del fundador en SCRUM-1446 c.18865. `calcVatBreakdown` y `descuentoGlobalEnCentimos` agrupan
+// por el tipo con sus decimales (`tipoEnPorcentaje`). Los tres casos de abajo fijaban el defecto;
+// ahora fijan el valor bueno, cada uno con su control al 10 %, que tiene que salir como siempre.
+
+test('SCRUM-1447 · ② el pie del presupuesto calcula la cuota del 7,5 % al 7,5 %, y base + cuota es el Total', async () => {
+  const visto = {};
+  for (const t of [0.075, 0.10]) {
+    const lines = [L(100, t)];
+    const q = await papelPresupuesto(lines, calcTotal(lines).toFixed(2));
+    visto[`${t * 100} %`] = { fila: q.filas[0].rotulo, base: q.base, pie: q.pie, total: q.total };
+    assert.equal(q.base + q.pie.reduce((a, x) => a + x.cuota, 0), q.total,
+      `🔴 en el presupuesto al ${t * 100} %, la base más las cuotas del pie no dan el Total impreso.`);
+  }
+  assert.deepEqual(visto, {
+    // ⚠️ El rótulo del PIE sale «7.5%», con punto: lo compone `presentacionIva.ts`, que no es de
+    // este carril. La fila, que pinta `pdf.service.ts`, sale «7,5%». La cifra es la buena en los dos.
+    '7.5 %': { fila: '7,5%', base: 10000, pie: [{ rotulo: '7.5%', cuota: 750 }], total: 10750 },
+    // El control: con un tipo entero, nada se ha movido.
+    '10 %': { fila: '10%', base: 10000, pie: [{ rotulo: '10%', cuota: 1000 }], total: 11000 },
+  },
+  'Ha cambiado el pie del presupuesto para una línea al 7,5 % o al 10 %.');
+});
+
+test('SCRUM-1447 · ② el desglose del registro de facturación lleva el tipo REAL: tipo × base = cuota en todos los admitidos', () => {
+  const de = (t) => {
+    const d = clasificarDetalleDesglose(calcVatBreakdown([L(100, t)]).entries[0], 'QA-1446');
+    return { tipoImpositivo: d.tipoImpositivo, base: d.baseImponible, cuota: d.cuotaRepercutida };
+  };
+  assert.deepEqual({ sieteYMedio: de(0.075), diez: de(0.10), veintiuno: de(0.21) }, {
+    sieteYMedio: { tipoImpositivo: '7.5', base: '100.00', cuota: '7.50' },   // antes: '8' con cuota 7.50
+    diez: { tipoImpositivo: '10', base: '100.00', cuota: '10.00' },          // el control
+    veintiuno: { tipoImpositivo: '21', base: '100.00', cuota: '21.00' },     // el control
+  },
+  'Ha cambiado el desglose que se construye para una línea al 7,5 %, al 10 % o al 21 %.');
+
+  // La propiedad, sobre la población que da el validador y no sobre una lista copiada: la terna que
+  // se remite no se contradice. Si mañana se admite otro tipo con decimales, entra solo.
+  let medidos = 0;
+  for (const t of ADMITIDOS.filter((x) => x > 0)) {
+    const d = de(t);
+    assert.equal((Number(d.tipoImpositivo) * Number(d.base) / 100).toFixed(2), d.cuota,
+      `🔴 el registro de una línea de 100,00 al ${t * 100} % lleva TipoImpositivo ${d.tipoImpositivo} ` +
+      `y cuota ${d.cuota}: la terna se contradice.`);
+    medidos += 1;
+  }
+  assert.equal(medidos, 6, 'esperaba medir los seis tipos admitidos mayores que 0');
+  // El lado que cae: un tipo redondeado a entero, como antes, SÍ contradice la terna.
+  assert.notEqual((Math.round(0.075 * 100) * 100 / 100).toFixed(2), de(0.075).cuota,
+    'el control no distingue un 8 de un 7,5: la propiedad de arriba no mediría nada');
+});
+
+test('SCRUM-1447 · ② el descuento global de un presupuesto al 7,5 % se firma con su tipo y se puede facturar', () => {
+  const de = (t) => {
+    const lines = [L(100, t)];
+    const paraFacturar = lineasParaFacturar({ lines, discountGlobalAmount: 10 });
+    return { firmado: calcTotal(lines, 10), taxDelDescuento: paraFacturar[0].tax, porton: tipoIvaNoEmitible(paraFacturar) };
+  };
+  assert.deepEqual({ sieteYMedio: de(0.075), diez: de(0.10) }, {
+    // antes: se firmaba 96,70, la línea del descuento salía con tax 0.08 y el portón la rechazaba
+    sieteYMedio: { firmado: 96.75, taxDelDescuento: 0.075, porton: null },
+    diez: { firmado: 99, taxDelDescuento: 0.1, porton: null },               // el control
+  },
+  'Ha cambiado lo que se firma o lo que se factura con descuento global al 7,5 % o al 10 %.');
+  // El lado que cae: el portón sigue rechazando un tipo que no existe.
+  assert.match(String(tipoIvaNoEmitible([{ tax: 0.08 }])), /8 %/,
+    'el portón ya no rechaza un 8 %: el `porton: null` de arriba no diría nada');
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// ③ SCRUM-1448 · el total recalculado y el guardado
+// ═════════════════════════════════════════════════════════════════════════════════════════
+
+// ── SCRUM-624e (24-oct-2026) · ARREGLADO EN LA F1: el TOTAL impreso es el guardado ─────────────
+// GO del fundador: SCRUM-624 c.20817, «A solo en facturas normales». Hasta hoy este caso fijaba
+// guardado 3 / impreso 4, 127 / 128 y 190 / 189. La R1 sigue recalculando (`scrum624e`).
+test('SCRUM-1448 · ③ ARREGLADO en la F1: el TOTAL impreso es el guardado con dos tipos, con tramos y con descuento de línea', async () => {
+  const plan = [{ index: 0, percentage: 0.5, label: '' }, { index: 1, percentage: 0.5, label: '' }];
+  const deTramo = [L(2.11, 0.21)];
+  const casos = {
+    // Las líneas de cada caso las construyen las funciones REALES que llaman las rutas.
+    'control · una línea de 100 al 21 %': [L(100, 0.21)],
+    'dos tipos · 0,02 al 21 % y 0,01 al 10 %': [L(0.02, 0.21), L(0.01, 0.10)],
+    'tramo 2 de 2 al 50 % · 2,11 al 21 %': stageLinesReconciled(deTramo, plan, 1, distributeStageAmounts(calcTotal(deTramo), plan)[1]),
+    'descuento de línea del 10 % · 1,74 al 21 %': lineasParaFacturar({ lines: [{ ...L(1.74, 0.21), dto: 10 }], discountGlobalAmount: null }),
+  };
+  const visto = {};
+  for (const [nombre, lines] of Object.entries(casos)) {
+    const guardado = grossOfLines(lines);
+    const p = await papelFactura(lines, guardado.toFixed(2));
+    visto[nombre] = { guardado: Math.round(guardado * 100), impreso: p.total };
+  }
+  assert.deepEqual(visto, {
+    'control · una línea de 100 al 21 %': { guardado: 12100, impreso: 12100 },
+    'dos tipos · 0,02 al 21 % y 0,01 al 10 %': { guardado: 3, impreso: 3 },
+    'tramo 2 de 2 al 50 % · 2,11 al 21 %': { guardado: 127, impreso: 127 },
+    'descuento de línea del 10 % · 1,74 al 21 %': { guardado: 190, impreso: 190 },
+  },
+  '🔴 la F1 vuelve a imprimir un TOTAL distinto del guardado: el papel ha vuelto a recalcular ' +
+  '(SCRUM-1448, SCRUM-624e).');
+});
+
+test('SCRUM-1448 · ③ la factura imprime el guardado, tenga líneas o no (SCRUM-624e)', async () => {
+  const sin = await papelFactura([], '123.45');
+  const con = await papelFactura([L(100, 0.21)], '999.99');
+  assert.deepEqual(
+    { sin: { total: sin.total, rama: sin.ramaSinLineas, filas: sin.filas.length }, con: { total: con.total, rama: con.ramaSinLineas } },
+    { sin: { total: 12345, rama: true, filas: 0 }, con: { total: 99999, rama: false } },
+    'Ha cambiado de dónde sale el total del PDF de la factura. Desde SCRUM-624e es UNA fuente, el ' +
+    'guardado, tenga líneas o no; hasta entonces, con líneas imprimía el recalculado (121,00).');
+});
+
+test('SCRUM-1446 · los defectos declarados son EXACTAMENTE cero, y cada uno nombra su ticket', () => {
+  // SCRUM-1446d: 3 → 2, al arreglarse «el 7,5 % se imprime «8%»». SCRUM-624e: 2 → 1, al imprimir
+  // la F1 su total guardado. SCRUM-1446e: 1 → 0, al ir la columna sin IVA.
+  assert.equal(Object.keys(DECLARADOS).length, 0,
+    'La lista de defectos declarados ha cambiado de tamaño. Sólo puede menguar, y al menguar se ' +
+    'cambia este número en el mismo commit.');
+  for (const [k, motivo] of Object.entries(DECLARADOS)) {
+    assert.match(motivo, /^SCRUM-\d+ /, `«${k}» se declara sin decir de qué ticket viene.`);
+  }
+});

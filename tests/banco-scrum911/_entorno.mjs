@@ -2,6 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { exigirDestinoCorrecto } from '../../scripts/_clave-vs-destino.mjs';
 
 // 🔴 LA RAÍZ SE DERIVA, NO SE ESCRIBE. La primera versión llevaba `D:/MILLONARIO/cobroFlash/wt-888d`
 // a pelo, y eso ata el banco a UN worktree: al moverlo a `tests/` —o al correrlo desde otro árbol,
@@ -9,7 +10,9 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 // estar midiendo. Dos niveles arriba de este fichero (`tests/banco-scrum911/`) es la raíz.
 export const WT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..').replace(/\\/g, '/');
 // El fichero de secretos vive FUERA del repositorio, al lado de los worktrees, y ahí sigue.
-const SECRETOS = path.resolve(WT, '..', 'e2e-staging-secret.txt');
+// SCRUM-911b: `YAQU_ENV_FILE` manda, como en `scripts/turno-staging.mjs` (SCRUM-932). Los worktrees
+// de hoy viven en `.claude/worktrees/`, y desde ahí «al lado» ya no es donde está el fichero.
+const SECRETOS = process.env.YAQU_ENV_FILE || path.resolve(WT, '..', 'e2e-staging-secret.txt');
 export const BASE = 'https://yaqu-staging-production.up.railway.app';
 export const imp = (rel) => import(pathToFileURL(`${WT}/${rel}`).href);
 
@@ -23,15 +26,22 @@ export function cargarSecretos() {
   return out;
 }
 
+// SCRUM-1575d · STAGING SE COMPRUEBA POR DESTINO —host Y base—, ANTES DE ABRIR NADA. Hasta aquí
+// cada recorrido comparaba `host !== STAGING_HOST`, y desarrollo vive en el MISMO host (`acela`):
+// una `DATABASE_URL_STAGING` que apuntara a `yaqu_dev_javier` pasaba, y `paso3`/`paso4` escribían
+// en ella. Lanza con el motivo si no cuadra; devuelve la URL para que quien la usa sea la MISMA.
+export function exigirStaging(url) {
+  const r = exigirDestinoCorrecto('DATABASE_URL_STAGING', url, WT);
+  return { url, host: r.real.host, base: r.real.base };
+}
+
 export async function prismaStaging() {
   const s = cargarSecretos();
-  const { parseBDSegura, STAGING_HOST } = await imp('scripts/_db-guard.mjs');
-  const p = parseBDSegura(s.DATABASE_URL_STAGING);
-  if (!p || p.host !== STAGING_HOST) throw new Error(`NO ES STAGING (host=${p?.host ?? 'ilegible'})`);
+  const { url, host } = exigirStaging(s.DATABASE_URL_STAGING);
   const { PrismaClient } = await imp('node_modules/@prisma/client/index.js');
-  const db = new PrismaClient({ datasourceUrl: s.DATABASE_URL_STAGING });
+  const db = new PrismaClient({ datasourceUrl: url });
   const [{ current_database }] = await db.$queryRaw`select current_database()`;
-  return { db, base: current_database, host: p.host };
+  return { db, base: current_database, host };
 }
 
 export async function sesionQA() {

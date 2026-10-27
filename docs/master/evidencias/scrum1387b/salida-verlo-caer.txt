@@ -1,0 +1,20 @@
+HEAD 3ce35c00671c1bcf8d0637511131c0d964477181 · git status: limpio
+corte: 66f525403cce5faeaa4208cddd99da1a92fea40d (pos 2716 de 2718)
+población: 136 ficheros con «mut» en el nombre · 54 bancos · 31 fuera · 31 heredados · 0 nuevos · historia de 2718 commits · corte 66f525403 (2026-10-13T13:42:42+01:00)
+mutaciones declaradas en el test: 3
+
+OK  | BASE                               | todo pasa                                      | 6 casos · 6 pasan · 0 caen
+OK  | M1 «const fuera = false;»          | cae «el clasificador separa el banco con list…» | 6 casos · 1 pasan · 5 caen | ancla 1 vez · aplicada true · restaurada true · caen: 5
+OK  | M2 «return false;»                 | cae «un banco que entra después del corte sal…» | 6 casos · 3 pasan · 3 caen | ancla 1 vez · aplicada true · restaurada true · caen: 3
+OK  | M3 «if (!alta) return false;»      | cae «un guion que todavía no está en ningún c…» | 6 casos · 4 pasan · 2 caen | ancla 1 vez · aplicada true · restaurada true · caen: 2
+OK  | SEMBRADO sin comitear              | cae el del árbol y nombra carpeta y guion      | 6 casos · 5 pasan · 1 caen
+OK  | SEMBRADO y COMITEADO               | cae el del árbol y nombra carpeta y guion      | 6 casos · 5 pasan · 1 caen | alta del sembrado pos 2719 · corte pos 2716
+OK  | CLON SUPERFICIAL (con el sembrado) | cae el del árbol diciendo CIEGO                | 6 casos · 5 pasan · 1 caen | superficial=true
+OK  | SEMBRADO que toma las del test     | vuelve a pasar                                 | 6 casos · 6 pasan · 0 caen
+OK  | SEMBRADO sólo con salidas          | pasa                                           | 6 casos · 6 pasan · 0 caen
+OK  | HEREDADO + guion nuevo             | cae y nombra SÓLO el guion nuevo               | 6 casos · 5 pasan · 1 caen | heredado usado: docs/evidencias/scrum1317 (31 heredados)
+OK  | DESPUÉS                            | todo pasa, como la BASE                        | 6 casos · 6 pasan · 0 caen
+
+árbol después: HEAD igual · git status limpio
+filas 11 · mal 0
+EXIT=0

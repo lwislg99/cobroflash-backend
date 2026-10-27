@@ -1,0 +1,66 @@
+RECOGIDO 2026-10-08T01:06:23.000Z (cabecera Date de GitHub) · ventana de merged_at [2026-10-06T22:00:00Z, 2026-10-08T22:00:00Z)
+OBLIGATORIO segun las reglas de main: «build + tests (con banco desechable)»
+POBLACION: 53 PR · 159 corridas · 424 checks (ultimo intento) + 12 de intentos anteriores · 8 nombres de check distintos
+  por dia de Madrid (UTC+2): 2026-10-07: 46 · 2026-10-08: 7
+  PR sin ninguna corrida: 0 · corridas con 0 jobs: 0 · PR con algun check ausente: 0
+
+== A · SEGUNDA SONDA: los jobs (actions/runs/<id>/jobs) contra los check-runs (commits/<sha>/check-runs)
+  mismos id y misma conclusion: 436 · solo en jobs: 0 · solo en check-runs: 0 · misma id y conclusion distinta: 0
+  TERCERA SONDA, el primer padre de main en la ventana: 53 commits · PR de la API cuyo merge_commit esta entre ellos: 53 de 53 · numeros en los asuntos que la API no trajo: ninguno · PR de la API que no nombra ningun asunto: ninguno
+
+== B · TABLA: cada nombre de check, por estado (ultimo intento)
+  [OBLIGATORIO] CI / build + tests (con banco desechable)
+      VERDE 53 · ROJO 0 · CIEGO 0 · suma 53 de 53   {VERDE: success = 53}
+  CI / constancia del ALTER (informativo)
+      VERDE 52 · ROJO 1 · CIEGO 0 · suma 53 de 53   {VERDE: success = 52 ; ROJO: failure = 1}
+  CI / guards de navegador (fuera de la tanda)
+      VERDE 32 · ROJO 0 · CIEGO 21 · suma 53 de 53   {CIEGO: success sin su paso «Guards de navegador» (skipped) = 21 ; VERDE: success = 32}
+  CI / meta-guard · los guards caen cuando deben
+      VERDE 43 · ROJO 10 · CIEGO 0 · suma 53 de 53   {VERDE: success = 43 ; ROJO: failure = 10}
+  CI / trinquete · ningún test nuevo mide la zona de la máquina
+      VERDE 49 · ROJO 0 · CIEGO 4 · suma 53 de 53   {VERDE: success = 49 ; CIEGO: cancelled = 4}
+  CI / vigía del despliegue (informativo)
+      VERDE 0 · ROJO 0 · CIEGO 53 · suma 53 de 53   {CIEGO: skipped = 53}
+  PR automático (ramas scrum-) / abrir-pr-y-armar-automerge
+      VERDE 52 · ROJO 1 · CIEGO 0 · suma 53 de 53   {ROJO: failure = 1 ; VERDE: success = 52}
+  Zona roja / ¿este PR toca la zona roja?
+      VERDE 53 · ROJO 0 · CIEGO 0 · suma 53 de 53   {VERDE: success = 53}
+
+== C · CONTROLES, corridos ANTES de dar el numero
+  C1 cero derivado · check «CI / trinquete · ningún test nuevo mide la zona de la máquina +1»: 0 (debe ser 0) · PR #2294 (el mayor de la poblacion mas uno): 0 (debe ser 0)
+     y la misma busqueda SI ve lo real · check «PR automático (ramas scrum-) / abrir-pr-y-armar-automerge»: 1 · PR #2234: 3
+  C2 un PR fabricado con 0 corridas: 0 VERDE · 8 CIEGO por ausencia de 8 nombres (debe ser 0 y 8)
+  C3 jobs fabricados · success, pasos saltados → CIEGO · success de navegador sin su paso → CIEGO · success de navegador con su paso → VERDE · cancelled → CIEGO · in_progress → CIEGO · failure → ROJO · success con un paso hecho → VERDE
+
+== D · PR VERDES ENTEROS segun este metodo: todo check en VERDE, salvo los `skipped` (el vigia del despliegue no corre en ningun PR)
+  25 de 53: #2241 #2245 #2248 #2249 #2250 #2253 #2255 #2256 #2258 #2260 #2262 #2265 #2267 #2268 #2269 #2270 #2271 #2274 #2275 #2278 #2279 #2283 #2289 #2291 #2292
+
+== E · HALLAZGOS: checks NO obligatorios que no son VERDE, uno por linea
+   (los `skipped` y los `success` sin su paso van contados aparte al final: son CIEGO, pero por una condicion escrita en el workflow)
+  PR con algun check no obligatorio ROJO: 12 · con alguno CANCELADO o ciego (sin contar skipped): 4 · con una cosa u otra: 15 de 53
+  checks: 12 ROJO · 4 CIEGO
+  #2234  ROJO  failure  «abrir-pr-y-armar-automerge»  job 112468336343  acabo 2026-10-06T19:48:53Z · merge 2026-10-07T06:43:02Z · 654.1 min antes del merge · comentarios en el PR 0 (que hablan de rojo o fallo: 0)  · scrum-regla-lotes-y-cierre
+  #2240  ROJO  failure  «meta-guard · los guards caen cuando deben»  job 112658748910  acabo 2026-10-07T06:31:14Z · merge 2026-10-07T06:25:13Z · 6.0 min DESPUES del merge · comentarios en el PR 0 (que hablan de rojo o fallo: 0)  · scrum-1227b-el-gesto-de-guardar
+  #2247  ROJO  failure  «meta-guard · los guards caen cuando deben»  job 112667939990  acabo 2026-10-07T07:12:42Z · merge 2026-10-07T06:58:45Z · 13.9 min DESPUES del merge · comentarios en el PR 0 (que hablan de rojo o fallo: 0)  · scrum-930-plantilla-guarda-descripcion
+  #2251  ROJO  failure  «meta-guard · los guards caen cuando deben»  job 112682147837  acabo 2026-10-07T07:48:10Z · merge 2026-10-07T07:43:46Z · 4.4 min DESPUES del merge · comentarios en el PR 0 (que hablan de rojo o fallo: 0)  · scrum-1484b-una-frase-y-su-papel
+  #2257  CIEGO  cancelled  «trinquete · ningún test nuevo mide la zona de la máquina»  job 112870964892  acabo 2026-10-07T16:14:36Z · merge 2026-10-07T15:43:05Z · 31.5 min DESPUES del merge · comentarios en el PR 0 (que hablan de rojo o fallo: 0)  · scrum-1184b-ventana-de-firma-declarada
+  #2259  ROJO  failure  «meta-guard · los guards caen cuando deben»  job 112873222861  acabo 2026-10-07T15:57:06Z · merge 2026-10-07T15:45:35Z · 11.5 min DESPUES del merge · comentarios en el PR 0 (que hablan de rojo o fallo: 0)  · scrum-1123d-latido-dice-el-veredicto
+  #2261  ROJO  failure  «meta-guard · los guards caen cuando deben»  job 112877413270  acabo 2026-10-07T16:06:46Z · merge 2026-10-07T15:55:42Z · 11.1 min DESPUES del merge · comentarios en el PR 0 (que hablan de rojo o fallo: 0)  · scrum-1484c-la-a19-dice-que-el-latido-avisa
+  #2261  CIEGO  cancelled  «trinquete · ningún test nuevo mide la zona de la máquina»  job 112877412968  acabo 2026-10-07T16:28:15Z · merge 2026-10-07T15:55:42Z · 32.5 min DESPUES del merge · comentarios en el PR 0 (que hablan de rojo o fallo: 0)  · scrum-1484c-la-a19-dice-que-el-latido-avisa
+  #2263  CIEGO  cancelled  «trinquete · ningún test nuevo mide la zona de la máquina»  job 112883431831  acabo 2026-10-07T16:40:55Z · merge 2026-10-07T16:06:11Z · 34.7 min DESPUES del merge · comentarios en el PR 0 (que hablan de rojo o fallo: 0)  · scrum-1496-censo-de-abiertos-tres-hechos
+  #2273  CIEGO  cancelled  «trinquete · ningún test nuevo mide la zona de la máquina»  job 112906587066  acabo 2026-10-07T17:35:01Z · merge 2026-10-07T17:05:28Z · 29.6 min DESPUES del merge · comentarios en el PR 0 (que hablan de rojo o fallo: 0)  · scrum-1449-cuando-sale-cada-frase
+  #2277  ROJO  failure  «meta-guard · los guards caen cuando deben»  job 112914859767  acabo 2026-10-07T17:28:43Z · merge 2026-10-07T17:22:43Z · 6.0 min DESPUES del merge · comentarios en el PR 0 (que hablan de rojo o fallo: 0)  · scrum-1389-el-proceso-que-no-arranca-medido
+  #2281  ROJO  failure  «meta-guard · los guards caen cuando deben»  job 112922067780  acabo 2026-10-07T17:44:41Z · merge 2026-10-07T17:40:53Z · 3.8 min DESPUES del merge · comentarios en el PR 0 (que hablan de rojo o fallo: 0)  · scrum-1436f-los-importes-de-los-avisos
+  #2282  ROJO  failure  «meta-guard · los guards caen cuando deben»  job 112925625227  acabo 2026-10-07T17:54:11Z · merge 2026-10-07T17:50:53Z · 3.3 min DESPUES del merge · comentarios en el PR 0 (que hablan de rojo o fallo: 0)  · scrum-1393-quien-vigila-main-medido
+  #2284  ROJO  failure  «meta-guard · los guards caen cuando deben»  job 112939912316  acabo 2026-10-07T18:30:56Z · merge 2026-10-07T18:19:03Z · 11.9 min DESPUES del merge · comentarios en el PR 0 (que hablan de rojo o fallo: 0)  · scrum-1500-el-censo-contra-el-master
+  #2285  ROJO  failure  «constancia del ALTER (informativo)»  job 112940436019  acabo 2026-10-07T18:10:18Z · merge 2026-10-07T18:23:54Z · 13.6 min antes del merge · comentarios en el PR 0 (que hablan de rojo o fallo: 0)  · scrum-1502-veintiocho-firmas-sin-respaldo
+  #2290  ROJO  failure  «meta-guard · los guards caen cuando deben»  job 113076553309  acabo 2026-10-08T00:13:29Z · merge 2026-10-08T00:05:48Z · 7.7 min DESPUES del merge · comentarios en el PR 0 (que hablan de rojo o fallo: 0)  · scrum-1503b-la-dirigida-y-los-guards-de-arbol
+  aparte, CIEGO por una condicion escrita en el workflow: 74 → «guards de navegador (fuera de la tanda) [success sin su paso «Guards de navegador» (skipped)]» 21 · «vigía del despliegue (informativo) [skipped]» 53
+
+== F · INTENTOS ANTERIORES y corridas sustituidas de la misma punta (no cuentan arriba: los tapo un intento posterior)
+  #2264  ROJO  failure  «build + tests (con banco desechable)»  job 112884703499  intento 1 de 2  [OBLIGATORIO]
+  #2272  ROJO  failure  «build + tests (con banco desechable)»  job 112906403918  intento 1 de 2  [OBLIGATORIO]
+  #2272  CIEGO  cancelled  «trinquete · ningún test nuevo mide la zona de la máquina»  job 112906404262  intento 1 de 2
+
+== G · EL OBLIGATORIO en estos mismos PR (no es la pregunta; va para que la tabla tenga su otra mitad)
+  VERDE 53 · PR sin el obligatorio: 0

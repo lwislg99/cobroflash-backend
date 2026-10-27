@@ -8,9 +8,11 @@
 //
 // Datos EFÍMEROS propios con limpieza en el finally — nunca el seed demo (lección SCRUM-63).
 //
-// ⚠️ GATEADO (crea y BORRA merchants efímeros; levanta la app in-process):
-//   QA_DB_TEST=1 npm run test:staging
+// ⚠️ GATEADO (crea y BORRA merchants efímeros; levanta la app in-process). Dos destinos (SCRUM-876e):
+//   QA_DB_TEST=1 npm run test:staging                     → staging, por `_staging-db.mjs` (igual que antes)
+//   LIBRO_PG_URL=<banco loopback, base *_test> npm test   → el banco desechable que CI levanta para la tanda
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-876e: el segundo destino, fail-closed; no afloja el primero
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
@@ -18,8 +20,30 @@ import { crearFactura } from './_factura-fixture.mjs';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import http from 'node:http';
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+// `node:http` sin agente y no `fetch` (SCRUM-1218d): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de `fetch`
+// (status, headers.get, text, json). No sigue redirecciones: medido, las únicas 3xx son las de /auth/verify, que ya iban con `redirect: 'manual'`.
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    let d = ''; r.setEncoding('utf8');
+    r.on('data', (t) => { d += t; });
+    r.on('end', () => ok({
+      status: r.statusCode,
+      headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+      text: async () => d,
+      json: async () => JSON.parse(d),
+    }));
+  });
+  req.on('error', mal);
+  req.end(body);
+});
+
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 
 // ── 🔒 ASSERT DE REGRESIÓN (el que blinda esto para siempre) ──────────────
 // Si alguien devuelve el dir a public/ o reintroduce el mount estático, esto falla.
@@ -41,9 +65,13 @@ test('SCRUM-72: invoicesDir no cuelga de public/ (regresión — sin base)', asy
   assert.ok(normalized.includes('/storage/'), `invoicesDir debe vivir en storage/ (actual: ${invoicesDir})`);
 });
 
-test('SCRUM-72: PDFs de factura y presupuesto no son públicos (estático muerto + auth + tenancy)', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
+test('SCRUM-72: PDFs de factura y presupuesto no son públicos (estático muerto + auth + tenancy)', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
+  // SCRUM-876e: SCRUM-844 se llevó este `import` al test de arriba al sacarlo del gate, y éste se
+  // quedó leyendo una variable que ya no existía: moría en el paso 4 con `invoicesDir is not
+  // defined`. Nadie lo vio porque un gateado roto y uno sano dan el mismo `skipped`.
+  const { invoicesDir } = await import('../dist/core/storage/dirs.js');
 
   const server = app.listen(0);
   await new Promise((r) => server.once('listening', r));
@@ -88,7 +116,7 @@ test('SCRUM-72: PDFs de factura y presupuesto no son públicos (estático muerto
     await prisma.authSession.create({
       data: { merchantId, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) },
     });
-    const res = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
+    const res = await pedirSinAgente(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
     const cookie = (res.headers.get('set-cookie') || '').split(';')[0];
     assert.ok(cookie.startsWith('pf_session='), 'no se obtuvo cookie de sesión');
     return cookie;
@@ -100,22 +128,22 @@ test('SCRUM-72: PDFs de factura y presupuesto no son públicos (estático muerto
     const cookieB = await mkCookie(merchantB.id);
 
     // ── 1) ESTÁTICO MUERTO: nombre VIEJO, sin cookie ────────────────────────
-    const oldName = await fetch(`${base}/invoices/${numero}.pdf`);
+    const oldName = await pedirSinAgente(`${base}/invoices/${numero}.pdf`);
     assert.ok(oldName.status === 404, `el estático viejo debe estar muerto (fue ${oldName.status})`);
     assert.ok(!isPdf(oldName), 'el estático viejo no debe devolver un PDF');
 
     // ── 2) ESTÁTICO MUERTO: nombre NUEVO (con merchantId), sin cookie ───────
-    const newName = await fetch(`${base}/invoices/${merchantA.id}-${numero}.pdf`);
+    const newName = await pedirSinAgente(`${base}/invoices/${merchantA.id}-${numero}.pdf`);
     assert.ok(newName.status === 404, `el nombre nuevo tampoco debe servirse (fue ${newName.status})`);
     assert.ok(!isPdf(newName), 'el nombre nuevo no debe devolver un PDF');
 
     // ── 3) PRESUPUESTO: su PDF tampoco es accesible por estático ────────────
-    const quotePub = await fetch(`${base}/invoices/QUOTE-${quoteA.id}.pdf`);
+    const quotePub = await pedirSinAgente(`${base}/invoices/QUOTE-${quoteA.id}.pdf`);
     assert.ok(quotePub.status === 404, `el PDF de presupuesto no debe ser público (fue ${quotePub.status})`);
     assert.ok(!isPdf(quotePub), 'el PDF de presupuesto no debe servirse sin auth');
 
     // ── 4) FELIZ + LEGACY (D4): el admin descarga y se REGENERA con nombre nuevo ──
-    const own = await fetch(`${base}/admin/invoices/${invoiceA.id}/pdf`, { headers: { cookie: cookieA } });
+    const own = await pedirSinAgente(`${base}/admin/invoices/${invoiceA.id}/pdf`, { headers: { cookie: cookieA } });
     assert.equal(own.status, 200, 'el admin debe poder descargar su factura');
     assert.ok(isPdf(own), 'debe devolver un PDF');
     const expectedDisk = path.join(invoicesDir, `${merchantA.id}-${numero}.pdf`);
@@ -124,11 +152,11 @@ test('SCRUM-72: PDFs de factura y presupuesto no son públicos (estático muerto
     assert.equal(after.pdfUrl, `/admin/invoices/${invoiceA.id}/pdf`, 'pdfUrl legacy debe quedar resuelto al endpoint auth');
 
     // ── 5) TENANCY: el merchant B no accede a la factura de A ───────────────
-    const cross = await fetch(`${base}/admin/invoices/${invoiceA.id}/pdf`, { headers: { cookie: cookieB } });
+    const cross = await pedirSinAgente(`${base}/admin/invoices/${invoiceA.id}/pdf`, { headers: { cookie: cookieB } });
     assert.equal(cross.status, 404, 'otro merchant no debe acceder al PDF (esperado 404)');
 
     // ── 6) SIN COOKIE contra el endpoint auth ──────────────────────────────
-    const anon = await fetch(`${base}/admin/invoices/${invoiceA.id}/pdf`);
+    const anon = await pedirSinAgente(`${base}/admin/invoices/${invoiceA.id}/pdf`);
     assert.ok(anon.status === 401 || anon.status === 403 || anon.status === 404,
       `sin sesión no se sirve el PDF (fue ${anon.status})`);
 
@@ -137,7 +165,7 @@ test('SCRUM-72: PDFs de factura y presupuesto no son públicos (estático muerto
     // podía ser sólo "fichero inexistente", no "directorio no servido". Ahora el
     // fichero SÍ existe (lo regeneró el paso 4) → si sigue dando 404, la prueba es real.
     assert.ok(fs.existsSync(expectedDisk), 'precondición: el PDF debe existir en disco');
-    const servedAnyway = await fetch(`${base}/invoices/${merchantA.id}-${numero}.pdf`);
+    const servedAnyway = await pedirSinAgente(`${base}/invoices/${merchantA.id}-${numero}.pdf`);
     assert.equal(servedAnyway.status, 404,
       'FUGA: el PDF existe en disco y el estático lo sirve → el directorio sigue publicado');
     assert.ok(!isPdf(servedAnyway), 'FUGA: content-type de PDF en la ruta pública');
@@ -146,7 +174,7 @@ test('SCRUM-72: PDFs de factura y presupuesto no son públicos (estático muerto
     // tampoco se alcanza (mismo directorio, misma prueba real).
     const quoteCanary = path.join(invoicesDir, `QUOTE-${quoteA.id}.pdf`);
     fs.writeFileSync(quoteCanary, '%PDF-1.4 canary SCRUM-72');
-    const quoteServed = await fetch(`${base}/invoices/QUOTE-${quoteA.id}.pdf`);
+    const quoteServed = await pedirSinAgente(`${base}/invoices/QUOTE-${quoteA.id}.pdf`);
     assert.equal(quoteServed.status, 404,
       'FUGA: el PDF de presupuesto existe en disco y se sirve por el estático');
 
@@ -155,7 +183,9 @@ test('SCRUM-72: PDFs de factura y presupuesto no son públicos (estático muerto
     // rompiera, el cliente se quedaría sin botón Y sin documento: peor que el problema
     // original. Aquí se construye el email de VERDAD y se comprueba el adjunto.
     // Nota de alcance: el outbox .eml y el adjunto del fallback los ARREGLÓ SCRUM-76 (con test
-    // propio en tests/scrum76-email-adjunto.test.mjs). Este test conserva la verificación del
+    // propio en tests/scrum76-email-adjunto.test.mjs, GATEADO por QA_DB_TEST: el CI no lo corre,
+    // así que esa cobertura NO existe en el check obligatorio — SCRUM-1178). Este test conserva la
+    // verificación del
     // ADJUNTO por su FUENTE REAL: `ensureInvoicePdf`, que es exactamente lo que sendInvoiceEmail
     // lee y adjunta (email.service.ts:29-30). Si el movimiento de directorio hubiera roto el
     // adjunto, esto falla.

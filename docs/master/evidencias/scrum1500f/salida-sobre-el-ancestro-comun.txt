@@ -1,0 +1,41 @@
+(1) por bytes, contra el ancestro comun con origin/main = aa0b22acc3abe8572cd5e527caed0dab1e5c0f31
+ok  .claude/skills/yaqu-verifactu-sif/SKILL.md · LF 90 -> 90 · CR 0 · BOM false · bytes 6213 -> 7257 · lineas distintas: 57,58,59,60,61 (esperadas: 57,58,59,60,61)
+ok  .agents/skills/yaqu-verifactu-sif/SKILL.md · LF 90 -> 90 · CR 0 · BOM false · bytes 6213 -> 7257 · lineas distintas: 57,58,59,60,61 (esperadas: 57,58,59,60,61)
+ok  docs/legal/AUDITORIA_CAMINO_EMISION.md · LF 240 -> 240 · CR 0 · BOM false · bytes 20432 -> 21121 · lineas distintas: 52 (esperadas: 52)
+ok  docs/legal/INVENTARIO_AFIRMACIONES_VERIFACTU.md · LF 499 -> 499 · CR 0 · BOM false · bytes 28869 -> 29846 · lineas distintas: 416 (esperadas: 416)
+ok  docs/legal/PREGUNTAS_ASESOR.md · LF 1410 -> 1410 · CR 0 · BOM false · bytes 112150 -> 113022 · lineas distintas: 461,463,464 (esperadas: 461,463,464)
+ok  tests/scrum298-modo-visible.test.mjs · LF 304 -> 304 · CR 0 · BOM false · bytes 21001 -> 21622 · lineas distintas: 9,10 (esperadas: 9,10)
+ok  fuera de docs/master cambian 6 ficheros y son los 6 esperados
+ok  src/, prisma/ y public/: 0 ficheros cambiados
+(2) el espejo de la skill
+ok  byte a byte: 7257 y 7257 bytes
+ok  control positivo: con UN byte de mas, la comparacion lo ve
+(3) el test, solo el comentario
+    typescript 5.9.2 desde C:\Users\Javier Pereira\cobroflash-backend\node_modules\typescript\lib\typescript.js
+ok  tokens de codigo: 451 antes, 451 despues, identicos
+ok  control positivo: con UN token de codigo cambiado, sale distinto
+(4) la cita de PREGUNTAS_ASESOR.md contra modoVisible.ts
+ok  la linea 463 lleva el corchete de modoVisible.ts:22, literal (666 caracteres)
+ok  control de cero: un corchete con un ticket derivado (SCRUM-1500z) no aparece
+ok  la linea 461 conserva la coordenada src/modules/invoicing/domain/modoVisible.ts:21-24
+(5) quien sigue diciendo la frase vieja (git grep, fuera de docs/master y docs/historico)
+    control positivo: 145 lineas nombran vfSubmission · control de cero (vfSubmissionZ): 0
+    lineas con la frase vieja: 17 = 7 que la citan dentro de su correccion + 10 SIN CORREGIR
+      corregida   .agents/skills/yaqu-verifactu-sif/SKILL.md:57:- 🔴 **NO CONSTRUIDO · FSM `VfSubmission`.** [Corregido el 8-oct
+      corregida   .claude/skills/yaqu-verifactu-sif/SKILL.md:57:- 🔴 **NO CONSTRUIDO · FSM `VfSubmission`.** [Corregido el 8-oct
+      corregida   docs/legal/AUDITORIA_CAMINO_EMISION.md:52:pinta el QR. **~~No se encola y~~ no se envía.** *(Corregido el 8-oc
+      corregida   docs/legal/INVENTARIO_AFIRMACIONES_VERIFACTU.md:416:  remisión»`. *(Nota del 8-oct-2026, SCRUM-1500f, decisión
+      corregida   docs/legal/PREGUNTAS_ASESOR.md:463:  > «**"se envía" NO EXISTE.** Cero clientes SOAP/mTLS contra la AEAT. [Cor
+      corregida   src/modules/invoicing/domain/modoVisible.ts:22:// la AEAT. [Corregido el 8-oct-2026, SCRUM-1500e, decisión del
+      corregida   tests/scrum298-modo-visible.test.mjs:9:// existe**: cero clientes SOAP/mTLS contra la AEAT. [Corregido el 8-oc
+      SIN TOCAR   docs/RUNBOOKS.md:76:> AEAT vía una cola `VfSubmission` que nunca se construyó (cero tabla, cero envío, cero
+      SIN TOCAR   docs/legal/AUDITLOG_FISCAL_CONTRATO.md:300:**respuestas de la AEAT**, y la remisión no existe (`SIF_ENABLED=false`, sin `VfSubmission` en el
+      SIN TOCAR   docs/legal/AUDITLOG_FISCAL_CONTRATO.md:777:- **La remisión a la AEAT no existe** (`SIF_ENABLED=false`, sin `VfSubmission` en el schema), así
+      SIN TOCAR   docs/legal/INVENTARIO_AFIRMACIONES_SKILLS.md:175:`VfSubmission` no está en el esquema — medido arriba.
+      SIN TOCAR   docs/legal/INVENTARIO_AFIRMACIONES_VERIFACTU.md:406:  tabla ni columna de respuesta | Sin VfSubmission en el schema`.
+      SIN TOCAR   docs/legal/INVENTARIO_AFIRMACIONES_VERIFACTU.md:408:  remisión al SIF (S1-D) **no está construida** y VfSubmission es un modelo del máster que aún no
+      SIN TOCAR   docs/legal/INVENTARIO_AFIRMACIONES_VERIFACTU.md:411:  existe** (SIF_ENABLED=false, sin VfSubmission en el schema)`. Correcto en el hecho; el paréntesi
+      SIN TOCAR   docs/legal/INVENTARIO_AFIRMACIONES_VERIFACTU.md:415:  Cero clientes SOAP/mTLS contra la AEAT, VfSubmission no está en el schema, no hay cola de
+      SIN TOCAR   docs/legal/SEMAFORO_MAPA_EMISION.md:295:| **¿Qué contestó la AEAT?** | 🔴 **No existe.** No hay tabla ni columna de respuesta | Sin `VfSubmission` en 
+      SIN TOCAR   docs/legal/SEMAFORO_MAPA_EMISION.md:301:no hay envío**. La remisión al SIF (S1-D) no está construida y `VfSubmission` es un modelo del
+resultado: todo cuadra

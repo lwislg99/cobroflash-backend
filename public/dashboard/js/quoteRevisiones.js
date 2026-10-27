@@ -67,6 +67,61 @@
     errorCrear: 'No se ha podido crear la revisión. Vuelve a intentarlo.',
   };
 
+  // SCRUM-1302 · EL AVISO ANTES DE CREAR LA REVISIÓN. Al crearla, el enlace que tiene el cliente de la
+  // versión anterior deja de valer (la página pública lo dice: `versionMasReciente.ts`), y el panel
+  // tiene que decírselo al profesional ANTES, no romperlo en silencio. W1 y W2, «Cancelar» y la
+  // conducta, firmados por el orquestador por delegación del fundador (SCRUM-1302, c.19475, sobre la
+  // propuesta de c.19456): `docs/microcopy/2026-10-13-SCRUM-1302-aviso-al-crear-revision.md`.
+  //
+  // `{numero}` es el de la fila sobre la que actúa el botón (la VIGENTE), tal como lo pinta la lista:
+  // puede no ser la versión que está abierta.
+  var TEXTOS_AVISO = {
+    titulo: 'Al crear la revisión, el enlace de {numero} dejará de valer.',
+    cuerpo: 'Quien lo abra verá que hay una versión más reciente y ya no podrá aceptar. Envíale la nueva a tu cliente cuando esté lista.',
+    cancelar: 'Cancelar',
+  };
+  // 🔴 LA MISMA CONDICIÓN QUE LA PÁGINA (`ESTADOS_CON_ENLACE_VIVO` en
+  // `src/modules/quotes/domain/versionMasReciente.ts`): sólo avisa si el enlace va a morir. Y NO se
+  // estrecha a `sent`: copiar el enlace ya es entregarlo y el estado se queda en `draft` (SCRUM-1297),
+  // así que un borrador no prueba que el enlace no haya salido (c.19475). Y `expired` también
+  // (c.19636): el enlace de una caducada pasa de «caducó» a «hay una versión más reciente».
+  var ESTADOS_CON_ENLACE_VIVO = ['draft', 'sent', 'expired'];
+
+  // SCRUM-1150 · CUANDO «CREAR REVISIÓN» FALLA, LA PANTALLA DECIDE POR EL CÓDIGO, NO PINTA EL
+  // `message` QUE VENGA. Conducta y literales firmados por el orquestador por delegación del
+  // fundador (SCRUM-1150, comentario 18740, 7-oct-2026):
+  // `docs/microcopy/2026-10-07-SCRUM-1150-crear-revision-por-codigo.md`.
+  //
+  // Hasta aquí se pintaba `data.message` de cualquier respuesta, y uno de esos mensajes era el
+  // diagnóstico de un programador: ocho líneas a 390 px («DOS VIGENTES A LA VEZ: …»). El servidor
+  // ya no lo manda (#2330), pero la puerta es ésta: un mensaje de excepción NUEVO no puede llegar
+  // a la cara de nadie, porque lo que no esté en esta tabla cae en `TEXTOS.errorCrear`.
+  //
+  // Los códigos son los de `POST /admin/quotes/:id/revisiones` (`quotesAdmin.routes.ts`); que cada
+  // clave de aquí exista en el servidor lo ata `tests/scrum1150b-…`.
+  var TEXTO_POR_CODIGO = {
+    quote_sin_numero: 'No se puede crear una revisión: este presupuesto no tiene número.',
+    quote_not_found: 'No se puede crear una revisión: este presupuesto ya no existe.',
+  };
+  // El ÚNICO código cuyo `message` del servidor pasa tal cual: está firmado (SCRUM-887, L2r) y
+  // atado al dominio por `tests/scrum887c-caso-c-bloqueado.test.mjs`.
+  var CODIGO_QUE_TRAE_SU_TEXTO = 'descuento_global_con_varios_iva';
+  //
+  // Caen en el general A PROPÓSITO, y se dice cuál no debería:
+  //   · `revisiones_sin_leer`: «vuelve a intentarlo» es cierto (SCRUM-1150 c.19085).
+  //   · `revision_no_posterior`, `revisiones_sin_la_propia`: fallos nuestros, sin frase propia.
+  //   · `revisiones_dos_vigentes`: aquí «vuelve a intentarlo» NO es cierto (son los datos). Su
+  //     frase está propuesta en c.19098 y SIN FIRMA al escribir esto: no se pinta hasta que conste.
+  function textoDelFalloAlCrear(e) {
+    var codigo = e && e.data && typeof e.data.error === 'string' ? e.data.error : null;
+    if (codigo !== null && Object.prototype.hasOwnProperty.call(TEXTO_POR_CODIGO, codigo)) {
+      return TEXTO_POR_CODIGO[codigo];
+    }
+    // SCRUM-1233 · leer el mensaje del servidor sigue viviendo en UN sitio (`mensajeParaPersona`).
+    if (codigo === CODIGO_QUE_TRAE_SU_TEXTO) return mensajeParaPersona(e, TEXTOS.errorCrear);
+    return TEXTOS.errorCrear;
+  }
+
   function esc(v) {
     return String(v === null || v === undefined ? '' : v)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -173,8 +228,58 @@
    */
   function botonCrearRevision(vigente) {
     if (!vigente || vigente.id == null) return '';
+    // SCRUM-1302 · el botón lleva consigo si tiene que avisar y de qué número: el estado ya viaja en
+    // cada fila (`quoteAdmin.ts`), y así el cableado no vuelve a buscar la vigente.
+    var avisa = ESTADOS_CON_ENLACE_VIVO.indexOf(vigente.status) !== -1;
     return '<button type="button" class="btn btn-ghost" data-revision-crear="' + esc(vigente.id) + '"' +
+      (avisa ? ' data-revision-avisa="' + esc(vigente.numero) + '"' : '') +
       ' style="margin-top:8px;font-size:13px">' + esc(TEXTOS.crearRevision) + '</button>';
+  }
+
+  /**
+   * SCRUM-1302 · pinta el aviso EN EL SITIO, debajo del botón, con sus dos botones. El primer clic no
+   * crea nada; crea el de «Crear revisión» del aviso. «Cancelar» lo deja como estaba.
+   */
+  function pintarAvisoDelEnlace(contenedor, btn, numero, alConfirmar) {
+    btn.hidden = true;
+    var aviso = document.createElement('div');
+    aviso.setAttribute('data-revision-aviso', '1');
+    aviso.className = 'revision-aviso';
+    // Aparece después de pulsar: un lector de pantalla tiene que oírlo, como el aviso de error.
+    aviso.setAttribute('role', 'alert');
+    var titulo = document.createElement('strong');
+    titulo.textContent = TEXTOS_AVISO.titulo.replace('{numero}', numero);
+    var cuerpo = document.createElement('p');
+    cuerpo.textContent = TEXTOS_AVISO.cuerpo;
+    var crear = document.createElement('button');
+    crear.type = 'button';
+    crear.className = 'btn btn-ghost';
+    crear.setAttribute('data-revision-confirmar', '1');
+    crear.textContent = TEXTOS.crearRevision;
+    var cancelar = document.createElement('button');
+    cancelar.type = 'button';
+    cancelar.className = 'btn btn-ghost';
+    cancelar.setAttribute('data-revision-cancelar', '1');
+    cancelar.textContent = TEXTOS_AVISO.cancelar;
+    aviso.appendChild(titulo);
+    aviso.appendChild(cuerpo);
+    aviso.appendChild(crear);
+    aviso.appendChild(cancelar);
+    contenedor.appendChild(aviso);
+    // El botón pulsado se oculta y el foco no puede quedarse en él. Va a «Cancelar», lo que no rompe
+    // nada: un segundo Intro sin leer no crea la revisión.
+    if (typeof cancelar.focus === 'function') cancelar.focus();
+    cancelar.addEventListener('click', function () {
+      aviso.remove();
+      btn.hidden = false;
+      if (typeof btn.focus === 'function') btn.focus();
+    });
+    crear.addEventListener('click', function () {
+      // Que dos clics no creen dos revisiones, y que el aviso no quede pintado sobre el resultado.
+      aviso.remove();
+      btn.hidden = false;
+      alConfirmar();
+    });
   }
 
   /**
@@ -190,6 +295,21 @@
     if (!btn) return false;
     var api = pedir || (typeof window !== 'undefined' ? window.apiRequest : null);
     btn.addEventListener('click', function () {
+      // SCRUM-1150 · el aviso del intento ANTERIOR se quita al volver a pulsar. Cada fallo colgaba
+      // otro párrafo debajo del anterior (medido: dos fallos, dos avisos), y mientras el segundo
+      // intento está en vuelo el primero ya no dice nada cierto.
+      var viejos = contenedor.querySelectorAll('[data-revision-error]');
+      for (var v = 0; v < viejos.length; v += 1) viejos[v].remove();
+      // SCRUM-1302 · si el enlace de la vigente va a morir, el primer clic sólo avisa.
+      var numero = btn.getAttribute('data-revision-avisa');
+      if (numero !== null) {
+        if (contenedor.querySelector('[data-revision-aviso]')) return;
+        pintarAvisoDelEnlace(contenedor, btn, numero, crear);
+        return;
+      }
+      crear();
+    });
+    function crear() {
       var id = btn.getAttribute('data-revision-crear');
       btn.disabled = true; // que dos clics no creen dos revisiones
       Promise.resolve()
@@ -197,15 +317,14 @@
         .then(function (r) { if (typeof alCrear === 'function') alCrear(r); })
         .catch(function (e) {
           btn.disabled = false;
-          // El motivo NO se inventa: si el servidor manda uno, se enseña el suyo.
-          // SCRUM-1215 (lote 4) · «el suyo» es `data.message`, el que el servidor escribe para una
-          // persona (`RevisionNoCreable`). NO `e.message`: `apiRequest` lo compone SIEMPRE
-          // —«API 500: internal_error», o «Failed to fetch» sin red— y así el texto firmado no se
-          // pintaba nunca. Lo que no traiga `data.message` cae en `errorCrear`, nunca al revés.
-          // SCRUM-1233 · esa regla vive ya en UN sitio, `mensajeParaPersona` (api.js).
-          var msg = mensajeParaPersona(e, TEXTOS.errorCrear);
+          // SCRUM-1215 (lote 4) · NUNCA `e.message`: `apiRequest` lo compone SIEMPRE —«API 500:
+          // internal_error», o «Failed to fetch» sin red— y así el texto firmado no se pintaba.
+          // SCRUM-1150 · y tampoco `data.message` a ciegas: decide el CÓDIGO (arriba).
+          var msg = textoDelFalloAlCrear(e);
           var aviso = document.createElement('p');
           aviso.setAttribute('data-revision-error', '1');
+          // Es un fallo que aparece después de pulsar: un lector de pantalla tiene que oírlo.
+          aviso.setAttribute('role', 'alert');
           // La clase vive en `styles.css` (regla 4: ni un estilo en línea, y `style.cssText`
           // cuenta). Aquí había un `cssText` con `--danger`, y el trinquete de SCRUM-713c lo
           // cazó: 349 sobre un techo de 348.
@@ -213,7 +332,7 @@
           aviso.textContent = msg;
           contenedor.appendChild(aviso);
         });
-    });
+    }
     return true;
   }
 
@@ -222,6 +341,9 @@
   window.revisionesOCeguera = revisionesOCeguera;
   window.puedeEditarseLaRevision = puedeEditarse;
   window.REVISIONES_TEXTOS = TEXTOS;
+  // SCRUM-1302 · el aviso del enlace, aparte: `TEXTOS` es el bloque firmado en SCRUM-688 y lo
+  // comparan byte a byte sus tests.
+  window.REVISIONES_TEXTOS_AVISO = TEXTOS_AVISO;
   // SCRUM-688 · el cableado de crear.
   window.cablearCrearRevision = cablearCrearRevision;
 })();

@@ -108,6 +108,7 @@ const PUBLIC = path.join(RAIZ, 'public');
 import { lanzarNavegador } from './_navegador.mjs';
 import { levantarServidor } from './_servidor.mjs';
 import { veredictoDe, recorrerCasos } from './_hallazgos-y-ciegos.mjs';
+import { enlacesDelPanel, TIPOS_DE_FUENTE, esperarFuentes, cegueraDeLaFuente, decirFuente } from './_hojas-del-panel.mjs';
 // SCRUM-522 · la ruta ya no se escribe aqui. Era una ruta de WINDOWS por defecto, identica en
 // los nueve guards, y por eso ninguno podia correr en el runner de CI —Ubuntu— donde de verdad
 // hacen falta. `rutaDelNavegador` busca en los sitios conocidos y, si no hay ninguno, PARA
@@ -182,14 +183,17 @@ const CONOCIDOS = {
  */
 const EXCEPCIONES = [];
 
-const TIPOS = { '.css': 'text/css', '.js': 'text/javascript', '.html': 'text/html', '.png': 'image/png', '.json': 'application/json', '.svg': 'image/svg+xml' };
+const TIPOS = { '.css': 'text/css', '.js': 'text/javascript', '.html': 'text/html', '.png': 'image/png', '.json': 'application/json', '.svg': 'image/svg+xml', ...TIPOS_DE_FUENTE };
+// SCRUM-1603 · las hojas del panel salen DEL ÍNDICE, con `/fonts/inter.css`: sin ella se medía con
+// la fuente de reserva (Segoe UI en Windows) y el campo `.input` daba 36 px donde la app da 34.
+const HOJAS_DEL_PANEL = enlacesDelPanel(PUBLIC);
 // SCRUM-782 · LA PÁGINA DEL PANEL. Se monta con el banco de vistas y se SERIALIZA: el marcado que
 // llega al navegador lo produce el PRODUCTO (`renderCustomersView`), no una tabla escrita aquí.
 // Si no se puede montar, se dice y se sale CIEGO — no se mide media casa y se llama verde.
 const PANEL = await paginaDeClientes(RAIZ);
 const PANEL_HTML = PANEL.html && `<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="/tokens.css"><link rel="stylesheet" href="/dashboard/css/styles.css">
+${HOJAS_DEL_PANEL}
 </head><body><div class="view-container">${PANEL.html}</div></body></html>`;
 
 // ═══ SCRUM-791 · LAS DOS SUPERFICIES QUE PROPUSO EL CENSO DE SCRUM-787 ═══════════════════════
@@ -237,7 +241,7 @@ const SONDAS_UMBRAL_HTML =
 
 const envolver = (cuerpo) => `<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="/tokens.css"><link rel="stylesheet" href="/dashboard/css/styles.css">
+${HOJAS_DEL_PANEL}
 </head><body><div class="view-container">${cuerpo}</div></body></html>`;
 
 // ═══ SCRUM-795 · LOS DATOS DE LA FICHA 360 ════════════════════════════════════════════════════
@@ -346,10 +350,18 @@ const SUPERFICIES_791 = [
   // 44 px (`.quote-lines-header > .btn-sm`), medidos con ESTE guard antes y después:
   //     «✨ Sugerir con IA»    BUTTON.btn-ghost.btn-sm                   30,7 → cumple a 929 y a 390
   //     «📋 Usar plantilla»    BUTTON.btn-ghost.btn-sm.quote-header-btn  30,7 → cumple a 929 y a 390
-  // Siguen: las casillas de 17 px (INPUT) y «+ Añadir descuento» (ver su excepción: 43,6 px, y es
-  // el banco, no el producto).
-  { ruta: '/__quotes', vista: 'renderQuotesView', titulo: 'editor de presupuesto', distintosEsperados: 2,
-    origen: 'SCRUM-1148 (26-sep-2026, con el mínimo de cada ancho)', preparar: abrirTodosLosPasos },
+  // 🔴 SCRUM-1158 · 15-oct-2026 · 2 → 1, y el que sale VA NOMBRADO:
+  //     «+ Añadir descuento»   BUTTON.btn-ghost.btn-sm   43,6 → cumple a 929 y a 390
+  // No cambió el botón: cambió el BANCO. Su 43,6 era el `<span>` «Descuento global», que el
+  // producto oculta con `hidden` y el mini-DOM pintaba (no reflejaba la propiedad). Con el banco
+  // arreglado ese campo ya no sale en la página serializada y el botón mide sus 44. Lo nombró el
+  // detector de sobrantes, medido con ESTE guard antes y después. Sigue: las casillas de 17 px.
+  // S2: 🔴 SCRUM-962f · 1 → 0. El último corto eran las casillas de «Ajustes del documento» a 17 px
+  // S2: (radios «Razón social / Nombre comercial» y «Incluir descripción en el PDF»): ahora su etiqueta
+  // S2: sube a 44 y el control lleva un `::before` de 44 (styles.css, bloque SCRUM-962f). Medido con
+  // S2: ESTE guard antes (1, verde) y después (0: CIEGO + excepción SOBRANTE, que es lo que pide bajar).
+  { ruta: '/__quotes', vista: 'renderQuotesView', titulo: 'editor de presupuesto', distintosEsperados: 0,
+    origen: 'SCRUM-962f (22-oct-2026, casillas de Ajustes del documento a 44)', preparar: abrirTodosLosPasos },
   // 🔴 SCRUM-848 · `datos` NO es una excepción nueva ni un número tocado: es la SUPERFICIE.
   //
   // Sin él, el banco montaba esta ficha con `{}` — un Trabajo SIN `status`, que el producto no
@@ -380,7 +392,8 @@ const SUPERFICIES_791 = [
   // 14 px) dejó de estar. Con CERO deuda CONOCIDA la ficha salió de esta lista citando
   // `npm run censo:tactil-panel` como red — y esa red **no corre en ningún sitio automático ni
   // bloquea nada** (medido por S0, SCRUM-1172: no está en los workflows, ni en
-  // `guards-visuales.mjs`, ni en `test`). Cero deuda CONOCIDA no es cero deuda: es que nadie
+  // `guards-visuales.mjs`, ni en `test`). (SCRUM-1178, 15-oct-2026: desde SCRUM-1179-C SÍ corre en
+  // cada PR, en el job informativo; cuenta, pero sigue sin bloquear nada.) Cero deuda CONOCIDA no es cero deuda: es que nadie
   // miraba, y detrás había botones de COBRO a 30 px («📲 Confirmar Bizum recibido», acciones de
   // cobro, «Enlace de pago»).
   //
@@ -517,6 +530,21 @@ PUERTO = await levantarServidor(srv, PUERTO);
 process.on('exit', () => { try { srv.close(); } catch { /* ya cerrado */ } });
 const navegador = await lanzarNavegador(puppeteer, { headless: 'new' });
 
+// SCRUM-1603 · TRAS CADA `goto`, LA FUENTE. `font-display: swap` pinta con la de reserva hasta que
+// llega Inter: medir en el `load` a pelo mide unas veces una y otras la otra. Toda navegación de este
+// guard va seguida de esto, y una página cuyas caras no cargan es un CIEGO, no un verde.
+// ⚠️ El `goto` se queda escrito en cada sitio, con su URL literal: `_solape-de-guards.mjs` (SCRUM-548)
+// sabe qué página mide cada guard LEYENDO esos `goto`, y un ayudante que navegara por dentro los
+// volvería invisibles (medido: el `5×/index.html` bajaba a 4× y `scrum548` caía).
+const fuentesVistas = new Map();
+const esperarLaFuente = async (page, ruta) => {
+  const f = await esperarFuentes(page);
+  const ceguera = cegueraDeLaFuente(f, ruta);
+  if (ceguera) noSupeMirar('   ' + ceguera);
+  fuentesVistas.set(decirFuente(f), (fuentesVistas.get(decirFuente(f)) || 0) + 1);
+  return f;
+};
+
 /** El código que corre DENTRO de la página. Va como cadena para poder inyectarlo dos veces. */
 const MEDIDOR = `(async (INTERACTIVOS, MIN, DESTAPAR_SELS, CON_SCROLL) => {
   const espera = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
@@ -591,6 +619,7 @@ const recorridoLanding = await recorrerCasos(ANCHOS, async (ancho) => {
   const MIN = minimoPara(ancho);
   await page.setViewport({ width: ancho, height: 900 });
   await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'load' });
+  await esperarLaFuente(page, '/');
 
   decir('\n════════════════════════════════════════════════════════════════════════════');
   decir(`ANCHO ${ancho} px`);
@@ -599,6 +628,7 @@ const recorridoLanding = await recorrerCasos(ANCHOS, async (ancho) => {
   // ── ⓪ CONTROL DEL SCROLL: ¿está el scroll haciendo algo, o me lo estoy creyendo? ─────────
   const sinScroll = await page.evaluate(`${FUENTE_MEDIDOR};${MEDIDOR}(${JSON.stringify(INTERACTIVOS)}, ${MIN}, ${JSON.stringify(DESTAPAR.map((d) => d.sel))}, false)`);
   await page.goto(`http://127.0.0.1:${PUERTO}/`, { waitUntil: 'load' });   // página limpia
+  await esperarLaFuente(page, '/');
   const r = await page.evaluate(`${FUENTE_MEDIDOR};${MEDIDOR}(${JSON.stringify(INTERACTIVOS)}, ${MIN}, ${JSON.stringify(DESTAPAR.map((d) => d.sel))}, true)`);
 
   const pieSin = sinScroll.medidos.filter((m) => m.seccion === 'footer').length;
@@ -685,10 +715,12 @@ for (const c of recorridoLanding.ciegos) noSupeMirar(`   🔴 NO SUPE MIRAR · $
  * QUIÉN LA RETIRA: el fundador, decidiendo qué hacer con `.btn-sm` (subirla a 44, o darle área con
  * un pseudo como se ha hecho aquí con la casilla). El día que se decida, esta lista se vacía.
  */
-const EXCEPCIONES_PANEL = [
-  { sel: 'BUTTON.btn-secondary.btn-sm', motivo: 'clase compartida `.btn-sm` (30 px de caja) — «Importar CSV», «Editar», «Portal». Pre-existente, medido 30,8–31,0 px. Lo retira el fundador al decidir sobre `.btn-sm`.' },
-  { sel: 'BUTTON.btn-ghost.btn-sm', motivo: 'clase compartida `.btn-sm` — «📊 Historial». Pre-existente, medido 30,9 px.' },
-];
+// SCRUM-1149 (J2, 20-oct-2026) · VACÍA. El fundador decidió el 21-sep (SCRUM-786 c.16266) la opción ③:
+// reglas por contenedor, nunca `.btn-sm` global. La de la lista de Clientes (`.clientes-lista`,
+// styles.css) da 36/44 px a «⬆ Importar clientes», «⬇ Clientes CSV», «Editar», «Portal» y
+// «📊 Historial», y este guard pidió borrar las dos entradas por sobrantes. Una entrada nueva aquí
+// vuelve a dejar sin vigilar a TODOS los botones de su selector en esta lista.
+const EXCEPCIONES_PANEL = [];
 
 // ═══ SCRUM-782 · SEGUNDA SUPERFICIE: EL PANEL (lista de Clientes) ═══════════════════════════
 //
@@ -710,6 +742,7 @@ if (!PANEL_HTML) {
     const MIN = minimoPara(ancho);
     await page.setViewport({ width: ancho, height: 900 });
     await page.goto(`http://127.0.0.1:${PUERTO}/__panel`, { waitUntil: 'load' });
+    await esperarLaFuente(page, '/__panel');
 
     decir('\n════════════════════════════════════════════════════════════════════════════');
     decir(`PANEL · lista de Clientes · ANCHO ${ancho} px`);
@@ -782,15 +815,11 @@ if (!PANEL_HTML) {
 // una deuda: es bajar el umbral. Cada superficie declara las suyas y responde de ellas.
 const EXCEPCIONES_791 = {
   renderQuotesView: [
-    // 🔴 SCRUM-1148 · UNA SOLA VÍCTIMA YA, y es DEL BANCO. «✨ Sugerir con IA» cumple desde la regla
-    // por contenedor y sale del motivo (la avería de SCRUM-794: el emparejador va por selector y no
-    // avisaría). «+ Añadir descuento» tiene caja de 44 px y el medidor le da 43,6 a 390 porque el
-    // `<span>` «Descuento global» del campo le pisa el borde inferior. Ese campo nace con
-    // `hidden = true` y en el producto NUNCA convive con el botón (quotesView.js, el clic hace
-    // campo.hidden=false y botón.hidden=true; `[hidden]` es `display:none !important`, SCRUM-731),
-    // pero el mini-DOM no refleja la PROPIEDAD `hidden` como atributo y la página serializada los
-    // pinta a los dos. Medido con `elementsFromPoint` en el borde, no supuesto.
-    { sel: 'BUTTON.btn-ghost.btn-sm', motivo: 'LIMITACIÓN DEL BANCO, NO DECISIÓN DE PRODUCTO. «+ Añadir descuento»: caja 44 px, 43,6 px de toque a 390 SOLO en el banco — el campo «Descuento global» (oculto con `hidden` en el producto, que nunca lo pinta junto al botón) sale visible en la página serializada porque el mini-DOM no refleja la propiedad `hidden`. Aquí el instrumento no sabe medir: se RETIRA en cuanto el banco refleje `hidden` (SCRUM-1158).' },
+    // 🔴 SCRUM-1158 · aquí estaba `BUTTON.btn-ghost.btn-sm` «+ Añadir descuento», la última, y era DEL
+    // BANCO: caja de 44 px y 43,6 de toque a 390 porque el `<span>` «Descuento global» —oculto con
+    // `hidden` en el producto, que nunca lo pinta junto al botón— salía visible en la página
+    // serializada. El mini-DOM ya refleja `hidden` y el botón cumple a 929 y a 390. Retirada; la
+    // nombró el detector de sobrantes.
     // SCRUM-1148 · aquí estaba `BUTTON.btn-ghost.btn-sm.quote-header-btn` «📋 Usar plantilla»: cumple
     // a 929 y a 390 con la regla por contenedor. Retirada; la nombró el detector de sobrantes.
     // 🔴 SCRUM-711 · AQUÍ HABÍA DOS EXCEPCIONES MÁS, y se retiran porque ya no tienen causa:
@@ -798,7 +827,9 @@ const EXCEPCIONES_791 = {
     // Los dos miden 36,7 px a 929 y cumplen a 390: sólo existían porque el guard exigía 44 en
     // escritorio, más de lo que dice DESIGN.md. Con el mínimo por ancho, el detector de sobrantes
     // las nombró a las dos. (La de «Limpiar formulario» ya había perdido una víctima en SCRUM-794.)
-    { sel: 'INPUT', motivo: 'casillas del editor a 17,0 px de área de toque. TERCER grupo de SCRUM-787: no es cuestión de una clase compartida, sino de darles área en este sitio. Sin decidir.' },
+    // S2: SCRUM-962f · aquí estaba `INPUT` «casillas del editor a 17,0 px… Sin decidir». Decidido y
+    // S2: hecho: se les da área EN ESTE SITIO (acotado a `.quote-ajustes`), como pedía el motivo. Cumple a
+    // S2: 929 y a 390; la nombró el detector de sobrantes. Retirada.
   ],
   // 🔴 SCRUM-795 · LA FICHA 360 · SIETE CORTOS DE SIETE, y uno lo pongo YO.
   //
@@ -867,6 +898,7 @@ for (const s of SUPERFICIES_791) {
     // y un cero así parecería cobertura. La sonda vive en una página aparte servida en memoria:
     // no se toca ningún fichero del árbol.
     await page.goto(`http://127.0.0.1:${PUERTO}${s.ruta}__sonda`, { waitUntil: 'load' });
+    await esperarLaFuente(page, `${s.ruta}__sonda`);
     const rs = await page.evaluate(`${FUENTE_MEDIDOR};${MEDIDOR}(${JSON.stringify(INTERACTIVOS)}, ${MIN}, ${JSON.stringify([])}, true)`);
     const sonda = rs.medidos.find((m) => m.sel === 'BUTTON' && m.texto === SONDA_TEXTO);
     if (!sonda) {
@@ -900,6 +932,7 @@ for (const s of SUPERFICIES_791) {
     }
 
     await page.goto(`http://127.0.0.1:${PUERTO}${s.ruta}`, { waitUntil: 'load' });
+    await esperarLaFuente(page, s.ruta);
     const r = await page.evaluate(`${FUENTE_MEDIDOR};${MEDIDOR}(${JSON.stringify(INTERACTIVOS)}, ${MIN}, ${JSON.stringify([])}, true)`);
 
     decir('\n════════════════════════════════════════════════════════════════════════════');
@@ -1030,7 +1063,11 @@ for (const e of (anchosDelPanelMedidos < ANCHOS_PANEL.length ? [] : EXCEPCIONES_
 await navegador.close();
 srv.close();
 
-decir('\n' + '─'.repeat(76));
+// SCRUM-1603 · con qué fuente se ha medido, y en cuántas páginas: la población de la fuente.
+for (const [linea, n] of fuentesVistas) decir(`⟦fuente⟧ ${linea} · en ${n} página(s)`);
+if (!fuentesVistas.size) noSupeMirar('   🔴 NO SUPE MIRAR la fuente: ninguna página pasó por `esperarLaFuente`.');
+
+decir('\n' +'─'.repeat(76));
 const veredictoFinal = veredictoDe({ hallazgos, ciegos });
 if (veredictoFinal.codigo !== 0) {
   if (hallazgos.length) {

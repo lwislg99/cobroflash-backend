@@ -17,10 +17,10 @@ cliente los firma en el móvil y se cobran online. Estoy a punto de dar de alta 
 primeros clientes de pago y hay **dos temas** en los que necesito tu criterio. Te adjunto
 dos documentos con el detalle, pero te resumo lo esencial:
 
-**1. (URGENTE) ¿Puedo cobrar la suscripción antes de tener la facturación fiscal certificada?**
+**1. (URGENTE) ¿Puedo cobrar la suscripción antes de tener la facturación fiscal operativa?**
 Ahora mismo la app hace presupuestos, firma y cobro, y emite *justificantes de cobro* (no
-facturas fiscales). La facturación con **VeriFactu** la activaré cuando tenga el sistema
-certificado, sin subir el precio al cliente. Mientras tanto, la facturación fiscal de la
+facturas fiscales). La facturación con **VeriFactu** la activaré cuando el envío a la AEAT esté construido y la declaración responsable del fabricante esté firmada (hoy es un borrador),
+sin subir el precio al cliente. Mientras tanto, la facturación fiscal de la
 actividad de cada profesional sigue siendo suya, por sus medios de siempre. **Mi pregunta:
 ¿es correcto cobrar una cuota de suscripción a estos clientes "fundadores" en estas
 condiciones, con el documento de alcance que te adjunto?** Y si sí, ¿cómo debería quedar

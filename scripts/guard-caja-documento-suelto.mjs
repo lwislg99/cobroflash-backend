@@ -279,7 +279,7 @@ const soloCiego = (porque) => ({ hallazgos: [], ciegos: [porque] });
  * pantalla entera (el CSS, el control negativo) la deja ciega; una caja que no se puede medir deja
  * ciega ESA caja, y las demás se juzgan.
  */
-function informar(modo, ancho, pantalla, m) {
+function informar(modo, ancho, pantalla, m, suyas) {
   const donde = `${pantalla} (${modo} @${ancho}px)`;
   if (parseFloat(m.anchoSidebar) <= 0) return soloCiego(`${donde}: el sidebar computa 0 px, el CSS no se aplicó como en el producto.`);
   // 🔴 EL DETECTOR TIENE QUE SABER DECIR QUE NO, en CADA pantalla: una caja de 80 px con una frase
@@ -287,7 +287,7 @@ function informar(modo, ancho, pantalla, m) {
   if (!m.controlDesborde || !m.controlDesborde.desborda) {
     return soloCiego(`${donde}: el CONTROL NEGATIVO no salió desbordado, así que «todos caben» significaría «no supe mirar».`);
   }
-  const suyas = { hallazgos: [], ciegos: [] };
+  // SCRUM-1392 · `suyas` son las listas que entrega el recorrido: lo apuntado sobrevive a un caso que lance.
   console.log(`\n── ${pantalla.toUpperCase()} · MODO ${modo.toUpperCase()} · VIEWPORT ${ancho} px ──`);
   for (const c of m.cajas) {
     if (c.ausente) { suyas.ciegos.push(`${donde}: no se encontró el nodo de «${c.etiqueta}».`); continue; }
@@ -315,7 +315,7 @@ try {
   const page = await navegador.newPage();
   const MEDIR = {
     // ── ① EL LISTADO ─────────────────────────────────────────────────────────────────────
-    listado: async (modo, ancho) => {
+    listado: async (modo, ancho, suyas) => {
       await page.goto(`${base}/__caja-${modo}.html`, { waitUntil: 'networkidle0' });
       const lista = await page.evaluate((cajaSrc) => {
         const caja = eval(cajaSrc); // eslint-disable-line no-eval
@@ -331,11 +331,11 @@ try {
       }, CAJA);
       if (!servidos.has('/dashboard/css/styles.css')) return soloCiego(`listado (${modo} @${ancho}px): el CSS del dashboard no llegó a servirse.`);
       fuenteUnica = lista.hayFuenteUnica;
-      return informar(modo, ancho, 'listado', lista);
+      return informar(modo, ancho, 'listado', lista, suyas);
     },
 
     // ── ② LA PÁGINA DEL DOCUMENTO SUELTO, MONTADA DE VERDAD ──────────────────────────────
-    página: async (modo, ancho) => {
+    página: async (modo, ancho, suyas) => {
       const altasAntes = altas.length;
       await page.goto(`${base}/__pagina-${modo}.html`, { waitUntil: 'networkidle0' });
       const doc = await page.evaluate(async (cajaSrc) => {
@@ -408,13 +408,13 @@ try {
             + `fuente dice ${JSON.stringify(esperado)}. No es la caja que digo medir.`);
         }
       }
-      return informar(modo, ancho, 'página del documento suelto', doc);
+      return informar(modo, ancho, 'página del documento suelto', doc, suyas);
     },
   };
-  const cuentas = await recorrerCasos(CASOS, async ({ modo, ancho, pantalla }) => {
+  const cuentas = await recorrerCasos(CASOS, async ({ modo, ancho, pantalla }, suyas) => {
     modoActual.valor = modo;
     await page.setViewport({ width: ancho, height: 900 });
-    return MEDIR[pantalla](modo, ancho);
+    return MEDIR[pantalla](modo, ancho, suyas);
   }, (caso) => `${caso.pantalla} (${caso.modo} @${caso.ancho}px)`);
   hallazgos.push(...cuentas.hallazgos);
   ciegos.push(...cuentas.ciegos);

@@ -1,0 +1,75 @@
+POBLACION · 96 ficheros de public/dashboard/js · 15429 literales de texto leídos por AST · 74 frases que casan · 19 formas distintas (sin mayúsculas ni punto final)
+CONTROL POSITIVO · en clienteVolverALlamar.js: 2 → «Inténtalo otra vez.» (l.51) ; «Inténtalo otra vez.» (l.52)
+
+[24] «inténtalo de nuevo»
+     escrita como: «Inténtalo de nuevo.» · «inténtalo de nuevo» · «inténtalo de nuevo.»
+     aiQuoteAssistant.js:75 · customerDetailView.js:1224 · customersView.js:1776 · exportView.js:289 · homeView.js:1640 · invoiceDetailView.js:417,477,516,583 · jobDetailView.js:2193 · productsView.js:1148,1238 · quotesDetailView.js:441,483,488,962,1077,1347,1506 · quotesView.js:275,317 · settingsView.js:651,1561,1735
+
+[19] «vuelve a intentarlo»
+     escrita como: «Vuelve a intentarlo.» · «vuelve a intentarlo» · «vuelve a intentarlo.»
+     albaranesView.js:195 · cobrosView.js:40 · customerDetailView.js:118 · expensesView.js:302 · facturasRecibidasView.js:43 · homeView.js:1349 · invoicesView.js:16,710,896 · jobDetailView.js:1547 · libroRegistroView.js:57 · parteDetailView.js:95,99,129,201 · parteOficinaView.js:65 · patronDetalleAcciones.js:28 · quoteRevisiones.js:67 · signaturePad.js:437
+
+[7] «inténtalo otra vez»
+     escrita como: «Inténtalo otra vez.»
+     clienteVolverALlamar.js:51,52 · documentoAsignados.js:46 · exportView.js:350 · facturasRecibidasView.js:68 · jobDetailView.js:3386 · rotulosDelDocumento.js:73
+
+[3] «reintentarlo»
+     escrita como: «reintentarlo.»
+     invoiceDetailView.js:618 · teamView.js:166 · tutorial.js:296
+
+[2] «pruébalo»
+     escrita como: «pruébalo.»
+     customersView.js:1072 · providersView.js:50
+
+[2] «pruébalo antes de enviarlo»
+     escrita como: «pruébalo antes de enviarlo.»
+     quotesDetailView.js:422,480
+
+[2] «pruébalo bien: cuando emitas esa factura, este número ya no se puede cambiar»
+     escrita como: «pruébalo bien: cuando emitas esa factura, este número ya no se puede cambiar.»
+     onboardingView.js:206 · puertaSerie.js:156
+
+[2] «reinténtalo desde la factura»
+     escrita como: «reinténtalo desde la factura» · «reinténtalo desde la factura.»
+     jobDetailView.js:956,2248
+
+[2] «reintentar»
+     api.js:500 · signaturePad.js:439
+
+[2] «vuelve a intentarlo en unos minutos; si sigue sin funcionar, escríbenos y lo resolvemos»
+     escrita como: «Vuelve a intentarlo en unos minutos; si sigue sin funcionar, escríbenos y lo resolvemos.»
+     exportView.js:248,249
+
+[1] «inténtalo de nuevo en un rato, y mira la lista antes de crearlo otra vez»
+     escrita como: «Inténtalo de nuevo en un rato, y mira la lista antes de crearlo otra vez.»
+     customersView.js:1787
+
+[1] «inténtalo otra vez cuando tengas señal»
+     escrita como: «inténtalo otra vez cuando tengas señal.»
+     albaranDetailView.js:34
+
+[1] «prueba otra vez más cerca del micro»
+     voiceInput.js:167
+
+[1] «pruébalo en el ticket»
+     escrita como: «pruébalo en el ticket.»
+     expensesView.js:1079
+
+[1] «reintentar whatsapp»
+     api.js:1029
+
+[1] «vuelve a enviarlo»
+     escrita como: «vuelve a enviarlo.»
+     homeView.js:1356
+
+[1] «vuelve a intentarlo cuando tengas cobertura, y mira la lista antes de crearlo otra vez»
+     escrita como: «Vuelve a intentarlo cuando tengas cobertura, y mira la lista antes de crearlo otra vez.»
+     customersView.js:1785
+
+[1] «vuelve a intentarlo o escribe las líneas tú»
+     parteDetailView.js:151
+
+[1] «vuelve a intentarlo;»
+     api.js:420
+
+EXIT=0

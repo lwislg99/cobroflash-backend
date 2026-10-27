@@ -1,0 +1,102 @@
+[
+ {
+  "donde": "src/modules/fiscal/evidencias/paquete.ts:174",
+  "anclas": [
+   "SCRUM-1252 comentario 17726"
+  ]
+ },
+ {
+  "donde": "src/modules/fiscal/verifactu/registro.builder.ts:629",
+  "anclas": [
+   "SCRUM-1258 comentario 17713"
+  ]
+ },
+ {
+  "donde": "src/modules/metrics/domain/actividadEquipo.ts:1",
+  "anclas": [
+   "SCRUM-1341 comentario 17825"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/invoicesView.js:209",
+  "anclas": [
+   "SCRUM-825 comentario 17446"
+  ]
+ },
+ {
+  "donde": "public/dashboard/js/quotesView.js:401",
+  "anclas": [
+   "SCRUM-915 comentario 15868"
+  ]
+ },
+ {
+  "donde": "src/modules/quotes/domain/avisoPlazo.ts:12",
+  "anclas": [
+   "SCRUM-1502 comentario 18111"
+  ]
+ },
+ {
+  "donde": "tests/scrum1027-atajo-flag-off-sin-documento.test.mjs:194",
+  "anclas": [
+   "SCRUM-825 comentario 17446"
+  ]
+ },
+ {
+  "donde": "tests/scrum411-exports-inalcanzables.test.mjs:68",
+  "anclas": [
+   "SCRUM-1404 comentario 18840"
+  ]
+ },
+ {
+  "donde": "tests/scrum514-aprobado-y-aplicado.test.mjs:943",
+  "anclas": [
+   "SCRUM-1258 comentario 17713"
+  ]
+ },
+ {
+  "donde": "tests/scrum582-seleccion-multiple-clientes.test.mjs:187",
+  "anclas": [
+   "SCRUM-1135 comentario 17449"
+  ]
+ },
+ {
+  "donde": "tests/scrum601-copy-del-documento-vs-flag.test.mjs:87",
+  "anclas": [
+   "SCRUM-887 comentario 15675",
+   "SCRUM-895 comentario 15699",
+   "SCRUM-920 comentario 15992",
+   "SCRUM-1216 comentario 17347",
+   "SCRUM-1257 comentario 17444"
+  ]
+ },
+ {
+  "donde": "tests/scrum1190-aviso-de-plazo.test.mjs:40",
+  "anclas": [
+   "SCRUM-100000 comentario 18200"
+  ]
+ },
+ {
+  "donde": "tests/scrum755-el-contador-que-cuadro-solo.test.mjs:113",
+  "anclas": [
+   "SCRUM-915 comentario 15868"
+  ]
+ },
+ {
+  "donde": "tests/scrum895b-literales-firmados.test.mjs:1",
+  "anclas": [
+   "SCRUM-895 comentario 15699"
+  ]
+ },
+ {
+  "donde": "tests/_asignacion-bloques-presupuesto.mjs:30",
+  "anclas": [
+   "SCRUM-915 comentario 15868"
+  ]
+ },
+ {
+  "donde": "scripts/guard-pasos-del-editor.mjs:1",
+  "anclas": [
+   "SCRUM-915 comentario 15790"
+  ]
+ }
+]

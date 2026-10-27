@@ -1,0 +1,9 @@
+docs/legal (control: 205)                      ficheros 19 · con alguna 9 · 551493 car. · coordenadas 205
+docs/RUNBOOKS.md                               ficheros 1 · con alguna 0 · 55543 car. · coordenadas 0
+docs/QA_MASTER.md                              ficheros 1 · con alguna 0 · 8491 car. · coordenadas 0
+docs/equipo/**                                 ficheros 43 · con alguna 4 · 454111 car. · coordenadas 5
+.claude/skills/**                              ficheros 36 · con alguna 0 · 414130 car. · coordenadas 0
+CLAUDE.md                                      ficheros 1 · con alguna 0 · 13740 car. · coordenadas 0
+docs/YAQU_MASTER.md                            ficheros 1 · con alguna 1 · 496492 car. · coordenadas 82
+docs/master/*.md (registros)                   ficheros 1087 · con alguna 550 · 13797848 car. · coordenadas 4786
+CERO derivado (fichero sembrado sin citas)     ficheros 1 · coordenadas 0

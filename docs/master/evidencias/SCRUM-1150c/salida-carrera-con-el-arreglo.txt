@@ -1,0 +1,14 @@
+POBLACIÓN · 10 intentos de dos POST a la vez, y un control en serie
+CONTROL en serie · respuestas [201 .1] [201 .2] · revisiones en la base: 0,1,2
+intento 1 · a la vez [201 .2] [201 .1] · en la base: 0,1,2 · sin empate · ficha después: 200 .0 · otro «Crear revisión» después: [201 .3]
+intento 2 · a la vez [201 .1] [201 .2] · en la base: 0,1,2 · sin empate · ficha después: 200 .0 · otro «Crear revisión» después: [201 .3]
+intento 3 · a la vez [201 .1] [201 .2] · en la base: 0,1,2 · sin empate · ficha después: 200 .0 · otro «Crear revisión» después: [201 .3]
+intento 4 · a la vez [201 .1] [201 .2] · en la base: 0,1,2 · sin empate · ficha después: 200 .0 · otro «Crear revisión» después: [201 .3]
+intento 5 · a la vez [201 .1] [201 .2] · en la base: 0,1,2 · sin empate · ficha después: 200 .0 · otro «Crear revisión» después: [201 .3]
+intento 6 · a la vez [201 .1] [201 .2] · en la base: 0,1,2 · sin empate · ficha después: 200 .0 · otro «Crear revisión» después: [201 .3]
+intento 7 · a la vez [201 .1] [201 .2] · en la base: 0,1,2 · sin empate · ficha después: 200 .0 · otro «Crear revisión» después: [201 .3]
+intento 8 · a la vez [201 .2] [201 .1] · en la base: 0,1,2 · sin empate · ficha después: 200 .0 · otro «Crear revisión» después: [201 .3]
+intento 9 · a la vez [201 .1] [201 .2] · en la base: 0,1,2 · sin empate · ficha después: 200 .0 · otro «Crear revisión» después: [201 .3]
+intento 10 · a la vez [201 .1] [201 .2] · en la base: 0,1,2 · sin empate · ficha después: 200 .0 · otro «Crear revisión» después: [201 .3]
+TESTIGO · 0 empates de 10 intentos
+EXIT=0

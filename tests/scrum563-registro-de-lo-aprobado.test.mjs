@@ -29,7 +29,13 @@ const html = leerLanding(RAIZ);
 
 /** Lo medido el 20-ago-2026. */
 const REGISTRADOS = 52;
-const SIN_CUBRIR = 1;
+/**
+ * Las entradas de la propuesta que ninguna aprobación vigente cubre, por IDENTIDAD y no por
+ * cuántas son: si aparece otra, el test dice cuál. F4-1 es la de `NO_APROBADAS`. F4-2 se
+ * aprobó el 20-ago y la superó el 14-oct otra firma del fundador (SCRUM-1016 c.19607 +
+ * c.19608, ver `SUPERADAS`): la propuesta sigue diciendo el texto viejo.
+ */
+const SIN_CUBRIR = ['F4-1', 'F4-2'];
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // SUELO · un registro que no encuentra nada diría «no hay nada aprobado»
@@ -95,7 +101,9 @@ test('CONTROL POSITIVO · el texto guardado es el literal, no una descripción',
 // ═════════════════════════════════════════════════════════════════════════════════════════
 test('dado un texto cualquiera, el registro contesta aprobado / pendiente / ni una cosa ni otra', () => {
   const casos = [
-    { texto: 'Del presupuesto al cobro, sin salir de WhatsApp.', espera: APROBADO,
+    // El texto sale DEL REGISTRO, por su id: el fundador lo cambió el 14-oct (SCRUM-1016
+    // c.19607) y un literal a fuego aquí se rompe con cada firma nueva sin que cambie nada.
+    { texto: REGISTRO.find((e) => e.id === 'heroe-f4/h1#1').texto, espera: APROBADO,
       porque: 'es una unidad registrada' },
     { texto: 'Escríbenos por WhatsApp', espera: APROBADO,
       porque: 'vive en un atributo y también está registrada' },
@@ -207,8 +215,8 @@ test('la reconstrucción separa lo no cubierto de lo partido de otra manera', ()
   assert.ok(r.doc.length > 0, '🔴 CIEGO: cero entradas leídas del documento de propuesta');
   assert.equal(r.cubierto.length + r.partidoDistinto.length + r.sinCubrir.length, r.doc.length,
     '🔴 la reconstrucción pierde entradas por el camino');
-  assert.equal(r.sinCubrir.length, SIN_CUBRIR,
-    `🔴 las entradas sin cubrir son ${r.sinCubrir.length} y se midieron ${SIN_CUBRIR}: `
+  assert.deepEqual([...r.sinCubrir.map((d) => d.num)].sort(), [...SIN_CUBRIR].sort(),
+    `🔴 las entradas sin cubrir no son las medidas (${SIN_CUBRIR.join(', ')}): `
     + JSON.stringify(r.sinCubrir.map((d) => d.num)));
   // y que ninguna de las «sin cubrir» esté en realidad registrada
   for (const d of r.sinCubrir) {

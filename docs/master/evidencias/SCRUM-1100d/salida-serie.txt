@@ -1,0 +1,87 @@
+INSTANCIAS por clase:
+     44  MUERTO
+     39  NO-APARECE
+     27  LIMPIA-SIN-VERDE
+INSTANCIAS por guard · clase:
+     27  scrum859-identidad-y-motivo-cerrado · NO-APARECE
+     15  vigia-atascados · MUERTO
+     15  scrum834-puerta-avisador-rojo · MUERTO
+     12  scrum853-avisador-solo-obligatorio · MUERTO
+     11  scrum834-puerta-avisador-rojo · LIMPIA-SIN-VERDE
+     10  vigia-atascados · LIMPIA-SIN-VERDE
+      6  vigia-atascados · NO-APARECE
+      4  scrum813-trinquete-de-zona · NO-APARECE
+      3  scrum813-trinquete-de-zona · LIMPIA-SIN-VERDE
+      2  scrum1349-entorno-prestado-solo-baja · LIMPIA-SIN-VERDE
+      2  scrum813-trinquete-de-zona · MUERTO
+      2  scrum757-la-declaracion-que-nadie-lee · NO-APARECE
+      1  scrum1412-tanda-por-tramos · LIMPIA-SIN-VERDE
+RUNS por guard (cualquier clase):
+     27  scrum859-identidad-y-motivo-cerrado
+     21  scrum834-puerta-avisador-rojo
+     21  vigia-atascados
+     12  scrum853-avisador-solo-obligatorio
+      7  scrum813-trinquete-de-zona
+      2  scrum757-la-declaracion-que-nadie-lee
+      1  scrum1349-entorno-prestado-solo-baja
+      1  scrum1412-tanda-por-tramos
+RUNS por nº de guards distintos afectados:
+     65  1
+     12  2
+      1  3
+TEST declarado, por guard·clase:
+     27  scrum859-identidad-y-motivo-cerrado · NO-APARECE · «SCRUM-859 · 🔴 insertar una entrada en medio NO mueve ninguna clave»
+     15  scrum834-puerta-avisador-rojo · MUERTO · «SCRUM-1263 · 🔴 el guard SALTADO no es un guard verde (sin banco, un t»
+     10  vigia-atascados · MUERTO · «🔴 CONTROL NEGATIVO REAL #1259 · recién empujado CON checks corriendo:»
+      6  scrum834-puerta-avisador-rojo · LIMPIA-SIN-VERDE · «SCRUM-1263 · 🔴 el guard SALTADO no es un guard verde (sin banco, un t»
+      5  scrum834-puerta-avisador-rojo · LIMPIA-SIN-VERDE · «SCRUM-1263 · 🔴 CASO REAL: el arreglo del bot deja el guard ROJO → NO »
+      5  scrum853-avisador-solo-obligatorio · MUERTO · «claude.yml pregunta a la puerta ANTES de la acción»
+      5  vigia-atascados · MUERTO · «🔴 `gh pr list` devuelve al bot como `app/yaqu-bot`: tiene que contar »
+      5  vigia-atascados · NO-APARECE · «🔴 CEBO REAL #1212 · con la memoria REAL del issue #1241 vuelve a avis»
+      4  scrum853-avisador-solo-obligatorio · MUERTO · «lo que añade el 853 no se queda con la salida de un `gh api` que ha FA»
+      3  vigia-atascados · LIMPIA-SIN-VERDE · «🔴 CEBO REAL #1212 · con la memoria REAL del issue #1241 vuelve a avis»
+      3  vigia-atascados · LIMPIA-SIN-VERDE · «🔴 `gh pr list` devuelve al bot como `app/yaqu-bot`: tiene que contar »
+      3  vigia-atascados · LIMPIA-SIN-VERDE · «🔴 CONTROL NEGATIVO REAL #1259 · recién empujado CON checks corriendo:»
+      3  scrum813-trinquete-de-zona · NO-APARECE · «con la lista VACÍA nada se ampara: cualquier ruta sigue cegando»
+      2  scrum853-avisador-solo-obligatorio · MUERTO · «el aviso de rama muda se comprueba sobre el fichero que de verdad se v»
+      2  scrum813-trinquete-de-zona · MUERTO · «POSITIVO: la tanda escribiendo LO SUYO no ciega — el trinquete EMITE v»
+      2  scrum757-la-declaracion-que-nadie-lee · NO-APARECE · «NEGATIVO: un objeto cualquiera del fichero NO se denuncia»
+      1  scrum1349-entorno-prestado-solo-baja · LIMPIA-SIN-VERDE · «CONTROL POSITIVO DEL TRINQUETE»
+      1  scrum1349-entorno-prestado-solo-baja · LIMPIA-SIN-VERDE · «son EXACTAMENTE los declarados»
+      1  scrum813-trinquete-de-zona · LIMPIA-SIN-VERDE · «EL QUE DECIDE: un fichero de TEST tocado a mano DURANTE la medición si»
+      1  scrum813-trinquete-de-zona · LIMPIA-SIN-VERDE · «con la lista VACÍA nada se ampara: cualquier ruta sigue cegando»
+      1  scrum813-trinquete-de-zona · LIMPIA-SIN-VERDE · «POSITIVO: la tanda escribiendo LO SUYO no ciega — el trinquete EMITE v»
+      1  scrum813-trinquete-de-zona · NO-APARECE · «EL QUE DECIDE: un fichero de TEST tocado a mano DURANTE la medición si»
+      1  scrum853-avisador-solo-obligatorio · MUERTO · «un 404 que llega como CUERPO DEL ERROR no es una cabeza remota»
+      1  vigia-atascados · LIMPIA-SIN-VERDE · «🔴 CEBO REAL #1205 · su obligatorio en FAILURE desde el 8-sep → ROJO-O»
+      1  scrum1412-tanda-por-tramos · LIMPIA-SIN-VERDE · «SCRUM-1412 · ② 🔴 con la condición SIN cumplirse, el mismo caído es un»
+      1  vigia-atascados · NO-APARECE · «🔴 CEBO REAL #1205 · su obligatorio en FAILURE desde el 8-sep → ROJO-O»
+glifos de las líneas no-✔:
+     66  ? … CIEGO
+     44  ☠ … FICHERO MUERTO
+     44  · … EL FICHERO MURIÓ AL MU
+     39  · … no se pudo juzgar si e
+     11  · … el test «SCRUM-1263 · 
+      4  · … el test «🔴 CEBO REAL 
+      3  · … el test «🔴 `gh pr lis
+      3  · … el test «🔴 CONTROL NE
+      1  · … el test «CONTROL POSIT
+      1  · … el test «son EXACTAMEN
+      1  · … el test «EL QUE DECIDE
+      1  · … el test «con la lista 
+      1  · … el test «POSITIVO: la 
+      1  · … el test «SCRUM-1412 · 
+
+LIMPIA-SIN-VERDE · run · obligatorio del MISMO run:
+   37456412455 2026-10-06T11:26:27Z pull_request scrum-1454-ya-esta-commit-ajeno · scrum1349-entorno-prestado-solo-baja «CONTROL POSITIVO DEL TRINQUETE» + scrum1349-entorno-prestado-solo-baja «son EXACTAMENTE los declarados» · build + tests (con banco desechable)=failure
+   37455139532 2026-10-06T11:15:00Z push main · scrum834-puerta-avisador-rojo «SCRUM-1263 · 🔴 CASO REAL: el arreglo de» + scrum834-puerta-avisador-rojo «SCRUM-1263 · 🔴 el guard SALTADO no es u» · build + tests (con banco desechable)=success
+   37454127059 2026-10-06T11:05:44Z pull_request scrum-1452b-registro-ocho-no-nueve · scrum834-puerta-avisador-rojo «SCRUM-1263 · 🔴 CASO REAL: el arreglo de» + scrum834-puerta-avisador-rojo «SCRUM-1263 · 🔴 el guard SALTADO no es u» · build + tests (con banco desechable)=success
+   37451560421 2026-10-06T10:42:32Z pull_request scrum-1450-lista-albaranes-facturacion-firmad · scrum834-puerta-avisador-rojo «SCRUM-1263 · 🔴 CASO REAL: el arreglo de» + scrum834-puerta-avisador-rojo «SCRUM-1263 · 🔴 el guard SALTADO no es u» · build + tests (con banco desechable)=success
+   37451186274 2026-10-06T10:39:07Z pull_request scrum-1453-latido-sin-auto-merge · scrum834-puerta-avisador-rojo «SCRUM-1263 · 🔴 CASO REAL: el arreglo de» + scrum834-puerta-avisador-rojo «SCRUM-1263 · 🔴 el guard SALTADO no es u» · build + tests (con banco desechable)=success
+   37450448569 2026-10-06T10:32:24Z pull_request scrum-1295-carriles-e-identidad · scrum834-puerta-avisador-rojo «SCRUM-1263 · 🔴 el guard SALTADO no es u» · build + tests (con banco desechable)=success
+   37047049994 2026-10-02T18:23:00Z push main · scrum834-puerta-avisador-rojo «SCRUM-1263 · 🔴 CASO REAL: el arreglo de» + scrum834-puerta-avisador-rojo «SCRUM-1263 · 🔴 el guard SALTADO no es u» · build + tests (con banco desechable)=success
+   37045093167 2026-10-02T18:05:22Z pull_request scrum-624-frecuencia-del-papel · scrum813-trinquete-de-zona «EL QUE DECIDE: un fichero de TEST tocado» + scrum813-trinquete-de-zona «con la lista VACÍA nada se ampara: cualq» + scrum813-trinquete-de-zona «POSITIVO: la tanda escribiendo LO SUYO n» · build + tests (con banco desechable)=success
+   37015285708 2026-10-02T13:46:54Z pull_request scrum-1418-sesiones-que-no-volvieron · vigia-atascados «🔴 CEBO REAL #1212 · con la memoria REAL» + vigia-atascados «🔴 `gh pr list` devuelve al bot como `ap» + vigia-atascados «🔴 CONTROL NEGATIVO REAL #1259 · recién » · build + tests (con banco desechable)=success
+   37007024514 2026-10-02T12:29:54Z pull_request scrum-1415-nombres-construidos-a-literal · vigia-atascados «🔴 CEBO REAL #1205 · su obligatorio en F» + vigia-atascados «🔴 CEBO REAL #1212 · con la memoria REAL» + vigia-atascados «🔴 `gh pr list` devuelve al bot como `ap» + vigia-atascados «🔴 CONTROL NEGATIVO REAL #1259 · recién » · build + tests (con banco desechable)=success
+   37003969458 2026-10-02T11:58:22Z pull_request scrum-1412-tanda-dirigida-por-tramos · scrum1412-tanda-por-tramos «SCRUM-1412 · ② 🔴 con la condición SIN c» · build + tests (con banco desechable)=failure
+   36959682022 2026-10-02T03:19:45Z pull_request scrum-1407-registro-1397-anexo-fechado · vigia-atascados «🔴 CEBO REAL #1212 · con la memoria REAL» + vigia-atascados «🔴 `gh pr list` devuelve al bot como `ap» + vigia-atascados «🔴 CONTROL NEGATIVO REAL #1259 · recién » · build + tests (con banco desechable)=success

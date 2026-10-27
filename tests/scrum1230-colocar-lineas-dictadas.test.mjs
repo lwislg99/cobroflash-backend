@@ -78,6 +78,17 @@ async function hastaLaPropuesta(m, { conSuelta = true } = {}) {
 
 const confirmar = (contenedor) => contenedor.querySelector('[data-propuesta-confirmar]');
 
+// SCRUM-1215 · el rótulo del botón. Hasta el 6-oct-2026 decía «Añadir estas líneas», que NO se
+// aprobó (c.17367, 28-sep-2026): una línea sin cantidad no entra, y «estas» prometía las que se
+// ven. «Añadir al parte» se firmó ese mismo día (c.17375) y estuvo sin aplicar hasta hoy.
+test('SCRUM-1215 · el botón que confirma lo dictado dice «Añadir al parte», letra por letra', async () => {
+  const m = montar();
+  const { contenedor } = await hastaLaPropuesta(m);
+  const boton = confirmar(contenedor);
+  assert.ok(boton, '🔴 CIEGO: la propuesta no pintó su botón de confirmar');
+  assert.equal(boton.textContent, 'Añadir al parte');
+});
+
 test('SCRUM-1230 · 🔴 una línea «Sin colocar» se PUEDE colocar y entra en el parte con su bloque', async () => {
   const m = montar();
   const { contenedor, suelta } = await hastaLaPropuesta(m);
@@ -90,7 +101,7 @@ test('SCRUM-1230 · 🔴 una línea «Sin colocar» se PUEDE colocar y entra en 
   materiales.disparar('change');
 
   const boton = confirmar(contenedor);
-  assert.ok(boton && !boton.disabled, '🔴 con todo colocado, «Añadir estas líneas» sigue bloqueado');
+  assert.ok(boton && !boton.disabled, '🔴 con todo colocado, «Añadir al parte» sigue bloqueado');
   boton.click();
   await esperar();
 
@@ -109,7 +120,7 @@ test('SCRUM-1230 · 🔴 CONTROL NEGATIVO: sin elegir, NO se confirma — nada s
   const m = montar();
   const { contenedor } = await hastaLaPropuesta(m);
   const boton = confirmar(contenedor);
-  assert.ok(boton, '🔴 CIEGO: no está «Añadir estas líneas»');
+  assert.ok(boton, '🔴 CIEGO: no está «Añadir al parte»');
   assert.equal(boton.disabled, true,
     '🔴 con una línea «Sin colocar» sin elegir se puede confirmar, y esa línea se descartaría sin aviso');
   // Aunque algo lo pulse igual, no sale un PATCH que deje fuera la línea sin colocar.

@@ -84,6 +84,9 @@ export const DESTINOS_ESPERADOS = Object.freeze({
       'cobroflash-b1': 'railway',
       'cobroflash-b2': 'railway',
       'cobroflash-b3': 'railway',
+      'jv-j6ar': 'yaqu_dev_javier',
+      'jv-j2ay': 'yaqu_dev_javier',
+      'jv-j6ba': 'yaqu_dev_javier',
     }),
     comoSeLlama: 'BASE DE PRUEBAS DEL CARRIL',
   },
@@ -247,17 +250,76 @@ export function exigirDestinoCorrecto(clave, url, worktree) {
 // como se llame la variable. **Un guard que sólo vigila las claves que le enseñaron deja pasar
 // justo la que no conoce.**
 
-/** El host de PRODUCCIÓN. Sale de `DESTINOS_ESPERADOS` para que no haya dos verdades que mantener. */
+/**
+ * El host de PRODUCCIÓN que se conoce HOY. Sale de `DESTINOS_ESPERADOS` para que no haya dos
+ * verdades que mantener.
+ *
+ * ⚠️ SCRUM-1526: sirve para NOMBRAR a producción en el mensaje, NO para decidir qué se aprueba. Es
+ * un nombre escrito a mano y los nombres caducan; de eso responde la lista de abajo.
+ */
 export const HOST_PRODUCCION = DESTINOS_ESPERADOS.DATABASE_URL.host;
 
 export const PRODUCCION_EN_ARBOL = 'produccion_en_arbol';
 
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1526 · SE APRUEBA LO QUE SE CONOCE, NO «TODO MENOS UN NOMBRE»
+//
+// 🔴 Medido el 13-oct-2026 con URLs fabricadas: hasta hoy la pregunta era «¿es éste el host de
+// producción?», y con cualquier OTRO host la respuesta era `cuadra`. Un host de producción con otro
+// nombre —tras una mudanza, un cambio de proveedor, un rediseño del proxy— salía en verde. El
+// control no se quedaba mudo: decía que estaba bien. Fallaba ABIERTO, y su verde dependía de que
+// una constante escrita a mano siguiera siendo verdad.
+//
+// Ahora la pregunta es la contraria: «¿es éste uno de los destinos DECLARADOS como no-producción?».
+// Lo que no esté en la lista no se aprueba, se llame como se llame su host. Así el control deja de
+// depender de conocer el nombre de producción: sólo tiene que conocer lo que es suyo.
+//
+// ⚠️ Con host Y NOMBRE DE BASE, por el mismo motivo que arriba: en `acela` conviven bases, y un
+// host que hoy sólo aloja bases de pruebas no garantiza nada sobre una base suya que nadie declaró.
+
 /**
- * ¿Esta clave de un árbol de trabajo apunta a PRODUCCIÓN? PURA: ni entorno ni ficheros, así que
- * su rojo se ejercita sin tocar ningún `.env`.
+ * Las claves de `DESTINOS_ESPERADOS` que designan bases que NO son producción. A mano a propósito:
+ * derivarla como «todas menos `DATABASE_URL`» aprobaría sola cualquier clave que se añada a la tabla.
+ * Una base de pruebas nueva se da de alta en la tabla Y aquí; hasta entonces, no pasa en verde.
+ */
+export const CLAVES_QUE_NO_SON_PRODUCCION = Object.freeze([
+  'DATABASE_URL_STAGING',
+  'DATABASE_URL_DEV',
+  'DATABASE_URL_TESTS',
+]);
+
+/**
+ * Los destinos que un árbol de trabajo PUEDE tener: `{ host, base }`, sin repetidos. De una clave
+ * por carril (`porWorktree`) entran todas sus bases — aquí no se pregunta cuál le toca a este
+ * árbol, que es cosa de `comprobarClaveVsDestino`. Una entrada sin nombre de base no aporta nada.
+ */
+export const DESTINOS_QUE_NO_SON_PRODUCCION = Object.freeze(
+  CLAVES_QUE_NO_SON_PRODUCCION
+    .flatMap((clave) => {
+      const d = DESTINOS_ESPERADOS[clave];
+      if (!d || !d.host) return [];
+      const bases = d.porWorktree ? Object.values(d.porWorktree) : [d.base];
+      return bases.filter(Boolean).map((base) => ({ host: d.host, base }));
+    })
+    .filter((d, i, todos) => todos.findIndex((o) => o.host === d.host && o.base === d.base) === i)
+    .map((d) => Object.freeze(d)),
+);
+
+export const DESTINO_NO_RECONOCIDO = 'destino_no_reconocido';
+
+/**
+ * ¿Puede esta clave vivir en un árbol de trabajo? PURA: ni entorno ni ficheros, así que su rojo se
+ * ejercita sin tocar ningún `.env`.
  *
- * `OK` aquí significa SOLO «no es producción», no que el destino sea el correcto: de eso responde
- * `comprobarClaveVsDestino`. Por eso las dos se corren juntas y ninguna sustituye a la otra.
+ * `OK` aquí significa SOLO «es un destino declarado como no-producción», no que sea el que le toca
+ * a esa clave: de eso responde `comprobarClaveVsDestino`. Por eso las dos se corren juntas y
+ * ninguna sustituye a la otra.
+ *
+ * Tres maneras de no pasar, y no son la misma:
+ *   · `PRODUCCION_EN_ARBOL`    el host es el de producción que se conoce hoy;
+ *   · `DESTINO_NO_RECONOCIDO`  nadie lo ha declarado. NO se afirma que sea producción —no se sabe—,
+ *                              y por eso mismo no se aprueba (SCRUM-1526);
+ *   · `NO_PUDE_RESOLVER`       la URL no se pudo leer.
  *
  * 🔴 SUELO: una URL ilegible es `NO_PUDE_RESOLVER`, jamás `OK`. Si no se pudo leer el destino no
  * se puede afirmar que no sea producción, y afirmarlo sería inventarse la medición cómoda.
@@ -296,10 +358,33 @@ export function comprobarCredencialDeProduccion(clave, url, worktree) {
     };
   }
 
+  const declarado = DESTINOS_QUE_NO_SON_PRODUCCION
+    .some((d) => d.host === real.host && d.base === real.base);
+  if (!declarado) {
+    return {
+      veredicto: DESTINO_NO_RECONOCIDO,
+      real,
+      mensaje:
+        '🔴 DESTINO NO RECONOCIDO EN UN ÁRBOL DE TRABAJO.\n\n' +
+        `  Worktree: ${donde}\n` +
+        `  Clave:    ${clave}\n` +
+        `  Apunta a: ${real.host}/${real.base || '(sin base)'}  ← nadie lo ha declarado\n\n` +
+        '  Declarados como no-producción (host Y base):\n' +
+        DESTINOS_QUE_NO_SON_PRODUCCION.map((d) => `    · ${d.host}/${d.base}\n`).join('') + '\n' +
+        '  NO se afirma que sea producción: no se sabe. Y por eso no se aprueba. Producción se\n' +
+        '  reconocía por UN nombre de host escrito a mano, y un nombre caduca: el día que cambie,\n' +
+        '  un control que aprueba «todo lo que no se llame así» la daría por buena (SCRUM-1526).\n' +
+        '  Aquí sólo pasa lo que alguien declaró.\n\n' +
+        '  Qué hacer: si es una base de pruebas NUEVA, se da de alta en `DESTINOS_ESPERADOS` y en\n' +
+        '  `CLAVES_QUE_NO_SON_PRODUCCION` (`scripts/_clave-vs-destino.mjs`) — es una decisión, y se\n' +
+        '  ve en un diff. Si no sabes qué es, quita la clave del `.env` de este árbol y pregunta.',
+    };
+  }
+
   return {
     veredicto: OK,
     real,
-    mensaje: `[producción] ${clave} → ${real.host}/${real.base} (no es producción) ✅`,
+    mensaje: `[producción] ${clave} → ${real.host}/${real.base} (declarado como no-producción) ✅`,
   };
 }
 

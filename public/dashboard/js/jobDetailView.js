@@ -213,8 +213,8 @@ function pintarQueFaltaParaCobrar(sec, job, fmt, moneda) {
     // puede saber. Los dos literales están FIRMADOS (com. 15881); aquí no se escribe copy.
     'sin-presupuesto': () => 'Este trabajo no tiene presupuesto aceptado',
     'sin-firmar': (h) => `${h.cantidad} ${h.cantidad === 1 ? 'albarán' : 'albaranes'} sin firmar`,
-    'sin-facturar': (h) => `${fmt(h.importe, moneda)} entregados sin facturar`,
-    'sin-facturar-nada': (h) => `${fmt(h.importe, moneda)} aceptados y sin facturar`,
+    'sin-facturar': (h) => `${fmt(h.importe, moneda)} entregados sin facturar`, // APROBADO por el fundador (docs/master/SCRUM-320.md, «N € entregados sin facturar»; marca: SCRUM-1215 comentario 19084)
+    'sin-facturar-nada': (h) => `${fmt(h.importe, moneda)} aceptados y sin facturar`, // APROBADO por el fundador (docs/master/SCRUM-320.md, C4, «aceptados y sin facturar»; marca: SCRUM-1215 comentario 19084)
     // SCRUM-423 · copy APROBADA por el asesor el 10-ago-2026 (regla 30). El formato copia el de
     // los otros cuatro, MEDIDO y no supuesto: número delante, sin mayúscula inicial forzada, sin
     // punto final y sin icono. Singular y plural DE VERDAD —nunca `línea(s)`—, regla dura heredada
@@ -239,7 +239,7 @@ function pintarQueFaltaParaCobrar(sec, job, fmt, moneda) {
       const base = `${h.cantidad} ${h.cantidad === 1 ? 'línea' : 'líneas'} del presupuesto sin entregar`;
       return h.fraseSinAtribuir ? `${base} · ${h.fraseSinAtribuir}` : base;
     },
-    'sin-cobrar': (h) => `${fmt(h.importe, moneda)} facturados sin cobrar`,
+    'sin-cobrar': (h) => `${fmt(h.importe, moneda)} facturados sin cobrar`, // APROBADO por el fundador (docs/master/SCRUM-320.md, «N € facturados sin cobrar»; marca: SCRUM-1215 comentario 19084)
   };
   const TEXTO_ACCION = {
     'hacer-presupuesto': 'Hacer presupuesto',
@@ -772,7 +772,10 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   // ── Resumen: estado de cobro + total + barra + cobrado/pendiente ──
   const sumSec = document.createElement('div');
   sumSec.className = 'detail-section';
-  body.appendChild(sumSec);
+  // SCRUM-917i · aquí NO se cuelga todavía. Se colgaba siempre, antes de saber si tenía algo que
+  // decir, y en un Trabajo sin importe (`totalAceptado` null) quedaba en pantalla una sección de
+  // 37 px —su relleno y su borde— sin nada dentro. Se cuelga abajo, con la franja, bajo la misma
+  // guarda que decide si hay franja: misma regla del hueco que «Lo que falta», justo encima.
   // SCRUM-31 (F1) puso aquí el cliente con tap-to-call. SCRUM-318 (G3) lo sube al rail (bloque
   // CLIENTE), donde vive el contexto y donde ya no compite con el dinero por la misma franja.
   const sumRow = document.createElement('div');
@@ -834,6 +837,9 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   // (la franja), 318/363 de si hay eje para derivar (el foco).
   const hayEje = aceptado > 0;
   if (job.totalAceptado != null) {
+    // SCRUM-917i · el resumen se cuelga AQUÍ: sólo existe si tiene franja. Entre su creación y este
+    // punto no se añade nada más al cuerpo, así que su sitio en la pantalla es el mismo de antes.
+    body.appendChild(sumSec);
     const franja = document.createElement('div');
     franja.className = 'detail-dinero';
 
@@ -1138,6 +1144,19 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
   dirInput.style.minHeight = '44px';
   dirWrap.appendChild(dirLabel);
   dirWrap.appendChild(dirInput);
+  // SCRUM-1144 · «Elegir un sitio guardado», el MISMO control que el editor de presupuestos. Escribe
+  // en el campo y le deja el foco, y se GUARDA al salir de él por el `blur` de abajo, igual que lo
+  // tecleado: un solo camino de guardado. Sin cliente no hay sitios que ofrecer, y no se pinta.
+  const idClienteDelTrabajo = job.customer && job.customer.id != null ? String(job.customer.id) : '';
+  if (idClienteDelTrabajo) {
+    const selectorDeSitios = window.sitiosGuardados.montarSelector({
+      idLista: 'job-sitios-guardados',
+      idCliente: () => idClienteDelTrabajo,
+      campo: dirInput,
+    });
+    dirWrap.appendChild(selectorDeSitios.boton);
+    dirWrap.appendChild(selectorDeSitios.lista);
+  }
   infoSec.appendChild(dirWrap);
 
   dirInput.addEventListener('blur', async () => {
@@ -1449,11 +1468,12 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
     else list.forEach((el) => acts.appendChild(el));
   };
   // SCRUM-85: payToken (Charge.receiptToken), NUNCA el chargeId — /pay/invoice ya no acepta el id.
+  // SCRUM-1233h: sin token, `null` — la barra no ofrece copiar. Antes copiaba la portada.
   const invWaFallback = (inv, payToken, onRetry) => {
     const token = payToken || inv.payToken;
     statusBox.querySelectorAll('.wa-fallback-bar').forEach((b) => b.remove());
     statusBox.appendChild(waFallbackBar({
-      link: token ? location.origin + '/pay/invoice/' + token : location.origin,
+      link: token ? location.origin + '/pay/invoice/' + token : null,
       onEmail: job.customer?.email ? () => apiRequest(`/admin/invoices/${inv.id}/send-email`, { method: 'POST' }) : null,
       emailDisabledReason: job.customer?.email ? null : 'Este cliente no tiene email guardado',
       onRetry,
@@ -1544,6 +1564,35 @@ async function renderJobDetailView(container, jobId, altaAlbaran) {
     }
   });
   newAlbRow.appendChild(parteBtn);
+
+  // ── SCRUM-1190 · UN PRESUPUESTO MÁS SOBRE ESTE TRABAJO (el imprevisto, la ampliación) ────────
+  //
+  // El servidor ya lo cuelga de este Trabajo (`job_id`, SCRUM-195) y al aceptarlo suma su importe
+  // (SCRUM-1370); faltaba por dónde pedirlo. Va por el MISMO camino que «Hacer presupuesto» del hueco
+  // (SCRUM-1274), así que el editor nace con este Trabajo y su cliente.
+  //
+  // SÓLO si el Trabajo ya tiene importe aceptado (`totalAceptado != null`): es el COMPLEMENTO EXACTO
+  // de la condición del hueco «Hacer presupuesto» (`huecosDeCobro`, `== null`), así que siempre sale
+  // uno de los dos y nunca los dos. Con `job.quote` a secas, un presupuesto enviado y sin aceptar
+  // enseñaría ambos: dos botones para lo mismo con dos rótulos dirían que son cosas distintas.
+  // Rótulo: `+ ${L.quoteNew}`, el de la ficha del cliente para el caso equivalente (abrir el editor
+  // atado a la ficha). Reutilización, no texto nuevo: firma del orquestador, 16-oct-2026.
+  // No escribe `Quote.esAdicional`: quién pone ese rol está sin decidir (docs/master/SCRUM-1190.md).
+  if (job.totalAceptado != null) {
+    const L = window.appLocale || {};
+    const otroPresupuestoBtn = document.createElement('button');
+    otroPresupuestoBtn.type = 'button';
+    otroPresupuestoBtn.className = 'btn-secondary btn-sm job-toolbar-btn-44';
+    otroPresupuestoBtn.setAttribute('data-presupuesto-del-trabajo', '1');
+    otroPresupuestoBtn.textContent = `+ ${L.quoteNew || 'Nuevo presupuesto'}`;
+    otroPresupuestoBtn.addEventListener('click', () => {
+      if (!window.renderAppView) return;
+      window.renderAppView('quotes-new', {
+        template: { deTrabajo: { jobId: job.id, customerId: job.customer && job.customer.id != null ? job.customer.id : null } },
+      });
+    });
+    newAlbRow.appendChild(otroPresupuestoBtn);
+  }
 
   // ── SCRUM-135: "+ Añadir gasto" ya vinculado a ESTE trabajo ──────────────────
   // Es el alta rápida "desde la furgoneta" que SCRUM-107 dejó aparcada hasta que existiera

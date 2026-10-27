@@ -34,8 +34,13 @@ export const REDACTADO = '[borrado a petición del interesado]';
  * son parte del asiento. Aquí cada campo está elegido, y lo que no está en la lista **no se toca**.
  */
 export const CAMPOS_PERSONALES: Readonly<Record<string, readonly string[]>> = Object.freeze({
-  merchant: ['name', 'email', 'legalName', 'taxId', 'address', 'whatsappPhone'],
-  customer: ['name', 'phone', 'email', 'legalName', 'taxId', 'notes'],
+  // SCRUM-1569d · `bizumPhone`, `iban` y `clabe` (cómo cobra el profesional: un teléfono y dos cuentas
+  // bancarias) y `customer.mobile` (el móvil al que se manda el WhatsApp, `canalDeWhatsApp.ts`, al
+  // lado de `phone`, que ya se redactaba). Decisión del fundador, SCRUM-1569 c.20142: «Ok tu
+  // recomendación». Ninguno lo lee el camino de emisión; sí la página de cobro de un comercio ya
+  // suprimido, que pasa a pintar el texto de redacción (como ya hacía con `whatsappPhone`).
+  merchant: ['name', 'email', 'legalName', 'taxId', 'address', 'whatsappPhone', 'bizumPhone', 'iban', 'clabe'],
+  customer: ['name', 'phone', 'email', 'legalName', 'taxId', 'notes', 'mobile'],
   // SCRUM-497 · `email_messages` guarda la DIRECCIÓN a la que se mandó cada correo, y hasta hoy
   // sobrevivía intacta a una supresión: quedaba constancia de que el profesional ejerció su
   // derecho y las direcciones de sus clientes seguían en claro.
@@ -50,12 +55,30 @@ export const CAMPOS_PERSONALES: Readonly<Record<string, readonly string[]>> = Ob
   // el hecho, no la persona.
   emailMessage: ['toEmail'],
   // SCRUM-1014 · el contacto EN OBRA (el portero, el inquilino) — una persona sin ficha propia
-  // de cliente, así que su único rastro es este teléfono. `name` de `customerSite` es la
-  // etiqueta que el profesional le pone al SITIO («Piso 3ºB»), no el nombre de una persona —
-  // mismo caso que `product.name`, declarado fuera en el censo (`tests/…scrum497…`), y por
-  // tanto no entra aquí. `address` (la dirección del sitio) queda SIN DECIDIR, misma pregunta
-  // que `job.direccion`.
-  customerSite: ['phone'],
+  // de cliente, así que su único rastro es este teléfono. `address` (la dirección del sitio)
+  // queda SIN DECIDIR, misma pregunta que `job.direccion`.
+  //
+  // SCRUM-1569 · `contactName` es el NOMBRE de esa misma persona («Luis el portero»), y se
+  // quedaba en claro junto a su teléfono redactado (medido en PGlite por J4, c.20092). Mismo
+  // criterio que `phone`: SE ANONIMIZA. `city`/`postalCode`/`province`/`country` no entran aquí:
+  // esperan decisión, como `address`.
+  //
+  // SCRUM-1569d · `name` estuvo FUERA desde SCRUM-1014 como «la etiqueta que el profesional le pone
+  // al SITIO, no el nombre de una persona». El fundador decidió lo contrario («ok decidimos que sí»,
+  // SCRUM-1569 c.20142): «Piso 3ºB» es media dirección. SE ANONIMIZA.
+  customerSite: ['phone', 'contactName', 'name'],
+  // SCRUM-529 · `whatsapp_messages.to_phone` guarda el NÚMERO al que se mandó cada WhatsApp: el
+  // teléfono del cliente, fuera de `customers`. Sin esta línea se redacta `customer.phone` y el
+  // mismo número queda en claro una tabla más allá.
+  //
+  // Mismo caso y mismo criterio que `emailMessage.toEmail`, justo arriba: SE ANONIMIZA, NO SE
+  // BORRA. La fila acredita el envío (qué plantilla, cuándo, con qué resultado); lo que
+  // desaparece es el destinatario.
+  //
+  // ⚠️ Solo `toPhone`. `waMessageId` es el identificador que da Meta —mismo papel que
+  // `providerId` en el correo: no es un dato del interesado y es lo que cruza un webhook de
+  // entrega con su fila—, y `type`/`templateName`/`status`/las fechas son el hecho, no la persona.
+  whatsAppMessage: ['toPhone'],
 });
 
 /** Lo que NUNCA se toca, con su motivo. Sirve de documentación y de guard a la vez. */

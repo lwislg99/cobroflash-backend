@@ -237,6 +237,7 @@ export function leerFuente(ruta, { conComentarios = false, ancla = null } = {}) 
   // SCRUM-719 · el `ancla` es opcional aqui y OBLIGATORIO en `ejecutableDe`, a proposito: este
   // camino tambien lo usan tests que EXIGEN algo, y a esos el filtro no puede cegarlos —una
   // afirmacion positiva sobre la nada FALLA sola—. Quien PROHIBE algo si necesita el suelo.
+  // ⚠️ 7-oct-2026 · SCRUM-1395 (anexado por SCRUM-1481): esa opcionalidad vale ya SOLO para los heredados declarados en `tests/_filtro-sin-suelo-heredados.json`; un test NUEVO da SIEMPRE el `ancla` (lo exige el caso «SCRUM-1395 · ②» de tests/scrum719-el-suelo-de-los-doce.test.mjs, y esa lista no crece).
   return ejecutableDe(texto, {
     ancla: ancla || undefined,
     donde: ruta,

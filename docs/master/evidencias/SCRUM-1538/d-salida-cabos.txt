@@ -1,0 +1,36 @@
+POBLACIÓN: 1045 ejecuciones de c-ejecuciones.tsv · ventana 2026-10-06T13:43:02Z → 2026-10-13T12:10:00Z
+
+① «19 de 56» · ejecuciones del meta-guard en push a main creadas hasta 2026-10-13T06:20:00Z, acabadas: 56 · en failure según GitHub: 19 · de ésas, ROJO (alguna muda): 0 · CIEGO (cola perdida): 19
+   la misma cuenta con la ventana entera de este censo: 20 de 63
+   control de cero derivado: las mismas condiciones sobre un job de nombre invertido → 0
+
+② SCRUM-1378 · job 112472123541 · el test en el commit del rojo: 12 líneas, sha256 2594a8b681ab · en la punta de main: 12 líneas, sha256 2594a8b681ab → IDÉNTICO: no hay arreglo en main
+   la aserción es doesNotMatch(/1681/) sobre la fila entera; el valor que la hizo caer: actualizado=1791316817877.9614 → ¿contiene «1681»? SÍ, dentro de la marca de tiempo · ¿y fuera de ese número? NO
+   control: el mismo test en un commit donde PASA trae la misma aserción: sí
+
+③ TRINQUETE · 64 ejecuciones · COLGADA 5 · VERDE 59
+   job 112314349590 · 2026-10-06T14:02:04Z · ee4331a46 · blob de scripts/trinquete-de-zona.mjs 31c3302c2 → con ese mismo blob: 3 otras ejecuciones, VERDE 3, COLGADA 0
+   job 112432961307 · 2026-10-06T18:21:22Z · 317c0bab5 · blob de scripts/trinquete-de-zona.mjs 68dec529e → con ese mismo blob: 59 otras ejecuciones, VERDE 56, COLGADA 3
+   job 112472123426 · 2026-10-06T19:39:34Z · 282225174 · blob de scripts/trinquete-de-zona.mjs 68dec529e → con ese mismo blob: 59 otras ejecuciones, VERDE 56, COLGADA 3
+   job 112931567843 · 2026-10-07T17:40:57Z · 58fb1028b · blob de scripts/trinquete-de-zona.mjs 68dec529e → con ese mismo blob: 59 otras ejecuciones, VERDE 56, COLGADA 3
+   job 113072953269 · 2026-10-07T23:41:42Z · edfbd86e7 · blob de scripts/trinquete-de-zona.mjs 68dec529e → con ese mismo blob: 59 otras ejecuciones, VERDE 56, COLGADA 3
+   la última colgada es del 2026-10-07T23:41:42Z; después: 38 ejecuciones, VERDE 38, COLGADA 0
+   commits de main que tocan scripts/trinquete-de-zona.mjs después de la última colgada: 0
+   commits de main que tocan .github/workflows/ci.yml después de la última colgada: 0
+   commits de main que tocan scripts/tanda-con-veredicto.mjs después de la última colgada: 0
+
+④ CLAUDE CODE en failure: 6 (workflow reactivo: lo dispara un comentario, no un commit de main)
+   job 112306344435 · 2026-10-06T13:54:21Z · 109163 B · Claude result reported subtype success with is_error:true (run did not complete successfully) ¦ Action failed with error: Claude execution failed: result is_error:true ¦ Process completed with exit code 1.
+   job 112315746134 · 2026-10-06T14:14:04Z · 134762 B · Claude result reported subtype success with is_error:true (run did not complete successfully) ¦ Action failed with error: Claude execution failed: result is_error:true ¦ Process completed with exit code 1.
+   job 112318722175 · 2026-10-06T14:20:07Z · 114130 B · Claude result reported subtype success with is_error:true (run did not complete successfully) ¦ Action failed with error: Claude execution failed: result is_error:true ¦ Process completed with exit code 1.
+   job 112698052565 · 2026-10-07T08:17:32Z · 114931 B · Claude result reported subtype success with is_error:true (run did not complete successfully) ¦ Action failed with error: Claude execution failed: result is_error:true ¦ Process completed with exit code 1.
+   job 113814851478 · 2026-10-09T12:17:05Z · 116045 B · Claude result reported subtype success with is_error:true (run did not complete successfully) ¦ Action failed with error: Claude execution failed: result is_error:true ¦ Process completed with exit code 1.
+   job 113815655938 · 2026-10-09T12:19:22Z · 125090 B · Claude result reported subtype success with is_error:true (run did not complete successfully) ¦ Action failed with error: Claude execution failed: result is_error:true ¦ Process completed with exit code 1.
+
+⑤ VIGÍA DEL DESPLIEGUE (informativo) · 64 ejecuciones · no dicen «al-dia»: 2
+   2026-10-07T06:25:16Z · job 112661659895 · ROJO · atrasado · prod 33f07c33 · main 720c1a12 · hueco 10.1 h · 4 commits
+      la siguiente: 2026-10-07T06:43:04Z · VERDE · al-dia · prod adedcf53 · main adedcf53 · hueco 0.0 h · 0 commits
+      la siguiente: 2026-10-07T06:58:48Z · VERDE · al-dia · prod 725c0e3a · main 725c0e3a · hueco 0.0 h · 0 commits
+   2026-10-13T11:20:14Z · job 115272657889 · VERDE · 🟡 verde POR DISEÑO con producción por detrás: atrasado · prod 38de705e · main f7a4c816 · hueco 95.8 h · 20 commits
+      la siguiente: 2026-10-13T11:50:50Z · VERDE · al-dia · prod fdd80538 · main fdd80538 · hueco 0.0 h · 0 commits
+EXIT=0

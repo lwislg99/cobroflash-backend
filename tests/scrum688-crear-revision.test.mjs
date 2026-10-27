@@ -48,6 +48,7 @@ const NUMERO = 2004226;
 function versionVigente(over = {}) {
   const q = {
     id: 700, merchantId: MERCHANT, quoteNumber: NUMERO, revision: 0,
+    createdAt: new Date('2026-09-01T10:00:00Z'), // SCRUM-1490: una fila de `quotes` SIEMPRE trae su fecha; de ella sale el año de su serie
     signatureUrl: 'data:image/png;base64,FIRMA', // firmada: es el caso que motiva el ticket
   };
   // Todo lo heredable, con un valor reconocible por campo — así se ve CUÁL no viaja.

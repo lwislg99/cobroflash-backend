@@ -1,0 +1,7 @@
+POBLACIÓN · node v24.21.0 · linux · 4 hilos · 3 pasadas por celda · 2 celdas de cobaya · 0 ficheros reales · carga 4 procesos
+
+── LA COBAYA ──
+R-sin-rojo-que-deja-un-servidor · carga 4 · 3 pasadas · 0 con casos ausentes · casos ausentes 0 (ejecutados 0, NO ejecutados 0) · forma (nada) · salidas señal SIGKILL×3
+S-con-rojo-que-deja-un-servidor · carga 4 · 3 pasadas · 0 con casos ausentes · casos ausentes 0 (ejecutados 0, NO ejecutados 0) · forma (nada) · salidas 1×3
+
+EXIT=0 · filas 6 + 0 · /home/runner/work/_temp/cobaya/cobaya-pasadas-carga4.tsv

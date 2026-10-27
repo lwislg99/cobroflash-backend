@@ -12,8 +12,10 @@
 // POR QUÉ HAY QUE CORRERLO EN LOS CUATRO ÁRBOLES: el defecto que cierra este ticket era que un
 // mismo nombre de clave significaba bases distintas SEGÚN LA CARPETA. Un verde en un worktree no
 // dice nada de los otros tres — es literalmente la dimensión en la que estaba el fallo.
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import dotenv from 'dotenv';
 import 'dotenv/config';
 import { raizDeTrabajo } from './_identidad-sesion.mjs';
 import {
@@ -29,13 +31,37 @@ import {
 const OBLIGATORIAS = ['DATABASE_URL_STAGING', 'DATABASE_URL_DEV', 'DATABASE_URL_TESTS'];
 
 /**
+ * SCRUM-418c · Los ficheros de entorno que la APP lee en este árbol, cada uno por separado.
+ *
+ * 🔴 `import 'dotenv/config'` sólo carga `.env`. La app carga ANTES `.env.local`, con prioridad
+ * (`src/core/config/loadEnv.ts:10`). Así que una credencial de producción escrita en `.env.local` la
+ * usaba `npm run dev` y este guard no la veía: estaba ciego justo en el fichero que gana. Se leen los
+ * dos, sin fusionar, porque también importa lo que hay en el que pierde: un script que sólo cargue
+ * `.env` se lleva lo de `.env`.
+ *
+ * Un fichero que existe y no se puede leer NO se salta: sale con `error`, y eso es un fallo.
+ * @returns {{origen:string, env?:Record<string,string>, error?:string}[]}
+ */
+export const FICHEROS_DE_ENTORNO = Object.freeze(['.env.local', '.env']);
+export function leerFicherosEnv(dir) {
+  const salida = [];
+  for (const origen of FICHEROS_DE_ENTORNO) {
+    const ruta = path.join(dir, origen);
+    if (!fs.existsSync(ruta)) continue;
+    try { salida.push({ origen, env: dotenv.parse(fs.readFileSync(ruta)) }); }
+    catch (e) { salida.push({ origen, error: e && e.message ? e.message : String(e) }); }
+  }
+  return salida;
+}
+
+/**
  * @param raiz  la raíz del árbol, INYECTABLE. Por defecto se descubre con `raizDeTrabajo`, que
  *   busca un `.git` hacia arriba — y por eso una ruta que no existe en disco no se puede usar
  *   para probar. Poder pasarla es lo que permite ejercitar los rojos de los CUATRO worktrees sin
  *   tener los cuatro delante ni leer un solo `.env` real, que es justo la dimensión en la que
  *   estaba el fallo de SCRUM-383 (misma clave, distinta base según la carpeta).
  */
-export function comprobarEsteArbol({ env = process.env, desde = process.cwd(), raiz: raizDada = null } = {}) {
+export function comprobarEsteArbol({ env = process.env, desde = process.cwd(), raiz: raizDada = null, ficheros = [] } = {}) {
   const raiz = raizDada ?? raizDeTrabajo(desde);
   const worktree = nombreDeWorktree(raiz) ?? '(no se pudo identificar)';
   const lineas = [`\n[claves de base] worktree: ${worktree}`];
@@ -81,20 +107,47 @@ export function comprobarEsteArbol({ env = process.env, desde = process.cwd(), r
     lineas.push('  · DATABASE_URL: ausente (correcto en un árbol de trabajo; producción no vive aquí).');
   }
 
+  // SCRUM-418c · el mismo barrido sobre CADA fichero de entorno, sin fusionar (ver `leerFicherosEnv`).
+  // Lo que ya se miró en `env` con el mismo valor no se repite.
+  let deFicheros = 0;
+  for (const f of ficheros) {
+    if (f.error) {
+      fallos++;
+      lineas.push(`\n🔴 NO SE PUDO LEER ${f.origen}: ${f.error}\n  Existe y no se sabe qué hay dentro: «no pude mirar» no es «no hay credencial de producción».\n`);
+      continue;
+    }
+    for (const { clave, valor } of clavesDeConexion(f.env)) {
+      deFicheros++;
+      if (env[clave] === valor) continue;
+      const r = comprobarCredencialDeProduccion(`${clave} (en ${f.origen})`, valor, raiz ?? worktree);
+      if (r.veredicto === OK) continue;
+      fallos++;
+      lineas.push(`\n${r.mensaje}\n`);
+    }
+  }
+
   // 🔴 SUELO. Si no se comprobó NADA, esto no puede terminar en verde: «todas cuadran» y «no
   // había ninguna que mirar» se ven igual en pantalla y significan lo contrario.
   //
   // ⚠️ El suelo mira las DOS cosas, y la segunda se añadió en SCRUM-418: sin `conexiones`, el
   // barrido de producción no ha mirado nada, y un barrido que no mira nada no puede declarar que
   // no hay credencial de producción — declararía la ceguera como limpieza.
-  if (comprobadas === 0 || conexiones.length === 0) {
+  if ((comprobadas === 0 || conexiones.length === 0) && deFicheros > 0) {
+    // SCRUM-418c: los ficheros sí traían cadenas (se han barrido arriba), así que «no se leyó ni una»
+    // sería falso. Lo que falta es que el ENTORNO cargado las traiga, que es lo que mira la coherencia.
+    fallos++;
+    const barridas = deFicheros === 1 ? 'La única cadena de los ficheros se ha barrido' : `Las ${deFicheros} cadenas de los ficheros se han barrido`;
+    lineas.push('  🔴 SUELO: el entorno cargado no trae las cadenas de conexión que hacen falta.\n' +
+      `     ${barridas} arriba, pero sin cadenas en el entorno la coherencia no ha mirado nada.\n` +
+      '     Esto NO es un verde.');
+  } else if (comprobadas === 0 || conexiones.length === 0) {
     fallos++;
     lineas.push('  🔴 SUELO: no se leyó ni una sola cadena de conexión. Esto NO es un verde — es que\n' +
       '     no se miró nada (¿`.env` ausente, o `dotenv` sin cargar?). «No hay credencial de\n' +
       '     producción» y «no supe mirar» se ven igual aquí y significan lo contrario.');
   }
 
-  return { worktree, fallos, comprobadas, conexiones: conexiones.length, salida: lineas.join('\n') };
+  return { worktree, fallos, comprobadas, conexiones: conexiones.length, deFicheros, salida: lineas.join('\n') };
 }
 
 // ── CLI ──────────────────────────────────────────────────────────────────────────────────────
@@ -104,14 +157,16 @@ export function comprobarEsteArbol({ env = process.env, desde = process.cwd(), r
 // con exit 0 — el defecto exacto de SCRUM-235.
 const esCli = process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1]);
 if (esCli) {
-  const r = comprobarEsteArbol();
+  const r = comprobarEsteArbol({ ficheros: leerFicherosEnv(raizDeTrabajo(process.cwd()) ?? process.cwd()) });
   console.log(r.salida);
   if (r.fallos > 0) {
     console.error(`\n❌ ${r.fallos} problema(s) de claves en «${r.worktree}». No se sigue.\n`);
     process.exit(1);
   }
+  // SCRUM-1526: el verde dice lo que se comprobó. «Ninguna va a producción» era una afirmación
+  // sobre un nombre de host; lo que se mira ahora es que cada destino esté DECLARADO.
   console.log(`\n✅ las ${r.comprobadas} claves de «${r.worktree}» apuntan a donde prometen, y ` +
-    `ninguna de las ${r.conexiones} cadenas de conexión de este árbol va a producción.\n`);
+    `las ${r.conexiones} cadenas de conexión de este árbol van a destinos declarados como no-producción.\n`);
 }
 
 // Delata el caso de arriba: si alguien invoca este fichero y no se reconoce como CLI, no puede

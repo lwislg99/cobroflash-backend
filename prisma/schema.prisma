@@ -67,9 +67,9 @@ model Merchant {
   connectStatus      String  @default("none") @map("connect_status") // none|pending|active|restricted
   // C1-4: móvil para Bizum manual asistido (default en UI: whatsappPhone, editable)
   bizumPhone         String? @map("bizum_phone")
-  // A10.2 (EXT3, Parte L): estado de la suscripción de Stripe — ok|past_due|canceled.
+  // A10.2 (EXT3): estado de la suscripción de Stripe. Los valores los fija la Parte L del máster («Subscription») y los escribe el webhook (stripe.routes.ts).
   // plan conserva QUÉ plan es; esto conserva CÓMO está (banner past_due + portal).
-  subscriptionStatus String? @map("subscription_status") // active | past_due | canceled
+  subscriptionStatus String? @map("subscription_status")
 
   // A14 (EXT3, PERFIL-1): perfil público /p/:slug · flag PUBLIC_PROFILE_ENABLED (OFF)
   slug          String?   @unique
@@ -182,6 +182,12 @@ model Merchant {
   // que esto NO abre deriva: el esquema alcanza a las bases, no al revés.
   retencionIrpfDeclarada Boolean @default(false) @map("retencion_irpf_declarada")
   retencionIrpfTipo      Int?    @map("retencion_irpf_tipo")
+  // SCRUM-1072 · LA ACTIVIDAD, junto a la retención: 'profesional' · 'empresarial' · 'no_lo_se'.
+  // UNA columna basta (docs/sql/scrum-1072-activity-kind.sql): NULL = no consta, y «no lo sé» es
+  // una RESPUESTA, otro valor. Sin `@default`: un valor por defecto afirmaría lo que nadie dijo.
+  // Solo se GUARDA: no cambia la retención ni ningún importe hasta que el asesor responda Q-C5.
+  // El DDL ya estaba aplicado (MIGRATIONS_PENDING, 29-sep): esto es A5 paso ③.
+  activityKind           String? @map("activity_kind")
 
   // SCRUM-656 (T7) · Las clausulas de cierre, escritas UNA vez: [{id, titulo, texto}].
   clausulasPresupuesto Json? @map("clausulas_presupuesto")
@@ -577,7 +583,7 @@ model Quote {
 
   // EXT3: origin (A15: maintenance) · validUntil (A16.2: caducidad, default 30d en código)
   // · docFields (A20.4: qué datos del cliente muestra el documento)
-  origin     String? // null|manual … | maintenance
+  origin     String? // null = no consta. Lo escribe maintenance.service.ts (propuesta de mantenimiento); revision.ts lo copia del original.
   validUntil DateTime? @map("valid_until")
   docFields  Json?     @map("doc_fields") // {name,phone,taxId,email}: bool
 
@@ -645,6 +651,11 @@ model Quote {
   // plataforma (el primer presupuesto de un merchant nuevo salía "#47").
   // Nullable: quotes anteriores al backfill muestran el id como fallback.
   quoteNumber Int? @map("quote_number")
+  // SCRUM-1490: el AÑO de la serie en que se numeró ESTA fila (`P26…` → 2026). Lo escribe quien
+  // reserva el número, y una revisión HEREDA el de su original: su `createdAt` puede caer en otro
+  // año. NO es `Merchant.quoteSeriesYear`, que es el año EN CURSO del contador. NULL = fila
+  // anterior a esta columna, o presupuesto sin número; no es un año.
+  seriesYear  Int? @map("series_year")
 
   // A2.1: métodos de pago habilitados para ESTE presupuesto (selector al crear:
   // ["card","bizum","transfer"]). null = todos los que el merchant tenga activos.
@@ -669,7 +680,7 @@ model Quote {
   acceptedAt           DateTime?
   paymentTerms         String?
   customBillingPlan    Json?     @map("custom_billing_plan") // SCRUM-27: [{percentage, label}] plan de tramos personalizado (fracción 0-1; índice = orden)
-  // V0-3: telemetría quote_created_via ('text' | 'voice' con VOZ-1)
+  // V0-3: telemetría quote_created_via. Lo escriben tres sitios: el alta (schemas.ts, created_via), maintenance.service.ts y revision.ts.
   createdVia           String?   @map("created_via")
   rejectedAt           DateTime?
   decisionChannel      String?
@@ -680,6 +691,9 @@ model Quote {
   tiers                Json?
   selectedTierId       String?
   internalNotes        String?   @map("internal_notes") @db.Text // Notas privadas del profesional, nunca visibles al cliente
+  // SCRUM-1273 · ARCHIVAR es quitarlo de la lista, no un estado: NULL = no archivado. Sin
+  // `archived_by` ni auditoría (c.19655): el quién NO queda. ALTER en docs/sql/scrum-1273-archivar-presupuestos.sql.
+  archivedAt           DateTime? @map("archived_at")
   // ⚠️ NO es la evidencia de la FIRMA, y la distinción costó medirla (SCRUM-805): esto lo escribe
   // el camino de ADMIN cuando el profesional marca a mano «aceptado/rechazado» ({method,
   // typedName, …}, ver `quotesAdmin.ts`). El camino público de firma NUNCA la toca. Se deja
@@ -889,7 +903,7 @@ model Invoice {
   // negativas — de un concepto en texto no se saca un identificador de factura.
   deductsRefs Json?    @map("deducts_refs")
 
-  // Tipo de factura (RD 1619/2012 / VeriFactu): F1 = completa estándar | R1 = rectificativa
+  // Tipo de documento. Los valores los fija la unión TipoDocumento (src/modules/invoicing/domain/tipoDocumento.ts), que dice también cuáles se declaran.
   type        String @default("F1")
   rectifiesId Int?   @map("rectifies_id") // factura original a la que rectifica (solo R1)
 
@@ -1135,7 +1149,7 @@ model BotSession {
   id         Int      @id @default(autoincrement())
   phone      String // normalizado (normalizePhone)
   merchantId Int?     @map("merchant_id")
-  state      String   @default("menu") // menu|choosing_merchant|asking_description|asking_zone|done|handoff (K1)
+  state      String   @default("menu") // estados CERRADOS (regla 27): los fija el máster, Parte K1 («BotSession»)
   data       Json?
   expiresAt  DateTime @map("expires_at")
 
@@ -1195,7 +1209,7 @@ model CustomerEvent {
   merchantId Int @map("merchant_id")
   customerId Int @map("customer_id")
 
-  type   String // quote_sent | quote_accepted | quote_rejected | invoice_issued | payment_received | reminder_sent | quote_requested | review_requested
+  type   String // campo ABIERTO, sin lista cerrada: lo escribe quien llama a recordCustomerEvent (customerEvents.service.ts), más fusionClientes.ts y notasDelCliente.ts
   title  String
   detail String?
   meta   Json?
@@ -1267,14 +1281,14 @@ model WhatsAppMessage {
   merchantId Int  @map("merchant_id")
   customerId Int? @map("customer_id")
 
-  type         String // 'template' | 'service'
+  type         String // valores CERRADOS (regla 27): los fija el máster, Parte L («WhatsAppMessage»)
   templateName String? @map("template_name")
   waMessageId  String? @unique @map("wa_message_id") // id que devuelve Meta (wamid.*)
-
-  status String  @default("queued") // queued → sent → delivered → read | failed
+  toPhone      String? @map("to_phone") // SCRUM-529: el número al que se mandó, tal cual se le dio a Meta. NULL = anterior a la columna, o entrante. Va en esta línea, que estaba en blanco, para no mover las de debajo: hay documentos que las citan por número.
+  status String  @default("queued") // estados CERRADOS (regla 27): los fija el máster, Parte L («WhatsAppMessage»)
   error  String?
 
-  // Documento relacionado para el chip de entrega (quote | invoice | charge)
+  // Documento relacionado para el chip de entrega. Los valores: WaRelatedType (src/modules/messaging/domain/whatsappLog.service.ts).
   relatedType String? @map("related_type")
   relatedId   Int?    @map("related_id")
 
@@ -1406,7 +1420,7 @@ model AuditLog {
 model Attachment {
   id         Int      @id @default(autoincrement())
   merchantId Int      @map("merchant_id")
-  entityType String   @map("entity_type") // quote_request | job
+  entityType String   @map("entity_type") // a qué cuelga el adjunto. Lo escriben attachment.service.ts (solicitud) y albaranes.routes.ts (albarán); el de Trabajo (MEDIA-1 c) no está construido.
   entityId   Int      @map("entity_id")
   url        String
   kind       String   @default("photo") // photo | audio (audio = F2, no F1)
@@ -1560,7 +1574,7 @@ model EmailMessage {
   merchantId Int  @map("merchant_id")
   customerId Int? @map("customer_id")
 
-  kind       String // invoice | quote | magic_link | digest | ...
+  kind       String // CLASES_DE_CORREO (src/modules/messaging/domain/registroDeEnvios.ts): lista cerrada, una por emisor
   toEmail    String  @map("to_email")
   providerId String? @unique @map("provider_id") // id de Resend; NULL = no consta
 
@@ -1568,7 +1582,7 @@ model EmailMessage {
   status String  @default("aceptado_sin_identificador")
   error  String?
 
-  relatedType String? @map("related_type") // invoice | quote | charge
+  relatedType String? @map("related_type") // documento relacionado; nulo si el emisor no lo sabe. Hoy sólo lo escribe email.service.ts (factura y presupuesto).
   relatedId   Int?    @map("related_id")
 
   createdAt DateTime @default(now()) @map("created_at")

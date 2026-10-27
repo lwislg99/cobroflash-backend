@@ -15,6 +15,8 @@ import { conConstancia } from '../../../messaging/domain/avisoConstancia';
 import {
   llevaRegistro, abrirRegistroDeEvento, marcarEventoProcesado, anotarFalloDeEvento,
 } from '../../domain/gatewayEvents.service';
+// SCRUM-1402: qué planes existen lo dice `entitlements.ts` (regla 34). Aquí NO se copia la lista.
+import { PLANES_CONOCIDOS } from '../../../../core/entitlements';
 
 export const rawBody = express.raw({ type: 'application/json' });
 export const router = express.Router();
@@ -31,6 +33,40 @@ export function isDuplicateStripeEvent(id: string): boolean { // A12.2: exportad
   seenOrder.push(id);
   if (seenOrder.length > 500) seenStripeEvents.delete(seenOrder.shift() as string);
   return false;
+}
+
+// SCRUM-1402 — `metadata.plan` llegaba a `Merchant.plan` TAL CUAL, con que no viniera vacío. Decisión
+// del fundador (SCRUM-1402, comentario 18019, opción A): un plan que no existe SE RECHAZA — no se
+// escribe nada en la fila y el merchant se queda con el que tenía — y el rechazo es RUIDOSO, porque
+// uno callado deja a alguien pagando sin que nadie se entere. El aviso tiene la forma del de
+// `getEntitlements` (SCRUM-1342): el valor recibido entre comillas, de quién es y los planes que
+// existen; y además el evento, que es por donde se busca el pago en Stripe.
+// ⛔ Rechazar NO devuelve el dinero ni lo compensa: eso lo resuelve el fundador a mano, caso por caso.
+// El checkout propio solo manda `pro` o `founding`; lo demás llega escrito a mano en Stripe.
+function planQueExiste(planId: string, merchantId: number, event: { id: string; type: string }): boolean {
+  if (PLANES_CONOCIDOS.includes(planId)) return true;
+  console.warn(
+    `[stripe] ⚠️ plan desconocido ${JSON.stringify(planId.slice(0, 60))} (merchant ${merchantId}) en `
+    + `${event.type} ${event.id}: NO se cambia el plan, el merchant se queda con el que tenía. `
+    + `Hay que mirarlo a mano en Stripe: puede haber un pago sin plan activado. `
+    + `Los planes que existen: ${PLANES_CONOCIDOS.join(', ')}.`,
+  );
+  return false;
+}
+
+// SCRUM-1565 — el fin del periodo pagado. Desde la API `2025-03-31` Stripe ya no lo manda en la raíz de
+// la `Subscription` sino en cada item, y la versión del payload la fija el ENDPOINT (el de yaqu.app está
+// en `2025-10-29.clover`, SCRUM-809c), no el `apiVersion` del cliente. Se lee la raíz (API vieja) y, si
+// no está, el de los items. Si los items no coinciden entre sí no se elige uno: no hay fecha.
+// Sólo vale un número entero de segundos mayor que cero; lo demás no es una fecha, y `0` o `null`
+// escribían 1970, que el paywall lee como «ya vencido».
+function finDePeriodo(sub: StripeLib.Subscription): Date | null {
+  const valido = (v: unknown): v is number => typeof v === 'number' && Number.isInteger(v) && v > 0;
+  const raiz = (sub as { current_period_end?: unknown }).current_period_end; // ya no está en el tipo del SDK
+  if (valido(raiz)) return new Date(raiz * 1000);
+  const deItems = (sub.items?.data ?? []).map((i) => i.current_period_end);
+  if (deItems.length === 0 || !deItems.every(valido) || new Set(deItems).size !== 1) return null;
+  return new Date(deItems[0] * 1000);
 }
 
 router.post('/', async (req, res) => {
@@ -94,7 +130,7 @@ router.post('/', async (req, res) => {
         // Suscripción nueva
         const merchantId = Number(s.metadata?.merchant_id);
         const planId = String(s.metadata?.plan || '');
-        if (Number.isInteger(merchantId) && planId && s.customer) {
+        if (Number.isInteger(merchantId) && planId && s.customer && planQueExiste(planId, merchantId, event)) {
           // SCRUM-475: el `select` es para saber a QUIÉN no se le avisó si el correo no sale. Un
           // rastro que no identifica el caso no es constancia: es ruido.
           const activado = await prisma.merchant.update({
@@ -136,26 +172,52 @@ router.post('/', async (req, res) => {
       const sub = event.data.object as StripeLib.Subscription;
       const merchantId = Number(sub.metadata?.merchant_id);
       const planId = String(sub.metadata?.plan || '');
-      if (Number.isInteger(merchantId) && planId) {
+      // J3 · SCRUM-1402h — decisión del fundador (SCRUM-1402, comentario 20681, «B · Como plan
+      // desconocido»): sin `metadata.plan` la suscripción se trata como un plan que no existe. La puerta
+      // ya no pide plan: `planQueExiste('')` es `false` y avisa, así que activar y renovar siguen sin
+      // escribir; el impago se marca (1402e) y la cancelación, que escribe el literal `trial`, se aplica.
+      if (Number.isInteger(merchantId)) {
         // A10.2 — FSM de la Parte L (fuente única: ESTE webhook):
         //   active/trialing → active(plan) · past_due/unpaid → past_due (el plan
         //   SE CONSERVA: gracia con banner + portal, no se degrada a trial) ·
         //   canceled/incomplete_expired → canceled → plan trial.
         const st = String(sub.status);
+        // SCRUM-1402: las dos ramas que escriben `planId` preguntan antes si existe. La cancelación
+        // no pregunta: escribe el literal `trial`, no lo que llega.
         if (st === 'active' || st === 'trialing') {
-          await prisma.merchant.update({
-            where: { id: merchantId },
-            data: {
-              plan: planId,
-              subscriptionStatus: 'active',
-              stripeSubscriptionId: sub.id,
-              planExpiresAt: new Date((sub as any).current_period_end * 1000),
-            },
-          });
+          if (planQueExiste(planId, merchantId, event)) {
+            // SCRUM-1565 · sin fecha utilizable se guarda lo demás y `planExpiresAt` NO se toca: un
+            // 400 aquí perdía el plan, el estado y la suscripción con ella, y Stripe reintentaba algo
+            // que el reintento no arregla.
+            const fin = finDePeriodo(sub);
+            if (!fin) {
+              console.warn(
+                `[stripe] ⚠️ ${event.type} ${event.id} (merchant ${merchantId}) sin fin de periodo utilizable: `
+                + 'se guardan plan y estado, y `planExpiresAt` se queda como estaba. Hay que mirarlo en Stripe.',
+              );
+            }
+            await prisma.merchant.update({
+              where: { id: merchantId },
+              data: {
+                plan: planId,
+                subscriptionStatus: 'active',
+                stripeSubscriptionId: sub.id,
+                planExpiresAt: fin ?? undefined, // `undefined` = Prisma no toca la columna
+
+              },
+            });
+          }
         } else if (st === 'past_due' || st === 'unpaid') {
+          // J3 · SCRUM-1402e — decisión del fundador (SCRUM-1402, comentario 20651, «Marcar el impago»):
+          // con un plan que no existe el impago SE MARCA igual, y lo único que no se escribe es el plan.
+          // Es el mismo estado de la Parte L que con un plan conocido (`past_due`) y el mismo aviso: el
+          // banner del panel que lee ese campo. Ni texto nuevo ni transición nueva.
+          const planConocido = planQueExiste(planId, merchantId, event);
           await prisma.merchant.update({
             where: { id: merchantId },
-            data: { plan: planId, subscriptionStatus: 'past_due', stripeSubscriptionId: sub.id },
+            data: planConocido
+              ? { plan: planId, subscriptionStatus: 'past_due', stripeSubscriptionId: sub.id }
+              : { subscriptionStatus: 'past_due' },
           });
         } else if (st === 'canceled' || st === 'incomplete_expired') {
           await prisma.merchant.update({

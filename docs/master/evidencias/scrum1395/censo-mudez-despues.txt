@@ -1,0 +1,36 @@
+Guards que mencionan el filtro de comentarios: 119
+
+① Pasada limpia e instrumentada — cuántos tests corre cada uno, y si llama al filtro
+   llaman al filtro de verdad: 109 · sólo lo mencionan: 10
+
+② Pasada mutada — `soloEjecutable` devuelve la cadena vacía
+
+════════ VEREDICTO ════════
+  VIVO       109
+  MUDO       0
+  CIEGO      0
+  NO APLICA  10
+  YA ROJO    0
+
+📌 NO APLICA — nunca llamaron al filtro; su verde no dice nada de ellos:
+    scrum201-citas-aeat.test.mjs  (2 tests)
+    scrum226-url-bd-sin-parseo-a-mano.test.mjs  (6 tests)
+    scrum237-negacion-respaldada.test.mjs  (8 tests)
+    scrum374-direccion-sin-escritores.test.mjs  (4 tests)
+    scrum402-marcador-no-se-pinta.test.mjs  (7 tests)
+    scrum403-beneficio-sin-iva.test.mjs  (8 tests)
+    scrum409-fixtures-sin-merchant-demo.test.mjs  (8 tests)
+    scrum475-receptor-webhook.test.mjs  (16 tests)
+    scrum480-fin-de-linea.test.mjs  (10 tests)
+    scrum745-comparar-por-identidad.test.mjs  (11 tests)
+
+✓ `tests/_guard-texto.mjs` comprobado idéntico al original.
+
+--- stderr ---
+
+--- envoltorio ---
+sha256 helper ANTES   c54651e75b7fee9b0b74d240727477f3a6fa53d10bc958651b3dac21da6c57ad
+sha256 helper DESPUES c54651e75b7fee9b0b74d240727477f3a6fa53d10bc958651b3dac21da6c57ad
+IDENTICO=true
+segundos=213
+EXIT=0 signal=null

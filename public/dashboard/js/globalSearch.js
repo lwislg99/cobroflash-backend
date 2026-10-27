@@ -175,10 +175,13 @@
         action: { type: 'customer', id: c.id },
       }));
 
+      // SCRUM-1482 · el número es el texto que manda el servidor ya hecho (`numeroVisible`,
+      // SCRUM-1483): aquí no se compone. `q2.id` es el id de la tabla —de toda la plataforma—:
+      // abre la ficha y no se pinta. Sin número del servidor, la fila no lleva ninguno.
       html += section(L.quotePlural || 'Presupuestos', quotes, (q2, q) => ({
         h: `<div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
               <div>
-                <span style="font-size:13.5px;font-weight:600;color:var(--neutral-900)">#${q2.id}</span>
+                ${q2.numeroVisible ? `<span style="font-size:13.5px;font-weight:600;color:var(--neutral-900)">${highlight(q2.numeroVisible, q)}</span>` : ''}
                 <span style="font-size:12.5px;color:var(--neutral-500);margin-left:6px">${highlight(q2.customer?.name, q)}</span>
               </div>
               <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">

@@ -149,6 +149,16 @@ router.get('/invoice/:token', async (req, res) => {
       <span class="chev">›</span>
     </a>`).join('');
 
+  // SCRUM-893b · EL PIE SÓLO NOMBRA A STRIPE SI ALGO DE LO QUE SE PINTA PASA POR STRIPE.
+  // Mientras la tarjeta se ofrecía a todos (el defecto de SCRUM-893), «Procesado por Stripe ·
+  // Nunca vemos los datos de tu tarjeta» era verdad en todas las páginas. Desde que la tarjeta
+  // sólo sale con Connect, un negocio con transferencia o Bizum manual —o sin ninguna vía— le
+  // seguía diciendo a la clienta que Stripe procesaba un pago que Stripe no toca. Se mira la
+  // lista YA FILTRADA, no `hasCard`: el Bizum automático también va por `/pay/card`, y el PRO
+  // puede haber quitado la tarjeta de ESTE cobro. No hay texto nuevo: es el mismo literal, que
+  // deja de pintarse donde no es cierto.
+  const pasaPorStripe = ordered.some((mm) => mm.key === 'card' || mm.key === 'bizum_auto');
+
   // Si el logo no carga (URL rota, file://…), se oculta y no rompe la landing
   const logoHtml = m?.logoUrl
     ? `<img class="logo-img" src="${esc(m.logoUrl)}" alt="${business}" onerror="this.style.display='none'"/>`
@@ -245,7 +255,7 @@ router.get('/invoice/:token', async (req, res) => {
         <svg class="lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
         Pago seguro y cifrado
       </span>
-      <div class="trust-sub">Procesado por Stripe · Nunca vemos los datos de tu tarjeta</div>
+      ${pasaPorStripe ? '<div class="trust-sub">Procesado por Stripe · Nunca vemos los datos de tu tarjeta</div>' : ''}
     </div>
   </div>
 </body>

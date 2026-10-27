@@ -1,0 +1,71 @@
+POBLACION · 202 vivas · AUDITLOG_FISCAL @ F2_CAMBIADA: 14
+
+[CAMBIADA] L44 · prisma/schema.prisma:700-713 · SIN · movida y además editada · salto= · f4d1f0bc2 2026-07-29 · parte de lo que decía está hoy en 1383, 1295, 1296, 1386
+  FRASE: …[`prisma/schema.prisma:700-713`](../../prisma/schema.prisma#L700-L713)…
+  DECIA: model AuditLog { ⏎ id           Int      @id @default(autoincrement()) ⏎ merchantId   Int      @map("merchant_
+  HOY  : // ⚠️ IP y UA son datos personales → viven SOLO aquí; NUNCA se exponen (ni PDF, ni HTML público, // // ni serializer/API del cliente). Aditivo, Json nullable: los presupuestos YA firmados se // // quedan en `null` y siguen siendo válidos — `null` es «se firmó antes de que esto existiera»,
+
+[CAMBIADA] L51 · audit.service.ts:8-25 · SIN_RUTA · movida y además editada · salto= · f4d1f0bc2 2026-07-29 · parte de lo que decía está hoy en 30, 31, 32, 39
+  FRASE: …| `action` | `String` | **String libre en la BD.** El tipado vive solo en TypeScript ([`audit.service.ts:8-25`](../../src/modules/system/audit.service.ts#L8-L25)); la BD acepta cualquier cadena |…
+  DECIA: export type AuditAction = ⏎ | 'marcar_pagado_manual' ⏎ | 'deshacer_pago' ⏎ | 'anular_factura' ⏎ | 'cambio_flag
+  HOY  : // que el sistema informó y que el usuario decidió», y que una factura no exista sin su // // registro. `recordAudit` era ESTRUCTURALMENTE INCAPAZ de garantizar eso: // //   · devolvía `void` → nadie podía esperarla;
+
+[CAMBIADA] L63 · audit.service.ts:33-55 · SIN_RUTA · movida y además editada · salto= · f4d1f0bc2 2026-07-29 · parte de lo que decía está hoy en 271, 274, 275, 276
+  FRASE: …[`audit.service.ts:33-55`](../../src/modules/system/audit.service.ts#L33-L55) — `recordAudit()`.…
+  DECIA: export function recordAudit(params: { ⏎ merchantId: number; ⏎ teamMemberId?: number | null; // null = owner/ad
+  HOY  : // ⚠️ LEGADO — NO USAR EN CÓDIGO NUEVO (SCRUM-207, decisión D-3 del fundador). // // Cubría DOS hechos fiscales distintos con el mismo nombre: la anulación (SCRUM-153) y // // la rectificativa R1. Se parte en `factura_anulada` / `factura_rectificada`. Las filas
+
+[CAMBIADA] L99 · audit.service.ts:8-25 · SIN_RUTA · movida y además editada · salto= · f4d1f0bc2 2026-07-29 · parte de lo que decía está hoy en 30, 31, 32, 39
+  FRASE: …**8 acciones declaradas** en el union type ([`audit.service.ts:8-25`](../../src/modules/system/audit.service.ts#L8-L25)):…
+  DECIA: export type AuditAction = ⏎ | 'marcar_pagado_manual' ⏎ | 'deshacer_pago' ⏎ | 'anular_factura' ⏎ | 'cambio_flag
+  HOY  : // que el sistema informó y que el usuario decidió», y que una factura no exista sin su // // registro. `recordAudit` era ESTRUCTURALMENTE INCAPAZ de garantizar eso: // //   · devolvía `void` → nadie podía esperarla;
+
+[CAMBIADA] L128 · borradoMerchant.ts:47 · SIN_RUTA · ese texto ya no está en el fichero · salto= · f4d1f0bc2 2026-07-29
+  FRASE: …| **Borrado de merchant** | [`borradoMerchant.ts:47`](../../src/modules/system/domain/borradoMerchant.ts#L47) | 🟠 **Lo BORRA** — y es el primero de la lista |…
+  DECIA: 'auditLog', 'whatsAppMessage', 'legalAcceptance', 'customerEvent', 'attachment',
+  HOY  : * ⚠️ Añadir un modelo aquí NO es opcional cuando aparece en el schema con `merchantId`: el
+
+[CAMBIADA] L129 · scripts/backup-dump.mjs:69 · SIN · ese texto ya no está en el fichero · salto= · f4d1f0bc2 2026-07-29
+  FRASE: …| **Backup** | [`scripts/backup-dump.mjs:69`](../../scripts/backup-dump.mjs#L69) | 🟢 `audit_log` sí entra en el volcado |…
+  DECIA: 'legal_acceptances', 'jobs', 'maintenance_plans', 'audit_log', 'attachments',
+  HOY  : process.exit(1);
+
+[CAMBIADA] L139 · borradoMerchant.ts:42-54 · SIN_RUTA · movida y además editada · salto= · f4d1f0bc2 2026-07-29 · parte de lo que decía está hoy en 51, 52, 53, 54
+  FRASE: …[`borradoMerchant.ts:42-54`](../../src/modules/system/domain/borradoMerchant.ts#L42-L54).…
+  DECIA: export const ORDEN_BORRADO_MERCHANT: readonly string[] = [ ⏎ // SCRUM-170: el libro de líneas facturadas va PR
+  HOY  : // ───────────────────────────────────────────────────────────────────────────────────────── //  // /**
+
+[CAMBIADA] L237 · quotes.routes.ts:537 · SIN_RUTA · ese texto ya no está en el fichero · salto= · f4d1f0bc2 2026-07-29
+  FRASE: …([`quotes.routes.ts:537`](../../src/modules/quotes/app/routes/quotes.routes.ts#L537)). Y hay…
+  DECIA: return tx.invoice.create({
+  HOY  : // emite NINGÚN documento ni se cobra por YaQu. La aceptación de arriba YA está commiteada y
+
+[CAMBIADA] L286 · verifactu.service.ts:280 · SIN_RUTA · ese texto ya no está en el fichero · salto= · f4d1f0bc2 2026-07-29
+  FRASE: …tán separados en el tiempo, y en C1/C2 el punto B **lo dispara el cliente final descargando su PDF**. Un solo `factura_emitida` afirmaría que la factura entró en la cadena cuando puede tardar días — o no ocurrir | SCRUM-200 §5; [`verifactu.service.ts:280`](../../src/modules/invoicing/domain/verifactu.service.ts#L280); [`receipt.routes.ts:418`](../../src/modules/billing/app/routes/receipt…
+  DECIA: data: { vfHash, vfPrevHash: prevHash, qrData: qrUrl, vfTimestamp: new Date(timestamp) },
+  HOY  : //
+
+[CAMBIADA] L287 · lib/invoicing.ts:58 · AUSENTE · ese texto ya no está en el fichero · salto= · f4d1f0bc2 2026-07-29
+  FRASE: … PDF entregado y no tener huella, y lo único que queda es un `console.error`. SCRUM-200 lo dijo con estas palabras: *«El problema no es que capture: es que capturar no deja rastro consultable. Falta el registro, no el `try`»* | [`lib/invoicing.ts:58`](../../src/lib/invoicing.ts#L58), [`:152`](../../src/lib/invoicing.ts#L152) |…
+  DECIA: } catch (e) {
+  HOY  : // factura igual —con número, con PDF y con un QR NO fiscal— y solo quedaba una línea de log.
+
+[CAMBIADA] L287 · lib/invoicing.ts:152 · AUSENTE · ese texto ya no está en el fichero · salto= · f4d1f0bc2 2026-07-29
+  FRASE: … PDF entregado y no tener huella, y lo único que queda es un `console.error`. SCRUM-200 lo dijo con estas palabras: *«El problema no es que capture: es que capturar no deja rastro consultable. Falta el registro, no el `try`»* | [`lib/invoicing.ts:58`](../../src/lib/invoicing.ts#L58), [`:152`](../../src/lib/invoicing.ts#L152) |…
+  DECIA: } catch (e) {
+  HOY  : * SCRUM-74: token OPACO del recibo público (patrón `Albaran.firmaToken`, SCRUM-49).
+
+[CAMBIADA] L639 · lib/invoicing.ts:58 · AUSENTE · ese texto ya no está en el fichero · salto= · f4d1f0bc2 2026-07-29
+  FRASE: …| `AV-SELLADO-FALLIDO` | ámbar | — | post-sellado | El fail-open de [`lib/invoicing.ts:58`](../../src/lib/invoicing.ts#L58) hecho visible |…
+  DECIA: } catch (e) {
+  HOY  : // factura igual —con número, con PDF y con un QR NO fiscal— y solo quedaba una línea de log.
+
+[CAMBIADA] L714 · invoicesAdmin.routes.ts:757 · SIN_RUTA · ese texto ya no está en el fichero · salto= · f4d1f0bc2 2026-07-29
+  FRASE: …[`invoicesAdmin.routes.ts:757`](../../src/modules/system/app/routes/invoicesAdmin.routes.ts#L757)…
+  DECIA: meta: { number: original.number, rectification: rect.number, rectificationId: rect.id },
+  HOY  : // payment_request_es apunta a /pay/invoice/{{1}}, ver WHATSAPP_TEMPLATES.md §2).
+
+[CAMBIADA] L759 · borradoMerchant.ts:47 · SIN_RUTA · ese texto ya no está en el fichero · salto= · f4d1f0bc2 2026-07-29
+  FRASE: …| **D-4** | **¿El registro fiscal sobrevive al borrado del merchant?** (`borradoMerchant.ts:47`) | **Colisión real.** El registro protege al **fundador como productor del SIF**, no al merchant: es interés legítimo propio, no un dat…
+  DECIA: 'auditLog', 'whatsAppMessage', 'legalAcceptance', 'customerEvent', 'attachment',
+  HOY  : * ⚠️ Añadir un modelo aquí NO es opcional cuando aparece en el schema con `merchantId`: el

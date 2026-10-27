@@ -48,7 +48,7 @@
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url'; // SCRUM-730: `pathname` no decodifica
+import { fileURLToPath, pathToFileURL } from 'node:url'; // SCRUM-730: `pathname` no decodifica
 import { run } from 'node:test'; // SCRUM-745 (adopción): eventos, no reporter
 import ts from 'typescript';
 import { ejecutadoDirectamente } from './_puerta-de-entrada.mjs'; // SCRUM-765
@@ -58,7 +58,7 @@ import { ejecutadoDirectamente } from './_puerta-de-entrada.mjs'; // SCRUM-765
 // que ya se importaba de este módulo, para no romper a quien lo lea desde fuera.
 import {
   SALIDA_NO_RESTAURADO, marcaDe, marcarEnVuelo, borrarMarca, restaurarDesdeMarca,
-  restaurarYVerificar, redDeSeguridad, instalarRedDeSeguridad, marcasHuerfanas,
+  restaurarYVerificar, redDeSeguridad, instalarRedDeSeguridad, marcasHuerfanas, apuntarMutacion,
 } from './_marca-de-arbol.mjs';
 
 export {
@@ -76,6 +76,7 @@ import {
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIR_TESTS = path.join(RAIZ, 'tests');
+const TUBERIA_BLOQUEANTE = pathToFileURL(path.join(RAIZ, 'scripts', 'tuberia-bloqueante.mjs')).href; // SCRUM-1339s
 
 export const SALIDA_MUDO = 1;
 export const SALIDA_CIEGO = 2;
@@ -164,6 +165,127 @@ export function sueloDeEjecucion({ vivas, mudas }) {
   if (vivas + mudas > 0) return null;
   return 'NO SE HA EJECUTADO NI UNA MUTACIÓN. Este exit no dice que los guards estén vivos: '
     + 'dice que no he medido nada. Mira las ciegas de arriba.';
+}
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 SCRUM-935d · UN CORTE QUE NO DICE QUÉ DEJÓ FUERA NO DICE «NO HAY FALLOS»: NO DICE NADA.
+ *
+ * MEDIDO en los logs de CI del 15 al 21-oct-2026 (`docs/master/SCRUM-935.md`, tramo 935d; 313 jobs
+ * leídos, 0 ciegos): 135 jobs de este instrumento murieron en el `timeout-minutes` del job. GitHub
+ * los da como `cancelled`, y este proceso NO escribe nada al morir: el último veredicto y, 0,7 s
+ * después, «The operation was canceled.». En esos 135 se quedaron ~3.034 veredictos sin emitir
+ * —siempre la COLA del censo: `utils` y `vigia-atascados` en los 135—, y lo que sí se juzgó y salió
+ * mal (39 CIEGAS y 1 FICHERO MUERTO en un push a `main`) quedó enterrado sin código de salida.
+ *
+ * Por eso el corte lo hace ESTE instrumento, antes de la pared, y lo dice: deja de empezar trabajo
+ * cuando se le acaba el presupuesto, nombra lo que no ha juzgado y sale CIEGO. Un `cancelled` se lee
+ * como un gris; un CIEGO con la lista delante, no.
+ *
+ * El presupuesto NO se teclea aquí: se LEE del `timeout-minutes` del job del meta-guard en
+ * `ci.yml` (un número escrito dos veces son dos números que divergen), menos `MARGEN_DEL_JOB_S`.
+ * `META_PRESUPUESTO_S` lo sustituye (para provocar el corte a mano). Fuera de CI y sin esa
+ * variable no hay presupuesto: en local nadie corta.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ */
+// SCRUM-935e · el margen es una cifra DERIVADA, y se deriva (antes era 150: 45 s no salían de ninguna medida).
+//   73 s · lo que el job gasta FUERA del paso (checkout, `npm ci`, build, post): máximo en los 313 jobs
+//          del 15 al 21-oct (p50 37, p99 50); en los 14 del 23-oct, 22-38 s.
+//   31 s · la pasada que queda EN VUELO: el corte se mira antes de cada limpia y de cada mutación, así que
+//          sólo queda una. Medido el 23-oct en los logs con hora de tres runs (1.977 veredictos): pasada
+//          suelta, 21,9 s como mucho; la limpia más cara, ≤ 30,4 s (el hueco de `scrum976` al cambiar de guard).
+//    1 s · el propio corte: imprimir lo que deja y salir.
+// La ventana del CIEGO falso no se cierra con ningún margen: un run con arranque rápido sale CIEGO pudiendo
+// acabar. Lo que la cerraría es contar desde el inicio del JOB, no desde el paso (SCRUM-935.md, tramo 935e).
+export const MARGEN_DEL_JOB_S = 105;
+
+/**
+ * El `timeout-minutes` (en segundos) del job de `ci.yml` que CORRE este instrumento, o `null` si no
+ * lo encuentro. El job se reconoce por su paso `npm run meta:mutaciones`, no por su clave ni por su
+ * nombre: los dos se pueden renombrar y el paso es lo que de verdad me lanza. Si DOS jobs lo
+ * corren, `null`: no sé de cuál soy.
+ */
+export function techoDelJob(ciYml) {
+  const lineas = String(ciYml || '').split(/\r?\n/);
+  const jobs = [];
+  let dentro = false;
+  for (const l of lineas) {
+    if (/^jobs:\s*$/.test(l)) { dentro = true; continue; }
+    if (!dentro) continue;
+    if (/^\S/.test(l)) { dentro = false; continue; }
+    if (/^ {2}[\w-]+:\s*$/.test(l)) jobs.push([]);
+    else if (jobs.length) jobs.at(-1).push(l);
+  }
+  // `- run:` (paso de una línea) o `run:` (bajo un `- name:`): las dos formas de YAML del mismo paso.
+  const mios = jobs.filter((j) => j.some((l) => /^\s+(?:-\s+)?run:\s*npm run meta:mutaciones\s*$/.test(l)));
+  if (mios.length !== 1) return null;
+  const techo = mios[0].map((l) => /^ {4}timeout-minutes:\s*(\d+)\s*$/.exec(l)).find(Boolean);
+  return techo ? Number(techo[1]) * 60 : null;
+}
+
+/**
+ * ¿Cuántos segundos puede trabajar el paso? `{ limiteS, origen }`, o `{ limiteS: null, origen }`
+ * si no hay presupuesto. Pura: recibe el entorno y el texto de `ci.yml`.
+ */
+export function presupuestoDelPaso({ env = {}, ciYml = '' } = {}) {
+  const forzado = env.META_PRESUPUESTO_S;
+  if (forzado !== undefined && forzado !== '') {
+    const n = Number(forzado);
+    if (!Number.isFinite(n) || n < 0) return { limiteS: null, origen: `META_PRESUPUESTO_S ilegible («${forzado}»): SIN presupuesto` };
+    return { limiteS: n, origen: `META_PRESUPUESTO_S=${n}` };
+  }
+  if (env.GITHUB_ACTIONS !== 'true') return { limiteS: null, origen: 'fuera de CI y sin META_PRESUPUESTO_S: sin presupuesto' };
+  const techo = techoDelJob(ciYml);
+  if (techo === null) {
+    return { limiteS: null, origen: 'en CI y SIN PODER LEER el `timeout-minutes` del job que corre `npm run meta:mutaciones` en ci.yml: si el job me corta, NO podré decir qué quedó sin juzgar' };
+  }
+  return { limiteS: Math.max(0, techo - MARGEN_DEL_JOB_S), origen: `ci.yml, job de \`npm run meta:mutaciones\`: ${techo} s − ${MARGEN_DEL_JOB_S} s de margen` };
+}
+
+/** ¿Hay que dejar de empezar trabajo? */
+export function debeCortar(transcurridoS, presupuesto) {
+  return Number.isFinite(presupuesto?.limiteS) && transcurridoS >= presupuesto.limiteS;
+}
+
+/** Lo que queda sin juzgar desde la mutación `desde` del guard nº `guardIdx` del censo. */
+export function pendientesDesde(censo, guardIdx, desde = 0) {
+  const pendientes = [];
+  for (let g = guardIdx; g < censo.length; g++) {
+    const muts = censo[g].mutaciones || [];
+    const resto = g === guardIdx ? muts.slice(desde) : muts;
+    if (resto.length) pendientes.push({ guard: censo[g].guard, mutaciones: resto.length });
+  }
+  return pendientes;
+}
+
+export const GUARD_CARO_S = 60;
+
+/**
+ * Las líneas que nombran a los guards que pasan de `GUARD_CARO_S` (limpia + todas sus mutaciones),
+ * de más caro a más barato, con la población declarada. `costes` va en orden de ejecución con el
+ * segundo en que empezó cada uno; el último termina en `finS`.
+ */
+export function guardsCaros(costes, finS) {
+  const medidos = costes.map((c, i) => ({ ...c, s: (i + 1 < costes.length ? costes[i + 1].inicioS : finS) - c.inicioS }));
+  const caros = medidos.filter((c) => c.s > GUARD_CARO_S).sort((a, b) => b.s - a.s);
+  const total = medidos.reduce((n, c) => n + c.s, 0);
+  return [
+    `\ncoste por guard: ${medidos.length} guards medidos, ${Math.round(total)} s en total · `
+      + `${caros.length} pasan de ${GUARD_CARO_S} s${caros.length ? ':' : ''}`,
+    ...caros.map((c) => `   ⏱ ${c.guard} · ${Math.round(c.s)} s (${c.mutaciones} mutaciones + la limpia, `
+      + `~${(c.s / (c.mutaciones + 1)).toFixed(1)} s por pasada)`),
+  ];
+}
+
+export function mensajeDeCorte({ juzgadas, pendientes, transcurridoS, presupuesto }) {
+  const sinJuzgar = pendientes.reduce((n, p) => n + p.mutaciones, 0);
+  return `🔴 CORTO YO, ANTES DEL TECHO: llevo ${Math.round(transcurridoS)} s y el presupuesto es `
+    + `${presupuesto.limiteS} s (${presupuesto.origen}).\n`
+    + `   Juzgadas ${juzgadas} de ${juzgadas + sinJuzgar} mutaciones. SIN JUZGAR ${sinJuzgar}, en `
+    + `${pendientes.length} guard(s):\n`
+    + pendientes.map((p) => `      · ${p.guard} (${p.mutaciones})`).join('\n')
+    + '\n   Eso NO es «no hay fallos» en esos guards: es que no los he mirado. Antes esto salía '
+    + '`cancelled` y sin una línea (SCRUM-935d).';
 }
 
 /**
@@ -319,9 +441,17 @@ export function mutacionesDeclaradas(codigo, nombre = 'x.mjs') {
  * Es la ÚNICA señal auto-declarada que hay en el árbol, y es DÉBIL EN LAS DOS DIRECCIONES —
  * medido el 17-sep-2026: de los 81 que declaran, sólo 18 se titulan guard; y de los 206 que se
  * titulan guard, sólo 18 declaran. No es un censo de guards y el rótulo lo dice en voz alta.
+ *
+ * 🔴 SCRUM-812d · se cuenta la PALABRA «guard»/«guards», no la subcadena. Hasta el 14-oct-2026 casaba
+ * con «guarda», «guardado», «guardada» (de guardar): medido sobre `origin/main` = `4f487bb17`, 303
+ * ficheros «se titulaban GUARD» por subcadena y 154 por palabra; en el subconjunto que además
+ * declara, 34 y 30. Los cuatro que salen, en el trinquete de
+ * `tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs`, con su línea.
+ * ⚠️ El final de palabra es una lista de letras y no `\b`: sin la bandera `u`, `\b` toma la «é» de
+ * «guardé» por un final de palabra.
  */
 export function seTitulaGuard(codigo) {
-  return /test\(\s*[`'"][^`'"]*GUARD/i.test(codigo);
+  return /test\(\s*[`'"][^`'"]*GUARDS?(?![a-záéíóúüñ])/i.test(codigo);
 }
 
 /**
@@ -785,8 +915,104 @@ export function errorDelFicheroMuerto(resultado, guard, dir = DIR_TESTS) {
  * no tiene NADA que ver con lo que promete vigilar — eso sería el sello de goma. Medido: hoy
  * ninguna de las declaraciones del árbol dispara este veredicto, así que la elección no mueve
  * ningún número de hoy; sólo decide qué pasará la próxima vez.
+ *
+ * ⚠️ 6-oct-2026 (SCRUM-1100d): «ninguna lo dispara» dejó de ser verdad. En CI este veredicto sale
+ * a diario, y casi nunca porque el fichero muera: sale cuando el caso rojo no llega con nombre y
+ * el proceso sí sale con rojo. La serie, en `docs/master/SCRUM-1100.md`. La constante NO cambia.
  */
 export const MUERTE_CUENTA_COMO = 'ciega'; // 'ciega' | 'caida'
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 SCRUM-1100d · EL ROJO DICE LO QUE SABE, Y LO QUE NO.
+ *
+ * Dos mensajes de este instrumento nombraban una causa que no habían comprobado, y mandaban a
+ * arreglar lo que no estaba roto. Medido sobre los logs del job en CI (`docs/master/SCRUM-1100.md`,
+ * sección 1100d):
+ *
+ *   · «EL FICHERO MURIÓ AL MUTAR … nunca llegó a ejecutarse … Acota la mutación». Lo único que
+ *     el código miraba era si la RUTA del fichero estaba entre los caídos. No miraba si habían
+ *     llegado otros tests de esa misma pasada, y casi siempre habían llegado: el fichero corrió.
+ *   · «O el fichero no llegó a ejecutarse, o ese test ya fallaba, o el nombre caducó». Tres causas
+ *     por la misma puerta, con el MISMO texto para un test que CAYÓ en la pasada limpia (un rojo
+ *     de verdad del árbol) y para uno que NO LLEGÓ (un informe perdido).
+ *
+ * ⛔ ESTO NO CAMBIA NINGÚN VEREDICTO. Las dos funciones sólo redactan: quien las llama sigue
+ * devolviendo `ciego` o `muerto` exactamente en los mismos casos, y el job sale con el mismo
+ * código. Lo que cambia es que el texto separa lo que el instrumento VIO de lo que no puede saber.
+ *
+ * PURAS a propósito: se ejercitan en `npm test` sin mutar nada.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ */
+const RECUENTO_DE = (r) => `${(r?.pasados || []).length} pasados · ${(r?.caidos || []).length} caídos · `
+  + `${(r?.saltados || []).length} saltados`;
+
+/**
+ * PUERTA 1: el test declarado no está en verde en la pasada LIMPIA. Antes de decir por qué, se
+ * mira lo que sí se sabe: ¿cayó, o no llegó? ¿murió el fichero? ¿sigue escrito su nombre?
+ *
+ * @param {{ limpia: object, cae: string, ficheroMuerto?: boolean, vecesEscrito?: number|null }} d
+ *   `vecesEscrito`: cuántas veces aparece `cae` en el fuente del guard, o `null` si no se miró.
+ */
+export function mensajeDeLimpiaSinVerde({ limpia, cae, ficheroMuerto = false, vecesEscrito = null }) {
+  const cabecera = `el test «${cae}» NO aparece EN VERDE en la pasada limpia, así que no se ha mutado nada.`;
+  const recuento = `Recuento de la LIMPIA: ${RECUENTO_DE(limpia)}.`;
+  if (cayo(limpia, cae)) {
+    return `${cabecera} Ese test CAYÓ en la pasada limpia: ya falla SIN mutar nada. Eso no lo ha `
+      + 'producido este instrumento. Mira `build + tests` de este mismo run: si allí también cae, '
+      + 'es un rojo del árbol; si allí pasa, falla sólo en el entorno de este job. Mientras caiga '
+      + `no hay línea base sobre la que juzgar la mutación. ${recuento}`;
+  }
+  const escrito = vecesEscrito === null ? ''
+    : vecesEscrito >= 2
+      ? ` Su nombre está escrito ${vecesEscrito} veces en el fuente del guard (además de en la declaración): NO ha caducado.`
+      : ' En el fuente del guard no lo encuentro escrito más que una vez o ninguna: o el nombre se '
+        + 'construye al ejecutar, o lleva escapes, o la declaración caducó. No afirmo cuál.';
+  if (ficheroMuerto) {
+    return `${cabecera} Ese test NO LLEGÓ: ni pasó, ni cayó, ni se saltó. El fichero entero está `
+      + 'entre los caídos, así que murió antes de registrarlo (una dependencia que falta: `dist/` '
+      + `sin compilar, por ejemplo).${escrito} ${recuento} NO es que el guard esté mudo: es que no `
+      + 'se ha podido medir.';
+  }
+  return `${cabecera} Ese test NO LLEGÓ: ni pasó, ni cayó, ni se saltó. NO SÉ si corrió y su informe `
+    + `no llegó, o si no corrió. Lo que sí sé: el fichero NO está entre los caídos.${escrito} ${recuento} `
+    + 'Una pasada limpia que trae menos tests de los que el fichero tiene es la pérdida de informe '
+    + 'medida en SCRUM-1405 (el hijo sale con `--test-force-exit` y la cola de su salida no llega). '
+    + 'Para separarlo de un rojo de verdad, mira `build + tests` de ESTE MISMO run: si está verde, '
+    + 'el test pasa y lo que ha fallado es este instrumento. NO es que el guard esté mudo: es que '
+    + 'no se ha podido medir.';
+}
+
+/**
+ * EL CUARTO VEREDICTO: el fichero está entre los caídos y el test declarado no. Lo que distingue
+ * «murió al cargar» de «corrió y su rojo no llegó con nombre» es si llegó ALGÚN otro test.
+ *
+ * @param {{ cae: string, pasados: number, caidosConNombre: number, saltados: number,
+ *           ausentes: string[], enLimpia: number, causa: object|null }} d
+ */
+export function mensajeDeMuerto({ cae, pasados, caidosConNombre, saltados, ausentes, enLimpia, causa }) {
+  const llegaron = pasados + caidosConNombre + saltados;
+  const loQueDejo = causa
+    ? `${causa.nombre || '(sin nombre)'}${causa.code ? ` · ${causa.code}` : ''}${causa.mensaje ? ` · ${causa.mensaje}` : ''}`
+    : 'sin error capturado (apunta a un SIGKILL/OOM externo, no a una excepción de JS)';
+  const cabecera = 'EL FICHERO SALIÓ ROJO POR SU RUTA y el test declarado '
+    + `—«${cae}»— no llegó con nombre. NO SÉ si ese test cayó o si no llegó a correr.\n`
+    + `    → lo que el proceso dejó dicho: ${loQueDejo}.\n`;
+  if (llegaron === 0) {
+    return `${cabecera}    → de la pasada MUTADA no ha llegado NI UN test con nombre (la limpia trajo `
+      + `${enLimpia}): el fichero murió antes de registrar nada. Aquí SÍ encaja una mutación de `
+      + 'RADIO más ancho que el defecto que quiere imitar (rompe la carga del fichero, o hace que '
+      + 'un `import` ejecute algo). Acota la mutación, o declara otra que produzca el mismo '
+      + 'defecto sin tumbar el proceso.';
+  }
+  return `${cabecera}    → de la pasada MUTADA SÍ llegaron ${llegaron} tests con nombre (${pasados} pasados · `
+    + `${caidosConNombre} caídos · ${saltados} saltados) y faltan ${ausentes.length} de los ${enLimpia} de la limpia`
+    + `${ausentes.length ? `: ${ausentes.slice(0, 8).map((n) => `«${n}»`).join(', ')}${ausentes.length > 8 ? `, y ${ausentes.length - 8} más` : ''}` : ''}. `
+    + 'El fichero NO murió al cargar: corrió, al menos hasta ahí. Su proceso salió con rojo y el '
+    + 'caso que cayó no llegó con nombre: es la pérdida de informe medida en SCRUM-1405 (se pierde '
+    + 'QUÉ caso cayó, no QUE el fichero cayó). Esto NO acusa a la mutación: no la acotes por este '
+    + 'mensaje.';
+}
 
 /**
  * 🔴 SCRUM-748 · LA LÍNEA BASE, Y POR QUÉ NO SE RECONOCE EL MENSAJE DE ERROR.
@@ -839,6 +1065,11 @@ export async function correr(guard, propias = null) {
     files: [path.isAbsolute(guard) ? guard : path.join(DIR_TESTS, guard)],
     cwd: RAIZ,
     forceExit: true,
+    // 🔴 SCRUM-1339s · la salida C de SCRUM-1405 (c.19584), extendida aquí por SCRUM-1339 c.20219.
+    // Con `forceExit` el hijo sale con la cola de su informe sin escribir, y en Linux se pierde: los
+    // NO APARECE de `porQueNoCayo`. El módulo pone bloqueante su tubería, como la tanda desde #2429.
+    // Por URL y no por ruta: en Windows `--import=D:\…` no es un especificador válido.
+    execArgv: [`--import=${TUBERIA_BLOQUEANTE}`],
     timeout: TIMEOUT_MS,
   });
   // ⚠️ EL FLUJO HAY QUE CONSUMIRLO. Con sólo suscribirse a `test:pass` no arranca: salen CERO
@@ -1102,12 +1333,19 @@ export async function aplicarUna(mut, guard, limpia) {
   }
 
   if (!paso(limpia, mut.cae)) {
+    // SCRUM-1100d · el veredicto es el de siempre (CIEGO, sin mutar). El texto ya no reparte tres
+    // causas a ciegas: dice si el test CAYÓ o NO LLEGÓ, que es lo que separa un rojo del árbol de
+    // un informe perdido. Lo del nombre se cuenta en el fuente y, si no se puede leer, no se afirma.
+    let vecesEscrito = null;
+    try {
+      const fuenteDelGuard = fs.readFileSync(path.isAbsolute(guard) ? guard : path.join(DIR_TESTS, guard), 'utf8');
+      vecesEscrito = fuenteDelGuard.split(mut.cae).length - 1;
+    } catch { /* sin fuente no se afirma nada del nombre */ }
     return {
       ok: false,
-      ciego: `el test «${mut.cae}» NO aparece EN VERDE en la pasada limpia, así que no se ha `
-        + 'mutado nada. O el fichero no llegó a ejecutarse (una dependencia que falta: '
-        + '`dist/` sin compilar, por ejemplo), o ese test ya fallaba, o el nombre de la '
-        + 'declaración caducó. NO es que el guard esté mudo: es que no se ha podido medir.',
+      ciego: mensajeDeLimpiaSinVerde({
+        limpia, cae: mut.cae, ficheroMuerto: murioElFichero(limpia, guard), vecesEscrito,
+      }),
     };
   }
 
@@ -1180,13 +1418,20 @@ export async function aplicarUna(mut, guard, limpia) {
   EN_VUELO.push(...piezas);
   try {
     const mutado = texto.replace(mut.de, mut.a);
+    // 🔴 SCRUM-1178 · cada mutación se APUNTA en la marca antes de escribirla: si muero aquí, la
+    // siguiente pasada sólo devuelve lo que reconoce como mío, nunca trabajo que vino después.
+    apuntarMutacion(DIR_MARCA, abs, mutado);
     fs.writeFileSync(abs, mutado);
     const BYTES_MUTADOS = fs.readFileSync(abs);
     if (Buffer.compare(BYTES_MUTADOS, ORIGINAL) === 0) {
       return { ok: false, ciego: 'la mutación no cambió el fichero: no probaría nada' };
     }
     // El árbol ejecutable tiene que llevar la mutación TAMBIÉN, o el guard mide el de antes.
-    if (absDist) fs.writeFileSync(absDist, emitirDesdeFuente(abs, mutado, RAIZ));
+    if (absDist) {
+      const mutadoDist = emitirDesdeFuente(abs, mutado, RAIZ);
+      apuntarMutacion(DIR_MARCA, absDist, mutadoDist);
+      fs.writeFileSync(absDist, mutadoDist);
+    }
     // 🔴 SCRUM-754 · las piezas que acabo de escribir viajan CON SUS BYTES, para que la vigilancia
     // no me denuncie a mí mismo — y para que sí denuncie si OTRO las toca mientras las uso.
     const propias = new Map([[abs, BYTES_MUTADOS]]);
@@ -1239,18 +1484,21 @@ export async function aplicarUna(mut, guard, limpia) {
       // de cada `test:fail`, incluida la muerte del fichero) y este mensaje nunca lo enseñaba —
       // «no se sabe si HABRÍA caído» sobre un dato que el proceso, un momento antes, sí tenía.
       const causa = errorDelFicheroMuerto(tras, guard);
+      // SCRUM-1100d · el veredicto es el de siempre (`muerto`). Lo que cambia es que el texto ya
+      // no afirma «no ha reportado ni un nombre de test … nunca llegó a ejecutarse» sin mirarlo:
+      // cuenta los tests que SÍ llegaron de esta pasada y los que faltan respecto a la limpia.
+      const esElFichero = (n) => murioElFichero({ caidos: [n] }, guard);
       resultado = {
         ok: false,
-        muerto: `EL FICHERO MURIÓ AL MUTAR. \`node:test\` no ha reportado ni un nombre de test: el `
-          + `único caído es el propio fichero. El guard SÍ se puso rojo, pero el test declarado `
-          + `—«${mut.cae}»— nunca llegó a ejecutarse, así que no se sabe si HABRÍA caído.\n`
-          + `    → lo que murió con él: ${causa
-            ? `${causa.nombre || '(sin nombre)'}${causa.code ? ` · ${causa.code}` : ''}`
-              + `${causa.mensaje ? ` · ${causa.mensaje}` : ''}`
-            : 'sin error capturado (apunta a un SIGKILL/OOM externo, no a una excepción de JS)'}.\n`
-          + '    Suele significar que la mutación tiene un RADIO más ancho que el defecto que '
-          + 'quiere imitar (rompe la carga del fichero, o hace que un `import` ejecute algo). '
-          + 'Acota la mutación, o declara otra que produzca el mismo defecto sin tumbar el proceso.',
+        muerto: mensajeDeMuerto({
+          cae: mut.cae,
+          pasados: (tras?.pasados || []).length,
+          caidosConNombre: (tras?.caidos || []).filter((n) => !esElFichero(n)).length,
+          saltados: (tras?.saltados || []).length,
+          ausentes: ausentesRespectoALaLimpia(tras, limpia),
+          enLimpia: (limpia?.pasados || []).length + (limpia?.caidos || []).length + (limpia?.saltados || []).length,
+          causa,
+        }),
       };
     } else {
       // 🔴 SCRUM-908 · LA MUDA SE EXPLICA SOLA, o el siguiente que la vea vuelve a empezar de cero.
@@ -1276,7 +1524,9 @@ export async function aplicarUna(mut, guard, limpia) {
       if (esCegueraNoMudez(donde)) {
         resultado = {
           ok: false,
-          ciego: `no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «${mut.cae}»${recuento}`,
+          // SCRUM-1100d: «NO APARECE» no dice si cayó o si no corrió, y el mensaje lo dice así.
+          ciego: `no se pudo juzgar si el guard cae. Test que debía ponerse rojo: «${mut.cae}»`
+            + `${donde.startsWith('NO APARECE') ? ' — NO SÉ si cayó o si no llegó a correr; lo que sí sé va debajo.' : ''}${recuento}`,
         };
       } else {
         resultado = { ok: false, mudo: `el guard NO cayó. Test que debía ponerse rojo: «${mut.cae}»${recuento}` };
@@ -1365,6 +1615,10 @@ if (ejecutadoDirectamente(import.meta.url)) {
       + 'murió con la mutación puesta.');
     console.error(`   Los bytes originales siguen en \`${path.relative(RAIZ, DIR_MARCA)}\`. `
       + 'MÍRALO A MANO: no se mide nada sobre un árbol mutado.');
+    if (pendiente.ajenos?.length) {
+      console.error('   ⚠️ Lo marcado «NO lo piso» NO es una mutación de esa pasada (SCRUM-1178): no he '
+        + 'escrito nada encima. Si es trabajo bueno, sólo sobra la marca.');
+    }
     process.exit(SALIDA_NO_RESTAURADO);
   }
   if (pendiente.reparadas.length) {
@@ -1472,7 +1726,16 @@ if (ejecutadoDirectamente(import.meta.url)) {
   const muertos = [];
   let vivas = 0;
   let colaterales = 0;
-  for (const { guard, mutaciones, incompletas } of censo) {
+  // 🔴 SCRUM-935d · el presupuesto se lee UNA vez, y se dice siempre: sin él en CI, el corte del job
+  // vuelve a ser mudo, y eso se tiene que ver en el log aunque nadie corte.
+  let ciYml = '';
+  try { ciYml = fs.readFileSync(path.join(RAIZ, '.github', 'workflows', 'ci.yml'), 'utf8'); } catch { /* lo dice `origen` */ }
+  const presupuesto = presupuestoDelPaso({ env: process.env, ciYml });
+  console.log(`presupuesto del paso: ${presupuesto.limiteS === null ? 'NINGUNO' : `${presupuesto.limiteS} s`} · ${presupuesto.origen}`);
+  let corte = null; // { guardIdx, desde, transcurridoS }
+  let juzgadas = 0;
+  const costes = []; // { guard, mutaciones, inicioS } — la duración sale del inicio del siguiente
+  bucle: for (const [guardIdx, { guard, mutaciones, incompletas }] of censo.entries()) {
     // 🔴 UNA DECLARACIÓN A LA QUE LE FALTA UN CAMPO NO ES UNA DECLARACIÓN MENOS: ES UN HUECO.
     // Se descartaba en silencio y el recuento bajaba sin que nadie lo dijera — «parece cobertura»,
     // que es el defecto que este mecanismo entero vino a cerrar. Provocado el 5-sep-2026 al perder
@@ -1489,10 +1752,21 @@ if (ejecutadoDirectamente(import.meta.url)) {
       console.log(`  ? ${guard} · CIEGO (declaración que no se puede evaluar)`);
     }
     if (!mutaciones.length) continue;
+    if (debeCortar(process.uptime(), presupuesto)) {
+      corte = { guardIdx, desde: 0, transcurridoS: process.uptime() };
+      break;
+    }
     // La línea base se corre UNA VEZ por guard, no por mutación: es la misma pasada limpia para
     // todas las suyas y duplicarla sólo costaría reloj.
+    const inicioGuard = process.uptime();
     const limpia = await correr(guard);
-    for (const mut of mutaciones) {
+    costes.push({ guard, mutaciones: mutaciones.length, inicioS: inicioGuard });
+    for (const [desde, mut] of mutaciones.entries()) {
+      if (debeCortar(process.uptime(), presupuesto)) {
+        corte = { guardIdx, desde, transcurridoS: process.uptime() };
+        break bucle;
+      }
+      juzgadas += 1;
       const r = await aplicarUna(mut, guard, limpia);
       if (r.ok) {
         vivas += 1;
@@ -1503,6 +1777,20 @@ if (ejecutadoDirectamente(import.meta.url)) {
       else if (r.mudo) { mudos.push(`${guard} · ${r.mudo}`); console.log(`  ✖ ${guard} · MUDO`); }
       else { ciegos.push(`${guard} · ${r.ciego}`); console.log(`  ? ${guard} · CIEGO`); }
     }
+  }
+  // 🔴 SCRUM-935d · el corte entra como una CIEGA más, con la lista: así sale por la misma puerta
+  // (código 2) y no puede leerse como un verde. Va antes del suelo de ejecución a propósito: si el
+  // corte llega antes de la primera mutación, «no he medido nada» es verdad, pero el MOTIVO es éste.
+  // 📌 SCRUM-935c (propuesta D) · el coste de cada guard, NOMBRADO. El 16-oct un solo commit subió
+  // `scrum813` de ~45 s a ~285 s y nadie lo vio hasta que el job empezó a morir en el techo.
+  for (const linea of guardsCaros(costes, process.uptime())) console.log(linea);
+  if (corte) {
+    const msg = mensajeDeCorte({
+      juzgadas, pendientes: pendientesDesde(censo, corte.guardIdx, corte.desde),
+      transcurridoS: corte.transcurridoS, presupuesto,
+    });
+    console.log(`\n${msg}`);
+    ciegos.push(msg);
   }
   // 🔴 SCRUM-754 · el recuento va CON la condición en la que se tomó. «vivas N · mudas 0» sin
   // decir sobre qué árbol es exactamente lo que se pudo creer una vez y no era verdad.

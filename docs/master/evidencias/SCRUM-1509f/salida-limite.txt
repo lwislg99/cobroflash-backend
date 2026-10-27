@@ -1,0 +1,52 @@
+app cargada de dist\app.js · NODE_ENV=development · capas en la pila de la app: 102
+topes leidos en dist: por cliente y dia = 3 · por comercio y dia = 100
+
+== 1 · LA CADENA delante de POST /webhooks/whatsapp (pila de la app cargada) ==
+  POST /webhooks/whatsapp
+    [  0] (toda peticion)  <anonymous>
+    [ 12] (toda peticion)  jsonParser
+    [ 13] (toda peticion)  urlencodedParser
+    [ 14] (toda peticion)  jsonError
+    [ 17] (toda peticion)  serveStatic
+    [ 41] (SOLO esta zona) ROUTER router  montada en /webhooks/whatsapp
+           dentro [1] ruta POST /  ->  manos: 1 (<anonymous>)
+    [101] (toda peticion)  <anonymous>
+  POSITIVO · POST /auth/login (una ruta que SI lleva limitador)
+    [ 25] (SOLO esta zona) ROUTER router  montada en /auth
+           dentro [0] ruta POST /login  ->  manos: 2 (<anonymous> , <anonymous>)
+  capas que casan con el webhook: 7 · propias de esta zona: 1 · una ruta inventada casa 6 (control)
+  manos de la ruta del webhook: 1 · capas de su router que no son ruta y casan: 0
+  manos de la ruta de login (positivo): 2  <- la mano de mas es su limitador
+cuadra CADENA: delante del manejador del webhook no hay ninguna mano propia (1 capa propia, 1 mano); login tiene 2
+
+== 2 · CONTROLES ==
+cuadra K+ POSITIVO del contador de 429: /auth/login, 7 seguidas, mismo correo         avisos=  0 plantProf=  0 textosCli=  0 bloqCom=  0 429= 2 http=200x5 429x2
+cuadra K0 CERO del contador de 429: /auth/login, 7 seguidas, 7 correos                avisos=  0 plantProf=  0 textosCli=  0 bloqCom=  0 429= 0 http=200x7
+cuadra K1 CERO: 120 entrantes con la firma MALA                                       avisos=  0 plantProf=  0 textosCli=  0 bloqCom=  0 429= 0 http=401x120
+cuadra K2 CERO: entrante valido de un numero que no es cliente de nadie               avisos=  0 plantProf=  0 textosCli=  0 bloqCom=  0 429= 0 http=200x1
+cuadra K3 CERO: BAJA de un numero que no es cliente de nadie                          avisos=  0 plantProf=  0 textosCli=  0 bloqCom=  0 429= 0 http=200x1
+cuadra K4 POSITIVO: cliente con albaran escribe 1 vez                                 avisos=  1 plantProf=  1 textosCli=  1 bloqCom=  0 429= 0 http=200x1
+cuadra K5 CERO de plantillas: 120 textos con la ventana del profesional ABIERTA       avisos=120 plantProf=  0 textosCli=120 bloqCom=  0 429= 0 http=200x120
+
+== 3 · :409 · UN cliente con albaran escribe 120 textos, ventana del profesional CERRADA ==
+cuadra L1 120 peticiones, 1 mensaje cada una, seguidas                                avisos=120 plantProf=100 textosCli=120 bloqCom= 20 429= 0 http=200x120
+cuadra L2 UNA sola peticion con 120 mensajes dentro (lote)                            avisos=120 plantProf=120 textosCli=120 bloqCom=  0 429= 0 http=200x1
+       OBSERVADO en L2, sin esperado (los 120 corren a la vez sobre una base EN MEMORIA): plantillas al profesional = 120 · bloqueadas por el tope de comercio = 0 · filas de plantilla escritas hoy = 120 · tope = 100
+cuadra L3 120 peticiones de 1 mensaje, lanzadas A LA VEZ                              avisos=120 plantProf=100 textosCli=120 bloqCom= 20 429= 0 http=200x120
+       OBSERVADO en L3, sin esperado (misma salvedad): plantillas al profesional = 100 · bloqueadas = 20 · tope = 100
+
+== 4 · :297 · BAJA repetida ==
+cuadra B1 primera BAJA de un cliente que NO estaba de baja                            avisos=  1 plantProf=  1 textosCli=  1 bloqCom=  0 429= 0 http=200x1
+       tras B1 el cliente queda con waOptOut=true · filas tocadas por la escritura de baja: 1
+cuadra B2 un cliente que YA esta de baja escribe BAJA 10 veces                        avisos= 10 plantProf= 10 textosCli= 10 bloqCom=  0 429= 0 http=200x10
+cuadra B3 lo mismo con las grafias que la ruta acepta (stop, Baja., STOP!, baja)      avisos= 10 plantProf= 10 textosCli= 10 bloqCom=  0 429= 0 http=200x10
+cuadra B4 CERO: 10 textos que NO son la orden de baja (cliente sin albaran)           avisos=  0 plantProf=  0 textosCli= 10 bloqCom=  0 429= 0 http=200x10
+cuadra B5 un cliente YA de baja escribe BAJA 120 veces                                avisos=120 plantProf=100 textosCli=120 bloqCom= 20 429= 0 http=200x120
+cuadra B6 el mismo numero es cliente de DOS comercios y escribe BAJA 10 veces         avisos= 20 plantProf= 20 textosCli= 10 bloqCom=  0 429= 0 http=200x10
+cuadra B7 CERO de plantillas: BAJA 10 veces con la ventana del profesional ABIERTA    avisos= 10 plantProf=  0 textosCli= 10 bloqCom=  0 429= 0 http=200x10
+
+== lo que la base en memoria contesto SIN modelarlo (valor neutro), toda la corrida ==
+  teamMember.findUnique x12
+
+CASOS: 18 · cuadran: 18 · NO cuadran: 0 · avisos contados en total: 652 · respuestas 429 en total: 2 (todas de /auth/login)
+POSITIVOS OBLIGATORIOS: K+ vio 2 respuestas 429 · K4 conto 1 aviso · L1 vio 20 bloqueos de comercio · B1 conto 1 aviso · B5 vio 20 bloqueos (los cinco > 0).

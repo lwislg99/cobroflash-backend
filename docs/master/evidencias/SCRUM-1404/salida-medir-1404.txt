@@ -1,0 +1,22 @@
+POBLACION=3 casos x 2 rutas = 6 llamadas
+
+① pendiente_de_sellado (ES, con NIF, sin huella): el caso del ticket
+  PANEL   GET /admin/invoices/:id/pdf → 500 · cuerpo {"error":"pdf_generation_failed"}
+          lo que queda en el log: [GET /admin/invoices/:id/pdf] Error: invoice_pendiente_de_sellado
+  CLIENTE GET /recibo/:token/pdf      → 500 · <title> "Documento no disponible — YaQu" · <h1> "Este enlace no corresponde a ningún documento activo."
+          lo que queda en el log: [GET /recibo/:token/pdf] invoice_pendiente_de_sellado
+
+② control del catch: `sellado` en la columna pero SIN huella (lo corta el portón)
+  PANEL   GET /admin/invoices/:id/pdf → 409 · cuerpo {"error":"invoice_sin_sellar","message":"Esta factura todavía no está registrada. Se reintenta solo; si sigue así, avísanos."}
+          lo que queda en el log: [GET /admin/invoices/:id/pdf] FacturaSinSellarError: invoice_sin_sellar:F260007
+  CLIENTE GET /recibo/:token/pdf      → 409 · <title> "Factura en proceso — YaQu" · <h1> "Esta factura se está registrando en Hacienda. Vuelve a intentarlo en un minuto."
+          lo que queda en el log: [GET /recibo/:token/pdf] invoice_sin_sellar:F260007
+
+③ control de avería: la factura llega sin su cliente
+  PANEL   GET /admin/invoices/:id/pdf → 500 · cuerpo {"error":"pdf_generation_failed"}
+          lo que queda en el log: [GET /admin/invoices/:id/pdf] Error: missing_relations
+  CLIENTE GET /recibo/:token/pdf      → 500 · <title> "Documento no disponible — YaQu" · <h1> "Este enlace no corresponde a ningún documento activo."
+          lo que queda en el log: [GET /recibo/:token/pdf] missing_relations
+
+HECHAS=6
+EXIT=0

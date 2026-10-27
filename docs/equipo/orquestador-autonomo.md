@@ -82,11 +82,28 @@ que **nació como A19**. Al leer, se comprueba el título, no el número.
 
 ### 5bis.1 · Cuándo se releva
 
-Los tres casos son los de la A19 y no se amplían: entrega verificada con el contexto **por encima de 200k**; más de
-**1 hora parada**; o el comienzo de la tanda del día siguiente. **Nunca a mitad de una entrega**, y **no en cada
-tarea**: si una entrega cierra por debajo de 200k, el encargo siguiente entra en la misma sesión.
+Los tres casos son los de la A19 y no se amplían: entrega verificada con el contexto **por encima de 300k**; más de
+**1 hora parada**; o el comienzo de la tanda del día siguiente. **No en cada tarea**: si una entrega cierra por
+debajo de 300k, el encargo siguiente entra en la misma sesión. **Y nunca a mitad de una entrega, salvo el caso
+de 500k de la A19**: ahí la sesión busca el primer punto seguro (un commit local), escribe su traspaso y pide el
+relevo.
 
-Para saber si pasa de 200k no se estima: se mide, con `sesion.mjs contexto N`.
+Para saber si pasa de 300k no se estima: se mide, con `sesion.mjs contexto N` o con la sección CONTEXTO del latido.
+
+*(6-oct-2026, SCRUM-1479, gemelo en código del texto de la A19. Hasta ese día este párrafo decía 200k —desde el
+21-sep-2026, SCRUM-1070b—. Los 300k los autorizó el fundador, coste incluido (SCRUM-1479 c.18513). El número de
+«al entregar» vive en un solo sitio, `UMBRAL_CONTEXTO` de `sesion.mjs`. El de «a mitad» es el que la A19 ya
+llevaba, y ese día NO se volvió a decidir.)*
+
+**El de «a mitad» también está en el código** (SCRUM-1484, en `main` desde el 6-oct-2026): es
+`UMBRAL_CONTEXTO_A_MITAD` de `sesion.mjs`, al lado del otro. Por encima de él, la sección CONTEXTO del latido y
+`sesion.mjs contexto N` dicen la MISMA frase, «se releva YA, sin esperar a terminar», y no «AL TERMINAR su
+entrega»; `contexto N` lo da además en el campo `momento` (`YA` o `AL-TERMINAR`). El 7-oct-2026 el orquestador de
+Luis lo dejó en 500k (SCRUM-1479 c.18622), con la medición de `docs/master/evidencias/SCRUM-1479/`: no cambia el
+número ni sube el gasto, y por eso no lleva la firma del fundador. Moverlo sí es coste, y es suyo.
+
+*(Hasta el 7-oct-2026 este apartado decía que el de «a mitad» «no está en el código: el latido dice la misma frase
+para los dos casos». Dejó de ser cierto el 6-oct con SCRUM-1484, que cambió el código y no este papel.)*
 
 ### 5bis.2 · Cómo se releva
 

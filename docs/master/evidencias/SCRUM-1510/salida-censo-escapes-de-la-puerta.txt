@@ -1,0 +1,48 @@
+CONTROL A CERO · nombre derivado «sellarTrasEmision_4b79695cbf» · ficheros leídos 321 · todo lo que encuentra: 0 (bien: 0, y con ficheros leídos)
+
+══ EL ÁRBOL · src/ · huella 4b79695cbfc7
+ficheros .ts leídos: 321 · el nombre en el texto bruto: 41 veces · como identificador: 21
+declaraciones: 1 modules/invoicing/domain/selladoEstado.ts:119
+imports con su nombre: 8 · en posición de tipo: 1 modules/invoicing/domain/reintentoSellado.ts:232
+LLAMADAS DIRECTAS (lo que ve el guard): 11 en 8 ficheros
+  · lib/invoicing.ts:241 · LO LEE EN UNA CONDICIÓN · va a variable «resultadoSellado» · lecturas 1: condición · produce bytes SÍ · portero sí
+  · modules/invoicing/domain/reintentoSellado.ts:289 · LO LEE EN UNA CONDICIÓN · va a variable «r» [?rama] · lecturas 2: condición, condición · produce bytes no · portero no
+  · modules/jobs/app/routes/albaranes.routes.ts:1340 · LO LEE EN UNA CONDICIÓN · va a variable «sellada» [.estado ===] · lecturas 2: return, condición · produce bytes no · portero no
+  · modules/jobs/app/routes/albaranes.routes.ts:1618 · LO LEE EN UNA CONDICIÓN · va a variable «sellada» [.estado ===] · lecturas 2: return, condición · produce bytes no · portero no
+  · modules/jobs/app/routes/jobs.routes.ts:1596 · DESCARTA (lo ve el guard) · va a NADIE (sentencia suelta) · produce bytes no · portero no
+  · modules/jobs/domain/recapitulativa.service.ts:145 · LO LEE EN UNA CONDICIÓN · va a variable «r» · lecturas 1: condición · produce bytes no · portero no
+  · modules/quotes/app/routes/quotes.routes.ts:681 · DESCARTA (lo ve el guard) · va a NADIE (sentencia suelta) · produce bytes no · portero no
+  · modules/system/app/routes/invoicesAdmin.routes.ts:208 · LO LEE EN UNA CONDICIÓN · va a variable «sellada» [.estado ===] · lecturas 2: return, condición · produce bytes no · portero no
+  · modules/system/app/routes/invoicesAdmin.routes.ts:1121 · SÓLO LO DEVUELVE · va a variable «vfApplied» [.estado ===] · lecturas 1: return · produce bytes no · portero no
+  · modules/system/app/routes/quotesAdmin.routes.ts:388 · LO LEE EN UNA CONDICIÓN · va a variable «resultadoSellado» · lecturas 2: vfApplied→return, condición · produce bytes no · portero no
+  · modules/system/app/routes/quotesAdmin.routes.ts:653 · SÓLO LO DEVUELVE · va a variable «vfApplied» [.estado ===] · lecturas 1: return · produce bytes no · portero no
+POR ALIAS (lo que el guard NO ve):
+  valor sin llamar (semilla de alias): 0
+  import renombrado: 0 
+  llamadas por el otro nombre: 0 
+  módulo traído sin nombrar (namespace/require/import()/export *): 0 
+  re-exportada desde otro fichero: 0 
+  el nombre como cadena: 0 
+  → ESCAPAN POR ALIAS: 0
+EL DOBLE INYECTABLE (propiedad tipada con typeof la puerta): «sellar» modules/invoicing/domain/reintentoSellado.ts:232
+  la rellenan en src/: 0 
+  la llaman en src/: 1 modules/invoicing/domain/reintentoSellado.ts:288 · opciones.sellar(…)
+«RECOJO Y NO HAGO CASO»: no lee o lee sin decidir: 0 
+  de los que recogen: lo leen en una condición 7 · sólo lo devuelven a quien llamó 2 (qué hace la condición NO lo juzga este censo: se lee a mano)
+  recogen el resultado, producen bytes y NO pasan por portero (a leer a mano): 0 
+
+POSITIVO (a) · declaración 1 (espero 1) · llamadas 11 en 8 ficheros, la medición anterior leyó 11 en 8 · la del reintento dentro: sí → CUADRA
+
+POSITIVO (b) · ESPEJO de src/ en dist/ · su censo sin sembrar es idéntico al del árbol: sí
+  LA VE    · S1 · alias: `const puerta = sellarTrasEmision; await puerta(…)` y entrega
+  LA VE    · S2 · import renombrado y llamada por el otro nombre
+  LA VE    · S3 · recoge el resultado, no lo lee, y entrega
+  LA VE    · S4 · lee el resultado y con «sigue pendiente» entrega igual (la C4 de SCRUM-1404)
+  LA VE    · S5 · espacio de nombres: `import * as s from …selladoEstado`
+  siembras: 5 · vistas: 5
+
+ÁRBOL DE VERDAD · huella sha256 de los 321 .ts de src/ antes y después: IGUAL · espejo borrado: sí
+
+RESULTADO · escapan por ALIAS: 0 · «recojo y no hago caso»: 0 · recogen + producen bytes sin portero: 0
+controles que fallan: 0
+EXIT=0

@@ -1,0 +1,78 @@
+censo-just · raíz <árbol en origin/main 5078f80c3>
+población · 340 ficheros de src/ (.ts/.mjs/.js) leídos por AST
+
+A · CREACIONES de Invoice: 8 (censo de la casa: 8; solo mías 0, solo de la casa 0)
+  src/lib/invoicing.ts:417 · crearFacturaEmitida · función ensureInvoiceForCharge
+      type = literal «F1» · number = expresión «number»
+  src/modules/invoicing/domain/crearFacturaEmitida.ts:65 · invoice.create · función crearFacturaEmitida
+      type = sin ver (spread) «…» · number = sin ver (spread) «…»
+  src/modules/invoicing/domain/invoicing.service.ts:109 · crearFacturaEmitida · función emitInvoice
+      type = expresión «input.type ?? 'F1'» · number = expresión «number»
+  src/modules/jobs/app/routes/jobs.routes.ts:1549 · crearFacturaEmitida · POST /:id/collect-rest (router)
+      type = literal «F1» · number = expresión «invoiceNumber»
+  src/modules/quotes/app/routes/quotes.routes.ts:658 · crearFacturaEmitida · POST /:token/decision (router)
+      type = literal «F1» · number = expresión «invoiceNumber»
+  src/modules/system/app/routes/invoicesAdmin.routes.ts:1079 · crearFacturaEmitida · POST /:id/rectify (router)
+      type = literal «R1» · number = expresión «number»
+  src/modules/system/app/routes/quotesAdmin.routes.ts:363 · crearFacturaEmitida · POST /:id/invoice (router)
+      type = literal «F1» · number = expresión «invoiceNumber»
+  src/modules/system/app/routes/quotesAdmin.routes.ts:656 · crearFacturaEmitida · POST /:id/invoice-manual (router)
+      type = literal «F1» · number = expresión «invoiceNumber»
+  anidadas o SQL en crudo (embudo de la casa): 0
+
+A' · LLAMADAS a emitInvoice (su type entra como input.type ?? 'F1'): 4
+  src/modules/jobs/app/routes/albaranes.routes.ts:1387 · POST /:id/facturar-parcial (router) · type = literal «F1»
+  src/modules/jobs/app/routes/albaranes.routes.ts:1667 · POST /:id/convertir-en-factura (router) · type = literal «F1»
+  src/modules/jobs/domain/recapitulativa.service.ts:109 · función emitirRecapitulativas · type = literal «F1»
+  src/modules/system/app/routes/invoicesAdmin.routes.ts:171 · POST / (router) · type = literal «F1»
+
+B · ESCRITURAS sobre filas de Invoice (update/updateMany/upsert.update): 24
+  src/lib/invoicing.ts:146 · invoice.update · función ensureInvoicePdf · type = no lo toca · number = no lo toca
+  src/lib/invoicing.ts:306 · invoice.update · función ensurePdfAndEvent · type = no lo toca · number = no lo toca
+  src/lib/invoicing.ts:311 · invoice.update · función ensurePdfAndEvent · type = no lo toca · number = no lo toca
+  src/modules/billing/app/routes/mpWebhook.routes.ts:172 · invoice.update · POST / (router) · type = no lo toca · number = no lo toca
+  src/modules/billing/app/routes/psp.routes.ts:195 · invoice.update · POST / (router) · type = no lo toca · number = no lo toca
+  src/modules/billing/app/routes/psp.routes.ts:259 · invoice.update · POST / (router) · type = no lo toca · number = no lo toca
+  src/modules/billing/domain/invoiceReminder.service.ts:109 · invoice.updateMany · función reservarCandado · type = no lo toca · number = no lo toca
+  src/modules/billing/domain/invoiceReminder.service.ts:110 · invoice.updateMany · función reservarCandado · type = no lo toca · number = no lo toca
+  src/modules/billing/domain/invoiceReminder.service.ts:126 · invoice.updateMany · función liberarCandado · type = no lo toca · number = no lo toca
+  src/modules/billing/domain/invoiceReminder.service.ts:128 · invoice.updateMany · función liberarCandado · type = no lo toca · number = no lo toca
+  src/modules/billing/domain/invoiceWhatsApp.service.ts:88 · invoice.update · función sendInvoicePaymentRequest · type = no lo toca · number = no lo toca
+  src/modules/invoicing/app/routes/invoice.routes.ts:109 · invoice.update · POST /:id/paid-webhook (router) · type = no lo toca · number = no lo toca
+  src/modules/invoicing/domain/selladoEstado.ts:132 · invoice.update · función sellarTrasEmision · type = no lo toca · number = no lo toca
+  src/modules/invoicing/domain/selladoEstado.ts:143 · invoice.update · función sellarTrasEmision · type = no lo toca · number = no lo toca
+  src/modules/invoicing/domain/verifactu.service.ts:430 · invoice.update · función applyVeriFactu · type = no lo toca · number = no lo toca
+  src/modules/invoicing/domain/verifactu.service.ts:526 · invoice.update · función applyVeriFactuAnulacion · type = no lo toca · number = no lo toca
+  src/modules/invoicing/domain/verifactu.service.ts:559 · invoice.update · función applyVeriFactuAnulacion · type = no lo toca · number = no lo toca
+  src/modules/invoicing/domain/verifactu.service.ts:564 · invoice.update · función applyVeriFactuAnulacion · type = no lo toca · number = no lo toca
+  src/modules/system/app/routes/invoicesAdmin.routes.ts:476 · invoice.updateMany · POST /bulk-paid (router) · type = no lo toca · number = no lo toca
+  src/modules/system/app/routes/invoicesAdmin.routes.ts:791 · invoice.update · POST /:id/send-reminder (router) · type = sin ver (data no literal) «…» · number = sin ver (data no literal) «…»
+  src/modules/system/app/routes/invoicesAdmin.routes.ts:934 · invoice.update · POST /:id/annul (router) · type = no lo toca · number = no lo toca
+  src/modules/system/app/routes/invoicesAdmin.routes.ts:1229 · invoice.update · POST /:id/regenerate-pdf (router) · type = no lo toca · number = no lo toca
+  src/modules/system/invoiceAdmin.ts:112 · invoice.updateMany · función setInvoiceTags · type = no lo toca · number = no lo toca
+  src/modules/system/invoiceAdmin.ts:310 · invoice.update · función updateInvoiceStatusAdmin · type = sin ver (spread) «…» · number = sin ver (spread) «…»
+
+C · CRUCE por el campo: propiedades `type: 'JUST'` en src/: 0
+  literales 'JUST' de código en src/ (cualquier sitio): 7
+  src/modules/billing/app/routes/receipt.routes.ts:106 · BinaryExpression · invoice.type === 'JUST'
+  src/modules/invoicing/domain/invoiceNumber.service.ts:431 · ConditionalExpression · esJustificante ? 'JUST' : rect ? 'R1' : 'F1'
+  src/modules/invoicing/domain/libroRegistro.repo.ts:96 · BinaryExpression · f.type === 'JUST'
+  src/modules/invoicing/domain/tipoDocumento.ts:52 · LiteralType · 'JUST'
+  src/modules/invoicing/infra/pdf/pdf.service.ts:384 · BinaryExpression · params.type === 'JUST'
+  src/modules/system/invoiceAdmin.ts:44 · PropertyAssignment · not: 'JUST'
+  src/modules/system/invoiceAdmin.ts:268 · BinaryExpression · existing.type === 'JUST'
+
+D · PREFIJO J-: literales/regex de código que empiezan por J-: 4
+  src/core/validation/fiscalInput.ts:165 · CallExpression · n.startsWith('J-')
+  src/modules/invoicing/domain/invoiceNumber.service.ts:86 · VariableDeclaration · RECEIPT_NUMBER_PREFIX = 'J-'
+  src/modules/messaging/domain/email.service.ts:39 · CallExpression · inv.number.startsWith('J-')
+  src/modules/system/invoiceAdmin.ts:268 · RegularExpressionLiteral · /^J-/i.test
+  lecturas de RECEIPT_NUMBER_PREFIX: 1
+  src/modules/invoicing/domain/invoiceNumber.service.ts:89 · CallExpression · typeof number === 'string' && number.startsWith(RECEIPT_NUMBER_PREFIX)
+
+CONTROLES
+  siembra (4 preguntas): QUITADA
+  otro tipo en el árbol real (type F1 literal): visto
+  dos sondas de la población A: mismo conjunto
+
+VEREDICTO · CIEGO · creaciones con type JUST literal: 0 · escrituras con type JUST: 0 · sitios con type sin ver: 3

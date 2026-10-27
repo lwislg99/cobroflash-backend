@@ -1,0 +1,1136 @@
+[
+ {
+  "cuando": "2026-10-06T10:50:33Z",
+  "ver": "al-dia",
+  "p8": "0dbf8eae",
+  "m8": "5508e95b",
+  "hueco": 0.1,
+  "commits": 2,
+  "recalculo": 0.10333333333333333,
+  "nTodos": 2,
+  "nFp": 1,
+  "hFp": 0.0038888888888888888,
+  "viejo": {
+   "ct": 1791283461,
+   "h": "c0967fb75",
+   "s": "SCRUM-1453: el latido avisa del PR verde SIN auto-merge y dice quien lo desarmo (cuatro PR, cuatro dias, seccion en verde)"
+  },
+  "viejoFp": {
+   "ct": 1791283819,
+   "H": "5508e95b05c901ce44d9352fa3b48fd55ec08688",
+   "s": "Merge pull request #2192 from lwislg99/scrum-1453-latido-sin-auto-merge"
+  },
+  "eP": {
+   "n": 0,
+   "creado": null,
+   "exito": null,
+   "estados": ""
+  },
+  "eM": {
+   "n": 1,
+   "creado": "2026-10-06T10:50:24Z",
+   "exito": "2026-10-06T10:51:52Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eV": {
+   "n": 1,
+   "creado": "2026-10-06T10:50:24Z",
+   "exito": "2026-10-06T10:51:52Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "ritmo": "-",
+  "concl": "success"
+ },
+ {
+  "cuando": "2026-10-06T10:51:07Z",
+  "ver": "al-dia",
+  "p8": "0dbf8eae",
+  "m8": "5508e95b",
+  "hueco": 0.1,
+  "commits": 2,
+  "recalculo": 0.11277777777777778,
+  "nTodos": 2,
+  "nFp": 1,
+  "hFp": 0.013333333333333334,
+  "viejo": {
+   "ct": 1791283461,
+   "h": "c0967fb75",
+   "s": "SCRUM-1453: el latido avisa del PR verde SIN auto-merge y dice quien lo desarmo (cuatro PR, cuatro dias, seccion en verde)"
+  },
+  "viejoFp": {
+   "ct": 1791283819,
+   "H": "5508e95b05c901ce44d9352fa3b48fd55ec08688",
+   "s": "Merge pull request #2192 from lwislg99/scrum-1453-latido-sin-auto-merge"
+  },
+  "eP": {
+   "n": 0,
+   "creado": null,
+   "exito": null,
+   "estados": ""
+  },
+  "eM": {
+   "n": 1,
+   "creado": "2026-10-06T10:50:24Z",
+   "exito": "2026-10-06T10:51:52Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eV": {
+   "n": 1,
+   "creado": "2026-10-06T10:50:24Z",
+   "exito": "2026-10-06T10:51:52Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "ritmo": "-",
+  "concl": "success"
+ },
+ {
+  "cuando": "2026-10-06T12:56:28Z",
+  "ver": "al-dia",
+  "p8": "eb1fdefa",
+  "m8": "a2533fd9",
+  "hueco": 0.7,
+  "commits": 6,
+  "recalculo": 0.6763888888888889,
+  "nTodos": 6,
+  "nFp": 1,
+  "hFp": 0.015833333333333335,
+  "viejo": {
+   "ct": 1791288953,
+   "h": "ea7dbea69",
+   "s": "SCRUM-1460: tras firmar en el pad, la ficha del albarán recuerda mandar la copia (R1 y R2 firmados en c.18330); el envío automático queda descartado y los botones no se mueven"
+  },
+  "viejoFp": {
+   "ct": 1791291331,
+   "H": "a2533fd9bb3a94c762fda17fef91185b8bc68f42",
+   "s": "Merge pull request #2208 from lwislg99/scrum-1460-recordatorio-de-la-copia"
+  },
+  "eP": {
+   "n": 1,
+   "creado": "2026-10-06T12:38:59Z",
+   "exito": "2026-10-06T12:40:39Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eM": {
+   "n": 1,
+   "creado": "2026-10-06T12:55:37Z",
+   "exito": "2026-10-06T12:57:05Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eV": {
+   "n": 1,
+   "creado": "2026-10-06T12:55:37Z",
+   "exito": "2026-10-06T12:57:05Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "ritmo": "-",
+  "concl": "success"
+ },
+ {
+  "cuando": "2026-10-06T17:02:39Z",
+  "ver": "al-dia",
+  "p8": "31ff91d9",
+  "m8": "f8da1ec8",
+  "hueco": 4,
+  "commits": 5,
+  "recalculo": 4.029722222222222,
+  "nTodos": 5,
+  "nFp": 1,
+  "hFp": 0.005277777777777778,
+  "viejo": {
+   "ct": 1791291652,
+   "h": "64a234e71",
+   "s": "SCRUM-1464: lo que se trae a la vista no acaba debajo del botón de ayuda (scroll-padding-bottom de la página, 80 px)"
+  },
+  "viejoFp": {
+   "ct": 1791306140,
+   "H": "f8da1ec83777c4110228e82093047e69a671dfe1",
+   "s": "Merge pull request #2217 from lwislg99/scrum-1464b-lo-traido-a-la-vista-no-cae-bajo-la-ayuda"
+  },
+  "eP": {
+   "n": 1,
+   "creado": "2026-10-06T14:49:54Z",
+   "exito": "2026-10-06T14:53:15Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eM": {
+   "n": 1,
+   "creado": "2026-10-06T17:02:26Z",
+   "exito": "2026-10-06T17:04:55Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eV": {
+   "n": 1,
+   "creado": "2026-10-06T17:02:26Z",
+   "exito": "2026-10-06T17:04:55Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "ritmo": "-",
+  "concl": "success"
+ },
+ {
+  "cuando": "2026-10-06T17:30:40Z",
+  "ver": "al-dia",
+  "p8": "b7f31687",
+  "m8": "78426f7a",
+  "hueco": 3.9,
+  "commits": 5,
+  "recalculo": 3.8961111111111113,
+  "nTodos": 5,
+  "nFp": 1,
+  "hFp": 0.01861111111111111,
+  "viejo": {
+   "ct": 1791293814,
+   "h": "018b61b1a",
+   "s": "SCRUM-1335: «ausente» deja de valer como veredicto de zona (se cuenta aparte; una caída real sigue en rojo por el fichero)"
+  },
+  "viejoFp": {
+   "ct": 1791307773,
+   "H": "78426f7ad5d75af2f43ebb553eb5fe7604f2eafc",
+   "s": "Merge pull request #2226 from lwislg99/scrum-1335b-ausente-no-es-veredicto"
+  },
+  "eP": {
+   "n": 1,
+   "creado": "2026-10-06T17:21:01Z",
+   "exito": "2026-10-06T17:24:37Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eM": {
+   "n": 1,
+   "creado": "2026-10-06T17:29:39Z",
+   "exito": "2026-10-06T17:32:07Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eV": {
+   "n": 1,
+   "creado": "2026-10-06T17:29:39Z",
+   "exito": "2026-10-06T17:32:07Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "ritmo": "-",
+  "concl": "success"
+ },
+ {
+  "cuando": "2026-10-06T17:45:43Z",
+  "ver": "al-dia",
+  "p8": "78426f7a",
+  "m8": "bcd74aba",
+  "hueco": 0.2,
+  "commits": 3,
+  "recalculo": 0.16277777777777777,
+  "nTodos": 3,
+  "nFp": 1,
+  "hFp": 0.002777777777777778,
+  "viejo": {
+   "ct": 1791308157,
+   "h": "fa9750cb5",
+   "s": "SCRUM-1480b: los scripts de workflow, contados (21 directos, 40 con imports): 16 a S5, 9 a S3, y la fila general de scripts/ sin cerradura"
+  },
+  "viejoFp": {
+   "ct": 1791308733,
+   "H": "bcd74abab69a1a609e520f85fe50e6632ced204c",
+   "s": "Merge pull request #2227 from lwislg99/scrum-1480b-filas-de-scripts-de-workflow"
+  },
+  "eP": {
+   "n": 1,
+   "creado": "2026-10-06T17:29:39Z",
+   "exito": "2026-10-06T17:32:07Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eM": {
+   "n": 1,
+   "creado": "2026-10-06T17:45:41Z",
+   "exito": "2026-10-06T17:47:51Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eV": {
+   "n": 1,
+   "creado": "2026-10-06T17:45:41Z",
+   "exito": "2026-10-06T17:47:51Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "ritmo": "-",
+  "concl": "success"
+ },
+ {
+  "cuando": "2026-10-07T06:25:28Z",
+  "ver": "atrasado",
+  "p8": "33f07c33",
+  "m8": "720c1a12",
+  "hueco": 10.1,
+  "commits": 4,
+  "recalculo": 10.110277777777778,
+  "nTodos": 4,
+  "nFp": 1,
+  "hFp": 0.004166666666666667,
+  "viejo": {
+   "ct": 1791317931,
+   "h": "df2ddcd5d",
+   "s": "SCRUM-1227: el gesto que faltaba, medido en yaqu.app (sonda de Guardar cambios con su control)"
+  },
+  "viejoFp": {
+   "ct": 1791354313,
+   "H": "720c1a122ffc796371004a92f6ab143b5f79d4d3",
+   "s": "Merge pull request #2240 from lwislg99/scrum-1227b-el-gesto-de-guardar"
+  },
+  "eP": {
+   "n": 1,
+   "creado": "2026-10-06T20:23:23Z",
+   "exito": "2026-10-06T20:25:42Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eM": {
+   "n": 1,
+   "creado": "2026-10-07T06:25:19Z",
+   "exito": "2026-10-07T06:26:45Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eV": {
+   "n": 1,
+   "creado": "2026-10-07T06:25:19Z",
+   "exito": "2026-10-07T06:26:45Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "ritmo": "CONGELADO",
+  "concl": "failure"
+ },
+ {
+  "cuando": "2026-10-07T07:44:59Z",
+  "ver": "al-dia",
+  "p8": "73ce872c",
+  "m8": "21c27b11",
+  "hueco": 0.5,
+  "commits": 6,
+  "recalculo": 0.45555555555555555,
+  "nTodos": 6,
+  "nFp": 1,
+  "hFp": 0.020277777777777777,
+  "viejo": {
+   "ct": 1791357459,
+   "h": "2e3dda3e7",
+   "s": "SCRUM-1484b: contexto N dice la misma frase que el latido por encima del segundo numero de la A19, y el papel de S5 deja de decir que no esta construido"
+  },
+  "viejoFp": {
+   "ct": 1791359026,
+   "H": "21c27b1127d937c99fae56c1b2de67eff1d03ccb",
+   "s": "Merge pull request #2251 from lwislg99/scrum-1484b-una-frase-y-su-papel"
+  },
+  "eP": {
+   "n": 1,
+   "creado": "2026-10-07T07:11:25Z",
+   "exito": "2026-10-07T07:13:17Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eM": {
+   "n": 1,
+   "creado": "2026-10-07T07:43:52Z",
+   "exito": "2026-10-07T07:45:12Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eV": {
+   "n": 1,
+   "creado": "2026-10-07T07:43:52Z",
+   "exito": "2026-10-07T07:45:12Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "ritmo": "-",
+  "concl": "success"
+ },
+ {
+  "cuando": "2026-10-07T15:44:24Z",
+  "ver": "al-dia",
+  "p8": "5f1bb361",
+  "m8": "12ecc7bb",
+  "hueco": 0.4,
+  "commits": 2,
+  "recalculo": 0.4091666666666667,
+  "nTodos": 2,
+  "nFp": 1,
+  "hFp": 0.022222222222222223,
+  "viejo": {
+   "ct": 1791386391,
+   "h": "a3715ea79",
+   "s": "SCRUM-1184b: ventanaDeFirma declarada sin enchufar con su motivo, y la vista previa vista en yaqu.app"
+  },
+  "viejoFp": {
+   "ct": 1791387784,
+   "H": "12ecc7bb3bad377e729a01b09fd755f978e125b9",
+   "s": "Merge pull request #2257 from lwislg99/scrum-1184b-ventana-de-firma-declarada"
+  },
+  "eP": {
+   "n": 1,
+   "creado": "2026-10-07T08:13:27Z",
+   "exito": "2026-10-07T08:14:39Z",
+   "estados": "INACTIVE,INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eM": {
+   "n": 1,
+   "creado": "2026-10-07T15:43:10Z",
+   "exito": "2026-10-07T15:45:40Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eV": {
+   "n": 1,
+   "creado": "2026-10-07T15:43:10Z",
+   "exito": "2026-10-07T15:45:40Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "ritmo": "-",
+  "concl": "success"
+ },
+ {
+  "cuando": "2026-10-07T16:37:36Z",
+  "ver": "al-dia",
+  "p8": "818cb29b",
+  "m8": "9acfbeba",
+  "hueco": 0.4,
+  "commits": 4,
+  "recalculo": 0.39222222222222225,
+  "nTodos": 4,
+  "nFp": 1,
+  "hFp": 0.02361111111111111,
+  "viejo": {
+   "ct": 1791389644,
+   "h": "8438eb904",
+   "s": "SCRUM-1215: las cuatro hojas de S4 que el censo 1157 acusaba citan su firma (SCRUM-720, 720c y c.18283)"
+  },
+  "viejoFp": {
+   "ct": 1791390971,
+   "H": "9acfbeba61c997aa838ad2460103a219141cd293",
+   "s": "Merge pull request #2270 from lwislg99/scrum-1215-las-cuatro-de-s4-citan-su-firma"
+  },
+  "eP": {
+   "n": 1,
+   "creado": "2026-10-07T16:30:19Z",
+   "exito": "2026-10-07T16:32:35Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eM": {
+   "n": 1,
+   "creado": "2026-10-07T16:36:17Z",
+   "exito": "2026-10-07T16:39:11Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eV": {
+   "n": 1,
+   "creado": "2026-10-07T16:36:17Z",
+   "exito": "2026-10-07T16:39:11Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "ritmo": "-",
+  "concl": "success"
+ },
+ {
+  "cuando": "2026-10-07T17:05:18Z",
+  "ver": "al-dia",
+  "p8": "965e3d05",
+  "m8": "60f19338",
+  "hueco": 1,
+  "commits": 12,
+  "recalculo": 1.035,
+  "nTodos": 12,
+  "nFp": 2,
+  "hFp": 0.005,
+  "viejo": {
+   "ct": 1791388992,
+   "h": "3084b48e2",
+   "s": "Reapply \"SCRUM-1436 ⑥: los dos literales firmados (comentario 18287, cuenta de Luis; válidos por la decisión del comentario 18734) para el aviso de disputa sin firma, letra por letra; sin factura no se encajan\""
+  },
+  "viejoFp": {
+   "ct": 1791392700,
+   "H": "912fb95701424239bd4d61aca203dc6360755523",
+   "s": "Merge pull request #2269 from lwislg99/scrum-1436c-los-dos-literales-del-aviso-de-disputa"
+  },
+  "eP": {
+   "n": 1,
+   "creado": "2026-10-07T16:48:10Z",
+   "exito": "2026-10-07T16:50:34Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eM": {
+   "n": 1,
+   "creado": "2026-10-07T17:05:11Z",
+   "exito": "2026-10-07T17:10:19Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eV": {
+   "n": 1,
+   "creado": "2026-10-07T17:05:06Z",
+   "exito": "2026-10-07T17:09:07Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "ritmo": "-",
+  "concl": "success"
+ },
+ {
+  "cuando": "2026-10-07T23:42:36Z",
+  "ver": "al-dia",
+  "p8": "a65a8c75",
+  "m8": "edfbd86e",
+  "hueco": 0.2,
+  "commits": 2,
+  "recalculo": 0.2222222222222222,
+  "nTodos": 2,
+  "nFp": 1,
+  "hFp": 0.015833333333333335,
+  "viejo": {
+   "ct": 1791415756,
+   "h": "84045f269",
+   "s": "SCRUM-1404: CRUCE DE CARRIL DECLARADO (A20) - el ticket es area-j1, escribe J2, lo autorizó el orquestador de Javier y fue SÓLO LECTURA; el banco de la población B y su registro"
+  },
+  "viejoFp": {
+   "ct": 1791416499,
+   "H": "edfbd86e7c193ce5b35f20269c478acc6e9b2777",
+   "s": "Merge pull request #2287 from lwislg99/scrum-1404-banco-de-la-poblacion-b"
+  },
+  "eP": {
+   "n": 1,
+   "creado": "2026-10-07T18:23:59Z",
+   "exito": "2026-10-07T18:26:19Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eM": {
+   "n": 1,
+   "creado": "2026-10-07T23:41:44Z",
+   "exito": "2026-10-07T23:43:46Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eV": {
+   "n": 1,
+   "creado": "2026-10-07T23:41:44Z",
+   "exito": "2026-10-07T23:43:46Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "ritmo": "-",
+  "concl": "success"
+ },
+ {
+  "cuando": "2026-10-08T01:34:51Z",
+  "ver": "al-dia",
+  "p8": "c63a527e",
+  "m8": "176d0772",
+  "hueco": 0.2,
+  "commits": 2,
+  "recalculo": 0.21222222222222223,
+  "nTodos": 2,
+  "nFp": 1,
+  "hFp": 0.0019444444444444444,
+  "viejo": {
+   "ct": 1791422527,
+   "h": "b8cdb7dec",
+   "s": "SCRUM-1509: medido el recordatorio de FACTURAS - no tiene el defecto del de presupuestos (registro y evidencias, sin tocar src)"
+  },
+  "viejoFp": {
+   "ct": 1791423284,
+   "H": "176d0772eb0f4be574dad06f5c548f7da73c5ca7",
+   "s": "Merge pull request #2297 from lwislg99/scrum-1509b-el-mismo-defecto-en-facturas"
+  },
+  "eP": {
+   "n": 1,
+   "creado": "2026-10-08T01:30:19Z",
+   "exito": "2026-10-08T01:31:57Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eM": {
+   "n": 1,
+   "creado": "2026-10-08T01:34:49Z",
+   "exito": "2026-10-08T01:36:13Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eV": {
+   "n": 1,
+   "creado": "2026-10-08T01:34:49Z",
+   "exito": "2026-10-08T01:36:13Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "ritmo": "-",
+  "concl": "success"
+ },
+ {
+  "cuando": "2026-10-08T03:18:06Z",
+  "ver": "al-dia",
+  "p8": "326e6af4",
+  "m8": "16e80dea",
+  "hueco": 1.1,
+  "commits": 4,
+  "recalculo": 1.1358333333333333,
+  "nTodos": 4,
+  "nFp": 1,
+  "hFp": 0.0125,
+  "viejo": {
+   "ct": 1791425397,
+   "h": "681a08d9d",
+   "s": "SCRUM-1509: carril J1 a mano (ruta de invoicesAdmin, encolado por c.18910) - medido quien puede llamar a send-reminder y cuantas veces; registro y evidencias, sin tocar src"
+  },
+  "viejoFp": {
+   "ct": 1791429441,
+   "H": "16e80dea496dad3819bf444983f9974d3c13ebb9",
+   "s": "Merge pull request #2305 from lwislg99/scrum-1509e-el-tope-de-la-ruta-manual"
+  },
+  "eP": {
+   "n": 1,
+   "creado": "2026-10-08T03:03:53Z",
+   "exito": "2026-10-08T03:05:43Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eM": {
+   "n": 1,
+   "creado": "2026-10-08T03:17:26Z",
+   "exito": "2026-10-08T03:18:58Z",
+   "estados": "INACTIVE,INACTIVE,SUCCESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eV": {
+   "n": 1,
+   "creado": "2026-10-08T03:17:26Z",
+   "exito": "2026-10-08T03:18:58Z",
+   "estados": "INACTIVE,INACTIVE,SUCCESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "ritmo": "-",
+  "concl": "success"
+ },
+ {
+  "cuando": "2026-10-08T07:46:48Z",
+  "ver": "al-dia",
+  "p8": "16e80dea",
+  "m8": "ad377526",
+  "hueco": 5.6,
+  "commits": 4,
+  "recalculo": 5.582777777777777,
+  "nTodos": 4,
+  "nFp": 1,
+  "hFp": 0.005,
+  "viejo": {
+   "ct": 1791425510,
+   "h": "38e0c9aed",
+   "s": "Merge commit '82e3637fcf48643aa994c724db378866adbabd3d' into scrum-1339k-la-tuberia-de-65536"
+  },
+  "viejoFp": {
+   "ct": 1791445590,
+   "H": "ad377526013cc518a09de4a3a1b0d86743d7e7b9",
+   "s": "Merge pull request #2310 from lwislg99/scrum-1339k-la-tuberia-de-65536"
+  },
+  "eP": {
+   "n": 1,
+   "creado": "2026-10-08T03:17:26Z",
+   "exito": "2026-10-08T03:18:58Z",
+   "estados": "INACTIVE,INACTIVE,SUCCESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eM": {
+   "n": 1,
+   "creado": "2026-10-08T07:46:37Z",
+   "exito": "2026-10-08T07:47:49Z",
+   "estados": "INACTIVE,INACTIVE,SUCCESS,IN_PROGRESS"
+  },
+  "eV": {
+   "n": 1,
+   "creado": "2026-10-08T07:46:37Z",
+   "exito": "2026-10-08T07:47:49Z",
+   "estados": "INACTIVE,INACTIVE,SUCCESS,IN_PROGRESS"
+  },
+  "ritmo": "-",
+  "concl": "success"
+ },
+ {
+  "cuando": "2026-10-08T08:06:16Z",
+  "ver": "al-dia",
+  "p8": "4f8c473d",
+  "m8": "aa0b22ac",
+  "hueco": 0.4,
+  "commits": 3,
+  "recalculo": 0.37555555555555553,
+  "nTodos": 3,
+  "nFp": 1,
+  "hFp": 0.022222222222222223,
+  "viejo": {
+   "ct": 1791445424,
+   "h": "71229443b",
+   "s": "SCRUM-1510: carril J6 (instrumentos) · el punto ciego 2 ya tiene test, por destino"
+  },
+  "viejoFp": {
+   "ct": 1791446696,
+   "H": "aa0b22acc3abe8572cd5e527caed0dab1e5c0f31",
+   "s": "Merge pull request #2313 from lwislg99/scrum-1510b-el-test-del-segundo-porton"
+  },
+  "eP": {
+   "n": 1,
+   "creado": "2026-10-08T07:53:52Z",
+   "exito": "2026-10-08T07:55:15Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eM": {
+   "n": 1,
+   "creado": "2026-10-08T08:05:02Z",
+   "exito": "2026-10-08T08:06:37Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eV": {
+   "n": 1,
+   "creado": "2026-10-08T08:05:02Z",
+   "exito": "2026-10-08T08:06:37Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "ritmo": "-",
+  "concl": "success"
+ },
+ {
+  "cuando": "2026-10-08T08:26:13Z",
+  "ver": "al-dia",
+  "p8": "a46ade85",
+  "m8": "e414866d",
+  "hueco": 0.3,
+  "commits": 3,
+  "recalculo": 0.29555555555555557,
+  "nTodos": 3,
+  "nFp": 1,
+  "hFp": 0.011111111111111112,
+  "viejo": {
+   "ct": 1791446909,
+   "h": "635ee796a",
+   "s": "wip: SCRUM-1515 guion de alta y su test, antes de verlo en rojo"
+  },
+  "viejoFp": {
+   "ct": 1791447933,
+   "H": "e414866dda770eda6ba0dec82df1bd17656ba3cf",
+   "s": "Merge pull request #2319 from lwislg99/scrum-1515-nuestra-puerta-de-alta"
+  },
+  "eP": {
+   "n": 1,
+   "creado": "2026-10-08T08:20:55Z",
+   "exito": "2026-10-08T08:22:13Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eM": {
+   "n": 1,
+   "creado": "2026-10-08T08:25:38Z",
+   "exito": "2026-10-08T08:27:10Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eV": {
+   "n": 1,
+   "creado": "2026-10-08T08:25:38Z",
+   "exito": "2026-10-08T08:27:10Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "ritmo": "-",
+  "concl": "success"
+ },
+ {
+  "cuando": "2026-10-08T10:34:03Z",
+  "ver": "al-dia",
+  "p8": "497f5167",
+  "m8": "be483452",
+  "hueco": 1.1,
+  "commits": 4,
+  "recalculo": 1.1166666666666667,
+  "nTodos": 4,
+  "nFp": 1,
+  "hFp": 0.005277777777777778,
+  "viejo": {
+   "ct": 1791451623,
+   "h": "53ff10a98",
+   "s": "SCRUM-1513: el tope de plantillas se decide y se apunta bajo un cerrojo corto por comercio (opcion C; J2: whatsapp.ts y whatsappLog.service.ts)"
+  },
+  "viejoFp": {
+   "ct": 1791455624,
+   "H": "be48345279da158bc81aebbea543eb926ae9eb88",
+   "s": "Merge pull request #2325 from lwislg99/scrum-1513d-el-cerrojo-del-tope"
+  },
+  "eP": {
+   "n": 1,
+   "creado": "2026-10-08T08:55:23Z",
+   "exito": "2026-10-08T08:57:03Z",
+   "estados": "INACTIVE,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eM": {
+   "n": 1,
+   "creado": "2026-10-08T10:33:50Z",
+   "exito": "2026-10-08T10:35:11Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eV": {
+   "n": 1,
+   "creado": "2026-10-08T10:33:50Z",
+   "exito": "2026-10-08T10:35:11Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "ritmo": "-",
+  "concl": "success"
+ },
+ {
+  "cuando": "2026-10-09T08:35:38Z",
+  "ver": "al-dia",
+  "p8": "be483452",
+  "m8": "65ee1329",
+  "hueco": 0.2,
+  "commits": 2,
+  "recalculo": 0.15777777777777777,
+  "nTodos": 2,
+  "nFp": 1,
+  "hFp": 0.005,
+  "viejo": {
+   "ct": 1791534370,
+   "h": "55c52db9e",
+   "s": "SCRUM-678b: que variable falta, con que nombre y que pasa hoy sin ella (medido en produccion); y el evento de disputa que faltaba en las dos listas del fundador"
+  },
+  "viejoFp": {
+   "ct": 1791534920,
+   "H": "65ee132921af1587fa20169d709a7649d9059e80",
+   "s": "Merge pull request #2326 from lwislg99/scrum-678b-que-variable-y-que-pasa-sin-ella"
+  },
+  "eP": {
+   "n": 1,
+   "creado": "2026-10-08T10:33:50Z",
+   "exito": "2026-10-08T10:35:11Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eM": {
+   "n": 1,
+   "creado": "2026-10-09T08:35:25Z",
+   "exito": "2026-10-09T08:36:58Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eV": {
+   "n": 1,
+   "creado": "2026-10-09T08:35:25Z",
+   "exito": "2026-10-09T08:36:58Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "ritmo": "-",
+  "concl": "success"
+ },
+ {
+  "cuando": "2026-10-09T10:16:26Z",
+  "ver": "al-dia",
+  "p8": "85d8d01e",
+  "m8": "51fbba7f",
+  "hueco": 0.2,
+  "commits": 3,
+  "recalculo": 0.2388888888888889,
+  "nTodos": 3,
+  "nFp": 1,
+  "hFp": 0.004722222222222222,
+  "viejo": {
+   "ct": 1791540126,
+   "h": "1fba763f8",
+   "s": "SCRUM-917i: el resumen del dinero de la ficha del Trabajo solo se cuelga si tiene franja (fuera la seccion vacia de 37 px)"
+  },
+  "viejoFp": {
+   "ct": 1791540969,
+   "H": "51fbba7f43b4e5391314f961f198b2c5f6b88ee6",
+   "s": "Merge pull request #2329 from lwislg99/scrum-917i-el-resumen-vacio-no-se-cuelga"
+  },
+  "eP": {
+   "n": 1,
+   "creado": "2026-10-09T08:46:11Z",
+   "exito": "2026-10-09T08:47:56Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eM": {
+   "n": 1,
+   "creado": "2026-10-09T10:16:15Z",
+   "exito": "2026-10-09T10:17:47Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eV": {
+   "n": 1,
+   "creado": "2026-10-09T10:16:15Z",
+   "exito": "2026-10-09T10:17:47Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "ritmo": "-",
+  "concl": "success"
+ },
+ {
+  "cuando": "2026-10-09T10:33:20Z",
+  "ver": "al-dia",
+  "p8": "51fbba7f",
+  "m8": "582656bd",
+  "hueco": 0.5,
+  "commits": 9,
+  "recalculo": 0.49694444444444447,
+  "nTodos": 9,
+  "nFp": 2,
+  "hFp": 0.023333333333333334,
+  "viejo": {
+   "ct": 1791540211,
+   "h": "07a35c692",
+   "s": "SCRUM-1480e: ocho filas de scripts/ por el area del ticket creador (28 ficheros del equipo de Luis), el criterio escrito bajo la tabla y carriles regenerados"
+  },
+  "viejoFp": {
+   "ct": 1791541916,
+   "H": "c524b02fd3655cc905a7a1303cbc04de88ed5daa",
+   "s": "Merge pull request #2328 from lwislg99/scrum-1188c-el-put-vacia-el-cobro"
+  },
+  "eP": {
+   "n": 1,
+   "creado": "2026-10-09T10:16:15Z",
+   "exito": "2026-10-09T10:17:47Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eM": {
+   "n": 1,
+   "creado": "2026-10-09T10:32:05Z",
+   "exito": "2026-10-09T10:35:22Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eV": {
+   "n": 1,
+   "creado": "2026-10-09T10:32:01Z",
+   "exito": "2026-10-09T10:34:19Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "ritmo": "-",
+  "concl": "success"
+ },
+ {
+  "cuando": "2026-10-09T11:50:31Z",
+  "ver": "al-dia",
+  "p8": "44cbb050",
+  "m8": "206d57a4",
+  "hueco": 0.3,
+  "commits": 4,
+  "recalculo": 0.2863888888888889,
+  "nTodos": 4,
+  "nFp": 1,
+  "hFp": 0.008611111111111111,
+  "viejo": {
+   "ct": 1791545600,
+   "h": "c4f88b41e",
+   "s": "SCRUM-1188d: tiers de una plantilla tambien se vacia, y un Json? vacio es NULL de SQL (plantillas y crear revision)"
+  },
+  "viejoFp": {
+   "ct": 1791546600,
+   "H": "206d57a49e3cddf9012a8580781dd5d7b9e9de2a",
+   "s": "Merge pull request #2335 from lwislg99/scrum-1188d-tiers-tambien-se-vacia"
+  },
+  "eP": {
+   "n": 1,
+   "creado": "2026-10-09T11:20:51Z",
+   "exito": "2026-10-09T11:22:22Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eM": {
+   "n": 1,
+   "creado": "2026-10-09T11:50:05Z",
+   "exito": "2026-10-09T11:51:37Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eV": {
+   "n": 1,
+   "creado": "2026-10-09T11:50:05Z",
+   "exito": "2026-10-09T11:51:37Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "ritmo": "-",
+  "concl": "success"
+ },
+ {
+  "cuando": "2026-10-13T00:18:33Z",
+  "ver": "al-dia",
+  "p8": "0472952c",
+  "m8": "265322bc",
+  "hueco": 0.2,
+  "commits": 4,
+  "recalculo": 0.18138888888888888,
+  "nTodos": 4,
+  "nFp": 2,
+  "hFp": 0.0077777777777777776,
+  "viejo": {
+   "ct": 1791850060,
+   "h": "9624584b5",
+   "s": "SCRUM-1523 (carril J4, solo docs/master): censo clasificado del justificante en src"
+  },
+  "viejoFp": {
+   "ct": 1791850685,
+   "H": "9b77c72dfc2830df80415ac70e20a236368039bb",
+   "s": "Merge pull request #2343 from lwislg99/scrum-1522-el-dia-del-tope"
+  },
+  "eP": {
+   "n": 1,
+   "creado": "2026-10-09T12:06:10Z",
+   "exito": "2026-10-09T12:07:47Z",
+   "estados": "INACTIVE,INACTIVE,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eM": {
+   "n": 1,
+   "creado": "2026-10-13T00:18:28Z",
+   "exito": "2026-10-13T00:21:20Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eV": {
+   "n": 1,
+   "creado": "2026-10-13T00:18:11Z",
+   "exito": "2026-10-13T00:19:56Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "ritmo": "-",
+  "concl": "success"
+ },
+ {
+  "cuando": "2026-10-13T04:57:17Z",
+  "ver": "al-dia",
+  "p8": "dfda86d6",
+  "m8": "0e5491a6",
+  "hueco": 4.8,
+  "commits": 17,
+  "recalculo": 4.828888888888889,
+  "nTodos": 17,
+  "nFp": 2,
+  "hFp": 0.01972222222222222,
+  "viejo": {
+   "ct": 1791850053,
+   "h": "3632300f0",
+   "s": "SCRUM-1500h (carril J5, equipo de Javier): el instrumento que aplica las correcciones en sitio, antes de usarlo"
+  },
+  "viejoFp": {
+   "ct": 1791867366,
+   "H": "944cc64f2f3c458a02de73dbc05ce79b0c47636b",
+   "s": "Merge pull request #2345 from lwislg99/scrum-1500h-los-veinticuatro-sitios"
+  },
+  "eP": {
+   "n": 1,
+   "creado": "2026-10-13T00:37:17Z",
+   "exito": "2026-10-13T00:39:04Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eM": {
+   "n": 1,
+   "creado": "2026-10-13T04:57:21Z",
+   "exito": "2026-10-13T04:59:25Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eV": {
+   "n": 1,
+   "creado": "2026-10-13T04:56:12Z",
+   "exito": null,
+   "estados": "FAILURE,FAILURE,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "ritmo": "-",
+  "concl": "success"
+ },
+ {
+  "cuando": "2026-10-13T06:36:41Z",
+  "ver": "al-dia",
+  "p8": "780c8127",
+  "m8": "b95e33e4",
+  "hueco": 0.3,
+  "commits": 3,
+  "recalculo": 0.3269444444444444,
+  "nTodos": 3,
+  "nFp": 1,
+  "hFp": 0.004722222222222222,
+  "viejo": {
+   "ct": 1791872224,
+   "h": "a49b9d66e",
+   "s": "SCRUM-1530: carril J5 (fiscal), a mano - la skill de VeriFactu lleva la fecha al lado de «no hay pruebas contra la AEAT»"
+  },
+  "viejoFp": {
+   "ct": 1791873384,
+   "H": "b95e33e4dc818eaa20f500f5a08bb1040c0d080a",
+   "s": "Merge pull request #2355 from lwislg99/scrum-1530-skill-que-miente"
+  },
+  "eP": {
+   "n": 1,
+   "creado": "2026-10-13T05:46:02Z",
+   "exito": "2026-10-13T05:47:41Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,SUCCESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eM": {
+   "n": 1,
+   "creado": "2026-10-13T06:36:29Z",
+   "exito": "2026-10-13T06:38:29Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eV": {
+   "n": 1,
+   "creado": "2026-10-13T06:36:29Z",
+   "exito": "2026-10-13T06:38:29Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "ritmo": "-",
+  "concl": "success"
+ },
+ {
+  "cuando": "2026-10-13T10:49:48Z",
+  "ver": "al-dia",
+  "p8": "9358f02b",
+  "m8": "b9ecf641",
+  "hueco": 0.3,
+  "commits": 2,
+  "recalculo": 0.2922222222222222,
+  "nTodos": 2,
+  "nFp": 1,
+  "hFp": 0.004722222222222222,
+  "viejo": {
+   "ct": 1791887536,
+   "h": "94f142e5d",
+   "s": "SCRUM-1524b: carril J4, a mano (solo docs/master del propio ticket; nada en src/, docs/legal ni scrum525d) - las citas desfasadas, separadas en vivas, fechadas y dudosas"
+  },
+  "viejoFp": {
+   "ct": 1791888571,
+   "H": "b9ecf641065f2616b0d019fa398f7f1c21f4e8d6",
+   "s": "Merge pull request #2364 from lwislg99/scrum-1524b-citas-vivas-desfasadas"
+  },
+  "eP": {
+   "n": 1,
+   "creado": "2026-10-13T07:37:24Z",
+   "exito": "2026-10-13T07:40:30Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eM": {
+   "n": 1,
+   "creado": "2026-10-13T10:49:37Z",
+   "exito": "2026-10-13T10:51:50Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eV": {
+   "n": 1,
+   "creado": "2026-10-13T10:49:37Z",
+   "exito": "2026-10-13T10:51:50Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "ritmo": "-",
+  "concl": "success"
+ },
+ {
+  "cuando": "2026-10-13T11:38:12Z",
+  "ver": "atrasado",
+  "p8": "38de705e",
+  "m8": "f7a4c816",
+  "hueco": 95.8,
+  "commits": 20,
+  "recalculo": 95.78055555555555,
+  "nTodos": 20,
+  "nFp": 2,
+  "hFp": 0.01638888888888889,
+  "viejo": {
+   "ct": 1791546682,
+   "h": "a25c04ec6",
+   "s": "SCRUM-1288c: el correo de presupuesto aprobado al tecnico recibe el numero y lo escribe con formatMoneyEs; su entrada del censo pasa a RETIRADAS; test que lee el correo que sale"
+  },
+  "viejoFp": {
+   "ct": 1791891433,
+   "H": "28e34d28020001d84881f57a585f2ad9ab6de205",
+   "s": "Merge pull request #2373 from lwislg99/scrum-1482b-el-titulo-de-la-vista-sin-el-id"
+  },
+  "eP": {
+   "n": 1,
+   "creado": "2026-10-13T11:34:21Z",
+   "exito": "2026-10-13T11:36:29Z",
+   "estados": "INACTIVE,INACTIVE,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eM": {
+   "n": 1,
+   "creado": "2026-10-13T11:37:48Z",
+   "exito": "2026-10-13T11:41:17Z",
+   "estados": "INACTIVE,SUCCESS,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "eV": {
+   "n": 1,
+   "creado": "2026-10-13T11:37:19Z",
+   "exito": "2026-10-13T11:39:28Z",
+   "estados": "INACTIVE,INACTIVE,SUCCESS,SUCCESS,IN_PROGRESS,IN_PROGRESS,IN_PROGRESS"
+  },
+  "ritmo": "DESPLIEGA",
+  "concl": "success"
+ }
+]

@@ -1,0 +1,7 @@
+base      sin-respaldo=25 porNivel={"negada":13,"citada":1,"rastreable":165,"anclado":18,"documental":24,"sin-respaldo":25} salen=[] entran=[]
+mut       sin-respaldo=25 porNivel={"negada":13,"citada":1,"rastreable":165,"anclado":18,"documental":24,"sin-respaldo":25} salen=[] entran=[]
+baseCita  sin-respaldo=24 porNivel={"negada":13,"citada":1,"rastreable":165,"anclado":18,"documental":25,"sin-respaldo":24} salen=["public/dashboard/js/homeView.js:779"] entran=[]
+mutCita   sin-respaldo=25 porNivel={"negada":13,"citada":1,"rastreable":165,"anclado":18,"documental":24,"sin-respaldo":25} salen=[] entran=[]
+mutPelo   sin-respaldo=24 porNivel={"negada":13,"citada":1,"rastreable":165,"anclado":18,"documental":25,"sin-respaldo":24} salen=["public/dashboard/js/homeView.js:779"] entran=[]
+semilla: public/dashboard/js/homeView.js:779
+árbol restaurado: true

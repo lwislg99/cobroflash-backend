@@ -6,6 +6,9 @@
 //   node scripts/equipo/latido.mjs cierre     → el obligatorio del último push de ESTA rama
 //   node scripts/equipo/latido.mjs contestada <id> <dónde>   → apunta en el libro que esa pregunta ya
 //                                               tiene respuesta (SCRUM-1357), y DÓNDE está escrita
+//   node scripts/equipo/latido.mjs contestada s<puesto> <dónde>   → (SCRUM-1474) lo mismo, para TODAS las
+//                                               preguntas abiertas de ese puesto a la vez
+//   node scripts/equipo/latido.mjs preguntas [s<puesto>]   → las preguntas sin marcar, ENTERAS (la sección las pliega)
 //
 // POR QUÉ EXISTE. El 29-sep-2026 se abrieron diez PR que NACIERON rojos y estuvieron dos días así
 // con el auto-merge armado. Medido el 1-oct: los detectores EXISTÍAN y los vieron —`vigia-atascados`
@@ -34,6 +37,10 @@
 //                  con su edad. Medido el 1-oct: ocho, del 27 al 29-sep, ninguna contestada, y la
 //                  sección 2 no las veía porque solo mira las de hoy. Una pregunta no caduca porque
 //                  muera quien la hizo. Y un state.json que no se deja leer se DICE: antes se saltaba.
+//                  (SCRUM-1474) Las que ya tienen relevo de su puesto salen PLEGADAS, un renglón por puesto
+//                  con la orden que las marca: el 6-oct eran 25 renglones y la sección se saltaba entera.
+//                  El relevo no apaga el aviso (medido: lo tienen 31 de 31): lo apaga la marca `contestada`.
+//                  Y «nadie vuelve» (sección 2) sólo se dice si en ese puesto no TRABAJA una sesión posterior.
 //   7 · CONTEXTO → (SCRUM-1282) cuánta ventana ocupa cada sesión viva, leído de SU jsonl. Antes solo
 //                  lo daba `sesion.mjs contexto`, que es la copia INSTALADA: responde ALTERADO cada vez
 //                  que un PR toca `sesion.mjs` en main (medido el 1-oct con #2002) y deja a todo el
@@ -48,9 +55,25 @@
 //                  leído, con su edad, mientras alguno de sus PR siga abierto. Del 2 al 6-oct-2026 comentó
 //                  tres veces sobre cuatro PR y nadie lo abrió. Y la línea de MAIN dice cuánto hace de
 //                  su último commit. (SCRUM-1463) Y si el vigía lleva más de 12 h sin CORRER, o su última
-//                  pasada no terminó bien, lo dice: un vigía parado no es «sin avisos».
+//                  pasada no terminó bien, lo dice: un vigía parado no es «sin avisos». (SCRUM-1123d) Y el
+//                  ÚLTIMO VEREDICTO del otro vigía, el de DESPLIEGUE: no cantó · no supo mirar · cantó
+//                  CONGELADA y su aviso es el Issue #N · cantó y NO CONSTA su aviso (reabre SCRUM-1123).
 //  10 · QA       → (SCRUM-1463) la sesión de la cuenta QA: VIVA hasta cuándo · MUERTA y quién la renueva ·
 //                  NO SE PUEDE SABER. Pregunta a `scripts/qa/sesion-panel.mjs estado`; no entra ni renueva.
+//  11 · DISCO    → (SCRUM-1473) el espacio libre de la unidad de la casa (transcripts, temporales) y de la de
+//                  los árboles, con aviso por debajo de seis días de lo que se escribe en cada una; cuánto de
+//                  lo ocupado es del EQUIPO y cuánto no; y lo que devolvería barrer los `tmp` de trabajos.
+//                  El 6-oct-2026 la primera se quedó a 79 MB y se supo por un ENOSPC a mitad de una tanda.
+//  12 · ARRANQUE → (SCRUM-1298b) el árbol donde ARRANCAN las sesiones contra la punta de `main`: cuántos commits
+//                  va por detrás, cuántos hooks de `main` declara el `settings.json` que hay en disco, y cuántas
+//                  de las piezas que una sesión carga al arrancar (CLAUDE.md, lo que importa, `.claude/`) son
+//                  distintas. Avisa si falta UN hook o UNA pieza; el número de commits no avisa, se enseña.
+//                  El 9-oct-2026 iba 2.582 por detrás con 1 hook de 5, y sólo se sabía midiéndolo a mano.
+//  13 · CIERRES  → (SCRUM-1463c) los tickets con el comentario de cierre ESCRITO y el estado sin mover, leídos de
+//                  lo que guardó `cierre-sin-clic.mjs` (el latido no tiene credenciales de Jira). El 13-oct-2026
+//                  el guion existía y dependía de que alguien se acordara de correrlo: era el mismo fallo que
+//                  venía a cazar. Si nadie lo ha corrido nunca en esta máquina, va como NOTA (no afirma nada);
+//                  con una foto de más de 12 h, «no pude mirar». ⛔ Lista y calla: no cierra nada.
 //
 // ⚠️ LO QUE ESTO NO ARREGLA: el latido corre cuando ALGUIEN lo corre. Si nadie corre nada en tres días,
 // no dice nada. El único que corre sin sesión es `vigia-atascados` (workflow), y escribe en GitHub.
@@ -71,16 +94,26 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import {
   esAsuntoDelVigia, causaDelAtasco, checksObligatoriosDeReglas, ultimaEjecucionPorCheck, GRACIA_MINUTOS,
+  filaDeMain, MARCA_DE_MAIN_PARADO,
 } from '../vigia-atascados.mjs';
 // Solo las funciones PURAS de `sesion.mjs`. Su puerta de integridad guarda la CLI (lanzar, parar…), no
 // estas: importarlas desde un árbol es leer, y por eso el latido da la ocupación aunque la copia
 // instalada esté desfasada (SCRUM-1282).
-import { contextoDelJsonl, buscarJsonl, UMBRAL_CONTEXTO, ESTADOS_TERMINALES } from './sesion.mjs';
+import { contextoDelJsonl, buscarJsonl, fraseDeRelevo, UMBRAL_CONTEXTO, UMBRAL_CONTEXTO_A_MITAD, ESTADOS_TERMINALES } from './sesion.mjs';
 // Qué ramas ha empujado una sesión: la función del hook de cierre (SCRUM-1356), la MISMA. Dos lectores
 // distintos de «qué empujó» acabarían atribuyendo el mismo PR a dos sesiones distintas.
 import { ramasEmpujadas } from '../../.claude/hooks/latido-cierre.mjs';
 // (SCRUM-1463) El estado de la sesión QA lo dice SU instrumento; aquí sólo se le pregunta `estado`.
 import { ejecutar as ejecutarQA } from '../qa/sesion-panel.mjs';
+// (SCRUM-1473) La máquina: el disco y lo que el barrido de `tmp` devolvería. El latido sólo mide; no borra.
+import { seccionDisco, medirDisco } from './disco.mjs';
+import { censar as censarTmp, candidatos as tmpBarribles, HORAS_SIN_ACTIVIDAD } from './barrer-jobs.mjs';
+// (SCRUM-1298b) El árbol donde arrancan las sesiones contra la punta de main. Sólo lee; no cambia de rama.
+import { seccionArranque, medirArranque } from './arranque.mjs';
+// (SCRUM-1123d) Qué Issue lleva la marca del aviso se decide con la MISMA función que usa el workflow.
+import { elegirIssueExistente } from '../vigia-despliegue-aviso.mjs';
+// (SCRUM-1463c) Los cierres sin clic: la sección la escribe SU guion; aquí sólo se lee lo que guardó.
+import { seccionCierres, leerGuardado, NOTA_SIN_CORRER } from './cierre-sin-clic.mjs';
 
 export const SALIDA_OK = 0;
 export const SALIDA_AVISO = 1;
@@ -146,7 +179,7 @@ export function origenDelSinArmar(eventos) {
 /**
  * @param {{prs:object[], reglas:any, checksDe:(n:number)=>object[]|undefined, minutosDesdePush:(n:number)=>number|undefined, eventosDeArmado?:(n:number)=>object[]|undefined, ahora?:number}} e
  */
-export function seccionPRs({ prs, reglas, checksDe, minutosDesdePush, eventosDeArmado = () => undefined }) {
+export function seccionPRs({ prs, reglas, checksDe, minutosDesdePush, eventosDeArmado = () => undefined, ahora = Date.now() }) {
   if (!Array.isArray(prs)) return ciega('PR', 'la lista de PR abiertos no llegó');
   const obligatorios = checksObligatoriosDeReglas(reglas);
   const filas = [];
@@ -165,7 +198,7 @@ export function seccionPRs({ prs, reglas, checksDe, minutosDesdePush, eventosDeA
       checks: Array.isArray(checkRuns) ? checkRuns.length : 0,
       minutosDesdePush: min,
       sondaConflicto: p.mergeable === 'CONFLICTING' ? true : p.mergeable === 'MERGEABLE' ? false : null,
-      checkRuns, obligatorios, autoMerge: !!p.autoMergeRequest,
+      checkRuns, obligatorios, autoMerge: !!p.autoMergeRequest, ahora,
     });
     filas.push({ numero: p.number, rama: p.headRefName, causa: c.causa, detalle: c.detalle, minutos: min });
   }
@@ -184,6 +217,11 @@ export function seccionPRs({ prs, reglas, checksDe, minutosDesdePush, eventosDeA
       // (SCRUM-1453) El clasificador ya lo decía y aquí se tiraba: cuatro PR, cuatro días, sección en ✅.
       const o = origenDelSinArmar(eventosDeArmado(f.numero));
       alertas.push({ ...f, origen: o.tipo, linea: `#${f.numero} ${f.rama} · SIN auto-merge: aunque todo pase a verde, nadie lo va a mergear · ${o.texto} · ${edad}` });
+    } else if (f.causa === 'BLOQUEADO-SIN-CAUSA') {
+      // (SCRUM-839i) El caso que nadie nota: #2449 estuvo dos días así. El clasificador sólo lo afirma si PERSISTE
+      // (obligatorio en verde desde hace MINUTOS_PARA_AFIRMAR_SIN_CAUSA y aún BLOCKED), así que aquí no hace falta
+      // otra espera: un BLOCKED pasajero llega como ESPERANDO y no suena.
+      alertas.push({ ...f, linea: `#${f.numero} ${f.rama} · BLOQUEADO sin causa: ${f.detalle} · ${edad}` });
     }
   }
   return {
@@ -212,20 +250,86 @@ export function preguntaDe(s) {
 }
 
 /**
- * @param {{sesiones:{id:string,nombre:string,estado:string,tempo?:string,detalle?:string,needs?:any,actualizado:number,creado?:number}[], filasPR:{numero:number,rama:string,causa:string}[]|null, ramasDe?:(s:object)=>string[]|undefined, ilegibles?:object[], ahora:number}} e
+ * (SCRUM-1474) Las sesiones del MISMO puesto que arrancaron después de `desde`, de la más vieja a la más nueva.
+ * `null` = no se puede saber: el nombre no dice el puesto, o falta la fecha. Una sesión sin fecha de arranque
+ * no cuenta como posterior a nada.
+ *
+ * ⚠️ QUE HAYA RELEVO NO DICE NADA DE LA PREGUNTA. Medido el 6-oct-2026 sobre 299 trabajos: las 31 preguntas
+ * en el aire tenían TODAS una sesión posterior de su puesto, y las ocho del 27 al 29-sep por las que nació el
+ * cementerio también (a las 0-40 h). Un puesto se relanza siempre. Por eso el relevo ORDENA la salida y no
+ * apaga ningún aviso: lo único que saca una pregunta del 🔴 es la marca `contestada`.
+ * @param {{id?:string, nombre:string, desde:number}} de
+ */
+export function relevosDe({ id, nombre, desde }, sesiones) {
+  const puesto = puestoDe(nombre);
+  if (puesto === null || !Number.isFinite(desde)) return null;
+  return sesiones.filter((s) => s.id !== id && puestoDe(s.nombre) === puesto && Number.isFinite(s.creado) && s.creado > desde)
+    .sort((a, b) => a.creado - b.creado);
+}
+
+/** La orden EXACTA que marca las preguntas de un puesto: se imprime donde se necesita, no se recuerda. */
+export const ordenDeMarcar = (puesto) => `node scripts/equipo/latido.mjs contestada s${puesto} "<dónde está la respuesta>"`;
+/** La orden impresa lleva un hueco entre ángulos: pegada sin rellenar no apunta nada. */
+export const esElHueco = (donde) => /^<.*>$/.test(String(donde).trim());
+const horaDe = (ms) => `${new Date(ms).toISOString().slice(0, 16)}Z`;
+
+/**
+ * (SCRUM-1474) Lo que a una sesión LE HAN DICHO, leído de su jsonl: su encargo (el primer mensaje de una
+ * persona) y los mensajes que le llegaron de otras sesiones. No lo que ella leyó o ejecutó por su cuenta.
+ * @returns {string|null} `null` = el jsonl no trae ni encargo ni mensajes
+ */
+export function loQueLeDijeron(jsonl) {
+  const trozos = []; let encargo = false;
+  for (const l of String(jsonl).split('\n')) {
+    const esUsuario = !encargo && l.includes('"type":"user"');
+    if (!esUsuario && !l.includes('cross-session-message')) continue;
+    let o; try { o = JSON.parse(l); } catch { continue; }
+    if (o.type === 'user' && !encargo && !o.isMeta && !o.isSidechain && o.message) {
+      const c = o.message.content;
+      const txt = typeof c === 'string' ? c : Array.isArray(c) ? c.filter((x) => x && x.type === 'text').map((x) => x.text).join('\n') : '';
+      if (txt.trim()) { trozos.push(txt); encargo = true; }
+    } else if (o.type === 'attachment' && o.attachment && o.attachment.prompt !== undefined) {
+      const txt = typeof o.attachment.prompt === 'string' ? o.attachment.prompt : JSON.stringify(o.attachment.prompt);
+      if (txt.includes('cross-session-message')) trozos.push(txt);
+    }
+  }
+  return trozos.length ? trozos.join('\n') : null;
+}
+
+/**
+ * ¿Ese texto nombra el PR? Por su número escrito como PR (`#2209`, `pull/2209`) o por su rama entera. Un
+ * `2209` a secas no vale: es también un número de ticket, una hora o un trozo de SHA.
+ * @returns {boolean|undefined} `undefined` = no hay texto que mirar
+ */
+export function nombraElPR(texto, { numero, rama }) {
+  if (typeof texto !== 'string') return undefined;
+  return (!!rama && texto.includes(rama)) || new RegExp(`(?:#|pull/)${Number(numero)}(?!\\d)`).test(texto);
+}
+
+/**
+ * @param {{sesiones:{id:string,nombre:string,estado:string,tempo?:string,detalle?:string,needs?:any,actualizado:number,creado?:number}[], filasPR:{numero:number,rama:string,causa:string}[]|null, ramasDe?:(s:object)=>string[]|undefined, dichoA?:(s:object)=>string|null|undefined, libro?:object|null, ilegibles?:object[], ahora:number}} e
  * `ramasDe`: las ramas que esa sesión ha empujado · `undefined` = no se pudo leer su transcript (y es lo que
  * responde si nadie la pasa: sin saber qué empujó cada una, esta sección no atribuye nada).
+ * `dichoA`: lo que a esa sesión le han dicho (`loQueLeDijeron`) · `undefined` = no se pudo leer · `null` = nada.
+ * `libro`: el del cementerio; una bloqueada de hoy cuya pregunta está marcada `contestada` no se vuelve a acusar.
  */
-export function seccionSesiones({ sesiones, filasPR, ramasDe = () => undefined, ilegibles = [], ahora }) {
+export function seccionSesiones({ sesiones, filasPR, ramasDe = () => undefined, dichoA = () => undefined, libro = null, ilegibles = [], ahora }) {
   if (!Array.isArray(sesiones)) return ciega('SESIONES', 'no se pudo leer la carpeta de trabajos');
   const hoy = sesiones.filter((s) => (ahora - s.actualizado) / 36e5 <= HORAS_DE_SESION);
   const alertas = [];
+  let marcadas = 0;
   for (const s of hoy) {
     const min = Math.round((ahora - s.actualizado) / 60000);
     if (espera(s)) {
+      const a = libro && libro[s.id];
+      if (a && a.contestada && a.needs === preguntaDe(s)) { marcadas++; continue; }
       // Quien lee «working» en el panel no mira más: si el bloqueo no está en `state`, se dice dónde está.
       const disfraz = s.estado === 'blocked' ? '' : ` · ⚠️ su state dice «${s.estado}»: el bloqueo está en ${s.tempo === 'blocked' ? 'tempo' : 'needs'}`;
-      alertas.push({ sesion: s.nombre, linea: `${s.nombre} (${s.id}) BLOQUEADA hace ${min} min · espera: ${String(s.needs || s.detalle || 'no lo dice').slice(0, 200)}${disfraz}` });
+      // (SCRUM-1474) A una sesión que ya salió no se le contesta: se relanza su puesto. Si eso ya pasó, se dice
+      // y se da la orden que lo apunta. El relevo NO la quita de aquí: la quita la marca.
+      const r = relevosDe({ id: s.id, nombre: s.nombre, desde: s.actualizado }, sesiones);
+      const relevo = r && r.length ? ` · su puesto ya tiene relevo (${r[0].nombre}, arrancó ${horaDe(r[0].creado)}): si la respuesta fue en su encargo, apúntalo → ${ordenDeMarcar(puestoDe(s.nombre))}` : '';
+      alertas.push({ sesion: s.nombre, linea: `${s.nombre} (${s.id}) BLOQUEADA hace ${min} min · espera: ${String(s.needs || s.detalle || 'no lo dice').slice(0, 200)}${disfraz}${relevo}` });
     }
   }
   // DE QUIÉN ES UN PR. De quien EMPUJÓ su rama, leído de los `git push` de su transcript: la misma
@@ -241,7 +345,7 @@ export function seccionSesiones({ sesiones, filasPR, ramasDe = () => undefined, 
     if (!Array.isArray(ramas)) { sinLeer.push(s); continue; }
     for (const r of ramas) empujo.set(r, [...(empujo.get(r) || []), s]);
   }
-  const sinDuena = [];
+  const sinDuena = []; const retomados = [];
   for (const f of filasPR || []) {
     const malo = /^ROJO|SIN-CHECKS|CONFLICTO|DIRTY/.test(f.causa);
     const duenas = empujo.get(f.rama) || [];
@@ -250,9 +354,25 @@ export function seccionSesiones({ sesiones, filasPR, ramasDe = () => undefined, 
     // Si una de las que la empujó sigue trabajando, alguien vuelve: el relevo no hereda la culpa de su antecesora.
     if (duenas.some((s) => s.estado === 'working')) continue;
     const quien = duenas.map((s) => `${s.nombre} (${s.id}, ${s.estado})`).join(' y ');
-    const sigue = malo ? `sigue ${f.causa}: nadie vuelve`
+    // (SCRUM-1474) «Nadie vuelve» es falso si en ese puesto TRABAJA una sesión posterior. Pero que trabaje no
+    // basta: tiene que saber que el PR es suyo, y eso sí se puede mirar, porque un PR tiene número y rama.
+    // Medido el 6-oct-2026 con el #2209 sobre las 19 sesiones del día: lo nombra el encargo de UNA, su relevo.
+    const enElPuesto = [];
+    for (const d of duenas) {
+      for (const r of relevosDe({ id: d.id, nombre: d.nombre, desde: Number.isFinite(d.creado) ? d.creado : d.actualizado }, sesiones) || []) {
+        if (r.estado === 'working' && !enElPuesto.includes(r)) enElPuesto.push(r);
+      }
+    }
+    const sabe = enElPuesto.map((r) => ({ r, nombra: nombraElPR(dichoA(r), f) }));
+    const avisado = sabe.find((x) => x.nombra === true);
+    if (avisado) { retomados.push(`#${f.numero} → ${avisado.r.nombre}, arrancó ${horaDe(avisado.r.creado)}`); continue; }
+    const relevo = sabe.length ? `${sabe.map((x) => `${x.r.nombre} (arrancó ${horaDe(x.r.creado)})`).join(' y ')}` : '';
+    const vuelve = !sabe.length ? 'nadie vuelve'
+      : sabe.some((x) => x.nombra === undefined) ? `en su puesto trabaja ${relevo} y NO PUDE LEER qué se le ha dicho: no sé si sabe que es suyo`
+        : `en su puesto trabaja ${relevo}, pero ni su encargo ni ningún mensaje que haya recibido nombran el #${f.numero} ni su rama: nadie le ha dicho que es suyo`;
+    const sigue = malo ? `sigue ${f.causa}: ${vuelve}`
       // Abierto y sin rojo: todavía no hay veredicto. Cerrar así no es entregar (A10), y si luego sale rojo nadie lo verá.
-      : `sigue ABIERTO sin veredicto (${f.causa}): si sale rojo, nadie vuelve`;
+      : `sigue ABIERTO sin veredicto (${f.causa}): si sale rojo, ${vuelve}`;
     alertas.push({ sesion: duenas[0].nombre, linea: `${quien} ya NO trabaja y el PR #${f.numero}, cuya rama ${f.rama} EMPUJÓ, ${sigue}` });
   }
   const cuenta = {};
@@ -260,6 +380,8 @@ export function seccionSesiones({ sesiones, filasPR, ramasDe = () => undefined, 
   const leidas = hoy.length - sinLeer.length - sinTurno.length;
   const poblacion = `${sesiones.length} trabajos con state.json · ${hoy.length} con actividad en ${HORAS_DE_SESION} h (${Object.entries(cuenta).map(([k, v]) => `${v} ${k}`).join(', ') || 'ninguno'}) · leído del REGISTRO, no del panel`
     + (filasPR ? ` · un PR es de quien EMPUJÓ su rama (\`git push\` en el transcript de ${leidas} sesión(es)), no de quien lo cita${sinTurno.length ? ` · ${sinTurno.length} sin transcript porque no llegaron a escribir un turno (${sinTurno.map((s) => s.nombre).join(', ')})` : ''}${sinDuena.length ? ` · ${sinDuena.length} PR con problema y NO SUPE DE QUIÉN SON (${sinDuena.join(', ')}): ninguna sesión leída de ${HORAS_DE_SESION} h empujó su rama, o lo hizo sin nombrarla — no acuso a nadie` : ''}` : ' · ⚠️ sin la sección PR no se pudo cruzar con sus PR')
+    + (retomados.length ? ` · ${retomados.length} PR de una sesión que ya no trabaja lo lleva el relevo de su puesto, que TRABAJA y a quien se le ha nombrado (${retomados.join(' · ')}): eso dice que lo sabe, no que lo vaya a arreglar` : '')
+    + (marcadas ? ` · ${marcadas} bloqueada(s) de hoy con su pregunta marcada «contestada» (no se repiten aquí; siguen en el libro)` : '')
     + (ilegibles.length ? ` · ⚠️ ${ilegibles.length} state.json ILEGIBLES, que pueden ser de hoy (ver CEMENTERIO)` : '');
   // Una sesión cuyo transcript no se deja leer NO es una sesión que no empujó nada.
   // (Sin ningún PR abierto que cruzar no hay nada que atribuir, y no leerlo no esconde nada.)
@@ -301,29 +423,68 @@ export function actualizarLibro(libro, sesiones) {
  * @param {{sesiones:object[], ilegibles?:{id:string,motivo:string}[], sinEstado?:string[], libro:object|null|undefined, libroGuardado?:boolean, ahora:number}} e
  * `libro`: `undefined` si existe y no se pudo leer · `null` si todavía no existe (no es un fallo).
  */
-export function seccionCementerio({ sesiones, ilegibles = [], sinEstado = [], libro, libroGuardado = true, ahora }) {
-  if (!Array.isArray(sesiones)) return ciega('CEMENTERIO', 'no se pudo leer la carpeta de trabajos');
+/** (SCRUM-1474) La frase del límite: va escrita en la salida siempre que haya una RELEVADA. */
+export const LIMITE_DE_RELEVADA = 'RELEVADA = el puesto siguió con otra sesión; NO dice que la pregunta se contestara';
+
+/**
+ * (SCRUM-1474) Todas las preguntas que se ven, las del registro y las que sólo conserva el libro, cada una
+ * en su cubo. El cubo NO decide el aviso: lo decide la marca.
+ *   MARCADA           → alguien apuntó dónde está la respuesta (`contestada`). Sigue en el libro.
+ *   SIN RELEVO        → ninguna sesión posterior de su puesto: la pregunta está en el aire y no hay nadie.
+ *   RELEVADA          → el puesto siguió con otra sesión. No dice que se contestara (ver `relevosDe`).
+ *   NO SE PUEDE SABER → el nombre no dice el puesto, o la pregunta no tiene fecha.
+ * @returns {{id:string,nombre:string,desde:number,q:string,deHoy:boolean,marcada:object|null,nota:string,relevos:object[]|null,cubo:string}[]} de la más vieja a la más nueva
+ */
+export function preguntasDelLibro({ sesiones, libro, ahora }) {
   const apuntado = libro || {};
-  const alertas = [];
-  let contestadas = 0; let deHoy = 0;
+  const filas = [];
   const enRegistro = new Map(sesiones.map((s) => [s.id, s]));
   for (const s of sesiones) {
     if (!espera(s)) continue;
-    if ((ahora - s.actualizado) / 36e5 <= HORAS_DE_SESION) { deHoy++; continue; }
     const q = preguntaDe(s);
     const a = apuntado[s.id];
-    if (a && a.contestada && a.needs === q) { contestadas++; continue; }
-    alertas.push({ sesion: s.nombre, desde: s.actualizado, linea: `${s.nombre} (${s.id}) · hace ${edadDe(ahora - s.actualizado)} · espera: ${q || 'NO LO DICE (bloqueada sin `needs`)'}` });
+    filas.push({ id: s.id, nombre: s.nombre, desde: s.actualizado, q, deHoy: (ahora - s.actualizado) / 36e5 <= HORAS_DE_SESION, marcada: a && a.contestada && a.needs === q ? a.contestada : null, nota: '' });
   }
   // Lo que el registro ya no enseña y el libro sí: la sesión fue parada (o borrada) con la pregunta dentro.
   for (const [id, a] of Object.entries(apuntado)) {
     const s = enRegistro.get(id);
     if (s && espera(s)) continue;
-    if (a.contestada) { contestadas++; continue; }
-    alertas.push({ sesion: a.nombre, desde: a.desde, linea: `${a.nombre} (${id}) · hace ${edadDe(ahora - a.desde)} · espera: ${a.needs} · ⚠️ ${s ? `el registro ya la da por «${s.estado}» y ha BORRADO la pregunta` : 'su carpeta ya no existe'}: sale del libro` });
+    filas.push({ id, nombre: a.nombre, desde: a.desde, q: a.needs, deHoy: false, marcada: a.contestada || null, nota: s ? `el registro ya la da por «${s.estado}» y ha BORRADO la pregunta` : 'su carpeta ya no existe' });
   }
+  for (const f of filas) {
+    f.relevos = relevosDe(f, sesiones);
+    f.cubo = f.marcada ? 'MARCADA' : f.relevos === null ? 'NO SE PUEDE SABER' : f.relevos.length ? 'RELEVADA' : 'SIN RELEVO';
+  }
+  return filas.sort((x, y) => x.desde - y.desde);
+}
+
+export function seccionCementerio({ sesiones, ilegibles = [], sinEstado = [], libro, libroGuardado = true, ahora }) {
+  if (!Array.isArray(sesiones)) return ciega('CEMENTERIO', 'no se pudo leer la carpeta de trabajos');
+  const todas = preguntasDelLibro({ sesiones, libro, ahora });
+  const deHoy = todas.filter((f) => f.deHoy).length;
+  const viejas = todas.filter((f) => !f.deHoy);
+  const contestadas = viejas.filter((f) => f.marcada).length;
+  const linea = (f) => `${f.nombre} (${f.id}) · hace ${edadDe(ahora - f.desde)} · espera: ${f.q || 'NO LO DICE (bloqueada sin `needs`)'}${f.nota ? ` · ⚠️ ${f.nota}: sale del libro` : ''}`;
+  const alertas = [];
+  // Una por una, las que no tienen a nadie detrás y las que no se pueden colocar: son pocas y son las que más urgen.
+  const sinRelevo = viejas.filter((f) => f.cubo === 'SIN RELEVO');
+  for (const f of sinRelevo) alertas.push({ sesion: f.nombre, desde: f.desde, linea: linea(f) });
+  const noSeSabe = viejas.filter((f) => f.cubo === 'NO SE PUEDE SABER');
+  for (const f of noSeSabe) alertas.push({ sesion: f.nombre, desde: f.desde, linea: `${linea(f)} · NO SE PUEDE SABER si su puesto siguió: ${puestoDe(f.nombre) === null ? 'su nombre no dice de qué puesto es' : 'la pregunta no tiene fecha'}` });
   alertas.sort((x, y) => x.desde - y.desde);
-  const poblacion = `${sesiones.length} trabajos leídos · ${alertas.length} pregunta(s) sin contestar (de más de ${HORAS_DE_SESION} h, o de una sesión ya parada) · ${deHoy} de hoy (están en SESIONES) · ${contestadas} marcada(s) como contestadas${sinEstado.length ? ` · ${sinEstado.length} carpeta(s) de trabajo SIN state.json (${sinEstado.slice(0, 5).join(', ')}): lanzadas y sin registro` : ''}${libroGuardado ? '' : ' · ⚠️ NO pude guardar el libro: si paran una sesión bloqueada, su pregunta se pierde'}`;
+  // (SCRUM-1474) Las RELEVADAS sin marcar, PLEGADAS: un renglón por puesto, con la orden que las marca y la
+  // que las enseña enteras. Siguen siendo aviso (el relevo no contesta nada): lo que cambia es que caben.
+  // El 6-oct-2026 eran 25 renglones y la sección se saltaba entera.
+  const relevadas = viejas.filter((f) => f.cubo === 'RELEVADA');
+  const porPuesto = new Map();
+  for (const f of relevadas) { const p = puestoDe(f.nombre); porPuesto.set(p, [...(porPuesto.get(p) || []), f]); }
+  for (const [p, fs_] of [...porPuesto.entries()].sort((x, y) => x[0] - y[0])) {
+    const nueva = fs_[fs_.length - 1];
+    const edades = fs_.length === 1 ? `de hace ${edadDe(ahora - nueva.desde)}` : `la más vieja de hace ${edadDe(ahora - fs_[0].desde)}, la más nueva de hace ${edadDe(ahora - nueva.desde)}`;
+    alertas.push({ sesion: `s${p}`, desde: fs_[0].desde, puesto: p, linea: `s${p} · ${fs_.length} pregunta(s) RELEVADA(S) y SIN MARCAR (${edades}) · la más nueva es de ${nueva.nombre} y su puesto siguió con ${nueva.relevos[0].nombre} (${horaDe(nueva.relevos[0].creado)}) · si ya están despachadas → ${ordenDeMarcar(p)} · para leerlas enteras → node scripts/equipo/latido.mjs preguntas s${p}` });
+  }
+  const sinContestar = sinRelevo.length + noSeSabe.length + relevadas.length;
+  const poblacion = `${sesiones.length} trabajos leídos · ${sinContestar} pregunta(s) sin contestar (de más de ${HORAS_DE_SESION} h, o de una sesión ya parada): ${sinRelevo.length} SIN RELEVO · ${relevadas.length} RELEVADA(S) sin marcar, plegadas en ${porPuesto.size} puesto(s) · ${noSeSabe.length} que NO SE PUEDE SABER · ${deHoy} de hoy (están en SESIONES) · ${contestadas} marcada(s) como contestadas (siguen en el libro)${relevadas.length ? ` · ${LIMITE_DE_RELEVADA}: el aviso sólo lo quita la marca` : ''}${sinEstado.length ? ` · ${sinEstado.length} carpeta(s) de trabajo SIN state.json (${sinEstado.slice(0, 5).join(', ')}): lanzadas y sin registro` : ''}${libroGuardado ? '' : ' · ⚠️ NO pude guardar el libro: si paran una sesión bloqueada, su pregunta se pierde'}`;
   const ciegos = [];
   if (ilegibles.length) ciegos.push(`${ilegibles.length} state.json que NO se dejan leer (${ilegibles.slice(0, 5).map((i) => `${i.id}: ${i.motivo}`).join(' · ')})`);
   if (libro === undefined) ciegos.push('el libro de preguntas existe y no se deja leer (las contestadas y las de sesiones ya paradas NO están contadas)');
@@ -366,9 +527,15 @@ const enK = (n) => `${Math.round(n / 1000)}k`;
  * @param {{sesiones:object[], contextoDe:(s:object)=>{tokens:number,cuando?:string}|null|undefined, sueltas?:{nombre:string,ctx:{tokens:number,cuando?:string}|null}[], ahora:number, umbral?:number}} e
  * `contextoDe`: `undefined` = no encontré o no pude leer su jsonl · `null` = lo leí y no trae ni un turno con uso.
  * `sueltas`: transcripts recientes que no son de ningún trabajo de fondo (el orquestador es uno).
+ *
+ * La A19 tiene DOS números y dos conductas (SCRUM-1484). Por encima de `umbral`, el relevo es AL TERMINAR la
+ * entrega; por encima de `umbralAMitad`, YA, en el primer punto seguro. Hasta el 6-oct-2026 esta sección conocía
+ * sólo el primero y a una sesión por encima del segundo le decía «al terminar», lo contrario de la norma.
  */
-export function seccionContexto({ sesiones, contextoDe, sueltas = [], ahora, umbral = UMBRAL_CONTEXTO }) {
+export function seccionContexto({ sesiones, contextoDe, sueltas = [], ahora, umbral = UMBRAL_CONTEXTO, umbralAMitad = UMBRAL_CONTEXTO_A_MITAD }) {
   if (!Array.isArray(sesiones)) return ciega('CONTEXTO', 'no se pudo leer la carpeta de trabajos');
+  // Con los dos números al revés o iguales no hay tramo «al terminar»: cualquier frase que saliera sería inventada.
+  if (!(umbralAMitad > umbral)) return ciega('CONTEXTO', `el umbral de «a mitad de entrega» (${umbralAMitad}) no es mayor que el de «al entregar» (${umbral}): no sé qué frase le toca a cada sesión`);
   const vivas = sesiones.filter((s) => !ESTADOS_TERMINALES.includes(s.estado) && (ahora - s.actualizado) / 36e5 <= HORAS_DE_SESION);
   const filas = []; const sinLeer = []; const sinUso = [];
   for (const s of vivas) {
@@ -381,7 +548,11 @@ export function seccionContexto({ sesiones, contextoDe, sueltas = [], ahora, umb
   filas.sort((a, b) => b.tokens - a.tokens);
   const hace = (f) => (Number.isFinite(Date.parse(f.cuando)) ? ` · último turno hace ${Math.round((ahora - Date.parse(f.cuando)) / 60000)} min` : '');
   const alertas = filas.filter((f) => f.tokens > umbral)
-    .map((f) => ({ sesion: f.nombre, linea: `${f.nombre} · ${enK(f.tokens)} de ventana, por encima de ${enK(umbral)} (A19): se releva AL TERMINAR su entrega${hace(f)}` }));
+    .map((f) => ({
+      sesion: f.nombre,
+      // La frase es la de `sesion.mjs`, la misma que da `contexto N` (SCRUM-1484b): aquí no se escribe otra.
+      linea: `${f.nombre} · ${enK(f.tokens)} de ventana, ${fraseDeRelevo({ tokens: f.tokens, umbral, umbralAMitad })}${hace(f)}`,
+    }));
   const poblacion = `${vivas.length} sesiones vivas en ${HORAS_DE_SESION} h + ${sueltas.length} transcript(s) reciente(s) sin trabajo de fondo · ${filas.length} leídas: ${filas.map((f) => `${f.nombre.split(' (')[0] || f.nombre} ${enK(f.tokens)}`).join(' · ') || 'ninguna'}${sinUso.length ? ` · ${sinUso.length} sin ningún turno con uso todavía (${sinUso.join(', ')})` : ''} · es la ventana del ÚLTIMO turno (entrada + caché), no lo gastado: al compactar BAJA`;
   // Una sesión viva cuyo jsonl no aparece NO ocupa cero: no se sabe cuánto ocupa.
   if (sinLeer.length) return { nombre: 'CONTEXTO', pudo: false, motivo: `no encontré o no pude leer el jsonl de ${sinLeer.length} sesión(es) viva(s): ${sinLeer.join(', ')}. Debajo va SOLO lo que sí pude leer: ${poblacion}`, alertas, poblacion: null };
@@ -603,15 +774,30 @@ export function prsDelAviso(cuerpo) {
  * guarda «visto»: es la única huella que deja quien lo abre, y se dice en la salida cómo dejarla.
  * VIVO  = nombra algún PR que sigue abierto. El que ya no, se cuenta y no se enseña: no hay nada que hacer.
  *
- * @param {{issue:number|null|undefined, comentarios:{id:number, creado:string, autor:string, esBot:boolean, cuerpo:string, reacciones:number}[]|undefined, abiertos:number[]|undefined, ahora:number}} e
+ * (SCRUM-1458) Un aviso puede hablar de `main` y de ningún PR: «`main` está PARADO». Ése sigue VIVO
+ * mientras `main` siga parado, y eso se mide aquí con la fecha de su último commit y la MISMA regla del
+ * vigía (`filaDeMain`): no hay un segundo umbral. Sin esa fecha no se da por resuelto: sale, y lo dice.
+ *
+ * @param {{issue:number|null|undefined, comentarios:{id:number, creado:string, autor:string, esBot:boolean, cuerpo:string, reacciones:number}[]|undefined, abiertos:number[]|undefined, ahora:number, ultimoMerge?:{fecha:string}|null}} e
  *   `issue`: `undefined` = no se pudo buscar · `null` = se buscó y no hay ninguno abierto con ese título.
  */
-export function seccionVigia({ issue, comentarios, abiertos, ahora, pasadas }) {
+export function seccionVigia({ issue, comentarios, abiertos, ahora, pasadas, ultimoMerge, despliegue }) {
+  // (SCRUM-1123d) `despliegue`: `undefined` = no se pregunta · cualquier otra cosa = se dice su veredicto.
+  // Su ceguera ciega la sección, pero no tapa lo que la otra mitad sí leyó (ni al revés).
+  if (despliegue !== undefined) {
+    const d = veredictoDelVigiaDeDespliegue({ ...(despliegue || { corridas: null }), ahora });
+    const s = seccionVigia({ issue, comentarios, abiertos, ahora, pasadas, ultimoMerge });
+    const alertas = [...d.alertas, ...s.alertas];
+    if (!d.ciego && s.pudo) return { ...s, alertas, poblacion: `${d.texto} · ${s.poblacion}` };
+    const motivo = [d.ciego, s.pudo ? null : s.motivo].filter(Boolean).join(' · Y ADEMÁS: ');
+    const leido = d.ciego ? (s.pudo ? s.poblacion : null) : d.texto;
+    return { nombre: 'VIGÍA', pudo: false, motivo: leido ? `${motivo} · lo que SÍ se leyó: ${leido}` : motivo, alertas, poblacion: null };
+  }
   // (SCRUM-1463) `pasadas`: `undefined` = no se pregunta (sólo los avisos) · cualquier otra cosa = se juzga.
   if (pasadas !== undefined) {
     const p = pasadaDelVigia(pasadas, ahora);
     if (p.ciego) return ciega('VIGÍA', p.ciego);
-    const s = seccionVigia({ issue, comentarios, abiertos, ahora });
+    const s = seccionVigia({ issue, comentarios, abiertos, ahora, ultimoMerge });
     if (!s.pudo) return s;
     return { ...s, alertas: [...p.alertas, ...s.alertas], poblacion: `${p.texto} · ${s.poblacion}` };
   }
@@ -621,22 +807,31 @@ export function seccionVigia({ issue, comentarios, abiertos, ahora, pasadas }) {
   if (!Array.isArray(abiertos)) return ciega('VIGÍA', 'la lista de PR abiertos no llegó: no sé qué avisos siguen vivos');
   const orden = [...comentarios].sort((a, b) => String(a.creado).localeCompare(String(b.creado)));
   const ultimaPersona = orden.filter((c) => !c.esBot).map((c) => String(c.creado)).pop() || '';
-  const avisos = orden.filter((c) => c.esBot && String(c.cuerpo || '').includes(MARCA_DE_AVISO));
+  const deMain = (c) => String(c.cuerpo || '').includes(MARCA_DE_MAIN_PARADO);
+  const avisos = orden.filter((c) => c.esBot && (String(c.cuerpo || '').includes(MARCA_DE_AVISO) || deMain(c)));
   // Un aviso sin ningún PR legible no se da por «sin PR abierto»: el formato cambió y no sé leerlo.
-  const ilegibles = avisos.filter((c) => prsDelAviso(c.cuerpo).length === 0);
+  const ilegibles = avisos.filter((c) => prsDelAviso(c.cuerpo).length === 0 && !deMain(c));
   if (ilegibles.length) return ciega('VIGÍA', `${ilegibles.length} aviso(s) del issue #${issue} no nombran ningún PR que yo sepa leer (el primero, del ${String(ilegibles[0].creado).slice(0, 16)}Z): el formato del vigía ha cambiado`);
   const sinLeer = avisos.filter((c) => !(c.reacciones > 0) && String(c.creado) > ultimaPersona);
   const hoy = new Set(abiertos);
+  // ¿Sigue `main` parado? `null` = no lo sé (no llegó la fecha, o no se deja leer).
+  const main = ultimoMerge ? filaDeMain({ fecha: ultimoMerge.fecha, ahora }) : { leido: false };
+  const mainSigue = main.leido ? main.parado : null;
   const alertas = []; let muertos = 0;
   for (const c of sinLeer) {
     const nombra = prsDelAviso(c.cuerpo);
     const siguen = nombra.filter((n) => hoy.has(n));
-    if (siguen.length === 0) { muertos++; continue; }
+    const porMain = deMain(c) && mainSigue !== false;
+    if (siguen.length === 0 && !porMain) { muertos++; continue; }
     const h = (ahora - Date.parse(c.creado)) / 3600000;
     const edad = !Number.isFinite(h) ? 'edad DESCONOCIDA' : h >= 48 ? `${(h / 24).toFixed(1)} días` : `${h.toFixed(1)} h`;
+    const deQue = [
+      ...(porMain ? [mainSigue ? `dice que main está PARADO, y SIGUE parado (${main.horas} h sin un merge)` : 'dice que main está PARADO, y no sé si sigue: no pude leer la fecha de su último commit'] : []),
+      ...(nombra.length ? [`nombra ${nombra.length} PR, ${siguen.length} siguen abiertos${siguen.length ? `: ${siguen.map((n) => `#${n}`).join(' ')}` : ''}`] : []),
+    ].join(' · ');
     alertas.push({
-      id: c.id, siguen,
-      linea: `aviso del ${String(c.creado).slice(0, 16)}Z SIN LEER desde hace ${edad} · nombra ${nombra.length} PR, ${siguen.length} siguen abiertos: ${siguen.map((n) => `#${n}`).join(' ')} · comentario ${c.id}`,
+      id: c.id, siguen, porMain,
+      linea: `aviso del ${String(c.creado).slice(0, 16)}Z SIN LEER desde hace ${edad} · ${deQue} · comentario ${c.id}`,
     });
   }
   return {
@@ -675,6 +870,102 @@ export function pasadaDelVigia(corridas, ahora) {
     alertas.push({ linea: `el vigía NO CORRE desde hace ${cuanto(horas(ultima))} (${String(ultima.created_at).slice(0, 16)}Z) y se le pide cada 3 h (hueco mayor medido: 10,1 h; tope ${HORAS_DE_VIGIA_CALLADO} h). Que no haya avisos nuevos NO es que no haya atascos` });
   }
   return { alertas, texto: `última pasada del vigía hace ${cuanto(horas(ultima))} (${ultima.conclusion})` };
+}
+
+/** El OTRO vigía: el que mira si producción corre lo que hay en `main`. Su veredicto no está en ningún issue. */
+export const WORKFLOW_DEL_VIGIA_DE_DESPLIEGUE = 'vigia-despliegue.yml';
+/** Los dos pasos de su job que dicen el veredicto, y la marca del Issue que abre. Un test los ata al YAML. */
+export const PASO_QUE_MIRA = '¿Está producción corriendo lo que hay en main?';
+export const PASO_QUE_AVISA = 'Avisar de verdad si el vigía cantó (Issue de GitHub)';
+export const MARCA_DE_CONGELADA = '<!-- vigia-despliegue:produccion-congelada -->';
+/**
+ * Su cron pide cada 2 h y GitHub lo retrasa: hueco mediano 4,7 h, p90 6,8 h y máximo 8,7 h en 189 huecos
+ * (2-sep → 7-oct-2026, medido dos veces el 7-oct). Doce horas queda por encima de todo lo medido.
+ */
+export const HORAS_DE_VIGIA_DE_DESPLIEGUE_CALLADO = 12;
+/**
+ * (SCRUM-1542) Cómo empieza el título de una corrida que es un SIMULACRO del aviso. Sale en `failure`
+ * con su paso de aviso corrido, igual que una CONGELADA de verdad, y su Issue se cierra solo: leída
+ * como una corrida más diría «CANTÓ y NO CONSTA SU AVISO». Se aparta por el título que le pone el
+ * `run-name` del workflow (un test ata las dos puntas) y se dice cuántas se apartaron.
+ */
+export const TITULO_DE_CORRIDA_DE_SIMULACRO = 'SIMULACRO del aviso del vigía';
+
+/**
+ * (SCRUM-1123d) El ÚLTIMO VEREDICTO del vigía de despliegue. Sin esto, cerrar SCRUM-1123 dejaba un ciego:
+ * la rama «abre o comenta un Issue» no se ha ejecutado nunca en vivo, y un CONGELADO real que no dejara
+ * su Issue no se habría visto en ningún sitio.
+ *
+ * La conclusión de la corrida NO basta: CONGELADA (salida 1) y «no supe mirar» (salida 2) son las dos
+ * `failure`. Lo que las distingue son los PASOS del job: el de aviso lleva `if: … salida == '1'`, así que
+ * sale `skipped` con 0 y con 2 y sólo corre con 1 (medido en la corrida 36684679677, 30-sep: salida 2,
+ * aviso `skipped`). Con `success` no se piden los pasos: salida 0.
+ *
+ * @param {{corridas:{id?:number, created_at?:string, status?:string, conclusion?:string, html_url?:string}[]|null,
+ *   pasosDe?:(id:number)=>{name:string, conclusion:string}[]|undefined, issuesAbiertos?:()=>object[]|undefined, ahora:number}} e
+ *   `corridas` del más NUEVO al más viejo · `pasosDe` e `issuesAbiertos` devuelven `undefined` si no pudieron leer.
+ * @returns {{ciego?:string, alertas:{linea:string}[], texto:string}}
+ */
+export function veredictoDelVigiaDeDespliegue({ corridas, pasosDe = () => undefined, issuesAbiertos = () => undefined, ahora }) {
+  const V = 'vigía de DESPLIEGUE';
+  if (!Array.isArray(corridas)) return { ciego: `no llegaron las corridas de \`${WORKFLOW_DEL_VIGIA_DE_DESPLIEGUE}\`: no sé cuál fue su último veredicto`, alertas: [], texto: '' };
+  // (SCRUM-1542) Un simulacro no es una lectura de producción: no da veredicto. Se aparta y se cuenta.
+  const esSimulacro = (c) => String((c && c.display_title) || '').startsWith(TITULO_DE_CORRIDA_DE_SIMULACRO);
+  const simulacros = corridas.filter(esSimulacro).length;
+  const aparte = simulacros ? ` (${simulacros} simulacro(s) del aviso apartado(s): no leen producción)` : '';
+  const terminadas = corridas.filter((c) => c && !esSimulacro(c) && c.status === 'completed' && Number.isFinite(Date.parse(c.created_at)));
+  if (terminadas.length === 0) return { ciego: `ninguna de las ${corridas.length} corridas de \`${WORKFLOW_DEL_VIGIA_DE_DESPLIEGUE}\` que llegaron está terminada y fechada${aparte}: no sé cuál fue su último veredicto`, alertas: [], texto: '' };
+  const horas = (c) => (ahora - Date.parse(c.created_at)) / 3600000;
+  const cuanto = (h) => (h >= 48 ? `${(h / 24).toFixed(1)} días (${Math.round(h)} h)` : `${h.toFixed(1)} h`);
+  const ultima = terminadas[0];
+  const cuando = `${String(ultima.created_at).slice(0, 16)}Z`;
+  const donde = ultima.html_url ? ` · ${ultima.html_url}` : '';
+  const buena = terminadas.find((c) => c.conclusion === 'success');
+  const laBuena = buena ? `La última que no cantó es de hace ${cuanto(horas(buena))}` : `Ninguna en verde entre las ${terminadas.length} que llegaron`;
+  const alertas = [];
+  // Un veredicto viejo no es el estado de hoy: se dice delante, sea cual sea.
+  if (horas(ultima) > HORAS_DE_VIGIA_DE_DESPLIEGUE_CALLADO) {
+    alertas.push({ linea: `el ${V} NO CORRE desde hace ${cuanto(horas(ultima))} (${cuando}) y se le pide cada 2 h (hueco mayor medido: 8,7 h; tope ${HORAS_DE_VIGIA_DE_DESPLIEGUE_CALLADO} h). Su veredicto de abajo es de ENTONCES, no de hoy` });
+  }
+  const texto = (veredicto) => `${V}: última corrida hace ${cuanto(horas(ultima))}, veredicto ${veredicto}${aparte}`;
+  if (ultima.conclusion === 'success') return { alertas, texto: texto('NO CANTÓ (salida 0: producción al día, o retrasada pero desplegando)') };
+  if (ultima.conclusion !== 'failure') {
+    alertas.push({ linea: `la última corrida del ${V} (${cuando}) terminó en ${String(ultima.conclusion).toUpperCase()}: NO DIO VEREDICTO. ${laBuena}${donde}` });
+    return { alertas, texto: texto(`NINGUNO (${ultima.conclusion})`) };
+  }
+  // `failure`: son los pasos los que dicen si cantó o si no supo mirar.
+  const pasos = pasosDe(ultima.id);
+  if (!Array.isArray(pasos)) return { ciego: `la última corrida del ${V} (${cuando}) terminó en FAILURE y no pude leer sus pasos: no sé si cantó CONGELADA o si no supo mirar${donde}`, alertas, texto: '' };
+  const mira = pasos.find((p) => p && p.name === PASO_QUE_MIRA);
+  const avisa = pasos.find((p) => p && p.name === PASO_QUE_AVISA);
+  if (!mira || !avisa) return { ciego: `la última corrida del ${V} (${cuando}) terminó en FAILURE y entre sus ${pasos.length} pasos no está «${!mira ? PASO_QUE_MIRA : PASO_QUE_AVISA}»: el workflow ha cambiado y no sé leer su veredicto${donde}`, alertas, texto: '' };
+  if (avisa.conclusion === 'skipped') {
+    const porque = mira.conclusion === 'failure'
+      ? 'NO SUPO MIRAR (salida 2: su paso de aviso no corrió, que es lo que manda el diseño; por ceguera no abre Issue)'
+      : `NO LLEGÓ A MIRAR (su paso «${PASO_QUE_MIRA}» quedó en ${String(mira.conclusion).toUpperCase()}: la corrida cayó antes)`;
+    alertas.push({ linea: `el ${V} ${porque} en su última corrida (${cuando}). Que no haya aviso NO es que producción esté al día. ${laBuena}${donde}` });
+    return { alertas, texto: texto(mira.conclusion === 'failure' ? 'NO SUPO MIRAR (salida 2)' : 'NINGUNO (cayó antes de mirar)') };
+  }
+  // El paso de aviso corrió: salida 1. ¿Dejó su aviso donde se ve?
+  const canto = `el ${V} CANTÓ PRODUCCIÓN CONGELADA en su última corrida (${cuando})`;
+  const issues = issuesAbiertos();
+  if (!Array.isArray(issues)) {
+    alertas.push({ linea: `${canto} · su paso de aviso terminó en ${String(avisa.conclusion).toUpperCase()}${donde}` });
+    return { ciego: `${canto} y no pude leer los Issues abiertos: no sé si dejó su aviso`, alertas, texto: '' };
+  }
+  const numero = elegirIssueExistente(issues, MARCA_DE_CONGELADA);
+  const elIssue = numero === null ? null : issues.find((i) => i && i.number === numero);
+  const tocado = elIssue && Number.isFinite(Date.parse(elIssue.updated_at)) && Date.parse(elIssue.updated_at) >= Date.parse(ultima.created_at);
+  const falta = numero === null ? 'ningún Issue ABIERTO lleva su marca'
+    : avisa.conclusion !== 'success' ? `su paso de aviso terminó en ${String(avisa.conclusion).toUpperCase()} (el Issue #${numero} lleva la marca, y no consta que esa corrida escribiera en él)`
+      : !tocado ? `el Issue #${numero} lleva la marca pero nadie lo ha tocado desde antes de esa corrida (${String(elIssue.updated_at).slice(0, 16)}Z)`
+        : null;
+  if (falta) {
+    alertas.push({ linea: `${canto} y NO CONSTA SU AVISO: ${falta}. ESTO REABRE SCRUM-1123 (se cerró con la rama de aviso sin ejercer en vivo)${donde}` });
+    return { alertas, texto: texto('CONGELADA, SIN AVISO') };
+  }
+  alertas.push({ linea: `${canto} · su aviso es el Issue #${numero}${donde}` });
+  return { alertas, texto: texto(`CONGELADA (aviso: Issue #${numero})`) };
 }
 
 // ───────────────────────────── 10 · QA ─────────────────────────────
@@ -718,6 +1009,17 @@ export function salidaDe(secciones) {
 export const NOTAS_FIJAS = [
   'ℹ️ JIRA · el cruce «tickets abiertos con su trabajo ya en main» NO lo hace el latido: no tiene credenciales de Jira. Saca la foto con el conector (los que no están en Done, TODAS las páginas) y corre: node scripts/abierto-con-trabajo-en-main.mjs --jira <foto.json …> · la foto vale 12 h: con una más vieja el comando se declara CIEGO y sale 2 · «con trabajo en main» NO es «terminado» · esto es un puntero, no una medición: no cuenta para la salida',
 ];
+
+/**
+ * (SCRUM-1463c) Lo que el latido dice de los cierres sin clic. Pura. `guardado` es lo que devuelve `leerGuardado`:
+ * `null` = nadie lo ha corrido en esta máquina → NO hay sección y va la nota (señala, no afirma, no cuenta para
+ * la salida) · `undefined` = está y no se deja leer → sección CIEGA · un objeto → la sección de `seccionCierres`.
+ * @returns {{seccion: object|null, notas: string[]}}
+ */
+export function cierresDelLatido({ guardado, ahora }) {
+  const seccion = seccionCierres({ guardado, ahora });
+  return seccion === null ? { seccion: null, notas: [NOTA_SIN_CORRER] } : { seccion, notas: [] };
+}
 
 export function informe(secciones, { ahora, fallosDe = () => undefined, notas = [] }) {
   const out = [`LATIDO · ${new Date(ahora).toISOString().slice(0, 16)}Z`];
@@ -846,18 +1148,66 @@ function guardarLibro(libro, ruta = rutaDelLibro()) {
   return intentar(() => { fs.mkdirSync(path.dirname(ruta), { recursive: true }); fs.writeFileSync(ruta, `${JSON.stringify(libro, null, 1)}\n`); return true; }) === true;
 }
 
+/**
+ * (SCRUM-1474) Marca de una vez TODAS las preguntas abiertas de un puesto. Marcar de una en una existía desde
+ * el 1-oct-2026 y el 6-oct llevaba CERO usos: el orquestador contesta relanzando el puesto, no sesión a sesión.
+ * No borra nada: la pregunta sigue en el libro con dónde se contestó.
+ * @returns {{libro:object, marcadas:string[]}}
+ */
+export function marcarPuesto(libro, puesto, { cuando, donde }) {
+  const nuevo = { ...libro }; const marcadas = [];
+  for (const [id, a] of Object.entries(libro)) {
+    // Sólo lo que ya estaba preguntado: una pregunta posterior a la marca no queda contestada por adelantado.
+    if (a.contestada || puestoDe(a.nombre) !== puesto || !(a.desde <= cuando)) continue;
+    nuevo[id] = { ...a, contestada: { cuando, donde: String(donde) } };
+    marcadas.push(id);
+  }
+  return { libro: nuevo, marcadas };
+}
+
 function contestada(id, donde) {
-  if (!id || !donde) { console.log('uso: latido.mjs contestada <id del trabajo> <dónde está la respuesta: ticket, comentario, mensaje>'); return SALIDA_CIEGO; }
+  if (!id || !donde) { console.log('uso: latido.mjs contestada <id del trabajo | s<puesto>> <dónde está la respuesta: ticket, comentario, mensaje, encargo de qué sesión>'); return SALIDA_CIEGO; }
+  if (esElHueco(donde)) { console.log(`🔴 «${donde}» es el hueco de la orden, no un sitio: di DÓNDE está la respuesta. No apunto nada.`); return SALIDA_CIEGO; }
   const t = leerTrabajos();
   const libro = leerLibro();
   if (!t || libro === undefined) { console.log('🔴 NO PUDE MIRAR: el registro de trabajos o el libro no se dejan leer. No apunto nada.'); return SALIDA_CIEGO; }
   const nuevo = actualizarLibro(libro || {}, t.sesiones);
+  const elPuesto = /^s(\d)$/i.exec(String(id));
+  if (elPuesto) {
+    const m = marcarPuesto(nuevo, Number(elPuesto[1]), { cuando: Date.now(), donde });
+    if (m.marcadas.length === 0) { console.log(`🔴 el puesto s${elPuesto[1]} no tiene ninguna pregunta abierta en el libro (${Object.keys(nuevo).length} apuntadas en total): no apunto nada.`); return SALIDA_AVISO; }
+    if (!guardarLibro(m.libro)) { console.log('🔴 NO pude guardar el libro: las preguntas siguen contando como sin contestar.'); return SALIDA_CIEGO; }
+    console.log(`✅ s${elPuesto[1]}: ${m.marcadas.length} pregunta(s) marcadas como contestadas en ${donde} (siguen en el libro):`);
+    for (const k of m.marcadas) console.log(`   · ${m.libro[k].nombre} (${k}): «${m.libro[k].needs.slice(0, 120)}»`);
+    return SALIDA_OK;
+  }
   const hallados = Object.keys(nuevo).filter((k) => k === id || nuevo[k].nombre === id);
   if (hallados.length !== 1) { console.log(`🔴 «${id}» casa con ${hallados.length} preguntas del libro: no apunto nada. Usa el id del trabajo (el de entre paréntesis).`); return SALIDA_AVISO; }
   nuevo[hallados[0]].contestada = { cuando: Date.now(), donde: String(donde) };
   if (!guardarLibro(nuevo)) { console.log('🔴 NO pude guardar el libro: la pregunta sigue contando como sin contestar.'); return SALIDA_CIEGO; }
   console.log(`✅ ${nuevo[hallados[0]].nombre} (${hallados[0]}): «${nuevo[hallados[0]].needs.slice(0, 120)}» → contestada en ${donde}`);
   return SALIDA_OK;
+}
+
+/** (SCRUM-1474) Las preguntas ENTERAS, que la sección pliega por puesto: lo plegado se tiene que poder leer. */
+function preguntas(cual) {
+  const t = leerTrabajos();
+  const libro = leerLibro();
+  if (!t || libro === undefined) { console.log('🔴 NO PUDE MIRAR: el registro de trabajos o el libro no se dejan leer.'); return SALIDA_CIEGO; }
+  const elPuesto = /^s(\d)$/i.exec(String(cual || ''));
+  if (cual && !elPuesto) { console.log('uso: latido.mjs preguntas [s<puesto>]'); return SALIDA_CIEGO; }
+  const ahora = Date.now();
+  const todas = preguntasDelLibro({ sesiones: t.sesiones, libro: actualizarLibro(libro || {}, t.sesiones), ahora })
+    .filter((f) => !elPuesto || puestoDe(f.nombre) === Number(elPuesto[1]));
+  const abiertas = todas.filter((f) => !f.marcada);
+  console.log(`PREGUNTAS${elPuesto ? ` de s${elPuesto[1]}` : ''} · ${todas.length} en el registro y el libro · ${abiertas.length} sin marcar · ${todas.length - abiertas.length} marcadas como contestadas`);
+  for (const f of abiertas) {
+    const r = f.relevos && f.relevos.length ? ` · su puesto siguió con ${f.relevos[0].nombre} (${horaDe(f.relevos[0].creado)})` : '';
+    console.log(`· [${f.cubo}${f.deHoy ? ', de hoy' : ''}] ${f.nombre} (${f.id}) · hace ${edadDe(ahora - f.desde)}${r}\n    espera: ${f.q || 'NO LO DICE (bloqueada sin `needs`)'}`);
+  }
+  if (abiertas.some((f) => f.cubo === 'RELEVADA')) console.log(`\n${LIMITE_DE_RELEVADA}.`);
+  if (elPuesto && abiertas.length) console.log(`Si ya están despachadas → ${ordenDeMarcar(elPuesto[1])}`);
+  return abiertas.length ? SALIDA_AVISO : SALIDA_OK;
 }
 
 function dirDeTraspasos() {
@@ -965,7 +1315,19 @@ async function todo() {
     const t = intentar(() => fs.readFileSync(r, 'utf8'));
     return typeof t === 'string' ? ramasEmpujadas(t) : undefined;
   };
-  const sSes = seccionSesiones({ sesiones, filasPR: sPR.pudo ? sPR.filas : null, ramasDe, ilegibles: trabajos ? trabajos.ilegibles : [], ahora });
+  // (SCRUM-1474) Lo que a una sesión le han dicho: su encargo y los mensajes de otras. Sólo se pide del relevo
+  // de un puesto con un PR sin dueña que trabaje.
+  const dichoA = (s) => {
+    const r = jsonlDe(s);
+    const t = r ? intentar(() => fs.readFileSync(r, 'utf8')) : undefined;
+    return typeof t === 'string' ? loQueLeDijeron(t) : undefined;
+  };
+  // El libro se actualiza ANTES de informar: lo que se ve hoy tiene que sobrevivir a que la paren mañana.
+  // Y antes de SESIONES: una bloqueada de hoy cuya pregunta ya está marcada no se vuelve a acusar.
+  let libro = leerLibro();
+  let libroGuardado = true;
+  if (sesiones && libro !== undefined) { libro = actualizarLibro(libro || {}, sesiones); libroGuardado = guardarLibro(libro); }
+  const sSes = seccionSesiones({ sesiones, filasPR: sPR.pudo ? sPR.filas : null, ramasDe, dichoA, libro, ilegibles: trabajos ? trabajos.ilegibles : [], ahora });
   const dT = dirDeTraspasos();
   const sTra = dT === undefined ? ciega('TRASPASO', 'no encuentro la carpeta de traspasos en la instalación del equipo')
     : seccionTraspasos({ sesiones, ahora, mtimeDelTraspaso: (n) => { const r = path.join(dT, `project_s${n}_traspaso.md`); return fs.existsSync(r) ? fs.statSync(r).mtimeMs : null; } });
@@ -997,10 +1359,7 @@ async function todo() {
     if (log !== undefined) fallos.set(a.numero, fallosDelLog(log));
   }
   tramo('logs de los rojos');
-  // 6 · cementerio. El libro se actualiza ANTES de informar: lo que se ve hoy tiene que sobrevivir a que la paren mañana.
-  let libro = leerLibro();
-  let libroGuardado = true;
-  if (sesiones && libro !== undefined) { libro = actualizarLibro(libro || {}, sesiones); libroGuardado = guardarLibro(libro); }
+  // 6 · cementerio. Con el libro que se leyó y se guardó arriba, antes de SESIONES.
   const sCem = seccionCementerio({ sesiones, ilegibles: trabajos ? trabajos.ilegibles : [], sinEstado: trabajos ? trabajos.sinEstado : [], libro, libroGuardado, ahora });
   // 7 · contexto. Se lee el jsonl de cada una; nada de `claude agents` ni de la copia instalada.
   const sCtx = seccionContexto({ sesiones, contextoDe: (s) => contextoDeRuta(jsonlDe(s)), sueltas: sesiones ? transcriptsSueltos(sesiones, ahora) : [], ahora });
@@ -1040,15 +1399,35 @@ async function todo() {
   // Cien justos es una página llena de PR abiertos: puede haber más, y entonces no sé cuáles siguen vivos.
   // Cuándo CORRIÓ: las corridas de su workflow. `null` si no llegan (la sección lo dice; no lo da por bueno).
   const pasadas = intentar(() => ghJson(['api', `repos/${REPO}/actions/workflows/${WORKFLOW_DEL_VIGIA}/runs?per_page=10`]).workflow_runs) ?? null;
-  const sVig = seccionVigia({ issue: elIssue, comentarios, abiertos: Array.isArray(prs) && prs.length < 100 ? prs.map((p) => p.number) : undefined, ahora, pasadas });
+  // (SCRUM-1123d) El vigía de DESPLIEGUE: sus corridas, y sólo si la última cayó, sus pasos y los Issues.
+  const despliegue = {
+    corridas: intentar(() => ghJson(['api', `repos/${REPO}/actions/workflows/${WORKFLOW_DEL_VIGIA_DE_DESPLIEGUE}/runs?per_page=10`]).workflow_runs) ?? null,
+    pasosDe: (id) => intentar(() => ghJson(['api', `repos/${REPO}/actions/runs/${id}/jobs?per_page=100`]).jobs.flatMap((j) => j.steps || [])),
+    issuesAbiertos: () => intentar(() => gh(['api', '--paginate', `repos/${REPO}/issues?state=open&per_page=100`, '-q', '.[] | {number, body, pull_request, updated_at}'])
+      .split('\n').filter((l) => l.trim()).map((l) => JSON.parse(l))),
+  };
+  const sVig = seccionVigia({ issue: elIssue, comentarios, abiertos: Array.isArray(prs) && prs.length < 100 ? prs.map((p) => p.number) : undefined, ahora, pasadas, ultimoMerge, despliegue });
   tramo('vigía');
   // 10 · QA. Una petición GET a producción con la cookie guardada: lo mismo que `estado`. No entra ni renueva.
   const dichoQA = [];
   const codigoQA = await ejecutarQA(['estado'], { out: (s) => dichoQA.push(s), err: (s) => dichoQA.push(s) }).catch((e) => { dichoQA.push(`reventó: ${String((e && e.message) || e).split('\n')[0]}`); return undefined; });
   const sQA = seccionQA({ codigo: codigoQA, lineas: dichoQA });
   tramo('QA');
-  const secciones = [sPR, sSes, sTra, sMain, sDep, sCem, sCtx, sExp, sVig, sQA];
-  console.log(informe(secciones, { ahora, fallosDe: (n) => fallos.get(n), notas: NOTAS_FIJAS }));
+  // 11 · disco. La unidad de la casa (transcripts, temporales) y la de los árboles. Sólo lee.
+  const disco = intentar(() => medirDisco({ arboles: raiz }));
+  const censoTmp = intentar(() => censarTmp(dirDeTrabajos()));
+  const barrible = censoTmp && censoTmp.pudo ? { bytes: tmpBarribles(censoTmp).reduce((a, f) => a + f.bytes, 0), trabajos: tmpBarribles(censoTmp).length, horas: HORAS_SIN_ACTIVIDAD } : null;
+  const sDis = seccionDisco({ unidades: disco && disco.unidades, zonas: disco ? disco.zonas : [], barrible });
+  tramo('disco');
+  // 12 · arranque. Pregunta la punta al remoto (`ls-remote`, sin escribir referencias) y compara el árbol principal.
+  const sArr = seccionArranque(intentar(() => medirArranque({ raiz })));
+  tramo('arranque');
+  // 13 · cierres sin clic. Sólo lee el fichero que dejó `cierre-sin-clic.mjs`; no toca Jira ni git.
+  const cie = cierresDelLatido({ guardado: intentar(() => leerGuardado()), ahora });
+  tramo('cierres');
+  const secciones = [sPR, sSes, sTra, sMain, sDep, sCem, sCtx, sExp, sVig, sQA, sDis, sArr];
+  if (cie.seccion) secciones.push(cie.seccion);
+  console.log(informe(secciones, { ahora, fallosDe: (n) => fallos.get(n), notas: [...NOTAS_FIJAS, ...cie.notas] }));
   console.log(tiempos(tramos));
   return salidaDe(secciones);
 }
@@ -1056,5 +1435,6 @@ async function todo() {
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const orden = process.argv[2];
   process.exitCode = orden === 'repartos' ? await repartos() : orden === 'cierre' ? cierre()
-    : orden === 'contestada' ? contestada(process.argv[3], process.argv.slice(4).join(' ')) : await todo();
+    : orden === 'contestada' ? contestada(process.argv[3], process.argv.slice(4).join(' '))
+      : orden === 'preguntas' ? preguntas(process.argv[3]) : await todo();
 }

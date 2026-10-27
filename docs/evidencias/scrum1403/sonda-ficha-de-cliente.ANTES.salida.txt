@@ -1,0 +1,26 @@
+BANCO LISTO · tablas=33 · 127.0.0.1:55612 · motor 18.3
+POBLACION: 6 clientes (4 con factura, C5 dado de alta por la Técnica → estado 201, C6 con un Trabajo suyo), 4 presupuestos, 4 facturas, 1 gasto, 3 eventos de pago · pregunta la Técnica id 1
+PATRON: panel de admin → total cobrado 1050, Blas 900 · base → facturado 1450, cobrado 1050, pendiente 400, gastos 30, beneficio 1020
+
+① HOY · GET /admin/customers → estado 200 · clientes 6 · fichas que abre 6 de 6
+   dinero en la LISTA de clientes (claves con pinta de dinero): ninguna
+   sumando las fichas, la Técnica obtiene del NEGOCIO ENTERO:
+     stats.totalPaid     (rótulo «Cobrado»)            1050 de 1050 · EXACTO
+     stats.totalBilled   (rótulo «Facturado»)          1450 de 1450 · EXACTO
+     stats.totalPending  (rótulo «Pendiente de cobro») 400 de 400 · EXACTO
+     stats.totalExpenses (viaja, no se pinta)          30 de 30 · EXACTO
+     stats.profit        (rótulo «Beneficio»)          1020 de 1020 · EXACTO
+     las facturas cobradas de la pestaña (20 por ficha) 1050 de 1050 · EXACTO
+     los eventos «Pago recibido» (50 por ficha)         1050 de 1050 · EXACTO
+   documentos AJENOS que traen las fichas: 3 facturas de 3 y 3 presupuestos de 3 (cada uno con su total)
+   control: «garantiaRetenida», que YA se le niega al Técnico (SCRUM-1108), viaja en 0 fichas de 6
+
+② LAS TRES SALIDAS (calculadas con la puerta real; NINGUNA está construida)
+   1 · no recibe los agregados          → por «totalPaid» suma 0 de 1050 · abre 6 fichas de 6
+   2 · los recibe sólo sobre lo suyo    → por «totalPaid» suma 100 de 1050 · abre 6 fichas de 6 · en 2 de 6 fichas «Cobrado» diría una cifra distinta de lo que el cliente ha pagado
+   3 · la ficha ajena no se abre        → por «totalPaid» suma 100 de 1050 · abre 2 fichas de 6 (C1, C6) · deja de abrir C2, C3, C4, C5
+       de las que deja de abrir, C5 es el cliente que ELLA acaba de dar de alta: SÍ lo pierde
+   en las tres, la pestaña de documentos y los eventos de la ficha siguen trayendo lo ajeno si no se recortan aparte.
+EXIT=0
+
+CORRER_EXIT=0

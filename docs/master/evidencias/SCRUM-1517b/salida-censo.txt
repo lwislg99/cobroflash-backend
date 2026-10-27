@@ -1,0 +1,65 @@
+POBLACION: 322 ficheros .ts de src/ leídos por AST · 14 claves pedidas
+
+── esErrorSinSellar · 2 usos · declarado en src/modules/invoicing/domain/portonDocumento.ts:117 · importado por 2 ficheros
+   src/modules/billing/app/routes/receipt.routes.ts:509 · en (nivel de módulo) · GET /:token/pdf · DENTRO DE UN catch
+   src/modules/system/app/routes/invoicesAdmin.routes.ts:1291 · en (nivel de módulo) · GET /:id/pdf · DENTRO DE UN catch
+
+── ralleSniSrorrEse · 0 usos · declarado en (ningún sitio de src/) · importado por 0 ficheros
+
+── ensureInvoicePdf · 4 usos · declarado en src/lib/invoicing.ts:36 · importado por 4 ficheros
+   src/modules/billing/app/routes/receipt.routes.ts:498 · en (nivel de módulo) · GET /:token/pdf
+   src/modules/exports/app/routes/exports.routes.ts:201 · en (nivel de módulo) · GET /datos.zip
+   src/modules/messaging/domain/email.service.ts:76 · en sendInvoiceEmail
+   src/modules/system/app/routes/invoicesAdmin.routes.ts:1281 · en (nivel de módulo) · GET /:id/pdf
+
+── ensureInvoiceForCharge · 6 usos · declarado en src/lib/invoicing.ts:174 · importado por 4 ficheros
+   src/modules/billing/app/routes/mpWebhook.routes.ts:142 · en (nivel de módulo) · POST /
+   src/modules/billing/app/routes/psp.routes.ts:55 · en (nivel de módulo) · POST /
+   src/modules/billing/app/routes/psp.routes.ts:218 · en (nivel de módulo) · POST /
+   src/modules/invoicing/app/routes/invoice.routes.ts:15 · en (nivel de módulo) · POST /issue
+   src/modules/system/app/routes/dev.routes.ts:64 · en (nivel de módulo) · POST /issue-invoice/:chargeId
+   src/modules/system/app/routes/dev.routes.ts:79 · en (nivel de módulo) · POST /email-invoice/:chargeId
+
+── sendInvoiceEmail · 6 usos · declarado en src/modules/messaging/domain/email.service.ts:28 · importado por 4 ficheros
+   src/modules/billing/app/routes/mpWebhook.routes.ts:148 · en (nivel de módulo) · POST /
+   src/modules/billing/app/routes/psp.routes.ts:82 · en (nivel de módulo) · POST /
+   src/modules/billing/app/routes/psp.routes.ts:228 · en (nivel de módulo) · POST /
+   src/modules/system/app/routes/dev.routes.ts:83 · en (nivel de módulo) · POST /email-invoice/:chargeId
+   src/modules/system/app/routes/invoicesAdmin.routes.ts:713 · en (nivel de módulo) · POST /:id/send-email
+   src/modules/system/app/routes/invoicesAdmin.routes.ts:714 · en (nivel de módulo) · POST /:id/send-email
+
+── exigirDocumentoEmitible · 2 usos · declarado en src/modules/invoicing/domain/portonDocumento.ts:109 · importado por 1 ficheros
+   src/lib/invoicing.ts:104 · en ensureInvoicePdf
+   src/lib/invoicing.ts:261 · en ensurePdfAndEvent
+
+── puedeProducirDocumento · 2 usos · declarado en src/modules/invoicing/domain/selladoEstado.ts:97 · importado por 2 ficheros
+   src/lib/invoicing.ts:61 · en ensureInvoicePdf
+   src/modules/system/app/routes/invoicesAdmin.routes.ts:1211 · en (nivel de módulo) · POST /:id/regenerate-pdf
+
+── FacturaSinSellarError · 1 usos · declarado en src/modules/invoicing/domain/portonDocumento.ts:66 · importado por 1 ficheros
+   src/modules/invoicing/domain/portonDocumento.ts:113 · en exigirDocumentoEmitible
+
+── ERROR_PDF_SIN_SELLAR · 2 usos · declarado en src/modules/invoicing/domain/selladoEstado.ts:102 · importado por 2 ficheros
+   src/lib/invoicing.ts:62 · en ensureInvoicePdf
+   src/modules/system/app/routes/invoicesAdmin.routes.ts:1212 · en (nivel de módulo) · POST /:id/regenerate-pdf
+
+── ERROR_SIN_SELLAR · 5 usos · declarado en src/modules/invoicing/domain/portonDocumento.ts:43 · importado por 1 ficheros
+   src/modules/invoicing/domain/portonDocumento.ts:67 · en (nivel de módulo)
+   src/modules/invoicing/domain/portonDocumento.ts:73 · en (nivel de módulo)
+   src/modules/invoicing/domain/portonDocumento.ts:118 · en esErrorSinSellar
+   src/modules/invoicing/domain/portonDocumento.ts:118 · en esErrorSinSellar
+   src/modules/system/app/routes/invoicesAdmin.routes.ts:1293 · en (nivel de módulo) · GET /:id/pdf · DENTRO DE UN catch
+
+── reintentarSelladosPendientes · 0 usos · declarado en src/modules/invoicing/domain/reintentoSellado.ts:228 · importado por 0 ficheros
+
+── COPY_PUBLICO_SIN_SELLAR · 1 usos · declarado en src/modules/invoicing/domain/portonDocumento.ts:51 · importado por 1 ficheros
+   src/modules/billing/app/routes/receipt.routes.ts:510 · en (nivel de módulo) · GET /:token/pdf · DENTRO DE UN catch
+
+── literal:invoice_pendiente_de_sellado · 1 usos
+   src/modules/invoicing/domain/selladoEstado.ts:102 · en (nivel de módulo)
+
+── literal:invoice_sin_sellar · 1 usos
+   src/modules/invoicing/domain/portonDocumento.ts:43 · en (nivel de módulo)
+
+TOTAL: 33 usos
+EXIT=0

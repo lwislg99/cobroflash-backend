@@ -10,6 +10,8 @@ import { demoSendBlocked, salidaAMetaBloqueada, MOTIVO_SALIDA_BLOQUEADA } from '
 import type { MotivoExencionDemo } from './whatsappPolicy';
 import {
   recordWaMessage,
+  reservarPlantilla,
+  resolverReservaDePlantilla,
   extractWaMessageId,
   isServiceWindowOpen,
   type WaRelatedType,
@@ -53,6 +55,37 @@ metaHttp.interceptors.request.use((cfg) => {
   asegurarSalidaAMetaPermitida();
   return cfg;
 });
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-1477 · QUÉ PASÓ CON LA LLAMADA A META, CON NOMBRE
+//
+// Los siete envíos acababan igual cuando la llamada fallaba: `{ ok: false, error }`, sin decir
+// cuál de estas tres cosas había pasado. Para quien envía son distintas, y dos son opuestas:
+//
+//   rechazado      · Meta CONTESTÓ que no (un 4xx). El mensaje NO ha salido.
+//   sin_respuesta  · la petición salió y no hay un «no» de Meta: plazo vencido, conexión
+//                    cortada, o un 5xx. El mensaje PUEDE haber salido. Decir «no ha salido» aquí
+//                    es como el profesional acaba mandándolo dos veces.
+//   no_enviado     · la petición NO llegó a salir: la paró `asegurarSalidaAMetaPermitida`.
+//
+// Los nombres son los de `sif.client.ts` (SCRUM-1112), que ya separa lo mismo hacia la AEAT.
+//
+// VA EN UN CAMPO NUEVO, `desenlace`, y no en `reason`, a propósito. `reason` es el motivo que el
+// envío decide ANTES de llamar a Meta, y hay quien lo lee tal cual: lo compara con el diccionario
+// (`SEND_FAILURE_MESSAGES`) o lo escribe en una nota. `error` tampoco cambia. Quien no lea
+// `desenlace` recibe exactamente lo de antes.
+//
+// Todo lo que no es un «no» claro cae en `sin_respuesta`, que es el lado que no duplica. El 408
+// es un 4xx y va ahí también: dice que el plazo venció, no que el mensaje se rechazara.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+export type DesenlaceDeMeta = 'rechazado' | 'sin_respuesta' | 'no_enviado';
+
+function desenlaceDeMeta(err: any): DesenlaceDeMeta {
+  if (err?.message === MOTIVO_SALIDA_BLOQUEADA) return 'no_enviado';
+  const status = Number(err?.response?.status);
+  if (status >= 400 && status < 500 && status !== 408) return 'rechazado';
+  return 'sin_respuesta';
+}
 
 // WA-0b: metadata opcional para el log de mensajes (chip de entrega). No afecta al envío.
 export interface WaLogMeta {
@@ -171,6 +204,13 @@ export type MotivoExencionBaja = 'respuesta-a-entrante';
  * pudo enviar por WhatsApp» — sin texto nuevo.
  */
 export const MOTIVO_BAJA_NO_COMPROBABLE = 'baja_no_comprobable';
+
+/**
+ * SCRUM-1509g · Motivo de una plantilla que no salió porque NO SE PUDO COMPROBAR el tope (la reserva
+ * de SCRUM-1513 lanzó). No es `daily_cap` ni `customer_daily_cap`: no se sabe si el tope está
+ * alcanzado. Mismo trato que la baja sin comprobar: fuera de `SEND_FAILURE_MESSAGES`, sin texto nuevo.
+ */
+export const MOTIVO_TOPE_NO_COMPROBABLE = 'tope_no_comprobable';
 
 /**
  * ¿Hay que cortar este envío por la baja del canal? Devuelve el motivo, o `null` si puede salir.
@@ -299,6 +339,7 @@ export async function sendWhatsAppTemplate(params: {
     if (!params.merchantId) return;
     recordWaMessage({
       merchantId: params.merchantId,
+      toPhone: params.to,
       customerId: params.log?.customerId ?? null,
       type: 'template',
       templateName: params.templateName,
@@ -332,50 +373,9 @@ export async function sendWhatsAppTemplate(params: {
     return { ok: false, reason: corte };
   }
 
-  // A3.2 (PV-WA-CAPS): topes anti-abuso del número compartido, contados sobre
-  // el log WA-0b (WhatsAppMessage). Best-effort: si la BD falla, NO se bloquea.
-  if (params.merchantId) {
-    try {
-      const startOfDay = new Date();
-      startOfDay.setHours(0, 0, 0, 0);
-
-      // Tope por merchant/día (protege el número y el gasto). SCRUM-115: solo cuenta
-      // intentos que LLEGARON a Meta (waMessageId presente) — un fallo de guard o de
-      // credencial no consumió API ni gasto, así que no debe comerse cupo.
-      const sentToday = await prisma.whatsAppMessage.count({
-        where: { merchantId: params.merchantId, type: 'template', createdAt: { gte: startOfDay }, waMessageId: { not: null } },
-      });
-      if (sentToday >= config.WA_DAILY_TEMPLATE_CAP) {
-        // Alerta interna de gasto/uso diario (visible en logs de Railway)
-        console.error(
-          `[WhatsApp][ALERTA] merchant ${params.merchantId} alcanzó el tope diario de plantillas ` +
-          `(${sentToday}/${config.WA_DAILY_TEMPLATE_CAP}); envío BLOQUEADO (A3.2)`,
-        );
-        logFailure('daily_cap');
-        return { ok: false, reason: 'daily_cap' };
-      }
-
-      // J6: tope duro de mensajes-iniciados-por-negocio por CLIENTE y día
-      const customerId = params.log?.customerId;
-      if (customerId) {
-        const toCustomerToday = await prisma.whatsAppMessage.count({
-          where: { merchantId: params.merchantId, customerId, type: 'template', createdAt: { gte: startOfDay }, waMessageId: { not: null } },
-        });
-        if (toCustomerToday >= config.WA_CUSTOMER_DAILY_CAP) {
-          console.warn(
-            `[WhatsApp] J6: cliente ${customerId} ya recibió ${toCustomerToday} plantillas hoy ` +
-            `del merchant ${params.merchantId}; envío BLOQUEADO`,
-          );
-          logFailure('customer_daily_cap');
-          return { ok: false, reason: 'customer_daily_cap' };
-        }
-      }
-    } catch (err: any) {
-      console.error('[WhatsApp] Error comprobando topes A3.2 (no se bloquea):', err?.message || err);
-    }
-  }
-
-  // J7: validar contra la spec aprobada ANTES de llamar a Meta (evita #132000/#132001)
+  // J7: validar contra la spec aprobada ANTES de llamar a Meta (evita #132000/#132001).
+  // SCRUM-1513: va DELANTE de los topes, porque ahora el tope APUNTA una fila: una plantilla que
+  // no va a salir no puede ocupar hueco.
   const invalid = validateTemplateComponents(params.templateName, params.components);
   if (invalid) {
     console.error('[WhatsApp] Plantilla inválida, envío abortado:', invalid);
@@ -383,22 +383,85 @@ export async function sendWhatsAppTemplate(params: {
     return { ok: false, error: `template_invalid: ${invalid}` };
   }
 
+  // A3.2 (PV-WA-CAPS) y J6: topes anti-abuso del número compartido, contados sobre el log WA-0b
+  // (WhatsAppMessage). SCRUM-1513: la pregunta y la fila van juntas, bajo el cerrojo del comercio
+  // (`reservarPlantilla`). Si cabe, la fila queda apuntada en `queued` ANTES de hablar con Meta, y
+  // se resuelve al volver. SCRUM-1509g (fundador, c.19620: «Ok que el tope bloquee»): si la reserva
+  // no se puede hacer —la base no contesta al leer o al apuntar—, la plantilla NO sale. Antes era
+  // best-effort y salía: con la base rota, 10 recordatorios eran 10 plantillas.
+  let reservaId: number | null = null;
+  if (params.merchantId) {
+    try {
+      const customerId = params.log?.customerId ?? null;
+      const reserva = await reservarPlantilla(prisma, {
+        merchantId: params.merchantId,
+        customerId,
+        toPhone: params.to,
+        templateName: params.templateName,
+        topeComercio: config.WA_DAILY_TEMPLATE_CAP,
+        topeCliente: config.WA_CUSTOMER_DAILY_CAP,
+      });
+      if (!reserva.ok && reserva.reason === 'daily_cap') {
+        // Alerta interna de gasto/uso diario (visible en logs de Railway)
+        console.error(
+          `[WhatsApp][ALERTA] merchant ${params.merchantId} alcanzó el tope diario de plantillas ` +
+          `(${reserva.cuenta}/${reserva.tope}); envío BLOQUEADO (A3.2)`,
+        );
+        logFailure('daily_cap');
+        return { ok: false, reason: 'daily_cap' };
+      }
+      if (!reserva.ok) {
+        // J6: tope duro de mensajes-iniciados-por-negocio por CLIENTE y día
+        console.warn(
+          `[WhatsApp] J6: cliente ${customerId} ya recibió ${reserva.cuenta} plantillas hoy ` +
+          `del merchant ${params.merchantId}; envío BLOQUEADO`,
+        );
+        logFailure('customer_daily_cap');
+        return { ok: false, reason: 'customer_daily_cap' };
+      }
+      reservaId = reserva.id;
+    } catch (err: any) {
+      console.error(
+        `[WhatsApp] NO se pudo comprobar el tope de plantillas del merchant ${params.merchantId}; ` +
+          'envío BLOQUEADO (fail-closed, SCRUM-1509g):',
+        err?.message || err,
+      );
+      logFailure(MOTIVO_TOPE_NO_COMPROBABLE);
+      return { ok: false, reason: MOTIVO_TOPE_NO_COMPROBABLE };
+    }
+  }
+
+  // WA-0b: el envío que salió. Con reserva, la fila ya existe y pasa a `sent`; sin ella, se crea.
+  const registrarEnviado = (data: any) => {
+    if (!params.merchantId) return;
+    const waMessageId = extractWaMessageId(data);
+    if (reservaId !== null) {
+      resolverReservaDePlantilla(prisma, reservaId, {
+        como: 'enviada',
+        waMessageId,
+        relatedType: params.log?.relatedType ?? null,
+        relatedId: params.log?.relatedId ?? null,
+      }).catch(() => {});
+      return;
+    }
+    recordWaMessage({
+      merchantId: params.merchantId,
+      toPhone: params.to,
+      customerId: params.log?.customerId ?? null,
+      type: 'template',
+      templateName: params.templateName,
+      waMessageId,
+      status: 'sent',
+      relatedType: params.log?.relatedType ?? null,
+      relatedId: params.log?.relatedId ?? null,
+    }).catch(() => {});
+  };
+
   // A5.5/A8.4: dry-run — guards pasados, Meta no se toca, log igual
   if (isDryRun()) {
     const data = dryRunData();
     dryRunRecord({ kind: 'template', to: params.to, templateName: params.templateName });
-    if (params.merchantId) {
-      recordWaMessage({
-        merchantId: params.merchantId,
-        customerId: params.log?.customerId ?? null,
-        type: 'template',
-        templateName: params.templateName,
-        waMessageId: extractWaMessageId(data),
-        status: 'sent',
-        relatedType: params.log?.relatedType ?? null,
-        relatedId: params.log?.relatedId ?? null,
-      }).catch(() => {});
-    }
+    registrarEnviado(data);
     return { ok: true, data, dryRun: true } as any;
   }
 
@@ -425,25 +488,27 @@ export async function sendWhatsAppTemplate(params: {
     );
 
     // WA-0b: registrar el envío con el waMessageId que devuelve Meta
-    if (params.merchantId) {
-      recordWaMessage({
-        merchantId: params.merchantId,
-        customerId: params.log?.customerId ?? null,
-        type: 'template',
-        templateName: params.templateName,
-        waMessageId: extractWaMessageId(response.data),
-        status: 'sent',
-        relatedType: params.log?.relatedType ?? null,
-        relatedId: params.log?.relatedId ?? null,
-      }).catch(() => {});
-    }
+    registrarEnviado(response.data);
 
     return { ok: true, data: response.data };
   } catch (err: any) {
     console.error('[WhatsApp] Error enviando mensaje:', err?.response?.data || err?.message);
     const errMsg = err?.response?.data ? JSON.stringify(err.response.data) : String(err?.message ?? 'error');
-    logFailure(errMsg);
-    return { ok: false, error: err?.response?.data || err?.message };
+    if (reservaId === null) {
+      logFailure(errMsg);
+    } else if (desenlaceDeMeta(err) === 'sin_respuesta') {
+      // P2: no se sabe si salió. La reserva se queda como está y sigue ocupando su hueco.
+      resolverReservaDePlantilla(prisma, reservaId, { como: 'sin_respuesta', error: errMsg }).catch(() => {});
+    } else {
+      // P1: Meta dijo que no, o la petición no llegó a salir. Devuelve el hueco.
+      resolverReservaDePlantilla(prisma, reservaId, {
+        como: 'rechazada',
+        error: errMsg,
+        relatedType: params.log?.relatedType ?? null,
+        relatedId: params.log?.relatedId ?? null,
+      }).catch(() => {});
+    }
+    return { ok: false, error: err?.response?.data || err?.message, desenlace: desenlaceDeMeta(err) };
   }
 }
 
@@ -466,7 +531,7 @@ export async function sendWhatsAppWindowFirst(params: {
   sinPlantilla?: boolean;
   template: { templateName: string; languageCode?: string; components?: any[] };
   log?: WaLogMeta;
-}): Promise<{ ok: boolean; via: 'window' | 'template' | 'none'; reason?: string; error?: any; data?: any }> {
+}): Promise<{ ok: boolean; via: 'window' | 'template' | 'none'; reason?: string; error?: any; data?: any; desenlace?: DesenlaceDeMeta }> {
   const customerId = params.customerId ?? params.log?.customerId ?? null;
 
   // J3: la baja del canal manda también sobre los textos de ventana
@@ -478,6 +543,7 @@ export async function sendWhatsAppWindowFirst(params: {
     // no tiene NINGÚN otro sitio donde ver este fallo si no queda aquí.
     recordWaMessage({
       merchantId: params.merchantId,
+      toPhone: params.to,
       customerId,
       type: 'service',
       templateName: params.template.templateName,
@@ -488,6 +554,9 @@ export async function sendWhatsAppWindowFirst(params: {
     }).catch(() => {});
     return { ok: false, via: 'none', reason: corte };
   }
+  // SCRUM-1436: lo que devolvió el envío por ventana cuando la ventana estaba ABIERTA y aun así
+  // no salió. `null` = no se llegó a intentar (ventana cerrada, o sin cliente al que mirársela).
+  let falloEnVentana: { reason?: string; error?: any; desenlace?: DesenlaceDeMeta } | null = null;
   if (customerId && (await isServiceWindowOpen(params.merchantId, customerId))) {
     // A23: si el llamador da windowCta, la ventana viaja como BOTÓN-ENLACE (sin URL cruda);
     // si no, texto libre como siempre. En ambos casos = service message (0 €).
@@ -508,6 +577,7 @@ export async function sendWhatsAppWindowFirst(params: {
     if (text.ok) {
       recordWaMessage({
         merchantId: params.merchantId,
+        toPhone: params.to,
         customerId,
         type: 'service',
         templateName: params.template.templateName, // la plantilla que NO se pagó
@@ -519,6 +589,7 @@ export async function sendWhatsAppWindowFirst(params: {
       }).catch(() => {});
       return { ok: true, via: 'window' };
     }
+    falloEnVentana = text as { reason?: string; error?: any; desenlace?: DesenlaceDeMeta };
     console.warn('[WhatsApp] A5.2: ventana abierta pero el texto falló; fallback a plantilla');
   }
 
@@ -537,7 +608,20 @@ export async function sendWhatsAppWindowFirst(params: {
   // OPCIONAL y por defecto NO cambia nada: quien no lo pide sigue cayendo a plantilla como
   // siempre. Aquí NO se decide quién lo pide — eso depende del ROL del presupuesto, que es
   // schema del fundador y está pendiente.
+  //
+  // SCRUM-1436 · LA DECISIÓN ES LA MISMA; LO QUE CAMBIA ES EL MOTIVO QUE SE CUENTA. Aquí se llega
+  // por dos caminos y antes los dos decían `ventana_cerrada`: con la ventana cerrada (cierto) y
+  // con la ventana ABIERTA y el texto fallido. En el segundo el profesional leía «Tu cliente no
+  // ha escrito en 24 h» de un cliente que acababa de escribirle. `sinPlantilla` es una opción del
+  // llamador, no el estado de la ventana: el estado es `falloEnVentana`. Si el envío trae su
+  // propio motivo (demo, baja, sin configurar) sube ése; si no, el genérico que ya existía.
   if (params.sinPlantilla) {
+    if (falloEnVentana) {
+      return {
+        ok: false, via: 'none', reason: falloEnVentana.reason ?? 'whatsapp_send_failed', error: falloEnVentana.error,
+        ...(falloEnVentana.desenlace ? { desenlace: falloEnVentana.desenlace } : {}), // SCRUM-1477
+      };
+    }
     return { ok: false, via: 'none', reason: 'ventana_cerrada' };
   }
 
@@ -549,6 +633,12 @@ export async function sendWhatsAppWindowFirst(params: {
     languageCode: params.template.languageCode,
     components: params.template.components,
   });
+  // SCRUM-1477: aquí puede haber habido DOS intentos, el de ventana y el de plantilla. Si el de
+  // ventana quedó sin respuesta, ese mensaje puede haber salido, y que después Meta rechace la
+  // plantilla (o que la pare un tope) no lo cambia: el conjunto no puede decir «no ha salido».
+  if (!result.ok && falloEnVentana?.desenlace === 'sin_respuesta') {
+    return { ...result, via: 'template', desenlace: 'sin_respuesta' };
+  }
   return { ...result, via: 'template' };
 }
 
@@ -594,6 +684,7 @@ export async function sendWhatsAppText(params: {
     if (!params.merchantId) return;
     recordWaMessage({
       merchantId: params.merchantId,
+      toPhone: params.to,
       customerId: params.log?.customerId ?? null,
       type: 'service',
       status: 'failed',
@@ -651,7 +742,7 @@ export async function sendWhatsAppText(params: {
     console.error('[WhatsApp] Error enviando texto:', err?.response?.data || err?.message);
     const errMsg = err?.response?.data ? JSON.stringify(err.response.data) : String(err?.message ?? 'error');
     logFailure(errMsg);
-    return { ok: false, error: err?.response?.data || err?.message };
+    return { ok: false, error: err?.response?.data || err?.message, desenlace: desenlaceDeMeta(err) };
   }
 }
 
@@ -679,6 +770,7 @@ export async function sendWhatsAppButtons(params: {
     if (!params.merchantId) return;
     recordWaMessage({
       merchantId: params.merchantId,
+      toPhone: params.to,
       customerId: params.log?.customerId ?? null,
       type: 'service',
       status: 'failed',
@@ -691,6 +783,7 @@ export async function sendWhatsAppButtons(params: {
     if (!params.merchantId) return;
     recordWaMessage({
       merchantId: params.merchantId,
+      toPhone: params.to,
       customerId: params.log?.customerId ?? null,
       type: 'service',
       waMessageId,
@@ -756,7 +849,7 @@ export async function sendWhatsAppButtons(params: {
   } catch (err: any) {
     console.error('[WhatsApp] Error enviando botones:', err?.response?.data || err?.message);
     logFailure(err?.response?.data ? JSON.stringify(err.response.data) : String(err?.message ?? 'error'));
-    return { ok: false, error: err?.response?.data || err?.message };
+    return { ok: false, error: err?.response?.data || err?.message, desenlace: desenlaceDeMeta(err) };
   }
 }
 
@@ -782,6 +875,7 @@ export async function sendWhatsAppList(params: {
     if (!params.merchantId) return;
     recordWaMessage({
       merchantId: params.merchantId,
+      toPhone: params.to,
       customerId: params.log?.customerId ?? null,
       type: 'service',
       status: 'failed',
@@ -794,6 +888,7 @@ export async function sendWhatsAppList(params: {
     if (!params.merchantId) return;
     recordWaMessage({
       merchantId: params.merchantId,
+      toPhone: params.to,
       customerId: params.log?.customerId ?? null,
       type: 'service',
       waMessageId,
@@ -865,7 +960,7 @@ export async function sendWhatsAppList(params: {
   } catch (err: any) {
     console.error('[WhatsApp] Error enviando lista:', err?.response?.data || err?.message);
     logFailure(err?.response?.data ? JSON.stringify(err.response.data) : String(err?.message ?? 'error'));
-    return { ok: false, error: err?.response?.data || err?.message };
+    return { ok: false, error: err?.response?.data || err?.message, desenlace: desenlaceDeMeta(err) };
   }
 }
 
@@ -894,6 +989,7 @@ export async function sendWhatsAppCtaUrl(params: {
     if (!params.merchantId) return;
     recordWaMessage({
       merchantId: params.merchantId,
+      toPhone: params.to,
       customerId: params.log?.customerId ?? null,
       type: 'service',
       status: 'failed',
@@ -906,6 +1002,7 @@ export async function sendWhatsAppCtaUrl(params: {
     if (!params.merchantId) return;
     recordWaMessage({
       merchantId: params.merchantId,
+      toPhone: params.to,
       customerId: params.log?.customerId ?? null,
       type: 'service',
       waMessageId,
@@ -958,7 +1055,7 @@ export async function sendWhatsAppCtaUrl(params: {
   } catch (err: any) {
     console.error('[WhatsApp] Error enviando cta_url:', err?.response?.data || err?.message);
     logFailure(err?.response?.data ? JSON.stringify(err.response.data) : String(err?.message ?? 'error'));
-    return { ok: false, error: err?.response?.data || err?.message };
+    return { ok: false, error: err?.response?.data || err?.message, desenlace: desenlaceDeMeta(err) };
   }
 }
 
@@ -984,6 +1081,7 @@ export async function sendWhatsAppDocument(params: {
     if (!params.merchantId) return;
     recordWaMessage({
       merchantId: params.merchantId,
+      toPhone: params.to,
       customerId: params.log?.customerId ?? null,
       type: 'service',
       status: 'failed',
@@ -996,6 +1094,7 @@ export async function sendWhatsAppDocument(params: {
     if (!params.merchantId) return;
     recordWaMessage({
       merchantId: params.merchantId,
+      toPhone: params.to,
       customerId: params.log?.customerId ?? null,
       type: 'service',
       waMessageId,
@@ -1044,7 +1143,7 @@ export async function sendWhatsAppDocument(params: {
   } catch (err: any) {
     console.error('[WhatsApp] Error enviando documento:', err?.response?.data || err?.message);
     logFailure(err?.response?.data ? JSON.stringify(err.response.data) : String(err?.message ?? 'error'));
-    return { ok: false, error: err?.response?.data || err?.message };
+    return { ok: false, error: err?.response?.data || err?.message, desenlace: desenlaceDeMeta(err) };
   }
 }
 
@@ -1067,6 +1166,7 @@ export async function sendWhatsAppLocationRequest(params: {
     if (!params.merchantId) return;
     recordWaMessage({
       merchantId: params.merchantId,
+      toPhone: params.to,
       customerId: params.log?.customerId ?? null,
       type: 'service',
       status: 'failed',
@@ -1079,6 +1179,7 @@ export async function sendWhatsAppLocationRequest(params: {
     if (!params.merchantId) return;
     recordWaMessage({
       merchantId: params.merchantId,
+      toPhone: params.to,
       customerId: params.log?.customerId ?? null,
       type: 'service',
       waMessageId,
@@ -1129,7 +1230,7 @@ export async function sendWhatsAppLocationRequest(params: {
   } catch (err: any) {
     console.error('[WhatsApp] Error enviando location_request:', err?.response?.data || err?.message);
     logFailure(err?.response?.data ? JSON.stringify(err.response.data) : String(err?.message ?? 'error'));
-    return { ok: false, error: err?.response?.data || err?.message };
+    return { ok: false, error: err?.response?.data || err?.message, desenlace: desenlaceDeMeta(err) };
   }
 }
 

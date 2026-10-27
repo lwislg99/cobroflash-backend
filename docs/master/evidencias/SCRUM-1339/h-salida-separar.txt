@@ -1,0 +1,20 @@
+POBLACION: 138 filas · 50 medidos · 28 con ausentes
+bloques: 52 · trozos sin parsear: 0 · avisos «y N más»: 0
+suma de ausentes en bloques: 587 (el registro suma 587)
+por forma × entrada de fichero × job: {
+ "cola · entrada=no · job success · tap_fail=0": "46 bloques · 519 casos · 24 runs",
+ "cola · entrada=no · job failure · tap_fail=>0": "3 bloques · 36 casos · 2 runs",
+ "entero · entrada=si · job failure · tap_fail=0": "2 bloques · 16 casos · 2 runs",
+ "cola · entrada=no · job failure · tap_fail=0": "1 bloques · 16 casos · 1 runs"
+}
+por entrada de fichero: {"entrada=no":"50 bloques · 571 casos · 27 runs","entrada=si":"2 bloques · 16 casos · 2 runs"}
+CONTROL DE CERO (marca inventada «el fichero NO SALE en el TAP»): 0
+runs con ausentes: 28 · TODOS sus bloques con entrada de fichero: 1 · ninguno: 26 · mezcla: 1
+--- detalle de los bloques con entrada de fichero o de jobs en failure ---
+28222517 2026-10-06T19:39:30.000Z job=failure tap_fail=1 scrum813-trinquete-de-zona.test.mjs faltan 3/43 cola entrada=false
+f30b1a40 2026-10-02T16:23:14.000Z job=failure tap_fail=0 scrum237-negacion-respaldada.test.mjs faltan 8/8 entero entrada=true
+643e9a65 2026-10-02T13:01:59.000Z job=failure tap_fail=1 vigia-atascados.test.mjs faltan 24/64 cola entrada=false
+643e9a65 2026-10-02T13:01:59.000Z job=failure tap_fail=1 scrum1262-la-baja-corta-todas-las-vias.test.mjs faltan 9/35 cola entrada=false
+7779b0cb 2026-10-02T05:34:57.000Z job=failure tap_fail=0 scrum834-puerta-avisador-rojo.test.mjs faltan 16/53 cola entrada=false
+7779b0cb 2026-10-02T05:34:57.000Z job=failure tap_fail=0 scrum237-negacion-respaldada.test.mjs faltan 8/8 entero entrada=true
+EXIT=0

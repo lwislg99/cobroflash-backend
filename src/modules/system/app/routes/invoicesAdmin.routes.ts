@@ -1,6 +1,6 @@
 // src/modules/system/app/routes/invoicesAdmin.routes.ts
 import { Router, type Request } from 'express';
-import { formatMoneyEs } from '../../../../core/utils/utils'; // SCRUM-931: la forma de la casa (A6.6)
+import { formatMoneyEs, formatImporteEs } from '../../../../core/utils/utils'; // SCRUM-931: la forma de la casa (A6.6)
 // SCRUM-1397 · qué facturas ve quien pregunta: UNA puerta para la lista, la ficha y el PDF.
 import { whereFacturasVisibles, puedeVerLaFactura, type QuienPide } from '../../../../core/documentos/accesoALaFactura';
 // SCRUM-597 (DOC-07 · P-DOC-3): el coste congelado en la línea es economía del negocio.
@@ -20,13 +20,12 @@ import {
   getInvoiceDetailAdmin,
   updateInvoiceStatusAdmin,
   NO_SE_MARCAN_PAGADAS_EN_LOTE,
-  markInvoicePaidAdmin,
-  markInvoicePendingAdmin,
   setInvoiceTags,
 } from '../../invoiceAdmin';
 
 import { BASE_URL } from '../../../../core/config/env';
 import { prisma } from '../../../../core/db/prisma';
+import { cabeEnColumnaInt } from '../../../../core/validation/enteroDeColumna'; // SCRUM-1379
 import { applyVeriFactu, applyVeriFactuAnulacion } from '../../../invoicing/domain/verifactu.service'; // SCRUM-153
 import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { isDemoMerchant, DEMO_WATERMARK } from '../../../invoicing/domain/emission.service';
@@ -47,8 +46,8 @@ import { ensureInvoicePdf, ensureChargeReceiptToken } from '../../../../lib/invo
 // SCRUM-728 · la sección crítica de la serie saturada: se traduce a un aviso legible en vez
 // de un `internal_error`. NO sube el timeout ni toca el cerrojo.
 import { esCerrojoSaturado, cuerpoCerrojoSaturado, ESTADO_CERROJO_SATURADO } from '../../../invoicing/domain/cerrojoSaturado';
-import { sendSuccessBody, sendFailureBody, SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../../lib/sendOutcome'; // SCRUM-126
-import { esErrorSinSellar, ERROR_SIN_SELLAR } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206
+import { sendSuccessBody, SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../../lib/sendOutcome'; // SCRUM-126
+import { esErrorSinSellar, ERROR_SIN_SELLAR, type MerchantPorton } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206
 import { sellarTrasEmision, sellarAnulacionTrasEmision, SELLADO_HECHO, puedeProducirDocumento, ERROR_PDF_SIN_SELLAR } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 import { resolverFechaDeCobro } from '../../../billing/domain/fechaDeCobro'; // SCRUM-397
 import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-1093 (bulk-paid)
@@ -66,7 +65,7 @@ import {
   modoDocumentoSuelto, validarFacturaSuelta,
   ERROR_MODO_SIN_FACTURA, ERROR_CLIENTE_INVALIDO,
 } from '../../../invoicing/domain/facturaSuelta'; // SCRUM-289 (A0.3)
-
+import { falloDeEnvioDeFactura } from '../../../invoicing/domain/envioQueNoSale'; // SCRUM-1478
 
 const router = Router();
 
@@ -242,7 +241,7 @@ router.post('/', requireRole('admin'), async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) {
+    if (!cabeEnColumnaInt(id)) {
       return res.status(400).json({ error: 'invalid_id' });
     }
 
@@ -306,7 +305,7 @@ router.post('/:id/payment-anomaly', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
     const amount = Number(req.body?.amount);
-    if (!Number.isInteger(id) || !Number.isFinite(amount) || amount < 0) {
+    if (!cabeEnColumnaInt(id) || !Number.isFinite(amount) || amount < 0) {
       return res.status(400).json({ error: 'invalid_input' });
     }
     const invoice = await prisma.invoice.findFirst({
@@ -319,8 +318,8 @@ router.post('/:id/payment-anomaly', requireRole('admin'), async (req, res) => {
     const diff = Math.round((amount - total) * 100) / 100;
     const kind = diff < 0 ? 'parcial' : 'sobrepago';
     const detail = diff < 0
-      ? `Recibidos ${amount.toFixed(2)} de ${total.toFixed(2)} ${invoice.currency} (faltan ${Math.abs(diff).toFixed(2)}). La factura SIGUE pendiente — decide: esperar el resto o ajustar con el cliente (runbook V4).`
-      : `Recibidos ${amount.toFixed(2)} ${invoice.currency} (sobran ${diff.toFixed(2)}). Anota la devolución manual de la diferencia antes de marcarla pagada (runbook V5).`;
+      ? `Recibidos ${formatImporteEs(amount)} de ${formatMoneyEs(total, invoice.currency)} (faltan ${formatImporteEs(Math.abs(diff))}). La factura SIGUE pendiente — decide: esperar el resto o ajustar con el cliente (runbook V4).`
+      : `Recibidos ${formatMoneyEs(amount, invoice.currency)} (sobran ${formatImporteEs(diff)}). Anota la devolución manual de la diferencia antes de marcarla pagada (runbook V5).`;
 
     recordCustomerEvent({
       merchantId: req.merchantId,
@@ -345,7 +344,7 @@ router.post('/:id/payment-anomaly', requireRole('admin'), async (req, res) => {
 router.get('/:id/dispute-package', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     const invoice = await prisma.invoice.findFirst({
       where: { id, merchantId: req.merchantId },
@@ -359,6 +358,9 @@ router.get('/:id/dispute-package', requireRole('admin'), async (req, res) => {
     if (!invoice) return res.status(404).json({ error: 'not_found' });
 
     const quote = invoice.quote;
+    // SCRUM-1576b · el paquete es la evidencia de ESTE documento: su cliente es el congelado al
+    // emitir (nombre, teléfono y email), no la ficha de hoy. La viva sólo si es anterior al escritor.
+    const cliente = clienteDelDocumento(invoice, invoice.customer);
     const messages = await prisma.whatsAppMessage.findMany({
       where: {
         merchantId: req.merchantId,
@@ -374,7 +376,7 @@ router.get('/:id/dispute-package', requireRole('admin'), async (req, res) => {
 
     const esc = (v: unknown) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     const fD = (d: Date | string | null | undefined) => d ? new Date(d).toLocaleString('es-ES', { dateStyle: 'long', timeStyle: 'short' }) : '—';
-    const money = (n: unknown, cur?: string) => `${Number(n ?? 0).toFixed(2)} ${cur || invoice.currency}`;
+    const money = (n: unknown, cur?: string) => formatMoneyEs(Number(n ?? 0), cur || invoice.currency);
     const ev = (quote?.evidence ?? {}) as Record<string, unknown>;
 
     const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"/>
@@ -411,7 +413,7 @@ router.get('/:id/dispute-package', requireRole('admin'), async (req, res) => {
   <tr><th>Emitido</th><td>${fD(invoice.createdAt)}</td></tr>
   <tr><th>Importe</th><td>${money(invoice.total)}</td></tr>
   <tr><th>Pagado el</th><td>${fD(invoice.paidAt)}</td></tr>
-  <tr><th>Cliente</th><td>${esc(invoice.customer?.name)} · ${esc(invoice.customer?.phone ?? '')} ${esc(invoice.customer?.email ?? '')}</td></tr>
+  <tr><th>Cliente</th><td>${esc(cliente.name)} · ${esc(cliente.phone ?? '')} ${esc(cliente.email ?? '')}</td></tr>
 </table>
 
 <h2>3 · Cobro y referencia del procesador</h2>
@@ -457,7 +459,7 @@ PDF del presupuesto firmado y del justificante: disponibles desde el panel (se a
  */
 router.post('/bulk-paid', requireRole('admin'), async (req, res) => {
   try {
-    const ids: number[] = Array.isArray(req.body?.ids) ? req.body.ids.map(Number).filter(Number.isInteger) : [];
+    const ids: number[] = Array.isArray(req.body?.ids) ? req.body.ids.map(Number).filter(cabeEnColumnaInt) : [];
     if (ids.length === 0) return res.status(400).json({ error: 'no_ids' });
     if (ids.length > 100) return res.status(400).json({ error: 'too_many', max: 100 });
 
@@ -513,7 +515,7 @@ router.post('/bulk-paid', requireRole('admin'), async (req, res) => {
  * 🔴 ESTO NO ABRE UNA PUERTA DE EDICION SOBRE UNA FACTURA EMITIDA (regla 29). Escribe UN campo
  * que no es el documento —ni numero, ni total, ni lineas, ni sello, ni PDF— y el porque, con sus
  * medidas, vive junto a `setInvoiceTags` en `invoiceAdmin.ts`. Es la misma familia que
- * `/:id/pay` o `/:id/status`, que ya escriben sobre facturas emitidas sin tocarlas.
+ * `/:id/status`, que ya escribe sobre facturas emitidas sin tocarlas.
  *
  * ⚠️ Y NO ROZA EL GUARD DE SCRUM-289b, que vigila otra cosa: que el ENTRYPOINT DE ALTA
  * (`POST /`) no edite ni borre, y que la COLECCION no acepte patch/put/delete. Esta ruta va por
@@ -522,7 +524,7 @@ router.post('/bulk-paid', requireRole('admin'), async (req, res) => {
 router.put('/:id/tags', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
     // 🔴 SE VALIDA ESTRICTO, Y NO ES CELO: `normalizarTags` convierte en `null` cualquier cosa que
     // no sea una lista —es su suelo, y es el correcto para un formulario—, pero en ESTA ruta ese
     // suelo seria destructivo: un cuerpo mal formado BORRARIA las etiquetas y devolveria `ok`. Un
@@ -546,7 +548,7 @@ router.put('/:id/tags', requireRole('admin'), async (req, res) => {
 router.put('/:id/status', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) {
+    if (!cabeEnColumnaInt(id)) {
       return res.status(400).json({ error: 'invalid_id' });
     }
 
@@ -558,7 +560,25 @@ router.put('/:id/status', requireRole('admin'), async (req, res) => {
     // SCRUM-441 · CÓMO dice el profesional que entró el dinero. OPCIONAL: si el cuerpo no lo trae,
     // esta ruta hace exactamente lo de siempre. Lo que llegue lo valida el DOMINIO contra `PAID_VIA`
     // (regla 22) — aquí no se reimplementa el conjunto cerrado, que es como se acaba teniendo dos.
-    const updated = await updateInvoiceStatusAdmin(id, status, req.merchantId, req.body?.paidVia);
+    //
+    // SCRUM-1609 (BUGS.md P3-PAIDAT-BO) · CUÁNDO entró el dinero, con el MISMO mecanismo que
+    // `bulk-paid` (SCRUM-397, criterio firmado: no futura, sin límite hacia atrás) y la misma zona
+    // del merchant (SCRUM-1093). Hasta aquí esta puerta escribía `new Date()` aunque el lote sí
+    // aceptara la fecha: conciliar UNA transferencia vieja la fechaba hoy. Solo se mira al marcar
+    // `paid` y solo si el cuerpo la trae: sin ella, esta ruta hace exactamente lo de antes —ni
+    // siquiera lee el merchant—.
+    const declarada = req.body?.paidAt;
+    let fecha: { fecha: Date; origen: 'declarada' | 'ahora' } | null = null;
+    if (status === 'paid' && declarada !== undefined && declarada !== null && declarada !== '') {
+      const m = await prisma.merchant.findUnique({ where: { id: req.merchantId }, select: { timezone: true } });
+      const r = resolverFechaDeCobro(declarada, new Date(), zonaDelMerchant(m));
+      if (!r.ok) return res.status(400).json({ error: r.error, message: r.message });
+      fecha = r;
+    }
+    // Sin fecha declarada, la llamada es LITERALMENTE la de antes (la ancla `scrum441` por su texto).
+    const updated = fecha
+      ? await updateInvoiceStatusAdmin(id, status, req.merchantId, req.body?.paidVia, fecha.fecha)
+      : await updateInvoiceStatusAdmin(id, status, req.merchantId, req.body?.paidVia);
     if (!updated) {
       return res.status(404).json({ error: 'not_found' });
     }
@@ -570,7 +590,13 @@ router.put('/:id/status', requireRole('admin'), async (req, res) => {
         merchantId: req.merchantId, teamMemberId: req.teamMemberId ?? null,
         action: status === 'paid' ? 'marcar_pagado_manual' : 'deshacer_pago',
         entityType: 'invoice', entityId: id,
-        meta: { via: 'status', number: (updated as any).number ?? null }, ip: requestIp(req),
+        // SCRUM-1609: como el lote, queda escrito qué fecha se guardó y si la AFIRMÓ una persona.
+        meta: {
+          via: 'status', number: (updated as any).number ?? null,
+          ...(status === 'paid'
+            ? { paidAt: (updated as any).paidAt ? new Date((updated as any).paidAt).toISOString() : null, fechaOrigen: fecha?.origen ?? 'ahora' }
+            : {}),
+        }, ip: requestIp(req),
       });
     }
 
@@ -580,54 +606,6 @@ router.put('/:id/status', requireRole('admin'), async (req, res) => {
       return res.status(409).json({ error: 'unpay_not_allowed', message: err.message });
     }
     console.error('[PUT /admin/invoices/:id/status]', err);
-    res.status(500).json({ error: 'internal_error' });
-  }
-});
-
-/**
- * (Opcional) Endpoints legacy pay/unpay si quieres mantenerlos
- */
-router.post('/:id/pay', requireRole('admin'), async (req, res) => {
-  try {
-    const id = Number(req.params.id);
-    if (Number.isNaN(id)) {
-      return res.status(400).json({ error: 'invalid_id' });
-    }
-
-    const updated = await markInvoicePaidAdmin(id, req.merchantId);
-    if (!updated) return res.status(404).json({ error: 'not_found' });
-    if (!(updated as any).__unchanged) recordAudit({ // A11.1 (S2)
-      merchantId: req.merchantId, teamMemberId: req.teamMemberId ?? null,
-      action: 'marcar_pagado_manual', entityType: 'invoice', entityId: id,
-      meta: { via: 'pay' }, ip: requestIp(req),
-    });
-    res.json(updated);
-  } catch (err) {
-    console.error('[POST /admin/invoices/:id/pay]', err);
-    res.status(500).json({ error: 'internal_error' });
-  }
-});
-
-router.post('/:id/unpay', requireRole('admin'), async (req, res) => {
-  try {
-    const id = Number(req.params.id);
-    if (Number.isNaN(id)) {
-      return res.status(400).json({ error: 'invalid_id' });
-    }
-
-    const updated = await markInvoicePendingAdmin(id, req.merchantId);
-    if (!updated) return res.status(404).json({ error: 'not_found' });
-    if (!(updated as any).__unchanged) recordAudit({ // A11.1 (S2)
-      merchantId: req.merchantId, teamMemberId: req.teamMemberId ?? null,
-      action: 'deshacer_pago', entityType: 'invoice', entityId: id,
-      meta: { via: 'unpay' }, ip: requestIp(req),
-    });
-    res.json(updated);
-  } catch (err) {
-    if (err instanceof UnpayNotAllowedError) {
-      return res.status(409).json({ error: 'unpay_not_allowed', message: err.message });
-    }
-    console.error('[POST /admin/invoices/:id/unpay]', err);
     res.status(500).json({ error: 'internal_error' });
   }
 });
@@ -644,12 +622,13 @@ router.post('/:id/unpay', requireRole('admin'), async (req, res) => {
 router.post('/:id/resend-whatsapp', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) {
+    if (!cabeEnColumnaInt(id)) {
       return res.status(400).json({ ok: false, error: 'invalid_id' });
     }
 
     // Lógica compartida (asegura cobro + envía payment_request_es)
-    const r = await sendInvoicePaymentRequest(id);
+    // SCRUM-1514 (regla 2): sólo la factura del comercio de la sesión; la de otro da el 404 de abajo.
+    const r = await sendInvoicePaymentRequest(id, { merchantId: req.merchantId });
     if (!r.ok) {
       // SCRUM-126: precondición real (nunca se intentó el envío) → status real, sin `sent`.
       // Este era el ÚNICO de los 9 endpoints de envío que trataba una política de envío
@@ -668,9 +647,9 @@ router.post('/:id/resend-whatsapp', requireRole('admin'), async (req, res) => {
       // Envío intentado, no salió (wa_opt_out/daily_cap/customer_daily_cap/demo_safe_numbers/
       // charge_creation_*/whatsapp_send_failed) — A20.5 (J5): charge_id/pay_token SIEMPRE
       // presentes para que la UI pueda ofrecer "Copiar enlace" aunque WhatsApp falle.
-      const reason: SendFailureReason =
-        r.reason && r.reason in SEND_FAILURE_MESSAGES ? (r.reason as SendFailureReason) : 'whatsapp_send_failed';
-      return res.status(200).json(sendFailureBody(reason, {
+      const motivo = r.motivoDelEnvio ?? r.reason; // SCRUM-1478: el motivo REAL del envío (baja, tope…), que `reason` aplana
+      const reason: SendFailureReason = motivo && motivo in SEND_FAILURE_MESSAGES ? (motivo as SendFailureReason) : 'whatsapp_send_failed';
+      return res.status(200).json(falloDeEnvioDeFactura(reason, {
         charge_id: r.chargeId ?? null,
         pay_token: r.payToken ?? null, // SCRUM-85: el frontend debe construir /pay/invoice con ESTO, no charge_id
       }));
@@ -695,7 +674,7 @@ router.post('/:id/resend-whatsapp', requireRole('admin'), async (req, res) => {
 router.post('/:id/send-email', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ ok: false, error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ ok: false, error: 'invalid_id' });
 
     const invoice = await prisma.invoice.findFirst({
       where: { id, merchantId: req.merchantId },
@@ -718,7 +697,7 @@ router.post('/:id/send-email', requireRole('admin'), async (req, res) => {
     // hermano de presupuestos (quotesAdmin.routes.ts): 200 + sent:false, salvo que sea
     // realmente la factura la que no existe (defensivo: el caller ya la comprobó arriba).
     if (err?.message === 'invoice_not_found') return res.status(404).json({ ok: false, error: 'not_found' });
-    return res.status(200).json(sendFailureBody('email_send_failed'));
+    return res.status(200).json(falloDeEnvioDeFactura('email_send_failed'));
   }
 });
 
@@ -731,7 +710,7 @@ router.post('/:id/send-email', requireRole('admin'), async (req, res) => {
 router.post('/:id/send-reminder', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     const invoice = await prisma.invoice.findFirst({
       where: { id, merchantId: req.merchantId },
@@ -773,6 +752,9 @@ router.post('/:id/send-reminder', requireRole('admin'), async (req, res) => {
           currency: invoice.currency,
           urlToken: payToken as string,
         }),
+        // SCRUM-1509k (fundador, SCRUM-1509 c.20569: «Pasar el cliente»): sin el cliente, el tope
+        // por cliente y día no se le preguntaba a este botón (uno de los cuatro de SCRUM-1509d).
+        log: { customerId: invoice.customerId, relatedType: 'invoice', relatedId: id },
       });
       sent = result.ok;
       if (!result.ok) {
@@ -785,7 +767,7 @@ router.post('/:id/send-reminder', requireRole('admin'), async (req, res) => {
       const result = await sendWhatsAppText({
         to: phone,
         merchantId: invoice.merchantId, // V0-2: demo solo a DEMO_SAFE_NUMBERS
-        text: `Hola ${customerName} 👋, te recordamos que tienes pendiente el pago de la factura *${invoice.number}* por *${importe}* de parte de *${merchantName}*.\n\n¡Gracias!`,
+        text: `Hola ${customerName} 👋, te recordamos que tienes pendiente el pago ${isReceiptNumber(invoice.number) ? 'del justificante' : 'de la factura'} *${invoice.number}* por *${importe}* de parte de *${merchantName}*.\n\n¡Gracias!`,
         // SCRUM-115: si falla, que la fila de WA-0b quede enlazada a ESTA factura/cliente.
         log: { customerId: invoice.customerId, relatedType: 'invoice', relatedId: id },
       });
@@ -811,7 +793,7 @@ router.post('/:id/send-reminder', requireRole('admin'), async (req, res) => {
     }
 
     const extra = { via: payUrl ? 'template' : 'text', phone };
-    return res.json(sent ? sendSuccessBody(extra) : sendFailureBody(failReason, extra));
+    return res.json(sent ? sendSuccessBody(extra) : falloDeEnvioDeFactura(failReason, extra));
   } catch (err) {
     console.error('[POST /admin/invoices/:id/send-reminder]', err);
     return res.status(500).json({ ok: false, error: 'internal_error' });
@@ -870,7 +852,7 @@ const NO_SE_ANULA_SI_NO_ESTA_PENDIENTE = {
 router.post('/:id/annul', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     const motivo = String(req.body?.motivo || '');
     if (!(MOTIVOS_ANULACION as readonly string[]).includes(motivo)) {
@@ -911,42 +893,23 @@ router.post('/:id/annul', requireRole('admin'), async (req, res) => {
       where: { id: req.merchantId }, select: { taxId: true, country: true },
     });
 
-    // ── 1) EL SELLADO, PRIMERO Y FUERA DE TODA TRANSACCIÓN (SCRUM-173/177) ──────────────────
-    // `applyVeriFactuAnulacion` extiende LA MISMA cadena que el alta y trae su propio cerrojo
-    // por merchant; llamarla dentro de una `$transaction` lanza a propósito. Va ANTES del cambio
-    // de estado porque el orden inverso dejaría una factura marcada como anulada sin registro
-    // que lo respalde: una huella sin estado se reintenta, un estado sin huella no se deshace.
-    let sellada = false;
-    if (merchant?.country === 'ES' && merchant?.taxId) {
-      try {
-        await sellarAnulacionTrasEmision(invoice, merchant.taxId, prisma); // SCRUM-205: punto unico
-        sellada = true;
-      } catch (e: any) {
-        console.error(`[annul] sellado de anulación falló en ${invoice.number}:`, e?.message || e);
-        return res.status(409).json({
-          error: 'anulacion_no_sellada',
-          message: 'No se pudo registrar la anulación en la cadena VeriFactu, así que no se ha anulado nada. Inténtalo de nuevo.',
-        });
-      }
-    }
-
-    // ── 2) ESTADO + LIBERACIÓN, en UNA transacción ──────────────────────────────────────────
+    // ── SELLADO + ESTADO + LIBERACIÓN, en UNA transacción (SCRUM-1314b) ─────────────────────
     //
-    // 🔴 SCRUM-1303 · `pending` VA DENTRO DEL `where`. La guarda de arriba miró el estado ANTES del
-    // sellado, y el sellado tarda: si en ese hueco entra un cobro, la factura ya está `paid` al
-    // escribir. Antes se escribía `annulled` encima de una factura cobrada. Ahora Prisma no
-    // encuentra la fila (P2025), la transacción entera se deshace —no se liberan albaranes ni se
+    // 🔴 SCRUM-1303 · `pending` VA DENTRO DEL `where`. La guarda de arriba miró el estado antes, y
+    // el sellado tarda: si en ese hueco entra un cobro, la factura ya está `paid` al escribir. Prisma
+    // no encuentra la fila (P2025), la transacción entera se deshace —no se liberan albaranes ni se
     // toca el libro— y se contesta el mismo 409 de la guarda de entrada.
     //
-    // ⚠️ LO QUE ESTO NO ARREGLA, declarado en `docs/BUGS.md` (P1-1303): el eslabón de anulación ya
-    // quedó sellado en el paso 1, así que la factura queda `paid` CON `vfAnulHash`. Ese eslabón ya
-    // existía antes de este arreglo cada vez que saltaba la carrera; lo que cambia es que el estado
-    // deja de taparlo. Qué hacer con él es del fundador (tocar el sellado es STOP, regla 40). Y no
-    // queda constancia en la auditoría: el `console.error` de abajo NO lo es.
-    let liberados;
-    try {
-    liberados = await prisma.$transaction(async (tx) => {
-      await tx.invoice.update({ where: { id: invoice.id, status: 'pending' }, data: { status: 'annulled' } });
+    // 🔴 SCRUM-1314b (GO del fundador, SCRUM-1314 c.20754) · Y EL SELLADO VA EN ESA MISMA ESCRITURA.
+    // Antes `applyVeriFactuAnulacion` sellaba primero y en su propia transacción, así que al perder
+    // la carrera la factura quedaba `paid` CON `vfAnulHash` (P1-1303): un eslabón de anulación sobre
+    // una factura cobrada, que la siguiente alta encadenaba. Ahora la huella y `annulled` son la misma
+    // `update` condicionada, dentro del cerrojo del sellado: van juntas o no va ninguna. Y una factura
+    // que ya tiene `vfAnulHash` no se vuelve a sellar (P2): se conserva su huella.
+    //
+    // Sigue FUERA de toda `$transaction` de la ruta (SCRUM-173/177): trae su propio cerrojo por
+    // merchant y llamarla dentro de otra lanza a propósito; la liberación entra en la suya.
+    const liberar = async (tx: any) => {
       // P10 (criterio nuevo): los albaranes que consolidó vuelven a estar pendientes.
       const albs = await tx.albaran.updateMany({
         where: { merchantId: req.merchantId, invoiceId: invoice.id },
@@ -957,15 +920,32 @@ router.post('/:id/annul', requireRole('admin'), async (req, res) => {
       const libro = await tx.albaranLineaFacturada.deleteMany({
         where: { merchantId: req.merchantId, invoiceId: invoice.id },
       });
-      return { albaranes: albs.count, lineasLibro: libro.count };
-    });
-    } catch (e) {
-      if (!esFilaQueNoCasa(e)) throw e;
-      console.error(
-        `[annul] SCRUM-1303 ${invoice.number} dejó de estar pendiente durante la anulación: no se anula` +
-          (sellada ? ' (el eslabón de anulación YA quedó sellado: P1-1303)' : ''),
-      );
-      return res.status(409).json(NO_SE_ANULA_SI_NO_ESTA_PENDIENTE);
+      return { albaranes: albs.count as number, lineasLibro: libro.count as number };
+    };
+
+    const sellada = merchant?.country === 'ES' && !!merchant?.taxId;
+    let liberados;
+    try {
+      if (sellada) {
+        // SCRUM-205: punto único de sellado.
+        liberados = await sellarAnulacionTrasEmision(invoice, merchant!.taxId!, prisma, { enLaMismaTransaccion: liberar });
+      } else {
+        liberados = await prisma.$transaction(async (tx) => {
+          await tx.invoice.update({ where: { id: invoice.id, status: 'pending' }, data: { status: 'annulled' } });
+          return liberar(tx);
+        });
+      }
+    } catch (e: any) {
+      if (esFilaQueNoCasa(e)) {
+        console.error(`[annul] SCRUM-1303 ${invoice.number} dejó de estar pendiente durante la anulación: no se anula ni se sella`);
+        return res.status(409).json(NO_SE_ANULA_SI_NO_ESTA_PENDIENTE);
+      }
+      if (!sellada) throw e;
+      console.error(`[annul] sellado de anulación falló en ${invoice.number}:`, e?.message || e);
+      return res.status(409).json({
+        error: 'anulacion_no_sellada',
+        message: 'No se pudo registrar la anulación en la cadena VeriFactu, así que no se ha anulado nada. Inténtalo de nuevo.',
+      });
     }
 
     // SCRUM-207 (D-3): antes esto y la rectificativa R1 compartían `anular_factura`, así que
@@ -1022,7 +1002,7 @@ const MICROCOPY_PENDIENTE_308 = '[PENDIENTE microcopy oficial]';
 router.post('/:id/rectify', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     const original = await prisma.invoice.findFirst({
       where: { id, merchantId: req.merchantId },
@@ -1185,7 +1165,7 @@ router.post('/:id/rectify', requireRole('admin'), async (req, res) => {
 router.post('/:id/regenerate-pdf', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     const invoice = await prisma.invoice.findFirst({
       where: { id, merchantId: req.merchantId },
@@ -1243,6 +1223,7 @@ router.post('/:id/regenerate-pdf', requireRole('admin'), async (req, res) => {
       rectifiesNumber: invoice.rectifies?.number ?? null,
       watermark: isDemoMerchant(merchant) ? DEMO_WATERMARK : null,
       stageLabel: invoice.stageLabel, // SCRUM-33
+      zona: merchant.timezone, // SCRUM-1470c: el día de la «Fecha:», el de su registro
     });
 
     await prisma.invoice.update({
@@ -1264,13 +1245,20 @@ router.post('/:id/regenerate-pdf', requireRole('admin'), async (req, res) => {
  * Así "Abrir PDF" siempre sirve un PDF real, sin enlazar nunca a 'PENDING_PDF'.
  */
 router.get('/:id/pdf', async (req, res) => {
+  // SCRUM-1404g · fuera del `try`: el `catch` necesita el número y el comercio de la factura para
+  // saber si un pendiente de sellado es de los que entran en la cadena (`esErrorSinSellar`).
+  let factura: { number: string; merchant: MerchantPorton | null } | null = null;
   try {
     const id = Number(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     // Scope multi-tenant: 404 si no es del merchant.
-    const owned = await prisma.invoice.findFirst({ where: { id, merchantId: req.merchantId }, select: { id: true } });
+    const owned = await prisma.invoice.findFirst({
+      where: { id, merchantId: req.merchantId },
+      select: { id: true, number: true, merchant: { select: { country: true, taxId: true } } },
+    });
     if (!owned) return res.status(404).json({ error: 'not_found' });
+    factura = owned;
     // SCRUM-1397 · y que sea de quien la pide, ANTES de generar nada: el PDF de una ajena no se
     // llega a producir.
     if (!(await puedeVerLaFactura(quienPide(req), id))) return res.status(404).json({ error: 'not_found' });
@@ -1286,11 +1274,12 @@ router.get('/:id/pdf', async (req, res) => {
     console.error('[GET /admin/invoices/:id/pdf]', err);
     // SCRUM-206: no es un fallo de generación, y llamarlo así manda a quien depure al sitio
     // equivocado. La factura existe y NO está registrada: 409 con su código.
-    if (esErrorSinSellar(err)) {
+    if (esErrorSinSellar(err, factura?.number, factura?.merchant)) {
       return res.status(409).json({
         error: ERROR_SIN_SELLAR,
         // Microcopy OFICIAL: aprobado por el fundador el 30-jul-2026 (regla 30). Lo ve el
         // PROFESIONAL al pulsar «Abrir PDF» de una factura cuyo sellado falló.
+        // Consta en: SCRUM-1502 comentario 18835.
         message: 'Esta factura todavía no está registrada. Se reintenta solo; si sigue así, avísanos.',
       });
     }
@@ -1327,7 +1316,7 @@ router.get('/:id/pdf', async (req, res) => {
 router.patch('/:id/asignados', requireRole('admin'), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     // Tenancy ANTES de escribir (regla 2): el id es un entero consecutivo, así que sin esto se
     // asignarían documentos de otro merchant sabiendo contar.

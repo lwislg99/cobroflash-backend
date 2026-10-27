@@ -260,3 +260,51 @@ está cerrada.
 Cuando SCRUM-929 esté dentro, la vía es el **override por merchant** en `merchants.flags`, nunca la
 variable de entorno. Y el GO tiene que escribirlo el fundador **en el chat de la sesión que lo
 haga**: no se hereda de otra sesión ni vale reenviado por el canal (A19).
+
+---
+
+## SCRUM-911b · (a) de c.19802: el recorrido repetido en STAGING, y el borrador CON IVA
+
+**Medido contra:** `origin/main` = `73e41ab00f727fae5c6c8f1715d6eb6749133502` · 2026-10-15T16:16:02Z
+**Staging servía** `73e41ab00f727fae5c6c8f1715d6eb6749133502` (`/version`, el mismo que producción).
+**Turno de staging** tomado y soltado en la misma tanda («marcador limpio»). Sesión 1. No cambia `src/`.
+
+Lo que pedía el orquestador era el **control positivo de SCRUM-929**: ver que el borrador que crea
+el ciclo sale CON IVA, no que «no falla». Banco: `tests/banco-scrum911/paso6-iva-929.mjs` (un solo
+proceso, con la restauración del fixture en el `finally`) y `paso6b-pantalla.mjs` (sólo lectura).
+
+| acción | resultado |
+|---|---|
+| flag SÓLO para el negocio QA (merchant 2, override de merchant) | funciona · ningún otro merchant con override |
+| presupuesto 320 € + 25 € al 21 % → aceptado → sugerencia → alta del plan | funciona · quote 1915, plan 10 (201) |
+| ciclo con `now` simulado (2028-07-01T10:00Z) y la puerta de planes ajenos | funciona · `due 1, proposed 1` |
+| total del borrador en la BASE | **387,2** (quote 1916, nº 43) |
+| total por la API (`GET /admin/quotes/1916`) | **387,2** |
+| total en PANTALLA (Edge headless, `quotes-detail`) | **«Total: 387,20 €»** · base 320,00 € + IVA 67,20 € (`pantalla-911b-borrador-nuevo.png`) |
+| control: el borrador del 17-sep (#1889), con el MISMO instrumento | **«Total: 320,00 €»**: el instrumento ve el defecto viejo (`pantalla-911b-borrador-17sep.png`) |
+| fixture devuelto | merchant 2 `flags null, trade null`, 0 planes activos en toda la BD, 0 overrides |
+
+**Lo que se tuvo que ajustar, dicho:**
+
+- **1ª pasada: el ciclo dio `customer_cooldown_90d` y no propuso.** El cliente 3927 arrastra un
+  `lastProposedAt` SIMULADO (2028-04-01) de pasadas anteriores, y el enfriamiento de 90 días por
+  cliente es correcto como producto (`maintenance.service.ts:367`). El `now` se mueve pasado el
+  enfriamiento; las fechas de la base no se tocan. Deja de resto el presupuesto 1914 (aceptado) y el
+  plan 9 (inactivo, `nextDueAt` reprogramado por el propio ciclo).
+- **La 1ª medida de pantalla dio «control roto», y era el instrumento.** Buscaba la subcadena
+  «387,20» en toda la página, y la columna TOTAL de la LÍNEA enseña 387,20 € en los DOS borradores
+  (la línea siempre se calculó con IVA; lo que tenía el defecto era el total del documento). Lo cazó
+  el control con el borrador viejo. `paso6b-pantalla.mjs` lee «Total:» del documento y lo confirma.
+  `paso6.json` guarda la 1ª lectura tal cual salió; la buena está en `paso6b.json`.
+- `_entorno.mjs` acepta ahora `YAQU_ENV_FILE`, como `scripts/turno-staging.mjs`: los worktrees de
+  hoy viven en `.claude/worktrees/`, y «al lado del worktree» ya no es donde está el secreto.
+
+**Lo que NO es de esta parte, y sigue igual:** (b) encenderlo en producción es del fundador, por
+negocio y con su GO escrito; (c) la plantilla `maintenance_proposal_es` sigue sin alta en Meta
+(STOP); (d) **el cron REAL de staging sigue sin verse disparar**: lo medido es
+`runMaintenanceProposals(now)` desde el `dist` de `73e41ab0`, no el `cron.schedule` de `cron.ts`.
+
+**De paso, fuera de mi carril (pantalla, S2), sin afirmar defecto:** en el borrador #43 el
+indicador de progreso pinta «Enviada» como paso actual con el estado BORRADOR.
+
+A9: aviso → A10 «Un prefijo no es un nombre, y una subcadena tampoco.» — no se pudo comprobar: es un banco contra staging que no corre en CI; lo cazó su propio control.

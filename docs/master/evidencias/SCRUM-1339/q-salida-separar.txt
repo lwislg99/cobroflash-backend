@@ -1,0 +1,13 @@
+POBLACION: 113 filas · 50 medidos · 30 con ausentes
+bloques: 55 · trozos sin parsear: 0 · avisos «y N más»: 0
+suma de ausentes en bloques: 644 (el registro suma 644)
+por forma × entrada de fichero × job: {
+ "cola · entrada=no · job success · tap_fail=0": "53 bloques · 636 casos · 29 runs",
+ "cola · entrada=no · job failure · tap_fail=>0": "2 bloques · 8 casos · 1 runs"
+}
+por entrada de fichero: {"entrada=no":"55 bloques · 644 casos · 30 runs"}
+CONTROL DE CERO (marca inventada «el fichero NO SALE en el TAP»): 0
+runs con ausentes: 30 · TODOS sus bloques con entrada de fichero: 0 · ninguno: 30 · mezcla: 0
+--- detalle de los bloques con entrada de fichero o de jobs en failure ---
+055648dc 2026-10-13T15:42:21.000Z job=failure tap_fail=1 scrum522-guards-fuera-de-la-tanda.test.mjs faltan 6/26 cola entrada=false
+055648dc 2026-10-13T15:42:21.000Z job=failure tap_fail=1 scrum1262-la-baja-corta-todas-las-vias.test.mjs faltan 2/35 cola entrada=false

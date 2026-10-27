@@ -1,0 +1,100 @@
+// banco-1218h.mjs — SCRUM-1218h (J6, 24-oct-2026). Corre UN fichero de test gateado SÓLO por QA_DB_TEST contra un
+// PGlite NUEVO por pasada (socket en loopback, base «yaqu_libro_test», `sslmode=disable`), SIN staging.
+// Es `banco-1599h` (PGlite por socket, 64 conexiones, base rehecha) + la sonda de respuestas de 1218c + N pasadas,
+// con UNA diferencia que hay que decir: los cuatro ficheros de este lote sólo se encienden con QA_DB_TEST, y
+// QA_DB_TEST exige el host de staging (`_staging-db.mjs`, allowlist). Así que el banco NO corre el fichero tal cual:
+// corre una COPIA temporal en `tests/` con DOS sustituciones, cada una con recuento EXACTO 1, y las MISMAS en el
+// ANTES y en el DESPUÉS (la forma de 1599f/876e: `_banco-libro.mjs` detrás de `_staging-db.mjs`):
+//   1) `import './_staging-db.mjs';` → + `import { URL_BANCO as __URL_BANCO_1218H } from './_banco-libro.mjs';`
+//   2) `const ENABLED = process.env.QA_DB_TEST === '1';` → `… === '1' || __URL_BANCO_1218H !== '';`
+// La copia se borra al acabar cada pasada. Lo que se compara es fetch → pedirSinAgente; el gate es idéntico.
+// Uso: node banco-1218h.mjs <raiz> <ddl.sql> <fuente.test.mjs> <nombre> <pasadas> <salida.json>
+import fs from 'node:fs';
+import path from 'node:path';
+import net from 'node:net';
+import { spawn } from 'node:child_process';
+import { PGlite } from '@electric-sql/pglite';
+import { PGLiteSocketServer } from '@electric-sql/pglite-socket';
+
+const [raiz, ddl, fuente, nombre, pasadasTxt, salidaRel] = process.argv.slice(2);
+const salida = salidaRel && path.resolve(salidaRel);
+if (!raiz || !ddl || !fuente || !nombre || !pasadasTxt || !salida) { console.log('CIEGO: faltan argumentos'); process.exit(2); }
+const sql = fs.readFileSync(ddl, 'utf8');
+const pasadas = Number(pasadasTxt);
+
+// ── la copia con el segundo destino ──────────────────────────────────────────
+const IMPORT = /^import '\.\/_staging-db\.mjs';.*$/m;
+const GATE = "const ENABLED = process.env.QA_DB_TEST === '1';";
+const texto0 = fs.readFileSync(fuente, 'utf8');
+const nImport = (texto0.match(new RegExp(IMPORT.source, 'gm')) || []).length;
+const nGate = texto0.split(GATE).length - 1;
+if (nImport !== 1 || nGate !== 1) { console.log(`CIEGO: ${nombre} · import=${nImport} gate=${nGate} (se esperaba 1 y 1)`); process.exit(2); }
+const copiaTexto = texto0
+  .replace(IMPORT, (l) => `${l}\nimport { URL_BANCO as __URL_BANCO_1218H } from './_banco-libro.mjs';`)
+  .replace(GATE, "const ENABLED = process.env.QA_DB_TEST === '1' || __URL_BANCO_1218H !== '';");
+const copia = path.join(raiz, 'tests', `_banco1218h-${nombre}.test.mjs`);
+
+const puertoLibre = () => new Promise((ok) => {
+  const s = net.createServer(); s.listen(0, '127.0.0.1', () => { const p = s.address().port; s.close(() => ok(p)); });
+});
+const FIRMA = /UV_HANDLE_CLOSING|async\.c|0xC0000409|3221226505/;
+// El caso se ancla al INICIO de la línea (con su sangría de subtest): un «not ok» dentro del NOMBRE no cuenta.
+const CASO = /^(\s*)(ok|not ok) \d+ - (.*?)(?: # (SKIP|TODO)\b.*)?$/;
+const sonda = new URL('./sonda-respuestas.mjs', import.meta.url).href;
+
+const entorno = { ...process.env };
+for (const k of ['NODE_TEST_CONTEXT', 'NODE_OPTIONS', 'FORCE_COLOR', 'QA_DB_TEST', 'A55_DB_TEST', 'BOT_SUITE_TEST', 'DATABASE_URL_TESTS']) delete entorno[k];
+
+const resultado = { fichero: nombre, pasadas: [] };
+try {
+  for (let i = 0; i < pasadas; i++) {
+    fs.writeFileSync(copia, copiaTexto);
+    const t0 = Date.now();
+    const db = new PGlite();
+    await db.exec(sql);
+    const puerto = await puertoLibre();
+    const servidor = new PGLiteSocketServer({ db, port: puerto, host: '127.0.0.1', maxConnections: 64 });
+    await servidor.start();
+    const tap = path.join(path.dirname(salida), `tap-${nombre}-${i}.tap`);
+    const respuestas = path.join(path.dirname(salida), `resp-${nombre}-${i}.txt`);
+    fs.rmSync(tap, { force: true }); fs.rmSync(respuestas, { force: true });
+    const hijo = spawn(process.execPath, [
+      `--import=${sonda}`, '--test', '--test-force-exit', '--test-reporter=tap', `--test-reporter-destination=${tap}`, copia,
+    ], {
+      cwd: raiz,
+      env: {
+        ...entorno,
+        LIBRO_PG_URL: `postgresql://postgres@127.0.0.1:${puerto}/yaqu_libro_test?sslmode=disable`,
+        DISABLE_CRONS: 'true', WHATSAPP_DRY_RUN: '1', NODE_ENV: 'test', SONDA_RESPUESTAS: respuestas,
+      },
+    });
+    let txt = '';
+    hijo.stdout.on('data', (d) => { txt += d; });
+    hijo.stderr.on('data', (d) => { txt += d; });
+    const codigo = await new Promise((ok) => hijo.on('close', (c, s) => ok(c ?? s)));
+    const ms = Date.now() - t0;
+    await servidor.stop();
+    await db.close();
+    fs.rmSync(copia, { force: true });
+    const lineas = fs.existsSync(tap) ? fs.readFileSync(tap, 'utf8').split(/\r?\n/) : [];
+    const casos = {};
+    for (const l of lineas) {
+      const m = CASO.exec(l);
+      if (!m) continue;
+      casos[`${m[1].length / 4}|${m[3]}`] = m[4] ? m[4].toLowerCase() : m[2];
+    }
+    const declarados = Number((lineas.find((l) => /^# tests \d+/.test(l)) || '').replace(/\D/g, '') || NaN);
+    const resp = fs.existsSync(respuestas) ? fs.readFileSync(respuestas, 'utf8').split('\n').filter(Boolean).sort() : [];
+    const p = { i, codigo, ms, firma: FIRMA.test(txt), declarados, casos, resp };
+    resultado.pasadas.push(p);
+    const raiz0 = Object.entries(casos).filter(([k]) => k.startsWith('0|')).map(([, v]) => v);
+    const v = Object.values(casos);
+    console.log(`${raiz0.length === 0 ? 'CIEGO · ' : ''}${nombre} · pasada ${i} · exit=${codigo} · ${ms} ms · firma=${p.firma} · casos=${v.length} (raíz ok=${raiz0.filter((x) => x === 'ok').length} not_ok=${raiz0.filter((x) => x === 'not ok').length} skip=${raiz0.filter((x) => x === 'skip').length}) · declarados=${declarados} · ${raiz0.length === declarados ? 'SUMA' : 'NO SUMA'} · respuestas=${resp.length}`);
+    for (const [n, e] of Object.entries(casos)) if (e !== 'ok') console.log(`   ${e} · ${n}`);
+    if (codigo !== 0 && i === 0) console.log(txt.slice(-2500));
+  }
+} finally {
+  fs.rmSync(copia, { force: true });
+}
+fs.writeFileSync(salida, JSON.stringify(resultado, null, 1));
+console.log(`POBLACION=${resultado.pasadas.length} pasadas · copia borrada=${!fs.existsSync(copia)} · EXIT=0`);

@@ -1,0 +1,13 @@
+POBLACION: 50 TAP (uno por run medido) · enteros segun la casa 50 · con NUL 0 · descuadres 0
+ENTRADAS DE FICHERO en los 50 TAP: 2 · caidas (not ok) 0 · ok 2 · con spawn/code 0 · con senal 0
+  f30b1a40	2026-10-02T16:23:14.000Z	CON AUSENTES	failure	tap_fail=0	scrum237-negacion-respaldada.test.mjs	ok	exitCode=null	signal=null	error=null	failureType=null	type='test'
+  7779b0cb	2026-10-02T05:34:57.000Z	CON AUSENTES	failure	tap_fail=0	scrum237-negacion-respaldada.test.mjs	ok	exitCode=null	signal=null	error=null	failureType=null	type='test'
+SIN DEPENDER DE LA FORMA: TAP con «# fail 0»: 48 de 50 · en los otros 2, lo caído de nivel 0 (2):
+  28222517 · not ok 1932 - SCRUM-1378 · `leerTrabajos` no saca PR de `children`, y el lector de ramas es el del hook de cie
+  643e9a65 · not ok 2254 - SCRUM-1415 · 🔴 EL ÁRBOL: las llamadas de nombre construido son exactamente las de la lista, ni 
+CRUCE bloque del aviso -> entrada de su fichero: 52 bloques · 587 casos
+  50 bloques · 571 casos · 27 runs · 17 ficheros · SIN entrada de fichero (cola)
+  2 bloques · 16 casos · 2 runs · 1 ficheros · entrada ok · exitCode=null · signal=null · error=null (entero)
+CONTROL DE CERO: entradas de «scrum9999-no-existe.test.mjs»: 0
+CONTROL POSITIVO (TAP fabricado con un fichero caido): entradas 1 · caida true · exitCode 1 · la casa ve 1 con caida=true
+EXIT=0

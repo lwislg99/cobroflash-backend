@@ -1,0 +1,14 @@
+POBLACION=1 mutación (la guarda de «ya sellada») · 6 comprobaciones declaradas como «tiene que caer»
+BASE sin mutar      · LIMPIA · comprobaciones 13 · caen 0 · salida 0
+la mutación declarada en tests/scrum1330-una-sellada-no-se-resella.test.mjs: su ancla casa 1 vez/veces en el compilado y 1 en el fuente
+mutación aplicada   · el compilado cambió: true · a11c3f8756e34fb0 -> 67a45f426802e935
+MUTADA              · CAE · comprobaciones 13 · caen 6 · salida 1
+   cae: S · escrituras que tocan la huella
+   cae: S · huella, anterior, instante y QR intactos
+   cae: S · lo único escrito sobre la factura
+   cae: S · avisó de que la conserva
+   cae: S2 · escrituras que tocan la huella
+   cae: S2 · la huella es la de P
+RESTAURADO          · el compilado es el de antes: true · LIMPIA · comprobaciones 13 · caen 0 · salida 0
+VEREDICTO: VIVA — cae lo declarado y sólo lo declarado
+EXIT=0

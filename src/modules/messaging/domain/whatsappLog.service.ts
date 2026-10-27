@@ -4,6 +4,8 @@
 // se puede desplegar ANTES de aplicar la migración, sin romper el envío de mensajes.
 import { prisma } from '../../../core/db/prisma';
 import { normalizePhone } from '../../../core/utils/utils';
+import { zonaDelMerchant, diaNaturalEn, mesNaturalEn, inicioDelDiaEn } from '../../../core/zonaDelMerchant';
+import { WA_TEMPLATES } from '../../../integrations/whatsappTemplates';
 
 // Coste estimado por plantilla Utility en España (tarifas Meta 2026, master J1 ~0,023 €).
 // Los service messages (dentro de ventana 24h) son gratis.
@@ -17,6 +19,13 @@ export type WaRelatedType = 'quote' | 'invoice' | 'charge' | 'albaran' | 'review
 export interface RecordWaMessageInput {
   merchantId: number;
   customerId?: number | null;
+  /**
+   * SCRUM-529 · El número al que se mandó, TAL CUAL se le dio al proveedor (`to`). No sale de la
+   * ficha del cliente: la ficha se corrige, y con ella se perdía a dónde fue el envío anterior.
+   * OBLIGATORIO en el tipo a propósito: un envío nuevo que no lo pase no compila. `null` sólo si
+   * de verdad no hay número.
+   */
+  toPhone: string | null;
   type: WaMsgType;
   templateName?: string | null;
   waMessageId?: string | null;
@@ -34,6 +43,7 @@ export async function recordWaMessage(input: RecordWaMessageInput): Promise<void
       data: {
         merchantId: input.merchantId,
         customerId: input.customerId ?? null,
+        toPhone: input.toPhone ?? null,
         type: input.type,
         templateName: input.templateName ?? null,
         waMessageId: input.waMessageId ?? null,
@@ -49,6 +59,179 @@ export async function recordWaMessage(input: RecordWaMessageInput): Promise<void
   } catch (err: any) {
     // Tabla aún no migrada en prod, u otro fallo: no romper el flujo de envío
     console.error('[WA-0b] recordWaMessage omitido:', err?.message || err);
+  }
+}
+
+// ── SCRUM-1513 · El tope de plantillas se decide y se apunta en el MISMO instante ──────────
+// Medido contra PostgreSQL 16 (Jira c.18973): con el tope en 100, una entrega del webhook con 120
+// mensajes sacaba de 113 a 120 plantillas, y 120 peticiones a la vez, 120. El tope era un `count`
+// y la fila que ese `count` cuenta se escribía DESPUÉS de hablar con el proveedor: todas las
+// preguntas se contestaban antes de la primera fila.
+//
+// Lo que cierra (opción C, GO del fundador en c.18988): un cerrojo CORTO por comercio, y dentro
+// de él la pregunta y la fila. La fila nace en `queued` —estado que ya está en el máster y que
+// hasta hoy no escribía nadie— y se resuelve al volver del proveedor, ya FUERA del cerrojo: no se
+// retiene ninguna conexión mientras el proveedor contesta.
+//
+// Qué cuenta para el tope: lo que tiene identificador del proveedor O sigue en `queued`.
+//   · el proveedor dijo que NO  → `failed`: devuelve el hueco (P1).
+//   · no se sabe si salió       → se queda en `queued`: OCUPA hueco hasta la medianoche del comercio (P2). Es
+//     mandar de menos a propósito: un solo número para todos los comercios, y pasarse cuesta más
+//     que quedarse corto.
+//
+// La reserva nace SIN documento asociado, y sólo lo recibe cuando deja de estar en `queued`. El
+// paquete de disputa (`invoicesAdmin.routes.ts`) imprime el estado de cada mensaje del documento
+// tal cual: así no llega a imprimir un estado sin resolver.
+//
+// El espacio del cerrojo es propio: 1748, 1749 y 1750 son de la emisión y no se comparten.
+const TOPE_WA_LOCK_NS = 1751;
+
+// ── SCRUM-1596b · Los avisos al PROFESIONAL tienen su tope, y no gastan el de los clientes ──────
+// Decisión del fundador (SCRUM-1596 c.20602, «Tope propio, fuera del cupo»): la plantilla
+// `merchant_alert_es` va al profesional, no a un cliente. Medido en c.20601: compartía el cupo de
+// comercio, y con 99 gastadas el aviso se llevaba la última y la siguiente al cliente ya no salía.
+// Ahora cuenta sólo contra los suyos (30 por comercio y día) y el cupo de comercio no la cuenta.
+// El que no cabe se pierde y queda anotado como `daily_cap`. Sin esquema: se cuenta por el nombre.
+// Los avisos por texto (ventana abierta) no pasan por aquí: siguen gastando 0.
+const TOPE_AVISOS_AL_PROFESIONAL = 30;
+const PLANTILLA_AVISO_AL_PROFESIONAL = WA_TEMPLATES.merchantAlert;
+
+export type ReservaDePlantilla =
+  | { ok: true; id: number }
+  | { ok: false; reason: 'daily_cap' | 'customer_daily_cap'; cuenta: number; tope: number };
+
+/**
+ * Pregunta los dos topes y, si cabe, deja la fila apuntada en `queued`. Todo bajo el cerrojo del
+ * comercio. LANZA si la base no contesta: qué se hace entonces lo decide quien llama.
+ */
+/** El cliente de la base lo pasa quien llama: es el suyo, y es el que un test dobla. */
+type ClienteDeLaBase = typeof prisma;
+
+/**
+ * Qué es una «plantilla de hoy» de un comercio. Lo preguntan DOS: el tope (`reservarPlantilla`) y el
+ * «Hoy» del panel (`getWhatsAppMetrics`), y los dos lo piden aquí (SCRUM-1522, Jira c.19157): con
+ * una definición cada uno, el panel enseñaba 87 mientras el tope contaba 100 y bloqueaba el envío.
+ *
+ * «Hoy» es el día del COMERCIO (c.19001), no el del servidor: con el reloj del proceso, que va en
+ * UTC, a un profesional de la península el cupo se le reiniciaba a la 01:00 o a las 02:00 de su
+ * madrugada. Y cuenta lo que tiene identificador del proveedor o sigue en `queued`: un rechazo
+ * devuelve el hueco, así que no es una plantilla de hoy para ninguno de los dos.
+ */
+function plantillasDeHoy(merchantId: number, zona: string, ahora: Date) {
+  return {
+    merchantId,
+    type: 'template',
+    createdAt: { gte: inicioDelDiaEn(diaNaturalEn(ahora, zona), zona) },
+    OR: [{ waMessageId: { not: null } }, { status: 'queued' }],
+  };
+}
+
+/**
+ * Lo mismo, sin los avisos al profesional: es lo que gasta el cupo de los clientes (SCRUM-1596b). Lo
+ * piden el tope y el «Hoy» del panel, para que los dos sigan contando lo mismo (SCRUM-1597 c.20635).
+ * Las filas sin nombre SÍ cuentan: `{ not }` a secas las dejaría fuera en SQL (NULL <> x no es verdad).
+ */
+function sinLosAvisosAlProfesional<T extends object>(filtro: T) {
+  return {
+    ...filtro,
+    AND: [{ OR: [{ templateName: null }, { templateName: { not: PLANTILLA_AVISO_AL_PROFESIONAL } }] }],
+  };
+}
+
+export async function reservarPlantilla(db: ClienteDeLaBase, input: {
+  merchantId: number;
+  customerId?: number | null;
+  /** SCRUM-529 · La reserva nace ANTES de hablar con el proveedor: si no lo lleva ella, no lo lleva nadie. */
+  toPhone: string | null;
+  templateName?: string | null;
+  topeComercio: number;
+  topeCliente: number;
+}): Promise<ReservaDePlantilla> {
+  return db.$transaction(
+    async (tx) => {
+      // La zona la resuelve `zonaDelMerchant` y nadie más: no sale del país (dentro de `ES` hay dos
+      // husos), y sin declarar cae a UTC, que es lo que ya se hacía.
+      // Se lee ANTES de pedir el cerrojo: es una lectura que no necesita turno.
+      const comercio = await tx.merchant.findUnique({ where: { id: input.merchantId }, select: { timezone: true } });
+      const cuentaParaElTope = plantillasDeHoy(input.merchantId, zonaDelMerchant(comercio), new Date());
+
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${TOPE_WA_LOCK_NS}::int, ${input.merchantId}::int)`;
+
+      if (input.templateName === PLANTILLA_AVISO_AL_PROFESIONAL) {
+        const avisosHoy = await tx.whatsAppMessage.count({
+          where: { ...cuentaParaElTope, templateName: PLANTILLA_AVISO_AL_PROFESIONAL },
+        });
+        if (avisosHoy >= TOPE_AVISOS_AL_PROFESIONAL) {
+          return { ok: false as const, reason: 'daily_cap' as const, cuenta: avisosHoy, tope: TOPE_AVISOS_AL_PROFESIONAL };
+        }
+      } else {
+        const sinLosAvisos = sinLosAvisosAlProfesional(cuentaParaElTope);
+        const sentToday = await tx.whatsAppMessage.count({ where: sinLosAvisos });
+        if (sentToday >= input.topeComercio) {
+          return { ok: false as const, reason: 'daily_cap' as const, cuenta: sentToday, tope: input.topeComercio };
+        }
+
+        if (input.customerId) {
+          const toCustomerToday = await tx.whatsAppMessage.count({ where: { ...sinLosAvisos, customerId: input.customerId } });
+          if (toCustomerToday >= input.topeCliente) {
+            return { ok: false as const, reason: 'customer_daily_cap' as const, cuenta: toCustomerToday, tope: input.topeCliente };
+          }
+        }
+      }
+
+      const fila = await tx.whatsAppMessage.create({
+        data: {
+          merchantId: input.merchantId,
+          customerId: input.customerId ?? null,
+          toPhone: input.toPhone ?? null,
+          type: 'template',
+          templateName: input.templateName ?? null,
+          status: 'queued',
+          costEstimate: WA_UTILITY_COST_ES,
+        },
+        select: { id: true },
+      });
+      return { ok: true as const, id: fila.id };
+    },
+    // SIN opciones propias, a propósito (SCRUM-728 ③): valen las de Prisma, 2 s para conseguir turno
+    // y 5 s de transacción. Medido el 8-oct-2026 contra PostgreSQL 16.13 en loopback
+    // (docs/master/evidencias/SCRUM-1513f): una reserva sola tarda unos 2 ms; 2.000 a la vez del
+    // mismo comercio caben; con 4.000, las que no consiguen turno LANZAN a los 2 s — y qué hace el
+    // envío entonces lo decide quien llama. Subir la espera no cierra eso: sólo lo aleja.
+  );
+}
+
+/**
+ * Resuelve una reserva al volver del proveedor. Nunca lanza.
+ *   · `enviada`       → `sent`, con el identificador del proveedor y su documento.
+ *   · `rechazada`     → `failed`, con su documento: devuelve el hueco.
+ *   · `sin_respuesta` → se queda en `queued` y sin documento: ocupa el hueco. Sólo se anota el motivo.
+ */
+export async function resolverReservaDePlantilla(
+  db: ClienteDeLaBase,
+  id: number,
+  desenlace:
+    | { como: 'enviada'; waMessageId: string | null; relatedType?: WaRelatedType | null; relatedId?: number | null }
+    | { como: 'rechazada'; error: string; relatedType?: WaRelatedType | null; relatedId?: number | null }
+    | { como: 'sin_respuesta'; error: string },
+): Promise<void> {
+  try {
+    if (desenlace.como === 'sin_respuesta') {
+      await db.whatsAppMessage.update({ where: { id }, data: { error: desenlace.error } });
+      return;
+    }
+    await db.whatsAppMessage.update({
+      where: { id },
+      data: {
+        ...(desenlace.como === 'enviada'
+          ? { status: 'sent', waMessageId: desenlace.waMessageId }
+          : { status: 'failed', error: desenlace.error }),
+        relatedType: desenlace.relatedType ?? null,
+        relatedId: desenlace.relatedId ?? null,
+      },
+    });
+  } catch (err: any) {
+    console.error('[WA-0b] resolverReservaDePlantilla omitido:', err?.message || err);
   }
 }
 
@@ -73,6 +256,8 @@ export async function recordInboundWaMessage(rawPhone: string): Promise<void> {
       select: { id: true, merchantId: true },
     });
     if (!customers.length) return; // número sin cliente asociado: nada que abrir
+    // SCRUM-529: SIN `toPhone`, y no es un olvido. Es un mensaje ENTRANTE: no se mandó a ningún
+    // número, así que la columna se queda a NULL.
     await prisma.whatsAppMessage.createMany({
       data: customers.map((c) => ({
         merchantId: c.merchantId,
@@ -109,20 +294,24 @@ export async function isServiceWindowOpen(
 const STATUS_RANK: Record<string, number> = { queued: 0, sent: 1, delivered: 2, read: 3 };
 
 /**
- * ¿Debe aplicarse la transición de `current` a `next`? `failed` siempre se aplica;
- * el resto solo avanza (un `delivered` que llega tras un `read` no degrada el estado,
- * y Meta puede entregar los callbacks fuera de orden). Pura → testeable sin BD.
+ * ¿Debe aplicarse la transición de `current` a `next`? Solo avanza (un `delivered` que llega
+ * tras un `read` no degrada el estado, y Meta puede entregar los callbacks fuera de orden).
+ * SCRUM-1601 (Parte L, regla 27): `failed` solo desde `queued|sent`, y de `failed`, `received`
+ * o un estado desconocido no se sale. SCRUM-1601c: el único salto firmado es `sent → read`
+ * (c.20673); desde `queued` sólo se va a `sent` (o a `failed`), decisión c.20709. Pura → testeable sin BD.
  */
 export function shouldApplyStatus(current: string, next: string): boolean {
-  if (next === 'failed') return true;
   const cur = STATUS_RANK[current] ?? -1;
+  if (cur < 0) return false;
+  if (next === 'failed') return cur <= STATUS_RANK.sent;
+  if (cur === STATUS_RANK.queued) return next === 'sent';
   const nxt = STATUS_RANK[next] ?? -1;
   return nxt > cur;
 }
 
 /**
  * Actualiza el estado de un mensaje por su waMessageId (webhook `statuses` de Meta).
- * Nunca retrocede el estado, salvo `failed`, que siempre se registra.
+ * Nunca retrocede el estado; qué transiciones aplica lo decide `shouldApplyStatus`.
  */
 export async function updateWaMessageStatus(
   waMessageId: string,
@@ -288,10 +477,13 @@ export async function getWhatsAppMetrics(merchantId: number, now = new Date()): 
     channel: { templateToday: 0, windowToday: 0, windowMonth: 0, savedEurMonth: 0 },
   };
   try {
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    // El día y el mes son los del COMERCIO, como en el tope (SCRUM-1522, c.19157): con el reloj del
+    // proceso, lo enviado en la primera hora o dos del día —y del mes— caía en el anterior.
+    const comercio = await prisma.merchant.findUnique({ where: { id: merchantId }, select: { timezone: true } });
+    const zona = zonaDelMerchant(comercio);
+    const monthStart = inicioDelDiaEn(`${mesNaturalEn(now, zona)}-01`, zona);
     const weekAgo = new Date(now.getTime() - 7 * 86_400_000);
-    const dayStart = new Date(now);
-    dayStart.setHours(0, 0, 0, 0);
+    const dayStart = inicioDelDiaEn(diaNaturalEn(now, zona), zona);
 
     const rows = await prisma.whatsAppMessage.findMany({
       where: { merchantId, type: 'template', createdAt: { gte: monthStart } },
@@ -305,7 +497,11 @@ export async function getWhatsAppMetrics(merchantId: number, now = new Date()): 
       select: { createdAt: true },
     });
     const channel = {
-      templateToday: rows.filter((r) => r.createdAt >= dayStart).length,
+      // Lo mismo que cuenta el tope, pedido con su mismo filtro: sin las rechazadas (c.19157 ③) y sin
+      // los avisos al profesional, que no gastan el cupo de los clientes (SCRUM-1597 c.20635).
+      templateToday: await prisma.whatsAppMessage.count({
+        where: sinLosAvisosAlProfesional(plantillasDeHoy(merchantId, zona, now)),
+      }),
       windowToday: windowRows.filter((r) => r.createdAt >= dayStart).length,
       windowMonth: windowRows.length,
       savedEurMonth: Math.round(windowRows.length * WA_UTILITY_COST_ES * 1000) / 1000,

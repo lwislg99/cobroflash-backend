@@ -1,0 +1,7 @@
+POBLACIÓN: 191 filas en antes.txt · 191 filas en antes-repetida.txt · 14144 B y 14144 B
+IDÉNTICAS: 191 · MOVIDAS: 0
+
+ESPERADAS: (ninguna)
+se mueve alguna que no se esperaba: no
+alguna esperada NO se mueve: no
+EXIT=0

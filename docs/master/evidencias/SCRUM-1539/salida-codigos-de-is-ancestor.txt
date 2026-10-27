@@ -1,0 +1,8 @@
+POBLACION: 160 ramas remotas · origin/main = eebc104d9e955cdd67b31ad2d24a50cc9b849a7b
+  todas     → código 0: 18 · código 1: 141 · código 128: 1
+  scrum-N   → código 0: 17 · código 1: 82
+  las demás → código 0: 1 · código 1: 59 · código 128: 1
+  ejemplo de código 0: refs/heads/automerge-el-mensaje-que-manda-a-mirar-donde-no-es · 
+  ejemplo de código 1: refs/heads/chore-flujo-pr · 
+  ejemplo de código 128: refs/heads/main · fatal: Not a valid commit name 4460363b62956b175e24c343e945901c212db75c
+CONTROLES: ancestro de verdad → 0 · sha que no está en el almacén → 128 · sin la ref de main → 128

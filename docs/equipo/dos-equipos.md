@@ -148,18 +148,19 @@ clasificados por carpeta y nombre, y **por contenido** donde el nombre engañaba
 | `privacidad.html`, `terminos.html` | **J3** construye | el texto lo propone J4 y lo firma un jefe |
 | `dashboard/js/jobsView.js`, `parteDetailView.js`, `albaranDetailView.js` | **S4** | |
 | `dashboard/css/styles.css`, `dashboard/js/app.js`, `dashboard/js/api.js`, `dashboard/index.html`, `sw.js`, `tokens.css` | **S2** (contenedor) | toda vista nueva toca los cinco primeros: el otro equipo añade SU bloque marcado |
+| `dashboard/js/quoteRevisiones.js` | **S2** | fila propia para que no haya que deducirlo de la fila general: el 7-oct-2026 un puesto tuvo que preguntarlo. Confirma al dueño que ya tenía. Decisión del orquestador de Luis, 9-oct-2026 (SCRUM-1480). Los otros 64 ficheros del panel que sólo cubre la fila de abajo siguen igual, y el dueño de cualquiera se pregunta con el comando de carriles, no se deduce |
 | `dashboard/js/homeView.js` y todo lo demás de `public/` | **S2** | |
 
 ### 3.3 · Repositorio, documentos y automatización
 
 | ruta | dueño | nota |
 |---|---|---|
-| `docs/equipo/00-normas-comunes.md`, `dos-equipos.md`, `trampas-del-entorno.md`, `afirmaciones-verificadas.md` | **S0** | el equipo de Javier propone por Jira (§5) |
+| `docs/equipo/00-normas-comunes.md`, `00-normas-siempre.md`, `dos-equipos.md`, `trampas-del-entorno.md`, `afirmaciones-verificadas.md` | **S0** | el equipo de Javier propone por Jira (§5) |
 | `docs/equipo/afirmaciones-verificadas-javier.md` | **J6** | lo crea J6 en su primera tanda |
 | `docs/equipo/orquestador.md` | **orquestador de Luis** | método común. Mientras no haya otro dueño, cada cambio se avisa al otro equipo con un comentario en Jira |
 | `docs/equipo/traspaso.md` / `traspaso-javier.md` | orquestador de Luis / **orquestador de Javier** | el ESTADO va por equipo; el de Javier lo crea su orquestador |
 | `docs/equipo/limites-del-fundador.md` | **orquestador de Luis** | pasa a «límites de los jefes»: cada decisión lleva quién la tomó y la fecha. El de Javier propone por Jira |
-| `docs/equipo/sesion-N.md` / `puesto-jN.md` | cada puesto, la suya | las `puesto-jN.md` las escribió la S0 (SCRUM-951c); el canon lo añade el puesto |
+| `docs/equipo/sesion-*.md` / `docs/equipo/puesto-j*.md` | cada puesto, la suya | las `puesto-jN.md` las escribió la S0 (SCRUM-951c); el canon lo añade el puesto |
 | `docs/equipo/orquestador-javier.md` | **orquestador de Javier** | solo lo que cambia para su equipo: el método es `orquestador.md` |
 | `docs/equipo/prompt-tanda-orquestador.md` | contenido **S0**; el cableado, **S5** | UN solo prompt para los dos equipos |
 | `docs/equipo/orquestador-autonomo.md`, `instalacion-*.md`, `scripts/equipo/**` | **S5** | |
@@ -168,8 +169,32 @@ clasificados por carpeta y nombre, y **por contenido** donde el nombre engañaba
 | `tests/`: bancos e instrumentos (`_banco-*`, `_suelo-*`, mutación) | **S3** | |
 | `tests/`: guards nuevos de J6 | **J6** | |
 | `tests/`: el test de un ticket | el puesto que trabaja el ticket | |
-| `scripts/` (verificación, censos de consulta) | **S0** | salvo `scripts/equipo/` (S5) y `scripts/_suelo-*` (S3) |
-| `docs/master/SCRUM-N.md` | quien trabaja el ticket | un fichero por ticket; si ya existe, se ANEXA una sección (A8) |
+| `scripts/` (verificación, censos de consulta) | **S0**, sólo lo que sea verificación o censo de consulta | salvo `scripts/equipo/` (S5), `scripts/_suelo-*` (S3), `scripts/qa/` (S3), `scripts/vigia-sesiones-jv.mjs` (S5) y las demás filas de abajo. **Esta fila no recoge lo que nadie clasificó:** un fichero de `scripts/` que no sea verificación ni censo de consulta y no tenga fila propia NO es de S0; le falta una fila, y se le pide a la S0 (SCRUM-1480). Por eso el dueño de esta fila no va escrito como un puesto a secas: donde nadie ha decidido no hay cerradura (decisión del orquestador de Luis, 6-oct-2026; medido ese día ANTES de añadir las dos filas de scripts de workflow de abajo: 273 de los 296 ficheros de `scripts/` sólo los cubría esta fila; con esas dos filas dentro, y ya con 298 ficheros, son 250, contados con `node docs/master/evidencias/SCRUM-1480/recuento-de-la-fila-general.mjs <raíz>`; el 9-oct-2026, con 302 ficheros y las ocho filas por área del ticket creador de más abajo, son 225, y cómo nace la fila de uno nuevo está escrito bajo esta tabla) |
+| `scripts/qa/**` (la sesión del panel y los sembradores de la cuenta QA) | **S3** | son sondas e instrumentos (§2.1), y los sembradores ESCRIBEN en la cuenta QA de producción: no son «censos de consulta». Decisión del orquestador de Luis, 6-oct-2026 (SCRUM-1480) |
+| `scripts/vigia-sesiones-jv.mjs` (el vigía de sesiones) | **S5** | los vigías son de S5 (§2.1; a J6 no se le mandan, §2.2). ⚠️ Lo escribió el equipo de Javier para una tarea programada de SU máquina (SCRUM-1000): quien lo cambie avisa antes a su orquestador por Jira (§5). Decisión del orquestador de Luis, 6-oct-2026 (SCRUM-1480) |
+| `scripts/vigia-atascados.mjs`, `scripts/vigia-pasada.mjs`, `scripts/vigia-despliegue-aviso.mjs`, `scripts/vigilante-de-despliegue.mjs`, `scripts/_vigilante-de-despliegue.mjs`, `scripts/_ritmo-de-despliegue.mjs`, `scripts/puerta-avisador-rojo.mjs`, `scripts/puerta-claude.mjs`, `scripts/puerta-claude-empuje.mjs`, `scripts/clasificar-fallo-automerge.mjs`, `scripts/conflicto-de-registro.mjs`, `scripts/tanda-con-veredicto.mjs`, `scripts/_huella-de-la-caida.mjs`, `scripts/_reporters-de-node-options.mjs`, `scripts/zona-roja.mjs`, `scripts/constancia-del-alter.mjs` (los 16 scripts del bucle PR → CI → merge → aviso que ejecuta un workflow, con lo que importan sólo ellos) | **S5** | son «los workflows y sus scripts» (`orquestador.md` §11bis) y los vigías (§2.1). Tres avisos: la lista `ZONA_ROJA` de `zona-roja.mjs` la decide el fundador (lo dice `.github/CODEOWNERS`); lo que exige `constancia-del-alter.mjs` es A5 y no se relaja sin un jefe; y `vigia-silencio-de-main.mjs` NO está aquí: lo escribió J6 y SCRUM-1324 sigue En curso con `area-j6`, así que sigue sin fila hasta que lo hablen los dos orquestadores. Decisión del orquestador de Luis, 6-oct-2026 (SCRUM-1480) |
+| `scripts/censo-objetivo-tactil-panel.mjs`, `scripts/censo-clics-del-80.mjs`, `scripts/censo-accion-del-80.mjs`, `scripts/meta-guard-mutaciones.mjs`, `scripts/_arbol-quieto.mjs`, `scripts/frontera-dist.mjs`, `scripts/suelo-de-la-tanda.mjs` (los 7 instrumentos que corre el CI: los censos del panel, el meta-guard de mutaciones y el suelo de la tanda, con los dos ficheros que, de entre los scripts, sólo importa el meta-guard) | **S3** | son instrumentos de medida y mutación (§2.1 y la fila de `tests/` de arriba). Lo que NO está aquí, a propósito: `guards-visuales.mjs` y `senal-de-nombres.mjs` (con sus ayudantes `_solape-de-guards.mjs` y `_senal-de-nombres.mjs`), que tienen ticket vivo del equipo de Javier (SCRUM-1313, 1320 y 1339); los diez ayudantes compartidos (`_navegador.mjs`, con 51 importadores medidos ese día, `_hallazgos-y-ciegos.mjs`, `_servidor.mjs`, `_puerta-de-entrada.mjs`, `_banco-lista.mjs`, `_trabajos-de-muestra.mjs`, `_prisma-client-guard.mjs`, `_marca-de-arbol.mjs`, y los dos del censo táctil: `_medidor-de-toque.mjs`, que también importan `guard-objetivo-tactil.mjs` y `guard-a11y-landing.mjs`, y `_pagina-panel.mjs`, que también importa `guard-objetivo-tactil.mjs`; esos dos guards no tienen fila), que no se clasifican antes que quienes los usan; y `trinquete-de-zona.mjs` con `_trinquete-de-zona.mjs`, que S3 toca sólo por la excepción escrita en SCRUM-1335 (comentario 18387): es un permiso para un trabajo, no un carril, y ese ticket lleva `area-j6`, así que es un cruce que se coordina (desde el 24-oct-2026, `_trinquete-de-zona.mjs` y `_senal-de-nombres.mjs` tienen fila propia, de S5 y de J6: más abajo). Los dos ayudantes del censo táctil entraron en esta fila y salieron el mismo día (SCRUM-1480c): el censo es de S3 y sus dos ayudantes siguen en la fila general, sin cerradura. Decisión del orquestador de Luis, 6-oct-2026 (SCRUM-1480) |
+| `scripts/carriles.mjs`, `scripts/_carriles.mjs`, `scripts/_censo-sin-consumir.mjs`, `scripts/auditoria-cierres.mjs`, `scripts/claves-bd-de-todos-los-arboles.mjs`, `scripts/espera-del-equipo.mjs`, `scripts/sesiones-que-no-volvieron.mjs`, `scripts/traspaso-derivado.mjs` (ocho scripts nacidos en tickets del área de S0) | **S0** | fila por el área del ticket que creó cada fichero (el criterio, bajo esta tabla): SCRUM-1295, 1185, 1372, 1423, 1414, 1418 y 1427, todos con `area-s0`. Ya no dependen de que alguien los lea como «verificación o censo de consulta». Decisión del orquestador de Luis, 9-oct-2026 (SCRUM-1480) |
+| `scripts/_sin-consumir-declarados.json` (la lista de piezas declaradas sin consumir) | **S0** (contenedor) | nació en SCRUM-1185, de `area-s0`, y es una lista donde cada puesto declara o retira SU pieza: 44 commits de los dos equipos hasta el 9-oct-2026. Por eso es contenedor: tiene dueño y no le cierra el paso a nadie. El criterio da el dueño; lo de contenedor lo añade la S0 y lo dice (SCRUM-1480) |
+| `scripts/_sin-fila-declarados.json` (el suelo del trinquete de scripts sin fila y la lista de los declarados) | **S0** (contenedor) | nació en SCRUM-1480, de `area-s0`. Contenedor porque en ella escriben otros: quien le da fila a un script viejo baja `quedan`, y el equipo de Javier apunta ahí el script nuevo al que la S0 todavía no ha podido dar fila («Cómo nace la fila», bajo esta tabla). Lo de contenedor lo añade la S0, como en la fila de arriba (SCRUM-1480) |
+| `scripts/_censo-rango-del-parte.mjs`, `scripts/rellenar-anio-de-la-serie.mjs` | **S1** | por el área del ticket que creó cada uno: SCRUM-1488 y SCRUM-1490, con `area-s1`. Decisión del orquestador de Luis, 9-oct-2026 (SCRUM-1480); el segundo nace con fila en el PR que lo crea (13-oct-2026) |
+| `scripts/guard-965-un-solo-presupuesto.mjs`, `scripts/guard-duplicar-926.mjs` | **S2** | por el área del ticket que creó cada uno: SCRUM-965 y SCRUM-926, con `area-s2`. Decisión del orquestador de Luis, 9-oct-2026 (SCRUM-1480) |
+| `scripts/_censo-entorno-prestado.mjs`, `scripts/_censo-gemelo-crudo.mjs`, `scripts/_tanda-por-tramos.mjs`, `scripts/_tests-que-cubren.mjs`, `scripts/tests-que-cubren.mjs` (dos censos y la tanda dirigida con sus dos ayudantes, que de entre los scripts sólo importa ella) | **S3** | por el área del ticket que creó cada uno: SCRUM-1153, 1452, 1412 y 1363, con `area-s3`. La tanda dirigida la CORRE todo el mundo; cambiarla es de S3. Decisión del orquestador de Luis, 9-oct-2026 (SCRUM-1480) |
+| `scripts/_censo-distintos.mjs` (la clave de «distinto» del censo táctil: un elemento por pantalla y posición) | **S3** | es un instrumento de medición del banco, no una vista ni una ruta: lo creó S3 en SCRUM-1559b (COLA 2 de SCRUM-1559, `area-s3`) y sólo lo importa `scripts/censo-objetivo-tactil-panel.mjs`, que ya es de S3 (fila de arriba), así que no espera a ningún importador de otro dueño. Decisión del orquestador de Luis, 17-oct-2026 |
+| `scripts/_datos-del-censo.mjs` (lo que cada ruta le contesta al banco del censo táctil, con la forma del servidor) | **S3** | es un instrumento de medición del banco, no una vista ni una ruta: lo creó S3 en SCRUM-1560 (`area-s3`) y lo importan `scripts/censo-objetivo-tactil-panel.mjs`, que ya es de S3, y su test. NO lo usa `guard-objetivo-tactil.mjs`: los tres fixtures que comparten siguen en `_pagina-panel.mjs`. Mismo motivo que la fila de arriba (orquestador de Luis, 17-oct-2026) |
+| `scripts/_hojas-del-panel.mjs` (las hojas del panel sacadas del índice y la espera de su fuente, para los bancos que montan el panel a mano) | **S3** | es un instrumento de medición del banco, no una vista ni una ruta: lo creó S3 en SCRUM-1603b (`area-s3`) y lo importan `scripts/_banco-lista.mjs`, `scripts/guard-objetivo-tactil.mjs` y `scripts/censo-objetivo-tactil-panel.mjs`, su test y la sonda del registro. Por el área del ticket que lo crea (§3.3, «Cómo nace la fila») |
+| `scripts/_ciegos-por-entorno-declarados.json`, `scripts/_entorno-prestado-declarados.json`, `scripts/_version-de-fila-dudosa-declaradas.json` (tres listas de declarados de instrumentos de S3) | **S3** (contenedor) | nacieron en SCRUM-1412, 1349 y 1381, con `area-s3`. Son listas donde un puesto apunta o retira lo suyo: medido en una de las tres (en SCRUM-1359 la S5 retiró sus cuatro entradas de la del entorno prestado); las otras dos sólo llevan el commit que las creó. Contenedor por lo mismo que la de arriba, y también lo añade la S0 (SCRUM-1480) |
+| `scripts/_detalle-917.mjs`, `scripts/_trabajos-917.mjs`, `scripts/capturas-lista-trabajos-917.mjs`, `scripts/guard-detalle-trabajo-917.mjs`, `scripts/guard-lista-trabajos-917.mjs` (los guards de navegador de la lista y del detalle del Trabajo, con sus dos ayudantes, que sólo importan ellos) | **S4** | por el área del ticket que los creó: SCRUM-917, con `area-s4`. Decisión del orquestador de Luis, 9-oct-2026 (SCRUM-1480) |
+| `scripts/_censo-bytes-control.mjs`, `scripts/arbol-mio.mjs`, `scripts/estado-antes-del-go.mjs` | **S5** | por el área del ticket que creó cada uno: SCRUM-942, 774 y 568, con `area-s5`. Decisión del orquestador de Luis, 9-oct-2026 (SCRUM-1480) |
+| `scripts/_trinquete-de-zona.mjs`, `scripts/_trinquete-de-zona-hijo.mjs`, `scripts/censo-guards-gateados.mjs` (el utillaje de antes de la división: el módulo del trinquete de zona horaria, el hijo que él lanza, y el censo de guards gateados) | **S5** | decisión de Javier del 24-oct-2026, en la nota de su orquestador «Para Luis · lo que el equipo J deja en tus carriles», que el fundador pasó al orquestador de Luis ese día hacia las 12:24Z: «Utillaje de antes de la división: Javier decide que es de S5. Son `_trinquete-de-zona.mjs`, `_trinquete-de-zona-hijo.mjs` y `censo-guards-gateados.mjs`. Que S0 lo anote en la tabla de carriles.» Contesta la pregunta de §7.4 (SCRUM-1480g), que el criterio del área no decidía: SCRUM-813 y SCRUM-754 no llevan etiqueta. NO entra, porque la decisión no lo nombra, `scripts/trinquete-de-zona.mjs` (la línea de órdenes, `npm run trinquete:zona`), que importa el primero y sigue en la fila general (SCRUM-1480h) |
+| `scripts/guards-entrada.mjs`, `tests/_censo-por-posicion.mjs` (el recuento de `npm run guards:entrada` y el censo de las dos formas de referenciar por posición) | **J3** | estaban sin dueño: el primero sólo en la fila general (sus tickets, SCRUM-414 y 928, no llevan etiqueta de área) y el segundo sin ninguna fila. Pasan al equipo de Javier por decisión del fundador del 14-oct-2026 en SCRUM-1556 («Ok nos lo quedamos nosotros»), y su orquestador da el puesto J3 (encargo del 23-oct-2026). Escrita por el equipo de Javier con el visto de la S0 en SCRUM-1556 c.19641 («son vuestras»). El tercer fichero de ese ticket, el cotejo, no va aquí: es `docs/master/evidencias/scrum1500/cotejo.cjs` (el único que corre en la tanda), lo creó SCRUM-1500, con `area-j5`, y tiene la suya, de J5, en la fila siguiente (hasta el 24-oct-2026 esta nota decía «su fila la decide el orquestador de Javier», ya decidido el 23-oct; lo avisaron SCRUM-1556 c.20486 y c.20562) |
+| `docs/master/evidencias/scrum1500/cotejo.cjs` (el cotejo de los comentarios del esquema contra la Parte L del máster; de los cotejos de las evidencias del máster, el único que corre en el check obligatorio, desde SCRUM-1500b) | **J5** | es el tercer fichero de SCRUM-1556, el que la fila J3 de arriba deja sin dueño. Pasa al equipo de Javier por la misma decisión del fundador del 14-oct-2026 («Ok nos lo quedamos nosotros»), y su orquestador da el puesto J5 (encargo del 23-oct-2026) por el área del ticket que lo creó: SCRUM-1500, con `area-j5`. Escrita por el equipo de Javier con el visto de la S0 en SCRUM-1556 c.19641 («son vuestras») |
+| `scripts/_senal-de-nombres.mjs` (el módulo puro de la señal de nombres) | **J6** | decisión del fundador en SCRUM-1389 c.20720 (24-oct-2026): «B: SÍ, la construye J6. `scripts/_senal-de-nombres.mjs` pasa a J6, con su fila en `docs/equipo/dos-equipos.md` §3». J6 la escribió en SCRUM-1389c y la quitó antes de empujar, porque esta tabla es de la S0 (c.20736); la pone la S0 (SCRUM-1480h). El guion `senal-de-nombres.mjs` no entra: la decisión nombra sólo este fichero |
+| `scripts/staging-gated.mjs`, `scripts/_evidencia-tanda.mjs` (el runner de la tanda gateada, `npm run test:staging:gated`, y el recibo que escribe) | **J6** | decisión del fundador en SCRUM-1599 c.20715 (24-oct-2026), la salida A: «Lo hace J6»; la salida que eligió decía en c.20713 «su fila nace en el mismo PR, área J6», y J6 no la puso porque esta tabla es de la S0 (c.20730). La pone la S0 (SCRUM-1480h). El runner lo CORRE todo el mundo; cambiarlo es de J6. `scripts/verificar-evidencia-tanda.mjs`, que importa el segundo, no lo nombra la decisión y sigue en la fila general |
+| `tests/_respaldo-de-firma.mjs`, `tests/scrum921c-firma-con-respaldo-en-codigo.test.mjs`, `tests/_pares-leidos-en-jira.mjs` (el trinquete de firmas con respaldo, su índice de fuentes y la lista congelada de pares leídos) | **J6** | decisión del fundador en SCRUM-1511 c.20748 (24-oct-2026): «Lo construye J6, que fue el último que tocó `_respaldo-de-firma.mjs` (1502h). La fila de carril de esos ficheros va a S0.» Los tres los nombra J6 en c.20765. El tercero lo crea SCRUM-1511h (PR #2828, todavía abierto al escribir esto, 24-oct-2026 12:29Z): la ruta va completa para que la fila valga antes de que exista. La pone la S0 (SCRUM-1480h) |
+| `scripts/_suelo-*` | **S3** | |
+| `docs/equipo/cicatrices/*.md` | cada puesto, la suya | A9 (SCRUM-1294): en qué se equivoca ese puesto, con su comprobación al lado |
+| `docs/master/SCRUM-*.md` | quien trabaja el ticket | un fichero por ticket; si ya existe, se ANEXA una sección (A8) |
 | `docs/microcopy/` | **S4** el README; cada registro, el puesto que usa el texto | la firma es de un jefe o de la delegación de SU orquestador |
 | `docs/prototipos/` | S4 / **J5**, por ticket | |
 | `docs/competencia/` | **J5** | la S0 deja ahí el resultado de Holded (§2.1) |
@@ -177,6 +202,56 @@ clasificados por carpeta y nombre, y **por contenido** donde el nombre engañaba
 | `CLAUDE.md`, `.claude/**`, `docs/YAQU_MASTER.md` | **un jefe** | derivados del máster (regla 35); la S0 prepara la propuesta |
 | `DESIGN.md` | **S2** propone | firma un jefe |
 | `package.json` | cada uno SU línea de script | **una dependencia nueva la decide un jefe** |
+
+**Cómo nace la fila de un fichero de `scripts/`** (SCRUM-1480, 9-oct-2026: propuesta medida de la S0, aceptada
+por el orquestador de Luis). Obliga al equipo de Luis; al de Javier se le propone por su orquestador (§5).
+
+- **Un fichero nuevo de `scripts/` nace con fila, en el PR que lo crea.** Su dueño es el puesto del **área
+  del ticket que lo crea**: la etiqueta `area-…` de ese ticket en Jira (§4). Quien lo crea añade la ruta a la
+  fila de ese puesto en la tabla de arriba, o se lo pide a la S0, y regenera
+  (`node scripts/carriles.mjs generar`). Es el único criterio de los cuatro medidos que da PUESTO y no sólo
+  equipo, y sale de un dato que ya está escrito, no de una opinión.
+- **Si ese ticket no lleva UNA etiqueta de área** (ninguna, o dos), el criterio calla: el fichero se queda en
+  la fila general, sin cerradura, y se DICE que está sin puesto. No se reparte por el nombre (cada clase,
+  `guard-` o `censo-`, la han escrito los dos equipos), ni por quién lo tocó (el autor de git da el equipo,
+  no el puesto: los seis puestos de Luis firman igual), ni por quién lo usa (179 de 253 los usa un test).
+- **Un ayudante (`_*.mjs`) espera a quienes lo importan:** no tiene fila propia mientras lo importe un script
+  de otro dueño o sin fila. Y **una lista de declarados**, donde cada puesto apunta lo suyo, va como
+  contenedor.
+- **Lo medido el 9-oct-2026**, sobre 302 ficheros: 49 ya tenían fila. De los otros 253 el criterio decide 41:
+  28 del equipo de Luis (las ocho filas de arriba, y en ninguno un ayudante con importadores de otro dueño)
+  y 13 del de Javier, que van a su orquestador y no se han escrito. Quedan 225 con sólo la fila general: esos
+  13, 138 donde el autor da el equipo pero no el puesto (55 de Luis, 83 de Javier) y 74 que han tocado los
+  dos equipos. **Esos 225 están SIN PUESTO, no repartidos.** Los instrumentos, en
+  `docs/master/evidencias/SCRUM-1480/`.
+- **Lo hace cumplir un trinquete, desde el 9-oct-2026:**
+  `tests/scrum1480f-un-script-nuevo-no-entra-sin-fila.test.mjs`, que corre en el check obligatorio. Un fichero
+  de `scripts/` que sólo cubre la fila general y no estaba entre esos 225 (la foto,
+  `docs/master/evidencias/SCRUM-1480/sin-fila-9oct.txt`) lo pone en rojo. El número, **225 el 9-oct-2026**, vive
+  en `scripts/_sin-fila-declarados.json` y sólo baja: quien le da fila a uno de la foto, o lo borra, lo baja en
+  ese mismo PR. Se cuenta con `node scripts/carriles.mjs sin-fila`.
+- **El rojo tiene dos salidas, y la segunda no es para todos.** La primera es la fila. La segunda es declararlo
+  en `scripts/_sin-fila-declarados.json`, con su ticket y su motivo, y vale en dos casos: lo crea el **equipo de
+  Javier**, que no edita esta tabla y al que este criterio se le ha propuesto y no impuesto (la S0 le da fila
+  cuando su orquestador diga el puesto); o lo crea el equipo de Luis en un ticket sin UNA etiqueta de área, que
+  es el caso en que el criterio calla. Un declarado es un fichero sin puesto que se ha DICHO: el trinquete no
+  deja que entre callado, no impide que entre. *Esta segunda salida la añade la S0 y lo dice: el encargo del
+  orquestador de Luis era «que no suba de 225», a secas, y así un PR del otro equipo se quedaría en rojo sin
+  poder arreglarlo él.*
+
+### 3.4 · Excepciones declaradas — el cruce de carril legítimo, a la vista
+
+Esta tabla y la de §3.1–3.3 se convierten solas en `.claude/carriles.json` y `.claude/rules/carril-*.md`
+(`node scripts/carriles.mjs generar`, SCRUM-1295), y la cerradura `.claude/hooks/carril.mjs` **bloquea**
+editar un fichero de otro puesto. Un cruce legítimo **no se hace con un permiso silencioso: se declara
+aquí**, con quién, por qué y el ticket, y se regenera. Si la tabla y lo generado no coinciden, el check
+obligatorio sale rojo (`tests/scrum1295-carriles.test.mjs`). «quién» es `todos` o una lista de puestos.
+
+| ruta | quién | motivo | ticket |
+|---|---|---|---|
+| `docs/equipo/00-normas-siempre.md` | todos | A9: el aviso que no se pudo convertir en comprobación va a A10, donde lo leen todas. Cada puesto añade SU línea, en su PR; el resto del fichero es de la S0 | SCRUM-1294 |
+| `.github/workflows/vigia-de-main.yml` | J6 | el vigía del CI de `main` (al acabar cada CI y diario de red), UN workflow nuevo; ningún otro workflow de S5 se toca. Excepción firmada por el fundador en SCRUM-1393 c.20147 | SCRUM-1393 |
+| `src/core/cron/cron.ts` | J1 | el `import` de `reintentoSellado.ts` y el bloque «reintento de sellado (cada minuto)», escritos por S1 (dueño) en SCRUM-1507 c.19344 §3, y sólo ese bloque (conformidad c.19344 §4); lo lleva el PR-2 de SCRUM-1404 del equipo de Javier por decisión del fundador (c.20220, opción 1). El resto del fichero sigue siendo de S1 | SCRUM-1507 |
 
 ## 4 · Jira: las etiquetas y el ciclo del ticket
 
@@ -234,6 +309,55 @@ efecto y se le cuenta al jefe en plano.
 1. Merchant QA propio para el equipo de Javier (§5.1).
 2. Si un jefe puede cambiar una decisión escrita por el otro (§1).
 3. La entrega a la gestoría (SCRUM-280, 322, 323): J1, con revisión de J4 por el RGPD del envío (§2.2).
+4. **Los huecos de carril** (`node scripts/carriles.mjs huecos`, SCRUM-1295). Un fichero que solo cubre la
+   fila general («todo lo demás de `src/`» o «de `public/`») y cuyo nombre se parece a los de OTRO puesto
+   es un viaje esperando: alguien deducirá el dueño por el dominio y la tabla dirá otra cosa. Medido el
+   1-oct-2026 sobre `36f1eee3`: 432 ficheros de producto, 241 solo por la fila general, **32 con pariente
+   en otro puesto**. El censo no decide. Para cada uno, la pregunta es de los dos jefes: **¿es un hueco de
+   la tabla, o es de ese puesto a propósito?** Se cierra escribiendo su fila en §3 (aunque sea para
+   confirmar al dueño actual: con fila propia deja de salir). Las preguntas se hacen por FAMILIA, no por
+   fichero: una pregunta sobre un grupo se contesta una vez; siete sobre ficheros se quedan sin contestar.
+   - **¿De quién es la familia «cliente» del servidor?** Hoy **S1**, solo por la fila general; por el
+     nombre, de J2 (que tiene `customerAdmin.ts`, `tagsDelCliente.ts`, `importarClientes.service.ts`). Son
+     ocho ficheros: seis en `src/modules/system/domain/` (`fusionClientes.ts`, que costó un viaje el
+     29-sep, `historialDelCliente.ts`, `historialWhatsAppDelCliente.ts`, `notasDelCliente.ts`,
+     `sitiosDelCliente.ts`, `puertaClienteReal.ts`), más `jobs/domain/consolidacionCliente.service.ts` y
+     `quotes/domain/decisionDelCliente.ts`.
+   - **¿De quién son las pantallas de parte y albarán que no son la ficha?** Hoy **S2**, solo por la fila
+     general; por el nombre, de S4 (que tiene `parteDetailView.js` y `albaranDetailView.js`). Son cuatro:
+     `parteOficinaView.js` (costó un viaje el 29-sep), `albaranAccion.js`, `albaranActionsRegistry.js` y
+     `albaranDesdePresupuestoModal.js`.
+   - El resto de la lista (20 ficheros sueltos) la da el censo; ninguno ha costado un viaje todavía.
+   - **Y un tipo distinto: el nombre contradice a la tabla** (lo encontró S3 el 1-oct). `scripts/verificacion-s5/`
+     (9 ficheros): la carpeta dice S5 y la fila «`scripts/` → S0» dice S0. Tiene fila y manda la tabla, pero
+     quien lee la carpeta y quien lee la tabla llegan a conclusiones opuestas. Es el único caso entre las 47
+     rutas del repo que llevan un puesto en el nombre. **¿Se le da la carpeta a S5 con una fila, o se renombra?**
+   - **Dos de `scripts/` que S3 necesita tocar y nadie ha decidido de quién son** (SCRUM-1480g, 22-oct-2026,
+     sobre `9839aa6c`). El criterio de §3.3 («el área del ticket que creó cada uno») no decide nada aquí: los
+     dos tickets que los crearon, SCRUM-813 y SCRUM-754, no llevan etiqueta de área. Los dos los abrió la
+     cuenta de Javier en Jira (5 y 7-sep), y los dos ficheros los escribió Javier (`45294b31d` y
+     `b751f88c0`, autor `javier.pereirafe@gmail.com`), antes de que hubiera dos equipos (18-sep). Lo de abajo
+     es una PROPUESTA (la inferencia es de S3), no una fila: una fila en §3 la aplica la cerradura como
+     decisión, y ésta es de los dos jefes.
+     - `scripts/_trinquete-de-zona-hijo.mjs`: S3 propone **S5**, porque SCRUM-1494c (`area-s5`) es el último
+       que lo cambió. Pero ese ticket lo cambió, no lo creó. Y si se declara, la fila tiene que llevar también
+       a su padre, `scripts/_trinquete-de-zona.mjs`, que es el único que lo lanza y tampoco tiene fila.
+       Declarar el hijo solo deja el mismo hueco un fichero más arriba.
+     - `scripts/censo-guards-gateados.mjs`: S3 propone **S0**, por ser un censo, que es lo que la fila
+       general de `scripts/` le da a la S0. Matiz: no es sólo de consulta (`npm run censo:gateados`), porque
+       dos tests importan su `veredictoDelCenso` (`scrum754`, `scrum846b`).
+     - ✅ **Contestada el 24-oct-2026: Javier decide que los tres —el hijo, su padre `_trinquete-de-zona.mjs` y
+       el censo— son de S5.** Tienen fila en §3.3 (SCRUM-1480h); lo de arriba se queda como estaba, de historia.
+       `scripts/trinquete-de-zona.mjs`, la línea de órdenes que importa al padre, no lo nombra la decisión y
+       sigue sin fila.
+5. **`.claude/**` es «de un jefe», y hoy entra sin que un jefe lo firme** (lo destapó SCRUM-1356, 1-oct-2026).
+   La fila de §3.3 dice que `.claude/**` lo firma un jefe y que la S0 prepara la propuesta. El encargo de
+   SCRUM-1356 le dio a la S0 «hooks y `settings.json`» como carril propio, y su PR (#2097: dos hooks y su
+   registro en `.claude/settings.json`) se abrió, se armó y se mergeó SOLO a los 18 minutos, con el check en
+   verde y sin firma de nadie. No hubo daño: los dos hooks avisan y dejan pasar. Pero la tabla y lo que pasó
+   no dicen lo mismo, y un hook que SÍ bloquee entraría por la misma puerta. **¿`.claude/hooks/` y
+   `.claude/settings.json` pasan a ser de la S0 con una fila, o un PR que los toca no se arma solo?** La
+   segunda es un cambio en `pr-automatico.yml` (S5). No lo decide la S0.
 
 **Comprobado contra casos reales:** el censo de los 80 tickets abiertos del orquestador (18-sep ~11:58Z, sobre
 `e76580b1`) casa cada ticket con un área de esta tabla. Salieron cuatro huecos: infraestructura (→ S5) y el

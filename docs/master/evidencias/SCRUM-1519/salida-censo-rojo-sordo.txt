@@ -1,0 +1,39 @@
+SCRUM-1519 · censo de la forma (estático, AST) · ⚠️ SORDO: esto es el rojo, no una medición
+POBLACION: 322 ficheros .ts de src/ · 768 llamadas a Prisma con operación de OPS (13 operaciones) · modelos del esquema 33, con columna de comercio 25 · ficheros con alguna llamada 125
+  por clase de modelo: CON-COLUMNA 614 · MERCHANT 137 · SIN-COLUMNA 17
+  receptores: prisma 632 · tx 48 · prismaClient 36 · db 34 · cliente 9 · client 7 · (prisma as any) 2
+
+── EL PAR SEMBRADO (11 fuentes de mentira)
+  ✗ cruza-por-id             espera SOLO-POR-ID     sale ATADA
+  ✓ filtra                   espera ATADA           sale ATADA
+  ✗ cruza-id-de-otra-fila    espera SOLO-POR-ID     sale ATADA
+  ✓ filtra-por-relacion      espera ATADA           sale ATADA
+  ✗ cruza-en-lote            espera SOLO-POR-ID     sale ATADA
+  ✓ filtra-variable          espera ATADA           sale ATADA
+  ✗ cruza-variable           espera SOLO-POR-ID     sale ATADA
+  ✗ escribe-cruza            espera SOLO-POR-ID     sale ATADA
+  ✓ filtra-clave-compuesta   espera ATADA           sale ATADA
+  ✗ otra-clave               espera POR-OTRA-CLAVE  sale ATADA
+  ✗ de-otro-sitio            espera ILEGIBLE        sale ATADA
+
+── MODELOS CON COLUMNA DE COMERCIO · 614 llamadas
+  ATADA 612 · SIN-WHERE 2
+
+── LA FORMA · SOLO-POR-ID sobre modelo con columna de comercio · 0 llamadas en 0 ficheros
+  por tipo:    
+  por sitio:   
+  tipo×sitio:  
+  por modelo:  
+  por fichero: 
+
+── POR-OTRA-CLAVE (sin id y sin comercio) · 0 · por tipo×sitio: 
+── ILEGIBLE · 0 · NO juzgadas: ni atadas ni sueltas · por sitio: 
+── SIN-WHERE · 2 · por operación: groupBy 2
+
+── MODELOS SIN COLUMNA (sólo se atan por el padre) · 17 llamadas · ATADA 17 · modelos: event 6 · jobAssignee 5 · gatewayEvent 4 · vfFlujoObligado 2
+── MERCHANT (su id ES el comercio) · 137 llamadas · ATADA 134 · SIN-WHERE 3
+
+── EL DEL TICKET (customer.findUnique por job.customerId en jobs.routes.ts): 0 → 
+
+ROJO: 7 de 11 fuentes sembradas no salen como deben: el censo de arriba NO vale.
+EXIT=1

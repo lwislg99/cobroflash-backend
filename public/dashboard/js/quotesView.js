@@ -132,7 +132,7 @@ function renderQuotesView(container, template, documentoSuelto) {
 
 
     // ---------- MODAL PREVISUALIZACIÓN PRESUPUESTO ----------
-function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingApproval }) {
+function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingApproval, clienteSinEmail }) {
   // A1.2: quoteNumber = número visible por merchant; quoteId sigue siendo el
   // id global para las llamadas a la API.
   const displayNum = quoteNumber ?? quoteId;
@@ -211,6 +211,23 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   shareWrap.appendChild(shareRow);
   mBody.appendChild(shareWrap);
 
+  // SCRUM-1237 · lo que contesta cada envío se dice TAMBIÉN aquí, donde se pulsó. `setAlert` escribe
+  // en el aviso del formulario, que esta modal TAPA: el 400 «sin email» llegaba, se traducía bien y
+  // no se veía hasta cerrarla. Se copia el aviso tal cual (mismo texto, misma clase): ninguna frase
+  // nueva, y las llamadas a `setAlert` siguen donde estaban, a la vista del censo de SCRUM-644.
+  const avisoDeLaModal = document.createElement("div");
+  avisoDeLaModal.className = "alert modal-share-aviso";
+  avisoDeLaModal.setAttribute("role", "status");
+  avisoDeLaModal.style.display = "none";
+  shareWrap.appendChild(avisoDeLaModal);
+  function copiarAvisoALaModal() {
+    avisoDeLaModal.textContent = alertBox.textContent;
+    avisoDeLaModal.className = alertBox.className + " modal-share-aviso";
+    avisoDeLaModal.style.display = alertBox.style.display;
+    // En móvil la modal se desplaza y el aviso nace bajo el borde: medido a 390 px, fuera de la vista.
+    if (avisoDeLaModal.style.display !== "none") avisoDeLaModal.scrollIntoView({ block: "nearest" });
+  }
+
   modal.appendChild(mBody);
 
   const mFooter = document.createElement("div");
@@ -261,6 +278,12 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
     emailBtn.type = "button";
     emailBtn.textContent = "✉ Enviar por email";
     emailBtn.className = "btn btn-secondary";
+    // SCRUM-1237 · un botón que no puede funcionar no se ofrece: la misma conducta, y el mismo
+    // texto, que el botón de correo de la ficha (`quotesDetailView.js`).
+    if (clienteSinEmail) {
+      emailBtn.disabled = true;
+      emailBtn.title = 'El cliente no tiene email configurado.';
+    }
     emailBtn.addEventListener("click", async function() {
       emailBtn.disabled = true;
       emailBtn.textContent = "Enviando…";
@@ -278,6 +301,7 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
         // miraba body.ok, que ya no es la señal del envío. waSendFailed mira sent.
         if (!waSendFailed(body)) {
           setAlert("success", "Presupuesto enviado por email.");
+          copiarAvisoALaModal();
           setResult({ quote_id: quoteId, number: displayNum, status: "SENT", sent: true });
           markDone(emailBtn, "✓ Enviado por email"); // la modal sigue abierta
         } else {
@@ -285,6 +309,7 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
         }
       } catch (err) {
         setAlert("error", err.message || "Error enviando el email.");
+        copiarAvisoALaModal();
         emailBtn.disabled = false;
         emailBtn.textContent = "✉ Enviar por email";
       }
@@ -320,16 +345,19 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
         // P3-2: si Meta rechazó, el backend devuelve 200 + sent:false con un mensaje claro.
         if (!waSendFailed(body)) {
           setAlert("success", "Presupuesto enviado por WhatsApp.");
+          copiarAvisoALaModal();
           setResult({ quote_id: quoteId, number: displayNum, status: "SENT", sent: true });
           markDone(sendBtn, "✓ Enviado por WhatsApp"); // la modal sigue abierta
         } else {
           setAlert("error", body.message || "Presupuesto creado, pero no se pudo enviar por WhatsApp.");
+          copiarAvisoALaModal();
           setResult({ quote_id: quoteId, number: displayNum, status: "DRAFT", sent: false });
           sendBtn.disabled = false;
           sendBtn.textContent = "Enviar por WhatsApp";
         }
       } catch (err) {
         setAlert("error", err.message || "Error enviando por WhatsApp.");
+        copiarAvisoALaModal();
         sendBtn.disabled = false;
         sendBtn.textContent = "Enviar por WhatsApp";
       }
@@ -754,6 +782,20 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
   // tope de aquí es para que el profesional vea dónde está el límite, no para validar.
   direccionObraInput.maxLength = 300;
   direccionObraWrap.appendChild(direccionObraInput);
+  // SCRUM-1144 · «Elegir un sitio guardado»: abre la lista de sitios del cliente y, al PULSAR
+  // uno, escribe su dirección en el campo de arriba. Vive dentro del mismo envoltorio, así que
+  // sólo existe con «Personalizada», que es el único modo en el que el texto viaja. Nada se
+  // rellena solo (P2/DOC-12): sin pulsación del profesional el campo sigue vacío. El control es
+  // el mismo que el de la ficha del Trabajo (`sitiosGuardados.montarSelector`).
+  const selectorDeSitios = window.sitiosGuardados.montarSelector({
+    idLista: "quote-sitios-guardados",
+    idCliente: () => fieldCustomer.select.value,
+    campo: direccionObraInput,
+    // Lo mismo que hace el oyente `input` del campo al teclear: previsualización y borrador.
+    alElegir: () => { renderPreview(); scheduleDraftSave(); },
+  });
+  direccionObraWrap.appendChild(selectorDeSitios.boton);
+  direccionObraWrap.appendChild(selectorDeSitios.lista);
   // SCRUM-600 · el campo de texto de la dirección de la obra se va con su selector (arriba). Va
   // aparte porque también se pinta aparte, y dejarlo suelto sería un `shipping_address` en la
   // pantalla del documento suelto sin nada que lo gobierne — invisible por `hidden`, que es
@@ -796,6 +838,9 @@ function openQuoteModal({ quoteId, quoteNumber, pdfUrl, allowWhatsapp, pendingAp
       (c) => String(c.id) === String(fieldCustomer.select.value),
     ) || null;
     direccionObraInput.placeholder = window.quoteDireccionObra.sugerenciaParaPlaceholder(cliente);
+    // SCRUM-1144 · la lista abierta es de UN cliente y de un modo: al cambiar cualquiera de los
+    // dos se cierra, o se ofrecerían los sitios del cliente anterior.
+    selectorDeSitios.cerrar();
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════════════
@@ -4672,7 +4717,13 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
     templateLines.forEach(function (l) {
       // SCRUM-132: `l.tax` CRUDO, sin `|| 0`. El `|| 0` convertía "esta línea no trae IVA" en
       // "IVA 0 %", y desde SCRUM-65 el 0 % es un tipo legítimo (21/10/4/0).
-      addLine({ concept: l.concept, qty: l.qty, price: l.price, tax: l.tax });
+      // SCRUM-930 · y su descripción y su «Dto. %», si la plantilla los trae. En el DOCUMENTO SUELTO
+      // no: esos dos campos no se pintan allí porque el emisor los descarta (SCRUM-616), y un
+      // descuento puesto en un campo que no se ve bajaría el importe de la vista previa sin que
+      // el documento emitido lo recoja.
+      const descripcion = esDocumentoSuelto ? undefined : l.description;
+      const dto = esDocumentoSuelto ? undefined : l.dto;
+      addLine({ concept: l.concept, qty: l.qty, price: l.price, tax: l.tax, description: descripcion, dto: dto });
     });
     setAlert('success', `Plantilla "${tpl.name}" cargada — ${templateLines.length} líneas añadidas.`);
     return templateLines.length;
@@ -4872,12 +4923,25 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
         const price   = parseFloat(String(line.priceInput.value || '0').replace(',', '.'));
         const vatPerc = parseFloat(String(line.vatInput.value   || '0').replace(',', '.'));
         if (!concept || !Number.isFinite(price) || price < 0) return null;
-        return {
-          concept,
-          qty:   Number.isFinite(qty)   ? qty   : 1,
-          price: price,
-          tax:   Number.isFinite(vatPerc) ? vatPerc / 100 : 0,
-        };
+        // SCRUM-930 · la plantilla guarda también la DESCRIPCIÓN de la línea y su «Dto. %». Viajan
+        // dentro de `lines`, que el servidor guarda sin mirar: no hace falta columna. Clave AUSENTE
+        // si el campo está vacío (mismo criterio que el payload del presupuesto): una plantilla sin
+        // descripción ni descuento sale byte a byte como antes.
+        // El SUPLIDO no se guarda, y es decisión del ticket: es un gasto de UN cliente concreto. Una
+        // línea marcada como suplido entra en la plantilla como línea normal con su IVA a 0.
+        // El descuento GLOBAL tampoco: la plantilla no tiene columna (espera el ALTER de SCRUM-930).
+        // En el documento suelto ninguno de los dos campos se pinta y aquí llegan vacíos.
+        const description = ((line.descInput && line.descInput.value) || '').trim();
+        return Object.assign(
+          {
+            concept,
+            qty:   Number.isFinite(qty)   ? qty   : 1,
+            price: price,
+            tax:   Number.isFinite(vatPerc) ? vatPerc / 100 : 0,
+          },
+          description ? { description } : {},
+          window.quoteDescuentos.descuentoParaPayload(line.dtoInput && line.dtoInput.value)
+        );
       })
       .filter(Boolean);
 
@@ -4918,8 +4982,8 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
     setTimeout(() => nameInput.focus(), 80);
 
     saveBtn.onclick = async function () {
-      const name = nameInput.value.trim();
-      if (!name) {
+      const escrito = nameInput.value.trim();
+      if (!escrito) {
         alertEl.textContent = 'Escribe un nombre para la plantilla.';
         alertEl.className = 'alert error';
         return;
@@ -4941,15 +5005,65 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
         : null;
 
       try {
-        await apiRequest('/admin/templates', {
-          method: 'POST',
-          body: JSON.stringify({ name, currency, lines: templateLines, paymentTerms }),
-        });
+        // SCRUM-1188e (parte C) · guardar con el nombre de una plantilla que YA tiene la SUSTITUYE,
+        // previa pregunta, en vez de crear otra con el mismo nombre (el `POST` no mira duplicados).
+        // Es la forma de cambiarle un precio a una plantilla: «Usar» → cambiar → guardar con su nombre.
+        // La lista se pide AHORA, no se reutiliza la de las fichas rápidas, que es de cuando se montó
+        // el editor. Si no se puede leer NO se guarda (cae al `catch`): «no pude mirar» no es «no hay
+        // ninguna con ese nombre», y crear a ciegas es justo el duplicado que esto viene a quitar.
+        const yaGuardadas = await apiRequest('/admin/templates');
+        if (!Array.isArray(yaGuardadas)) throw new Error('lista_de_plantillas_ilegible');
+        // Mismo nombre = igual sin contar mayúsculas ni espacios de los bordes. La lista viene de la
+        // más reciente a la más antigua: si ya hay varias con ese nombre, se sustituye la más reciente.
+        const mismoNombre = (a, b) => String(a || '').trim().toLocaleLowerCase('es') === String(b || '').trim().toLocaleLowerCase('es');
+        const laQueYaTiene = yaGuardadas.find((tpl) => tpl && mismoNombre(tpl.name, escrito)) || null;
+        // `name` es el nombre que va en los textos y, si se crea, en el `POST`: al sustituir es el
+        // GUARDADO, que es el que ya conoce (el `PUT` no lo manda: «no lo cambies» es no mandar la
+        // clave, SCRUM-1188c). El literal firmado de abajo sigue interpolando `name`, sin tocar.
+        const name = laQueYaTiene ? laQueYaTiene.name : escrito;
+
+        if (laQueYaTiene) {
+          // Pregunta FIRMADA por el orquestador (SCRUM-1188, comentario 19400), letra por letra. Avisa
+          // de que no se deshace porque es verdad: las líneas que tenía la plantilla se pierden.
+          if (!window.confirm(`Ya tienes una plantilla llamada "${name}". ¿Quieres sustituirla? Esta acción no se puede deshacer.`)) {
+            // Dice que no: la hoja sigue abierta con lo escrito, para que le cambie el nombre.
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Guardar plantilla';
+            return;
+          }
+          // `paymentTerms` viaja SIEMPRE, también a `null`: desde SCRUM-1188c el `null` VACÍA el cobro
+          // guardado. Sin eso, sustituir una plantilla 50/50 desde un plan personalizado dejaría el
+          // 50/50 viejo debajo del aviso que dice «guardada sin el plan de cobro».
+          // `tiers` no viaja: este editor no tiene opciones, y lo que no se manda no se toca.
+          await apiRequest(`/admin/templates/${laQueYaTiene.id}`, {
+            method: 'PUT',
+            body: JSON.stringify({ currency, lines: templateLines, paymentTerms }),
+          });
+          // Las fichas rápidas guardan la plantilla TAL COMO ERA al montar el editor: sin esto, la
+          // ficha de la recién sustituida seguiría cargando las líneas y los precios viejos. Se
+          // quitan YA y se vuelven a pedir; si esa petición falla queda el botón de la lista, que
+          // pide la suya cada vez que se abre.
+          plantillasRapidas.hidden = true;
+          plantillasRapidas.innerHTML = '';
+          plantillasRotulo = null;
+          useTemplateBtn.hidden = false;
+          pintarPlantillasRapidas();
+        } else {
+          await apiRequest('/admin/templates', {
+            method: 'POST',
+            body: JSON.stringify({ name, currency, lines: templateLines, paymentTerms }),
+          });
+        }
         closeOverlay();
         // SCRUM-1188 · con «CUSTOM» la plantilla sale SIN condición (arriba): se dice, una vez, aquí.
         // Texto FIRMADO por el orquestador (SCRUM-1188, comentario 17332), letra por letra. SOLO con
         // «CUSTOM»: en las otras tres la condición sí se guarda y sale el éxito de siempre.
+        // Al SUSTITUIR con «CUSTOM» sale este mismo aviso y no el de «actualizada»: lo que afirma
+        // sigue siendo verdad (la plantilla queda guardada sin plan de cobro) y es lo que más importa.
+        // Esa firma era para CREAR; el comentario 19400 la extiende a sustituir y firma el de
+        // «actualizada» de la línea siguiente.
         if (paymentSelect.value === 'CUSTOM') setAlert('aviso', `Plantilla "${name}" guardada sin el plan de cobro. Los tramos de un plan personalizado no se guardan en las plantillas: al usarla, elige el cobro en el presupuesto.`);
+        else if (laQueYaTiene) setAlert('success', `Plantilla "${name}" actualizada.`);
         else setAlert('success', `Plantilla "${name}" guardada. Puedes usarla con el botón "📋 Usar plantilla".`);
       } catch {
         alertEl.textContent = 'Error al guardar la plantilla.';
@@ -5749,11 +5863,15 @@ payloadLines.push(lineaParaPayload({
 
       // 2) Pedimos el detalle al admin para recuperar el pdfUrl del presupuesto
       let pdfUrl = null;
+      // SCRUM-1237 · del mismo detalle sale si el cliente tiene email. Sólo se da por «sin email»
+      // si el detalle LLEGÓ y lo dice: si no se pudo leer, el botón se ofrece y contesta el servidor.
+      let clienteSinEmail = false;
       try {
         const detailRes = await fetch(`/admin/quotes/${quoteId}`);
         if (detailRes.ok) {
           const detail = await detailRes.json();
           pdfUrl = detail.pdfUrl || null;
+          clienteSinEmail = !(detail.customer && detail.customer.email);
         }
       } catch (e) {
         console.warn("No se pudo obtener pdfUrl del presupuesto", e);
@@ -5766,7 +5884,7 @@ payloadLines.push(lineaParaPayload({
       const pendingApproval = quote.status === 'pending_approval';
       // SCRUM-965 · se guarda la hoja EXACTA que se acaba de abrir, no sus trozos: el segundo clic
       // tiene que reabrir esto mismo, y reconstruirlo a mano sería la segunda fuente que deriva.
-      const hojaDeEstePresupuesto = { quoteId, quoteNumber, pdfUrl, allowWhatsapp: true, pendingApproval };
+      const hojaDeEstePresupuesto = { quoteId, quoteNumber, pdfUrl, allowWhatsapp: true, pendingApproval, clienteSinEmail };
       presupuestoYaCreado = { huella: huellaDeEstePresupuesto, hoja: hojaDeEstePresupuesto };
       openQuoteModal(hojaDeEstePresupuesto);
 

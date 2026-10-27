@@ -1,0 +1,63 @@
+POBLACIÓN · 322 state.json · 43 con actividad en 30 h · 43 con turnos · 43 con nombre de puesto · líneas rotas 0 · jsonl ilegibles 0
+nombre         estado   turnos  fin   max  comp pushes 1erPush | cruza300→ turno · pushes antes · ctx en el 1er push después (turnos)
+s0-6octc       done        96 823k 823k    0     0     —  | t23 · 0 · NINGUNO (acabó en 823k, parada 431 min)
+s5-6octd       done       112 531k 531k    0     2  339k  | t41 · 0 · 339k (+13)
+s1-6octc       done       155 512k 512k    0     3  247k  | t64 · 1 · 416k (+46)
+s3-6octc       done       132 502k 502k    0     2  395k  | t60 · 0 · 395k (+31)
+s2-6octb       done       122 495k 495k    0     6  182k  | t67 · 1 · 340k (+8)
+s0-6octd       done       127 465k 465k    0     4  232k  | t67 · 2 · 412k (+33)
+s4-6octc       done       106 427k 427k    0     3  243k  | t57 · 1 · 304k (+2)
+s1-6octd       blocked    104 423k 423k    0     2  288k  | t53 · 1 · 394k (+38)
+s0-2octb       blocked    128 420k 420k    0    10  200k  | t73 · 4 · 318k (+7)
+s5-6octf       blocked    107 415k 415k    0     2  165k  | t60 · 1 · 381k (+33)
+s4-6octg       blocked     82 412k 412k    0     1  318k  | t41 · 0 · 318k (+16)
+s0-6octf       done       120 404k 404k    0     3  194k  | t63 · 2 · 310k (+13)
+s4-6octb       done        80 393k 393k    0     1  192k  | t56 · 1 · NINGUNO (acabó en 393k, parada 464 min)
+s5-6octb       done        75 372k 372k    0     5  199k  | t48 · 2 · 318k (+5)
+s3-6oct        done        69 355k 355k    0     2  273k  | t42 · 1 · 344k (+20)
+s1-6octg       blocked     66 344k 344k    0     1  290k  | t55 · 1 · NINGUNO (acabó en 344k, parada 80 min)
+s1-6octf       blocked     66 344k 344k    0     0     —  | t50 · 0 · NINGUNO (acabó en 344k, parada 135 min)
+s2-6octd       done       107 333k 333k    0     1  313k  | t80 · 0 · 313k (+16)
+s5-6octg       done        76 333k 333k    1     1  307k  | t58 · 0 · 307k (+7)
+s3-6octd       done        53 330k 330k    0     1  287k  | t39 · 1 · NINGUNO (acabó en 330k, parada 353 min)
+s3-6octg       done        93 318k 318k    0     1  298k  | t84 · 1 · NINGUNO (acabó en 318k, parada 41 min)
+s0-6octg       blocked     94 298k 298k    0     2  210k  | no
+s4-6octf       blocked     43 291k 291k    0     0     —  | no
+s2-6oct        blocked     43 277k 277k    0     1  230k  | no
+s1-6octh       working     53 275k 275k    0     0     —  | no
+s1-6oct        blocked     56 273k 273k    0     1  210k  | no
+s4-6oct        blocked     28 271k 271k    0     0     —  | no
+s2-6octf       blocked     36 264k 264k    0     0     —  | no
+s3-6octf       blocked     68 258k 258k    0     1  135k  | no
+s1-6octe       done        40 255k 255k    0     1  252k  | no
+s2-6octh       working     35 249k 249k    0     0     —  | no
+s4-6octh       working     32 247k 247k    0     0     —  | no
+s1-6octb       blocked     24 247k 247k    0     0     —  | no
+s0-6octh       working     44 243k 243k    0     0     —  | no
+s4-6octd       done        33 227k 227k    0     1  223k  | no
+s5-6octh       working     51 219k 219k    0     1  144k  | no
+s2-6octg       blocked     24 207k 207k    0     0     —  | no
+s0-6octb       blocked     18 203k 203k    0     0     —  | no
+s3-6octh       working     22 191k 191k    0     0     —  | no
+s0-6oct        done        25 191k 191k    0     1   89k  | no
+s5-6oct        blocked     35 186k 186k    0     1  177k  | no
+s2-6octe       done        21 184k 184k    0     0     —  | no
+s3-prueba      done         1  63k  63k    0     0     —  | no
+
+── LA PREGUNTA, por umbral (sesiones con nombre de puesto) ──
+sesiones: 43 · con algún push: 28 · sin ninguno: 15
+contexto en el PRIMER push: mediana 230k · mín  89k · máx 395k
+contexto FINAL (último turno): mediana 298k · MÁXIMO del día por sesión: mediana 298k
+200k · lo cruzan 38 de 43 · de ellas SIN ningún push antes de cruzarlo: 30 · con un push DESPUÉS (ahí saltaría el relevo): 23, a mediana 273k y máx 395k · lo cruzaron y se pararon (>60 min) SIN otro push: 10
+300k · lo cruzan 21 de 43 · de ellas SIN ningún push antes de cruzarlo: 7 · con un push DESPUÉS (ahí saltaría el relevo): 15, a mediana 339k y máx 416k · lo cruzaron y se pararon (>60 min) SIN otro push: 5
+400k · lo cruzan 12 de 43 · de ellas SIN ningún push antes de cruzarlo: 1 · con un push DESPUÉS (ahí saltaría el relevo): 6, a mediana 416k y máx 527k · lo cruzaron y se pararon (>60 min) SIN otro push: 5
+500k · lo cruzan 4 de 43 · de ellas SIN ningún push antes de cruzarlo: 1 · con un push DESPUÉS (ahí saltaría el relevo): 1, a mediana 527k y máx 527k · lo cruzaron y se pararon (>60 min) SIN otro push: 3
+
+── FINALES de las sesiones PARADAS más de 60 min (dónde acaban, en tramos de contexto) ──
+    0–200 k: 4
+  200–300 k: 11
+  300–400 k: 7
+  400–500 k: 7
+  500–800 k: 3
+  800–2000k: 1
+  (paradas: 33 de 43 · con alguna compactación en el día: 1)

@@ -403,13 +403,23 @@ test('SCRUM-698 · CONTROL POSITIVO: las vistas que ya se montaban dan los MISMO
   // · `textarea`) = 7, que es todo el delta.
   // SCRUM-1180 · 28-sep-2026 · `renderQuotesView` 255 → 256: el envoltorio `div.quote-clausulas`,
   // oculto y vacío porque el negocio del banco no tiene cláusulas. Las otras tres, intactas.
+  // SCRUM-1144 · 15-oct-2026 · `renderQuotesView` 256 → 258: dentro de `div.quote-direccion-obra`,
+  // el `button.btn-ghost` «Elegir un sitio guardado» y la `div.sitios-guardados`, cerrada y
+  // vacía hasta que se pulsa. 2 = todo el delta. Las otras tres, intactas.
   // 🔴 SCRUM-1135 · 28-sep-2026 · `renderCustomersView` 78 → 82, y las otras tres intactas. Los
   // CUATRO, POR IDENTIDAD sobre el árbol montado: `div.barra-seleccion-etiquetar` (el bloque de
   // etiquetar la selección, dentro de la barra) + `input.input` («Etiqueta») + dos
   // `button.btn-secondary` («Añadir etiqueta», «Quitar etiqueta») = 4, todo el delta. Se montan con
   // el rol admin del banco; para un técnico no se pintan.
-  for (const [vista, nodos] of [['renderQuotesView', 256], ['renderProductsView', 176],
-    ['renderCustomersView', 82], ['renderHomeView', 145]]) {
+  // 🔴 SCRUM-1043a · 23-oct-2026 · `renderCustomersView` 82 → 89, y las otras tres intactas. Los
+  // SIETE, POR IDENTIDAD (firmas etiqueta + clase + texto de los dos árboles, `public/` de main
+  // 5da02178a contra la rama; nada resta): `div.customers-tabs` + `button.customers-tab` «Con cobro
+  // pendiente» + `option` «Más pendiente de cobro» + `th` «Pendiente de cobro» + su casilla en el
+  // selector de columnas (`label.columnas-opcion` + `input` + `span`) = 7. Textos firmados en
+  // SCRUM-1043 c.20536; el techo, autorizado por el orquestador en SCRUM-1043 c.20582. Rol admin del
+  // banco; al técnico no se le pintan.
+  for (const [vista, nodos] of [['renderQuotesView', 258], ['renderProductsView', 176],
+    ['renderCustomersView', 89], ['renderHomeView', 145]]) {
     const r = await pintarVista(cargarDashboard(RAIZ), vista);
     assert.equal(r.error, null, `🔴 ${vista} ha dejado de montarse: ${r.error}`);
     assert.equal(todos(r.contenedor).length, nodos,
@@ -477,7 +487,9 @@ test('SCRUM-698 · CONTROL NEGATIVO: el fixture NO se impone a quien ya pasaba l
   // identidad en el bloque de arriba. El componente se monta con valores vacíos y no depende de los
   // datos, así que lo pintan los dos montajes. Los dos dan 255.
   // SCRUM-1180 (28-sep-2026): +1, el envoltorio de las cláusulas, oculto y vacío en los dos montajes. Los dos dan 256.
-  assert.equal(todos(desnuda.contenedor).length, 256,
+  // SCRUM-1144 (15-oct-2026): +2, el botón y la lista cerrada de los sitios guardados; no dependen de
+  // los datos, así que los pintan los dos montajes. Los dos dan 258.
+  assert.equal(todos(desnuda.contenedor).length, 258,
     '🔴 montar sin `datos` ya no da lo de siempre: el fixture se ha colado como valor por '
     + 'defecto y está moviendo lo que miden otros.');
 });

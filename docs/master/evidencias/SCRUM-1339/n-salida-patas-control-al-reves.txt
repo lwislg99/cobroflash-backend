@@ -1,0 +1,43 @@
+POBLACIÓN: 248 ejecuciones del meta-guard en 246 runs y 139 PR · de 2026-10-06T13:46:31Z a 2026-10-13T06:20:11Z · recogido 2026-10-13T06:21:08.000Z
+✅ SUMA: las 248 ejecuciones listadas están, una a una, en la LISTA de j-logs (248 filas)
+  estado del job: CIEGO: 58 · SIN VEREDICTO: 35 · VERDE: 155
+  scrum859-identidad-y-motivo-cerrado.test.mjs: SIN VEREDICTO: 35 · ✔?: 42 · ✔✔: 171
+✅ SUMA: ciegas (42) + enteras (171) = con veredicto (213); no hay una tercera forma
+
+① TASA: scrum859 sale CIEGO en 42 de 213 ejecuciones con veredicto = 19.7 % · sin veredicto (no cuentan ni a favor ni en contra): 35
+
+CONTROLES DEL DÍA
+🔴 POSITIVO que TIENE que salir ciego: job 113102985230 (#2294, run 37712917041) → VERDE · ✔✔
+🔴 CERO que NO puede salir ciego: job 115146037750 (#2354) → CIEGO · ✔?
+✅ TAMAÑO: los 213 logs con veredicto pesan de 113588 a 127648 B (mediana 124163); los 35 sin veredicto, de 0 a 123069 B
+
+② EL MISMO BLOB EN OTROS JOBS
+  tests/scrum859-identidad-y-motivo-cerrado.test.mjs: blob de origin/main 97a2be408e002fafd664e5336ad0dfd1afca6e80 · versiones que main ha tenido: 6
+  tests/scrum267-ancla-de-medicion.test.mjs: blob de origin/main 597c2e4373d74f2bdd4cd5eafec4f7f8df5d202c · versiones que main ha tenido: 13
+  scripts/meta-guard-mutaciones.mjs: blob de origin/main b0bfd890a187dee507817ef882ce60d0afa6f956 · versiones que main ha tenido: 25
+✅ main NO ha tocado ninguno de los tres desde el merge del instrumento actual (8290e27d, #2213): 0 commits · positivo del mismo comando sobre docs/master: 455 commits
+  puntas distintas: 211 · ejecuciones cuya rama trae una versión de alguno de los tres que main no ha tenido, o cuyo commit no está en local: 0
+  blobs [97a2be408e002fafd 597c2e4373d74f2bd b0bfd890a187dee50] → juzgado ENTERO (✔✔) en 171 · CIEGO (✔?) en 42
+✅ LA PATA: con los tres blobs de main, scrum859 sale juzgado ENTERO en 171 ejecuciones y CIEGO en 42
+
+③ REPARTO
+  por día (UTC, creación del run), ciegas de las que tienen veredicto: 2026-10-06: 8 de 35 · 2026-10-07: 10 de 73 · 2026-10-08: 13 de 56 · 2026-10-09: 5 de 24 · 2026-10-13: 6 de 25
+  por evento: pull_request: 28 de 157 · push: 14 de 56
+  por intento del run: intento 1: 42 de 211 · intento 2: 0 de 2
+  la MISMA punta ejecutada más de una vez: 2 puntas (4 ejecuciones) · con resultado DISTINTO entre sus ejecuciones: 0 · todas ciegas: 0 · todas enteras: 2
+  PR con más de una ejecución (puntas distintas incluidas): 64 · con las dos formas: 25 · sólo ciegas: 2 · sólo enteras: 37
+  en orden de creación: 66 cambios de forma entre ejecuciones vecinas · racha más larga de ciegas seguidas: 4 · primera ciega 2026-10-06T13:48:15Z · última 2026-10-13T05:32:38Z · última entera 2026-10-13T05:45:59Z
+  secuencia (E entera, C ciega): ECEEEEEEEEEEEECEECEEEECECCCCEEEEEEECEEEEEEEECEEEEECEEEEEEEEEECEECEEEEEECEEEEEEEEEEEEEEEECEEECEECEEEEEEEEEEECEEEEEEECCEEECEEEEEEEEEEEEECCEEEECEEEEEEECEEEECECCEEECCECEEEEECEECEECEEEEEEECEEECCEEEEEEECEECEEEEECEEECCEE
+
+④ TODAS LAS MARCAS «?» Y «☠» DE LOS LOGS CON VEREDICTO, por guard
+✅ SUMA: las marcas «?» y «☠» contadas aquí dan las ciegas más los muertos que dice el resumen en 213 de 213 logs
+  ? scrum859-identidad-y-motivo-cerrado.test.mjs: 42 logs
+  ? vigia-atascados.test.mjs: 26 logs
+  ? scrum757-la-declaracion-que-nadie-lee.test.mjs: 3 logs (PR #2229 #2233 #2337)
+  ☠ scrum813-trinquete-de-zona.test.mjs: 3 logs (PR #2293 #2298 #2301)
+  ☠ scrum834-puerta-avisador-rojo.test.mjs: 1 logs (PR #2282)
+  ☠ vigia-atascados.test.mjs: 1 logs (PR #2334)
+  logs CIEGO que lo son sin que ciegue scrum859: 16 · logs ROJO (alguna muda): 0
+
+🔴 2 control(es) NO se cumplen: lo de arriba no vale
+EXIT=1

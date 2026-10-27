@@ -414,8 +414,8 @@ function quitarFiltrosDeGastos() {
   }
 }
 
-// Una fila de la lista. Tocar la fila abre el gasto (el modal de edición, hasta que exista el detalle);
-// el enlace del trabajo y el «⋯» NO la abren. Todo lo que se puede hacer con un gasto está en su «⋯»:
+// Una fila de la lista. Tocar la fila abre el gasto: su FICHA de lectura (SCRUM-1156), que hasta que
+// existió era el modal de edición. El enlace del trabajo y el «⋯» NO la abren. Todo lo que se puede hacer con un gasto está en su «⋯»:
 // la papelera de 21 × 29 px que iba pegada a una fila que navega ya no es un botón suelto (AB3).
 function filaDeGasto(e) {
   const fila = gastoEl('div', 'gasto-fila');
@@ -454,20 +454,206 @@ function filaDeGasto(e) {
   fila.append(que, meta, celdaTrabajo(e), imp, mas);
   fila.addEventListener('click', (ev) => {
     if (ev.target.closest('a, button')) return;
-    openExpenseModal(e);
+    renderAppView('expenses-detail', { expenseId: e.id });
   });
   return fila;
 }
 
-async function deleteExpenseItem(id) {
+// `despues` (SCRUM-1156, opcional): qué hacer cuando el gasto ya no existe. Sin él, recarga la lista,
+// que es lo de siempre; desde la ficha, la ficha que se queda sin gasto vuelve a la lista.
+async function deleteExpenseItem(id, despues) {
   if (!confirm('¿Eliminar este gasto?')) return;
   try {
     await apiRequest(`/admin/expenses/${id}`, { method: 'DELETE' });
-    await Promise.all([loadSummary(), loadExpenses()]);
+    if (despues) despues();
+    else await Promise.all([loadSummary(), loadExpenses()]);
   } catch (err) {
     showToast('No se pudo eliminar: ' + err.message, 'error');
   }
 }
+
+// ══ SCRUM-1156 · LA FICHA DE LECTURA DEL GASTO ═══════════════════════════════════════════════════
+//
+// Hasta hoy un gasto no se podía LEER, sólo editar: tocar la fila abría el modal con sus catorce
+// campos, y la foto del ticket —que es el justificante— salía en miniatura debajo de todos ellos.
+// Aquí la foto va delante y grande, y de los datos de la factura sólo se pinta lo que el profesional
+// apuntó: sin ninguno, no hay tarjeta (nunca una columna de «—», que sería la lista de «qué le
+// falta» que espera al asesor, SCRUM-324 E3). Prototipo: docs/prototipos/SCRUM-920/gastos.html.
+//
+// Textos: los de SCRUM-920 comentario 15992 (sección «El detalle y el «⋯»»), y los rótulos de los
+// datos, que son los del alta. No hay ninguno nuevo. Todo lo que CAMBIA el gasto pasa por el modal
+// de siempre (`openExpenseModal`), con el foco en el control que se pidió: así el error, el guardado
+// y la foto los resuelve el camino que ya existe, y no hay un segundo formulario que se separe.
+//
+// La ficha vive en el hash (`DETALLES` de app.js, SCRUM-832): «atrás» vuelve a la lista y una
+// recarga la pide sola a `GET /admin/expenses/:id` (SCRUM-1156b, la misma fila que la lista).
+const TEXTO_FICHA_FOTO_TITULO = 'La foto del ticket';
+const TEXTO_FICHA_FOTO_GRANDE = 'Ver a tamaño completo';
+const TEXTO_FICHA_FOTO_CAMBIAR = 'Cambiar la foto';
+const TEXTO_FICHA_SIN_FOTO = 'De este gasto no guardaste ninguna foto.';
+const TEXTO_FICHA_SIN_FOTO_CTA = '📷 Añadir la foto ahora';
+const TEXTO_FICHA_DATOS_TITULO = 'Datos de la factura del proveedor';
+const TEXTO_FICHA_SUELTO = 'Este gasto no cuenta para el margen de ningún trabajo.';
+const TEXTO_FICHA_VINCULAR = 'Vincular a un trabajo';
+const TEXTO_MENU_VER_FOTO = 'Ver la foto';
+const TEXTO_MENU_ANADIR_FOTO = '📷 Añadir la foto';
+// La ficha que no se pudo pedir (5xx, sin red): el singular de lo que dice la lista más arriba
+// («No se han podido cargar los gastos. Vuelve a intentarlo.»), con la misma forma.
+const TEXTO_FICHA_NO_CARGA = 'No se ha podido cargar el gasto. Vuelve a intentarlo.'; // APROBADO · SCRUM-1156 comentario 19907
+// El aviso del id que no existe: el MISMO literal que `DETALLES` de app.js. «No existe» y «no es
+// tuyo» dicen lo mismo, también desde aquí.
+const TEXTO_FICHA_NO_EXISTE = 'Ese gasto ya no existe.'; // APROBADO · SCRUM-1156 comentario 19907
+
+/** La foto entera, en otra pestaña: lo mismo que «Verla» del alta. */
+function abrirFotoDelGasto(e) {
+  window.open(`/admin/expenses/${encodeURIComponent(e.id)}/foto`, '_blank', 'noopener');
+}
+
+/** El modal de siempre con el foco en el control que se pidió desde la ficha. */
+function editarGastoDesde(e, idFoco, alGuardar) {
+  openExpenseModal(e, { onSaved: alGuardar });
+  const control = idFoco && document.getElementById(idFoco);
+  if (control) control.focus();
+}
+
+function botonDeFicha(texto, clase, alPulsar) {
+  const b = gastoEl('button', clase, texto);
+  b.type = 'button';
+  b.addEventListener('click', alPulsar);
+  return b;
+}
+
+async function renderExpenseDetailView(container, expenseId) {
+  // Sin id no hay gasto que pedir: `/admin/expenses/undefined` es una petición que el servidor sólo
+  // puede rechazar (SCRUM-1560). `app.js` no la llama así; quien lo haga no recibe una ficha a medias.
+  if (expenseId == null || expenseId === '') return;
+  container.innerHTML = '';
+  const page = gastoEl('div', 'detail-page gasto-ficha');
+  container.appendChild(page);
+
+  let e;
+  try {
+    const r = await apiRequest('/admin/expenses/' + encodeURIComponent(expenseId));
+    e = r && r.item;
+  } catch (err) {
+    // Un 4xx es «este gasto no está» (borrado en otra pestaña, o de otro negocio): lo mismo que dice
+    // el router desde el hash, y a la lista. Lo demás no dice nada del gasto: se avisa en la ficha.
+    const s = err && err.status;
+    if (typeof s === 'number' && s >= 400 && s < 500) {
+      renderAppView('expenses');
+      showToast(TEXTO_FICHA_NO_EXISTE, 'warn');
+      return;
+    }
+    const aviso = gastoEl('div', 'gastos-error', mensajeParaPersona(err, TEXTO_FICHA_NO_CARGA));
+    page.appendChild(aviso);
+    return;
+  }
+  if (!e) return;
+  // Esta ficha ya no es la que está en pantalla (se navegó mientras llegaba): no se pinta encima.
+  if (container.querySelector('.detail-page') !== page) return;
+
+  const recargar = () => renderExpenseDetailView(container, e.id);
+
+  // ── CABECERA: qué, cuándo, de qué tipo, si hay foto, y cuánto ─────────────────────────────────
+  const head = gastoEl('div', 'detail-head');
+  const izq = gastoEl('div', 'detail-head-izq');
+  const migas = gastoEl('nav', 'detail-migas');
+  migas.setAttribute('aria-label', 'Migas de navegación');
+  migas.appendChild(botonDeFicha('Gastos', 'detail-miga-link', () => renderAppView('expenses')));
+  const sep = gastoEl('span', 'detail-miga-sep', '›');
+  sep.setAttribute('aria-hidden', 'true');
+  migas.appendChild(sep);
+  izq.appendChild(migas);
+  izq.appendChild(gastoEl('h2', null, e.concept));
+  izq.appendChild(gastoEl('p', 'detail-sub', new Date(e.date).toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' })));
+  const chips = gastoEl('div', 'detail-head-chips');
+  chips.innerHTML = catPill(e.category);
+  chips.appendChild(gastoEl('span', 'gasto-foto ' + (e.tieneFoto ? 'gasto-foto--si' : 'gasto-foto--no'), e.tieneFoto ? 'Foto guardada' : 'Sin foto'));
+  izq.appendChild(chips);
+  head.appendChild(izq);
+  head.appendChild(gastoEl('div', 'detail-total-amount gasto-ficha-importe', fmtEuro(Number(e.amount))));
+
+  const acciones = gastoEl('div', 'detail-head-acciones gasto-ficha-acciones');
+  acciones.appendChild(botonDeFicha('Editar', 'btn-secondary btn-sm', () => editarGastoDesde(e, null, recargar)));
+  if (e.job) acciones.appendChild(botonDeFicha('Ver trabajo', 'btn-secondary btn-sm', () => renderAppView('jobs-detail', { jobId: e.job.id })));
+  // El «⋯»: todo lo que se puede hacer con un gasto, como en el prototipo.
+  const opciones = [
+    botonDeFicha('Editar', 'btn-ghost btn-sm', () => editarGastoDesde(e, null, recargar)),
+    e.tieneFoto
+      ? botonDeFicha(TEXTO_MENU_VER_FOTO, 'btn-ghost btn-sm', () => abrirFotoDelGasto(e))
+      : botonDeFicha(TEXTO_MENU_ANADIR_FOTO, 'btn-ghost btn-sm', () => editarGastoDesde(e, 'exp-btn-camara', recargar)),
+    e.job
+      ? botonDeFicha('Ver trabajo', 'btn-ghost btn-sm', () => renderAppView('jobs-detail', { jobId: e.job.id }))
+      : (e.quote ? null : botonDeFicha(TEXTO_FICHA_VINCULAR, 'btn-ghost btn-sm', () => editarGastoDesde(e, 'exp-quoteid', recargar))),
+    botonDeFicha('🗑 Eliminar', 'btn-ghost btn-sm gasto-opcion-eliminar', () => deleteExpenseItem(e.id, () => renderAppView('expenses'))),
+  ];
+  acciones.appendChild(overflowMenu(opciones, { label: 'Más acciones de ' + e.concept }));
+  head.appendChild(acciones);
+  page.appendChild(head);
+
+  // ── LA FOTO DEL TICKET, delante y grande ──────────────────────────────────────────────────────
+  const foto = gastoEl('div', 'detail-section');
+  foto.appendChild(gastoEl('h3', 'detail-section-title', TEXTO_FICHA_FOTO_TITULO));
+  if (e.tieneFoto) {
+    const caja = gastoEl('div', 'gasto-ficha-ticket');
+    const img = gastoEl('img', 'gasto-ficha-foto');
+    img.alt = TEXTO_FICHA_FOTO_TITULO;
+    // Si la foto no se puede servir (415 de una fila vieja), se quita en vez de dejar el icono roto,
+    // como en el alta. Los dos botones siguen: «Cambiar la foto» es justo la salida.
+    img.addEventListener('error', () => { img.hidden = true; });
+    img.src = `/admin/expenses/${encodeURIComponent(e.id)}/foto`;
+    const botones = gastoEl('div', 'gasto-ficha-botones');
+    botones.appendChild(botonDeFicha(TEXTO_FICHA_FOTO_GRANDE, 'btn-secondary btn-sm', () => abrirFotoDelGasto(e)));
+    botones.appendChild(botonDeFicha(TEXTO_FICHA_FOTO_CAMBIAR, 'btn-ghost btn-sm', () => editarGastoDesde(e, 'exp-foto-quitar', recargar)));
+    caja.append(img, botones);
+    foto.appendChild(caja);
+  } else {
+    const sin = gastoEl('div', 'gasto-ficha-sinfoto');
+    sin.appendChild(gastoEl('div', 'gasto-ficha-sinfoto-icono', '🧾'));
+    sin.appendChild(gastoEl('p', null, TEXTO_FICHA_SIN_FOTO));
+    sin.appendChild(botonDeFicha(TEXTO_FICHA_SIN_FOTO_CTA, 'btn-primary btn-sm', () => editarGastoDesde(e, 'exp-btn-camara', recargar)));
+    foto.appendChild(sin);
+  }
+  page.appendChild(foto);
+
+  // ── DATOS DE LA FACTURA: sólo los apuntados, y sin tarjeta si no hay ninguno ──────────────────
+  // Sin «NIF del proveedor»: la fila no lo trae (`provider` es `{ id, name }`), y sin dato no hay fila.
+  const fechaFactura = e.providerInvoiceDate
+    ? new Date(e.providerInvoiceDate).toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' }) : null;
+  const datos = [
+    ['Nº de factura del proveedor', String(e.providerInvoiceNumber || '').trim() || null],
+    ['Fecha de la factura', fechaFactura],
+    ['Base imponible', e.baseAmount != null ? fmtEuro(Number(e.baseAmount)) : null],
+    ['Tipo de IVA', e.vatRate != null ? Number(e.vatRate) + '%' : null],
+    ['Cuota de IVA', e.vatAmount != null ? fmtEuro(Number(e.vatAmount)) : null],
+  ].filter(([, v]) => v != null && v !== '');
+  if (datos.length) {
+    const sec = gastoEl('div', 'detail-section');
+    sec.appendChild(gastoEl('h3', 'detail-section-title', TEXTO_FICHA_DATOS_TITULO));
+    const dl = gastoEl('dl', 'detail-dl');
+    datos.forEach(([k, v]) => { dl.appendChild(gastoEl('dt', null, k)); dl.appendChild(gastoEl('dd', null, v)); });
+    sec.appendChild(dl);
+    page.appendChild(sec);
+  }
+
+  if (e.notes && String(e.notes).trim()) {
+    const sec = gastoEl('div', 'detail-section');
+    sec.appendChild(gastoEl('h3', 'detail-section-title', 'Notas'));
+    sec.appendChild(gastoEl('p', 'gasto-ficha-notas', e.notes));
+    page.appendChild(sec);
+  }
+
+  // ── EL TRABAJO: el mismo que dice la fila de la lista, con su proveedor debajo ────────────────
+  const trab = gastoEl('div', 'detail-section');
+  trab.appendChild(gastoEl('h3', 'detail-section-title', 'Trabajo'));
+  trab.appendChild(celdaTrabajo(e));
+  if (!e.job && !e.quote) {
+    trab.appendChild(gastoEl('p', 'gasto-ficha-suelto', TEXTO_FICHA_SUELTO));
+    trab.appendChild(botonDeFicha(TEXTO_FICHA_VINCULAR, 'btn-secondary btn-sm', () => editarGastoDesde(e, 'exp-quoteid', recargar)));
+  }
+  page.appendChild(trab);
+}
+window.renderExpenseDetailView = renderExpenseDetailView;
 
 // opts (SCRUM-135, ambos opcionales — sin ellos el modal se comporta igual que antes):
 //   opts.job     → { id, quoteId, titulo } : abre el gasto YA vinculado a ESE trabajo y sin

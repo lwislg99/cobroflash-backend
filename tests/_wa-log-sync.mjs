@@ -37,6 +37,18 @@
 //
 // Resultado: bajo staging lento el test espera 4,86 s y pasa; bajo staging rápido espera 40 ms.
 // Varía la DURACIÓN, no el resultado. No hay número que ajustar.
+//
+// ── SCRUM-1513f · LA SEGUNDA BOCA: LA PLANTILLA QUE SALE YA NO ESCRIBE POR `recordWaMessage` ──
+// Desde SCRUM-1513 la plantilla que SALE no se registra al volver: su fila nace antes, bajo el
+// cerrojo del tope (`reservarPlantilla`, que el envío SÍ espera), y al volver del proveedor se
+// resuelve con `resolverReservaDePlantilla`, lanzada sin `await` igual que el registro de siempre.
+// Esa resolución es ahora la escritura que el test no puede mirar antes de tiempo: hasta que
+// aterriza, la fila existe pero sigue en `queued`. Por eso se envuelve TAMBIÉN, con la misma
+// técnica y la misma garantía (se llama a la original y se devuelve SU promesa).
+// `recordWaMessage` sigue siendo la boca de todo lo demás: los fallos, los bloqueos, los textos de
+// sesión y la plantilla que sale sin reserva porque la base no contestó al preguntar el tope.
+// El suelo no se ha tocado: cero escrituras interceptadas, por la boca que sea, sigue siendo rojo.
+// Cómo se vio: `a55-window-quote` cayó en CI con SIN_INTERCEPTAR; en local se saltaba (pide base).
 import { setTimeout as programar } from 'node:timers';
 
 /**
@@ -57,7 +69,9 @@ export const TIMEOUT_RED_MS = 60_000;
 export const SIN_INTERCEPTAR =
   'SCRUM-250: no se interceptó NINGUNA escritura de WA-0b. El log ya no pasa por ' +
   '`recordWaMessage` (¿se enrutó por otra función?), así que este helper no está sincronizando ' +
-  'nada y el test habría vuelto a depender del reloj sin que se notara. Revisa el camino de ' +
+  'nada y el test habría vuelto a depender del reloj sin que se notara. (SCRUM-1513f: la ' +
+  'plantilla que sale se resuelve por `resolverReservaDePlantilla`, que también se intercepta: ' +
+  'si ves esto, tampoco pasó por ahí.) Revisa el camino de ' +
   'registro antes de tocar el test. (SCRUM-255: si el envío se dispara ANIDADO —la ruta lo lanza ' +
   'sin await y responde antes—, lo que quieres es `esperarAlMenos(n)`, no `esperar()`.)';
 
@@ -102,9 +116,8 @@ export function interceptarWaLog({ log, prisma, timeoutMs = TIMEOUT_RED_MS } = {
   // Se ENVUELVE, no se sustituye: la escritura de verdad sigue ocurriendo. Se devuelve la
   // MISMA promesa que devolvió la original, así que el call-site de producción ve exactamente
   // lo que veía antes (y su `.catch(() => {})` sigue siendo el único que la maneja).
-  const recordOriginal = log.recordWaMessage;
-  log.recordWaMessage = function envueltaWaLog(input) {
-    const p = recordOriginal.call(this, input);
+  /** Anota una escritura que acaba de nacer, venga por la boca que venga. */
+  const anotar = (p) => {
     interceptadas++;
     pendientes.push(Promise.resolve(p));
     // SCRUM-255: despertar a quien esperaba a que ARRANCARAN n escrituras (`esperarAlMenos`).
@@ -112,6 +125,18 @@ export function interceptarWaLog({ log, prisma, timeoutMs = TIMEOUT_RED_MS } = {
     if (arranque && interceptadas >= arranque.n) { arranque.resolver(); arranque = null; }
     return p;
   };
+  const recordOriginal = log.recordWaMessage;
+  log.recordWaMessage = function envueltaWaLog(input) {
+    return anotar(recordOriginal.call(this, input));
+  };
+  // SCRUM-1513f: la segunda boca. Sólo si el módulo la trae: un doble de `log` que no la tenga
+  // sigue valiendo, y entonces no hay nada que envolver ni que restaurar.
+  const resolverOriginal = typeof log.resolverReservaDePlantilla === 'function' ? log.resolverReservaDePlantilla : null;
+  if (resolverOriginal) {
+    log.resolverReservaDePlantilla = function envueltaWaResolver(...args) {
+      return anotar(resolverOriginal.apply(this, args));
+    };
+  }
 
   // ── CAPA 2 · el diagnóstico ─────────────────────────────────────────────────
   // `recordWaMessage` se TRAGA el error (try/catch interno, a propósito: no debe romper un
@@ -127,11 +152,26 @@ export function interceptarWaLog({ log, prisma, timeoutMs = TIMEOUT_RED_MS } = {
   // `PrismaPromise` (no vale dentro de `$transaction`), y eso es seguro aquí: en todo `src/`
   // hay UN solo `prisma.whatsAppMessage.create`, en `whatsappLog.service.ts:33`, y está fuera
   // de cualquier transacción (verificado). Además esto solo existe dentro del test y se restaura.
+  // SCRUM-1513f: desde SCRUM-1513 hay un SEGUNDO `create`, el de la reserva, y ése va DENTRO de
+  // una transacción — pero sobre el cliente de la transacción (`tx`), que es otro objeto: esta
+  // envoltura no lo toca. Lo que la reserva lance llega al `catch` del propio envío, no aquí.
   const delegate = prisma?.whatsAppMessage;
   const createOriginal = typeof delegate?.create === 'function' ? delegate.create : null;
   if (createOriginal) {
     delegate.create = function envueltaWaCreate(...args) {
       const p = createOriginal.apply(this, args);
+      return p.then(
+        (valor) => valor,
+        (err) => { fallos.push(err); throw err; },
+      );
+    };
+  }
+  // SCRUM-1513f: la resolución de la reserva también se traga su error, y escribe con `update`.
+  // Mismo diagnóstico, misma única suscripción (tampoco va dentro de una transacción).
+  const updateOriginal = resolverOriginal && typeof delegate?.update === 'function' ? delegate.update : null;
+  if (updateOriginal) {
+    delegate.update = function envueltaWaUpdate(...args) {
+      const p = updateOriginal.apply(this, args);
       return p.then(
         (valor) => valor,
         (err) => { fallos.push(err); throw err; },
@@ -222,7 +262,9 @@ export function interceptarWaLog({ log, prisma, timeoutMs = TIMEOUT_RED_MS } = {
     /** Deshace las dos envolturas. Llamar SIEMPRE en un `finally`. */
     restaurar() {
       log.recordWaMessage = recordOriginal;
+      if (resolverOriginal) log.resolverReservaDePlantilla = resolverOriginal;
       if (createOriginal) delegate.create = createOriginal;
+      if (updateOriginal) delegate.update = updateOriginal;
     },
   };
 }

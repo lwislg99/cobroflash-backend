@@ -1,0 +1,37 @@
+topes leidos en dist: por cliente y dia = 3 · por comercio y dia = 100
+
+== K · CONTROLES (antes de cualquier numero) ==
+cuadra K0 CERO: los cuatro sin nada que mandar (sin telefono, sin filas)  plantillas=  0 otroTipo=  0 llamadas=  0 conCliente=  0 puestos=  0 bloqCli=  0 bloqCom=  0 pregCli=  0 [no=1 none=1 http404=1]
+cuadra K1 POSITIVO: 10 al mismo cliente CON cliente en la llamada         plantillas=  3 otroTipo=  0 llamadas= 10 conCliente= 10 puestos=  0 bloqCli=  7 bloqCom=  0 pregCli= 10 [ok=3 customer_daily_cap=7]
+cuadra K2 POSITIVO: el hermano que SI pasa cliente (:105), 10 al mismo    plantillas=  3 otroTipo=  0 llamadas=  0 conCliente=  0 puestos=  0 bloqCli=  7 bloqCom=  0 pregCli= 10 [ok=3 no=7]
+cuadra K3 POSITIVO comercio: 100 filas de otro cliente hoy, 1 envio       plantillas=  0 otroTipo=  0 llamadas=  1 conCliente=  1 puestos=  0 bloqCli=  0 bloqCom=  1 pregCli=  0 [daily_cap=1]
+
+== HOY · los cuatro llamadores, 10 veces al mismo cliente el mismo dia, todo sano ==
+cuadra HOY      1 sendPaymentConfirmation (:35) x10                       plantillas= 10 otroTipo=  0 llamadas= 10 conCliente=  0 puestos=  0 bloqCli=  0 bloqCom=  0 pregCli=  0 [ok=10]
+cuadra HOY      2 notifyMerchantAlert (:171) x10, ventana cerrada         plantillas= 10 otroTipo= 10 llamadas= 10 conCliente=  0 puestos=  0 bloqCli=  0 bloqCom=  0 pregCli=  0 [ok=10]
+cuadra HOY      3 sendPendingReminders (:47), 1 pasada, 10 presupuestos   plantillas= 10 otroTipo=  0 llamadas= 10 conCliente=  0 puestos=  0 bloqCli=  0 bloqCom=  0 pregCli=  0 [-]
+cuadra HOY      4 POST /:id/send-reminder (:766) x10, misma factura       plantillas= 10 otroTipo=  0 llamadas= 10 conCliente=  0 puestos=  0 bloqCli=  0 bloqCom=  0 pregCli=  0 [http200+enviado=10]
+
+== CON TOPE · los cuatro llamadores, 10 veces al mismo cliente el mismo dia, todo sano ==
+cuadra CON TOPE 1 sendPaymentConfirmation (:35) x10                       plantillas=  3 otroTipo=  0 llamadas= 10 conCliente=  0 puestos= 10 bloqCli=  7 bloqCom=  0 pregCli= 10 [ok=3 no=7]
+cuadra CON TOPE 2 notifyMerchantAlert (:171) x10, ventana cerrada         plantillas= 10 otroTipo= 10 llamadas= 10 conCliente=  0 puestos=  0 bloqCli=  0 bloqCom=  0 pregCli=  0 [ok=10]
+cuadra CON TOPE 3 sendPendingReminders (:47), 1 pasada, 10 presupuestos   plantillas=  3 otroTipo=  0 llamadas= 10 conCliente=  0 puestos= 10 bloqCli=  7 bloqCom=  0 pregCli= 10 [-]
+cuadra CON TOPE 4 POST /:id/send-reminder (:766) x10, misma factura       plantillas=  3 otroTipo=  0 llamadas= 10 conCliente=  0 puestos= 10 bloqCli=  7 bloqCom=  0 pregCli= 10 [http200+enviado=3 http200+no:customer_daily_cap=7]
+
+== V · VARIANTES que acotan (mismos llamadores) ==
+cuadra V1 CERO de la envoltura: CON TOPE, 10 presupuestos de 10 clientes  plantillas= 10 otroTipo=  0 llamadas= 10 conCliente=  0 puestos= 10 bloqCli=  0 bloqCom=  0 pregCli= 10 [-]
+cuadra V2 HOY      cliente con 3 plantillas ya hoy + 1 recordatorio (cron) plantillas=  1 otroTipo=  0 llamadas=  1 conCliente=  0 puestos=  0 bloqCli=  0 bloqCom=  0 pregCli=  0 [-]
+cuadra V3 HOY      cliente con 3 plantillas ya hoy + 1 pulsacion (ruta)   plantillas=  1 otroTipo=  0 llamadas=  1 conCliente=  0 puestos=  0 bloqCli=  0 bloqCom=  0 pregCli=  0 [http200+enviado=1]
+cuadra V2 CON TOPE cliente con 3 plantillas ya hoy + 1 recordatorio (cron) plantillas=  0 otroTipo=  0 llamadas=  1 conCliente=  0 puestos=  1 bloqCli=  1 bloqCom=  0 pregCli=  1 [-]
+cuadra V3 CON TOPE cliente con 3 plantillas ya hoy + 1 pulsacion (ruta)   plantillas=  0 otroTipo=  0 llamadas=  1 conCliente=  0 puestos=  1 bloqCli=  1 bloqCom=  0 pregCli=  1 [http200+no:customer_daily_cap=1]
+cuadra V4 la ruta con rol tecnico: no llega al envio                      plantillas=  0 otroTipo=  0 llamadas=  0 conCliente=  0 puestos=  0 bloqCli=  0 bloqCom=  0 pregCli=  0 [http403=1]
+cuadra V5 la ruta sin cobro: sale por texto, 0 plantillas                 plantillas=  0 otroTipo=  1 llamadas=  0 conCliente=  0 puestos=  0 bloqCli=  0 bloqCom=  0 pregCli=  0 [http200+enviado=1]
+cuadra V6 notifyMerchantAlert x10, ventana ABIERTA                        plantillas=  0 otroTipo= 10 llamadas=  0 conCliente=  0 puestos=  0 bloqCli=  0 bloqCom=  0 pregCli=  0 [ok=10]
+cuadra V7 notifyMerchantAlert x120, ventana cerrada (tope de comercio)    plantillas=100 otroTipo=120 llamadas=120 conCliente=  0 puestos=  0 bloqCli=  0 bloqCom= 20 pregCli=  0 [ok=100 template=20]
+cuadra V8 tras 100 avisos al profesional, 1 plantilla a un cliente -> ok=false motivo=daily_cap plantillas nuevas=0
+
+== lo que la base en memoria contesto SIN modelarlo (valor neutro), toda la corrida ==
+  customerEvent.create x8
+
+CASOS: 22 · cuadran: 22 · NO cuadran: 0 · plantillas contadas en total: 177
+POSITIVO OBLIGATORIO: K1 bloqueo 7 de 10 y K2 bloqueo 7 de 10 (tienen que ser > 0 con el tope leido en dist).

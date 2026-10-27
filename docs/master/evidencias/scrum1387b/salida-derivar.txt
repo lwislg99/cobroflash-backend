@@ -1,0 +1,61 @@
+HEAD ............ 3ce35c00671c1bcf8d0637511131c0d964477181
+historia ........ 2718 commits en la línea principal · 1884 rutas con alta leída
+disco ........... 136 ficheros con «mut» en el nombre · 54 bancos · 31 fuera
+guiones fuera ... 35 · sin alta en la historia: 0
+
+① HOY · corte = 66f525403cce5faeaa4208cddd99da1a92fea40d (2026-10-13T13:42:42+01:00)
+   heredados 31 · nuevos 0 · suma 31 de 31 fuera
+   por motivo: anterior a la decisión 19 · posterior a la decisión y anterior al guard 12
+   quién la retira: leído en Jira el 7-oct 23 · sin leer 8
+   2026-09-16T10:47:23.000Z  docs/master/evidencias/scrum864            anterior a la decisión                       retira: sin etiqueta de área en Jira (SCRUM-864)
+   2026-09-17T18:28:39.000Z  docs/master/evidencias/scrum864c           anterior a la decisión                       retira: sin etiqueta de área en Jira (SCRUM-864)
+   2026-09-18T08:47:26.000Z  docs/master/evidencias/scrum933            anterior a la decisión                       retira: sin etiqueta de área en Jira (SCRUM-933)
+   2026-09-18T12:24:25.000Z  docs/master/evidencias/SCRUM-912           anterior a la decisión                       retira: S1
+   2026-09-21T12:20:41.000Z  docs/master/evidencias/scrum982            anterior a la decisión                       retira: S2
+   2026-09-21T14:02:15.000Z  docs/master/evidencias/scrum908c           anterior a la decisión                       retira: J6
+   2026-09-21T18:02:47.000Z  docs/master/evidencias/scrum920            anterior a la decisión                       retira: sin etiqueta de área en Jira (SCRUM-920)
+   2026-09-24T15:51:25.000Z  docs/master/evidencias/SCRUM-917           anterior a la decisión                       retira: S4
+   2026-10-01T03:49:26.000Z  docs/master/evidencias/SCRUM-1324          anterior a la decisión                       retira: J6
+   2026-10-01T05:36:41.000Z  docs/master/evidencias/scrum1304           anterior a la decisión                       retira: J1
+   2026-10-01T05:36:41.000Z  docs/master/evidencias/scrum1330           anterior a la decisión                       retira: J1
+   2026-10-01T06:26:08.000Z  docs/master/evidencias/scrum1333           anterior a la decisión                       retira: J1
+   2026-10-01T06:43:59.000Z  docs/master/evidencias/scrum1327           anterior a la decisión                       retira: J1
+   2026-10-01T07:19:15.000Z  docs/master/evidencias/scrum1326           anterior a la decisión                       retira: sin etiqueta de área en Jira (SCRUM-1326, equipo de Javier)
+   2026-10-01T07:23:12.000Z  docs/evidencias/scrum1317                  anterior a la decisión                       retira: J4
+   2026-10-01T07:55:51.000Z  docs/master/evidencias/scrum1340           anterior a la decisión                       retira: J4
+   2026-10-01T08:07:25.000Z  docs/master/evidencias/SCRUM-1345          anterior a la decisión                       retira: J6
+   2026-10-01T15:08:58.000Z  docs/evidencias/scrum1338                  anterior a la decisión                       retira: J4
+   2026-10-01T19:03:24.000Z  docs/master/evidencias/scrum1344           anterior a la decisión                       retira: J4
+   2026-10-06T14:49:48.000Z  docs/master/evidencias/scrum1395           posterior a la decisión y anterior al guard  retira: sin etiqueta de área en Jira (SCRUM-1395, equipo de Javier)
+   2026-10-06T19:02:45.000Z  docs/master/evidencias/SCRUM-1486          posterior a la decisión y anterior al guard  retira: S3
+   2026-10-07T15:49:45.000Z  docs/master/evidencias/SCRUM-876f          posterior a la decisión y anterior al guard  retira: sin etiqueta de área en Jira (SCRUM-876)
+   2026-10-07T17:05:05.000Z  docs/master/evidencias/scrum1392           posterior a la decisión y anterior al guard  retira: sin etiqueta de área en Jira (SCRUM-1392, equipo de Javier)
+   2026-10-07T23:50:49.000Z  docs/master/evidencias/scrum1500b          posterior a la decisión y anterior al guard  retira: sin leer en Jira
+   2026-10-08T00:33:24.000Z  docs/master/evidencias/SCRUM-1404          posterior a la decisión y anterior al guard  retira: sin leer en Jira
+   2026-10-09T10:54:42.000Z  docs/master/evidencias/SCRUM-1288b         posterior a la decisión y anterior al guard  retira: sin leer en Jira
+   2026-10-09T12:06:05.000Z  docs/master/evidencias/SCRUM-1150          posterior a la decisión y anterior al guard  retira: sin leer en Jira
+   2026-10-13T11:14:39.000Z  docs/master/evidencias/SCRUM-876g          posterior a la decisión y anterior al guard  retira: sin leer en Jira
+   2026-10-13T11:34:16.000Z  docs/master/evidencias/SCRUM-1150c         posterior a la decisión y anterior al guard  retira: sin leer en Jira
+   2026-10-13T11:37:13.000Z  docs/master/evidencias/SCRUM-1482          posterior a la decisión y anterior al guard  retira: sin leer en Jira
+   2026-10-13T11:37:42.000Z  docs/master/evidencias/SCRUM-1288c         posterior a la decisión y anterior al guard  retira: sin leer en Jira
+
+② CONTROL · corte = 6536e63e038ef36be9d61fc8057a649ff2af3149 (pos 2615 de 2718)
+   lista escrita a mano en 888e7ffe2: 23 carpetas
+   derivados de la historia: 23 · en los dos: 23
+   sólo en la lista: 0
+   sólo en la historia: 0
+   y con ese corte, NUEVOS (lo que entró después del 7-oct): 8
+   NUEVO  2026-10-09T12:06:05Z  docs/master/evidencias/SCRUM-1150 → mutantes-1150b.mjs
+   NUEVO  2026-10-13T11:34:16Z  docs/master/evidencias/SCRUM-1150c → mutar-1150c.mjs
+   NUEVO  2026-10-09T10:54:42Z  docs/master/evidencias/SCRUM-1288b → mutar-1288b.mjs
+   NUEVO  2026-10-13T11:37:42Z  docs/master/evidencias/SCRUM-1288c → mutar-1288c.mjs
+   NUEVO  2026-10-08T00:33:24Z  docs/master/evidencias/SCRUM-1404 → mutar-declaracion.mjs, mutar-reintento.mjs
+   NUEVO  2026-10-13T11:37:13Z  docs/master/evidencias/SCRUM-1482 → mutantes-1482b.mjs
+   NUEVO  2026-10-13T11:14:39Z  docs/master/evidencias/SCRUM-876g → mutar-dist-876g.mjs
+   NUEVO  2026-10-07T23:50:49Z  docs/master/evidencias/scrum1500b → mutar.mjs
+
+③ corte en el commit más viejo → nuevos 31 de 31 (tiene que ser todos)
+   corte en HEAD → nuevos 0 (tiene que ser 0)
+
+VEREDICTO: la historia REPRODUCE la lista escrita a mano (23 de 23 en los dos sentidos).
+EXIT=0

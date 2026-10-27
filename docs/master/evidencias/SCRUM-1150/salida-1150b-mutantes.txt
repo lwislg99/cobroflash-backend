@@ -1,0 +1,12 @@
+BASE sin mutar · POBLACION=16 · caen=[] · exit=0
+M1 · el quoteRevisiones.js de origin/main (pinta data.message, sin role, cuelga avisos) · numstat=«7	46	public/dashboard/js/quoteRevisiones.js» · POBLACION=16 · caen=[1,2,4,5,6,7,8,9,10,13,14,16] · tras dos fallos: 2 avisos · MUERE
+M2 · sin role="alert" · numstat=«0	1	public/dashboard/js/quoteRevisiones.js» · POBLACION=16 · caen=[13] · MUERE
+M3 · no quita el aviso del intento anterior · numstat=«1	1	public/dashboard/js/quoteRevisiones.js» · POBLACION=16 · caen=[14] · tras dos fallos: 2 avisos · MUERE
+M4 · lo que no está en la tabla pinta el message del servidor (la puerta abierta) · numstat=«1	2	public/dashboard/js/quoteRevisiones.js» · POBLACION=16 · caen=[4,5,6,7,8,9,10] · MUERE
+M5 · una clave de la tabla con errata (código que el servidor no contesta) · numstat=«1	1	public/dashboard/js/quoteRevisiones.js» · POBLACION=16 · caen=[1,16] · MUERE
+M6 · una letra cambiada en un literal firmado · numstat=«1	1	public/dashboard/js/quoteRevisiones.js» · POBLACION=16 · caen=[2,14,16] · MUERE
+M7 · la frase SIN FIRMA de revisiones_dos_vigentes metida en la tabla · numstat=«1	0	public/dashboard/js/quoteRevisiones.js» · POBLACION=16 · caen=[4,16] · MUERE
+M8 · SERVIDOR: un motivo nuevo en el dominio que la pantalla no ha decidido · numstat=«1	1	src/modules/quotes/domain/revision.ts» · POBLACION=16 · caen=[15] · MUERE
+restaurado: git status --porcelain = «»
+MUTANTES=8 · no mueren=0
+EXIT=0

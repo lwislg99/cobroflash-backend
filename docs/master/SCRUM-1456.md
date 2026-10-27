@@ -1,0 +1,420 @@
+# SCRUM-1456 · Un id que no cabe en la columna daba 500 donde tocaba 400 — la ficha de cliente, y la forma única para los tres tickets de la familia (1455, 1456 y 1457)
+
+**Medido contra:** `origin/main` = `b71719f32f623729debec40518e3c7c6d3601086` · 2026-10-06T13:45:45Z
+
+6-oct-2026 · **J2e** (puesto J2, equipo de Javier), por encargo del orquestador (`cobroflash-backend-90`).
+[Escrito por J2e, una sesión; no por el fundador. Los tres tickets y SCRUM-1379, con sus comentarios, los he
+leído en Jira.]
+
+**CRUCE DE CARRIL DECLARADO.** Este registro es el de mi carril (`area-j2`). La misma rama lleva
+SCRUM-1455 (`area-j1`) y SCRUM-1457 (`area-j3`), que no son míos: el orquestador los dio juntos y a una
+sola sesión para que las tres listas usen UNA forma de leer el id. Cada uno tiene su registro
+(`SCRUM-1455.md`, `SCRUM-1457.md`) y los dos citan éste para lo común.
+
+A9: aviso → cicatriz J2 «otra hora a ojo en un mensaje al orquestador: puse ~13:50Z y GitHub, leído minutos después, decía 13:28Z; es la quinta línea de J2 con lo mismo» — no se pudo comprobar: el mensaje al orquestador sale por la herramienta de mensajes, que ningún hook del repositorio ve antes de enviar
+
+## Ⓐ La forma: ya existía, y no se ha escrito otra
+
+`cabeEnColumnaInt` (`src/core/validation/enteroDeColumna.ts`, SCRUM-1379). Buscada por concepto antes
+de escribir nada: 16 ficheros de `src/` la importaban ya en `main`. Los tres tickets la usan tal cual;
+el fichero del helper no se toca (es de S1).
+
+- Donde había `Number.isInteger(x)` → `cabeEnColumnaInt(x)`, en su misma línea.
+- Donde había `Number.isNaN(x)` → `!cabeEnColumnaInt(x)`, en su misma línea.
+- Una línea de `import` por fichero. Nada se mueve, nada se exporta, ninguna firma cambia.
+
+## Ⓑ El borde, derivado del tipo de la columna (el esquema se LEE)
+
+`prisma/schema.prisma`, leído y no tocado: **33 modelos; 29 llevan `id Int @id`, 3 llevan clave
+compuesta de dos `Int` y 1 lleva clave de texto (`obligadoNif`). `BigInt` aparece 0 veces.** El DDL que
+`prisma migrate diff --from-empty` saca de ese esquema crea las 29 como `"id" SERIAL`, que en Postgres es
+un entero de 4 bytes: de **−2.147.483.648 a 2.147.483.647** (2³¹ − 1).
+
+Medido con Postgres de verdad (Ⓓ), no deducido: `2147483647` se consulta y contesta 404;
+`2147483648` reventaba con 500. El borde es ése y no otro. `10000000000` es «seguro» para JavaScript
+(`Number.isSafeInteger`) y reventaba igual: por eso el criterio es el de la columna.
+
+## Ⓒ El censo, abierto línea a línea — y dos recuentos que no cuadraban
+
+Numeración de `origin/main` = `8dcc6d2a` (la del ticket). En la rama, las de `customersAdmin.routes.ts`
+e `invoicesAdmin.routes.ts` bajan una línea por el `import`.
+
+**El ticket dice «26 lecturas». Son 26 LÍNEAS y 30 LECTURAS**: cuatro líneas leen dos ids
+(`:462`, `:485`, `:618`, `:638`). La familia entera son 46 líneas y 50 lecturas.
+
+| Grupo | Líneas | Lecturas | Estado |
+|---|---|---|---|
+| `customersAdmin.routes.ts` — lectura, o escritura que no es dinero ni borrado: `:147` `:190` `:213` `:335` `:337` `:365` `:367` `:389` `:406` `:431` `:445` `:462` `:485` `:501` `:618` | 15 | 18 | **HECHO** |
+| `customersAdmin.routes.ts` `:600` (`DELETE /:id`) y `:638` (`POST /:id/fusionar`) — datos de clientes | 2 | 3 | **NO HECHO → al fundador** (c.18414: datos de clientes) |
+| `chargesAdmin.routes.ts` `:34` `:117` `:167` (confirmar Bizum, garantía, liberar garantía) — flujo de cobro | 3 | 3 | **NO HECHO, y es decisión mía** (Ⓗ): el orquestador las autoriza en c.18414, pero son flujo de cobro y la parada de `CLAUDE.md` pide al fundador |
+| `psp.routes.ts:36` — el webhook interno del cobro; es la ÚNICA de las seis de webhook que lleva el id a la base | 1 | 1 | **NO HECHO → al fundador** (c.18414: dinero real) |
+| `stripe.routes.ts` `:84` `:124` `:189` y `connectWebhook.routes.ts` `:52` `:112` | 5 | 5 | **NO SE TOCAN: es el arreglo correcto, no un recorte** (Ⓔ; aceptado en c.18414) |
+| **Total** | **26** | **30** | |
+
+`:190` es una línea y dos rutas (`PUT` y `PATCH /:id` comparten handler): por eso el test tiene 19
+filas de clientes para 18 lecturas.
+
+`customersAdmin.routes.ts:79` (`excluirId`) no es este defecto, como dice el ticket: no va a la base.
+
+## Ⓓ El rojo primero, dos veces
+
+**1 · Por la ruta, con la base doblada** (`tests/scrum1456-ids-que-no-caben-en-la-columna.test.mjs`,
+entonces con 24 lecturas: 19 de clientes y 5 de facturas). Contra el build de `main` sin el arreglo: **51 casos,
+27 pasan, 24 caen**; los 24 que caen son los 24 «un id que no cabe → 400» y ninguno más. 22 contestaban
+500 y 2 contestaban 404. Salida: `docs/evidencias/scrum1456/rojo-primero.salida.txt`.
+
+Los dos 404 son `despuesDe` (el cursor de `historial` y de `whatsapp`): con la base doblada el cliente
+«no existe» y la ruta se va por el 404 antes de usar el cursor. **El doble no enseña ese 500; la base de
+verdad sí** (abajo): con un cliente que existe, el cursor enorme daba 500.
+
+**2 · Con lo de verdad** (`docs/evidencias/scrum1456/sonda-real.mjs.txt`): los routers de `dist/`, el
+Prisma de verdad y un Postgres de verdad (PGlite en memoria, en loopback, base desechable creada con el
+DDL del esquema). Lo único doblado es la sesión. **51 peticiones:**
+
+| | 200 | 400 | 404 | 500 |
+|---|---|---|---|---|
+| Antes (build de `main` `8dcc6d2a`) | 7 | 8 | 15 | **21** |
+| Después (la rama, con `main` `6aaec0dc` mezclado) | 5 | 30 | 13 | **3** |
+
+Los 3 que quedan en 500 son los tres `POST /webhooks/psp` con un `charge_id` que no cabe: es
+`psp.routes.ts:36`, que NO se ha tocado. Salidas: `sonda-real.antes.salida.txt` y
+`sonda-real.despues.salida.txt`, en la misma carpeta.
+
+### 🔴 El hallazgo que justifica el ticket entero, y es peor que el defecto que el ticket describe
+
+`GET /admin/customers/1.5` contestaba **200 CON LA FICHA DEL CLIENTE 1**. Eso no es «un 500 donde
+debería haber un 400»: **un id decimal resolvía SILENCIOSAMENTE a otro registro y contestaba como si
+fuera el pedido.** Un 500 se ve; esto no se ve. Las dos pasadas de la sonda: **21 de 51 respuestas eran
+500 → 3 de 51, y las tres son `psp`, que no se ha tocado**; y los dos 200 que desaparecen (7 → 5) son
+exactamente `/admin/customers/1.5` y `/admin/customers/1.5/detail`.
+
+**¿Pasa sólo en clientes? NO: pasa en cualquier columna `Int`, y también al ESCRIBIR.** Medido con el
+Prisma de verdad sobre Postgres de verdad, sin pasar por ninguna ruta
+(`docs/evidencias/scrum1456/sonda-decimal.mjs.txt`, 21 lecturas y 1 escritura sobre tres tablas con
+ids 1, 2 y 3):
+
+| Se pide el id | `customer` | `charge` | `merchant` |
+|---|---|---|---|
+| `1.5` y `1.9` | devuelve el 1 | devuelve el 1 | devuelve el 1 |
+| `2.5` | devuelve el 2 | devuelve el 2 | devuelve el 2 |
+| `3.5` | devuelve el 3 | devuelve el 3 | devuelve el 3 |
+| `0.5` y `-0.5` | no existe | no existe | no existe |
+
+El decimal se TRUNCA. Y `customer.updateMany({ where: { id: 1.5 } })` **escribió la fila 1** (count 1).
+O sea: el ticket no es «500 en vez de 400» en ninguna ruta que valide con `Number.isNaN`; en ésas, un
+id decimal opera sobre el registro de su parte entera.
+
+**Cuántas rutas siguen así después de esta rama: 8, y son todas de las que esperan al fundador.**
+Censo de `Number.isNaN(` en `src/` sobre la rama: 18 líneas; 8 validan el id de una ruta —
+`invoicesAdmin.routes.ts` `status`, `pay`, `unpay`, `send-email`, `annul`, `rectify` y `regenerate-pdf`, y
+`customersAdmin.routes.ts` `DELETE /:id`—; las otras 10 no leen un id de ruta (importes, fechas,
+`excluirId`). LEÍDO, y deliberadamente NO ejecutado: `POST /admin/invoices/1.5/annul` anularía la
+factura 1, y `DELETE /admin/customers/1.5` borraría el cliente 1.
+
+**Lo que esto NO es.** No es un agujero de tenencia: todas esas consultas filtran por `merchantId`, y la
+fila a la que resuelve el decimal es del mismo comercio que podía pedirla por su id entero. Tampoco
+está visto en producción: es PGlite y el cliente de Prisma del checkout compartido (25-sep).
+
+Los dos envíos de facturas que entraron después (Ⓗ) tuvieron su propio rojo: con las tres filas de
+envío añadidas y sin tocar el fuente, **57 casos, 3 caen** (`resend-whatsapp` 500, `send-reminder` 500,
+`send-email` 200).
+
+## Ⓔ Los webhooks: de seis líneas, una; y cambiar las otras cinco altera el reintento
+
+- **Sólo `psp.routes.ts:36` consulta la base con el id** (`prisma.charge.findUnique`). EJECUTADO en Ⓓ:
+  hoy contesta 500 a `2147483648`, `10000000000` y `1e20`, y 404 a `2147483647`.
+- Las otras cinco **no consultan nada con el `chargeId`**: lo reenvían por `axios` a `/webhooks/psp`.
+  No tienen el defecto. LEÍDO, no ejecutado (ejecutarlo pide fabricar un evento firmado de Stripe).
+- **Cambiarlas sí altera lo que Stripe reintenta.** LEÍDO: hoy, con un `charge_id` que no cabe, psp
+  contesta 500, `axios` lanza, y el `catch` de `stripe.routes.ts` y de `connectWebhook.routes.ts`
+  contesta **400** a Stripe, que reintenta. Con `cabeEnColumnaInt` en esas líneas el evento se salta, se
+  marca procesado y se contesta **200**: Stripe deja de reintentar. Eso es una decisión, no un arreglo.
+- Arreglando sólo `psp:36` (si llega el GO), Stripe sigue recibiendo el mismo 400: psp pasaría de 500 a
+  400 y `axios` lanza igual con los dos.
+
+Subido al orquestador el 6-oct y ACEPTADO por él en SCRUM-1456 c.18414: esas cinco no se tocan.
+
+## Ⓕ Lo corrido
+
+| Qué | Resultado |
+|---|---|
+| `tests/scrum1456-…test.mjs`, sobre la rama con `main` `6aaec0dc` mezclado (26 lecturas: 19 de clientes, 7 de facturas) | 55 de 55 |
+| Ese test más `scrum1379`, `scrum1379b` y `scrum1379d` (los hermanos de S1) | 124 de 124, 0 saltos (corrido cuando el test tenía 51 casos; no repetido con los 55) |
+| `tests/banco-scrum1456/mutar.mjs` (dos mutantes por llamada: `Number.isInteger` y `Number.isSafeInteger`) | **50 de 50 caen** (25 llamadas × 2), cada uno tumba sólo los casos de su lectura; 0 vivas, 0 ciegas; T0 en verde; árbol intacto por sha256. Salida: `docs/evidencias/scrum1456/mutar.salida.txt` |
+| La dirigida (`node scripts/tests-que-cubren.mjs --lanzar`, en 4 tramos, con `main` `b71719f3` mezclado) | 329 ficheros · 3.214 tests · 3.205 pasan · **2 caen**, los dos de `scrum1199-avisos-alta-cliente` con `MODULE_NOT_FOUND`: el worktree no tiene `node_modules` propio y ese test carga un módulo por ruta. No son de este cambio; el juez es el CI, donde se leen por nombre |
+
+`dist/` se construyó con `tsc --noCheck`: el worktree hereda el `node_modules` del checkout compartido,
+cuyo cliente de Prisma es del 25-sep. El juez de los tipos es el CI.
+
+## Ⓗ La autorización, citada, y lo que NO he hecho aunque la tuviera
+
+**SCRUM-1456 c.18414** (6-oct-2026, GO parcial del orquestador, vale para los tres tickets). Autoriza
+el bloque libre de 1455 y 1456, `chargesAdmin` `:34` `:117` `:167` y los tres envíos de 1455, con una
+condición para los seis últimos: medir que nada reacciona distinto a un 400 que a un 500. Manda al
+fundador `annul`, `rectify`, `regenerate-pdf`, `status`, `pay`, `unpay`, `invoice.routes.ts:63`,
+`psp.routes.ts:36`, `DELETE /:id`, `fusionar` y `supresion.routes.ts:34`.
+
+- **Los tres envíos, medidos antes de tocar** (con un id que no cabe, por la ruta): `resend-whatsapp`
+  500, `send-reminder` 500, **`send-email` 200 con `sent: false`**. Los dos primeros se han hecho:
+  `api.js` trata igual cualquier respuesta que no sea 2xx, y `invoiceDetailView.js` también. **`send-email`
+  NO se ha hecho:** pasar de 200 a 400 cambia la rama por la que va la pantalla. La condición decía «si
+  algo reacciona, se para».
+- **`chargesAdmin`, NO hecho, y es decisión mía.** Confirmar un Bizum y la garantía son flujo de cobro.
+  La parada de `CLAUDE.md` (protocolo de sesión, punto 4) pide el OK del FUNDADOR para eso, y el propio
+  ticket las llama «STOP de un jefe». El GO es de una sesión. Son tres líneas idénticas a las demás: con
+  el sí de Javier escrito en el ticket se hacen en esta misma rama.
+
+## Ⓖ Lo que queda sin hacer, dicho
+
+- **11 lecturas de este ticket** (3 de `chargesAdmin`, 4 que van al fundador en 3 líneas, y 5 que no se
+  tocan a propósito): tabla de Ⓒ. **Este ticket no se cierra con este PR.**
+- **No visto en yaqu.app.** La cuenta QA está caducada (lo dice el ticket) y no se piden credenciales.
+  La aceptación 1 se ve en el test y en la sonda; en producción, NO.
+- **Aceptación 3 (regla 2):** no se ha tocado ninguna consulta; el diff son las líneas de validación y
+  el `import`.
+
+---
+
+## J3 · SCRUM-1456b · el borrado y la fusión de clientes: el rojo, medido por la ruta real
+
+**Medido contra:** `origin/main` = `e0c32fb5297e0ea98383d9f983ed8abfa67553c2` · 2026-10-20T10:06:27Z (sesión J3 `jv-j3a`, por encargo del orquestador `cobroflash-backend-09`; GO del fundador para estas rutas en c.18731)
+
+A9: aviso → cicatriz J3 «Repetí la del 6-oct al pie de la letra: lancé la sonda «después» en paralelo con dos ediciones que la cerradura de carril denegó, y medí el código sin arreglo bajo la etiqueta del arreglado; apuntarla no lo impidió.» — no se pudo comprobar: lanzar órdenes en paralelo es cómo trabaja una sesión y ningún test del árbol lo ve; la sonda ahora deduce su etiqueta del dist y se niega si no casa
+
+### 🔴 EL PR DE ESTA RAMA SALE ROJO A PROPÓSITO — no toques el test para ponerlo verde
+
+Esta rama lleva **el test y la evidencia, sin una línea de `src/`**. El arreglo es de J2: la cerradura de
+carril (`.claude/hooks/carril.mjs`) bloqueó a J3 al editar `customersAdmin.routes.ts`, y el cruce no se
+puede declarar sin tocar `docs/equipo/dos-equipos.md` §3.4, que es de S0. El orquestador la pasa a `jv-j2a` (J2).
+Caen, en `tests/scrum1456-ids-que-no-caben-en-la-columna.test.mjs`:
+- «DELETE customers /:id · `id` (params) · 🔴 un id que no cabe en la columna → 400, sin tocar la base»
+- «POST customers /:id/fusionar · `id` (params) · 🔴 un id que no cabe en la columna → 400, sin tocar la base»
+- «POST customers /:id/fusionar · `con` (body) · 🔴 un id que no cabe en la columna → 400, sin tocar la base»
+
+**Qué lo pone en verde:** las dos líneas de J2 encima, en esta misma rama. `customersAdmin.routes.ts:620`
+`Number.isNaN(id)` → `!cabeEnColumnaInt(id)`, y `:658` los dos `Number.isInteger(` → `cabeEnColumnaInt(`.
+El `import` ya está en el fichero. `enteroDeColumna.ts` es de S1: se USA, no se cambia.
+
+### Lo medido por la ruta real: `DELETE /admin/customers/1.5` BORRA EL CLIENTE 1
+
+c.18431 lo dejó «leído, deliberadamente no ejecutado». Ejecutado ahora con el montaje de J2e sin cambios:
+router de `dist/` (build de `main` `e0c32fb52`), Prisma de verdad, Postgres de verdad (PGlite por socket en
+loopback, DDL de `prisma migrate diff --from-empty`), con solo la sesión doblada. Se siembran 4 clientes
+(ids 1-4) en el comercio 2 y uno (id 5) en el comercio 3, y tras cada petición se mira QUÉ FILA desaparece.
+`docs/evidencias/scrum1456/sonda-borrar.mjs.txt` y su salida `sonda-borrar.antes.salida.txt`:
+
+| Petición | Respuesta | Desaparece |
+|---|---|---|
+| `DELETE /1.5` | **204** | **[1]** 🔴 |
+| `DELETE /2` (control negativo) | 204 | [2] y sólo [2] |
+| `DELETE /2147483648`, `/10000000000`, `/99999999999999999999` | 500 | nada |
+| `DELETE /abc` | 400 | nada |
+| `DELETE /5` (cliente de OTRO comercio) | 204 | nada |
+| `fusionar` con decimal en el principal o en `con` | 400 (ya lo paraba `Number.isInteger`) | nada |
+| `fusionar` con `2147483648` en cualquiera de los dos | 500 | nada |
+| `fusionar 3 con 4` (control positivo) | 200 | [4] |
+
+**Los cuatro límites, literales:** no cruza comercios · hace falta sesión admin · hay que escribir el
+decimal a mano en la URL (ninguna pantalla lo produce) · **no está visto en producción**.
+
+`fusionar` no tiene el defecto del decimal: sólo el 500 del id que no cabe.
+
+### La condición ② del fundador (c.18731): nada reacciona distinto a un 400 que a un 500 — LEÍDO
+
+- `DELETE /admin/customers/:id`: **ningún fichero de `public/` lo llama**.
+- `fusionar`: `customerDetailView.js:986` sólo distingue el **409**. Un 400 y un 500 van al mismo texto
+  (`mensajeParaPersona` no mira el estado, `api.js:333`) y dejan el botón activo.
+- Estrictamente protector (condición ⑥): con `cabeEnColumnaInt` sigue pasando todo lo que pasaba antes y
+  cabe en la columna, incluidos `-1` y `0`. Sólo se rechazan decimales, los que no caben e `Infinity`.
+
+### El rojo primero, y su control negativo
+
+Test, tres lecturas nuevas al final del censo (29: 22 de clientes y 7 de facturas) y un control negativo
+(un id correcto SIGUE llegando al borrado y contesta 204). Contra `main`: **62 tests, 59 verdes, 3 rojos**,
+y los tres son los «→ 400» de arriba. Suelos y control negativo, en verde.
+
+### Lo que NO está medido
+
+- **El después.** No hay arreglo en esta rama. Una primera sonda «después» corrió EN PARALELO con las dos
+  ediciones que la cerradura denegó, y midió el código SIN arreglo bajo esa etiqueta: se descartó entera.
+  La sonda ahora lee el handler del `DELETE` en el `dist/` que mide y se niega (CIEGA, exit 2) si la etiqueta
+  no casa. Control rojo: «DESPUES» sobre el `dist` de `main` → se niega. Control positivo: el detector, sobre
+  un `dist` fabricado con el arreglo, dice ARREGLADO (`sonda-borrar.control-detector.mjs.txt`).
+- `chargesAdmin.routes.ts` `:34` `:117` `:167` y `psp.routes.ts:37`: sin empezar. Son de J2
+  (`src/modules/billing/**`) y piden la condición ② línea a línea; `psp` es webhook.
+
+### Encontrado de paso, no arreglado aquí
+
+`DELETE /admin/customers/5`, con un cliente de OTRO comercio, contesta **204 sin borrar nada**. La tenencia
+aguanta, pero la respuesta afirma lo que no hizo. El ticket lo abre el orquestador.
+
+## J2 · SCRUM-1456b · el arreglo: DELETE y fusionar validan con `cabeEnColumnaInt`
+
+**Medido contra:** `origin/main` = `e0c32fb5297e0ea98383d9f983ed8abfa67553c2` · 2026-10-20T09:50:25Z (hora de GitHub al escribir: 2026-10-20T10:18:28Z; sesión J2 `jv-j2a`, encima de la punta `02f2f9809` de J3, por encargo del orquestador `cobroflash-backend-09`)
+A9: comprobación → `tests/banco-scrum1456/mutar.mjs`
+
+El arreglo está en `customersAdmin.routes.ts`, en dos líneas. En `:620` (DELETE `/:id`), `Number.isNaN(id)` pasa a
+`!cabeEnColumnaInt(id)`. En `:658` (fusionar), los dos `Number.isInteger(` pasan a `cabeEnColumnaInt(`.
+`enteroDeColumna.ts` (S1) sólo se usa, no se toca. El test de J3 pasa de 3 rojos a verde: con scrum1126, 73 de 73.
+
+### Lo medido, con el arreglo
+
+- **La sonda de J3, sin cambiar** (`sonda-borrar.despues.salida.txt`). Antes, el **control rojo**: lanzada como
+  «DESPUES» sobre un `dist` SIN el arreglo, se niega con «CIEGA … EXIT=2». Con el arreglo, el detector dice
+  ARREGLADO. Resultados:
+  - `DELETE /1.5`: **400, no borra nada** (antes 204 y borraba el 1).
+  - `DELETE /2`: sigue en **204 y borra el 2, y sólo el 2**.
+  - `/abc`: 400, como antes. `/5`, de otro comercio: 204 sin borrar, como antes.
+  - `fusionar 3 con 4`: sigue en 200.
+- **Los ids que no caben, medidos, no deducidos:** `DELETE /2147483648`, `/10000000000` y `/99999999999999999999`,
+  y `fusionar` con `2147483648` en el principal o en `con`, **pasan de 500 a 400**. Ninguno borra nada, ni antes ni
+  ahora.
+- **El control negativo de los bordes** (`sonda-bordes.mjs.txt`, mismo montaje y mismo detector; salida
+  `sonda-bordes.salida.txt`). `-1`, `0`, `2147483647`, `-2147483648` y `1e3` siguen llegando al borrado (204).
+  `-2147483649` e `Infinity` dan 400. `/2` borra el 2. **8 de 8 como se esperaba.**
+  - Un cambio que el encargo no nombraba: **`Infinity` antes pasaba** la comprobación (`Number.isNaN` no lo para) y
+    llegaba a la base. Ahora da 400.
+
+### La condición ② del fundador (c.18731), EJECUTADA y no sólo leída
+
+`condicion2-panel.mjs.txt` monta la ficha 360 real con el banco de la casa (`tests/_banco-vistas.mjs`, el de
+scrum1126), pulsa «Fusionar» con la red doblada y compara la pantalla. Salida en `condicion2-panel.salida.txt`:
+
+| respuesta | aviso | modal | «confirmar» | reintento |
+|---|---|---|---|---|
+| 400 `invalid_id` (lo nuevo) | «No se ha podido completar la acción. Vuelve a intentarlo.» | abierto | activo | sale otro POST |
+| 500 `internal_error` (lo de antes) | el mismo | abierto | activo | sale otro POST |
+| 409 `mismo_cliente` (control) | «Elige un cliente distinto.» | abierto | **desactivado** | **no** sale |
+
+**El 400 y el 500 producen la misma pantalla.** El 409 sale distinto, y eso demuestra que el comparador no estaba
+ciego. Del DELETE no hay pantalla que medir: ningún `method: 'DELETE'` de `public/` apunta a `/admin/customers/:id`
+(los seis que hay son de otras rutas).
+
+### El banco de mutación, con las tres lecturas nuevas
+
+Las tres lecturas nuevas van a `ESPERADO` en `tests/banco-scrum1456/mutar.mjs`. **56 mutaciones (28 llamadas × 2):
+caen 56, ninguna viva, ninguna ciega, ninguna mal repartida.** El árbol queda intacto, con el sha256 de los 4
+ficheros. Salida en `mutar.despues.salida.txt`.
+
+### Error propio
+
+En la tabla del banco puse el DELETE **detrás** de `fusion-preview`, pero en el fuente va delante (`:620` antes que
+`:638`). El banco lo cazó en la primera pasada con «mal repartidas 6»: cada mutación caía en el test de la fila de
+al lado. Se corrigió la tabla, no el banco.
+
+### Lo que sigue, y no es de este PR
+
+`chargesAdmin.routes.ts` (`:34`, `:117`, `:167`) y `psp.routes.ts:37` son de J2 y van después, con la condición ②
+medida línea a línea. `psp` es un webhook: allí un 400 nuevo cambia lo que hace Stripe.
+
+## J2 · SCRUM-1456c · cobros y psp: `confirm-bizum`, las dos de garantía y `/webhooks/psp` validan con `cabeEnColumnaInt`
+
+**Medido contra:** `origin/main` = `fe65a8b7fca8b1e42448c8134e26d880d96b9ba7` · 2026-10-21T12:16:04Z (mezclado dentro de la rama, A4; sesión J2 `jv-j2m`, por encargo del orquestador `cobroflash-backend-5f`)
+A9: comprobación → `.claude/hooks/guard-dangerous.sh`
+
+[Escrito por `jv-j2m`, una sesión; no por el fundador. He leído SCRUM-1456 entero en Jira, con sus siete
+comentarios hasta c.20139.] El hook de arranque dijo «SIN IDENTIDAD» (SCRUM-1498); el orquestador ordena
+seguir, y lo dejo escrito.
+
+**La firma:** SCRUM-1456 **c.20139**, del fundador (copiada por el orquestador desde «YaQu - decisiones
+pendientes 20-oct»): «Ok autorizo». Cubre exactamente esas cuatro líneas y ese cambio; la petición entera es
+c.20104. Cualquier otra línea del flujo de cobro sigue siendo STOP, y no se ha tocado ninguna.
+
+### El cambio, y dónde están hoy las cuatro líneas
+
+Identificadas por contenido sobre `fe65a8b7`. Están donde las midió c.20104: `chargesAdmin.routes.ts:34`,
+`:117` y `:167` (`if (!Number.isInteger(id)) return res.status(400).json({ error: 'invalid_id' });`) y
+`psp.routes.ts:37` (`if (!Number.isInteger(chargeId)) {`). En las cuatro, `Number.isInteger(` pasa a
+`cabeEnColumnaInt(`. Con el `import` las líneas bajan una: **`:35`, `:118`, `:168` y `psp:38`**.
+
+- **Lo que la firma no nombra y he hecho igual: un `import` por fichero** (`chargesAdmin.routes.ts:13` y
+  `psp.routes.ts:6`). Sin él no compila. Es la consecuencia mecánica del cambio autorizado y el ticket ya lo
+  decía («Más UNA línea de `import` por fichero»). No he tocado nada más de `src/`.
+- `enteroDeColumna.ts` (S1) se usa y no se toca.
+
+### El rojo pasa a verde, por el handler real
+
+`tests/scrum1456c-cobros-y-psp-id-que-cabe.test.mjs` (el commit del rojo, `ce0d607f`, que dejó escrito
+`jv-j2a`):
+
+| `dist/` | casos | caen | pasan | los que caen |
+|---|---|---|---|---|
+| sin el arreglo (fuente de `HEAD~`, transpilado a `dist/`) | 10 | 4 | 6 | los cuatro «🔴 un id que no cabe»: responden **500** con `99999999999999999999` |
+| con el arreglo | 10 | 0 | 10 | — (8 pasadas seguidas, todas con código de salida 0) |
+
+Los cuatro SUELOS siguen en verde con y sin arreglo: `1`, `2147483647`, `-1` y `0` llegan a la base y dan 404.
+
+### De paso: el test del rojo salía ROJO con sus diez casos en VERDE
+
+Con el arreglo puesto, el FICHERO caía con `exitCode 3221226505` (0xC0000409), 4 de 4 pasadas, con los diez
+casos `ok`. No era el arreglo: el caso de Stripe, corrido solo y **sin** el arreglo, cae igual (3 de 3). Es el
+patrón de SCRUM-560: un `fetch` a un servidor que levanta el propio test, con `--test-force-exit`. Arreglado en
+el test, con la receta de la casa (`scrum893b`): `node:http` con `agent: false` y los dos servidores cerrados
+con `await`. Ninguna aserción cambia. Después: 8 de 8 pasadas limpias, y sin el arreglo de `src/` sigue cayendo
+en los mismos 4 casos.
+
+⚠️ **Lo que no he arreglado y hay que mirar:** `tests/scrum560-patron-fetch-servidor.test.mjs` sale **verde**
+con este fichero dentro (4 casos de 4, en una pasada). El `fetch` está en una función (`emitir`) a la que se llama desde un bucle, y
+el detector busca el `fetch` DENTRO del bucle. No es mi carril ni lo toco: se dice aquí y en la entrega.
+
+### Lo que ve Stripe con `psp` en 400 o en 500 (la condición ② para `psp`)
+
+El mismo test monta la ruta de Stripe real (firma HMAC local) y reenvía un `payment_intent.payment_failed` con
+`charge_id` = `2147483648` a un `/webhooks/psp` falso. Medido hoy:
+`{"200":{"status":200},"400":{"status":400},"500":{"status":400}}`. Con `psp` en 400 o en 500, Stripe recibe
+**400 las dos veces**; el 200 de control sí cambia lo que recibe.
+
+🔵 **Corrige la última línea de la sección de 1456b**, que decía «`psp` es un webhook: allí un 400 nuevo cambia
+lo que hace Stripe». No lo llama Stripe: está detrás de `requireInternalSecret` y lo llaman nuestras rutas (lo
+midió `jv-j2a`, c.20104), y lo que Stripe ve no cambia.
+
+### La condición ② para `chargesAdmin`, EJECUTADA y no sólo leída
+
+`docs/evidencias/scrum1456/condicion2-cobros.mjs.txt` monta las DOS pantallas que llaman a
+`POST /admin/charges/:id/confirm-bizum` con el banco de la casa (`tests/_banco-vistas.mjs`): la ficha de factura
+(`invoiceDetailView.js`, con `fetch`) y la del trabajo (`jobDetailView.js`, con el `apiRequest` real de
+`api.js`). Pulsa los dos toques de «Confirmar Bizum» con la red doblada, y otros dos para ver si se puede
+reintentar. Salida en `condicion2-cobros.salida.txt`:
+
+| pantalla | respuesta | aviso pintado | botón después | reintento |
+|---|---|---|---|---|
+| factura | 400 `invalid_id` (lo nuevo) | «No se pudo confirmar. Inténtalo de nuevo.» | activo, «📲 Confirmar Bizum recibido» | sale otro POST |
+| factura | 500 `internal_error` (lo de antes) | el mismo | el mismo | sale otro POST |
+| factura | 409 `charge_not_pending` (control) | «Este cobro ya no está pendiente.» | el mismo | sale otro POST |
+| trabajo | 400 `invalid_id` | «No se pudo confirmar el Bizum.» | activo, «📲 Confirmar Bizum recibido» | sale otro POST |
+| trabajo | 500 `internal_error` | el mismo | el mismo | sale otro POST |
+| trabajo | 409 `charge_not_pending` (control) | «Este cobro ya no está pendiente.» | el mismo | sale otro POST |
+
+**En las dos pantallas, el 400 y el 500 se ven igual.** El 409 sale distinto, así que el comparador no está
+ciego. Y el control de la propia sonda: sin cobro en la factura y en el trabajo (`chargeId: null`) no hay botón,
+y dice **CIEGA** con salida 2.
+
+`/garantia` y `/garantia/liberar` no se miden en pantalla: **ningún fichero de `public/` las llama**. El mismo
+`grep` sí encuentra las dos llamadas a `confirm-bizum`.
+
+### El banco de mutación, con las cuatro llamadas nuevas
+
+`tests/banco-scrum1456/mutar.mjs` cubre ahora `chargesAdmin.routes.ts` y `psp.routes.ts`. Cada fichero se mide
+con su test (`PRUEBA`). T0 en verde en los dos tests: 62 y 10 casos. **64 mutaciones (32 llamadas × 2): caen
+64, ninguna viva, ninguna ciega, ninguna mal repartida.** Las 8 nuevas caen cada una sólo en su caso: `:35`,
+`:118`, `:168` y `psp:38`, en sus variantes «entero» y «seguro». Árbol intacto, con el sha256 de los 8
+ficheros. Salida en `docs/evidencias/scrum1456/mutar.1456c.salida.txt`.
+
+### Error propio
+
+Para medir el `dist/` sin arreglo lancé un `git checkout --` sobre mis dos ficheros de `src/`, con el arreglo
+sin comitear y su `git apply` encadenado en la misma orden. Lo paró `guard-dangerous`. Si el `apply` hubiera
+fallado, el arreglo se habría perdido. Lo medí sin tocar `src/`: transpilé la versión de `HEAD` directamente a
+`dist/`, que es lo que ya hace el banco.
+
+Y una desviación del encargo, dicha: el orquestador pedía `docs/master/SCRUM-1456c.md`. A8 dice «un fichero por
+número de ticket; si ya existe, ANEXAS una sección», y en `docs/master/` no hay ningún fichero con letra (0 de
+1.146). Por eso va aquí, como 1456b.
+
+### Lo que NO está medido
+
+- **En yaqu.app, nada.** Son tres `POST` de dinero y un endpoint interno: no se ejecutan contra producción.
+- **Contra Postgres de verdad, tampoco**: el banco del test lanza como Postgres con un número que no cabe en
+  int4. La sonda con Postgres de 1456 cubrió otras rutas, no estas cuatro.
+- Lo que ve Stripe está medido con una firma local y un `psp` falso, no con una cuenta de Stripe (no la hay).
+- La tanda completa no la he corrido: sólo este test, sus vecinos y los del check (en la entrega).

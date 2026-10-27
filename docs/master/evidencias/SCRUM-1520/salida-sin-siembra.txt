@@ -1,0 +1,136 @@
+SCRUM-1520 · la cola que cae · node v24.18.0 en win32 · raíz C:/Users/Javier Pereira/cobroflash-backend/.claude/worktrees/scrum-1520-puede-un-verde-esconder-un-rojo
+cadena: tanda-con-veredicto.mjs → node --test --test-force-exit → hijo por fichero · temporal C:/Users/JAVIER~1/AppData/Local/Temp/scrum1520-3x2Nkq
+
+── A · sin corte, sin fallo (control de cero)
+   DICTAMEN: VERDE
+   salida de la cadena: 0
+   recuento del padre: tests 32 · pass 32 · fail 0 · cancelled 0   (declarados: 27 + 5 = 32)
+   nombres con resultado: spec 32 · tap 32   · log 1609 car., tap 4477 car.
+   el sembrado: no hay
+   el fichero como caído: spec NO · tap NO
+   el hijo: código propio 0 · mensajes 146 (ilegibles 0) · entregó 32649 B · perdió 0 B
+   cuerpos que empezaron a correr: 27 de 27
+
+── B · sin corte, cae el 22 (control positivo)
+   DICTAMEN: VERDE · NO se ve nada
+   salida de la cadena: 0
+   recuento del padre: tests 32 · pass 32 · fail 0 · cancelled 0   (declarados: 27 + 5 = 32)
+   nombres con resultado: spec 32 · tap 32   · log 1611 car., tap 4479 car.
+   el sembrado (22): se ejecutó SÍ · ✖ en spec NO · ✔ en spec SÍ · «not ok» en tap NO
+   el fichero como caído: spec NO · tap NO
+   el hijo: código propio 0 · mensajes 146 (ilegibles 0) · entregó 32648 B · perdió 0 B
+   cuerpos que empezaron a correr: 27 de 27
+
+── C · cae el 22 · el corte cae ENTRE dos casos (antes de que empiece el 22)
+   DICTAMEN: VERDE · NO se ve nada
+   salida de la cadena: 0
+   recuento del padre: tests 29 · pass 29 · fail 0 · cancelled 0   (declarados: 27 + 5 = 32)
+   nombres con resultado: spec 29 · tap 29   · log 1473 car., tap 4077 car.
+   el sembrado (22): se ejecutó SÍ · ✖ en spec NO · ✔ en spec NO · «not ok» en tap NO
+   el fichero como caído: spec NO · tap NO
+   el hijo: código propio 0 · mensajes 146 (ilegibles 0) · entregó 28487 B · perdió 4162 B · primer mensaje perdido: test:start «caso 22 de 24 · siembra 14294a20»
+   cuerpos que empezaron a correr: 27 de 27
+
+── D · cae el 21b · el corte cae DENTRO del caso 21 (llega su inicio, no su resultado)
+   DICTAMEN: VERDE · NO se ve nada
+   salida de la cadena: 0
+   recuento del padre: tests 25 · pass 25 · fail 0 · cancelled 0   (declarados: 27 + 5 = 32)
+   nombres con resultado: spec 25 · tap 25   · log 1280 car., tap 3501 car.
+   el sembrado (21b): se ejecutó SÍ · ✖ en spec NO · ✔ en spec NO · «not ok» en tap NO
+   el fichero como caído: spec NO · tap NO
+   el hijo: código propio 0 · mensajes 146 (ilegibles 0) · entregó 24608 B · perdió 8041 B · primer mensaje perdido: test:start «caso 21a de 24 · siembra 02d4fca8»
+   cuerpos que empezaron a correr: 27 de 27
+
+── E · cae el 22 · el corte parte en dos el mensaje del fallo
+   DICTAMEN: VERDE · NO se ve nada
+   salida de la cadena: 0
+   recuento del padre: tests 32 · pass 32 · fail 0 · cancelled 0   (declarados: 27 + 5 = 32)
+   nombres con resultado: spec 32 · tap 32   · log 1611 car., tap 4479 car.
+   el sembrado (22): se ejecutó SÍ · ✖ en spec NO · ✔ en spec SÍ · «not ok» en tap NO
+   el fichero como caído: spec NO · tap NO
+   el hijo: código propio 0 · mensajes 146 (ilegibles 0) · entregó 32649 B · perdió 0 B
+   cuerpos que empezaron a correr: 27 de 27
+
+── F · cae el 22 · el fallo llega y se pierde lo de detrás
+   DICTAMEN: VERDE · NO se ve nada
+   salida de la cadena: 0
+   recuento del padre: tests 32 · pass 32 · fail 0 · cancelled 0   (declarados: 27 + 5 = 32)
+   nombres con resultado: spec 32 · tap 32   · log 1609 car., tap 4477 car.
+   el sembrado (22): se ejecutó SÍ · ✖ en spec NO · ✔ en spec SÍ · «not ok» en tap NO
+   el fichero como caído: spec NO · tap NO
+   el hijo: código propio 0 · mensajes 146 (ilegibles 0) · entregó 32649 B · perdió 0 B
+   cuerpos que empezaron a correr: 27 de 27
+
+── G · el mismo corte que C, QUITANDO la siembra (no cae nadie)
+   DICTAMEN: VERDE
+   salida de la cadena: 0
+   recuento del padre: tests 29 · pass 29 · fail 0 · cancelled 0   (declarados: 27 + 5 = 32)
+   nombres con resultado: spec 29 · tap 29   · log 1470 car., tap 4074 car.
+   el sembrado: no hay
+   el fichero como caído: spec NO · tap NO
+   el hijo: código propio 0 · mensajes 146 (ilegibles 0) · entregó 28487 B · perdió 4162 B · primer mensaje perdido: test:start «caso 22 de 24 · siembra d8d302b3»
+   cuerpos que empezaron a correr: 27 de 27
+
+── H · como C, y además el hijo sale con 0 (se quita la pieza)
+   DICTAMEN: VERDE · NO se ve nada
+   salida de la cadena: 0
+   recuento del padre: tests 29 · pass 29 · fail 0 · cancelled 0   (declarados: 27 + 5 = 32)
+   nombres con resultado: spec 29 · tap 29   · log 1473 car., tap 4077 car.
+   el sembrado (22): se ejecutó SÍ · ✖ en spec NO · ✔ en spec NO · «not ok» en tap NO
+   el fichero como caído: spec NO · tap NO
+   el hijo: código propio 0 → FORZADO a 0 · mensajes 146 (ilegibles 0) · entregó 28487 B · perdió 4162 B · primer mensaje perdido: test:start «caso 22 de 24 · siembra 99fd9f30»
+   cuerpos que empezaron a correr: 27 de 27
+
+── I · sin corte · el proceso se va con exit(0) en el 21 y el 22 habría caído
+   DICTAMEN: VERDE · NO se ve nada
+   salida de la cadena: 0
+   recuento del padre: tests 6 · pass 6 · fail 0 · cancelled 0   (declarados: 27 + 5 = 32)
+   nombres con resultado: spec 5 · tap 5   · log 356 car., tap 882 car.
+   el sembrado (22): se ejecutó NO · ✖ en spec NO · ✔ en spec NO · «not ok» en tap NO
+   el fichero como caído: spec NO · tap NO
+   el hijo: código propio 0 · mensajes 0 (ilegibles 0) · entregó 0 B · perdió 0 B
+   cuerpos que empezaron a correr: 21 de 27
+
+── J · cae el 22 · no llega NADA del informe del fichero
+   DICTAMEN: VERDE · NO se ve nada
+   salida de la cadena: 0
+   recuento del padre: tests 6 · pass 6 · fail 0 · cancelled 0   (declarados: 27 + 5 = 32)
+   nombres con resultado: spec 5 · tap 5   · log 355 car., tap 881 car.
+   el sembrado (22): se ejecutó SÍ · ✖ en spec NO · ✔ en spec NO · «not ok» en tap NO
+   el fichero como caído: spec NO · tap NO
+   el hijo: código propio 0 · mensajes 146 (ilegibles 0) · entregó 0 B · perdió 32649 B · primer mensaje perdido: test:enqueue «caso 01 de 24 · siembra 95db677d»
+   cuerpos que empezaron a correr: 27 de 27
+
+── K · como I, pero cada caso suelta el bucle: lo anterior al 21 SÍ llega
+   DICTAMEN: VERDE · NO se ve nada
+   salida de la cadena: 0
+   recuento del padre: tests 25 · pass 25 · fail 0 · cancelled 0   (declarados: 27 + 5 = 32)
+   nombres con resultado: spec 25 · tap 25   · log 1268 car., tap 3480 car.
+   el sembrado (22): se ejecutó NO · ✖ en spec NO · ✔ en spec NO · «not ok» en tap NO
+   el fichero como caído: spec NO · tap NO
+   el hijo: código propio 0 · mensajes 105 (ilegibles 0) · entregó 23725 B · perdió 0 B
+   cuerpos que empezaron a correr: 21 de 27
+
+CONTROLES DEL BANCO
+   vale  · cero · A sale 0 con los 32 declarados y ninguno caído — salida 0, tests 32, pass 32, fail 0
+   NO VALE · positivo · B sale distinto de 0 y el sembrado se ve ✖ por nombre en los DOS reporters — salida 0, spec false, tap false, fail 0
+   vale  · la suma cuadra en A y en B: pass + fail = tests = nombres con resultado — A 32/32/32 · B 32/32/32
+   vale  · el sello se ve y el sello falso no — visto en A 33 veces · falso 0
+   vale  · el lector del informe entiende todos los mensajes (0 ilegibles) y hay acta en todas — A:0 B:0 C:0 D:0 E:0 F:0 G:0 H:0 I:0 J:0 K:0
+   NO VALE · el corte actuó donde se pidió y sólo donde se pidió — A:0 B:0 C:4162 D:8041 E:0 F:0 G:4162 H:4162 I:0 J:32649 K:0
+   vale  · el corte de G reproduce la firma del CI: VERDE, sin entrada de fichero y con menos tests — salida 0, tests 29 de 32, fichero caído false
+
+RESUMEN (una línea por variante)
+   A     VERDE                                          sin corte, sin fallo (control de cero)
+   B     VERDE · NO se ve nada                          sin corte, cae el 22 (control positivo)
+   C     VERDE · NO se ve nada                          cae el 22 · el corte cae ENTRE dos casos (antes de que empiece el 22)
+   D     VERDE · NO se ve nada                          cae el 21b · el corte cae DENTRO del caso 21 (llega su inicio, no su resultado)
+   E     VERDE · NO se ve nada                          cae el 22 · el corte parte en dos el mensaje del fallo
+   F     VERDE · NO se ve nada                          cae el 22 · el fallo llega y se pierde lo de detrás
+   G     VERDE                                          el mismo corte que C, QUITANDO la siembra (no cae nadie)
+   H     VERDE · NO se ve nada                          como C, y además el hijo sale con 0 (se quita la pieza)
+   I     VERDE · NO se ve nada                          sin corte · el proceso se va con exit(0) en el 21 y el 22 habría caído
+   J     VERDE · NO se ve nada                          cae el 22 · no llega NADA del informe del fichero
+   K     VERDE · NO se ve nada                          como I, pero cada caso suelta el bucle: lo anterior al 21 SÍ llega
+
+CIEGO: 2 control(es) del banco no salieron. La tabla NO VALE.

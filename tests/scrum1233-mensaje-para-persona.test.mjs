@@ -190,7 +190,8 @@ const TECHO = Object.freeze({
   // facturasRecibidasView.js: 1 → 0 (SCRUM-1388): el párrafo que pintaba `err.message` bajo el cartel
   // de carga se retira; el cartel dice solo el texto firmado. Sale de la tabla: su techo es CERO.
   'invoiceDetailView.js': 3,
-  'jobsView.js': 1,
+  // jobsView.js: 1 → 0 (SCRUM-1233e): `avisoDeFallo` pasa por `mensajeParaPersona`. Sale de la tabla:
+  // su techo es CERO.
   'libroRegistroView.js': 1,
   'plansView.js': 2,
   'settingsView.js': 3,
@@ -205,7 +206,8 @@ const TECHO = Object.freeze({
 // un FALSO POSITIVO (la variable solo se leía en la condición del ternario) y el censo ya no lo cuenta.
 // 16 → 15 (SCRUM-1233c): la carga de la lista de Gastos, al helper con su texto firmado (c.17504).
 // 15 → 14 (SCRUM-1388): el detalle crudo bajo el cartel de «Facturas recibidas», retirado.
-const TOTAL_MEDIDO = 14;
+// 14 → 13 (SCRUM-1233e): el aviso de fallo de la lista de Trabajos, al helper.
+const TOTAL_MEDIDO = 13;
 
 test('SCRUM-1233 · 🔴 EL TRINQUETE: ningún fichero pinta más `.message` ocultos que su techo', () => {
   const por = new Map();
@@ -232,7 +234,7 @@ test('SCRUM-1233 · 🔴 EL TRINQUETE: ningún fichero pinta más `.message` ocu
 test('SCRUM-1233 · 🔴 la tabla NO CRECE, y lo arreglado se queda en cero', () => {
   const total = Object.values(TECHO).reduce((a, b) => a + b, 0);
   assert.ok(total <= TOTAL_MEDIDO, `🔴 la tabla ha subido a ${total}; solo puede bajar de ${TOTAL_MEDIDO}`);
-  for (const base of ['albaranesView.js', 'jobDetailView.js', 'quoteRevisiones.js', 'teamView.js', 'productsView.js', 'expensesView.js', 'facturasRecibidasView.js']) {
-    assert.equal(base in TECHO, false, `🔴 ${base} ha vuelto a la tabla: se arregló (SCRUM-1233, SCRUM-1388) y su techo es CERO`);
+  for (const base of ['albaranesView.js', 'jobDetailView.js', 'quoteRevisiones.js', 'teamView.js', 'productsView.js', 'expensesView.js', 'facturasRecibidasView.js', 'jobsView.js']) {
+    assert.equal(base in TECHO, false, `🔴 ${base} ha vuelto a la tabla: se arregló (SCRUM-1233, SCRUM-1388, SCRUM-1233e) y su techo es CERO`);
   }
 });

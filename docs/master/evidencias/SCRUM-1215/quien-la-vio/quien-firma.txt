@@ -1,0 +1,27 @@
+POBLACION: 173 hojas de grupo · main f7a4c816ab2bf5c334a953dee60dc7b73718a0f8
+  15  ASESOR                                   con acta   5 · SIN acta  10
+        buscadorDeClientes.js·TEXTOS | cobrosView.js·COBROS_COPY | cobrosView.js·COBROS_DESCONOCIDO | estadoFirma.js·TEXTO_DESALOJO | estadoFirma.js·TEXTO_FIRMA
+  10  ASESOR_A_LA_ESPERA_DEL_FUNDADOR          con acta   3 · SIN acta   7
+        filtroClientes.js·TEXTOS_ETIQUETAS | filtroClientes.js·TEXTOS_SELECCION | quoteDireccionObra.js·TEXTOS
+  55  DELEGACION                               con acta  37 · SIN acta  18
+        cobrosView.js·COBROS_COPY | customerDetailView.js·FUSION_CLIENTE | customerDetailView.js·HISTORIAL_CLIENTE | filtroClientes.js·TEXTOS_VISITA | parteDetailView.js·TEXTOS
+  69  FUNDADOR                                 con acta  36 · SIN acta  33
+        albaranDetailView.js·ROTULOS_RAIL_ALBARAN | atajoNuevo.js·TEXTOS | documentoAsignados.js·TEXTOS_DOC_ASIGNADOS | filtroClientes.js·VACIO_PESTANA | homeView.js·TONO_DE_ACEPTACION | jobDetailView.js·ALB_CREAR_COPY | jobDetailView.js·ALB_TABLA_COPY | jobRailBlocks.js·JOB_RAIL_TITULOS | jobsCierreTrabajo.js·CIERRE_TEXTOS | libroRegistroView.js·ESTADO_VISIBLE | quoteRevisiones.js·TEXTOS | settingsSubmenus.js·ROTULOS | settingsView.js·QR_COPY | settingsView.js·TX
+  12  LETRA_NEGADA(resuelta en «ambiguos»)     con acta   5 · SIN acta   7
+        quoteActionsRegistry.js·QUOTE_ACTION_ROTULOS
+  12  NO_DICE_QUIEN                            con acta   2 · SIN acta  10
+        estadoFirma.js·TEXTO_PRECARGA | jobDetailView.js·TEXTO_HUECO | puertaSerie.js·SERIE_TEXTOS
+
+NO_DICE_QUIEN, la letra:
+  · APROBADA** (regla 30)
+  · FIRMADOS (com
+  · FIRMADOS, literales
+
+ASESOR_A_LA_ESPERA_DEL_FUNDADOR, la letra ENTERA:
+  · SCRUM-580 (CONT-07) · LOS CUATRO TEXTOS DE LAS ETIQUETAS, en un solo sitio. ✅ APROBADOS por el ASESOR el 2-sep-2026, **provisionales a la espera del fundador**. PROCEDENCIA: `docs/master/SCRUM-580.md`, sección de microcopy. Sin decir DÓNDE consta, «aprobado» es una afirmación que nadie puede comprobar (SCRUM-387). Viven aquí y no repartidos por `customersView.js` para que se puedan fijar con `===` desde un solo test: un texto suelto en cada `textContent` deriva sin que nada chille. ⚠️ SIN MARCADOR en pantalla (decisión del 2-sep-2026). Que no se pinte el corchete NO significa que estén firmados por el fundador: eso lo dice `SIN_APROBAR`, arriba.
+
+  · SCRUM-582 (CONT-09) · LOS TRES TEXTOS DE LA SELECCIÓN. ✅ APROBADOS por el ASESOR el 4-sep-2026, **a la espera de la firma del fundador** (regla 30). PROCEDENCIA: `docs/master/SCRUM-582.md`, sección de microcopy — que es donde consta una aprobación DEL ASESOR, como la de SCRUM-580. `docs/microcopy/` es del FUNDADOR: su README lo dice en la primera línea, y meter ahí una aprobación que no es suya corrompería el registro de las que sí lo son. ⚠️ Y CONSTA ALGO MÁS, porque el asesor lo pidió por escrito: **la caja de estos textos está CALCULADA, no medida**. El MCP del navegador estaba caído y la firma se dio sobre el cálculo, con la condición de medirla cuando vuelva. Si no cabe, falla el cálculo, no el texto. · `todos` es el NOMBRE ACCESIBLE de la casilla de cabecera: sin él, un lector de pantalla dice «casilla» y no dice a quién selecciona. · `uno` y `varios` son el contador, y son DOS porque el plural es de verdad.
+
+  · LOS CUATRO TEXTOS, en un solo sitio. ✅ APROBADOS por el ASESOR el 4-sep-2026, **provisionales a la espera del fundador**. PROCEDENCIA: `docs/master/SCRUM-602.md`, sección de microcopy. Sin decir DÓNDE consta, «aprobado» es una afirmación que nadie puede comprobar (SCRUM-387). 🔴 `rotulo` NO ES «Dirección de envío», y el motivo se midió antes de escribirlo: el editor YA tiene un bloque «4. Envío» que significa el envío del DOCUMENTO por WhatsApp o correo. Dos cosas distintas con el mismo nombre en la misma pantalla es cómo se aprende mal un producto. «Obra» es además la palabra del oficio y la que ya usa el albarán. ⚠️ SIN MARCADOR en pantalla (mismo criterio que `filtroClientes.js` y que los tres rótulos de SCRUM-599). Que no se pinte el corchete NO significa que estén firmados por el fundador: eso lo dice `SIN_APROBAR`, abajo.
+
+EXIT=0

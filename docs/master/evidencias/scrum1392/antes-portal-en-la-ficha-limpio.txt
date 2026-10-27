@@ -1,0 +1,17 @@
+# portal-en-la-ficha-limpio · sha f9b4074d33278023f55548b88306421531114174 · EXIT=0 · 3.1 s
+
+════════════════════════════════════════════════════════════════════════════════════
+EL BOTÓN DEL PORTAL · medido en NAVEGADOR, sobre el DOM renderizado
+════════════════════════════════════════════════════════════════════════════════════
+  caso        LISTA    FICHA 360
+  SIN token   botón    botón
+  CON token   botón    botón
+
+  peticiones al abrir (las dos vistas):
+    SIN token   /admin/customers/7/detail · /admin/customers/7/historial · /admin/customers
+    CON token   /admin/customers/7/detail · /admin/customers/7/historial · /admin/customers
+⟦veredicto⟧ 0 hallazgos · 0 ciegos
+
+✅ Las dos pantallas dicen lo mismo, y abrir la ficha no cura.
+
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s

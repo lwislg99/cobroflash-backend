@@ -1,0 +1,185 @@
+{
+ "importsReescritos": 3,
+ "marcasTotales": 229,
+ "porNivel": {
+  "negada": 13,
+  "citada": 1,
+  "rastreable": 149,
+  "anclado": 15,
+  "documental": 24,
+  "sin-respaldo": 27
+ },
+ "SIN_RESPALDO": 27,
+ "ancladas": [
+  {
+   "donde": "src/modules/fiscal/evidencias/paquete.ts:174",
+   "lineas": 16,
+   "citas": [
+    "SCRUM-1252/17726"
+   ],
+   "ancha": [
+    "17726"
+   ]
+  },
+  {
+   "donde": "src/modules/fiscal/verifactu/registro.builder.ts:629",
+   "lineas": 15,
+   "citas": [
+    "SCRUM-1258/17713"
+   ],
+   "ancha": [
+    "17713"
+   ]
+  },
+  {
+   "donde": "src/modules/metrics/domain/actividadEquipo.ts:1",
+   "lineas": 38,
+   "citas": [
+    "SCRUM-1341/17825"
+   ],
+   "ancha": [
+    "17825"
+   ]
+  },
+  {
+   "donde": "src/modules/system/app/routes/invoicesAdmin.routes.ts:1293",
+   "lineas": 3,
+   "citas": [
+    "SCRUM-1502/18835"
+   ],
+   "ancha": [
+    "18835"
+   ]
+  },
+  {
+   "donde": "public/dashboard/js/invoicesView.js:209",
+   "lineas": 13,
+   "citas": [
+    "SCRUM-825/17446"
+   ],
+   "ancha": [
+    "17446"
+   ]
+  },
+  {
+   "donde": "public/dashboard/js/quotesView.js:401",
+   "lineas": 24,
+   "citas": [
+    "SCRUM-915/15868"
+   ],
+   "ancha": [
+    "15868"
+   ]
+  },
+  {
+   "donde": "tests/scrum1027-atajo-flag-off-sin-documento.test.mjs:194",
+   "lineas": 5,
+   "citas": [
+    "SCRUM-825/17446"
+   ],
+   "ancha": [
+    "17446"
+   ]
+  },
+  {
+   "donde": "tests/scrum411-exports-inalcanzables.test.mjs:68",
+   "lineas": 161,
+   "citas": [
+    "SCRUM-1404/18840"
+   ],
+   "ancha": [
+    "16468",
+    "18840",
+    "18856"
+   ]
+  },
+  {
+   "donde": "tests/scrum514-aprobado-y-aplicado.test.mjs:943",
+   "lineas": 1,
+   "citas": [
+    "SCRUM-1258/17713"
+   ],
+   "ancha": [
+    "17713"
+   ]
+  },
+  {
+   "donde": "tests/scrum582-seleccion-multiple-clientes.test.mjs:187",
+   "lineas": 9,
+   "citas": [
+    "SCRUM-1135/17449"
+   ],
+   "ancha": [
+    "17449"
+   ]
+  },
+  {
+   "donde": "tests/scrum601-copy-del-documento-vs-flag.test.mjs:87",
+   "lineas": 158,
+   "citas": [
+    "SCRUM-887/15675",
+    "SCRUM-895/15699",
+    "SCRUM-920/15992",
+    "SCRUM-1216/17347",
+    "SCRUM-1257/17444"
+   ],
+   "ancha": [
+    "15675",
+    "15699",
+    "15868",
+    "15992",
+    "17347",
+    "17444",
+    "17446"
+   ]
+  },
+  {
+   "donde": "tests/scrum755-el-contador-que-cuadro-solo.test.mjs:113",
+   "lineas": 15,
+   "citas": [
+    "SCRUM-915/15868"
+   ],
+   "ancha": [
+    "15868"
+   ]
+  },
+  {
+   "donde": "tests/scrum895b-literales-firmados.test.mjs:1",
+   "lineas": 23,
+   "citas": [
+    "SCRUM-895/15699"
+   ],
+   "ancha": [
+    "15699"
+   ]
+  },
+  {
+   "donde": "tests/_asignacion-bloques-presupuesto.mjs:30",
+   "lineas": 7,
+   "citas": [
+    "SCRUM-915/15868"
+   ],
+   "ancha": [
+    "15868"
+   ]
+  },
+  {
+   "donde": "scripts/guard-pasos-del-editor.mjs:1",
+   "lineas": 56,
+   "citas": [
+    "SCRUM-915/15790"
+   ],
+   "ancha": [
+    "15790"
+   ]
+  }
+ ],
+ "controlPositivo": "anclado",
+ "controlCero": "sin-respaldo"
+}
+
+Los 13 casos del propio scrum921c, que corren al importar la copia:
+ℹ tests 13
+ℹ pass 13
+ℹ fail 0
+ℹ skipped 0

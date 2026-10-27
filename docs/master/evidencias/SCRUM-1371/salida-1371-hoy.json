@@ -1,0 +1,117 @@
+{
+ "modo": "HOY",
+ "build": "720c1a122ffc796371004a92f6ab143b5f79d4d3",
+ "existente": {
+  "escena": "cliente EXISTENTE",
+  "clics": [
+   {
+    "clic": 1,
+    "modalSigueAbierto": true,
+    "botonEncendido": true
+   },
+   {
+    "clic": 2,
+    "modalSigueAbierto": true,
+    "botonEncendido": true
+   }
+  ],
+  "altasDeCliente": 0,
+  "altasDePresupuesto": 1,
+  "preciosPedidos": [
+   50
+  ],
+  "enviosIntentados": [
+   "/admin/quotes/995001/send-whatsapp",
+   "/admin/quotes/995001/send-whatsapp"
+  ],
+  "noGet": [
+   "POST /quote/create · contestada por la sonda (200)",
+   "POST /admin/quotes/995001/send-whatsapp · contestada por la sonda (500)",
+   "POST /admin/quotes/995001/send-whatsapp · contestada por la sonda (500)"
+  ]
+ },
+ "nuevo": {
+  "escena": "cliente NUEVO",
+  "clics": [
+   {
+    "clic": 1,
+    "modalSigueAbierto": true,
+    "botonEncendido": true
+   },
+   {
+    "clic": 2,
+    "modalSigueAbierto": true,
+    "botonEncendido": true
+   }
+  ],
+  "altasDeCliente": 1,
+  "altasDePresupuesto": 1,
+  "preciosPedidos": [
+   50
+  ],
+  "enviosIntentados": [
+   "/admin/quotes/995001/send-whatsapp",
+   "/admin/quotes/995001/send-whatsapp"
+  ],
+  "noGet": [
+   "POST /admin/customers · contestada por la sonda (200)",
+   "POST /quote/create · contestada por la sonda (200)",
+   "POST /admin/quotes/995001/send-whatsapp · contestada por la sonda (500)",
+   "POST /admin/quotes/995001/send-whatsapp · contestada por la sonda (500)"
+  ]
+ },
+ "otrasLineas": {
+  "escena": "CONTROL: se cambian las líneas entre clics",
+  "clics": [
+   {
+    "clic": 1,
+    "modalSigueAbierto": true,
+    "botonEncendido": true
+   },
+   {
+    "clic": 2,
+    "modalSigueAbierto": true,
+    "botonEncendido": true
+   }
+  ],
+  "altasDeCliente": 0,
+  "altasDePresupuesto": 2,
+  "preciosPedidos": [
+   50,
+   80
+  ],
+  "enviosIntentados": [
+   "/admin/quotes/995001/send-whatsapp",
+   "/admin/quotes/995002/send-whatsapp"
+  ],
+  "noGet": [
+   "POST /quote/create · contestada por la sonda (200)",
+   "POST /admin/quotes/995001/send-whatsapp · contestada por la sonda (500)",
+   "POST /quote/create · contestada por la sonda (200)",
+   "POST /admin/quotes/995002/send-whatsapp · contestada por la sonda (500)"
+  ]
+ },
+ "todoBien": {
+  "escena": "CONTROL: un clic con todo bien",
+  "clics": [
+   {
+    "clic": 1,
+    "modalSigueAbierto": false,
+    "botonEncendido": false
+   }
+  ],
+  "altasDeCliente": 0,
+  "altasDePresupuesto": 1,
+  "preciosPedidos": [
+   50
+  ],
+  "enviosIntentados": [
+   "/admin/quotes/995001/send-whatsapp"
+  ],
+  "noGet": [
+   "POST /quote/create · contestada por la sonda (200)",
+   "POST /admin/quotes/995001/send-whatsapp · contestada por la sonda (200)"
+  ]
+ },
+ "erroresDePagina": []
+}

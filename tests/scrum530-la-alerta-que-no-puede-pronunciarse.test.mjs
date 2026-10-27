@@ -173,7 +173,7 @@ test('SCRUM-530 · 🔴 CONTRATO: el servicio real manda `minimo` y NO se activa
   ];
   requiere.cache[fPrisma] = {
     id: fPrisma, filename: fPrisma, loaded: true,
-    exports: { prisma: { whatsAppMessage: { findMany: async () => filas } } },
+    exports: { prisma: { merchant: { findUnique: async () => null }, whatsAppMessage: { findMany: async () => filas, count: async () => 0 } } },
   };
   delete requiere.cache[fSrv];
   const { getWhatsAppMetrics } = requiere(fSrv);

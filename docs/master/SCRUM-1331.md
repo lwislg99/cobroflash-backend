@@ -181,3 +181,62 @@ La primera lista de frases de red llevaba `unable to access`. Git antepone esa f
 fallo de https — también a un `The requested URL returned error: 403`, que es de permisos. Habría
 mandado a «relanzar» un fallo que no se arregla relanzando. La quité al releer la lista, y el
 caso ② lo fija: el 403 tiene que dar `false`.
+
+---
+
+## 13-oct-2026 · SCRUM-1331b · la frase que llega tarde no existe (el intermitente del caso ④)
+
+**Medido contra:** `origin/main` = `6f35b50901fac64347d862255ec755a036ca1f0d` · 2026-10-13T11:07:40Z (hora de GitHub)
+
+S5. Sin ticket nuevo: defecto encontrado de paso al mirar por qué el PR #2336 (SCRUM-1298b) llevaba
+cuatro días en rojo.
+
+### Qué cayó
+
+Run `37924386431` (9-oct, 11:35Z, node v24.21.0, Linux): un solo caso caído de 11.158 tests (11.064 pasan, 93 saltados), el ④ de
+`tests/scrum1331-sin-red-se-dice.test.mjs`. El fichero fabricado `b-muere.test.mjs` salió «FICHERO CAÍDO
+SIN CASO CAÍDO … sin huella reconocida» donde el test pide «MURIÓ EL PROCESO … async.c». El diff de #2336
+no toca ni el test ni el lector. Con `main` traído y vuelto a empujar, el mismo PR salió verde y entró
+(merge `4605a1450`, 10:57Z): era un intermitente.
+
+Cuánto: de los 30 últimos CI rojos (8-oct a 13-oct), **1** es éste. No es la causa de los otros dos PR
+que estaban en rojo esos días (#2337 y #2340 cayeron los dos en `scrum622-desconocido-no-es-verde`, que
+no he mirado: no son de S5).
+
+### Por qué
+
+El fichero fabricado escribía la frase nativa DENTRO del `exit`. `node --test` espera a que el fichero
+salga y a que cierre su salida estándar; a la de error no la espera, y cierra su lector
+(`lib/internal/test_runner/runner.js`, rama v24.x: `once(child, 'exit')` + `finished(child.stdout)`).
+Lo que llega después se pierde.
+
+| sonda (node v24.8.0, Windows; no están en git) | resultado |
+| --- | --- |
+| la tanda fabricada tal cual, 96 veces, de 12 en 12 | 96 de 96 clasifican bien: aquí la carrera no se pierde |
+| control de la sonda: el fichero espera 3 s y la frase llega con él vivo | la frase SALE en `spec`, antes de su `✖` |
+| forzado: la frase la escribe un nieto 600 ms después de morir el fichero | **0 líneas** en `spec`, ni antes ni después del `✖`; el lector dice «sin huella» |
+
+La tercera fila reproduce el síntoma del 9-oct forzando el mecanismo. **Lo que NO tengo:** la carrera
+perdida de forma natural. En Windows no se pierde y en esta máquina no hay Linux; que el 9-oct fuera esto
+es lo que casa con el código del runner y con el síntoma, no una reproducción.
+
+### Qué cambia
+
+- `tests/scrum1331-sin-red-se-dice.test.mjs`: los dos ficheros fabricados que dejan huella
+  (`b-muere`, `c-sin-red`) la escriben con el proceso VIVO y esperan antes de morir (250 ms + 500 ms y
+  500 ms). `b-muere` la escribe en el `after` de la raíz, después del `✔` de su caso, que es donde
+  empieza la ventana que lee el lector. **Las aserciones no cambian, ni una** (regla 41): cambia cuándo
+  escribe el fichero fabricado, no lo que se le exige al lector.
+- `scripts/_huella-de-la-caida.mjs`: un límite más en su lista de límites declarados. Sólo comentario.
+  Una muerte nativa DE VERDAD puede perder esta misma carrera y salir «sin huella reconocida»: es el
+  lado seguro (no absuelve nada), pero «sin huella» no es «no fue nativa».
+
+### Controles
+
+- El fichero entero, 10 veces seguidas con el cambio: 10 de 10 (6 casos cada una).
+- La forma nueva de `b-muere` en la sonda de carga, 48 veces de 12 en 12: 48 de 48 «NATIVA».
+- **El rojo del arreglo no lo puedo dar** como «con el código viejo vuelve a fallar»: el viejo no falla
+  aquí (96 de 96). Lo que hay es la tercera fila de la tabla. Es una pausa, no una garantía: ensancha el
+  margen de «lo que tarde en morir» a medio segundo.
+
+A9: aviso → A10 «Una frase que un fichero escribe al morir compite con el lector que la espera: se escribe con el proceso vivo.» — no se pudo comprobar: la carrera no se reproduce de forma natural (96 de 96 bien en Windows; sólo forzada), así que no hay test que falle antes y pase después

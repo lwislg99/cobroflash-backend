@@ -1,0 +1,12 @@
+POBLACION: 8 mutaciones declaradas en tests/scrum1402-plan-inexistente-no-se-escribe.test.mjs
+BASE sin mutar: 12 casos, 0 caen
+1. VIVA (caen 2 de 12) · «checkout.session.completed con un plan que NO existe» · a: " && s.customer) {"
+2. VIVA (caen 2 de 12) · «(active, trialing) con un plan que NO existe» · a: "        if (st === 'active' || st === 'trialing') {\n          await pr"
+3. VIVA (caen 1 de 12) · «un impago (past_due, unpaid) con un plan que NO existe» · a: "        } else if (st === 'past_due' || st === 'unpaid') {\n          a"
+4. VIVA (caen 4 de 12) · «checkout.session.completed con un plan que NO existe» · a: "  String(\n    `[stripe] "
+5. VIVA (caen 5 de 12) · «checkout.session.completed con un plan legítimo» · a: "  if (false) return true;"
+6. VIVA (caen 3 de 12) · «checkout.session.completed con un plan que NO existe» · a: "  if ((PLANES_CONOCIDOS as any)[planId] !== undefined || PLANES_CONOCI"
+7. VIVA (caen 3 de 12) · «(active, trialing) con un plan que NO existe» · a: "  if (PLANES_CONOCIDOS.includes(planId.trim().toLowerCase())) return t"
+8. VIVA (caen 1 de 12) · «no lleva su PROPIA lista de planes» · a: "  if (['trial', 'pro', 'founding', 'equipo'].includes(planId)) return "
+RESULTADO: 8 vivas · 0 mudas · 0 ciegas, de 8 · dist/ re-emitido sin mutar (0)
+EXIT=0

@@ -1,0 +1,17 @@
+BASE sin mutar · POBLACION=14 · caen=[] · exit=0
+M1 · un texto firmado cambia una letra («Nota» por «Nota de la llamada») · numstat=«1	1	public/dashboard/js/clienteVolverALlamar.js» · POBLACION=14 · caen=[2,8] · MUERE
+M2 · la marca sale también para una llamada futura · numstat=«1	2	public/dashboard/js/clienteVolverALlamar.js» · POBLACION=14 · caen=[4] · MUERE
+M3 · un día sin estado se da por «futuro» · numstat=«1	1	public/dashboard/js/clienteVolverALlamar.js» · POBLACION=14 · caen=[5,12] · MUERE
+M4 · tras guardar se pinta lo tecleado, no lo que devuelve el servidor · numstat=«1	1	public/dashboard/js/clienteVolverALlamar.js» · POBLACION=14 · caen=[8,12] · MUERE
+M5 · si guardar falla, no se dice · numstat=«0	2	public/dashboard/js/clienteVolverALlamar.js» · POBLACION=14 · caen=[11] · MUERE
+M6 · si guardar falla, los botones se quedan apagados · numstat=«0	1	public/dashboard/js/clienteVolverALlamar.js» · POBLACION=14 · caen=[11] · MUERE
+M7 · «Hecho» que falla borra la llamada igual · numstat=«1	1	public/dashboard/js/clienteVolverALlamar.js» · POBLACION=14 · caen=[13] · MUERE
+M8 · se manda una llamada sin día · numstat=«1	1	public/dashboard/js/clienteVolverALlamar.js» · POBLACION=14 · caen=[10] · MUERE
+M9 · el día pasa por Date (hora y zona) · numstat=«1	1	public/dashboard/js/clienteVolverALlamar.js» · POBLACION=14 · caen=[3,4,7,8,9,14] · MUERE
+M10 · guardado sin día devuelto: se ofrece «Poner fecha» · numstat=«1	1	public/dashboard/js/clienteVolverALlamar.js» · POBLACION=14 · caen=[12] · MUERE
+M11 · «Cambiar» abre el formulario vacío · numstat=«1	1	public/dashboard/js/clienteVolverALlamar.js» · POBLACION=14 · caen=[9] · MUERE
+M12 · la nota viaja sin recortar · numstat=«1	1	public/dashboard/js/clienteVolverALlamar.js» · POBLACION=14 · caen=[8] · MUERE
+M13 · la nota se pinta sin la clase que parte las palabras largas · numstat=«0	1	public/dashboard/js/clienteVolverALlamar.js» · POBLACION=14 · caen=[7] · MUERE
+restaurado: git status --porcelain = «»
+MUTANTES=13 · no mueren=0
+EXIT=0

@@ -70,12 +70,22 @@ async function sesionDe(prisma, merchantId, teamMemberId) {
   return token;
 }
 
-const pedir = async (port, token, ruta) => {
-  const r = await fetch(`http://127.0.0.1:${port}${ruta}`, { headers: { cookie: `pf_session=${token}` } });
-  const tipo = r.headers.get('content-type') || '';
-  const cuerpo = tipo.includes('json') ? await r.json().catch(() => null) : (await r.arrayBuffer(), null);
-  return { status: r.status, cuerpo, tipo };
-};
+// `node:http` sin agente y no `fetch` (SCRUM-1218c): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Un JSON que no se lee da `null`, como el `.catch` de antes.
+const pedir = (port, token, ruta) => new Promise((ok, mal) => {
+  const req = http.request({ host: '127.0.0.1', port, path: ruta, method: 'GET', headers: { cookie: `pf_session=${token}` }, agent: false }, (r) => {
+    let d = ''; r.setEncoding('utf8');
+    r.on('data', (t) => { d += t; });
+    r.on('end', () => {
+      const tipo = r.headers['content-type'] || '';
+      let cuerpo = null;
+      if (tipo.includes('json')) { try { cuerpo = JSON.parse(d); } catch { cuerpo = null; } }
+      ok({ status: r.statusCode, cuerpo, tipo });
+    });
+  });
+  req.on('error', mal);
+  req.end();
+});
 
 /** Un negocio con dos Técnicos y una administradora. Devuelve los creadores que usan los casos. */
 async function equipoDe(prisma, merchant, marca) {
@@ -145,13 +155,16 @@ test('SCRUM-1397 · 🔴 un Técnico ya NO reconstruye el total cobrado del nego
       assert.equal(panel.cuerpo.totalCollected, 1050, 'SUELO: el panel tiene que decir 1.050 de total cobrado');
       assert.equal(blasEnPanel?.collected, 900, 'SUELO: el panel tiene que decir 900 cobrados por Blas');
 
-      // El cálculo de J2i, tal cual: las dos listas que el Técnico tiene abiertas.
+      // El cálculo de J2i necesitaba saber qué presupuestos son de Blas, y se lo decía
+      // `GET /admin/quotes?teamMemberId=<id>`. SCRUM-1403 cerró esa mitad y el SUELO que había aquí
+      // SALTÓ, como estaba escrito que hiciera («si un día se cierra, este caso pasaría por la razón
+      // equivocada: que lo diga»): con la lista vacía, lo de Blas se sumaría sobre ningún id.
+      // Re-medido: ahora los ids se le REGALAN al cálculo, sacados de lo sembrado. Es el peor caso
+      // (son enteros correlativos) y deja este caso midiendo sólo SU puerta, la lista de facturas.
       const deBlas = await pedir(port, tokenAna, `/admin/quotes?teamMemberId=${e.blas.id}`);
       assert.equal(deBlas.status, 200);
-      const idsDeBlas = new Set(deBlas.cuerpo.map((q) => q.id));
-      // SUELO del cálculo: la otra mitad de la vía sigue abierta (no es de este ticket). Si un día
-      // se cierra, este caso pasaría por la razón equivocada: que lo diga.
-      assert.equal(idsDeBlas.size, 2, 'SUELO: la lista de presupuestos por autor ya no contesta; re-mide qué prueba este caso');
+      assert.equal(deBlas.cuerpo.length, 0, 'SUELO: la lista de presupuestos por autor vuelve a contestarle a un Técnico (la cerró SCRUM-1403); re-mide qué prueba este caso');
+      const idsDeBlas = new Set([pBlas1.id, pBlas2.id]);
 
       const facturas = await pedir(port, tokenAna, '/admin/invoices');
       assert.equal(facturas.status, 200);

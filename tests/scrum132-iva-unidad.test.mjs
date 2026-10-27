@@ -16,7 +16,8 @@
 // comportamiento. `quotesView.js` es vanilla de navegador (sin bundler, usa `document`), así que
 // no se puede importar en node y ejecutar `addLine`. Lo que se verifica es que la forma del
 // código que arregla el bug SIGUE AHÍ — no que el navegador la ejecute bien. La verificación de
-// comportamiento es manual (o vía el harness de puppeteer de scripts/e2e-critico.mjs).
+// comportamiento es manual. (Hasta el 13-oct-2026 aquí se nombraba también el harness de
+// puppeteer de `e2e-critico`; se retiró en SCRUM-1521 y no hay recorrido que lo sustituya.)
 //
 // SIN GATE: solo lee un fichero. No toca BD ni levanta servidor.
 import test from 'node:test';

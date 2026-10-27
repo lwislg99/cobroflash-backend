@@ -27,6 +27,12 @@
 # ═════════════════════════════════════════════════════════════════════════════════════════════
 name: Vigía del despliegue
 
+# SCRUM-1542 · un simulacro se llama distinto EN LA LISTA DE EJECUCIONES. No es cosmético: el
+# latido lee de aquí el último veredicto del vigía, y un simulacro sale en `failure` con su paso
+# de aviso corrido, igual que una CONGELADA de verdad. Por este título lo aparta
+# (`TITULO_DE_CORRIDA_DE_SIMULACRO` en `scripts/equipo/latido.mjs`; un test ata las dos puntas).
+run-name: ${{ inputs.simulacro && 'SIMULACRO del aviso del vigía (producción NO está congelada)' || 'Vigía del despliegue' }}
+
 on:
   schedule:
     # Cada 2 horas, en punto. UTC.
@@ -39,6 +45,28 @@ on:
         description: 'Margen en horas (por defecto, el propuesto en el código)'
         required: false
         default: ''
+      # ═════════════════════════════════════════════════════════════════════════════════════
+      # 🔴 SCRUM-1542 · EL SIMULACRO: HACER SONAR EL AVISO A PROPÓSITO
+      #
+      # El aviso por Issue (SCRUM-1123) no había disparado NI UNA VEZ: 0 Issues con su marca
+      # sobre 2.382 filas de la API (medido el 13-oct-2026). Un canal de aviso que nunca ha
+      # sonado no se sabe si funciona, y éste es el único que diría que un despliegue se paró.
+      #
+      # Con esta casilla el vigía lee una «producción» FABRICADA —un commit viejo de `main`
+      # dentro de una URL `data:`— en vez de `yaqu.app/version`, y todo lo demás corre por su
+      # camino de siempre: mismo guion, mismo código de salida, mismo paso de aviso, misma marca.
+      # Qué se fabrica y qué no, en `scripts/equipo/simulacro-del-vigia.mjs`.
+      #
+      #     gh workflow run vigia-despliegue.yml -f simulacro=true
+      #
+      # ⚠️ LA EJECUCIÓN SALE EN ROJO, Y ES LO QUE TIENE QUE PASAR: el vigía canta fallando el
+      # job. Si el simulacro fue bien lo dice su último paso («¿sonó?»), no el color del run.
+      # ═════════════════════════════════════════════════════════════════════════════════════
+      simulacro:
+        description: 'SIMULACRO: fabrica una producción congelada y hace sonar el aviso. No mira yaqu.app.'
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -47,7 +75,9 @@ permissions:
   issues: write
 
 concurrency:
-  group: vigia-despliegue
+  # SCRUM-1542 · el simulacro va en SU grupo: con el mismo, lanzarlo cancelaría una lectura de
+  # verdad que estuviera corriendo (o al revés), y una pasada del vigía cancelada no avisa.
+  group: vigia-despliegue${{ inputs.simulacro && '-simulacro' || '' }}
   cancel-in-progress: true
 
 jobs:
@@ -109,12 +139,25 @@ jobs:
       # tres veredictos siguen siendo tres y NO_SE_SABE sigue sin ser verde.
       # ═══════════════════════════════════════════════════════════════════════════════════════
       - name: Recuperar la constancia de la ejecución anterior
+        # SCRUM-1542 · en un simulacro NO: tiene que partir de un historial VACÍO, y no puede
+        # comparar su producción fabricada con una lectura de verdad.
+        if: ${{ !inputs.simulacro }}
         uses: actions/cache/restore@v4
         with:
           path: .vigia
           key: vigia-estado-${{ github.run_id }}
           restore-keys: |
             vigia-estado-
+
+      # SCRUM-1542 · sólo en un simulacro. Elige el commit viejo, fabrica la URL y da la PRIMERA
+      # de las dos lecturas (la siembra, que tiene que salir 2). Si no puede, falla aquí y el
+      # paso de abajo no llega a correr: un simulacro que no supo fabricarse no mira producción.
+      - name: SIMULACRO · fabricar una producción congelada (no toca la de verdad)
+        id: simulacro
+        if: ${{ inputs.simulacro }}
+        env:
+          VIGIA_ESTADO: .vigia/constancias.log
+        run: node scripts/equipo/simulacro-del-vigia.mjs
 
       # Sin `npm ci`: el vigía no importa nada de `node_modules`. Sólo `node:child_process` y
       # `fetch`. Instalar dependencias aquí sería tiempo y superficie que no hace falta.
@@ -124,6 +167,10 @@ jobs:
         id: vigia
         env:
           VIGIA_ESTADO: .vigia/constancias.log
+          # SCRUM-1542 · vacía siempre, salvo en un simulacro: entonces es la «producción»
+          # fabricada, y el vigía la lee en vez de `yaqu.app/version` (y lo dice en su salida).
+          # Es lo ÚNICO que cambia en este paso: el guion de abajo no sabe que es un simulacro.
+          VIGIA_URL: ${{ steps.simulacro.outputs.url }}
         run: |
           # SCRUM-1123 · `set +e` a propósito: el paso sigue saliendo con el MISMO código (abajo
           # se hace `exit "$codigo"`, el job sigue en rojo igual que siempre), pero primero se
@@ -146,8 +193,12 @@ jobs:
       # paso que vigila es una memoria que sólo recuerda los días buenos.
       #
       # Va DESPUÉS del vigía a propósito: guarda el renglón que ACABA de anotar, no el heredado.
+      #
+      # 🔴 SCRUM-1542 · Y EN UN SIMULACRO NO SE GUARDA NADA. Su lectura es de una producción
+      # fabricada: si llegara a la caché, la siguiente pasada de verdad la tomaría por la lectura
+      # anterior, vería que «producción ha cambiado» y callaría un hueco real.
       - name: Guardar la constancia de ESTA ejecución (también si el vigía canta)
-        if: always()
+        if: always() && !inputs.simulacro
         uses: actions/cache/save@v4
         with:
           path: .vigia
@@ -156,8 +207,10 @@ jobs:
       # ═══════════════════════════════════════════════════════════════════════════════════════
       # SCRUM-1123 · AVISAR DE VERDAD, NO SÓLO PONER EL JOB EN ROJO
       #
-      # El 24/25-sep-2026 este vigía llevaba DÍAS en FAILURE (SCRUM-1122: 193 h de hueco) y nadie
-      # lo miró: «el job falla» sólo avisa a quien tenga activada la notificación de GitHub para
+      # El 24/25-sep-2026 este vigía estuvo en FAILURE cuatro pasadas seguidas (SCRUM-1122) y nadie
+      # lo miró. (Aquí decía «llevaba DÍAS… 193 h de hueco»: las 193 h eran la cifra inflada del
+      # log de entonces; medido, fueron 24,5 h sin un despliegue bueno. SCRUM-1542.)
+      # «El job falla» sólo avisa a quien tenga activada la notificación de GitHub para
       # workflows programados en rojo, y aquí no la tenía nadie. El síntoma es el mismo que el
       # que hizo nacer el vigía —«no cambia nada»—, un nivel más arriba.
       #
@@ -184,15 +237,59 @@ jobs:
       # `scripts/vigia-despliegue-aviso.mjs` (JSON en, JSON fuera, cero red, con tests contra
       # dobles); el `gh api`/`gh issue` que de verdad habla con GitHub se queda aquí, fino.
       # ═══════════════════════════════════════════════════════════════════════════════════════
+      #
+      # 🔴 SCRUM-1542 · EL SIMULACRO PASA POR ESTE MISMO PASO, sin rama aparte: misma condición,
+      # mismo token, misma marca, misma dedupe. Lo único suyo es `VIGIA_SIMULACRO`, que le pone
+      # al cuerpo un párrafo delante y otro título al Issue (los dos salen del módulo, no de
+      # aquí). Y el paso deja dicho QUÉ HIZO (`accion`, `numero`, `marca`) para que el último
+      # paso pueda ir a GitHub a comprobarlo en vez de creerse este log.
       - name: Avisar de verdad si el vigía cantó (Issue de GitHub)
         if: always() && steps.vigia.outputs.salida == '1'
+        id: aviso
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           MARCA: "<!-- vigia-despliegue:produccion-congelada -->"
+          VIGIA_SIMULACRO: ${{ inputs.simulacro }}
+          # SCRUM-1123f · a quién llama el aviso. El #2455 juntó 9 comentarios del bot con 0
+          # menciones: un aviso que no nombra a nadie no le llega a nadie. Es el dueño del
+          # repositorio. Si su cuenta RECIBE la notificación no está medido (hace falta el permiso
+          # `notifications`, que el `gh` de las sesiones no tiene): se declara, no se deduce.
+          VIGIA_MENCION: "@${{ github.repository_owner }}"
         run: |
+          echo "marca=$MARCA" >> "$GITHUB_OUTPUT"
           RENGLON="$(tail -1 .vigia/constancias.log 2>/dev/null || true)"
+
+          # ═══════════════════════════════════════════════════════════════════════════════════
+          # 🔴 SCRUM-1123f · ¿RAILWAY NO HA VISTO EL COMMIT (TIPO A) O LO VIO Y FALLÓ (TIPO B)?
+          #
+          # Las dos dan el mismo síntoma y se miran en sitios distintos. Del 21 al 22-oct Railway
+          # no vio 55 commits y este aviso mandó 8 veces a mirar «los logs de arranque»: no había
+          # ninguno. Se distinguen desde GitHub, por los estados que Railway deja en el commit.
+          #
+          # Se miran los 5 commits MÁS NUEVOS de primer padre entre producción y `main` (los shas
+          # salen del renglón del vigía; el checkout trae la historia entera). Cada uno lleva
+          # `leido:false` si la API no contestó: «no pude leer» NO es «cero estados», y el módulo
+          # lo distingue. Si algo de aquí falla, VIGIA_ESTADOS_JSON va vacío y el aviso sale igual,
+          # diciendo que no sabe qué avería es (nunca se calla el aviso por no poder diagnosticar).
+          # ═══════════════════════════════════════════════════════════════════════════════════
+          PROD="$(printf '%s' "$RENGLON" | grep -oE 'prod=[0-9a-f]{8}' | head -1 | cut -d= -f2)" || true
+          MAIN="$(printf '%s' "$RENGLON" | grep -oE 'main=[0-9a-f]{8}' | head -1 | cut -d= -f2)" || true
+          VIGIA_ESTADOS_JSON=''
+          if [ -n "$PROD" ] && [ -n "$MAIN" ]; then
+            FILAS=''
+            for SHA in $(git rev-list --first-parent --max-count=5 "$PROD..$MAIN" 2>/dev/null); do
+              FILA=''
+              if J="$(gh api "repos/$REPO/commits/$SHA/status" 2>/dev/null)"; then
+                FILA="$(printf '%s' "$J" | jq -c --arg sha "$SHA" '{sha: $sha, leido: true, estados: [.statuses[] | {context, state, description}]}' 2>/dev/null)" || FILA=''
+              fi
+              [ -n "$FILA" ] || FILA="{\"sha\":\"$SHA\",\"leido\":false}"
+              FILAS="$FILAS$FILA"$'\n'
+            done
+            VIGIA_ESTADOS_JSON="$(printf '%s' "$FILAS" | jq -s -c '.' 2>/dev/null)" || VIGIA_ESTADOS_JSON=''
+          fi
+          echo "estados de Railway leídos: ${VIGIA_ESTADOS_JSON:-(ninguno)}"
 
           # 🔴 NO se usa `gh issue list --search`: la búsqueda de GitHub tokeniza el cuerpo y no
           # garantiza casar un literal con `<!-- … -->`. Se listan los Issues abiertos tal cual
@@ -201,26 +298,85 @@ jobs:
             VIGIA_ISSUES_JSON='[]'
           fi
 
-          # 🔴 `|| true` en las tres líneas siguientes A PROPÓSITO: los `run:` de Actions llevan
-          # `-e -o pipefail`, y sin esto un `jq`/`node` que fallara abortaría el paso ANTES de
+          # 🔴 `|| true` en las tres líneas siguientes A PROPÓSITO: este fichero no declara `shell:`
+          # ni `defaults:`, así que Actions corre el paso con `bash -e {0}` — `-e` SÍ, `pipefail`
+          # NO (medido en SCRUM-1123c). Sin esto, un `node` que fallara abortaría el paso ANTES de
           # llegar al `if`/`else` que decide cómo avisar del fallo — el mismo error de "abortar en
           # vez de decidir" que este propio seguimiento viene a evitar en la decisión de arriba.
+          # (Sin `pipefail`, en las tuberías de abajo sólo cuenta la ÚLTIMA orden: un `jq` de en
+          # medio que falla no aborta, le pasa vacío a la siguiente.)
           DECISION="$(VIGIA_ISSUES_JSON="$VIGIA_ISSUES_JSON" VIGIA_MARCA="$MARCA" VIGIA_RENGLON="$RENGLON" VIGIA_RUN_URL="$RUN_URL" \
+                      VIGIA_ESTADOS_JSON="$VIGIA_ESTADOS_JSON" \
                       node scripts/vigia-despliegue-aviso.mjs)" || true
           ACCION="$(printf '%s' "$DECISION" | jq -r '.accion' 2>/dev/null)" || true
+          TIPO="$(printf '%s' "$DECISION" | jq -r '.tipo // "no-se-sabe"' 2>/dev/null)" || true
+          echo "- **Avería:** \`${TIPO:-no-se-sabe}\` (SCRUM-1123f: \`railway-no-lo-vio\` = tipo A, \`fallo-el-despliegue\` = tipo B)" >> "$GITHUB_STEP_SUMMARY"
 
           if [ "$ACCION" = "comentar" ]; then
             NUMERO="$(printf '%s' "$DECISION" | jq -r '.numero')"
             printf '%s' "$DECISION" | jq -r '.cuerpo' | gh issue comment "$NUMERO" --repo "$REPO" --body-file -
             echo "- **ACTUALIZADO** — Issue #$NUMERO con la lectura de esta ejecución." >> "$GITHUB_STEP_SUMMARY"
+            { echo "accion=comentar"; echo "numero=$NUMERO"; } >> "$GITHUB_OUTPUT"
           elif [ "$ACCION" = "crear" ]; then
+            # El título lo da el módulo (`TITULO_DEL_AVISO`, o el del simulacro): una sola copia.
+            TITULO="$(printf '%s' "$DECISION" | jq -r '.titulo')"
             SALIDA_ISSUE="$(printf '%s' "$DECISION" | jq -r '.cuerpo' \
-              | gh issue create --repo "$REPO" --title "🔴 Producción congelada — el vigía del despliegue está en rojo" --body-file - 2>&1)" \
+              | gh issue create --repo "$REPO" --title "$TITULO" --body-file - 2>&1)" \
               && echo "- **ABIERTO** — $SALIDA_ISSUE" >> "$GITHUB_STEP_SUMMARY" \
               || { echo "::error::No se pudo abrir el Issue de aviso: $SALIDA_ISSUE"; echo "- **NO SE PUDO ABRIR** — $SALIDA_ISSUE" >> "$GITHUB_STEP_SUMMARY"; exit 1; }
+            # `gh issue create` contesta con la URL del Issue; el número es su último tramo. Si no
+            # se puede sacar, `numero` va vacío y el que comprueba dirá que no consta.
+            NUMERO="$(printf '%s\n' "$SALIDA_ISSUE" | grep -oE '/issues/[0-9]+' | tail -1 | grep -oE '[0-9]+' || true)"
+            { echo "accion=crear"; echo "numero=$NUMERO"; } >> "$GITHUB_OUTPUT"
           else
             MOTIVO="$(printf '%s' "$DECISION" | jq -r '.motivo // "sin motivo"' 2>/dev/null || echo "sin motivo (DECISION ilegible: $DECISION)")"
             echo "::error::No se pudo decidir el aviso: $MOTIVO"
             echo "- **NO-SE-SABE** — $MOTIVO" >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
+
+      # ═══════════════════════════════════════════════════════════════════════════════════════
+      # 🔴 SCRUM-1542 · ¿SONÓ? SE COMPRUEBA EN GITHUB, NO EN EL LOG DE ARRIBA — Y SE RECOGE
+      #
+      # Un simulacro que se da por bueno porque «el paso de aviso corrió» sólo sabe que corrió.
+      # Aquí se le pide a la API el Issue que el paso dice haber escrito y se mira que exista y
+      # que lleve la marca: es la misma pregunta que se haría alguien que mirase desde fuera.
+      #
+      # Y se RECOGE: el Issue que abrió el simulacro se cierra aquí mismo. Con la marca puesta y
+      # abierto, se comería el siguiente aviso de verdad —la dedupe comentaría en él en vez de
+      # abrir uno nuevo—. Sólo se cierra lo que ESTE simulacro abrió: si comentó en uno que ya
+      # estaba abierto, ése puede ser un aviso real y no se toca (lo decide el módulo).
+      #
+      # `always()`: tiene que correr también cuando el vigía NO cantó, que es justo cuando hay
+      # que decir «el simulacro no sonó» en vez de dejar un run rojo que parece un éxito.
+      # ═══════════════════════════════════════════════════════════════════════════════════════
+      - name: SIMULACRO · ¿sonó? Se comprueba en GitHub y se recoge
+        if: always() && inputs.simulacro
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SIMULACRO_SALIDA: ${{ steps.vigia.outputs.salida }}
+          SIMULACRO_ACCION: ${{ steps.aviso.outputs.accion }}
+          SIMULACRO_NUMERO: ${{ steps.aviso.outputs.numero }}
+          SIMULACRO_MARCA: ${{ steps.aviso.outputs.marca }}
+          SIMULACRO_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set +e
+          SIMULACRO_ISSUE_JSON=''
+          if [ -n "$SIMULACRO_NUMERO" ]; then
+            SIMULACRO_ISSUE_JSON="$(gh api "repos/$REPO/issues/$SIMULACRO_NUMERO" 2>/dev/null)" || SIMULACRO_ISSUE_JSON=''
+          fi
+          VEREDICTO="$(SIMULACRO_ISSUE_JSON="$SIMULACRO_ISSUE_JSON" node scripts/equipo/simulacro-del-vigia.mjs comprobar)"
+          codigo=$?
+          RESUMEN="$(printf '%s' "$VEREDICTO" | jq -r '.resumen // empty' 2>/dev/null)"
+          [ -n "$RESUMEN" ] || RESUMEN="🔴 **EL SIMULACRO NO SONÓ** — no se pudo leer el veredicto del simulacro: $VEREDICTO"
+          { echo "### simulacro del aviso del vigía"; echo; echo "$RESUMEN"; } >> "$GITHUB_STEP_SUMMARY"
+          echo "$RESUMEN"
+
+          if [ "$codigo" = "0" ] && [ "$(printf '%s' "$VEREDICTO" | jq -r '.cerrar')" = "true" ]; then
+            printf '%s' "$VEREDICTO" | jq -r '.comentario' | gh issue comment "$SIMULACRO_NUMERO" --repo "$REPO" --body-file - \
+              && gh issue close "$SIMULACRO_NUMERO" --repo "$REPO" \
+              || { echo "::error::El simulacro sonó, pero NO se pudo cerrar el Issue #$SIMULACRO_NUMERO: ciérralo a mano, o se comerá el siguiente aviso de verdad."; exit 1; }
+          fi
+          if [ "$codigo" != "0" ]; then echo "::error::$RESUMEN"; fi
+          exit "$codigo"

@@ -13,22 +13,26 @@
 //   3. Si no casa, Prisma lanza P2025 y la ruta contesta 409 `version_superada`, sin escribir nada.
 //   4. La respuesta devuelve la `version` nueva, para que el siguiente guardado vaya sobre ella.
 //
-// ⚠️ TRANSICIÓN DECLARADA: sin `version` en la petición, la ruta escribe como hasta hoy. No es un
-// olvido: la pantalla aún no la manda, y exigirla rompería el guardado normal el día del despliegue.
-// Cuando todas las pantallas que escriben esa fila la manden, se exige y se retira este hueco.
+// 🔴 LA VERSIÓN SE EXIGE. Nació opcional («transición declarada», 29-sep): sin `version` la ruta
+// escribía como antes, porque la pantalla aún no la mandaba. La manda desde el 1-oct (#2095), y un
+// candado que se abre con no traer la llave no para a nadie: una petición sin `version` seguía
+// reemplazando a ciegas. Desde el 7-oct, sin ella no se escribe.
 //
-// Para copiarlo en otra ruta: `leerVersion(req.body?.version)` → 400 si `!ok` → `updatedAt: v.version ?? undefined`
+// Para copiarlo en otra ruta: `leerVersion(req.body?.version)` → 400 con `v.error` si `!ok` → `updatedAt: v.version`
 // LITERAL en el `where` (un spread lo vuelve OPACO para el censo 1285c) → `esVersionSuperada(err)` en el `catch` → 409 con `ERROR_VERSION_SUPERADA`.
 
 export const ERROR_VERSION_SUPERADA = 'version_superada';
 export const ERROR_VERSION_INVALIDA = 'version_invalida';
+export const ERROR_VERSION_REQUERIDA = 'version_requerida';
 
-/** Lo que manda la pantalla, leído. `null` = no la mandó (transición); `ok:false` = mandó basura. */
-export function leerVersion(bruta: unknown): { ok: true; version: Date | null } | { ok: false } {
-  if (bruta === undefined || bruta === null) return { ok: true, version: null };
-  if (typeof bruta !== 'string' || bruta.trim() === '') return { ok: false };
+/** Lo que manda la pantalla, leído. Un código por causa: no la mandó, o mandó basura. */
+export function leerVersion(bruta: unknown):
+  | { ok: true; version: Date }
+  | { ok: false; error: typeof ERROR_VERSION_REQUERIDA | typeof ERROR_VERSION_INVALIDA } {
+  if (bruta === undefined || bruta === null) return { ok: false, error: ERROR_VERSION_REQUERIDA };
+  if (typeof bruta !== 'string' || bruta.trim() === '') return { ok: false, error: ERROR_VERSION_INVALIDA };
   const d = new Date(bruta);
-  return Number.isNaN(d.getTime()) ? { ok: false } : { ok: true, version: d };
+  return Number.isNaN(d.getTime()) ? { ok: false, error: ERROR_VERSION_INVALIDA } : { ok: true, version: d };
 }
 
 /** ¿El `update` no encontró la fila en la versión pedida? (Prisma: «Record to update not found».) */

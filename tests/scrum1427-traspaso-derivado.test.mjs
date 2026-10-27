@@ -7,7 +7,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { derivar, informe, buscar, esDelArnes, MARCA } from '../scripts/traspaso-derivado.mjs';
+import { derivar, informe, buscar, esDelArnes, ramasDeGithub, MARCA } from '../scripts/traspaso-derivado.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SCRIPT = path.join(RAIZ, 'scripts', 'traspaso-derivado.mjs');
@@ -21,6 +21,14 @@ const recibe = (n, kind, texto) => JSON.stringify({ type: 'user', timestamp: hor
 const tr = (...l) => l.join('\n');
 const LIMITE = "You've hit your weekly limit · resets 12am";
 const sesion = (transcripcion, extra = {}) => ({ nombre: 's0-fabricada', estado: 'blocked', intent: 'ERES LA SESIÓN 0. Haz el censo.', transcripcion, ...extra });
+// SCRUM-1468 · una entrada `pr-link` de verdad no trae la rama: sólo número, repositorio y URL.
+const enlace = (n, numero) => JSON.stringify({ type: 'pr-link', prNumber: numero, prRepository: 'o/r', prUrl: `https://x/pull/${numero}`, timestamp: hora(n) });
+const RAMA_DEL_ARRANQUE = 'scrum-1082-flujo-crear-factura-competencia';
+const RAMAS_DE_PR = new Map([
+  [77, 'scrum-9-censo'],
+  [1681, RAMA_DEL_ARRANQUE],
+]);
+const ramaDe = (n) => RAMAS_DE_PR.get(n);
 
 // La sesión que importa: trabajó, comiteó, siguió editando, y el arnés la cortó por cuota.
 const CORTADA = tr(
@@ -63,7 +71,7 @@ test('SCRUM-1427 · qué es del arnés lo dice un campo de la entrada, no su tex
 });
 
 test('SCRUM-1427 · 🔴 lo que dejó: tickets donde ESCRIBIÓ, PR, órdenes de empujar y los ficheros de DESPUÉS de su último commit', () => {
-  const d = derivar(sesion(CORTADA));
+  const d = derivar(sesion(CORTADA), { ramaDe });
   assert.deepEqual(d.jira, ['SCRUM-9'], 'leer un ticket no es escribir en él');
   assert.deepEqual(d.prs, [77]);
   assert.deepEqual(d.empujes, ['git -C D:/wt-1 push origin HEAD:scrum-9-censo 2>$null']);
@@ -148,14 +156,82 @@ test('SCRUM-1427 · el comando de verdad: una sesión, ninguna, dos con el mismo
     pon('j1', 's1-una', CORTADA); pon('j2', 's2-doble', CORTADA); pon('j3', 's2-doble', CORTADA); pon('j4', 's3-sin-rastro', null);
     assert.deepEqual(buscar(tmp, 's2-doble').map((x) => x.id), ['j2', 'j3']);
     assert.equal(buscar(tmp, 's3-sin-rastro')[0].transcripcion, null);
-    const corre = (...a) => spawnSync(process.execPath, [SCRIPT, ...a, '--jobs', tmp, '--sin-arboles'], { encoding: 'utf8' });
+    // `--sin-github`: un test no pregunta nada a la red (SCRUM-1468).
+    const corre = (...a) => spawnSync(process.execPath, [SCRIPT, ...a, '--jobs', tmp, '--sin-arboles', '--sin-github'], { encoding: 'utf8' });
     const una = corre('s1-una');
     assert.equal(una.status, 0, una.stdout + una.stderr);
     assert.match(una.stdout, /sesión: s1-una · estado en su state\.json: stopped · CON RASTRO/);
     assert.equal(una.stdout.split('\n')[0], MARCA);
+    // Empujó con nombre y no se preguntó de qué rama es el #77: no se le atribuye, y se dice por qué.
+    assert.match(una.stdout, /PR EMPUJADOS POR ESTA SESIÓN \(0\): ninguno/);
+    assert.match(una.stdout, /PR DE LOS QUE NO SUPE DE QUIÉN SON \(1\):\n {3}· #77 — no se preguntó a GitHub de qué rama es \(--sin-github\)/);
     assert.deepEqual([corre('s9-nadie').status, corre('s2-doble').status, corre('s3-sin-rastro').status, corre().status], [2, 2, 2, 2]);
     assert.match(corre('s9-nadie').stdout, /no hay ninguna sesión llamada «s9-nadie».*eso NO dice que no hiciera nada/);
     assert.match(corre('s2-doble').stdout, /hay 2 sesiones llamadas «s2-doble» \(j2, j3\)\. No elijo una por ti/);
     assert.match(corre('s3-sin-rastro').stdout, /NO SUPE/);
   } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-1468 · un PR es de quien EMPUJÓ su rama, no de quien lo lleva enlazado en la transcripción.
+// Medido el 6-oct-2026: 22 sesiones llevaban el #1681 (el de la rama del checkout compartido) y
+// ninguna empujó esa rama; su `pr-link` aparece tras un `git push` de OTRA rama lanzado desde allí.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+const SOLO_ENLAZA = tr(recibe(0, 'human', 'mira esto'), usa(1, 'Read', { file_path: 'D:\\wt-1\\a.ts' }), enlace(2, 1681), dice(3, 'Mirado. No hay nada que cambiar.'));
+
+test('SCRUM-1468 · 🔴 un PR sólo ENLAZADO no se le atribuye a la sesión ni la hace pasar por «con rastro»', () => {
+  // Sin preguntar nada a nadie: quien no empujó ninguna rama no puede haber empujado la de ese PR.
+  const d = derivar(sesion(SOLO_ENLAZA));
+  assert.equal(d.cubo, 'NO HIZO NADA QUE MUTE', 'un enlace no es una mutación');
+  assert.deepEqual(d.prs, []);
+  assert.deepEqual(d.prsEnlazados, [1681], 'el enlace no se pierde: sale aparte');
+  assert.deepEqual(d.prsSinSaber, []);
+  const t = informe(d, null).lineas.join('\n');
+  assert.match(t, /PR EMPUJADOS POR ESTA SESIÓN \(0\): ninguno/);
+  assert.match(t, /PR ENLAZADOS, NO EMPUJADOS POR ESTA SESIÓN \(1\): #1681/);
+  assert.match(t, /PR DE LOS QUE NO SUPE DE QUIÉN SON \(0\): ninguno/);
+});
+
+test('SCRUM-1468 · control positivo: la que SÍ empujó su rama sigue saliendo con su PR, y el del arranque va aparte', () => {
+  const d = derivar(sesion(tr(CORTADA, enlace(11, 1681))), { ramaDe });
+  assert.deepEqual(d.ramas, ['scrum-9-censo']);
+  assert.deepEqual(d.prs, [77]);
+  assert.deepEqual(d.prsEnlazados, [1681]);
+  assert.deepEqual(d.prsSinSaber, []);
+  assert.equal(d.cubo, 'CON RASTRO');
+  const t = informe(d, null).lineas.join('\n');
+  assert.match(t, /PR EMPUJADOS POR ESTA SESIÓN \(1\): #77/);
+  assert.match(t, /PR ENLAZADOS, NO EMPUJADOS POR ESTA SESIÓN \(1\): #1681/);
+  assert.match(t, /RAMAS QUE EMPUJÓ CON NOMBRE \(1\): scrum-9-censo/);
+});
+
+test('SCRUM-1468 · si no se puede decidir qué rama empujó, se dice «no supe», no se atribuye ni se descarta', () => {
+  // Un `git push` a secas: `ramasEmpujadas` no inventa la rama. Pudo ser la de cualquiera de los dos PR.
+  const aSecas = derivar(sesion(tr(edita(1, 'D:\\wt-1\\a.ts'), orden(2, 'git -C D:/wt-1 push'), enlace(3, 77), enlace(3, 1681))), { ramaDe });
+  assert.deepEqual([aSecas.prs, aSecas.prsEnlazados], [[], []]);
+  assert.deepEqual(aSecas.prsSinSaber.map((p) => p.numero), [77, 1681]);
+  assert.equal(aSecas.empujesSinRama, 1);
+  assert.match(informe(aSecas, null).lineas.join('\n'), /#1681 — su rama \(scrum-1082-flujo-crear-factura-competencia\) no está entre las que empujó con nombre, pero hay 1 orden\(es\) de empujar sin nombre de rama/);
+  // Empujó con nombre, pero nadie dijo de qué rama es cada PR: tampoco se atribuye.
+  const sinPreguntar = derivar(sesion(tr(CORTADA, enlace(11, 1681))));
+  assert.deepEqual([sinPreguntar.prs, sinPreguntar.prsEnlazados], [[], []]);
+  assert.deepEqual(sinPreguntar.prsSinSaber.map((p) => p.numero), [77, 1681]);
+  assert.match(informe(sinPreguntar, null).lineas.join('\n'), /#77 — no se preguntó a GitHub de qué rama es/);
+  // GitHub contestó de uno y del otro no: cada PR con lo suyo.
+  const aMedias = derivar(sesion(tr(CORTADA, enlace(11, 1681), enlace(11, 500))), { ramaDe });
+  assert.deepEqual([aMedias.prs, aMedias.prsEnlazados, aMedias.prsSinSaber], [[77], [1681], [{ numero: 500, motivo: 'GitHub no dijo de qué rama es' }]]);
+});
+
+test('SCRUM-1468 · de qué rama es un PR se le pregunta a GitHub UNA vez, y un fallo no se lee como «no es suyo»', () => {
+  const pedidas = [];
+  const contesta = (salida) => (args) => { pedidas.push(args); return salida; };
+  const m = ramasDeGithub([77, 1681, 500], 'o/r', contesta(JSON.stringify({ data: { repository: { p77: { headRefName: 'scrum-9-censo' }, p1681: { headRefName: RAMA_DEL_ARRANQUE }, p500: null } } })));
+  assert.equal(pedidas.length, 1, 'una sola llamada para todos');
+  assert.match(pedidas[0].join(' '), /p77: pullRequest\(number: 77\)/);
+  assert.deepEqual([m.get(77), m.get(1681), m.get(500)], ['scrum-9-censo', RAMA_DEL_ARRANQUE, undefined]);
+  assert.equal(ramasDeGithub([77], 'o/r', () => { throw new Error('sin red'); }), null, 'no pudo preguntar: null, no un mapa vacío');
+  assert.equal(ramasDeGithub([77], 'o/r', () => 'esto no es JSON'), null);
+  assert.equal(ramasDeGithub([77], 'o/r', () => JSON.stringify({ errors: [{ message: 'sin cuota' }] })), null, 'contestó, pero sin el repositorio: tampoco es un mapa vacío');
+  assert.equal(ramasDeGithub([77], 'sin-barra', contesta('{}')), null, 'sin repositorio reconocible no se pregunta');
+  assert.equal(ramasDeGithub([], 'o/r', () => { throw new Error('no debería llamar'); }).size, 0, 'sin PR que preguntar no se llama a nadie');
 });

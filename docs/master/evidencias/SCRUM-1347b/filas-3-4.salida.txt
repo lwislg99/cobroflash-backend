@@ -1,0 +1,84 @@
+POBLACIÓN: 194 rutas /admin montadas (2 sembradas incluidas) · referencia «no montada»: /admin/no-existe-1347b
+
+== fila 3 · Marcar pagado / deshacer · 3 ruta(s)
+POST   /admin/invoices/bulk-paid                    técnico 403 CIERRA (escr. 0) · admin 400 LLEGA (escr. 0)
+PUT    /admin/invoices/:id/status                   técnico 403 CIERRA (escr. 0) · admin 400 LLEGA (escr. 0)
+POST   /admin/charges/:id/confirm-bizum             técnico 403 CIERRA (escr. 0) · admin 404 LLEGA (escr. 0)
+
+== fila 3 · vecinas (cobro, no «marcar pagado») · 3 ruta(s) · no decide la fila
+POST   /admin/invoices/:id/payment-anomaly          técnico 403 CIERRA (escr. 0) · admin 400 LLEGA (escr. 0)
+POST   /admin/charges/:id/garantia                  técnico 403 CIERRA (escr. 0) · admin 404 LLEGA (escr. 0)
+POST   /admin/charges/:id/garantia/liberar          técnico 403 CIERRA (escr. 0) · admin 404 LLEGA (escr. 0)
+
+== fila 4 · Configuración, datos fiscales · 5 ruta(s)
+PUT    /admin/merchant                              técnico 403 CIERRA (escr. 0) · admin 200 LLEGA (escr. 1)
+GET    /admin/merchant/public-profile-qr            técnico 403 CIERRA (escr. 0) · admin 400 LLEGA (escr. 0)
+POST   /admin/onboarding/complete                   técnico 403 CIERRA (escr. 0) · admin 200 LLEGA (escr. 1)
+POST   /admin/onboarding/serie/previa               técnico 403 CIERRA (escr. 0) · admin 200 LLEGA (escr. 0)
+POST   /admin/onboarding/serie                      técnico 403 CIERRA (escr. 0) · admin 200 LLEGA (escr. 1)
+
+== fila 4 · Connect · 4 ruta(s)
+GET    /admin/connect/status                        técnico 403 CIERRA (escr. 0) · admin 200 LLEGA (escr. 0)
+POST   /admin/connect/onboard                       técnico 403 CIERRA (escr. 0) · admin 501 LLEGA (escr. 0)
+GET    /admin/connect/return                        técnico 403 CIERRA (escr. 0) · admin 303 LLEGA (escr. 0)
+GET    /admin/connect/refresh                       técnico 403 CIERRA (escr. 0) · admin 303 LLEGA (escr. 0)
+
+== fila 4 · flags · 0 ruta(s)
+
+== fila 4 · billing/plan · 4 ruta(s)
+GET    /admin/billing/plans                         técnico 403 CIERRA (escr. 0) · admin 200 LLEGA (escr. 0)
+POST   /admin/billing/accept-alcance                técnico 403 CIERRA (escr. 0) · admin 200 LLEGA (escr. 1)
+POST   /admin/billing/checkout                      técnico 403 CIERRA (escr. 0) · admin 501 LLEGA (escr. 0)
+POST   /admin/billing/portal                        técnico 403 CIERRA (escr. 0) · admin 501 LLEGA (escr. 0)
+
+== fila 4 · equipo · 5 ruta(s)
+GET    /admin/team                                  técnico 403 CIERRA (escr. 0) · admin 200 LLEGA (escr. 0)
+POST   /admin/team                                  técnico 403 CIERRA (escr. 0) · admin 400 LLEGA (escr. 0)
+PUT    /admin/team/:id                              técnico 403 CIERRA (escr. 0) · admin 404 LLEGA (escr. 0)
+POST   /admin/team/:id/resend                       técnico 403 CIERRA (escr. 0) · admin 404 LLEGA (escr. 0)
+DELETE /admin/team/:id                              técnico 403 CIERRA (escr. 0) · admin 404 LLEGA (escr. 0)
+
+== fila 4 · exports · 11 ruta(s)
+GET    /admin/exports/datos.zip/info                técnico 403 CIERRA (escr. 0) · admin 200 LLEGA (escr. 0)
+GET    /admin/exports/datos.zip                     técnico 403 CIERRA (escr. 0) · admin 200 LLEGA (escr. 1)
+GET    /admin/exports/customers.csv                 técnico 403 CIERRA (escr. 0) · admin 200 LLEGA (escr. 1)
+GET    /admin/exports/invoices.csv                  técnico 403 CIERRA (escr. 0) · admin 200 LLEGA (escr. 1)
+GET    /admin/exports/fees.csv                      técnico 403 CIERRA (escr. 0) · admin 403 LLEGA (escr. 0)
+         admin: {"error":"forbidden"} · consultas del manejador: 1
+GET    /admin/exports/verifactu.xml                 técnico 403 CIERRA (escr. 0) · admin 404 LLEGA (escr. 0)
+GET    /admin/exports/charges.csv                   técnico 403 CIERRA (escr. 0) · admin 200 LLEGA (escr. 1)
+GET    /admin/exports/jobs.csv                      técnico 403 CIERRA (escr. 0) · admin 200 LLEGA (escr. 1)
+GET    /admin/exports/expenses.csv                  técnico 403 CIERRA (escr. 0) · admin 200 LLEGA (escr. 1)
+GET    /admin/exports/quotes.csv                    técnico 403 CIERRA (escr. 0) · admin 200 LLEGA (escr. 1)
+GET    /admin/exports/portabilidad.zip              técnico 403 CIERRA (escr. 0) · admin 200 LLEGA (escr. 2)
+
+== fila 4 · vecinas (libros e informes que también exportan) · 10 ruta(s) · no decide la fila
+GET    /admin/libro-registro                        técnico 403 CIERRA (escr. 0) · admin 200 LLEGA (escr. 0)
+GET    /admin/libros/expedidas.csv                  técnico 403 CIERRA (escr. 0) · admin 400 LLEGA (escr. 0)
+GET    /admin/libros/recibidas.csv                  técnico 403 CIERRA (escr. 0) · admin 400 LLEGA (escr. 0)
+GET    /admin/libros/recibidas.json                 técnico 403 CIERRA (escr. 0) · admin 400 LLEGA (escr. 0)
+GET    /admin/modelo-303                            técnico 403 CIERRA (escr. 0) · admin 200 LLEGA (escr. 0)
+GET    /admin/evidencias.zip                        técnico 403 CIERRA (escr. 0) · admin 200 LLEGA (escr. 0)
+GET    /admin/reports/pl                            técnico 403 CIERRA (escr. 0) · admin 500 LLEGA (escr. 0)
+GET    /admin/reports/x2                            técnico 403 CIERRA (escr. 0) · admin 200 LLEGA (escr. 0)
+GET    /admin/reports/vat                           técnico 403 CIERRA (escr. 0) · admin 200 LLEGA (escr. 0)
+GET    /admin/reports/resumen-trimestre             técnico 403 CIERRA (escr. 0) · admin 200 LLEGA (escr. 0)
+
+== SEMBRADA · 2 ruta(s) · no decide la fila
+POST   /admin/sembrada-1347b/cerrada                técnico 403 CIERRA (escr. 0) · admin 200 LLEGA (escr. 1)
+POST   /admin/sembrada-1347b/abierta                técnico 200 LLEGA (escr. 1) · admin 200 LLEGA (escr. 1)
+         técnico: {"ok":"sembrada-abierta"} · escribe sembrada1347b.create
+
+== GET /admin/merchant (ver la configuración)
+técnico 200 · marcas fiscales/bancarias que le llegan: 0 de 4 · flag sembrado: no
+admin   200 · marcas que le llegan: 4 de 4
+
+== flags: PUT /admin/merchant del ADMIN con {name, flags} en el cuerpo
+admin 200 · escribe el nombre (control): sí · escribe flags: no
+
+red cortada: 0 intento(s) de salir
+controles: sembrada con gate → técnico CIERRA / admin LLEGA · sembrada sin gate → técnico LLEGA (escribe sembrada1347b.create)
+grupos de fila sin ninguna ruta montada: fila 4 · flags
+rutas de fila que el admin NO alcanza (positivo flojo): 0
+rutas de fila que LLEGAN al técnico: 0
+EXIT=0

@@ -75,6 +75,57 @@ export function numeroQueImprimeElPapel(
 }
 
 /**
+ * EL NÚMERO DE UN PRESUPUESTO TAL Y COMO LO LEE EL PROFESIONAL EN SU PANEL, YA HECHO: `#12` el
+ * original, `#12.1` su primera revisión (SCRUM-1483; la decisión, en SCRUM-1444 c.18429: «el
+ * servidor manda el TEXTO; el panel no lo compone»).
+ *
+ * 🔴 ES UN TEXTO, CON SU ALMOHADILLA, Y SE ESCRIBE AQUÍ Y EN NINGÚN OTRO SITIO. Una respuesta que
+ * manda la secuencia en crudo obliga al navegador a componer el número, y entonces hay dos sitios
+ * escribiéndolo: así nació «P12» en una pantalla y `#205` (el id de la tabla) en el buscador. La
+ * respuesta que use esta función NO manda además `quoteNumber`.
+ *   ⚠️ EXCEPCIÓN DECLARADA, CON FECHA DE FIN · SCRUM-1444c (decisión del orquestador, 18-oct-2026,
+ *   opción A): las respuestas de S1 que llevan `numeroVisible` desde 1444c lo llevan AL LADO de su
+ *   número crudo (`number` / `quoteNumber`), porque sus pantallas todavía leen el crudo y quitarlo
+ *   las rompería. Cada pantalla que pase a leer `numeroVisible` pide quitar el crudo de SU
+ *   respuesta; cuando no quede ninguna, esta excepción se borra. Lista y estado: `docs/master/SCRUM-1444.md`.
+ *
+ * 🔴 HOY ESCRIBE LO MISMO QUE EL PAPEL (`#12`), NO LA SERIE (`P260012`), Y ES A PROPÓSITO. La
+ * serie está decidida (SCRUM-1444 c.18405) y desde SCRUM-1490 su año se guarda en la fila
+ * (`Quote.seriesYear`), pero el PDF sigue diciendo `#12` y las filas viejas esperan su relleno:
+ * repartir la serie por el panel es de SCRUM-1444. El día que cambie, cambia AQUÍ, y con esta
+ * función cambian a la vez todas las respuestas que la usan.
+ *
+ * Sin número devuelve `null`: ni una raya ni el `id` de la tabla (c.18405, punto 2). Quien pinta
+ * decide cómo nombra un presupuesto sin número, y ese texto es suyo. Por eso NO es
+ * `numeroQueImprimeElPapel` con una almohadilla delante: aquélla respalda al `id`.
+ */
+export function numeroVisibleDelPresupuesto(
+  q: { quoteNumber: number | null; revision: number },
+): string | null {
+  if (q.quoteNumber == null) return null;
+  return `#${numeroConRevision({ numero: String(q.quoteNumber), revision: q.revision })}`;
+}
+
+/**
+ * Lo que alguien teclea para buscar un presupuesto POR SU NÚMERO, leído al revés de como
+ * `numeroVisibleDelPresupuesto` lo escribe: `12`, `#12`, `12.1`, `#12.1` (SCRUM-1483).
+ *
+ * 🔴 EL QUE ESCRIBE EL NÚMERO Y EL QUE LO LEE VIVEN JUNTOS. Un buscador con su propia idea de qué
+ * es «un número» deja de encontrar lo que la pantalla enseña el día que el formato cambie, y no
+ * falla: devuelve cero. Si el formato de arriba cambia, este patrón cambia en el mismo commit.
+ *
+ * Devuelve `null` si el texto no es un número de presupuesto — y entonces NO se busca por número.
+ * Nunca se busca por el `id` de la tabla: es una clave interna, no algo que el profesional vea.
+ * Sin la revisión, casa el grupo entero (el original y sus revisiones se llaman `12`).
+ */
+export function numeroBuscado(texto: string): { quoteNumber: number; revision?: number } | null {
+  const m = /^#?(\d{1,9})(?:\.(\d{1,4}))?$/.exec(String(texto ?? '').trim());
+  if (!m) return null;
+  const quoteNumber = Number(m[1]);
+  return m[2] === undefined ? { quoteNumber } : { quoteNumber, revision: Number(m[2]) };
+}
+
+/**
  * Cuál es la VIGENTE de un grupo de revisiones del mismo presupuesto: la de revisión más alta.
  *
  * 🔴 Y LAS DEMÁS SIGUEN AHÍ. Esta función no borra, no marca y no devuelve «la buena y basura»:
@@ -109,14 +160,41 @@ export function esVigente(q: RevisionDePresupuesto, grupo: readonly RevisionDePr
 // no leído de un acta). Lo de abajo es lo que hacía falta para enchufarlo a una pantalla.
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
+// ── SCRUM-1150 · UNA CAUSA, UN CÓDIGO ────────────────────────────────────────────────────────
+//
+// Las dos clases de abajo se lanzan desde CUATRO sitios, y la ruta los contestaba todos con un solo
+// código y con el `message` de la excepción. Un código con varias causas no admite una frase cierta
+// para la persona: la que explica una miente sobre las otras. Por eso cada sitio que lanza dice
+// AQUÍ cuál es (`motivo`), y eso es lo que viaja; el `message` es el diagnóstico para quien lo
+// arregla y se queda en el log.
+//
+//   revisiones_dos_vigentes    dos filas del grupo con la MISMA revisión más alta. Son los datos:
+//                              reintentar no lo arregla.
+//   revision_no_posterior      el número calculado para la nueva no supera al de la que se revisa.
+//                              Es un fallo NUESTRO al calcularlo, no de los datos.
+//   revisiones_sin_leer        el grupo llega sin ninguna revisión legible: no se ha leído nada.
+//   revisiones_sin_la_propia   el censo de un presupuesto no lo incluye a él mismo.
+//
+// Los nombres de clase NO cambian: su test (`scrum655b`) y la ruta deciden por `e.name`. El tipo del
+// `motivo` es cerrado para que lanzar sin decir la causa no compile. Lo censa
+// `tests/scrum1150-un-codigo-por-causa.test.mjs`.
+type MotivoDeRevisionesAmbiguas = 'revisiones_dos_vigentes' | 'revision_no_posterior';
+type MotivoDeCensoCiego = 'revisiones_sin_leer' | 'revisiones_sin_la_propia';
+
 /** Dos filas del mismo grupo se disputan el «vigente». No hay respuesta, y no se elige una. */
 export class RevisionesAmbiguas extends Error {
-  constructor(mensaje: string) { super(mensaje); this.name = 'RevisionesAmbiguas'; }
+  constructor(public readonly motivo: MotivoDeRevisionesAmbiguas, mensaje: string) {
+    super(mensaje);
+    this.name = 'RevisionesAmbiguas';
+  }
 }
 
 /** El censo de revisiones no se ve ni a sí mismo. */
 export class CensoDeRevisionesCiego extends Error {
-  constructor(mensaje: string) { super(mensaje); this.name = 'CensoDeRevisionesCiego'; }
+  constructor(public readonly motivo: MotivoDeCensoCiego, mensaje: string) {
+    super(mensaje);
+    this.name = 'CensoDeRevisionesCiego';
+  }
 }
 
 /**
@@ -136,6 +214,7 @@ export function vigenteUnicaDe<T extends RevisionDePresupuesto>(revisiones: read
   const legibles = src.filter((q) => Number.isFinite(Number(q?.revision)));
   if (legibles.length === 0) {
     throw new CensoDeRevisionesCiego(
+      'revisiones_sin_leer',
       'CENSO CIEGO · se ha pedido la revisión vigente de un grupo SIN revisiones legibles. Todo '
       + 'presupuesto es al menos su propia revisión, así que un grupo vacío aquí no significa «no '
       + 'tiene revisiones»: significa que no se ha leído nada — grupo mal armado, `quoteNumber` '
@@ -147,6 +226,7 @@ export function vigenteUnicaDe<T extends RevisionDePresupuesto>(revisiones: read
   if (empatadas.length > 1) {
     const quienes = empatadas.map((q) => `${numeroConRevision(q)} (revisión ${q.revision})`).join(' y ');
     throw new RevisionesAmbiguas(
+      'revisiones_dos_vigentes',
       `DOS VIGENTES A LA VEZ: ${quienes}.\n`
       + '  «Cuál está vigente» con dos respuestas no es una respuesta. Elegir una de las dos aquí\n'
       + '  sería peor que fallar: la pantalla enseñaría una y el PDF podría enseñar la otra, y nadie\n'
@@ -176,6 +256,7 @@ export function revisionesDe<T extends RevisionDePresupuesto>(
   );
   if (!seVeASiMisma) {
     throw new CensoDeRevisionesCiego(
+      'revisiones_sin_la_propia',
       `CENSO CIEGO · el censo de revisiones de ${numeroConRevision(propia)} devuelve `
       + `${src.length} y NO SE INCLUYE A SÍ MISMO. Todo presupuesto es al menos su propia revisión, `
       + 'así que esto no es «no tiene otras versiones»: es que el grupo no se ha leído — agrupado '
@@ -294,6 +375,7 @@ export const REVISION_NO_HEREDA: Readonly<Record<string, string>> = Object.freez
   decisionToken:   'el enlace público es de UN documento: compartirlo llevaría al cliente a la versión vieja',
   pdfUrl:          'el PDF pintado de la versión anterior. La nueva se pinta cuando exista',
   reminderSentAt:  'los recordatorios ya enviados son de aquella versión',
+  archivedAt:      'archivar es quitar de la lista AQUELLA versión (SCRUM-1273). La revisión la acaba de crear el profesional: nace en la lista',
 });
 
 /** Los que pone el sistema al crear la revisión — ni se heredan ni se copian: se calculan. */
@@ -301,6 +383,7 @@ export const REVISION_LA_PONE_EL_SISTEMA: Readonly<Record<string, string>> = Obj
   id:          'fila nueva: la anterior conserva la suya, y por eso sigue existiendo',
   merchantId:  'el del que la crea; se comprueba contra el anterior, no se arrastra a ciegas',
   quoteNumber: 'EL NÚMERO BASE NO CAMBIA: es lo que hace que esto sea «P2004226.1» y no otro presupuesto',
+  seriesYear:  'EL AÑO DE LA SERIE TAMPOCO: es el de su ORIGINAL, no el del día en que se revisa (SCRUM-1490). La `.1` del 12 de 2026 creada en enero sigue siendo del 12 de 2026',
   revision:    'la siguiente del grupo. Es el dato del ticket',
   status:      'nace borrador: nadie la ha visto todavía',
   createdVia:  'queda marcado que nació como revisión, no como presupuesto suelto',
@@ -313,6 +396,8 @@ export interface VersionAnterior {
   id: number;
   merchantId: number;
   quoteNumber: number | null;
+  /** El año de la serie del grupo (SCRUM-1490). La revisión nueva lo guarda tal cual. */
+  seriesYear?: number | null;
   revision: number;
   signatureUrl?: string | null;
   [campo: string]: unknown;
@@ -332,6 +417,7 @@ export function nuevaRevisionDe(
 ): Record<string, unknown> {
   if (!Number.isInteger(siguienteRevision) || siguienteRevision <= Number(anterior?.revision)) {
     throw new RevisionesAmbiguas(
+      'revision_no_posterior',
       `LA REVISIÓN NUEVA (${siguienteRevision}) NO ES POSTERIOR A LA QUE SE REVISA `
       + `(${anterior?.revision}). Crearla así pondría dos filas con la misma revisión en el mismo `
       + 'grupo, y entonces «cuál está vigente» deja de tener respuesta. El número sale del grupo '
@@ -345,6 +431,9 @@ export function nuevaRevisionDe(
     status: 'draft',
     createdVia: 'revision',
   };
+  // SCRUM-1490: el año de la serie viaja con el número base. Quien llama lo trae ya resuelto
+  // (`crearRevisionDeQuote` le pone el del grupo aunque la fila anterior sea vieja y no lo guarde).
+  if (anterior.seriesYear != null) nueva.seriesYear = anterior.seriesYear;
   for (const campo of REVISION_HEREDA) {
     if (campo in anterior) nueva[campo] = (anterior as Record<string, unknown>)[campo];
   }

@@ -1,0 +1,30 @@
+CONTROL ③ · mira-primero: DISTINGUE (29 → 0) · no-mira: NO DISTINGUE (29 → 0)
+
+POBLACIÓN · 12 pares (consumidor, vista) de 7 tests vivos
+
+DISTINGUE     scrum1583-enlace-documento-cobros-44.test.mjs · renderCobrosView · nodos 29 → 0 · base 2/2 · mutado 1 pass · 1 fail
+                caído: SCRUM-1583 · Cobros pinta el enlace al documento DENTRO de lo que la regla nombra
+DISTINGUE     scrum1562d-trabajos-con-teclado.test.mjs · renderJobsView · nodos 90 → 0 · base 6/6 · mutado 5 pass · 1 fail
+                caído: SCRUM-1562 · SUELO: la lista monta con dos filas de Trabajo y cada una abre su ficha con RATÓN
+DISTINGUE     scrum1562f-ver-detalle-fuera-de-acciones.test.mjs · renderJobsView · nodos 90 → 0 · base 3/3 · mutado 0 pass · 3 fail
+                caído: SCRUM-1562f · SUELO: cada fila tiene su `.jobs-acciones` y su «Ver detalle» (si no, «fuera» sería cierto por vacío)
+                caído: SCRUM-1562f · 🔴 «Ver detalle» NO está dentro de `.jobs-acciones`: no es la acción de la escalera
+                caído: SCRUM-1562f · …pero sigue en la celda de acciones de SU fila, junto a `.jobs-acciones`
+DISTINGUE     scrum1562c-partes-oficina-con-teclado.test.mjs · renderPartesOficinaView · nodos 11 → 0 · base 3/3 · mutado 1 pass · 2 fail
+                caído: SCRUM-1562c · cada parte por valorar es un control NATIVO: `<button type="button">`
+                caído: SCRUM-1562c · con el RATÓN la fila sigue abriendo SU parte (la misma ruta que antes)
+DISTINGUE     scrum1559j-productos-44px.test.mjs · renderProductsView · nodos 89 → 0 · base 4/4 · mutado 3 pass · 1 fail
+                caído: SCRUM-1559j · Productos lleva `.catalogo-productos` y sus controles caen dentro
+DISTINGUE     scrum1559g-dieciseis-controles-44px.test.mjs · renderHomeView · nodos 167 → 0 · base 6/6 · mutado 5 pass · 1 fail
+                caído: SCRUM-1559g · Inicio pinta «Ver resumen», «✕» y «Ver facturas →» DENTRO de lo que la regla nombra
+DISTINGUE     scrum1559g-dieciseis-controles-44px.test.mjs · renderQuoteDetailView · nodos 125 → 0 · base 6/6 · mutado 5 pass · 1 fail
+                caído: SCRUM-1559g · la ficha del presupuesto lleva `.presupuesto-ficha` y sus botones `.btn-sm` caen dentro
+DISTINGUE     scrum1559g-dieciseis-controles-44px.test.mjs · renderQuoteRequestsView · nodos 23 → 0 · base 6/6 · mutado 5 pass · 1 fail
+                caído: SCRUM-1559g · Solicitudes pinta sus dos botones como hijos DIRECTOS de `.solicitud-acciones`
+DISTINGUE     scrum1559g-dieciseis-controles-44px.test.mjs · renderAlbaranesView · nodos 49 → 0 · base 6/6 · mutado 5 pass · 1 fail
+                caído: SCRUM-1559g · Albaranes pinta el número y «Enviar para firmar» donde la regla los nombra
+NO DISTINGUE  scrum1560-datos-de-muestra-con-forma.test.mjs · renderJobsView · nodos 90 → 0 · base 12/12 · mutado 12 pass · 0 fail
+NO DISTINGUE  scrum1560-datos-de-muestra-con-forma.test.mjs · renderSettingsView · nodos 186 → 0 · base 12/12 · mutado 12 pass · 0 fail
+NO DISTINGUE  scrum1560-datos-de-muestra-con-forma.test.mjs · renderCobrosView · nodos 29 → 0 · base 12/12 · mutado 12 pass · 0 fail
+
+public/ al acabar: limpio

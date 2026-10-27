@@ -1,0 +1,4 @@
+POBLACIÓN · ejecuciones de job: 1045 · con log que pedir: 389 · sin log que pedir (saltadas, sin acabar, o verdes de otro workflow): 656
+bajados con 1.000 B o más: 389 · de 18231 a 1808809 B · suma 132402350 B
+SIN LOG (menos de 1.000 B o error): 0
+EXIT=0

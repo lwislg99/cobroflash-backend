@@ -1,0 +1,36 @@
+CONTROL ok  · cero: código sin comentarios · esperado [] · visto []
+CONTROL ok  · cero: comentario que no promete · esperado [] · visto []
+CONTROL ok  · positivo NADA (la frase de SCRUM-1408) · esperado ["NADA"] · visto ["NADA"]
+CONTROL ok  · positivo TICKET · esperado ["TICKET"] · visto ["TICKET"]
+CONTROL ok  · positivo FICHERO · esperado ["FICHERO"] · visto ["FICHERO"]
+POBLACIÓN: 320 ficheros .ts de src/ · 19 promesas por la forma de la frase, en 18 ficheros
+  FICHERO (tiene dirección): 5
+  TICKET  (sólo un número):  5
+  NADA    (sin dirección):   9
+
+── NADA ──
+src/core/documentos/asignacionDeDocumento.ts:13	Por eso este fichero no exporta nada que responda «¿puede?», y hay un guard que lo comprueba:
+src/core/documentos/direccionObra.ts:154	`public/dashboard/js/quoteDireccionObra.js` y un test las ata por identidad. No se puede hacer
+src/modules/fiscal/evidencias/paquete.ts:15	y no escribe: no es una promesa, es que no tiene con qué. Un guard lo comprueba sobre el AST.
+src/modules/invoicing/domain/criterioDelMerchant.ts:25	—los dos producen cargas distintas— y hay un test que lo fija. El día que el devengo cambie para
+src/modules/invoicing/domain/verifactu.service.ts:908	OTRO constructor, el que no usaba nadie. Ahora hay uno solo, y un guard lo vigila.
+src/modules/jobs/domain/albaranBarrido.ts:33	Por eso `entradaDesdeFilas` copia la resolución del sellador campo a campo, y hay un guard que
+src/modules/jobs/domain/asignacionDeTrabajo.ts:19	Por eso **una sola función escribe los dos**, y hay un guard que cae si discrepan. Sin ese guard
+src/modules/jobs/domain/precarga.service.ts:131	y hay un test que las contrasta caso a caso, porque «derivan de lo mismo» no es «hacen lo mismo».
+src/modules/system/domain/supresionMerchant.service.ts:12	textos redactados, la anotación previa sigue ahí cuando todo termina — y un test lo comprueba
+
+── TICKET ──
+src/modules/billing/domain/bizumCharge.ts:27	cubre Bizum sin tocarlo, por construcción y no por coincidencia. Hay un test que lo fija.
+src/modules/fiscal/librosAeat/librosAeat.ts:205	⚠️ Sin «gasto(s)»: el plural perezoso lo caza el trinquete de SCRUM-377 y se lee como
+src/modules/jobs/domain/albaranContenidoFuentes.ts:15	Aquí se declara UNA vez. La receta y el PDF conforman a esta declaración, y hay un guard que lo
+src/modules/quotes/domain/apartados.ts:70	dos copias que divergen. Lo único que comparten front y dominio es la MARCA, y hay un test que
+src/modules/reports/domain/cobrosPorCubo.ts:68	que es el nombre de UNA de las dos y no el de la familia). Eso lo ata el test de SCRUM-488, que
+
+── FICHERO ──
+src/core/http/adminRouteDeclarations.ts:409	handler tiene que estar aquí, y hay un guard que lo comprueba contra el código
+src/modules/fiscal/verifactu/registro.builder.ts:342	generador de registros pasa por esta función o no pasa: hay un guard que lo vigila
+src/modules/invoicing/domain/cerrojoSaturado.ts:27	segundos** mirando la pantalla. Se cambiaría un fallo rápido por una espera larga. Hay un guard
+src/modules/invoicing/domain/clienteCongelado.ts:23	incapacidad no es una promesa: la vigila el censo del embudo (`tests/_embudo-factura.mjs`), que
+src/modules/jobs/domain/precarga.service.ts:51	⚠️ Y para que «entra solo» no sea «entra sin que nadie se entere», hay un guard
+
+EXIT=0

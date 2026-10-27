@@ -1,0 +1,232 @@
+SCRUM-1514c · las NO-LLEGO del eje de comercio · sesión: administrador del comercio 21 · el recurso 102 es del comercio 22
+POBLACION: 25 rutas leídas de la sección NO-LLEGO del censo (que declara 25) · con :parámetro 6 · con receta 25 · recetas que no son de la población 0 · modelos con columna de comercio 25 de 33 · sin ella: event, reconciliation, jobAssignee, quoteAssignee, invoiceAssignee, gatewayEvent, vfFlujoObligado
+
+── POR QUÉ NO LLEGÓ CADA UNA (pasada genérica: la del censo, ahora con el cuerpo de la respuesta)
+GET    /admin/me  → 401 · manos 1 · repite al censo
+         contesta: {"error":"not_authenticated"}
+POST   /admin/customers/bulk-tags  → 400 (tras relleno) · manos 2 · repite al censo
+         contesta: {"error":"accion_invalida","message":"La acción tiene que ser \"add\" o \"remove\"."}
+POST   /admin/customers/import/preparar  → 400 (tras relleno) · manos 2 · repite al censo
+         contesta: {"error":"no_data","message":"No hemos recibido ningún archivo. Vuelve a elegirlo."}
+POST   /admin/customers/import  → 400 (tras relleno) · manos 2 · repite al censo
+         contesta: {"error":"no_data","message":"No hemos recibido ningún archivo. Vuelve a elegirlo."}
+GET    /admin/customers/:id/fusion-preview  → 400 (tras relleno) · manos 2 · repite al censo
+         contesta: {"error":"invalid_id"}
+POST   /admin/customers/:id/fusionar  → 400 (tras relleno) · manos 2 · repite al censo
+         contesta: {"error":"invalid_id"}
+PATCH  /admin/quotes/:id/billing-plan  → 400 (tras relleno) · manos 2 · repite al censo
+         contesta: {"error":"version_requerida"}
+POST   /admin/invoices/:id/annul  → 400 (tras relleno) · manos 2 · repite al censo
+         contesta: {"error":"motivo_invalido","message":"Elige por qué se anula: duplicada, emitida por error, datos del cliente equivocados o prueba.","motivos":["duplicada","error_sin_operacion","datos_cliente","prueb…
+POST   /admin/products/import  → 400 (tras relleno) · manos 2 · repite al censo
+         contesta: {"ok":false,"error":"csv_required"}
+POST   /admin/expenses/leer-ticket  → 503 · manos 1 · repite al censo
+         contesta: {"ok":false,"error":"ai_not_configured"}
+POST   /admin/jobs  → 400 (tras relleno) · manos 1 · repite al censo
+         contesta: {"error":"customer_required"}
+POST   /admin/albaranes/consolidar  → 400 (tras relleno) · manos 2 · repite al censo
+         contesta: {"error":"customer_requerido","message":"Indica el cliente."}
+POST   /admin/entorno  → 400 (tras relleno) · manos 1 · repite al censo
+         contesta: {"error":"invalid_entorno"}
+POST   /admin/soporte  → 400 (tras relleno) · manos 1 · repite al censo
+         contesta: {"error":"mensaje_vacio"}
+GET    /admin/libros/expedidas.csv  → 400 (tras relleno) · manos 1 · repite al censo
+         contesta: {"error":"periodo_invalido","detalle":"No reconozco ese periodo. Elige un trimestre (T1 a T4) y un año."}
+GET    /admin/libros/recibidas.csv  → 400 (tras relleno) · manos 1 · repite al censo
+         contesta: {"error":"periodo_invalido","detalle":"No reconozco ese periodo. Elige un trimestre (T1 a T4) y un año."}
+GET    /admin/libros/recibidas.json  → 400 (tras relleno) · manos 1 · repite al censo
+         contesta: {"error":"periodo_invalido","detalle":"No reconozco ese periodo. Elige un trimestre (T1 a T4) y un año."}
+POST   /admin/supresion/:merchantId  → 404 · manos 1 · repite al censo
+         contesta: {"error":"not_found"}
+POST   /admin/billing/checkout  → 501 · manos 1 · repite al censo
+         contesta: {"error":"stripe_not_configured"}
+POST   /admin/billing/portal  → 501 · manos 1 · repite al censo
+         contesta: {"error":"stripe_not_configured"}
+POST   /admin/team  → 400 (tras relleno) · manos 1 · repite al censo
+         contesta: {"error":"invalid_email"}
+POST   /admin/connect/onboard  → 501 · manos 1 · repite al censo
+         contesta: {"error":"stripe_not_configured"}
+POST   /admin/ai/suggest-quote  → 503 · manos 1 · repite al censo
+         contesta: {"error":"ai_not_configured","message":"El asistente de IA no está configurado. Añade GEMINI_API_KEY (gratis) en Railway."}
+POST   /admin/ai/quote-message  → 503 · manos 1 · repite al censo
+         contesta: {"error":"ai_not_configured","message":"El asistente de IA no está configurado. Añade GEMINI_API_KEY (gratis) en Railway."}
+PATCH  /admin/quote-requests/:id  → 400 (tras relleno) · manos 1 · repite al censo
+         contesta: {"error":"invalid_status"}
+
+── CON RECETA
+
+== CRUZA · 1 (con :parámetro 0)
+POST   /admin/jobs  [causa: cuerpo: pide `customerId` y los datos del trabajo]
+         · un trabajo para el cliente ajeno → FILTRA-Y-NO-ACABA 404
+           contesta: {"error":"customer_not_found"}
+           atadas (1): customer.findFirst
+         · un trabajo para un cliente propio → CRUZA 201
+           contesta: {"id":501,"status":"accepted","assignedUserId":12,"createdAt":"2026-10-08T08:22:18.746Z","titulo":"#501","tituloPropio":null,"direccion":null,"totalAceptado":nu…
+           atadas (6): customer.findFirst, job.create, auditLog.create, quote.findMany, teamMember.findFirst, albaran.findMany
+           🔴 SIN COMERCIO (1): customer.findUnique {"id":5}
+           a modelos sin columna de comercio (no juzgadas): jobAssignee.findMany {"jobId":501,"teamMember":{"merchantId":21}}
+
+== LEE-Y-NO-ACABA · 0 (con :parámetro 0)
+
+== LEE-Y-NIEGA · 0 (con :parámetro 0)
+
+== NO-LLEGO · 2 (con :parámetro 0)
+POST   /admin/expenses/leer-ticket  [causa: precondición: la IA no está configurada en el árbol]
+         · con la IA «configurada» en memoria y la red cortada → NO-LLEGO 502 · salidas cortadas: fetch:generativelanguage.googleapis.com
+           contesta: {"ok":false,"error":"ai_provider_error"}
+           atadas (0): —
+POST   /admin/billing/checkout  [causa: precondición: Stripe no está configurado en el árbol]
+         · con Stripe doblado → NO-LLEGO 501
+           contesta: {"error":"price_not_configured"}
+           atadas (0): —
+
+== FILTRA-Y-NO-ACABA · 9 (con :parámetro 5)
+POST   /admin/customers/:id/fusionar  [causa: cuerpo: pide `con`, el segundo cliente]
+         · principal ajeno, fusionado propio → FILTRA-Y-NO-ACABA 409
+           contesta: {"error":"cliente_no_encontrado"}
+           atadas (2): customer.findFirst
+         · principal propio, fusionado ajeno → FILTRA-Y-NO-ACABA 409
+           contesta: {"error":"cliente_no_encontrado"}
+           atadas (2): customer.findFirst
+         · los dos ajenos → FILTRA-Y-NO-ACABA 409
+           contesta: {"error":"cliente_no_encontrado"}
+           atadas (2): customer.findFirst
+PATCH  /admin/quotes/:id/billing-plan  [causa: cuerpo: pide `version`, la que leyó la pantalla]
+         · el plan del presupuesto ajeno → FILTRA-Y-NO-ACABA 404
+           contesta: {"error":"quote_not_found"}
+           atadas (1): quote.findFirst
+POST   /admin/invoices/:id/annul  [causa: cuerpo: pide `motivo` de una lista cerrada]
+         · anular la factura ajena → FILTRA-Y-NO-ACABA 404
+           contesta: {"error":"not_found"}
+           atadas (1): invoice.findFirst
+POST   /admin/albaranes/consolidar  [causa: cuerpo: pide `customerId` y `albaranIds`]
+         · cliente ajeno y albarán ajeno → FILTRA-Y-NO-ACABA 404
+           contesta: {"error":"not_found"}
+           atadas (1): customer.findFirst
+         · cliente PROPIO y albarán ajeno → FILTRA-Y-NO-ACABA 409
+           contesta: {"error":"consolidacion_no_disponible","message":"La factura recapitulativa no está disponible en este modo."}
+           atadas (2): customer.findFirst, merchant.findUnique
+POST   /admin/supresion/:merchantId  [causa: precondición: el flag MERCHANT_DELETE_ENABLED está apagado]
+         · flag encendido, suprimir el comercio 22 → NIEGA-SIN-CONSULTAR 404
+           contesta: {"error":"not_found"}
+           atadas (0): —
+         · flag encendido, el PROPIO con la confirmación mal (¿se abrió la puerta?) → FILTRA-Y-NO-ACABA 409
+           contesta: {"error":"confirmacion_no_coincide"}
+           atadas (1): merchant.findUnique
+POST   /admin/team  [causa: cuerpo: pide `name` y `email`]
+         · invitar a un compañero → FILTRA-Y-NO-ACABA 409
+           contesta: {"error":"user_limit","maxUsers":1,"message":"Tu plan incluye 1 usuario. ¿Trabajáis varios? El plan Equipo añade hasta 5 usuarios con aprobaciones y asignación …
+           atadas (2): merchant.findUnique, teamMember.count
+POST   /admin/ai/suggest-quote  [causa: precondición: la IA no está configurada en el árbol]
+         · con la IA «configurada» en memoria y la red cortada → FILTRA-Y-NO-ACABA 502 · salidas cortadas: fetch:generativelanguage.googleapis.com
+           contesta: {"error":"ai_provider_error","message":"La IA no respondió bien. Inténtalo de nuevo en un momento."}
+           atadas (2): merchant.findUnique, product.findMany
+POST   /admin/ai/quote-message  [causa: precondición: la IA no está configurada en el árbol]
+         · el mensaje del presupuesto ajeno → FILTRA-Y-NO-ACABA 404
+           contesta: {"error":"quote_not_found"}
+           atadas (1): quote.findFirst
+         · sin presupuesto, con los datos en el cuerpo → FILTRA-Y-NO-ACABA 502 · salidas cortadas: fetch:generativelanguage.googleapis.com
+           contesta: {"error":"ai_provider_error","message":"La IA no respondió bien. Inténtalo de nuevo en un momento."}
+           atadas (1): merchant.findUnique
+PATCH  /admin/quote-requests/:id  [causa: cuerpo: pide `status` de una lista cerrada (read, done, pending)]
+         · marcar como leída la solicitud ajena → FILTRA-Y-NO-ACABA 404
+           contesta: {"error":"not_found"}
+           atadas (1): quoteRequest.findFirst
+
+== NIEGA-SIN-CONSULTAR · 0 (con :parámetro 0)
+
+== SIN-CONSULTA · 1 (con :parámetro 0)
+POST   /admin/customers/import/preparar  [causa: cuerpo: pide `fichero` en base64]
+         · un CSV de dos filas → SIN-CONSULTA 200
+           contesta: {"ok":true,"codificacion":"utf-8","alternativa":"windows-1252","primeraFila":"nombre;telefono","columnas":[{"indice":0,"columna":"nombre","campo":"name","confia…
+           atadas (0): —
+
+== FILTRA · 12 (con :parámetro 1)
+GET    /admin/me  [causa: precondición: la sesión se lee de la cookie, no de req.merchantId]
+         · con la cookie de una sesión del comercio 21 → FILTRA 200
+           contesta: {"merchantId":21,"name":"Negocio","merchantName":"Negocio","logoUrl":null,"locale":{"quote":"Presupuesto","quotePlural":"Presupuestos","quoteArticle":"el presup…
+           atadas (3): authSession.findUnique, merchant.findUnique, invoice.findMany
+POST   /admin/customers/bulk-tags  [causa: cuerpo: pide `accion` y `etiqueta`, que el relleno no lleva]
+         · etiquetar el cliente ajeno → FILTRA 200
+           contesta: {"actualizados":0,"resultados":[{"id":102,"actualizado":false,"motivo":"No encontrado"}]}
+           atadas (1): customer.findMany
+         · uno propio y uno ajeno en la misma lista → FILTRA 200
+           contesta: {"actualizados":0,"resultados":[{"id":501,"actualizado":false,"motivo":"No encontrado"},{"id":102,"actualizado":false,"motivo":"No encontrado"}]}
+           atadas (1): customer.findMany
+         · quitar la etiqueta al ajeno → FILTRA 200
+           contesta: {"actualizados":0,"resultados":[{"id":102,"actualizado":false,"motivo":"No encontrado"}]}
+           atadas (1): customer.findMany
+POST   /admin/customers/import  [causa: cuerpo: pide `fichero` en base64 y `mapeo`]
+         · un CSV de dos filas con su mapeo → FILTRA 200
+           contesta: {"ok":true,"creados":0,"omitidos":1,"rechazos":[],"csvRechazos":null}
+           atadas (1): customer.findFirst
+GET    /admin/customers/:id/fusion-preview  [causa: query: pide `con`, el segundo cliente]
+         · principal ajeno, fusionado propio → FILTRA 200
+           contesta: {"bloqueada":"cliente_no_encontrado","principal":null,"fusionado":{"id":501,"merchantId":21,"teamMemberId":12,"operarioId":12,"assignedUserId":12,"assignees":[{…
+           atadas (2): customer.findFirst
+         · principal propio, fusionado ajeno → FILTRA 200
+           contesta: {"bloqueada":"cliente_no_encontrado","principal":{"id":501,"merchantId":21,"teamMemberId":12,"operarioId":12,"assignedUserId":12,"assignees":[{"teamMemberId":12…
+           atadas (2): customer.findFirst
+         · los dos ajenos → FILTRA 200
+           contesta: {"bloqueada":"cliente_no_encontrado","principal":null,"fusionado":{"id":501,"merchantId":21,"teamMemberId":12,"operarioId":12,"assignedUserId":12,"assignees":[{…
+           atadas (2): customer.findFirst
+POST   /admin/products/import  [causa: cuerpo: pide `csv` como texto]
+         · un CSV de catálogo → FILTRA 200
+           contesta: {"ok":true,"created":0,"skipped":1,"errors":0,"errorList":[]}
+           atadas (1): product.findFirst
+POST   /admin/entorno  [causa: cuerpo: pide `entorno` de una lista cerrada]
+         · con la sesión que pone requireAuth (propia) → FILTRA 200
+           contesta: {"estado":"ESCRITO","valor":false}
+           atadas (2): authSession.findUnique, authSession.update
+POST   /admin/soporte  [causa: cuerpo: pide `mensaje`]
+         · un mensaje de soporte → FILTRA 200
+           contesta: {"ok":true,"sent":false,"error":"email_send_failed","message":"No se pudo enviar el email. Puedes reintentarlo.","motivo":"sin_transporte"}
+           atadas (3): merchant.findUnique, authSession.findFirst, emailMessage.create
+GET    /admin/libros/expedidas.csv  [causa: query: pide año y trimestre]
+         · tercer trimestre de 2026 → FILTRA 200
+           contesta: ﻿Fecha de expedición;Serie y número;Tipo de factura;NIF del destinatario;Nombre del destinatario;Base imponible;Tipo de IVA (%);Cuota de IVA;Total de la factura…
+           atadas (2): merchant.findUnique, invoice.findMany
+GET    /admin/libros/recibidas.csv  [causa: query: pide año y trimestre]
+         · tercer trimestre de 2026 → FILTRA 200
+           contesta: ﻿Formato provisional: no contrastado contra especificación oficial.
+Serie y número del proveedor;Fecha de expedición del proveedor;Fecha del apunte;NIF del pro…
+           atadas (1): expense.findMany
+GET    /admin/libros/recibidas.json  [causa: query: pide año y trimestre]
+         · tercer trimestre de 2026 → FILTRA 200
+           contesta: {"filas":[],"miradas":0,"avisos":["Formato provisional: no contrastado contra especificación oficial."],"desde":"2026-06-30T23:00:00.000Z","hasta":"2026-09-30T2…
+           atadas (1): expense.findMany
+POST   /admin/billing/portal  [causa: precondición: Stripe no está configurado en el árbol]
+         · con Stripe doblado → FILTRA 200
+           contesta: {"ok":true,"portalUrl":"http://127.0.0.1:9/laboratorio"}
+           atadas (1): merchant.findUnique
+POST   /admin/connect/onboard  [causa: precondición: Stripe no está configurado en el árbol]
+         · con Stripe doblado y el flag de Connect encendido → FILTRA 200
+           contesta: {"ok":true,"url":"http://127.0.0.1:9/laboratorio"}
+           atadas (2): merchant.findUnique, merchant.update
+
+== SIN-RECETA · 0 (con :parámetro 0)
+
+── CONTROLES
+  SEMBRADAS, con lo que cada una necesita:
+    ok  POST /admin/__siembra-1514c/por-ruta/:id/cruza → CRUZA 200 (se espera CRUZA 200) · invoice.findUnique {"id":102}
+    ok  POST /admin/__siembra-1514c/por-ruta/:id/filtra → FILTRA-Y-NO-ACABA 404 (se espera FILTRA-Y-NO-ACABA 404)
+    ok  POST /admin/__siembra-1514c/por-ruta/:id/niega-antes → NIEGA-SIN-CONSULTAR 404 (se espera NIEGA-SIN-CONSULTAR 404)
+    ok  POST /admin/__siembra-1514c/por-cuerpo/lee-cruza → CRUZA 200 (se espera CRUZA 200) · customer.findMany {"id":{"in":[102]}}
+    ok  POST /admin/__siembra-1514c/por-cuerpo/lee-filtra → FILTRA-Y-NO-ACABA 404 (se espera FILTRA-Y-NO-ACABA 404)
+    ok  POST /admin/__siembra-1514c/por-cuerpo/escribe-cruza → CRUZA 200 (se espera CRUZA 200) · customer.updateMany(ESCRIBE) {"id":{"in":[102]}}
+    ok  POST /admin/__siembra-1514c/por-cuerpo/escribe-filtra → FILTRA 200 (se espera FILTRA 200)
+  SEMBRADAS con validación, SIN darles su cuerpo (la pasada del censo): tienen que salir NO-LLEGO las cuatro, la que cruza también
+    ok  POST /admin/__siembra-1514c/por-cuerpo/lee-cruza → NO-LLEGO 400
+    ok  POST /admin/__siembra-1514c/por-cuerpo/lee-filtra → NO-LLEGO 400
+    ok  POST /admin/__siembra-1514c/por-cuerpo/escribe-cruza → NO-LLEGO 400
+    ok  POST /admin/__siembra-1514c/por-cuerpo/escribe-filtra → NO-LLEGO 400
+  NEGATIVO del árbol (filtra, medido por HTTP en SCRUM-1512): ok  POST /admin/invoices/:id/send-reminder → FILTRA-Y-NO-ACABA 404 envíos 0
+  LA ARREGLADA en SCRUM-1514b (ya no cruza): ok  POST /admin/invoices/:id/resend-whatsapp → FILTRA-Y-NO-ACABA 404 envíos 0
+  POSITIVO del árbol (lee sin comercio y niega después; SCRUM-1514 ③): ok  POST /admin/quotes/:id/send-whatsapp → LEE-Y-NIEGA 404 · quote.findUnique {"id":102}
+  CERO (una sembrada que NO he montado): manos 0
+  MOTOR: la pasada genérica repite el estado y el NO-LLEGO del censo en 25 de 25
+¿esta pasada distingue la que cruza de la que filtra, y repite al censo?  true
+
+TOTALES (el peor veredicto de cada ruta): CRUZA 1 · LEE-Y-NO-ACABA 0 · LEE-Y-NIEGA 0 · NO-LLEGO 2 · FILTRA-Y-NO-ACABA 9 · NIEGA-SIN-CONSULTAR 0 · SIN-CONSULTA 1 · FILTRA 12 · SIN-RECETA 0 · suma 25
+envíos a Meta doblados en toda la corrida: 0 · intentos de salir de la máquina cortados: 3 → fetch:generativelanguage.googleapis.com
+EXIT=0

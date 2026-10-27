@@ -1,0 +1,201 @@
+POBLACION · 1439 ficheros de código leídos · 0 que NO supo leer · 1107 tocan rutas de máquina
+SITIOS donde una ruta de máquina llega a una comparación: 78, en 48 ficheros
+  LITERAL  1 en 1 ficheros · contra un «/» o «\» escrito a mano: DIFIERE entre máquinas
+  NO-LEIDO 45 en 24 ficheros · el otro lado no lo sabe seguir: lo lee una persona
+  MAQUINA  18 en 16 ficheros · ruta de máquina contra ruta de máquina
+  INOCUO   14 en 12 ficheros · contra un texto sin separador, o una regex que admite los dos
+MEZCLAS · 10 en 4 ficheros · una ruta de máquina con un «/» o «\» pegado a mano, llegue o no a una comparación
+
+── LITERAL (1) ──
+tests/scrum521-resolvedor-de-importadores.test.mjs:112 · === · literal-sep
+    const ajeno = path.sep === '\\' ? '/' : '\\';
+
+── NO-LEIDO (45) ──
+tests/_alcance-desde-entradas.mjs:279 · === · no-leido
+    if (imp.modulo === abs) {
+tests/_censo-arneses-de-router.mjs:318 · .startsWith() · no-leido
+    if (!id.startsWith(dist)) continue;
+tests/banco-scrum1102f/mutar.mjs:66 · .startsWith() · no-leido
+    const esDeSrc = (f) => f.startsWith(en('src'));
+tests/banco-scrum1325/mutar.mjs:115 · !== · no-leido
+    if (m.f !== MOTOR || distMutado) {
+tests/banco-scrum1325/mutar.mjs:116 · === · no-leido
+    if (m.f === MOTOR) fs.writeFileSync(m.f, original);
+tests/banco-scrum1325/mutar.mjs:118 · !== · no-leido
+    distMutado = m.f !== MOTOR;
+tests/banco-scrum1325/mutar.mjs:119 · === · no-leido
+    if (m.f === MOTOR) fs.writeFileSync(m.f, original.replace(m.de, () => m.a));
+tests/banco-scrum1341/mutar.mjs:104 · .startsWith() · no-leido
+    const esDeSrc = (f) => f.startsWith(en('src'));
+tests/scrum1093h-censo-fecha-sin-zona.test.mjs:247 · assert.equal · no-leido
+    assert.equal(REAL.raiz, path.resolve('.'), '🔴 `censar(".")` no declara como raíz el árbol que se le pidió.');
+tests/scrum1093h-censo-fecha-sin-zona.test.mjs:253 · assert.equal · no-leido
+    assert.equal(r.raiz, path.resolve(dir));
+tests/scrum1281-fixture-git-raiz-propia.test.mjs:79 · assert.equal · no-leido
+    assert.equal(raizDeFixturesGit({ RUNNER_TEMP: '/home/runner/work/_temp' }), path.join('/home/runner/work/_temp', 'yaqu-fixtures-git'));
+tests/scrum1281-fixture-git-raiz-propia.test.mjs:81 · assert.equal · no-leido
+    assert.equal(raizDeFixturesGit({}), path.join(os.tmpdir(), 'yaqu-fixtures-git'));
+tests/scrum1281-fixture-git-raiz-propia.test.mjs:84 · .startsWith() · no-leido
+    assert.ok(repoFixture().startsWith(raiz + path.sep), `repoFixture() está fuera de ${raiz}`);
+tests/scrum1298-mesa-por-puesto.test.mjs:96 · assert.equal · no-leido
+    assert.equal(s.rutaDeMesa({ mesas, repo, nombre: 'sesion-3', equipo: EQUIPO }).mesa, path.join(mesas, 'mesa-s3'));
+tests/scrum1298-mesa-por-puesto.test.mjs:97 · assert.equal · no-leido
+    assert.equal(s.rutaDeMesa({ mesas, repo, nombre: 'orquestador', equipo: EQUIPO }).mesa, path.join(mesas, 'mesa-orquestador'));
+tests/scrum1298-mesa-por-puesto.test.mjs:116 · assert.equal · no-leido
+    assert.equal(p.mesa, path.join(b.mesas, 'mesa-s2'));
+tests/scrum1398-la-sonda-de-colision.test.mjs:172 · assert.equal · no-leido
+    assert.equal(JSON.parse(r.stdout.slice(r.stdout.indexOf('{'))).fichero, path.join(dir, 'tmp', 'sobre-soap-prueba-aeat.xml'));
+tests/scrum1430-sesion-qa-estado.test.mjs:253 · assert.equal · no-leido
+    assert.equal(rutaCaducidadDe(path.join('x', 'sesion.txt')), path.join('x', 'sesion.txt.caducidad.json'));
+tests/scrum1473-latido-disco-y-barrido.test.mjs:223 · assert.equal · no-leido
+    assert.equal(r.noRecorridas[0].ruta, fichero);
+tests/scrum253-adopcion.test.mjs:216 · assert.equal · no-leido
+    assert.equal(raizDeTrabajo(path.join(arbolA, 'sub')), arbolA,
+tests/scrum253-adopcion.test.mjs:218 · assert.equal · no-leido
+    assert.equal(raizDeTrabajo(arbolB), arbolB);
+tests/scrum289b-factura-suelta.test.mjs:382 · === · no-leido
+    const solo = f === VISTA
+tests/scrum381-scripts-cargables.test.mjs:171 · === · no-leido
+    dependenciasDe(fs.readFileSync(f, 'utf8')).some((d) => resolver(f, d.especificador) === victima));
+tests/scrum381-scripts-cargables.test.mjs:179 · === · no-leido
+    return r === victima ? null : r;
+tests/scrum393-marcadores-de-conflicto.test.mjs:97 · .endsWith() · no-leido
+    TODOS.some((f) => f.endsWith(path.join('public', 'dashboard', 'js', 'jobDetailView.js'))),
+tests/scrum521-resolvedor-de-importadores.test.mjs:130 · .includes() · no-leido
+    assert.equal(porRamaNormal.modulo.includes(path.sep), porRamaDist.modulo.includes(path.sep),
+tests/scrum521-resolvedor-de-importadores.test.mjs:130 · .includes() · no-leido
+    assert.equal(porRamaNormal.modulo.includes(path.sep), porRamaDist.modulo.includes(path.sep),
+tests/scrum590-el-destino-pasa-por-el-resolvedor.test.mjs:117 · .startsWith() · no-leido
+    if (f.startsWith(INTEGRACIONES)) continue; // fontanería: reenvía lo que le dan
+tests/scrum72-pdfs-privados.test.mjs:168 · assert.equal · no-leido
+    assert.equal(attach.diskPath, expectedDisk, 'el adjunto debe salir del fichero con el nombre nuevo');
+tests/scrum72-pdfs-privados.test.mjs:191 · assert.equal · no-leido
+    assert.equal(qpdf.outPath, path.join(invoicesDir, `QUOTE-${quoteA.id}.pdf`),
+tests/scrum813-trinquete-de-zona.test.mjs:307 · .includes() · no-leido
+    assert.ok(vistos.includes(path.join(RAIZ, 'tests', path.basename(fileURLToPath(import.meta.url)))),
+tests/scrum829b-la-ref-rancia-se-poda.test.mjs:105 · .startsWith() · no-leido
+    assert.ok(comun.startsWith(fs.realpathSync.native(b.dir) + path.sep),
+tests/scrum899c-relevar-y-contexto.test.mjs:139 · === · no-leido
+    const soloEnLaSegunda = (p) => p === path.join('/proyectos/C--Users-scratchpad-prompts', `${UUID}.jsonl`);
+tests/scrum899c-relevar-y-contexto.test.mjs:141 · assert.equal · no-leido
+    assert.equal(
+tests/scrum899c-relevar-y-contexto.test.mjs:292 · assert.equal · no-leido
+    assert.equal(s.rutaDelTraspaso(config, 'sesion-5'), path.join('/memoria', 'project_s5_traspaso.md'));
+tests/scrum899c-relevar-y-contexto.test.mjs:293 · assert.equal · no-leido
+    assert.equal(s.rutaDelTraspaso(config, 'sesion-0'), path.join('/memoria', 'project_s0_traspaso.md'));
+tests/scrum899c-relevar-y-contexto.test.mjs:297 · assert.equal · no-leido
+    assert.equal(s.rutaDelTraspaso(config, 'orquestador'), path.join('/memoria', 'project_orquestador_traspaso.md'));
+tests/scrum899c-relevar-y-contexto.test.mjs:316 · assert.equal · no-leido
+    assert.equal(ruta, path.join(scratch, `${UUID}.jsonl`));
+tests/scrum932-el-turno-tiene-mecanismo.test.mjs:180 · === · no-leido
+    const fuente = informe.fuentes.find((f) => f.ruta === fichero);
+tests/scrum951a-equipo-configurable.test.mjs:319 · assert.equal · no-leido
+    assert.equal(instalar.carpetaDeMemoria('D:\\MILLONARIO\\cobroFlash\\cobroflash-backend', p),
+tests/scrum951a-equipo-configurable.test.mjs:321 · assert.equal · no-leido
+    assert.equal(instalar.carpetaDeMemoria('D:/MILLONARIO/cobroFlash/cobroflash-backend/.claude/worktrees/x_y', p),
+tests/scrum951a-equipo-configurable.test.mjs:462 · assert.equal · no-leido
+    assert.equal(s.rutaDelTraspaso(config, 'jv-jefe'), path.join('/memoria', 'project_jefe_traspaso.md'));
+tests/scrum951a-equipo-configurable.test.mjs:463 · assert.equal · no-leido
+    assert.equal(s.rutaDelTraspaso(config, 'jv-sesion-3'), path.join('/memoria', 'project_s3_traspaso.md'));
+tests/scrum951a-equipo-configurable.test.mjs:464 · assert.equal · no-leido
+    assert.equal(s.rutaDelTraspaso({ traspasos: path.join('/memoria'), prefijo: '' }, 'orquestador'),
+tests/scrum996-suelo-de-arranque.test.mjs:551 · .includes() · no-leido
+    assert.ok(r.texto.includes(path.join(memoria, 'project_s5_traspaso.md')));
+
+── MEZCLAS (10) ──
+tests/scrum592-concurrencia-serie.test.mjs:38
+    const { PrismaClient } = await import(pathToFileURL(RAIZ + '/node_modules/@prisma/client/default.js').href);
+tests/scrum592-concurrencia-serie.test.mjs:39
+    const { parseBDSegura } = await import(pathToFileURL(RAIZ + '/scripts/_db-guard.mjs').href);
+tests/scrum767-cura-concurrencia.test.mjs:49
+    const { PrismaClient } = await import(pathToFileURL(RAIZ + '/node_modules/@prisma/client/default.js').href);
+tests/scrum767-cura-concurrencia.test.mjs:50
+    const { parseBDSegura } = await import(pathToFileURL(RAIZ + '/scripts/_db-guard.mjs').href);
+tests/scrum767-cura-concurrencia.test.mjs:62
+    cliente = await import(pathToFileURL(RAIZ + '/dist/modules/system/customerAdmin.js').href);
+tests/scrum781-concurrencia-de-la-factura.test.mjs:56
+    const { PrismaClient } = await import(pathToFileURL(RAIZ + '/node_modules/@prisma/client/default.js').href);
+tests/scrum781-concurrencia-de-la-factura.test.mjs:57
+    const { parseBDSegura } = await import(pathToFileURL(RAIZ + '/scripts/_db-guard.mjs').href);
+tests/scrum793-la-carrera-del-token.test.mjs:46
+    const { PrismaClient } = await import(pathToFileURL(RAIZ + '/node_modules/@prisma/client/default.js').href);
+tests/scrum793-la-carrera-del-token.test.mjs:47
+    const { parseBDSegura } = await import(pathToFileURL(RAIZ + '/scripts/_db-guard.mjs').href);
+tests/scrum793-la-carrera-del-token.test.mjs:57
+    cliente = await import(pathToFileURL(RAIZ + '/dist/modules/system/customerAdmin.js').href);
+
+── MAQUINA (18) ──
+tests/banco-scrum1397/lanzar.mjs:24 · .startsWith() · maquina
+    if (path.resolve(salida).startsWith(RAIZ + path.sep)) {
+tests/banco-scrum1397/mutar.mjs:94 · .startsWith() · maquina
+    if (path.resolve(carpeta).startsWith(RAIZ + path.sep)) fin(2, 'CIEGO: la carpeta de salida va FUERA del árbol');
+tests/banco-scrum1456/mutar.mjs:68 · .startsWith() · maquina
+    if (!fuera || path.resolve(fuera).startsWith(RAIZ + path.sep)) {
+tests/scrum1091-guard-cwd-posix.test.mjs:97 · assert.equal · maquina
+    assert.equal(path.resolve(cwd, 'victima.md').toLowerCase(), path.join(DIR, 'victima.md').toLowerCase(),
+tests/scrum1093h-censo-fecha-sin-zona.test.mjs:245 · assert.equal · maquina
+    assert.equal(path.resolve(RAIZ), path.resolve(import.meta.dirname, '..'),
+tests/scrum124-r28-graph-facebook-guard.test.mjs:58 · === · maquina
+    if (full === THIS_FILE) continue; // el propio guard: contiene el host a propósito
+tests/scrum129-n8n-guard.test.mjs:42 · === · maquina
+    if (full === THIS_FILE) continue; // el propio guard: contiene el marcador a propósito
+tests/scrum189-citas-con-destino.test.mjs:68 · !== · maquina
+    if (full !== THIS_FILE && EXT.has(path.extname(e.name))) acc.push(full);
+tests/scrum226-url-credencial-en-argv.test.mjs:125 · === · maquina
+    if (full === THIS_FILE) continue; // el propio guard, ver ⚠️ AST arriba
+tests/scrum351-diagnostico-dependencias.test.mjs:123 · === · maquina
+    assert.ok(arboles.some((a) => path.resolve(a.raiz) === aqui),
+tests/scrum378-carga-por-pagina.test.mjs:151 · !== · maquina
+    const resto = ficheros.filter((f) => path.resolve(f) !== path.resolve(borrado));
+tests/scrum378-carga-por-pagina.test.mjs:162 · !== · maquina
+    .filter((f) => f && path.resolve(f) !== path.resolve(borrado));
+tests/scrum637-un-numero-una-regla.test.mjs:180 · !== · maquina
+    else if (e.name.endsWith('.md') && p !== MASTER) fuera.push(p);
+tests/scrum784-el-cuarto-veredicto.test.mjs:115 · assert.notEqual · maquina
+    assert.notEqual(path.resolve(porElEnlace), path.resolve(RUTA_YO),
+tests/scrum784-el-cuarto-veredicto.test.mjs:134 · assert.notEqual · maquina
+    assert.notEqual(enMinuscula, RUTA_YO,
+tests/scrum836-ancla-de-mutacion-viva.test.mjs:141 · === · maquina
+    const seCitaASiMismo = path.resolve(abs) === path.resolve(dirGuards, guard);
+tests/scrum864-el-temporal-que-se-borra.test.mjs:133 · .startsWith() · maquina
+    const dentroDelArbol = path.resolve(dir).toLowerCase().startsWith(path.resolve(RAIZ).toLowerCase());
+tests/scrum932-el-turno-tiene-mecanismo.test.mjs:248 · assert.notEqual · maquina
+    assert.notEqual(path.resolve(principal.ruta), path.join(RAIZ, '.env'),
+
+── INOCUO (14) ──
+tests/_temporal.mjs:63 · === · literal-sin-sep
+    return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));
+tests/_temporal.mjs:63 · .startsWith() · literal-sin-sep
+    return rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));
+tests/scrum1473-latido-disco-y-barrido.test.mjs:102 · .startsWith() · literal-sin-sep
+    assert.ok(rel && !rel.startsWith('..') && !path.isAbsolute(rel), `🔴 ${ruta} no cuelga de la carpeta temporal del test`);
+tests/scrum245-sin-listas-blancas.test.mjs:65 · .endsWith() · literal-sin-sep
+    else if (p.endsWith('.ts') && /from '[^']*integrations\/whatsapp(Policy)?'/.test(fs.readFileSync(p, 'utf8'))) {
+tests/scrum294-recargo-caja.test.mjs:234 · .endsWith() · literal-sin-sep
+    else if (e.name.endsWith('.ts') && !p.endsWith('recargoEquivalencia.ts') && !p.endsWith('criterioCaja.ts')) {
+tests/scrum294-recargo-caja.test.mjs:234 · .endsWith() · literal-sin-sep
+    else if (e.name.endsWith('.ts') && !p.endsWith('recargoEquivalencia.ts') && !p.endsWith('criterioCaja.ts')) {
+tests/scrum347-origen-de-la-factura.test.mjs:107 · .endsWith() · literal-sin-sep
+    if (f.endsWith('.ts')) ficheros.push(f);
+tests/scrum360-entorno-guardado.test.mjs:183 · .endsWith() · literal-sin-sep
+    if (!f.endsWith('.ts')) continue;
+tests/scrum401-anular-no-borra-el-cobro.test.mjs:128 · .endsWith() · literal-sin-sep
+    if (f.endsWith('.ts')) ficheros.push(f);
+tests/scrum458-paquete-de-precarga.test.mjs:327 · .endsWith() · literal-sin-sep
+    if (!f.endsWith('.ts') || rel === RUTA) continue;
+tests/scrum646-cortafuegos-defaultvat.test.mjs:62 · .endsWith() · literal-sin-sep
+    if (p.endsWith('.ts')) out.push(p);
+tests/scrum647-presupuesto-tambien-neutral.test.mjs:180 · .endsWith() · literal-sin-sep
+    else if (p.endsWith('.ts')) ficheros.push(p);
+tests/scrum650-asignacion-a-varios.test.mjs:124 · .endsWith() · literal-sin-sep
+    if (!f.endsWith('.ts')) continue;
+tests/scrum784-el-cuarto-veredicto.test.mjs:99 · regex.test() · literal-sin-sep
+    const TIENE_UNIDAD = /^[a-zA-Z]:/.test(RUTA_YO);
+
+LO QUE ESTE CENSO NO VE (un cero suyo no lo absuelve):
+  · una ruta que llega por PARÁMETRO de una función (el `(l) => l.startsWith(...)` de un filtro): se ve el sumidero, no de dónde viene `l`
+  · una ruta guardada en un array o en un objeto y comparada después (el `foto()` de SCRUM-1473 hacía eso)
+  · una ruta que viene de OTRO módulo (un ayudante `_*.mjs` que devuelve rutas) o de un `let` reasignado
+  · lo que hace el CÓDIGO probado con sus rutas: sólo se leen los ficheros de `tests/`
+  · las otras diferencias entre Windows y Linux: mayúsculas en nombres, finales de línea, permisos, enlaces
+EXIT=0

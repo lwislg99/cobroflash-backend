@@ -1,0 +1,49 @@
+cuadra · sin cambio (la base)
+    entró=no aplica · salida=0 · pass=1 fail=0 · merchants que quedan=0
+cuadra · el guion corta en cuanto vuelve registerMerchant
+    entró=sí · salida=1 · pass=0 fail=1 · merchants que quedan=1
+    AssertionError [ERR_ASSERTION]: 🔴 el guion salió 0 sin DECIR qué creó
+cuadra · el guion no pasa el correo a minúsculas
+    entró=sí · salida=1 · pass=0 fail=1 · merchants que quedan=0
+    AssertionError [ERR_ASSERTION]: 🔴 no hay merchant con el correo alta-a-1515-z9ug2l@test.local: el alta no dejó fila
+cuadra · el guion no recorta `source` a 200
+    entró=sí · salida=1 · pass=0 fail=1 · merchants que quedan=0
+    AssertionError [ERR_ASSERTION]: 🔴 B: EL MERCHANT DEL GUION NO NACE IGUAL QUE NACÍA EL DE LA RUTA
+cuadra · el guion no quita los espacios del país
+    entró=sí · salida=1 · pass=0 fail=1 · merchants que quedan=0
+    AssertionError [ERR_ASSERTION]: 🔴 B: EL MERCHANT DEL GUION NO NACE IGUAL QUE NACÍA EL DE LA RUTA
+cuadra · el guion escribe la fila A MANO en vez de llamar a registerMerchant
+    entró=sí · salida=1 · pass=0 fail=1 · merchants que quedan=0
+    AssertionError [ERR_ASSERTION]: 🔴 a alta-a-1515-z9un8z@test.local no se le ha mandado ningún enlace de acceso
+cuadra · la RUTA vuelve a dar de alta (el manejador de antes del cierre, entero)
+    entró=sí · salida=1 · pass=0 fail=1 · merchants que quedan=0
+    AssertionError [ERR_ASSERTION]: 🔴 POST /auth/register tiene que negarse con 409 y contestó 200 {"ok":true}
+cuadra · la RUTA cerrada cambia UNA letra de la frase firmada
+    entró=sí · salida=1 · pass=0 fail=1 · merchants que quedan=0
+    AssertionError [ERR_ASSERTION]: 🔴 la ruta cerrada no contesta la frase firmada, con sus dos claves y ninguna más
+cuadra · la RUTA cerrada contesta 400 en vez de 409
+    entró=sí · salida=1 · pass=0 fail=1 · merchants que quedan=0
+    AssertionError [ERR_ASSERTION]: 🔴 POST /auth/register tiene que negarse con 409 y contestó 400 {"error":"registration_closed","message":"Ahora mismo no estamos aceptando altas nuevas. Si quieres probar YaQu, escríbenos y te damos
+cuadra · la RUTA cerrada no manda `message` (la página pintaría el código crudo)
+    entró=sí · salida=1 · pass=0 fail=1 · merchants que quedan=0
+    AssertionError [ERR_ASSERTION]: 🔴 la ruta cerrada no contesta la frase firmada, con sus dos claves y ninguna más
+cuadra · la RUTA cerrada le manda un enlace a quien ya es merchant (lo que hacía registerMerchant)
+    entró=sí · salida=1 · pass=0 fail=1 · merchants que quedan=0
+    AssertionError [ERR_ASSERTION]: 🔴 la ruta cerrada le ha escrito a un merchant que ya existía
+cuadra · la RUTA cerrada recupera el limitador (a la sexta, otra frase)
+    entró=sí · salida=1 · pass=0 fail=1 · merchants que quedan=0
+    AssertionError [ERR_ASSERTION]: 🔴 a la 6.ª vez la ruta cerrada ya no contesta lo mismo
+cuadra · el cierre se lleva por delante el LOGIN (POST /auth/login también se niega)
+    entró=sí · salida=1 · pass=0 fail=1 · merchants que quedan=0
+    AssertionError [ERR_ASSERTION]: 🔴 UN MERCHANT QUE YA EXISTE NO PUEDE PEDIR SU ENLACE: POST /auth/login contestó 409
+cuadra · el LOGIN contesta 200 pero ya no manda el enlace
+    entró=sí · salida=1 · pass=0 fail=1 · merchants que quedan=0
+    AssertionError [ERR_ASSERTION]: 🔴 POST /auth/login no le ha mandado un enlace nuevo al merchant que ya existe
+cuadra · el cierre se lleva por delante la VERIFICACIÓN (GET /auth/verify no deja entrar)
+    entró=sí · salida=1 · pass=0 fail=1 · merchants que quedan=0
+    AssertionError [ERR_ASSERTION]: 🔴 el merchant del guion no puede entrar con su enlace
+cuadra · la VERIFICACIÓN redirige al panel sin dar sesión
+    entró=sí · salida=1 · pass=0 fail=1 · merchants que quedan=0
+    AssertionError [ERR_ASSERTION]: 🔴 el merchant del guion no puede entrar con su enlace
+FILAS=16 · que no cuadran=0 · EXIT=0
+exit=0

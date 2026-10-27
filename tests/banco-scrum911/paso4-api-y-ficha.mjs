@@ -3,15 +3,15 @@
 // Deja a propósito UN borrador vivo del ciclo (el que la pantalla tiene que enseñar) y un plan
 // activo colgando del presupuesto aceptado, para el recorrido visual de `paso5-pantalla.mjs`.
 import fs from 'node:fs';
-import { cargarSecretos, imp, sesionQA } from './_entorno.mjs';
+import { cargarSecretos, exigirStaging, imp, sesionQA } from './_entorno.mjs';
 
 const secretos = cargarSecretos();
 process.env.DATABASE_URL = secretos.DATABASE_URL_STAGING;
 delete process.env.WHATSAPP_PHONE_NUMBER_ID;
 delete process.env.WHATSAPP_TOKEN;
 
-const { parseBDSegura, STAGING_HOST } = await imp('scripts/_db-guard.mjs');
-if (parseBDSegura(process.env.DATABASE_URL)?.host !== STAGING_HOST) throw new Error('NO ES STAGING');
+// SCRUM-1575d · por DESTINO (host Y base), no sólo por host: desarrollo comparte el host de staging.
+exigirStaging(process.env.DATABASE_URL);
 const { config } = await imp('dist/core/config/env.js');
 if (config.WHATSAPP_PHONE_NUMBER_ID || config.WHATSAPP_TOKEN) throw new Error('ABORTA: hay credenciales de WhatsApp');
 

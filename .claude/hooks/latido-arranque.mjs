@@ -116,7 +116,8 @@ async function seccionesLocales() {
     // El libro se LEE y se pone al día en memoria, pero no se guarda: guardar es de la pasada completa.
     const alDia = sesiones && libro !== undefined ? m.actualizarLibro(libro || {}, sesiones) : libro;
     const secciones = [
-      m.seccionSesiones({ sesiones, filasPR: null, ilegibles, ahora }),
+      // (SCRUM-1474) Con el libro: una bloqueada de hoy ya marcada «contestada» no se vuelve a acusar aquí.
+      m.seccionSesiones({ sesiones, filasPR: null, libro: alDia, ilegibles, ahora }),
       m.seccionCementerio({ sesiones, ilegibles, sinEstado: t ? t.sinEstado : [], libro: alDia, ahora }),
     ];
     return { texto: m.informe(secciones, { ahora }) };

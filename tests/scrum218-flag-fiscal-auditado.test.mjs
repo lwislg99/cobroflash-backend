@@ -18,7 +18,9 @@ const {
   cambiarFlagFiscal, FLAGS_FISCALES, esFlagFiscal, ErrorCambioFlag,
 } = await import('../dist/modules/system/domain/flagFiscal.service.js');
 
-const MERCHANT = { id: 7, email: 'pro@ejemplo.es', country: 'ES', flags: null };
+// `llevaLibrosPorSii: false`: desde SCRUM-1102h encender exige «No» al SII; sin la columna el doble
+// sería «No consta» y la puerta se negaría antes de llegar a lo que aquí se prueba.
+const MERCHANT = { id: 7, email: 'pro@ejemplo.es', country: 'ES', flags: null, llevaLibrosPorSii: false };
 const ACTOR = { tipo: 'pro_propietario', teamMemberId: null, ref: null };
 
 /** Cliente falso: apunta cada escritura y con qué cliente se hizo. */

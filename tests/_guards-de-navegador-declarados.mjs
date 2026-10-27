@@ -79,6 +79,10 @@ export const DECLARADOS = [
   'guard:cabecera-del-editor',
   'guard:lista-gastos',
   'guard:ajustes-del-justificante',
+  'guard:modo-en-ajustes',
+  // SCRUM-1132: navegador de verdad a tres anchos y el router real de `/notes` sobre `dist/` (~11 s);
+  // lo que cabe en la tanda va en `tests/scrum1132-notas-en-la-ficha.test.mjs`, con el banco de vistas.
+  'guard:notas-en-la-ficha',
   // 👆 EL TUYO VA AQUÍ, EN SU PROPIA LÍNEA, Y NO SE TOCA NINGUNA DE LAS DE ARRIBA.
   //    Si al mergear sale conflicto en esta línea es que otra rama añadió el suyo a la vez:
   //    se quedan LOS DOS. Es el conflicto que se buscaba, no un problema.

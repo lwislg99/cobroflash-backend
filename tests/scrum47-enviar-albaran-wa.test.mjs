@@ -7,11 +7,35 @@
 // ⚠️ GATEADO (crea/BORRA merchants efímeros; genera el PDF real en disco; levanta la app):
 //   QA_DB_TEST=1 WHATSAPP_DRY_RUN=1 npm run test:staging
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-876g: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
+import { cortarSalida } from './_sin-salida.mjs'; // SCRUM-876g: el hecho, no la bandera
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 import { interceptarWaLog } from './_wa-log-sync.mjs'; // SCRUM-250/255: esperar la escritura, no el reloj
+import http from 'node:http';
+
+// `node:http` sin agente y no `fetch` (SCRUM-1218d): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de `fetch`
+// (status, headers.get, text, json). No sigue redirecciones: medido, las únicas 3xx son las de /auth/verify, que ya iban con `redirect: 'manual'`.
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    let d = ''; r.setEncoding('utf8');
+    r.on('data', (t) => { d += t; });
+    r.on('end', () => ok({
+      status: r.statusCode,
+      headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+      text: async () => d,
+      json: async () => JSON.parse(d),
+    }));
+  });
+  req.on('error', mal);
+  req.end(body);
+});
 
 // SCRUM-114 (reaplicado en SCRUM-126: el fix original no llegó a mergear — solo su
 // documentación en SUITE_REGRESION.md, "trampa 7"; el código se perdió en el camino).
@@ -22,7 +46,8 @@ import { interceptarWaLog } from './_wa-log-sync.mjs'; // SCRUM-250/255: esperar
 // al cargar).
 process.env.WHATSAPP_DRY_RUN = '1';
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+const CON_BANCO = URL_BANCO !== '';
+const ENABLED = process.env.QA_DB_TEST === '1' || CON_BANCO;
 const SIG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
 
 // SCRUM-255: aquí había un sondeo de 3 s sobre `whatsAppMessage` — la misma forma que SCRUM-250
@@ -41,7 +66,22 @@ async function moduloDeLog() {
   return (await import('../dist/modules/messaging/domain/whatsappLog.service.js')).default;
 }
 
-test('SCRUM-47: enviar-whatsapp — técnico 200 (firmado), 409 no-firmado/sin-teléfono, tenancy 404', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-47: enviar-whatsapp — técnico 200 (firmado), 409 no-firmado/sin-teléfono, tenancy 404', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
+  // SCRUM-876g · con el banco como destino este fichero corre en la tanda de CI. La bandera se
+  // asierta (el sender la lee en cada envío: `scrum876f-el-seco-se-decide-al-enviar`), pero lo que
+  // decide no es la bandera: se corta toda conexión que no sea de esta máquina, con su control
+  // positivo ANTES de la primera petición, y al acabar lo apuntado tiene que ser nada.
+  assert.equal(process.env.WHATSAPP_DRY_RUN, '1', 'este test exige WHATSAPP_DRY_RUN=1');
+  const corte = CON_BANCO ? cortarSalida() : null;
+  if (corte) {
+    await corte.controlPositivo();
+    t.after(() => {
+      const ajenos = corte.ajenos();
+      corte.restaurar();
+      assert.equal(corte.controlado, true, '🔴 CIEGO: el corte de salida no pasó su control');
+      assert.deepEqual(ajenos, [], '🔴 el test INTENTÓ salir de esta máquina con WHATSAPP_DRY_RUN=1 y el banco como destino');
+    });
+  }
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const server = app.listen(0);
@@ -72,10 +112,10 @@ test('SCRUM-47: enviar-whatsapp — técnico 200 (firmado), 409 no-firmado/sin-t
     data: { merchantId: merchantA.id, name: 'Sin teléfono', phone: null },
   });
   const job = await prisma.job.create({
-    data: { merchantId: merchantA.id, customerId: customer.id, status: 'terminado', titulo: 'C/ Mayor 12' },
+    data: { merchantId: merchantA.id, customerId: customer.id, status: 'terminado', titulo: 'C/ Mayor 12', operarioId: tecnico.id },
   });
   const jobSinTel = await prisma.job.create({
-    data: { merchantId: merchantA.id, customerId: customerSinTel.id, status: 'terminado', titulo: 'Sin tel' },
+    data: { merchantId: merchantA.id, customerId: customerSinTel.id, status: 'terminado', titulo: 'Sin tel', operarioId: tecnico.id },
   });
   const mkAlb = (jobId, numero, estado, firmado) =>
     prisma.albaran.create({
@@ -92,16 +132,21 @@ test('SCRUM-47: enviar-whatsapp — técnico 200 (firmado), 409 no-firmado/sin-t
   const mkCookie = async (merchantId, teamMemberId = null) => {
     const token = 'qa47-' + crypto.randomBytes(12).toString('hex');
     await prisma.authSession.create({ data: { merchantId, teamMemberId, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) } });
-    const res = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
+    const res = await pedirSinAgente(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
     const cookie = (res.headers.get('set-cookie') || '').split(';')[0];
     assert.ok(cookie.startsWith('pf_session='), 'no se obtuvo cookie de sesión');
     return cookie;
   };
   const post = (albId, cookie) =>
-    fetch(`${base}/admin/albaranes/${albId}/enviar-whatsapp`, { method: 'POST', headers: { cookie, 'content-type': 'application/json' } });
+    pedirSinAgente(`${base}/admin/albaranes/${albId}/enviar-whatsapp`, { method: 'POST', headers: { cookie, 'content-type': 'application/json' } });
 
     const cookieTecnico = await mkCookie(merchantA.id, tecnico.id); // rol técnico (S1: enviar WA ✅)
     const cookieB = await mkCookie(merchantB.id, null);
+    // SCRUM-876g · otro técnico del MISMO negocio que no lleva ese trabajo.
+    const ajeno = await prisma.teamMember.create({
+      data: { merchantId: merchantA.id, name: 'QA Téc 47 ajeno', email: `qa-tec47b-${stamp}@test.local`, role: 'tecnico', status: 'active' },
+    });
+    const cookieAjeno = await mkCookie(merchantA.id, ajeno.id);
 
     // ── TÉCNICO permitido (S1) + happy path dry-run → 200 ok:true ──
     // SCRUM-255: el interceptor se instala ANTES de la petición — la escritura de WA-0b nace
@@ -136,6 +181,13 @@ test('SCRUM-47: enviar-whatsapp — técnico 200 (firmado), 409 no-firmado/sin-t
     // ── Tenancy (regla 2): B no ve el albarán de A → 404 ──
     const rB = await post(albFirmado.id, cookieB);
     assert.equal(rB.status, 404, 'merchant B no accede al albarán de A');
+
+    // ── SCRUM-876g · un técnico que NO lleva el trabajo → 404, y no se envía nada ──
+    // Es la regla que tuvo este test caído mientras estaba gateado: `findAlbaran` recorta por el
+    // dueño del Trabajo (`esSuyoElTrabajo`). Arriba pasa porque el trabajo ES del técnico
+    // (`operarioId`); aquí no lo es. 404 y no 403: el código no le dice que el albarán existe.
+    const rAjeno = await post(albFirmado.id, cookieAjeno);
+    assert.equal(rAjeno.status, 404, `un técnico que no lleva el trabajo no envía su albarán (fue ${rAjeno.status})`);
 
     console.log('✔ SCRUM-47: técnico 200 (firmado, dry-run), 409 no-firmado/sin-tel, tenancy 404, WA-0b albaran ✓');
       }));

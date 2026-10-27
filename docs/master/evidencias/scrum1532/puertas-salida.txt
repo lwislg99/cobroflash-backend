@@ -1,0 +1,185 @@
+POBLACION · 322 ficheros .ts de src/ · 0 sin parsear · cliente de Prisma resuelto: SI
+
+== A · PUERTAS: 40 llamadas sobre el delegado de cobros (11 escriben, 29 leen)
+  ESCRIBE src/lib/invoicing.ts:170 update · where{id} status=— · data{receiptToken} status=—
+  ESCRIBE src/modules/billing/app/routes/psp.routes.ts:136 update · where{id} status=— · data{method,reference,reconciliations} +ESPARCE[datosDeCobroPagado(resolucion.fecha, body)] status=—
+  ESCRIBE src/modules/billing/app/routes/psp.routes.ts:390 update · where{id,status} status={ in: ESTADOS_QUE_UN_FALLO_PUEDE_PISAR } · data{status,events} status=nuevo
+  ESCRIBE src/modules/billing/app/routes/charges.routes.ts:53 create · where=AUSENTE · data{merchantId,customerId,concept,amount,currency,method,status,expiresAt,payMethods,events} status='pending'
+  ESCRIBE src/modules/billing/app/routes/payMp.routes.ts:62 update · where{id} status=— · data{intentId} status=—
+  ESCRIBE src/modules/billing/app/routes/chargesAdmin.routes.ts:141 update · where{id} status=— · data=EXPRESION datosParaDeclararRetencion(split, liberacion)
+  ESCRIBE src/modules/billing/app/routes/chargesAdmin.routes.ts:194 create · where=AUSENTE · data{merchantId,customerId,concept,amount,currency,method} +ESPARCE[datosDeCobroPagado(ahora, { tipo: 'liberacion_garantia_obra', chargeOriginalId: …] status=—
+  ESCRIBE src/modules/billing/app/routes/chargesAdmin.routes.ts:206 update · where{id} status=— · data=EXPRESION datosParaMarcarCobrada(ahora)
+  ESCRIBE src/modules/billing/app/routes/mpWebhook.routes.ts:108 update · where{id} status=— · data{method,reference,reconciliations} +ESPARCE[datosDeCobroPagado(new Date(), { mp_payment_id: mpPaymentId, mp_status: mpStatus…] status=—
+  ESCRIBE src/modules/billing/app/routes/mpWebhook.routes.ts:256 update · where{id} status=— · data{status,events} status='failed'
+  ESCRIBE src/modules/system/domain/fusionClientes.ts:180 updateMany · where{merchantId,customerId} status=— · data{customerId} status=—
+  LEE     src/lib/invoicing.ts:162 findUnique · where{id} status=—
+  LEE     src/lib/invoicing.ts:182 findUnique · where{id} status=—
+  LEE     src/modules/billing/domain/garantiasRetenidas.ts:112 findMany · where{merchantId,status,customerId,retencionGarantiaPorcentaje,retencionGarantiaCobrada} status='paid'
+  LEE     src/modules/system/app/routes/dev.routes.ts:73 findUnique · where{id} status=—
+  LEE     src/modules/payments/disputes.service.ts:137 findFirst · where{intentId} status=—
+  LEE     src/modules/billing/app/routes/psp.routes.ts:41 findUnique · where{id} status=—
+  LEE     src/modules/billing/app/routes/receipt.routes.ts:31 findUnique · where{receiptToken} status=—
+  LEE     src/modules/billing/app/routes/receipt.routes.ts:75 findUnique · where{receiptToken} status=—
+  LEE     src/modules/billing/app/routes/receipt.routes.ts:486 findUnique · where{receiptToken} status=—
+  LEE     src/modules/billing/app/routes/receipt.routes.ts:522 findUnique · where{receiptToken} status=—
+  LEE     src/modules/billing/app/routes/payBank.routes.ts:27 findUnique · where{receiptToken} status=—
+  LEE     src/modules/billing/app/routes/payCard.routes.ts:19 findUnique · where{receiptToken} status=—
+  LEE     src/modules/billing/app/routes/payMp.routes.ts:20 findUnique · where{receiptToken} status=—
+  LEE     src/modules/billing/app/routes/payMp.routes.ts:92 findUnique · where{receiptToken} status=—
+  LEE     src/modules/billing/app/routes/payInvoice.routes.ts:24 findUnique · where{receiptToken} status=—
+  LEE     src/modules/billing/app/routes/payBizum.routes.ts:122 findUnique · where{receiptToken} status=—
+  LEE     src/modules/billing/app/routes/chargesAdmin.routes.ts:42 findFirst · where{id,merchantId} status=—
+  LEE     src/modules/billing/app/routes/chargesAdmin.routes.ts:119 findFirst · where{id,merchantId} status=—
+  LEE     src/modules/billing/app/routes/chargesAdmin.routes.ts:169 findFirst · where{id,merchantId} status=—
+  LEE     src/modules/billing/app/routes/chargesAdmin.routes.ts:219 findFirst · where{id,merchantId} status=—
+  LEE     src/modules/billing/app/routes/mpWebhook.routes.ts:95 findUnique · where{id} status=—
+  LEE     src/modules/whatsappBot/domain/botFlow.service.ts:572 findMany · where{customerId,merchantId,status} status='pending'
+  LEE     src/modules/jobs/app/routes/jobs.routes.ts:729 findMany · where{id,merchantId,status} status='paid'
+  LEE     src/modules/exports/domain/exportData.ts:232 findMany · where=EXPRESION whereRango(merchantId, rango, 'createdAt', status !== 'all' ? { status } : {})
+  LEE     src/modules/system/app/routes/invoicesAdmin.routes.ts:289 findFirst · where{id,merchantId} status=—
+  LEE     src/modules/billing/domain/cobros.service.ts:220 findMany · where{merchantId} status=—
+  LEE     src/modules/metrics/domain/metrics.service.ts:132 count · where{merchantId,status} status='paid'
+  LEE     src/modules/metrics/domain/metrics.service.ts:396 groupBy · where{status} status='paid'
+  LEE     src/modules/exports/app/routes/exports.routes.ts:467 findMany · where{status,method,updatedAt} status='paid'
+
+== A · SUELTAS (`.charge` sin método detrás): 31
+  src/modules/billing/domain/metodoDeCobro.ts:251 cobro.charge?.method
+  src/modules/jobs/app/routes/jobs.routes.ts:764 quote?.charge ? { id: quote.charge.id, status: quote.charge.status, method: quote.charge.method, amount: Number(quote.ch…
+  src/modules/jobs/app/routes/jobs.routes.ts:766 quote.charge.id
+  src/modules/jobs/app/routes/jobs.routes.ts:767 quote.charge.status
+  src/modules/jobs/app/routes/jobs.routes.ts:768 quote.charge.method
+  src/modules/jobs/app/routes/jobs.routes.ts:769 quote.charge.amount
+  src/modules/jobs/app/routes/jobs.routes.ts:770 quote.charge.currency
+  src/modules/system/quoteAdmin.ts:104 primaryStatus === 'draft' && q.charge
+  src/modules/system/quoteAdmin.ts:106 q.charge.status
+  src/modules/system/quoteAdmin.ts:107 q.charge.status
+  src/modules/system/quoteAdmin.ts:128 q.charge?.method
+  src/modules/system/quoteAdmin.ts:129 q.charge?.id
+  src/modules/system/quoteAdmin.ts:314 quote.charge ? { id: quote.charge.id, status: quote.charge.status, method: quote.charge.method, amount: quote.charge.amo…
+  src/modules/system/quoteAdmin.ts:316 quote.charge.id
+  src/modules/system/quoteAdmin.ts:317 quote.charge.status
+  src/modules/system/quoteAdmin.ts:318 quote.charge.method
+  src/modules/system/quoteAdmin.ts:319 quote.charge.amount
+  src/modules/system/quoteAdmin.ts:320 quote.charge.currency
+  src/modules/system/quoteAdmin.ts:321 quote.charge.expiresAt
+  src/modules/system/quoteAdmin.ts:322 quote.charge.reference
+  src/modules/system/app/routes/invoicesAdmin.routes.ts:421 invoice.charge?.intentId
+  src/modules/system/app/routes/invoicesAdmin.routes.ts:421 invoice.charge?.reference
+  src/modules/system/app/routes/invoicesAdmin.routes.ts:422 invoice.charge?.status
+  src/modules/reports/domain/cobrosPorCubo.ts:234 !factura.charge
+  src/modules/system/app/routes/customerPortal.routes.ts:308 inv.charge?.id
+  src/modules/system/app/routes/customerPortal.routes.ts:308 inv.charge.id
+  src/modules/system/app/routes/customerPortal.routes.ts:309 inv.charge.id
+  src/modules/system/app/routes/customerPortal.routes.ts:309 inv.charge.id
+  src/modules/system/app/routes/customerPortal.routes.ts:412 inv.charge?.id
+  src/modules/system/app/routes/customerPortal.routes.ts:412 inv.charge.id
+  src/modules/billing/domain/invoiceReminder.service.ts:139 inv.charge?.id
+
+== A · ANIDADAS desde otro modelo: 0
+
+== A · SQL CRUDO que nombra `charges`: 0 (de 13 usos de $queryRaw/$executeRaw en todo src/)
+
+== B · LECTURAS TIPADAS de Charge.status: 44 (de 1074 accesos `.status` en src/)
+  src/lib/invoicing.ts:188 [payload] if (charge.status !== 'paid') throw new Error(`charge_not_paid:${charge.status}`);
+  src/lib/invoicing.ts:188 [payload] if (charge.status !== 'paid') throw new Error(`charge_not_paid:${charge.status}`);
+  src/modules/billing/app/routes/psp.routes.ts:44 [payload] if (charge.status === 'paid' && body.event === 'payment.confirmed') {
+  src/modules/billing/app/routes/psp.routes.ts:103 [payload] (charge.status === 'failed' && body.event === 'payment.failed') ||
+  src/modules/billing/app/routes/psp.routes.ts:104 [payload] (charge.status === 'expired' && body.event === 'payment.expired')
+  src/modules/billing/app/routes/psp.routes.ts:106 [payload] return res.json({ ok: true, status: `already_${charge.status}` });
+  src/modules/billing/app/routes/psp.routes.ts:113 [payload] !elFalloPuedePisar(charge.status) &&
+  src/modules/billing/app/routes/psp.routes.ts:116 [payload] return res.json({ ok: true, status: `already_${charge.status}` });
+  src/modules/billing/app/routes/charges.routes.ts:90 [payload] status: charge.status,
+  src/modules/billing/app/routes/receipt.routes.ts:47 [payload] charge.status === 'pending' &&
+  src/modules/billing/app/routes/receipt.routes.ts:127 [payload] ch.status === 'pending'
+  src/modules/billing/app/routes/receipt.routes.ts:185 [payload] ch.status === 'paid' && invoice
+  src/modules/billing/app/routes/receipt.routes.ts:208 [payload] ch.status === 'pending'
+  src/modules/billing/app/routes/receipt.routes.ts:212 [payload] : ch.status === 'paid'
+  src/modules/billing/app/routes/receipt.routes.ts:220 [payload] : ch.status === 'failed'
+  src/modules/billing/app/routes/receipt.routes.ts:224 [payload] : ch.status === 'expired'
+  src/modules/billing/app/routes/receipt.routes.ts:267 [payload] const sh = SH[ch.status] || SH.pending;
+  src/modules/billing/app/routes/receipt.routes.ts:274 [payload] ch.status === 'paid' &&
+  src/modules/billing/app/routes/receipt.routes.ts:295 [payload] ch.status === 'paid'
+  src/modules/billing/app/routes/receipt.routes.ts:335 [payload] ch.status === 'paid'
+  src/modules/billing/app/routes/receipt.routes.ts:468 [payload] ${ch.status === 'pending' ? `<div class="pay-stack">${payBtns}</div>` : ''}
+  src/modules/billing/app/routes/receipt.routes.ts:487 [payload] if (!ch || ch.status !== 'paid') return res.status(404).send(documentNotFoundHtml());
+  src/modules/billing/app/routes/receipt.routes.ts:527 [payload] if (charge.status !== 'paid') return res.redirect(303, `/recibo/${token}`);
+  src/modules/billing/app/routes/payCard.routes.ts:25 [payload] if (charge.status !== 'pending') {
+  src/modules/billing/app/routes/payMp.routes.ts:26 [payload] if (charge.status === 'paid') return res.redirect(`${BASE_URL}/pay/mp/${token}/result?status=approved`);
+  src/modules/billing/app/routes/payMp.routes.ts:27 [payload] if (charge.status === 'expired') return res.redirect(`${BASE_URL}/pay/mp/${token}/result?status=expired`);
+  src/modules/billing/app/routes/payMp.routes.ts:97 [payload] const status = CHARGE_STATUS_A_RESULTADO[charge.status] || 'pending';
+  src/modules/billing/app/routes/payInvoice.routes.ts:32 [payload] if (charge.status === 'paid' || charge.status === 'expired') {
+  src/modules/billing/app/routes/payInvoice.routes.ts:32 [payload] if (charge.status === 'paid' || charge.status === 'expired') {
+  src/modules/billing/app/routes/payBizum.routes.ts:138 [payload] if (charge.status === 'paid' || charge.status === 'expired') {
+  src/modules/billing/app/routes/payBizum.routes.ts:138 [payload] if (charge.status === 'paid' || charge.status === 'expired') {
+  src/modules/billing/app/routes/payBizum.routes.ts:184 [payload] if (charge.status !== 'pending') {
+  src/modules/billing/app/routes/chargesAdmin.routes.ts:53 [select] if (charge.status === 'paid') return res.json({ ok: true, status: 'already_paid' });
+  src/modules/billing/app/routes/chargesAdmin.routes.ts:54 [select] if (charge.status !== 'pending') return res.status(409).json({ error: 'charge_not_pending' });
+  src/modules/billing/app/routes/mpWebhook.routes.ts:104 [payload] if (mpStatus === 'approved' && charge.status !== 'paid') {
+  src/modules/billing/app/routes/mpWebhook.routes.ts:255 [payload] } else if (['rejected', 'cancelled'].includes(mpStatus) && charge.status === 'pending') {
+  src/modules/billing/app/routes/mpWebhook.routes.ts:265 [payload] console.log(`[mpWebhook] Estado MP '${mpStatus}' para charge ${chargeId} (ya en '${charge.status}') — sin cambios`);
+  src/modules/jobs/app/routes/jobs.routes.ts:767 [select] status: quote.charge.status,
+  src/modules/system/quoteAdmin.ts:106 [payload] typeof q.charge.status === 'string'
+  src/modules/system/quoteAdmin.ts:107 [payload] ? q.charge.status.toLowerCase()
+  src/modules/system/quoteAdmin.ts:317 [payload] status: quote.charge.status,
+  src/modules/exports/domain/exportData.ts:260 [payload] ch.status,
+  src/modules/system/app/routes/invoicesAdmin.routes.ts:293 [select] if (cobro?.status !== 'paid') return null;
+  src/modules/system/app/routes/invoicesAdmin.routes.ts:422 [select] <tr><th>Estado del cobro</th><td>${esc(invoice.charge?.status ?? '—')}</td></tr>
+   por modelo: Charge 39 · Quote 37 · Invoice 17 · Job 5 · TeamMember 3 · WhatsAppMessage 1
+   por select: Quote 12 · Charge 5 · WhatsAppMessage 4 · TeamMember 3 · Merchant 2 · Invoice 1 · Job 1
+   FUERA: 832 son llamadas `.status(…)` (res.status) sobre algo que no es un modelo
+   SIN JUZGAR: 25 accesos `.status` sobre un receptor `any` · 87 lecturas sobre un tipo que no es un modelo de Prisma ni un select
+     otro · 24 · src/modules/jobs/app/routes/albaranes.routes.ts
+     otro · 12 · src/modules/jobs/app/routes/partes.routes.ts
+     otro · 5 · src/modules/messaging/domain/whatsappLog.service.ts
+     otro · 5 · src/integrations/gemini.ts
+     otro · 4 · src/modules/exports/app/routes/exports.routes.ts
+     otro · 3 · src/modules/system/invoiceAdmin.ts
+     otro · 3 · src/modules/billing/domain/cobros.service.ts
+     otro · 3 · src/modules/metrics/domain/metricasEquipo.ts
+     otro · 2 · src/modules/messaging/domain/registroDeEnvios.ts
+     otro · 2 · src/modules/billing/domain/envioDelDocumento.ts
+     otro · 2 · src/modules/billing/app/routes/mpWebhook.routes.ts
+     otro · 2 · src/modules/quotes/domain/expire.service.ts
+     otro · 2 · src/modules/system/app/routes/quotesAdmin.routes.ts
+     otro · 2 · src/modules/system/app/routes/invoicesAdmin.routes.ts
+     otro · 2 · src/modules/metrics/domain/actividadEquipo.ts
+     otro · 2 · src/modules/system/app/routes/quoteDecisionLanding.routes.ts
+     otro · 1 · src/integrations/whatsapp.ts
+     otro · 1 · src/modules/billing/app/routes/stripe.routes.ts
+     otro · 1 · src/modules/billing/app/routes/psp.routes.ts
+     otro · 1 · src/modules/billing/app/routes/receipt.routes.ts
+     otro · 1 · src/modules/jobs/domain/dineroDelTrabajo.ts
+     otro · 1 · src/modules/jobs/app/routes/jobs.routes.ts
+     otro · 1 · src/modules/jobs/domain/presupuestosParaAlbaran.ts
+     otro · 1 · src/modules/jobs/domain/precarga.service.ts
+     otro · 1 · src/modules/invoicing/domain/libroRegistro.ts
+     otro · 1 · src/modules/products/app/routes/products.routes.ts
+     otro · 1 · src/modules/team/domain/teamOverview.service.ts
+     otro · 1 · src/modules/quoteRequests/app/routes/quoteRequests.routes.ts
+     any · 6 · src/modules/ai/app/routes/ai.routes.ts
+     any · 3 · src/modules/jobs/app/routes/jobs.routes.ts
+     any · 3 · src/modules/exports/app/routes/exports.routes.ts
+     any · 2 · src/integrations/whatsapp.ts
+     any · 2 · src/core/http/roleCapabilities.ts
+     any · 2 · src/modules/quotes/app/routes/quotes.routes.ts
+     any · 2 · src/modules/quoteRequests/app/routes/quoteRequests.routes.ts
+     any · 1 · src/integrations/mercadopago.ts
+     any · 1 · src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts
+     any · 1 · src/modules/system/quoteAdmin.ts
+     any · 1 · src/modules/system/app/routes/quotesAdmin.routes.ts
+     any · 1 · src/modules/system/app/routes/invoicesAdmin.routes.ts
+
+== CONTROL
+  OK   CERO · el árbol real no trae ningún zz1532 — 0 apariciones
+  OK   POSITIVO · escritura con literal — data.status y where.status
+  OK   POSITIVO · escritura por fábrica (esparcido) — ...fabrica1532()
+  OK   POSITIVO · delegado por corchete — ['charge']
+  OK   POSITIVO · escritura anidada desde otro modelo — invoice → charge.update
+  OK   POSITIVO · SQL crudo — UPDATE charges
+  OK   POSITIVO · delegado suelto — const suelto = prisma.charge
+  OK   POSITIVO · lectura tipada de Charge.status — 3 en la siembra
+  OK   CERO · la lectura de Invoice.status NO sale como de cobro — f.status y q.status
+  OK   POSITIVO · lectura de un cobro traído con select — prisma.charge.findFirst({ select })
+  OK   POSITIVO · lectura de un cobro traído como relación con select — invoice → charge: { select }
+  OK   La siembra no mueve lo demás — puertas 40/40 · lecturas 44/44
+EXIT=0

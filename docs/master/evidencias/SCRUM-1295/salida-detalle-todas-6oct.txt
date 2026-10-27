@@ -1,0 +1,148 @@
+POBLACIÓN · 43 sesiones «s*» · 582 ediciones dentro del repo en 144 ficheros · 328 fuera
+RESUMEN · PASA 582
+   × 9 PASA (contenedor de S2) · public/dashboard/css/styles.css
+   × 2 PASA (dueño sin puesto: «**S0**, sólo lo que sea verificación o censo de consulta») · scripts/_censo-convenio-microcopy-declarados.json
+   × 1 PASA (dueño sin puesto: «**S0**, sólo lo que sea verificación o censo de consulta») · scripts/_censo-fecha-sin-zona.mjs
+   ×14 PASA (dueño sin puesto: «**S0**, sólo lo que sea verificación o censo de consulta») · scripts/_censo-gemelo-crudo.mjs
+   ×11 PASA (dueño sin puesto: «**S0**, sólo lo que sea verificación o censo de consulta») · scripts/_trinquete-de-zona.mjs
+   ×13 PASA (dueño sin puesto: «**S0**, sólo lo que sea verificación o censo de consulta») · scripts/traspaso-derivado.mjs
+   × 8 PASA (dueño sin puesto: «**S0**, sólo lo que sea verificación o censo de consulta») · scripts/trinquete-de-zona.mjs
+   × 1 PASA (dueño sin puesto: «**S4** el README; cada registro, el puesto que usa el texto») · docs/microcopy/2026-09-28-SCRUM-1215-anadir-al-parte.md
+   × 1 PASA (dueño sin puesto: «**S4** el README; cada registro, el puesto que usa el texto») · docs/microcopy/2026-10-02-SCRUM-1375-facturacion-del-albaran.md
+   × 1 PASA (dueño sin puesto: «**S4** el README; cada registro, el puesto que usa el texto») · docs/microcopy/2026-10-06-SCRUM-1215-hoja-facturar-lo-entregado.md
+   × 1 PASA (dueño sin puesto: «**S4** el README; cada registro, el puesto que usa el texto») · docs/microcopy/2026-10-06-SCRUM-1302-campo-que-no-se-guarda.md
+   × 1 PASA (dueño sin puesto: «**S4** el README; cada registro, el puesto que usa el texto») · docs/microcopy/2026-10-06-SCRUM-1302-ordenar-que-falla.md
+   × 1 PASA (dueño sin puesto: «**S4** el README; cada registro, el puesto que usa el texto») · docs/microcopy/2026-10-06-SCRUM-1431-rechazo-fallo-nuestro.md
+   × 5 PASA (dueño sin puesto: «**S4** el README; cada registro, el puesto que usa el texto») · docs/microcopy/2026-10-06-SCRUM-1443-presupuesto-rapido-fallos.md
+   × 1 PASA (dueño sin puesto: «**S4** el README; cada registro, el puesto que usa el texto») · docs/microcopy/2026-10-06-SCRUM-1460-recordatorio-de-la-copia.md
+   × 3 PASA (dueño sin puesto: «**S4** el README; cada registro, el puesto que usa el texto») · docs/microcopy/2026-10-06-SCRUM-1465-envio-que-no-sale.md
+   × 2 PASA (dueño sin puesto: «**S4** el README; cada registro, el puesto que usa el texto») · docs/microcopy/2026-10-06-SCRUM-1465-tope-por-cliente-y-correo.md
+   × 1 PASA (dueño sin puesto: «**S4** el README; cada registro, el puesto que usa el texto») · docs/microcopy/2026-10-06-SCRUM-1476-titulos-de-la-pestana.md
+   × 1 PASA (dueño sin puesto: «**S4** el README; cada registro, el puesto que usa el texto») · docs/microcopy/2026-10-06-SCRUM-1482-ficha-sin-numero-mientras-carga.md
+   × 1 PASA (dueño sin puesto: «**S4** el README; cada registro, el puesto que usa el texto») · docs/microcopy/2026-10-06-SCRUM-1491-desplazamiento-numero-entero.md
+   × 1 PASA (dueño sin puesto: «**orquestador de Luis**») · docs/equipo/limites-del-fundador.md
+   × 2 PASA (dueño sin puesto: «**orquestador de Luis**») · docs/equipo/orquestador.md
+   × 1 PASA (dueño sin puesto: «**un jefe**») · .claude/hooks/latido-arranque.mjs
+   × 7 PASA (dueño sin puesto: «cada puesto, la suya») · docs/equipo/cicatrices/S0.md
+   × 1 PASA (dueño sin puesto: «cada puesto, la suya») · docs/equipo/cicatrices/S1.md
+   × 2 PASA (dueño sin puesto: «cada puesto, la suya») · docs/equipo/cicatrices/S2.md
+   × 1 PASA (dueño sin puesto: «quien trabaja el ticket») · docs/master/SCRUM-1100.md
+   × 2 PASA (dueño sin puesto: «quien trabaja el ticket») · docs/master/SCRUM-1215.md
+   × 4 PASA (dueño sin puesto: «quien trabaja el ticket») · docs/master/SCRUM-1282.md
+   × 1 PASA (dueño sin puesto: «quien trabaja el ticket») · docs/master/SCRUM-1295.md
+   × 2 PASA (dueño sin puesto: «quien trabaja el ticket») · docs/master/SCRUM-1302.md
+   × 3 PASA (dueño sin puesto: «quien trabaja el ticket») · docs/master/SCRUM-1335.md
+   × 2 PASA (dueño sin puesto: «quien trabaja el ticket») · docs/master/SCRUM-1431.md
+   × 3 PASA (dueño sin puesto: «quien trabaja el ticket») · docs/master/SCRUM-1443.md
+   × 1 PASA (dueño sin puesto: «quien trabaja el ticket») · docs/master/SCRUM-1444.md
+   × 1 PASA (dueño sin puesto: «quien trabaja el ticket») · docs/master/SCRUM-1450.md
+   × 4 PASA (dueño sin puesto: «quien trabaja el ticket») · docs/master/SCRUM-1452.md
+   × 1 PASA (dueño sin puesto: «quien trabaja el ticket») · docs/master/SCRUM-1453.md
+   × 2 PASA (dueño sin puesto: «quien trabaja el ticket») · docs/master/SCRUM-1454.md
+   × 1 PASA (dueño sin puesto: «quien trabaja el ticket») · docs/master/SCRUM-1458.md
+   × 1 PASA (dueño sin puesto: «quien trabaja el ticket») · docs/master/SCRUM-1459.md
+   × 2 PASA (dueño sin puesto: «quien trabaja el ticket») · docs/master/SCRUM-1460.md
+   × 1 PASA (dueño sin puesto: «quien trabaja el ticket») · docs/master/SCRUM-1462.md
+   × 2 PASA (dueño sin puesto: «quien trabaja el ticket») · docs/master/SCRUM-1463.md
+   × 9 PASA (dueño sin puesto: «quien trabaja el ticket») · docs/master/SCRUM-1464.md
+   ×10 PASA (dueño sin puesto: «quien trabaja el ticket») · docs/master/SCRUM-1465.md
+   × 2 PASA (dueño sin puesto: «quien trabaja el ticket») · docs/master/SCRUM-1468.md
+   × 1 PASA (dueño sin puesto: «quien trabaja el ticket») · docs/master/SCRUM-1469.md
+   × 1 PASA (dueño sin puesto: «quien trabaja el ticket») · docs/master/SCRUM-1473.md
+   × 2 PASA (dueño sin puesto: «quien trabaja el ticket») · docs/master/SCRUM-1474.md
+   × 2 PASA (dueño sin puesto: «quien trabaja el ticket») · docs/master/SCRUM-1475.md
+   × 4 PASA (dueño sin puesto: «quien trabaja el ticket») · docs/master/SCRUM-1476.md
+   × 1 PASA (dueño sin puesto: «quien trabaja el ticket») · docs/master/SCRUM-1479.md
+   × 3 PASA (dueño sin puesto: «quien trabaja el ticket») · docs/master/SCRUM-1480.md
+   × 1 PASA (dueño sin puesto: «quien trabaja el ticket») · docs/master/SCRUM-1482.md
+   × 2 PASA (dueño sin puesto: «quien trabaja el ticket») · docs/master/SCRUM-1483.md
+   × 2 PASA (dueño sin puesto: «quien trabaja el ticket») · docs/master/SCRUM-1485.md
+   × 1 PASA (dueño sin puesto: «quien trabaja el ticket») · docs/master/SCRUM-1486.md
+   × 2 PASA (dueño sin puesto: «quien trabaja el ticket») · docs/master/SCRUM-1491.md
+   × 2 PASA (sin regla) · docs/master/evidencias/SCRUM-1100d/sonda-flag.mjs
+   × 5 PASA (sin regla) · docs/master/evidencias/SCRUM-1335b/banco-sembrado.mjs
+   × 1 PASA (sin regla) · docs/master/evidencias/SCRUM-1480/lista-de-la-fila-de-s3.txt
+   × 2 PASA (sin regla) · docs/master/evidencias/SCRUM-1480/recuento-de-la-fila-general.mjs
+   × 1 PASA (sin regla) · docs/master/evidencias/SCRUM-1486/mutar-1486.mjs
+   × 8 PASA (sin regla) · tests/scrum1070-vivas-relevo.test.mjs
+   × 2 PASA (sin regla) · tests/scrum1100d-el-rojo-dice-lo-que-sabe.test.mjs
+   × 2 PASA (sin regla) · tests/scrum1198-cliente-nuevo-sin-telefono.test.mjs
+   × 1 PASA (sin regla) · tests/scrum1215d-hoja-facturar-lo-entregado.test.mjs
+   × 3 PASA (sin regla) · tests/scrum1230-colocar-lineas-dictadas.test.mjs
+   × 1 PASA (sin regla) · tests/scrum1302b-campo-que-no-se-guarda.test.mjs
+   × 2 PASA (sin regla) · tests/scrum1302c-ordenar-que-falla-no-borra-la-propuesta.test.mjs
+   × 3 PASA (sin regla) · tests/scrum1350-latido.test.mjs
+   × 8 PASA (sin regla) · tests/scrum1351-viaje-firma-sin-red-albaran.test.mjs
+   × 1 PASA (sin regla) · tests/scrum1415-nombres-construidos.test.mjs
+   × 4 PASA (sin regla) · tests/scrum1424-ya-esta.test.mjs
+   × 6 PASA (sin regla) · tests/scrum1427-traspaso-derivado.test.mjs
+   × 5 PASA (sin regla) · tests/scrum1431-rechazo-escapado.test.mjs
+   × 8 PASA (sin regla) · tests/scrum1443-rapido-dice-que-ha-pasado.test.mjs
+   ×10 PASA (sin regla) · tests/scrum1444-el-numero-de-la-pagina-es-el-del-papel.test.mjs
+   × 1 PASA (sin regla) · tests/scrum1444b-el-servidor-manda-el-numero-hecho.test.mjs
+   × 1 PASA (sin regla) · tests/scrum1450-lista-albaranes-facturacion-con-palabras.test.mjs
+   × 1 PASA (sin regla) · tests/scrum1452-gemelo-crudo.test.mjs
+   × 1 PASA (sin regla) · tests/scrum1453-latido-sin-auto-merge.test.mjs
+   × 2 PASA (sin regla) · tests/scrum1458-vigia-main-parado.test.mjs
+   × 1 PASA (sin regla) · tests/scrum1459-latido-lee-al-vigia.test.mjs
+   × 2 PASA (sin regla) · tests/scrum1462-cliente-envuelve-en-la-tarjeta.test.mjs
+   × 3 PASA (sin regla) · tests/scrum1463-latido-qa-y-vigia-callado.test.mjs
+   × 5 PASA (sin regla) · tests/scrum1464-hueco-para-el-boton-de-ayuda.test.mjs
+   × 3 PASA (sin regla) · tests/scrum1465-lo-que-salio-salio.test.mjs
+   × 9 PASA (sin regla) · tests/scrum1465b-las-frases-del-envio.test.mjs
+   ×11 PASA (sin regla) · tests/scrum1473-latido-disco-y-barrido.test.mjs
+   × 1 PASA (sin regla) · tests/scrum1474-latido-relevo.test.mjs
+   × 2 PASA (sin regla) · tests/scrum1475-el-parte-trae-su-aviso-a-la-vista.test.mjs
+   × 2 PASA (sin regla) · tests/scrum1476-titulos-de-la-pagina-del-locale.test.mjs
+   × 1 PASA (sin regla) · tests/scrum1482-el-panel-no-ensena-el-id-de-la-tabla.test.mjs
+   × 2 PASA (sin regla) · tests/scrum1483-la-busqueda-manda-y-busca-el-numero.test.mjs
+   × 4 PASA (sin regla) · tests/scrum1485-censo-rutas-de-maquina.test.mjs
+   × 4 PASA (sin regla) · tests/scrum1486-insertbefore-del-banco.test.mjs
+   × 2 PASA (sin regla) · tests/scrum1489-la-busqueda-recorta-al-tecnico.test.mjs
+   × 1 PASA (sin regla) · tests/scrum1491-desplazamiento-es-un-numero-entero.test.mjs
+   × 3 PASA (sin regla) · tests/scrum264-copy-que-llega-al-cliente.test.mjs
+   × 2 PASA (sin regla) · tests/scrum301-albaranes-seccion.test.mjs
+   × 3 PASA (sin regla) · tests/scrum419-ci-declara-lo-que-no-corre.test.mjs
+   × 5 PASA (sin regla) · tests/scrum514-aprobado-y-aplicado.test.mjs
+   × 1 PASA (sin regla) · tests/scrum596-la-nota-interna-no-sale.test.mjs
+   × 1 PASA (sin regla) · tests/scrum622-desconocido-no-es-verde.test.mjs
+   × 2 PASA (sin regla) · tests/scrum723-guard-contra-su-base.test.mjs
+   × 3 PASA (sin regla) · tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs
+   × 6 PASA (sin regla) · tests/scrum813-trinquete-de-zona.test.mjs
+   × 1 PASA (sin regla) · tests/scrum839c-la-pasada-se-ejecuta.test.mjs
+   × 2 PASA (sin regla) · tests/scrum899c-relevar-y-contexto.test.mjs
+   ×16 PASA (suyo) · docs/equipo/00-normas-comunes.md
+   × 1 PASA (suyo) · docs/equipo/00-normas-siempre.md
+   × 1 PASA (suyo) · docs/equipo/afirmaciones-verificadas.md
+   ×11 PASA (suyo) · docs/equipo/dos-equipos.md
+   × 2 PASA (suyo) · docs/equipo/orquestador-autonomo.md
+   ×10 PASA (suyo) · public/dashboard/js/albaranDetailView.js
+   × 5 PASA (suyo) · public/dashboard/js/albaranesView.js
+   × 1 PASA (suyo) · public/dashboard/js/globalSearch.js
+   ×10 PASA (suyo) · public/dashboard/js/homeView.js
+   × 4 PASA (suyo) · public/dashboard/js/jobDetailView.js
+   ×22 PASA (suyo) · public/dashboard/js/parteDetailView.js
+   × 2 PASA (suyo) · public/dashboard/js/quotesDetailView.js
+   × 3 PASA (suyo) · scripts/equipo/barrer-jobs.mjs
+   ×10 PASA (suyo) · scripts/equipo/censo-rutas-de-maquina.mjs
+   × 2 PASA (suyo) · scripts/equipo/disco.mjs
+   × 8 PASA (suyo) · scripts/equipo/gasto-arranque.mjs
+   ×55 PASA (suyo) · scripts/equipo/latido.mjs
+   × 5 PASA (suyo) · scripts/equipo/sesion.mjs
+   × 7 PASA (suyo) · scripts/equipo/ya-esta.mjs
+   × 5 PASA (suyo) · scripts/meta-guard-mutaciones.mjs
+   × 6 PASA (suyo) · scripts/vigia-atascados.mjs
+   × 7 PASA (suyo) · scripts/vigia-pasada.mjs
+   × 1 PASA (suyo) · src/core/http/adminRouteDeclarations.ts
+   × 7 PASA (suyo) · src/core/i18n/locales.ts
+   × 2 PASA (suyo) · src/modules/messaging/domain/email.service.ts
+   × 2 PASA (suyo) · src/modules/quotes/domain/quoteNumber.service.ts
+   × 2 PASA (suyo) · src/modules/quotes/domain/revision.ts
+   × 1 PASA (suyo) · src/modules/quotes/domain/sendQuote.service.ts
+   × 9 PASA (suyo) · src/modules/search/app/routes/search.routes.ts
+   ×13 PASA (suyo) · src/modules/system/app/routes/quoteDecisionLanding.routes.ts
+   × 6 PASA (suyo) · src/modules/system/app/routes/quotesAdmin.routes.ts
+   × 6 PASA (suyo) · src/modules/system/quoteAdmin.ts
+   × 8 PASA (suyo) · tests/_banco-vistas.mjs
+FUERA (carpeta, recortada a 60) · 62× C:\Users\Admin\.claude\projects\D--MILLONARIO-cobroFlash-cob | 58× C:\Users\Admin\.claude\projects\d--MILLONARIO-cobroFlash-cob | 22× D:\MILLONARIO\cobroFlash\sondas-s2 | 20× D:\MILLONARIO\cobroFlash\tmp-s5-6octe | 12× C:\Users\Admin\AppData\Local\Temp | 12× C:\Users\Admin\.claude\jobs\9efc6625\tmp
+EXIT=0

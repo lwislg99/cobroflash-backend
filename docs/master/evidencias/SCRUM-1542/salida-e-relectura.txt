@@ -1,0 +1,8 @@
+PROGRAMADO: paginas=3 declarados=213 traidos=213 del 2026-09-02T22:04:00Z al 2026-10-13T08:37:21Z
+  por evento/conclusion: {"schedule/success":207,"schedule/failure":5,"workflow_dispatch/success":1}
+  failure por dia: {"2026-09-30":1,"2026-09-25":3,"2026-09-24":1}
+  ultimo failure: 2026-09-30T07:36:34Z 36684679677 | primero: 2026-09-24T22:46:54Z
+  CADENCIA desde 6-oct: ejecuciones schedule=30 (el cron pide 12 al dia) | hueco entre dos: min=3.2 h mediana=6.2 h max=11.3 h | huecos de mas de 6 h: 17 de 29
+  CADENCIA historia: 212 en 40.4 dias = 5.2 al dia
+ISSUES: filas=2382 (issues=2, PR=2380) con-la-marca=0 por-titulo=0
+  CONTROL POSITIVO (issues cualesquiera, tiene que ser >0): 2 | CONTROL CERO (marca al reves): 0

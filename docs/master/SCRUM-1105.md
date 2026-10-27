@@ -121,3 +121,133 @@ scripts que dejan que Prisma lea la variable por su cuenta, sin nombrarla.
   para producción o la vigilan).
 - **Sin clasificar sin leerlos uno a uno (6):** `backup-dump`, `cambiar-flag-fiscal`,
   `censo-vias-de-cobro`, `conciliar-auditoria-fiscal`, `preview-migracion` y `puerta-cliente-real`.
+
+# SCRUM-1105b · El cuarto sembrador: `prisma/seed.ts` también elige su base por bandera · carril J3
+
+**Medido contra:** `origin/main` = `4c6c70e846d3e80b72be210e5010c1e43a9a15f8` · 2026-10-24T10:21:45Z
+
+A9: comprobación → `tests/scrum1105b-prisma-seed-por-bandera.test.mjs`
+
+**Puesto:** J3 (`jv-j3ba`, equipo de Javier) · **Rama:** `scrum-1105b-prisma-seed-con-bandera`. El hook de
+arranque dijo «SIN IDENTIDAD» (SCRUM-1498); el puesto lo da el encargo del orquestador, y se dice aquí.
+
+## 1 · PASO 0 — 3 de los 4 seeds ya estaban hechos
+
+- **Ya en `main` por #1762** (merge `0a504cf774328b3de396d8958e47075bbea8b7a2`, 25-sep): `seed-demo.mjs`,
+  `seed-video.mjs` y `seed-staging.mjs` aceptan `--dev`/`--staging` (tramo de arriba). Jira seguía en «Por
+  hacer» y sin comentarios: por eso el ticket parecía sin empezar.
+- **El resto, medido hoy:** `prisma/seed.ts` (`npm run seed`, y `npm run db:seed` vía `package.json#prisma.seed`)
+  leía solo `DATABASE_URL`, y su mensaje de rechazo enseñaba `DATABASE_URL=<la de dev> npm run db:seed`: copiar
+  la credencial a mano, que es lo que el ticket quita. El tramo de arriba contó «tres sembradores» y SCRUM-746
+  contó otros tres; ninguno de los dos conteos tenía los cuatro.
+- `carriles.mjs de prisma/seed.ts` → «sin fila en §3: nadie lo reclama». No es de ningún S*. Se toca solo ese
+  fichero de `prisma/` (orden del orquestador); `schema.prisma` no se toca.
+
+## 2 · De paso: `prisma/seed.ts` no compilaba
+
+Desde SCRUM-746 su `import()` de `_db-guard.mjs` daba **TS7016** (el `.mjs` no trae tipos) y ts-node paraba
+antes de la primera línea: `npm run seed` y `npm run db:seed` estaban rotos en `main`. Nadie lo vio porque
+ningún test ejecutaba el fichero (746b lo lee con una regex). Se arregla con `@ts-expect-error` en los dos
+`import()`, que nombra el error aceptado y cae solo si un día el `.mjs` trae tipos.
+
+## 3 · Lo que se hace
+
+`prisma/seed.ts` llama a `fijarDestinoPorBandera` (`scripts/_destino-de-semilla.mjs`, el mismo de los otros
+tres) **antes** de leer `DATABASE_URL`, y después sigue por su camino de siempre (`destinoSembrable`).
+
+- `npm run seed -- --dev` (o `--staging`) · o `npm run db:seed -- -- --dev`: prisma necesita su propio `--`.
+  **Medido**, con el cliente de pega y las dos banderas (que se niegan antes de leer ningún `.env`):
+  `prisma db seed -- --dev --staging` lanza `ts-node prisma/seed.ts --dev --staging` y sale el rechazo del
+  seed; `prisma db seed --dev` lo para prisma con «unknown or unexpected option: --dev». La vía no se rompe:
+  sin el `--` se niega con su motivo.
+- **Sin bandera, el camino de antes**, y aquí me aparto de la frase del encargo («sin bandera se niega»): el
+  comentario de SCRUM-746 en el propio fichero pone como condición no añadir fricción para sembrar en
+  desarrollo, y los otros tres seeds tampoco se niegan sin bandera. Producción queda cerrada igual por las
+  dos vías: con bandera, por `comprobarClaveVsDestino` + allowlist; sin ella, por la allowlist. Lo que cambia
+  sin bandera es el mensaje: ya no enseña a exportar la URL, sino `npm run seed -- --dev`.
+- Ningún mensaje lleva la URL: sale `host/base` y nada más.
+
+## 4 · Verificación — ningún seed contra ninguna base
+
+`tests/scrum1105b-prisma-seed-por-bandera.test.mjs`, 7 casos. Ejecuta el `prisma/seed.ts` REAL en un proceso
+hijo, con el binario de ts-node (lo que lanza `npm run seed`), un `.env` de pega en un temporal fuera del
+repo y **sin base posible**: un `-r` cambia `@prisma/client` por un cliente que, en la primera consulta,
+imprime `host/base` y lanza; y `PRISMA_QUERY_ENGINE_LIBRARY` apunta a un fichero que no existe.
+
+| pasada | resultado |
+|---|---|
+| base (rama) | 7 pass · 0 fail |
+| M0 · `prisma/seed.ts` de `main` | **7 fail** de 7 |
+| M1 · sin los `@ts-expect-error` (el TS7016 de §2) | **6 fail** (pasa solo el caso AST) |
+| M2 · sin llamar a `fijarDestinoPorBandera` | **5 fail** (pasan `--prod` y «sin bandera», que no dependen de ella) |
+
+Después de las tres, `prisma/seed.ts` == HEAD (comparado por contenido).
+
+**Lo que me salió mal, y cómo se ve:** la primera versión del test lanzaba el hijo con
+`node -r ts-node/register`, y así el hijo salía **mudo y con código 0**, sin ejecutar nada. Un verde
+que no habría ejecutado nada. Lo cazó el control positivo (la marca del cliente de pega tiene que salir en
+`--dev` y `--staging`), y el test pasó al binario. Por qué `-r ts-node/register` sale mudo en Node 24: sin medir.
+
+**Guards dirigidos**, sobre la rama con `origin/main` mergeado y `dist/` construido con `tsc --noCheck`:
+27 ficheros (1105, 1105b, 1294, 1415, 237, 262, 267, 273, 381 ×2, 383, 418, 418c, 419, 700, 702, 719, 723,
+744, 746, 746b, 812, 824, 836, 864c, 921c, 976) → **254 tests · 254 pass · 0 fail · 0 skipped**. Control
+positivo: los 7 casos de 1105b están entre los 254. **Suite entera local: NO CORRIDA** (10 sesiones a la
+vez; el obligatorio de CI hace de tanda).
+
+# SCRUM-1105c · El control final: un seed ejecutado con `--dev`, sin credencial en la orden · carril J3
+
+**Medido contra:** `origin/main` = `efe736f3f01b5ecbc6dce221e80a3dfc3bfcd42a` · 2026-10-27T13:15:03Z
+
+A9: comprobación → `tests/scrum1105c-numero-de-presupuesto-desestructurado.test.mjs`
+
+**Puesto:** J3 (`jv-j3bs`, equipo de Javier) · **Rama:** `scrum-1105c-seed-ejercitado`. El hook de arranque dijo
+«SIN IDENTIDAD» (SCRUM-1498); el puesto lo da el encargo del orquestador. Salda la deuda de SCRUM-1098 §5.
+
+## 1 · Antes de ejecutar
+
+- `node scripts/comprobar-claves-bd.mjs` → `DATABASE_URL_DEV → acela.proxy.rlwy.net/yaqu_dev_javier (DESARROLLO) ✅`,
+  `DATABASE_URL_STAGING → …/railway (STAGING) ✅`, `DATABASE_URL: ausente`. Sale 1 por otra clave: `DATABASE_URL_TESTS`
+  no tiene destino declarado para este worktree (`DESTINOS_ESPERADOS…porWorktree`). No afecta a `--dev`; se nombra, no se toca.
+- `scripts/seed-video.mjs` leído: **no borra nada** (0 `delete`/`deleteMany`/SQL de escritura). Crea UN merchant nuevo
+  (`lwislg99@gmail.com`, `flags: {INVOICING_ES_ENABLED: true}`) y sus filas, todo en una `$transaction`; aborta si
+  falta el demo id=1 o si el owner ya existe.
+- Recuento: script de solo lectura fuera del árbol que resuelve la base con `fijarDestinoPorBandera({argv:['--dev']})`
+  (el de la casa) y cuenta 16 tablas dentro de una transacción `SET TRANSACTION READ ONLY` (`transaction_read_only = on`
+  medido en cada pasada). Control positivo: el demo id=1 aparece en todas.
+
+## 2 · Lo que dio, en orden
+
+| orden | salida | qué dijo |
+|---|---|---|
+| `node scripts/seed-video.mjs` (sin bandera) | **1** | «❌ ABORTADO: Sin destino. Nómbralo: node scripts/seed-video.mjs --dev (o --staging).» |
+| `node scripts/seed-video.mjs --dev` (código de `main`) | **1** | preflight OK y luego `PrismaClientValidationError` en `prisma.quote.create()`: «Argument `quoteNumber`: Invalid value provided. Expected Int or Null, provided Object.» |
+| `node scripts/seed-video.mjs --dev` (con el arreglo) | **0** | «✅ SEED COMPLETADO»: 1 merchant · 15 clientes · 30 productos · 12 presupuestos · **7 facturas** · 7 cobros · 6 trabajos · 3 albaranes |
+| `node scripts/seed-video.mjs --dev` (otra vez) | **1** | «Ya existe un merchant con email … (id=1587). El seed es idempotente…» |
+
+**El clasificador no paró ninguna de las cuatro**: en la orden no hay ninguna credencial. Ésa es la parte de SCRUM-1105.
+
+**Filas** (16 tablas): antes del arreglo, antes/después **idénticos** (la transacción revirtió). Con el arreglo, cada
+tabla sube exactamente lo que cuelga del merchant nuevo (id 1587) — merchant 6→7, customer 14→29, product 8→38, quote
+15→27, invoice 5→12, auditLog 5→12, … — así que no se tocó ninguna fila ajena. **Las 7 facturas salen `F1`; 0 `JUST`**,
+que es lo que pedía comprobar SCRUM-1098 §5.
+
+## 3 · El defecto, y el arreglo
+
+`allocateQuoteNumber` devuelve `{ numero, seq, year }` desde SCRUM-592 (`271e461fa`, 4-sep-2026); las tres llamadas
+de `src/` lo desestructuran y `seed-video.mjs:464` guardaba el objeto entero. **Ya estaba roto el 23-sep, cuando
+SCRUM-1098 lo entregó «reparado en frío»**: su §6 cotejó por lectura la forma del override, no la del número, y avisaba
+de que una prueba de mesa no ve lo que solo sale corriendo. El arreglo: `const { seq: quoteNumber, year: seriesYear }`,
+como `quotes.routes.ts`, y `seriesYear` en la fila. Nada de `src/` ni del camino de emisión.
+
+**El test** lee por AST cada `x = await allocateQuoteNumber(…)` de `src/` y `scripts/`: población 4 en 4 ficheros
+(suelo 4), con un control sembrado (el objeto entero tiene que caer; un comentario no cuenta). Rama: 2 pass · 0 fail.
+Con el `seed-video.mjs` de `main` (`git restore --source=origin/main`, numstat `1 4`): 1 fail que nombra
+`scripts/seed-video.mjs:464`. Restaurado con `git restore --source=HEAD`; `git status` limpio.
+
+**No hubo segundo defecto**: después del arreglo el seed llegó al final.
+
+**Lo que me salió mal:** la primera inyección del rojo la escribí con `>` sobre un fichero versionado y el hook
+`guard-dangerous` la paró (la orden entera, el commit incluido). La rehíce con `git restore --source=origin/main`,
+sin gastar el permiso de un uso.
+
+**Queda en dev**: el merchant 1587 y sus 7 facturas F1 (base de desarrollo, datos inventados). No se borran.

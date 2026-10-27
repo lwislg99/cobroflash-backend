@@ -69,11 +69,14 @@ async function pagina(metodo, ruta, quote, body) {
   assert.ok(capa, `🔴 CIEGO: no encuentro ${metodo.toUpperCase()} ${ruta}`);
   const original = prisma.quote.findUnique;
   prisma.quote.findUnique = async () => quote;
+  // SCRUM-1302p · la página pregunta si hay una versión más reciente del grupo; aquí, ninguna.
+  const originalCount = prisma.quote.count;
+  prisma.quote.count = async () => 0;
   let html = '';
   const res = { setHeader() { return res; }, status() { return res; }, send(b) { html = String(b); return res; }, redirect() { return res; } };
   const manejador = capa.route.stack[capa.route.stack.length - 1].handle; // el último: delante va el parser del formulario
   try { await manejador({ params: { token: TOKEN }, query: {}, headers: {}, body }, res); }
-  finally { prisma.quote.findUnique = original; }
+  finally { prisma.quote.findUnique = original; prisma.quote.count = originalCount; }
   assert.ok(html.length > 0, '🔴 CIEGO: la ruta no ha contestado nada');
   return html;
 }

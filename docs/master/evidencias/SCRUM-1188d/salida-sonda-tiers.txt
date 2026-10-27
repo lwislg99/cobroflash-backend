@@ -1,0 +1,16 @@
+node sonda-tiers.mjs <raíz del árbol> <url del banco propio, loopback, base yaqu_tiers_test>
+Código en el árbol: origin/main ebd9bd8e9c4329edbdc35fffced5ff5b173f885c (ANTES del arreglo: la sonda no pasa por la ruta, habla con Prisma).
+Corrida el 9-oct-2026 hacia las 11:08Z.
+
+POBLACIÓN · base=yaqu_tiers_test · PostgreSQL 16.4 · @prisma/client 6.18.0
+{"caso":"SUELO · alta con tiers=[3] y cobro 50/50","ok":true,"leido":{"null_de_sql":false,"texto":"[{\"id\": \"good\"}, {\"id\": \"better\"}, {\"id\": \"best\"}]","tipo_json":"array","cobro_null":false,"cobro":"FIFTY_FIFTY"}}
+{"caso":"CONTROL NEGATIVO · update con una columna que no existe","ok":false,"clase":"PrismaClientValidationError","codigo":null,"ultima":"Unknown argument `columnaQueNoExiste`. Available options are marked with ?.","leido":{"null_de_sql":false,"texto":"[{\"id\": \"good\"}, {\"id\": \"better\"}, {\"id\": \"best\"}]","tipo_json":"array","cobro_null":false,"cobro":"FIFTY_FIFTY"}}
+{"caso":"CONTROL POSITIVO · update paymentTerms: null (texto anulable)","ok":true,"leido":{"null_de_sql":false,"texto":"[{\"id\": \"good\"}, {\"id\": \"better\"}, {\"id\": \"best\"}]","tipo_json":"array","cobro_null":true,"cobro":null}}
+{"caso":"update tiers: null (el `null` de JS, lo que llega del cable)","ok":true,"leido":{"null_de_sql":false,"texto":"null","tipo_json":"null","cobro_null":true,"cobro":null}}
+{"caso":"update tiers: Prisma.JsonNull","ok":true,"leido":{"null_de_sql":false,"texto":"null","tipo_json":"null","cobro_null":true,"cobro":null}}
+{"caso":"update tiers: Prisma.DbNull (tras reponer [3])","ok":true,"leido":{"null_de_sql":true,"texto":null,"tipo_json":null,"cobro_null":true,"cobro":null}}
+{"caso":"create tiers: null (lo que hace hoy el POST sin niveles)","ok":true,"leido":{"null_de_sql":false,"texto":"null","tipo_json":"null","cobro_null":true,"cobro":null}}
+{"caso":"create sin la clave tiers","ok":true,"leido":{"null_de_sql":true,"texto":null,"tipo_json":null,"cobro_null":true,"cobro":null}}
+{"caso":"create tiers: Prisma.DbNull","ok":true,"leido":{"null_de_sql":true,"texto":null,"tipo_json":null,"cobro_null":true,"cobro":null}}
+TESTIGO · 9 casos corridos
+EXIT=0

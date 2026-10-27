@@ -1,0 +1,154 @@
+# SCRUM-1449 · Pago con Mercado Pago: cuándo sale cada frase, medido ejecutando la ruta
+
+**Medido contra:** `origin/main` = `28166620c923253a3c2c350f415894e6fc2ed1f4` · 2026-10-07T16:43:17Z (hora de GitHub)
+
+A9: sin fallo que generalice — es una medición sin código; el fallo de la sesión (no medir el contexto a tiempo) va en la entrega y no depende de este ticket
+
+Sesión J1 (`jv-j1`, 7-oct), por encargo del orquestador de Javier. El ticket es del área J2 y J2 no
+tiene sesión hoy. **Sólo se mide: no se ha tocado `src/` ni se ha escrito ningún texto.**
+
+## Qué se hizo
+
+`docs/master/evidencias/SCRUM-1449/medir-1449.mjs` ejecuta las rutas reales de `dist/`
+(`payMp.routes`, `mpWebhook.routes`) con la base doblada, Mercado Pago doblado y el WhatsApp en
+dry-run, e imprime lo que contestan. Su salida de hoy está al lado, en `medido-2026-10-07.txt`.
+Población: 4 situaciones del enlace de pago, 4 estados de la página de resultado y 12 combinaciones
+de contacto del cliente con lo que dice Mercado Pago.
+
+## Lo que salió
+
+### 1 · «Mercado Pago no está configurado para este merchant.» no depende del negocio
+
+| situación | contesta | lo que lee el cliente |
+|---|---|---|
+| la plataforma no tiene token de Mercado Pago | 503, texto plano | «Mercado Pago no está configurado para este merchant.» |
+| la plataforma lo tiene | redirige al pago | — |
+| la plataforma lo tiene y Mercado Pago no contesta | 502, texto plano | «Error al conectar con Mercado Pago. Inténtalo de nuevo.» |
+
+La ruta lee `charge.merchant.mpAccessToken` y, si no hay, el token de la plataforma. Pero
+`mpAccessToken` no es una columna de `prisma/schema.prisma` (buscado por nombre: cero apariciones;
+control: `whatsappPhone` sí aparece), así que en una fila real nunca viene. **Lo único que decide el
+503 es la configuración de la plataforma**, igual para todos los negocios. La frase le dice al
+cliente que el problema es «de este merchant», y no lo es.
+
+**No medido:** si producción tiene ese token puesto. Es una clave y no se mira. Si lo tiene, el 503
+no sale nunca; si no lo tiene, sale siempre.
+
+### 2 · A esa ruta no lleva ningún enlace del producto
+
+`/pay/mp/<token>` sólo se construye en `charges.routes.ts` (`paymp_url`, en la respuesta de
+`POST /charges`), y nadie lee ese campo: buscado `paymp_url` y `/pay/mp/` en `src/` y `public/`,
+sólo aparecen ahí, en la propia ruta y en las URLs de retorno de Mercado Pago. Ninguna página de
+pago ni ningún mensaje ofrece ese enlace. Es lectura por búsqueda, no una navegación en yaqu.app.
+
+O sea: hoy un cliente sólo llega a estas tres frases si alguien le da la dirección a mano.
+
+### 3 · «Te notificaremos pronto» se cumple en 3 de 12
+
+La frase sale siempre que el cobro sigue pendiente al volver de Mercado Pago. Lo que el cliente
+recibe después:
+
+| contacto del cliente | pago aprobado | pago rechazado | sigue pendiente |
+|---|---|---|---|
+| teléfono y correo | 1 WhatsApp y 1 correo | nada | nada |
+| sólo teléfono | 1 WhatsApp | nada | nada |
+| sólo correo | 1 correo | nada | nada |
+| ni teléfono ni correo | nada | nada | nada |
+
+El ticket ya decía que sin teléfono ni correo no hay aviso. Lo que añade la medición: **si el pago
+se rechaza no se avisa a nadie, tenga el contacto que tenga.** El correo, además, depende de que la
+factura automática y su correo estén encendidos en la plataforma (aquí lo estaban).
+
+### 4 · De paso: la página de resultado pinta el importe en crudo al cliente
+
+En los cuatro estados sale «1419.87 EUR». Es el formato que SCRUM-931 retiró de lo que lee el
+cliente, y no está entre los once sitios de SCRUM-1436 (hallazgo 4). Fichero del carril J2.
+
+## Los textos: ya están firmados, no hay nada que redactar
+
+El comentario 18285 de este ticket (cuenta de Luis, 6-oct-2026) firma los tres. La decisión del
+fundador en SCRUM-1436, comentario 18734, dice que una firma de cualquiera de los dos jefes vale
+para los dos carriles. La etiqueta `sin-firma` del ticket estaba caducada.
+
+Contra lo medido:
+
+- **«Ahora mismo no se puede pagar con Mercado Pago. Contacta con el profesional.»** No nombra al
+  negocio como causa, que es lo que la medición pide. Su cierre es, letra por letra, el de la frase
+  de cobro vencido de la misma página.
+- **El 502 se queda como está**, dentro de la página de la casa.
+- **«Tu pago está siendo procesado.»** El recorte se sostiene: la promesa que quita falla en 9 de 12.
+
+## Lo que NO lleva
+
+- Ningún cambio de código. Construirlo es del carril J2, y el propio 18285 pone el límite: si hay
+  que cambiar cómo se decide el 503 o el 502, es flujo de cobro y se para.
+- Nada visto en yaqu.app, ni si el token de la plataforma existe en producción.
+- El aviso al cliente cuando el pago se rechaza: es una decisión de producto, no un texto.
+
+---
+
+# SCRUM-1449b · Los tres textos firmados, construidos: el 503 y el 502 en página
+
+**Medido contra:** `origin/main` = `00179a513a5fb11ca12d61fe25b1b2dec26b51ca` · 2026-10-23T09:30:01Z (hora de GitHub)
+
+A9: aviso → cicatriz J2 «tomé de control positivo del ls-remote la rama de un PR recién mergeado, que el merge había borrado, y el control dio 0; lo vi antes de fiarme y lo cambié por una rama viva» — no se pudo comprobar: el control lo escribe a mano cada sesión en su consola y ningún guard lo ve
+
+Sesión J2 (`jv-j2x`, 23-oct), carril J2. Rama `scrum-1449b-pagina-mercado-pago`.
+
+## Qué se hizo
+
+En `src/modules/billing/app/routes/payMp.routes.ts`, sólo el envoltorio y el texto (c.18285):
+
+- `GET /pay/mp/:token` sin token de Mercado Pago: el 503 contesta con una página (`avisoMpHtml`,
+  la misma tarjeta, fuente y colores que la página de resultado de ese fichero) y el literal firmado
+  «Ahora mismo no se puede pagar con Mercado Pago. Contacta con el profesional.».
+- Mercado Pago no contesta: el 502, en la misma página, con su texto de siempre.
+- Página de resultado con el cobro pendiente: «Tu pago está siendo procesado.», sin la promesa.
+- **No cambia qué rama contesta:** las dos condiciones (`if (!accessToken)` y el `catch`) están igual.
+
+Registro de la firma: `docs/microcopy/2026-10-06-SCRUM-1449-pago-mercado-pago.md`.
+
+## Cómo se copiaron los literales
+
+Leídos en ADF del comentario 18285 y guardados tal cual en
+`docs/master/evidencias/SCRUM-1449/firma-c18285.json`; el test extrae de ahí lo que espera. Ese
+salto (Jira → fichero) pasó por la sesión, así que `procedencia.mjs` lo coteja con una segunda
+fuente, los bytes de `payMp.routes.ts` en el sha base: el 502 casa entero, el recorte es el
+principio exacto de la frase vieja y el cierre del 503 es el de «Cobro vencido». La primera frase
+del 503 no estaba en el código y sólo la respalda Jira; no lleva ningún carácter fuera de ASCII.
+Control sembrado: el 502 sin una tilde sale «NO CASA». Salida: `procedencia-salida.txt`.
+
+## Medido
+
+- `tests/scrum1449b-la-pagina-de-mercado-pago.test.mjs`, handlers reales de `dist/` con la base y
+  Mercado Pago doblados. Población: 6 casos (control del instrumento, 503, 502, redirección al pago,
+  cobro pagado, resultado pendiente). **Rojo primero**, con el código de main: 3 caen y 3 pasan de 6,
+  y caen los tres del defecto (sin cabecera HTML en 503 y 502; la frase con la promesa). Con el arreglo: 6 de 6.
+- Mutación: los 7 mutantes viven en el test como `MUTACIONES_QUE_ME_TUMBAN` (catálogo del
+  meta-guard, SCRUM-1387), uno por pieza (las dos cabeceras, la página del 503, «merchant» de
+  vuelta, una tilde menos en el 502, la promesa de vuelta, y sin token llamando igual a Mercado
+  Pago). `mutar-1449b.mjs` los lee con `mutacionesDeclaradas` y los corre en local: base verde,
+  **los 7 caen por el caso que declaran**, fichero restaurado (`mutar-1449b-salida.txt`).
+  `npm run meta:mutaciones` entero no lo he corrido.
+- Vecinos: `guards:entrada` 15 de 15; los 5 de árbol entero que pide su salida, más 1387 y 745:
+  63 de 63. La tanda completa **no terminó**: la corté a los 590 s con 8.718 casos escritos y 28
+  caídos. Dos eran míos y los corregí (1294 y 1387); por el título, la mayoría son de este árbol
+  anidado sin `node_modules` ni cliente de Prisma propios (1199 lo leí: `express` sin resolver), y
+  tres ficheros enteros (534b, 553, 615) no los miré. Lo que no llegó a correr lo dice el obligatorio.
+- **Corrección, tras el primer obligatorio** (run 39935632392, 12.214 casos, 12.123 pasan, 2
+  caen): los dos rojos eran míos y ya habían caído en local, entre los que no leí. SCRUM-553 cazó
+  las regex `<h1>`/`<p>` del test, con el `>` pegado (ahora `<h1\b[^>]*>`); SCRUM-622 cazó en
+  `mutar-1449b.mjs` un `fail ? 'ROJO' : 'VERDE'` que daría verde sin saber (ahora es CIEGO salvo
+  que se vea pasar todo). Con el arreglo: 553, 622, 1387 y el test, 42 de 42; mutaciones, igual.
+
+## Lo que NO lleva
+
+- **Decisión mía que el orquestador puede tumbar:** el `<title>` de la página es el propio literal
+  seguido de « — YaQu», como el `${título} — YaQu` de la página de resultado. No hay palabra nueva,
+  pero la combinación no estaba en el código. La página no lleva el pie «Pago gestionado con
+  Mercado Pago» de la de resultado, porque ahí no se ha gestionado ningún pago.
+- Nada visto en yaqu.app: a `/pay/mp/<token>` no lleva ningún enlace del producto (medición de
+  J1, arriba), y sin un cobro con token no hay URL que abrir. Tampoco medido si producción tiene
+  `MP_ACCESS_TOKEN`.
+- Las dos decisiones que no son texto siguen abiertas: avisar al cliente si el pago se rechaza, y
+  si esta ruta se mantiene.

@@ -11,11 +11,35 @@
 // de la 49 aplicado (firma_token, enviado_para_firma_at):
 //   QA_DB_TEST=1 WHATSAPP_DRY_RUN=1 npm run test:staging
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-876g: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
+import { cortarSalida } from './_sin-salida.mjs'; // SCRUM-876g: el hecho, no la bandera
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 import { interceptarWaLog } from './_wa-log-sync.mjs'; // SCRUM-250/255: esperar la escritura, no el reloj
+import http from 'node:http';
+
+// `node:http` sin agente y no `fetch` (SCRUM-1218d): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de `fetch`
+// (status, headers.get, text, json). No sigue redirecciones: medido, las únicas 3xx son las de /auth/verify, que ya iban con `redirect: 'manual'`.
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    let d = ''; r.setEncoding('utf8');
+    r.on('data', (t) => { d += t; });
+    r.on('end', () => ok({
+      status: r.statusCode,
+      headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+      text: async () => d,
+      json: async () => JSON.parse(d),
+    }));
+  });
+  req.on('error', mal);
+  req.end(body);
+});
 
 // SCRUM-114 (reaplicado en SCRUM-126: el fix original no llegó a mergear — solo su
 // documentación en SUITE_REGRESION.md, "trampa 7"; el código se perdió en el camino).
@@ -23,7 +47,8 @@ import { interceptarWaLog } from './_wa-log-sync.mjs'; // SCRUM-250/255: esperar
 // fijarlo. ANTES de importar dist (config se congela al cargar).
 process.env.WHATSAPP_DRY_RUN = '1';
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+const CON_BANCO = URL_BANCO !== '';
+const ENABLED = process.env.QA_DB_TEST === '1' || CON_BANCO;
 const SIG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
 
 // SCRUM-255: aqui habia un sondeo de 3 s sobre `whatsAppMessage` -- la forma que SCRUM-250
@@ -47,7 +72,22 @@ async function moduloDeLog() {
   return (await import('../dist/modules/messaging/domain/whatsappLog.service.js')).default;
 }
 
-test('SCRUM-49: firma remota — enviar-para-firmar, página pública, firmar, auto-envío, tenancy', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-49: firma remota — enviar-para-firmar, página pública, firmar, auto-envío, tenancy', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
+  // SCRUM-876g · con el banco como destino este fichero corre en la tanda de CI. La bandera se
+  // asierta (el sender la lee en cada envío: `scrum876f-el-seco-se-decide-al-enviar`), pero lo que
+  // decide no es la bandera: se corta toda conexión que no sea de esta máquina, con su control
+  // positivo ANTES de la primera petición, y al acabar lo apuntado tiene que ser nada.
+  assert.equal(process.env.WHATSAPP_DRY_RUN, '1', 'este test exige WHATSAPP_DRY_RUN=1');
+  const corte = CON_BANCO ? cortarSalida() : null;
+  if (corte) {
+    await corte.controlPositivo();
+    t.after(() => {
+      const ajenos = corte.ajenos();
+      corte.restaurar();
+      assert.equal(corte.controlado, true, '🔴 CIEGO: el corte de salida no pasó su control');
+      assert.deepEqual(ajenos, [], '🔴 el test INTENTÓ salir de esta máquina con WHATSAPP_DRY_RUN=1 y el banco como destino');
+    });
+  }
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const server = app.listen(0);
@@ -77,7 +117,7 @@ test('SCRUM-49: firma remota — enviar-para-firmar, página pública, firmar, a
   const mkCookie = async (merchantId) => {
     const token = 'qa49-' + crypto.randomBytes(12).toString('hex');
     await prisma.authSession.create({ data: { merchantId, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) } });
-    const res = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
+    const res = await pedirSinAgente(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
     const cookie = (res.headers.get('set-cookie') || '').split(';')[0];
     assert.ok(cookie.startsWith('pf_session='), 'no se obtuvo cookie de sesión');
     return cookie;
@@ -90,7 +130,7 @@ test('SCRUM-49: firma remota — enviar-para-firmar, página pública, firmar, a
     // SCRUM-255: el interceptor se instala ANTES de la peticion -- la escritura de WA-0b nace
     // dentro de ella, asi que instalarlo despues no la veria.
     const wa1 = interceptarWaLog({ log: await moduloDeLog(), prisma });
-    const rSend = await fetch(`${base}/admin/albaranes/${albaran.id}/enviar-para-firmar`, { method: 'POST', headers: { cookie: cookieA, 'content-type': 'application/json' } });
+    const rSend = await pedirSinAgente(`${base}/admin/albaranes/${albaran.id}/enviar-para-firmar`, { method: 'POST', headers: { cookie: cookieA, 'content-type': 'application/json' } });
     assert.equal(rSend.status, 200, `enviar-para-firmar debe ser 200 y fue ${rSend.status}`);
     const sendBody = await rSend.json();
     assert.equal(sendBody.ok, true);
@@ -109,7 +149,7 @@ test('SCRUM-49: firma remota — enviar-para-firmar, página pública, firmar, a
     assert.ok(filaWa1, wa1.explicar('WA-0b: albaran_para_firmar_es registrado'));
 
     // (b) GET público /albaran/:token → 200, con nº, SIN teléfono ni email del cliente
-    const rPage = await fetch(`${base}/albaran/${token}`); // sin cookie: superficie pública
+    const rPage = await pedirSinAgente(`${base}/albaran/${token}`); // sin cookie: superficie pública
     assert.equal(rPage.status, 200, 'la página pública responde 200 con token válido');
     const html = await rPage.text();
     assert.ok(html.includes(albaran.numero), 'la página muestra el nº de albarán');
@@ -117,7 +157,7 @@ test('SCRUM-49: firma remota — enviar-para-firmar, página pública, firmar, a
     // RENDERIZA, pero no que `phone`/`email` serían encontrables si se filtraran. Se
     // comprueba contra la ficha AUTENTICADA del cliente, donde sí deben salir: si ahí
     // tampoco aparecen, el canario está roto y estos dos asserts pasan en vacío.
-    const fichaCliente = await (await fetch(`${base}/admin/customers/${customer.id}`, { headers: { cookie: cookieA } })).text();
+    const fichaCliente = await (await pedirSinAgente(`${base}/admin/customers/${customer.id}`, { headers: { cookie: cookieA } })).text();
     assert.ok(fichaCliente.includes(phone) && fichaCliente.includes(email),
       `🔴 CANARIO ROTO (no es un pase): ni el teléfono ni el email del cliente aparecen en la\n` +
       `vista autenticada, así que comprobar su AUSENCIA en la pública no verifica nada.\n` +
@@ -126,12 +166,23 @@ test('SCRUM-49: firma remota — enviar-para-firmar, página pública, firmar, a
     assert.ok(!html.includes(email), 'la página pública NO incluye el email del cliente');
 
     // (c) token inválido → 404
-    assert.equal((await fetch(`${base}/albaran/token-que-no-existe-xyz`)).status, 404, 'token inválido → 404');
+    assert.equal((await pedirSinAgente(`${base}/albaran/token-que-no-existe-xyz`)).status, 404, 'token inválido → 404');
 
     // (d) POST público /albaran/:token/firmar → 200 → firmado
     const wa2 = interceptarWaLog({ log: await moduloDeLog(), prisma }); // ventana propia: ver arriba
     // SCRUM-300: la firma remota también puede declarar QUIÉN firma (campo OPCIONAL en C5).
-    const rFirmar = await fetch(`${base}/albaran/${token}/firmar`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ signatureData: SIG, firmadoPorNombre: 'Ana Pérez' }) });
+    // SCRUM-876g · el cliente firma LA VERSIÓN QUE VIO (SCRUM-361), y la que vio es la que la
+    // página le dio: se lee del HTML servido, no de la base. Sin ella la ruta contesta 409, y así
+    // llevaba cayendo este test desde que entró aquella regla.
+    const mVersion = html.match(/version:(\d+),/);
+    assert.ok(mVersion, 'la página pública le da al cliente la versión del albarán que está viendo');
+    const version = Number(mVersion[1]);
+    const rSinVersion = await pedirSinAgente(`${base}/albaran/${token}/firmar`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ signatureData: SIG, firmadoPorNombre: 'Ana Pérez' }) });
+    assert.equal(rSinVersion.status, 409, `firmar sin decir qué versión se vio → 409 (fue ${rSinVersion.status})`);
+    row = await prisma.albaran.findUnique({ where: { id: albaran.id }, select: { estado: true, signatureUrl: true } });
+    assert.equal(row.estado, 'emitido', 'un 409 no firma nada: el albarán sigue emitido');
+    assert.equal(row.signatureUrl, null, 'un 409 no guarda la firma');
+    const rFirmar = await pedirSinAgente(`${base}/albaran/${token}/firmar`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ signatureData: SIG, firmadoPorNombre: 'Ana Pérez', version }) });
     assert.equal(rFirmar.status, 200, `firmar público debe ser 200 y fue ${rFirmar.status}`);
     row = await prisma.albaran.findUnique({ where: { id: albaran.id }, select: { estado: true, signatureUrl: true, firmadoAt: true } });
     assert.equal(row.estado, 'firmado', 'la firma remota transiciona a firmado');
@@ -156,12 +207,12 @@ test('SCRUM-49: firma remota — enviar-para-firmar, página pública, firmar, a
     assert.ok(filaWa2, wa2.explicar('auto-envío: WA-0b albaran_firmado_es registrado'));
 
     // (f) re-enviar-para-firmar ya firmado → 409 albaran_no_emitido (la firma no se rehace)
-    const rAgain = await fetch(`${base}/admin/albaranes/${albaran.id}/enviar-para-firmar`, { method: 'POST', headers: { cookie: cookieA, 'content-type': 'application/json' } });
+    const rAgain = await pedirSinAgente(`${base}/admin/albaranes/${albaran.id}/enviar-para-firmar`, { method: 'POST', headers: { cookie: cookieA, 'content-type': 'application/json' } });
     assert.equal(rAgain.status, 409);
     assert.equal((await rAgain.json()).error, 'albaran_no_emitido');
 
     // (g) tenancy: B no ve el albarán de A → 404
-    const rB = await fetch(`${base}/admin/albaranes/${albaran.id}/enviar-para-firmar`, { method: 'POST', headers: { cookie: cookieB, 'content-type': 'application/json' } });
+    const rB = await pedirSinAgente(`${base}/admin/albaranes/${albaran.id}/enviar-para-firmar`, { method: 'POST', headers: { cookie: cookieB, 'content-type': 'application/json' } });
     assert.equal(rB.status, 404, 'merchant B no accede al albarán de A');
 
     console.log('✔ SCRUM-49: enviar-para-firmar → página pública (sin contacto) → firma remota → auto-envío → 409 no-emitido → tenancy 404.');

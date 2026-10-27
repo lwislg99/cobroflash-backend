@@ -30,14 +30,14 @@ y el envío— no se han construido nunca.**
 
 | # | Eslabón | Estado | Fichero y línea |
 |---|---|---|---|
-| 1 | Puerta de emisión (usuario y admin) | **EXISTE** | `src/modules/invoicing/app/routes/invoice.routes.ts:12` · `src/modules/system/app/routes/invoicesAdmin.routes.ts:100` |
+| 1 | Puerta de emisión (usuario y admin) | **EXISTE** | `src/modules/invoicing/app/routes/invoice.routes.ts:12` · `src/modules/system/app/routes/invoicesAdmin.routes.ts:115` |
 | 2 | Decide qué documento sale (factura / justificante / ninguno) | **EXISTE** | `src/modules/invoicing/domain/facturaSuelta.ts:85-89` (`modoDocumentoSuelto`) — SCRUM-1027 (21-sep-2026) movió la línea: la afirmación sigue igual, «justificante» ya no es uno de los desenlaces posibles (regla 24 / SCRUM-612c) |
 | 3 | Numeración de serie | **EXISTE** | `src/modules/invoicing/domain/invoiceNumber.service.ts:335` (`allocateInvoiceNumber`) — SCRUM-735 (23-sep-2026) movió la línea: el año de la serie pasó a derivarse de la zona del merchant; SCRUM-1216b (28-sep-2026) la volvió a mover: `seqDeLaSerieF`, la función pura del arranque declarado, va por encima; SCRUM-825 (28-sep-2026) la subió al retirar el generador de referencias `J-`, que estaba por encima |
-| 4 | Huella SHA-256 y encadenado a la anterior | **EXISTE** | `prisma/schema.prisma:917-918` (`vf_hash`, `vf_prev_hash`) — SCRUM-1107 (25-sep-2026) movió la línea: la retención de garantía de obra añadió campos por encima en el mismo modelo; SCRUM-1216b (28-sep-2026), dos columnas del arranque en `merchants`; SCRUM-1296 (30-sep-2026), la relación con la cola de remisión en `merchants`; SCRUM-1102f (1-oct-2026), las dos columnas del SII y del domicilio foral en `merchants`. La afirmación NO cambia: la huella y el encadenado siguen exactamente donde estaban |
+| 4 | Huella SHA-256 y encadenado a la anterior | **EXISTE** | `prisma/schema.prisma:931-932` (`vf_hash`, `vf_prev_hash`) — SCRUM-1107 (25-sep-2026) movió la línea: la retención de garantía de obra añadió campos por encima en el mismo modelo; SCRUM-1216b (28-sep-2026), dos columnas del arranque en `merchants`; SCRUM-1296 (30-sep-2026), la relación con la cola de remisión en `merchants`; SCRUM-1102f (1-oct-2026), las dos columnas del SII y del domicilio foral en `merchants`; SCRUM-1273 (14-oct-2026), `archived_at` en `quotes`. La afirmación NO cambia: la huella y el encadenado siguen exactamente donde estaban |
 | 5 | Sellado en el momento de emitir | **EXISTE** | `src/modules/invoicing/domain/selladoEstado.ts:119` (`sellarTrasEmision`), invocado desde `src/lib/invoicing.ts:17` — SCRUM-1296 (30-sep-2026) movió la línea: una importación y el `email` del merchant, para reconocer al demo |
 | 6 | QR de cotejo para el cliente | **EXISTE** | `src/modules/invoicing/domain/verifactu.service.ts:185` (`buildVeriFactuQrUrl`) — SCRUM-735 movió la línea; SCRUM-1296, una importación de tipos |
-| 7 | XML del registro, con el sobre oficial | **EXISTE — pero su destino es una DESCARGA** | `src/modules/fiscal/verifactu/registro.builder.ts:574` (`construirSobreRegFactu`) → `src/modules/invoicing/domain/verifactu.service.ts:659` (`buildVerifactuRegistrosXml`) → consumido en `src/modules/exports/app/routes/exports.routes.ts:253` y `:563` — SCRUM-1051 (23-sep-2026) movió la línea: el bloque S2 se insertó antes de la función; SCRUM-1296, una importación de tipos; SCRUM-1330, la guarda de «ya sellada» |
-| 8 | Cola de remisión (`VfSubmission`) | **NO EXISTE** | ningún modelo del esquema; ver medición abajo |
+| 7 | XML del registro, con el sobre oficial | **EXISTE — pero su destino es una DESCARGA** | `src/modules/fiscal/verifactu/registro.builder.ts:574` (`construirSobreRegFactu`) → `src/modules/invoicing/domain/verifactu.service.ts:704` (`buildVerifactuRegistrosXml`) → consumido en `src/modules/exports/app/routes/exports.routes.ts:253` y `:568` — SCRUM-1051 (23-sep-2026) movió la línea: el bloque S2 se insertó antes de la función; SCRUM-1296, una importación de tipos; SCRUM-1330, la guarda de «ya sellada»; puesta al día el 13-oct-2026 (SCRUM-1524c): la segunda decía 563 |
+| 8 | Cola de remisión (`VfSubmission`) | **NO EXISTE una cola que alguien vacíe — hay una tabla que la emisión llena y que ningún proceso vacía** | Corregido el 8-oct-2026 (SCRUM-1500e, decisión del fundador en SCRUM-1500 c.18925): aquí decía «ningún modelo del esquema», cierto el 19-ago-2026 y falso desde el 30-sep-2026 (SCRUM-1296). Medido en SCRUM-1500d (Jira c.18919) y repetido idéntico el 8-oct-2026: el esquema tiene el modelo — `prisma/schema.prisma:1809` (`model VfSubmission`) —; sellar una factura deja su alta en `pending` — `src/modules/invoicing/domain/encolarRemision.ts:61` (`vfSubmission.create`), que se ejecuta de verdad porque lo llama `sellarTrasEmision` en `src/modules/invoicing/domain/selladoEstado.ts:173` (`encolarAltaTrasSellado`) —; y el único código que la sacaría de ahí, `procesarObligado`, existe, tiene tests y no lo llama ni lo carga nadie: ni un cron, ni una ruta, ni el arranque. No se encola ninguna anulación. **NO MEDIDO:** ninguna base de datos —ni si la tabla existe en producción, staging o dev, ni cuántas filas tiene— ni el valor de `SIF_ENABLED` en Railway, sólo su valor por defecto en el código. Detalle: `docs/master/SCRUM-1500.md`, tramos «SCRUM-1500d» y «SCRUM-1500e»; ver medición abajo |
 | 9 | Envío telemático a la AEAT | **NO EXISTE** | ninguna llamada de red; ver medición abajo |
 
 **Los tres números cuadran:** EXISTE 7 + EXISTE PERO APAGADO 0 + NO EXISTE 2 = **9 eslabones**.
@@ -49,7 +49,7 @@ y el envío— no se han construido nunca.**
 ### ¿Dónde se para hoy el camino?
 
 **Se para justo después de sellar.** Se genera el registro, se sella la huella, se encadena y se
-pinta el QR. **No se encola y no se envía.**
+pinta el QR. **~~No se encola y~~ no se envía.** *(Corregido el 8-oct-2026, SCRUM-1500f, decisión del fundador en SCRUM-1500 c.18970: aquí decía «No se encola y no se envía.», y «no se encola» es falso desde el 30-sep-2026 (SCRUM-1296). Medido en SCRUM-1500d (Jira c.18919): sellar una factura deja su alta en `pending` — hay una tabla que la emisión llena y que ningún proceso vacía. No se encola ninguna anulación. «No se envía» sigue en pie: llamadas a `procesarObligado`: 0; llamadas a `enviarSobre`: 0. NO MEDIDO: ninguna base de datos —ni si la tabla existe en producción, staging o dev, ni cuántas filas tiene— ni el valor de `SIF_ENABLED` en Railway. El tachado es deliberado: conserva lo que decía.)*
 
 > **Nota del 25-sep-2026 (SCRUM-1127):** desde ese día existen
 > `src/modules/fiscal/verifactu/sif.client.ts` (con una llamada `https.request`) y `sif.cola.ts`.
@@ -65,15 +65,15 @@ pinta el QR. **No se encola y no se envía.**
 * **Instrumento de texto.** Buscando `aeat.es`, `agenciatributaria`, `SistemaFacturacion` y
   similares en `src/`, los únicos aciertos son: dos **espacios de nombres XSD**
   (`src/modules/fiscal/verifactu/registro.builder.ts:10-11`), la **URL del QR que escanea el cliente**
-  (`src/modules/invoicing/domain/verifactu.service.ts:153`) y **enlaces a la especificación dentro de comentarios**
+  (`src/modules/invoicing/domain/verifactu.service.ts:197`) y **enlaces a la especificación dentro de comentarios**
   (`src/modules/invoicing/domain/verifactu.service.ts:8`). Ninguno es un destino de envío.
 * **Instrumento AST.** Contando llamadas de red en `src/modules/fiscal/` y `src/modules/invoicing/`:
   18 aciertos, y al mirarlos uno a uno **ninguno sale a la AEAT** — son definiciones de rutas de
   Express (`router.get` / `router.post`), lecturas de `Map` (`.get`) y una sola llamada real,
-  `src/modules/invoicing/infra/pdf/pdf.service.ts:120`, que es un `axios.get` **para descargar el
+  `src/modules/invoicing/infra/pdf/pdf.service.ts:121`, que es un `axios.get` **para descargar el
   logo del profesional** y ponerlo en el PDF.
 * **Control positivo del detector:** el mismo instrumento encuentra **16** llamadas de red en
-  `src/integrations/` (por ejemplo `src/integrations/enviarCorreo.ts:112`, `src/integrations/gemini.ts:43`, `src/integrations/mercadopago.ts:51`). Si
+  `src/integrations/` (por ejemplo `src/integrations/enviarCorreo.ts:112`, `src/integrations/gemini.ts:89`, `src/integrations/mercadopago.ts:51`). Si
   hubiera dado cero ahí, el detector estaría roto y su «cero» en la zona fiscal no valdría nada.
 * **Suelo de ceguera, y saltó de verdad.** En su primera ejecución el instrumento no supo localizar
   la zona fiscal y **abortó diciendo `CIEGO: zona fiscal = 0`** en vez de informar «0 llamadas de
@@ -99,12 +99,12 @@ porque no remite.**
 `clientCertificate`, `apoderamiento`, `colaborador social`, `representante`. Los aciertos son
 **todos ajenos** a la remisión:
 
-* `src/modules/exports/app/routes/exports.routes.ts:524` — un **comentario** que dice que el envío
+* `src/modules/exports/app/routes/exports.routes.ts:525` — un **comentario** que dice que el envío
   telemático requiere certificado y está pendiente.
-* `src/modules/invoicing/domain/verifactu.service.ts:527` — otro **comentario** con el mismo aviso.
+* `src/modules/invoicing/domain/verifactu.service.ts:696` — otro **comentario** con el mismo aviso.
 * `src/modules/jobs/domain/albaranFirmante.ts:53-63` — «representante» referido a **quién firma un
   albarán en obra**, no a representación ante la AEAT.
-* `src/modules/jobs/infra/albaranPdf.service.ts:382` y `src/modules/jobs/domain/albaran.service.ts:896` — «certificado de
+* `src/modules/jobs/infra/albaranPdf.service.ts:412` y `src/modules/jobs/domain/albaran.service.ts:896` — «certificado de
   evidencias» de una **firma en obra**, nada que ver con un certificado digital de la FNMT.
 
 **No hay lectura de ningún fichero de certificado, ni configuración de mTLS, ni ningún campo que
@@ -141,14 +141,14 @@ existe, porque no hay envío.**
 
 | Comprobación | Estado | Fichero y línea |
 |---|---|---|
-| Validación contra los XSD oficiales | **CONSTRUIDA** | `tests/scrum240-sobre-unico.test.mjs` (citado en `src/modules/invoicing/domain/verifactu.service.ts:947`); espacios de nombres en `src/modules/fiscal/verifactu/registro.builder.ts:10-11` |
-| Huella encadenada (cada factura apunta a la anterior) | **CONSTRUIDA** | `prisma/schema.prisma:865-866`; sellado en `src/modules/invoicing/domain/selladoEstado.ts:116` |
-| Estado de sellado explícito (`pendiente_de_sellado` / `sellado`) | **CONSTRUIDA** | `prisma/schema.prisma:864` |
-| Campos obligatorios del registro | **CONSTRUIDA** | `src/modules/fiscal/verifactu/registro.builder.ts:536` (generador único del contenido) |
-| Puerta que impide producir documento sin huella | **CONSTRUIDA** | `src/lib/invoicing.ts:104` y `:261` (`exigirDocumentoEmitible`) — SCRUM-1304 y SCRUM-1330 movieron la línea |
+| Validación contra los XSD oficiales | **CONSTRUIDA** | `tests/scrum240-sobre-unico.test.mjs` (citado en `src/modules/invoicing/domain/verifactu.service.ts:855`); espacios de nombres en `src/modules/fiscal/verifactu/registro.builder.ts:10-11` |
+| Huella encadenada (cada factura apunta a la anterior) | **CONSTRUIDA** | `prisma/schema.prisma:931-932`; sellado en `src/modules/invoicing/domain/selladoEstado.ts:119` |
+| Estado de sellado explícito (`pendiente_de_sellado` / `sellado`) | **CONSTRUIDA** | `prisma/schema.prisma:921` |
+| Campos obligatorios del registro | **CONSTRUIDA** | `src/modules/fiscal/verifactu/registro.builder.ts:552` (generador único del contenido) |
+| Puerta que impide producir documento sin huella | **CONSTRUIDA** | `src/lib/invoicing.ts:104` y `:262` (`exigirDocumentoEmitible`) — SCRUM-1304, SCRUM-1330 y SCRUM-1470c movieron la línea |
 | `Subsanacion` / `RechazoPrevio` / `SinRegistroPrevio` | **NO MEDIDO** | no se buscaron una a una en esta tanda |
-| Cola `VfSubmission` | **INEXISTENTE** | el esquema tiene **25 modelos** (`prisma/schema.prisma`) y **ninguno** se llama `Vf*`, `*Submission` ni `*Verifactu`. Ningún fichero de `src/` menciona `vfSubmission` |
-| Control de flujo de envío (reintentos, ritmo) | **INEXISTENTE** | no hay envío que gobernar |
+| Cola `VfSubmission` | **LA TABLA EXISTE Y LA EMISIÓN LA LLENA; NINGÚN PROCESO LA VACÍA** | Corregido el 8-oct-2026 (SCRUM-1500e, decisión del fundador en SCRUM-1500 c.18925): aquí decía «INEXISTENTE», que el esquema tenía 25 modelos y ninguno se llamaba `Vf*`, `*Submission` ni `*Verifactu`, y que ningún fichero de `src/` mencionaba `vfSubmission`. Era cierto el 19-ago-2026 y es falso desde el 30-sep-2026 (SCRUM-1296). Medido en SCRUM-1500d (Jira c.18919) sobre 321 ficheros `.ts` de `src/` leídos por AST, 0 sin parsear: el esquema tiene `model VfSubmission`; toda llamada `<algo>.vfSubmission.<método>()` de `src/` son 7, y un acceso más por nombre de modelo; de las tres que escriben sólo se ejecuta la que crea la fila en `pending` — `src/modules/invoicing/domain/encolarRemision.ts:61` (`vfSubmission.create`) —, y las tres lecturas que se ejecutan sólo cuentan. Llamadas a `procesarObligado`: 0. Llamadas a `enviarSobre`: 0. **NO MEDIDO:** ninguna base de datos —ni si la tabla existe en producción, staging o dev, ni cuántas filas tiene— ni el valor de `SIF_ENABLED` en Railway. Detalle: `docs/master/SCRUM-1500.md`, tramo «SCRUM-1500d» |
+| Control de flujo de envío (reintentos, ritmo) | **EL CÓDIGO EXISTE Y NADA LO EJECUTA** | Corregido el 13-oct-2026 (SCRUM-1500h, decisión del fundador en SCRUM-1500 c.18993): aquí decía «INEXISTENTE · no hay envío que gobernar». Desde el 30-sep-2026 (SCRUM-1296) el código de reintentos existe (`sif.cola.ts`: `MAX_INTENTOS`, `backoffS` y el paso a `manual_review`) y nada lo ejecuta: el proceso no carga ese fichero y `procesarObligado` tiene 0 llamadas (Jira c.18919). «No hay envío que gobernar» sigue siendo cierto. NO medido: sus tests no se han corrido hoy, ni ninguna base de datos, ni el valor de `SIF_ENABLED` en Railway. |
 
 ---
 
@@ -173,7 +173,7 @@ si no hay nada, el valor por defecto de arriba.
 > pero la fuente de esa decisión sí está medida: es el código.
 
 **Qué hace `SIF_ENABLED` hoy:** se **consulta y se guarda**, no decide un envío. En
-`src/modules/invoicing/domain/invoiceNumber.service.ts:452-457` se lee junto a `INVOICING_ES_ENABLED`
+`src/modules/invoicing/domain/invoiceNumber.service.ts:406-411` se lee junto a `INVOICING_ES_ENABLED`
 para **congelar el modo fiscal del momento en el registro de auditoría**. No hay ninguna rama del
 código que, al ponerla en `true`, empiece a transmitir: **ese código no existe**.
 
@@ -197,7 +197,7 @@ código que, al ponerla en `true`, empiece a transmitir: **ese código no existe
 ### Construcción (después de la decisión 1, y solo entonces)
 
 4. **La cola de remisión** (`VfSubmission` o equivalente): tabla, estados y reintentos. Hoy
-   **inexistente**.
+   ~~**inexistente**~~ **una tabla que la emisión llena y que ningún proceso vacía** *(corregido el 8-oct-2026, SCRUM-1500e, decisión del fundador en SCRUM-1500 c.18925; medición de SCRUM-1500d, Jira c.18919: la tabla y sus cinco estados están en el esquema desde el 30-sep-2026 (SCRUM-1296) y la emisión la llena. Lo que sigue por construir es quien la vacíe: cron, worker o reintento, no hay; el único código que sacaría una fila de `pending` no lo llama ni lo carga nadie. No se encola ninguna anulación. NO MEDIDO: ninguna base de datos, ni filas, ni `SIF_ENABLED` en Railway. El tachado es deliberado: conserva lo que decía.)*
 5. **El cliente de envío a la AEAT**, con el certificado del carril que se elija y su mTLS. Hoy
    **inexistente**.
 6. **La lectura de la respuesta de la AEAT**, aplicando la clasificación que ya está calibrada en
@@ -214,7 +214,7 @@ código que, al ponerla en `true`, empiece a transmitir: **ese código no existe
 Se anotan porque el encargo lo pide, **y no se arreglan aquí** (SCRUM-513 tiene ticket propio):
 
 * `docs/legal/SEMAFORO_MAPA_EMISION.md` tiene **coordenadas desfasadas** (están en `docs/legal/SEMAFORO_MAPA_EMISION.md:226` y `:258`, que es todo lo que el mapa cita). Constatado, no corregido.
-* `src/modules/invoicing/domain/verifactu.service.ts:674` — **MEDIDO el 16-sep-2026 (SCRUM-525c);
+* `src/modules/invoicing/domain/verifactu.service.ts:930` *(cita puesta al día el 13-oct-2026, SCRUM-1524c, permiso del fundador en SCRUM-1524 c.19292: el 16-sep-2026 era la 674, y «la 674» y «la 673» de este párrafo son las de aquel día)* — **MEDIDO el 16-sep-2026 (SCRUM-525c);
   esto ya no es «NO MEDIDO».** El encargo de aquella tanda daba por hecho que ahí había un comentario
   que **mentía sobre las rectificativas**. Esa afirmación queda **SIN CONFIRMAR**, porque lo que hay
   hoy en la 674 afirma lo contrario: «`TipoRectificativa` · **LA R1 SÍ ENTRA HOY EN EL REGISTRO**».
@@ -222,7 +222,7 @@ Se anotan porque el encargo lo pide, **y no se arreglan aquí** (SCRUM-513 tiene
   se puede cerrar.
 * `src/modules/invoicing/domain/modoVisible.ts:21` afirma en un comentario que «**se envía** NO
   EXISTE. Cero clientes SOAP/mTLS». **Esta auditoría lo confirma por su cuenta**, con los dos
-  instrumentos y el control positivo — no por creerse el comentario.
+  instrumentos y el control positivo — no por creerse el comentario. [Corregido el 13-oct-2026, SCRUM-1500h, decisión del fundador en SCRUM-1500 c.18993: lo que esta auditoría confirmó es que nada envía, y eso sigue en pie. «Cero clientes SOAP/mTLS» es falso como «no existe ningún cliente» desde SCRUM-1127. Medido en SCRUM-1500g (Jira c.18986) y vuelto a leer el 13-oct-2026: hay UN cliente, `src/modules/fiscal/verifactu/sif.client.ts` —538 líneas, sobre SOAP, con opciones de mTLS que le llegan de fuera y una sola llamada de red, dentro de `enviarSobre`—, y NADIE lo llama: 0 importaciones de valor, y `enviarSobre` tiene 1 definición y 0 llamadas en `src/`. NO medido: el cliente no se ha ejecutado, y tampoco ninguna base de datos ni el valor de `SIF_ENABLED` en Railway. El comentario de `modoVisible.ts` se corrigió ese mismo día y dice ahora «Nada envía a la AEAT».]
 
 ## Qué queda NO MEDIDO
 
@@ -231,7 +231,7 @@ Se anotan porque el encargo lo pide, **y no se arreglan aquí** (SCRUM-513 tiene
 3. ~~El comentario de `src/modules/invoicing/domain/verifactu.service.ts:673` sobre
    rectificativas.~~ **JUBILADO el 16-sep-2026 (SCRUM-525b): ya no queda por medir.** No se borra,
    se dice qué pasó — **SCRUM-513 lo midió y lo corrigió**. Hoy ese comentario vive en
-   `src/modules/invoicing/domain/verifactu.service.ts:674` (la 673 se quedó vacía al reescribirlo)
+   `src/modules/invoicing/domain/verifactu.service.ts:930` *(cita puesta al día el 13-oct-2026, SCRUM-1524c: el 16-sep-2026 era la 674)* (la 673 se quedó vacía al reescribirlo)
    y declara él mismo que durante 18 días afirmó en falso que la R1 quedaba excluida del registro.
    Quien vuelva a esta lista no tiene que ir a mirarlo.
    **El tachado de arriba es deliberado, no un error de formato.** Se conserva la coordenada

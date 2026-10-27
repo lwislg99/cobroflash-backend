@@ -1,0 +1,45 @@
+POBLACION · árbol D:\MILLONARIO\cobroFlash\wt-s3-1288b · HEAD e09773449f70df0dde6e194d357400c526429793 · 2 ficheros de test
+BASE sin mutar · exit 0 · tests 31 · pass 31 · fail 0
+MUERE  · M1 · la forma apagada (nunca hay moneda detrás) · numstat [1 1 scripts/_censo-gemelo-crudo.mjs] · tests 31 · fail 11 · caídos esperados que faltan: ninguno · árbol limpio después: true
+     ✖ SCRUM-1288b · SUELO: el censo ve la forma en el árbol real, y ve los formateadores que la libran
+     ✖ SCRUM-1288b · los tres correos al profesional que motivaron la forma están VISTOS: vivos y declarados DEUDA, o retirados
+     ✖ SCRUM-1288b · 🔴 el importe que llega por un PARÁMETRO ya hecho texto se acusa (la forma de los tres correos)
+     ✖ SCRUM-1288b · 🔴 por una variable, con otros decimales, con la coma a mano, sin formato o con toLocaleString(): se acusa
+     ✖ SCRUM-1288b · 🔴 una envoltura de escape no lava el valor: `${esc(total)} €` se acusa
+     ✖ SCRUM-1288b · 🔴 a un formateador LOCAL no se le cree por el nombre: se mira su cuerpo
+     ✖ SCRUM-1288b · 🔴 el `const` se sigue por ÁMBITO: un homónimo en otra función no lava, y un parámetro tapa al de fuera
+     ✖ SCRUM-1288b · lo que no es un importe pegado a una moneda no se acusa, y un registro interno es DENTRO
+     ✖ SCRUM-1288b · 🔴 un aviso nuevo con el importe crudo, en un fichero nuevo de `src/`, sale como NUEVO en `comparar`
+     ✖ SCRUM-1452 · 🔴 TRINQUETE: ninguna entrada declarada ha BAJADO sin declararlo
+     ✖ SCRUM-1452 · IMPORTE negativo derivado: con `formatMoneyEs`, y el `toFixed(2)` sin moneda, no se acusan
+MUERE  · M2 · las envolturas dejan de mirarse por dentro · numstat [1 1 scripts/_censo-gemelo-crudo.mjs] · tests 31 · fail 1 · caídos esperados que faltan: ninguno · árbol limpio después: true
+     ✖ SCRUM-1288b · con el formateador de la casa no se acusa: directo, por un `const`, envuelto en esc() y por las dos ramas 
+MUERE  · M3 · un parámetro ya no tapa al const de fuera · numstat [0 1 scripts/_censo-gemelo-crudo.mjs] · tests 31 · fail 1 · caídos esperados que faltan: ninguno · árbol limpio después: true
+     ✖ SCRUM-1288b · 🔴 el `const` se sigue por ÁMBITO: un homónimo en otra función no lava, y un parámetro tapa al de fuera
+MUERE  · M4 · a `fmt` se le cree por el nombre · numstat [1 0 scripts/_censo-gemelo-crudo.mjs] · tests 31 · fail 1 · caídos esperados que faltan: ninguno · árbol limpio después: true
+     ✖ SCRUM-1288b · 🔴 a un formateador LOCAL no se le cree por el nombre: se mira su cuerpo
+MUERE  · M5 · el toFixed(2) pegado a la moneda se acusa dos veces · numstat [0 1 scripts/_censo-gemelo-crudo.mjs] · tests 31 · fail 3 · caídos esperados que faltan: ninguno · árbol limpio después: true
+     ✖ SCRUM-1288b · un `toFixed(2)` pegado a la moneda es UNA fila IMPORTE, no dos
+     ✖ SCRUM-1452 · 🔴 TRINQUETE: ningún sitio NUEVO con un número o un importe en crudo
+     ✖ SCRUM-1452 · 🔴 IMPORTE: `toFixed(2)` con la moneda escrita o interpolada se acusa
+MUERE  · M6 · un `let` libra igual que un `const` · numstat [1 1 scripts/_censo-gemelo-crudo.mjs] · tests 31 · fail 1 · caídos esperados que faltan: ninguno · árbol limpio después: true
+     ✖ SCRUM-1288b · 🔴 el `const` se sigue por ÁMBITO: un homónimo en otra función no lava, y un parámetro tapa al de fuera
+MUERE  · M7 · cualquier llamada libra (no se mira qué devuelve la función local) · numstat [1 1 scripts/_censo-gemelo-crudo.mjs] · tests 31 · fail 1 · caídos esperados que faltan: ninguno · árbol limpio después: true
+     ✖ SCRUM-1288b · 🔴 a un formateador LOCAL no se le cree por el nombre: se mira su cuerpo
+MUERE  · M8 · un registro interno se acusa (se pierde DENTRO para la forma) · numstat [1 1 scripts/_censo-gemelo-crudo.mjs] · tests 31 · fail 7 · caídos esperados que faltan: ninguno · árbol limpio después: true
+     ✖ SCRUM-1288b · 🔴 el importe que llega por un PARÁMETRO ya hecho texto se acusa (la forma de los tres correos)
+     ✖ SCRUM-1288b · 🔴 por una variable, con otros decimales, con la coma a mano, sin formato o con toLocaleString(): se acusa
+     ✖ SCRUM-1288b · 🔴 una envoltura de escape no lava el valor: `${esc(total)} €` se acusa
+     ✖ SCRUM-1288b · 🔴 a un formateador LOCAL no se le cree por el nombre: se mira su cuerpo
+     ✖ SCRUM-1288b · 🔴 el `const` se sigue por ÁMBITO: un homónimo en otra función no lava, y un parámetro tapa al de fuera
+     ✖ SCRUM-1288b · lo que no es un importe pegado a una moneda no se acusa, y un registro interno es DENTRO
+     ✖ SCRUM-1452 · IMPORTE negativo derivado: con `formatMoneyEs`, y el `toFixed(2)` sin moneda, no se acusan
+MUERE  · M9 · uno de los tres correos pasa a LEGITIMO · numstat [1 1 scripts/_censo-gemelo-crudo.mjs] · tests 31 · fail 1 · caídos esperados que faltan: ninguno · árbol limpio después: true
+     ✖ SCRUM-1288b · los tres correos al profesional que motivaron la forma están VISTOS: vivos y declarados DEUDA, o retirados
+MUERE  · M10 · uno de los tres correos se borra de DECLARADOS · numstat [0 1 scripts/_censo-gemelo-crudo.mjs] · tests 31 · fail 2 · caídos esperados que faltan: ninguno · árbol limpio después: true
+     ✖ SCRUM-1288b · los tres correos al profesional que motivaron la forma están VISTOS: vivos y declarados DEUDA, o retirados
+     ✖ SCRUM-1452 · 🔴 TRINQUETE: ningún sitio NUEVO con un número o un importe en crudo
+MUERE  · M11 · «euros» casa aunque siga la palabra (sin frontera) · numstat [1 1 scripts/_censo-gemelo-crudo.mjs] · tests 31 · fail 1 · caídos esperados que faltan: ninguno · árbol limpio después: true
+     ✖ SCRUM-1288b · lo que no es un importe pegado a una moneda no se acusa, y un registro interno es DENTRO
+BASE al acabar · exit 0 · tests 31 · pass 31 · fail 0 · árbol limpio: true
+RECUENTO · 11 de 11 mutantes mueren donde se esperaba

@@ -1,0 +1,118 @@
+POBLACION · 25 citas (17 auditoría, 8 preguntas) · control: 2 rotas vistas de 2, 0 buenas marcadas de 1
+
+[bien] AUDITORIA_CAMINO_EMISION.md:33 · clase N · tocada
+  FRASE: …| 1 | Puerta de emisión (usuario y admin) | **EXISTE** | `src/modules/invoicing/app/routes/invoice.routes.ts:12` · `src/modules/system/app/routes/invoicesAdmin.routes.ts:115` |…
+    115: router.post('/', requireRole('admin'), async (req, res) => {
+
+[bien] AUDITORIA_CAMINO_EMISION.md:39 · clase L · tocada
+  FRASE: …cal/verifactu/registro.builder.ts:574` (`construirSobreRegFactu`) → `src/modules/invoicing/domain/verifactu.service.ts:659` (`buildVerifactuRegistrosXml`) → consumido en `src/modules/exports/app/routes/exports.routes.ts:253` y `:568` — SCRUM-1051 (23-sep-2026) movió la línea: el bloque S2 se insertó antes de la función; SCRUM-1296, una importación de tipos; SCRUM-1330, la guarda de «ya sellada»; puesta al día el 13-oct-2026 (SCRUM-1524c): la segunda decía 563 |…
+    568: const { xml, count, excluidos } = await buildVerifactuRegistrosXml({ merchantId: req.merchantId, year });
+
+[bien] AUDITORIA_CAMINO_EMISION.md:68 · clase N · tocada
+  FRASE: …(`src/modules/invoicing/domain/verifactu.service.ts:197`) y **enlaces a la especificación dentro de comentarios**…
+    197: return `https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/ValidarQR?${qs.toString()}`;
+
+[bien] AUDITORIA_CAMINO_EMISION.md:73 · clase N · tocada
+  FRASE: …`src/modules/invoicing/infra/pdf/pdf.service.ts:121`, que es un `axios.get` **para descargar el…
+    121: const resp = await axios.get(logoUrl, { responseType: 'arraybuffer', timeout: 5_000 });
+
+[bien] AUDITORIA_CAMINO_EMISION.md:76 · clase N · tocada
+  FRASE: …`src/integrations/` (por ejemplo `src/integrations/enviarCorreo.ts:112`, `src/integrations/gemini.ts:89`, `src/integrations/mercadopago.ts:51`). Si…
+     89: response = await fetch(url, {
+
+[bien] AUDITORIA_CAMINO_EMISION.md:102 · clase N · tocada
+  FRASE: …* `src/modules/exports/app/routes/exports.routes.ts:525` — un **comentario** que dice que el envío…
+    525: // requiere certificado digital del emisor — pendiente (tarea usuario).
+
+[bien] AUDITORIA_CAMINO_EMISION.md:104 · clase N · tocada
+  FRASE: …* `src/modules/invoicing/domain/verifactu.service.ts:651` — otro **comentario** con el mismo aviso.…
+    651: * ENVÍO telemático real al SIF requiere certificado digital del emisor — pendiente (tarea
+
+[bien] AUDITORIA_CAMINO_EMISION.md:107 · clase N · tocada
+  FRASE: …* `src/modules/jobs/infra/albaranPdf.service.ts:412` y `src/modules/jobs/domain/albaran.service.ts:896` — «certificado de…
+    412: // ── Certificado de evidencias (SCRUM-68 · solo si hay firma sellada) ──────
+
+[bien] AUDITORIA_CAMINO_EMISION.md:144 · clase N · tocada
+  FRASE: …| Validación contra los XSD oficiales | **CONSTRUIDA** | `tests/scrum240-sobre-unico.test.mjs` (citado en `src/modules/invoicing/domain/verifactu.service.ts:855`); espacios de nombres en `src/modules/fiscal/verifactu/registro.builder.ts:10-11` |…
+    855: // en contenido y que las dos validen contra los XSD (`tests/scrum240-sobre-unico.test.mjs`).
+
+[bien] AUDITORIA_CAMINO_EMISION.md:145 · clase N · tocada
+  FRASE: …| Huella encadenada (cada factura apunta a la anterior) | **CONSTRUIDA** | `prisma/schema.prisma:917-918`; sellado en `src/modules/invoicing/domain/selladoEstado.ts:119` |…
+    917: vfHash          String?   @map("vf_hash") // huella SHA-256 de esta factura
+    918: vfPrevHash      String?   @map("vf_prev_hash") // huella de la factura anterior en la cadena
+
+[bien] AUDITORIA_CAMINO_EMISION.md:145 · clase N · tocada
+  FRASE: …| Huella encadenada (cada factura apunta a la anterior) | **CONSTRUIDA** | `prisma/schema.prisma:917-918`; sellado en `src/modules/invoicing/domain/selladoEstado.ts:119` |…
+    119: export async function sellarTrasEmision(
+
+[bien] AUDITORIA_CAMINO_EMISION.md:146 · clase N · tocada
+  FRASE: …| Estado de sellado explícito (`pendiente_de_sellado` / `sellado`) | **CONSTRUIDA** | `prisma/schema.prisma:916` |…
+    916: vfEstado        String    @default("pendiente_de_sellado") @map("vf_estado")
+
+[bien] AUDITORIA_CAMINO_EMISION.md:147 · clase N · tocada
+  FRASE: …| Campos obligatorios del registro | **CONSTRUIDA** | `src/modules/fiscal/verifactu/registro.builder.ts:552` (generador único del contenido) |…
+    552: * SCRUM-240 · EL ÚNICO GENERADOR DEL CONTENIDO DEL SOBRE `RegFactuSistemaFacturacion`.
+
+[bien] AUDITORIA_CAMINO_EMISION.md:176 · clase N · tocada
+  FRASE: …`src/modules/invoicing/domain/invoiceNumber.service.ts:406-411` se lee junto a `INVOICING_ES_ENABLED`…
+    406: // SCRUM-207: el modo fiscal del MOMENTO, congelado en el registro. Se calcula con la
+    407: // misma `m` que ya está leída — ni una consulta de más.
+    408: const flagsFiscales = {
+    409: INVOICING_ES_ENABLED: isFlagEnabled('INVOICING_ES_ENABLED', { merchant: m }),
+
+[bien] AUDITORIA_CAMINO_EMISION.md:217 · clase L · tocada
+  FRASE: …* `src/modules/invoicing/domain/verifactu.service.ts:930` *(cita puesta al día el 13-oct-2026, SCRUM-1524c, permiso del fundador en SCRUM-1524 c.19292: el 16-sep-2026 era la 674, y «la 674» y «la 673» de este párrafo son las de aquel día)* — **MEDIDO el 16-sep-2026 (SCRUM-525c);…
+    930: // ── `TipoRectificativa` · LA R1 SÍ ENTRA HOY EN EL REGISTRO ──────────────────────────────
+
+[bien] AUDITORIA_CAMINO_EMISION.md:223 · clase 0 · sin tocar
+  FRASE: …* `src/modules/invoicing/domain/modoVisible.ts:21` afirma en un comentario que «**se envía** NO…
+     21: // y el motivo está medido, no supuesto: **«se envía» NO EXISTE**. Nada envía a
+
+[bien] AUDITORIA_CAMINO_EMISION.md:234 · clase L · tocada
+  FRASE: …`src/modules/invoicing/domain/verifactu.service.ts:930` *(cita puesta al día el 13-oct-2026, SCRUM-1524c: el 16-sep-2026 era la 674)* (la 673 se quedó vacía al reescribirlo)…
+    930: // ── `TipoRectificativa` · LA R1 SÍ ENTRA HOY EN EL REGISTRO ──────────────────────────────
+
+[bien] PREGUNTAS_ASESOR.md:461 · clase 0 · sin tocar
+  FRASE: …* **NO hace**, con estas palabras, en `src/modules/invoicing/domain/modoVisible.ts:21-24`: *(cita puesta al día el 8-oct-2026, SCRUM-1500f, decisión del fundador en SCRUM-1500 c.18970: ese comentario se corrigió el 8-oc…
+     21: // y el motivo está medido, no supuesto: **«se envía» NO EXISTE**. Nada envía a
+     22: // la AEAT. [Corregido el 13-oct-2026, SCRUM-1500h, decisión del fundador en SCRUM-1500 c.18993: aquí decía «Cero clientes SOAP/mTLS contra la AEAT», que es falso como «n
+     23: // la cadena de huellas y la URL del QR —o sea SELLA EN LOCAL— y los XSD están vendorizados pero
+     24: // nadie los manda a ningún sitio. Hoy todo es «se guarda».
+
+[bien] PREGUNTAS_ASESOR.md:693 · clase N · tocada · ⚠️ el censo daba 238
+  FRASE: …**(a) Qué la dispara.** `libroRegistroView.js:246`, dentro de `if (asientos.length === 0)` (`:244`):…
+    246: if (libro.miradas > 0) avisar(COPY.descuadre(libro.miradas), 'warning');
+
+[bien] PREGUNTAS_ASESOR.md:693 · clase N · tocada · ⚠️ el censo daba 236
+  FRASE: …**(a) Qué la dispara.** `libroRegistroView.js:246`, dentro de `if (asientos.length === 0)` (`:244`):…
+    244: if (asientos.length === 0) {
+
+[bien] PREGUNTAS_ASESOR.md:704 · clase N · tocada
+  FRASE: …**(b) Qué se pinta hoy** (`libroRegistroView.js:60-62`):…
+     60: descuadre: (miradas) => rotulo(
+     61: 'El libro no cuadra: se han revisado ' + miradas + ' facturas y no ha salido ningún asiento. '
+     62: + 'No lo tomes como que no has facturado.'),
+
+[bien] PREGUNTAS_ASESOR.md:724 · clase N · tocada · ⚠️ el censo daba 230
+  FRASE: …**(a) Qué la dispara.** `libroRegistroView.js:238-240`:…
+    238: if (Array.isArray(libro.importesIlegibles) && libro.importesIlegibles.length > 0) {
+    239: avisar(COPY.avisoIlegibles(libro.importesIlegibles), 'warning', CONTACTO);
+    240: }
+
+[bien] PREGUNTAS_ASESOR.md:745 · clase L · tocada
+  FRASE: …**(a) Qué la dispara.** `libroRegistroView.js:241`:…
+    241: if (libro.ajenas > 0) avisar(COPY.avisoAjenas, 'warning');
+
+[bien] PREGUNTAS_ASESOR.md:764 · clase L · tocada
+  FRASE: …**(a) Qué la dispara.** `libroRegistroView.js:242`:…
+    242: if (libro.sinNumero > 0) avisar(COPY.avisoSinNumero(libro.sinNumero), 'warning');
+
+[bien] PREGUNTAS_ASESOR.md:786 · clase N · tocada · ⚠️ el censo daba 339
+  FRASE: …**(a) Qué la dispara.** `libroRegistroView.js:346-349`, por cada fila de la tabla:…
+    346: if (e.albaranesNoSellados > 0) {
+    347: alguna = true;
+    348: tdTrazas.appendChild(marca(COPY.trazaNoSellado + ' ×' + e.albaranesNoSellados, 'badge-amber'));
+    349: }
+
+RESULTADO · 25 bien de 25 · 0 rotas · clases N=18 L=5 0=2 · 4 con destino distinto del que daba el censo
+EXIT=0

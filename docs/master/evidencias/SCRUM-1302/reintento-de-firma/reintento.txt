@@ -1,0 +1,28 @@
+SCRUM-1302d · reintentar la firma del parte cuando la primera SÍ llegó
+ruta medida: POST /albaran/:token/firmar · dist/modules/jobs/app/routes/albaranPublic.routes.js
+
+0 · control · un parte EMITIDO, una firma
+   respuesta 200 {"ok":true}
+   estado=firmado · escrituras=1 · PDF pedidos=1 · copias pedidas=1 · trazo guardado=el PRIMERO · firmante=Ana Prueba
+
+1 · la primera firma llegó y se reintenta con LO MISMO
+   primera   → 200 {"ok":true}
+   reintento → 200 {"ok":true,"already":true}
+   estado=firmado · escrituras=1 · PDF pedidos=1 · copias pedidas=1 · trazo guardado=el PRIMERO · firmante=Ana Prueba
+   sello y fecha de firma tras el reintento: LOS MISMOS
+
+1b · la primera firma llegó y se reintenta con OTRO trazo y OTRO nombre
+   reintento → 200 {"ok":true,"already":true}
+   estado=firmado · escrituras=1 · PDF pedidos=1 · copias pedidas=1 · trazo guardado=el PRIMERO · firmante=Ana Prueba
+
+1c · la primera firma llegó y el reintento trae OTRA versión del parte
+   reintento → 200 {"ok":true,"already":true}
+   estado=firmado · escrituras=1 · PDF pedidos=1 · copias pedidas=1 · trazo guardado=el PRIMERO · firmante=Ana Prueba
+
+2 · dos peticiones A LA VEZ sobre un parte emitido (las dos leen antes de que ninguna escriba)
+   respuestas → 200 {"ok":true} · 200 {"ok":true}
+   estado=firmado · escrituras=2 · PDF pedidos=2 · copias pedidas=2 · trazo guardado=el SEGUNDO · firmante=Otra Persona
+   LECTURA: escriben las 2: la escritura del parte no lleva la condición de estado.
+
+RESUMEN · reintento después de una firma que llegó: NO firma dos veces (200 `already`, cero escrituras, cero copias, mismo sello)
+RESUMEN · dos a la vez: escrituras=2, copias pedidas=2, queda el SEGUNDO trazo

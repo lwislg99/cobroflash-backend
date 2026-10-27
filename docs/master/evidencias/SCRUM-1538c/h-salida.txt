@@ -1,0 +1,6 @@
+POBLACIÓN · runs de CI 1029 · verdes limpios (todos sus jobs en success, sin pedir) 223 · ejecuciones de job pedidas 3456
+① trinquete creado desde 2026-10-14T09:00:00Z: 315 acabados (19 de runs limpios) · cortados a ≥ 40 min 0 · cortados antes (empujón nuevo) 64, no cuentan
+① build + tests creado desde 2026-10-14T09:00:00Z: 333 con veredicto (success o failure; 19 de runs limpios) · de ellos en failure 100 — las colgadas de la tanda salen en failure: el desglose está en g-salida.txt
+② siembra del lector de A8.4: 3 de 3
+② build + tests en success desde 2026-10-14T07:19:47Z (los 15 últimos de la población pedida): A8.4 pasó 15 · saltó 0 · no aparece 0 · sin log 0
+EXIT=0

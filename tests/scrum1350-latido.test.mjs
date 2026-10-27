@@ -447,10 +447,56 @@ test('SCRUM-1282 · 🔴 CONTEXTO: cada sesión viva sale con su ocupación, y l
     contextoDe: (x) => por[x.nombre], sueltas: [{ nombre: '(sin trabajo de fondo: ed676fd1)', ctx: ctx(421_000, 0) }], ahora: AHORA,
   });
   assert.equal(s.pudo, true, `🔴 la terminada y la de ayer no se miran: no pueden dejarla ciega (${s.motivo})`);
-  assert.deepEqual(s.alertas.map((a) => a.sesion), ['(sin trabajo de fondo: ed676fd1)', 's3-1oct (s3-1oct)'], '🔴 las dos por encima de 200k, la mayor primero; la de 121k no');
-  assert.match(s.alertas[1].linea, /s3-1oct \(s3-1oct\) · 409k de ventana, por encima de 200k \(A19\): se releva AL TERMINAR su entrega · último turno hace 11 min/);
+  // LAS DOS FECHAS (SCRUM-1479). Del 1-oct al 6-oct-2026 este test decía «por encima de 200k (A19)». Desde el
+  // 6-oct-2026 el umbral de la A19 es 300k: estas dos siguen avisando, y lo que cambia se fija abajo con la de 230k.
+  assert.deepEqual(s.alertas.map((a) => a.sesion), ['(sin trabajo de fondo: ed676fd1)', 's3-1oct (s3-1oct)'], '🔴 las dos por encima de 300k, la mayor primero; la de 121k no');
+  assert.match(s.alertas[1].linea, /s3-1oct \(s3-1oct\) · 409k de ventana, por encima de 300k \(A19\): se releva AL TERMINAR su entrega · último turno hace 11 min/);
   assert.match(s.poblacion, /^2 sesiones vivas en 24 h \+ 1 transcript\(s\).* 3 leídas: .*s3-1oct 409k · s4-1oct 121k/);
   assert.equal(salidaDe([s]), SALIDA_AVISO);
+  // Lo que el cambio mueve: una sesión de 230k (la mediana del PRIMER push el 6-oct-2026) ya no se acusa…
+  const de230 = (umbral) => seccionContexto({ sesiones: [sesion('s2-6oct', 'working')], contextoDe: () => ctx(230_000, 3), ahora: AHORA, ...(umbral ? { umbral } : {}) });
+  assert.deepEqual(de230().alertas, [], '🔴 a 230k todavía no ha entregado nada: con el umbral en 300k no se le pide el relevo');
+  // …y el latido no tiene umbral propio: con el de antes, la misma sesión vuelve a salir.
+  assert.match(de230(200_000).alertas[0].linea, /s2-6oct \(s2-6oct\) · 230k de ventana, por encima de 200k \(A19\): se releva AL TERMINAR su entrega · último turno hace 3 min/);
+});
+
+// SCRUM-1484 · LA A19 TIENE DOS NÚMEROS Y EL LATIDO SÓLO CONOCÍA UNO. Hasta el 6-oct-2026 a una sesión por
+// encima del umbral de «a mitad de entrega» le decía «se releva AL TERMINAR su entrega», que para ese caso es lo
+// contrario de la norma. Un instrumento que dice lo contrario de la norma es peor que no tenerlo: quien lo lee
+// cree que está cubierto.
+test('SCRUM-1484 · 🔴 DOS umbrales, DOS frases: entre los dos «AL TERMINAR»; por encima del segundo «YA»', async () => {
+  const { UMBRAL_CONTEXTO, UMBRAL_CONTEXTO_A_MITAD } = await import('../scripts/equipo/sesion.mjs');
+  assert.ok(UMBRAL_CONTEXTO_A_MITAD > UMBRAL_CONTEXTO, '🔴 el de «a mitad» tiene que quedar por encima del de «al entregar»');
+  const entre = Math.round((UMBRAL_CONTEXTO + UMBRAL_CONTEXTO_A_MITAD) / 2);
+  const encima = UMBRAL_CONTEXTO_A_MITAD + 60_000;
+  const por = { 's1-6octd': ctx(entre, 7), 's0-6octc': ctx(encima, 2), 's4-6oct': ctx(UMBRAL_CONTEXTO - 50_000) };
+  // Sin pasar umbrales: son los de `sesion.mjs`, que es lo que corre `node scripts/equipo/latido.mjs`.
+  const s = seccionContexto({ sesiones: Object.keys(por).map((n) => sesion(n, 'working')), contextoDe: (x) => por[x.nombre], ahora: AHORA });
+  assert.equal(s.pudo, true, s.motivo);
+  assert.deepEqual(s.alertas.map((a) => a.sesion), ['s0-6octc (s0-6octc)', 's1-6octd (s1-6octd)'], '🔴 las dos avisan, la mayor primero; la que no llega al primero no');
+  const [deEncima, deEntre] = s.alertas.map((a) => a.linea);
+  const k = (n) => `${Math.round(n / 1000)}k`;
+  assert.equal(deEntre, `s1-6octd (s1-6octd) · ${k(entre)} de ventana, por encima de ${k(UMBRAL_CONTEXTO)} (A19): se releva AL TERMINAR su entrega · último turno hace 7 min`);
+  assert.equal(deEncima, `s0-6octc (s0-6octc) · ${k(encima)} de ventana, por encima de ${k(UMBRAL_CONTEXTO_A_MITAD)} (A19, a mitad de entrega): se releva YA, sin esperar a terminar — primer punto seguro (un commit local), traspaso y relevo · último turno hace 2 min`);
+  // Lo que el ticket persigue, dicho sin depender de la redacción: la de encima NO lleva la frase de la otra.
+  assert.match(deEncima, /se releva YA/, '🔴 el latido ya no escribe «se releva YA»: la negación de abajo no mediría nada');
+  assert.doesNotMatch(deEncima, /AL TERMINAR/, '🔴 por encima del segundo umbral el latido vuelve a decir «al terminar»: lo contrario de la A19');
+  assert.doesNotMatch(deEntre, /se releva YA/, '🔴 a una sesión que sólo pasó el primero no se le pide parar a mitad');
+  // El borde: IGUAL al segundo umbral todavía es «al terminar» (la norma dice «si pasa de»).
+  const borde = seccionContexto({ sesiones: [sesion('s2-6oct', 'working')], contextoDe: () => ctx(UMBRAL_CONTEXTO_A_MITAD), ahora: AHORA });
+  assert.match(borde.alertas[0].linea, /AL TERMINAR su entrega/);
+  // El segundo número tampoco es propio del latido: con otro, la misma sesión cambia de frase.
+  const conOtro = seccionContexto({ sesiones: [sesion('s1-6octd', 'working')], contextoDe: () => ctx(entre, 7), ahora: AHORA, umbralAMitad: entre - 1 });
+  assert.match(conOtro.alertas[0].linea, new RegExp(`por encima de ${k(entre - 1)} \\(A19, a mitad de entrega\\): se releva YA`));
+});
+
+test('SCRUM-1484 · 🔴 CIEGO: con los dos umbrales iguales o al revés no se elige una frase — sale 2', () => {
+  for (const [umbral, umbralAMitad] of [[300_000, 300_000], [500_000, 300_000], [300_000, undefined], [300_000, NaN]]) {
+    const s = seccionContexto({ sesiones: [sesion('s1-6octd', 'working')], contextoDe: () => ctx(700_000), ahora: AHORA, umbral, ...(umbralAMitad === undefined ? { umbralAMitad: null } : { umbralAMitad }) });
+    assert.equal(s.pudo, false, `🔴 con ${umbral}/${umbralAMitad} da una frase`);
+    assert.equal(salidaDe([s]), SALIDA_CIEGO);
+    assert.match(s.motivo, /no es mayor que el de «al entregar»/);
+  }
 });
 
 test('SCRUM-1282 · NEGATIVO: todas por debajo del umbral no acusa a nadie, y dice cuánto llevan', () => {

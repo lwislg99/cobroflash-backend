@@ -56,6 +56,18 @@ const NIF = 'B27000001'; // el del merchant de España del banco
 const ZONA = 'Europe/Madrid';
 const MERCHANT_ES = { country: 'ES', taxId: NIF, email: 'lugo@ejemplo.invalid' };
 
+// El rojo de la guarda, declarado: lo ejecuta `npm run meta:mutaciones`. De aquí la toma también
+// `docs/master/evidencias/SCRUM-1404/mutar-guarda.mjs`, que la aplica al compilado (SCRUM-1404f).
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // Quitar la guarda de «ya sellada»: `applyVeriFactu` vuelve a recalcular y a pisar la huella.
+    fichero: 'src/modules/invoicing/domain/verifactu.service.ts',
+    de: '    if (yaSellada?.vfHash) {',
+    a: '    if (false) {',
+    cae: 'SCRUM-1330 · 🔴 B · `applyVeriFactu` sobre una factura YA sellada, con otra encadenada detrás → la cadena queda BYTE A BYTE',
+  },
+];
+
 // ── LAS PIEZAS ────────────────────────────────────────────────────────────────────────────
 
 /** Como el `crearFactura` de `tests/scrum173`: los mismos datos, sobre el banco. */

@@ -1,0 +1,27 @@
+# caja-documento-suelto-limpio · sha 1c0ec64b0dc734590972a4690a13d36cd4b32226 · EXIT=0 · 9.5 s
+
+── LISTADO · MODO FACTURA · VIEWPORT 929 px ──
+      título de listado    "Facturas"                                                     8 car · 633.0×46.5 px · 1 línea(s)
+      columna Nº           "Nº factura"                                                  10 car · 86.2×23.3 px · 1 línea(s)
+
+── PÁGINA DEL DOCUMENTO SUELTO · MODO FACTURA · VIEWPORT 929 px ──
+      título de la página  "Nueva factura"                                               13 car · 539.0×26.3 px · 1 línea(s)
+      botón primario       "Emitir factura"                                              14 car · 151.6×36.0 px · 2 línea(s)
+      error al emitir      "No hemos podido emitir la factura. Inténtalo otra vez."      54 car · 591.0×42.3 px · 2 línea(s)
+
+── LISTADO · MODO FACTURA · VIEWPORT 390 px ──
+      título de listado    "Facturas"                                                     8 car · 366.0×46.5 px · 1 línea(s)
+      columna Nº           "Nº factura"                                                  10 car · 50.0×46.5 px · 2 línea(s)
+
+── PÁGINA DEL DOCUMENTO SUELTO · MODO FACTURA · VIEWPORT 390 px ──
+      título de la página  "Nueva factura"                                               13 car · 272.0×26.3 px · 1 línea(s)
+      botón primario       "Emitir factura"                                              14 car · 151.6×44.0 px · 2 línea(s)
+      error al emitir      "No hemos podido emitir la factura. Inténtalo otra vez."      54 car · 324.0×62.5 px · 3 línea(s)
+⟦recorrido⟧ 4 casos recorridos · 0 lanzaron · 0 de ésos traían hallazgos en las listas del recorrido
+
+════ VEREDICTO ════
+⟦veredicto⟧ 0 hallazgos · 0 ciegos
+   Las CINCO cajas caben: las dos del listado y las tres de la página montada de verdad,
+   en el modo factura (el único desde SCRUM-825 D1) y en los dos anchos.
+   (Envolver en varias líneas NO es un hallazgo; desbordar o salirse del viewport, sí.)
+⟦arranque⟧ 0.3 s COMPLETA · proceso+ws 0.3 s · primera-página 0.0 s

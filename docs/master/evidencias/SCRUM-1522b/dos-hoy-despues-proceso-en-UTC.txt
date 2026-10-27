@@ -1,0 +1,14 @@
+POBLACION: 8 casos · proceso TZ=UTC · desfase del proceso ahora=0 min · tope=100
+{"caso":"1 · 13 de madrugada + 87 de dia, a las 18:00 de Madrid","zona":"Europe/Madrid","ahora":"2026-07-15T16:00:00Z","filas":100,"panel_mes":100,"panel_hoy":100,"tope_cuenta":100,"tope_desde":"2026-07-14T22:00:00.000Z","envio":"BLOQUEADO (daily_cap)","coinciden":"si"}
+{"caso":"2 · 100 enviadas ayer de dia, a las 00:30 de Madrid","zona":"Europe/Madrid","ahora":"2026-07-15T22:30:00Z","filas":100,"panel_mes":100,"panel_hoy":0,"tope_cuenta":0,"tope_desde":"2026-07-15T22:00:00.000Z","envio":"SALE","coinciden":"si"}
+{"caso":"3 · CONTROL: 87 de dia y nada de madrugada, a las 18:00 de Madrid","zona":"Europe/Madrid","ahora":"2026-07-15T16:00:00Z","filas":87,"panel_mes":87,"panel_hoy":87,"tope_cuenta":87,"tope_desde":"2026-07-14T22:00:00.000Z","envio":"SALE","coinciden":"si"}
+{"caso":"4 · las filas del caso 1, zona sin declarar","zona":"NULL","ahora":"2026-07-15T16:00:00Z","filas":100,"panel_mes":100,"panel_hoy":87,"tope_cuenta":87,"tope_desde":"2026-07-15T00:00:00.000Z","envio":"SALE","coinciden":"si"}
+{"caso":"5 · invierno: 13 a las 00:30 de Madrid + 87 de dia, a las 18:00","zona":"Europe/Madrid","ahora":"2026-01-15T17:00:00Z","filas":100,"panel_mes":100,"panel_hoy":100,"tope_cuenta":100,"tope_desde":"2026-01-14T23:00:00.000Z","envio":"BLOQUEADO (daily_cap)","coinciden":"si"}
+{"caso":"6 · Canarias, verano: 13 a las 00:30 de Canarias + 87 de dia","zona":"Atlantic/Canary","ahora":"2026-07-15T16:00:00Z","filas":100,"panel_mes":100,"panel_hoy":100,"tope_cuenta":100,"tope_desde":"2026-07-14T23:00:00.000Z","envio":"BLOQUEADO (daily_cap)","coinciden":"si"}
+{"caso":"7 · sin reloj de por medio: 90 enviadas + 15 rechazadas, de dia, zona sin declarar","zona":"NULL","ahora":"2026-07-15T16:00:00Z","filas":105,"panel_mes":105,"panel_hoy":90,"tope_cuenta":90,"tope_desde":"2026-07-15T00:00:00.000Z","envio":"SALE","coinciden":"si"}
+{"caso":"8 · CONTROL: 5 de hoy + 40 de anteayer","zona":"Europe/Madrid","ahora":"2026-07-15T16:00:00Z","filas":45,"panel_mes":45,"panel_hoy":5,"tope_cuenta":5,"tope_desde":"2026-07-14T22:00:00.000Z","envio":"SALE","coinciden":"si"}
+{"barrido":"Europe/Madrid","minutos_mirados":525600,"minutos_con_el_mismo_inicio":0,"minutos_en_dias_distintos":34500,"horas_al_ano":575,"dias_afectados":365,"dias por minutos_al_dia":{"60":155,"120":210}}
+{"barrido":"Atlantic/Canary","minutos_mirados":525600,"minutos_con_el_mismo_inicio":223140,"minutos_en_dias_distintos":12600,"horas_al_ano":210,"dias_afectados":210,"dias por minutos_al_dia":{"60":210}}
+{"barrido":"UTC","minutos_mirados":525600,"minutos_con_el_mismo_inicio":525600,"minutos_en_dias_distintos":0,"horas_al_ano":0,"dias_afectados":0,"dias por minutos_al_dia":{}}
+SUELO: los 8 casos tenian filas y el panel las vio
+EXIT=0

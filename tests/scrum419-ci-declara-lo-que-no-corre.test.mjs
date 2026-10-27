@@ -125,6 +125,35 @@ const GATEADOS_DECLARADOS = Object.freeze({
   'scrum13-cobrado.test.mjs': 1,
   'scrum52-operario.test.mjs': 1,
   'scrum692-guardado-parcial-en-base.test.mjs': 1,
+  // SCRUM-876e (T3): dos de los OBSOLETOS, alineados al código de hoy. Mismo trato que los tres de
+  // arriba: conservan staging con `QA_DB_TEST=1` y ganan éste como segundo destino. Necesitan banco
+  // porque levantan la app entera y lo que vigilan es a QUIÉN le contesta: el PDF de la factura de
+  // otro merchant (72), y el albarán de otro merchant y sus dos candados, firmado y modo (los dos
+  // de `albaran`).
+  'scrum72-pdfs-privados.test.mjs': 1,
+  'albaran.test.mjs': 2,
+  // SCRUM-876f (grupo C de SCRUM-868): el envío del presupuesto por ventana o por plantilla.
+  // Conserva staging con `A55_DB_TEST=1` y gana éste como segundo destino. Necesita banco porque
+  // lo que vigila son las FILAS que deja el envío (una `template`, una `service` a 0 €) y la
+  // ventana que abre un entrante. En este destino va en seco por sí mismo y con la salida cortada.
+  'a55-window-quote.test.mjs': 1,
+  // SCRUM-876f: la suite del bot, el otro del grupo C. Necesita banco porque recorre el webhook
+  // de verdad —sesiones, solicitud, adjunto, baja— y lee lo que deja escrito. Mismo trato: staging
+  // con `BOT_SUITE_TEST=1`, y éste como segundo destino, en seco y con la salida cortada.
+  'bot-suite.test.mjs': 1,
+  // SCRUM-876g (T4 de SCRUM-876): los cuatro del albarán que seguían sólo en staging. Conservan
+  // `QA_DB_TEST=1` y ganan éste como segundo destino, en seco y con la salida cortada. Necesitan
+  // banco porque levantan la app y leen lo que la ruta deja escrito:
+  //   · el envío del albarán firmado por WhatsApp: quién puede (el técnico que lleva el trabajo) y
+  //     la fila de `whatsAppMessage` que deja;
+  'scrum47-enviar-albaran-wa.test.mjs': 1,
+  //   · la firma remota entera: el enlace, la página pública, la versión que el cliente vio y el
+  //     auto-envío de la copia firmada;
+  'scrum49-firma-remota.test.mjs': 1,
+  //   · el webhook cuando el cliente contesta sobre un albarán: el acuse y el aviso al profesional;
+  'scrum50-bot-albaranes.test.mjs': 1,
+  //   · las evidencias que se sellan al firmar (remoto e in situ) y que no salen por ninguna respuesta.
+  'scrum68-evidencias-firma.test.mjs': 1,
   // SCRUM-967b: el enlace del portal. Necesita banco porque lo que vigila es a QUIÉN se le da el
   // token del cliente — el correo real, la firma real que sella y la segunda que no debe soltarlo.
   'scrum967b-el-portal-en-el-envio.test.mjs': 1,
@@ -136,6 +165,10 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // (dos merchants), que un documento borrado no se lleva el mensaje por delante (tabla suelta,
   // ENT-3) y las páginas de 20 con cursor.
   'scrum1062-historial-whatsapp-cliente.test.mjs': 1,
+  // SCRUM-1518b: la misma función, y que el entrante del cliente NO sale. Necesita banco porque el
+  // filtro es un operador de Prisma (`not`): el doble en memoria de la sonda de S4 lo ignoraba y
+  // daba verde con el arreglo y sin él.
+  'scrum1518b-la-ficha-no-ensena-entrantes.test.mjs': 1,
   // SCRUM-1014: los sitios del cliente. Necesita banco porque vigila la TENENCIA (merchant y
   // cliente) en las cuatro funciones, el orden estable, y que crear/editar un sitio no escribe
   // `Quote.shippingAddress` (P2/DOC-12).
@@ -167,6 +200,152 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // en scrum597, su doble contesta `invoice.findFirst` con la misma factura sea cual sea el where,
   // pasa 8 de 8 y no dice NADA del recorte.
   'scrum1397-el-tecnico-ve-sus-facturas.test.mjs': 2,
+  // SCRUM-1188d: los TRES que miran que `tiers` de una plantilla quede a NULL de SQL (el alta sin
+  // niveles y el `PUT` con `tiers: null`), mas su suelo. Necesitan banco porque lo que vigilan es
+  // QUE NULL queda en la columna: por la API de Prisma el NULL de SQL y el valor JSON `null` se leen
+  // igual, y solo el SQL crudo contra Postgres (`IS NULL`, `jsonb_typeof`) los distingue. La sonda
+  // que lo intento sin base salio ciega (SCRUM-1188c). `jsonAnulable`, sin base, corre siempre.
+  'scrum1188d-tiers-tambien-se-vacia.test.mjs': 3,
+  // SCRUM-1188d: el que crea una revision con `crearRevisionDeQuote` de verdad y relee por SQL que
+  // las columnas `Json?` vacias se heredan vacias. Mismo motivo. El censo de la lista y la funcion
+  // pura corren siempre.
+  'scrum1188d-la-revision-hereda-el-vacio.test.mjs': 1,
+  // SCRUM-1515: el merchant que crea nuestro guion nace igual que nacia el de `POST /auth/register`
+  // (la ruta se cerro el 8-oct-2026 y la referencia es su foto, `_scrum1515-foto-de-la-ruta.json`),
+  // la ruta cerrada no da de alta, y quien ya tiene cuenta sigue entrando. Necesita banco porque
+  // compara la FILA campo a campo, con sus valores por defecto, y lo que el alta deja colgando
+  // (sesiones, correos). Solo el desechable: da de alta y borra merchants por el guion.
+  'scrum1515-nuestra-puerta-de-alta.test.mjs': 1,
+  // SCRUM-1403: los TRES que ejercitan el recorte de presupuestos del Tecnico y la pestana de
+  // documentos de la ficha de cliente contra Prisma de verdad. Necesitan banco por el mismo motivo
+  // que los de SCRUM-1397: lo que vigilan es el WHERE (el recorte en AND con la busqueda y con el
+  // filtro por autor, los ejes del Trabajo, las revisiones), y eso lo contesta Postgres, no un doble.
+  // SCRUM-1403b: y el CUARTO, el de los eventos con importe y las cifras de la ficha. Necesita banco
+  // porque entra por la RUTA real con sesiones guardadas en la base (Tecnica, administradora y duena)
+  // y mira lo que `GET /admin/customers/:id/detail` arma con los eventos y facturas que lee de
+  // Postgres; luego pinta la ficha con ESA respuesta. Con un doble se probaria el doble, no la ruta.
+  // Lo que se lee sin base (los 7 sitios que escriben un importe, el criterio `seesOnlyOwnJobs`)
+  // va en los dos casos AST del mismo fichero, que corren siempre.
+  'scrum1403-el-tecnico-y-las-otras-puertas.test.mjs': 4,
+  // SCRUM-1489: el buscador de arriba pasa por esas mismas dos puertas (fila 9 del censo de
+  // SCRUM-1390). Necesita banco por el mismo motivo: lo que vigila es el WHERE que la busqueda
+  // manda con el recorte en AND, y que ese filtro deja fuera lo ajeno lo contesta Postgres. La
+  // mitad sin base (nueve casos, con Prisma doblado) corre siempre.
+  'scrum1489-la-busqueda-recorta-al-tecnico.test.mjs': 1,
+  // SCRUM-1346: los CUATRO que entran por la RUTA, con sesiones de verdad, y miran si el Tecnico
+  // alcanza el presupuesto o la factura de un companero, si sigue alcanzando lo suyo y si la
+  // administradora lo sigue alcanzando todo. Necesitan banco porque lo que vigilan es la consulta
+  // que arma cada ruta (con su recorte o sin el), y lo contesta Postgres. El caso sin base (la
+  // lista del trinquete solo nombra sondas que existen) corre siempre.
+  'scrum1346-el-tecnico-ve-documentos-ajenos.test.mjs': 4,
+  // SCRUM-1145: el que crea, edita y borra un sitio por la RUTA real, con sesiones de verdad en dos
+  // merchants. Necesita banco porque lo que vigila es la tenencia (un merchant no ve ni toca el
+  // sitio de otro: la consulta la contesta Postgres) y que borrar un sitio deja intacta la dirección
+  // ya copiada en un presupuesto, que es otra fila. La pantalla (once casos en el banco de vistas)
+  // corre siempre.
+  'scrum1145-pestana-sitios.test.mjs': 1,
+  // SCRUM-1150c: los DOS que miran que dos «Crear revision» a la vez no dejan dos filas con la
+  // misma revision. Necesitan banco porque lo que vigilan es del MOTOR: que
+  // `pg_advisory_xact_lock` hace esperar de verdad a la segunda creacion (se mira en `pg_locks`)
+  // y que su lectura del grupo, lanzada tras conseguir el cerrojo, ve la revision que acaba de
+  // confirmar la primera. La mitad con Prisma doblado (cuatro casos) corre siempre.
+  'scrum1150c-carrera-de-la-revision-postgres.test.mjs': 2,
+  // SCRUM-1390e: los CUATRO que piden el enlace del portal por la RUTA, con sesiones de verdad: el
+  // Tecnico no se lo lleva si el cliente tiene un documento ajeno, si se lo lleva cuando todo es suyo,
+  // la administradora y la duena sin cambios, y la ficha no lo sirve en crudo. Necesitan banco porque
+  // lo que vigilan es la CUENTA de documentos con el recorte de las dos puertas, y eso lo contesta
+  // Postgres. Los dos casos AST corren siempre.
+  'scrum1390e-el-portal-solo-lo-suyo.test.mjs': 4,
+  // SCRUM-1599f (primer lote del diseño B de SCRUM-1599, c.20715): cuatro que hasta aquí SÓLO
+  // corrían con `QA_DB_TEST=1` (staging) y que CI saltaba sin que nadie lo viera. Conservan
+  // staging y ganan éste como segundo destino, con `_banco-libro.mjs`. Necesitan banco porque lo
+  // que vigilan es lo que queda ESCRITO: el autor del gasto (109), el filtro por fecha de
+  // ejecución de trabajos.csv (106), los clientes referenciados del paquete (104) y la tenencia
+  // de la cotización y el proveedor de un gasto (135). El caso sin base de 106 corre siempre.
+  'scrum109-expense-teammember.test.mjs': 2,
+  'scrum106-trabajos-fecha.test.mjs': 1,
+  'scrum104-clientes-referenciados.test.mjs': 1,
+  'scrum135-gasto-tenencia.test.mjs': 4,
+  // SCRUM-1599h (segundo lote del diseño B): siete más, con la misma forma. Necesitan banco porque
+  // lo que vigilan lo contesta la base: los textos del documento que se guardan, se releen y salen
+  // en el PDF (593d), y por la RUTA real con sesiones guardadas: el reenvío de la invitación que no
+  // pierde la fila (131), el `payment.confirmed` duplicado que no re-paga (webhooks), el operario
+  // del trabajo, el cobro y el albarán (57 y 22), los albaranes de un trabajo sin presupuesto (51) y
+  // que la lista de trabajos no crezca en consultas con el número de filas (58). Los casos sin base
+  // de webhooks corren siempre.
+  'scrum593d-viaje-completo-del-texto.test.mjs': 4,
+  'scrum131-resend-honesto.test.mjs': 1,
+  'webhooks-idempotencia.test.mjs': 1,
+  'scrum57-operario-propagacion.test.mjs': 1,
+  'scrum22-operario-readpath.test.mjs': 1,
+  'scrum51-job-sin-quote.test.mjs': 1,
+  'scrum58-jobs-n1.test.mjs': 1,
+  // SCRUM-1599i (tercer lote del diseño B): siete más, con la misma forma. Necesitan banco porque
+  // lo que vigilan lo contesta la RUTA real con filas guardadas: el IDOR de /pay/bank y /pay/mp por
+  // id numérico (90), el hub de Equipo y sus cuentas por miembro (136), el gate por campo del PATCH
+  // de un trabajo (120), el filtro por operario que no le da a un técnico lo ajeno (148), las sumas
+  // de /admin/metrics/operarios (24), el PDF regenerado del presupuesto (pdfs) y el tipoOperacion
+  // con su auditoría (66). Los casos sin base de pdfs y de 66 corren siempre.
+  'scrum90-pay-bank-mp-token.test.mjs': 1,
+  'scrum136-hub-equipo.test.mjs': 3,
+  'scrum120-patch-job-roles.test.mjs': 1,
+  'scrum148-filtro-por-miembro.test.mjs': 2,
+  'scrum24-operarios-metrics.test.mjs': 1,
+  'pdfs.test.mjs': 1,
+  'scrum66-tipo-operacion.test.mjs': 1,
+  // SCRUM-1599k (cuarto lote del diseño B): seis más, con la misma forma. Necesitan banco porque lo
+  // que vigilan lo contesta el código real con filas guardadas: el IDOR de /recibo/:token por id
+  // numérico (74), el 409 de /auth/register sin merchant fantasma (94), la recapitulativa partida
+  // por mes (17), el catálogo de information_schema que lee el arranque (222), el .eml de la
+  // factura con su PDF adjunto (76) y la factura que se confirma o cae junto con su auditoría (207).
+  // Los casos sin base de 17, 222 y 207 corren siempre.
+  'scrum74-recibo-token.test.mjs': 1,
+  'scrum94-register-teammember.test.mjs': 1,
+  'scrum17-recapitulativa.test.mjs': 1,
+  'scrum222-deriva-arranque.test.mjs': 2,
+  'scrum76-email-adjunto.test.mjs': 1,
+  'scrum207-emision-auditada.test.mjs': 2,
+  // SCRUM-1599m (quinto lote del diseño B): los ocho «HE», con la misma forma. Necesitan banco porque lo
+  // que vigilan lo contesta el código real con filas guardadas: el gate del flag en verifactu.xml (73), el
+  // registro que bloquea los bytes del export fiscal (221), la consolidación por cliente que no refactura
+  // (171a), la tenencia de los CSV (25-exports), el XML dentro de datos.zip (82), el albarán a medias que
+  // no se consolida (170), el rango de fechas del paquete (25-export-zip) y el técnico que solo ve sus
+  // Trabajos (tenancy-permisos). Los seis casos sin base de 170 corren siempre.
+  'scrum73-verifactu-gate.test.mjs': 1,
+  'scrum221-export-fiscal-cero-bytes.test.mjs': 1,
+  'scrum171a-consolidar-cliente.test.mjs': 1,
+  'scrum25-exports.test.mjs': 1,
+  'scrum82-zip-verifactu.test.mjs': 1,
+  'scrum170-facturacion-parcial.test.mjs': 1,
+  'scrum25-export-zip.test.mjs': 1,
+  'tenancy-permisos.test.mjs': 2,
+  // SCRUM-1599j: el que 1599i apartó, con la misma forma. Necesita banco porque el IDOR de /pay/card,
+  // /pay/bizum y /pay/invoice por id numérico lo contesta la RUTA real con cobros guardados. Su caso
+  // sin base (el ancla del id, sembrada) corre siempre.
+  'scrum85-pay-routes-token.test.mjs': 1,
+  // SCRUM-1599p (lote 6a del diseño B, medido antes en §1599o): los que llevan carrera y no se pisan en la
+  // tanda. Cinco con la forma de 1599m (115, 127, 178, 92, 814-carrera-del-tramo.gated) y tres que antes
+  // sólo iban a `yaqu_dev_javier` (592, 767, 793), que con el banco toman `URL_BANCO`. Más scrum173, opción
+  // (A) de SCRUM-1599 c.20940: de sus 7, el de las cadenas YA PERSISTIDAS SALTA también con el banco (recorre
+  // las facturas de toda la base) y se queda en staging; aquí cuenta, porque su salto nombra la variable.
+  // El caso sin base de 178 corre siempre.
+  'scrum115-wa-fallo-registrado.test.mjs': 2,
+  'scrum127-paywall-bloquea.test.mjs': 1,
+  'scrum173-cadena-verifactu-serializada.test.mjs': 7,
+  'scrum178-emision-manual.test.mjs': 2,
+  'scrum92-login-operario.test.mjs': 1,
+  'scrum814-carrera-del-tramo.gated.test.mjs': 3,
+  'scrum592-concurrencia-serie.test.mjs': 4,
+  'scrum767-cura-concurrencia.test.mjs': 4,
+  'scrum793-la-carrera-del-token.test.mjs': 6,
+  // SCRUM-1599s (lote 6b del diseño B): los dos que 1599p dejó fuera, ya alineados con la serie F en 1599r
+  // (SCRUM-1599 c.20947). 234.gated con la forma de 1599m; 781 con `URL_BANCO`, como 592. Los cuatro casos
+  // sin base de 781 corren siempre.
+  'scrum234-carrera-serie.gated.test.mjs': 1,
+  'scrum781-concurrencia-de-la-factura.test.mjs': 4,
+  // SCRUM-1599t: scrum574-mismo-cliente-tras-migracion con la forma de 1599m. Su caso «CONTRA POSTGRES», que lee
+  // los clientes de TODA la base, salta en el banco con su motivo y se queda en staging (opción A, como 173).
+  'scrum574-mismo-cliente-tras-migracion.test.mjs': 2,
 });
 const TOTAL_DECLARADO = Object.values(GATEADOS_DECLARADOS).reduce((a, b) => a + b, 0);
 

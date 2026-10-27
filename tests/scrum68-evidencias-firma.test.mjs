@@ -5,11 +5,35 @@
 //   evidenciaFirma { canal, ip, ua, tokenId, firmante, contentHash } y — CLAVE — ip/ua/hash
 //   NUNCA se exponen (ni en la respuesta serializada, ni en la página pública, ni en el JSON).
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-876g: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
+import { cortarSalida } from './_sin-salida.mjs'; // SCRUM-876g: el hecho, no la bandera
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 import { computeAlbaranContentHash } from '../dist/modules/jobs/domain/albaran.service.js';
+import http from 'node:http';
+
+// `node:http` sin agente y no `fetch` (SCRUM-1218d): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de `fetch`
+// (status, headers.get, text, json). No sigue redirecciones: medido, las únicas 3xx son las de /auth/verify, que ya iban con `redirect: 'manual'`.
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    let d = ''; r.setEncoding('utf8');
+    r.on('data', (t) => { d += t; });
+    r.on('end', () => ok({
+      status: r.statusCode,
+      headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+      text: async () => d,
+      json: async () => JSON.parse(d),
+    }));
+  });
+  req.on('error', mal);
+  req.end(body);
+});
 
 const SIG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
 const HEX64 = /^[0-9a-f]{64}$/;
@@ -81,14 +105,33 @@ test('computeAlbaranContentHash: null vs cadena no colisionan (serialización ca
 });
 
 // ── Sellado real + PRIVACIDAD (gateado) ──────────────────────────────────────
-const ENABLED = process.env.QA_DB_TEST === '1';
+const CON_BANCO = URL_BANCO !== '';
+const ENABLED = process.env.QA_DB_TEST === '1' || CON_BANCO;
+// SCRUM-876g · la firma remota lanza el auto-envío de la copia firmada (SCRUM-49). Con el banco como
+// destino va en seco; contra staging no cambia nada: lo pone quien lanza, como dice la cabecera.
+if (CON_BANCO) process.env.WHATSAPP_DRY_RUN = '1';
 const FWD_IP = '203.0.113.9';   // x-forwarded-for determinista para la aserción de ip
 const UA = 'QA-UA-SCRUM68/1.0';
 // SCRUM-300: DISTINTO del nombre del cliente ('Cliente 68') a propósito — es lo que permite
 // distinguir «lo declaró alguien» de «se lo pusimos nosotros».
 const FIRMANTE_DECLARADO = 'Encargado de obra Paco';
 
-test('SCRUM-68: sella evidencias (remoto + in situ) y NUNCA expone ip/ua/hash', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-68: sella evidencias (remoto + in situ) y NUNCA expone ip/ua/hash', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
+  // SCRUM-876g · con el banco como destino este fichero corre en la tanda de CI. La bandera se
+  // asierta (el sender la lee en cada envío: `scrum876f-el-seco-se-decide-al-enviar`), pero lo que
+  // decide no es la bandera: se corta toda conexión que no sea de esta máquina, con su control
+  // positivo ANTES de la primera petición, y al acabar lo apuntado tiene que ser nada.
+  if (CON_BANCO) assert.equal(process.env.WHATSAPP_DRY_RUN, '1', 'este test exige WHATSAPP_DRY_RUN=1');
+  const corte = CON_BANCO ? cortarSalida() : null;
+  if (corte) {
+    await corte.controlPositivo();
+    t.after(() => {
+      const ajenos = corte.ajenos();
+      corte.restaurar();
+      assert.equal(corte.controlado, true, '🔴 CIEGO: el corte de salida no pasó su control');
+      assert.deepEqual(ajenos, [], '🔴 el test INTENTÓ salir de esta máquina con WHATSAPP_DRY_RUN=1 y el banco como destino');
+    });
+  }
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const server = app.listen(0);
@@ -123,18 +166,18 @@ test('SCRUM-68: sella evidencias (remoto + in situ) y NUNCA expone ip/ua/hash', 
   const mkCookie = async () => {
     const token = 'qa68-' + crypto.randomBytes(12).toString('hex');
     await prisma.authSession.create({ data: { merchantId: merchant.id, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) } });
-    const res = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
+    const res = await pedirSinAgente(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
     return (res.headers.get('set-cookie') || '').split(';')[0];
   };
 
     // ── (A) FIRMA REMOTA (pública) ───────────────────────────────────────────
-    const rFirmar = await fetch(`${base}/albaran/${firmaToken}/firmar`, {
+    const rFirmar = await pedirSinAgente(`${base}/albaran/${firmaToken}/firmar`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-forwarded-for': FWD_IP, 'user-agent': UA },
       // SCRUM-300: se declara un nombre DISTINTO del cliente a propósito. Antes el sobre ponía
       // el nombre del cliente pasara lo que pasara, así que los dos valores eran
       // indistinguibles y el test no podía ver la diferencia. Ahora sí.
-      body: JSON.stringify({ signatureData: SIG, firmadoPorNombre: FIRMANTE_DECLARADO }),
+      body: JSON.stringify({ signatureData: SIG, firmadoPorNombre: FIRMANTE_DECLARADO, version: albRemoto.version }),
     });
     assert.equal(rFirmar.status, 200, `firmar remoto → 200 (fue ${rFirmar.status})`);
     const firmarBody = await rFirmar.text();
@@ -158,13 +201,13 @@ test('SCRUM-68: sella evidencias (remoto + in situ) y NUNCA expone ip/ua/hash', 
       'la respuesta pública de firmar NO expone ip/ua/hash');
 
     // PRIVACIDAD: la página pública "ya firmado" tampoco los filtra
-    const pageHtml = await (await fetch(`${base}/albaran/${firmaToken}`, { headers: { 'user-agent': UA } })).text();
+    const pageHtml = await (await pedirSinAgente(`${base}/albaran/${firmaToken}`, { headers: { 'user-agent': UA } })).text();
     assert.ok(!pageHtml.includes(FWD_IP) && !pageHtml.includes(evRemoto.contentHash),
       'la página pública NO expone ip ni hash');
 
     // ── (B) FIRMA IN SITU (admin) ────────────────────────────────────────────
     const cookie = await mkCookie();
-    const rInSitu = await fetch(`${base}/admin/albaranes/${albInSitu.id}/firmar`, {
+    const rInSitu = await pedirSinAgente(`${base}/admin/albaranes/${albInSitu.id}/firmar`, {
       method: 'POST',
       headers: { cookie, 'content-type': 'application/json', 'x-forwarded-for': FWD_IP, 'user-agent': UA },
       body: JSON.stringify({ signatureData: SIG, firmadoPorNombre: FIRMANTE_DECLARADO }),
@@ -188,7 +231,7 @@ test('SCRUM-68: sella evidencias (remoto + in situ) y NUNCA expone ip/ua/hash', 
       'la respuesta serializada NO expone ip/ua/hash en ningún campo');
 
     // El PDF se regenera con el certificado (200 + application/pdf) tras firmar
-    const rPdf = await fetch(`${base}/admin/albaranes/${albInSitu.id}/pdf`, { headers: { cookie } });
+    const rPdf = await pedirSinAgente(`${base}/admin/albaranes/${albInSitu.id}/pdf`, { headers: { cookie } });
     assert.equal(rPdf.status, 200);
     assert.match(rPdf.headers.get('content-type') || '', /application\/pdf/);
 

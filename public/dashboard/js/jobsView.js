@@ -77,7 +77,7 @@ async function renderJobsView(container) {
     bNuevo.className = 'btn-primary';
     bNuevo.id = 'jobs-nuevo-btn';
     // SCRUM-769 · rótulo FIRMADO por el fundador el 6-sep-2026: «Trabajo nuevo» → «Nuevo trabajo»,
-    // el mismo patrón que las otras listas. Se conserva escrito aquí como RESPALDO —igual que en
+    // el mismo patrón que las otras listas. Consta en: SCRUM-769 comentario 14580. Se conserva escrito aquí como RESPALDO —igual que en
     // `quotesListView` y `customersView`— por si la pieza no ha cargado; el que manda es el de
     // `atajoNuevo.TEXTOS` y `etiquetar` lo pisa un renglón más abajo.
     bNuevo.textContent = 'Nuevo trabajo';
@@ -387,14 +387,15 @@ function pintarCifrasDeLaLista(zona, jobs) {
  * fichero era 2. Con el modal de técnicos habrían sido tres — y **un trinquete solo baja**. En vez
  * de subirlo, los tres caminos pasan por aquí y quedan en UNO.
  *
- * ⚠️ Esto REDUCE la superficie, no la cura: por esta rendija sigue pudiendo salir un identificador
- * del servidor. Lo que cambia es que ahora hay un único punto donde traducirlo el día que se haga,
- * en vez de tres. Traducirlo es otro ticket (el patrón es `mensajeDeErrorProveedor`, SCRUM-644).
+ * SCRUM-1233e · y ese punto ya traduce: el detalle sale de `mensajeParaPersona` (api.js), que solo
+ * deja pasar la frase que el servidor escribió para una persona (`data.message`). Antes caía a
+ * `err.message`, o sea «API 500: internal_error» o «Failed to fetch» detrás del prefijo. Sin frase
+ * del servidor, el aviso es el prefijo solo.
  *
  * Los prefijos son los literales que ya usaba esta pantalla: no se estrena microcopy (regla 30).
  */
 function avisoDeFallo(prefijo, err) {
-  const detalle = (err && err.data && err.data.message) || (err && err.message) || '';
+  const detalle = mensajeParaPersona(err, '');
   showToast(detalle ? prefijo + ': ' + detalle : prefijo, 'error');
 }
 
@@ -1062,9 +1063,13 @@ function jobRow(j, container, equipo) {
   // ⑤ Acción principal + el «⋯»
   const tdAcc = document.createElement('td');
   tdAcc.className = 'cell-actions';
+  // SCRUM-1562f · la celda lleva DOS zonas: «Ver detalle» (mirar) y `.jobs-acciones` (actuar). Ver
+  // el porqué junto a `bDetalle`, más abajo.
+  const celda = document.createElement('div');
+  celda.className = 'jobs-celda-acciones';
+  tdAcc.appendChild(celda);
   const caja = document.createElement('div');
   caja.className = 'jobs-acciones';
-  tdAcc.appendChild(caja);
 
   // 🔴 DOS BOTONES CON EL MISMO RÓTULO, uno que navega y otro que cobra. `jobNextAction` devuelve
   // `💰 Cobrar el resto (importe)` para un terminado con saldo — la MISMA cadena que el botón de
@@ -1189,6 +1194,38 @@ function jobRow(j, container, equipo) {
       jobsModal('Cerrar trabajo', cuerpo, () => {});
     });
   }
+
+  // ── SCRUM-1562 · LA FICHA, TAMBIÉN SIN RATÓN ──────────────────────────────────────────────
+  // El clic en la fila abre el Trabajo, pero un `<tr>` no recibe foco ni teclas. Y los botones de
+  // arriba no lo suplen: «Agendar», «▶ Empezar» y «💰 Cobrar el resto» ejecutan aquí, y los que sí
+  // llevan a la ficha («+ Nuevo albarán»…) prometen otra cosa en el rótulo. Medido el 18-oct-2026
+  // con la sonda de S3. Se resuelve como Presupuestos (`quotesListView.js`, «Ver detalle») y
+  // Clientes («📊 Historial»): un control NATIVO dentro de la fila, con el rótulo que ya usa la
+  // lista hermana. No se le da `role` a la fila: un `<tr>` con `role=button` deja de ser una fila
+  // de tabla para quien la oye.
+  //
+  // Fantasma, no secundaria: la jerarquía de SCRUM-917c no cambia —la primaria sigue siendo la del
+  // dinero, y la acción de la escalera sigue pesando más que mirar—. El clic en la fila se queda.
+  // `stopPropagation`, como Presupuestos: no navega dos veces aunque la guarda de abajo dejara de
+  // reconocer este botón.
+  //
+  // ── SCRUM-1562f · …Y FUERA DE `.jobs-acciones` ─────────────────────────────────────────────
+  // `.jobs-acciones` es la acción de la ESCALERA: la que cambia con el estado del Trabajo, y la que
+  // `guard:escalera-por-estado` compara con la del detalle. «Ver detalle» sale igual en los cinco
+  // estados, así que no es la acción de la fila: dentro de esa caja, en un Trabajo CERRADO era el
+  // único botón y la lista «proponía» algo que el detalle no propone. Decisión (a) del fundador,
+  // SCRUM-1570 c.20161: sale de la caja y el guard no se toca. Sigue siendo el MISMO `<button>`
+  // nativo en la misma celda —el teclado de SCRUM-1562 no cambia— y va DELANTE, como en
+  // Presupuestos, para que el «⋯» siga cerrando la fila.
+  const bDetalle = document.createElement('button');
+  bDetalle.className = 'btn-ghost btn-sm';
+  bDetalle.textContent = 'Ver detalle';
+  bDetalle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (window.renderAppView) window.renderAppView('jobs-detail', { jobId: j.id });
+  });
+  celda.appendChild(bDetalle);
+  celda.appendChild(caja);
 
   if (menu.length && typeof overflowMenu === 'function') caja.appendChild(overflowMenu(menu));
   tr.appendChild(tdAcc);

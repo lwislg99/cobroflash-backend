@@ -140,7 +140,7 @@ que no lo son.** Un acierto de subcadena y una afirmación falsa se cuentan igua
 
 # CLASE A · falsa por la auditoría (7)
 
-> No hay envío, no hay cola y no hay interruptor (auditoría §1, eslabones 8 y 9: **NO EXISTE**).
+> No hay envío, no hay cola y no hay interruptor (auditoría §1, eslabones 8 y 9: **NO EXISTE**). *(Nota del 13-oct-2026, SCRUM-1500h, decisión del fundador en SCRUM-1500 c.18993: medido el 20-ago-2026 y NO reclasificado. Que la cola o la entidad `VfSubmission` «no existe», «no aparece» o «no está en el esquema» —aquí y en las líneas 49, 144, 156, 169, 175, 181, 186, 303 y 335— era cierto entonces y es falso desde el 30-sep-2026 (SCRUM-1296). Medido en SCRUM-1500d (Jira c.18919): hay una tabla que la emisión llena y que ningún proceso vacía — el esquema tiene el modelo, sellar una factura deja su alta en `pending`, y el único código que la sacaría de ahí existe, tiene tests y no lo llama ni lo carga nadie: ni un cron, ni una ruta, ni el arranque. «No hay envío» sigue siendo cierto. NO medido: ninguna base de datos (ni si la tabla existe en producción, staging o dev, ni cuántas filas tiene) ni el valor de `SIF_ENABLED` en Railway.)*
 > Verificado además aquí, de primera mano y no heredado: `VfSubmission` **no aparece** en
 > `prisma/schema.prisma`, y el único acierto de
 > `prewww1 | VerifactuSOAP | https.Agent | mTLS | fast-xml-parser` en todo `src/` es
@@ -226,7 +226,7 @@ firma dicen lo contrario de lo que esta clase castiga.
 
 **Lectura verdadera:** es la decisión de arquitectura tomada en S1-0b, y como decisión sigue en pie.
 **Lectura falsa:** que ese cliente exista. **No existe ni una línea:** el único acierto de esos
-términos en `src/` es el comentario de `modoVisible.ts:21` que dice que no hay clientes SOAP/mTLS.
+términos en `src/` es el comentario de `modoVisible.ts:21` que dice que no hay clientes SOAP/mTLS. *(Nota del 13-oct-2026, SCRUM-1500h, decisión del fundador en SCRUM-1500 c.18993: ese comentario se corrigió el 13-oct-2026. Como «no existe ningún cliente» era falso desde SCRUM-1127; como «nada envía» sigue siendo cierto. Medido en SCRUM-1500g (Jira c.18986) y vuelto a leer el 13-oct-2026: hay UN cliente, `src/modules/fiscal/verifactu/sif.client.ts` —538 líneas, sobre SOAP, con opciones de mTLS que le llegan de fuera y una sola llamada de red, dentro de `enviarSobre`—, y NADIE lo llama: 0 importaciones de valor, y `enviarSobre` tiene 1 definición y 0 llamadas en `src/`. NO medido: el cliente no se ha ejecutado, y tampoco ninguna base de datos ni el valor de `SIF_ENABLED` en Railway.)*
 Un endpoint de producción escrito con nombre y ruta se lee como algo que ya se usa.
 
 **C2 · `yaqu-verifactu-sif:32-33` · C3 · `cerebro-yaqu:53-54` · C4 · `verifactu:229-231` — las tres remisiones al guion H2**

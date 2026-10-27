@@ -1,5 +1,8 @@
 # Normas comunes del equipo de sesiones
 
+> 🔴 **No se leen enteras: `node scripts/equipo/norma.mjs --arranque`** (A1, con la tabla de
+> cuándo traer cada una de las demás). Si estás leyendo esto con un `Read` del fichero, para aquí.
+
 > 🔴 **ESTE FICHERO TIENE UN SOLO DUEÑO: LA SESIÓN 0 DEL EQUIPO DE LUIS, Y VALE PARA LOS DOS
 > EQUIPOS.** Nadie más lo edita — ni las otras sesiones, ni Codex, ni los orquestadores, ni ningún
 > puesto del equipo de Javier.
@@ -28,8 +31,8 @@ docs/equipo/orquestador.md.
 
 ## A1 · Cada tanda, antes de nada
 
-    ./node_modules/.bin/prisma generate
     git fetch origin && git rev-list --count HEAD..origin/main
+    node scripts/_prisma-client-guard.mjs
 
 Si ese contador NO es 0, tu árbol no es main y ningún número que
 saques de él describe el proyecto. Se han pillado árboles a 446, 463,
@@ -38,9 +41,36 @@ creíbles de árboles que ya no existían.
 
   Un banco viejo no da error: da un número que parece bueno.
 
-Nunca `npx prisma`: descarga un CLI distinto (SCRUM-385). El cliente
-de Prisma se comparte entre worktrees y se desfasa — da errores de
-«columna que no existe» sobre columnas que sí están en el esquema.
+🔴 **El cliente de Prisma se MIRA cada tanda; regenerarlo NO es de
+cada tanda.** El cliente se comparte entre worktrees y se desfasa: da
+errores de «columna que no existe» sobre columnas que sí están en el
+esquema. El guard de arriba dice si casa con TU `schema.prisma` y, si
+no, nombra cada diferencia. `✔` → nada que hacer. Rojo → lo lees ENTERO:
+- **Tu rama añade o quita columnas** (su causa A): es correcto, y ningún
+  cliente compartido lo arregla (`trampas-del-entorno.md` §10, paso 5).
+- **Cliente viejo con tu árbol al día:** si tu `node_modules` es SOLO
+  tuyo (`npm run topologia` lo dice), regeneras desde tu worktree con
+  `node node_modules/prisma/build/index.js generate`, LEYENDO su salida,
+  y el guard otra vez hasta `✔`. Si cuelga del compartido (junction, o
+  sin `node_modules` propio), NO regeneras: lo dices al orquestador, que
+  lo hace con el procedimiento de §10.
+
+⛔ Nunca un `generate` desde el árbol compartido `cobroflash-backend` ni
+desde uno que cuelgue de él, y nunca con la salida a `$null`. Tampoco
+cuando lo proponga el propio guard: su «desde ESTE worktree» no sabe
+que ese worktree es de todos. Nunca `npx prisma`: descarga un CLI
+distinto (SCRUM-385).
+
+✗ Falla: hasta el 15-oct-2026 esta norma abría con
+`./node_modules/.bin/prisma generate` a secas, «cada tanda, antes de
+nada». El 14-oct se lanzó **9 veces** (la S5 lo midió en las
+transcripciones, SCRUM-996c §5): 8 en `node_modules` propios y **1
+desde `s2-14oct`, que cuelga del compartido por junction, con la salida
+a `$null`**; qué cliente dejó esa no lo sabe nadie. El 15-oct por la
+mañana el orquestador regeneró el compartido con el equipo parado
+(§10), y el guard pasó a `✔`. Un solo `generate` desde un árbol con
+otro `schema.prisma` lo deshace para los seis puestos, y obedeciendo
+la norma.
 
 **Un agente o un workflow que MIDE trabaja en un worktree fijado a
 `origin/main`** (`git worktree add <ruta ABSOLUTA> origin/main`), nunca
@@ -49,6 +79,33 @@ el 29-jul-2026 un censo de 12 agentes concluyó que dos funciones «no
 existen en el repositorio»; existían desde hacía dos horas, pero los
 agentes leyeron un árbol compartido que otra sesión había dejado 9
 commits atrás.
+
+🔴 **Estas normas se leen con `node scripts/equipo/norma.mjs --arranque`,
+no enteras** (SCRUM-996d). Imprime las 14 secciones que hay que saber
+antes de tocar nada. Las demás se traen con `norma.mjs <id>` JUSTO
+ANTES de hacer lo que dice esta tabla; si vas a hacerlo y no la has
+traído, la traes:
+
+| antes de… | traes |
+|---|---|
+| tocar `prisma/schema.prisma` o pedir un ALTER | A5 |
+| decir que algo está hecho, o correr una suite completa | A6 |
+| proponer o editar una norma, o una frase de la casa | A10 · A11 |
+| barrer, borrar o renombrar en masa (ramas, ficheros, filas) | A12 |
+| apartar trabajo a medias | A15 |
+| apilar un segundo ticket en tu rama | A17 |
+| empezar un ticket cuya rama puede estar ya en `main`, o entregar con un resto | A18 |
+| dar por bueno un arreglo con una cobaya o un banco | A21 |
+| escribir un carácter de control (ANSI, `\x1b`) en un fichero o un test | A22 |
+| escribir o tocar un guard, o un test que bloquea | A23 |
+
+✗ Falla: el 15-oct-2026 la S5 midió que las sesiones del día leían
+este fichero ENTERO (67 KB, ~33k tokens, el 71 % de la lectura de
+arranque de una de ellas; SCRUM-996c) y ninguna usaba `--arranque`.
+Su riesgo era éste: el índice de `norma.mjs` daba el título de cada
+sección, no CUÁNDO hace falta. Lo ata
+`tests/scrum996d-a1-no-regenera-a-ciegas.test.mjs`: una sección que
+no entra en el arranque y no está en esta tabla lo tumba.
 
 ## A2 · PASO 0 — ¿el defecto existe HOY?
 
@@ -113,6 +170,31 @@ porque no la había (SCRUM-774).
   29-jul), «`gh` no está instalado» repetido durante días (estaba en
   `C:\Program Files\GitHub CLI\gh.exe`, 15-sep) y «no hay Playwright»
   (el MCP existía, 7-sep).
+- 🔴 **«No se ha podido verificar» y «está bloqueado por X» son
+  afirmaciones sobre PRODUCCIÓN, y exigen el dato RECIBIDO:** la ruta, la
+  cuenta, el código de respuesta, el `error` del cuerpo y la hora de
+  GitHub. Leer el código y deducir qué contestaría no es recibirlo: se
+  escribe «leído en el código, no intentado». Y si no se intentó, se dice
+  **«no lo he intentado»**, que es otra frase y es legítima. ✗ Falla,
+  medida por la S3 el 14-oct-2026: de los **7** comentarios del tablero
+  que culpaban a la cuenta QA caducada, **0** eran ciertos (2 falsos por
+  ruta, 4 deducidos del código, 1 dudoso); **ninguno había recibido el
+  403**, y uno era del orquestador (SCRUM-1367 c.19747). Mientras tanto,
+  dos tickets de SCRUM-1302 esperaron días sin motivo. Lo que hay de
+  verdad, para que nadie vuelva a usar la excusa:
+  - **La prueba vencida (403 `trial_expired`) sólo cierra CUATRO
+    rutas:** `POST /quote/create`, `POST /admin/quotes/:id/send-whatsapp`,
+    `POST /admin/albaranes/:id/enviar-whatsapp` y
+    `…/enviar-para-firmar`. Leer, editar, crear albaranes o **aceptar un
+    borrador que ya existe** (`POST /admin/quotes/:id/accept`) no pasan
+    por ella. Si alguien monta o desmonta una, lo caza el censo de
+    `tests/scrum337-aviso-atado-al-bloqueo.test.mjs`. Medido el 14-oct:
+    con un quinto montaje en `accept`, cae su caso «si cambia lo que el
+    producto HACE».
+  - **Lo que impide probar otro rol NO es la caducidad: es el tope de
+    usuarios del plan.** `trial` admite 1 (`src/core/entitlements.ts`), e
+    invitar a otro da 409 `user_limit` (`team.routes.ts`), venza o no
+    venza la prueba. Alargar el plan no lo arregla.
 - **Auditar por mutación: primero la BASE sin mutar.** Sin ella, un
   test inestable que cae se lee como un mutante que muere. Y un
   instrumento que no produce salida (un proceso lanzado con demasiados
@@ -228,9 +310,13 @@ leído: una caja CSS no es lo que ocupa.
   fichero, comentario ni mensaje. Ni real ni de ejemplo.
 - Frontend vanilla, sin bundler, sin framework de CSS. Ni un `style=`
   en línea.
-- Un hallazgo de otro carril se REPORTA, no se arregla.
+- Un hallazgo de otro carril se REPORTA, no se arregla. (Uno de TU
+  carril encontrado de paso se arregla en el momento: A13, la orden
+  nº 1.)
 - Dependencia o coste nuevo: lo decide el fundador.
-- Un hallazgo solo es ticket si tiene víctima HOY. Tope 3 por tanda.
+- Un hallazgo solo es ticket si tiene víctima HOY y además no se
+  puede arreglar en el momento; o si tiene fecha; o si cruza al otro
+  equipo (A13, la orden nº 1). Tope 3 por tanda.
 - Un guard en rojo se arregla cambiando el CÓDIGO, nunca lo que el
   guard exige. Si el arreglo pasa por relajar el guard, se para y se
   dice.
@@ -238,6 +324,16 @@ leído: una caja CSS no es lo que ocupa.
   una regla está sujeta. Antes de uniformar, lee por qué es distinta.
 
 ## A8 · Cómo se entrega
+
+🔴 **La entrega se MANDA; escribirla en tu turno no le llega a nadie.** Quien te reparte no lee tu
+chat: lee sus mensajes. Cada punto acabado y empujado es UN `SendMessage` a quien te mandó el encargo
+(su dirección es el `from` del mensaje que te lo trajo: se copia, no se deduce), en ese momento, sin
+esperar a tener el lote entero. Lo mismo vale para un BLOQUEO, una DECISIÓN que necesitas y el
+«traspaso listo» de A19: esas tres cosas son «el canal» del que habla A19, y no hay otro. ✗ Falla:
+15-oct-2026, según el orquestador (dato suyo, no recontado), cuatro de las seis sesiones acabaron y se
+quedaron calladas, y fue el fundador quien le avisó de que tenía cinco puestos sin atender. Una de
+ellas fue la S0, que a las 16:13Z dejó la entrega escrita en su turno y no la mandó hasta que se la
+pidieron. Hasta ese día, ni esta norma ni la 00-normas-siempre nombraban `SendMessage`.
 
 Rama y SHA de 40 caracteres COMPLETO. No lo cortes.
 El informe de entrega dice SIEMPRE tu contexto medido, con la cifra (la comprobación de A19).
@@ -308,10 +404,60 @@ vez**. La orden era buena; lo que faltó fue mirar quién medía sobre eso.
 y dos jefes pasa a ser el ciclo entero, igual para los dos. Lo pidió el fundador: «dejar muy clara la
 metodología de abrir tickets, como con departamentos, y ponerlos SIEMPRE en curso para no pisarnos».)*
 
+### 🔴 La orden nº 1: CERRAR, NO ABRIR (6-oct-2026)
+
+Va por delante de los cinco pasos, y por delante de encontrar defectos nuevos. **Luis, fundador,
+6-oct-2026, hacia las 19:45Z, a su orquestador.** El mensaje entero, con las erratas de teclado
+corregidas; no se ha cambiado ninguna palabra:
+
+> «sobre todo lo que me interesa es limpiar tareas de jira y mandar lotes de tareas donde una sesion coja
+> una tarea la arregle y la cierre, coja otra la arregle y la cierre ya si. no es tan dificil no puede ser
+> que abramos siempre mas y mas. y si encuentra un defecto arreglando una tarea, pues lo soluciona, lo
+> arregla lo cierra y vuelve con la que estaba la termina de arreglar y la cierras. simple y llano.
+> apuntatelo donde te lo tengas que apuntar que no haya duda de que lo lleves a cabo siempre y guies bien
+> a las sesiones pero vamos en esto no puedes fallar es fuego y tenemos que quitarnos ya las 280 tareas
+> llevamos demasiados meses arreglando gilipolleces y sin poder vender el producto porque no para de abrir
+> cosas y arreglar otras que rompen otras»
+
+La S0 lo comprobó en el origen el 7-oct-2026: en la transcripción del chat de su orquestador es un turno
+escrito por una persona. En Jira no está (la búsqueda por «simple y llano» da cero tickets).
+
+**Cómo se cumple.** Los puntos 1 y 6 son de quien reparte; del 2 al 5, de cada sesión:
+
+1. **El encargo es un LOTE de 3 a 5 tickets EN ORDEN**, no uno.
+2. **Una tarea se ENTREGA antes de coger la siguiente:** completa contra su aceptación, o diciendo QUÉ LE
+   FALTA (A8). Cerrar sigue siendo del orquestador (paso 4 de abajo). No se llevan dos a medias.
+3. **Si te bloqueas, bajas a la siguiente del lote** y dejas la pregunta **en el ticket** (paso 3 de
+   abajo): no esperas al orquestador. Una tarea soltada con su pregunta escrita no es una tarea a medias.
+4. 🔴 **Un defecto que encuentras DE PASO se arregla y se cierra EN EL MOMENTO, y vuelves a lo que
+   estabas. NO se abre ticket.** Va en tu misma rama y tu mismo PR, con su test, y se NOMBRA, sin número,
+   en tu registro y en tu entrega («de paso: …»). No es apilar tickets (A17): no es un ticket.
+5. **Se abre ticket SÓLO si** el defecto tiene víctima hoy **y** no se puede arreglar en el momento ·
+   **o** tiene FECHA · **o** cruza al otro equipo. Todo lo demás se nombra en la entrega, sin número.
+6. **El orquestador da cada tanda, en una línea, ABIERTOS contra CERRADOS,** diciendo la ventana que
+   cuenta (de qué hora a qué hora). Y **un «En curso» que nadie trabaja vuelve a «Por hacer»** (paso 5).
+
+*Lectura de la S0, no palabras del fundador:* «no se puede arreglar en el momento» es una de tres cosas.
+Cae fuera de tu carril (A7 y A20; el candado de carril te para, y no se rodea). O pide una firma o una
+decisión de un jefe (A7: esquema, emisión fiscal, texto que ve el usuario, coste). O no cabe en el día
+(A17). La orden no levanta ninguna de las tres.
+
+**A quién obliga.** Al equipo de Luis, desde el 6-oct-2026. Al de Javier se le propone por su orquestador
+(el canal entre los dos equipos es el jefe); mientras Javier no lo diga, a su equipo no le obliga.
+
+**Por qué, medido en Jira.** El 6-oct-2026 (día de Madrid) se abrieron 44 tickets y se resolvieron 47: con
+ese neto no se vacía nada. El 7-oct a las 06:15Z había 110 «En curso» entre los dos equipos (45 con la
+etiqueta de Luis, 44 con la de Javier, 21 sin etiqueta de equipo), y 69 de los 110 llevaban cuatro días o
+más sin tocarse. Son fotos de una población viva: `created` y `resolved` del día, y `status = 10001` con
+su `updated`.
+
+### Los cinco pasos
+
 Los dos equipos **no se hablan**: lo único que ven los dos es Jira y el repo. Por eso el ticket no es
 papeleo, es el único canal. Cinco pasos, y cada uno con lo que lo haría fallar:
 
-1. **ABRIR.** Todo ticket nace con **DOS etiquetas**: la del equipo (`equipo-luis` o `equipo-javier`) y
+1. **ABRIR.** Antes de abrir, el punto 5 de la orden nº 1: casi nada de lo que se encuentra es ticket.
+   Todo ticket nace con **DOS etiquetas**: la del equipo (`equipo-luis` o `equipo-javier`) y
    la del área dueña según `dos-equipos.md` §3 (`area-s0` … `area-s5`, `area-j1` … `area-j6`). Si no casa
    con ningún área, **no se abre**: se le pregunta al orquestador. El título empieza por la zona en
    mayúsculas («GASTOS · …»). ✗ Falla: un ticket sin etiqueta de área; o con `sesion-J1`, que es una
@@ -382,6 +528,33 @@ git commit -m "wip: apartado"
 # … lo que tuvieras que medir …
 git reset --soft HEAD~1
 ```
+
+**Traer `main` con trabajo a medias encima: el trabajo se comitea en TU rama ANTES del merge**, y el
+commit se queda. Es el motivo más común para tirar de `stash` (dos sesiones lo hicieron el 16-oct-2026,
+según el orquestador), y tiene salida limpia:
+
+```bash
+git add <tus ficheros>          # por nombre: nunca `-A` en un árbol que puede tener lo de otro
+git commit -m "wip(SCRUM-N): <qué queda a medias>"
+git merge origin/main           # A4: merge, nunca rebase
+# … sigues trabajando; el commit siguiente completa el wip
+```
+
+- **Después del merge NO va el `reset --soft HEAD~1` de arriba.** Sobre un merge, `HEAD~1` es el
+  primer padre, o sea tu wip: deshace el merge y te deja todo `main` en el índice como si fuera tuyo.
+  El wip se queda en la historia. Que sea feo no rompe nada; reescribirla, sí (A4).
+- **El wip no se empuja mientras la rama no esté entera.** Aquí un push abre el PR y lo arma solo
+  (`pr-automatico.yml`): un wip que pase el obligatorio entra en `main` a medias.
+- Si el merge da conflicto, tu trabajo ya está a salvo en un commit. No hay un `pop` que pueda
+  sacar encima lo de otro.
+
+✗ Falla: en el almacén compartido sigue **una** entrada desde el 8-sep-2026,
+`stash@{0}` = `a7f6fad8d39d8ce7fe0bf4f72cb9171070591a1d`, «On scrum-713-buscador-cliente:
+scrum713-before-main-20260908-9e7b4a21». Su propio mensaje dice para qué se hizo: *before main*,
+apartar trabajo para traerse `main`. Es la del suceso de abajo. Lleva 4 ficheros seguidos y 3 sin
+seguir, y sus dos tests (`tests/scrum713-buscador-cliente*.mjs`) no están en `main` con ese nombre.
+Si ese trabajo se perdió o entró con otro nombre no está medido. **Nadie le hace `pop`**: quien la
+necesite la mira con `git show` y la trae con `apply`.
 
 Si aun así hay que mirar un stash: `git stash list` PRIMERO, se comprueba de
 quién es por su mensaje, y **NUNCA se usa `pop` — solo `apply`**, que conserva
@@ -486,30 +659,68 @@ y **siempre están ocupados**. El puesto dura lo que dure el equipo. Lo que se c
 segundo plano, que lee lo suyo y sigue donde lo dejó la anterior sin arrastrar su contexto.
 
 - **Cuándo se releva** (lo decide el orquestador). Hay tres casos:
-  1. al terminar una entrega verificada, **si el contexto de la sesión pasa de 200k**;
+  1. al terminar una entrega verificada, **si el contexto de la sesión pasa de 300k**;
   2. si la sesión lleva **más de 1 hora parada**. La caché de prompt caduca a la hora, y el siguiente
      mensaje reescribe la conversación entera; Claude Code lo avisa con «Idle… re-cache about Nk
      tokens»;
   3. al empezar la tanda del día siguiente.
+
+  Y una sesión que ha **compactado** se releva en el siguiente punto limpio, diga lo que diga su número
+  (casilla 1 de abajo): el número vuelve a ser bajo, pero ya no mide lo mismo.
 - 🔴 **La COMPROBACIÓN al entregar — la hace la propia sesión, no espera a que se la pidan.** Tres
   casillas, cada una sí o no, después de cada entrega (push hecho o plan entregado):
   1. ¿He **medido** mi contexto? Es el `usage` del ÚLTIMO mensaje de mi propio jsonl: `input_tokens` +
-     `cache_read_input_tokens` + `cache_creation_input_tokens`. Desde fuera, `sesion.mjs contexto <nombre>`
-     (el lanzador de la S5) lee lo mismo. Estimarlo no vale.
+     `cache_read_input_tokens` + `cache_creation_input_tokens`. Estimarlo no vale.
+     - **«15.000.000 − restantes», el contador que enseña Claude Code, es una lectura válida de esa misma
+       suma:** la sigue a menos del 0,3 % (medido 2 de 2 por la S5, el 29-sep y el 1-oct-2026; SCRUM-1282).
+       Restarlo no es estimar. NO es el consumo acumulado: en la única sesión donde se sumó, el acumulado
+       era 32 veces mayor.
+     - **Desde fuera se lee en el latido** (`node scripts/equipo/latido.mjs`, sección CONTEXTO): corre desde
+       un árbol y da la cifra de cada sesión viva. `sesion.mjs contexto <nombre>` (el lanzador de la S5) lee
+       lo mismo, pero es de la copia INSTALADA y responde `ALTERADO` cada vez que un PR toca ese fichero y
+       nadie la refresca.
+     - **Si mi sesión ha COMPACTADO, lo digo al dar la cifra.** Al compactar, el número cae a ~70-80k
+       (medido sobre las 5 compactaciones de una transcripción: de 861-967k a 69-81k en las 4 que dejaron
+       un turno válido detrás) y es CIERTO como ocupación.
+       Lo que ya no dice es «sesión fresca»: desde ahí la sesión trabaja sobre un resumen de sí misma.
+       ⚠️ No medido: el contador visto desde DENTRO de una sesión recién compactada (una del otro equipo
+       leyó 6.108; ninguna nuestra lo ha cruzado con su jsonl).
   2. ¿Lo **digo en el informe de entrega**, con la cifra, aunque sea bajo? Un informe sin la cifra no pasa
      esta casilla.
-  3. ¿Pasa de **200k**? → no empiezo lo siguiente: escribo mi traspaso y pido el relevo por el canal.
+  3. ¿Pasa de **300k**? → no empiezo lo siguiente: escribo mi traspaso y pido el relevo por el canal.
 
   Y **en mitad de una entrega**, si pasa de **500k**: busco el primer punto seguro (un commit local, nunca
   a medio editar), escribo el traspaso y pido el relevo. Es la única excepción a «nunca a mitad de una
   entrega» de abajo, y existe porque seguir hasta el final a ese tamaño cuesta más que un traspaso.
+  **El latido avisa de este caso** (SCRUM-1484, en `main` desde el 6-oct-2026): a una sesión por encima de
+  500k le dice «se releva YA, sin esperar a terminar — primer punto seguro (un commit local), traspaso y
+  relevo», y a una que sólo ha pasado el umbral de entrega, «se releva AL TERMINAR su entrega». La frase
+  es UNA para el latido y para `sesion.mjs contexto N` (`fraseDeRelevo`), y se vio el 7-oct-2026 contra una
+  transcripción viva de 530k. La casilla 1 no cambia: la cifra la mide y la dice la propia sesión.
+  *(Hasta el 7-oct-2026 este párrafo decía lo contrario: que el latido daba a las dos la misma frase. Dejó
+  de ser cierto el 6-oct, al entrar ese ticket, y la norma tardó un día en decirlo: el papel y su gemelo
+  cambian juntos. Lo ata `tests/scrum1484c-la-a19-dice-lo-que-dice-el-latido.test.mjs`.)*
+
+  **Son dos números a propósito, y el 6-oct-2026 sólo cambió uno.** 300k al entregar es el camino normal
+  (era 200k; el porqué, abajo). 500k a mitad es la salida de emergencia y **es el de antes**: existe porque
+  una sesión llegó a ~560k sin decirlo (el fallo de abajo). Ese segundo número **se queda en 500k**:
+  el 7-oct-2026 el orquestador de Luis lo dejó como estaba (SCRUM-1479, comentario 18622), con lo medido
+  abajo delante. No lo firmó el fundador: no cambia el número ni sube el gasto. **Bajarlo o subirlo sí es
+  coste, y es suyo** (`limites-del-fundador.md`). La otra mitad de la norma no
+  cambia: el umbral dice «ya toca»; el punto limpio dice «ahora».
+
+  **El porqué de 300k y de 500k** (la medición del 6-oct-2026 sobre 42 sesiones y su coste simulado), **quién
+  lo autorizó** (el fundador, el 6-oct-2026, porque es coste) **y su gemelo de código** (`sesion.mjs`,
+  SCRUM-1479) están al final de esta sección, detrás del corte del arranque: `node scripts/equipo/norma.mjs A19
+  --entera`. Para cumplir la norma no hacen falta; quien vaya a MOVER cualquiera de los dos números los lee
+  antes, y lo recalcula con ellos.
 
   ✗ **Falla:** el 18-sep-2026 todas las sesiones pasaban de 350k y ninguna lo medía; la Sesión 0 llegó a
   ~560k entregando SCRUM-951b **sin decirlo en ningún informe**, y el relevo se pidió desde fuera. La norma
   existía; lo que faltaba era una casilla que se contesta al entregar.
 - **Cuándo NO se releva:**
   - **Nunca a mitad de una entrega** (salvo el caso de 500k de arriba, y siempre en un punto seguro).
-  - Tampoco en cada tarea: si una entrega se cierra por debajo de 200k, el siguiente encargo entra
+  - Tampoco en cada tarea: si una entrega se cierra por debajo de 300k, el siguiente encargo entra
     en la misma sesión.
   - Si el uso se acaba o Claude Code no deja seguir, el traspaso se deja ANTES. El último informe
     lo dice justo después de la hora y el SHA (A14): «traspaso listo: el siguiente encargo, en
@@ -562,6 +773,66 @@ segundo plano, que lee lo suyo y sigue donde lo dejó la anterior sin arrastrar 
 - *Lectura de la Sesión 0, no palabras del fundador:* el umbral de 300k que el 16-sep se retiró vuelve
   porque lo que se rechazó entonces era **abrir chats a mano**, y el relevo lo lanza el orquestador
   sin que el fundador haga nada.
+
+**El porqué de los dos números, quién lo autorizó y su gemelo de código.** Hasta el 15-oct-2026 estaba arriba,
+dentro de la norma; se movió aquí, detrás del corte del arranque, en SCRUM-996d: eran ~6,5 KB que cada sesión
+leía al arrancar y sólo hacen falta para mover un número. El texto es el mismo, sin tocar una palabra.
+
+**Por qué 300k al entregar, y no los 200k de antes** (cambio del 6-oct-2026; quién lo autorizó, abajo).
+Lo medido va entero para que quien lo relea con sesiones más largas lo RECALCULE y no lo herede. Es UN
+día de UN equipo, y «entrega» se cuenta como un `git push`: es un sustituto (un push no es una entrega
+verificada, y una entrega sin push no se ve).
+
+- **La medición.** El 6-oct-2026 a las 19:27Z, 42 sesiones de fondo con algún turno ese día (26 dieron
+  algún push, 50 en total; el primero llega con 232k de mediana, habiendo arrancado en ~66-70k):
+  - **200k** lo cruzan 35 de 42, y al cruzarlo sólo 6 de las 35 habían empujado algo. Salta antes de la
+    primera entrega: un aviso que suena en ocho de cada diez no distingue a ninguna.
+  - **300k** lo cruzan 20 de 42; al cruzarlo 13 de las 20 ya habían empujado, y 14 vuelven a empujar
+    después, que es donde una norma «al entregar» puede saltar. Con ella, esas 14 se habrían relevado
+    entre 304k y 416k (mediana 340k). Las otras 6 cruzan y no vuelven a empujar.
+  - **500k** lo cruzan 4 de 42 y sólo 1 vuelve a empujar después: a 500k la norma «al entregar» casi no
+    salta nunca.
+
+  ⚠️ Qué mide cada cifra. Todas cuentan el MÁXIMO del día de cada sesión de fondo. A las ~17:15Z, contando
+  todas las transcripciones del día y no sólo las de fondo, eran 32 sesiones y 5 pasaban de 500k: son dos
+  poblaciones, no una contradicción. Y en aquella, contando el ÚLTIMO turno en vez del máximo salía una
+  menos por encima de 800k: una pasó, compactó y acabó por debajo.
+- **No hay un techo medido por debajo de la compactación.** Las 16 sesiones que ese día quedaron paradas
+  con una pregunta acabaron entre 186k y 423k (mediana 273k): se paran por la pregunta, no por el tamaño.
+  11 de 42 pasaron de 400k y siguieron trabajando, y una llegó a 823k. El único límite medido es la
+  compactación sola, entre 861k y 967k (casilla 1).
+- **El coste, sin adornarlo.** Simulado a las 19:28Z sobre 43 sesiones (las 42 de arriba y una del 2-oct
+  cuyo fichero se tocó ese día, con sus turnos viejos dentro; Σ de contexto 733,3 M): relevar a
+  200k lo dejaría en 393,7 M (−46,3 %), a 300k en 518,2 M (−29,3 %), a 400k en 625,4 M (−14,7 %) y a 500k
+  en 700,8 M (−4,4 %). Frente a 200k, 300k renuncia a 17 puntos del ahorro simulado. **El ahorro de 200k
+  no se estaba cobrando:** con el umbral en 200k la suma real era la de arriba, porque casi nadie relevaba
+  a 200k. Es una simulación de la suma de contexto, no del coste ni de la eficiencia. Supone que una
+  sesión relevada arranca en 85k, releva en el turno en que cruza el umbral (la norma espera a la entrega)
+  y no cuenta lo que cuesta cada relevo: es un techo del ahorro, no el ahorro. El comando, entero, una
+  vez por umbral:
+
+      node scripts/equipo/gasto-arranque.mjs vivas --horas 30 --simular 300000
+
+  (`--simular` sin número no arranca. Sale con código 1 cuando hay sesiones que relevar: no es un fallo.)
+- **El motivo.** Un umbral que salta antes de la primera entrega no se puede cumplir «al entregar», y uno
+  que casi nadie cruza no ahorra. 300k es, además, el valor que esta norma tuvo hasta el 21-sep-2026.
+- **Para el número de «a mitad» (500k; quien lo quiera mover lo recalcula con esto).** Entre un push y el siguiente una sesión crece
+  64k de mediana, 169k en el percentil 90 y 216k como máximo (23 pares). Una sesión que entrega justo por
+  debajo de 300k y hace una entrega más acaba, como mucho, hacia 470-516k; con la norma de 300k, la que
+  más tarde se habría relevado lo habría hecho a 416k. Por encima de 500k ese día hubo 4 sesiones.
+
+**Quién lo autorizó.** El número es una decisión de coste, y el coste está fuera de la delegación del
+orquestador (`limites-del-fundador.md`). **Luis, fundador, 6-oct-2026, 18:50Z: «El límite de relevo lo
+pongo en 300.000. Autorizado el coste.»** Se lo dijo a su orquestador, que lo transcribió en SCRUM-1479
+(comentario 18513) y lo mandó escribir en `limites-del-fundador.md`. En Jira los dos firman con la misma
+cuenta, así que la S5 y la S0 lo comprobaron cada una en el origen: en la transcripción del chat del
+orquestador es un turno escrito por una persona, con esa frase (SCRUM-1479, comentario 18532). La frase
+la había redactado el orquestador y el fundador la envió tal cual. Autorizó UN número, el de relevo al
+entregar.
+
+**El gemelo de código entró en el mismo PR** (SCRUM-1479, de la S5): la constante de `sesion.mjs`,
+`gasto-arranque.mjs`, sus tests y `orquestador-autonomo.md` dicen 300k desde el mismo merge que esta
+norma. Ningún test ata este texto a esa constante: quien cambie uno, cambia el otro en el mismo PR.
 
 Lo que sigue es la historia anterior, sin tocar:
 
@@ -832,8 +1103,10 @@ guardarraíl se deshace: **rojos de CI por entrega** y **correcciones tras entre
 - **Mide y declara** tu contexto en cada informe de entrega (A19); estimarlo no vale.
 - **Arranque barato:** `norma.mjs --arranque`, traspaso ≤ 5 KB, ningún Read > 6 KB sin offset/limit,
   Grep antes que leer entero, salidas largas a fichero.
-- **Relevo a 200k** tras una entrega verificada (era 300k; A19 lo recoge). Medido: una sesión de 142 turnos
-  fue el 48 % de las vivas, y la mediana ACABA en 337k; simulado, 200k ahorra el 43 % del contexto.
+- **Relevo a 300k** tras una entrega verificada, y a 500k en mitad de una (A19, que lleva la medición y el
+  coste del 6-oct-2026). Fue 300k hasta el 21-sep y 200k desde entonces: medido aquel día, una sesión de
+  142 turnos fue el 48 % de las vivas, la mediana ACABABA en 337k y, simulado, 200k ahorraba el 43 % del
+  contexto. Ese ahorro no llegó a cobrarse: el 6-oct, 35 de 42 sesiones pasaban de 200k y seguían.
 - **Al orquestador solo ENTREGA, BLOQUEO o DECISIÓN:** sin saludos ni acuses.
 - **Subagentes** con presupuesto y salida ≤ 2 KB. **Rigor proporcional** a lo que se toca.
 - **No se relanza un puesto sin cola real**, y nunca `EnterWorktree` en un prompt de relevo.

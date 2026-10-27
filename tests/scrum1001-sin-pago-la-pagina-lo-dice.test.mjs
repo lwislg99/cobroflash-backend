@@ -31,6 +31,9 @@ const presupuesto = (m) => ({
 async function pagina(m) {
   const original = prisma.quote.findUnique;
   prisma.quote.findUnique = async () => presupuesto(m);
+  // SCRUM-1302p · la página pregunta si hay una versión más reciente del grupo; aquí, ninguna.
+  const originalCount = prisma.quote.count;
+  prisma.quote.count = async () => 0;
   // El handler REAL de `GET /quote/:token`, con req/res mínimos (sin abrir sockets).
   const capa = quoteDecisionLandingRouter.stack.find((l) => l.route?.path?.includes?.('/quote/:token'));
   assert.ok(capa, 'no encuentro la ruta GET /quote/:token');
@@ -46,6 +49,7 @@ async function pagina(m) {
     await capa.route.stack[0].handle({ params: { token: TOKEN }, query: {}, headers: {} }, res);
   } finally {
     prisma.quote.findUnique = original;
+    prisma.quote.count = originalCount;
   }
   return { status, html };
 }

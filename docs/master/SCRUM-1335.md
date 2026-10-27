@@ -153,3 +153,114 @@ El guion y los workflows no son de este puesto; va al dueño por el orquestador.
 
 Los ids de los 137 jobs están en `jobs-ultimos-100-runs.tsv` y `jobs-muestra-antigua.tsv`. Los logs
 (unos 6 MB) no se suben: GitHub los conserva y se bajan por id.
+
+---
+
+# SCRUM-1335b · «Ausente» deja de valer como veredicto de zona
+
+**Medido contra:** `origin/main` = `5e3211dc4ca3decda4f50b976c5272ed53d82c99` · 2026-10-06T13:38:00Z
+
+A9: sin fallo que generalice — los dos tropiezos del diseño (una caída sin nombre que confirmaba a cualquier prueba del fichero, y una censada perdida que salía como «nueva») se cazaron antes de empujar y quedaron como casos con su mutación en `tests/scrum813-trinquete-de-zona.test.mjs`
+
+Sesión 3 del equipo de Luis (tests · bancos · instrumentación). El ticket es del equipo de Javier
+(`area-j6`); lo trabaja S3 por la asignación escrita del orquestador de Luis en el comentario 18387
+de Jira, que es también donde está la decisión y sus tres condiciones. Cogido en el 18415.
+
+**No se toca ningún workflow, ni `forceExit`, ni ningún test del árbol.** La causa de que los
+resultados no lleguen sigue sin demostrar y sigue siendo de SCRUM-1405.
+
+## Qué cambia
+
+| fichero | cambio |
+|---|---|
+| `scripts/_trinquete-de-zona.mjs` | `compararZonas` separa `cambian` (dos veredictos reales y distintos) de `sinComparar` (en alguna zona no hay resultado). `repescar` y `resolverRepesca` (la repesca, que vivía en el guion). `veredicto` y `juzgarCanarios` reciben lo que no se pudo comparar |
+| `scripts/trinquete-de-zona.mjs` | usa lo anterior e imprime siempre la línea `NO PUDE COMPARAR · en la tanda N · comparadas a solas… N · SIGUEN SIN COMPARAR N`, con el fichero y la zona de cada una |
+| `tests/scrum813-trinquete-de-zona.test.mjs` | de 28 a 43 casos (15 nuevos) y de 11 a 22 mutaciones; un caso reescrito y una mutación reapuntada, las dos cosas dichas abajo |
+
+## Qué cuenta ahora como «cambia de veredicto», y qué no
+
+- **Sí:** dos resultados reales distintos (pasa/cae, pasa/salta). Igual que antes.
+- **Sí:** un `fail` frente a un resultado que falta, **cuando en la zona donde falta ese fichero no
+  tiene ninguna caída**. El fichero cae en una zona y en la otra no. Cubre el fichero que muere al
+  cargar en una zona sola y la prueba que cae sólo en una zona y cuyo resultado se pierde justo ahí.
+- **No:** un `pass` (o un `skip`) frente a un resultado que falta. Es la forma de las 289. Pasa a
+  «no pude comparar», contado.
+- **No:** un `fail` frente a un resultado que falta cuando el fichero cae también en la otra zona. No
+  se sabe si es la misma prueba.
+
+Lo segundo se apoya en una medida, no en una suposición: **el código de salida del fichero no viaja
+por la tubería que pierde resultados.** Con un fichero sembrado que deja de escribir su salida a
+mitad, `run()` sigue entregando un `fail` con la ruta del fichero por nombre.
+
+## Las tres condiciones
+
+**① Una diferencia real pasa/cae sigue en rojo.** Banco sembrado por el guion real
+(`docs/master/evidencias/SCRUM-1335b/banco-sembrado.mjs`, salida en `salida-banco.txt`): lanza
+`scripts/trinquete-de-zona.mjs` entero sobre un árbol en miniatura fuera del repo, con el
+instrumento de antes (`8dcc6d2a…`) y con el de ahora. 14 de 14 corridas dan la salida esperada.
+
+| escenario sembrado | antes | ahora |
+|---|---|---|
+| A · sin sembrar | salida 0 | salida 0 · sin comparar 0 |
+| B · todo pasa, en una zona faltan resultados | **salida 1 · acusa 5** | **salida 0 · acusa 0 · sin comparar 5** |
+| C · una prueba cae sólo en Midway, vista en las dos | salida 1 · acusa 1 | salida 1 · acusa 1 |
+| D · cae sólo en Midway y su resultado se pierde allí | salida 1 · acusa 2 | salida 1 · acusa 1 (por el fichero) · sin comparar 1 |
+| E · el fichero muere al cargar en una zona | salida 1 · acusa 2 | salida 1 · acusa 1 (por el fichero) · sin comparar 1 |
+| F · cae en las dos zonas y en una se pierde | salida 1 · acusa 2 | salida 0 · acusa 0 · sin comparar 2 |
+| G · retirado el sembrado real, queda la pérdida | salida 1 · acusa 2 | salida 0 · acusa 0 · sin comparar 2 |
+
+El sembrado no vive en `tests/`: se fabrica en un temporal y se borra. Tres de esas formas corren
+además en cada tanda, por el camino real, dentro de `tests/scrum813-…` («SEMBRADO»).
+
+**② «Ausente» se dice.** La línea de cifras sale siempre, también con ceros. En verde, el cierre
+añade cuántas no se pudieron comparar y que de ésas el verde no dice nada.
+
+**③ Cifras antes y después.**
+
+| | antes | después |
+|---|---|---|
+| medido en CI, 177 corridas del 1 al 6-oct | 34 rojos · 289 acusaciones · las 289 pasa/ausente | **sin medir todavía**: hace falta que el job corra con este código |
+| banco sembrado, escenario B | acusa 5 | acusa 0 · sin comparar 5 |
+
+Lo que **no** se puede afirmar con los logs viejos: que las 289 quedarían todas en «siguen sin
+comparar». El log viejo imprime el veredicto de la tanda (pasa/ausente) pero no el de la repesca a
+solas, así que no dice si a solas faltó el resultado otra vez o hubo otra cosa. Lo esperable es 0
+acusaciones y hasta 289 avisos; la cifra real sale de leer el job en los PR siguientes.
+
+## Lo que se vuelve más estricto, y conviene saberlo
+
+- **Una censada que no se pudo comparar es CIEGO**, no «sigue viva». Antes, que le faltara el
+  resultado en una zona contaba como que seguía cambiando.
+- **Un canario que no se pudo comparar es CIEGO.** Antes, a un canario dependiente le bastaba faltar
+  en una zona para darse por denunciado.
+- **Una diferencia vista en la tanda con los dos resultados** ya no la borra una repesca a la que le
+  falte un resultado o que no llegue a medir: queda en pie y lo dice.
+
+En las 177 corridas medidas ni la censada ni los canarios perdieron nunca un resultado (los
+ficheros acusados fueron ocho, y ninguno es de ésos), así que estos tres no añaden rojos conocidos.
+
+## Dos cosas tocadas en el test que ya existía
+
+- El caso «una prueba que EXISTE en una zona y no en la otra también cambia de veredicto» probaba
+  `pass` contra nada. Era exactamente la afirmación retirada. Se reescribe con la forma real de lo
+  que quería proteger (el fichero que muere al cargar), y sigue en rojo si eso deja de verse.
+- La mutación ④ se reapunta: su línea ganó `&& !sinVeredicto.has(c.clave)`. Hace lo mismo.
+
+Las 22 mutaciones tumban su caso en local, con base verde antes y después y el árbol restaurado
+(`mutar-813.mjs` y `salida-mutar-813.txt`, réplica acotada a este fichero; la oficial es el job
+`meta-guard` del PR).
+
+## Límites
+
+- La pérdida se **imita** (el fichero sembrado deja de escribir). La real sólo se ha visto en el
+  runner de Linux. Medido en Windows con Node 24.8.0; el CI corre 24.20 y 24.21.
+- Un fichero cuya salida se pierde entera deja una entrada de más en la cuenta: `run()` informa del
+  fichero mismo como una prueba que pasa.
+- El trinquete nunca ha juzgado una prueba que cae en las dos zonas, y sigue sin hacerlo (escenario
+  F): eso es del check obligatorio.
+
+## Reproducir
+
+    node docs/master/evidencias/SCRUM-1335b/banco-sembrado.mjs
+    node docs/master/evidencias/SCRUM-1335b/mutar-813.mjs .
+    node --test tests/scrum813-trinquete-de-zona.test.mjs

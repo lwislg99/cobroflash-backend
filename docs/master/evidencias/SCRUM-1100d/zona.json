@@ -1,0 +1,1999 @@
+[
+ {
+  "id": 37457025055,
+  "creado": "2026-10-06T11:31:56Z",
+  "evento": "pull_request",
+  "rama": "scrum-1302b-campo-que-no-se-guarda",
+  "zona": "failure",
+  "paso": "La tanda entera en dos zonas extremas (+14 y −11)",
+  "bytes": 29303,
+  "nuevas": 5,
+  "conAusente": 5,
+  "pares": [
+   "pass/ausente",
+   "ausente/pass"
+  ],
+  "ficheros": [
+   "tests/scrum1262-la-baja-corta-todas-las-vias.test.mjs",
+   "tests/scrum1379b-id-fuera-de-rango-resto.test.mjs"
+  ],
+  "habla": true,
+  "otro": [
+   "🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban",
+   "##[error]Process completed with exit code 1."
+  ]
+ },
+ {
+  "id": 37457005608,
+  "creado": "2026-10-06T11:31:46Z",
+  "evento": "pull_request",
+  "rama": "scrum-1459-latido-lee-al-vigia",
+  "zona": "failure",
+  "paso": "La tanda entera en dos zonas extremas (+14 y −11)",
+  "bytes": 28074,
+  "nuevas": 4,
+  "conAusente": 4,
+  "pares": [
+   "pass/ausente"
+  ],
+  "ficheros": [
+   "tests/vigia-atascados.test.mjs"
+  ],
+  "habla": true,
+  "otro": [
+   "🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban",
+   "##[error]Process completed with exit code 1."
+  ]
+ },
+ {
+  "id": 37456518551,
+  "creado": "2026-10-06T11:27:24Z",
+  "evento": "pull_request",
+  "rama": "scrum-1215-hoja-facturar-lo-entregado",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37456412455,
+  "creado": "2026-10-06T11:26:27Z",
+  "evento": "pull_request",
+  "rama": "scrum-1454-ya-esta-commit-ajeno",
+  "zona": "failure",
+  "paso": "La tanda entera en dos zonas extremas (+14 y −11)",
+  "bytes": 34638,
+  "nuevas": 17,
+  "conAusente": 17,
+  "pares": [
+   "pass/ausente"
+  ],
+  "ficheros": [
+   "tests/scrum514-aprobado-y-aplicado.test.mjs",
+   "tests/scrum834-puerta-avisador-rojo.test.mjs"
+  ],
+  "habla": true,
+  "otro": [
+   "   🔴 NUEVA SCRUM-1263 · 🔴 si el guard no aparece en la pasada local (o no hubo pasada) → CIEGO, no verde",
+   "   🔴 NUEVA SCRUM-1263 · 🔴 un log del que no se sabe sacar QUÉ cayó → CIEGO (falla cerrado)",
+   "🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban",
+   "     · tests/scrum834-puerta-avisador-rojo.test.mjs::SCRUM-1263 · 🔴 si el guard no aparece en la pasada local (o no hubo pasada) → CIEGO, no verde",
+   "     · tests/scrum834-puerta-avisador-rojo.test.mjs::SCRUM-1263 · 🔴 un log del que no se sabe sacar QUÉ cayó → CIEGO (falla cerrado)",
+   "##[error]Process completed with exit code 1."
+  ]
+ },
+ {
+  "id": 37455139532,
+  "creado": "2026-10-06T11:15:00Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37454428095,
+  "creado": "2026-10-06T11:08:30Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37454127059,
+  "creado": "2026-10-06T11:05:44Z",
+  "evento": "pull_request",
+  "rama": "scrum-1452b-registro-ocho-no-nueve",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37453095698,
+  "creado": "2026-10-06T10:56:26Z",
+  "evento": "pull_request",
+  "rama": "scrum-1444-numero-del-presupuesto-al-cliente",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37452424121,
+  "creado": "2026-10-06T10:50:22Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37452377392,
+  "creado": "2026-10-06T10:49:57Z",
+  "evento": "pull_request",
+  "rama": "scrum-1452-guards-gemelo-crudo",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37451560421,
+  "creado": "2026-10-06T10:42:32Z",
+  "evento": "pull_request",
+  "rama": "scrum-1450-lista-albaranes-facturacion-firmada",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37451186274,
+  "creado": "2026-10-06T10:39:07Z",
+  "evento": "pull_request",
+  "rama": "scrum-1453-latido-sin-auto-merge",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37450448569,
+  "creado": "2026-10-06T10:32:24Z",
+  "evento": "pull_request",
+  "rama": "scrum-1295-carriles-e-identidad",
+  "zona": "failure",
+  "paso": "La tanda entera en dos zonas extremas (+14 y −11)",
+  "bytes": 31225,
+  "nuevas": 2,
+  "conAusente": 2,
+  "pares": [
+   "ausente/pass"
+  ],
+  "ficheros": [
+   "tests/scrum514-aprobado-y-aplicado.test.mjs"
+  ],
+  "habla": true,
+  "otro": [
+   "🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban",
+   "##[error]Process completed with exit code 1."
+  ]
+ },
+ {
+  "id": 37047049994,
+  "creado": "2026-10-02T18:23:00Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "failure",
+  "paso": "La tanda entera en dos zonas extremas (+14 y −11)",
+  "bytes": 29547,
+  "nuevas": 9,
+  "conAusente": 9,
+  "pares": [
+   "ausente/pass"
+  ],
+  "ficheros": [
+   "tests/scrum834-puerta-avisador-rojo.test.mjs"
+  ],
+  "habla": true,
+  "otro": [
+   "   🔴 NUEVA SCRUM-1263 · 🔴 si el guard no aparece en la pasada local (o no hubo pasada) → CIEGO, no verde",
+   "   🔴 NUEVA SCRUM-1263 · 🔴 un log del que no se sabe sacar QUÉ cayó → CIEGO (falla cerrado)",
+   "🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban",
+   "     · tests/scrum834-puerta-avisador-rojo.test.mjs::SCRUM-1263 · 🔴 si el guard no aparece en la pasada local (o no hubo pasada) → CIEGO, no verde",
+   "     · tests/scrum834-puerta-avisador-rojo.test.mjs::SCRUM-1263 · 🔴 un log del que no se sabe sacar QUÉ cayó → CIEGO (falla cerrado)",
+   "##[error]Process completed with exit code 1."
+  ]
+ },
+ {
+  "id": 37045831804,
+  "creado": "2026-10-02T18:12:08Z",
+  "evento": "pull_request",
+  "rama": "scrum-1426-parte-firma-guardada-en-el-movil",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37045093167,
+  "creado": "2026-10-02T18:05:22Z",
+  "evento": "pull_request",
+  "rama": "scrum-624-frecuencia-del-papel",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37044458182,
+  "creado": "2026-10-02T17:59:50Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37043184485,
+  "creado": "2026-10-02T17:48:13Z",
+  "evento": "pull_request",
+  "rama": "scrum-1439-sondas-como-evidencia",
+  "zona": "failure",
+  "paso": "La tanda entera en dos zonas extremas (+14 y −11)",
+  "bytes": 31620,
+  "nuevas": 11,
+  "conAusente": 11,
+  "pares": [
+   "pass/ausente"
+  ],
+  "ficheros": [
+   "tests/scrum834-puerta-avisador-rojo.test.mjs"
+  ],
+  "habla": true,
+  "otro": [
+   "   🔴 NUEVA SCRUM-1263 · 🔴 si el guard no aparece en la pasada local (o no hubo pasada) → CIEGO, no verde",
+   "   🔴 NUEVA SCRUM-1263 · 🔴 un log del que no se sabe sacar QUÉ cayó → CIEGO (falla cerrado)",
+   "   · tests/scrum524b-trinquete-de-la-tabla.test.mjs::SCRUM-524b · ⚫ CIEGO: con un src/ que no es el nuestro, no encuentra NINGUNA de las comprobadas y lo dice",
+   "🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban",
+   "     · tests/scrum834-puerta-avisador-rojo.test.mjs::SCRUM-1263 · 🔴 si el guard no aparece en la pasada local (o no hubo pasada) → CIEGO, no verde",
+   "     · tests/scrum834-puerta-avisador-rojo.test.mjs::SCRUM-1263 · 🔴 un log del que no se sabe sacar QUÉ cayó → CIEGO (falla cerrado)"
+  ]
+ },
+ {
+  "id": 37042341025,
+  "creado": "2026-10-02T17:40:43Z",
+  "evento": "pull_request",
+  "rama": "scrum-1427-traspaso-derivado",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37042247559,
+  "creado": "2026-10-02T17:39:55Z",
+  "evento": "pull_request",
+  "rama": "scrum-1418-sesiones-que-no-volvieron",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37041953192,
+  "creado": "2026-10-02T17:37:20Z",
+  "evento": "pull_request",
+  "rama": "scrum-1215-pista-del-tecnico",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37041922619,
+  "creado": "2026-10-02T17:37:03Z",
+  "evento": "pull_request",
+  "rama": "scrum-1437c-yaqu-en-pantalla",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37041845904,
+  "creado": "2026-10-02T17:36:23Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37040758594,
+  "creado": "2026-10-02T17:26:50Z",
+  "evento": "pull_request",
+  "rama": "scrum-1440-enviar-siempre-a-la-vista",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37040721329,
+  "creado": "2026-10-02T17:26:30Z",
+  "evento": "pull_request",
+  "rama": "scrum-1198-sin-telefono-se-guarda-y-se-dice",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37040654357,
+  "creado": "2026-10-02T17:25:55Z",
+  "evento": "pull_request",
+  "rama": "scrum-1375-facturacion-con-palabras",
+  "zona": "failure",
+  "paso": "La tanda entera en dos zonas extremas (+14 y −11)",
+  "bytes": 29174,
+  "nuevas": 2,
+  "conAusente": 2,
+  "pares": [
+   "ausente/pass"
+  ],
+  "ficheros": [
+   "tests/scrum1379b-id-fuera-de-rango-resto.test.mjs"
+  ],
+  "habla": true,
+  "otro": [
+   "   · tests/scrum524b-trinquete-de-la-tabla.test.mjs::SCRUM-524b · ⚫ CIEGO: con un src/ que no es el nuestro, no encuentra NINGUNA de las comprobadas y lo dice",
+   "   · tests/scrum524b-trinquete-de-la-tabla.test.mjs::SCRUM-524b · ⚫ CIEGO: sin src/, el instrumento no dice «0 comprobadas», dice CIEGO y sale 2",
+   "🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban",
+   "##[error]Process completed with exit code 1."
+  ]
+ },
+ {
+  "id": 37040448208,
+  "creado": "2026-10-02T17:24:06Z",
+  "evento": "pull_request",
+  "rama": "scrum-1370b-aceptaciones-1-y-4",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37039602180,
+  "creado": "2026-10-02T17:16:32Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37038981782,
+  "creado": "2026-10-02T17:11:06Z",
+  "evento": "pull_request",
+  "rama": "scrum-1383-dos-preguntas-al-cerrar-sesion",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37038938667,
+  "creado": "2026-10-02T17:10:43Z",
+  "evento": "pull_request",
+  "rama": "scrum-1437b-servicem8-por-dentro",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37038713161,
+  "creado": "2026-10-02T17:08:43Z",
+  "evento": "pull_request",
+  "rama": "scrum-1379d-id-en-rutas-que-emiten",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37038227644,
+  "creado": "2026-10-02T17:04:23Z",
+  "evento": "pull_request",
+  "rama": "scrum-605-nombre-accesible-de-los-atajos",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37038195168,
+  "creado": "2026-10-02T17:04:06Z",
+  "evento": "pull_request",
+  "rama": "scrum-1367d-formas-vistas-en-produccion",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37037871786,
+  "creado": "2026-10-02T17:01:16Z",
+  "evento": "pull_request",
+  "rama": "scrum-1384-resultado-que-nadie-leyo",
+  "zona": "failure",
+  "paso": "La tanda entera en dos zonas extremas (+14 y −11)",
+  "bytes": 27964,
+  "nuevas": 1,
+  "conAusente": 1,
+  "pares": [
+   "ausente/pass"
+  ],
+  "ficheros": [
+   "tests/scrum524b-trinquete-de-la-tabla.test.mjs"
+  ],
+  "habla": true,
+  "otro": [
+   "   🔴 NUEVA SCRUM-524b · ⚫ CIEGO: con un src/ que no es el nuestro, no encuentra NINGUNA de las comprobadas y lo dice",
+   "🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban",
+   "     · tests/scrum524b-trinquete-de-la-tabla.test.mjs::SCRUM-524b · ⚫ CIEGO: con un src/ que no es el nuestro, no encuentra NINGUNA de las comprobadas y lo dice",
+   "##[error]Process completed with exit code 1."
+  ]
+ },
+ {
+  "id": 37037864075,
+  "creado": "2026-10-02T17:01:12Z",
+  "evento": "pull_request",
+  "rama": "scrum-1366b-censo-en-una-escritura",
+  "zona": "failure",
+  "paso": "La tanda entera en dos zonas extremas (+14 y −11)",
+  "bytes": 31197,
+  "nuevas": 3,
+  "conAusente": 3,
+  "pares": [
+   "pass/ausente"
+  ],
+  "ficheros": [
+   "tests/scrum524b-trinquete-de-la-tabla.test.mjs"
+  ],
+  "habla": true,
+  "otro": [
+   "   🔴 NUEVA SCRUM-524b · ⚫ CIEGO: con un src/ que no es el nuestro, no encuentra NINGUNA de las comprobadas y lo dice",
+   "   🔴 NUEVA SCRUM-524b · ⚫ CIEGO: sin src/, el instrumento no dice «0 comprobadas», dice CIEGO y sale 2",
+   "🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban",
+   "     · tests/scrum524b-trinquete-de-la-tabla.test.mjs::SCRUM-524b · ⚫ CIEGO: con un src/ que no es el nuestro, no encuentra NINGUNA de las comprobadas y lo dice",
+   "     · tests/scrum524b-trinquete-de-la-tabla.test.mjs::SCRUM-524b · ⚫ CIEGO: sin src/, el instrumento no dice «0 comprobadas», dice CIEGO y sale 2",
+   "##[error]Process completed with exit code 1."
+  ]
+ },
+ {
+  "id": 37037468566,
+  "creado": "2026-10-02T16:57:41Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37036096918,
+  "creado": "2026-10-02T16:45:33Z",
+  "evento": "pull_request",
+  "rama": "scrum-1437-verifacturamos-por-dentro-pasos",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37035569233,
+  "creado": "2026-10-02T16:40:55Z",
+  "evento": "pull_request",
+  "rama": "scrum-1367c-albaran-de-cliente-sin-movil",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37034410303,
+  "creado": "2026-10-02T16:30:34Z",
+  "evento": "pull_request",
+  "rama": "scrum-1366-causa-del-fichero-entero",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37033583034,
+  "creado": "2026-10-02T16:23:18Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37033425662,
+  "creado": "2026-10-02T16:21:56Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37032255635,
+  "creado": "2026-10-02T16:11:43Z",
+  "evento": "pull_request",
+  "rama": "scrum-1431-rechazo-escapado",
+  "zona": "failure",
+  "paso": "La tanda entera en dos zonas extremas (+14 y −11)",
+  "bytes": 30706,
+  "nuevas": 3,
+  "conAusente": 3,
+  "pares": [
+   "ausente/pass"
+  ],
+  "ficheros": [
+   "tests/scrum1379b-id-fuera-de-rango-resto.test.mjs"
+  ],
+  "habla": true,
+  "otro": [
+   "   · tests/scrum524b-trinquete-de-la-tabla.test.mjs::SCRUM-524b · ⚫ CIEGO: con un src/ que no es el nuestro, no encuentra NINGUNA de las comprobadas y lo dice",
+   "   · tests/scrum524b-trinquete-de-la-tabla.test.mjs::SCRUM-524b · ⚫ CIEGO: sin src/, el instrumento no dice «0 comprobadas», dice CIEGO y sale 2",
+   "🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban",
+   "##[error]Process completed with exit code 1."
+  ]
+ },
+ {
+  "id": 37032112109,
+  "creado": "2026-10-02T16:10:27Z",
+  "evento": "pull_request",
+  "rama": "scrum-1422-el-parte-escucha-la-cola",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37022719089,
+  "creado": "2026-10-02T14:50:38Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37021257420,
+  "creado": "2026-10-02T14:38:19Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "failure",
+  "paso": "La tanda entera en dos zonas extremas (+14 y −11)",
+  "bytes": 28506,
+  "nuevas": 1,
+  "conAusente": 1,
+  "pares": [
+   "ausente/pass"
+  ],
+  "ficheros": [
+   "tests/scrum853-avisador-solo-obligatorio.test.mjs"
+  ],
+  "habla": true,
+  "otro": [
+   "   · tests/scrum834-puerta-avisador-rojo.test.mjs::SCRUM-1263 · 🔴 un log del que no se sabe sacar QUÉ cayó → CIEGO (falla cerrado)",
+   "🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban",
+   "##[error]Process completed with exit code 1."
+  ]
+ },
+ {
+  "id": 37019193963,
+  "creado": "2026-10-02T14:20:37Z",
+  "evento": "pull_request",
+  "rama": "scrum-1367b-sembrador-fotos-y-firma",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37018877916,
+  "creado": "2026-10-02T14:17:55Z",
+  "evento": "pull_request",
+  "rama": "scrum-1198-cliente-nuevo-sin-telefono",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37018821734,
+  "creado": "2026-10-02T14:17:25Z",
+  "evento": "pull_request",
+  "rama": "scrum-1416c-nombres-construidos-lote-3",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37018449897,
+  "creado": "2026-10-02T14:14:16Z",
+  "evento": "pull_request",
+  "rama": "scrum-1381b-escritores-el-resumen-cuadra",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37018216962,
+  "creado": "2026-10-02T14:12:14Z",
+  "evento": "pull_request",
+  "rama": "scrum-1430-sesion-qa-dice-si-esta-viva",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37018151807,
+  "creado": "2026-10-02T14:11:41Z",
+  "evento": "pull_request",
+  "rama": "scrum-1295-carriles-e-identidad",
+  "zona": "failure",
+  "paso": "La tanda entera en dos zonas extremas (+14 y −11)",
+  "bytes": 37059,
+  "nuevas": 6,
+  "conAusente": 6,
+  "pares": [
+   "ausente/pass"
+  ],
+  "ficheros": [
+   "tests/scrum524b-trinquete-de-la-tabla.test.mjs",
+   "tests/vigia-atascados.test.mjs"
+  ],
+  "habla": true,
+  "otro": [
+   "   🔴 NUEVA SCRUM-524b · ⚫ CIEGO: sin src/, el instrumento no dice «0 comprobadas», dice CIEGO y sale 2",
+   "   · tests/scrum524b-trinquete-de-la-tabla.test.mjs::SCRUM-524b · ⚫ CIEGO: con un src/ que no es el nuestro, no encuentra NINGUNA de las comprobadas y lo dice",
+   "🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban",
+   "     · tests/scrum524b-trinquete-de-la-tabla.test.mjs::SCRUM-524b · ⚫ CIEGO: sin src/, el instrumento no dice «0 comprobadas», dice CIEGO y sale 2",
+   "##[error]Process completed with exit code 1."
+  ]
+ },
+ {
+  "id": 37016609319,
+  "creado": "2026-10-02T13:58:24Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37016358241,
+  "creado": "2026-10-02T13:56:11Z",
+  "evento": "pull_request",
+  "rama": "scrum-1123c-censo-workflows-y-su-desmentido",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37016039873,
+  "creado": "2026-10-02T13:53:28Z",
+  "evento": "pull_request",
+  "rama": "scrum-1431-rechazo-escapado",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37015334802,
+  "creado": "2026-10-02T13:47:20Z",
+  "evento": "pull_request",
+  "rama": "scrum-1427-traspaso-derivado",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37015285708,
+  "creado": "2026-10-02T13:46:54Z",
+  "evento": "pull_request",
+  "rama": "scrum-1418-sesiones-que-no-volvieron",
+  "zona": "failure",
+  "paso": "La tanda entera en dos zonas extremas (+14 y −11)",
+  "bytes": 33713,
+  "nuevas": 23,
+  "conAusente": 23,
+  "pares": [
+   "ausente/pass"
+  ],
+  "ficheros": [
+   "tests/vigia-atascados.test.mjs"
+  ],
+  "habla": true,
+  "otro": [
+   "🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban",
+   "##[error]Process completed with exit code 1."
+  ]
+ },
+ {
+  "id": 37015272641,
+  "creado": "2026-10-02T13:46:47Z",
+  "evento": "pull_request",
+  "rama": "scrum-1379c-id-en-el-cuerpo",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37015230151,
+  "creado": "2026-10-02T13:46:24Z",
+  "evento": "pull_request",
+  "rama": "scrum-1370-total-aceptado-es-la-suma",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37014839354,
+  "creado": "2026-10-02T13:43:00Z",
+  "evento": "pull_request",
+  "rama": "scrum-1425-foto-pequena-que-no-es-imagen",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37014829177,
+  "creado": "2026-10-02T13:42:55Z",
+  "evento": "pull_request",
+  "rama": "scrum-1198-cliente-nuevo-sin-telefono",
+  "zona": "cancelled",
+  "paso": null
+ },
+ {
+  "id": 37014407450,
+  "creado": "2026-10-02T13:39:09Z",
+  "evento": "pull_request",
+  "rama": "scrum-1369b-eje-es-lo-aceptado",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37014320631,
+  "creado": "2026-10-02T13:38:23Z",
+  "evento": "pull_request",
+  "rama": "scrum-1423b-claves-bd-de-todos-los-arboles",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37014173707,
+  "creado": "2026-10-02T13:37:03Z",
+  "evento": "pull_request",
+  "rama": "scrum-1424-ya-esta",
+  "zona": "failure",
+  "paso": "La tanda entera en dos zonas extremas (+14 y −11)",
+  "bytes": 31173,
+  "nuevas": 11,
+  "conAusente": 11,
+  "pares": [
+   "pass/ausente"
+  ],
+  "ficheros": [
+   "tests/vigia-atascados.test.mjs"
+  ],
+  "habla": true,
+  "otro": [
+   "🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban",
+   "##[error]Process completed with exit code 1."
+  ]
+ },
+ {
+  "id": 37014095592,
+  "creado": "2026-10-02T13:36:21Z",
+  "evento": "pull_request",
+  "rama": "scrum-1422-el-parte-escucha-la-cola",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37014036159,
+  "creado": "2026-10-02T13:35:49Z",
+  "evento": "pull_request",
+  "rama": "scrum-1419-canceladas-de-pr",
+  "zona": "failure",
+  "paso": "La tanda entera en dos zonas extremas (+14 y −11)",
+  "bytes": 33301,
+  "nuevas": 2,
+  "conAusente": 2,
+  "pares": [
+   "ausente/pass"
+  ],
+  "ficheros": [
+   "tests/scrum1262-la-baja-corta-todas-las-vias.test.mjs"
+  ],
+  "habla": true,
+  "otro": [
+   "🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban",
+   "##[error]Process completed with exit code 1."
+  ]
+ },
+ {
+  "id": 37013988272,
+  "creado": "2026-10-02T13:35:23Z",
+  "evento": "pull_request",
+  "rama": "scrum-1420-la-ficha-recuerda-el-aviso",
+  "zona": "failure",
+  "paso": "La tanda entera en dos zonas extremas (+14 y −11)",
+  "bytes": 30414,
+  "nuevas": 8,
+  "conAusente": 8,
+  "pares": [
+   "ausente/pass"
+  ],
+  "ficheros": [
+   "tests/scrum834-puerta-avisador-rojo.test.mjs"
+  ],
+  "habla": true,
+  "otro": [
+   "   🔴 NUEVA SCRUM-1263 · 🔴 si el guard no aparece en la pasada local (o no hubo pasada) → CIEGO, no verde",
+   "   🔴 NUEVA SCRUM-1263 · 🔴 un log del que no se sabe sacar QUÉ cayó → CIEGO (falla cerrado)",
+   "🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban",
+   "     · tests/scrum834-puerta-avisador-rojo.test.mjs::SCRUM-1263 · 🔴 si el guard no aparece en la pasada local (o no hubo pasada) → CIEGO, no verde",
+   "     · tests/scrum834-puerta-avisador-rojo.test.mjs::SCRUM-1263 · 🔴 un log del que no se sabe sacar QUÉ cayó → CIEGO (falla cerrado)",
+   "##[error]Process completed with exit code 1."
+  ]
+ },
+ {
+  "id": 37013680955,
+  "creado": "2026-10-02T13:32:38Z",
+  "evento": "pull_request",
+  "rama": "scrum-1416b-nombres-construidos-lote-2",
+  "zona": "failure",
+  "paso": "La tanda entera en dos zonas extremas (+14 y −11)",
+  "bytes": 27467,
+  "nuevas": 2,
+  "conAusente": 2,
+  "pares": [
+   "pass/ausente"
+  ],
+  "ficheros": [
+   "tests/scrum834-puerta-avisador-rojo.test.mjs"
+  ],
+  "habla": true,
+  "otro": [
+   "🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban",
+   "##[error]Process completed with exit code 1."
+  ]
+ },
+ {
+  "id": 37013674279,
+  "creado": "2026-10-02T13:32:35Z",
+  "evento": "pull_request",
+  "rama": "scrum-1416d-main-rojo-tres-nombres-construidos",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37013536728,
+  "creado": "2026-10-02T13:31:19Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37011782455,
+  "creado": "2026-10-02T13:15:21Z",
+  "evento": "pull_request",
+  "rama": "scrum-1369b-eje-es-lo-aceptado",
+  "zona": "failure",
+  "paso": "La tanda entera en dos zonas extremas (+14 y −11)",
+  "bytes": 36995,
+  "nuevas": 18,
+  "conAusente": 18,
+  "pares": [
+   "ausente/pass"
+  ],
+  "ficheros": [
+   "tests/scrum1379b-id-fuera-de-rango-resto.test.mjs"
+  ],
+  "habla": true,
+  "otro": [
+   "🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban",
+   "##[error]Process completed with exit code 1."
+  ]
+ },
+ {
+  "id": 37011441947,
+  "creado": "2026-10-02T13:12:18Z",
+  "evento": "pull_request",
+  "rama": "scrum-1416-nombres-construidos-lote-1",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37010775127,
+  "creado": "2026-10-02T13:06:07Z",
+  "evento": "pull_request",
+  "rama": "scrum-1420-la-ficha-recuerda-el-aviso",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37010639672,
+  "creado": "2026-10-02T13:04:54Z",
+  "evento": "pull_request",
+  "rama": "scrum-1423b-claves-bd-de-todos-los-arboles",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37010338401,
+  "creado": "2026-10-02T13:02:02Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37010328724,
+  "creado": "2026-10-02T13:01:57Z",
+  "evento": "pull_request",
+  "rama": "scrum-1416b-nombres-construidos-lote-2",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37010063156,
+  "creado": "2026-10-02T12:59:30Z",
+  "evento": "pull_request",
+  "rama": "scrum-1423-claves-bd-de-todos-los-arboles",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37009502930,
+  "creado": "2026-10-02T12:54:03Z",
+  "evento": "pull_request",
+  "rama": "scrum-1419-canceladas-de-pr",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37008959675,
+  "creado": "2026-10-02T12:48:45Z",
+  "evento": "pull_request",
+  "rama": "scrum-1414-espera-del-equipo",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37008923056,
+  "creado": "2026-10-02T12:48:23Z",
+  "evento": "pull_request",
+  "rama": "scrum-1283b-licencia-titularidad",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37008804216,
+  "creado": "2026-10-02T12:47:13Z",
+  "evento": "pull_request",
+  "rama": "scrum-1418-sesiones-que-no-volvieron",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37008131372,
+  "creado": "2026-10-02T12:40:45Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37008064587,
+  "creado": "2026-10-02T12:40:07Z",
+  "evento": "pull_request",
+  "rama": "scrum-1379b-id-fuera-de-rango-resto",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37007568377,
+  "creado": "2026-10-02T12:35:13Z",
+  "evento": "pull_request",
+  "rama": "scrum-1420-el-pad-avisa-al-cerrarse",
+  "zona": "cancelled",
+  "paso": null
+ },
+ {
+  "id": 37007073566,
+  "creado": "2026-10-02T12:30:21Z",
+  "evento": "pull_request",
+  "rama": "scrum-1412-tanda-dirigida-por-tramos",
+  "zona": "failure",
+  "paso": "La tanda entera en dos zonas extremas (+14 y −11)",
+  "bytes": 36369,
+  "nuevas": 22,
+  "conAusente": 22,
+  "pares": [
+   "ausente/pass",
+   "pass/ausente"
+  ],
+  "ficheros": [
+   "tests/scrum454-destructivo-sin-comprobacion.test.mjs",
+   "tests/vigia-atascados.test.mjs"
+  ],
+  "habla": true,
+  "otro": [
+   "   · tests/scrum811c-skill-ui-declarada.test.mjs::SCRUM-1340 · DE PUNTA A PUNTA: sobre un repositorio real ve los merges, lo de la rama, y se declara CIEGO en u",
+   "🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban",
+   "##[error]Process completed with exit code 1."
+  ]
+ },
+ {
+  "id": 37007042076,
+  "creado": "2026-10-02T12:30:04Z",
+  "evento": "pull_request",
+  "rama": "scrum-1419-canceladas-de-pr",
+  "zona": "failure",
+  "paso": "La tanda entera en dos zonas extremas (+14 y −11)",
+  "bytes": 27692,
+  "nuevas": 3,
+  "conAusente": 3,
+  "pares": [
+   "ausente/pass"
+  ],
+  "ficheros": [
+   "tests/vigia-atascados.test.mjs"
+  ],
+  "habla": true,
+  "otro": [
+   "🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban",
+   "##[error]Process completed with exit code 1."
+  ]
+ },
+ {
+  "id": 37007024514,
+  "creado": "2026-10-02T12:29:54Z",
+  "evento": "pull_request",
+  "rama": "scrum-1415-nombres-construidos-a-literal",
+  "zona": "failure",
+  "paso": "La tanda entera en dos zonas extremas (+14 y −11)",
+  "bytes": 31224,
+  "nuevas": 10,
+  "conAusente": 10,
+  "pares": [
+   "pass/ausente"
+  ],
+  "ficheros": [
+   "tests/scrum834-puerta-avisador-rojo.test.mjs"
+  ],
+  "habla": true,
+  "otro": [
+   "   🔴 NUEVA SCRUM-1263 · 🔴 si el guard no aparece en la pasada local (o no hubo pasada) → CIEGO, no verde",
+   "   🔴 NUEVA SCRUM-1263 · 🔴 un log del que no se sabe sacar QUÉ cayó → CIEGO (falla cerrado)",
+   "🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban",
+   "     · tests/scrum834-puerta-avisador-rojo.test.mjs::SCRUM-1263 · 🔴 si el guard no aparece en la pasada local (o no hubo pasada) → CIEGO, no verde",
+   "     · tests/scrum834-puerta-avisador-rojo.test.mjs::SCRUM-1263 · 🔴 un log del que no se sabe sacar QUÉ cayó → CIEGO (falla cerrado)",
+   "##[error]Process completed with exit code 1."
+  ]
+ },
+ {
+  "id": 37006406887,
+  "creado": "2026-10-02T12:23:39Z",
+  "evento": "pull_request",
+  "rama": "scrum-1383-rechazo-durante-el-cierre",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37006377041,
+  "creado": "2026-10-02T12:23:19Z",
+  "evento": "pull_request",
+  "rama": "scrum-1414-espera-del-equipo",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37005988858,
+  "creado": "2026-10-02T12:19:22Z",
+  "evento": "pull_request",
+  "rama": "scrum-1417-marcadores-antes-de-empujar",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37005888267,
+  "creado": "2026-10-02T12:18:18Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "failure",
+  "paso": "La tanda entera en dos zonas extremas (+14 y −11)",
+  "bytes": 27595,
+  "nuevas": 1,
+  "conAusente": 1,
+  "pares": [
+   "pass/ausente"
+  ],
+  "ficheros": [
+   "tests/scrum1262-la-baja-corta-todas-las-vias.test.mjs"
+  ],
+  "habla": true,
+  "otro": [
+   "🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban",
+   "##[error]Process completed with exit code 1."
+  ]
+ },
+ {
+  "id": 37005308562,
+  "creado": "2026-10-02T12:12:23Z",
+  "evento": "pull_request",
+  "rama": "scrum-1384-resultado-que-nadie-leyo",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37005003232,
+  "creado": "2026-10-02T12:09:11Z",
+  "evento": "pull_request",
+  "rama": "scrum-1413-latido-experimentos-sin-leer",
+  "zona": "cancelled",
+  "paso": null
+ },
+ {
+  "id": 37004509302,
+  "creado": "2026-10-02T12:04:04Z",
+  "evento": "pull_request",
+  "rama": "scrum-1372c-a10-y-notas-de-registro",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37004054706,
+  "creado": "2026-10-02T11:59:19Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37003969458,
+  "creado": "2026-10-02T11:58:22Z",
+  "evento": "pull_request",
+  "rama": "scrum-1412-tanda-dirigida-por-tramos",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37002929807,
+  "creado": "2026-10-02T11:47:16Z",
+  "evento": "pull_request",
+  "rama": "scrum-1369-entrega-solo-de-lo-aceptado",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37002928283,
+  "creado": "2026-10-02T11:47:15Z",
+  "evento": "pull_request",
+  "rama": "scrum-1379-id-fuera-de-rango-400",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37002332202,
+  "creado": "2026-10-02T11:40:51Z",
+  "evento": "pull_request",
+  "rama": "scrum-1374-detalle-albaran-escucha-la-cola",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37002193878,
+  "creado": "2026-10-02T11:39:20Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37002166361,
+  "creado": "2026-10-02T11:39:03Z",
+  "evento": "pull_request",
+  "rama": "scrum-1367-sembrador-cuatro-casos",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37001307781,
+  "creado": "2026-10-02T11:29:43Z",
+  "evento": "pull_request",
+  "rama": "scrum-1411-dos-equipos-tablas-que-lee-scrum514",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37001292016,
+  "creado": "2026-10-02T11:29:33Z",
+  "evento": "pull_request",
+  "rama": "scrum-1372b-gana-el-tope-y-etiqueta-sin-trabajo",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37001251503,
+  "creado": "2026-10-02T11:29:06Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "failure",
+  "paso": "La tanda entera en dos zonas extremas (+14 y −11)",
+  "bytes": 34854,
+  "nuevas": 12,
+  "conAusente": 12,
+  "pares": [
+   "ausente/pass"
+  ],
+  "ficheros": [
+   "tests/scrum834-puerta-avisador-rojo.test.mjs"
+  ],
+  "habla": true,
+  "otro": [
+   "   🔴 NUEVA SCRUM-1263 · 🔴 si el guard no aparece en la pasada local (o no hubo pasada) → CIEGO, no verde",
+   "   🔴 NUEVA SCRUM-1263 · 🔴 un log del que no se sabe sacar QUÉ cayó → CIEGO (falla cerrado)",
+   "🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban",
+   "     · tests/scrum834-puerta-avisador-rojo.test.mjs::SCRUM-1263 · 🔴 si el guard no aparece en la pasada local (o no hubo pasada) → CIEGO, no verde",
+   "     · tests/scrum834-puerta-avisador-rojo.test.mjs::SCRUM-1263 · 🔴 un log del que no se sabe sacar QUÉ cayó → CIEGO (falla cerrado)",
+   "##[error]Process completed with exit code 1."
+  ]
+ },
+ {
+  "id": 37000528745,
+  "creado": "2026-10-02T11:21:10Z",
+  "evento": "pull_request",
+  "rama": "scrum-1285-escritores-cifra-del-censo",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37000384548,
+  "creado": "2026-10-02T11:19:37Z",
+  "evento": "pull_request",
+  "rama": "scrum-1302-aviso-cerrar-sesion",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37000239486,
+  "creado": "2026-10-02T11:18:00Z",
+  "evento": "pull_request",
+  "rama": "scrum-1231-logo-solo-imagen-subida",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 37000226705,
+  "creado": "2026-10-02T11:17:51Z",
+  "evento": "pull_request",
+  "rama": "scrum-1373-drenado-avisa-firmas-confirmadas",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36982504632,
+  "creado": "2026-10-02T08:10:03Z",
+  "evento": "pull_request",
+  "rama": "scrum-1405-force-exit-medido",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36975440639,
+  "creado": "2026-10-02T06:49:45Z",
+  "evento": "pull_request",
+  "rama": "scrum-1403-el-tecnico-y-las-otras-dos-puertas",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36973472833,
+  "creado": "2026-10-02T06:25:25Z",
+  "evento": "pull_request",
+  "rama": "scrum-1403-el-tecnico-y-las-otras-dos-puertas",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36973433297,
+  "creado": "2026-10-02T06:24:56Z",
+  "evento": "pull_request",
+  "rama": "scrum-1399-el-anterior-de-una-anulacion",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36973054343,
+  "creado": "2026-10-02T06:20:11Z",
+  "evento": "pull_request",
+  "rama": "scrum-1252b-evidencias-linea-y-literal",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36972593292,
+  "creado": "2026-10-02T06:14:19Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36971389183,
+  "creado": "2026-10-02T05:59:08Z",
+  "evento": "pull_request",
+  "rama": "scrum-1399-el-anterior-de-una-anulacion",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36970670157,
+  "creado": "2026-10-02T05:49:30Z",
+  "evento": "pull_request",
+  "rama": "scrum-1400-asignar-no-es-un-permiso-alcance",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36970498882,
+  "creado": "2026-10-02T05:47:10Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36969583822,
+  "creado": "2026-10-02T05:35:00Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "failure",
+  "paso": "La tanda entera en dos zonas extremas (+14 y −11)",
+  "bytes": 35852,
+  "nuevas": 25,
+  "conAusente": 25,
+  "pares": [
+   "pass/ausente"
+  ],
+  "ficheros": [
+   "tests/vigia-atascados.test.mjs"
+  ],
+  "habla": true,
+  "otro": [
+   "🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban",
+   "##[error]Process completed with exit code 1."
+  ]
+ },
+ {
+  "id": 36969266429,
+  "creado": "2026-10-02T05:30:49Z",
+  "evento": "pull_request",
+  "rama": "scrum-1334-el-guard-dice-lo-que-no-cruza",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36963260025,
+  "creado": "2026-10-02T04:08:51Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36962325431,
+  "creado": "2026-10-02T03:56:02Z",
+  "evento": "pull_request",
+  "rama": "scrum-1325-una-tilde-no-rompe-lo-que-entiende",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36961644136,
+  "creado": "2026-10-02T03:46:39Z",
+  "evento": "pull_request",
+  "rama": "scrum-1252-evidencias-libro-solo-facturas",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36961537377,
+  "creado": "2026-10-02T03:45:13Z",
+  "evento": "pull_request",
+  "rama": "scrum-1334-el-guard-dice-lo-que-no-cruza",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36960580809,
+  "creado": "2026-10-02T03:31:55Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36960136892,
+  "creado": "2026-10-02T03:25:53Z",
+  "evento": "pull_request",
+  "rama": "scrum-1252-evidencias-libro-solo-facturas",
+  "zona": "failure",
+  "paso": "La tanda entera en dos zonas extremas (+14 y −11)",
+  "bytes": 29552,
+  "nuevas": 4,
+  "conAusente": 4,
+  "pares": [
+   "pass/ausente"
+  ],
+  "ficheros": [
+   "tests/scrum524b-trinquete-de-la-tabla.test.mjs"
+  ],
+  "habla": true,
+  "otro": [
+   "   🔴 NUEVA SCRUM-524b · ⚫ CIEGO: con un src/ que no es el nuestro, no encuentra NINGUNA de las comprobadas y lo dice",
+   "   🔴 NUEVA SCRUM-524b · ⚫ CIEGO: sin src/, el instrumento no dice «0 comprobadas», dice CIEGO y sale 2",
+   "🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban",
+   "     · tests/scrum524b-trinquete-de-la-tabla.test.mjs::SCRUM-524b · ⚫ CIEGO: con un src/ que no es el nuestro, no encuentra NINGUNA de las comprobadas y lo dice",
+   "     · tests/scrum524b-trinquete-de-la-tabla.test.mjs::SCRUM-524b · ⚫ CIEGO: sin src/, el instrumento no dice «0 comprobadas», dice CIEGO y sale 2",
+   "##[error]Process completed with exit code 1."
+  ]
+ },
+ {
+  "id": 36959682022,
+  "creado": "2026-10-02T03:19:45Z",
+  "evento": "pull_request",
+  "rama": "scrum-1407-registro-1397-anexo-fechado",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36958967655,
+  "creado": "2026-10-02T03:10:15Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36958106792,
+  "creado": "2026-10-02T02:59:03Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36957895689,
+  "creado": "2026-10-02T02:56:07Z",
+  "evento": "pull_request",
+  "rama": "scrum-1397-el-tecnico-ve-sus-facturas",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36957731270,
+  "creado": "2026-10-02T02:53:54Z",
+  "evento": "pull_request",
+  "rama": "scrum-1342-plan-desconocido-no-calla",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36957229739,
+  "creado": "2026-10-02T02:47:12Z",
+  "evento": "pull_request",
+  "rama": "scrum-1388-facturas-recibidas-literales-firmados",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36957204393,
+  "creado": "2026-10-02T02:46:52Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36956445164,
+  "creado": "2026-10-02T02:36:53Z",
+  "evento": "pull_request",
+  "rama": "scrum-1398-la-colision-ya-se-midio",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36956408166,
+  "creado": "2026-10-02T02:36:25Z",
+  "evento": "pull_request",
+  "rama": "scrum-1339e-la-tasa-medida-hoy",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36953150048,
+  "creado": "2026-10-02T01:54:34Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "failure",
+  "paso": "La tanda entera en dos zonas extremas (+14 y −11)",
+  "bytes": 30066,
+  "nuevas": 11,
+  "conAusente": 11,
+  "pares": [
+   "pass/ausente"
+  ],
+  "ficheros": [
+   "tests/scrum834-puerta-avisador-rojo.test.mjs",
+   "tests/vigia-atascados.test.mjs"
+  ],
+  "habla": true,
+  "otro": [
+   "   🔴 NUEVA SCRUM-1263 · 🔴 si el guard no aparece en la pasada local (o no hubo pasada) → CIEGO, no verde",
+   "   🔴 NUEVA SCRUM-1263 · 🔴 un log del que no se sabe sacar QUÉ cayó → CIEGO (falla cerrado)",
+   "🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban",
+   "     · tests/scrum834-puerta-avisador-rojo.test.mjs::SCRUM-1263 · 🔴 si el guard no aparece en la pasada local (o no hubo pasada) → CIEGO, no verde",
+   "     · tests/scrum834-puerta-avisador-rojo.test.mjs::SCRUM-1263 · 🔴 un log del que no se sabe sacar QUÉ cayó → CIEGO (falla cerrado)",
+   "##[error]Process completed with exit code 1."
+  ]
+ },
+ {
+  "id": 36911463721,
+  "creado": "2026-10-01T19:03:29Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36909961264,
+  "creado": "2026-10-01T18:51:29Z",
+  "evento": "pull_request",
+  "rama": "scrum-1394-bancos-de-mutacion-fuera-del-catalogo",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36909925923,
+  "creado": "2026-10-01T18:51:11Z",
+  "evento": "pull_request",
+  "rama": "scrum-1344-arnes-de-prueba-con-rol",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36909189107,
+  "creado": "2026-10-01T18:45:20Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36908181812,
+  "creado": "2026-10-01T18:37:15Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36906567049,
+  "creado": "2026-10-01T18:24:16Z",
+  "evento": "pull_request",
+  "rama": "scrum-1391-las-cinco-puertas-ejecutadas",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36905130761,
+  "creado": "2026-10-01T18:12:40Z",
+  "evento": "pull_request",
+  "rama": "scrum-1339d-senal-de-nombres",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36904434773,
+  "creado": "2026-10-01T18:07:07Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36902185694,
+  "creado": "2026-10-01T17:49:04Z",
+  "evento": "pull_request",
+  "rama": "scrum-1344-arnes-de-prueba-con-rol",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36901626137,
+  "creado": "2026-10-01T17:44:37Z",
+  "evento": "pull_request",
+  "rama": "scrum-1339d-senal-de-nombres",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36900081688,
+  "creado": "2026-10-01T17:32:06Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36898810091,
+  "creado": "2026-10-01T17:21:46Z",
+  "evento": "pull_request",
+  "rama": "scrum-1336-un-ciego-no-se-pinta-de-hallazgo",
+  "zona": "failure",
+  "paso": "La tanda entera en dos zonas extremas (+14 y −11)",
+  "bytes": 34760,
+  "nuevas": 9,
+  "conAusente": 9,
+  "pares": [
+   "ausente/pass"
+  ],
+  "ficheros": [
+   "tests/scrum834-puerta-avisador-rojo.test.mjs"
+  ],
+  "habla": true,
+  "otro": [
+   "   🔴 NUEVA SCRUM-1263 · 🔴 si el guard no aparece en la pasada local (o no hubo pasada) → CIEGO, no verde",
+   "   🔴 NUEVA SCRUM-1263 · 🔴 un log del que no se sabe sacar QUÉ cayó → CIEGO (falla cerrado)",
+   "🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban",
+   "     · tests/scrum834-puerta-avisador-rojo.test.mjs::SCRUM-1263 · 🔴 si el guard no aparece en la pasada local (o no hubo pasada) → CIEGO, no verde",
+   "     · tests/scrum834-puerta-avisador-rojo.test.mjs::SCRUM-1263 · 🔴 un log del que no se sabe sacar QUÉ cayó → CIEGO (falla cerrado)",
+   "##[error]Process completed with exit code 1."
+  ]
+ },
+ {
+  "id": 36896374800,
+  "creado": "2026-10-01T17:01:57Z",
+  "evento": "pull_request",
+  "rama": "scrum-1391-las-cinco-puertas-ejecutadas",
+  "zona": "failure",
+  "paso": "La tanda entera en dos zonas extremas (+14 y −11)",
+  "bytes": 33076,
+  "nuevas": 6,
+  "conAusente": 6,
+  "pares": [
+   "pass/ausente"
+  ],
+  "ficheros": [
+   "tests/scrum834-puerta-avisador-rojo.test.mjs"
+  ],
+  "habla": true,
+  "otro": [
+   "   · tests/scrum834-puerta-avisador-rojo.test.mjs::SCRUM-1263 · 🔴 si el guard no aparece en la pasada local (o no hubo pasada) → CIEGO, no verde",
+   "   · tests/scrum834-puerta-avisador-rojo.test.mjs::SCRUM-1263 · 🔴 un log del que no se sabe sacar QUÉ cayó → CIEGO (falla cerrado)",
+   "🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban",
+   "##[error]Process completed with exit code 1."
+  ]
+ },
+ {
+  "id": 36892903386,
+  "creado": "2026-10-01T16:33:37Z",
+  "evento": "pull_request",
+  "rama": "scrum-1336-un-ciego-no-se-pinta-de-hallazgo",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36890335441,
+  "creado": "2026-10-01T16:13:13Z",
+  "evento": "pull_request",
+  "rama": "scrum-1390-master-s1-autor-o-asignado",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36886780786,
+  "creado": "2026-10-01T15:45:42Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36886428643,
+  "creado": "2026-10-01T15:42:58Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36885380576,
+  "creado": "2026-10-01T15:34:57Z",
+  "evento": "pull_request",
+  "rama": "scrum-1339b-comparacion-y-discriminador",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36884663586,
+  "creado": "2026-10-01T15:29:27Z",
+  "evento": "pull_request",
+  "rama": "scrum-1386-runner-matado-es-ciego",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36883824732,
+  "creado": "2026-10-01T15:23:06Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36882137364,
+  "creado": "2026-10-01T15:10:16Z",
+  "evento": "pull_request",
+  "rama": "scrum-1341-actividad-del-equipo-sin-importes",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36880659605,
+  "creado": "2026-10-01T14:58:58Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36879667635,
+  "creado": "2026-10-01T14:51:30Z",
+  "evento": "pull_request",
+  "rama": "scrum-1338-menu-del-operario-contra-los-gates",
+  "zona": "failure",
+  "paso": "La tanda entera en dos zonas extremas (+14 y −11)",
+  "bytes": 31865,
+  "nuevas": 5,
+  "conAusente": 5,
+  "pares": [
+   "ausente/pass",
+   "pass/ausente"
+  ],
+  "ficheros": [
+   "tests/scrum524b-trinquete-de-la-tabla.test.mjs",
+   "tests/vigia-atascados.test.mjs"
+  ],
+  "habla": true,
+  "otro": [
+   "   · tests/scrum1350-latido.test.mjs::SCRUM-1282 · 🔴 CIEGO: una sesión viva sin jsonl NO ocupa cero — sale 2 y enseña las que sí leyó",
+   "   · tests/scrum1350-latido.test.mjs::SCRUM-1357 · 🔴 CIEGO: un state.json ilegible NO es una sesión que no existe — sale 2 y enseña lo que sí leyó",
+   "   · tests/scrum524b-trinquete-de-la-tabla.test.mjs::SCRUM-524b · ⚫ CIEGO: con un src/ que no es el nuestro, no encuentra NINGUNA de las comprobadas y lo dice",
+   "   · tests/scrum524b-trinquete-de-la-tabla.test.mjs::SCRUM-524b · ⚫ CIEGO: sin src/, el instrumento no dice «0 comprobadas», dice CIEGO y sale 2",
+   "   · tests/scrum595-etiquetas-del-documento.test.mjs::SCRUM-595 · 🔴 SUELO: el censo se declara CIEGO si no encuentra ni un documento",
+   "🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban"
+  ]
+ },
+ {
+  "id": 36879091133,
+  "creado": "2026-10-01T14:47:15Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36878986636,
+  "creado": "2026-10-01T14:46:28Z",
+  "evento": "pull_request",
+  "rama": "scrum-1343-un-hijo-que-no-arranca-es-ciego",
+  "zona": "failure",
+  "paso": "La tanda entera en dos zonas extremas (+14 y −11)",
+  "bytes": 38728,
+  "nuevas": 22,
+  "conAusente": 22,
+  "pares": [
+   "pass/ausente"
+  ],
+  "ficheros": [
+   "tests/vigia-atascados.test.mjs"
+  ],
+  "habla": true,
+  "otro": [
+   "   · tests/scrum1350-latido.test.mjs::SCRUM-1282 · 🔴 CIEGO: una sesión viva sin jsonl NO ocupa cero — sale 2 y enseña las que sí leyó",
+   "🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban",
+   "##[error]Process completed with exit code 1."
+  ]
+ },
+ {
+  "id": 36875190979,
+  "creado": "2026-10-01T14:17:36Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36874745101,
+  "creado": "2026-10-01T14:14:12Z",
+  "evento": "pull_request",
+  "rama": "scrum-1285-alcance-de-los-escritores",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36873487461,
+  "creado": "2026-10-01T14:04:27Z",
+  "evento": "pull_request",
+  "rama": "scrum-1380-suelo-corrio-y-no-reporto",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36873388049,
+  "creado": "2026-10-01T14:03:41Z",
+  "evento": "pull_request",
+  "rama": "scrum-1295-carriles-e-identidad",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36873341958,
+  "creado": "2026-10-01T14:03:19Z",
+  "evento": "pull_request",
+  "rama": "scrum-1376-aviso-rechazo-separado-de-los-botones",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36873098548,
+  "creado": "2026-10-01T14:01:26Z",
+  "evento": "pull_request",
+  "rama": "scrum-1385-latido-main-mira-main",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36872965725,
+  "creado": "2026-10-01T14:00:28Z",
+  "evento": "pull_request",
+  "rama": "scrum-1381-censo-escritores-por-fila",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36872847972,
+  "creado": "2026-10-01T13:59:35Z",
+  "evento": "pull_request",
+  "rama": "scrum-1231-logo-solo-imagen-subida",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36872822042,
+  "creado": "2026-10-01T13:59:22Z",
+  "evento": "pull_request",
+  "rama": "scrum-1365-collect-rest-solo-aceptados",
+  "zona": "failure",
+  "paso": "La tanda entera en dos zonas extremas (+14 y −11)",
+  "bytes": 29564,
+  "nuevas": 6,
+  "conAusente": 6,
+  "pares": [
+   "pass/ausente"
+  ],
+  "ficheros": [
+   "tests/vigia-atascados.test.mjs"
+  ],
+  "habla": true,
+  "otro": [
+   "   · tests/scrum1350-latido.test.mjs::SCRUM-1282 · 🔴 CIEGO: una sesión viva sin jsonl NO ocupa cero — sale 2 y enseña las que sí leyó",
+   "   · tests/scrum524b-trinquete-de-la-tabla.test.mjs::SCRUM-524b · ⚫ CIEGO: con un src/ que no es el nuestro, no encuentra NINGUNA de las comprobadas y lo dice",
+   "🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban",
+   "##[error]Process completed with exit code 1."
+  ]
+ },
+ {
+  "id": 36872559721,
+  "creado": "2026-10-01T13:57:19Z",
+  "evento": "pull_request",
+  "rama": "scrum-1377-censo-fecha-raiz-del-arbol",
+  "zona": "failure",
+  "paso": "La tanda entera en dos zonas extremas (+14 y −11)",
+  "bytes": 31537,
+  "nuevas": 9,
+  "conAusente": 9,
+  "pares": [
+   "pass/ausente"
+  ],
+  "ficheros": [
+   "tests/scrum834-puerta-avisador-rojo.test.mjs"
+  ],
+  "habla": true,
+  "otro": [
+   "   🔴 NUEVA SCRUM-1263 · 🔴 si el guard no aparece en la pasada local (o no hubo pasada) → CIEGO, no verde",
+   "   🔴 NUEVA SCRUM-1263 · 🔴 un log del que no se sabe sacar QUÉ cayó → CIEGO (falla cerrado)",
+   "   · tests/scrum524b-trinquete-de-la-tabla.test.mjs::SCRUM-524b · ⚫ CIEGO: con un src/ que no es el nuestro, no encuentra NINGUNA de las comprobadas y lo dice",
+   "   · tests/scrum524b-trinquete-de-la-tabla.test.mjs::SCRUM-524b · ⚫ CIEGO: sin src/, el instrumento no dice «0 comprobadas», dice CIEGO y sale 2",
+   "🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban",
+   "     · tests/scrum834-puerta-avisador-rojo.test.mjs::SCRUM-1263 · 🔴 si el guard no aparece en la pasada local (o no hubo pasada) → CIEGO, no verde"
+  ]
+ },
+ {
+  "id": 36872127553,
+  "creado": "2026-10-01T13:53:56Z",
+  "evento": "pull_request",
+  "rama": "scrum-1302-firma-directa-ya-registrada",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36872039381,
+  "creado": "2026-10-01T13:53:13Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36871803226,
+  "creado": "2026-10-01T13:51:20Z",
+  "evento": "pull_request",
+  "rama": "scrum-1382-borrador-no-es-fallo-real",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36870942366,
+  "creado": "2026-10-01T13:44:36Z",
+  "evento": "pull_request",
+  "rama": "scrum-1378-latido-pr-de-quien-empujo",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36869558169,
+  "creado": "2026-10-01T13:33:31Z",
+  "evento": "pull_request",
+  "rama": "scrum-1373-drenado-avisa-firmas-confirmadas",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36869452118,
+  "creado": "2026-10-01T13:32:40Z",
+  "evento": "pull_request",
+  "rama": "scrum-1368b-prod-por-detras",
+  "zona": "failure",
+  "paso": "La tanda entera en dos zonas extremas (+14 y −11)",
+  "bytes": 28068,
+  "nuevas": 2,
+  "conAusente": 2,
+  "pares": [
+   "pass/ausente"
+  ],
+  "ficheros": [
+   "tests/scrum524b-trinquete-de-la-tabla.test.mjs"
+  ],
+  "habla": true,
+  "otro": [
+   "   🔴 NUEVA SCRUM-524b · ⚫ CIEGO: con un src/ que no es el nuestro, no encuentra NINGUNA de las comprobadas y lo dice",
+   "   🔴 NUEVA SCRUM-524b · ⚫ CIEGO: sin src/, el instrumento no dice «0 comprobadas», dice CIEGO y sale 2",
+   "🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban",
+   "     · tests/scrum524b-trinquete-de-la-tabla.test.mjs::SCRUM-524b · ⚫ CIEGO: con un src/ que no es el nuestro, no encuentra NINGUNA de las comprobadas y lo dice",
+   "     · tests/scrum524b-trinquete-de-la-tabla.test.mjs::SCRUM-524b · ⚫ CIEGO: sin src/, el instrumento no dice «0 comprobadas», dice CIEGO y sale 2",
+   "##[error]Process completed with exit code 1."
+  ]
+ },
+ {
+  "id": 36869390442,
+  "creado": "2026-10-01T13:32:09Z",
+  "evento": "pull_request",
+  "rama": "scrum-1192-censo-cierre-transitivo",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36869360556,
+  "creado": "2026-10-01T13:31:55Z",
+  "evento": "pull_request",
+  "rama": "scrum-1352-invalid-id-inalcanzable-desde-el-pad",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36868764493,
+  "creado": "2026-10-01T13:27:02Z",
+  "evento": "push",
+  "rama": "main",
+  "zona": "failure",
+  "paso": "La tanda entera en dos zonas extremas (+14 y −11)",
+  "bytes": 34913,
+  "nuevas": 14,
+  "conAusente": 14,
+  "pares": [
+   "pass/ausente"
+  ],
+  "ficheros": [
+   "tests/vigia-atascados.test.mjs"
+  ],
+  "habla": true,
+  "otro": [
+   "   · tests/scrum1350-latido.test.mjs::SCRUM-1282 · 🔴 CIEGO: una sesión viva sin jsonl NO ocupa cero — sale 2 y enseña las que sí leyó",
+   "   · tests/scrum524b-trinquete-de-la-tabla.test.mjs::SCRUM-524b · ⚫ CIEGO: con un src/ que no es el nuestro, no encuentra NINGUNA de las comprobadas y lo dice",
+   "   · tests/scrum524b-trinquete-de-la-tabla.test.mjs::SCRUM-524b · ⚫ CIEGO: sin src/, el instrumento no dice «0 comprobadas», dice CIEGO y sale 2",
+   "   · tests/scrum834-puerta-avisador-rojo.test.mjs::SCRUM-1263 · 🔴 si el guard no aparece en la pasada local (o no hubo pasada) → CIEGO, no verde",
+   "   · tests/scrum834-puerta-avisador-rojo.test.mjs::SCRUM-1263 · 🔴 un log del que no se sabe sacar QUÉ cayó → CIEGO (falla cerrado)",
+   "🔴 EL TRINQUETE HABLA · hay pruebas que dependen de la zona de la máquina y NO estaban"
+  ]
+ },
+ {
+  "id": 36868709715,
+  "creado": "2026-10-01T13:26:35Z",
+  "evento": "pull_request",
+  "rama": "scrum-1371-reintentar-no-vuelve-a-crear",
+  "zona": "success",
+  "paso": null
+ },
+ {
+  "id": 36868567466,
+  "creado": "2026-10-01T13:25:26Z",
+  "evento": "pull_request",
+  "rama": "scrum-1356-latido-enganchado",
+  "zona": "success",
+  "paso": null
+ }
+]

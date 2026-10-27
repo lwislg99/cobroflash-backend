@@ -1,0 +1,74 @@
+POBLACION · 180 runs
+conclusión del job del trinquete de zona:
+    143  success
+     34  failure
+      3  cancelled
+
+CAÍDOS 34 · paso:
+     34  La tanda entera en dos zonas extremas (+14 y −11)
+¿imprime «EL TRINQUETE HABLA»?
+     34  true
+forma: nuevas / de ellas con «ausente» en una zona:
+      5  nuevas 2 · con ausente 2 (TODAS)
+      3  nuevas 9 · con ausente 9 (TODAS)
+      3  nuevas 11 · con ausente 11 (TODAS)
+      3  nuevas 1 · con ausente 1 (TODAS)
+      3  nuevas 3 · con ausente 3 (TODAS)
+      3  nuevas 6 · con ausente 6 (TODAS)
+      2  nuevas 5 · con ausente 5 (TODAS)
+      2  nuevas 4 · con ausente 4 (TODAS)
+      2  nuevas 22 · con ausente 22 (TODAS)
+      1  nuevas 17 · con ausente 17 (TODAS)
+      1  nuevas 23 · con ausente 23 (TODAS)
+      1  nuevas 8 · con ausente 8 (TODAS)
+      1  nuevas 18 · con ausente 18 (TODAS)
+      1  nuevas 10 · con ausente 10 (TODAS)
+      1  nuevas 12 · con ausente 12 (TODAS)
+      1  nuevas 25 · con ausente 25 (TODAS)
+      1  nuevas 14 · con ausente 14 (TODAS)
+pares de veredicto vistos:
+     20  pass/ausente
+     17  ausente/pass
+ficheros acusados (runs):
+     12  tests/vigia-atascados.test.mjs
+     11  tests/scrum834-puerta-avisador-rojo.test.mjs
+      6  tests/scrum524b-trinquete-de-la-tabla.test.mjs
+      4  tests/scrum1379b-id-fuera-de-rango-resto.test.mjs
+      3  tests/scrum1262-la-baja-corta-todas-las-vias.test.mjs
+      2  tests/scrum514-aprobado-y-aplicado.test.mjs
+      1  tests/scrum853-avisador-solo-obligatorio.test.mjs
+      1  tests/scrum454-destructivo-sin-comprobacion.test.mjs
+   37457025055 2026-10-06T11:31:56Z pull_request scrum-1302b-campo-que-no-se-guarda · nuevas 5 · ausente 5 · pass/ausente,ausente/pass · scrum1262-la-baja-corta-todas-las-vias,scrum1379b-id-fuera-de-rango-resto
+   37457005608 2026-10-06T11:31:46Z pull_request scrum-1459-latido-lee-al-vigia · nuevas 4 · ausente 4 · pass/ausente · vigia-atascados
+   37456412455 2026-10-06T11:26:27Z pull_request scrum-1454-ya-esta-commit-ajeno · nuevas 17 · ausente 17 · pass/ausente · scrum514-aprobado-y-aplicado,scrum834-puerta-avisador-rojo
+   37450448569 2026-10-06T10:32:24Z pull_request scrum-1295-carriles-e-identidad · nuevas 2 · ausente 2 · ausente/pass · scrum514-aprobado-y-aplicado
+   37047049994 2026-10-02T18:23:00Z push main · nuevas 9 · ausente 9 · ausente/pass · scrum834-puerta-avisador-rojo
+   37043184485 2026-10-02T17:48:13Z pull_request scrum-1439-sondas-como-evidencia · nuevas 11 · ausente 11 · pass/ausente · scrum834-puerta-avisador-rojo
+   37040654357 2026-10-02T17:25:55Z pull_request scrum-1375-facturacion-con-palabras · nuevas 2 · ausente 2 · ausente/pass · scrum1379b-id-fuera-de-rango-resto
+   37037871786 2026-10-02T17:01:16Z pull_request scrum-1384-resultado-que-nadie-leyo · nuevas 1 · ausente 1 · ausente/pass · scrum524b-trinquete-de-la-tabla
+   37037864075 2026-10-02T17:01:12Z pull_request scrum-1366b-censo-en-una-escritura · nuevas 3 · ausente 3 · pass/ausente · scrum524b-trinquete-de-la-tabla
+   37032255635 2026-10-02T16:11:43Z pull_request scrum-1431-rechazo-escapado · nuevas 3 · ausente 3 · ausente/pass · scrum1379b-id-fuera-de-rango-resto
+   37021257420 2026-10-02T14:38:19Z push main · nuevas 1 · ausente 1 · ausente/pass · scrum853-avisador-solo-obligatorio
+   37018151807 2026-10-02T14:11:41Z pull_request scrum-1295-carriles-e-identidad · nuevas 6 · ausente 6 · ausente/pass · scrum524b-trinquete-de-la-tabla,vigia-atascados
+   37015285708 2026-10-02T13:46:54Z pull_request scrum-1418-sesiones-que-no-volvieron · nuevas 23 · ausente 23 · ausente/pass · vigia-atascados
+   37014173707 2026-10-02T13:37:03Z pull_request scrum-1424-ya-esta · nuevas 11 · ausente 11 · pass/ausente · vigia-atascados
+   37014036159 2026-10-02T13:35:49Z pull_request scrum-1419-canceladas-de-pr · nuevas 2 · ausente 2 · ausente/pass · scrum1262-la-baja-corta-todas-las-vias
+   37013988272 2026-10-02T13:35:23Z pull_request scrum-1420-la-ficha-recuerda-el-aviso · nuevas 8 · ausente 8 · ausente/pass · scrum834-puerta-avisador-rojo
+   37013680955 2026-10-02T13:32:38Z pull_request scrum-1416b-nombres-construidos-lote-2 · nuevas 2 · ausente 2 · pass/ausente · scrum834-puerta-avisador-rojo
+   37011782455 2026-10-02T13:15:21Z pull_request scrum-1369b-eje-es-lo-aceptado · nuevas 18 · ausente 18 · ausente/pass · scrum1379b-id-fuera-de-rango-resto
+   37007073566 2026-10-02T12:30:21Z pull_request scrum-1412-tanda-dirigida-por-tramos · nuevas 22 · ausente 22 · ausente/pass,pass/ausente · scrum454-destructivo-sin-comprobacion,vigia-atascados
+   37007042076 2026-10-02T12:30:04Z pull_request scrum-1419-canceladas-de-pr · nuevas 3 · ausente 3 · ausente/pass · vigia-atascados
+   37007024514 2026-10-02T12:29:54Z pull_request scrum-1415-nombres-construidos-a-literal · nuevas 10 · ausente 10 · pass/ausente · scrum834-puerta-avisador-rojo
+   37005888267 2026-10-02T12:18:18Z push main · nuevas 1 · ausente 1 · pass/ausente · scrum1262-la-baja-corta-todas-las-vias
+   37001251503 2026-10-02T11:29:06Z push main · nuevas 12 · ausente 12 · ausente/pass · scrum834-puerta-avisador-rojo
+   36969583822 2026-10-02T05:35:00Z push main · nuevas 25 · ausente 25 · pass/ausente · vigia-atascados
+   36960136892 2026-10-02T03:25:53Z pull_request scrum-1252-evidencias-libro-solo-factura · nuevas 4 · ausente 4 · pass/ausente · scrum524b-trinquete-de-la-tabla
+   36953150048 2026-10-02T01:54:34Z push main · nuevas 11 · ausente 11 · pass/ausente · scrum834-puerta-avisador-rojo,vigia-atascados
+   36898810091 2026-10-01T17:21:46Z pull_request scrum-1336-un-ciego-no-se-pinta-de-halla · nuevas 9 · ausente 9 · ausente/pass · scrum834-puerta-avisador-rojo
+   36896374800 2026-10-01T17:01:57Z pull_request scrum-1391-las-cinco-puertas-ejecutadas · nuevas 6 · ausente 6 · pass/ausente · scrum834-puerta-avisador-rojo
+   36879667635 2026-10-01T14:51:30Z pull_request scrum-1338-menu-del-operario-contra-los- · nuevas 5 · ausente 5 · ausente/pass,pass/ausente · scrum524b-trinquete-de-la-tabla,vigia-atascados
+   36878986636 2026-10-01T14:46:28Z pull_request scrum-1343-un-hijo-que-no-arranca-es-cie · nuevas 22 · ausente 22 · pass/ausente · vigia-atascados
+   36872822042 2026-10-01T13:59:22Z pull_request scrum-1365-collect-rest-solo-aceptados · nuevas 6 · ausente 6 · pass/ausente · vigia-atascados
+   36872559721 2026-10-01T13:57:19Z pull_request scrum-1377-censo-fecha-raiz-del-arbol · nuevas 9 · ausente 9 · pass/ausente · scrum834-puerta-avisador-rojo
+   36869452118 2026-10-01T13:32:40Z pull_request scrum-1368b-prod-por-detras · nuevas 2 · ausente 2 · pass/ausente · scrum524b-trinquete-de-la-tabla
+   36868764493 2026-10-01T13:27:02Z push main · nuevas 14 · ausente 14 · pass/ausente · vigia-atascados

@@ -1,0 +1,209 @@
+== CONTROLES
+control · censo escritores, fixture: 4 (esperado 4)
+control · censo lectores, fixture: 5 (esperado 5)
+control · censo forma, fixture: 2 (esperado 2)
+control · censo escritores, nombre que no existe, src: 0 (esperado 0)
+control · censo lectores, modelo que no existe, src: 0 (esperado 0)
+control · tragadas, fixture: total: 6 (esperado 6)
+control · tragadas, fixture: TRAGA(.catch): 1 (esperado 1)
+control · tragadas, fixture: TRAGA(try): 3 (esperado 3)
+control · tragadas, modelo que no existe, src: 0 (esperado 0)
+control · tragadas ve el .catch de recordAudit: 1 (esperado 1)
+
+== 1 · QUIEN ESCRIBE en la tabla de auditoria (src)
+modules/exports/app/routes/exports.routes.ts | 55 | recordAudit | 'datos_exportados' | SUELTA |  | auditExport
+modules/exports/app/routes/exports.routes.ts | 300 | recordAuditOrThrow | 'exportacion_fiscal' | await |  | (módulo/handler)
+modules/exports/app/routes/exports.routes.ts | 595 | recordAuditOrThrow | 'exportacion_fiscal' | await |  | (módulo/handler)
+modules/exports/domain/portabilidadRegistro.ts | 101 | recordAuditOrThrow | ACCION_SOLICITADA | await | cliente=cliente | registrarSolicitud
+modules/exports/domain/portabilidadRegistro.ts | 127 | recordAuditOrThrow | ACCION_ATENDIDA | await | cliente=cliente | registrarAtencion
+modules/invoicing/domain/encolarRemision.ts | 83 | recordAudit | 'encolado_fallido' | SUELTA |  | encolarAltaTrasSellado
+modules/invoicing/domain/invoiceNumber.service.ts | 415 | recordAuditOrThrow | 'factura_emitida' | return | cliente=tx | auditar
+modules/invoicing/domain/selladoEstado.ts | 151 | recordAudit | 'sellado_fallido' | SUELTA |  | sellarTrasEmision
+modules/jobs/app/routes/albaranes.routes.ts | 774 | recordAudit | 'albaran_editado' | SUELTA |  | (módulo/handler)
+modules/jobs/app/routes/jobs.routes.ts | 897 | recordAudit | 'trabajo_creado' | SUELTA |  | (módulo/handler)
+modules/jobs/app/routes/jobs.routes.ts | 1127 | recordAudit | 'tipo_operacion_elegido' | SUELTA |  | (módulo/handler)
+modules/jobs/domain/job.service.ts | 157 | recordAudit | 'operario_asignado' | SUELTA |  | ensureJobForQuote
+modules/system/app/routes/invoicesAdmin.routes.ts | 492 | recordAudit | 'marcar_pagado_manual' | SUELTA |  | (módulo/handler)
+modules/system/app/routes/invoicesAdmin.routes.ts | 570 | recordAudit | status === 'paid' ? 'marcar_pagado_manual' : 'deshacer_pago' | SUELTA |  | (módulo/handler)
+modules/system/app/routes/invoicesAdmin.routes.ts | 600 | recordAudit | 'marcar_pagado_manual' | SUELTA |  | (módulo/handler)
+modules/system/app/routes/invoicesAdmin.routes.ts | 621 | recordAudit | 'deshacer_pago' | SUELTA |  | (módulo/handler)
+modules/system/app/routes/invoicesAdmin.routes.ts | 977 | recordAudit | 'factura_anulada' | SUELTA |  | (módulo/handler)
+modules/system/app/routes/invoicesAdmin.routes.ts | 1133 | recordAudit | 'factura_rectificada' | SUELTA |  | (módulo/handler)
+modules/system/audit.service.ts | 310 | DIRECTO .auditLog.create |  | encadenada |  | recordAudit
+modules/system/audit.service.ts | 334 | DIRECTO .auditLog.create |  | await |  | recordAuditOrThrow
+modules/system/domain/flagFiscal.service.ts | 120 | recordAuditOrThrow | 'cambio_flag' | await | cliente=tx as any | cambiarFlagFiscal
+modules/system/domain/supresionMerchant.service.ts | 43 | ALIAS recordAuditOrThrow | TypeQuery |  |  | suprimirMerchant
+modules/system/domain/supresionMerchant.service.ts | 52 | ALIAS recordAuditOrThrow | BinaryExpression |  |  | suprimirMerchant
+# población: 321 ficheros, 266283 nodos · hallazgos: 23 · modo=escritores modelo=auditLog fn=recordAudit
+
+== 2 · QUIEN LEE la tabla de auditoria (src)
+modules/exports/domain/portabilidadRegistro.ts | 171 | .auditLog.findMany | ACCION_SOLICITADA | await | solicitudesPendientes
+modules/exports/domain/portabilidadRegistro.ts | 182 | .auditLog.findMany | ACCION_ATENDIDA | await | solicitudesPendientes
+modules/invoicing/domain/reintentoSellado.ts | 274 | .auditLog.findMany | ACCION_DEL_SELLADO_FALLIDO | await | reintentarSelladosPendientes
+modules/system/domain/borradoMerchant.ts | 98 | CADENA | "auditLog" | ArrayLiteralExpression | (módulo/handler)
+# población: 321 ficheros, 266283 nodos · hallazgos: 4 · modo=lectores modelo=auditLog fn=recordAudit
+
+== 2b · idem en scripts/ y public/
+backup-dump.mjs | 112 | CADENA | "audit_log" | ArrayLiteralExpression | (módulo/handler)
+cambiar-flag-fiscal.mjs | 122 | .auditLog.findFirst | 'cambio_flag' | await | (módulo/handler)
+clean-staging-tests.mjs | 175 | CADENA | "auditLog" | ArrayLiteralExpression | main
+conciliar-auditoria-fiscal.mjs | 172 | CADENA | "UPDATE audit_log SET id = id WHERE false" | CallExpression | (módulo/handler)
+e2e-critico.mjs | 305 | CADENA | "auditLog" | ArrayLiteralExpression | (módulo/handler)
+# población: 290 ficheros, 445262 nodos · hallazgos: 5 · modo=lectores modelo=auditLog fn=recordAudit
+# población: 98 ficheros, 199114 nodos · hallazgos: 0 · modo=lectores modelo=auditLog fn=recordAudit
+
+== 3 · LA FORMA: promesa suelta con .catch que traga (src)
+index.ts | 53 | (módulo/handler) | arrancar | arrancar() | (err) => { // El mensaje ya viene explicado desde assertSche
+integrations/whatsapp.ts | 331 | logFailure | recordWaMessage | recordWaMessage({ merchantId: params.merchantId, customerId: params.log?.customerId ?? null, type: 'template', | () => {}
+integrations/whatsapp.ts | 422 | sendWhatsAppTemplate | recordWaMessage | recordWaMessage({ merchantId: params.merchantId, customerId: params.log?.customerId ?? null, type: 'template', | () => {}
+integrations/whatsapp.ts | 460 | sendWhatsAppTemplate | recordWaMessage | recordWaMessage({ merchantId: params.merchantId, customerId: params.log?.customerId ?? null, type: 'template', | () => {}
+integrations/whatsapp.ts | 510 | sendWhatsAppWindowFirst | recordWaMessage | recordWaMessage({ merchantId: params.merchantId, customerId, type: 'service', templateName: params.template.te | () => {}
+integrations/whatsapp.ts | 543 | sendWhatsAppWindowFirst | recordWaMessage | recordWaMessage({ merchantId: params.merchantId, customerId, type: 'service', templateName: params.template.te | () => {}
+integrations/whatsapp.ts | 649 | logFailure | recordWaMessage | recordWaMessage({ merchantId: params.merchantId, customerId: params.log?.customerId ?? null, type: 'service',  | () => {}
+integrations/whatsapp.ts | 734 | logFailure | recordWaMessage | recordWaMessage({ merchantId: params.merchantId, customerId: params.log?.customerId ?? null, type: 'service',  | () => {}
+integrations/whatsapp.ts | 746 | logSent | recordWaMessage | recordWaMessage({ merchantId: params.merchantId, customerId: params.log?.customerId ?? null, type: 'service',  | () => {}
+integrations/whatsapp.ts | 837 | logFailure | recordWaMessage | recordWaMessage({ merchantId: params.merchantId, customerId: params.log?.customerId ?? null, type: 'service',  | () => {}
+integrations/whatsapp.ts | 849 | logSent | recordWaMessage | recordWaMessage({ merchantId: params.merchantId, customerId: params.log?.customerId ?? null, type: 'service',  | () => {}
+integrations/whatsapp.ts | 949 | logFailure | recordWaMessage | recordWaMessage({ merchantId: params.merchantId, customerId: params.log?.customerId ?? null, type: 'service',  | () => {}
+integrations/whatsapp.ts | 961 | logSent | recordWaMessage | recordWaMessage({ merchantId: params.merchantId, customerId: params.log?.customerId ?? null, type: 'service',  | () => {}
+integrations/whatsapp.ts | 1039 | logFailure | recordWaMessage | recordWaMessage({ merchantId: params.merchantId, customerId: params.log?.customerId ?? null, type: 'service',  | () => {}
+integrations/whatsapp.ts | 1051 | logSent | recordWaMessage | recordWaMessage({ merchantId: params.merchantId, customerId: params.log?.customerId ?? null, type: 'service',  | () => {}
+integrations/whatsapp.ts | 1122 | logFailure | recordWaMessage | recordWaMessage({ merchantId: params.merchantId, customerId: params.log?.customerId ?? null, type: 'service',  | () => {}
+integrations/whatsapp.ts | 1134 | logSent | recordWaMessage | recordWaMessage({ merchantId: params.merchantId, customerId: params.log?.customerId ?? null, type: 'service',  | () => {}
+modules/billing/app/routes/mpWebhook.routes.ts | 195 | (módulo/handler) | sendPaymentConfirmat | sendPaymentConfirmationInvoice({ toPhone: canalDeWhatsApp(updated.customer), customerName: updated.customer.na | () => {}
+modules/billing/app/routes/mpWebhook.routes.ts | 224 | (módulo/handler) | sendWhatsAppCtaUrl | sendWhatsAppCtaUrl({ to: phone, merchantId: updated.merchantId, // V0-2: demo solo a DEMO_SAFE_NUMBERS bodyTex | (err) => console.error('[review] Error enviando reseña:', er
+modules/billing/app/routes/mpWebhook.routes.ts | 241 | (módulo/handler) | notifyMerchantPaid | notifyMerchantPaid({ merchantId: updated.merchantId, // V0-2 + J3 reaplicados dentro merchantPhone: merchant?. | () => {}
+modules/billing/app/routes/mpWebhook.routes.ts | 254 | (módulo/handler) | recalcJobCobradoForC | recalcJobCobradoForCharge(updated.id) | (e) => console.error('[mpWebhook] SCRUM-13 recalc totalCobra
+modules/billing/app/routes/payBizum.routes.ts | 198 | (módulo/handler) | notifyMerchantAlert | notifyMerchantAlert({ merchantId: charge.merchantId, merchantPhone: charge.merchant?.whatsappPhone, customerNa | (err) => console.error('[bizum/claimed] Error avisando al me
+modules/billing/app/routes/psp.routes.ts | 297 | (módulo/handler) | sendPaymentConfirmat | sendPaymentConfirmationInvoice({ toPhone: canalDeWhatsApp(updated.customer), customerName: updated.customer.na | () => {}
+modules/billing/app/routes/psp.routes.ts | 330 | (módulo/handler) | sendWhatsAppCtaUrl | sendWhatsAppCtaUrl({ to: reviewPhone, merchantId: updated.merchantId, // V0-2: demo solo a DEMO_SAFE_NUMBERS b | (err) => console.error('[review] Error enviando reseña:', er
+modules/billing/app/routes/psp.routes.ts | 346 | (módulo/handler) | notifyMerchantPaid | notifyMerchantPaid({ merchantId: updated.merchantId, // V0-2 + J3 reaplicados dentro merchantPhone: merchant?. | (err) => console.error('[psp] Error notificando al merchant:
+modules/billing/app/routes/psp.routes.ts | 376 | (módulo/handler) | recalcJobCobradoForC | recalcJobCobradoForCharge(updated.id) | (e) => console.error('[psp] SCRUM-13 recalc totalCobrado:', 
+modules/jobs/app/routes/albaranPublic.routes.ts | 452 | (módulo/handler) | sendAlbaranFirmadoWh | sendAlbaranFirmadoWhatsApp(albaran.id) | (e) => console.error('[albaranPublic] auto-envío:', e?.messa
+modules/messaging/domain/registroDeEnvios.ts | 238 | registrarEnvio | escritura | escritura | (e) => anotarFallo(to, e)
+modules/quotes/app/routes/quotes.routes.ts | 245 | (módulo/handler) | sendWhatsAppText | sendWhatsAppText({ to: adminPhone, merchantId: quote.merchantId, // V0-2: demo solo a DEMO_SAFE_NUMBERS text:  | () => {}
+modules/quotes/app/routes/quotes.routes.ts | 519 | (módulo/handler) | ensureJobForQuote | ensureJobForQuote(quote.id) | () => {}
+modules/quotes/app/routes/quotes.routes.ts | 712 | (módulo/handler) | sendInvoicePaymentRe | sendInvoicePaymentRequest(createdInvoice.id) | (err) => { console.error('[POST /quote/:id/decision] error e
+modules/quotes/app/routes/quotes.routes.ts | 761 | (módulo/handler) | notifyMerchantAlert | notifyMerchantAlert({ merchantId: quote.merchantId, merchantPhone: quote.merchant?.whatsappPhone, customerName | (err) => console.error('[decision] Error notificando al merc
+modules/system/app/routes/customerPortal.routes.ts | 561 | (módulo/handler) | sendWhatsAppText | sendWhatsAppText({ to: mPhone, merchantId: customer.merchantId, // V0-2: demo solo a DEMO_SAFE_NUMBERS text: ` | (e) => console.error('[quoteRequest] WA error:', e?.message)
+modules/system/app/routes/quotesAdmin.routes.ts | 151 | (módulo/handler) | ensureJobForQuote | ensureJobForQuote(id) | () => {}
+modules/system/audit.service.ts | 310 | recordAudit | prisma | prisma.auditLog .create({ data: datosDe(params) as any }) | (e) => console.error('[audit] no se pudo registrar:', e?.mes
+modules/system/invoiceAdmin.ts | 319 | updateInvoiceStatusAdmin | recalcJobCobradoForI | recalcJobCobradoForInvoice(existing.id) | (e) => console.error('[invoiceAdmin] SCRUM-28 recalc totalCo
+modules/whatsappBot/app/routes/whatsappIncoming.routes.ts | 122 | (módulo/handler) | updateWaMessageStatu | updateWaMessageStatus(waMessageId, status, err) | (e) => console.error('[WA status] update error:', e?.message
+modules/whatsappBot/app/routes/whatsappIncoming.routes.ts | 138 | (módulo/handler) | recordInboundWaMessa | recordInboundWaMessage(from) | () => {}
+modules/whatsappBot/app/routes/whatsappIncoming.routes.ts | 141 | (módulo/handler) | markInboundRead | markInboundRead(String(msg.id || '')) | () => {}
+modules/whatsappBot/app/routes/whatsappIncoming.routes.ts | 146 | (módulo/handler) | routeIncoming | routeIncoming(from, { text }) | (e) => console.error('[WA in] handler error:', e?.message)
+modules/whatsappBot/app/routes/whatsappIncoming.routes.ts | 155 | (módulo/handler) | routeIncoming | routeIncoming(from, { listReplyId }) | (e) => console.error('[WA in] handler error:', e?.message)
+modules/whatsappBot/app/routes/whatsappIncoming.routes.ts | 164 | (módulo/handler) | handleTemplateButton | handleTemplateButtonReply(from, btnText) | (e) => console.error('[WA in] button error:', e?.message)
+modules/whatsappBot/app/routes/whatsappIncoming.routes.ts | 171 | (módulo/handler) | routeIncoming | routeIncoming(from, { text: zoneText }) | (e) => console.error('[WA in] handler error:', e?.message)
+modules/whatsappBot/app/routes/whatsappIncoming.routes.ts | 180 | (módulo/handler) | handleIncomingPhoto | handleIncomingPhoto(from, mediaId) | (e) => console.error('[WA in] photo error:', e?.message)
+modules/whatsappBot/app/routes/whatsappIncoming.routes.ts | 184 | (módulo/handler) | handleUnsupportedMed | handleUnsupportedMedia(from) | () => {}
+modules/whatsappBot/app/routes/whatsappIncoming.routes.ts | 190 | (módulo/handler) | handleUnsupportedMed | handleUnsupportedMedia(from) | () => {}
+modules/whatsappBot/app/routes/whatsappIncoming.routes.ts | 297 | handleOptOutRequest | notifyMerchantAlert | notifyMerchantAlert({ merchantId: m.id, merchantPhone: m.whatsappPhone, customerName: cust?.name || 'Un client | () => {}
+modules/whatsappBot/app/routes/whatsappIncoming.routes.ts | 409 | handleIncomingText | notifyMerchantAlert | notifyMerchantAlert({ merchantId: albaranMsg.merchantId, merchantPhone: merchant?.whatsappPhone, customerName: | () => {}
+modules/whatsappBot/app/routes/whatsappIncoming.routes.ts | 493 | handleIncomingText | ensureJobForQuote | ensureJobForQuote(quote.id) | () => {}
+modules/whatsappBot/app/routes/whatsappIncoming.routes.ts | 534 | handleIncomingText | sendWhatsAppText | sendWhatsAppText({ // SCRUM-245: va al PRO, no a quien escribio, asi que NO es una respuesta y NO se exime. // | () => {}
+modules/whatsappBot/app/routes/whatsappIncoming.routes.ts | 577 | handleIncomingText | sendWhatsAppText | sendWhatsAppText({ // SCRUM-245: va al PRO, no a quien escribio, asi que NO es una respuesta y NO se exime. // | () => {}
+modules/whatsappBot/domain/botFlow.service.ts | 495 | handleBotMessage | notifyMerchantAlert | notifyMerchantAlert({ merchantId, merchantPhone: merchant.whatsappPhone, customerName: customer.name || 'Un cl | (e) => console.error('[bot] aviso solicitud:', e?.message ||
+modules/whatsappBot/domain/botFlow.service.ts | 631 | handleBotMessage | notifyMerchantAlert | notifyMerchantAlert({ merchantId, merchantPhone: merchant.whatsappPhone, customerName: customer.name || 'Un cl | (e) => console.error('[bot] handoff aviso:', e?.message || e
+modules/whatsappBot/domain/botFlow.service.ts | 688 | handleBotMessage | notifyMerchantAlert | notifyMerchantAlert({ merchantId, merchantPhone: merchant.whatsappPhone, customerName: customer.name || 'Un cl | (e) => console.error('[bot] handoff 2ª vez:', e?.message || 
+# población: 321 ficheros, 266283 nodos · hallazgos: 54 · modo=forma modelo=auditLog fn=recordAudit
+
+== 4 · escrituras prisma cuyo fallo NO llega al llamador (src; fuera las que contestan HTTP)
+authSession | update | TRAGA(try) | devuelve-valor | modules/auth/domain/entornoApp.service.ts:93 | registrarEntornoDeSesion
+charge | update | TRAGA(try) | sin-senal | modules/billing/app/routes/mpWebhook.routes.ts:108 | (modulo/handler)
+invoice | update | TRAGA(.catch) |  | modules/billing/app/routes/mpWebhook.routes.ts:172 | (modulo/handler)
+charge | update | TRAGA(try) | sin-senal | modules/billing/app/routes/mpWebhook.routes.ts:256 | (modulo/handler)
+sessions | create | TRAGA(try) | devuelve-valor | modules/billing/app/routes/payCard.routes.ts:104 | (modulo/handler)
+sessions | create | TRAGA(try) | devuelve-valor | modules/billing/app/routes/payCard.routes.ts:105 | (modulo/handler)
+event | create | TRAGA(try) | devuelve-valor | modules/billing/app/routes/payCard.routes.ts:107 | (modulo/handler)
+invoice | update | TRAGA(try) | sin-senal | modules/billing/app/routes/psp.routes.ts:194 | (modulo/handler)
+invoice | update | TRAGA(try) | sin-senal | modules/billing/app/routes/psp.routes.ts:258 | (modulo/handler)
+event | create | TRAGA(try) | sin-senal | modules/billing/domain/correoDeFacturaEnviado.ts:112 | marcarCorreoEnviado
+gatewayEvent | update | TRAGA(try) | sin-senal | modules/billing/domain/gatewayEvents.service.ts:184 | anotarFalloDeEvento
+invoice | update | TRAGA(.catch) |  | modules/billing/domain/invoiceReminder.service.ts:90 | sendInvoicePaymentReminders
+invoice | update | TRAGA(.catch) |  | modules/billing/domain/invoiceReminder.service.ts:98 | sendInvoicePaymentReminders
+invoice | update | TRAGA(try) | devuelve-valor | modules/billing/domain/invoiceWhatsApp.service.ts:78 | sendInvoicePaymentRequest
+vfSubmission | create | TRAGA(try) | devuelve-valor | modules/invoicing/domain/encolarRemision.ts:61 | encolarAltaTrasSellado
+invoice | update | TRAGA(try) | devuelve-valor | modules/invoicing/domain/selladoEstado.ts:143 | sellarTrasEmision
+quote | create | TRAGA(try) | sin-senal | modules/jobs/app/routes/albaranes.routes.ts:1641 | (modulo/handler)
+quote | update | TRAGA(try) | sin-senal | modules/jobs/domain/job.service.ts:83 | ensureJobForQuote
+job | create | TRAGA(try) | sin-senal | modules/jobs/domain/job.service.ts:101 | ensureJobForQuote
+quote | update | TRAGA(try) | sin-senal | modules/jobs/domain/job.service.ts:153 | ensureJobForQuote
+job | update | TRAGA(try) | sin-senal | modules/jobs/domain/job.service.ts:297 | recalcJobCobradoForJob
+quote | delete | TRAGA(.catch) |  | modules/maintenance/domain/maintenance.service.ts:534 | handleMaintenanceButton
+quote | delete | TRAGA(.catch) |  | modules/maintenance/domain/maintenance.service.ts:547 | handleMaintenanceButton
+emailMessage | create | TRAGA(try) | devuelve-valor | modules/messaging/domain/registroDeEnvios.ts:214 | registrarEnvio
+emailMessage | update | TRAGA(try) | devuelve-valor | modules/messaging/domain/registroDeEnvios.ts:317 | aplicarAvisoDeProveedor
+whatsAppMessage | create | TRAGA(try) | sin-senal | modules/messaging/domain/whatsappLog.service.ts:33 | recordWaMessage
+whatsAppMessage | createMany | TRAGA(try) | sin-senal | modules/messaging/domain/whatsappLog.service.ts:76 | recordInboundWaMessage
+whatsAppMessage | update | TRAGA(try) | sin-senal | modules/messaging/domain/whatsappLog.service.ts:142 | updateWaMessageStatus
+merchant | update | TRAGA(try) | devuelve-valor | modules/payments/connect/connect.routes.ts:87 | syncConnectStatus
+accountLinks | create | TRAGA(try) | devuelve-valor | modules/payments/connect/connect.routes.ts:110 | (modulo/handler)
+event | create | TRAGA(try) | sin-senal | modules/payments/disputes.service.ts:206 | handleStripeDispute
+product | create | TRAGA(try) | sin-senal | modules/products/domain/products.service.ts:210 | importProductsCsv
+quote | update | TRAGA(try) | sin-senal | modules/quotes/app/routes/quotes.routes.ts:263 | (modulo/handler)
+quote | update | TRAGA(try) | sin-senal | modules/quotes/app/routes/quotes.routes.ts:512 | (modulo/handler)
+quote | update | TRAGA(.catch) |  | modules/quotes/domain/reminder.service.ts:83 | markReminded
+quote | update | TRAGA(try) | sin-senal | modules/quotes/domain/sendQuote.service.ts:117 | sendQuoteWhatsAppToCustomer
+quote | update | TRAGA(.catch) |  | modules/system/app/routes/quotesAdmin.routes.ts:764 | (modulo/handler)
+quote | update | TRAGA(try) | sin-senal | modules/system/app/routes/quotesAdmin.routes.ts:803 | (modulo/handler)
+auditLog | create | TRAGA(.catch) |  | modules/system/audit.service.ts:310 | recordAudit
+customerEvent | create | TRAGA(try) | sin-senal | modules/system/customerEvents.service.ts:21 | recordCustomerEvent
+# poblacion: 321 ficheros, 209 llamadas (escrituras)
+
+== 5 · quien LEE whatsAppMessage
+whatsAppMessage | count | TRAGA(try) | sin-senal | integrations/whatsapp.ts:376 | sendWhatsAppTemplate
+whatsAppMessage | count | TRAGA(try) | sin-senal | integrations/whatsapp.ts:392 | sendWhatsAppTemplate
+whatsAppMessage | findMany | PROPAGA |  | modules/billing/app/routes/chargesAdmin.routes.ts:224 | leerEstados
+whatsAppMessage | findMany | PROPAGA |  | modules/jobs/app/routes/jobs.routes.ts:733 | serializeJobDetail
+whatsAppMessage | findFirst | TRAGA(try) | devuelve-valor | modules/messaging/domain/whatsappLog.service.ts:98 | isServiceWindowOpen
+whatsAppMessage | findUnique | TRAGA(try) | sin-senal | modules/messaging/domain/whatsappLog.service.ts:134 | updateWaMessageStatus
+whatsAppMessage | findFirst | TRAGA(try) | devuelve-valor | modules/messaging/domain/whatsappLog.service.ts:170 | getDeliveryStatus
+whatsAppMessage | findMany | TRAGA(try) | devuelve-valor | modules/messaging/domain/whatsappLog.service.ts:204 | getDeliveryStatusMany
+whatsAppMessage | findMany | TRAGA(try) | devuelve-valor | modules/messaging/domain/whatsappLog.service.ts:296 | getWhatsAppMetrics
+whatsAppMessage | findMany | TRAGA(try) | devuelve-valor | modules/messaging/domain/whatsappLog.service.ts:303 | getWhatsAppMetrics
+whatsAppMessage | findMany | PROPAGA |  | modules/system/app/routes/invoicesAdmin.routes.ts:294 | envioDelDocumentoDeLaFactura
+whatsAppMessage | findMany | TRAGA(try) | responde-http | modules/system/app/routes/invoicesAdmin.routes.ts:363 | (modulo/handler)
+whatsAppMessage | findMany | PROPAGA |  | modules/system/domain/historialWhatsAppDelCliente.ts:35 | historialWhatsAppDelCliente
+whatsAppMessage | findFirst | TRAGA(.catch) |  | modules/whatsappBot/app/routes/whatsappIncoming.routes.ts:391 | handleIncomingText
+# poblacion: 321 ficheros, 14 llamadas (lecturas modelo=whatsAppMessage)
+
+== 5 · quien LEE customerEvent
+customerEvent | findMany | TRAGA(try) | devuelve-valor | modules/system/customerEvents.service.ts:62 | existeEventoDePlan
+customerEvent | findMany | TRAGA(try) | devuelve-valor | modules/system/customerEvents.service.ts:84 | listCustomerEvents
+customerEvent | count | PROPAGA |  | modules/system/domain/fusionClientes.ts:128 | previsualizarFusion
+customerEvent | findMany | PROPAGA |  | modules/system/domain/notasDelCliente.ts:113 | listarNotas
+# poblacion: 321 ficheros, 4 llamadas (lecturas modelo=customerEvent)
+
+== 5 · quien LEE event
+event | findFirst | TRAGA(.catch) |  | modules/billing/app/routes/payBizum.routes.ts:149 | (modulo/handler)
+event | findFirst | TRAGA(.catch) |  | modules/billing/app/routes/payBizum.routes.ts:188 | (modulo/handler)
+event | findMany | PROPAGA |  | modules/billing/domain/cobros.service.ts:234 | listarCobros
+event | findMany | PROPAGA |  | modules/billing/domain/cobros.service.ts:355 | listarCobrosConCorreo
+event | findMany | TRAGA(try) | devuelve-valor | modules/billing/domain/correoDeFacturaEnviado.ts:81 | yaSeEnvioElCorreo
+event | findMany | TRAGA(try) | devuelve-valor | modules/payments/disputes.service.ts:111 | yaAtendida
+# poblacion: 321 ficheros, 6 llamadas (lecturas modelo=event)
+
+== 5 · quien LEE gatewayEvent
+gatewayEvent | findUnique | PROPAGA |  | modules/billing/domain/gatewayEvents.service.ts:136 | abrirRegistroDeEvento
+# poblacion: 321 ficheros, 1 llamadas (lecturas modelo=gatewayEvent)
+
+== 5 · quien LEE vfSubmission
+vfSubmission | findMany | PROPAGA |  | modules/fiscal/verifactu/sif.procesador.ts:81 | procesarObligado
+vfSubmission | findMany | PROPAGA |  | modules/fiscal/verifactu/sif.procesador.ts:98 | procesarObligado
+vfSubmission | count | TRAGA(try) | devuelve-valor | modules/invoicing/domain/encolarRemision.ts:57 | encolarAltaTrasSellado
+vfSubmission | count | TRAGA(try) | devuelve-valor | modules/system/domain/borradoMerchant.ts:225 | borrarMerchant
+# poblacion: 321 ficheros, 4 llamadas (lecturas modelo=vfSubmission)
+
+== 6 · SONDAS sobre dist/ (control primero)
+{"sonda":"tope","variante":"control","pasadas":10,"plantillasQueSalieron":3,"sinIdDeMensaje":0,"llamadasAlRegistro":10,"filasQueQuedaron":10,"candadoPedido":0,"candadoEscrito":0,"bloqueosPorTope":7,"enDryRun":null,"porPasada":"ok,ok,ok,customer_daily_cap,customer_daily_cap,customer_daily_cap,customer_daily_cap,customer_daily_cap,customer_daily_cap,customer_daily_cap"}
+{"sonda":"presupuesto","variante":"control","pasadas":48,"plantillasQueSalieron":1,"sinIdDeMensaje":0,"llamadasAlRegistro":1,"filasQueQuedaron":1,"candadoPedido":1,"candadoEscrito":1,"bloqueosPorTope":0,"enDryRun":null,"porPasada":"1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0"}
+{"sonda":"factura","variante":"control","pasadas":30,"plantillasQueSalieron":2,"sinIdDeMensaje":0,"llamadasAlRegistro":2,"filasQueQuedaron":2,"candadoPedido":2,"candadoEscrito":2,"bloqueosPorTope":0,"enDryRun":null,"porPasada":"2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0"}
+{"sonda":"tope","variante":"registro","pasadas":10,"plantillasQueSalieron":10,"sinIdDeMensaje":0,"llamadasAlRegistro":10,"filasQueQuedaron":0,"candadoPedido":0,"candadoEscrito":0,"bloqueosPorTope":0,"enDryRun":null,"porPasada":"ok,ok,ok,ok,ok,ok,ok,ok,ok,ok"}
+{"sonda":"presupuesto","variante":"candado","pasadas":48,"plantillasQueSalieron":48,"sinIdDeMensaje":0,"llamadasAlRegistro":48,"filasQueQuedaron":48,"candadoPedido":48,"candadoEscrito":0,"bloqueosPorTope":0,"enDryRun":null,"porPasada":"1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1"}
+{"sonda":"presupuesto","variante":"registro","pasadas":48,"plantillasQueSalieron":1,"sinIdDeMensaje":0,"llamadasAlRegistro":1,"filasQueQuedaron":0,"candadoPedido":1,"candadoEscrito":1,"bloqueosPorTope":0,"enDryRun":null,"porPasada":"1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0"}
+{"sonda":"presupuesto","variante":"ambos","pasadas":48,"plantillasQueSalieron":48,"sinIdDeMensaje":0,"llamadasAlRegistro":48,"filasQueQuedaron":0,"candadoPedido":48,"candadoEscrito":0,"bloqueosPorTope":0,"enDryRun":null,"porPasada":"1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1"}
+{"sonda":"factura","variante":"candado","pasadas":30,"plantillasQueSalieron":60,"sinIdDeMensaje":0,"llamadasAlRegistro":60,"filasQueQuedaron":60,"candadoPedido":60,"candadoEscrito":0,"bloqueosPorTope":0,"enDryRun":null,"porPasada":"2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2"}
+{"sonda":"factura","variante":"registro","pasadas":30,"plantillasQueSalieron":2,"sinIdDeMensaje":0,"llamadasAlRegistro":2,"filasQueQuedaron":0,"candadoPedido":2,"candadoEscrito":2,"bloqueosPorTope":0,"enDryRun":null,"porPasada":"2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0"}
+{"sonda":"factura","variante":"ambos","pasadas":30,"plantillasQueSalieron":60,"sinIdDeMensaje":0,"llamadasAlRegistro":60,"filasQueQuedaron":0,"candadoPedido":60,"candadoEscrito":0,"bloqueosPorTope":0,"enDryRun":null,"porPasada":"2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2"}

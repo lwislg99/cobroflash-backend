@@ -10,15 +10,38 @@
 //   3. que un albarán a medias (SCRUM-170) NO entre — cobraría dos veces lo ya facturado;
 //   4. tenancy: los partes de otro cliente o de otro merchant no existen para esta llamada.
 import './_staging-db.mjs'; // SCRUM-60
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599m: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
+import http from 'node:http';
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+// `node:http` sin agente y no `fetch` (SCRUM-1218d): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de `fetch`
+// (status, headers.get, text, json) y, como el `redirect: 'manual'` de antes, no sigue redirecciones.
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    let d = ''; r.setEncoding('utf8');
+    r.on('data', (t) => { d += t; });
+    r.on('end', () => ok({
+      status: r.statusCode,
+      headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+      text: async () => d,
+      json: async () => JSON.parse(d),
+    }));
+  });
+  req.on('error', mal);
+  req.end(body);
+});
+
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 const LINEAS = [{ concepto: 'Mantenimiento mensual', cantidad: 2, unidad: 'h', precioUnitario: 50, tipoIva: 21 }];
 
-test('SCRUM-171a: consolidar por CLIENTE cruzando Trabajos, con rotura por mes', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
+test('SCRUM-171a: consolidar por CLIENTE cruzando Trabajos, con rotura por mes', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
 
@@ -61,11 +84,11 @@ test('SCRUM-171a: consolidar por CLIENTE cruzando Trabajos, con rotura por mes',
         await prisma.authSession.create({
           data: { merchantId: merchant.id, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) },
         });
-        const verify = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
+        const verify = await pedirSinAgente(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
         const cookie = (verify.headers.get('set-cookie') || '').split(';')[0];
         assert.ok(cookie.startsWith('pf_session='), 'no se obtuvo cookie de sesión');
 
-        const consolidar = (body) => fetch(`${base}/admin/albaranes/consolidar`, {
+        const consolidar = (body) => pedirSinAgente(`${base}/admin/albaranes/consolidar`, {
           method: 'POST', headers: { cookie, 'Content-Type': 'application/json' }, body: JSON.stringify(body),
         });
 
@@ -139,10 +162,10 @@ test('SCRUM-171a: consolidar por CLIENTE cruzando Trabajos, con rotura por mes',
         });
         const token = 'qa171b-' + crypto.randomBytes(12).toString('hex');
         await prisma.authSession.create({ data: { merchantId: mA.id, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) } });
-        const verify = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
+        const verify = await pedirSinAgente(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
         const cookieA = (verify.headers.get('set-cookie') || '').split(';')[0];
 
-        const res = await fetch(`${base}/admin/albaranes/consolidar`, {
+        const res = await pedirSinAgente(`${base}/admin/albaranes/consolidar`, {
           method: 'POST', headers: { cookie: cookieA, 'Content-Type': 'application/json' },
           body: JSON.stringify({ customerId: cB.id, albaranIds: [aB.id] }),
         });
@@ -155,3 +178,11 @@ test('SCRUM-171a: consolidar por CLIENTE cruzando Trabajos, con rotura por mes',
     await prisma.$disconnect();
   }
 });
+
+// SCRUM-1599m (diseño B de SCRUM-1599) · la mutación que tumba el caso de base, CATALOGADA en SCRUM-1599m.
+// Va aparte de `MUTACIONES_QUE_ME_TUMBAN` a propósito: el job del meta-guard corre SIN base, el caso sale
+// SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco PGlite,
+// `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e). Cada campo, LITERAL.
+export const MUTACIONES_CON_BASE = [
+  { fichero: "src/modules/jobs/domain/consolidacionCliente.service.ts", de: "    if (a.invoiceId != null) { fuera(a, 'ya_facturado'); continue; }", a: "    if (false) { fuera(a, 'ya_facturado'); continue; }", cae: "SCRUM-171a: consolidar por CLIENTE" },
+];

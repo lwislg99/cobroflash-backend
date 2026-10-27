@@ -21,6 +21,28 @@ import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import { parseBDSegura } from '../scripts/_db-guard.mjs';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
+import http from 'node:http';
+
+// `node:http` sin agente y no `fetch` (SCRUM-1218d): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de `fetch`
+// (status, headers.get, text, json). No sigue redirecciones: medido, las únicas 3xx son las de /auth/verify, que ya iban con `redirect: 'manual'`.
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    let d = ''; r.setEncoding('utf8');
+    r.on('data', (t) => { d += t; });
+    r.on('end', () => ok({
+      status: r.statusCode,
+      headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+      text: async () => d,
+      json: async () => JSON.parse(d),
+    }));
+  });
+  req.on('error', mal);
+  req.end(body);
+});
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const RUTAS = path.join(RAIZ, 'src', 'modules', 'jobs', 'app', 'routes', 'partes.routes.ts');
@@ -207,14 +229,14 @@ test('SCRUM-992 · el técnico ve, edita y firma SOLO los partes de sus trabajos
           await prisma.authSession.create({
             data: { merchantId: m.id, teamMemberId, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) },
           });
-          const res = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
+          const res = await pedirSinAgente(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
           const cookie = (res.headers.get('set-cookie') || '').split(';')[0];
           assert.ok(cookie.startsWith('pf_session='), 'no se obtuvo cookie de sesión');
           return cookie;
         };
         const cookieA = await mkCookie(tecA.id);
         const cookieAdmin = await mkCookie(null); // propietario = admin implícito
-        const llamar = (cookie, metodo, ruta, cuerpo) => fetch(`${base}${ruta}`, {
+        const llamar = (cookie, metodo, ruta, cuerpo) => pedirSinAgente(`${base}${ruta}`, {
           method: metodo,
           headers: { cookie, 'content-type': 'application/json' },
           ...(cuerpo === undefined ? {} : { body: JSON.stringify(cuerpo) }),

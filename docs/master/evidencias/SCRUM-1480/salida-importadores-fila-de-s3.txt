@@ -1,0 +1,12 @@
+POBLACIÓN · 1727 ficheros leídos por AST (scripts/, tests/, .claude/hooks/) · 9 pedidos
+CONTROL · scripts/_suelo-de-la-tanda.mjs lo importa scripts/suelo-de-la-tanda.mjs: SÍ
+  0 importadores (scripts 0, tests 0) · scripts/censo-objetivo-tactil-panel.mjs
+  0 importadores (scripts 0, tests 0) · scripts/censo-clics-del-80.mjs
+  0 importadores (scripts 0, tests 0) · scripts/censo-accion-del-80.mjs
+  5 importadores (scripts 3, tests 2) · scripts/_medidor-de-toque.mjs  ← censo-objetivo-tactil-panel.mjs, guard-a11y-landing.mjs, guard-objetivo-tactil.mjs
+  3 importadores (scripts 2, tests 1) · scripts/_pagina-panel.mjs  ← censo-objetivo-tactil-panel.mjs, guard-objetivo-tactil.mjs
+ 30 importadores (scripts 2, tests 28) · scripts/meta-guard-mutaciones.mjs  ← _suelo-contra-main.mjs, censo-guards-gateados.mjs
+  2 importadores (scripts 1, tests 1) · scripts/_arbol-quieto.mjs  ← meta-guard-mutaciones.mjs
+  3 importadores (scripts 1, tests 2) · scripts/frontera-dist.mjs  ← meta-guard-mutaciones.mjs
+  0 importadores (scripts 0, tests 0) · scripts/suelo-de-la-tanda.mjs
+EXIT=0

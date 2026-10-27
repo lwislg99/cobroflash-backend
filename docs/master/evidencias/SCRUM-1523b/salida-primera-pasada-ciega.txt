@@ -1,0 +1,12 @@
+POBLACION · casos ejecutados=5 · banco=temporal
+A · fila guardada JUST + J- + no_aplica (SIEMBRA)
+    NO SALE · texto.includes is not a function · lecturas=1
+B · fila F1 sellada (numero de factura, con huella)
+    NO SALE · texto.includes is not a function · lecturas=1
+C · fila JUST + J- + pendiente_de_sellado (el DEFAULT del esquema)
+    NO SALE · invoice_pendiente_de_sellado · lecturas=1
+D · fila F1 con numero J- + no_aplica
+    NO SALE · texto.includes is not a function · lecturas=1
+E · fila JUST con numero de factura + no_aplica, sin huella
+    NO SALE · invoice_sin_sellar:F2026-0002 · lecturas=1
+CIEGO: la fila sembrada no dio el titulo. Ninguna fila de arriba vale. EXIT=2

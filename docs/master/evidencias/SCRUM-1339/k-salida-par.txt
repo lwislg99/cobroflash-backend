@@ -1,0 +1,25 @@
+node v24.18.0 win32 · réplica: «C:\Users\Javier Pereira\.claude\jobs\aa9a79e6\tmp\rrrrr» (55 caracteres; la del runner, 55) · su forma URL mide 3 más que la del runner · FORCE_COLOR=0
+quien	commit	ci	registros	bytes_total	veredictos	caen	ultimo_gordo	mensajes_cola	cola_replica	cola_runner	respecto_marca	declarado	detras_declarado	rutas_en_cola
+38e0c9aed5fc82a212d01511b8d1f19e09bfd701	38e0c9aed5	-	1066	1037753	20	9	test:fail 163860	26	61295	61289	-4247	test:fail	6704	26
+      CON EL MODELO (marca 65536): veredictos que llegan 16 de 20 · caídos que llegan 8 · el declarado NO LLEGA · perdidos 61295 B · pausas 5 · atascos 6
+EXIT=0
+node v24.18.0 win32 · réplica: «C:\Users\Javier Pereira\.claude\jobs\aa9a79e6\tmp\rrrrr» (55 caracteres; la del runner, 55) · su forma URL mide 3 más que la del runner · FORCE_COLOR=3
+quien	commit	ci	registros	bytes_total	veredictos	caen	ultimo_gordo	mensajes_cola	cola_replica	cola_runner	respecto_marca	declarado	detras_declarado	rutas_en_cola
+38e0c9aed5fc82a212d01511b8d1f19e09bfd701	38e0c9aed5	-	1066	1091191	20	9	test:fail 168980	26	64975	64969	-567	test:fail	6704	26
+      CON EL MODELO (marca 65536): veredictos que llegan 16 de 20 · caídos que llegan 8 · el declarado NO LLEGA · perdidos 64975 B · pausas 5 · atascos 6
+EXIT=0
+node v24.18.0 win32 · réplica: «C:\Users\Javier Pereira\.claude\jobs\aa9a79e6\tmp\rrrrrrrrrrrrrrrrrrrrrrr» (73 caracteres; la del runner, 55) · su forma URL mide 3 más que la del runner · FORCE_COLOR=3
+quien	commit	ci	registros	bytes_total	veredictos	caen	ultimo_gordo	mensajes_cola	cola_replica	cola_runner	respecto_marca	declarado	detras_declarado	rutas_en_cola
+38e0c9aed5fc82a212d01511b8d1f19e09bfd701	38e0c9aed5	-	1066	1093893	20	9	test:fail 169034	26	65515	65509	-27	test:fail	7100	26
+      CON EL MODELO (marca 65536): veredictos que llegan 16 de 20 · caídos que llegan 8 · el declarado NO LLEGA · perdidos 65514 B · pausas 5 · atascos 6
+EXIT=0
+node v24.18.0 win32 · réplica: «C:\Users\Javier Pereira\.claude\jobs\aa9a79e6\tmp\rrrrrrrrrrrrrrrrrrrrrrrr» (74 caracteres; la del runner, 55) · su forma URL mide 3 más que la del runner · FORCE_COLOR=3
+quien	commit	ci	registros	bytes_total	veredictos	caen	ultimo_gordo	mensajes_cola	cola_replica	cola_runner	respecto_marca	declarado	detras_declarado	rutas_en_cola
+38e0c9aed5fc82a212d01511b8d1f19e09bfd701	38e0c9aed5	-	1066	1094043	20	9	test:fail 169037	26	65545	65539	3	test:fail	7122	26
+      CON EL MODELO (marca 65536): veredictos que llegan 20 de 20 · caídos que llegan 9 · el declarado LLEGA · perdidos 0 B · pausas 6 · atascos 6
+EXIT=0
+node v24.18.0 win32 · réplica: «C:\Users\Javier Pereira\.claude\jobs\aa9a79e6\tmp\rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr» (92 caracteres; la del runner, 55) · su forma URL mide 3 más que la del runner · FORCE_COLOR=3
+quien	commit	ci	registros	bytes_total	veredictos	caen	ultimo_gordo	mensajes_cola	cola_replica	cola_runner	respecto_marca	declarado	detras_declarado	rutas_en_cola
+38e0c9aed5fc82a212d01511b8d1f19e09bfd701	38e0c9aed5	-	1066	1096851	20	9	test:fail 169092	26	66111	66105	569	test:fail	7540	26
+      CON EL MODELO (marca 65536): veredictos que llegan 20 de 20 · caídos que llegan 9 · el declarado LLEGA · perdidos 0 B · pausas 6 · atascos 6
+EXIT=0

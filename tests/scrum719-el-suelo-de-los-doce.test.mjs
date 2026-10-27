@@ -34,6 +34,12 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ejecutableDe, ejecutablesDe, leerFuente } from './_guard-texto.mjs';
 import { soloCodigo } from './_solo-codigo.mjs';
+import { analizarFiltro, clasificarFiltro, censoDelFiltro, FORMAS } from './_censo-filtro-sin-suelo.mjs'; // SCRUM-1395
+import { casosEscritos } from './_casos-escritos.mjs'; // SCRUM-1415
+import { // SCRUM-1395b
+  poblacionMudez, huella, huellaDe, clasificar, leerVeredicto, juzgarVeredicto, serializarVeredicto,
+  NOMBRES_DEL_FILTRO, RUTA_FILTRO, SUELO_POBLACION,
+} from './_veredicto-mudez.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -180,9 +186,330 @@ test('SCRUM-719 · 📌 `leerFuente` sigue siendo el camino corto, y ahora admit
   // El ancla es OPCIONAL aquí a propósito: por este camino también pasan tests que EXIGEN algo,
   // y a ésos el filtro no puede cegarlos —una afirmación positiva sobre la nada falla sola—.
   // Quien PROHÍBE es quien necesita el suelo, y ahora puede pedirlo sin cambiar de función.
+  // ⚠️ 6-oct-2026 · SCRUM-1395: esa opcionalidad vale ya SÓLO para los heredados declarados en `tests/_filtro-sin-suelo-heredados.json`; para un test NUEVO el ancla es obligatoria (lo exige el caso ② de más abajo).
   const propio = path.join(RAIZ, 'tests', '_guard-texto.mjs');
   assert.ok(leerFuente(propio).includes('soloEjecutable'), '🔴 `leerFuente` sin ancla ha dejado de leer');
   assert.ok(leerFuente(propio, { ancla: 'export function soloEjecutable' }).length > 1000);
   assert.throws(() => leerFuente(propio, { ancla: 'NoExisteEsteSimbolo719' }), /ESCÁNER CIEGO/,
     '🔴 `leerFuente` acepta un ancla que no está: entonces no es un suelo');
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-1395 · EL FILTRO SIN SUELO NO CRECE
+//
+// La lista de arriba vigila TRECE nombres. El 6-oct-2026 el censo de mudez miraba 119 ficheros, y
+// el único mudo —`scrum589`— no era ninguno de los trece: nació el 6-sep, dos días después de
+// esta lista, usando la forma vieja, y estuvo un mes en verde con la negación sin respaldo. La red
+// que corre siempre vigilaba una lista cerrada; el desagüe estaba en los que nacen después.
+//
+// Lo que sigue lo cierra por donde se puede cerrar en milisegundos: un test NUEVO no llama al
+// filtro por una forma que acepta la cadena vacía. Las formas con suelo LANZAN sobre la nada, así
+// que quien las usa es vivo por construcción y no hace falta romper el filtro para saberlo.
+//
+// ⚠️ LO QUE ESTO NO HACE, DICHO: no mide mudez. Los heredados de
+// `tests/_filtro-sin-suelo-heredados.json` siguen sin suelo; hoy son VIVOS porque tienen otra
+// aserción que cae, y si alguien se la quita nada avisa hasta que alguien corra `censo:mudez` a
+// mano. Ese fichero dice por qué se toleran y qué los retira.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+const HEREDADOS_1395 = JSON.parse(fs.readFileSync(path.join(RAIZ, 'tests', '_filtro-sin-suelo-heredados.json'), 'utf8'));
+const LISTA_1395 = [...HEREDADOS_1395.ficheros, ...Object.keys(HEREDADOS_1395.sinJuzgar)];
+
+/**
+ * 🔴 CUÁNTOS HEREDADOS HAY. Va aquí Y en el JSON a propósito: para añadir un nombre hay que tocar
+ * DOS ficheros y este número, y eso se ve en cualquier diff. Si te encuentras subiéndolo, PARA:
+ * un trinquete que salta pide una DECISIÓN (del orquestador de tu equipo, escrita en el registro
+ * del ticket), no una lista más ancha. Sólo baja: cuando un heredado pasa a una forma con suelo.
+ */
+const TECHO_HEREDADOS_1395 = 85;
+
+const CENSO_1395 = censoDelFiltro(RAIZ);
+const SIN_SUELO_HOY = CENSO_1395.sinSuelo.map((x) => x.fichero);
+const enLista1395 = (xs) => xs.map((x) => `   · ${x}`).join('\n');
+const COMO_SE_ARREGLA_1395 = `
+Cómo se arregla (no hace falta abrir Jira):
+
+    import { ejecutableDe } from './_guard-texto.mjs';
+    const codigo = ejecutableDe(texto, { ancla: 'algoQueTuTestYaNecesitaQueEste' });
+    // o, leyendo de disco:  leerFuente(ruta, { ancla: '…' })
+
+El ancla es algo de lo que tu test YA depende (el símbolo que importa, la función que mira). Si no
+sobrevive al filtro, tu negación estaba mirando la nada y ahora lo dice. NO lo añadas a
+tests/_filtro-sin-suelo-heredados.json: esa lista es de los que existían antes de SCRUM-1395.
+`;
+
+test('SCRUM-1395 · ① la línea sale SIEMPRE, con su población, y el censo del filtro no está ciego', (t) => {
+  const nuevos = SIN_SUELO_HOY.filter((f) => !LISTA_1395.includes(f));
+  const sinParsear = CENSO_1395.filas.filter((x) => x.motivo);
+  const linea = `SCRUM-1395 · ${CENSO_1395.usan.length} guards llaman al filtro de comentarios · `
+    + `${SIN_SUELO_HOY.length} sin suelo (${LISTA_1395.length} heredados declarados · ${nuevos.length} nuevos) · `
+    + `${CENSO_1395.de(FORMAS.CON_SUELO).length} con suelo · ${CENSO_1395.de(FORMAS.NO_FILTRA).length} no filtran · `
+    + `población: ${CENSO_1395.enDisco} ficheros *.test.mjs de tests/ leídos, ${sinParsear.length} sin parsear · `
+    + `aparte: ${CENSO_1395.envoltorios.length} módulos de apoyo llaman al filtro y no se juzgan · `
+    + '⚠️ esto NO mide mudez: «N mirados · K mudos» lo dicta `npm run censo:mudez`, a mano';
+  t.diagnostic(linea);
+  console.log(linea);
+
+  assert.ok(CENSO_1395.enDisco > 1000, `🔴 CIEGO: sólo ${CENSO_1395.enDisco} ficheros en tests/. No es la suite.`);
+  assert.equal(CENSO_1395.filas.length, CENSO_1395.enDisco, 'el censo tiene que haber mirado TODOS los *.test.mjs');
+  assert.deepEqual(sinParsear.map((x) => x.fichero), [],
+    '🔴 hay ficheros que el analizador no supo leer. No leerlo no es que esté limpio.');
+  assert.ok(CENSO_1395.usan.length >= 50,
+    `🔴 CIEGO: sólo ${CENSO_1395.usan.length} ficheros usan el filtro. El 6-oct-2026 eran 110: el censo ha dejado de seguir el import.`);
+
+  // Los dos controles: uno de los trece (con suelo) y este mismo fichero, que llama a
+  // `leerFuente(propio)` sin ancla unas líneas más arriba y por eso es un heredado.
+  const clase = (f) => (CENSO_1395.filas.find((x) => x.fichero === f) || {}).clase;
+  assert.equal(clase('scrum149-sin-lineas-no-sella.test.mjs'), FORMAS.CON_SUELO, '🔴 CIEGO: uno de los trece no sale «con suelo»');
+  assert.equal(clase('scrum719-el-suelo-de-los-doce.test.mjs'), FORMAS.SIN_SUELO, '🔴 CIEGO: este fichero no sale «sin suelo»');
+  assert.equal(clase('scrum9999-un-nombre-inventado.test.mjs'), undefined, 'un nombre que no existe no puede salir');
+});
+
+test('SCRUM-1395 · ② un test NUEVO no llama al filtro sin suelo (la lista de heredados no crece)', () => {
+  const lista = new Set(LISTA_1395);
+  assert.equal(lista.size, LISTA_1395.length, 'un nombre repetido en la lista de heredados');
+  const nuevos = CENSO_1395.sinSuelo.filter((x) => !lista.has(x.fichero)).map((x) => {
+    const sitios = x.sitios.filter((s) => s.forma !== FORMAS.CON_SUELO && s.forma !== FORMAS.NO_FILTRA)
+      .map((s) => `${s.exportado} en la línea ${s.linea}${s.forma === FORMAS.SIN_JUZGAR ? ' (sin juzgar)' : ''}`);
+    return `${x.fichero} → ${sitios.join(', ')}`;
+  });
+  assert.deepEqual(nuevos, [],
+    `\n\n🔴 TEST QUE LLAMA AL FILTRO DE COMENTARIOS SIN SUELO (${nuevos.length}):\n${enLista1395(nuevos)}\n\n`
+    + 'Con el filtro ciego esa llamada devuelve la cadena vacía, y una negación sobre la nada pasa\n'
+    + `siempre. Así estuvo \`scrum589\` un mes.\n${COMO_SE_ARREGLA_1395}`);
+});
+
+test('SCRUM-1395 · ③ la lista de heredados no baja en silencio, y su número está escrito dos veces', () => {
+  const hoy = new Set(SIN_SUELO_HOY);
+  const deMas = LISTA_1395.filter((f) => !hoy.has(f));
+  assert.deepEqual(deMas, [],
+    `\n\n🔴 EN LA LISTA DE HEREDADOS Y YA NO LLAMA AL FILTRO SIN SUELO (${deMas.length}):\n${enLista1395(deMas)}\n\n`
+    + 'O se ha pasado a una forma con suelo (bien: quítalo de tests/_filtro-sin-suelo-heredados.json y\n'
+    + 'baja TECHO_HEREDADOS_1395, en este mismo commit), o se ha borrado o renombrado, o el censo ha\n'
+    + 'dejado de verlo — y eso último es un instrumento roto, no una mejora.\n');
+  assert.equal(LISTA_1395.length, TECHO_HEREDADOS_1395,
+    `🔴 la lista tiene ${LISTA_1395.length} nombres y el techo escrito aquí dice ${TECHO_HEREDADOS_1395}. `
+    + 'Si ha BAJADO, baja el techo. Si ha SUBIDO, no es un arreglo: es una decisión, y no es tuya.');
+  for (const [f, motivo] of Object.entries(HEREDADOS_1395.sinJuzgar)) {
+    assert.ok(typeof motivo === 'string' && motivo.length > 40, `🔴 \`${f}\` está «sin juzgar» sin decir qué se vio`);
+  }
+  for (const campo of ['medidoContra', 'porQueSeToleran', 'queLosRetira']) {
+    assert.ok(typeof HEREDADOS_1395[campo] === 'string' && HEREDADOS_1395[campo].length > 30,
+      `🔴 la lista de heredados ha perdido \`${campo}\`: una excepción sin motivo ni quién la retira es una promesa`);
+  }
+});
+
+test('SCRUM-1395 · ④ `scrum589`, el que estuvo mudo, tiene suelo y NO es un heredado', () => {
+  const fila = CENSO_1395.filas.find((x) => x.fichero === 'scrum589-nombre-por-documento.test.mjs');
+  assert.ok(fila, '🔴 `scrum589` ya no existe o se renombró: este caso vigilaría un fichero que no está');
+  assert.equal(fila.clase, FORMAS.CON_SUELO,
+    '🔴 `scrum589` ha vuelto a llamar al filtro sin suelo. Es el guard que estuvo mudo del 6-sep al 6-oct-2026.');
+  assert.equal(LISTA_1395.includes(fila.fichero), false, '🔴 `scrum589` se ha metido en la lista de heredados');
+  // Y el mismo token, en positivo: la lista sí contiene a los que tiene que contener.
+  assert.equal(LISTA_1395.includes('scrum719-el-suelo-de-los-doce.test.mjs'), true);
+});
+
+// ── el analizador VE cada forma (y no acusa a las que tienen suelo) ───────────────────────
+const IMPORTA_1395 = (nombres) => `import { ${nombres} } from './_guard-texto.mjs';\n`;
+const FORMAS_VISTAS_1395 = [
+  ['`soloEjecutable(x)` directo', `${IMPORTA_1395('soloEjecutable')}const c = soloEjecutable(src);\n`, FORMAS.SIN_SUELO],
+  ['`soloEjecutable` con alias', `${IMPORTA_1395('soloEjecutable as limpio')}const c = limpio(src);\n`, FORMAS.SIN_SUELO],
+  ['`soloEjecutable` pasado sin llamar', `${IMPORTA_1395('soloEjecutable')}const cs = textos.map(soloEjecutable);\n`, FORMAS.SIN_SUELO],
+  ['por `import * as`', "import * as g from './_guard-texto.mjs';\nconst c = g.soloEjecutable(src);\n", FORMAS.SIN_SUELO],
+  ['por `await import()`', "const { soloEjecutable } = await import('./_guard-texto.mjs');\nconst c = soloEjecutable(src);\n", FORMAS.SIN_SUELO],
+  ['`leerFuente(r)` sin opciones', `${IMPORTA_1395('leerFuente')}const c = leerFuente(ruta);\n`, FORMAS.SIN_SUELO],
+  ['`leerFuente(r, {})` sin ancla', `${IMPORTA_1395('leerFuente')}const c = leerFuente(ruta, {});\n`, FORMAS.SIN_SUELO],
+  ['`ejecutableDe` con `sinAncla`', `${IMPORTA_1395('ejecutableDe')}const c = ejecutableDe(src, { sinAncla: true });\n`, FORMAS.SIN_SUELO],
+  ['opciones que no se pueden leer', `${IMPORTA_1395('leerFuente')}const c = leerFuente(ruta, opciones);\n`, FORMAS.SIN_JUZGAR],
+  ['una con suelo y otra sin él', `${IMPORTA_1395('ejecutableDe, soloEjecutable')}ejecutableDe(a, { ancla: 'x' });\nsoloEjecutable(b);\n`, FORMAS.SIN_SUELO],
+  ['✅ `ejecutableDe` con ancla', `${IMPORTA_1395('ejecutableDe')}const c = ejecutableDe(src, { ancla: 'x' });\n`, FORMAS.CON_SUELO],
+  ['✅ `leerFuente` con ancla', `${IMPORTA_1395('leerFuente')}const c = leerFuente(ruta, { ancla: 'x' });\n`, FORMAS.CON_SUELO],
+  ['✅ `ejecutablesDe`', `${IMPORTA_1395('ejecutablesDe')}const cs = ejecutablesDe(entradas, { donde: 'x' });\n`, FORMAS.CON_SUELO],
+  ['✅ `leerFuente` con comentarios (no filtra)', `${IMPORTA_1395('leerFuente')}const c = leerFuente(ruta, { conComentarios: true });\n`, FORMAS.NO_FILTRA],
+  ['✅ sólo lo nombra en un comentario', `${IMPORTA_1395('ejecutableDe')}// antes: soloEjecutable(src)\nconst c = ejecutableDe(src, { ancla: 'x' });\n`, FORMAS.CON_SUELO],
+  ['✅ un `soloEjecutable` propio, que no viene del filtro', 'const soloEjecutable = (s) => s;\nconst c = soloEjecutable(src);\n', null],
+];
+// Un caso por fila, con el nombre ESCRITO (SCRUM-1415): con el bucle, el nombre se construía al
+// ejecutar y la señal por nombres no podía decir que faltaba uno si la tanda lo perdía.
+const clasifica1395 = casosEscritos(FORMAS_VISTAS_1395, ([nombre]) => `SCRUM-1395 · ⑤ el analizador clasifica · ${nombre}`, ([, fuente, esperada]) => {
+  const a = analizarFiltro(fuente, 'caso.mjs');
+  assert.equal(a.ok, true, 'el caso de prueba tiene que parsear');
+  assert.equal(clasificarFiltro(a), esperada);
+});
+test('SCRUM-1395 · ⑤ el analizador clasifica · `soloEjecutable(x)` directo', clasifica1395(0));
+test('SCRUM-1395 · ⑤ el analizador clasifica · `soloEjecutable` con alias', clasifica1395(1));
+test('SCRUM-1395 · ⑤ el analizador clasifica · `soloEjecutable` pasado sin llamar', clasifica1395(2));
+test('SCRUM-1395 · ⑤ el analizador clasifica · por `import * as`', clasifica1395(3));
+test('SCRUM-1395 · ⑤ el analizador clasifica · por `await import()`', clasifica1395(4));
+test('SCRUM-1395 · ⑤ el analizador clasifica · `leerFuente(r)` sin opciones', clasifica1395(5));
+test('SCRUM-1395 · ⑤ el analizador clasifica · `leerFuente(r, {})` sin ancla', clasifica1395(6));
+test('SCRUM-1395 · ⑤ el analizador clasifica · `ejecutableDe` con `sinAncla`', clasifica1395(7));
+test('SCRUM-1395 · ⑤ el analizador clasifica · opciones que no se pueden leer', clasifica1395(8));
+test('SCRUM-1395 · ⑤ el analizador clasifica · una con suelo y otra sin él', clasifica1395(9));
+test('SCRUM-1395 · ⑤ el analizador clasifica · ✅ `ejecutableDe` con ancla', clasifica1395(10));
+test('SCRUM-1395 · ⑤ el analizador clasifica · ✅ `leerFuente` con ancla', clasifica1395(11));
+test('SCRUM-1395 · ⑤ el analizador clasifica · ✅ `ejecutablesDe`', clasifica1395(12));
+test('SCRUM-1395 · ⑤ el analizador clasifica · ✅ `leerFuente` con comentarios (no filtra)', clasifica1395(13));
+test('SCRUM-1395 · ⑤ el analizador clasifica · ✅ sólo lo nombra en un comentario', clasifica1395(14));
+test('SCRUM-1395 · ⑤ el analizador clasifica · ✅ un `soloEjecutable` propio, que no viene del filtro', clasifica1395(15));
+clasifica1395.todos();
+
+test('SCRUM-1395 · ⑥ un fuente que no parsea sale SIN JUZGAR, nunca limpio', () => {
+  const roto = analizarFiltro(`${IMPORTA_1395('soloEjecutable')}const c = soloEjecutable(src;\n`, 'roto.mjs');
+  assert.equal(roto.ok, false, '🔴 un fuente con un paréntesis sin cerrar se ha dado por leído');
+  assert.equal(clasificarFiltro(roto), FORMAS.SIN_JUZGAR);
+  // El mismo fuente, bien cerrado, sí se juzga: lo que cambia el veredicto es el parseo.
+  const sano = analizarFiltro(`${IMPORTA_1395('soloEjecutable')}const c = soloEjecutable(src);\n`, 'sano.mjs');
+  assert.equal(sano.ok, true);
+  assert.equal(clasificarFiltro(sano), FORMAS.SIN_SUELO);
+});
+
+// ═════════════════════════════════════════════════════════════════════════════════════════
+// 🔴 SCRUM-1395b · EL VEREDICTO DE `censo:mudez`, GUARDADO Y EXIGIDO (opción ②, c.18744)
+//
+// Lo de arriba impide que NAZCA un guard sin suelo, pero no mide mudez: un heredado al que le
+// quiten la aserción que lo hacía vivo pasaba a mudo sin que nada avisara. Desde aquí, el censo
+// escribe su veredicto en `tests/_veredicto-mudez.json` con la huella de cada fichero, y la tanda
+// exige que esté AL DÍA: tocar un guard de la población caduca su ficha, y la ficha se renueva
+// corriendo `npm run censo:mudez -- --escribir` (sólo vuelve a medir lo caducado).
+//
+// La tanda NO corre el censo: lee el JSON. Lo que se paga en minutos lo paga quien toca un guard.
+//
+// 🔴 «No se pudo correr» tiene su propia salida, y no es ni verde ni rojo: el censo apunta CIEGO o
+// YA ROJO, la tanda no cae, y el caso ③ lo salta DICIENDO los nombres. Lo que sí cae es un
+// veredicto que falta o caducó: eso no es «no se pudo», es «no se corrió».
+//
+// ⚠️ Lo que esto NO ve, dicho: (a) la huella es del fichero de test, no de lo que el test lee; si
+// cambia el código vigilado y eso vuelve mudo al guard, la ficha no caduca. (b) Un JSON escrito a
+// mano pasa: es el mismo límite que la M3 del trinquete, y se ve en el diff.
+// ═════════════════════════════════════════════════════════════════════════════════════════
+const EN_EL_CENSO_1395B = process.env.CENSO_MUDEZ_EN_CURSO === '1';
+const SALTO_EN_EL_CENSO_1395B = 'dentro de `censo:mudez` (CENSO_MUDEZ_EN_CURSO=1): este caso lee el veredicto que esa misma pasada está escribiendo';
+const JUICIO_1395B = juzgarVeredicto(
+  poblacionMudez(RAIZ), (f) => huellaDe(RAIZ, path.join('tests', f)), huellaDe(RAIZ, RUTA_FILTRO), leerVeredicto(RAIZ),
+);
+const COMO_SE_RENUEVA_1395B = `
+Cómo se arregla (no hace falta abrir Jira):
+
+    npm run censo:mudez -- --escribir
+
+Vuelve a medir SÓLO los ficheros sin ficha o con ficha caducada (o todos, si cambió el filtro
+\`${RUTA_FILTRO}\`), y reescribe tests/_veredicto-mudez.json. Comitéalo con tu cambio. NO se edita a mano.
+`;
+
+test('SCRUM-1395b · ① el veredicto guardado de `censo:mudez` cubre la población, al día, y la línea sale SIEMPRE', (t) => {
+  t.diagnostic(JUICIO_1395B.linea);
+  console.log(JUICIO_1395B.linea);
+  if (EN_EL_CENSO_1395B) { t.skip(SALTO_EN_EL_CENSO_1395B); return; }
+
+  assert.ok(JUICIO_1395B.poblacion >= SUELO_POBLACION,
+    `🔴 CIEGO: la población del censo de mudez es ${JUICIO_1395B.poblacion}. No es la suite.`);
+  assert.ok(!JUICIO_1395B.ciego, `🔴 CIEGO: no hay veredicto guardado que leer en tests/_veredicto-mudez.json.\n${COMO_SE_RENUEVA_1395B}`);
+  assert.ok(!JUICIO_1395B.filtroCaducado,
+    `🔴 el filtro \`${RUTA_FILTRO}\` ha cambiado desde que se midió: todo el veredicto está caducado.\n${COMO_SE_RENUEVA_1395B}`);
+  const sinMedir = [
+    ...JUICIO_1395B.faltan.map((f) => `${f} · sin ficha`),
+    ...JUICIO_1395B.caducados.map((f) => `${f} · el fichero cambió desde la medida`),
+    ...JUICIO_1395B.sobran.map((f) => `${f} · ficha de un fichero que ya no está en la población`),
+    ...JUICIO_1395B.raros.map((f) => `${f} · clase que el censo no dicta`),
+  ];
+  assert.deepEqual(sinMedir, [],
+    `🔴 el veredicto de mudez no cubre el árbol de hoy:\n${enLista1395(sinMedir)}\n${COMO_SE_RENUEVA_1395B}`);
+});
+
+test('SCRUM-1395b · ② ningún guard de la población sale MUDO en el veredicto guardado', (t) => {
+  if (EN_EL_CENSO_1395B) { t.skip(SALTO_EN_EL_CENSO_1395B); return; }
+  // Suelo: «0 mudos» sobre un veredicto sin vivos es «no he mirado».
+  assert.ok(JUICIO_1395B.vivos.length > 0, '🔴 CIEGO: el veredicto guardado no tiene ni un VIVO al día.');
+  assert.deepEqual(JUICIO_1395B.mudos, [],
+    `🔴 MUDOS — su negación pasaría igual sobre un fichero vacío:\n${enLista1395(JUICIO_1395B.mudos)}\n${COMO_SE_ARREGLA_1395}`);
+});
+
+test('SCRUM-1395b · ③ lo que el censo no pudo correr sale SIN JUZGAR, con su nombre, y nunca como verde', (t) => {
+  if (EN_EL_CENSO_1395B) { t.skip(SALTO_EN_EL_CENSO_1395B); return; }
+  if (JUICIO_1395B.sinJuzgar.length) {
+    t.skip(`SIN JUZGAR · ${JUICIO_1395B.sinJuzgar.length} que censo:mudez no pudo correr: ${JUICIO_1395B.sinJuzgar.join(', ')}`);
+    return;
+  }
+  assert.equal(JUICIO_1395B.sinJuzgar.length, 0);
+});
+
+test('SCRUM-1395b · ④ la población del veredicto es la del censo: las dos listas de nombres del filtro son la misma', () => {
+  const censo = soloCodigo(fs.readFileSync(path.join(RAIZ, 'scripts', 'censo-mudez.mjs'), 'utf8'), 'c.mjs');
+  const suya = censo.match(/\.filter\(\(f\) => \/([^/\n]+)\/\.test\(fs\.readFileSync/);
+  assert.ok(suya, '🔴 CIEGO: no encuentro la lista de nombres del filtro en `scripts/censo-mudez.mjs`.');
+  assert.equal(suya[1], NOMBRES_DEL_FILTRO.source,
+    '🔴 el censo y `tests/_veredicto-mudez.mjs` buscan nombres distintos: uno deja ficheros fuera del veredicto sin decirlo.');
+});
+
+// ── Sembrados: el positivo se FABRICA aquí, no se toma prestado de un defecto del árbol ─────
+const POBLACION_SEMBRADA_1395B = Array.from({ length: SUELO_POBLACION + 2 }, (_, i) => `sembrado-${String(i).padStart(2, '0')}.test.mjs`);
+const HUELLA_SEMBRADA_1395B = (f) => huella(`contenido de ${f}`);
+const VEREDICTO_SEMBRADO_1395B = () => ({
+  filtro: 'f0',
+  ficheros: Object.fromEntries(POBLACION_SEMBRADA_1395B.map((f) => [f, ['VIVO', HUELLA_SEMBRADA_1395B(f)]])),
+});
+
+test('SCRUM-1395b · ⑤ sembrado: un MUDO, una ficha caducada, una que falta, una que sobra y un filtro cambiado, se ven', () => {
+  const sano = juzgarVeredicto(POBLACION_SEMBRADA_1395B, HUELLA_SEMBRADA_1395B, 'f0', VEREDICTO_SEMBRADO_1395B());
+  assert.equal(sano.alDia, true, 'el veredicto sembrado sin defectos tiene que salir al día');
+  assert.equal(sano.vivos.length, POBLACION_SEMBRADA_1395B.length);
+
+  const v = VEREDICTO_SEMBRADO_1395B();
+  const [a, b, c] = POBLACION_SEMBRADA_1395B;
+  v.ficheros[a] = ['MUDO', HUELLA_SEMBRADA_1395B(a)];
+  v.ficheros[b] = ['VIVO', 'otra-huella'];
+  delete v.ficheros[c];
+  v.ficheros['ya-no-existe.test.mjs'] = ['VIVO', 'x'];
+  const r = juzgarVeredicto(POBLACION_SEMBRADA_1395B, HUELLA_SEMBRADA_1395B, 'f1', v);
+  assert.deepEqual(r.mudos, [a]);
+  assert.deepEqual(r.caducados, [b]);
+  assert.deepEqual(r.faltan, [c]);
+  assert.deepEqual(r.sobran, ['ya-no-existe.test.mjs']);
+  assert.equal(r.filtroCaducado, true);
+  assert.equal(r.alDia, false);
+  assert.match(r.linea, /22 guards mirados · 1 mudos/);
+});
+
+test('SCRUM-1395b · ⑥ sembrado: «no se pudo correr» es CIEGO y nunca VIVO, en las dos pasadas, y no bloquea', () => {
+  const limpio = { verde: true, tests: 3, llamoAlFiltro: true, cortado: false };
+  assert.equal(clasificar(limpio, { verde: false, tests: 3, cortado: false }), 'VIVO');
+  assert.equal(clasificar(limpio, { verde: true, tests: 3, cortado: false }), 'MUDO');
+  // El caso que hasta SCRUM-1395b salía VIVO: con el filtro roto, se pasó del tiempo.
+  assert.equal(clasificar(limpio, { verde: false, tests: 0, cortado: true }), 'CIEGO');
+  assert.equal(clasificar(limpio, null), 'CIEGO');
+  assert.equal(clasificar({ ...limpio, cortado: true, verde: false }, null), 'CIEGO');
+  assert.equal(clasificar({ ...limpio, tests: 0 }, null), 'CIEGO');
+  assert.equal(clasificar({ ...limpio, llamoAlFiltro: false }, null), 'NO APLICA');
+  assert.equal(clasificar({ ...limpio, verde: false }, null), 'YA ROJO');
+
+  const v = VEREDICTO_SEMBRADO_1395B();
+  const [a, b] = POBLACION_SEMBRADA_1395B;
+  v.ficheros[a] = ['CIEGO', HUELLA_SEMBRADA_1395B(a)];
+  v.ficheros[b] = ['YA ROJO', HUELLA_SEMBRADA_1395B(b)];
+  const r = juzgarVeredicto(POBLACION_SEMBRADA_1395B, HUELLA_SEMBRADA_1395B, 'f0', v);
+  assert.deepEqual(r.sinJuzgar, [`${a} (CIEGO)`, `${b} (YA ROJO)`]);
+  assert.equal(r.vivos.includes(a) || r.vivos.includes(b), false, '🔴 un «no se pudo correr» se ha contado como vivo');
+  assert.equal(r.alDia, true, 'no poder correr un fichero NO bloquea la tanda: sale sin juzgar');
+  assert.match(r.linea, /2 sin juzgar \(no se pudo correr\)/);
+});
+
+test('SCRUM-1395b · ⑦ sembrado: sin veredicto, o con una población enana, sale CIEGO y nunca al día', () => {
+  const sinNada = juzgarVeredicto(POBLACION_SEMBRADA_1395B, HUELLA_SEMBRADA_1395B, 'f0', null);
+  assert.equal(sinNada.ciego, true);
+  assert.equal(sinNada.alDia, false);
+  assert.equal(sinNada.vivos.length, 0);
+  const enana = POBLACION_SEMBRADA_1395B.slice(0, 3);
+  const r = juzgarVeredicto(enana, HUELLA_SEMBRADA_1395B, 'f0', VEREDICTO_SEMBRADO_1395B());
+  assert.equal(r.ciego, true);
+  assert.equal(r.alDia, false);
+  assert.match(r.linea, /CIEGO/);
+});
+
+test('SCRUM-1395b · ⑧ la huella no depende del fin de línea (CRLF aquí, LF en CI) y sí del contenido; el JSON vuelve a leerse igual', () => {
+  assert.equal(huella('a\r\nb\r\n'), huella('a\nb\n'));
+  assert.notEqual(huella('a\nb\n'), huella('a\nc\n'));
+  const fichas = { 'b.test.mjs': ['VIVO', huella('b')], 'a.test.mjs': ['MUDO', huella('a')] };
+  const texto = serializarVeredicto('f0', fichas);
+  assert.deepEqual(JSON.parse(texto), { '//': JSON.parse(texto)['//'], filtro: 'f0', ficheros: fichas });
+  assert.ok(texto.indexOf('"a.test.mjs"') < texto.indexOf('"b.test.mjs"'), 'las fichas van en orden, una por línea');
 });

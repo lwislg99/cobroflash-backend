@@ -600,3 +600,42 @@ y 2 declaraciones ahí. El proxy contaba bloques MOVIDOS, que era el límite que
    commits». Un lector ciego da el mismo cero. Sólo la destapó que el proxy anterior dijera 7.
 4. **Iba a arreglar `TOPE_PROSA_MUDA` a mano**, como decía el encargo, sin censar antes. Eran
    cuatro, y una ni siquiera es del mismo tipo.
+
+---
+
+## SCRUM-812d · el título se cuenta por PALABRA (14-oct-2026, 08:59Z, S5)
+
+Medido sobre `origin/main` = `4f487bb177c42a7ee02042b0029f8c90b7e9e77e` · rama `scrum-812d-titula-guard-por-palabra`.
+
+`seTitulaGuard` (`scripts/meta-guard-mutaciones.mjs`) casaba la SUBCADENA «guard» sin distinguir
+mayúsculas, así que «guarda», «guardado» y «guardada» (de guardar) contaban como «se titula GUARD».
+Lo vio de paso SCRUM-1463b (§«De paso, visto y NO arreglado» de su registro). Ahora cuenta la palabra
+`guard`/`guards`, con el final de palabra como lista de letras (sin la bandera `u`, `\b` toma la «é»
+de «guardé» por un final de palabra).
+
+| cifra | subcadena (antes) | palabra (ahora) |
+| --- | --- | --- |
+| ficheros de test | 1340 | 1340 |
+| se titulan GUARD | 303 | 154 |
+| se titulan GUARD **y** declaran (el trinquete) | 34 | 30 |
+
+**El suelo baja de 34 a 30.** Lo aprobó el orquestador (mensaje de arranque del 14-oct) con una condición:
+nombrar uno a uno a los que salen. Los cuatro siguen declarando; ninguno se llama guard en un título:
+
+| fichero | línea | el título que casaba |
+| --- | --- | --- |
+| `tests/scrum1302m-el-total-y-la-leyenda.test.mjs` | 146 | «el guardado sigue mandando…» |
+| `tests/scrum880-el-empate-del-sello.test.mjs` | 224 | «…recomputable desde el sello guardado» |
+| `tests/scrum951d-ensayo-instalacion.test.mjs` | 110 | «la decisión guardada en la entrada del proyecto…» |
+| `tests/vigia-atascados.test.mjs` | 573 | «la pasada lee reglas y checks, guarda el umbral…» |
+
+⚠️ La subida a 20 del 18-sep dice que `scrum951d` «titula GUARD»: era esta misma subcadena.
+
+**Control positivo:** con el matcher viejo puesto, el trinquete da «LA COBERTURA HA SUBIDO a 34 (el
+suelo decía 30)» y lista justo esos cuatro. Es la mutación ⑤, nueva, declarada en el test.
+**Mutaciones del test: 5/5 caen** (corridas a mano, una a una, con el fichero restaurado y comprobado
+después de cada una).
+
+**Lo que no se midió:** la tanda completa en local. Los 30 ficheros que importan el meta-guard dan
+214 pass, 26 fail y 4 skip; los 26 son de entorno (el worktree no tiene `dist/`, y el temporal de
+SCRUM-1321 está en otra unidad), ninguno toca el matcher. El veredicto es el del obligatorio del PR.

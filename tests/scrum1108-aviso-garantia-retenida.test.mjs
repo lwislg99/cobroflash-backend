@@ -110,7 +110,9 @@ const dobles = {
     findMany: async ({ where }) => clientes.filter((c) => c.merchantId === where.merchantId),
     findFirst: async ({ where }) => clientes.find((c) => c.merchantId === where.merchantId && c.id === where.id) ?? null,
   },
-  job: { groupBy: async () => [] },
+  // `findMany`: desde SCRUM-1403 la ficha 360 de un Técnico lee sus Trabajos para recortar la pestaña
+  // de documentos. Aquí no tiene ninguno; sin este doble la ficha del técnico contestaba 500.
+  job: { groupBy: async () => [], findMany: async () => [] },
   quote: { findMany: async () => [], count: async () => 0 },
   expense: { aggregate: async () => ({ _sum: { amount: null } }) },
   customerEvent: { findMany: async () => [] },

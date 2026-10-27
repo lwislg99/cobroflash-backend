@@ -35,6 +35,7 @@ import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 import { baseDeLaRama, contenidoEnLaBase } from './_base-de-la-rama.mjs';
 import { ambitoDeLaFactura, ENTRADA_FACTURA } from './_ambito-de-la-factura.mjs';
+import { cambioAutorizado } from './_cambios-autorizados-de-la-factura.mjs';
 import { censarReferenciaMovil, analizarFuente } from './_censo-referencia-movil.mjs';
 import { temporal } from './_temporal.mjs';
 
@@ -197,6 +198,10 @@ const AMBITO_DECLARADO = [
   'NOMBRE_IMPUESTO_POR_DEFECTO',
   'fmtImporte',
   'generateInvoicePdf',
+  // SCRUM-1446g (26-oct-2026) · entra `importesDeLaColumnaSinIva`: el céntimo de un tramo va a la
+  // línea de mayor resto (decisión del fundador, SCRUM-1446 c.20945). Decide qué imprime la columna
+  // de la F1, así que tiene que estar DENTRO de lo que vigilan 603b y este guard.
+  'importesDeLaColumnaSinIva',
   'loadLogoBuffer',
 ];
 
@@ -253,6 +258,9 @@ test('SCRUM-723 · 🔴 el ÁMBITO ENTERO de la factura no ha cambiado respecto 
   const enBase = ambitoDeLaFactura(contenido);
   const enDisco = ambitoDeLaFactura(fs.readFileSync(path.join(RAIZ, REL_PDF), 'utf8'));
   assert.ok(enBase.texto && enDisco.texto, '🔴 CIEGO: falta uno de los dos ámbitos que comparar');
+  // 🔴 23-oct-2026 · SCRUM-1446d · la vía de cambio autorizado (SCRUM-1446 c.20473): sólo el PAR de
+  // huellas declarado con su firma; lo demás cae aquí abajo como siempre.
+  if (enDisco.texto !== enBase.texto && cambioAutorizado('ambito', enBase.texto, enDisco.texto)) return;
   assert.equal(enDisco.texto, enBase.texto,
     '🔴 ESTA RAMA CAMBIA LO QUE IMPRIME LA FACTURA — la función o algo que ella alcanza.\n'
     + '     base:  ' + base.ref + ' @ ' + base.sha.slice(0, 8) + '\n'
@@ -277,6 +285,34 @@ const HALLAZGOS_DECLARADOS = [
   // producción está en `main`, y cuántos lleva de retraso?». Contra la base de una rama no
   // significaría nada. Corre en su propio workflow, con `fetch-depth: 0`.
   'scripts/vigilante-de-despliegue.mjs [rev-parse]',
+  // SCRUM-1458 · la pasada del vigía de atascados. Su pregunta es «¿cuántas horas lleva la PUNTA de
+  // `main` sin moverse?» (`git log -1 --format=%cI origin/main`): la referencia móvil es el sujeto,
+  // misma familia que el vigía del despliegue de arriba. Contra la base de una rama daría la edad
+  // de esa base, que no es ningún parón. No acusa a ninguna rama: no corre en la tanda, sino en su
+  // propio workflow, que ya trae `main` con `fetch-depth: 0`; y si la fecha no se deja leer lo DICE
+  // en vez de dar a `main` por al día (`tests/scrum1458-vigia-main-parado.test.mjs`).
+  // Lo retira: quien le pase a la pasada la fecha ya leída (un fichero más de los que prepara el
+  // workflow), o quien retire el aviso de `main` parado.
+  'scripts/vigia-pasada.mjs [log]',
+  // SCRUM-1542 · el simulacro del aviso del vigía del despliegue. Para fabricar una «producción»
+  // congelada necesita un commit VIEJO de la cadena de primer padre de la PUNTA
+  // (`git log --first-parent origin/main`): es contra esa punta contra la que el vigía va a medir
+  // el hueco acto seguido, así que la referencia móvil es el sujeto, misma familia que el vigía de
+  // arriba. Contra la base de una rama fabricaría un hueco que el vigía no vería. No acusa a
+  // ninguna rama ni corre en la tanda: sólo en `vigia-despliegue.yml` lanzado a mano con
+  // `simulacro=true`, que trae `main` con `fetch-depth: 0`; y si no encuentra una entrada lo
+  // bastante vieja lo DICE y sale 2 (`tests/scrum1542c-el-hueco-se-fecha-por-entrada.test.mjs`).
+  // Lo retira: quien retire el simulacro, o quien le pase la lista de entradas ya leída.
+  'scripts/equipo/simulacro-del-vigia.mjs [log]',
+  // SCRUM-1300c · la memoria del orquestador contra el árbol. Su pregunta ES la punta: «lo que la memoria
+  // dice EN MAIN, ¿está HOY en `origin/main`?» (`cat-file`, el `merge-base --is-ancestor` no sale aquí
+  // porque la punta va en el último argumento), y sus testigos salen de ella (`rev-parse`, el último
+  // «Merge pull request» por `log`). No acusa a ninguna rama ni corre en la tanda: lo corre el orquestador
+  // contra su memoria, después de un `fetch`, y si no puede traer el remoto sale 2.
+  // Lo retira: quien le pase la punta y los testigos ya leídos.
+  'scripts/equipo/memoria-contra-el-arbol.mjs [cat-file]',
+  'scripts/equipo/memoria-contra-el-arbol.mjs [log]',
+  'scripts/equipo/memoria-contra-el-arbol.mjs [rev-parse]',
   // Este mismo fichero: la lógica VIEJA, conservada para poder enseñar el rojo del ticket. Vive
   // dentro de un repo SINTÉTICO —su `origin/main` no es el de nadie— y desaparece el día que se
   // borre el caso ①, no antes: sin ella, «ahora está verde» no se puede contrastar con nada.
@@ -306,6 +342,16 @@ const HALLAZGOS_DECLARADOS = [
   // Lo retira: quien borre `scripts/verificacion-s5/`, o el día que haya `gh` y el estado de los
   // PR se pueda consultar de frente, que es lo que este rodeo sustituye.
   'scripts/verificacion-s5/ramas-borrables.mjs [log]',
+  // SCRUM-1540 · el mismo generador, desde que juzga cada rama por su punta VIVA del remoto: resuelve
+  // `origin/main` UNA vez (`rev-parse --verify`) y mide todo —las ramas y sus sondas sembradas—
+  // contra ese sha congelado, que es lo que este guard pide ver. La punta es el sujeto de la pregunta
+  // por el mismo motivo que el `[log]` de arriba. Lo retira quien retire el `[log]`.
+  'scripts/verificacion-s5/ramas-borrables.mjs [rev-parse]',
+  // SCRUM-1540b · el enlace ticket↔rama, desde que juzga el mergeado por la punta VIVA con el mismo
+  // `clasificar` de `ramas-borrables.mjs`: resuelve `origin/main` UNA vez y mide cada punta contra ese
+  // sha. Su `branch -r --merged` sobre refs locales atrasadas decía «se puede borrar» de una rama viva
+  // sin mergear. La punta es el sujeto, como su `[log]`. Lo retira quien retire el `[log]`.
+  'scripts/verificacion-s5/enlace-ticket-rama.mjs [rev-parse]',
   // SCRUM-839d · el job que resuelve los conflictos de solo registro. Su pregunta es sobre la
   // PUNTA por definición: «¿este PR choca con `main` TAL COMO ESTÁ AHORA?». Es lo que GitHub
   // mira para marcarlo CONFLICTING, y contra la base de la rama no habría conflicto que ver.
@@ -369,6 +415,15 @@ const HALLAZGOS_DECLARADOS = [
   'scripts/censo-regla-42.mjs [log]',
   'scripts/censo-regla-42.mjs [ls-tree]',
   'scripts/censo-regla-42.mjs [show]',
+  // SCRUM-1539 · el mismo censo, desde que lee el remoto UNA vez por foto: `leerRemoto` resuelve
+  // `origin/main` (`rev-parse --verify`) en el instante del `ls-remote` y todo lo demás —`ls-tree`,
+  // `show`, `log`, `--is-ancestor`— se mide contra ese sha congelado. La punta es el sujeto de la
+  // pregunta, como en las tres de arriba. Lo retira quien retire el censo de la 42.
+  'scripts/censo-regla-42.mjs [rev-parse]',
+  // …y su test, que resuelve la punta y su padre sólo para tener DOS commits donde uno no contiene
+  // al otro: el caso pasa igual con cualquier punta, porque lo que mide es que el censo use el sha
+  // de la foto que se le da. Lo retira quien retire el test.
+  'tests/scrum1539b-una-sola-foto-del-remoto.test.mjs [rev-parse]',
 ];
 
 /** Ficheros que llaman a git y nombran la referencia móvil FUERA de los argumentos. */
@@ -445,6 +500,11 @@ const INDIRECTAS_DECLARADAS = [
   // mergeada, que es la respuesta inútil. EN SECO por defecto y fuera de CI.
   // Lo retira: quien borre `scripts/verificacion-s5/`.
   'scripts/verificacion-s5/ramas-borrables.mjs',
+  // SCRUM-1540b · el enlace ticket↔rama nombra `origin/main` al resolverla UNA vez para juzgar cada
+  // punta viva («¿esta rama está DENTRO de la punta de main?»), como `ramas-borrables.mjs`, cuyo
+  // `clasificar` usa. La referencia móvil es el sujeto. Herramienta de mano, fuera de CI.
+  // Lo retira: quien borre `scripts/verificacion-s5/`.
+  'scripts/verificacion-s5/enlace-ticket-rama.mjs',
   // SCRUM-804 · el guard de la dimensión «rama viva». Nombra `main` en la PROSA que explica la
   // regla —«¿el trabajo de este ticket está dentro de `main`?»— y en la clase `'en-main'` que
   // devuelve el clasificador de SCRUM-387. NO compara contra la referencia móvil: su árbitro le
@@ -589,6 +649,48 @@ const INDIRECTAS_DECLARADAS = [
   // nombra en las aserciones sobre el texto del informe y en el ancla fabricada de un registro.
   // Lo retira quien borre el test.
   'tests/scrum1424-ya-esta.test.mjs',
+  // SCRUM-1458 · la pasada del vigía de atascados, que desde este ticket lee la fecha de la punta
+  // (su entrada de arriba, en los hallazgos, dice por qué). Fuera de los argumentos de git nombra
+  // `main` en lo que escribe en el issue y en su traza: «`main` está PARADO», «no se pudo leer la
+  // edad de `main`».
+  // Lo retira quien retire el aviso de `main` parado.
+  'scripts/vigia-pasada.mjs',
+  // SCRUM-1458 · su test: mismo caso que 1298, 899b y 1424 — la pasada se lanza contra un repositorio
+  // SINTÉTICO en el temporal cuyo `origin/main` no es el de nadie (un commit fechado a propósito).
+  // Fuera de los argumentos de git nombra `main` en los nombres de sus tests y en sus aserciones.
+  // Lo retira quien borre el test.
+  'tests/scrum1458-vigia-main-parado.test.mjs',
+  // SCRUM-1298b · la sección ARRANQUE del latido. Aquí la punta es el SUJETO, igual que en el latido
+  // (SCRUM-1350) y en `ya-esta` (SCRUM-1424): la pregunta es «¿el árbol donde arrancan las sesiones trae
+  // lo que `main` trae AHORA?», y contra la base de una rama no se puede contestar. Lo que hace para no
+  // reintroducir el defecto que este guard vigila: pregunta la punta AL REMOTO con `ls-remote`, la congela
+  // en un sha y mide todo contra ESE objeto — ninguna de sus llamadas lectoras lleva la referencia móvil.
+  // Fuera de los argumentos la nombra en el valor por defecto `rama = 'main'`, en la orden que le da a
+  // quien lee y en su prosa. Herramienta de mano del orquestador; no corre en CI.
+  // Lo retira quien retire la sección.
+  'scripts/equipo/arranque.mjs',
+  // SCRUM-1298b · su test: mismo caso que 1298, 899b, 1424 y 1458 — la medición se lanza contra un
+  // repositorio SINTÉTICO en el temporal con su propio remoto desnudo, cuyo `main` no es el de nadie.
+  // Lo retira quien borre el test.
+  'tests/scrum1298b-latido-arbol-de-arranque.test.mjs',
+  // SCRUM-1542 · el simulacro del aviso del vigía del despliegue. Su ÚNICA lectura de la punta es el
+  // `[log]` declarado arriba; lo que sale aquí es la prosa de sus mensajes, que nombra `main` para
+  // decir qué ha fabricado y sobre qué («entró en `main` hace N h», «entradas de `main` miradas»).
+  // No hay ninguna referencia que viaje por una variable hasta un git. Lo retira quien retire el
+  // simulacro.
+  'scripts/equipo/simulacro-del-vigia.mjs',
+  // SCRUM-1300c · la memoria contra el árbol: fuera de los argumentos nombra `origin/main` al montar
+  // `origin/main:<ruta>` para `cat-file` y en la prosa de sus veredictos. Su sujeto es la punta (ver la
+  // entrada de arriba). Lo retira quien le pase la punta ya leída.
+  'scripts/equipo/memoria-contra-el-arbol.mjs',
+  // …y su test: monta repositorios SINTÉTICOS en el temporal (uno con un merge, otro lineal) y les
+  // pone su propio `refs/remotes/origin/main`, que no es el de nadie; el resto son los mensajes de
+  // sus aserciones, que hablan de cuándo ENTRÓ algo en `main`. Mismo caso que 839d, 899b y 966.
+  'tests/scrum1542c-el-hueco-se-fecha-por-entrada.test.mjs',
+  // SCRUM-1540 · monta un remoto de juguete en el temporal (veinte ramas mergeadas y una que recibe
+  // un commit después) y empuja a SU `main`, que no es el de nadie. Mismo caso que 1542c. Lo retira
+  // quien borre el test.
+  'tests/scrum1540-borrables-por-la-punta-viva.test.mjs',
 ];
 
 test('SCRUM-723 · SUELO del censo: lee, ve los git de verdad y sabe absolver a `merge-base`', () => {

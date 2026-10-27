@@ -44,3 +44,32 @@ No se usa `congelarMientrasGuarda`: ese patrón impide un segundo envío **mient
 - **Qué se le dice a la persona.** Sin teléfono sigue saliendo el identificador interno, y el alta de un cliente nuevo sin teléfono sigue rechazándose antes de crear nada. Eso es SCRUM-1198 y espera decisión del fundador.
 - **El presupuesto que queda si se cambian las líneas tras un fallo:** el primero sigue existiendo como borrador. Es lo que la persona pidió las dos veces; no se borra nada por ella.
 - **En pantalla contra yaqu.app:** no medido.
+
+---
+
+## SCRUM-1371b · El gesto, medido en yaqu.app (S1)
+
+**Medido contra:** `origin/main` = `720c1a122ffc796371004a92f6ab143b5f79d4d3` · 2026-10-07T06:29:51Z
+A9: comprobación → `tests/scrum1371-reintentar-no-vuelve-a-crear.test.mjs`
+
+Carril S1 · sesión `s1-7oct` · rama `scrum-1371b-el-gesto-en-yaqu-app`. Sólo documentación y evidencia: ni `src/` ni `public/`. Cierra la última línea de «Lo que NO arregla ni mide» de arriba.
+
+`docs/master/evidencias/SCRUM-1371/sonda-1371-reintentar.mjs`: el panel REAL de yaqu.app (build `720c1a12…`, leído de su `<meta name="yaqu-build">`), a 390 px, con la sesión QA. El botón «Enviar por WhatsApp» se pulsa de verdad.
+
+### Medido — población: 1 modal, 4 escenas, 2 pasadas
+
+| Escena | HOY (`salida-1371-hoy.json`) | CONTROL: el `homeView.js` de antes de #2098 (`salida-1371-viejo.json`) |
+|---|---|---|
+| Aceptación 1 · cliente existente, el envío falla, dos clics | **1** presupuesto · 2 intentos de envío, los dos del mismo | **2** presupuestos |
+| Aceptación 1 · cliente nuevo, el envío falla, dos clics | **1** cliente + **1** presupuesto · 2 intentos del mismo | **2** clientes + **2** presupuestos |
+| Aceptación 3 · se cambia el precio entre los dos clics | 2 presupuestos, a 50 y a 80: no se reenvía el viejo | 2, igual |
+| Aceptación 2 · un clic con todo bien | 1 presupuesto, 1 envío, el modal se cierra | 1, igual |
+
+Las dos primeras filas del control son el defecto del ticket, reproducido con la misma sonda sobre el mismo panel: sin ellas, la columna de HOY no diría nada. 0 errores de página en las dos pasadas.
+
+### Lo que esta sonda NO mide
+
+- **No escribe en producción:** las altas y el envío los contesta la sonda (el interceptor lleva su control positivo antes de pulsar). Que el servidor cree y envíe no es de este ticket.
+- **Los datos del modal se ponen en su estado (`qqState`), no tecleando.** El clic sí es un clic.
+- **El envío falla con un 500 de mentira**, como en el test: desde SCRUM-1198 el `customer_missing_phone` de la descripción ya no deja el modal abierto.
+- La sonda importa `comun.mjs` de una carpeta de la máquina (`D:/MILLONARIO/cobroFlash/sondas-s2/`), que no está en el repo; el control pide además el fichero de `git show 34a3dc81~1:public/dashboard/js/homeView.js`.

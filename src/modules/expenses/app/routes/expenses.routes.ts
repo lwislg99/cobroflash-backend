@@ -1,7 +1,7 @@
 import { cabeEnColumnaInt } from '../../../../core/validation/enteroDeColumna'; // SCRUM-1379
 import { Router } from 'express';
 import {
-  listExpenses, createExpense, updateExpense, deleteExpense,
+  listExpenses, getExpense, createExpense, updateExpense, deleteExpense,
   getExpenseSummary, getQuoteMargin, EXPENSE_CATEGORIES, ExpenseRefError, ExpenseCategoryError,
   queFueDelNif, // SCRUM-937
 } from '../../domain/expenses.service';
@@ -146,6 +146,31 @@ router.get('/:id/foto', requireRole('admin'), async (req, res) => {
     return res.end(bytes);
   } catch (err) {
     console.error('[GET /admin/expenses/:id/foto]', err);
+    return res.status(500).json({ ok: false, error: 'internal_error' });
+  }
+});
+
+/**
+ * GET /admin/expenses/:id — SCRUM-1156b · LA FICHA DE LECTURA DE UN GASTO.
+ *
+ * La MISMA fila que la lista (`getExpense` comparte su `select`, su `tieneFoto` y su `job`), sin la
+ * foto, que sigue saliendo por `/:id/foto`. Existe para que la ficha viva en el hash (`DETALLES` de
+ * `app.js`, SCRUM-832): sin una ruta que la devuelva sola, abrirla borraba la lista del historial.
+ *
+ * MISMO PERMISO QUE LA LISTA (`admin`), y por el mismo motivo que la foto: una fila que sólo lee un
+ * admin no puede tener una puerta más abierta que la lista de la que sale. El gasto de otro negocio
+ * da 404, igual que uno que no existe. Va DETRÁS de `/summary`, `/categories` y `/margin/:quoteId`:
+ * delante, `/:id` se los comería.
+ */
+router.get('/:id', requireRole('admin'), async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!cabeEnColumnaInt(id)) return res.status(400).json({ ok: false, error: 'invalid_id' });
+    const item = await getExpense(req.merchantId, id);
+    if (!item) return res.status(404).json({ ok: false, error: 'not_found' });
+    return res.json({ ok: true, item });
+  } catch (err) {
+    console.error('[GET /admin/expenses/:id]', (err as Error)?.message || err);
     return res.status(500).json({ ok: false, error: 'internal_error' });
   }
 });

@@ -58,7 +58,7 @@ function base({ quotes = [], jobs = [] } = {}) {
 
 const Q = (id, extra = {}) => ({
   id, merchantId: M, customerId: 3, status: 'accepted', total: '100.00', quoteNumber: id,
-  teamMemberId: null, jobId: null, customer: { name: 'Cliente QA' }, ...extra,
+  teamMemberId: null, jobId: null, customer: { name: 'Cliente QA', merchantId: extra.merchantId ?? M }, ...extra, // SCRUM-1519e: el cliente es del negocio del presupuesto
 });
 const guardado = (cl, jobId) => cl.jobs.find((j) => j.id === jobId).totalAceptado;
 const igual = (valor, esperado, msg) => assert.equal(valor == null ? valor : Number(valor), esperado, msg);

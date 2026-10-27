@@ -466,11 +466,14 @@ async function invocarDetalle({ job, quote }) {
 test('SCRUM-302 · ③ el detalle trae el presupuesto del DOCUMENTO', async () => {
   const { salida } = await invocarDetalle({
     job: { id: 42, titulo: 'Reforma baño', direccion: 'C/ Mayor 3', customerId: 5, quoteId: 88 },
-    quote: { id: 88, quoteNumber: 12 },
+    // SCRUM-1444c · la consulta pide ya `revision` y la base la devuelve: el doble también.
+    quote: { id: 88, quoteNumber: 12, revision: 0 },
   });
   assert.equal(salida?.code ?? 200, 200, `🔴 el detalle no responde 200: ${JSON.stringify(salida)}`);
   assert.deepEqual(
-    salida.body.quote, { id: 88, number: 12 },
+    // SCRUM-1444c (decisión A del orquestador, 18-oct): `numeroVisible` se AÑADE al lado de `number`,
+    // que sigue mientras la pantalla migra. El contrato se amplía; la exactitud del `deepEqual`, no.
+    salida.body.quote, { id: 88, number: 12, numeroVisible: '#12' },
     '🔴 el detalle no devuelve el presupuesto de origen. Sin él, el rail no puede enlazarlo — y '
     + 'la vista NO debe deducirlo de las líneas, que es justo lo que este ticket prohíbe.',
   );
