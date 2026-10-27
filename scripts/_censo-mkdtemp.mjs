@@ -45,6 +45,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import ts from 'typescript';
+// SCRUM-1396c · el trinquete de «declarados uno a uno» de la casa (SCRUM-1349): no hay un segundo.
+import { contraDeclarados } from './_censo-entorno-prestado.mjs';
 
 /** Extensiones que se parsean. */
 const EXT = new Set(['.ts', '.mjs', '.js', '.cjs']);
@@ -383,6 +385,42 @@ export const sinCierre = (censo) => [...censo.SIN_LIMPIEZA, ...censo.NO_GARANTIZ
  * a nadie, es `temporal()`, que limpia sin que el llamador tenga que enterarse.
  */
 export const sinDueno = (censo) => [...censo.ESCAPA, ...censo.FABRICA];
+
+/** Las cuatro categorías de fuga juntas: lo que ③ de SCRUM-864c no deja entrar. */
+export const fugasDe = (censo) => [...sinCierre(censo), ...sinDueno(censo)];
+
+/**
+ * SCRUM-1396c · LOS SITIOS DECLARADOS, que sólo pueden BAJAR (decisión del fundador, SCRUM-1396
+ * c.21095). Al emparejar por ámbito y no por nombre, el censo destapó 28 sitios que ya estaban en
+ * `main` (2 con fuga medida, 22 por su forma, 4 sin medir). No se tocan aquí (regla 41): entran
+ * declarados uno a uno en `scripts/_mkdtemp-declarados.json`, con su motivo y quién los retira.
+ *
+ * No es `DECLARADAS` de arriba: aquélla saca un fichero ENTERO del censo porque el censo no puede
+ * juzgarlo; ésta deja el sitio DENTRO, juzgado y acusado, y sólo exige que el árbol tenga
+ * EXACTAMENTE los declarados. Por fichero y con cuántas llamadas, no por línea: las líneas se mueven.
+ */
+export const RUTA_SITIOS_DECLARADOS = 'scripts/_mkdtemp-declarados.json';
+export const MOTIVOS_DE_SITIO = ['MEDIDA', 'FORMA', 'SIN_MEDIR'];
+export const QUIEN_RETIRA = ['J6', 'SCRUM-1621'];
+export const leerSitiosDeclarados = (raiz) =>
+  JSON.parse(fs.readFileSync(path.join(raiz, RUTA_SITIOS_DECLARADOS), 'utf8')).ficheros;
+/** `{ nuevos, sobran }`: lo que acusa sin estar declarado, y lo declarado que ya no se acusa. */
+export const contraSitiosDeclarados = (censo, declarados) => contraDeclarados(fugasDe(censo), declarados);
+
+/**
+ * La mitad del trinquete que `contraDeclarados` no tiene: la LISTA no puede crecer. Se compara con
+ * la lista tal como la creó su primer commit (quien llama la lee de la historia): un fichero que no
+ * estaba, o más llamadas de las que tenía, es subir. Borrar o bajar es lo esperado y no se dice.
+ */
+export function subeRespectoA(nacimiento, hoy) {
+  const sube = [];
+  for (const [fichero, d] of Object.entries(hoy)) {
+    const antes = nacimiento[fichero];
+    if (!antes) sube.push(`${fichero}: no estaba en la lista que creó la decisión`);
+    else if (d.llamadas > antes.llamadas) sube.push(`${fichero}: ${antes.llamadas} → ${d.llamadas} llamadas`);
+  }
+  return sube;
+}
 
 /**
  * 🔴 EL SUELO. Un censo que no ve nada contesta «cero infracciones», y eso se lee igual que «está
