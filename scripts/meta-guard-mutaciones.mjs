@@ -639,6 +639,30 @@ export function rotuloDelCenso({ poblacion, declarantes, declaraciones, titulado
 
 /**
  * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 SCRUM-1387d · EL RECUENTO FINAL LLEVA SU POBLACIÓN PEGADA, EN LA MISMA LÍNEA.
+ *
+ * El rótulo de arriba sólo salía con `--solo-censo`. La pasada que corre el CI acababa en
+ * «vivas 707 · mudas 0 · ciegas 1» y nada más: medido el 27-oct-2026 en `main` (`77ce98573`, job
+ * 122241583529), esa «ciegas 1» era un corte por tiempo que dejó 177 de 884 mutaciones SIN JUZGAR,
+ * y la línea que todo el mundo lee no lo decía. Un recuento sin población no distingue «no hay
+ * más» de «no miré ahí».
+ *
+ * Va en la MISMA línea y no debajo por lo mismo que el límite del subconjunto va pegado arriba:
+ * una línea que se puede copiar sola se copia sola. Y sale SIEMPRE, también con el 100 %: una
+ * población que sólo se dice cuando es mala se lee, por su ausencia, como buena.
+ *
+ * ⛔ No decide nada: imprime. Los veredictos y los códigos de salida siguen saliendo de abajo.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ */
+export function rotuloDelResultado({ vivas, mudas, ciegas, muertos, juzgadas, declaraciones, declarantes, poblacion }) {
+  const pct = poblacion > 0 ? Math.round((declarantes / poblacion) * 100) : 0;
+  return `vivas ${vivas} · mudas ${mudas} · ciegas ${ciegas} · ficheros muertos ${muertos} `
+    + `· sobre ${juzgadas} juzgadas de ${declaraciones} declaraciones, en ${declarantes} ficheros `
+    + `DECLARANTES de ${poblacion} ficheros de test (${pct} %)`;
+}
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
  * 🔴 SCRUM-745 (adopción) · POR QUÉ AQUÍ YA NO SE LEE NINGÚN REPORTER.
  *
  * Hasta hoy los dos lectores parseaban la salida del reporter `spec` —buscaban `✔` y `✖` al
@@ -1678,14 +1702,16 @@ if (ejecutadoDirectamente(import.meta.url)) {
     console.error(`🔴 CIEGO · ${encogido}`);
     process.exit(SALIDA_CIEGO);
   }
+  // 🔴 SCRUM-812 · el rótulo lo escribe `rotuloDelCenso`, no este `console.log`: así su guard
+  // se lo puede exigir sin arrancar el trabajo entero. `declarantes` sale del MISMO sitio que
+  // `guardsConDeclaracion` —el filtro por `mutaciones.length`— y por eso se pasa ése.
+  // 🔴 SCRUM-1387d · va FUERA del `if (soloCenso)`: hasta hoy la pasada del CI no lo imprimía nunca.
+  // Y va ANTES del bucle, para que lo diga también un job que muera en la pared sin llegar al final.
+  for (const linea of rotuloDelCenso({
+    poblacion, declarantes: guardsConDeclaracion, declaraciones, titulados, tituladosQueDeclaran,
+  })) console.log(linea);
   if (soloCenso) {
     const expo = censoDeExposicionATypeScript(); // `expo`, no `ts`: `ts` es el compilador de arriba
-    // 🔴 SCRUM-812 · el rótulo lo escribe `rotuloDelCenso`, no este `console.log`: así su guard
-    // se lo puede exigir sin arrancar el trabajo entero. `declarantes` sale del MISMO sitio que
-    // `guardsConDeclaracion` —el filtro por `mutaciones.length`— y por eso se pasa ése.
-    for (const linea of rotuloDelCenso({
-      poblacion, declarantes: guardsConDeclaracion, declaraciones, titulados, tituladosQueDeclaran,
-    })) console.log(linea);
     console.log(`  sobre la frontera src/ ↔ dist/ (SCRUM-763): ${expo.expuestas.length} de ${expo.poblacion}`);
     for (const e of expo.expuestas) console.log(`    · ${e.guard} → ${e.fichero}`);
     console.log('\n⚠️ MODO CENSO: NO se ha ejecutado ninguna mutación.');
@@ -1784,20 +1810,24 @@ if (ejecutadoDirectamente(import.meta.url)) {
   // 📌 SCRUM-935c (propuesta D) · el coste de cada guard, NOMBRADO. El 16-oct un solo commit subió
   // `scrum813` de ~45 s a ~285 s y nadie lo vio hasta que el job empezó a morir en el techo.
   for (const linea of guardsCaros(costes, process.uptime())) console.log(linea);
+  // 🔴 SCRUM-1387d · el corte ya NO se imprime aquí: sale una vez, con las demás ciegas, en el
+  // `console.error` de abajo. Medido el 27-oct-2026 (job 122241583529): salía DOS veces en el log.
   if (corte) {
     const msg = mensajeDeCorte({
       juzgadas, pendientes: pendientesDesde(censo, corte.guardIdx, corte.desde),
       transcurridoS: corte.transcurridoS, presupuesto,
     });
-    console.log(`\n${msg}`);
     ciegos.push(msg);
   }
   // 🔴 SCRUM-754 · el recuento va CON la condición en la que se tomó. «vivas N · mudas 0» sin
   // decir sobre qué árbol es exactamente lo que se pudo creer una vez y no era verdad.
   console.log(`\nárbol VIGILADO durante las ${vivas + mudos.length + muertos.length} mediciones `
     + `(${FAMILIAS_VIGILADAS.join(', ')})`);
-  console.log(`\nvivas ${vivas} · mudas ${mudos.length} · ciegas ${ciegos.length} `
-    + `· ficheros muertos ${muertos.length}`);
+  // 🔴 SCRUM-1387d · y CON su población: sobre cuántas, de cuántas, en cuántos ficheros.
+  console.log(`\n${rotuloDelResultado({
+    vivas, mudas: mudos.length, ciegas: ciegos.length, muertos: muertos.length, juzgadas,
+    declaraciones, declarantes: guardsConDeclaracion, poblacion,
+  })}`);
 
   // 📌 SCRUM-784, EL OTRO LADO DEL MISMO AGUJERO — MEDICIÓN, NO VEREDICTO. El meta-guard sólo
   // mira el test que la mutación NOMBRA; lo que le pase al resto del fichero no lo ve nadie. Esta
@@ -1824,13 +1854,15 @@ if (ejecutadoDirectamente(import.meta.url)) {
   // Un fichero MUERTO sí llegó a mutar el árbol y a correr el guard, así que cuenta como trabajo
   // ejecutado con independencia de cómo se clasifique: no contarlo diría «no he medido nada»
   // sobre una pasada que mutó y corrió.
+  // 🔴 SCRUM-1387d · las ciegas se imprimen ANTES del suelo de ejecución: un corte que llega antes
+  // de la primera mutación sale por ese suelo, y sin esto su lista de lo pendiente no salía nunca.
+  if (ciegos.length) console.error('🔴 CIEGO:\n  · ' + ciegos.join('\n  · '));
   const sinMedir = sueloDeEjecucion({ vivas: vivas + muertos.length, mudas: mudos.length });
   if (sinMedir) {
     console.error(`🔴 CIEGO: ${sinMedir}`);
     process.exit(SALIDA_CIEGO);
   }
 
-  if (ciegos.length) console.error('🔴 CIEGO:\n  · ' + ciegos.join('\n  · '));
   if (mudos.length) {
     console.error('🔴 GUARDS MUDOS — pasan en verde sobre el defecto que dicen vigilar:\n  · '
       + mudos.join('\n  · '));
