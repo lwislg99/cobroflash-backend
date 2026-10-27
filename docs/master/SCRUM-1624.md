@@ -60,3 +60,36 @@ Presupuesto: «Mano de obra» 2 × 100 € al 21 % con 10 % de descuento de lín
 - La fila «Descuento global» de la tarjeta de factura, por lectura de código: no la he visto en una factura real del portal ni en yaqu.app (hace falta el token del portal de un cliente).
 - No revisado: el modo «IVA no incluido» en el portal (sus líneas ya llevan IVA hoy, con o sin descuento); queda fuera de este ticket.
 - Varios tipos de IVA con descuento global no se pueden guardar (SCRUM-887, `quotes.routes.ts:149`). Un presupuesto anterior a 887 podría tenerlos: con P2 la cuenta sigue cuadrando, pero no he medido si hay alguno.
+
+# APÉNDICE · 27-oct-2026 · SCRUM-1624b · construida la fila «Descuento global» de la tarjeta del presupuesto (firma c.21094)
+
+**Medido contra:** `origin/main` = `c992358dc42fa7407e2960f826bd36d68bc3d47e` · 2026-10-27T16:00:17Z (cabecera `Date` de GitHub)
+
+A9: aviso → cicatriz J2 «lancé `node scripts/meta-guard-mutaciones.mjs --help` para leer su uso, no tiene ayuda y arrancó la pasada entera; al pararla se quedó mutado `scripts/meta-guard-mutaciones.mjs`» — no se pudo comprobar: el instrumento no rechaza argumentos que no conoce, y cambiarlo es de su dueño (J6), no de este puesto
+
+Lo escribe J2 (`jv-j2bo`). Firma del fundador: SCRUM-1624 c.21094, P1-P5 ✅, sobre la propuesta de arriba (c.21089). Va encima de #2934 (SCRUM-1568), mergeado en `main` a las 15:53:45Z.
+
+## Qué cambia
+
+`src/modules/system/app/routes/customerPortal.routes.ts`, **sólo la tarjeta del PRESUPUESTO**, con `filaDescuentoGlobalDelPresupuesto`:
+
+- **P1** · sólo si el presupuesto tiene descuento global y resta algo, sale una fila «Descuento global» en negativo y con IVA. Con `discountGlobalAmount` a `null`, `0`, `'0'`, `''` o sin el campo, la tarjeta es idéntica byte a byte.
+- **P2** · el importe es `calcTotal(líneas, global) − calcTotal(líneas)`. No hay ninguna cuenta nueva.
+- **P3** · la fila va la primera. **P4** · «Ver detalles (N líneas)» sigue contando sólo las líneas.
+- Usa las mismas clases y el mismo marcado que las demás filas. No hay CSS, token ni componente nuevos.
+
+**El rótulo.** El de la tarjeta de factura vive en `ROTULO_DESCUENTO_GLOBAL` (`src/modules/invoicing/domain/invoiceLines.service.ts:46`). Esa constante no está exportada y es camino de emisión, así que exportarla sería modificarlo (regla 38, STOP). Por eso el portal lleva el mismo literal, y el test lee esa constante del fuente y exige que la fila diga exactamente lo mismo. Si una cambia sin la otra, el test cae. No hay texto nuevo.
+
+## Medido
+
+- **Rojo primero**, con #2934 dentro y sin este cambio, sobre el ejemplo firmado: las filas suman **278,30 €** y el total es 254,10 €. Caen 2 de 5 casos y pasan el control y los dos que ya cumplía la tarjeta de antes (P4 y «sin global, idéntica»): 3 + 2 = 5.
+- **Verde después:** `tests/scrum1624b-portal-fila-descuento-global.test.mjs`, 5 de 5. Las filas suman **254,10 €** al céntimo, y la primera es «Descuento global» con −24,20 €. El test pide la ruta real con el Prisma de mentira de scrum1568. Junto a él, `scrum1568` sigue 4 de 4.
+- **Mutaciones**, con `correr` y `aplicarUna` de `scripts/meta-guard-mutaciones.mjs` sobre las dos de `MUTACIONES_QUE_ME_TUMBAN`: **2 de 2 tumban su caso**. Después, `git status` deja sólo mis ficheros.
+- **Build con tipos** (`tsc -p .`, sin `--noCheck`): salida 0.
+
+## Sin medir, o fuera
+
+- **No se ha verificado en yaqu.app.** Ver el portal de un cliente pide su token, y no lo tengo.
+- **No hay capturas antes/después** (checklist AB6). La fila reusa el marcado de las otras filas, y no he arrancado navegador.
+- **Un `discountGlobalAmount` negativo o no numérico** no pinta fila: la condición es que el total con global sea menor que sin él. Si `calcTotal` da NaN, tampoco sale fila.
+- **Suite entera en local: NO CORRIDA** (orden del orquestador). Los guards que sí se corrieron están en el comentario de Jira.
