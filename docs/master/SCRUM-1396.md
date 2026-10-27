@@ -351,7 +351,7 @@ general de `scripts/`; el JSON va declarado en `scripts/_sin-fila-declarados.jso
 sólo se añade el bloque propio), `tests/scrum864c-el-temporal-no-vuelve.test.mjs` (③) y un test nuevo.
 No toca ninguno de los 28 sitios.
 
-A9: aviso → cicatriz J6 «Crucé el aviso de 200k entre dos mediciones (141k al leer Jira, 215k tras las mutaciones) y avisé después del cruce, no en él» — no se pudo comprobar: ningún hook de este árbol lee el usage de la sesión entre dos tandas
+A9: aviso → cicatriz J6 «Crucé el aviso de 200k entre dos mediciones (141k al leer Jira, 215k tras las mutaciones) y avisé después del cruce, no en él: la de SCRUM-1539, dos semanas después» — no se pudo comprobar: ningún hook de este árbol lee el usage de la sesión entre dos tandas
 
 ### Qué se ha hecho
 
