@@ -3199,3 +3199,24 @@ sale del comentario 19370 del ticket, del orquestador del equipo de Javier:
 ⚠️ **El relleno de las filas que ya existen NO es este ALTER** y no está hecho en ninguna base:
 `scripts/rellenar-anio-de-la-serie.mjs` (simulacro por defecto) sigue sin ejecutarse, y quién lo
 corre sigue sin decidir. Este log no cubre migraciones de datos.
+
+## SCRUM-665e · `invoices.pdf_sha256` (huella del PDF guardado al emitir) — 27-oct-2026 · 🔴 NINGUNA base tocada
+
+Decisión del fundador: SCRUM-665 c.21182, punto 4 («Se guarda también la huella del fichero:
+columna nueva, ALTER aditivo»). **Una** sentencia, aditiva:
+
+    ALTER TABLE "invoices" ADD COLUMN "pdf_sha256" TEXT;
+
+Nullable, sin default, sin índice: ninguna fila cambia, y las facturas ya emitidas quedan a NULL
+(regla 29: no se rellena hacia atrás). El DDL lo sacó J1 (jv-j1dk) el 27-oct-2026 ~18:04Z con
+`node scripts/preview-migracion.mjs --desde <schema.prisma de origin/main 95016f26f>` (offline;
+control positivo «la herramienta responde (33 tablas)»; veredicto «aditiva»). Quien lo aplique puede
+añadir `IF NOT EXISTS`.
+
+- [ ] **desarrollo y tests · yaqu_dev_javier**
+- [ ] **staging**
+- [ ] **producción**
+
+El PR de esquema + código + tests (rama `scrum-665e-pdf-persistente`) **no se empuja** hasta que
+estén las tres casillas y el volumen persistente de Railway creado (c.21182, «Dependencias del
+fundador antes de empujar»).

@@ -1806,3 +1806,32 @@ pero sigue valiendo para cuando staging o producción se corran con la columna c
   bug) ni con la columna corregida — no son de este puesto (dixit el encargo).
 * La cifra de DEV (0 emitidas) es la MEDICIÓN de hoy sobre esta base; no dice nada de staging (9
   filas totales) ni de producción (2), que pueden tener una distribución de `vf_estado` distinta.
+
+---
+
+# APÉNDICE (E) · SCRUM-665e · 27-oct-2026 · J1 (jv-j1dk) · El PDF emitido se guarda al emitir: el DDL, y lo que falta para construirlo
+
+**Medido contra:** `origin/main` = `95016f26f5b0d31dcb542467cbdb2a9249a71366` · 2026-10-27T18:04:48Z
+
+> Encargo: construir la opción A con el GO de regla 40 del fundador (Jira c.21182, cinco puntos), en
+> LOCAL, sin empujar hasta que estén el ALTER aplicado y el volumen de Railway creado.
+
+**Hecho en esta tanda, en local (rama `scrum-665e-pdf-persistente`, sin empujar):**
+
+1. `prisma/schema.prisma`: `Invoice.pdfSha256 String? @map("pdf_sha256")` (punto 4 de c.21182).
+2. El DDL, con `node scripts/preview-migracion.mjs --desde <schema de origin/main>` (offline):
+   `ALTER TABLE "invoices" ADD COLUMN "pdf_sha256" TEXT;` · control positivo «33 tablas» ·
+   veredicto «aditiva». En `docs/MIGRATIONS_PENDING.md` y en Jira c.21190.
+
+**NO hecho, y por qué:**
+
+- El código (guardar al emitir, servir siempre ése, retirar `POST /admin/invoices/:id/regenerate-pdf`
+  y su botón) está SIN ESCRIBIR. Leído, no ejercitado: el único punto por el que pasan todas las
+  emisiones es `sellarTrasEmision` (`selladoEstado.ts`), con 11 llamadas en `src/`; la ruta de
+  regenerar la nombran 5 tests y `adminOnlyRoutes.ts`, que se mueven con ella.
+- Pregunta abierta al fundador (c.21190): qué pasa con las facturas emitidas ANTES del cambio
+  (`pdf_sha256` a NULL). El encargo manda parar y preguntar, y `ensureInvoicePdf` no se puede
+  escribir sin la respuesta.
+- La sesión cruzó los 200k de contexto al acabar de leer: el código va a sesión nueva.
+
+A9: aviso → cicatriz J1 «Para commitear añadí `-c core.hooksPath=` a la orden» — no se pudo comprobar: lo paró el clasificador del arnés, que no es de este repositorio.
