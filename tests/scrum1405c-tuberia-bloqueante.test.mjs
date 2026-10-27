@@ -199,6 +199,9 @@ function bytesPendientesDeLaSonda() {
   const m = /PENDIENTE=(\d+)/.exec(r.stderr || '');
   return m ? Number(m[1]) : null;
 }
+// SCRUM-1625b · EXPERIMENTO (rama que no entra en main): la sonda corre a la CARGA del fichero, donde
+// estaba antes de SCRUM-1574, y no al principio de ④, justo antes de los dos brazos.
+const PENDIENTE_DE_LA_SONDA = bytesPendientesDeLaSonda();
 
 /** Qué hace ④ con lo que ha visto (SCRUM-1574). Quien decide si hay rojo que ver es el brazo SIN el
  *  módulo, no la sonda: `pendiente` son los bytes de la sonda y `sinFaltan` los casos que pierde cada
@@ -244,7 +247,7 @@ function brazo(ficheros, extra) {
 
 test('SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, no más de lo medido (SCRUM-1405d)',
   (t) => {
-    const pendiente = bytesPendientesDeLaSonda();
+    const pendiente = PENDIENTE_DE_LA_SONDA;
     assert.notEqual(pendiente, null, decidirCuarto(null, []).motivo);
     const { token } = tokenDelScript();
     assert.ok(token, '🔴 NO PUDE MIRAR: sin el token del script `test` (ver ①)');
