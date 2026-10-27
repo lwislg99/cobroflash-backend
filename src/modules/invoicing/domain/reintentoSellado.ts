@@ -71,7 +71,7 @@ import { sellarTrasEmision, SELLADO_PENDIENTE, SELLADO_HECHO, SELLADO_NO_APLICA 
  * GitHub DESPUÉS de comprobar que este fichero ya está desplegado. No es una preferencia: una
  * fecha puesta «por lo bajo» devuelve el histórico entero, idéntico a no poner fecha.
  */
-export const REINTENTO_ACTIVO_DESDE: string | null = null;
+export const REINTENTO_ACTIVO_DESDE: string | null = '2026-10-26T23:58:57Z';
 
 /**
  * El suelo de esa fecha: cuándo se escribió este fichero (cabecera `Date:` de GitHub). Una fecha

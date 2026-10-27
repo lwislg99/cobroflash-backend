@@ -47,7 +47,7 @@ import { ensureInvoicePdf, ensureChargeReceiptToken } from '../../../../lib/invo
 // de un `internal_error`. NO sube el timeout ni toca el cerrojo.
 import { esCerrojoSaturado, cuerpoCerrojoSaturado, ESTADO_CERROJO_SATURADO } from '../../../invoicing/domain/cerrojoSaturado';
 import { sendSuccessBody, SEND_FAILURE_MESSAGES, type SendFailureReason } from '../../../../lib/sendOutcome'; // SCRUM-126
-import { esErrorSinSellar, ERROR_SIN_SELLAR } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206
+import { esErrorSinSellar, ERROR_SIN_SELLAR, type MerchantPorton } from '../../../invoicing/domain/portonDocumento'; // SCRUM-206
 import { sellarTrasEmision, sellarAnulacionTrasEmision, SELLADO_HECHO, puedeProducirDocumento, ERROR_PDF_SIN_SELLAR } from '../../../invoicing/domain/selladoEstado'; // SCRUM-205
 import { resolverFechaDeCobro } from '../../../billing/domain/fechaDeCobro'; // SCRUM-397
 import { zonaDelMerchant } from '../../../../core/zonaDelMerchant'; // SCRUM-1093 (bulk-paid)
@@ -1245,13 +1245,20 @@ router.post('/:id/regenerate-pdf', requireRole('admin'), async (req, res) => {
  * Así "Abrir PDF" siempre sirve un PDF real, sin enlazar nunca a 'PENDING_PDF'.
  */
 router.get('/:id/pdf', async (req, res) => {
+  // SCRUM-1404g · fuera del `try`: el `catch` necesita el número y el comercio de la factura para
+  // saber si un pendiente de sellado es de los que entran en la cadena (`esErrorSinSellar`).
+  let factura: { number: string; merchant: MerchantPorton | null } | null = null;
   try {
     const id = Number(req.params.id);
     if (!cabeEnColumnaInt(id)) return res.status(400).json({ error: 'invalid_id' });
 
     // Scope multi-tenant: 404 si no es del merchant.
-    const owned = await prisma.invoice.findFirst({ where: { id, merchantId: req.merchantId }, select: { id: true } });
+    const owned = await prisma.invoice.findFirst({
+      where: { id, merchantId: req.merchantId },
+      select: { id: true, number: true, merchant: { select: { country: true, taxId: true } } },
+    });
     if (!owned) return res.status(404).json({ error: 'not_found' });
+    factura = owned;
     // SCRUM-1397 · y que sea de quien la pide, ANTES de generar nada: el PDF de una ajena no se
     // llega a producir.
     if (!(await puedeVerLaFactura(quienPide(req), id))) return res.status(404).json({ error: 'not_found' });
@@ -1267,7 +1274,7 @@ router.get('/:id/pdf', async (req, res) => {
     console.error('[GET /admin/invoices/:id/pdf]', err);
     // SCRUM-206: no es un fallo de generación, y llamarlo así manda a quien depure al sitio
     // equivocado. La factura existe y NO está registrada: 409 con su código.
-    if (esErrorSinSellar(err)) {
+    if (esErrorSinSellar(err, factura?.number, factura?.merchant)) {
       return res.status(409).json({
         error: ERROR_SIN_SELLAR,
         // Microcopy OFICIAL: aprobado por el fundador el 30-jul-2026 (regla 30). Lo ve el
