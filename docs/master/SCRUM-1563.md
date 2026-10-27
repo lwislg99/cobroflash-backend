@@ -189,3 +189,37 @@ El merge que se apunta es el **último** con su número. **Un merge no es un arr
 ### Error propio
 
 - **Busqué la rama de 1565 con un filtro de `git ls-remote` sin control positivo.** Dio vacío, y el mismo filtro con 1563 también daba vacío, porque la rama de 1563b se borró al mergear. Ese vacío no probaba nada. Lo rehice con la lista entera del remoto, filtrada después. Es la familia de «no pude mirar» igual a «no hay nada».
+
+## Tramo 1563d · la foto del 19-oct a las 07:5xZ (S0)
+
+**Medido contra:** `origin/main` = `774c32b517918c9bca567d35c0c15d881885cb64` · 2026-10-19T07:5xZ
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1563/contar-dependencias.mjs`
+
+Encargo del orquestador (`cobroflash-backend-86`, 19-oct): poner el documento al día tras el triaje de los 54 y los cuatro cierres de la mañana. Meter también 1390b, el agujero conocido de `done` contra «sin uso», por qué 1529 y 1532 no los cierra este equipo, y la cifra del triaje (54 con merge, 31 mirados, 3 cerrables).
+
+### Qué cambia en el documento
+
+- **2 filas pasan a §8:** 6.10 (SCRUM-1265, cerrado a las 07:37Z, visto en producción, c.20006) y 6.11 (SCRUM-1564, cerrado a las 07:16Z; VISTO con sesión en #2599, c.20004).
+- **1 fila nueva:** 6.12 (SCRUM-1390, tramo 1390b de S1: el `.ics` de un Trabajo ajeno; #2603 abierto). Depende de NOSOTROS + FUNDADOR, porque verlo necesita un Técnico de verdad.
+- **§1 y §3: lo movible hoy sin nadie pasa a CERO.** Son 65 filas: 63 esperan al fundador, a Javier o al asesor; 1 es nuestra pero espera firma (2.4); 1 no tiene dueño (2.5).
+- **§4:** el triaje de los 54, con los dos que NO cierra este equipo y su motivo. Sale SCRUM-1564.
+- **§5:** una fila nueva. **§6:** el agujero conocido de las sesiones (c.20007 de SCRUM-999).
+
+### Cómo se midió
+
+| qué | comando | resultado |
+|---|---|---|
+| los cuatro cierres | JQL por clave, con comentarios | 1564 a las 07:16:02Z, 1265 a las 07:37:04Z, 999 a las 07:38:10Z y 1557 a las 07:38:41Z: Finalizada, cada uno con su comentario de cierre (c.20004, c.20006, c.20007 y c.20008). 1529 y 1532, «Tareas por hacer» |
+| 1390b | `git ls-remote origin` entero, filtrado · `gh pr list --head` · `git diff --stat origin/main...FETCH_HEAD` | rama `scrum-1390b-ics-sin-trabajo-ajeno`; **#2603 OPEN** (07:37:53Z), `build + tests` IN_PROGRESS a las 07:5xZ; toca `jobs.routes.ts` (+5), su test y `SCRUM-1390.md` |
+| las seis cuentas de §5 | JQL `count` | 264 · 50 · 165 · 49 · 49 · 10. Control: 50 + 165 + 49 = 264 |
+| producción | `GET /version` | `774c32b5`, la punta de `main` |
+| §3 | el contador | 65 filas · 45/29 · 28/12 · 10/2 · 6/2. Control: sobre la versión de las 06:43Z da lo publicado entonces (66 · 44/29 · 28/12 · 11/4 · 6/2). Sólo-NOSOTROS: 2.4 y 2.5 (listado por máquina) |
+| el triaje de los 54 | descripción + todos los comentarios de los 31, a fichero, extraídos con un guion · registros de `main` · títulos de PR | 3 cerrables (1557, 999, 1529) + 1 con condición (1532); 27 a medias. Se miraron 31 de 54; los 23 sólo de `equipo-javier`, no. 1072, 1442, 1558 y 1562 salen de la lectura del 18-oct, porque Jira no había cambiado desde entonces (medido) |
+| la copia instalada de `sesion.mjs` (para 1557) | hash con LF y sin BOM, contra `git show origin/main:` | **distinta** (55c6… contra 10e0…), pero lleva `elegirParaContexto`: va por detrás de 1298c y 1011b. Es mantenimiento, no aceptación |
+
+### Lo que el encargo traía y hay que matizar
+
+- **«65 filas, con 6.10 y 6.11 ya hechas».** Son 65, pero contando la 6.12 que entra: 66 − 2 + 1. Sin 1390b serían 64.
+- **«1390b empujada».** Sí, y además con PR abierto (#2603). Al escribir esto **no estaba en `main`**: la fila lo dice así.
+- **La cifra de «movible hoy» cambia de 1 a 0**, no «sigue en 1». La 6.10 se hizo entera en la misma mañana (patrón decidido, construido, visto y cerrado), y la 6.12 nueva no es sólo nuestra.
