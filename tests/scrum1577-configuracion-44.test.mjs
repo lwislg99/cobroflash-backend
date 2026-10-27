@@ -21,6 +21,14 @@
 //   ④ el color: sin `style=` en línea (ganaría a la hoja), con `height: 44px` y `flex: none`, y su fila
 //      con `flex-wrap: wrap` (sin ella, a 320 «Sin color (por defecto)» sale cortado por la tarjeta);
 //   ⑤ los dos `select`: el mínimo de 44 por su id, fuera de toda `@media`, y los ids siguen en la vista.
+//
+// SCRUM-1577c (parte 4, decisión del fundador en c.20987: el enlace en línea NO se exime, DESIGN.md §6):
+// el enlace `yaqu.app/p/…` de «Tu página pública» daba 17 px de toque a 390 y 929, y a 320 se partía en
+// dos renglones. Ahora lleva `pp-enlace`, que en el bloque «J3 · SCRUM-1577c» de `styles.css` lo hace
+// `inline-flex` con `min-height: 44px` en todas las anchuras. Este test vigila:
+//   ⑥ el enlace (por su destino `/p/`, no por su posición) lleva `pp-enlace` y ningún `style=`, y la regla
+//      está fuera de toda `@media` con su `display: inline-flex` (sin él, `min-height` no hace nada en un
+//      enlace en línea) y su `min-height: 44px`.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -76,6 +84,24 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     de: '#actividad-tipo { min-height: 44px; }',
     a: '#actividad-tipo { }',
     cae: 'SCRUM-1577 ⑤ ·',
+  },
+  {
+    fichero: 'public/dashboard/js/settingsView.js',
+    de: '<a class="pp-enlace" href="/p/${escSettings(m.slug)}"',
+    a: '<a href="/p/${escSettings(m.slug)}"',
+    cae: 'SCRUM-1577 ⑥ ·',
+  },
+  {
+    fichero: 'public/dashboard/css/styles.css',
+    de: '.pp-enlace { display: inline-flex; align-items: center; min-height: 44px; }',
+    a: '.pp-enlace { align-items: center; min-height: 44px; }',
+    cae: 'SCRUM-1577 ⑥ ·',
+  },
+  {
+    fichero: 'public/dashboard/css/styles.css',
+    de: '.pp-enlace { display: inline-flex; align-items: center; min-height: 44px; }',
+    a: '.pp-enlace { display: inline-flex; align-items: center; }',
+    cae: 'SCRUM-1577 ⑥ ·',
   },
 ];
 
@@ -162,4 +188,16 @@ test('SCRUM-1577 ⑤ · los dos select de Facturación tienen mínimo de 44 en t
   const m = SUPERIOR.match(/\n#retencion-irpf-tipo,\s*\n#actividad-tipo\s*\{([^}]*)\}/);
   assert.ok(m, '🔴 en styles.css, fuera de @media, no está la regla `#retencion-irpf-tipo,\\n#actividad-tipo { … }`.');
   assert.match(m[1], /(^|;)\s*min-height:\s*44px;/, `🔴 los dos select sin \`min-height: 44px\`: vuelven a 36 (\`.input\` no tiene mínimo). ${m[1].trim()}`);
+});
+
+test('SCRUM-1577 ⑥ · el enlace de «Tu página pública» llega a 44 de toque en todas las anchuras', () => {
+  const enlaces = JS.match(/<a\b[^>]*\bhref="\/p\/\$\{[^>]*>/g) || [];
+  assert.equal(enlaces.length, 1, `🔴 NO PUDE MIRAR: el enlace a \`/p/…\` aparece ${enlaces.length} veces en settingsView.js (esperaba 1).`);
+  const clases = (enlaces[0].match(/\bclass="([^"]*)"/) || [, ''])[1].split(/\s+/);
+  assert.ok(clases.includes('pp-enlace'), `🔴 el enlace de la página pública sin \`pp-enlace\`: vuelve a 17 px de toque. ${enlaces[0]}`);
+  assert.doesNotMatch(enlaces[0], /\bstyle=/, `🔴 el enlace de la página pública lleva \`style=\` en línea: ${enlaces[0]}`);
+  const regla = reglaDe('.pp-enlace');
+  assert.ok(regla !== null, '🔴 en styles.css, fuera de @media, no hay regla `.pp-enlace { … }` al principio de línea.');
+  assert.match(regla, /(^|;)\s*display:\s*inline-flex;/, `🔴 \`.pp-enlace\` sin \`display: inline-flex\`: en un enlace en línea \`min-height\` no hace nada. ${regla.trim()}`);
+  assert.match(regla, /(^|;)\s*min-height:\s*44px;/, `🔴 \`.pp-enlace\` sin \`min-height: 44px\`: vuelve a 17 px. ${regla.trim()}`);
 });

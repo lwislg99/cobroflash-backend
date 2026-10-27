@@ -4929,3 +4929,12 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
   border: 1px solid var(--border); border-radius: 8px; cursor: pointer;
 }
 :has(> #brand-color-input) { flex-wrap: wrap; }
+
+/* ── J3 · SCRUM-1577c (AB6) ── Configuración → Tu página pública (settingsView.js, de J3): el enlace
+   `yaqu.app/p/…` del aviso «Tu página está activa», a 44 px de toque en TODAS las anchuras. El fundador
+   no lo exime por ser un enlace en línea (SCRUM-1577 c.20987, DESIGN.md §6). Medido con
+   `docs/master/evidencias/scrum1577/banco-44.mjs` el 27-oct: 17 px a 390 y 929, y a 320 el enlace se
+   partía en dos renglones. Como `.detail-rail-enlace--suelto`: el texto no cambia, el renglón del
+   aviso crece a 44. Sin margen negativo A PROPÓSITO: el blanco de toque montaría sobre el texto del
+   renglón de encima, y un toque en «activa» abriría la página. */
+.pp-enlace { display: inline-flex; align-items: center; min-height: 44px; }
