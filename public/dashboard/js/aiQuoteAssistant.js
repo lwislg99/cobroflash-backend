@@ -144,7 +144,7 @@ function openAiSuggestModal(addLinesFn) {
         <div>
           <div style="font-weight:600;color:var(--neutral-900)">${escHtml(line.concept)}</div>
           <div style="color:var(--neutral-500)">
-            Cantidad: ${line.qty} · Precio: ${fmtMoneyEs(line.price, (window.appLocale && window.appLocale.currency) || 'EUR')} · IVA: ${(line.tax * 100).toFixed(0)}%
+            Cantidad: ${line.qty} · Precio: ${fmtMoneyEs(line.price, (window.appLocale && window.appLocale.currency) || 'EUR')} · IVA: ${fmtTipoIvaEs(line.tax)}%
           </div>
           ${supuestos.length ? `<div class="ai-linea-supuesta" style="color:var(--warn,#b45309);font-weight:600;margin-top:2px">Esto lo hemos puesto nosotros: ${camposSupuestos}. Revísalo antes de enviar.</div>` : ''}
         </div>
