@@ -112,12 +112,24 @@ test('SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivo
       // entrelazado que la carrera necesita deja de depender del reloj.
       //
       // NO toca el camino de emisión (regla 38): es orquestación desde fuera, sobre una fila.
+      //
+      // SCRUM-1611b · las emisiones salen DESPUÉS de que la barrera tenga la fila. Antes se lanzaban
+      // a la vez que ella, y la barrera era en sí una carrera: desde SCRUM-780 la secuencia sale de un
+      // `findMany` de `invoices`, y una emisión que llegaba antes que el `FOR UPDATE` leía, escribía y
+      // commiteaba en ~30 ms sin que nada la parase. Medido en el banco (SCRUM-1611 c.20978, 13 de 13):
+      // sin `pg_advisory_xact_lock`, la barrera tarde y la 2ª leyendo tras el COMMIT de la 1ª → VERDE
+      // 4 de 4. `race` con la propia barrera: si su transacción revienta antes de tomar la fila, el
+      // caso cae con ese error en vez de esperar un aviso que no llega.
       let liberarBarrera;
+      let avisarTomada;
       const barreraSoltada = new Promise((r) => { liberarBarrera = r; });
+      const barreraTomada = new Promise((r) => { avisarTomada = r; });
       const barrera = prisma.$transaction(async (t) => {
         await t.$queryRaw`SELECT id FROM merchants WHERE id = ${merchant.id} FOR UPDATE`;
+        avisarTomada();
         await barreraSoltada;
       }, { timeout: 30_000, maxWait: 30_000 });
+      await Promise.race([barreraTomada, barrera]);
 
       // `allSettled` y no `all`: si una revienta con P2002 queremos VER el error, no perderlo
       // detrás del fallo de la otra promesa.
@@ -173,8 +185,10 @@ test('SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivo
 // SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco,
 // `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e), que muta `dist/` y no el fuente
 // (regla 38: el fuente de la emisión sólo se lee). Cada campo, LITERAL.
-// ⚠️ La mutación natural de este fichero, quitar el `pg_advisory_xact_lock`, VIVE en el banco (3 de 3, §1599s):
-// por qué, SIN MEDIR. Ésta caza el contador, que es la última aserción del caso.
+// La primera caza el contador, que es la última aserción del caso. La segunda es la mutación natural de este
+// fichero, quitar el `pg_advisory_xact_lock`: VIVÍA en el banco (3 de 3, §1599s) porque la barrera llegaba tarde
+// (SCRUM-1611 c.20978); con la barrera esperada tiene que MORIR, y es SCRUM-1611b quien la cataloga.
 export const MUTACIONES_CON_BASE = [
   { fichero: "src/modules/invoicing/domain/invoiceNumber.service.ts", de: "nextInvoiceNumber: Math.max(m.nextInvoiceNumber, seq + 1)", a: "nextInvoiceNumber: Math.max(m.nextInvoiceNumber, seq)", cae: "SCRUM-234 · dos reservas concurrentes NO colisionan" },
+  { fichero: "src/modules/invoicing/domain/invoiceNumber.service.ts", de: "await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SERIE_LOCK_NS}::int, ${merchantId}::int)`;", a: "/* SCRUM-1611b: sin cerrojo de serie */", cae: "SCRUM-234 · dos reservas concurrentes NO colisionan" },
 ];

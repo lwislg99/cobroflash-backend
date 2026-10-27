@@ -120,11 +120,34 @@ test('SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy
     assert.equal(afterMerchant, beforeMerchant + 1, 'el login del Merchant owner no debe cambiar de comportamiento');
 
     // ── Caso 3: email inexistente (ni Merchant ni TeamMember) → nada se crea, sin fuga ──
+    // SCRUM-1611b · el CONJUNTO de sesiones que nacen en la ventana de la llamada, no `count()` de toda
+    // la base: en el banco, con ficheros en paralelo, otro test crea sesiones a la vez y el recuento cayó
+    // con «11 !== 9» (§1599s). No se acota a los comercios de este test: `AuthSession.merchantId` es
+    // obligatorio, así que la fuga de un email fantasma es una sesión de un comercio CUALQUIERA, y
+    // acotarlo dejaría de verla (SCRUM-1611 c.20978). `id > max(id) de antes` recoge la de esta llamada
+    // aunque otra transacción tenga un id menor sin commitear. Una sesión ajena en la ventana no se
+    // distingue de una fuga, así que la ventana se repite hasta verla VACÍA: una fuga del código sale en
+    // TODAS (no hay azar entre el lookup y el `create`), y una de otro test, no. Ni una vacía = rojo.
     const ghostEmail = `qa-s92-fantasma-${stamp}@test.local`;
-    const beforeGhost = await prisma.authSession.count();
-    await requestMagicLink(ghostEmail); // no debe lanzar, ni crear nada
-    const afterGhost = await prisma.authSession.count();
-    assert.equal(afterGhost, beforeGhost, 'un email que no existe en NINGUNA tabla no debe crear ningún AuthSession');
+    const VENTANAS = 5;
+    const llenas = [];
+    let vacia = 0;
+    for (let i = 1; i <= VENTANAS && !vacia; i++) {
+      const [{ antes }] = await prisma.$queryRaw`SELECT coalesce(max(id), 0)::int AS antes FROM auth_sessions`;
+      await requestMagicLink(ghostEmail); // no debe lanzar, ni crear nada
+      const nuevas = await prisma.authSession.findMany({
+        where: { id: { gt: antes } },
+        select: { id: true, merchantId: true, teamMemberId: true },
+      });
+      assert.deepEqual(nuevas.filter((s) => s.merchantId === merchant.id), [],
+        'un email que no existe en NINGUNA tabla creó un AuthSession en el comercio de este test');
+      if (nuevas.length === 0) vacia = i;
+      else llenas.push(nuevas.map((s) => `${s.id}→m${s.merchantId}`).join(' '));
+    }
+    assert.ok(vacia,
+      `un email que no existe en NINGUNA tabla no debe crear ningún AuthSession: en las ${VENTANAS} ventanas ` +
+      `nacieron sesiones (${llenas.join(' | ')}) — o es la fuga, o la base no calló en ninguna; en los dos casos no hay verde`);
+    t.diagnostic(`SCRUM-92 · email fantasma: ventana vacía en el intento ${vacia} de ${VENTANAS}` + (llenas.length ? ` · antes, con sesiones ajenas: ${llenas.join(' | ')}` : ''));
 
     // La respuesta HTTP de /auth/login es SIEMPRE la misma genérica, exista o no el email
     // (regla anti-enumeración, no tocada por este fix) — probado a nivel de ruta:
@@ -150,4 +173,6 @@ test('SCRUM-92: operario puede volver a entrar — token+sesión con rol/tenancy
 // `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e). Cada campo, LITERAL.
 export const MUTACIONES_CON_BASE = [
   { fichero: "src/modules/auth/domain/auth.service.ts", de: "    teamMemberId: teamMember.id,", a: "    teamMemberId: null,", cae: "SCRUM-92: operario puede volver a entrar" },
+  // SCRUM-1611b · la fuga del caso 3: el email fantasma abre sesión en el comercio más antiguo de la base.
+  { fichero: "src/modules/auth/domain/auth.service.ts", de: "    console.log(`[magic-link] intento de login con email no registrado: ${maskEmail(email)}`);", a: "    { const cualquiera = await prisma.merchant.findFirst({ orderBy: { id: 'asc' } }); if (cualquiera) return issueLoginLink({ merchantId: cualquiera.id, teamMemberId: null, email, recipientName: cualquiera.name }); }", cae: "SCRUM-92: operario puede volver a entrar" },
 ];
