@@ -48,11 +48,20 @@ export function covariables(txt, conCenso) {
   const arranque = new RegExp(`^${T}> npm run build && node scripts/tanda`, 'm').exec(txt);
   const cuarto = new RegExp(`^${T}(?:[✔✖﹣]) SCRUM-1405c · ④ [^\\n]*\\(([\\d.]+)ms\\)`, 'm').exec(txt);
   // Antes de SCRUM-1574 (los jobs de 1405d) la línea no llevaba «sonda: N bytes · »: la sonda sale vacía.
-  const listas = /SCRUM-1405c · (?:sonda: (\d+) bytes · )?sin el módulo: \[[^\]]*\] · con el módulo: (\[[^\]]*\])/.exec(txt);
+  // Y cuando ④ caía (38 jobs de 1405d) las listas sólo salen en el mensaje del AssertionError, sin
+  // «SCRUM-1405c · » delante. Lo que impide coger la lista de otro sitio es que tiene que casar con el censo.
+  const listas = /(?:SCRUM-1405c · |la salida C no basta\. )(?:sonda: (\d+) bytes · )?sin el módulo: \[[^\]]*\] · con el módulo: (\[[^\]]*\])/.exec(txt);
   if (!cuarto) return { ...r, estado: 'CIEGO', motivo: r.bytes < 100000 ? `log de ${r.bytes} B` : 'sin la línea de ④' };
   if (!listas) return { ...r, estado: 'CIEGO', motivo: 'sin la línea de la sonda' };
   const con = JSON.parse(listas[2]).map((f) => f.faltan).join(',');
-  if (con !== conCenso) return { ...r, estado: 'CIEGO', motivo: `con del log ${con} ≠ censo ${conCenso}` };
+  // conCenso === null: jobs del HUECO entre los dos censos (--hueco), que ningún censo leyó. La lista sale del
+  // propio log y no hay con qué cruzarla: ese control queda más débil, y la fila lo dice en «fuente».
+  if (conCenso !== null && con !== conCenso) return { ...r, estado: 'CIEGO', motivo: `con del log ${con} ≠ censo ${conCenso}` };
+  r.fuente = conCenso === null ? 'log' : 'censo';
+  r.con = con;
+  // Qué versión de ④ corrió: «con él, ninguno» es la de 1405c (14-oct); sin «sonda:» en la lista, la de
+  // 1405d (21-oct 12:43Z, #2634); con «sonda:», la de 1574 (21-oct 13:18Z, #2638), que mide la sonda DENTRO de ④.
+  r.version = /con él, ninguno/.test(cuarto[0]) ? '1405c' : (listas[1] === undefined ? '1405d' : '1574');
   r.cuartoMs = Math.round(Number(cuarto[2]));
   r.cuartoA = arranque ? Math.round((ms(cuarto[1]) - ms(arranque[1])) / 1000) : '';
   r.sonda = listas[1] ?? '';
@@ -77,6 +86,10 @@ function controles() {
   ok(a.estado === 'ok' && a.runner === '2.338.0' && a.provisioner === '20261021.618' && a.imagen === '20261025.353.1'
     && a.region === 'eastus2' && a.node === '24.22.1' && a.tests === '12801' && a.tandaMs === '753950.4'
     && a.cuartoMs === 4105 && a.cuartoA === 177 && a.sonda === '1048576', '① completo ' + JSON.stringify(a));
+  ok(a.version === '1574' && a.fuente === 'censo', '① versión ' + JSON.stringify(a));
+  // ①bis modo hueco (sin censo): la lista sale del log y la fila lo dice; la versión de 1405c se reconoce
+  const hu = covariables(log.replace('🔴 EL ROJO PRIMERO: x', '🔴 EL ROJO PRIMERO: sin el módulo la cobaya PIERDE casos; con él, ninguno'), null);
+  ok(hu.estado === 'ok' && hu.con === '0,15,0,3' && hu.fuente === 'log' && hu.version === '1405c', '①bis hueco ' + JSON.stringify(hu));
   // ② la lista del log no casa con la del censo → CIEGO (no se juntan covariables de otro job)
   ok(covariables(log, '0,0,0,0').estado === 'CIEGO', '② no casa');
   // ③ quitada la línea de ④ (la de dentro de otro nombre NO cuenta) → CIEGO
@@ -84,10 +97,14 @@ function controles() {
   // ③bis el formato de antes de 1574, sin «sonda: N bytes · », también se lee
   const viejo = covariables(log.replace('sonda: 1048576 bytes · ', ''), '0,15,0,3');
   ok(viejo.estado === 'ok' && viejo.sonda === '', '③bis formato 1405d ' + JSON.stringify(viejo));
+  // ③ter el ④ en ROJO de 1405d: las listas van en el AssertionError (calibrado con el job 115746857769)
+  const rojo = covariables(log.replace(/^.*✔ SCRUM-1405c · ④ 🔴.*$/m, `${h('18:41')}✖ SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO: x (1988.860872ms)`)
+    .replace(/^.*ℹ SCRUM-1405c · sonda.*$/m, `${h('18:41')}  AssertionError [ERR_ASSERTION]: 🔴 con el módulo la cobaya SIGUE perdiendo casos: la salida C no basta. sin el módulo: ${fila([45, 36, 34, 37])} · con el módulo: ${fila([0, 0, 0, 4])}`), '0,0,0,4');
+  ok(rojo.estado === 'ok' && rojo.cuartoMs === 1989, '③ter rojo 1405d ' + JSON.stringify(rojo));
   // ④ log VACÍO → CIEGO, no una fila con covariables vacías
   const v = covariables('', '0,0,0,0');
   ok(v.estado === 'CIEGO' && v.motivo === 'log de 0 B', '④ vacío ' + JSON.stringify(v));
-  console.log('CONTROLES · 5 de 5 en su sitio (completo, lista que no casa, sin ④, formato 1405d, vacío)');
+  console.log('CONTROLES · 7 de 7 en su sitio (completo, modo hueco, lista que no casa, sin ④, formato 1405d, rojo de 1405d, vacío)');
 }
 
 const leeTsv = (f) => {
@@ -102,11 +119,29 @@ async function main() {
   const args = process.argv.slice(2);
   const dir = args[args.indexOf('--logs') + 1];
   const salida = args[args.indexOf('--salida') + 1];
-  const censos = args.filter((a, i) => !a.startsWith('--') && args[i - 1] !== '--logs' && args[i - 1] !== '--salida');
-  if (!dir || !salida || !censos.length) throw new Error('uso: covariables.mjs <censo.tsv>... --logs <dir> --salida <cov.tsv>');
+  const hueco = args.includes('--hueco') ? args.slice(args.indexOf('--hueco') + 1, args.indexOf('--hueco') + 3) : null;
+  const censos = args.filter((a, i) => !a.startsWith('--') && !['--logs', '--salida', '--hueco'].includes(args[i - 1]) && args[i - 2] !== '--hueco');
+  if (!dir || !salida || (!censos.length && !hueco)) throw new Error('uso: covariables.mjs <censo.tsv>... | --hueco <desdeISO> <hastaISO>  --logs <dir> --salida <cov.tsv>');
   fs.mkdirSync(dir, { recursive: true });
-  const filas = censos.flatMap((c) => leeTsv(c).filter((f) => f.con && f.con.includes(',')).map((f) => ({ censo: path.basename(path.dirname(c)), ...f })));
-  console.log(`POBLACIÓN · ${filas.length} jobs con la lista «con» en ${censos.length} censos`);
+  let filas;
+  if (hueco) {
+    // Los runs de ci.yml creados en [desde, hasta] y, de cada uno, el job obligatorio con veredicto (la misma
+    // población que censo-f.mjs). La lista «con» sale del log (fuente = log).
+    const runs = JSON.parse(await gh(['api', `repos/${REPO}/actions/workflows/ci.yml/runs?per_page=100&created=${hueco[0]}..${hueco[1]}`]));
+    if (runs.total_count > 100) throw new Error(`hueco con ${runs.total_count} runs: más de una página, estréchalo`);
+    filas = [];
+    const pob = { runs: runs.workflow_runs.length, sinObligatorio: 0, sinVeredicto: 0 };
+    for (const r of runs.workflow_runs) {
+      const ob = JSON.parse(await gh(['api', `repos/${REPO}/actions/runs/${r.id}/jobs?per_page=100`])).jobs.find((j) => j.name.startsWith('build + tests'));
+      if (!ob) { pob.sinObligatorio++; continue; }
+      if (ob.conclusion !== 'success' && ob.conclusion !== 'failure') { pob.sinVeredicto++; continue; }
+      filas.push({ censo: 'hueco', cuando: r.created_at, job: String(ob.id), evento: r.event, rama: r.head_branch, sha: r.head_sha, con: null });
+    }
+    console.log(`HUECO ${hueco[0]} → ${hueco[1]} · ${JSON.stringify(pob)} · con veredicto ${filas.length}`);
+  } else {
+    filas = censos.flatMap((c) => leeTsv(c).filter((f) => f.con && f.con.includes(',')).map((f) => ({ censo: path.basename(path.dirname(c)), ...f })));
+  }
+  console.log(`POBLACIÓN · ${filas.length} jobs${hueco ? ' del hueco' : ` con la lista «con» en ${censos.length} censos`}`);
   const out = [];
   let i = 0, hechos = 0;
   await Promise.all(Array.from({ length: 6 }, async () => {
@@ -124,7 +159,7 @@ async function main() {
     }
   }));
   out.sort((a, b) => a.cuando.localeCompare(b.cuando));
-  const col = ['censo', 'cuando', 'job', 'evento', 'rama', 'sha', 'con', 'estado', 'motivo', 'bytes', 'runner', 'provisioner', 'region', 'imagen', 'node', 'tests', 'tandaMs', 'cuartoMs', 'cuartoA', 'sonda'];
+  const col = ['censo', 'cuando', 'job', 'evento', 'rama', 'sha', 'con', 'estado', 'motivo', 'bytes', 'runner', 'provisioner', 'region', 'imagen', 'node', 'tests', 'tandaMs', 'cuartoMs', 'cuartoA', 'sonda', 'version', 'fuente'];
   fs.writeFileSync(salida, [col.join('\t'), ...out.map((f) => col.map((k) => String(f[k] ?? '').replace(/\t/g, ' ')).join('\t'))].join('\n') + '\n');
   const por = out.reduce((a, f) => ((a[f.estado] = (a[f.estado] || 0) + 1), a), {});
   console.log('ESTADOS', JSON.stringify(por), `· ${out.length} de ${filas.length}`);
