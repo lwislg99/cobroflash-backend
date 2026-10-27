@@ -819,7 +819,7 @@ export const DECLARADOS = [
   { modulo: 'src/modules/system/domain/anonimizarMerchant.ts',
     cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
     motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',
-    exports: ['INTOCABLES', 'REDACTADO'] },
+    exports: ['INTOCABLES'] },
   { modulo: 'src/modules/system/domain/avisoPuerta.service.ts',
     cat: 'VOCABULARIO_DEL_MODULO', desde: '2026-08-12',
     motivo: 'Constante exportada para ser la única fuente del término; hoy la lee su propio módulo y su test, no otro módulo.',

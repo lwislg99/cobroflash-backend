@@ -1248,3 +1248,66 @@ niega a contar sin argumento (visto: sin él, CIEGO y salida 2; con él, 17 de 1
 
 - Las anclas de S1/S2 de c.20853 (`quoteActionsRegistry.js:68`, `parteDictado.ts:138` y `:401`): son de Luis.
 - yaqu.app: no mirado; nada cambia en pantalla.
+
+## SCRUM-1502q · Tramo 16 (J2, 27-oct-2026): la marca «A18» de `botFlow.service.ts` anclada a c.20834 (P22)
+
+**Medido contra:** `origin/main` = `1608087e64aaa4b08c2877ee3119cc2fad97e02e` · 2026-10-27T16:44:24Z (hora de GitHub)
+A9: comprobación → `docs/master/evidencias/scrum1502j/niveles.mjs`
+
+### Qué firmó el fundador y dónde
+
+SCRUM-1502 **comentario 20834** (24-oct, transcrito por el orquestador del equipo de Javier, no por Javier),
+fila **22**: `botFlow.service.ts:1` — el «Copy A18» de `docs/YAQU_MASTER.md:386` vale como firma del bot ✅.
+Leído hoy con el ticket entero (31 comentarios de 31 declarados). El par `1502/20834` ya estaba en
+`tests/_pares-leidos-en-jira.mjs` (lo puso 1502o): esta vez no se toca.
+
+⚠️ El mismo comentario dice que la 22 la ancla Luis («las de S1/S2 (9, 11, 12 y 22)»). Medido hoy:
+`node scripts/carriles.mjs de src/modules/whatsappBot/domain/botFlow.service.ts` → **J2**
+(`docs/equipo/dos-equipos.md:124`). La ancla J2 por encargo del orquestador; el reparto de c.20834 se equivocó de carril en esa fila.
+
+### Lo hecho
+
+| fichero | cambio |
+|---|---|
+| `src/modules/whatsappBot/domain/botFlow.service.ts:16` | `Consta en: SCRUM-1502 comentario 20834.` al FINAL de la última línea del bloque A18, sin añadir línea: `docs/go-live/puerta.json:158` cita `botFlow.service.ts:582` por posición. Sólo comentario: ni lógica ni texto que vea nadie |
+| `tests/scrum921c-firma-con-respaldo-en-codigo.test.mjs` | `SIN_RESPALDO` 12 → **11**, con su nota en la línea (cruce a J6 sólo por el número, como 1502o y 1502p) |
+| `tests/scrum387-procedencia-aprobacion.test.mjs` | `SIN_PROCEDENCIA` 13 → **12**, con su nota: lo pidió su propio rojo («se han arreglado marcas sin procedencia (13 → 12) y el número no se ha bajado»). El fichero no tiene fila en §3 |
+| `docs/master/evidencias/scrum1502q/salida-niveles.txt` | la comparación antes/después de `niveles.mjs` |
+
+### La otra marca del encargo: `:129` («Menú oficial K1 — copy v2…») NO se ancla
+
+No es `sin-respaldo`: el guard la da **`documental`** (literal en `docs/YAQU_MASTER.md`, «Copy v2 (base, fundador
+5-jul-2026)»). Y es el **control positivo** del propio guard: el caso «la firma del MÁSTER también respalda» de
+`scrum921c` la busca por identidad (`Men[uú]\s+oficial\s+K1`) y exige `nivel === 'documental'`. Un `Consta en:` la
+pasaría a `anclado` (o a `rastreable`, que se mira antes que `documental`) y ese caso caería: sería arreglar el
+guard para que pase el ancla (regla 41). Ninguna fila de c.20834 ni de otro comentario del ticket la firma por
+Jira; su firma es el máster, y el guard ya la ve.
+
+### El control: el nivel de cada marca, antes y después
+
+`docs/master/evidencias/scrum1502j/niveles.mjs`. ⚠️ El «antes» se fotografió sobre `1e513d684` (la base de la rama);
+entre él y `1608087e6` no cambia ninguno de los ficheros que lee el guard para estas marcas (`git diff --stat`, 0).
+
+| `porNivel()` | negada | citada | rastreable | anclado | documental | sin respaldo |
+|---|---|---|---|---|---|---|
+| antes | 13 | 1 | 176 | 49 | 12 | 12 |
+| después | 13 | 1 | 176 | **50** | 12 | **11** |
+
+- **Sólo cambia `botFlow.service.ts:1`, de `sin-respaldo` a `anclado`** (`cambios=1`, 262 marcas antes y después).
+  `:129` sigue `documental`.
+- **Rojo primero:** con el ancla puesta y el número en 12, `scrum921c` da 15 de 16 y cae sólo «SCRUM-921c · el
+  trinquete tampoco baja en silencio».
+
+### Verificación
+
+19 ficheros dirigidos (921c, 921, 387×2, 237, 976, 1294, 267, 273, 710b, 715, 1502h, 1554c, 1177, 737, 723,
+812, 1415, 419): **165 de 165**, 0 saltos, 0 caen (TAP a fichero, leído aparte; los `ok` suman el total). La primera
+pasada dio 164 de 165: cayó el trinquete de `scrum387` y se bajó (arriba). Además `npm run guards:entrada`: 15 guards,
+170 de 170; y los 5 «de árbol entero» que imprime (195, 414, 694, 710b, 737): 38 de 38. Leen fuentes, no `dist/`. Build con tipos: no
+corrido; en `src/` sólo cambia un comentario. Tanda completa: NO CORRIDA (la corre el obligatorio). yaqu.app: no
+mirado; nada cambia en pantalla.
+
+### Lo que NO se ha hecho
+
+- `:129`: sin ancla, a propósito (arriba).
+- La 9, 11 y 12 de c.20834 (S1/S2) no son de este carril.
