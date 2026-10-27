@@ -193,3 +193,61 @@ que no habría ejecutado nada. Lo cazó el control positivo (la marca del client
 744, 746, 746b, 812, 824, 836, 864c, 921c, 976) → **254 tests · 254 pass · 0 fail · 0 skipped**. Control
 positivo: los 7 casos de 1105b están entre los 254. **Suite entera local: NO CORRIDA** (10 sesiones a la
 vez; el obligatorio de CI hace de tanda).
+
+# SCRUM-1105c · El control final: un seed ejecutado con `--dev`, sin credencial en la orden · carril J3
+
+**Medido contra:** `origin/main` = `efe736f3f01b5ecbc6dce221e80a3dfc3bfcd42a` · 2026-10-27T13:15:03Z
+
+A9: comprobación → `tests/scrum1105c-numero-de-presupuesto-desestructurado.test.mjs`
+
+**Puesto:** J3 (`jv-j3bs`, equipo de Javier) · **Rama:** `scrum-1105c-seed-ejercitado`. El hook de arranque dijo
+«SIN IDENTIDAD» (SCRUM-1498); el puesto lo da el encargo del orquestador. Salda la deuda de SCRUM-1098 §5.
+
+## 1 · Antes de ejecutar
+
+- `node scripts/comprobar-claves-bd.mjs` → `DATABASE_URL_DEV → acela.proxy.rlwy.net/yaqu_dev_javier (DESARROLLO) ✅`,
+  `DATABASE_URL_STAGING → …/railway (STAGING) ✅`, `DATABASE_URL: ausente`. Sale 1 por otra clave: `DATABASE_URL_TESTS`
+  no tiene destino declarado para este worktree (`DESTINOS_ESPERADOS…porWorktree`). No afecta a `--dev`; se nombra, no se toca.
+- `scripts/seed-video.mjs` leído: **no borra nada** (0 `delete`/`deleteMany`/SQL de escritura). Crea UN merchant nuevo
+  (`lwislg99@gmail.com`, `flags: {INVOICING_ES_ENABLED: true}`) y sus filas, todo en una `$transaction`; aborta si
+  falta el demo id=1 o si el owner ya existe.
+- Recuento: script de solo lectura fuera del árbol que resuelve la base con `fijarDestinoPorBandera({argv:['--dev']})`
+  (el de la casa) y cuenta 16 tablas dentro de una transacción `SET TRANSACTION READ ONLY` (`transaction_read_only = on`
+  medido en cada pasada). Control positivo: el demo id=1 aparece en todas.
+
+## 2 · Lo que dio, en orden
+
+| orden | salida | qué dijo |
+|---|---|---|
+| `node scripts/seed-video.mjs` (sin bandera) | **1** | «❌ ABORTADO: Sin destino. Nómbralo: node scripts/seed-video.mjs --dev (o --staging).» |
+| `node scripts/seed-video.mjs --dev` (código de `main`) | **1** | preflight OK y luego `PrismaClientValidationError` en `prisma.quote.create()`: «Argument `quoteNumber`: Invalid value provided. Expected Int or Null, provided Object.» |
+| `node scripts/seed-video.mjs --dev` (con el arreglo) | **0** | «✅ SEED COMPLETADO»: 1 merchant · 15 clientes · 30 productos · 12 presupuestos · **7 facturas** · 7 cobros · 6 trabajos · 3 albaranes |
+| `node scripts/seed-video.mjs --dev` (otra vez) | **1** | «Ya existe un merchant con email … (id=1587). El seed es idempotente…» |
+
+**El clasificador no paró ninguna de las cuatro**: en la orden no hay ninguna credencial. Ésa es la parte de SCRUM-1105.
+
+**Filas** (16 tablas): antes del arreglo, antes/después **idénticos** (la transacción revirtió). Con el arreglo, cada
+tabla sube exactamente lo que cuelga del merchant nuevo (id 1587) — merchant 6→7, customer 14→29, product 8→38, quote
+15→27, invoice 5→12, auditLog 5→12, … — así que no se tocó ninguna fila ajena. **Las 7 facturas salen `F1`; 0 `JUST`**,
+que es lo que pedía comprobar SCRUM-1098 §5.
+
+## 3 · El defecto, y el arreglo
+
+`allocateQuoteNumber` devuelve `{ numero, seq, year }` desde SCRUM-592 (`271e461fa`, 4-sep-2026); las tres llamadas
+de `src/` lo desestructuran y `seed-video.mjs:464` guardaba el objeto entero. **Ya estaba roto el 23-sep, cuando
+SCRUM-1098 lo entregó «reparado en frío»**: su §6 cotejó por lectura la forma del override, no la del número, y avisaba
+de que una prueba de mesa no ve lo que solo sale corriendo. El arreglo: `const { seq: quoteNumber, year: seriesYear }`,
+como `quotes.routes.ts`, y `seriesYear` en la fila. Nada de `src/` ni del camino de emisión.
+
+**El test** lee por AST cada `x = await allocateQuoteNumber(…)` de `src/` y `scripts/`: población 4 en 4 ficheros
+(suelo 4), con un control sembrado (el objeto entero tiene que caer; un comentario no cuenta). Rama: 2 pass · 0 fail.
+Con el `seed-video.mjs` de `main` (`git restore --source=origin/main`, numstat `1 4`): 1 fail que nombra
+`scripts/seed-video.mjs:464`. Restaurado con `git restore --source=HEAD`; `git status` limpio.
+
+**No hubo segundo defecto**: después del arreglo el seed llegó al final.
+
+**Lo que me salió mal:** la primera inyección del rojo la escribí con `>` sobre un fichero versionado y el hook
+`guard-dangerous` la paró (la orden entera, el commit incluido). La rehíce con `git restore --source=origin/main`,
+sin gastar el permiso de un uso.
+
+**Queda en dev**: el merchant 1587 y sus 7 facturas F1 (base de desarrollo, datos inventados). No se borran.
