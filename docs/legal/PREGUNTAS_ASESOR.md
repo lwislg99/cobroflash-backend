@@ -1265,11 +1265,11 @@ tenemos remisión ni certificado para hacerlo (SCRUM-524 ④.3). **Una factura e
 
 ---
 
-# P25. Dos valores del bloque `SistemaInformatico` en un SaaS con muchos obligados — **CANDIDATA, sin cotejar con la Orden HAC/1177/2024** (bloquea dar por buenos los valores de `productor.ts` y de los dos generadores)
+# P25. Dos valores del bloque `SistemaInformatico` en un SaaS con muchos obligados — **RESPONDIDA por fuente oficial y DECIDIDA; no es respuesta del asesor ni va a la cita** (Orden HAC/1177/2024, anexo 2.6, y FAQ de desarrolladores de la AEAT v1.3: SCRUM-524e · opción B y GO del fundador: SCRUM-524 c.20291 y c.20295 · en `main` desde #2695)
 
-> **Origen: SCRUM-524c** (J5, a partir de SCRUM-524 ④.4). ⚠️ **Candidata:** puede que la Orden la
-> conteste sin asesor; antes de llevarla a la cita, alguien la coteja con la Orden. Quién es el
-> productor ya lo pregunta P19: aquí sólo va lo que P19 no pregunta.
+> **Origen: SCRUM-524c** (J5, a partir de SCRUM-524 ④.4). ✅ **Respondida por fuente oficial, sin asesor** (SCRUM-524e, 22-oct-2026, por OK del fundador en SCRUM-524 c.20209): Orden HAC/1177/2024, anexo 2.6 «SistemaInformatico» (API de legislación consolidada del BOE: versión única, vigente desde 2024-10-29, sin modificar) y AEAT, «Aclaraciones a dudas de los desarrolladores», versión 1.3, 4-dic-2025, apartado 4 (**criterio publicado de la AEAT, no norma**). **1)** `NumeroInstalacion`: no vale un «1» para todos; cada facturación lleva un número propio, que no se repite nunca. **2)** `TipoUsoPosibleMultiOT` = `S` es correcto; `IndicadorMultiplesOT` se calcula por usuario del SaaS: `N` si sólo tiene una facturación.
+> **Decidida:** el fundador eligió la opción B —el número se deriva del id del comercio, sin ALTER; «usuario» = la cuenta— (SCRUM-524 c.20291) y dio el GO de la regla 40 (c.20295: los 2 NIF repetidos de producción son cuentas de prueba). Aplicada en `main` por #2695 (SCRUM-524g). **No va al asesor** (SCRUM-524 c.20974). Quién es el productor sigue en P19. El texto de debajo es la pregunta tal como se redactó el 21-oct, antes de leer la Orden: se conserva como estaba y no es la respuesta.
+> **Cotejo de estas citas (SCRUM-524i, 26-oct-2026):** la Orden, en la API consolidada del BOE (40 bloques, todos de 2024-10-28; el anexo, una sola versión con vigencia 2024-10-29 y el apartado 2.6 en las imágenes `22138_14945631_1.png` y `_2.png`). La FAQ no tiene copia en el repositorio: la sede sirve hoy el mismo fichero que leyó 524e (691.549 B, `last-modified` 10-dic-2025, «Versión 1.3», 4 de diciembre de 2025) y trae literales «por cada usuario del SIF SaaS», «no a nivel global del SIF SaaS» y «no puede repetirse nunca». **NO VERIFICADO:** el texto de las dos imágenes del anexo 2.6, y que esos literales estén en el apartado 4, págs. 9-10.
 
 Lo que va en cada registro hoy, **leído en el código**: `NumeroInstalacion` = `"1"`
 (`VERIFACTU_NUM_INSTALACION`, `productor.ts`), y `TipoUsoPosibleMultiOT` = `S` e

@@ -1295,3 +1295,80 @@ Tanda local: NO CORRIDA (encargo: hacen de tanda los guards dirigidos y el oblig
 A9: aviso → A10 «Cero resultados con tu vocabulario no es silencio del documento.» — no se pudo comprobar: mi primer barrido de 1264 buscaba `P22`…`P29` y dio 0 en las dos mitades, también en `P29`, que existe como «Pregunta 29»; lo vio el control positivo añadido después, y ningún guard sabe qué vocabulario usa una sesión para buscar en Jira
 
 ---
+
+# SCRUM-524i — El título de la P25 en `PREGUNTAS_ASESOR.md`: de «CANDIDATA, sin cotejar» a «RESPONDIDA por fuente oficial y DECIDIDA» (solo docs)
+
+*26-oct-2026 · rama `scrum-524i-p25-titulo` · puesto J4 (jv-j4ao) · encargo del orquestador `cobroflash-backend-8b`*
+
+**Medido contra:** `origin/main` = `5df4e330ef8f99872987498feae4a874bf044490` · 2026-10-26T23:46:14Z (la rama salió de `840ca85b8`; entre los dos sólo entró #2908, el tramo 524h de este mismo fichero, 109 líneas añadidas; traído con `git merge --ff-only`)
+
+> **Desbloqueo.** SCRUM-524 c.20972 (jv-j5ap, «de paso, carril J4, no tocado») y c.20974 (orquestador:
+> «se corrige en la próxima tanda de J4»). La decisión que lo cierra es del fundador y está en Jira:
+> opción B (c.20291), GO de la regla 40 (c.20295, «Sí cuentas de prueba, dale go»), en `main` por #2695
+> (merge `8c0aa9ed74c62ef819b2afe45d89091dcc39cfa4`, ancestro de `main`: comprobado). **Carril:**
+> `node scripts/carriles.mjs de docs/legal/PREGUNTAS_ASESOR.md` → «SIN CERRADURA · **J4** propone ·
+> patrón docs/legal/**». **Base:** #2910 (1039e) sigue abierto y toca el mismo fichero, pero sus cinco
+> trozos están entre las líneas 841 y 1038; la P25 está en la 1268. Por eso la rama sale de `main`.
+
+## ① Lo cambiado — cuatro líneas, el mismo número de líneas
+
+`docs/legal/PREGUNTAS_ASESOR.md:1268` (título) y `:1270-1272` (la marca): `git diff --numstat` = `4 4`.
+Las citas por número de línea a partir de ahí (`PREGUNTAS_ASESOR.md:1327`, dos veces en el repo) no se
+mueven. El título dice ahora **RESPONDIDA por fuente oficial y DECIDIDA; no es respuesta del asesor ni va
+a la cita**. La marca lleva las fuentes, la respuesta en dos puntos, la decisión con sus comentarios y lo
+que está sin verificar. **El cuerpo de la pregunta no se ha tocado** (también su párrafo «Lo que NO
+sabemos», que la marca da ahora por la redacción del 21-oct). Ninguna otra pregunta se ha tocado. La
+redacción sale de la que propuso 524e ⑤, con la decisión de 524f/524g añadida.
+
+## ② Las citas, cotejadas hoy
+
+| cita | cómo | resultado |
+|---|---|---|
+| Orden HAC/1177/2024, metadatos | API consolidada del BOE, `…/id/BOE-A-2024-22138/metadatos`, `Date:` 26-oct-2026 23:46:28 GMT | `numero_oficial` HAC/1177/2024, `fecha_actualizacion` 20251220 |
+| Orden, versiones | `…/texto/indice` | **40 bloques, los 40 con `fecha_actualizacion` 20241028**: sin modificar |
+| Orden, anexo 2.6 | `…/texto/bloque/an` (42.483 B) | una sola `<version>`, `fecha_vigencia` 20241029; el rótulo «2.6 Bloque 6: «SistemaInformatico»» va justo antes de `22138_14945631_1.png` y `_2.png`, las dos imágenes que leyó 524e |
+| FAQ AEAT v1.3 | **no hay copia en el repositorio** (`git ls-files` por `faq` y `desarrollador`: 0). Se bajó de la ruta de la sede que cita 524e | 691.549 B, `last-modified` 10-dic-2025 (el mismo tamaño y fecha que en 524e). En sus cadenas de texto: «(Versión 1.3)», «4 de diciembre de 2025», «por cada usuario del SIF SaaS», «no a nivel global del SIF SaaS», «calcularse de forma independiente», «propio y distinto al resto», «no puede repetirse nunca». Control negativo: una frase inventada da NO |
+| #2695 en `main` | `git merge-base --is-ancestor` y `git grep` | `instalacion.ts` exporta `numeroInstalacion` e `indicadorMultiplesOT`; `IndicadorMultiplesOT>S<` literal en `src/`: **0**; el mismo patrón sin la `S` encuentra las 3 plantillas (control positivo) |
+
+**NO VERIFICADO:** el texto de las dos imágenes del anexo 2.6 (no las he leído; las citas literales son
+de 524e). Que esos literales de la FAQ estén en el apartado 4, págs. 9-10: mi extractor de texto del PDF
+no da páginas, y no encuentra «virtuales» ni «Timestamp», que 524e cita. Así que **un NO de ese extractor
+no dice que falte**: sólo valen sus SÍ.
+
+## ③ Guards
+
+Encargo: los de registro y los que leen `PREGUNTAS_ASESOR.md` (1106, 296, 1041, 292, 302 y 324). Corridos
+en local con el árbol ya editado: **12 ficheros, 89 casos · 87 pasan · 2 saltan · 0 caen**. Los ficheros:
+1041, 1106, 292-nif, 296-pantalla-libro, 302-rotulos-completos, 324-aviso-simplificado-ui y
+324-cadena-hasta-el-libro, más los de registro 1294, 267, 273, 1572 y 854. Los 2 que saltan son de
+324-cadena: piden `LIBRO_PG_URL`, así que **no los he corrido**. Los `ok`, anclados al inicio, más los que
+saltan suman el total que declara cada pasada.
+- En la primera pasada, **5 ficheros salieron CIEGOS, no rojos**: `Cannot find package 'typescript'`, porque
+  este worktree no tiene `node_modules`. Los repetí con un junction temporal al `node_modules` del checkout
+  compartido, sin `generate`. Lo quité con `[System.IO.Directory]::Delete`, y el destino sigue con 280
+  entradas, igual que antes. 324-cadena pedía además `dist/`: `tsc -p . --noCheck`, salida 0. No hay
+  `src/` en la rama, así que no hace falta compilar con tipos.
+- **Control en rojo:** cambiar «exactamente igual» por «casi igual» en la frase de mi `A9:` hace caer
+  scrum1294 (1 de 4: «el aviso … no está LITERAL en A10», en la línea `A9:` de este tramo). Fichero restaurado y
+  comprobado con `cmp`.
+
+Tanda local entera: NO CORRIDA (encargo). Obligatorio de CI: en el comentario de entrega.
+
+## 🔴 Mis errores, esta tanda
+
+- **Mi primera lectura del anexo devolvió 187 B y la leí como datos.** Pedí el bloque sin cabecera
+  `Accept`, y la API contestó un 400 dentro de un cuerpo XML. Mi `grep` de versiones y de imágenes dio
+  vacío, sin error. Lo vi por el tamaño (`wc -c` = 187) y repetí la petición con `Accept: application/xml`.
+- `npm run arbol:mio -- 524` salió CIEGO: este worktree no tiene `node_modules` (falta `typescript`). Lo
+  comprobé a mano (worktree `cobroflash-jv-j4ao`, rama `scrum-524i-p25-titulo`, limpio, en `origin/main`).
+  No es un error mío, pero el instrumento no corrió y lo digo.
+
+## Lo NO tocado
+
+`src/` · `prisma/schema.prisma` · el cuerpo de la P25 y cualquier otra pregunta · `docs/legal/` fuera de
+esas cuatro líneas · ninguna base de datos · Jira (solo el comentario de entrega) · el auto-merge · ningún
+guard.
+
+A9: aviso → A10 «Una operación que no se ejecutó se lee exactamente igual que un éxito.» — no se pudo comprobar: la API del BOE devuelve su 400 como un cuerpo XML corto, y nada obliga a mirar el tamaño de una respuesta antes de buscar en ella; lo cazó el `wc -c`
+
+---
