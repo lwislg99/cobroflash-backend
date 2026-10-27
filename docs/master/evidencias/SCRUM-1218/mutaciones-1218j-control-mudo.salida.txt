@@ -1,0 +1,7 @@
+censo: 227 guards con declaración
+guard=scrum560-patron-fetch-servidor.test.mjs · declaraciones=2 · incompletas=0
+ancla «const UMBRAL_SUELTOS = 1;» → ambigüedad: null
+ancla «  if (sueltos >= UMBRAL_SUELTOS)» → ambigüedad: null
+limpia: pasados=4 caidos=0 movidos=0
+MUDA · /** Cuántos `fetch` sueltos → /** Cuantos `fetch` sueltos · cae «SCRUM-560 · AUTOPRUEBA» · colaterales=0 · el guard NO cayó. Test que debía ponerse rojo: «SCRUM-560 · AUTOPRUEBA»
+    → en la pasada MUTADA ese test: PASÓ (corrió y no falló). Recuento: 4 pasados · 0 caídos · 0 saltados. Y en la LIMPIA: 4 pasados · 0 caídos.

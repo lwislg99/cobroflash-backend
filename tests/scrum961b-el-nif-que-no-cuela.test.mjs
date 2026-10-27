@@ -39,6 +39,8 @@ import path from 'node:path';
 const L = await import('../dist/modules/expenses/domain/lecturaTicket.js');
 
 const AHORA = new Date('2026-09-18T10:00:00Z');
+// SCRUM-1622: la zona del comercio se pasa SIEMPRE; la de estos casos es la de Madrid.
+const ZONA = 'Europe/Madrid';
 const IMAGEN = { mimeType: 'image/jpeg', data: 'QUJD' };
 const MERCHANT = 55;
 
@@ -60,7 +62,7 @@ const lecturaCon = (nif) => ({ concepto: 'Codos de cobre', total: 12.1, fecha: '
 
 const leerCon = (fichas, nif = NIF_DEL_TICKET) => {
   const cliente = clienteCon(fichas);
-  return L.leerTicket({ merchantId: MERCHANT, imagen: IMAGEN, ahora: AHORA },
+  return L.leerTicket({ merchantId: MERCHANT, imagen: IMAGEN, ahora: AHORA, zona: ZONA },
     { completar: completarCon(lecturaCon(nif)), cliente }).then((r) => ({ r, cliente }));
 };
 
