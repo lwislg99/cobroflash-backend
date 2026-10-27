@@ -15,17 +15,11 @@
     "tests/scrum716c-la-memoria-del-vigia.test.mjs": { "llamadas": 1, "motivo": "FORMA", "retira": "J6", "detalle": "ESCAPA; 5 fallos inyectados, 0 restos" },
     "tests/scrum726-quien-firma-la-microcopy.test.mjs": { "llamadas": 1, "motivo": "FORMA", "retira": "SCRUM-1621", "detalle": "ESCAPA; 3 fallos inyectados, 0 restos" },
     "tests/scrum754-el-juez-que-oscila.test.mjs": { "llamadas": 2, "motivo": "FORMA", "retira": "J6", "detalle": "una ESCAPA (2 fallos, 0 restos) y una NO_GARANTIZADA (2 fallos, 0 restos)" },
-    "tests/scrum757-la-declaracion-que-nadie-lee.test.mjs": { "llamadas": 1, "motivo": "FORMA", "retira": "J6", "detalle": "NO_GARANTIZADA; 6 fallos inyectados, 0 restos" },
-    "tests/scrum759-el-guard-ciego-fuera-de-su-fichero.test.mjs": { "llamadas": 1, "motivo": "FORMA", "retira": "J6", "detalle": "NO_GARANTIZADA; 3 fallos inyectados, 0 restos" },
     "tests/scrum811c-skill-ui-declarada.test.mjs": { "llamadas": 1, "motivo": "FORMA", "retira": "SCRUM-1621", "detalle": "ESCAPA; 1 fallo inyectado, 0 restos" },
     "tests/scrum836-ancla-de-mutacion-viva.test.mjs": { "llamadas": 2, "motivo": "FORMA", "retira": "J6", "detalle": "dos NO_GARANTIZADA; 8 y 3 fallos inyectados, 0 restos" },
     "tests/scrum839d-union-solo-en-el-registro.test.mjs": { "llamadas": 1, "motivo": "FORMA", "retira": "SCRUM-1621", "detalle": "ESCAPA; 11 fallos inyectados, 0 restos" },
     "tests/scrum839e-solo-pr-armados.test.mjs": { "llamadas": 1, "motivo": "FORMA", "retira": "SCRUM-1621", "detalle": "ESCAPA; 6 fallos inyectados, 0 restos" },
     "tests/scrum850b-las-formas-que-mienten.test.mjs": { "llamadas": 1, "motivo": "FORMA", "retira": "J6", "detalle": "ESCAPA; 2 fallos inyectados, 0 restos" },
-    "tests/scrum899-sesion-lista-blanca.test.mjs": { "llamadas": 1, "motivo": "FORMA", "retira": "SCRUM-1621", "detalle": "ESCAPA; 4 fallos inyectados, 0 restos" },
-    "tests/_alcance-desde-entradas.mjs": { "llamadas": 1, "motivo": "FORMA", "retira": "J6", "detalle": "ESCAPA; autoprueba() borra en finally; 1 fallo inyectado, 0 restos (c.18877)" },
-    "tests/_comparador-alcance.mjs": { "llamadas": 1, "motivo": "FORMA", "retira": "J6", "detalle": "ESCAPA; autoprueba() borra en finally; 1 fallo inyectado, 0 restos (c.18877)" },
-    "tests/_export-que-sobra.mjs": { "llamadas": 1, "motivo": "FORMA", "retira": "J6", "detalle": "ESCAPA; autoprueba() borra en finally; 2 fallos inyectados, 0 restos (c.18877)" },
-    "tests/_huerfanos-en-modulos-vivos.mjs": { "llamadas": 1, "motivo": "FORMA", "retira": "J6", "detalle": "ESCAPA; autoprueba() borra en finally; 1 fallo inyectado, 0 restos (c.18877)" }
+    "tests/scrum899-sesion-lista-blanca.test.mjs": { "llamadas": 1, "motivo": "FORMA", "retira": "SCRUM-1621", "detalle": "ESCAPA; 4 fallos inyectados, 0 restos" }
   }
 }

@@ -45,6 +45,7 @@ import {
 import {
   arbolDeLaBase, poblacionesContraLaBase, sueloDerivado, RAMA_DE_REFERENCIA,
 } from '../scripts/_suelo-contra-main.mjs';
+import { temporal, borrarTemporal } from './_temporal.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -104,7 +105,7 @@ const ALTA = 'apiRequest(`/admin/jobs/${id}/albaranes`, { method: \'POST\', body
  * fichero del mismo dashboard que puede llevar —o no— una segunda.
  */
 function banco({ segundaAltaFuera = false, segundaAltaDentro = false } = {}) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum759-'));
+  const dir = temporal('scrum759-');
   fs.writeFileSync(path.join(dir, 'vigilado.js'), [
     'function openAlbCrearSheet(ctx) {',
     `  ${ALTA}`,
@@ -119,7 +120,7 @@ function banco({ segundaAltaFuera = false, segundaAltaDentro = false } = {}) {
     dir,
     anclada: [path.join(dir, 'vigilado.js')],
     entera: fs.readdirSync(dir).map((f) => path.join(dir, f)),
-    limpia: () => fs.rmSync(dir, { recursive: true, force: true }),
+    limpia: () => borrarTemporal(dir),
   };
 }
 

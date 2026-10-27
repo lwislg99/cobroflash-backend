@@ -400,3 +400,69 @@ Salidas en `docs/master/evidencias/SCRUM-1396/salida-mutar-1396c.txt`.
 - Ninguno de los 28 se ha tocado (regla 41). Las 4 `SIN_MEDIR` siguen sin fallo inyectado.
 - Suite entera local: NO CORRIDA (encargo: 10 sesiones a la vez; el obligatorio de CI hace de tanda).
 - `scrum1387` no se ha podido medir en local (CIEGO por la topología de la rama), y con él `scrum976` ④.
+
+## Tramo 5 · 1396d · Primer lote: 6 de los 17 de J6 pasan a `temporal()` y salen de la lista (28 → 22)
+
+**Medido contra:** `origin/main` = `63550e45e6e65f8461e80e4f7e8aa413d5483093` · 2026-10-27T17:36:44Z
+
+Sesión `jv-j6du` (puesto J6), encargo del orquestador `cobroflash-backend-8b`, tras c.21095 y c.21106. Rama
+`scrum-1396d-lote-1-temporales`, creada desde la de 1396c (PR #2949, todavía fuera de `main`): el PR de este
+tramo lleva también los commits de 1396b/c. El hook de arranque dijo «SIN IDENTIDAD» (SCRUM-1498); se siguió.
+
+A9: aviso → cicatriz J6 «Volví a meter la ruta del trabajo, con espacios, en un `grep` sin comillas el mismo día que lo apunté en SCRUM-1614» — no se pudo comprobar: ningún hook de este árbol lee las comillas de un comando antes de lanzarlo
+
+### El lote, y por qué éste
+
+Los 13 `FORMA` de J6 (11 ficheros); se cogen las 6 más baratas, una llamada por fichero y sin más
+`mkdtemp` sin cubrir en el mismo sitio. Las 2 `MEDIDA` y las 4 `SIN_MEDIR` no entran (encargo).
+
+| sitio (antes) | censo antes | qué se cambia |
+|---|---|---|
+| `tests/_alcance-desde-entradas.mjs:385` | ESCAPA | `escribirFuenteSintetica()` crea con `temporal()`; `autoprueba()` borra con `borrarTemporal()` |
+| `tests/_comparador-alcance.mjs:261` | ESCAPA | ídem |
+| `tests/_export-que-sobra.mjs:239` | ESCAPA | ídem |
+| `tests/_huerfanos-en-modulos-vivos.mjs:195` | ESCAPA | ídem (en los cuatro sobra el `import os`, y se quita) |
+| `tests/scrum757-la-declaracion-que-nadie-lee.test.mjs:41` | NO_GARANTIZADA | `banco()` crea con `temporal()`; `limpia` llama a `borrarTemporal()` |
+| `tests/scrum759-el-guard-ciego-fuera-de-su-fichero.test.mjs:107` | NO_GARANTIZADA | ídem; las otras dos `mkdtemp` del fichero (240, 281) ya eran GARANTIZADA y no se tocan |
+
+`escribirFuenteSintetica` sólo la llama su propio fichero (`git grep`: 4 definiciones, 4 llamadas, todas en el
+mismo fichero). **«Después» no es GARANTIZADA: es fuera de la población.** El censo sólo mira `mkdtemp*`, y
+`temporal()` queda fuera por diseño (comentario de `scripts/_censo-mkdtemp.mjs:385`). El caso del enlace a
+`node_modules` que el encargo cita de c.21093 no aparece en ninguno de los seis: ninguno enlaza nada.
+
+Carril: `carriles.mjs de` da «sin fila en §3» a los seis, consultado ANTES de escribir, y da lo mismo para
+`no/existe.mjs` (c.18861: no mide). Lo que asigna estos sitios a J6 es c.21095; la cuenta de git que creó
+cada uno es la de Javier (6 de 6).
+
+### Medido hoy (local, Windows, una pasada; `dist/` con `tsc --noCheck`, sin tocar `src/`)
+
+| qué | resultado |
+|---|---|
+| censo antes → después | 233 → **227** llamadas, 169 → 165 ficheros (3460 mirados); acusados **28 → 22**, los 6 que salen son éstos y ninguno más (`diff`) |
+| `scrum864c` + `scrum1396c` + `scrum1396` | **13 de 13** pasan, con la lista en 22 |
+| negativo ①: uno de los seis devuelto a la lista sin desarreglarlo | 864c ③ y 1396c ④ **caen** |
+| negativo ②: `tests/_export-que-sobra.mjs` devuelto a su `mkdtempSync`, lista en 22 | 864c ③ **cae** nombrando `tests/_export-que-sobra.mjs:239` |
+| los 8 tests tocados o que importan los ayudantes (757, 759, 411, 493, 494, 521, 631, 824) | base **99/99** → después **99/99**, el MISMO conjunto de nombres (`diff` de nombres: 0 en los 8) |
+| restos en TMPDIR con los seis prefijos, antes y después de correr 494, 757, 759, 411 y 493 | 0 → 0 (camino feliz); el contador ve un `scrum494-` sembrado (1) y su borrado (0) |
+| `scrum237`, `scrum1349`, `scrum1480f` | pasan |
+| `scrum1387` | **CIEGO en local**, el mismo de 1396b/c (la rama trae `main` por merge; lo mide CI) |
+| la línea `mkdtemp` nueva que trae `main` desde la base de la rama (`tests/scrum1616b-…:111`) | `clasificaFuente` de esta rama la da GARANTIZADA (`after` en la línea siguiente): el merge no añade un rojo de este censo |
+
+Salida en `docs/master/evidencias/SCRUM-1396/salida-1396d-lote-1.txt`.
+
+### Aceptación → dónde se ve
+
+| aceptación (encargo de 1396d) | dónde se ve |
+|---|---|
+| hasta 6 de los 17 de J6, empezando por FORMA | la tabla de arriba · `scripts/_mkdtemp-declarados.json` (22 llamadas: J6 11 · SCRUM-1621 11) |
+| borrado garantizado en su ámbito con el ayudante de la casa | `temporal()` / `borrarTemporal()` de `tests/_temporal.mjs` en los seis |
+| cada uno sale de la lista; la lista sólo baja | `tests/scrum1396c-los-declarados-solo-bajan.test.mjs` ② · `tests/scrum864c-el-temporal-no-vuelve.test.mjs` ③ |
+| rojo primero y después fuera del censo | `docs/master/evidencias/SCRUM-1396/salida-1396d-lote-1.txt` |
+| los tests tocados pasan igual, mismos casos por nombre | la misma salida (99/99 → 99/99) |
+| vaciar los 11 restantes de J6 | NO HECHO → J6, siguientes lotes (7 FORMA: 521, 716c, 754 ×2, 836 ×2, 850b · 4 SIN_MEDIR) |
+
+### Lo que no se ha hecho
+
+- Ninguno de los seis se ha corrido con fallo inyectado después del cambio (con `temporal()` el borrado cuelga
+  del `exit` del proceso; el mecanismo lo prueba `tests/scrum864-el-temporal-que-se-borra.test.mjs`, no este tramo).
+- Suite entera local: NO CORRIDA (encargo). `scrum976` y los guards de registro, ver la entrega.

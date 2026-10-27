@@ -33,9 +33,9 @@
 // ejecuta nadie»—. Se AÑADE una población, no se cambia la que hay.
 import ts from 'typescript';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { analizar } from './_alcance-dominio.mjs';
+import { temporal, borrarTemporal } from './_temporal.mjs';
 
 export const clave = (modulo, nombre) => `${modulo}::${nombre}`;
 
@@ -192,7 +192,7 @@ const FUENTE_SINTETICA = {
 
 /** Escribe el árbol sintético en un directorio temporal y devuelve su raíz. */
 export function escribirFuenteSintetica() {
-  const raiz = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum411-autoprueba-'));
+  const raiz = temporal('scrum411-autoprueba-');
   for (const [rel, contenido] of Object.entries(FUENTE_SINTETICA)) {
     const destino = path.join(raiz, rel);
     fs.mkdirSync(path.dirname(destino), { recursive: true });
@@ -231,6 +231,6 @@ export function autoprueba() {
       ok: JSON.stringify(vistos) === JSON.stringify(ESPERADOS),
     };
   } finally {
-    fs.rmSync(raiz, { recursive: true, force: true });
+    borrarTemporal(raiz);
   }
 }

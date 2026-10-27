@@ -32,16 +32,17 @@ import {
   lecturaDeDeclaraciones, mutacionesDeclaradas, declaracionesIlegibles, motivoDeIlegible,
   censoDeDeclaraciones, CAMPOS_DE_LA_DECLARACION,
 } from '../scripts/meta-guard-mutaciones.mjs';
+import { temporal, borrarTemporal } from './_temporal.mjs';
 
 const CABECERA = "import test from 'node:test';\ntest('uno', () => {});\ntest('dos', () => {});\n\n";
 const BUENA = "  { fichero: 'src/a.ts', de: 'X', a: 'Y', cae: 'uno' },\n";
 
 /** Un directorio de guards de mentira, para no tocar el de verdad. */
 function banco(...cuerpos) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scrum757-'));
+  const dir = temporal('scrum757-');
   fs.writeFileSync(path.join(dir, 'guardx.test.mjs'),
     `${CABECERA}export const MUTACIONES_QUE_ME_TUMBAN = [\n${cuerpos.join('')}];\n`);
-  return { dir, limpia: () => fs.rmSync(dir, { recursive: true, force: true }) };
+  return { dir, limpia: () => borrarTemporal(dir) };
 }
 
 // ═══ ① EL ROJO QUE IMPORTA · la declaración que el lector no sabe leer ═══════════════════════
