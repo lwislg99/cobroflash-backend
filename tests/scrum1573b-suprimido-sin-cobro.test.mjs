@@ -49,11 +49,11 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
 const comercio = () => ({
   id: 42, name: 'Fontanería Ruiz', legalName: 'Fontanería Ruiz SL', email: 'ruiz@ejemplo.test',
   taxId: 'B12345678', address: 'C/ Mayor 1', country: 'ES', logoUrl: null, timezone: null,
-  iban: 'ES9121000418450200051332', clabe: null, bizumPhone: '+34600111222', whatsappPhone: '+34600111222',
+  iban: 'ES9121000418450200051332', clabe: null, bizumPhone: '+34000111222', whatsappPhone: '+34000111222',
   connectStatus: 'active', stripeAccountId: 'acct_TEST1573', status: 'active',
   flags: { PAYMENTS_CONNECT_ENABLED: true, BIZUM_MANUAL_ENABLED: true },
 });
-const cliente = () => ({ id: 3, merchantId: 42, name: 'Ana', email: 'ana@ejemplo.test', phone: '+34611000000', mobile: null,
+const cliente = () => ({ id: 3, merchantId: 42, name: 'Ana', email: 'ana@ejemplo.test', phone: '+34000000002', mobile: null,
   legalName: null, taxId: null, notes: null, portalToken: 'portal1573' });
 
 async function suprimido() {

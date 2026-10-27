@@ -155,3 +155,10 @@ Lo escribe J2 (`jv-j2bk`). GO del fundador a los 5 puntos de c.21029: SCRUM-1573
 
 - **Corrido:** `tsc -p .` con tipos, salida 0; el test nuevo en rojo y en verde; las 6 mutaciones; los guards dirigidos de la entrega.
 - **No corrido:** la suite entera en local (orden del orquestador: cola saturada); Stripe y MP reales; nada contra producción ni staging; yaqu.app no se puede verificar antes del merge, y tras él la supresión sigue apagada, así que el efecto no es visible allí.
+
+## Arreglo del obligatorio de #2937 (run 40533005423 sobre `da86323b9`, relevo `jv-j2bk`)
+
+- **Propio:** `build + tests` dio `tests 12810 · pass 12800 · fail 1 · skipped 9` (2.219.023 B, sin «TANDA SIN VEREDICTO»); cae `SCRUM-262 · todo teléfono sembrado está en el rango imposible` por `+34600111222` y `+34611000000` en las líneas 52 y 56 del test nuevo. Pasan a `+34000111222` y `+34000000002` (prefijo 340, `scripts/_telefonos-prueba.mjs`); `src/` no cambia. Tras el cambio, scrum262 + scrum1573b + scrum237 + scrum976 + scrum1387: 43 de 43, 0 saltados.
+- **Ajeno, no se toca:** el meta-guard sale CIEGO por presupuesto, «🔴 CORTO YO, ANTES DEL TECHO: llevo 1696 s y el presupuesto es 1695 s», sin ningún caso caído antes; main `77ce98573` (run 40518576319, 14:14Z) cayó con el mismo literal.
+
+A9: comprobación → `tests/scrum262-telefonos-de-prueba.test.mjs`
