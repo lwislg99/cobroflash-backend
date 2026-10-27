@@ -1834,4 +1834,4 @@ pero sigue valiendo para cuando staging o producción se corran con la columna c
   escribir sin la respuesta.
 - La sesión cruzó los 200k de contexto al acabar de leer: el código va a sesión nueva.
 
-A9: aviso → cicatriz J1 «Para commitear añadí `-c core.hooksPath=` a la orden» — no se pudo comprobar: lo paró el clasificador del arnés, que no es de este repositorio.
+A9: aviso → cicatriz J1 «Para commitear añadí `-c core.hooksPath=` a la orden, que se salta los hooks igual que `--no-verify`; lo paró el clasificador antes de correr» — no se pudo comprobar: lo paró el clasificador del arnés, que no es de este repositorio.
