@@ -623,7 +623,7 @@ el «sustituto CORRIENDO». En cuanto alguno lo tenga, se aplica la regla de arr
 
 **Medido contra:** `origin/main` = `ce1111a68d00d2063bc6bb369ce71d2124c3547f` · 2026-10-27T15:34:57Z
 
-A9: aviso → cicatriz J6 «Corrí `carriles.mjs de` sobre los cuatro tests del vigía después de editarlos y no antes: la tercera de la familia de SCRUM-1218d (SCRUM-1393g)» — no se pudo comprobar: la cerradura de carril no para (SCRUM-1506) y ningún hook exige la consulta antes de la primera escritura
+A9: aviso → cicatriz J6 «Corrí `carriles.mjs de` sobre los cuatro tests del vigía después de editarlos y no antes: la tercera de la familia de SCRUM-1218d» — no se pudo comprobar: la cerradura de carril no para (SCRUM-1506) y ningún hook exige la consulta antes de la primera escritura
 
 J6 (`jv-j6dm`), por encargo del orquestador (`cobroflash-backend-8b`). Carril: el motor es de J6 (sin cerradura:
 fila general de `scripts/`); `.github/workflows/` NO se toca. Decisión del fundador, **SCRUM-1393 c.21059** (27-oct):
