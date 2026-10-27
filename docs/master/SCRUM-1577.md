@@ -134,3 +134,63 @@ Banco: ANTES salida 1 (ROJO 6 · CIEGO 0 · VERDE 9); DESPUÉS salida 0 (ROJO 0 
 - **Mini-tanda** = los 15 guards del encargo (237, 976, 824, 836, 419, 702, 700, 719, 1415, 267, 273, 1294, 811c, 713c, 1387) + el mío + todo `tests/` que nombra `settingsView` o `styles.css`: **149 ficheros · 1.391 tests = 1.390 pass + 0 fail + 1 skipped** (cuadra). El salto es `scrum1145` «por la ruta real», gateado por `LIBRO_PG_URL`. Control positivo: mis 5 casos `SCRUM-1577 ①…⑤` están en el TAP; control a cero: `SCRUM-1577 ⑥`, 0.
 - **Guards de navegador que montan Configuración** (no hay filtro en `guards-visuales.mjs`: uno a uno): `guard-modo-en-ajustes`, `guard-aviso-bizum`, `guard-completar-lleva-al-campo`, `guard-falta-en-otra-pestana` y `guard-vias-de-cobro`, **salida 0 los cinco**. `guard-objetivo-tactil` sale **2 (0 hallazgos · 4 CIEGOS)**, y **no es mío**: corrido en otro árbol anidado en `origin/main` = `c1331293b01ac32a4357cf1b239dab86853f25ee`, da los mismos 4 ciegos con las líneas idénticas (`diff` vacío). Además ese guard **no mide Configuración** (0 líneas nombran la pantalla o estos tres controles), así que no prueba nada de este cambio: lo prueba el banco de arriba.
 - `main` avanzó de `f6a31196` a `c1331293` mientras medía: `git diff --stat` entre los dos sobre mis siete rutas, vacío.
+
+## SCRUM-1577c · parte 4: el enlace de «Tu página pública», a 44 px de toque
+
+**Medido contra:** `origin/main` = `5078f80c3726c93b3751baf9c10134b4a486eaa4` · 2026-10-27T11:52:29Z
+**Skill UI:** cargada (`yaqu-premium-ui`), antes de tocar el código. DESIGN.md §6 («targets ≥44px») leído. Checklist AB6: target ≥44 (abajo) · ningún `style=` en línea nuevo · ningún token nuevo · ningún texto nuevo · capturas antes/después en `evidencias/scrum1577/c-*.png` · ancho de página sin desbordar a 320/390/929, también con una dirección de 40 caracteres.
+**Carril:** J3 (`settingsView.js`, contenedor de J3) + un bloque marcado «J3 · SCRUM-1577c» al final de `styles.css`, contenedor de S2 (`dos-equipos.md:95-97`).
+**Decisión:** SCRUM-1577 **c.20987** (el orquestador, por cuestionario del fundador): el enlace en línea NO se exime, llega a 44 px. El encargo citaba «c.20986»; el comentario que lo dice es el 20987.
+
+A9: comprobación → `tests/scrum1577-configuracion-44.test.mjs`
+
+### PASO 0 — el defecto existe hoy
+
+`git log origin/main --grep=SCRUM-1577`, `git ls-remote origin 'refs/heads/scrum-1577*'` y `gh pr list --search 1577`: sólo 1577 (#2699) y 1577b (#2890), los dos mergeados; nada de 1577c. El banco sobre una copia de `origin/main` (abajo) da el enlace a 17 px.
+
+### Lo que se cambia
+
+- `settingsView.js`, `renderPublicProfileCard`: el `<a href="/p/…">` del aviso «Tu página está activa» lleva `class="pp-enlace"`. El texto no cambia.
+- `styles.css`, bloque «J3 · SCRUM-1577c»: `.pp-enlace { display: inline-flex; align-items: center; min-height: 44px; }`, fuera de toda `@media`, como `.detail-rail-enlace--suelto`. Sin `inline-flex`, `min-height` no hace nada en un enlace en línea.
+- **Lo que cambia de aspecto, y es lo necesario:** el renglón del enlace pasa a 44, así que el aviso verde crece 24,5 px a 390 y 929 (61 → 85,5 y 41,5 → 66) y 5 px a 320 (80,5 → 85,5). El color y el subrayado del enlace no cambian (ni antes ni después lleva subrayado).
+- **Descartado:** dar el área con `padding` y margen negativo, que no cambia nada a la vista. A 320 y 390 el enlace va en su propio renglón, y el blanco de toque montaría sobre el texto «Tu página está activa:» del renglón de encima: un toque en «activa» abriría la página. Eso no lo he medido con el árbitro, lo he deducido de la geometría.
+
+### ANTES y DESPUÉS — `evidencias/scrum1577/banco-44.mjs`
+
+Al banco se le añade un objetivo, el enlace, por su destino (`.alert.success a[href^="/p/"]`), no por su clase, que el ANTES no tiene. Los demás objetivos, sin cambios. ANTES = copia de `public/` de `origin/main` `5078f80c`, sacada con `git archive`.
+
+| control | toque ANTES 320 · 390 · 929 | DESPUÉS |
+| --- | --- | --- |
+| enlace `yaqu.app/p/…` | CIEGO · 17 · 17 | 45 · 45 · 45 |
+
+ANTES: salida 2, con **2 ROJOS y 1 CIEGO** de 18 mediciones. El CIEGO es el enlace a 320: se parte en dos renglones (caja 35,5 de alto) y el árbitro «no lo alcanza ni en su centro», porque el centro de la caja cae entre los dos trozos. DESPUÉS: salida 0, **18 VERDES**. La sonda sembrada se ve corta (20–21) en las 6 filas de pestaña de cada pasada. Los 15 de 1577/1577b siguen verdes en las dos.
+
+`evidencias/scrum1577/captura-1577c.mjs` (nuevo), con una dirección normal y otra de 40 caracteres (el máximo que admite la pantalla):
+
+| ancho · dirección | ANTES: enlace · renglones · aviso | DESPUÉS |
+| --- | --- | --- |
+| 320 · normal | 35,5×173 · 2 · 80,5 | 44×182 · 1 · 85,5 |
+| 320 · 40 car. | 55×174,6 · 3 · 100 | 58,5×182 · 1 · 100 |
+| 390 · normal | 16×186,2 · 1 · 61 | 44×186,2 · 1 · 85,5 |
+| 390 · 40 car. | 35,5×232,4 · 2 · 80,5 | 44×252 · 1 · 85,5 |
+| 929 · normal | 16×186,2 · 1 · 41,5 | 44×186,2 · 1 · 66 |
+| 929 · 40 car. | 16×343,3 · 1 · 41,5 | 44×343,3 · 1 · 66 |
+
+En las doce, la página no desborda (`scrollWidth` = ancho de ventana) y el enlace no se sale del aviso. El control de la captura es la fila ANTES: 16 de alto a 390 y dos renglones a 320, lo mismo que el banco.
+
+### Test
+
+`tests/scrum1577-configuracion-44.test.mjs`, caso ⑥: el enlace a `/p/` (por su destino; tiene que haber uno) lleva `pp-enlace` y ningún `style=`, y la regla `.pp-enlace` está fuera de `@media` con `display: inline-flex` y `min-height: 44px`. **Rojo primero:** copiado el test sobre los ficheros de `origin/main`, cae justo ⑥ («sin `pp-enlace`») y pasan ①–⑤. Tres mutaciones nuevas en el catálogo (11 en total). Con las funciones de la casa (`aplicarUna`, vía `evidencias/SCRUM-1123f/arnes-mutaciones.mjs`): **limpia 6 pasan · 11 de 11 VIVAS**, árbol limpio después. `mutar.mjs`: base verde, 11/11, MAL 0. `meta-guard-mutaciones.mjs --solo-censo`: salida 0, 875 declaraciones en 220 ficheros.
+
+### Sin mirar / pendiente (no es cero)
+
+- **Visto en yaqu.app (parte 5): NO HECHO**, no lo he intentado.
+- El foco del enlace: no lo he mirado ni antes ni después.
+- **Error propio:** el caso ⑥ lo añadí al test con un heredoc, por quinta vez contra mi cicatriz del 21-oct. Iba entre comillas (`<<'EOF'`) y salió intacto: lo comprobé leyéndolo antes de correrlo. Va a `cicatrices/J3.md`.
+
+### Tandas
+
+- **Suite entera local: NO CORRIDA** (orden del orquestador: 10 sesiones a la vez).
+- **Guards de navegador que montan Configuración**, en este árbol, con `dist/` de `tsc --noCheck` (no toco `src/`): `guard-modo-en-ajustes`, `guard-aviso-bizum`, `guard-completar-lleva-al-campo`, `guard-falta-en-otra-pestana` y `guard-vias-de-cobro`, **salida 0 los cinco**. La primera pasada de `guard-aviso-bizum` salió 1 por «Cannot find module …/dist/…»: el árbol no tenía `dist/`. Leí el error antes de contarlo, construí y repetí. `guard-objetivo-tactil` sale **2 (0 hallazgos · 4 CIEGOS)**, en la ficha del Trabajo (`renderJobDetailView`), no en Configuración. Hoy no lo he recomparado con `main`; 1577b midió los mismos 4 ciegos idénticos en `main`.
+- **Guards de registro y de suite + el mío** (1577, 267, 273, 1294, 811c, 237, 976, 1387), sobre este tramo ya escrito: **84 tests = 84 pass + 0 fail + 0 skipped** (cuadra). Positivo: `SCRUM-1577 ⑥` está en el TAP; cero de control: `SCRUM-1577 ⑦`, 0.
+- No corridos: los demás tests que nombran `settingsView` o `styles.css` (1577b corrió 149 ficheros). Esos los cubre el obligatorio de CI.
