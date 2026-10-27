@@ -248,3 +248,95 @@ borra al salir el proceso, lo tenga quien lo tenga. Decisión: no es de este pue
 - No se ha convertido ninguna de las 24, ni las 2 que fugan: son ficheros de otro carril (los dos los creó la cuenta
   del equipo de Luis; reparto de los 22 en SCRUM-1506 c.18864).
 - `scrum864c` ③ sigue en rojo con este PR, por las mismas 24. El PR sigue aparcado.
+
+## Tramo 3 · 1396b · Desaparcado (c.21079): la rama al día con `main`, y el rojo que sale hoy son 28, no 2
+
+**Medido contra:** `origin/main` = `ce1111a68d00d2063bc6bb369ce71d2124c3547f` · 2026-10-27T15:48:10Z
+
+Sesión `jv-j6do` (puesto J6), encargo del orquestador `cobroflash-backend-8b`. Carril: J6 sobre un ticket
+`area-j6`; toca `scripts/_censo-mkdtemp.mjs` (sólo lo cubre la fila general de `scripts/`, que nadie ha
+decidido) y, en este tramo, sólo `docs/master/`.
+
+A9: comprobación → `.claude/hooks/guard-dangerous.sh`
+
+(El fallo, mío: para medir la base intenté poner el censo de `main` encima del de la rama con un `>` y luego
+devolverlo con `git restore`; el hook paró las dos, y pedí `.claude/allow-destructivo`, que me denegaron. Lo
+hice por la vía que el propio hook propone: `git checkout origin/main -- <fichero>`, pasada, y `git stash push -m
+<etiqueta única>` + comprobar que la entrada era idéntica a `origin/main` por blob + `drop` por su SHA.)
+
+### Qué se ha hecho
+
+- `git merge origin/main` (`ce1111a68`) en la rama: **sin conflictos**. Desde la base de la rama (`c92d8182`)
+  ningún commit de `main` ha tocado `scripts/_censo-mkdtemp.mjs`, `tests/scrum864c-*` ni `tests/_temporal.mjs`:
+  el merge no pisa nada.
+- ①–⑤ del enunciado ya estaban en la rama desde el 8-oct y no se han reescrito: el emparejamiento por la
+  VARIABLE que resuelve el compilador (ámbito, sombreado), las tres fuentes de J6k como rojo, el positivo, el
+  caso `'exit'` del banco de SCRUM-1391 y la línea de población.
+
+### Medido hoy (local, Windows, una pasada de cada)
+
+| qué | censo de `main` | censo de la rama |
+|---|---|---|
+| `tests/scrum1396-el-borrado-de-otra-funcion.test.mjs` | — | **5 de 5 pasan** |
+| `tests/scrum864c-el-temporal-no-vuelve.test.mjs` | **4 de 4 pasan** | **3 pasan, 1 cae: ③** |
+
+Línea de población (⑤): `169 ficheros con temporales (233 llamadas, de 3452 ficheros mirados) · 24 con nombres
+repetidos · 226 emparejamientos fuera de ámbito, que ya no cuentan · 0 emparejadas sólo por nombre`.
+
+🔴 **La premisa de c.21079 no se sostiene:** decía que el guard «NOMBRA en rojo» las 2 fugas de SCRUM-1621.
+Nombra **28**. Arreglar SCRUM-1621 dejaría 26 y el PR seguiría en rojo.
+
+### Las 28, una a una
+
+Sale de `docs/master/evidencias/SCRUM-1396/tabla-de-las-28.mjs` (corre `censar()`, `git ls-tree` y
+`scripts/carriles.mjs de` con la ruta real); salida entera en `salida-tabla-de-las-28.txt`.
+
+| fichero:línea | categoría | fuga | lo creó (cuenta de git) |
+|---|---|---|---|
+| `tests/scrum1263-gancho-pre-push.test.mjs:52` | ESCAPA | **MEDIDA** (J4 c.18875) | Luis |
+| `tests/scrum454-destructivo-sin-comprobacion.test.mjs:157` | ESCAPA | **MEDIDA** (J4 c.18875) | Luis |
+| `tests/scrum1328-skips-con-motivo-en-el-tap.test.mjs:102` | ESCAPA | NUEVA, sin medir | Javier |
+| `tests/scrum1575b-censo-conexiones.test.mjs:37` | ESCAPA | NUEVA, sin medir | Javier |
+| `tests/scrum1575c-censo-ve-el-singleton.test.mjs:22` | ESCAPA | NUEVA, sin medir | Javier |
+| `tests/scrum1575d-staging-por-destino.test.mjs:71` | ESCAPA | NUEVA, sin medir | Javier |
+| `tests/scrum1289b-reporters-como-argumentos.test.mjs:80` | ESCAPA | por FORMA | Luis |
+| `tests/scrum1424-ya-esta.test.mjs:114` | ESCAPA | por FORMA | Luis |
+| `tests/scrum252-procedencia-cliente.test.mjs:60` | NO_GARANTIZADA | por FORMA | Luis |
+| `tests/scrum521-resolvedor-de-importadores.test.mjs:52` | ESCAPA | por FORMA | Javier |
+| `tests/scrum709-microcopy-por-fichero.test.mjs:84` | ESCAPA | por FORMA | Luis |
+| `tests/scrum716c-la-memoria-del-vigia.test.mjs:224` | ESCAPA | por FORMA | Javier |
+| `tests/scrum726-quien-firma-la-microcopy.test.mjs:36` | ESCAPA | por FORMA | Luis |
+| `tests/scrum754-el-juez-que-oscila.test.mjs:345` | ESCAPA | por FORMA | Javier |
+| `tests/scrum754-el-juez-que-oscila.test.mjs:705` | NO_GARANTIZADA | por FORMA | Javier |
+| `tests/scrum757-la-declaracion-que-nadie-lee.test.mjs:41` | NO_GARANTIZADA | por FORMA | Javier |
+| `tests/scrum759-el-guard-ciego-fuera-de-su-fichero.test.mjs:107` | NO_GARANTIZADA | por FORMA | Javier |
+| `tests/scrum811c-skill-ui-declarada.test.mjs:609` | ESCAPA | por FORMA | Luis |
+| `tests/scrum836-ancla-de-mutacion-viva.test.mjs:83` | NO_GARANTIZADA | por FORMA | Javier |
+| `tests/scrum836-ancla-de-mutacion-viva.test.mjs:491` | NO_GARANTIZADA | por FORMA | Javier |
+| `tests/scrum839d-union-solo-en-el-registro.test.mjs:149` | ESCAPA | por FORMA | Luis |
+| `tests/scrum839e-solo-pr-armados.test.mjs:116` | ESCAPA | por FORMA | Luis |
+| `tests/scrum850b-las-formas-que-mienten.test.mjs:73` | ESCAPA | por FORMA | Javier |
+| `tests/scrum899-sesion-lista-blanca.test.mjs:177` | ESCAPA | por FORMA | Luis |
+| `tests/_alcance-desde-entradas.mjs:385` | ESCAPA | por FORMA | Javier |
+| `tests/_comparador-alcance.mjs:261` | ESCAPA | por FORMA | Javier |
+| `tests/_export-que-sobra.mjs:239` | ESCAPA | por FORMA | Javier |
+| `tests/_huerfanos-en-modulos-vivos.mjs:195` | ESCAPA | por FORMA | Javier |
+
+Recuento: **2 medidas · 22 por forma · 4 nuevas sin medir = 28**; 28 de 28 están en el árbol (`git ls-tree`).
+Comparado por conjunto con `las-24-llamadas.txt` del 6-oct: 22 iguales, `scrum754:703→705` y `scrum811c:611→609`
+(la misma llamada, el fichero se movió), y las 4 nuevas.
+
+**Carril: las 28 contestan «sin fila en §3: nadie lo reclama».** ⚠️ No es una medición: J4 midió (c.18861) que
+`carriles.mjs de` contesta lo mismo para una ruta que no existe. Por eso va al lado la cuenta de git que creó el
+fichero: 11 Luis, 17 Javier. ⚠️ La cuenta tampoco dice qué sesión ni qué equipo lo escribió.
+
+«Por forma» quiere decir: J4 corrió esas líneas el 8-oct con un fallo inyectado y quedaron 0 directorios
+(c.18875/c.18877), sobre la rama `33e3d9d4`. **No se ha repetido hoy.**
+
+### Lo que no se ha hecho
+
+- No se ha tocado ninguna de las 28 ni se ha declarado ninguna excepción (regla 41; orden del orquestador).
+- Las 4 nuevas no se han medido por efecto (restos con fallo inyectado).
+- La decisión que queda —si el guard nuevo entra acusando por FORMA o sólo por fuga MEDIDA— es del fundador,
+  y la lleva el orquestador.
+- Suite entera local: NO CORRIDA (encargo: el obligatorio de CI hace de tanda).
