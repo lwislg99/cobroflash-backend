@@ -314,7 +314,14 @@ test('SCRUM-601 · el censo distingue DEPENDER DEL FLAG de estar en un ternario 
   // de la nota (`git diff --numstat` de `homeView.js`: 31 10). Cifra MEDIDA, no deducida, y se vuelve
   // a medir igual: `grep -n '"100% al aceptar" genera' public/dashboard/js/homeView.js` da una sola
   // línea, y es ésta. Segundo re-anclaje por posición de este control (el primero, SCRUM-1124).
-  const boton = en('public/dashboard/js/homeView.js', 885);
+  //
+  // SCRUM-1390y (24-oct-2026) · 885 → 894: el rótulo y el vacío del Inicio por rol meten 14 líneas y
+  // quitan 5 POR ENCIMA de la nota (`git diff --numstat` de `homeView.js`: 14 5). Medido con el mismo
+  // `grep -n`. Tercer re-anclaje por posición.
+  // SCRUM-1390y (27-oct-2026) · 894 → 898: el error de una respuesta sin lista se queda en su bloque
+  // en vez de lanzarse; contra origin/main 77ce98573, `git diff --numstat` de `homeView.js` da 18 5,
+  // todo POR ENCIMA de la nota. Medido con el mismo `grep -n`, en la rama: 898; en main: 885.
+  const boton = en('public/dashboard/js/homeView.js', 898);
   assert.equal(boton.length, 1, 'no se encuentra la nota de condiciones de homeView donde se midió');
   assert.match(boton[0].texto, /100% al aceptar/);
   assert.equal(boton[0].dependeDelFlag, true,
