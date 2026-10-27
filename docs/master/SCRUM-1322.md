@@ -137,3 +137,105 @@ de verdad).
   `scrum411` (un `export` cuyo único consumidor de fuera es su test es un huérfano) y `scrum775`
   (un suelo que el censo no sabe leer). Arreglado en el código, no en los guards: las listas no se
   exportan y el test las lee del fuente por AST, con `typescript` importado arriba.
+
+## SCRUM-1322c · al que acepta por texto, «{Negocio} ya tiene tu confirmación.»
+
+**Medido contra:** `origin/main` = `7a86ed067d597d9c3bcb5d8ca6756796efbec453` · 2026-10-26T23:15:31Z (hora de GitHub) · jv-j2bg, puesto J2, equipo de Javier
+
+A9: comprobación → `tests/scrum1322-el-bot-entiende-lo-que-pide.test.mjs`
+
+Es la segunda parte del enunciado. Medición y tres literales propuestos: jv-j2bf en el comentario
+20956 de Jira. Firma del fundador, opción A: comentario 20957.
+
+### 1 · Lo que cambia
+
+- `whatsappIncoming.routes.ts`, rama `accept`: la respuesta al cliente pasa de «…Te avisaremos con
+  los siguientes pasos.» a «`${merchant.name}` ya tiene tu confirmación.». El resto de la frase
+  («✅ ¡Perfecto! Hemos registrado tu aceptación del presupuesto #…») no cambia.
+- Para tener el nombre antes de enviar, la consulta del comercio (y la del cliente) sube por
+  encima del envío. Antes iba debajo, y sólo servía para los avisos al profesional. Los campos que
+  se piden no cambian.
+- El nombre es `merchant.name`, que es lo que este fichero ya usa para el comercio. La columna es
+  `String` NOT NULL. No he añadido ningún texto de reserva: sería un texto sin firma.
+- La cita `SCRUM-1322 comentario 20957` del código entra en `tests/_pares-leidos-en-jira.mjs`.
+  **Ese fichero es de J6: cruce de carril declarado.** Es una fila, igual que las de 1446e/f.
+- Ni plantillas de Meta, ni K1, ni el máster.
+
+### 2 · El rojo primero
+
+Mismo test, con la ruta de main compilada (`git show HEAD:` del fichero, `git diff` vacío
+comprobado antes de compilar): 13 casos, 11 pasan y 2 caen. Los dos que caen son los nuevos, y
+caen por el negativo: «ha vuelto «Te avisaremos»». Con el arreglo: 13 de 13.
+
+Los dos casos pasan por el webhook real con dobles (`escribe()`): el cliente normal y el que tiene
+`waOptOut: true` escriben «Acepto». Cada uno recibe exactamente
+`✅ ¡Perfecto! Hemos registrado tu aceptación del presupuesto #P-0011. Fontanería Ruiz ya tiene tu confirmación.`
+
+Build con tipos (`tsc -p .`, sin `--noCheck`): salida 0, log de 0 bytes.
+
+Después de ese rojo, el test se partió en dos `test()` con nombre literal y un caso de control
+(ver §4). Con el arreglo quedan 14 de 14. El rojo lo medí sobre la versión de 13 casos. La de 14
+la he corrido sólo en verde, y sus aserciones son las mismas.
+
+**Dirigida:** 41 ficheros: los del encargo, los que nombran la ruta y 377, 411, 737, 747, 1177,
+895b, 1325, 1326, 245 y 812. Salen 403 casos: 401 pasan, 0 caen y 2 se saltan
+(`scrum50` y `/webhooks/psp`, gateados por base). La tanda entera en local: NO CORRIDA.
+
+### 3 · Lo que no he medido
+
+- **Un comercio con `name` vacío** recibiría « ya tiene tu confirmación.». El esquema no lo
+  impide, porque una cadena vacía cabe en NOT NULL. No he mirado si el alta lo permite ni si hay
+  alguno en una base. Si hace falta un texto de reserva, lo tiene que firmar el fundador.
+- El cliente dado de baja: el doble de `sendWhatsAppText` no aplica la baja. El test fija qué
+  texto sale de la ruta. Que el envío pase la baja lo fija `scrum1262`, por la exención
+  `respuesta-a-entrante`, que no he tocado.
+- Meta, producción y yaqu.app: sin mirar. La tanda entera en local no la he corrido; la corre el
+  obligatorio de CI.
+
+### 4 · Errores míos
+
+- La primera versión del test hacía los dos casos en un bucle, con el nombre construido.
+  `scrum1415` cayó: un nombre construido no lo ve la señal por nombres. Además, el negativo
+  «Te avisaremos» no tenía hermano positivo, y cayó `scrum237`. Los dos salieron en la dirigida,
+  antes de empujar. Arreglado en el test: dos `test()` literales y un caso de control que
+  comprueba que el negativo caza la frase retirada. Las comprobaciones son esos dos guards.
+- Pasé una sustitución con barra invertida por `sed` y no casó, sin dar error (la cicatriz de J2
+  del 1-oct, otra vez). Lo vi al releer el fichero, y lo rehíce con la herramienta de edición.
+
+## SCRUM-1322d · el comercio sin nombre: «Tu profesional ya tiene tu confirmación.»
+
+**Medido contra:** `origin/main` = `c09dd883ebfaf0f5e2213fb31f623ca547871a01` · 2026-10-26T23:36:20Z (hora de GitHub) · jv-j2bh, puesto J2, equipo de Javier
+
+A9: comprobación → `tests/scrum1322-el-bot-entiende-lo-que-pide.test.mjs`
+
+Firma del fundador: SCRUM-1322 comentario 20977, sobre el caso que 1322c dejó abierto en §3.
+Base: #2909 (1322c) no había entrado en `main`; la rama sale de `origin/scrum-1322c-literal-bot`
+(`d0a275b7f`).
+
+### 1 · Lo que cambia
+
+- `whatsappIncoming.routes.ts`, al aceptar por texto: si `merchant.name` llega vacío o solo con
+  espacios (`trim()` vacío), la frase final es «Tu profesional ya tiene tu confirmación.». Con
+  nombre sale el nombre tal cual, como en 1322c.
+- Ningún otro texto. **Cruce de carril declarado:** una fila en `tests/_pares-leidos-en-jira.mjs`
+  (J6) para el par 1322/20977 que cita el código.
+
+### 2 · El rojo primero
+
+Tres casos nuevos en el test, por el webhook real con dobles (`escribe()` acepta ahora el nombre
+del comercio): vacío, solo espacios y normal. Con la ruta de 1322c compilada (sin el arreglo):
+17 casos, 15 pasan y 2 caen — los de vacío y espacios, que reciben
+`… #P-0011.  ya tiene tu confirmación.`. Con el arreglo: 17 de 17. Build con tipos
+(`tsc -p .`, sin `--noCheck`): salida 0.
+
+### 3 · Lo que no he medido
+
+- Un nombre con espacios alrededor (« Fontanería Ruiz ») sale sin recortar, con el doble espacio;
+  la firma habla de vacío y de solo espacios, y no lo he cambiado.
+- Si el alta deja hoy un `name` vacío, ni cuántos hay en una base: sin mirar.
+- Meta, producción y yaqu.app: sin mirar. La tanda entera en local: NO CORRIDA.
+
+### 4 · Errores míos
+
+- El rojo lo medí sobre la ruta de 1322c, no sobre la de `main`: en `main` la frase aún es
+  «Te avisaremos…», y el caso «con nombre» también caería allí. Es la base de esta rama.
