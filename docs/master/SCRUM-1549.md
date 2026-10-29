@@ -522,7 +522,7 @@ Por eso el diagnóstico debe vivir FUERA de ella (§4, punto 1).
 
 # SCRUM-1549f · El latido dice si la PUERTA del lanzador deja lanzar (p.4 de c.20777)
 
-**Medido contra:** `origin/main` = `5a247020e5608fd2b21fad04bcf585694494397a` · 2026-10-29T18:02:06Z
+**Medido contra:** `origin/main` = `142b4579bb965e5d1a74d3937cbb7b9f3f1127aa` · 2026-10-29T18:10:11Z
 
 A9: comprobación → `tests/scrum1549f-latido-puerta.test.mjs`
 
