@@ -1,0 +1,33 @@
+# rojo: contra c93f26a76 (copia byte a byte del instrumento de main antes de 1527h)
+✖ corte por nombre: parte la cuenta por la fecha dada → no dice /corte 2026-10-27T13:09:00Z/ · no dice /antes del corte: 2 jobs con paso «Tests»/ · no dice /después del corte: 2 jobs con paso «Tests»/ · dice /corte --/
+✖ --de-cache en el sitio del corte: no puede partir por «--de-cache» → dice /corte --de-cache/
+✖ un tercer posicional (el «Cómo se repite» viejo) sale 2 a la vista → salida 0, tenía que ser 2
+✖ --corte que no es fecha sale 2 → salida 0, tenía que ser 2
+✖ ventana sin ningún colgado conocido: CIEGO, nunca 0 → salida 0, tenía que ser 2 · no dice /CIEGO/ · no dice /ningún colgado conocido cae en la ventana/
+✖ positivo en la ventana pero su log sin aviso: CIEGO → salida 0, tenía que ser 2 · no dice /119769715166 .*no sale con su aviso/
+✖ positivo que la lista ha perdido: CIEGO (por fecha, no por figurar) → salida 0, tenía que ser 2
+✖ --umbral 900 deja fuera los sanos de 748/760 s y sigue viendo el colgado → no dice /candidatos \(paso «Tests» de 900 s o más\): 1/ · no dice /119769715166, 2026-10-22T10:21:15Z\): sale, con su aviso/
+interrogatorio de docs/master/evidencias/SCRUM-1527/_viejo-1527h.mjs: 0 de 8 cuadran
+
+# verde: contra el instrumento de esta rama
+✔ corte por nombre: parte la cuenta por la fecha dada
+✔ --de-cache en el sitio del corte: no puede partir por «--de-cache»
+✔ un tercer posicional (el «Cómo se repite» viejo) sale 2 a la vista
+✔ --corte que no es fecha sale 2
+✔ ventana sin ningún colgado conocido: CIEGO, nunca 0
+✔ positivo en la ventana pero su log sin aviso: CIEGO
+✔ positivo que la lista ha perdido: CIEGO (por fecha, no por figurar)
+✔ --umbral 900 deja fuera los sanos de 748/760 s y sigue viendo el colgado
+interrogatorio de docs/master/evidencias/SCRUM-1527/s3-reproduce-hoy.mjs: 8 de 8 cuadran
+
+# mutante: el de esta rama SIN la línea «ningún colgado conocido cae en la ventana»
+✔ corte por nombre: parte la cuenta por la fecha dada
+✔ --de-cache en el sitio del corte: no puede partir por «--de-cache»
+✔ un tercer posicional (el «Cómo se repite» viejo) sale 2 a la vista
+✔ --corte que no es fecha sale 2
+✖ ventana sin ningún colgado conocido: CIEGO, nunca 0 → salida 0, tenía que ser 2 · no dice /ningún colgado conocido cae en la ventana/
+✔ positivo en la ventana pero su log sin aviso: CIEGO
+✔ positivo que la lista ha perdido: CIEGO (por fecha, no por figurar)
+✔ --umbral 900 deja fuera los sanos de 748/760 s y sigue viendo el colgado
+interrogatorio de docs/master/evidencias/SCRUM-1527/_mutante-1527h.mjs: 7 de 8 cuadran
+
