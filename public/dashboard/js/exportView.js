@@ -40,10 +40,17 @@ const EXPORT_DATASETS = [
 //   encima (propuesta de J4, SCRUM-1251 c.20672). Un segundo par de «Año»/«Trimestre» serían
 //   rótulos que la firma no cubre.
 // · Ni «VeriFactu», ni «Hacienda», ni «AEAT», ni «libro registro», ni «modelo 303» (c.20672 §3).
+// · SCRUM-1629 · y, sin selector propio, la tarjeta DICE de dónde sale el periodo: sin esa línea un
+//   profesional podía llevarle a su asesor el trimestre que hubiera quedado puesto arriba. Va antes
+//   del botón, que es donde se lee antes de pulsar. «Usa el año y el trimestre seleccionados arriba.»:
+//   texto elegido por el orquestador por delegación del fundador, SCRUM-1629 c.21194. El fundador
+//   delegó la elección, no firmó el literal. Va DENTRO de la plantilla, como T1–T7: interpolado desde
+//   una constante, el censo de SCRUM-601 deja de ver que la tarjeta entera sólo existe en `fiscal`.
 const TARJETA_PAQUETE_TRIMESTRE = `
       <div class="customers-card paquete-trimestre" id="paquete-trimestre-card">
         <h3 class="paquete-trimestre__titulo">Paquete del trimestre</h3>
         <p class="paquete-trimestre__texto">Un ZIP con las facturas del trimestre, el resumen de IVA y la comprobación de los albaranes firmados, para tu asesor.</p>
+        <p class="paquete-trimestre__texto" id="paquete-trimestre-periodo">Usa el año y el trimestre seleccionados arriba.</p>
         <p class="paquete-trimestre__ayuda">Dentro va un índice que marca, factura por factura, lo que falta o no cuadra.</p>
         <button class="btn-secondary" id="btn-paquete-trimestre">Descargar ZIP</button>
         <p class="paquete-trimestre__info" id="paquete-trimestre-info" aria-live="polite"></p>
