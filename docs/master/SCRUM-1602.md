@@ -57,3 +57,18 @@ El PR salió rojo el 27-oct en `build + tests (con banco desechable)` por tres c
 | SCRUM-601 «lo que no sabe leer» | 37 → 38: el mismo literal llega al `innerHTML` por referencia a su constante | `NO_LEGIBLES_AL_MEDIR` re-anclado (el caso 31→32: no se pega en línea para bajarlo) |
 
 Las cifras salen de CORRER el censo (`censoCopy`) sobre los dos árboles —`origin/main` 5deff8b3b: `{flag 7, tipo 11, aPelo 162}`, 37 no legibles; la rama mezclada: `{flag 8, tipo 11, aPelo 162}`, 38— y comparar fila a fila: las únicas filas nuevas son `exportView.js:43` (la tarjeta) en ① y en no legibles. «1 factura» de la misma vista sólo cambia de línea (179 → 205).
+
+## 29-oct-2026 (2) · el obligatorio volvió a caer: el veredicto de mudez, no regenerado
+
+**Medido contra:** `origin/main` = `b4c1c3254dc076f4d237ff8751fc77105947d5ff` · 2026-10-29T10:54:32Z
+
+A9: comprobación → `tests/scrum719-el-suelo-de-los-doce.test.mjs`
+
+Run 40856878737 (punta `42f548ba7`): 12 937 tests, **1 ✖**, leído en el log del job antes de tocar nada:
+`scrum719` · SCRUM-1395b ① — «`scrum601-copy-del-documento-vs-flag.test.mjs` · el fichero cambió desde la
+medida». **Error nuestro:** el tramo de arriba re-ancló `scrum601` y no regeneró `tests/_veredicto-mudez.json`,
+que guarda una huella de cada test que lee texto. Arreglo con su generador, no a mano:
+`npm run censo:mudez -- --escribir` sobre `main` mezclado (125 fichas, 1 medida ahora, VIVO; el filtro
+`_guard-texto.mjs` comprobado idéntico). `scrum719` + `scrum601`: 42/42.
+
+**Lección:** quien toca un `tests/*.test.mjs` que lee texto, regenera el veredicto de mudez en el mismo commit.
