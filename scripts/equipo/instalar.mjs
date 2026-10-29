@@ -72,11 +72,25 @@ export function arranqueCmd({ destino, repo, prompt }) {
   ].join('\r\n');
 }
 
-/** Las órdenes para crear las tareas, una por hora (schtasks admite un disparador por orden). */
+/** La ruta de `arranque.cmd` tal como la ejecuta la tarea programada. */
+export function rutaArranqueCmd(destino) {
+  return `${aWin(destino).replace(/\\$/, '')}\\arranque.cmd`;
+}
+
+/**
+ * Las órdenes para crear las tareas, una por hora (schtasks admite un disparador por orden). Se pegan
+ * en Git Bash.
+ *
+ * SCRUM-1549d · el `/tr` lleva comillas DENTRO del argumento. Las de fuera se las come bash, y schtasks
+ * parte lo que recibe por el primer espacio: con `/tr "C:\Users\Javier Pereira\…\arranque.cmd"` la tarea
+ * se guardó con Command `C:\Users\Javier` y Arguments `Pereira\…` y cada tanda murió con 0x80070002
+ * (medido en la máquina de Javier, SCRUM-1549 c.20760). Por eso va entre comillas simples de bash —que
+ * entregan las dobles tal cual— y una comilla simple de la ruta se escapa como `'\''`.
+ */
 export function ordenesSchtasks({ destino, tandas, prefijo }) {
-  const cmd = `${aWin(destino).replace(/\\$/, '')}\\arranque.cmd`;
+  const tr = `'"${rutaArranqueCmd(destino).replace(/'/g, "'\\''")}"'`;
   return tandas.map((hora) =>
-    `MSYS_NO_PATHCONV=1 schtasks /create /sc daily /tn yaqu-equipo-${prefijo}${hora.replace(':', '')} /st ${hora} /tr "${cmd}"`);
+    `MSYS_NO_PATHCONV=1 schtasks /create /sc daily /tn yaqu-equipo-${prefijo}${hora.replace(':', '')} /st ${hora} /tr ${tr}`);
 }
 
 /** La línea del statusLine para `~/.claude/settings.json` (la pone quien manda en la máquina). */
