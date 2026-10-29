@@ -404,64 +404,9 @@ NO-PUDE-MIRAR).
   `instalar.mjs` de main. **Reinstalar con `instalar.mjs` reescribe `config.json` y `arranque.cmd`** (c.20816 §1). Lo
   hace quien manda en esa máquina.
 
+
 ---
 
-# SCRUM-1549f · El latido dice si la PUERTA del lanzador deja lanzar (p.4 de c.20777)
-
-**Medido contra:** `origin/main` = `5a247020e5608fd2b21fad04bcf585694494397a` · 2026-10-29T18:02:06Z
-
-A9: comprobación → `tests/scrum1549f-latido-puerta.test.mjs`
-
-S5, 29-oct-2026. Viene de SCRUM-1549e (PR #2994): la puerta de `sesion.mjs` estuvo cerrada 6 h 38 min
-(10:53:28Z → 17:31:43Z) y nada lo dijo. La puerta da el mismo código 2 a `ALTERADO` y a «no pude comprobar».
-
-## 0 · Qué hace
-
-Sección **16 · PUERTA** del latido, en `scripts/equipo/puerta.mjs`. Compara los BYTES de
-`%LOCALAPPDATA%\yaqu-equipo\sesion.mjs` contra `origin/main:scripts/equipo/sesion.mjs` del `config.repo`, que es lo
-mismo que compara la puerta. **No importa ni ejecuta la copia instalada y no escribe en la instalación** (es `deny`).
-Tres respuestas con tres salidas:
-
-| la copia | sale | qué dice |
-|---|---|---|
-| idéntica | ✅ · 0 | tamaño y sha256 |
-| ATRASADA (es una versión vieja de main) | 🔴 · 1 | qué versión es (commit y fecha) y **el merge que la cerró** (el siguiente que cambió el fichero en el primer padre de main) · la orden de refresco |
-| AJENA (no es ninguna versión de main) | 🔴 · 1 | si es main con UTF-16+BOM, BOM UTF-8 o CRLF, lo nombra · cuándo se escribió · la orden de refresco |
-| sin instalación, sin `config.json`, main ilegible | 🔴 NO PUDE MIRAR · 2 | el motivo |
-
-La orden de refresco son las dos líneas de `arranque.cmd` (`fetch` y `show … >`), y la sección dice **«desde cmd,
-NUNCA desde PowerShell»**: el `>` de PowerShell 5.1 reescribe la codificación (medido en SCRUM-1549e). Una instalación
-dentro de un árbol de git sale como puerta cerrada (`DESDE-UN-ARBOL`), igual que la contesta la puerta.
-
-Lo que NO mira: la validación de equipo y de modelo que la puerta hace después de los bytes. Lo dice su población.
-Y sólo mira `sesion.mjs`: `orquestador-arranque.mjs` y `uso.mjs` sólo los usa la tarea programada (desactivada desde el 27-oct).
-
-## 1 · El control positivo, con datos de verdad (no del banco)
-
-Contra la instalación de esta máquina, a las 29-oct-2026 ~18:00Z, sobre `origin/main` = `7acb753a1` del checkout compartido:
-
-- `sesion.mjs` instalada: **81.772 B · sha256 `e96077461a593230283e4f35ea76d595d2924aa5563ec885bb2d0ffdb64e621b`**
-  · blob `547e8dd62d…`, igual que main → la sección: **✅ AL DÍA**. **Si la puerta se vuelve a cerrar, se compara con esto.**
-- Lo de hoy, reconstruido: la versión anterior (`75c6bd366`, 19-oct) puesta en una instalación de mentira → **«ATRASADA 1
-  versión: es la de 75c6bd366 (2026-10-19T07:07:32Z) · CERRADA desde el merge 8f4d7e863 (2026-10-29T10:53:28Z)»**. Es la
-  hora del cierre que midió SCRUM-1549e por otro camino.
-- Main escrita en UTF-16 con BOM → «AJENA … es main ESTROPEADA: UTF-16 con BOM (el `>` de PowerShell)».
-- `config.json` roto → NO PUDE MIRAR.
-
-## 2 · Cómo se mide (`tests/scrum1549f-latido-puerta.test.mjs`, 8 tests)
-
-Banco sintético en un temporal: un repositorio con dos versiones del lanzador y una instalación al lado. Las
-mutaciones declaradas en `MUTACIONES_QUE_ME_TUMBAN` (§3) cubren: toda copia «al día», «desde cuándo» apuntando a la
-versión de la copia, la copia en UTF-16 sin reconocer, y «no pude» con `pudo: true`.
-
-## 3 · Rojos vistos
-
-(se rellena abajo con la medición de las mutaciones)
-
-## 4 · Lo que sigue (no en este PR)
-
-- La tarea de **sólo refresco** cada 15 min y la (B) `s<N>-<sufijo>` de `validarNombre`: el orquestador decide que
-  vayan en UN PR, DESPUÉS de que el fundador cree la tarea (escribe en la ruta `deny`). Sin su sí, no se construye.
 # SCRUM-1549e · El apagón del 29-oct, medido: la puerta estuvo cerrada 6 h 38 min, y desde el 27-oct nada la reabre sola
 
 **S5 (equipo de Luis)** · 29-oct-2026 · SÓLO MEDIR: ni `scripts/equipo/sesion.mjs` ni la copia instalada se tocan.
@@ -572,3 +517,75 @@ Por eso el diagnóstico debe vivir FUERA de ella (§4, punto 1).
   sobre 4.2; 4.1 no la necesita y es lo siguiente de S5.
 - El desfase del reloj de la máquina hoy: las horas del `.jsonl` y de los ficheros son del reloj local.
 - Cuántos minutos tardó cada cierre anterior en notarse: sólo hay 3 `ALTERADO` recibidos.
+
+---
+
+# SCRUM-1549f · El latido dice si la PUERTA del lanzador deja lanzar (p.4 de c.20777)
+
+**Medido contra:** `origin/main` = `5a247020e5608fd2b21fad04bcf585694494397a` · 2026-10-29T18:02:06Z
+
+A9: comprobación → `tests/scrum1549f-latido-puerta.test.mjs`
+
+S5, 29-oct-2026. Viene de SCRUM-1549e (PR #2994): la puerta de `sesion.mjs` estuvo cerrada 6 h 38 min
+(10:53:28Z → 17:31:43Z) y nada lo dijo. La puerta da el mismo código 2 a `ALTERADO` y a «no pude comprobar».
+
+## 0 · Qué hace
+
+Sección **16 · PUERTA** del latido, en `scripts/equipo/puerta.mjs`. Compara los BYTES de
+`%LOCALAPPDATA%\yaqu-equipo\sesion.mjs` contra `origin/main:scripts/equipo/sesion.mjs` del `config.repo`, que es lo
+mismo que compara la puerta. **No importa ni ejecuta la copia instalada y no escribe en la instalación** (es `deny`).
+Tres respuestas con tres salidas:
+
+| la copia | sale | qué dice |
+|---|---|---|
+| idéntica | ✅ · 0 | tamaño y sha256 |
+| ATRASADA (es una versión vieja de main) | 🔴 · 1 | qué versión es (commit y fecha) y **el merge que la cerró** (el siguiente que cambió el fichero en el primer padre de main) · la orden de refresco |
+| AJENA (no es ninguna versión de main) | 🔴 · 1 | si es main con UTF-16+BOM, BOM UTF-8 o CRLF, lo nombra · cuándo se escribió · la orden de refresco |
+| sin instalación, sin `config.json`, main ilegible | 🔴 NO PUDE MIRAR · 2 | el motivo |
+
+La orden de refresco son las dos líneas de `arranque.cmd` (`fetch` y `show … >`), y la sección dice **«desde cmd,
+NUNCA desde PowerShell»**: el `>` de PowerShell 5.1 reescribe la codificación (medido en SCRUM-1549e). Una instalación
+dentro de un árbol de git sale como puerta cerrada (`DESDE-UN-ARBOL`), igual que la contesta la puerta.
+
+Lo que NO mira: la validación de equipo y de modelo que la puerta hace después de los bytes. Lo dice su población.
+Y sólo mira `sesion.mjs`: `orquestador-arranque.mjs` y `uso.mjs` sólo los usa la tarea programada (desactivada desde el 27-oct).
+
+## 1 · El control positivo, con datos de verdad (no del banco)
+
+Contra la instalación de esta máquina, a las 29-oct-2026 ~18:00Z, sobre `origin/main` = `7acb753a1` del checkout compartido:
+
+- `sesion.mjs` instalada: **81.772 B · sha256 `e96077461a593230283e4f35ea76d595d2924aa5563ec885bb2d0ffdb64e621b`**
+  · blob `547e8dd62d…`, igual que main → la sección: **✅ AL DÍA**. **Si la puerta se vuelve a cerrar, se compara con esto.**
+- Lo de hoy, reconstruido: la versión anterior (`75c6bd366`, 19-oct) puesta en una instalación de mentira → **«ATRASADA 1
+  versión: es la de 75c6bd366 (2026-10-19T07:07:32Z) · CERRADA desde el merge 8f4d7e863 (2026-10-29T10:53:28Z)»**. Es la
+  hora del cierre que midió SCRUM-1549e por otro camino.
+- Main escrita en UTF-16 con BOM → «AJENA … es main ESTROPEADA: UTF-16 con BOM (el `>` de PowerShell)».
+- `config.json` roto → NO PUDE MIRAR.
+
+## 2 · Cómo se mide (`tests/scrum1549f-latido-puerta.test.mjs`, 8 tests)
+
+Banco sintético en un temporal: un repositorio con dos versiones del lanzador y una instalación al lado. Las
+mutaciones declaradas en `MUTACIONES_QUE_ME_TUMBAN` (§3) cubren: toda copia «al día», «desde cuándo» apuntando a la
+versión de la copia, la copia en UTF-16 sin reconocer, y «no pude» con `pudo: true`.
+
+## 3 · Rojos vistos
+
+Con TODO comiteado (`1788d413b7457d273791badd9f783379696dd763`), cada mutación inyectada sola, comprobada con
+`git diff --numstat` (1 1 `scripts/equipo/puerta.mjs` en las cuatro), el test corrido y el fichero restaurado con
+`git restore --source=HEAD`; `git status --porcelain` vacío al acabar. Base sin mutar: 8/8.
+
+| mutación | caen | la declarada |
+|---|---|---|
+| toda copia «al día» | 4 | cae |
+| «desde cuándo» = la versión de la copia | 1 | cae |
+| la copia UTF-16 sin reconocer | 1 | cae |
+| «no pude» con `pudo: true` | 2 | cae |
+
+De paso: `tests/scrum723-guard-contra-su-base.test.mjs` cayó al nombrar `origin/main` fuera de los argumentos de git.
+No se ablandó: la sección se DECLARA en su lista con su motivo (su sujeto es la referencia móvil, la que lee la puerta),
+y además se congela la referencia en un sha con UNA lectura, como `arranque.mjs`.
+
+## 4 · Lo que sigue (no en este PR)
+
+- La tarea de **sólo refresco** cada 15 min y la (B) `s<N>-<sufijo>` de `validarNombre`: el orquestador decide que
+  vayan en UN PR, DESPUÉS de que el fundador cree la tarea (escribe en la ruta `deny`). Sin su sí, no se construye.
