@@ -4680,6 +4680,8 @@ textarea.parte-linea-desc {
 .gasto-cat--desplazamiento { background: #fef3c7; color: #92400e; }
 .gasto-cat--herramientas { background: #ede9fe; color: #6d28d9; }
 .gasto-cat--subcontrata { background: #fee2e2; color: #b91c1c; }
+/* SCRUM-1588 · alquiler de local: el par de tokens de badge de `tokens.css` (#047857 sobre #ecfdf5, AA). */
+.gasto-cat--alquiler { background: var(--brand-tint); color: var(--brand-tint-ink); }
 .gasto-cat--otros { background: var(--neutral-100); color: var(--neutral-600); }
 
 /* SCRUM-920d · la foto del ticket en la fila: un HECHO sobre el archivo que guardamos («Foto guardada» /

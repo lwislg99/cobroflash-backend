@@ -1,12 +1,13 @@
 // public/dashboard/js/expensesView.js
 
-// Los cinco colores de la píldora viven en `styles.css` (`.gasto-cat--<clave>`), no aquí: eran un
+// Los colores de la píldora viven en `styles.css` (`.gasto-cat--<clave>`), no aquí: eran un
 // `style=` en línea por fila (SCRUM-920c, norma A7). Son los de siempre; el profesional ya los reconoce.
 const CATEGORY_LABELS = {
   materiales:     { label: 'Materiales' },
   desplazamiento: { label: 'Desplazamiento' },
   herramientas:   { label: 'Herramientas' },
   subcontrata:    { label: 'Subcontrata' },
+  alquiler:       { label: 'Alquiler de local' }, // SCRUM-1588 · rótulo FIRMADO en SCRUM-1066 c.20497 (regla 39); la ruta lo acepta con la mitad de S1
   otros:          { label: 'Otros' },
 };
 
