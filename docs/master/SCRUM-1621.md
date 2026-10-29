@@ -130,3 +130,19 @@ Lo que salió mal: la sesión del 27-oct empujó la rama sin correr el trinquete
 el rojo estuvo dos días sin que nadie lo mirara. El defecto no llegó a `main` porque el trinquete lo paró.
 
 A9: comprobación → `tests/scrum824-temporales-fuera-del-arbol.test.mjs`
+
+## SCRUM-1621 · el commit `SCRUM-1621f` de la rama de SCRUM-1238c (29-oct, S5)
+
+**Medido contra:** `origin/main` = `fd24ce099696acca6b2dc3652dfb511bdca9694f` · 2026-10-29T10:36:16Z (hora de GitHub)
+
+Este tramo no trae trabajo de 1621. Existe porque la rama `scrum-1238c-espera-no-es-fin` (PR #2981) lleva un
+commit titulado `SCRUM-1621f:` (`e19b87307c3144410c13cda5cce4dfb33d7dac81`): el arreglo se encargó como pieza de
+1621 y después pasó a su ticket, SCRUM-1238. El registro de ese trabajo está en `docs/master/SCRUM-1238.md`,
+tramo «S5 · SCRUM-1238c».
+
+El obligatorio de #2981 cayó por 1 caso de 12.930: `SCRUM-854 · ② esta rama, si toca código, trae su entrada
+de registro`, con `falta: docs/master/SCRUM-1621.md`. El guard junta el número de la rama y el de cada asunto de
+commit, y pide la entrada de todos. Reescribir el asunto obligaría a empujar con `--force`, y eso no se hace, así
+que se escribe la entrada que pide.
+
+A9: comprobación → `tests/scrum854-todo-merge-deja-entrada.test.mjs`
