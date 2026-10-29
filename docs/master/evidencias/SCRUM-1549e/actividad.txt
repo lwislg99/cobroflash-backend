@@ -1,0 +1,16 @@
+población: 40 jsonl (sin subagentes) modificados desde 2026-10-27
+hora  10-27           10-29           
+06Z   -               -               
+07Z   -               -               
+08Z   -               -               
+09Z   -               7 ses 565 t     
+10Z   -               14 ses 1790 t   
+11Z   1 ses 23 t      7 ses 601 t     
+12Z   1 ses 10 t      1 ses 24 t      
+13Z   -               1 ses 6 t       
+14Z   -               -               
+15Z   7 ses 1134 t    -               
+16Z   6 ses 483 t     -               
+17Z   8 ses 1381 t    7 ses 348 t     
+18Z   5 ses 622 t     -               
+19Z   -               -               
