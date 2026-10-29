@@ -65,6 +65,17 @@ convenio, igual que en `main`. Va a quien reparte.
 
 **Población corrida** (`main` mezclado, `dist` con `tsc --noCheck`): 22 ficheros de gastos y censo, 211 tests,
 209 ✔ · 0 ✖ · 2 saltados; y 8 de firmas/procedencia (1502h, 387, 553, 601, 718, 719, 921, 921c), 102/102.
+
+## 29-oct-2026 (3) · S2 · el obligatorio de #2984 en rojo tras mezclar `main`: dos causas
+
+**Medido contra:** `origin/main` = `eb20da11b` (el merge `fcb0756c8` de #2984) · run 40865190138, leído en el log de los jobs `build + tests` y `meta-guard`.
+
+A9: comprobación → `tests/scrum1194d-trinquete-vocabulario-ofrecido.test.mjs`
+
+1. **`scrum1194d` «TRINQUETE no baja en silencio»**: con la pantalla ofreciendo `alquiler`, los dos pares transitorios que S1 declaró (`POST /admin/expenses`, `PUT /admin/expenses/:id`, `faltan [alquiler]`) ya no salen PARCIAL. El guard lo pide: «si se arregló, se quita de DECLARADOS». Se quitan las dos líneas; el guard no se toca. Es lo que el tramo de S1 anunciaba.
+2. **`scrum1572` «EL ÁRBOL»**: este registro lo crearon las dos ramas y la unión de git entrelazó los tramos (faltaba incluso la línea en blanco antes de `## S1`). Se junta a mano: esta entrada y la separación son el commit posterior que el test da por revisado.
+3. **`meta-guard`** salió con 2 ciegas: la 1ª es el punto 1 (el test caía ya en la pasada limpia, sin línea base); la 2ª es el techo de tiempo (1696 s de 1695 s, 54 mutaciones sin juzgar), ajeno a este cambio: no se toca el techo. Se espera al run nuevo.
+
 ## S1 · el servidor (rama `scrum-1588-alquiler-en-las-categorias`)
 
 **Medido contra:** `origin/main` = `503f0d86ac8dceb9dbce6ecc57e049a46092a70c` · 2026-10-29T10:28:09Z (cabecera `Date:` de GitHub al escribir esto)
