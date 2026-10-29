@@ -7,7 +7,9 @@ const CATEGORY_LABELS = {
   desplazamiento: { label: 'Desplazamiento' },
   herramientas:   { label: 'Herramientas' },
   subcontrata:    { label: 'Subcontrata' },
-  alquiler:       { label: 'Alquiler de local' }, // SCRUM-1588 · rótulo FIRMADO en SCRUM-1066 c.20497 (regla 39); la ruta lo acepta con la mitad de S1
+  alquiler:       { // SCRUM-1588 · la firma va en la línea de `label`: es la hoja que ve el profesional
+    label: 'Alquiler de local', // APROBADO por Javier el 23-oct-2026 (SCRUM-1066 c.20497, opción A)
+  },
   otros:          { label: 'Otros' },
 };
 
