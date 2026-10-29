@@ -71,6 +71,9 @@ decide esta rama.
 ## Tramo 1628b · el banco COMPARTIDO y el banco de UN ticket (S0)
 
 **Medido contra:** `origin/main` = `5deff8b3b7b0f8a8d3cd037baabbca454ea7aa29` · 2026-10-29 10:0xZ (`Date:` de GitHub)
+A9: comprobación → `tests/scrum1628-de-ve-la-regla-del-test-de-un-ticket.test.mjs`
+
+*(La lección de este tramo, que la línea A9 no deja escribir en su formato: una regla que reconoce el número de ticket sólo en el nombre del FICHERO calla sobre los 52 de `tests/banco-scrumNNN/`, y el encargo la daba por cubierta. La comprobación es el test `SCRUM-1628b` de ese fichero (`:66`), que recorre los 15 bancos y exige el ticket del DIRECTORIO. Añadida el 29-oct-2026 ~10:4xZ, tras caer el obligatorio de #2980 por faltar esta línea: `scrum1294`, «ancla del 2026-10-29 sin línea A9».)*
 
 Encargo del orquestador de Luis (29-oct): una fila en `dos-equipos.md` §3 que distinga el banco compartido (`tests/banco-scrum911/`) del banco de un ticket, con la medida de S0 del 27-oct como procedencia, y con control negativo: los que no son compartidos siguen cayendo en la regla «el test de un ticket».
 
