@@ -151,3 +151,56 @@ A9: comprobación → `tests/scrum1632b-campo-url-sin-llaves.test.mjs`
 ### ❓ La pregunta que sólo Meta resuelve
 
 ¿El editor de WhatsApp Manager añade él el `{{1}}` al elegir «Dinámico»? La regla «un solo `{{1}}`, al final» vale en los dos casos. **La prueba del móvil dice cuál es el nuestro.** Hasta que alguien la haga, la causa es lectura.
+
+## 29-oct-2026 · S1 · 1632c: la página de firma limpia el token con `parseToken` (arreglo (b))
+
+**Medido contra:** `origin/main` = `eafca9fe154c26d38b05a748ca816ba098943724` (hora de GitHub: 2026-10-29T17:42:45Z).
+Rama `scrum-1632c-firma-tolera-la-url-sucia`. GO del orquestador por delegación del fundador: c.21220 («1 nos e decide tu»).
+
+A9: comprobación → `tests/scrum1632c-firma-tolera-la-url-sucia.test.mjs`
+
+### Qué cambia (`src/modules/jobs/app/routes/albaranPublic.routes.ts`)
+
+| línea | antes | después |
+|---|---|---|
+| import (:10) | `{ esc }` | `{ esc, parseToken }` — necesario para las otras tres; no mueve ni extrae nada |
+| `:251` (GET) | `loadContext(req.params.token)` | `loadContext(parseToken(req.params.token))` — **autorizado** |
+| `:381` (POST) | `firmaToken: req.params.token` | `firmaToken: parseToken(req.params.token)` — **autorizado** |
+| `:328` (la ruta del POST que la página pinta en su `<script>`) | `` `/albaran/${req.params.token}/firmar` `` | `` `/albaran/${parseToken(req.params.token)}/firmar` `` — 🔴 **FUERA de lo autorizado: pedido aparte al orquestador** |
+
+**Por qué `:328`, medido y no leído:** con SÓLO los dos sitios autorizados, la página abre con cualquier
+URL cuya parte hex sea el token, y `:328` mete la URL cruda en el `<script>` con `JSON.stringify`, que no
+escapa `<`. El caso ④ del test lo demuestra: una URL que limpia da el token del parte llevaba
+`</script>` + un script nuevo DENTRO de la página. Antes del cambio no pasaba porque la página sólo se
+pintaba si la URL ERA el token exacto. No hay CSP en `src/` (`git grep -i content-security-policy` = 0).
+Con `:328` limpia, lo que se pinta es siempre hex.
+
+### Las mayúsculas (el control que mandaba)
+
+`parseToken` pasa a minúscula. **Escritores de `firmaToken` en toda la historia de `main`**
+(`git log -G firmaToken -p -- src scripts prisma`, líneas añadidas): UNO, `albaranWhatsApp.service.ts:132-133`,
+`albaran.firmaToken || crypto.randomBytes(16).toString('hex')`. El SQL crudo (`firma_token`) sólo aparece en
+el ALTER de SCRUM-49, que crea la columna a NULL. `randomBytes(n).toString('hex')`: 200.000 muestras, 0 con
+mayúscula (control: `/[A-F]/` casa con `'ABC'`). ⚠️ **La base de PRODUCCIÓN no la he leído** (ninguna sesión
+tiene su clave): lo que digo es que ningún camino del código, hoy ni antes, pudo escribir una mayúscula.
+
+### Tests
+
+- Rojo antes del cambio: 8 casos, 3 caen (① GET, ① POST, ④); ② y ③ pasan.
+- Con sólo los dos sitios autorizados: 7/8, cae ④ (arriba).
+- Con `:328`: 8/8. Vecinos (los 18 ficheros que nombran `albaranPublic`): 130 tests, 0 fallos, 1 saltado.
+  Y 100 ficheros más que barren `parseToken`/`params.token`/rutas de `jobs`: 844, 2 fallos de
+  `scrum1266b` (dictado del panel), que solo da 15/15: carga, ajeno al diff.
+
+### Lo que NO se ha podido probar
+
+- **De punta a punta con WhatsApp real:** no lo he intentado. Mandar un «Enviar para firmar» y abrir el botón
+  en un móvil es lo único que lo ve entero; ninguna sesión tiene un móvil con WhatsApp. El test pide las
+  dos rutas de verdad (`dist`) con la base doblada.
+- **La base de producción** (las mayúsculas, arriba).
+- **Lo que hay en Meta:** sigue como esté (fila 2.10, STOP del fundador). Con esto la FIRMA abre igual.
+
+### De paso
+
+- `docs/WHATSAPP_TEMPLATES.md:88-91` decía «pendiente de decisión, no hecho»: actualizado. `/pay/invoice` y
+  `/recibo` siguen pasando el token en crudo (`payInvoice.routes.ts:23`, `receipt.routes.ts:31`, carril J2): no tocados.
