@@ -39,3 +39,29 @@ Saca por AST `CATEGORY_LABELS`, `categoriaDe` y `catPill` de la vista y los ejec
 - **Hasta que entre la mitad de S1, guardar un gasto con «Alquiler de local» da `category_invalid`** (`expenses.service.ts`): el formulario ya la ofrece y la ruta todavía la rechaza. No es un defecto de esta mitad; es el orden de llegada. Si esta rama entra antes que la de S1, durante ese intervalo la opción falla al guardar con el error de siempre.
 - **En yaqu.app: NO MIRADO.** Sin la mitad de S1 no se puede crear un gasto de alquiler en producción, y la aceptación 3 (selector + píldora en la fila) pide los dos. Se mira cuando entren las dos.
 - `GET /admin/expenses/categories` sigue sin consumidor en el front (`scripts/_sin-consumir-declarados.json`): la lista vive copiada en `CATEGORY_LABELS`. No se toca aquí; esa nota dice que conectarla obliga a retirar la copia en el mismo cambio.
+
+## 29-oct-2026 (2) · S2 · el obligatorio de #2984 en rojo: la firma se leía «por grupo»
+
+**Medido contra:** `origin/main` = `e9888aa2357f172b985b2c7b08646a386edb96a1` · 2026-10-29T11:04:19Z
+
+A9: comprobación → `tests/scrum1157-censo-convenio-microcopy.test.mjs`
+
+**Skill UI:** cargada (`yaqu-premium-ui`; cambio de comentario y de forma del literal, ningún texto visible cambia).
+
+Run 40857297693 (punta `ccc0105a7`): 12 932 tests, **4 ✖**, leídos en el log del job antes de tocar nada:
+`scrum1157` ① y ③, `scrum1215g` y `scrum1215i`. Una sola causa, **nuestra**: la firma iba al final de la línea
+de `alquiler`, cuyo valor es un objeto (`{ label: … }`). El censo (`_censo-convenio-microcopy.mjs`) se la pasa a
+`label` como firma **de grupo** («APROBADO POR GRUPO, sin nombrar»), y además, al ver un comentario de convenio
+dentro de `CATEGORY_LABELS`, metía el objeto entero en el censo: las cinco etiquetas de siempre (Materiales,
+Desplazamiento, Herramientas, Subcontrata, Otros) salían NUEVAS sin firma.
+
+**Arreglo:** la firma en la línea del propio `label`, con la forma que el censo lee:
+`label: 'Alquiler de local', // APROBADO por Javier el 23-oct-2026 (SCRUM-1066 c.20497, opción A)`. El literal no
+cambia. Censo: **0 nuevas · 0 que sobran · 34 acusadas · 176 por grupo**. Ningún guard tocado.
+
+**Hallazgo, no arreglado:** esas cinco etiquetas de `CATEGORY_LABELS` no tienen firma encontrada (ni en
+`docs/microcopy/` ni en `SCRUM-920`/`944`/`1066`). El censo no las ve porque su objeto no lleva comentario de
+convenio, igual que en `main`. Va a quien reparte.
+
+**Población corrida** (`main` mezclado, `dist` con `tsc --noCheck`): 22 ficheros de gastos y censo, 211 tests,
+209 ✔ · 0 ✖ · 2 saltados; y 8 de firmas/procedencia (1502h, 387, 553, 601, 718, 719, 921, 921c), 102/102.
