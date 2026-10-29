@@ -462,3 +462,113 @@ versión de la copia, la copia en UTF-16 sin reconocer, y «no pude» con `pudo:
 
 - La tarea de **sólo refresco** cada 15 min y la (B) `s<N>-<sufijo>` de `validarNombre`: el orquestador decide que
   vayan en UN PR, DESPUÉS de que el fundador cree la tarea (escribe en la ruta `deny`). Sin su sí, no se construye.
+# SCRUM-1549e · El apagón del 29-oct, medido: la puerta estuvo cerrada 6 h 38 min, y desde el 27-oct nada la reabre sola
+
+**S5 (equipo de Luis)** · 29-oct-2026 · SÓLO MEDIR: ni `scripts/equipo/sesion.mjs` ni la copia instalada se tocan.
+
+**Medido contra:** `origin/main` = `eafca9fe154c26d38b05a748ca816ba098943724` · 2026-10-29T17:42:01Z
+
+A9: sin fallo que generalice — mi único tropiezo (un `git show … | git hash-object --stdin` en PowerShell dio un blob
+distinto, `ad99456…`, para dos ficheros idénticos) lo cazó la segunda sonda en el mismo turno, y la trampa ya está
+escrita: PowerShell recodifica lo que pasa por su tubería (`trampas-del-entorno.md` §2). Va en §3 como dato, porque
+es justo el camino por el que un refresco a mano deja la puerta cerrada para siempre.
+
+Instrumentos y salidas: `docs/master/evidencias/SCRUM-1549e/` (cada `.mjs` declara su población).
+
+## 0 · La respuesta corta
+
+- **Hoy:** el merge de #2981 (`8f4d7e863`, 10:53:28Z) cambió `sesion.mjs`; la primera sesión que recibió `ALTERADO`
+  fue el orquestador a las 11:05:25Z; la copia se refrescó a las 17:31:43Z (fecha del fichero, reloj de la máquina,
+  que va adelantado: desfase de hoy sin medir). **6 h 38 min cerrada.** Tras el refresco, copia y `origin/main` son
+  idénticas: 81.772 B, sha256 `e96077461a593230283e4f35ea76d595d2924aa5563ec885bb2d0ffdb64e621b` (`comparar.txt`).
+- **No es la primera vez: es la 13.ª desde la instalación (21-sep), y suman 99 h cerradas.** Las 12 anteriores se
+  curaron solas en la siguiente pasada de `arranque.cmd` (de 2,8 a 16,8 h). **Ésta no podía curarse: las tareas
+  programadas que corren `arranque.cmd` están desactivadas desde el 27-oct** (última línea de `arranque.log`:
+  2026-10-27T12:05:04Z). El refresco vivía DENTRO del arranque automático; al apagar el arranque por su coste, se
+  apagó también, sin que nadie lo dijera, el único refresco que había.
+- **Desde el 27-oct, cada merge que toque `sesion.mjs` cierra la puerta SIN FECHA DE APERTURA**, hasta que una mano
+  copie el fichero. Ritmo medido: 20 merges a ese fichero en 42 días (uno cada ~2 días).
+- **La puerta ya distingue `ALTERADO` de `NO-PUDE-MIRAR`** (`sesion.mjs:893-911`, veredictos distintos), pero los dos
+  salen con código 2 y `ALTERADO` no dice desde cuándo, qué versión es la copia ni cómo se arregla.
+
+## 1 · Lo que costó, medido (actividad de los `.jsonl` y merges a `main`)
+
+| hora (Z) | 29-oct: sesiones · turnos | qué pasaba |
+|---|---|---|
+| 09 | 7 · 565 | |
+| 10 | 14 · 1.790 | 16 merges entre las 10:00 y las 12:20:37Z |
+| 11 | 7 · 601 | 11:05 y 11:16: `ALTERADO` al orquestador (`alterados.txt`) |
+| 12 | 1 · 24 | 12:20:37Z, último merge del día (#2984) |
+| 13 | 1 · 6 | |
+| 14-16 | **0** | nadie trabaja |
+| 17 | 7 · 348 | tras el refresco de las 17:31 |
+
+Población: 40 `.jsonl` de `~/.claude/projects` (sin subagentes) modificados desde el 27-oct (`actividad.txt`).
+**Lo que no se ha hecho por eso — ESTIMACIÓN, no medida:** a ritmo de la mañana (16 merges en 2 h 20 min) son
+~5 h × ~7 merges/h; digamos **del orden de 25-35 merges**. *Lectura mía, no medida:* la parada tiene dos causas que se
+pisan: la puerta cerrada impedía relanzar, y había sesiones esperando respuesta en su `needs` (dos de ellas
+preguntaban, según el orquestador, justo por refrescar `sesion.mjs`). Separar cuánto es de cada una no se puede con
+estos datos.
+
+## 2 · ¿Cuántas veces ha pasado? (`ventanas.txt`)
+
+Cada merge a `main` que toca `scripts/equipo/sesion.mjs` deja la copia distinta de `origin/main` hasta la siguiente
+pasada de `arranque.cmd` (la copia va antes de la línea que escribe en `arranque.log`). Desde la instalación
+(21-sep, 07:11Z): **13 cierres** (16 merges; tres pares cayeron en la misma ventana), **99 h** en total; 12 se curaron
+solos, el de hoy no. Sesiones que de verdad RECIBIERON `ALTERADO` al ejecutar la copia instalada, en 575 `.jsonl`
+(433.055 líneas, 78 ejecuciones reconocidas de la puerta, `alterados.txt`): **3** (1-oct 12:10Z, tras #2002; 29-oct
+11:05Z y 11:16Z). Control positivo del mismo instrumento: ve 9 `ESTADO`, 20 `LANZADA` y 12 `RELEVADA`. Los otros
+cierres cayeron de noche o sin nadie lanzando, y se curaron antes de que se notaran: por eso no constaba.
+
+## 3 · ¿Qué dice la puerta cuando está ALTERADO, y se distingue de «no pude comprobar»?
+
+Recibido hoy, literal: `{"ok":false,"veredicto":"ALTERADO","motivo":"esta copia no es idéntica a origin/main:scripts/equipo/sesion.mjs"}`, código 2.
+`NO-PUDE-MIRAR` (sin `config.json`, sin `repo`, sin `traspasos`, sin leer `origin/main`) también sale con código 2,
+pero con otro veredicto: **se distinguen por el veredicto, no por el código.** Lo que `ALTERADO` no dice:
+- si la copia es una versión VIEJA de `main` (lo de hoy: se arregla copiando) o no es ninguna (corrupta: BOM, CRLF,
+  editada a mano);
+- desde qué merge está cerrada;
+- cómo se reabre. Y el camino obvio, PowerShell, la estropea: medido hoy, `git show origin/main:… | git hash-object
+  --stdin` en PowerShell da `ad99456…`, y el mismo contenido leído del fichero da `547e8dd…` (el blob real). Un
+  refresco con `>` o `|` de PowerShell deja la puerta en `ALTERADO` aunque se haga en el momento.
+
+⚠️ Mejorar ese mensaje DENTRO de la puerta exige tocar `sesion.mjs`, y cada cambio a ese fichero es un cierre más.
+Por eso el diagnóstico debe vivir FUERA de ella (§4, punto 1).
+
+## 4 · ¿Se puede detectar antes, y refrescar sin una mano y sin debilitar la puerta?
+
+1. **Detectar: sí, sin ejecutar la puerta.** El latido (punto 4 de c.20777, de S5) puede comparar los bytes de la
+   copia instalada con `origin/main` (sólo lectura) y decir `VIVA` / `CERRADA · atrasada desde el merge X, hace N min`
+   / `CERRADA · no es ninguna versión de main` / `NO PUDE MIRAR`, con la orden exacta del refresco. Y en el PR que toca
+   `sesion.mjs`, avisar antes del merge de que, al entrar, la puerta se cierra hasta el refresco. **Ninguna de las dos
+   toca la puerta ni la ruta instalada.** No construido en esta tanda (§6).
+2. **Refrescar sin una mano en cada merge: sí, separando el refresco del arranque.** Un `refrescar.cmd` con sólo las
+   líneas de `git fetch` y de copia que ya tiene `arranque.cmd` (sin la última, la que lanza el orquestador), corrido
+   por una tarea programada cada 15 min. **No debilita la puerta:** la fuente es la misma `origin/main` (rama
+   protegida, con el obligatorio) contra la que la puerta compara; la puerta sigue fallando cerrado entre el merge y
+   la siguiente pasada (≤ 15 min). Coste en tokens: cero; no lanza nada. **Pero escribe en la carpeta instalada:
+   necesita la decisión del fundador y que él cree la tarea UNA vez.** Una sesión no puede (regla `deny` sobre
+   `yaqu-equipo/**`, y no programamos nada).
+3. **Descartados, y por qué:** que `sesion.mjs` se reescriba sola al ver `ALTERADO`, o que `uso.mjs` (la barra de
+   estado, que ya corre desde la carpeta instalada) copie el fichero. Las dos son código de una sesión escribiendo
+   en la ruta que la regla `deny` prohíbe: el mismo rodeo con otra forma.
+
+## 5 · La lista blanca (encargo añadido el 29-oct: «más puestos»)
+
+- La lista NO está en el código: `validarNombre` (`sesion.mjs:182-183`) la saca de `config.json` → `puestos` de la
+  instalación, hoy `orquestador, sesion-0 … sesion-5`. **Añadir un nombre ahí no toca `sesion.mjs` y no cierra la
+  puerta**; pero el fichero está bajo la misma regla `deny`: lo edita el fundador.
+- Una `sesion-6` arrancaría SIN IDENTIDAD: `_carriles.mjs:224` sólo reconoce `sesion-[0-5]` y `s[0-5]-<algo>`, y no
+  hay carril S6 en `dos-equipos.md` §3.
+- **Mi recomendación:** refuerzo = una segunda sesión de un puesto que existe, con nombre `s<N>-<sufijo>` (p. ej.
+  `s2-b`), que el hook ya reconoce como S<N>. Es la (B) que el fundador firmó el 14-oct (c.19615) y el punto 5 de
+  c.20777. Exige cambiar `validarNombre` → cerrar la puerta al mergear → **que vaya en el mismo PR que el refresco
+  del punto 4.2, después de que la tarea exista.** Si lo que se quiere son carriles NUEVOS (S6…), es una decisión de
+  organización (`dos-equipos.md`, `sesion-6.md`, los `S[0-5]` de `_carriles.mjs`), no de la lista blanca.
+
+## 6 · Lo que NO se ha hecho ni medido
+
+- No construido: la sección del latido (4.1), `refrescar.cmd` (4.2) ni la (B) (§5). Esperan la decisión del fundador
+  sobre 4.2; 4.1 no la necesita y es lo siguiente de S5.
+- El desfase del reloj de la máquina hoy: las horas del `.jsonl` y de los ficheros son del reloj local.
+- Cuántos minutos tardó cada cierre anterior en notarse: sólo hay 3 `ALTERADO` recibidos.
