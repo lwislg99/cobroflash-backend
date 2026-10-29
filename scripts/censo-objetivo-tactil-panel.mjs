@@ -80,6 +80,8 @@ const SONDA_OCULTA_TEXTO = ':';
 // toque dos veces: tiene que salir con las dos cifras distintas, y cada una en su sitio.
 const SONDA_TAPADA_TEXTO = ';';
 const SONDA_TAPADA = { caja: 40, tocable: 30 };
+// Lo esperado se escribe A MANO, no con `cajaYToque`: si el formateador se rompe, el aviso no se rompe con él.
+const SONDA_TAPADA_ESPERADA = 'caja 40 · toque 30';
 const SONDA = '<button id="__sonda" style="width:12px;height:12px;padding:0;border:0">' + SONDA_TEXTO + '</button>'
   + '<div style="display:none"><button id="__sondaOculta">' + SONDA_OCULTA_TEXTO + '</button></div>'
   + '<div style="position:relative;width:120px;height:40px;margin:0">'
@@ -326,7 +328,7 @@ for (const ancho of ANCHOS) {
     // ±2 px: el árbitro acierta el píxel, no la décima (medido: el toque de la tapada sale de 29,0 a 30,0
     // según la página). Las dos cifras distan 10, así que imprimir el toque dos veces cae igual.
     if (!leida || Math.abs(leida.caja - SONDA_TAPADA.caja) > 2 || Math.abs(leida.tocable - SONDA_TAPADA.tocable) > 2) {
-      sondasFallidas.push(`${nombre} @${ancho}px (la sonda TAPADA sale «${tapada ? cajaYToque(tapada) : 'ni siquiera medida'}» y no «${cajaYToque(SONDA_TAPADA)}»)`);
+      sondasFallidas.push(`${nombre} @${ancho}px (la sonda TAPADA sale «${tapada ? cajaYToque(tapada) : 'ni siquiera medida'}» y no «${SONDA_TAPADA_ESPERADA}»)`);
     } else {
       tapadasLeidas.push(leida);
     }
@@ -355,7 +357,7 @@ decir(`páginas × anchuras: ${paginas.length * ANCHOS.length} (${superficies.le
 for (const s of sondasFallidas) decir('   🔴 SUPERFICIE NO MEDIDA: ' + s);
 // SCRUM-1603c · la caja y el toque salen distintos donde deben diferir; si no, no se imprime la caja.
 const rango = (xs) => xs.length ? `${Math.min(...xs).toFixed(1)}–${Math.max(...xs).toFixed(1)}` : '—';
-decir(`✅ CONTROL POSITIVO · sonda tapada, se espera «${cajaYToque(SONDA_TAPADA)}»: leída en ${tapadasLeidas.length} de ${paginas.length * ANCHOS.length} páginas`
+decir(`✅ CONTROL POSITIVO · sonda tapada, se espera «${SONDA_TAPADA_ESPERADA}»: leída en ${tapadasLeidas.length} de ${paginas.length * ANCHOS.length} páginas`
   + ` · caja ${rango(tapadasLeidas.map((t) => t.caja))} · toque ${rango(tapadasLeidas.map((t) => t.tocable))}`);
 if (sondasFallidas.length) {
   noSupe('🔴 hay superficies que no cazan un objetivo de 12 px: sus ceros no valen y el total está incompleto.');
