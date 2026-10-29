@@ -45,3 +45,15 @@ Puesto S2. `exportView.js` es S2 (`node scripts/carriles.mjs de public/dashboard
 
 - **En yaqu.app no se puede ver, y es lo correcto:** la tarjeta sólo se pinta con `modoEmision = 'fiscal'`, y en España nadie está en ese modo antes de SIF-1 (regla 24; `INVOICING_ES_ENABLED` en OFF). Ninguna cuenta de prueba la enseña. No lo he intentado en producción: no hay forma de llegar sin cambiar un flag, y eso es STOP.
 - El contenido del ZIP con facturas reales no lo he descargado: es de J1 y tiene sus tests (`scrum297-*`, `scrum1252-*`, `scrum1251b-*`).
+
+## 29-oct-2026 · el obligatorio de #2972 en rojo: tres trinquetes, los tres por consecuencia mecánica
+
+El PR salió rojo el 27-oct en `build + tests (con banco desechable)` por tres casos. Medidos uno a uno en el árbol con `origin/main` 5deff8b3b mezclado (merge, no rebase); ninguno era un defecto de la función.
+
+| caso | qué movió la rama | arreglo |
+|---|---|---|
+| SCRUM-1185 ② «una pieza declarada que YA SE CONSUME sale de la lista» | la tarjeta consume `GET /admin/evidencias.zip`, declarada sin consumidor | sale de `declaradas` y entra en `retiradas` de `scripts/_sin-consumir-declarados.json` con su motivo, que es lo que pide el propio trinquete |
+| SCRUM-601 «EL VEREDICTO» | `flag` 7 → 8: la tarjeta (firmada en SCRUM-1251 c.20675) sólo se pinta en modo `fiscal` | `VEREDICTO_AL_MEDIR` re-anclado con su porqué |
+| SCRUM-601 «lo que no sabe leer» | 37 → 38: el mismo literal llega al `innerHTML` por referencia a su constante | `NO_LEGIBLES_AL_MEDIR` re-anclado (el caso 31→32: no se pega en línea para bajarlo) |
+
+Las cifras salen de CORRER el censo (`censoCopy`) sobre los dos árboles —`origin/main` 5deff8b3b: `{flag 7, tipo 11, aPelo 162}`, 37 no legibles; la rama mezclada: `{flag 8, tipo 11, aPelo 162}`, 38— y comparar fila a fila: las únicas filas nuevas son `exportView.js:43` (la tarjeta) en ① y en no legibles. «1 factura» de la misma vista sólo cambia de línea (179 → 205).
