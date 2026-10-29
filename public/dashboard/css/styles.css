@@ -1756,6 +1756,15 @@ html, body { overflow-x: clip; }
    izquierda; menos los 14 + 14 de relleno del `td`. Con la tabla llena no cambia nada. */
 .catalogo-productos .table-scroll { container-type: inline-size; }
 .catalogo-productos .empty-state { position: sticky; left: 0; box-sizing: border-box; width: calc(100cqi - 28px); }
+/* SCRUM-1636 ② · a 1280 px el ID salía «23/8» y la píldora «ACTIV/O» (medido en yaqu.app: 5 de 5
+   filas, 2 líneas cada uno). Es la regla global `.table td { word-break: break-word }`, que deja el
+   ancho mínimo de una celda en UNA letra; la misma causa y el mismo arreglo que Albaranes (SCRUM-1559i
+   A): en esta tabla se parte por PALABRAS, nunca dentro de una. Un nombre largo sigue partiéndose
+   entre palabras, y una palabra que no cabe sola, también (`overflow-wrap`). Desde 641, como allí: por
+   debajo la tabla va en bloque con su scroll y no se partía. */
+@media (min-width: 641px) {
+  .catalogo-productos .table td { word-break: normal; overflow-wrap: break-word; }
+}
 
 /* ── SCRUM-1144 · «Elegir un sitio guardado», bajo el campo de la dirección de la obra ───────
    Lo montan el editor de presupuestos y la ficha del Trabajo (`sitiosGuardados.montarSelector`).

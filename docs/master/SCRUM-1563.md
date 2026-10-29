@@ -266,3 +266,27 @@ Encargo del orquestador (29-oct): las tres correcciones que dejó la sesión ant
 ### Error propio
 
 - Corrí `guards:entrada` con `2>&1` en PowerShell 5.1 y salió «exit 2» con 170/170 en verde: es la trampa conocida de `NativeCommandError`. Lo repetí sin redirigir y dio 0. Un código de salida leído así no vale ni para bien ni para mal.
+
+
+## SCRUM-1563g · 29-oct-2026 por la tarde: recuento tras 10 PR y la hoja de decisiones del fundador
+
+**Medido contra:** `origin/main` = `eafca9fe1` · producción NO medida en esta pasada · `Date:` de GitHub 2026-10-29T17:50:54Z
+
+A9: sin fallo que generalice — tramo de documento; el recuento lo da el contador, no la mano
+
+- **Recuento de §2:** 74 → **71 filas** · FUNDADOR **48/29** · JAVIER 26/8 · NOSOTROS **19/8** · ASESOR 6/2 (`node docs/master/evidencias/SCRUM-1563/contar-dependencias.mjs docs/producto/ESTADO-DEL-PRODUCTO.md`). Salen a §8 2.12 (1589), 5.3 (1623 y 1626, con la nota «no verificado en pantalla»), 6.14 (1608) y 6.15 (1588). Entra 5.4 (SCRUM-1638, abierto por S0 hoy). Corregidas 2.4 (chip #2986), 2.9 (guías #2985; `parseToken` sigue en 0 en `src/modules/jobs/`), 2.11 (tres servicios, dato del orquestador c.21240), 3.18, 3.21 (la rama compartida SÍ existe, `8f6becbd2`) y 6.16 (queda 1629).
+- **Hoja nueva:** `docs/producto/DECISIONES-DEL-FUNDADOR.md`. Las 48 filas del fundador en cuatro partes: A, 3 que puede decidir el orquestador (1.8, 6.12, 3.17) y dos mitades (2.9 b y 1.1, porque `albaranPublic.routes.ts` y `albaranes.routes.ts` están fuera de `RUTAS_FISCALES`, `scripts/puerta-avisador-rojo.mjs`); B, 3 que bloquean hoy (0.1, 2.11, 2.9 a); C, 11 que esperan a la S.L.; D, 31 para la revisión de go-live, en bloque. 3 + 3 + 11 + 31 = 48.
+- **Sin medir, y dicho en la cabecera del documento:** §1, §4 y §4b siguen con la medida de las 10:20Z; producción (`/version`) no se leyó.
+- **Lectura de S0, no decisión:** que A no le toque al fundador. La columna «depende de» de §2 no se cambió para esas filas; lo decide el orquestador. Para 1.1, antes hay que leer la regla 40 del máster.
+- **Jira:** SCRUM-1554 (de `equipo-javier`) sólo recibe un comentario con el enlace; no se pone En curso.
+
+## 29-oct-2026 ~18:10Z (GitHub) · S0 · tramo 1563h: la hoja, para PULSAR
+
+`origin/main` = `5a247020e`. Sobre la rama `scrum-1563g-hoja-decisiones-fundador` (PR aún sin abrir por el bot a las 18:02Z).
+
+- **Parte A** decidida por el orquestador: salen 2.9 b (GO dado; PR #2998 ABIERTO, sin mergear), 1.8 y 6.12 (a SCRUM-1638) y 3.17. **1.1 NO sale:** `albaranes.routes.ts` es camino de emisión (`emitInvoice` en `:1390` y `:1672`), aunque esté fuera de `RUTAS_FISCALES`.
+- **Parte B** con pasos: B1 la S.L. (SCRUM-143 c.19619, c.20086, c.20865: no consta firma del notario) · B2 una visita a Meta para los cuatro botones (`docs/WHATSAPP_TEMPLATES.md:52-62`) con la prueba del móvil.
+- **2.11 baja a D:** el backend ya manda `YaQu <no-reply@yaqu.app>` (SCRUM-1115 c.19624) y los otros dos sólo escriben a buzones internos (`:335`, `:346`).
+- **Simulacro de SCRUM-1605** en D, del fundador.
+- **Parte E nueva:** SCRUM-1529, las siete en c.19228 y máster `:403-409`.
+- ⚠️ La skill `.claude/skills/yaqu-wa-templates/SKILL.md:20,30,31,33` en `origin/main` sigue diciendo «la URL base termina en `/{{1}}`», contra `docs/WHATSAPP_TEMPLATES.md:52` (corregido en #2985). No la toco: `.claude/*` es del orquestador.
