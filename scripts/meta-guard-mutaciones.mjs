@@ -366,10 +366,14 @@ export function veredictoDeLasPartes(resumenes, k) {
   let declaraciones = 0;
   const censos = new Set();
   let lenta = null;
+  // SCRUM-1620b · los guards con alguna mutación juzgada, sumados; `null` si una parte no lo dijo.
+  let guardsJuzgados = 0;
+  const guardsDelCenso = new Set();
   for (let i = 1; i <= k; i++) {
     const r = resumenes[i - 1];
     if (!r || !Number.isInteger(r.codigo)) {
       codigos.push(SALIDA_CIEGO);
+      guardsJuzgados = null;
       lineas.push(`parte ${i} de ${k}: NO DEJÓ RESUMEN (cancelada, cortada por el job o sin arrancar): no sé qué juzgó`);
       continue;
     }
@@ -377,12 +381,17 @@ export function veredictoDeLasPartes(resumenes, k) {
     juzgadas += r.juzgadas;
     declaraciones += r.declaraciones;
     censos.add(r.declaracionesDelCenso);
+    guardsJuzgados = Number.isInteger(r.guardsJuzgados) && guardsJuzgados !== null ? guardsJuzgados + r.guardsJuzgados : null;
+    guardsDelCenso.add(r.guardsDelCenso);
     if (!lenta || r.segundos > lenta.segundos) lenta = { i, segundos: r.segundos, presupuestoS: r.presupuestoS };
     lineas.push(`parte ${i} de ${k}: salió con ${r.codigo} · juzgadas ${r.juzgadas} de ${r.declaraciones} `
       + `· ${Math.round(r.segundos)} s`);
   }
   const delCenso = censos.size === 1 ? [...censos][0] : null;
   lineas.push(`censo por partes: juzgadas ${juzgadas} de ${delCenso ?? '?'} declaraciones, en ${k} partes`);
+  // SCRUM-1620b · y sobre cuántos GUARDS: los «ficheros DECLARANTES» del rótulo son el censo, no lo juzgado.
+  const guardsCenso = guardsDelCenso.size === 1 && Number.isInteger([...guardsDelCenso][0]) ? [...guardsDelCenso][0] : null;
+  lineas.push(`guards con alguna mutación juzgada: ${guardsJuzgados ?? '?'} de ${guardsCenso ?? '?'} del censo`);
   if (lenta && Number.isFinite(lenta.presupuestoS)) {
     lineas.push(`margen de la parte más lenta: ${Math.round(lenta.presupuestoS - lenta.segundos)} s `
       + `(parte ${lenta.i}, ${Math.round(lenta.segundos)} s de ${lenta.presupuestoS})`);
@@ -1742,7 +1751,10 @@ if (ejecutadoDirectamente(import.meta.url)) {
 
   // 🔴 SCRUM-1620 · lo que esta pasada deja para `--juntar`, escrito AL SALIR por cualquier puerta
   // (también por las del CIEGO de arriba del todo): una parte que sale sin resumen se juzga CIEGA.
-  const resumenDeLaParte = { parte: null, juzgadas: 0, declaraciones: null, declaracionesDelCenso: null, presupuestoS: null };
+  const resumenDeLaParte = {
+    parte: null, juzgadas: 0, declaraciones: null, declaracionesDelCenso: null, presupuestoS: null,
+    guardsJuzgados: 0, guardsDelCenso: null,
+  };
   if (process.env.META_SALIDA_EN) {
     const destino = process.env.META_SALIDA_EN;
     process.on('exit', (codigo) => {
@@ -1887,6 +1899,7 @@ if (ejecutadoDirectamente(import.meta.url)) {
   }));
   Object.assign(resumenDeLaParte, {
     parte: parte && `${parte.i}/${parte.k}`, declaraciones: declaracionesEnJuego, declaracionesDelCenso: declaraciones,
+    guardsDelCenso: guardsConDeclaracion,
   });
 
   // ═══════════════════════════════════════════════════════════════════════════════════════════
@@ -1969,6 +1982,9 @@ if (ejecutadoDirectamente(import.meta.url)) {
       juzgadas += 1;
       guardsJuzgados.add(guard);
       resumenDeLaParte.juzgadas = juzgadas;
+      // SCRUM-1620b · un guard cuenta como juzgado con su PRIMERA mutación juzgada: el corte dejaba
+      // guards enteros sin ninguna, y el rótulo del censo los seguía contando (lo medido, en su registro).
+      if (desde === 0) resumenDeLaParte.guardsJuzgados += 1;
       const r = await aplicarUna(mut, guard, limpia);
       if (r.ok) {
         vivas += 1;

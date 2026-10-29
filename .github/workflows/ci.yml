@@ -698,9 +698,25 @@ jobs:
   #
   # CÓDIGOS: 1 algún guard MUDO (falla el job) · 2 no supo medir (ciego, también falla) · 3 no
   # pudo restaurar un fichero. El 3 es el grave y lo grita: hay que mirar el árbol a mano.
+  #
+  # ── 🔴 SCRUM-1620b · EN TRES PARTES, Y UN JOB QUE LAS JUNTA ───────────────────────────────────
+  # El 29-oct-2026 el censo entero (940 declaraciones, 238 guards) ya no cabía en los 1695 s del
+  # paso: «Juzgadas 735 de 940 mutaciones. SIN JUZGAR 205, en 46 guard(s)» (job 123442782267), o sea
+  # 192 guards juzgados de 238. #2962 dejó al script capaz de correr UNA parte (`META_PARTE=i/K`),
+  # pero sin esta matriz seguía corriendo «parte ÚNICA: el censo entero», y se cortaba igual.
+  # Cada parte tiene su presupuesto ENTERO (30 min) y juzga uno de cada tres guards, por turno; el
+  # job `meta-veredicto` junta sus resúmenes y conserva el NOMBRE, el PASO y el CÓDIGO que lee el
+  # vigía de main (`vigia-silencio-de-main.mjs`). No se sube el techo ni sale una mutación del censo.
+  # ⚠️ El 3 de la matriz y el de `--juntar` son el MISMO número: si no casan, las partes no suman
+  # el censo y `--juntar` sale CIEGO (lo ata `tests/scrum1620b-la-matriz-del-ci.test.mjs`).
   meta-mutaciones:
-    name: meta-guard · los guards caen cuando deben
+    name: meta-guard · parte ${{ matrix.parte }} de 3
     runs-on: ubuntu-latest
+    strategy:
+      # Una parte en rojo no cancela a las otras: su veredicto es parte del total.
+      fail-fast: false
+      matrix:
+        parte: [1, 2, 3]
     # ── 🔴 SCRUM-935 · 30, Y NO 10 · POR QUÉ, Y QUÉ NO ARREGLA ─────────────────────────────────
     #
     # Hasta el 20-sep-2026 esto ponía `10`. Ese techo NO cortaba un caso raro: cortaba la mitad de
@@ -809,7 +825,21 @@ jobs:
         run: echo "META_INICIO=$(date +%s)" >> "$GITHUB_ENV"
 
       - name: Cada guard cae con la mutación que declara
+        env:
+          META_PARTE: ${{ matrix.parte }}/3
+          META_SALIDA_EN: meta-partes/parte-${{ matrix.parte }}.json
         run: npm run meta:mutaciones
+
+      # El resumen de la parte, para `meta-veredicto`. `always()`: el que más interesa es el de la
+      # parte que cae. Sin fichero, el agregador la dice CIEGA («NO DEJÓ RESUMEN»), nunca verde.
+      - name: Guardar el resumen de la parte
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: meta-parte-${{ matrix.parte }}
+          path: meta-partes/
+          if-no-files-found: ignore
+          retention-days: 7
 
       # ── 🔴 SCRUM-935 · EL AVISO, PORQUE UN PRESUPUESTO SIN AVISO SE GASTA EN SILENCIO ─────────
       #
@@ -848,6 +878,55 @@ jobs:
             echo "" >> "$GITHUB_STEP_SUMMARY"
             echo "🔴 **Se acerca al techo.** No se arregla subiendo el presupuesto: toca medir (SCRUM-935)." >> "$GITHUB_STEP_SUMMARY"
           fi
+
+  # 🔴 SCRUM-1620b · EL VEREDICTO DE LAS TRES PARTES, EN UNO. Este job lleva el nombre que lee el
+  # vigía de main (`JOB_META_GUARD`) y su paso, el que cae (`PASO_DEL_META_GUARD`), con el código PEOR
+  # de las partes (3 > 1 > 2 > 0). Una parte cancelada, cortada o sin arrancar no deja resumen y aquí
+  # sale CIEGO (2), nunca verde. Imprime las juzgadas sobre el censo, los guards juzgados sobre los
+  # del censo y el margen de la parte más lenta.
+  #   · `!cancelled()` y NO `always()`: con `always()` este job corría también en un run CANCELADO
+  #     (sustituido en la cola) y lo pintaba CIEGO por partes que nadie dejó acabar.
+  #   · No corre `npm run meta:mutaciones`: `techoDelJob` busca UN solo job con esa línea.
+  meta-veredicto:
+    name: meta-guard · los guards caen cuando deben
+    needs: meta-mutaciones
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      # Sin `prisma generate`: `--juntar` sólo lee los resúmenes (y el script importa `typescript`).
+      - run: npm ci --ignore-scripts
+
+      # Sin artefactos este paso no puede ser el que cae: lo dice `--juntar` («NO DEJÓ RESUMEN»).
+      - name: Traer los resúmenes de las partes
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          pattern: meta-parte-*
+          path: meta-partes
+          merge-multiple: true
+
+      - name: Cada guard cae con la mutación que declara
+        # El código es el de `--juntar`, y sale DESPUÉS de escribir el resumen: con `bash -e` un 2
+        # cortaba el paso antes de decir qué partes faltaban.
+        run: |
+          set +e
+          node scripts/meta-guard-mutaciones.mjs --juntar meta-partes 3 > meta-veredicto.txt
+          codigo=$?
+          cat meta-veredicto.txt
+          {
+            echo "meta-guard · las 3 partes, juntas (salió con ${codigo})"
+            echo '```'
+            cat meta-veredicto.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$codigo"
 
   # ═══════════════════════════════════════════════════════════════════════════════════════════
   # 🔴 SCRUM-813 · EL TRINQUETE DE ZONA HORARIA · BLOQUEANTE, Y ÉSE ES EL PUNTO
