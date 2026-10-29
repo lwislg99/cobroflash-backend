@@ -111,3 +111,43 @@ la página abre igual, así que **lo que hay que mirar es la URL copiada, no si 
 Ni las plantillas (STOP del fundador), ni el código, ni las guías (`WHATSAPP_TEMPLATES.md:52`,
 `SKILL.md:20`). Si se confirma la lectura, la línea de las guías que dice «la URL base termina en `/{{1}}`»
 es la que lo provocó, y corregirla va en su propio ticket.
+
+## 29-oct-2026 · S4 · 1632b: nuestras guías, corregidas (el campo URL va SIN `{{1}}`)
+
+**Medido contra:** `origin/main` = `5deff8b3b7b0f8a8d3cd037baabbca454ea7aa29` (hora de GitHub al empezar: 2026-10-29T10:13:22Z).
+Rama `scrum-1632b-guias-campo-url-sin-llaves`. Encargo del orquestador del equipo de Luis (tarea 1), sobre la tabla de c.21201.
+
+A9: comprobación → `tests/scrum1632b-campo-url-sin-llaves.test.mjs`
+
+⛔ **No he visto el panel de Meta y no afirmo nada de lo que hay puesto.** No se ha tocado ninguna plantilla, ni código de `src/`.
+
+### Qué instruían, hasta hoy, nuestras tres fuentes
+
+| fuente | qué decía del campo URL | ¿contradice la tabla de c.21201? |
+|---|---|---|
+| `docs/WHATSAPP_TEMPLATES.md:52` | «la URL base termina en `/{{1}}`» (+ §1:132, §2:166, §4:242 con `…/{{1}}`; §8:322 `/albaran/{{token}}`, otra notación) | **sí** |
+| `.claude/skills/yaqu-wa-templates/SKILL.md:20,30,31,33` | lo mismo: «la URL base termina en `/{{1}}`» y la tabla con `/pay/quote/{{1}}`, `/pay/invoice/{{1}}`, `/recibo/{{1}}` | **sí** |
+| `docs/SPEC_SCRUM47_ALBARAN_FIRMADO_WA.md:63,137` | `https://yaqu.app/albaran/{{1}}`; :137 deja constancia de que así se dio de alta el 14-jul | **sí** |
+
+**Entre ellas no se contradicen:** las tres dicen lo mismo, y las tres contradicen la tabla de c.21201. Y hay **otras tres** que el encargo no nombraba y dicen igual: `docs/BUGS.md:1174` (el «arreglo de raíz» de P3-1 vuelve a escribir la base con `{{1}}`), `docs/PENDIENTES_FUNDADOR.md:92,227` (la lista que el fundador sigue al recrear las plantillas).
+
+**Por qué decían eso, y no es un capricho:** es lo que pide la **API** de Meta. La página de componentes de plantilla de Meta (developers.facebook.com/docs/whatsapp/business-management-api/message-templates/components, leída hoy) dice del `url`: «Supports 1 variable, appended to the end of the URL string», ejemplo `https://www.luckyshrub.com/shop?promo={{1}}`. Pero **no creamos plantillas por API**: `git grep message_templates -- src scripts docs .claude` = 0. Se dan de alta en el **editor**, y del editor sólo hay fuentes de terceros (Jotform, Qiscus, Clickatell…, búsqueda de hoy) que dicen que añade el `{{1}}` solo. **Ninguna de Meta.** Nuestras guías describían la API y se usaban en el editor.
+
+### Qué he cambiado (sólo documentación + un guard)
+
+- `docs/WHATSAPP_TEMPLATES.md` «Reglas comunes»: la regla nueva (campo SIN `{{1}}`, «un solo `{{1}}`, al final»), la tabla de las cuatro (la de c.21201), el **porqué** con P3-1 (`BUGS.md:1172`) de precedente, **la prueba que vale escrita** (copiar el enlace del botón en el móvil y buscar `%7B%7B1%7D%7D`; abrir el panel NO vale) y la pregunta que sólo Meta resuelve. §1, §2, §4 y §8 apuntan a la regla.
+- `docs/SPEC_SCRUM47_ALBARAN_FIRMADO_WA.md:63` corregida; `:137` NO reescrita (es constancia de lo que se hizo el 14-jul): lleva una nota debajo.
+- `docs/BUGS.md` P3-1, `docs/PENDIENTES_FUNDADOR.md:92,227` y `docs/ERRORES_ASESOR.md` #3: notas fechadas, sin borrar nada. La de #3 importa: **la lección de julio puede ser la contraria** (el enlace del móvil era la prueba buena; el panel se juzgó contra nuestra regla, que pedía el `{{1}}`).
+- `parseToken` en el camino de la firma: escrito como **«pendiente de decisión»** (c.21202), no como hecho.
+- **Guard** `tests/scrum1632b-campo-url-sin-llaves.test.mjs`: la spec canónica no puede volver a enseñar un campo con `{{1}}`/`{{token}}` (fuera de las citas `>`), y tiene que llevar las cuatro filas, la regla y la prueba del móvil. **Visto en rojo** contra `origin/main:docs/WHATSAPP_TEMPLATES.md`: acusa :52, :132, :166, :242 y :322 y falla la tabla. La primera versión del detector no veía :322 (sin dominio); la mutación lo destapó y se amplió.
+
+### Lo que NO he cambiado, y por qué
+
+- 🔴 **`.claude/skills/yaqu-wa-templates/SKILL.md` sigue diciendo «termina en `/{{1}}`».** `.claude/**` es «de un jefe» (`docs/equipo/dos-equipos.md:204`; `carriles.mjs de` lo confirma). No lo he tocado. Hasta que se firme, la skill contradice la spec, aunque la propia skill manda leer la spec («el detalle EXACTO está en `docs/WHATSAPP_TEMPLATES.md`»). **El texto propuesto** para que lo firme un jefe:
+  - `:20` → `- **Botón URL dinámica:** en WhatsApp Manager, «Tipo de URL: Dinámico» y el campo SIN `{{1}}` (base acabada en `/`, p. ej. `https://yaqu.app/albaran/`). Al terminar, UN SOLO `{{1}}`, al final. La prueba es copiar el enlace del botón en el móvil (sin `%7B%7B1%7D%7D`), no mirar el panel. Motivo: `docs/WHATSAPP_TEMPLATES.md`, «Reglas comunes». El código envía SOLO el sufijo (el token).`
+  - `:30,31,33` → `→ campo `https://yaqu.app/pay/quote/`` / `…/pay/invoice/` / `…/recibo/` (abre `/<ruta>/<token>`), y añadir la fila de `albaran_para_firmar_es` → campo `https://yaqu.app/albaran/`.
+- `docs/YAQU_MASTER.md:302` (`→ /recibo/{{1}}`) y los comentarios de `src/integrations/whatsappTemplates.ts` describen la URL que se abre, no cómo se rellena el campo: no instruyen. No los he tocado (master bloqueado; `src/` no es mío).
+
+### ❓ La pregunta que sólo Meta resuelve
+
+¿El editor de WhatsApp Manager añade él el `{{1}}` al elegir «Dinámico»? La regla «un solo `{{1}}`, al final» vale en los dos casos. **La prueba del móvil dice cuál es el nuestro.** Hasta que alguien la haga, la causa es lectura.
