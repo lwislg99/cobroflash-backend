@@ -220,9 +220,9 @@ test('SCRUM-1447 · ② el pie del presupuesto calcula la cuota del 7,5 % al 7,5
       `🔴 en el presupuesto al ${t * 100} %, la base más las cuotas del pie no dan el Total impreso.`);
   }
   assert.deepEqual(visto, {
-    // ⚠️ El rótulo del PIE sale «7.5%», con punto: lo compone `presentacionIva.ts`, que no es de
-    // este carril. La fila, que pinta `pdf.service.ts`, sale «7,5%». La cifra es la buena en los dos.
-    '7.5 %': { fila: '7,5%', base: 10000, pie: [{ rotulo: '7.5%', cuota: 750 }], total: 10750 },
+    // SCRUM-1636c · el rótulo del PIE salía «7.5%», con punto (`presentacionIva.ts`); ahora usa
+    // `rotuloDeTipo`, como la fila de `pdf.service.ts`. La cifra no se ha movido.
+    '7.5 %': { fila: '7,5%', base: 10000, pie: [{ rotulo: '7,5%', cuota: 750 }], total: 10750 },
     // El control: con un tipo entero, nada se ha movido.
     '10 %': { fila: '10%', base: 10000, pie: [{ rotulo: '10%', cuota: 1000 }], total: 11000 },
   },

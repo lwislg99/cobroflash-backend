@@ -68,7 +68,7 @@
     {"fichero":"src/modules/system/app/routes/quoteDecisionLanding.routes.ts","fuente":"/(material|tuber|cable|pintura|placa|cemento|pieza|grifo|caldera)/","clase":"persona","motivo":"el icono de la línea se elige por el concepto, que escribe el profesional"},
     {"fichero":"src/modules/system/app/routes/quoteDecisionLanding.routes.ts","fuente":"/(desplaz|viaje|\\bkm\\b|transporte|dieta)/","clase":"persona","motivo":"el icono de la línea se elige por el concepto, que escribe el profesional"},
     {"fichero":"src/modules/system/app/routes/quoteDecisionLanding.routes.ts","fuente":"/(revisi|diagn|inspec|presupuesto|estudio)/","clase":"persona","motivo":"el icono de la línea se elige por el concepto, que escribe el profesional"},
-    {"fichero":"src/modules/system/app/routes/quoteDecisionLanding.routes.ts","fuente":"/^IVA (\\d+)%:$/","clase":"maquina","motivo":"la etiqueta que arma nuestro propio pie de presupuesto"},
+    {"fichero":"src/modules/system/app/routes/quoteDecisionLanding.routes.ts","fuente":"/^IVA (\\d+(?:,\\d+)?)%:$/","clase":"maquina","motivo":"la etiqueta que arma nuestro propio pie de presupuesto (SCRUM-1636c: el tipo ya llega con coma, «IVA 7,5%:»)"},
     {"fichero":"src/modules/system/domain/importarClientes.service.ts","fuente":"/[^a-z0-9]/g","clase":"persona","motivo":"la cabecera de una columna del CSV que sube el profesional"},
     {"fichero":"src/modules/system/domain/importarClientes.service.ts","fuente":"/^[A-Za-z]{2}$/","clase":"maquina","motivo":"código ISO de país de 2 letras: un formato, y lo que no lo cumple se rechaza diciéndolo"},
     {"fichero":"src/modules/system/domain/publicProfile.service.ts","fuente":"/^#[0-9a-fA-F]{6}$/","clase":"maquina","motivo":"color hexadecimal de la marca"},

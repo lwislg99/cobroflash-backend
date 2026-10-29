@@ -2,7 +2,7 @@ import express, { Router, Request, Response } from 'express';
 import path from 'path'; // SCRUM-822 · `root` de `res.sendFile`
 import fetch from 'node-fetch';
 import { prisma } from '../../../../core/db/prisma';
-import { esc, parseToken, formatMoneyEs } from '../../../../core/utils/utils';
+import { esc, parseToken, formatMoneyEs, rotuloDeTipo } from '../../../../core/utils/utils';
 import { getLocale } from '../../../../core/i18n/locales';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
 import { isQuoteExpired } from '../../../quotes/domain/expire.service';
@@ -483,7 +483,8 @@ function renderQuoteDetail(
   });
   const conDescuento = pie.filas.some((f) => f.etiqueta === 'Suma de líneas:');
   const rotuloEnLaPagina = (etiqueta: string) => {
-    const iva = /^IVA (\d+)%:$/.exec(etiqueta);
+    // SCRUM-1636 · el pie ya trae el tipo con coma («IVA 7,5%:»); sin `,\d+` caía al rótulo crudo.
+    const iva = /^IVA (\d+(?:,\d+)?)%:$/.exec(etiqueta);
     return iva ? `IVA (${iva[1]}%)` : etiqueta.replace(/:$/, '');
   };
   const vatHtml = conDescuento
@@ -495,7 +496,7 @@ function renderQuoteDetail(
     ? `<div class="totals-block">
         <div class="totals-row"><span>Base imponible</span><span>${money(vat.base)}</span></div>
         ${vat.entries.filter((e) => e.rate > 0).map((e) => `
-        <div class="totals-row"><span>IVA (${e.rate}%)</span><span>${money(e.cuota)}</span></div>`).join('')}
+        <div class="totals-row"><span>IVA (${rotuloDeTipo(e.rate)}%)</span><span>${money(e.cuota)}</span></div>`).join('')}
       </div>`
     : '';
 
