@@ -1,0 +1,38 @@
+﻿población: 100 ficheros .js en public/ · 217 comentarios de convención (93 en objetos del censo, 124 FUERA DE ALCANCE) · 52 objetos · 348 hojas de texto
+APROBADO 314 · PENDIENTE 7 · SIN_COMENTARIO 27
+  SIN_COMENTARIO  public/dashboard/js/cobrosView.js · COBROS_COPY.cabeceras
+  SIN_COMENTARIO  public/dashboard/js/cobrosView.js · COBROS_COPY.diasEnTabla
+  SIN_COMENTARIO  public/dashboard/js/cobrosView.js · COBROS_COPY.diasSinCobrar
+  PENDIENTE       public/dashboard/js/invoicesView.js · COPY_BULK_PAGADAS.recargaFallida
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.avisoAjenas
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.avisoIlegibles
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.avisoSinNumero
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.cargando
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.colBase
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.colCuota
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.colEstado
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.colFecha
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.colNumero
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.colTipo
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.colTotal
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.descuadre
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.error
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.menu
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.recuento
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.titulo
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.trazaAlbaran
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.trazaCobro
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.trazaNoSellado
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.trazaPresupuestoFirmado
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.trazaPresupuestoSinFirmar
+  SIN_COMENTARIO  public/dashboard/js/libroRegistroView.js · COPY.vacioDeVerdad
+  SIN_COMENTARIO  public/dashboard/js/paidViaEtiquetas.js · ETIQUETAS_HEREDADAS.card:stripe
+  SIN_COMENTARIO  public/dashboard/js/paidViaEtiquetas.js · ETIQUETAS_HEREDADAS.manual
+  PENDIENTE       public/dashboard/js/settingsView.js · QR_COPY.color
+  PENDIENTE       public/dashboard/js/settingsView.js · QR_COPY.colorMarca
+  PENDIENTE       public/dashboard/js/settingsView.js · QR_COPY.colorNegro
+  PENDIENTE       public/dashboard/js/settingsView.js · QR_COPY.descargar
+  PENDIENTE       public/dashboard/js/settingsView.js · QR_COPY.formato
+  PENDIENTE       public/dashboard/js/settingsView.js · QR_COPY.tamano
+de las APROBADO, por firma de GRUPO (no en su línea): 176
+trinquete: 0 nuevas · 0 que sobran · 34 acusadas · 176 aprobadas por grupo
