@@ -74,6 +74,12 @@
 //                  el guion existía y dependía de que alguien se acordara de correrlo: era el mismo fallo que
 //                  venía a cazar. Si nadie lo ha corrido nunca en esta máquina, va como NOTA (no afirma nada);
 //                  con una foto de más de 12 h, «no pude mirar». ⛔ Lista y calla: no cierra nada.
+//  14 · VIGÍA DE MAIN → (SCRUM-1621) el último veredicto de `vigia-de-main.yml` en su Issue (#2641), con su hora,
+//                  y si sigue corriendo. Del 22 al 23-oct-2026 escribió 123 «SIN veredicto» que nadie leyó; y su
+//                  propio silencio no lo vigila nadie más (SCRUM-1324 c.17719).
+//  15 · TANDA GATEADA → (SCRUM-1621, SCRUM-1599 diseño A) cuántos días lleva cada fichero gateado sin verde,
+//                  juntando el recibo de TODOS los árboles. 🔴 Sin umbral decidido (SCRUM-1599 c.20713 ④): se
+//                  enseña con ⚪ y no avisa. Sin ningún recibo con desglose, «no pude mirar».
 //
 // ⚠️ LO QUE ESTO NO ARREGLA: el latido corre cuando ALGUIEN lo corre. Si nadie corre nada en tres días,
 // no dice nada. El único que corre sin sesión es `vigia-atascados` (workflow), y escribe en GitHub.
@@ -114,6 +120,10 @@ import { seccionArranque, medirArranque } from './arranque.mjs';
 import { elegirIssueExistente } from '../vigia-despliegue-aviso.mjs';
 // (SCRUM-1463c) Los cierres sin clic: la sección la escribe SU guion; aquí sólo se lee lo que guardó.
 import { seccionCierres, leerGuardado, NOTA_SIN_CORRER } from './cierre-sin-clic.mjs';
+// (SCRUM-1621) El vigía de main: su silencio se mide con la ventana de SU red, no con una nueva.
+import { UMBRAL_HORAS_DE_CRON } from '../vigia-silencio-de-main.mjs';
+// (SCRUM-1621) La edad de cada fichero gateado la calcula el dueño del recibo; aquí sólo se lee y se junta.
+import { RUTA_RECIBO, diasSinVerde } from '../_evidencia-tanda.mjs';
 
 export const SALIDA_OK = 0;
 export const SALIDA_AVISO = 1;
@@ -968,6 +978,155 @@ export function veredictoDelVigiaDeDespliegue({ corridas, pasosDe = () => undefi
   return { alertas, texto: texto(`CONGELADA (aviso: Issue #${numero})`) };
 }
 
+// ───────────────────────────── 14 · VIGÍA DE MAIN ─────────────────────────────
+
+/** El tercer vigía: `vigia-de-main.yml` (SCRUM-1393c). Su título y su workflow; un test los ata al YAML. */
+export const WORKFLOW_DEL_VIGIA_DE_MAIN = 'vigia-de-main.yml';
+export const TITULO_DEL_VIGIA_DE_MAIN = '[vigía] main sin verificar';
+/** Así empieza todo lo que escribe en su Issue: el aviso (`cuerpoDelAviso`) y el cierre (`accionDelIssue`). */
+const CABECERA_DEL_VIGIA_DE_MAIN = '**Vigía de main**';
+/**
+ * Cuánto puede callar antes de que su silencio deje de ser «nada nuevo». NO es un número elegido aquí: es
+ * la ventana con la que su propia red diaria mira hacia atrás (`desdeDeLaRed`: 24 h del cron + el retraso
+ * de cron medido, `UMBRAL_HORAS_DE_CRON`). Con `main` quieto sólo corre su cron, y más tarde que eso, ni él
+ * mismo se cubre. Medido el 27-oct-2026: sus 6 pasadas de cron llegaron entre 5 y 7 h tarde.
+ */
+export const HORAS_DE_VIGIA_DE_MAIN_CALLADO = 24 + UMBRAL_HORAS_DE_CRON;
+
+/**
+ * (SCRUM-1621, pieza 2 · decisión del fundador en SCRUM-1324 c.20782: «el latido muestra el último
+ * veredicto del vigía de main (Issue #2641) y su hora».) Del 22 al 23-oct ese vigía escribió 123 veces
+ * «SIN veredicto» en su Issue y nadie lo leyó: un detector que publica donde nadie lee equivale a uno ciego.
+ *
+ * Dos cosas distintas, y se dicen las dos:
+ *   · SU VEREDICTO es lo último que escribió en el Issue. Abierto = hay commits de `main` sin verificar, y
+ *     se enseña su recuento; cerrado = la última pasada que cerró juzgó la punta VERDE.
+ *   · SI SIGUE MIRANDO lo dicen sus CORRIDAS, no el Issue: sólo comenta lo NUEVO, así que un Issue quieto
+ *     se lee igual con `main` al día que con el vigía parado. Y su silencio no lo vigila nadie más
+ *     (SCRUM-1324 c.17719): esta sección es lo único que lo enseña.
+ *
+ * @param {{ issue: {number:number, estado:string, cerradoEn?:string|null}|null|undefined,
+ *   ultimo: {creado:string, cuerpo:string}|null|undefined,
+ *   corridas: {status?:string, conclusion?:string, created_at?:string, html_url?:string}[]|null|undefined, ahora:number }} e
+ *   `issue`: `undefined` = no se pudo buscar · `null` = se buscó y no hay ninguno con ese título.
+ *   `ultimo`: lo último que escribió el vigía (su último comentario, o el cuerpo si no hay ninguno);
+ *   `undefined` = no se pudo leer · `null` = no hay nada suyo. `corridas`: del más NUEVO al más viejo.
+ */
+export function seccionVigiaDeMain({ issue, ultimo, corridas, ahora }) {
+  const N = 'VIGÍA DE MAIN';
+  if (!Array.isArray(corridas)) return ciega(N, `no llegaron las corridas de \`${WORKFLOW_DEL_VIGIA_DE_MAIN}\`: no sé si sigue mirando, ni cuál fue su último veredicto`);
+  const terminadas = corridas.filter((c) => c && c.status === 'completed' && Number.isFinite(Date.parse(c.created_at)));
+  const enCola = corridas.filter((c) => c && c.status !== 'completed').length;
+  if (terminadas.length === 0) return ciega(N, `ninguna de las ${corridas.length} corridas de \`${WORKFLOW_DEL_VIGIA_DE_MAIN}\` que llegaron está terminada y fechada: no sé cuándo miró por última vez`);
+  const horas = (t) => (ahora - Date.parse(t)) / 3600000;
+  const cuanto = (h) => (h >= 48 ? `${(h / 24).toFixed(1)} días (${Math.round(h)} h)` : `${h.toFixed(1)} h`);
+  const ultima = terminadas[0];
+  const cuando = `${String(ultima.created_at).slice(0, 16)}Z`;
+  const alertas = [];
+  if (ultima.conclusion !== 'success') {
+    const buena = terminadas.find((c) => c.conclusion === 'success');
+    alertas.push({ linea: `su última pasada (${cuando}) terminó en ${String(ultima.conclusion).toUpperCase()}: SIN VEREDICTO (SCRUM-1324d pone el job en rojo cuando el juez no lo da). ${buena ? `La última buena es de hace ${cuanto(horas(buena.created_at))}` : `Ninguna buena entre las ${terminadas.length} que llegaron`}. Lo de abajo NO es el estado de hoy${ultima.html_url ? ` · ${ultima.html_url}` : ''}` });
+  } else if (horas(ultima.created_at) > HORAS_DE_VIGIA_DE_MAIN_CALLADO) {
+    alertas.push({ linea: `el vigía NO CORRE desde hace ${cuanto(horas(ultima.created_at))} (${cuando}): corre al acabar cada CI de main y una vez al día por cron, y más de ${HORAS_DE_VIGIA_DE_MAIN_CALLADO} h es más de lo que su propia red cubre. Su silencio NO es que main esté verificado` });
+  }
+  const pasada = `última pasada hace ${cuanto(horas(ultima.created_at))} (${ultima.conclusion})${enCola ? ` · ${enCola} en cola o corriendo` : ''}`;
+  if (issue === undefined) return { ...ciega(N, `no se pudo buscar el Issue «${TITULO_DEL_VIGIA_DE_MAIN}»: no sé su último veredicto · lo que SÍ se leyó: ${pasada}`), alertas };
+  if (issue === null) return { nombre: N, pudo: true, alertas, poblacion: `${pasada} · no hay ningún Issue «${TITULO_DEL_VIGIA_DE_MAIN}»: el vigía no ha avisado nunca (o alguien lo borró)` };
+  if (ultimo === undefined) return { ...ciega(N, `no pude leer lo último que escribió el vigía en el Issue #${issue.number}: no sé su último veredicto · lo que SÍ se leyó: ${pasada}`), alertas };
+  // El aviso empieza por `**Vigía de main**`; el cierre, por `**Vigía de main · CERRADO**`.
+  if (!ultimo || !String(ultimo.cuerpo || '').startsWith(CABECERA_DEL_VIGIA_DE_MAIN.slice(0, -2))) {
+    return { ...ciega(N, `lo último del Issue #${issue.number} no lo escribió el vigía (no empieza por «${CABECERA_DEL_VIGIA_DE_MAIN}»): o lo comentó una persona después, o el formato ha cambiado; no sé su último veredicto · lo que SÍ se leyó: ${pasada}`), alertas };
+  }
+  const cuerpo = String(ultimo.cuerpo);
+  // El recuento es la penúltima línea de `informeDeCommits`: en el aviso va sola; en el cierre, tras
+  // «Población de esta pasada:». Se busca donde esté, y el ÚLTIMO (un cierre puede ir pegado a un aviso).
+  const recuento = [...cuerpo.matchAll(/\d+ commits mirados · [^\n]*?\d+ verdes/g)].map((m) => m[0]).pop();
+  if (!recuento) return { ...ciega(N, `lo último que escribió el vigía en el Issue #${issue.number} (${String(ultimo.creado).slice(0, 16)}Z) no trae su recuento «N commits mirados · … · V verdes»: el formato ha cambiado y no sé leer su veredicto · lo que SÍ se leyó: ${pasada}`), alertas };
+  const dicho = `${String(ultimo.creado).slice(0, 16)}Z, hace ${cuanto(horas(ultimo.creado))}`;
+  const esCierre = cuerpo.includes(`${CABECERA_DEL_VIGIA_DE_MAIN.slice(0, -2)} · CERRADO**`);
+  if (issue.estado === 'CLOSED') {
+    if (!esCierre) {
+      alertas.push({ linea: `el Issue #${issue.number} está CERRADO, pero lo último que escribió el vigía (${dicho}) es un AVISO, no su cierre: lo cerró alguien a mano con commits sin verificar. Ese aviso dice «${recuento}» · https://github.com/${REPO}/issues/${issue.number}` });
+      return { nombre: N, pudo: true, alertas, poblacion: `${pasada} · Issue #${issue.number} cerrado A MANO` };
+    }
+    return { nombre: N, pudo: true, alertas, poblacion: `${pasada} · Issue #${issue.number} CERRADO por el propio vigía (${dicho}): la punta de main salió VERDE sin ningún CIEGO pendiente · «${recuento}»` };
+  }
+  if (esCierre) {
+    alertas.push({ linea: `el vigía escribió su CIERRE (${dicho}) y el Issue #${issue.number} sigue ABIERTO: su paso de cerrar no se ejecutó. Su recuento: «${recuento}» · https://github.com/${REPO}/issues/${issue.number}` });
+    return { nombre: N, pudo: true, alertas, poblacion: `${pasada} · Issue #${issue.number} abierto con el cierre escrito` };
+  }
+  const avisados = cuerpo.split(/\r?\n/).map((l) => /^- \*\*([A-Z-]+)\*\* `([0-9a-f]+)`/.exec(l.trim())).filter(Boolean);
+  const porEstado = [...new Set(avisados.map((m) => m[1]))].map((e) => `${avisados.filter((m) => m[1] === e).length} ${e}`).join(', ');
+  alertas.push({ linea: `el Issue #${issue.number} está ABIERTO: main tiene commits SIN VERIFICAR. Último veredicto (${dicho}): «${recuento}»${avisados.length ? ` · ese aviso nombra ${avisados.length} commit(s) nuevo(s): ${porEstado}` : ''} · https://github.com/${REPO}/issues/${issue.number}` });
+  return { nombre: N, pudo: true, alertas, poblacion: `${pasada} · Issue #${issue.number} abierto` };
+}
+
+// ───────────────────────────── 15 · TANDA GATEADA ─────────────────────────────
+
+/**
+ * (SCRUM-1621, pieza 4 · SCRUM-1599, diseño A, decisión del fundador c.20715 ②: «el latido dice N días sin
+ * verde».) 🔴 EL UMBRAL NO ESTÁ DECIDIDO: es la pregunta ④ de SCRUM-1599 c.20713 y la decide el fundador.
+ * Mientras sea `null`, la sección ENSEÑA la edad de cada fichero y NINGUNA avisa: sale con ⚪, no con ✅,
+ * para que nadie lea «sin umbral» como «todo bien». Decidirlo es cambiar ESTE número, y nada más.
+ */
+export const UMBRAL_DIAS_SIN_VERDE = null;
+
+/**
+ * Los recibos de TODOS los árboles, en uno. El recibo vive en `.claude/evidencia-tanda.json` del árbol que
+ * corrió la tanda, y la corre cada sesión en el suyo: leer sólo el del árbol del latido sería mirar UNO de
+ * cientos. Por fichero gana el veredicto más reciente; su último verde es el más reciente de todos. Pura.
+ * @param {{arbol:string, texto:string}[]} recibos
+ * @returns {{leidos:number, ilegibles:string[], conDesglose:number, ultimaTanda:string|null, texto:string|null}}
+ */
+export function fusionarRecibos(recibos) {
+  const porFichero = {}; const ilegibles = []; let conDesglose = 0; let ultimaTanda = null;
+  const masNueva = (a, b) => (!a ? b : !b ? a : Date.parse(b) > Date.parse(a) ? b : a);
+  for (const { arbol, texto } of recibos) {
+    let r; try { r = JSON.parse(texto); } catch { ilegibles.push(arbol); continue; }
+    if (!r || typeof r !== 'object') { ilegibles.push(arbol); continue; }
+    if (Number.isFinite(Date.parse(r.terminadaEn))) ultimaTanda = masNueva(ultimaTanda, r.terminadaEn);
+    const pf = r.porFichero;
+    if (!pf || typeof pf !== 'object' || Array.isArray(pf) || !Object.keys(pf).length) continue;
+    conDesglose++;
+    for (const [f, e] of Object.entries(pf)) {
+      if (!e || typeof e !== 'object') continue;
+      const antes = porFichero[f];
+      const verde = masNueva(antes && antes.ultimoVerdeEn, e.ultimoVerdeEn) ?? null;
+      porFichero[f] = !antes || Date.parse(e.veredictoEn) > Date.parse(antes.veredictoEn) ? { ...e, ultimoVerdeEn: verde } : { ...antes, ultimoVerdeEn: verde };
+    }
+  }
+  return { leidos: recibos.length, ilegibles, conDesglose, ultimaTanda, texto: conDesglose ? JSON.stringify({ terminadaEn: ultimaTanda, porFichero }) : null };
+}
+
+/**
+ * @param {{ recibos: {arbol:string, texto:string}[]|undefined, arboles: number|undefined, ahora:number, umbralDias?:number|null }} e
+ *   `recibos`: `undefined` = no se pudo listar los árboles. `umbralDias` sólo para el test: en la orden manda la constante.
+ */
+export function seccionTandaGateada({ recibos, arboles, ahora, umbralDias = UMBRAL_DIAS_SIN_VERDE }) {
+  const N = 'TANDA GATEADA';
+  if (!Array.isArray(recibos)) return ciega(N, 'no pude listar los árboles de la máquina (`git worktree list`): no sé dónde buscar los recibos de la tanda gateada');
+  const f = fusionarRecibos(recibos);
+  const deDonde = `${f.leidos} recibo(s) en ${arboles ?? '?'} árboles${f.ilegibles.length ? ` (${f.ilegibles.length} ilegible(s): ${f.ilegibles.slice(0, 3).join(', ')})` : ''}, ${f.conDesglose} con desglose por fichero`;
+  const dias = (t) => Math.floor((ahora - Date.parse(t)) / 864e5);
+  const ultimaTanda = f.ultimaTanda ? `última tanda gateada con recibo: ${f.ultimaTanda.slice(0, 16)}Z, hace ${dias(f.ultimaTanda)} días` : 'ningún recibo dice cuándo terminó';
+  if (!f.leidos) return ciega(N, `ningún árbol de los ${arboles ?? '?'} de la máquina tiene recibo de la tanda gateada (\`npm run test:staging:gated\`): no sé cuánto lleva cada fichero sin verde`);
+  if (!f.texto) return ciega(N, `${deDonde} · ${ultimaTanda} · ningún recibo trae el desglose por fichero (son anteriores a SCRUM-1599g): no sé cuánto lleva cada fichero sin verde`);
+  const conUmbral = Number.isFinite(umbralDias);
+  const d = diasSinVerde({ texto: f.texto, ahoraMs: ahora, ...(conUmbral ? { umbralDias } : {}) });
+  if (d.estado !== 'OK') return ciega(N, `${deDonde} · ${d.motivo}`);
+  const de = (e) => d.ficheros.filter((x) => x.estado === e).length;
+  const malos = d.ficheros.filter((x) => x.estado !== 'verde')
+    .sort((a, b) => (b.dias ?? Infinity) - (a.dias ?? Infinity) || a.fichero.localeCompare(b.fichero));
+  const linea = (x) => `${x.fichero} · ${x.estado === 'sin-verde' ? `${x.dias} días sin verde (último verde ${String(x.ultimoVerdeEn).slice(0, 10)}, último veredicto ${x.veredicto})`
+    : x.estado === 'nunca-verde' ? 'NUNCA verde en ningún recibo (último veredicto rojo)' : x.estado === 'saltado' ? 'saltado: la tanda no lo mide' : 'CIEGO'}`;
+  const poblacion = `${deDonde} · ${ultimaTanda} · ${d.poblacion} ficheros: ${de('verde')} verdes, ${de('sin-verde')} sin verde, ${de('nunca-verde')} nunca verdes, ${de('saltado')} saltados`;
+  if (!conUmbral) {
+    return { nombre: N, pudo: true, alertas: [], sinUmbral: true, lineas: malos.map(linea),
+      poblacion: `${poblacion} · ⚠️ SIN UMBRAL DECIDIDO (SCRUM-1599 c.20713 ④, lo decide el fundador): se enseña la edad y NINGUNA avisa` };
+  }
+  return { nombre: N, pudo: true, alertas: d.avisos.map((x) => ({ linea: linea(x) })), poblacion: `${poblacion} · avisa por encima de ${umbralDias} días` };
+}
+
 // ───────────────────────────── 10 · QA ─────────────────────────────
 
 /**
@@ -1025,7 +1184,9 @@ export function informe(secciones, { ahora, fallosDe = () => undefined, notas = 
   const out = [`LATIDO · ${new Date(ahora).toISOString().slice(0, 16)}Z`];
   for (const s of secciones) {
     if (!s.pudo) { out.push('', `🔴 ${s.nombre} · NO PUDE MIRAR: ${s.motivo}`, '   Esto NO quiere decir que no haya nada.'); for (const a of s.alertas) out.push(`   · ${a.linea}`); continue; }
-    out.push('', `${s.alertas.length ? '🔴' : '✅'} ${s.nombre} · ${s.poblacion}`);
+    // (SCRUM-1621) ⚪ = la sección miró, pero no tiene con qué juzgar (un umbral sin decidir): NO es un ✅.
+    out.push('', `${s.alertas.length ? '🔴' : s.sinUmbral ? '⚪' : '✅'} ${s.nombre} · ${s.poblacion}`);
+    for (const l of s.lineas || []) out.push(`   · ${l}`);
     for (const a of s.alertas) {
       out.push(`   · ${a.linea}`);
       const f = a.numero ? fallosDe(a.numero) : undefined;
@@ -1425,8 +1586,32 @@ async function todo() {
   // 13 · cierres sin clic. Sólo lee el fichero que dejó `cierre-sin-clic.mjs`; no toca Jira ni git.
   const cie = cierresDelLatido({ guardado: intentar(() => leerGuardado()), ahora });
   tramo('cierres');
+  // 14 · vigía de main (SCRUM-1621). Su Issue se busca por título en TODOS los estados, como lo busca él; y
+  // de lo que escribió sólo hace falta lo ÚLTIMO: una página de un comentario, la del final.
+  const vmCorridas = intentar(() => ghJson(['api', `repos/${REPO}/actions/workflows/${WORKFLOW_DEL_VIGIA_DE_MAIN}/runs?per_page=20`]).workflow_runs) ?? null;
+  const vmIssues = intentar(() => ghJson(['issue', 'list', '--state', 'all', '--search', `${TITULO_DEL_VIGIA_DE_MAIN} in:title`, '--json', 'number,title,state,closedAt', '--limit', '20']));
+  const vmElegido = !Array.isArray(vmIssues) ? undefined
+    : vmIssues.filter((i) => i.title === TITULO_DEL_VIGIA_DE_MAIN).sort((a, b) => (a.state !== 'OPEN') - (b.state !== 'OPEN') || b.number - a.number)[0] || null;
+  const vmIssue = vmElegido && { number: vmElegido.number, estado: vmElegido.state, cerradoEn: vmElegido.closedAt };
+  const vmUltimo = !vmElegido ? vmElegido : intentar(() => {
+    const i = ghJson(['api', `repos/${REPO}/issues/${vmElegido.number}`]);
+    if (!i.comments) return { creado: i.created_at, cuerpo: i.body };
+    const [c] = ghJson(['api', `repos/${REPO}/issues/${vmElegido.number}/comments?per_page=1&page=${i.comments}`]);
+    return c ? { creado: c.created_at, cuerpo: c.body } : undefined;
+  });
+  const sVM = seccionVigiaDeMain({ issue: vmIssue, ultimo: vmUltimo, corridas: vmCorridas, ahora });
+  tramo('vigía de main');
+  // 15 · tanda gateada (SCRUM-1621). El recibo de cada árbol de la máquina; uno solo sería mirar uno de cientos.
+  const arbolesDeLaMaquina = intentar(() => git(['worktree', 'list', '--porcelain']).split(/\r?\n/).filter((l) => l.startsWith('worktree ')).map((l) => l.slice(9)));
+  const recibos = arbolesDeLaMaquina && arbolesDeLaMaquina.flatMap((a) => {
+    const texto = intentar(() => fs.readFileSync(path.join(a, RUTA_RECIBO), 'utf8'));
+    return typeof texto === 'string' ? [{ arbol: a, texto }] : [];
+  });
+  const sTG = seccionTandaGateada({ recibos, arboles: arbolesDeLaMaquina && arbolesDeLaMaquina.length, ahora });
+  tramo('tanda gateada');
   const secciones = [sPR, sSes, sTra, sMain, sDep, sCem, sCtx, sExp, sVig, sQA, sDis, sArr];
   if (cie.seccion) secciones.push(cie.seccion);
+  secciones.push(sVM, sTG);
   console.log(informe(secciones, { ahora, fallosDe: (n) => fallos.get(n), notas: [...NOTAS_FIJAS, ...cie.notas] }));
   console.log(tiempos(tramos));
   return salidaDe(secciones);
