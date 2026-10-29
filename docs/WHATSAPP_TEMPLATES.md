@@ -49,8 +49,47 @@ contar en Meta y vea nueve, que no busque dos plantillas perdidas — son éstas
 - **Categoría:** UTILITY
 - **Idioma:** `es`
 - **Variables:** numeradas (`{{1}}`, `{{2}}`…), en el orden indicado.
-- **Botones URL dinámica:** la URL base termina en `/{{1}}`; el código envía como
-  parámetro del botón **solo el sufijo** (el id), no la URL completa.
+- **Botones URL dinámica — en WhatsApp Manager el campo URL se escribe SIN `{{1}}`:** «Tipo de
+  URL: Dinámico» y, en el campo, la base acabada en `/` (p. ej. `https://yaqu.app/albaran/`). El
+  código envía como parámetro del botón **solo el sufijo** (el token), no la URL completa.
+  **Al terminar tiene que quedar UN SOLO `{{1}}`, al final.** Si hay un `{{1}}` escrito a mano en
+  el campo, ése es el que sobra. Las cuatro con enlace (tabla de SCRUM-1632 c.21201):
+
+  | plantilla | campo URL (Dinámico) | abre |
+  | --- | --- | --- |
+  | `albaran_para_firmar_es` | `https://yaqu.app/albaran/` | `/albaran/<token>` |
+  | `quote_decision_es` | `https://yaqu.app/pay/quote/` | `/pay/quote/<token>` |
+  | `payment_request_es` | `https://yaqu.app/pay/invoice/` | `/pay/invoice/<token>` |
+  | `payment_confirmation_invoice_es` | `https://yaqu.app/recibo/` | `/recibo/<token>` |
+
+  > ⚠️ **Por qué se corrigió esta regla (29-oct-2026, SCRUM-1632).** Hasta ese día decía «la URL
+  > base termina en `/{{1}}`», y lo mismo decían la skill `yaqu-wa-templates` y
+  > `SPEC_SCRUM47_ALBARAN_FIRMADO_WA.md:63,137`. Eso es lo que pide la **API** de Meta (en
+  > `message_templates` el `url` lleva el `{{1}}` al final: «Supports 1 variable, appended to the
+  > end of the URL string»), pero nosotros **no creamos plantillas por API**: no hay ni una llamada
+  > a `message_templates` en el repo. Se dan de alta a mano en el **editor** de WhatsApp Manager, y
+  > guías de terceros (Jotform y otras; **no Meta**) dicen que el editor añade él el `{{1}}` al
+  > elegir «Dinámico». Si es así, escribirlo deja un `{{1}}` literal delante del token:
+  > `/albaran/%7B%7B1%7D%7D<token>`, que es exactamente el enlace roto de SCRUM-1236 (18-oct) y
+  > de **P3-1** (`docs/BUGS.md:1172`: `/pay/quote/{{1}}23` en junio, `/pay/invoice/{{1}}0` el
+  > 22-jul). El «arreglo de raíz» de P3-1 (`BUGS.md:1174`) volvía a escribir la base con `{{1}}`.
+  > Un arreglo cuyo camino por defecto sigue mal vuelve a crear el defecto.
+  >
+  > 🔴 **La prueba que vale:** mandar un mensaje real con la plantilla al móvil del fundador,
+  > **mantener pulsado el botón → copiar el enlace** y pegarlo. Si lleva `%7B%7B1%7D%7D` (o
+  > `{{1}}`), la plantilla está mal. **Abrir el panel y mirar NO vale:** es lo que se hizo en
+  > julio (`docs/ERRORES_ASESOR.md` #3), se vio «dinámico y correcto» comparándolo con esta misma
+  > regla, que pedía el `{{1}}`, y el defecto volvió.
+  >
+  > ❓ **Lo que sólo Meta resuelve, y no está verificado:** que el editor añada el `{{1}}` solo lo
+  > dicen terceros; ninguna sesión ve el panel. La regla de «un solo `{{1}}`, al final» vale en
+  > los dos casos; la prueba del móvil dice cuál es el nuestro.
+  >
+  > 🔵 **Pendiente de decisión, no hecho:** el camino del presupuesto ya tolera el `{{1}}` sobrante
+  > (`parseToken`, `src/core/utils/utils.ts`), el de la firma (`albaranPublic.routes.ts`) no. Que
+  > lo haga lo decide el fundador (SCRUM-1632 c.21202). Esto no cambia la regla de arriba.
+  >
+  > ⛔ Editar una plantilla aprobada la manda otra vez a revisión de Meta y es STOP del fundador.
 - El número de variables del cuerpo y de botones debe cuadrar **exacto** o Meta
   rechaza el envío (error #132000 / #132001).
 
@@ -129,7 +168,8 @@ Envío de un presupuesto al cliente para que lo vea, acepte o rechace.
 - **Pie:** `Enviado con Yaqu`
 - **Botones — 1 (URL dinámica):**
   - Texto: `Ver presupuesto`
-  - URL base: `https://yaqu.app/pay/quote/{{1}}` → variable = **Quote.decisionToken**
+  - Campo URL (Dinámico, **sin `{{1}}`**, ver «Reglas comunes»): `https://yaqu.app/pay/quote/`
+    → abre `/pay/quote/<token>` · variable = **Quote.decisionToken**
     (SCRUM-95: token opaco, antes el id — mismo patrón que `payment_request_es` §2. La
     URL base aprobada por Meta NO cambia, solo el valor que se sustituye en `{{1}}`;
     no requirió re-aprobación, igual que en 74/85/90).
@@ -163,8 +203,8 @@ Envío de la factura con enlace de pago.
 - **Pie:** `Pago seguro · Yaqu`
 - **Botones — 1 (URL dinámica):**
   - Texto: `Pagar ahora`
-  - URL base: `https://yaqu.app/pay/invoice/{{1}}` (SIN CAMBIOS — la BASE aprobada en Meta es
-    la misma) → variable = **token OPACO del cobro** (`Charge.receiptToken`, SCRUM-85; antes
+  - Campo URL (Dinámico, **sin `{{1}}`**, ver «Reglas comunes»): `https://yaqu.app/pay/invoice/`
+    → abre `/pay/invoice/<token>` (SIN CAMBIOS — la BASE aprobada en Meta es la misma) → variable = **token OPACO del cobro** (`Charge.receiptToken`, SCRUM-85; antes
     era el `chargeId`, cambiado por IDOR/RGPD — misma fuga y mismo fix que
     `payment_confirmation_invoice_es` en SCRUM-74, ver §4). Meta aprueba la URL BASE fija + la
     POSICIÓN del sufijo dinámico, no el formato del valor sustituido en runtime — por eso este
@@ -239,8 +279,8 @@ de cobro. **Sustituirá** a `payment_confirmation_es` cuando esté aprobada.
 - **Botones — 1 (URL dinámica):**
   - Texto: `Ver documento`
   - Tipo: URL **dinámica**
-  - URL base: `https://yaqu.app/recibo/{{1}}` (SIN CAMBIOS — la BASE aprobada en Meta es la
-    misma) → variable = **token OPACO del recibo** (`Charge.receiptToken`, SCRUM-74; antes era
+  - Campo URL (Dinámico, **sin `{{1}}`**, ver «Reglas comunes»): `https://yaqu.app/recibo/`
+    → abre `/recibo/<token>` (SIN CAMBIOS — la BASE aprobada en Meta es la misma) → variable = **token OPACO del recibo** (`Charge.receiptToken`, SCRUM-74; antes era
     el `chargeId`, ej. `42` — cambiado por IDOR/RGPD: el id era enumerable). Mismo mecanismo que
     el botón de `albaran_para_firmar_es` (**§8**, SCRUM-49): Meta aprueba la URL BASE fija + la
     POSICIÓN del sufijo dinámico, no el formato del valor que se sustituye en runtime — por eso
@@ -319,7 +359,9 @@ Copia **firmada** del albarán al cliente, con el PDF en la cabecera.
 ## 8. `albaran_para_firmar_es`  (SCRUM-49)
 Enlace «para firmar» a distancia: el cliente firma el albarán desde su móvil.
 
-- **Cuerpo — 3 variables** · **Botón URL dinámica** → `/albaran/{{token}}` · **Sin cabecera**.
+- **Cuerpo — 3 variables** · **Botón URL dinámica** «Ver y firmar» · campo URL (Dinámico, **sin
+  `{{1}}`**, ver «Reglas comunes»): `https://yaqu.app/albaran/` → abre `/albaran/<token>`
+  (`Albaran.firmaToken`) · **Sin cabecera**.
 - Mismo mecanismo de token que §2 y §4: Meta aprueba la **URL base fija** y la POSICIÓN del
   sufijo dinámico, no el formato del valor — por eso cambiar el token no exige re-aprobación.
 - **Código que lo envía:** `src/modules/jobs/domain/albaranWhatsApp.service.ts`.
