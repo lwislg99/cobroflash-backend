@@ -68,21 +68,28 @@ test('SCRUM-1633 · CONTROL POSITIVO: los ficheros reales contestan lo de siempr
   assert.doesNotMatch(r.stdout, /no existe|RUTA NUEVA/, r.stdout);
 });
 
-test('SCRUM-1633 · censo: ningún fichero del repo cae en «no existe», y cada uno contesta lo que dice su fila', () => {
+test('SCRUM-1633 · muestra de todo el repo POR LA CLI: ningún fichero real cae en «no existe», y cada uno contesta su fila', () => {
+  // Por la CLI y con rutas absolutas, que es donde se puede romper: la ruta que se teclea se normaliza a la del
+  // repo, y si esa normalización fallara, un fichero real saldría «no existe». Uno de cada 40 (~200 rutas): el
+  // repo entero no cabe en una línea de órdenes de Windows, y cada fichero por separado son minutos (canon S0).
   const ficheros = ficherosDelRepo();
   const mapa = construirMapa(TABLA, ficheros);
-  const existe = new Set(ficheros);
-  // Población: medido el 29-oct-2026 en eafca9fe1, 7852 ficheros.
-  assert.ok(ficheros.length >= 5000, `población: ${ficheros.length} ficheros`);
+  const muestra = ficheros.filter((_, i) => i % 40 === 0);
+  // Población: medido el 29-oct-2026 en eafca9fe1, 7852 ficheros → 197 en la muestra.
+  assert.ok(muestra.length >= 120, `población: ${muestra.length} de ${ficheros.length}`);
+  const r = de(...muestra);
+  const lineas = r.stdout.split(/\r?\n/).filter((l) => / → /.test(l) && !l.startsWith(' '));
+  assert.equal(lineas.length, muestra.length, 'una respuesta por ruta');
   let conDueno = 0;
-  for (const f of ficheros) {
-    const { linea, ciego } = respuestaDe(f, { mapa, tabla: TABLA, existe: (x) => existe.has(x) });
-    assert.doesNotMatch(linea, /no existe|RUTA NUEVA/, linea);
-    const r = reglaDe(f, mapa);
-    if (r) { conDueno++; assert.ok(linea.startsWith(`${f} → ${r.puesto ?? 'SIN CERRADURA'} (${r.tipo}) · `), linea); }
-    assert.equal(ciego, !r && Boolean(testDeTicket(f, TABLA)), `${f}: sólo el test de un ticket sin fila deja la salida en 2`);
-  }
-  assert.ok(conDueno >= 1000, `población: ${conDueno} con fila`);
+  muestra.forEach((f, i) => {
+    assert.ok(lineas[i].startsWith(`${f} → `), `${f}: ${lineas[i]}`);
+    assert.doesNotMatch(lineas[i], /no existe|RUTA NUEVA/, lineas[i]);
+    const regla = reglaDe(f, mapa);
+    if (regla) { conDueno++; assert.ok(lineas[i].startsWith(`${f} → ${regla.puesto ?? 'SIN CERRADURA'} (${regla.tipo}) · `), lineas[i]); }
+  });
+  assert.ok(conDueno >= 60, `población: ${conDueno} con fila en la muestra`);
+  const ciega = muestra.some((f) => !reglaDe(f, mapa) && testDeTicket(f, TABLA));
+  assert.equal(r.status, ciega ? 2 : 0, 'la salida sólo es 2 si en la muestra hay un test de ticket sin fila');
 });
 
 test('SCRUM-1633 · CONTROL del huérfano de verdad: existe, no tiene fila, y sale «nadie lo reclama» con 0, distinto de «no existe»', () => {

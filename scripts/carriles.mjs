@@ -9,7 +9,9 @@
 //   node scripts/carriles.mjs generar            escribe carriles.json y las reglas
 //   node scripts/carriles.mjs comprobar          salida 1 si lo escrito no es lo que sale de la tabla
 //   node scripts/carriles.mjs de <ruta>          de quién es un fichero, y por qué fila (salida 2 si alguna es
-//                                                el test de un ticket sin fila: su dueño está en Jira, SCRUM-1628)
+//                                                el test de un ticket sin fila: su dueño está en Jira, SCRUM-1628;
+//                                                y salida 2 si la ruta no existe: no nombra dueño, SCRUM-1633)
+//   node scripts/carriles.mjs de --nueva <ruta>  lo mismo para un fichero que vas a CREAR, marcado «RUTA NUEVA»
 //   node scripts/carriles.mjs sin-fila [--lista] los scripts que sólo cubre la fila general (SCRUM-1480f)
 //   node scripts/carriles.mjs mesa <PUESTO> <dir>
 //
@@ -106,14 +108,22 @@ export function textoMesa(puesto, textoTabla, ficheros, leerCicatrices = () => n
 }
 
 // La línea que contesta `de` para UNA ruta (relativa a la raíz), y si deja la salida en 2.
-export function respuestaDe(rel, { mapa, tabla }) {
+// SCRUM-1633: una ruta que no existe no tiene dueño que medir. Antes contestaba el del patrón en que caía (una
+// errata de `jobsView.js`, de S4, salía «S2» con su fila y su línea) o «nadie lo reclama», y las dos con 0. Ahora
+// no nombra puesto y deja la salida en 2; quien va a CREAR el fichero lo pregunta con `--nueva`, y se le dice.
+export function respuestaDe(rel, { mapa, tabla, existe = () => true, nueva = false }) {
+  const hoy = existe(rel);
+  if (!hoy && !nueva) {
+    return { linea: `${rel} → NO-PUDE-MIRAR: esa ruta no existe (ni en \`git ls-files\` ni en disco). ¿Una errata? No digo de quién sería: si la vas a CREAR, \`node scripts/carriles.mjs de --nueva ${rel}\`.`, ciego: true };
+  }
+  const marca = hoy ? '' : 'RUTA NUEVA (hoy no existe) · ';
   const r = reglaDe(rel, mapa);
   // SCRUM-1628: el test de un ticket no tiene fila de RUTA, pero sí dueño (§3, «el test de un ticket»), y ese
   // dueño está en Jira. Decir «nadie lo reclama» ahí era afirmar lo que este instrumento no puede ver.
   const t = r ? null : testDeTicket(rel, tabla);
-  const linea = r ? `${rel} → ${r.puesto ?? 'SIN CERRADURA'} (${r.tipo}) · ${FUENTE}:${r.linea} · «${r.dueno}» · patrón ${r.patron}`
-    : t ? `${rel} → NO-PUDE-MIRAR: sin fila de ruta, pero es el test de ${t.ticket}, y ${FUENTE}:${t.fila.linea} («${t.fila.que}» → ${t.fila.dueno}) lo da al puesto que trabaja ese ticket. Cuál es no está en la tabla: es la etiqueta area-… de ${t.ticket} en Jira. NO quiere decir «nadie lo reclama».`
-    : `${rel} → sin fila en §3: nadie lo reclama`;
+  const linea = `${rel} → ${marca}` + (r ? `${r.puesto ?? 'SIN CERRADURA'} (${r.tipo}) · ${FUENTE}:${r.linea} · «${r.dueno}» · patrón ${r.patron}`
+    : t ? `NO-PUDE-MIRAR: sin fila de ruta, pero es el test de ${t.ticket}, y ${FUENTE}:${t.fila.linea} («${t.fila.que}» → ${t.fila.dueno}) lo da al puesto que trabaja ese ticket. Cuál es no está en la tabla: es la etiqueta area-… de ${t.ticket} en Jira. NO quiere decir «nadie lo reclama».`
+    : 'sin fila en §3: nadie lo reclama');
   return { linea, ciego: Boolean(t) };
 }
 
@@ -158,14 +168,19 @@ function principal(argv) {
   if (orden === 'de') {
     // SCRUM-1295b: contesta TODAS las rutas que se le pasan. Antes leía sólo la primera y salía con 0, así
     // que `de a b` callaba `b` con la misma cara que si `b` no tuviera nada que decir. Sin ruta, no contesta.
-    if (!resto.length) { console.log('NO-PUDE-MIRAR: uso: de <ruta> [<ruta>…]'); return 2; }
+    const nueva = resto.includes('--nueva');
+    const rutas = resto.filter((a) => a !== '--nueva');
+    if (!rutas.length) { console.log('NO-PUDE-MIRAR: uso: de <ruta> [<ruta>…] · de --nueva <ruta> para un fichero que vas a crear'); return 2; }
+    const enGit = new Set(ficheros);
+    const existe = (rel) => enGit.has(rel) || fs.existsSync(path.join(RAIZ, rel));
     let ciego = false;
-    for (const ruta of resto) {
+    for (const ruta of rutas) {
       const rel = path.relative(RAIZ, path.resolve(ruta)).split(path.sep).join('/');
-      const r = reglaDe(rel, mapa);
-      const respuesta = respuestaDe(rel, { mapa, tabla });
+      const respuesta = respuestaDe(rel, { mapa, tabla, existe, nueva });
       if (respuesta.ciego) ciego = true;
       console.log(respuesta.linea);
+      if (!existe(rel) && !nueva) continue;
+      const r = reglaDe(rel, mapa);
       // SCRUM-1480e: la fila general de scripts/ no da dueño (no es «todo lo demás de…», que sí lo da). A
       // quien cae en ella se le dice aquí, que es donde se pregunta, y no en un documento que hay que ir a leer.
       if (r && !r.puesto && r.patron === 'scripts/**') console.log(`  ⚠ sólo lo cubre la fila general de scripts/: su dueño no lo ha decidido nadie, y no es de la S0 por caer aquí. Si lo estás CREANDO, nace con fila en tu mismo PR: la del puesto del área del ticket que lo crea (${FUENTE} §3.3, «Cómo nace la fila de un fichero de scripts/»).`);
