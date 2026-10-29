@@ -63,9 +63,13 @@ function entornoLimpio(extra = {}) {
   return env;
 }
 
-/** Corre un guion en un node aparte y devuelve el JSON de su línea `RESULTADO `. */
-function resultadoDe(dir, codigo, args = []) {
-  const guion = path.join(dir, 'medir.mjs');
+/**
+ * Corre un guion en un node aparte y devuelve el JSON de su línea `RESULTADO `.
+ * El guion va a SU PROPIO `temporal()`, no a una carpeta que llegue por parámetro: el censo de
+ * SCRUM-824 no sigue parámetros, y así la creación se prueba en vez de declararse.
+ */
+function resultadoDe(codigo, args = []) {
+  const guion = path.join(temporal('scrum1621-guion-'), 'medir.mjs');
   fs.writeFileSync(guion, codigo);
   const r = spawnSync(process.execPath, [guion, ...args], { cwd: RAIZ, env: entornoLimpio(), encoding: 'utf8', timeout: 120000 });
   const linea = String(r.stdout || '').split(/\r?\n/).find((l) => l.startsWith('RESULTADO '));
@@ -112,7 +116,7 @@ test('SCRUM-1621 · 🔴 el hijo del censo de gateados carga la tubería bloquea
   const dir = temporal('scrum1621-censo-');
   const cobaya = path.join(dir, 'cobaya.test.mjs');
   fs.writeFileSync(cobaya, COBAYA_CENSO);
-  const r = resultadoDe(dir, `const { medirGateados } = await import(${JSON.stringify(CENSO)});
+  const r = resultadoDe(`const { medirGateados } = await import(${JSON.stringify(CENSO)});
 const m = await medirGateados([process.argv[2]]);
 console.log('RESULTADO ' + JSON.stringify(Object.fromEntries(m)));`, [cobaya]);
   // Población: la cobaya, una vez, con su único caso contado de algún lado.
@@ -125,7 +129,7 @@ test('SCRUM-1621 · control positivo: la cobaya del censo, lanzada por run() sin
   const dir = temporal('scrum1621-censo-sin-');
   const cobaya = path.join(dir, 'cobaya.test.mjs');
   fs.writeFileSync(cobaya, COBAYA_CENSO);
-  const r = resultadoDe(dir, `import { run } from 'node:test';
+  const r = resultadoDe(`import { run } from 'node:test';
 let reales = 0; let saltados = 0;
 for await (const ev of run({ files: [process.argv[2]], forceExit: true, timeout: 60000 })) {
   if (ev.type === 'test:pass') { if (ev.data.skip) saltados++; else reales++; } else if (ev.type === 'test:fail') reales++;

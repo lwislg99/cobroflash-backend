@@ -111,3 +111,22 @@ No se han tocado: el orquestador lo decide con este dato.
 
 - El **umbral** de la pieza 4: lo decide el fundador.
 - **Piezas 5 y 6**: dueño por decidir, con la medida de arriba.
+
+## SCRUM-1621 · rescate del obligatorio de #2964 (29-oct, S5)
+
+**Medido contra:** `5deff8b3b7b0f8a8d3cd037baabbca454ea7aa29` · 2026-10-29T09:43:16Z (hora de GitHub)
+
+El obligatorio de #2964 estaba en rojo desde el 27-oct por un solo caso:
+`SCRUM-824 · 🔴 el conjunto de ficheros SIN PROBAR no crece`. **Reproducido** con `main` mergeado dentro: 9
+tests, 1 fallo, y el fichero nuevo era `tests/scrum1621-los-hijos-heredan-la-tuberia.test.mjs`, de este ticket.
+El censo (`sinProbar`) nombraba UNA creación: `:69 · writeFileSync(guion)`. `resultadoDe(dir, …)` escribía el
+guion en una carpeta que le llegaba por PARÁMETRO, y el censo no sigue parámetros.
+
+**Arreglo en el código, no en el guard:** `resultadoDe` crea su guion en su propio `temporal('scrum1621-guion-')`.
+La lista `SIN_PROBAR_CONOCIDOS` no se toca: la creación pasa a estar probada en vez de declarada.
+Después: 824 + los dos tests de 1621 → 26 tests, 26 pass, 0 fail, 0 skipped.
+
+Lo que salió mal: la sesión del 27-oct empujó la rama sin correr el trinquete 824 sobre el árbol fusionado, y
+el rojo estuvo dos días sin que nadie lo mirara. El defecto no llegó a `main` porque el trinquete lo paró.
+
+A9: comprobación → `tests/scrum824-temporales-fuera-del-arbol.test.mjs`
