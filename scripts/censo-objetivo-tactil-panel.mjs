@@ -49,6 +49,11 @@
 // ⚠️ ① sólo sabe abrir PESTAÑAS. Pasos de asistente, desplegables y bloques que se abren con otro
 // gesto siguen ocultos, y por eso cuentan en el «no medidos»: no está resuelto, está dicho.
 //
+// ── LA CAJA SE IMPRIME, PERO NO DECIDE (SCRUM-1603c) ────────────────────────────────────────
+// La aceptación de SCRUM-1603 pide la CAJA de `.input` en Clientes y el censo sólo imprimía el toque.
+// Ahora cada corto sale con «caja X · toque Y»; el juicio sigue siendo el toque. Una sonda TAPADA
+// (caja 40, toque 30) comprueba en cada página que lo impreso distingue las dos cifras.
+//
 // SALIDAS: 0 censo completo · 2 no supe medir (sonda fallida, o cero superficies).
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 import fs from 'node:fs';
@@ -283,8 +288,8 @@ const EVAL = `${FUENTE_MEDIDOR};${MEDIR}(${JSON.stringify(INTERACTIVOS)}, ${MINI
 const navegador = await lanzarNavegador(puppeteer, {});
 const resultados = [];
 const sondasFallidas = [];
-// SCRUM-1603c · cómo salió impresa la sonda tapada, y en cuántas páginas.
-const tapadasLeidas = new Map();
+// SCRUM-1603c · lo que se leyó de la línea impresa de la sonda tapada, página a página.
+const tapadasLeidas = [];
 // SCRUM-1603 · navegar y ESPERAR la fuente (font-display: swap pinta primero con la de reserva). Una
 // página cuyas caras no cargan no está medida con la fuente de la app: se apunta y el censo lo dice.
 const fuentesVistas = new Map();
@@ -318,10 +323,12 @@ for (const ancho of ANCHOS) {
     // SCRUM-1603c · la tapada se lee de la LÍNEA impresa, no del objeto: lo que se controla es lo que sale.
     const tapada = rs.medidos.find((m) => m.sel === 'BUTTON' && m.texto === SONDA_TAPADA_TEXTO);
     const leida = tapada ? leerCajaYToque(cajaYToque(tapada)) : null;
-    if (!leida || Math.abs(leida.caja - SONDA_TAPADA.caja) > 1 || Math.abs(leida.tocable - SONDA_TAPADA.tocable) > 1) {
+    // ±2 px: el árbitro acierta el píxel, no la décima (medido: el toque de la tapada sale de 29,0 a 30,0
+    // según la página). Las dos cifras distan 10, así que imprimir el toque dos veces cae igual.
+    if (!leida || Math.abs(leida.caja - SONDA_TAPADA.caja) > 2 || Math.abs(leida.tocable - SONDA_TAPADA.tocable) > 2) {
       sondasFallidas.push(`${nombre} @${ancho}px (la sonda TAPADA sale «${tapada ? cajaYToque(tapada) : 'ni siquiera medida'}» y no «${cajaYToque(SONDA_TAPADA)}»)`);
     } else {
-      tapadasLeidas.set(cajaYToque(tapada), (tapadasLeidas.get(cajaYToque(tapada)) || 0) + 1);
+      tapadasLeidas.push(leida);
     }
 
     await ir(page, `/${s.ruta}`);
@@ -347,7 +354,9 @@ decir('\n═══ ✅ LA SONDA ═══');
 decir(`páginas × anchuras: ${paginas.length * ANCHOS.length} (${superficies.length} superficies + ${estadosAbiertos.length} pestañas abiertas) · sondas NO cazadas: ${sondasFallidas.length}`);
 for (const s of sondasFallidas) decir('   🔴 SUPERFICIE NO MEDIDA: ' + s);
 // SCRUM-1603c · la caja y el toque salen distintos donde deben diferir; si no, no se imprime la caja.
-for (const [linea, n] of tapadasLeidas) decir(`✅ CONTROL POSITIVO · sonda tapada (se espera ${cajaYToque(SONDA_TAPADA)}): ${linea} · en ${n} página(s)`);
+const rango = (xs) => xs.length ? `${Math.min(...xs).toFixed(1)}–${Math.max(...xs).toFixed(1)}` : '—';
+decir(`✅ CONTROL POSITIVO · sonda tapada, se espera «${cajaYToque(SONDA_TAPADA)}»: leída en ${tapadasLeidas.length} de ${paginas.length * ANCHOS.length} páginas`
+  + ` · caja ${rango(tapadasLeidas.map((t) => t.caja))} · toque ${rango(tapadasLeidas.map((t) => t.tocable))}`);
 if (sondasFallidas.length) {
   noSupe('🔴 hay superficies que no cazan un objetivo de 12 px: sus ceros no valen y el total está incompleto.');
 }
