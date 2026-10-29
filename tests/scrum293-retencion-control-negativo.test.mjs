@@ -58,10 +58,13 @@ test('SCRUM-293 · SUELO: las funciones de importe se cargan y devuelven número
 test('SCRUM-293 · 🔴 CONTROL NEGATIVO: el importe de quien NO ha declarado nada no se mueve', () => {
   // Vector CONGELADO, calculado a mano contra el árbol de hoy:
   //   base  302,25  = 136,50 + 120,00 + 45,75
-  //   cuota  58,44  =  53,86 (21 % sobre 256,50) + 4,58 (10 % sobre 45,75)
-  //   BRUTO 360,69  = base + cuota, que es lo que acaba en `Invoice.total`
+  //   cuota  58,45  =  53,87 (21 % sobre 256,50) + 4,58 (10 % sobre 45,75)
+  //   BRUTO 360,70  = base + cuota, que es lo que acaba en `Invoice.total`
   // Medido contra el árbol de hoy, no calculado a ojo: el redondeo por tramo de IVA no se adivina.
-  const BRUTO_CONGELADO = 360.69;
+  // SCRUM-1566 (c.21031 punto 3): era 53,86 / 58,44 / 360,69, el empate de medio céntimo mal
+  // redondeado (256,50 × 0,21 = 53,865). Valor exacto por el oráculo en BigInt (registro de
+  // SCRUM-1566, tramo «B + calcTotal»): 53,865 → 53,87 · 4,575 → 4,58 · bruto 360,70.
+  const BRUTO_CONGELADO = 360.70;
 
   assert.equal(grossOfLines(LINEAS), BRUTO_CONGELADO,
     '🔴 SE HA ALTERADO EL IMPORTE DE LA FACTURA DE UN MERCHANT QUE NO HA DECLARADO NADA.\n\n'
@@ -80,9 +83,9 @@ test('SCRUM-293 · 🔴 el desglose de IVA tampoco se mueve: la retención no en
   // Congelado de verdad: si se recalculara aquí mismo, este test compararía el árbol consigo
   // mismo y pasaría siempre. Un vector que se regenera no es un vector.
   const CONGELADO = JSON.stringify({
-    entries: [{ rate: 21, base: 256.5, cuota: 53.86 }, { rate: 10, base: 45.75, cuota: 4.58 }],
+    entries: [{ rate: 21, base: 256.5, cuota: 53.87 }, { rate: 10, base: 45.75, cuota: 4.58 }],
     base: 302.25,
-    cuota: 58.44,
+    cuota: 58.45,
   });
   assert.equal(JSON.stringify(calcVatBreakdown(LINEAS)), CONGELADO,
     '🔴 el desglose de IVA de un merchant sin declarar ha cambiado: la retención NO entra en la '

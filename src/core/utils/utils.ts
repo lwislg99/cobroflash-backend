@@ -234,10 +234,9 @@ export function normalizePhone(input?: string | null): string {
     // El margen NO vive en el documento (DOC-08): vive en el catálogo. Así que aquí no hay
     // ningún margen que respetar, y el descuento se aplica al precio y ya.
     //
-    // 🔴 LA CONVENCIÓN DE REDONDEO NO SE TOCA. `Math.round(sum * 100) / 100` sobre la suma en
-    // coma flotante es la que esta función ya tenía, y cambiarla movería importes de documentos
-    // existentes. Son CUATRO conviviendo en el árbol (medido en SCRUM-624) y la elección está en
-    // la asesoría con SCRUM-619 y 623: este ticket no la decide.
+    // 🔴 LA CONVENCIÓN DE REDONDEO es la de `Math.round` sobre la suma, y SCRUM-1566 (C) sólo le
+    // quita el ruido binario en el empate de medio céntimo (`redondearCentimos`, abajo). Cuál de
+    // las convenciones del árbol debe mandar sigue en la asesoría con SCRUM-619 y 623.
     const base = suman.reduce(
       (acc, l) => acc + Number(l.qty) * precioConDto(l.price, (l as Record<string, unknown>).dto)
         * (1 + (Number(l.tax) || 0)),
@@ -253,7 +252,7 @@ export function normalizePhone(input?: string | null): string {
     // ⚠️ REGLA DEL PRESUPUESTO, QUE NO ES DOCUMENTO FISCAL. Antes de que un descuento llegue a
     // una FACTURA, este prorrateo va a la asesoría con SCRUM-619, 623 y 624.
     const reparto = descuentoGlobalEnCentimos(suman, descuentoGlobal);
-    if (!reparto) return Math.round(base * 100) / 100;
+    if (!reparto) return redondearCentimos(base * 100) / 100;
 
     const { tipos, sumaBases, aRepartir } = reparto;
     let quitado = 0;
@@ -266,7 +265,19 @@ export function normalizePhone(input?: string | null): string {
       acumulado += cents;
       quitado += cents * (1 + rate / 100);   // el descuento se lleva su parte de impuesto
     }
-    return Math.round((base * 100 - quitado)) / 100;
+    return redondearCentimos(base * 100 - quitado) / 100;
+  }
+
+  /**
+   * 🔴 SCRUM-1566 · el redondeo de `calcTotal`, alineado con `round2` de `vat.service.ts` tras el
+   * arreglo C (c.21028): `Math.round` sobre el valor DECIMAL de los céntimos, no sobre el binario
+   * (22,50 × 1,21 = 27,225 → 27,23, y no 27,22). Sigue siendo la convención de `Math.round` (el
+   * medio céntimo va hacia +∞); lo que cambia es que el empate se ve. Es una copia y no un import
+   * porque `vat.service.ts` ya importa de aquí. Decidido por el fundador con C, en el mismo PR
+   * (c.21019, c.21031): si el total firmado y la factura redondean distinto, el cobro no cuadra.
+   */
+  function redondearCentimos(centimos: number): number {
+    return Math.round(Number(centimos.toPrecision(15)));
   }
   
   export function makeReference() {

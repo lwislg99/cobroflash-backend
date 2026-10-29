@@ -88,9 +88,13 @@ export interface PieDePresupuesto {
  * ⚠️ El desglose sale de `calcVatBreakdown`, la misma primitiva que usan la factura y el libro.
  * Aquí no se suma, no se redondea y no se multiplica nada.
  */
-/** Dos decimales, sin elegir convención nueva: es la que ya usa `calcVatBreakdown`. */
+/**
+ * Dos decimales, sin elegir convención nueva: es la de `round2` en `vat.service.ts` tras el
+ * arreglo C de SCRUM-1566 (c.21028): `Math.round` sobre el valor DECIMAL, no sobre el binario, para
+ * que 4,725 sea 4,73 y no 4,72. Va en el mismo PR que C (c.21031): copia y original cambian juntos.
+ */
 function redondear2(n: number): number {
-  return Math.round(n * 100) / 100;
+  return Math.round(Number((n * 100).toPrecision(15))) / 100;
 }
 
 /**
@@ -170,13 +174,27 @@ export function pieDePresupuesto(params: {
     return cents / 100;
   });
 
-  bd.entries.forEach((e, i) => {
+  // ── 🔴 SCRUM-1566 (B) · LA CUOTA ES LA DE `calcVatBreakdown`, LA QUE DECLARARÁ LA FACTURA ──
+  // Antes: `R((R(base) − q) × tipo)`, que redondea la base y LUEGO multiplica. La canónica acumula
+  // la cuota línea a línea y redondea UNA vez, así que con cantidades decimales la página de firma y
+  // el PDF daban un IVA y la factura otro. Con descuento global, la cuenta es la de la factura (la
+  // forma F1 del expediente, `docs/master/SCRUM-1566.md` tramo b): la canónica sobre las líneas más
+  // una línea negativa con lo que el global le quita a ese tipo, PRIMERO, como en
+  // `lineasParaFacturar`. Decidido por el fundador: «B y C antes del SIF-1» (c.21019, c.21031).
+  const canonica = global > 0
+    ? calcVatBreakdown([
+      ...bd.entries.map((e, i) => ({ qty: 1, price: -quitaDelTipo[i], tax: e.rate / 100, ...(e.causa ? { causa: e.causa } : {}) })),
+      ...efectivas,
+    ])
+    : bd;
+  const cuotaDe = new Map(canonica.entries.map((e) => [`${e.rate}|${e.causa ?? ''}`, e.cuota]));
+
+  bd.entries.forEach((e) => {
     // Heredado de SCRUM-623 y de la factura: una fila con cuota CERO no se pinta. Se mantiene
     // igual en los dos documentos a propósito — divergir aquí inventaría una segunda forma de
     // documento, y el defecto (una base al 0 % que no aparece) es de los DOS.
     if (e.cuota === 0) return;
-    // La cuota de este tipo, sobre su base YA descontada de la parte de global que le tocó.
-    const cuota = redondear2((e.base - quitaDelTipo[i]) * (e.rate / 100));
+    const cuota = cuotaDe.get(`${e.rate}|${e.causa ?? ''}`) ?? 0;
     if (cuota === 0) return;
     filas.push({ etiqueta: `${params.nombreImpuesto} ${e.rate}%:`, importe: cuota });
   });

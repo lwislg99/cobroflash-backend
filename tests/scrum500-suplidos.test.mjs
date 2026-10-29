@@ -222,8 +222,10 @@ const LINEAS_NORMALES = [
   { qty: 2.5, price: 18.3, tax: 0.10 },
 ];
 const BASE_CONGELADA = 302.25;   // 136,50 + 120,00 + 45,75
-const CUOTA_CONGELADA = 58.44;   // 53,86 (21 % s/256,50) + 4,58 (10 % s/45,75)
-const BRUTO_CONGELADO = 360.69;  // lo que acaba en `Invoice.total`
+// SCRUM-1566 (c.21031 punto 3): eran 58,44 y 360,69, con 256,50 × 0,21 = 53,865 mal redondeado a
+// 53,86. Valor exacto por el oráculo en BigInt (registro de SCRUM-1566, tramo «B + calcTotal»).
+const CUOTA_CONGELADA = 58.45;   // 53,87 (21 % s/256,50) + 4,58 (10 % s/45,75)
+const BRUTO_CONGELADO = 360.70;  // lo que acaba en `Invoice.total`
 
 test('SCRUM-500 · 🔴 CONTROL NEGATIVO: sin suplidos, el desglose es EL MISMO, hasta el céntimo', () => {
   const d = desgloseConSuplidos(LINEAS_NORMALES);
