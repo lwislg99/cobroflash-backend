@@ -1,0 +1,36 @@
+﻿HORA GitHub: Date: Tue, 27 Oct 2026 17:10:33 GMT
+
+== MAIN (push): 25 pasadas
+2026-10-27T17:00:29Z → 2026-10-27T17:00:30Z · 40546443040 · efe2cc59 · pending/null · arrancó 2026-10-27T17:00:29Z · intento 1 · 0 jobs ()
+2026-10-27T16:44:19Z → 2026-10-27T17:00:31Z · 40543849069 · 1608087e · completed/cancelled · arrancó 2026-10-27T16:44:19Z · intento 1 · 0 jobs ()
+2026-10-27T16:41:03Z → 2026-10-27T16:44:20Z · 40543320857 · 8f115f4a · completed/cancelled · arrancó 2026-10-27T16:41:03Z · intento 1 · 0 jobs ()
+2026-10-27T16:28:33Z → 2026-10-27T16:41:04Z · 40541271834 · 1e513d68 · completed/cancelled · arrancó 2026-10-27T16:28:33Z · intento 1 · 0 jobs ()
+2026-10-27T16:23:40Z → 2026-10-27T16:28:35Z · 40540469229 · 97c6910d · completed/cancelled · arrancó 2026-10-27T16:23:40Z · intento 1 · 0 jobs ()
+2026-10-27T16:18:49Z → 2026-10-27T16:23:42Z · 40539666888 · 922fddaa · completed/cancelled · arrancó 2026-10-27T16:18:49Z · intento 1 · 0 jobs ()
+2026-10-27T16:17:15Z → 2026-10-27T16:18:51Z · 40539412891 · 32f9ded1 · completed/cancelled · arrancó 2026-10-27T16:17:15Z · intento 1 · 0 jobs ()
+2026-10-27T16:15:53Z → 2026-10-27T16:17:16Z · 40539190272 · 2edc51a1 · completed/cancelled · arrancó 2026-10-27T16:15:53Z · intento 1 · 0 jobs ()
+2026-10-27T16:15:50Z → 2026-10-27T16:15:54Z · 40539182280 · 3b1c1c3f · completed/cancelled · arrancó 2026-10-27T16:15:50Z · intento 1 · 0 jobs ()
+2026-10-27T16:10:43Z → 2026-10-27T16:15:51Z · 40538329329 · 40986008 · completed/cancelled · arrancó 2026-10-27T16:10:43Z · intento 1 · 0 jobs ()
+2026-10-27T15:54:35Z → 2026-10-27T16:48:38Z · 40535649172 · c992358d · in_progress/null · arrancó 2026-10-27T15:54:35Z · intento 1 · 6 jobs (ssss)
+2026-10-27T15:53:48Z → 2026-10-27T15:54:36Z · 40535517263 · 33771487 · completed/cancelled · arrancó 2026-10-27T15:53:48Z · intento 1 · 0 jobs ()
+2026-10-27T15:50:59Z → 2026-10-27T15:53:49Z · 40535052800 · f15a9baa · completed/cancelled · arrancó 2026-10-27T15:50:59Z · intento 1 · 0 jobs ()
+2026-10-27T15:47:43Z → 2026-10-27T15:51:01Z · 40534515875 · 8d2a7803 · completed/cancelled · arrancó 2026-10-27T15:47:43Z · intento 1 · 0 jobs ()
+2026-10-27T15:43:58Z → 2026-10-27T15:47:44Z · 40533888727 · 540c62bc · completed/cancelled · arrancó 2026-10-27T15:43:58Z · intento 1 · 0 jobs ()
+2026-10-27T15:35:02Z → 2026-10-27T16:04:07Z · 40532410727 · ce1111a6 · completed/success · arrancó 2026-10-27T15:35:02Z · intento 1 · 6 jobs (ssssss)
+2026-10-27T14:10:25Z → 2026-10-27T14:43:49Z · 40518576319 · 77ce9857 · completed/failure · arrancó 2026-10-27T14:10:25Z · intento 1 · 6 jobs (sssssf)
+2026-10-27T13:47:50Z → 2026-10-27T14:11:55Z · 40515231157 · 4da5db44 · completed/cancelled · arrancó 2026-10-27T13:47:50Z · intento 1 · 0 jobs ()
+2026-10-27T13:47:43Z → 2026-10-27T13:47:51Z · 40515214413 · 45ed04a0 · completed/cancelled · arrancó 2026-10-27T13:47:43Z · intento 1 · 0 jobs ()
+2026-10-27T13:43:32Z → 2026-10-27T14:14:48Z · 40514583047 · 5b36ce0c · completed/failure · arrancó 2026-10-27T13:43:32Z · intento 1 · 6 jobs (ssfsss)
+2026-10-27T13:40:16Z → 2026-10-27T13:43:33Z · 40514090777 · b75da9a5 · completed/cancelled · arrancó 2026-10-27T13:40:16Z · intento 1 · 0 jobs ()
+2026-10-27T13:32:41Z → 2026-10-27T13:40:18Z · 40512942009 · b44e1a5f · completed/cancelled · arrancó 2026-10-27T13:32:41Z · intento 1 · 0 jobs ()
+2026-10-27T13:31:06Z → 2026-10-27T13:35:04Z · 40512718056 · 08773189 · completed/cancelled · arrancó 2026-10-27T13:31:06Z · intento 1 · 0 jobs ()
+2026-10-27T13:16:57Z → 2026-10-27T13:45:48Z · 40510657285 · 2a8d703d · completed/success · arrancó 2026-10-27T13:16:57Z · intento 1 · 6 jobs (ssssss)
+2026-10-27T12:23:35Z → 2026-10-27T13:19:24Z · 40503386789 · efe736f3 · completed/failure · arrancó 2026-10-27T12:23:35Z · intento 1 · 6 jobs (fsssss)
+recuento: {"pending/null":1,"completed/cancelled":18,"in_progress/null":1,"completed/success":2,"completed/failure":3}
+
+== RAMAS (pull_request): 40 pasadas
+2026-10-27T13:04:59Z → 2026-10-27T13:35:40Z · 40508944571 · 15483e52 · completed/cancelled · arrancó 2026-10-27T13:04:59Z · intento 1 · 6 jobs (ssfcss) · scrum-1194d-metodo-a
+recuento: {"queued/null":7,"in_progress/null":4,"completed/failure":20,"completed/success":8,"completed/cancelled":1}
+
+EN COLA 25: 5 Avisador de PR en rojo · 3 Zona roja · 7 CI · 2 PR automático (ramas scrum-) · 2 Claude Code · 4 Vigía de main · 1 Conflicto de registro
+EN CURSO 6: 5 CI
