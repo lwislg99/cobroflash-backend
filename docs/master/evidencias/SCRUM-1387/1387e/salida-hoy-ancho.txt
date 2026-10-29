@@ -1,4 +1,4 @@
-﻿raíz . · tests 1565 · declarantes 238 (15 %) · declaraciones 940
+raíz . · tests 1565 · declarantes 238 (15 %) · declaraciones 940
 CI · juzgadas 735 de 940 · SIN JUZGAR 205 en 46 guards: 46 sin NINGUNA juzgada, 0 a medias, 0 fuera del catálogo de este árbol
 CI · ficheros con al menos una mutación repetida: 192 de 1565 (12.3 %)
 registros 1216 · afirman mutaciones 631 (criterio ancho: las nombra)

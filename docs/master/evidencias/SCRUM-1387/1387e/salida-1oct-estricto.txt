@@ -1,4 +1,4 @@
-﻿raíz C:\Users\Admin\.claude\jobs\507f15fc\tmp\arbol-1oct · tests 1189 · declarantes 118 (10 %) · declaraciones 385
+raíz C:\Users\Admin\.claude\jobs\507f15fc\tmp\arbol-1oct · tests 1189 · declarantes 118 (10 %) · declaraciones 385
 registros 947 · afirman mutaciones 185 (criterio estricto: con veredicto)
   A 59 · B 104 · C1 8 · C2 10 · C3 4 · fuera (B+C2+C3) 118
   fuera, por lo que el árbol permite comprobar: guion 9 · salida 0 · texto 109
