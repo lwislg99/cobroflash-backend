@@ -11,9 +11,10 @@
 // uno es lo que debe serlo: el mismo elemento corto a dos anchuras.
 
 /**
- * `resultados`: [{ fn, ancho, medidos: [{ i, sel, texto, tocable, cumple }] }].
- * Devuelve un Map clave → { fn, i, sel, texto, tocable } con el área MÍNIMA de las anchuras en que
- * se quedó corto. Un medido sin `i` es un censo que no dice su posición: revienta, no adivina.
+ * `resultados`: [{ fn, ancho, medidos: [{ i, sel, texto, caja, tocable, cumple }] }].
+ * Devuelve un Map clave → { fn, i, sel, texto, caja, tocable } con el área MÍNIMA de las anchuras en
+ * que se quedó corto, y la caja DE ESA MISMA medida. Un medido sin `i` es un censo que no dice su
+ * posición: revienta, no adivina.
  */
 export function cortosDistintos(resultados) {
   const distintos = new Map();
@@ -22,10 +23,27 @@ export function cortosDistintos(resultados) {
       if (!Number.isInteger(m.i)) throw new Error(`censo-distintos: ${r.fn} @${r.ancho} trae un medido sin posición («${m.texto}»)`);
       const k = `${r.fn}|${m.i}`;
       const p = distintos.get(k);
-      if (!p || m.tocable < p.tocable) distintos.set(k, { fn: r.fn, i: m.i, sel: m.sel, texto: m.texto, tocable: m.tocable });
+      if (!p || m.tocable < p.tocable) distintos.set(k, { fn: r.fn, i: m.i, sel: m.sel, texto: m.texto, caja: m.caja, tocable: m.tocable });
     }
   }
   return distintos;
+}
+
+/**
+ * SCRUM-1603c · LA CAJA Y EL TOQUE, EN UNA SOLA FORMA DE IMPRIMIRLOS.
+ *
+ * El censo juzga por el TOQUE y sólo imprimía el toque, así que la caja CSS de un campo (los 34 px
+ * de `.input` que pide la aceptación de SCRUM-1603) no salía en ningún log. Son dos números
+ * distintos y salen los dos, siempre en este orden y con su palabra delante.
+ *
+ * `leerCajaYToque` hace el camino de vuelta: el censo lo usa sobre su sonda TAPADA (caja 40, toque
+ * 30) para comprobar que lo que IMPRIME distingue las dos cifras. Si un día se imprimiera el toque
+ * dos veces, la sonda saldría «caja 30» y el censo diría que no supo medir.
+ */
+export const cajaYToque = (m) => `caja ${m.caja} · toque ${m.tocable}`;
+export function leerCajaYToque(linea) {
+  const x = /caja (\S+) · toque (\S+)/.exec(String(linea));
+  return x ? { caja: Number(x[1]), tocable: Number(x[2]) } : null;
 }
 
 /**
