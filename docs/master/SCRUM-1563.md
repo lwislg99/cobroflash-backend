@@ -266,3 +266,72 @@ Encargo del orquestador (29-oct): las tres correcciones que dejó la sesión ant
 ### Error propio
 
 - Corrí `guards:entrada` con `2>&1` en PowerShell 5.1 y salió «exit 2» con 170/170 en verde: es la trampa conocida de `NativeCommandError`. Lo repetí sin redirigir y dio 0. Un código de salida leído así no vale ni para bien ni para mal.
+
+
+## SCRUM-1563g · 29-oct-2026 por la tarde: recuento tras 10 PR y la hoja de decisiones del fundador
+
+**Medido contra:** `origin/main` = `eafca9fe1` · producción NO medida en esta pasada · `Date:` de GitHub 2026-10-29T17:50:54Z
+
+A9: sin fallo que generalice — tramo de documento; el recuento lo da el contador, no la mano
+
+- **Recuento de §2:** 74 → **71 filas** · FUNDADOR **48/29** · JAVIER 26/8 · NOSOTROS **19/8** · ASESOR 6/2 (`node docs/master/evidencias/SCRUM-1563/contar-dependencias.mjs docs/producto/ESTADO-DEL-PRODUCTO.md`). Salen a §8 2.12 (1589), 5.3 (1623 y 1626, con la nota «no verificado en pantalla»), 6.14 (1608) y 6.15 (1588). Entra 5.4 (SCRUM-1638, abierto por S0 hoy). Corregidas 2.4 (chip #2986), 2.9 (guías #2985; `parseToken` sigue en 0 en `src/modules/jobs/`), 2.11 (tres servicios, dato del orquestador c.21240), 3.18, 3.21 (la rama compartida SÍ existe, `8f6becbd2`) y 6.16 (queda 1629).
+- **Hoja nueva:** `docs/producto/DECISIONES-DEL-FUNDADOR.md`. Las 48 filas del fundador en cuatro partes: A, 3 que puede decidir el orquestador (1.8, 6.12, 3.17) y dos mitades (2.9 b y 1.1, porque `albaranPublic.routes.ts` y `albaranes.routes.ts` están fuera de `RUTAS_FISCALES`, `scripts/puerta-avisador-rojo.mjs`); B, 3 que bloquean hoy (0.1, 2.11, 2.9 a); C, 11 que esperan a la S.L.; D, 31 para la revisión de go-live, en bloque. 3 + 3 + 11 + 31 = 48.
+- **Sin medir, y dicho en la cabecera del documento:** §1, §4 y §4b siguen con la medida de las 10:20Z; producción (`/version`) no se leyó.
+- **Lectura de S0, no decisión:** que A no le toque al fundador. La columna «depende de» de §2 no se cambió para esas filas; lo decide el orquestador. Para 1.1, antes hay que leer la regla 40 del máster.
+- **Jira:** SCRUM-1554 (de `equipo-javier`) sólo recibe un comentario con el enlace; no se pone En curso.
+
+## 29-oct-2026 ~18:10Z (GitHub) · S0 · tramo 1563h: la hoja, para PULSAR
+
+`origin/main` = `5a247020e`. Sobre la rama `scrum-1563g-hoja-decisiones-fundador` (PR aún sin abrir por el bot a las 18:02Z).
+
+- **Parte A** decidida por el orquestador: salen 2.9 b (GO dado; PR #2998 ABIERTO, sin mergear), 1.8 y 6.12 (a SCRUM-1638) y 3.17. **1.1 NO sale:** `albaranes.routes.ts` es camino de emisión (`emitInvoice` en `:1390` y `:1672`), aunque esté fuera de `RUTAS_FISCALES`.
+- **Parte B** con pasos: B1 la S.L. (SCRUM-143 c.19619, c.20086, c.20865: no consta firma del notario) · B2 una visita a Meta para los cuatro botones (`docs/WHATSAPP_TEMPLATES.md:52-62`) con la prueba del móvil.
+- **2.11 baja a D:** el backend ya manda `YaQu <no-reply@yaqu.app>` (SCRUM-1115 c.19624) y los otros dos sólo escriben a buzones internos (`:335`, `:346`).
+- **Simulacro de SCRUM-1605** en D, del fundador.
+- **Parte E nueva:** SCRUM-1529, las siete en c.19228 y máster `:403-409`.
+- ⚠️ La skill `.claude/skills/yaqu-wa-templates/SKILL.md:20,30,31,33` en `origin/main` sigue diciendo «la URL base termina en `/{{1}}`», contra `docs/WHATSAPP_TEMPLATES.md:52` (corregido en #2985). No la toco: `.claude/*` es del orquestador.
+
+## SCRUM-1563i · 29-oct-2026, 18:12Z-18:20Z (GitHub) · S0: la clase de cada fila, la skill de plantillas y lo que quedó sin medir
+
+**Medido contra:** `origin/main` = `c93f26a76` · producción (`/version`) = `c93f26a765313ce7834ecf276ddc3c09673527cc`, el mismo, leído a las 18:15:28Z (`Date:` de GitHub). Rama `scrum-1563i-etiquetas-hoja`, encima de `scrum-1563g-hoja-decisiones-fundador` (PR #2999, sin mergear) para no reiniciarle el obligatorio.
+
+A9: aviso → A10 «Cero no es «está limpio»: es «no he mirado».» — no se pudo comprobar: `gh pr list --json mergeable` devolvió 20 de 25 PR en `UNKNOWN` (GitHub calcula el estado al pedirlo PR a PR); leído como «sin conflicto» habría dicho 0 donde hay 13. Lo cacé porque la suma no daba 25 con los dos estados que esperaba; no hay guard que lo mire por mí
+
+**1 · La clase de cada fila de `DECISIONES-DEL-FUNDADOR.md`.** Etiquetas de los **47** tickets que nombra la hoja, leídas con `fields: key, summary, status, labels`. **11** `stop-fundador` · **11** `equipo-javier` · **7** `fundador` · **27 sin ninguna de las tres** (20 con alguna + 27 = 47). Cada fila lleva ahora su clase; donde no hay etiqueta, MI LECTURA, marcada. **Partidas en (a)/(b)** las que mezclan dos: 0.3·3.6, 3.1, 3.3·3.4, 3.5 (parte C); 1.1·3.14, 3.9, 3.10, 3.19, 7.6, 7.9 (parte D). **Seis tickets donde Jira y lo medido no casan** (tabla al principio de la hoja): 1115, 1525, 523, 1632, 1390, 913. Candidatas a salir de la lista del fundador, MI LECTURA: 3.2 (870, sólo `equipo-javier`) y 6.4 (1056: el ALTER lo aplica el colaborador). **No se ha cambiado ninguna etiqueta en Jira**: lo decide el orquestador.
+
+**2 · SCRUM-1529:** sale de «no hay nada que preguntarle» y entra como **UNA pregunta en el bloque de go-live**, con las siete citadas: «¿confirmas estas siete?». c.19228 es el orquestador de Javier recogiendo la decisión, no la voz literal del fundador. **No se cierra.**
+
+**3 · La skill `yaqu-wa-templates` contra el repo** (medido en `origin/main` = `c93f26a76`; la skill la tocó por última vez `f6be6854f`):
+
+| dónde | dice | choca con |
+|---|---|---|
+| `.claude/skills/yaqu-wa-templates/SKILL.md:20` | «**Botón URL dinámica:** la URL base termina en `/{{1}}`» | `docs/WHATSAPP_TEMPLATES.md:52-55` («en WhatsApp Manager el campo URL se escribe SIN `{{1}}`») |
+| `SKILL.md:30` | `quote_decision_es` → `/pay/quote/{{1}}` | `WHATSAPP_TEMPLATES.md:61` (`https://yaqu.app/pay/quote/`) |
+| `SKILL.md:31` | `payment_request_es` → `/pay/invoice/{{1}}` | `WHATSAPP_TEMPLATES.md:62` |
+| `SKILL.md:33` | `payment_confirmation_invoice_es` → `/recibo/{{1}}` | `WHATSAPP_TEMPLATES.md:63` |
+| `SKILL.md:27-34` | «**Las 5 plantillas**» | el código tiene **7**: `src/integrations/whatsappTemplates.ts` nombra también `albaran_para_firmar_es` y `albaran_firmado_es`. **Falta justo la de B2**, la del enlace roto |
+
+**El fondo, con la spec delante: los dos caminos piden cosas distintas al ESCRIBIR, y lo mismo al TERMINAR.**
+- **API** (`POST /<WABA>/message_templates`): el `url` del botón **se escribe con `{{1}}` al final**: «Supports 1 variable, appended to the end of the URL string», con `example` obligatorio si lleva variable (developers.facebook.com/docs/whatsapp/business-management-api/message-templates/components, leído el 29-oct). **Nosotros no usamos este camino:** `message_templates` aparece **0** veces en `src/` y `scripts/` de `origin/main` (control positivo de la búsqueda: `graph.facebook.com` sí aparece, en `src/integrations/whatsapp.ts`).
+- **Editor de WhatsApp Manager** (el que usamos): **Meta no documenta en ninguna página que yo haya encontrado** si el editor añade él el `{{1}}` al elegir «Dinámico». Lo dicen guías de terceros, y la búsqueda del 29-oct no encontró ninguna página de ayuda de Meta. **Lo que sí está medido** es el síntoma: el enlace llegó como `/albaran/%7B%7B1%7D%7D<token>` (SCRUM-1632) y antes `/pay/quote/{{1}}23` (P3-1, `docs/BUGS.md:1172`): **un `{{1}}` literal más la variable**, que es lo que sale si el editor pone el suyo y alguien teclea otro.
+- **Lo que vale en los dos caminos es el estado FINAL: un solo `{{1}}`, al final.** Por eso la instrucción segura no es «escríbelo» ni «no lo escribas», sino «**escribe la base acabada en `/`; si el editor no enseña un `{{1}}` al final, ése sí lo pones; al terminar tiene que haber UNO**», y se comprueba en el móvil, no en el panel. Es lo que ya dicen `WHATSAPP_TEMPLATES.md:52-55` y la parte B2 de la hoja. **La skill describe el estado final como si fuera lo que se teclea.** Ése es el origen de la confusión.
+
+**Corrección exacta que haría falta en la skill** (no la aplico: `.claude/**` tiene dueño; la sube el orquestador):
+
+`SKILL.md:20-21`, sustituir por:
+```
+- **Botón URL dinámica — en WhatsApp Manager el campo URL se escribe SIN `{{1}}`:** «Tipo de URL:
+  Dinámico» y la base acabada en `/` (p. ej. `https://yaqu.app/albaran/`). Al terminar tiene que
+  quedar UN SOLO `{{1}}`, al final; si hay uno tecleado a mano, ése sobra. (Sólo por API el `url`
+  se escribe con `{{1}}`, y aquí no se crean por API.) Se comprueba en el MÓVIL: copiar el enlace
+  del botón; si lleva `%7B%7B1%7D%7D`, está mal. Detalle: `docs/WHATSAPP_TEMPLATES.md:52-75`.
+  El código envía SOLO el sufijo (el token), no la URL completa.
+```
+`SKILL.md:27-34`, la tabla: título «**Las 7 plantillas**», la columna «Botón» con la base sin `{{1}}` (`https://yaqu.app/pay/quote/`, `…/pay/invoice/`, `…/recibo/`), y dos filas nuevas, copiadas de `docs/WHATSAPP_TEMPLATES.md` (sus variables NO se dictan aquí: las da esa spec):
+```
+| `albaran_para_firmar_es` | Utility | (ver WHATSAPP_TEMPLATES.md) | URL "Ver y firmar" → base `https://yaqu.app/albaran/` |
+| `albaran_firmado_es` | Utility | (ver WHATSAPP_TEMPLATES.md) | (ver WHATSAPP_TEMPLATES.md) |
+```
+`yaqu-fase-b/SKILL.md` no repite la regla (0 coincidencias de `URL` o `{{1}}`): no hace falta tocarla.
+
+**4 · Lo que quedó sin medir, cerrado** (`ESTADO-DEL-PRODUCTO.md`): `/version` = `main` · §1 ③: 175 abiertos (178 − 9 + 6, exacto), Javier 59 → **64 sin crear ninguno** (cinco re-etiquetados, NO medido cuáles) · §4: salen cinco Finalizadas (1589, 1594, 1608, 1623, 1626); 1518 ya tiene el chip en `main` · §4b: **13** en conflicto de 25 abiertos (entra #2738, de un ticket Finalizado). **§2 no se ha recontado.**
