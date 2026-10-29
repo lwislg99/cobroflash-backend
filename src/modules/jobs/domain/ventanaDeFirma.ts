@@ -176,10 +176,11 @@ export function contrastarReloj(params: {
  * del fundador: `docs/master/SCRUM-359.md` §7. Esto solo lo hace **observable**, que es lo que
  * impide que se descubra dentro de tres meses en una discusión con un cliente.
  *
- * Se compara en la zona horaria que se pase (por defecto la de España, que es donde se factura):
- * «qué día fue» es una pregunta local, y en UTC una firma de las 23:30 de Madrid cae en otro día.
+ * Se compara en la zona DEL COMERCIO, que pasa quien llama con `zonaDelMerchant` (SCRUM-1622: el
+ * valor por defecto era Madrid, y un canario no vive ahí). Sin zona se rechaza: no se adivina.
  */
-export function cruzaDias(ventana: Ventana, zona = 'Europe/Madrid'): boolean {
+export function cruzaDias(ventana: Ventana, zona: string): boolean {
+  if (typeof zona !== 'string' || zona === '') throw new Error('zona_requerida');
   const dia = (d: Date) => d.toLocaleDateString('es-ES', { timeZone: zona });
   return dia(ventana.suelo) !== dia(ventana.techo);
 }

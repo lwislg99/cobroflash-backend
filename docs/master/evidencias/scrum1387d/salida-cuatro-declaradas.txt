@@ -1,0 +1,12 @@
+# las 4 declaraciones de tests/scrum1387d-…, por correr() + aplicarUna() del propio meta-guard
+
+ANCLA 1 "    + `· sobre ${juzgadas} juzgadas de ${declaraciones} declaraciones
+ANCLA 1 "  })) console.log(linea);"
+ANCLA 1 "  console.log(`\\n${rotuloDelResultado({"
+ANCLA 1 "  if (ciegos.length) console.error('🔴 CIEGO:\\n  · ' + ciegos.join('
+LIMPIA caidos 0
+VIVA  SCRUM-1387d · ① la línea del recuento lleva su población PEGADA 
+VIVA  SCRUM-1387d · 🔴 el rótulo del censo sale en la pasada del CI, antes del bucle 
+VIVA  SCRUM-1387d · 🔴 el recuento final sale por `rotuloDelResultado`, y por ningún otro sitio 
+VIVA  SCRUM-1387d · el corte sale UNA vez, y antes del suelo de ejecución 
+ARBOL IGUAL true

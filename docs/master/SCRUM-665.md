@@ -1806,3 +1806,84 @@ pero sigue valiendo para cuando staging o producción se corran con la columna c
   bug) ni con la columna corregida — no son de este puesto (dixit el encargo).
 * La cifra de DEV (0 emitidas) es la MEDICIÓN de hoy sobre esta base; no dice nada de staging (9
   filas totales) ni de producción (2), que pueden tener una distribución de `vf_estado` distinta.
+
+---
+
+# SCRUM-665c · 27-oct-2026 · J1 (jv-j4av) · El coste de la opción A — guardar el PDF emitido
+
+**Medido contra:** `origin/main` = `2cc189a05d9e5b4d11cd17546d796fadf47200f9` · 2026-10-27T17:44:00Z
+
+> Encargo: lo que pide el comentario 16647 antes del GO del fundador — qué rutas sirven el PDF,
+> cuánto ocupa, dónde guardarlo con su precio y su riesgo, y qué cambia en el código. **Medir y
+> proponer: no se construye nada.** Construirlo es modificar el camino de emisión (regla 40).
+> El texto entero, con las tablas y las preguntas ✅/❌, está en Jira: **SCRUM-665 comentario 21175**.
+> Aquí va lo que tiene que quedarse en el repositorio.
+
+## Lo que ya estaba y no se repite
+
+El apéndice «EL COSTE DE LOS DOS CAMINOS» (16-sep, arriba) midió el PDF **sin logo** (5,1–6,3 KiB)
+y proyectó tres escenarios **supuestos**. Este tramo completa sólo lo que le faltaba al fundador.
+
+## ① Quién sirve el PDF
+
+`ensureInvoicePdf` (`src/lib/invoicing.ts:36`) tiene **4 llamadas**, las mismas cuatro del §3 de
+arriba con las líneas movidas: `receipt.routes.ts:513` (🔴 público, por token),
+`invoicesAdmin.routes.ts:1267`, `exports.routes.ts:211` y `email.service.ts:76`. Población: 6
+coincidencias de `ensureInvoicePdf(` en `src/` = 4 llamadas + la definición + 1 comentario.
+
+🔴 **Dos generadores más, que el expediente no nombraba**, llaman a `generateInvoicePdf` sin pasar
+por `ensureInvoicePdf`: `ensureInvoiceForCharge` (`src/lib/invoicing.ts:286`) y
+**`POST /admin/invoices/:id/regenerate-pdf`** (`invoicesAdmin.routes.ts:1165`), con su botón en
+`public/dashboard/js/invoiceDetailView.js:747`: una ruta que existe para reimprimir una factura
+emitida con el código de hoy. La opción A tiene que retirarla o acotarla.
+
+## ② Cuánto ocupa, con logo — `docs/master/evidencias/scrum665c/tamano-con-logo.mjs`
+
+Salida en `tamano-con-logo.salida.txt`, al lado. `generateInvoicePdf` real de `dist/` (compilado con
+`--noCheck`; `src/` sin tocar). Muestra: 7 PDF de la fixture del 15 y el 16-sep.
+
+| caso | PDF |
+|---|---|
+| sin logo | 5216 B (el 16-sep, 5209: la plantilla ha cambiado algo desde entonces) |
+| logo 192×192 | 13.491 B |
+| logo 512×512 | 31.889 B |
+| techo: PNG RGBA 512×512 de ruido | 1.054.567 B |
+
+El techo sale del producto: `settingsView.js` reescala a 512 px y el esquema admite hasta 1.500.000
+caracteres de data URI. Controles: recuento de imágenes del PDF (2 → 4), un logo basura sembrado
+que tiene que salir «NO embebido», y un suelo de entropía del ruido.
+
+## ③ Dónde y cuánto — precios consultados el 27-oct-2026 en las fuentes oficiales
+
+Volumen de Railway 0,15 $/GB-mes (tope Hobby 5 GB, Pro 1 TB; sin réplicas; caída breve al
+redesplegar) · R2 0,015 $/GB-mes, 10 GB gratis, salida gratis · S3 España 0,023 $/GB-mes, salida
+0,09 $/GB. **Hoy, con 0 clientes reales, las tres cuestan ≈ 0 $.** En el peor escenario supuesto
+(20.000 facturas/mes, 5 años, logo techo) el volumen pasa de su tope. **El precio no decide:
+deciden el riesgo y el cambio de código.** Recomendación: volumen de Railway con copias
+automáticas, y R2 si un día hacen falta réplicas o se acerca al tope.
+
+## ④ Qué cambiaría en el código — dicho, NO hecho
+
+Generar al emitir (hoy es perezoso: lo «congelado» sería la primera apertura, que puede hacer el
+cliente final), servir la copia guardada sin regenerar nunca una emitida, retirar
+`regenerate-pdf` y su botón (UI: firma), mover `invoicesDir` al montaje o meter un SDK nuevo, y,
+opcional, guardar la huella del fichero (columna nueva: ALTER, A5).
+
+## ⑤ La P20 del asesor
+
+`docs/legal/PREGUNTAS_ASESOR.md`, P20: nota de estado puesta **en sitio, sin mover líneas** (hay
+citas por `fichero:línea` más abajo): respondida por Javier el 23-sep con fuente (comentario 16647),
+sin dictamen profesional; sigue abierta sólo la custodia del art. 19.3 ROF. En SCRUM-1264 es la
+**D1** y figura «SIN RESPUESTA», desfasado: el texto propuesto va en el comentario 21175. Ese ticket
+no se ha tocado.
+
+## Lo NO medido
+
+Facturas por comercio (exige las bases); el precio de las copias de Railway; si producción usa
+réplicas; el bloqueo de objetos de R2 y S3; un logo JPEG. Tanda entera: NO CORRIDA (sólo docs).
+
+**Error mío:** la primera pasada dio 29 KB de PDF para el «peor caso», porque mi generador de ruido
+multiplicaba en coma flotante y no fabricaba ruido. El número era creíble. Lo cacé porque no
+cuadraba, y el banco lleva ahora un suelo: con el generador viejo sale CIEGO (código 3), comprobado.
+
+A9: comprobación → `docs/master/evidencias/scrum665c/tamano-con-logo.mjs`

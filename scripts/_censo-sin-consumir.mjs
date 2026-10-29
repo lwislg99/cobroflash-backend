@@ -263,6 +263,9 @@ export function censar({ files, testsText = '' }) {
       const a0 = n.arguments[0]; if (!a0 || !(ts.isStringLiteral(a0) || ts.isNoSubstitutionTemplateLiteral(a0)) || !a0.text.startsWith('/')) return;
       const obj = n.expression.expression; if (!ts.isIdentifier(obj) || n.arguments.length < 2) return;
       set.add(a0);
+      // ⚠️ ANCLA DE OTRO EQUIPO (SCRUM-1619): `tests/_censo-vocabulario-ofrecido.mjs` (J6, SCRUM-1194d) copia el
+      // final de la línea de abajo POR TEXTO y lo parchea en memoria. Si lo cambias, su censo sale CIEGO y cae el
+      // obligatorio de todos. Se cambia con J6 (Jira, dos-equipos.md §5); lo vigila tests/scrum1619-anclas-de-otro-equipo.test.mjs.
       routeDefs.push({ file: f, line: lineOf(s, n), method: meth.toUpperCase(), local: a0.text, routerVar: obj.text, cuerpoLeido: clavesLeidas(n) });
     });
     routeLiteralNodes.set(f, set);
@@ -571,6 +574,10 @@ export function censar({ files, testsText = '' }) {
   // quitar duplicados de clave (una pieza puede salir por dos caminos)
   const vistas = new Map(); for (const p of piezas) if (!vistas.has(p.clave)) vistas.set(p.clave, p);
   return {
+    // ⚠️ ANCLA DE OTRO EQUIPO (SCRUM-1619): `tests/_censo-vocabulario-ofrecido.mjs` (J6, SCRUM-1194d) copia la
+    // línea de abajo POR TEXTO, con su sangría, y mete delante `rutasInternas: routes` (este `routes`). Si cambias
+    // cualquiera de las dos, su censo sale CIEGO o roto y cae el obligatorio de todos. Se cambia con J6 (Jira,
+    // dos-equipos.md §5); lo vigila tests/scrum1619-anclas-de-otro-equipo.test.mjs.
     poblacion: {
       ficherosSrc: srcFiles.length, ficherosPublicJs: pubJs.length, html: pubHtml.length + srcHtml.length,
       rutas: routes.length, rutasExternas: routes.filter((r) => r.externo).length, consumidores: consumidores.length,
