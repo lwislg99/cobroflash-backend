@@ -1,6 +1,6 @@
 # Estado del producto · YaQu
 
-**Última medida: 27-oct-2026, 18:3xZ-18:4xZ** (`Date:` de GitHub, 18:41:25Z al anclar) · `origin/main` = `42c458e192608d71f5e06611976c89f9da3ff297` · producción (`/version`) = el mismo `42c458e1`, leído a las 18:41Z · la escribió S0 (SCRUM-1563e). Las anteriores (18-oct a las 17:13Z y 18:46Z; 19-oct a las 06:43Z) siguen en el historial de git. **La de las 07:50Z del 19-oct (SCRUM-1563d, PR #2604) no llegó a entrar**: lleva 8 días abierta con el obligatorio en rojo. Lo que medía se ha vuelto a medir aquí y está dentro.
+**Última medida: 29-oct-2026, 10:20Z-10:50Z** (`Date:` de GitHub) · `origin/main` = `d12e99784cf3927e13972e1e370ddc19f5d08a19` · producción (`/version`) = el mismo `d12e9978`, leído a las 10:45Z · la escribió S0 (SCRUM-1563f). **`main` se movió tres veces mientras se medía:** al empezar (10:20Z) estaba en `503f0d86`; a las 10:3xZ entró #2962 (SCRUM-1620, el `meta-guard` por partes, `fd24ce09`), y a las 10:40Z #2983 (SCRUM-1594) y #2982 (SCRUM-1626). Producción siguió a cada uno. Las anteriores (18-oct a las 17:13Z y 18:46Z; 19-oct a las 06:43Z; 27-oct a las 18:41Z) siguen en el historial de git. **La de las 07:50Z del 19-oct (SCRUM-1563d, PR #2604) sigue sin entrar**: 10 días abierta, obligatorio en rojo y ahora también en conflicto (§4b).
 
 **Qué es:** UN documento que se ACTUALIZA, no un informe nuevo cada vez. Dice qué le falta al producto para estar completo, de quién depende cada cosa, qué la bloquea y cómo va. Lo pidió el fundador el 18-oct-2026: «molaría sacar un informe con todas las tareas que tenemos que cerrar para el producto y ver cómo las vamos cerrando, para tener algo controlado». Y lo volvió a preguntar el 27-oct: «como va nuestra hoja de ruta con las cosas para tener el proyecto al 100% estamos avanzando queda mucho? lo estás siguiendo? está creciendo cada vez más el jira? estamos cerca de ser esto ya usable por una empresa?» (SCRUM-1563 c.21195). **§1 contesta esas cuatro preguntas.**
 
@@ -24,19 +24,19 @@
 | qué hace el profesional | ¿funciona hoy en yaqu.app? | qué lo impide | de quién depende |
 |---|---|---|---|
 | **Presupuestar** | sí | — (lo que falta, §2 bloque 1) | — |
-| **Enviar por WhatsApp y que el cliente firme** | 🔴 **sí, pero el enlace de firma llegó ROTO el 18-oct** (2.9), y las otras tres plantillas con enlace, entre ellas la del presupuesto, **no se han mirado** (2.10) | la dirección del botón de la plantilla en WhatsApp Manager. **Nueve días después no tiene ticket ni consta movimiento** | **FUNDADOR** |
+| **Enviar por WhatsApp y que el cliente firme** | 🔴 **sí, pero el enlace de firma llegó ROTO el 18-oct** (2.9), y las otras tres plantillas con enlace, entre ellas la del presupuesto, **no se han mirado en Meta** (2.10) | **ya tiene ticket (SCRUM-1632, En curso) y dos arreglos, uno de cada lado:** (a) la dirección del botón en WhatsApp Manager, con la tabla de las cuatro escrita por S4 (#2979, en `main` desde las 10:17Z del 29-oct); (b) **uno NUESTRO**: la página de firma no limpia el token, y la del presupuesto sí. (b) espera un GO de una línea | **FUNDADOR** (Meta y el GO de b) |
 | **Facturar en España** | **no**, a propósito (regla 24) | SIF-1 8/8 + una factura real aceptada por la AEAT. **Hoy, 3 de 8** (§1b) | **FUNDADOR** en los 5 tramos que faltan; JAVIER en 2 de ellos |
 | **Cobrar al cliente en España** | **no** (regla 24 + Stripe en modo real) | lo mismo que facturar, más Stripe real (4.1), que cuelga de la S.L. | **FUNDADOR** |
 | **Que el profesional nos pague** | **no** en modo real | Stripe real (5.1), que cuelga de la S.L. El fin de periodo de la suscripción ya se escribe (5.2 → §8) | **FUNDADOR** |
 | **Enseñar el producto con la cuenta DEMO** | 🔴 **no**: crear un presupuesto da 403 `trial_expired` (7.8) | devolverle el acceso a la cuenta y que su correo llegue a algún buzón. **Sin ticket ni movimiento desde el 18-oct** | **FUNDADOR** |
 
-**En una frase:** para un profesional que sólo quiera presupuestar y hacer firmar, lo que falta es que el enlace del WhatsApp funcione (2.9 y 2.10, del fundador, sin ticket). **Para facturar y cobrar en España, la fecha la marca la S.L. inscrita en el Registro Mercantil, no el equipo:** de ella cuelgan 4 de los 5 tramos de SIF-1 que faltan (§1b). La gestoría del fundador estimaba la S.L. para «mediados de noviembre»; al 20-oct iban 3 de 8 pasos, con notario la semana del 26-oct (SCRUM-1264 c.20088, SCRUM-143 c.20865, leído por un lector). **Cuánto tarda después (asesor, Convenio 017, ≥10 envíos, revisión externa) NO se puede sacar del repositorio, y no se estima aquí.**
+**En una frase:** para un profesional que sólo quiera presupuestar y hacer firmar, lo que falta es que el enlace del WhatsApp funcione (2.9 y 2.10: ya con ticket, SCRUM-1632, abierto después de la medida del 27-oct, y con un arreglo nuestro que sólo espera un GO). **Para facturar y cobrar en España, la fecha la marca la S.L. inscrita en el Registro Mercantil, no el equipo:** de ella cuelgan 4 de los 5 tramos de SIF-1 que faltan (§1b). La gestoría del fundador estimaba la S.L. para «mediados de noviembre»; al 20-oct iban 3 de 8 pasos, con notario la semana del 26-oct (SCRUM-1264 c.20088, SCRUM-143 c.20865, leído por un lector). **Cuánto tarda después (asesor, Convenio 017, ≥10 envíos, revisión externa) NO se puede sacar del repositorio, y no se estima aquí.**
 
 ### ② ¿De quién depende?
 
-**De las 74 cosas que faltan (§2), 50 necesitan al fundador y 30 dependen SÓLO de él.** Contado por máquina (§3).
+**De las 74 cosas que faltan (§2), 49 necesitan al fundador y 29 dependen SÓLO de él.** Contado por máquina (§3). **Baja una (30 → 29) y no porque él la haya movido:** la 2.9, el enlace de firma, tiene ahora un arreglo nuestro (S1) además del suyo. Sigue esperando su GO.
 
-🔴 **Las 29 que el 19-oct dependían sólo de él siguen las 29 aquí, ocho días después, con el mismo dueño.** Ninguna ha salido de la lista. Alguna se ha movido por dentro (la S.L. tiene notario; el productor tiene sus cinco respuestas), pero ninguna se ha desbloqueado. Y se ha sumado una (6.12). **Mientras eso no cambie, lo que entregue el equipo no acerca la fecha de vender en España.**
+🔴 **(27-oct)** **Las 29 que el 19-oct dependían sólo de él siguen las 29 aquí, ocho días después, con el mismo dueño.** Ninguna ha salido de la lista. Alguna se ha movido por dentro (la S.L. tiene notario; el productor tiene sus cinco respuestas), pero ninguna se ha desbloqueado. Y se ha sumado una (6.12). **Mientras eso no cambie, lo que entregue el equipo no acerca la fecha de vender en España.**
 
 **SIF-1, que es lo que separa a YaQu de vender en España, depende del fundador en los cinco tramos que faltan, y en cuatro de ellos a través de la S.L.** El detalle, en §1b.
 
@@ -44,25 +44,50 @@
 
 | ventana | todo el proyecto | equipo de Luis + sin etiqueta | sólo equipo de Javier (por diferencia) |
 |---|---|---|---|
+| **desde las 18:41Z del 27-oct hasta las 10:3xZ del 29-oct (~40 h)** | 3 cerrados · 2 creados · **−1** | 3 cerrados (1087, 1088, 1593) · 2 creados (1632, 1633) · **−1** | **0 cerrados** · 0 creados · 0 |
+| abiertos el 29-oct a las 10:3xZ | **178** | **119** (73 + 46) | **59** |
 | últimas 24 h (hasta las 18:4xZ del 27-oct) | 39 cerrados · 22 creados · **−17** | 7 cerrados · 12 creados · **+5** | 32 cerrados · 10 creados · **−22** |
 | desde las 07:50Z del 19-oct (8 días) | 151 cerrados · 66 creados · **−85** | 9 cerrados · 31 creados · **+22** | 142 cerrados · 35 creados · **−107** |
 | abiertos hoy | **179** (eran 264 el 19-oct) | **121** (67 + 54; eran 99) | **58** (eran 165) |
 
-🔴 **El total baja, y baja entero por el equipo de Javier. Lo del equipo de Luis CRECE:** +22 en ocho días, +5 en las últimas 24 h. La cifra «39 cerrados, 22 abiertos, −17» del orquestador es correcta para el proyecto entero y no dice esto. **Control:** 264 − 151 + 66 = 179, y 99 − 9 + 31 = 121, las dos exactas. **NO medido:** cuántos de los 142 cierres de Javier son por efecto y cuántos limpieza de duplicados o superados.
+**29-oct:** en 40 horas el Jira **casi no se ha movido**: −1 en todo el proyecto, y los tres cierres son nuestros, los tres del triaje de S0 de esta mañana (§4). **El equipo de Javier no ha cerrado ninguno.** **Control:** 179 − 3 + 2 = 178, exacto; 73 + 59 + 46 = 178, exacto. Luis + sin etiqueta da 121 − 3 + 2 = 120 y hay **119**: SCRUM-1631 pasó de no tener etiqueta a `equipo-javier`, que por eso sube de 58 a 59 sin crear nada.
+
+🔴 **(27-oct)** **El total baja, y baja entero por el equipo de Javier. Lo del equipo de Luis CRECE:** +22 en ocho días, +5 en las últimas 24 h. La cifra «39 cerrados, 22 abiertos, −17» del orquestador es correcta para el proyecto entero y no dice esto. **Control:** 264 − 151 + 66 = 179, y 99 − 9 + 31 = 121, las dos exactas. **NO medido:** cuántos de los 142 cierres de Javier son por efecto y cuántos limpieza de duplicados o superados.
 
 ### ④ ¿Avanzamos? ¿Lo está siguiendo alguien?
 
 - **Producto:** desde el 19-oct salieron de §2 **nueve filas** (§8): la fecha de fin de periodo de la suscripción (5.2), las casillas de pago (6.10), los CSV (6.11), los textos legales que prometían cobro (7.4), el guion H2 (7.2), la portada (7.5) y tres defectos fiscales (3.11, 3.12 y 3.13, que es la factura doble). **Siete de las nueve las hizo el equipo de Javier.** Entraron **diecisiete nuevas**, doce de ellas con el equipo de Luis dentro.
-- **Este documento es el seguimiento.** Llevaba 8 días sin actualizarse: la actualización del 19-oct por la tarde (#2604) se quedó en rojo y nadie la vio. **Que el fundador tuviera que preguntar dos veces lo mismo es eso.**
+- **29-oct:** salen de §2 **una fila**, la 4.3 (SCRUM-1292: el arreglo estaba en `main` desde el 30-sep y la fila decía «espera GO de dinero»), y entra una, la 3.21 (SCRUM-1566, autorizada por el fundador). **Lo que más pesa hoy no es una fila que falta, es trabajo hecho que no llega: 12 PR en conflicto (§4b).**
+- **Este documento es el seguimiento.** El 27-oct llevaba 8 días sin actualizarse: la actualización del 19-oct por la tarde (#2604) se quedó en rojo y nadie la vio. **Que el fundador tuviera que preguntar dos veces lo mismo es eso.**
 
 ### Lo que el equipo de Luis puede mover HOY sin esperar a nadie
 
 | fila | qué | quién | por qué importa |
 |---|---|---|---|
-| **3.18** | 🔴 **SCRUM-1594:** traer `llevaLibrosPorSii` en los 6 `select` de S1 | **S1** | **el equipo de Javier tiene construida la comprobación del SII de SIF-1 (SCRUM-1585) en una rama LOCAL y no la empuja hasta que esto entre.** Ticket nuestro, sin comentarios ni rama desde el 23-oct |
-| **6.3** | 🔴 **SCRUM-914:** abrir la rama compartida de «Equipos del cliente» | **S1** | J3 tiene su parte lista (10 ficheros) y **lo ha pedido cuatro veces** (c.20091, 20-oct) |
-| 1.13 · 1.15 · 2.12 · 2.14 · 6.13 · 6.14 · 6.15 · 6.17 | ocho defectos nuevos del equipo de Luis, sin bloqueo de fuera | S1 · S2 | §3 |
-| 2.4 · 2.7 | arreglos ya en `main`: falta verlos en producción con la cuenta QA y cerrar | quien tenga la cuenta QA | §4 |
+| **6.3** | 🔴 **SCRUM-914:** las DOS piezas nuestras de «Equipos del cliente»: `model Equipment` y los cuatro `equipmentId` en `schema.prisma`, y `'equipment'` en `MODELOS_POR_MERCHANT` | **S1** | **la tabla lleva aplicada en las tres bases desde el 29-sep — un MES sin una línea de código que la use.** La rama de J3 existe desde el 20-oct (#2621) y lleva 9 días en conflicto esperando esto. Ya no es «abrir la rama»: es escribir dos piezas |
+| **2.9** | 🔴 **SCRUM-1632, arreglo (b):** que la página de firma limpie el token como ya lo hace la del presupuesto (`parseToken`) | **S1**, tras el GO | **es el enlace del que depende firmar.** Espera un GO de una línea del fundador (c.21202) |
+| ~~3.18~~ | SCRUM-1594: traer `llevaLibrosPorSii` en los 6 `select` de S1 | **S1** | 🔵 **HECHO de nuestro lado:** #2983 MERGEADO a las 10:40Z del 29-oct. Ahora J1 puede empujar la comprobación del SII de SIF-1 (SCRUM-1585). Falta cerrar 1594 |
+| **2.4** | SCRUM-1518: el CHIP que pinta «Enviado» lo que no conoce | **S2** | el servidor ya está en `main` (#2688); falta la pantalla. Encargado a S2 el 29-oct (dato del orquestador) |
+| 1.13 · 1.15 · 2.14 · 6.13 · 6.17 | cinco defectos nuevos del equipo de Luis, sin bloqueo de fuera | S1 · S2 | §3 |
+| 2.7 · 2.12 · 6.14 | arreglos ya en `main`: falta verlos en producción con la cuenta QA y cerrar | quien tenga la cuenta QA | §4 |
+
+### Lo que el encargo del 29-oct traía y no aguantó la medida
+
+Medido por S0 entre las 10:20Z y las 10:45Z. **De once afirmaciones, seis aguantan enteras; dos eran ciertas a su hora y ya no (producción y el CI); tres aguantan con una corrección (la rama de 1566, la cifra de 1632 y la hora de los cierres).**
+
+| lo que se afirmó (encargo del orquestador, 29-oct) | lo que se midió | cómo |
+|---|---|---|
+| «producción = `main` = `5deff8b3b`» | **cierto a su hora; ya no:** a las 10:17Z entró #2979 (`503f0d86`) y a las 10:3xZ #2962 (`fd24ce09`). Producción siguió a los dos | `yaqu.app/version` a las 10:20Z y a las 10:39Z |
+| 🔴 «el CI está VACÍO: 40 de 40 completadas, cero en cola» | **ya no:** de las 40 últimas pasadas, 23 completadas, 7 en marcha, 2 pendientes y **8 en cola**. El propio orquestador lo corrigió a las 10:3xZ: estaba vacío a las 09:28Z y se llenó al empujar los seis puestos | `gh api …/actions/runs?status=queued` y `?per_page=40`, 10:2xZ |
+| «en el commit desplegado, `meta-guard` ROJO y el OBLIGATORIO VERDE» | **cierto en `5deff8b3b`**: `meta-guard` failure, `build + tests (con banco desechable)` success. Su arreglo (#2962, SCRUM-1620) **entró a las 10:3xZ**. Producción estuvo comprobada donde importa | check-runs del commit |
+| «12 PR en conflicto, de 2 a 16 días; ocho de Javier y cuatro nuestros» | **cierto, los doce y el reparto** (§4b). El equipo, por la etiqueta del ticket de cada PR | `gh pr list` + `mergeable`, y Jira |
+| «#2690 (962) y #2392 (876), los dos de tickets ya Finalizada» | **cierto:** SCRUM-962 cerrado el 22-sep, SCRUM-876 el 13-oct | Jira |
+| 🔴 «SCRUM-914: la rama la empujó J el 20-oct; #2621, nueve días en conflicto con los 10 ficheros; faltan dos piezas nuestras; la tabla, aplicada en las tres bases desde el 29-sep» | **cierto.** `model Equipment` y `equipmentId`: **0** en `schema.prisma` y en `src/` (control: `model Albaran` sí sale). #2621: CONFLICTING, 10 ficheros, abierto el 20-oct a las 09:57Z. La forma de la tabla en las tres bases la midió el equipo de Javier (c.20085, «producción 17/17, staging 17/17, dev 17/17»): **S0 no ha mirado ninguna base** | `git grep`, `gh pr view 2621`, SCRUM-914 c.20085 y c.21207 |
+| «SCRUM-1566: el fundador autorizó B y C antes del SIF-1 (c.21019) y la subida de `VERIFACTU_VERSION` (c.21031); B va hoy en `conjunto-1566-b-y-c`» | **las dos autorizaciones, ciertas y literales.** **La rama, NO existe en `origin`** a las 10:2xZ: «va hoy» es un plan, no un hecho. «C, construido por J1 sin empujar»: NO CONSTA en lo que S0 leyó | SCRUM-1566 c.21019, c.21031, c.21199; `git ls-remote --heads origin` |
+| 🔴 «SCRUM-1632: `parseToken` tolera el `{{1}}` y lo usan los 4 sitios del camino del presupuesto; el de la firma no lo usa» | **cierto, con una cifra que corregir:** son **5** usos, no 4 (`quotes.routes.ts:357` y cuatro en `quoteDecisionLanding.routes.ts`). En `src/modules/jobs/`, **0**; `albaranPublic.routes.ts:251` y `:381` pasan `req.params.token` en crudo | `git grep parseToken -- src` |
+| «los siete sin etiqueta (1626-1632) ya la tienen» | **cierto.** Y 1631 la tiene de `equipo-javier`, que mueve las cuentas de ③ | Jira |
+| «1087, 1088 y 1593 cerrados a las ~11:2xZ» | **cerrados, pero a las 10:14Z.** «11:14» es la hora de Madrid que da Jira (`+0100`), no la Z | `resolutiondate` en Jira |
+| «4.3 → §8: el GO se dio hace un mes» | **la fila sale, y lo que lo prueba es el merge:** #2006 MERGEADO el 30-sep a las 20:44Z. **Por qué la fila estaba mal:** el último comentario del ticket (c.17637, de Javier) es de las 20:38Z, **seis minutos ANTES del merge**, y dice que no hay nada construido. El GO en sí NO CONSTA en lo que S0 leyó | `gh pr view 2006`, SCRUM-1292 c.17637 |
 
 ### Lo que el encargo del 27-oct traía y no aguantó la medida
 
@@ -80,7 +105,7 @@
 
 ## 1b · SIF-1 tramo a tramo
 
-La puerta: **8/8 (S1-A a S1-H) + una factura real aceptada por la AEAT** (`YAQU_MASTER.md:997`). El marcador sale de `YAQU_MASTER.md:986` (última corrección: 1-oct, SCRUM-1319) y cada tramo que falta se ha vuelto a medir el 27-oct en el árbol y en su ticket.
+La puerta: **8/8 (S1-A a S1-H) + una factura real aceptada por la AEAT** (`YAQU_MASTER.md:997`). El marcador sale de `YAQU_MASTER.md:986` (última corrección: 1-oct, SCRUM-1319) y cada tramo que falta se ha vuelto a medir el 27-oct en el árbol y en su ticket. **29-oct, S1-D re-medido por S0 en `fd24ce09`: sin cambios** — `enviarSobre` sigue con una definición y ninguna llamada (fuera de `sif.client.ts` sólo sale en comentarios de `sif.procesador.ts` y `modoVisible.ts`), y el procesador sigue diciendo «NO LO LLAMA NINGÚN CRON» (`sif.procesador.ts:13`).
 
 | tramo | estado | lo que hay de verdad (27-oct) | de quién depende | bloqueo |
 |---|---|---|---|---|
@@ -134,15 +159,15 @@ Además de los ocho tramos, hay piezas de SIF-1 que tienen que estar antes de en
 | # | qué le falta al producto | ticket | depende de | bloqueo | fuente |
 |---|---|---|---|---|---|
 | 2.3 | El correo puede decir «ok» sin salir, y ninguna pantalla enseña el rebote | SCRUM-1558 | NOSOTROS (S1 + S2) + FUNDADOR | (a) ya está en `main` (#2522). Queda (b), el rebote, que necesita «firma de texto», y 1558b, que espera `LOG_MAGIC_LINKS=true` en staging | sin cambios desde el 16-oct |
-| 2.4 | Lo que escribe el CLIENTE salía en su ficha como un envío nuestro | SCRUM-1518 | NOSOTROS | ninguno: **el arreglo está en `main`** (#2688, 22-oct, 1518b: la ficha sólo enseña lo ENVIADO). Falta verlo en producción y cerrarlo | Jira sin cambios desde el 8-oct: **el ticket no dice que esté arreglado** |
+| 2.4 | Lo que escribe el CLIENTE salía en su ficha como un envío nuestro | SCRUM-1518 | NOSOTROS (S2) | ninguno de fuera. **El servidor está en `main`** (#2688, 22-oct, 1518b: la ficha sólo enseña lo ENVIADO), **pero falta el CHIP de S2:** `waDeliveryChip` (`public/dashboard/js/api.js:1448`) pinta con `map[status] \|\| map.sent` (`:1458`), así que un estado que no conoce, como `received`, sale «Enviado». Encargado a S2 el 29-oct (dato del orquestador). **Corregido el 29-oct:** hasta ahora decía «falta verlo en producción», y con el chip así no hay nada que ver | medido por S0 en `fd24ce09`. Jira: **0 comentarios**, sin etiqueta y sin cambios desde el 8-oct |
 | 2.5 | Firmar sin cobertura: sin red no se crea albarán ni parte, no van las fotos, y al reabrir manda a `/login` | SCRUM-307 | NOSOTROS (S2) | «prueba con un iPhone de verdad» | c.16463 (22-sep) |
 | 2.6 | «Voy de camino», aviso de visita y el portal en el pie del WhatsApp | SCRUM-975 · 981 · 1143 | FUNDADOR | «plantillas de Meta: una sola visita para las tres» | c.16051 · c.16297 · descripción; sin cambios |
 | 2.7 | Con teclado no se abría una factura | SCRUM-1562 | NOSOTROS + JAVIER | ninguno: **Facturas entró hoy** (#2959, 1562g, MERGEADO a las 18:13:12Z; producción `42c458e1` lo contiene, medido por S0). Falta verlo en producción y cerrar | Trabajos y Partes, vistos en producción el 18-oct. El ticket sigue abierto |
 | 2.8 | El tope de plantillas por cliente se puede rebasar en una ráfaga | SCRUM-1513 | JAVIER (J2) | ninguno | c.19002; sin cambios desde el 8-oct |
-| 2.9 | 🔴 **El enlace de FIRMA que llega por WhatsApp no funciona:** llegó `yaqu.app/albaran/%7B%7B1%7D%7D<token>`, el marcador `{{1}}` escrito tal cual y el token pegado detrás. El cliente ve un 404 | **sin ticket** | FUNDADOR | **corregir la dirección del botón de `albaran_para_firmar_es` en WhatsApp Manager**. Desde el repo no se puede | nosotros mandamos SÓLO el token (`whatsappTemplates.ts`). **Nueve días sin ticket.** Búsqueda del 27-oct en Jira (texto, desde el 19-oct) y en los commits de `main`: **0**. Control: la misma búsqueda de Jira devuelve otros 26 tickets, así que no está ciega |
-| 2.10 | 🔴 **Las otras tres plantillas con enlace pueden tener el mismo defecto, y no está mirado:** `quote_decision_es` (el botón del PRESUPUESTO), `payment_request_es` y `payment_confirmation_invoice_es` | **sin ticket** | FUNDADOR | **mirar en WhatsApp Manager la dirección de los tres botones** contra `docs/WHATSAPP_TEMPLATES.md`. Ninguna sesión ve el panel de Meta | igual que 2.9: sin movimiento desde el 19-oct |
+| 2.9 | 🔴 **El enlace de FIRMA que llega por WhatsApp no funciona:** llegó `yaqu.app/albaran/%7B%7B1%7D%7D<token>`, el marcador `{{1}}` escrito tal cual y el token pegado detrás. El cliente ve un 404 | SCRUM-1632 (En curso) | FUNDADOR + NOSOTROS (S1) | **dos arreglos, y hacen falta los dos** (c.21202): **(a)** corregir el botón de `albaran_para_firmar_es` en WhatsApp Manager, con la dirección exacta que dejó S4 (`docs/master/SCRUM-1632.md`, #2979); **(b) NUESTRO:** que `albaranPublic.routes.ts:251` y `:381` limpien el token con `parseToken` (`utils.ts:288`), como ya hacen los 5 usos del presupuesto. (b) es el que impide que vuelva a pasar, y **espera un GO de una línea** | `git grep parseToken`: 0 en `src/modules/jobs/` (medido por S0 en `fd24ce09`). **MI LECTURA de S4, sin confirmar contra Meta:** la causa de origen pueden ser nuestras propias guías, que mandan teclear el `{{1}}` en la base (`docs/WHATSAPP_TEMPLATES.md:52`); encargado a S4 (dato del orquestador) |
+| 2.10 | 🔴 **Las otras tres plantillas con enlace pueden tener el mismo defecto, y no está mirado en Meta:** `quote_decision_es` (el botón del PRESUPUESTO), `payment_request_es` y `payment_confirmation_invoice_es` | SCRUM-1632 | FUNDADOR | **mirar en WhatsApp Manager los tres botones** contra la tabla de S4 (`docs/master/SCRUM-1632.md`: tipo «Dinámica», la base SIN `{{1}}`). Ninguna sesión ve el panel de Meta | la del presupuesto tolera el `{{1}}` en el servidor (`parseToken`); **las de pago (`/pay/invoice/`) y recibo (`/recibo/`): NO MEDIDO** si lo toleran |
 | 2.11 | Dos de los tres programas que mandan correo pueden salir todavía con la marca vieja («PresuFácil») | SCRUM-1115 | FUNDADOR | **leer `EMAIL_FROM` en esos dos servicios de Railway**, o el `From` de su último envío en Resend | c.19624 (14-oct); sin cambios |
-| 2.12 | **NUEVA · En el PDF del albarán, la imagen de la firma invade 10,5 pt la línea «Firmado por:»** en toda firma real | SCRUM-1589 | NOSOTROS (S1) | ninguno (En curso) | título (23-oct); no leído |
+| 2.12 | **NUEVA · En el PDF del albarán, la imagen de la firma invade 10,5 pt la línea «Firmado por:»** en toda firma real | SCRUM-1589 | NOSOTROS (S1) | ninguno: **el arreglo está en `main`** (#2731). Falta verlo en producción y cerrar (§4) | triaje de S0 del 29-oct; ticket En curso, sin cambios desde el 23-oct |
 | 2.13 | **NUEVA · El registro del fallo de WhatsApp se escribe sin esperar** (`logFailure`): la función vuelve antes de que la fila exista | SCRUM-1631 | JAVIER (J2) | ninguno | título (27-oct); no leído |
 | 2.14 | **NUEVA · El correo de la factura dice «Tu factura está lista»** (de SCRUM-1252) | SCRUM-1622 | NOSOTROS (S1) | NO CONSTA si el texto nuevo está firmado | título (27-oct): pieza que deja abierto un ticket de J; no leído |
 
@@ -164,7 +189,8 @@ Además de los ocho tramos, hay piezas de SIF-1 que tienen que estar antes de en
 | 3.15 | Las retenciones en el resumen del trimestre | SCRUM-1146 | FUNDADOR | «GO para el camino de emisión» | c.19788; sin cambios desde el 15-oct |
 | 3.16 | Quitar «[PENDIENTE]» del libro y de la exportación | SCRUM-1041 | ASESOR | «dictamen (PREGUNTAS_ASESOR §21)» | c.17186 |
 | 3.17 | La puerta de go-live: lo que tiene que ser verdad antes de encender la facturación | SCRUM-1554 | NOSOTROS + JAVIER + FUNDADOR | «hay cuatro listas de deseos, no una puerta»: 4 listas sin unificar y **0 de 37 condiciones** con un mecanismo que impida encender. Falta que el fundador decida unificarlas | c.20293 (22-oct), leído por un lector |
-| 3.18 | 🔴 **NUEVA · Comprobar el SII en cada emisión** (quien declare SII después de encendido deja de emitir): **construido por J1 en una rama local, sin empujar, esperando a SCRUM-1594, que es NUESTRO** | SCRUM-1585 (J1) · **SCRUM-1594 (S1)** | NOSOTROS (S1) + JAVIER (J1) | **ninguno de fuera: espera a S1.** 1594 no tiene comentarios ni rama (27-oct) | SCRUM-1585 c.21115 (27-oct), leído por un lector. `ya-esta 1594`: NO ESTÁ en `main`; `git ls-remote`: ninguna rama 1594 |
+| 3.18 | 🔴 **NUEVA · Comprobar el SII en cada emisión** (quien declare SII después de encendido deja de emitir): **construido por J1 en una rama local, sin empujar, esperando a SCRUM-1594, que es NUESTRO** | SCRUM-1585 (J1) · SCRUM-1594 (S1, en `main`) | JAVIER (J1) | **ninguno de fuera.** 🔵 **1594 está en `main` y en producción:** #2983, MERGEADO el 29-oct a las 10:40:15Z. **Lo que faltaba de nuestro lado ya no falta: la pelota es de J1**, que puede empujar 1585 | 1594 sigue En curso: falta cerrarlo | SCRUM-1594 c.21211 (29-oct, S1: «6 sitios con `llevaLibrosPorSii`, 6208 tests 0 fail»), leído por un lector; merge comprobado en GitHub |
+| 3.21 | **NUEVA · El motor de IVA no cuadra con su propio total por un empate de medio céntimo** (22,50 € al 21 % da 4,72 y no 4,73), y de ahí sale la `CuotaTotal` del XML de VeriFactu | SCRUM-1566 | JAVIER (J1) + NOSOTROS (S1) | **autorizado por el fundador:** «B y C antes del SIF-1», juntos y nunca B sin C (c.21019), y la subida de `VERIFACTU_VERSION` con C (c.21031). B es de S1 y va en la rama compartida `conjunto-1566-b-y-c` (c.21199), **que a las 10:2xZ del 29-oct NO existe en `origin`**. C es de J1; que esté construido NO CONSTA en lo leído | SCRUM-1566 c.21019, c.21031, c.21199, leídos por un lector con cita literal; `git ls-remote` por S0 |
 | 3.19 | **NUEVA · Subsanar un registro «aceptado con errores» por la AEAT,** y el aviso al profesional del art. 16.4 | SCRUM-1612 | JAVIER (J1) + FUNDADOR | «diseño y GO antes de construir» (`stop-fundador`) | título; no leído |
 | 3.20 | **NUEVA (era §6 «sin leer») · El PDF de una factura emitida se regenera con el código y los datos de hoy** (regla 29) | SCRUM-665 | JAVIER (J1) | ninguno: el fundador decidió el 27-oct la opción A (el PDF se guarda al emitir y se sirve siempre ése) | SCRUM-1264 c.21184 (27-oct), leído por S0; SCRUM-665 En curso |
 
@@ -174,7 +200,6 @@ Además de los ocho tramos, hay piezas de SIF-1 que tienen que estar antes de en
 |---|---|---|---|---|---|
 | 4.1 | Stripe en modo real | SCRUM-41 | FUNDADOR | «S.L. constituida + SIF-1» | c.16294 (21-sep); sin cambios |
 | 4.2 | Dos secretos de webhook en Railway (Connect y Mercado Pago) | SCRUM-678 | FUNDADOR | ninguno: hacen falta antes de encender Connect o Mercado Pago | c.19059; sin cambios desde el 9-oct |
-| 4.3 | Un Bizum ya pagado puede pasar a «caducado» (en producción hay 0) | SCRUM-1292 | JAVIER (J2) + FUNDADOR | «GO de dinero» | c.17637; sin cambios desde el 30-sep |
 | 4.4 | Una factura cobrada a mano sigue como deuda, con el enlace de pago vivo | SCRUM-1429 | JAVIER (J1/J2) | «decisión sobre el cobro (Charge)» | c.18211; sin cambios desde el 2-oct |
 | 4.5 | Cancelar un cobro: el estado existe y nadie llega a él | SCRUM-1532 | FUNDADOR | «GO + 2 decisiones (el dinero que entra y la factura)» | c.19235; sin cambios desde el 13-oct |
 
@@ -183,7 +208,7 @@ Además de los ocho tramos, hay piezas de SIF-1 que tienen que estar antes de en
 | # | qué le falta al producto | ticket | depende de | bloqueo | fuente |
 |---|---|---|---|---|---|
 | 5.1 | La suscripción en modo real (claves reales y precios recreados) | 🔴 sin ticket propio; cuelga de SCRUM-41 | FUNDADOR | «S.L. + Stripe en modo real» | SCRUM-1561, descripción |
-| 5.3 | **NUEVA · El nombre del plan en la barra lateral:** «Plan Equipo» no sale, y el dueño del plan «founding» ve la palabra en crudo | SCRUM-1623 (S2, En curso) · SCRUM-1626 | NOSOTROS (S2) + FUNDADOR | 1626: «su literal NO está firmado» | títulos (27-oct); no leídos |
+| 5.3 | **NUEVA · El nombre del plan en la barra lateral:** «Plan Equipo» no sale, y el dueño del plan «founding» ve la palabra en crudo | SCRUM-1623 (S2, En curso) · SCRUM-1626 | NOSOTROS (S2) + FUNDADOR | **1623 («Plan Equipo») está en `main` y en producción** (#2960, MERGEADO el 29-oct a las 10:15:42Z); falta verlo y cerrarlo. **1626 también entró** (#2982, MERGEADO a las 10:40:53Z). Falta verlos y cerrarlos; 1626 llevaba la etiqueta «su literal NO está firmado», y NO CONSTA en lo leído por S0 si se firmó antes del merge | merges comprobados en GitHub; los dos En curso |
 
 ### 6 · Gestionar
 
@@ -191,7 +216,7 @@ Además de los ocho tramos, hay piezas de SIF-1 que tienen que estar antes de en
 |---|---|---|---|---|---|
 | 6.1 | Encender los mantenimientos (construidos y apagados) | SCRUM-911 | FUNDADOR | «GO escrito + plantilla de Meta» | c.19807; sin cambios desde el 15-oct |
 | 6.2 | Fichaje (registro de jornada) | SCRUM-913 | JAVIER + FUNDADOR | «ALTER + decisiones de ubicación, interruptor, textos y plan» | c.19821; sin cambios desde el 15-oct |
-| 6.3 | Equipos del cliente | SCRUM-914 | **NOSOTROS (S1)** + JAVIER | 🔴 **espera a S1:** J3 tiene su parte lista (10 ficheros) y pide que S1 abra la rama compartida y le dé su nombre. **«Cuarta vez que lo pedimos»** | c.20091 (20-oct), leído por un lector |
+| 6.3 | Equipos del cliente | SCRUM-914 | **NOSOTROS (S1)** + JAVIER | 🔴 **espera a S1, pero NO a que abra una rama.** **Corregido el 29-oct:** esta fila decía «espera a que S1 abra la rama compartida», y la rama la empujó el equipo de Javier el 20-oct: `scrum-914-j3-borrado-y-anonimizado-equipos`, **PR #2621, 9 días en CONFLICTO** con sus 10 ficheros. Lo que falta son **dos piezas NUESTRAS:** `model Equipment` y los cuatro `equipmentId` en `schema.prisma`, y `'equipment'` en `MODELOS_POR_MERCHANT`. **La tabla está aplicada en las tres bases desde el 29-sep: un MES sin una línea de código que la use** | SCRUM-914 c.21207 (29-oct) y c.20085 (forma de la tabla columna a columna, «17/17» en las tres, medida por el equipo de Javier; S0 no ha mirado ninguna base). `git grep -i equipment` en `schema.prisma` y `src/`: **0** (control: `model Albaran` sí sale). #2621 comprobado en GitHub |
 | 6.4 | «Volver a llamar» dentro del cliente | SCRUM-1056 | JAVIER (J2/J3) + FUNDADOR | lo que falta no es de S2: el ALTER (sólo está en dev), las rutas y el montaje (J2) y el anonimizado (J3) | 1056e (19-oct): `974068d33` |
 | 6.5 | Preguntar la actividad junto a la retención de IRPF | SCRUM-1072 | NOSOTROS (S2) + JAVIER (contenedor J3) + ASESOR | el campo se guarda de verdad (**visto en yaqu.app** el 23-oct). Falta que salga en el Resumen del trimestre: espera la Q-C5 del asesor | c.20510 (23-oct), leído por un lector |
 | 6.6 | Leer el ticket con IA y que el gasto entre por WhatsApp | SCRUM-961 · 971 | FUNDADOR | «5 fotos reales de tickets» | c.19330 · c.16053; sin cambios |
@@ -200,9 +225,9 @@ Además de los ocho tramos, hay piezas de SIF-1 que tienen que estar antes de en
 | 6.9 | La pantalla de provincia | SCRUM-1522 | JAVIER | ninguno: SCRUM-1536 se cerró el 24-oct; J6 mira si el ticket se cierra parte a parte | c.21047 (27-oct), leído por un lector |
 | 6.12 | **NUEVA · Un Técnico podía bajarse el calendario (`.ics`) de un Trabajo AJENO**: arreglado y sin verificar con un Técnico de verdad | SCRUM-1390 (J4, En curso; tramo 1390b) | FUNDADOR | **#2603 MERGEADO el 19-oct a las 07:52Z.** Verlo en yaqu.app necesita un Técnico de verdad: la misma limitación que 1.8 | la escribió la medida 1563d, que no entró; PR comprobado en GitHub. SCRUM-1390 c.21146 (27-oct): «QA no tiene sesión de Técnico» |
 | 6.13 | **NUEVA · Tres puertas más por las que el Técnico lee o escribe sobre el documento de un compañero** (adjuntos, mensaje IA, gasto imputado) | SCRUM-1582 | NOSOTROS (S1) | ninguno | título (23-oct); medidas en SCRUM-1390d; no leído |
-| 6.14 | **NUEVA · El tipo de IVA se redondea a entero en cuatro pantallas:** un 7,5 % se pinta «8 %» | SCRUM-1608 | NOSOTROS (S2) | ninguno (En curso) | título (26-oct); no leído |
-| 6.15 | **NUEVA · Falta la categoría de gasto «Alquiler de local»** | SCRUM-1588 | NOSOTROS (S1 + S2) | ninguno | título (23-oct); no leído |
-| 6.16 | **NUEVA · La tarjeta «Paquete del trimestre»** en Descargar datos, y que diga de qué periodo descarga | SCRUM-1602 (S2, En curso) · SCRUM-1629 | NOSOTROS (S2) + FUNDADOR | 1629: «FIRMA DEL FUNDADOR (sin prisa)» | títulos; no leídos |
+| 6.14 | **NUEVA · El tipo de IVA se redondea a entero en cuatro pantallas:** un 7,5 % se pinta «8 %» | SCRUM-1608 | NOSOTROS (S2) | ninguno: **el arreglo está en `main`** (#2943). Falta verlo en producción y cerrar (§4) | triaje de S0 del 29-oct; ticket En curso |
+| 6.15 | **NUEVA · Falta la categoría de gasto «Alquiler de local»** | SCRUM-1588 | NOSOTROS (S1 + S2) | ninguno: la pantalla está empujada (#2984, 29-oct, obligatorio en cola a las 10:3xZ) | PR comprobado en GitHub; ticket En curso |
+| 6.16 | **NUEVA · La tarjeta «Paquete del trimestre»** en Descargar datos, y que diga de qué periodo descarga | SCRUM-1602 (S2, En curso) · SCRUM-1629 | NOSOTROS (S2) + FUNDADOR | 1602, empujado (#2972, 27-oct, sin conflicto; obligatorio en marcha a las 10:3xZ). 1629: «FIRMA DEL FUNDADOR (sin prisa)» | PR comprobado en GitHub; 1629 por título |
 | 6.17 | **NUEVA · Ocho controles táctiles cortos** que llevaban meses sin verse (Avisos, Marca, Equipo, Facturación) | SCRUM-1630 | NOSOTROS | «repartirlos por dueño» | título (27-oct); no leído |
 
 ### 7 · Para salir a vender
@@ -220,16 +245,18 @@ Además de los ocho tramos, hay piezas de SIF-1 que tienen que estar antes de en
 
 ## 3 · De quién depende
 
-Sobre las **74 filas** de §2 (66 del 19-oct a las 06:43Z − 9 hechas + 17 nuevas, contando la 6.12 de la medida que no entró). Una fila puede depender de más de uno, así que las columnas no suman 74.
+Sobre las **74 filas** de §2 (74 del 27-oct − 4.3, hecha + 3.21, nueva). Una fila puede depender de más de uno, así que las columnas no suman 74.
 
-| | filas en las que aparece | filas que dependen SÓLO de él | el 19-oct (06:43Z) |
-|---|---|---|---|
-| **FUNDADOR** | **50** | **30** | 44 / 29 |
-| JAVIER | 26 | 7 | 28 / 12 |
-| NOSOTROS | 21 | 10 | 11 / 4 |
-| ASESOR (hoy no hay) | 6 | 2 | 6 / 2 |
+| | filas en las que aparece | filas que dependen SÓLO de él | el 27-oct (18:41Z) | el 19-oct (06:43Z) |
+|---|---|---|---|---|
+| **FUNDADOR** | **49** | **29** | 50 / 30 | 44 / 29 |
+| JAVIER | 26 | **8** | 26 / 7 | 28 / 12 |
+| NOSOTROS | 22 | 10 | 21 / 10 | 11 / 4 |
+| ASESOR (hoy no hay) | 6 | 2 | 6 / 2 | 6 / 2 |
 
-Contado por máquina sobre la columna «depende de» de §2: `node docs/master/evidencias/SCRUM-1563/contar-dependencias.mjs docs/producto/ESTADO-DEL-PRODUCTO.md`. Se vuelve a correr en cada actualización. **Control:** el mismo comando sobre la versión del 19-oct a las 06:43Z (`git show 42c458e1:docs/producto/ESTADO-DEL-PRODUCTO.md`) da lo que se publicó entonces: 66 filas · 44/29 · 28/12 · 11/4 · 6/2.
+Contado por máquina sobre la columna «depende de» de §2: `node docs/master/evidencias/SCRUM-1563/contar-dependencias.mjs docs/producto/ESTADO-DEL-PRODUCTO.md`. Se vuelve a correr en cada actualización. **Control (29-oct):** el mismo comando sobre la versión del 27-oct (`git show 503f0d86:docs/producto/ESTADO-DEL-PRODUCTO.md`) da lo que se publicó entonces: 74 filas · 50/30 · 26/7 · 21/10 · 6/2.
+
+**Lo que cambió el 29-oct:** sale 4.3 (JAVIER + FUNDADOR); entra 3.21 (JAVIER + NOSOTROS); 2.9 pasa de FUNDADOR a FUNDADOR + NOSOTROS (el arreglo (b) es nuestro); y 3.18 pasa de NOSOTROS + JAVIER a sólo JAVIER (1594 entró a las 10:40Z). Eso es todo: **JAVIER 26 = 26 − 1 + 1 y sólo-JAVIER 8 = 7 + 1; NOSOTROS 22 = 21 + 2 − 1; FUNDADOR 49 = 50 − 1 y sólo-FUNDADOR 29 = 30 − 1.**
 
 **Lo que cambió desde el 19-oct** (comparado fila a fila por máquina, las dos versiones con el mismo contador):
 - 🔴 **Las 29 filas que dependían SÓLO del fundador el 19-oct siguen las 29 en §2, con el mismo dueño.** Se suma la 6.12 (verla necesita un Técnico de verdad): **30**.
@@ -241,9 +268,12 @@ Contado por máquina sobre la columna «depende de» de §2: `node docs/master/e
 
 | | filas |
 |---|---|
-| **desbloquean al equipo de Javier** (lo más urgente) | **3.18** (SCRUM-1594, S1 → SIF-1) · **6.3** (SCRUM-914, S1, pedido cuatro veces) |
-| arreglo en `main`, falta verlo en producción y cerrar | 2.4 (SCRUM-1518) · 2.7 (SCRUM-1562, Facturas entró hoy) |
-| defectos nuevos nuestros sin bloqueo de fuera | 1.13 · 1.15 · 2.12 · 2.14 · 6.13 · 6.14 · 6.15 · 6.17 |
+| **desbloquean al equipo de Javier** (lo más urgente) | **6.3** (SCRUM-914, S1: dos piezas, PR de J3 con 9 días en conflicto) · **3.21** (SCRUM-1566, la mitad B de S1). **3.18 ya está:** 1594 entró a las 10:40Z |
+| **desbloquea firmar** | **2.9** (b) (SCRUM-1632, S1), en cuanto haya GO |
+| arreglo en `main`, falta verlo en producción y cerrar | 2.7 (SCRUM-1562) · 2.12 (SCRUM-1589) · 5.3 (SCRUM-1623) · 6.14 (SCRUM-1608) |
+| falta la pantalla | 2.4 (SCRUM-1518, el chip de S2) |
+| defectos nuevos nuestros sin bloqueo de fuera | 1.13 · 1.15 · 2.14 · 6.13 · 6.15 (empujado: #2984) · 6.17 |
+| **trabajo hecho que no llega** | los 4 PR nuestros en conflicto (§4b): #2392 y #2690 (tickets ya Finalizada), #2604, #2621 |
 
 ⚠️ **2.14 puede necesitar firma:** NO CONSTA si el texto nuevo del correo está firmado.
 
@@ -253,12 +283,18 @@ Contado por máquina sobre la columna «depende de» de §2: `node docs/master/e
 
 ## 4 · Arreglos ya en `main` con el ticket todavía abierto
 
-Puede que estén acabados y sólo falte cerrarlos. Lo cierra el orquestador del equipo dueño (A13). **Re-medido el 27-oct:** estado leído en Jira a las 18:3xZ.
+Puede que estén acabados y sólo falte cerrarlos. Lo cierra el orquestador del equipo dueño (A13). **Re-medido el 29-oct:** estado leído en Jira a las 10:2xZ.
 
-| ticket | equipo | qué entró | qué falta | estado (19-oct → 27-oct) |
+| ticket | equipo | qué entró | qué falta | estado (27-oct → 29-oct) |
 |---|---|---|---|---|
-| SCRUM-1518 | sin etiqueta | **#2688, 22-oct** (1518b) | verlo en producción | Tareas por hacer → **sin cambios desde el 8-oct** |
-| SCRUM-1562 | Luis + Javier | **#2959, hoy 18:13Z** (Facturas) | verlo en producción | Tareas por hacer → Tareas por hacer |
+| SCRUM-1589 | Luis | **#2731** | verlo en producción (2.12) | En curso → En curso. **Cerrable tras verlo** (triaje de S0) |
+| SCRUM-1608 | Luis | **#2943** | verlo en producción (6.14) | En curso → En curso. **Cerrable tras verlo** (triaje de S0) |
+| SCRUM-1623 | Luis | **#2960, 29-oct 10:15Z** | verlo en producción (5.3) | En curso |
+| SCRUM-1626 | Luis | **#2982, 29-oct 10:40Z** | verlo en producción (5.3); su literal, sin firmar el 27-oct | En curso |
+| SCRUM-1594 | Luis | **#2983, 29-oct 10:40Z** | nada en nuestro lado (3.18): cerrar | En curso |
+| SCRUM-1292 | sin etiqueta (es de J2) | **#2006, 30-sep 20:44Z** | NADA que conste: la fila 4.3 sale a §8 | Tareas por hacer, sin cambios desde el 30-sep. **Cerrable, para Javier** (triaje de S0; se lo pasa el orquestador) |
+| SCRUM-1518 | sin etiqueta | **#2688, 22-oct** (1518b, el servidor) | **el chip de S2** (2.4): no es sólo verlo | Tareas por hacer → **sin cambios desde el 8-oct** |
+| SCRUM-1562 | **Javier** (desde el 27-oct sólo lleva `equipo-javier`) | **#2959, 27-oct 18:13Z** (Facturas) | verlo en producción | Tareas por hacer → Tareas por hacer |
 | SCRUM-1233 | Luis | #2588 (18-oct) | NO CONSTA: es un censo de pantallas | En curso → En curso |
 | SCRUM-1444 | sin etiqueta de equipo | #2584 (18-oct) | NO CONSTA: es un censo de ~90 sitios | En curso → En curso |
 | SCRUM-1442 | Luis + Javier | #2559 (página pública) | el PDF, de J1 (1.5) | Tareas por hacer → Tareas por hacer |
@@ -268,9 +304,36 @@ Puede que estén acabados y sólo falte cerrarlos. Lo cierra el orquestador del 
 | SCRUM-1513 | Javier | #2325 | la ráfaga | Tareas por hacer → Tareas por hacer |
 | SCRUM-1525 | Javier | #2370 (el correo) | programar el volcado (7.6) | Tareas por hacer → Tareas por hacer |
 
-**Salen de la tabla desde el 19-oct, cerrados:** SCRUM-529 (20-oct), 1258 y 1304 (19-oct), 534 (27-oct), 1564 (19-oct) y 1265 (19-oct). **Entran:** 1518 y 1562 (Facturas).
+**Salen de la tabla desde el 19-oct, cerrados:** SCRUM-529 (20-oct), 1258 y 1304 (19-oct), 534 (27-oct), 1564 (19-oct) y 1265 (19-oct). **Entran el 27-oct:** 1518 y 1562 (Facturas). **Entran el 29-oct:** 1589, 1608, 1623 y 1292.
 
-**El triaje de los 54 del 19-oct** (los tickets abiertos con algún merge en `main` desde el 11-oct) **no se ha repetido.** Su resultado de entonces (31 mirados, 3 cerrables) está en la rama de #2604 y en `docs/master/SCRUM-1563.md` de esa rama.
+**El triaje se repitió el 29-oct** (S0, sesión anterior, ~10:1xZ): **80 tickets abiertos leídos**, y cada «cerrable» re-verificado por S0 —de los 6 que dieron sus lectores, tumbó 2 releyendo el último comentario (SCRUM-1603 tiene una fila «NO HECHO»; SCRUM-1529 es de J3)—. Resultado: **3 cerrables nuestros, ya CERRADOS** por el orquestador a las 10:14Z (1087, 1088, 1593 → §8) · **2 tras verlos en producción** (1589, 1608) · **3 para Javier** (1292, 1512, 1529; se los pasa el orquestador). ⚠️ **La tabla completa del triaje viajó en un mensaje al orquestador y no está en ningún fichero del repo**: lo que queda escrito es este párrafo. Es el mismo patrón que el triaje del 19-oct (§4b, nota final).
+
+---
+
+## 4b · Trabajo hecho que no llega: 12 PR en CONFLICTO
+
+**Medido por S0 el 29-oct a las 10:2xZ**, sobre `503f0d86`: de 23 PR abiertos, **12 en `CONFLICTING`**. El equipo sale de la etiqueta del ticket de cada PR. Un PR en conflicto no se mezcla aunque su obligatorio pase: **es trabajo terminado que no llega a producción.**
+
+| PR | rama | abierto | días | obligatorio (última pasada) | equipo | nota |
+|---|---|---|---|---|---|---|
+| **#2392** | `scrum-876h-scrum17-al-banco` | 13-oct | **16** | verde (13-oct) | **Luis** (S3) | borrador. **SCRUM-876 está Finalizada desde el 13-oct** |
+| **#2604** | `scrum-1563d-estado-19oct-tarde` | 19-oct | 10 | rojo (19-oct) | **Luis** (S0) | la medida de este documento que no entró. Lo que traía se volvió a medir el 27-oct |
+| **#2621** | `scrum-914-j3-borrado-y-anonimizado-equipos` | 20-oct | 9 | rojo (20-oct) | **Luis** (ticket) · el código es de J3 | **6.3:** espera las dos piezas de S1 |
+| **#2690** | `scrum-962e-censo-tactil-cuatro-averias` | 22-oct | 7 | sin pasada con ese nombre | **Luis** (S2) | **SCRUM-962 está Finalizada desde el 22-sep** |
+| #2841 | `scrum-1498c-grupo-propio-jobs-largos` | 24-oct | 5 | verde (24-oct) | Javier (J3) | borrador |
+| #2881 | `scrum-523c-declaracion-dos-firmantes` | 26-oct | 3 | rojo (26-oct) | Javier (J1) | borrador; es la declaración responsable de S1-E (3.5) |
+| #2940 | `scrum-1393g-cierre-con-ciegos-dichos` | 27-oct | 2 | rojo | Javier | — |
+| #2949 | `scrum-1396-censo-mkdtemp-por-variable` | 27-oct | 2 | rojo | Javier (J6) | — |
+| #2965 | `scrum-1396d-lote-1-temporales` | 27-oct | 2 | rojo | Javier (J6) | — |
+| #2969 | `scrum-1396e-lote-2-temporales` | 27-oct | 2 | rojo | Javier (J6) | — |
+| #2974 | `scrum-1051d-suelta-conserva-causa` | 27-oct | 2 | verde | Javier (J1) | — |
+| #2975 | `scrum-1252h-ancla-firma-correo` | 27-oct | 2 | verde | Javier (J1) | SCRUM-1252 está Finalizada |
+
+**Ocho del equipo de Javier y cuatro nuestros.** De los cuatro nuestros, **dos son de tickets ya Finalizada** (#2392 y #2690): o su trabajo ya no hace falta y el PR sobra, o el ticket se cerró sin él. **NO CONSTA cuál** de las dos: no se ha mirado el contenido de esos dos PR contra `main`.
+
+**El obligatorio en rojo, aparte del conflicto** (los 23 abiertos): 2 del 19-oct (#2604, #2616), 1 del 20-oct (#2621), 1 del 23-oct (#2738), 1 del 26-oct (#2881) y **6 del 27-oct** (#2940, #2949, #2950, #2965, #2969, #2973). El encargo decía «ocho desde el 27-oct»: S0 cuenta **seis** con esa fecha a las 10:2xZ; #2962 estaba re-corriendo y entró a las 10:3xZ. Más **#2980** (1628b, S0), rojo a las 10:24Z por una línea A9 que faltaba: arreglado y re-empujado a las 10:4xZ (`2f4889b6`).
+
+**Nota · el triaje del 19-oct no se perdió por accidente.** La rama `scrum-1529-censo-equipo-javier-27` (S0, 19-oct: un censo de 23 tickets de Javier con merge sin cerrar, `para-javier.md` §27) tiene su PR #2606 **CERRADO sin mergear**, y `para-javier.md` sigue acabando en §26. **Lo cerró el orquestador del equipo de Javier el 26-oct a las 15:17Z, por decisión de Javier:** «es una foto del 19-oct, desfasada, que nadie cita. El censo de tickets con merge sin cerrar se rehace cuando hace falta (auditor de cierre del 24-oct)». Es decir: **se cerró a propósito, y nadie del equipo de Luis lo supo hasta el 29-oct.** Lo que sí es el patrón de SCRUM-1632 es lo segundo: una decisión sobre trabajo nuestro escrita en un sitio que nuestro equipo no lee.
 
 ---
 
@@ -280,11 +343,14 @@ Una fila por medida. **No se borra ninguna:** se añade la nueva arriba.
 
 | medida (hora de GitHub) | abiertos en SCRUM | del equipo de Luis | sólo de Javier | sin etiqueta de equipo | cerrados desde el 14-oct (Luis + sin etiqueta) | creados desde el 14-oct (Luis + sin etiqueta) | filas de §2: hechas / quedan |
 |---|---|---|---|---|---|---|---|
+| 29-oct-2026 10:3xZ | **178** | **73** | **59** | **46** | 61 | 41 | 1 hecha / 74 (entra 1 nueva) |
 | 27-oct-2026 18:3xZ | **179** | **67** | **58** | **54** | 58 | 40 | 9 hechas / 74 (entran 17 nuevas) |
 | 19-oct-2026 07:4xZ (#2604, sin mergear) | 264 | 50 | 165 | 49 | 49 | 10 | 2 hechas / 65 (entra 1 nueva) |
 | 19-oct-2026 06:4xZ | 268 | 53 | 165 | 50 | 45 | 10 | 1 hecha / 66 (entra 1 nueva) |
 | 18-oct-2026 18:4xZ | 271 | 56 | 164 | 51 | 41 | 10 | 2 hechas / 66 (entran 5 nuevas) |
 | 18-oct-2026 17:09Z | 273 | 58 | 164 | 51 | 38 | 9 | 0 / 63 (primera foto) |
+
+**Entre las 18:41Z del 27 y las 10:3xZ del 29:** 3 cerrados y 2 creados en todo el proyecto: 179 − 3 + 2 = **178**, exacto. **Control:** 73 + 59 + 46 = 178. Los «creados desde el 14-oct» suben sólo de 40 a 41 con dos tickets nuevos porque 1631, sin etiqueta el 27-oct, ahora es de Javier y sale de la cuenta.
 
 **Entre las 07:50Z del 19 y las 18:4xZ del 27:** se cerraron **151** y se crearon **66** en todo el proyecto: 264 − 151 + 66 = **179**, exacto. Del equipo de Luis + sin etiqueta, **9** cerrados y **31** creados: 99 − 9 + 31 = **121** = 67 + 54, exacto. **Control:** 67 + 58 + 54 = 179.
 
@@ -305,15 +371,18 @@ Las fechas de JQL van en la hora de Madrid.
 
 ## 6 · Lo que NO está medido
 
-- **Cómo están registradas en Meta las cuatro plantillas con enlace** (2.9 y 2.10). Ninguna sesión ve WhatsApp Manager. Puede que el fundador ya lo haya corregido y nadie lo haya escrito: **no consta en ningún sitio que mire el equipo.**
+- **Cómo están registradas en Meta las cuatro plantillas con enlace** (2.9 y 2.10). Ninguna sesión ve WhatsApp Manager. Desde el 29-oct hay en `main` la dirección que DEBE llevar cada botón (S4, `docs/master/SCRUM-1632.md`); lo que lleva HOY, no lo ha visto nadie del equipo.
+- **Si `/pay/invoice/` y `/recibo/` toleran el `{{1}}`** como la página del presupuesto (2.10): no medido.
+- **El contenido de #2392 y #2690 contra `main`** (§4b): sus tickets están Finalizada y no se sabe si su trabajo sigue haciendo falta.
+- **Ninguna base de datos:** que la tabla `equipments` esté en las tres (6.3) lo midió el equipo de Javier (SCRUM-914 c.20085), no S0.
 - **El valor de los interruptores y variables en Railway** (`INVOICING_ES_ENABLED`, `E2E_TEST_LOGIN_*`, los secretos de webhook, `LOG_MAGIC_LINKS` en staging). Ninguna sesión lo ve.
 - **El estado de la cuenta demo** (7.8) y su correo: no se ha repetido desde el 18-19-oct.
 - **El remitente de los dos cron que mandan correo** (2.11).
 - **Lo que «vio en producción» otra sesión**: sale de sus registros. S0 no lo ha repetido.
-- **2.4, 2.7, 6.12 y 1.8 en yaqu.app**: 2.4 y 2.7 se pueden mirar con la cuenta QA; 6.12 y 1.8 necesitan un Técnico de verdad, que no hay.
+- **2.7, 2.12, 5.3 (1623), 6.14, 6.12 y 1.8 en yaqu.app**: los cuatro primeros se pueden mirar con la cuenta QA; 6.12 y 1.8 necesitan un Técnico de verdad, que no hay. **2.4 ya no está en esta lista:** antes de verlo falta el chip de S2.
 - **Las filas «leído por un lector»**: el último comentario lo leyó un subagente de sólo lectura el 27-oct. S0 releyó entero sólo SCRUM-1264 y SCRUM-1563.
 - **Las filas nuevas marcadas «no leído»**: salen sólo del título del ticket.
-- **Los 58 sólo de Javier**, salvo los que nombra esta tabla. **Los 54 sin etiqueta**, lo mismo. ⚠️ Los seis más nuevos (SCRUM-1626 a 1631, creados el 27-oct) no llevan **ninguna** etiqueta, ni de equipo ni de área (A13 paso 1), así que no salen en ninguna consulta por equipo.
+- **Los 59 sólo de Javier**, salvo los que nombra esta tabla. **Los 46 sin etiqueta**, lo mismo. Los siete que el 27-oct no llevaban ninguna etiqueta (SCRUM-1626 a 1632) **ya la llevan** (29-oct): seis `equipo-luis` y 1631 `equipo-javier`.
 - **Si los 142 cierres de Javier desde el 19-oct son por efecto o limpieza.**
 - **Tickets nuevos del equipo de Luis que NO son fila** porque no le faltan al producto, sino a las herramientas del equipo: 1590, 1591 (anclas de firma en el código), 1593, 1603 (bancos táctiles), 1605, 1606, 1620, 1621, 1627, 1628 (CI y sesiones).
 
@@ -352,3 +421,6 @@ Lo que estaba en §2 y ya no falta. **No se borra.** Una fila que entra y sale e
 | 7.2 | El guion H2 sobre VeriFactu decía cosas falsas (SCRUM-534) | 27-oct-2026, cerrado 13:06Z | H2 firmado; #2425 (14-oct) en `main` (c.21018, leído por un lector). Queda un cambio de máster aparte (diseño de `VfSubmission`) que no bloquea |
 | 7.4 | Documentos legales servidos que prometían cobro (SCRUM-1551 · 1028) | 26 y 27-oct-2026 | #2931 en `main` y **visto en yaqu.app**: 0 «Cobro integrado» / «Justificantes de cobro» en alcance-beta, términos y privacidad (c.21109, c.20911, leídos por un lector). ⚠️ **Queda uno fuera:** `plansView.js:103,109` sigue diciendo «Cobro integrado», oculto en modo justificante; los tickets que cita (1029 y 1086) están cerrados desde el 23-sep |
 | 7.5 | El `title` y los dos H1 de la landing (SCRUM-1016) | 26-oct-2026, cerrado 15:42Z | en `main` y visto en yaqu.app (c.20883, leído por un lector). Su P1, los guiones comerciales, pasa a §2 como 7.9 |
+| 4.3 | Un Bizum ya pagado podía pasar a «caducado» (SCRUM-1292) | **30-sep-2026**, #2006 MERGEADO a las 20:44Z; **la fila sale el 29-oct** | arreglo y test en `main` (`estadoDelCobro.ts`, `tests/scrum1292-cobro-pagado-no-retrocede.test.mjs`). **La fila estuvo un mes de más** porque su fuente era el último comentario de Jira (c.17637), escrito **6 minutos antes** del merge. ⚠️ **El ticket sigue abierto** (§4): cerrable, para Javier |
+| — | Dos preguntas urgentes para el asesor (SCRUM-1087) y cotejar las 14 marcas ⚠ de PREGUNTAS_ASESOR (SCRUM-1088). No eran fila | 29-oct-2026, cerrados a las 10:14Z | triaje de S0 del 29-oct, re-verificado por S0; el orquestador comprobó sus PR mergeados (#1691, #1693) antes de cerrar |
+| — | El censo táctil no abría las pestañas ocultas (SCRUM-1593). Herramienta del equipo, no fila | 29-oct-2026, cerrado a las 10:14Z | lo mismo; PR #2970. Lo que destapó (ocho controles cortos) sigue en §2 como 6.17 |
