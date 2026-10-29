@@ -301,8 +301,8 @@ export function mensajeDeCorte({ juzgadas, pendientes, transcurridoS, presupuest
  * `META_PARTE=i/K` (lo pone la matriz de `ci.yml`) juzga los guards del censo cuyo índice cumple
  * `n % K === i - 1`: por turno, que es el reparto que mejor equilibra los costes medidos. Sin
  * `META_PARTE`, el censo entero: así corre en local, y así corría el CI antes de la matriz.
- * Los SUELOS del censo se aplican ANTES de repartir y sobre el censo ENTERO: una parte de 74 guards
- * no puede decir «ha encogido» de un censo de 222, ni callarse si encoge.
+ * Los SUELOS del censo se aplican ANTES de repartir y sobre el censo ENTERO: una parte, que sólo ve
+ * un trozo, no puede decir «ha encogido» del censo, ni callarse si encoge.
  *
  * ⚠️ Una `META_PARTE` que no se entiende NO es «el censo entero»: es CIEGO. Si la matriz la escribe
  * mal y yo corriera todo, cada parte juzgaría lo mismo y volvería a cortarse, en silencio.

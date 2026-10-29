@@ -159,3 +159,23 @@ el caso decía vigilar). Ya no depende de que yo me acuerde: la mutación que lo
 en el propio test y la ejecuta el meta-guard en cada PR.
 
 A9: comprobación → `tests/scrum1620-el-censo-por-partes.test.mjs`
+
+## 29-oct-2026 ~10:00Z (hora de GitHub) · S3 · las dos puertas que el obligatorio no pasaba
+
+La rama `de7d43ba5` llevaba desde el 27-oct con `build + tests (con banco desechable)` en rojo
+(run 40551845913): `ℹ tests 12868 · pass 12857 · fail 2 · skipped 9`. Los dos rojos, medidos:
+
+| trinquete | qué acusaba | ¿cierto? | arreglo |
+|---|---|---|---|
+| SCRUM-702 (tope 22, censo 23) | `tests/scrum1620-el-censo-por-partes.test.mjs` con `GITHUB_ACTIONS` | el TEXTO sí; una lectura del entorno, NO: el test le pasa a `avisoDeNoCabe` un `env` escrito a mano, y lo nombra en el `de:` de una mutación. Es el mismo caso que `scrum935d` | declarado en `scrum702`, tope 22 → 23, como pide su mensaje |
+| SCRUM-737 (censo 81, hay 82) | `scripts/meta-guard-mutaciones.mjs:304` «una parte de 74 guards … un censo de 222» | sí: un recuento sin ancla, mío | opción ② de su mensaje: reformulado sin número. Control positivo: con el texto viejo, local, «HAY 82 … ESTABA EN 81» |
+
+Sobre `origin/main` = `5deff8b3b7b0f8a8d3cd037baabbca454ea7aa29`, fundido (merge, no rebase). Local: los 5
+ficheros de las puertas, 36/36; los 53 que nombran el meta-guard, `tests 403 · pass 398 · fail 1 · skipped 4`.
+El rojo es `scrum1321` (temporal en C:, repo en D:, rojo de esta máquina); los 4 saltados son SCRUM-781
+(Postgres real, los corre el banco del CI).
+
+⚠️ **Entrar este PR NO pone en verde el meta-guard de `main`.** Sin `META_PARTE` el script recorre el
+censo entero como antes y se sigue cortando; ahora con el `::warning … NO CABE` en vez de una CIEGA más.
+La matriz de `ci.yml` quedó revocada por el orquestador (Jira c.21171) tras la medida de S5 (c.21168).
+La aceptación 1 sigue NO HECHA.
