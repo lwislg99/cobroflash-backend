@@ -335,3 +335,20 @@ A9: aviso → A10 «Cero no es «está limpio»: es «no he mirado».» — no s
 `yaqu-fase-b/SKILL.md` no repite la regla (0 coincidencias de `URL` o `{{1}}`): no hace falta tocarla.
 
 **4 · Lo que quedó sin medir, cerrado** (`ESTADO-DEL-PRODUCTO.md`): `/version` = `main` · §1 ③: 175 abiertos (178 − 9 + 6, exacto), Javier 59 → **64 sin crear ninguno** (cinco re-etiquetados, NO medido cuáles) · §4: salen cinco Finalizadas (1589, 1594, 1608, 1623, 1626); 1518 ya tiene el chip en `main` · §4b: **13** en conflicto de 25 abiertos (entra #2738, de un ticket Finalizado). **§2 no se ha recontado.**
+
+---
+
+## SCRUM-1563j · las 27 sin clase, la nota de claves de BD de `CLAUDE.md` y §2 recontado
+
+**Medido:** 29-oct-2026, 18:30Z-18:55Z (`Date:` de GitHub) · `origin/main` = `53d9834d9` · rama `scrum-1563j-clases-hoja-y-claves`, **encima de 1563i** (PR #3005, abierto) para no chocar en la misma hoja · S0.
+
+**1 · Las 27 filas sin etiqueta de clase** (`DECISIONES-DEL-FUNDADOR.md`, parte F nueva). El ÚLTIMO comentario de cada ticket, leído por dos lectores de sólo lectura con `fields` explícito; **la cita que saca una fila de la lista (1629), cotejada por S0 en Jira.** Resultado: `stop-fundador` 13 · `fundador` 5 · `fundador`+`stop-fundador` 3 · `fundador`+nuestro 1 · `equipo-javier` 1 · nuestro 3 · sin decidir 1 (1545, se queda en D) = 27; **10 de ellas sólo por título** (0 comentarios con la decisión).
+- **Salen a la parte A tres filas:** 3.2 (870) y 6.4 (1056), por decisión del orquestador; **6.16 (1629) por lo medido**: el fundador DELEGÓ la elección del texto («weligue tu lo que me pides», c.21194, 27-oct). La hoja la tenía como `stop-fundador` (MI LECTURA de 1563i): **estaba mal**. Recuento: A 6 · B 2 · C 10 · D 30 = 48.
+- **913 resuelto:** J aplica el ALTER (título), construye `equipo-luis`.
+- **`decision-jefe` no es `fundador`:** dice QUIÉN (un jefe, Luis o Javier: `dos-equipos.md:28`), no QUÉ. En 1182 y 1210 (`equipo-luis`) deja los dos tickets **fuera de las dos colas**: la nuestra no busca esa etiqueta y la de Javier exige `equipo-javier`. Propuesta al orquestador: sustituirla por la clase medida. **Jira no se ha tocado.**
+
+**2 · `CLAUDE.md`, regla 3, re-fechada** (sólo el registro medido que el propio fichero pide re-fechar; nada más). Instrumentos: `node scripts/claves-bd-de-todos-los-arboles.mjs` (la población de la frase) y `node scripts/comprobar-claves-bd.mjs` en los dos árboles con fichero, ambos de `main`. **313 árboles · 311 sin fichero de entorno · 2 con `.env.local`** (compartido y `s1-960`) · ninguno con `_STAGING`/`_DEV`/`_TESTS` · `DATABASE_URL` → `localhost/yaqu_dev` en los dos · nadie en el 5432. 🔴 **El censo sale 2 («no supe medir») y NO da la frase «ninguna apunta a producción»**: `localhost/yaqu_dev` no está declarado en `DESTINOS_ESPERADOS` (SCRUM-1526). Declararlo es una decisión sobre un guard: **no se ha tocado**; se le pasa al orquestador. Ningún valor de clave en ningún sitio.
+
+**3 · §2 de `ESTADO-DEL-PRODUCTO.md`, recontado.** 66 filas, 74 tickets, una consulta (`key, status`) filtrada a «Finalizada o tocado desde las 06:00Z» = 21. Los 11 Finalizada ya estaban reflejados. Movido: **2.14 → §8** (#2935 y #2958 MERGEADOS, comprobado en GitHub; ticket 1622 abierto) · **6.16 → movible hoy (S2)** · 3.2 y 6.4 sin FUNDADOR · 2.4, 2.13, 6.17 con su último comentario (6.17 resulta de J3). Control: `contar-dependencias.mjs` da FUNDADOR **48 → 45** y filas **71 → 70**, que es exactamente lo movido. **No leído:** el último comentario de los 53 abiertos sin movimiento desde las 06:00Z.
+
+**Para el orquestador:** ① declarar o no `localhost/yaqu_dev` (sin eso, la frase de la regla 3 no se puede escribir) · ② `decision-jefe` en 1182 y 1210 · ③ 1545: ¿espera aún al fundador el «encargo de diseño»? (un lector dice que no; NO cotejado).
