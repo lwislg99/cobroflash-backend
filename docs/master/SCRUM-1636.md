@@ -2,6 +2,11 @@
 
 **Medido contra:** `origin/main` = `eafca9fe154c26d38b05a748ca816ba098943724` · 2026-10-29T12:20:37Z
 
+A9: comprobación → `tests/scrum1294-a9-leccion-en-a10.test.mjs`
+
+Error propio del puesto: este registro se empujó SIN su línea A9 y el obligatorio de #2996 cayó por eso
+(run 40925537638, `scrum1294` y, por arrastre, `scrum976` ④). El guard que la nombra es el que lo cazó.
+
 ## SCRUM-1636 ② · Productos ya no parte el ID ni la píldora a 1280 px (29-oct-2026)
 
 **Skill UI:** cargada (yaqu-premium-ui) antes de tocar `public/`. Sólo CSS, sin tokens ni textos nuevos: ningún literal cambia.
@@ -41,6 +46,12 @@ Sitios de S1 (no tocados): `presentacionIva.ts:181`, `quoteDecisionLanding.route
 ## SCRUM-1636 ① · el tipo de IVA con COMA decimal en el panel (29-oct-2026, rama `scrum-1636b-iva-con-coma`)
 
 **Medido contra:** `origin/main` = `7acb753a1089dccb71122710d3e2b5ed70e61fac` · 2026-10-29T18:08:59Z
+
+A9: comprobación → `tests/scrum1294-a9-leccion-en-a10.test.mjs`
+
+Error propio del puesto: la tanda de «vecinos» de abajo se eligió por los ficheros del PANEL tocados y dejó
+fuera los guards que leen `docs/master/`; por eso no vio que a este tramo (y al de arriba) les faltaba la
+línea A9. Lo cazó el guard nombrado, al correrlo el relevo antes de que el obligatorio diera veredicto.
 
 **Skill UI:** cargada (yaqu-premium-ui) antes de tocar `public/`. Sin tokens, sin clases y sin texto nuevo:
 sólo cambia el SEPARADOR del número que ya se pintaba. Puesto S2; los cinco ficheros son S2
