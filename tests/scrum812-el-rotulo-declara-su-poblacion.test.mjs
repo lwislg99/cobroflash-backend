@@ -200,9 +200,15 @@ function tituladosQueDeclaran() {
  * decía 35)»). Re-medido en local con el lector de este fichero: sobre `origin/main` =
  * `268eb55ddf33547063a620009e505e4ed833ba35` da 35, y sobre la rama (`1afa6fb8d23a69c7f8ac2f56b564069e8b010123`)
  * da 36; la única diferencia entre las dos listas es el fichero nuevo. Población: 1.528 ficheros de test.
+ *
+ * ⬆️ **37** (SCRUM-1620, 27-oct-2026, S3): entra `scrum1620-el-censo-por-partes.test.mjs`, que declara
+ * cinco mutaciones sobre el reparto del meta-guard en partes y cuenta como «titulado GUARD». Medido en
+ * local con este mismo test sobre la rama `scrum-1620-metaguard-por-partes`, fundida con `origin/main` =
+ * `efe2cc598dabd3072b650284e5be1b4aa36a0463`: «LA COBERTURA HA SUBIDO a 37 (el suelo decía 36)», con
+ * el fichero nuevo en la lista.
  * ═════════════════════════════════════════════════════════════════════════════════════════════
  */
-export const SUELO_GUARD_QUE_DECLARAN = 36;
+export const SUELO_GUARD_QUE_DECLARAN = 37;
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 // ① SUELO · ¿he mirado algo? Un cero de población no es «no hay»: es «no he mirado».
@@ -403,8 +409,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // ④ El trinquete se afloja una unidad: deja hueco para que la cobertura baje sin aviso.
     fichero: 'tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs',
-    de: 'export const SUELO_GUARD_QUE_DECLARAN = 36;',
-    a: 'export const SUELO_GUARD_QUE_DECLARAN = 35;',
+    de: 'export const SUELO_GUARD_QUE_DECLARAN = 37;',
+    a: 'export const SUELO_GUARD_QUE_DECLARAN = 36;',
     cae: 'SCRUM-812 · 🔴 EL TRINQUETE del GUARD: la cobertura auto-declarada NO BAJA',
   },
   {

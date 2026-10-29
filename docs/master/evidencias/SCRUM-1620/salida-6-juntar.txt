@@ -1,0 +1,5 @@
+parte 1 de 3: NO DEJÓ RESUMEN (cancelada, cortada por el job o sin arrancar): no sé qué juzgó
+parte 2 de 3: salió con 2 · juzgadas 1 de 279 · 42 s
+parte 3 de 3: NO DEJÓ RESUMEN (cancelada, cortada por el job o sin arrancar): no sé qué juzgó
+censo por partes: juzgadas 1 de 906 declaraciones, en 3 partes
+margen de la parte más lenta: -2 s (parte 2, 42 s de 40)

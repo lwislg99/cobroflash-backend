@@ -58,8 +58,33 @@ test('SCRUM-1628 · censo de tests/: cada test sin fila es O test de un ticket (
   assert.ok(tests.length >= 1000, `población: ${tests.length} ficheros en tests/`);
   assert.ok(deTicket.length >= 1000, `población: ${deTicket.length} tests de ticket sin fila de ruta (suelo 1000)`);
   assert.ok(huerfanos.length >= 1, `población: ${huerfanos.length} huérfanos de verdad; sin ninguno no hay control positivo`);
-  for (const f of deTicket) assert.match(f, /^tests\/scrum-?\d+/i, `${f}: sólo un nombre con número de ticket es «el test de un ticket»`);
-  for (const f of huerfanos) assert.doesNotMatch(f, /^tests\/scrum-?\d+/i, `${f}: lleva número de ticket y salió huérfano`);
+  // SCRUM-1628b · el número de ticket puede ir en el nombre del fichero o en el del banco (`tests/banco-scrumNNN/`).
+  for (const f of deTicket) assert.match(f, /^tests\/(?:banco-)?scrum-?\d+/i, `${f}: sólo un nombre con número de ticket es «el test de un ticket»`);
+  for (const f of huerfanos) assert.doesNotMatch(f, /^tests\/(?:banco-)?scrum-?\d+/i, `${f}: lleva número de ticket y salió huérfano`);
+});
+
+test('SCRUM-1628b · el banco COMPARTIDO (banco-scrum911) da su fila; los bancos de UN ticket caen en la regla «el test de un ticket»', () => {
+  const ficheros = ficherosDelRepo();
+  const mapa = construirMapa(TABLA, ficheros);
+  const bancos = ficheros.filter((f) => /^tests\/banco-scrum\d+[a-z]?\//i.test(f));
+  const dirs = new Set(bancos.map((f) => f.split('/')[1]));
+  // Población: medido el 29-oct-2026, 15 directorios y 52 ficheros; 29 son de banco-scrum911.
+  assert.ok(dirs.size >= 10 && bancos.length >= 40, `población: ${dirs.size} bancos, ${bancos.length} ficheros`);
+  const compartido = bancos.filter((f) => f.startsWith('tests/banco-scrum911/'));
+  assert.ok(compartido.length >= 1, 'población: banco-scrum911 existe');
+  for (const f of compartido) assert.equal(reglaDe(f, mapa)?.puesto, 'S3', `${f}: el banco compartido tiene fila de S3`);
+  // CONTROL NEGATIVO: los demás no ganan fila de ruta; siguen siendo del ticket de su directorio.
+  const deUnTicket = bancos.filter((f) => !f.startsWith('tests/banco-scrum911/'));
+  assert.ok(deUnTicket.length >= 1, 'población: hay bancos de un ticket');
+  for (const f of deUnTicket) {
+    assert.equal(reglaDe(f, mapa), null, `${f}: un banco de un ticket no lleva fila de ruta`);
+    const t = testDeTicket(f, TABLA);
+    assert.ok(t, `${f}: cae en «el test de un ticket»`);
+    assert.equal(t.ticket, `SCRUM-${/banco-scrum0*(\d+)/i.exec(f)[1]}`, `${f}: el ticket es el del directorio`);
+  }
+  // Y el test que lo hace compartido sigue importándolo: si deja de hacerlo, esta fila hay que revisarla.
+  const importa = fs.readFileSync(path.join(RAIZ, 'tests/scrum1575d-staging-por-destino.test.mjs'), 'utf8');
+  assert.match(importa, /from '\.\/banco-scrum911\/_entorno\.mjs'/, 'scrum1575d importa el entorno de banco-scrum911');
 });
 
 test('SCRUM-1628 · CONTROL POSITIVO: un fichero de tests/ huérfano de verdad sigue saliendo «nadie lo reclama», con salida 0', () => {

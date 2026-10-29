@@ -160,7 +160,9 @@ export function filasSinRuta(texto) {
  * Sin esa fila en la tabla, `null`: el instrumento no inventa una regla que la tabla ya no dice.
  */
 export function testDeTicket(rel, texto) {
-  const m = /^tests\/scrum-?0*(\d+)/i.exec(rel);
+  // SCRUM-1628b · también el banco de un ticket (`tests/banco-scrumNNN/…`): el número va en el DIRECTORIO.
+  // El banco compartido tiene fila de ruta, y en `de` gana la fila.
+  const m = /^tests\/(?:banco-)?scrum-?0*(\d+)/i.exec(rel);
   if (!m) return null;
   const fila = filasSinRuta(texto).find((f) => rel.startsWith(f.prefijo) && /\bel test de un ticket\b/.test(f.que));
   return fila ? { ticket: `SCRUM-${m[1]}`, fila } : null;
