@@ -771,14 +771,19 @@ export function rotuloDelCenso({ poblacion, declarantes, declaraciones, titulado
  */
 export function rotuloDelResultado({
   vivas, mudas, ciegas, muertos, juzgadas, declaraciones, declarantes, poblacion,
-  parte = null, declaracionesDelCenso = declaraciones,
+  parte = null, declaracionesDelCenso = declaraciones, ficherosJuzgados = null,
 }) {
-  const pct = poblacion > 0 ? Math.round((declarantes / poblacion) * 100) : 0;
+  const pct = (a) => (poblacion > 0 ? Math.round((a / poblacion) * 100) : 0);
   // 🔴 SCRUM-1620 · en una parte, «295 de 295» es de la PARTE: sin el censo detrás no dice que hay
   // otras 591 juzgándose en otros jobs. Sin parte, la línea es la de 1387d, byte a byte.
+  // 🔴 SCRUM-1387f · y los ficheros con ALGUNA juzgada. El corte va por guard: medido el 29-oct (1387e,
+  // job 123442782267), 46 de los 238 declarantes se quedaron sin ninguna, y «238 (15 %)» se leía como
+  // lo que el CI repite, que eran 192 (12 %). Sin el dato, la línea es la de antes.
   return `vivas ${vivas} · mudas ${mudas} · ciegas ${ciegas} · ficheros muertos ${muertos} `
     + `· sobre ${juzgadas} juzgadas de ${declaraciones} declaraciones, en ${declarantes} ficheros `
-    + `DECLARANTES de ${poblacion} ficheros de test (${pct} %)`
+    + `DECLARANTES de ${poblacion} ficheros de test (${pct(declarantes)} %)`
+    + (ficherosJuzgados === null ? '' : ` · ${ficherosJuzgados} juzgados de ${declarantes} declarantes `
+      + `(${pct(ficherosJuzgados)} % de los ${poblacion} ficheros de test)`)
     + (parte ? ` · PARTE ${parte.i} de ${parte.k} (el censo entero: ${declaracionesDelCenso} declaraciones)` : '');
 }
 
@@ -1926,6 +1931,7 @@ if (ejecutadoDirectamente(import.meta.url)) {
   console.log(`presupuesto del paso: ${presupuesto.limiteS === null ? 'NINGUNO' : `${presupuesto.limiteS} s`} · ${presupuesto.origen}`);
   let corte = null; // { guardIdx, desde, transcurridoS }
   let juzgadas = 0;
+  const guardsJuzgados = new Set(); // 🔴 SCRUM-1387f · los ficheros con alguna juzgada, para el rótulo
   const costes = []; // { guard, mutaciones, inicioS } — la duración sale del inicio del siguiente
   resumenDeLaParte.presupuestoS = presupuesto.limiteS;
   // 🔴 SCRUM-1620 · recorre SU parte (`enJuego`); sin `META_PARTE` es el censo entero, como antes.
@@ -1961,6 +1967,7 @@ if (ejecutadoDirectamente(import.meta.url)) {
         break bucle;
       }
       juzgadas += 1;
+      guardsJuzgados.add(guard);
       resumenDeLaParte.juzgadas = juzgadas;
       const r = await aplicarUna(mut, guard, limpia);
       if (r.ok) {
@@ -1999,7 +2006,7 @@ if (ejecutadoDirectamente(import.meta.url)) {
   console.log(`\n${rotuloDelResultado({
     vivas, mudas: mudos.length, ciegas: ciegos.length, muertos: muertos.length, juzgadas,
     declaraciones: declaracionesEnJuego, declarantes: guardsEnJuego, poblacion,
-    parte, declaracionesDelCenso: declaraciones,
+    parte, declaracionesDelCenso: declaraciones, ficherosJuzgados: guardsJuzgados.size,
   })}`);
 
   // 📌 SCRUM-784, EL OTRO LADO DEL MISMO AGUJERO — MEDICIÓN, NO VEREDICTO. El meta-guard sólo
