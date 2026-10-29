@@ -156,11 +156,10 @@ test('SCRUM-1549f · las TRES respuestas salen con TRES salidas distintas (0, 1,
 
 test('SCRUM-1549f · una instalación DENTRO de un árbol de git es puerta cerrada (DESDE-UN-ARBOL), no «al día»', () => {
   const b = banco();
-  const dentro = path.join(b.base, 'repo', 'instalacion');
-  fs.mkdirSync(dentro);
-  fs.writeFileSync(path.join(dentro, 'config.json'), JSON.stringify({ repo: b.repo.replace(/\\/g, '/') }));
-  fs.writeFileSync(path.join(dentro, 'sesion.mjs'), V2);
-  const s = seccionPuerta(medirPuerta({ dir: dentro }));
+  fs.mkdirSync(path.join(b.base, 'repo', 'instalacion'));
+  fs.writeFileSync(path.join(b.base, 'repo', 'instalacion', 'config.json'), JSON.stringify({ repo: b.repo.replace(/\\/g, '/') }));
+  fs.writeFileSync(path.join(b.base, 'repo', 'instalacion', 'sesion.mjs'), V2);
+  const s = seccionPuerta(medirPuerta({ dir: path.join(b.base, 'repo', 'instalacion') }));
   assert.equal(s.alertas.length, 1);
   assert.match(s.alertas[0].linea, /DESDE-UN-ARBOL/);
 });
