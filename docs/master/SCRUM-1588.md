@@ -4,7 +4,7 @@ El ticket va en DOS mitades y ninguna lo cierra sola: S1 el servidor (`EXPENSE_C
 
 ## S2 · la pantalla (rama `scrum-1588b-alquiler-de-local-pantalla`)
 
-**Medido contra:** `origin/main` = `5deff8b3b7b0f8a8d3cd037baabbca454ea7aa29` · cabecera `Date:` de GitHub al escribir esto: 2026-10-29T09:57:54Z
+**Medido contra:** `origin/main` = `5deff8b3b7b0f8a8d3cd037baabbca454ea7aa29` · 2026-10-29T09:57:54Z (cabecera `Date:` de GitHub al escribir esto)
 
 **Skill UI:** cargada (yaqu-premium-ui) antes de tocar `public/`. Sin componentes nuevos: una entrada más en el mapa de rótulos y una variante más de una píldora que ya existía.
 
