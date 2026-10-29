@@ -1,0 +1,61 @@
+✔ SCRUM-560 · SUELO: el censo VE los ficheros que levantan servidor propio (1202.0072ms)
+✔ SCRUM-560 · AUTOPRUEBA: el detector caza el patrón y NO acusa a `node:http` (13.4544ms)
+✖ SCRUM-560 · ningún fichero NUEVO pide con `fetch` a su propio `app.listen(0)` (3240.8328ms)
+✔ SCRUM-560 · la lista de los que ya estaban no puede quedarse vieja (3015.4884ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7847.0488
+
+✖ failing tests:
+
+test at tests\scrum560-nuevo.test.mjs:306:1
+✖ SCRUM-560 · ningún fichero NUEVO pide con `fetch` a su propio `app.listen(0)` (3240.8328ms)
+  AssertionError [ERR_ASSERTION]: 🔴 UN FICHERO NUEVO USA `fetch` SOBRE SU PROPIO SERVIDOR:
+      scrum131-resend-honesto.test.mjs — 2 `fetch` sobre su propio servidor (basta 1: SCRUM-1218j)
+      scrum136-hub-equipo.test.mjs — 2 `fetch` sobre su propio servidor (basta 1: SCRUM-1218j)
+      scrum876f-el-seco-se-decide-al-enviar.test.mjs — 1 `fetch` sobre su propio servidor (basta 1: SCRUM-1218j)
+      webhooks-idempotencia.test.mjs — 2 `fetch` sobre su propio servidor (basta 1: SCRUM-1218j)
+  
+    Ese patrón revienta una aserción de libuv al cerrar el proceso: el fichero se marca fallido
+    sin nombrar ningún subtest, y sale en la tanda de todo el mundo de forma intermitente
+    (medido: 2 de cada 10 tandas).
+  
+    QUÉ HACER EN SU LUGAR — `node:http` con `agent: false` (sin pool de conexiones):
+      const req = http.request({ host: '127.0.0.1', port, path, method: 'GET', agent: false },
+        (res) => { let d = ''; res.setEncoding('utf8');
+                   res.on('data', (t) => { d += t; });
+                   res.on('end', () => resolve({ status: res.statusCode, cuerpo: d })); });
+      req.on('error', (e) => resolve({ status: 0, cuerpo: '' }));
+      req.end();
+    EL EJEMPLO PROBADO, con su motivo escrito: `tests/scrum100-webhooks-fail-closed.test.mjs`
+    (líneas 50-57), donde vive desde SCRUM-100. Y el antes/después medido, en
+    `docs/master/SCRUM-560.md`.
+  + actual - expected
+  
+  + [
+  +   'scrum131-resend-honesto.test.mjs — 2 `fetch` sobre su propio servidor (basta 1: SCRUM-1218j)',
+  +   'scrum136-hub-equipo.test.mjs — 2 `fetch` sobre su propio servidor (basta 1: SCRUM-1218j)',
+  +   'scrum876f-el-seco-se-decide-al-enviar.test.mjs — 1 `fetch` sobre su propio servidor (basta 1: SCRUM-1218j)',
+  +   'webhooks-idempotencia.test.mjs — 2 `fetch` sobre su propio servidor (basta 1: SCRUM-1218j)'
+  + ]
+  - []
+  
+      at TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/.claude/jobs/764cdb17/tmp/copia/tests/scrum560-nuevo.test.mjs:308:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1325:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:911:18)
+      at Test.postRun (node:internal/test_runner/test:1465:19)
+      at Test.run (node:internal/test_runner/test:1390:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:911:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [ 'scrum131-resend-honesto.test.mjs — 2 `fetch` sobre su propio servidor (basta 1: SCRUM-1218j)', 'scrum136-hub-equipo.test.mjs — 2 `fetch` sobre su propio servidor (basta 1: SCRUM-1218j)', 'scrum876f-el-seco-se-decide-al-enviar.test.mjs — 1 `fetch` sobre su propio servidor (basta 1: SCRUM-1218j)', 'webhooks-idempotencia.test.mjs — 2 `fetch` sobre su propio servidor (basta 1: SCRUM-1218j)' ],
+    expected: [],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

@@ -143,7 +143,7 @@ const VENTANA = 45;
 //
 // ⚠️ Y NO es el 27 de `_censo-firmas-autorizacion.mjs`: aquél cuenta sobre `docs/` incluido y con
 // otra marca. Que los dos rondaran 27 es casualidad, y por eso se dice aquí.
-export const SIN_RESPALDO = 12; // SCRUM-1502o: 20 → 13, siete marcas de tests/ ancladas a su firma real (SCRUM-1502 c.20834, SCRUM-593 c.14262). SCRUM-1502p: 13 → 12, sale scrum377:72 (SCRUM-1502 c.20853).
+export const SIN_RESPALDO = 11; // SCRUM-1502o: 20 → 13, siete marcas de tests/ ancladas a su firma real (SCRUM-1502 c.20834, SCRUM-593 c.14262). SCRUM-1502p: 13 → 12, sale scrum377:72 (SCRUM-1502 c.20853). SCRUM-1502q: 12 → 11, sale botFlow.service.ts:1 (SCRUM-1502 c.20834, P22).
 
 // Procedencias que apuntan a un documento que NO EXISTE. Peor que no tener procedencia: parece
 // rastreable, así que nadie va a mirar. Se congela con nombre y apellidos, y NO se arregla aquí

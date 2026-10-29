@@ -20,6 +20,8 @@ const modRutas = await import('../dist/modules/expenses/app/routes/expenses.rout
 const router = modRutas.default?.default ?? modRutas.default;
 
 const AHORA = new Date('2026-09-18T10:00:00Z');
+// SCRUM-1622: la zona del comercio se pasa SIEMPRE; la de estos casos es la de Madrid.
+const ZONA = 'Europe/Madrid';
 const FOTO = 'data:image/jpeg;base64,QUJDRA==';
 // CIF comprobado a mano en `nifEspanol.ts` (control 1). Con otro control, NO es válido.
 const NIF_BUENO = 'A58818501';
@@ -59,7 +61,26 @@ const respuestaGemini = (objeto) => new Response(
   { status: 200, headers: { 'Content-Type': 'application/json' } },
 );
 
+// SCRUM-1622: la ruta lee la zona DEL COMERCIO antes de contar el tope. Es su única lectura de la
+// base en estos casos, y se dobla aquí (como `scrum1489`); el doble exige que pregunte por ESE
+// comercio (regla 2) y nada más que la zona.
+const { prisma } = await import('../dist/core/db/prisma.js');
+
 async function conApp(merchantId, fn) {
+  const zonaOriginal = prisma.merchant.findUnique;
+  prisma.merchant.findUnique = async (args) => {
+    assert.equal(args?.where?.id, merchantId, '🔴 la zona se ha pedido para otro comercio');
+    assert.deepEqual(args?.select, { timezone: true });
+    return { timezone: ZONA };
+  };
+  try {
+    return await conAppSinDoble(merchantId, fn);
+  } finally {
+    prisma.merchant.findUnique = zonaOriginal;
+  }
+}
+
+async function conAppSinDoble(merchantId, fn) {
   const app = express();
   app.use(express.json({ limit: '2mb' }));
   app.use((req, _res, next) => { Object.assign(req, reqDeSesion({ rol: 'admin', merchantId })); next(); });
@@ -104,7 +125,7 @@ test('SCRUM-912 · 🔴 sin clave de Gemini y CON clave de Anthropic: 503 y NI U
       });
       // Y el dominio por su camino por defecto, sin la guarda de la ruta delante: tampoco cae.
       await assert.rejects(
-        () => L.leerTicket({ merchantId: 9121, imagen: { mimeType: 'image/jpeg', data: 'QUJD' }, ahora: AHORA }),
+        () => L.leerTicket({ merchantId: 9121, imagen: { mimeType: 'image/jpeg', data: 'QUJD' }, ahora: AHORA, zona: ZONA }),
         (e) => e?.code === 'gemini_not_configured',
       );
     });
@@ -220,7 +241,7 @@ test('SCRUM-912 · parsearImagen: solo data-URL de imagen admitida, con base64',
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
 test('SCRUM-912 · lectura completa → propuesta con los nombres del POST y nada descartado', () => {
-  const { propuesta, descartados } = L.sanearLectura(LECTURA_COMPLETA, AHORA);
+  const { propuesta, descartados } = L.sanearLectura(LECTURA_COMPLETA, AHORA, ZONA);
   assert.deepEqual(descartados, []);
   assert.deepEqual(propuesta, {
     concept: 'Codos de cobre',
@@ -238,11 +259,11 @@ test('SCRUM-912 · lectura completa → propuesta con los nombres del POST y nad
 });
 
 test('SCRUM-912 · null es «no se leyó», NO un descarte; y el 0 % es un dato', () => {
-  const vacio = L.sanearLectura({}, AHORA);
+  const vacio = L.sanearLectura({}, AHORA, ZONA);
   assert.deepEqual(vacio.descartados, []);
   assert.ok(Object.values(vacio.propuesta).every((v) => v === null));
 
-  const exento = L.sanearLectura({ total: 50, base: 50, tipoIva: 0, cuota: 0 }, AHORA);
+  const exento = L.sanearLectura({ total: 50, base: 50, tipoIva: 0, cuota: 0 }, AHORA, ZONA);
   assert.deepEqual(exento.descartados, []);
   assert.equal(exento.propuesta.vatRate, 0);
   assert.equal(exento.propuesta.vatAmount, 0);
@@ -270,30 +291,30 @@ test('SCRUM-912 · 🔴 lo que no cuadra se DESCARTA y se dice, no se arregla', 
     [{ concepto: 42 }, 'concept', 'no_es_texto'],
   ];
   for (const [entrada, campo, motivo] of casos) {
-    const { propuesta, descartados } = L.sanearLectura(entrada, AHORA);
+    const { propuesta, descartados } = L.sanearLectura(entrada, AHORA, ZONA);
     assert.deepEqual(descartados, [{ campo, motivo }], `entrada ${JSON.stringify(entrada)}`);
     assert.equal(propuesta[campo], null, `🔴 ${campo} descartado pero PROPUESTO igual`);
   }
 });
 
 test('SCRUM-912 · el céntimo de tolerancia de justificante.ts vale también aquí; dos céntimos, no', () => {
-  assert.deepEqual(L.sanearLectura({ total: 12.1, base: 10.01, cuota: 2.1 }, AHORA).descartados, []);
+  assert.deepEqual(L.sanearLectura({ total: 12.1, base: 10.01, cuota: 2.1 }, AHORA, ZONA).descartados, []);
   assert.deepEqual(
-    L.sanearLectura({ total: 12.1, base: 10.02, cuota: 2.1 }, AHORA).descartados,
+    L.sanearLectura({ total: 12.1, base: 10.02, cuota: 2.1 }, AHORA, ZONA).descartados,
     [{ campo: 'baseAmount', motivo: 'no_cuadra_con_el_total' }],
   );
 });
 
 test('SCRUM-912 · el NIF se propone normalizado, y el «hoy» es el de Madrid, no el de UTC', () => {
-  assert.equal(L.sanearLectura({ nifProveedor: 'a-5881 8501' }, AHORA).propuesta.nifProveedor, NIF_BUENO);
+  assert.equal(L.sanearLectura({ nifProveedor: 'a-5881 8501' }, AHORA, ZONA).propuesta.nifProveedor, NIF_BUENO);
   // 18-sep 23:30Z ya es 19-sep en Madrid (UTC+2): un ticket del 19 NO es futuro.
   const noche = new Date('2026-09-18T23:30:00Z');
-  assert.deepEqual(L.sanearLectura({ fecha: '2026-09-19' }, noche).descartados, []);
+  assert.deepEqual(L.sanearLectura({ fecha: '2026-09-19' }, noche, ZONA).descartados, []);
 });
 
 test('SCRUM-912 · lo que no es un objeto no es una lectura', () => {
   for (const bruto of [null, [], 'texto', 3]) {
-    assert.throws(() => L.sanearLectura(bruto, AHORA), /ai_invalid_format/);
+    assert.throws(() => L.sanearLectura(bruto, AHORA, ZONA), /ai_invalid_format/);
   }
 });
 
@@ -313,17 +334,17 @@ const completarCon = (objeto) => async () => ({ texto: JSON.stringify(objeto), m
 test('SCRUM-912 · el proveedor se propone solo si su NIF casa con UNA ficha del merchant', async () => {
   const imagen = { mimeType: 'image/jpeg', data: 'QUJD' };
   const uno = clienteCon([{ id: 7, taxId: 'a-58818501' }, { id: 8, taxId: 'B00000000' }]);
-  const r = await L.leerTicket({ merchantId: 55, imagen, ahora: AHORA }, { completar: completarCon(LECTURA_COMPLETA), cliente: uno });
+  const r = await L.leerTicket({ merchantId: 55, imagen, ahora: AHORA, zona: ZONA }, { completar: completarCon(LECTURA_COMPLETA), cliente: uno });
   assert.equal(r.propuesta.providerId, 7);
   assert.equal(uno.consultas.length, 1);
   assert.equal(uno.consultas[0].where.merchantId, 55, '🔴 la búsqueda de proveedor no filtra por merchant (regla 2)');
 
   const dos = clienteCon([{ id: 7, taxId: NIF_BUENO }, { id: 9, taxId: NIF_BUENO }]);
-  const r2 = await L.leerTicket({ merchantId: 55, imagen, ahora: AHORA }, { completar: completarCon(LECTURA_COMPLETA), cliente: dos });
+  const r2 = await L.leerTicket({ merchantId: 55, imagen, ahora: AHORA, zona: ZONA }, { completar: completarCon(LECTURA_COMPLETA), cliente: dos });
   assert.equal(r2.propuesta.providerId, null, 'con dos fichas iguales no se elige ninguna');
 
   const sinNif = clienteCon([{ id: 7, taxId: NIF_BUENO }]);
-  const r3 = await L.leerTicket({ merchantId: 55, imagen, ahora: AHORA },
+  const r3 = await L.leerTicket({ merchantId: 55, imagen, ahora: AHORA, zona: ZONA },
     { completar: completarCon({ ...LECTURA_COMPLETA, nifProveedor: null }), cliente: sinNif });
   assert.equal(r3.propuesta.providerId, null);
   assert.equal(sinNif.consultas.length, 0, 'sin NIF leído no se consulta la base');
@@ -331,7 +352,7 @@ test('SCRUM-912 · el proveedor se propone solo si su NIF casa con UNA ficha del
 
 test('SCRUM-912 · 🔴 la IA NUNCA da un ticket por deducible: como mucho, «falta confirmar»', async () => {
   const imagen = { mimeType: 'image/jpeg', data: 'QUJD' };
-  const r = await L.leerTicket({ merchantId: 55, imagen, ahora: AHORA },
+  const r = await L.leerTicket({ merchantId: 55, imagen, ahora: AHORA, zona: ZONA },
     { completar: completarCon(LECTURA_COMPLETA), cliente: clienteCon([]) });
   assert.equal(r.justificante.veredicto, 'falta_confirmar');
   assert.deepEqual(r.justificante.faltan, ['nif_destinatario_en_el_documento']);
@@ -341,14 +362,14 @@ test('SCRUM-912 · 🔴 la IA NUNCA da un ticket por deducible: como mucho, «fa
   // verde. Lo caza `scrum961b` ④, que exige que ningún bloque lea un ticket con NIF sin juzgarlo.
   assert.equal(r.propuesta.providerId, null, '🔴 sin NINGUNA ficha se ha enganchado un proveedor');
 
-  const ticket = await L.leerTicket({ merchantId: 55, imagen, ahora: AHORA },
+  const ticket = await L.leerTicket({ merchantId: 55, imagen, ahora: AHORA, zona: ZONA },
     { completar: completarCon({ total: 3.5, fecha: '2026-09-17' }), cliente: clienteCon([]) });
   assert.equal(ticket.justificante.veredicto, 'no_deducible');
 });
 
 test('SCRUM-912 · lo que devuelve el modelo sin ser JSON es ai_invalid_json', async () => {
   await assert.rejects(
-    () => L.leerTicket({ merchantId: 55, imagen: { mimeType: 'image/jpeg', data: 'QUJD' }, ahora: AHORA },
+    () => L.leerTicket({ merchantId: 55, imagen: { mimeType: 'image/jpeg', data: 'QUJD' }, ahora: AHORA, zona: ZONA },
       { completar: async () => ({ texto: 'esto no es json', modelo: 'modelo-doble' }), cliente: clienteCon([]) }),
     /ai_invalid_json/,
   );
