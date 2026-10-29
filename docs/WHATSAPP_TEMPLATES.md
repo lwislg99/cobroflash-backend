@@ -85,9 +85,10 @@ contar en Meta y vea nueve, que no busque dos plantillas perdidas — son éstas
   > dicen terceros; ninguna sesión ve el panel. La regla de «un solo `{{1}}`, al final» vale en
   > los dos casos; la prueba del móvil dice cuál es el nuestro.
   >
-  > 🔵 **Pendiente de decisión, no hecho:** el camino del presupuesto ya tolera el `{{1}}` sobrante
-  > (`parseToken`, `src/core/utils/utils.ts`), el de la firma (`albaranPublic.routes.ts`) no. Que
-  > lo haga lo decide el fundador (SCRUM-1632 c.21202). Esto no cambia la regla de arriba.
+  > 🔵 **Decidido (SCRUM-1632 c.21220) y hecho en SCRUM-1632c:** el camino del presupuesto y el de
+  > la firma (`albaranPublic.routes.ts`) toleran el `{{1}}` sobrante con `parseToken`
+  > (`src/core/utils/utils.ts`). `/pay/invoice` y `/recibo` (carril J2) todavía no. Esto no cambia
+  > la regla de arriba: con la plantilla bien, el enlace no trae nada que limpiar.
   >
   > ⛔ Editar una plantilla aprobada la manda otra vez a revisión de Meta y es STOP del fundador.
 - El número de variables del cuerpo y de botones debe cuadrar **exacto** o Meta
