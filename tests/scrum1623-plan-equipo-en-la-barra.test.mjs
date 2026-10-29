@@ -68,7 +68,9 @@ function subtituloPintado(me) {
   };
   vm.createContext(ctx);
   vm.runInContext(`(function () { ${TRAMO} \n})()`, ctx);
-  const m = tarjeta.innerHTML.match(/<div class="sidebar-user-plan">([^<]*)<\/div>/);
+  // Hueco para atributos a los dos lados de la clase (SCRUM-553): un `id` o un `aria-*` nuevo en
+  // el `<div>` no puede dejar este test ciego.
+  const m = tarjeta.innerHTML.match(/<div[^>]*class="sidebar-user-plan"[^>]*>([^<]*)<\/div>/);
   assert.ok(m, `🔴 la tarjeta no pinta .sidebar-user-plan; pintó:\n${tarjeta.innerHTML}`);
   return m[1];
 }

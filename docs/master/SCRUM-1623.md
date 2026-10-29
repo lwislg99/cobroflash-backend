@@ -46,3 +46,9 @@ Mutación: quitar la entrada `equipo` tumba ① (es el rojo de antes del arreglo
 - `tests/scrum1623-plan-equipo-en-la-barra.test.mjs`: 3 de 3 tras el arreglo; 2 de 3 antes.
 - Los que leen `app.js` más las familias 1402, 745, 237, 976, 811c (39 ficheros, concurrencia 2): 429 de 431 antes de escribir este registro; los 2 rojos eran 1340 y 976 ④, que exigen la línea `**Skill UI:**` de este fichero.
 - Sin tanda entera: memoria libre 1.848 MB, por debajo del umbral de 2.200. El obligatorio lo dice el CI.
+
+## 29-oct-2026 · el obligatorio de #2960 en rojo: SCRUM-553, y era MÍO
+
+El PR salió rojo el 27-oct por `SCRUM-553 · 🔴 el número de etiquetas con el \`>\` pegado NO SUBE`. Medido con `censar()` sobre el árbol con `origin/main` 5deff8b3b mezclado: 21 contra un tope de 20, y la fila nueva era **el test de este ticket**, `tests/scrum1623-plan-equipo-en-la-barra.test.mjs:71`, que buscaba `<div class="sidebar-user-plan">` con el `>` pegado. No es un trinquete que se mueva por consecuencia: es el defecto que el trinquete vigila (un `id` o un `aria-*` nuevo en ese `<div>` dejaba el test sin encontrar el subtítulo).
+
+Arreglo en el código, no en el guard (regla 41): el patrón pasa a `/<div[^>]*class="sidebar-user-plan"[^>]*>([^<]*)<\/div>/`. El censo vuelve a 20 (0 filas de 1623) y `TOPE` no se toca. `scrum553` + `scrum1623`: 19 de 19.
