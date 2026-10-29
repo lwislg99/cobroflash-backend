@@ -5339,7 +5339,8 @@ conceptInput._pfIsLastLine = () => lines[lines.length - 1] === lineObj;
     // dice «presupuesto».
     if (esDocumentoSuelto) {
       const ivaPorDefecto = fieldVatDefault.input.value;
-      ajustesSueltoValor.textContent = "IVA por defecto" + (ivaPorDefecto === "" ? "" : " " + ivaPorDefecto + " %");
+      // SCRUM-1636 ① · el valor del selector es «7.5»: se pinta «7,5» (`fmtTipoIvaEs`, SCRUM-1608).
+      ajustesSueltoValor.textContent = "IVA por defecto" + (ivaPorDefecto === "" ? "" : " " + fmtTipoIvaEs(Number(ivaPorDefecto) / 100) + " %");
     } else {
       filaCobroValor.textContent = textoDeCobro();
       const pagos = pmDefs.filter(function (d) { return pmChecks[d.key].checked; })

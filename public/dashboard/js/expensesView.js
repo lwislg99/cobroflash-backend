@@ -627,7 +627,7 @@ async function renderExpenseDetailView(container, expenseId) {
     ['Nº de factura del proveedor', String(e.providerInvoiceNumber || '').trim() || null],
     ['Fecha de la factura', fechaFactura],
     ['Base imponible', e.baseAmount != null ? fmtEuro(Number(e.baseAmount)) : null],
-    ['Tipo de IVA', e.vatRate != null ? Number(e.vatRate) + '%' : null],
+    ['Tipo de IVA', e.vatRate != null ? fmtTipoIvaEs(Number(e.vatRate) / 100) + '%' : null],
     ['Cuota de IVA', e.vatAmount != null ? fmtEuro(Number(e.vatAmount)) : null],
   ].filter(([, v]) => v != null && v !== '');
   if (datos.length) {
