@@ -2,6 +2,11 @@
 
 **Medido contra:** `origin/main` = `eafca9fe154c26d38b05a748ca816ba098943724` · 2026-10-29T12:20:37Z
 
+A9: comprobación → `tests/scrum1294-a9-leccion-en-a10.test.mjs`
+
+Error propio del puesto: este registro se empujó SIN su línea A9 y el obligatorio de #2996 cayó por eso
+(run 40925537638, `scrum1294` y, por arrastre, `scrum976` ④). El guard que la nombra es el que lo cazó.
+
 ## SCRUM-1636 ② · Productos ya no parte el ID ni la píldora a 1280 px (29-oct-2026)
 
 **Skill UI:** cargada (yaqu-premium-ui) antes de tocar `public/`. Sólo CSS, sin tokens ni textos nuevos: ningún literal cambia.
