@@ -394,7 +394,9 @@ app.get('/admin/me', async (req, res) => {
     // con EL MISMO criterio que usa la pagina de pago del cliente (que cae a `whatsappPhone`).
     // SCRUM-809b: `subscriptionStatus` se lee AQUÍ; la sesión no lo trae (ver el banner, abajo).
     select: { country: true, logoUrl: true, email: true, flags: true, invoiceSeriesYear: true,
-      bizumPhone: true, whatsappPhone: true, timezone: true, subscriptionStatus: true },
+      bizumPhone: true, whatsappPhone: true, timezone: true, subscriptionStatus: true,
+      // SCRUM-1594: lo exige `MerchantLike` cuando entre SCRUM-1585 (el modo mira el SII).
+      llevaLibrosPorSii: true },
   });
 
   // SCRUM-298 (A8) · UN SOLO objeto para las dos preguntas de modo. `documentoSuelto` (qué se
@@ -406,6 +408,7 @@ app.get('/admin/me', async (req, res) => {
     email: merchantFull?.email ?? null,
     country: merchantFull?.country ?? null,
     flags: merchantFull?.flags,
+    llevaLibrosPorSii: merchantFull?.llevaLibrosPorSii ?? null,
   };
 
   // SCRUM-313 (D2) · LA PUERTA DE ULTIMA OPORTUNIDAD. Se lee aqui porque el veredicto tiene que
