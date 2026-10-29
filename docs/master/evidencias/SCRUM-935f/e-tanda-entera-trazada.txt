@@ -1,0 +1,3 @@
+trazas 1939 · ficheros de test con traza 1468 · trazas sin dueño 138
+leen documentación 190 · llaman a APIs de zona 336 · LAS DOS COSAS 33
+con subproceso (su nieto puede no estar trazado si limpia NODE_OPTIONS): 193
