@@ -252,7 +252,16 @@ const censo = censoCopy(RAIZ, cierre.portadores, cierreTipo.portadores);
 // REGENERADO con el propio censo sobre el árbol YA FUSIONADO (origin/main f6a311967 + la rama), no
 // deducido: { flag: 7, tipo: 11, aPelo: 162 }, y el único literal del censo en `subscriptions.routes.ts`
 // es ése.
-const VEREDICTO_AL_MEDIR = { flag: 7, tipo: 11, aPelo: 162 };
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// flag 7 → 8 · 29-oct-2026 (SCRUM-1602) · CUÁL ENTRÓ Y POR QUÉ NO ES REGRESIÓN: la tarjeta
+// «Paquete del trimestre» (`TARJETA_PAQUETE_TRIMESTRE`, `exportView.js:43`), textos FIRMADOS en
+// SCRUM-1251 comentario 20675. Cae en ① porque SÓLO se pinta con `window.appModoEmision === 'fiscal'`
+// (`conPaquete`): es la categoría correcta, la de un texto que el modo de emisión calla (reglas 7/24).
+// Tampoco va a `PENDIENTES_DE_FIRMA`: está firmado. REGENERADO con el propio censo sobre el árbol YA
+// FUSIONADO (origin/main 5deff8b3b + la rama), no deducido: main da { flag: 7, tipo: 11, aPelo: 162 }
+// y la rama { flag: 8, tipo: 11, aPelo: 162 }; la única fila nueva de ① es ésa. («1 factura» de
+// `exportView.js` sólo cambia de línea, 179 → 205, y sigue en ③.)
+const VEREDICTO_AL_MEDIR = { flag: 8, tipo: 11, aPelo: 162 };
 
 // ─────────────────────────────────────────────────────────────────────────────────────────
 // 1 · EL INSTRUMENTO VE — controles de respuesta conocida, y también de la VÍA
@@ -414,7 +423,12 @@ test('SCRUM-601 · EL VEREDICTO: las tres categorías, ancladas, y SUMAN', () =>
 // (`TEXTO_SUSCRIPCION_EXISTE`, `subscriptions.routes.ts:47`) y llega al `json` por referencia. No se
 // pega en línea para bajar el número: el motivo de 31→32. Medido con el censo sobre origin/main
 // f6a311967 + la rama: es la única construcción no legible de ese fichero.
-const NO_LEGIBLES_AL_MEDIR = 37;
+// 29-oct-2026 · 37 → 38, MEDIDO (SCRUM-1602). Es el mismo literal que sube `flag` 7 → 8: la tarjeta
+// firmada del paquete vive en SU ÚNICA constante (`TARJETA_PAQUETE_TRIMESTRE`) y llega al `innerHTML`
+// por `${conPaquete ? TARJETA_PAQUETE_TRIMESTRE : ''}`. No se pega en línea para bajar el número: el
+// motivo de 31→32. Medido con el censo sobre origin/main 5deff8b3b (37) + la rama (38): la única
+// construcción no legible nueva es `exportView.js:43`.
+const NO_LEGIBLES_AL_MEDIR = 38;
 
 test('SCRUM-601 · el censo DECLARA lo que no sabe leer, y esa lista no crece sola', () => {
   const n = censo.noLegibles.length;
