@@ -268,7 +268,7 @@ export function argsLanzar({ modo, nombre, sessionId, prompt, equipo, modelo = M
  * @param {{leido:boolean, terminal?:boolean, cuando?:string|null, motivo?:string}|null} job
  *   lo que dice su `state.json`, o `{leido:false}` si no se pudo mirar
  * @returns {{estado:'VIVA'|'MUERTA'|'ESPERA'|'NO-PUDE-MIRAR', motivo:string, pregunta?:string}}
- *   `ESPERA` (SCRUM-1621f) cuenta como viva para los tres que deciden: sólo `MUERTA` es un resto.
+ *   `ESPERA` (SCRUM-1238c) cuenta como viva para los tres que deciden: sólo `MUERTA` es un resto.
  */
 export function clasificarAgente(agente, job) {
   if (!agente || typeof agente !== 'object') return { estado: 'NO-PUDE-MIRAR', motivo: 'la entrada no es un objeto' };
@@ -276,7 +276,7 @@ export function clasificarAgente(agente, job) {
   if (!job || job.leido !== true) {
     return { estado: 'NO-PUDE-MIRAR', motivo: `sin pid, y su state.json no se pudo leer${job && job.motivo ? `: ${job.motivo}` : ''}` };
   }
-  // SCRUM-1621f: «te está esperando» no sale igual que «terminó» ni que «no pude mirar». Va antes del
+  // SCRUM-1238c: «te está esperando» no sale igual que «terminó» ni que «no pude mirar». Va antes del
   // final: una que pregunta no es un resto, aunque su state.json haya terminado algún turno.
   if (job.espera === true) {
     return { estado: 'ESPERA', motivo: `sin pid, y su state.json dice que ESPERA una respuesta (${job.huella || 'sin huella'})`, pregunta: job.pregunta || 'no dice qué' };
@@ -1014,7 +1014,7 @@ function estadoDeJob(config, id) {
 }
 
 /**
- * SCRUM-1621f · Lo que significa un `state.json`, separado de leerlo para poder probarlo.
+ * SCRUM-1238c · Lo que significa un `state.json`, separado de leerlo para poder probarlo.
  *
  * 🔴 `firstTerminalAt` NO es «terminó»: es «terminó ALGÚN turno». Medido el 29-oct-2026 sobre los 44
  * `state.json` de la máquina: en 16 de los 38 terminales `firstTerminalAt` es ANTERIOR a
@@ -1039,7 +1039,7 @@ export function leerJob(j) {
 }
 
 /**
- * SCRUM-1621f · Las sesiones que esperan una respuesta, leídas de la CARPETA de trabajos y no de la
+ * SCRUM-1238c · Las sesiones que esperan una respuesta, leídas de la CARPETA de trabajos y no de la
  * lista. Medido el 29-oct-2026: `claude agents --json` daba 8 entradas, las 8 con `pid`; una sesión
  * que acaba su turno preguntando pierde el proceso y deja de salir en la lista, así que sólo su
  * `state.json` sabe que pregunta. Población declarada; sin carpeta legible, `leido: false`.
@@ -1184,7 +1184,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       restos: agentes.filter((a) => a.kind === 'background' && validarNombre(a.name, equipo) === null
         && clasificarAgente(a, job(a.id)).estado === 'MUERTA').map(resumen),
       otras: agentes.filter((a) => a.kind === 'background' && validarNombre(a.name, equipo) !== null).map(resumen),
-      // SCRUM-1621f: las que preguntan, de la carpeta de trabajos, tengan proceso o no.
+      // SCRUM-1238c: las que preguntan, de la carpeta de trabajos, tengan proceso o no.
       esperando: esperandoEnJobs(raizDeJobs(config), {
         ahora, conProceso: new Set(agentes.filter((a) => typeof a.pid === 'number' && a.pid > 0).map((a) => a.id)),
       }),
