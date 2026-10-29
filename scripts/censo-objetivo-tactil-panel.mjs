@@ -61,7 +61,7 @@ import { enlacesDelPanel, TIPOS_DE_FUENTE, esperarFuentes, cegueraDeLaFuente, de
 import { FUENTE_MEDIDOR, INTERACTIVOS, MINIMO_TACTIL } from './_medidor-de-toque.mjs';
 import { serializar, paginaDeClientes } from './_pagina-panel.mjs';
 import { cargarDashboard, pintarVista, todos } from '../tests/_banco-vistas.mjs';
-import { cortosDistintos, noMedidosPorOcultos } from './_censo-distintos.mjs';
+import { cortosDistintos, noMedidosPorOcultos, cajaYToque, leerCajaYToque } from './_censo-distintos.mjs';
 import { datosDelCenso, ARGUMENTOS_DEL_CENSO, parametrosDe, avisoDeVistaSinPedir, avisoDeRutaSinContrato } from './_datos-del-censo.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -70,8 +70,16 @@ const ANCHOS = [929, 390];
 const SONDA_TEXTO = '.';
 // SCRUM-1593 · y una segunda, OCULTA: tiene que salir en `ocultos`, no medida ni «sin caja».
 const SONDA_OCULTA_TEXTO = ':';
+// SCRUM-1603c · y una tercera, TAPADA: caja de 40 px con los 10 de arriba cubiertos por un bloque que
+// no es interactivo, así que su toque son 30. Es el control de que el censo imprime la CAJA y no el
+// toque dos veces: tiene que salir con las dos cifras distintas, y cada una en su sitio.
+const SONDA_TAPADA_TEXTO = ';';
+const SONDA_TAPADA = { caja: 40, tocable: 30 };
 const SONDA = '<button id="__sonda" style="width:12px;height:12px;padding:0;border:0">' + SONDA_TEXTO + '</button>'
-  + '<div style="display:none"><button id="__sondaOculta">' + SONDA_OCULTA_TEXTO + '</button></div>';
+  + '<div style="display:none"><button id="__sondaOculta">' + SONDA_OCULTA_TEXTO + '</button></div>'
+  + '<div style="position:relative;width:120px;height:40px;margin:0">'
+  + '<button id="__sondaTapada" style="display:block;box-sizing:border-box;width:120px;height:40px;min-height:0;padding:0;border:0;margin:0">' + SONDA_TAPADA_TEXTO + '</button>'
+  + '<div style="position:absolute;left:0;top:0;width:120px;height:10px"></div></div>';
 const MINIMO_SUPERFICIES = 10;
 
 let salida = 0;
@@ -275,6 +283,8 @@ const EVAL = `${FUENTE_MEDIDOR};${MEDIR}(${JSON.stringify(INTERACTIVOS)}, ${MINI
 const navegador = await lanzarNavegador(puppeteer, {});
 const resultados = [];
 const sondasFallidas = [];
+// SCRUM-1603c · cómo salió impresa la sonda tapada, y en cuántas páginas.
+const tapadasLeidas = new Map();
 // SCRUM-1603 · navegar y ESPERAR la fuente (font-display: swap pinta primero con la de reserva). Una
 // página cuyas caras no cargan no está medida con la fuente de la app: se apunta y el censo lo dice.
 const fuentesVistas = new Map();
@@ -305,6 +315,14 @@ for (const ancho of ANCHOS) {
     if (!rs.ocultos.some(esOculta) || rs.sinCaja.some(esOculta) || rs.medidos.some(esOculta)) {
       sondasFallidas.push(`${nombre} @${ancho}px (la sonda OCULTA no sale como oculta)`);
     }
+    // SCRUM-1603c · la tapada se lee de la LÍNEA impresa, no del objeto: lo que se controla es lo que sale.
+    const tapada = rs.medidos.find((m) => m.sel === 'BUTTON' && m.texto === SONDA_TAPADA_TEXTO);
+    const leida = tapada ? leerCajaYToque(cajaYToque(tapada)) : null;
+    if (!leida || Math.abs(leida.caja - SONDA_TAPADA.caja) > 1 || Math.abs(leida.tocable - SONDA_TAPADA.tocable) > 1) {
+      sondasFallidas.push(`${nombre} @${ancho}px (la sonda TAPADA sale «${tapada ? cajaYToque(tapada) : 'ni siquiera medida'}» y no «${cajaYToque(SONDA_TAPADA)}»)`);
+    } else {
+      tapadasLeidas.set(cajaYToque(tapada), (tapadasLeidas.get(cajaYToque(tapada)) || 0) + 1);
+    }
 
     await ir(page, `/${s.ruta}`);
     resultados.push({ fn: s.fn, pantalla: s.fn, estado: s.estado, ancho, ...(await page.evaluate(EVAL)) });
@@ -328,6 +346,8 @@ srv.close();
 decir('\n═══ ✅ LA SONDA ═══');
 decir(`páginas × anchuras: ${paginas.length * ANCHOS.length} (${superficies.length} superficies + ${estadosAbiertos.length} pestañas abiertas) · sondas NO cazadas: ${sondasFallidas.length}`);
 for (const s of sondasFallidas) decir('   🔴 SUPERFICIE NO MEDIDA: ' + s);
+// SCRUM-1603c · la caja y el toque salen distintos donde deben diferir; si no, no se imprime la caja.
+for (const [linea, n] of tapadasLeidas) decir(`✅ CONTROL POSITIVO · sonda tapada (se espera ${cajaYToque(SONDA_TAPADA)}): ${linea} · en ${n} página(s)`);
 if (sondasFallidas.length) {
   noSupe('🔴 hay superficies que no cazan un objetivo de 12 px: sus ceros no valen y el total está incompleto.');
 }
@@ -358,7 +378,7 @@ for (const r of resultados.filter((x) => x.estado)) {
   const yaMedidos = new Set(base ? base.medidos.map((m) => m.i) : []);
   for (const c of r.medidos.filter((m) => !m.cumple && !yaMedidos.has(m.i))) {
     soloAbriendo += 1;
-    decir(`   ${r.pantalla} · ${r.estado} @${r.ancho}px  ${c.sel.padEnd(28)} caja ${c.caja} · toque ${c.tocable}  «${c.texto}»`);
+    decir(`   ${r.pantalla} · ${r.estado} @${r.ancho}px  ${c.sel.padEnd(28)} ${cajaYToque(c)}  «${c.texto}»`);
   }
 }
 decir(`   mediciones así: ${soloAbriendo}`);
@@ -373,13 +393,14 @@ const smDistintos = [...distintos.values()].filter((v) => esSm(v.sel)).length;
 decir('\n═══ ③ POR CLASE (elementos DISTINTOS, sin duplicar por anchura) ═══');
 const porClase = new Map();
 for (const v of distintos.values()) {
-  if (!porClase.has(v.sel)) porClase.set(v.sel, { n: 0, min: Infinity, max: 0, pant: new Set(), ej: new Set() });
+  if (!porClase.has(v.sel)) porClase.set(v.sel, { n: 0, min: Infinity, max: 0, cajaMin: Infinity, cajaMax: 0, pant: new Set(), ej: new Set() });
   const e = porClase.get(v.sel);
   e.n += 1; e.min = Math.min(e.min, v.tocable); e.max = Math.max(e.max, v.tocable);
+  e.cajaMin = Math.min(e.cajaMin, v.caja); e.cajaMax = Math.max(e.cajaMax, v.caja);
   e.pant.add(v.fn); if (e.ej.size < 3) e.ej.add(v.texto);
 }
 for (const [sel, e] of [...porClase.entries()].sort((a, b) => b[1].n - a[1].n)) {
-  decir(`   ${String(e.n).padStart(3)}  ${sel.padEnd(42)} ${e.min.toFixed(1)}–${e.max.toFixed(1)} px · ${e.pant.size} pantalla(s) · p.ej. ${[...e.ej].join(' / ')}`);
+  decir(`   ${String(e.n).padStart(3)}  ${sel.padEnd(42)} toque ${e.min.toFixed(1)}–${e.max.toFixed(1)} px · caja ${e.cajaMin.toFixed(1)}–${e.cajaMax.toFixed(1)} px · ${e.pant.size} pantalla(s) · p.ej. ${[...e.ej].join(' / ')}`);
 }
 
 // SCRUM-1593 · los que NINGÚN estado ni anchura dejó mirar. No son cero cortos: son sin medir.
@@ -410,7 +431,8 @@ for (const ancho of ANCHOS) {
   if (!r) { noSupe(`   🔴 no he medido Clientes a ${ancho}px`); continue; }
   const cortos = r.medidos.filter((m) => !m.cumple);
   decir(`   @${ancho}px → medidos ${r.medidos.length} · cortos ${cortos.length} · no tocables ${r.noTocables.length}`);
-  for (const c of cortos) decir(`        ${c.sel.padEnd(34)} ${String(c.tocable).padEnd(6)} «${c.texto}»`);
+  // SCRUM-1603c · con la CAJA: la aceptación de 1603 pide la caja de `.input`, y aquí sólo salía el toque.
+  for (const c of cortos) decir(`        ${c.sel.padEnd(34)} ${cajaYToque(c).padEnd(22)} «${c.texto}»`);
 }
 decir('   (el guard imprime, hoy: 929 → 20 medidos / 11 cortos / 6 no tocables · 390 → 19 / 2 / 6)');
 
