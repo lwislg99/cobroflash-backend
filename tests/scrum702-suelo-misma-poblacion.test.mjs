@@ -277,7 +277,13 @@ test('SCRUM-702 · CONTROL NEGATIVO: por encima del suelo y sin mudos, no dice n
 //   · `tests/scrum935d-el-corte-dice-lo-que-deja.test.mjs` no lee el entorno: le PASA a esa función
 //     pura un `env` escrito a mano con y sin `GITHUB_ACTIONS`, para probar las dos ramas en cualquier
 //     máquina. Es la decisión de `scrum727` y `scrum716c`: fijarlo, no heredarlo.
-const TOPE_LEEN_EL_ENTORNO = 22;
+// SCRUM-1620 (29-oct-2026, S3) · 22 → 23, y la nueva NO lee el entorno: es el caso de `scrum935d`.
+//   · `tests/scrum1620-el-censo-por-partes.test.mjs` le PASA a `avisoDeNoCabe` (función pura del
+//     meta-guard) un `env` escrito a mano con `GITHUB_ACTIONS: 'true'`, para probar el aviso
+//     `::warning … NO CABE` en cualquier máquina; y lo nombra en el `de:` de la mutación que declara
+//     sobre esa línea del script. Ningún aserto depende de dónde corre. La lectura de verdad sigue
+//     siendo la de `scripts/meta-guard-mutaciones.mjs`, ya contada en 935d.
+const TOPE_LEEN_EL_ENTORNO = 23;
 
 /**
  * 🔴 PARTIDAS A PROPÓSITO, para que el censo NO SE CACE A SÍ MISMO. Escritas enteras, este
