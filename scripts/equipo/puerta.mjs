@@ -153,17 +153,20 @@ export function medirPuerta({
   } catch { /* fuera de un árbol, git sale ≠ 0: es lo correcto */ }
   const ruta = path.join(dir, INSTALADO);
   if (!existe(ruta)) return { dir, repo, alerta: `no hay copia de ${INSTALADO} en ${aWin(dir)}: no hay lanzador que abrir · ${ordenDeRefresco({ repo, dir }).join('  y después  ')} (desde cmd)` };
+  // La referencia se lee UNA vez y se congela en un sha: todo lo demás se mide contra ESE objeto, y un `fetch` de otra
+  // sesión a mitad de la medida no mezcla dos `main`. Es la referencia móvil a propósito: es la que lee la puerta.
   let main; let mainRef;
   try {
-    mainRef = git(repo, ['rev-parse', 'origin/main']).trim();
-    main = Buffer.from(git(repo, ['show', `origin/main:${RUTA_EN_EL_REPO}`], true));
+    mainRef = String(git(repo, ['rev-parse', '--verify', 'origin/main^{commit}'])).trim();
+    if (!/^[0-9a-f]{40}$/.test(mainRef)) return { dir, repo, motivo: `origin/main no se resuelve a un commit en ${aWin(repo)}` };
+    main = Buffer.from(git(repo, ['show', `${mainRef}:${RUTA_EN_EL_REPO}`], true));
   } catch (e) { return { dir, repo, motivo: `no pude leer origin/main:${RUTA_EN_EL_REPO} en ${aWin(repo)} (${String((e && e.message) || e).split('\n')[0]})` }; }
   if (!main.length) return { dir, repo, motivo: `origin/main:${RUTA_EN_EL_REPO} salió VACÍO: no comparo contra nada` };
   let propio;
   try { propio = leer(ruta); } catch (e) { return { dir, repo, motivo: `no pude leer ${aWin(ruta)} (${String((e && e.message) || e).split('\n')[0]})` }; }
   let versiones = null;
   try {
-    versiones = versionesDe(git(repo, ['log', '--first-parent', '--diff-merges=first-parent', '--raw', '--no-abbrev', '--format=%x00%H%x09%cI', '-n', String(VERSIONES), 'origin/main', '--', RUTA_EN_EL_REPO]));
+    versiones = versionesDe(git(repo, ['log', '--first-parent', '--diff-merges=first-parent', '--raw', '--no-abbrev', '--format=%x00%H%x09%cI', '-n', String(VERSIONES), mainRef, '--', RUTA_EN_EL_REPO]));
   } catch { versiones = null; }
   let escrita = null;
   try { escrita = mtime(ruta).toISOString().slice(0, 19) + 'Z'; } catch { /* se dice «escrita el null»: no se inventa */ }
