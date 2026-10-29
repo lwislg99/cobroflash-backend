@@ -169,3 +169,386 @@ base, pero el ancla de arriba es la base de verdad y no la del primer mensaje.
 inversión. El dato no lo distingue, y la única forma de cerrarlo es un campo corriente/inversión en
 `Expense` (un ALTER, que decide Javier) o un criterio del asesor. Hasta entonces, el aviso
 «orientativo» y el borrador para el asesor son lo que lo contiene.
+
+## SCRUM-1063c · el motivo propio de los suplidos y la casilla 64 (J1, jv-j1bh, 24-oct-2026)
+
+**Medido contra:** `origin/main` = `0e86dada4887f1ac54ce0ed5cad3c53c99c72c1c` · 2026-10-24T10:13:45Z
+
+A9: sin fallo que generalice — el error propio de abajo (la 67 de c.20716) es de lectura de un impreso; el instrumento que lo impide es leer la imagen, y quedó dentro del test (`tests/scrum1063c-suplido-y-casilla-64.test.mjs`, «SIN la 67»).
+
+Decisión del fundador: SCRUM-1063 c.20717 (transcrita por el orquestador), que contesta las preguntas 1 y 2 de c.20716.
+
+### Qué se ha construido
+
+1. **El suplido tiene su motivo.** `AsientoLibro` lleva un campo nuevo, `suplidosPorTipo`: la parte de `porTipo` que son suplidos, sacada con `partirPorSuplido` (`suplidos.ts`, sin cambiarlo) y el mismo `calcVatBreakdown`. `[]` = no hay; `null` = marca ilegible. **`porTipo`, `base`, `cuota` y `total` del libro no cambian** (caso a mano, verde en `main` y en la rama). El 303 aparta, de la entrada al 0 %, lo que es suplido con `motivo: 'suplido'`; el resto sigue `tipo_cero`. Se aparta restando, así que libro = casillas + sin clasificar sigue al céntimo. No llama a `desgloseConSuplidos` ni toca el camino de emisión.
+2. **La 64 = 46**, en `resultadoFinal.sumaDeResultados`. **Vacías con su motivo como código**: 65, 66, 68, 69, 70 y 71 (`CASILLAS_RESULTADO_VACIAS` en `casillas.ts`). Procedencia: Orden HAC/27/2026, Anexo III, página 3 del impreso (`https://www.boe.es/datos/imagenes/disp/2026/23/1761_16563944_9.png`), recuadro «Resultado», leída como imagen el 24-oct.
+3. **Texto.** El aviso «… sin calificación fiscal (exenta / no sujeta / ISP) …» deja de contar los suplidos. **No se ha escrito ningún aviso para el suplido** (regla 39): viaja como dato. El literal se le propone al fundador en el comentario de Jira.
+
+### Error propio
+
+En c.20716 (jv-j1bc, este mismo puesto) se escribió «la 67 (cuotas a compensar de periodos anteriores)». **En el impreso vigente no hay casilla 67**: las cuotas a compensar son la 110, la 78 y la 87. Por eso la lista de vacías salta de la 66 a la 68. La decisión dice «65 a 71»; se han dejado vacías las que existen.
+
+### Cómo se ha medido
+
+- **Rojo primero:** el test nuevo contra `origin/main` `137c7fad` compilado aparte: caen 9 de 14. Los dos casos que comprueban que el libro no cambia salen verdes en los dos.
+- **Mutaciones sobre `dist/`** (nunca `src/`): sin `suplidosPorTipo` caen 5; el aviso que vuelve a contar el suplido, 2; la 64 = 27, 2; un resto a cero apuntado, 2; el suplido de vuelta a `tipo_cero`, 3; una 67 inventada, 1. Después, 14 de 14.
+- **Guards dirigidos:** los 28 ficheros que nombran `libroRegistro` (`git grep -l libroRegistro tests/`) más `scrum1066c`, `scrum1066e` y `scrum500`: 273 casos, 0 caen, 4 saltados (`LIBRO_PG_URL`, banco local). Ninguno trata el libro como emisión (`scrum389-censo-vat` lo clasifica `DOCUMENTO`). Los de suite y de registro, en el comentario de Jira con su recuento.
+- **Suite entera local: NO CORRIDA** (10 sesiones a la vez); hace de tanda el obligatorio de CI.
+
+### Riesgo residual, dicho
+
+- `porTipo` pierde la `causa` (SCRUM-1051). Si una factura tuviera al 0 % una línea S2 y un suplido, las dos entradas al 0 % no se distinguen en el libro, y el suplido se aparta de la primera que salga. Ninguna factura así existe hoy: medido no, deducido de que no hay merchants reales.
+- El código `suplido` se ve en el CSV del paquete de evidencias (`SIN_CLASIFICAR suplido <número>`), igual que hoy `tipo_cero`.
+
+## SCRUM-1063d · el aviso firmado de los suplidos, y el riesgo S2 + suplido medido (J1, jv-j1bj, 24-oct-2026)
+
+**Medido contra:** `origin/main` = `49045295ec2823bd98b4ebf7ab8d2f0125fabcb9` · 2026-10-24T10:25:35Z
+
+A9: comprobación → `tests/scrum1063d-aviso-suplidos.test.mjs`
+
+Firma del fundador: SCRUM-1063 c.20731 (regla 39, transcrita por el orquestador). Rama sobre `scrum-1063c-suplidos-y-64` @ `c185f80c`: **este PR depende del #2811**, que a esta hora sigue sin mergear.
+
+### Qué se ha construido
+
+1. En `motivosParaNoFiarse` del 303, para las entradas de `sinClasificar` con `motivo: 'suplido'`, el literal firmado: «{n} suplido(s) no entran en ninguna casilla: son gastos pagados por cuenta del cliente.» Un solo texto para singular y plural, como está en la firma. `{n}` cuenta entradas de `sinClasificar`, igual que el aviso de «operación(es)» de al lado.
+2. `tests/scrum1063c-suplido-y-casilla-64.test.mjs`: dos aserciones fijaban «sin aviso» porque la firma no existía; ahora fijan el literal exacto. La comprobación es más estricta, no más laxa.
+
+### Cómo se ha medido
+
+- **Rojo primero:** el test nuevo contra el código de 1063c: caen 4 de 5 (el quinto es el negativo de la marca ilegible, verde en los dos).
+- **Mutaciones sobre `dist/`:** sin el punto final caen 3; «suplidos» en vez de «suplido(s)», 4; umbral `> 1`, 3; contar todo `sinClasificar`, 3; aviso quitado, 4. Restaurado y comprobado.
+- **Guards dirigidos:** 1063b/c/d, 1066c/e, 1232, 237, 976, 824, 824b, 836, 419, 702, 700, 719, 1415, 1294, 267, 273, 622 y 854: 22 ficheros, 215 casos, 0 caen, 0 saltados. Los 30 ficheros que nombran `modelo303` o `motivosParaNoFiarse`: 321 casos, 0 caen, 3 saltados (`LIBRO_PG_URL`).
+- **Suite entera local: NO CORRIDA**; hace de tanda el obligatorio de CI.
+
+### El riesgo de c.20728, medido (no arreglado: espera decisión)
+
+Factura fabricada, pasada por `construirLibroRegistro` y `construirModelo303` reales:
+
+- **S2 al 0 % (1000) primero, suplido (50) después:** el libro da `porTipo` = `[{0,1000},{0,50}]` sin `causa`. El 303 aparta el suplido **de la entrada S2**: `sinClasificar` = suplido 50, `tipo_cero` 950, `tipo_cero` 50. La suma cuadra (1050), pero la etiqueta va a la línea que no es y el aviso de «sin calificación» dice 2 donde hay 1. **Riesgo confirmado.**
+- **Suplido primero:** sale bien (suplido 50, `tipo_cero` 1000).
+- **De paso, otro más grave, anterior a 1063c:** una S2 con `tax: 0.21` (el validador de causa no exige `tax` 0) entra en la **casilla 07** del 21 % con base 1000 y cuota 0, sin aviso. La causa es la misma: el libro tira la `causa` al copiar `porTipo`.
+
+### Riesgo residual, dicho
+
+- Los dos casos de arriba siguen como estaban: arreglarlos pide que el libro conserve `causa` en `porTipo`, y eso es una decisión que se ha pedido en Jira.
+- Si la marca de suplido es ilegible no hay aviso de suplido: queda en `tipo_cero`, como en 1063c.
+
+## SCRUM-1063e · el libro guarda la causa S2 y el 303 la saca de la casilla de su tipo (J1, jv-j1bm, 24-oct-2026)
+
+**Medido contra:** `origin/main` = `091e4d765ba13083b93fb6c168ffbd70fb1f1563` · 2026-10-24T10:55:33Z
+
+A9: comprobación → `tests/scrum296-libro-registro.test.mjs`
+
+Error propio: al importar el tipo `Causa` reescribí la línea `import { calcVatBreakdown }`, y ese guard (el libro reutiliza el cálculo del emisor) cayó en la dirigida. Se arregló el código con un `import type` aparte, no el guard.
+
+Decisión del fundador: SCRUM-1063 c.20746 («Sí: guardar la causa y apartar la S2»), sobre la medición de c.20739. Rama sobre `scrum-1063d-aviso-suplidos` @ `ec68e591`, con `origin/main` mergeado dentro: **este PR depende de #2811 (1063c) y del PR de 1063d**, que a esta hora siguen sin mergear.
+
+### Qué se ha construido
+
+1. **El libro** (`libroRegistro.ts`): cada entrada de `porTipo` lleva `causa` **solo si la tiene**, al final y con la misma convención que `calcVatBreakdown` (SCRUM-1051). Sin S2 la entrada es la de antes, sin la clave. Base, cuota y total del asiento no cambian. No se toca `calcVatBreakdown` ni la emisión: el libro solo copia un campo que ya devolvía.
+2. **El 303** (`modelo303.ts`): la entrada con `causa: 'S2'` sale **antes de mirar su tipo** y va a `sinClasificar` con `motivo: 'inversion_sujeto_pasivo'` (código, no texto). Los suplidos se apartan solo de las entradas sin causa.
+3. **Aviso: ningún texto nuevo.** La S2 sigue contada en el aviso que ya existía, «operación(es) sin calificación fiscal (exenta / no sujeta / ISP)», para que un 303 con una base fuera de casilla no salga sin aviso. Es el texto que la S2 al 0 % ya daba antes de este ticket; la S2 con `tax: 0.21`, que antes caía en la 07 sin aviso, ahora también lo da. El literal propio se propone en Jira (regla 39).
+
+### Cómo se ha medido
+
+- **Rojo primero:** `tests/scrum1063e-causa-s2.test.mjs` contra el código de 1063d: caen 6 de 10. Los 4 que pasan en los dos son, a propósito, el `porTipo` byte a byte sin S2, «la causa no cambia base ni cuota», el cuadre libro = casillas + sin clasificar y el aviso existente.
+- **Los dos casos de c.20739 son casos del test:** la S2 antes del suplido (`sinClasificar` = S2 1000 + suplido 50, sin `tipo_cero`) y la S2 con `tax: 0.21` (la 07 se queda con 800, la mano de obra).
+- **Mutaciones sobre `dist/`** (7, restauradas y comprobadas): libro sin `causa`, caen 6 · `causa` siempre presente aunque sea `undefined`, cae 1 (el `Object.keys` del byte a byte; `JSON.stringify` se la come) · sin la rama S2, 5 · la rama S2 solo sin tripleta, 7 · la S2 con motivo `tipo_cero`, 5 · la rama S2 solo sin suplido pendiente, 1 · quitar `!e.causa` de los suplidos: **MUDA, y es esperado**: hoy `Causa` solo vale `'S2'` y la rama de arriba ya la ha apartado. Queda para cuando la lista de causas crezca.
+- **`modelo390/` (#1077a, rama `scrum-1077a-borrador-390` @ `b57eb4bc`, sin mergear):** sus tres ficheros y su test, copiados un momento a este árbol y quitados después: 10 de 10. El 390 pasa `sinClasificar` del 303 tal cual (`...s`), y el código nuevo de motivo le llega como dato.
+- **Guards dirigidos tras mergear main:** 57 ficheros (los que nombran `libroRegistro`, `modelo303` o `modelo390`, más 1063b/c/d/e, 1066c/e, 1065b, 1067b, 1232, 237, 976, 824, 836, 419, 702, 700, 719, 1415, 1294, 267, 273, 854, 622, 295, 296, 325, 389, 387 y 921): 606 casos, 602 pasan, 0 caen, 4 saltados (`LIBRO_PG_URL`). `tsc --noEmit` del proyecto, limpio.
+- **Suite entera local: NO CORRIDA**; hace de tanda el obligatorio de CI. No hay pantalla del 303: en yaqu.app no se ha verificado nada.
+
+### La casilla de la S2 en el impreso (leída, no aplicada)
+
+Orden HAC/27/2026, Anexo III, leída como imagen el 24-oct:
+
+- Página 1 (`https://www.boe.es/datos/imagenes/disp/2026/23/1761_16563944_7.png`, HTTP 200, 888.636 B): 12/13 «Otras operaciones con inversión del sujeto pasivo (excepto adq. intracom.)». Está en el **IVA devengado**: es la del destinatario que autorrepercute, no la de quien emite la S2.
+- Página 3 (`https://www.boe.es/datos/imagenes/disp/2026/23/1761_16563944_9.png`, HTTP 200, 791.276 B), recuadro «Información adicional»: **122 «Operaciones sujetas con inversión del sujeto pasivo»**, una sola cifra, sin cuota.
+
+Propuesta en Jira: la S2 a la 122, por su base. **No se ha puesto**: espera firma. No he leído las instrucciones del modelo, solo el impreso.
+
+### Riesgo residual, dicho
+
+- El aviso de «sin calificación» sigue contando la S2, y una S2 sí tiene calificación: es el texto viejo hasta que se firme uno propio.
+- Si mañana se añade otra causa a `Causa`, irá con `!e.causa` fuera de los suplidos, pero sin rama propia: caerá en la casilla de su tipo. Lo sujeta el comentario de `vat.service.ts`, que obliga a ensanchar el tipo y su validador.
+## SCRUM-1063c · el rojo de scrum411 en el PR #2811 (J1, relevo jv-j1bq, 24-oct-2026)
+
+**Medido contra:** `origin/main` = `091e4d765ba13083b93fb6c168ffbd70fb1f1563` · 2026-10-24T11:02:38Z
+
+A9: comprobación → `tests/scrum411-exports-inalcanzables.test.mjs`
+
+Fue el que cazó en el obligatorio que el import nuevo de `libroRegistro.ts` resucitaba `suplidos.ts`; la dirigida del tramo de arriba no lo incluía.
+
+### Qué decía el guard
+
+Al importar `partirPorSuplido`, `suplidos.ts` deja de ser un módulo inalcanzable (4 de 173, tope 5) y sus exports sin consumidor de fuera entran en la segunda población sin declarar (medidos 250, declarados 245). El consejo del clasificador, export por export: **declarar** `desgloseConSuplidos` y `totalSuplidos`; **quitar el `export`** a `MARCA_SUPLIDO`, `leerMarcaSuplido` e `importeSuplido`.
+
+### Por qué se puede tocar
+
+`suplidos.ts` es carril J1 (`node scripts/carriles.mjs de …` → `dos-equipos.md:117`) y **no es camino de emisión**: `scrum389-censo-vat` lo clasifica `DOCUMENTO` (línea 83). Quitar un `export` no cambia ningún número: `dist/` compilado sólo pierde las tres líneas `exports.X = X`.
+
+### Qué se ha hecho
+
+1. Tope de inalcanzables **5 → 4**, con su entrada en `scrum411`.
+2. `desgloseConSuplidos` y `totalSuplidos`, declarados `MOTOR_EN_ESPERA` en `_huerfanos-declarados.mjs`: cablearlos cambia lo que se sella (regla 38, c.20717).
+3. Sin `export`: `MARCA_SUPLIDO`, `leerMarcaSuplido`, `importeSuplido`. El análisis por AST de `scrum411` dice que su consumidor está dentro del módulo y que de fuera sólo entran `scrum500-suplidos` y `scrum844f`; un `grep` de los tres nombres en `src/`, `tests/`, `public/` y `scripts/` da lo mismo (más comentarios y el literal propio de `quoteSuplido.js`). Esos casos se reescriben por la superficie pública (`partirPorSuplido`, `totalSuplidos`), con la clave escrita a mano. El de «front y dominio usan la misma clave» pasa a medir COMPORTAMIENTO: una línea marcada con la clave del front tiene que salir apartada, y con otra clave no.
+
+⚠️ Precedente contrario, dicho: en SCRUM-293 (`_huerfanos-declarados.mjs`, bloque de `retencionIrpf.ts`) se declararon en vez de des-exportar, «para no tocar un módulo fiscal por un contador». Aquí el orquestador ordenó aplicar el consejo del guard, condicionado a que el fichero no fuera de emisión.
+
+### Cómo se ha medido
+
+- Rojo primero: los 3 de scrum411 en local antes de tocar nada, con las mismas cifras que el obligatorio (4/5, 250/245).
+- Mutaciones sobre `dist/` contra los casos reescritos: la clave del dominio renombrada → caen 7; la línea que no es objeto leída como normal → 1; la marca ilegible aceptada → 2. Restaurado con `cmp`.
+- Dirigida en el comentario de Jira, con su población. **Suite entera local: NO CORRIDA.**
+
+## SCRUM-1063d · el aviso de suplidos en dos formas, sin «(s)» (J1, jv-j1bs, 24-oct-2026)
+
+**Medido contra:** `origin/main` = `1b3395ecc6d3524e7b4ec711871d1d485ee67f28` · 2026-10-24T14:36:40Z
+
+A9: comprobación → `tests/scrum377-plural-de-programador.test.mjs`
+
+El obligatorio de #2825 cayó en `scrum377` («HAY 7 «(s)» EN TEXTO DE PANTALLA y el tope es 6 … modelo303.ts → suplido(s)»; job `120864632581`). La dirigida del tramo 1063d de arriba no lo incluía. Medición y preguntas en c.20796. El fundador eligió cambiar el texto y NO subir el tope (c.20797, regla 39). Esa firma sustituye a c.20731.
+
+### Qué se ha hecho
+
+1. `modelo303.ts`: el aviso de suplidos se parte en las dos formas firmadas en c.20797, singular para n = 1 y plural para el resto. Los literales se han cotejado por programa con el texto del comentario. El tope de `scrum377` no se toca.
+2. `tests/scrum1063d-aviso-suplidos.test.mjs`: fija el singular (n = 1) y el plural (n = 2 y n = 3) por igualdad exacta. Añade un caso nuevo: ningún aviso de suplidos lleva «(s)», con su positivo, que exige que el aviso exista. Los controles casan las dos formas con UN token, `HABLA_DE_SUPLIDOS`.
+3. `tests/scrum1063c-suplido-y-casilla-64.test.mjs`: sus dos aserciones de igualdad pasan al singular firmado. Siguen siendo igualdad exacta, así que no son más laxas.
+
+### Cómo se ha medido
+
+- **Rojo primero:** con el literal viejo en `dist/`, caen 7 de 20 (los dos ficheros).
+- **Mutaciones sobre `dist/`**, sobre 20 casos: siempre plural, caen 4; siempre singular, 1; sin el punto final, 4; umbral `> 1`, 6. Se restauró el `dist/` bueno y la base volvió a 20 de 20.
+- **Dirigida** (1063b/c/d, 1066c/e, 1077, 1232, 237, 976, 824, 824b, 836, 419, 702, 700, 719, 1415, 377, 296, 411, 500, 844f, 622, 295 y 389): 31 ficheros, 307 casos, 303 pasan, 0 caen, 4 saltados (`LIBRO_PG_URL`). Control positivo: el caso del trinquete de 377 está en el TAP, y pasa.
+- **Suite entera local: NO CORRIDA**; hace de tanda el obligatorio de CI.
+
+### Error propio
+
+Al reescribir los tests pasé un `\\b` por `node -e` desde bash, y en el fichero entró un carácter de retroceso (0x08) en lugar de `\b`. El control positivo del test nuevo lo cazó: daba 0 avisos donde había 1. Lo quité con un script escrito con la herramienta de escritura, y el recuento de caracteres de control en los tres ficheros tocados da 0. Es la cicatriz J1 del 2026-10-01 (texto por la línea de órdenes) repetida.
+
+## SCRUM-1063f · la S2 del emisor a la casilla 122, y el aviso firmado para la que queda fuera (J1, jv-j1bs, 24-oct-2026)
+
+**Medido contra:** `origin/main` = `bcfc99b0d9a4f4a3aaf9d1608dce06b3d3691482` · 2026-10-24T15:25:00Z
+
+A9: comprobación → `tests/scrum1063f-s2-casilla-122.test.mjs`
+
+Decisión c.20768 («Sí, a la 122») y firma c.20797, que sustituye al aviso de c.20768. Encima de 1063c, 1063d y 1063e, ya en `main`: #2811, #2825 (merge `052f6e94003a74af6a770dd826aedfaa79e60e0d`) y #2835 (merge `bcfc99b0d9a4f4a3aaf9d1608dce06b3d3691482`).
+
+### Las instrucciones, leídas antes de escribir (condición de c.20768)
+
+Fuente: las instrucciones de la AEAT para 2026, «Instrucciones 02 a 12 y 2T a 4T de 2026» (`sede.agenciatributaria.gob.es/…/modelo-303-iva-autoliquidacion_/instrucciones-2026/instrucciones-02-12-2t-4t-2026.html`), bajadas el 24-oct a las 15:11Z (cabecera `Date`). Texto, literal:
+
+> 122 Operaciones sujetas con inversión del sujeto pasivo: se hará constar el importe total, en el período objeto de declaración, de: Las entregas de oro a las que sea de aplicación la regla contenida en el artículo 84, apartado Uno, número 2º, letra b) de la Ley y las entregas de oro de inversión a que se refiere el artículo 140 de la misma Ley. Las entregas de bienes y prestaciones de servicios realizadas a que se refiere el artículo 84 Uno. 2º a), c), d), e), f) y g) de la Ley.
+
+**No contradicen al impreso.** Es la casilla del que EMITE, va en «Información adicional», es un importe sin cuota y no suma en el resultado. La Orden HAC/27/2026 del BOE no trae instrucciones: sus cinco anexos son impresos. Una búsqueda atribuía a la 122 la condición del art. 74.1 RIVA; en el texto, esa condición es de la **77**.
+
+### Qué se ha construido
+
+1. `casillas.ts`: `CASILLA_INVERSION_SUJETO_PASIVO = 122`, con el impreso y las instrucciones citados.
+2. `modelo303.ts`: hay un campo nuevo, `informacionAdicional.inversionSujetoPasivo` = `{ casilla: 122, base, operaciones[] }` (una operación por entrada S2 del libro). Ese es el camino de la S2 con **cuota 0**. La S2 **con cuota** no cabe en la 122, que no tiene cuota: llevarla allí rompería `libro.cuota = 27 + cuota sin clasificar`. Esa se queda en `sinClasificar` con `inversion_sujeto_pasivo` y es la única que lleva el aviso firmado, en singular o en plural. La S2 deja de contar en el aviso de «sin calificación», porque sí tiene calificación. El aviso de «TODAS las casillas a cero sin nada declarado aparte» ya no salta si lo que hay está en la 122. El invariante de la cabecera suma la 122.
+3. **Para no perderla en silencio:**
+   - El 390 suma `sinClasificar`, y la S2 habría desaparecido del anual. Ahora sigue saliendo declarada con su trimestre, igual que antes de 1063f, porque su casilla en el 390 NO está decidida. Diferencia: va al final de las del trimestre y no en el orden del libro.
+   - El CSV del 303 en el paquete de evidencias lleva una fila `122;;;INVERSION_SUJETO_PASIVO <número>;<base>;`.
+4. Tests:
+   - `scrum1063e`: sus casos de la S2 pasan a fijar la 122 por igualdad exacta, con `sinClasificar` vacío. El cuadre suma la 122, con un positivo de 2000.
+   - Fixtures de `scrum297-paquete-piezas` y `scrum438-atestiguar`: llevan el campo nuevo.
+   - `_veredicto-mudez.json`: regenerado con `npm run censo:mudez -- --escribir` porque `scrum438` cambió. Resultado: VIVO.
+
+### Cómo se ha medido
+
+- **Rojo primero**, con `dist/` del código de 1063e: el test nuevo da 10 de 11 rojos y `scrum1063e` reescrito da 7 de 10.
+- **Literales:** cotejados por programa contra el texto del comentario c.20797. Los dos, idénticos en código y test.
+- **Mutaciones sobre `dist/`**, sobre 21 casos (1063f + 1063e). Caen todas:
+
+  | mutación | caen |
+  |---|---|
+  | la S2 a sin clasificar | 12 |
+  | toda S2 a la 122 | 4 |
+  | contarla en «sin calificación» | 3 |
+  | sin aviso | 4 |
+  | siempre plural | 2 |
+  | base 0 | 7 |
+  | «TODAS a cero» sin mirar la 122 | 1 |
+  | el 390 no la traspasa | 1 |
+  | el CSV sin la fila | 1 |
+
+  Restaurado con `cmp`, y la base vuelve a 21 de 21.
+- **Dirigida**, antes de mezclar main: la lista de 1063d más todo test que nombra `modelo303`, `modelo390`, el paquete, `motivosParaNoFiarse` o `informacionAdicional`, en total 58 ficheros. Cayeron dos, los dos por mí:
+  - `scrum719` (1395b): el veredicto de mudez caducado por `scrum438`. Regenerado.
+  - `scrum976` → `scrum811c`: midió la cadena justo cuando `origin/main` se movió 16 commits (entraron #2825 y #2835) y nombró mi merge local `23f3a5cde`. Repetido tras mezclar main: ver el comentario de Jira.
+- `tsc --noEmit`: limpio. `scrum1077` (390): verde dentro de la dirigida.
+- **Suite entera local: NO CORRIDA**; hace de tanda el obligatorio de CI. **yaqu.app: NO HECHO**, porque no hay pantalla del 303.
+
+### Riesgo residual, dicho
+
+- La S2 con cuota es **inalcanzable hoy**: `calcVatBreakdown` da cuota 0 también a una S2 con `tax: 0.21`. El aviso firmado sólo sale con un libro fabricado. Existe porque la decisión lo pide («si alguna S2 queda fuera») y para que un cambio del cálculo no la meta en la 122 perdiendo su cuota.
+- La 122 recoge TODA S2 del libro. Las instrucciones la limitan al art. 84.Uno.2º (y al oro). Que cada S2 de YaQu sea de ese artículo no lo he medido: la factura no guarda la letra.
+- Las rectificativas suman con su signo en la 122: el libro no las distingue (aviso `rectificativas_sin_casilla_propia` del 390).
+- Para el 390 no hay casilla decidida: la S2 sigue «sin clasificar» en el anual.
+
+## SCRUM-1063h · las herramientas por debajo de 3.005,06 € van a la 28/29 (J1, jv-j1ce, 26-oct-2026)
+
+**Medido contra:** `origin/main` = `980bd61850307dfb8fa08248297e13a0d22e2d73` · 2026-10-26T15:35:07Z
+
+A9: comprobación → `tests/scrum1063h-umbral-herramientas.test.mjs`
+
+Decisión del fundador c.20867 («A ahora, columna después»), sobre la medición de J5 en c.20863 (tramo 1063g, rama `scrum-1063g-bienes-inversion`, sólo docs).
+
+### Qué se ha construido
+
+- `modelo303.ts`: `UMBRAL_BIEN_DE_INVERSION = 3005.06`, con la cita del art. 108.Dos.5.º LIVA («cuyo valor de adquisición sea inferior a quinientas mil pesetas»; 500.000 / 166,386 = 3.005,0605…). Una herramienta deducible cuya base + cuota, en céntimos, es MENOR que el umbral pasa por las mismas puertas que un gasto corriente (tipo, cuota) y entra en la 28/29. Si llega al umbral, o le falta la base o la cuota para medirlo, sigue apartada con `posible_bien_de_inversion` (código, sin texto nuevo).
+- 30/31 siguen vacías con su `vaciaPorque`: la columna (C) no está decidida. Sin ALTER.
+- El 390 (`modelo390/`) no se ha tocado: suma la 29 de los cuatro 303. Un caso del test nuevo lo construye encima y comprueba que la 49 anual = Σ 29 trimestrales, y que la herramienta grande sigue en `gastosSinClasificar` con su trimestre.
+- **Fixtures cambiadas, no aserciones:** tres casos (`scrum1063b` «herramientas NO se reparte» y el INVARIANTE, y `scrum1077` «lo que el 303 no colocó») usaban una herramienta de 48,40 € y de 24,20 € para medir «apartada». Con la decisión, esas ya se deducen: pasan a una herramienta de 3.000 + 630. Las aserciones son las mismas. Medido: con las fixtures viejas y el código nuevo caen esos 3 de 19.
+
+### Medido
+
+- Rojo primero contra `main` `289ca894`: caen 6 de 9. Los 3 que pasan en los dos lados son los de «sigue apartada» (en el umbral, por encima, sin cuota), a propósito.
+- Bordes con cifras a mano: 2.483,52 + 521,53 / 521,54 / 521,55. Y un caso aparte con el borde DERIVADO de la constante (un céntimo a cada lado), para que mover la constante no arrastre al test.
+- Cuatro mutaciones declaradas en `MUTACIONES_QUE_ME_TUMBAN` (`<` → `<=`, la constante a 3.005,07, comparar sólo la base, quitar el umbral) ejecutadas con `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`: caen las 4 (3, 3, 4 y 3 casos). Las 11 de `scrum1077` siguen vivas con la fixture nueva.
+- Dirigida antes de escribir este tramo, 36 ficheros (1063b-h, 1066e, 1077, 1077c, 237, 976, 824, 824b ×2, 836, 419, 702, 700, 719, 1415, 1294, 267, 273, 921, 921c, 387 ×2, 377, 389 ×2, 411, 622, 745, 1321, 1387, 854): 355 casos, 352 pasan, 1 cae, 2 saltados. El que cae es `scrum854` (la rama no tenía todavía este tramo). En `tests/` no hay ningún fichero `scrum1064c`/`scrum1064d`: no se han podido correr.
+- `tsc --noEmit`: limpio. **Suite entera local: NO CORRIDA.** En yaqu.app no hay pantalla del 303.
+
+### Riesgos
+
+- El umbral compara el GASTO entero, no cada bien: cinco taladros de 800 € en una factura (4.000 €) siguen apartados aunque ninguno sea bien de inversión (pregunta (b) del asesor, c.20863). Sólo yerra hacia apartar.
+- Un gasto de exactamente 3.005,06 € se aparta, y en pesetas son 499.999,90: «inferior a quinientas mil». La decisión dice «no llegue a 3.005,06 €» y se ha seguido; el céntimo va hacia el lado seguro.
+- Un bien de inversión apuntado en «otros» sigue yendo a la 28/29 sin aviso (riesgo de c.20867): lo cubre C, no esto.
+## SCRUM-1063g · casillas 30/31 (bienes de inversión): medición y propuesta, sin ALTER (J5, jv-j5am, 26-oct-2026)
+
+**Medido contra:** `origin/main` = `289ca894656c7c3686a0469d34785512b960e0b3` · 2026-10-26T15:18:32Z
+
+A9: sin fallo que generalice — es una medición sin código; el riesgo que no estaba escrito («otros» manda a la 28/29 un bien de inversión) queda en este tramo y en la pregunta 4 de Jira c.20863
+
+**Encargo:** orquestador `cobroflash-backend-8b`, «SOLO MEDIR Y PROPONER». Ni ALTER, ni `db push`, ni código, ni texto de pantalla. Lo entregado está en Jira, c.20863 (preguntas ✅/❌ incluidas). Aquí va lo que hay que poder volver a medir.
+
+### PASO 0
+
+- `git log origin/main --grep=SCRUM-1063`: 1063b a 1063f, y nada de 1063g. `git ls-remote origin 'refs/heads/scrum-1063*'` sale vacío. `gh pr list --search 1063` sólo enseña #1656 (mergeado).
+- El ticket lleva `area-j1` y `equipo-javier`. Este tramo es sólo docs: `carriles.mjs de docs/master/SCRUM-1063.md` → sin cerradura, «quien trabaja el ticket».
+
+### La norma, con su fuente
+
+- **Art. 108 LIVA** (`BOE-A-1992-28740`, bloque `a108` de `datosabiertos/api/legislacion-consolidada`): una sola versión, vigente desde el 1-1-1993. Control: el bloque `a91` de la misma API trae 44 versiones (la última, del 8-10-2026), así que la API sí devuelve historial.
+  - Uno: «se considerarán de inversión los bienes corporales, muebles, semovientes o inmuebles que, por su naturaleza y función, estén normalmente destinados a ser utilizados por un período de tiempo superior a un año como instrumentos de trabajo o medios de explotación.»
+  - Dos.5.º: no lo son los bienes «cuyo valor de adquisición sea inferior a quinientas mil pesetas». 3.005,06 € es una conversión MÍA (500.000 / 166,386): el texto consolidado sigue en pesetas.
+- **Instrucciones del 303 de 2026** (la misma URL de sede que cita `casillas.ts:127`), bajadas a las 15:15Z, HTTP 200, 113.580 B. Control: en esa página está el literal de la 122 que citó 1063f. Para la 28 a la 39 dicen: «distinguiendo si se trata de operaciones corrientes u operaciones con bienes de inversión (Artículo 108 LIVA)». El impreso no añade ningún criterio propio.
+- Lo que cuelga del mismo dato y queda FUERA de este tramo: la 43 (regularización, arts. 107-110 LIVA), la 99 (entregas de bienes de inversión, que se restan en la 88) y el **art. 65 RIVA** (`BOE-A-1992-28925`, bloque `a65`, vigente desde el 1-7-2017). El art. 65 pide un libro de bienes de inversión, con cada bien «debidamente individualizado», a quien «tenga que practicar la regularización».
+
+### El código (leído, no ejecutado sobre datos)
+
+- `model Expense` no tiene ningún campo que separe lo corriente de la inversión. `EXPENSE_CATEGORIES` (`src/modules/expenses/domain/expenses.service.ts:6`) = materiales, desplazamiento, herramientas, subcontrata, otros. `alquiler` no se puede escribir hasta SCRUM-1588 (S1 y S2, por hacer).
+- `construirIvaDeducible` (`src/modules/fiscal/modelo303/modelo303.ts`): «herramientas» se aparta entera (`posible_bien_de_inversion`), y el resto de `CATEGORIAS_CORRIENTES` va a la 28/29. 30/31 a 0, con `vaciaPorque`. En el 390 pasa lo mismo con la 50/51 (`modelo390/casillas.ts:69`).
+- La 45 es 29 + 31 + … (`casillas.ts:61`). **Si un gasto va a la 29 o a la 31, el resultado (46) no cambia.** Lo que sí cambia hoy el resultado es apartar las herramientas: ese IVA no se deduce en el borrador.
+- **Riesgo no escrito hasta hoy:** un bien de inversión apuntado en «otros» (una furgoneta, un ordenador) va a la 28/29 sin aviso.
+
+### Las tres alternativas
+
+- **A · Umbral, sin ALTER (J1).** «herramientas» con base + cuota < 3.005,06 € → 28/29; las que llegan o pasan siguen apartadas. Sólo es seguro en ese sentido: si el gasto ENTERO no llega, ningún bien que lleve dentro llega (108.Dos.5.º), y como base + cuota ≥ base, la conclusión vale con IVA o sin él.
+- **B · Categoría nueva, sin ALTER (S1 + S2 + J1, con rótulo firmado).** Mezcla QUÉ es el gasto con CUÁNTO dura, y «herramientas» sigue ambigua. No se recomienda.
+- **C · ALTER mínimo (J5 + J1 + S1 + S2).** `bienDeInversion Boolean? @map("bien_de_inversion")`, sin `@default` (convención de `vatDeducible`: null = nadie lo clasificó).
+  - DDL, salido de `previewMigracion` (`scripts/preview-migracion.mjs`, modo `--desde`, sin conectar a ninguna base) sobre dos copias del esquema en el temporal de la sesión. **No se ha aplicado, y `prisma/schema.prisma` no se ha tocado:** `ALTER TABLE "expenses" ADD COLUMN "bien_de_inversion" BOOLEAN;`
+  - Controles: igual → igual da `-- This is an empty migration.` (`sin_cambios`). El control positivo de la casa ve 33 tablas = 33 `model` (`grep -c "^model "`).
+
+Recomendación de J5: **A ahora; C después, preguntando sólo a partir del umbral.** Las cuatro preguntas para el fundador y las cuatro del asesor (valor con o sin IVA, umbral por unidad, art. 65 RIVA con el 100 % deducible, vehículos y art. 95.Tres sin leer) están en c.20863.
+
+### Sin medir
+
+- Cuántos gastos reales caen a cada lado del umbral: no se ha tocado ninguna base.
+- El detalle de las instrucciones de la 43 y la 99, visto sólo de pasada.
+- **Suite: NO CORRIDA** (sólo docs); los guards de registro, en la entrega. En yaqu.app no hay nada que ver.
+
+## SCRUM-1063i · la regularización de bienes de inversión y el ALTER por niveles: medición y propuesta (J5, jv-j5ao, 26-oct-2026)
+
+**Medido contra:** `origin/main` = `d2e468960494f9f35b22f9ff3c2dca4e3f48548a` · 2026-10-26T16:25:03Z
+
+A9: aviso → cicatriz J5 «Controlé si un sufijo de rama estaba libre con `gh pr list --search`, que no busca en el nombre de la rama: dio 1 PR y no traía #2882, y sólo lo vio el control positivo» — no se pudo comprobar: ningún guard sabe con qué consulta mide una sesión si un sufijo está libre
+
+**Encargo:** orquestador `cobroflash-backend-8b`, «SOLO MEDIR Y PROPONER». Ni ALTER, ni `db push`, ni `src/`, ni `prisma/schema.prisma`. Lo entregado está en Jira, c.20922 (preguntas ✅/❌ incluidas). Aquí va lo que hay que poder volver a medir.
+
+### PASO 0
+
+- El booleano `bien_de_inversion` y su DDL ya estaban en 1063g (c.20863), y la decisión c.20867 dice «C se decide después, con las preguntas del asesor respondidas. Nada de ALTER ahora». Este tramo no lo repite: mide lo que 1063g dejó fuera.
+- `git log origin/main --grep=SCRUM-1063`: 1063b a 1063h, y nada de 1063i. `git ls-remote --heads origin` no tiene ninguna `scrum-1063*`. La API de PR (los 100 últimos) enseña #2811, #2825, #2835, #2855, #2875 y #2882, que es el control positivo, y ninguna 1063i.
+- `carriles.mjs de docs/master/SCRUM-1063.md` → sin cerradura, «quien trabaja el ticket». `cicatrices/J5.md` → sin cerradura, «cada puesto, la suya».
+
+### La norma, con su fuente
+
+Todo de `datosabiertos/api/legislacion-consolidada` (LIVA `BOE-A-1992-28740`, RIVA `BOE-A-1992-28925`), `Date: Mon, 26 Oct 2026 16:21:38 GMT`. Se cita la última versión de cada bloque.
+
+- `a107`: 2 versiones, la última vigente desde el 28-5-1993. Hay que regularizar «durante los cuatro años naturales siguientes», y son nueve para terrenos y edificaciones. Sólo hay regularización con una diferencia de prorrata «superior a diez puntos». Si el bien se pierde sin culpa (Seis), no se regulariza en los años siguientes. Se declara en el último periodo del año (Siete).
+- `a109`: 1 versión. La diferencia se divide «por cinco o, tratándose de terrenos o edificaciones, por diez».
+- `a110`: 1 versión. Si el bien se vende dentro del periodo hay una «regularización única», y Dos dice que se practica «incluso en el supuesto de que en los años anteriores no hubiere sido de aplicación la regla de prorrata».
+- `a95`: 2 versiones, la última vigente desde el 1-1-1998. Tres.2.ª: los turismos se presumen afectos «en la proporción del 50 por 100», y al 100 % los «vehículos mixtos utilizados en el transporte de mercancías». Tres.3.ª: si cambia el grado de uso se regulariza con el procedimiento de los bienes de inversión.
+- RIVA `a65`: 2 versiones, la última vigente desde el 1-7-2017. El libro lo lleva quien «tenga que practicar la regularización», con cada bien «debidamente individualizado», la fecha en que se empieza a usar, la prorrata y la regularización anual. Si el bien se vende, la baja lleva la referencia al asiento de la factura emitida (5).
+- Instrucciones del 303 de 2026: la URL de `casillas.ts:184`, `date: Mon, 26 Oct 2026 16:22:03 GMT`, HTTP 200, 113.580 B. Control positivo: el literal de la 122 está en la misma página.
+  - La 28 a la 39 van «después de aplicar, en su caso, la regla de prorrata».
+  - La 43 es el resultado de la regularización de bienes de inversión.
+  - La 44 es la prorrata definitiva, «únicamente en el 4T o mes 12».
+  - La 99 son las entregas de bienes de inversión, que se restan en la 88.
+
+### El esquema (leído, `prisma/schema.prisma` sin tocar)
+
+- `model Expense` no tiene ningún campo de bien de inversión, de afectación ni de fecha de inicio de uso. Tampoco hay ninguna tabla de bienes.
+- `grep -ci prorrata prisma/schema.prisma` = 0. Control positivo: `grep -c vatDeducible` = 2.
+- El 303 no rellena la 43, la 44 ni la 99 (`src/modules/fiscal/modelo303/casillas.ts:65-66`). 30/31 van a 0 con `vaciaPorque: 'sin_dato_de_bien_de_inversion'`.
+
+### El DDL por niveles (propuesto, NO aplicado)
+
+`previewMigracion` de `scripts/preview-migracion.mjs`, modo `--desde`, datamodel → datamodel, sin conectar a ninguna base. Ejecutor: `ejecutorLocal` con la raíz del checkout compartido, sólo por su `node_modules/prisma` (6.18; este árbol no tiene `node_modules`). Las copias del esquema se escribieron en el temporal de la sesión, así que **el banco no está en git**: lo regenera la descripción de cada nivel de abajo.
+
+- Controles: igual → igual da `-- This is an empty migration.` (`sin_cambios`). El control de la casa ve 33 tablas, que son los 33 `model`. Con N3 ve 34 (positivo sembrado). Destructivas: 0 en los tres niveles. `git status` limpio después de cada pasada.
+- **N1** (30/31, igual que la C de 1063g): `bienDeInversion Boolean? @map("bien_de_inversion")` → `ALTER TABLE "expenses" ADD COLUMN "bien_de_inversion" BOOLEAN;`
+- **N2** (art. 95.Tres): `porcentajeAfectacion Int? @map("porcentaje_afectacion")`, en entero de porcentaje (la convención de `vatRate`) y sin `@default` → `ADD COLUMN "porcentaje_afectacion" INTEGER`.
+- **N3** (art. 65 RIVA): `model BienInversion` → `CREATE TABLE "bienes_inversion"`. Lleva `merchant_id`, `expense_id`, `descripcion`, `base_imponible`, `cuota_soportada`, `cuota_deducida`, `porcentaje_deduccion_inicial`, `es_inmueble`, `fecha_inicio_utilizacion` DATE?, `fecha_baja` DATE?, `causa_baja`?, `invoice_id_baja`?, `created_at` y `updated_at`, con índices por `merchant_id` y por `expense_id`. No lleva relaciones Prisma, que es el patrón de `teamMemberId`.
+- **Corregido en la sesión:** la primera versión de N3 apuntaba la baja a `quote_id_baja`. El art. 65.5 pide el asiento de la factura emitida, y en el esquema eso es `model Invoice`.
+- **Fuera, a propósito:** la tabla de prorrata anual (sin operaciones exentas no hay prorrata) y la marca de la 99 en las facturas emitidas, que es camino de emisión (regla 38) y por tanto STOP.
+
+Recomendación de J5: N1 cuando conteste el asesor. N2 sólo si el asesor confirma que entre los usuarios hay turismos. N3 no, mientras el asesor no diga que un oficio al 100 % tiene que llevar el libro. Las cuatro ✅/❌ y las preguntas (e), (f) y (g) para el asesor (SCRUM-1264) están en c.20922.
+
+### Sin medir
+
+- Cuántos gastos reales serían bienes de inversión o vehículos: no se ha tocado ninguna base.
+- La 44, en detalle.
+- **Suite: NO CORRIDA** (sólo docs). Los guards de registro van en la entrega. En yaqu.app no hay nada que ver.
+
+## SCRUM-1063j · los casos límite «rectificativas» y «gasto de otro periodo», fijados (solo test) (J1, jv-j1de, 27-oct-2026)
+
+**Medido contra:** `origin/main` = `1608087e64aaa4b08c2877ee3119cc2fad97e02e` · 2026-10-27T16:49:20Z
+
+A9: comprobación → `tests/scrum1063j-casos-limite-303.test.mjs`
+
+**PASO 0.** El enunciado de SCRUM-1063 pide, entre sus «Casos límite», «gasto de otro periodo · rectificativas». `grep` de `rectificativ|R1` y de fechas fuera de periodo sobre `tests/*303*`, `tests/scrum1063*` y `tests/scrum1077*`: la única R1 es la de `scrum1063c` (mide que el suplido negativo sale como `suplido`, no las casillas), y del periodo sólo `scrum295` (bordes de `rangoTrimestre`) y `scrum1063b` (el `where.date` del lector). Ningún test fijaba qué casilla recibe una R1 ni qué fecha decide el trimestre de un gasto. Sin rama, PR ni commit previos de 1063j.
+
+**Solo test.** `src/` no se toca. Lo que fija cada caso es el comportamiento de HOY, medido con `construirModelo303` y `leerModelo303` reales sobre `dist/`; donde ni el registro ni el asesor lo han fijado, el nombre del caso dice «comportamiento actual, sin criterio del asesor (SCRUM-1264)».
+
+### Rectificativas (cifras a mano)
+
+El libro no distingue una R1 de otra factura (tramo 1063f, «Riesgo residual»; `docs/master/SCRUM-1077.md:70`): va a la fila de su tipo con su signo.
+
+| caso | a mano | hoy |
+|---|---|---|
+| F1 1.000 + 210 y R1 −200 − 42 en el 2T, gasto 300 + 63 | 07 = 800, 09 = 168, 27 = 168, 29 = 63, 46 = 64 = 105 | igual; `sinClasificar` vacío; **ningún aviso** |
+| sólo la R1 en el 2T (su original es del 1T) | 07 = −200, 09 = −42, 27 = −42, 46 = −105 | igual; ningún aviso con la 27 negativa |
+| R1 que anula la factura entera | todo a 0 | salta «hay 2 asientos y TODAS las casillas salen a cero sin nada declarado aparte» |
+
+Tres cosas que el código hace sin que nadie lo haya decidido, y que NO he cambiado:
+- **El 303 no avisa de las rectificativas; el 390 sí** (`rectificativas_sin_casilla_propia`, `modelo390.ts:57-59`). La casilla de modificación de bases y cuotas del 303 no la he leído en el impreso.
+- **Una 27 negativa no lleva aviso.**
+- **La anulación completa dispara el aviso de «mecanismo roto»**, que nació para el cero con asientos (cabecera de `modelo303.ts`): aquí el cero es real. El literal ya existía; no escribo ninguno.
+
+### Gasto con fecha de otro periodo (cifras a mano)
+
+El soportado sale del libro de recibidas del MISMO rango (tramo 1063b, líneas 111-112 de este fichero), y ese rango se filtra por `date`, la fecha del APUNTE, no por `providerInvoiceDate` (`libroRecibidas.repo.ts:57-64`, «es una decisión, no un descuido»; el mismo comentario deja abierta qué fecha manda).
+
+- A: apuntado el 2-may, factura del proveedor del 20-mar, 300 + 63 → entra en el **2T** (28 = 300, 29 = 63).
+- B: apuntado el 28-mar, factura del proveedor del 2-abr, 100 + 21 → entra en el **1T**.
+- Los cuatro trimestres: 29 = 21 · 63 · 210 · 0, que suman la cuota de los tres gastos (ni se pierde ni se duplica).
+- La base falsa filtra como Prisma sobre CUALQUIER columna, con dos controles: un gasto del 3T no entra en el 2T, y filtrando por `providerInvoiceDate` el 2T sería B y no A (así la tercera mutación tiene a qué caer).
+
+### Medido
+
+- El test nuevo, 7 de 7 en verde.
+- Mutaciones en `MUTACIONES_QUE_ME_TUMBAN`, pasadas con `mutacionesDeclaradas`, `correr` y `aplicarUna` de `scripts/meta-guard-mutaciones.mjs` (el arnés de `docs/master/evidencias/SCRUM-1123f/arnes-mutaciones.mjs`): `Math.abs` en la base, `Math.abs` en la cuota y el filtro a `providerInvoiceDate`. Tumban las 3 su caso. `git status` después: sólo el fichero nuevo.
+- Dirigida, con los dos tramos de registro escritos: 52 ficheros (1063b-j, 1064c/d, 1077, 1077c, 1232, 1252/1252e/1252g, 295 ×2, 296 ×4, 297 ×4, 389 ×2, 411, 438 ×2, 377, 237, 976, 1387, 1294, 267, 273, 921, 921c, 387 ×2, 622, 719, 824, 824b ×2, 836, 419, 702, 700, 1415, 854). **467 casos, 461 pasan, 0 caen, 6 saltados** (`LIBRO_PG_URL`); suman. Los 7 de 1063j están en el TAP.
+- **Suite entera local: NO CORRIDA**: hace de tanda el obligatorio de CI. En yaqu.app no hay nada que ver (no hay pantalla del 303).

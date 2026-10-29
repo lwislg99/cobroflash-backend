@@ -1,0 +1,28 @@
+POBLACION String: 224 · exactas: 34 · exactas dentro: true
+SUBCADENA (no exactas): 24
+customer.billingAddress
+quote.shippingAddress
+quote.shippingAddressMode
+invoice.customerName
+invoice.customerLegalName
+invoice.customerTaxId
+invoice.customerEmail
+invoice.customerPhone
+invoice.merchantName
+invoice.merchantLegalName
+invoice.merchantTaxId
+invoice.merchantAddress
+invoice.merchantPhone
+invoice.merchantEmail
+invoice.shippingAddress
+invoice.shippingAddressMode
+product.nameSearch
+customerSite.contactName
+whatsAppMessage.templateName
+albaran.customerName
+albaran.customerLegalName
+albaran.customerTaxId
+albaran.customerEmail
+albaran.customerPhone
+RESTO sin mirar: 166
+EXIT=0

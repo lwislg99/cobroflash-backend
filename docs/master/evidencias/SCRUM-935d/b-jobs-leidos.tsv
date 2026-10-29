@@ -1,0 +1,314 @@
+job	run	evento	rama	creado	conclusion	estado	juzgadas	total_aprox	sin_juzgar	guards_juzgados	guards_sin_juzgar	mudas	ciegas	muertos	ultimo_guard	ref_job	mudos_nombres	ciegos_nombres
+116536564106	38761595965	pull_request	docs-para-javier-14oct	2026-10-15T15:34:56Z	success	COMPLETO	589	589		156		0	0	0	vigia-atascados.test.mjs			
+116514921041	38761862417	pull_request	scrum-429c-regenerado-apuntado	2026-10-15T15:36:45Z	failure	COMPLETO	589	589		156		0	1	0	vigia-atascados.test.mjs			scrum859-identidad-y-motivo-cerrado.test.mjs
+116518465233	38762875683	pull_request	scrum-996c-arranque-medido-15oct	2026-10-15T15:43:46Z	success	COMPLETO	589	589		156		0	0	0	vigia-atascados.test.mjs			
+116533006318	38762957694	pull_request	scrum-1273-archivar-panel	2026-10-15T15:44:20Z	cancelled	CORTADO	388	589	201	108	48	0	0	0	scrum797-el-dueno-se-escribe.test.mjs	116518973382		
+116518973382	38763022869	pull_request	scrum-999c-queda-uso-medido	2026-10-15T15:44:46Z	success	COMPLETO	589	589		156		0	0	0	vigia-atascados.test.mjs			
+116522790997	38764128875	pull_request	scrum-1158-el-banco-ve-hidden	2026-10-15T15:52:24Z	cancelled	CORTADO	564	589	25	150	6	0	0	0	scrum951a-equipo-configurable.test.mjs	116518973382		
+116526808260	38765294710	pull_request	scrum-1177-citas-a-redes-que-no-existen	2026-10-15T16:00:27Z	cancelled	CORTADO	333	589	256	88	68	0	0	0	scrum760-iva-de-voz-rechazado.test.mjs	116527816612		
+116527816612	38765588327	pull_request	scrum-1144-selector-sitio-guardado	2026-10-15T16:02:25Z	success	COMPLETO	589	589		156		0	0	0	vigia-atascados.test.mjs			
+116530517356	38766372217	pull_request	scrum-996d-a1-sin-generate	2026-10-15T16:07:53Z	failure	CORTADO	0	589	589	0	156	0	0	0		116530659351		
+116530659351	38766413628	pull_request	scrum-1504-el-comentario-nombra-su-guard	2026-10-15T16:08:10Z	failure	COMPLETO	589	589		156		0	4	0	vigia-atascados.test.mjs			vigia-atascados.test.mjs,vigia-atascados.test.mjs,vigia-atascados.test.mjs,vigia-atascados.test.mjs
+116531152898	38766552957	pull_request	scrum-1557-contexto-aparta-muertas	2026-10-15T16:09:11Z	cancelled	CORTADO	493	589	96	132	25	0	0	0	scrum858b-la-tanda-sin-veredicto.test.mjs	116530659351		
+116532845404	38766750335	pull_request	scrum-996d-a1-sin-generate	2026-10-15T16:10:34Z	failure	CORTADO	0	589	589	0	156	0	0	0		116530659351		
+116532589218	38766965149	pull_request	scrum-1178-citas-a-redes-que-no-corren	2026-10-15T16:12:05Z	cancelled	CORTADO	16	589	573	7	149	0	0	0	scrum1245b-patron-de-la-tanda-entre-comillas.test.mjs	116533529073		
+116532923596	38767061957	pull_request	scrum-1494-paso0-sin-techo	2026-10-15T16:12:45Z	cancelled	CORTADO	264	589	325	69	87	0	0	0	scrum710b-anclaje-por-identidad.test.mjs	116533529073		
+116533529073	38767177705	pull_request	scrum-1158-el-banco-ve-hidden	2026-10-15T16:13:34Z	failure	COMPLETO	589	589		156		0	1	0	vigia-atascados.test.mjs			scrum859-identidad-y-motivo-cerrado.test.mjs
+116549978946	38767188407	pull_request	scrum-1177-citas-a-redes-que-no-existen	2026-10-15T16:13:38Z	success	COMPLETO	589	589		156		0	0	0	vigia-atascados.test.mjs			
+116534389255	38767198602	pull_request	scrum-1178-citas-a-redes-que-no-corren	2026-10-15T16:13:42Z	failure	COMPLETO	589	589		156		0	1	0	vigia-atascados.test.mjs			scrum859-identidad-y-motivo-cerrado.test.mjs
+116533873747	38767340694	pull_request	scrum-1233e-trabajos-y-parte-sin-tripa	2026-10-15T16:14:41Z	success	COMPLETO	589	589		156		0	0	0	vigia-atascados.test.mjs			
+116534819750	38767617175	pull_request	scrum-996c-arranque-medido-15oct	2026-10-15T16:16:36Z	success	COMPLETO	589	589		156		0	0	0	vigia-atascados.test.mjs			
+116535744696	38767882249	push	main	2026-10-15T16:18:28Z	failure	COMPLETO	589	589		156		0	5	0	vigia-atascados.test.mjs			scrum859-identidad-y-motivo-cerrado.test.mjs,vigia-atascados.test.mjs,vigia-atascados.test.mjs,vigia-atascados.test.mjs,vigia-atascados.test.mjs
+116535941239	38767940212	pull_request	scrum-999c-queda-uso-medido	2026-10-15T16:18:52Z	success	COMPLETO	589	589		156		0	0	0	vigia-atascados.test.mjs			
+116536411091	38768074826	pull_request	scrum-911b-iva-en-staging	2026-10-15T16:19:51Z	success	COMPLETO	589	589		156		0	0	0	vigia-atascados.test.mjs			
+116537914329	38768335592	pull_request	scrum-1494-paso0-sin-techo	2026-10-15T16:21:41Z	cancelled	CORTADO	265	589	324	69	87	0	0	0	scrum710b-anclaje-por-identidad.test.mjs	116538066442		
+116538066442	38768556476	pull_request	scrum-1302u-los-mensajes-del-campo	2026-10-15T16:23:14Z	success	COMPLETO	589	589		156		0	0	0	vigia-atascados.test.mjs			
+116541100679	38769359434	pull_request	scrum-996d-a1-sin-generate	2026-10-15T16:28:59Z	cancelled	CORTADO	238	589	351	58	98	0	0	0	scrum547-el-documento-que-nadie-mira.test.mjs	116541118603		
+116541118603	38769445094	pull_request	scrum-1493b-anadir-409-relee	2026-10-15T16:29:37Z	success	COMPLETO	589	589		156		0	0	0	vigia-atascados.test.mjs			
+116541304067	38769499009	pull_request	scrum-1233f-techo-644-trabajos	2026-10-15T16:30:01Z	success	COMPLETO	589	589		156		0	0	0	vigia-atascados.test.mjs			
+116541813653	38769572114	pull_request	scrum-1557-contexto-aparta-muertas	2026-10-15T16:30:29Z	success	COMPLETO	591	591		157		0	0	0	vigia-atascados.test.mjs			
+116542397439	38769668228	pull_request	scrum-1494-paso0-sin-techo	2026-10-15T16:31:08Z	cancelled	CORTADO	330	591	261	88	69	0	0	0	scrum760-iva-de-voz-rechazado.test.mjs	116541813653		
+116574833620	38769765344	pull_request	scrum-1273-archivar-panel	2026-10-15T16:31:49Z	success	COMPLETO	589	589		156		0	0	0	vigia-atascados.test.mjs			
+116542592644	38769879820	pull_request	scrum-1506-cerradura-medida	2026-10-15T16:32:37Z	success	COMPLETO	589	589		156		0	0	0	vigia-atascados.test.mjs			
+116544217697	38770350864	pull_request	claude-md-158-no-matar-node	2026-10-15T16:35:59Z	failure	COMPLETO	589	589		156		0	1	0	vigia-atascados.test.mjs			scrum859-identidad-y-motivo-cerrado.test.mjs
+116546446403	38770882279	pull_request	scrum-1178-citas-a-redes-que-no-corren	2026-10-15T16:39:52Z	cancelled	CORTADO	324	589	265	86	70	0	0	0	scrum758-cabecera-no-miente.test.mjs	116546560368		
+116546560368	38771028491	pull_request	scrum-1467-vigia-jv-sin-relleno	2026-10-15T16:40:53Z	success	COMPLETO	589	589		156		0	0	0	vigia-atascados.test.mjs			
+116548116350	38771379605	pull_request	scrum-996d-a1-sin-generate	2026-10-15T16:43:26Z	success	COMPLETO	591	591		157		0	0	0	vigia-atascados.test.mjs			
+116942402297	38771461239	pull_request	scrum-1190-el-adicional-ya-suma	2026-10-15T16:44:02Z	success	COMPLETO	591	591		157		0	0	0	vigia-atascados.test.mjs			
+116552840088	38771762124	push	main	2026-10-15T16:46:15Z	success	COMPLETO	591	591		157		0	0	0	vigia-atascados.test.mjs			
+116550174797	38772070871	pull_request	scrum-1144b-verificado-en-produccion	2026-10-15T16:48:31Z	success	COMPLETO	591	591		157		0	0	0	vigia-atascados.test.mjs			
+116553922091	38773156622	pull_request	scrum-1173-la-retirada-caduca	2026-10-15T16:56:29Z	cancelled	CORTADO	555	591	36	150	7	1	3	0	scrum949-el-suelo-como-cociente.test.mjs	116554046095	scrum810b-los-suelos-derivados.test.mjs	scrum810-el-suelo-a-la-primera.test.mjs,scrum810-el-suelo-a-la-primera.test.mjs,scrum810b-los-suelos-derivados.test.mjs
+116554046095	38773192962	pull_request	scrum-1183-trabajos-csv	2026-10-15T16:56:44Z	success	COMPLETO	591	591		157		0	0	0	vigia-atascados.test.mjs			
+116568042936	38777267724	pull_request	scrum-1233e-trabajos-y-parte-sin-tripa	2026-10-15T17:25:52Z	success	COMPLETO	591	591		157		0	0	0	vigia-atascados.test.mjs			
+116570565765	38777907516	pull_request	scrum-1178-citas-a-redes-que-no-corren	2026-10-15T17:30:27Z	success	COMPLETO	591	591		157		0	0	0	vigia-atascados.test.mjs			
+116570482251	38777980634	pull_request	scrum-1233f-techo-644-trabajos	2026-10-15T17:30:59Z	success	COMPLETO	591	591		157		0	0	0	vigia-atascados.test.mjs			
+116571318813	38778227218	pull_request	scrum-429c-regenerado-apuntado	2026-10-15T17:32:43Z	success	COMPLETO	591	591		157		0	0	0	vigia-atascados.test.mjs			
+116571520904	38778284743	pull_request	scrum-1356b-la-entrega-se-manda	2026-10-15T17:33:08Z	success	COMPLETO	591	591		157		0	0	0	vigia-atascados.test.mjs			
+116573359845	38778819919	pull_request	scrum-1506-cerradura-medida	2026-10-15T17:37:00Z	success	COMPLETO	591	591		157		0	0	0	vigia-atascados.test.mjs			
+116573423554	38778828390	push	main	2026-10-15T17:37:03Z	success	COMPLETO	593	593		158		0	0	0	vigia-atascados.test.mjs			
+116574353600	38779103795	pull_request	scrum-429d-causa-b-no-regeneres	2026-10-15T17:39:07Z	failure	COMPLETO	593	593		158		0	0	1	vigia-atascados.test.mjs			
+116575923566	38779538251	pull_request	scrum-1158b-serializar-y-hidden	2026-10-15T17:42:17Z	failure	COMPLETO	593	593		158		0	2	0	vigia-atascados.test.mjs			scrum710b-anclaje-por-identidad.test.mjs,scrum710b-anclaje-por-identidad.test.mjs
+116577393922	38779994654	pull_request	normas-por-secciones-en-el-arranque	2026-10-15T17:45:35Z	success	COMPLETO	593	593		158		0	0	0	vigia-atascados.test.mjs			
+116577462000	38780014374	pull_request	scrum-913b-fichaje-diseno-y-ddl	2026-10-15T17:45:44Z	success	COMPLETO	593	593		158		0	0	0	vigia-atascados.test.mjs			
+116580022321	38780553560	pull_request	scrum-1173-la-retirada-caduca	2026-10-15T17:49:41Z	success	COMPLETO	593	593		158		0	0	0	vigia-atascados.test.mjs			
+116579797588	38780690011	pull_request	scrum-1494-paso0-sin-techo	2026-10-15T17:50:40Z	cancelled	CORTADO	583	593	10	154	4	0	1	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	116580022321		scrum859-identidad-y-motivo-cerrado.test.mjs
+116597469716	38785735678	push	main	2026-10-15T18:27:12Z	success	COMPLETO	593	593		158		0	0	0	vigia-atascados.test.mjs			
+116610720096	38786809083	push	main	2026-10-15T18:34:58Z	failure	COMPLETO	593	593		158		0	1	0	vigia-atascados.test.mjs			scrum757-la-declaracion-que-nadie-lee.test.mjs
+116942457896	38891691536	pull_request	scrum-1494-paso0-sin-techo	2026-10-16T11:07:23Z	cancelled	CORTADO	582	593	11	154	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	116942940542		
+116942718716	38891771442	pull_request	scrum-1158b-serializar-y-hidden	2026-10-16T11:08:07Z	cancelled	CORTADO	458	593	135	124	34	0	0	0	scrum839d-union-solo-en-el-registro.test.mjs	116942940542		
+116942940542	38891836725	pull_request	scrum-429e-trampas-10-no-regeneres	2026-10-16T11:08:44Z	success	COMPLETO	593	593		158		0	0	0	vigia-atascados.test.mjs			
+116943034866	38891864971	pull_request	scrum-1273-archivar-panel	2026-10-16T11:09:00Z	success	COMPLETO	593	593		158		0	0	0	vigia-atascados.test.mjs			
+116944430810	38892289234	pull_request	scrum-1300b-las-nueve-piezas-medidas	2026-10-16T11:12:53Z	cancelled	CORTADO	191	593	402	48	110	0	0	0	scrum1473-latido-disco-y-barrido.test.mjs	116943034866		
+116946022255	38892778047	pull_request	scrum-1072-actividad-irpf-servidor	2026-10-16T11:17:19Z	cancelled	CORTADO	5	593	588	2	156	0	0	0	scrum1007-1011-1026-relevo-lanzar-bloqueo.test.mjs	116946335966		
+116946335966	38892871017	pull_request	scrum-1183b-el-anio-es-la-fecha-prevista	2026-10-16T11:18:12Z	failure	COMPLETO	593	593		158		0	1	0	vigia-atascados.test.mjs			scrum859-identidad-y-motivo-cerrado.test.mjs
+116966462071	38892936252	pull_request	scrum-1300b-las-nueve-piezas-medidas	2026-10-16T11:18:47Z	failure	COMPLETO	593	593		158		0	1	0	vigia-atascados.test.mjs			scrum859-identidad-y-motivo-cerrado.test.mjs
+116946582458	38892945149	push	main	2026-10-16T11:18:52Z	cancelled	CORTADO	583	593	10	154	4	0	1	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	116966462071		scrum859-identidad-y-motivo-cerrado.test.mjs
+116947550871	38893078411	pull_request	scrum-996e-lectura-medida-16oct	2026-10-16T11:20:05Z	cancelled	CORTADO	584	597	13	155	3	0	1	0	scrum976-guards-entrada-con-techo.test.mjs	116947388713		scrum859-identidad-y-motivo-cerrado.test.mjs
+116947611751	38893115898	pull_request	scrum-1072-actividad-irpf-servidor	2026-10-16T11:20:25Z	cancelled	CORTADO	265	597	332	69	89	0	0	0	scrum691-contraste-de-tokens.test.mjs	116947388713		
+116947388713	38893193173	pull_request	scrum-1357c-te-espera	2026-10-16T11:21:07Z	success	COMPLETO	597	597		158		0	0	0	vigia-atascados.test.mjs			
+116948676168	38893475476	pull_request	scrum-1158b-serializar-y-hidden	2026-10-16T11:23:39Z	success	COMPLETO	597	597		158		0	0	0	vigia-atascados.test.mjs			
+116950160971	38894047911	pull_request	scrum-1183c-sonda-where-muertos	2026-10-16T11:28:52Z	cancelled	CORTADO	583	597	14	154	4	0	1	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	116948676168		scrum859-identidad-y-motivo-cerrado.test.mjs
+116951355793	38894418525	pull_request	scrum-1233g-banco-bloquea-el-sw	2026-10-16T11:32:11Z	cancelled	CORTADO	102	597	495	32	126	0	0	0	scrum1342-plan-desconocido-no-calla.test.mjs	116953737035		
+116953737035	38894992161	pull_request	scrum-1233g-banco-bloquea-el-sw	2026-10-16T11:37:24Z	success	COMPLETO	597	597		158		0	0	0	vigia-atascados.test.mjs			
+116953804340	38895105413	pull_request	scrum-1072-actividad-irpf-servidor	2026-10-16T11:38:27Z	cancelled	CORTADO	585	597	12	155	3	0	1	0	scrum976-guards-entrada-con-techo.test.mjs	116953737035		scrum859-identidad-y-motivo-cerrado.test.mjs
+116953966775	38895221364	pull_request	scrum-1236-pdf-por-dentro	2026-10-16T11:39:30Z	success	COMPLETO	597	597		158		0	0	0	vigia-atascados.test.mjs			
+116954064906	38895251520	pull_request	scrum-1158c-inicio-informes-44px	2026-10-16T11:39:47Z	cancelled	CORTADO	583	597	14	154	4	0	1	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	116953966775		scrum859-identidad-y-motivo-cerrado.test.mjs
+116954710104	38895350138	pull_request	scrum-1183b-el-anio-es-la-fecha-prevista	2026-10-16T11:40:39Z	failure	COMPLETO	597	597		158		0	1	0	vigia-atascados.test.mjs			scrum859-identidad-y-motivo-cerrado.test.mjs
+116958440768	38896540180	push	main	2026-10-16T11:51:21Z	failure	COMPLETO	597	597		158		0	0	1	vigia-atascados.test.mjs			
+116961778498	38897617308	pull_request	scrum-999b-uso-juzga-la-semanal	2026-10-16T12:01:01Z	cancelled	CORTADO	592	597	5	155	3	0	0	0	scrum976-guards-entrada-con-techo.test.mjs	116958440768		
+116962193190	38897743325	pull_request	scrum-1236b-firma-remota-inalcanzable	2026-10-16T12:02:08Z	cancelled	CORTADO	588	597	9	155	3	0	0	0	scrum976-guards-entrada-con-techo.test.mjs	116958440768		
+116964426067	38898426320	pull_request	scrum-1236c-las-tres-firmas-de-la-landing	2026-10-16T12:08:09Z	cancelled	CORTADO	583	601	18	154	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	116969497327		
+116964470223	38898439255	pull_request	scrum-1367g-r25-firmar-en-qa	2026-10-16T12:08:16Z	cancelled	CORTADO	99	601	502	32	126	0	0	0	scrum1342-plan-desconocido-no-calla.test.mjs	116969497327		
+116966491113	38898933833	pull_request	scrum-1367g-r25-firmar-en-qa	2026-10-16T12:12:39Z	cancelled	CORTADO	583	601	18	154	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	116969497327		
+116966190947	38898960914	pull_request	scrum-1357d-sala-sobre-parados	2026-10-16T12:12:53Z	cancelled	CORTADO	583	601	18	154	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	116969497327		
+116966267642	38898984257	pull_request	scrum-951f-blocked-no-es-atasco	2026-10-16T12:13:06Z	cancelled	CORTADO	583	601	18	154	4	0	1	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	116969497327		scrum859-identidad-y-motivo-cerrado.test.mjs
+116970205633	38899904495	push	main	2026-10-16T12:21:11Z	cancelled	CORTADO	587	601	14	154	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	116969497327		
+116969497327	38899968065	pull_request	scrum-829c-a15-traer-main-a-medias	2026-10-16T12:21:45Z	failure	COMPLETO	601	601		158		0	2	0	vigia-atascados.test.mjs			scrum834-puerta-avisador-rojo.test.mjs,scrum834-puerta-avisador-rojo.test.mjs
+116969608105	38900002288	pull_request	scrum-1237-aviso-dentro-de-la-modal	2026-10-16T12:22:02Z	cancelled	CORTADO	345	601	256	92	66	0	0	0	scrum765-la-puerta-y-el-suelo.test.mjs	116969497327		
+116972156257	38900600148	pull_request	scrum-1558-sin-proveedor-no-es-envio	2026-10-16T12:27:10Z	success	COMPLETO	601	601		158		0	0	0	vigia-atascados.test.mjs			
+117483573433	38901645834	pull_request	scrum-1190b-nuevo-presupuesto-en-el-trabajo	2026-10-16T12:35:57Z	cancelled	CORTADO	587	601	14	154	4	0	1	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	116975931286		scrum859-identidad-y-motivo-cerrado.test.mjs
+116975082966	38901647764	pull_request	scrum-839i-atasco-sin-causa	2026-10-16T12:35:58Z	cancelled	CORTADO	267	601	334	70	88	0	0	0	scrum710b-anclaje-por-identidad.test.mjs	116975931286		
+116975931286	38901732782	pull_request	scrum-1237-aviso-dentro-de-la-modal	2026-10-16T12:36:41Z	success	COMPLETO	601	601		158		0	0	0	vigia-atascados.test.mjs			
+116975370111	38901734608	pull_request	scrum-951g-rama-empujada-vacia	2026-10-16T12:36:42Z	failure	COMPLETO	601	601		158		0	0	1	vigia-atascados.test.mjs			
+116977391401	38902343496	pull_request	scrum-1183b-el-anio-es-la-fecha-prevista	2026-10-16T12:41:51Z	success	COMPLETO	601	601		158		0	0	0	vigia-atascados.test.mjs			
+116978277539	38902611051	pull_request	scrum-1559b-censo-cuenta-cada-elemento	2026-10-16T12:44:05Z	cancelled	CORTADO	101	601	500	32	126	0	0	0	scrum1342-plan-desconocido-no-calla.test.mjs	116977391401		
+116978502269	38902679498	pull_request	scrum-1559c-dos-botones-vuestros-a-31px	2026-10-16T12:44:38Z	cancelled	CORTADO	586	601	15	154	4	0	1	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	116977391401		scrum757-la-declaracion-que-nadie-lee.test.mjs
+116979034091	38902693487	pull_request	scrum-839i-atasco-sin-causa	2026-10-16T12:44:45Z	cancelled	CORTADO	587	601	14	154	4	0	1	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	116977391401		scrum859-identidad-y-motivo-cerrado.test.mjs
+116978923006	38902807587	pull_request	scrum-1559-serializar-lee-los-dos-sitios	2026-10-16T12:45:41Z	cancelled	CORTADO	430	601	171	118	40	0	0	0	scrum813-trinquete-de-zona.test.mjs	116977391401		
+116979063152	38902849765	pull_request	scrum-1206b-la-ficha-del-albaran-pinta-sus-textos	2026-10-16T12:46:01Z	cancelled	CORTADO	5	601	596	2	156	0	0	0	scrum1007-1011-1026-relevo-lanzar-bloqueo.test.mjs	116977391401		
+116979404983	38902946902	pull_request	scrum-1156b-ficha-gasto-servidor	2026-10-16T12:46:53Z	cancelled	CORTADO	269	601	332	70	88	0	0	0	scrum710b-anclaje-por-identidad.test.mjs	116977391401		
+116984208493	38904225555	push	main	2026-10-16T12:57:35Z	cancelled	CORTADO	587	601	14	154	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	116983949021		
+116983949021	38904308991	pull_request	scrum-1559d-el-intermitente-ajeno-nos-cuesta	2026-10-16T12:58:14Z	success	COMPLETO	601	601		158		0	0	0	vigia-atascados.test.mjs			
+116985616240	38904644799	pull_request	scrum-1206b-la-ficha-del-albaran-pinta-sus-textos	2026-10-16T13:00:59Z	cancelled	CORTADO	587	601	14	154	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	116983949021		
+116989129399	38905690014	pull_request	scrum-1559-serializar-lee-los-dos-sitios	2026-10-16T13:09:22Z	cancelled	CORTADO	587	601	14	154	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	116989809678		
+116989529074	38905735004	pull_request	scrum-1559b-censo-cuenta-cada-elemento	2026-10-16T13:09:44Z	cancelled	CORTADO	588	601	13	155	3	0	1	0	scrum976-guards-entrada-con-techo.test.mjs	116989809678		scrum859-identidad-y-motivo-cerrado.test.mjs
+116989809678	38905953144	pull_request	scrum-1156b-ficha-gasto-servidor	2026-10-16T13:11:28Z	success	COMPLETO	601	601		158		0	0	0	vigia-atascados.test.mjs			
+116998608878	38907863319	push	main	2026-10-16T13:26:33Z	failure	COMPLETO	604	604		158		0	1	0	vigia-atascados.test.mjs			scrum859-identidad-y-motivo-cerrado.test.mjs
+116998339767	38908581818	pull_request	scrum-1206b-visto-en-prod	2026-10-16T13:32:06Z	cancelled	CORTADO	587	604	17	154	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	116998608878		
+117009386020	38910338111	push	main	2026-10-16T13:45:32Z	cancelled	CORTADO	571	604	33	151	7	0	1	0	scrum951a-equipo-configurable.test.mjs	116998608878		scrum859-identidad-y-motivo-cerrado.test.mjs
+117485643216	39063315563	pull_request	scrum-951h-staging-es-produccion	2026-10-17T19:38:12Z	cancelled	CORTADO	588	604	16	155	3	0	0	0	scrum976-guards-entrada-con-techo.test.mjs	117485922459		
+117485922459	39063404950	pull_request	scrum-1183d-quita-tres-where-muertos	2026-10-17T19:39:31Z	success	COMPLETO	604	604		158		0	0	0	vigia-atascados.test.mjs			
+117485925874	39063406069	push	main	2026-10-17T19:39:32Z	success	COMPLETO	604	604		158		0	0	0	vigia-atascados.test.mjs			
+117486096853	39063464167	pull_request	scrum-1559-serializar-lee-los-dos-sitios	2026-10-17T19:40:21Z	failure	COMPLETO	604	604		158		0	1	0	vigia-atascados.test.mjs			scrum859-identidad-y-motivo-cerrado.test.mjs
+117486360789	39063553674	pull_request	scrum-951i-ancla-del-registro	2026-10-17T19:41:36Z	cancelled	CORTADO	196	604	408	49	109	0	0	0	scrum1474-latido-relevo.test.mjs	117486096853		
+117487006251	39063769525	pull_request	scrum-1559b-censo-cuenta-cada-elemento	2026-10-17T19:44:42Z	cancelled	CORTADO	587	604	17	154	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117487878557		
+117487878557	39063961810	pull_request	scrum-951i-ancla-del-registro	2026-10-17T19:47:25Z	success	COMPLETO	604	604		158		0	0	0	vigia-atascados.test.mjs			
+117487736247	39064016120	pull_request	scrum-1559d-el-intermitente-ajeno-nos-cuesta	2026-10-17T19:48:11Z	cancelled	CORTADO	5	604	599	2	156	0	0	0	scrum1007-1011-1026-relevo-lanzar-bloqueo.test.mjs	117487878557		
+117732388013	39064194535	pull_request	scrum-1559d-el-intermitente-ajeno-nos-cuesta	2026-10-17T19:50:39Z	success	COMPLETO	604	604		158		0	0	0	vigia-atascados.test.mjs			
+117488413700	39064245427	pull_request	scrum-1357e-aparcado-no-es-caido	2026-10-17T19:51:21Z	cancelled	CORTADO	425	604	179	118	40	0	0	0	scrum813-trinquete-de-zona.test.mjs	117732388013		
+117490312331	39064878958	pull_request	scrum-1206c-la-ficha-del-presupuesto-pinta-sus-textos	2026-10-17T20:00:31Z	cancelled	CORTADO	588	604	16	155	3	0	0	0	scrum976-guards-entrada-con-techo.test.mjs	117732388013		
+117490637492	39064989694	pull_request	scrum-1152b-guards-entrada-con-a9	2026-10-17T20:02:01Z	cancelled	CORTADO	102	604	502	32	126	0	0	0	scrum1342-plan-desconocido-no-calla.test.mjs	117511208861		
+117492089056	39065032530	push	main	2026-10-17T20:02:37Z	cancelled	CORTADO	585	604	19	153	5	0	0	0	scrum954-vivo-no-es-listado.test.mjs	117511208861		
+117491797304	39065232859	pull_request	scrum-1152b-guards-entrada-con-a9	2026-10-17T20:05:23Z	cancelled	CORTADO	124	604	480	36	122	0	0	0	scrum1363-tests-que-cubren.test.mjs	117511208861		
+117491813324	39065376055	pull_request	scrum-951i-ancla-del-registro	2026-10-17T20:07:25Z	cancelled	CORTADO	587	604	17	154	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117511208861		
+117492761914	39065594283	pull_request	scrum-1357e-aparcado-no-es-caido	2026-10-17T20:10:31Z	cancelled	CORTADO	587	604	17	154	4	0	1	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117511208861		scrum859-identidad-y-motivo-cerrado.test.mjs
+117511208861	39065651970	pull_request	scrum-1152b-guards-entrada-con-a9	2026-10-17T20:11:21Z	success	COMPLETO	604	604		158		0	0	0	vigia-atascados.test.mjs			
+117494212287	39066173936	pull_request	scrum-1206d-rotulos-del-rail-en-versalitas	2026-10-17T20:18:49Z	failure	COMPLETO	604	604		158		0	1	0	vigia-atascados.test.mjs			scrum834-puerta-avisador-rojo.test.mjs
+117494733371	39066349718	pull_request	scrum-1560-datos-de-muestra-con-forma-del-servidor	2026-10-17T20:21:19Z	cancelled	CORTADO	447	604	157	119	39	0	2	0	scrum829b-la-ref-rancia-se-poda.test.mjs	117494212287		scrum710b-anclaje-por-identidad.test.mjs,scrum710b-anclaje-por-identidad.test.mjs
+117498807403	39067209376	push	main	2026-10-17T20:33:18Z	cancelled	CORTADO	585	604	19	153	5	0	0	0	scrum954-vivo-no-es-listado.test.mjs	117500053583		
+117505420455	39067848948	pull_request	scrum-1206d-visto-en-prod	2026-10-17T20:42:25Z	cancelled	CORTADO	587	604	17	154	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117500053583		
+117499774579	39068044781	pull_request	scrum-1560-datos-de-muestra-con-forma-del-servidor	2026-10-17T20:45:12Z	cancelled	CORTADO	525	604	79	142	16	0	0	0	scrum899b-arranque-de-la-tanda.test.mjs	117500053583		
+117500053583	39068168503	pull_request	scrum-1559e-quince-controles-vuestros	2026-10-17T20:46:59Z	success	COMPLETO	604	604		158		0	0	0	vigia-atascados.test.mjs			
+117505082429	39068833209	push	main	2026-10-17T20:56:35Z	success	COMPLETO	604	604		158		0	0	0	vigia-atascados.test.mjs			
+117505536923	39069955678	pull_request	scrum-1560-datos-de-muestra-con-forma-del-servidor	2026-10-17T21:12:27Z	cancelled	CORTADO	20	604	584	8	150	0	0	0	scrum1257e-modo-en-ajustes-tres-modos.test.mjs	117506044360		
+117506044360	39070101878	pull_request	scrum-1560-datos-de-muestra-con-forma-del-servidor	2026-10-17T21:14:32Z	failure	COMPLETO	604	604		158		0	0	1	vigia-atascados.test.mjs			
+117510181326	39071008572	push	main	2026-10-17T21:27:20Z	cancelled	CORTADO	587	604	17	154	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117506044360		
+117732381944	39071288778	pull_request	scrum-1206c-visto-en-prod	2026-10-17T21:31:16Z	cancelled	CORTADO	587	604	17	154	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117506044360		
+117510844919	39071824459	pull_request	scrum-1156c-ficha-gasto-pantalla	2026-10-17T21:38:53Z	cancelled	CORTADO	388	604	216	108	50	0	0	0	scrum795-el-portal-en-la-ficha.test.mjs	117514394930		
+117513077298	39072584256	pull_request	scrum-1357f-pregunta-sin-proceso	2026-10-17T21:50:03Z	cancelled	CORTADO	278	604	326	71	87	0	0	0	scrum716-ritmo-de-despliegue.test.mjs	117514394930		
+117516276574	39072838400	push	main	2026-10-17T21:53:48Z	cancelled	CORTADO	587	604	17	154	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117514394930		
+117514394930	39072994958	pull_request	scrum-1156c-ficha-gasto-pantalla	2026-10-17T21:56:11Z	success	COMPLETO	604	604		158		0	0	0	vigia-atascados.test.mjs			
+117514405525	39073031480	pull_request	scrum-1152c-el-verde-dice-donde-acaba	2026-10-17T21:56:46Z	success	COMPLETO	604	604		158		0	0	0	vigia-atascados.test.mjs			
+117514804231	39073059050	pull_request	scrum-1357f-pregunta-sin-proceso	2026-10-17T21:57:11Z	success	COMPLETO	604	604		158		0	0	0	vigia-atascados.test.mjs			
+117519316349	39074695308	pull_request	scrum-1156c-visto-en-yaqu	2026-10-17T22:20:54Z	cancelled	CORTADO	588	604	16	155	3	0	0	0	scrum976-guards-entrada-con-techo.test.mjs	117522415290		
+117522415290	39075570593	push	main	2026-10-17T22:33:38Z	failure	COMPLETO	604	604		158		0	1	0	vigia-atascados.test.mjs			scrum859-identidad-y-motivo-cerrado.test.mjs
+117523427885	39076089223	pull_request	scrum-1560c-censo-ficha-del-gasto	2026-10-17T22:41:23Z	cancelled	CORTADO	587	604	17	154	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117522415290		
+117525870866	39076919030	pull_request	scrum-1559f-la-factura-devuelve-el-presupuesto-entero	2026-10-17T22:54:12Z	cancelled	CORTADO	587	604	17	154	4	0	1	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117526062368		scrum859-identidad-y-motivo-cerrado.test.mjs
+117526062368	39076983970	pull_request	scrum-1560d-fixtures-compartidos-con-forma	2026-10-17T22:55:12Z	success	COMPLETO	604	604		158		0	0	0	vigia-atascados.test.mjs			
+117527779032	39077540455	push	main	2026-10-17T23:03:43Z	cancelled	CORTADO	587	604	17	154	4	0	1	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117526062368		scrum859-identidad-y-motivo-cerrado.test.mjs
+117533509782	39077845100	push	main	2026-10-17T23:08:21Z	cancelled	CORTADO	587	604	17	154	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117526062368		
+117536341928	39080520369	pull_request	scrum-1434-zona-roja-gh-api-sin-tumbar	2026-10-17T23:50:09Z	cancelled	CORTADO	592	604	12	156	3	0	0	0	scrum976-guards-entrada-con-techo.test.mjs	117537671148		
+117537671148	39080979137	pull_request	scrum-1519d-la-revision-ata-el-cliente	2026-10-17T23:57:40Z	success	COMPLETO	604	604		158		0	0	0	vigia-atascados.test.mjs			
+117539332426	39081546394	pull_request	scrum-1560e-vista-que-no-pide-nada	2026-10-18T00:06:38Z	cancelled	CORTADO	587	604	17	154	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117537671148		
+117539460615	39081588487	push	main	2026-10-18T00:07:18Z	cancelled	CORTADO	587	604	17	154	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117537671148		
+117540455368	39081920195	pull_request	scrum-1559g-dieciseis-controles-nuestros-44px	2026-10-18T00:12:42Z	cancelled	CORTADO	587	604	17	154	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117541949584		
+117540678712	39081995068	pull_request	scrum-1562b-para-javier-teclado-y-casilla	2026-10-18T00:13:55Z	cancelled	CORTADO	587	604	17	154	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117541949584		
+117541234622	39082183500	pull_request	scrum-1562-sonda-filas-sin-teclado	2026-10-18T00:16:52Z	cancelled	CORTADO	587	604	17	154	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117541949584		
+117541949584	39082421466	pull_request	scrum-1519e-la-aceptacion-no-crea-trabajo-ajeno	2026-10-18T00:20:49Z	success	COMPLETO	604	604		158		0	0	0	vigia-atascados.test.mjs			
+117542676310	39082660808	pull_request	scrum-1442b-tarjeta-de-opcion-sin-nan	2026-10-18T00:24:51Z	success	COMPLETO	604	604		158		0	0	0	vigia-atascados.test.mjs			
+117543543442	39082953280	pull_request	scrum-1562c-partes-oficina-con-teclado	2026-10-18T00:29:42Z	cancelled	CORTADO	444	604	160	118	40	0	0	0	scrum813-trinquete-de-zona.test.mjs	117542676310		
+117545009270	39083125652	push	main	2026-10-18T00:32:19Z	cancelled	CORTADO	587	604	17	154	4	0	1	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117545209645		scrum859-identidad-y-motivo-cerrado.test.mjs
+117545209645	39083518926	pull_request	scrum-1562d-trabajos-con-teclado	2026-10-18T00:38:41Z	success	COMPLETO	604	604		158		0	0	0	vigia-atascados.test.mjs			
+117550592700	39084354507	push	main	2026-10-18T00:52:08Z	cancelled	CORTADO	587	604	17	154	4	0	1	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117545209645		scrum859-identidad-y-motivo-cerrado.test.mjs
+117548004087	39084375339	pull_request	scrum-1562c-partes-oficina-con-teclado	2026-10-18T00:52:29Z	cancelled	CORTADO	595	604	9	156	2	0	0	0	scrum996d-a1-no-regenera-a-ciegas.test.mjs	117545209645		
+117733023122	39147091607	pull_request	scrum-1434-zona-roja-gh-api-sin-tumbar	2026-10-18T16:53:51Z	cancelled	CORTADO	100	604	504	32	126	0	0	0	scrum1342-plan-desconocido-no-calla.test.mjs	117735486259		
+117733601305	39147192272	pull_request	scrum-1559d-el-intermitente-ajeno-nos-cuesta	2026-10-18T16:55:14Z	cancelled	CORTADO	587	604	17	154	4	0	1	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117735486259		scrum859-identidad-y-motivo-cerrado.test.mjs
+117733737283	39147335140	pull_request	scrum-1562c-partes-oficina-con-teclado	2026-10-18T16:57:10Z	cancelled	CORTADO	587	604	17	154	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117735486259		
+117744789725	39147352034	pull_request	scrum-1434-zona-roja-gh-api-sin-tumbar	2026-10-18T16:57:24Z	cancelled	CORTADO	591	604	13	155	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117735486259		
+117735486259	39147932967	push	main	2026-10-18T17:05:01Z	success	COMPLETO	604	604		158		0	0	0	vigia-atascados.test.mjs			
+117737524373	39148623762	pull_request	scrum-1559h-el-arreglo-de-1405c-no-llega-a-cero	2026-10-18T17:14:04Z	cancelled	CORTADO	587	604	17	154	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117738788652		
+117737989683	39148788094	pull_request	scrum-1562d-visto-en-prod	2026-10-18T17:16:10Z	cancelled	CORTADO	587	604	17	154	4	0	1	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117738788652		scrum859-identidad-y-motivo-cerrado.test.mjs
+117738788652	39149062000	pull_request	scrum-1563-estado-del-producto	2026-10-18T17:19:41Z	success	COMPLETO	604	604		158		0	0	0	vigia-atascados.test.mjs			
+117740948734	39149797664	push	main	2026-10-18T17:29:13Z	success	COMPLETO	604	604		158		0	0	0	vigia-atascados.test.mjs			
+117743122685	39150546244	pull_request	scrum-1183e-operarios-servida-y-declarada	2026-10-18T17:38:50Z	cancelled	CORTADO	587	604	17	154	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117740948734		
+117744350326	39150964350	pull_request	scrum-1562e-sonda-sin-alternativa-medida	2026-10-18T17:44:27Z	cancelled	CORTADO	587	604	17	154	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117746439349		
+117745317940	39151296411	pull_request	scrum-1357g-parados-control	2026-10-18T17:48:53Z	cancelled	CORTADO	587	604	17	154	4	0	1	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117746439349		scrum859-identidad-y-motivo-cerrado.test.mjs
+117746439349	39151628243	push	main	2026-10-18T17:53:16Z	success	COMPLETO	604	604		158		0	0	0	vigia-atascados.test.mjs			
+117746716957	39151772745	pull_request	scrum-809b-banner-de-impago-lee-el-estado	2026-10-18T17:55:15Z	success	COMPLETO	604	604		158		0	0	0	vigia-atascados.test.mjs			
+117747244450	39151952213	pull_request	scrum-1011b-lanzar-dice-por-que	2026-10-18T17:57:43Z	cancelled	CORTADO	5	608	603	2	157	0	0	0	scrum1007-1011-1026-relevo-lanzar-bloqueo.test.mjs	117747559783		
+117747500037	39152037981	pull_request	scrum-655d-pagina-del-cliente-sin-apartados	2026-10-18T17:58:56Z	cancelled	CORTADO	587	608	21	154	5	0	1	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117747559783		scrum859-identidad-y-motivo-cerrado.test.mjs
+117747559783	39152057334	pull_request	scrum-1158d-recuento-de-los-21	2026-10-18T17:59:14Z	success	COMPLETO	608	608		159		0	0	0	vigia-atascados.test.mjs			
+117748777263	39152480648	pull_request	scrum-1236d-envio-del-46-sin-permiso	2026-10-18T18:04:28Z	success	COMPLETO	608	608		159		0	0	0	vigia-atascados.test.mjs			
+117748919968	39152530606	pull_request	scrum-1345b-ciego-por-plazo-sin-plazo	2026-10-18T18:05:07Z	cancelled	CORTADO	591	608	17	155	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117748777263		
+117749120820	39152597462	pull_request	scrum-1011b-lanzar-dice-por-que	2026-10-18T18:05:58Z	cancelled	CORTADO	591	608	17	155	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117748777263		
+117749226646	39152633421	pull_request	scrum-1298c-sin-mesa-lanza-desde-el-repo	2026-10-18T18:06:27Z	cancelled	CORTADO	591	608	17	155	4	0	1	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117748777263		scrum859-identidad-y-motivo-cerrado.test.mjs
+117751198291	39153289449	pull_request	scrum-49b-albaran-estado-real-de-entrega	2026-10-18T18:15:02Z	cancelled	CORTADO	591	608	17	155	4	0	1	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117928519578		scrum757-la-declaracion-que-nadie-lee.test.mjs
+117751462599	39153381354	pull_request	scrum-1236e-para-javier-18oct	2026-10-18T18:16:10Z	cancelled	CORTADO	317	608	291	85	74	0	0	0	scrum755-el-contador-que-cuadro-solo.test.mjs	117928519578		
+117752910344	39153504063	push	main	2026-10-18T18:17:45Z	cancelled	CORTADO	591	608	17	155	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117928519578		
+117752696546	39153797095	pull_request	scrum-1206e-ficha-del-albaran-en-rejilla	2026-10-18T18:21:38Z	cancelled	CORTADO	589	608	19	154	5	0	0	0	scrum954-vivo-no-es-listado.test.mjs	117928519578		
+117928519578	39154000154	pull_request	scrum-1300c-memoria-contra-el-arbol	2026-10-18T18:24:20Z	success	COMPLETO	608	608		159		0	0	0	vigia-atascados.test.mjs			
+117755261188	39154554724	pull_request	scrum-809c-webhook-invalid-date-confirmado	2026-10-18T18:31:40Z	cancelled	CORTADO	590	608	18	155	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117755788828		
+117755642469	39154712832	pull_request	scrum-1236e-para-javier-18oct	2026-10-18T18:33:42Z	cancelled	CORTADO	590	608	18	155	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117755788828		
+117755788828	39154830979	pull_request	scrum-49c-albaran-expone-enlace-de-firma	2026-10-18T18:35:14Z	success	COMPLETO	608	608		159		0	0	0	vigia-atascados.test.mjs			
+117755867228	39154857791	pull_request	scrum-1503c-el-lector-ve-el-caminante-en-el-sitio	2026-10-18T18:35:34Z	cancelled	CORTADO	594	608	14	155	5	0	0	0	scrum954-vivo-no-es-listado.test.mjs	117755788828		
+117756846502	39155187707	pull_request	scrum-1466-sembrar-qa-compara-sin-orden	2026-10-18T18:39:54Z	cancelled	CORTADO	593	608	15	156	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117755788828		
+117759661515	39156147912	pull_request	scrum-1444c-numero-visible-en-las-respuestas	2026-10-18T18:52:18Z	cancelled	CORTADO	591	608	17	155	4	0	1	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117761811017		scrum859-identidad-y-motivo-cerrado.test.mjs
+117759952260	39156245897	pull_request	scrum-1177b-la-barra-en-un-navegador	2026-10-18T18:53:37Z	cancelled	CORTADO	591	608	17	155	4	0	1	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117761811017		scrum859-identidad-y-motivo-cerrado.test.mjs
+117923435204	39156812508	pull_request	scrum-231b-exports-sin-cache-compartida	2026-10-18T19:01:06Z	cancelled	CORTADO	587	608	21	154	5	0	0	0	scrum954-vivo-no-es-listado.test.mjs	117761811017		
+117761811017	39156877461	pull_request	scrum-951j-banco-que-localiza-por-clase	2026-10-18T19:02:01Z	success	COMPLETO	608	608		159		0	0	0	vigia-atascados.test.mjs			
+117762080879	39156971189	pull_request	scrum-1563b-estado-al-dia	2026-10-18T19:03:12Z	success	COMPLETO	608	608		159		0	0	0	vigia-atascados.test.mjs			
+117762482366	39156976099	push	main	2026-10-18T19:03:15Z	cancelled	CORTADO	596	608	12	156	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117762080879		
+117762227889	39157021489	pull_request	scrum-1233h-copiar-enlace-sin-enlace	2026-10-18T19:03:50Z	cancelled	CORTADO	67	608	541	21	138	0	0	0	scrum1302p-el-aviso-antes-de-crear-la-revision.test.mjs	117762080879		
+117762345930	39157061122	pull_request	scrum-1559i-tabla-albaranes-desde-900	2026-10-18T19:04:19Z	cancelled	CORTADO	595	608	13	156	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117762080879		
+117763541770	39157368239	pull_request	scrum-1233h-copiar-enlace-sin-enlace	2026-10-18T19:08:14Z	success	COMPLETO	613	613		160		0	0	0	vigia-atascados.test.mjs			
+117763780380	39157545156	pull_request	scrum-1237b-visto-en-prod	2026-10-18T19:10:31Z	cancelled	CORTADO	596	613	17	156	5	0	0	0	scrum954-vivo-no-es-listado.test.mjs	117763541770		
+117763852228	39157569525	pull_request	scrum-951k-fatal-heap-del-ci-es-deliberado	2026-10-18T19:10:49Z	cancelled	CORTADO	596	613	17	156	5	0	0	0	scrum954-vivo-no-es-listado.test.mjs	117763541770		
+117772908732	39159620511	push	main	2026-10-18T19:37:33Z	success	COMPLETO	615	615		161		0	0	0	vigia-atascados.test.mjs			
+117927104495	39211953731	pull_request	scrum-49d-pildora-solo-si-llego	2026-10-19T06:47:26Z	success	COMPLETO	615	615		161		0	0	0	vigia-atascados.test.mjs			
+117927432012	39212057312	pull_request	scrum-1563c-estado-19oct	2026-10-19T06:48:29Z	cancelled	CORTADO	276	615	339	72	89	0	0	0	scrum691-contraste-de-tokens.test.mjs	117927104495		
+117927570814	39212101431	push	main	2026-10-19T06:48:57Z	cancelled	CORTADO	596	615	19	156	5	0	0	0	scrum954-vivo-no-es-listado.test.mjs	117927104495		
+117928139409	39212283374	pull_request	scrum-1357h-sala-carga-mods-yaqu	2026-10-19T06:50:48Z	cancelled	CORTADO	593	615	22	155	6	0	0	0	scrum951d-ensayo-instalacion.test.mjs	117927104495		
+117929895062	39212795851	pull_request	scrum-1563c-estado-19oct	2026-10-19T06:56:01Z	cancelled	CORTADO	596	615	19	156	5	0	1	0	scrum954-vivo-no-es-listado.test.mjs	117931907034		scrum859-identidad-y-motivo-cerrado.test.mjs
+117930049607	39212895542	pull_request	scrum-1011b-lanzar-dice-por-que	2026-10-19T06:57:01Z	cancelled	CORTADO	597	615	18	157	4	0	1	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117931907034		scrum859-identidad-y-motivo-cerrado.test.mjs
+117930573557	39213062899	pull_request	scrum-1265-casillas-de-pago-44px	2026-10-19T06:58:44Z	cancelled	CORTADO	596	615	19	156	5	0	0	0	scrum954-vivo-no-es-listado.test.mjs	117931907034		
+117931907034	39213486488	pull_request	scrum-1428-para-javier-19oct	2026-10-19T07:02:53Z	failure	COMPLETO	615	615		161		0	3	0	vigia-atascados.test.mjs			vigia-atascados.test.mjs,vigia-atascados.test.mjs,vigia-atascados.test.mjs
+117932005812	39213518551	pull_request	scrum-1236f-privacidad-92-pagina-emitida	2026-10-19T07:03:11Z	success	COMPLETO	615	615		161		0	0	0	vigia-atascados.test.mjs			
+117932032951	39213527137	pull_request	scrum-49d-visto-en-prod	2026-10-19T07:03:15Z	success	COMPLETO	615	615		161		0	0	0	vigia-atascados.test.mjs			
+117933938438	39214130206	pull_request	scrum-1300c-memoria-contra-el-arbol	2026-10-19T07:09:02Z	success	COMPLETO	615	615		161		0	0	0	vigia-atascados.test.mjs			
+117934996015	39214466139	pull_request	scrum-231b-visto-en-prod	2026-10-19T07:12:09Z	success	COMPLETO	615	615		161		0	0	0	vigia-atascados.test.mjs			
+117937381449	39215138019	push	main	2026-10-19T07:18:26Z	cancelled	CORTADO	583	615	32	154	7	0	0	0	scrum951a-equipo-configurable.test.mjs	117934996015		
+117939636608	39215928395	pull_request	scrum-1516b-frontera-al-obligatorio	2026-10-19T07:25:50Z	cancelled	CORTADO	597	615	18	157	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117934996015		
+117940297750	39216131645	pull_request	scrum-1554c-puerta-go-live-en-fichero	2026-10-19T07:27:45Z	cancelled	CORTADO	186	615	429	47	114	0	0	0	scrum1463b-cierre-sin-clic.test.mjs	117934996015		
+117941034751	39216357981	pull_request	scrum-1357h-sala-carga-mods-yaqu	2026-10-19T07:29:54Z	cancelled	CORTADO	124	615	491	36	125	0	0	0	scrum1363-tests-que-cubren.test.mjs	117934996015		
+117942851871	39216928002	pull_request	scrum-1233i-email-sin-accion-no-se-pinta	2026-10-19T07:35:06Z	cancelled	CORTADO	597	615	18	157	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	117948197887		
+117943335101	39216938996	pull_request	scrum-1357h-sala-carga-mods-yaqu	2026-10-19T07:35:11Z	cancelled	CORTADO	596	615	19	156	5	0	0	0	scrum954-vivo-no-es-listado.test.mjs	117948197887		
+117944287128	39217122718	pull_request	scrum-1554c-puerta-go-live-en-fichero	2026-10-19T07:36:53Z	cancelled	CORTADO	102	615	513	32	129	0	0	0	scrum1342-plan-desconocido-no-calla.test.mjs	117948197887		
+117943842586	39217235482	pull_request	scrum-1390b-ics-sin-trabajo-ajeno	2026-10-19T07:37:56Z	cancelled	CORTADO	586	615	29	154	7	0	0	0	scrum951a-equipo-configurable.test.mjs	117948197887		
+117946019048	39217704463	pull_request	scrum-1554c-puerta-go-live-en-fichero	2026-10-19T07:42:21Z	cancelled	CORTADO	596	615	19	156	5	0	0	0	scrum954-vivo-no-es-listado.test.mjs	117948197887		
+117945663264	39217797487	pull_request	scrum-1563d-estado-19oct-tarde	2026-10-19T07:43:14Z	cancelled	CORTADO	585	615	30	154	7	0	0	0	scrum951a-equipo-configurable.test.mjs	117948197887		
+117948197887	39218463552	push	main	2026-10-19T07:49:19Z	failure	COMPLETO	615	615		161		0	1	0	vigia-atascados.test.mjs			scrum859-identidad-y-motivo-cerrado.test.mjs
+117959057155	39218813067	push	main	2026-10-19T07:52:28Z	success	COMPLETO	615	615		161		0	0	0	vigia-atascados.test.mjs			
+118026818774	39242614393	pull_request	scrum-49e-copiar-enlace-de-firma	2026-10-19T11:09:41Z	success	COMPLETO	615	615		161		0	0	0	vigia-atascados.test.mjs			
+118027112017	39242706610	pull_request	scrum-1554c-puerta-go-live-en-fichero	2026-10-19T11:10:24Z	cancelled	CORTADO	580	615	35	154	7	0	0	0	scrum951a-equipo-configurable.test.mjs	118026818774		
+118029415910	39243414956	pull_request	scrum-1529-censo-equipo-javier-27	2026-10-19T11:16:09Z	cancelled	CORTADO	68	615	547	21	140	0	0	0	scrum1302p-el-aviso-antes-de-crear-la-revision.test.mjs	118030598053		
+118030598053	39243666743	pull_request	scrum-1529-censo-equipo-javier-27	2026-10-19T11:18:15Z	failure	COMPLETO	615	615		161		0	1	0	vigia-atascados.test.mjs			scrum859-identidad-y-motivo-cerrado.test.mjs
+118031263932	39243970370	push	main	2026-10-19T11:20:49Z	cancelled	CORTADO	574	615	41	153	8	0	0	0	scrum949-el-suelo-como-cociente.test.mjs	118030598053		
+118031421826	39244019034	pull_request	scrum-1545c-tiers-de-plantilla-con-forma	2026-10-19T11:21:13Z	cancelled	CORTADO	596	615	19	156	5	0	0	0	scrum954-vivo-no-es-listado.test.mjs	118030598053		
+118031974084	39244184178	pull_request	scrum-1357i-propuesta-aviso-permiso-colgado	2026-10-19T11:22:37Z	cancelled	CORTADO	578	615	37	154	7	0	1	0	scrum951a-equipo-configurable.test.mjs	118030598053		scrum859-identidad-y-motivo-cerrado.test.mjs
+118033017813	39244498878	pull_request	scrum-1554b-los-57-por-tipo	2026-10-19T11:25:13Z	cancelled	CORTADO	596	615	19	156	5	0	0	0	scrum954-vivo-no-es-listado.test.mjs	118030598053		
+118047745303	39244881162	pull_request	scrum-1559j-productos-44px	2026-10-19T11:28:27Z	cancelled	CORTADO	596	615	19	156	5	0	0	0	scrum954-vivo-no-es-listado.test.mjs	118030598053		
+118036110598	39245439172	pull_request	scrum-786d-albaran-pdf-lineas-44px	2026-10-19T11:33:03Z	cancelled	CORTADO	596	615	19	156	5	0	1	0	scrum954-vivo-no-es-listado.test.mjs	118030598053		scrum859-identidad-y-motivo-cerrado.test.mjs
+118036936565	39245697150	pull_request	scrum-1056e-carriles-de-fichero-inexistente	2026-10-19T11:35:10Z	cancelled	CORTADO	573	615	42	153	8	0	0	0	scrum949-el-suelo-como-cociente.test.mjs	118030598053		
+118040680760	39246830438	pull_request	scrum-1493c-casilla-propuesta-mismo-estilo	2026-10-19T11:44:35Z	cancelled	CORTADO	585	615	30	154	7	0	0	0	scrum951a-equipo-configurable.test.mjs	118048269905		
+118041690409	39247138932	pull_request	scrum-1516b-frontera-al-obligatorio	2026-10-19T11:47:02Z	cancelled	CORTADO	597	615	18	157	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	118048269905		
+118042451212	39247363850	pull_request	scrum-1444d-importes-pantalla-y-papel	2026-10-19T11:48:55Z	cancelled	CORTADO	69	615	546	21	140	0	0	0	scrum1302p-el-aviso-antes-de-crear-la-revision.test.mjs	118048269905		
+118042513376	39247382691	pull_request	scrum-1559k-albaranes-769-899	2026-10-19T11:49:05Z	cancelled	CORTADO	500	615	115	132	29	0	0	0	scrum853-lecturas-que-fallan-cerrado.test.mjs	118048269905		
+118043325261	39247384947	push	main	2026-10-19T11:49:06Z	cancelled	CORTADO	585	615	30	154	7	0	1	0	scrum951a-equipo-configurable.test.mjs	118048269905		scrum859-identidad-y-motivo-cerrado.test.mjs
+118043866793	39247627538	pull_request	scrum-1444d-importes-pantalla-y-papel	2026-10-19T11:51:08Z	cancelled	CORTADO	69	615	546	21	140	0	0	0	scrum1302p-el-aviso-antes-de-crear-la-revision.test.mjs	118048269905		
+118046331096	39248367095	pull_request	scrum-1444d-importes-pantalla-y-papel	2026-10-19T11:57:16Z	cancelled	CORTADO	273	615	342	70	91	0	0	0	scrum641-nombre-cogido-sin-500.test.mjs	118048269905		
+118048269905	39249121418	pull_request	scrum-624c-total-del-papel-por-tramos	2026-10-19T12:03:33Z	success	COMPLETO	615	615		161		0	0	0	vigia-atascados.test.mjs			
+118048388698	39249156066	pull_request	scrum-623b-xml-y-papel-discrepan	2026-10-19T12:03:51Z	failure	COMPLETO	615	615		161		0	1	0	vigia-atascados.test.mjs			scrum859-identidad-y-motivo-cerrado.test.mjs
+118049658795	39249311043	pull_request	scrum-1444d-importes-pantalla-y-papel	2026-10-19T12:05:05Z	success	COMPLETO	615	615		161		0	0	0	vigia-atascados.test.mjs			
+118049541774	39249506242	pull_request	scrum-1070-medida-yaqu-ruta-19oct	2026-10-19T12:06:37Z	cancelled	CORTADO	522	615	93	140	21	0	0	0	scrum876f-el-seco-se-decide-al-enviar.test.mjs	118049658795		
+118052275634	39250332193	pull_request	scrum-1072d-pregunta-de-actividad	2026-10-19T12:13:04Z	cancelled	CORTADO	603	615	12	158	3	0	0	0	scrum976-guards-entrada-con-techo.test.mjs	118053068636		
+118053068636	39250396115	pull_request	scrum-1559k-albaranes-769-899	2026-10-19T12:13:35Z	success	COMPLETO	615	615		161		0	0	0	vigia-atascados.test.mjs			
+118057483609	39251559428	push	main	2026-10-19T12:22:31Z	cancelled	CORTADO	592	615	23	155	6	0	0	0	scrum951d-ensayo-instalacion.test.mjs	118070958615		
+118070958615	39252337299	push	main	2026-10-19T12:28:33Z	success	COMPLETO	615	615		161		0	0	0	vigia-atascados.test.mjs			
+118557914755	39401763044	pull_request	scrum-1565-fin-de-periodo-clover	2026-10-20T09:35:15Z	cancelled	CORTADO	583	615	32	154	7	0	0	0	scrum951a-equipo-configurable.test.mjs	118576950868		
+118560198911	39402442507	pull_request	scrum-1496d-triaje-de-los-169	2026-10-20T09:40:47Z	cancelled	CORTADO	597	615	18	157	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	118576950868		
+118562930102	39403263745	push	main	2026-10-20T09:47:33Z	cancelled	CORTADO	598	615	17	157	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	118576950868		
+118575013040	39403614651	push	main	2026-10-20T09:50:29Z	cancelled	CORTADO	582	615	33	154	7	0	0	0	scrum951a-equipo-configurable.test.mjs	118576950868		
+118566805246	39404434727	pull_request	scrum-914-j3-borrado-y-anonimizado-equipos	2026-10-20T09:57:17Z	cancelled	CORTADO	598	615	17	157	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	118576950868		
+118587007440	39405324553	pull_request	scrum-1565b-sin-victima-hoy	2026-10-20T10:04:39Z	cancelled	CORTADO	582	615	33	154	7	0	0	0	scrum951a-equipo-configurable.test.mjs	118576950868		
+118571104584	39405741620	pull_request	scrum-1456b-borrar-y-fusionar-con-id-que-cabe	2026-10-20T10:08:01Z	cancelled	CORTADO	384	615	231	105	56	0	0	0	scrum783-seleccion-sobrevive-navegacion.test.mjs	118576950868		
+118576179222	39407211337	pull_request	scrum-1456b-borrar-y-fusionar-con-id-que-cabe	2026-10-20T10:20:14Z	cancelled	CORTADO	598	615	17	157	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	118576950868		
+118576950868	39407519071	pull_request	scrum-1569-censo-ciego	2026-10-20T10:22:50Z	failure	COMPLETO	615	615		161		0	1	0	vigia-atascados.test.mjs			scrum859-identidad-y-motivo-cerrado.test.mjs
+118581906968	39409023272	pull_request	scrum-1569-la-linea-contactname	2026-10-20T10:35:32Z	cancelled	CORTADO	79	615	536	27	134	0	0	0	scrum1330-una-sellada-no-se-resella.test.mjs	118586767551		
+118586767551	39409183666	push	main	2026-10-20T10:36:54Z	success	COMPLETO	615	615		161		0	0	0	vigia-atascados.test.mjs			
+118583313780	39409224779	pull_request	scrum-1569-la-linea-contactname	2026-10-20T10:37:16Z	cancelled	CORTADO	5	615	610	2	159	0	0	0	scrum1007-1011-1026-relevo-lanzar-bloqueo.test.mjs	118586767551		
+118698647382	39409534555	pull_request	scrum-1569-la-linea-contactname	2026-10-20T10:39:59Z	success	COMPLETO	615	615		161		0	0	0	vigia-atascados.test.mjs			
+118586478339	39410403526	pull_request	scrum-1509g-el-tope-bloquea	2026-10-20T10:47:23Z	cancelled	CORTADO	596	615	19	156	5	0	0	0	scrum954-vivo-no-es-listado.test.mjs	118698647382		
+118596558918	39412199759	push	main	2026-10-20T11:03:00Z	cancelled	CORTADO	598	615	17	157	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	118598629536		
+118598629536	39414054768	pull_request	scrum-1149-fila-de-clientes-44	2026-10-20T11:18:50Z	success	COMPLETO	615	615		161		0	0	0	vigia-atascados.test.mjs			
+118608468689	39415687417	push	main	2026-10-20T11:32:31Z	cancelled	CORTADO	601	615	14	158	3	0	1	0	scrum976-guards-entrada-con-techo.test.mjs	118598629536		scrum859-identidad-y-motivo-cerrado.test.mjs
+118713672528	39447636547	pull_request	scrum-1455b-factura-decimal-medida	2026-10-20T15:21:27Z	cancelled	CORTADO	600	615	15	158	3	0	0	0	scrum976-guards-entrada-con-techo.test.mjs	118717000162		
+118717000162	39448585012	pull_request	scrum-1527e-cero-tras-2429-y-e-descartada	2026-10-20T15:27:33Z	failure	COMPLETO	615	615		161		0	1	0	vigia-atascados.test.mjs			scrum859-identidad-y-motivo-cerrado.test.mjs
+118721406583	39449841582	push	main	2026-10-20T15:35:34Z	cancelled	CORTADO	577	615	38	154	7	0	1	0	scrum951a-equipo-configurable.test.mjs	118717000162		scrum859-identidad-y-motivo-cerrado.test.mjs
+119218368386	39598992594	pull_request	scrum-1569d-cinco-campos-al-anonimizado	2026-10-21T12:21:50Z	success	COMPLETO	615	615		161		0	0	0	vigia-atascados.test.mjs			
+119219731792	39599395268	pull_request	scrum-1393c-vigia-main-por-commit	2026-10-21T12:24:54Z	failure	COMPLETO	615	615		161		0	1	0	vigia-atascados.test.mjs			scrum859-identidad-y-motivo-cerrado.test.mjs
+119221707958	39599974620	pull_request	scrum-1456c-cobros-y-psp-con-id-que-cabe	2026-10-21T12:29:14Z	cancelled	CORTADO	598	615	17	157	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	119219731792		
+119222039083	39600073687	pull_request	scrum-1509h-veinte-por-hora	2026-10-21T12:29:59Z	cancelled	CORTADO	586	615	29	155	7	0	1	0	scrum951a-equipo-configurable.test.mjs	119219731792		scrum859-identidad-y-motivo-cerrado.test.mjs
+119222836838	39600310953	pull_request	scrum-1405d-la-cifra-medida	2026-10-21T12:31:40Z	cancelled	CORTADO	607	615	8	159	3	0	0	0	scrum976-guards-entrada-con-techo.test.mjs	119219731792		
+119225222483	39601017625	pull_request	scrum-1260b-el-emisor-ya-no-escribe-just	2026-10-21T12:36:58Z	cancelled	CORTADO	584	615	31	154	7	0	0	0	scrum951a-equipo-configurable.test.mjs	119219731792		
+119227219984	39601605945	push	main	2026-10-21T12:41:25Z	cancelled	CORTADO	598	615	17	157	4	0	0	1	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	119219731792		
+119232826164	39603249616	pull_request	scrum-1570b-marcadores-ficha-gasto	2026-10-21T12:53:23Z	cancelled	CORTADO	597	619	22	156	6	0	0	0	scrum951d-ensayo-instalacion.test.mjs	119235365064		
+119234335137	39603691610	pull_request	scrum-1218b-censo-fetch-a-traves-de-llamada	2026-10-21T12:56:35Z	cancelled	CORTADO	602	619	17	158	4	0	1	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	119235365064		scrum859-identidad-y-motivo-cerrado.test.mjs
+119235365064	39603985294	pull_request	scrum-1393c-vigia-main-por-commit	2026-10-21T12:58:47Z	success	COMPLETO	619	619		162		0	0	0	vigia-atascados.test.mjs			
+119238978494	39605052252	pull_request	scrum-1574-la-sonda-no-decide-el-salto	2026-10-21T13:06:09Z	success	COMPLETO	622	622		162		0	0	0	vigia-atascados.test.mjs			
+119241890429	39605731375	push	main	2026-10-21T13:10:55Z	failure	COMPLETO	619	619		162		0	1	0	vigia-atascados.test.mjs			scrum859-identidad-y-motivo-cerrado.test.mjs
+119241470665	39605781276	pull_request	scrum-1260c-los-cinco-escritores-sin-just	2026-10-21T13:11:15Z	cancelled	CORTADO	588	619	31	155	7	0	1	0	scrum951a-equipo-configurable.test.mjs	119241890429		scrum859-identidad-y-motivo-cerrado.test.mjs
+119243885672	39606487967	pull_request	scrum-1571-borrar-ajeno-contesta-404	2026-10-21T13:16:01Z	cancelled	CORTADO	455	623	168	122	41	0	0	0	scrum813-trinquete-de-zona.test.mjs	119244448930		
+119244448930	39606649146	pull_request	scrum-1509h-veinte-por-hora	2026-10-21T13:17:08Z	success	COMPLETO	623	623		163		0	0	0	vigia-atascados.test.mjs			
+119247794684	39607402234	pull_request	scrum-1570b-marcadores-ficha-gasto	2026-10-21T13:22:14Z	failure	COMPLETO	622	622		162		0	0	1	vigia-atascados.test.mjs			
+119254552518	39608197965	push	main	2026-10-21T13:27:46Z	cancelled	CORTADO	604	622	18	158	4	0	0	0	scrum959b-el-arranque-no-duplica-el-equipo.test.mjs	119247794684		
+119254698747	39609608390	pull_request	scrum-1393d-cierre-con-verde	2026-10-21T13:37:24Z	cancelled	CORTADO	614	626	12	160	3	0	2	0	scrum976-guards-entrada-con-techo.test.mjs	119256514460		scrum1349-entorno-prestado-solo-baja.test.mjs,scrum1349-entorno-prestado-solo-baja.test.mjs
+119256073262	39609998235	pull_request	scrum-1572-registro-creado-por-dos-ramas	2026-10-21T13:40:10Z	cancelled	CORTADO	598	626	28	157	7	0	1	0	scrum951a-equipo-configurable.test.mjs	119256514460		scrum859-identidad-y-motivo-cerrado.test.mjs
+119256514460	39610056116	pull_request	scrum-1571-borrar-ajeno-contesta-404	2026-10-21T13:40:32Z	failure	COMPLETO	626	626		163		0	1	1	vigia-atascados.test.mjs			scrum859-identidad-y-motivo-cerrado.test.mjs
+119268333902	39613457112	pull_request	scrum-1393d-cierre-con-verde	2026-10-21T14:03:34Z	cancelled	CORTADO	550	626	76	148	16	0	0	0	scrum899b-arranque-de-la-tanda.test.mjs	119256514460		
+119268912847	39613682832	pull_request	scrum-1058b-visto-bueno-j1	2026-10-21T14:05:03Z	cancelled	CORTADO	577	626	49	154	10	0	0	0	scrum938-la-lista-como-fixture.test.mjs	119256514460		
+119270205540	39613708786	push	main	2026-10-21T14:05:12Z	cancelled	CORTADO	553	626	73	148	16	0	1	0	scrum899b-arranque-de-la-tanda.test.mjs	119256514460		scrum859-identidad-y-motivo-cerrado.test.mjs
+119270070437	39614014990	pull_request	scrum-1570c-altura-barra-anuncio	2026-10-21T14:07:09Z	cancelled	CORTADO	585	630	45	156	8	0	0	0	scrum949-el-suelo-como-cociente.test.mjs	119285448649		
+119270276513	39614071852	pull_request	scrum-524c-preguntas-asesor	2026-10-21T14:07:32Z	cancelled	CORTADO	583	630	47	155	9	0	0	0	scrum939b-trinquete-de-las-skills.test.mjs	119285448649		
+119274631808	39615309299	pull_request	scrum-524d-preguntas-al-documento	2026-10-21T14:15:40Z	cancelled	CORTADO	584	630	46	156	8	0	0	0	scrum949-el-suelo-como-cociente.test.mjs	119285448649		
+119278944432	39616520363	pull_request	scrum-1538c-rojos-sin-dueno	2026-10-21T14:24:13Z	cancelled	CORTADO	567	630	63	150	14	0	0	0	scrum899d-aviso-de-uso.test.mjs	119285448649		
+119285448649	39617471945	push	main	2026-10-21T14:31:01Z	failure	COMPLETO	630	630		164		0	1	0	vigia-atascados.test.mjs			scrum859-identidad-y-motivo-cerrado.test.mjs
+119282958328	39617731311	pull_request	scrum-1393e-absolver-sustituidos	2026-10-21T14:32:45Z	cancelled	CORTADO	584	630	46	156	8	0	0	0	scrum949-el-suelo-como-cociente.test.mjs	119283569932		
+119283569932	39617921753	pull_request	scrum-1571b-escrituras-ajenas-404	2026-10-21T14:34:00Z	success	COMPLETO	630	630		164		0	0	0	vigia-atascados.test.mjs			
+119286031873	39618688017	pull_request	scrum-1569e-dev-contra-main	2026-10-21T14:38:59Z	cancelled	CORTADO	576	630	54	153	11	0	2	0	scrum928b-el-veredicto-que-el-color-tapa.test.mjs	119283569932		scrum757-la-declaracion-que-nadie-lee.test.mjs,scrum859-identidad-y-motivo-cerrado.test.mjs
+119288747061	39619475877	pull_request	scrum-1571c-findfirst-null-404	2026-10-21T14:44:19Z	success	COMPLETO	630	630		164		0	0	0	vigia-atascados.test.mjs			
+119298555635	39620781606	push	main	2026-10-21T14:53:07Z	success	COMPLETO	630	630		164		0	0	0	vigia-atascados.test.mjs			
+119295842502	39621490856	pull_request	scrum-1538d-que-quito-las-colgadas	2026-10-21T14:57:56Z	failure	COMPLETO	630	630		164		0	1	0	vigia-atascados.test.mjs			scrum859-identidad-y-motivo-cerrado.test.mjs
+119310271644	39625711200	pull_request	scrum-935c-coste-del-meta-guard	2026-10-21T15:26:32Z	cancelled	CORTADO	595	630	35	157	7	0	0	0	scrum951a-equipo-configurable.test.mjs	119295842502		
+119311902573	39625990144	push	main	2026-10-21T15:28:18Z	cancelled	CORTADO	576	630	54	153	11	0	0	0	scrum928b-el-veredicto-que-el-color-tapa.test.mjs	119295842502		
+119314008433	39626796393	pull_request	scrum-1393f-absolver-sin-run	2026-10-21T15:33:41Z	cancelled	CORTADO	583	630	47	155	9	0	0	0	scrum939b-trinquete-de-las-skills.test.mjs	119295842502		
+119327979037	39628953329	push	main	2026-10-21T15:48:04Z	cancelled	CORTADO	599	630	31	157	7	0	0	0	scrum951a-equipo-configurable.test.mjs	119295842502		

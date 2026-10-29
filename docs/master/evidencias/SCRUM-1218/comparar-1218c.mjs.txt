@@ -1,0 +1,46 @@
+// comparar-1218c.mjs — compara ANTES y DESPUÉS de cada fichero como CONJUNTOS: los casos (nivel|nombre →
+// veredicto) y las respuestas del servidor (método ruta status, con los dígitos plegados), pasada a pasada
+// y en la unión de las 20. Lleva un control SEMBRADO: una copia del ANTES con un veredicto cambiado y una
+// respuesta de más tiene que salir DISTINTA; si sale igual, el comparador está CIEGO.
+import fs from 'node:fs';
+
+const FICHEROS = ['scrum1346-el-tecnico-ve-documentos-ajenos', 'scrum1397-el-tecnico-ve-sus-facturas', 'scrum1403-el-tecnico-y-las-otras-puertas'];
+const plegar = (r) => r.replace(/\d+/g, '#');
+const firmaCasos = (p) => JSON.stringify(Object.entries(p.casos).sort());
+const firmaResp = (p) => JSON.stringify(p.resp.map(plegar).sort());
+
+function comparar(a, b) {
+  const casosA = new Set(a.pasadas.map(firmaCasos)); const casosB = new Set(b.pasadas.map(firmaCasos));
+  const respA = new Set(a.pasadas.map(firmaResp)); const respB = new Set(b.pasadas.map(firmaResp));
+  const igual = (x, y) => x.size === y.size && [...x].every((v) => y.has(v));
+  return {
+    pasadas: `${a.pasadas.length}/${b.pasadas.length}`,
+    casos: igual(casosA, casosB) ? 'IGUAL' : 'DISTINTO',
+    variantesCasos: `${casosA.size}/${casosB.size}`,
+    respuestas: igual(respA, respB) ? 'IGUAL' : 'DISTINTO',
+    variantesResp: `${respA.size}/${respB.size}`,
+    abortos: `${a.pasadas.filter((p) => p.firma || p.codigo !== 0).length}/${b.pasadas.filter((p) => p.firma || p.codigo !== 0).length}`,
+    nCasos: Object.keys(a.pasadas[0].casos).length,
+    nResp: a.pasadas[0].resp.length,
+  };
+}
+
+let malos = 0;
+for (const f of FICHEROS) {
+  const a = JSON.parse(fs.readFileSync(`antes/${f}.json`, 'utf8'));
+  const b = JSON.parse(fs.readFileSync(`despues/${f}.json`, 'utf8'));
+  const r = comparar(a, b);
+  if (r.casos !== 'IGUAL' || r.respuestas !== 'IGUAL' || r.abortos !== '0/0' || r.nCasos === 0 || r.nResp === 0) malos++;
+  console.log(f, JSON.stringify(r));
+  // Control sembrado: la misma comparación contra un ANTES alterado tiene que dar DISTINTO en las dos patas.
+  const s = structuredClone(a);
+  const k = Object.keys(s.pasadas[0].casos)[0];
+  s.pasadas[0].casos[k] = s.pasadas[0].casos[k] === 'ok' ? 'not ok' : 'ok';
+  s.pasadas[0].resp.push('GET /sembrada 302');
+  const c = comparar(s, b);
+  const vivo = c.casos === 'DISTINTO' && c.respuestas === 'DISTINTO';
+  if (!vivo) malos++;
+  console.log(`  control sembrado: casos=${c.casos} respuestas=${c.respuestas} → ${vivo ? 'VIVO' : 'CIEGO'}`);
+}
+console.log(`POBLACION=${FICHEROS.length} ficheros · malos=${malos} · EXIT=${malos ? 1 : 0}`);
+process.exit(malos ? 1 : 0);

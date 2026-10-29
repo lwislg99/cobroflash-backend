@@ -33,7 +33,8 @@ const REPARTO = require_(path.join(RAIZ, 'public/dashboard/js/jobDocsReparto.js'
 
 const fmt = (n) => `${Number(n).toFixed(2)} EUR`;
 
-/** El ejemplo aprobado por el fundador, con sus números exactos. */
+/** El ejemplo aprobado por el fundador, con sus números exactos.
+ *  Consta en: SCRUM-1502 comentario 20629. */
 const jobDelEjemplo = () => ({
   totalAceptado: 853.05,
   totalCobrado: 300,
@@ -258,6 +259,7 @@ test('SCRUM-320 · si la cabecera propone una acción de COBRO, G5 lista algún 
 // test, porque el siguiente que lo lea creerá que está decidido.**
 //
 // Lo que aquel test protegía lo protege ahora el invariante de arriba, sin exclusiones.
+// Consta en: SCRUM-1502 comentario 20834.
 
 test('SCRUM-320 · C4 · el Trabajo SIN NADA FACTURADO ya no se queda mudo', () => {
   // El caso que destapó el invariante: 100 % del dinero fuera y la sección callada. Callarse ahí

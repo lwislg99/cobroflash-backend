@@ -1,0 +1,33 @@
+censo del instrumento: 164 guards · 630 mutaciones
+scrum976-guards-entrada-con-techo.test.mjs · fichero 16.7 s · 6 mutaciones
+     0.2 s · SCRUM-1386 ⑦ un runner que acaba SIN su resumen
+     1.7 s · SCRUM-1386 ⑨ el comando de verdad
+     0.4 s · SCRUM-1386 ⑧ un fichero MUERTO
+     0.4 s · SCRUM-1386 ⑧ un fichero MUERTO
+     0.4 s · SCRUM-1386 ⑧ un fichero MUERTO
+     0.2 s · SCRUM-1386 ⑦ un runner que acaba SIN su resumen
+scrum710b-anclaje-por-identidad.test.mjs · fichero 23.0 s · 5 mutaciones
+     0.0 s · una cita TROCEADA con todas sus piezas escritas
+     0.0 s · una cita TROCEADA con todas sus piezas escritas
+     0.0 s · EL LÍMITE: con una pieza en un nombre
+     2.6 s · los anclajes por NÚMERO DE LÍNEA no crecen
+     2.6 s · los anclajes por NÚMERO DE LÍNEA no crecen
+scrum853c-el-vigia-no-se-cree-un-error.test.mjs · fichero 15.4 s · 3 mutaciones
+     0.4 s · FECHA · si no se puede leer cuándo se empujó, no se inventa un NaN
+     0.1 s · NUM · si no se puede buscar el issue, la pasada PARA
+     0.1 s · ANTES · una memoria que no se puede leer NO es una memoria vacía
+scrum775-suelo-que-no-dispara.test.mjs · fichero 46.3 s · 3 mutaciones
+     0.9 s · SCRUM-775 · 🔴 EL QUE DECIDE: con el censo encogido el CLI sale con 2 y DICE por qué
+     4.8 s · SCRUM-775 · ✅ POSITIVO: con el censo SIN encoger el CLI sigue saliendo con 0
+     0.0 s · SCRUM-775 · 🔴 CONTROL POSITIVO: el censo caza los DOS casos conocidos, el roto y el bueno
+scrum1007-1011-1026-relevo-lanzar-bloqueo.test.mjs · fichero 10.6 s · 3 mutaciones
+     0.0 s · SCRUM-1007 · 🔴 EL CASO MEDIDO: traspaso 14,4 s ANTES del turno de «traspaso listo» → RELEVAR
+     0.0 s · SCRUM-1011 · comprobarQueArranco: solo un pid > 0 cuenta como arrancada
+     0.0 s · SCRUM-1026 · sesionesBloqueadas: separa las bloqueadas, con motivo y el proxy de tiempo
+scrum858b-la-tanda-sin-veredicto.test.mjs · fichero 9.6 s · 3 mutaciones
+     0.3 s · NEGATIVO: una tanda con un test ROJO nunca sale 0 por el envoltorio
+     0.2 s · una tanda que sale con 0 SIN línea de recuento sale con 4
+     8.7 s · una tanda MUDA más que el tope sale con 3, y para SOLO su árbol
+scrum959b-el-arranque-no-duplica-el-equipo.test.mjs · fichero 9.0 s · 2 mutaciones
+     0.0 s · 🔴 ROJO: con el equipo de hoy vivo bajo OTROS nombres, `lanzar orquestador` dice YA-VIVA
+     0.0 s · 🔴 un chat interactivo PARADO no cuenta como equipo

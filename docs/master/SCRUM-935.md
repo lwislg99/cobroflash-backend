@@ -211,3 +211,441 @@ mirando otro sitio. Queda escrito en el propio banco.
 **Cómo se mide el efecto tras el merge (no se da por hecho):** en las horas siguientes, `gh run list --workflow ci.yml --event push --branch main` y contar `cancelled`. Esperado: los `cancelled` que queden son pendientes sustituidos (sin `startedAt`), no runs con jobs a medias. Si siguen muriendo runs con jobs en curso, la línea no surtió efecto.
 
 **Ficheros:** `.github/workflows/ci.yml` (la línea y dos comentarios), `tests/scrum935b-main-no-cancela.test.mjs`, este apartado.
+
+## SCRUM-935c · por qué el meta-guard vuelve al techo: medición y propuesta (no construida)
+
+**Medido contra:** `origin/main` = `c47288f7e82fb9dea4473f71e161a3836ac788f3` · 2026-10-21T14:31:09Z
+J6 (`jv-j6t`, equipo de Javier) · **sólo mide y propone**: `scripts/meta-guard-mutaciones.mjs` es de S3,
+`tests/scrum813-trinquete-de-zona.test.mjs` y SCRUM-1494 son de S5, y `ci.yml` es de S5 y del fundador.
+Aquí no se toca ninguno. Jira no conectó en toda la sesión (`CONNECT_TIMEOUT` del MCP): el ticket NO se leyó.
+
+**El encargo:** el job meta-guard del run 39610056116 (PR #2640) dijo «1508 s · 83 % del presupuesto».
+Medido: **el 83 % es un superviviente.** Desde el 16-oct el job **muere en el techo de 30 min**.
+
+### 1 · La serie (población declarada)
+
+`muestrear-runs.mjs`: de cada día entre el 20-sep y el 21-oct, 4 runs de `ci.yml` repartidos en la lista
+del día (la API da 100 por página: en los días con más de 100, la muestra sale de los 100 más recientes)
+y, de 2 de ellos, el log entero. **104 runs**: 46 logs COMPLETOS, 20 jobs `cancelled`, 19 sin el job
+(saltado), 19 sin log bajado. Los 6 días sin runs (3-5 y 10-12 oct) los da así la API: no lo crucé.
+Controles del analizador, sembrados (`salida-controles-sembrados.tsv`): un log cortado sale CORTADO, uno
+vacío sale CIEGO, uno con una línea de resultado de más sale NO-CASA y el real sale COMPLETO. En los 46,
+las líneas de resultado suman exactamente `vivas + mudas + ciegas + muertos`.
+
+| fecha | N (mutaciones) | fase de mutación | s/mutación |
+|---|---|---|---|
+| 20-sep | 310 | 577-698 s | 1,86-2,25 |
+| 1-oct | 418 | 1.146 s | 2,74 |
+| 6-oct | 510 | 1.337 s | 2,62 |
+| 14-oct | 589 | 1.602 s | 2,72 |
+| 15-oct | 593 | 1.634 s | 2,76 |
+| 19-oct | 615 | 1.732 s | 2,82 |
+| 21-oct | 622 | 1.646 s | 2,65 |
+
+* **N se ha duplicado en 31 días** (310 → 622, unas 10 mutaciones al día). El coste por mutación del
+  runner va de 1,8 a 2,8 s, sin tendencia: es el sorteo del runner, que ya midió el tramo de arriba.
+* 🔴 **En el techo:** 7 jobs `cancelled` con el paso a 1.769-1.779 s, **todos desde el 16-oct** (3 el
+  16, 2 el 18, 2 el 20: dos de ellos son `push` a `main`). Desde el 16-oct, de los 14 jobs muestreados que
+  llegaron al final o al techo, **7 murieron en el techo**. Un job cortado no llega a su resumen: es
+  CIEGO, no lento. jv-j3u midió lo mismo sobre otra población (1.029 runs, 128 cortes; PR #2648): mi
+  muestra lo confirma por separado, y no copio su cifra.
+
+### 2 · Coste por guard y desde qué commit
+
+El instrumento corre los guards **en serie**: una pasada limpia del fichero y otra **del fichero entero
+por cada mutación**, y cada resultado sale en el log con su hora. Así que el coste de un guard es
+`(mutaciones + 1) × lo que tarda en cargarse y correr su fichero` (`analizar.mjs` → `guards-<run>.tsv`).
+
+Último log completo (run 39605052252, 21-oct, 622 mutaciones, 162 guards, 1.646 s): **los 10 guards más
+caros suman 761 s (el 46 %)**, y `scrum813-trinquete-de-zona` sola **286 s (el 17 %)**.
+
+Descomposición 20-sep → 21-oct (`salida-comparar-20sep-21oct.txt`, normalizada por el runner con la
+mediana de 49 guards que no cambiaron): base 691 s **+ 639 s de 69 guards nuevos** (279 mutaciones)
+**+ 286 s de que la MISMA mutación tarde más** + 31 s de mutaciones nuevas en guards viejos = 1.646 s
+(cuadra con lo medido).
+
+**Los 286 s son casi enteros de UN commit.** `scrum813` costaba unos 45 s (22 mutaciones a ~2 s) hasta el
+15-oct y **~285 s (26 a ~11 s)** desde el 17-oct. Entre medias entró el merge de #2486
+(`574e538065dd51f45cfdca078b3787d7f32fbb5a`, 16-oct 11:18:48Z, SCRUM-1494c «el hijo de zona corta por
+test y por pared»). Ese PR añadió un banco sembrado de cuelgues con una pared de 4 s y su repesca, **y lo
+corre en el nivel superior del módulo**: se paga en CADA carga del fichero, y el meta-guard lo carga 27
+veces. **A/B en local, 3 pasadas por lado** (`salida-ab-813-y-carga.txt`): 1,84-1,91 s antes del merge,
+11,44-11,62 s después. Un patrón de nombre que no casa con ningún test sigue tardando 11,2 s: el coste
+está en la carga, no en los tests.
+
+**Los otros siete caros siguen otro patrón** (`salida-cae-vs-lento.txt`). Cargan en 0,07-0,4 s, y casi
+todo su tiempo es UN test lento (el 83-97 % del fichero: comandos reales, esperas). **23 de sus 25
+mutaciones declaran como `cae` otro test que tarda ≤ 2,6 s**, pero cada una paga el fichero entero:
+`scrum976` (6 × 16 s), `scrum710b` (5 × 16 s), `scrum853c`, `scrum775`, `scrum1007-1011-1026`, `scrum858b`
+y `scrum959b`. Sólo la 3.ª de `scrum858b` (8,7 s) y la 2.ª de `scrum775` (4,8 s) apuntan a su test lento.
+
+### 3 · Propuesta (para S3 y S5, vía el orquestador; no la construyo)
+
+No se sube el techo, que lo dice el propio aviso. Cifras sobre el runner del run 39605052252:
+
+| | qué | de quién | cuánto quita | qué cuesta |
+|---|---|---|---|---|
+| A | sacar el banco de «cortados» de SCRUM-1494c a su PROPIO fichero de test, con sus 4 mutaciones | S5 | **~190 s** (`scrum813`: 286 → ~94: 23 cargas a ~2 s + 5 a ~9,5 s) | nada en lo que mide; un fichero más |
+| B | en la pasada MUTADA, correr sólo el test `cae` (la limpia sigue entera) | S3 | **~300 s** en los 7 medidos (estimado: tiempo local de cada `cae` escalado a CI); el resto de los 162, SIN MEDIR | pierde el recuento de colaterales (hoy informativo: «ninguno cambia un veredicto») y estrecha el diagnóstico de corte de SCRUM-1321 a un test |
+| C | partir el job en `k` trozos equilibrados por el coste medido de cada guard (`guards-<run>.tsv`), con `k = ⌈coste / 900 s⌉` (hoy 2) | S3 (argumento de trozo) + S5/fundador (`ci.yml`) | la mitad del reloj por trozo (~823 s + ~30 s de arranque) | un runner más por PR |
+| D | la comprobación que lo habría parado el 16-oct: el instrumento imprime `limpia × (mutaciones + 1)` por guard y avisa, NOMBRÁNDOLO, del que pase de 60 s | S3 | 0 s: no recorta, **nombra** | — |
+
+* **A + B ≈ 490 s**: 1.646 → ~1.150 s, y ~1.230 s con el runner más lento visto (2,82 s/mut). Con +10
+  mutaciones al día (~26 s/día), eso vuelve a los 1.800 s en **unas 3 semanas**. Por eso A y B solos no
+  bastan, y C lleva su `k` DERIVADO del coste: un número fijo de trozos es otro techo fijo.
+* **Lo que cubre los 128 cortes de jv-j3u es A (o C) YA:** sin A, un runner por encima de ~2,9 s por
+  mutación (1.800 / 622) se come el techo con N=622, y el más lento visto ya va a 2,82. Con A, ese mismo
+  runner queda en ~1.550 s. B y D no lo cubren solos.
+* ⚠️ Ni A ni B están medidos en CI: son estimaciones con tiempos de Windows. La de A está anclada al A/B
+  de arriba y a los logs de CI del 15 y del 17-oct (45 s → 285 s). La de B sólo a tiempos locales.
+
+**Discrepancia con la medición de jv-j3u, dicha y no resuelta:** él da `scrum813` de 11 a 26 mutaciones y
+de 29 a 284 s. En mis logs tiene 11 hasta el 2-oct, **22 desde el 6-oct** y 26 desde el 17-oct; el salto
+de coste por mutación es el del 16-oct en los dos. Puede ser la fecha de referencia de cada uno: no lo crucé.
+
+**Evidencias:** `docs/master/evidencias/SCRUM-935c/` — los instrumentos (`muestrear-runs.mjs`,
+`analizar.mjs`, `comparar.mjs`, `tests-lentos.mjs`, `cae-vs-lento.mjs`), la serie (`serie-104-runs.tsv`),
+cuatro perfiles por guard (20-sep, 15-oct, 17-oct y 21-oct) y las salidas. Los logs crudos NO entran:
+llevan secuencias de escape (A22) y caducan a los 90 días; los perfiles `.tsv` son lo que queda de ellos.
+
+A9: aviso → cicatriz J6 «Medí el coste de un fichero de test quitándole tests con un filtro de nombre, y el coste estaba en la carga del módulo: el filtro no lo toca» — no se pudo comprobar: es un hábito al aislar dónde se va el tiempo, y lo cazó medir la carga sola; un instrumento que lo impida tendría que ser el de S3 (propuesta D)
+## SCRUM-935d · lo que tapaban los cortes, y el meta-guard corta ANTES del techo diciendo qué deja
+
+**Medido contra:** `origin/main` = `0077bd1d51a7cb64b1c18d85781117b71936fd38` · 2026-10-22T09:58:23Z
+**S3** · Windows, node v24.8.0 · la rama nació en `9839aa6c2baee741f6a38de4e99c7fc29a3fe807` y trajo `main` con merge.
+Encargo del orquestador (22-oct): la propuesta B de 935c y, sobre todo, «cuántos guards no se estaban comprobando en
+los cortes». El orden cambió por el camino a ① ¿está muerto `scrum813`? ② 1339s ③ la D de 935c. La A es de S5.
+
+### ① Lo que tapaban los cortes (evidencias `a-*`, `b-*`, `c-*`)
+
+**Población:** 447 runs de `ci.yml` creados del 15-oct 00:00Z al 22-oct (la API, troceada por día; 0 consultas
+ciegas) → 327 con job de meta-guard → 313 con paso de mutación → **313 logs bajados y leídos, 0 CIEGOS**. Logs del
+15-oct 15:34Z al 21-oct 15:48Z. Controles sembrados del lector: un log fabricado con 3 veredictos y sin resumen sale
+CORTADO con 3; uno con resumen, COMPLETO; uno vacío, CIEGO. La primera pasada salió **313 de 313 CIEGOS** porque
+`gh api` se niega a escribir un log con ANSI sin `--allow-escape-sequences`: el lector lo dijo como CIEGO, no como cero.
+
+| | jobs |
+|---|---|
+| COMPLETOS (con resumen y código de salida) | 124 (92 verdes, 32 rojos) |
+| **CORTADOS POR EL TECHO** (job ≥ 1.770 s, sin resumen, `cancelled`) | **135** |
+| cortados antes del techo (concurrencia: un push nuevo SUSTITUYE al run; no tapa) | 54 |
+
+* **Sin juzgar en los 135:** ~3.034 veredictos de mutación (3,7 % de ~82.400). Por corte, p50 17 mutaciones / 4 guards,
+  p90 41 / 8, máx 93 / 21. Siempre la COLA del censo: 22 guards distintos, `utils.test.mjs` y
+  `vigia-atascados.test.mjs` en 135 de 135, `scrum996d` en 134, `scrum976` en 121 (`c-guards-fuera.tsv`). La población
+  de cada corte sale del job COMPLETO más cercano en el tiempo: aproximación de ± unas pocas, declarada.
+* **Juzgado y ENTERRADO** (impreso, sin código de salida): MUDAS 0 · CIEGAS 39 en 38 jobs (`scrum859` ×36, la pérdida de
+  cola de SCRUM-1405; `scrum757` ×3) · **1 FICHERO MUERTO en un push a `main`** (`scrum813`, run 39601605945, sha
+  `e2cd370cc2277504172af141bc1f257a8d5b6746`, 21-oct 12:41Z).
+* **Sin NINGÚN meta-guard completo:** 92 de 181 ramas de PR y 30 de 51 commits de `main`.
+* La cifra es 135 y no la de 128 de jv-j3u: otra ventana. No se copia.
+
+### ② ¿Está muerto `scrum813`? No (evidencias `e-*`)
+
+Sus 26 mutaciones, hoy, con las mismas `correr()` + `aplicarUna()`: limpia 48/0/0 en 14,5 s; **26 VIVAS**. En los 313
+logs tiene 6.802 VIVA y 3 ☠ (15, 17 y 21-oct), cada uno en una mutación DISTINTA (#21, #26, #19), y los dos que llegaron a
+imprimir el detalle dicen «el fichero salió rojo por su ruta y el test declarado no llegó con nombre; faltan 27 / 3 de
+la limpia»: la firma de la pérdida de cola de 1405, que tapa SCRUM-1339s (ya en `main`). El del 15-oct es anterior al
+banco de #2486: la lentitud de carga no lo causa (lectura, no medida).
+
+### ③ La D: el corte lo hace el instrumento, y lo dice
+
+Al corte de GitHub el proceso muere sin escribir nada: último veredicto y, 0,7 s después, «The operation was
+canceled.» (medido en el log de un corte). Un manejador de señal no tiene a quién hablar. Así que:
+
+* **Presupuesto:** `timeout-minutes` del job que corre `npm run meta:mutaciones`, LEÍDO de `ci.yml` (se reconoce por el
+  paso, no por la clave, que es `meta-mutaciones` y no `meta-guard`), menos `MARGEN_DEL_JOB_S = 150`: lo que el job
+  gasta FUERA del paso medido en los 313 jobs es 24-73 s (p50 37, p99 50), más una pasada en vuelo (~20 s la más cara,
+  `scrum813`). `META_PRESUPUESTO_S` lo sustituye. Fuera de CI y sin la variable, sin presupuesto. En CI sin techo
+  legible lo DICE. El presupuesto se imprime siempre al empezar.
+* Antes de cada pasada limpia y de cada mutación: si se acabó, **deja de empezar trabajo, nombra cada guard sin juzgar
+  con cuántas le faltan y sale CIEGO (2)** por la misma puerta que las demás ciegas. Antes del suelo de ejecución, para
+  que el motivo de «no he medido nada» sea éste.
+* **Y nombra los guards de más de 60 s** (`guardsCaros`), con la población: la comprobación que habría parado el 16-oct.
+
+⚠️ **Consecuencia en CI, y es a propósito:** un run que hoy tardaría más de 1.650 s en el paso deja de salir `cancelled`
+y sale ROJO (CIEGO) con la lista. El meta-guard no es obligatorio: no bloquea, pero ya no se lee como un gris.
+
+**Guard:** `tests/scrum935d-el-corte-dice-lo-que-deja.test.mjs`, 8 casos. El techo se lee del `ci.yml` REAL y se cruza
+con una segunda vía (el número del bloque `meta-mutaciones` a mano). Que el BUCLE usa las piezas lo mira el AST del
+bloque principal impreso sin comentarios (A23 nº 2). El recorrido entero NO va en la tanda: correr el meta-guard dentro
+movería el árbol bajo los demás tests.
+
+**Rojo y mutaciones:** el guard nació después del código (A23 nº 9 incumplida en el orden; lo digo). Su primera pasada
+salió ROJA de verdad: 1 de 8, el lector del techo no reconocía `- run:` (la forma de una línea), sólo `run:` bajo un
+`- name:`. Arreglado en el código. Después, las 4 mutaciones declaradas, una a una (`f-*`): base 8/8; cada una con
+`git diff --numstat` = `1 1` y **las 4 CAEN** en su caso; árbol restaurado (`git status` vacío).
+
+**Control positivo del corte, corrido de verdad** (`g-salida-corte-a-mano.txt`): `META_PRESUPUESTO_S=45 node
+scripts/meta-guard-mutaciones.mjs` → «🔴 CORTO YO, ANTES DEL TECHO: llevo 52 s y el presupuesto es 45 s … Juzgadas 3 de
+634 mutaciones. SIN JUZGAR 631, en 164 guard(s): …» con la lista, **salida 2**, árbol limpio. Los 7 s de más son la
+mutación que estaba en vuelo: por eso el margen lleva una pasada dentro.
+
+### La propuesta B: NO construida, y por qué
+
+* 🔴 **Tal como está escrita da VIVAS FALSAS.** Medido con una sonda (`h-*`): con `testNamePatterns` un test que depende
+  de otro anterior del mismo fichero CAE al correr solo («segundo depende del primero»: `0 !== 1`). En la pasada mutada
+  eso se leería como «la mutación lo tumbó». Y los tests filtrados no salen ni como saltados: no salen.
+* La forma honrada: una línea base FILTRADA por cada `cae` (si ahí no pasa, ese guard se mide entero), y todo veredicto
+  que no sea VIVA se confirma con el fichero entero. Así B sólo puede acelerar, nunca cambiar un veredicto.
+* Lo que ahorra no está medido con la A puesta (S5 la está metiendo; 935c lo estimó en ~300 s en 7 guards con tiempos
+  de Windows). Un filtro no quita coste de CARGA (cicatriz J6 en 935c). Se mide cuando la A esté en `main`.
+
+### De paso (sin ticket)
+
+* El orden seguro para la A de S5 (`d-*`): la línea de `RETIRADAS_A_PROPOSITO` va EN EL MISMO PR que la bajada. Medido
+  en un clon con `origin/main` movido a mano y `scrum810`+`810b` reales: la línea sola en `main` antes de la bajada deja
+  ROJO el PR de S5 (una retirada sólo exime mientras está PENDIENTE frente a la base, SCRUM-1173).
+* Hallazgo para después, de mi carril: `_suelo-contra-main.mjs` no distingue una MUDANZA de una retirada (sólo recorre
+  los guards de la base). Lo arreglo cuando entre lo de S5, para no moverle el suelo debajo.
+
+### Mis errores
+
+1. Transcribí ㉓ ㉔ como ㉕ ㉖ en la simulación y en el motivo de la línea que le di a S5. El orden medido no cambia (la
+   simulación mueve DOS declaraciones, sean cuales sean); el motivo sí, y se corrigió por mensaje.
+2. Escribí el código de la D antes que su guard.
+3. El primer lector de logs no pasaba `--allow-escape-sequences` y salió 313 de 313 ciegos: lo cazó su propio CIEGO.
+
+A9: comprobación → `tests/scrum935d-el-corte-dice-lo-que-deja.test.mjs`
+
+**Ficheros:** `scripts/meta-guard-mutaciones.mjs`, `tests/scrum935d-el-corte-dice-lo-que-deja.test.mjs`,
+`tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs` (el trinquete de cobertura sube de 31 a 32 por el guard nuevo,
+y su mutación ④ cita la constante nueva; sin la subida caía «LA COBERTURA HA SUBIDO a 32»), los 35 ficheros que
+importan el meta-guard: 304 tests, 1 fail que es `scrum1321` CIEGO por entorno (temporal en `C:`, repo en `D:`),
+`docs/master/evidencias/SCRUM-935d/` (instrumentos y `.tsv`; los logs crudos NO: llevan ANSI, A22), este apartado.
+
+### Las dos puertas que el PR #2676 no pasaba (23-oct-2026, S3)
+
+El obligatorio del run `39767863385` (sobre `ca697e7e8`) cayó con 2 de 12.114, y los dos eran guards de
+DECLARACIÓN que apuntaban a lo que trajo la D. Reproducidos en local con la rama tal cual, ANTES de tocar nada:
+
+| guard | rojo en local, rama tal cual | causa | arreglo |
+|---|---|---|---|
+| `scrum702` · ninguna dependencia del entorno sin declarar | «hay 22 ficheros… el tope es 20» | DOS lecturas nuevas de `GITHUB_ACTIONS`, no una: el meta-guard (`presupuestoDelPaso`) y el `env` escrito a mano del test | declaradas al lado de `TOPE_LEEN_EL_ENTORNO`, que sube 20 → 22, diciendo qué hace cada una |
+| `scrum708` · ningún fichero registra tests fuera de la tanda | `docs/master/evidencias/SCRUM-935d/h-cobaya.mjs` | la cobaya de la sonda vivía como fichero de test en `evidencias/` | la cobaya pasa a ser plantilla de texto dentro de `h-sonda-filtro.mjs`, que la escribe en un temporal y la borra (como SCRUM-1405) |
+
+⚠️ El diagnóstico que me llegó apuntaba a `META_PRESUPUESTO_S` (702) y al test nuevo (708). Medido, no era así:
+`META_PRESUPUESTO_S` no está entre las señales que mira el censo, y el que registraba tests fuera era la cobaya.
+De paso, la sonda abría `cobaya.test.mjs` junto a sí misma, y ese fichero no existía en el repo (sólo `h-cobaya.mjs`):
+tal como estaba, no se podía volver a correr. Corrida otra vez tras el arreglo: los mismos resultados que su salida guardada
+`h-salida-sonda.txt` (cambian los milisegundos, y la línea de `execArgv`, que allí está recortada a mano).
+
+Al fundir `origin/main` (`6c8706dae`) chocó el trinquete de `scrum812`: 1339u y esta rama lo subían los dos a 32. El número
+no se eligió de un lado, se REGENERÓ: con el suelo a 34 el trinquete cae diciendo «33 ficheros se titulan GUARD y declaran»,
+así que queda en **33**, y su mutación ④ pasa a citar 33 → 32.
+
+Después: `scrum702`, `scrum708` y `scrum935d`, 24/24 en verde; `scrum812` 6/6. Ningún guard se tocó salvo en su sitio
+de declaración (el tope y su comentario; el suelo del trinquete y su mutación).
+
+🔵 **El otro rojo del run, el del meta-guard (job informativo), es la D funcionando:** cortó a los 1.650 s («CORTO YO, ANTES
+DEL TECHO»), juzgadas 613 de 641, y nombró las 28 sin juzgar en 7 guards; antes eso salía `cancelled` y sin una línea. El
+último meta-guard de `main` (run `39948261197`, sin la D) tardó 1.397 s y salió verde. Lo que queda abierto, y no lo arregla
+este PR: la D da 150 s de margen, y un run que antes acababa entre los 1.650 y los 1.800 s ahora sale CIEGO en vez de verde.
+
+## SCRUM-935d · propuesta A construida: el banco de cortados sale de `scrum813`
+
+**Medido contra:** `origin/main` = `9839aa6c2baee741f6a38de4e99c7fc29a3fe807` · hora real 2026-10-22T09:32Z
+(cabecera `Date:` de GitHub) · S5, equipo de Luis · rama `scrum-935-banco-cortados-fuera-813`.
+
+A9: comprobación → `tests/scrum810-el-suelo-a-la-primera.test.mjs`
+
+**Error propio:** construí la mudanza sin mirar antes quién cuenta las declaraciones POR fichero. Lo vi
+después de escribir el código y antes de empujar: el control positivo de `scrum810` habría puesto en rojo el
+obligatorio. Se probó en los dos sentidos (abajo).
+
+**Carril:** `scrum813` es de S5. Lo dicen este registro (935c, «`tests/scrum813-…` y SCRUM-1494 son de
+S5») y `dos-equipos.md:171` («el test de un ticket → el puesto que trabaja el ticket»).
+`scripts/carriles.mjs de` contesta «sin fila» para cualquier `tests/*.test.mjs`, también para los que
+no existen, así que no decide nada aquí. El fichero nuevo NO se llama `_banco-*` a propósito: ese
+patrón es de S3.
+
+**Qué:** el banco sembrado de cuelgues de SCRUM-1494c (pared de 4 s; corre en el NIVEL SUPERIOR del
+módulo) y sus tres tests pasan a `tests/scrum1494-cortados-de-zona.test.mjs`, con las DOS mutaciones
+cuyo `cae` los necesita (㉓ y ㉔). Las otras dos de 1494 (㉕ y ㉖) se quedan en `scrum813`: sus tests
+son de datos fabricados (`medidaFalsa`, `entrada`) y no miran el banco. Llevarlas al fichero nuevo
+haría que el banco se pagara 5 veces en vez de 3. Los nombres de los tests no cambian, así que los
+`cae` casan igual.
+
+Se comprobó que el fichero editado es el que SE CARGA: `meta-guard-mutaciones.mjs:342` lista
+`tests/*.test.mjs` del árbol con `readdirSync`, y las medidas de abajo se tomaron sobre esas rutas.
+
+**Antes y después, en local** (Windows, node v24.8.0, `node --test` de un fichero suelto, 3 pasadas):
+
+| fichero | antes | después |
+|---|---|---|
+| `scrum813-trinquete-de-zona` | 13,16 · 11,89 · 11,91 s · 48 tests | 6,72 (la primera, en frío) · 3,36 · 2,58 s · 45 tests |
+| `scrum1494-cortados-de-zona` | — | 10,69 · 10,08 · 10,27 s · 3 tests |
+
+Todo en verde, 0 fallos, 0 saltos. El «antes» casa con el A/B de J6 (11,44-11,62 s).
+
+**El meta-guard DE VERDAD, sobre estos dos guards.** Un arnés fuera del árbol llama a las MISMAS
+funciones del bucle principal de `scripts/meta-guard-mutaciones.mjs` (`mutacionesDeclaradas`, `correr`,
+`aplicarUna`), sólo para los guards que se le dan. Corrió una vez por lado, en la misma máquina y en la
+misma hora, con el árbol limpio al acabar (`git status` sin cambios en `tests/` ni `scripts/`):
+
+| | mutaciones | vivas | limpia | total |
+|---|---|---|---|---|
+| ANTES: `scrum813` de main (`8ad167195`) | 26 | 26 | 14,0 s | **370,1 s** |
+| DESPUÉS: `scrum813` | 24 | 24 | 4,3 s | 136,3 s |
+| DESPUÉS: `scrum1494-cortados-de-zona` | 2 | 2 | 11,5 s | 36,4 s |
+| DESPUÉS, los dos | 26 | 26 | | **172,7 s** |
+
+**197 s menos en local, con 26 de 26 vivas antes y después.** La máquina iba cargada (otras sesiones):
+por mutación, `scrum813` tardó 2,9-9,8 s, cuando suelto carga en 2,6-3,4 s. Por eso la cifra vale como
+comparación ANTES/DESPUÉS en la misma pasada, no como lo que tardará el CI. Lo del CI se lee en el resumen
+del job meta-guard del primer run tras el merge: el paso `if: always()` de 935 imprime la duración.
+
+**El suelo contra main, y el cruce de carril.** `scripts/_suelo-contra-main.mjs` cuenta las declaraciones
+POR fichero, y `scrum813` baja de 26 a 24: contadas con `lecturaDeDeclaraciones`, el lector real, sobre la
+base y sobre esta rama (base 26 · ahora 24 · fichero nuevo 2). Se añade UNA línea a `RETIRADAS_A_PROPOSITO`.
+🔴 **Cruce de carril declarado:** ese fichero es de S3. La línea la redactó S3 para este PR (vía el
+orquestador, 22-oct). Su `motivo` decía ㉕ ㉖; se corrigió a ㉓ ㉔, que son las que se mudan, y S3 lo
+confirmó. Va en el MISMO PR que la bajada, no antes, porque una retirada sólo exime mientras está pendiente
+frente a la base de fusión (SCRUM-1173): S3 lo midió en 6 escenarios (la línea sola primero: 14/15; juntas:
+15/15).
+
+| `scrum810` | resultado |
+|---|---|
+| CON la línea | 6/6 |
+| SIN la línea (`git diff --numstat` = 0/1, restaurado con `git restore`) | 5/6: cae «CONTROL POSITIVO: con el árbol tal cual, el suelo CALLA», con `scrum813-trinquete-de-zona.test.mjs: 26 → 24` |
+
+⚠️ **Lo que el suelo NO comprueba (hallazgo de S3):** la lista no distingue mudanza de retirada. El suelo
+recorre sólo los guards de la BASE y el fichero nuevo no está en ella. Una mudanza cuyo destino no llevara
+los `cae` saldría igual de verde. Ésta sí los lleva (lo dice el arnés de arriba: ㉓ y ㉔ VIVAS en
+`scrum1494`), pero eso lo mide esta pasada, no el instrumento. S3 lo cierra después de este PR.
+
+## SCRUM-935e · el margen del corte, DERIVADO: 150 → 105 s (23-oct-2026, S3)
+
+Rama desde `origin/main` = `655f1252e`. Lo decidió el orquestador el 23-oct, sobre la medida de abajo. Un solo
+cambio: `MARGEN_DEL_JOB_S` en `scripts/meta-guard-mutaciones.mjs`, con la derivación escrita al lado.
+
+**Por qué.** Con la D, un run que habría acabado entre el corte y el techo sale CIEGO pudiendo terminar: un
+CIEGO falso. Los 150 s eran 73 + ~20 medidos más 57 que no salían de ninguna medida.
+
+**¿La ventana es alcanzable hoy? Sí.** #2677 entró el 22-oct a las 10:58Z, así que todos los runs de abajo ya lo llevan.
+14 jobs del meta-guard del 23-oct (`gh api …/actions/jobs/<id>`, pasos con su hora):
+
+| | segundos |
+|---|---|
+| antes del paso (checkout, `npm ci`, tsc) | 22-38 |
+| el paso, en los 8 verdes | 1.329-1.608 (tres a 42-64 s del corte de 1.650) |
+| el paso, en los 6 que mató el techo | 1.777-1.779 |
+
+**La pasada en vuelo, medida.** Los logs de CI llevan hora por línea. El hueco entre dos veredictos seguidos es
+una pasada. Al cambiar de guard, ese hueco es la limpia más la primera mutación. Tres runs, 1.977 veredictos (dos enteros de
+`main`, 39948879101 y 39944683225, y el cortado de #2676, 39767863385):
+
+* pasada suelta: **21,9 s** como mucho;
+* limpia + 1.ª mutación: hasta 42,9 s (`scrum710b`, con su media de 21,6 s por pasada: su limpia ronda los 21 s). El
+  siguiente hueco es el de `scrum976`, 30,4 s, que acota su limpia; el resto queda por debajo de 26,1 s.
+* El corte se mira antes de cada limpia y de cada mutación, así que en vuelo sólo queda UNA: ≤ 30,4 s.
+
+⚠️ Corrección a lo que mandé el mismo día: di «≤ 30 s» como cota con un argumento sacado del log de un run CORTADO,
+que sólo lista los guards juzgados antes del corte. Ahí no estaban `vigia-atascados` ni `scrum976`. El número se
+sostiene; la población de la que lo saqué, no. Ésta sí es la de runs enteros.
+
+**Margen = 73 (máximo fuera del paso, 313 jobs) + 31 (pasada en vuelo) + 1 (el propio corte) = 105 s.** El corte en CI
+pasa de 1.650 a **1.695 s** (`presupuestoDelPaso` con el `ci.yml` de hoy: «1800 s − 105 s de margen»).
+
+**Lo que esto NO cierra.** Cualquier margen que cubra el peor caso deja como CIEGO a un run con arranque rápido que habría
+acabado: con 22-38 s fuera del paso hoy, son entre 35 y 50 s de ventana. Lo que la cerraría es contar desde el inicio del
+JOB y no desde el paso. Escrito, NO empezado (decisión del orquestador, 23-oct).
+
+**Verificado:** `tests/scrum935d-el-corte-dice-lo-que-deja.test.mjs` y `scrum702`, 18/18. El caso del presupuesto
+compara contra `techoDelJob − MARGEN_DEL_JOB_S`: sigue la constante y no un número escrito.
+
+A9: sin fallo que generalice — es afinar una cifra con su medida; el error propio (una cota sacada de una población cortada) ya es la trampa de la ficha de S3, «el instrumento le miente primero»
+
+## SCRUM-935f · recortar el meta-guard y el trinquete en los PR de sólo docs: MEDIDO, y no se construye
+
+**Medido contra:** `origin/main` = `6c8706daef7399513e69e6872068aa7bed25b760` · 2026-10-23T12:21Z
+(rama `scrum-935e-ci-solo-docs`; el ancla del generador al escribir esto ya daba `655f1252e` · 2026-10-23T13:26:38Z)
+· S5, equipo de Luis · encargo del orquestador `cobroflash-backend-90`, 23-oct.
+
+A9: aviso → cicatriz S5 «Escribí en una evidencia que 49 tests ejecutan código de docs/ con la cifra de un grep, antes de medirla en la traza: eran 4 tests y 23 procesos hijo» — no se pudo comprobar: ningún guard lee las cifras de las evidencias de docs/master; lo cazó volver a contarlo con el instrumento antes de comitear
+
+**Rescatado el 29-oct-2026 (S5)** sobre `origin/main` = `d12e99784cf3927e13972e1e370ddc19f5d08a19` · 2026-10-29T10:44:40Z
+(hora de GitHub), por decisión del orquestador. Este tramo se escribió el 23-oct en el PR #2738, que no llegó a
+entrar: su obligatorio cayó por dos guards que leían los instrumentos de la evidencia. Es un resultado negativo
+medido (lo que se midió y por qué NO se hace), y se perdía con el PR. Cambios respecto a #2738:
+
+* **Sufijo `935e` → `935f`** en el título y en la carpeta de evidencias: `935e` lo usa en `main` el tramo de S3 de
+  arriba («el margen del corte», #2737). El nombre de la rama de entonces, `scrum-935e-ci-solo-docs`, se deja como
+  estaba, porque es historia.
+* **Dos arreglos en los instrumentos, ninguno en los guards:** `traza-lecturas.mjs` cuenta con una función
+  `cuenta(k)` en vez de repetir `zona[k] || 0` (con la etiqueta «sin timeZone» a la izquierda de `||`, `scrum643`
+  lo leía como resolver la zona por su cuenta); `zona-de-un-fichero.mjs` borra su carpeta temporal en un `finally`
+  (`scrum864c`: el borrado sólo ocurría si todo salía bien).
+* **Lo que ha cambiado desde entonces, sin volver a medir:** el 10-16 % es del meta-guard de antes de SCRUM-1620
+  (#2962, ya en `main`, que lo parte en trozos), y el PR #2676 de S3 que se cita abajo ya no es el estado de
+  `scripts/meta-guard-mutaciones.mjs`. Las cifras del ③ (trinquete) no dependen del meta-guard.
+
+**El encargo.** La cola del 22-oct (899,8 min de jobs) tenía ~98 min de meta-guard y ~86 de trinquete en PR
+de sólo docs. ② meta-guard: en esos PR, correr sólo los guards que leen `docs/`, con la condición de
+demostrar ANTES que los 5 guards con mutación sobre documentación entran en ese conjunto. ③ trinquete:
+MEDIR si depende de `docs/` (el comentario de `ci.yml` dice que sí y no estaba comprobado).
+
+**Resultado, en una tabla:**
+
+| | pregunta | medido | decisión |
+|---|---|---|---|
+| ② | ¿los 5 guards que mutan documentación caen en «leen docs»? | **sí, los 5** (y los 5 por leer `docs/`, no por el fail-closed de subproceso) | condición cumplida |
+| ② | ¿cuánto ahorra? | **10–16 %** del meta-guard en un PR de sólo docs (797 s de 7.888 / 5.060 s locales, dos pasadas): ≈10–16 de los 98 min del día | **no compensa ahora**; además el fichero es de S3 y tiene PR abierto |
+| ③ | ¿un PR de sólo docs puede cambiar el veredicto del trinquete? | **sí**: un cambio de 2 líneas en `docs/master/evidencias/scrum1336/linea.mjs` (el CI lo llama `solo_docs=true`) pone **2 pruebas** en pass a +14 y fail a −11 | **no se toca**: los 86 min se quedan |
+| R1 | ¿los guards de navegador (recorte YA en `main`, SCRUM-1284) tienen el mismo agujero? | **no**: `guards:visuales` entero con la traza, 41 procesos, **0 lecturas de documentación**; sus `git` sólo piden `public/` y `merge-base`. `guard:firma-con-tramos` cae al cargar con mi hook de módulos: ése, **sin medir** | R1 se queda como está |
+
+**② · cómo se midió.** `evidencias/SCRUM-935f/traza-lecturas.mjs` se carga con `--import` en el hijo de
+`node:test` y apunta cada ruta que pasa por `fs` (sync, callback y promesas), cada módulo que se carga y cada
+subproceso. `trazar-todos.mjs` corre la línea base de los 180 guards declarantes (690 declaraciones) como lo
+hace `correr` del meta-guard, uno a uno y cada uno en su propia carpeta de trazas. `clasificar.mjs` dice
+«depende» si el guard lee o importa algo que `solo-docs.mjs` llama documentación, si lista un directorio
+fuera de las carpetas de código, si lanza CUALQUIER subproceso (fail-closed) o si no dejó traza.
+Control positivo: la traza de `scrum758` ve `docs/MIGRATIONS_PENDING.md`.
+
+* Los 5 de `a-censo-mutaciones-sobre-docs.txt` (12 declaraciones): `scrum1336`, `scrum1536b`, `scrum758`,
+  `scrum769`, `scrum996d` → los 5 DEPENDEN (`b-clasificacion-180-guards.txt`).
+* 95 dependen (381 mutaciones) y 85 no (309). Pero los 85 son los BARATOS: ~2,6 s por mutación frente a
+  ~15 s. El coste está en los que lanzan `node` o `git` DENTRO del árbol (58 guards dependen sólo por eso).
+* Afinar con «un `git` sin shell, con cwd, argumentos y `GIT_DIR` fuera del árbol no puede leer `docs/`»
+  (regla sólida, no lista blanca) libera **un** guard más (`b2-con-git-fuera-del-arbol.txt`). Ir más allá
+  exige clasificar subcomandos de git (`git diff`, `git show origin/main:docs/…` SÍ leen docs): una lista
+  blanca que envejece. No la hago.
+* **Por qué no se construye:** el filtro tiene que vivir dentro de `scripts/meta-guard-mutaciones.mjs` (no
+  admite ningún filtro desde fuera: ni variable ni argumento salvo `--solo-censo`), ese fichero es de **S3**
+  (`dos-equipos.md:176`) y tiene abierto el PR #2676 de S3, que lo reescribe. Por ≈10-16 min al día no se
+  cruza carril ni se pisa un PR vivo. Si se quiere, es una propuesta para S3 con el instrumento ya hecho.
+
+**③ · cómo se midió.** Tres instrumentos, y decide el tercero:
+
+1. Historia (`c-historia-300-runs.txt`, 300 runs de `ci.yml` por `pull_request`, 16→23-oct, PR por rama):
+   105 runs de sólo docs; el trinquete terminó 83 y salió rojo 6. Los 6 son **la misma prueba**,
+   `scrum1405c` ④ («la cobaya pierde casos»), que no lee docs y sale igual en PR con código
+   (`d-trinquete-rojos-en-solo-docs.txt`). Historia de una semana: dice que no ha pasado, no que no pueda.
+2. La tanda entera trazada en una zona (`e-tanda-entera-trazada.txt`), con la traza además apuntando las
+   llamadas que dependen de la zona (getters locales de `Date`, `toLocale*`, `Intl.DateTimeFormat` sin
+   `timeZone`, `new Date(y,m,…)`, texto sin zona): 190 ficheros leen documentación, 336 llaman a APIs de
+   zona, **33 las dos cosas**. ⚠️ Dos defectos de MI instrumento, dichos: marcó como «texto local» la
+   cabecera HTTP `Date:` (lleva `GMT`), y atribuyó nietos a su test subiendo por `ppid`, que Windows
+   recicla (dio a `scrum979` un `import` que hace `scrum1117`). Por eso esta pasada no decide.
+3. **El experimento con un cambio REAL de sólo docs** (`f-experimento-cambio-solo-docs.txt`), con la
+   maquinaria del propio trinquete (`medirEnZona` + `compararZonas`, Kiritimati y Midway) sobre
+   `tests/scrum1336-…`: árbol limpio → 0 cambian; con el cambio → **2 cambian** (pass / fail). Se deshizo.
+
+**Por qué depende:** `docs/` no es sólo prosa. En la tanda se cargan **6 módulos que viven bajo `docs/`**:
+4 ficheros de test los importan (`scrum1336`, `scrum1500`, `scrum1536b`, `scrum1537`) y 23 procesos hijo
+los ejecutan; y `solo-docs.mjs` clasifica todo `docs/**` como documentación. El comentario de `ci.yml`
+acertaba en la conclusión con otro motivo («una fecha nueva en un registro»), que no se ha demostrado.
+
+⚠️ **Lo que queda abierto:** si `solo-docs.mjs` dejara de contar como documentación el CÓDIGO bajo `docs/`
+(`.mjs`, `.js`), ¿dependería todavía el trinquete de la prosa (`.md`)? La pasada 2 no lo descarta (33
+ficheros leen docs y llaman a APIs de zona, casi todos por `docs/microcopy` y el panel) y no está medido.
+No se cambia el clasificador sin medirlo: es la regla de R1.
+
+**R1, comprobado de paso** (`g-guards-de-navegador-trazados.txt`): el hallazgo de arriba obligaba a mirar si
+el recorte que YA está en `main` tiene el mismo agujero, porque usa el mismo `solo-docs.mjs`. No lo tiene en lo
+medido: `npm run guards:visuales` con `NODE_OPTIONS=--import=<traza>` (588 s), 41 procesos trazados, ninguno
+lee, lista ni importa documentación, y ningún subproceso nombra `docs/`. Lo no medido, dicho: `guard:firma-con-tramos`.
+
+**Ficheros:** este apartado, `docs/master/evidencias/SCRUM-935f/` (instrumentos y salidas, sin rutas
+locales ni logs crudos) y la línea de la cicatriz en `docs/equipo/cicatrices/S5.md`. Nada de `ci.yml` ni de
+`scripts/`: no hay arreglo que meter.

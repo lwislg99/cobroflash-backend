@@ -127,10 +127,20 @@ test('SCRUM-505 · ✅ ④ los campos que el ticket nombra siguen SIN cubrir por
     ['merchant', 'iban'], ['merchant', 'bizumPhone'],
     ['botSession', 'phone'],
   ];
+  // SCRUM-1569d · el inventario se re-midió el 21-oct-2026: el fundador decidió que estos dos se
+  // anonimizan (SCRUM-1569 c.20142). Siguen en la lista —es el inventario del ticket— y aquí se
+  // comprueba lo contrario: que SÍ están cubiertos.
+  const DECIDIDOS = new Set(['merchant.iban', 'merchant.bizumPhone']);
 
   const cubiertos = [];
   for (const [modelo, campo] of DEL_TICKET) {
-    if ((CAMPOS_PERSONALES[modelo] ?? []).includes(campo)) cubiertos.push(`${modelo}.${campo}`);
+    const clave = `${modelo}.${campo}`;
+    const cubierto = (CAMPOS_PERSONALES[modelo] ?? []).includes(campo);
+    if (DECIDIDOS.has(clave)) {
+      assert.ok(cubierto, `🔴 «${clave}» se decidió anonimizar (SCRUM-1569 c.20142) y no está en CAMPOS_PERSONALES.`);
+      continue;
+    }
+    if (cubierto) cubiertos.push(clave);
   }
 
   assert.deepEqual(cubiertos, [],

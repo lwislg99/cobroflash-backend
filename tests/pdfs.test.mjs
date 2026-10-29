@@ -3,13 +3,41 @@
 // Sin factura fiscal: eso vive tras INVOICING_ES_ENABLED (no se toca).
 // Los unit generan ficheros reales en /invoices y los BORRAN al acabar.
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599i: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
+import http from 'node:http';
 
-const DB = process.env.QA_DB_TEST === '1';
+// `node:http` sin agente y no `fetch` (SCRUM-1218g): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de `fetch`
+// (status, headers.get, text, json, arrayBuffer) y, como el `redirect: 'manual'` de antes, no sigue
+// redirecciones. El cuerpo se guarda en bytes: `text()` lo decodifica como `fetch` (TextDecoder).
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    const trozos = [];
+    r.on('data', (t) => { trozos.push(t); });
+    r.on('end', () => {
+      const buf = Buffer.concat(trozos);
+      ok({
+        status: r.statusCode,
+        headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+        text: async () => new TextDecoder().decode(buf),
+        json: async () => JSON.parse(new TextDecoder().decode(buf)),
+        arrayBuffer: async () => buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
+      });
+    });
+  });
+  req.on('error', mal);
+  req.end(body);
+});
+
+const DB = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 
 // PNG 1x1 transparente — firma mínima válida para el canvas
 const SIG_1PX =
@@ -91,7 +119,7 @@ test('A12.5c: watermark de DEMO presente en el PDF', async () => {
 // P3-9 (SCRUM-80, 22-jul): antes usaba el merchant demo id=1 — SCRUM-42 lo quemó (0 filas)
 // y el test revienta (TypeError sobre quote null). Datos EFÍMEROS propios (mismo patrón
 // que SCRUM-78 en tenancy-permisos/webhooks-idempotencia): nada depende ya del demo.
-test('A12.5d: regeneración on-demand (R8) — /admin/quotes/:id/pdf responde PDF SIEMPRE', { skip: !DB && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('A12.5d: regeneración on-demand (R8) — /admin/quotes/:id/pdf responde PDF SIEMPRE', { skip: !DB && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const server = app.listen(0);
@@ -117,11 +145,11 @@ test('A12.5d: regeneración on-demand (R8) — /admin/quotes/:id/pdf responde PD
     await prisma.authSession.create({
       data: { merchantId: merchant.id, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) },
     });
-    const v = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
+    const v = await pedirSinAgente(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
     const cookie = (v.headers.get('set-cookie') || '').split(';')[0];
 
     for (let i = 1; i <= 2; i++) { // dos veces: el fs de Railway es efímero (R8)
-      const res = await fetch(`${base}/admin/quotes/${quote.id}/pdf`, { headers: { cookie } });
+      const res = await pedirSinAgente(`${base}/admin/quotes/${quote.id}/pdf`, { headers: { cookie } });
       assert.equal(res.status, 200, `intento ${i}: status ${res.status}`);
       const buf = Buffer.from(await res.arrayBuffer());
       assert.ok(buf.subarray(0, 5).toString() === '%PDF-', `intento ${i}: no devolvió PDF`);
@@ -133,3 +161,11 @@ test('A12.5d: regeneración on-demand (R8) — /admin/quotes/:id/pdf responde PD
     await prisma.$disconnect();
   }
 });
+
+// SCRUM-1599i (diseño B de SCRUM-1599) · la mutación que tumba el caso de base, CATALOGADA en SCRUM-1599i.
+// Va aparte de `MUTACIONES_QUE_ME_TUMBAN` a propósito: el job del meta-guard corre SIN base, el caso sale
+// SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco PGlite,
+// `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e). Cada campo, LITERAL.
+export const MUTACIONES_CON_BASE = [
+  { fichero: "src/modules/system/app/routes/quotesAdmin.routes.ts", de: "return res.sendFile(path.basename(pdf.outPath), { root: path.dirname(pdf.outPath) });", a: "return res.json({ pdfUrl: pdf.publicUrlPath });", cae: "A12.5d: regeneración on-demand (R8)" },
+];

@@ -234,3 +234,103 @@ El rojo era mío: `scrum864c` vio que el guion de fabricar borraba su directorio
 final, así que un caso que lanzara lo dejaba atrás (y mis dos primeras pasadas fallidas dejaron dos,
 que he borrado a mano). Arreglado en el guion, no en el censo: ahora se borra al salir el proceso.
 En local, `scrum864c` con el arreglo: pasa. Mi muestra de controles no lo incluía.
+
+# SCRUM-1510c · ④ La cabecera de `scrum205-fallo-de-sellado-no-entrega` dice lo que mide, y declara lo que no
+
+**Medido contra:** `origin/main` = `180e19746b2c3b38bc953d81ec23d1c7c4019249` · 2026-10-23T10:21:23Z (hora de GitHub)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1510/limites-de-la-cabecera-205.mjs`
+
+Sesión J6 (`jv-j6ak`, 23-oct), por encargo del orquestador de Javier (`cobroflash-backend-62`). Carril:
+J6 (instrumentos), ticket `area-j6` con `decision-jefe`. **La decisión es del orquestador, no del
+fundador:** se reescribe la cabecera para que diga EXACTAMENTE lo que mide, y lo que no mide se declara.
+El hook de arranque dijo «SIN IDENTIDAD» (SCRUM-1498); seguí por la norma común.
+
+## Qué cambia, y qué no
+
+Sólo líneas de comentario de `tests/scrum205-fallo-de-sellado-no-entrega.test.mjs`: la frase de la
+línea 3 («LA PROPIEDAD, que es la que se vigila») pasa a «la que PERSIGUE, no la que demuestra», y
+entre la lista de las tres afirmaciones y el primer `import` entra la sección «LO QUE MIDE Y LO QUE
+NO». Ni una aserción, ni una línea de código, ni nada de `src/`.
+
+**Control de que el código no se movió:** el fichero de `origin/main` y el nuevo, impresos por el
+compilador de TypeScript sin comentarios, son idénticos (8.141 B los dos). Control positivo: el mismo
+fichero con `<= 2` cambiado a `<= 3` sale distinto. Y en el diff, 0 líneas `+`/`-` que no empiecen
+por `//`.
+
+## Cada frase de la cabecera nueva, con la línea del test que la sostiene
+
+Líneas del fichero nuevo.
+
+| frase de la cabecera | línea que la sostiene | visto por efecto |
+| --- | --- | --- |
+| Mide en el TEXTO de `src/`, sin compilar ni base | 91 (`createSourceFile`), 105 (`fuentes(SRC)`) | — |
+| sin seguir quién llama a quién | 218 (la pila es sólo de funciones que ENVUELVEN) | L4 |
+| ① objeto con `action: 'sellado_fallido'` literal | 120-121 | A2 cae si se renombra |
+| ① en algún bloque que lo envuelve | 116, 126 | — |
+| ① la palabra `throw` | 130 | L1 muda |
+| ① `return` a ≤200 caracteres de `SELLADO_PENDIENTE` | 131 | A1 cae · A3 muda |
+| ① y hay al menos uno | 140-141 | A2 |
+| ① NO VE un `return` de otro estado con el nombre en un comentario | 131 | A3 muda |
+| ① NO VE un `throw` en otra rama que no se ejecuta | 130 | L1 muda |
+| ① el valor lo exige `scrum1296-emitir-encola` | `tests/scrum1296-emitir-encola.test.mjs:162` | c.18915 (sembrado A3, cae) |
+| ② sacado por AST | 170-179 | — |
+| ② y EJECUTADO | 187, 192 | B1 cae |
+| ② niega `pendiente`, deja pasar `sellado` y `no_aplica` | 195, 199, 201 | B1, B2 caen |
+| ② NO VE si alguien le pregunta | ningún código del caso mira `lib/` | B3 muda |
+| ② eso lo exige `scrum1510b` | `tests/scrum1510b-pendiente-que-el-porton-dejaria-pasar.test.mjs:190`, `:208` | 1510b, rojo sobre el espejo |
+| ③ POR ESE NOMBRE (identificador o `.nombre`) | 94, 219 | C3 muda |
+| ③ suelo de 8 LLAMADAS, no de caminos | 237 (cuenta `llamadores`, uno por llamada) | cotejo: «veo 7» / «veo 6» |
+| ③ sentencia suelta, con o sin `await` | 223-225 | C2 cae |
+| ③ un productor de `PRODUCE_BYTES` alrededor | 78, 227 | C1 cae |
+| ③ y ninguno de `PORTEROS` | 80, 228, 243 | S2 cae |
+| ③ tope ≤2 sueltas sin productor | 257, 259 | C2 cae (RATCHET) |
+| ③ NO VE un alias | 94, 219 | C3 muda |
+| ③ NO VE recoger y no leer | 225 | C4 muda |
+| ③ NO VE un portero después de entregar o sin leer su respuesta | 228 (`contiene`: que aparezca, no el orden) | L2 muda |
+| ③ un productor con otro nombre: lo caza el TOPE | 78, 257 | L3 cae por RATCHET |
+| ③ entregar desde quien llama a la función que sella: lo caza el TOPE | 218, 257 | L4 cae por RATCHET, no por la regla |
+| ③ el tope cuenta, no compara | 259 (`length`) | L5 muda |
+
+## Las mediciones
+
+- **Instrumento de la casa, re-corrido hoy** (`docs/master/evidencias/SCRUM-1404/censo-scrum205-por-efecto.mjs`,
+  sin tocarlo): base 3 · 6 · 17 casos, 0 caen; 11 llamadas a la puerta en 8 ficheros; cotejo con el
+  guard «veo 7» y «veo 6», cuadra; **17 mutaciones, 17 aciertan, 0 ciegas**; árbol de verdad, 6
+  ficheros por sha256, 0 movidos. Salida: `salida-censo-scrum205-por-efecto-23oct.txt`. Los cuatro
+  límites del ticket (A3, B3, C3, C4) siguen MUDOS hoy.
+- **Instrumento nuevo, para los límites que la cabecera añade leyendo el test**
+  (`limites-de-la-cabecera-205.mjs`, mismo patrón de espejo dentro de `dist/`): base 3 casos, 0 caen;
+  **7 mutaciones: 2 siembras positivas (S1, S2) que caen, 5 límites; 7 aciertan, 0 ciegas**; árbol de
+  verdad, 4 ficheros, 0 movidos; espejo borrado. Salida: `salida-limites-de-la-cabecera-205.txt`.
+  Si quitas las siembras, el instrumento no tiene con qué distinguir MUDO de CIEGO: por eso van primero.
+- Las dos pasadas, otra vez con la cabecera nueva puesta: las mismas cifras.
+
+## Lo que NO se midió
+
+- Que la cabecera sea completa: declara los límites que he leído en el código y visto por efecto;
+  puede haber más. Los otros dos productores de bytes no los he sembrado (sólo `ensureInvoicePdf` y
+  uno inventado). La tanda completa, no.
+- La frase «y la razón de que este guard sea MÁS estricto que el de 206» (línea 29) es historia de la
+  cabecera vieja y no la he medido ni tocado.
+- Los comentarios del cuerpo (líneas 160-163 dicen que la rama no compila sin el ALTER; ya compila)
+  no son cabecera y no los he tocado.
+- `docs/master/evidencias/SCRUM-1523/salida-tests.txt:232` cita la línea 173 del fichero viejo: es
+  una salida fechada, no un ancla viva; la cabecera la mueve a la 202.
+
+## Mis errores
+
+- Declaré L3 («productor con otro nombre») MUDA y salió SORPRESA: la regla no lo ve, pero la llamada
+  que tira el resultado sin «producir» suma al tope y lo caza. Lo cazó el propio instrumento, que
+  compara lo declarado con lo visto. Corregí la declaración, y añadí L5 para ver el límite del tope.
+  La primera pasada se queda en `salida-limites-de-la-cabecera-205-primera-pasada.txt`.
+- En la tabla de arriba escribí las líneas 62 y 76, que eran las del fichero VIEJO (la cabecera
+  desplaza 29 líneas). Lo vi al cotejar cada número con `grep -n` sobre el nuevo: son 91 y 105.
+- Cogí el sufijo `1510d` sin mirar: en `origin/main` casa dentro de SHAs y evidencias. Lo vi con
+  `git grep` antes de comitear y pasé a `1510c`, que da 0.
+
+## Ficheros
+
+- `tests/scrum205-fallo-de-sellado-no-entrega.test.mjs` (sólo comentarios)
+- `docs/master/evidencias/SCRUM-1510/limites-de-la-cabecera-205.mjs` y sus dos salidas
+- `docs/master/evidencias/SCRUM-1510/salida-censo-scrum205-por-efecto-23oct.txt`

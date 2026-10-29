@@ -127,3 +127,5 @@ Una causa que encaja con lo último que viste no está cerrada hasta que explica
 Cuando dos personas distintas se equivocan igual el mismo día, no falta cuidado: falta una herramienta, o que la que ya existe sea el camino por defecto. (SCRUM-951i)
 Cero resultados con tu vocabulario no es silencio del documento. (SCRUM-1206)
 Una herramienta que contesta por patrón contesta también por un fichero que no existe: antes de creerse el dueño, se comprueba que el fichero está. (SCRUM-1056e)
+Un test gateado que se salta en local es un test que no corriste: su verde no habla de él. (SCRUM-1509i)
+Negar las líneas no niega el total: `Math.round` sube el medio céntimo negativo, y la R1 no suma lo que resta. (SCRUM-624d)

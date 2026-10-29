@@ -1,0 +1,11 @@
+clave DATABASE_URL_STAGING → acela.proxy.rlwy.net/railway  (host de producción declarado: distinto: sí)
+① READ ONLY · SHOW=on · escritura con WHERE false → RECHAZADA · OK
+② sembrado (3 filas, mismo SELECT sobre VALUES) → SIEMBRA-JUST-DISCREPA=discrepa · SIEMBRA-F1-MISMAS=coincide · SIEMBRA-JUST-LIMPIA=coincide
+     SIEMBRA-JUST-DISCREPA: guardado 100,00 · impreso 121,00 («TOTAL COBRADO»)
+   esperado SIEMBRA-JUST-DISCREPA=discrepa · SIEMBRA-F1-MISMAS=coincide · SIEMBRA-JUST-LIMPIA=coincide · positivo OK
+③ invoices: 9 filas en la tabla · 9 leídas · 9 PDF leídos · 0 ciegas
+   coincide 9 · DISCREPA 0
+   JUST                 9 filas · discrepa 0
+PDF generados y leídos en total: 12
+VEREDICTO: VERDE — 0 de 9 facturas imprimen un total distinto del guardado
+EXIT=0

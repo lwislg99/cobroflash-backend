@@ -1,0 +1,94 @@
+SCRUM-1599d · salida de sonda-1599d.mjs · Date: Fri, 23 Oct 2026 22:32:06 GMT · origin/main = 09f51b1c7db6f6a8f7b6532a03c30a4809b48e86
+
+### 1. Las dos sondas sobre el commit del último CI VERDE de main (run 40023657436, job 120656131758 «build + tests», log bajado con --allow-escape-sequences)
+ref a7855fd70 = a7855fd70b1bf4a4d6e565fc83c6233df25e9050
+① ESTÁTICA · población: 1485 ficheros .test.mjs · con skip literal que nombra un gate: 90
+    48 ficheros · motivo nombra: QA_DB_TEST
+    20 ficheros · motivo nombra: LIBRO_PG_URL + QA_DB_TEST
+    20 ficheros · motivo nombra: LIBRO_PG_URL
+     1 ficheros · motivo nombra: A55_DB_TEST + LIBRO_PG_URL
+     1 ficheros · motivo nombra: BOT_SUITE_TEST + LIBRO_PG_URL
+   → nombran QA_DB_TEST y NO LIBRO_PG_URL (no tienen banco desechable): 48
+   sin motivo literal pero leen process.env.<gate>: 2 (no clasificados: pueden ser gate de otra forma o tests que la enseñan)
+② DINÁMICA · log 1983145 B · tests 12427 = pass 12338 + skipped 89: SUMA · líneas de salto leídas: 89
+   casos saltados por QA_DB_TEST: 83 · en 46 ficheros · sin casar con ningún fichero: 0
+   otros saltos (no son de base): 6
+      · el defecto depende de path.isAbsolute/resolve NATIVOS de Windows; este runner no es win32 
+      · el defecto depende de path.isAbsolute/resolve NATIVOS de Windows; este runner no es win32 
+      · el defecto depende de path.isAbsolute/resolve NATIVOS de Windows; este runner no es win32 
+      · el defecto depende de path.isAbsolute/resolve NATIVOS de Windows; este runner no es win32 
+      · el entorno no deja leer la hora de GitHub aquí: no se pudo leer la hora de GitHub (`gh api
+      · sin TRAMOS_PG_URL
+   control POSITIVO sembrado (tests/pdfs.test.mjs): casa · control NEGATIVO inventado: no casa
+   cruce ①×②: en ① y no saltan en CI: 2 · saltan en CI y ① no los tiene como «solo QA»: 0
+      ①-sólo tests/scrum419-ci-declara-lo-que-no-corre.test.mjs
+      ①-sólo tests/scrum754-el-juez-que-oscila.test.mjs
+FICHEROS QUE NO CORREN EN CI (② por título):
+   tests/pdfs.test.mjs · 1 casos
+   tests/scrum104-clientes-referenciados.test.mjs · 1 casos
+   tests/scrum106-trabajos-fecha.test.mjs · 1 casos
+   tests/scrum109-expense-teammember.test.mjs · 2 casos
+   tests/scrum115-wa-fallo-registrado.test.mjs · 2 casos
+   tests/scrum116-recordatorio-candado.test.mjs · 1 casos
+   tests/scrum120-patch-job-roles.test.mjs · 1 casos
+   tests/scrum127-paywall-bloquea.test.mjs · 1 casos
+   tests/scrum131-resend-honesto.test.mjs · 1 casos
+   tests/scrum135-gasto-tenencia.test.mjs · 4 casos
+   tests/scrum136-hub-equipo.test.mjs · 3 casos
+   tests/scrum148-filtro-por-miembro.test.mjs · 2 casos
+   tests/scrum17-recapitulativa.test.mjs · 1 casos
+   tests/scrum170-facturacion-parcial.test.mjs · 1 casos
+   tests/scrum171a-consolidar-cliente.test.mjs · 1 casos
+   tests/scrum173-cadena-verifactu-serializada.test.mjs · 7 casos
+   tests/scrum178-emision-manual.test.mjs · 1 casos
+   tests/scrum207-emision-auditada.test.mjs · 2 casos
+   tests/scrum22-operario-readpath.test.mjs · 1 casos
+   tests/scrum221-export-fiscal-cero-bytes.test.mjs · 1 casos
+   tests/scrum222-deriva-arranque.test.mjs · 2 casos
+   tests/scrum234-carrera-serie.gated.test.mjs · 1 casos
+   tests/scrum24-operarios-metrics.test.mjs · 1 casos
+   tests/scrum25-export-zip.test.mjs · 1 casos
+   tests/scrum25-exports.test.mjs · 1 casos
+   tests/scrum51-job-sin-quote.test.mjs · 1 casos
+   tests/scrum57-operario-propagacion.test.mjs · 1 casos
+   tests/scrum574-mismo-cliente-tras-migracion.test.mjs · 2 casos
+   tests/scrum58-jobs-n1.test.mjs · 1 casos
+   tests/scrum592-concurrencia-serie.test.mjs · 4 casos
+   tests/scrum593d-viaje-completo-del-texto.test.mjs · 4 casos
+   tests/scrum66-tipo-operacion.test.mjs · 1 casos
+   tests/scrum73-verifactu-gate.test.mjs · 1 casos
+   tests/scrum74-recibo-token.test.mjs · 1 casos
+   tests/scrum76-email-adjunto.test.mjs · 1 casos
+   tests/scrum767-cura-concurrencia.test.mjs · 4 casos
+   tests/scrum781-concurrencia-de-la-factura.test.mjs · 4 casos
+   tests/scrum793-la-carrera-del-token.test.mjs · 6 casos
+   tests/scrum814-carrera-del-tramo.gated.test.mjs · 3 casos
+   tests/scrum82-zip-verifactu.test.mjs · 1 casos
+   tests/scrum85-pay-routes-token.test.mjs · 1 casos
+   tests/scrum90-pay-bank-mp-token.test.mjs · 1 casos
+   tests/scrum92-login-operario.test.mjs · 1 casos
+   tests/scrum94-register-teammember.test.mjs · 1 casos
+   tests/tenancy-permisos.test.mjs · 2 casos
+   tests/webhooks-idempotencia.test.mjs · 1 casos
+rc=0
+
+### 2. Sólo la estática, sobre origin/main de hoy
+ref 09f51b1c7db6f6a8f7b6532a03c30a4809b48e86 = 09f51b1c7db6f6a8f7b6532a03c30a4809b48e86
+① ESTÁTICA · población: 1491 ficheros .test.mjs · con skip literal que nombra un gate: 90
+    48 ficheros · motivo nombra: QA_DB_TEST
+    20 ficheros · motivo nombra: LIBRO_PG_URL + QA_DB_TEST
+    20 ficheros · motivo nombra: LIBRO_PG_URL
+     1 ficheros · motivo nombra: A55_DB_TEST + LIBRO_PG_URL
+     1 ficheros · motivo nombra: BOT_SUITE_TEST + LIBRO_PG_URL
+   → nombran QA_DB_TEST y NO LIBRO_PG_URL (no tienen banco desechable): 48
+   sin motivo literal pero leen process.env.<gate>: 2 (no clasificados: pueden ser gate de otra forma o tests que la enseñan)
+② DINÁMICA · sin --log: no medida
+rc=0
+
+### 3. Mutaciones del instrumento
+3a. quitar el positivo sembrado (fSembrado = undefined, copia fuera del árbol):
+CIEGO · ① no encontró ningún fichero gateado por QA_DB_TEST: no hay positivo que sembrar
+rc=2
+3b. log cortado a 50.000 B:
+CIEGO · log de 49712 B: un job a medias o sin bajar (uno completo pasa de 1,7 MB)
+rc=2

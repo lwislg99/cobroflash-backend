@@ -180,7 +180,8 @@ test('SCRUM-359 · ④ la ventana que cruza días se DETECTA (no se resuelve aqu
     candidatosSuelo: candidatos(),
     llegadaAlServidor: TECHO,
   });
-  assert.equal(cruzaDias(r.ventana), true,
+  // SCRUM-1622: la zona ya no tiene valor por defecto; la de estos casos es la de Madrid.
+  assert.equal(cruzaDias(r.ventana, 'Europe/Madrid'), true,
     '🔴 una ventana de martes a jueves no se detecta como que cruza días. Un albarán acredita ' +
     'una entrega de UN día concreto, y aquí nuestros datos no dicen cuál: solo lo dice el reloj ' +
     'que no controlamos.');
@@ -190,7 +191,7 @@ test('SCRUM-359 · ④ la ventana que cruza días se DETECTA (no se resuelve aqu
     candidatosSuelo: [{ fuente: 'albaran_actualizado', instante: T('2026-08-04T09:00:00.000Z') }],
     llegadaAlServidor: T('2026-08-04T12:00:00.000Z'),
   });
-  assert.equal(cruzaDias(mismoDia.ventana), false, '🔴 una ventana de tres horas del mismo día dice que cruza días.');
+  assert.equal(cruzaDias(mismoDia.ventana, 'Europe/Madrid'), false, '🔴 una ventana de tres horas del mismo día dice que cruza días.');
 });
 
 test('SCRUM-359 · ④ «qué día fue» se pregunta en hora local, no en UTC', () => {
@@ -202,7 +203,7 @@ test('SCRUM-359 · ④ «qué día fue» se pregunta en hora local, no en UTC', 
     techo: T('2026-08-04T22:30:00.000Z'),  // 00:30 en Madrid, día 5
     anchoMs: 3600000,
   };
-  assert.equal(cruzaDias(ventana), true,
+  assert.equal(cruzaDias(ventana, 'Europe/Madrid'), true,
     '🔴 en Madrid esa ventana empieza el día 4 y acaba el día 5, y se dice que no cruza días.');
 });
 

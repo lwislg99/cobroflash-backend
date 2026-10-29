@@ -413,6 +413,7 @@ async function fetchInvoices(options = {}) {
         <th>Estado</th>
         <th class="col-hide-mobile">Fecha</th>
         <th class="col-hide-mobile">${FC.TEXTOS_ETIQUETAS.columna}</th>
+        <th></th>
       </tr>
     `;
     table.appendChild(thead);
@@ -649,7 +650,10 @@ async function fetchInvoices(options = {}) {
 
           const tdCustomer = document.createElement('td');
           tdCustomer.className = 'cell-client';
-          tdCustomer.textContent = (inv.customer && inv.customer.name) || '—';
+          // SCRUM-1576b · el cliente de una factura EMITIDA es el que se congeló al emitirla
+          // (`customerName`, que la API ya manda); la ficha viva sólo si es anterior al escritor.
+          // La misma regla que `clienteDelDocumento` (clienteCongelado.ts).
+          tdCustomer.textContent = (inv.customerName != null ? inv.customerName : (inv.customer && inv.customer.name)) || '—';
           tr.appendChild(tdCustomer);
 
           const tdTotal = document.createElement('td');
@@ -694,6 +698,26 @@ async function fetchInvoices(options = {}) {
             tdTags.title = susTags.join(', ');
           }
           tr.appendChild(tdTags);
+
+          // ── SCRUM-1562g · LA FACTURA, TAMBIÉN SIN RATÓN ─────────────────────────────────────
+          // Un `<tr>` con clic no recibe foco ni teclas, y dentro sólo estaba la casilla del lote:
+          // con teclado no se abría ninguna factura (medido con la sonda de 1562, c.21124). Se
+          // resuelve como Trabajos (1562d/f) y Presupuestos: un `<button>` NATIVO en su propia
+          // celda, con el rótulo «Ver detalle» que el fundador firmó para las tres listas
+          // (SCRUM-1562 c.21125). A la fila no se le da `role`: dejaría de ser una fila de tabla
+          // para quien la oye. El clic en la fila y la casilla siguen como estaban;
+          // `stopPropagation` para no navegar dos veces.
+          const tdAcc = document.createElement('td');
+          tdAcc.className = 'cell-actions';
+          const bDetalle = document.createElement('button');
+          bDetalle.className = 'btn-ghost btn-sm';
+          bDetalle.textContent = 'Ver detalle';
+          bDetalle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (window.renderAppView) window.renderAppView('invoice-detail', { invoiceId: inv.id });
+          });
+          tdAcc.appendChild(bDetalle);
+          tr.appendChild(tdAcc);
 
           tr.style.cursor = 'pointer';
           tr.addEventListener('click', (e) => {

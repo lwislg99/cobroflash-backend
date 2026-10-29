@@ -269,6 +269,7 @@ test('SCRUM-438 · 🔴 la política va SIEMPRE dentro del ZIP, cuadren o no los
       año: 2026, trimestre: 3, desde: '', hasta: '', moneda: 'EUR',
       casillas: [], casillaTotalCuota: { casilla: 27, valor: 0 }, totalBase: 0,
       sinClasificar: [], sinDesglose: [], cruceConCobros: {}, miradas: 0, asientos: 0,
+      informacionAdicional: { inversionSujetoPasivo: { casilla: 122, base: 0, operaciones: [] } }, // SCRUM-1063f
       motivosParaNoFiarse: [], avisoObligatorio: '',
     },
     merchantId: 7,

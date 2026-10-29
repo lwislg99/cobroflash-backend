@@ -1,0 +1,471 @@
+# SCRUM-1566 · El expediente de los tres céntimos (1566 · 623 · 624 ②) — una firma
+
+**Medido contra:** `origin/main` = `9839aa6c2baee741f6a38de4e99c7fc29a3fe807` · 2026-10-22T09:31:49Z
+
+A9: sin fallo que generalice — tramo de papel, sólo lectura: ni `src/` ni `tests/`, y ningún arreglo aplicado
+
+Sesión S1, encargo del orquestador (22-oct). **Sólo lectura.** No se ha tocado `vat.service.ts`,
+`pdf.service.ts`, `registro.builder.ts` ni nada del camino de emisión, ni se propone texto de cara al
+usuario. Enlaces: [SCRUM-623](SCRUM-623.md) (tramo del 19-oct en el PR #2616, abierto) ·
+[SCRUM-624](SCRUM-624.md) (tramo «SCRUM-624c») · [SCRUM-1444](SCRUM-1444.md) (tramo 1444d, de donde
+sale el 1566).
+
+---
+
+## 🔴 PARA EL FUNDADOR — lo que se firma (dos minutos)
+
+**La pregunta:** ¿las tres se arreglan con UN cambio o con tres? **Respuesta medida (simulada sobre el
+código de hoy, abajo cómo):**
+
+1. **623 y 624 ② son EL MISMO defecto y se cierran con UN cambio (A).** Con A, las dos bajan a
+   **0,0 %** en las siete poblaciones medidas, y **A no empeora ninguna otra columna**.
+2. **1566 es OTRO cambio (B), en otro fichero.** A no lo toca.
+3. **Hay un tercero escondido debajo de los tres: el empate de medio céntimo (C).** Y aquí está lo que
+   no sabíamos: **arreglar una SÍ descuadra otra si se hace en mal orden.**
+   - **C solo** (arreglar el redondeo del motor sin A) **empeora 623 y 624**: factura única al 10 %,
+     de 1,2 % a **2,8 %**; tramos 50/50, de 12,4 % a **15,2 %**. Mueve el XML y el guardado, y el
+     PDF se queda donde estaba.
+   - **B solo empeora presupuesto contra factura**: con cantidades enteras al 10 %, de 0,0 % a
+     **0,9 %**.
+   - **A + B + C: las tres a 0,0 % en las siete poblaciones.**
+4. **Lo que A + B + C NO cierran:** el presupuesto sigue sin cuadrar consigo mismo (base + IVA ≠
+   total en el **21-48 %** de los presupuestos con cantidades decimales) y su IVA difiere del de la
+   factura en **hasta un 3 %**. Eso lo cierra **un cuarto cambio (D): que el total que el cliente FIRMA salga
+   de la misma cuenta.** D cambia un importe firmado: no es de este expediente, es de la asesoría.
+
+**⇒ Tres tickets son UNA decisión: «la cuenta de `calcVatBreakdown` manda en TODAS las superficies»**
+—que es extender a los papeles la que ya tomaste el 4-sep para el total guardado (SCRUM-624 fase C,
+«gobierna la canónica»)—. Se ejecuta en este orden, y el orden es parte de la decisión:
+
+| paso | qué | cierra | ¿antes de encender la facturación? |
+|---|---|---|---|
+| **A** | el bloque de totales del PDF de factura lee `calcVatBreakdown` y el total guardado | **623 y 624 ②** | **SÍ.** Es la que deja un céntimo mal PARA SIEMPRE en cada factura emitida |
+| **B + C**, juntos | el pie del presupuesto usa la cuota de `calcVatBreakdown`; el empate se redondea bien en el motor | **1566** (y el empate) | C, sí (toca el XML), **pero nunca antes que A**; B puede esperar, pero NO puede ir sin C |
+| **D** | el total del presupuesto sale de la misma cuenta | presupuesto ↔ factura | **después**, con la asesoría: cambia lo firmado |
+
+**Lo que se contesta:** «autorizo A antes del SIF-1» · «autorizo A, B y C antes del SIF-1» ·
+«después del SIF-1». **Si se elige «después», cada factura que se emita mientras tanto con el
+descuadre se queda así: una factura emitida no se edita (regla 29), sólo se rectifica.**
+
+---
+
+## Las tres, una por una
+
+| | **① SCRUM-1566** | **② SCRUM-623** | **③ SCRUM-624 ②** |
+|---|---|---|---|
+| **qué ve el cliente** | la página donde firma el presupuesto y el PDF del presupuesto dan un IVA distinto, por 1 céntimo | el PDF de su factura y el registro que va a Hacienda (XML VeriFactu) dicen base, IVA o total distintos, por 1-2 céntimos | el TOTAL impreso en su factura no es el guardado — el que se cobra y se declara (`ImporteTotal`) |
+| **cada cuánto** (hoy) | cantidades decimales (m², horas): **4,4 %** al 21 %, **6,4 %** al 10 %, **7,7 %** mezclando tipos. Enteras: 0-0,9 %. *(1444d midió 5,9 % y 4,6 % en su población; aquí es la de 624c)* | factura única, un tipo: **0-1,6 %** · única, tipos mezclados: **28,8 %** · tramos: **12,4 %** · tramos mezclados: **40,0 %** | única, un tipo: **0-1,6 %** · única mezclados: **11,6 %** · tramos: **11,8 %** · tramos mezclados: **19,9 %** |
+| **la línea que lo causa** | `presentacionIva.ts:179`: redondea la base del tipo y LUEGO multiplica · frente a `vat.service.ts:77` + `:84`: acumula la cuota línea a línea y redondea una vez. Se pintan en `quoteDecisionLanding.routes.ts:497` (página) y `pdf.service.ts:1093-1106` (PDF) | `pdf.service.ts:548-562`: su propio `vatMap`, suma sin redondear y redondea sólo al pintar (`:574`, `:630`/`:652`, `:664`) · frente a `vat.service.ts:84-90`, que redondea por tipo y suma, y que es lo que va al XML (`registro.builder.ts:315-332`, `verifactu.service.ts:297`) | `pdf.service.ts:562` (`grandTotal = subtotal + totalVat`, pintado en `:664`) · frente a `invoiceLines.service.ts:155-157` (`grossOfLines`, lo guardado), que va a `ImporteTotal` (`verifactu.service.ts:293`) |
+| **qué se tocaría** | **B**: `presentacionIva.ts` (carril S1) | **A**: `pdf.service.ts`, bloque de totales de la factura (carril J1, camino de emisión) | **A**, el mismo |
+| **si NO se arregla antes de encender la facturación** | no es documento fiscal: el presupuesto se puede reenviar. Muerde en credibilidad («¿cuál de los dos IVA es?»), no en Hacienda | **el papel y Hacienda dicen cosas distintas, y en cada factura emitida queda así para siempre** (regla 29). Las filas por tipo sí suelen coincidir (623, tramo 19-oct): lo que se separa es la base y el total agregados | **el cliente paga una cifra y su factura dice otra**, por 1-2 céntimos; inmutable igual que ② |
+
+**Y el escondido — el empate (C):** `vat.service.ts:23-24`, `round2 = Math.round(n * 100) / 100`. En
+un empate de medio céntimo decide el número binario: 1 × 22,50 € al 21 % → IVA exacto 4,725, YaQu
+pone **4,72**. Lo midió 1444d: **0,30 %** al 21 %, **0,84 %** al 10 %. La misma forma está copiada en
+`presentacionIva.ts:92`, `invoiceLines.service.ts:147` y `utils.ts:256` (`calcTotal`). El XML queda
+cuadrado consigo mismo (base + cuota = total, medido: **0,0 %** de descuadre en todas las
+poblaciones), pero con una cuota que no es base × tipo bien redondeado. **Si la AEAT lo rechaza: NO
+LO SÉ.** Su catálogo tiene el error `1142` («CuotaRepercutida tiene un valor incorrecto para … base y
+tipo», `docs/legal/fuentes/aeat-errores.properties`), y el margen que admite no está en ningún
+documento del repositorio.
+
+---
+
+## La tabla que contesta la pregunta
+
+% de documentos con el descuadre. Población por fila: 4.000 presupuestos (y las facturas que la
+emisión real saca de ellos). Salida entera en `evidencias/SCRUM-1566/salida-expediente.txt`.
+
+**Factura única · cantidades decimales · tipos 21/10/4 %** (la que más se mueve):
+
+| escenario | ① 1566 | ② 623 | ③ 624 | presupuesto no cuadra consigo | presupuesto ≠ factura (IVA) |
+|---|---|---|---|---|---|
+| hoy | 7,7 % | 28,8 % | 11,6 % | 42,4 % | 9,9 % |
+| sólo A | 7,7 % | **0,0 %** | **0,0 %** | 42,4 % | 9,9 % |
+| sólo B | **0,0 %** | 28,8 % | 11,6 % | 42,4 % | 3,1 % |
+| sólo C | 8,1 % | 29,0 % | 11,8 % | 42,8 % | 10,3 % |
+| A + B + C | **0,0 %** | **0,0 %** | **0,0 %** | 42,8 % | 3,1 % |
+| A + B + C + D | 0,0 % | 0,0 % | 0,0 % | **0,0 %** | **0,0 %** |
+
+**Donde se ve que el orden importa** (las otras poblaciones, sólo las celdas que cambian):
+
+| población | hoy | sólo C | sólo B | A + B + C |
+|---|---|---|---|---|
+| única · enteras · 21 % — ② 623 | 1,2 % | **2,1 %** ↑ | 1,2 % | 0,0 % |
+| única · enteras · 10 % — ② 623 | 1,2 % | **2,8 %** ↑ | 1,2 % | 0,0 % |
+| única · enteras · 10 % — presupuesto ≠ factura | 0,0 % | 0,0 % | **0,9 %** ↑ | 0,0 % |
+| tramos 50/50 · enteras · 21 % — ② 623 | 12,4 % | **15,2 %** ↑ | 12,4 % | 0,0 % |
+
+Las siete poblaciones dan lo mismo en lo que importa: **con A, ② y ③ a 0,0 % siempre; con A + B + C,
+①, ② y ③ a 0,0 % siempre; y el XML cuadra consigo mismo en el 0,0 % de los casos en todos los
+escenarios** — el registro fiscal es la referencia, son los papeles los que se separan de él.
+
+---
+
+## Cómo se ha medido, y qué vale
+
+`docs/master/evidencias/SCRUM-1566/expediente-tres-centimos.cjs` —
+`node <guion> <árbol con dist/> [300] [4000]`. Corrido contra el `dist/` del árbol `s1-624c`; los
+ficheros de cuenta que usa no han cambiado entre su base (`eee7d2b4b`) y este `main` (`git log`: los
+dos únicos commits en `src/modules/invoicing/` desde entonces tocan los libros y el emisor de JUST,
+nada de lo que se llama aquí).
+
+- **Los arreglos no se han hecho: se SIMULAN.** Hacerlos en el código sería modificar el camino de
+  emisión (regla 38, STOP). El guion escribe una réplica de cada superficie con el redondeo como
+  parámetro y **exige que, con el redondeo de hoy, dé lo mismo que el código real**:
+  - el **PDF de factura de verdad** (`generateInvoicePdf` con `PDFDocument.prototype.text` espiado,
+    como en 624c): **580 facturas, misma base, mismas filas de IVA y mismo TOTAL en las 580**;
+  - `calcVatBreakdown`, `grossOfLines`, `pieDePresupuesto` y `calcTotal` reales: **1.700
+    presupuestos y sus facturas, idénticos**. Si uno solo difiere, el guion se para.
+- **Control positivo:** el caso a mano de 1444d (22,50 € al 21 %) sale 4,72 hoy y 4,73 con el
+  redondeo simulado; si no, el guion se para.
+- **Las facturas salen del camino de emisión real** (`lineasParaFacturar` → `stageLinesReconciled`
+  con el objetivo de `distributeStageAmounts(calcTotal)`), con el generador y los planes de 624c.
+- **Nada se escribe en el repositorio:** los PDF van a un temporal del sistema que se borra al salir.
+
+**Lo que NO vale, declarado:**
+
+- **Son poblaciones sintéticas, no facturas reales.** En producción no hay clientes reales; la
+  consulta de sólo lectura de 624 fase C sigue sin correr.
+- **C se simula con UN redondeo** (medio céntimo hacia arriba, en decimal). Es para medir el efecto,
+  no una propuesta de convención: cuál manda es de la asesoría.
+- **B se simula sin descuento global.** Con descuento global, `pieDePresupuesto` reparte el descuento
+  entre tipos y recalcula la cuota sobre la base descontada: ahí B pide elegir cómo, y eso no se ha
+  medido. Los presupuestos con descuento de línea quedan fuera de la columna ① a propósito: con
+  descuento, página y PDF ya usan la misma función (`quoteDecisionLanding.routes.ts:476-488`).
+- **D cambia el importe que el cliente firma** (`utils.ts:256`, `calcTotal`). Se ha medido para
+  saber qué cierra; no se recomienda sin asesoría.
+- **Fuera de la población:** facturas recapitulativas, factura final de tramos
+  (`finalInvoice.service.ts`, que guarda un total explícito: si no casa con sus líneas, A imprimiría
+  ese total) y la columna de importes por línea del PDF (SCRUM-1446).
+
+## Lo que no está hecho
+
+- **Nada arreglado.** A y C son camino de emisión y carril J1; B es carril S1, pero no puede ir sin C.
+- **El trinquete de las dos mitades** que dejó pendiente el tramo de S3 en 623 sigue sin construir.
+  El de este expediente se puede montar sobre este mismo guion el día que entre A.
+
+---
+
+## SCRUM-1566 (b) · B CON DESCUENTO GLOBAL — el hueco que dejó declarado el tramo de arriba
+
+**Medido contra:** `origin/main` = `8ad167195af03cf4153337ccc1bf1b80d04c10f8` · 2026-10-22T09:41:52Z
+
+A9: sin fallo que generalice — sólo lectura, ni `src/` ni `tests/`; la premisa del encargo se corrige abajo con su fuente
+
+Encargo del orquestador (22-oct): «B se simuló sin descuento global; con él, `pieDePresupuesto` reparte el
+descuento entre tipos y B pide elegir cómo. Mídelo: forma de repartir · qué cambia en el pie · qué cambia
+frente a la factura · %». **Sólo lectura.**
+
+### 🔴 Lo primero: el reparto entre tipos NO es una decisión viva — ya está bloqueado
+
+Un descuento global con **varios** tipos de IVA (el «caso C» de SCRUM-887) **no se guarda, no se revisa y
+no se factura** desde el 17-sep (decisión de SCRUM-887, comentario 15697): `quotes.routes.ts:149` (400 al
+crear), `quoteAdmin.ts:667` (no hay revisión), `invoiceLines.service.ts:128` (las líneas salen a 0 y el
+portón de SCRUM-246 no emite). El propio fichero lo dice: «repartir el global entre tipos es la convención
+que espera a la asesoría». **Así que B no tiene que elegir ningún reparto:** el único caso vivo con descuento
+global es el de **UN SOLO tipo**, y ahí el descuento entero va a ese tipo.
+
+Y otra cosa que cambia el encuadre: **con descuento, 1566 no existe.** La página de firma y el PDF del
+presupuesto ya usan los dos `pieDePresupuesto` (`quoteDecisionLanding.routes.ts:480-491`, `pdf.service.ts:1093`),
+así que no pueden discrepar entre sí. Lo que B mueve con descuento es otra cosa: **el presupuesto frente a la
+factura** y **el presupuesto frente a sí mismo**.
+
+### Lo que sí hay que elegir con un solo tipo: CÓMO se calcula la cuota tras quitar el descuento
+
+Tres formas (ninguna inventada: F0 es la de hoy, F1 la que ya declara la factura, F2 la otra natural):
+
+| forma | cuota del tipo, con `q` € de descuento global |
+|---|---|
+| **F0 · hoy** (`presentacionIva.ts:179`) | redondea la base, le quita `q`, multiplica: `R((R(base) − q) × tipo)` |
+| **F1 · la de la factura** | la canónica sobre las líneas **más la línea negativa** de `−q` que ya pone `lineasParaFacturar` (`invoiceLines.service.ts:136-139`): `R(Σ cuota − q × tipo)` |
+| **F2** | cuota de las líneas menos cuota del descuento, cada una redondeada: `R(Σ cuota) − R(q × tipo)` |
+
+% de presupuestos (4.000 por fila, todos con descuento global, un solo tipo; mitad en euros redondos, mitad
+con céntimos, del 2 al 30 % de la base). Salida entera en `evidencias/SCRUM-1566/salida-descuento-global.txt`.
+
+| población · forma | IVA presupuesto ≠ factura (hoy) | IVA presupuesto ≠ factura (con D) | presupuesto no cuadra consigo (hoy) | presupuesto no cuadra consigo (con D) |
+|---|---|---|---|---|
+| entera 21 % · **F0 hoy** | 5,2 % | 3,0 % | 13,8 % | 3,7 % |
+| entera 21 % · **F1 factura** | **2,1 %** | **0,0 %** | **10,7 %** | **0,7 %** |
+| entera 21 % · F2 | 10,6 % | 10,3 % | 17,3 % | 11,0 % |
+| decimal 21 % · **F0 hoy** | 10,5 % | 6,3 % | 31,3 % | 7,0 % |
+| decimal 21 % · **F1 factura** | **4,3 %** | **0,0 %** | **25,0 %** | **0,7 %** |
+| decimal 21 % · F2 | 14,2 % | 11,8 % | 26,4 % | 11,5 % |
+| decimal 10 % · **F0 hoy** | 5,0 % | 5,0 % | 27,2 % | 5,7 % |
+| decimal 10 % · **F1 factura** | **0,0 %** | **0,0 %** | **22,1 %** | **0,7 %** |
+| decimal 10 % · F2 | 12,8 % | 12,8 % | 27,3 % | 13,4 % |
+
+(Entera 10 % da lo mismo en forma: F1 la mejor en las cuatro columnas, 0,0 % frente a la factura con D.)
+
+**Lo que dice la tabla:**
+
+- **F1 es la mejor en TODAS las celdas de las cuatro poblaciones, y no es una convención nueva:** es
+  `calcVatBreakdown` sobre `lineasParaFacturar(quote)`, las dos ya existentes. Con F1, B se puede escribir en
+  una frase que vale con y sin descuento: **«el IVA del pie del presupuesto es el que declarará su factura»**.
+- 🔴 **F2 se DESCARTA en voz alta:** es la peor en todas las celdas y, con D, deja el presupuesto sin cuadrar
+  consigo en el **11-13 %**, frente al 0,7 % de F1. Redondear la cuota del descuento por separado mete un
+  segundo redondeo que nadie más hace.
+- **F0 (hoy) también queda peor que F1 en todo**, y con D no baja del 3-7 %.
+- **Sin D, ninguna forma cuadra el presupuesto consigo** (10-31 %): el total firmado sale de `calcTotal`, otra
+  cuenta. Y el IVA frente a la factura no baja a cero porque la reconciliación (`stageLinesReconciled`) mueve
+  precios de la factura hasta dar ese total firmado. **Es D otra vez, no B.**
+- **El 0,7 % que queda con F1 + D es el empate (C):** cuotas en medio céntimo EXACTO (701,055 →
+  701,05 o 701,06) donde el binario decide según el orden de la suma —el presupuesto suma la línea negativa
+  al final, la factura al principio—. Comprobado caso a caso en seis ejemplos; con un redondeo decimal (C)
+  los dos lados dan lo mismo. *(Guion del residuo: fuera del repositorio, no se publica.)*
+
+### Los C heredados (varios tipos + global, anteriores al bloqueo) — no son de B
+
+3.383 de la población sintética: **en el 60,2 % el tipo que «absorbe el céntimo» del reparto es distinto en
+`calcTotal` y en el pie** — `calcTotal` reparte en el orden en que APARECE cada tipo (`utils.ts:262-268`, un
+`Map`) y `pieDePresupuesto` en orden DESCENDENTE (`presentacionIva.ts:164-171`). Su pie no cuadra con lo
+firmado en el **40-52 %** según la forma. No se pueden facturar, así que no llegan a Hacienda; **cuántos hay en
+producción: NO LO SÉ** (no hay consulta corrida; sin clientes reales, previsiblemente ninguno real).
+
+### Controles
+
+- **La réplica del pie con F0 da EXACTAMENTE lo que da `pieDePresupuesto` real** (todas sus filas, con
+  descuento de línea y global) en **5.000** presupuestos; si uno solo difiere, el guion se para.
+- **Control positivo:** el guion busca un caso en que F0 y F1 difieran y se para si no lo encuentra
+  (encontrado: 25,22 × 198,38 € al 21 %, global 500,31 → 945,59 frente a 945,60).
+- La factura sale del camino real (`lineasParaFacturar` → `stageLinesReconciled` con el objetivo de
+  `distributeStageAmounts(calcTotal)`). No se genera ningún PDF ni se escribe nada.
+- `dist/` del árbol `s1-624c`: 0 commits en `src/modules/quotes`, `src/modules/invoicing` y `src/core/utils`
+  entre `9839aa6c2` y este `main`, y los de antes ya se revisaron en el tramo de arriba.
+
+### Cómo queda la decisión de B
+
+**B no es una decisión disfrazada: con descuento global sólo hay un caso vivo (un tipo), y en él la mejor
+forma medida es la que ya usa la factura.** Lo que sigue siendo decisión es lo de antes: **B no va sin C** (el
+empate) y **lo que B no cierra lo cierra D** (el total firmado), que cambia lo que el cliente firma y es de la
+asesoría. El reparto entre tipos sigue donde lo dejó SCRUM-887: bloqueado, esperando a la asesoría.
+
+---
+
+## SCRUM-1566 (c) · LA CONSULTA DE SÓLO LECTURA — una autorización, tres preguntas (C heredados · 1490 · zona horaria)
+
+**Medido contra:** `origin/main` = `f02e48be2c66ae2e0dae8701401c8fcbc4fff14b` · 2026-10-22T09:51:35Z
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1566/probar-consulta.mjs`
+
+Encargo del orquestador (22-oct): preparar la consulta que cuenta los «C heredados» (descuento global con
+varios IVA, que no se pueden facturar), juntarla con la de SCRUM-1490 y con la pregunta de S4 (cuántos
+negocios tienen zona horaria), y probarla en un Postgres desechable. **⛔ NO se ha corrido contra
+producción**: no tengo claves y no debo tenerlas. La dispara quien tenga el acceso, cuando el fundador lo
+autorice. ⚠️ Producción está congelada: lo que se lea ahí es el estado de ese despliegue.
+
+**El fichero:** `evidencias/SCRUM-1566/consulta-solo-lectura.sql`. Se pega entero en una consola SQL.
+
+| bloque | pregunta | lo que imprime |
+|---|---|---|
+| ① SCRUM-1566 (c) | ¿cuántos presupuestos no se pueden facturar? | total · sin el demo · negocios · **firmados o aceptados** · vivos · ya facturados antes del bloqueo · por estado · fechas · ids (máx. 50) |
+| ② SCRUM-1490 | la causa del error 500 (aceptación 6) | su fila, **tal cual** se probó el 19-oct |
+| ③ SCRUM-1445 | ¿cuántos negocios tienen zona horaria? | total · con zona declarada · con zona válida · sin zona (fechas en UTC) · las zonas |
+
+**No es una sola consulta: son tres preguntas con UNA autorización.** Van en una sola transacción
+`READ ONLY` y se leen sobre la misma foto de la base (`REPEATABLE READ`). Sólo devuelven recuentos, ids de
+presupuesto y nombres de zona: ni nombres de cliente, ni importes.
+
+**Por qué ① no dice si el C «cuadra»:** no cambia la respuesta. Todo C está atascado, cuadre o no. Y
+calcularlo en SQL sería una quinta copia de la cuenta del pie. La siembra sí lleva un C que cuadra y otro
+que no: los dos se cuentan.
+
+### Las dos barreras contra la escritura
+
+1. **Postgres:** el fichero abre `BEGIN … READ ONLY` y cierra con `ROLLBACK`. Probado: con un `INSERT`
+   inyectado dentro, Postgres contesta `cannot execute INSERT in a read-only transaction` y no entra
+   ninguna fila.
+2. **`guard-solo-lectura.mjs`** (estático, se corre antes de pegarla): limpia comentarios, literales e
+   identificadores, y exige `BEGIN … READ ONLY` al principio, `ROLLBACK` al final y sólo `SET LOCAL` de
+   tiempos y `WITH`/`SELECT` en medio, sin palabras que escriban, bloqueen o tiren de una secuencia.
+   **Rechaza los seis mutantes:** un `UPDATE`, `COMMIT` en vez de `ROLLBACK`, sin `READ ONLY`,
+   `SELECT … INTO`, `nextval()`, y un `DELETE` escondido delante de un comentario.
+
+### La prueba (`probar-consulta.mjs`, salida en `salida-probar-consulta.txt`)
+
+Postgres 16.4 portable con el esquema que genera Prisma (no hay cambios de esquema desde el 18-oct). El
+probador se para si la URL no es loopback y una base `…_test`.
+
+- **Control negativo:** 7 presupuestos que NO son C, incluidos los casos frontera (el segundo IVA sólo en
+  una cabecera, base 0, global 0, el mismo IVA uno como texto, `lines` que no es una lista) → **0**. La
+  función real (`tieneDescuentoGlobalConVariosIva`) dice lo mismo de cada uno.
+- **Siembra:** 7 C (uno que cuadra consigo y otro que no, **firmado**; uno del demo, uno archivado, uno ya
+  facturado, IVA y cantidad como texto, una línea sin tipo) → **las 10 medidas iguales** a las que da la
+  función real sobre las mismas filas.
+- **② SCRUM-1490:** corre sobre este esquema y caza la revisión sembrada (`revision_en_otro_anio` 0 → 1).
+- **③ zona:** cinco negocios (sin zona, `Europe/Madrid`, una inventada, en blanco, `atlantic/canary` en
+  minúsculas) → declarada 3, válida 2, **igual que `zonaValida` real**.
+
+### 🔴 Un fallo mío que cazó la propia prueba
+
+La primera versión de ① filtraba las cabeceras con `NOT (… AND e.l -> 'apartado' = true)`. En una línea
+sin esa clave, `->` da `NULL`, el `NOT` da `NULL` y la línea queda fuera. **La consulta contaba 0 siempre.**
+Contra producción ese 0 se habría leído como «no hay ningún presupuesto atascado». Lo cazó la siembra
+(daba 0 donde la función real daba 7). Corregido con `IS DISTINCT FROM`.
+
+### Lo que no cubre, declarado
+
+- **Valores raros de `Number()` de JavaScript** (`"0x1A"`, `"Infinity"`) y los empates de medio punto en
+  `Math.round` frente a `round` de Postgres: no se replican. En datos que pasan por la validación de
+  `schemas.ts` no deberían existir.
+- **③ «válida»** la decide `pg_timezone_names` y el código usa `Intl`: es la misma base IANA, pero no el
+  mismo programa. Coinciden en los cinco casos sembrados, no en todos los posibles.
+
+---
+
+## Para el asesor (SCRUM-1264) — las preguntas del expediente, redactadas para contestar
+
+*(Añadido el 22-oct, a petición del orquestador: S0 midió que la pregunta del redondeo NO está en la lista
+del asesor. Son preguntas internas para la asesoría, no texto de producto.)*
+
+**Contexto común:** YaQu calcula el IVA de una factura agrupando las líneas por tipo. Por cada tipo suma
+las bases y las cuotas (base × tipo) sin redondear, redondea al céntimo la base y la cuota del tipo, y el
+total es la suma de esas cifras ya redondeadas. Eso es lo que va al registro VeriFactu (`BaseImponible`,
+`CuotaRepercutida` por tipo, `CuotaTotal`, `ImporteTotal`).
+
+1. **El medio céntimo.** Cuando la cuota de un tipo cae exactamente en medio céntimo (1 × 22,50 € al 21 % =
+   4,725 €), hoy se declara **4,72**. ¿Debe ser **4,73** (el medio céntimo se redondea hacia arriba)? ¿O
+   es admisible cualquiera de los dos? Y si la AEAT comprueba que `CuotaRepercutida` = `BaseImponible` ×
+   `TipoImpositivo` (su error 1142), **¿qué margen admite**: ninguno, un céntimo, otro?
+2. **Por tipo o por línea.** Con varias líneas al mismo tipo, ¿es correcto calcular la cuota sobre la suma
+   de las bases (redondeando una vez por tipo), o la norma exige redondear la cuota de cada línea y sumar?
+   (Ejemplo medido en SCRUM-624: 3 líneas de 9,99 € al 21 % dan **36,27 €** redondeando por línea y
+   **36,26 €** por tipo. Con qué frecuencia difieren las dos formas en general no está medido.)
+3. **El total que firma el cliente en el presupuesto.** Hoy sale de sumar los importes con IVA de todas
+   las líneas y redondear una vez. La factura, en cambio, suma base y cuota ya redondeadas por tipo, así
+   que puede diferir del presupuesto firmado en un céntimo. ¿Puede el presupuesto mostrar el total
+   calculado igual que la factura (aunque eso cambie en un céntimo el importe que firma el cliente
+   respecto al de hoy)? ¿O el presupuesto, que no es factura, puede seguir su propio cálculo?
+4. **Descuento global con varios tipos de IVA** (bloqueado desde SCRUM-887 esperando a la asesoría). Un
+   descuento en euros sobre un presupuesto con líneas al 21 % y al 10 %: ¿cómo se reparte entre los tipos
+   (¿en proporción a la base de cada uno?), y a qué tipo va el céntimo que sobra del reparto?
+   ⚠️ **No he podido comprobar si esta pregunta está ya en SCRUM-1264** (Jira no está disponible esta
+   sesión). Si no está, es la misma situación que la 1.
+
+**Lo que contesta cada una:** la 1 decide el arreglo C; la 2 confirma o cambia la cuenta de la que
+dependen A y B; la 3 decide D; la 4 desbloquea los presupuestos «C» (SCRUM-1566 (c) los cuenta).
+
+---
+
+## SCRUM-1566 (c) · añadido el 22-oct: el bloque ④ (SCRUM-1518), cuarta pregunta con la misma autorización
+
+A petición del orquestador, a partir de lo que reprodujo S4 en SCRUM-1518: el indicador pinta «Enviado»
+ante cualquier estado de mensaje que no conoce. Con el código de hoy, el único estado alcanzable que no
+conoce es `received`. Pero las filas viejas las escribió código anterior y nadie sabe qué estados tienen.
+
+- **④ devuelve:** el total de mensajes, los estados distintos guardados y el recuento por estado y tipo.
+  **Ni teléfonos, ni textos, ni clientes.**
+- **Probado en el mismo banco** (fase 6 de `probar-consulta.mjs`): vacío → 0 y «—». Con 7 mensajes
+  sembrados (`delivered`, `received`, `read` y un estado inventado que el código ya no escribe), el total,
+  los estados y el recuento coinciden con lo sembrado, y la salida no enseña el teléfono sembrado.
+- **El guard estático sigue aceptando el fichero, y las cinco fases anteriores siguen en verde.** Salida
+  en `evidencias/SCRUM-1566/salida-probar-consulta.txt`.
+- **Sigue sin haberse corrido contra producción.** El banco desechable se apagó al terminar.
+- **23-oct · el rojo del PR #2662 (run 39762348172, 1 fallo de 12.101) era MÍO:** el guard de SCRUM-864c
+  marcaba `probar-consulta.mjs:36` como `NO_GARANTIZADA` — el `mkdtempSync` de `correrFichero` sólo se
+  borraba si `writeFileSync` y `spawnSync` no lanzaban. Arreglado en el código (borrado en `finally`), el
+  guard sin tocar: en ROJO con la rama como estaba (3/4) y en VERDE después (4/4). Re-probado el guion
+  entero con `main` mezclado, en una base desechable nueva (`yaqu_c2_test`, esquema por
+  `migrate diff --from-empty`, 33 modelos): las seis fases en verde y **0** directorios `c1566-*` en TEMP
+  (la fase 3 enseña que se crearon ahí). El temporal de `expediente-tres-centimos.cjs` ya se borraba
+  (`process.on('exit')`) y el guard no lo marca.
+
+## SCRUM-1566 (d) · LA MEDIDA DE D, sin construirla — qué es, cuántos sitios, de quién, y qué rompe
+
+**Medido contra:** `origin/main` = `5a247020e5608fd2b21fad04bcf585694494397a` (y antes `eafca9fe1`: ningún
+fichero de los de abajo cambió entre los dos, `git diff --stat` vacío). Hora de GitHub al empezar:
+2026-10-29T17:42:45Z. S1, encargo del orquestador del equipo de Luis: «MEDIR D, sin construirlo».
+**Sólo lectura:** no se ha tocado `src/`, `public/` ni ningún test.
+
+A9: sin fallo que generalice — la sonda se probó contra el caso que la motivó (94,51 → 94,52) y contra uno
+limpio (242 → 242) antes de usarla, y la base se corrió con la MISMA sonda cargada sin sustituir.
+
+### Qué es D, exactamente
+
+**Una función:** `calcTotal` (`src/core/utils/utils.ts:230`). Hoy suma `qty × precio con dto × (1 + tax)`
+línea a línea en coma flotante y redondea UNA vez al final (con global: resta su parte con impuesto).
+D es que devuelva **la base + la cuota de `calcVatBreakdown`** (`vat.service.ts`) sobre las mismas líneas
+con su `dto`, es decir `grossOfLines` de las líneas efectivas — la cuenta con la que se factura. Con global,
+la variante 1 usa el reparto del pie (`presentacionIva.ts:159-181`); la 2, `lineasParaFacturar`. **Las dos
+dan los mismos números en todo lo de abajo.**
+
+Ejemplo que lo motivó: 2,5 × 36,35 al 4 % → hoy firma **94,51**; con D, **94,52** (90,88 + 3,64).
+
+### Cuántos sitios — un punto de cambio, cinco consumidores
+
+`calcTotal(` en `src/`, por llamada (sin comentarios): **5**.
+
+| sitio | qué hace con el total | carril |
+|---|---|---|
+| `src/core/utils/utils.ts:230` | **la definición: lo único que cambia D** | **S1** |
+| `quotes.routes.ts:22` (`calcTierTotal`) y `:145` | el `Quote.total` al crear (`:201`) y el de cada opción; `:442` reescribe el total al elegir opción | S1 |
+| `maintenance.service.ts:426` | el precio de la línea del presupuesto que genera un mantenimiento | S1 |
+| `pdf.service.ts:1435` (`ivaDentroDelImporte`) | el IVA que va dentro, en el PDF del presupuesto en modo `no_incluido` | **J1** (no cambia su código; cambia lo que recibe) |
+| `customerPortal.routes.ts:251` | el importe de cada línea en el portal del cliente | **J2** (ídem) |
+| `public/dashboard/js/quoteDescuentos.js:147-188` | **una copia de la fórmula** en el editor, para el total en vivo | **S2** — hay que cambiarla A LA VEZ |
+
+Escritores de `Quote.total` (todos los `quote.create/update` de `src/`): crear (`quotes.routes.ts:201`),
+elegir opción (`:442`), mantenimiento (`maintenance.service.ts:431`), presupuesto desde albarán
+(`albaranes.routes.ts:1723`, siempre `'0.00'`) y la revisión, que lo **hereda** sin recalcular
+(`revision.ts:289`). **D no cambia ningún total ya guardado** (no hay recálculo de lo guardado); sólo lo que
+se escriba desde que entre. Ningún sello ni huella llama a `calcTotal` (los 5 de arriba son todos).
+
+### Qué rompe — los tests
+
+Población: los **58** ficheros de `tests/` que nombran `calcTotal`, `pieDePresupuesto`,
+`distributeStageAmounts`, `stageLinesReconciled`, `grossOfLines`, `quote/create`, `ivaDentroDelImporte`,
+`maintenance.service` o `scrum887`: **565** tests. Base (sonda cargada, sin sustituir): 0 fallos. Con D (las
+dos variantes): **3 fallos**, los mismos.
+
+| test | qué pasa con D | qué pide |
+|---|---|---|
+| `scrum594-descuentos-presupuesto.test.mjs:199` «la pieza de PANTALLA y `calcTotal` dan EXACTAMENTE lo mismo» | `32,64 ≠ 32,63`: el editor (S2) sigue con la fórmula vieja | cambiar `quoteDescuentos.js` en el mismo PR. Es el guard haciendo su trabajo |
+| `scrum887-el-cobro-es-lo-firmado.test.mjs:159` «sin descuento … dan los MISMOS céntimos que antes» (`HUELLA_SIN_DESCUENTO`) | la huella cambia: D cambia lo firmado **por definición** | 🔴 **regenerar la huella es la decisión de D, no un arreglo.** Por la regla 41 no lo hace la sesión: lo firma quien autorice D |
+| `scrum887b-descuento-global.test.mjs:188` caso B, techo 50/50 | **35 > 31** | 🔴 un techo que «sólo puede bajar» SUBE: con la regla 41 D **no entra así** |
+
+### Lo que D arregla, y lo que no — «cobro ≠ firmado» (`d-contar-887.mjs`, 2.000 por fila)
+
+| muestra | plan | hoy | con D |
+|---|---|---|---|
+| 887 sin descuento | SIN · A_uno · A_mixto | 18 · 18 · 14 | **0 · 0 · 0** |
+| 887b con global, un tipo | entero · 50/50 · 30/70 | 23 · 31 · 43 | **0** · **35** ↑ · 41 |
+
+**Sin descuento global, D cierra del todo «cobro ≠ firmado».** Con global y factura única, también. **Con
+global y TRAMOS no:** el 50/50 empeora (31 → 35) y el 30/70 apenas baja. La causa de ese resto **no la he
+medido**; vive en cómo se reparte la línea del global entre tramos (`distributeStageAmounts`,
+`quotes/domain/billingPlan.ts`, S1, y `stageLinesReconciled`, `invoiceLines.service.ts`, J1).
+
+### Cuánto cambia lo firmado (`d-cuantos-cambian.cjs`, 10.000 por fila)
+
+| muestra (los conjuntos de 887b: precios con fracción de céntimo, adversarial) | cambia el total firmado | máx |
+|---|---|---|
+| un tipo, sin global | **14,9 %** (sube 897 · baja 592) | 1 cént. |
+| tipos mezclados, sin global | **32,9 %** (sube 2.245 · baja 1.040) | 2 cént. |
+| un tipo, con global | **19,4 %** (sube 878 · baja 744) | 1 cént. |
+
+⚠️ Es una muestra hecha para provocar el caso, no presupuestos reales: en producción no hay clientes
+reales, y con precios de dos decimales y cantidades enteras la tasa será mucho menor (sin medir).
+
+### 🔴 D sin C hereda el empate en lo firmado
+
+1 × 22,50 € al 21 %: hoy firma **27,23** (22,50 + 4,725 → 27,225 → 27,23); con D, **27,22**, porque la cuota
+canónica es 4,72 (el empate mal redondeado de C, `vat.service.ts:23`). **Con D sola, ese presupuesto firma y
+cobra lo mismo, pero un céntimo menos del correcto.** D y C se necesitan: D hace que firmado = cobrado; C,
+que ese importe sea el bien redondeado. **No he medido C + D juntas** (la C simulada de la sesión anterior
+vivía en un `dist` parcheado que no se conserva).
+
+### Lo que eso deja para decidir
+
+1. **D es UN cambio en S1** (`utils.ts:230`) + **su espejo en S2** (`quoteDescuentos.js`), en el mismo PR.
+2. **Antes de entrar, el resto del 50/50 con global** (887b, 31 → 35): o se arregla en el reparto por tramos,
+   o D no entra (regla 41). Sin medir dónde.
+3. **La huella de 887 cambia por diseño**: quien autorice D autoriza regenerarla.
+4. **D cambia lo firmado** (14-33 % en la muestra adversarial, ±1-2 cént.): lo que el expediente ya decía
+   que es de la asesoría.
+
+### Instrumentos (en `evidencias/SCRUM-1566/`)
+
+`sonda-d.cjs` (D en memoria, `SONDA_D=0|1|2`) · `d-contar-887.mjs <árbol>` (copia efímera de los dos
+tests dentro del árbol, borrada al salir) · `d-cuantos-cambian.cjs` (con `SONDA_D=0` y `--require` de la
+sonda) · salida en `salida-d.txt`.

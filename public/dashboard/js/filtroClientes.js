@@ -94,6 +94,65 @@
     { meses: 24, palabra: 'Sin visitar desde hace 24 meses' },
   ];
 
+  /**
+   * SCRUM-1043 · «QUIÉN ME DEBE»: el filtro, el orden, la columna y el vacío.
+   *
+   * ✅ FIRMADOS por el fundador el 23-oct-2026 (SCRUM-1043 c.20536, todas las A de la propuesta
+   * c.20533; registro en `docs/microcopy/2026-10-23-SCRUM-1043-quien-me-debe.md`). No cuentan en
+   * SIN_APROBAR. «Pendiente de cobro» es el rótulo de la tarjeta de la ficha, firmado en el mismo acto.
+   *
+   * 🔴 ES DINERO: sólo para quien ve todo (`veDinero`). Al técnico se le OCULTAN filtro, orden y
+   * columna, sin texto (c.20532), y el servidor ya no le manda el saldo (`customersAdmin.routes.ts`).
+   * Filtrar y ordenar los hace el SERVIDOR (`?conDeuda=1`, `?orden=saldo`): aquí sólo se pinta.
+   */
+  var TEXTOS_DEUDA = {
+    filtro: 'Con cobro pendiente', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1043 comentario 20536, 1)
+    orden: 'Más pendiente de cobro', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1043 comentario 20536, 2)
+    columna: 'Pendiente de cobro', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1043 comentario 20536, 3a)
+    vacio: 'Ningún cliente tiene cobros pendientes.', // APROBADO por el fundador el 23-oct-2026 (SCRUM-1043 comentario 20536, 5)
+  };
+  // No entra en ORDENES: al técnico no se le ofrece. `ordenar` no lo reordena (lo manda el servidor).
+  var ORDEN_SALDO = { id: 'SALDO', palabra: TEXTOS_DEUDA.orden };
+
+  /** ¿Este rol ve el dinero de la cartera? ALLOWLIST, como `seesAllJobs` del servidor: solo 'admin'. */
+  function veDinero(rol) { return rol === 'admin'; }
+
+  /** Los órdenes que se ofrecen a ese rol: los de siempre y, si ve dinero, el de saldo al final. */
+  function ordenesPara(conDinero) { return conDinero === true ? ORDENES.concat([ORDEN_SALDO]) : ORDENES.slice(); }
+
+  /** Lo que se pide al servidor. Sin dinero, nada: el técnico pide la lista de siempre. */
+  function consultaDeDeuda(conDinero, soloConDeuda, ordenId) {
+    var p = [];
+    if (conDinero !== true) return p;
+    if (soloConDeuda === true) p.push(['conDeuda', '1']);
+    if (ordenId === ORDEN_SALDO.id) p.push(['orden', 'saldo']);
+    return p;
+  }
+
+  /**
+   * Las líneas de la celda «Pendiente de cobro» de un cliente. `fmt` formatea un importe (la vista
+   * pasa `fmtMoneyEs`). Sin deuda → `[]`: ni cifra ni marca (criterio 4). Un saldo ≤ 0 (un abono) no
+   * es deuda. La garantía va UNA LÍNEA POR RETENCIÓN con el literal firmado de SCRUM-1108
+   * (`garantiaRetenidaFicha`), igual que la ficha: con dos fechas, «total · desde la más temprana»
+   * diría que todo se libera ya. `liberacionDia` es el día en la zona del merchant (lo da el servidor).
+   */
+  function lineasDeDeuda(c, fmt) {
+    var fuera = [];
+    var saldo = c && typeof c.saldoPendiente === 'number' ? c.saldoPendiente : null;
+    if (saldo !== null && saldo > 0) fuera.push({ tipo: 'saldo', aviso: false, texto: fmt(saldo) + ' sin cobrar' });
+    var rs = c && c.garantiaRetenida && Array.isArray(c.garantiaRetenida.retenciones) ? c.garantiaRetenida.retenciones : [];
+    for (var i = 0; i < rs.length; i++) {
+      var r = rs[i];
+      var dia = String(r.liberacionDia || '').split('-');
+      if (dia.length !== 3) continue; // sin fecha legible no se pinta una línea que la promete
+      var y = dia[0], m = dia[1], d = dia[2];
+      // El MISMO literal, carácter a carácter, que `customerDetailView.js` (lo fija el test de SCRUM-1043).
+      fuera.push({ tipo: 'garantia', aviso: r.aviso === true,
+        texto: `Garantía retenida: ${fmt(r.importe)} · liberación desde el ${d}/${m}/${y} · sin cobrar` });
+    }
+    return fuera;
+  }
+
   /** La fecha de la última visita, o `null` si no hay (o si lo que llega no es una fecha). */
   function ultimaVisitaDe(c) {
     var v = c && c.ultimaVisita;
@@ -366,6 +425,10 @@
     { id: 'id', texto: 'ID', fija: false, ocultaEnMovil: false },
     { id: 'nombre', texto: 'Nombre', fija: true, ocultaEnMovil: false },
     { id: 'telefono', texto: 'Teléfono', fija: false, ocultaEnMovil: false },
+    // SCRUM-1043 · visible en el móvil, donde la cabecera no se ve: por eso la celda dice «sin cobrar».
+    // `dinero: true` la deja FUERA de la tabla, del selector y del `colSpan` para quien no ve dinero
+    // (`fijarDinero(false)`).
+    { id: 'pendiente', texto: TEXTOS_DEUDA.columna, fija: false, ocultaEnMovil: false, dinero: true },
     { id: 'email', texto: 'Email', fija: false, ocultaEnMovil: true },
     { id: 'notas', texto: 'Notas', fija: false, ocultaEnMovil: true },
     { id: 'etiquetas', texto: TEXTOS_ETIQUETAS.columna, fija: false, ocultaEnMovil: true },
@@ -376,7 +439,7 @@
 
   /** Las que el profesional puede tocar. Las fijas no salen en el control. */
   function columnasElegibles() {
-    return COLUMNAS.filter(function (c) { return !c.fija; });
+    return columnasDeLaTabla().filter(function (c) { return !c.fija; });
   }
 
   /**
@@ -402,7 +465,15 @@
    * la esconde en móvil. Se deja explícito para que quien lea sepa que aquí no se borran
    * columnas del DOM — borrarlas descuadraría el `colSpan` de las filas vacías.
    */
-  function columnasDeLaTabla() { return COLUMNAS; }
+  // SCRUM-1043 · LAS DE DINERO, sólo si la vista lo fijó para quien mira (`fijarDinero`). Se fija UNA
+  // vez y no por argumento a propósito: cabecera, selector y `colSpan` siguen saliendo de la MISMA
+  // lista sin que cada llamada tenga que acordarse del rol (SCRUM-584). La vista lo fija SIEMPRE desde
+  // `veDinero(appUserRole)` antes de pintar; sin fijar es la lista entera, la de los guards de 584.
+  var conDineroFijado = true;
+  function fijarDinero(conDinero) { conDineroFijado = conDinero === true; }
+  function columnasDeLaTabla() {
+    return conDineroFijado ? COLUMNAS : COLUMNAS.filter(function (c) { return !c.dinero; });
+  }
 
   /**
    * La CLASE de una columna dada la preferencia. Es la única regla que traduce «encendida» a
@@ -425,7 +496,7 @@
    * escritos a mano, y otra sesión los tuvo que recalcular al entrar «Etiquetas»: un número
    * copiado envejece en silencio y **un vacío descuadrado no lo ve ninguna tanda**.
    */
-  function colSpanDeLaTabla() { return COLUMNAS.length; }
+  function colSpanDeLaTabla() { return columnasDeLaTabla().length; }
 
   // ═══════════════════════════════════════════════════════════════════════════════════════
   // SCRUM-582 (CONT-09) · EL MECANISMO DE SELECCIÓN. SÓLO EL MECANISMO.
@@ -640,6 +711,14 @@
     ultimaVisitaDe: ultimaVisitaDe,
     hayVisitas: hayVisitas,
     filtrarPorVisita: filtrarPorVisita,
+    // SCRUM-1043
+    TEXTOS_DEUDA: TEXTOS_DEUDA,
+    ORDEN_SALDO: ORDEN_SALDO,
+    veDinero: veDinero,
+    fijarDinero: fijarDinero,
+    ordenesPara: ordenesPara,
+    consultaDeDeuda: consultaDeDeuda,
+    lineasDeDeuda: lineasDeDeuda,
   };
 
   if (typeof window !== 'undefined') window.filtroClientes = api;

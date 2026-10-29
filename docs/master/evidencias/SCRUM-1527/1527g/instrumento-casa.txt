@@ -1,0 +1,35 @@
+# s3-reproduce-hoy.mjs --de-cache sobre 8 jobs: la colgada conocida, los 6 pasos success más largos y un job SEMBRADO inexistente (id 1). rc=2
+gh: Not Found (HTTP 404)
+SCRUM-1527d · ¿se sigue colgando? · ventana desde 2026-10-22T00:00:00Z · corte --de-cache
+población: 8 ejecuciones CON job obligatorio (de la caché jobs.json; la lista entera de ci.yml no se relee) ·8 jobs «build + tests» con reintentos · failure 2 · success 6
+antes del corte: 8 jobs con paso «Tests» · 6 en success · 1 con «TANDA SIN VEREDICTO»
+después del corte: 0 jobs con paso «Tests» · 0 en success · 0 con «TANDA SIN VEREDICTO»
+candidatos (paso «Tests» de 600 s o más): 8
+   job 119769715166 · 2026-10-22T10:21:15Z · pull_request · scrum-962c-editor-presupuestos-44 · paso failure en 1210 s · 1409303 B · aviso SÍ · pasan 8390 · lo último que llegó: «SCRUM-615 · 🔴 el módulo no escribe NI UN texto de producto » → scrum615-pedir-tipo-destinatario.test.mjs
+   job 121715777949 · 2026-10-26T16:55:29Z · pull_request · scrum-523d-version-del-sif · paso success en 761 s · 2194754 B · aviso no · pasan 12701 · lo último que llegó: -
+   job 122172664272 · 2026-10-27T11:51:43Z · push · main · paso success en 758 s · 2206840 B · aviso no · pasan 12786 · lo último que llegó: -
+   job 121896735516 · 2026-10-26T22:50:42Z · pull_request · scrum-1599r-tests-serie-f · paso success en 752 s · 2199837 B · aviso no · pasan 12725 · lo último que llegó: -
+   job 121688905711 · 2026-10-26T16:07:53Z · pull_request · scrum-1599m-lote-5-banco · paso success en 750 s · 2183696 B · aviso no · pasan 12639 · lo último que llegó: -
+   job 120854814173 · 2026-10-24T10:58:36Z · pull_request · scrum-1077a-borrador-390 · paso success en 748 s · 2075939 B · aviso no · pasan 12425 · lo último que llegó: -
+   job 122179219802 · 2026-10-27T12:07:05Z · pull_request · scrum-1611c-scrum58-sin-carrera · paso success en 744 s · 2207812 B · aviso no · pasan 12786 · lo último que llegó: -
+   job 1 · 2026-10-22T10:21:15Z · pull_request · SEMBRADO-inexistente · paso failure en 999 s · 0 B · aviso no · pasan undefined · lo último que llegó: undefined
+control positivo (115134364145): fuera de la ventana
+el paso «Tests» más largo fuera de los candidatos: -Infinity s
+CIEGO:
+   · log del job 1: 0 B, no es un log
+
+# lo mismo sin el sembrado. rc=0
+SCRUM-1527d · ¿se sigue colgando? · ventana desde 2026-10-22T00:00:00Z · corte --de-cache
+población: 7 ejecuciones CON job obligatorio (de la caché jobs.json; la lista entera de ci.yml no se relee) ·7 jobs «build + tests» con reintentos · failure 1 · success 6
+antes del corte: 7 jobs con paso «Tests» · 6 en success · 1 con «TANDA SIN VEREDICTO»
+después del corte: 0 jobs con paso «Tests» · 0 en success · 0 con «TANDA SIN VEREDICTO»
+candidatos (paso «Tests» de 600 s o más): 7
+   job 119769715166 · 2026-10-22T10:21:15Z · pull_request · scrum-962c-editor-presupuestos-44 · paso failure en 1210 s · 1409303 B · aviso SÍ · pasan 8390 · lo último que llegó: «SCRUM-615 · 🔴 el módulo no escribe NI UN texto de producto » → scrum615-pedir-tipo-destinatario.test.mjs
+   job 121715777949 · 2026-10-26T16:55:29Z · pull_request · scrum-523d-version-del-sif · paso success en 761 s · 2194754 B · aviso no · pasan 12701 · lo último que llegó: -
+   job 122172664272 · 2026-10-27T11:51:43Z · push · main · paso success en 758 s · 2206840 B · aviso no · pasan 12786 · lo último que llegó: -
+   job 121896735516 · 2026-10-26T22:50:42Z · pull_request · scrum-1599r-tests-serie-f · paso success en 752 s · 2199837 B · aviso no · pasan 12725 · lo último que llegó: -
+   job 121688905711 · 2026-10-26T16:07:53Z · pull_request · scrum-1599m-lote-5-banco · paso success en 750 s · 2183696 B · aviso no · pasan 12639 · lo último que llegó: -
+   job 120854814173 · 2026-10-24T10:58:36Z · pull_request · scrum-1077a-borrador-390 · paso success en 748 s · 2075939 B · aviso no · pasan 12425 · lo último que llegó: -
+   job 122179219802 · 2026-10-27T12:07:05Z · pull_request · scrum-1611c-scrum58-sin-carrera · paso success en 744 s · 2207812 B · aviso no · pasan 12786 · lo último que llegó: -
+control positivo (115134364145): fuera de la ventana
+el paso «Tests» más largo fuera de los candidatos: -Infinity s

@@ -1,0 +1,33 @@
+﻿Date: Tue, 27 Oct 2026 17:12:45 GMT
+Zona roja · pull_request · scrum-1218j-umbral-uno · run in_progress · jobs: 1 corriendo, 0 esperando, 1 en total
+CI · pull_request · scrum-1619-anclas-de-otro-equipo · run in_progress · jobs: 2 corriendo, 0 esperando, 6 en total
+CI · pull_request · scrum-1573b-suprimido-sin-cobro · run in_progress · jobs: 3 corriendo, 0 esperando, 6 en total
+CI · pull_request · scrum-1562g-facturas-con-teclado · run in_progress · jobs: 1 corriendo, 0 esperando, 6 en total
+Vigía de main · workflow_run · main · run in_progress · jobs: 1 corriendo, 0 esperando, 1 en total
+CI · pull_request · scrum-1396-censo-mkdtemp-por-variable · run in_progress · jobs: 1 corriendo, 0 esperando, 6 en total
+CI · push · main · run in_progress · jobs: 1 corriendo, 0 esperando, 6 en total
+Avisador de PR en rojo · workflow_run · main · run queued · jobs: 0 corriendo, 1 esperando, 1 en total
+Zona roja · pull_request · scrum-1624b-fila-descuento-global · run queued · jobs: 0 corriendo, 1 esperando, 1 en total
+CI · pull_request · scrum-1624b-fila-descuento-global · run queued · jobs: 0 corriendo, 5 esperando, 6 en total
+PR automático (ramas scrum-) · push · scrum-1624b-fila-descuento-global · run queued · jobs: 0 corriendo, 1 esperando, 1 en total
+Avisador de PR en rojo · workflow_run · main · run queued · jobs: 0 corriendo, 1 esperando, 1 en total
+PR automático (ramas scrum-) · push · scrum-1623-plan-equipo-barra-lateral · run queued · jobs: 0 corriendo, 1 esperando, 1 en total
+Claude Code · issue_comment · main · run queued · jobs: 0 corriendo, 1 esperando, 1 en total
+CI · pull_request · scrum-1218j-umbral-uno · run queued · jobs: 2 corriendo, 3 esperando, 6 en total
+Vigía de main · workflow_run · main · run queued · jobs: 0 corriendo, 1 esperando, 1 en total
+Conflicto de registro · push · main · run queued · jobs: 0 corriendo, 1 esperando, 1 en total
+Zona roja · pull_request · scrum-1063j-casos-limite · run queued · jobs: 0 corriendo, 1 esperando, 1 en total
+CI · pull_request · scrum-1063j-casos-limite · run queued · jobs: 2 corriendo, 3 esperando, 6 en total
+Avisador de PR en rojo · workflow_run · main · run queued · jobs: 0 corriendo, 1 esperando, 1 en total
+Claude Code · issue_comment · main · run queued · jobs: 0 corriendo, 1 esperando, 1 en total
+CI · pull_request · scrum-1549d-tr-entrecomillado · run queued · jobs: 0 corriendo, 4 esperando, 6 en total
+CI · pull_request · scrum-1502q-ancla-botflow · run queued · jobs: 2 corriendo, 2 esperando, 6 en total
+Avisador de PR en rojo · workflow_run · main · run queued · jobs: 0 corriendo, 1 esperando, 1 en total
+Vigía de main · workflow_run · main · run queued · jobs: 0 corriendo, 1 esperando, 1 en total
+CI · pull_request · scrum-1567-factura-en-tres-superficies · run queued · jobs: 2 corriendo, 1 esperando, 6 en total
+Vigía de main · workflow_run · main · run queued · jobs: 0 corriendo, 1 esperando, 1 en total
+Avisador de PR en rojo · workflow_run · main · run queued · jobs: 0 corriendo, 1 esperando, 1 en total
+CI · pull_request · scrum-1625b-experimento-sonda-fuera · run queued · jobs: 2 corriendo, 1 esperando, 6 en total
+Vigía de main · workflow_run · main · run queued · jobs: 0 corriendo, 1 esperando, 1 en total
+
+JOBS CORRIENDO A LA VEZ: 20 · JOBS ESPERANDO RUNNER: 35 · runs vivos: 30

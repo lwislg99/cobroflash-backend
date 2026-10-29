@@ -167,9 +167,48 @@ function tituladosQueDeclaran() {
  * El total de titulados baja con ellos, de 303 a 154. Medido sobre `origin/main` =
  * `4f487bb177c42a7ee02042b0029f8c90b7e9e77e`. CONTROL POSITIVO: con el matcher viejo, los cuatro
  * vuelven a contarse y este trinquete da «HA SUBIDO a 34» (es la mutación ⑤ de abajo).
+ *
+ * ⬆️ **31** (SCRUM-1339r, 22-oct-2026): entra `scrum1339r-vigia-ciego-del-metaguard.test.mjs`, que
+ * declara dos mutaciones sobre el vigía de `main`. Cuenta como «titulado GUARD» porque sus casos
+ * nombran al «meta-guard»; el fichero es un test del vigía, no se llama guard a sí mismo. Este test
+ * en local sobre la rama, base `75884928b170ec0ec02e35921426e5bd711cbb0f`: «LA COBERTURA HA SUBIDO a 31».
+ *
+ * ⬆️ **32** (SCRUM-1339u, 22-oct-2026): entra `scrum1339u-vigia-ciego-de-la-senal.test.mjs`, que
+ * declara dos mutaciones sobre el vigía de `main`. Mismo motivo que el de arriba: un caso nombra al
+ * «meta-guard». Este test en local sobre la rama, base `808af5b4466d2649a1006d4c554d1f22e7eba47c`:
+ * «LA COBERTURA HA SUBIDO a 32».
+ *
+ * ⬆️ **33** (SCRUM-935d, 22-oct-2026, S3; regenerado al fundir main el 23-oct): entra
+ * `scrum935d-el-corte-dice-lo-que-deja.test.mjs`, que declara cuatro mutaciones sobre el corte del
+ * meta-guard. Las dos subidas a 32 (ésta y la de 1339u) chocaron al fundir; el número no se eligió
+ * de un lado: este test en local sobre la rama fundida con `origin/main` = `6c8706dae`: «LA
+ * COBERTURA HA SUBIDO a 33».
+ *
+ * ⬆️ **34** (SCRUM-1511h, 24-oct-2026): `scrum921c-firma-con-respaldo-en-codigo.test.mjs` pasa a
+ * declarar una mutación (`MUTACIONES_QUE_ME_TUMBAN`, sobre `_respaldo-de-firma.mjs`) y sus casos
+ * nombran al «meta-guard». Medido por el CI sobre la fusión con main, run 40088626951, job
+ * meta-guard/build+tests: «LA COBERTURA HA SUBIDO a 34 (el suelo decía 33)».
+ *
+ * ⬆️ **35** (SCRUM-1603b, 24-oct-2026): entra `scrum1603-el-banco-mide-con-la-fuente-del-panel.test.mjs`,
+ * que declara sus mutaciones y sus casos dicen CIEGO. Medido en local sobre la fusión con main
+ * (`def9d33d3f973dc75bfd7076478523ea1ac06afe`, rama en `925b0ab44c6b819bb0f641a3c71afa2169807762`):
+ * «LA COBERTURA HA SUBIDO a 35 (el suelo decía 34)», con el fichero nuevo en la lista.
+ *
+ * ⬆️ **36** (SCRUM-1404g, 26-oct-2026): entra `scrum1404g-el-409-del-pendiente-de-sellado.test.mjs`,
+ * que declara sus mutaciones (`MUTACIONES_QUE_ME_TUMBAN`, 6) y cuenta como «titulado GUARD» por su
+ * caso «guard de J5…». Lo dio el obligatorio del PR #2896 («LA COBERTURA HA SUBIDO a 36 (el suelo
+ * decía 35)»). Re-medido en local con el lector de este fichero: sobre `origin/main` =
+ * `268eb55ddf33547063a620009e505e4ed833ba35` da 35, y sobre la rama (`1afa6fb8d23a69c7f8ac2f56b564069e8b010123`)
+ * da 36; la única diferencia entre las dos listas es el fichero nuevo. Población: 1.528 ficheros de test.
+ *
+ * ⬆️ **37** (SCRUM-1620, 27-oct-2026, S3): entra `scrum1620-el-censo-por-partes.test.mjs`, que declara
+ * cinco mutaciones sobre el reparto del meta-guard en partes y cuenta como «titulado GUARD». Medido en
+ * local con este mismo test sobre la rama `scrum-1620-metaguard-por-partes`, fundida con `origin/main` =
+ * `efe2cc598dabd3072b650284e5be1b4aa36a0463`: «LA COBERTURA HA SUBIDO a 37 (el suelo decía 36)», con
+ * el fichero nuevo en la lista.
  * ═════════════════════════════════════════════════════════════════════════════════════════════
  */
-export const SUELO_GUARD_QUE_DECLARAN = 30;
+export const SUELO_GUARD_QUE_DECLARAN = 37;
 
 // ─────────────────────────────────────────────────────────────────────────────────────────────
 // ① SUELO · ¿he mirado algo? Un cero de población no es «no hay»: es «no he mirado».
@@ -370,8 +409,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // ④ El trinquete se afloja una unidad: deja hueco para que la cobertura baje sin aviso.
     fichero: 'tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs',
-    de: 'export const SUELO_GUARD_QUE_DECLARAN = 30;',
-    a: 'export const SUELO_GUARD_QUE_DECLARAN = 29;',
+    de: 'export const SUELO_GUARD_QUE_DECLARAN = 37;',
+    a: 'export const SUELO_GUARD_QUE_DECLARAN = 36;',
     cae: 'SCRUM-812 · 🔴 EL TRINQUETE del GUARD: la cobertura auto-declarada NO BAJA',
   },
   {

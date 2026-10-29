@@ -267,3 +267,290 @@ Cada una sobre el árbol comiteado, recompilando, y restaurada después (`git st
   La lista se leyó después entera: ninguno de mis ficheros está en ella.
 - Medí primero sobre el árbol heredado, que iba 5 ficheros de `src/` por detrás de `main`. Lo vi al
   comparar los dos y repetí la medición del camino de emisión en un árbol nacido de `origin/main`.
+
+## Anexo SCRUM-1252c · punto B: qué es una `F1` con número `J-` en cada sitio
+
+**Medido contra:** `origin/main` = `2c45bf589aeae007eb12ed388b3e0f4d2d8d98ed` · 2026-10-23T20:59:45Z (hora de GitHub, `gh api -i zen`)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1252/c-banco-f1-con-j.cjs.txt`
+
+Lo que caza ese banco, y por qué existe: mi primera pasada clasificó el correo y el PDF como «ni
+factura ni justificante» porque comparaba textos que llevan dentro el número de cada documento; lo vi
+leyendo la salida, no por un testigo. El banco compara ahora con el número sustituido, y lleva su
+propio control negativo (`SABOTEO=1`: el justificante de control pasa a ser una factura más, y las 12
+filas tienen que salir CIEGAS; salen 12 de 12, `c-banco-salida-saboteo.txt`). Otro tropiezo, sin
+salir: la rama me llegó nombrada `scrum-1252b-…`, y `1252b` ya es el PR #2129; lo cazó el control de
+sufijo de A4 antes del primer empujón, y la rama es `scrum-1252c-f1-con-numero-j`.
+
+Sesión J1ay (`jv-j1ay`), 23-oct-2026, por encargo del orquestador de Javier
+(`cobroflash-backend-62`). **Sólo se mide y se propone.** No se toca `src/`, ni `public/`, ni el
+esquema, ni ningún texto. El camino de emisión se LEE y se LLAMA con un cliente falso (regla 38); no
+se modifica. El punto C (55 contra 2 filas) y el censo de los cinco son filas de producción: fuera.
+
+### ① Cómo se midió
+
+`dist/` compilado de este mismo árbol (`tsc --noCheck`, salida 0), cliente Prisma falso en memoria,
+ninguna base, y el directorio de trabajo en una carpeta temporal (lo que escriben el PDF y el correo
+cae allí, no en el árbol). Tres documentos: el del ticket (`type: 'F1'`, número `J-2026-0001`) y dos
+controles, una factura normal (`F1`, `F260001`) y un justificante (`JUST`, `J-2026-0002`). Una fila
+sólo vale si los dos controles dan cosas distintas. Salida entera: `c-banco-salida.txt`.
+
+**Población del banco: 12 filas · 3 la tratan como factura · 9 como justificante · 0 ciegas.**
+
+Los sitios que no se pueden llamar sin una ruta HTTP montada o un envío real se leyeron: van
+marcados «leído» y su predicado es el que dice la línea citada, sin ejecutar.
+
+### ② La tabla: qué ve cada uno
+
+| sitio | quién lo ve | decide por | la `F1` con `J-` sale como | cómo |
+|---|---|---|---|---|
+| PDF (`pdf.service.ts:322`, título en `:410`) | cliente | tipo | **factura**, con su número y **con QR** | ejecutado |
+| libro registro y su ZIP (`libroRegistro.repo.ts:95`) | profesional, gestoría | tipo | **factura** | ejecutado |
+| lista de Facturas, consulta del servidor (`invoiceAdmin.ts:44`) | — | tipo | **dentro** | ejecutado |
+| lista de Facturas, filtro del navegador (`invoicesView.js:79`, vía `tipoDeFactura`) | profesional | número | **no se pinta** | ejecutado (el fichero real, en `vm`) |
+| pila del Trabajo y bloque DINERO (`jobDocsReparto.js:36`, `jobRailBlocks.js:157`) | profesional | número | justificante | ejecutado |
+| detalle del documento en el panel (`invoiceDetailView.js:91`, `:135`, `:540`) | profesional | número | justificante (título y distintivo) | leído |
+| correo al cliente: asunto y cuerpo (`email.service.ts:39`, `:91`) | cliente | número | justificante, **con el PDF de «factura» adjunto** | ejecutado (asunto) |
+| página pública del recibo (`receipt.routes.ts:106`, `:195`) | cliente | tipo **o** número | justificante, y su botón descarga el PDF de «factura» | leído |
+| WhatsApp del envío y concepto del cobro (`invoiceWhatsApp.service.ts:76`, `:102`) | cliente | número | justificante | leído |
+| recordatorios de pago (`invoiceReminder.service.ts:171`, `invoicesAdmin.routes.ts:796`) | cliente | número | justificante | leído |
+| páginas de pago y aviso de cobro (`payInvoice.routes.ts:48`, `psp.routes.ts:320`, `mpWebhook.routes.ts:216`) | cliente, profesional | número | justificante | leído |
+| portal del cliente (`customerPortal.routes.ts:427`, `:413`) | cliente | **nada** | factura (lo dice de todo documento, también de un `JUST`) | leído |
+| cadena de huellas (`portonDocumento.ts:84`, `selladoEstado.ts:75`) | — | número | **fuera** | ejecutado |
+| sellado y anulación VeriFactu (`verifactu.service.ts:252`, `:469`) | — | número | **rechazado**, 0 llamadas a base | ejecutado |
+| anular y rectificar (`invoicesAdmin.routes.ts:911`, `:1076`; `invoiceDetailView.js:694`) | profesional | número | no se anula ni se rectifica | leído |
+| des-pagar (`invoiceAdmin.ts:261`) | profesional | tipo **o** número | **se des-paga** (una `F1` normal, no) | ejecutado |
+| facturar o consolidar albaranes (`albaranes.routes.ts:1388`, `:1670`; `recapitulativa.service.ts:118`) | profesional | número | rechazado | leído |
+
+### ③ Lo que dice la tabla
+
+**a) La premisa del comentario 17451 sobre la lista de Facturas sólo es cierta a medias.** El
+servidor la mete (la consulta filtra por tipo), pero el navegador la vuelve a sacar con
+`tipoDeFactura`, que mira el número. **Hoy la `F1` con `J-` no se ve en la pantalla de Facturas.** Lo
+medido el 1-oct (§① de arriba) era la consulta del servidor, no la pantalla.
+
+**b) Al cliente le llegan las dos cosas en el mismo gesto.** El correo dice justificante y adjunta un
+PDF que dice factura; la página del recibo ofrece descargar el justificante y baja la factura; el
+portal la llama factura. No es un sitio equivocado: son dos criterios que se encuentran en el mismo
+envío.
+
+**c) Para la emisión es un justificante, y el PDF la imprime como factura.** No entra en la cadena,
+VeriFactu no la sella ni la anula, no se rectifica y se puede des-pagar; y su PDF sale con el rótulo
+de factura y con QR (en el camino real el QR lleva el `qrData` de la fila o, si está pendiente, el
+genérico `INV:…` de `lib/invoicing.ts:85`; sin `vfHash` no es un QR de la AEAT: leído, no ejecutado
+sobre ese camino). Un documento que el cliente recibe como factura sin registro de
+facturación es lo que la regla 24 no deja emitir en España antes de SIF-1. **Con el fundador
+diciendo que son facturas (17451), el defecto no es el rótulo del correo: es que una factura no tiene
+registro ni forma de corregirse.**
+
+**d) La población es histórica y no crece.** El generador `J-` no existe (SCRUM-1027, SCRUM-825) y
+`invoicing.service.ts:114` ya no fuerza `JUST`. Que hoy haya alguna en producción es el punto C, y no
+se ha medido.
+
+### ④ Las opciones, para el fundador
+
+No se elige ninguna y no se construye nada. Los literales que alguna necesitaría van en el comentario
+de Jira de esta entrega, para firmar allí; aquí sólo se nombra dónde irían.
+
+| opción | qué cambia | coste | toca emisión | texto nuevo |
+|---|---|---|---|---|
+| **A · el tipo manda** (lo que dijo 17451) | los sitios que deciden por número pasan a `esJustificante` fuera del camino de emisión: correo, recibo, WhatsApp, recordatorios, pago, panel, filtro del navegador | unos diez ficheros, con sus guards de microcopy; la `F1` con `J-` vuelve a la lista y se llama factura en todas partes | **no, y por eso queda a medias**: seguiría sin registro, sin anulación y sin R1. Meterla en la cadena es sellar hoy una factura antigua con un número fuera de serie: STOP (reglas 29 y 40) | ninguno: se usa la rama «factura» que ya existe en cada sitio |
+| **B · el número manda** | libro, lista del servidor y PDF pasan a mirar el número | tres sitios; tumba la decisión de 17451 y el criterio que fija `tests/scrum1232-libro-sin-justificantes.test.mjs` (caso de la `F1` con `J-`), que habría que cambiar por decisión, no por relajar el test (regla 41); el PDF de un documento ya emitido cambiaría de título al regenerarse (regla 29: STOP) | sí, por el PDF | ninguno: rótulos de justificante existentes |
+| **C · se marca como incoherente y no se toca nada más** | sólo el panel: la `F1` con `J-` vuelve a la lista de Facturas con un distintivo que dice qué es, y el detalle lo repite | dos ficheros del panel; el cliente sigue viendo las dos cosas | no | sí: el distintivo y su explicación (propuestos en Jira) |
+
+**Antes de cualquiera de las tres, el punto C:** si producción tiene cero `F1` con número `J-`, la
+opción más barata es no construir nada y dejarlo escrito; las tres cuestan más que el problema.
+
+### ⑤ Visto y no tocado
+
+- `email.service.ts:96`: el titular del correo concuerda en masculino con los dos rótulos; con el de
+  factura queda una concordancia de género mal. Es texto que ve el cliente (firma) y no es este
+  punto.
+- Nada de lo de arriba se ha tocado.
+
+### ⑥ Lo corrido
+
+- `tsc --noCheck` sobre el árbol, salida 0. Banco: 12 filas, 0 ciegas; con `SABOTEO=1`, 12 ciegas.
+- `git status` después de cada pasada: sólo los ficheros de este anexo.
+- Tests: no he corrido la tanda; este PR sólo lleva docs.
+
+## Anexo SCRUM-1252e · que ninguna `F1` nazca, ni se convierta, con número `J-`
+
+**Medido contra:** `origin/main` = `5262c70d97afa074d63c7dfc859700c23249f9b3` · 2026-10-23T21:51:55Z (hora de GitHub, `gh api -i zen`)
+
+A9: comprobación → `tests/scrum1252e-f1-con-j-no-nace.test.mjs`
+
+El fallo que generaliza es el del enunciado: el código dejó nacer cinco `F1` con `J-` (censo del
+10-ago) y nada lo impedía por construcción. Desde este tramo lo impide un test que lee el código.
+
+Sesión J1ba (`jv-j1ba`), 23-oct-2026, por encargo del orquestador de Javier
+(`cobroflash-backend-62`), tras c.20683 (decisión: con cero filas, sólo un guard), c.20698 y
+c.20700 (producción: 2 filas, 0 `F1`, 2 con `J-`). **Sólo se LEE el camino de emisión** (regla 38):
+no se modifica ni se extrae nada de `src/`. No se tocan los tres sitios del enunciado, el 303 ni
+`registro.builder.ts`.
+
+### ① Las dos puertas
+
+Una `F1` con `J-` sólo puede aparecer de dos formas: **nacer** así (una creación cuyo `number`
+empiece por `J-`) o **convertirse** (un update que reescriba `type` o `number` de una fila que ya
+existe: las dos filas `J-` de producción son justificantes, y un `type: 'F1'` encima las haría `F1`
+con `J-`). Medido por AST sobre el árbol: 30 escrituras en `src/` (23 llamadas a `invoice.*` + 7 al
+envoltorio `crearFacturaEmitida`; el `grep` da las mismas 23 y 7 comentarios), más 4 en `scripts/`.
+
+### ② Las creaciones: de dónde sale el `type` y de dónde la serie del número
+
+| sitio | `type` | `number` |
+|---|---|---|
+| `src/lib/invoicing.ts:417` (cobro → factura, C6) | `'F1'` literal | `const` de `allocateInvoiceNumber` |
+| `src/modules/invoicing/domain/invoicing.service.ts:109` (`emitInvoice`) | `input.type ?? 'F1'`; sus 4 llamadores (`albaranes.routes.ts:1377` y `:1657`, `recapitulativa.service.ts:109`, `invoicesAdmin.routes.ts:173`) pasan `'F1'` literal | `const` del reservador |
+| `src/modules/jobs/app/routes/jobs.routes.ts:1549` | `'F1'` | `const` del reservador |
+| `src/modules/quotes/app/routes/quotes.routes.ts:658` | `'F1'` | `const` del reservador |
+| `src/modules/system/app/routes/invoicesAdmin.routes.ts:1107` (R1) | `'R1'` | del reservador con `rectifying` |
+| `src/modules/system/app/routes/quotesAdmin.routes.ts:363` y `:656` | `'F1'` | `const` del reservador |
+| `scripts/seed-demo.mjs:377` y `:437`, `scripts/seed-video.mjs:551` | `isReceiptNumber(number) ? 'JUST' : 'F1'` | del reservador (SCRUM-203) |
+
+**La serie.** `allocateInvoiceNumber` tiene un solo `return`: un `const` de `formatInvoiceNumber`, que
+devuelve `formatoNumeroDocumento(SERIES.factura, …)` (`F<AA><NNNN>`, con `SERIES.factura = 'F'`) o
+`` `${year}-…` `` (empieza por el año). En modo `receipt` lanza (SCRUM-1027). **Ningún número nuevo
+puede empezar por `J-`**, sea cual sea el prefijo de serie del comercio.
+
+### ③ Los updates
+
+22 escrituras de `invoice` en `src/` y 1 en `scripts/`, del censo de la casa
+(`scripts/_censo-escrituras-sin-version.mjs`). Ninguna escribe `type` ni `number`. Las dos que el
+censo deja OPACAS se resuelven en el test, no a ojo: `invoicesAdmin.routes.ts:817` →
+`{reminder7SentAt, reminder14SentAt}` y `invoiceAdmin.ts:303` → `{status, paidAt, paidVia}`. Cero
+SQL en crudo que actualice `invoices` en 639 ficheros de `src/` y `scripts/`.
+
+### ④ El test, y lo que hace caer
+
+`tests/scrum1252e-f1-con-j-no-nace.test.mjs`, 8 casos, sin base, sin `dist/`:
+
+- ① ningún update de `invoice` escribe `type` ni `number`; un opaco que no se resuelve es ROJO.
+- ② el reservador sólo devuelve serie `F` o de año (AST de los `return`).
+- ③ toda creación toma el número del reservador (`_embudo-factura.mjs`) en un `const`: SCRUM-203
+  mira sólo el inicializador, y un `let` reescrito después pasaba.
+- ④ ningún SQL en crudo hace `UPDATE invoices`.
+- Cuatro positivos SEMBRADOS, uno por detector, con su negativo al lado.
+
+**Mutación declarada** (`MUTACIONES_QUE_ME_TUMBAN`): `invoiceReminder.service.ts`, el `data` del
+recordatorio de 7 días gana `type: 'F1'`. Vista en ROJO con el árbol comiteado en `c181e6a7`: cae
+① nombrando `invoiceReminder.service.ts:109 (updateMany) · escribe type`; `git diff --numstat` 1/1;
+restaurado con `git restore --source=HEAD`, `git status --porcelain` vacío. No muto el camino de
+emisión, ni siquiera en local: los sembrados ② y ③ cubren esas formas.
+
+### ⑤ Lo que no se mide aquí
+
+- Filas: staging y dev siguen sin medir (los cinco del 10-ago pueden estar ahí).
+- Un receptor con alias (`const t = tx.invoice`) y el SQL fuera de `src/` y `scripts/`: lo mismo
+  que declara SCRUM-203.
+
+### Lo que hice mal
+
+Al arrancar redirigí a `$T/fichero` sin comillas con una ruta que lleva un espacio: bash dio
+«ambiguous redirect» y no escribió nada. Avisó en voz alta y lo repetí con comillas; no generaliza
+más allá de la trampa ya conocida de esta máquina.
+
+Y crucé los 200k de contexto sin avisar al cruzarlos: medí al acabar el arranque (111.079) y Jira
+(122.434), y la siguiente medida, tras la tanda de guards, ya daba 246.598. Lo avisé en ese momento,
+tarde. La lectura del ticket por la herramienta de Jira, la salida de los tests y la del censo
+fueron más gruesas de lo que estimé, y entre medias no me medí.
+
+## Anexo SCRUM-1252f · las `F1` con número `J-`, contadas en STAGING y DEV
+
+**Medido contra:** `origin/main` = `25ad5d43b6a8ed41fdcb90c5fdbc0e2e388ec1be` · 2026-10-24T10:04:53Z (hora de GitHub, `gh api -i zen`)
+
+A9: aviso → cicatriz J1 «Fui de Jira a la medición sin correr `node scripts/equipo/norma.mjs --arranque`, que CLAUDE.md pide en cada tanda» — no se pudo comprobar: lo impediría un hook de arranque que exigiera haberla leído, y los hooks no son de este puesto
+
+Sesión J1bg (`jv-j1bg`), 24-oct-2026, por encargo del orquestador de Javier
+(`cobroflash-backend-95`). Resultado y controles también en Jira, c.20718. **Sólo lectura:** cada
+consulta va dentro de `SET TRANSACTION READ ONLY` (la base contestó `transaction_read_only = on`).
+Ninguna fila cambiada (regla 29). Producción no se toca: en un árbol no vive.
+
+### ① Qué bases
+
+`node scripts/comprobar-claves-bd.mjs` → `rc=0`: `DATABASE_URL_STAGING` (base `railway`) y
+`DATABASE_URL_DEV` (base `yaqu_dev_javier`); `DATABASE_URL` ausente. `DATABASE_URL_TESTS` apunta a la
+misma base que DEV: se mide una vez. El script es de un solo uso, vive fuera del repositorio y no
+imprime clave ni URL. El turno de staging no se tomó: la receta (RUNBOOKS, SCRUM-188/232) lo pide
+para tandas y operaciones que escriben, y tomarlo escribe un marcador en la base.
+
+### ② Resultado
+
+| base | c.20697 (`F1` con `J-`) | total | f1 | con_j | por `type` |
+| --- | --- | --- | --- | --- | --- |
+| STAGING | 0 filas | 9 | 0 | 9 | `JUST` 9, las 9 con `J-` |
+| DEV | 0 filas | 5 | 5 | 0 | `F1` 5, ninguna con `J-` |
+| PRODUCCIÓN (c.20700, la corrió el fundador) | 0 filas | 2 | 0 | 2 | — |
+
+Controles: el mismo predicado (`type = 'F1' AND number LIKE 'J-%'`) sobre tres filas sembradas
+(`F1`/`J-…`, `F1`/`F26…`, `JUST`/`J-…`) da 1 en las dos bases. Ninguna tabla está vacía. STAGING
+cumple el criterio de c.20698 (total > 0 y con_j > 0). DEV no tiene ningún `J-`, así que su cero no
+pone a prueba esa mitad del predicado. Como no salió ninguna fila, no hay id, número, merchant ni
+fecha que dar (la consulta de detalle, con `isDemoMerchant` de la casa, volvió vacía).
+
+### ③ Lo que dice
+
+- Los cinco del 10-ago no están hoy en ninguna de las tres bases medibles.
+- Corrección a la premisa del enunciado («son de desarrollo o de staging»): el censo del 10-ago fue
+  **de producción** (`SCRUM-1232.md:197-198`, que cita `PREGUNTAS_ASESOR.md:640-641`). Los cinco
+  estaban en producción, y producción tenía 2 filas el 28-sep. Cuándo y por qué desaparecieron esas
+  filas: NO MEDIDO. Es pregunta para el fundador (regla 29 si eran documentos emitidos).
+- NO MEDIDO: bases de desarrollo que no están en este árbol (las del otro equipo, los Postgres locales).
+
+### Lo que hice mal
+
+No corrí la lectura de arranque (`norma.mjs --arranque`): pasé de Jira a la medición. Va a mi
+cicatriz, porque no hay ningún guard que lo vea.
+
+## Anexo SCRUM-1252g · el titular del correo de una factura concuerda: «Tu factura está lista»
+
+**Medido contra:** `origin/main` = `77ce98573b1b5e090dfcf7754c4e7960bc63b85a` · 2026-10-27T15:33:32Z (hora de GitHub, `gh api -i zen`)
+
+A9: sin fallo que generalice — escribí primero la cita en la forma del ancla contando con añadir su par a la lista de J6; la regla del carril lo paró antes de editar, y la cita quedó en forma rastreable (§②).
+
+Lo hace la S1 del equipo de Luis (carril: `node scripts/carriles.mjs de src/modules/messaging/domain/email.service.ts`
+→ S1, `dos-equipos.md:136`), por encargo de su orquestador. Es lo único que c.20899 dejaba abierto en
+este ticket. **SCRUM-1604** («PARA S1 · El correo de una factura dice "Tu factura está listo"», 23-oct)
+es el MISMO defecto con la misma firma; el trabajo va aquí y 1604 apunta a este tramo.
+
+### ① La firma
+
+c.20683, punto ②, decisión del fundador transcrita por el orquestador del equipo J: «Sí: «Tu factura
+está lista»». Con la factura, ese titular; con los documentos en masculino (el justificante), nada
+cambia; ningún otro texto. No se ha redactado nada: el literal es el firmado.
+
+### ② El arreglo
+
+`src/modules/messaging/domain/email.service.ts` (`sendInvoiceEmail`): el titular se elige por
+`isJust`, la misma variable que ya elige `docLabel`. Factura → «Tu factura está lista»; justificante →
+«Tu justificante de cobro está listo», como antes. Asunto y cuerpo, sin tocar. El comentario de la
+línea cita la firma como `SCRUM-1252 c.20683, punto ②`.
+
+⚠️ La cita queda **rastreable, no anclada**: la forma del ancla (`SCRUM-N comentario M`) exige su par
+en `tests/_pares-leidos-en-jira.mjs`, que es de J6 (`carriles.mjs` → `dos-equipos.md:194`), y no se
+edita desde S1. Si J6 añade el par (1252, 20683), el comentario puede pasar a la forma del ancla.
+
+No toca el camino de emisión: `ensureInvoicePdf` y lo que viene antes del titular siguen igual. La
+línea tocada es la plantilla del correo, después de tener el PDF.
+
+### ③ El test, y lo que lo hace caer
+
+`tests/scrum1252g-titular-del-correo-de-factura.test.mjs`, sin base ni red: el banco de scrum1235
+(base, emisión y `axios.post` doblados; `sendInvoiceEmail` y `renderEmailLayout` reales). Lee el HTML
+que llegaría a Resend.
+
+| `dist/` | factura | justificante (control) |
+|---|---|---|
+| arreglado | ✔ | ✔ |
+| mutante 1: titular de factura vuelve a «está listo» (el defecto) | ✖ | ✔ |
+| mutante 2: el justificante pasa a «está lista» | ✔ | ✖ |
+
+Cada mutante tumba sólo su caso: los dos casos miden cosas distintas. `dist/` restaurado y comprobado
+por hash tras cada mutante.
+
+### ④ Fuera
+
+- La verificación en yaqu.app: producción no tiene `INVOICING_ES_ENABLED` en ON, y una factura nueva
+  no se emite sólo para ver un correo (regla 24). Lo que se ve es el test sobre el HTML real.
+- Ningún otro texto del correo.

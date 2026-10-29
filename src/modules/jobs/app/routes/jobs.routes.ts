@@ -23,7 +23,7 @@ import { dineroDelTrabajo, presupuestoAceptado } from '../../domain/dineroDelTra
 import { datosDeTrabajoDirecto, filaDeTrabajoDirecto, tituloDeTrabajo, tituloPropioDeTrabajo } from '../../domain/trabajoDirecto';
 import { veredictoAlbaranSinPresupuesto } from '../../domain/albaranSinPresupuesto'; // SCRUM-684
 import { sendInvoicePaymentRequest } from '../../../billing/domain/invoiceWhatsApp.service';
-import { allocateInvoiceNumber, isReceiptNumber } from '../../../invoicing/domain/invoiceNumber.service';
+import { allocateInvoiceNumber } from '../../../invoicing/domain/invoiceNumber.service';
 import { crearFacturaEmitida } from '../../../invoicing/domain/crearFacturaEmitida'; // SCRUM-729
 import { congelarCliente } from '../../../invoicing/domain/clienteCongelado'; // SCRUM-729
 import { congelarEmisorDesdeFicha } from '../../../invoicing/domain/emisorCongelado'; // SCRUM-665
@@ -1551,7 +1551,7 @@ router.post('/:id/collect-rest', requireRole('admin'), async (req, res) => {
         customerId: quote.customerId,
         quoteId: quote.id,
         number: invoiceNumber,
-        type: isReceiptNumber(invoiceNumber) ? 'JUST' : 'F1', // V0-0 (regla 26)
+        type: 'F1',
         total: tramo.amount.toFixed(2),
         stageLabel: isCustomPlan ? tramo.stage.label : null, // SCRUM-27: etiqueta congelada (solo custom)
         currency: quote.currency,
@@ -1663,7 +1663,8 @@ router.post('/:id/consolidar-albaranes', requireRole('admin'), async (req, res) 
       where: { id: req.merchantId },
       // getEmissionMode necesita id/email/country/flags (Parte P); defaultCurrency para la
       // factura; taxId para el sellado VeriFactu de SCRUM-173 (entra en la huella).
-      select: { id: true, email: true, country: true, flags: true, defaultCurrency: true, taxId: true },
+      // SCRUM-1594: `llevaLibrosPorSii` lo exige `MerchantLike` cuando entre SCRUM-1585.
+      select: { id: true, email: true, country: true, flags: true, defaultCurrency: true, taxId: true, llevaLibrosPorSii: true },
     });
     if (!merchant) return res.status(404).json({ error: 'not_found' });
     if (getEmissionMode(merchant) === 'receipt') {

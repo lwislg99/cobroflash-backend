@@ -411,8 +411,22 @@ test('SCRUM-698 · CONTROL POSITIVO: las vistas que ya se montaban dan los MISMO
   // etiquetar la selección, dentro de la barra) + `input.input` («Etiqueta») + dos
   // `button.btn-secondary` («Añadir etiqueta», «Quitar etiqueta») = 4, todo el delta. Se montan con
   // el rol admin del banco; para un técnico no se pintan.
+  // 🔴 SCRUM-1043a · 23-oct-2026 · `renderCustomersView` 82 → 89, y las otras tres intactas. Los
+  // SIETE, POR IDENTIDAD (firmas etiqueta + clase + texto de los dos árboles, `public/` de main
+  // 5da02178a contra la rama; nada resta): `div.customers-tabs` + `button.customers-tab` «Con cobro
+  // pendiente» + `option` «Más pendiente de cobro» + `th` «Pendiente de cobro» + su casilla en el
+  // selector de columnas (`label.columnas-opcion` + `input` + `span`) = 7. Textos firmados en
+  // SCRUM-1043 c.20536; el techo, autorizado por el orquestador en SCRUM-1043 c.20582. Rol admin del
+  // banco; al técnico no se le pintan.
+  // 🔴 SCRUM-1390y · 27-oct-2026 · `renderHomeView` 145 → 148, y las otras tres intactas. Lo mueve
+  // la VISTA. POR IDENTIDAD (firmas etiqueta + clase de los dos árboles, `homeView.js` de origin/main
+  // 77ce98573 contra la rama, el resto de `public/` igual): este banco sirve `{}` a
+  // `/admin/metrics/home`, y una respuesta SIN `recentActivity` ya no es el vacío (c.20438, punto 2):
+  // sobran `div.state-error` + `div.state-error-ico` + `div.state-error-msg` +
+  // `button.state-error-retry` = 4 dentro de `#activity-feed`, y falta el `div` de «Sin actividad
+  // reciente» = 1. +4 − 1 = +3, todo el delta. «Completa tu configuración» sigue entera (scrum901).
   for (const [vista, nodos] of [['renderQuotesView', 258], ['renderProductsView', 176],
-    ['renderCustomersView', 82], ['renderHomeView', 145]]) {
+    ['renderCustomersView', 89], ['renderHomeView', 148]]) {
     const r = await pintarVista(cargarDashboard(RAIZ), vista);
     assert.equal(r.error, null, `🔴 ${vista} ha dejado de montarse: ${r.error}`);
     assert.equal(todos(r.contenedor).length, nodos,

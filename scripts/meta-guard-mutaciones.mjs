@@ -48,7 +48,7 @@
 // ═════════════════════════════════════════════════════════════════════════════════════════════
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url'; // SCRUM-730: `pathname` no decodifica
+import { fileURLToPath, pathToFileURL } from 'node:url'; // SCRUM-730: `pathname` no decodifica
 import { run } from 'node:test'; // SCRUM-745 (adopción): eventos, no reporter
 import ts from 'typescript';
 import { ejecutadoDirectamente } from './_puerta-de-entrada.mjs'; // SCRUM-765
@@ -76,6 +76,7 @@ import {
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIR_TESTS = path.join(RAIZ, 'tests');
+const TUBERIA_BLOQUEANTE = pathToFileURL(path.join(RAIZ, 'scripts', 'tuberia-bloqueante.mjs')).href; // SCRUM-1339s
 
 export const SALIDA_MUDO = 1;
 export const SALIDA_CIEGO = 2;
@@ -164,6 +165,242 @@ export function sueloDeEjecucion({ vivas, mudas }) {
   if (vivas + mudas > 0) return null;
   return 'NO SE HA EJECUTADO NI UNA MUTACIÓN. Este exit no dice que los guards estén vivos: '
     + 'dice que no he medido nada. Mira las ciegas de arriba.';
+}
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 SCRUM-935d · UN CORTE QUE NO DICE QUÉ DEJÓ FUERA NO DICE «NO HAY FALLOS»: NO DICE NADA.
+ *
+ * MEDIDO en los logs de CI del 15 al 21-oct-2026 (`docs/master/SCRUM-935.md`, tramo 935d; 313 jobs
+ * leídos, 0 ciegos): 135 jobs de este instrumento murieron en el `timeout-minutes` del job. GitHub
+ * los da como `cancelled`, y este proceso NO escribe nada al morir: el último veredicto y, 0,7 s
+ * después, «The operation was canceled.». En esos 135 se quedaron ~3.034 veredictos sin emitir
+ * —siempre la COLA del censo: `utils` y `vigia-atascados` en los 135—, y lo que sí se juzgó y salió
+ * mal (39 CIEGAS y 1 FICHERO MUERTO en un push a `main`) quedó enterrado sin código de salida.
+ *
+ * Por eso el corte lo hace ESTE instrumento, antes de la pared, y lo dice: deja de empezar trabajo
+ * cuando se le acaba el presupuesto, nombra lo que no ha juzgado y sale CIEGO. Un `cancelled` se lee
+ * como un gris; un CIEGO con la lista delante, no.
+ *
+ * El presupuesto NO se teclea aquí: se LEE del `timeout-minutes` del job del meta-guard en
+ * `ci.yml` (un número escrito dos veces son dos números que divergen), menos `MARGEN_DEL_JOB_S`.
+ * `META_PRESUPUESTO_S` lo sustituye (para provocar el corte a mano). Fuera de CI y sin esa
+ * variable no hay presupuesto: en local nadie corta.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ */
+// SCRUM-935e · el margen es una cifra DERIVADA, y se deriva (antes era 150: 45 s no salían de ninguna medida).
+//   73 s · lo que el job gasta FUERA del paso (checkout, `npm ci`, build, post): máximo en los 313 jobs
+//          del 15 al 21-oct (p50 37, p99 50); en los 14 del 23-oct, 22-38 s.
+//   31 s · la pasada que queda EN VUELO: el corte se mira antes de cada limpia y de cada mutación, así que
+//          sólo queda una. Medido el 23-oct en los logs con hora de tres runs (1.977 veredictos): pasada
+//          suelta, 21,9 s como mucho; la limpia más cara, ≤ 30,4 s (el hueco de `scrum976` al cambiar de guard).
+//    1 s · el propio corte: imprimir lo que deja y salir.
+// La ventana del CIEGO falso no se cierra con ningún margen: un run con arranque rápido sale CIEGO pudiendo
+// acabar. Lo que la cerraría es contar desde el inicio del JOB, no desde el paso (SCRUM-935.md, tramo 935e).
+export const MARGEN_DEL_JOB_S = 105;
+
+/**
+ * El `timeout-minutes` (en segundos) del job de `ci.yml` que CORRE este instrumento, o `null` si no
+ * lo encuentro. El job se reconoce por su paso `npm run meta:mutaciones`, no por su clave ni por su
+ * nombre: los dos se pueden renombrar y el paso es lo que de verdad me lanza. Si DOS jobs lo
+ * corren, `null`: no sé de cuál soy.
+ */
+export function techoDelJob(ciYml) {
+  const lineas = String(ciYml || '').split(/\r?\n/);
+  const jobs = [];
+  let dentro = false;
+  for (const l of lineas) {
+    if (/^jobs:\s*$/.test(l)) { dentro = true; continue; }
+    if (!dentro) continue;
+    if (/^\S/.test(l)) { dentro = false; continue; }
+    if (/^ {2}[\w-]+:\s*$/.test(l)) jobs.push([]);
+    else if (jobs.length) jobs.at(-1).push(l);
+  }
+  // `- run:` (paso de una línea) o `run:` (bajo un `- name:`): las dos formas de YAML del mismo paso.
+  const mios = jobs.filter((j) => j.some((l) => /^\s+(?:-\s+)?run:\s*npm run meta:mutaciones\s*$/.test(l)));
+  if (mios.length !== 1) return null;
+  const techo = mios[0].map((l) => /^ {4}timeout-minutes:\s*(\d+)\s*$/.exec(l)).find(Boolean);
+  return techo ? Number(techo[1]) * 60 : null;
+}
+
+/**
+ * ¿Cuántos segundos puede trabajar el paso? `{ limiteS, origen }`, o `{ limiteS: null, origen }`
+ * si no hay presupuesto. Pura: recibe el entorno y el texto de `ci.yml`.
+ */
+export function presupuestoDelPaso({ env = {}, ciYml = '' } = {}) {
+  const forzado = env.META_PRESUPUESTO_S;
+  if (forzado !== undefined && forzado !== '') {
+    const n = Number(forzado);
+    if (!Number.isFinite(n) || n < 0) return { limiteS: null, origen: `META_PRESUPUESTO_S ilegible («${forzado}»): SIN presupuesto` };
+    return { limiteS: n, origen: `META_PRESUPUESTO_S=${n}` };
+  }
+  if (env.GITHUB_ACTIONS !== 'true') return { limiteS: null, origen: 'fuera de CI y sin META_PRESUPUESTO_S: sin presupuesto' };
+  const techo = techoDelJob(ciYml);
+  if (techo === null) {
+    return { limiteS: null, origen: 'en CI y SIN PODER LEER el `timeout-minutes` del job que corre `npm run meta:mutaciones` en ci.yml: si el job me corta, NO podré decir qué quedó sin juzgar' };
+  }
+  return { limiteS: Math.max(0, techo - MARGEN_DEL_JOB_S), origen: `ci.yml, job de \`npm run meta:mutaciones\`: ${techo} s − ${MARGEN_DEL_JOB_S} s de margen` };
+}
+
+/** ¿Hay que dejar de empezar trabajo? */
+export function debeCortar(transcurridoS, presupuesto) {
+  return Number.isFinite(presupuesto?.limiteS) && transcurridoS >= presupuesto.limiteS;
+}
+
+/** Lo que queda sin juzgar desde la mutación `desde` del guard nº `guardIdx` del censo. */
+export function pendientesDesde(censo, guardIdx, desde = 0) {
+  const pendientes = [];
+  for (let g = guardIdx; g < censo.length; g++) {
+    const muts = censo[g].mutaciones || [];
+    const resto = g === guardIdx ? muts.slice(desde) : muts;
+    if (resto.length) pendientes.push({ guard: censo[g].guard, mutaciones: resto.length });
+  }
+  return pendientes;
+}
+
+export const GUARD_CARO_S = 60;
+
+/**
+ * Las líneas que nombran a los guards que pasan de `GUARD_CARO_S` (limpia + todas sus mutaciones),
+ * de más caro a más barato, con la población declarada. `costes` va en orden de ejecución con el
+ * segundo en que empezó cada uno; el último termina en `finS`.
+ */
+export function guardsCaros(costes, finS) {
+  const medidos = costes.map((c, i) => ({ ...c, s: (i + 1 < costes.length ? costes[i + 1].inicioS : finS) - c.inicioS }));
+  const caros = medidos.filter((c) => c.s > GUARD_CARO_S).sort((a, b) => b.s - a.s);
+  const total = medidos.reduce((n, c) => n + c.s, 0);
+  return [
+    `\ncoste por guard: ${medidos.length} guards medidos, ${Math.round(total)} s en total · `
+      + `${caros.length} pasan de ${GUARD_CARO_S} s${caros.length ? ':' : ''}`,
+    ...caros.map((c) => `   ⏱ ${c.guard} · ${Math.round(c.s)} s (${c.mutaciones} mutaciones + la limpia, `
+      + `~${(c.s / (c.mutaciones + 1)).toFixed(1)} s por pasada)`),
+  ];
+}
+
+export function mensajeDeCorte({ juzgadas, pendientes, transcurridoS, presupuesto }) {
+  const sinJuzgar = pendientes.reduce((n, p) => n + p.mutaciones, 0);
+  return `🔴 CORTO YO, ANTES DEL TECHO: llevo ${Math.round(transcurridoS)} s y el presupuesto es `
+    + `${presupuesto.limiteS} s (${presupuesto.origen}).\n`
+    + `   Juzgadas ${juzgadas} de ${juzgadas + sinJuzgar} mutaciones. SIN JUZGAR ${sinJuzgar}, en `
+    + `${pendientes.length} guard(s):\n`
+    + pendientes.map((p) => `      · ${p.guard} (${p.mutaciones})`).join('\n')
+    + '\n   Eso NO es «no hay fallos» en esos guards: es que no los he mirado. Antes esto salía '
+    + '`cancelled` y sin una línea (SCRUM-935d).';
+}
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 SCRUM-1620 · EL CENSO EN PARTES: CADA JOB JUZGA UNA, Y ENTRE TODAS, EL CENSO ENTERO.
+ *
+ * Medido el 27-oct-2026 (`docs/master/SCRUM-1620.md`): el rojo de `77ce98573` se cortó con 177 de
+ * 884 mutaciones sin juzgar, y el único verde del día gastó 1667 s de los 1695 del presupuesto. El
+ * coste es una cola larga (135 guards de menos de 5 s suman 362 s) y el runner lento tarda un 60 %
+ * más con la misma población: abaratar el guard más caro no da margen. Repartir, sí. Ni se sube el
+ * techo ni sale una mutación del censo.
+ *
+ * `META_PARTE=i/K` (lo pone la matriz de `ci.yml`) juzga los guards del censo cuyo índice cumple
+ * `n % K === i - 1`: por turno, que es el reparto que mejor equilibra los costes medidos. Sin
+ * `META_PARTE`, el censo entero: así corre en local, y así corría el CI antes de la matriz.
+ * Los SUELOS del censo se aplican ANTES de repartir y sobre el censo ENTERO: una parte, que sólo ve
+ * un trozo, no puede decir «ha encogido» del censo, ni callarse si encoge.
+ *
+ * ⚠️ Una `META_PARTE` que no se entiende NO es «el censo entero»: es CIEGO. Si la matriz la escribe
+ * mal y yo corriera todo, cada parte juzgaría lo mismo y volvería a cortarse, en silencio.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ */
+export function parteDelEntorno(env = {}) {
+  const v = env.META_PARTE;
+  if (v === undefined || v === '') return { parte: null };
+  const m = /^(\d+)\/(\d+)$/.exec(String(v).trim());
+  const i = m ? Number(m[1]) : NaN;
+  const k = m ? Number(m[2]) : NaN;
+  if (!m || !(k >= 1) || !(i >= 1) || i > k) {
+    return { error: `META_PARTE ilegible («${v}»): se espera «i/K», con 1 ≤ i ≤ K. No sé qué parte me `
+      + 'toca, y juzgar el censo entero en cada parte es el corte otra vez.' };
+  }
+  return { parte: { i, k } };
+}
+
+/** Los guards del censo que juzga la parte `{ i, k }`, en su orden. Sin parte, el censo entero. */
+export function parteDelCenso(censo, parte) {
+  if (!parte) return censo;
+  return censo.filter((_, n) => n % parte.k === parte.i - 1);
+}
+
+/** Qué parte es ésta y qué deja a las otras. Se dice SIEMPRE, también con el censo entero. */
+export function rotuloDeLaParte({ parte, guards, declaraciones, guardsDelCenso, declaracionesDelCenso }) {
+  if (!parte) return `parte ÚNICA: el censo entero, ${guardsDelCenso} guards y ${declaracionesDelCenso} declaraciones`;
+  const otras = parte.k - 1;
+  return `parte ${parte.i} de ${parte.k}: ${guards} de los ${guardsDelCenso} guards y ${declaraciones} de las `
+    + `${declaracionesDelCenso} declaraciones del censo · el resto lo juzga${otras === 1 ? ' la otra parte' : `n las otras ${otras} partes`}, `
+    + 'cada una en su job';
+}
+
+/**
+ * 🔴 SCRUM-1620 · el corte, dicho como lo que es. Hasta hoy salía como una CIEGA más, con el mismo
+ * rojo que un guard que no supo medir, y la aceptación del ticket lo pide distinguible: una anotación
+ * con su título en el resumen del PR. Sólo en CI (fuera no hay a quién anotarle) y sólo si quedó algo.
+ * ⚠️ No dice «Process completed with exit code»: de esa frase lee el vigía de main (J6) el código 2.
+ */
+export function avisoDeNoCabe({ juzgadas, sinJuzgar, parte, presupuesto }, env = {}) {
+  if (env.GITHUB_ACTIONS !== 'true' || !sinJuzgar) return null;
+  const donde = parte ? `la parte ${parte.i} de ${parte.k}` : 'el censo entero';
+  return `::warning title=meta-guard · NO CABE en su presupuesto::${donde}: juzgadas ${juzgadas}, SIN `
+    + `JUZGAR ${sinJuzgar}, en ${presupuesto.limiteS} s. No se sube el techo ni se saca una mutación: se `
+    + 'reparte en más partes (la matriz de ci.yml, SCRUM-1620).';
+}
+
+/** El orden de gravedad de las salidas: la primera que aparezca en alguna parte es la del conjunto. */
+export const GRAVEDAD_DE_LA_SALIDA = [SALIDA_NO_RESTAURADO, SALIDA_MUDO, SALIDA_CIEGO];
+
+/**
+ * 🔴 SCRUM-1620 · las K partes, juntadas en UN veredicto (`--juntar`, el job que conserva el nombre que
+ * lee el vigía de main). `resumenes[i - 1]` es lo que la parte i dejó al salir (`META_SALIDA_EN`), o
+ * `null` si no dejó nada. PURA. Una parte sin resumen —cancelada, cortada por el job, sin arrancar— NO
+ * es una parte verde: es CIEGO. Y si las partes no suman las declaraciones del censo, también.
+ */
+export function veredictoDeLasPartes(resumenes, k) {
+  const lineas = [];
+  const codigos = [];
+  let juzgadas = 0;
+  let declaraciones = 0;
+  const censos = new Set();
+  let lenta = null;
+  for (let i = 1; i <= k; i++) {
+    const r = resumenes[i - 1];
+    if (!r || !Number.isInteger(r.codigo)) {
+      codigos.push(SALIDA_CIEGO);
+      lineas.push(`parte ${i} de ${k}: NO DEJÓ RESUMEN (cancelada, cortada por el job o sin arrancar): no sé qué juzgó`);
+      continue;
+    }
+    codigos.push(r.codigo === 0 || GRAVEDAD_DE_LA_SALIDA.includes(r.codigo) ? r.codigo : SALIDA_CIEGO);
+    juzgadas += r.juzgadas;
+    declaraciones += r.declaraciones;
+    censos.add(r.declaracionesDelCenso);
+    if (!lenta || r.segundos > lenta.segundos) lenta = { i, segundos: r.segundos, presupuestoS: r.presupuestoS };
+    lineas.push(`parte ${i} de ${k}: salió con ${r.codigo} · juzgadas ${r.juzgadas} de ${r.declaraciones} `
+      + `· ${Math.round(r.segundos)} s`);
+  }
+  const delCenso = censos.size === 1 ? [...censos][0] : null;
+  lineas.push(`censo por partes: juzgadas ${juzgadas} de ${delCenso ?? '?'} declaraciones, en ${k} partes`);
+  if (lenta && Number.isFinite(lenta.presupuestoS)) {
+    lineas.push(`margen de la parte más lenta: ${Math.round(lenta.presupuestoS - lenta.segundos)} s `
+      + `(parte ${lenta.i}, ${Math.round(lenta.segundos)} s de ${lenta.presupuestoS})`);
+  }
+  const todas = censos.size > 0 && resumenes.slice(0, k).filter((r) => r && Number.isInteger(r.codigo)).length === k;
+  if (!(k >= 1)) {
+    lineas.push('🔴 CIEGO · ninguna parte que juntar');
+    codigos.push(SALIDA_CIEGO);
+  } else if (censos.size > 1) {
+    lineas.push(`🔴 CIEGO · las partes midieron censos distintos (${[...censos].join(', ')} declaraciones)`);
+    codigos.push(SALIDA_CIEGO);
+  } else if (todas && declaraciones !== delCenso) {
+    lineas.push(`🔴 CIEGO · las partes suman ${declaraciones} declaraciones y el censo tiene ${delCenso}: `
+      + 'el reparto perdió o repitió guards');
+    codigos.push(SALIDA_CIEGO);
+  }
+  const codigo = GRAVEDAD_DE_LA_SALIDA.find((g) => codigos.includes(g)) ?? 0;
+  return { codigo, lineas };
 }
 
 /**
@@ -513,6 +750,36 @@ export function rotuloDelCenso({ poblacion, declarantes, declaraciones, titulado
       + 'declaran SIN llamarse guard. Y «guard» no está definido en el árbol: esto NO es un censo '
       + 'de guards.',
   ];
+}
+
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 SCRUM-1387d · EL RECUENTO FINAL LLEVA SU POBLACIÓN PEGADA, EN LA MISMA LÍNEA.
+ *
+ * El rótulo de arriba sólo salía con `--solo-censo`. La pasada que corre el CI acababa en
+ * «vivas 707 · mudas 0 · ciegas 1» y nada más: medido el 27-oct-2026 en `main` (`77ce98573`, job
+ * 122241583529), esa «ciegas 1» era un corte por tiempo que dejó 177 de 884 mutaciones SIN JUZGAR,
+ * y la línea que todo el mundo lee no lo decía. Un recuento sin población no distingue «no hay
+ * más» de «no miré ahí».
+ *
+ * Va en la MISMA línea y no debajo por lo mismo que el límite del subconjunto va pegado arriba:
+ * una línea que se puede copiar sola se copia sola. Y sale SIEMPRE, también con el 100 %: una
+ * población que sólo se dice cuando es mala se lee, por su ausencia, como buena.
+ *
+ * ⛔ No decide nada: imprime. Los veredictos y los códigos de salida siguen saliendo de abajo.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════
+ */
+export function rotuloDelResultado({
+  vivas, mudas, ciegas, muertos, juzgadas, declaraciones, declarantes, poblacion,
+  parte = null, declaracionesDelCenso = declaraciones,
+}) {
+  const pct = poblacion > 0 ? Math.round((declarantes / poblacion) * 100) : 0;
+  // 🔴 SCRUM-1620 · en una parte, «295 de 295» es de la PARTE: sin el censo detrás no dice que hay
+  // otras 591 juzgándose en otros jobs. Sin parte, la línea es la de 1387d, byte a byte.
+  return `vivas ${vivas} · mudas ${mudas} · ciegas ${ciegas} · ficheros muertos ${muertos} `
+    + `· sobre ${juzgadas} juzgadas de ${declaraciones} declaraciones, en ${declarantes} ficheros `
+    + `DECLARANTES de ${poblacion} ficheros de test (${pct} %)`
+    + (parte ? ` · PARTE ${parte.i} de ${parte.k} (el censo entero: ${declaracionesDelCenso} declaraciones)` : '');
 }
 
 /**
@@ -943,6 +1210,11 @@ export async function correr(guard, propias = null) {
     files: [path.isAbsolute(guard) ? guard : path.join(DIR_TESTS, guard)],
     cwd: RAIZ,
     forceExit: true,
+    // 🔴 SCRUM-1339s · la salida C de SCRUM-1405 (c.19584), extendida aquí por SCRUM-1339 c.20219.
+    // Con `forceExit` el hijo sale con la cola de su informe sin escribir, y en Linux se pierde: los
+    // NO APARECE de `porQueNoCayo`. El módulo pone bloqueante su tubería, como la tanda desde #2429.
+    // Por URL y no por ruta: en Windows `--import=D:\…` no es un especificador válido.
+    execArgv: [`--import=${TUBERIA_BLOQUEANTE}`],
     timeout: TIMEOUT_MS,
   });
   // ⚠️ EL FLUJO HAY QUE CONSUMIRLO. Con sólo suscribirse a `test:pass` no arranca: salen CERO
@@ -1450,6 +1722,32 @@ if (ejecutadoDirectamente(import.meta.url)) {
   // los ~76 s del trabajo entero. NO es el modo del CI: `npm run meta:mutaciones` no lo pasa.
   const soloCenso = process.argv.includes('--solo-censo');
 
+  // 🔴 SCRUM-1620 · `--juntar <dir> <K>`: el job que conserva el nombre que lee el vigía de main junta
+  // aquí los resúmenes de las K partes y sale con el código peor. No toca el árbol ni el censo.
+  if (process.argv.includes('--juntar')) {
+    const [dir, kTexto] = process.argv.slice(process.argv.indexOf('--juntar') + 1);
+    const k = Number(kTexto);
+    const resumenes = Array.from({ length: Number.isInteger(k) && k > 0 ? k : 0 }, (_, n) => {
+      try { return JSON.parse(fs.readFileSync(path.join(String(dir), `parte-${n + 1}.json`), 'utf8')); } catch { return null; }
+    });
+    const v = veredictoDeLasPartes(resumenes, Number.isInteger(k) ? k : 0);
+    for (const l of v.lineas) console.log(l);
+    process.exit(v.codigo);
+  }
+
+  // 🔴 SCRUM-1620 · lo que esta pasada deja para `--juntar`, escrito AL SALIR por cualquier puerta
+  // (también por las del CIEGO de arriba del todo): una parte que sale sin resumen se juzga CIEGA.
+  const resumenDeLaParte = { parte: null, juzgadas: 0, declaraciones: null, declaracionesDelCenso: null, presupuestoS: null };
+  if (process.env.META_SALIDA_EN) {
+    const destino = process.env.META_SALIDA_EN;
+    process.on('exit', (codigo) => {
+      try {
+        fs.mkdirSync(path.dirname(destino), { recursive: true });
+        fs.writeFileSync(destino, JSON.stringify({ ...resumenDeLaParte, codigo, segundos: process.uptime() }));
+      } catch (e) { console.error(`⚠️ no pude dejar el resumen de la parte en ${destino}: ${e.message}`); }
+    });
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════════════════════
   // 🔴 SCRUM-808 · SUELO 0 · ¿QUEDÓ UNA MUTACIÓN PUESTA DE UNA PASADA MUERTA?
   //
@@ -1551,19 +1849,40 @@ if (ejecutadoDirectamente(import.meta.url)) {
     console.error(`🔴 CIEGO · ${encogido}`);
     process.exit(SALIDA_CIEGO);
   }
+  // 🔴 SCRUM-812 · el rótulo lo escribe `rotuloDelCenso`, no este `console.log`: así su guard
+  // se lo puede exigir sin arrancar el trabajo entero. `declarantes` sale del MISMO sitio que
+  // `guardsConDeclaracion` —el filtro por `mutaciones.length`— y por eso se pasa ése.
+  // 🔴 SCRUM-1387d · va FUERA del `if (soloCenso)`: hasta hoy la pasada del CI no lo imprimía nunca.
+  // Y va ANTES del bucle, para que lo diga también un job que muera en la pared sin llegar al final.
+  for (const linea of rotuloDelCenso({
+    poblacion, declarantes: guardsConDeclaracion, declaraciones, titulados, tituladosQueDeclaran,
+  })) console.log(linea);
   if (soloCenso) {
     const expo = censoDeExposicionATypeScript(); // `expo`, no `ts`: `ts` es el compilador de arriba
-    // 🔴 SCRUM-812 · el rótulo lo escribe `rotuloDelCenso`, no este `console.log`: así su guard
-    // se lo puede exigir sin arrancar el trabajo entero. `declarantes` sale del MISMO sitio que
-    // `guardsConDeclaracion` —el filtro por `mutaciones.length`— y por eso se pasa ése.
-    for (const linea of rotuloDelCenso({
-      poblacion, declarantes: guardsConDeclaracion, declaraciones, titulados, tituladosQueDeclaran,
-    })) console.log(linea);
     console.log(`  sobre la frontera src/ ↔ dist/ (SCRUM-763): ${expo.expuestas.length} de ${expo.poblacion}`);
     for (const e of expo.expuestas) console.log(`    · ${e.guard} → ${e.fichero}`);
     console.log('\n⚠️ MODO CENSO: NO se ha ejecutado ninguna mutación.');
     process.exit(0);
   }
+
+  // 🔴 SCRUM-1620 · la parte del censo que juzga ESTA pasada. Después de los suelos (que miran el censo
+  // entero) y antes de tocar el árbol: una parte ilegible sale CIEGA sin haber mutado nada.
+  const leida = parteDelEntorno(process.env);
+  if (leida.error) {
+    console.error(`🔴 CIEGO · ${leida.error}`);
+    process.exit(SALIDA_CIEGO);
+  }
+  const { parte } = leida;
+  const enJuego = parteDelCenso(censo, parte);
+  const declaracionesEnJuego = enJuego.reduce((n, c) => n + c.mutaciones.length, 0);
+  const guardsEnJuego = enJuego.filter((c) => c.mutaciones.length).length;
+  console.log(rotuloDeLaParte({
+    parte, guards: guardsEnJuego, declaraciones: declaracionesEnJuego,
+    guardsDelCenso: guardsConDeclaracion, declaracionesDelCenso: declaraciones,
+  }));
+  Object.assign(resumenDeLaParte, {
+    parte: parte && `${parte.i}/${parte.k}`, declaraciones: declaracionesEnJuego, declaracionesDelCenso: declaraciones,
+  });
 
   // ═══════════════════════════════════════════════════════════════════════════════════════════
   // 🔴 SCRUM-754 · SUELO ③ · ¿PUEDO SIQUIERA SABER SI EL ÁRBOL SE MUEVE?
@@ -1599,7 +1918,18 @@ if (ejecutadoDirectamente(import.meta.url)) {
   const muertos = [];
   let vivas = 0;
   let colaterales = 0;
-  for (const { guard, mutaciones, incompletas } of censo) {
+  // 🔴 SCRUM-935d · el presupuesto se lee UNA vez, y se dice siempre: sin él en CI, el corte del job
+  // vuelve a ser mudo, y eso se tiene que ver en el log aunque nadie corte.
+  let ciYml = '';
+  try { ciYml = fs.readFileSync(path.join(RAIZ, '.github', 'workflows', 'ci.yml'), 'utf8'); } catch { /* lo dice `origen` */ }
+  const presupuesto = presupuestoDelPaso({ env: process.env, ciYml });
+  console.log(`presupuesto del paso: ${presupuesto.limiteS === null ? 'NINGUNO' : `${presupuesto.limiteS} s`} · ${presupuesto.origen}`);
+  let corte = null; // { guardIdx, desde, transcurridoS }
+  let juzgadas = 0;
+  const costes = []; // { guard, mutaciones, inicioS } — la duración sale del inicio del siguiente
+  resumenDeLaParte.presupuestoS = presupuesto.limiteS;
+  // 🔴 SCRUM-1620 · recorre SU parte (`enJuego`); sin `META_PARTE` es el censo entero, como antes.
+  bucle: for (const [guardIdx, { guard, mutaciones, incompletas }] of enJuego.entries()) {
     // 🔴 UNA DECLARACIÓN A LA QUE LE FALTA UN CAMPO NO ES UNA DECLARACIÓN MENOS: ES UN HUECO.
     // Se descartaba en silencio y el recuento bajaba sin que nadie lo dijera — «parece cobertura»,
     // que es el defecto que este mecanismo entero vino a cerrar. Provocado el 5-sep-2026 al perder
@@ -1616,10 +1946,22 @@ if (ejecutadoDirectamente(import.meta.url)) {
       console.log(`  ? ${guard} · CIEGO (declaración que no se puede evaluar)`);
     }
     if (!mutaciones.length) continue;
+    if (debeCortar(process.uptime(), presupuesto)) {
+      corte = { guardIdx, desde: 0, transcurridoS: process.uptime() };
+      break;
+    }
     // La línea base se corre UNA VEZ por guard, no por mutación: es la misma pasada limpia para
     // todas las suyas y duplicarla sólo costaría reloj.
+    const inicioGuard = process.uptime();
     const limpia = await correr(guard);
-    for (const mut of mutaciones) {
+    costes.push({ guard, mutaciones: mutaciones.length, inicioS: inicioGuard });
+    for (const [desde, mut] of mutaciones.entries()) {
+      if (debeCortar(process.uptime(), presupuesto)) {
+        corte = { guardIdx, desde, transcurridoS: process.uptime() };
+        break bucle;
+      }
+      juzgadas += 1;
+      resumenDeLaParte.juzgadas = juzgadas;
       const r = await aplicarUna(mut, guard, limpia);
       if (r.ok) {
         vivas += 1;
@@ -1631,12 +1973,34 @@ if (ejecutadoDirectamente(import.meta.url)) {
       else { ciegos.push(`${guard} · ${r.ciego}`); console.log(`  ? ${guard} · CIEGO`); }
     }
   }
+  // 🔴 SCRUM-935d · el corte entra como una CIEGA más, con la lista: así sale por la misma puerta
+  // (código 2) y no puede leerse como un verde. Va antes del suelo de ejecución a propósito: si el
+  // corte llega antes de la primera mutación, «no he medido nada» es verdad, pero el MOTIVO es éste.
+  // 📌 SCRUM-935c (propuesta D) · el coste de cada guard, NOMBRADO. El 16-oct un solo commit subió
+  // `scrum813` de ~45 s a ~285 s y nadie lo vio hasta que el job empezó a morir en el techo.
+  for (const linea of guardsCaros(costes, process.uptime())) console.log(linea);
+  // 🔴 SCRUM-1387d · el corte ya NO se imprime aquí: sale una vez, con las demás ciegas, en el
+  // `console.error` de abajo. Medido el 27-oct-2026 (job 122241583529): salía DOS veces en el log.
+  if (corte) {
+    const pendientes = pendientesDesde(enJuego, corte.guardIdx, corte.desde);
+    const msg = mensajeDeCorte({ juzgadas, pendientes, transcurridoS: corte.transcurridoS, presupuesto });
+    ciegos.push(msg);
+    // 🔴 SCRUM-1620 · y el aviso que lo distingue de cualquier otro rojo: NO CABE.
+    const aviso = avisoDeNoCabe({
+      juzgadas, sinJuzgar: pendientes.reduce((n, p) => n + p.mutaciones, 0), parte, presupuesto,
+    }, process.env);
+    if (aviso) console.log(aviso);
+  }
   // 🔴 SCRUM-754 · el recuento va CON la condición en la que se tomó. «vivas N · mudas 0» sin
   // decir sobre qué árbol es exactamente lo que se pudo creer una vez y no era verdad.
   console.log(`\nárbol VIGILADO durante las ${vivas + mudos.length + muertos.length} mediciones `
     + `(${FAMILIAS_VIGILADAS.join(', ')})`);
-  console.log(`\nvivas ${vivas} · mudas ${mudos.length} · ciegas ${ciegos.length} `
-    + `· ficheros muertos ${muertos.length}`);
+  // 🔴 SCRUM-1387d · y CON su población: sobre cuántas, de cuántas, en cuántos ficheros.
+  console.log(`\n${rotuloDelResultado({
+    vivas, mudas: mudos.length, ciegas: ciegos.length, muertos: muertos.length, juzgadas,
+    declaraciones: declaracionesEnJuego, declarantes: guardsEnJuego, poblacion,
+    parte, declaracionesDelCenso: declaraciones,
+  })}`);
 
   // 📌 SCRUM-784, EL OTRO LADO DEL MISMO AGUJERO — MEDICIÓN, NO VEREDICTO. El meta-guard sólo
   // mira el test que la mutación NOMBRA; lo que le pase al resto del fichero no lo ve nadie. Esta
@@ -1663,13 +2027,15 @@ if (ejecutadoDirectamente(import.meta.url)) {
   // Un fichero MUERTO sí llegó a mutar el árbol y a correr el guard, así que cuenta como trabajo
   // ejecutado con independencia de cómo se clasifique: no contarlo diría «no he medido nada»
   // sobre una pasada que mutó y corrió.
+  // 🔴 SCRUM-1387d · las ciegas se imprimen ANTES del suelo de ejecución: un corte que llega antes
+  // de la primera mutación sale por ese suelo, y sin esto su lista de lo pendiente no salía nunca.
+  if (ciegos.length) console.error('🔴 CIEGO:\n  · ' + ciegos.join('\n  · '));
   const sinMedir = sueloDeEjecucion({ vivas: vivas + muertos.length, mudas: mudos.length });
   if (sinMedir) {
     console.error(`🔴 CIEGO: ${sinMedir}`);
     process.exit(SALIDA_CIEGO);
   }
 
-  if (ciegos.length) console.error('🔴 CIEGO:\n  · ' + ciegos.join('\n  · '));
   if (mudos.length) {
     console.error('🔴 GUARDS MUDOS — pasan en verde sobre el defecto que dicen vigilar:\n  · '
       + mudos.join('\n  · '));

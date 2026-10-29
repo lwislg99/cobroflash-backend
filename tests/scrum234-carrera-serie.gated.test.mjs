@@ -41,13 +41,14 @@
 // simularlo: un mock no tiene niveles de aislamiento, y lo que se está midiendo es justamente
 // el comportamiento del motor.
 import './_staging-db.mjs'; // PRIMERO: fija la BD de staging. Es código de seguridad (SCRUM-118).
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599s: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { withMerchant } from './_merchant-fixture.mjs';
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 
-test('SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivos', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { allocateInvoiceNumber } = await import('../dist/modules/invoicing/domain/invoiceNumber.service.js');
 
@@ -111,12 +112,24 @@ test('SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivo
       // entrelazado que la carrera necesita deja de depender del reloj.
       //
       // NO toca el camino de emisión (regla 38): es orquestación desde fuera, sobre una fila.
+      //
+      // SCRUM-1611b · las emisiones salen DESPUÉS de que la barrera tenga la fila. Antes se lanzaban
+      // a la vez que ella, y la barrera era en sí una carrera: desde SCRUM-780 la secuencia sale de un
+      // `findMany` de `invoices`, y una emisión que llegaba antes que el `FOR UPDATE` leía, escribía y
+      // commiteaba en ~30 ms sin que nada la parase. Medido en el banco (SCRUM-1611 c.20978, 13 de 13):
+      // sin `pg_advisory_xact_lock`, la barrera tarde y la 2ª leyendo tras el COMMIT de la 1ª → VERDE
+      // 4 de 4. `race` con la propia barrera: si su transacción revienta antes de tomar la fila, el
+      // caso cae con ese error en vez de esperar un aviso que no llega.
       let liberarBarrera;
+      let avisarTomada;
       const barreraSoltada = new Promise((r) => { liberarBarrera = r; });
+      const barreraTomada = new Promise((r) => { avisarTomada = r; });
       const barrera = prisma.$transaction(async (t) => {
         await t.$queryRaw`SELECT id FROM merchants WHERE id = ${merchant.id} FOR UPDATE`;
+        avisarTomada();
         await barreraSoltada;
       }, { timeout: 30_000, maxWait: 30_000 });
+      await Promise.race([barreraTomada, barrera]);
 
       // `allSettled` y no `all`: si una revienta con P2002 queremos VER el error, no perderlo
       // detrás del fallo de la otra promesa.
@@ -140,8 +153,12 @@ test('SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivo
       const numeros = [a.value, b.value].sort();
       assert.notEqual(numeros[0], numeros[1], '🔴 las dos facturas salieron con el MISMO número');
 
-      // Consecutivos: el sufijo de la serie es `-NNN` al final del número.
-      const seq = (n) => Number(String(n).split('-').pop());
+      // Consecutivos. SCRUM-1599r: la serie fiscal es F<AA><NNNN> desde `CORTE_FORMATO_F`
+      // (SCRUM-780 c.14709), y el correlativo son sus 4 últimos dígitos.
+      for (const n of numeros) {
+        assert.match(String(n), /^F\d{6}$/, `🔴 el número no tiene la forma de la serie fiscal F: ${n}`);
+      }
+      const seq = (n) => Number(String(n).slice(-4));
       assert.equal(
         seq(numeros[1]) - seq(numeros[0]), 1,
         `🔴 los números no son consecutivos (${numeros.join(' y ')}). Un salto aquí significa que ` +
@@ -162,3 +179,16 @@ test('SCRUM-234 · dos reservas concurrentes NO colisionan: números consecutivo
     },
   );
 });
+
+// SCRUM-1599s (diseño B de SCRUM-1599) · la mutación que tumba el caso de base, CATALOGADA en SCRUM-1599s.
+// Va aparte de `MUTACIONES_QUE_ME_TUMBAN` a propósito: el job del meta-guard corre SIN base, el caso sale
+// SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco,
+// `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e), que muta `dist/` y no el fuente
+// (regla 38: el fuente de la emisión sólo se lee). Cada campo, LITERAL.
+// La primera caza el contador, que es la última aserción del caso. La segunda es la mutación natural de este
+// fichero, quitar el `pg_advisory_xact_lock`: VIVÍA en el banco (3 de 3, §1599s) porque la barrera llegaba tarde
+// (SCRUM-1611 c.20978); con la barrera esperada tiene que MORIR, y es SCRUM-1611b quien la cataloga.
+export const MUTACIONES_CON_BASE = [
+  { fichero: "src/modules/invoicing/domain/invoiceNumber.service.ts", de: "nextInvoiceNumber: Math.max(m.nextInvoiceNumber, seq + 1)", a: "nextInvoiceNumber: Math.max(m.nextInvoiceNumber, seq)", cae: "SCRUM-234 · dos reservas concurrentes NO colisionan" },
+  { fichero: "src/modules/invoicing/domain/invoiceNumber.service.ts", de: "await tx.$executeRaw`SELECT pg_advisory_xact_lock(${SERIE_LOCK_NS}::int, ${merchantId}::int)`;", a: "/* SCRUM-1611b: sin cerrojo de serie */", cae: "SCRUM-234 · dos reservas concurrentes NO colisionan" },
+];

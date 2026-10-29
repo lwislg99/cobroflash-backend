@@ -1,0 +1,21 @@
+#!/bin/bash
+# SCRUM-1614 · N pasadas del fichero real, solo, con o sin siembra. Uso: bash siembra.sh <etiqueta> <n> <con|sin>
+set -u
+ET="$1"; N="$2"; MODO="$3"
+T="$CLAUDE_JOB_DIR/tmp"
+cd "/c/Users/Javier Pereira/cobroflash-jv-j6df"
+echo "POBLACION: tests/webhooks-idempotencia.test.mjs · $N pasadas · siembra=$MODO"
+for i in $(seq 1 "$N"); do
+  (cd "$T/banco" && node pgbanco.mjs rehacer 55614 >/dev/null)
+  if [ "$MODO" = con ]; then (cd "$T/banco" && node siembra1614.mjs 55614 poner); fi
+  S=$(date +%s)
+  env -u NODE_TEST_CONTEXT -u NODE_OPTIONS -u QA_DB_TEST LIBRO_PG_URL="postgresql://postgres@127.0.0.1:55614/yaqu_libro_test" \
+    timeout 100 node --test --test-force-exit --test-reporter=tap tests/webhooks-idempotencia.test.mjs > "$T/$ET-$i.tap" 2>&1
+  rc=$?
+  casos=$(grep -cE "^(ok|not ok) [0-9]+ - " "$T/$ET-$i.tap")
+  decl=$(grep -E "^# tests " "$T/$ET-$i.tap" | awk '{print $3}')
+  a122c=$(grep -E "^(ok|not ok) [0-9]+ - A12.2c" "$T/$ET-$i.tap" | cut -c1-6)
+  err=$(grep -oE "customer_events_customer_id_fkey|historial[^']*|primer confirm[^']*|reintento debe[^']*" "$T/$ET-$i.tap" | sort -u | tr '\n' '|')
+  echo "$ET-$i rc=$rc s=$(( $(date +%s)-S )) casos=$casos decl=$decl A12.2c=[$a122c] err=[$err]"
+done
+echo "EXIT=0"

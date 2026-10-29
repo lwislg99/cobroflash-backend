@@ -1,5 +1,6 @@
 ---
 paths:
+  - "docs/master/evidencias/scrum1500/cotejo.cjs"
   - "docs/competencia/**"
 ---
 # Carril J5 — GENERADO por `scripts/carriles.mjs` desde `docs/equipo/dos-equipos.md` §3. No se edita a mano.

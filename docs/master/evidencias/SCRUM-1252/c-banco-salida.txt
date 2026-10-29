@@ -1,0 +1,50 @@
+como JUSTIFICANTE  | isReceiptNumber (correo-recibo-WA-recordatorio-pago-anular-R1-sellado lo usan) | ejecutado
+    F1J=true
+    F1 =false
+    JUST=true
+como FACTURA       | esJustificante (libro, SCRUM-1232) | ejecutado
+    F1J=false
+    F1 =false
+    JUST=true
+como FACTURA       | lista de Facturas: where del servidor (invoiceAdmin.ts:44) | ejecutado: el where de listInvoicesAdmin con cliente falso
+    F1J="dentro"
+    F1 ="dentro"
+    JUST="fuera"
+como JUSTIFICANTE  | panel: tipoDeFactura (pila del Trabajo, rail DINERO) | ejecutado
+    F1J="justificante"
+    F1 ="factura"
+    JUST="justificante"
+como JUSTIFICANTE  | panel: lista de Facturas, filtro del navegador (invoicesView.js soloFacturas) | ejecutado: el fichero real en vm
+    F1J="NO se pinta"
+    F1 ="se pinta"
+    JUST="NO se pinta"
+como JUSTIFICANTE  | cadena de huellas: debeEstarEnLaCadena (portonDocumento.ts) | ejecutado, merchant ES con NIF
+    F1J=false
+    F1 =true
+    JUST=false
+como JUSTIFICANTE  | cadena de huellas: entraEnLaCadena (selladoEstado.ts) | ejecutado, merchant ES con NIF
+    F1J=false
+    F1 =true
+    JUST=false
+como JUSTIFICANTE  | sellado VeriFactu: applyVeriFactu | ejecutado con cliente falso
+    F1J="RECHAZA receipt_document_not_invoiceable · 0 llamadas a base"
+    F1 ="pasa la puerta y cae después · 1 llamadas a base"
+    JUST="RECHAZA receipt_document_not_invoiceable · 0 llamadas a base"
+como JUSTIFICANTE  | anulación VeriFactu: applyVeriFactuAnulacion | ejecutado con cliente falso
+    F1J="RECHAZA receipt_document_not_invoiceable · 0 llamadas a base"
+    F1 ="pasa la puerta y cae después · 2 llamadas a base"
+    JUST="RECHAZA receipt_document_not_invoiceable · 0 llamadas a base"
+como JUSTIFICANTE  | panel: des-pagar (paid → pending), updateInvoiceStatusAdmin | ejecutado con cliente falso
+    F1J="SE DES-PAGA"
+    F1 ="NO: Una factura emitida no se des-paga: emite una rectificativa (R1)."
+    JUST="SE DES-PAGA"
+como JUSTIFICANTE  | correo al cliente: asunto (sendInvoiceEmail) | ejecutado: transporte de flujo, sin Resend ni SMTP
+    F1J="Tu justificante de cobro J-2026-0001"
+    F1 ="Tu factura F260001"
+    JUST="Tu justificante de cobro J-2026-0002"
+como FACTURA       | PDF: título y rótulo del número (generateInvoicePdf) | ejecutado: PDF real generado y leído
+    F1J="FACTURA · Nº J-2026-0001 · TOTAL: · con QR"
+    F1 ="FACTURA · Nº F260001 · TOTAL: · con QR"
+    JUST="JUSTIFICANTE DE COBRO · Ref. J-2026-0002 · TOTAL COBRADO: · sin QR"
+
+POBLACION filas=12 · como FACTURA=3 · como JUSTIFICANTE=9 · CIEGA=0 · NI UNA NI OTRA=0

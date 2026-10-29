@@ -86,7 +86,7 @@ export async function cambiarFlagFiscal(
 
   const merchant = await cliente.merchant.findUnique({
     where: { id: params.merchantId },
-    select: { id: true, email: true, country: true, flags: true },
+    select: { id: true, email: true, country: true, flags: true, llevaLibrosPorSii: true, domicilioFiscalForal: true },
   });
   if (!merchant) throw new ErrorCambioFlag('merchant_no_encontrado', 'Ese merchant no existe.');
 
@@ -97,6 +97,25 @@ export async function cambiarFlagFiscal(
     throw new ErrorCambioFlag(
       'confirmacion_no_coincide',
       'La confirmación debe ser el email exacto del merchant al que se le cambia el flag.',
+    );
+  }
+
+  // SCRUM-1102h · W: quien lleva los libros de IVA por el SII queda fuera del RRSIF (art. 3.3,
+  // verificado contra el BOE consolidado en SCRUM-1102), así que no se le ENCIENDE la facturación.
+  // GO del fundador en SCRUM-1102 c.20472. Apagar nunca se bloquea.
+  // `=== false` y no `!== true`: «No consta» (NULL) no es «No», y una lectura que no trae la
+  // columna da `undefined`, que aquí se niega igual (SCRUM-1102g §⑦). La foral NO bloquea: es
+  // una inferencia del art. 1.3 que espera al asesor (SCRUM-1264); viaja en la fila de auditoría.
+  if (params.flag === 'INVOICING_ES_ENABLED' && params.valorNuevo === true && merchant.llevaLibrosPorSii !== false) {
+    if (merchant.llevaLibrosPorSii === true) {
+      throw new ErrorCambioFlag(
+        'sii_declarado',
+        'Este merchant ha declarado que lleva los libros de IVA por el SII: no se enciende INVOICING_ES_ENABLED (RRSIF art. 3.3, SCRUM-1102).',
+      );
+    }
+    throw new ErrorCambioFlag(
+      'sii_no_consta',
+      'Este merchant no ha contestado si lleva los libros de IVA por el SII («No consta»): no se enciende INVOICING_ES_ENABLED hasta que conteste «No» (SCRUM-1102).',
     );
   }
 
@@ -139,6 +158,9 @@ export async function cambiarFlagFiscal(
             valorNuevo: nuevo,
             overrideAnterior,
             overrideNuevo: params.valorNuevo,
+            // SCRUM-1102h: lo que el merchant tenía declarado en el instante del cambio (NULL = «No consta»).
+            llevaLibrosPorSii: merchant.llevaLibrosPorSii ?? null,
+            domicilioFiscalForal: merchant.domicilioFiscalForal ?? null,
           },
         }),
         ip: params.ip ?? null,

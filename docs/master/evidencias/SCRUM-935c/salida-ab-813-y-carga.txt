@@ -1,0 +1,18 @@
+# SCRUM-935c · A/B de tests/scrum813-trinquete-de-zona.test.mjs en local (Windows, node v24.18.0), 3 pasadas por lado
+# antes = 48fc00f6a90089b0f172b58c49413d889288bec0 (574e53806^1) · despues = 574e538065dd51f45cfdca078b3787d7f32fbb5a (merge de #2486, SCRUM-1494)
+antes#1 # tests 43 # pass 43 # fail 0 # duration_ms 1891.7316 
+antes#2 # tests 43 # pass 43 # fail 0 # duration_ms 1843.6638 
+antes#3 # tests 43 # pass 43 # fail 0 # duration_ms 1913.4742 
+despues#1 # tests 48 # pass 48 # fail 0 # duration_ms 11616.2922 
+despues#2 # tests 48 # pass 48 # fail 0 # duration_ms 11439.2135 
+despues#3 # tests 48 # pass 48 # fail 0 # duration_ms 11467.1342 
+
+# coste de CARGA del modulo (patron que no casa con ningun test) frente al fichero entero, sobre c47288f7e~
+scrum813-trinquete-de-zona · entero # duration_ms 12100.066 · solo carga # duration_ms 11184.0524
+scrum976-guards-entrada-con-techo · entero # duration_ms 16775.1061 · solo carga # duration_ms 79.4852
+scrum710b-anclaje-por-identidad · entero # duration_ms 23278.9758 · solo carga # duration_ms 334.4384
+scrum853c-el-vigia-no-se-cree-un-error · entero # duration_ms 15514.6916 · solo carga # duration_ms 82.638
+scrum775-suelo-que-no-dispara · entero # duration_ms 46856.8602 · solo carga # duration_ms 376.9624
+scrum1007-1011-1026-relevo-lanzar-bloqueo · entero # duration_ms 10718.1638 · solo carga # duration_ms 71.6359
+scrum858b-la-tanda-sin-veredicto · entero # duration_ms 9658.3568 · solo carga # duration_ms 75.2115
+scrum959b-el-arranque-no-duplica-el-equipo · entero # duration_ms 9080.8995 · solo carga # duration_ms 68.5498

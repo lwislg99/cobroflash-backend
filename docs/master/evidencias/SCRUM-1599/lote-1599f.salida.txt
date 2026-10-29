@@ -1,0 +1,53 @@
+SCRUM-1599f · salida del primer lote · banco desechable LOCAL: PGlite 0.5 + pglite-socket en 127.0.0.1:55611, base yaqu_libro_test, esquema de prisma migrate diff --from-empty (33 tablas), reiniciado antes de cada fichero
+codigo de la rama: 07e604d3125a7d4172eaec0f458393cc594a3b93 · dist/ con tsc --noCheck · sin QA_DB_TEST · hora de GitHub al juntar: Sat, 24 Oct 2026 10:14:50 GMT
+
+## canario (scrum13-cobrado, ya migrado en 876c)
+# tests 1
+# pass 1
+# fail 0
+# skipped 0
+
+## antes
+scrum109-expense-teammember · ok: SCRUM-109: createExpense guarda teamMemberId cuando se indica # SKIP s|ok: SCRUM-109: createExpense sin teamMemberId → null (propietario), no r| # tests 2 # pass 0 # fail 0 # skipped 2 
+scrum106-trabajos-fecha · ok: SCRUM-106: el criterio de trabajos.csv es la fecha de ejecución (sin |ok: SCRUM-106: trabajos.csv por fecha de EJECUCIÓN — el de junio ejecut| # tests 2 # pass 1 # fail 0 # skipped 1 
+scrum104-clientes-referenciados · ok: SCRUM-104 (fase 2): clientes.csv del paquete = los referenciados, ni m| # tests 1 # pass 0 # fail 0 # skipped 1 
+scrum135-gasto-tenencia · ok: SCRUM-135: un gasto SÍ acepta una cotización propia (guarda de prese|ok: SCRUM-135: un gasto NO puede apuntar a la cotización de OTRO merchant|ok: SCRUM-135: tampoco por la puerta de atrás del PUT # SKIP sin QA_DB_TE|ok: SCRUM-135: mismo criterio para el proveedor # SKIP sin QA_DB_TEST=1 ·| # tests 4 # pass 0 # fail 0 # skipped 4 
+
+## despues
+scrum109-expense-teammember · ok: SCRUM-109: createExpense guarda teamMemberId cuando se indica|ok: SCRUM-109: createExpense sin teamMemberId → null (propietario), no r| # tests 2 # pass 2 # fail 0 # skipped 0 
+scrum106-trabajos-fecha · ok: SCRUM-106: el criterio de trabajos.csv es la fecha de ejecución (sin |ok: SCRUM-106: trabajos.csv por fecha de EJECUCIÓN — el de junio ejecut| # tests 2 # pass 2 # fail 0 # skipped 0 
+scrum104-clientes-referenciados · ok: SCRUM-104 (fase 2): clientes.csv del paquete = los referenciados, ni m| # tests 1 # pass 1 # fail 0 # skipped 0 
+scrum135-gasto-tenencia · ok: SCRUM-135: un gasto SÍ acepta una cotización propia (guarda de prese|ok: SCRUM-135: un gasto NO puede apuntar a la cotización de OTRO merchant|ok: SCRUM-135: tampoco por la puerta de atrás del PUT|ok: SCRUM-135: mismo criterio para el proveedor| # tests 4 # pass 4 # fail 0 # skipped 0 
+
+## mutacion en dist/ (no en src/): assertRefsOwned sin merchantId en el findFirst de quote · scrum135
+ok 1 - SCRUM-135: un gasto SÍ acepta una cotización propia (guarda de presencia)
+not ok 2 - SCRUM-135: un gasto NO puede apuntar a la cotización de OTRO merchant
+not ok 3 - SCRUM-135: tampoco por la puerta de atrás del PUT
+ok 4 - SCRUM-135: mismo criterio para el proveedor
+# tests 4
+# pass 2
+# fail 2
+# skipped 0
+
+## trinquete scrum1599f · m1
+not ok 1 - SCRUM-1599f · los que SÓLO corren contra staging son exactamente los 42 declarados
+ok 2 - SCRUM-1599f · sin el sembrado el censo dice CIEGO, no verde
+ok 3 - SCRUM-1599f · CONTROLES: el sembrado entra, su gemelo migrado no, y un comentario no conecta nada
+      ENTRAN (gateados sólo de staging sin declarar): scrum109-expense-teammember.test.mjs
+      SALEN (declarados que ya no lo son): —
+
+## trinquete scrum1599f · m2
+not ok 1 - SCRUM-1599f · los que SÓLO corren contra staging son exactamente los 42 declarados
+ok 2 - SCRUM-1599f · sin el sembrado el censo dice CIEGO, no verde
+ok 3 - SCRUM-1599f · CONTROLES: el sembrado entra, su gemelo migrado no, y un comentario no conecta nada
+      ENTRAN (gateados sólo de staging sin declarar): scrum58-jobs-n1.test.mjs
+      SALEN (declarados que ya no lo son): —
+
+## trinquete scrum1599f · m3
+not ok 1 - SCRUM-1599f · los que SÓLO corren contra staging son exactamente los 42 declarados
+ok 2 - SCRUM-1599f · sin el sembrado el censo dice CIEGO, no verde
+ok 3 - SCRUM-1599f · CONTROLES: el sembrado entra, su gemelo migrado no, y un comentario no conecta nada
+      ENTRAN (gateados sólo de staging sin declarar): —
+      SALEN (declarados que ya no lo son): scrum13-cobrado.test.mjs
+
+m1 = scrum109 devuelto a su forma de origin/main · m2 = quitar scrum58 de SOLO_STAGING · m3 = declarar scrum13-cobrado (ya migrado)

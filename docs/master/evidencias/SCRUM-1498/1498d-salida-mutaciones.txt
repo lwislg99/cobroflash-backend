@@ -1,0 +1,61 @@
+M0 rojo-primero: sin la clase nueva (lo de main) · aplicada: 1	1	scripts/vigia-silencio-de-main.mjs · exit=1 · caen 7 + pasan 5
+    SCRUM-1498d · las clases sembradas son lo que dicen ser, y la causa sale del DATO
+    SCRUM-1498d · SIEMBRA sustituido-verde → ABSUELTO por su propio obligatorio, y el Issue cierra listándolo
+    SCRUM-1498d · SIEMBRA sustituido-sin-veredicto + siguiente obligatorio VERDE → absuelto por él (c.20802)
+    SCRUM-1498d · SIEMBRA sustituido-sin-veredicto + siguiente obligatorio ROJO → NO se absuelve, y el aviso dice cuál
+    SCRUM-1498d · SIEMBRA sustituido-sin-veredicto con el siguiente aún CORRIENDO → espera; sin nada encima o con un hueco → no
+    SCRUM-1498d · SIEMBRA punta sin meta-guard → AVISO, y no cierra
+    SCRUM-1498d · la bajada por la línea sigue por los sustituidos por job y para en el primero que no lo es
+M1 absuelve también en la punta · aplicada: 1	1	scripts/vigia-silencio-de-main.mjs · exit=1 · caen 1 + pasan 11
+    SCRUM-1498d · SIEMBRA punta sin meta-guard → AVISO, y no cierra
+M2 sin exigir el obligatorio en success · aplicada: 1	1	scripts/vigia-silencio-de-main.mjs · exit=1 · caen 5 + pasan 7
+    SCRUM-1498d · las clases sembradas son lo que dicen ser, y la causa sale del DATO
+    SCRUM-1498d · SIEMBRA sustituido-sin-veredicto + siguiente obligatorio VERDE → absuelto por él (c.20802)
+    SCRUM-1498d · SIEMBRA sustituido-sin-veredicto + siguiente obligatorio ROJO → NO se absuelve, y el aviso dice cuál
+    SCRUM-1498d · SIEMBRA sustituido-sin-veredicto con el siguiente aún CORRIENDO → espera; sin nada encima o con un hueco → no
+    SCRUM-1498d · la bajada por la línea sigue por los sustituidos por job y para en el primero que no lo es
+M3 «sin arrancar» sin mirar los pasos · aplicada: 1	2	scripts/vigia-silencio-de-main.mjs · exit=1 · caen 2 + pasan 10
+    SCRUM-1498d · «sin arrancar» se lee de los PASOS: cortado a mitad, o sin pasos leídos, no lo es
+    SCRUM-1498d · la bajada por la línea sigue por los sustituidos por job y para en el primero que no lo es
+M4 sin mirar la señal · aplicada: 1	1	scripts/vigia-silencio-de-main.mjs · exit=1 · caen 1 + pasan 11
+    SCRUM-1498d · con la señal de nombres CIEGA en el obligatorio no se absuelve: su verde no midió
+M5 la bajada para en las clases nuevas · aplicada: 1	1	scripts/vigia-silencio-de-main.mjs · exit=1 · caen 1 + pasan 11
+    SCRUM-1498d · la bajada por la línea sigue por los sustituidos por job y para en el primero que no lo es
+M6 sin exigir los declarados · aplicada: 1	1	scripts/vigia-silencio-de-main.mjs · exit=1 · caen 1 + pasan 11
+    SCRUM-1498d · con un job declarado AUSENTE no se absuelve
+M7 (b) el siguiente verde no absuelve · aplicada: 1	1	scripts/vigia-silencio-de-main.mjs · exit=1 · caen 2 + pasan 10
+    SCRUM-1498d · SIEMBRA sustituido-sin-veredicto + siguiente obligatorio VERDE → absuelto por él (c.20802)
+    SCRUM-1498d · la bajada por la línea sigue por los sustituidos por job y para en el primero que no lo es
+M8 (b) el rojo no para la subida · aplicada: 1	1	scripts/vigia-silencio-de-main.mjs · exit=1 · caen 1 + pasan 11
+    SCRUM-1498d · SIEMBRA sustituido-sin-veredicto + siguiente obligatorio ROJO → NO se absuelve, y el aviso dice cuál
+M9 (b) corriendo no espera · aplicada: 1	1	scripts/vigia-silencio-de-main.mjs · exit=1 · caen 1 + pasan 11
+    SCRUM-1498d · SIEMBRA sustituido-sin-veredicto con el siguiente aún CORRIENDO → espera; sin nada encima o con un hueco → no
+M10 (b) un hueco no para · aplicada: 1	1	scripts/vigia-silencio-de-main.mjs · exit=1 · caen 1 + pasan 11
+    SCRUM-1498d · SIEMBRA sustituido-sin-veredicto con el siguiente aún CORRIENDO → espera; sin nada encima o con un hueco → no
+M11 la bajada no arranca desde un obligatorio con veredicto · aplicada: 1	1	scripts/vigia-silencio-de-main.mjs · exit=1 · caen 1 + pasan 11
+    SCRUM-1498d · la bajada por la línea sigue por los sustituidos por job y para en el primero que no lo es
+M12 (b) sin la clase · aplicada: 1	1	scripts/vigia-silencio-de-main.mjs · exit=1 · caen 5 + pasan 7
+    SCRUM-1498d · las clases sembradas son lo que dicen ser, y la causa sale del DATO
+    SCRUM-1498d · SIEMBRA sustituido-sin-veredicto + siguiente obligatorio VERDE → absuelto por él (c.20802)
+    SCRUM-1498d · SIEMBRA sustituido-sin-veredicto + siguiente obligatorio ROJO → NO se absuelve, y el aviso dice cuál
+    SCRUM-1498d · SIEMBRA sustituido-sin-veredicto con el siguiente aún CORRIENDO → espera; sin nada encima o con un hueco → no
+    SCRUM-1498d · la bajada por la línea sigue por los sustituidos por job y para en el primero que no lo es
+M13 (b) el aviso no dice cuál · aplicada: 1	1	scripts/vigia-silencio-de-main.mjs · exit=1 · caen 1 + pasan 11
+    SCRUM-1498d · SIEMBRA sustituido-sin-veredicto + siguiente obligatorio ROJO → NO se absuelve, y el aviso dice cuál
+restaurado: sí
+
+# Las 14 mutaciones: [nombre, ancla en scripts/vigia-silencio-de-main.mjs, reemplazo]. Cada ancla casa 1 vez; se aplica, se corre tests/scrum1498d-vigia-absuelve-obligatorio-verde.test.mjs y se restaura con git restore --source=HEAD.
+  ['M0 rojo-primero: sin la clase nueva (lo de main)', 'if (sinArrancar.length && !rojos.length', 'if (false && sinArrancar.length && !rojos.length'],
+  ['M1 absuelve también en la punta', 'if (p > 0) absueltos.set(v.sha, v.sha)', 'absueltos.set(v.sha, v.sha)'],
+  ['M2 sin exigir el obligatorio en success', "obligatorio?.status === 'completed' && obligatorio.conclusion === 'success'", 'true'],
+  ['M3 «sin arrancar» sin mirar los pasos', "j.conclusion === 'cancelled' && Array.isArray(j.steps)\n    && j.steps.every((s) => s?.status !== 'completed' && s?.status !== 'in_progress')", "j.conclusion === 'cancelled'"],
+  ['M4 sin mirar la señal', '!rojos.length && !deLaSenal\n', '!rojos.length\n'],
+  ['M5 la bajada para en las clases nuevas', '[CAUSA_SUSTITUIDO, CAUSA_SUSTITUIDO_CON_OBLIGATORIO_VERDE, CAUSA_OBLIGATORIO_SUSTITUIDO].includes(v.causa) && !(v.sinRun', '[CAUSA_SUSTITUIDO].includes(v.causa) && !(v.sinRun'],
+  ['M6 sin exigir los declarados', '&& declarados.every((n) => jobs.some((j) => j.name === n))', ''],
+  ['M7 (b) el siguiente verde no absuelve', "if (w.obligatorio === 'success') { absueltos.set(v.sha, w.sha); break; }", "if (w.obligatorio === 'success') { break; }"],
+  ['M8 (b) el rojo no para la subida', "{ tapados.set(v.sha, w.sha); break; }", "{ tapados.set(v.sha, w.sha); }"],
+  ['M9 (b) corriendo no espera', "if (w.estado === 'CORRIENDO') { enEspera.add(v.sha); break; }", ''],
+  ['M10 (b) un hueco no para', 'if (!w) break;', 'if (!w) continue;'],
+  ['M11 la bajada no arranca desde un obligatorio con veredicto', " || v.estado === 'CORRIENDO' || v.obligatorio)", " || v.estado === 'CORRIENDO')"],
+  ['M12 (b) sin la clase', 'if (canceladoSinArrancar(obligatorio)) {', 'if (false) {'],
+  ['M13 (b) el aviso no dice cuál', 'salió en ROJO: no se absuelve', 'no se absuelve'],

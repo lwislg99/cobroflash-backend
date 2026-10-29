@@ -15,14 +15,26 @@
       "que": "R1–R6 del documento legal servido: fuera «Cobro integrado» y «Justificantes de cobro», soporte sólo por email, el cobro con su estado real, «no emite facturas ni ningún otro documento de cobro», fuera el «mientras tanto».",
       "de_donde": "SCRUM-1551 c.19542",
       "consta_en": "SCRUM-1554, descripción, fila 2",
-      "estado": "abierta"
+      "estado": "cerrada",
+      "cerrada": {
+        "por": "jv-j3au (puesto J3, equipo de Javier), SCRUM-1551g",
+        "motivo": "R1-R6, firmadas en SCRUM-1551 c.20208, entraron en main con el PR #2657 (SCRUM-1551b, commit 6118056b1, el que quita «Cobro integrado» según git log -S) y están servidas: yaqu.app/health = 28098fe4b1a1, que contiene el merge, y /legal/alcance-beta (versión ac7349fd0b84) lleva 1 vez «Albaranes y partes de trabajo», «cobro a tus clientes a través de YaQu», «ningún otro documento de cobro» y «el alta de cobros (Stripe)», y 0 «Cobro integrado», «Justificantes de cobro», «email y WhatsApp» y «mientras tanto» (23-oct-2026 19:07:50Z, cabecera Date de yaqu.app).",
+        "sha": "be18d365d92df11c4a6638e85544417aa750c5c8",
+        "fecha": "2026-10-23"
+      }
     },
     {
       "numero": 3,
       "que": "D1: el aviso de BORRADOR va en una línea «>» y no se sirve; sí se ven tres [REVISAR ASESOR] y los huecos del contrato.",
       "de_donde": "SCRUM-1551",
       "consta_en": "SCRUM-1554, descripción, fila 3",
-      "estado": "abierta"
+      "estado": "cerrada",
+      "cerrada": {
+        "por": "jv-j3au (puesto J3, equipo de Javier), SCRUM-1551g",
+        "motivo": "D1 decidida por el fundador con la opción (a) en SCRUM-1551 c.20217: el aviso se ve. Entró en main con el PR #2657 (SCRUM-1551b, commit 6118056b1, el que añade la línea según git log -S) y está servido: /legal/alcance-beta (versión ac7349fd0b84) lleva 1 vez «Borrador pendiente de revisión legal: estas condiciones pueden cambiar antes de que se te cobre.» (23-oct-2026 19:07:50Z, cabecera Date de yaqu.app). Siguen a la vista los tres [REVISAR ASESOR] y los huecos del contrato: es lo que la opción (a) deja, avisado por esa línea, no un resto sin hacer.",
+        "sha": "be18d365d92df11c4a6638e85544417aa750c5c8",
+        "fecha": "2026-10-23"
+      }
     },
     {
       "numero": 4,
@@ -56,21 +68,39 @@
       "que": "public/terminos.html:48 dice en presente «emitir facturas y gestionar cobros». Fuera de la población medida; no leído entero.",
       "de_donde": "SCRUM-1551",
       "consta_en": "SCRUM-1554, descripción, fila 7",
-      "estado": "abierta"
+      "estado": "cerrada",
+      "cerrada": {
+        "por": "jv-j3au (puesto J3, equipo de Javier), SCRUM-1551g",
+        "motivo": "T1a, firmada en SCRUM-1551 c.20256, entró en main con el PR #2697 (SCRUM-1551d, commit 2ddbb3798, el que quita la frase según git log -S) y está servida: /terminos lleva 0 «emitir facturas y gestionar cobros» y 1 vez «…recoger firmas digitales. En España, el cobro a tus clientes a través de YaQu se activará a la vez que la facturación; hasta entonces YaQu no cobra por ti y no emite facturas ni ningún otro documento de cobro.»; tampoco queda la hermana de la sección 6 (SCRUM-1551 c.20051): 0 «cotización y factura» (23-oct-2026 19:07:50Z, cabecera Date de yaqu.app).",
+        "sha": "d09951f487138503bdce72212886b310ba89259e",
+        "fecha": "2026-10-23"
+      }
     },
     {
       "numero": 8,
       "que": "El guard de SCRUM-406 sólo mira public/ y no ve lo que se sirve desde docs/legal: por ahí se coló «soporte por email y WhatsApp».",
       "de_donde": "SCRUM-1551",
       "consta_en": "SCRUM-1554, descripción, fila 8",
-      "estado": "abierta"
+      "estado": "cerrada",
+      "cerrada": {
+        "por": "jv-j6az (puesto J6, equipo de Javier), SCRUM-1551h",
+        "motivo": "tests/scrum406-canal-prometido-existe.test.mjs mira también los documentos de docs/legal/ que el servidor sirve: la lista sale por AST de las llamadas a readLegalDoc en src/ (hoy 1 documento, ALCANCE_BETA.md, desde 2 fuentes) y una viñeta partida en varias líneas se lee como una frase. Visto en rojo: con «soporte⏎  por email y WhatsApp.» inyectado en ALCANCE_BETA.md:24-25, el guard nuevo cae y el de main (b6dd5d1a8) sale verde 5/5. El sha es el del commit que lo hace, no un merge: entra en main con el PR de esta misma rama.",
+        "sha": "c1581273d73cf3ff7a1cee3d4aa2724061923a2d",
+        "fecha": "2026-10-23"
+      }
     },
     {
       "numero": 9,
       "que": "readLegalDoc sirve cada línea de continuación de una viñeta como un <p> suelto: 7 líneas de ALCANCE_BETA.md, el P1 entre ellas, se leen partidas en dos bloques. No cambia ninguna palabra.",
       "de_donde": "SCRUM-534 §5",
       "consta_en": "SCRUM-1554 c.19593",
-      "estado": "abierta"
+      "estado": "cerrada",
+      "cerrada": {
+        "por": "jv-j4as (puesto J4, equipo de Javier), SCRUM-1551j",
+        "motivo": "Salida A, decidida por el fundador en SCRUM-1551 c.21020: mdToHtml mete la línea sangrada de una viñeta dentro de su <li> y ALCANCE_BETA.md no se toca. Entró en main con el PR #2927 (SCRUM-1551i) y está servido: yaqu.app/version = 77ce98573b1b, el merge, y /legal/alcance-beta imprime «Versión del documento: cc719298c151» con 0 </ul> seguidos de <p> y 13 <p> (antes 5 y 22, según la sonda de 1551i); R4, «…YaQu no emite facturas ni ningún otro documento de cobro…», va entera en su <li> (27-oct-2026 15:13:21Z, cabecera Date de yaqu.app, 4.737 B). Las 0 aceptaciones de la versión anterior, ac7349fd0b84: consulta del fundador en producción antes del merge (SCRUM-1551 c.21034).",
+        "sha": "77ce98573b1b5e090dfcf7754c4e7960bc63b85a",
+        "fecha": "2026-10-27"
+      }
     },
     {
       "numero": 10,
@@ -93,7 +123,13 @@
       "de_donde": "SCRUM-1236 c.19745",
       "consta_en": "SCRUM-1554 c.19746, fila 12",
       "condicion": "Falso siempre.",
-      "estado": "abierta"
+      "estado": "cerrada",
+      "cerrada": {
+        "por": "jv-j3bd (puesto J3, equipo de Javier), SCRUM-1016o",
+        "motivo": "El fundador firmó el literal en SCRUM-1016 c.20778 (P4): «Demostración: del presupuesto a la firma». El sha es el commit que cambia public/index.html:447 (copiado de Jira por programa) y entra en main en el mismo PR que este cierre: si el PR no entra, este cierre tampoco. Lo vigila tests/scrum1016o-aria-label-firmado.test.mjs. Servido en yaqu.app: NO medido al escribir esto (se mide tras el despliegue).",
+        "sha": "36f475434f3ef265b37e18745aa32eabcd85a297",
+        "fecha": "2026-10-24"
+      }
     },
     {
       "numero": 13,
@@ -108,8 +144,14 @@
       "que": "public/index.html:427, el subtítulo vivo: tiene recambio firmado (SCRUM-1016 c.19607) y falta aplicarlo. Carril J3.",
       "de_donde": "SCRUM-1236 c.19745",
       "consta_en": "SCRUM-1554 c.19746, fila 14",
-      "condicion": "Aplicarlo, sin firma nueva.",
-      "estado": "abierta"
+      "condicion": "Superada el 23-oct por la firma S3 (SCRUM-1551 c.20437): el recambio de c.19607 NO se aplica. S3 lo aplica SCRUM-1551e en public/index.html:442; se cierra con el sha de su merge.",
+      "estado": "cerrada",
+      "cerrada": {
+        "por": "jv-j3ar (puesto J3, equipo de Javier), SCRUM-1551f",
+        "motivo": "S3 (SCRUM-1551 c.20437) entró en main con el PR #2711 (SCRUM-1551e) y está servido: yaqu.app/health = 180e19746b2c, que contiene el merge, y la portada lleva 1 vez «Y llevas clientes, gastos y albaranes en el mismo sitio.» y 0 «gastos y facturas» (23-oct-2026 10:14:56Z, cabecera Date de yaqu.app).",
+        "sha": "809527fa691056443c545901152443d0d2a072dc",
+        "fecha": "2026-10-23"
+      }
     },
     {
       "numero": 15,
@@ -173,6 +215,14 @@
       "que": "sendInvoiceEmail, sin proveedor, escribe invoice-<número>.eml y devuelve ok: el día que se encienda la facturación le dirá a un profesional que su factura salió por correo cuando sólo se escribió un fichero. STOP del fundador (camino de emisión).",
       "de_donde": "SCRUM-1558",
       "consta_en": "docs/master/SCRUM-1558.md:29 («el orquestador lo apunta en la puerta»). NO consta en SCRUM-1554",
+      "estado": "abierta"
+    },
+    {
+      "numero": 24,
+      "que": "Los cinco guiones de venta del máster prometen el cobro que la regla 24 apaga en España: A1 (docs/YAQU_MASTER.md:53, promesa de calle), H5 (:226-228, tres guiones), H6 (:232, objeciones), H7 y AB5 (:235 y :1869, titular) y V0-6 (:1012, guion de vídeo). Hoy no se usan con profesionales reales; se firman aquí en bloque ANTES de usarse. Literales de mínimos en SCRUM-1016 c.16200 §3; la objeción del Kit Digital no tiene respuesta verdadera hasta SIF-1.",
+      "de_donde": "SCRUM-1016 c.20778 (P1 del fundador: «No, aún no»)",
+      "consta_en": "docs/master/SCRUM-1016.md, tramo SCRUM-1016p. NO consta en SCRUM-1554",
+      "condicion": "Falso en España hasta SIF-1. No se usa con profesionales reales sin la firma en bloque.",
       "estado": "abierta"
     }
   ]

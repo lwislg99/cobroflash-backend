@@ -206,6 +206,13 @@ export type MotivoExencionBaja = 'respuesta-a-entrante';
 export const MOTIVO_BAJA_NO_COMPROBABLE = 'baja_no_comprobable';
 
 /**
+ * SCRUM-1509g · Motivo de una plantilla que no salió porque NO SE PUDO COMPROBAR el tope (la reserva
+ * de SCRUM-1513 lanzó). No es `daily_cap` ni `customer_daily_cap`: no se sabe si el tope está
+ * alcanzado. Mismo trato que la baja sin comprobar: fuera de `SEND_FAILURE_MESSAGES`, sin texto nuevo.
+ */
+export const MOTIVO_TOPE_NO_COMPROBABLE = 'tope_no_comprobable';
+
+/**
  * ¿Hay que cortar este envío por la baja del canal? Devuelve el motivo, o `null` si puede salir.
  *
  * Sin `merchantId` no corta, y no es un descuido: la baja se guarda POR merchant, así que sin él
@@ -379,8 +386,9 @@ export async function sendWhatsAppTemplate(params: {
   // A3.2 (PV-WA-CAPS) y J6: topes anti-abuso del número compartido, contados sobre el log WA-0b
   // (WhatsAppMessage). SCRUM-1513: la pregunta y la fila van juntas, bajo el cerrojo del comercio
   // (`reservarPlantilla`). Si cabe, la fila queda apuntada en `queued` ANTES de hablar con Meta, y
-  // se resuelve al volver. Best-effort como antes: si la BD falla, NO se bloquea, y el envío se
-  // registra después como se hacía (`reservaId` se queda en null).
+  // se resuelve al volver. SCRUM-1509g (fundador, c.19620: «Ok que el tope bloquee»): si la reserva
+  // no se puede hacer —la base no contesta al leer o al apuntar—, la plantilla NO sale. Antes era
+  // best-effort y salía: con la base rota, 10 recordatorios eran 10 plantillas.
   let reservaId: number | null = null;
   if (params.merchantId) {
     try {
@@ -397,7 +405,7 @@ export async function sendWhatsAppTemplate(params: {
         // Alerta interna de gasto/uso diario (visible en logs de Railway)
         console.error(
           `[WhatsApp][ALERTA] merchant ${params.merchantId} alcanzó el tope diario de plantillas ` +
-          `(${reserva.cuenta}/${config.WA_DAILY_TEMPLATE_CAP}); envío BLOQUEADO (A3.2)`,
+          `(${reserva.cuenta}/${reserva.tope}); envío BLOQUEADO (A3.2)`,
         );
         logFailure('daily_cap');
         return { ok: false, reason: 'daily_cap' };
@@ -413,7 +421,13 @@ export async function sendWhatsAppTemplate(params: {
       }
       reservaId = reserva.id;
     } catch (err: any) {
-      console.error('[WhatsApp] Error comprobando topes A3.2 (no se bloquea):', err?.message || err);
+      console.error(
+        `[WhatsApp] NO se pudo comprobar el tope de plantillas del merchant ${params.merchantId}; ` +
+          'envío BLOQUEADO (fail-closed, SCRUM-1509g):',
+        err?.message || err,
+      );
+      logFailure(MOTIVO_TOPE_NO_COMPROBABLE);
+      return { ok: false, reason: MOTIVO_TOPE_NO_COMPROBABLE };
     }
   }
 

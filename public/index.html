@@ -4,7 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>YaQu — Del presupuesto a la firma, sin salir de WhatsApp</title>
-  <meta name="description" content="El ERP por WhatsApp para los oficios en España: crea presupuestos en 30 segundos, tu cliente los firma desde el móvil. Clientes, gastos, facturas y bot — todo en un sitio."/>
+  <meta name="description" content="El ERP por WhatsApp para los oficios en España: crea presupuestos en 30 segundos, tu cliente los firma desde el móvil. Clientes, gastos, albaranes y bot — todo en un sitio."/>
   <meta name="theme-color" content="#16a34a"/>
   <link rel="manifest" href="/manifest.json"/>
   <link rel="stylesheet" href="/fonts/inter.css"/>
@@ -12,7 +12,7 @@
   <meta property="og:site_name" content="YaQu"/>
   <meta property="og:locale" content="es_ES"/>
   <meta property="og:title" content="YaQu — Del presupuesto a la firma, sin salir de WhatsApp"/>
-  <meta property="og:description" content="El ERP por WhatsApp para los oficios: presupuesto en 30 s y firma desde el móvil. Clientes, gastos y facturas en el mismo sitio."/>
+  <meta property="og:description" content="El ERP por WhatsApp para los oficios: presupuesto en 30 s y firma desde el móvil. Clientes, gastos y albaranes en el mismo sitio."/>
   <meta property="og:url" content="https://yaqu.app"/>
   <meta property="og:image" content="https://yaqu.app/img/og.png"/>
   <meta property="og:image:width" content="1200"/>
@@ -32,7 +32,7 @@
     "applicationCategory": "BusinessApplication",
     "operatingSystem": "Web, iOS, Android",
     "url": "https://yaqu.app",
-    "description": "El ERP por WhatsApp para los oficios en España (fontaneros, electricistas, reformistas): presupuestos en 30 segundos, firma digital del cliente y gestión de clientes, gastos y facturas.",
+    "description": "El ERP por WhatsApp para los oficios en España (fontaneros, electricistas, reformistas): presupuestos en 30 segundos, firma digital del cliente y gestión de clientes, gastos y albaranes.",
     "offers": {
       "@type": "Offer",
       "price": "19.90",
@@ -58,8 +58,22 @@
     --tint:var(--brand-tint); --cyan:var(--logo-cyan); --tintbg:var(--brand-tint); --amber:#b45309;
     --sh-sm:var(--shadow-sm); --sh-md:var(--shadow-md); --sh-lg:var(--shadow-lg);
     --sh-xl:0 40px 80px -24px rgba(16,24,40,.28);
-    --font:'Inter','Inter var',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif;
+    --font:'Inter','Inter var','YaQu Reserva Arial','YaQu Reserva DejaVu',system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',sans-serif;
   }
+  /* SCRUM-1570c · la reserva con las medidas de Inter. Mientras llega Inter (font-display:swap) el texto se
+     pinta con una fuente del sistema más ancha o más estrecha, y al cambiar el subtítulo del hero se
+     re-maqueta y empuja la página (132 → 106 px a 390 con DejaVu; SCRUM-1570 c.20169). Estas caras usan
+     una fuente LOCAL escalada a las anchuras y alturas de Inter. Números de
+     docs/master/evidencias/SCRUM-1570c/metricas.mjs: size-adjust = ancho medio de Inter / ancho medio de
+     la reserva sobre el texto que esta página pinta en cada tramo de grosor; ascent/descent = hhea de Inter (1984/494 de 2048) / size-adjust.
+     Arial = Liberation Sans = Arimo en anchuras (Windows, Mac, Linux con fonts-liberation); DejaVu, la de
+     Ubuntu. El unicode-range es el de Inter latin + latin-ext: con Inter cargada, ninguna pinta nada. */
+  @font-face{font-family:'YaQu Reserva Arial';font-weight:100 500;src:local('Arial'),local('ArialMT'),local('Liberation Sans'),local('LiberationSans'),local('Arimo');size-adjust:106.29%;ascent-override:91.14%;descent-override:22.69%;line-gap-override:0%;unicode-range:U+0000-02BA,U+02BB-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2000-206F,U+20A0-20C0,U+2113,U+2191,U+2193,U+2212,U+2215,U+2C60-2C7F,U+A720-A7FF,U+FEFF,U+FFFD}
+  @font-face{font-family:'YaQu Reserva Arial';font-weight:600 700;src:local('Arial Bold'),local('Arial-BoldMT'),local('Liberation Sans Bold'),local('LiberationSans-Bold'),local('Arimo Bold'),local('Arimo-Bold');size-adjust:102.21%;ascent-override:94.78%;descent-override:23.60%;line-gap-override:0%;unicode-range:U+0000-02BA,U+02BB-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2000-206F,U+20A0-20C0,U+2113,U+2191,U+2193,U+2212,U+2215,U+2C60-2C7F,U+A720-A7FF,U+FEFF,U+FFFD}
+  @font-face{font-family:'YaQu Reserva Arial';font-weight:800 900;src:local('Arial Bold'),local('Arial-BoldMT'),local('Liberation Sans Bold'),local('LiberationSans-Bold'),local('Arimo Bold'),local('Arimo-Bold');size-adjust:103.13%;ascent-override:93.94%;descent-override:23.39%;line-gap-override:0%;unicode-range:U+0000-02BA,U+02BB-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2000-206F,U+20A0-20C0,U+2113,U+2191,U+2193,U+2212,U+2215,U+2C60-2C7F,U+A720-A7FF,U+FEFF,U+FFFD}
+  @font-face{font-family:'YaQu Reserva DejaVu';font-weight:100 500;src:local('DejaVu Sans'),local('DejaVuSans');size-adjust:94.16%;ascent-override:102.89%;descent-override:25.62%;line-gap-override:0%;unicode-range:U+0000-02BA,U+02BB-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2000-206F,U+20A0-20C0,U+2113,U+2191,U+2193,U+2212,U+2215,U+2C60-2C7F,U+A720-A7FF,U+FEFF,U+FFFD}
+  @font-face{font-family:'YaQu Reserva DejaVu';font-weight:600 700;src:local('DejaVu Sans Bold'),local('DejaVuSans-Bold');size-adjust:86.26%;ascent-override:112.31%;descent-override:27.96%;line-gap-override:0%;unicode-range:U+0000-02BA,U+02BB-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2000-206F,U+20A0-20C0,U+2113,U+2191,U+2193,U+2212,U+2215,U+2C60-2C7F,U+A720-A7FF,U+FEFF,U+FFFD}
+  @font-face{font-family:'YaQu Reserva DejaVu';font-weight:800 900;src:local('DejaVu Sans Bold'),local('DejaVuSans-Bold');size-adjust:87.72%;ascent-override:110.44%;descent-override:27.50%;line-gap-override:0%;unicode-range:U+0000-02BA,U+02BB-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2000-206F,U+20A0-20C0,U+2113,U+2191,U+2193,U+2212,U+2215,U+2C60-2C7F,U+A720-A7FF,U+FEFF,U+FFFD}
   *,*::before,*::after{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--body);font-family:var(--font);line-height:1.6;
     -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;font-feature-settings:"cv11","ss01";overflow-x:hidden}
@@ -128,6 +142,7 @@
   .announce a::after{content:"";position:absolute;left:0;right:0;top:-12px;bottom:-12px;z-index:1}
   .announce a:hover{border-color:#fff}
   @media(max-width:600px){.announce .sep,.announce .hide-sm{display:none}.announce-in{gap:4px 12px}}
+  @media(max-width:600px){.announce-in{min-height:94.8px;align-content:center}}@media(max-width:362px){.announce-in{min-height:116.4px}}
 
   .nav{position:sticky;top:0;z-index:40;background:rgba(246,247,245,.85);backdrop-filter:saturate(180%) blur(12px);border-bottom:1px solid var(--border)}
   .nav-in{display:flex;align-items:center;justify-content:space-between;height:64px}
@@ -424,12 +439,12 @@
     <div>
       <span class="eyebrow">El ERP por WhatsApp para los oficios</span>
       <h1 id="reg-hero">Del presupuesto a la firma, <span class="hl">sin salir de WhatsApp.</span></h1>
-      <p class="sub">Crea el presupuesto en 30 segundos, tu cliente lo firma desde el móvil y te paga — con tarjeta, Bizum o transferencia. Y llevas clientes, gastos y facturas en el mismo sitio.</p>
+      <p class="sub">Crea el presupuesto en 30 segundos y tu cliente lo firma desde el móvil por WhatsApp. Y llevas clientes, gastos y albaranes en el mismo sitio.</p>
       <div class="cta-row"><a href="/register.html" class="btn btn-primary btn-lg">Empieza gratis</a><a href="#probar" class="btn btn-ghost btn-lg">Probar la demo</a></div>
       <p class="note"><b>14 días gratis</b><span class="dot"></span>Sin tarjeta<span class="dot"></span>Listo en 5 minutos</p>
     </div>
 
-    <div class="stage" aria-label="Demostración: de presupuesto a cobro">
+    <div class="stage" aria-label="Demostración: del presupuesto a la firma">
       <div class="beat-label"><span class="pulse"></span><span class="lbls"><span class="ph">Firmado. Presupuesto cerrado.</span><span class="l l1">Presupuesto en 30 segundos</span><span class="l l2">Enviado por WhatsApp</span><span class="l l3">Tu cliente firma</span><span class="l l4">Firmado. Presupuesto cerrado.</span></span></div>
       <div class="win">
         <div class="win-bar"><div class="traffic"><i></i><i></i><i></i></div><div class="urlbar">🔒 app.yaqu.app/presupuesto/nuevo</div></div>
@@ -728,10 +743,10 @@
   <div class="wrap">
     <div class="sec-head"><span class="eyebrow">Preguntas</span><h2 id="reg-faq">Preguntas de compañeros de oficio</h2><p>Las que nos hacen de verdad.</p></div>
     <div class="faq">
-      <details open><summary>Ya mando presupuestos por WhatsApp gratis. ¿Para qué esto?</summary><div class="a">Exacto — por eso esto ES WhatsApp. La diferencia: el tuyo no firma ni lleva el seguimiento solo. Y aquí además llevas clientes, gastos y facturas en el mismo sitio.</div></details>
+      <details open><summary>Ya mando presupuestos por WhatsApp gratis. ¿Para qué esto?</summary><div class="a">Exacto — por eso esto ES WhatsApp. La diferencia: el tuyo no firma ni lleva el seguimiento solo. Y aquí además llevas clientes, gastos y albaranes en el mismo sitio.</div></details>
       <details><summary>¿Mis clientes tienen que instalar algo? Muchos son mayores.</summary><div class="a">Nada. Les llega un WhatsApp normal con un enlace: lo abren, ven el presupuesto y lo firman con el dedo.</div></details>
       <details><summary>¿Sirve para llevar todo mi negocio o solo presupuestos?</summary><div class="a">Todo: presupuestos y firma, más clientes, proveedores, productos, gastos, informes y equipo. Es tu herramienta de gestión completa, no solo para cotizar.</div></details>
-      <details><summary>¿Y si un día lo dejo?</summary><div class="a">Sin permanencia. Tus datos son tuyos: clientes, presupuestos, facturas, cobros, trabajos y gastos se exportan en CSV cuando quieras.</div></details>
+      <details><summary>¿Y si un día lo dejo?</summary><div class="a">Sin permanencia. Tus datos son tuyos: clientes, presupuestos, trabajos y gastos se exportan en CSV cuando quieras.</div></details>
     </div>
   </div>
 </section>

@@ -1,0 +1,17 @@
+rc 1 · pasan 1 · caen 6
+  [comercio] · cortes 2: intento 1 (13161 B / 204 líneas), intento 2 (13161 B / 204 líneas)
+  [comercio] código 0 · población ¿? (suelo 192) · CRUZA 2 · LEE-Y-NO-ACABA 0 · LEE-Y-NIEGA 1 · FILTRA 160 · SIN-CONSULTA 4 · NO-LLEGO 20 · relanzado con 3 variable(s) vacías que NO venían del entorno del test: DATABASE_URL_DEV, DATABASE_URL_STAGING, DATABASE_UR
+  ✖ SCRUM-1516c · 🔴 eje del COMERCIO: lo que cruza la frontera es exactamente lo declarado, y sólo puede bajar (3892.3599ms)
+  [rol] · cortes 2: intento 1 (23327 B / 266 líneas), intento 2 (23327 B / 266 líneas)
+  [rol] código 0 · población ¿? (suelo 78) · NO-DISTINGUE 3 · RECORTA 44 · SIN-DOCUMENTO 17 · NO-LLEGO 14 · CIEGO 0 · relanzado con 3 variable(s) vacías que NO venían del entorno del test: DATABASE_URL_DEV, DATABASE_URL_STAGING, DATABASE_URL_TESTS
+  [comercioSordo] · cortes 2: intento 1 (12900 B / 201 líneas), intento 2 (12900 B / 201 líneas)
+  ✖ SCRUM-1516c · 🔴 eje del ROL: lo que un Técnico recibe igual que el administrador es exactamente lo declarado (255.1866ms)
+  ✖ SCRUM-1516c · el censo NO está mudo: sin su siembra dice CIEGO en los dos ejes, y con el doble sordo cae (1.0644ms)
+  ✔ SCRUM-1516c · cada ruta declarada lleva su MOTIVO, no sólo su nombre (0.4644ms)
+  ✖ SCRUM-1516c · 🔴 eje del COMERCIO: lo que cruza la frontera es exactamente lo declarado, y sólo puede bajar (3892.3599ms)
+    AssertionError [ERR_ASSERTION]: [comercio] el censo salió 0 pero su línea de controles SEMBRADOS no dice true
+  ✖ SCRUM-1516c · 🔴 eje del ROL: lo que un Técnico recibe igual que el administrador es exactamente lo declarado (255.1866ms)
+    AssertionError [ERR_ASSERTION]: [rol] el censo salió 0 pero su línea de controles SEMBRADOS no dice true
+  ✖ SCRUM-1516c · el censo NO está mudo: sin su siembra dice CIEGO en los dos ejes, y con el doble sordo cae (1.0644ms)
+    AssertionError [ERR_ASSERTION]: --doble-sordo salió 1 sin decir que no distingue el par
+restaurado

@@ -205,6 +205,64 @@ jobs:
           key: vigia-estado-${{ github.run_id }}
 
       # ═══════════════════════════════════════════════════════════════════════════════════════
+      # 🔴 SCRUM-1605 · Y CUANDO PRODUCCIÓN VUELVE A ESTAR AL DÍA, EL AVISO SE CIERRA
+      #
+      # Hasta aquí el vigía abría y comentaba, pero no cerraba nunca: el #2455 (14-oct) siguió abierto
+      # 17 pasadas verdes después de la congelación del 21-23 oct. Un rojo que no se apaga deja de avisar.
+      #
+      # La DECISIÓN es de `decidirCierre` (`scripts/vigia-despliegue-aviso.mjs`): sólo con un renglón
+      # `al-dia` —no con «retrasado pero desplegando», que también sale 0— y nunca en un simulacro.
+      #
+      # Va ANTES del paso de aviso: los dos se excluyen por `salida` (0 aquí, 1 allí), así que el orden
+      # no cambia lo que pasa.
+      #
+      # 🔴 Si no puede mirar o no puede cerrar, el run sale en ROJO y lo dice en el resumen: «no pude
+      # cerrar el aviso» nunca sale verde. Y la lista de Issues que no llega NO es «[]»: «[]» diría
+      # «ningún aviso abierto».
+      # ═══════════════════════════════════════════════════════════════════════════════════════
+      - name: Cerrar el aviso si producción vuelve a estar al día (SCRUM-1605)
+        if: always() && !inputs.simulacro && steps.vigia.outputs.salida == '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          MARCA: "<!-- vigia-despliegue:produccion-congelada -->"
+        run: |
+          set +e
+          RENGLON="$(tail -1 .vigia/constancias.log 2>/dev/null)"
+          HISTORIAL="$(tail -500 .vigia/constancias.log 2>/dev/null)"
+          if ! ISSUES="$(gh api "repos/$REPO/issues?state=open&per_page=100" --paginate 2>/dev/null)"; then
+            echo "::error::NO PUDE MIRAR si hay un aviso que cerrar: la API de Issues no contestó."
+            echo "- **NO PUDE MIRAR** si había aviso que cerrar: la API de Issues no contestó." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          DECISION="$(VIGIA_ISSUES_JSON="$ISSUES" VIGIA_MARCA="$MARCA" VIGIA_RENGLON="$RENGLON" VIGIA_HISTORIAL="$HISTORIAL" \
+                      VIGIA_RUN_URL="$RUN_URL" node scripts/vigia-despliegue-aviso.mjs cerrar)"
+          ACCION="$(printf '%s' "$DECISION" | jq -r '.accion' 2>/dev/null)"
+          if [ "$ACCION" = "nada" ]; then
+            echo "- **Aviso:** nada que cerrar — $(printf '%s' "$DECISION" | jq -r '.motivo')" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if [ "$ACCION" != "cerrar" ]; then
+            MOTIVO="$(printf '%s' "$DECISION" | jq -r '.motivo // empty' 2>/dev/null)"
+            echo "::error::NO SE SABE si había que cerrar el aviso: ${MOTIVO:-$DECISION}"
+            echo "- **NO-SE-SABE** si había que cerrar el aviso — ${MOTIVO:-$DECISION}" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          NUMERO="$(printf '%s' "$DECISION" | jq -r '.numero')"
+          printf '%s' "$DECISION" | jq -r '.comentario' | gh issue comment "$NUMERO" --repo "$REPO" --body-file - \
+            && gh issue close "$NUMERO" --repo "$REPO"
+          # Se comprueba EN GITHUB, no en el código de salida de arriba.
+          ESTADO="$(gh api "repos/$REPO/issues/$NUMERO" --jq '.state' 2>/dev/null)"
+          if [ "$ESTADO" = "closed" ]; then
+            echo "- **CERRADO** — Issue #$NUMERO: producción vuelve a estar al día (leído de vuelta en GitHub)." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          echo "::error::Producción está al día, pero el Issue #$NUMERO NO consta cerrado (estado: ${ESTADO:-no se pudo leer}). Ciérralo a mano."
+          echo "- **NO SE PUDO CERRAR** el Issue #$NUMERO (estado: ${ESTADO:-no se pudo leer})." >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+
+      # ═══════════════════════════════════════════════════════════════════════════════════════
       # SCRUM-1123 · AVISAR DE VERDAD, NO SÓLO PONER EL JOB EN ROJO
       #
       # El 24/25-sep-2026 este vigía estuvo en FAILURE cuatro pasadas seguidas (SCRUM-1122) y nadie
@@ -252,9 +310,44 @@ jobs:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           MARCA: "<!-- vigia-despliegue:produccion-congelada -->"
           VIGIA_SIMULACRO: ${{ inputs.simulacro }}
+          # SCRUM-1123f · a quién llama el aviso. El #2455 juntó 9 comentarios del bot con 0
+          # menciones: un aviso que no nombra a nadie no le llega a nadie. Es el dueño del
+          # repositorio. Si su cuenta RECIBE la notificación no está medido (hace falta el permiso
+          # `notifications`, que el `gh` de las sesiones no tiene): se declara, no se deduce.
+          VIGIA_MENCION: "@${{ github.repository_owner }}"
         run: |
           echo "marca=$MARCA" >> "$GITHUB_OUTPUT"
           RENGLON="$(tail -1 .vigia/constancias.log 2>/dev/null || true)"
+
+          # ═══════════════════════════════════════════════════════════════════════════════════
+          # 🔴 SCRUM-1123f · ¿RAILWAY NO HA VISTO EL COMMIT (TIPO A) O LO VIO Y FALLÓ (TIPO B)?
+          #
+          # Las dos dan el mismo síntoma y se miran en sitios distintos. Del 21 al 22-oct Railway
+          # no vio 55 commits y este aviso mandó 8 veces a mirar «los logs de arranque»: no había
+          # ninguno. Se distinguen desde GitHub, por los estados que Railway deja en el commit.
+          #
+          # Se miran los 5 commits MÁS NUEVOS de primer padre entre producción y `main` (los shas
+          # salen del renglón del vigía; el checkout trae la historia entera). Cada uno lleva
+          # `leido:false` si la API no contestó: «no pude leer» NO es «cero estados», y el módulo
+          # lo distingue. Si algo de aquí falla, VIGIA_ESTADOS_JSON va vacío y el aviso sale igual,
+          # diciendo que no sabe qué avería es (nunca se calla el aviso por no poder diagnosticar).
+          # ═══════════════════════════════════════════════════════════════════════════════════
+          PROD="$(printf '%s' "$RENGLON" | grep -oE 'prod=[0-9a-f]{8}' | head -1 | cut -d= -f2)" || true
+          MAIN="$(printf '%s' "$RENGLON" | grep -oE 'main=[0-9a-f]{8}' | head -1 | cut -d= -f2)" || true
+          VIGIA_ESTADOS_JSON=''
+          if [ -n "$PROD" ] && [ -n "$MAIN" ]; then
+            FILAS=''
+            for SHA in $(git rev-list --first-parent --max-count=5 "$PROD..$MAIN" 2>/dev/null); do
+              FILA=''
+              if J="$(gh api "repos/$REPO/commits/$SHA/status" 2>/dev/null)"; then
+                FILA="$(printf '%s' "$J" | jq -c --arg sha "$SHA" '{sha: $sha, leido: true, estados: [.statuses[] | {context, state, description}]}' 2>/dev/null)" || FILA=''
+              fi
+              [ -n "$FILA" ] || FILA="{\"sha\":\"$SHA\",\"leido\":false}"
+              FILAS="$FILAS$FILA"$'\n'
+            done
+            VIGIA_ESTADOS_JSON="$(printf '%s' "$FILAS" | jq -s -c '.' 2>/dev/null)" || VIGIA_ESTADOS_JSON=''
+          fi
+          echo "estados de Railway leídos: ${VIGIA_ESTADOS_JSON:-(ninguno)}"
 
           # 🔴 NO se usa `gh issue list --search`: la búsqueda de GitHub tokeniza el cuerpo y no
           # garantiza casar un literal con `<!-- … -->`. Se listan los Issues abiertos tal cual
@@ -271,8 +364,11 @@ jobs:
           # (Sin `pipefail`, en las tuberías de abajo sólo cuenta la ÚLTIMA orden: un `jq` de en
           # medio que falla no aborta, le pasa vacío a la siguiente.)
           DECISION="$(VIGIA_ISSUES_JSON="$VIGIA_ISSUES_JSON" VIGIA_MARCA="$MARCA" VIGIA_RENGLON="$RENGLON" VIGIA_RUN_URL="$RUN_URL" \
+                      VIGIA_ESTADOS_JSON="$VIGIA_ESTADOS_JSON" \
                       node scripts/vigia-despliegue-aviso.mjs)" || true
           ACCION="$(printf '%s' "$DECISION" | jq -r '.accion' 2>/dev/null)" || true
+          TIPO="$(printf '%s' "$DECISION" | jq -r '.tipo // "no-se-sabe"' 2>/dev/null)" || true
+          echo "- **Avería:** \`${TIPO:-no-se-sabe}\` (SCRUM-1123f: \`railway-no-lo-vio\` = tipo A, \`fallo-el-despliegue\` = tipo B)" >> "$GITHUB_STEP_SUMMARY"
 
           if [ "$ACCION" = "comentar" ]; then
             NUMERO="$(printf '%s' "$DECISION" | jq -r '.numero')"

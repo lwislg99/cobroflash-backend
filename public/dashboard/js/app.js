@@ -181,7 +181,7 @@ async function initApp() {
 
   // 2. Inyectar usuario en sidebar
   const initials = (me.name || 'U').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-  const planLabels = { trial: 'Trial gratuito', basic: 'Plan Básico', pro: 'Plan Pro', empresa: 'Plan Empresa' };
+  const planLabels = { trial: 'Trial gratuito', basic: 'Plan Básico', pro: 'Plan Pro', empresa: 'Plan Empresa', equipo: 'Plan Equipo', founding: 'Plan Fundador' }; // SCRUM-1623: «Plan Equipo» = T2, firmado en SCRUM-1402 c.20845 (regla 39) · SCRUM-1626: «Plan Fundador», firmado en SCRUM-1626 c.21169 (regla 39)
   const roleLabels = { admin: 'Admin', tecnico: 'Operario' }; // A20.3: etiqueta 'Operario' (fundador); el valor interno no se migra
 
   const sidebarSubtitle = me.isOwner

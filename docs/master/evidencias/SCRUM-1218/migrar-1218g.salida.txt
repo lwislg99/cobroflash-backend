@@ -1,0 +1,12 @@
+pdfs: fetch( 2 → 0 · llamadas a pedirSinAgente( 2 · imports hasta la línea 10
+scrum221-export-fiscal-cero-bytes: fetch( 3 → 0 · llamadas a pedirSinAgente( 3 · imports hasta la línea 26
+scrum74-recibo-token: fetch( 7 → 0 · llamadas a pedirSinAgente( 7 · imports hasta la línea 17
+scrum82-zip-verifactu: fetch( 3 → 0 · llamadas a pedirSinAgente( 3 · imports hasta la línea 35
+scrum25-export-zip: fetch( 2 → 0 · llamadas a pedirSinAgente( 2 · imports hasta la línea 23
+scrum25-exports: fetch( 2 → 0 · llamadas a pedirSinAgente( 2 · imports hasta la línea 18
+scrum148-filtro-por-miembro: fetch( 1 → 0 · llamadas a pedirSinAgente( 1 · imports hasta la línea 18 · node:http ya importado
+POBLACION=7 ficheros · malos=0 · EXIT=0
+## diff-idem-1218f sobre este diff
+quitadas=20 · puestas=208 · faltan=0 · quitadas sin fetch(=0
+control sembrado: VIVO
+EXIT=0

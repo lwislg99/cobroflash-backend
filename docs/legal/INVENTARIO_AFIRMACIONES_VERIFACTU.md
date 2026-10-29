@@ -317,7 +317,7 @@ para «facturación VeriFactu» entendida como el sistema completo. Dos coordena
 La primera mitad describe trabajo que la modalidad elegida excluye. **La misma línea lo desmiente**
 a continuación con su `✅ DONE 12-jun-26` (ver **D4**), así que solo engaña a quien lea media línea.
 
-**C9 · `docs/legal/ALCANCE_BETA.md:28-29` — contrato del cliente founding**
+**C9 · `docs/legal/ALCANCE_BETA.md:32-33` — contrato del cliente founding**
 > `La **facturación con sistema VERI*FACTU se activará al cerrar la certificación** del sistema,
 > **sin cambio de precio** para ti.`
 

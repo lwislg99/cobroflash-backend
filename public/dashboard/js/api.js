@@ -708,6 +708,17 @@ function fmtNumeroEs(n) {
 window.fmtNumeroEs = fmtNumeroEs;
 
 /**
+ * SCRUM-1608 · EL TIPO DE IVA PARA UN RÓTULO: 0.075 → «7,5», 0.21 → «21». Sin el signo, que lo pone
+ * quien rotula. Gemela de `rotuloDeTipo(tipoEnPorcentaje(x))` del backend, la que usa el PDF desde
+ * SCRUM-1447: el tipo se redondea a la CENTÉSIMA de punto, nunca a entero (`toFixed(0)` pintaba «8»).
+ */
+function fmtTipoIvaEs(taxFrac) {
+  const v = Number(taxFrac);
+  return fmtNumeroEs(Number.isFinite(v) ? Math.round(v * 10000) / 100 : 0);
+}
+window.fmtTipoIvaEs = fmtTipoIvaEs;
+
+/**
  * ─────────────────────────────────────────────────────────────────────────────────────────
  * SCRUM-436 · EL MISMO IMPORTE, PERO DISTINGUIENDO EL AUSENTE DEL CERO
  *
@@ -1445,7 +1456,12 @@ function waDeliveryChip(waDelivery, opciones) {
     read:      { cls: 'wa-chip-read',      glyph: '✓✓', label: 'Leído' },
     failed:    { cls: 'wa-chip-failed',    glyph: '⚠',  label: 'No entregado' },
   };
-  const m = map[waDelivery.status] || map.sent;
+  // SCRUM-1518c · un estado que no conocemos NO es un envío: no hay chip. Antes caía en `map.sent`, y
+  // lo que escribe el cliente (`received`) salía «WhatsApp: Enviado», como si lo hubiéramos mandado
+  // nosotros. Es el criterio de 1518b en la pestaña: lo que no es un envío no se enseña como envío.
+  // `hasOwnProperty`: con `map[status]` a pelo, «toString» o «constructor» encuentran el prototipo.
+  if (!Object.prototype.hasOwnProperty.call(map, waDelivery.status)) return '';
+  const m = map[waDelivery.status];
   let when = '';
   // SCRUM-986 · `sinFecha`: la LISTA lo pide para no ensanchar la columna de estado (con la fecha el
   // chip mide ~200 px y parte en dos líneas el ID, la fecha y el importe de TODAS las filas). El

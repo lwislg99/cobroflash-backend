@@ -337,7 +337,16 @@
 - **Quedaba abierto, y lo cierra SCRUM-1338 (1-oct-2026):** el botón «Crear producto» del alta no se le vetaba al operario, aunque
   `POST /admin/products` exige admin desde SCRUM-614. Ahora va deshabilitado y con su nota (`docs/master/SCRUM-1338.md`).
 
-### [ ] P1-1303 · una anulación que pierde la carrera contra un cobro deja la factura `paid` CON su eslabón de anulación sellado (1-oct-2026, residual de SCRUM-1303)
+### [x] P1-1303 · una anulación que pierde la carrera contra un cobro deja la factura `paid` CON su eslabón de anulación sellado (1-oct-2026, residual de SCRUM-1303; resuelto en SCRUM-1314b, 24-oct-2026)
+- **Resuelto en SCRUM-1314b (24-oct-2026), con el GO del fundador sobre el camino de emisión
+  (SCRUM-1314 c.20754):** el sellado y el paso a `annulled` son ahora UNA sola `update`, con `pending`
+  en el `where`, dentro de la transacción y el cerrojo del sellado, y la liberación de albaranes va en
+  esa misma transacción. Si el cobro gana, no casa ninguna fila (P2025), se deshace todo y no queda
+  eslabón. Y una factura que ya tiene `vfAnulHash` no se vuelve a sellar (antes un reintento tras un
+  500 pisaba la huella). El caso «RESIDUAL CONOCIDO» del test de abajo pasa a afirmar que el eslabón
+  huérfano NO existe. **Lo que no cierra:** las filas que ya pudieran haber quedado así (el recuento
+  P3 de c.20754 es de sólo lectura y aparte), ni el alta, R1, la remisión o el XML, que el GO no cubre.
+  Registro: `docs/master/SCRUM-1314.md`, tramo 1314b.
 - **Qué pasa:** `POST /admin/invoices/:id/annul` sella la anulación (`applyVeriFactuAnulacion`, que
   escribe `vfAnulHash`/`vfAnulPrevHash`/`vfAnulTimestamp` y extiende la cadena) ANTES de escribir el
   estado, en su propia transacción. Si un cobro entra mientras se sella, desde SCRUM-1303 la escritura
@@ -357,7 +366,8 @@
   que la Parte L no declara): STOP, reglas 5 y 40. Decide el fundador. Tampoco se repara nada ya
   escrito: primero hay que medir si alguna factura quedó así.
 - **Fijado por un test:** `tests/scrum1303-estado-dentro-del-where.test.mjs`, caso «RESIDUAL
-  CONOCIDO». Si alguien cambia este comportamiento, cae y remite aquí.
+  CONOCIDO». Si alguien cambia este comportamiento, cae y remite aquí. *(Desde SCRUM-1314b ese caso
+  afirma lo contrario: «tras B′ NO queda eslabón de anulación».)*
 
 ### [ ] P1-WA-TASA · La tasa de entrega de WhatsApp lee **100 %** con 9 de 10 mensajes FALLIDOS (15-sep-2026, hallazgo colateral de SCRUM-530)
 - **Medido sobre el servicio real**, con la base doblada y filas fabricadas (ni una base, ni una
@@ -720,7 +730,7 @@
 
 ## P3 — Técnico / raíz (registrar, abordar después de P1)
 
-### [ ] P3-PAIDAT-BO · El botón individual "marcar pagada" del BO (`PUT /admin/invoices/:id/status`) no acepta fecha de cobro declarada, a diferencia de `bulk-paid` (23-sep-2026, hallazgo colateral de SCRUM-1055)
+### [x] P3-PAIDAT-BO · El botón individual "marcar pagada" del BO (`PUT /admin/invoices/:id/status`) no acepta fecha de cobro declarada, a diferencia de `bulk-paid` (23-sep-2026, hallazgo colateral de SCRUM-1055)
 - **No es de SCRUM-1055** — se registra aparte porque SCRUM-1055 (el criterio de caja/RECC) está
   parado esperando al asesor (Q-C6/QC6, `docs/legal/PREGUNTAS_ASESOR.md`, sin cita todavía —
   confirmado hoy contra el mapa fresco de `docs/master/SCRUM-1023.md`, que la deja fuera de las 17
@@ -758,6 +768,12 @@
 - **Done cuando:** `PUT /admin/invoices/:id/status` acepte un `paidAt` opcional en el cuerpo con el
   mismo contrato que `bulk-paid` (rechaza fecha futura, sin límite hacia atrás), y sin cuerpo se
   comporte exactamente igual que hoy.
+- **CERRADO (26-oct-2026, SCRUM-1609, rama `scrum-1609-fecha-de-cobro-de-una-en-una`; el número del PR
+  lo abre el bot al empujar y va en el ticket):** la ruta resuelve `paidAt` con `resolverFechaDeCobro` y la
+  zona del merchant, igual que el lote, y se la pasa a `updateInvoiceStatusAdmin`; sin `paidAt`, la llamada
+  es la de siempre. Lo sujeta `tests/scrum1609-fecha-de-cobro-de-una-en-una.test.mjs`, por la ruta montada.
+  ⚠️ Ninguna pantalla manda `paidAt` todavía (ni este botón ni el del lote): elegir la fecha en el panel
+  es UI con texto, otro ticket.
 
 ### [ ] P3-NODEOPTS-850B · `scrum850b` filtra `NODE_OPTIONS` a su `node --test` anidado: bajo CI real escribe en el MISMO `tanda.tap` del proceso padre (16-sep-2026, hallazgo colateral de SCRUM-839e)
 - **Medido:** en el run `35137040565` (job «build + tests (con banco desechable)»), el TAP combinado
@@ -1164,6 +1180,16 @@
   - **El log NO sirve para auditar esto:** `WhatsAppMessage` (`schema.prisma:504-528`) guarda `templateName`/`status`/`waMessageId`, **no el cuerpo ni la URL**.
   - **Duda abierta:** en ese caso el sufijo resuelto era `0` (`{{1}}0` → `parseNumericId` → `0`) y **no existe ningún `Charge` con id 0** (autoincrement empieza en 1) → ese enlace concreto no abriría. Falta confirmar si fue **truncamiento al copiar la URL** (lo más probable) o un `chargeId` inválido colándose en algún call-site. Si fuese lo segundo, es bug aparte.
   - **Seguimiento:** **SCRUM-77**.
+- **⚠️ 29-oct-2026 (SCRUM-1632) · el «arreglo de raíz» de arriba puede ser la causa.** Escribe la
+  base CON `{{1}}` (`…/pay/quote/{{1}}`), igual que nuestras guías hasta ese día. En el editor de
+  WhatsApp Manager el campo va **sin** `{{1}}` (`https://yaqu.app/pay/quote/`): según guías de
+  terceros (no Meta), el editor lo añade solo al elegir «Dinámico», y uno escrito a mano queda
+  literal delante del sufijo, que es justo el síntoma de esta entrada. Y en :1178, «URL estática
+  con el literal `{{1}}` y Meta le concatena detrás el parámetro» no cuadra: a un botón estático
+  Meta no le pega ningún parámetro, así que el botón ERA dinámico y lo que sobraba era el `{{1}}`
+  literal. Es lectura, no está verificado contra el panel. Regla corregida, motivo y la prueba
+  que vale (copiar el enlace del botón en el móvil; abrir el panel NO vale):
+  `docs/WHATSAPP_TEMPLATES.md`, «Reglas comunes». Ha vuelto con el albarán (SCRUM-1236, 18-oct).
 
 ### [x] P3-2 · Manejo de error en el envío de WhatsApp
 - **Mejora:** que `/admin/quotes/:id/send-whatsapp` devuelva un mensaje claro cuando Meta rechaza, nunca un 502. (Verificar si ya está resuelto; el error de Meta ya se loguea.)

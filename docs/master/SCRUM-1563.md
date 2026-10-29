@@ -189,3 +189,104 @@ El merge que se apunta es el **último** con su número. **Un merge no es un arr
 ### Error propio
 
 - **Busqué la rama de 1565 con un filtro de `git ls-remote` sin control positivo.** Dio vacío, y el mismo filtro con 1563 también daba vacío, porque la rama de 1563b se borró al mergear. Ese vacío no probaba nada. Lo rehice con la lista entera del remoto, filtrada después. Es la familia de «no pude mirar» igual a «no hay nada».
+
+
+## Tramo 1563e · la foto del 27-oct (S0)
+
+**Medido contra:** `origin/main` = `42c458e192608d71f5e06611976c89f9da3ff297` · producción (`/version`) = el mismo · `Date:` de GitHub 2026-10-27T18:41:25Z
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1563/contar-dependencias.mjs`
+
+Encargo del orquestador (27-oct, SCRUM-1563 c.21195): el fundador volvió a preguntar cómo va la hoja de ruta, si crece el Jira y si estamos cerca de que una empresa lo use. Contestarlo desde la medida, con la columna «de quién depende» como razón de ser, re-midiendo las cifras del propio encargo.
+
+### Qué cambia en el documento
+
+- **§1 contesta las cuatro preguntas del fundador**, en su orden, con una tabla por pregunta.
+- **§1b nueva: SIF-1 tramo a tramo** (3 de 8), con quién bloquea cada tramo que falta, medido en el árbol y no en el máster.
+- **9 filas pasan a §8:** 3.11, 3.12, 3.13, 5.2, 6.10, 6.11, 7.2, 7.4, 7.5. **17 nuevas:** 1.13-1.15, 2.12-2.14, 3.18-3.20, 5.3, 6.12-6.17, 7.9. Quedan **74**.
+- **§1 ③ separa el saldo del equipo de Luis del total**: el total baja (−17 en 24 h) y lo nuestro sube (+5).
+- **§4 re-medida** contra Jira; **§5** con su fila nueva y la de la medida 1563d (#2604), que no entró.
+- **La medida 1563d (19-oct, 07:50Z) no se mergeó**: #2604 lleva 8 días con `build + tests (con banco desechable)` en rojo. Lo que medía (6.10 y 6.11 hechas, 6.12 nueva) se ha vuelto a comprobar en GitHub (#2595, #2599, #2603: los tres MERGEADOS el 19-oct) y entra aquí. **Con esta, #2604 queda superada**; cerrarla es del orquestador.
+
+### Cómo se midió
+
+- **Jira:** las 74 claves de §2 (más 1390, 1585 y 1594) en una consulta, con su estado y su última actualización. Las 32 que cambiaron desde el 19-oct se leyeron con **dos lectores de sólo lectura en paralelo**, que devolvieron su último comentario, lo que falta y de quién depende. **S0 releyó entero SCRUM-1264**, porque contradecía al encargo (la cita del asesor).
+- **`npm run ya-esta`** sobre los 56 tickets abiertos de §2: 36 YA ESTÁ (con trabajo en `main`), 20 NO ESTÁ, 0 NO HE PODIDO MIRAR.
+- **Filas sin ticket (2.9, 2.10, 7.8):** búsqueda de texto en Jira desde el 19-oct (`albaran_para_firmar_es`, `trial_expired`, `quote_decision_es`, `planExpiresAt`, `EMAIL_FROM`) y en los commits de `main`. **0 sobre esas filas; control: la misma consulta devuelve 26 tickets de otras cosas.**
+- **S1-D en el árbol:** `enviarSobre` se define en `sif.client.ts:355` y ningún otro fichero de `src/` lo importa; `sif.procesador.ts` no tiene llamador; `encolarAltaTrasSellado` sí (`selladoEstado.ts:173`).
+- **Saldos de Jira:** las seis consultas de §5 y cuatro más por ventana. **Los dos controles cuadran exactos:** 264 − 151 + 66 = 179 y 99 − 9 + 31 = 121.
+- **Dependencias:** el contador sobre §2, con control sobre la versión de `main` (`42c458e1`, la del 19-oct a las 06:43Z), que da lo publicado entonces (66 · 44/29 · 28/12 · 11/4 · 6/2). Y una comparación fila a fila de las dos versiones con el mismo criterio de columnas: **las 29 filas sólo-del-fundador del 19-oct siguen las 29.**
+
+### Lo que el encargo traía y no aguantó la medida
+
+| lo que se afirmó | lo que se midió |
+|---|---|
+| «este documento no existe» | existe desde el 18-oct (#2564) |
+| la cita con el asesor, «fijada el 1-oct para dos semanas» | no hay asesor (c.19623, 14-oct); el fundador lo aplazó hasta la S.L. (c.20088, 20-oct) |
+| «S1-D · El envío → El equipo» | carril J1, sin ticket abierto, y el certificado es del fundador |
+| «tres de los cuatro que faltan son suyos» | faltan cinco tramos y los cinco necesitan al fundador |
+| la auditoría del 19-ago (cola y envío «sin construir») | la cola encola desde el 30-sep; procesador y cliente existen sin enchufar |
+
+**Aguantaron:** SIF-1 3 de 8, «hay 3 aceptados» y el saldo de 24 h (39 · 22 · −17) para el proyecto entero.
+
+### Error propio
+
+- **Escribí a mano las cifras de §1 y §3 (67 filas, 46/24, 10 nuevas) antes de correr el contador**, y estaban mal: eran 74 filas, 50/30 y 17 nuevas. Peor: a partir de esas cifras escribí que lo sólo-del-fundador «bajaba de 29 a 24», que era lo contrario de lo que pasa (las 29 siguen y suma una). Lo cazó el contador antes del commit. Es la tercera vez en este mismo registro que una cuenta a mano sale mal (tramos 1563 y 1563b): el contador se corre ANTES de escribir la frase, no después.
+
+## Tramo 1563f · la foto del 29-oct (S0)
+
+**Medido contra:** `origin/main` = `d12e99784cf3927e13972e1e370ddc19f5d08a19` · producción (`/version`) = el mismo · `Date:` de GitHub 2026-10-29T10:45:24Z (empezado a las 10:20Z sobre `503f0d86`; `main` se movió tres veces durante la medida)
+
+A9: comprobación → `scripts/equipo/ya-esta.mjs`
+
+*(La lección, que el formato de la línea A9 no deja escribir: la fila 4.3 estuvo un mes de más porque su fuente era el último comentario de Jira, escrito seis minutos antes del merge que lo dejaba viejo. `ya-esta` mira `main`, no Jira: es la comprobación, y el paso 3 de §7 del documento ya la manda correr por fila. Hoy, `ya-esta 1292` da «🟢 YA ESTÁ en origin/main · DESDE el 2026-09-30» con #2006 dentro. Si el 27-oct, cuando se corrió sobre 56 tickets a granel, dio lo mismo para 1292: NO CONSTA, porque la salida de aquel día no se guardó.)*
+
+Encargo del orquestador (29-oct): las tres correcciones que dejó la sesión anterior de S0 (4.3 → §8; 2.4 es el chip de S2; 1087, 1088 y 1593 → §8, 1589 y 1608 cerrables tras verlos), y re-medir lo que el orquestador midió por la mañana: producción, CI, 12 PR en conflicto, SCRUM-914, SCRUM-1566, SCRUM-1632 y las etiquetas de 1626-1632.
+
+### Qué cambia en el documento
+
+- **Sale 4.3** (SCRUM-1292, #2006 mergeado el 30-sep) a §8, y **entran a §8** 1087, 1088 y 1593 (no eran fila). **Entra 3.21** (SCRUM-1566, B y C autorizados). Quedan **74**.
+- **Corregidas:** 6.3 (no espera una rama: espera dos piezas de S1; la rama de J3 lleva 9 días en conflicto), 2.4 (falta el chip de S2, no verlo), 2.9 y 2.10 (ya con ticket y con un arreglo nuestro esperando GO), 3.18 (1594 entró a las 10:40Z: la fila pasa a sólo JAVIER).
+- **§4b nueva: 12 PR en conflicto**, ocho de Javier y cuatro nuestros, dos de ellos de tickets ya Finalizada. Y el obligatorio en rojo de los 23 abiertos.
+- **§1** con el saldo de 40 h (−1, y 0 cierres de Javier), la tabla de lo que no aguantó del encargo, y la nota sobre #2606.
+
+### Cómo se midió
+
+- **Producción y `main`:** `yaqu.app/version` a las 10:20Z, 10:39Z y 10:45Z; `git log --first-parent` entre cada par.
+- **CI:** `gh api …/actions/runs` (en cola, en marcha, y las 40 últimas por estado) a las 10:2xZ.
+- **PR:** `gh pr list --json mergeable` dos veces (la primera dio `UNKNOWN` en 17 de 20: GitHub recalcula tras moverse `main`; la segunda, 12 `CONFLICTING`), y `statusCheckRollup` del obligatorio de cada uno de los 23. El equipo, por la etiqueta del ticket en Jira.
+- **Jira:** las seis consultas de §5 y dos por ventana; una consulta de 22 claves con estado y etiquetas; y un lector de sólo lectura con cita literal de c.20085, c.21207, c.21019, c.21031, c.21199, c.21202 y c.17637. **Control:** 179 − 3 + 2 = 178 y 73 + 59 + 46 = 178, exactos.
+- **Árbol:** `git grep` de `parseToken` (5 usos, 0 en `src/modules/jobs/`), de `equipment` en `schema.prisma` y `src/` (0; control `model Albaran`), de `enviarSobre` (sólo comentarios fuera del cliente) y `api.js:1448-1458` (el chip).
+- **Dependencias:** el contador, con control sobre la versión del 27-oct, que da lo publicado (74 · 50/30 · 26/7 · 21/10 · 6/2).
+
+### De paso
+
+- **#2980 (1628b, de S0) tenía el obligatorio en rojo** a las 10:24Z por `scrum1294` («ancla del 2026-10-29 sin línea A9», en `SCRUM-1628.md:73`); el otro fallo, `scrum976 ④`, era `guards:entrada` cayendo por ese mismo test. Con GO del orquestador: la línea A9 y su lección, `scrum1294` 4/4, `guards:entrada` 170/170 con salida 0 y los 5 de árbol entero 46/46; empujado `2f4889b69f007a1c1bd00487d63d9bb4fd3ab262`.
+
+### Error propio
+
+- Corrí `guards:entrada` con `2>&1` en PowerShell 5.1 y salió «exit 2» con 170/170 en verde: es la trampa conocida de `NativeCommandError`. Lo repetí sin redirigir y dio 0. Un código de salida leído así no vale ni para bien ni para mal.
+
+
+## SCRUM-1563g · 29-oct-2026 por la tarde: recuento tras 10 PR y la hoja de decisiones del fundador
+
+**Medido contra:** `origin/main` = `eafca9fe1` · producción NO medida en esta pasada · `Date:` de GitHub 2026-10-29T17:50:54Z
+
+A9: sin fallo que generalice — tramo de documento; el recuento lo da el contador, no la mano
+
+- **Recuento de §2:** 74 → **71 filas** · FUNDADOR **48/29** · JAVIER 26/8 · NOSOTROS **19/8** · ASESOR 6/2 (`node docs/master/evidencias/SCRUM-1563/contar-dependencias.mjs docs/producto/ESTADO-DEL-PRODUCTO.md`). Salen a §8 2.12 (1589), 5.3 (1623 y 1626, con la nota «no verificado en pantalla»), 6.14 (1608) y 6.15 (1588). Entra 5.4 (SCRUM-1638, abierto por S0 hoy). Corregidas 2.4 (chip #2986), 2.9 (guías #2985; `parseToken` sigue en 0 en `src/modules/jobs/`), 2.11 (tres servicios, dato del orquestador c.21240), 3.18, 3.21 (la rama compartida SÍ existe, `8f6becbd2`) y 6.16 (queda 1629).
+- **Hoja nueva:** `docs/producto/DECISIONES-DEL-FUNDADOR.md`. Las 48 filas del fundador en cuatro partes: A, 3 que puede decidir el orquestador (1.8, 6.12, 3.17) y dos mitades (2.9 b y 1.1, porque `albaranPublic.routes.ts` y `albaranes.routes.ts` están fuera de `RUTAS_FISCALES`, `scripts/puerta-avisador-rojo.mjs`); B, 3 que bloquean hoy (0.1, 2.11, 2.9 a); C, 11 que esperan a la S.L.; D, 31 para la revisión de go-live, en bloque. 3 + 3 + 11 + 31 = 48.
+- **Sin medir, y dicho en la cabecera del documento:** §1, §4 y §4b siguen con la medida de las 10:20Z; producción (`/version`) no se leyó.
+- **Lectura de S0, no decisión:** que A no le toque al fundador. La columna «depende de» de §2 no se cambió para esas filas; lo decide el orquestador. Para 1.1, antes hay que leer la regla 40 del máster.
+- **Jira:** SCRUM-1554 (de `equipo-javier`) sólo recibe un comentario con el enlace; no se pone En curso.
+
+## 29-oct-2026 ~18:10Z (GitHub) · S0 · tramo 1563h: la hoja, para PULSAR
+
+`origin/main` = `5a247020e`. Sobre la rama `scrum-1563g-hoja-decisiones-fundador` (PR aún sin abrir por el bot a las 18:02Z).
+
+- **Parte A** decidida por el orquestador: salen 2.9 b (GO dado; PR #2998 ABIERTO, sin mergear), 1.8 y 6.12 (a SCRUM-1638) y 3.17. **1.1 NO sale:** `albaranes.routes.ts` es camino de emisión (`emitInvoice` en `:1390` y `:1672`), aunque esté fuera de `RUTAS_FISCALES`.
+- **Parte B** con pasos: B1 la S.L. (SCRUM-143 c.19619, c.20086, c.20865: no consta firma del notario) · B2 una visita a Meta para los cuatro botones (`docs/WHATSAPP_TEMPLATES.md:52-62`) con la prueba del móvil.
+- **2.11 baja a D:** el backend ya manda `YaQu <no-reply@yaqu.app>` (SCRUM-1115 c.19624) y los otros dos sólo escriben a buzones internos (`:335`, `:346`).
+- **Simulacro de SCRUM-1605** en D, del fundador.
+- **Parte E nueva:** SCRUM-1529, las siete en c.19228 y máster `:403-409`.
+- ⚠️ La skill `.claude/skills/yaqu-wa-templates/SKILL.md:20,30,31,33` en `origin/main` sigue diciendo «la URL base termina en `/{{1}}`», contra `docs/WHATSAPP_TEMPLATES.md:52` (corregido en #2985). No la toco: `.claude/*` es del orquestador.
