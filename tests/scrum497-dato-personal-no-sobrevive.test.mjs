@@ -44,6 +44,9 @@ const FUERA_DE_ANONIMIZADO = Object.freeze({
   // SCRUM-1569: lo hace visible el censo por núcleo («…Name»). Es el nombre de la plantilla de Meta
   // con que se mandó el mensaje: el hecho, no la persona (lo dice ya `anonimizarMerchant.ts`).
   'whatsAppMessage.templateName': 'el nombre de la PLANTILLA de Meta con que se mandó el mensaje, no el de una persona',
+  // SCRUM-914 · lo hace visible el mismo censo por núcleo. Clasificado FUERA por J3 en
+  // docs/master/SCRUM-914.md §② («`type`, `brand`, `modelName` (catálogo)»).
+  'equipment.modelName': 'el MODELO de catálogo del aparato («ecoTEC plus»), no el de una persona',
 });
 
 // SCRUM-1569 · la misma pregunta para las 17 copias de la factura y el albarán. Se escribe una vez:

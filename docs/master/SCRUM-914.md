@@ -217,3 +217,52 @@ CLI local, latido…) son de la máquina, no de esta rama: no los toco.
   backticks dentro (lo que mi memoria dice que no se hace). Lo paró la comprobación de ancla del propio
   script, que salió en error sin escribir; lo rehíce con Edit. Y el arnés falló dos veces por montaje
   (ruta con espacio codificada, `public/` sin copiar) antes de medir: ninguno llegó a un resultado.
+
+---
+
+## 29-oct-2026 · S1 · el ③: `model Equipment` y los cuatro `equipmentId` en el esquema
+
+**Medido contra:** `origin/main` = `8dcf269130bab35d42a9fa4ba3d026d0efb98152` · 2026-10-29T18:52:15Z
+
+A9: comprobación → `tests/scrum192-borrado-merchant.test.mjs`
+
+Decisión del orquestador (por delegación del fundador, SCRUM-914 c.21269): el ③ ENTERO, encima de la rama de
+J3 (#2621). Regla 40 cubierta: el ALTER ya está aplicado, 17 de 17 columnas en las tres bases (c.20085,
+medido el 20-oct). Esto es el paso ③ de la regla 3, aditivo. Rama `scrum-914c-esquema-de-equipos`: los dos
+commits de J3 + `origin/main` + lo de abajo.
+
+### Qué cambia
+
+- `prisma/schema.prisma`: `model Equipment` (`equipments`) tal cual el candidato de
+  `docs/sql/scrum-914-equipos-del-cliente.sql`; `Equipment[]` en `Merchant` y `equipments` en `Customer`;
+  `equipmentId Int? @map("equipment_id")` + `@@index([equipmentId])` en `Job`, `MaintenancePlan`, `Albaran` y
+  `ParteTrabajo`. Sin FK en las referencias opcionales (decisión del 8-sep). `prisma validate`: válido.
+- `tests/_merchant-fixture.mjs`: `'equipment'` antes de `'customer'` en `MODELOS_POR_MERCHANT` (lo midió J3 en ⓪).
+- Consecuencias del modelo nuevo, cada una con su guard:
+  - `scripts/backup-dump.mjs`: `'equipments'` en `TABLES` (`scrum241`: «FALTAN … equipments»).
+  - `tests/scrum497-…`: `equipment.modelName` a `FUERA_DE_ANONIMIZADO`, con motivo. Lo hace visible el censo
+    por núcleo («…Name») de SCRUM-1569, que entró en `main` DESPUÉS de la medida de J3. La clasificación es la
+    de J3 en el §② de arriba («`modelName` (catálogo)»), no mía. Si quien reparte la quiere en `SIN_DECIDIR`,
+    se mueve.
+  - `docs/legal/AUDITORIA_CAMINO_EMISION.md:36` y `:40`: dos coordenadas de `schema.prisma` llevadas a donde
+    están hoy (`scrum525d` ①, mecánico). La afirmación no cambia.
+- Conflicto de #2621 con `main`, una línea de `tests/_censo-datos-personales.mjs`: se quedan las tres,
+  `'serialNumber'` y `'mobile', 'clabe'`.
+- `equipmentId` no entra en el canónico sellado del albarán ni del parte: no se ha tocado ningún canónico.
+
+### Tests (local, sin regenerar el cliente)
+
+⚠️ No he regenerado el cliente de Prisma: el `node_modules` de este árbol es el compartido (junction), y
+regenerarlo cambia el de todos (`docs/equipo/trampas-del-entorno.md` §10: lo coordina el orquestador).
+No he leído ninguna base.
+
+- 31 ficheros (192, 314, 914, 244, 497, 440, 411, 419, 241 y los que nombran `MODELOS_POR_MERCHANT` o
+  `backup-dump`): 243 tests, 237 pass, 5 SKIP (base), **1 fail**: `scrum244` «la lista sale del SCHEMA …:
+  producción y guard coinciden», que compara con el DMMF del cliente GENERADO (el compartido, sin
+  `Equipment`). Lo pone verde el cliente que genera el CI desde este schema.
+- `scrum192` y `scrum314`, los dos rojos de #2621 que leen el schema, en verde.
+- `scrum914` ×2 (Postgres) y `scrum244` contra Postgres: SKIP en local, sin `LIBRO_PG_URL`.
+- `guards:entrada`: 170/170. `scrum525d`: 8/8.
+
+**La verificación de punta a punta es la del CI** («build + tests (con banco desechable)»): si los cinco
+rojos de #2621 (scrum192, 314, 914×2, 244) no salen verdes ahí, la medida del 20-oct ya no describe las bases.
