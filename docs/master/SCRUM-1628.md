@@ -67,3 +67,36 @@ Javier.
 del DIRECTORIO, no del fichero, y siguen «nadie lo reclama». La fila `:169` da a S3 «bancos e instrumentos», pero su
 patrón es sólo `_banco-*`. Es una pregunta de la tabla (¿de S3 o del ticket?), no de este instrumento, y no la
 decide esta rama.
+
+## Tramo 1628b · el banco COMPARTIDO y el banco de UN ticket (S0)
+
+**Medido contra:** `origin/main` = `5deff8b3b7b0f8a8d3cd037baabbca454ea7aa29` · 2026-10-29 10:0xZ (`Date:` de GitHub)
+
+Encargo del orquestador de Luis (29-oct): una fila en `dos-equipos.md` §3 que distinga el banco compartido (`tests/banco-scrum911/`) del banco de un ticket, con la medida de S0 del 27-oct como procedencia, y con control negativo: los que no son compartidos siguen cayendo en la regla «el test de un ticket».
+
+### Lo que el encargo traía y no aguantó la medida
+
+- **«los que no son compartidos deben SEGUIR cayendo en `:171`».** No caían: `carriles.mjs de` daba «sin fila en §3: nadie lo reclama» a los **52** ficheros de los 15 bancos, porque `testDeTicket` sólo reconocía el número de ticket en el nombre del FICHERO (`tests/scrumNNN…`), no en el del directorio (`tests/banco-scrumNNN/`). Lo dejó dicho el propio registro de 1628 («Lo que esto NO arregla»). La regla `:171` sólo los cubría en el papel.
+
+### Qué cambia
+
+- `docs/equipo/dos-equipos.md` §3: la fila `:171` nombra el banco de un ticket, y debajo entra la fila `tests/banco-scrum911/**` → **S3** (banco compartido = «bancos e instrumentos», la fila `:169`). **Que sea S3 es lectura de S0**, no decisión del orquestador: él decidió distinguir.
+- `scripts/_carriles.mjs`: `testDeTicket` reconoce también `tests/banco-scrumNNN/`. En `de` gana la fila de ruta, así que `banco-scrum911` da S3.
+- `.claude/carriles.json` y `.claude/rules/carril-s3.md`, regenerados con `node scripts/carriles.mjs generar` (`comprobar` los daba DISTINTOS de la tabla).
+- `tests/scrum1628-de-ve-la-regla-del-test-de-un-ticket.test.mjs`: un caso nuevo (1628b) y la forma del nombre de ticket ampliada en el censo.
+
+### Cómo se midió
+
+| qué | comando | resultado |
+|---|---|---|
+| los bancos y quién los usa desde fuera | node sobre `tests/` y `scripts/`, buscando el nombre del directorio fuera de él | 15 dirs, 52 ficheros. **Importado** desde fuera: sólo `banco-scrum911` (29 ficheros; `scrum1575d:20`). Leídos como muestra: 1102f, 1322, 1329 (`scrum1349`), 1257 (su propio test), 911 (`scrum1575c`). Sólo en comentarios: 1220, 825. Nadie los nombra: 1325, 1334, 1341, 1397, 1436, 1456, 1477, 931 |
+| antes del cambio | `carriles.mjs de` sobre `banco-scrum911/_entorno.mjs` y `banco-scrum1334/README.md` | los dos «nadie lo reclama» |
+| después, los 52 | `carriles.mjs de` sobre `git ls-files "tests/banco-scrum*"` | **29 → S3** (banco-scrum911) · **23 → NO-PUDE-MIRAR con `:171`** (los otros 14 directorios) · 0 «nadie lo reclama» |
+| control positivo | `de tests/zz-huerfano.test.mjs` · `de tests/_banco-no-existe.mjs` | el huérfano sigue «nadie lo reclama»; `_banco-*` sigue S3 por `:169` |
+| control negativo | `de scripts/equipo/latido.mjs` · `de tests/_salida-entera.mjs` | S5 y J6, como antes |
+| tests | los 9 ficheros de `tests/` que nombran `dos-equipos` o `carriles` | **83 tests · 83 pass · 0 fail · 0 skipped** |
+
+### Lo que NO se ha hecho
+
+- No se ha preguntado a S3 si acepta el banco: la fila le da cerradura sobre `tests/banco-scrum911/`. Si S1 vuelve a SCRUM-911 (encender MANT-1) y necesita tocar su banco, lo pide por su orquestador.
+- Una cita con número de línea de `dos-equipos.md` en `docs/equipo/para-javier.md:415` (`:176`) apunta ahora una línea más arriba. Es un mensaje fechado a Javier; no se reescribe.
