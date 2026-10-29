@@ -1044,12 +1044,23 @@ async function renderQuoteDetailView(container, forcedQuoteId) {
       const div = document.createElement('div');
       div.className = 'invoice-item';
       div.style.cursor = 'pointer';
-      div.innerHTML =
-        `<p style="margin:0"><strong>${escHtml(inv.number)}</strong><br>` +
+      const resumen = document.createElement('p');
+      resumen.style.margin = '0';
+      resumen.innerHTML =
+        `<strong>${escHtml(inv.number)}</strong><br>` +
         `Total: <span class="amount-muted">${fmtQuoteMoney(inv.total, inv.currency || cur)}</span><br>` +
-        `Creada: ${inv.createdAt ? new Date(inv.createdAt).toLocaleString('es-ES') : '—'}</p>`;
-      div.addEventListener('click', () => {
+        `Creada: ${inv.createdAt ? new Date(inv.createdAt).toLocaleString('es-ES') : '—'}`;
+      div.appendChild(resumen);
+      const abrirFactura = () => {
         if (window.renderAppView) window.renderAppView('invoice-detail', { invoiceId: inv.id });
+      };
+      div.addEventListener('click', abrirFactura);
+      // SCRUM-1639 · con teclado: la tarjeta puede llevar «Marcar como pagada» y su selector, y un botón
+      // no contiene controles; el activable es el resumen de la factura, cuyo nombre es su propio texto.
+      resumen.setAttribute('role', 'button');
+      resumen.setAttribute('tabindex', '0');
+      resumen.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); abrirFactura(); }
       });
 
       if (inv.status === 'pending') {

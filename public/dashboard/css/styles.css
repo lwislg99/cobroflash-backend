@@ -1608,7 +1608,7 @@ html, body { overflow-x: clip; }
   max-width: 100%;
 }
 .quote-plantilla-chip:hover { background: var(--bg, #f6f7f5); }
-.quote-plantilla-chip:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(34,197,94,.30); }
+.quote-plantilla-chip:focus-visible { outline: none; box-shadow: var(--ring); }
 .quote-plantilla-chip__nombre {
   font-size: 14px; font-weight: 600; max-width: 100%;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -1869,7 +1869,7 @@ html, body { overflow-x: clip; }
 .quote-line input:focus {
   outline: none;
   border-color: var(--green-600, #16a34a);
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, .30);   /* anillo Foco (DESIGN.md §4) */
+  box-shadow: var(--ring);   /* anillo Foco (DESIGN.md §4) */
 }
 
 /* Regla del Importe (DESIGN.md §3): el dinero en Tinta, ≥700, tabular. Nunca en gris. */
@@ -1930,7 +1930,7 @@ html, body { overflow-x: clip; }
    ahí se queda el hueco, invisible y fuera del orden de tabulación (`visibility`). La hoja se abre
    siempre desde «Ajustes» del menú ⋯. */
 .quote-line__ajustes.is-de-siempre { display: none; }
-.quote-line__ajustes:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(34,197,94,.30); }
+.quote-line__ajustes:focus-visible { outline: none; box-shadow: var(--ring); }
 
 /* La hoja: los dos campos apilados y a lo ancho — es su pantalla, no una columna estrecha. */
 .quote-ajustes-modal { max-width: 420px; }
@@ -1950,7 +1950,7 @@ html, body { overflow-x: clip; }
 .quote-ajustes-campos select:focus, /* S2: SCRUM-962f */
 .quote-ajustes-campos input:focus {
   outline: none; border-color: var(--green-600, #16a34a);
-  box-shadow: 0 0 0 3px rgba(34,197,94,.30);
+  box-shadow: var(--ring);
 }
 
 /* SCRUM-500 · la casilla de SUPLIDO dentro de la hoja de ajustes.
