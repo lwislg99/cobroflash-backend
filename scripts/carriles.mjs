@@ -105,6 +105,18 @@ export function textoMesa(puesto, textoTabla, ficheros, leerCicatrices = () => n
   return { md, json };
 }
 
+// La línea que contesta `de` para UNA ruta (relativa a la raíz), y si deja la salida en 2.
+export function respuestaDe(rel, { mapa, tabla }) {
+  const r = reglaDe(rel, mapa);
+  // SCRUM-1628: el test de un ticket no tiene fila de RUTA, pero sí dueño (§3, «el test de un ticket»), y ese
+  // dueño está en Jira. Decir «nadie lo reclama» ahí era afirmar lo que este instrumento no puede ver.
+  const t = r ? null : testDeTicket(rel, tabla);
+  const linea = r ? `${rel} → ${r.puesto ?? 'SIN CERRADURA'} (${r.tipo}) · ${FUENTE}:${r.linea} · «${r.dueno}» · patrón ${r.patron}`
+    : t ? `${rel} → NO-PUDE-MIRAR: sin fila de ruta, pero es el test de ${t.ticket}, y ${FUENTE}:${t.fila.linea} («${t.fila.que}» → ${t.fila.dueno}) lo da al puesto que trabaja ese ticket. Cuál es no está en la tabla: es la etiqueta area-… de ${t.ticket} en Jira. NO quiere decir «nadie lo reclama».`
+    : `${rel} → sin fila en §3: nadie lo reclama`;
+  return { linea, ciego: Boolean(t) };
+}
+
 function principal(argv) {
   const [orden, ...resto] = argv;
   let tabla;
@@ -151,13 +163,9 @@ function principal(argv) {
     for (const ruta of resto) {
       const rel = path.relative(RAIZ, path.resolve(ruta)).split(path.sep).join('/');
       const r = reglaDe(rel, mapa);
-      // SCRUM-1628: el test de un ticket no tiene fila de RUTA, pero sí dueño (§3, «el test de un ticket»), y ese
-      // dueño está en Jira. Decir «nadie lo reclama» ahí era afirmar lo que este instrumento no puede ver.
-      const t = r ? null : testDeTicket(rel, tabla);
-      if (t) ciego = true;
-      console.log(r ? `${rel} → ${r.puesto ?? 'SIN CERRADURA'} (${r.tipo}) · ${FUENTE}:${r.linea} · «${r.dueno}» · patrón ${r.patron}`
-        : t ? `${rel} → NO-PUDE-MIRAR: sin fila de ruta, pero es el test de ${t.ticket}, y ${FUENTE}:${t.fila.linea} («${t.fila.que}» → ${t.fila.dueno}) lo da al puesto que trabaja ese ticket. Cuál es no está en la tabla: es la etiqueta area-… de ${t.ticket} en Jira. NO quiere decir «nadie lo reclama».`
-        : `${rel} → sin fila en §3: nadie lo reclama`);
+      const respuesta = respuestaDe(rel, { mapa, tabla });
+      if (respuesta.ciego) ciego = true;
+      console.log(respuesta.linea);
       // SCRUM-1480e: la fila general de scripts/ no da dueño (no es «todo lo demás de…», que sí lo da). A
       // quien cae en ella se le dice aquí, que es donde se pregunta, y no en un documento que hay que ir a leer.
       if (r && !r.puesto && r.patron === 'scripts/**') console.log(`  ⚠ sólo lo cubre la fila general de scripts/: su dueño no lo ha decidido nadie, y no es de la S0 por caer aquí. Si lo estás CREANDO, nace con fila en tu mismo PR: la del puesto del área del ticket que lo crea (${FUENTE} §3.3, «Cómo nace la fila de un fichero de scripts/»).`);
