@@ -99,3 +99,49 @@ es devolver ese sitio a lo que hay en `origin/main`) tumba SU caso: 5/5 caen.
 | Sin texto nuevo | ningún literal cambia; sólo el separador del número |
 | Visto en yaqu.app | pendiente hasta que entre en `main` (Productos ya estaba bien; mirar editor, Informes y gasto) |
 | Los tres sitios de S1 | NO tocados: `presentacionIva.ts:181`, `quoteDecisionLanding.routes.ts:498`, `modelo303/casillas.ts:152` |
+
+## SCRUM-1636 ① (b) · el «Dto.» del chip con COMA decimal (29-oct-2026, misma rama `scrum-1636b-iva-con-coma`)
+
+**Medido contra:** `origin/main` = `8dcf269130bab35d42a9fa4ba3d026d0efb98152` · 2026-10-29T18:39:27Z
+
+A9: comprobación → `tests/scrum1294-a9-leccion-en-a10.test.mjs`
+
+Cierra el «NO HECHO» de arriba. Decisión del orquestador (29-oct, encargo a S2): se arregla, porque un chip con
+«IVA 7,5 %» bien y «Dto. 12.5 %» mal, el uno al lado del otro, es el defecto del ticket a medias.
+
+| sitio | antes | después |
+|---|---|---|
+| «Dto.» del chip de la línea (`quotesView.js:2864`) | «Dto. 12.5 %» | «Dto. 12,5 %» |
+| un descuento entero | «Dto. 10 %» | «Dto. 10 %» (igual: sin coma ni «,0») |
+
+**Criterio:** `fmtNumeroEs` (`api.js`, SCRUM-743), no `fmtTipoIvaEs`: un descuento no es un tipo de IVA, y
+`dtoDeLinea` ya lo da en porcentaje (0–100). Deja un entero sin decimales y no fuerza ninguno. `api.js` carga
+antes que `quotesView.js` en `index.html` y en el banco (`tests/_banco-vistas.mjs`).
+
+**Por qué en la llamada y no en `resumenAjustes`:** el «Dto.» nunca ha vivido en `resumenAjustes`; se AÑADE en la
+llamada desde SCRUM-594, precisamente para no cambiar la firma de esa pieza del suplido (SCRUM-500). La llamada
+sigue siendo `resumenAjustes(esSuplido, safeVat, 0)`, que es lo que mira `scrum598`: no se toca.
+
+🔴 **RE-ANCLAJE DECLARADO de `scrum594` (regla 41: se declara para que no se lea como aflojar un guard):**
+- **Ancla que había:** `/Dto\. \$\{dtoDeEsta\} %/` en `tests/scrum594-descuentos-presupuesto.test.mjs:384`.
+- **Ancla que pongo:** `/Dto\. \$\{fmtNumeroEs\(dtoDeEsta\)\} %/`.
+- **Por qué es intencionado:** el guard exige que el chip COMPONGA el descuento de ESTA línea (CONT-01 ②). Lo sigue
+  exigiendo, con la misma variable; sólo cambia la forma del número. No es más laxo: un chip sin el descuento, o
+  con el descuento de otra línea, sigue cayendo. Sin el re-anclaje, el guard fijaba el PUNTO decimal, que es justo
+  el defecto del ticket.
+
+**Rojo primero:** `tests/scrum1636b-tipo-de-iva-con-coma.test.mjs`, caso del chip, ahora con 12,5 y con el CONTROL
+del 10 entero. Sin el cambio de `quotesView.js`: cae con «IVA 7,5 % · Dto. 12.5 %». Con el cambio: verde.
+
+**Vecinos:** 1636b, 594, 598, 139 (×5), 500, 930, 601, 719, 1294, 267, 811c, 976 (+ los que casó el filtro):
+260 tests, 254 verdes, 6 saltados, 0 rojos.
+
+**Aceptación → dónde se ve**
+
+| aceptación | dónde se ve |
+|---|---|
+| «Dto.» con coma | el caso del chip del test (12,5) |
+| Un entero no gana coma ni «,0» | el CONTROL del 10 del mismo caso |
+| `scrum598` intacto | la llamada a `resumenAjustes` no cambia; 598 verde entre los vecinos |
+| Re-anclaje de 594 declarado | este tramo y el mensaje del commit |
+| Visto en yaqu.app | pendiente hasta que entre en `main`: editor, una línea con Dto. 12,5 y otra con 10 |

@@ -178,12 +178,19 @@ test('SCRUM-1636 ① · editor: el chip de la línea dice «IVA 7,5 % · Dto. 10
     .find((n) => n.tagName === 'INPUT' && n.type === 'number' && String(n.max) === '100' && String(n.min) === '0');
   assert.ok(dto, '🔴 NO PUDE MIRAR: no encuentro el campo de descuento de la línea.');
   await elegir(b, deLinea, '7.5');
-  dto.value = '10'; // entero: el «Dto.» con decimales lo fija scrum594 por forma, fuera de este ticket
+  dto.value = '12.5';
+  dto.disparar('input');
+  dto.disparar('change');
+  await respirar();
+  const chipDec = String(boton.textContent);
+  assert.equal(chipDec, 'IVA 7,5 % · Dto. 12,5 %', `🔴 chip: el descuento con decimales sigue con punto: «${chipDec}».`);
+  // CONTROL: un descuento entero no gana coma ni «,0».
+  dto.value = '10';
   dto.disparar('input');
   dto.disparar('change');
   await respirar();
   const chip = String(boton.textContent);
-  assert.equal(chip, 'IVA 7,5 % · Dto. 10 %', `🔴 chip: «${chip}».`);
+  assert.equal(chip, 'IVA 7,5 % · Dto. 10 %', `🔴 chip: CONTROL — un 10 entero no es «Dto. 10 %»: «${chip}».`);
   // CONTROL: con 21 y sin descuento, el texto que compone el chip es «IVA 21 %» (aunque se oculte, F4).
   dto.value = '';
   dto.disparar('input');
