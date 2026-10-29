@@ -204,3 +204,19 @@ tiene su clave): lo que digo es que ningún camino del código, hoy ni antes, pu
 
 - `docs/WHATSAPP_TEMPLATES.md:88-91` decía «pendiente de decisión, no hecho»: actualizado. `/pay/invoice` y
   `/recibo` siguen pasando el token en crudo (`payInvoice.routes.ts:23`, `receipt.routes.ts:31`, carril J2): no tocados.
+### El rojo del PR #2998 y su arreglo (29-oct, ~18:40Z, S1 relevo)
+
+«build + tests» cayó con 2 de 12.982 (job 123632236082), los dos del propio PR. Decisión del orquestador
+en el encargo del relevo.
+
+- **`tests/scrum68-evidencias-firma.test.mjs:158` — fixture cambiado, DECLARADO.** Había
+  `'tok68-' + randomBytes(16).toString('hex')`; `parseToken` quita lo que no es hex, la ruta buscaba
+  `68…` y «firmar remoto» daba 404. Pongo `randomBytes(16).toString('hex')` a secas. La forma vieja era
+  **imposible en producción**: el único escritor de `firmaToken` (`albaranWhatsApp.service.ts:132`) hace
+  hex puro (arriba, «Las mayúsculas»). **Ninguna aserción tocada**: el test sigue afirmando lo mismo
+  sobre el sellado (canal, `tokenId` = token usado, ip, ua, sha256, firmante declarado, privacidad).
+  Ese test va gateado por base (`QA_DB_TEST`/`LIBRO_PG_URL`): en local sale SKIP; lo juzga el CI.
+- **`tests/scrum1632c-firma-tolera-la-url-sucia.test.mjs` ③ — nombres literales** (lo pide `scrum1415`):
+  el bucle con nombre en plantilla pasa a cuatro `test()` con su nombre escrito y una función común.
+  Mismos cuatro casos, mismas aserciones.
+- Local: `scrum1632c` + `scrum1415` + `scrum68` → 19 tests, 18 pass, 0 fail, 1 SKIP (el de base).

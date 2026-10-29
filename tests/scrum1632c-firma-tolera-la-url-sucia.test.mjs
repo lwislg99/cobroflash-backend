@@ -122,18 +122,21 @@ test('② control positivo: el token limpio sigue funcionando igual', async () =
   assert.equal((await banco().firmar(otro)).status, 404);
 });
 
-for (const vacio of ['{{1}}', '', 'zzzz-sin-nada-hex', '{{1}}{{2}}']) {
-  test(`③ control del vacío: «${vacio}» no encuentra parte y la búsqueda lleva clave`, async () => {
-    const b = banco();
-    assert.equal((await b.pagina(vacio)).status, 404, 'GET no puede caer en la primera fila');
-    const p = await b.firmar(vacio);
-    assert.equal(p.status, 404, 'POST no puede firmar la primera fila');
-    assert.equal(b.fila.estado, 'emitido');
-    assert.equal(b.cuenta.escrituras, 0);
-    assert.ok(b.cuenta.claves.length >= 2, `CIEGO: el doble no vio las dos búsquedas (${b.cuenta.claves.length})`);
-    for (const k of b.cuenta.claves) assert.equal(typeof k, 'string', 'la búsqueda tiene que llevar clave');
-  });
+async function controlDelVacio(vacio) {
+  const b = banco();
+  assert.equal((await b.pagina(vacio)).status, 404, 'GET no puede caer en la primera fila');
+  const p = await b.firmar(vacio);
+  assert.equal(p.status, 404, 'POST no puede firmar la primera fila');
+  assert.equal(b.fila.estado, 'emitido');
+  assert.equal(b.cuenta.escrituras, 0);
+  assert.ok(b.cuenta.claves.length >= 2, `CIEGO: el doble no vio las dos búsquedas (${b.cuenta.claves.length})`);
+  for (const k of b.cuenta.claves) assert.equal(typeof k, 'string', 'la búsqueda tiene que llevar clave');
 }
+
+test('③ control del vacío: «{{1}}» no encuentra parte y la búsqueda lleva clave', () => controlDelVacio('{{1}}'));
+test('③ control del vacío: «» no encuentra parte y la búsqueda lleva clave', () => controlDelVacio(''));
+test('③ control del vacío: «zzzz-sin-nada-hex» no encuentra parte y la búsqueda lleva clave', () => controlDelVacio('zzzz-sin-nada-hex'));
+test('③ control del vacío: «{{1}}{{2}}» no encuentra parte y la búsqueda lleva clave', () => controlDelVacio('{{1}}{{2}}'));
 
 test('④ la ruta del POST que se pinta en la página es la LIMPIA, no la que trajo la URL', async () => {
   const b = banco();
