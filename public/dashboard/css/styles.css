@@ -2890,6 +2890,9 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 /* Importe: Regla del Importe (tinta, peso 700, tabular) */
 .amount { color: var(--ink); font-weight: 700; font-variant-numeric: tabular-nums; }
 .amount-muted { color: var(--body); font-variant-numeric: tabular-nums; }
+/* SCRUM-1635 · las filas del descuento en los totales de la ficha: el mismo tono que «Base imponible»
+   e «IVA», que van en línea en `quotesDetailView.js`; aquí como clase, no como `style=`. */
+.quote-total-desglose { font-size: 13px; color: var(--muted); }
 
 /* Pill de "pendiente de aprobación" (ámbar) como clase, no inline */
 .status-pill-approval { background: #fff7ed; color: #9a3412; }
