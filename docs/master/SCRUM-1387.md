@@ -383,3 +383,57 @@ verdes.
     node docs/master/evidencias/SCRUM-1387/1387e/censo-registros.mjs --raiz <dir> [--estricto]
     # sale 2 (CIEGO) si la población está vacía, si la lista del corte no cuadra con su rótulo,
     # o si SCRUM-1387 (control positivo, con su test en el catálogo) no sale como A
+
+## SCRUM-1387f · el rótulo del meta-guard dice también los ficheros con alguna juzgada
+
+**Medido contra:** `origin/main` = `53d9834d91b5eea3ec35a22449b72a62e9160739` · 2026-10-29T18:32:43Z
+(S3, equipo de Luis. Es el punto ① del camino que propuso 1387e, y lo aprobó el orquestador el 29-oct: «es barato,
+no decide nada, y hace visible el corte en vez de dejarlo en el log». Los puntos ② (la matriz de 1620, S5) y ③ (la
+decisión del fundador) NO se tocan aquí.)
+
+A9: comprobación → `tests/scrum1387f-el-rotulo-dice-los-juzgados.test.mjs`
+
+### Qué cambia
+
+La línea final del meta-guard decía «…en 238 ficheros DECLARANTES de 1565 ficheros de test (15 %)», y el CI repetía
+mutaciones en 192 (1387e ①): el corte de 1620 dejó 46 guards sin ninguna. Ahora la misma línea sigue con:
+
+    · 192 juzgados de 238 declarantes (12 % de los 1565 ficheros de test)
+
+- **Se cuenta donde se juzga:** `guardsJuzgados.add(guard)` va justo después de `juzgadas += 1`, dentro del bucle.
+  Un guard que el corte deja a cero no entra.
+- **Sin el dato, la línea es la de 1387d byte a byte** (`ficherosJuzgados = null`). Lo que ya buscaba «vivas N ·
+  mudas N» o «(N %)» lo sigue encontrando, y los tests de 1387d, 1620 y 812 no se han tocado.
+- **No decide nada:** sólo imprime. Los veredictos y los códigos de salida no cambian.
+- Con parte (1620), los juzgados van antes de «PARTE i de k» y son los de esa parte.
+
+### Controles
+
+- **Rojo primero:** el test se comiteó solo (`5867d60f50f8bd0373144174fe32b697e0db38b0`) y daba **0 de 3** contra
+  el código de `main`. Con el arreglo (`904b483c3273ffad6d98556c5f9d06df03283c15`), 3 de 3. Junto a 1387d, 1620,
+  812, 935d y 765: **36 de 36**, con el trinquete de 812 sin moverse (el fichero nuevo no se titula guard).
+- **Sus dos mutaciones, VIVAS** con la maquinaria del propio meta-guard
+  (`docs/master/evidencias/SCRUM-1620/juzgar-guards.mjs`): quitar los juzgados del rótulo, y no contarlos en el
+  bucle. Las cuatro de 1387d, también VIVAS. Árbol limpio después.
+- **La pasada de verdad, con el corte provocado** (`META_PRESUPUESTO_S=120`, `1387f/pasada-corte-120s.txt`):
+
+      vivas 23 · mudas 0 · ciegas 1 · ficheros muertos 0 · sobre 23 juzgadas de 942 declaraciones, en 239 ficheros DECLARANTES de 1566 ficheros de test (15 %) · 7 juzgados de 239 declarantes (0 % de los 1566 ficheros de test)
+
+  Sale 2, como debe con un corte. **Cómo se lee:** 7 juzgados y «SIN JUZGAR 919, en 233 guard(s)» suman 240,
+  uno más que los 239 declarantes. No es un descuadre: el guard que el corte pilla A MEDIAS tiene alguna juzgada
+  (cuenta aquí) y le quedan pendientes (cuenta allí). El 29-oct en CI no había ninguno a medias (1387e); con el
+  corte a 120 s, uno. El 0 % es 7 de 1.566 redondeado al entero, igual que el resto del rótulo.
+
+### Lo que no hace
+
+- **`--juntar` (las K partes de 1620) no lleva los juzgados:** su recuento sale de `veredictoDeLasPartes` y el
+  resumen de cada parte no los guarda. Cuando entre la matriz de S5, cada parte dirá los suyos en su línea; el
+  total juntado no. Es añadir el número al resumen de la parte, y no lo he hecho porque la matriz no está
+  construida y no sé con qué forma entra.
+- No cambia la cifra: con la matriz (S5) los 46 vuelven a juzgarse, y la línea pasará a decir 238 de 238 sola.
+
+### Reproducir
+
+    node --test tests/scrum1387f-el-rotulo-dice-los-juzgados.test.mjs
+    node docs/master/evidencias/SCRUM-1620/juzgar-guards.mjs scrum1387f-el-rotulo-dice-los-juzgados.test.mjs
+    npm run build && META_PRESUPUESTO_S=120 node scripts/meta-guard-mutaciones.mjs   # sale 2 por el corte; mirar la línea «vivas …»
