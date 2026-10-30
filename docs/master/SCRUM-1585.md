@@ -68,3 +68,21 @@ SCRUM-1585 c.20534): éste se empuja **después**; si entrara antes, el obligato
 ## ⑤ Sin medir
 
 Ninguna base. La tanda completa. El CI (no hay empujón). Lo que haga S1 en SCRUM-1594.
+
+## SCRUM-1585b · retomada: STOP por el guard de versión del SIF
+
+**Medido contra:** `origin/main` = `06ad4f1bd53d25b701cd11ae42791db753329ceb` · 2026-10-30T17:18:36Z
+
+A9: comprobación → `tests/scrum523d-version-del-sif.test.mjs`
+
+Sesión `jv-j1dl` (puesto J1). Medición y decisión pendiente en Jira, SCRUM-1585 c.21284. No hay empujón.
+
+- SCRUM-1594 está en `main` (`1c2acd5b0`, #2983). Merge de `main` hecho (934 commits). `tsc -p .`: salida 0.
+- 🔴 `scrum523d` entró en `main` el 26-oct, después del GO c.20531, y cae con M: nombra
+  `emission.service.ts` e `invoiceNumber.service.ts`. Pide subir `VERIFACTU_VERSION` con declaración
+  firmada (V2 de SCRUM-523 c.20878) o que el fundador decida otra cosa para M. El GO de M no lo cubre.
+- Dirigida: 146 ficheros de 1.571, 1.255 casos, 1.220 pasan, 2 caen, 33 saltados. El otro rojo es
+  `scrum719` (veredicto de mudez caducado por dos tests de esta rama).
+- Falta tras la decisión: huellas o versión, `censo:mudez`, las mutaciones en el catálogo
+  (`MUTACIONES_QUE_ME_TUMBAN` + `aplicarUna`), re-anclar y un empujón.
+- Sin medir: ninguna base, el CI y la suite entera local.
