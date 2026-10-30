@@ -1,23 +1,43 @@
 // docs/master/evidencias/SCRUM-1527/s3-reproduce-hoy.mjs — SCRUM-1527d · ¿se sigue colgando el obligatorio?
 //
-//     node docs/master/evidencias/SCRUM-1527/s3-reproduce-hoy.mjs <desdeISO> <carpetaDeLogs> [corteISO]
+//     node docs/master/evidencias/SCRUM-1527/s3-reproduce-hoy.mjs <desdeISO> <carpetaDeLogs> [--corte <ISO>] [--umbral <s>] [--de-cache]
 //
 // QUÉ MIDE. Desde <desdeISO>, todos los jobs «build + tests» de `ci.yml` (con reintentos), la duración
-// y el veredicto de su paso «Tests», y en los candidatos (paso «Tests» de 600 s o más, o job
-// cancelado tras llegar a ese paso) baja el log y busca «TANDA SIN VEREDICTO». Con [corteISO] parte
-// la cuenta en antes / después (p. ej. el merge de #2429, SCRUM-1405c).
-// El filtro de duración es el de SCRUM-1527b ①: entre 600 y 900 s no había ninguno.
+// y el veredicto de su paso «Tests», y en los candidatos (paso «Tests» de --umbral s o más, 600 si no
+// se dice) baja el log y busca «TANDA SIN VEREDICTO». Con --corte parte la cuenta en antes / después
+// (p. ej. el merge de #2429, SCRUM-1405c).
+// El umbral de 600 s es el de SCRUM-1527b ①. Desde #2429 una tanda sana pasa de 600 s (1527g): para
+// los sospechosos, --umbral 900, que es el silencio que espera el vigía antes de escribir el aviso.
 //
-// CONTROL POSITIVO: si la ventana empieza antes del 13-oct 05:07Z, el job 115134364145 (colgado
-// conocido, #2350) TIENE que salir. Si no sale, el instrumento no vale y sale 2.
+// SCRUM-1527h · el corte va por NOMBRE. Hasta aquí era el tercer argumento posicional, y con
+// `--de-cache` en ese sitio partía la cuenta por la fecha «--de-cache» (1527g). Un tercer posicional
+// sale 2, para que un «Cómo se repite» viejo falle a la vista en vez de medir otra cosa.
 //
-// Sale 0 si pudo medir; 2 si algún control falla o alguna consulta no contestó.
+// CONTROL POSITIVO: cada colgado conocido cuya fecha cae en la ventana TIENE que salir con su aviso.
+// Si NINGUNO cae en la ventana, el instrumento no ha visto nunca lo que busca y sale 2 (CIEGO): un 0
+// sin positivo es «no he mirado», no «no hay» (1527h; antes salía 0 con «fuera de la ventana»).
+//
+// Sale 0 si pudo medir; 2 si algún control falla, alguna consulta no contestó o el uso es malo.
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const [desde, carpeta, corte] = process.argv.slice(2);
-if (!desde || !carpeta) { console.error('uso: s3-reproduce-hoy.mjs <desdeISO> <carpetaDeLogs> [corteISO]'); process.exit(2); }
+const USO = 'uso: s3-reproduce-hoy.mjs <desdeISO> <carpetaDeLogs> [--corte <ISO>] [--umbral <s>] [--de-cache]';
+const args = process.argv.slice(2);
+const valor = (bandera) => { const i = args.indexOf(bandera); return i === -1 ? undefined : args.splice(i, 2)[1] ?? ''; };
+const corte = valor('--corte');
+const umbralTexto = valor('--umbral');
+const pideCache = args.includes('--de-cache');
+const posicionales = args.filter((a) => a !== '--de-cache');
+const [desde, carpeta] = posicionales;
+const malUso = [];
+if (posicionales.length !== 2) malUso.push(`hacen falta 2 argumentos posicionales y hay ${posicionales.length}${posicionales.length > 2 ? ` (el corte va con --corte: «${posicionales.slice(2).join(' ')}»)` : ''}`);
+if (posicionales.some((a) => a.startsWith('--'))) malUso.push(`bandera desconocida: ${posicionales.filter((a) => a.startsWith('--')).join(' ')}`);
+if (desde && Number.isNaN(Date.parse(desde))) malUso.push(`desde no es una fecha: «${desde}»`);
+if (corte !== undefined && Number.isNaN(Date.parse(corte))) malUso.push(`--corte no es una fecha: «${corte}»`);
+const UMBRAL = umbralTexto === undefined ? 600 : Number(umbralTexto);
+if (!(UMBRAL > 0)) malUso.push(`--umbral no es un número de segundos: «${umbralTexto}»`);
+if (malUso.length) { console.error(USO); for (const m of malUso) console.error(`   · ${m}`); process.exit(2); }
 mkdirSync(carpeta, { recursive: true });
 const GH = process.platform === 'win32' ? 'C:\\Program Files\\GitHub CLI\\gh.exe' : 'gh';
 const REPO = 'repos/lwislg99/cobroflash-backend';
@@ -35,7 +55,7 @@ function ficheroDelCaso(nombre) {
 
 // ① Las ejecuciones de la ventana (paginado hasta agotar). Con --de-cache se reutiliza el
 // jobs.json de una pasada anterior en la misma carpeta (la lista es lo lento: un gh api por run).
-const DE_CACHE = process.argv.includes('--de-cache') && existsSync(join(carpeta, 'jobs.json'));
+const DE_CACHE = pideCache && existsSync(join(carpeta, 'jobs.json'));
 const runs = [];
 for (let p = 1; p < 50 && !DE_CACHE; p++) {
   const r = api(`${REPO}/actions/workflows/ci.yml/runs?created=%3E%3D${encodeURIComponent(desde)}&per_page=100&page=${p}`);
@@ -58,9 +78,15 @@ for (const run of DE_CACHE ? [] : runs) {
 }
 
 // ③ Los candidatos, y su log.
-const candidatos = jobs.filter((x) => (x.dur !== null && x.dur >= 600) || (x.conclusion === 'cancelled' && x.paso !== null && x.dur !== null && x.dur >= 600));
-const POSITIVO = 115134364145;
-const enVentana = Date.parse(desde) <= Date.parse('2026-10-13T05:07:16Z');
+const candidatos = jobs.filter((x) => x.dur !== null && x.dur >= UMBRAL);
+// Los colgados conocidos, con la hora de creación de su ejecución. Uno por línea: uno nuevo se añade aquí.
+const POSITIVOS = [
+  { job: 115134364145, creado: '2026-10-13T05:07:16Z' }, // #2350 (1527d)
+  { job: 119769715166, creado: '2026-10-22T10:21:15Z' }, // scrum-962c (1527f, 1527g)
+];
+// Dentro de la ventana es por FECHA, no por figurar en la lista: una lista que lo pierde es CIEGO.
+const enVentana = POSITIVOS.filter((p) => Date.parse(p.creado) >= Date.parse(desde));
+const sale = (p) => candidatos.some((c) => c.job === p.job && c.aviso);
 for (const c of candidatos) {
   const f = join(carpeta, `job${c.job}.log`);
   if (!existsSync(f) || statSync(f).size < 1000) {
@@ -80,7 +106,8 @@ for (const c of candidatos) {
   c.ultimoCaso = m2 ? m2[1] : null;
   c.ultimo = c.aviso ? (m2 ? (ficheroDelCaso(m2[1]) ?? 'no encontrado en este árbol') : 'el aviso no dice el caso') : '-';
 }
-if (enVentana && !candidatos.some((c) => c.job === POSITIVO && c.aviso)) fallos.push(`control positivo: el colgado conocido ${POSITIVO} no sale con su aviso`);
+if (!enVentana.length) fallos.push(`control positivo: ningún colgado conocido cae en la ventana (el último es del ${POSITIVOS.at(-1).creado}); sin positivo, un 0 no se distingue de no mirar`);
+for (const p of enVentana) if (!sale(p)) fallos.push(`control positivo: el colgado conocido ${p.job} (${p.creado}) no sale con su aviso con --umbral ${UMBRAL}`);
 
 // ④ La salida.
 const porConclusion = {};
@@ -94,9 +121,10 @@ for (const t of corte ? ['antes', 'después'] : ['antes']) {
   const colg = candidatos.filter((c) => c.aviso && tramo(c) === t);
   console.log(`${corte ? `${t} del corte: ` : ''}${js.length} jobs con paso «Tests» · ${js.filter((j) => j.paso === 'success').length} en success · ${colg.length} con «TANDA SIN VEREDICTO»`);
 }
-console.log(`candidatos (paso «Tests» de 600 s o más): ${candidatos.length}`);
+console.log(`candidatos (paso «Tests» de ${UMBRAL} s o más): ${candidatos.length}`);
 for (const c of candidatos) console.log(`   job ${c.job} · ${c.creado} · ${c.evento} · ${c.rama} · paso ${c.paso} en ${c.dur} s · ${c.bytes} B · aviso ${c.aviso ? 'SÍ' : 'no'} · pasan ${c.pasan} · lo último que llegó: ${c.ultimoCaso ? `«${c.ultimoCaso.slice(0, 60)}» → ${c.ultimo}` : c.ultimo}`);
-console.log(`control positivo (${POSITIVO}): ${enVentana ? (candidatos.some((c) => c.job === POSITIVO && c.aviso) ? 'sale, con su aviso' : 'NO SALE') : 'fuera de la ventana'}`);
+for (const p of POSITIVOS) console.log(`control positivo (${p.job}, ${p.creado}): ${enVentana.includes(p) ? (sale(p) ? 'sale, con su aviso' : 'NO SALE') : 'fuera de la ventana'}`);
+if (!enVentana.length) console.log('control positivo: NINGUNO en la ventana → CIEGO (empieza la ventana antes de un colgado conocido y parte con --corte)');
 const dmax = Math.max(...llegan.filter((j) => j.dur !== null && !candidatos.includes(j)).map((j) => j.dur));
 console.log(`el paso «Tests» más largo fuera de los candidatos: ${dmax} s`);
 writeFileSync(join(carpeta, 'jobs.json'), JSON.stringify(jobs, null, 1));

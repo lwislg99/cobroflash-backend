@@ -47,6 +47,8 @@
 // cabecera «IMPORTE» del PDF de la factura (tramo 1446e).
 // La 28.ª (SCRUM-1446 comentario 20939) la leyó jv-j1co el 26-oct, con el ticket entero: extiende esa
 // cabecera «IMPORTE» al PDF del presupuesto (tramo 1446f).
+// SCRUM-1251 comentario 20675 lo leyó la S2 el 27-oct, con el ticket entero: es la firma de los ocho
+// textos de la tarjeta «Paquete del trimestre» de `exportView.js` (SCRUM-1602).
 //
 // Una fila por línea (lo pide `tests/scrum710b`): dos tickets que añaden pares no se pisan.
 
@@ -60,6 +62,7 @@ const POR_1446E = 'jv-j1ck · SCRUM-1446e';
 const POR_1446F = 'jv-j1co · SCRUM-1446f';
 const POR_1322C = 'jv-j2bg · SCRUM-1322c';
 const POR_1322D = 'jv-j2bh · SCRUM-1322d';
+const POR_1602 = 'S2 · SCRUM-1602';
 
 export const PARES_LEIDOS = Object.freeze([
   { ticket: 299, comentario: 12188, leido: '2026-10-24', por: POR_1511G },
@@ -92,4 +95,5 @@ export const PARES_LEIDOS = Object.freeze([
   { ticket: 1446, comentario: 20939, leido: '2026-10-26', por: POR_1446F },
   { ticket: 1322, comentario: 20957, leido: '2026-10-26', por: POR_1322C },
   { ticket: 1322, comentario: 20977, leido: '2026-10-26', por: POR_1322D },
+  { ticket: 1251, comentario: 20675, leido: '2026-10-27', por: POR_1602 },
 ].map(Object.freeze));

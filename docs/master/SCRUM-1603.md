@@ -149,3 +149,41 @@ La suite completa la paró Claude Code por falta de memoria en la máquina, con 
 - El texto de la excepción de las pestañas del historial en `guard-objetivo-tactil.mjs` dice «a 41,0 px»: con Inter miden 39. La excepción no la toco (las retira el fundador); su prosa queda vieja y se dice aquí.
 
 **Reancla (24-oct, tras el rojo del #2846):** al quitar `new URL` de `_hojas-del-panel.mjs` dejé la mutación ① del test 1603 anclada a esa línea; `tests/scrum836-ancla-de-mutacion-viva.test.mjs` la cazó («el ancla `de` no está en el fichero»). Se reancló a `return r.locales.map((h) =>`, que no depende de cómo se resuelve la ruta. La comprobación que ya lo impide es ese test de 836.
+
+## Tramo 1603c (S3, equipo de Luis, 29-oct-2026) · el censo IMPRIME LA CAJA además del toque
+
+Medido sobre `origin/main` `fd24ce099696acca6b2dc3652dfb511bdca9694f` (29-oct-2026 10:30Z, hora de GitHub) · worktree `wt-s3-1603c` · rama `scrum-1603c-censo-imprime-la-caja`.
+
+**Por qué.** En el log del job de navegador de #2846 (`120896295932`) el censo daba para `INPUT.input` de Clientes @929 un **39**: es el ÁREA DE TOQUE. La caja, que es lo que pide la aceptación ②, no la imprimía ningún log. Decisión del orquestador (Jira c.21216): ni se da por buena con el 39 ni se rebaja la aceptación; el censo imprime la caja.
+
+### Qué cambia
+- `scripts/_censo-distintos.mjs`: `cajaYToque(m)` → «caja X · toque Y», una sola forma de imprimirlas; `leerCajaYToque` hace el camino de vuelta; `cortosDistintos` lleva la caja DE LA MISMA medida que dio el toque mínimo.
+- `scripts/censo-objetivo-tactil-panel.mjs`: el bloque de control de Clientes y los cortos que sólo se ven abriendo pestaña salen con «caja X · toque Y»; «por clase» da el rango de toque y el de caja. El juicio sigue siendo el toque: no se toca ningún umbral.
+- **Control positivo, dentro del censo:** una tercera sonda, TAPADA (botón de 40 px con sus 10 de arriba cubiertos por un bloque no interactivo: caja 40, toque 30), en cada página × anchura. Se comprueba sobre la LÍNEA IMPRESA, leída de vuelta, no sobre el objeto. Si sale fuera de ±2 px, esa página cuenta como SUPERFICIE NO MEDIDA y el censo sale 2. Lo esperado va escrito a mano (`SONDA_TAPADA_ESPERADA`), no con el formateador.
+
+### ANTES y DESPUÉS, mismo árbol, Windows
+| cifra | antes (`fd24ce099`) | después (`338b4d8b1`) |
+|---|---|---|
+| distintos < 44 px | 111 | **111** |
+| no medidos por ocultos | 88 en 8 pantallas | **88 en 8** |
+| mediciones | 200 | **200** |
+| con `.btn-sm` / sin | 38 / 73 | **38 / 73** |
+| sondas no cazadas | 0 de 82 | 0 de 82 |
+| sonda tapada | — | leída en **82 de 82** · caja 40,0–40,0 · toque 29,0–30,0 |
+| fuente | Inter · 5 de 35 · fallidas 0 · 164 págs | igual |
+| **Clientes `INPUT.input` @929** | toque 39 (sin caja) | **caja 38 · toque 39** |
+
+El control negativo se cumple: imprimir un dato más no mueve ningún recuento. Los 2 distintos de más frente a los 109 de 1630 no los destapa este cambio (el recuento es el mismo antes y después): siguen **sin identificar**.
+
+**El número que pedía el ticket, en Windows: la caja de `INPUT.input` en Clientes a 929 px es 38, no 34.** «Por clase», `INPUT.input` va de caja 34,0 a 38,0 en 10 pantallas: hay campos `.input` a 34, pero el de Clientes no es uno de ellos. *Mi lectura, sin medir aparte:* en Clientes el campo vive en `.customers-search` (`display:flex`, `styles.css:2231`) y la fila lo estira a la altura de sus vecinos (los dos `SELECT.input`, también a 38); el `.input` suelto (`styles.css:2440`) da 34. La comparación de la aceptación ② es Windows contra CI: la cifra de CI sale en el log del job de navegador de ESTE PR.
+
+### Rojos (A23)
+- Unitario `tests/scrum1603c-el-censo-imprime-la-caja.test.mjs`: con el mutante «imprime el toque dos veces» en `cajaYToque` (numstat `1 1`), caen 2 de 5 casos; restaurado, 5 de 5.
+- **Censo entero con el mismo mutante:** sale **2**, con **82 de 82** páginas «la sonda TAPADA sale «caja 30 · toque 30»». Ese rojo destapó que el aviso imprimía lo esperado con el formateador roto («y no «caja 30 · toque 30»»): ahora va literal.
+
+### Coste
+Local, misma máquina, mismo código: 182 s, 243 s y 231 s; con el mutante, 382 s. La máquina va cargada y la variación entre pasadas IGUALES (61 s) es mayor que lo que puede añadir el cambio (un elemento más por página de sonda, sin navegación nueva). **No hay cifra local fiable del coste**; la buena es la del paso `censo:tactil-panel` en el CI de este PR, contra los ~80 s de antes.
+
+### Sin hacer, y a quién
+- **`guard:objetivo-tactil`, la otra mitad de la aceptación ②:** imprime la caja sólo de los hallazgos. A 929 el mínimo es 36 (`minimoPara`), el campo de Clientes da 39 de toque y no es hallazgo, así que su caja no sale. No lo toco: el encargo era el censo y el guard no tiene fila de carril (orquestador).
+- Los 2 distintos nuevos frente a 1630: sin identificar.

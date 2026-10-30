@@ -267,13 +267,19 @@ export function argsLanzar({ modo, nombre, sessionId, prompt, equipo, modelo = M
  * @param {object} agente una entrada de `claude agents --json`
  * @param {{leido:boolean, terminal?:boolean, cuando?:string|null, motivo?:string}|null} job
  *   lo que dice su `state.json`, o `{leido:false}` si no se pudo mirar
- * @returns {{estado:'VIVA'|'MUERTA'|'NO-PUDE-MIRAR', motivo:string}}
+ * @returns {{estado:'VIVA'|'MUERTA'|'ESPERA'|'NO-PUDE-MIRAR', motivo:string, pregunta?:string}}
+ *   `ESPERA` (SCRUM-1238c) cuenta como viva para los tres que deciden: sólo `MUERTA` es un resto.
  */
 export function clasificarAgente(agente, job) {
   if (!agente || typeof agente !== 'object') return { estado: 'NO-PUDE-MIRAR', motivo: 'la entrada no es un objeto' };
   if (typeof agente.pid === 'number' && agente.pid > 0) return { estado: 'VIVA', motivo: `tiene proceso (pid ${agente.pid})` };
   if (!job || job.leido !== true) {
     return { estado: 'NO-PUDE-MIRAR', motivo: `sin pid, y su state.json no se pudo leer${job && job.motivo ? `: ${job.motivo}` : ''}` };
+  }
+  // SCRUM-1238c: «te está esperando» no sale igual que «terminó» ni que «no pude mirar». Va antes del
+  // final: una que pregunta no es un resto, aunque su state.json haya terminado algún turno.
+  if (job.espera === true) {
+    return { estado: 'ESPERA', motivo: `sin pid, y su state.json dice que ESPERA una respuesta (${job.huella || 'sin huella'})`, pregunta: job.pregunta || 'no dice qué' };
   }
   if (job.terminal === true) {
     return { estado: 'MUERTA', motivo: `sin pid, y su state.json dice que terminó${job.cuando ? ` (${job.cuando})` : ''}` };
@@ -994,15 +1000,75 @@ function sinActividadDelAgente(config, agente, ahora) {
  * veredicto de muerte, así que su suelo es lo único que importa: si no se puede leer, `leido:false`,
  * y `clasificarAgente` deja la entrada como `NO-PUDE-MIRAR` — o sea, viva.
  */
+function raizDeJobs(config) {
+  return config.jobs || path.join(process.env.USERPROFILE || process.env.HOME || '', '.claude', 'jobs');
+}
+
 function estadoDeJob(config, id) {
   if (!ID_CORTO.test(id || '')) return { leido: false, motivo: 'la entrada no trae un id corto legible' };
-  const raiz = config.jobs || path.join(process.env.USERPROFILE || process.env.HOME || '', '.claude', 'jobs');
-  const ruta = path.join(raiz, id, 'state.json');
+  const ruta = path.join(raizDeJobs(config), id, 'state.json');
   let j;
   try { j = JSON.parse(fs.readFileSync(ruta, 'utf8')); } catch { return { leido: false, motivo: `no se pudo leer ${ruta}` }; }
   if (!j || typeof j !== 'object') return { leido: false, motivo: `${ruta} no es un objeto` };
-  const cuando = typeof j.firstTerminalAt === 'string' && j.firstTerminalAt ? j.firstTerminalAt : null;
-  return { leido: true, terminal: cuando !== null || ESTADOS_TERMINALES.includes(j.state), cuando, estado: j.state ?? null };
+  return leerJob(j);
+}
+
+/**
+ * SCRUM-1238c · Lo que significa un `state.json`, separado de leerlo para poder probarlo.
+ *
+ * 🔴 `firstTerminalAt` NO es «terminó»: es «terminó ALGÚN turno». Medido el 29-oct-2026 sobre los 44
+ * `state.json` de la máquina: en 16 de los 38 terminales `firstTerminalAt` es ANTERIOR a
+ * `lastTerminalAt`, o sea, la sesión volvió a trabajar después y el campo siguió puesto. Y SCRUM-1238
+ * midió la forma que eso mata: `state: "blocked"` + `firstTerminalAt` + `needs` (la J2 `4d9f556d`).
+ * Hasta aquí, `terminal` era `firstTerminalAt !== null || …`, y esa sesión salía MUERTA con su
+ * pregunta dentro. Ahora `terminal` sale del `state` de AHORA, y nunca si espera.
+ *
+ * El criterio de «espera» es el de `espera()`/`preguntaDe()` de `latido.mjs` (state o tempo
+ * `blocked`, o algo en `needs`), COPIADO a propósito: la copia instalada de este fichero corre sola,
+ * sin el resto de `scripts/` al lado, así que no puede importarlo.
+ */
+export function leerJob(j) {
+  const espera = j.state === 'blocked' || j.tempo === 'blocked' || !!j.needs;
+  const n = j.needs;
+  const pregunta = n ? (typeof n === 'string' ? n : JSON.stringify(n)).replace(/\s+/g, ' ').trim() : '';
+  const fecha = (v) => (typeof v === 'string' && v ? v : null);
+  const cuando = fecha(j.lastTerminalAt) || fecha(j.firstTerminalAt);
+  const huella = `state=${j.state ?? '—'}${j.tempo ? ` tempo=${j.tempo}` : ''}`
+    + `${fecha(j.firstTerminalAt) ? ' con firstTerminalAt' : ' sin firstTerminalAt'}${pregunta ? ' con needs' : ''}`;
+  return { leido: true, terminal: !espera && ESTADOS_TERMINALES.includes(j.state), espera, pregunta, huella, cuando, estado: j.state ?? null };
+}
+
+/**
+ * SCRUM-1238c · Las sesiones que esperan una respuesta, leídas de la CARPETA de trabajos y no de la
+ * lista. Medido el 29-oct-2026: `claude agents --json` daba 8 entradas, las 8 con `pid`; una sesión
+ * que acaba su turno preguntando pierde el proceso y deja de salir en la lista, así que sólo su
+ * `state.json` sabe que pregunta. Población declarada; sin carpeta legible, `leido: false`.
+ */
+export function esperandoEnJobs(raiz, { ahora = Date.now(), horas = 24, conProceso = new Set() } = {}) {
+  let ids;
+  try { ids = fs.readdirSync(raiz, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name); } catch {
+    return { leido: false, motivo: `no se pudo leer la carpeta de trabajos ${raiz}` };
+  }
+  let leidos = 0;
+  let recientes = 0;
+  const ilegibles = [];
+  const filas = [];
+  for (const id of ids) {
+    const ruta = path.join(raiz, id, 'state.json');
+    if (!fs.existsSync(ruta)) continue;
+    let j;
+    try { j = JSON.parse(fs.readFileSync(ruta, 'utf8').replace(/^﻿/, '')); } catch { ilegibles.push(id); continue; }
+    if (!j || typeof j !== 'object') { ilegibles.push(id); continue; }
+    leidos += 1;
+    const desde = Date.parse(j.updatedAt) || fs.statSync(ruta).mtimeMs;
+    if ((ahora - desde) / 36e5 > horas) continue;
+    recientes += 1;
+    const e = leerJob(j);
+    if (!e.espera) continue;
+    filas.push({ id, nombre: j.name ?? null, desde: new Date(desde).toISOString(), conProceso: conProceso.has(id),
+      huella: e.huella, pregunta: e.pregunta || 'no dice qué' });
+  }
+  return { leido: true, poblacion: `${leidos} state.json leídos · ${recientes} tocados en ${horas} h · ${ilegibles.length} ilegibles`, ilegibles, filas };
 }
 
 function leerRegistro(dir) {
@@ -1101,7 +1167,8 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     const resumen = (a) => {
       const c = clasificarAgente(a, job(a.id));
       return { id: a.id ?? null, nombre: a.name ?? null, cwd: a.cwd ?? null, kind: a.kind ?? null,
-        state: a.state ?? null, pid: a.pid ?? null, clasificacion: c.estado, porque: c.motivo };
+        state: a.state ?? null, pid: a.pid ?? null, clasificacion: c.estado, porque: c.motivo,
+        ...(c.pregunta ? { pregunta: c.pregunta } : {}) };
     };
     // SCRUM-954, punto 2 del ticket: una sesión de fondo SIN nombre —o con uno que no es de este
     // equipo— desaparecía del radar entera, porque este filtro sólo dejaba pasar la lista blanca.
@@ -1117,6 +1184,10 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       restos: agentes.filter((a) => a.kind === 'background' && validarNombre(a.name, equipo) === null
         && clasificarAgente(a, job(a.id)).estado === 'MUERTA').map(resumen),
       otras: agentes.filter((a) => a.kind === 'background' && validarNombre(a.name, equipo) !== null).map(resumen),
+      // SCRUM-1238c: las que preguntan, de la carpeta de trabajos, tengan proceso o no.
+      esperando: esperandoEnJobs(raizDeJobs(config), {
+        ahora, conProceso: new Set(agentes.filter((a) => typeof a.pid === 'number' && a.pid > 0).map((a) => a.id)),
+      }),
     });
   }
 
