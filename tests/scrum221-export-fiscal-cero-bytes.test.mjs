@@ -82,7 +82,7 @@ test('SCRUM-221 · el registro BLOQUEA: sin fila no salen bytes (XML y ZIP por s
         // (SCRUM-73). Override POR MERCHANT, sin tocar el env global.
         await prisma.merchant.update({
           where: { id: merchant.id },
-          data: { country: 'ES', flags: { INVOICING_ES_ENABLED: true } },
+          data: { country: 'ES', flags: { INVOICING_ES_ENABLED: true }, llevaLibrosPorSii: false },
         });
 
         const customer = await prisma.customer.create({

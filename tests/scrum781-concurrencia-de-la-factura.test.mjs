@@ -89,7 +89,7 @@ async function conMerchantYCliente(fn) {
     email: `qa-781-${process.pid}-${Date.now()}@test.local`,
     country: 'ES',
     taxId: 'B12345678',
-    flags: { INVOICING_ES_ENABLED: true },
+    flags: { INVOICING_ES_ENABLED: true }, llevaLibrosPorSii: false,
     invoiceSeriesPrefix: 'QA',
     nextInvoiceNumber: 1,
     invoiceSeriesYear: null,
