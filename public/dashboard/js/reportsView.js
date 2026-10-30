@@ -470,7 +470,7 @@ async function renderReportsView(container) {
     data.rates.forEach((r) => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td style="font-weight:600">${r.rate}%</td>
+        <td style="font-weight:600">${fmtTipoIvaEs(r.rate / 100)}%</td>
         <td style="text-align:right">${fmtMoneyEs(r.base, data.currency)}</td>
         <td style="text-align:right;font-weight:600">${fmtMoneyEs(r.cuota, data.currency)}</td>
       `;
