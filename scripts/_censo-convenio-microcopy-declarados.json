@@ -1,10 +1,5 @@
 {
   "ambiguos": {
-    "public/dashboard/js/invoicesView.js · COPY_BULK_PAGADAS.recargaFallida": {
-      "clase": "PENDIENTE",
-      "alcance": "propiedad",
-      "motivo": "Su comentario dice «SIN APROBAR (regla 30): microcopy nueva de SCRUM-375»; no consta firma posterior en el fuente."
-    },
     "public/dashboard/js/settingsView.js · TX (cabecera)": {
       "clase": "APROBADO",
       "motivo": "Cuenta dos momentos: «MICROCOPY PROPUESTA, SIN APROBAR» y después «MICROCOPY APROBADA por el fundador el 3-sep-2026 (regla 30). LITERAL». Manda la firma."
@@ -47,10 +42,6 @@
     "public/dashboard/js/cobrosView.js · COBROS_COPY.diasSinCobrar": {
       "clase": "SIN_COMENTARIO",
       "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): vive en un objeto de copy con el convenio, pero ningún comentario legible por la sonda lo firma. Pendiente de contrastar con docs/microcopy/ (S4): o se firma, o se anota la firma que ya tenga."
-    },
-    "public/dashboard/js/invoicesView.js · COPY_BULK_PAGADAS.recargaFallida": {
-      "clase": "PENDIENTE",
-      "motivo": "Censo inicial SCRUM-1157 (28-sep-2026): su comentario dice «SIN APROBAR (regla 30)», microcopy de SCRUM-375. Contenido de S4, no de este instrumento."
     },
     "public/dashboard/js/libroRegistroView.js · COPY.avisoAjenas": {
       "clase": "SIN_COMENTARIO",
@@ -373,6 +364,10 @@
     {
       "id": "public/dashboard/js/quoteActionsRegistry.js · QUOTE_ACTION_ROTULOS.btnBorrar",
       "motivo": "SCRUM-1273 (14-oct-2026): la hoja SALE del fichero, no se firma. «Borrar» no existía en ningún sitio (ni ruta ni botón) y se sustituye por `btnArchivar` («Archivar», T1), APROBADA por el orquestador en SCRUM-1273 comentario 19605, con su marca en su misma línea. Ficha en docs/microcopy/2026-10-14-SCRUM-1273-archivar-presupuestos.md. Era la última hoja de SCRUM-1215 en el carril de S2."
+    },
+    {
+      "id": "public/dashboard/js/invoicesView.js · COPY_BULK_PAGADAS.recargaFallida",
+      "motivo": "SCRUM-1640: firmado por el fundador en SCRUM-1640 comentario 21292 (30-oct-2026); ficha en docs/microcopy/2026-10-30-SCRUM-1640-lote-marca-cero.md."
     }
   ],
   "porGrupo": {

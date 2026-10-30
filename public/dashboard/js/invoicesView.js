@@ -8,14 +8,19 @@
 // no?». Dentro del listener eso no se puede provocar sin un navegador; aquí sí, y el test lo
 // hace con las tres combinaciones.
 //
-// Los tres tonos son distintos A PROPÓSITO: `error` es que NO se marcó, `warning` es que SÍ se
-// marcó y la lista puede estar vieja, `success` es que todo fue bien. Un `.alert` sin tono está
-// OCULTO por CSS (styles.css:1667), así que el tono no es decoración.
+// Los tres tonos son distintos A PROPÓSITO: `error` es que la escritura FALLÓ, `warning` es que
+// la escritura fue bien pero hay algo que mirar —la lista puede estar vieja, o no se marcó ninguna
+// porque ya estaban pagadas o anuladas (SCRUM-1640)—, `success` es que todo fue bien. Un `.alert`
+// sin tono está OCULTO por CSS (styles.css:1667), así que el tono no es decoración.
 const COPY_BULK_PAGADAS = {
   // FIRMADO por el asesor en SCRUM-373. Solo se dice cuando la ESCRITURA falló.
   escrituraFallida: 'No se han podido marcar como pagadas. Vuelve a intentarlo.',
-  // SIN APROBAR (regla 30): microcopy nueva de SCRUM-375, va con marcador hasta que se firme.
+  // FIRMADO por el fundador en SCRUM-1640 comentario 21292.
   recargaFallida: 'Se han marcado como pagadas, pero la lista no se ha podido actualizar. Recárgala para verla al día.',
+  // FIRMADO por el fundador en SCRUM-1640 comentario 21292.
+  ningunaMarcada: 'No se ha marcado ninguna: ya estaban pagadas o anuladas.',
+  // FIRMADO por el fundador en SCRUM-1640 comentario 21292.
+  ningunaMarcadaRecargaFallida: 'No se ha marcado ninguna: ya estaban pagadas o anuladas. La lista no se ha podido actualizar. Recárgala para verla al día.',
 };
 
 /** El plural de verdad, sin `(s)`: cambia el sustantivo y el participio. */
@@ -27,10 +32,15 @@ function textoMarcadas(n) {
  * Qué se le dice al profesional según lo que pasó. PURO: no toca DOM ni red.
  *
  * La regla que codifica, y es la del ticket: **un fallo de lectura no se presenta como un fallo de
- * escritura**. Si `escrituraOk`, el mensaje dice que se marcaron — pase lo que pase con la recarga.
+ * escritura**. Si `escrituraOk`, el mensaje dice cuántas se marcaron — pase lo que pase con la
+ * recarga. Y cero es un recuento, no un éxito: el servidor se salta las ya pagadas o anuladas, y
+ * entonces no se puede decir que se marcaron (SCRUM-1640).
  */
 function resultadoMarcadoEnBloque({ escrituraOk, recargaOk, marcadas }) {
   if (!escrituraOk) return { tono: 'error', texto: COPY_BULK_PAGADAS.escrituraFallida, seMarcaron: false };
+  if (marcadas === 0) {
+    return { tono: 'warning', texto: recargaOk ? COPY_BULK_PAGADAS.ningunaMarcada : COPY_BULK_PAGADAS.ningunaMarcadaRecargaFallida, seMarcaron: false };
+  }
   if (!recargaOk) return { tono: 'warning', texto: COPY_BULK_PAGADAS.recargaFallida, seMarcaron: true };
   return { tono: 'success', texto: textoMarcadas(marcadas), seMarcaron: true };
 }
@@ -499,9 +509,10 @@ async function fetchInvoices(options = {}) {
       }
 
       // A partir de aquí LA ESCRITURA YA OCURRIÓ. Pase lo que pase con la recarga, el mensaje
-      // tiene que decir que se marcaron.
-      let recargaOk = true;
-      try { await reload(); } catch { recargaOk = false; }
+      // tiene que decir cuántas se marcaron. `reload()` no lanza si falla la red: lo DEVUELVE
+      // (SCRUM-1640), y el `catch` queda para lo que reviente antes de su `try`.
+      let recargaOk = false;
+      try { recargaOk = await reload(); } catch { recargaOk = false; }
 
       const r = resultadoMarcadoEnBloque({ escrituraOk: true, recargaOk, marcadas: data.updated });
       statusBox.textContent = r.texto;
@@ -521,6 +532,8 @@ async function fetchInvoices(options = {}) {
       updateBulkBar();
     });
 
+    // Devuelve si la lista se ha podido leer: el marcado en bloque lo necesita para no decir ✓
+    // sobre una lista que no se ha actualizado (SCRUM-1640).
     async function reload() {
       setCount('Cargando…');
       statusBox.style.display = 'none';
@@ -570,7 +583,7 @@ async function fetchInvoices(options = {}) {
             if (window.renderAppView) renderAppView('quotes-new');
           });
           setCount('0 facturas');
-          return;
+          return true;
         }
 
         setCount(invoices.length + ' factura' + (invoices.length !== 1 ? 's' : ''));
@@ -729,11 +742,13 @@ async function fetchInvoices(options = {}) {
         });
 
         statusBox.style.display = 'none';
+        return true;
       } catch (err) {
         console.error('[renderInvoicesView] error', err);
         statusBox.textContent = 'No se han podido cargar las facturas. Vuelve a intentarlo.';
         statusBox.className = 'alert error';
         statusBox.style.display = 'block';
+        return false;
       }
     }
 
