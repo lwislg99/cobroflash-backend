@@ -1,6 +1,7 @@
 # SCRUM-1640 · Facturas: el marcado en bloque cuando se marcan cero (punto ①)
 
 **Medido contra:** `origin/main` = `3527028a3388de64c5e2429cb0d19d665e768473` · 2026-10-30T17:39:38Z (cabecera `Date` de GitHub)
+**Skill UI:** cargada
 
 A9: comprobación → `tests/scrum1640-lote-marca-cero.test.mjs`
 
@@ -33,6 +34,8 @@ Con el banco de vistas (`tests/_banco-vistas.mjs`), POST y recarga por su `fetch
 ## Lo que falló
 
 Mi primer `return true` dejó fuera la salida temprana de `reload()` con la lista vacía: devolvía `undefined`, y al marcarlas todas en «Pendientes» la pantalla habría dicho que la lista no se pudo actualizar. Lo vi barriendo los `return` antes de cerrar, con el test nuevo ya en verde; ahora lo ata su propio caso y su mutación. El test de la función pura no lo habría visto.
+
+Y el primer obligatorio cayó por mi registro, sin `**Skill UI:**`. Corrí la dirigida con el trabajo sin commitear, y un guard que mide lo que la rama cambia no ve nada que juzgar: `scrum976` estaba en la lista y salió verde. `guards:entrada` se corre después del commit.
 
 ## Lo que no se ha medido
 
