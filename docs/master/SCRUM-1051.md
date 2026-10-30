@@ -402,3 +402,56 @@ corrigió antes de empujar. Un prefijo no es un nombre: «S1» casa con dos cosa
   cual es lectura de código (`invoicesAdmin.routes.ts`, `validarFacturaSuelta(req.body)`).
 - Suite entera local: NO CORRIDA (encargo: 10 sesiones a la vez). Corridos los guards dirigidos
   que dice la entrega.
+
+## SCRUM-1051e · la prueba S2 lista para subir a mano (J1, jv-j1do, 30-oct-2026)
+
+**Medido contra:** `origin/main` = `3527028a3388de64c5e2429cb0d19d665e768473` · 2026-10-30T17:31:23Z (hora de la cabecera `Date:` de GitHub)
+
+A9: comprobación → `tests/scrum1051e-sobre-s2.test.mjs`
+
+Prepara el punto 2 de c.21180. No se ha enviado nada a la AEAT, ni se ha tocado `src/`, ningún
+certificado ni ninguna base. El GO de `registro.builder.ts:311` sigue sin darse. Los comandos, la
+tabla de respuestas y la de combinaciones están en Jira, SCRUM-1051 c.21295: aquí no se copian.
+
+### Qué cambia en `scripts/sobre-soap-prueba-aeat.mjs`
+
+- `--calificacion S2 --variante omitir|cero`, sólo en altas. `omitir` es lo que devuelve hoy
+  `clasificarDetalleDesglose`; `cero` añade `TipoImpositivo 0` y `CuotaRepercutida 0.00` en el guion.
+- Cifras: base 100.00, `CuotaTotal` 0.00, `ImporteTotal` 100.00. La huella es la fórmula de siempre.
+- Cada variante escribe su fichero: `tmp/sobre-s2-omitir.xml` y `tmp/sobre-s2-cero.xml`.
+- **De paso:** generar movía la cadena aunque el sobre no llegara a subirse. En S2 queda un candidato
+  y el puntero sólo avanza con `--confirmar-s2`, que falla si la cadena se ha movido. En S1, R1 y
+  anulación no cambia nada.
+- **El destinatario de una S2 ha de ser otro contribuyente.** El 1193 está en la lista de los códigos
+  que rechazan la factura y pide un NIF distinto del obligado. La R1 del 28-sep llevaba el del emisor,
+  y si el entorno de pruebas aplica el 1193 no consta. El guion aborta sin `--dest-nif` y
+  `--dest-nombre`, o con el NIF del emisor.
+
+El guion no tiene dueño en carriles y no se ha creado aquí, así que no ha pedido fila (§3.3).
+
+### La cadena
+
+Último registro con aceptación probada: la sonda B de SCRUM-1398 (`A-ALQ5VMP5QV7QLQ`). Después se
+generaron un alta y una R1 sin rastro de envío, y la R1 es a la que apuntan los punteros del 28-sep.
+**No se puede asegurar cuál fue el último registro aceptado.** Copiados a este árbol sin tocar el
+origen (hash igual antes y después), el guion los acepta y da `primerRegistro: false`.
+
+### Corrido
+
+- Rojo: 11 de 14 caen sobre el guion sin tocar. Después, 14 de 14.
+- Mutaciones de `MUTACIONES_QUE_ME_TUMBAN` con `aplicarUna`: 5 de 5 tumban el test, árbol limpio.
+- Dirigida de 17 ficheros: 128 de 128, 0 saltos. `tsc -p .` no aplica: no se toca `src/`.
+- Prueba en seco con NIF de ejemplo, desde PowerShell: los dos sobres generados, salida 0; sin
+  destinatario, salida 1. Esos sobres y sus candidatos se han borrado.
+
+### Error propio
+
+Crucé los 200k de contexto y avisé a 257.589: no me medí entre Jira y el final de las mutaciones, y
+dos lecturas sin recortar me comieron el margen.
+
+### Riesgo residual, dicho
+
+- No medido: ninguna respuesta de la AEAT, si el entorno de pruebas aplica el 1193, qué hace con un
+  anterior que no vio, y producción.
+- La cadena que deje la prueba vive sólo en el `tmp/` de este árbol, que git ignora.
+- Suite entera local: NO CORRIDA (encargo: 10 sesiones a la vez).
