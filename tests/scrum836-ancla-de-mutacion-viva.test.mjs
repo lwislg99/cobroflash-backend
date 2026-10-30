@@ -62,6 +62,7 @@ import ts from 'typescript';
 import {
   censoDeDeclaraciones, ambiguedadDelAncla, motivoDeAnclaAmbigua,
 } from '../scripts/meta-guard-mutaciones.mjs';
+import { temporal, borrarTemporal } from './_temporal.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -80,11 +81,11 @@ const CABECERA = "import test from 'node:test';\ntest('uno', () => {});\ntest('d
 
 /** Un banco de guards de mentira, para no tocar el de verdad (mismo patrón que SCRUM-757). */
 function banco(prefijo, vigilado, ...declaraciones) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefijo));
+  const dir = temporal(prefijo);
   fs.writeFileSync(path.join(dir, 'vigilado.mjs'), vigilado);
   fs.writeFileSync(path.join(dir, 'guardx.test.mjs'),
     `${CABECERA}export const MUTACIONES_QUE_ME_TUMBAN = [\n${declaraciones.join('')}];\n`);
-  return { dir, limpia: () => fs.rmSync(dir, { recursive: true, force: true }) };
+  return { dir, limpia: () => borrarTemporal(dir) };
 }
 
 /**
@@ -488,14 +489,14 @@ test('SCRUM-1321 · ✅ POSITIVO: la misma mutación, anclada con su contexto, N
 
 /** Un guard que se muta a SÍ MISMO: la constante y la declaración que la cita, en el orden pedido. */
 function bancoQueSeCita(prefijo, { arrayArriba = false, constantes = 1 } = {}) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefijo));
+  const dir = temporal(prefijo);
   const constante = 'export const TOPE = 5;\n'.repeat(constantes);
   const array = 'export const MUTACIONES_QUE_ME_TUMBAN = [\n'
     + "  { fichero: 'guardx.test.mjs', de: 'export const TOPE = 5;', a: 'export const TOPE = 99;', cae: 'uno' },\n"
     + '];\n';
   fs.writeFileSync(path.join(dir, 'guardx.test.mjs'),
     CABECERA + (arrayArriba ? array + constante : constante + array));
-  return { dir, limpia: () => fs.rmSync(dir, { recursive: true, force: true }) };
+  return { dir, limpia: () => borrarTemporal(dir) };
 }
 
 test('SCRUM-1321 · ✅ el guard que se muta a sí mismo y CITA su ancla no es ambiguo: se deriva, no se lista', () => {

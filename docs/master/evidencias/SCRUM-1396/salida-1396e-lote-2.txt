@@ -1,0 +1,129 @@
+SCRUM-1396e · lote 2 · censo de scripts/_censo-mkdtemp.mjs (censar + fugasDe + contraSitiosDeclarados), Windows, 27-oct-2026
+rama scrum-1396e-lote-2-temporales sobre 4d991f77335f7b174b33e96d5171439bcb503fe2 (1396c + 1396d)
+
+== ANTES (worktree desacoplado en 4d991f773, censado con el mismo módulo: scripts/_censo-mkdtemp.mjs no cambia)
+165 ficheros con temporales (227 llamadas, de 3460 ficheros mirados) · 24 con nombres repetidos · 214 emparejamientos fuera de ámbito, que ya no cuentan · 0 emparejadas sólo por nombre
+ESCAPA tests/scrum1263-gancho-pre-push.test.mjs:52 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum1289b-reporters-como-argumentos.test.mjs:80 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum1328-skips-con-motivo-en-el-tap.test.mjs:102 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum1424-ya-esta.test.mjs:114 · mkdtempSync(…) → base  ·  no se borra en ninguna parte
+ESCAPA tests/scrum1575b-censo-conexiones.test.mjs:37 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum1575c-censo-ve-el-singleton.test.mjs:22 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum1575d-staging-por-destino.test.mjs:71 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum454-destructivo-sin-comprobacion.test.mjs:157 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum521-resolvedor-de-importadores.test.mjs:52 · mkdtempSync(…) → raiz  ·  no se borra en ninguna parte
+ESCAPA tests/scrum709-microcopy-por-fichero.test.mjs:84 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum716c-la-memoria-del-vigia.test.mjs:224 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum726-quien-firma-la-microcopy.test.mjs:36 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum754-el-juez-que-oscila.test.mjs:345 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum811c-skill-ui-declarada.test.mjs:609 · mkdtempSync(…) → raiz  ·  no se borra en ninguna parte
+ESCAPA tests/scrum839d-union-solo-en-el-registro.test.mjs:149 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum839e-solo-pr-armados.test.mjs:116 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum850b-las-formas-que-mienten.test.mjs:73 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum899-sesion-lista-blanca.test.mjs:177 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+NO_GARANTIZADA tests/scrum252-procedencia-cliente.test.mjs:60 · mkdtempSync(…) → dir  ·  borra en 63 SIN cobertura
+NO_GARANTIZADA tests/scrum754-el-juez-que-oscila.test.mjs:705 · mkdtempSync(…) → dir  ·  borra en 708 SIN cobertura
+NO_GARANTIZADA tests/scrum836-ancla-de-mutacion-viva.test.mjs:491 · mkdtempSync(…) → dir  ·  borra en 498 SIN cobertura
+NO_GARANTIZADA tests/scrum836-ancla-de-mutacion-viva.test.mjs:83 · mkdtempSync(…) → dir  ·  borra en 87 SIN cobertura
+contraDeclarados: {"nuevos":[],"sobran":[]}
+
+== DESPUÉS (árbol de trabajo)
+160 ficheros con temporales (216 llamadas, de 3460 ficheros mirados) · 24 con nombres repetidos · 177 emparejamientos fuera de ámbito, que ya no cuentan · 0 emparejadas sólo por nombre
+ESCAPA tests/scrum1263-gancho-pre-push.test.mjs:52 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum1289b-reporters-como-argumentos.test.mjs:80 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum1424-ya-esta.test.mjs:114 · mkdtempSync(…) → base  ·  no se borra en ninguna parte
+ESCAPA tests/scrum454-destructivo-sin-comprobacion.test.mjs:157 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum709-microcopy-por-fichero.test.mjs:84 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum726-quien-firma-la-microcopy.test.mjs:36 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum811c-skill-ui-declarada.test.mjs:609 · mkdtempSync(…) → raiz  ·  no se borra en ninguna parte
+ESCAPA tests/scrum839d-union-solo-en-el-registro.test.mjs:149 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum839e-solo-pr-armados.test.mjs:116 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+ESCAPA tests/scrum899-sesion-lista-blanca.test.mjs:177 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+NO_GARANTIZADA tests/scrum252-procedencia-cliente.test.mjs:60 · mkdtempSync(…) → dir  ·  borra en 63 SIN cobertura
+contraDeclarados: {"nuevos":[],"sobran":[]}
+
+== diff
+1c1
+< 165 ficheros con temporales (227 llamadas, de 3460 ficheros mirados) · 24 con nombres repetidos · 214 emparejamientos fuera de ámbito, que ya no cuentan · 0 emparejadas sólo por nombre
+---
+> 160 ficheros con temporales (216 llamadas, de 3460 ficheros mirados) · 24 con nombres repetidos · 177 emparejamientos fuera de ámbito, que ya no cuentan · 0 emparejadas sólo por nombre
+4d3
+< ESCAPA tests/scrum1328-skips-con-motivo-en-el-tap.test.mjs:102 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+6,8d4
+< ESCAPA tests/scrum1575b-censo-conexiones.test.mjs:37 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+< ESCAPA tests/scrum1575c-censo-ve-el-singleton.test.mjs:22 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+< ESCAPA tests/scrum1575d-staging-por-destino.test.mjs:71 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+10d5
+< ESCAPA tests/scrum521-resolvedor-de-importadores.test.mjs:52 · mkdtempSync(…) → raiz  ·  no se borra en ninguna parte
+12d6
+< ESCAPA tests/scrum716c-la-memoria-del-vigia.test.mjs:224 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+14d7
+< ESCAPA tests/scrum754-el-juez-que-oscila.test.mjs:345 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+18d10
+< ESCAPA tests/scrum850b-las-formas-que-mienten.test.mjs:73 · mkdtempSync(…) → dir  ·  no se borra en ninguna parte
+21,23d12
+< NO_GARANTIZADA tests/scrum754-el-juez-que-oscila.test.mjs:705 · mkdtempSync(…) → dir  ·  borra en 708 SIN cobertura
+< NO_GARANTIZADA tests/scrum836-ancla-de-mutacion-viva.test.mjs:491 · mkdtempSync(…) → dir  ·  borra en 498 SIN cobertura
+< NO_GARANTIZADA tests/scrum836-ancla-de-mutacion-viva.test.mjs:83 · mkdtempSync(…) → dir  ·  borra en 87 SIN cobertura
+
+== tests tocados: base → después (TAP, cada fichero solo; nombres comparados como conjunto)
+scrum1328-skips-con-motivo-en-el-tap: base # tests 5 # pass 5 # fail 0 → después # tests 5 # pass 5 # fail 0 · nombres iguales (5)
+scrum1575b-censo-conexiones: base # tests 8 # pass 8 # fail 0 → después # tests 8 # pass 8 # fail 0 · nombres iguales (8)
+scrum1575c-censo-ve-el-singleton: base # tests 5 # pass 5 # fail 0 → después # tests 5 # pass 5 # fail 0 · nombres iguales (5)
+scrum1575d-staging-por-destino: base # tests 5 # pass 5 # fail 0 → después # tests 5 # pass 5 # fail 0 · nombres iguales (5)
+scrum521-resolvedor-de-importadores: base # tests 6 # pass 6 # fail 0 → después # tests 6 # pass 6 # fail 0 · nombres iguales (6)
+scrum716c-la-memoria-del-vigia: base # tests 9 # pass 9 # fail 0 → después # tests 9 # pass 9 # fail 0 · nombres iguales (9)
+scrum754-el-juez-que-oscila: base # tests 22 # pass 22 # fail 0 → después # tests 22 # pass 22 # fail 0 · nombres iguales (22)
+scrum836-ancla-de-mutacion-viva: base # tests 17 # pass 17 # fail 0 → después # tests 17 # pass 17 # fail 0 · nombres iguales (17)
+scrum850b-las-formas-que-mienten: base # tests 6 # pass 6 # fail 0 → después # tests 6 # pass 6 # fail 0 · nombres iguales (6)
+
+== guards: scrum864c + scrum1396c + scrum1396 con la lista en 11
+# tests 13
+# pass 13
+# fail 0
+
+== negativos (864c + 1396c; restaurado después: hash del diff idéntico)
+NEG-1 · scrum1575c vuelve a la lista sin deshacer el arreglo → caen 1396c ④ y 864c ③ (8 tests, 6 pasan)
+NEG-2 · scrum1575c vuelve a mkdtempSync con la lista en 11 → caen 1396c ③, 1396c ④ y 864c ③ (8 tests, 5 pasan), nombrando tests/scrum1575c-censo-ve-el-singleton.test.mjs (+1)
+
+== las 4 SIN_MEDIR con el espía de J4 y fallo inyectado: ANTES
+== CONTROLES DEL INSTRUMENTO (esperado: 0 · 1 · 0 · 1 creados que siguen vivos)
+control-1-pasa-y-borra · control · salida 0 · tests 2 · rojos 0 · creados 2 · armados 0 · disparados 0 · en TEMP al final 0 · creados que siguen vivos 0
+control-2-pasa-y-nadie-borra · control · salida 0 · tests 3 · rojos 0 · creados 3 · armados 0 · disparados 0 · en TEMP al final 1 · creados que siguen vivos 1 → control-del-espia.test.mjs:13
+control-3-falla-con-finally · control · salida 1 · tests 2 · rojos 1 · creados 2 · armados 1 · disparados 1 · en TEMP al final 0 · creados que siguen vivos 0
+control-4-falla-sin-finally · control · salida 1 · tests 2 · rojos 1 · creados 2 · armados 1 · disparados 1 · en TEMP al final 1 · creados que siguen vivos 1 → control-del-espia.test.mjs:12
+
+== LAS LÍNEAS, una a una: camino feliz y camino de fallo
+feliz · scrum1328-skips-con-motivo-en-el-tap · salida 0 · tests 5 · rojos 0 · creados 2 · armados 0 · disparados 0 · en TEMP al final 0 · creados que siguen vivos 0
+fallo · scrum1328-skips-con-motivo-en-el-tap · salida 1 · tests 5 · rojos 2 · creados 2 · armados 2 · disparados 2 · en TEMP al final 0 · creados que siguen vivos 0
+  → scrum1328-skips-con-motivo-en-el-tap.test.mjs:102 · fallos inyectados 2 · directorios suyos que quedan 0
+feliz · scrum1575b-censo-conexiones · salida 0 · tests 8 · rojos 0 · creados 4 · armados 0 · disparados 0 · en TEMP al final 0 · creados que siguen vivos 0
+fallo · scrum1575b-censo-conexiones · salida 1 · tests 8 · rojos 2 · creados 4 · armados 2 · disparados 2 · en TEMP al final 0 · creados que siguen vivos 0
+  → scrum1575b-censo-conexiones.test.mjs:37 · fallos inyectados 2 · directorios suyos que quedan 0
+feliz · scrum1575c-censo-ve-el-singleton · salida 0 · tests 5 · rojos 0 · creados 1 · armados 0 · disparados 0 · en TEMP al final 0 · creados que siguen vivos 0
+fallo · scrum1575c-censo-ve-el-singleton · salida 1 · tests 5 · rojos 1 · creados 1 · armados 1 · disparados 1 · en TEMP al final 0 · creados que siguen vivos 0
+  → scrum1575c-censo-ve-el-singleton.test.mjs:22 · fallos inyectados 1 · directorios suyos que quedan 0
+feliz · scrum1575d-staging-por-destino · salida 0 · tests 5 · rojos 0 · creados 1 · armados 0 · disparados 0 · en TEMP al final 0 · creados que siguen vivos 0
+fallo · scrum1575d-staging-por-destino · salida 1 · tests 5 · rojos 1 · creados 1 · armados 1 · disparados 1 · en TEMP al final 0 · creados que siguen vivos 0
+  → scrum1575d-staging-por-destino.test.mjs:71 · fallos inyectados 1 · directorios suyos que quedan 0
+
+== las 4 SIN_MEDIR: DESPUÉS (armada la línea del mkdtempSync de tests/_temporal.mjs)
+== CONTROLES DEL INSTRUMENTO (esperado: 0 · 1 · 0 · 1 creados que siguen vivos)
+control-1-pasa-y-borra · control · salida 0 · tests 2 · rojos 0 · creados 2 · armados 0 · disparados 0 · en TEMP al final 0 · creados que siguen vivos 0
+control-2-pasa-y-nadie-borra · control · salida 0 · tests 3 · rojos 0 · creados 3 · armados 0 · disparados 0 · en TEMP al final 1 · creados que siguen vivos 1 → control-del-espia.test.mjs:13
+control-3-falla-con-finally · control · salida 1 · tests 2 · rojos 1 · creados 2 · armados 1 · disparados 1 · en TEMP al final 0 · creados que siguen vivos 0
+control-4-falla-sin-finally · control · salida 1 · tests 2 · rojos 1 · creados 2 · armados 1 · disparados 1 · en TEMP al final 1 · creados que siguen vivos 1 → control-del-espia.test.mjs:12
+
+== LAS LÍNEAS, una a una: camino feliz y camino de fallo
+feliz · scrum1328-skips-con-motivo-en-el-tap · salida 0 · tests 5 · rojos 0 · creados 2 · armados 0 · disparados 0 · en TEMP al final 0 · creados que siguen vivos 0
+fallo · scrum1328-skips-con-motivo-en-el-tap · salida 1 · tests 5 · rojos 2 · creados 2 · armados 2 · disparados 2 · en TEMP al final 0 · creados que siguen vivos 0
+  → _temporal.mjs:93 · fallos inyectados 2 · directorios suyos que quedan 0
+feliz · scrum1575b-censo-conexiones · salida 0 · tests 8 · rojos 0 · creados 4 · armados 0 · disparados 0 · en TEMP al final 0 · creados que siguen vivos 0
+fallo · scrum1575b-censo-conexiones · salida 1 · tests 8 · rojos 2 · creados 4 · armados 2 · disparados 2 · en TEMP al final 0 · creados que siguen vivos 0
+  → _temporal.mjs:93 · fallos inyectados 2 · directorios suyos que quedan 0
+feliz · scrum1575c-censo-ve-el-singleton · salida 0 · tests 5 · rojos 0 · creados 1 · armados 0 · disparados 0 · en TEMP al final 0 · creados que siguen vivos 0
+fallo · scrum1575c-censo-ve-el-singleton · salida 1 · tests 5 · rojos 1 · creados 1 · armados 1 · disparados 1 · en TEMP al final 0 · creados que siguen vivos 0
+  → _temporal.mjs:93 · fallos inyectados 1 · directorios suyos que quedan 0
+feliz · scrum1575d-staging-por-destino · salida 0 · tests 5 · rojos 0 · creados 1 · armados 0 · disparados 0 · en TEMP al final 0 · creados que siguen vivos 0
+fallo · scrum1575d-staging-por-destino · salida 1 · tests 5 · rojos 1 · creados 1 · armados 1 · disparados 1 · en TEMP al final 0 · creados que siguen vivos 0
+  → _temporal.mjs:93 · fallos inyectados 1 · directorios suyos que quedan 0

@@ -19,11 +19,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { integridadTap } from '../scripts/equipo/por-que-cayo.mjs';
+import { temporal, borrarTemporal } from './_temporal.mjs';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ENVOLTORIO = path.join(RAIZ, 'scripts', 'tanda-con-veredicto.mjs');
@@ -99,7 +99,7 @@ const opcionesDelCi = (tap) =>
   `--test-reporter=spec --test-reporter-destination=stdout --test-reporter=tap --test-reporter-destination=${tap}`;
 
 function banco() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'yaqu-1328-'));
+  const dir = temporal('yaqu-1328-');
   fs.writeFileSync(path.join(dir, 'nieto.test.mjs'), "import test from 'node:test';\ntest('nieto', () => {});\n");
   // Como en el CI, el padre ya ha ESCRITO parte de su TAP cuando el nieto trunca (cicatriz de J3, 1-oct).
   fs.writeFileSync(path.join(dir, 'a-primero.test.mjs'),
@@ -167,7 +167,7 @@ test('SCRUM-1328 ④ · 🔴 CON el envoltorio, el TAP de una tanda ROJA se lee 
     // `# Subtest:` (medido: yo esperaba una). Por eso el lector se ancla al caso y cuadra con el resumen.
     assert.equal(receta.length, t.resumen.skipped + 2,
       `grep a secas debería ver los 2 saltos y las 2 líneas del nombre trampa:\n${receta.join('\n')}`);
-  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  } finally { borrarTemporal(dir); }
 });
 
 test('SCRUM-1328 ④ · 🔴 CONTROL SEMBRADO: SIN el envoltorio el mismo lector dice CIEGO, no «0 saltos»', () => {
@@ -180,7 +180,7 @@ test('SCRUM-1328 ④ · 🔴 CONTROL SEMBRADO: SIN el envoltorio el mismo lector
       '🔴 NO SUPE REPRODUCIR LA AVERÍA: con el nieto pisando, el TAP salió legible ' +
       `(${JSON.stringify(t.resumen)}). Sin esto, el verde del caso de arriba no prueba nada.`);
     assert.match(t.motivo, /NUL|resúmenes/);
-  } finally { fs.rmSync(dir, { recursive: true, force: true }); }
+  } finally { borrarTemporal(dir); }
 });
 
 // ═══ EL LECTOR, SOBRE TAPs FABRICADOS ════════════════════════════════════════════════════
