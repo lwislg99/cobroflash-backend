@@ -86,3 +86,30 @@ Sesión `jv-j1dl` (puesto J1). Medición y decisión pendiente en Jira, SCRUM-15
 - Falta tras la decisión: huellas o versión, `censo:mudez`, las mutaciones en el catálogo
   (`MUTACIONES_QUE_ME_TUMBAN` + `aplicarUna`), re-anclar y un empujón.
 - Sin medir: ninguna base, el CI y la suite entera local.
+
+## SCRUM-1585c · la opción B, construida: M entra en la 1.0.0
+
+**Medido contra:** `origin/main` = `3527028a3388de64c5e2429cb0d19d665e768473` · 2026-10-30T17:34:43Z
+
+A9: aviso → cicatriz J1 «Edité 12 tests ajenos antes de leer entero `carriles.mjs de`, que había cortado con `cut`: uno era de S1 y los otros 11 no tenían dueño escrito, y su veredicto remitía a una etiqueta de Jira que no miré» — no se pudo comprobar: la cerradura de carril avisa y no para (SCRUM-1506), y los hooks no son de este puesto
+
+Sesión `jv-j1dl` (puesto J1), con la decisión del fundador en SCRUM-1585 c.21290 (opción B).
+
+- `scrum523d`: el guard no cambia. Se recongelan `emission.service.ts` e `invoiceNumber.service.ts` con lo
+  que imprime, y el comentario de la lista cita c.21290. Ningún otro fichero del camino se mueve.
+- `motivoSiiSinEmision` y los dos códigos: `ERROR_SII_*` pierden el `export` porque `scrum411` los da por
+  huérfanos. El caso «los códigos de M son los de W» compara ahora la salida de M: con literales, su
+  mutación salió muda, y fue el catálogo quien lo cazó.
+- `MUTACIONES_QUE_ME_TUMBAN`: 10 en el test, 10 vivas con `aplicarUna`, sobre la última versión del código.
+  La primera es el rojo primero: el modo de antes de M.
+- `censo:mudez -- --escribir`: 125 fichas, 2 medidas ahora, 2 VIVO.
+- Tests con el flag encendido y el SII sin contestar: 38 de 1.730 ficheros `.mjs` encienden el flag por
+  literal; 22 ya llevan la columna y 16 no. De esos 16, 12 crean un merchant real en una base, con NULL: M
+  los dejaría en `sii_no_consta`. A 11 se les pone `llevaLibrosPorSii: false`, el contrato de 1585. Sus
+  tickets no llevan etiqueta de área: no consta el dueño, y el cruce va declarado en el commit.
+- 🔴 `tests/scrum974-firmado-sin-facturar-en-el-lunes.test.mjs` es de S1 (SCRUM-974: `area-s1`). Corre en
+  el job `test` de CI con `LIBRO_PG_URL`, y sin esa línea caería al entrar M (leído en el código, no corrido).
+- Dirigida: 525 ficheros de 1.572, 4.902 casos, 4.863 pasan, 7 caen, 32 sin contar. Tres ficheros eran de
+  esta rama (`scrum411`, `scrum1415`, `scrum189`) y ya pasan; `scrum1298b` y `scrum351` no los toca y
+  siguen en rojo aquí: sin mirar en `main`.
+- Sin medir: ninguna base; esos 12 tests NO se han corrido en local; la suite entera local; el CI.
