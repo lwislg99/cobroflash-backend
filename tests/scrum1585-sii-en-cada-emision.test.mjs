@@ -156,7 +156,8 @@ test('SCRUM-1585 · embudo · con el flag OFF el error sigue siendo invoicing_es
 // ── W y M dicen lo mismo con el mismo nombre ──────────────────────────────────────────────
 
 test('SCRUM-1585 · los códigos de M son los de W (SCRUM-1102h): un hecho, un nombre', async () => {
-  for (const [sii, codigo] of [[true, 'sii_declarado'], [null, 'sii_no_consta']]) {
+  for (const sii of [true, null]) {
+    const codigo = motivoSiiSinEmision(ES(sii)); // el de M, tal cual sale del código
     const tx = {
       merchant: { findUnique: async () => ES(sii, null, { domicilioFiscalForal: null }), update: async () => ({}) },
       auditLog: { create: async () => ({}) },
