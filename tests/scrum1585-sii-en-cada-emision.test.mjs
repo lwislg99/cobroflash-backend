@@ -51,7 +51,7 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
 ];
 
 const {
-  getEmissionMode, motivoSiiSinEmision, ERROR_SII_DECLARADO, ERROR_SII_NO_CONSTA,
+  getEmissionMode, motivoSiiSinEmision,
 } = await import('../dist/modules/invoicing/domain/emission.service.js');
 const { allocateInvoiceNumber } = await import('../dist/modules/invoicing/domain/invoiceNumber.service.js');
 const { cambiarFlagFiscal, ErrorCambioFlag } = await import('../dist/modules/system/domain/flagFiscal.service.js');
@@ -72,19 +72,17 @@ test('SCRUM-1585 · control positivo: español, flag ON, SII «No» → fiscal, 
 
 test('SCRUM-1585 · SII «Sí» con el flag ON → receipt, por sii_declarado', () => {
   assert.equal(getEmissionMode(ES(true)), 'receipt');
-  assert.equal(motivoSiiSinEmision(ES(true)), ERROR_SII_DECLARADO);
-  assert.equal(ERROR_SII_DECLARADO, 'sii_declarado');
+  assert.equal(motivoSiiSinEmision(ES(true)), 'sii_declarado');
 });
 
 test('SCRUM-1585 · SII «No consta» (NULL) con el flag ON → receipt, por sii_no_consta (NULL no es «No»)', () => {
   assert.equal(getEmissionMode(ES(null)), 'receipt');
-  assert.equal(motivoSiiSinEmision(ES(null)), ERROR_SII_NO_CONSTA);
-  assert.equal(ERROR_SII_NO_CONSTA, 'sii_no_consta');
+  assert.equal(motivoSiiSinEmision(ES(null)), 'sii_no_consta');
 });
 
 test('SCRUM-1585 · una lectura sin la columna (undefined) cuenta como «No consta», nunca como «No»', () => {
   assert.equal(getEmissionMode(ES('ausente')), 'receipt');
-  assert.equal(motivoSiiSinEmision(ES('ausente')), ERROR_SII_NO_CONSTA);
+  assert.equal(motivoSiiSinEmision(ES('ausente')), 'sii_no_consta');
 });
 
 test('SCRUM-1585 · con el flag OFF manda el flag: receipt sin motivo del SII, conteste lo que conteste', () => {
@@ -141,13 +139,14 @@ test('SCRUM-1585 · embudo · el select pide llevaLibrosPorSii (sin él, «No» 
   assert.equal(registro.selects[0]?.llevaLibrosPorSii, true);
 });
 
-for (const [sii, codigo] of [[true, 'sii_declarado'], [null, 'sii_no_consta']]) {
-  test(`SCRUM-1585 · embudo · SII ${sii === true ? '«Sí»' : '«No consta»'} → rechaza con ${codigo} y no avanza la serie`, async () => {
-    const { tx, registro } = txFalso(ES(sii));
-    await assert.rejects(reservar(tx), (e) => e.message === codigo);
-    assert.equal(registro.escrituras, 0);
-  });
+async function rechazaSinAvanzar(sii, codigo) {
+  const { tx, registro } = txFalso(ES(sii));
+  await assert.rejects(reservar(tx), (e) => e.message === codigo);
+  assert.equal(registro.escrituras, 0);
 }
+
+test('SCRUM-1585 · embudo · SII «Sí» → rechaza con sii_declarado y no avanza la serie', () => rechazaSinAvanzar(true, 'sii_declarado'));
+test('SCRUM-1585 · embudo · SII «No consta» → rechaza con sii_no_consta y no avanza la serie', () => rechazaSinAvanzar(null, 'sii_no_consta'));
 
 test('SCRUM-1585 · embudo · con el flag OFF el error sigue siendo invoicing_es_disabled', async () => {
   const { tx } = txFalso(ES(true, null));
@@ -157,7 +156,7 @@ test('SCRUM-1585 · embudo · con el flag OFF el error sigue siendo invoicing_es
 // ── W y M dicen lo mismo con el mismo nombre ──────────────────────────────────────────────
 
 test('SCRUM-1585 · los códigos de M son los de W (SCRUM-1102h): un hecho, un nombre', async () => {
-  for (const [sii, codigo] of [[true, ERROR_SII_DECLARADO], [null, ERROR_SII_NO_CONSTA]]) {
+  for (const [sii, codigo] of [[true, 'sii_declarado'], [null, 'sii_no_consta']]) {
     const tx = {
       merchant: { findUnique: async () => ES(sii, null, { domicilioFiscalForal: null }), update: async () => ({}) },
       auditLog: { create: async () => ({}) },

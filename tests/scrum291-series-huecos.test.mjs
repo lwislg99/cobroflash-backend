@@ -347,7 +347,7 @@ const EMISOR = 'src/modules/invoicing/domain/invoiceNumber.service.ts';
 //
 //   anterior: 4ff56cab14efc1ddd7acb5d4d5f1d131bad6a784aa90bf679b1c34f9406cb6c2   (SCRUM-825)
 //
-// ── SCRUM-1585 · 23-oct-2026 · GO de regla 40 del fundador en Jira, SCRUM-1585 comentario 20531 (D0
+// ── SCRUM-1585 · 23-oct-2026 · GO del fundador (camino de emisión) en Jira, SCRUM-1585 comentario 20531 (D0
 // «Sí, ahora»: la comprobación del SII en el camino de emisión, sin tocar sellado ni XML; D1: «el
 // servidor puede construirse antes con el código de error»; D2: el dato del SII OBLIGATORIO en cada
 // consulta que alimente la emisión). El cambio: UN campo más en el `select` de

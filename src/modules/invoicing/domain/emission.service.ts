@@ -34,8 +34,8 @@ export interface MerchantLike extends MerchantIdentidad {
 
 // SCRUM-1585 · Los mismos dos códigos que la puerta de encendido de SCRUM-1102h
 // (`flagFiscal.service.ts`): un hecho, un nombre.
-export const ERROR_SII_DECLARADO = 'sii_declarado';
-export const ERROR_SII_NO_CONSTA = 'sii_no_consta';
+const ERROR_SII_DECLARADO = 'sii_declarado';
+const ERROR_SII_NO_CONSTA = 'sii_no_consta';
 export type MotivoSiiSinEmision = typeof ERROR_SII_DECLARADO | typeof ERROR_SII_NO_CONSTA;
 
 export function isDemoMerchant(m: MerchantIdentidad): boolean {

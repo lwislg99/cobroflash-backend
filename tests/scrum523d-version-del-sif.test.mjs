@@ -79,7 +79,7 @@ const HUELLAS_CONGELADAS = Object.freeze({
   'src/modules/fiscal/verifactu/sif.procesador.ts': 'a817d5b83c318cab',
   'src/modules/invoicing/domain/clienteCongelado.ts': 'b9acb99427984fc5',
   'src/modules/invoicing/domain/emisorCongelado.ts': 'f82c1d146a9e5c15',
-  'src/modules/invoicing/domain/emission.service.ts': 'de2bf26ef9729f43',
+  'src/modules/invoicing/domain/emission.service.ts': 'fb326e3f1fb6f79f',
   'src/modules/invoicing/domain/encolarRemision.ts': '9250c4d15ce607c2',
   'src/modules/invoicing/domain/invoiceNumber.service.ts': '65ff392f155d005b',
   'src/modules/invoicing/domain/selladoEstado.ts': 'f08728ab84b81ba2',
