@@ -2,7 +2,7 @@
 //
 // Decisión del fundador (SCRUM-1393 c.21059, 27-oct-2026): el vigía de `main` CIERRA su Issue con la
 // punta VERDE y 0 pendientes. Los CIEGO ya no bloquean el cierre, pero el comentario de cierre los
-// DECLARA: cuántos y sobre qué población. Motivo, medido en c.21036: 20 verdes desde el 21-oct,
+// DECLARA: cuántos y sobre qué población. Motivo, medido en c.21036 el 27-oct-2026: 20 verdes desde el 21-oct,
 // 0 cierres, ~124 CIEGO por pasada.
 //
 // «Pendiente» = un commit del Issue cuya última marca es CIEGO o SIN-LEER y que ESTA pasada no ha
