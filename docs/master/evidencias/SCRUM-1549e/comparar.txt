@@ -1,0 +1,14 @@
+{
+ "main": {
+  "bytes": 81772,
+  "sha256": "e96077461a593230283e4f35ea76d595d2924aa5563ec885bb2d0ffdb64e621b",
+  "blob": "547e8dd62da7220eb12bd9b7a257b0bccc0b0c9c"
+ },
+ "instalada": {
+  "bytes": 81772,
+  "sha256": "e96077461a593230283e4f35ea76d595d2924aa5563ec885bb2d0ffdb64e621b",
+  "blob": "547e8dd62da7220eb12bd9b7a257b0bccc0b0c9c",
+  "mtime": "2026-10-29T17:31:43.731Z"
+ },
+ "identicas": true
+}

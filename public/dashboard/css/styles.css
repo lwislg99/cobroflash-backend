@@ -1756,6 +1756,15 @@ html, body { overflow-x: clip; }
    izquierda; menos los 14 + 14 de relleno del `td`. Con la tabla llena no cambia nada. */
 .catalogo-productos .table-scroll { container-type: inline-size; }
 .catalogo-productos .empty-state { position: sticky; left: 0; box-sizing: border-box; width: calc(100cqi - 28px); }
+/* SCRUM-1636 ② · a 1280 px el ID salía «23/8» y la píldora «ACTIV/O» (medido en yaqu.app: 5 de 5
+   filas, 2 líneas cada uno). Es la regla global `.table td { word-break: break-word }`, que deja el
+   ancho mínimo de una celda en UNA letra; la misma causa y el mismo arreglo que Albaranes (SCRUM-1559i
+   A): en esta tabla se parte por PALABRAS, nunca dentro de una. Un nombre largo sigue partiéndose
+   entre palabras, y una palabra que no cabe sola, también (`overflow-wrap`). Desde 641, como allí: por
+   debajo la tabla va en bloque con su scroll y no se partía. */
+@media (min-width: 641px) {
+  .catalogo-productos .table td { word-break: normal; overflow-wrap: break-word; }
+}
 
 /* ── SCRUM-1144 · «Elegir un sitio guardado», bajo el campo de la dirección de la obra ───────
    Lo montan el editor de presupuestos y la ficha del Trabajo (`sitiosGuardados.montarSelector`).
@@ -2881,6 +2890,9 @@ kbd { display:inline-block; min-width:16px; text-align:center; padding:0 5px;
 /* Importe: Regla del Importe (tinta, peso 700, tabular) */
 .amount { color: var(--ink); font-weight: 700; font-variant-numeric: tabular-nums; }
 .amount-muted { color: var(--body); font-variant-numeric: tabular-nums; }
+/* SCRUM-1635 · las filas del descuento en los totales de la ficha: el mismo tono que «Base imponible»
+   e «IVA», que van en línea en `quotesDetailView.js`; aquí como clase, no como `style=`. */
+.quote-total-desglose { font-size: 13px; color: var(--muted); }
 
 /* Pill de "pendiente de aprobación" (ámbar) como clase, no inline */
 .status-pill-approval { background: #fff7ed; color: #9a3412; }
@@ -4680,6 +4692,8 @@ textarea.parte-linea-desc {
 .gasto-cat--desplazamiento { background: #fef3c7; color: #92400e; }
 .gasto-cat--herramientas { background: #ede9fe; color: #6d28d9; }
 .gasto-cat--subcontrata { background: #fee2e2; color: #b91c1c; }
+/* SCRUM-1588 · alquiler de local: el par de tokens de badge de `tokens.css` (#047857 sobre #ecfdf5, AA). */
+.gasto-cat--alquiler { background: var(--brand-tint); color: var(--brand-tint-ink); }
 .gasto-cat--otros { background: var(--neutral-100); color: var(--neutral-600); }
 
 /* SCRUM-920d · la foto del ticket en la fila: un HECHO sobre el archivo que guardamos («Foto guardada» /
@@ -4938,3 +4952,17 @@ td.cell-id [data-correo-no-salio] > button::before { content: ""; position: abso
    aviso crece a 44. Sin margen negativo A PROPÓSITO: el blanco de toque montaría sobre el texto del
    renglón de encima, y un toque en «activa» abriría la página. */
 .pp-enlace { display: inline-flex; align-items: center; min-height: 44px; }
+
+/* ── S2 · SCRUM-1602 ── Descargar datos → «Paquete del trimestre» (exportView.js). Hermana de
+   «Facturas emitidas», que va justo encima: mismas medidas que su `style=` en línea, pero en clases,
+   porque el trinquete de SCRUM-713c no deja escribir estilos nuevos desde JS. El título es el estilo
+   Label de DESIGN.md §3 (12 px, 600, MAYÚSCULAS, Apagado). La ayuda va en `--muted` y no en
+   `--neutral-400` como la nota de «Qué incluir»: a 12 px, #949b92 sobre blanco no llega a AA. */
+.paquete-trimestre { margin-top: 16px; }
+.paquete-trimestre__titulo {
+  margin: 0 0 10px; font-size: 12px; font-weight: 600; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--muted);
+}
+.paquete-trimestre__texto { margin: 0 0 4px; font-size: 13px; color: var(--muted); }
+.paquete-trimestre__ayuda { margin: 0 0 12px; font-size: 12px; color: var(--muted); }
+.paquete-trimestre__info { margin: 12px 0 0; font-size: 12px; color: var(--muted); }

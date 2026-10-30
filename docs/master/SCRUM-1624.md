@@ -93,3 +93,11 @@ Lo escribe J2 (`jv-j2bo`). Firma del fundador: SCRUM-1624 c.21094, P1-P5 ✅, so
 - **No hay capturas antes/después** (checklist AB6). La fila reusa el marcado de las otras filas, y no he arrancado navegador.
 - **Un `discountGlobalAmount` negativo o no numérico** no pinta fila: la condición es que el total con global sea menor que sin él. Si `calcTotal` da NaN, tampoco sale fila.
 - **Suite entera en local: NO CORRIDA** (orden del orquestador). Los guards que sí se corrieron están en el comentario de Jira.
+
+# APÉNDICE · 30-oct-2026 · SCRUM-1624b · relevo: el rojo de #2950 era un merge de tres padres, y la entrega pasa a una rama sin él
+
+**Medido contra:** `origin/main` = `06ad4f1bd53d25b701cd11ae42791db753329ceb` · 2026-10-30T17:15:30Z (cabecera `Date` de GitHub)
+
+A9: comprobación → `tests/scrum1572-registro-creado-por-dos-ramas.test.mjs`
+
+Lo escribe J2 (`jv-j2br`). El obligatorio de #2950 cayó con «no pude mirar: 0225c794515db264e7b01575ab55497d4ec2e2dc tiene 3 padres»: ese commit era un merge a la vez de `main`, de la rama de #2934 y de la del registro. El registro no estaba entrelazado, y seguía cayendo igual después de `git merge origin/main`, así que todo el trabajo va ahora en un solo commit sobre `main` (`scrum-1624b-fila-descuento-global-sin-octopus`), sin cambiar ni una línea de lo construido.

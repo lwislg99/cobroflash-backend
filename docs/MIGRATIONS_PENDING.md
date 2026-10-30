@@ -3199,3 +3199,33 @@ sale del comentario 19370 del ticket, del orquestador del equipo de Javier:
 ⚠️ **El relleno de las filas que ya existen NO es este ALTER** y no está hecho en ninguna base:
 `scripts/rellenar-anio-de-la-serie.mjs` (simulacro por defecto) sigue sin ejecutarse, y quién lo
 corre sigue sin decidir. Este log no cubre migraciones de datos.
+
+## SCRUM-1103 · tres columnas en `expenses` (retención IRPF PRACTICADA en gastos) — 23-sep-2026 · ✅ **APLICADA EN LAS TRES BASES**, según su registro
+
+**Una** sentencia, aditiva: las tres columnas nullable, sin default y sin índice; ninguna fila
+cambia. Es la que lee hoy `prisma/schema.prisma:1027-1029` (`retencionPracticadaTipo`,
+`retencionPracticadaCuota`, `retencionPracticadaDeclarada`):
+
+    ALTER TABLE "expenses" ADD COLUMN     "retencion_practicada_cuota" DECIMAL(12,2),
+    ADD COLUMN     "retencion_practicada_declarada" BOOLEAN,
+    ADD COLUMN     "retencion_practicada_tipo" INTEGER;
+
+El DDL lo sacó J1 el 23-sep-2026 con `node scripts/preview-migracion.mjs --desde <copia>` (control
+positivo: 30 tablas; veredicto «aditiva»), y vive en `docs/sql/scrum-1103-retencion-practicada-gastos.sql`.
+NULL en las tres = «nunca clasificado», no «sin retención».
+
+Esta entrada la escribe J1 el 27-oct-2026 (SCRUM-1066f), **un mes después y sin haber aplicado ni
+medido ninguna base**: no tengo claves. Faltaba aquí (0 menciones de `retencion_practicada` en este
+fichero, medido el 27-oct sobre `63550e45e`). Lo que consta sale de `docs/master/SCRUM-1103.md`, tramo 1103b:
+
+- [x] **producción** — aplicada por Javier el 23-sep-2026 («Query ran successfully»). Ese registro
+      no dice que se leyera del catálogo. **No medido por J1.**
+- [x] **staging** — aplicada por Javier el 23-sep-2026 («Query ran successfully»). Lo mismo:
+      **no medido por J1.**
+- [x] **desarrollo · yaqu_dev_javier** — aplicada por J1 (sesión de entonces) con
+      `scripts/aplicar-sql-dev.mjs --go`, destino confirmado antes con `describirBD`, y leída del
+      catálogo (`information_schema.columns`: las tres columnas con su tipo y nullable; control
+      `control_ve_el_catalogo: 470`).
+
+⚠️ No medido: si el check «constancia del ALTER» del CI ha preguntado a producción por estas tres
+columnas después del 23-sep. Es la vía que tendría una medida propia, como en SCRUM-1490.

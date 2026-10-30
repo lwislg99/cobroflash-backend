@@ -267,3 +267,173 @@ Una pasada de verdad con `META_PRESUPUESTO_S=90` y `dist/` compilado: 6 juzgadas
     node --test tests/scrum1387d-el-recuento-dice-sobre-cuantos.test.mjs
     node scripts/meta-guard-mutaciones.mjs --solo-censo
     META_PRESUPUESTO_S=0 node scripts/meta-guard-mutaciones.mjs     # sale 2 y dice su población
+
+## SCRUM-1387e · la cifra honesta: el CI repite mutaciones en el 12,3 % de los ficheros de test, y 5 de cada 6 afirmaciones de fuera no tienen nada en git que se pueda volver a correr
+
+**Medido contra:** `origin/main` = `5a247020e5608fd2b21fad04bcf585694494397a` · 2026-10-29T18:10:51Z (hora de GitHub)
+(S3, equipo de Luis, por encargo de su orquestador. SÓLO MEDIDA: no se toca el meta-guard, no se mete nada en el
+catálogo y la ② sigue siendo del fundador.)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1387/1387e/censo-registros.mjs`
+
+### ① Lo que el CI repite DE VERDAD
+
+El último meta-guard de `main` que terminó (run 40872477063, job 123442782267, sobre `eafca9fe1`) dice:
+
+    vivas 735 · mudas 0 · ciegas 1 · ficheros muertos 0 · sobre 735 juzgadas de 940 declaraciones, en 238 ficheros DECLARANTES de 1565 ficheros de test (15 %)
+
+Todo cierto, pero el 15 % son los que DECLARAN, no los que se juzgan. El corte (SCRUM-1620) dejó 205 sin juzgar
+en 46 guards, y **los 46 se quedaron sin NINGUNA** (0 a medias: el corte va por guard). Cruzando la lista del
+log con el censo del árbol:
+
+| | ficheros de test | de 1.565 |
+|---|---|---|
+| declaran alguna mutación | 238 | 15,2 % |
+| **con al menos una mutación repetida en ese CI** | **192** | **12,3 %** |
+
+Ningún guard del log faltaba en el censo de este árbol (0 «fuera del catálogo»), así que el log de `eafca9fe1`
+y el árbol de `5a247020e` describen el mismo catálogo. Con la matriz de 1620 (aprobada, la construye S5) los 46
+vuelven a juzgarse y la cifra sube a 238; hasta entonces, la honesta es 192.
+
+### ② Los registros que afirman mutaciones, hoy
+
+Reconstrucción de S3, **no** el instrumento de J6i (`~/yaqu-censos/j6i-1oct/` nunca entró en git y no está en
+esta máquina). Mismas clases que la descripción del ticket. Corrida sobre el árbol del 1-oct (`5fb7630ad`), da
+**la misma población que J6i: 947 registros, 1.189 tests, 118 declarantes, 385 declaraciones**. Lo que no
+reproduce es «afirman»: J6i dio 299 y ningún criterio mío da 299 (nombrarlas → 409; con veredicto →
+185). Por eso se dan dos criterios y **lo que se compara es la proporción**, no la cuenta:
+
+| árbol | criterio | afirman | A | B | C1 | C2 | C3 | fuera (B+C2+C3) |
+|---|---|---|---|---|---|---|---|---|
+| 1-oct, J6i | el suyo | 299 | 80 | 184 | 11 | 17 | 7 | **208 (70 %)** |
+| 1-oct, S3 | las nombra | 409 | 93 | 260 | 14 | 30 | 12 | 302 (74 %) |
+| 1-oct, S3 | con veredicto | 185 | 59 | 104 | 8 | 10 | 4 | 118 (64 %) |
+| **hoy, S3** | las nombra | 631 | 176 | 364 | 24 | 48 | 19 | **431 (68 %)** |
+| **hoy, S3** | con veredicto | 274 | 112 | 133 | 11 | 14 | 4 | **151 (55 %)** |
+
+Los «208» de hoy son **151 a 431** según lo que se cuente como afirmar. La proporción baja (de 64-74 % a
+55-68 %) porque la clase A crece más deprisa, no porque B se vacíe: B pasa de 104-260 a 133-364.
+
+### ③ Qué se puede comprobar de lo que está fuera
+
+Para cada registro de fuera, qué hay en git (`docs/master/evidencias/` y `docs/evidencias/`) con el número del
+ticket:
+
+| | las nombra (431) | con veredicto (151) |
+|---|---|---|
+| un guion que muta (`.mjs` que nombra mutaciones y reescribe fuente) | 36 | 15 |
+| sólo salidas guardadas (`.txt`/`.json`/`.md`) que hablan de mutaciones | 19 | 10 |
+| **nada: la afirmación vive sólo en el párrafo** | **376 (87 %)** | **126 (83 %)** |
+
+Muestra a mano: 8 de los 132 «sólo texto» con veredicto (semilla 1387). **7 son afirmaciones de verdad**
+(«Mutación \| Cae diciendo», «las cuatro muertas… (caen 2)»…) **sin ningún guion en git**. La octava (1388) tenía
+sus evidencias en `docs/evidencias/`, que el instrumento no miraba: arreglado, ahora sale «salida». **Ningún
+falso en la muestra; los otros 124 no se han leído.**
+
+Y hay que leerlo así: `.replace(`/`writeFileSync`/`aplicarUna` es un indicio de que el guion muta,
+no la prueba de que hoy funcione. **«guion» quiere decir «se podría volver a correr a mano», no «se repite».**
+
+### Controles del instrumento
+
+- **Positivo:** SCRUM-1387 tiene su test en el catálogo y sale A. Mutado para buscar 1386 (que es C1): **sale 2,
+  «CIEGO · control positivo»**. Sin mutar, 0.
+- **Log sin la lista del corte:** sale 2, CIEGO, en vez de dar 238 como si no hubiera corte.
+- **Población:** sobre el árbol del 1-oct reproduce los 947 / 1.189 / 118 / 385 de J6i (salidas `salida-1oct-*.txt`).
+
+### Lo que propongo (el camino; nada de esto está construido)
+
+1. **S3, barato y sin decidir nada:** el rótulo del meta-guard dice también los ficheros con alguna juzgada
+   («…en 192 juzgados de 238 declarantes de 1565»). Hoy se lee 15 donde el CI repite 12. Va en la familia de
+   1387d y no cambia cómo decide. Si se quiere, con su rojo primero.
+2. **S5, ya aprobado:** la matriz de 1620. Devuelve los 46 guards y lleva 192 → 238.
+3. **Fundador, la ②, con los números delante:**
+   - «catálogo obligatorio para toda mutación de ticket» son **151 a 431 registros en falta hoy**, y 5 de cada 6
+     ni siquiera tienen el guion en git: no se pueden pasar al catálogo, hay que **reescribirlas**. Y el
+     meta-guard ya no cabe: 735 juzgadas tardan 1.695 s (≈ 2,3 s por mutación, del mismo log). Cada 100
+     mutaciones nuevas son ≈ 4 min más de CI repartidos entre las partes.
+   - «sólo las que vigilan un guard» deja escrito que lo demás es verificación de UNA vez. Es honesto, pero hoy
+     **ni la verificación de una vez se puede repetir** en el 83-87 % de los casos.
+   - **El punto medio que medí que falta:** que un registro que AFIRMA mutaciones lleve su guion en git (A8 ya
+     dice «el banco SE SUBE»). No mete nada en el CI, no cuesta minutos y convierte el párrafo en algo que otro
+     puede volver a correr. Hoy lo cumplen 36 de 431. Es una norma (S0 la propone, el fundador la firma), y
+     un instrumento la podría comprobar con este mismo censo.
+
+⛔ **No se arreglan los 431 a ciegas.** Reescribir mutaciones de tickets cerrados sin su contexto es fabricar
+verdes.
+
+### Lo que NO he medido
+
+- **Si las mutaciones de fuera seguirían cayendo hoy.** Este censo mira si hay algo que correr, no lo corre.
+- **La clase A no es «cubierto»** (lo dijo J6i y sigue valiendo): sólo que ALGÚN test del ticket declara algo.
+  De los 176 A (o 112 con veredicto), 150 (100) tienen alguno juzgado en ese CI.
+- Las mutaciones que viven fuera de `docs/master/evidencias/` y `docs/evidencias/` con otro nombre de carpeta
+  (p. ej. `tests/_banco-*` sin número de ticket): no las atribuyo a ningún registro, así que pueden inflar
+  «sólo texto». La muestra de 8 no encontró ninguna.
+
+### Mis errores
+
+- El instrumento miraba una raíz de evidencias y en el árbol hay dos. No lo vio ningún control: lo vio la muestra
+  a mano. Arreglado antes de publicar, y la nota queda en el propio guion.
+
+### Reproducir
+
+    git archive --format=tar -o a1oct.tar 5fb7630ad564740f0fe4ba115e7dc141d18da775 docs/master tests   # y extraerlo en <dir>
+    gh api repos/lwislg99/cobroflash-backend/actions/jobs/123442782267/logs --allow-escape-sequences > meta.log
+    node docs/master/evidencias/SCRUM-1387/1387e/censo-registros.mjs --log meta.log [--estricto] [--lista <tsv>]
+    node docs/master/evidencias/SCRUM-1387/1387e/censo-registros.mjs --raiz <dir> [--estricto]
+    # sale 2 (CIEGO) si la población está vacía, si la lista del corte no cuadra con su rótulo,
+    # o si SCRUM-1387 (control positivo, con su test en el catálogo) no sale como A
+
+## SCRUM-1387f · el rótulo del meta-guard dice también los ficheros con alguna juzgada
+
+**Medido contra:** `origin/main` = `53d9834d91b5eea3ec35a22449b72a62e9160739` · 2026-10-29T18:32:43Z
+(S3, equipo de Luis. Es el punto ① del camino que propuso 1387e, y lo aprobó el orquestador el 29-oct: «es barato,
+no decide nada, y hace visible el corte en vez de dejarlo en el log». Los puntos ② (la matriz de 1620, S5) y ③ (la
+decisión del fundador) NO se tocan aquí.)
+
+A9: comprobación → `tests/scrum1387f-el-rotulo-dice-los-juzgados.test.mjs`
+
+### Qué cambia
+
+La línea final del meta-guard decía «…en 238 ficheros DECLARANTES de 1565 ficheros de test (15 %)», y el CI repetía
+mutaciones en 192 (1387e ①): el corte de 1620 dejó 46 guards sin ninguna. Ahora la misma línea sigue con:
+
+    · 192 juzgados de 238 declarantes (12 % de los 1565 ficheros de test)
+
+- **Se cuenta donde se juzga:** `guardsJuzgados.add(guard)` va justo después de `juzgadas += 1`, dentro del bucle.
+  Un guard que el corte deja a cero no entra.
+- **Sin el dato, la línea es la de 1387d byte a byte** (`ficherosJuzgados = null`). Lo que ya buscaba «vivas N ·
+  mudas N» o «(N %)» lo sigue encontrando, y los tests de 1387d, 1620 y 812 no se han tocado.
+- **No decide nada:** sólo imprime. Los veredictos y los códigos de salida no cambian.
+- Con parte (1620), los juzgados van antes de «PARTE i de k» y son los de esa parte.
+
+### Controles
+
+- **Rojo primero:** el test se comiteó solo (`5867d60f50f8bd0373144174fe32b697e0db38b0`) y daba **0 de 3** contra
+  el código de `main`. Con el arreglo (`904b483c3273ffad6d98556c5f9d06df03283c15`), 3 de 3. Junto a 1387d, 1620,
+  812, 935d y 765: **36 de 36**, con el trinquete de 812 sin moverse (el fichero nuevo no se titula guard).
+- **Sus dos mutaciones, VIVAS** con la maquinaria del propio meta-guard
+  (`docs/master/evidencias/SCRUM-1620/juzgar-guards.mjs`): quitar los juzgados del rótulo, y no contarlos en el
+  bucle. Las cuatro de 1387d, también VIVAS. Árbol limpio después.
+- **La pasada de verdad, con el corte provocado** (`META_PRESUPUESTO_S=120`, `1387f/pasada-corte-120s.txt`):
+
+      vivas 23 · mudas 0 · ciegas 1 · ficheros muertos 0 · sobre 23 juzgadas de 942 declaraciones, en 239 ficheros DECLARANTES de 1566 ficheros de test (15 %) · 7 juzgados de 239 declarantes (0 % de los 1566 ficheros de test)
+
+  Sale 2, como debe con un corte. **Cómo se lee:** 7 juzgados y «SIN JUZGAR 919, en 233 guard(s)» suman 240,
+  uno más que los 239 declarantes. No es un descuadre: el guard que el corte pilla A MEDIAS tiene alguna juzgada
+  (cuenta aquí) y le quedan pendientes (cuenta allí). El 29-oct en CI no había ninguno a medias (1387e); con el
+  corte a 120 s, uno. El 0 % es 7 de 1.566 redondeado al entero, igual que el resto del rótulo.
+
+### Lo que no hace
+
+- **`--juntar` (las K partes de 1620) no lleva los juzgados:** su recuento sale de `veredictoDeLasPartes` y el
+  resumen de cada parte no los guarda. Cuando entre la matriz de S5, cada parte dirá los suyos en su línea; el
+  total juntado no. Es añadir el número al resumen de la parte, y no lo he hecho porque la matriz no está
+  construida y no sé con qué forma entra.
+- No cambia la cifra: con la matriz (S5) los 46 vuelven a juzgarse, y la línea pasará a decir 238 de 238 sola.
+
+### Reproducir
+
+    node --test tests/scrum1387f-el-rotulo-dice-los-juzgados.test.mjs
+    node docs/master/evidencias/SCRUM-1620/juzgar-guards.mjs scrum1387f-el-rotulo-dice-los-juzgados.test.mjs
+    npm run build && META_PRESUPUESTO_S=120 node scripts/meta-guard-mutaciones.mjs   # sale 2 por el corte; mirar la línea «vivas …»

@@ -1,0 +1,6 @@
+guard antes   congeladas=12 porNivel={"negada":13,"citada":1,"rastreable":176,"anclado":49,"documental":12,"sin-respaldo":12}
+guard después congeladas=11 porNivel={"negada":13,"citada":1,"rastreable":176,"anclado":50,"documental":12,"sin-respaldo":11}
+congeladas idénticas como conjunto: false
+marcas antes=262 después=262
+CAMBIA src/modules/whatsappBot/domain/botFlow.service.ts:1 → src/modules/whatsappBot/domain/botFlow.service.ts:1: sin-respaldo → anclado
+cambios=1
