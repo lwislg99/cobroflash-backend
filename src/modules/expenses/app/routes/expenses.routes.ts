@@ -13,8 +13,9 @@ import { clasificarJustificante } from '../../domain/justificante';
 import { isGeminiConfigured } from '../../../../integrations/gemini';
 import { hitRateLimit } from '../../../../core/http/rateLimit';
 import {
-  parsearImagen, leerTicket, LECTURAS_TICKET_POR_DIA, hoyEnMadrid, corteDeCuota, ERROR_POR_CORTE,
+  parsearImagen, leerTicket, LECTURAS_TICKET_POR_DIA, hoyDelComercio, corteDeCuota, ERROR_POR_CORTE,
 } from '../../domain/lecturaTicket';
+import { zonaDelMerchant } from '../../../../core/zonaDelMerchant';
 
 const router = Router();
 
@@ -276,17 +277,22 @@ router.post('/leer-ticket', async (req, res) => {
   const imagen = parsearImagen(req.body?.imagen);
   if (!imagen.ok) return res.status(400).json({ ok: false, error: imagen.error });
 
-  // Por día natural de Madrid: la clave lleva la fecha, así que al cambiar de día el contador es
-  // otro. Se cuenta DESPUÉS de validar la foto: un cuerpo malo no gasta cuota de Google.
+  // Por día natural DEL COMERCIO (SCRUM-1622; antes, Madrid fijo): la clave lleva la fecha, así que
+  // al cambiar de día el contador es otro. Se cuenta DESPUÉS de validar la foto: un cuerpo malo no
+  // gasta cuota de Google.
   const ahora = new Date();
-  if (hitRateLimit(`leer-ticket:${req.merchantId}:${hoyEnMadrid(ahora)}`, LECTURAS_TICKET_POR_DIA, 24 * 60 * 60_000)) {
-    return res.status(429).json({ ok: false, error: 'lecturas_agotadas' });
-  }
-
   try {
+    const zona = zonaDelMerchant(await prisma.merchant.findUnique({
+      where: { id: req.merchantId }, select: { timezone: true },
+    }));
+    if (hitRateLimit(`leer-ticket:${req.merchantId}:${hoyDelComercio(ahora, zona)}`, LECTURAS_TICKET_POR_DIA, 24 * 60 * 60_000)) {
+      return res.status(429).json({ ok: false, error: 'lecturas_agotadas' });
+    }
+
     const lectura = await leerTicket({
       merchantId: req.merchantId,
       imagen: { mimeType: imagen.mimeType, data: imagen.data },
+      zona,
       ahora,
     });
     return res.json({ ok: true, ...lectura });

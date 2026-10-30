@@ -1,0 +1,10 @@
+clave DATABASE_URL_DEV → acela.proxy.rlwy.net/yaqu_dev_javier  (host de producción declarado: distinto: sí)
+① READ ONLY · SHOW=on · escritura con WHERE false → RECHAZADA · OK
+② sembrado (2 filas, mismo SELECT sobre VALUES) → SIEMBRA-F1-MISMAS=coincide · SIEMBRA-JUST-LIMPIA=coincide
+   esperado SIEMBRA-F1-MISMAS=coincide · SIEMBRA-JUST-LIMPIA=coincide · positivo CIEGO
+③ invoices: 12 filas en la tabla · 12 leídas · 12 PDF leídos · 0 ciegas
+   coincide 12 · DISCREPA 0
+   F1                  12 filas · discrepa 0
+PDF generados y leídos en total: 14
+VEREDICTO: CIEGO — el positivo sembrado no se ve; el recuento real no vale
+EXIT=2

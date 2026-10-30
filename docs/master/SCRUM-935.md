@@ -555,3 +555,97 @@ JOB y no desde el paso. Escrito, NO empezado (decisión del orquestador, 23-oct)
 compara contra `techoDelJob − MARGEN_DEL_JOB_S`: sigue la constante y no un número escrito.
 
 A9: sin fallo que generalice — es afinar una cifra con su medida; el error propio (una cota sacada de una población cortada) ya es la trampa de la ficha de S3, «el instrumento le miente primero»
+
+## SCRUM-935f · recortar el meta-guard y el trinquete en los PR de sólo docs: MEDIDO, y no se construye
+
+**Medido contra:** `origin/main` = `6c8706daef7399513e69e6872068aa7bed25b760` · 2026-10-23T12:21Z
+(rama `scrum-935e-ci-solo-docs`; el ancla del generador al escribir esto ya daba `655f1252e` · 2026-10-23T13:26:38Z)
+· S5, equipo de Luis · encargo del orquestador `cobroflash-backend-90`, 23-oct.
+
+A9: aviso → cicatriz S5 «Escribí en una evidencia que 49 tests ejecutan código de docs/ con la cifra de un grep, antes de medirla en la traza: eran 4 tests y 23 procesos hijo» — no se pudo comprobar: ningún guard lee las cifras de las evidencias de docs/master; lo cazó volver a contarlo con el instrumento antes de comitear
+
+**Rescatado el 29-oct-2026 (S5)** sobre `origin/main` = `d12e99784cf3927e13972e1e370ddc19f5d08a19` · 2026-10-29T10:44:40Z
+(hora de GitHub), por decisión del orquestador. Este tramo se escribió el 23-oct en el PR #2738, que no llegó a
+entrar: su obligatorio cayó por dos guards que leían los instrumentos de la evidencia. Es un resultado negativo
+medido (lo que se midió y por qué NO se hace), y se perdía con el PR. Cambios respecto a #2738:
+
+* **Sufijo `935e` → `935f`** en el título y en la carpeta de evidencias: `935e` lo usa en `main` el tramo de S3 de
+  arriba («el margen del corte», #2737). El nombre de la rama de entonces, `scrum-935e-ci-solo-docs`, se deja como
+  estaba, porque es historia.
+* **Dos arreglos en los instrumentos, ninguno en los guards:** `traza-lecturas.mjs` cuenta con una función
+  `cuenta(k)` en vez de repetir `zona[k] || 0` (con la etiqueta «sin timeZone» a la izquierda de `||`, `scrum643`
+  lo leía como resolver la zona por su cuenta); `zona-de-un-fichero.mjs` borra su carpeta temporal en un `finally`
+  (`scrum864c`: el borrado sólo ocurría si todo salía bien).
+* **Lo que ha cambiado desde entonces, sin volver a medir:** el 10-16 % es del meta-guard de antes de SCRUM-1620
+  (#2962, ya en `main`, que lo parte en trozos), y el PR #2676 de S3 que se cita abajo ya no es el estado de
+  `scripts/meta-guard-mutaciones.mjs`. Las cifras del ③ (trinquete) no dependen del meta-guard.
+
+**El encargo.** La cola del 22-oct (899,8 min de jobs) tenía ~98 min de meta-guard y ~86 de trinquete en PR
+de sólo docs. ② meta-guard: en esos PR, correr sólo los guards que leen `docs/`, con la condición de
+demostrar ANTES que los 5 guards con mutación sobre documentación entran en ese conjunto. ③ trinquete:
+MEDIR si depende de `docs/` (el comentario de `ci.yml` dice que sí y no estaba comprobado).
+
+**Resultado, en una tabla:**
+
+| | pregunta | medido | decisión |
+|---|---|---|---|
+| ② | ¿los 5 guards que mutan documentación caen en «leen docs»? | **sí, los 5** (y los 5 por leer `docs/`, no por el fail-closed de subproceso) | condición cumplida |
+| ② | ¿cuánto ahorra? | **10–16 %** del meta-guard en un PR de sólo docs (797 s de 7.888 / 5.060 s locales, dos pasadas): ≈10–16 de los 98 min del día | **no compensa ahora**; además el fichero es de S3 y tiene PR abierto |
+| ③ | ¿un PR de sólo docs puede cambiar el veredicto del trinquete? | **sí**: un cambio de 2 líneas en `docs/master/evidencias/scrum1336/linea.mjs` (el CI lo llama `solo_docs=true`) pone **2 pruebas** en pass a +14 y fail a −11 | **no se toca**: los 86 min se quedan |
+| R1 | ¿los guards de navegador (recorte YA en `main`, SCRUM-1284) tienen el mismo agujero? | **no**: `guards:visuales` entero con la traza, 41 procesos, **0 lecturas de documentación**; sus `git` sólo piden `public/` y `merge-base`. `guard:firma-con-tramos` cae al cargar con mi hook de módulos: ése, **sin medir** | R1 se queda como está |
+
+**② · cómo se midió.** `evidencias/SCRUM-935f/traza-lecturas.mjs` se carga con `--import` en el hijo de
+`node:test` y apunta cada ruta que pasa por `fs` (sync, callback y promesas), cada módulo que se carga y cada
+subproceso. `trazar-todos.mjs` corre la línea base de los 180 guards declarantes (690 declaraciones) como lo
+hace `correr` del meta-guard, uno a uno y cada uno en su propia carpeta de trazas. `clasificar.mjs` dice
+«depende» si el guard lee o importa algo que `solo-docs.mjs` llama documentación, si lista un directorio
+fuera de las carpetas de código, si lanza CUALQUIER subproceso (fail-closed) o si no dejó traza.
+Control positivo: la traza de `scrum758` ve `docs/MIGRATIONS_PENDING.md`.
+
+* Los 5 de `a-censo-mutaciones-sobre-docs.txt` (12 declaraciones): `scrum1336`, `scrum1536b`, `scrum758`,
+  `scrum769`, `scrum996d` → los 5 DEPENDEN (`b-clasificacion-180-guards.txt`).
+* 95 dependen (381 mutaciones) y 85 no (309). Pero los 85 son los BARATOS: ~2,6 s por mutación frente a
+  ~15 s. El coste está en los que lanzan `node` o `git` DENTRO del árbol (58 guards dependen sólo por eso).
+* Afinar con «un `git` sin shell, con cwd, argumentos y `GIT_DIR` fuera del árbol no puede leer `docs/`»
+  (regla sólida, no lista blanca) libera **un** guard más (`b2-con-git-fuera-del-arbol.txt`). Ir más allá
+  exige clasificar subcomandos de git (`git diff`, `git show origin/main:docs/…` SÍ leen docs): una lista
+  blanca que envejece. No la hago.
+* **Por qué no se construye:** el filtro tiene que vivir dentro de `scripts/meta-guard-mutaciones.mjs` (no
+  admite ningún filtro desde fuera: ni variable ni argumento salvo `--solo-censo`), ese fichero es de **S3**
+  (`dos-equipos.md:176`) y tiene abierto el PR #2676 de S3, que lo reescribe. Por ≈10-16 min al día no se
+  cruza carril ni se pisa un PR vivo. Si se quiere, es una propuesta para S3 con el instrumento ya hecho.
+
+**③ · cómo se midió.** Tres instrumentos, y decide el tercero:
+
+1. Historia (`c-historia-300-runs.txt`, 300 runs de `ci.yml` por `pull_request`, 16→23-oct, PR por rama):
+   105 runs de sólo docs; el trinquete terminó 83 y salió rojo 6. Los 6 son **la misma prueba**,
+   `scrum1405c` ④ («la cobaya pierde casos»), que no lee docs y sale igual en PR con código
+   (`d-trinquete-rojos-en-solo-docs.txt`). Historia de una semana: dice que no ha pasado, no que no pueda.
+2. La tanda entera trazada en una zona (`e-tanda-entera-trazada.txt`), con la traza además apuntando las
+   llamadas que dependen de la zona (getters locales de `Date`, `toLocale*`, `Intl.DateTimeFormat` sin
+   `timeZone`, `new Date(y,m,…)`, texto sin zona): 190 ficheros leen documentación, 336 llaman a APIs de
+   zona, **33 las dos cosas**. ⚠️ Dos defectos de MI instrumento, dichos: marcó como «texto local» la
+   cabecera HTTP `Date:` (lleva `GMT`), y atribuyó nietos a su test subiendo por `ppid`, que Windows
+   recicla (dio a `scrum979` un `import` que hace `scrum1117`). Por eso esta pasada no decide.
+3. **El experimento con un cambio REAL de sólo docs** (`f-experimento-cambio-solo-docs.txt`), con la
+   maquinaria del propio trinquete (`medirEnZona` + `compararZonas`, Kiritimati y Midway) sobre
+   `tests/scrum1336-…`: árbol limpio → 0 cambian; con el cambio → **2 cambian** (pass / fail). Se deshizo.
+
+**Por qué depende:** `docs/` no es sólo prosa. En la tanda se cargan **6 módulos que viven bajo `docs/`**:
+4 ficheros de test los importan (`scrum1336`, `scrum1500`, `scrum1536b`, `scrum1537`) y 23 procesos hijo
+los ejecutan; y `solo-docs.mjs` clasifica todo `docs/**` como documentación. El comentario de `ci.yml`
+acertaba en la conclusión con otro motivo («una fecha nueva en un registro»), que no se ha demostrado.
+
+⚠️ **Lo que queda abierto:** si `solo-docs.mjs` dejara de contar como documentación el CÓDIGO bajo `docs/`
+(`.mjs`, `.js`), ¿dependería todavía el trinquete de la prosa (`.md`)? La pasada 2 no lo descarta (33
+ficheros leen docs y llaman a APIs de zona, casi todos por `docs/microcopy` y el panel) y no está medido.
+No se cambia el clasificador sin medirlo: es la regla de R1.
+
+**R1, comprobado de paso** (`g-guards-de-navegador-trazados.txt`): el hallazgo de arriba obligaba a mirar si
+el recorte que YA está en `main` tiene el mismo agujero, porque usa el mismo `solo-docs.mjs`. No lo tiene en lo
+medido: `npm run guards:visuales` con `NODE_OPTIONS=--import=<traza>` (588 s), 41 procesos trazados, ninguno
+lee, lista ni importa documentación, y ningún subproceso nombra `docs/`. Lo no medido, dicho: `guard:firma-con-tramos`.
+
+**Ficheros:** este apartado, `docs/master/evidencias/SCRUM-935f/` (instrumentos y salidas, sin rutas
+locales ni logs crudos) y la línea de la cicatriz en `docs/equipo/cicatrices/S5.md`. Nada de `ci.yml` ni de
+`scripts/`: no hay arreglo que meter.

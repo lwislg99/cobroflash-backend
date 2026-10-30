@@ -21,6 +21,33 @@ import assert from 'node:assert/strict';
 import http from 'node:http';
 import { cortarSalida, HOST_DE_CONTROL } from './_sin-salida.mjs';
 
+// `node:http` sin agente y no `fetch` (SCRUM-1218i): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de `fetch`
+// (status, ok, headers.get, text, json, arrayBuffer) y, como el `redirect: 'manual'` de antes, no sigue
+// redirecciones. El cuerpo se guarda en bytes: `text()` lo decodifica como `fetch` (TextDecoder).
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    const trozos = [];
+    r.on('data', (t) => { trozos.push(t); });
+    r.on('end', () => {
+      const buf = Buffer.concat(trozos);
+      ok({
+        status: r.statusCode,
+        ok: r.statusCode >= 200 && r.statusCode < 300,
+        headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+        text: async () => new TextDecoder().decode(buf),
+        json: async () => JSON.parse(new TextDecoder().decode(buf)),
+        arrayBuffer: async () => buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
+      });
+    });
+  });
+  req.on('error', mal);
+  req.end(body);
+});
+
 // 🔴 MUTACIONES_QUE_ME_TUMBAN · se ejecutan con `npm run meta:mutaciones`.
 export const MUTACIONES_QUE_ME_TUMBAN = [
   {
@@ -56,7 +83,7 @@ test('SCRUM-876f · lo de esta máquina pasa el corte y no se apunta', async () 
   });
   try {
     const antes = corte.intentos.length;
-    const cuerpo = await (await fetch(`http://127.0.0.1:${servidor.address().port}/`)).text();
+    const cuerpo = await (await pedirSinAgente(`http://127.0.0.1:${servidor.address().port}/`)).text();
     assert.equal(cuerpo, 'de casa', '🔴 el corte se ha llevado por delante una conexión de loopback');
     assert.equal(corte.intentos.length, antes, '🔴 una conexión de loopback se apuntó como salida');
   } finally {

@@ -1,0 +1,15 @@
+POBLACIÓN: 340 ficheros (339 de src/ + 1 semilla)
+Campos de Merchant en el esquema: 80
+Accesos R.campo con R = …merchant: 410 (delegados de Prisma excluidos: 145)
+  en el esquema: 406 · fuera del esquema: 4 (semilla 1 + árbol 3)
+CONTROL cero derivado · connectStatus: 7 accesos, 0 dados por ausentes (tiene que ser 0)
+CONTROL positivo sembrado · campoSembrado1615: 1 (tiene que ser 1)
+
+FUERA DEL ESQUEMA en src/: 2 campos distintos, 3 accesos
+· mpAccessToken (1)
+    src/modules/billing/app/routes/payMp.routes.ts:65  [as any]  (charge.merchant as any)?.mpAccessToken
+· phone (2)
+    src/modules/invoicing/infra/pdf/pdf.service.ts:511  params.merchant.phone
+    src/modules/invoicing/infra/pdf/pdf.service.ts:511  params.merchant.phone
+
+VEREDICTO: ROJO — 3 accesos fuera del esquema (revisar uno a uno)

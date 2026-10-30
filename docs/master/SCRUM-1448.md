@@ -133,3 +133,80 @@ puede haber nacido entre el 11-jun y el 22-sep, o de los seeds que 1448a dejó c
 
 - Mi primera orden usó `$CLAUDE_JOB_DIR` en Git Bash, donde no está definida: el `git rev-parse` salió 128 y el
   volcado de las normas no se escribió. Lo vi por la salida y lo repetí con la ruta escrita.
+
+## SCRUM-1448c · La sonda del enunciado: `Invoice.total` contra el total que imprime el PDF, factura a factura
+
+**Medido contra:** `origin/main` = `77ce98573b1b5e090dfcf7754c4e7960bc63b85a` · 2026-10-27T15:14:44Z (hora de GitHub)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1448/sonda-total-del-pdf.mjs`
+
+Encargo: lo que c.21038 reabrió. El enunciado pide una sonda de sólo lectura que compare, para las facturas de la
+base de pruebas, `Invoice.total` con el total que imprime el PDF, y diga sobre cuántas miró. P7a y P7b no la
+cubrían. Sesión `jv-j1da`. Nada escrito en ninguna base. `src/` sin tocar: la sonda carga `dist/` y lo llama.
+
+### En corto
+
+| base | filas en `invoices` | PDF generados y leídos | tipos | imprimen ≠ guardado |
+| --- | --- | --- | --- | --- |
+| staging | 9 | 9 | 9 JUST | **0 de 9** |
+| dev | 12 | 12 | 12 F1 | **0 de 12** |
+| producción | 2 (c.21012) | NO MEDIDO | 2 JUST (c.21013) | NO MEDIDO: la sonda no corre contra producción |
+
+Las tres pasadas se corrieron entre las 15:12Z y las 15:14Z. Salidas:
+`salida-sonda-staging.txt`, `salida-sonda-dev.txt` y `salida-sonda-dev-ciego-sin-siembra.txt`, en
+`docs/master/evidencias/SCRUM-1448/`.
+
+### Cómo mide
+
+- Una consulta (`id, number, type, total::text, lines::text, currency, vf_estado, merchantId`) dentro de una
+  transacción `READ ONLY`. Antes de medir, la base lo confirma: `SHOW transaction_read_only` = `on`, y un
+  `UPDATE … WHERE false` sale RECHAZADO. Calcado de `SCRUM-1314c/contar-huellas-sin-anular.mjs`. Se niega a
+  correr si el host es el de producción.
+- Cada fila pasa por el `generateInvoicePdf` REAL de `dist/`, con los parámetros que deciden el total tal como
+  los pasan sus tres llamadores (`lib/invoicing.ts` ×2 e `invoicesAdmin.routes.ts`): `total: inv.total.toString()`,
+  las `lines` crudas de la columna, `type` y `currency`. El total se lee del papel con `tests/_texto-del-pdf.mjs`:
+  `TOTAL:`, `TOTAL COBRADO:` (JUST) o `Total:` (sin líneas). Si encuentra cero o más de uno, la fila sale CIEGA.
+- Las PDF van a una carpeta temporal del sistema (se cambia de directorio ANTES de cargar `dist/`).
+- No lee nombres ni datos de clientes: el emisor y el cliente del PDF son un literal de QA.
+
+### Controles
+
+| control | cómo | resultado |
+| --- | --- | --- |
+| positivo SEMBRADO | la MISMA consulta sobre un `VALUES` fabricado (el banco desechable), por el MISMO camino: una JUST con 100,00 guardado y una línea de 100 al 21 % | DISCREPA: imprime 121,00 (`TOTAL COBRADO`). En las dos bases |
+| quitar el positivo | `--quitar-sembrado` | **CIEGO, salida 2**, con la población real intacta (12 de 12). No sale verde |
+| la F1 con las mismas líneas | la misma fila sembrada, como F1 | coincide: desde 624e (#2863) la F1 imprime el guardado |
+| una JUST limpia | 121,00 guardado, la misma línea | coincide |
+| población | filas leídas = `count(*)` de la tabla, y 0 ciegas | 9 = 9 · 12 = 12 |
+| la rama F1 quitada (mutación en `dist/`) | `leeElRegistro = false` | la siembra F1 discrepa → CIEGO, salida 2 |
+
+### Qué dice, y qué no
+
+- **En la F1 la comparación no puede salir distinta hoy:** imprime `params.total`, que ES el guardado
+  (`pdf.service.ts`, la rama `leeElRegistro`). El 0 de 12 de dev lo confirma, pero no informa: es la construcción
+  de 624e. Si alguien le quita esa rama, la sonda lo ve. **Medido:** con `const leeElRegistro = false;` en
+  `dist/` (nunca en `src/`), la siembra F1 imprime 121,00 sobre 100,00, el veredicto sale CIEGO con salida 2, y
+  `dist/` se restauró (el `grep` de la línea original vuelve a dar 1). Salida:
+  `salida-sonda-dev-con-dist-mutado-f1-recalcula.txt`. Dato de paso de esa misma pasada: aun recalculando, las 12
+  F1 de dev imprimen su guardado.
+- **Donde sí informa es en JUST y R1**, que siguen recalculando de las líneas (c.20916). Staging tiene 9 JUST, y
+  las 9 imprimen su guardado: sus líneas suman exactamente el total. No hay ninguna R1 en ninguna de las dos bases.
+- **Dev ha cambiado en una hora:** c.21016 contó 5 filas a las ~13:03Z; hoy a las 15:14Z son 12, todas F1. Es una
+  base viva: la cifra lleva su hora.
+- **No he tomado el turno de staging** (SCRUM-188): el turno es para las tandas que escriben y se toma escribiendo
+  en el marcador de la base, y esta sonda no escribe. Si había una tanda corriendo, sus filas de prueba habrían
+  entrado en la población; las 9 que leí son las 9 JUST que c.21016 contó a las ~13:03Z.
+- **SCRUM-1566d (C, el empate) no está en `main`** (`git log origin/main --grep=SCRUM-1566d` vacío): esta es la
+  medición de ANTES de C, como pedía c.21038. Después de C se corre la misma orden.
+
+### Lo que no he medido
+
+- **Producción.** Sus 2 filas son JUST (216 y 217, c.21013), justo el tipo que recalcula: son las únicas de las
+  tres bases donde el PDF puede imprimir hoy otro total. La consulta para pegar en Railway va en el comentario de
+  Jira de este tramo. Es una COPIA de la aritmética de la rama que recalcula, no el PDF.
+- La suite entera, en local: NO CORRIDA. Este tramo sólo añade documentos.
+
+### Errores míos
+
+- La primera orden de la sesión encadenó `git rev-parse --short origin/main HEAD` (salió 128) con el volcado de
+  las normas a una carpeta que aún no existía. Lo vi en la salida y lo repetí por separado. No dejó ningún dato malo.

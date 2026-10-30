@@ -312,3 +312,93 @@ daba a entender. Un electricista o fontanero que subcontrata a otro para una ref
 obra completa sea, de verdad, construcción o rehabilitación en el sentido estricto de arriba.
 Quien retome este ticket para construir la UI/selector (fuera del GO de esta entrada) necesita
 las tres condiciones, no solo la subcontrata entre profesionales.
+
+## SCRUM-1051c · dos huecos de la ISP, medidos SOLO LEYENDO (J1, jv-j1di, 27-oct-2026)
+
+**Medido contra:** `origin/main` = `2cc189a05d9e5b4d11cd17546d796fadf47200f9` · 2026-10-27T17:42:05Z (hora de la cabecera `Date:` de GitHub)
+
+A9: comprobación → `tests/scrum1051c-isp-medicion.test.mjs`
+
+**Qué se pidió.** Medir, sin tocar el camino de emisión (regla 38), dos preguntas: ① si el `POST`
+de factura conserva la `causa` que trae cada línea del cuerpo; ② qué sale del builder VERI*FACTU
+con una R1 que rectifica una factura con línea S2. No se construye nada: los puntos 1, 3 y 6 de la
+aceptación siguen esperando decisión o firma.
+
+**Cómo.** `dist/` compilado con `tsc --noCheck` desde este árbol (sin `prisma generate`; el árbol
+cuelga del compartido). Casos fabricados, pasados por las funciones reales:
+`validarFacturaSuelta`, `lineasParaFacturar` y `buildVerifactuRegistrosXml` (el único constructor
+de `RegistroAlta` con llamadas en `src/`: `buildRegistroAlta` tiene 0 fuera de su fichero). Base
+de datos: ninguna. AEAT: no se ha enviado nada.
+
+### ① La factura suelta DESCARTA la causa
+
+- `POST /admin/invoices` es la única boca que recibe las líneas del cuerpo (las de presupuesto,
+  cobro y albarán las sacan del documento de origen). Pasa por `validarFacturaSuelta`, que
+  reconstruye cada línea así (`src/modules/invoicing/domain/facturaSuelta.ts:145`):
+  `lineas.push({ concept, qty, price, tax });` — la `causa` no llega a `emitInvoice`.
+- Esa ruta tampoco llama a `exigirCausaLineaEmitible`: sólo a `exigirTiposDeIvaEmitibles`
+  (`src/modules/system/app/routes/invoicesAdmin.routes.ts:166`). El portón de causa vive sólo en
+  `src/lib/invoicing.ts` (boca de cobro).
+- Control: `lineasParaFacturar` (presupuesto → factura) SÍ conserva `causa: 'S2'`.
+- Consecuencias medidas: una línea `{tax: 0, causa: 'S2'}` sale de la suelta como un 0 % sin
+  causa, y el builder la EXCLUYE del registro con «no se puede saber si es…» (con la causa puesta,
+  la misma línea sella). Y una `{tax: 0.21, causa: 'S2'}` sale como un 21 % normal, que cobra
+  cuota.
+- **Víctima hoy: ninguna medida.** Ninguna pantalla escribe una causa: `'S2'`/`"S2"` da 0
+  apariciones en `public/` (control: 13 en `src/`). Sólo un cliente de la API la mandaría.
+
+### ② La R1 de una factura S2
+
+La R1 se fabricó con la misma expresión que `POST /admin/invoices/:id/rectify`
+(`invoicesAdmin.routes.ts:1042`, `{ ...l, price: -price }`: la `causa` se hereda). La ruta no
+exporta nada, así que el fixture es una COPIA: si la ruta cambia, el test no se entera.
+
+| campo | sale | qué pide la fuente (`docs/legal/fuentes/aeat-errores.properties`, catálogo de errores de la AEAT) | |
+|---|---|---|---|
+| `TipoFactura` | `R1` | 1197 (l.143): con S2, «TipoFactura solo puede ser F1, F3, R1, R2, R3 y R4» | ✔ |
+| `TipoRectificativa` / `ImporteRectificacion` | `I` / ausente | 1119 (l.66): si no es por sustitución, `ImporteRectificacion` «no debe tener valor» | ✔ |
+| `CalificacionOperacion` · `ClaveRegimen` | `S2` · `01` | — | ✔ |
+| `BaseImponibleOimporteNoSujeto` | `-1000.00` | — | ✔ (negada, como toda R1 `I`) |
+| `TipoImpositivo` · `CuotaRepercutida` | **ausentes** | 1198 (l.144): con S2, «TipoImpositivo y CuotaRepercutida deberan tener valor 0» | ⚠️ sin medir |
+| `CuotaTotal` | `0.00` | 1207 (l.152): la cuota sólo puede ser ≠ 0 con S1 | ✔ |
+| `ImporteTotal` | `-1000.00` | 1210 (l.155): cuadra con base + cuota | ✔ |
+
+El XML valida contra el XSD (`tests/_xsd-verifactu.mjs`). **Lo que sale mal NO es propio de la
+R1:** la F1 original sale igual, sin los dos campos (la rama S2 de
+`src/modules/fiscal/verifactu/registro.builder.ts:311` sólo devuelve régimen, calificación y base;
+el PASO 4 de arriba lo decidió así porque los dos son `minOccurs="0"` en el XSD). Que la AEAT
+acepte esa omisión con el 1198 delante **no lo ha medido nadie que conste**: «S2» da 0
+apariciones en los tres registros de las pruebas a mano del 24 y el 28-sep
+(`docs/master/SCRUM-1110.md`, `SCRUM-1398.md`, `SCRUM-1399.md`) y en
+`scripts/sobre-soap-prueba-aeat.mjs`; qué calificación llevaron esas altas no lo dicen. Dato de la mutación: la variante con
+`TipoImpositivo` `0` y `CuotaRepercutida` `0.00` también valida contra el XSD, así que el XSD no
+decide entre las dos; sólo la AEAT.
+
+### Preguntas para el fundador (✅/❌) — cualquiera de los dos ✅ toca el camino de emisión: GO
+
+1. ¿La factura suelta debe **conservar** la `causa` de cada línea y pasar por
+   `exigirCausaLineaEmitible`, como la boca de cobro? ✅ = `facturaSuelta.ts:145` y la ruta.
+   ❌ = se queda como está; hoy no la manda ninguna pantalla.
+2. ¿Una línea S2 se declara con `TipoImpositivo` `0` y `CuotaRepercutida` `0.00` (literal del
+   1198) en vez de omitirlos? Propuesta: antes de decidir, un alta S2 a mano en el entorno de
+   PRUEBAS de la AEAT, como las del 24-sep, con las dos variantes. ✅ = cambiar la rama S2 del
+   builder (y `tests/scrum1051-isp-s2.test.mjs`, que hoy exige la omisión). ❌ = se queda.
+
+**Etiqueta `listo-para-construir`:** propongo quitarla (no la he tocado). Motivo: lo que falta
+del ticket (aceptación 1, 3 y 6) espera la validación de identidad fuera del GO c.16594, la
+leyenda firmada (regla 39) y ahora estas dos preguntas; nada de eso se puede construir hoy.
+
+### Error propio
+
+En el primer borrador de este tramo escribí que las pruebas a mano de septiembre «fueron altas
+S1», citando `SCRUM-1399.md`. No lo había medido: el `grep` de después mostró que ahí «S1» es el
+sprint (S1-D), no la calificación, y que ninguno de los tres registros dice cuál llevaron. Se
+corrigió antes de empujar. Un prefijo no es un nombre: «S1» casa con dos cosas.
+
+### Riesgo residual, dicho
+
+- No medido: el PDF de la R1 de una S2, el libro y el 303 con una R1 S2, ni la base de datos.
+- El ① se midió en la función pura, no con la ruta montada: que la ruta le pase `req.body` tal
+  cual es lectura de código (`invoicesAdmin.routes.ts`, `validarFacturaSuelta(req.body)`).
+- Suite entera local: NO CORRIDA (encargo: 10 sesiones a la vez). Corridos los guards dirigidos
+  que dice la entrega.

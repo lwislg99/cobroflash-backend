@@ -555,3 +555,83 @@ Guards de máster y de registro y los de suite, en local (resultado abajo, en el
 local: NO CORRIDA (10 sesiones a la vez; hace de tanda el obligatorio de CI). yaqu.app: no aplica a un cambio sólo de
 docs; lo construido tampoco se puede ver allí con un Técnico (SCRUM-1555, sin sesión de técnico en producción). No lo
 he intentado.
+
+## SCRUM-1390y · Inicio pinta el rótulo y el vacío de CADA rol (los textos firmados en c.17962 y c.17963)
+
+[Anexado por S2, equipo de Luis, el 24-oct-2026 hacia las 12:34Z (`Date:` de GitHub), sobre `origin/main`
+`927bda7ab44b604d81bca8c453663e7fc6f6cda9`. Encargo del orquestador de Luis. Sufijo `y` porque `x` es de J4. Carril:
+`public/dashboard/js/homeView.js` → S2 (`dos-equipos.md:152`).]
+
+**Skill UI:** cargada (yaqu-premium-ui). Sin tokens nuevos ni estilos nuevos: cambia el texto de dos nodos que ya existían.
+
+A9: comprobación → `tests/scrum1390y-inicio-por-rol.test.mjs`
+
+El fallo de esa A9: lancé el error de «respuesta sin lista» como `TypeError` y el banco de vistas lo trató, con razón, como error de PROGRAMA tragado (SCRUM-1278: la vista sale «no medida»); una respuesta mal formada no es un fallo del programa, así que es `Error`. Lo cazó el caso ④ de este test antes de comitar.
+
+### Los dos extremos, comprobados ANTES de escribir
+
+1. **Inicio enseñaba lo mismo a los dos roles** en `origin/main` `927bda7ab`: `homeView.js:93` «Actividad reciente» y
+   `:647` «Sin actividad reciente», sin mirar el rol. El recorte de datos sí estaba (SCRUM-1555, #2456).
+2. **Los literales firmados existen y se citan:** SCRUM-1390 **c.17962** (respuesta literal «2-Ok firmo»: `Tus
+   presupuestos recientes`; «3-El admin conserva sí») y **c.17963** (respuesta literal «1-Firmo la 1»: `Todavía no
+   tienes presupuestos. Aquí verás los que hagas tú y los que te asignen.`). Los dos, también en `YAQU_MASTER.md:687`.
+   El cambio de máster que c.17962 pedía antes de construir es #2115 (mergeado el 1-oct).
+
+### Qué cambia (`public/dashboard/js/homeView.js`)
+
+- `veNegocio` se decide ANTES de pintar, y de esa MISMA pregunta salen la ruta (`home`/`inicio`) y el rótulo: el título
+  no puede prometer otra cosa que lo que la ruta trae. Y como se pinta antes de cargar, encima de un error ya está el
+  rótulo del rol (c.20438, punto 4).
+- `renderActivity(items, veNegocio)`: el vacío del admin sigue siendo «Sin actividad reciente»; el del Técnico, el firmado.
+- **c.20438, punto 2, sin texto nuevo:** un 200 SIN `recentActivity` caía en el vacío por el `|| []`. Con el texto
+  firmado, el Técnico habría leído «Todavía no tienes presupuestos» sobre una respuesta rota. Ahora lanza y va al estado
+  de error que ya existía («No pudimos cargar tus métricas…» + Reintentar). Al admin le pasa lo mismo.
+- `tests/scrum601-copy-del-documento-vs-flag.test.mjs`: re-anclaje por posición 885 → 894 (el `grep -n` medido; numstat
+  14 5), con su nota, como los dos anteriores (1124 y 1317). No cambia lo que el control exige.
+- `docs/YAQU_MASTER.md:681` y `:687`: la frase «lo que NO está construido son los textos por rol» lleva al lado su marca
+  ✅ con fecha y este ticket, sin borrar nada y sin mover ninguna línea.
+
+### Medido
+
+- `tests/scrum1390y-inicio-por-rol.test.mjs`, por EFECTO en el banco de vistas (pinta la vista con cada rol y lee el texto
+  del bloque `[data-home-block="activity"]`): ⓪ control (cada rol pide SU ruta y se ve un presupuesto sembrado) ·
+  ① rótulo por rol, con lista vacía y con uno · ② vacío por rol, y ninguno ve el del otro · ③ un 500: el Técnico ve el
+  error bajo SU rótulo, no el vacío · ④ un 200 sin la lista: error, no vacío, en los dos roles. **5 de 5.**
+- **Rojo primero:** con el `homeView.js` de `origin/main` caen ①②③④ y el control ⓪ aguanta.
+- **Mutaciones** (`docs/master/evidencias/scrum1390y/mutar-1390y.mjs <raiz> origin/main`): las 4 del catálogo tumban su
+  caso; restauración comprobada por bytes.
+- yaqu.app: ver la entrega en Jira (el Técnico de producción es la limitación de SCRUM-1555).
+
+### Lo que NO hace
+
+- **La actividad del Técnico sigue con importe** (de SUS presupuestos). J4 lo señaló en c.20755 contra c.20735 («sin
+  importes»); el máster dice «con importe». No se toca aquí: es una decisión, no un texto.
+- El `catch` sigue envolviendo lo que va detrás de pintar la actividad (c.20438, punto 5): no medido, no tocado.
+
+## SCRUM-1390yb · #2839 en rojo tres días: el error de «respuesta sin lista» se llevaba la Inicio entera (27-oct-2026)
+
+**Skill UI:** cargada (yaqu-premium-ui), DESPUÉS de editar `homeView.js` en este tramo, no antes. Sin tokens ni estilos nuevos: reutiliza `uiErrorState` (AB3) con su texto, que ya existía en la Inicio.
+
+A9: comprobación → `tests/scrum901-banco-fiel-a-la-inicio.test.mjs`
+
+El fallo de esa A9: el 24-oct empujé el `throw` de `renderActivity` corriendo sólo mi test. El `throw` iba al `catch` de toda la Inicio y se saltaba lo que va detrás, «Completa tu configuración» incluida. scrum901 y scrum1158c lo cazaron en el obligatorio de #2839 y el PR se quedó tres días en rojo. Antes de empujar un cambio en una vista hay que correr TODOS los tests que la montan (`Select-String homeView|renderHomeView` sobre `tests/`: 42 ficheros), no sólo el mío.
+
+Medido el 27-oct-2026 sobre `origin/main` 77ce98573b1b5e090dfcf7754c4e7960bc63b85a, con main mergeado en la rama (sin conflictos).
+
+### El rojo, reproducido en local antes de tocar nada
+
+`build + tests (con banco desechable)` de #2839 (run 40095167327): 4 caídos. En local, con main mergeado: scrum1158c («Completa tu configuración» sin `.home-checklist`, 0 ≠ 1) · scrum901 (0 «Ir →» ≠ 9) · scrum698 (87 nodos ≠ 145) · scrum719/1395b (veredicto de mudez caducado para scrum601). Causa: el banco sirve `{}` a `/admin/metrics/home`, el `throw` mandaba la Inicio al `catch` y no se pintaba nada de lo que va detrás de la actividad.
+
+### Qué cambia
+
+- `public/dashboard/js/homeView.js`: una respuesta sin `recentActivity` pinta el estado de error **en su bloque** (`uiErrorState(feed, …, reintentar)`, el mismo texto y el mismo «Reintentar» del `catch`) y vuelve. El resto de la Inicio se pinta. Punto 2 de c.20438 intacto: sigue sin ser el vacío.
+- `tests/scrum698-vistas-que-no-se-miden.test.mjs`: `renderHomeView` 145 → 148, POR IDENTIDAD (firmas de los dos árboles, `homeView.js` de main contra la rama): +4 (`div.state-error`, `-ico`, `-msg`, `button.state-error-retry`) − 1 (el `div` de «Sin actividad reciente»). Control: el árbol de main da 145, la cifra fijada.
+- `tests/scrum601-…`: re-anclaje 894 → 898 (`grep -n`: rama 898, main 885; numstat 18 5).
+- `tests/_veredicto-mudez.json`: regenerado con `npm run censo:mudez -- --escribir` (1 medido: scrum601, VIVO).
+- `tests/scrum1390y-…`: la mutación ④ apunta al nuevo `if` (deshace el error y vuelve al vacío).
+
+### Medido
+
+- Los 42 ficheros de `tests/` que nombran `homeView`/`renderHomeView`/`scrum1390y` + scrum719: **489 de 489**, 0 saltados.
+- Mutador `docs/master/evidencias/scrum1390y/mutar-1390y.mjs . origin/main`: sano 5/5 · base de main tumba ①②③④ · las 4 mutaciones caen en su caso.
+- Contraprueba del arreglo: con el `throw` (la punta del 24-oct) scrum901/1158c caen; sin él, pasan.
