@@ -1,0 +1,17 @@
+CENSO1218I poblacion=1535 ficheros .test.mjs + 1 siembra · con servidor=89 · con fetch=7 · siembra=VISTA
+CENSO1218I scrum1188d-tiers-tambien-se-vacia.test.mjs	PELIGROSO	banco	7 `fetch` sobre su propio servidor (el umbral de SCRUM-100 son 3)
+CENSO1218I scrum131-resend-honesto.test.mjs	bajo-umbral	qa+banco	2 `fetch`: por debajo del patrón
+CENSO1218I scrum136-hub-equipo.test.mjs	bajo-umbral	qa+banco	2 `fetch`: por debajo del patrón
+CENSO1218I scrum1489-la-busqueda-recorta-al-tecnico.test.mjs	PELIGROSO	banco	5 `fetch` sobre su propio servidor (el umbral de SCRUM-100 son 3)
+CENSO1218I scrum876f-el-seco-se-decide-al-enviar.test.mjs	bajo-umbral	banco	1 `fetch`: por debajo del patrón
+CENSO1218I scrum912-leer-ticket-gasto.test.mjs	PELIGROSO	libre	1 `fetch` DENTRO DE UN BUCLE (cuenta por muchas peticiones, no por una)
+CENSO1218I webhooks-idempotencia.test.mjs	bajo-umbral	qa+banco	2 `fetch`: por debajo del patrón
+# segunda sonda, por texto (listen(0 y fetch( en el mismo fichero):
+scrum1188d-tiers-tambien-se-vacia.test.mjs
+scrum131-resend-honesto.test.mjs
+scrum136-hub-equipo.test.mjs
+scrum1489-la-busqueda-recorta-al-tecnico.test.mjs
+scrum560-patron-fetch-servidor.test.mjs
+scrum876f-el-seco-se-decide-al-enviar.test.mjs
+scrum912-leer-ticket-gasto.test.mjs
+webhooks-idempotencia.test.mjs

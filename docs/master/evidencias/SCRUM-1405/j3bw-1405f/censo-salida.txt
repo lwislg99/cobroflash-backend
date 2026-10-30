@@ -1,0 +1,5 @@
+CONTROLES · 7 de 7 en su sitio (pasa, salto de decidirCuarto, salto viejo, cae, nombre, vacío, no cuadra)
+POBLACIÓN {"runs":687,"sinObligatorio":208,"enCurso":2,"cancelado":36,"otro":0,"conVeredicto":441,"logNo":0}
+EVENTOS {"pull_request":409,"push":278}
+ventana 2026-10-21T13:18:43Z → 2026-10-27T15:27:49Z
+ESTADOS {"corrió-pasa":440,"CANCELADO":36,"CIEGO":1,"EN-CURSO":2}

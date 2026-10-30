@@ -1,0 +1,30 @@
+// Corre SOLO las declaraciones de scrum560 con las piezas de la casa (censo, correr, aplicarUna).
+import path from 'node:path';
+import fs from 'node:fs';
+import { pathToFileURL } from 'node:url';
+const RAIZ = 'C:/Users/Javier Pereira/cobroflash-jv-j6dr';
+const m = await import(pathToFileURL(path.join(RAIZ, 'scripts/meta-guard-mutaciones.mjs')).href);
+const GUARD = 'scrum560-patron-fetch-servidor.test.mjs';
+const censo = m.censoDeDeclaraciones();
+console.log(`censo: ${censo.length} guards con declaración`);
+const fila = censo.find((x) => String(x.guard).endsWith(GUARD));
+if (!fila) { console.log('CIEGO: scrum560 no sale en el censo de la casa'); process.exit(2); }
+console.log(`guard=${fila.guard} · declaraciones=${fila.mutaciones.length} · incompletas=${(fila.incompletas || []).length}`);
+const fuente = fs.readFileSync(path.join(RAIZ, 'tests', GUARD), 'utf8');
+for (const mut of fila.mutaciones) {
+  console.log(`ancla «${mut.de}» → ambigüedad: ${JSON.stringify(m.ambiguedadDelAncla(fuente, mut.de, { seCitaASiMismo: true }))}`);
+}
+if (process.argv.includes('--control-mudo')) {
+  // Control del instrumento: una mutación inocua (un comentario) TIENE que salir MUDA.
+  fila.mutaciones = [{ fichero: 'tests/' + GUARD, de: '/** Cuántos `fetch` sueltos', a: '/** Cuantos `fetch` sueltos', cae: 'SCRUM-560 · AUTOPRUEBA' }];
+}
+const limpia = await m.correr(fila.guard);
+console.log(`limpia: pasados=${limpia.pasados?.length} caidos=${limpia.caidos?.length} movidos=${limpia.movidos?.length ?? 0}`);
+let rc = 0;
+for (const mut of fila.mutaciones) {
+  const r = await m.aplicarUna(mut, fila.guard, limpia);
+  const v = r.ok ? 'VIVA' : r.mudo ? 'MUDA' : r.muerto ? 'MUERTO' : 'CIEGA';
+  if (!r.ok) rc = 1;
+  console.log(`${v} · ${mut.de} → ${mut.a} · cae «${mut.cae}» · colaterales=${r.colaterales ?? 0}${r.ok ? '' : ' · ' + (r.mudo || r.ciego || r.muerto)}`);
+}
+process.exit(rc);

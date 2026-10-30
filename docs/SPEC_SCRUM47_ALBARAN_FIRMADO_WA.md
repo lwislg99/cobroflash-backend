@@ -60,7 +60,11 @@ albarán (**SCRUM-49**; la plantilla puede aprobarse ANTES de que exista la pág
 - **Pie:** `Enviado con YaQu`
 - **Botones — 1 (URL dinámica):**
   - Texto: `Ver y firmar`
-  - URL base: `https://yaqu.app/albaran/{{1}}` → la variable del botón (independiente de las del
+  - Campo URL en WhatsApp Manager (Tipo **Dinámico**, **SIN `{{1}}`**): `https://yaqu.app/albaran/`
+    → abre `/albaran/<token>`. ⚠️ Corregido el 29-oct-2026 (SCRUM-1632): decía
+    `https://yaqu.app/albaran/{{1}}`, y teclear ese `{{1}}` en el editor puede dejarlo literal
+    delante del token. Regla, motivo y la prueba que vale: `docs/WHATSAPP_TEMPLATES.md`,
+    «Reglas comunes». La variable del botón (independiente de las del
     cuerpo) = **token OPACO de la página pública del albarán** (SCRUM-49). JAMÁS el id ni el
     número (`ALB-…` es adivinable; el token debe ser irrecuperable por fuerza bruta, patrón
     del portal `/cliente/:token`).
@@ -135,7 +139,16 @@ Anti-spam J6 tabla de envíos automáticos (regla 28): NO aplica — el envío e
 **Ambas plantillas (`albaran_firmado_es` §1 y `albaran_para_firmar_es` §1b) están ENVIADAS
 A REVISIÓN** con los copys FINALES, pie `Enviado con YaQu`, quick reply «👍 Recibido» (solo
 la primera), botón `Ver y firmar` → `https://yaqu.app/albaran/{{1}}` (solo la segunda) y las
-muestras de §1/§1b. Queda:
+muestras de §1/§1b.
+
+> ⚠️ **Nota del 29-oct-2026 (SCRUM-1632), sin reescribir lo de arriba:** esa línea es la
+> constancia de lo que se dio de alta el 14-jul, siguiendo la spec de entonces. **Si en el editor
+> se tecleó el `{{1}}`, ése es el que sobra** y es una causa posible del enlace roto
+> `/albaran/%7B%7B1%7D%7D<token>` (SCRUM-1236, 18-oct). Es lectura, no está verificado contra el
+> panel. Cómo comprobarlo (copiar el enlace del botón en el móvil, no mirar el panel):
+> `docs/WHATSAPP_TEMPLATES.md`, «Reglas comunes».
+
+Queda:
 1. **Esperar el Approved** (plazo típico minutos-días; contar SEMANAS). Si Meta reclasifica
    cualquiera a Marketing → apelar (precedente: P3-3).
 2. Al aprobarse cada una: verificar el texto Approved **byte a byte** contra §1/§1b (si Meta

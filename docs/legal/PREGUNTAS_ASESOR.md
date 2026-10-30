@@ -1117,9 +1117,9 @@ todas las versiones").
 
 # P20. 🔴 La huella sella el REGISTRO — ¿también tiene que ser inmutable el PDF entregado?
 
-> **Formulada por J4 (SCRUM-1087). Del enunciado de SCRUM-665, sin preguntar desde el 2-sep-2026 —
-> hoy bloquea una decisión de diseño, y por eso es la más urgente de las dos preguntas de esta
-> entrada.**
+> **Formulada por J4 (SCRUM-1087). Del enunciado de SCRUM-665, sin preguntar desde el 2-sep-2026.**
+> **Nota de estado (SCRUM-665c, 27-oct-2026) · RESPONDIDA POR JAVIER el 23-sep-2026, con fuente oficial, en SCRUM-665 comentario 16647 — no es dictamen de un profesional, y Javier lo dice él mismo.** Lo que responde: el RRSIF sólo sella el REGISTRO; el ROF exige además conservar la copia «con su contenido original» (art. 19.2) y legible «en el formato original en el que se hayan recibido o remitido» (art. 21.1), y la FAQ de conservación de la AEAT (NOTA 1) dice que factura y registro «son productos diferentes». Una regeneración que cambie cualquier mención ya no es la copia expedida. Vía que recomienda Javier: **(a)**, archivar el fichero y servir siempre ése. Con eso, las preguntas 1), 2) y 3) de abajo quedan contestadas por él y ya no bloquean el diseño.
+> **Lo que SIGUE ABIERTO para el asesor, y sólo esto:** (i) confirmar como profesional lo que Javier respondió con la norma delante; (ii) el reparto de la custodia del art. 19.3 ROF —YaQu como tercero que conserva «en nombre y por cuenta» del merchant—, que la vía (a) convierte en real. Lo que bloquea hoy la vía (a) no es esta pregunta: es el GO de coste del fundador (almacenamiento nuevo, SCRUM-665c). En SCRUM-1264 esta pregunta es la **D1** y figura «SIN RESPUESTA»: está desfasado.
 
 **Medido hoy, no supuesto:** el PDF de una factura emitida se **regenera** con el código actual cada
 vez que falta en disco. `ensureInvoicePdf` (`src/lib/invoicing.ts`) comprueba

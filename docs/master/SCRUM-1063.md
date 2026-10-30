@@ -511,3 +511,44 @@ Recomendación de J5: N1 cuando conteste el asesor. N2 sólo si el asesor confir
 - Cuántos gastos reales serían bienes de inversión o vehículos: no se ha tocado ninguna base.
 - La 44, en detalle.
 - **Suite: NO CORRIDA** (sólo docs). Los guards de registro van en la entrega. En yaqu.app no hay nada que ver.
+
+## SCRUM-1063j · los casos límite «rectificativas» y «gasto de otro periodo», fijados (solo test) (J1, jv-j1de, 27-oct-2026)
+
+**Medido contra:** `origin/main` = `1608087e64aaa4b08c2877ee3119cc2fad97e02e` · 2026-10-27T16:49:20Z
+
+A9: comprobación → `tests/scrum1063j-casos-limite-303.test.mjs`
+
+**PASO 0.** El enunciado de SCRUM-1063 pide, entre sus «Casos límite», «gasto de otro periodo · rectificativas». `grep` de `rectificativ|R1` y de fechas fuera de periodo sobre `tests/*303*`, `tests/scrum1063*` y `tests/scrum1077*`: la única R1 es la de `scrum1063c` (mide que el suplido negativo sale como `suplido`, no las casillas), y del periodo sólo `scrum295` (bordes de `rangoTrimestre`) y `scrum1063b` (el `where.date` del lector). Ningún test fijaba qué casilla recibe una R1 ni qué fecha decide el trimestre de un gasto. Sin rama, PR ni commit previos de 1063j.
+
+**Solo test.** `src/` no se toca. Lo que fija cada caso es el comportamiento de HOY, medido con `construirModelo303` y `leerModelo303` reales sobre `dist/`; donde ni el registro ni el asesor lo han fijado, el nombre del caso dice «comportamiento actual, sin criterio del asesor (SCRUM-1264)».
+
+### Rectificativas (cifras a mano)
+
+El libro no distingue una R1 de otra factura (tramo 1063f, «Riesgo residual»; `docs/master/SCRUM-1077.md:70`): va a la fila de su tipo con su signo.
+
+| caso | a mano | hoy |
+|---|---|---|
+| F1 1.000 + 210 y R1 −200 − 42 en el 2T, gasto 300 + 63 | 07 = 800, 09 = 168, 27 = 168, 29 = 63, 46 = 64 = 105 | igual; `sinClasificar` vacío; **ningún aviso** |
+| sólo la R1 en el 2T (su original es del 1T) | 07 = −200, 09 = −42, 27 = −42, 46 = −105 | igual; ningún aviso con la 27 negativa |
+| R1 que anula la factura entera | todo a 0 | salta «hay 2 asientos y TODAS las casillas salen a cero sin nada declarado aparte» |
+
+Tres cosas que el código hace sin que nadie lo haya decidido, y que NO he cambiado:
+- **El 303 no avisa de las rectificativas; el 390 sí** (`rectificativas_sin_casilla_propia`, `modelo390.ts:57-59`). La casilla de modificación de bases y cuotas del 303 no la he leído en el impreso.
+- **Una 27 negativa no lleva aviso.**
+- **La anulación completa dispara el aviso de «mecanismo roto»**, que nació para el cero con asientos (cabecera de `modelo303.ts`): aquí el cero es real. El literal ya existía; no escribo ninguno.
+
+### Gasto con fecha de otro periodo (cifras a mano)
+
+El soportado sale del libro de recibidas del MISMO rango (tramo 1063b, líneas 111-112 de este fichero), y ese rango se filtra por `date`, la fecha del APUNTE, no por `providerInvoiceDate` (`libroRecibidas.repo.ts:57-64`, «es una decisión, no un descuido»; el mismo comentario deja abierta qué fecha manda).
+
+- A: apuntado el 2-may, factura del proveedor del 20-mar, 300 + 63 → entra en el **2T** (28 = 300, 29 = 63).
+- B: apuntado el 28-mar, factura del proveedor del 2-abr, 100 + 21 → entra en el **1T**.
+- Los cuatro trimestres: 29 = 21 · 63 · 210 · 0, que suman la cuota de los tres gastos (ni se pierde ni se duplica).
+- La base falsa filtra como Prisma sobre CUALQUIER columna, con dos controles: un gasto del 3T no entra en el 2T, y filtrando por `providerInvoiceDate` el 2T sería B y no A (así la tercera mutación tiene a qué caer).
+
+### Medido
+
+- El test nuevo, 7 de 7 en verde.
+- Mutaciones en `MUTACIONES_QUE_ME_TUMBAN`, pasadas con `mutacionesDeclaradas`, `correr` y `aplicarUna` de `scripts/meta-guard-mutaciones.mjs` (el arnés de `docs/master/evidencias/SCRUM-1123f/arnes-mutaciones.mjs`): `Math.abs` en la base, `Math.abs` en la cuota y el filtro a `providerInvoiceDate`. Tumban las 3 su caso. `git status` después: sólo el fichero nuevo.
+- Dirigida, con los dos tramos de registro escritos: 52 ficheros (1063b-j, 1064c/d, 1077, 1077c, 1232, 1252/1252e/1252g, 295 ×2, 296 ×4, 297 ×4, 389 ×2, 411, 438 ×2, 377, 237, 976, 1387, 1294, 267, 273, 921, 921c, 387 ×2, 622, 719, 824, 824b ×2, 836, 419, 702, 700, 1415, 854). **467 casos, 461 pasan, 0 caen, 6 saltados** (`LIBRO_PG_URL`); suman. Los 7 de 1063j están en el TAP.
+- **Suite entera local: NO CORRIDA**: hace de tanda el obligatorio de CI. En yaqu.app no hay nada que ver (no hay pantalla del 303).

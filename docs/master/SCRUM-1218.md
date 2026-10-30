@@ -661,3 +661,95 @@ cobro en `id = 1`, ~1 de cada 16 (sin medir en CI, donde la base la comparten ot
 **Sin medir:** 20 pasadas por fichero, Linux/CI con pasadas y staging (este árbol no tiene turno). Tampoco el
 `fetch` de `tests/fixtures/scrum814-peticion-simultanea.mjs`, que corre en un proceso hijo sin
 `--test-force-exit` y que el censo no ve (lo declara: «procesos hijos»). Suite entera local: NO CORRIDA.
+
+## J6 · SCRUM-1218i · el disparo, medido: `webhooks-idempotencia` aborta por el tier-up de wasm, y los cuatro bajo el umbral, a `node:http`
+
+**Medido contra:** `origin/main` = `77ce98573b1b5e090dfcf7754c4e7960bc63b85a` · 2026-10-27T15:44:11Z (hora de GitHub al acabar las pasadas; sesión J6 `jv-j6dl`, por encargo del orquestador `cobroflash-backend-8b`, c.21040. Al cerrar, `origin/main` iba en `540c62bc257c0c9ad0a42c4649e3dea0da7e442f`, que no toca ninguno de estos ficheros)
+
+A9: aviso → cicatriz J6 «Metí una ruta con espacios en una variable sin comillas dentro de un bucle de grep, y salieron ochenta errores en vez de veinte filas» — no se pudo comprobar: me pasó otra vez hoy, al resumir las pasadas (el recuento salió vacío, con un error por fichero y pregunta, y lo rehice con comillas); ningún hook de este árbol lee las comillas de un comando antes de lanzarlo
+
+Carril: `carriles.mjs de` los cuatro, ANTES de tocarlos → «sin fila en §3: nadie lo reclama». 0 líneas de `src/` (`psp.routes.ts` sólo se leyó). Ningún PR abierto toca estos ficheros (10 abiertos, leídos con sus ficheros). Banco: el Postgres 16.14 de `pgbanco-1599p` (copiado, sin enlazar, del de 1614), puerto 55618, base rehecha antes de cada pasada, DDL de `prisma migrate diff --from-empty` (33 tablas, idéntico byte a byte al de 1614), `LIBRO_PG_URL` con `sslmode=disable`, `dist/` con `tsc --noCheck`. Instrumentos y salidas: `evidencias/SCRUM-1218/*-1218i.*`.
+
+### ① ¿Es la firma de 1218? Sí: el criterio de disparo SE HA CUMPLIDO
+
+`webhooks-idempotencia`, a solas, con `--test-force-exit` (`pasadas-1218i.salida.txt`):
+
+| bandera | pasadas | abortos | casos |
+|---|---|---|---|
+| sin `--no-wasm-dynamic-tiering` | 80 (20 + 20 + 40) | **5** | 3/3 ok en las 80 |
+| con `--no-wasm-dynamic-tiering` | 120 (40 + 40 + 40) | **0** | 3/3 ok en las 120 |
+
+Los cinco abortos son la firma literal del ticket: los 3 casos `ok`, el fichero `not ok … 'test failed'`, `exitCode 3221226505`, `Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 94`, y 0 errores de FK. Con la tasa de 5/80, un 0/120 por azar sale el 0,04 % de las veces (0,9375^120). Control de la bandera: una sonda que imprime su `process.execArgv` la lleva cuando se lanza `node --no-wasm-dynamic-tiering --test` y no la lleva sin ella.
+
+La hipótesis de 1614 ⑤ (escrituras que `/webhooks/psp` deja corriendo) no queda refutada como **ventana**: 1204 midió que lo que decide es el tiempo entre los `fetch` y la salida. Pero sin el tier-up de wasm no aborta nunca, así que el mecanismo es el de 1218, y el remedio también.
+
+### ② La población: la que SIGUE con `fetch` + `listen(0)`, por AST
+
+`censo-1218i` usa `enPatronPeligroso` de `scrum560` y le quita el umbral: cuenta todo fichero con `<x>.listen(0, …)` y al menos un `fetch`. Siembra propia (un `fetch` suelto + `listen(0)` en un temporal): VISTA. Sobre 1.535 `tests/*.test.mjs` (89 con servidor propio) salen **7**. Segunda sonda, por texto: 8, que son esos 7 y el propio `scrum560` (lo nombra en sus cadenas).
+
+- `scrum1188d`, `scrum1489`, `scrum912`: los de Luis, en `CON_EL_PATRON_YA`. No se tocan.
+- **`scrum131-resend-honesto` (2 `fetch`), `scrum136-hub-equipo` (1), `scrum876f-el-seco-se-decide-al-enviar` (1) y `webhooks-idempotencia` (2): por debajo del umbral de `scrum560`** (un `fetch` en bucle, o 3 sueltos), y por eso no estaban en la lista. `scrum131`, `scrum136` y `webhooks-idempotencia` eran de los 40 del censo original, que no tenía umbral.
+
+🔴 **Para el orquestador:** el umbral de 3 viene de SCRUM-100, y `webhooks-idempotencia` aborta 1 de cada 16 con 2. El trinquete de `scrum560` deja entrar hoy un fichero nuevo con 1 o 2 `fetch` a su propio servidor. Bajarlo a 1 es endurecer el guard (A23), no relajarlo, y con esta rama dentro saldría verde (sólo quedan los 3 de la lista). **No lo he hecho:** no estaba en el encargo.
+
+### ③ Migrados con `migrar-1218i` (= `migrar-1218g` + `ok`)
+
+`webhooks-idempotencia` lee `r1.ok` y `r2.ok`, y el ayudante de 1218g no da `ok`. `migrar-1218i` añade `ok: status 200-299`, como `fetch`, y nada más; los ficheros que ya llevan su copia del ayudante no se tocan. 5 llamadas en 4 ficheros. `diff-idem-1218f`: 5 quitadas, 0 que falten, control sembrado VIVO. Ninguna aserción cambia.
+
+| fichero | casos (0 SKIP) | antes, sin bandera | después, sin | después, con | casos por nombre |
+|---|---|---|---|---|---|
+| webhooks-idempotencia | 3 | **5/80 abortos** | **0/80** | 0/20 | IGUAL |
+| scrum131-resend-honesto | 1 | 0/20 | 0/20 | 0/20 | IGUAL |
+| scrum136-hub-equipo | 3 | 0/20 | 0/20 | 0/20 | IGUAL |
+| scrum876f-el-seco-se-decide-al-enviar | 3 | 0/20 | 0/20 | 0/20 | IGUAL |
+
+Con la tasa de antes, el 0/80 de después por azar sale el 0,6 % de las veces. El comparador (`comparar-1218i`) compara el conjunto «veredicto + nombre» de todas las pasadas de cada lado; su control sembrado (un veredicto cambiado) sale VIVO en los 9 pares.
+
+Mutaciones (`migrar-1218i.salida.txt`), las dos restauradas después:
+
+- `scrum876f` prueba que el corte de salida de `_sin-salida.mjs` deja pasar el loopback. El corte vive en `net.Socket.prototype.connect`, por donde también pasa `http.request`. Si el corte se lleva también el loopback, el caso migrado cae («lo de esta máquina pasa el corte»): sigue midiendo lo mismo.
+- `ok: false` en el ayudante de `webhooks-idempotencia`: cae la A12.2c.
+
+`CON_EL_PATRON_YA` no cambia (3): ninguno de los cuatro estaba en ella.
+
+**Sin medir:** Linux/CI con pasadas; staging (los cuatro se encienden con el banco y no se han corrido con `QA_DB_TEST`); los procesos hijos, imports y métodos, que el detector no ve. **Suite entera local: NO CORRIDA.**
+
+## J6 · SCRUM-1218j · `scrum560` acusa desde UN `fetch` a su propio `listen(0)`
+
+**Medido contra:** `origin/main` = `1e513d684da91f26226ce6f13e1468a4afb45fde` · 2026-10-27T16:42:42Z (hora de GitHub al acabar el rojo, el verde y las mutaciones; sesión J6 `jv-j6dr`, por encargo del orquestador `cobroflash-backend-8b`, decisión c.21091)
+
+A9: comprobación → `tests/scrum836-ancla-de-mutacion-viva.test.mjs`
+
+(Lo que me salió mal: escribí las dos mutaciones con el umbral a pelo en la línea, `  if (sueltos >= 1) return`, y una ancla era prefijo de la otra: habría salido tres veces y la criba de la casa la habría dado por ambigua. Lo cacé leyendo `ambiguedadDelAncla` antes de correrlas; el umbral pasó a la constante `UMBRAL_SUELTOS` y cada ancla sale dos veces, la línea de verdad primero.)
+
+### ① El cambio
+
+- `enPatronPeligroso` acusa con `sueltos >= UMBRAL_SUELTOS`, y `UMBRAL_SUELTOS = 1` (era 3). Un `fetch` en bucle sigue acusando como antes.
+- **Segunda siembra** en `censar()`: `siembra-scrum1218j-un-fetch-suelto.mjs`, con un `app.listen(0)` y UN `fetch` suelto. Si el umbral vuelve a subir, el censo sale CIEGO en vez de verde.
+- AUTOPRUEBA: `dosSueltos` y `unaLlamadaSuelta` pasan a acusar (ahora hacen falta), sale `unoSuelto` (acusa) y `llamadaSinFetch` (no acusa). La fixture `recursiva` pierde el `fetch` suelto que llevaba: con el umbral en uno, ese `fetch` solo ya acusaba, y el caso dejaba de medir que la recursión se corta sin contar.
+- `CON_EL_PATRON_YA` sigue con los 3 de Luis, con su motivo de siempre (scrum1188d, scrum1489, scrum912). **El umbral nuevo no destapa ninguno más:** con main, el trinquete («ningún fichero NUEVO») y su otra mitad («la lista no puede quedarse vieja») salen en verde, así que el censo es exactamente esos 3. Población: los `tests/*.test.mjs` de main más las dos siembras.
+
+### ② Rojo primero, en una copia fuera del árbol
+
+La copia es `tests/` de main (`git archive`) con los 4 ficheros sacados de `77ce98573`, el main de antes de 1218i, y `typescript` copiado, sin junction. Se corren el guard viejo y el nuevo sobre esa misma copia:
+
+| guard | sobre la copia (los 4 con `fetch`) | dónde se ve |
+| --- | --- | --- |
+| viejo (umbral 3) | 4 pass · 0 fail: no ve a ninguno | `evidencias/SCRUM-1218/rojo-1218j-guard-viejo.salida.txt` |
+| nuevo (umbral 1) | 3 pass · 1 fail: el trinquete nombra **exactamente** scrum131 (2), scrum136 (2), scrum876f (1) y webhooks-idempotencia (2) | `rojo-1218j-guard-nuevo.salida.txt` |
+| nuevo, sobre main | 4 pass · 0 fail | `verde-1218j-main.salida.txt` |
+
+1218i contó 1 `fetch` en scrum136; el detector cuenta 2, porque cuenta también las llamadas a una función del fichero. A los dos lados el fichero acusa.
+
+### ③ Mutaciones, con las piezas de la casa
+
+Declaradas en `MUTACIONES_QUE_ME_TUMBAN` del propio guard. Las corre `mutar-1218j.mjs.txt` con `censoDeDeclaraciones`, `correr` y `aplicarUna` de `scripts/meta-guard-mutaciones.mjs`, sin el meta-guard entero. Censo de la casa: 227 guards con declaración, y scrum560 sale con 2 y 0 incompletas. Pasada limpia: 4 pasados · 0 caídos · 0 movidos.
+
+- `UMBRAL_SUELTOS = 1` → `3`: **VIVA**, cae el trinquete (la siembra de uno no sale) y 2 colaterales.
+- `sueltos >= UMBRAL_SUELTOS` → `sueltos > UMBRAL_SUELTOS`: **VIVA**, cae la AUTOPRUEBA, con 2 colaterales.
+- Control del instrumento: una mutación inocua (una tilde en un comentario) sale **MUDA**, rc 1 (`mutaciones-1218j-control-mudo.salida.txt`).
+- `ambiguedadDelAncla(…, { seCitaASiMismo: true })` = `null` en las dos. `git status` limpio después de cada pasada.
+
+**Sin medir:** Linux/CI; el meta-guard entero (`npm run meta:mutaciones`), que no corrí; los procesos hijos, imports y métodos, que el detector sigue sin ver. **Suite entera local: NO CORRIDA.**
+
+**Guards** (237, 976, 1387, 560, 836, 812, 745, 267, 273, 1294, 921c, 1572 y 850, con este tramo dentro): **117 = 116 pass + 1 fail + 0 skip**. El fail es `scrum836`, que nombra anclas de scrum608 y scrum624e en `dist/`: este árbol no traía `dist/`. Compilado con `tsc --noCheck` (sin tocar `src/`), `scrum836` da 17/17.

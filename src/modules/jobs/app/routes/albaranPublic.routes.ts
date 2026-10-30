@@ -7,7 +7,7 @@
 // (página + canvas de firma) + el token opaco de customerPortal. Tenancy = el token.
 import { Router, Request, Response } from 'express';
 import { prisma } from '../../../../core/db/prisma';
-import { esc } from '../../../../core/utils/utils';
+import { esc, parseToken } from '../../../../core/utils/utils';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
 import { rateLimit } from '../../../../core/http/rateLimit';
 import { buildFirmaEvidencia, canTransitionAlbaran, ensureAlbaranPdf } from '../../domain/albaran.service';
@@ -248,7 +248,7 @@ async function loadContext(token: string) {
 // GET /albaran/:token — revisar + firmar (o estado "ya firmado" / no encontrado).
 router.get('/:token', async (req: Request, res: Response) => {
   const html = (t: string, b: string) => res.setHeader('Content-Type', 'text/html; charset=utf-8').send(renderPage(t, b));
-  const ctx = await loadContext(req.params.token).catch(() => null);
+  const ctx = await loadContext(parseToken(req.params.token)).catch(() => null); // tolera URLs sucias ('{{1}}abc...' → 'abc...')
   if (!ctx) return res.status(404).setHeader('Content-Type', 'text/html; charset=utf-8').send(documentNotFoundHtml());
   const { albaran, merchant, job, customer } = ctx;
   const hero = merchantHero(merchant);
@@ -325,7 +325,7 @@ router.get('/:token', async (req: Request, res: Response) => {
           // SCRUM-300: los dos datos de FIRMADO POR viajan CON la firma, para que entren en el
           // contenido ANTES de sellarlo. Pegarlos después rompería el hash.
           const cal=document.getElementById('firmante-calidad');
-          const r=await fetch(${JSON.stringify(`/albaran/${req.params.token}/firmar`)},{
+          const r=await fetch(${JSON.stringify(`/albaran/${parseToken(req.params.token)}/firmar`)},{
             method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
               signatureData:sig,
               // SCRUM-361 (H6): la versión que ESTA PÁGINA pintó. El servidor la compara con la de
@@ -378,7 +378,7 @@ router.get('/:token', async (req: Request, res: Response) => {
 // POST /albaran/:token/firmar — emitido → firmado + auto-envío de la copia firmada (best-effort).
 router.post('/:token/firmar', firmaLimiter, async (req: Request, res: Response) => {
   try {
-    const albaran = await prisma.albaran.findUnique({ where: { firmaToken: req.params.token } });
+    const albaran = await prisma.albaran.findUnique({ where: { firmaToken: parseToken(req.params.token) } }); // tolera URLs sucias
     if (!albaran) return res.status(404).json({ error: 'not_found', message: 'Este enlace no es válido.' });
     if (albaran.estado === 'firmado') return res.json({ ok: true, already: true }); // idempotente
     if (!canTransitionAlbaran(albaran.estado, 'firmado')) {

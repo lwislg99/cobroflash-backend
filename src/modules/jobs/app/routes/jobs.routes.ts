@@ -1663,7 +1663,8 @@ router.post('/:id/consolidar-albaranes', requireRole('admin'), async (req, res) 
       where: { id: req.merchantId },
       // getEmissionMode necesita id/email/country/flags (Parte P); defaultCurrency para la
       // factura; taxId para el sellado VeriFactu de SCRUM-173 (entra en la huella).
-      select: { id: true, email: true, country: true, flags: true, defaultCurrency: true, taxId: true },
+      // SCRUM-1594: `llevaLibrosPorSii` lo exige `MerchantLike` cuando entre SCRUM-1585.
+      select: { id: true, email: true, country: true, flags: true, defaultCurrency: true, taxId: true, llevaLibrosPorSii: true },
     });
     if (!merchant) return res.status(404).json({ error: 'not_found' });
     if (getEmissionMode(merchant) === 'receipt') {

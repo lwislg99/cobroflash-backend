@@ -477,7 +477,8 @@ router.post('/consolidar', requireRole('admin'), async (req, res) => {
 
     const merchant = await prisma.merchant.findUnique({
       where: { id: req.merchantId },
-      select: { id: true, email: true, country: true, flags: true, defaultCurrency: true, taxId: true },
+      // SCRUM-1594: `llevaLibrosPorSii` lo exige `MerchantLike` cuando entre SCRUM-1585.
+      select: { id: true, email: true, country: true, flags: true, defaultCurrency: true, taxId: true, llevaLibrosPorSii: true },
     });
     if (!merchant) return res.status(404).json({ error: 'not_found' });
     if (getEmissionMode(merchant) === 'receipt') {
@@ -1331,9 +1332,11 @@ router.post('/:id/facturar-parcial', requireRole('admin'), async (req, res) => {
       // SCRUM-665 · se ensancha a los siete del emisor congelado (name/legalName/address/
       // logoUrl/whatsappPhone; email y taxId ya estaban). Esta lectura alimenta getEmissionMode
       // más abajo — es camino de emisión, y el congelado sale a coste cero: el viaje ya se hacía.
+      // SCRUM-1594: `llevaLibrosPorSii` lo exige `MerchantLike` cuando entre SCRUM-1585.
       select: {
         id: true, email: true, country: true, flags: true, defaultCurrency: true, taxId: true,
         name: true, legalName: true, address: true, logoUrl: true, whatsappPhone: true,
+        llevaLibrosPorSii: true,
       },
     });
     if (!merchant) return res.status(404).json({ error: 'not_found' });
@@ -1531,9 +1534,11 @@ router.post('/:id/convertir-en-factura', requireRole('admin'), async (req, res) 
     const merchant = await prisma.merchant.findUnique({
       where: { id: req.merchantId },
       // SCRUM-665 · idem que `facturar-parcial`: se ensancha a los siete del emisor congelado.
+      // SCRUM-1594: `llevaLibrosPorSii` lo exige `MerchantLike` cuando entre SCRUM-1585.
       select: {
         id: true, email: true, country: true, flags: true, defaultCurrency: true, taxId: true,
         name: true, legalName: true, address: true, logoUrl: true, whatsappPhone: true,
+        llevaLibrosPorSii: true,
       },
     });
     if (!merchant) return res.status(404).json({ error: 'not_found' });
