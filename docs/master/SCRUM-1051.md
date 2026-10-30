@@ -402,3 +402,52 @@ corrigió antes de empujar. Un prefijo no es un nombre: «S1» casa con dos cosa
   cual es lectura de código (`invoicesAdmin.routes.ts`, `validarFacturaSuelta(req.body)`).
 - Suite entera local: NO CORRIDA (encargo: 10 sesiones a la vez). Corridos los guards dirigidos
   que dice la entrega.
+
+## SCRUM-1051d · la factura SUELTA conserva la causa de cada línea (J1, jv-j1dj, 27-oct-2026)
+
+**Medido contra:** `origin/main` = `95016f26f5b0d31dcb542467cbdb2a9249a71366` · 2026-10-27T18:08:06Z (hora de la cabecera `Date:` de GitHub)
+
+A9: comprobación → `tests/scrum1051d-suelta-conserva-causa.test.mjs`
+
+**GO:** Jira SCRUM-1051 c.21180, punto 1 (regla 40). Sólo esto; el punto 2 (rama S2 de
+`registro.builder.ts`, error 1198) sigue ⏸ hasta la prueba en la AEAT y NO se ha tocado.
+
+**Qué cambia (dos ficheros de `src/`):**
+- `src/modules/invoicing/domain/facturaSuelta.ts` · `validarFacturaSuelta` copia `causa` a la línea
+  cuando viene (no `undefined`/`null`) y NO la juzga; `LineaEntrada` gana `causa?: Causa`. Sin causa,
+  la línea sigue saliendo con sus cuatro claves (sin `causa: undefined`).
+- `src/modules/system/app/routes/invoicesAdmin.routes.ts` · `POST /admin/invoices` llama a
+  `exigirCausaLineaEmitible(val.lineas)` justo después de `exigirTiposDeIvaEmitibles`, antes de
+  `emitInvoice`: el mismo portón y el mismo sitio que la boca de cobro (`lib/invoicing.ts`). No se ha
+  escrito otro.
+
+**Rojo primero:** con `dist/` compilado del árbol SIN el arreglo, `scrum1051d` dio 7 casos, 6 caen y
+1 pasa (el control «sin causa»). Con el arreglo, 7/7. Y los tres casos de ① de
+`tests/scrum1051c-isp-medicion.test.mjs` que FIJABAN el defecto («descarta la causa», «S2 con tax 0
+sale como 0 % sin causa y se excluye», «S2 con tax 0.21 cobra el 21 %») cayeron los tres con el
+arreglo, como pedía su cabecera, y se han dado la vuelta en este mismo commit. El de «se excluye»
+conserva su control negativo: la misma línea SIN causa se sigue excluyendo (el builder no cambia).
+② de 1051c no se toca y sigue en verde.
+
+**Control:** de presupuesto a factura (`lineasParaFacturar`) la causa se conserva igual que antes
+(caso de 1051c y caso de 1051d, que además comprueba que las dos líneas S2 —la de la suelta y la de
+presupuesto— sellan).
+
+**Mutación** (catálogo de la casa, `MUTACIONES_QUE_ME_TUMBAN` del test, aplicadas con `aplicarUna`
+de `scripts/meta-guard-mutaciones.mjs`): 2 declaradas, 2 vivas (el test cae con cada una), árbol
+restaurado (`git status` sólo con los cuatro ficheros de la entrega). No hizo falta base.
+
+**Lo que se sabe y NO se ha cambiado:** si el portón rechaza (causa no activa), la ruta responde el
+`500 internal_error` del `catch`, igual que hoy con un tipo de IVA no emitible y igual que la boca de
+cobro. Darle un 4xx con mensaje es un texto que ve el usuario (regla 39) y no está en el GO.
+Víctima hoy: ninguna pantalla manda `causa` (medido en 1051c, no re-medido aquí).
+
+**Corrido:** build con tipos (`tsc -p .`, sin `--noCheck`): salida 0. Dirigida: 73 ficheros (los de
+1051/1051c/1051d, los de factura suelta, la ruta y el portón, scrum237, scrum976, scrum1387/1387d,
+scrum622 y los de registro scrum267/273/854/1294): 737 casos = 731 pass + 6 skip (sin `LIBRO_PG_URL`),
+0 fail; control positivo: 7 `ok` de 1051d y 7 de 1051c en el TAP. Suite entera local: NO CORRIDA
+(10 sesiones a la vez). Ruta montada: NO ejecutada (el test la mira por AST); yaqu.app: NO verificado.
+
+**Puesta al día (relevo, jv-j1dj, 30-oct-2026, sobre `3527028a3388de64c5e2429cb0d19d665e768473`, 149 commits):** `git merge` sin conflictos y sin recongelar nada: `facturaSuelta.ts` y `invoicesAdmin.routes.ts` no están en la lista de `scrum523d`, que pasa con sus 7 casos. `tsc -p .`: salida 0. Dirigida de 76 ficheros: 763 casos = 757 pass + 6 skip (sin `LIBRO_PG_URL`), 0 fail. Suite entera local: NO CORRIDA.
+
+A9: sin fallo que generalice — poner la rama al día no cambió los dos ficheros de `src/` de este tramo respecto a lo entregado el 27-oct, y lo que podía caer lo mide `scrum523d`.

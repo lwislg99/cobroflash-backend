@@ -1,0 +1,26 @@
+// SCRUM-1631 · ¿Cuánto tarda en volver un envío fallido con la base inaccesible, y qué devuelve?
+// Uso: node caida-1631.mjs <raiz> <N>. DATABASE_URL debe apuntar a un puerto de loopback SIN nadie escuchando.
+import { createRequire } from 'node:module';
+import path from 'node:path';
+
+const [raiz, nTxt] = process.argv.slice(2);
+const req = createRequire(path.join(raiz, 'package.json'));
+delete process.env.WHATSAPP_DRY_RUN;
+delete process.env.WHATSAPP_PHONE_NUMBER_ID;
+delete process.env.WHATSAPP_ACCESS_TOKEN;
+const { sendWhatsAppTemplate } = req('./dist/integrations/whatsapp.js');
+const errores = [];
+console.warn = () => {};
+console.error = (...a) => errores.push(String(a[0]));
+const ms = [];
+const devuelve = {};
+for (let i = 0; i < Number(nTxt); i++) {
+  const t0 = performance.now();
+  const r = await sendWhatsAppTemplate({ to: '34600000000', templateName: 'x', merchantId: 5, log: { relatedType: 'invoice', relatedId: i } });
+  ms.push(Math.round(performance.now() - t0));
+  const k = JSON.stringify(r);
+  devuelve[k] = (devuelve[k] ?? 0) + 1;
+}
+ms.sort((a, b) => a - b);
+console.log(JSON.stringify({ N: ms.length, devuelve, msMin: ms[0], msMediana: ms[ms.length >> 1], msMax: ms.at(-1), avisosEnElLog: [...new Set(errores)] }));
+process.exit(0);
