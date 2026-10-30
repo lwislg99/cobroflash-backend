@@ -426,7 +426,6 @@ const CONOCIDOS_A = new Map([
   ['tests/scrum519-un-solo-criterio-de-cobro.test.mjs  homeView.js', 1],
   ['tests/scrum519-un-solo-criterio-de-cobro.test.mjs  payInvoice.routes.ts', 1],
   ['tests/scrum519-un-solo-criterio-de-cobro.test.mjs  settingsView.js', 1],
-  ['tests/scrum624b-guardado-vs-impreso.test.mjs  schemas.ts', 1],
   ['tests/scrum624c-total-canonico.test.mjs  albaranAFactura.ts', 1],
   ['tests/scrum642-tramos-del-arranque.test.mjs  BrowserLauncher.ts', 1],
   ['tests/scrum656b-clausulas-configuracion.test.mjs  quotes.routes.ts', 2],

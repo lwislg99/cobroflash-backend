@@ -13,13 +13,42 @@
 //    agregaba así— pero es exactamente el tipo de detalle que alguien "arregla" homogeneizando
 //    y rompe en silencio, porque los números seguirían saliendo. El test fija el contrato.
 import './_staging-db.mjs';
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599i: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { withMerchant } from './_merchant-fixture.mjs';
+import http from 'node:http';
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+// `node:http` sin agente y no `fetch` (SCRUM-1218i): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de `fetch`
+// (status, ok, headers.get, text, json, arrayBuffer) y, como el `redirect: 'manual'` de antes, no sigue
+// redirecciones. El cuerpo se guarda en bytes: `text()` lo decodifica como `fetch` (TextDecoder).
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    const trozos = [];
+    r.on('data', (t) => { trozos.push(t); });
+    r.on('end', () => {
+      const buf = Buffer.concat(trozos);
+      ok({
+        status: r.statusCode,
+        ok: r.statusCode >= 200 && r.statusCode < 300,
+        headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+        text: async () => new TextDecoder().decode(buf),
+        json: async () => JSON.parse(new TextDecoder().decode(buf)),
+        arrayBuffer: async () => buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
+      });
+    });
+  });
+  req.on('error', mal);
+  req.end(body);
+});
 
-test('SCRUM-136: el hub de Equipo es admin-only — un operario no ve el pendiente de sus compañeros', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
+
+test('SCRUM-136: el hub de Equipo es admin-only — un operario no ve el pendiente de sus compañeros', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const request = (await import('node:http')).default;
@@ -45,7 +74,7 @@ test('SCRUM-136: el hub de Equipo es admin-only — un operario no ve el pendien
     await new Promise((r) => server.once('listening', r));
     const port = server.address().port;
     const get = async (token) => {
-      const res = await fetch(`http://127.0.0.1:${port}/admin/team`, { headers: { cookie: `pf_session=${token}` } });
+      const res = await pedirSinAgente(`http://127.0.0.1:${port}/admin/team`, { headers: { cookie: `pf_session=${token}` } });
       return { status: res.status, body: await res.json().catch(() => null) };
     };
 
@@ -68,7 +97,7 @@ test('SCRUM-136: el hub de Equipo es admin-only — un operario no ve el pendien
   });
 });
 
-test('SCRUM-136: el resumen NO homogeneiza las ventanas — presupuestos del mes, trabajos del histórico', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-136: el resumen NO homogeneiza las ventanas — presupuestos del mes, trabajos del histórico', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { getTeamOverview } = await import('../dist/modules/team/domain/teamOverview.service.js');
 
@@ -117,7 +146,7 @@ test('SCRUM-136: el resumen NO homogeneiza las ventanas — presupuestos del mes
   });
 });
 
-test('SCRUM-136: el propietario sale en el hub aunque no sea TeamMember, con sus propios números', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-136: el propietario sale en el hub aunque no sea TeamMember, con sus propios números', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { getTeamOverview } = await import('../dist/modules/team/domain/teamOverview.service.js');
 
@@ -140,3 +169,11 @@ test('SCRUM-136: el propietario sale en el hub aunque no sea TeamMember, con sus
     assert.equal(owner.resumen.pendiente, 750);
   });
 });
+
+// SCRUM-1599i (diseño B de SCRUM-1599) · la mutación que tumba el caso de base, CATALOGADA en SCRUM-1599i.
+// Va aparte de `MUTACIONES_QUE_ME_TUMBAN` a propósito: el job del meta-guard corre SIN base, el caso sale
+// SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco PGlite,
+// `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e). Cada campo, LITERAL.
+export const MUTACIONES_CON_BASE = [
+  { fichero: "src/modules/team/domain/teamOverview.service.ts", de: "pendiente: round2(Number(r._sum.totalAceptado ?? 0) - Number(r._sum.totalCobrado ?? 0)),", a: "pendiente: round2(Number(r._sum.totalAceptado ?? 0)),", cae: "SCRUM-136: el resumen NO homogeneiza las ventanas" },
+];

@@ -767,3 +767,143 @@ que repita el defecto como vivo; la única copia del título es la foto de Jira 
 - El fallo que se convierte en comprobación no es mío, es del instrumento que traía: un mutador en
   dos llamadas deja el árbol mutado si la segunda no llega. Por eso la línea A9 apunta al mutador
   nuevo, que se vio devolver el compilado con el proceso cortado a medias.
+
+# SCRUM-1404g · PR-2 (a): el pendiente de sellado contesta 409 firmado si la factura entra en la cadena; el justificante y el comercio no español siguen en 500
+
+**Medido contra:** `origin/main` = `afd062082d62592f55f5b29a9d3db3555850b59b` · 2026-10-26T17:00:07Z (hora de GitHub)
+
+A9: comprobación → `tests/scrum1404g-el-409-del-pendiente-de-sellado.test.mjs`
+
+*(Escribe J1, equipo de Javier, sesión `jv-j1cm`. Lo que se hace es la opción 2 de c.20930, que el
+fundador decidió en c.20932, con el GO de la regla 40 ampliado. **CRUCE DE CARRIL DECLARADO:**
+`src/modules/billing/app/routes/receipt.routes.ts` es de J2, y lo declara c.20932 sólo para este
+cambio. **La rama NO está completa a propósito:** el fundador escribe encima `REINTENTO_ACTIVO_DESDE`
+en este mismo PR (c.20923 P2). Nunca entra (a) sola.)*
+
+## Lo que cambia
+
+* `portonDocumento.ts` · `esErrorSinSellar(e, numero?, merchant?)`. Sigue reconociendo
+  `invoice_sin_sellar` como antes. Ahora reconoce también `invoice_pendiente_de_sellado`, pero **sólo
+  si** `debeEstarEnLaCadena(numero, merchant)`, y sin número no lo reconoce. La puerta
+  `exigirDocumentoEmitible` no cambia.
+* `invoicesAdmin.routes.ts` (`GET /admin/invoices/:id/pdf`) · la factura sale del `try`. La consulta
+  de pertenencia pide además `number` y `merchant { country, taxId }`, y el `catch` se los pasa al
+  reconocedor.
+* `receipt.routes.ts` (`GET /recibo/:token/pdf`) · `invoice` sale del `try`. Las dos lecturas de la
+  factura incluyen `merchant { country, taxId }`, y el `catch` se los pasa al reconocedor.
+* ⛔ No se tocan `lib/invoicing.ts` (la opción 3, descartada), ni `REINTENTO_ACTIVO_DESDE`, ni el
+  caso ④ de `scrum1507`. No hay texto nuevo: las dos frases del 409 son las firmadas (SCRUM-1502
+  c.18835), las mismas que ya daba el caso G.
+
+## Lo que tiene que escribir el fundador encima, en este PR
+
+1. `src/modules/invoicing/domain/reintentoSellado.ts:74` · `REINTENTO_ACTIVO_DESDE`, con la hora de
+   GitHub (el procedimiento está en la cabecera de esa constante).
+2. `tests/scrum1507-el-cron-del-reintento.test.mjs` · el caso ④ (c.20921 §1).
+3. `tests/scrum1404g-el-409-del-pendiente-de-sellado.test.mjs` · `TODO_DEL_GUARD_J5 = null`. Si no lo
+   pone, cae el hermano del guard («con la fecha escrita, su todo ya no puede seguir puesto»).
+
+## El test, por destino (`montarAppReal()`, A10 de SCRUM-1344)
+
+Las filas no se escriben a mano. Las escribe `sellarTrasEmision` compilado, con los mismos fallos que
+fabrica el control de J5. El doble de la app respeta `select` e `include`: si la ruta no pide el
+comercio, al `catch` no le llega.
+
+| caso | recibo público | panel | qué dice |
+| --- | --- | --- | --- |
+| P · ES, el sellado falla antes de la huella | 409, la página firmada byte a byte | 409 `{error, message}` firmado | el arreglo |
+| F · ES, no llegó a la puerta | 409 | 409 | el arreglo |
+| D · justificante `J-` pendiente | **500** | **500** | c.20923 P4 |
+| E · comercio PT pendiente | **500** | **500** | c.20923 P4 |
+| G · «no aplica», NIF añadido después | 409 | 409 | no cambia |
+| factura sellada | 200, PDF | 200, PDF | no cambia |
+| X · sellada, emisor sin nombre (avería) | 500 | 500 | no se lo traga |
+| C · huella escrita, estado sin marcar | 409 | 409 | **excepción declarada** (c.20923 P5): el reintento no la recoge nunca |
+
+En todos los casos que no son 200 se comprueban **0 escrituras en `invoice`** al pedir el documento
+(regla 29).
+
+**El guard de J5** (la respuesta nunca antes que el reintento, c.18783): mientras
+`REINTENTO_ACTIVO_DESDE` sea `null`, P no puede contestar 409. Con esta rama cae, y por eso va como
+`todo` con su motivo. El hermano NO es `todo`: cae si la fecha deja de ser `null` y el `todo` sigue
+puesto.
+
+## Visto en rojo, y visto caer
+
+* **El control de J5, sobre `main` sin el cambio:** `control-en-rojo.mjs --exigir-el-409` sale
+  ROJO con salida 1. Las 5 pendientes (B, C, D, E y F) dan 500 por las dos rutas, y pasan los 11
+  controles.
+* **El test nuevo, sobre `dist/` de `main`:** sale con salida 1. Caen 3 (P, F y C, los tres con
+  `recibo: 500`), pasan 7 y queda 1 `todo`: 11 en total.
+* **Con el cambio:** salida 0. Pasan 10, caen 0 y queda 1 `todo`, el guard de J5, que falla como
+  tiene que fallar.
+* **El guard de J5 sin su `todo`:** salida 1, pasan 10 y cae 1, el suyo.
+* **Mutaciones, con la herramienta de la casa** (`MUTACIONES_QUE_ME_TUMBAN` + `aplicarUna` de
+  `scripts/meta-guard-mutaciones.mjs`, sobre el commit `aa9b7dc03d1779045663f0ad5b19d989927bb87b`):
+  **6 vivas de 6**. Son estas: el reconocedor sin selector (cae D), el reconocedor sin el pendiente
+  (cae P), cada ruta sin pasarle la factura (cae P), el 500 del panel convertido en 409 (cae X) y la
+  fecha escrita con el `todo` puesto (cae el hermano). Después, el árbol queda limpio.
+* **Tanda dirigida:** 97 ficheros (los guards del encargo, los de suite y de registro, y los que nombran
+  el camino de emisión o `bocasDeEmision`). Salen 1.044 casos: pasan 1.041, caen 0, se saltan 2 con
+  motivo (`LIBRO_PG_URL` y `TRAMOS_PG_URL`) y queda 1 `todo`. 1.041 + 2 + 1 = 1.044.
+
+## De paso
+
+* `{ todo: null }` **sigue siendo `todo`** en node v24.18.0 del árbol: lo medí al ver el guard de J5
+  sin su `todo`, y con la primera versión siguió en `todo`. Si el fundador hubiera puesto la constante
+  a `null`, el guard no se habría encendido nunca. Ahora la opción sólo se pasa si hay motivo, y el
+  rojo de arriba (salida 1) se midió con eso.
+
+## Lo que NO se midió
+
+* La suite entera en local: **NO CORRIDA** (hay 10 sesiones a la vez y manda el obligatorio de CI).
+* Nada en yaqu.app, staging ni producción. El 409 no se puede ver en yaqu.app hasta que el fundador
+  escriba la fecha y se despliegue.
+* El control de J5 **con** el cambio sigue diciendo ROJO, y no es una regresión. Su veredicto exige
+  409 para las 5 pendientes, D y E incluidas (es anterior a c.20923 P4). Además, su doble del panel
+  devuelve `{ id }` sin mirar el `select`, así que tampoco ve el número. El test que vale es el de
+  este tramo.
+* La frase del panel la copié del código (`invoicesAdmin.routes.ts`, que la ancla a SCRUM-1502
+  c.18835). En Jira no la he vuelto a leer.
+
+## Mis errores
+
+* Escribí `{ todo: TODO_DEL_GUARD_J5 }` dando por hecho que `null` lo apagaba, y le iba a decir al
+  fundador «pon `null`». Lo cazó ver el guard de J5 sin su `todo`, que es lo que pedía el encargo.
+* Crucé los 200k de contexto al acabar las mutaciones (~213k) y lo avisé en ese momento.
+
+## El rojo propio del obligatorio: el trinquete de `scrum812` (sesión `jv-j1cn`)
+
+A9: comprobación → `tests/scrum812-el-rotulo-declara-su-poblacion.test.mjs`
+
+*(Escribe J1, sesión `jv-j1cn`, por encargo del orquestador tras c.20938. Medido contra
+`origin/main` = `268eb55ddf33547063a620009e505e4ed833ba35`, leído el 26-oct-2026 tras `git fetch`.
+Carril: `tests/` y este registro; no toca `src/`.)*
+
+* **El rojo** (obligatorio de #2896, vigía `jv-j6cn`): `scrum812` :288, «LA COBERTURA HA SUBIDO a 36
+  (el suelo decía 35)». Lo causa el test nuevo de este tramo, que declara mutaciones y se titula
+  GUARD por su caso «guard de J5…».
+* **Comprobado que es SÓLO ese fichero**, con el lector del propio `scrum812`
+  (`censoConPoblacion` + `seTitulaGuard`) sobre los dos árboles: `origin/main` da **35** y la rama
+  (`1afa6fb8d`) da **36**, población 1.528 ficheros de test en los dos. La única línea distinta entre
+  las dos listas es `scrum1404g-el-409-del-pendiente-de-sellado.test.mjs`. Control positivo: el 35 de
+  `main` es justo el suelo vigente.
+* **Arreglo:** `SUELO_GUARD_QUE_DECLARAN` pasa a 36, con su entrada fechada y sus dos sha en el
+  comentario del trinquete; la mutación ④ pasa a «36 → 35» para seguir tumbándolo. El suelo sube: el
+  trinquete queda más duro, no más blando.
+* **Visto en rojo, y visto caer:** con el suelo en 35 el test sale 5 de 6 con el literal del CI
+  («HA SUBIDO a 36 (el suelo decía 35)»); con 36, 6 de 6. Que la mutación ④ sigue teniendo ancla lo
+  dice el caso del propio trinquete (el ancla aparece 2 veces y la primera en línea propia).
+* **Dirigida:** 129 ficheros (los que nombran un fichero de la rama según `tests-que-cubren --porque`,
+  los que recorren `docs/master`, y 812, 1404b, 1404g, 1507, 206, 206b, 237, 976, 824, 836, 419, 702,
+  700, 719, 1415, 622, 273, 267, 1294 y 1572), `dist/` compilado con `tsc --noCheck`: **1.294 casos =
+  1.284 pasan + 2 caen + 7 saltos + 1 `todo`**. El `todo` es el guard de J5 (a propósito). Los 2
+  rojos son `scrum1298b` :105 y :180, que no toca esta rama: comparan la ruta corta del TEMP
+  (`JAVIER~1`) con la larga (`Javier Pereira`); es de esta máquina, no del cambio.
+* **NO medido:** la suite entera en local (NO CORRIDA, manda el obligatorio); el test de 1517 no
+  existe con ese número en `tests/` (lo busqué por nombre: 0 ficheros).
+
+### Mis errores
+
+* No he leído enteros los 26 comentarios anteriores a c.20921 de SCRUM-1404: leí de c.20921 a
+  c.20938, que son los que deciden este cambio.

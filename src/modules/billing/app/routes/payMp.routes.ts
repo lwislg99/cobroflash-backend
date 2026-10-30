@@ -4,6 +4,7 @@
 import { Router } from 'express';
 import { prisma } from '../../../../core/db/prisma';
 import { documentNotFoundHtml } from '../../../../core/http/publicNotFound';
+import { comercioSuprimido } from '../../domain/comercioSuprimido'; // SCRUM-1573b
 import { config, BASE_URL } from '../../../../core/config/env';
 import { esc, formatMoneyEs } from '../../../../core/utils/utils';
 import { createMpPreference } from '../../../../integrations/mercadopago';
@@ -59,6 +60,7 @@ router.get('/mp/:token', async (req, res) => {
   });
 
   if (!charge)            return res.status(404).send(documentNotFoundHtml());
+  if (comercioSuprimido(charge.merchant)) return res.status(404).send(documentNotFoundHtml()); // SCRUM-1573b
   if (charge.status === 'paid')    return res.redirect(`${BASE_URL}/pay/mp/${token}/result?status=approved`);
   if (charge.status === 'expired') return res.redirect(`${BASE_URL}/pay/mp/${token}/result?status=expired`);
 

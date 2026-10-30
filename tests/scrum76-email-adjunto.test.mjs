@@ -10,6 +10,7 @@
 // el test se omite (no aplica). Datos efímeros propios con limpieza en el finally (lección SCRUM-63).
 //   QA_DB_TEST=1 npm run test:staging
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599k: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 import test from 'node:test';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
 import { crearFactura } from './_factura-fixture.mjs';
@@ -17,9 +18,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 
-test('SCRUM-76: el email adjunta el PDF en TODAS las ramas (outbox .eml materializado + fallback de presupuesto)', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
+test('SCRUM-76: el email adjunta el PDF en TODAS las ramas (outbox .eml materializado + fallback de presupuesto)', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { config } = await import('../dist/core/config/env.js');
   // El fallback (donde vivían los defectos) solo se ejerce sin Resend. Con clave → path Resend, no aplica.
@@ -88,3 +89,11 @@ test('SCRUM-76: el email adjunta el PDF en TODAS las ramas (outbox .eml material
     await prisma.$disconnect();
   }
 });
+
+// SCRUM-1599k (diseño B de SCRUM-1599) · la mutación que tumba el caso de base, CATALOGADA en SCRUM-1599k.
+// Va aparte de `MUTACIONES_QUE_ME_TUMBAN` a propósito: el job del meta-guard corre SIN base, el caso sale
+// SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco PGlite,
+// `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e). Cada campo, LITERAL.
+export const MUTACIONES_CON_BASE = [
+  { fichero: "src/modules/messaging/domain/email.service.ts", de: "      attachments: [{ filename: `${inv.number}.pdf`, content: Buffer.from(pdfBase64, 'base64'), contentType: 'application/pdf' }],", a: "      attachments: [],", cae: "SCRUM-76: el email adjunta el PDF" },
+];

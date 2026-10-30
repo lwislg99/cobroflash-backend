@@ -551,3 +551,154 @@ export function mensajeApagado() {
 export const AVISO_ALCANCE =
   'ℹ️  Alcance: esto es un guard contra el OLVIDO, no contra la mala fe — nada impide borrar o\n' +
   '   editar el recibo a mano. NO sustituye a un CI de los gateados; sustituye al descuido.\n';
+
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-1599g · EL RECIBO POR FICHERO — fecha y veredicto de cada fichero, y su último VERDE
+//
+// Hasta aquí el recibo decía «la tanda salió X» y nada más: no había forma de saber desde cuándo
+// un fichero gateado no pasaba. Medido en SCRUM-1599 (c.20713): scrum17 estuvo 46 días en rojo,
+// scrum85 36 y scrum178/814 31,5, y el único recibo de la máquina era del 4-sep, sin desglose.
+// Decisión del fundador, SCRUM-1599 c.20715 ②: el runner guarda fecha y veredicto de cada
+// fichero; el aviso «N días sin verde» lo pinta `scripts/equipo/latido.mjs` (S5), que consume
+// `diasSinVerde` de aquí abajo.
+//
+// Tres piezas, las tres puras (el disco lo pone el runner):
+//   · el REPORTER (export default): node --test lo carga junto al spec y le da los eventos con
+//     su `file`; escribe UNA línea JSON al terminar. Si el hijo muere antes, la línea no existe y
+//     ese hijo no aporta nada: no se adivina.
+//   · `fusionarPorFichero`: lo que corrió ahora pisa su entrada; lo que no corrió se queda como
+//     estaba. El último verde se conserva de recibo en recibo — es lo que no se puede perder.
+//   · `diasSinVerde`: lo que lee el latido. Sin recibo, o con un recibo sin desglose, CIEGO.
+// ─────────────────────────────────────────────────────────────────────────────────────────
+
+/** Los tres veredictos de un fichero en una tanda. `saltado` NO es verde: no midió nada. */
+export const VEREDICTOS_FICHERO = ['verde', 'rojo', 'saltado'];
+
+const DIA_MS = 24 * 60 * 60 * 1000;
+
+/** La clave de un fichero en el recibo: su nombre, sin carpeta (tests/ es plano). */
+export function claveDeFichero(ruta) {
+  if (typeof ruta !== 'string' || ruta === '') return null;
+  const partes = ruta.split(/[\\/]/);
+  return partes[partes.length - 1] || null;
+}
+
+/**
+ * El reporter de node:test. Cuenta, por fichero, los casos que pasan, caen y se saltan, y al
+ * terminar escribe `{"porFichero": {"<fichero>": {pass, fail, skip}}}` en una sola línea.
+ * Un `todo` no cuenta en ningún lado: ni pasa ni cae por diseño.
+ */
+export default async function* reporterPorFichero(source) {
+  const cuentas = {};
+  for await (const e of source) {
+    if (e?.type !== 'test:pass' && e?.type !== 'test:fail') continue;
+    const f = claveDeFichero(e.data?.file);
+    if (!f || e.data?.todo) continue;
+    const c = (cuentas[f] ??= { pass: 0, fail: 0, skip: 0 });
+    if (e.type === 'test:fail') c.fail++;
+    else if (e.data?.skip) c.skip++;
+    else c.pass++;
+  }
+  yield JSON.stringify({ porFichero: cuentas }) + '\n';
+}
+
+/** Del recuento de un fichero, su veredicto. Un fichero sin casos que pasen no es verde. */
+export function veredictoDeFichero(c) {
+  if (!c || typeof c !== 'object') return null;
+  if (c.fail > 0) return 'rojo';
+  if (c.pass > 0) return 'verde';
+  return 'saltado';
+}
+
+/**
+ * Lee la salida del reporter. `null` si no se puede leer: un hijo que murió antes de terminar
+ * deja el fichero vacío o cortado, y entonces NO aporta veredictos (no es «todo verde»).
+ * @returns {Record<string, 'verde'|'rojo'|'saltado'> | null}
+ */
+export function leerSalidaReporter(texto) {
+  if (typeof texto !== 'string' || texto.trim() === '') return null;
+  let o;
+  try { o = JSON.parse(texto.trim().split(/\r?\n/).pop()); } catch { return null; }
+  if (!o || typeof o.porFichero !== 'object' || o.porFichero === null) return null;
+  const res = {};
+  for (const [f, c] of Object.entries(o.porFichero)) {
+    const v = veredictoDeFichero(c);
+    if (v) res[f] = v;
+  }
+  return res;
+}
+
+/**
+ * El historial por fichero del recibo nuevo.
+ * @param {object|null} previo       `porFichero` del recibo anterior (o null si no había)
+ * @param {Record<string,string>} resultados  veredicto de cada fichero que corrió AHORA
+ * @param {string} terminadaEn       ISO de esta tanda
+ * @returns {Record<string, {veredicto: string, veredictoEn: string, ultimoVerdeEn: string|null}>}
+ */
+export function fusionarPorFichero(previo, resultados, terminadaEn) {
+  const base = previo && typeof previo === 'object' && !Array.isArray(previo) ? previo : {};
+  const res = { ...base };
+  for (const [f, veredicto] of Object.entries(resultados || {})) {
+    if (!VEREDICTOS_FICHERO.includes(veredicto)) continue;
+    const antes = base[f] && typeof base[f] === 'object' ? base[f] : {};
+    res[f] = {
+      veredicto,
+      veredictoEn: terminadaEn,
+      ultimoVerdeEn: veredicto === 'verde' ? terminadaEn : (antes.ultimoVerdeEn ?? null),
+    };
+  }
+  return res;
+}
+
+/**
+ * LO QUE CONSUME EL LATIDO: cuántos días lleva cada fichero sin verde.
+ *
+ * Estados de la respuesta: `CIEGO` (no hay recibo, no se lee, o no trae `porFichero`) u `OK`.
+ * Y por fichero:
+ *   · `verde`        su último veredicto fue verde;
+ *   · `sin-verde`    tuvo un verde y desde entonces no (rojo o saltado): `dias` = días desde él;
+ *   · `nunca-verde`  rojo y ningún verde registrado: `dias` = null;
+ *   · `saltado`      nunca verde y su último veredicto es saltado: la tanda no lo mide;
+ *   · `CIEGO`        está en `ficheros` y el recibo no lo nombra.
+ * `avisa` sólo se calcula si llega `umbralDias` (el número no está decidido: pregunta ④ de
+ * SCRUM-1599 c.20713, sin respuesta en c.20715). Sin umbral, la edad se da igual.
+ *
+ * @param {object} p
+ * @param {string|null} p.texto        contenido del recibo, o null si no existe
+ * @param {number} p.ahoraMs
+ * @param {string[]} [p.ficheros]      los que deberían estar (p. ej. los gateados de hoy)
+ * @param {number} [p.umbralDias]
+ */
+export function diasSinVerde({ texto, ahoraMs, ficheros, umbralDias }) {
+  const ciego = (motivo) => ({ estado: 'CIEGO', motivo, poblacion: 0, ficheros: [], avisos: [] });
+  if (texto === null || texto === undefined || String(texto).trim() === '') {
+    return ciego(`no existe ${RUTA_RECIBO}: la tanda gateada no ha corrido desde este árbol`);
+  }
+  let r;
+  try { r = JSON.parse(texto); } catch { return ciego(`${RUTA_RECIBO} no es JSON válido`); }
+  const pf = r && typeof r === 'object' ? r.porFichero : null;
+  if (!pf || typeof pf !== 'object' || Array.isArray(pf) || Object.keys(pf).length === 0) {
+    return ciego(`${RUTA_RECIBO} no trae desglose por fichero (recibo anterior a SCRUM-1599g)`);
+  }
+  if (!Number.isFinite(ahoraMs)) return ciego('sin reloj (ahoraMs)');
+  const conUmbral = Number.isFinite(umbralDias);
+  const nombres = Array.isArray(ficheros) ? ficheros.map(claveDeFichero).filter(Boolean) : Object.keys(pf);
+  const filas = nombres.sort().map((fichero) => {
+    const e = pf[fichero];
+    if (!e || typeof e !== 'object') return { fichero, estado: 'CIEGO', dias: null, avisa: conUmbral ? true : null };
+    const tVerde = typeof e.ultimoVerdeEn === 'string' ? Date.parse(e.ultimoVerdeEn) : NaN;
+    let estado, dias = null;
+    if (e.veredicto === 'verde') estado = 'verde';
+    else if (Number.isFinite(tVerde)) estado = 'sin-verde';
+    else if (e.veredicto === 'rojo') estado = 'nunca-verde';
+    else if (e.veredicto === 'saltado') estado = 'saltado';
+    else estado = 'CIEGO';
+    if (Number.isFinite(tVerde)) dias = Math.floor((ahoraMs - tVerde) / DIA_MS);
+    const avisa = !conUmbral ? null
+      : estado === 'CIEGO' || estado === 'nunca-verde' || (dias !== null && dias > umbralDias);
+    return { fichero, estado, dias, veredicto: e.veredicto ?? null, veredictoEn: e.veredictoEn ?? null,
+      ultimoVerdeEn: e.ultimoVerdeEn ?? null, avisa };
+  });
+  return { estado: 'OK', motivo: null, poblacion: filas.length, terminadaEn: r.terminadaEn ?? null,
+    ficheros: filas, avisos: filas.filter((f) => f.avisa === true) };
+}

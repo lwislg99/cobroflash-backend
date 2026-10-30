@@ -32,8 +32,16 @@
 # o salido con 2 en el paso de las mutaciones, es CIEGO con causa propia, no ROJO: no lo absuelve un
 # verde posterior, y manda aunque otro job del run esté en rojo (va nombrado en el motivo).
 #
-# ⚠️ Lo que NO se pudo probar fuera de GitHub, declarado en `docs/master/SCRUM-1393c.md`: que los
-# disparadores salten, que el cron llegue, y que el Issue se escriba. Hasta su primera pasada, CIEGO.
+# ⚠️ Lo que NO se pudo probar fuera de GitHub está declarado en `docs/master/SCRUM-1393.md`, tercer tramo
+# («SCRUM-1393c»), apartado «Lo que NO se puede saber hasta que corra en GitHub»: que los disparadores
+# salten, que el cron llegue, y que el Issue se escriba. Ya ha corrido (SCRUM-1621, medido el 27-oct-2026:
+# 300 pasadas, 6 del cron, llegando entre 5 y 7 h tarde, y el Issue #2641 con 214 comentarios).
+#
+# 🔴 ESTE VIGÍA ES UN CRON Y SU PROPIO SILENCIO NO LO VIGILA NADIE (decisión del fundador, SCRUM-1324
+# c.17719: «escrito, en el registro y en el propio workflow»). Si GitHub deja de dispararlo —un cron que no
+# llega, un `workflow_run` que no salta, el workflow desactivado— no sale ningún aviso: un Issue sin
+# comentarios nuevos se lee igual con `main` en verde que con el vigía parado. Lo único que lo enseña es el
+# latido del equipo (`scripts/equipo/latido.mjs`, sección VIGÍA DE MAIN), y sólo a quien lo corre.
 name: Vigía de main
 
 on:
@@ -179,3 +187,34 @@ jobs:
             esac
             echo "- **$p** ${NUM:+#$NUM}" >> "$GITHUB_STEP_SUMMARY"
           done
+
+      - name: Sin veredicto, el job en ROJO
+        # SCRUM-1324d (decisión del fundador, SCRUM-1324 c.20749: «Sí, rojo sin veredicto»). Del 22 al
+        # 24-oct el juez no escribió veredicto en más de 120 pasadas seguidas (le faltaba `typescript`,
+        # SCRUM-1324c) y el job salió `success` en todas: su silencio y su «todo bien» eran el mismo
+        # verde. Va DESPUÉS de avisar, para que el aviso salga igual, y con `always()` para que corra
+        # aunque un paso de antes haya caído.
+        # Veredicto = `vigia.json` legible, con al menos un commit juzgado, y salida 0 o 1. La salida 1
+        # CON veredicto es un rojo o CIEGO del código, que ya va al Issue: eso no tumba este job.
+        if: always()
+        env:
+          SALIDA: ${{ steps.juez.outputs.salida }}
+        run: |
+          motivo=""
+          if [ ! -f vigia.json ]; then
+            motivo="el juez no escribió vigia.json"
+          elif ! N="$(node -e 'const d = JSON.parse(require("fs").readFileSync("vigia.json", "utf8")); if (!Array.isArray(d.veredictos)) process.exit(1); process.stdout.write(String(d.veredictos.length))' 2>/dev/null)"; then
+            motivo="vigia.json no se puede leer o no trae «veredictos»"
+          elif [ "$N" = "0" ]; then
+            motivo="vigia.json no juzga ningún commit"
+          fi
+          case "${SALIDA:-}" in
+            0|1) ;;
+            *) motivo="${motivo:+$motivo · }salida del juez «${SALIDA:-vacía}» (2 = no supo mirar)" ;;
+          esac
+          if [ -n "$motivo" ]; then
+            echo "::error title=Vigía de main SIN veredicto::$motivo"
+            echo "- 🔴 **SIN veredicto**: $motivo" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          echo "- veredicto: **$N** commit(s) juzgado(s), salida $SALIDA" >> "$GITHUB_STEP_SUMMARY"

@@ -42,8 +42,9 @@
 // abortaba por lo mismo que el CLI del turno. El porqué medido está en `_cargar-env.mjs`.
 import { cargarEnvDelEquipo, resumenDeEnv } from './_cargar-env.mjs';
 import { spawnSync } from 'node:child_process';
-import { readdirSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { readdirSync, existsSync, mkdirSync, writeFileSync, readFileSync, rmSync, mkdtempSync } from 'node:fs';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import os from 'node:os';
 import path from 'node:path';
 import { PrismaClient } from '@prisma/client';
 import { assertSafeStagingUrl, STAGING_HOST } from './_db-guard.mjs';
@@ -82,6 +83,9 @@ import { guardarNota, borrarNota } from './_turno-nota.mjs';
 // SCRUM-239: `huellaDeCodigo` es el ANCLA del recibo, y se importa (no se reimplementa) para
 // que el runner y el verificador no puedan calcular cosas distintas.
 import { RUTA_RECIBO, HIJOS_SPEC, AISLADOS, pesadoEsElUltimo, huellaDeCodigo } from './_evidencia-tanda.mjs';
+// SCRUM-1599g: el mismo módulo es el REPORTER que cuenta por fichero (su export default), y de
+// él salen las dos piezas puras que leen esa salida y la fusionan con el recibo anterior.
+import { leerSalidaReporter, fusionarPorFichero } from './_evidencia-tanda.mjs';
 // SCRUM-265: piezas puras del margen. Viven fuera porque este fichero es un SCRIPT — importarlo
 // desde un test lanzaría una tanda —, y sin poder importarlas no habría forma de darles red.
 import { medirMargen, textoDeMargen, esAbortadoPorTiempo, margenesVacios } from './_margen-tanda.mjs';
@@ -121,12 +125,27 @@ const ficherosQa = readdirSync(TESTS_DIR)
 // SCRUM-199: los hijos se CONSTRUYEN iterando HIJOS_SPEC (la fuente única en _evidencia-tanda.mjs).
 // El runner solo añade lo runtime: los `args` (que dependen de `override` y de `ficherosQa`, que sí
 // necesitan fs y no caben en la hoja). No re-lista claves ni ficheros — el guard scrum199 lo impide.
+// SCRUM-1599g · cada hijo lleva DOS reporters: el spec a stdout, como antes (de su resumen sale
+// `parseCuenta`), y el de `_evidencia-tanda.mjs`, que escribe el recuento por fichero FUERA del
+// árbol (un temporal dentro del repo es el rojo intermitente de SCRUM-824). Desde node 24 el spec
+// ya era el de por defecto; con un segundo reporter hay que nombrarlo, o desaparece de stdout.
+const REPORTER_POR_FICHERO = pathToFileURL(path.join(HERE, '_evidencia-tanda.mjs')).href;
+// El directorio sale de `mkdtemp`, único por tanda: una ruta fija del temporal la comparte toda
+// la máquina, y dos tandas se pisarían la salida (scrum258).
+const DIR_POR_FICHERO = mkdtempSync(path.join(os.tmpdir(), 'yaqu-por-fichero-'));
+// Se va al salir por CUALQUIER camino: los `process.exit` de antes del turno no pasan por ningún
+// `finally`, pero sí por el evento `exit` (síncrono, por eso `rmSync`).
+process.on('exit', () => { try { rmSync(DIR_POR_FICHERO, { recursive: true, force: true }); } catch { /* best-effort */ } });
+const salidaPorFichero = (clave) => path.join(DIR_POR_FICHERO, `${clave}.json`);
 const hijos = HIJOS_SPEC.map((s) => ({
   nombre: s.nombre,
   clave: s.clave,
   ...(s.pesado ? { pesado: true } : {}),
   env: s.env,
+  porFichero: salidaPorFichero(s.clave),
   args: ['--test', '--test-force-exit', '--test-concurrency=1',
+    '--test-reporter=spec', '--test-reporter-destination=stdout',
+    `--test-reporter=${REPORTER_POR_FICHERO}`, `--test-reporter-destination=${salidaPorFichero(s.clave)}`,
     ...(override ? [override] : (s.aislado ? [`${TESTS_DIR}/${s.fichero}`] : ficherosQa))],
 }));
 
@@ -179,6 +198,12 @@ const desgloseHijos = Object.fromEntries(hijos.map((h) => [h.clave, null]));
 // aunque muriera por timeout o crasheara. El detalle, en `_margen-tanda.mjs`.
 // ─────────────────────────────────────────────────────────────────────────────────────────
 const margenes = margenesVacios(hijos.map((h) => h.clave));
+
+// SCRUM-1599g · el veredicto de cada fichero que corrió en ESTA tanda, de los hijos que
+// terminaron. Un hijo abortado por tiempo o sin salida legible no aporta: sus ficheros se quedan
+// en el recibo como estaban (con su fecha vieja), y se dice cuáles fueron.
+const veredictosPorFichero = {};
+const hijosSinPorFichero = [];
 
 // ── BANNER (SCRUM-166): test:staging y test:staging:gated apuntan AQUÍ. Sale ANTES de nada,
 // ruidoso, para que quien teclee el nombre viejo con memoria muscular vea QUÉ es esto y cuál es
@@ -537,6 +562,13 @@ async function tanda() {
     // NO se hace tree-kill: medido que matar a `node --test` reapea también su subproceso
     // por-fichero (el nieto NO queda huérfano con la conexión). Y un taskkill defensivo sobre un
     // res.pid YA MUERTO sería peligroso: si el SO reusó ese pid, mataría a otro proceso.
+    // SCRUM-1599g · se lee y se borra ANTES de cualquier `continue`: el temporal no se queda.
+    let porFichero = null;
+    try { porFichero = leerSalidaReporter(readFileSync(h.porFichero, 'utf8')); } catch { porFichero = null; }
+    rmSync(h.porFichero, { force: true });
+    if (esAbortadoPorTiempo(res) || !porFichero) hijosSinPorFichero.push(h.nombre);
+    else Object.assign(veredictosPorFichero, porFichero);
+
     if (esAbortadoPorTiempo(res)) {
       fallaron.push(`${h.nombre} [ABORTADO POR TIEMPO · ${durS}s > ${limiteTxt}]`);
       console.log(`\n[${i + 1}/${hijos.length}] ${h.nombre}: ⏱  ABORTADO POR TIEMPO tras ${durS}s (límite ${limiteTxt}${textoDeMargen(margen)}; signal=${res.signal || res.error?.code}). No agrego sus contadores.`);
@@ -621,19 +653,34 @@ async function tanda() {
       return r.status === 0 ? (r.stdout ?? '') : null;
     };
     const huella = huellaDeCodigo(gitParaHuella);
+    const terminadaEn = new Date().toISOString();
+    // SCRUM-1599g · el historial por fichero viaja de recibo en recibo: se lee el anterior antes
+    // de pisarlo. Si no se lee, se empieza de cero (y el último verde de antes se pierde: se dice).
+    let previo = null;
+    try { previo = JSON.parse(readFileSync(RUTA_RECIBO, 'utf8'))?.porFichero ?? null; } catch { previo = null; }
+    if (!previo && existsSync(RUTA_RECIBO)) {
+      console.error(`\n⚠️  SCRUM-1599g: el recibo anterior no trae desglose por fichero legible; el historial empieza hoy.`);
+    }
+    // En AUTOTEST el fichero trivial no es de la tanda: el historial se copia sin tocar.
+    const porFichero = override ? (previo ?? {}) : fusionarPorFichero(previo, veredictosPorFichero, terminadaEn);
+    if (hijosSinPorFichero.length) {
+      console.error(`\n⚠️  SCRUM-1599g: sin veredicto por fichero de ${hijosSinPorFichero.join(' · ')}; sus ficheros conservan la fecha anterior.`);
+    }
     const recibo = {
       commit,
       // `null` si no se pudo calcular, y el validador lo rechaza. Escribir un recibo SIN huella
       // es mejor que escribir uno con una huella a medias: el fallo se ve en vez de heredarse.
       huella: huella?.huella ?? null,
       huellaFicheros: huella?.ficheros ?? null,
-      terminadaEn: new Date().toISOString(),
+      terminadaEn,
       total: agg.tests, pass: agg.pass, fail: agg.fail, skip: agg.skipped,
       ficheros: override ? 1 : ficherosQa.length,
       hijos: desgloseHijos,
       // SCRUM-265 · OBSERVACIÓN, no veredicto. Mapa hermano de `hijos`, jamás dentro: el porqué
       // y qué se rompe al fusionarlos está donde se declara `margenes`, arriba.
       margenes,
+      // SCRUM-1599g · { "<fichero>": {veredicto, veredictoEn, ultimoVerdeEn} }. Lo lee `diasSinVerde`.
+      porFichero,
       autotest: Boolean(override),
       runner: 'scripts/staging-gated.mjs',
     };

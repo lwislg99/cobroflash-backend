@@ -66,7 +66,8 @@ const CENSO_SERVIDOR = marcadoresDeclarados().servidor;
   // ↳ ENTRADA `src/modules/invoicing/infra/pdf/pdf.service.ts` (su número, en el JSON)
   // Aviso del criterio de caja y resumen del modelo 303: los ve el profesional en su pantalla.
   // ↳ ENTRADA `src/modules/invoicing/domain/criterioCaja.ts` (su número, en el JSON)
-  // ↳ ENTRADA `src/modules/fiscal/modelo303/modelo303.ts` (su número, en el JSON)
+  // `src/modules/fiscal/modelo303/modelo303.ts` ESTUVO aquí con 1 y SALIÓ el 24-oct-2026
+  // (SCRUM-1065c): el fundador firmó «Borrador para tu asesor» (SCRUM-1065 c.20813 y c.20820).
   // ↳ ENTRADA `src/modules/fiscal/librosAeat/librosAeat.ts` (su número, en el JSON)
   // ── SCRUM-684 · 4-sep-2026 · ENTRÓ CON 1 Y SALIÓ EL MISMO DÍA ──────────────────────────
   //

@@ -1,0 +1,42 @@
+SCRUM-1599n · banco de 1599h con un test que lanza un hijo con Prisma · J6 jv-j6cl
+Date: Mon, 26 Oct 2026 16:22:05 GMT · origin/main c1331293b · PGlite 0.5.8 + pglite-socket 0.2.11 · dist con tsc --noCheck · ddl de migrate diff --from-empty (33 CREATE TABLE, 33 model)
+
+== ANTES · banco de origin/main (sin pgbouncer) · scrum1515 (dos pasadas, las dos iguales)
+scrum1515-nuestra-puerta-de-alta.test.mjs · exit=1 · 3181 ms · casos=1 (ok=0 not_ok=1 skip=0) · declarados=1 · SUMA
+   not ok · SCRUM-1515 · el merchant que crea nuestro guion nace igual que nacía el de POST /auth/register, y esa ruta ya no da de alta
+
+POBLACION=1 ficheros · EXIT=0
+-- el error del caso, citado de su TAP:
+altaDeMerchant.js:95:51
+code: \"42P05\", message: \"prepared statement \\\"s0\\\" already exists
+
+== CONTROL · banco de origin/main · scrum109 (sin hijo)
+scrum109-expense-teammember.test.mjs · exit=0 · 2378 ms · casos=2 (ok=2 not_ok=0 skip=0) · declarados=2 · SUMA
+POBLACION=1 ficheros · EXIT=0
+
+== DESPUÉS · banco con SIN_PREPARADAS='&pgbouncer=true' · scrum1515
+scrum1515-nuestra-puerta-de-alta.test.mjs · exit=0 · 7482 ms · casos=1 (ok=1 not_ok=0 skip=0) · declarados=1 · SUMA
+POBLACION=1 ficheros · EXIT=0
+-- población que el propio test declara:
+# SCRUM-1515: ruta cerrada, 409 y la frase firmada en 14 llamadas, 0 altas y 0 correos · 2 merchants por el guion · 117 campos comparados por valor con la foto de la ruta (65 por fila en la foto) ·
+
+== MUTACIÓN · SIN_PREPARADAS='' (1 línea) · scrum1515 + control scrum109
+CIEGO (instrumento: 42P05, sentencias preparadas) · scrum1515-nuestra-puerta-de-alta.test.mjs · exit=1 · 2889 ms · casos=1 (ok=0 not_ok=1 skip=0) · declarados=1 · SUMA
+scrum109-expense-teammember.test.mjs · exit=0 · 1643 ms · casos=2 (ok=2 not_ok=0 skip=0) · declarados=2 · SUMA
+POBLACION=2 ficheros · EXIT=0
+
+== REGRESIÓN · banco arreglado · lotes 1599i y 1599k ya en main (13 ficheros)
+scrum90-pay-bank-mp-token.test.mjs · exit=0 · 2728 ms · casos=1 (ok=1 not_ok=0 skip=0) · declarados=1 · SUMA
+scrum136-hub-equipo.test.mjs · exit=0 · 1912 ms · casos=3 (ok=3 not_ok=0 skip=0) · declarados=3 · SUMA
+scrum120-patch-job-roles.test.mjs · exit=0 · 2247 ms · casos=1 (ok=1 not_ok=0 skip=0) · declarados=1 · SUMA
+scrum148-filtro-por-miembro.test.mjs · exit=0 · 2440 ms · casos=2 (ok=2 not_ok=0 skip=0) · declarados=2 · SUMA
+scrum24-operarios-metrics.test.mjs · exit=0 · 3043 ms · casos=1 (ok=1 not_ok=0 skip=0) · declarados=1 · SUMA
+pdfs.test.mjs · exit=0 · 2906 ms · casos=4 (ok=4 not_ok=0 skip=0) · declarados=4 · SUMA
+scrum66-tipo-operacion.test.mjs · exit=0 · 1958 ms · casos=2 (ok=2 not_ok=0 skip=0) · declarados=2 · SUMA
+scrum74-recibo-token.test.mjs · exit=0 · 2170 ms · casos=1 (ok=1 not_ok=0 skip=0) · declarados=1 · SUMA
+scrum94-register-teammember.test.mjs · exit=0 · 2073 ms · casos=1 (ok=1 not_ok=0 skip=0) · declarados=1 · SUMA
+scrum17-recapitulativa.test.mjs · exit=0 · 1845 ms · casos=12 (ok=12 not_ok=0 skip=0) · declarados=12 · SUMA
+scrum222-deriva-arranque.test.mjs · exit=0 · 1403 ms · casos=23 (ok=23 not_ok=0 skip=0) · declarados=23 · SUMA
+scrum76-email-adjunto.test.mjs · exit=0 · 1482 ms · casos=1 (ok=1 not_ok=0 skip=0) · declarados=1 · SUMA
+scrum207-emision-auditada.test.mjs · exit=0 · 1329 ms · casos=5 (ok=5 not_ok=0 skip=0) · declarados=5 · SUMA
+POBLACION=13 ficheros · EXIT=0

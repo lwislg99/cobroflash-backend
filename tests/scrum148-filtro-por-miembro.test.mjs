@@ -11,13 +11,40 @@
 // ⚠️ Toca BD real (staging), gateado:
 //   QA_DB_TEST=1 DATABASE_URL_TESTS="..." npm run test:staging
 import './_staging-db.mjs';
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599i: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { withMerchant } from './_merchant-fixture.mjs';
 import http from 'node:http';
 import crypto from 'node:crypto';
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+// `node:http` sin agente y no `fetch` (SCRUM-1218g): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de `fetch`
+// (status, headers.get, text, json, arrayBuffer) y, como el `redirect: 'manual'` de antes, no sigue
+// redirecciones. El cuerpo se guarda en bytes: `text()` lo decodifica como `fetch` (TextDecoder).
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    const trozos = [];
+    r.on('data', (t) => { trozos.push(t); });
+    r.on('end', () => {
+      const buf = Buffer.concat(trozos);
+      ok({
+        status: r.statusCode,
+        headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+        text: async () => new TextDecoder().decode(buf),
+        json: async () => JSON.parse(new TextDecoder().decode(buf)),
+        arrayBuffer: async () => buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
+      });
+    });
+  });
+  req.on('error', mal);
+  req.end(body);
+});
+
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 
 async function montar(app) {
   const server = http.createServer(app).listen(0);
@@ -36,7 +63,7 @@ async function sesionDe(prisma, merchantId, teamMemberId) {
   return token;
 }
 
-test('SCRUM-148: el filtro por operario NO le da a un técnico la llave de los trabajos ajenos', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-148: el filtro por operario NO le da a un técnico la llave de los trabajos ajenos', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
 
@@ -61,7 +88,7 @@ test('SCRUM-148: el filtro por operario NO le da a un técnico la llave de los t
 
     const { port, cerrar } = await montar(app);
     const jobs = async (token, qs) => {
-      const r = await fetch(`http://127.0.0.1:${port}/admin/jobs${qs}`, { headers: { cookie: `pf_session=${token}` } });
+      const r = await pedirSinAgente(`http://127.0.0.1:${port}/admin/jobs${qs}`, { headers: { cookie: `pf_session=${token}` } });
       const body = await r.json().catch(() => []);
       return { status: r.status, titulos: Array.isArray(body) ? body.map((j) => j.titulo).sort() : body };
     };
@@ -97,7 +124,7 @@ test('SCRUM-148: el filtro por operario NO le da a un técnico la llave de los t
   });
 });
 
-test('SCRUM-148: el filtro de presupuestos distingue "del propietario" de "sin filtrar"', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-148: el filtro de presupuestos distingue "del propietario" de "sin filtrar"', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { listQuotesAdmin } = await import('../dist/modules/system/quoteAdmin.js');
 
@@ -123,3 +150,11 @@ test('SCRUM-148: el filtro de presupuestos distingue "del propietario" de "sin f
     assert.equal(delDueno.length, 1, 'null debe filtrar por "del propietario", no significar "sin filtro"');
   });
 });
+
+// SCRUM-1599i (diseño B de SCRUM-1599) · la mutación que tumba el caso de base, CATALOGADA en SCRUM-1599i.
+// Va aparte de `MUTACIONES_QUE_ME_TUMBAN` a propósito: el job del meta-guard corre SIN base, el caso sale
+// SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco PGlite,
+// `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e). Cada campo, LITERAL.
+export const MUTACIONES_CON_BASE = [
+  { fichero: "src/modules/jobs/app/routes/jobs.routes.ts", de: "    if (!restringido) {", a: "    if (true) {", cae: "SCRUM-148: el filtro por operario NO le da a un técnico la llave" },
+];

@@ -33,7 +33,8 @@ import { inyectarBase, moduloDeDist, MERCHANT } from './_envio-doblado.mjs';
 const RUTAS = '../dist/modules/expenses/app/routes/expenses.routes.js';
 const SERVICIO = '../dist/modules/expenses/domain/expenses.service.js';
 const GASTO_ID = 9430;
-const VALIDAS = ['materiales', 'desplazamiento', 'herramientas', 'subcontrata', 'otros'];
+// SCRUM-1588: `alquiler` entra en `EXPENSE_CATEGORIES`; aquí sigue la lista (consecuencia mecánica).
+const VALIDAS = ['materiales', 'desplazamiento', 'herramientas', 'subcontrata', 'alquiler', 'otros'];
 const AJENAS = ['materials', 'travel', 'subcontractor', 'Materiales', 'MATERIALES', ' materiales', 'gasolina', 'null'];
 
 /** La base doblada. Anota cada escritura TAL CUAL llega, y sirve `lista` a `expense.findMany`. */

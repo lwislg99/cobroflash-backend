@@ -1,0 +1,38 @@
+# SCRUM-1218f · los 4 ROJOS del ANTES (sin migrar), pasada 0: caso caido, error y respuestas de la sonda
+## scrum178-emision-manual
+not ok 2 - SCRUM-178: emisión manual — emite UNA vez, con líneas, y cierra las cuatro puertas
+  error: |-
+    debía emitir; devolvió 409 {"error":"facturacion_no_disponible","message":"[PENDIENTE microcopy oficial]"}
+respuestas:
+GET /auth/verify?token=<tapado> 302
+POST /admin/quotes/489/invoice-manual 409
+## scrum85-pay-routes-token
+not ok 1 - SCRUM-85: /pay/card, /pay/bizum, /pay/invoice cierran el IDOR — numérico 404 sin fuga, token funciona
+  error: 'el link a /pay/card debe llevar el TOKEN'
+respuestas:
+GET /pay/invoice/153 404
+GET /pay/invoice/<token tapado> 200
+## scrum17-recapitulativa
+not ok 12 - SCRUM-17: consolidar → rotura por mes (N facturas), IVA mixto, guards, tenancy
+  error: 'número de serie FISCAL (no J-)'
+respuestas:
+GET /auth/verify?token=<tapado> 302
+POST /admin/jobs/683/consolidar-albaranes 201
+## scrum814-carrera-del-tramo.gated
+not ok 1 - SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo
+  error: |-
+    🔴 se esperaban 2 facturas y hay 0: []. Respuestas: A 409 {"error":"facturacion_no_disponible","message":"[PENDIENTE microcopy oficial]"} · B 409 {"error":"facturacion_no_disponible","message":"[PENDIENTE microcopy oficial]"}
+not ok 2 - SCRUM-814 · plan 30/70: lo facturable NO puede quedar por debajo del presupuesto
+  error: |-
+    se esperaban 2 facturas y hay 0
+not ok 3 - SCRUM-814 · dos peticiones SECUENCIALES siguen emitiendo «Anticipo» y luego «Final»
+  error: |-
+respuestas:
+GET /auth/verify?token=<tapado> 302
+POST /admin/quotes/495/invoice 409
+POST /admin/quotes/495/invoice 409
+GET /auth/verify?token=<tapado> 302
+POST /admin/quotes/496/invoice 409
+POST /admin/quotes/496/invoice 409
+GET /auth/verify?token=<tapado> 302
+POST /admin/quotes/497/invoice 409

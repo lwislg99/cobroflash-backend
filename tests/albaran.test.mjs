@@ -23,6 +23,28 @@ import {
   validarLineas,
   calcAlbaranTotales,
 } from '../dist/modules/jobs/domain/albaran.service.js';
+import http from 'node:http';
+
+// `node:http` sin agente y no `fetch` (SCRUM-1218d): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de `fetch`
+// (status, headers.get, text, json). No sigue redirecciones: medido, las únicas 3xx son las de /auth/verify, que ya iban con `redirect: 'manual'`.
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    let d = ''; r.setEncoding('utf8');
+    r.on('data', (t) => { d += t; });
+    r.on('end', () => ok({
+      status: r.statusCode,
+      headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+      text: async () => d,
+      json: async () => JSON.parse(d),
+    }));
+  });
+  req.on('error', mal);
+  req.end(body);
+});
 
 // ── Numeración (pura) ────────────────────────────────────────────────────────
 // 🔴 SCRUM-592 (DOC-02) · el formato pasa a `AB260001`. El de antes —`ALB-2026-001`— sigue
@@ -234,7 +256,7 @@ test('SCRUM-14: tenancy del albarán + lock de firmado end-to-end', { skip: !ENA
     await prisma.authSession.create({
       data: { merchantId, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) },
     });
-    const res = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
+    const res = await pedirSinAgente(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
     const cookie = (res.headers.get('set-cookie') || '').split(';')[0];
     assert.ok(cookie.startsWith('pf_session='), 'no se obtuvo cookie de sesión');
     return cookie;
@@ -243,7 +265,7 @@ test('SCRUM-14: tenancy del albarán + lock de firmado end-to-end', { skip: !ENA
     const cookieA = await mkCookie(merchantA.id);
     const cookieB = await mkCookie(merchantB.id);
     const jsonReq = (url, cookie, method = 'GET', body) =>
-      fetch(`${base}${url}`, {
+      pedirSinAgente(`${base}${url}`, {
         method,
         headers: { cookie, 'content-type': 'application/json' },
         body: body ? JSON.stringify(body) : undefined,
@@ -321,7 +343,7 @@ test('SCRUM-14: tenancy del albarán + lock de firmado end-to-end', { skip: !ENA
 
     // Acceso PÚBLICO al estático eliminado (nombre nuevo y viejo) → 404, JAMÁS un PDF.
     for (const p of [`/albaranes/${merchantA.id}-${alb1.numero}.pdf`, `/albaranes/${alb1.numero}.pdf`]) {
-      const rPub = await fetch(`${base}${p}`); // sin cookie: superficie pública
+      const rPub = await pedirSinAgente(`${base}${p}`); // sin cookie: superficie pública
       assert.equal(rPub.status, 404, `${p} público debería ser 404 y fue ${rPub.status}`);
       assert.doesNotMatch(rPub.headers.get('content-type') || '', /application\/pdf/, `${p} no debe servir un PDF`);
     }
@@ -364,10 +386,10 @@ test('SCRUM-65: albarán VALORADO — validación, candado de modo y PDF en ambo
     await prisma.authSession.create({
       data: { merchantId: merchant.id, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) },
     });
-    const resAuth = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
+    const resAuth = await pedirSinAgente(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
     const cookie = (resAuth.headers.get('set-cookie') || '').split(';')[0];
     const jsonReq = (url, method = 'GET', body) =>
-      fetch(`${base}${url}`, {
+      pedirSinAgente(`${base}${url}`, {
         method,
         headers: { cookie, 'content-type': 'application/json' },
         body: body ? JSON.stringify(body) : undefined,

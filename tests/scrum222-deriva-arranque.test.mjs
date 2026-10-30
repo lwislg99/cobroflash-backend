@@ -34,6 +34,7 @@
 // ⚠️ AST, no `grep`: un guard por texto casa con el propio comentario que lo explica.
 
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging con QA_DB_TEST=1 (fail-closed anti-prod)
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599k: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -284,9 +285,9 @@ test('el SQL del censo es de SOLO LECTURA y lleva su suelo anti-falso-positivo',
 // esquema real encaje solo los puede afirmar una base de verdad. Este es el único test aquí que
 // abre una conexión, y solo LEE `information_schema`: no crea ni borra nada.
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 
-test('GATEADO · contra la BD de staging el arranque da en-sync de verdad', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('GATEADO · contra la BD de staging el arranque da en-sync de verdad', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const r = await comprobarDerivaDeSchema();
   assert.equal(
     r.estado,
@@ -299,7 +300,7 @@ test('GATEADO · contra la BD de staging el arranque da en-sync de verdad', { sk
   assert.ok(r.columnas >= 100, `pocas columnas comprobadas: ${r.columnas}`);
 });
 
-test('GATEADO · contra la BD de staging, una deriva de verdad se ve y NO arrancaría', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('GATEADO · contra la BD de staging, una deriva de verdad se ve y NO arrancaría', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   // La otra mitad: que el en-sync de arriba no sea un «siempre digo que sí». Se le enseña a la
   // base real un datamodel que dice tener una columna que la base NO tiene — que es exactamente
   // la forma del defecto: un PR añade la columna y el `db push` no se ejecuta.
@@ -400,3 +401,11 @@ test('AUTOPRUEBA · el guard caza un arranque al que le quitaron la comprobació
   });
   assert.equal(encontrada, false, 'el guard tiene que ver la ausencia, no darla por buena');
 });
+
+// SCRUM-1599k (diseño B de SCRUM-1599) · la mutación que tumba el caso de base, CATALOGADA en SCRUM-1599k.
+// Va aparte de `MUTACIONES_QUE_ME_TUMBAN` a propósito: el job del meta-guard corre SIN base, el caso sale
+// SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco PGlite,
+// `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e). Cada campo, LITERAL.
+export const MUTACIONES_CON_BASE = [
+  { fichero: "src/core/db/schemaDrift.ts", de: "  WHERE table_schema = current_schema()", a: "  WHERE table_schema = 'esquema_que_no_existe'", cae: "GATEADO · contra la BD de staging el arranque da en-sync de verdad" },
+];

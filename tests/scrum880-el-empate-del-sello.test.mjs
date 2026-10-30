@@ -102,6 +102,13 @@ function bancoDeCadena(filas) {
     $executeRaw: async () => 0,
     invoice: {
       findFirst,
+      // SCRUM-1314b: la anulación pregunta, dentro del cerrojo, si la factura ya tiene su huella de
+      // anulación (no se vuelve a sellar). Se contesta SÓLO por `id`; cualquier otra forma revienta.
+      findUnique: async ({ where, select }) => {
+        assert.deepEqual(Object.keys(where), ['id'], '🔴 el banco sólo entiende `findUnique` por `id`.');
+        const fila = tabla.find((r) => r.id === where.id);
+        return fila ? Object.fromEntries(Object.keys(select).map((k) => [k, fila[k] ?? null])) : null;
+      },
       update: async ({ where, data }) => {
         const fila = tabla.find((r) => r.id === where.id);
         if (!fila) throw new Error('🔴 el banco no tiene la fila que se actualiza.');

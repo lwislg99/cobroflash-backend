@@ -1,0 +1,214 @@
+POBLACION 367 trabajos con state.json legible · 0 sin state.json · 0 ilegibles
+fechas 2026-09-18T14:52:59.037Z → 2026-10-14T07:50:20.975Z
+
+FORMA { 'jv-jN…': 329, otra: 19, 'jv-otro': 11, 'jN-…': 4, 'sin-nombre': 4 }
+
+FORMA × pasa-solo-por-nombre {
+  'jv-jN… → CAE': 329,
+  'otra → CAE': 19,
+  'jv-otro → CAE': 11,
+  'jN-… → pasa': 4,
+  'sin-nombre → CAE': 4
+}
+
+HOOK al arrancar (lo que dijo identidad.mjs) {
+  'SIN-IDENTIDAD': 158,
+  'sin-hook': 200,
+  'sin-transcript': 8,
+  'OK:J6:carpeta+nombre': 1
+}
+
+FORMA × HOOK {
+  'jv-jN… | SIN-IDENTIDAD': 158,
+  'jv-jN… | sin-hook': 168,
+  'otra | sin-hook': 19,
+  'jv-otro | sin-hook': 11,
+  'jN-… | sin-transcript': 2,
+  'jN-… | sin-hook': 2,
+  'jv-jN… | sin-transcript': 2,
+  'sin-nombre | sin-transcript': 4,
+  'jv-jN… | OK:carpeta+nombre': 1
+}
+
+HOY (mesa actual en su cwd) {
+  'SIN-IDENTIDAD': 352,
+  'OK:J4:mesa': 1,
+  'cwd-desconocido': 8,
+  'OK:J1:mesa': 1,
+  'OK:J3:mesa': 1,
+  'cwd-borrado': 1,
+  'OK:J6:mesa': 1,
+  'OK:J2:mesa': 1,
+  'OK:J6:nombre': 1
+}
+
+CON HOOK 159 · caerían (SIN-IDENTIDAD|ROTO): 158
+
+ULTIMAS 24h 74 {
+  'jv-jN… | SIN-IDENTIDAD': 72,
+  _fuera: 293,
+  'jv-jN… | sin-transcript': 1,
+  'jv-jN… | OK:J6:carpeta+nombre': 1
+}
+
+NOMBRES no-jv/no-jN jv3 orchestrator startup, jv-orquestador startup, j4 orchestrator bootstrap, j4 orchestrator startup, quality setup verification, jv-orquestador cross-session messaging, orchestrator ticket review, jv3 orchestrator initialization, j5 orchestrator startup, jv-orquestador initialization, j2 orchestrator initialization cobrofla…, jv-orquestador message routing, j2 batch startup, cobroflash-jv-j2 orchestrator, cobroflash backend startup, orchestrator verification jv, jv-orquestador bash read, , jv-orquestador startup check, jv-orquestador startup batch, prueba-lanzador, orchestrator ticket verification, stop multiple sessions, billing and verifactu, j1 orchestrator bootstrap, jv-j4 orchestrator startup, jv-orquestador batch initialization, jv-j6 orchestrator batch startup, cobroflash jv5 orchestrator initializat…, j2 orchestrator tree setup
+
+CAEN con hook (detalle)
+  2026-10-07T17:54:28.871Z 14d92662 jv-j1 stopped SIN-IDENTIDAD wt/scrum-1404b-el-pdf-sin-sellar-contesta
+  2026-10-07T17:54:29.668Z 7a917412 jv-j2 done SIN-IDENTIDAD wt/scrum-1408-el-guard-prometido
+  2026-10-07T17:54:38.566Z 18b507ed jv-j4 done SIN-IDENTIDAD wt/scrum-1502-veintiocho-firmas-sin-respaldo
+  2026-10-07T17:54:39.447Z cb759530 jv-j5 done SIN-IDENTIDAD wt/scrum-1500-el-censo-contra-el-master
+  2026-10-07T17:57:06.514Z e665f066 jv-j3 done SIN-IDENTIDAD wt/scrum-1503-la-dirigida-no-ve-los-guards-de-arbol
+  2026-10-07T23:16:19.718Z cfdd73b5 jv-j1 done SIN-IDENTIDAD wt/scrum-1446-los-tres-importes-del-pdf
+  2026-10-07T23:16:21.183Z 6fc08495 jv-j2 done SIN-IDENTIDAD wt/scrum-1471-fecha-del-recibo-y-el-portal
+  2026-10-07T23:16:22.091Z fd8ddd97 jv-j3 stopped SIN-IDENTIDAD wt/scrum-1503b-la-dirigida-y-los-guards-de-arbol
+  2026-10-07T23:16:23.049Z 8da0166a jv-j5 done SIN-IDENTIDAD wt/scrum-1500b-guard-del-cotejo
+  2026-10-07T23:23:42.224Z e77414f5 jv-j4 done SIN-IDENTIDAD wt/scrum-1505-el-cruce-no-ve-el-commit-multiticket
+  2026-10-07T23:35:35.016Z 073559c2 jv-j6 stopped SIN-IDENTIDAD wt/scrum-1404b-el-reintento-y-la-respuesta
+  2026-10-07T23:54:50.012Z acb7ff57 jv-j6 stopped SIN-IDENTIDAD wt/scrum-1404b-el-reintento-y-la-respuesta
+  2026-10-07T23:57:55.094Z 8c13ffe9 jv-j1 done SIN-IDENTIDAD wt/scrum-1446-los-tres-importes-del-pdf
+  2026-10-08T00:14:43.751Z 97ba9f31 jv-j6 done SIN-IDENTIDAD wt/scrum-1404b-el-reintento-y-la-respuesta
+  2026-10-08T00:32:32.053Z cce90215 jv-j2 done SIN-IDENTIDAD wt/scrum-1508-quien-descansa-en-recordaudit
+  2026-10-08T01:01:18.620Z c4dac341 jv-j1 stopped SIN-IDENTIDAD wt/scrum-1446b-arreglo-de-los-importes
+  2026-10-08T01:03:22.847Z 04989ecf jv-j3 stopped SIN-IDENTIDAD wt/scrum-1393b-checks-sin-leer
+  2026-10-08T01:03:45.517Z 59d80c07 jv-j6 done SIN-IDENTIDAD wt/scrum-1404c-huecos-declarados-de-pr1
+  2026-10-08T01:04:26.583Z 261c7be9 jv-j2 stopped SIN-IDENTIDAD wt/scrum-1509-el-tope-que-no-se-evalua
+  2026-10-08T01:14:33.721Z b0a7ecd6 jv-j2 done SIN-IDENTIDAD wt/scrum-1509b-el-mismo-defecto-en-facturas
+  2026-10-08T01:16:12.093Z 3e4dd5a4 jv-j4 stopped SIN-IDENTIDAD wt/scrum-1502b-mira-el-guard-en-jira
+  2026-10-08T01:26:35.409Z 1d4752a7 jv-j2 done SIN-IDENTIDAD wt/scrum-1509c-los-topes-de-plantillas
+  2026-10-08T01:34:22.736Z b453d7c8 jv-j1 done SIN-IDENTIDAD wt/scrum-1446c-la-factura-dice-siete-y-medio
+  2026-10-08T01:37:01.646Z 1b6b7f50 jv-j3 stopped SIN-IDENTIDAD wt/scrum-1339j-por-que-ciega-scrum859
+  2026-10-08T01:44:53.784Z 04b15055 jv-j5 done SIN-IDENTIDAD wt/scrum-1500c-los-once-estados-sin-cotejar
+  2026-10-08T01:44:54.588Z 121148cb jv-j2 done SIN-IDENTIDAD wt/scrum-1509d-los-cuatro-llamadores-sin-tope
+  2026-10-08T01:46:08.197Z 3dc927c9 jv-j4 stopped SIN-IDENTIDAD wt/scrum-1511b-las-cinco-a-mano
+  2026-10-08T01:46:09.606Z 86dd351a jv-j6 done SIN-IDENTIDAD wt/scrum-1510-los-puntos-ciegos-de-205
+  2026-10-08T01:54:25.967Z d76f65b2 jv-j4 stopped SIN-IDENTIDAD wt/scrum-1511c-los-cinco-pares-que-faltan
+  2026-10-08T02:02:19.658Z 7ac96709 jv-j1 stopped SIN-IDENTIDAD wt/scrum-1509e-el-tope-de-la-ruta-manual
+  2026-10-08T02:02:47.330Z dc8f99f0 jv-j4 stopped SIN-IDENTIDAD wt/scrum-1511d-cuantos-textos-llevan-firma-delegada
+  2026-10-08T02:03:09.417Z 7696fca6 jv-j5 done SIN-IDENTIDAD wt/scrum-1500d-existe-la-cola-de-vfsubmission
+  2026-10-08T02:09:30.385Z aa9a79e6 jv-j3 done SIN-IDENTIDAD wt/scrum-1339k-la-tuberia-de-65536
+  2026-10-08T02:10:58.918Z 957df871 jv-j2 done SIN-IDENTIDAD wt/scrum-1509f-los-dos-sin-freno
+  2026-10-08T02:12:35.695Z 8deb8adf jv-j4 done SIN-IDENTIDAD wt/scrum-1511d-cuantos-textos-llevan-firma-delegada
+  2026-10-08T02:14:26.703Z 1e8b8054 jv-j1 stopped SIN-IDENTIDAD wt/scrum-1512-del-alta-publica-a-la-primera-plantilla
+  2026-10-08T07:30:08.690Z 2e0e3580 jv-j1 done SIN-IDENTIDAD wt/scrum-1514-la-frontera-entre-comercios
+  2026-10-08T07:30:37.917Z 73118f8c jv-j2 done SIN-IDENTIDAD wt/scrum-1513-el-tope-contra-postgres
+  2026-10-08T07:31:06.293Z aecbe1b8 jv-j3 stopped SIN-IDENTIDAD wt/scrum-1339k-la-tuberia-de-65536
+  2026-10-08T07:31:40.593Z 482d1ec6 jv-j4 done SIN-IDENTIDAD wt/scrum-1511f-cuantas-ancladas-citan-un-404
+  2026-10-08T07:32:10.783Z d300547c jv-j5 stopped SIN-IDENTIDAD wt/scrum-1500e-los-tres-sitios-que-niegan-la-cola
+  2026-10-08T07:32:40.734Z 035a3f22 jv-j6 stopped SIN-IDENTIDAD wt/scrum-1510b-el-test-del-segundo-porton
+  2026-10-08T07:50:17.771Z ec9ec426 jv-j1 done SIN-IDENTIDAD wt/scrum-1514b-el-unico-cruce-real
+  2026-10-08T07:53:08.540Z 226d9d6f jv-j5 stopped SIN-IDENTIDAD wt/scrum-1500f-lo-que-todavia-dice-que-no-existe
+  2026-10-08T07:57:41.605Z 77e4e49e jv-j3 stopped SIN-IDENTIDAD wt/scrum-1515-nuestra-puerta-de-alta
+  2026-10-08T08:03:39.033Z cd338d54 jv-j2 stopped SIN-IDENTIDAD wt/scrum-1513b-donde-va-el-cerrojo
+  2026-10-08T08:06:54.008Z 971c6c9d jv-j4 done SIN-IDENTIDAD wt/scrum-1516-un-positivo-que-sobreviva
+  2026-10-08T08:08:15.074Z 5c120a98 jv-j6 done SIN-IDENTIDAD wt/scrum-1517-el-recibo-que-daria-500
+  2026-10-08T08:10:55.313Z 9a5f5287 jv-j5 done SIN-IDENTIDAD wt/scrum-1500g-el-barrido-por-concepto
+  2026-10-08T08:14:00.152Z 83ec9214 jv-j1 stopped SIN-IDENTIDAD wt/scrum-1514c-las-veinticinco-sin-medir
+  2026-10-08T08:16:33.173Z bd81e904 jv-j3 done SIN-IDENTIDAD wt/scrum-1515-nuestra-puerta-de-alta
+  2026-10-08T08:17:42.621Z 6fceb0cc jv-j2 stopped SIN-IDENTIDAD wt/scrum-1513c-tiene-firma-el-chip
+  2026-10-08T08:24:36.737Z 393daa97 jv-j4 done SIN-IDENTIDAD wt/scrum-1339m-los-dieciocho-nombres-ausentes
+  2026-10-08T08:37:55.617Z 5c75a22d jv-j3 done SIN-IDENTIDAD wt/scrum-1515-nuestra-puerta-de-alta
+  2026-10-08T08:39:12.120Z 14423701 jv-j2 stopped SIN-IDENTIDAD wt/scrum-1513b-donde-va-el-cerrojo
+  2026-10-08T09:29:01.984Z 02ccaf94 jv-j2 stopped SIN-IDENTIDAD wt/scrum-1513d-el-cerrojo-del-tope
+  2026-10-08T10:03:46.377Z 68a46642 jv-j2 done SIN-IDENTIDAD wt/scrum-1513d-el-cerrojo-del-tope
+  2026-10-12T23:57:02.171Z 9f894fc8 jv-j1 stopped SIN-IDENTIDAD wt/scrum-1519-la-forma-de-la-fuga
+  2026-10-12T23:57:32.594Z 941f9613 jv-j2 stopped SIN-IDENTIDAD wt/scrum-1522-el-dia-del-tope
+  2026-10-12T23:58:00.073Z 153b3f00 jv-j3 stopped SIN-IDENTIDAD wt/scrum-1521-retirar-el-e2e-critico
+  2026-10-12T23:58:30.538Z 84bb2ad9 jv-j4 stopped SIN-IDENTIDAD wt/scrum-1523-censo-del-justificante
+  2026-10-12T23:59:03.780Z 8d0ebfda jv-j5 done SIN-IDENTIDAD wt/scrum-1500h-los-veinticuatro-sitios
+  2026-10-12T23:59:42.099Z 5508de09 jv-j6 stopped SIN-IDENTIDAD wt/scrum-1520-puede-un-verde-esconder-un-rojo
+  2026-10-13T00:09:00.305Z 02efa1ca jv-j1 stopped SIN-IDENTIDAD wt/scrum-1519b-los-tres-escritores
+  2026-10-13T00:14:33.647Z c2150f0e jv-j6 stopped SIN-IDENTIDAD wt/scrum-1520b-los-cinco-logs-que-faltan
+  2026-10-13T00:16:18.167Z 0d1218fd jv-j5 stopped SIN-IDENTIDAD wt/scrum-1500h-los-veinticuatro-sitios
+  2026-10-13T00:18:38.988Z b1d3af51 jv-j2 stopped SIN-IDENTIDAD wt/scrum-1522b-el-panel-cuenta-lo-mismo
+  2026-10-13T04:32:20.232Z b619202e jv-j2 done SIN-IDENTIDAD wt/scrum-1522b-el-panel-cuenta-lo-mismo
+  2026-10-13T04:35:55.791Z b4658ab9 jv-j3 done SIN-IDENTIDAD wt/scrum-1521b-la-nota-del-master
+  2026-10-13T04:36:23.642Z aa62d58e jv-j4 done SIN-IDENTIDAD wt/scrum-1524-las-ochenta-y-una-coordenadas
+  2026-10-13T04:36:54.729Z 8fb6ad59 jv-j1 stopped SIN-IDENTIDAD wt/scrum-1519c-los-tres-creadores-leidos
+  2026-10-13T04:37:36.448Z b1e1176d jv-j5 done SIN-IDENTIDAD wt/scrum-1500h-los-veinticuatro-sitios
+  2026-10-13T04:38:04.163Z 33290b7e jv-j6 done SIN-IDENTIDAD wt/scrum-1520b-los-cinco-logs-que-faltan
+  2026-10-13T05:17:21.637Z 23e09037 jv-j6b done SIN-IDENTIDAD wt/j6b-1527-tanda-colgada
+  2026-10-13T05:18:06.471Z b84bc8ca jv-j3b done SIN-IDENTIDAD wt/j3b-1526-guard-abierto
+  2026-10-13T05:27:39.595Z 7276ab7b jv-j2b stopped SIN-IDENTIDAD wt/j2b-verificar-cierres
+  2026-10-13T05:31:14.027Z 633904bd jv-j4b done SIN-IDENTIDAD wt/scrum-1339m-los-dieciocho-nombres-ausentes
+  2026-10-13T06:10:47.171Z e7edcfbd jv-j5b done SIN-IDENTIDAD wt/j5b-1530-skill
+  2026-10-13T06:12:18.879Z 37ad5ffb jv-j3c done SIN-IDENTIDAD wt/j3c-1339n-ciega
+  2026-10-13T06:42:55.388Z f027722d jv-j5c done SIN-IDENTIDAD wt/j5c-1531-enganche
+  2026-10-13T06:46:12.963Z 7fcbcbcd jv-j2c done SIN-IDENTIDAD wt/j2c-1529-campos
+  2026-10-13T06:46:52.896Z c369923f jv-j6c done SIN-IDENTIDAD wt/j6c-1525-respaldo
+  2026-10-13T06:47:38.174Z 1c1544ba jv-j3d done SIN-IDENTIDAD wt/j3d-metaguard-27
+  2026-10-13T07:13:14.285Z 5c771199 jv-j2d stopped SIN-IDENTIDAD wt/j2d-1532-cancelar
+  2026-10-13T07:13:53.816Z b9b609b9 jv-j5d done SIN-IDENTIDAD wt/j5d-1533-legal
+  2026-10-13T07:14:33.917Z 98588540 jv-j2e done SIN-IDENTIDAD wt/j2e-1529b-tres
+  2026-10-13T10:21:46.471Z ba0f47ff jv-j6f done SIN-IDENTIDAD wt/j6f-1527b
+  2026-10-13T10:22:16.569Z f8d67414 jv-j1f done SIN-IDENTIDAD wt/j1f-1523b
+  2026-10-13T10:22:44.498Z c0a7006f jv-j2f done SIN-IDENTIDAD wt/j2f-1522c
+  2026-10-13T10:23:14.329Z 8cc8f476 jv-j5f stopped SIN-IDENTIDAD wt/j5f-1517b
+  2026-10-13T10:23:44.211Z f665a00f jv-j3f done SIN-IDENTIDAD wt/j3f-cierres
+  2026-10-13T10:24:16.004Z a86432d0 jv-j4f stopped SIN-IDENTIDAD wt/j4f-1524b
+  2026-10-13T10:53:57.555Z 3a9a4077 jv-j5g done SIN-IDENTIDAD wt/j5g-1524c
+  2026-10-13T10:54:29.175Z 48e5876d jv-j6g done SIN-IDENTIDAD wt/j6g-1525b
+  2026-10-13T10:55:00.459Z cc5612e7 jv-j2g done SIN-IDENTIDAD wt/j2g-1522d
+  2026-10-13T11:06:59.388Z fbbd82c3 jv-j3h stopped SIN-IDENTIDAD wt/j3h-1522e
+  2026-10-13T11:14:20.555Z 325e370e jv-j3i done SIN-IDENTIDAD wt/j3i-1529c
+  2026-10-13T11:14:47.031Z 5560a624 jv-j3j done SIN-IDENTIDAD wt/j3d-metaguard-27
+  2026-10-13T11:15:12.169Z 2b428ed1 jv-j6h done SIN-IDENTIDAD wt/j6f-1527b
+  2026-10-13T11:24:14.878Z dc7ae160 jv-j5i done SIN-IDENTIDAD wt/j5g-1524c
+  2026-10-13T11:24:45.000Z 32b8c984 jv-j2h done SIN-IDENTIDAD wt/j2h-cierres
+  2026-10-13T12:03:28.114Z 7a044b9f jv-j5j done SIN-IDENTIDAD wt/j5j-1536-forales
+  2026-10-13T12:03:30.234Z 11f44313 jv-j3k done SIN-IDENTIDAD wt/j3k-desatasco
+  2026-10-13T12:03:32.631Z ce4da878 jv-j6h done SIN-IDENTIDAD wt/j6h-1537-cotejos
+  2026-10-13T12:03:35.351Z 28ecdd60 jv-j2i stopped SIN-IDENTIDAD wt/j2i-verificar
+  2026-10-13T12:06:29.864Z afd12689 jv-j3l done SIN-IDENTIDAD wt/j3l-1538-rojos
+  2026-10-13T12:06:36.117Z 1fe06ce9 jv-j6i done SIN-IDENTIDAD wt/j6i-desatasco-hoy
+  2026-10-13T12:20:43.498Z a08d0f62 jv-j6j done SIN-IDENTIDAD wt/j6j-1539-carrera
+  2026-10-13T12:32:48.672Z 80bd214a jv-j1k done SIN-IDENTIDAD wt/j1k-1490b-anio
+  2026-10-13T12:33:41.893Z c654b826 jv-j4i done SIN-IDENTIDAD wt/j4i-1387b-catalogo
+  2026-10-13T12:48:44.611Z 76f6caa6 jv-j2j done SIN-IDENTIDAD wt/j2j-1542-vigia
+  2026-10-13T12:50:00.808Z 5e3721e1 jv-j3m done SIN-IDENTIDAD wt/j3m-1538b-registro
+  2026-10-13T12:50:10.241Z 92812bb5 jv-j6k done SIN-IDENTIDAD wt/j6k-1537b-aviso
+  2026-10-13T12:51:42.520Z 97b5968d jv-j5k done SIN-IDENTIDAD wt/j5k-997b-limites
+  2026-10-13T12:51:48.914Z d95e5c1b jv-j1l done SIN-IDENTIDAD wt/j1l-obligatorios
+  2026-10-13T13:09:11.960Z 57a23738 jv-j2k stopped SIN-IDENTIDAD wt/j2k-1542b-registro
+  2026-10-13T13:09:57.473Z a33fb39f jv-j6l done SIN-IDENTIDAD wt/j6l-1544-censo-ast
+  2026-10-14T01:39:47.600Z 37712e10 jv-j2a done SIN-IDENTIDAD wt/j2a-529-tophone
+  2026-10-14T01:39:55.123Z 4dc3e6a2 jv-j6a done SIN-IDENTIDAD wt/j6a-1546-oraculo
+  2026-10-14T01:44:07.041Z bec24663 jv-j1a stopped SIN-IDENTIDAD wt/j1a-1507-cron
+  2026-10-14T01:44:13.732Z cba19df6 jv-j1b done SIN-IDENTIDAD wt/j1b-iva-pdf
+  2026-10-14T01:46:00.121Z fc55ab88 jv-j6b done SIN-IDENTIDAD wt/j6b-1544b-737
+  2026-10-14T01:46:08.028Z e851fa98 jv-j4a done SIN-IDENTIDAD wt/j4a-1387c-864c
+  2026-10-14T01:52:44.863Z 3b9d6513 jv-j3a done SIN-IDENTIDAD wt/j3a-529c-anonimizado
+  2026-10-14T01:56:20.153Z b5aff375 jv-j5a done SIN-IDENTIDAD wt/j5a-534-parte3
+  2026-10-14T02:06:01.610Z 1195f629 jv-j2b done SIN-IDENTIDAD wt/j2b-529-relevo
+  2026-10-14T02:06:11.232Z ef83daf1 jv-j4b stopped SIN-IDENTIDAD wt/j4b-534c-certificacion
+  2026-10-14T02:10:14.036Z ea1cdae5 jv-j6c done SIN-IDENTIDAD wt/j6c-1536b-ternarios
+  2026-10-14T02:10:26.330Z d6c5c712 jv-j1c done SIN-IDENTIDAD wt/j1c-sonda-resellado
+  2026-10-14T02:18:09.749Z 0172d6cc jv-j1d done SIN-IDENTIDAD wt/j1d-1302n-catalogo
+  2026-10-14T02:52:21.601Z 0afd0932 jv-j6d done SIN-IDENTIDAD wt/j6c-1536b-ternarios
+  2026-10-14T02:59:00.437Z 4c2ccaae jv-j6e done SIN-IDENTIDAD wt/j6e-1548-ciego
+  2026-10-14T03:07:12.766Z 74d62072 jv-j2c done SIN-IDENTIDAD wt/j2c-traer-main
+  2026-10-14T03:25:39.129Z f8e43172 jv-j4c done SIN-IDENTIDAD wt/j4c-534q-las-siete
+  2026-10-14T03:27:49.159Z c585e178 jv-j3b stopped SIN-IDENTIDAD wt/j3b-1550-contenido
+  2026-10-14T03:49:33.841Z 1de83812 jv-j2d done SIN-IDENTIDAD wt/j2d-1508-audit
+  2026-10-14T03:49:39.344Z 1369a5fc jv-j1e done SIN-IDENTIDAD wt/j1e-1502-marcas
+  2026-10-14T03:51:08.207Z 12c7aeee jv-j6f done SIN-IDENTIDAD wt/j6f-1548b-derivar
+  2026-10-14T03:51:14.670Z d9d0ccf6 jv-j4d done SIN-IDENTIDAD wt/j4d-1551-legal
+  2026-10-14T04:26:19.087Z 0ca3e52b jv-j5a stopped SIN-IDENTIDAD wt/j5a-1552-reglas
+  2026-10-14T04:35:01.919Z a240cfa4 jv-j6g stopped SIN-IDENTIDAD wt/j6g-1339-casos
+  2026-10-14T04:35:07.206Z b58e1002 jv-j6h stopped SIN-IDENTIDAD wt/j6h-1331-red
+  2026-10-14T04:35:12.812Z 6052f565 jv-j3c stopped SIN-IDENTIDAD wt/j3c-1515-alta
+  2026-10-14T04:35:18.597Z f9581595 jv-j2e done SIN-IDENTIDAD wt/j2e-1471-fechas
+  2026-10-14T04:35:24.710Z 44de6cfa jv-j3d stopped SIN-IDENTIDAD wt/j3d-1538-rojos
+  2026-10-14T06:34:14.820Z 630ddaf0 jv-j6i done SIN-IDENTIDAD wt/j6g-1339-casos
+  2026-10-14T06:34:22.223Z 55b5070f jv-j3e stopped SIN-IDENTIDAD wt/j3e-1405-testigo
+  2026-10-14T06:40:06.006Z f031cf76 jv-j3f stopped SIN-IDENTIDAD wt/j3f-1405c-tuberia
+  2026-10-14T06:40:12.491Z 00b1c337 jv-j2f done SIN-IDENTIDAD wt/j2f-1543-a84
+  2026-10-14T06:44:02.205Z 8ba1eb27 jv-j4e done SIN-IDENTIDAD wt/j4e-534r-p1
+  2026-10-14T06:46:41.175Z 56205e99 jv-j3g working SIN-IDENTIDAD wt/j3g-1553b-consulta
+  2026-10-14T06:46:47.678Z 03c7a996 jv-j6j done SIN-IDENTIDAD wt/j6j-testigo-real
+  2026-10-14T06:51:36.237Z 57dfaa1b jv-j4f done SIN-IDENTIDAD wt/j4f-1554b-los57
+  2026-10-14T06:51:50.478Z 61d2c2ad jv-j3h stopped SIN-IDENTIDAD wt/j3h-1496c-cerrar
+  2026-10-14T07:44:46.630Z 4384be17 jv-j3i working SIN-IDENTIDAD wt/j3i-1016-titular
+  2026-10-14T07:44:47.641Z 06adcee8 jv-j4g working SIN-IDENTIDAD wt/j4g-1346-tecnico
+  2026-10-14T07:44:49.038Z c3d1faac jv-j2l working SIN-IDENTIDAD wt/j2l-1257-modo
+  2026-10-14T07:44:50.652Z 26826ede jv-j1l working SIN-IDENTIDAD wt/j1l-1115-remite

@@ -1,0 +1,2 @@
+población: 334 ficheros .ts de src/ · árbol de trabajo
+CIEGO: el sembrado tiene 1 llamada (y un comentario y una cadena que no lo son) y se ven 0.

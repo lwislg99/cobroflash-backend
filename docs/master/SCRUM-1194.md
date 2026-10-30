@@ -109,3 +109,202 @@ Que sea un **segundo modo de la sonda de 1185** y no un instrumento aparte: que 
 sus rutas con los identificadores de cada handler, que es exactamente lo que parchea esta medición.
 Hoy la medición depende de dos anclas textuales en su fichero y sale CIEGA si cambian. Integrarla
 es cosa de su dueño.
+
+## J6 · SCRUM-1194b · la medición se había quedado CIEGA: positivo sembrado y la lista de hoy
+
+**Medido contra:** `origin/main` = `25ad5d43b6a8ed41fdcb90c5fdbc0e2e388ec1be` · 2026-10-24T10:07:28Z (hora de GitHub al acabar las pasadas; sesión J6 `jv-j6bl` en su árbol `jv-j6bl`, por encargo del orquestador `cobroflash-backend-95`. Al escribir, `main` ya era `137c7fad02e7f4e01f94955d17cb6406035f7ed5`: 1 fichero, 0 en `src/`, `public/` o la sonda de 1185)
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1194/censo-vocabulario.mjs`
+
+Reparación de MI medición del 28-sep, no construcción del método: sin test y sin trinquete (el
+ticket no los pide y prefiere un modo de la sonda de 1185, que es de Luis). OK del orquestador por
+mensaje. No se toca ninguna discrepancia: cada una es de su carril.
+
+### Qué pasó
+
+Corrida hoy tal como estaba: **exit 2, CIEGO** — «SCRUM-1136 no sale PARCIAL con taxId (sale:
+ofrece todo)». Su control positivo era el propio defecto de 1136, y #1939 lo arregló
+(`csvImport.js:168` ofrece ya los doce). El instrumento se jubiló el día que triunfó.
+
+### Lo que cambia
+
+- **Positivo SEMBRADO en memoria** (nada se escribe en el árbol): la pareja del ejemplo del ticket
+  —un vocabulario de los 12 valores de `CAMPOS_CLIENTE`, una ruta que lo acepta montada en
+  `app.ts`, y una pantalla que hace `fetch` y ofrece sólo los 4 de antes de #1939—. Entra por el
+  camino real de la sonda de 1185. Tiene que salir PARCIAL con exactamente los 8 que faltan.
+- **Control que NO casa, sembrado:** la gemela que ofrece los 12 tiene que salir «ofrece todo».
+- **La siembra no cuenta en nada:** si deja otro número de pares que 2, CIEGO; después se quita
+  de todas las cifras.
+- **Comprobado quitándola:** `--sin-siembra` da **exit 2, CIEGO** («ni aparece»), no verde.
+- **CIEGO de verdad en la primera pasada sembrada:** las dos pantallas se llamaban `enviar`, y el
+  salto por envoltorio casa por NOMBRE, así que metía la gemela como llamadora de la parcial y el
+  positivo salía «ofrece todo». Se arregló en la siembra (un nombre por pantalla) y se midió lo
+  mismo en el árbol real: cubo nuevo «ofrece todo SÓLO gracias al envoltorio».
+- **Marca nueva:** una fila cuya ruta no lee `req.body` (según la sonda de 1185) lo dice.
+
+### El resultado de hoy
+
+| cubo | 28-sep | hoy |
+|---|---|---|
+| vocabularios del servidor | 62 | **71** (13 `z.enum` + 58 arrays) · 244 rutas |
+| no pude ligar a ninguna ruta | 25 | 30 |
+| pares vocabulario × ruta | 48 | 55 |
+| · GET | 10 | 11 |
+| · sin pantalla llamadora | 7 | 9 |
+| · ofrece todo | 18 | 21 |
+| · **PARCIAL** | 2 (1136) | **1** |
+| · no nombra NINGUNO | 11 | 13 |
+| · NO PUDE MEDIR | 0 | 0 |
+| «ofrece todo» sólo por envoltorio | — | 8 |
+
+- **SCRUM-1136 real** (`POST /admin/customers/import`): **ofrece todo**. Arreglado por efecto.
+- **El único PARCIAL, `POST /admin/quotes/:id/archivar` · `ESTADOS_ARCHIVABLES`, falta `expired`:
+  falso positivo, revisado a mano.** La ruta no lee cuerpo (`quotesDetailView.js:229` manda
+  `{ method: 'POST' }`); `archivado.ts:9` se compara con el `status` GUARDADO, y el botón se ofrece
+  en cualquier estado (decide el 409). Lo que nombra la pantalla (`draft`, `rejected`) está ahí
+  por otro motivo.
+- **Los 13 «no nombra NINGUNO»:** los 11 del 28-sep siguen con su veredicto (el
+  `customerCreateSchema` de `POST /admin/customers` son ahora dos filas: `EMPRESA/PERSONA` es el
+  `contactKind` del componente, y `NINGUNA/QUINCENAL/MENSUAL` es la variante «sólo al editar»).
+  Los 2 nuevos son `ESTADOS_PARTE` en `POST /admin/partes/:id/firmar-tecnico` (`partes.routes.ts:660`)
+  y `…/firmar` (`:735`): **estado interno del parte, por analogía con el PATCH del 28-sep; no
+  abiertos uno a uno.**
+- **Los 8 «sólo por envoltorio»** son `POST /quote/create` (5 vocabularios), `PUT /admin/merchant`
+  (2) y `POST /admin/customers` (`PARTICULAR/EMPRESARIO`): la llamada vive en `api.js` y los
+  valores en las vistas. Es el caso para el que existe el salto; **no los he abierto uno a uno**.
+
+### La respuesta a «¿cuántas?», hoy
+
+**0** rutas con la forma de 1136, sobre 55 pares de 71 vocabularios, con el positivo sembrado
+saliendo y la gemela sin salir. Las 2 variantes «sólo al editar» del 28-sep siguen:
+`POST /admin/customers` · `billingPeriodicity` y `POST /admin/partes` · `tipo`. Carril medido con
+`carriles.mjs de`: `customersAdmin.routes.ts` y `customersView.js` son **J2**; `partes.routes.ts` es
+**S1** y `jobDetailView.js` **S2** (equipo de Luis). Son decisión de producto, no defecto: no se tocan.
+(Primero lo escribí «J2/J1» sin consultar; lo cacé al correrlo.)
+
+### ⚠️ Lo que sigue sin verse
+
+Todo lo declarado el 28-sep, y además: el salto por envoltorio **casa por nombre de función**, así
+que una pantalla ajena con una función homónima cuenta como llamadora (medido con la siembra). El
+cubo de 8 lo pone a la vista; no lo resuelve.
+
+## J6 · SCRUM-1194c · la Q2 («qué método») formulada en tres métodos, para decidir
+
+**Medido contra:** `origin/main` = `289ca894656c7c3686a0469d34785512b960e0b3` · 2026-10-26T15:13:56Z (hora de GitHub; sesión J6 `jv-j6ce`, por encargo del orquestador `cobroflash-backend-8b`)
+
+A9: sin fallo que generalice — tramo de sólo medir y proponer; no se escribió instrumento ni test, y la única medición nueva (una pasada de la sonda de 1194b) salió con sus dos controles sembrados en ✅
+
+Sólo medir y proponer: no se construye nada hasta que alguien decida (lo dice el ticket). El
+auditor del 24-oct (jv-j3be) dejó 1194 en NO porque su Q2 no tenía ni decisión ni pregunta en Jira.
+Esto es la pregunta.
+
+### Lo medido hoy
+
+- La sonda de 1194b, una pasada: **exit 0 en 7 s**. 71 vocabularios · **242 rutas** (244 el 24-oct) ·
+  55 pares · 1 PARCIAL (el falso positivo de `archivar`) · 13 «no nombra ninguno» · 0 «no pude
+  medir». Positivo sembrado PARCIAL con los 8 que faltan ✅; gemela «ofrece todo» ✅.
+- **La forma tiene DOS mitades, y sólo una está sin cubrir.** Un campo que no llega puede ser una
+  CLAVE del cuerpo que ninguna pantalla manda, o un VALOR de un vocabulario cerrado que ningún
+  desplegable ofrece. Las claves ya las censa la sonda de 1185 (`cuerpo · …`, 34 entradas hoy en
+  `scripts/_sin-consumir-declarados.json`), con la detección DÉBIL que declara en sus `LIMITES`, y
+  su trinquete corre en el obligatorio. Los **valores** (la forma real de 1136) sólo los mide
+  `censo-vocabulario.mjs`, a mano y sin trinquete.
+- **El acoplamiento de hoy:** `censo-vocabulario.mjs` parchea una copia de
+  `scripts/_censo-sin-consumir.mjs` (carril **S0**, `carriles.mjs de`) por dos anclas de texto: la
+  línea `cuerpoLeido: clavesLeidas(n) });` (para sacar los identificadores de cada handler) y
+  `    poblacion: {` (para que `censar` devuelva sus rutas). Si cualquiera cambia, sale CIEGO.
+- **Ya existe un ejemplar del método C:** `tests/scrum1136-columnas-reconocidas-llegan.test.mjs`
+  pinta `csvImport.js` en el banco de vistas y exige que cada desplegable ofrezca EXACTAMENTE
+  `CAMPOS_CLIENTE`. Protege 1136; no descubre la siguiente.
+
+### Los tres métodos
+
+| | A · ampliar la sonda de 1194b a test con trinquete | B · un modo de la sonda de 1185 | C · un test por ruta |
+|---|---|---|---|
+| qué es | `censo-vocabulario.mjs` pasa a `tests/`, con su lista de pares declarados (como `_sin-consumir-declarados.json`) | `censar` expone sus rutas con los identificadores de cada handler (las dos anclas de hoy, hechas API), y el cruce de vocabularios vive como modo de esa sonda o como consumidor sin parche | un test por cada ruta que acepta un vocabulario: pinta la pantalla y compara sus opciones con el vocabulario del servidor (lo que hace hoy el de 1136) |
+| qué caza | toda ruta nueva o cambiada con la forma VALOR, en el obligatorio | lo mismo que A, y con un solo recorrido del árbol para las dos mitades (claves y valores) | la ruta escrita, con exactitud: sin falsos positivos, porque pinta la pantalla de verdad |
+| qué no caza | todo lo que declara 1194b: vocabularios no literales, valores que pone un componente u otro fichero, envoltorio por nombre, un solo salto | lo mismo que A | **cualquier ruta que nadie haya escrito**: no descubre. Su población es la que alguien eligió |
+| ruido medido | 1 falso PARCIAL + 13 «no nombra ninguno» que habría que declarar con motivo al nacer; de 48 a 55 pares en 26 días (~2 por semana nuevos a clasificar) | el mismo | ninguno |
+| coste | ~7 s por pasada más en el obligatorio (vuelve a parsear el árbol que ya parsea 1185); un fichero de test y un JSON | el cruce en sí, igual; ahorra el segundo parseo si va en la misma pasada que el trinquete de 1185. Pide trabajo y decisión de **S0** | un test por par (55 hoy, 21 «ofrece todo»), cada uno en el carril de su pantalla (J2, S1, S2…); ~horas por test |
+| carril | J6 entero | **S0** (equipo de Luis): cruza de equipo → ticket con `equipo-luis` / `area-s0` (A13, punto 5) | el de cada pantalla |
+| control para que no se quede mudo | la siembra de 1194b (parcial + gemela) dentro del test, y `--sin-siembra` → CIEGO; anclas que no casan → **rojo** en el obligatorio de J6 por un cambio de S0 | la siembra, como «CONTROL FABRICADO» igual que los de `scrum1185-trinquete-sin-consumir.test.mjs`; sin anclas que se rompan | cada test compara contra el vocabulario IMPORTADO, no escrito; pero un test que no existe no puede dar rojo |
+| riesgo | **dos instrumentos sobre las mismas rutas** (lo que el ticket pedía evitar): S0 edita su sonda y el test de J6 cae sin que S0 lo sepa | depende de que el otro equipo lo acepte y lo haga | se ve verde aunque la forma esté por todas partes |
+
+### Recomendación de J6
+
+**B, en su forma mínima:** que S0 haga API las dos anclas (que `censar` devuelva las rutas con los
+identificadores de cada handler). Es un cambio aditivo en su fichero, y acaba con el parche. Con eso,
+el cruce de vocabularios puede ir como modo de su sonda o como consumidor de J6 sin parche; eso lo
+decide su dueño. Si el equipo de Luis no lo acepta, **A**, sabiendo que deja un test de J6
+acoplado por texto al fichero de S0. **C no como método**: es el arreglo correcto para cada caso que
+se encuentre (como 1136), pero no encuentra casos.
+
+### Lo que NO he medido
+
+- El tiempo del trinquete de 1185 en CI (el «ahorro» de B es una deducción de que hoy se parsea dos veces, no una medición).
+- El coste por test de C: «~horas» sale de la longitud del de 1136 (9.870 B), no de cronometrar a nadie.
+- Ninguno de los 13 «no nombra ninguno» ni de los 8 «sólo por envoltorio» abierto de nuevo: siguen con el veredicto del 24-oct.
+
+## J6 · SCRUM-1194d · el método A, construido: censo como pieza, trinquete y los 14 pares declarados
+
+**Medido contra:** `origin/main` = `efe736f3f01b5ecbc6dce221e80a3dfc3bfcd42a` · 2026-10-27T13:02:48Z (hora de GitHub; sesión J6 `jv-j6de`, por encargo del orquestador `cobroflash-backend-8b`)
+
+A9: comprobación → `tests/scrum1194d-trinquete-vocabulario-ofrecido.test.mjs`
+
+Decisión del fundador en c.21005: «A en J6 ya», con su trinquete y los 14 pares declarados desde el
+principio. B no se lleva a Luis y C se descarta como método. No se toca `src/`, `public/` ni la sonda
+de 1185 (`scripts/_censo-sin-consumir.mjs`, carril S0): se leen, y la sonda se parchea en una copia
+en memoria, igual que en 1194b.
+
+### Lo que hay
+
+- **El censo, como pieza:** `tests/_censo-vocabulario-ofrecido.mjs` (`censarVocabulario`). Es el
+  algoritmo de 1194b sin cambios. Devuelve `{ ciego }` en vez de salir del proceso. Ahora
+  `docs/master/evidencias/SCRUM-1194/censo-vocabulario.mjs` sólo lo llama e imprime: así hay un
+  algoritmo, no dos. **Su salida es idéntica byte a byte a la de antes (8.180 B, `diff` vacío)**, y
+  `--sin-siembra` sigue dando exit 2 CIEGO.
+- **El trinquete:** `tests/scrum1194d-trinquete-vocabulario-ofrecido.test.mjs`, 5 casos en ~5 s.
+  SIEMBRA (pareja PARCIAL con los 8 que faltan y gemela «ofrece todo»), SIN SIEMBRA (CIEGO, no
+  verde), SUELO (población en el diagnóstico y 0 «no pude medir»), «no sube» y «no baja en
+  silencio».
+- **Los 14 pares declarados al nacer** (`DECLARADOS`, uno por línea, cada uno con su motivo): el
+  PARCIAL falso de `archivar` y los 13 «no nombra ninguno». El par se identifica por ruta,
+  vocabulario, valores y fichero, no por posición. Los dos `z.enum` de `customerCreateSchema` se
+  llaman igual y sólo los separan sus valores. Los motivos se copian de los tramos 1194 y 1194b.
+  `firmar-tecnico` y `firmar`, que el 24-oct salían «por analogía», ligan por el salto de import a
+  `parteTrabajo.ts` y no por el cuerpo. Eso se mira con `grep` en `partes.routes.ts`: la ruta no
+  nombra `ESTADOS_PARTE`.
+
+### La población de hoy (del diagnóstico del test)
+
+71 vocabularios (13 `z.enum` + 58 arrays) · 242 rutas (sonda 1185) · 30 sin ruta · 55 pares: 11 GET,
+9 sin pantalla, 21 ofrece todo, 1 PARCIAL, 13 no nombra ninguno, 0 no pude medir · 8 «ofrece todo»
+sólo por envoltorio · 14 declarados. Coincide con 1194c.
+
+### Visto caer (`MUTACIONES_QUE_ME_TUMBAN`, con el `aplicarUna` de la casa)
+
+Pasada base: 5 ✔, 0 caídos, 0 saltados. Las 6 mutaciones salen **VIVAS**:
+
+| mutación | cae |
+|---|---|
+| el veredicto PARCIAL desaparece | SIEMBRA (+3 colaterales) |
+| la siembra no se monta (`if (sembrar)` → `if (false)`) | SIEMBRA (+3). El positivo quitado no da verde |
+| sin siembra no se sale CIEGO | SIN SIEMBRA |
+| PUT y PATCH tratados como GET (se van 2 declarados) | «no baja en silencio» |
+| las pantallas `.html` no se leen | SUELO (+1) |
+| un par del árbol sin declarar | «no sube» (+1) |
+
+Después, `git status --porcelain` sale vacío: el árbol quedó como estaba.
+
+### ⚠️ Lo que sigue sin verse
+
+Todo lo que declaran 1194 y 1194b: vocabularios no literales, valores que pone otro fichero de la
+pantalla, un solo salto de import y uno de envoltorio, y que el envoltorio casa por nombre. Queda
+además el riesgo que la tabla de 1194c atribuye a A: si S0 cambia una de las dos anclas de su
+sonda, el trinquete sale CIEGO, y será un rojo de J6 causado por un cambio de S0. Los 8 «sólo por
+envoltorio» se imprimen y no se vigilan. Ninguno de los 13 «no nombra» se ha vuelto a abrir uno a
+uno: llevan el veredicto de su tramo.
+
+**Arreglo del rojo de #2924 (2026-10-27T13:31Z, sesión J6 `jv-j6di`, sobre la punta `15483e52c02913e7c61b2aab1a22d6fb4eed36ae`):** el obligatorio cayó en SCRUM-846c ③ porque `censarVocabulario` sólo recibía el árbol de verdad; el trinquete lleva ahora el caso CASO FABRICADO (árbol temporal con la sonda de 1185 copiada: la pantalla sin «pausa» sale PARCIAL, la que ofrece los tres no acusa) y una 7.ª mutación (`faltan = []`), y las 7 salen VIVAS con el `aplicarUna` de la casa sobre una base de 6 ✔. La mitad NO no se ha visto caer con una mutación propia.
+
+A9: comprobación → `tests/scrum846c-trinquete-instrumentos-con-caso.test.mjs`

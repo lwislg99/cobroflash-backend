@@ -1,0 +1,51 @@
+// SCRUM-1599p · el Postgres 16.14 desechable del lote 6a (forma de 1599o), en el temporal de la sesión y en loopback.
+// Uso: node pgbanco.mjs init <puerto>      → initdb + pg_ctl start (max_connections=400) + plantilla con ddl.sql
+//      node pgbanco.mjs rehacer <puerto>   → yaqu_libro_test NUEVA desde la plantilla (DROP … WITH (FORCE))
+//      node pgbanco.mjs stop               → pg_ctl stop
+// Sólo loopback y bases que acaban en «_test» o «_plantilla»: no sabe hablar con otra cosa.
+import fs from 'node:fs';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import pg from 'pg';
+
+const AQUI = path.dirname(fileURLToPath(import.meta.url));
+const BIN = path.join(AQUI, 'node_modules/@embedded-postgres/windows-x64/native/bin');
+const DATOS = path.join(AQUI, 'datos');
+const [orden, puertoTxt] = process.argv.slice(2);
+const puerto = Number(puertoTxt);
+
+const sql = async (base, texto) => {
+  const c = new pg.Client({ host: '127.0.0.1', port: puerto, user: 'postgres', database: base });
+  await c.connect();
+  try { return await c.query(texto); } finally { await c.end(); }
+};
+const correr = (exe, args) => {
+  const r = spawnSync(path.join(BIN, exe), args, { encoding: 'utf8' });
+  console.log(`${exe} rc=${r.status}`, (r.stdout + r.stderr).trim().split('\n').slice(-2).join(' | '));
+  if (r.status !== 0) process.exit(1);
+};
+
+if (orden === 'init') {
+  if (!puerto) { console.log('CIEGO: falta puerto'); process.exit(2); }
+  fs.rmSync(DATOS, { recursive: true, force: true });
+  correr('initdb.exe', ['-D', DATOS, '-U', 'postgres', '-A', 'trust', '-E', 'UTF8', '--no-locale']);
+  // stdio 'ignore': el postgres que deja vivo hereda las tuberías y spawnSync no volvería nunca (medido)
+  const r = spawnSync(path.join(BIN, 'pg_ctl.exe'), ['start', '-w', '-D', DATOS, '-l', path.join(AQUI, 'pg.log'), '-o', `-p ${puerto} -h 127.0.0.1 -c max_connections=400 -c fsync=off`], { stdio: 'ignore' });
+  console.log(`pg_ctl start rc=${r.status}`);
+  if (r.status !== 0) process.exit(1);
+}
+if (orden === 'init' || orden === 'plantilla') {
+  await sql('postgres', 'CREATE DATABASE yaqu_libro_plantilla');
+  await sql('yaqu_libro_plantilla', fs.readFileSync(path.join(AQUI, 'ddl.sql'), 'utf8'));
+  const t = await sql('yaqu_libro_plantilla', "SELECT count(*)::int AS n FROM information_schema.tables WHERE table_schema = 'public'");
+  console.log(`plantilla: ${t.rows[0].n} tablas`);
+} else if (orden === 'rehacer') {
+  await sql('postgres', 'DROP DATABASE IF EXISTS yaqu_libro_test WITH (FORCE)');
+  await sql('postgres', 'CREATE DATABASE yaqu_libro_test TEMPLATE yaqu_libro_plantilla');
+  const t = await sql('yaqu_libro_test', "SELECT count(*)::int AS n FROM information_schema.tables WHERE table_schema = 'public'");
+  console.log(`yaqu_libro_test: ${t.rows[0].n} tablas`);
+  if (t.rows[0].n === 0) process.exit(2);
+} else if (orden === 'stop') {
+  correr('pg_ctl.exe', ['stop', '-D', DATOS, '-m', 'fast']);
+} else { console.log('CIEGO: orden desconocida'); process.exit(2); }

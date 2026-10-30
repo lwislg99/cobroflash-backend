@@ -300,14 +300,14 @@ test('SCRUM-295 · el cruce separa la cuota cobrada de la NO cobrada', () => {
 // EL AVISO OBLIGATORIO (A5) Y LA REGLA 30
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-295 · el aviso de «orientativo» viaja DENTRO del resultado, y va marcado', () => {
+test('SCRUM-295 · el aviso de «orientativo» viaja DENTRO del resultado, con su texto firmado', () => {
   // El diseño (A5) lo declara obligatorio: no somos asesores fiscales. Si viviera en la pantalla,
   // un segundo consumidor —un export, un PDF— podría pintar el 303 sin él.
+  // SCRUM-1065c: el marcador sale porque el texto se firmó — «Borrador para tu asesor»
+  // (SCRUM-1064 c.20780, T2; SCRUM-1065 c.20813 y c.20820).
   const { m303 } = trescientosTres([factura()]);
   assert.equal(m303.avisoObligatorio, AVISO_ORIENTATIVO);
-  assert.match(m303.avisoObligatorio, /^\[PENDIENTE microcopy oficial\] /,
-    '🔴 el aviso se presenta como texto aprobado y no lo está (regla 30).');
-  assert.ok(m303.avisoObligatorio.length > 30, '🔴 el aviso está vacío detrás del marcador.');
+  assert.equal(m303.avisoObligatorio, 'Borrador para tu asesor');
 });
 
 test('SCRUM-295 · CASILLAS: los números salen del mapa, no de literales sueltos', () => {

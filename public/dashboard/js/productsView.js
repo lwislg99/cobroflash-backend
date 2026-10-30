@@ -818,7 +818,7 @@ function renderProductsView(container) {
   
         const vatPct = (it.vat === null || typeof it.vat === "undefined")
           ? "—"
-          : (Number(it.vat) * 100).toFixed(0) + " %";
+          : fmtTipoIvaEs(it.vat) + " %";
         const activePill = it.isActive
           ? '<span class="status-pill status-pill-accepted">ACTIVO</span>'
           : '<span class="status-pill status-pill-draft">INACTIVO</span>';

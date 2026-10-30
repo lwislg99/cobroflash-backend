@@ -1,0 +1,202 @@
+TAP version 13
+# Subtest: mesNaturalKey/Label: YYYY-MM y etiqueta legible
+ok 1 - mesNaturalKey/Label: YYYY-MM y etiqueta legible
+  ---
+  duration_ms: 28.757
+  type: 'test'
+  ...
+# Subtest: groupByRotura: 2 meses distintos → 2 grupos ordenados por mes
+ok 2 - groupByRotura: 2 meses distintos → 2 grupos ordenados por mes
+  ---
+  duration_ms: 0.5854
+  type: 'test'
+  ...
+# Subtest: groupByRotura: 1 mes → 1 grupo; vacío → []
+ok 3 - groupByRotura: 1 mes → 1 grupo; vacío → []
+  ---
+  duration_ms: 0.9818
+  type: 'test'
+  ...
+# Subtest: validarConsolidacion: caso feliz → ok
+ok 4 - validarConsolidacion: caso feliz → ok
+  ---
+  duration_ms: 4.6113
+  type: 'test'
+  ...
+# Subtest: validarConsolidacion: selección vacía → seleccion_vacia
+ok 5 - validarConsolidacion: selección vacía → seleccion_vacia
+  ---
+  duration_ms: 0.3229
+  type: 'test'
+  ...
+# Subtest: validarConsolidacion: TRABAJO_UNICO → consolidacion_no_aplica
+ok 6 - validarConsolidacion: TRABAJO_UNICO → consolidacion_no_aplica
+  ---
+  duration_ms: 0.2219
+  type: 'test'
+  ...
+# Subtest: validarConsolidacion: no firmado → albaran_no_firmado
+ok 7 - validarConsolidacion: no firmado → albaran_no_firmado
+  ---
+  duration_ms: 0.3524
+  type: 'test'
+  ...
+# Subtest: validarConsolidacion: SIN_VALORAR → albaran_sin_precios
+ok 8 - validarConsolidacion: SIN_VALORAR → albaran_sin_precios
+  ---
+  duration_ms: 0.1799
+  type: 'test'
+  ...
+# Subtest: validarConsolidacion: ya facturado → albaran_ya_facturado
+ok 9 - validarConsolidacion: ya facturado → albaran_ya_facturado
+  ---
+  duration_ms: 0.5787
+  type: 'test'
+  ...
+# Subtest: validarConsolidacion: cliente distinto → cliente_mixto
+ok 10 - validarConsolidacion: cliente distinto → cliente_mixto
+  ---
+  duration_ms: 0.274
+  type: 'test'
+  ...
+# Subtest: calcAlbaranTotales: líneas con IVA mixto suman en céntimos enteros
+ok 11 - calcAlbaranTotales: líneas con IVA mixto suman en céntimos enteros
+  ---
+  duration_ms: 0.3915
+  type: 'test'
+  ...
+# Subtest: SCRUM-17: consolidar → rotura por mes (N facturas), IVA mixto, guards, tenancy
+not ok 12 - SCRUM-17: consolidar → rotura por mes (N facturas), IVA mixto, guards, tenancy
+  ---
+  duration_ms: 12731.327
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-backend\\.claude\\worktrees\\jv-j6ar\\tests\\scrum17-recapitulativa.test.mjs:114:1'
+  failureType: 'testCodeFailure'
+  error: 'número de serie FISCAL (no J-)'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+  actual: 'F260001'
+  operator: 'match'
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/jv-j6ar/tests/scrum17-recapitulativa.test.mjs:176:12)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SCRUM-178 (aritmética, sin BD): el tramo único al 100 % reproduce las líneas y el total EXACTOS
+ok 13 - SCRUM-178 (aritmética, sin BD): el tramo único al 100 % reproduce las líneas y el total EXACTOS
+  ---
+  duration_ms: 16.2319
+  type: 'test'
+  ...
+# 🧹 SCRUM-194: 4 fila(s) huérfana(s) barridas al cerrar el fichero.
+# Subtest: SCRUM-178: emisión manual — emite UNA vez, con líneas, y cierra las cuatro puertas
+not ok 14 - SCRUM-178: emisión manual — emite UNA vez, con líneas, y cierra las cuatro puertas
+  ---
+  duration_ms: 20005.0477
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-backend\\.claude\\worktrees\\jv-j6ar\\tests\\scrum178-emision-manual.test.mjs:48:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    debía emitir; devolvió 409 {"error":"facturacion_no_disponible","message":"[PENDIENTE microcopy oficial]"}
+    
+    409 !== 201
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 201
+  actual: 409
+  operator: 'strictEqual'
+  stack: |-
+    file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/jv-j6ar/tests/scrum178-emision-manual.test.mjs:93:16
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async withMerchant (file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/jv-j6ar/tests/_merchant-fixture.mjs:296:12)
+    async TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/jv-j6ar/tests/scrum178-emision-manual.test.mjs:59:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# Subtest: SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo
+not ok 15 - SCRUM-814 · dos peticiones simultáneas NO pueden emitir el MISMO tramo
+  ---
+  duration_ms: 23291.7947
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-backend\\.claude\\worktrees\\jv-j6ar\\tests\\scrum814-carrera-del-tramo.gated.test.mjs:151:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    🔴 se esperaban 2 facturas y hay 0: []. Respuestas: A 409 {"error":"facturacion_no_disponible","message":"[PENDIENTE microcopy oficial]"} · B 409 {"error":"facturacion_no_disponible","message":"[PENDIENTE microcopy oficial]"}
+    
+    0 !== 2
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 2
+  actual: 0
+  operator: 'strictEqual'
+  stack: |-
+    file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/jv-j6ar/tests/scrum814-carrera-del-tramo.gated.test.mjs:179:16
+    async withMerchant (file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/jv-j6ar/tests/_merchant-fixture.mjs:296:12)
+    async TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/jv-j6ar/tests/scrum814-carrera-del-tramo.gated.test.mjs:160:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+  ...
+# desfase de salida: 0 ms · A → 409 · B → 409
+# Subtest: SCRUM-814 · plan 30/70: lo facturable NO puede quedar por debajo del presupuesto
+not ok 16 - SCRUM-814 · plan 30/70: lo facturable NO puede quedar por debajo del presupuesto
+  ---
+  duration_ms: 7794.2739
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-backend\\.claude\\worktrees\\jv-j6ar\\tests\\scrum814-carrera-del-tramo.gated.test.mjs:213:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    se esperaban 2 facturas y hay 0
+    
+    0 !== 2
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 2
+  actual: 0
+  operator: 'strictEqual'
+  stack: |-
+    file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/jv-j6ar/tests/scrum814-carrera-del-tramo.gated.test.mjs:239:16
+    async withMerchant (file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/jv-j6ar/tests/_merchant-fixture.mjs:296:12)
+    async TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/jv-j6ar/tests/scrum814-carrera-del-tramo.gated.test.mjs:223:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+# desfase de salida: 0 ms · A → 409 · B → 409
+# Subtest: SCRUM-814 · dos peticiones SECUENCIALES siguen emitiendo «Anticipo» y luego «Final»
+not ok 17 - SCRUM-814 · dos peticiones SECUENCIALES siguen emitiendo «Anticipo» y luego «Final»
+  ---
+  duration_ms: 3534.4549
+  type: 'test'
+  location: 'C:\\Users\\Javier Pereira\\cobroflash-backend\\.claude\\worktrees\\jv-j6ar\\tests\\scrum814-carrera-del-tramo.gated.test.mjs:276:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    la 1ª debía emitir y dio 409 {"error":"facturacion_no_disponible","message":"[PENDIENTE microcopy oficial]"}
+    
+    409 !== 201
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 201
+  actual: 409
+  operator: 'strictEqual'
+  stack: |-
+    file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/jv-j6ar/tests/scrum814-carrera-del-tramo.gated.test.mjs:300:16
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async withMerchant (file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/jv-j6ar/tests/_merchant-fixture.mjs:296:12)
+    async TestContext.<anonymous> (file:///C:/Users/Javier%20Pereira/cobroflash-backend/.claude/worktrees/jv-j6ar/tests/scrum814-carrera-del-tramo.gated.test.mjs:285:5)
+    async Test.run (node:internal/test_runner/test:1332:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:911:7)
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 12
+# fail 5
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 35532.3708

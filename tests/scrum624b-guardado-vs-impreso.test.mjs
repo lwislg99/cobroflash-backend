@@ -75,10 +75,12 @@ test('SCRUM-624b · 🔴 SUELO: el lector encuentra un total que SÍ está impre
  * **La lista solo puede MENGUAR.** Si aparece un caso nuevo, es que alguien ha abierto otro camino
  * de divergencia y este guard cae nombrándolo.
  */
-const DIVERGENCIAS_DECLARADAS = Object.freeze({
-  'redondeo por línea': 'SCRUM-624 · la convención ESCRITA redondea el céntimo por línea (36,27) y el PDF suma en float (36,26). Corregirlo es camino de emisión: decide el fundador.',
-  'decimales del precio': 'SCRUM-624 · `price` no limita decimales (`schemas.ts:16`), así que un 30,003 guarda 30,01 e imprime 30,00. Es el caso que YA ocurrió en staging.',
-});
+// ✅ SCRUM-624e (24-oct-2026) · las DOS se borran, como pedía la puerta de salida de abajo: con el GO
+// del fundador (SCRUM-624 c.20817, «A solo en facturas normales») el papel de la F1 imprime el
+// total GUARDADO. Eran «redondeo por línea» (guardado 36,27, impreso 36,26) y «decimales del
+// precio» (guardado 30,01, impreso 30,00). La R1 no pasa por aquí: sigue recalculando, y lo fija
+// `tests/scrum624e-a-solo-en-f1.test.mjs`.
+const DIVERGENCIAS_DECLARADAS = Object.freeze({});
 
 test('SCRUM-624b · 🔴 EL PAPEL Y LA BASE: el total impreso es el GUARDADO', async () => {
   // El caso de la convención escrita: tres líneas de 9,99 al 21 %.
@@ -113,14 +115,8 @@ test('SCRUM-624b · 🔴 EL PAPEL Y LA BASE: el total impreso es el GUARDADO', a
       '  El cliente tiene en la mano un número que no es el que hay en la base. En una empresa\n' +
       '  que factura a institutos, ese papel es el que se discute.');
   }
-
-  // ⚠️ Y si un día SÍ coinciden, este guard tiene que enterarse: la declaración sobraría.
-  if (imprimeElGuardado) {
-    assert.fail(
-      '✅ EL PAPEL YA IMPRIME EL GUARDADO por la convención de redondeo. Eso es lo que este ticket ' +
-      'pedía: borra «redondeo por línea» de `DIVERGENCIAS_DECLARADAS` en este mismo commit. Una ' +
-      'lista que no mengua deja de señalar lo que falta.');
-  }
+  // (SCRUM-624e: aquí iba la puerta de salida, que fallaba si el papel YA imprimía el guardado para
+  // que se borrase la declaración. Se cruzó: la declaración está borrada y este caso exige el guardado.)
 });
 
 test('SCRUM-624b · 🔴 el OTRO camino, sobre el papel: decimales del precio', async () => {
@@ -138,11 +134,8 @@ test('SCRUM-624b · 🔴 el OTRO camino, sobre el papel: decimales del precio', 
       '🔴 EL PAPEL DICE UN TOTAL Y LA BASE OTRO.\n' +
       '    guardado: 30,01 €   ·   IMPRESO EN EL PAPEL: 30,00 €\n\n' +
       '  Y este no es un caso de laboratorio: es el documento J-20260722-R8Y8 de staging.');
-  } else {
-    assert.fail(
-      '✅ EL PAPEL YA IMPRIME EL GUARDADO en el caso de los decimales. Borra «decimales del ' +
-      'precio» de `DIVERGENCIAS_DECLARADAS` en este mismo commit.');
   }
+  // (SCRUM-624e: la puerta de salida se cruzó; ver el caso de arriba.)
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
@@ -171,8 +164,9 @@ test('SCRUM-624b · ✅ CONTROL POSITIVO: los documentos que HOY cuadran siguen 
     '  defecto por otro, y el nuevo no lo estaría mirando nadie.');
 });
 
-test('SCRUM-624b · las divergencias declaradas son EXACTAMENTE dos, y la lista no puede crecer', () => {
-  assert.equal(Object.keys(DIVERGENCIAS_DECLARADAS).length, 2,
+test('SCRUM-624b · las divergencias declaradas son EXACTAMENTE cero, y la lista no puede crecer', () => {
+  // SCRUM-624e: 2 → 0, al imprimir la F1 su total guardado.
+  assert.equal(Object.keys(DIVERGENCIAS_DECLARADAS).length, 0,
     '🔴 la lista de divergencias ha CAMBIADO de tamaño. Solo puede menguar: si crece, alguien ha ' +
     'abierto otro camino por el que el papel y la base pueden decir cosas distintas.');
   for (const [k, motivo] of Object.entries(DIVERGENCIAS_DECLARADAS)) {

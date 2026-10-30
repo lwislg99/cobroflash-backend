@@ -149,6 +149,59 @@ test('SCRUM-1339u · el suelo reconoce los cebos de la señal, y un juez que no 
   assert.equal(sueloPorCommit(sinSenal).ok, false, 'el vigía de antes (sin leer la señal) tiene que salir CIEGO del suelo');
 });
 
+// SCRUM-1339x. El paso se busca por su `run` (identidad), no por su nombre ni por su línea. Se lee el
+// YAML sin las líneas de comentario —el propio paso lleva uno que cita `continue-on-error`— y sólo las
+// claves PROPIAS del paso, a su sangría: un `continue-on-error` de otro paso no lo activa ni lo calla.
+const RUN_DE_LA_SENAL = 'node scripts/senal-de-nombres.mjs';
+const sangria = (l) => /^ */.exec(l)[0].length;
+/** Las claves propias (`clave: valor`, recortadas) de cada paso cuyo `run` empieza por `comando`. */
+const pasosConRun = (yml, comando) => {
+  const lineas = yml.split(/\r?\n/).filter((l) => l.trim() !== '' && !/^\s*#/.test(l));
+  const pasos = [];
+  lineas.forEach((l, i) => {
+    const m = /^( *)(- +)?run: +(.*)$/.exec(l);
+    if (!m || !m[3].startsWith(`${comando} `)) return;
+    const claves = m[1].length + (m[2] ? m[2].length : 0);
+    let ini = i;
+    while (ini >= 0 && !(/^ *- /.test(lineas[ini]) && sangria(lineas[ini]) === claves - 2)) ini--;
+    if (ini < 0) return;
+    let fin = ini + 1;
+    while (fin < lineas.length && sangria(lineas[fin]) >= claves) fin++;
+    const propias = lineas.slice(ini, fin)
+      .map((x, k) => (k === 0 ? ' '.repeat(claves) + x.slice(claves) : x))
+      .filter((x) => sangria(x) === claves);
+    pasos.push(propias.map((x) => x.trim()));
+  });
+  return pasos;
+};
+const sinContinue = (yml) => {
+  const pasos = pasosConRun(yml, RUN_DE_LA_SENAL);
+  assert.equal(pasos.length, 1, `el paso de la señal tiene que estar UNA vez en ci.yml (hay ${pasos.length})`);
+  assert.ok(pasos[0].some((c) => c.startsWith('run: ')), 'el paso leído es el del `run`');
+  const coe = pasos[0].filter((c) => /^continue-on-error\s*:/.test(c));
+  assert.deepEqual(coe, [], '🔴 el paso de la señal lleva `continue-on-error`: su rojo dejaría de bloquear el obligatorio (SCRUM-1339 c.20228)');
+};
+
+test('SCRUM-1339x · el paso de la señal NO lleva continue-on-error: su rojo tumba el obligatorio', () => {
+  sinContinue(CI_YML);
+  // Sembrado: el mismo ci.yml con `continue-on-error: true` dentro del paso de la señal, cae.
+  const LINEA_RUN = /^( +)run: node scripts\/senal-de-nombres\.mjs .*$/m;
+  assert.match(CI_YML, LINEA_RUN, 'el cebo se puede sembrar');
+  const conContinue = CI_YML.replace(LINEA_RUN, (l, s) => `${s}continue-on-error: true\n${l}`);
+  assert.notEqual(conContinue, CI_YML);
+  assert.throws(() => sinContinue(conContinue), /lleva `continue-on-error`/);
+  // y en la forma `- run:` (el paso sin nombre), también
+  const enGuion = 'jobs:\n  j:\n    steps:\n      - run: node scripts/senal-de-nombres.mjs x\n        continue-on-error: true\n';
+  assert.throws(() => sinContinue(enGuion), /lleva `continue-on-error`/);
+  // Controles: un `continue-on-error` en el paso de AL LADO, o en un comentario del paso, no lo activa.
+  const vecino = 'jobs:\n  j:\n    steps:\n      - name: otro\n        continue-on-error: true\n        run: echo x\n'
+    + '      - name: señal\n        # continue-on-error: true\n        if: always()\n        run: node scripts/senal-de-nombres.mjs x\n'
+    + '      - name: después\n        continue-on-error: true\n        run: echo y\n';
+  sinContinue(vecino);
+  // Y un ci.yml sin el paso, o con dos, no pasa por limpio.
+  assert.throws(() => sinContinue(CI_YML.replace(LINEA_RUN, (l, s) => `${s}run: echo nada`)), /UNA vez/);
+});
+
 export const MUTACIONES_QUE_ME_TUMBAN = [
   {
     // Sin el CIEGO de la señal: la que no pudo medir, con el navegador en rojo, vuelve a ser ROJO.
@@ -163,5 +216,12 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
     de: 'if (aviso || registros.some((r) => !r.medible)) return',
     a: 'if (aviso) return',
     cae: 'SCRUM-1339u · la línea de registro con medible=no basta sola',
+  },
+  {
+    // SCRUM-1339x: vuelve el `continue-on-error` al paso de la señal y su rojo deja de bloquear.
+    fichero: '.github/workflows/ci.yml',
+    de: '        run: node scripts/senal-de-nombres.mjs "${{ runner.temp }}/tanda.tap"\n',
+    a: '        continue-on-error: true\n        run: node scripts/senal-de-nombres.mjs "${{ runner.temp }}/tanda.tap"\n',
+    cae: 'SCRUM-1339x · el paso de la señal NO lleva continue-on-error',
   },
 ];

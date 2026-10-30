@@ -1,0 +1,58 @@
+SCRUM-1599j · scrum85 al banco desechable con el ancla del id · salidas (sesión J2 jv-j2bd, 26-oct-2026)
+Banco: PGlite 0.5.8 + pglite-socket 0.2.11, uno NUEVO por pasada (banco-1599h.mjs sin cambiar), DDL de
+`prisma migrate diff --from-empty` (33 tablas). Guion de pasadas: pasadas-1599j.mjs (cruza el veredicto del caso
+de base con el diagnóstico «el token de A EMPIEZA / no empieza por su id» que el test imprime tras la aserción).
+Con la base vacía el cobro A sale con id=1 en todas las pasadas (lo dice el diagnóstico de la pasada canario).
+
+== canario (el fichero arreglado, una pasada)
+scrum85-pay-routes-token.test.mjs · exit=0 · 3520 ms · casos=2 (ok=2 not_ok=0 skip=0) · declarados=2 · SUMA
+# SCRUM-1599j: el token de A no empieza por su id (1)
+
+== DESPUÉS: el fichero arreglado, 120 pasadas (50 + 50 antes de mezclar main, 20 sobre el árbol mezclado)
+[real1] N=50 · ciegas=0
+  token EMPIEZA: ok=3 not_ok=0 otro=0
+  token no empieza: ok=47 not_ok=0 otro=0
+  token SIN DIAGNOSTICO: ok=0 not_ok=0 otro=0
+  suma=50 + ciegas=0 = 50 (SUMA)
+[real2] N=50 · ciegas=0
+  token EMPIEZA: ok=3 not_ok=0 otro=0
+  token no empieza: ok=47 not_ok=0 otro=0
+  token SIN DIAGNOSTICO: ok=0 not_ok=0 otro=0
+  suma=50 + ciegas=0 = 50 (SUMA)
+[tras-merge] N=20 · ciegas=0
+  token EMPIEZA: ok=4 not_ok=0 otro=0
+  token no empieza: ok=16 not_ok=0 otro=0
+  token SIN DIAGNOSTICO: ok=0 not_ok=0 otro=0
+  suma=20 + ciegas=0 = 20 (SUMA)
+Total: 120 pasadas, 10 con el token empezado por «1», 0 caídas.
+
+== MUTACIÓN DEL ANCLA: copia temporal del test con `(?![0-9A-Za-z_-])` quitado (recuento exacto 1), 160 pasadas
+[mutante] N=60 · ciegas=0
+  token EMPIEZA: ok=0 not_ok=0 otro=0
+  token no empieza: ok=50 not_ok=0 otro=0
+  token SIN DIAGNOSTICO: ok=0 not_ok=10 otro=0
+  suma=60 + ciegas=0 = 60 (SUMA)
+[mutante2] N=40 · ciegas=0
+  token no empieza: ok=39 not_ok=0 otro=0
+  token SIN DIAGNOSTICO: ok=0 not_ok=1 otro=0
+[mutante3] N=60 · ciegas=0 (ya con el lector de errores arreglado)
+pasada 11: token SIN DIAGNOSTICO · caso not ok · errores='no debe cazar el id 1 en <a href="/pay/card/1f3a9c0e5b7d2a4c6e8f0a1b3c5d7e9f">' | 'el link a /pay/card NO debe llevar el id numérico'
+pasada 23: (la misma línea)
+pasada 34: (la misma línea)
+pasada 49: (la misma línea)
+pasada 60: (la misma línea)
+  token no empieza: ok=55 not_ok=0 otro=0
+  token SIN DIAGNOSTICO: ok=0 not_ok=5 otro=0
+  suma=60 + ciegas=0 = 60 (SUMA)
+Total: 16 caídas del caso de base en 160 pasadas. «SIN DIAGNOSTICO» porque la aserción cae ANTES de imprimirlo.
+El positivo sembrado cae en el mutante: en las 5 caídas leídas de mutante3 y en el TAP de la última pasada
+de mutante («no debe cazar el id 1 en <a href="/pay/card/1f3a9c0e5b7d2a4c6e8f0a1b3c5d7e9f">»).
+
+== MUTACIÓN DE src (MUTACIONES_CON_BASE, con mutar-1599i.mjs sin cambiar), sobre el árbol mezclado
+== tests/scrum85-pay-routes-token.test.mjs · limpia: 2 ok de 2
+MUERE · M1 · src/modules/billing/app/routes/payCard.routes.ts · «where: { receiptToken: token },» → «where: /^\d+$/.test(token) ? { id: Number(token) }» · 1 de 2 caen · su caso («SCRUM-85: /pay/card, /pay/bizum, /pay/invoice cierran el IDOR») cae
+    · SCRUM-85: /pay/card, /pay/bizum, /pay/invoice cierran el IDOR — numérico 404 sin fuga, token funciona
+      error: GET /pay/card/<id numérico> debe ser 404 y fue 501
+POBLACION=1 mutaciones en 1 ficheros · vivas=0 · ciegas=0 · dist restaurado byte a byte · EXIT=0
+(Primera pasada de esta mutación: «🔴 VIVE», porque el `a` llevaba `\d` en vez de `\\d` —un heredoc se comió
+la barra— y la regex no casaba nunca. Corregido con el editor; ver la línea A9 del tramo.)

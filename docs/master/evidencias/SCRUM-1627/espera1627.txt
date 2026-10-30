@@ -1,0 +1,13 @@
+﻿Date: Tue, 27 Oct 2026 17:18:56 GMT
+c992358d · run 2026-10-27T15:54:35Z · espera de grupo 9.5 min · espera de runner por job: build 26.9, constancia 44.5, guards 35.6, vigía 28.3, trinquete 43.4, meta-guard 38.7
+ce1111a6 · run 2026-10-27T15:35:02Z · espera de grupo 0.0 min · espera de runner por job: constancia 0.0, meta-guard 0.0, trinquete 0.0, guards 0.1, vigía 0.0, build 0.0
+77ce9857 · run 2026-10-27T14:10:25Z · espera de grupo 4.4 min · espera de runner por job: trinquete 0.0, constancia 0.0, guards 0.0, build 0.0, vigía 0.0, meta-guard 0.0
+5b36ce0c · run 2026-10-27T13:43:32Z · espera de grupo 2.3 min · espera de runner por job: constancia 0.0, build 0.0, meta-guard 0.0, vigía 0.0, trinquete 0.0, guards 0.0
+2a8d703d · run 2026-10-27T13:16:57Z · espera de grupo 2.5 min · espera de runner por job: build 0.0, meta-guard 0.0, trinquete 0.0, vigía 0.0, constancia 0.0, guards 0.0
+efe736f3 · run 2026-10-27T12:23:35Z · espera de grupo 26.8 min · espera de runner por job: meta-guard 0.0, constancia 0.0, build 0.0, guards 0.0, trinquete 0.0, vigía 0.0
+bf500180 · run 2026-10-27T12:17:45Z · espera de grupo 3.0 min · espera de runner por job: build 0.0, trinquete 0.0, constancia 0.0, guards 0.0, meta-guard 0.0, vigía 0.0
+e1966530 · run 2026-10-27T11:51:43Z · espera de grupo 0.0 min · espera de runner por job: build 0.0, guards 0.0, trinquete 0.0, constancia 0.0, vigía 0.0, meta-guard 0.1
+5078f80c · run 2026-10-27T00:40:32Z · espera de grupo 20.2 min · espera de runner por job: meta-guard 0.1, trinquete 0.0, vigía 0.0, guards 0.1, constancia 0.0, build 0.0
+01144fda · run 2026-10-27T00:26:07Z · espera de grupo 5.6 min · espera de runner por job: trinquete 0.0, guards 0.0, build 0.0, meta-guard 0.0, vigía 0.0, constancia 0.0
+MAIN: 41 runs desde 2026-10-27T00:00:00Z, 10 con jobs · espera de RUNNER por job: n=60 p50 0.0 p90 26.9 máx 44.5 min · espera de GRUPO por run: p50 4.4 máx 26.8 min
+PR: 50 runs desde 2026-10-27T00:00:00Z, 50 con jobs · espera de RUNNER por job: n=264 p50 0.5 p90 25.5 máx 43.2 min · espera de GRUPO por run: p50 0.0 máx 0.2 min

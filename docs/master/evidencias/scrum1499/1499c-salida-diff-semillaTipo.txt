@@ -1,0 +1,12 @@
+529c529
+< ok - CONTROL · el árbol sano da VERDE contra el cliente real
+---
+> not ok - CONTROL · el árbol sano da VERDE contra el cliente real
+855c855
+< ok - SCRUM-461 · ✅ CONTROL NEGATIVO: con el cliente al día el generador NO molesta
+---
+> not ok - SCRUM-461 · ✅ CONTROL NEGATIVO: con el cliente al día el generador NO molesta
+895c895
+< ok - SCRUM-475 · el modelo de `schema.prisma` es el de la entrada de máster, línea a línea
+---
+> not ok - SCRUM-475 · el modelo de `schema.prisma` es el de la entrada de máster, línea a línea

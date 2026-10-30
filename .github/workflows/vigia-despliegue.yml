@@ -205,6 +205,64 @@ jobs:
           key: vigia-estado-${{ github.run_id }}
 
       # ═══════════════════════════════════════════════════════════════════════════════════════
+      # 🔴 SCRUM-1605 · Y CUANDO PRODUCCIÓN VUELVE A ESTAR AL DÍA, EL AVISO SE CIERRA
+      #
+      # Hasta aquí el vigía abría y comentaba, pero no cerraba nunca: el #2455 (14-oct) siguió abierto
+      # 17 pasadas verdes después de la congelación del 21-23 oct. Un rojo que no se apaga deja de avisar.
+      #
+      # La DECISIÓN es de `decidirCierre` (`scripts/vigia-despliegue-aviso.mjs`): sólo con un renglón
+      # `al-dia` —no con «retrasado pero desplegando», que también sale 0— y nunca en un simulacro.
+      #
+      # Va ANTES del paso de aviso: los dos se excluyen por `salida` (0 aquí, 1 allí), así que el orden
+      # no cambia lo que pasa.
+      #
+      # 🔴 Si no puede mirar o no puede cerrar, el run sale en ROJO y lo dice en el resumen: «no pude
+      # cerrar el aviso» nunca sale verde. Y la lista de Issues que no llega NO es «[]»: «[]» diría
+      # «ningún aviso abierto».
+      # ═══════════════════════════════════════════════════════════════════════════════════════
+      - name: Cerrar el aviso si producción vuelve a estar al día (SCRUM-1605)
+        if: always() && !inputs.simulacro && steps.vigia.outputs.salida == '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          MARCA: "<!-- vigia-despliegue:produccion-congelada -->"
+        run: |
+          set +e
+          RENGLON="$(tail -1 .vigia/constancias.log 2>/dev/null)"
+          HISTORIAL="$(tail -500 .vigia/constancias.log 2>/dev/null)"
+          if ! ISSUES="$(gh api "repos/$REPO/issues?state=open&per_page=100" --paginate 2>/dev/null)"; then
+            echo "::error::NO PUDE MIRAR si hay un aviso que cerrar: la API de Issues no contestó."
+            echo "- **NO PUDE MIRAR** si había aviso que cerrar: la API de Issues no contestó." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          DECISION="$(VIGIA_ISSUES_JSON="$ISSUES" VIGIA_MARCA="$MARCA" VIGIA_RENGLON="$RENGLON" VIGIA_HISTORIAL="$HISTORIAL" \
+                      VIGIA_RUN_URL="$RUN_URL" node scripts/vigia-despliegue-aviso.mjs cerrar)"
+          ACCION="$(printf '%s' "$DECISION" | jq -r '.accion' 2>/dev/null)"
+          if [ "$ACCION" = "nada" ]; then
+            echo "- **Aviso:** nada que cerrar — $(printf '%s' "$DECISION" | jq -r '.motivo')" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if [ "$ACCION" != "cerrar" ]; then
+            MOTIVO="$(printf '%s' "$DECISION" | jq -r '.motivo // empty' 2>/dev/null)"
+            echo "::error::NO SE SABE si había que cerrar el aviso: ${MOTIVO:-$DECISION}"
+            echo "- **NO-SE-SABE** si había que cerrar el aviso — ${MOTIVO:-$DECISION}" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          NUMERO="$(printf '%s' "$DECISION" | jq -r '.numero')"
+          printf '%s' "$DECISION" | jq -r '.comentario' | gh issue comment "$NUMERO" --repo "$REPO" --body-file - \
+            && gh issue close "$NUMERO" --repo "$REPO"
+          # Se comprueba EN GITHUB, no en el código de salida de arriba.
+          ESTADO="$(gh api "repos/$REPO/issues/$NUMERO" --jq '.state' 2>/dev/null)"
+          if [ "$ESTADO" = "closed" ]; then
+            echo "- **CERRADO** — Issue #$NUMERO: producción vuelve a estar al día (leído de vuelta en GitHub)." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          echo "::error::Producción está al día, pero el Issue #$NUMERO NO consta cerrado (estado: ${ESTADO:-no se pudo leer}). Ciérralo a mano."
+          echo "- **NO SE PUDO CERRAR** el Issue #$NUMERO (estado: ${ESTADO:-no se pudo leer})." >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+
+      # ═══════════════════════════════════════════════════════════════════════════════════════
       # SCRUM-1123 · AVISAR DE VERDAD, NO SÓLO PONER EL JOB EN ROJO
       #
       # El 24/25-sep-2026 este vigía estuvo en FAILURE cuatro pasadas seguidas (SCRUM-1122) y nadie

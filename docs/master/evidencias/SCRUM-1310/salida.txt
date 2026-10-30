@@ -1,0 +1,51 @@
+REF 0a7eef15c907acc7646ed7ab33cab9176f8f1bc0 = 0a7eef15c907acc7646ed7ab33cab9176f8f1bc0
+POBLACION · fuentes DDL leídas=75 (bytes=255838) · modelos=33
+FK parser=37 · recuento texto @relation(fields:)=37 · CASAN
+tablas con FK=19 · con DDL=24 · SIN fuente=13 · tablas afectadas=8
+CONTROL+ CREATE TABLE sembrados: 3 de 3 vistos
+CONTROL+ semilla: VISTA (CASCADE)
+CONTROL0 zz_mvma641e_cero_fkey: cero (bien)
+
+--- SIN fuente en congeladas ni docs/sql ---
+auth_sessions_merchant_id_fkey · obligatoria · onDelete esquema=(implícito) · CREATE TABLE NINGUNO · nombre en otro fichero: ninguno
+auth_sessions_team_member_id_fkey · opcional · onDelete esquema=(implícito) · CREATE TABLE NINGUNO · nombre en otro fichero: ninguno
+customers_merchant_id_fkey · obligatoria · onDelete esquema=(implícito) · CREATE TABLE docs/historico/prisma-migrations-frozen-2026-03/20250919125018_init_schema/migration.sql · nombre en otro fichero: docs/evidencias/scrum242-restauracion.md, docs/master/SCRUM-242.md, docs/master/SCRUM-876.md, tests/scrum13-cobrado.test.mjs, tests/scrum692-guardado-parcial-en-base.test.mjs
+invoices_rectifies_id_fkey · opcional · onDelete esquema=(implícito) · CREATE TABLE docs/historico/prisma-migrations-frozen-2026-03/20251105170555_add_invoice_model/migration.sql · nombre en otro fichero: docs/master/evidencias/SCRUM-1496f/filas.json, docs/master/evidencias/SCRUM-1496f/salida/veredicto-lote-N02.md, docs/master/evidencias/SCRUM-1496f/veredictos-por-lote.md, docs/master/evidencias/SCRUM-1550/sondas.json
+expenses_merchant_id_fkey · obligatoria · onDelete esquema=(implícito) · CREATE TABLE NINGUNO · nombre en otro fichero: ninguno
+expenses_quote_id_fkey · opcional · onDelete esquema=(implícito) · CREATE TABLE NINGUNO · nombre en otro fichero: ninguno
+expenses_provider_id_fkey · opcional · onDelete esquema=(implícito) · CREATE TABLE NINGUNO · nombre en otro fichero: ninguno
+quote_requests_merchant_id_fkey · obligatoria · onDelete esquema=(implícito) · CREATE TABLE NINGUNO · nombre en otro fichero: ninguno
+quote_requests_customer_id_fkey · obligatoria · onDelete esquema=(implícito) · CREATE TABLE NINGUNO · nombre en otro fichero: ninguno
+quote_templates_merchant_id_fkey · obligatoria · onDelete esquema=(implícito) · CREATE TABLE NINGUNO · nombre en otro fichero: ninguno
+team_members_merchant_id_fkey · obligatoria · onDelete esquema=(implícito) · CREATE TABLE NINGUNO · nombre en otro fichero: docs/master/SCRUM-876.md, tests/scrum52-operario.test.mjs
+customer_events_merchant_id_fkey · obligatoria · onDelete esquema=(implícito) · CREATE TABLE NINGUNO · nombre en otro fichero: ninguno
+customer_events_customer_id_fkey · obligatoria · onDelete esquema=(implícito) · CREATE TABLE NINGUNO · nombre en otro fichero: ninguno
+
+--- CON fuente ---
+charges_merchant_id_fkey · ddl=RESTRICT/ · esquema=(implícito) · 20250919125018_init_schema/migration.sql:89 ; 20250921193122_ids_autoincrement/migration.sql:24 ; 20250921193122_ids_autoincrement/migration.sql:83
+charges_customer_id_fkey · ddl=SET NULL/ · esquema=(implícito) · 20250919125018_init_schema/migration.sql:92 ; 20250921193122_ids_autoincrement/migration.sql:21 ; 20250921193122_ids_autoincrement/migration.sql:86
+events_charge_id_fkey · ddl=RESTRICT/ · esquema=(implícito) · 20250919125018_init_schema/migration.sql:95 ; 20250921193122_ids_autoincrement/migration.sql:27 ; 20250921193122_ids_autoincrement/migration.sql:89
+reconciliations_charge_id_fkey · ddl=RESTRICT/ · esquema=(implícito) · 20250919125018_init_schema/migration.sql:98 ; 20250921193122_ids_autoincrement/migration.sql:30 ; 20250921193122_ids_autoincrement/migration.sql:92
+quotes_merchantId_fkey · ddl=RESTRICT · esquema=(implícito) · 20251104175333_add_quote_model/migration.sql:20
+quotes_customerId_fkey · ddl=RESTRICT · esquema=(implícito) · 20251104175333_add_quote_model/migration.sql:23
+quotes_chargeId_fkey · ddl=SET NULL · esquema=(implícito) · 20251104175333_add_quote_model/migration.sql:26
+invoices_merchantId_fkey · ddl=RESTRICT · esquema=(implícito) · 20251105170555_add_invoice_model/migration.sql:22
+invoices_customerId_fkey · ddl=RESTRICT · esquema=(implícito) · 20251105170555_add_invoice_model/migration.sql:25
+invoices_quoteId_fkey · ddl=SET NULL · esquema=(implícito) · 20251105170555_add_invoice_model/migration.sql:28
+invoices_charge_id_fkey · ddl=SET NULL · esquema=(implícito) · 20251126102131_add_invoice_payment_fields/migration.sql:8
+products_merchant_id_fkey · ddl=RESTRICT · esquema=(implícito) · 20251213111606_add_product_model/migration.sql:21
+products_provider_id_fkey · ddl=SET NULL · esquema=(implícito) · 20260309122015_add_product_provider_relation/migration.sql:8
+providers_merchant_id_fkey · ddl=RESTRICT · esquema=(implícito) · 20260307201255_add_provider_model/migration.sql:20
+customer_sites_merchant_id_fkey · ddl=RESTRICT · esquema=(implícito) · sql/scrum-1014-customer-site.sql:33
+customer_sites_customer_id_fkey · ddl=RESTRICT · esquema=(implícito) · sql/scrum-1014-customer-site.sql:35
+job_assignees_job_id_fkey · ddl=/CASCADE · esquema=CASCADE · sql/scrum-650-job-assignees.sql:28 ; sql/scrum-650-job-assignees.sql:41
+job_assignees_team_member_id_fkey · ddl=CASCADE · esquema=CASCADE · sql/scrum-650-job-assignees.sql:43
+quote_assignees_quote_id_fkey · ddl=CASCADE · esquema=CASCADE · sql/scrum-597-asignados-de-documento.sql:38
+quote_assignees_team_member_id_fkey · ddl=CASCADE · esquema=CASCADE · sql/scrum-597-asignados-de-documento.sql:40
+invoice_assignees_invoice_id_fkey · ddl=CASCADE · esquema=CASCADE · sql/scrum-597-asignados-de-documento.sql:49
+invoice_assignees_team_member_id_fkey · ddl=CASCADE · esquema=CASCADE · sql/scrum-597-asignados-de-documento.sql:51
+vf_submissions_merchant_id_fkey · ddl=RESTRICT · esquema=RESTRICT · sql/scrum-1127-vf-submissions-dev.sql:39
+vf_submissions_invoice_id_fkey · ddl=RESTRICT · esquema=RESTRICT · sql/scrum-1127-vf-submissions-dev.sql:40
+
+--- tablas SIN ningún CREATE TABLE en esas fuentes ---
+auth_sessions, expenses, quote_requests, quote_templates, team_members, customer_events

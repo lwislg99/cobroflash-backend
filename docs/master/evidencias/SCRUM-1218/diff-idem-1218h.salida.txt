@@ -1,0 +1,3 @@
+quitadas=17 · puestas=125 · faltan=0 · quitadas sin fetch(=0
+control sembrado: VIVO
+EXIT=0

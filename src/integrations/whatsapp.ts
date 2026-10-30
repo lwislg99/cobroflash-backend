@@ -405,7 +405,7 @@ export async function sendWhatsAppTemplate(params: {
         // Alerta interna de gasto/uso diario (visible en logs de Railway)
         console.error(
           `[WhatsApp][ALERTA] merchant ${params.merchantId} alcanzó el tope diario de plantillas ` +
-          `(${reserva.cuenta}/${config.WA_DAILY_TEMPLATE_CAP}); envío BLOQUEADO (A3.2)`,
+          `(${reserva.cuenta}/${reserva.tope}); envío BLOQUEADO (A3.2)`,
         );
         logFailure('daily_cap');
         return { ok: false, reason: 'daily_cap' };

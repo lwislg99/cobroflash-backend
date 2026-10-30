@@ -1,0 +1,9 @@
+scrum178-emision-manual {"pasadas":"5/5","casos":"IGUAL","variantesCasos":"1/1","respuestas":"IGUAL","variantesResp":"1/1","abortos":"0/0","nCasos":3,"nResp":11}
+  control sembrado: casos=DISTINTO respuestas=DISTINTO · sólo status=DISTINTO → VIVO
+scrum85-pay-routes-token {"pasadas":"5/5","casos":"DISTINTO","variantesCasos":"1/2","respuestas":"DISTINTO","variantesResp":"1/2","abortos":"0/1","nCasos":1,"nResp":7}
+  control sembrado: casos=IGUAL respuestas=DISTINTO · sólo status=DISTINTO → CIEGO
+scrum17-recapitulativa {"pasadas":"5/5","casos":"IGUAL","variantesCasos":"1/1","respuestas":"IGUAL","variantesResp":"1/1","abortos":"0/0","nCasos":12,"nResp":9}
+  control sembrado: casos=DISTINTO respuestas=DISTINTO · sólo status=DISTINTO → VIVO
+scrum814-carrera-del-tramo.gated {"pasadas":"5/5","casos":"IGUAL","variantesCasos":"1/1","respuestas":"IGUAL","variantesResp":"1/1","abortos":"0/0","nCasos":3,"nResp":10}
+  control sembrado: casos=DISTINTO respuestas=DISTINTO · sólo status=DISTINTO → VIVO
+POBLACION=4 ficheros · malos=2 · EXIT=1

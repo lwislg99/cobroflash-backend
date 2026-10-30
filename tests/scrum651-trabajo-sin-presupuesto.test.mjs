@@ -380,6 +380,7 @@ test('SCRUM-651 · la ruta le pasa el AUTOR de verdad, no un null fijo', () => {
 test('SCRUM-651 · el vocabulario es EXACTAMENTE el aprobado, y en su orden', () => {
   // Aprobado por el fundador el 2-sep-2026 (regla 27). Ni uno mas, ni uno menos, ni reordenado:
   // el orden es el que ve el profesional en el desplegable y el primero es el caso frecuente.
+  // Consta en: SCRUM-1502 comentario 20834.
   assert.deepEqual([...TIPOS_INTERVENCION],
     ['REPARACION_ASISTENCIA', 'MANTENIMIENTO', 'INSTALACION'],
     '🔴 el vocabulario cerrado ha cambiado. Ampliarlo o reordenarlo es cambio de master '

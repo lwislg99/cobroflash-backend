@@ -5,6 +5,7 @@
 import { prisma } from '../../../core/db/prisma';
 import { normalizePhone } from '../../../core/utils/utils';
 import { zonaDelMerchant, diaNaturalEn, mesNaturalEn, inicioDelDiaEn } from '../../../core/zonaDelMerchant';
+import { WA_TEMPLATES } from '../../../integrations/whatsappTemplates';
 
 // Coste estimado por plantilla Utility en España (tarifas Meta 2026, master J1 ~0,023 €).
 // Los service messages (dentro de ventana 24h) son gratis.
@@ -85,9 +86,19 @@ export async function recordWaMessage(input: RecordWaMessageInput): Promise<void
 // El espacio del cerrojo es propio: 1748, 1749 y 1750 son de la emisión y no se comparten.
 const TOPE_WA_LOCK_NS = 1751;
 
+// ── SCRUM-1596b · Los avisos al PROFESIONAL tienen su tope, y no gastan el de los clientes ──────
+// Decisión del fundador (SCRUM-1596 c.20602, «Tope propio, fuera del cupo»): la plantilla
+// `merchant_alert_es` va al profesional, no a un cliente. Medido en c.20601: compartía el cupo de
+// comercio, y con 99 gastadas el aviso se llevaba la última y la siguiente al cliente ya no salía.
+// Ahora cuenta sólo contra los suyos (30 por comercio y día) y el cupo de comercio no la cuenta.
+// El que no cabe se pierde y queda anotado como `daily_cap`. Sin esquema: se cuenta por el nombre.
+// Los avisos por texto (ventana abierta) no pasan por aquí: siguen gastando 0.
+const TOPE_AVISOS_AL_PROFESIONAL = 30;
+const PLANTILLA_AVISO_AL_PROFESIONAL = WA_TEMPLATES.merchantAlert;
+
 export type ReservaDePlantilla =
   | { ok: true; id: number }
-  | { ok: false; reason: 'daily_cap' | 'customer_daily_cap'; cuenta: number };
+  | { ok: false; reason: 'daily_cap' | 'customer_daily_cap'; cuenta: number; tope: number };
 
 /**
  * Pregunta los dos topes y, si cabe, deja la fila apuntada en `queued`. Todo bajo el cerrojo del
@@ -115,6 +126,18 @@ function plantillasDeHoy(merchantId: number, zona: string, ahora: Date) {
   };
 }
 
+/**
+ * Lo mismo, sin los avisos al profesional: es lo que gasta el cupo de los clientes (SCRUM-1596b). Lo
+ * piden el tope y el «Hoy» del panel, para que los dos sigan contando lo mismo (SCRUM-1597 c.20635).
+ * Las filas sin nombre SÍ cuentan: `{ not }` a secas las dejaría fuera en SQL (NULL <> x no es verdad).
+ */
+function sinLosAvisosAlProfesional<T extends object>(filtro: T) {
+  return {
+    ...filtro,
+    AND: [{ OR: [{ templateName: null }, { templateName: { not: PLANTILLA_AVISO_AL_PROFESIONAL } }] }],
+  };
+}
+
 export async function reservarPlantilla(db: ClienteDeLaBase, input: {
   merchantId: number;
   customerId?: number | null;
@@ -134,13 +157,25 @@ export async function reservarPlantilla(db: ClienteDeLaBase, input: {
 
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(${TOPE_WA_LOCK_NS}::int, ${input.merchantId}::int)`;
 
-      const sentToday = await tx.whatsAppMessage.count({ where: cuentaParaElTope });
-      if (sentToday >= input.topeComercio) return { ok: false as const, reason: 'daily_cap' as const, cuenta: sentToday };
+      if (input.templateName === PLANTILLA_AVISO_AL_PROFESIONAL) {
+        const avisosHoy = await tx.whatsAppMessage.count({
+          where: { ...cuentaParaElTope, templateName: PLANTILLA_AVISO_AL_PROFESIONAL },
+        });
+        if (avisosHoy >= TOPE_AVISOS_AL_PROFESIONAL) {
+          return { ok: false as const, reason: 'daily_cap' as const, cuenta: avisosHoy, tope: TOPE_AVISOS_AL_PROFESIONAL };
+        }
+      } else {
+        const sinLosAvisos = sinLosAvisosAlProfesional(cuentaParaElTope);
+        const sentToday = await tx.whatsAppMessage.count({ where: sinLosAvisos });
+        if (sentToday >= input.topeComercio) {
+          return { ok: false as const, reason: 'daily_cap' as const, cuenta: sentToday, tope: input.topeComercio };
+        }
 
-      if (input.customerId) {
-        const toCustomerToday = await tx.whatsAppMessage.count({ where: { ...cuentaParaElTope, customerId: input.customerId } });
-        if (toCustomerToday >= input.topeCliente) {
-          return { ok: false as const, reason: 'customer_daily_cap' as const, cuenta: toCustomerToday };
+        if (input.customerId) {
+          const toCustomerToday = await tx.whatsAppMessage.count({ where: { ...sinLosAvisos, customerId: input.customerId } });
+          if (toCustomerToday >= input.topeCliente) {
+            return { ok: false as const, reason: 'customer_daily_cap' as const, cuenta: toCustomerToday, tope: input.topeCliente };
+          }
         }
       }
 
@@ -259,20 +294,24 @@ export async function isServiceWindowOpen(
 const STATUS_RANK: Record<string, number> = { queued: 0, sent: 1, delivered: 2, read: 3 };
 
 /**
- * ¿Debe aplicarse la transición de `current` a `next`? `failed` siempre se aplica;
- * el resto solo avanza (un `delivered` que llega tras un `read` no degrada el estado,
- * y Meta puede entregar los callbacks fuera de orden). Pura → testeable sin BD.
+ * ¿Debe aplicarse la transición de `current` a `next`? Solo avanza (un `delivered` que llega
+ * tras un `read` no degrada el estado, y Meta puede entregar los callbacks fuera de orden).
+ * SCRUM-1601 (Parte L, regla 27): `failed` solo desde `queued|sent`, y de `failed`, `received`
+ * o un estado desconocido no se sale. SCRUM-1601c: el único salto firmado es `sent → read`
+ * (c.20673); desde `queued` sólo se va a `sent` (o a `failed`), decisión c.20709. Pura → testeable sin BD.
  */
 export function shouldApplyStatus(current: string, next: string): boolean {
-  if (next === 'failed') return true;
   const cur = STATUS_RANK[current] ?? -1;
+  if (cur < 0) return false;
+  if (next === 'failed') return cur <= STATUS_RANK.sent;
+  if (cur === STATUS_RANK.queued) return next === 'sent';
   const nxt = STATUS_RANK[next] ?? -1;
   return nxt > cur;
 }
 
 /**
  * Actualiza el estado de un mensaje por su waMessageId (webhook `statuses` de Meta).
- * Nunca retrocede el estado, salvo `failed`, que siempre se registra.
+ * Nunca retrocede el estado; qué transiciones aplica lo decide `shouldApplyStatus`.
  */
 export async function updateWaMessageStatus(
   waMessageId: string,
@@ -458,8 +497,11 @@ export async function getWhatsAppMetrics(merchantId: number, now = new Date()): 
       select: { createdAt: true },
     });
     const channel = {
-      // Lo mismo que cuenta el tope, pedido con su mismo filtro: sin las rechazadas (c.19157 ③).
-      templateToday: await prisma.whatsAppMessage.count({ where: plantillasDeHoy(merchantId, zona, now) }),
+      // Lo mismo que cuenta el tope, pedido con su mismo filtro: sin las rechazadas (c.19157 ③) y sin
+      // los avisos al profesional, que no gastan el cupo de los clientes (SCRUM-1597 c.20635).
+      templateToday: await prisma.whatsAppMessage.count({
+        where: sinLosAvisosAlProfesional(plantillasDeHoy(merchantId, zona, now)),
+      }),
       windowToday: windowRows.filter((r) => r.createdAt >= dayStart).length,
       windowMonth: windowRows.length,
       savedEurMonth: Math.round(windowRows.length * WA_UTILITY_COST_ES * 1000) / 1000,

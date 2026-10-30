@@ -40,6 +40,8 @@ const OBJETIVOS = {
     ['button Quitar (fila 1 de cláusulas)', '[data-clausula-quitar="0"]'],
   ],
   marca: [['input[color] color de marca', '#brand-color-input']],
+  // SCRUM-1577c: el enlace de «Tu página pública», por su destino (no por su clase, que el ANTES no tiene).
+  publica: [['a enlace yaqu.app/p/… (Tu página pública)', '.alert.success a[href^="/p/"]']],
 };
 const SONDA = '<select id="__sonda44" style="height:20px;min-height:0;padding:0;font-size:10px"><option>x</option></select>';
 

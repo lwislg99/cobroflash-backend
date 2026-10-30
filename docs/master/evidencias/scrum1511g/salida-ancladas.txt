@@ -1,0 +1,383 @@
+{
+ "importsReescritos": 3,
+ "marcasTotales": 247,
+ "porNivel": {
+  "negada": 13,
+  "citada": 1,
+  "rastreable": 167,
+  "anclado": 33,
+  "documental": 13,
+  "sin-respaldo": 20
+ },
+ "SIN_RESPALDO": 20,
+ "ancladas": [
+  {
+   "donde": "src/modules/fiscal/evidencias/paquete.ts:174",
+   "lineas": 16,
+   "citas": [
+    "SCRUM-1252/17726"
+   ],
+   "ancha": [
+    "17726"
+   ]
+  },
+  {
+   "donde": "src/modules/fiscal/librosAeat/librosAeat.ts:183",
+   "lineas": 17,
+   "citas": [
+    "SCRUM-1502/20702"
+   ],
+   "ancha": [
+    "20702"
+   ]
+  },
+  {
+   "donde": "src/modules/fiscal/verifactu/registro.builder.ts:629",
+   "lineas": 15,
+   "citas": [
+    "SCRUM-1258/17713"
+   ],
+   "ancha": [
+    "17713"
+   ]
+  },
+  {
+   "donde": "src/modules/metrics/domain/actividadEquipo.ts:1",
+   "lineas": 38,
+   "citas": [
+    "SCRUM-1341/17825"
+   ],
+   "ancha": [
+    "17825"
+   ]
+  },
+  {
+   "donde": "src/modules/system/app/routes/invoicesAdmin.routes.ts:1301",
+   "lineas": 3,
+   "citas": [
+    "SCRUM-1502/18835"
+   ],
+   "ancha": [
+    "18835"
+   ]
+  },
+  {
+   "donde": "public/dashboard/js/invoicesView.js:209",
+   "lineas": 13,
+   "citas": [
+    "SCRUM-825/17446"
+   ],
+   "ancha": [
+    "17446"
+   ]
+  },
+  {
+   "donde": "public/dashboard/js/quotesView.js:429",
+   "lineas": 24,
+   "citas": [
+    "SCRUM-915/15868"
+   ],
+   "ancha": [
+    "15868"
+   ]
+  },
+  {
+   "donde": "public/dashboard/js/settingsSubmenus.js:36",
+   "lineas": 18,
+   "citas": [
+    "SCRUM-1502/20514"
+   ],
+   "ancha": [
+    "20514"
+   ]
+  },
+  {
+   "donde": "tests/scrum1027-atajo-flag-off-sin-documento.test.mjs:200",
+   "lineas": 5,
+   "citas": [
+    "SCRUM-825/17446"
+   ],
+   "ancha": [
+    "17446"
+   ]
+  },
+  {
+   "donde": "tests/scrum1260b-el-emisor-ya-no-escribe-just.test.mjs:1",
+   "lineas": 29,
+   "citas": [
+    "SCRUM-1260/19616"
+   ],
+   "ancha": [
+    "19616",
+    "20143"
+   ]
+  },
+  {
+   "donde": "tests/scrum244-menu-portabilidad.test.mjs:43",
+   "lineas": 13,
+   "citas": [
+    "SCRUM-1502/20702"
+   ],
+   "ancha": [
+    "20702"
+   ]
+  },
+  {
+   "donde": "tests/scrum257-albaran-desde-presupuesto.test.mjs:26",
+   "lineas": 2,
+   "citas": [
+    "SCRUM-1502/20702"
+   ],
+   "ancha": [
+    "20702"
+   ]
+  },
+  {
+   "donde": "tests/scrum291-series-huecos.test.mjs:99",
+   "lineas": 4,
+   "citas": [
+    "SCRUM-1502/20514"
+   ],
+   "ancha": [
+    "20514"
+   ]
+  },
+  {
+   "donde": "tests/scrum299-copy-factura-publico.test.mjs:27",
+   "lineas": 5,
+   "citas": [
+    "SCRUM-299/12188"
+   ],
+   "ancha": [
+    "12188"
+   ]
+  },
+  {
+   "donde": "tests/scrum320-que-falta-para-cobrar.test.mjs:36",
+   "lineas": 2,
+   "citas": [
+    "SCRUM-1502/20629"
+   ],
+   "ancha": [
+    "20629"
+   ]
+  },
+  {
+   "donde": "tests/scrum338-carga-de-catalogo-no-muda.test.mjs:109",
+   "lineas": 4,
+   "citas": [
+    "SCRUM-1502/20702"
+   ],
+   "ancha": [
+    "20702"
+   ]
+  },
+  {
+   "donde": "tests/scrum344-cierre-con-saldo.test.mjs:30",
+   "lineas": 15,
+   "citas": [
+    "SCRUM-1502/20702"
+   ],
+   "ancha": [
+    "20702"
+   ]
+  },
+  {
+   "donde": "tests/scrum364-cambiar-gremio.test.mjs:138",
+   "lineas": 6,
+   "citas": [
+    "SCRUM-1502/20702"
+   ],
+   "ancha": [
+    "20702"
+   ]
+  },
+  {
+   "donde": "tests/scrum394-plan-mudo.test.mjs:264",
+   "lineas": 3,
+   "citas": [
+    "SCRUM-1502/20702"
+   ],
+   "ancha": [
+    "20702"
+   ]
+  },
+  {
+   "donde": "tests/scrum411-exports-inalcanzables.test.mjs:68",
+   "lineas": 167,
+   "citas": [
+    "SCRUM-1404/18840"
+   ],
+   "ancha": [
+    "16468",
+    "18840",
+    "18856"
+   ]
+  },
+  {
+   "donde": "tests/scrum428-terminado-sin-cobrar.test.mjs:120",
+   "lineas": 8,
+   "citas": [
+    "SCRUM-1502/20702"
+   ],
+   "ancha": [
+    "20702"
+   ]
+  },
+  {
+   "donde": "tests/scrum514-aprobado-y-aplicado.test.mjs:963",
+   "lineas": 1,
+   "citas": [
+    "SCRUM-1258/17713"
+   ],
+   "ancha": [
+    "17713"
+   ]
+  },
+  {
+   "donde": "tests/scrum582-seleccion-multiple-clientes.test.mjs:187",
+   "lineas": 9,
+   "citas": [
+    "SCRUM-1135/17449"
+   ],
+   "ancha": [
+    "17449"
+   ]
+  },
+  {
+   "donde": "tests/scrum586-forma-de-pago-por-cliente.test.mjs:178",
+   "lineas": 5,
+   "citas": [
+    "SCRUM-1502/20629"
+   ],
+   "ancha": [
+    "20629"
+   ]
+  },
+  {
+   "donde": "tests/scrum586-forma-de-pago-por-cliente.test.mjs:393",
+   "lineas": 2,
+   "citas": [
+    "SCRUM-1502/20629"
+   ],
+   "ancha": [
+    "20629"
+   ]
+  },
+  {
+   "donde": "tests/scrum593b-superficie-texto-del-documento.test.mjs:21",
+   "lineas": 3,
+   "citas": [
+    "SCRUM-593/14262",
+    "SCRUM-1502/20702"
+   ],
+   "ancha": [
+    "14262",
+    "20702"
+   ]
+  },
+  {
+   "donde": "tests/scrum601-copy-del-documento-vs-flag.test.mjs:87",
+   "lineas": 158,
+   "citas": [
+    "SCRUM-887/15675",
+    "SCRUM-895/15699",
+    "SCRUM-920/15992",
+    "SCRUM-1216/17347",
+    "SCRUM-1257/17444"
+   ],
+   "ancha": [
+    "15675",
+    "15699",
+    "15868",
+    "15992",
+    "17347",
+    "17444",
+    "17446"
+   ]
+  },
+  {
+   "donde": "tests/scrum683-parte-dictado.test.mjs:85",
+   "lineas": 3,
+   "citas": [
+    "SCRUM-1502/20629"
+   ],
+   "ancha": [
+    "20629"
+   ]
+  },
+  {
+   "donde": "tests/scrum716-ritmo-de-despliegue.test.mjs:127",
+   "lineas": 6,
+   "citas": [
+    "SCRUM-1502/20629"
+   ],
+   "ancha": [
+    "20629"
+   ]
+  },
+  {
+   "donde": "tests/scrum755-el-contador-que-cuadro-solo.test.mjs:113",
+   "lineas": 15,
+   "citas": [
+    "SCRUM-915/15868"
+   ],
+   "ancha": [
+    "15868"
+   ]
+  },
+  {
+   "donde": "tests/scrum895b-literales-firmados.test.mjs:1",
+   "lineas": 23,
+   "citas": [
+    "SCRUM-895/15699"
+   ],
+   "ancha": [
+    "15699"
+   ]
+  },
+  {
+   "donde": "tests/_asignacion-bloques-presupuesto.mjs:30",
+   "lineas": 7,
+   "citas": [
+    "SCRUM-915/15868"
+   ],
+   "ancha": [
+    "15868"
+   ]
+  },
+  {
+   "donde": "scripts/guard-pasos-del-editor.mjs:1",
+   "lineas": 56,
+   "citas": [
+    "SCRUM-915/15790"
+   ],
+   "ancha": [
+    "15790"
+   ]
+  }
+ ],
+ "controlPositivo": "anclado",
+ "controlCero": "sin-respaldo"
+}
+✔ SCRUM-921c · SUELO: el guard ve marcas de aprobación de verdad (3671.2299ms)
+✔ SCRUM-921c · CONTROL POSITIVO: el caso de SCRUM-878b lo caza, y por el eje correcto (0.9319ms)
+✔ SCRUM-921c · 🔴 UN SOLO EJE NO BASTABA: se prueba, no se razona (806.9829ms)
+✔ SCRUM-921c · CONTROL NEGATIVO: las firmas REALES no se acusan (278.1104ms)
+✔ SCRUM-921c · 🔴 SEGUNDO NEGATIVO: lo respaldado en el MÁSTER sale limpio (378.6282ms)
+✔ SCRUM-921c · una NEGACIÓN no es una afirmación de autorización (339.7082ms)
+✔ SCRUM-921d · 🔴 una CITA declarada en un banco no se acusa; fuera de un banco, sí (0.5721ms)
+✔ SCRUM-921d · ✅ un fichero SIN delimitador se juzga exactamente igual, con la regla y sin ella (584.2545ms)
+✔ SCRUM-921c · las 11 del ASESOR siguen FUERA, y es una decisión, no un olvido (0.4487ms)
+✔ SCRUM-921c · 🔴 sólo PROSA respalda: un código de error no es una microcopy (249.8117ms)
+✔ SCRUM-921c · el trinquete no sube: una firma nueva nace diciendo dónde consta (253.9501ms)
+✔ SCRUM-921c · el trinquete tampoco baja en silencio (255.4003ms)
+✔ SCRUM-921c · 🔴 una procedencia que apunta a un fichero fantasma no es procedencia (215.302ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7043.2434

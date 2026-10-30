@@ -1,0 +1,10 @@
+población: 1986 ficheros (scripts/ + tests/)
+montan página con styles.css/tokens.css: 5
+  · enlazan también /fonts/inter.css: 2
+      scripts/guard-notas-en-la-ficha.mjs
+      tests/scrum676-hojas-del-indice.test.mjs
+  · NO la enlazan: 3
+      scripts/censo-objetivo-tactil-panel.mjs
+      scripts/guard-objetivo-tactil.mjs
+      scripts/_banco-lista.mjs
+CIEGO: sin semilla no hay control positivo; las cifras de arriba no valen

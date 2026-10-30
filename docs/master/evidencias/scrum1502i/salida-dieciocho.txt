@@ -1,0 +1,19 @@
+POBLACION marcas=248 fuentes=1339 niveles={"rastreable":178,"anclado":23,"documental":25,"sin-respaldo":21} A=18
+src/modules/fiscal/librosAeat/librosAeat.ts:183 | respaldos: docs/master/SCRUM-426.md:172 ; docs/master/SCRUM-426.md:174
+src/modules/jobs/domain/albaranFirmante.ts:246 | respaldos: docs/master/SCRUM-300.md:415 ; docs/master/SCRUM-300.md:416
+public/dashboard/js/albaranDetailView.js:292 | respaldos: docs/master/SCRUM-921.md:257
+public/dashboard/js/jobDetailView.js:401 | respaldos: docs/master/SCRUM-607.md:1 ; docs/master/SCRUM-607.md:199
+public/dashboard/js/jobDetailView.js:484 | respaldos: docs/master/SCRUM-303.md:153 ; docs/master/SCRUM-303.md:154 ; docs/master/SCRUM-303.md:155 ; docs/master/SCRUM-303.md:151 ; docs/master/SCRUM-303.md:152
+public/dashboard/js/productsView.js:1178 | respaldos: docs/master/SCRUM-313.md:93,docs/master/SCRUM-364.md:14
+public/dashboard/js/productsView.js:1214 | respaldos: docs/master/SCRUM-364.md:14
+tests/scrum244-menu-portabilidad.test.mjs:43 | respaldos: docs/master/SCRUM-921.md:274
+tests/scrum257-albaran-desde-presupuesto.test.mjs:26 | respaldos: docs/master/SCRUM-257.md:53
+tests/scrum299-copy-factura-publico.test.mjs:27 | respaldos: docs/master/SCRUM-299.md:66
+tests/scrum324-aviso-simplificado-ui.test.mjs:30 | respaldos: docs/master/SCRUM-324.md:307 ; docs/master/SCRUM-324.md:307
+tests/scrum338-carga-de-catalogo-no-muda.test.mjs:109 | respaldos: docs/master/SCRUM-338.md:33
+tests/scrum344-cierre-con-saldo.test.mjs:30 | respaldos: docs/master/SCRUM-344.md:117 ; docs/master/SCRUM-344.md:119
+tests/scrum364-cambiar-gremio.test.mjs:138 | respaldos: docs/master/SCRUM-364.md:80 ; docs/master/SCRUM-364.md:80
+tests/scrum394-plan-mudo.test.mjs:264 | respaldos: docs/master/SCRUM-394.md:68 ; docs/master/SCRUM-394.md:69
+tests/scrum428-terminado-sin-cobrar.test.mjs:120 | respaldos: docs/master/SCRUM-428.md:135
+tests/scrum580-tags-por-contacto.test.mjs:319 | respaldos: docs/master/SCRUM-580.md:255,docs/master/SCRUM-595.md:583
+tests/scrum593b-superficie-texto-del-documento.test.mjs:21 | respaldos: docs/master/SCRUM-1206.md:26,docs/master/SCRUM-1502.md:69,docs/master/SCRUM-593.md:380,docs/master/SCRUM-921.md:262

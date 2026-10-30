@@ -140,7 +140,24 @@ async function negocio(prisma, merchant) {
   const deBlasRechazar = await presupuesto(blas, 'sent', 'de Blas, para rechazar');
   const facturaDeAna = await factura(`QA1346-A-${marca}`, deAna);
   const facturaDeBlas = await factura(`QA1346-B-${marca}`, deBlas);
-  return { ana, blas, jefa, cliente, deAna, deBlas, deBlasAceptar, deBlasRechazar, facturaDeAna, facturaDeBlas };
+
+  // SCRUM-1346 (P1, c.20745): un Trabajo de cada uno, del MISMO cliente, con un albarán que entra
+  // en las dos bandejas (firmado, valorado, sin facturar, obra no única). El de Blas es ajeno a Ana
+  // aunque comparten cliente: lo que la separa es el Trabajo, no el cliente.
+  const albaranDe = async (tecnico, numero) => {
+    const job = await prisma.job.create({
+      data: { merchantId: merchant.id, customerId: cliente.id, titulo: `Trabajo de ${tecnico.name}`, operarioId: tecnico.id, tipoOperacion: 'OPERACIONES_SUELTAS' },
+    });
+    return prisma.albaran.create({
+      data: {
+        merchantId: merchant.id, jobId: job.id, numero, estado: 'firmado', modoValoracion: 'VALORADO',
+        lineas: [{ concepto: 'Mano de obra', cantidad: 1, unidad: 'h', precioUnitario: 40, tipoIva: 21 }],
+      },
+    });
+  };
+  const albaranDeAna = await albaranDe(ana, `QA1346-ALB-A-${marca}`);
+  const albaranDeBlas = await albaranDe(blas, `QA1346-ALB-B-${marca}`);
+  return { ana, blas, jefa, cliente, deAna, deBlas, deBlasAceptar, deBlasRechazar, facturaDeAna, facturaDeBlas, albaranDeAna, albaranDeBlas };
 }
 
 /**
@@ -168,6 +185,16 @@ function sondas(e) {
       lee: (r, id) => (r.status === 200 ? (contiene(r.datos?.invoices ?? r.datos, id) ? 'VE' : 'NO-VE') : `CIEGO:${r.status}`) },
     'ficha-factura': { doc: 'factura', ruta: (id) => ['GET', `/admin/invoices/${id}`],
       lee: (r) => (r.status === 200 ? 'VE' : r.status === 404 ? 'NO-VE' : `CIEGO:${r.status}`) },
+    // ── Bandejas de albaranes (SCRUM-1346 P1, c.20745) ───────────────────────────────────
+    // Un albarán ajeno puede salir por dos sitios de cada respuesta; los dos cuentan como VE.
+    'albaranes-pendientes': { doc: 'albaran', ruta: () => ['GET', '/admin/albaranes/pendientes-facturar'],
+      lee: (r, id) => (r.status === 200 && Array.isArray(r.datos?.clientes)
+        ? (r.datos.clientes.some((c) => (c.grupos ?? []).some((g) => contiene(g.albaranes, id))) ? 'VE' : 'NO-VE')
+        : `CIEGO:${r.status}`) },
+    'albaranes-consolidables': { doc: 'albaran', ruta: () => ['GET', `/admin/albaranes/consolidables?customerId=${e.cliente.id}`],
+      lee: (r, id) => (r.status === 200 && Array.isArray(r.datos?.grupos) && Array.isArray(r.datos?.descartados)
+        ? (r.datos.grupos.some((g) => contiene(g.albaranes, id)) || contiene(r.datos.descartados, id) ? 'VE' : 'NO-VE')
+        : `CIEGO:${r.status}`) },
     // ── Acciones sobre un presupuesto ────────────────────────────────────────────────────
     'notas': { doc: 'presupuesto', ruta: (id) => ['PUT', `/admin/quotes/${id}/notes`, { notes: 'escrita por quien pregunta' }],
       // `updateMany` contesta 200 aunque no toque nada: lo que decide es si la nota CAMBIÓ.
@@ -192,9 +219,11 @@ function sondas(e) {
 
 // El documento AJENO sobre el que actúa cada sonda (las acciones que cambian el estado van sobre su
 // propia fila, para que una no le quite a la siguiente lo que mide).
+const DE_BLAS = { presupuesto: 'deBlas', factura: 'facturaDeBlas', albaran: 'albaranDeBlas' };
+const DE_ANA = { presupuesto: 'deAna', factura: 'facturaDeAna', albaran: 'albaranDeAna' };
 const ajeno = (clave, e) => ({ aceptar: e.deBlasAceptar, rechazar: e.deBlasRechazar })[clave]
-  ?? (sondas(e)[clave].doc === 'factura' ? e.facturaDeBlas : e.deBlas);
-const propio = (clave, e) => (sondas(e)[clave].doc === 'factura' ? e.facturaDeAna : e.deAna);
+  ?? e[DE_BLAS[sondas(e)[clave].doc]];
+const propio = (clave, e) => e[DE_ANA[sondas(e)[clave].doc]];
 
 async function medir(port, token, prisma, sonda, doc) {
   const [metodo, ruta, cuerpo] = sonda.ruta(doc.id);
@@ -221,7 +250,7 @@ async function conElNegocio(fn) {
 }
 
 // Las lecturas van ANTES que las acciones: aceptar y rechazar cambian el estado de una fila.
-const LECTURAS = ['lista-presupuestos', 'ficha-presupuesto', 'pdf-presupuesto', 'inicio', 'albaran-buscador', 'lista-facturas', 'ficha-factura'];
+const LECTURAS = ['lista-presupuestos', 'ficha-presupuesto', 'pdf-presupuesto', 'inicio', 'albaran-buscador', 'lista-facturas', 'ficha-factura', 'albaranes-pendientes', 'albaranes-consolidables'];
 const ACCIONES = ['notas', 'aceptar', 'rechazar', 'enviar-whatsapp', 'enviar-correo'];
 
 // ═════════════════════════════════════════════════════════════════════════════════════════════

@@ -31,8 +31,18 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { run } from 'node:test';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const [, , listaJson, destino, raiz, limiteArg, paredArg] = process.argv;
+
+/**
+ * 🔴 SCRUM-1621 (pieza 1) · la salida C de SCRUM-1405 (c.19584), extendida a los `run()` por SCRUM-1339
+ * c.20219, como ya la lleva `meta-guard-mutaciones.mjs` (1339s). Con `forceExit` cada hijo sale con la
+ * cola de su informe sin escribir, y en Linux se pierde: un caso que corrió y no llega es, aquí, un
+ * veredicto que falta en UNA zona y no en la otra. Se resuelve desde ESTE fichero y no desde `raiz`: el
+ * módulo es del instrumento, no del árbol que se mide. Por URL: en Windows `--import=D:\…` no vale.
+ */
+const TUBERIA_BLOQUEANTE = pathToFileURL(path.join(path.dirname(fileURLToPath(import.meta.url)), 'tuberia-bloqueante.mjs')).href;
 
 const ficheros = JSON.parse(fs.readFileSync(listaJson, 'utf8'));
 
@@ -117,6 +127,7 @@ const CONCURRENCIA = Math.max(1, os.availableParallelism() - 1);
 const pared = AbortSignal.timeout(PARED_MS);
 const flujo = run({
   files: ficheros, cwd: raiz, forceExit: true, concurrency: CONCURRENCIA,
+  execArgv: [`--import=${TUBERIA_BLOQUEANTE}`],
   timeout: LIMITE_TEST_MS, signal: pared,
 });
 

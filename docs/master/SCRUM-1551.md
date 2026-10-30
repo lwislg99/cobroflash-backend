@@ -901,3 +901,264 @@ mano: el hook de inicio dijo «SIN IDENTIDAD» (SCRUM-1498). `docs/go-live/puert
 |---|---|
 | fila 14 cerrada con el sha del merge de 1551e | `docs/go-live/puerta.json`, entrada 14; `tests/scrum1554c-puerta-de-go-live.test.mjs` (`CERRADAS`) |
 | S3 servido en yaqu.app | `https://yaqu.app/` (§2) |
+
+---
+
+# APÉNDICE · 23-oct-2026 · SCRUM-1551g · las filas 2, 3 y 7 de la puerta, cerradas con el sha de su merge
+
+**Medido contra:** `origin/main` = `28098fe4b1a160303526f5a4002d52556d2c5b22` · 2026-10-23T19:10:44Z
+
+A9: sin fallo que generalice — el tramo cierra tres entradas por el camino que el guard prescribe, y el rojo previo (las tres cerradas sin declarar) se vio caer antes de declararlas
+
+**Quién:** jv-j3au (puesto J3, equipo de Javier), por encargo del orquestador `cobroflash-backend-62`. Carril a
+mano: el hook de inicio dijo «SIN IDENTIDAD» (SCRUM-1498). `docs/go-live/puerta.json` y
+`tests/scrum1554c-puerta-de-go-live.test.mjs` no tienen dueño en §3 (`carriles.mjs de`: «sin fila en §3: nadie lo
+reclama»); las toca J3 como hizo 1551f. Ningún texto que ve el usuario cambia.
+
+## 1 · Qué entra
+
+| sitio | cambio |
+|---|---|
+| `docs/go-live/puerta.json`, entradas 2 y 3 | `abierta` → `cerrada`, `sha` = `be18d365d92df11c4a6638e85544417aa750c5c8` (merge del PR #2657, SCRUM-1551b) |
+| `docs/go-live/puerta.json`, entrada 7 | `abierta` → `cerrada`, `sha` = `d09951f487138503bdce72212886b310ba89259e` (merge del PR #2697, SCRUM-1551d) |
+| `tests/scrum1554c-puerta-de-go-live.test.mjs` | `CERRADAS` suma `2`, `3` y `7`. `TOTAL` sigue en 23; no se quita ningún caso |
+
+## 2 · Hecho, comprobado por contenido y no por número
+
+- **Quién lo hizo, por `git log origin/main -S`:** la línea de D1 y la retirada de «Cobro integrado» de
+  `docs/legal/ALCANCE_BETA.md` salen de `6118056b1` (segundo padre de `be18d365d`); la retirada de «emitir facturas y
+  gestionar cobros» de `public/terminos.html` sale de `2ddbb3798` (antecesor de `d09951f48`). Los dos merges son
+  antecesores de `origin/main`.
+- **En main** (`ALCANCE_BETA.md`, 3.095 B): R1 `:23`, R3 `:24-25`, R4 `:29-31`, R5 `:33-34`, R6 `:37-38`, D1 `:9`; 0
+  «Cobro integrado», «Justificantes de cobro», «soporte por email y WhatsApp», «mientras tanto». `terminos.html:48` es T1a.
+- **En yaqu.app** (`/health` = `28098fe4b1a160303526f5a4002d52556d2c5b22`, el mismo que main; cabecera `Date:` 23-oct-2026
+  19:07:50 GMT). `/legal/alcance-beta` (4.851 B, pie «Versión del documento: ac7349fd0b84», la de 1551b): 1 vez cada
+  una «Albaranes y partes de trabajo», «cobro a tus clientes a través de YaQu», «ningún otro documento de cobro», «el
+  alta de cobros (Stripe)» y la línea de D1 (positivos, en la misma página que los ceros); 0 «Cobro integrado»,
+  «Justificantes de cobro», «email y WhatsApp», «mientras tanto», «emite justificantes». `/terminos` (6.712 B): 1 vez la
+  frase de T1a desde «recoger firmas digitales.» hasta «documento de cobro.»; 0 «emitir facturas y gestionar cobros» y
+  0 «cotización y factura» (la de la sección 6, c.20051).
+- **Fila 3, lo que queda:** los tres «[REVISAR ASESOR]» (3 en lo servido) y los huecos del contrato siguen a la vista.
+  La cierro porque la fila es D1 y D1 se decidió con (a), «que se vea» (c.20217): el aviso ya avisa de esos huecos.
+  Si el orquestador lee la fila como «que no se vean los huecos», no está hecha y se reabre diciéndolo en `CERRADAS`.
+- **Fila 8 no se toca:** R3 quitó la frase, pero la fila habla del guard de SCRUM-406, que sigue sin mirar `docs/legal/`.
+
+## 3 · La fila 9, descrita y SIN ELEGIR (c.20512)
+
+Hoy: `mdToHtml` (`src/modules/system/app/routes/legalPages.routes.ts:20-44`) pinta cada línea que no empieza por
+`-` como un `<p>` suelto, y cierra la lista. `ALCANCE_BETA.md` tiene **9 líneas de continuación en 5 viñetas**
+(`:22`, `:25`, `:30-31`, `:33-36`, `:38`; la fila dice 7, que eran las del 14-oct), R4 y R5 entre ellas.
+
+| salida | carril | qué cambia | coste |
+|---|---|---|---|
+| A · arreglar `mdToHtml` para que una línea sangrada siga la viñeta | J3 | código en `src/`, con su test; el `.md` no se toca | cambia el HTML servido y, con él, la versión (`:52-53`, sha-256 del HTML), aunque no cambie ninguna palabra; el comentario de `:50-51` sólo lo dice para el texto. No mueve ninguna cita por línea. Arregla también la próxima viñeta larga |
+| B · unir las líneas en `docs/legal/ALCANCE_BETA.md` | J4 propone | sólo el `.md` | cambia la versión igual. Mueve 9 líneas: caducan las citas por línea vivas (`INVENTARIO_AFIRMACIONES_VERIFACTU.md:320` cita `:32-33`; el comentario de `tests/scrum341-condicion-precio-publicada.test.mjs:4` cita `:42`); `puerta.json:35` describe el 14-oct y no se toca. El renderizador sigue partiendo la siguiente |
+
+**Las dos cuestan lo mismo en aceptaciones:** las de `ac7349fd0b84` dejan de valer para el checkout founding. Cuántas
+hay se sabe sólo con la consulta de ③ (c.19542), corrida por el fundador justo antes de aplicar; la última, del 22-oct
+(c.20226), daba 4 filas, todas de `48e3140b2083`. Desde entonces está SIN MEDIR. No elijo: es del orquestador y del fundador.
+
+## 4 · Tests
+
+- Rojo primero: con las tres cerradas y `CERRADAS` sin declararlas, `scrum1554c` da 13/14, y el caído nombra las
+  entradas 2, 3 y 7 («está cerrada y el guard no lo declara»). Con ellas declaradas, cifras en el comentario de Jira.
+
+## 5 · Aceptación → dónde se ve
+
+| aceptación | dónde se ve |
+|---|---|
+| filas 2, 3 y 7 cerradas con el sha que lo hizo, como 1551f | `docs/go-live/puerta.json`, entradas 2, 3 y 7; `tests/scrum1554c-puerta-de-go-live.test.mjs` (`CERRADAS`) |
+| comprobado por contenido, en main y en yaqu.app | §2 |
+| fila 9 descrita con sus dos salidas y su coste, sin elegir | §3 |
+| ningún texto que ve el usuario cambia | el diff: `puerta.json`, el guard y este registro |
+
+---
+
+# APÉNDICE · 23-oct-2026 · SCRUM-1551h · el guard de canales prometidos mira también lo legal servido (fila 8)
+
+**Medido contra:** `origin/main` = `b6dd5d1a8d64abd0bf835141e8d9bac6d5d2055f` · 2026-10-23T20:26:36Z
+
+A9: comprobación → `tests/scrum406-canal-prometido-existe.test.mjs`
+
+**Quién:** jv-j6az (puesto J6, equipo de Javier), por encargo del orquestador `cobroflash-backend-62`. Carril a
+mano: el hook de inicio dijo «SIN IDENTIDAD» (SCRUM-1498). `tests/scrum406-canal-prometido-existe.test.mjs`,
+`docs/go-live/puerta.json` y `tests/scrum1554c-puerta-de-go-live.test.mjs` no tienen dueño en §3 (`carriles.mjs de`:
+«sin fila en §3: nadie lo reclama»). Ningún texto que ve el usuario cambia.
+
+## 1 · Qué entra
+
+| sitio | cambio |
+|---|---|
+| `tests/scrum406-canal-prometido-existe.test.mjs` | `promesasDeSoporte()` suma los documentos de `docs/legal/` que el servidor sirve. La lista sale por AST (`typescript`) de las llamadas a `readLegalDoc` en `src/`, no de una lista a mano; un argumento que no es literal es CIEGO y cae. El Markdown se lee por unidades (viñeta o párrafo, uniendo sus líneas), sin las líneas `>` que `mdToHtml` no sirve, y la captura para en `.` o `;` |
+| ídem, 3 casos nuevos | SUELO de población legal (≥ 1 documento servido, todos existen, 0 sin resolver); AST con positivo SEMBRADO (literal, por propiedad, plantilla y variable → CIEGO); frase partida SEMBRADA que se ve, con su contraste línea a línea que da 0 |
+| `docs/go-live/puerta.json`, entrada 8 | `abierta` → `cerrada`. `sha` = `c1581273d73cf3ff7a1cee3d4aa2724061923a2d`, el commit del guard de esta rama (no un merge: entra con este PR) |
+| `tests/scrum1554c-puerta-de-go-live.test.mjs` | `CERRADAS` suma `8`. `TOTAL` sigue en 23 |
+
+## 2 · Población
+
+1 documento servido (`ALCANCE_BETA.md`), leído desde 2 fuentes de `src/` que nombran `readLegalDoc`
+(`legalPages.routes.ts`, `subscriptions.routes.ts`; 3 llamadas). Lo dice el propio test con `t.diagnostic`.
+De los otros 19 ficheros de `docs/legal/`, ninguno se sirve por esta vía; si otro lo hiciera por una ruta que no
+pase por `readLegalDoc`, este guard no lo ve (sin medir: no hay hoy otra ruta que lea `docs/legal/`, según 1551 ①).
+
+## 3 · Rojo primero
+
+- **Guard nuevo, violación real inyectada:** `ALCANCE_BETA.md:25` «  por email.» → «  por email y WhatsApp.»
+  (`git diff --numstat` 1/1). Cae «el producto no promete un canal que no existe» con
+  `docs/legal/ALCANCE_BETA.md:24 promete «whatsapp»`; 7 pasan, 1 cae. Restaurado con `git restore --source=HEAD`.
+- **El guard de `main` (`b6dd5d1a8`) con la MISMA inyección:** 5 de 5 verdes. Es el defecto de la fila 8.
+- **Mutante del lector** (cerrar la unidad en cada línea = leer línea a línea): cae sólo el caso sembrado de la
+  frase partida.
+- **Sin inyectar:** 8 de 8 verdes. Lo que hoy pasa sigue pasando; la frase legal de hoy («soporte por email») no
+  promete un canal ausente.
+
+## 4 · Aceptación → dónde se ve
+
+| aceptación | dónde se ve |
+|---|---|
+| el guard mira los documentos legales servidos, lista sacada de `readLegalDoc` y no a mano | `tests/scrum406-canal-prometido-existe.test.mjs`, `documentosLegalesServidos()` |
+| una frase partida se une y un positivo sembrado partido la hace caer | ídem, caso «una promesa PARTIDA en dos líneas»; §3 |
+| suelo de población | ídem, caso «SUELO: el guard mira los documentos legales que el servidor SIRVE» |
+| lo que hoy pasa sigue pasando, ningún texto cambia | §3; el diff no toca `public/` ni `docs/legal/` |
+| fila 8 cerrada como 1551g | `docs/go-live/puerta.json`, entrada 8; `tests/scrum1554c-puerta-de-go-live.test.mjs` (`CERRADAS`) |
+
+## 5 · Relevo (jv-j6bb, 23-oct-2026 ~21:20Z): el obligatorio de #2780 cayó por SCRUM-710b
+
+- **Lo que cayó:** «SCRUM-710b · los anclajes por NÚMERO DE LÍNEA no crecen», con
+  `tests/scrum406-canal-prometido-existe.test.mjs  sembrado.ts  (declarados 0, hay 1)`. El caso sembrado del AST
+  comparaba la llamada sin resolver como el texto «fichero, dos puntos y su línea 4», o sea, por POSICIÓN y como dato.
+  Lo cazó el guard en CI, no la sesión que lo escribió: la mini-tanda de 22 ficheros de §3 no llevaba 710b.
+- **Arreglo, en el código del test:** cada llamada sin resolver es ahora `{ fichero, argumento, linea }`, y se
+  identifica por su fichero y el TEXTO de su argumento (`a.getText(sf)`, lo que la llamada ES). El caso sembrado
+  compara `[['sembrado.ts', 'nombre']]`. La línea sólo viaja al mensaje del SUELO. No se trocea ni se arma ninguna
+  cita, y 710b no se toca.
+- **Los dos positivos sembrados siguen cayendo con la cita nueva:** mutante «el lector no declara CIEGO» → cae sólo
+  «el lector de AST ve el literal y declara CIEGO…» (8 casos · 7 pasan · 1 cae); mutante «cerrar la unidad en cada
+  línea» → cae sólo «una promesa PARTIDA en dos líneas…» (8 · 7 · 1). Restaurado con `git restore --source=HEAD`,
+  árbol limpio después de cada uno.
+
+---
+
+# APÉNDICE · 27-oct-2026 · SCRUM-1551i · `mdToHtml` deja de partir las viñetas (fila 9, salida A)
+
+**Medido contra:** `origin/main` = `2a8d703da3711da3940c833948056fe48fdca0d3` · 2026-10-27T13:17:18Z
+
+A9: comprobación → `tests/scrum1551i-vinetas-enteras.test.mjs`
+
+**Quién:** jv-j3bu (puesto J3, equipo de Javier), por encargo del orquestador `cobroflash-backend-8b`. El hook de
+inicio dijo «SIN IDENTIDAD» (SCRUM-1498): carril a mano. `src/modules/system/app/routes/legalPages.routes.ts` es
+de J3 (`carriles.mjs de` → `dos-equipos.md:129`). **Decisión:** SCRUM-1551 c.21020, salida **A** de la fila 9 de
+c.20632: se arregla el renderizador y `docs/legal/ALCANCE_BETA.md` no se toca. Ninguna palabra servida cambia.
+
+## 1 · Qué entra
+
+| sitio | cambio |
+|---|---|
+| `legalPages.routes.ts`, `mdToHtml` | una línea sangrada justo debajo de una viñeta (con la lista abierta) se añade a ese `<li>`, separada por un espacio, en vez de cerrar la lista y salir como `<p>`. Cada línea sigue pasando por `inline()` por separado, como antes |
+| `tests/scrum1551i-vinetas-enteras.test.mjs` | nuevo: el documento REAL por el `readLegalDoc` de `dist` (cada viñeta del `.md`, leída por el test y no por el renderizador, sale en UN `<li>` con todas sus palabras; SUELO ≥ 1 viñeta larga) + un positivo SEMBRADO con la salida exacta. Declara 2 mutaciones |
+| `docs/master/evidencias/SCRUM-1551i/sonda-vinetas.mjs` | la sonda antes/después de §2 |
+
+Lo que **no** cambia, a propósito: una línea SIN sangría pegada a una lista sigue siendo un `<p>` (el sembrado lo
+fija). Hacerlo sería otra regla, y cambiaría documentos de `docs/legal/` sin viñetas partidas.
+
+## 2 · Antes y después, con el código real
+
+Sonda `sonda-vinetas.mjs`: los dos `legalPages.routes.js` compilados (antes, sha `2859256fa4f3`; después,
+`e07e4ffd371a`) sobre **los 19 `.md` de `docs/legal/`**. Control de versión: con el mismo módulo dos veces sale
+`CIEGO` (salida 2).
+
+- **`ALCANCE_BETA.md` (el único que se sirve, población de 1551h):** versión `ac7349fd0b84` → `cc719298c151`.
+  Texto sin etiquetas (espacios normalizados) **idéntico, 2.429 → 2.429 caracteres**. `<li>` 7 → 7; `<p>` justo
+  detrás de una lista 5 → 0; `<p>` 22 → 13: son las 9 líneas de continuación de c.20632, en 5 viñetas (Firma y
+  aceptación · Clientes… soporte por email · **R4** «El cobro a tus clientes…» · La facturación VERI*FACTU (R5) ·
+  Cuando el cobro se active (R6)).
+- **Producción hoy** (`GET yaqu.app/legal/alcance-beta`, 200, `Date: 2026-10-27T13:17:33Z`, `/health` =
+  `efe736f3f`): imprime `ac7349fd0b84`, la misma del «antes», con 5 `</ul>`.
+- **Los otros 18:** 3 salen iguales byte a byte (`EMAIL_ASESOR`, `INVESTIGACION_ALBARANES`, `REGISTRO_JORNADA_ES`)
+  y **15 cambian, todos con el texto idéntico**: tienen viñetas con líneas sangradas, y ahora salen enteras. **Ninguno
+  se sirve** (`readLegalDoc` sólo se llama con `ALCANCE_BETA.md`: 3 llamadas, en `legalPages.routes.ts` y
+  `subscriptions.routes.ts`), así que no los ve nadie. Los `<p>` tras lista que les quedan son líneas sin sangría.
+- **La versión que se registra al aceptar CAMBIA:** `POST /admin/billing/accept-alcance` guarda `doc.version`
+  (`subscriptions.routes.ts:72-80`) y el checkout founding exige una aceptación de la versión servida (`:116-120`).
+  Una aceptación de `ac7349fd0b84` deja de valer. La última consulta es c.20226 (22-oct): 4 filas, todas de
+  `48e3140b2083`. **Desde entonces, sin medir**: por c.21020 el fundador la repite antes del merge.
+
+## 3 · Rojo primero y mutación
+
+- Con el `dist` sin arreglo: **2 casos · 0 pasan · 2 caen**; el primero enseña las 5 viñetas cortadas.
+- Mutaciones declaradas, corridas con `correr` + `aplicarUna` de `scripts/meta-guard-mutaciones.mjs` sólo sobre
+  este guard: **2 juzgadas · 2 vivas** (quitar la regla tumba los dos casos). Fuente y `dist` restaurados (sha del
+  `.js` igual al de antes de mutar; `git diff --stat` igual).
+- `tsc -p .` **con tipos: salida 0**, sin salida.
+
+## 4 · Tests
+
+Mini-tanda con `dist` compilado: **22 ficheros** (1551i, 534r, 406 ×2, 341, 377, 564, 564b, 237, 976, 267, 273,
+1294, 921c, 850, 850b, 811c, 1572, 1554c, 745, 1387, 710b) · **206 casos · 206 pasan · 0 caen · 0 saltados**; los
+`ok` anclados al inicio del caso suman 206. **Suite entera local: NO CORRIDA** (orden del encargo: 10 sesiones a
+la vez). No hay guard de navegador para lo legal (`package.json`, 0 nombres con `legal` o `alcance`).
+Contexto de la sesión: 117.026 al acabar el arranque · 148.279 tras Jira · 208.723 tras esta mini-tanda.
+
+## 5 · Lo que NO se ha hecho
+
+- **La fila 9 de `docs/go-live/puerta.json` sigue `abierta`:** se cierra con el sha del merge, que todavía no
+  existe (como 1551e/f/g). Dice «7 líneas»; hoy eran 9.
+- No he mirado la página en un navegador: el recuento es del HTML servido y del HTML de la rama.
+
+## Errores míos, contados
+
+- Mi primer normalizador del test quitaba las etiquetas dejando un espacio, y el rojo enseñaba diferencias falsas
+  («Presupuestos ilimitados :», «VERI FACTU»). Lo vi al leer el diff del rojo, antes de arreglar nada.
+- Dos instrumentos salieron CIEGOS por la ruta y no por el código: la sonda, con el módulo fuera de `dist` (no
+  resolvía `express`), y el meta-guard, con `tests/` delante del nombre del guard. Los dos lo dijeron en voz alta.
+
+---
+
+# APÉNDICE · 27-oct-2026 · SCRUM-1551j · la fila 9 de la puerta, cerrada en yaqu.app
+
+**Medido contra:** `origin/main` = `77ce98573b1b5e090dfcf7754c4e7960bc63b85a` · 2026-10-27T15:15:14Z
+
+A9: aviso → cicatriz J4 «al cerrar la fila 9 de la puerta puse como medidas mías dos cifras del antes que eran de la sonda de J3 sobre la rama, no de mi GET a yaqu.app» — no se pudo comprobar: el motivo de una fila es prosa y ningún guard sabe de qué medición sale cada número
+
+**Quién:** jv-j4as (puesto J4, equipo de Javier), por encargo del orquestador `cobroflash-backend-8b`. El hook de
+inicio dijo «SIN IDENTIDAD» (SCRUM-1498): carril a mano. `docs/go-live/puerta.json` y su guard no tienen dueño en
+§3 (`carriles.mjs de`); este registro es «quien trabaja el ticket». Ningún texto legal nuevo: sólo docs y la
+lista `CERRADAS` del guard, que el propio guard pide subir al cerrar una fila.
+
+## 1 · Lo servido (GET a yaqu.app, 27-oct-2026 15:13:20-21Z, cabecera `Date`)
+
+| ruta | HTTP | bytes | lo que dice |
+|---|---|---|---|
+| `/version` | 200 | 54 | `77ce98573b1b5e090dfcf7754c4e7960bc63b85a` = el merge de #2927 (14:10:21Z) |
+| `/health` | 200 | 110 | la misma versión, `db: up` |
+| `/legal/alcance-beta` | 200 | 4.737 | «Versión del documento: cc719298c151» · 0 «Cobro integrado» · 0 «Justificantes de cobro» · 0 `</ul>` seguidos de `<p>` · 2 `<ul>` · 7 `<li>` · 13 `<p>` |
+| `/terminos` | 200 | 6.712 | no imprime «Versión del documento» (es `public/terminos.html` por `sendFile`, no pasa por `mdToHtml`) · 0 «Cobro integrado» · 0 «Justificantes de cobro» |
+
+- **Las viñetas ya no salen partidas.** Las 7 viñetas de `/legal/alcance-beta` llevan su texto entero dentro del
+  `<li>`; R4 («…YaQu no emite facturas ni ningún otro documento de cobro…») va en la 6.ª. La versión,
+  `cc719298c151`, es la que anunció 1551i.
+- **Control positivo del recuento `</ul>` + `<p>`:** en `/terminos` sale 1, y es un párrafo propio detrás de una
+  lista («El incumplimiento de las políticas de WhatsApp/Meta…»), no una viñeta partida. El instrumento ve el
+  patrón cuando está.
+- **Controles de que la página es la de R1-R6 y D1:** 1 «Albaranes y partes de trabajo», 1 «cobro a tus clientes
+  a través de YaQu», 1 «ningún otro documento de cobro», 1 «el alta de cobros (Stripe)», 1 «Borrador pendiente de
+  revisión legal: estas condiciones pueden cambiar antes de que se te cobre.», 3 «[REVISAR ASESOR»; 0 «email y
+  WhatsApp», 0 «mientras tanto».
+
+## 2 · La puerta
+
+- **Fila 9 → `cerrada`**, con el sha del merge `77ce98573b1b5e090dfcf7754c4e7960bc63b85a` y su motivo, en la
+  forma de la fila 4. `tests/scrum1554c-puerta-de-go-live.test.mjs` lleva el 9 en `CERRADAS`.
+- **Filas 2 y 3: ya estaban cerradas** desde 1551g (jv-j3au, 23-oct), con el sha `be18d365d92df11c4a6638e85544417aa750c5c8`
+  (#2657). Su motivo cita la versión `ac7349fd0b84`, que ya no es la servida; lo que afirman sigue siendo cierto en
+  `cc719298c151` (recuentos del §1). No las he tocado.
+
+## 3 · Tests
+
+- `tests/scrum1554c-puerta-de-go-live.test.mjs` y los de registro (abajo, en la entrega de Jira). **Suite entera
+  local: NO CORRIDA** (orden del encargo).
+
+## 4 · Lo que NO se ha hecho
+
+- No he mirado la página en un navegador: el recuento es del HTML servido.
+- La aceptación de la versión nueva `cc719298c151` no la he medido (vive en la base de producción).

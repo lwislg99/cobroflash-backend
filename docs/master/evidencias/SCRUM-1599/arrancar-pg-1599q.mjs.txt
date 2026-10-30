@@ -1,0 +1,24 @@
+// SCRUM-1599q · Postgres 16 desechable en loopback para medir 234/781. Uso: node arrancar.mjs <dir> <puerto> <ddl.sql>
+// Crea la base yaqu_libro_test (base nueva), aplica el DDL y se queda vivo hasta SIGINT/kill.
+import EmbeddedPostgres from 'embedded-postgres';
+import fs from 'node:fs';
+import pg from 'pg';
+
+const [dir, puertoTxt, ddl] = process.argv.slice(2);
+const port = Number(puertoTxt);
+fs.rmSync(dir, { recursive: true, force: true });
+const db = new EmbeddedPostgres({ databaseDir: dir, user: 'postgres', password: 'x', port, persistent: false, authMethod: 'trust' });
+await db.initialise();
+await db.start();
+await db.createDatabase('yaqu_libro_test');
+const c = new pg.Client({ host: '127.0.0.1', port, user: 'postgres', database: 'yaqu_libro_test' });
+await c.connect();
+await c.query(fs.readFileSync(ddl, 'utf8'));
+const r = await c.query("select count(*)::int n from information_schema.tables where table_schema='public'");
+const v = await c.query('show server_version');
+await c.end();
+console.log(`LISTO puerto=${port} tablas=${r.rows[0].n} version=${v.rows[0].server_version}`);
+const parar = async () => { await db.stop(); process.exit(0); };
+process.on('SIGINT', parar);
+process.on('SIGTERM', parar);
+setInterval(() => {}, 1 << 30);

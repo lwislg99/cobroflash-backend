@@ -172,7 +172,11 @@ router.post('/', async (req, res) => {
       const sub = event.data.object as StripeLib.Subscription;
       const merchantId = Number(sub.metadata?.merchant_id);
       const planId = String(sub.metadata?.plan || '');
-      if (Number.isInteger(merchantId) && planId) {
+      // J3 · SCRUM-1402h — decisión del fundador (SCRUM-1402, comentario 20681, «B · Como plan
+      // desconocido»): sin `metadata.plan` la suscripción se trata como un plan que no existe. La puerta
+      // ya no pide plan: `planQueExiste('')` es `false` y avisa, así que activar y renovar siguen sin
+      // escribir; el impago se marca (1402e) y la cancelación, que escribe el literal `trial`, se aplica.
+      if (Number.isInteger(merchantId)) {
         // A10.2 — FSM de la Parte L (fuente única: ESTE webhook):
         //   active/trialing → active(plan) · past_due/unpaid → past_due (el plan
         //   SE CONSERVA: gracia con banner + portal, no se degrada a trial) ·
@@ -204,9 +208,16 @@ router.post('/', async (req, res) => {
             });
           }
         } else if (st === 'past_due' || st === 'unpaid') {
-          if (planQueExiste(planId, merchantId, event)) await prisma.merchant.update({
+          // J3 · SCRUM-1402e — decisión del fundador (SCRUM-1402, comentario 20651, «Marcar el impago»):
+          // con un plan que no existe el impago SE MARCA igual, y lo único que no se escribe es el plan.
+          // Es el mismo estado de la Parte L que con un plan conocido (`past_due`) y el mismo aviso: el
+          // banner del panel que lee ese campo. Ni texto nuevo ni transición nueva.
+          const planConocido = planQueExiste(planId, merchantId, event);
+          await prisma.merchant.update({
             where: { id: merchantId },
-            data: { plan: planId, subscriptionStatus: 'past_due', stripeSubscriptionId: sub.id },
+            data: planConocido
+              ? { plan: planId, subscriptionStatus: 'past_due', stripeSubscriptionId: sub.id }
+              : { subscriptionStatus: 'past_due' },
           });
         } else if (st === 'canceled' || st === 'incomplete_expired') {
           await prisma.merchant.update({

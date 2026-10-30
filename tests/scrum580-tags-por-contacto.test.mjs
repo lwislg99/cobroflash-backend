@@ -326,6 +326,7 @@ test('SCRUM-580 · la etiqueta se pinta con el componente del inventario, no con
 //
 // ⚠️ Y «aprobada por el asesor» NO es «firmada por el fundador». Que no se pinte marcador en
 // pantalla no cambia eso: quien lleva la cuenta es `SIN_APROBAR`, y por estas cuatro vale 4.
+// Consta en: SCRUM-1502 comentario 20702.
 // ═══════════════════════════════════════════════════════════════════════════════════════════════
 
 test('SCRUM-580 · ✅ los CUATRO textos son EXACTAMENTE los aprobados', () => {

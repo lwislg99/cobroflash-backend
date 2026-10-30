@@ -1,17 +1,20 @@
 /**
  * AI Quote Assistant.
- * Proveedor: Gemini (tier gratuito) por defecto; Claude como fallback solo si
- * Gemini no está configurado pero sí ANTHROPIC_API_KEY. Decisión del fundador
+ * Proveedor: Gemini (tier gratuito), y SOLO Gemini. Decisión del fundador
  * (6-jul-2026): la voz es dictado gratis del navegador; "Sugerir con IA" pasa a
  * una IA gratis para no gastar saldo de pago.
+ *
+ * SCRUM-1247 (Q1, c.20779 «Sí, quitarlo»): aquí había un camino a Anthropic que se usaba si
+ * faltaba GEMINI_API_KEY y sobraba ANTHROPIC_API_KEY. La política de privacidad sólo nombra a
+ * Google (SCRUM-1154), así que ese camino la dejaba falsa por CONFIGURACIÓN, sin que cayera
+ * ningún test. Retirado: sin clave de Gemini, «IA no configurada». Volver a tener un segundo
+ * proveedor es otra firma (política incluida), no una variable de entorno.
  *
  * suggestQuoteLines: dado un texto descriptivo del trabajo y el catálogo del
  * merchant, devuelve líneas de presupuesto listas para rellenar el formulario.
  * generateQuoteMessage: genera el mensaje de WhatsApp del link del presupuesto.
  */
-import { anthropic } from '../../../integrations/claude';
 import { geminiComplete, isGeminiConfigured } from '../../../integrations/gemini';
-import { config } from '../../../core/config/env';
 import { prisma } from '../../../core/db/prisma';
 // SCRUM-760 · la MISMA regla fiscal que ya guarda la puerta del presupuesto (SCRUM-217). Se
 // importa, no se copia: ver el bloque de `sanearLineasAlbaran`.
@@ -26,10 +29,10 @@ import {
 
 // ¿Hay algún proveedor de IA disponible? (lo usa la ruta para el 503 digno)
 export function isAiConfigured(): boolean {
-  return isGeminiConfigured() || !!config.ANTHROPIC_API_KEY;
+  return isGeminiConfigured();
 }
 
-// Capa única: Gemini si hay key; si no, Claude; si ninguna, error claro.
+// Capa única: Gemini si hay key; si no, error claro (SCRUM-1247: sin segundo proveedor).
 async function aiComplete(params: {
   system: string;
   user: string;
@@ -38,17 +41,6 @@ async function aiComplete(params: {
 }): Promise<string> {
   if (isGeminiConfigured()) {
     return geminiComplete({ system: params.system, user: params.user, maxTokens: params.maxTokens, jsonSchema: params.jsonSchema });
-  }
-  if (config.ANTHROPIC_API_KEY) {
-    const response = await anthropic.messages.create({
-      model: 'claude-opus-4-7',
-      max_tokens: params.maxTokens,
-      system: [{ type: 'text', text: params.system, cache_control: { type: 'ephemeral' } }] as any,
-      messages: [{ role: 'user', content: params.user }],
-    });
-    const textBlock = response.content.find((b) => b.type === 'text');
-    if (!textBlock || textBlock.type !== 'text') throw new Error('ai_no_response');
-    return textBlock.text.trim();
   }
   throw new Error('ai_not_configured');
 }

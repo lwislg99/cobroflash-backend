@@ -1,0 +1,102 @@
+antes	scrum178-emision-manual	pasada 0	exit=0	firma=false	raíz ok=3 not_ok=0 skip=0 declarados=3	respuestas=11
+antes	scrum178-emision-manual	pasada 1	exit=0	firma=false	raíz ok=3 not_ok=0 skip=0 declarados=3	respuestas=11
+antes	scrum178-emision-manual	pasada 2	exit=0	firma=false	raíz ok=3 not_ok=0 skip=0 declarados=3	respuestas=11
+antes	scrum178-emision-manual	pasada 3	exit=0	firma=false	raíz ok=3 not_ok=0 skip=0 declarados=3	respuestas=11
+antes	scrum178-emision-manual	pasada 4	exit=0	firma=false	raíz ok=3 not_ok=0 skip=0 declarados=3	respuestas=11
+antes	scrum85-pay-routes-token	pasada 0	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «a»
+antes	scrum85-pay-routes-token	pasada 1	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «7»
+antes	scrum85-pay-routes-token	pasada 2	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «e»
+antes	scrum85-pay-routes-token	pasada 3	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «f»
+antes	scrum85-pay-routes-token	pasada 4	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «d»
+antes	scrum17-recapitulativa	pasada 0	exit=0	firma=false	raíz ok=12 not_ok=0 skip=0 declarados=12	respuestas=9
+antes	scrum17-recapitulativa	pasada 1	exit=0	firma=false	raíz ok=12 not_ok=0 skip=0 declarados=12	respuestas=9
+antes	scrum17-recapitulativa	pasada 2	exit=0	firma=false	raíz ok=12 not_ok=0 skip=0 declarados=12	respuestas=9
+antes	scrum17-recapitulativa	pasada 3	exit=0	firma=false	raíz ok=12 not_ok=0 skip=0 declarados=12	respuestas=9
+antes	scrum17-recapitulativa	pasada 4	exit=0	firma=false	raíz ok=12 not_ok=0 skip=0 declarados=12	respuestas=9
+antes	scrum814-carrera-del-tramo.gated	pasada 0	exit=0	firma=false	raíz ok=3 not_ok=0 skip=0 declarados=3	respuestas=10
+antes	scrum814-carrera-del-tramo.gated	pasada 1	exit=0	firma=false	raíz ok=3 not_ok=0 skip=0 declarados=3	respuestas=10
+antes	scrum814-carrera-del-tramo.gated	pasada 2	exit=0	firma=false	raíz ok=3 not_ok=0 skip=0 declarados=3	respuestas=10
+antes	scrum814-carrera-del-tramo.gated	pasada 3	exit=0	firma=false	raíz ok=3 not_ok=0 skip=0 declarados=3	respuestas=10
+antes	scrum814-carrera-del-tramo.gated	pasada 4	exit=0	firma=false	raíz ok=3 not_ok=0 skip=0 declarados=3	respuestas=10
+despues	scrum178-emision-manual	pasada 0	exit=0	firma=false	raíz ok=3 not_ok=0 skip=0 declarados=3	respuestas=11
+despues	scrum178-emision-manual	pasada 1	exit=0	firma=false	raíz ok=3 not_ok=0 skip=0 declarados=3	respuestas=11
+despues	scrum178-emision-manual	pasada 2	exit=0	firma=false	raíz ok=3 not_ok=0 skip=0 declarados=3	respuestas=11
+despues	scrum178-emision-manual	pasada 3	exit=0	firma=false	raíz ok=3 not_ok=0 skip=0 declarados=3	respuestas=11
+despues	scrum178-emision-manual	pasada 4	exit=0	firma=false	raíz ok=3 not_ok=0 skip=0 declarados=3	respuestas=11
+despues	scrum85-pay-routes-token	pasada 0	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «a»
+despues	scrum85-pay-routes-token	pasada 1	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «c»
+despues	scrum85-pay-routes-token	pasada 2	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «9»
+despues	scrum85-pay-routes-token	pasada 3	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «7»
+despues	scrum85-pay-routes-token	pasada 4	exit=1	firma=false	raíz ok=0 not_ok=1 skip=0 declarados=1	respuestas=2	token empieza por «1»
+despues	scrum17-recapitulativa	pasada 0	exit=0	firma=false	raíz ok=12 not_ok=0 skip=0 declarados=12	respuestas=9
+despues	scrum17-recapitulativa	pasada 1	exit=0	firma=false	raíz ok=12 not_ok=0 skip=0 declarados=12	respuestas=9
+despues	scrum17-recapitulativa	pasada 2	exit=0	firma=false	raíz ok=12 not_ok=0 skip=0 declarados=12	respuestas=9
+despues	scrum17-recapitulativa	pasada 3	exit=0	firma=false	raíz ok=12 not_ok=0 skip=0 declarados=12	respuestas=9
+despues	scrum17-recapitulativa	pasada 4	exit=0	firma=false	raíz ok=12 not_ok=0 skip=0 declarados=12	respuestas=9
+despues	scrum814-carrera-del-tramo.gated	pasada 0	exit=0	firma=false	raíz ok=3 not_ok=0 skip=0 declarados=3	respuestas=10
+despues	scrum814-carrera-del-tramo.gated	pasada 1	exit=0	firma=false	raíz ok=3 not_ok=0 skip=0 declarados=3	respuestas=10
+despues	scrum814-carrera-del-tramo.gated	pasada 2	exit=0	firma=false	raíz ok=3 not_ok=0 skip=0 declarados=3	respuestas=10
+despues	scrum814-carrera-del-tramo.gated	pasada 3	exit=0	firma=false	raíz ok=3 not_ok=0 skip=0 declarados=3	respuestas=10
+despues	scrum814-carrera-del-tramo.gated	pasada 4	exit=0	firma=false	raíz ok=3 not_ok=0 skip=0 declarados=3	respuestas=10
+antes85	scrum85-pay-routes-token	pasada 0	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «4»
+antes85	scrum85-pay-routes-token	pasada 1	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «d»
+antes85	scrum85-pay-routes-token	pasada 2	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «8»
+antes85	scrum85-pay-routes-token	pasada 3	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «9»
+antes85	scrum85-pay-routes-token	pasada 4	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «e»
+antes85	scrum85-pay-routes-token	pasada 5	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «2»
+antes85	scrum85-pay-routes-token	pasada 6	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «a»
+antes85	scrum85-pay-routes-token	pasada 7	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «2»
+antes85	scrum85-pay-routes-token	pasada 8	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «9»
+antes85	scrum85-pay-routes-token	pasada 9	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «b»
+antes85	scrum85-pay-routes-token	pasada 10	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «c»
+antes85	scrum85-pay-routes-token	pasada 11	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «e»
+antes85	scrum85-pay-routes-token	pasada 12	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «4»
+antes85	scrum85-pay-routes-token	pasada 13	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «4»
+antes85	scrum85-pay-routes-token	pasada 14	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «4»
+antes85	scrum85-pay-routes-token	pasada 15	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «5»
+antes85	scrum85-pay-routes-token	pasada 16	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «9»
+antes85	scrum85-pay-routes-token	pasada 17	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «3»
+antes85	scrum85-pay-routes-token	pasada 18	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «3»
+antes85	scrum85-pay-routes-token	pasada 19	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «2»
+antes85b	scrum85-pay-routes-token	pasada 0	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «c»
+antes85b	scrum85-pay-routes-token	pasada 1	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «a»
+antes85b	scrum85-pay-routes-token	pasada 2	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «2»
+antes85b	scrum85-pay-routes-token	pasada 3	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «b»
+antes85b	scrum85-pay-routes-token	pasada 4	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «4»
+antes85b	scrum85-pay-routes-token	pasada 5	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «d»
+antes85b	scrum85-pay-routes-token	pasada 6	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «7»
+antes85b	scrum85-pay-routes-token	pasada 7	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «0»
+antes85b	scrum85-pay-routes-token	pasada 8	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «2»
+antes85b	scrum85-pay-routes-token	pasada 9	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «3»
+antes85b	scrum85-pay-routes-token	pasada 10	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «b»
+antes85b	scrum85-pay-routes-token	pasada 11	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «d»
+antes85b	scrum85-pay-routes-token	pasada 12	exit=1	firma=false	raíz ok=0 not_ok=1 skip=0 declarados=1	respuestas=2	token empieza por «1»
+antes85b	scrum85-pay-routes-token	pasada 13	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «4»
+antes85b	scrum85-pay-routes-token	pasada 14	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «a»
+antes85b	scrum85-pay-routes-token	pasada 15	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «5»
+antes85b	scrum85-pay-routes-token	pasada 16	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «4»
+antes85b	scrum85-pay-routes-token	pasada 17	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «b»
+antes85b	scrum85-pay-routes-token	pasada 18	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «6»
+antes85b	scrum85-pay-routes-token	pasada 19	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «b»
+antes85b	scrum85-pay-routes-token	pasada 20	exit=1	firma=false	raíz ok=0 not_ok=1 skip=0 declarados=1	respuestas=2	token empieza por «1»
+antes85b	scrum85-pay-routes-token	pasada 21	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «6»
+antes85b	scrum85-pay-routes-token	pasada 22	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «a»
+antes85b	scrum85-pay-routes-token	pasada 23	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «f»
+antes85b	scrum85-pay-routes-token	pasada 24	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «9»
+antes85b	scrum85-pay-routes-token	pasada 25	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «0»
+antes85b	scrum85-pay-routes-token	pasada 26	exit=1	firma=false	raíz ok=0 not_ok=1 skip=0 declarados=1	respuestas=2	token empieza por «1»
+antes85b	scrum85-pay-routes-token	pasada 27	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «2»
+antes85b	scrum85-pay-routes-token	pasada 28	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «3»
+antes85b	scrum85-pay-routes-token	pasada 29	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «9»
+antes85b	scrum85-pay-routes-token	pasada 30	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «f»
+antes85b	scrum85-pay-routes-token	pasada 31	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «9»
+antes85b	scrum85-pay-routes-token	pasada 32	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «2»
+antes85b	scrum85-pay-routes-token	pasada 33	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «3»
+antes85b	scrum85-pay-routes-token	pasada 34	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «7»
+antes85b	scrum85-pay-routes-token	pasada 35	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «3»
+antes85b	scrum85-pay-routes-token	pasada 36	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «2»
+antes85b	scrum85-pay-routes-token	pasada 37	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «9»
+antes85b	scrum85-pay-routes-token	pasada 38	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «b»
+antes85b	scrum85-pay-routes-token	pasada 39	exit=0	firma=false	raíz ok=1 not_ok=0 skip=0 declarados=1	respuestas=7	token empieza por «6»
+scrum85 · token que empieza por «1»: 4 caen / 0 pasan · resto: 0 caen / 66 pasan
+POBLACION=100 pasadas · EXIT=0

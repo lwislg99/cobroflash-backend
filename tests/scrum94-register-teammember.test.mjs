@@ -23,13 +23,36 @@
 // ⚠️ GATEADO (crea/BORRA merchants + teamMembers efímeros; levanta la app):
 //   QA_DB_TEST=1 npm run test:staging
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599k: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
+import http from 'node:http';
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+// `node:http` sin agente y no `fetch` (SCRUM-1218d): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de `fetch`
+// (status, headers.get, text, json) y, como el `redirect: 'manual'` de antes, no sigue redirecciones.
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    let d = ''; r.setEncoding('utf8');
+    r.on('data', (t) => { d += t; });
+    r.on('end', () => ok({
+      status: r.statusCode,
+      headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+      text: async () => d,
+      json: async () => JSON.parse(d),
+    }));
+  });
+  req.on('error', mal);
+  req.end(body);
+});
 
-test('SCRUM-94: /auth/register rechaza el email de un operario (sin merchant fantasma ni fuga de empresa)', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
+
+test('SCRUM-94: /auth/register rechaza el email de un operario (sin merchant fantasma ni fuga de empresa)', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
 
@@ -38,7 +61,7 @@ test('SCRUM-94: /auth/register rechaza el email de un operario (sin merchant fan
   const base = `http://127.0.0.1:${server.address().port}`;
   const stamp = Date.now();
 
-  const reg = (email) => fetch(`${base}/auth/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'Negocio Nuevo', email, country: 'ES' }) });
+  const reg = (email) => pedirSinAgente(`${base}/auth/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'Negocio Nuevo', email, country: 'ES' }) });
 
   // ⚠️ NO son fixtures nuestras: son los merchants que crearía la APLICACIÓN si la ruta volviera a
   // dar de alta (lo hacía con el operario suspendido y con el email nuevo). `withMerchant` no los
@@ -143,3 +166,11 @@ test('SCRUM-94: /auth/register rechaza el email de un operario (sin merchant fan
     await prisma.$disconnect();
   }
 });
+
+// SCRUM-1599k (diseño B de SCRUM-1599) · la mutación que tumba el caso de base, CATALOGADA en SCRUM-1599k.
+// Va aparte de `MUTACIONES_QUE_ME_TUMBAN` a propósito: el job del meta-guard corre SIN base, el caso sale
+// SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco PGlite,
+// `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e). Cada campo, LITERAL.
+export const MUTACIONES_CON_BASE = [
+  { fichero: "src/modules/auth/app/routes/auth.routes.ts", de: "router.post('/register', (_req, res) => {\n  return res.status(409).json({", a: "router.post('/register', (_req, res) => {\n  return res.status(201).json({", cae: "SCRUM-94: /auth/register rechaza el email de un operario" },
+];

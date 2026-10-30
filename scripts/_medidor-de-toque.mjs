@@ -48,8 +48,14 @@
  *
  * ⚠️ NO cambia lo que mide la landing: allí hay CERO casillas (medido, `grep -c` sobre
  * `public/` fuera de `dashboard/` = 0), así que su población es la misma antes y después.
+ *
+ * 🔴 SCRUM-1584 · ENTRAN `select`, `textarea` y todo `input` que se pinta (opción B). Hasta aquí
+ * sólo entraban submit, button y checkbox, así que ningún desplegable, buscador ni campo de fecha
+ * del panel lo medía nadie: los de Facturación (38,9 de toque) y Export (38,9) de SCRUM-962b salían
+ * de una medición manual. Medido el 23-oct-2026 sobre censo:tactil-panel (28 superficies × 2 anchos):
+ * distintos < 44, de 72 a 100. `input[type="hidden"]` queda fuera: no se pinta, no se pulsa.
  */
-export const INTERACTIVOS = 'a[href], button, [role="button"], summary, input[type="submit"], input[type="button"], input[type="checkbox"]';
+export const INTERACTIVOS = 'a[href], button, [role="button"], summary, input:not([type="hidden"]), select, textarea';
 
 /** AB6. No se baja: si un caso no llega, va como excepción declarada con su motivo. */
 export const MINIMO_TACTIL = 44;

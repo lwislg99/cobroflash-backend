@@ -8,11 +8,18 @@
 // ⚠️ Toca BD real (staging), gateado:
 //   QA_DB_TEST=1 DATABASE_URL_TESTS="..." npm run test:staging
 import './_staging-db.mjs';
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599p: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { withMerchant } from './_merchant-fixture.mjs';
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
+// SCRUM-1599p (opción A de SCRUM-1599 c.20940): el caso de las cadenas YA PERSISTIDAS recorre las facturas
+// selladas de TODA la base, sin filtrar por comercio. En el banco desechable esa base la comparten los ficheros
+// que corren a la vez en la tanda, y en una pasada medida (§1599o, régimen T) recalculó la huella de una factura
+// de OTRO test. Ahí no se acota a sus comercios (cambiaría lo que vigila): se queda en staging.
+const SOLO_EN_STAGING = URL_BANCO !== ''
+  && 'en el banco desechable no: recorre las facturas selladas de TODA la base, que en la tanda comparten otros ficheros (SCRUM-1599p) · npm run test:staging:gated';
 const NIF = 'B12345678';
 
 async function crearFactura(prisma, merchantId, customerId, numero, createdAt) {
@@ -29,7 +36,7 @@ async function crearFactura(prisma, merchantId, customerId, numero, createdAt) {
   });
 }
 
-test('SCRUM-173 ①: sellar DENTRO de una transacción está prohibido (rompería el lote)', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-173 ①: sellar DENTRO de una transacción está prohibido (rompería el lote)', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { applyVeriFactu } = await import('../dist/modules/invoicing/domain/verifactu.service.js');
 
@@ -59,7 +66,7 @@ test('SCRUM-173 ①: sellar DENTRO de una transacción está prohibido (romperí
   });
 });
 
-test('SCRUM-173 ②: dos facturas con el MISMO createdAt encadenan de forma determinista', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-173 ②: dos facturas con el MISMO createdAt encadenan de forma determinista', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { applyVeriFactu } = await import('../dist/modules/invoicing/domain/verifactu.service.js');
 
@@ -88,7 +95,7 @@ test('SCRUM-173 ②: dos facturas con el MISMO createdAt encadenan de forma dete
   });
 });
 
-test('SCRUM-173 ③: dos sellados CONCURRENTES se serializan y no comparten prev', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-173 ③: dos sellados CONCURRENTES se serializan y no comparten prev', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { applyVeriFactu } = await import('../dist/modules/invoicing/domain/verifactu.service.js');
 
@@ -118,7 +125,7 @@ test('SCRUM-173 ③: dos sellados CONCURRENTES se serializan y no comparten prev
   });
 });
 
-test('SCRUM-173: las cadenas YA PERSISTIDAS siguen siendo válidas tras el cambio', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-173: las cadenas YA PERSISTIDAS siguen siendo válidas tras el cambio', { skip: (!ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated') || SOLO_EN_STAGING }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { computeVeriFactuHash, formatFechaHoraHuso } = await import('../dist/modules/invoicing/domain/verifactu.service.js');
 
@@ -162,7 +169,7 @@ test('SCRUM-173: las cadenas YA PERSISTIDAS siguen siendo válidas tras el cambi
 // Sin esto el arreglo quedaba a medias, que es peor que dos mecanismos declarados: parece uno
 // solo. Un alta y una anulación simultáneas del mismo emisor encadenarían al mismo eslabón.
 
-test('SCRUM-173b: sellar una ANULACIÓN dentro de una transacción está prohibido', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-173b: sellar una ANULACIÓN dentro de una transacción está prohibido', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { applyVeriFactu, applyVeriFactuAnulacion } = await import('../dist/modules/invoicing/domain/verifactu.service.js');
 
@@ -212,7 +219,7 @@ test('SCRUM-173b: sellar una ANULACIÓN dentro de una transacción está prohibi
 // registro anterior. Con dos cadenas, apuntar a un eslabón sin decir a cuál pertenece sería
 // irreconstruible para la AEAT.
 
-test('SCRUM-177: el alta siguiente a una ANULACIÓN encadena a ELLA, no al alta anterior', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-177: el alta siguiente a una ANULACIÓN encadena a ELLA, no al alta anterior', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { applyVeriFactu, applyVeriFactuAnulacion } = await import('../dist/modules/invoicing/domain/verifactu.service.js');
 
@@ -243,7 +250,7 @@ test('SCRUM-177: el alta siguiente a una ANULACIÓN encadena a ELLA, no al alta 
   });
 });
 
-test('SCRUM-177: excluirId — resellar un alta no la encadena a sí misma', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async () => {
+test('SCRUM-177: excluirId — resellar un alta no la encadena a sí misma', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async () => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { applyVeriFactu } = await import('../dist/modules/invoicing/domain/verifactu.service.js');
 
@@ -262,3 +269,11 @@ test('SCRUM-177: excluirId — resellar un alta no la encadena a sí misma', { s
     assert.equal(segundo.vfPrevHash, '', 'sigue siendo la única de la cadena: prev vacío');
   });
 });
+
+// SCRUM-1599p (diseño B de SCRUM-1599) · la mutación que tumba el caso de base, CATALOGADA en SCRUM-1599p.
+// Va aparte de `MUTACIONES_QUE_ME_TUMBAN` a propósito: el job del meta-guard corre SIN base, el caso sale
+// SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco,
+// `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e). Cada campo, LITERAL.
+export const MUTACIONES_CON_BASE = [
+  { fichero: "src/modules/invoicing/domain/verifactu.service.ts", de: "  if (typeof (prismaClient as any).$transaction !== 'function') {\n    // Fail-closed y explícito: un cliente de transacción dejaría el sellado sin cerrojo y con", a: "  if (false) {\n    // Fail-closed y explícito: un cliente de transacción dejaría el sellado sin cerrojo y con", cae: "SCRUM-173 ①: sellar DENTRO de una transacción" },
+];

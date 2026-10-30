@@ -27,7 +27,9 @@ import { soloCodigo } from './_solo-codigo.mjs';
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const VISTA = path.join(RAIZ, 'public/dashboard/js/expensesView.js');
 
-/** Literal, carácter a carácter. Aprobada por el fundador el 10-ago-2026. */
+/** Literal, carácter a carácter. NO se aprobó: se RETIRÓ el 10-ago-2026 por ser afirmación fiscal
+ *  (`docs/master/SCRUM-324.md:399-403`; SCRUM-324 comentario 13135, «El aviso fiscal NO se
+ *  enciende»). Lo confirma la respuesta P11 de SCRUM-1502 comentario 20702. */
 const TEXTO_APROBADO = 'Con un ticket no puedes deducir el IVA. Pide en el almacén una '
   + 'factura a tu nombre, con tu NIF y el IVA desglosado.';
 

@@ -304,7 +304,8 @@ async function loadQuote(token: string) {
       // SCRUM-1001 · `id`, `email` y `flags`: `getEmissionMode` reconoce al demo y el interruptor por negocio con ellos.
       // SCRUM-1279 · `clausulasPresupuesto`: las cláusulas de cierre que el PDF imprime; sin ella la
       // página no puede enseñar lo que el cliente firma.
-      merchant: { select: { id: true, email: true, flags: true, name: true, legalName: true, logoUrl: true, address: true, country: true, brandColor: true, brandAccentColor: true, whatsappPhone: true, timezone: true, clausulasPresupuesto: true } },
+      // SCRUM-1594 · `llevaLibrosPorSii`: lo exige `MerchantLike` cuando entre SCRUM-1585 (el modo mira el SII).
+      merchant: { select: { id: true, email: true, flags: true, name: true, legalName: true, logoUrl: true, address: true, country: true, brandColor: true, brandAccentColor: true, whatsappPhone: true, timezone: true, clausulasPresupuesto: true, llevaLibrosPorSii: true } },
       customer: { select: { name: true } },
     },
   });
@@ -762,7 +763,9 @@ quoteDecisionLandingRouter.get(['/quote/:token', '/quote/:token/accept'], async 
   const shareTextEnc = encodeURIComponent(`✅ He aceptado mi ${locale.quoteVerb} con ${shareName}. ¡Gracias!`);
   // SCRUM-1001 · sin cobro por YaQu (modo `receipt`: ES real con INVOICING_ES_ENABLED OFF) la página no
   // ofrece pagar, así que tras aceptar dice quién se ocupa. Literal FIRMADO por Javier el 21-sep-2026.
-  const sinBotonDePago = getEmissionMode((loadedQuote as any).merchant ?? {}) === 'receipt';
+  // SCRUM-1594 · sin `as any`: con él el compilador no exigía los campos de `MerchantLike`, y un
+  // campo que faltara en el `select` de `loadQuote` cambiaría el modo EN SILENCIO en esta página.
+  const sinBotonDePago = getEmissionMode(loadedQuote.merchant) === 'receipt';
 
   // PC-A (N1): botón "💬 Tengo una duda" → WhatsApp del PRO. Mismo patrón que el estado
   // rejected. Si el negocio no tiene whatsappPhone, no se muestra (degradación digna).

@@ -1,0 +1,8 @@
+scrum178-emision-manual · revertido a fetch · scrum560 rc=1 · cae: ✖ SCRUM-560 · ningún fichero NUEVO pide con `fetch` a su propio `app.listen(0)` (2449. · nombra=3
+   restaurado (cmp idéntico)
+scrum85-pay-routes-token · revertido a fetch · scrum560 rc=1 · cae: ✖ SCRUM-560 · ningún fichero NUEVO pide con `fetch` a su propio `app.listen(0)` (25377 · nombra=3
+   restaurado (cmp idéntico)
+scrum17-recapitulativa · revertido a fetch · scrum560 rc=1 · cae: ✖ SCRUM-560 · ningún fichero NUEVO pide con `fetch` a su propio `app.listen(0)` (5787. · nombra=3
+   restaurado (cmp idéntico)
+scrum814-carrera-del-tramo.gated · revertido a fetch · scrum560 rc=1 · cae: ✖ SCRUM-560 · ningún fichero NUEVO pide con `fetch` a su propio `app.listen(0)` (21975 · nombra=3
+   restaurado (cmp idéntico)

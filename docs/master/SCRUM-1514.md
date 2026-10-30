@@ -2,7 +2,7 @@
 
 **Medido contra:** `origin/main` = `16e80dea496dad3819bf444983f9974d3c13ebb9` · 2026-10-08T07:38:34Z
 
-A9: comprobación → `docs/evidencias/scrum1390/censo-que-ve-el-tecnico.mjs.txt`
+A9: comprobación → `tests/_censo-frontera.mjs`
 
 8-oct-2026 · **J1** (sesión `jv-j1`, equipo de Javier), por encargo del orquestador (`cobroflash-backend-90`).
 [Escrito por J1. El encargo es la descripción de SCRUM-1514 MÁS su comentario c.18961, leídos en Jira.]

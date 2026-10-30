@@ -19,7 +19,6 @@
     "ficheros": {
       "src/modules/invoicing/infra/pdf/pdf.service.ts": 1,
       "src/modules/invoicing/domain/criterioCaja.ts": 1,
-      "src/modules/fiscal/modelo303/modelo303.ts": 1,
       "src/modules/fiscal/librosAeat/librosAeat.ts": 1,
       "src/modules/jobs/app/routes/albaranes.routes.ts": 1,
       "src/modules/system/app/routes/invoicesAdmin.routes.ts": 1,

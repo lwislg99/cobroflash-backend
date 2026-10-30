@@ -77,7 +77,7 @@ async function renderJobsView(container) {
     bNuevo.className = 'btn-primary';
     bNuevo.id = 'jobs-nuevo-btn';
     // SCRUM-769 · rótulo FIRMADO por el fundador el 6-sep-2026: «Trabajo nuevo» → «Nuevo trabajo»,
-    // el mismo patrón que las otras listas. Se conserva escrito aquí como RESPALDO —igual que en
+    // el mismo patrón que las otras listas. Consta en: SCRUM-769 comentario 14580. Se conserva escrito aquí como RESPALDO —igual que en
     // `quotesListView` y `customersView`— por si la pieza no ha cargado; el que manda es el de
     // `atajoNuevo.TEXTOS` y `etiquetar` lo pisa un renglón más abajo.
     bNuevo.textContent = 'Nuevo trabajo';

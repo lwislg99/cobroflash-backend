@@ -19,6 +19,8 @@ import { soloCodigo } from './_solo-codigo.mjs';
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const MARCA = '[PENDIENTE microcopy oficial]';
 // Los DOS rótulos del FORMULARIO, firmados por el fundador el 2-sep-2026.
+// Consta en: SCRUM-593 comentario 14262 (la cabecera).
+// Consta en: SCRUM-1502 comentario 20702 (el pie, «Observaciones»).
 const ROTULO_CABECERA = 'Añadir texto en el documento';
 const ROTULO_PIE = 'Observaciones';
 
@@ -90,6 +92,7 @@ test('SCRUM-593b · 🔴 el bloque final dice «Observaciones» y NO lleva marca
 // MARCADOR, porque no estaba firmado. Ese mismo día el fundador lo firmó: «Añadir texto en el
 // documento», y de paso decidió que en el PDF ese bloque no lleva rótulo. La premisa caducó por
 // una decisión legítima, así que el test no se borra: afirma lo contrario y sigue pudiendo fallar.
+// Consta en: SCRUM-593 comentario 14262.
 test('SCRUM-593b · 🔴 el rótulo de la CABECERA es el APROBADO, y no se confunde con el otro', () => {
   const w = cargar();
   const cab = w.TD_CAMPOS.find((c) => c.clave === 'docHeaderText');

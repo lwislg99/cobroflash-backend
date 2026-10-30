@@ -71,3 +71,126 @@ La tabla «después» de los tres sin tocar es la del árbol entregado, no la de
 - **Los campos de cada cláusula** («Título», «Texto»: `input` y `textarea` nativos con `style="width:100%"`) se ven bajos en la captura y **no los he medido**. Mismo bloque, mismo carril; piden clase de campo de la casa + CSS → mismo bloqueo que los `select`.
 - Los `select` y el color: **esperan a 962f** (arriba).
 - yaqu.app: producción congelada; ver a 390 y 1280 cuando se descongele.
+
+## SCRUM-1577b · partes 2 y 3: los dos `select` de Facturación y el selector de color, a 44 px de toque
+
+**Medido contra:** `origin/main` = `f6a3119675c2584480d846fa0a20572d48cadaa5` · 2026-10-26T16:06:05Z
+**Skill UI:** cargada (`yaqu-premium-ui`), antes de tocar el código. DESIGN.md §5 «Inputs / Fields» y §6 «targets ≥44px» leídos. Checklist AB6: targets ≥44 (abajo) · un `style=` en línea MENOS (el del color, que pasa a la hoja tal cual era salvo el alto) · ningún token nuevo (`var(--border)`, los mismos valores) · capturas antes/después en `evidencias/scrum1577/b-*.png` · ancho de página sin desbordar a 320/390/929.
+**Microcopy:** ninguna. Ningún literal tocado.
+**Carril:** J3 en `settingsView.js` (contenedor de J3). En `public/dashboard/css/styles.css` (contenedor de **S2**) sólo un bloque nuevo marcado «J3 · SCRUM-1577b», al final, como permite `docs/equipo/dos-equipos.md:95-97` (y como hace J2 en ese mismo fichero). No se reescribe nada de S2. Encargo del orquestador `cobroflash-backend-8b` a `jv-j3bn`.
+
+A9: comprobación → `tests/scrum1577-configuracion-44.test.mjs`
+
+El fallo que generaliza: mi primer «después» dio **15/15 verdes** en el banco de 44 con el botón «Sin color (por defecto)» **cortado** a 320 (lo creaba mi arreglo: el color ya no se encoge y la fila no cabe). El banco mide el control, no a su vecino, y `scrollWidth` tampoco lo ve porque la tarjeta recorta. Lo cacé mirando la captura. Ahora lo comprueban el caso ④ del test (exige `flex-wrap: wrap` en la fila; la mutación que lo quita lo tumba) y `captura-1577b.mjs`, que imprime el borde derecho del botón contra el de la tarjeta y dice CORTADO.
+De paso, un error mío sin comprobación posible: añadí código al test con un heredoc, con mi cicatriz del 21-oct en contra. Va a `docs/equipo/cicatrices/J3.md`.
+
+### PASO 0 — el defecto existe hoy
+
+- #2692 (962f), el bloqueo del ticket, está en `main`: mergeado `def9d33d3f973dc75bfd7076478523ea1ac06afe` el 2026-10-24T12:53:29Z. Ni rama ni PR de 1577b en el remoto (`ls-remote 'refs/heads/scrum-1577*'` vacío; `gh pr list --search 1577`: #2699 MERGED y un #1577 de otro asunto).
+- Banco ANTES (abajo): 6 rojos. Los `select` dan hoy **36,5–37** de toque, no 38,9 como el 22-oct: su alto sale de `.input` (padding sin mínimo), así que depende de la fuente. El color, **38,6–38,9** de alto y, a 320, **18,2 de ancho** (el 22-oct, 32,3).
+
+### Lo que se cambia
+
+- `settingsView.js:802`: el `<input type="color">` pierde su `style=` en línea (un `style=` le gana a la hoja: no había otra forma de subirle el alto).
+- `styles.css`, bloque «J3 · SCRUM-1577b» (nivel superior, fuera de toda `@media`: el ticket pide 44 también a 929, como el «Criterio de caja» de la misma pestaña):
+  - `#retencion-irpf-tipo, #actividad-tipo { min-height: 44px; }` — por id: `.input` es de todas las pantallas y no se toca.
+  - `#brand-color-input { flex: none; width: 48px; height: 44px; … }` — lo que había en línea, con el alto a 44 y `flex: none` para que no se encoja.
+  - `:has(> #brand-color-input) { flex-wrap: wrap; }` — su fila salta de línea a 320 (ver `A9:`).
+- No se copia el mecanismo de «Criterio de caja» (`fCriterioCaja.style.minHeight` desde JS): `scrum713c` cuenta esas escrituras y es un trinquete.
+
+### ANTES y DESPUÉS — `evidencias/scrum1577/banco-44.mjs` (el de la parte 1, sin cambios)
+
+Corrido con `NODE_PATH` al `node_modules` del checkout compartido (este árbol no tiene, y no he creado ningún junction en él; el banco sólo saca `puppeteer-core` por `createRequire`). 5 controles × 320/390/929 = **15 mediciones**; sonda sembrada de 20 px en cada pestaña, que sale corta (20,2–21) en las 6 filas de pestaña de las dos pasadas: 0 CIEGOS.
+
+| control | toque ANTES 320 · 390 · 929 | toque DESPUÉS 320 · 390 · 929 | caja DESPUÉS (alto×ancho) |
+|---|---|---|---|
+| `select` Retención de IRPF | 36,7 · 37 · 36,9 | **44,7 · 44,9 · 44,9** | 44×170 |
+| `select` ¿Qué tipo de actividad tienes? | 36,5 · 36,7 · 36,9 | **44,5 · 44,7 · 44,9** | 44×121 |
+| color de marca | 38,9 · 38,7 · 38,6 (caja 38×**18,2** a 320) | **44,9 · 44,7 · 44,6** | 44×48 en las tres |
+| «Añadir condición» (parte 1, sin tocar) | 44,5 · 44,6 · 36,7 | igual | |
+| «Quitar» (parte 1, sin tocar) | 44,8 · 44,6 · 37 | igual | |
+
+Banco: ANTES salida 1 (ROJO 6 · CIEGO 0 · VERDE 9); DESPUÉS salida 0 (ROJO 0 · CIEGO 0 · VERDE 15).
+
+`evidencias/scrum1577/captura-1577b.mjs` (nuevo): capturas `b-antes-*`/`b-despues-*` de las dos filas a 320/390/929, ancho de página y el borde del botón de al lado del color. ANTES sirve una copia de `public/` de `origin/main` (`git archive`; `diff --no-index` = sólo mis dos ficheros). Control: la fila «antes» tiene que dar el color a 38×18,2 a 320, y lo da. Página = ventana en las 6 filas de cada versión. Botón contra tarjeta a 320: antes 287/287, primer «después» **316,8/287 CORTADO**, final 194,3/287 (baja de línea entero).
+
+### Test
+
+`tests/scrum1577-configuracion-44.test.mjs`, dos casos nuevos: **④** el color sin `style=`, con `height: 44px` y `flex: none`, y su fila con `flex-wrap: wrap`; **⑤** los dos `select` con `min-height: 44px` fuera de toda `@media`, y sus ids todavía en la vista. La hoja se lee sin comentarios, sin los bloques `@media` (recortados por llaves equilibradas, con suelo: el recorte tiene que quitar algo) y con los selectores anclados a principio de línea.
+- **Base en rojo:** el test contra `settingsView.js` y `styles.css` de `origin/main` → ①②③ pasan, **④ y ⑤ caen** (salida 1).
+- **Mutaciones:** 4 nuevas en `MUTACIONES_QUE_ME_TUMBAN` (8 en total). `evidencias/scrum1577/mutar.mjs` sobre el commit local `fea74addd06e91030ee436208e5f18ee93818f80`: **base verde, 8/8 tumban SU caso, MAL 0**.
+
+### Sin mirar / pendiente (no es cero)
+
+- **Parte 4** (el enlace de la página pública, DESIGN.md §6): espera decisión. No tocada.
+- **Parte 5 · yaqu.app: NO HECHO.** Esta sesión no lo ha intentado.
+- **Los campos de cada cláusula** («Título», «Texto»): siguen sin medir, como dijo la parte 1. Fuera del encargo.
+- **Foco del color:** no tenía estilo de foco propio antes y no se le ha dado. No medido.
+- **Suite entera local: NO CORRIDA** (orden del orquestador: 10 sesiones a la vez y la máquina justa de memoria). Las tandas dirigidas, abajo.
+
+### Tandas (sobre el commit local `97bea8f1da55b60e59340ecd04d44fd9e97b3d65`)
+
+- **Primera pasada, CIEGA:** en este árbol, que no tiene `node_modules`, 100 de 590 cayeron por 96 «Cannot find package 'typescript'», 2 «axios» y 1 «fake-indexeddb». No es un rojo: se repitió en un árbol anidado de usar y tirar (`.claude/worktrees/j3bn-mini` del checkout compartido, con `dist/` de `tsc --noCheck` y sin `prisma generate`), ya quitado.
+- **Mini-tanda** = los 15 guards del encargo (237, 976, 824, 836, 419, 702, 700, 719, 1415, 267, 273, 1294, 811c, 713c, 1387) + el mío + todo `tests/` que nombra `settingsView` o `styles.css`: **149 ficheros · 1.391 tests = 1.390 pass + 0 fail + 1 skipped** (cuadra). El salto es `scrum1145` «por la ruta real», gateado por `LIBRO_PG_URL`. Control positivo: mis 5 casos `SCRUM-1577 ①…⑤` están en el TAP; control a cero: `SCRUM-1577 ⑥`, 0.
+- **Guards de navegador que montan Configuración** (no hay filtro en `guards-visuales.mjs`: uno a uno): `guard-modo-en-ajustes`, `guard-aviso-bizum`, `guard-completar-lleva-al-campo`, `guard-falta-en-otra-pestana` y `guard-vias-de-cobro`, **salida 0 los cinco**. `guard-objetivo-tactil` sale **2 (0 hallazgos · 4 CIEGOS)**, y **no es mío**: corrido en otro árbol anidado en `origin/main` = `c1331293b01ac32a4357cf1b239dab86853f25ee`, da los mismos 4 ciegos con las líneas idénticas (`diff` vacío). Además ese guard **no mide Configuración** (0 líneas nombran la pantalla o estos tres controles), así que no prueba nada de este cambio: lo prueba el banco de arriba.
+- `main` avanzó de `f6a31196` a `c1331293` mientras medía: `git diff --stat` entre los dos sobre mis siete rutas, vacío.
+
+## SCRUM-1577c · parte 4: el enlace de «Tu página pública», a 44 px de toque
+
+**Medido contra:** `origin/main` = `5078f80c3726c93b3751baf9c10134b4a486eaa4` · 2026-10-27T11:52:29Z
+**Skill UI:** cargada (`yaqu-premium-ui`), antes de tocar el código. DESIGN.md §6 («targets ≥44px») leído. Checklist AB6: target ≥44 (abajo) · ningún `style=` en línea nuevo · ningún token nuevo · ningún texto nuevo · capturas antes/después en `evidencias/scrum1577/c-*.png` · ancho de página sin desbordar a 320/390/929, también con una dirección de 40 caracteres.
+**Carril:** J3 (`settingsView.js`, contenedor de J3) + un bloque marcado «J3 · SCRUM-1577c» al final de `styles.css`, contenedor de S2 (`dos-equipos.md:95-97`).
+**Decisión:** SCRUM-1577 **c.20987** (el orquestador, por cuestionario del fundador): el enlace en línea NO se exime, llega a 44 px. El encargo citaba «c.20986»; el comentario que lo dice es el 20987.
+
+A9: comprobación → `tests/scrum1577-configuracion-44.test.mjs`
+
+### PASO 0 — el defecto existe hoy
+
+`git log origin/main --grep=SCRUM-1577`, `git ls-remote origin 'refs/heads/scrum-1577*'` y `gh pr list --search 1577`: sólo 1577 (#2699) y 1577b (#2890), los dos mergeados; nada de 1577c. El banco sobre una copia de `origin/main` (abajo) da el enlace a 17 px.
+
+### Lo que se cambia
+
+- `settingsView.js`, `renderPublicProfileCard`: el `<a href="/p/…">` del aviso «Tu página está activa» lleva `class="pp-enlace"`. El texto no cambia.
+- `styles.css`, bloque «J3 · SCRUM-1577c»: `.pp-enlace { display: inline-flex; align-items: center; min-height: 44px; }`, fuera de toda `@media`, como `.detail-rail-enlace--suelto`. Sin `inline-flex`, `min-height` no hace nada en un enlace en línea.
+- **Lo que cambia de aspecto, y es lo necesario:** el renglón del enlace pasa a 44, así que el aviso verde crece 24,5 px a 390 y 929 (61 → 85,5 y 41,5 → 66) y 5 px a 320 (80,5 → 85,5). El color y el subrayado del enlace no cambian (ni antes ni después lleva subrayado).
+- **Descartado:** dar el área con `padding` y margen negativo, que no cambia nada a la vista. A 320 y 390 el enlace va en su propio renglón, y el blanco de toque montaría sobre el texto «Tu página está activa:» del renglón de encima: un toque en «activa» abriría la página. Eso no lo he medido con el árbitro, lo he deducido de la geometría.
+
+### ANTES y DESPUÉS — `evidencias/scrum1577/banco-44.mjs`
+
+Al banco se le añade un objetivo, el enlace, por su destino (`.alert.success a[href^="/p/"]`), no por su clase, que el ANTES no tiene. Los demás objetivos, sin cambios. ANTES = copia de `public/` de `origin/main` `5078f80c`, sacada con `git archive`.
+
+| control | toque ANTES 320 · 390 · 929 | DESPUÉS |
+| --- | --- | --- |
+| enlace `yaqu.app/p/…` | CIEGO · 17 · 17 | 45 · 45 · 45 |
+
+ANTES: salida 2, con **2 ROJOS y 1 CIEGO** de 18 mediciones. El CIEGO es el enlace a 320: se parte en dos renglones (caja 35,5 de alto) y el árbitro «no lo alcanza ni en su centro», porque el centro de la caja cae entre los dos trozos. DESPUÉS: salida 0, **18 VERDES**. La sonda sembrada se ve corta (20–21) en las 6 filas de pestaña de cada pasada. Los 15 de 1577/1577b siguen verdes en las dos.
+
+`evidencias/scrum1577/captura-1577c.mjs` (nuevo), con una dirección normal y otra de 40 caracteres (el máximo que admite la pantalla):
+
+| ancho · dirección | ANTES: enlace · renglones · aviso | DESPUÉS |
+| --- | --- | --- |
+| 320 · normal | 35,5×173 · 2 · 80,5 | 44×182 · 1 · 85,5 |
+| 320 · 40 car. | 55×174,6 · 3 · 100 | 58,5×182 · 1 · 100 |
+| 390 · normal | 16×186,2 · 1 · 61 | 44×186,2 · 1 · 85,5 |
+| 390 · 40 car. | 35,5×232,4 · 2 · 80,5 | 44×252 · 1 · 85,5 |
+| 929 · normal | 16×186,2 · 1 · 41,5 | 44×186,2 · 1 · 66 |
+| 929 · 40 car. | 16×343,3 · 1 · 41,5 | 44×343,3 · 1 · 66 |
+
+En las doce, la página no desborda (`scrollWidth` = ancho de ventana) y el enlace no se sale del aviso. El control de la captura es la fila ANTES: 16 de alto a 390 y dos renglones a 320, lo mismo que el banco.
+
+### Test
+
+`tests/scrum1577-configuracion-44.test.mjs`, caso ⑥: el enlace a `/p/` (por su destino; tiene que haber uno) lleva `pp-enlace` y ningún `style=`, y la regla `.pp-enlace` está fuera de `@media` con `display: inline-flex` y `min-height: 44px`. **Rojo primero:** copiado el test sobre los ficheros de `origin/main`, cae justo ⑥ («sin `pp-enlace`») y pasan ①–⑤. Tres mutaciones nuevas en el catálogo (11 en total). Con las funciones de la casa (`aplicarUna`, vía `evidencias/SCRUM-1123f/arnes-mutaciones.mjs`): **limpia 6 pasan · 11 de 11 VIVAS**, árbol limpio después. `mutar.mjs`: base verde, 11/11, MAL 0. `meta-guard-mutaciones.mjs --solo-censo`: salida 0, 875 declaraciones en 220 ficheros.
+
+### Sin mirar / pendiente (no es cero)
+
+- **Visto en yaqu.app (parte 5): NO HECHO**, no lo he intentado.
+- El foco del enlace: no lo he mirado ni antes ni después.
+- **Error propio:** el caso ⑥ lo añadí al test con un heredoc, por quinta vez contra mi cicatriz del 21-oct. Iba entre comillas (`<<'EOF'`) y salió intacto: lo comprobé leyéndolo antes de correrlo. Va a `cicatrices/J3.md`.
+
+### Tandas
+
+- **Suite entera local: NO CORRIDA** (orden del orquestador: 10 sesiones a la vez).
+- **Guards de navegador que montan Configuración**, en este árbol, con `dist/` de `tsc --noCheck` (no toco `src/`): `guard-modo-en-ajustes`, `guard-aviso-bizum`, `guard-completar-lleva-al-campo`, `guard-falta-en-otra-pestana` y `guard-vias-de-cobro`, **salida 0 los cinco**. La primera pasada de `guard-aviso-bizum` salió 1 por «Cannot find module …/dist/…»: el árbol no tenía `dist/`. Leí el error antes de contarlo, construí y repetí. `guard-objetivo-tactil` sale **2 (0 hallazgos · 4 CIEGOS)**, en la ficha del Trabajo (`renderJobDetailView`), no en Configuración. Hoy no lo he recomparado con `main`; 1577b midió los mismos 4 ciegos idénticos en `main`.
+- **Guards de registro y de suite + el mío** (1577, 267, 273, 1294, 811c, 237, 976, 1387), sobre este tramo ya escrito: **84 tests = 84 pass + 0 fail + 0 skipped** (cuadra). Positivo: `SCRUM-1577 ⑥` está en el TAP; cero de control: `SCRUM-1577 ⑦`, 0.
+- No corridos: los demás tests que nombran `settingsView` o `styles.css` (1577b corrió 149 ficheros). Esos los cubre el obligatorio de CI.

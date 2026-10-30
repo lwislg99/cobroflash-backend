@@ -460,12 +460,20 @@ export async function applyVeriFactu(
  *
  * El eslabón anterior se toma de TODA la cadena (altas y anulaciones), no solo de las altas:
  * si la última operación del emisor fue una anulación, la siguiente huella encadena con ella.
+ *
+ * 🔴 SCRUM-1314b · `anular`: SELLADO Y ESTADO EN UNA SOLA ESCRITURA (GO del fundador, SCRUM-1314
+ * c.20754). Con él, la misma `update` que escribe la huella pone `annulled` con `status: 'pending'`
+ * en el `where`, y `anular.enLaMismaTransaccion` (la liberación de albaranes) corre en la misma
+ * transacción. Si un cobro entró en medio, Prisma no encuentra la fila (P2025), la transacción
+ * entera se deshace y NO queda eslabón: antes el sellado iba en su propia transacción y dejaba una
+ * huella de anulación sobre una factura cobrada (P1-1303).
  */
-export async function applyVeriFactuAnulacion(
+export async function applyVeriFactuAnulacion<R = undefined>(
   invoice: { id: number; number: string; createdAt: Date; merchantId: number },
   taxId: string,
   prismaClient = defaultPrisma,
-): Promise<{ vfAnulHash: string; vfPrevHash: string }> {
+  anular?: { enLaMismaTransaccion: (tx: any) => Promise<R> },
+): Promise<{ vfAnulHash: string; vfPrevHash: string; conservada: boolean; liberado?: R }> {
   if (isReceiptNumber(invoice.number)) {
     throw new Error('receipt_document_not_invoiceable'); // V0-0: un J- nunca entra en la cadena
   }
@@ -500,6 +508,27 @@ export async function applyVeriFactuAnulacion(
   const sellado = await (prismaClient as any).$transaction(async (tx: any) => {
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(${VERIFACTU_LOCK_NS}::int, ${invoice.merchantId}::int)`;
 
+    // ── SCRUM-1314b · LO YA SELLADO NO SE VUELVE A SELLAR (el gemelo de SCRUM-1330 en el alta) ──
+    //
+    // Sin esto, una factura que ya tenía `vfAnulHash` (la que dejaba un 500 entre el sellado y el
+    // estado, cuando iban separados) se volvía a sellar y la `update` PISABA la huella: el eslabón
+    // que la cadena ya tenía detrás seguía apuntando a una huella que había dejado de existir. Se
+    // pregunta DENTRO del cerrojo, igual que en el alta. Se conserva la huella y, si se está
+    // anulando, sólo se pone al día el estado, con la misma condición.
+    const yaAnulada = await tx.invoice.findUnique({
+      where: { id: invoice.id },
+      select: { vfAnulHash: true, vfAnulPrevHash: true },
+    });
+    if (yaAnulada?.vfAnulHash) {
+      let liberado: R | undefined;
+      if (anular) {
+        // Sólo se anula lo que sigue pendiente (SCRUM-1303): `pending` en el `where`.
+        await tx.invoice.update({ where: { id: invoice.id, status: 'pending' }, data: { status: 'annulled' } });
+        liberado = await anular.enLaMismaTransaccion(tx);
+      }
+      return { vfAnulHash: yaAnulada.vfAnulHash, prevHash: yaAnulada.vfAnulPrevHash ?? '', conservada: true, liberado };
+    }
+
     const prevHash = await ultimaHuellaDeLaCadena(invoice.merchantId, tx);
     // El sello se toma DENTRO del cerrojo: es el que entra en la huella y tiene que ser
     // posterior al del eslabón anterior.
@@ -522,17 +551,33 @@ export async function applyVeriFactuAnulacion(
     // con dos anulaciones próximas en el tiempo el orden por sello puede empatar o invertirse, y
     // una cadena de huellas se sella PARA SIEMPRE. Se guarda lo que de verdad se hasheó — igual
     // que `vfPrevHash` con el alta. Un dato, no una inferencia.
-    await tx.invoice.update({
-      where: { id: invoice.id },
-      data: { vfAnulHash, vfAnulPrevHash: prevHash, vfAnulTimestamp: ahora },
-    });
+    //
+    //
+    // SCRUM-1314b: con `anular`, esta MISMA escritura pone `annulled` y lleva `pending` en el `where`.
+    // Sin él, el sellado no escribe ningún campo que no sea suyo (SCRUM-153): ni siquiera `status`.
+    if (anular) {
+      await tx.invoice.update({
+        where: { id: invoice.id, status: 'pending' },
+        data: { vfAnulHash, vfAnulPrevHash: prevHash, vfAnulTimestamp: ahora, status: 'annulled' },
+      });
+    } else {
+      await tx.invoice.update({
+        where: { id: invoice.id },
+        data: { vfAnulHash, vfAnulPrevHash: prevHash, vfAnulTimestamp: ahora },
+      });
+    }
+    const liberado = anular ? await anular.enLaMismaTransaccion(tx) : undefined;
 
-    return { vfAnulHash, prevHash };
+    return { vfAnulHash, prevHash, conservada: false, liberado };
   });
 
-  const { vfAnulHash, prevHash } = sellado;
-  console.log(`[verifactu] ANULACION invoice=${invoice.number} hash=${vfAnulHash.slice(0, 16)}…`);
-  return { vfAnulHash, vfPrevHash: prevHash };
+  const { vfAnulHash, prevHash, conservada, liberado } = sellado;
+  if (conservada) {
+    console.warn(`[verifactu] ANULACION invoice=${invoice.number} ya tenía su registro: se conserva su huella ${vfAnulHash.slice(0, 16)}… y no se vuelve a sellar`);
+  } else {
+    console.log(`[verifactu] ANULACION invoice=${invoice.number} hash=${vfAnulHash.slice(0, 16)}…`);
+  }
+  return { vfAnulHash, vfPrevHash: prevHash, conservada, liberado };
 }
 
 /**

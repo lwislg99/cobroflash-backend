@@ -38,6 +38,7 @@
 // El defecto es el patrón, no la línea. Cuatro correcciones con el mismo espíritu divergen en la
 // quinta ocasión; un portón compartido solo puede divergir si alguien lo rodea, y eso se ve.
 import { isReceiptNumber } from './invoiceNumber.service';
+import { ERROR_PDF_SIN_SELLAR } from './selladoEstado'; // SCRUM-1404g
 
 /** Código único del rechazo. Se ramifica por CÓDIGO, nunca por el texto (SCRUM-151). */
 export const ERROR_SIN_SELLAR = 'invoice_sin_sellar';
@@ -113,7 +114,20 @@ export function exigirDocumentoEmitible(
   if (!puedeSalirDocumento(inv, merchant)) throw new FacturaSinSellarError(inv.number);
 }
 
-/** ¿Este error es el del portón? Para que los llamadores ramifiquen por código. */
-export function esErrorSinSellar(e: unknown): boolean {
-  return (e as any)?.code === ERROR_SIN_SELLAR || String((e as any)?.message ?? '').startsWith(ERROR_SIN_SELLAR);
+/**
+ * ¿Este error es el del portón? Para que los llamadores ramifiquen por código.
+ *
+ * SCRUM-1404g · también el corte previo de `ensureInvoicePdf` (`invoice_pendiente_de_sellado`),
+ * pero SÓLO si la factura debe estar en la cadena. Ese error no lleva ni el número ni el país, así
+ * que se los pasa el llamador: a un justificante `J-` o a un comercio no español, «se está
+ * registrando en Hacienda» les mentiría, y siguen en 500 (SCRUM-1404 c.20923 P4 y c.20932). Sin
+ * número no se reconoce: quien no sabe de qué factura habla no puede prometer el reintento.
+ */
+export function esErrorSinSellar(
+  e: unknown,
+  numero?: string | null,
+  merchant?: MerchantPorton | null,
+): boolean {
+  if ((e as any)?.code === ERROR_SIN_SELLAR || String((e as any)?.message ?? '').startsWith(ERROR_SIN_SELLAR)) return true;
+  return String((e as any)?.message ?? '') === ERROR_PDF_SIN_SELLAR && !!numero && debeEstarEnLaCadena(numero, merchant);
 }

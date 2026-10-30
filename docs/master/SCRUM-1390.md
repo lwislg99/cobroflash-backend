@@ -500,3 +500,138 @@ regenerado: es el compartido.
 Local, antes de empujar (41 ficheros: los guards de suite y de registro y los que tocan estas rutas): 328 casos =
 319 ok + 2 not ok + 7 saltados. Los 2 rojos son `scrum1199`, que no encuentra `express` en el `node_modules` del árbol
 anidado (`MODULE_NOT_FOUND`): entorno, no lo he medido en otro árbol.
+
+## SCRUM-1390x · la Parte S1 marca CONSTRUIDO lo que ya está, y escribe que un recuento sin euros no es un documento
+
+[Anexado por J4 (sesión jv-j4ad), equipo de Javier, el 24-oct-2026 hacia las 10:48Z (`Date:` de GitHub), sobre
+`origin/main` `0a7eef15c907acc7646ed7ab33cab9176f8f1bc0`. Encargo del orquestador (`cobroflash-backend-95`). Sólo
+docs: `docs/YAQU_MASTER.md` (carril «un jefe»: la decisión es del fundador) y este registro.]
+
+A9: sin fallo que generalice — el encargo pedía marcar construidas las tres filas, y medir antes de escribir sacó que el rótulo y el vacío por rol no lo están; eso se dijo en la propia marca y no es un tropiezo mío que pueda repetirse
+
+### La decisión
+
+SCRUM-1346 c.20745 (24-oct-2026, la transcribe el orquestador `cobroflash-backend-95`; responde a las preguntas de
+jv-j2bb en c.20735):
+- **P3 «Sí»**: las filas que dicen «sin construir» se marcan CONSTRUIDAS, con fecha y motivo, sin borrar nada, citando
+  1397, 1403 y 1555.
+- **P2 «No, se quedan del negocio»**: los recuentos sin euros no se recortan, y el máster escribe que un recuento sin
+  euros no es un documento.
+- P1 (las dos bandejas de albaranes) es carril S1 y no entra aquí.
+
+### Qué se ha cambiado: cinco líneas, en sitio
+
+El máster tenía 1.913 líneas antes y las tiene después: ninguna cita `YAQU_MASTER.md:<n>` se desplaza. Cada cambio
+AÑADE una marca fechada al final de lo que había; no se ha quitado ni una palabra.
+
+| línea | qué decía | qué se añade |
+|---|---|---|
+| `:671` (Facturas) | «ver sí — es lo que hace HOY … sin construir» | ✅ CONSTRUIDA (24-oct): sólo las suyas, desde SCRUM-1397 (#2121) |
+| `:680` (globos del menú) | Técnico ✅ | la línea de P2: los globos y los números de la ficha de cliente son recuentos del negocio; un recuento sin euros no es un documento |
+| `:681` (Actividad reciente) | «HOY: los del negocio … sin construir» | ✅ CONSTRUIDA (24-oct): `GET /admin/metrics/inicio` recorta con `wherePresupuestosVisibles` (SCRUM-1555, #2456) · ⚠️ el rótulo y el vacío por rol NO están construidos |
+| `:687` (nota «Autor o asignado») | «HOY NO ESTÁ CONSTRUIDA» | ✅ CONSTRUIDA (24-oct): 1397 (#2121), 1403 (#2130), 1555 (#2456), con el trinquete de 1346 en `FUGAS_CONOCIDAS` vacía |
+| `:687` (misma línea, más adelante) | «Sin medir, y sin texto: qué enseña el bloque si la carga FALLA» | medido después en SCRUM-1390c (c.20438) |
+
+Los merges citados, leídos en `origin/main`: SCRUM-1397 `bbe633acb852b1aaca413df4c5ebef76f1291e6c` (#2121),
+SCRUM-1403 `0f6b3099ddbdbf28fd2bcc2fcdc1c55a17282f6a` (#2130), SCRUM-1555 `becfaf83094b8ddba05043e7850dbf5c6c6635bd` (#2456).
+
+### Lo que la medición corrige del encargo
+
+El encargo decía «se marcan CONSTRUIDAS» las tres filas. Leído el código de `main` antes de escribir:
+- **El recorte sí está construido**: `invoicesAdmin.routes.ts:90` (`whereFacturasVisibles`), `quotesAdmin.routes.ts:123`
+  y `metrics.routes.ts:28` (`wherePresupuestosVisibles`), y `tests/scrum1346-el-tecnico-ve-documentos-ajenos.test.mjs:64`
+  con `FUGAS_CONOCIDAS = new Map([])`.
+- 🔴 **Los textos firmados por rol NO lo están**: `public/dashboard/js/homeView.js:93` pinta «Actividad reciente» y
+  `:647` «Sin actividad reciente» a los dos roles; «Tus presupuestos recientes» y «Todavía no tienes presupuestos…»
+  (c.17962, c.17963) dan 0 resultados en `public/` y `src/`. Marcar la fila de Inicio CONSTRUIDA a secas habría hecho
+  que el máster afirmara un rótulo que la pantalla no pinta, que es lo que c.17795 prohibió. Por eso la marca de `:681`
+  y la de `:687` lo dicen. Construirlos es `public/` (no es carril J4) y no se toca aquí.
+- La actividad de Inicio sigue **con importe** (`total`, `metrics.service.ts`): son los importes de SUS presupuestos.
+  c.20735 la describe «sin importes»; el máster dice «con importe», y eso no cambia.
+
+### Lo corrido
+
+Guards de máster y de registro y los de suite, en local (resultado abajo, en el comentario de Jira). Suite entera
+local: NO CORRIDA (10 sesiones a la vez; hace de tanda el obligatorio de CI). yaqu.app: no aplica a un cambio sólo de
+docs; lo construido tampoco se puede ver allí con un Técnico (SCRUM-1555, sin sesión de técnico en producción). No lo
+he intentado.
+
+## SCRUM-1390y · Inicio pinta el rótulo y el vacío de CADA rol (los textos firmados en c.17962 y c.17963)
+
+[Anexado por S2, equipo de Luis, el 24-oct-2026 hacia las 12:34Z (`Date:` de GitHub), sobre `origin/main`
+`927bda7ab44b604d81bca8c453663e7fc6f6cda9`. Encargo del orquestador de Luis. Sufijo `y` porque `x` es de J4. Carril:
+`public/dashboard/js/homeView.js` → S2 (`dos-equipos.md:152`).]
+
+**Skill UI:** cargada (yaqu-premium-ui). Sin tokens nuevos ni estilos nuevos: cambia el texto de dos nodos que ya existían.
+
+A9: comprobación → `tests/scrum1390y-inicio-por-rol.test.mjs`
+
+El fallo de esa A9: lancé el error de «respuesta sin lista» como `TypeError` y el banco de vistas lo trató, con razón, como error de PROGRAMA tragado (SCRUM-1278: la vista sale «no medida»); una respuesta mal formada no es un fallo del programa, así que es `Error`. Lo cazó el caso ④ de este test antes de comitar.
+
+### Los dos extremos, comprobados ANTES de escribir
+
+1. **Inicio enseñaba lo mismo a los dos roles** en `origin/main` `927bda7ab`: `homeView.js:93` «Actividad reciente» y
+   `:647` «Sin actividad reciente», sin mirar el rol. El recorte de datos sí estaba (SCRUM-1555, #2456).
+2. **Los literales firmados existen y se citan:** SCRUM-1390 **c.17962** (respuesta literal «2-Ok firmo»: `Tus
+   presupuestos recientes`; «3-El admin conserva sí») y **c.17963** (respuesta literal «1-Firmo la 1»: `Todavía no
+   tienes presupuestos. Aquí verás los que hagas tú y los que te asignen.`). Los dos, también en `YAQU_MASTER.md:687`.
+   El cambio de máster que c.17962 pedía antes de construir es #2115 (mergeado el 1-oct).
+
+### Qué cambia (`public/dashboard/js/homeView.js`)
+
+- `veNegocio` se decide ANTES de pintar, y de esa MISMA pregunta salen la ruta (`home`/`inicio`) y el rótulo: el título
+  no puede prometer otra cosa que lo que la ruta trae. Y como se pinta antes de cargar, encima de un error ya está el
+  rótulo del rol (c.20438, punto 4).
+- `renderActivity(items, veNegocio)`: el vacío del admin sigue siendo «Sin actividad reciente»; el del Técnico, el firmado.
+- **c.20438, punto 2, sin texto nuevo:** un 200 SIN `recentActivity` caía en el vacío por el `|| []`. Con el texto
+  firmado, el Técnico habría leído «Todavía no tienes presupuestos» sobre una respuesta rota. Ahora lanza y va al estado
+  de error que ya existía («No pudimos cargar tus métricas…» + Reintentar). Al admin le pasa lo mismo.
+- `tests/scrum601-copy-del-documento-vs-flag.test.mjs`: re-anclaje por posición 885 → 894 (el `grep -n` medido; numstat
+  14 5), con su nota, como los dos anteriores (1124 y 1317). No cambia lo que el control exige.
+- `docs/YAQU_MASTER.md:681` y `:687`: la frase «lo que NO está construido son los textos por rol» lleva al lado su marca
+  ✅ con fecha y este ticket, sin borrar nada y sin mover ninguna línea.
+
+### Medido
+
+- `tests/scrum1390y-inicio-por-rol.test.mjs`, por EFECTO en el banco de vistas (pinta la vista con cada rol y lee el texto
+  del bloque `[data-home-block="activity"]`): ⓪ control (cada rol pide SU ruta y se ve un presupuesto sembrado) ·
+  ① rótulo por rol, con lista vacía y con uno · ② vacío por rol, y ninguno ve el del otro · ③ un 500: el Técnico ve el
+  error bajo SU rótulo, no el vacío · ④ un 200 sin la lista: error, no vacío, en los dos roles. **5 de 5.**
+- **Rojo primero:** con el `homeView.js` de `origin/main` caen ①②③④ y el control ⓪ aguanta.
+- **Mutaciones** (`docs/master/evidencias/scrum1390y/mutar-1390y.mjs <raiz> origin/main`): las 4 del catálogo tumban su
+  caso; restauración comprobada por bytes.
+- yaqu.app: ver la entrega en Jira (el Técnico de producción es la limitación de SCRUM-1555).
+
+### Lo que NO hace
+
+- **La actividad del Técnico sigue con importe** (de SUS presupuestos). J4 lo señaló en c.20755 contra c.20735 («sin
+  importes»); el máster dice «con importe». No se toca aquí: es una decisión, no un texto.
+- El `catch` sigue envolviendo lo que va detrás de pintar la actividad (c.20438, punto 5): no medido, no tocado.
+
+## SCRUM-1390yb · #2839 en rojo tres días: el error de «respuesta sin lista» se llevaba la Inicio entera (27-oct-2026)
+
+**Skill UI:** cargada (yaqu-premium-ui), DESPUÉS de editar `homeView.js` en este tramo, no antes. Sin tokens ni estilos nuevos: reutiliza `uiErrorState` (AB3) con su texto, que ya existía en la Inicio.
+
+A9: comprobación → `tests/scrum901-banco-fiel-a-la-inicio.test.mjs`
+
+El fallo de esa A9: el 24-oct empujé el `throw` de `renderActivity` corriendo sólo mi test. El `throw` iba al `catch` de toda la Inicio y se saltaba lo que va detrás, «Completa tu configuración» incluida. scrum901 y scrum1158c lo cazaron en el obligatorio de #2839 y el PR se quedó tres días en rojo. Antes de empujar un cambio en una vista hay que correr TODOS los tests que la montan (`Select-String homeView|renderHomeView` sobre `tests/`: 42 ficheros), no sólo el mío.
+
+Medido el 27-oct-2026 sobre `origin/main` 77ce98573b1b5e090dfcf7754c4e7960bc63b85a, con main mergeado en la rama (sin conflictos).
+
+### El rojo, reproducido en local antes de tocar nada
+
+`build + tests (con banco desechable)` de #2839 (run 40095167327): 4 caídos. En local, con main mergeado: scrum1158c («Completa tu configuración» sin `.home-checklist`, 0 ≠ 1) · scrum901 (0 «Ir →» ≠ 9) · scrum698 (87 nodos ≠ 145) · scrum719/1395b (veredicto de mudez caducado para scrum601). Causa: el banco sirve `{}` a `/admin/metrics/home`, el `throw` mandaba la Inicio al `catch` y no se pintaba nada de lo que va detrás de la actividad.
+
+### Qué cambia
+
+- `public/dashboard/js/homeView.js`: una respuesta sin `recentActivity` pinta el estado de error **en su bloque** (`uiErrorState(feed, …, reintentar)`, el mismo texto y el mismo «Reintentar» del `catch`) y vuelve. El resto de la Inicio se pinta. Punto 2 de c.20438 intacto: sigue sin ser el vacío.
+- `tests/scrum698-vistas-que-no-se-miden.test.mjs`: `renderHomeView` 145 → 148, POR IDENTIDAD (firmas de los dos árboles, `homeView.js` de main contra la rama): +4 (`div.state-error`, `-ico`, `-msg`, `button.state-error-retry`) − 1 (el `div` de «Sin actividad reciente»). Control: el árbol de main da 145, la cifra fijada.
+- `tests/scrum601-…`: re-anclaje 894 → 898 (`grep -n`: rama 898, main 885; numstat 18 5).
+- `tests/_veredicto-mudez.json`: regenerado con `npm run censo:mudez -- --escribir` (1 medido: scrum601, VIVO).
+- `tests/scrum1390y-…`: la mutación ④ apunta al nuevo `if` (deshace el error y vuelve al vacío).
+
+### Medido
+
+- Los 42 ficheros de `tests/` que nombran `homeView`/`renderHomeView`/`scrum1390y` + scrum719: **489 de 489**, 0 saltados.
+- Mutador `docs/master/evidencias/scrum1390y/mutar-1390y.mjs . origin/main`: sano 5/5 · base de main tumba ①②③④ · las 4 mutaciones caen en su caso.
+- Contraprueba del arreglo: con el `throw` (la punta del 24-oct) scrum901/1158c caen; sin él, pasan.

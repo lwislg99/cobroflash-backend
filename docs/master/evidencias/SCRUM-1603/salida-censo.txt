@@ -1,0 +1,11 @@
+población: 1987 ficheros (scripts/ + tests/ + 1 semilla)
+montan página con styles.css/tokens.css: 6
+  · enlazan también /fonts/inter.css: 2
+      scripts/guard-notas-en-la-ficha.mjs
+      tests/scrum676-hojas-del-indice.test.mjs
+  · NO la enlazan: 4
+      scripts/censo-objetivo-tactil-panel.mjs
+      scripts/guard-objetivo-tactil.mjs
+      scripts/_banco-lista.mjs
+      __SEMILLA__
+semilla: VISTA

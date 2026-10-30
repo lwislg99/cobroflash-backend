@@ -910,3 +910,42 @@ Se puede firmar **un parte y un albarán** en `luisdragonball+qa@gmail.com` (mer
 - **El perfil fiscal desbloquea una fila entera:** firmar albarán y parte por R25, y con ello todo lo que se mide en un papel firmado. Es un minuto del fundador en Configuración, la base no se toca y lo ya firmado no se rompe (medido). Pero es de una sola dirección: los valores de prueba se quedan puestos.
 - **La zona desbloquea a medias:** las fechas por zona que no necesitan factura (en mi clasificación por fichero, 13 de los 26 que llaman a `zonaDelMerchant`; la lista está en `docs/master/SCRUM-1367.md`, 1367h), y sólo midiendo de noche o con una zona inventada. **Pide escribir en la base**, porque ninguna ruta la escribe.
 - **Ni los dos juntos tocan el bloque más grande**, el de facturas y cobros: ése espera a SIF-1.
+
+## R27 · Activar el plan Equipo a mano en Stripe, sobre la MISMA suscripción (SCRUM-1402j)
+
+**Para qué sirve:** Equipo (5 usuarios, 59 €/mes) es oferta manual (W1): no se lista en ninguna página y el checkout propio lo rechaza con `400 invalid_plan` (`subscriptions.routes.ts:14-24` y `:99-100`). La decisión del fundador del 24-oct-2026 (SCRUM-1402, c.20832, P1 «Sí, a mano y por escrito») es que se active en el panel de Stripe sobre la suscripción que el cliente ya tiene. Lo hace el fundador; **ninguna sesión toca claves ni llama a la API de Stripe**. Todas las rutas de abajo son de `src/modules/billing/app/routes/` salvo que digan otra cosa, y se leyeron sobre `origin/main` `82e1bb530d3158777b719ca824c1f573b66715a1`.
+
+⚠️ **NO PROBADO.** Nadie lo ha ejecutado: está leído en el código, no medido contra la cuenta de Stripe. Lo que sólo se sabe mirando la cuenta va como «comprobar en el panel».
+
+### Antes de empezar (las cuatro tienen que cumplirse)
+
+0. **Que esté en producción lo de P2** (c.20832: «Antes del primer cliente en Equipo»): quitar a quien tiene Equipo la oferta de Pro y del fundador, y que el checkout rechace una segunda suscripción. Hasta entonces la pantalla le ofrece «Suscribirme — 19,90 €/mes» (`public/dashboard/js/plansView.js:46` y `:181`) y el checkout no mira si ya tiene una (`subscriptions.routes.ts:69-138`).
+1. **El merchant tiene UNA sola suscripción viva**, en el cliente de Stripe que guarda `Merchant.stripeCustomerId`. → comprobar en el panel: Clientes → ese cliente → Suscripciones. Por qué: las dos puertas de cancelación bajan a `trial` por `merchant_id`, sin mirar QUÉ suscripción se cancela (`stripe.routes.ts:229` y `:244`), y P3 (c.20832) decidió no tocarlas.
+2. **Esa suscripción lleva en sus metadatos `merchant_id` = el id del merchant.** La pone el checkout en la sesión y en la suscripción (`subscriptions.routes.ts:119` y `:130`). Sin ella el webhook no escribe nada (`stripe.routes.ts:173` y `:179`). → comprobar en el panel: la suscripción → Metadatos.
+3. **El precio `yaqu_equipo_monthly` existe y está activo** (producto «YaQu Equipo», 5.900 céntimos al mes: `scripts/setup-stripe-prices.mjs:26`; clave en `src/modules/billing/domain/stripePrices.ts:15`). → comprobar en el panel: Productos → «YaQu Equipo» → el precio con esa clave de búsqueda (*lookup key*). Si no existe, crearlo es del fundador; ese guion pide la clave secreta (`setup-stripe-prices.mjs:16`) y **no lo corre ninguna sesión**.
+4. **El endpoint de yaqu.app recibe `customer.subscription.updated`**, que es el evento que escribe el plan (`stripe.routes.ts:168-171`). → comprobar en el panel: Desarrolladores → Webhooks → el endpoint de yaqu.app → eventos.
+
+### Los pasos, en el panel y sobre la MISMA suscripción
+
+1. **Cambiar el precio** de la línea de la suscripción al de `yaqu_equipo_monthly`, cantidad 1. → comprobar en el panel: qué opciones de prorrateo ofrece y qué se cobra hoy (qué cobrar lo decide el fundador), y, si venía del anual de Pro (`yaqu_pro_annual`), qué hace con el periodo ya pagado al pasar a mensual.
+2. **Poner en los metadatos de la SUSCRIPCIÓN `plan` = `equipo`**: exacto, en minúsculas, sin espacios. Ni en los del cliente, ni en los del producto, ni en los del precio: el webhook lee `sub.metadata.plan` (`stripe.routes.ts:174`) y lo contrasta con la lista de planes (`planQueExiste`, `stripe.routes.ts:46-55`, que lee `PLANES_CONOCIDOS` de `src/core/entitlements.ts:29`). `Equipo` o `equipo ` no activan nada y dejan una línea `[stripe] ⚠️ plan desconocido` en el log.
+   - 🔴 **Cambiar sólo el precio no basta:** los metadatos que puso el checkout se quedan (`pro`), que es un plan válido, y la cuenta sigue en 1 usuario **sin ningún aviso** (c.20825; que Stripe no toque los metadatos al cambiar el precio es su comportamiento conocido, sin medir aquí).
+   - **Orden:** si el panel deja hacer los dos cambios en la misma edición, mejor (→ comprobar en el panel). Si van por separado, primero el precio y después los metadatos: cada edición manda su `customer.subscription.updated` y manda el último, y así YaQu no da Equipo antes de cobrarlo.
+3. **Lo que hace YaQu al recibirlo** (rama `active`/`trialing`, `stripe.routes.ts:187-209`): escribe `plan: 'equipo'`, `subscriptionStatus: 'active'`, `stripeSubscriptionId` y `planExpiresAt` con el fin del periodo (`finDePeriodo`, `stripe.routes.ts:63-70`). **No** manda el correo de primer pago ni el premio de referido: ésos sólo salen en `checkout.session.completed` (`stripe.routes.ts:142` y `:153`).
+
+### Cómo se comprueba después
+
+1. **Stripe lo entregó:** → comprobar en el panel: Webhooks → el endpoint → el último `customer.subscription.updated` de esa suscripción, con respuesta **200** y cuerpo `{"received":true}` (`stripe.routes.ts:264`). Un 400 es un fallo que Stripe reintenta (`stripe.routes.ts:271`).
+2. **No hubo aviso:** en los logs de Railway, ninguna línea `plan desconocido` con ese evento (`stripe.routes.ts:48-53`) ni `sin fin de periodo utilizable` (`stripe.routes.ts:194-197`).
+3. **`Merchant.plan` = `equipo`, en yaqu.app:** con la cuenta del fundador, `GET /admin/metrics/platform-funnel` da cada merchant con su `plan` (ruta en `src/modules/metrics/app/routes/metrics.routes.ts:61`; el campo, en `src/modules/metrics/domain/metrics.service.ts:393` y `:438`). Desde la cuenta del propio merchant, `GET /admin/billing/plans` devuelve `currentPlan: "equipo"` (`subscriptions.routes.ts:27-40`).
+4. **`maxUsers` = 5:** ninguna respuesta lo enseña salvo la del tope. Se comprueba invitando: caben 4 miembros no suspendidos además del dueño (`src/modules/team/app/routes/team.routes.ts:75-79`, `1 + activos >= maxUsers`), y al quinto el `409 user_limit` lleva `maxUsers: 5` (`team.routes.ts:80-86`). El 5 sale de `src/core/entitlements.ts:21`.
+
+### Cómo se deshace
+
+1. **En el mismo panel y la misma suscripción:** el precio que tenía (`yaqu_pro_monthly`, `yaqu_pro_annual` o `yaqu_founding_monthly`) y `plan` = el que tenía (`pro` o `founding`). Lo escribe la misma rama del webhook (`stripe.routes.ts:187-209`), y se comprueba igual que arriba.
+2. **Lo que NO se deshace solo:**
+   - **Los miembros ya invitados no se suspenden.** El tope sólo se mira al invitar (`team.routes.ts:75-79`): la cuenta conserva los que tenga y no puede invitar a más. Suspenderlos lo decide el dueño.
+   - **La plaza del fundador.** Una plaza es `plan: 'founding'` + `subscriptionStatus: 'active'` (`src/modules/billing/domain/founding.ts:34`): al pasar a Equipo se libera. Volver a `founding` por el panel no mira si quedan plazas (eso sólo lo hace el checkout, `subscriptions.routes.ts:76-79`). → antes, `founding.seatsLeft` en `GET /admin/billing/plans`.
+3. **Lo que NO es deshacer:**
+   - Cancelar la suscripción: baja a `trial` (`stripe.routes.ts:229` y `:244`).
+   - Escribir `Merchant.plan` a mano en la base: la siguiente renovación lo machaca con lo que digan los metadatos (`stripe.routes.ts:202`).

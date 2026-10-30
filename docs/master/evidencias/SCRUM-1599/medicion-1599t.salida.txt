@@ -1,0 +1,80 @@
+# SCRUM-1599t · salidas literales (Postgres 16.14 desechable, loopback, UTF8; dist/ con tsc --noCheck sobre 0 cambios de src/)
+## arrancar-pg-1599t (la de 1599q con initdb --encoding=UTF8 --locale=C)
+ENCODING=UTF8
+LISTO puerto=5544 tablas=33 version=16.14
+## S1 · 116 adaptado, con el arrancar de 1599q SIN cambiar (clúster WIN1252)
+S1 · VERDE · 758 ms · 1/0/0 (decl 1, suman true) · sin-reloj · zz1599t-116-recordatorio-candado.mjs
+# ConnectorError(ConnectorError { user_facing_error: None, kind: QueryError(PostgresError { code: "22P05", message: "character with byte sequence 0xe2 0x9a 0xa0 in encoding \\"UTF8\\" has no equivalent in encoding \\"WIN
+## S2 · régimen S, 116 y 574 adaptados (forma 1599m), base UTF8
+S2 · VERDE · 828 ms · 1/0/0 (decl 1, suman true) · sin-reloj · zz1599t-116-recordatorio-candado.mjs
+S2 · ROJO  · 671 ms · 7/1/0 (decl 8, suman true) · sin-reloj · zz1599t-574-mismo-cliente-tras-migracion.mjs · CAEN: SCRUM-574 · CONTRA POSTGRES: tras la migración, cada cliente sigue siendo el mismo
+    error: '⛔ NO SUPE MIRAR: cero clientes en "yaqu_libro_test", no hay nada que comparar'
+    expected: true
+    actual: false
+## Vecino de 574 (vecino574-1599t): un cliente de otro comercio vivo mientras corre 574 adaptado
+VECINO merchant=4 cliente=6 contactKind=EMPRESA · clientes en la base=1
+V-EMPRESA · ROJO  · 797 ms · 7/1/0 (decl 8, suman true) · sin-reloj · zz1599t-574-mismo-cliente-tras-migracion.mjs · CAEN: SCRUM-574 · CONTRA POSTGRES: tras la migración, cada cliente sigue siendo el mismo
+    error: |-
+    expected: ~
+    actual: 'EMPRESA'
+TRAS LIMPIAR · clientes en la base=0
+VECINO merchant=6 cliente=10 contactKind=null · clientes en la base=1
+V-ninguno · VERDE · 741 ms · 8/0/0 (decl 8, suman true) · sin-reloj · zz1599t-574-mismo-cliente-tras-migracion.mjs
+TRAS LIMPIAR · clientes en la base=0
+## T1 · 89 ficheros del banco + 116 adaptado en la posición 46, N=11, con vigia-1599t (cada 200 ms)
+T1 · N=11 · ficheros=90 · VERDE=88 ROJO=1 SALTA=1 CIEGO=0 COLGADO=0 · pared 40960 ms
+T1 · ROJO    ·     818 ms · 1/1/0 (decl 2, suman true) · scrum115-wa-fallo-registrado.test.mjs · CAEN: SCRUM-115: sendWhatsAppText bloqueado (demo fuera de DEMO_SAFE_NUMBERS) registra status:failed en WA-0b
+T1 · SALTA   ·    1993 ms · 6/0/1 (decl 7, suman true) · scrum173-cadena-verifactu-serializada.test.mjs
+{
+ "veredicto": "MIRADO",
+ "lecturas": 199,
+ "sembrado": false,
+ "vioSembrado": false,
+ "ajenas_distintas": 29,
+ "max7_a_la_vez": 10,
+ "max14_a_la_vez": 10,
+ "comercios": [
+  "QA S104 <n>",
+  "QA 303 MIO q2908",
+  "QA 303 OTRO q2908",
+  "QA A7 MIO e26016",
+  "QA A7 OTRO e26016",
+  "QA 389 u33392",
+  "QA A7 ROTO e26016",
+  "QA 389b u33392"
+ ]
+}
+# [invoiceReminder] 1 recordatorio(s) 7d, 0 recordatorio(s) 14d
+## Control de la sonda: sembrado visto / sin siembra / siembra fuera de la ventana (debe decir CIEGO)
+{"veredicto":"MIRADO","lecturas":11,"sembrado":true,"vioSembrado":true,"ajenas_distintas":0,"max7_a_la_vez":0,"max14_a_la_vez":0,"comercios":[]}
+{"veredicto":"MIRADO","lecturas":7,"sembrado":false,"vioSembrado":false,"ajenas_distintas":0,"max7_a_la_vez":0,"max14_a_la_vez":0,"comercios":[]}
+{"veredicto":"CIEGO(noviolosembrado)","lecturas":7,"sembrado":true,"vioSembrado":false,"ajenas_distintas":0,"max7_a_la_vez":0,"max14_a_la_vez":0,"comercios":[]}
+## Vecino de 116 (vecino116-1599t): factura ajena de 30 días; dry = WHATSAPP_DRY_RUN=1, ci = sin WHATSAPP_* (como ci.yml)
+V116-dry · not ok 1 - S · 1 cron con 2 de 7d
+V116-dry2 · ok 1 - SCRUM · 1 cron con 2 de 7d
+V116-dry3 · ok 1 - SCRUM · 1 cron con 2 de 7d
+V116-dry4 · ok 1 - SCRUM · 1 cron con 2 de 7d
+V116-dry5 · not ok 1 - S · 1 cron con 2 de 7d
+V116-dry6 · ok 1 - SCRUM · 1 cron con 2 de 7d
+V116-ci · ok 1 - SCRUM · 1 cron con 2 de 7d
+V116-ci2 · ok 1 - SCRUM · 1 cron con 2 de 7d
+V116-ci3 · ok 1 - SCRUM · 1 cron con 2 de 7d
+## 116 SIN vecino, corredor de 1599q (dry): S2..S7
+S2 · ok 1 - SCRUM
+S3 · ok 1 - SCRUM
+S4 · ok 1 - SCRUM
+S5 · ok 1 - SCRUM
+S6 · ok 1 - SCRUM
+S7 · ok 1 - SCRUM
+## 574 versionado (esta rama), con banco y sin banco
+D2 · SALTA · 556 ms · 7/0/1 (decl 8, suman true) · sin-reloj · scrum574-mismo-cliente-tras-migracion.test.mjs
+ℹ tests 8
+ℹ pass 6
+ℹ fail 0
+ℹ skipped 2
+## Mutación con base (mutar-1599i.mjs sobre banco-1599p + pgbanco-1599p, sin cambiar)
+== tests/scrum574-mismo-cliente-tras-migracion.test.mjs · limpia: 7 ok de 8
+MUERE · M1 · src/modules/system/customerAdmin.ts · «data: { ...normalizarEtiquetas(normalizarIdentificadores(dat» → «data: { ...normalizarEtiquetas(normalizarIdentific» · 1 de 8 caen · su caso («SCRUM-574 · ✅ CONTROL POSITIVO») cae
+    · SCRUM-574 · ✅ CONTROL POSITIVO: se da de alta por CADA lado, y el campo fiscal no se contagia
+      error: 🔴 el alta por el lado EMPRESA no guardó la forma jurídica
+POBLACION=1 mutaciones en 1 ficheros · vivas=0 · ciegas=0 · dist restaurado byte a byte · EXIT=0

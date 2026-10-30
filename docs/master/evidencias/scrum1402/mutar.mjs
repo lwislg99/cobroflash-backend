@@ -17,7 +17,8 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..');
-const TEST = 'tests/scrum1402-plan-inexistente-no-se-escribe.test.mjs';
+// SCRUM-1402e: el test se puede pasar como segundo argumento; sin él, el de SCRUM-1402, como antes.
+const TEST = process.argv[3] || 'tests/scrum1402-plan-inexistente-no-se-escribe.test.mjs';
 const TSC = process.argv[2];
 if (!TSC || !fs.existsSync(TSC)) { console.error('CIEGO: falta la ruta a tsc'); process.exit(2); }
 

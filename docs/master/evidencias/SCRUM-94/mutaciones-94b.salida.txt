@@ -1,0 +1,11 @@
+== tests/scrum1515-nuestra-puerta-de-alta.test.mjs · limpia: 1 ok de 1
+MUERE · M1 · src/modules/auth/domain/auth.service.ts · «if (teamMember && teamMember.status !== 'suspended') {» → «if (false) {» · 1 de 1 caen · su caso («SCRUM-1515 · el merchant que crea nuestro guion») cae
+    · SCRUM-1515 · el merchant que crea nuestro guion nace igual que nacía el de POST /auth/register, y esa ruta ya no da de a
+      error: 🔴 el correo de un operario: el guion tiene que salir 4 y salió 2
+MUERE · M2 · src/modules/auth/domain/auth.service.ts · «if (teamMember && teamMember.status !== 'suspended') {» → «if (teamMember && teamMember.status === 'active') » · 1 de 1 caen · su caso («SCRUM-1515 · el merchant que crea nuestro guion») cae
+    · SCRUM-1515 · el merchant que crea nuestro guion nace igual que nacía el de POST /auth/register, y esa ruta ya no da de a
+      error: 🔴 SCRUM-94: el correo de un operario activo o invitado no puede darse de alta como merchant
+MUERE · M3 · src/modules/auth/domain/auth.service.ts · «if (teamMember && teamMember.status !== 'suspended') {» → «if (teamMember) {» · 1 de 1 caen · su caso («SCRUM-1515 · el merchant que crea nuestro guion») cae
+    · SCRUM-1515 · el merchant que crea nuestro guion nace igual que nacía el de POST /auth/register, y esa ruta ya no da de a
+      error: 🔴 SCRUM-94: un operario suspendido sí puede dar de alta su negocio, y el guion salió 4
+POBLACION=3 mutaciones en 1 ficheros · vivas=0 · ciegas=0 · dist restaurado byte a byte · EXIT=0

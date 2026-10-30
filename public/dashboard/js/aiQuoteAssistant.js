@@ -70,8 +70,10 @@ function openAiSuggestModal(addLinesFn) {
       lines = data.lines;
       descartadas = data.descartadas || [];
     } catch (err) {
+      // SCRUM-1247d · texto para el profesional, sin proveedor ni Railway (firma del fundador,
+      // SCRUM-1247 c.20779, Q2). El gemelo de `openAiMessageModal` (R3) espera a SCRUM-1182 (Q4).
       const msg = err?.data?.error === 'ai_not_configured'
-        ? 'La IA no está configurada. Añade GEMINI_API_KEY (gratis) en Railway.'
+        ? 'El asistente de IA no está disponible ahora mismo. Rellena las líneas a mano.'
         : 'Error al generar sugerencias. Inténtalo de nuevo.';
       setAlert('error', msg);
       btn.disabled = false;
@@ -142,7 +144,7 @@ function openAiSuggestModal(addLinesFn) {
         <div>
           <div style="font-weight:600;color:var(--neutral-900)">${escHtml(line.concept)}</div>
           <div style="color:var(--neutral-500)">
-            Cantidad: ${line.qty} · Precio: ${fmtMoneyEs(line.price, (window.appLocale && window.appLocale.currency) || 'EUR')} · IVA: ${(line.tax * 100).toFixed(0)}%
+            Cantidad: ${line.qty} · Precio: ${fmtMoneyEs(line.price, (window.appLocale && window.appLocale.currency) || 'EUR')} · IVA: ${fmtTipoIvaEs(line.tax)}%
           </div>
           ${supuestos.length ? `<div class="ai-linea-supuesta" style="color:var(--warn,#b45309);font-weight:600;margin-top:2px">Esto lo hemos puesto nosotros: ${camposSupuestos}. Revísalo antes de enviar.</div>` : ''}
         </div>

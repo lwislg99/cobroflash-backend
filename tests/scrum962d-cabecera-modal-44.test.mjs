@@ -32,8 +32,8 @@ export const MUTACIONES_QUE_ME_TUMBAN = [
   },
   {
     fichero: 'public/dashboard/css/styles.css',
-    de: '  width: 44px;\n  height: 44px;\n  transform: translateY(-50%);',
-    a: '  width: 40px;\n  height: 44px;\n  transform: translateY(-50%);',
+    de: '.modal-header > .modal-close::before {\n  content: "";\n  position: absolute;\n  top: 50%;\n  width: 44px;',
+    a: '.modal-header > .modal-close::before {\n  content: "";\n  position: absolute;\n  top: 50%;\n  width: 40px;',
     cae: 'SCRUM-962d ① ·',
   },
   {

@@ -164,7 +164,11 @@ const INVISIBLES = [
   // Al mover el pie del presupuesto a `quotes/domain/presentacionIva.ts` (que sí la llama), la
   // máscara desaparece y el fichero aparece por lo que lleva haciendo desde siempre. NO se
   // arregla aquí: es el camino de emisión de la factura (regla 38) y no es de este ticket.
-  'src/modules/invoicing/infra/pdf/pdf.service.ts',
+  // ⚠️ 24-oct-2026 · SCRUM-624e · SALE `pdf.service.ts`, y la máscara VUELVE: el bloque de totales
+  // de la F1 llama ya a la primitiva (GO del fundador, SCRUM-624 c.20817), pero el de la R1 y el
+  // justificante sigue agrupando a mano. Por fichero, una llamada tapa la otra, como antes de
+  // SCRUM-656. La aritmética que queda sigue a la vista en el test de abajo («UNA SOLA reimplementa
+  // el DESGLOSE»), que no mira quién llama y la sigue nombrando.
   // Sprint Tecnosel · ENTRA `partes.routes.ts`: el serializador de OFICINA multiplica
   // `precioUnitario * unds` para dar el importe de cada línea. Ver su veredicto en scrum627b.
   'src/modules/jobs/app/routes/partes.routes.ts',

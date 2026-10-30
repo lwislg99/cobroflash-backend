@@ -198,6 +198,10 @@ const AMBITO_DECLARADO = [
   'NOMBRE_IMPUESTO_POR_DEFECTO',
   'fmtImporte',
   'generateInvoicePdf',
+  // SCRUM-1446g (26-oct-2026) · entra `importesDeLaColumnaSinIva`: el céntimo de un tramo va a la
+  // línea de mayor resto (decisión del fundador, SCRUM-1446 c.20945). Decide qué imprime la columna
+  // de la F1, así que tiene que estar DENTRO de lo que vigilan 603b y este guard.
+  'importesDeLaColumnaSinIva',
   'loadLogoBuffer',
 ];
 

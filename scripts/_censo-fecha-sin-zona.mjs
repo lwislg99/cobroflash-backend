@@ -362,16 +362,12 @@ export const USO = new Map([
   //     literal es firma del fundador (regla 39).
   //   · `fD` (más abajo): el paquete de disputa. Su gemelo es ese sello —el banco recibe los dos
   //     papeles— y cambian juntos o no cambian.
-  ['src/modules/invoicing/infra/pdf/pdf.service.ts::dateStr', { uso: IMPRIME, motivo: 'la «Fecha:» del PDF de la FACTURA (sólo de la factura): fiscal, espera la decisión del fundador — SCRUM-1470, aceptación 2', ref: 'SCRUM-1470' }],
   ['src/modules/invoicing/infra/pdf/pdf.service.ts::generateQuotePdf', { uso: IMPRIME, motivo: 'el sello de la evidencia, que se declara «(hora del servidor)»: literal firmado, no se mueve sin cambiar el literal (regla 39). La fecha de la firma ya va en la zona del negocio', ref: 'SCRUM-1470' }],
   ['src/modules/jobs/infra/albaranPdf.service.ts::fmtDate', { uso: IMPRIME, motivo: 'fecha impresa en el PDF de albarán' }],
   ['src/modules/jobs/infra/albaranPdf.service.ts::generateAlbaranPdf', { uso: IMPRIME, motivo: 'fecha impresa en el PDF de albarán' }],
   ['src/modules/jobs/domain/recapitulativa.service.ts::emitirRecapitulativas', { uso: IMPRIME, motivo: 'fecha impresa en la recapitulativa' }],
   ['src/modules/jobs/app/routes/albaranes.routes.ts::POST /:id/facturar-parcial', { uso: IMPRIME, motivo: 'fecha impresa al facturar parcialmente' }],
   ['src/modules/jobs/app/routes/albaranes.routes.ts::POST /:id/convertir-en-factura', { uso: IMPRIME, motivo: 'fecha impresa al convertir en factura' }],
-  // SCRUM-1471 · la fecha de la FACTURA en el portal: gemela de `dateStr`, espera la misma decisión.
-  // El resto del portal («Pagada …», la fecha del presupuesto) ya va en la zona del negocio.
-  ['src/modules/system/app/routes/customerPortal.routes.ts::fechaDeLaFactura', { uso: IMPRIME, motivo: 'la fecha de la FACTURA en el portal: su gemelo es la «Fecha:» del PDF de la factura (dateStr), y cambian juntas — SCRUM-1470, aceptación 2', ref: 'SCRUM-1471' }],
   ['src/modules/system/app/routes/invoicesAdmin.routes.ts::fD', { uso: IMPRIME, motivo: 'las fechas del paquete de disputa: su gemelo es el sello «(hora del servidor)» del PDF firmado, que no se mueve sin cambiar su literal (regla 39)', ref: 'SCRUM-1470' }],
 
   // ── AGREGADO — bordes de ventana de informe/filtro/métrica: NO se acusan ──────────────────────
@@ -416,6 +412,11 @@ export const USO = new Map([
  *   · `src/modules/system/app/routes/customerPortal.routes.ts::dateShort` — SCRUM-1471. Lleva la
  *     zona del negocio. (La fecha de la FACTURA se quedó aparte, en `fechaDeLaFactura`, que sigue
  *     en `USO` con su motivo: no ha desaparecido, ha cambiado de nombre y se dice.)
+ *   · `src/modules/system/app/routes/customerPortal.routes.ts::fechaDeLaFactura` — SCRUM-1471b (GO
+ *     del fundador, SCRUM-1470 c.20530). El día sale de `diaNaturalEn(createdAt, zonaDelMerchant(...))`,
+ *     el mismo que el registro y que la «Fecha:» del PDF de la factura (SCRUM-1470c); la forma corta
+ *     se pinta con `timeZone: 'UTC'` sobre ese día. Por su ruta, con el proceso en UTC, en
+ *     `tests/scrum1470-la-fecha-impresa-es-la-del-negocio.test.mjs`.
  *   · `src/modules/messaging/domain/weeklyDigest.service.ts::sendDigestForMerchant` — SCRUM-1472.
  *     La semana del asunto, con `timeZone: zonaDelMerchant(merchant)`.
  *   Los tres, comparados contra el papel real con el proceso en UTC en
@@ -431,6 +432,10 @@ export const USO = new Map([
  *     esa identidad sigue en `USO` por el «Sello temporal … (hora del servidor)», que no se toca sin
  *     firma porque su rótulo declara la hora del servidor. En el papel real:
  *     `tests/scrum1445-fechas-del-albaran.test.mjs`.
+ *   · `src/modules/invoicing/infra/pdf/pdf.service.ts::dateStr` — SCRUM-1470c (GO del fundador,
+ *     SCRUM-1470 c.20530). La «Fecha:» del PDF de la FACTURA es el día natural de su registro:
+ *     `diaNaturalEn(createdAt, zonaDelMerchant(...))`. Comparada contra `formatDateES` del registro,
+ *     con el proceso en UTC, en `tests/scrum1470c-la-factura-imprime-el-dia-de-su-registro.test.mjs`.
  */
 export const RETIRADAS = new Set([
   'src/modules/messaging/domain/whatsappLog.service.ts::getWhatsAppMetrics',
@@ -445,6 +450,8 @@ export const RETIRADAS = new Set([
   'src/app.ts::POST /admin/onboarding/serie',
   'src/modules/system/merchantAdmin.ts::updateMerchantProfile',
   'src/modules/jobs/infra/albaranPdf.service.ts::fmtDate',
+  'src/modules/invoicing/infra/pdf/pdf.service.ts::dateStr',
+  'src/modules/system/app/routes/customerPortal.routes.ts::fechaDeLaFactura',
 ]);
 
 /** ¿Esta fila se acusa? Todo lo que no esté declarado AGREGADO — incluida una identidad NUEVA que

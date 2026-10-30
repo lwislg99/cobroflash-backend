@@ -34,12 +34,14 @@
 import { run } from 'node:test';
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { ejecutadoDirectamente } from './_puerta-de-entrada.mjs';
 import { censoDeDeclaraciones } from './meta-guard-mutaciones.mjs';
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIR_TESTS = path.join(RAIZ, 'tests');
+// SCRUM-1621 (pieza 1) · la salida C de SCRUM-1405, como en `meta-guard-mutaciones.mjs` (1339s). Por URL.
+const TUBERIA_BLOQUEANTE = pathToFileURL(path.join(RAIZ, 'scripts', 'tuberia-bloqueante.mjs')).href;
 
 export const SALIDA_CIEGO = 2;
 export const SALIDA_EXPUESTO = 1;
@@ -69,6 +71,10 @@ export async function medirGateados(ficheros) {
     files: ficheros.map((f) => (path.isAbsolute(f) ? f : path.join(DIR_TESTS, f))),
     cwd: RAIZ,
     forceExit: true,
+    // 🔴 SCRUM-1621 (pieza 1) · con `forceExit` el hijo sale con la cola de su informe sin escribir, y
+    // en Linux se pierde: un test que corrió y no llega cuenta menos «reales», y un fichero puede pasar
+    // por GATEADO sin serlo. El módulo pone bloqueante su tubería (SCRUM-1405 c.19584, SCRUM-1339 c.20219).
+    execArgv: [`--import=${TUBERIA_BLOQUEANTE}`],
     timeout: 300000,
     concurrency: true,
   });

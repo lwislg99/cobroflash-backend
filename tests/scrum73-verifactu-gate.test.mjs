@@ -4,14 +4,37 @@
 // caso ESPECÍFICO del ticket: con el flag OFF, CERO registros salen aunque existan
 // facturas reales del merchant (regresión a prueba de reverts silenciosos).
 import './_staging-db.mjs'; // SCRUM-60: fuerza la BD de staging cuando QA_DB_TEST=1 (fail-closed anti-prod)
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599m: segundo destino (LIBRO_PG_URL), inerte con el gate de staging
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { withMerchant } from './_merchant-fixture.mjs'; // SCRUM-113
+import http from 'node:http';
 
-const ENABLED = process.env.QA_DB_TEST === '1';
+// `node:http` sin agente y no `fetch` (SCRUM-1218d): `fetch` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de `fetch`
+// (status, headers.get, text, json) y, como el `redirect: 'manual'` de antes, no sigue redirecciones.
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    let d = ''; r.setEncoding('utf8');
+    r.on('data', (t) => { d += t; });
+    r.on('end', () => ok({
+      status: r.statusCode,
+      headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+      text: async () => d,
+      json: async () => JSON.parse(d),
+    }));
+  });
+  req.on('error', mal);
+  req.end(body);
+});
 
-test('SCRUM-73: verifactu.xml — técnico 403, flag OFF sin registros, flag ON genera', { skip: !ENABLED && 'sin QA_DB_TEST=1 · npm run test:staging:gated' }, async (t) => {
+const ENABLED = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
+
+test('SCRUM-73: verifactu.xml — técnico 403, flag OFF sin registros, flag ON genera', { skip: !ENABLED && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL · npm run test:staging:gated' }, async (t) => {
   const { prisma } = await import('../dist/core/db/prisma.js');
   const { app } = await import('../dist/app.js');
   const server = app.listen(0);
@@ -53,7 +76,7 @@ test('SCRUM-73: verifactu.xml — técnico 403, flag OFF sin registros, flag ON 
     await prisma.authSession.create({
       data: { merchantId: merchant.id, teamMemberId, token, type: 'magic_link', expiresAt: new Date(Date.now() + 600000) },
     });
-    const res = await fetch(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
+    const res = await pedirSinAgente(`${base}/auth/verify?token=${token}`, { redirect: 'manual' });
     const cookie = (res.headers.get('set-cookie') || '').split(';')[0];
     assert.ok(cookie.startsWith('pf_session='), 'no se obtuvo cookie de sesión');
     return cookie;
@@ -64,11 +87,11 @@ test('SCRUM-73: verifactu.xml — técnico 403, flag OFF sin registros, flag ON 
     const url = `${base}/admin/exports/verifactu.xml`;
 
     // 1) Técnico → 403 (requireRole('admin') corre ANTES de mirar el flag)
-    const rTec = await fetch(url, { headers: { cookie: cookieTecnico } });
+    const rTec = await pedirSinAgente(url, { headers: { cookie: cookieTecnico } });
     assert.equal(rTec.status, 403, `técnico debería ser 403 y fue ${rTec.status}`);
 
     // 2) Admin, flag OFF (default hoy) → 404 neutro, CERO registros, aunque exista la factura F1 real.
-    const rOff = await fetch(url, { headers: { cookie: cookieAdmin } });
+    const rOff = await pedirSinAgente(url, { headers: { cookie: cookieAdmin } });
     assert.equal(rOff.status, 404, `admin con flag OFF debería ser 404 y fue ${rOff.status}`);
     const bodyOff = await rOff.text();
     assert.doesNotMatch(bodyOff, /RegistroAlta/, 'con el flag OFF NO debe generarse ningún registro — SuministroInformacion.xsd:37: RegistroAlta es el ELEMENTO; RegistroFacturacionAlta es el TIPO y no aparece en el XML');
@@ -76,7 +99,7 @@ test('SCRUM-73: verifactu.xml — técnico 403, flag OFF sin registros, flag ON 
 
     // 3) Admin, flag ON (override por merchant — no toca el env global) → genera el XML real.
     await prisma.merchant.update({ where: { id: merchant.id }, data: { flags: { INVOICING_ES_ENABLED: true } } });
-    const rOn = await fetch(url, { headers: { cookie: cookieAdmin } });
+    const rOn = await pedirSinAgente(url, { headers: { cookie: cookieAdmin } });
     assert.equal(rOn.status, 200, `admin con flag ON debería ser 200 y fue ${rOn.status}`);
     assert.match(rOn.headers.get('content-type') || '', /application\/xml/);
     const bodyOn = await rOn.text();
@@ -89,3 +112,11 @@ test('SCRUM-73: verifactu.xml — técnico 403, flag OFF sin registros, flag ON 
     await prisma.$disconnect();
   }
 });
+
+// SCRUM-1599m (diseño B de SCRUM-1599) · la mutación que tumba el caso de base, CATALOGADA en SCRUM-1599m.
+// Va aparte de `MUTACIONES_QUE_ME_TUMBAN` a propósito: el job del meta-guard corre SIN base, el caso sale
+// SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco PGlite,
+// `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e). Cada campo, LITERAL.
+export const MUTACIONES_CON_BASE = [
+  { fichero: "src/modules/exports/app/routes/exports.routes.ts", de: "    if (!isFlagEnabled('INVOICING_ES_ENABLED', { merchant })) {", a: "    if (false) {", cae: "SCRUM-73: verifactu.xml" },
+];

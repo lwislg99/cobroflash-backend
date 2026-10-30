@@ -1,0 +1,105 @@
+# SCRUM-1039f · comprobar-citas-contabilidad.mjs sobre origin/main e19665301fc1a3949b6556eee383060a8f793ab3 · fuentes bajadas 2026-10-27 ~11:47Z (Date: del BOE)
+## fuentes (GET publico, 200 OK): fichero bytes sha256[0:16]
+LIRPF.html 2028806 8299c9b3be89a813
+LIVA.html 1769466 23e127077b395476
+ORDEN303.html 180543 c3b602b128f74552
+RFACT.html 242447 81dcec43213ab58e
+RIRPF.html 1000017 2f31ecec110d775a
+RIVA.html 1052204 689853b650a163f7
+
+## 1 · pasada sobre docs/producto/CONTABILIDAD.md
+{
+ "poblacion_fuentes": [
+  "LIVA:751653:300 bloques",
+  "RIVA:445672:187 bloques",
+  "LIRPF:884391:278 bloques",
+  "RIRPF:489992:211 bloques",
+  "RFACT:106999:57 bloques",
+  "ORDEN303:48793:24 bloques"
+ ],
+ "citas_extraidas": 31,
+ "encontradas": 31,
+ "no_encontradas": 0,
+ "control_negativo": "OK (la cita alterada NO aparece, la original SI)",
+ "control_ancla": "OK (una redaccion envejecida a proposito SALE como cambiada)",
+ "anclas_guardadas": 31,
+ "norma_cambiada": 5,
+ "citas_sin_ancla": 0,
+ "anclas_huerfanas": 0
+}
+NORMA CAMBIADA >> Se aplicará el tipo del 10 por ciento a las operaciones siguientes: | anclada: LIVA a91@20241221 | hoy: LIVA a91@20261007
+NORMA CAMBIADA >> Se aplicará el tipo del 4 por ciento a las operaciones siguientes: | anclada: LIVA a91@20241221 | hoy: LIVA a91@20261007
+NORMA CAMBIADA >> Que la construcción o rehabilitación de la vivienda a que se refieren  | anclada: LIVA a91@20241221 | hoy: LIVA a91@20261007
+NORMA CAMBIADA >> Que la persona que realice las obras no aporte materiales para su ejec | anclada: LIVA a91@20241221 | hoy: LIVA a91@20261007
+NORMA CAMBIADA >> Artículo 20. Exenciones en operaciones interiores. Uno. Estarán exenta | anclada: LIVA a20@20180704 | hoy: LIVA a20@20261007
+exit 2
+
+## 2 · control sembrado: la cita del art. 90.Uno con 21 -> 22 (1 byte, cmp -l = 1)
+{
+ "poblacion_fuentes": [
+  "LIVA:751653:300 bloques",
+  "RIVA:445672:187 bloques",
+  "LIRPF:884391:278 bloques",
+  "RIRPF:489992:211 bloques",
+  "RFACT:106999:57 bloques",
+  "ORDEN303:48793:24 bloques"
+ ],
+ "citas_extraidas": 31,
+ "encontradas": 30,
+ "no_encontradas": 1,
+ "control_negativo": "FALLA",
+ "control_ancla": "OK (una redaccion envejecida a proposito SALE como cambiada)",
+ "anclas_guardadas": 31,
+ "norma_cambiada": 5,
+ "citas_sin_ancla": 0,
+ "anclas_huerfanas": 1
+}
+NO ENCONTRADA >> El Impuesto se exigirá al tipo del 22 por ciento, salvo lo dispuesto en el artículo siguiente.
+NORMA CAMBIADA >> Se aplicará el tipo del 10 por ciento a las operaciones siguientes: | anclada: LIVA a91@20241221 | hoy: LIVA a91@20261007
+NORMA CAMBIADA >> Se aplicará el tipo del 4 por ciento a las operaciones siguientes: | anclada: LIVA a91@20241221 | hoy: LIVA a91@20261007
+NORMA CAMBIADA >> Que la construcción o rehabilitación de la vivienda a que se refieren  | anclada: LIVA a91@20241221 | hoy: LIVA a91@20261007
+NORMA CAMBIADA >> Que la persona que realice las obras no aporte materiales para su ejec | anclada: LIVA a91@20241221 | hoy: LIVA a91@20261007
+NORMA CAMBIADA >> Artículo 20. Exenciones en operaciones interiores. Uno. Estarán exenta | anclada: LIVA a20@20180704 | hoy: LIVA a20@20261007
+HUERFANA >> El Impuesto se exigirá al tipo del 21 por ciento, salvo lo dispuesto e
+exit 1
+
+## 3 · CIEGO: carpeta sin ORDEN303.html
+{
+ "resultado": "FUENTE ILEGIBLE — no se ha comprobado nada",
+ "ilegibles": [
+  "ORDEN303: no se puede leer <tmp>\\ciego\\ORDEN303.html"
+ ]
+}
+exit 3
+
+## 4 · que cambio en los bloques (API consolidada, bloques a91 y a20; scrum1039f-diferencia-versiones.mjs)
+versiones en el bloque: 44 · parrafos 20241221: 136 · 20261007: 141
+SALE  >> No obstante lo dispuesto en el párrafo anterior, también se comprenderán en este número las citadas ejecuciones de obra cuando su destinatario sea una comunidad de propietarios.
+SALE  >> 6.º Las viviendas calificadas administrativamente como de protección oficial de régimen especial o de promoción pública, cuando las entregas se efectúen por sus promotores, incluidos los garajes y anexos situados en el mismo edificio que se transmitan conjuntamente. A estos efectos, el número de plazas de garaje no podrá exceder de dos unidades.
+SALE  >> Las viviendas que sean adquiridas por las entidades que apliquen el régimen especial previsto en el capítulo III del Título VII del Texto Refundido de la Ley del Impuesto sobre Sociedades aprobado por el Real Decreto Legislativo 4/2004, de 5 de marzo, siempre que a las rentas derivadas de su posterior arrendamiento les sea aplicable la bonificación establecida en el apartado 1 del artículo 54 de l
+ENTRA >> Se incluyen en este número los arrendamientos de apartamentos o viviendas amueblados a que se refiere el artículo 20.Uno.23.º, letra e’) de esta ley.
+ENTRA >> No obstante lo dispuesto en el párrafo anterior, también se comprenderán en este número las citadas ejecuciones de obra cuando su destinatario sea una comunidad de propietarios o cuando se trate de viviendas destinadas a su arrendamiento como vivienda habitual, cualquiera que sea la condición del arrendador.
+ENTRA >> La aplicación del tipo reducido queda condicionada a que el importe de la contraprestación de las ejecuciones de obras haya sido satisfecho mediante tarjeta de crédito o débito, transferencia bancaria, cheque nominativo o ingreso en cuentas en entidades de crédito a favor de los sujetos pasivos que las realicen.
+ENTRA >> 6.º Las viviendas calificadas administrativamente como de protección oficial de régimen especial o de promoción pública, así como las viviendas protegidas sujetas a calificación permanente o indefinida, cuando las entregas se efectúen por sus promotores, incluidos los garajes y anexos situados en el mismo edificio que se transmitan conjuntamente. A estos efectos, el número de plazas de garaje no p
+ENTRA >> Las viviendas que sean adquiridas por las entidades que apliquen el régimen especial previsto en el capítulo III del título VII de la Ley 27/2014, de 27 de noviembre, del Impuesto sobre Sociedades, siempre que a las rentas derivadas de su posterior arrendamiento les sea aplicable la bonificación establecida en el apartado 1 del artículo 49 de la citada ley. A estos efectos, la entidad adquirente c
+ENTRA >> Se modifican, con efectos de 1 de diciembre de 2026, los apartados Uno.2.2º, Uno.2.10º y Dos.1.6º por el art. 7.2 a 4 del Real Decreto-ley 29/2026, de 6 de octubre. Ref. BOE-A-2026-20823#a7
+ENTRA >> Se deja sin efecto la modificación de los apartados Uno.2.2º, Uno.2.10º y Dos.1.6º por Resolución de 2 de octubre de 2026 que publica el Acuerdo del Congreso de los Diputados por el que se deroga el Real Decreto-ley 26/2026, de 29 de septiembre. Ref. BOE-A-2026-20526
+ENTRA >> Se modifican, con efectos de 1 de diciembre de 2026, los apartados Uno.2.2º, Uno.2.10º y Dos.1.6º por el art. 7.2 a 4 del Real Decreto-ley 26/2026, de 29 de septiembre. Ref. BOE-A-2026-20266#a7
+cita «Se aplicará el tipo del 10 por ciento a las operac…» en 20241221: true · en 20261007: true
+cita «Se aplicará el tipo del 4 por ciento a las operaci…» en 20241221: true · en 20261007: true
+cita «Que la construcción o rehabilitación de la viviend…» en 20241221: true · en 20261007: true
+cita «Que la persona que realice las obras no aporte mat…» en 20241221: true · en 20261007: true
+
+versiones en el bloque: 28 · parrafos 20180704: 205 · 20261007: 203
+SALE  >> Téngase en cuenta que esta última actualización del apartado 6º, establecida por el art. 75 de la Ley 6/2018, de 3 de julio. Ref. BOE-A-2018-9268#ar-71, tiene efectos desde el 1 de enero de 2019.
+SALE  >> Redacción anterior:
+SALE  >> "6.º Los servicios prestados directamente a sus miembros por uniones, agrupaciones o entidades autónomas, incluidas las Agrupaciones de Interés Económico, constituidas exclusivamente por personas que ejerzan una actividad exenta o no sujeta al Impuesto que no origine el derecho a la deducción, cuando concurran las siguientes condiciones:
+SALE  >> La exención no alcanza a los servicios prestados por sociedades mercantiles."
+SALE  >> e´) Los arrendamientos de apartamentos o viviendas amueblados cuando el arrendador se obligue a la prestación de alguno de los servicios complementarios propios de la industria hotelera, tales como los de restaurante, limpieza, lavado de ropa u otros análogos.
+ENTRA >> e') Los arrendamientos de apartamentos o viviendas amueblados cuando concurran cualquiera de las siguientes circunstancias:
+ENTRA >> – El arrendador se obligue a la prestación de alguno de los servicios complementarios propios de la industria hotelera, tales como los de restaurante, limpieza, lavado de ropa u otros análogos.
+ENTRA >> – Su duración a favor de un mismo arrendatario no supere las 30 noches, excepto si se produce en el apartamento o vivienda arrendada en la que el arrendador tenga su residencia habitual, en cuyo caso estarán exentos.
+ENTRA >> Se modifica, con efectos de 1 de diciembre de 2026, el apartado 1.23º.e') por el art. 7.1 del Real Decreto-ley 29/2026, de 6 de octubre. Ref. BOE-A-2026-20823#a7
+ENTRA >> Se deja sin efecto la modificación del apartado 1.23º.e') por Resolución de 2 de octubre de 2026 que publica el Acuerdo del Congreso de los Diputados por el que se deroga el Real Decreto-ley 26/2026, de 29 de septiembre. Ref. BOE-A-2026-20526
+ENTRA >> Se modifica, con efectos de 1 de diciembre de 2026, el apartado 1.23º.e') por el art. 7.1 del Real Decreto-ley 26/2026, de 29 de septiembre. Ref. BOE-A-2026-20266
+cita «Artículo 20. Exenciones en operaciones interiores.…» en 20180704: true · en 20261007: true

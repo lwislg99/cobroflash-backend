@@ -275,6 +275,9 @@ export interface ClientePendienteFacturar {
 export async function getPendientesFacturar(
   merchantId: number,
   prisma: PrismaClient,
+  // SCRUM-1346: los Trabajos que puede ver quien pregunta (un Técnico); `null` = todos (admin y
+  // el resumen semanal). El eje lo resuelve la ruta, no este servicio.
+  jobIdsVisibles: number[] | null = null,
 ): Promise<ClientePendienteFacturar[]> {
   // Albaran.jobId es un Int plano (sin relación Prisma declarada hacia Job) — a diferencia de
   // consolidar-albaranes (jobs.routes.ts), que arranca DESDE el Job y no necesita este paso,
@@ -289,7 +292,11 @@ export async function getPendientesFacturar(
   const zona = zonaDelMerchant(merchant);
 
   const jobs = await prisma.job.findMany({
-    where: { merchantId, tipoOperacion: { not: 'TRABAJO_UNICO' } },
+    where: {
+      merchantId,
+      tipoOperacion: { not: 'TRABAJO_UNICO' },
+      id: jobIdsVisibles ? { in: jobIdsVisibles } : undefined,
+    },
     select: { id: true, customerId: true },
   });
   if (!jobs.length) return [];

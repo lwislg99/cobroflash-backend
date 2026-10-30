@@ -25,6 +25,26 @@ import { casosEscritos } from './_casos-escritos.mjs';
 const RAIZ = path.resolve(import.meta.dirname, '..');
 const requiere = createRequire(import.meta.url);
 
+// Las corre el meta-guard (SCRUM-1597b). La primera es la misma que la del C5 en
+// `scrum1596b-tope-de-avisos-al-profesional.test.mjs`: el filtro es UNO para el tope y el panel, y
+// quitarlo tiene que tumbar a los dos ficheros. Medida a mano sobre dist antes de pasarla aquí.
+export const MUTACIONES_QUE_ME_TUMBAN = [
+  {
+    // El filtro compartido deja de apartar los avisos: el tope cuenta 104 y el panel también.
+    fichero: 'src/modules/messaging/domain/whatsappLog.service.ts',
+    de: 'AND: [{ OR: [{ templateName: null }, { templateName: { not: PLANTILLA_AVISO_AL_PROFESIONAL } }] }],',
+    a: '',
+    cae: '99 a clientes + 5 avisos al profesional',
+  },
+  {
+    // Sólo el panel vuelve a contar los avisos; el tope sigue bien: vuelve el descuadre de c.20634.
+    fichero: 'src/modules/messaging/domain/whatsappLog.service.ts',
+    de: 'where: sinLosAvisosAlProfesional(plantillasDeHoy(merchantId, zona, now)),',
+    a: 'where: plantillasDeHoy(merchantId, zona, now),',
+    cae: '70 a clientes + 30 avisos al profesional',
+  },
+];
+
 const COMERCIO = 7;
 const TOPE = 100;
 const PENINSULA = 'Europe/Madrid';
@@ -54,6 +74,7 @@ const rotos = [];
 function casa(fila, where) {
   for (const [k, v] of Object.entries(where)) {
     if (k === 'OR') { if (!v.some((w) => casa(fila, w))) return false; continue; }
+    if (k === 'AND') { if (!v.every((w) => casa(fila, w))) return false; continue; } // SCRUM-1596b: la reserva aparta los avisos al profesional
     if (k === 'createdAt') { if (!(fila.createdAt.getTime() >= v.gte.getTime())) return false; continue; }
     if (v && typeof v === 'object' && 'not' in v) { if (fila[k] === v.not) return false; continue; }
     if (v && typeof v === 'object') { rotos.push(k); throw new Error(`filtro que el doble no conoce: ${k}`); }
@@ -176,6 +197,44 @@ test('SCRUM-1522b · 🔴 lo que está en cola cuenta en los dos, y lo que el pr
   });
   assert.equal(r.tope, 7);
   assert.equal(r.panel, 7);
+});
+
+// ═══ SCRUM-1597b · LOS AVISOS AL PROFESIONAL ════════════════════════════════════════════════
+// Desde 1596b los avisos (`merchant_alert_es`) tienen su tope y no gastan el de los clientes; el
+// «Hoy» del panel tiene que apartarlos igual (decisión del orquestador, SCRUM-1597 c.20635).
+
+const aviso = (iso) => plantilla(iso, { templateName: 'merchant_alert_es' });
+
+test('SCRUM-1597b · 🔴 99 a clientes + 5 avisos al profesional: el panel y el tope dicen 99, y la siguiente sale', async () => {
+  procesoEn('UTC', 0);
+  const r = await medir({
+    zona: PENINSULA, ahora: '2026-07-15T16:00:00Z',
+    filas: [...varias(99, '2026-07-15T08:00:00Z'), ...varias(5, '2026-07-15T09:00:00Z', aviso)],
+  });
+  assert.equal(r.tope, 99, 'el tope de los clientes no cuenta los avisos (1596b)');
+  assert.equal(r.sale, true);
+  assert.equal(r.panel, r.tope, `🔴 el panel dice «Hoy: ${r.panel}» contando los avisos, y el tope ${r.tope}`);
+  assert.equal(r.metricas.month.total, 104, 'el total del mes sigue contando los avisos: es el coste aceptado en c.20635');
+});
+
+test('SCRUM-1597b · 🔴 70 a clientes + 30 avisos al profesional: el panel y el tope dicen 70', async () => {
+  procesoEn('UTC', 0);
+  const r = await medir({
+    zona: PENINSULA, ahora: '2026-07-15T16:00:00Z',
+    filas: [...varias(70, '2026-07-15T08:00:00Z'), ...varias(30, '2026-07-15T09:00:00Z', aviso)],
+  });
+  assert.equal(r.tope, 70);
+  assert.equal(r.panel, 70, `🔴 el panel dice «Hoy: ${r.panel}»: el profesional cree que no le queda cupo y le quedan 30`);
+});
+
+test('SCRUM-1597b · CONTROL: sin avisos, el panel cuenta lo mismo que antes, y las filas sin nombre siguen contando', async () => {
+  procesoEn('UTC', 0);
+  const r = await medir({
+    zona: PENINSULA, ahora: '2026-07-15T16:00:00Z',
+    filas: [...varias(97, '2026-07-15T08:00:00Z'), ...varias(2, '2026-07-15T08:00:00Z', (iso) => plantilla(iso, { templateName: null }))],
+  });
+  assert.equal(r.tope, 99);
+  assert.equal(r.panel, 99);
 });
 
 // ═══ ② EL MES ════════════════════════════════════════════════════════════════════════════════

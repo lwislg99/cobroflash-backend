@@ -1,0 +1,95 @@
+// SCRUM-1611 (J6, 26-oct-2026) · ¿genera el test concurrencia REAL en el banco? Corre UN fichero de test contra el
+// Postgres de `pgbanco.mjs` (base rehecha) y, mientras corre, dos sondas independientes:
+//   A) muestreo de pg_stat_activity + pg_locks cada ~15 ms (quién está conectado, en transacción y esperando qué);
+//   B) log_statement=all del propio Postgres con %p (pid) y %x (xid): el ORDEN real de las sentencias por backend.
+// Uso: node medir1611.mjs <raiz> <tests/fichero> <etiqueta> [filtro de nombre de test]
+// Salida: <etiqueta>.muestras.jsonl, <etiqueta>.log (las líneas del log de Postgres de esta pasada), <etiqueta>.tap
+// y un resumen por consola. Sin muestras o sin líneas de log, dice CIEGO.
+import fs from 'node:fs';
+import path from 'node:path';
+import { spawn, spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import pg from 'pg';
+
+const AQUI = path.dirname(fileURLToPath(import.meta.url));
+const PUERTO = Number(process.env.PGB_PUERTO || 55743);
+const [raiz, fichero, etiqueta, filtro] = process.argv.slice(2);
+if (!raiz || !fichero || !etiqueta) { console.log('CIEGO: faltan argumentos'); process.exit(2); }
+
+const rh = spawnSync(process.execPath, [path.join(AQUI, 'pgbanco.mjs'), 'rehacer', String(PUERTO)], { encoding: 'utf8' });
+if (rh.status !== 0) { console.log('CIEGO: no se pudo rehacer', rh.stdout, rh.stderr); process.exit(2); }
+
+const admin = new pg.Client({ host: '127.0.0.1', port: PUERTO, user: 'postgres', database: 'postgres' });
+await admin.connect();
+await admin.query("ALTER SYSTEM SET log_statement = 'all'");
+await admin.query("ALTER SYSTEM SET log_line_prefix = '%m [%p] x=%x '");
+await admin.query("ALTER SYSTEM SET log_lock_waits = on");
+await admin.query("ALTER SYSTEM SET deadlock_timeout = '50ms'");
+await admin.query('SELECT pg_reload_conf()');
+const LOG = path.join(AQUI, 'pg.log');
+const desde = fs.existsSync(LOG) ? fs.statSync(LOG).size : 0;
+
+const muestras = [];
+let vivo = true;
+const SQL = `SELECT a.pid, a.state, a.xact_start, a.wait_event_type, a.wait_event, left(a.query, 90) AS q,
+  (SELECT string_agg(l.locktype || ':' || l.mode || ':' || l.granted, ',') FROM pg_locks l
+     WHERE l.pid = a.pid AND l.locktype IN ('advisory','transactionid','tuple','relation') AND (l.locktype <> 'relation' OR NOT l.granted)) AS locks
+  FROM pg_stat_activity a WHERE a.datname = 'yaqu_libro_test' AND a.pid <> pg_backend_pid()`;
+const sondeo = (async () => {
+  while (vivo) {
+    const t = Date.now();
+    try { const r = await admin.query(SQL); muestras.push({ t, filas: r.rows }); } catch (e) { muestras.push({ t, error: String(e.message) }); }
+    await new Promise((ok) => setTimeout(ok, 15));
+  }
+})();
+
+const tap = path.join(AQUI, `${etiqueta}.tap`);
+fs.rmSync(tap, { force: true });
+const entorno = { ...process.env };
+for (const k of ['NODE_TEST_CONTEXT', 'NODE_OPTIONS', 'FORCE_COLOR', 'QA_DB_TEST', 'A55_DB_TEST', 'BOT_SUITE_TEST']) delete entorno[k];
+const args = ['--test', '--test-force-exit', '--test-reporter=tap', `--test-reporter-destination=${tap}`];
+if (filtro) args.push(`--test-name-pattern=${filtro}`);
+args.push(fichero);
+const t0 = Date.now();
+const hijo = spawn(process.execPath, args, {
+  cwd: raiz,
+  env: { ...entorno, LIBRO_PG_URL: `postgresql://postgres@127.0.0.1:${PUERTO}/yaqu_libro_test?sslmode=disable`, DISABLE_CRONS: 'true', WHATSAPP_DRY_RUN: '1', NODE_ENV: 'test' },
+});
+let texto = '';
+hijo.stdout.on('data', (d) => { texto += d; });
+hijo.stderr.on('data', (d) => { texto += d; });
+const codigo = await new Promise((ok) => hijo.on('close', (c, s) => ok(c ?? s)));
+const ms = Date.now() - t0;
+vivo = false; await sondeo;
+await admin.query('ALTER SYSTEM RESET log_statement'); await admin.query('ALTER SYSTEM RESET log_line_prefix');
+await admin.query('ALTER SYSTEM RESET log_lock_waits'); await admin.query('ALTER SYSTEM RESET deadlock_timeout');
+await admin.query('SELECT pg_reload_conf()');
+await admin.end();
+
+fs.writeFileSync(path.join(AQUI, `${etiqueta}.muestras.jsonl`), muestras.map((m) => JSON.stringify(m)).join('\n'));
+const log = fs.readFileSync(LOG, 'utf8').slice(desde);
+fs.writeFileSync(path.join(AQUI, `${etiqueta}.log`), log);
+
+// Resumen A: población de muestras, conexiones simultáneas, transacciones abiertas a la vez, esperas de cerrojo.
+const ok = muestras.filter((m) => m.filas);
+let maxCon = 0; let maxTx = 0; let maxActivas = 0; const esperas = {}; const pids = new Set();
+for (const m of ok) {
+  maxCon = Math.max(maxCon, m.filas.length);
+  const tx = m.filas.filter((f) => f.xact_start);
+  maxTx = Math.max(maxTx, tx.length);
+  maxActivas = Math.max(maxActivas, m.filas.filter((f) => f.state === 'active').length);
+  for (const f of m.filas) {
+    pids.add(f.pid);
+    if (f.wait_event_type === 'Lock') { const k = `${f.wait_event} · ${(f.q || '').replace(/\s+/g, ' ').slice(0, 60)}`; esperas[k] = (esperas[k] || 0) + 1; }
+  }
+}
+// Resumen B: sentencias de la pasada por pid (solo las que nombran tablas de la factura o el cerrojo).
+const lineas = log.split(/\r?\n/).filter((l) => /\[\d+\] x=\d+ LOG:  (statement|execute)/.test(l) || /still waiting|acquired/.test(l));
+const interes = lineas.filter((l) => /pg_advisory_xact_lock|FOR UPDATE|"invoices"|"merchants"|still waiting|acquired|BEGIN|COMMIT|ROLLBACK/i.test(l));
+const casos = fs.existsSync(tap) ? fs.readFileSync(tap, 'utf8').split(/\r?\n/).filter((l) => /^(ok|not ok) \d+ - /.test(l)) : [];
+console.log(`${etiqueta} · exit=${codigo} · ${ms} ms · casos: ${casos.length ? casos.map((c) => c.slice(0, 90)).join(' | ') : 'NINGUNO'}`);
+console.log(`  A · muestras=${ok.length} (errores ${muestras.length - ok.length}) · pids vistos=${pids.size} · máx conexiones=${maxCon} · máx en transacción a la vez=${maxTx} · máx activas a la vez=${maxActivas}`);
+console.log(`  A · esperas de cerrojo (muestras): ${Object.keys(esperas).length ? Object.entries(esperas).map(([k, v]) => `${v}× ${k}`).join(' ;; ') : 'ninguna'}`);
+console.log(`  B · líneas de log de la pasada=${lineas.length} · de interés=${interes.length}`);
+if (ok.length === 0 || lineas.length === 0) console.log('  CIEGO: una de las dos sondas no vio nada');
+if (codigo !== 0) console.log(texto.slice(-1500));

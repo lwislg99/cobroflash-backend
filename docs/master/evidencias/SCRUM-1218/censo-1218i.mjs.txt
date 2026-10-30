@@ -1,0 +1,34 @@
+// SCRUM-1218i · censo: ficheros de tests/ con servidor propio (`<x>.listen(0, …)`) y AL MENOS UN `fetch`,
+// con el detector de la casa (`enPatronPeligroso` de scrum560), sin su umbral. Siembra propia: un fichero
+// con 1 `fetch` + listen(0) escrito en un temporal; si no sale, CIEGO.
+// Uso: node censo-1218i.mjs <raiz del árbol>
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+
+const RAIZ = process.argv[2];
+const { enPatronPeligroso } = await import(pathToFileURL(path.join(RAIZ, 'tests/scrum560-patron-fetch-servidor.test.mjs')).href);
+const DIR = path.join(RAIZ, 'tests');
+const sembrada = 'const s = app.listen(0);\nconst r = await fetch(`http://127.0.0.1:${s.address().port}/x`);\n';
+const dirS = fs.mkdtempSync(path.join(os.tmpdir(), 'censo1218i-'));
+fs.writeFileSync(path.join(dirS, 'siembra-1218i.mjs'), sembrada);
+const leer = (d, filtro) => fs.readdirSync(d).filter(filtro).map((f) => [d, f]);
+const pob = [...leer(DIR, (x) => x.endsWith('.test.mjs')), ...leer(dirS, () => true)];
+const out = [];
+let vio = false, conServidor = 0;
+for (const [d, f] of pob) {
+  const src = fs.readFileSync(path.join(d, f), 'utf8');
+  const r = enPatronPeligroso(src, f);
+  if (r.motivo === 'no levanta servidor propio') continue;
+  conServidor++;
+  const n = Number((r.motivo.match(/^(\d+) /) || [])[1] ?? NaN);
+  if (!r.peligroso && n === 0) continue;
+  if (d === dirS) { vio = true; continue; }
+  const gate = /QA_DB_TEST|BOT_SUITE_TEST/.test(src) ? (/URL_BANCO|LIBRO_PG_URL/.test(src) ? 'qa+banco' : 'qa') : (/URL_BANCO|LIBRO_PG_URL/.test(src) ? 'banco' : 'libre');
+  out.push(`${f}\t${r.peligroso ? 'PELIGROSO' : 'bajo-umbral'}\t${gate}\t${r.motivo}`);
+}
+fs.rmSync(dirS, { recursive: true, force: true });
+console.log(`CENSO1218I poblacion=${pob.length - 1} ficheros .test.mjs + 1 siembra · con servidor=${conServidor - (vio ? 1 : 0)} · con fetch=${out.length} · siembra=${vio ? 'VISTA' : 'CIEGO'}`);
+for (const l of out.sort()) console.log('CENSO1218I ' + l);
+process.exit(vio ? 0 : 2);

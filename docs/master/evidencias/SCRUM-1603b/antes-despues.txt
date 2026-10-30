@@ -1,0 +1,265 @@
+SCRUM-1603b · los 11 instrumentos que montan el banco, ANTES y DESPUÉS de meter Inter, sobre el mismo árbol
+(origin/main 927bda7ab44b604d81bca8c453663e7fc6f6cda9). Uno a uno, con su salida y código guardados.
+POBLACIÓN: 11 instrumentos · 3 pasadas (antes · después · después2 con la versión final del recuento).
+
+====================================================================================================
+CÓDIGOS · antes
+====================================================================================================
+guard-objetivo-tactil	exit=1	signal=-	1.0s
+censo-tactil-panel	exit=1	signal=-	0.7s
+guard-lista-trabajos	exit=0	signal=-	18.0s
+guard-lista-trabajos-917	exit=0	signal=-	9.2s
+guard-lista-gastos	exit=0	signal=-	24.9s
+guard-escalera-por-estado	exit=0	signal=-	9.0s
+guard-albaranes-con-acciones	exit=0	signal=-	2.7s
+censo-accion-del-80	exit=0	signal=-	3.4s
+censo-clics-del-80	exit=0	signal=-	6.4s
+test-889b-710b-1142	exit=1	signal=-	26.5s
+editor-962c	exit=0	signal=-	59.5s
+guard-objetivo-tactil	exit=0	signal=-	23.6s
+censo-tactil-panel	exit=0	signal=-	58.8s
+test-889b-710b-1142	exit=0	signal=-	33.1s
+
+(las tres primeras filas con exit=1 de ANTES son el worktree sin dist/; se repitieron con dist/ y son las tres últimas)
+
+====================================================================================================
+CÓDIGOS · después
+====================================================================================================
+guard-objetivo-tactil	exit=0	signal=-	42.8s
+censo-tactil-panel	exit=0	signal=-	80.7s
+guard-lista-trabajos	exit=0	signal=-	38.3s
+guard-lista-trabajos-917	exit=0	signal=-	10.7s
+guard-lista-gastos	exit=0	signal=-	72.7s
+guard-escalera-por-estado	exit=0	signal=-	16.5s
+guard-albaranes-con-acciones	exit=0	signal=-	2.6s
+censo-accion-del-80	exit=0	signal=-	5.2s
+censo-clics-del-80	exit=0	signal=-	11.4s
+test-889b-710b-1142	exit=0	signal=-	38.5s
+editor-962c	exit=0	signal=-	63.2s
+
+====================================================================================================
+CÓDIGOS · después2
+====================================================================================================
+guard-objetivo-tactil	exit=0	signal=-	25.6s
+censo-tactil-panel	exit=0	signal=-	56.4s
+guard-lista-trabajos	exit=0	signal=-	12.8s
+guard-lista-trabajos-917	exit=0	signal=-	8.8s
+guard-lista-gastos	exit=0	signal=-	22.9s
+guard-escalera-por-estado	exit=0	signal=-	8.2s
+guard-albaranes-con-acciones	exit=0	signal=-	1.7s
+censo-accion-del-80	exit=0	signal=-	2.4s
+censo-clics-del-80	exit=0	signal=-	6.2s
+test-889b-710b-1142	exit=0	signal=-	22.9s
+editor-962c	exit=0	signal=-	58.0s
+
+====================================================================================================
+LÍNEAS QUE CAMBIAN · antes → después (tiempos, puertos y temporales normalizados)
+====================================================================================================
+
+=== censo-accion-del-80.txt: líneas 138 → 138 · sólo ANTES 0 · sólo DESPUÉS 0
+
+=== censo-clics-del-80.txt: líneas 41 → 41 · sólo ANTES 0 · sólo DESPUÉS 0
+
+=== censo-tactil-panel.txt: líneas 136 → 136 · sólo ANTES 11 · sólo DESPUÉS 11
+  - renderCobrosView              929    7        0       0          0
+  -     16  INPUT.input                                36.6–39.0 px · 10 pantalla(s) · p.ej. (sin texto)
+  -      8  BUTTON                                     29.9–41.0 px · 2 pantalla(s) · p.ej. Presupuestos (1) / Facturas (1) / Trabajos (1)
+  -      7  SELECT.input                               38.6–39.0 px · 6 pantalla(s) · p.ej. Facturación: todos (1)Sin facturar / Todas las etiquetasadministradormo / Más recientesNombre A-ZMás pendien
+  -      2  INPUT                                      14.0–41.6 px · 2 pantalla(s) · p.ej. (sin texto)
+  -      2  SELECT                                     33.5–34.0 px · 2 pantalla(s) · p.ej. PendientesTodasCompletadas / 20262025202420232022
+  -      1  A.alb-enlace                               19.0–19.0 px · 1 pantalla(s) · p.ej. Reforma de baño
+  -      1  BUTTON.plan-btn                            41.9–41.9 px · 1 pantalla(s) · p.ej. Quiero mi plaza founding — 9,90 €/
+  -      1  BUTTON.btn-primary.plan-btn                39.8–39.8 px · 1 pantalla(s) · p.ej. Suscribirme — 19,90 €/mes
+  -      1  BUTTON.btn.btn-primary.btn-sm              30.8–30.8 px · 1 pantalla(s) · p.ej. Copiar link
+  -      1  BUTTON.btn-danger.btn-sm                   30.7–30.7 px · 1 pantalla(s) · p.ej. Suspender
+  + renderCobrosView              929    6        0       0          1
+  +     16  INPUT.input                                34.6–39.0 px · 10 pantalla(s) · p.ej. (sin texto)
+  +      8  BUTTON                                     28.9–39.0 px · 2 pantalla(s) · p.ej. Presupuestos (1) / Facturas (1) / Trabajos (1)
+  +      7  SELECT.input                               36.6–39.0 px · 6 pantalla(s) · p.ej. Facturación: todos (1)Sin facturar / Todas las etiquetasadministradormo / Más recientesNombre A-ZMás pendien
+  +      2  INPUT                                      14.0–40.7 px · 2 pantalla(s) · p.ej. (sin texto)
+  +      2  SELECT                                     32.5–33.0 px · 2 pantalla(s) · p.ej. PendientesTodasCompletadas / 20262025202420232022
+  +      1  A.alb-enlace                               17.0–17.0 px · 1 pantalla(s) · p.ej. Reforma de baño
+  +      1  BUTTON.plan-btn                            39.9–39.9 px · 1 pantalla(s) · p.ej. Quiero mi plaza founding — 9,90 €/
+  +      1  BUTTON.btn-primary.plan-btn                39.6–39.6 px · 1 pantalla(s) · p.ej. Suscribirme — 19,90 €/mes
+  +      1  BUTTON.btn.btn-primary.btn-sm              30.7–30.7 px · 1 pantalla(s) · p.ej. Copiar link
+  +      1  BUTTON.btn-danger.btn-sm                   30.8–30.8 px · 1 pantalla(s) · p.ej. Suspender
+
+=== editor-962c-analisis.txt: líneas 34 → 34 · sólo ANTES 8 · sólo DESPUÉS 8
+  - por veredicto: {"DEFECTO":4,"DUDOSO":1,"SOLO-ESCRITORIO":21,"ARTEFACTO":3}
+  - DUDOSO            21.8  21.6  select «IVA %211040» . · etiqueta envolvente 44.6 px · clic ACTIVA · 2 · ajustes de la línea (IVA) · bloque=modal quote-ajustes-modal
+  - SOLO-ESCRITORIO   44.7  36.7  button[button] «Atrás» .btn btn-ghost · — · 2 · Conceptos · bloque=quote-block quote-block-totals quote-paso-parte is
+  - SOLO-ESCRITORIO   44.7  36.7  button[button] «Ver documento» .btn btn-secondary quote-ver-documento · — · 2 · Conceptos · bloque=quote-block quote-block-totals quote-paso-parte is
+  - SOLO-ESCRITORIO   44.7  36.7  button[button] «Continuar» .btn btn-primary · — · 2 · Conceptos · bloque=quote-block quote-block-totals quote-paso-parte is
+  - SOLO-ESCRITORIO     45  36.7  button[button] «Listo» .btn-primary · — · 2 · ajustes de la línea (IVA) · bloque=modal quote-ajustes-modal
+  - ARTEFACTO         16.6  16.8  input[radio] «Persona» .segmented-input · etiqueta envolvente 44.8 px · clic ACTIVA · 1 · alta de cliente · bloque=modal
+  - ARTEFACTO         21.6  21.7  input[number] «Descuento global» . · etiqueta envolvente 44.6 px · clic ACTIVA · 2 · descuento global · bloque=quote-block quote-paso is-abierto
+  + por veredicto: {"DEFECTO":6,"SOLO-ESCRITORIO":21,"ARTEFACTO":2}
+  + DEFECTO           20.6  20.7  input[number] «Descuento global» . · etiqueta envolvente 43.6 px · clic ACTIVA · 2 · descuento global · bloque=quote-block quote-paso is-abierto
+  + DEFECTO           20.8  20.7  select «IVA %211040» . · etiqueta envolvente 43.6 px · clic ACTIVA · 2 · ajustes de la línea (IVA) · bloque=modal quote-ajustes-modal
+  + SOLO-ESCRITORIO   44.5  36.7  button[button] «Atrás» .btn btn-ghost · — · 2 · Conceptos · bloque=quote-block quote-block-totals quote-paso-parte is
+  + SOLO-ESCRITORIO   44.5  36.7  button[button] «Ver documento» .btn btn-secondary quote-ver-documento · — · 2 · Conceptos · bloque=quote-block quote-block-totals quote-paso-parte is
+  + SOLO-ESCRITORIO   44.5  36.7  button[button] «Continuar» .btn btn-primary · — · 2 · Conceptos · bloque=quote-block quote-block-totals quote-paso-parte is
+  + SOLO-ESCRITORIO     45  36.5  button[button] «Listo» .btn-primary · — · 2 · ajustes de la línea (IVA) · bloque=modal quote-ajustes-modal
+  + ARTEFACTO         16.7  16.9  input[radio] «Persona» .segmented-input · etiqueta envolvente 44.8 px · clic ACTIVA · 1 · alta de cliente · bloque=modal
+
+=== editor-962c.txt: líneas 65 → 65 · sólo ANTES 0 · sólo DESPUÉS 0
+
+=== guard-albaranes-con-acciones.txt: líneas 46 → 46 · sólo ANTES 0 · sólo DESPUÉS 0
+
+=== guard-escalera-por-estado.txt: líneas 38 → 38 · sólo ANTES 0 · sólo DESPUÉS 0
+
+=== guard-lista-gastos.txt: líneas 128 → 128 · sólo ANTES 0 · sólo DESPUÉS 0
+
+=== guard-lista-trabajos-917.txt: líneas 78 → 78 · sólo ANTES 0 · sólo DESPUÉS 0
+
+=== guard-lista-trabajos.txt: líneas 71 → 71 · sólo ANTES 1 · sólo DESPUÉS 1
+  -    base de la rama: 927bda7ab44b604d81bca8c453663e7fc6f6cda9 (vía origin/main) · 113 ficheros
+  +    base de la rama: 927bda7ab44b604d81bca8c453663e7fc6f6cda9 (vía origin/main) · 120 ficheros
+
+=== guard-objetivo-tactil.txt: líneas 203 → 203 · sólo ANTES 14 · sólo DESPUÉS 14
+  -    ⚠️ EXCEPCIÓN 41px · BUTTON «Presupuestos (1)» — las DOS pestañas del historial, «Presupuestos (1)» y «Facturas (1)», a 41,0 px (caja 40). No llevan clase de botón: es el TERCER grupo de SCRUM-787 —los que no se arregl
+  -    ⚠️ EXCEPCIÓN 41px · BUTTON «Facturas (1)» — las DOS pestañas del historial, «Presupuestos (1)» y «Facturas (1)», a 41,0 px (caja 40). No llevan clase de botón: es el TERCER grupo de SCRUM-787 —los que no se arreglan c
+  -    ⚠️ EXCEPCIÓN 41px · BUTTON «Sitios» — las DOS pestañas del historial, «Presupuestos (1)» y «Facturas (1)», a 41,0 px (caja 40). No llevan clase de botón: es el TERCER grupo de SCRUM-787 —los que no se arreglan con `.b
+  -    ⚠️ EXCEPCIÓN 41px · BUTTON «Notas» — las DOS pestañas del historial, «Presupuestos (1)» y «Facturas (1)», a 41,0 px (caja 40). No llevan clase de botón: es el TERCER grupo de SCRUM-787 —los que no se arreglan con `.bt
+  -    ⚠️ EXCEPCIÓN 30.8px · BUTTON.btn-ghost.btn-sm «Ver →» — clase compartida `.btn-sm` (30,5–31,0 px) — «← Volver a Clientes» y «Ver →». Pre-existentes. Las retira el fundador al decidir sobre `.btn-sm` (SCRUM-786; SCRUM-
+  -    ⚠️ EXCEPCIÓN 30.9px · BUTTON.btn.btn-secondary.btn-sm «Editar» — clase compartida `.btn-sm` — «Editar» y «Desactivar/Activar» de cada fila, 30,7 px a 929 y 44 px a 390 (la tabla apila en móvil). Pre-existentes, no irr
+  -    ⚠️ EXCEPCIÓN 30.9px · BUTTON.btn.btn-secondary.btn-sm «Desactivar» — clase compartida `.btn-sm` — «Editar» y «Desactivar/Activar» de cada fila, 30,7 px a 929 y 44 px a 390 (la tabla apila en móvil). Pre-existentes, no
+  -    ✅ irreversible «Borrar» 44.9px ≥ 44 (caja CSS 44px).
+  -    ✅ irreversible «Borrar» 44.8px ≥ 44 (caja CSS 44px).
+  -    · [(suelto)] BUTTON «🔧Varios avisos o visitas sueltasCada vi» — caja 126px — lo tapa SUMMARY.detail-plega-cab
+  -    · [(suelto)] BUTTON «🏗️Una obra o reforma de varios díasEs u» — caja 126px — lo tapa SUMMARY.detail-plega-cab
+  -    · [(suelto)] INPUT.input «(sin texto)» — caja 44px — lo tapa SPAN.detail-plega-rotulo
+  -    · [(suelto)] BUTTON «🔧Varios avisos o visitas sueltasCada vi» — caja 107px — lo tapa SUMMARY.detail-plega-cab
+  -    · [(suelto)] BUTTON «🏗️Una obra o reforma de varios díasEs u» — caja 91px — lo tapa SPAN.detail-plega-rotulo
+  +    ⚠️ EXCEPCIÓN 30.6px · BUTTON.btn-ghost.btn-sm «Ver →» — clase compartida `.btn-sm` (30,5–31,0 px) — «← Volver a Clientes» y «Ver →». Pre-existentes. Las retira el fundador al decidir sobre `.btn-sm` (SCRUM-786; SCRUM-
+  +    ⚠️ EXCEPCIÓN 39px · BUTTON «Presupuestos (1)» — las DOS pestañas del historial, «Presupuestos (1)» y «Facturas (1)», a 41,0 px (caja 40). No llevan clase de botón: es el TERCER grupo de SCRUM-787 —los que no se arregl
+  +    ⚠️ EXCEPCIÓN 39px · BUTTON «Facturas (1)» — las DOS pestañas del historial, «Presupuestos (1)» y «Facturas (1)», a 41,0 px (caja 40). No llevan clase de botón: es el TERCER grupo de SCRUM-787 —los que no se arreglan c
+  +    ⚠️ EXCEPCIÓN 39px · BUTTON «Sitios» — las DOS pestañas del historial, «Presupuestos (1)» y «Facturas (1)», a 41,0 px (caja 40). No llevan clase de botón: es el TERCER grupo de SCRUM-787 —los que no se arreglan con `.b
+  +    ⚠️ EXCEPCIÓN 39px · BUTTON «Notas» — las DOS pestañas del historial, «Presupuestos (1)» y «Facturas (1)», a 41,0 px (caja 40). No llevan clase de botón: es el TERCER grupo de SCRUM-787 —los que no se arreglan con `.bt
+  +    ⚠️ EXCEPCIÓN 30.6px · BUTTON.btn.btn-secondary.btn-sm «Editar» — clase compartida `.btn-sm` — «Editar» y «Desactivar/Activar» de cada fila, 30,7 px a 929 y 44 px a 390 (la tabla apila en móvil). Pre-existentes, no irr
+  +    ⚠️ EXCEPCIÓN 30.6px · BUTTON.btn.btn-secondary.btn-sm «Desactivar» — clase compartida `.btn-sm` — «Editar» y «Desactivar/Activar» de cada fila, 30,7 px a 929 y 44 px a 390 (la tabla apila en móvil). Pre-existentes, no
+  +    ✅ irreversible «Borrar» 44.6px ≥ 44 (caja CSS 44px).
+  +    ✅ irreversible «Borrar» 44.6px ≥ 44 (caja CSS 44px).
+  +    · [(suelto)] BUTTON «🔧Varios avisos o visitas sueltasCada vi» — caja 120px — lo tapa SUMMARY.detail-plega-cab
+  +    · [(suelto)] BUTTON «🏗️Una obra o reforma de varios díasEs u» — caja 120px — lo tapa SUMMARY.detail-plega-cab
+  +    · [(suelto)] INPUT.input «(sin texto)» — caja 44px — lo tapa SUMMARY.detail-plega-cab
+  +    · [(suelto)] BUTTON «🔧Varios avisos o visitas sueltasCada vi» — caja 103px — lo tapa SUMMARY.detail-plega-cab
+  +    · [(suelto)] BUTTON «🏗️Una obra o reforma de varios díasEs u» — caja 88px — lo tapa SPAN.detail-plega-rotulo
+
+=== test-889b-710b-1142.txt: líneas 45 → 45 · sólo ANTES 1 · sólo DESPUÉS 1
+  - ℹ duration_ms 32984.4149
+  + ℹ duration_ms 38399.8066
+
+
+====================================================================================================
+LÍNEAS QUE CAMBIAN · después → después2 (estabilidad)
+====================================================================================================
+
+=== censo-accion-del-80.txt: líneas 138 → 138 · sólo ANTES 1 · sólo DESPUÉS 1
+  - navegador: Edge (Windows)  ·  viewport: 1700 px  ·  árbol: 927bda7a (scrum-1603-banco-inter) + cambios SIN commitear
+  + navegador: Edge (Windows)  ·  viewport: 1700 px  ·  árbol: cbf159fc (scrum-1603-banco-inter) + cambios SIN commitear
+
+=== censo-clics-del-80.txt: líneas 41 → 41 · sólo ANTES 0 · sólo DESPUÉS 0
+
+=== censo-tactil-panel.txt: líneas 136 → 136 · sólo ANTES 0 · sólo DESPUÉS 0
+
+=== editor-962c-analisis.txt: líneas 34 → 34 · sólo ANTES 0 · sólo DESPUÉS 0
+
+=== editor-962c.txt: líneas 65 → 65 · sólo ANTES 0 · sólo DESPUÉS 0
+
+=== guard-albaranes-con-acciones.txt: líneas 46 → 46 · sólo ANTES 0 · sólo DESPUÉS 0
+
+=== guard-escalera-por-estado.txt: líneas 38 → 38 · sólo ANTES 0 · sólo DESPUÉS 0
+
+=== guard-lista-gastos.txt: líneas 128 → 128 · sólo ANTES 0 · sólo DESPUÉS 0
+
+=== guard-lista-trabajos-917.txt: líneas 78 → 78 · sólo ANTES 0 · sólo DESPUÉS 0
+
+=== guard-lista-trabajos.txt: líneas 71 → 71 · sólo ANTES 0 · sólo DESPUÉS 0
+
+=== guard-objetivo-tactil.txt: líneas 203 → 203 · sólo ANTES 0 · sólo DESPUÉS 0
+
+=== test-889b-710b-1142.txt: líneas 45 → 45 · sólo ANTES 1 · sólo DESPUÉS 1
+  - ℹ duration_ms 38399.8066
+  + ℹ duration_ms 22825.3793
+
+
+====================================================================================================
+EDITOR 962c · análisis ANTES
+====================================================================================================
+controles distintos medidos: 109 · en la población del censo: 109 · cortos (<44 a alguna anchura): 29
+por veredicto: {"DEFECTO":4,"DUDOSO":1,"SOLO-ESCRITORIO":21,"ARTEFACTO":3}
+cortos en la población del censo: 2 · DEFECTO o DUDOSO a 390 en la población del censo: 0
+medidos sólo con error del árbitro (tapados/no alcanzables): 0 
+DEFECTO             14    14  input[checkbox] «Baja de WhatsApp: no enviarle más mensajes (el cli» . · etiqueta envolvente 41.3 px · clic ACTIVA · 1 · alta de cliente · bloque=modal
+DEFECTO           16.7  16.6  input[radio] «Razón social» . · etiqueta envolvente 20.4 px · clic ACTIVA · 3 · fila 4 · bloque=quote-block quote-paso-parte quote-ajustes is-abie
+DEFECTO           16.7  16.6  input[radio] «Nombre comercial» . · etiqueta envolvente 20.4 px · clic ACTIVA · 3 · fila 4 · bloque=quote-block quote-paso-parte quote-ajustes is-abie
+DEFECTO             17    17  input[checkbox] «Incluir descripción en el PDF» . · etiqueta envolvente 21.1 px · clic ACTIVA · 3 · fila 4 · bloque=quote-block quote-paso-parte quote-ajustes is-abie
+DUDOSO            21.8  21.6  select «IVA %211040» . · etiqueta envolvente 44.6 px · clic ACTIVA · 2 · ajustes de la línea (IVA) · bloque=modal quote-ajustes-modal
+SOLO-ESCRITORIO   44.5  36.5  button[button] «Atrás» .btn btn-ghost · — · 3 · Condiciones · bloque=quote-block quote-paso-parte quote-ajustes is-pleg
+SOLO-ESCRITORIO   44.5  36.5  button[button] «Ver documento» .btn btn-secondary quote-ver-documento · — · 3 · Condiciones · bloque=quote-block quote-paso-parte quote-ajustes is-pleg
+SOLO-ESCRITORIO   44.5  36.5  button[button] «Continuar» .btn btn-primary · — · 3 · Condiciones · bloque=quote-block quote-paso-parte quote-ajustes is-pleg
+SOLO-ESCRITORIO   44.6    37  button[button] «Ver documento» .btn btn-secondary quote-ver-documento · — · 1 · Cliente (montaje) · bloque=quote-block quote-paso is-abierto
+SOLO-ESCRITORIO   44.6    37  button[button] «Continuar» .btn btn-primary · — · 1 · Cliente (montaje) · bloque=quote-block quote-paso is-abierto
+SOLO-ESCRITORIO   44.7  36.7  button[button] «Atrás» .btn btn-ghost · — · 2 · Conceptos · bloque=quote-block quote-block-totals quote-paso-parte is
+SOLO-ESCRITORIO   44.7  36.7  button[button] «Ver documento» .btn btn-secondary quote-ver-documento · — · 2 · Conceptos · bloque=quote-block quote-block-totals quote-paso-parte is
+SOLO-ESCRITORIO   44.7  36.7  button[button] «Continuar» .btn btn-primary · — · 2 · Conceptos · bloque=quote-block quote-block-totals quote-paso-parte is
+SOLO-ESCRITORIO   44.9  41.6  button[button] «Cambiar» .quote-paso__cambiar · — · 2 · Conceptos · bloque=quote-block quote-paso is-cerrado is-hecho
+SOLO-ESCRITORIO   44.9  36.5  button[button] «Atrás» .btn btn-ghost · — · 4 · Revisar · bloque=quote-block quote-block-actions quote-paso is-abie
+SOLO-ESCRITORIO   44.9  36.5  button[button] «Generar presupuesto» .btn btn-primary · — · 4 · Revisar · bloque=quote-block quote-block-actions quote-paso is-abie
+SOLO-ESCRITORIO     45  36.6  button[button] «Cancelar» .btn btn-secondary · — · 1 · alta de cliente · bloque=modal
+SOLO-ESCRITORIO     45  36.6  button[submit] «Guardar» .btn btn-primary · — · 1 · alta de cliente · bloque=modal
+SOLO-ESCRITORIO     45  36.9  button[button] «Volver al editor» .btn-primary · — · 1 · Ver documento · bloque=modal quote-documento-modal
+SOLO-ESCRITORIO     45  36.7  button[button] «Listo» .btn-primary · — · 2 · ajustes de la línea (IVA) · bloque=modal quote-ajustes-modal
+SOLO-ESCRITORIO     45    37  button «✨ Generar sugerencias» .btn-primary · — · 2 · Sugerir con IA · bloque=modal
+SOLO-ESCRITORIO   51.7  42.7  button[button] «💾 Guardar como plantilla» .overflow-item · — · 1 · menú ⋯ de la página · bloque=modal overflow-sheet
+SOLO-ESCRITORIO   51.7  42.5  button[button] «↓ Bajar» .overflow-item · — · 2 · menú ⋯ de la línea · bloque=modal overflow-sheet
+SOLO-ESCRITORIO     52    42  button[button] «Limpiar formulario» .overflow-item · — · 1 · menú ⋯ de la página · bloque=modal overflow-sheet
+SOLO-ESCRITORIO     52    42  button[button] «🗑️ Eliminar línea» .overflow-item · — · 2 · menú ⋯ de la línea · bloque=modal overflow-sheet
+SOLO-ESCRITORIO   52.2  42.7  button[button] «↑ Subir» .overflow-item · — · 2 · menú ⋯ de la línea · bloque=modal overflow-sheet
+ARTEFACTO         16.6  16.8  input[radio] «Empresa» .segmented-input · etiqueta envolvente 44.7 px · clic ACTIVA · 1 · alta de cliente · bloque=modal
+ARTEFACTO         16.6  16.8  input[radio] «Persona» .segmented-input · etiqueta envolvente 44.8 px · clic ACTIVA · 1 · alta de cliente · bloque=modal
+ARTEFACTO         21.6  21.7  input[number] «Descuento global» . · etiqueta envolvente 44.6 px · clic ACTIVA · 2 · descuento global · bloque=quote-block quote-paso is-abierto
+
+====================================================================================================
+EDITOR 962c · análisis DESPUÉS
+====================================================================================================
+controles distintos medidos: 109 · en la población del censo: 109 · cortos (<44 a alguna anchura): 29
+por veredicto: {"DEFECTO":6,"SOLO-ESCRITORIO":21,"ARTEFACTO":2}
+cortos en la población del censo: 2 · DEFECTO o DUDOSO a 390 en la población del censo: 0
+medidos sólo con error del árbitro (tapados/no alcanzables): 0 
+DEFECTO             14    14  input[checkbox] «Baja de WhatsApp: no enviarle más mensajes (el cli» . · etiqueta envolvente 41.3 px · clic ACTIVA · 1 · alta de cliente · bloque=modal
+DEFECTO           16.7  16.6  input[radio] «Razón social» . · etiqueta envolvente 20.4 px · clic ACTIVA · 3 · fila 4 · bloque=quote-block quote-paso-parte quote-ajustes is-abie
+DEFECTO           16.7  16.6  input[radio] «Nombre comercial» . · etiqueta envolvente 20.4 px · clic ACTIVA · 3 · fila 4 · bloque=quote-block quote-paso-parte quote-ajustes is-abie
+DEFECTO             17    17  input[checkbox] «Incluir descripción en el PDF» . · etiqueta envolvente 21.1 px · clic ACTIVA · 3 · fila 4 · bloque=quote-block quote-paso-parte quote-ajustes is-abie
+DEFECTO           20.6  20.7  input[number] «Descuento global» . · etiqueta envolvente 43.6 px · clic ACTIVA · 2 · descuento global · bloque=quote-block quote-paso is-abierto
+DEFECTO           20.8  20.7  select «IVA %211040» . · etiqueta envolvente 43.6 px · clic ACTIVA · 2 · ajustes de la línea (IVA) · bloque=modal quote-ajustes-modal
+SOLO-ESCRITORIO   44.5  36.7  button[button] «Atrás» .btn btn-ghost · — · 2 · Conceptos · bloque=quote-block quote-block-totals quote-paso-parte is
+SOLO-ESCRITORIO   44.5  36.7  button[button] «Ver documento» .btn btn-secondary quote-ver-documento · — · 2 · Conceptos · bloque=quote-block quote-block-totals quote-paso-parte is
+SOLO-ESCRITORIO   44.5  36.7  button[button] «Continuar» .btn btn-primary · — · 2 · Conceptos · bloque=quote-block quote-block-totals quote-paso-parte is
+SOLO-ESCRITORIO   44.5  36.5  button[button] «Atrás» .btn btn-ghost · — · 3 · Condiciones · bloque=quote-block quote-paso-parte quote-ajustes is-pleg
+SOLO-ESCRITORIO   44.5  36.5  button[button] «Ver documento» .btn btn-secondary quote-ver-documento · — · 3 · Condiciones · bloque=quote-block quote-paso-parte quote-ajustes is-pleg
+SOLO-ESCRITORIO   44.5  36.5  button[button] «Continuar» .btn btn-primary · — · 3 · Condiciones · bloque=quote-block quote-paso-parte quote-ajustes is-pleg
+SOLO-ESCRITORIO   44.6    37  button[button] «Ver documento» .btn btn-secondary quote-ver-documento · — · 1 · Cliente (montaje) · bloque=quote-block quote-paso is-abierto
+SOLO-ESCRITORIO   44.6    37  button[button] «Continuar» .btn btn-primary · — · 1 · Cliente (montaje) · bloque=quote-block quote-paso is-abierto
+SOLO-ESCRITORIO   44.9  41.6  button[button] «Cambiar» .quote-paso__cambiar · — · 2 · Conceptos · bloque=quote-block quote-paso is-cerrado is-hecho
+SOLO-ESCRITORIO   44.9  36.5  button[button] «Atrás» .btn btn-ghost · — · 4 · Revisar · bloque=quote-block quote-block-actions quote-paso is-abie
+SOLO-ESCRITORIO   44.9  36.5  button[button] «Generar presupuesto» .btn btn-primary · — · 4 · Revisar · bloque=quote-block quote-block-actions quote-paso is-abie
+SOLO-ESCRITORIO     45  36.6  button[button] «Cancelar» .btn btn-secondary · — · 1 · alta de cliente · bloque=modal
+SOLO-ESCRITORIO     45  36.6  button[submit] «Guardar» .btn btn-primary · — · 1 · alta de cliente · bloque=modal
+SOLO-ESCRITORIO     45  36.9  button[button] «Volver al editor» .btn-primary · — · 1 · Ver documento · bloque=modal quote-documento-modal
+SOLO-ESCRITORIO     45  36.5  button[button] «Listo» .btn-primary · — · 2 · ajustes de la línea (IVA) · bloque=modal quote-ajustes-modal
+SOLO-ESCRITORIO     45    37  button «✨ Generar sugerencias» .btn-primary · — · 2 · Sugerir con IA · bloque=modal
+SOLO-ESCRITORIO   51.7  42.7  button[button] «💾 Guardar como plantilla» .overflow-item · — · 1 · menú ⋯ de la página · bloque=modal overflow-sheet
+SOLO-ESCRITORIO   51.7  42.5  button[button] «↓ Bajar» .overflow-item · — · 2 · menú ⋯ de la línea · bloque=modal overflow-sheet
+SOLO-ESCRITORIO     52    42  button[button] «Limpiar formulario» .overflow-item · — · 1 · menú ⋯ de la página · bloque=modal overflow-sheet
+SOLO-ESCRITORIO     52    42  button[button] «🗑️ Eliminar línea» .overflow-item · — · 2 · menú ⋯ de la línea · bloque=modal overflow-sheet
+SOLO-ESCRITORIO   52.2  42.7  button[button] «↑ Subir» .overflow-item · — · 2 · menú ⋯ de la línea · bloque=modal overflow-sheet
+ARTEFACTO         16.6  16.8  input[radio] «Empresa» .segmented-input · etiqueta envolvente 44.7 px · clic ACTIVA · 1 · alta de cliente · bloque=modal
+ARTEFACTO         16.7  16.9  input[radio] «Persona» .segmented-input · etiqueta envolvente 44.8 px · clic ACTIVA · 1 · alta de cliente · bloque=modal
+
+====================================================================================================
+LA BAJADA DE COBROS @929 · sonda puntual, sin Inter (d) y con Inter (c)
+====================================================================================================
+SONDA1603C {"rect":[676.1,178.7,120.4,18],"rects":[[676.1,178.7,120.4,18]],"display":"inline","white":"normal","padre":"TD.cell-id 157","encima":"A. «factura F-2026-0021»","html":"<td class=\"cell-id\"><a href=\"#invoice-detail\" style=\"color:inherit;text-decoration:underline\">factura F-2026-0021</a></td>"}
+SONDA1603C {"rect":[676.6,179.7,102.2,36.9],"rects":[[676.6,179.7,102.2,16],[676.6,200.6,30.8,16]],"display":"inline","white":"normal","padre":"TD.cell-id 161","encima":"TD.cell-id «factura F-2026-0021»","html":"<td class=\"cell-id\"><a href=\"#invoice-detail\" style=\"color:inherit;text-decoration:underline\">factura F-2026-0021</a></td>"}

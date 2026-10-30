@@ -1,0 +1,31 @@
+// diff-idem.mjs — cada línea quitada por el diff tiene que reaparecer idéntica entre las añadidas,
+// cambiando sólo `fetch(` por `pedirSinAgente(` (multiconjunto). Control sembrado: una quitada
+// alterada tiene que salir FALTA; si no, el instrumento está ciego.
+import { execFileSync } from 'node:child_process';
+const diff = execFileSync('git', ['diff', '-U0', '--', 'tests/'], { encoding: 'utf8' });
+const quitadas = []; const puestas = [];
+for (const l of diff.split('\n')) {
+  if (l.startsWith('---') || l.startsWith('+++')) continue;
+  if (l.startsWith('-')) quitadas.push(l.slice(1));
+  else if (l.startsWith('+')) puestas.push(l.slice(1));
+}
+function faltan(qs) {
+  const bolsa = new Map();
+  for (const p of puestas) bolsa.set(p, (bolsa.get(p) || 0) + 1);
+  const f = [];
+  for (const q of qs) {
+    const esperada = q.replace(/\bfetch\(/g, 'pedirSinAgente(');
+    const n = bolsa.get(esperada) || 0;
+    if (n === 0) f.push(q); else bolsa.set(esperada, n - 1);
+  }
+  return f;
+}
+const f = faltan(quitadas);
+const sinFetch = quitadas.filter((q) => !/\bfetch\(/.test(q));
+const sembrada = faltan([...quitadas.slice(1), quitadas[0] + ' /*sembrada*/']);
+console.log(`quitadas=${quitadas.length} · puestas=${puestas.length} · faltan=${f.length} · quitadas sin fetch(=${sinFetch.length}`);
+for (const x of f) console.log('  FALTA:', x.trim());
+console.log(`control sembrado: ${sembrada.length === 1 ? 'VIVO' : 'CIEGO'}`);
+const ok = quitadas.length > 0 && f.length === 0 && sinFetch.length === 0 && sembrada.length === 1;
+console.log(`EXIT=${ok ? 0 : 1}`);
+process.exit(ok ? 0 : 1);

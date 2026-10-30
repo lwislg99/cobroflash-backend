@@ -1,0 +1,139 @@
+SCRUM-1599h · salida del segundo lote · banco desechable LOCAL: PGlite 0.5.8 + pglite-socket 0.2.11 (maxConnections 64) en loopback, base yaqu_libro_test, esquema de prisma migrate diff --from-empty (33 CREATE TABLE = 33 model), PGlite nuevo por fichero (banco-1599h.mjs.txt)
+codigo: rama scrum-1599h-lote-2-banco sobre origin/main 1b3395ecc · dist/ con tsc --noCheck · sin QA_DB_TEST · Date: Sat, 24 Oct 2026 15:14:50 GMT
+
+## banderas (calibración: sobre 0e86dada, el commit de antes del lote 1, salen los mismos 7 sencillos de 1599f)
+C	8099	···C·	scrum767-cura-concurrencia.test.mjs
+C	10113	···C·	scrum793-la-carrera-del-token.test.mjs
+E	5933	··E··	scrum76-email-adjunto.test.mjs
+E	10058	··E··	scrum207-emision-auditada.test.mjs
+EC	8727	··EC·	scrum592-concurrencia-serie.test.mjs
+EC	9377	··EC·	scrum234-carrera-serie.gated.test.mjs
+EC	15345	··EC·	scrum173-cadena-verifactu-serializada.test.mjs
+EC	20699	··EC·	scrum781-concurrencia-de-la-factura.test.mjs
+HC	11602	·H·C·	scrum127-paywall-bloquea.test.mjs
+HE	6591	·HE··	scrum73-verifactu-gate.test.mjs
+HE	10192	·HE··	scrum221-export-fiscal-cero-bytes.test.mjs
+HE	11008	·HE··	scrum171a-consolidar-cliente.test.mjs
+HE	12061	·HE··	scrum25-exports.test.mjs
+HE	13699	·HE··	scrum82-zip-verifactu.test.mjs
+HE	14643	·HE··	scrum170-facturacion-parcial.test.mjs
+HE	14951	·HE··	scrum25-export-zip.test.mjs
+HE	18943	·HE··	tenancy-permisos.test.mjs
+HEC	9867	·HEC·	scrum92-login-operario.test.mjs
+HEC	16501	·HEC·	scrum178-emision-manual.test.mjs
+HEC	19895	·HEC·	scrum814-carrera-del-tramo.gated.test.mjs
+MC	6281	M··C·	scrum115-wa-fallo-registrado.test.mjs
+sencillo	2648	·····	scrum109-expense-teammember.test.mjs
+sencillo	6338	·····	scrum106-trabajos-fecha.test.mjs
+sencillo	7134	·····	scrum104-clientes-referenciados.test.mjs
+sencillo	7380	·····	scrum135-gasto-tenencia.test.mjs
+sencillo	9842	·····	scrum116-recordatorio-candado.test.mjs
+sencillo	10120	·····	scrum593d-viaje-completo-del-texto.test.mjs
+sencillo	18624	·····	scrum574-mismo-cliente-tras-migracion.test.mjs
+solo-H	4167	·H···	scrum131-resend-honesto.test.mjs
+solo-H	5700	·H···	webhooks-idempotencia.test.mjs
+solo-H	5984	·H···	scrum57-operario-propagacion.test.mjs
+solo-H	6319	·H···	scrum22-operario-readpath.test.mjs
+solo-H	6772	·H···	scrum51-job-sin-quote.test.mjs
+solo-H	6805	·H···	scrum58-jobs-n1.test.mjs
+solo-H	6874	·H···	scrum90-pay-bank-mp-token.test.mjs
+solo-H	7581	·H···	scrum136-hub-equipo.test.mjs
+solo-H	7890	·H···	scrum120-patch-job-roles.test.mjs
+solo-H	8129	·H···	scrum148-filtro-por-miembro.test.mjs
+solo-H	8204	·H···	scrum24-operarios-metrics.test.mjs
+solo-H	8269	·H···	pdfs.test.mjs
+solo-H	8753	·H···	scrum85-pay-routes-token.test.mjs
+solo-H	8861	·H···	scrum66-tipo-operacion.test.mjs
+solo-H	10318	·H···	scrum74-recibo-token.test.mjs
+solo-H	10868	·H···	scrum94-register-teammember.test.mjs
+solo-H	13144	·H···	scrum17-recapitulativa.test.mjs
+solo-H	20385	·H···	scrum222-deriva-arranque.test.mjs
+# poblacion 46 de 46 pedidos · commit 0e86dada4887f1ac54ce0ed5cad3c53c99c72c1c · grupos {"C":2,"E":2,"EC":4,"HC":1,"HE":8,"HEC":3,"MC":1,"sencillo":7,"solo-H":18}
+
+## canario (scrum109, migrado en 1599f)
+scrum109-expense-teammember.test.mjs · exit=0 · 8429 ms · casos=2 (ok=2 not_ok=0 skip=0) · declarados=2 · SUMA
+POBLACION=1 ficheros · EXIT=0
+
+## antes (los 8 candidatos de main, con LIBRO_PG_URL)
+scrum593d-viaje-completo-del-texto.test.mjs · exit=0 · 4684 ms · casos=4 (ok=0 not_ok=0 skip=4) · declarados=4 · SUMA
+scrum574-mismo-cliente-tras-migracion.test.mjs · exit=0 · 3164 ms · casos=8 (ok=6 not_ok=0 skip=2) · declarados=8 · SUMA
+scrum131-resend-honesto.test.mjs · exit=0 · 2719 ms · casos=1 (ok=0 not_ok=0 skip=1) · declarados=1 · SUMA
+webhooks-idempotencia.test.mjs · exit=0 · 5034 ms · casos=3 (ok=2 not_ok=0 skip=1) · declarados=3 · SUMA
+scrum57-operario-propagacion.test.mjs · exit=0 · 4762 ms · casos=1 (ok=0 not_ok=0 skip=1) · declarados=1 · SUMA
+scrum22-operario-readpath.test.mjs · exit=0 · 4213 ms · casos=1 (ok=0 not_ok=0 skip=1) · declarados=1 · SUMA
+scrum51-job-sin-quote.test.mjs · exit=0 · 4863 ms · casos=1 (ok=0 not_ok=0 skip=1) · declarados=1 · SUMA
+scrum58-jobs-n1.test.mjs · exit=0 · 5179 ms · casos=1 (ok=0 not_ok=0 skip=1) · declarados=1 · SUMA
+POBLACION=8 ficheros · EXIT=0
+
+## despues (los 8 migrados)
+scrum593d-viaje-completo-del-texto.test.mjs · exit=0 · 5314 ms · casos=4 (ok=4 not_ok=0 skip=0) · declarados=4 · SUMA
+scrum574-mismo-cliente-tras-migracion.test.mjs · exit=1 · 4000 ms · casos=8 (ok=7 not_ok=1 skip=0) · declarados=8 · SUMA
+   not ok · SCRUM-574 · CONTRA POSTGRES: tras la migración, cada cliente sigue siendo el mismo
+
+scrum131-resend-honesto.test.mjs · exit=0 · 5048 ms · casos=1 (ok=1 not_ok=0 skip=0) · declarados=1 · SUMA
+webhooks-idempotencia.test.mjs · exit=1 · 4456 ms · casos=4 (ok=3 not_ok=1 skip=0) · declarados=4 · SUMA
+   not ok · tests\\webhooks-idempotencia.test.mjs
+
+scrum57-operario-propagacion.test.mjs · exit=0 · 3832 ms · casos=1 (ok=1 not_ok=0 skip=0) · declarados=1 · SUMA
+scrum22-operario-readpath.test.mjs · exit=0 · 4196 ms · casos=1 (ok=1 not_ok=0 skip=0) · declarados=1 · SUMA
+scrum51-job-sin-quote.test.mjs · exit=0 · 3149 ms · casos=1 (ok=1 not_ok=0 skip=0) · declarados=1 · SUMA
+scrum58-jobs-n1.test.mjs · exit=0 · 4594 ms · casos=1 (ok=1 not_ok=0 skip=0) · declarados=1 · SUMA
+POBLACION=8 ficheros · EXIT=0
+   (574 caso 7: '⛔ NO SUPE MIRAR: cero clientes en "postgres", no hay nada que comparar' → 574 se aparta y vuelve a su forma de main)
+   (webhooks: los 3 casos ok y el proceso aborta al salir: Assertion failed: !(handle->flags & UV_HANDLE_CLOSING), file src\win\async.c, line 94)
+
+## webhooks-idempotencia, 3 pasadas más
+webhooks-idempotencia.test.mjs · exit=0 · 9879 ms · casos=3 (ok=3 not_ok=0 skip=0) · declarados=3 · SUMA
+webhooks-idempotencia.test.mjs · exit=0 · 7910 ms · casos=3 (ok=3 not_ok=0 skip=0) · declarados=3 · SUMA
+webhooks-idempotencia.test.mjs · exit=0 · 10012 ms · casos=3 (ok=3 not_ok=0 skip=0) · declarados=3 · SUMA
+POBLACION=3 ficheros · EXIT=0
+
+## mutaciones en dist/ (no en src/), una por fichero migrado
+## M1 · dist/modules/invoicing/infra/pdf/pdf.service.js · el PDF deja de pintar el pie guardado · restaurado=sí (hash igual)
+scrum593d-viaje-completo-del-texto.test.mjs · exit=1 · 10106 ms · casos=4 (ok=3 not_ok=1 skip=0) · declarados=4 · SUMA
+   not ok · SCRUM-593d · 🔴 EL VIAJE: se escribe, se guarda, se RELEE y sale en el PDF
+
+## M2 · dist/modules/team/app/routes/team.routes.js · el reenvío dice «enviado» aunque el correo no saliera · restaurado=sí (hash igual)
+scrum131-resend-honesto.test.mjs · exit=1 · 12264 ms · casos=1 (ok=0 not_ok=1 skip=0) · declarados=1 · SUMA
+   not ok · SCRUM-131: reenviar invitación informa si el email NO salió (sent:false), sin perder la invitación
+
+## M3 · dist/modules/billing/app/routes/psp.routes.js · un payment.confirmed duplicado ya no se reconoce como duplicado · restaurado=sí (hash igual)
+webhooks-idempotencia.test.mjs · exit=1 · 9585 ms · casos=3 (ok=2 not_ok=1 skip=0) · declarados=3 · SUMA
+   not ok · A12.2c: /webhooks/psp — payment.confirmed duplicado NO re-paga (integración)
+
+## M4 · dist/modules/jobs/app/routes/jobs.routes.js · el serializador del trabajo deja de exponer el operario · restaurado=sí (hash igual)
+scrum57-operario-propagacion.test.mjs · exit=1 · 8118 ms · casos=1 (ok=0 not_ok=1 skip=0) · declarados=1 · SUMA
+   not ok · SCRUM-57: operario:{id,name} propagado a job + charge + albaranes en el detalle (owner→null)
+
+scrum22-operario-readpath.test.mjs · exit=1 · 5945 ms · casos=1 (ok=0 not_ok=1 skip=0) · declarados=1 · SUMA
+   not ok · SCRUM-22: serializer expone operario:{id,name} en lista+detalle (null propietario) + tenancy
+
+## M5 · dist/modules/jobs/app/routes/jobs.routes.js · vuelve el early-return: un trabajo sin presupuesto no ve sus albaranes · restaurado=sí (hash igual)
+scrum51-job-sin-quote.test.mjs · exit=1 · 5465 ms · casos=1 (ok=0 not_ok=1 skip=0) · declarados=1 · SUMA
+   not ok · SCRUM-51: el detalle incluye albaranes[] en un Job sin quoteId (y sigue igual con quote)
+
+## M6 · dist/modules/jobs/app/routes/jobs.routes.js · una consulta de más POR trabajo en la lista (un N+1 sembrado) · restaurado=sí (hash igual)
+scrum58-jobs-n1.test.mjs · exit=1 · 6019 ms · casos=1 (ok=0 not_ok=1 skip=0) · declarados=1 · SUMA
+   not ok · SCRUM-58: la lista de Trabajos no hace N+1 (las consultas no crecen con el nº de jobs)
+
+POBLACION=6 mutaciones · fallos de instrumento=0
+
+## trinquete scrum1599f · rojos
+m1 = quitar scrum574 de SOLO_STAGING:
+not ok 1 - SCRUM-1599f · los que SÓLO corren contra staging son exactamente los 35 declarados
+      ENTRAN (gateados sólo de staging sin declarar): scrum574-mismo-cliente-tras-migracion.test.mjs
+      SALEN (declarados que ya no lo son): —
+ok 2 - SCRUM-1599f · sin el sembrado el censo dice CIEGO, no verde
+ok 3 - SCRUM-1599f · CONTROLES: el sembrado entra, su gemelo migrado no, y un comentario no conecta nada
+m2 = volver a declarar scrum131 (ya migrado):
+not ok 1 - SCRUM-1599f · los que SÓLO corren contra staging son exactamente los 35 declarados
+      ENTRAN (gateados sólo de staging sin declarar): —
+      SALEN (declarados que ya no lo son): scrum131-resend-honesto.test.mjs
+ok 2 - SCRUM-1599f · sin el sembrado el censo dice CIEGO, no verde
+ok 3 - SCRUM-1599f · CONTROLES: el sembrado entra, su gemelo migrado no, y un comentario no conecta nada
+
+## trinquete + 419 + 876e + 876f, con el lote
+# tests 22
+# pass 22
+# fail 0
+# skipped 0

@@ -1,0 +1,8 @@
+BASE sin mutar · tiene que PASAR → PASA · ok=1 not_ok=0 · exit=0
+catálogo 1 · tiene que CAER ·   extra       Int? → CAE · ok=0 not_ok=1 · exit=1
+catálogo 2 · tiene que CAER · merchantId BigInt  @map("merchant_id") → CAE · ok=0 not_ok=1 · exit=1
+catálogo 3 · tiene que CAER · providerId String? @map("provider_id") → CAE · ok=0 not_ok=1 · exit=1
+catálogo 4 · tiene que CAER · @@index([merchantId, updatedAt]) → CAE · ok=0 not_ok=1 · exit=1
+catálogo 5 · tiene que CAER · // error  String? → CAE · ok=0 not_ok=1 · exit=1
+SOLO comentario · tiene que PASAR → PASA · ok=1 not_ok=0 · exit=0
+7 mutaciones (5 del catálogo) · restaurado byte a byte

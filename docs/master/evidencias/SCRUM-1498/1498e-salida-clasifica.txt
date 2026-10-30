@@ -1,0 +1,13 @@
+  control H: H · guard que no cae (MUDO) · cuadra true · sin marcas → SIN LEER (log sin código ni resumen) · OK
+  control P: P · presupuesto agotado (CORTO YO), sin otro CIEGO · cuadra true · sin marcas → SIN LEER (log sin código ni resumen) · OK
+  control C: C · CIEGO por otra causa · cuadra true · sin marcas → SIN LEER (log sin código ni resumen) · OK
+  control S: S · salida cortada (1610b) · cuadra true · sin marcas → SIN LEER (log sin código ni resumen) · OK
+CONTROL SEMBRADO: 4 de 4 bien
+
+POBLACION failure=95 success(calibracion)=23 · logs vacios=0
+    9 de 95 · C · CIEGO por otra causa
+   85 de 95 · P · presupuesto agotado (CORTO YO), sin otro CIEGO
+    1 de 95 · otra: paso «Compilar (tsc)»
+suma de clases = 95 (tiene que ser 95)
+COHERENCIA con el resumen del instrumento (ciegas = guards «?» + corte; mudas = guards «✖»): cuadra 117 · no cuadra 0 · sin resumen 1
+CALIBRACION success: con resumen y codigo null/0 = 23 de 23 · con mudas>0 = 0 (tiene que ser 0)

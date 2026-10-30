@@ -1,0 +1,9 @@
+== medido 2026-10-23T19:06:08.188Z · proceso en UTC · comercio sin zona (UTC) ==
+cuadra S0 SUELO: 87 a clientes, las dos funciones las ven
+        {"panel":87,"mesTotal":87,"topeClientesCuenta":87,"saleACliente":true,"topeAvisosCuenta":0,"saleAviso":true}
+cuadra C0 CERO: 99 a clientes y ningún aviso: panel = tope
+        {"panel":99,"mesTotal":99,"topeClientesCuenta":99,"saleACliente":true,"topeAvisosCuenta":0,"saleAviso":true}
+ROJO   C1 POSITIVO SEMBRADO: la reserva de avisos ve los 5 avisos
+        {"panel":99,"mesTotal":99,"topeClientesCuenta":99,"saleACliente":true,"topeAvisosCuenta":0,"saleAviso":true}
+        <<< topeAvisosCuenta: esperado 5, salió 0
+CIEGO: los avisos sembrados no llegan a la rama de los avisos.

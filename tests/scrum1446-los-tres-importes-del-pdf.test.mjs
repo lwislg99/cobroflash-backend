@@ -44,8 +44,12 @@ const { calcTotal } = require('../dist/core/utils/utils.js');
 
 /** Los defectos que este fichero fija sin arreglar, con el ticket que los lleva. */
 const DECLARADOS = Object.freeze({
-  'la columna no suma el total': 'SCRUM-1446 · cada línea se redondea al imprimirse y el TOTAL sale de la suma sin redondear.',
-  'el total impreso no es el guardado': 'SCRUM-1448 y SCRUM-624 · la factura con líneas recalcula; el guardado es `grossOfLines`.',
+  // ✅ SCRUM-1446e (26-oct-2026) · sale «la columna no suma el total»: con el GO de SCRUM-1446
+  // c.20917 la columna de la F1 va sin IVA y suma la base. Su motivo decía «el TOTAL sale de la
+  // suma sin redondear», y desde SCRUM-624e ya no era cierto: el TOTAL era el guardado y lo que no
+  // sumaba era la columna CON IVA, redondeada línea a línea (medido en SCRUM-1446 c.20915). Ver ① abajo.
+  // ✅ SCRUM-624e (24-oct-2026) · sale «el total impreso no es el guardado»: con el GO de SCRUM-624
+  // c.20817, el papel de la F1 imprime su total guardado. Ver ③ abajo.
 });
 
 const IMPORTE = '-?[\\d.]+,\\d{2}';
@@ -122,27 +126,32 @@ const ADMITIDOS = [...TIPOS_IVA_ES_BP].map((b) => b / 10000).sort((a, b) => a - 
 // SUELO: el lector ve lo que está, y un papel que cuadra, cuadra
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-1446 · SUELO: en un papel que cuadra, la columna suma el TOTAL y el total es el guardado', async () => {
+// SCRUM-1446e: desde SCRUM-1446 c.20917 la columna de la F1 va SIN IVA, así que lo que suma es la base
+// (100,00 + 100,00 = 200,00) y el TOTAL es el guardado (242,00). Hasta hoy fijaba 121,00 + 121,00.
+test('SCRUM-1446 · SUELO: en un papel que cuadra, la columna suma la base y el total es el guardado', async () => {
   const lines = [L(100, 0.21), L(100, 0.21)];
   const guardado = grossOfLines(lines);
   const p = await papelFactura(lines, guardado.toFixed(2));
   assert.deepEqual(
     { filas: p.filas, pie: p.pie, total: p.total, sumaDeLaColumna: suma(p.filas), guardado: Math.round(guardado * 100) },
     {
-      filas: [{ rotulo: '21%', total: 12100 }, { rotulo: '21%', total: 12100 }],
+      filas: [{ rotulo: '21%', total: 10000 }, { rotulo: '21%', total: 10000 }],
       pie: [{ rotulo: '21%', cuota: 4200 }],
-      total: 24200, sumaDeLaColumna: 24200, guardado: 24200,
+      total: 24200, sumaDeLaColumna: 20000, guardado: 24200,
     },
-    '🔴 CIEGO: en la factura más simple —dos líneas de 100 al 21 %— el lector no saca 121,00 + 121,00 = ' +
-    '242,00. Si no sabe leer un papel que cuadra, lo que diga de los que no cuadran no vale.');
+    '🔴 CIEGO: en la factura más simple —dos líneas de 100 al 21 %— el lector no saca 100,00 + 100,00 = ' +
+    '200,00 de base y 242,00 de TOTAL. Si no sabe leer un papel que cuadra, lo que diga de los que no cuadran no vale.');
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
 // ① SCRUM-1446 · la columna de las líneas no suma el TOTAL
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-1446 · ① DECLARADO: dos líneas de 12,50 al 21 % imprimen 15,13 + 15,13 y TOTAL 30,25', async () => {
-  assert.ok(DECLARADOS['la columna no suma el total'].includes('SCRUM-1446'));
+// ── SCRUM-1446e (26-oct-2026) · ARREGLADO: la columna va SIN IVA y suma la base ────────────────
+// Decisión del fundador: SCRUM-1446 c.20917 (P1 en la factura, P4 en el presupuesto). Hasta hoy este
+// caso fijaba 15,13 + 15,13 = 30,26 con TOTAL 30,25, en los dos papeles. El detalle, la R1 y el
+// justificante (que no cambian) y el resto de los tramos: `tests/scrum1446e-la-columna-sin-iva.test.mjs`.
+test('SCRUM-1446 · ① ARREGLADO: dos líneas de 12,50 al 21 % imprimen 12,50 + 12,50, que es la base, y TOTAL 30,25', async () => {
   const lines = [L(12.5, 0.21), L(12.5, 0.21)];
   const f = await papelFactura(lines, grossOfLines(lines).toFixed(2));
   const q = await papelPresupuesto(lines, calcTotal(lines).toFixed(2));
@@ -152,12 +161,11 @@ test('SCRUM-1446 · ① DECLARADO: dos líneas de 12,50 al 21 % imprimen 15,13 +
       presupuesto: { lineas: q.filas.map((x) => x.total), sumaALaVista: suma(q.filas), total: q.total },
     },
     {
-      factura: { lineas: [1513, 1513], sumaALaVista: 3026, total: 3025 },
-      presupuesto: { lineas: [1513, 1513], sumaALaVista: 3026, total: 3025 },
+      factura: { lineas: [1250, 1250], sumaALaVista: 2500, total: 3025 },
+      presupuesto: { lineas: [1250, 1250], sumaALaVista: 2500, total: 3025 },
     },
-    'El papel ya no imprime 15,13 + 15,13 con TOTAL 30,25. Si ahora la columna SUMA el total, es lo ' +
-    'que SCRUM-1446 pedía: borra «la columna no suma el total» de `DECLARADOS` y fija aquí los ' +
-    'importes nuevos. Si ha cambiado por otra cosa, alguien ha movido una cifra impresa.');
+    '🔴 la columna de las líneas ya no imprime 12,50 + 12,50 (sin IVA) o el TOTAL ya no es 30,25. ' +
+    'Decisión del fundador: SCRUM-1446 c.20917. Si ha cambiado, alguien ha movido una cifra impresa.');
 });
 
 // ═════════════════════════════════════════════════════════════════════════════════════════
@@ -270,8 +278,10 @@ test('SCRUM-1447 · ② el descuento global de un presupuesto al 7,5 % se firma 
 // ③ SCRUM-1448 · el total recalculado y el guardado
 // ═════════════════════════════════════════════════════════════════════════════════════════
 
-test('SCRUM-1448 · ③ DECLARADO: el TOTAL impreso no es el guardado con dos tipos, con tramos y con descuento de línea', async () => {
-  assert.ok(DECLARADOS['el total impreso no es el guardado'].includes('SCRUM-1448'));
+// ── SCRUM-624e (24-oct-2026) · ARREGLADO EN LA F1: el TOTAL impreso es el guardado ─────────────
+// GO del fundador: SCRUM-624 c.20817, «A solo en facturas normales». Hasta hoy este caso fijaba
+// guardado 3 / impreso 4, 127 / 128 y 190 / 189. La R1 sigue recalculando (`scrum624e`).
+test('SCRUM-1448 · ③ ARREGLADO en la F1: el TOTAL impreso es el guardado con dos tipos, con tramos y con descuento de línea', async () => {
   const plan = [{ index: 0, percentage: 0.5, label: '' }, { index: 1, percentage: 0.5, label: '' }];
   const deTramo = [L(2.11, 0.21)];
   const casos = {
@@ -289,28 +299,28 @@ test('SCRUM-1448 · ③ DECLARADO: el TOTAL impreso no es el guardado con dos ti
   }
   assert.deepEqual(visto, {
     'control · una línea de 100 al 21 %': { guardado: 12100, impreso: 12100 },
-    'dos tipos · 0,02 al 21 % y 0,01 al 10 %': { guardado: 3, impreso: 4 },
-    'tramo 2 de 2 al 50 % · 2,11 al 21 %': { guardado: 127, impreso: 128 },
-    'descuento de línea del 10 % · 1,74 al 21 %': { guardado: 190, impreso: 189 },
+    'dos tipos · 0,02 al 21 % y 0,01 al 10 %': { guardado: 3, impreso: 3 },
+    'tramo 2 de 2 al 50 % · 2,11 al 21 %': { guardado: 127, impreso: 127 },
+    'descuento de línea del 10 % · 1,74 al 21 %': { guardado: 190, impreso: 190 },
   },
-  'Ha cambiado el total que imprime la factura o el que se guarda. Si ya coinciden, es lo que ' +
-  'SCRUM-1448 y SCRUM-624 pedían: borra «el total impreso no es el guardado» de `DECLARADOS` y ' +
-  'fija aquí los importes nuevos.');
+  '🔴 la F1 vuelve a imprimir un TOTAL distinto del guardado: el papel ha vuelto a recalcular ' +
+  '(SCRUM-1448, SCRUM-624e).');
 });
 
-test('SCRUM-1448 · ③ la factura SIN líneas imprime el guardado, y con líneas lo ignora', async () => {
+test('SCRUM-1448 · ③ la factura imprime el guardado, tenga líneas o no (SCRUM-624e)', async () => {
   const sin = await papelFactura([], '123.45');
   const con = await papelFactura([L(100, 0.21)], '999.99');
   assert.deepEqual(
     { sin: { total: sin.total, rama: sin.ramaSinLineas, filas: sin.filas.length }, con: { total: con.total, rama: con.ramaSinLineas } },
-    { sin: { total: 12345, rama: true, filas: 0 }, con: { total: 12100, rama: false } },
-    'Ha cambiado de dónde sale el total del PDF de la factura. Hoy son dos fuentes en el mismo ' +
-    'documento según tenga líneas o no (SCRUM-1448); si pasa a ser una, fija aquí cuál.');
+    { sin: { total: 12345, rama: true, filas: 0 }, con: { total: 99999, rama: false } },
+    'Ha cambiado de dónde sale el total del PDF de la factura. Desde SCRUM-624e es UNA fuente, el ' +
+    'guardado, tenga líneas o no; hasta entonces, con líneas imprimía el recalculado (121,00).');
 });
 
-test('SCRUM-1446 · los defectos declarados son EXACTAMENTE dos, y cada uno nombra su ticket', () => {
-  // SCRUM-1446d: 3 → 2, al arreglarse «el 7,5 % se imprime «8%»».
-  assert.equal(Object.keys(DECLARADOS).length, 2,
+test('SCRUM-1446 · los defectos declarados son EXACTAMENTE cero, y cada uno nombra su ticket', () => {
+  // SCRUM-1446d: 3 → 2, al arreglarse «el 7,5 % se imprime «8%»». SCRUM-624e: 2 → 1, al imprimir
+  // la F1 su total guardado. SCRUM-1446e: 1 → 0, al ir la columna sin IVA.
+  assert.equal(Object.keys(DECLARADOS).length, 0,
     'La lista de defectos declarados ha cambiado de tamaño. Sólo puede menguar, y al menguar se ' +
     'cambia este número en el mismo commit.');
   for (const [k, motivo] of Object.entries(DECLARADOS)) {

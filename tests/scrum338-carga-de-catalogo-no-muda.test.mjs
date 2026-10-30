@@ -109,6 +109,7 @@ test('SCRUM-338 · el aviso es el texto APROBADO, y dice DÓNDE está la salida'
   // Microcopy aprobada por el fundador el 9-ago-2026. El guard compara contra la CONSTANTE que
   // publica la vista, nunca contra una copia del literal: una copia se desincroniza y el día que
   // el texto cambie este test seguiría verde sobre el texto viejo.
+  // Consta en: SCRUM-1502 comentario 20702.
   const { ctx } = correrPasoConFallo();
   const msg = ctx.window.OB_MSG_CATALOGO_FALLO;
   assert.ok(msg, '🔴 la vista no publica el mensaje: no se puede comprobar sin copiarlo.');

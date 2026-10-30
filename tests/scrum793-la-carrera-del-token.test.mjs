@@ -31,6 +31,8 @@
 //    MEDIDO en SCRUM-767: censos rápidos y gateados lentos en el mismo fichero hacen que
 //    `--test-force-exit` cancele los gateados.
 // ═════════════════════════════════════════════════════════════════════════════════════════
+import './_staging-db.mjs'; // SCRUM-1599p: el guard de staging va delante del segundo destino (scrum876e)
+import { URL_BANCO } from './_banco-libro.mjs'; // SCRUM-1599p: segundo destino (LIBRO_PG_URL); su guard exige loopback y «*_test»
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -38,18 +40,22 @@ import path from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url'; // NUNCA `.pathname`: no decodifica
 
 const RAIZ = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
-const GATE = process.env.QA_DB_TEST === '1';
+const GATE = process.env.QA_DB_TEST === '1' || URL_BANCO !== '';
 
 let prismaDev = null;
 let cliente = null;
 if (GATE) {
   const { PrismaClient } = await import(pathToFileURL(RAIZ + '/node_modules/@prisma/client/default.js').href);
   const { parseBDSegura } = await import(pathToFileURL(RAIZ + '/scripts/_db-guard.mjs').href);
-  const linea = fs.readFileSync(path.join(RAIZ, '.env'), 'utf8').split('\n').find((l) => l.startsWith('DATABASE_URL_DEV='));
-  const url = linea?.slice('DATABASE_URL_DEV='.length).trim().replace(/^["']|["']$/g, '');
-  const info = url ? parseBDSegura(url) : null;
-  assert.ok(info && info.base === 'yaqu_dev_javier',
-    '🔴 PARO: este test ESCRIBE y la clave de desarrollo no apunta a `yaqu_dev_javier`.');
+  // SCRUM-1599p: o el banco desechable, cuya URL ya ha pasado el guard de `_banco-libro.mjs`.
+  let url = URL_BANCO;
+  if (!url) {
+    const linea = fs.readFileSync(path.join(RAIZ, '.env'), 'utf8').split('\n').find((l) => l.startsWith('DATABASE_URL_DEV='));
+    url = linea?.slice('DATABASE_URL_DEV='.length).trim().replace(/^["']|["']$/g, '');
+    const info = url ? parseBDSegura(url) : null;
+    assert.ok(info && info.base === 'yaqu_dev_javier',
+      '🔴 PARO: este test ESCRIBE y la clave de desarrollo no apunta a `yaqu_dev_javier`.');
+  }
   prismaDev = new PrismaClient({ datasources: { db: { url } } });
   // El doble ANTES del import: `customerAdmin` usa el singleton de `core/db/prisma`, que resuelve
   // `DATABASE_URL` — variable que en este árbol NO existe (sólo `_DEV`/`_STAGING`/`_TESTS`).
@@ -77,7 +83,7 @@ const sinToken = (mid) => prismaDev.customer
 const enBase = (id) => prismaDev.customer
   .findUnique({ where: { id }, select: { portalToken: true } }).then((x) => x?.portalToken ?? null);
 
-test('SCRUM-793 · SUELO: el cliente del experimento NACE sin token', { skip: !GATE && 'sin QA_DB_TEST=1 · necesita Postgres real: la condición que se prueba vive en el WHERE de un UPDATE' }, async () => {
+test('SCRUM-793 · SUELO: el cliente del experimento NACE sin token', { skip: !GATE && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL ·necesita Postgres real: la condición que se prueba vive en el WHERE de un UPDATE' }, async () => {
   await conMerchant(async (m) => {
     const c = await sinToken(m.id);
     assert.equal(c.portalToken, null,
@@ -86,7 +92,7 @@ test('SCRUM-793 · SUELO: el cliente del experimento NACE sin token', { skip: !G
   });
 });
 
-test('SCRUM-793 · 🔴 EL QUE DECIDE: DIEZ curaciones a la vez → UN token, y está en la base', { skip: !GATE && 'sin QA_DB_TEST=1 · necesita Postgres real: la condición que se prueba vive en el WHERE de un UPDATE' }, async () => {
+test('SCRUM-793 · 🔴 EL QUE DECIDE: DIEZ curaciones a la vez → UN token, y está en la base', { skip: !GATE && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL ·necesita Postgres real: la condición que se prueba vive en el WHERE de un UPDATE' }, async () => {
   // Tres rondas: con el defecto puesto, las tres fallaban. No es para «darle oportunidades», es
   // para que un verde no dependa de que una ronda no llegara a entrelazarse.
   for (let ronda = 1; ronda <= 3; ronda += 1) {
@@ -112,7 +118,7 @@ test('SCRUM-793 · 🔴 EL QUE DECIDE: DIEZ curaciones a la vez → UN token, y 
   }
 });
 
-test('SCRUM-793 · 🔴 y DOS a la vez tampoco: el caso del encargo', { skip: !GATE && 'sin QA_DB_TEST=1 · necesita Postgres real: la condición que se prueba vive en el WHERE de un UPDATE' }, async () => {
+test('SCRUM-793 · 🔴 y DOS a la vez tampoco: el caso del encargo', { skip: !GATE && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL ·necesita Postgres real: la condición que se prueba vive en el WHERE de un UPDATE' }, async () => {
   // Con el defecto puesto esto fallaba 4 de cada 5 veces — o sea que UNA ronda sola habría pasado
   // en verde una de cada cinco. Cinco rondas, y ninguna puede entregar un token muerto.
   for (let ronda = 1; ronda <= 5; ronda += 1) {
@@ -129,7 +135,7 @@ test('SCRUM-793 · 🔴 y DOS a la vez tampoco: el caso del encargo', { skip: !G
   }
 });
 
-test('SCRUM-793 · ✅ CONTROL POSITIVO: a quien YA tiene token no se le mueve', { skip: !GATE && 'sin QA_DB_TEST=1 · necesita Postgres real: la condición que se prueba vive en el WHERE de un UPDATE' }, async () => {
+test('SCRUM-793 · ✅ CONTROL POSITIVO: a quien YA tiene token no se le mueve', { skip: !GATE && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL ·necesita Postgres real: la condición que se prueba vive en el WHERE de un UPDATE' }, async () => {
   // El arreglo escribe condicionado a `portalToken: null`. Si esa condición se rompiera al revés
   // —escribiendo siempre— este control cae: le cambiaría el enlace a un cliente que ya lo tiene,
   // y el que ya circula por WhatsApp dejaría de abrir.
@@ -144,7 +150,7 @@ test('SCRUM-793 · ✅ CONTROL POSITIVO: a quien YA tiene token no se le mueve',
   });
 });
 
-test('SCRUM-793 · ✅ CONTROL NEGATIVO: editar el nombre sigue sin mover el token', { skip: !GATE && 'sin QA_DB_TEST=1 · necesita Postgres real: la condición que se prueba vive en el WHERE de un UPDATE' }, async () => {
+test('SCRUM-793 · ✅ CONTROL NEGATIVO: editar el nombre sigue sin mover el token', { skip: !GATE && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL ·necesita Postgres real: la condición que se prueba vive en el WHERE de un UPDATE' }, async () => {
   await conMerchant(async (m) => {
     const c = await sinToken(m.id);
     const t0 = await cliente.ensurePortalToken(m.id, c.id);
@@ -155,7 +161,7 @@ test('SCRUM-793 · ✅ CONTROL NEGATIVO: editar el nombre sigue sin mover el tok
   });
 });
 
-test('SCRUM-793 · un cliente que no es de este merchant no se cura (regla 2)', { skip: !GATE && 'sin QA_DB_TEST=1 · necesita Postgres real: la condición que se prueba vive en el WHERE de un UPDATE' }, async () => {
+test('SCRUM-793 · un cliente que no es de este merchant no se cura (regla 2)', { skip: !GATE && 'sin QA_DB_TEST=1 ni LIBRO_PG_URL ·necesita Postgres real: la condición que se prueba vive en el WHERE de un UPDATE' }, async () => {
   // La escritura pasó a filtrar por `merchantId`, que antes sólo filtraba la lectura. Se comprueba
   // por el efecto: con el merchant equivocado no se cura NI se escribe nada.
   await conMerchant(async (propietario) => {
@@ -172,3 +178,11 @@ test('SCRUM-793 · un cliente que no es de este merchant no se cura (regla 2)', 
 });
 
 test.after(async () => { if (prismaDev) await prismaDev.$disconnect(); });
+
+// SCRUM-1599p (diseño B de SCRUM-1599) · la mutación que tumba el caso de base, CATALOGADA en SCRUM-1599p.
+// Va aparte de `MUTACIONES_QUE_ME_TUMBAN` a propósito: el job del meta-guard corre SIN base, el caso sale
+// SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco,
+// `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e). Cada campo, LITERAL.
+export const MUTACIONES_CON_BASE = [
+  { fichero: "src/modules/system/customerAdmin.ts", de: "    where: { id: customerId, merchantId, portalToken: null },", a: "    where: { id: customerId, merchantId },", cae: "DIEZ curaciones a la vez" },
+];

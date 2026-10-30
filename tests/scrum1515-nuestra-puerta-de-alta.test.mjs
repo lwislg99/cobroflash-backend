@@ -379,7 +379,25 @@ ${enCanarias.salida}`);
         '🔴 un alta rechazada dejó un merchant');
       assert.equal(await cuantos(), alEmpezar + 2, '🔴 al acabar hay más merchants que los dos del guion');
 
-      t.diagnostic(`SCRUM-1515: ruta cerrada, 409 y la frase firmada en 14 llamadas, 0 altas y 0 correos · 2 merchants por el guion · ${porValor} campos comparados por valor con la foto de la ruta (${Object.keys(ruta.A.fila).length} por fila en la foto) · por regla: ${POR_REGLA.join(', ')}, referredBy en B y timezone en A (${guion.A.fila.timezone}; en B, ${guion.B.fila.timezone}) · campos de hoy que la foto no tiene: ${nuevos.length}${nuevos.length ? ` (${nuevos.join(', ')}; sin juzgar)` : ''} · un merchant que ya existe pide enlace, entra y lee su sesión`);
+      // SCRUM-94b · las tres ramas de la guarda de SCRUM-94, por el ÚNICO camino que llega hoy a ella (el
+      // guion), y con un alta COMPLETA: si la guarda no estuviera, estos tres SÍ se darían de alta. Sin
+      // provincia (como el operario de arriba), quitar la guarda sólo se ve porque sale 2 en vez de 4.
+      const completa = { provincia: 'Madrid', 'domicilio-foral': 'no', 'domicilio-canarias': 'no' };
+      const operarioDe = (status) => prisma.teamMember.create({ data: { merchantId: guion.A.fila.id, name: `Operario ${status} 94b`, email: `operario-${status}-94b-${sello.toLowerCase()}@test.local`, role: 'tecnico', status } });
+      const activo = await operarioDe('active');
+      const invitado = await operarioDe('invited');
+      const suspendido = await operarioDe('suspended');
+      const deActivo = await porElGuion({ name: 'Negocio del activo', email: activo.email, ...completa });
+      const deInvitado = await porElGuion({ name: 'Negocio del invitado', email: invitado.email, ...completa });
+      assert.deepEqual([deActivo.codigo, deActivo.dicho.at(-1)?.error, deInvitado.codigo, deInvitado.dicho.at(-1)?.error], [4, 'email_belongs_to_team', 4, 'email_belongs_to_team'],
+        `🔴 SCRUM-94: el correo de un operario activo o invitado no puede darse de alta como merchant\n${deActivo.salida}\n${deInvitado.salida}`);
+      assert.equal(await prisma.merchant.count({ where: { email: { in: [activo.email, invitado.email] } } }), 0, '🔴 SCRUM-94: el alta rechazada de un operario dejó un merchant');
+      // 'suspended' NO se rechaza (auth.service.ts, SCRUM-94): ya no puede entrar y darse de alta es legítimo.
+      const deSuspendido = await porElGuion({ name: 'Negocio del suspendido', email: suspendido.email, ...completa });
+      assert.equal(deSuspendido.codigo, 0, `🔴 SCRUM-94: un operario suspendido sí puede dar de alta su negocio, y el guion salió ${deSuspendido.codigo}\n${deSuspendido.salida}`);
+      assert.equal(await prisma.merchant.count({ where: { email: suspendido.email } }), 1, '🔴 SCRUM-94: el alta del operario suspendido no creó su merchant');
+
+      t.diagnostic(`SCRUM-1515: ruta cerrada, 409 y la frase firmada en 14 llamadas, 0 altas y 0 correos · 2 merchants por el guion · ${porValor} campos comparados por valor con la foto de la ruta (${Object.keys(ruta.A.fila).length} por fila en la foto) · por regla: ${POR_REGLA.join(', ')}, referredBy en B y timezone en A (${guion.A.fila.timezone}; en B, ${guion.B.fila.timezone}) · campos de hoy que la foto no tiene: ${nuevos.length}${nuevos.length ? ` (${nuevos.join(', ')}; sin juzgar)` : ''} · un merchant que ya existe pide enlace, entra y lee su sesión · SCRUM-94 por el guion: operario activo e invitado salen 4 sin merchant, suspendido sale 0 con el suyo`);
     });
   } finally {
     console.log = logReal;
@@ -395,3 +413,14 @@ ${enCanarias.salida}`);
     fs.rmSync(carpetaVacia, { recursive: true, force: true });
   }
 });
+
+// SCRUM-94b · la guarda de SCRUM-94 (`registerMerchant` no da de alta el correo de un operario) sólo se
+// alcanza hoy por el guion: `/auth/register` contesta 409 sin llamar al servicio (SCRUM-1599 c.20874).
+// Va aparte de `MUTACIONES_QUE_ME_TUMBAN` a propósito: el job del meta-guard corre SIN base, el caso sale
+// SALTADO en su pasada limpia y eso es CIEGO (PUERTA 1a), no un veredicto. La ejecuta, con el banco PGlite,
+// `docs/master/evidencias/SCRUM-1599/mutar-1599i.mjs` (forma de SCRUM-1390e). Cada campo, LITERAL.
+export const MUTACIONES_CON_BASE = [
+  { fichero: "src/modules/auth/domain/auth.service.ts", de: "if (teamMember && teamMember.status !== 'suspended') {", a: "if (false) {", cae: "SCRUM-1515 · el merchant que crea nuestro guion" },
+  { fichero: "src/modules/auth/domain/auth.service.ts", de: "if (teamMember && teamMember.status !== 'suspended') {", a: "if (teamMember && teamMember.status === 'active') {", cae: "SCRUM-1515 · el merchant que crea nuestro guion" },
+  { fichero: "src/modules/auth/domain/auth.service.ts", de: "if (teamMember && teamMember.status !== 'suspended') {", a: "if (teamMember) {", cae: "SCRUM-1515 · el merchant que crea nuestro guion" },
+];

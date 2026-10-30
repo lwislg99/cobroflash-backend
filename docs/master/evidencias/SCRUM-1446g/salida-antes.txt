@@ -1,0 +1,11 @@
+dist con reparto (importesDeLaColumnaSinIva): NO (la base)
+calibración: 80 PDF reales · 0 distintos de esta aritmética
+población: 56000 tramos de 24000 facturas
+  50/50     16000 tramos · hoy no suma 7657 (47,9 %) · con esta columna no suma 7657 · líneas movidas en 0
+  30/70     16000 tramos · hoy no suma 5209 (32,6 %) · con esta columna no suma 5209 · líneas movidas en 0
+  30/40/30  24000 tramos · hoy no suma 7752 (32,3 %) · con esta columna no suma 7752 · líneas movidas en 0
+tramos que hoy suman y esta columna mueve: 0
+desvío máximo de una línea frente a su importe exacto: 0,500 céntimos
+control a cero: las 24000 facturas SIN tramos · no suman 0 · cambia alguna línea en 0
+control positivo (1446e ⑤): hoy 106 + 167 = 273 sobre base 272 · esta columna 106 + 167
+EXIT=0

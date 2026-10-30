@@ -1,0 +1,20 @@
+VIVA   scrum1620-el-censo-por-partes.test.mjs · SCRUM-1620 · ① las partes, juntas, son el censo ENTERO, sin repetir ni perder un guard
+VIVA   scrum1620-el-censo-por-partes.test.mjs · SCRUM-1620 · ② una META_PARTE que no se entiende es CIEGO, no «el censo entero»
+VIVA   scrum1620-el-censo-por-partes.test.mjs · SCRUM-1620 · ④ el corte se avisa como lo que es: NO CABE
+VIVA   scrum1620-el-censo-por-partes.test.mjs · SCRUM-1620 · ⑤ una parte que no dejó resumen NO es una parte verde: es CIEGO
+VIVA   scrum1620-el-censo-por-partes.test.mjs · SCRUM-1620 · ⑥ el bloque principal juzga SU parte y dice cuál es
+VIVA   scrum1387d-el-recuento-dice-sobre-cuantos.test.mjs · SCRUM-1387d · ① la línea del recuento lleva su población PEGADA
+VIVA   scrum1387d-el-recuento-dice-sobre-cuantos.test.mjs · SCRUM-1387d · 🔴 el rótulo del censo sale en la pasada del CI, antes del bucle
+VIVA   scrum1387d-el-recuento-dice-sobre-cuantos.test.mjs · SCRUM-1387d · 🔴 el recuento final sale por `rotuloDelResultado`, y por ningún otro sitio
+VIVA   scrum1387d-el-recuento-dice-sobre-cuantos.test.mjs · SCRUM-1387d · el corte sale UNA vez, y antes del suelo de ejecución
+VIVA   scrum812-el-rotulo-declara-su-poblacion.test.mjs · SCRUM-812 · 🔴 GUARD del rótulo: dice DECLARANTES y publica su DENOMINADOR
+VIVA   scrum812-el-rotulo-declara-su-poblacion.test.mjs · SCRUM-812 · 🔴 EL QUE DECIDE: el subconjunto auto-declarado lleva su LÍMITE PEGADO
+VIVA   scrum812-el-rotulo-declara-su-poblacion.test.mjs · SCRUM-812 · 🔴 SUELO del GUARD: sobre población CERO se declara CIEGO, no cero
+VIVA   scrum812-el-rotulo-declara-su-poblacion.test.mjs · SCRUM-812 · 🔴 EL TRINQUETE del GUARD: la cobertura auto-declarada NO BAJA
+VIVA   scrum812-el-rotulo-declara-su-poblacion.test.mjs · SCRUM-812d · 🔴 el título se cuenta por PALABRA: «guarda» y «guardado» no son un guard
+VIVA   scrum935d-el-corte-dice-lo-que-deja.test.mjs · SCRUM-935d · 🔴 con el presupuesto agotado, CORTA; con margen, no
+VIVA   scrum935d-el-corte-dice-lo-que-deja.test.mjs · SCRUM-935d · lo pendiente empieza en la mutación del corte, no en la primera del guard
+VIVA   scrum935d-el-corte-dice-lo-que-deja.test.mjs · SCRUM-935d · si DOS jobs corren el instrumento, no sé de cuál soy: sin techo
+VIVA   scrum935d-el-corte-dice-lo-que-deja.test.mjs · SCRUM-935d · 🔴 EL BUCLE: mira el presupuesto antes de cada pasada, y el corte sale como CIEGA
+
+todas VIVAS

@@ -181,3 +181,123 @@ A y B no se excluyen. C es la única que cumple el ticket como está escrito.
 - Una pasada del caso 9 falló por `EBUSY` al renombrar el binario recién copiado y el testigo, que
   miraba sólo la última copia, dijo «sí». Ahora hay reintento y un testigo por pasada.
 - Di por población «las corridas rojas» y la corrida de control conocida era `cancelled`.
+
+## SCRUM-1389b · sigue vivo hoy, y sigue sin decisión — no se construye
+
+**Medido contra:** `origin/main` = `25ad5d43b6a8ed41fdcb90c5fdbc0e2e388ec1be` · 2026-10-24T10:03:43Z
+
+A9: sin fallo que generalice — los dos tropiezos de esta pasada (abajo) los cazó la herramienta en el acto y no dejaron ninguna medición mala detrás
+
+Sesión `jv-j6bj` (puesto J6), por encargo del orquestador del equipo de Javier (`cobroflash-backend-95`).
+**Sólo docs:** este tramo. Ningún script, test, guard, lista ni workflow.
+
+**El defecto existe hoy (A2).** El banco de este registro (`docs/master/evidencias/scrum1389/banco.mjs`),
+corrido sin cambios sobre `25ad5d43`, node v24.18.0, Windows, 11 s, temporales en `os.tmpdir()`: los
+nueve casos dan lo mismo que el 7-oct. Control verde (caso 1): `tests 2 · pass 2 · fail 0 · EXIT=0`.
+Control rojo (caso 2): `tests 2 · pass 1 · fail 1 · EXIT=1`. Los dos nietos que no se crean (caso 9):
+`tests 3 · pass 1 · fail 2 · EXIT=1`, y la puerta los sigue llamando «FICHERO CAÍDO SIN CASO CAÍDO …
+su salida está justo encima de su ✖», que para un proceso que no existió es falso. Testigo: binario
+renombrado en 4 de 4 pasadas. En los eventos y en el TAP la separación sigue ahí (`exitCode` presente
+en 3–8; ausente y `causaCode: ENOENT`, `causaSyscall: spawn` en 9).
+
+**Qué cambió desde el 7-oct en los tres sitios del arreglo:** `scripts/tanda-con-veredicto.mjs` y
+`scripts/_senal-de-nombres.mjs`, nada; `scripts/_huella-de-la-caida.mjs`, 6 líneas añadidas
+(`git diff --stat 7f3bfbde3 origin/main`), y la frase falsa del caso 9 sigue saliendo.
+
+**Por qué no se construye.** El ticket pide ①–⑥ pero no fija el arreglo, y este registro dejó cuatro
+salidas «no se elige aquí»; en Jira (descripción y los 2 comentarios, c.18776 y c.18782) no hay
+decisión posterior. Carriles medidos con `node scripts/carriles.mjs de <ruta>` el 24-oct:
+`tanda-con-veredicto.mjs` y `_huella-de-la-caida.mjs` → **S5**; `_senal-de-nombres.mjs` y
+`_hallazgos-y-ciegos.mjs` → sin cerradura (fila general de `scripts/`, «S0, sólo verificación o censo
+de consulta»). La salida C, la única que cumple ① tal como está escrito, es de S5 y cambia lo que dice
+el obligatorio de los dos equipos. La B cae en un fichero sin dueño decidido.
+
+**Lo que hace falta para seguir, como preguntas ✅/❌** (para el orquestador y, si cruza de equipo, para
+los dos jefes):
+
+1. ¿Se elige la salida **C** (tanda que sólo tiene procesos no creados → CIEGO por `veredictoDe`, «se creó
+   y murió» sigue rojo)? ✅ → es trabajo de S5, se le pasa por Jira. ❌ → se queda ①.
+2. ¿Se construye la **B** (la señal de nombres cuenta siempre, también con cero, entradas de fichero ·
+   no creadas · muertas con su código) en `_senal-de-nombres.mjs`, y ese fichero pasa a ser de J6 con
+   fila propia en `dos-equipos.md` §3? ✅ → la construye J6 con rojo primero, positivo sembrado y mutación.
+3. ¿La **A** (una clase más en el lector de huellas para el proceso que no se creó)? ✅ → S5.
+4. ¿O **D**, dejarlo medido? (0 procesos no creados en las 124 corridas legibles del 7-oct.)
+
+**No hecho / no medido:** no se ha corrido la tanda, ni `guards:entrada`, ni los guards de suite (no se
+ha tocado ni código ni tests); el obligatorio de este PR, el que diga la entrega.
+
+**Mis errores:** probé el `cloudId` de Jira con el host del dueño del repo de GitHub, y era otro; lo dijo
+la herramienta al primer intento. Y el primer comando del arranque encadenaba con `&&` un
+`git rev-parse --short` con dos refs, que sólo admite una: falló y se llevó por delante la lectura de
+la norma, que repetí en un comando aparte.
+
+## SCRUM-1389c · salida B construida: la señal de nombres cuenta SIEMPRE las entradas de fichero del TAP
+
+**Medido contra:** `origin/main` = `0e86dada4887f1ac54ce0ed5cad3c53c99c72c1c` · 2026-10-24T10:18:19Z
+
+A9: aviso → cicatriz J6 «Escribí las regex de un test sobre fixtures de texto con `$` y `\n` a pelo, y en un checkout de Windows esos ficheros salen con CRLF» — no se pudo comprobar: ningún guard corre un test nuevo con sus fixtures en los dos finales de línea; lo cazó el aviso de git al commitear
+
+Sesión `jv-j6bm` (puesto J6), por encargo del orquestador del equipo de Javier (`cobroflash-backend-95`).
+Decisión del fundador en Jira, SCRUM-1389 c.20720 (24-oct-2026): **B sí, la construye J6**; C y A no;
+D queda medido como está.
+
+**Lo construido.** `scripts/_senal-de-nombres.mjs` (`procesosDelTap`, `lineaDeProcesos`; `leerTap` lee
+el bloque YAML de primer nivel de cada entrada de fichero). El informe lleva, como SEGUNDA línea y
+siempre —también con cero y también cuando los nombres no se pueden medir—:
+
+    [señal de nombres · procesos v1] medible=si entradas_de_fichero=N no_creadas=K murieron=M codigos=<código>:<veces>,… otras=J
+
+- **murieron**: el bloque lleva `exitCode:` (el proceso se creó y salió); con el código y cuántas veces.
+- **no creadas**: sin `exitCode:` y con `error: 'spawn …'` (el proceso no existió).
+- **otras**: cualquier otra entrada de fichero; se cuenta y no se clasifica. Las tres suman el total.
+- Si el TAP no está entero, todas las cifras salen `?` y `medible=no`: no se cuentan como cero.
+- Con `no_creadas > 0` sale además una línea que lo dice en prosa.
+
+**Avisa, no bloquea.** No entra en `ausentes`, ni en la línea de registro (la que lee el vigía), ni en
+las anotaciones `::notice`/`::warning` (`scrum1339d` exige UNA `::notice`), ni en el código de salida
+del guion. Lo comprueba el caso ⑤ del test: con un proceso muerto, o dos no creados, y ningún nombre
+ausente, el guion sale 0 y escribe la línea.
+
+**El positivo, sembrado.** `docs/master/evidencias/scrum1389/capturar-tap.mjs` corre los nueve casos de
+`banco.mjs` (los mismos ficheros) con el reporter TAP y deja los nueve TAP en
+`tests/fixtures/scrum1389c/`, con las rutas de la máquina cambiadas por `<banco>`. Node v24.18.0,
+win32, 8 s; testigo del caso 9: binario renombrado. El test, `tests/scrum1389c-senal-tres-clases.test.mjs`:
+
+| caso | entradas | no creadas | murieron (códigos) |
+|---|---|---|---|
+| 1 control verde · 2 control rojo de caso | 0 | 0 | 0 |
+| 3–6 se crea y muere (import, sintaxis, throw, exit mudo) | 1 | 0 | 1 (`1:1`) |
+| 7–8 se crea y sale con 3221225794 (imitación) | 1 | 0 | 1 (`3221225794:1`) |
+| 9 no se crea (ENOENT, dos ficheros) | 2 | 2 | 0 |
+
+Quitado el positivo (TAP vacío, o sin resumen), la línea sale `medible=no … ?`, no ceros (caso ③).
+
+**Rojo primero:** el test, escrito antes que el código, cayó al importar (`does not provide an export named
+'lineaDeProcesos'`). **Mutaciones declaradas** en el propio test (`MUTACIONES_QUE_ME_TUMBAN`), aplicadas una
+a una con el árbol commiteado (`8921108d`), restauradas y comprobadas por contenido:
+1. el no creado vuelve a contarse como muerto → caen ①, ④ y ⑤ (la declarada, ①, entre ellas);
+2. la línea sólo sale cuando hay entradas → caen ② y ③ (la declarada, ②, entre ellas).
+Sin mutar: 5 de 5. El meta-guard entero (`meta:mutaciones`) no se ha corrido.
+
+**La fila de `dos-equipos.md` §3 queda PENDIENTE DE S0.** El encargo decía ponerla en este PR; el
+orquestador lo corrigió a mitad (el fichero es de S0) y la pasa él a Luis/S0. Se escribió, se regeneró
+`.claude/carriles.json` y se quitó antes de empujar: el PR no toca `docs/equipo/dos-equipos.md` ni
+`.claude/`. Hoy `node scripts/carriles.mjs de scripts/_senal-de-nombres.mjs` sigue dando «SIN
+CERRADURA» (fila general de `scripts/`). Medido de paso: con la fila puesta, `scrum1480f` exige bajar
+`suelo.quedan` de 223 a 222 en `scripts/_sin-fila-declarados.json` (el fichero está en la foto del 9-oct,
+línea 71): quien ponga la fila, que lo baje en el mismo PR.
+
+**Corrido:** los guards de la señal (1339d, 1339u, 1415, 1389c), los de suite (237, 976, 824, 836, 419,
+702, 700, 719), los de carriles (1295, 1480e, 1480f, 1408) y los de piezas sin consumir (1185, 411):
+**200 pass · 0 fail · 0 skipped en 18 ficheros**, con `dist/` construido con `tsc --noCheck` (sin él,
+`scrum836` cae por tres ficheros de `dist/` que no existen en este árbol). Los de registro (1294, 267,
+273, 723, 921c): **45 pass · 0 fail en 5 ficheros**; positivo: `scrum1294` cayó antes en este mismo tramo
+(línea A9) cuando la cita llevaba el `(SCRUM-1389c)` que el guard quita de la frase de la cicatriz.
+**No corrido:** la tanda entera (hoy hay 10 sesiones a la vez), `guards:entrada`. **No medido:** el TAP
+de un runner Linux con un nieto matado por memoria (si deja `exitCode: ~` con `signal:`, cae en
+«murieron» con el nombre de la señal; no se ha visto nunca uno real). El obligatorio, en la entrega.
+
+**Mis errores:** la primera captura dejó la ruta de la máquina en los TAP (node la escribe con el nombre
+corto `JAVIER~1` y yo sustituía la larga); lo cazó un recuento de «Users» que daba 0 en la buena y 4 en
+la mala. Las regex del test no admitían CRLF (la cicatriz de arriba). Un guion mío de mutación pasado por
+heredoc perdió una barra y no compiló; lo reescribí con la herramienta de escritura.

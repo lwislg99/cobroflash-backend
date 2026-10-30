@@ -11,6 +11,7 @@
 // SCRUM-1522e: `--provincia` es OBLIGATORIA con país España (el que va por defecto). De ella sale la
 // zona con la que nace el comercio (domain/zonaDeLaProvincia.ts); sin ella no se crea nada. Con
 // otro país no se admite: no hay tabla de ningún otro, y ese comercio nace sin zona, como hasta hoy.
+// SCRUM-1616b: vale el nombre, la forma doble del INE («Valencia/València») o el código INE («46»).
 //
 // SCRUM-1536d: con España, también `--domicilio-foral si|no` y `--domicilio-canarias si|no`, las dos
 // OBLIGATORIAS: son las dos preguntas Q1 firmadas en SCRUM-1536 c.20225. Con un «si», o con una

@@ -1,0 +1,55 @@
+== A · CENSO POR AST · población: 2411 ficheros (src, tests, scripts, public) ==
+cuadra A0 SEMBRADO: 2 llamadas (una por nombre), 0 por el prefijo y 0 por el comentario  {"llamadas":2,"total":4}
+cuadra A1 CERO: un nombre que no existe  {"apariciones":0}
+   sendPaymentConfirmation: declaración src/integrations/whatsappNotifications.ts:21 · 0 llamadas
+   notifyMerchantAlert: declaración src/integrations/whatsappNotifications.ts:151 · 9 llamadas
+      llamada  src/integrations/whatsappNotifications.ts:195
+      llamada  src/modules/billing/app/routes/payBizum.routes.ts:198
+      llamada  src/modules/payments/disputes.service.ts:183
+      llamada  src/modules/quotes/app/routes/quotes.routes.ts:785
+      llamada  src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts:306
+      llamada  src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts:418
+      llamada  src/modules/whatsappBot/domain/botFlow.service.ts:495
+      llamada  src/modules/whatsappBot/domain/botFlow.service.ts:637
+      llamada  src/modules/whatsappBot/domain/botFlow.service.ts:695
+      import src/modules/billing/app/routes/payBizum.routes.ts:15
+      import src/modules/payments/disputes.service.ts:10
+      import src/modules/quotes/app/routes/quotes.routes.ts:25
+      import src/modules/whatsappBot/app/routes/whatsappIncoming.routes.ts:18
+      import src/modules/whatsappBot/domain/botFlow.service.ts:21
+      referencia tests/scrum1322-el-bot-entiende-lo-que-pide.test.mjs:247
+      referencia tests/scrum1325-una-tilde-no-rompe-lo-que-entiende.test.mjs:80
+      referencia tests/scrum1326-vale-pregunta-una-vez.test.mjs:146
+      referencia tests/scrum1436f-los-importes-de-los-avisos.test.mjs:114
+      referencia tests/scrum1509h-veinte-entrantes-por-hora.test.mjs:144
+      referencia tests/scrum1509h-veinte-entrantes-por-hora.test.mjs:145
+   notifyMerchantPaid: declaración src/integrations/whatsappNotifications.ts:188 · 2 llamadas
+      llamada  src/modules/billing/app/routes/mpWebhook.routes.ts:241
+      llamada  src/modules/billing/app/routes/psp.routes.ts:347
+      import src/modules/billing/app/routes/mpWebhook.routes.ts:11
+      import src/modules/billing/app/routes/psp.routes.ts:13
+      referencia tests/scrum1436f-los-importes-de-los-avisos.test.mjs:113
+      referencia tests/scrum885-documento-sin-enviar.test.mjs:130
+cuadra A2 sendPaymentConfirmation: llamadas en el árbol  {"llamadas":0}
+cuadra A3 notifyMerchantAlert: llamadas en el árbol  {"llamadas":9}
+cuadra A4 notifyMerchantPaid (atajo): llamadas en el árbol  {"llamadas":2}
+
+topes leídos en dist: por cliente y día = 3 · por comercio y día = 100
+
+== B · sendPaymentConfirmation (EJECUTADA: no la llama nadie, A2) ==
+cuadra B0 SUELO: tope libre → sale 1 plantilla al cliente  {"ok":true,"plantillas":1,"nombre":"payment_confirmation_es","preguntasCliente":0}
+cuadra B1 cliente con 3 plantillas hoy → ¿sale?  {"ok":true,"plantillas":1,"preguntasCliente":0,"filaSinCliente":1}
+cuadra B2 POSITIVO: la hermana con cliente, mismo cliente con 3 hoy → bloqueada  {"ok":false,"plantillas":0,"preguntasCliente":[701]}
+cuadra B3 5 veces al mismo cliente el mismo día  {"ok":5,"plantillas":5}
+cuadra B4 OTRO TOPE: comercio con 100 plantillas hoy → bloqueada por el de comercio  {"ok":false,"plantillas":0,"preguntasComercio":1,"motivo":"daily_cap"}
+
+== C · notifyMerchantAlert por POST /pay/bizum/:token/claimed (app entera de dist) ==
+cuadra C0 SUELO: cliente libre, ventana del profesional cerrada → 1 plantilla al PROFESIONAL  {"http":303,"alProfesional":1,"nombre":"merchant_alert_es","alCliente":0,"preguntasComercio":1,"preguntasCliente":0,"errores":0}
+cuadra C1 el cliente que paga tiene 3 plantillas hoy → ¿sale el aviso?  {"http":303,"alProfesional":1,"preguntasCliente":0,"filaDelAviso":[{"customerId":null,"status":"sent"}]}
+cuadra C2 CERO: ventana del profesional ABIERTA → va por texto, 0 plantillas  {"http":303,"plantillas":0,"textosAlProfesional":1}
+cuadra C3 OTRO FRENO: «ya he pagado» 5 veces sobre el mismo cobro  {"avisos":1,"eventos":1}
+cuadra C4 OTRO TOPE: comercio con 100 plantillas hoy → el aviso no sale por plantilla  {"http":303,"plantillas":0,"intentosDeTexto":1,"motivo":"daily_cap","preguntasComercio":1}
+cuadra C5 con 99 de 100 gastadas: el aviso se lleva la última y la del cliente ya no sale  {"avisoComoPlantilla":1,"alClienteOk":false,"alCliente":0,"preguntasComercio":2}
+
+CASOS: todos cuadran
+peticiones al proveedor doblado en total: 12 · trazas de handler roto en el último caso: 0

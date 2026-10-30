@@ -43,3 +43,46 @@ la firma del presupuesto. Tiene el mismo `doc.moveDown(5)` tras `doc.image(…, 
 fit: [180, 70] })` en `:1175`. **El número que usa S1:** pie de la caja = `arriba + 70`, más **4 pt** de
 hueco. Si J1 lo arregla, que use el mismo para que los dos papeles no tengan dos soluciones distintas al
 mismo solape.
+
+## SCRUM-1589 · VISTO en yaqu.app (S4, 29-oct-2026)
+
+Medido sobre `origin/main` `bf2549a4fb7caf6b97f9a557e169ab5861552342`; producción en `e9888aa23` (`/version`,
+~10:55Z), que contiene el merge de #2731 (`a3c13611e`, comprobado con `merge-base --is-ancestor`). Horas de GitHub.
+
+**Excepción a R25 (`docs/RUNBOOKS.md:887`), autorizada por el orquestador de Luis (cobroflash-backend-52,
+SendMessage del 29-oct, opción A).** R25 deja fuera «firmar con el perfil fiscal vacío», y el perfil de QA sigue
+vacío (`GET /admin/merchant` → 200 a las 10:44Z: `legalName`, `taxId` y `address` null). Razón, **LEÍDA EN EL
+CÓDIGO, NO MEDIDA:** el servidor no lo impide (`albaran.service.ts:681-682` cae a `merchant.name` y
+`emisorNif` null) y R26 fila 3 midió que el sobre v:3 CONGELA emisor y NIF, así que rellenar el perfil después
+no alteraría lo ya firmado. El perfil NO se ha tocado (ningún `PUT /admin/merchant`). Propuesta, sin aplicar
+(el runbook lo decide el orquestador): que R25 diga que el perfil vacío no impide firmar un sobre v:3, y que la
+razón que da («entran en el hash») sólo vale para v:1 y v:2.
+
+**Qué se firmó (R25.2 y R25.6).** Cuenta `luisdragonball+qa@gmail.com` (merchant 46), Trabajo #76:
+
+| albarán | creado | emitido | firmado | papel |
+|---|---|---|---|---|
+| #49 `AB260004` | 11:12Z, borrador | sí | **sí**, `firmadoAt` 2026-10-29T11:14:35.841Z (reloj del servidor), firmante «[QA-1589] Firmante de prueba», «El propio cliente», canal in situ | el que se mide |
+| #50 `AB260005` | 11:12Z, borrador | sí | **no** (queda `emitido`) | gemelo sin firmar, control (R25.4) |
+
+La firma es la del PANEL (`POST /admin/albaranes/49/firmar`, botón «Firmar aquí mismo»), con el trazo
+DIBUJADO con el ratón en el pad (470×190), no un PNG inyectado. Nada se envió. Por la regla 29, #49 no se edita
+ni se borra.
+
+**Lo medido** (`evidencias/SCRUM-1589/1589-visto/medir-pdf-firma.mjs`, sólo GET; salida en `medida.txt`):
+
+| aceptación (c.20505) | dónde se ve |
+|---|---|
+| el cursor baja al pie de la caja de la firma (arriba + 70) y deja 4 pt; la firma ya no invade «Firmado por:» | PDF de #49: imagen 173,16 × 70 pt de 299,01 a 369,01; techo de «Firmado por:» en 373,01 → **4,00 pt de hueco, no se pisan**. Recorte pintado: `albaran-49-bloque-firma.png` |
+| toda firma real llega a los 70 pt | la imagen de #49 sale a 70 pt de alto (el pad llena la caja de alto: 470/190 × 70 = 173,16) |
+| (control) | gemelo #50: 0 imágenes y sin «Firmado por» · #47 (firmado el 14-oct, PDF generado hoy): también 4,00 pt |
+| en yaqu.app, con un albarán NUEVO firmado en QA | hecho: #49 |
+
+**Límites, dichos:** (1) el pad registró sólo parte del trazo (998 píxeles pintados, filas 8–86 de 190), así que
+el recorte no enseña un trazo que toque el pie del pad; el peor caso lo cubre la caja medida, que es la del pad
+entero. No se investigó por qué (puede ser cómo lo movió Playwright). (2) El «antes» (10,5 pt de solape) no se
+puede ver en producción: lo dio el test de S1 en rojo contra main. (3) El primer cálculo de la sonda tomaba la
+imagen y el texto en el mismo sentido de ejes y daba «se pisan 169 pt»; se vio leyendo los operadores crudos y se
+corrigió antes de usar ninguna cifra.
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1589/1589-visto/medir-pdf-firma.mjs`

@@ -152,16 +152,18 @@ test('SCRUM-604 · ✅ DEFECTO ① RESUELTO (SCRUM-623): la base al 0 % ya se im
   assert.equal(filas(unaSola), 1, '🔴 la de un solo tipo debe seguir imprimiendo UNA.');
 });
 
-test('SCRUM-604 · 🔴 DEFECTO ②: el total IMPRESO se recalcula e ignora el guardado', async () => {
+test('SCRUM-604 · ✅ DEFECTO ② RESUELTO en la F1 (SCRUM-624e): el total IMPRESO es el guardado', async () => {
   // Se le pasa un total que NO cuadra con las líneas — «una base que no cuadra con sus líneas»,
   // el caso que pide el encargo. Sirve para saber QUIÉN gana: el papel o el registro.
   const bloque = bloqueDeTotales(await textoDeFactura('D', DOS_TASAS, '999.99'));
-  // Cadena actualizada por SCRUM-623 (las bases por tipo). LA CARACTERIZACIÓN NO CAMBIA: el total
-  // impreso sigue siendo el recalculado y sigue ignorando el guardado — 122,10, no 999,99.
-  assert.equal(bloque, 'Base imponible:105,00 EUR[PENDIENTE microcopy oficial]21%60,00 EURIVA 21%:12,60 EUR10%45,00 EURIVA 10%:4,50 EURTOTAL:122,10 EUR',
-    'CARACTERIZACIÓN: con líneas, el PDF recalcula y el total GUARDADO (999,99) no llega al papel. '
-    + 'Si el total sellado y la suma de las líneas se separasen, el documento diría una cosa y el '
-    + 'registro otra, y el documento no avisa.');
+  // ✅ SCRUM-624e (GO del fundador, SCRUM-624 c.20817, «A solo en facturas normales»): en la F1
+  // gana el REGISTRO. Base y cuotas salen del desglose que lleva el XML y el TOTAL es el guardado,
+  // el `ImporteTotal` del XML. Hasta hoy esta cadena acababa en «TOTAL:122,10 EUR», recalculado.
+  // Un guardado que no cuadra con sus líneas no lo produce hoy ningún camino de creación de F1
+  // (medido en SCRUM-624d §1): este caso lo inyecta para saber quién gana, no porque ocurra.
+  assert.equal(bloque, 'Base imponible:105,00 EUR[PENDIENTE microcopy oficial]21%60,00 EURIVA 21%:12,60 EUR10%45,00 EURIVA 10%:4,50 EURTOTAL:999,99 EUR',
+    'CARACTERIZACIÓN: en la F1 el TOTAL del papel es el GUARDADO (999,99), el que declara su '
+    + 'registro. Si vuelve a salir 122,10, el papel ha vuelto a recalcular por su cuenta.');
 });
 
 test('SCRUM-604 · sin líneas, el PDF sí imprime el total guardado (el otro camino)', async () => {

@@ -1,0 +1,15 @@
+rc 1 · pasan 1 · caen 6
+  [comercio] · cortes 2: intento 1 (13161 B / 204 líneas), intento 2 (13161 B / 204 líneas)
+  ✖ SCRUM-1516c · 🔴 eje del COMERCIO: lo que cruza la frontera es exactamente lo declarado, y sólo puede bajar (4732.6491ms)
+  [rol] · cortes 2: intento 1 (23327 B / 266 líneas), intento 2 (23327 B / 266 líneas)
+  [comercioSordo] · cortes 2: intento 1 (12900 B / 201 líneas), intento 2 (12900 B / 201 líneas)
+  ✖ SCRUM-1516c · 🔴 eje del ROL: lo que un Técnico recibe igual que el administrador es exactamente lo declarado (203.9735ms)
+  ✖ SCRUM-1516c · el censo NO está mudo: sin su siembra dice CIEGO en los dos ejes, y con el doble sordo cae (1.1244ms)
+  ✔ SCRUM-1516c · cada ruta declarada lleva su MOTIVO, no sólo su nombre (0.3506ms)
+  ✖ SCRUM-1516c · 🔴 eje del COMERCIO: lo que cruza la frontera es exactamente lo declarado, y sólo puede bajar (4732.6491ms)
+    AssertionError [ERR_ASSERTION]: [comercio] CIEGO · salida cortada: el censo de frontera llegó dos veces sin su centinela final («EXIT=N» como última línea, con el código de salida); la última, 13161 B / 204 líneas, código 0. NO es un defecto del árbol ni un 
+  ✖ SCRUM-1516c · 🔴 eje del ROL: lo que un Técnico recibe igual que el administrador es exactamente lo declarado (203.9735ms)
+    AssertionError [ERR_ASSERTION]: [rol] CIEGO · salida cortada: el censo de frontera llegó dos veces sin su centinela final («EXIT=N» como última línea, con el código de salida); la última, 23327 B / 266 líneas, código 0. NO es un defecto del árbol ni un verde
+  ✖ SCRUM-1516c · el censo NO está mudo: sin su siembra dice CIEGO en los dos ejes, y con el doble sordo cae (1.1244ms)
+    AssertionError [ERR_ASSERTION]: [comercioSordo] CIEGO · salida cortada: el censo de frontera llegó dos veces sin su centinela final («EXIT=N» como última línea, con el código de salida); la última, 12900 B / 201 líneas, código 1. NO es un defecto del árbol n
+restaurado

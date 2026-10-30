@@ -1,0 +1,76 @@
+// migrar-1218i.mjs — SCRUM-1218i (J6, 27-oct-2026). Es `migrar-1218g` con UN cambio: el ayudante da
+// también `ok` (status 200-299, como `fetch`), que es lo que lee `webhooks-idempotencia` (`assert.ok(r1.ok)`).
+// Los ficheros que ya llevan su copia del ayudante no se tocan (se rechazan, como en 1218d/g).
+// ── Lo de 1218g, sin cambiar:
+// migrar-1218g.mjs — SCRUM-1218g (J6, 23-oct-2026). Es `migrar-1218d` con dos cambios, y nada más:
+//   1. el ayudante que se pega en cada fichero lee el cuerpo en BYTES y da también `arrayBuffer()`, que
+//      es lo que leen los de este lote (PDF, ZIP, CSV). `text()` decodifica con `TextDecoder`, como
+//      `fetch` (quita un BOM inicial; `setEncoding('utf8')` no lo quita). Los 23 que ya llevan su copia
+//      del ayudante de 1218d no se tocan: el ayudante va copiado dentro de cada fichero, no importado.
+//   2. si el fichero YA importa `http` de 'node:http' (scrum148, que monta su propio servidor), no se
+//      añade otro import: se reutiliza. Si ya tiene `pedirSinAgente`, se rechaza como en 1218d.
+// Para cada fichero cambia cada llamada `fetch(` por `pedirSinAgente(`. Imprime, por fichero, cuántas
+// llamadas cambió; si alguna cuenta no cuadra, sale ≠ 0.
+import fs from 'node:fs';
+import path from 'node:path';
+
+const [raiz, ...nombres] = process.argv.slice(2);
+const AYUDA = `
+// \`node:http\` sin agente y no \`fetch\` (SCRUM-1218i): \`fetch\` contra un servidor propio puede
+// abortar el proceso al salir (SCRUM-560). Devuelve lo que este fichero lee de la respuesta de \`fetch\`
+// (status, ok, headers.get, text, json, arrayBuffer) y, como el \`redirect: 'manual'\` de antes, no sigue
+// redirecciones. El cuerpo se guarda en bytes: \`text()\` lo decodifica como \`fetch\` (TextDecoder).
+const pedirSinAgente = (url, { method = 'GET', headers = {}, body } = {}) => new Promise((ok, mal) => {
+  const u = new URL(url);
+  const cabeceras = { ...headers };
+  if (body !== undefined) cabeceras['content-length'] = Buffer.byteLength(body);
+  const req = http.request({ host: u.hostname, port: u.port, path: u.pathname + u.search, method, headers: cabeceras, agent: false }, (r) => {
+    const trozos = [];
+    r.on('data', (t) => { trozos.push(t); });
+    r.on('end', () => {
+      const buf = Buffer.concat(trozos);
+      ok({
+        status: r.statusCode,
+        ok: r.statusCode >= 200 && r.statusCode < 300,
+        headers: { get: (n) => { const v = r.headers[n.toLowerCase()]; return v === undefined ? null : [].concat(v).join(', '); } },
+        text: async () => new TextDecoder().decode(buf),
+        json: async () => JSON.parse(new TextDecoder().decode(buf)),
+        arrayBuffer: async () => buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
+      });
+    });
+  });
+  req.on('error', mal);
+  req.end(body);
+});
+`;
+
+let malos = 0;
+for (const n of nombres) {
+  const ruta = path.join(raiz, 'tests', `${n}.test.mjs`);
+  const lineas = fs.readFileSync(ruta, 'utf8').split('\n');
+  if (lineas.some((l) => /pedirSinAgente/.test(l))) { console.log(`${n}: YA TIENE pedirSinAgente — no se toca`); malos++; continue; }
+  const yaHttp = lineas.some((l) => /^import http from 'node:http';/.test(l));
+  if (!yaHttp && lineas.some((l) => /from 'node:http'/.test(l))) { console.log(`${n}: importa node:http con otro nombre — no se toca`); malos++; continue; }
+  // Fin del bloque de imports: la última línea que cierra un import (de una línea o multilínea).
+  let ultimo = -1;
+  let dentro = false;
+  for (let i = 0; i < lineas.length; i++) {
+    const l = lineas[i];
+    if (dentro) { if (/^\} from '[^']+';/.test(l)) { ultimo = i; dentro = false; } continue; }
+    if (/^import \{\s*$/.test(l)) { dentro = true; continue; }
+    if (/^import .*;/.test(l)) ultimo = i;
+  }
+  if (ultimo < 0) { console.log(`${n}: sin bloque de imports`); malos++; continue; }
+  const antes = lineas.join('\n').match(/\bfetch\(/g)?.length ?? 0;
+  const cuerpo = lineas.slice(ultimo + 1).join('\n').replace(/\bfetch\(/g, 'pedirSinAgente(');
+  const cabeza = lineas.slice(0, ultimo + 1).join('\n');
+  if (/\bfetch\(/.test(cabeza)) { console.log(`${n}: fetch( dentro del bloque de imports`); malos++; continue; }
+  const nuevo = `${cabeza}\n${yaHttp ? '' : "import http from 'node:http';\n"}${AYUDA}${cuerpo}`;
+  const despues = nuevo.match(/\bfetch\(/g)?.length ?? 0;
+  const llamadas = nuevo.match(/\bpedirSinAgente\(/g)?.length ?? 0;
+  fs.writeFileSync(ruta, nuevo);
+  console.log(`${n}: fetch( ${antes} → ${despues} · llamadas a pedirSinAgente( ${llamadas} · imports hasta la línea ${ultimo + 1}${yaHttp ? ' · node:http ya importado' : ''}`);
+  if (despues !== 0 || llamadas !== antes) malos++;
+}
+console.log(`POBLACION=${nombres.length} ficheros · malos=${malos} · EXIT=${malos ? 1 : 0}`);
+process.exit(malos ? 1 : 0);
