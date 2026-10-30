@@ -37,6 +37,11 @@
 // Uso:
 //   npm run build
 //   node scripts/sobre-soap-prueba-aeat.mjs --nif 05292751Z --nombre "Javier Pereira Fernández"
+//
+// SCRUM-1051e · alta S2 con sus dos variantes del error 1198 (ver más abajo):
+//   node scripts/sobre-soap-prueba-aeat.mjs --calificacion S2 --variante omitir|cero
+//     --nif <titular> --nombre "<titular>" --dest-nif <otro NIF real> --dest-nombre "<su nombre>"
+//   node scripts/sobre-soap-prueba-aeat.mjs --confirmar-s2 omitir|cero
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -48,7 +53,7 @@ const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 // Rutas tomadas de `gen-registros-sample.mjs`, que es la llamada que YA produce XML
 // válido contra el XSD oficial. No se deducen: se copian de lo que funciona.
-const { buildRegistroAlta, buildRegistroAnulacion, construirSobreRegFactu } =
+const { buildRegistroAlta, buildRegistroAnulacion, clasificarDetalleDesglose, construirSobreRegFactu } =
   require(path.join(raiz, 'dist/modules/fiscal/verifactu/registro.builder.js'));
 const { computeVeriFactuHash, computeVeriFactuHashAnulacion } =
   require(path.join(raiz, 'dist/modules/invoicing/domain/verifactu.service.js'));
@@ -77,6 +82,51 @@ const NOMBRE = arg('nombre');
 // que importa es que el registro se acepte, no a quien se factura.
 const DEST_NIF = arg('dest-nif') ?? NIF;
 const DEST_NOMBRE = arg('dest-nombre') ?? NOMBRE;
+
+// ═══════════════════════════════════════════════════════════════════════════════════
+// SCRUM-1051e · LA S2 Y LAS DOS VARIANTES DEL ERROR 1198
+//
+// 1198: «Si CalificacionOperacion tiene valor […] (S2) TipoImpositivo y CuotaRepercutida deberan
+// tener valor 0». El builder los OMITE (`registro.builder.ts:311`) y el XSD admite las dos formas,
+// así que sólo la AEAT puede decidir. El fundador pidió medirlo antes del GO (SCRUM-1051 c.21180):
+//   · `omitir`: lo que devuelve hoy `clasificarDetalleDesglose`, tal cual.
+//   · `cero`:   eso mismo con los dos campos a 0. Se añade AQUÍ: `src/` no se toca (reglas 38 y 40).
+//
+// 🔴 GENERAR UNA S2 NO MUEVE LA CADENA. El sello caduca a los 240 s y este sobre se puede rehacer
+// varias veces, o volver rechazado: con el puntero movido, el siguiente nombraría como anterior un
+// registro que la AEAT no vio. Queda un candidato, `tmp/s2-<variante>.puntero.json`, y la cadena
+// sólo avanza con `--confirmar-s2`, cuando una persona ha leído que la AEAT lo aceptó.
+// ═══════════════════════════════════════════════════════════════════════════════════
+const VARIANTES_S2 = ['omitir', 'cero'];
+
+function confirmarS2(variante) {
+  if (!VARIANTES_S2.includes(variante)) {
+    console.error(`Variante desconocida: «${variante}». Valores: ${VARIANTES_S2.join(' | ')}.`);
+    process.exit(1);
+  }
+  const rutaCandidato = path.join(raiz, 'tmp', `s2-${variante}.puntero.json`);
+  const rutaUltimo = path.join(raiz, 'tmp', 'ultimo-registro.json');
+  if (!fs.existsSync(rutaCandidato)) {
+    console.error(`🔴 No hay nada que confirmar: falta ${rutaCandidato}. Genera antes el sobre de esa variante.`);
+    process.exit(1);
+  }
+  const candidato = JSON.parse(fs.readFileSync(rutaCandidato, 'utf8'));
+  const actual = fs.existsSync(rutaUltimo) ? JSON.parse(fs.readFileSync(rutaUltimo, 'utf8')).huella : '';
+  if (actual !== candidato.encadenaA) {
+    console.error('🔴 La cadena ya no está donde estaba al generar este sobre: no se confirma nada.');
+    console.error(`   Puntero actual: ${actual || '(vacío)'}. El sobre se encadenó a: ${candidato.encadenaA || '(vacío)'}.`);
+    process.exit(1);
+  }
+  fs.writeFileSync(rutaUltimo, JSON.stringify(candidato.ultimoRegistro, null, 2));
+  fs.writeFileSync(path.join(raiz, 'tmp', 'ultima-alta.json'), JSON.stringify(candidato.ultimaAlta, null, 2));
+  console.log(JSON.stringify({ veredicto: 'CONFIRMADO', variante, ultimoRegistro: candidato.ultimoRegistro }, null, 2));
+}
+
+const VARIANTE_A_CONFIRMAR = arg('confirmar-s2');
+if (VARIANTE_A_CONFIRMAR) {
+  confirmarS2(VARIANTE_A_CONFIRMAR);
+  process.exit(0);
+}
 
 // Falla CERRADO: sin NIF explícito no se genera nada. Un valor por defecto aquí sería la
 // forma más fácil de acabar enviando el NIF inventado y no entender el rechazo.
@@ -129,6 +179,36 @@ const TIPO = arg('tipo') || 'alta';
 if (!TIPOS.includes(TIPO)) {
   console.error(`Tipo desconocido: «${TIPO}». Valores: ${TIPOS.join(' | ')} (por defecto: alta).`);
   process.exit(1);
+}
+
+// SCRUM-1051e. Falla CERRADO: cada aborto de aquí es un rechazo de la AEAT por OTRA causa, que
+// gastaría el envío sin decir nada del 1198.
+const CALIFICACION = arg('calificacion') || 'S1';
+const VARIANTE = arg('variante');
+const S2 = CALIFICACION === 'S2';
+if (CALIFICACION !== 'S1' && !S2) {
+  console.error(`Calificación desconocida: «${CALIFICACION}». Valores: S1 | S2 (por defecto: S1).`);
+  process.exit(1);
+}
+if (S2 ? !VARIANTES_S2.includes(VARIANTE) : VARIANTE !== undefined) {
+  console.error(`🔴 --variante (${VARIANTES_S2.join(' | ')}) va con --calificacion S2, y sólo con ella.`);
+  process.exit(1);
+}
+if (S2) {
+  if (TIPO !== 'alta') {
+    console.error(`🔴 La prueba del 1198 es de ALTAS S2: «--tipo ${TIPO}» no se genera.`);
+    process.exit(1);
+  }
+  if (!arg('dest-nif') || !arg('dest-nombre')) {
+    console.error('🔴 Una S2 pide --dest-nif y --dest-nombre: el NIF de OTRO contribuyente real, con su nombre del censo.');
+    console.error('   Sin nombre valdría el del emisor, que no casa con ese NIF (1239 o 2001).');
+    process.exit(1);
+  }
+  if (DEST_NIF === NIF) {
+    console.error('🔴 El destinatario no puede ser el emisor. Código 1193, en la lista de los que rechazan la factura:');
+    console.error('   «el NIF debe estar identificado y ser distinto del NIF ObligadoEmision». Taparía al 1198.');
+    process.exit(1);
+  }
 }
 
 const RUTA_ULTIMA_ALTA = path.join(raiz, 'tmp', 'ultima-alta.json');
@@ -266,9 +346,14 @@ if (TIPO === 'anulacion') {
   // Alta y R1 comparten builder y fórmula de huella: una rectificativa ES un alta con otro
   // TipoFactura y las facturas rectificadas dentro. Lo que cambia es el CONTENIDO, no la forma.
   const tipoFactura = TIPO === 'r1' ? 'R1' : 'F1';
+  // SCRUM-1051e · Base 100 sin cuota: ImporteTotal = base (1210 y 2005) y CuotaTotal 0 (2006).
+  const IMPORTES = S2 ? { cuotaTotal: '0.00', importeTotal: '100.00' } : { cuotaTotal: '21.00', importeTotal: '121.00' };
+  const detalle = S2
+    ? clasificarDetalleDesglose({ rate: 0, base: 100, cuota: 0, causa: 'S2' })
+    : { claveRegimen: '01', calificacion: 'S1', tipoImpositivo: '21', baseImponible: '100.00', cuotaRepercutida: '21.00' };
   huella = computeVeriFactuHash({
     nif: NIF, serie: SERIE, fecha: FECHA, tipoFactura,
-    cuotaTotal: '21.00', importeTotal: '121.00', prevHash, timestamp: TS,
+    ...IMPORTES, prevHash, timestamp: TS,
   });
   registro = buildRegistroAlta({
     idEmisorFactura: NIF,
@@ -286,12 +371,8 @@ if (TIPO === 'anulacion') {
       ? 'Rectificacion de prueba de conformidad VERI*FACTU'
       : 'Prueba de conformidad del envio VERI*FACTU',
     destinatario: { nombreRazon: DEST_NOMBRE, nif: DEST_NIF },
-    desglose: [{
-      claveRegimen: '01', calificacion: 'S1', tipoImpositivo: '21',
-      baseImponible: '100.00', cuotaRepercutida: '21.00',
-    }],
-    cuotaTotal: '21.00',
-    importeTotal: '121.00',
+    desglose: [VARIANTE === 'cero' ? { ...detalle, tipoImpositivo: '0', cuotaRepercutida: '0.00' } : detalle],
+    ...IMPORTES,
     encadenamiento: anterior ? { primerRegistro: false, anterior } : { primerRegistro: true },
     sistema,
     fechaHoraHusoGenRegistro: TS,
@@ -353,6 +434,11 @@ const controles = {
     : soap.includes('RegistroAlta') && !soap.includes('RegistroAnulacion'),
   // Y una R1 sin las facturas rectificadas dentro es un alta con otra etiqueta.
   r1LlevaLoRectificado: TIPO !== 'r1' || /FacturasRectificadas/.test(soap),
+  // 🔴 SCRUM-1051e · Si el builder cambia, `omitir` dejaría de medir lo que se le atribuye.
+  calificacionPedida: TIPO === 'anulacion' || soap.includes(`<sum1:CalificacionOperacion>${CALIFICACION}<`),
+  varianteS2ComoSePidio: !S2 || (VARIANTE === 'cero'
+    ? soap.includes('<sum1:TipoImpositivo>0<') && soap.includes('<sum1:CuotaRepercutida>0.00<')
+    : !soap.includes('<sum1:TipoImpositivo>') && !soap.includes('<sum1:CuotaRepercutida>')),
   // Sin firma: en modalidad VERI*FACTU no se exige, y meterla sería un error.
   sinFirma: !/Signature|XAdES|<ds:/.test(soap),
   sobreCerrado: soap.trimEnd().endsWith('</soapenv:Envelope>'),
@@ -365,9 +451,40 @@ if (!ok) {
   process.exit(1);
 }
 
-const salida = path.join(raiz, 'tmp', 'sobre-soap-prueba-aeat.xml');
+const salida = path.join(raiz, 'tmp', S2 ? `sobre-s2-${VARIANTE}.xml` : 'sobre-soap-prueba-aeat.xml');
 fs.mkdirSync(path.dirname(salida), { recursive: true });
 fs.writeFileSync(salida, soap, 'utf8');
+
+// SCRUM-1051e · La S2 deja un candidato y se va: la cadena la mueve `--confirmar-s2` (arriba).
+if (S2) {
+  const punteroS2 = {
+    idEmisorFactura: NIF, numSerieFactura: SERIE, fechaExpedicion: FECHA, huella, tipo: TIPO, identifica: 'registro',
+  };
+  fs.writeFileSync(path.join(raiz, 'tmp', `s2-${VARIANTE}.puntero.json`), JSON.stringify({
+    encadenaA: prevHash,
+    ultimoRegistro: punteroS2,
+    ultimaAlta: { idEmisorFactura: NIF, numSerieFactura: SERIE, fechaExpedicion: FECHA, huella },
+  }, null, 2));
+  console.log(JSON.stringify({
+    veredicto: 'GENERADO',
+    fichero: salida,
+    bytes: Buffer.byteLength(soap),
+    variante: VARIANTE,
+    obligado: NIF,
+    destinatario: DEST_NIF,
+    serie: SERIE,
+    huella,
+    primerRegistro: !anterior,
+    registroAnterior: anterior ? anterior.numSerieFactura : null,
+    // 240 s desde el sello, según el código 2004. Es hora de España, la del reloj de esta máquina.
+    margenSegundos: 240,
+    subirAntesDe: new Date(ahora.getTime() + 240_000).toLocaleTimeString('es-ES', { timeZone: 'Europe/Madrid' }),
+    endpointParaElFormulario: '/wlpl/TIKE-CONT/ws/SistemaFacturacion/VerifactuSOAP',
+    controles,
+    cadena: `NO avanza. Si la AEAT lo acepta: node scripts/sobre-soap-prueba-aeat.mjs --confirmar-s2 ${VARIANTE}`,
+  }, null, 2));
+  process.exit(0);
+}
 
 // El siguiente envío se encadena a éste. Se guarda DESPUÉS de que pasen los controles:
 // si el sobre no sale, la cadena no avanza.
