@@ -44,6 +44,9 @@ const FUERA_DE_ANONIMIZADO = Object.freeze({
   // SCRUM-1569: lo hace visible el censo por núcleo («…Name»). Es el nombre de la plantilla de Meta
   // con que se mandó el mensaje: el hecho, no la persona (lo dice ya `anonimizarMerchant.ts`).
   'whatsAppMessage.templateName': 'el nombre de la PLANTILLA de Meta con que se mandó el mensaje, no el de una persona',
+  // SCRUM-914 · lo hace visible el mismo censo por núcleo. Clasificado FUERA por J3 en
+  // docs/master/SCRUM-914.md §② («`type`, `brand`, `modelName` (catálogo)»).
+  'equipment.modelName': 'el MODELO de catálogo del aparato («ecoTEC plus»), no el de una persona',
 });
 
 // SCRUM-1569 · la misma pregunta para las 17 copias de la factura y el albarán. Se escribe una vez:
@@ -128,7 +131,7 @@ test('SCRUM-497 · 🔴 SUELO: la derivación ve las columnas personales del esq
 
   // Y que el vocabulario no se haya quedado vacío: con él vacío, el cero de arriba sería trivial.
   assert.ok(VOCABULARIO_PERSONAL.length >= 10,
-    `🔴 el vocabulario de dato personal trae ${VOCABULARIO_PERSONAL.length} nombres y son 14 (13 hasta SCRUM-529, que sumó \`toPhone\`).`);
+    `🔴 el vocabulario de dato personal trae ${VOCABULARIO_PERSONAL.length} nombres y son 15 (13 hasta SCRUM-529, que sumó \`toPhone\`; SCRUM-914 sumó \`serialNumber\`).`);
 });
 
 test('SCRUM-497 · 🔴 AUTOPRUEBA: la derivación distingue un dato personal de una bandera', () => {

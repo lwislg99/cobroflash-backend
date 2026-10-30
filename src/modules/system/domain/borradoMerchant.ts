@@ -92,15 +92,26 @@ export const ORDEN_BORRADO_MERCHANT: readonly string[] = [
   // nombre del cliente, la dirección de la obra y lo que se hizo dentro.
   //
   // SCRUM-1014 · `customerSite` (agenda de sitios) lleva datos PERSONALES propios — nombre y
-  // teléfono del contacto EN OBRA, la dirección — y tiene FK RESTRICT a `customer`. Va antes que
-  // `customerEvent` por el mismo motivo que éste va antes que `customer`, y da igual el orden
-  // entre los dos (ninguno cuelga del otro).
-  'auditLog', 'whatsAppMessage', 'legalAcceptance', 'customerEvent', 'customerSite', 'attachment', 'emailMessage',
+  // teléfono del contacto EN OBRA, la dirección — y tiene FK RESTRICT a `customer`. Desde SCRUM-914
+  // ya NO va en este bloque: va al final, justo antes de `customer` y DESPUÉS de `equipment`, que
+  // le apunta sin FK (ver allí).
+  'auditLog', 'whatsAppMessage', 'legalAcceptance', 'customerEvent', 'attachment', 'emailMessage',
   'parteTrabajo',
   // Documentos: albarán antes que factura (el albarán apunta a la factura que lo consolidó).
   'albaran', 'maintenancePlan', 'invoice', 'charge', 'job', 'quote', 'quoteRequest',
   // Catálogo y operativa: nadie cuelga de ellos a estas alturas.
   'quoteTemplate', 'expense', 'product', 'provider', 'authSession', 'teamMember',
+  // SCRUM-914 · los EQUIPOS del cliente, y su sitio detrás. La posición sale de a quién apunta
+  // cada uno (`docs/sql/scrum-914-equipos-del-cliente.sql`), no de parecido:
+  //   · a `equipment` le apuntan `job`, `maintenancePlan`, `albaran` y `parteTrabajo` por su
+  //     `equipment_id`, SIN FK → va DESPUÉS de los cuatro. Si cayera antes y el bucle fallara a
+  //     mitad, quedarían documentos apuntando a un equipo que ya no existe y nada protestaría.
+  //   · `equipment` apunta a `customerSite` por `customer_site_id`, SIN FK → el sitio va DESPUÉS
+  //     del equipo, por el mismo motivo. Y a `customerSite` no le apunta nadie más (medido en el
+  //     schema), así que retrasarlo no rompe ningún borrado posterior.
+  //   · `equipment` y `customerSite` apuntan a `customer` con FK RESTRICT → los dos, antes que él.
+  //     Sin `equipment` en esta lista, el `deleteMany` de `customer` y el del merchant FALLAN.
+  'equipment', 'customerSite',
   // El cliente al FINAL: media casa le apunta.
   'customer',
 ];

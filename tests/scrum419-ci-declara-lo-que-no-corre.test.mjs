@@ -77,6 +77,9 @@ const GATEADOS_DECLARADOS = Object.freeze({
   // es lo mas importante que este inventario declara.
   'scrum324-cadena-hasta-el-libro.test.mjs': 2,
   'scrum244-supresion-y-anonimizado.test.mjs': 1,
+  // SCRUM-914: los equipos del cliente en el borrado y en el anonimizado. Necesitan banco porque lo
+  // que vigilan son las FK RESTRICT de `equipments`, y ésas sólo las hace cumplir el motor.
+  'scrum914-equipos-borrado-y-anonimizado.test.mjs': 2,
   'scrum295-modelo-303-postgres.test.mjs': 1,
   'scrum296-libro-postgres.test.mjs': 1,
   // SCRUM-980: el historial de la ficha. Necesita banco porque vigila la TENENCIA de cinco consultas
