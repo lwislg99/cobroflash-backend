@@ -14,31 +14,39 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import ts from 'typescript';
 
-const EMISION = 'src/modules/invoicing/domain/emission.service.ts';
-const EMBUDO = 'src/modules/invoicing/domain/invoiceNumber.service.ts';
 
 // Las corre `npm run meta:mutaciones`. La primera es el rojo primero: el modo de antes de M.
 export const MUTACIONES_QUE_ME_TUMBAN = [
-  { fichero: EMISION, de: "return motivoSiiSinEmision(m) === null ? 'fiscal' : 'receipt';",
+  { fichero: 'src/modules/invoicing/domain/emission.service.ts',
+    de: "return motivoSiiSinEmision(m) === null ? 'fiscal' : 'receipt';",
     a: "return 'fiscal';", cae: 'SII «Sí» con el flag ON → receipt' },
-  { fichero: EMISION, de: "if (!isFlagEnabled('INVOICING_ES_ENABLED', { merchant: m })) return 'receipt';",
+  { fichero: 'src/modules/invoicing/domain/emission.service.ts',
+    de: "if (!isFlagEnabled('INVOICING_ES_ENABLED', { merchant: m })) return 'receipt';",
     a: '', cae: 'con el flag OFF manda el flag' },
-  { fichero: EMISION, de: 'if (m.llevaLibrosPorSii === false) return null;',
+  { fichero: 'src/modules/invoicing/domain/emission.service.ts',
+    de: 'if (m.llevaLibrosPorSii === false) return null;',
     a: 'if (m.llevaLibrosPorSii !== true) return null;', cae: 'NULL no es «No»' },
-  { fichero: EMISION, de: 'if (isDemoMerchant(m)) return null;',
+  { fichero: 'src/modules/invoicing/domain/emission.service.ts',
+    de: 'if (isDemoMerchant(m)) return null;',
     a: '', cae: 'el demo sigue en demo' },
-  { fichero: EMISION, de: "if (!isFlagEnabled('INVOICING_ES_ENABLED', { merchant: m })) return null;",
+  { fichero: 'src/modules/invoicing/domain/emission.service.ts',
+    de: "if (!isFlagEnabled('INVOICING_ES_ENABLED', { merchant: m })) return null;",
     a: '', cae: 'fuera de España el SII no decide' },
-  { fichero: EMISION, de: 'return m.llevaLibrosPorSii === true ? ERROR_SII_DECLARADO : ERROR_SII_NO_CONSTA;',
+  { fichero: 'src/modules/invoicing/domain/emission.service.ts',
+    de: 'return m.llevaLibrosPorSii === true ? ERROR_SII_DECLARADO : ERROR_SII_NO_CONSTA;',
     a: 'return m.llevaLibrosPorSii === true ? ERROR_SII_NO_CONSTA : ERROR_SII_DECLARADO;',
     cae: 'por sii_declarado' },
-  { fichero: EMISION, de: "ERROR_SII_DECLARADO = 'sii_declarado'",
+  { fichero: 'src/modules/invoicing/domain/emission.service.ts',
+    de: "ERROR_SII_DECLARADO = 'sii_declarado'",
     a: "ERROR_SII_DECLARADO = 'sii_si'", cae: 'los códigos de M son los de W' },
-  { fichero: EMISION, de: 'llevaLibrosPorSii: boolean | null;',
+  { fichero: 'src/modules/invoicing/domain/emission.service.ts',
+    de: 'llevaLibrosPorSii: boolean | null;',
     a: 'llevaLibrosPorSii?: boolean | null;', cae: 'es obligatorio y admite null' },
-  { fichero: EMBUDO, de: "throw new Error(motivoSiiSinEmision(m) ?? 'invoicing_es_disabled');",
+  { fichero: 'src/modules/invoicing/domain/invoiceNumber.service.ts',
+    de: "throw new Error(motivoSiiSinEmision(m) ?? 'invoicing_es_disabled');",
     a: "throw new Error('invoicing_es_disabled');", cae: 'rechaza con sii_declarado' },
-  { fichero: EMBUDO, de: 'llevaLibrosPorSii: true,',
+  { fichero: 'src/modules/invoicing/domain/invoiceNumber.service.ts',
+    de: 'llevaLibrosPorSii: true,',
     a: '', cae: 'el select pide llevaLibrosPorSii' },
 ];
 
