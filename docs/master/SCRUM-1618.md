@@ -60,3 +60,41 @@ solo comentarios de código). Se propusieron en c.21176 y el fundador firmó los
   4 casos de SCRUM-1618 y 5 de SCRUM-373 en `ok`). Mutaciones repetidas: 3 de 3 VIVAS.
 - Tanda entera local: NO CORRIDA (10 sesiones a la vez). Guards de navegador: los que nombran las vistas
   entran en la dirigida; no he abierto la pantalla en un navegador. yaqu.app: no verificado al escribir esto (se mira tras el despliegue).
+
+## J1 · SCRUM-1618b · los rojos de #2973: lo que el cambio tenía que declarar y no declaró
+
+**Medido contra:** `origin/main` = `06ad4f1bd53d25b701cd11ae42791db753329ceb` · 2026-10-30T17:21:32Z (hora de GitHub; sesión J1 `jv-j1dg`, relevo, por encargo del orquestador `cobroflash-backend-5b`)
+
+A9: comprobación → `tests/scrum1157-censo-convenio-microcopy.test.mjs`
+
+[Escrito por J1, una sesión; no por el fundador.] La línea `A9:` es mi fallo: escribí un solo comentario
+encima de tres literales («los tres literales») y di por firmados los tres; el censo solo leyó el primero.
+Tampoco metí en la dirigida los censos que miran el árbol entero (1157, 1185, 1215, 921c): 58 ficheros en
+verde en local y 6 de los 7 fallos en CI.
+
+Run 40557186284, 27-oct, 12.881 casos = 12.865 pasan + 7 fallan + 9 saltados. Los 7, comparados con los runs
+de main 40554143042 (`build + tests` verde) y 40567122288 (sólo cae el meta-guard):
+
+| caso | de quién | arreglo |
+|---|---|---|
+| SCRUM-1157 ① y ③ | mío | marca `APROBADO` en la línea de cada literal |
+| SCRUM-1215g y 1215i | mío, misma causa | la misma marca |
+| SCRUM-1511h | mío | filas 1618/21183 y 1618/21221 en `tests/_pares-leidos-en-jira.mjs`, leídas en Jira hoy |
+| SCRUM-1185 ② | mío | `bulk-paid::paidAt` pasa a `retiradas` |
+| SCRUM-1405c ④ | ajeno (SCRUM-1625) | no se toca; verde en los dos runs de main citados |
+
+Fuera de esos 7: `guard:lista-trabajos` en rojo era mío (la barra oculta metía el campo en la huella de
+Facturas). Se arregla en el CÓDIGO: el campo nace con la primera selección, y no se ha tocado el guard. El
+meta-guard es ajeno: en la rama y en esos dos runs de main sale CIEGO por presupuesto («CORTO YO», 869, 725 y
+714 juzgadas).
+
+De paso, visto en Edge: la ayuda se partía al lado del campo en la barra del lote; va en su propia línea.
+
+Los literales viven en un solo sitio, `COPY_FECHA_DE_COBRO`, con las dos citas que pide c.21221. S2 los usa con
+`window.pintarFechaDeCobro`, sin copiarlos; a 30-oct no había entrado nada suyo en main (`git grep` sobre
+`06ad4f1bd`).
+
+Medido: `docs/master/evidencias/SCRUM-1618/sonda-1618-lote-en-edge.mjs`, Edge real, 2 facturas pendientes a
+1280 px: sin seleccionar, 0 campos; con una y con dos, 1; cuerpo vacío `{"ids":[43,41]}`, con fecha
+`{"ids":[43],"paidAt":"2026-03-31"}`; en la base nunca sale. La ficha NO se ha abierto en un navegador. Tanda
+entera local: NO CORRIDA (la hace el obligatorio). yaqu.app: no verificado.

@@ -50,10 +50,9 @@ function resultadoMarcadoEnBloque({ escrituraOk, recargaOk, marcadas }) {
 // límite hacia atrás). Aquí no se repite la regla. Su 400 cae en el aviso firmado de siempre
 // (SCRUM-373 prohíbe a esta vista pintar el mensaje de la excepción); la ficha sí lo enseña.
 const COPY_FECHA_DE_COBRO = {
-  // FIRMADO por el fundador (regla 39): SCRUM-1618, comentario 21183 (27-oct-2026), los tres literales.
-  rotuloUna: '¿Cuándo lo has cobrado?',
-  rotuloLote: '¿Cuándo las has cobrado?',
-  ayuda: 'Si lo dejas vacío, se guarda la fecha de hoy.',
+  rotuloUna: '¿Cuándo lo has cobrado?', // APROBADO por Javier el 27-oct-2026 (SCRUM-1618 comentario 21183; Trabajo y Presupuesto, SCRUM-1618 comentario 21221)
+  rotuloLote: '¿Cuándo las has cobrado?', // APROBADO por Javier el 27-oct-2026 (SCRUM-1618 comentario 21183)
+  ayuda: 'Si lo dejas vacío, se guarda la fecha de hoy.', // APROBADO por Javier el 27-oct-2026 (SCRUM-1618 comentario 21183; Trabajo y Presupuesto, SCRUM-1618 comentario 21221)
 };
 
 /** La fecha escrita en el campo, o `null` si está vacío (señal de NO mandar `paidAt`). */
@@ -96,7 +95,10 @@ function pintarFechaDeCobro(contenedor, opts) {
   const ayuda = document.createElement('small');
   ayuda.id = id + '-ayuda';
   ayuda.textContent = COPY_FECHA_DE_COBRO.ayuda;
-  envoltorio.appendChild(ayuda);
+  // En su propia línea: suelta, en la barra del lote se partía al lado del campo.
+  const lineaAyuda = document.createElement('div');
+  lineaAyuda.appendChild(ayuda);
+  envoltorio.appendChild(lineaAyuda);
 
   contenedor.appendChild(envoltorio);
   return input;
@@ -504,9 +506,9 @@ async function fetchInvoices(options = {}) {
       <button id="bulk-paid-btn" class="btn-primary btn-sm">✓ Marcar como pagadas</button>
       <button id="bulk-cancel-btn" class="btn-ghost btn-sm" style="color:rgba(255,255,255,.7)">Cancelar</button>
     `;
-    // SCRUM-1618 · la fecha de cobro del lote, delante del botón que la usa. Vacía = cuerpo de siempre.
-    const bulkFechaCobro = pintarFechaDeCobro(bulkBar, { id: 'bulk-fecha-cobro', rotulo: COPY_FECHA_DE_COBRO.rotuloLote });
-    if (bulkFechaCobro) bulkBar.insertBefore(bulkFechaCobro.parentNode, bulkBar.querySelector('#bulk-paid-btn'));
+    // SCRUM-1618 · la fecha de cobro del lote: nace en `updateBulkBar`, con la primera selección, para
+    // que la lista sin seleccionar pinte lo mismo que antes del campo. Vacía = cuerpo de siempre.
+    let bulkFechaCobro = null;
     panelEmitidas.appendChild(bulkBar);
 
     let currentStatus = 'all';
@@ -524,6 +526,10 @@ async function fetchInvoices(options = {}) {
     function updateBulkBar() {
       const n = selectedIds.size;
       if (n > 0) {
+        if (!bulkFechaCobro) {
+          bulkFechaCobro = pintarFechaDeCobro(bulkBar, { id: 'bulk-fecha-cobro', rotulo: COPY_FECHA_DE_COBRO.rotuloLote });
+          if (bulkFechaCobro) bulkBar.insertBefore(bulkFechaCobro.parentNode, bulkBar.querySelector('#bulk-paid-btn'));
+        }
         bulkBar.style.display = 'flex';
         bulkBar.querySelector('#bulk-count').textContent = n + ' factura' + (n !== 1 ? 's' : '') + ' seleccionada' + (n !== 1 ? 's' : '');
       } else {
