@@ -1,0 +1,16 @@
+Los 6 rojos del trinquete en PR de sólo docs (de c-historia-300-runs.txt), leídos con log-meta.mjs
+el 23-oct-2026. En los 6, la ÚNICA prueba nueva que denuncia es la misma, y no lee documentación:
+
+  run 39244498878 · PR #2428 · 325fd58e5
+  run 39213527137 · PR #2598 · 73dc13a26
+  run 39212283374 · PR #2594 · cdbd934dd
+  run 39152037981 · PR #2571 · 07dacfe84
+  run 39082183500 · PR #2557 · 118062b68
+  run 38908581818 · PR #2532 · 6ef7eaff5
+
+     🔴 NUEVA tests/scrum1405c-tuberia-bloqueante.test.mjs::SCRUM-1405c · ④ 🔴 EL ROJO PRIMERO:
+        sin el módulo la cobaya PIERDE casos; con él, ninguno
+
+Los PR con código tienen otros 6 rojos del trinquete en la misma ventana. Lectura: ninguno de los 83
+trinquetes terminados en PR de sólo docs se puso rojo POR un cambio de docs. Eso es historia (una
+semana), no la prueba de que no pueda pasar: la prueba de que SÍ puede está en f-experimento.

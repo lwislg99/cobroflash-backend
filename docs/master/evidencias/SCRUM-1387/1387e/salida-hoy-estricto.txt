@@ -1,0 +1,7 @@
+raíz . · tests 1565 · declarantes 238 (15 %) · declaraciones 940
+CI · juzgadas 735 de 940 · SIN JUZGAR 205 en 46 guards: 46 sin NINGUNA juzgada, 0 a medias, 0 fuera del catálogo de este árbol
+CI · ficheros con al menos una mutación repetida: 192 de 1565 (12.3 %)
+registros 1216 · afirman mutaciones 274 (criterio estricto: con veredicto)
+  A 112 · B 133 · C1 11 · C2 14 · C3 4 · fuera (B+C2+C3) 151
+  fuera, por lo que el árbol permite comprobar: guion 15 · salida 10 · texto 126
+  A con algún test juzgado en el CI de ese log: 100 de 112

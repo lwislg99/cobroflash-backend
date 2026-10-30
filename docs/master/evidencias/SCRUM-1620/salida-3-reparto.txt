@@ -1,0 +1,21 @@
+censo: 222 guards · 886 veredictos · 1667 s (factor 1)
+K=2 · por turno (i % K, orden del censo)     partes 995s/111g · 672s/111g · peor 995 s · margen al presupuesto (1695) 700 s · job ≈ 1068 s
+K=2 · por huella del nombre (sha1 % K)       partes 827s/113g · 840s/109g · peor 840 s · margen al presupuesto (1695) 855 s · job ≈ 913 s
+K=2 · por tramos contiguos                   partes 698s/111g · 969s/111g · peor 969 s · margen al presupuesto (1695) 726 s · job ≈ 1042 s
+K=3 · por turno (i % K, orden del censo)     partes 490s/74g · 551s/74g · 626s/74g · peor 626 s · margen al presupuesto (1695) 1069 s · job ≈ 699 s
+K=3 · por huella del nombre (sha1 % K)       partes 487s/69g · 472s/75g · 709s/78g · peor 709 s · margen al presupuesto (1695) 986 s · job ≈ 782 s
+K=3 · por tramos contiguos                   partes 446s/74g · 552s/74g · 668s/74g · peor 668 s · margen al presupuesto (1695) 1027 s · job ≈ 741 s
+K=4 · por turno (i % K, orden del censo)     partes 491s/56g · 339s/56g · 503s/55g · 333s/55g · peor 503 s · margen al presupuesto (1695) 1192 s · job ≈ 576 s
+K=4 · por huella del nombre (sha1 % K)       partes 435s/59g · 477s/49g · 392s/54g · 363s/60g · peor 477 s · margen al presupuesto (1695) 1218 s · job ≈ 550 s
+K=4 · por tramos contiguos                   partes 321s/56g · 377s/55g · 442s/56g · 527s/55g · peor 527 s · margen al presupuesto (1695) 1168 s · job ≈ 600 s
+
+censo: 222 guards · 886 veredictos · 2667 s (factor 1.6)
+K=2 · por turno (i % K, orden del censo)     partes 1591s/111g · 1076s/111g · peor 1591 s · margen al presupuesto (1695) 104 s · job ≈ 1664 s
+K=2 · por huella del nombre (sha1 % K)       partes 1323s/113g · 1344s/109g · peor 1344 s · margen al presupuesto (1695) 351 s · job ≈ 1417 s
+K=2 · por tramos contiguos                   partes 1117s/111g · 1550s/111g · peor 1550 s · margen al presupuesto (1695) 145 s · job ≈ 1623 s
+K=3 · por turno (i % K, orden del censo)     partes 783s/74g · 882s/74g · 1002s/74g · peor 1002 s · margen al presupuesto (1695) 693 s · job ≈ 1075 s
+K=3 · por huella del nombre (sha1 % K)       partes 778s/69g · 755s/75g · 1134s/78g · peor 1134 s · margen al presupuesto (1695) 561 s · job ≈ 1207 s
+K=3 · por tramos contiguos                   partes 714s/74g · 883s/74g · 1069s/74g · peor 1069 s · margen al presupuesto (1695) 626 s · job ≈ 1142 s
+K=4 · por turno (i % K, orden del censo)     partes 786s/56g · 543s/56g · 805s/55g · 532s/55g · peor 805 s · margen al presupuesto (1695) 890 s · job ≈ 878 s
+K=4 · por huella del nombre (sha1 % K)       partes 696s/59g · 763s/49g · 627s/54g · 581s/60g · peor 763 s · margen al presupuesto (1695) 932 s · job ≈ 836 s
+K=4 · por tramos contiguos                   partes 514s/56g · 603s/55g · 707s/56g · 843s/55g · peor 843 s · margen al presupuesto (1695) 852 s · job ≈ 916 s

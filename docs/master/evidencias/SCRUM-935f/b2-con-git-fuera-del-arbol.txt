@@ -1,0 +1,3 @@
+guards 180 · DEPENDEN 94 (379 mut.) · NO 86 (311 mut.)
+coste local estimado de mutaciones (n × línea base): dependen 3249 s · no dependen 800 s · líneas base 1011 s
+motivos: { 'SIN TRAZA': 0, subproceso: 75, docs: 37 }
