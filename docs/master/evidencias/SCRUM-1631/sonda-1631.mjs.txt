@@ -1,0 +1,79 @@
+// SCRUM-1631 · ¿Está la fila de fallo cuando el envío devuelve?
+// Uso: node sonda-1631.mjs <raiz-del-arbol> <modo> <N>
+//   modo = not_configured · cap (WHATSAPP_DRY_RUN=1, tope J6 por cliente) · muerte-exit · muerte-sigterm
+// Mide sobre el dist/ del árbol, contra el Postgres de DATABASE_URL. No habla con Meta.
+import { createRequire } from 'node:module';
+import path from 'node:path';
+
+const [raiz, modo, nTxt] = process.argv.slice(2);
+const N = Number(nTxt);
+const req = createRequire(path.join(raiz, 'package.json'));
+if (modo === 'cap') process.env.WHATSAPP_DRY_RUN = '1';
+else delete process.env.WHATSAPP_DRY_RUN;
+delete process.env.WHATSAPP_PHONE_NUMBER_ID;
+delete process.env.WHATSAPP_ACCESS_TOKEN;
+
+const { prisma } = req('./dist/core/db/prisma.js');
+const { sendWhatsAppTemplate } = req('./dist/integrations/whatsapp.js');
+const { config } = req('./dist/core/config/env.js');
+
+const callar = console.warn; console.warn = () => {};
+const callarE = console.error; console.error = () => {};
+const sello = Date.now();
+const to = `3460${String(sello).slice(-7)}`;
+
+if (modo.startsWith('muerte-')) {
+  // Hijo: envía y muere ya, como un proceso que recibe SIGTERM sin manejador (src/ no lleva ninguno).
+  const merchantId = Number(process.env.SONDA_MERCHANT);
+  const relatedId = Number(process.env.SONDA_RELATED);
+  await sendWhatsAppTemplate({ to, templateName: 'payment_request_es', merchantId, log: { relatedType: 'invoice', relatedId } });
+  if (modo === 'muerte-exit') process.exit(0);
+  process.kill(process.pid, 'SIGTERM');
+  await new Promise(() => {});
+}
+
+let merchant = await prisma.merchant.create({ data: { name: `S1631 ${sello}`, email: `s1631-${sello}@test.local`, country: 'ES' } });
+if (merchant.id === 1) merchant = await prisma.merchant.create({ data: { name: `S1631b ${sello}`, email: `s1631b-${sello}@test.local`, country: 'ES' } }); // el 1 es el demo
+const cliente = await prisma.customer.create({ data: { merchantId: merchant.id, name: 'S1631', phone: to } });
+if (modo === 'cap') {
+  for (let i = 0; i < config.WA_CUSTOMER_DAILY_CAP; i++) {
+    await prisma.whatsAppMessage.create({ data: { merchantId: merchant.id, customerId: cliente.id, type: 'template', templateName: 'payment_request_es', waMessageId: `wamid.s1631-${sello}-${i}`, status: 'sent' } });
+  }
+}
+
+const leer = (relatedId) => prisma.whatsAppMessage.findFirst({ where: { merchantId: merchant.id, relatedId, status: 'failed' } });
+
+// CONTROL NEGATIVO: una fila que nadie escribió no aparece.
+const negativo = await leer(999999);
+// CONTROL POSITIVO SEMBRADO: una fila escrita con espera SE VE con el mismo lector.
+await prisma.whatsAppMessage.create({ data: { merchantId: merchant.id, type: 'template', status: 'failed', relatedType: 'invoice', relatedId: 888888 } });
+const positivo = await leer(888888);
+if (negativo || !positivo) { console.log(`CIEGO · negativo=${!!negativo} positivo=${!!positivo}`); process.exit(2); }
+
+let faltan = 0;
+let nunca = 0;
+const razones = {};
+const retrasos = [];
+for (let i = 1; i <= N; i++) {
+  const r = await sendWhatsAppTemplate({ to, templateName: 'payment_request_es', merchantId: merchant.id, log: { customerId: cliente.id, relatedType: 'invoice', relatedId: i } });
+  const t0 = performance.now();
+  const hay = await leer(i);
+  const motivo = r.reason ?? String(r.error);
+  razones[motivo] = (razones[motivo] ?? 0) + 1;
+  if (hay) continue;
+  faltan++;
+  let llego = false;
+  while (performance.now() - t0 < 5000) {
+    if (await leer(i)) { llego = true; break; }
+  }
+  if (llego) retrasos.push(performance.now() - t0); else nunca++;
+}
+await new Promise((r) => setTimeout(r, 300));
+const filas = await prisma.whatsAppMessage.count({ where: { merchantId: merchant.id, status: 'failed', relatedId: { lte: N } } });
+retrasos.sort((a, b) => a - b);
+console.log(JSON.stringify({ modo, N, razones, faltanAlVolver: faltan, nuncaEn5s: nunca, filasAlFinal: filas, retrasoMaxMs: Math.round(retrasos.at(-1) ?? 0) }));
+await prisma.whatsAppMessage.deleteMany({ where: { merchantId: merchant.id } });
+await prisma.customer.deleteMany({ where: { merchantId: merchant.id } });
+await prisma.merchant.delete({ where: { id: merchant.id } });
+await prisma.$disconnect();
+console.warn = callar; console.error = callarE;
