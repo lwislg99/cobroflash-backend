@@ -85,9 +85,13 @@ const RUTAS = [
 // hash cambia. No se retira del control: se le exige que su diferencia con la base sea EXACTAMENTE
 // la declarada — quitadas esas tres piezas, el HTML tiene que salir IDÉNTICO al de la base. Es más
 // fuerte que el hash de antes: dice «cambió solo en lo que dijo».
+// ── SCRUM-1562g · FACTURAS TAMPOCO, por el mismo motivo ──────────────────────────────────────
+//
+// 1562g le da A PROPÓSITO a cada fila un botón «Ver detalle» en su propia columna (firma del fundador
+// en SCRUM-1562 c.21125; declaración autorizada en c.21143), así que su hash cambia. Sale de aquí y
+// se le exige lo de Clientes: quitadas sus piezas, IDÉNTICO a la base. Presupuestos sigue por hash.
 const HERMANAS = [
   { ruta: '/presupuestos', rotulo: 'Presupuestos' },
-  { ruta: '/facturas', rotulo: 'Facturas' },
 ];
 
 const { srv, puerto } = await servirListas(PUBLICO, RUTAS);
@@ -574,6 +578,45 @@ titulo('⑥ las hermanas: TRES idénticas por hash · Albaranes trae LO DECLARAD
       mal(`   🔴 Clientes ha cambiado MÁS de lo declarado por SCRUM-979, SCRUM-1032, SCRUM-1135 y SCRUM-1043a · base sin lo declarado ${shaBaseSin} ≠ hoy sin lo declarado ${shaSin}`);
     } else {
       di(`   ✅ Clientes trae LO DECLARADO (SCRUM-979, SCRUM-1032, SCRUM-1135 y SCRUM-1043a) y nada más · sin esas piezas (${filasDeDatos} celdas de cada fila), idéntico a la base sin ellas ${shaBaseSin}`);
+    }
+
+    // ── SCRUM-1562g · Facturas: su diferencia con la base es EXACTAMENTE la declarada ──────────
+    // Declaración autorizada por el fundador en SCRUM-1562 c.21143, sobre el texto que firmó en c.21125.
+    // Las piezas, MEDIDAS en el HTML que pinta este banco (1280 px, sin facturas: la lista sale con su
+    // vacío): el `<th>` sin texto de la columna nueva (1), y el `colspan` del vacío, que la vista DERIVA
+    // del número de columnas y por eso pasa de 7 a 8 (1). El colspan no se borra: se deshace SÓLO si es
+    // igual al número de `<th>` de esa misma pantalla, así que un colspan desajustado se queda y cae.
+    // Va ANTES que el `<th>`, porque se cuenta con él puesto. Las filas con «Ver detalle» no salen en
+    // este banco (no hay facturas): las mide `tests/scrum1562g-facturas-con-teclado.test.mjs`.
+    const fA = await huella(puertoMain, '/facturas');
+    const fB = await huella(puerto, '/facturas');
+    const filasFac = (fA._html.match(/<tr[\s>]/g) || []).length;
+    const columnas = (html) => (html.match(/<th[\s>]/g) || []).length;
+    const PIEZAS_1562g = [
+      ['el colspan del vacío, igual al número de columnas',
+        /<td colspan="(\d+)"([^>]*)><div class="empty-state"([^>]*)>/g,
+        1,
+        (todo, n, td, caja, _pos, html) => (sinHuecos(td, caja) && Number(n) === columnas(html) ? '<td colspan="=columnas"><div class="empty-state">' : todo)],
+      ['el <th> sin texto de la columna «Ver detalle»',
+        /\n[ \t]*<th([^>]*)><\/th>/g,
+        1,
+        (todo, th) => (sinHuecos(th) ? '' : todo)],
+    ];
+    const cuentasFac = PIEZAS_1562g.map(([nombre, re, esperadas]) => [nombre, (fB._html.match(re) || []).length, esperadas]);
+    const deshacerFac = (html) => PIEZAS_1562g.reduce((h, [, re, , sustituto]) => h.replace(re, sustituto), html);
+    const shaFacSin = sha(deshacerFac(fB._html));
+    const shaFacBaseSin = sha(deshacerFac(fA._html));
+    if (filasFac < 2) {
+      nosupe(`   🔴 NO SUPE MIRAR · Facturas: la pantalla de la base pintó ${filasFac} <tr> (${fA.largo} caracteres).`);
+    } else if (cuentasFac.some(([, n, esperadas]) => n !== esperadas)) {
+      mal('   🔴 Facturas NO trae lo declarado por SCRUM-1562g · '
+        + cuentasFac.map(([nombre, n, esperadas]) => `${nombre}: ${n} de ${esperadas}`).join(' · '));
+    } else if (fA.sha === fB.sha) {
+      di(`   ✅ Facturas · ${fA.sha} · idéntico a la base (que ya trae SCRUM-1562g)`);
+    } else if (shaFacSin !== shaFacBaseSin) {
+      mal(`   🔴 Facturas ha cambiado MÁS de lo declarado por SCRUM-1562g · base sin lo declarado ${shaFacBaseSin} ≠ hoy sin lo declarado ${shaFacSin}`);
+    } else {
+      di(`   ✅ Facturas trae LO DECLARADO (SCRUM-1562g) y nada más · sin esas piezas, idéntico a la base sin ellas ${shaFacBaseSin}`);
     }
     srvMain.close();
   }

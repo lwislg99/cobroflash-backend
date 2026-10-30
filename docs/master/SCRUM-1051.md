@@ -447,3 +447,7 @@ Víctima hoy: ninguna pantalla manda `causa` (medido en 1051c, no re-medido aqu�
 scrum622 y los de registro scrum267/273/854/1294): 737 casos = 731 pass + 6 skip (sin `LIBRO_PG_URL`),
 0 fail; control positivo: 7 `ok` de 1051d y 7 de 1051c en el TAP. Suite entera local: NO CORRIDA
 (10 sesiones a la vez). Ruta montada: NO ejecutada (el test la mira por AST); yaqu.app: NO verificado.
+
+**Puesta al día (relevo, jv-j1dj, 30-oct-2026, sobre `3527028a3388de64c5e2429cb0d19d665e768473`, 149 commits):** `git merge` sin conflictos y sin recongelar nada: `facturaSuelta.ts` y `invoicesAdmin.routes.ts` no están en la lista de `scrum523d`, que pasa con sus 7 casos. `tsc -p .`: salida 0. Dirigida de 76 ficheros: 763 casos = 757 pass + 6 skip (sin `LIBRO_PG_URL`), 0 fail. Suite entera local: NO CORRIDA.
+
+A9: sin fallo que generalice — poner la rama al día no cambió los dos ficheros de `src/` de este tramo respecto a lo entregado el 27-oct, y lo que podía caer lo mide `scrum523d`.
