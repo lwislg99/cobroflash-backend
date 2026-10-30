@@ -1,6 +1,6 @@
 // tests/scrum1396c-los-declarados-solo-bajan.test.mjs — SCRUM-1396c
 //
-// LOS 28 SITIOS QUE DESTAPÓ EL CENSO AL EMPAREJAR POR ÁMBITO ENTRAN DECLARADOS, Y LA LISTA SÓLO BAJA
+// LOS 28 SITIOS QUE DESTAPÓ EL CENSO EL 27-oct-2026 AL EMPAREJAR POR ÁMBITO ENTRAN DECLARADOS, Y LA LISTA SÓLO BAJA
 //
 // SCRUM-1396 cambió `scripts/_censo-mkdtemp.mjs` para que un borrado sólo cubra a SU variable, no a
 // cualquiera que se llame igual. Con eso, ③ de SCRUM-864c acusó 28 sitios que ya estaban en `main`

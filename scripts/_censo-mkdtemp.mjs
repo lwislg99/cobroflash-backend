@@ -391,7 +391,7 @@ export const fugasDe = (censo) => [...sinCierre(censo), ...sinDueno(censo)];
 
 /**
  * SCRUM-1396c · LOS SITIOS DECLARADOS, que sólo pueden BAJAR (decisión del fundador, SCRUM-1396
- * c.21095). Al emparejar por ámbito y no por nombre, el censo destapó 28 sitios que ya estaban en
+ * c.21095, 27-oct-2026). Al emparejar por ámbito y no por nombre, el censo destapó 28 sitios que ya estaban en
  * `main` (2 con fuga medida, 22 por su forma, 4 sin medir). No se tocan aquí (regla 41): entran
  * declarados uno a uno en `scripts/_mkdtemp-declarados.json`, con su motivo y quién los retira.
  *
