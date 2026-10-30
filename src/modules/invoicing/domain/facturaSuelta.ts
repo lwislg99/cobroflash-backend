@@ -46,6 +46,7 @@
 // caminos (SCRUM-1027, `invoiceNumber.service.ts`). El camino de emisión no se modifica para
 // esto: se endurece el ÚNICO punto que ya decidía (regla 38).
 import { getEmissionMode, type MerchantLike } from './emission.service';
+import { type Causa } from './vat.service'; // SCRUM-1051d
 
 /** Error nombrado del gate. Un 500 no prueba nada: quien lo reciba tiene que poder ramificar. */
 export const ERROR_MODO_SIN_FACTURA = 'factura_suelta_no_disponible';
@@ -94,6 +95,8 @@ export interface LineaEntrada {
   price: number;
   /** Tipo de IVA en FRACCIÓN (0.21), como el resto de `Invoice.lines` del árbol. */
   tax: number;
+  /** SCRUM-1051d · por qué la línea no repercute IVA (hoy sólo 'S2'). La valida la ruta, no esto. */
+  causa?: Causa;
 }
 
 export type ResultadoValidacion =
@@ -142,7 +145,14 @@ export function validarFacturaSuelta(body: unknown): ResultadoValidacion {
     if (!esNumeroFinito(tax) || tax < 0 || tax > 1) {
       return { ok: false, error: ERROR_LINEAS_INVALIDAS, message: 'El IVA de cada línea va en fracción (0.21 para el 21 %).' };
     }
-    lineas.push({ concept, qty, price, tax });
+    // SCRUM-1051d (GO de Javier, c.21180 punto 1): la causa viaja TAL CUAL y no se juzga aquí. La
+    // juzga `exigirCausaLineaEmitible` en la ruta, igual que en la boca de cobro: una causa no
+    // activa se rechaza allí antes de pedir número, en vez de perderse aquí y salir como un 0 % (o
+    // un 21 % que cobra cuota) sin causa. Sin causa la línea no lleva la clave: los llamadores de
+    // `calcVatBreakdown` comparan con deepEqual.
+    const linea: LineaEntrada = { concept, qty, price, tax };
+    if (l.causa !== undefined && l.causa !== null) linea.causa = l.causa as Causa;
+    lineas.push(linea);
   }
 
   return { ok: true, customerId, lineas };

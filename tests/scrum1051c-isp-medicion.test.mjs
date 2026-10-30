@@ -9,6 +9,9 @@
 //   ① `POST /admin/invoices` (factura suelta, la única boca que recibe las líneas del cuerpo)
 //      pasa por `validarFacturaSuelta`, que reconstruye cada línea con concept/qty/price/tax y
 //      DESCARTA `causa`. La boca de presupuesto (`lineasParaFacturar`) sí la conserva.
+//      ✅ ARREGLADO en SCRUM-1051d con el GO de c.21180 (punto 1): los tres casos de ① que fijaban
+//      el defecto se han dado la vuelta aquí, y el arreglo entero lo vigila
+//      `tests/scrum1051d-suelta-conserva-causa.test.mjs`. ② sigue fijando lo de HOY (punto 2, ⏸).
 //   ② La R1 de una factura con línea S2, construida como la construye `POST /:id/rectify`
 //      ({...l, price: -price}), pasa por `buildVerifactuRegistrosXml`: sale R1 + I, S2, base
 //      negativa, SIN `TipoImpositivo` ni `CuotaRepercutida`. El catálogo de la AEAT
@@ -51,7 +54,7 @@ const registroDe = (xml, numero) => {
 
 // ── ① la boca de la factura suelta ──────────────────────────────────────────────────────────
 
-test('1051c ① · HOY validarFacturaSuelta DESCARTA la causa de la línea (las otras cuatro claves llegan)', () => {
+test('1051c ① · desde 1051d validarFacturaSuelta CONSERVA la causa de la línea (las otras cuatro claves llegan)', () => {
   const v = validarFacturaSuelta({ customerId: 5, lines: [{ ...LINEA_S2 }] });
   assert.equal(v.ok, true, `CIEGO: la validación no aceptó el cuerpo de control: ${JSON.stringify(v)}`);
   assert.equal(v.lineas.length, 1);
@@ -60,8 +63,7 @@ test('1051c ① · HOY validarFacturaSuelta DESCARTA la causa de la línea (las 
     { concept: v.lineas[0].concept, qty: v.lineas[0].qty, price: v.lineas[0].price, tax: v.lineas[0].tax },
     { concept: 'Subcontrata de obra', qty: 1, price: 1000, tax: 0 },
   );
-  assert.equal('causa' in v.lineas[0], false,
-    'la factura suelta YA conserva la causa: actualiza este caso y el tramo 1051c (¿con qué GO?)');
+  assert.equal(v.lineas[0].causa, 'S2', 'la factura suelta vuelve a DESCARTAR la causa (el defecto de 1051c)');
 });
 
 test('1051c ① · control: la boca de presupuesto (lineasParaFacturar) SÍ conserva la causa', () => {
@@ -70,18 +72,22 @@ test('1051c ① · control: la boca de presupuesto (lineasParaFacturar) SÍ cons
   assert.equal(lineas[0].causa, 'S2');
 });
 
-test('1051c ① · consecuencia: la línea S2 que sale de la suelta (0 % sin causa) se EXCLUYE del registro', async () => {
+test('1051c ① · desde 1051d la línea S2 que sale de la suelta SELLA (ya no es un 0 % sin causa que se excluye)', async () => {
   const { lineas } = validarFacturaSuelta({ customerId: 5, lines: [{ ...LINEA_S2 }] });
   const conCausa = await buildVerifactuRegistrosXml({ merchantId: 7, year: 2026 }, fakePrisma([original([{ ...LINEA_S2 }])]));
   assert.equal(conCausa.excluidos.length, 0, 'control: con la causa puesta, la misma línea SELLA');
-  const sinCausa = await buildVerifactuRegistrosXml({ merchantId: 7, year: 2026 }, fakePrisma([original(lineas)]));
+  // Control negativo: SIN la causa, la misma línea sigue excluyéndose (el builder no ha cambiado).
+  const { causa: _c, ...sinLaCausa } = LINEA_S2;
+  const sinCausa = await buildVerifactuRegistrosXml({ merchantId: 7, year: 2026 }, fakePrisma([original([sinLaCausa])]));
   assert.equal(sinCausa.excluidos.length, 1);
   assert.match(sinCausa.excluidos[0].motivo, /no se puede saber si es/);
+  const deSuelta = await buildVerifactuRegistrosXml({ merchantId: 7, year: 2026 }, fakePrisma([original(lineas)]));
+  assert.equal(deSuelta.excluidos.length, 0, 'la línea S2 que sale de la suelta vuelve a excluirse (el defecto de 1051c)');
 });
 
-test('1051c ① · consecuencia: una S2 con tax 0.21 que entra por la suelta se convierte en un 21 % que COBRA cuota', () => {
+test('1051c ① · desde 1051d una S2 con tax 0.21 que entra por la suelta conserva la causa (no es un 21 % que cobra)', () => {
   const { lineas } = validarFacturaSuelta({ customerId: 5, lines: [{ ...LINEA_S2, tax: 0.21 }] });
-  assert.deepEqual(lineas[0], { concept: 'Subcontrata de obra', qty: 1, price: 1000, tax: 0.21 });
+  assert.deepEqual(lineas[0], { concept: 'Subcontrata de obra', qty: 1, price: 1000, tax: 0.21, causa: 'S2' });
 });
 
 // ── ② la R1 de una factura con línea S2 ─────────────────────────────────────────────────────
