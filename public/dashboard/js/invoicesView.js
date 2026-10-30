@@ -35,8 +35,80 @@ function resultadoMarcadoEnBloque({ escrituraOk, recargaOk, marcadas }) {
   return { tono: 'success', texto: textoMarcadas(marcadas), seMarcaron: true };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────────────────
+// SCRUM-1618 · CUÁNDO SE COBRÓ, DICHO POR QUIEN MARCA LA FACTURA
+//
+// El servidor ya acepta `paidAt` en los dos caminos (lote: SCRUM-397; una en una: SCRUM-1609) y
+// ninguna pantalla lo mandaba: el cobro del 31 de marzo conciliado el 2 de abril quedaba en abril.
+// Esta pieza la usan el lote (aquí abajo) y la ficha (`invoiceDetailView.js`, que carga después).
+//
+// 🔴 CAMPO VACÍO = CUERPO DE SIEMPRE. Sin fecha, `paidAt` NO viaja y el servidor pone el instante
+// del marcado, como antes de existir el campo. Por eso no viene relleno con hoy: relleno, el campo
+// mandaría siempre una fecha que el profesional no ha dicho.
+//
+// Qué fechas valen lo decide el SERVIDOR (`resolverFechaDeCobro`: ni futura ni ilegible, sin
+// límite hacia atrás). Aquí no se repite la regla. Su 400 cae en el aviso firmado de siempre
+// (SCRUM-373 prohíbe a esta vista pintar el mensaje de la excepción); la ficha sí lo enseña.
+const COPY_FECHA_DE_COBRO = {
+  rotuloUna: '¿Cuándo lo has cobrado?', // APROBADO por Javier el 27-oct-2026 (SCRUM-1618 comentario 21183; Trabajo y Presupuesto, SCRUM-1618 comentario 21221)
+  rotuloLote: '¿Cuándo las has cobrado?', // APROBADO por Javier el 27-oct-2026 (SCRUM-1618 comentario 21183)
+  ayuda: 'Si lo dejas vacío, se guarda la fecha de hoy.', // APROBADO por Javier el 27-oct-2026 (SCRUM-1618 comentario 21183; Trabajo y Presupuesto, SCRUM-1618 comentario 21221)
+};
+
+/** La fecha escrita en el campo, o `null` si está vacío (señal de NO mandar `paidAt`). */
+function fechaDeCobroElegida(input) {
+  if (!input || typeof input.value !== 'string') return null;
+  const v = input.value.trim();
+  return v === '' ? null : v;
+}
+
+/** El cuerpo de la petición, con `paidAt` SOLO si el profesional escribió una fecha. PURO. */
+function cuerpoConFechaDeCobro(base, input) {
+  const cuerpo = Object.assign({}, base || {});
+  const f = fechaDeCobroElegida(input);
+  if (f) cuerpo.paidAt = f;
+  return cuerpo;
+}
+
+/** Pinta rótulo + campo de fecha + ayuda dentro de `contenedor` y devuelve el `<input>`. */
+function pintarFechaDeCobro(contenedor, opts) {
+  if (!contenedor || typeof document === 'undefined') return null;
+  const o = opts || {};
+  const id = o.id || 'fecha-cobro';
+
+  const envoltorio = document.createElement('div');
+  envoltorio.className = 'form-group';
+
+  const etiqueta = document.createElement('label');
+  etiqueta.htmlFor = id;
+  etiqueta.textContent = o.rotulo || COPY_FECHA_DE_COBRO.rotuloUna;
+  envoltorio.appendChild(etiqueta);
+
+  const input = document.createElement('input');
+  input.type = 'date';
+  input.id = id;
+  input.className = 'input';
+  input.dataset.fechaDeCobro = '1';
+  input.setAttribute('aria-describedby', id + '-ayuda');
+  envoltorio.appendChild(input);
+
+  const ayuda = document.createElement('small');
+  ayuda.id = id + '-ayuda';
+  ayuda.textContent = COPY_FECHA_DE_COBRO.ayuda;
+  // En su propia línea: suelta, en la barra del lote se partía al lado del campo.
+  const lineaAyuda = document.createElement('div');
+  lineaAyuda.appendChild(ayuda);
+  envoltorio.appendChild(lineaAyuda);
+
+  contenedor.appendChild(envoltorio);
+  return input;
+}
+
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { COPY_BULK_PAGADAS, resultadoMarcadoEnBloque, textoMarcadas };
+  module.exports = {
+    COPY_BULK_PAGADAS, resultadoMarcadoEnBloque, textoMarcadas,
+    COPY_FECHA_DE_COBRO, fechaDeCobroElegida, cuerpoConFechaDeCobro,
+  };
 }
 
 async function fetchInvoices(options = {}) {
@@ -434,6 +506,9 @@ async function fetchInvoices(options = {}) {
       <button id="bulk-paid-btn" class="btn-primary btn-sm">✓ Marcar como pagadas</button>
       <button id="bulk-cancel-btn" class="btn-ghost btn-sm" style="color:rgba(255,255,255,.7)">Cancelar</button>
     `;
+    // SCRUM-1618 · la fecha de cobro del lote: nace en `updateBulkBar`, con la primera selección, para
+    // que la lista sin seleccionar pinte lo mismo que antes del campo. Vacía = cuerpo de siempre.
+    let bulkFechaCobro = null;
     panelEmitidas.appendChild(bulkBar);
 
     let currentStatus = 'all';
@@ -451,6 +526,10 @@ async function fetchInvoices(options = {}) {
     function updateBulkBar() {
       const n = selectedIds.size;
       if (n > 0) {
+        if (!bulkFechaCobro) {
+          bulkFechaCobro = pintarFechaDeCobro(bulkBar, { id: 'bulk-fecha-cobro', rotulo: COPY_FECHA_DE_COBRO.rotuloLote });
+          if (bulkFechaCobro) bulkBar.insertBefore(bulkFechaCobro.parentNode, bulkBar.querySelector('#bulk-paid-btn'));
+        }
         bulkBar.style.display = 'flex';
         bulkBar.querySelector('#bulk-count').textContent = n + ' factura' + (n !== 1 ? 's' : '') + ' seleccionada' + (n !== 1 ? 's' : '');
       } else {
@@ -486,9 +565,10 @@ async function fetchInvoices(options = {}) {
       try {
         data = await apiRequest('/admin/invoices/bulk-paid', {
           method: 'POST',
-          body: JSON.stringify({ ids }),
+          body: JSON.stringify(cuerpoConFechaDeCobro({ ids }, bulkFechaCobro)),
         });
         selectedIds.clear();
+        if (bulkFechaCobro) bulkFechaCobro.value = '';
       } catch {
         btn.disabled = false;
         btn.textContent = '✓ Marcar como pagadas';

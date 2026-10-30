@@ -23,7 +23,6 @@
     {"clave":"cuerpo · PATCH /admin/jobs/:id::assignedUserId","donde":"src/modules/jobs/app/routes/jobs.routes.ts:934","carril":"S2","ticket":"SCRUM-1185","motivo":"⚠️ NO CONECTAR (S2, 29-sep): sustituido por el asignado MÚLTIPLE (jobAsignados.js → /asignados, job_assignees, SCRUM-650). Conectar este campo daría DOS fuentes de «quién ejecuta el Trabajo», y se contradirían en cuanto uno se edite sin el otro."},
     {"clave":"cuerpo · POST /admin/ai/quote-message::merchantName","donde":"src/modules/ai/app/routes/ai.routes.ts:147","carril":"S2","ticket":"SCRUM-1182"},
     {"clave":"cuerpo · POST /admin/ai/quote-message::quoteId","donde":"src/modules/ai/app/routes/ai.routes.ts:147","carril":"S2","ticket":"SCRUM-1182"},
-    {"clave":"cuerpo · POST /admin/invoices/bulk-paid::paidAt","donde":"src/modules/system/app/routes/invoicesAdmin.routes.ts:442","carril":"J1","ticket":"SCRUM-1185"},
     {"clave":"cuerpo · POST /admin/partes::tipo","donde":"src/modules/jobs/app/routes/partes.routes.ts:349","carril":"S4","ticket":"SCRUM-1185"},
     {"clave":"cuerpo · POST /admin/quotes/:id/accept::evidence","donde":"src/modules/system/app/routes/quotesAdmin.routes.ts:96","carril":"S2","ticket":"SCRUM-1185","motivo":"APARCADO (S2, 29-sep, decisión del orquestador): qué prueba se guarda de una aceptación manual y quién la aporta es decisión de producto; toca la trazabilidad de la decisión. La aceptación manual existe (quotesDetailView.js submitDecision) sin evidencia."},
     {"clave":"cuerpo · POST /admin/quotes/:id/reject::evidence","donde":"src/modules/system/app/routes/quotesAdmin.routes.ts:135","carril":"S2","ticket":"SCRUM-1185","motivo":"APARCADO (S2, 29-sep, decisión del orquestador): mismo motivo que accept::evidence."},
@@ -219,6 +218,7 @@
     {"clave":"export · src/modules/invoicing/domain/reintentoSellado.ts::conclusionDelReintento","motivo":"SCRUM-1507 (PR-2 de SCRUM-1404, J1): la importa la tarea programada «reintento de sellado (cada minuto)» de src/core/cron/cron.ts, bloque de S1 (SCRUM-1507 c.19344 §3)"},
     {"clave":"export · src/modules/invoicing/domain/reintentoSellado.ts::reintentarSelladosPendientes","motivo":"SCRUM-1507 (PR-2 de SCRUM-1404, J1): la importa la tarea programada «reintento de sellado (cada minuto)» de src/core/cron/cron.ts, bloque de S1 (SCRUM-1507 c.19344 §3)"},
     {"clave":"export · src/modules/invoicing/domain/reintentoSellado.ts::resumenDelReintento","motivo":"SCRUM-1507 (PR-2 de SCRUM-1404, J1): la importa la tarea programada «reintento de sellado (cada minuto)» de src/core/cron/cron.ts, bloque de S1 (SCRUM-1507 c.19344 §3)"},
-    {"clave":"ruta · GET /admin/evidencias.zip","motivo":"SCRUM-1602: conectada en exportView.js (tarjeta «Paquete del trimestre», sólo en modo fiscal; año y trimestre de la tarjeta de emitidas)"}
+    {"clave":"ruta · GET /admin/evidencias.zip","motivo":"SCRUM-1602: conectada en exportView.js (tarjeta «Paquete del trimestre», sólo en modo fiscal; año y trimestre de la tarjeta de emitidas)"},
+    {"clave":"cuerpo · POST /admin/invoices/bulk-paid::paidAt","motivo":"SCRUM-1618: conectada en invoicesView.js (el campo de fecha de la barra del lote, vía cuerpoConFechaDeCobro; solo viaja si se escribe una fecha)"}
   ]
 }
