@@ -1,0 +1,51 @@
+## DESPUES (con el arreglo), misma base
+{"modo":"not_configured","N":200,"razones":{"not_configured":200},"faltanAlVolver":0,"nuncaEn5s":0,"filasAlFinal":200,"retrasoMaxMs":0}
+{"modo":"cap","N":200,"razones":{"template_invalid: payment_request_es: body con 0 variables, Meta espera 4":200},"faltanAlVolver":0,"nuncaEn5s":0,"filasAlFinal":200,"retrasoMaxMs":0}
+{"modo":"muerte-exit","N":30,"hijos":30,"salidas":{"0":30},"filasEscritas":30,"perdidas":0}
+{"modo":"muerte-sigterm","N":30,"hijos":30,"salidas":{"1":30},"filasEscritas":30,"perdidas":0}
+{"modo":"ci","N":25,"verde":25,"premisaRota":0,"otroRojo":0,"ciego":0,"motivos":{"not_configured":25}}
+{"modo":"dry","N":25,"verde":25,"premisaRota":0,"otroRojo":0,"ciego":0,"motivos":{"customer_daily_cap":25}}
+# base inaccesible (puerto sin nadie)
+{"N":10,"devuelve":{"{\"ok\":false,\"reason\":\"not_configured\"}":10},"msMin":2037,"msMediana":2046,"msMax":2072,"avisosEnElLog":["[WA-0b] recordWaMessage omitido:"]}
+# mutaciones con aplicarUna
+exports aplicarUna,correr · declaradas 4
+limpia {}
+MUERE · SCRUM-1631 · las ocho vías · {"ok":true,"colaterales":1,"colateralesNombres":["SCRUM-1631 · por árbol: toda escritura de un fallo se espera y ninguna se traga el error"],"tras":{"pasados
+MUERE · SCRUM-1631 · por árbol · {"ok":true,"colaterales":0,"colateralesNombres":[],"tras":{"pasados":["SCRUM-1631 · las ocho vías: el envío no vuelve hasta que la fila del fallo está escrita"
+MUERE · SCRUM-1631 · la plantilla reservada · {"ok":true,"colaterales":1,"colateralesNombres":["SCRUM-1631 · por árbol: toda escritura de un fallo se espera y ninguna se traga el error"],"tras":{
+MUERE · SCRUM-1631 · si la escritura rechaza · {"ok":true,"colaterales":0,"colateralesNombres":[],"tras":{"pasados":["SCRUM-1631 · las ocho vías: el envío no vuelve hasta que la fila del fallo e
+declaradas 4 · cazadas 4 · no cazadas 0
+# censo AST
+logFailure: 7 declaraciones · 32 llamadas · 341 ficheros de src/
+  decl 348 en sendWhatsAppTemplate asyncDecl=true
+  decl 693 en sendWhatsAppText asyncDecl=true
+  decl 779 en sendWhatsAppButtons asyncDecl=true
+  decl 884 en sendWhatsAppList asyncDecl=true
+  decl 998 en sendWhatsAppCtaUrl asyncDecl=true
+  decl 1090 en sendWhatsAppDocument asyncDecl=true
+  decl 1175 en sendWhatsAppLocationRequest asyncDecl=true
+  fnAsync=true espera=true valorUsado=false sigue=ReturnStatement: 31 · líneas 368,375,382,392,420,429,439,712,719,725,754,811,816,822,861,916,921,927,972,1030,1035,1041,1067,1122,1127,1133,1155,1207,1212,1218,1242
+  fnAsync=true espera=true valorUsado=false sigue=(fin): 1 · líneas 508
+escrituras del log: 18
+  350 recordWaMessage failed en logFailure espera=true
+  449 resolverReservaDePlantilla enviada en registrarEnviado espera=false
+  457 recordWaMessage sent en registrarEnviado espera=false
+  511 resolverReservaDePlantilla sin_respuesta en sendWhatsAppTemplate espera=true
+  514 resolverReservaDePlantilla rechazada en sendWhatsAppTemplate espera=true
+  554 recordWaMessage failed en sendWhatsAppWindowFirst espera=true
+  588 recordWaMessage sent en sendWhatsAppWindowFirst espera=false
+  695 recordWaMessage failed en logFailure espera=true
+  781 recordWaMessage failed en logFailure espera=true
+  794 recordWaMessage sent en logSent espera=false
+  886 recordWaMessage failed en logFailure espera=true
+  899 recordWaMessage sent en logSent espera=false
+  1000 recordWaMessage failed en logFailure espera=true
+  1013 recordWaMessage sent en logSent espera=false
+  1092 recordWaMessage failed en logFailure espera=true
+  1105 recordWaMessage sent en logSent espera=false
+  1177 recordWaMessage failed en logFailure espera=true
+  1190 recordWaMessage sent en logSent espera=false
+envíos exportados: 8 (sendWhatsAppTemplate, sendWhatsAppWindowFirst, sendWhatsAppText, sendWhatsAppButtons, sendWhatsAppList, sendWhatsAppCtaUrl, sendWhatsAppDocument, sendWhatsAppLocationRequest) · llamadas a ellos en src/: 61
+siembra vista: 1 · llamadas DENTRO de $transaction: 0
+# dentro de transaction
+$transaction en src/: 33 · llamadas send*/notif*/avisar*/enviar* dentro: 0

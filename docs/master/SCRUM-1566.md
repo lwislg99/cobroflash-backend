@@ -370,3 +370,172 @@ conoce es `received`. Pero las filas viejas las escribió código anterior y nad
   `migrate diff --from-empty`, 33 modelos): las seis fases en verde y **0** directorios `c1566-*` en TEMP
   (la fase 3 enseña que se crearon ahí). El temporal de `expediente-tres-centimos.cjs` ya se borraba
   (`process.on('exit')`) y el guard no lo marca.
+
+## SCRUM-1566 (d) · LA MEDIDA DE D, sin construirla — qué es, cuántos sitios, de quién, y qué rompe
+
+**Medido contra:** `origin/main` = `5a247020e5608fd2b21fad04bcf585694494397a` (y antes `eafca9fe1`: ningún
+fichero de los de abajo cambió entre los dos, `git diff --stat` vacío). Hora de GitHub al empezar:
+2026-10-29T17:42:45Z. S1, encargo del orquestador del equipo de Luis: «MEDIR D, sin construirlo».
+**Sólo lectura:** no se ha tocado `src/`, `public/` ni ningún test.
+
+A9: sin fallo que generalice — la sonda se probó contra el caso que la motivó (94,51 → 94,52) y contra uno
+limpio (242 → 242) antes de usarla, y la base se corrió con la MISMA sonda cargada sin sustituir.
+
+### Qué es D, exactamente
+
+**Una función:** `calcTotal` (`src/core/utils/utils.ts:230`). Hoy suma `qty × precio con dto × (1 + tax)`
+línea a línea en coma flotante y redondea UNA vez al final (con global: resta su parte con impuesto).
+D es que devuelva **la base + la cuota de `calcVatBreakdown`** (`vat.service.ts`) sobre las mismas líneas
+con su `dto`, es decir `grossOfLines` de las líneas efectivas — la cuenta con la que se factura. Con global,
+la variante 1 usa el reparto del pie (`presentacionIva.ts:159-181`); la 2, `lineasParaFacturar`. **Las dos
+dan los mismos números en todo lo de abajo.**
+
+Ejemplo que lo motivó: 2,5 × 36,35 al 4 % → hoy firma **94,51**; con D, **94,52** (90,88 + 3,64).
+
+### Cuántos sitios — un punto de cambio, cinco consumidores
+
+`calcTotal(` en `src/`, por llamada (sin comentarios): **5**.
+
+| sitio | qué hace con el total | carril |
+|---|---|---|
+| `src/core/utils/utils.ts:230` | **la definición: lo único que cambia D** | **S1** |
+| `quotes.routes.ts:22` (`calcTierTotal`) y `:145` | el `Quote.total` al crear (`:201`) y el de cada opción; `:442` reescribe el total al elegir opción | S1 |
+| `maintenance.service.ts:426` | el precio de la línea del presupuesto que genera un mantenimiento | S1 |
+| `pdf.service.ts:1435` (`ivaDentroDelImporte`) | el IVA que va dentro, en el PDF del presupuesto en modo `no_incluido` | **J1** (no cambia su código; cambia lo que recibe) |
+| `customerPortal.routes.ts:251` | el importe de cada línea en el portal del cliente | **J2** (ídem) |
+| `public/dashboard/js/quoteDescuentos.js:147-188` | **una copia de la fórmula** en el editor, para el total en vivo | **S2** — hay que cambiarla A LA VEZ |
+
+Escritores de `Quote.total` (todos los `quote.create/update` de `src/`): crear (`quotes.routes.ts:201`),
+elegir opción (`:442`), mantenimiento (`maintenance.service.ts:431`), presupuesto desde albarán
+(`albaranes.routes.ts:1723`, siempre `'0.00'`) y la revisión, que lo **hereda** sin recalcular
+(`revision.ts:289`). **D no cambia ningún total ya guardado** (no hay recálculo de lo guardado); sólo lo que
+se escriba desde que entre. Ningún sello ni huella llama a `calcTotal` (los 5 de arriba son todos).
+
+### Qué rompe — los tests
+
+Población: los **58** ficheros de `tests/` que nombran `calcTotal`, `pieDePresupuesto`,
+`distributeStageAmounts`, `stageLinesReconciled`, `grossOfLines`, `quote/create`, `ivaDentroDelImporte`,
+`maintenance.service` o `scrum887`: **565** tests. Base (sonda cargada, sin sustituir): 0 fallos. Con D (las
+dos variantes): **3 fallos**, los mismos.
+
+| test | qué pasa con D | qué pide |
+|---|---|---|
+| `scrum594-descuentos-presupuesto.test.mjs:199` «la pieza de PANTALLA y `calcTotal` dan EXACTAMENTE lo mismo» | `32,64 ≠ 32,63`: el editor (S2) sigue con la fórmula vieja | cambiar `quoteDescuentos.js` en el mismo PR. Es el guard haciendo su trabajo |
+| `scrum887-el-cobro-es-lo-firmado.test.mjs:159` «sin descuento … dan los MISMOS céntimos que antes» (`HUELLA_SIN_DESCUENTO`) | la huella cambia: D cambia lo firmado **por definición** | 🔴 **regenerar la huella es la decisión de D, no un arreglo.** Por la regla 41 no lo hace la sesión: lo firma quien autorice D |
+| `scrum887b-descuento-global.test.mjs:188` caso B, techo 50/50 | **35 > 31** | 🔴 un techo que «sólo puede bajar» SUBE: con la regla 41 D **no entra así** |
+
+### Lo que D arregla, y lo que no — «cobro ≠ firmado» (`d-contar-887.mjs`, 2.000 por fila)
+
+| muestra | plan | hoy | con D |
+|---|---|---|---|
+| 887 sin descuento | SIN · A_uno · A_mixto | 18 · 18 · 14 | **0 · 0 · 0** |
+| 887b con global, un tipo | entero · 50/50 · 30/70 | 23 · 31 · 43 | **0** · **35** ↑ · 41 |
+
+**Sin descuento global, D cierra del todo «cobro ≠ firmado».** Con global y factura única, también. **Con
+global y TRAMOS no:** el 50/50 empeora (31 → 35) y el 30/70 apenas baja. La causa de ese resto **no la he
+medido**; vive en cómo se reparte la línea del global entre tramos (`distributeStageAmounts`,
+`quotes/domain/billingPlan.ts`, S1, y `stageLinesReconciled`, `invoiceLines.service.ts`, J1).
+
+### Cuánto cambia lo firmado (`d-cuantos-cambian.cjs`, 10.000 por fila)
+
+| muestra (los conjuntos de 887b: precios con fracción de céntimo, adversarial) | cambia el total firmado | máx |
+|---|---|---|
+| un tipo, sin global | **14,9 %** (sube 897 · baja 592) | 1 cént. |
+| tipos mezclados, sin global | **32,9 %** (sube 2.245 · baja 1.040) | 2 cént. |
+| un tipo, con global | **19,4 %** (sube 878 · baja 744) | 1 cént. |
+
+⚠️ Es una muestra hecha para provocar el caso, no presupuestos reales: en producción no hay clientes
+reales, y con precios de dos decimales y cantidades enteras la tasa será mucho menor (sin medir).
+
+### 🔴 D sin C hereda el empate en lo firmado
+
+1 × 22,50 € al 21 %: hoy firma **27,23** (22,50 + 4,725 → 27,225 → 27,23); con D, **27,22**, porque la cuota
+canónica es 4,72 (el empate mal redondeado de C, `vat.service.ts:23`). **Con D sola, ese presupuesto firma y
+cobra lo mismo, pero un céntimo menos del correcto.** D y C se necesitan: D hace que firmado = cobrado; C,
+que ese importe sea el bien redondeado. **No he medido C + D juntas** (la C simulada de la sesión anterior
+vivía en un `dist` parcheado que no se conserva).
+
+### Lo que eso deja para decidir
+
+1. **D es UN cambio en S1** (`utils.ts:230`) + **su espejo en S2** (`quoteDescuentos.js`), en el mismo PR.
+2. **Antes de entrar, el resto del 50/50 con global** (887b, 31 → 35): o se arregla en el reparto por tramos,
+   o D no entra (regla 41). Sin medir dónde.
+3. **La huella de 887 cambia por diseño**: quien autorice D autoriza regenerarla.
+4. **D cambia lo firmado** (14-33 % en la muestra adversarial, ±1-2 cént.): lo que el expediente ya decía
+   que es de la asesoría.
+
+### Instrumentos (en `evidencias/SCRUM-1566/`)
+
+`sonda-d.cjs` (D en memoria, `SONDA_D=0|1|2`) · `d-contar-887.mjs <árbol>` (copia efímera de los dos
+tests dentro del árbol, borrada al salir) · `d-cuantos-cambian.cjs` (con `SONDA_D=0` y `--require` de la
+sonda) · salida en `salida-d.txt`.
+
+## SCRUM-1566 (e) · EL REPARTO ENTRE TRAMOS, MEDIDO — dónde nace el céntimo y qué salida baja los tres techos
+
+**Medido contra:** `origin/main` = `06ad4f1bd53d25b701cd11ae42791db753329ceb` · 2026-10-30T17:25:45Z
+
+A9: comprobación → `docs/master/evidencias/SCRUM-1566/reparto-tramos.cjs`
+
+Sólo lectura: ni `src/` ni `dist/` se escriben. La simulación reescribe en memoria el texto al cargar
+(`sonda-e.cjs`). Comentario en Jira: c.21289. Las muestras salen del texto de los propios tests, así que la
+población es la de los techos por construcción.
+
+### Corrige la premisa de c.21276
+
+**El descuento global no es la causa.** Las mismas líneas de la muestra B SIN global dan 30 y 40 frente a 31 y
+43; en los dos conjuntos caen 21 de 31 y 27 de 43. **`distributeStageAmounts` tampoco:** su suma cuadra con lo
+firmado en 2.000 de 2.000 en los dos planes. `billingPlan.ts` no necesita cambio.
+
+### Dónde nace el céntimo
+
+| causa | dónde | medido |
+|---|---|---|
+| ① el bruto tiene huecos al 4 %: base y cuota saltan a la vez | `calcVatBreakdown` | barrido 0-12 €: 48 huecos de 1.249 al 4 %; 0 al 21 %, 10 % y 0 %. Fallos de hoy al 4 %: 26 de 31 y 37 de 43 |
+| ② la ventana de `reconcileToTarget` no llega | `invoiceLines.service.ts:223` | 7 tramos del 50/50 y 6 del 30/70 eran alcanzables y no se alcanzaron |
+| ③ nadie coordina los tramos | `stageLinesReconciled` | en 74 de 74 fallos existe una pareja alcanzable a ±1 cént. que suma lo firmado |
+
+C+D no amplifica nada: el 50/50 conserva sus 31 fallos y añade 6; el 30/70 conserva 39 de 43 y añade 6. **Por
+qué C en concreto añade fallos: sin medir** (el barrido no ve diferencia con y sin C).
+
+### Las salidas
+
+Controles: sin simular, 18·18·14 y 23·31·43; con C, 25·33·47; con C+D, 0·37·45 (las de S1, c.21275). Dirigida:
+los 58 ficheros y 565 tests de S1, base 0 fallos. Suite entera: NO CORRIDA.
+
+**D2:** `calcTotal` = bruto de las líneas que se facturan (variante 2 de `sonda-d.cjs`). **E2:** el último tramo
+cierra contra lo que dieron los anteriores y, si no llega, se mueve ±1 cént. entre tramos; sólo actúa si el
+importe recibido es el reparto del bruto. **F:** segunda pasada más fina en `reconcileToTarget`.
+
+| salida | 887 SIN·A_uno·A_mixto | 887b entero·50/50·30/70 | 30/30/40 B | deriva `scrum141` (tope 1,5 %) | caen de 565 |
+|---|---|---|---|---|---|
+| hoy | 18·18·14 | 23·31·43 | 35 | 0,809 % | 0 |
+| C+D2 | 0·0·0 | 0·37·45 | 45 | 0,833 % | no corrida |
+| C+D (var. 1)+E2 | 0·0·0 | 0·44·44 | 44 | no medida | no corrida |
+| C+D2+E2 | 0·0·0 | 0·0·0 | 0 | 1,638 %, rompe | 6 |
+| F sola | 18·16·6 | 14·26·34 | 27 | 0,644 % | 1 (huella de 887) |
+| ✅ **C+D2+E2+F** | **0·0·0** | **0·0·0** | **0** | 1,287 % | **5** |
+
+Con ✅ caen `scrum293` ×2 y `scrum500` (literales de c.21031 punto 3; la rama de S1 los cambia, no corrido
+junto), `scrum594` (espejo de S2) y la huella de `scrum887` (cambia por definición con D). Ningún techo sube.
+
+### Coste
+
+Muestra adversarial, no presupuestos reales. Total firmado con C+D2: 15,2 / 32,1 / 17,1 %, ±1-2 cént. (control:
+C+D reproduce 15,2 / 32,1 / 19,7). E2+F no cambian lo firmado: mueven un tramo como máximo 1 cént. del importe
+aritmético, en 32-56 de 2.000 presupuestos, y la suma es exacta. Lo guardado no cambia: E2 no actúa si el total
+guardado no es el bruto de las líneas.
+
+### Propuesta y preguntas
+
+En Jira c.21289: todo junto en `conjunto-1566-b-y-c`, con J1 (C, E2, F, `VERIFACTU_VERSION`), S1 (B y `calcTotal`
+en forma D2) y S2 (espejo). ⚠️ `calcTotal` llamando a `lineasParaFacturar` da un ciclo de imports, sin resolver.
+Tres ✅/❌ para el fundador: ampliar el GO a D2+E2+F · aceptar el cambio de lo firmado y regenerar la huella ·
+aceptar 1 cént. de desvío en un tramo.
+
+**NO medido:** suite entera, `scrum523d`, B real junto a esto, ningún XML, presupuestos reales, planes editados
+a mitad o tramos ya emitidos, guards de navegador, ninguna base. Un diseño simulado en memoria no es un diff probado.
+
+### Instrumentos (en `evidencias/SCRUM-1566/`)
+
+`sonda-e.cjs` (`SIM=C,D,D2,E1,E2,F`) · `reparto-tramos.cjs` (`DETALLE=1`, `DUMP=<fichero>`) ·
+`d2-cuantos-shim.cjs` (`d-cuantos-cambian.cjs` contra la variante 2) · salida en `salida-e.txt`.

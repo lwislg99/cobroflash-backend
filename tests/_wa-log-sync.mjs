@@ -49,6 +49,11 @@
 // sesión y la plantilla que sale sin reserva porque la base no contestó al preguntar el tope.
 // El suelo no se ha tocado: cero escrituras interceptadas, por la boca que sea, sigue siendo rojo.
 // Cómo se vio: `a55-window-quote` cayó en CI con SIN_INTERCEPTAR; en local se saltaba (pide base).
+//
+// ── SCRUM-1631 · LOS FALLOS YA SE ESPERAN ─────────────────────────────────────
+// La fila de un envío que no salió ya se escribe con `await` en `whatsapp.ts`, así que lo de arriba
+// sobre el fire-and-forget vale sólo para las filas de lo que SÍ salió. El helper sigue igual: envuelve
+// la misma boca, y la promesa que recoge ya está resuelta cuando el envío devuelve.
 import { setTimeout as programar } from 'node:timers';
 
 /**
