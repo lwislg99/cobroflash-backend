@@ -325,10 +325,16 @@ causa está **reproducida**, no deducida:
   | el mensaje sin `fetch-depth: 0` | cae «…CAEN nombrando la causa» |
   | «SIN RASTRO» sin `exigirArbol()` (pasa en vacío) | cae el caso AST. Antes de ese caso quedaba **VIVA**, y el caso se añadió por eso |
 
-- `scrum723` cayó dos veces: mi test escribía la referencia móvil en cadenas fuera de las llamadas a
-  git, una en el control y otras dos en un `init -b` y en dos mensajes. Se arregló el TEST, sin
-  declararlo en su lista: el control comprueba ahora que las refs remotas del clon son exactamente
-  la rama pedida.
+- `scrum723` cayó dos veces sobre MI test nuevo (`tests/scrum1335e-scrum804-en-clon-somero.test.mjs`),
+  no sobre código de producto. Lo que cambió en el test, y por qué:
+  | Commit | Dónde | Antes | Después |
+  |---|---|---|---|
+  | `192bccd6e` | el caso CONTROL | dos `rev-parse --verify` sobre `refs/remotes/origin/<la rama principal>` y sobre la rama pedida, y la rama principal nombrada en el título y en un mensaje | UN `for-each-ref refs/remotes/` con `deepEqual` contra `['refs/remotes/origin/scrum-8-viva']`: dice a la vez que trae la rama pedida y que no trae ninguna otra, sin nombrar la referencia móvil; el comentario del caso lo explica |
+  | `9074a1dd8` | `montar()` y el mensaje del control nuevo | `gitDeFixture(['init', …, '-b', <la principal>, remoto])` (`scrum723` no reconoce esa forma como llamada a git y casa la palabra), y el mensaje del `deepEqual` aún la nombraba | `g(dir, 'init', …)`, el mismo envoltorio que usa el resto de `montar()`, y el mensaje dice «la rama principal» |
+  **Por qué NO va en `HALLAZGOS_DECLARADOS` ni en `INDIRECTAS_DECLARADAS` de `scrum723`:** esas listas
+  son de quien COMPARA de verdad contra una referencia móvil; mi test no compara contra ella, sólo la
+  nombraba en prosa y en un fixture. Tras el arreglo `scrum723` ya no lo encuentra, y su propio
+  `deepEqual` hace caer una lista que declara de más. El guard no se tocó (regla 41).
 - Tanda: la tanda local ENTERA no terminó. Claude Code la paró por falta de memoria de la máquina
   cuando llevaba 4.351 casos de primer nivel, con 3 caídas: `scrum113` (la de todos los PR),
   `scrum1321` (la del temporal C:/D: en Windows) y `scrum1387` (la mía, ya arreglada). Después, la
