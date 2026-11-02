@@ -352,3 +352,22 @@ A9: aviso → A10 «Cero no es «está limpio»: es «no he mirado».» — no s
 **3 · §2 de `ESTADO-DEL-PRODUCTO.md`, recontado.** 66 filas, 74 tickets, una consulta (`key, status`) filtrada a «Finalizada o tocado desde las 06:00Z» = 21. Los 11 Finalizada ya estaban reflejados. Movido: **2.14 → §8** (#2935 y #2958 MERGEADOS, comprobado en GitHub; ticket 1622 abierto) · **6.16 → movible hoy (S2)** · 3.2 y 6.4 sin FUNDADOR · 2.4, 2.13, 6.17 con su último comentario (6.17 resulta de J3). Control: `contar-dependencias.mjs` da FUNDADOR **48 → 45** y filas **71 → 70**, que es exactamente lo movido. **No leído:** el último comentario de los 53 abiertos sin movimiento desde las 06:00Z.
 
 **Para el orquestador:** ① declarar o no `localhost/yaqu_dev` (sin eso, la frase de la regla 3 no se puede escribir) · ② `decision-jefe` en 1182 y 1210 · ③ 1545: ¿espera aún al fundador el «encargo de diseño»? (un lector dice que no; NO cotejado).
+
+## 2-nov-2026 · S0 · 1563k — la hoja, corregida con el último comentario de los 64
+
+**Medido contra:** `origin/main` = `70eefc40cba2eb9636992b733223bf1555c1755f` · 2026-11-02T19:53:04Z-20:05Z (`Date:` de GitHub). Producción en el mismo commit (`/version`, leído por el orquestador a las 19:30Z).
+
+**Qué cambia en `docs/producto/DECISIONES-DEL-FUNDADOR.md`** (tabla completa al principio de la hoja, «Re-medido el 2-nov»):
+- 🔴 **3.14 sale de lo que se le pide**: la credencial de sólo lectura existe desde el 23-sep (SCRUM-1097 c.16655, cotejado). Falta correrla (SCRUM-1109, `equipo-javier`). 1.1 se queda en D sólo por el GO de las 2 líneas.
+- **B2 baja a D**: se cumplió la condición que ella misma ponía (1632c en producción). **B queda en 1 (0.1).**
+- **1545 cotejado por S0**: un solo comentario (c.20042) y nada para el fundador; lo suyo son los textos (punto 4, regla 39). Se queda en D con ese motivo.
+- 1586 (ratificación de Javier, c.21159) · 1612 (diseño firmado, c.21141): **sin cotejar**, se quedan en D con la nota.
+- Entran **3.21** (SCRUM-1566, D, candidata a B) y **3.16** (SCRUM-1041, C), las dos fuera de las 48.
+- **Parte G nueva**: 1393 (incompleta), 523 y 1566, para que el fundador tenga una lista y no dos.
+- `ESTADO-DEL-PRODUCTO.md` §2b, fila 2.4 (1518): iba por detrás; las dos mitades están en producción.
+
+**Error del encargo, cotejado:** decía «la D1 de 1264 la contestó el fundador en 665 c.16647». **El autor de c.16647 es Javier** (lo dice `docs/legal/PREGUNTAS_ASESOR.md:1121`: «RESPONDIDA POR JAVIER… no es dictamen»). La hoja lo dice así.
+
+**Error mío:** las horas de los comentarios de 1631 y 1562 (c.21316, c.21317) dicen «~20:05Z»; Jira los fechó a las 19:57Z. Puse la hora a ojo, sin pedirla.
+
+**NO medido:** las citas de 1393, 523, 1566, 1586 y 1612 (de un lector, sin cotejar) · qué GO pide el `stop-fundador` de 1109 · quién corre la consulta de 1490 con la credencial.
