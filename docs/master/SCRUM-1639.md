@@ -90,3 +90,28 @@ con el fichero guardado en memoria, no restaurado desde HEAD).
 | 4. `listitem` con motivo | arriba; el test lo fija |
 | 5. Guard que cuenta | el censo: 4 → 2, techo exacto de J3 en las dos direcciones |
 | Visto en yaqu.app | pendiente hasta que entre en `main` (Gastos y la ficha de un presupuesto con factura, con teclado) |
+
+## SCRUM-1639b · el rojo de #3009: un filtro de comentarios propio (2-nov-2026, misma rama `scrum-1639-filas-con-teclado`)
+
+**Medido contra:** `origin/main` = `70eefc40cba2eb9636992b733223bf1555c1755f` · 2026-11-02T19:45:37Z
+
+A9: comprobación → `tests/scrum700-filtros-de-comentario.test.mjs`
+
+Error propio del puesto: para quitar los comentarios del CSS, el caso del anillo del test usaba su propio
+`.replace(/\/\*[\s\S]*?\*\//g, '')` en vez del sitio único. `scrum700` lo cazó en el obligatorio (92 > 91 ficheros
+con filtro propio). Ahora usa `soloCodigo` (`tests/_solo-codigo.mjs`), como `scrum962g` sobre el mismo `styles.css`.
+De paso, el número de línea que da el aviso vuelve a ser el de verdad: `soloCodigo` deja las líneas donde están,
+y el `replace` las desplazaba en cuanto había un bloque `/* */` de varias líneas. El guard no se ha tocado.
+
+**Skill UI:** no cargada · sólo cambia un test; este tramo no toca ningún fichero de `public/`.
+
+**Control del caso**, con un guion fuera del árbol que siembra y restaura `styles.css` desde HEAD (comprobado
+idéntico al acabar):
+
+| siembra | fallos (esperados) |
+|---|---|
+| ninguna (base) | 0 (0) |
+| un anillo a mano como CÓDIGO | 1 (1) |
+| el mismo anillo dentro de un comentario de varias líneas | 0 (0) |
+
+**Main metido:** `70eefc40c`, sin conflictos. Lo que la rama cambia respecto a `main` siguen siendo sus 7 ficheros.
