@@ -284,6 +284,21 @@ esquema que el CI levanta. Cayeron otros SEIS (12.996 tests, 6 fail), todos cons
 | `scrum302` | `Albaran.equipmentId` sin clasificar en `albaranDuplicado.ts` | al cubo que **VIAJA**: el parte de mañana es sobre el mismo aparato, como `jobId`; no afirma nada ocurrido. Decisión mía, de carril S1: si quien reparte la quiere al otro cubo, se mueve |
 | `scrum222`, `scrum461` ③, `scrum733` | `docs/sql/deriva-prod.sql` sin las 17 columnas nuevas | regenerado con su generador: 515 → **532** columnas, 33 → 34 tablas (las 17 de c.20085, ni una más) |
 
+🔴 **Por qué 914 valía la pena, dicho en una frase: añadir el modelo `Equipment` al esquema destapó que
+fusionar dos clientes daba 500 en cuanto uno de ellos tuviera un equipo** — la FK `RESTRICT` de
+`equipments.customer_id` ya estaba en las tres bases desde el ALTER de c.20085, y `fusionarClientes` no
+sabía que existía. Era latente, no mordido: en `origin/main` @ `70eefc40c` ni `src/` ni `public/` nombran
+`equipment` (0 coincidencias; control, la rama 914c: 10), así que nada da de alta equipos todavía. Habría
+mordido con el primero, y no lo cazó un cliente: lo cazó `scrum1291` en cuanto el modelo entró.
+
+**`equipmentId` viaja con el duplicado, y es a propósito** (2-nov, tras discutirlo con el orquestador): el
+duplicador no cruza de comercio —`findAlbaran` busca con el `merchantId` de la sesión y el duplicado
+hereda el del origen— y no duplica nada más que el albarán, así que el id del equipo sigue apuntando a un
+equipo del mismo comercio, igual que `jobId` al mismo trabajo. Testigo:
+`tests/scrum302-duplicar.test.mjs`, «SCRUM-914 · el EQUIPO viaja con el duplicado…» (mismo `merchantId`,
+mismo `equipmentId`, y 404 sin crear nada desde otro comercio). Mutantes: quitar `equipmentId` del cubo
+que viaja, y quitar el `merchantId` del `findFirst` de `findAlbaran` → los dos lo tumban.
+
 ⚠️ **Cómo se regeneró, declarado:** el `node_modules` de este árbol es el compartido (junction) y no se ha
 regenerado su cliente. Se generó un cliente APARTE, desde el `schema.prisma` de este árbol, en un temporal
 fuera del repo, y con su DMMF se llamó a las funciones exportadas del propio generador (`paresEsperados`,
