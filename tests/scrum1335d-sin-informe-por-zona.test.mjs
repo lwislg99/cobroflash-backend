@@ -25,7 +25,7 @@ import {
 
 const CAB = "import test from 'node:test';\nconst ZONA = Intl.DateTimeFormat().resolvedOptions().timeZone;\n";
 const MUDO = (cond) => `if (${cond}) process.stdout.write = () => true;\n`;
-const tres = (p) => [1, 2, 3].map((i) => `test('${p} ${i}', () => {});`).join('\n') + '\n';
+const tres = (p) => ['uno', 'dos', 'tres'].map((i) => `test('${p} ${i}', () => {});`).join('\n') + '\n';
 
 /** Medida falsa: lo único que mira `sinInformePorZona` es `zona`, `ok` y `conInforme`. */
 const medida = (zona, conInforme, extra = {}) => ({
@@ -40,7 +40,10 @@ test('① cuenta por zona y separa «en UNA zona» de «en las DOS» (lógica pu
   ], ficheros);
   assert.equal(r.medible, true);
   assert.equal(r.poblacion, 4);
-  assert.deepEqual(r.porZona.map((z) => [z.zona, z.sinInforme]), [['Z1', 2], ['Z2', 2]]);
+  assert.deepEqual(r.porZona.map((z) => `${z.zona}=${z.sinInforme}`), [
+    'Z1=2',
+    'Z2=2',
+  ]);
   assert.deepEqual(r.enUna, ['tests/b.test.mjs', 'tests/c.test.mjs']);
   assert.deepEqual(r.enTodas, ['tests/d.test.mjs']);
 });

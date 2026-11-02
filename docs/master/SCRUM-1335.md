@@ -267,8 +267,9 @@ Las 22 mutaciones tumban su caso en local, con base verde antes y después y el 
 
 # SCRUM-1335d · El recuento de los ficheros sin informe, por zona («en una» frente a «en las DOS»)
 
-S3 · 2-nov-2026 · hora de GitHub 20:56:47Z al arrancar · sobre `origin/main`
-`70eefc40cba2eb9636992b733223bf1555c1755f`. Autorizado por el orquestador como línea de informe.
+**Medido contra:** `origin/main` = `70eefc40cba2eb9636992b733223bf1555c1755f` · 2026-11-02T20:56:47Z
+**Puesto:** S3 (instrumentos) · autorizado por el orquestador como línea de informe.
+A9: comprobación → `tests/scrum1335d-sin-informe-por-zona.test.mjs`
 ⚠️ El tramo 1335c (la serie y el ciego que motiva esto) vive en la rama
 `scrum-1335c-perdida-en-las-dos-zonas`, todavía sin mergear: este tramo va en rama propia (A17) y,
 si al fusionar chocan los dos anexos al final de este fichero, **se conservan los dos**.
