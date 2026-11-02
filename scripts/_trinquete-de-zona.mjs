@@ -658,6 +658,9 @@ export function medirEnZona({ zona, ficheros, raiz = RAIZ, salida, topes }) {
     zona,
     ok: true,
     veredictos,
+    // SCRUM-1335d · `null` = el hijo no lo dijo, que NO es «ninguno informó»: el recuento sale
+    // «no pude contar», nunca cero.
+    conInforme: Array.isArray(bruto.conInforme) ? new Set(bruto.conInforme) : null,
     zonaVista: bruto.zonaVista,
     concurrencia: bruto.concurrencia,
     topes: bruto.topes,
@@ -749,6 +752,52 @@ export function compararZonas(medidas) {
     }
   }
   return { cambian, sinComparar };
+}
+
+/**
+ * ═════════════════════════════════════════════════════════════════════════════════════════════
+ * 🔴 SCRUM-1335d · LOS FICHEROS QUE NO ENTREGARON SU INFORME, por zona.
+ *
+ * LO QUE NO SE VEÍA (medido en SCRUM-1335c): un fichero que pierde su informe en las DOS zonas sale
+ * en CERO listas de `compararZonas`, porque `run()` pone en su lugar una entrada `pass` con la ruta
+ * del fichero por nombre, y `pass`/`pass` es «comparada e igual». Lo que sí llega siempre es el
+ * `test:summary` con `file` de cada fichero cuyo informe acabó; el hijo los apunta (`conInforme`).
+ *
+ * Devuelve, sobre la POBLACIÓN que se le pasa (`ficheros`):
+ *   · `porZona` ... cuántos no informaron en cada zona
+ *   · `enUna` ..... los que no informaron en ALGUNA zona y sí en otra — esos ya los ve el comparador
+ *   · `enTodas` ... los que no informaron en NINGUNA — el caso invisible, con su nombre
+ *
+ * 🔴 «No pude contar» no es cero: si una pasada no midió o el hijo no dijo `conInforme`, sale
+ * `medible: false` con el motivo y SIN cifras.
+ *
+ * 🔴 ES UNA LÍNEA DE INFORME, NO UNA PUERTA. No entra en `veredicto()`: que un informe incompleto
+ * ponga el job en CIEGO es decisión del fundador, y la toma con esta cifra delante (SCRUM-1335d).
+ * ═════════════════════════════════════════════════════════════════════════════════════════════
+ */
+export function sinInformePorZona(medidas, ficheros, raiz = RAIZ) {
+  if (!medidas.length) return { medible: false, porque: 'no hay ninguna pasada que contar' };
+  for (const m of medidas) {
+    if (!m.ok) return { medible: false, porque: `la pasada en \`${m.zona}\` no midió` };
+    if (!(m.conInforme instanceof Set)) {
+      return { medible: false, porque: `la pasada en \`${m.zona}\` no dijo qué ficheros informaron` };
+    }
+  }
+  const rels = [...new Set(ficheros.map((f) => rutaRelativa(f, raiz)))].sort();
+  const enUna = [];
+  const enTodas = [];
+  for (const rel of rels) {
+    const faltan = medidas.filter((m) => !m.conInforme.has(rel)).length;
+    if (faltan === medidas.length) enTodas.push(rel);
+    else if (faltan > 0) enUna.push(rel);
+  }
+  return {
+    medible: true,
+    poblacion: rels.length,
+    porZona: medidas.map((m) => ({ zona: m.zona, sinInforme: rels.filter((r) => !m.conInforme.has(r)).length })),
+    enUna,
+    enTodas,
+  };
 }
 
 /**
