@@ -562,6 +562,16 @@ Contra la instalación de esta máquina, a las 29-oct-2026 ~18:00Z, sobre `origi
 - Main escrita en UTF-16 con BOM → «AJENA … es main ESTROPEADA: UTF-16 con BOM (el `>` de PowerShell)».
 - `config.json` roto → NO PUDE MIRAR.
 
+**Re-medido el 2-nov-2026, con la matriz de SCRUM-1620 ya en main** (`origin/main` = `70eefc40cba2eb9636992b733223bf1555c1755f`,
+el mismo commit que servía `yaqu.app/version`):
+
+- 19:30Z, medido por el orquestador: la copia instalada **sigue AL DÍA** — 81.772 B, sha256 `e96077461a593230…`.
+- 19:4xZ (`Date:` de GitHub: 19:37:14Z al empezar la tanda), medido por la S5 con `medirPuerta()` de esta rama contra la
+  instalación real: **81.772 B · sha256 `e96077461a593230283e4f35ea76d595d2924aa5563ec885bb2d0ffdb64e621b`** · escrita
+  el 2026-10-29T17:31:43Z · contra `origin/main` `70eefc40c` → **✅ AL DÍA, idéntica byte a byte**. Es la misma copia que
+  midió el control del 29-oct, y la hora de escritura es la de la reapertura que midió SCRUM-1549e (17:31:43Z): ningún
+  merge ha tocado `sesion.mjs` desde entonces.
+
 ## 2 · Cómo se mide (`tests/scrum1549f-latido-puerta.test.mjs`, 8 tests)
 
 Banco sintético en un temporal: un repositorio con dos versiones del lanzador y una instalación al lado. Las
