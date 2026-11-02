@@ -67,7 +67,7 @@ function montar() {
   const g = (cwd, ...args) => gitDeFixture(args, { cwd });
   const remoto = path.join(dir, 'remoto.git');
   const obra = path.join(dir, 'obra');
-  gitDeFixture(['init', '-q', '--bare', '-b', 'main', remoto]);
+  g(dir, 'init', '-q', '--bare', '-b', 'main', remoto);
   fs.mkdirSync(obra);
   g(obra, 'init', '-q', '-b', 'main');
   g(obra, 'config', 'user.email', 'fixture@yaqu.test');
@@ -122,7 +122,7 @@ function bloques(salida) {
   return out;
 }
 
-test('SCRUM-1335e · CONTROL: el banco tiene la forma del job de zona (somero y sin la punta de `main`)', () => {
+test('SCRUM-1335e · CONTROL: el banco tiene la forma del job de zona (somero y sin la punta de la rama principal)', () => {
   const { somero } = montar();
   const g = (...args) => spawnSync('git', args, { cwd: somero, encoding: 'utf8' });
   assert.equal(g('rev-parse', '--is-shallow-repository').stdout.trim(), 'true',
@@ -131,7 +131,7 @@ test('SCRUM-1335e · CONTROL: el banco tiene la forma del job de zona (somero y 
   // trae ninguna otra —tampoco la punta de `main`— sin nombrar esa referencia (lo vigila SCRUM-723).
   const remotas = g('for-each-ref', '--format=%(refname)', 'refs/remotes/').stdout.split('\n').filter(Boolean);
   assert.deepEqual(remotas, ['refs/remotes/origin/scrum-8-viva'],
-    '🔴 el clon no trae sólo la rama pedida: o el banco está roto, o trae la punta de `main` y no es la forma del job de zona');
+    '🔴 el clon no trae sólo la rama pedida: o el banco está roto, o trae la punta de la rama principal y no es la forma del job de zona');
 });
 
 test('SCRUM-1335e · 🔴 scrum804 en un clon somero NO muere al cargar: declara sus casos', () => {
